@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServiceSupabase } from "@/lib/supabase"
-import { cookies } from "next/headers"
 
 // 認証チェック
 function isAuthenticated(req: NextRequest): boolean {
@@ -15,38 +14,40 @@ function unauthorized() {
 
 // ═══ POST: 管理CRUD API ═══
 export async function POST(req: NextRequest) {
-  if (!isAuthenticated(req)) return unauthorized()
-
-  const db = getServiceSupabase()
-  if (!db) return NextResponse.json({ error: "DB接続エラー" }, { status: 500 })
-
   try {
     const body = await req.json()
     const { action, ...params } = body
 
-    switch (action) {
-      // ═══ 認証 ═══
-      case "login": {
-        const password = process.env.ADMIN_PASSWORD || "paradigm-admin-2025"
-        if (params.password !== password) {
-          return NextResponse.json({ error: "パスワードが違います" }, { status: 401 })
-        }
-        const res = NextResponse.json({ success: true })
-        res.cookies.set("paradigm_admin_token", password, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          maxAge: 60 * 60 * 24 * 7, // 7日
-          path: "/",
-        })
-        return res
+    // ─── 認証不要アクション（login / logout）───
+    if (action === "login") {
+      const password = process.env.ADMIN_PASSWORD || "paradigm-admin-2025"
+      if (params.password !== password) {
+        return NextResponse.json({ error: "パスワードが違います" }, { status: 401 })
       }
+      const res = NextResponse.json({ success: true })
+      res.cookies.set("paradigm_admin_token", password, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 7,
+        path: "/",
+      })
+      return res
+    }
 
-      case "logout": {
-        const res = NextResponse.json({ success: true })
-        res.cookies.delete("paradigm_admin_token")
-        return res
-      }
+    if (action === "logout") {
+      const res = NextResponse.json({ success: true })
+      res.cookies.delete("paradigm_admin_token")
+      return res
+    }
+
+    // ─── 以降は認証必須 ───
+    if (!isAuthenticated(req)) return unauthorized()
+
+    const db = getServiceSupabase()
+    if (!db) return NextResponse.json({ error: "DB接続エラー" }, { status: 500 })
+
+    switch (action) {
 
       // ═══ ダッシュボード統計 ═══
       case "dashboard_stats": {
