@@ -4,49 +4,89 @@
 
 | 進捗 | # | セクション | 状態メモ |
 |------|---|-----------|---------|
-| ★★★☆☆ | 1 | [🎯 事業概要・市場機会](#s1) | コーポレートHP、概要固まった |
-| ☆☆☆☆☆ | 2 | [🏆 競合・差別化](#s2) | N/A（競合比較ページなし） |
-| ★★☆☆☆ | 3 | [💰 ビジネスモデル](#s3) | 料金プランは実装済み、BizModel記述なし |
+| ★★★★☆ | 1 | [🎯 事業概要・市場機会](#s1) | 2言語サイト設計確定（/ja日本向け・/en海外向け） |
+| ★★☆☆☆ | 2 | [🏆 競合・差別化](#s2) | Japan Entry Packageポジション記載あり |
+| ★★★☆☆ | 3 | [💰 ビジネスモデル](#s3) | /ja JPY・/en USD確定・Japan Entry Package設計確定 |
 | ☆☆☆☆☆ | 4 | [📊 財務計画・KPI](#s4) | N/A |
-| ★★☆☆☆ | 5 | [📈 ロードマップ・PMF](#s5) | 未実装リストあり |
-| ★☆☆☆☆ | 6 | [⚖️ Exit・法的リスク](#s6) | 特定商取引法ページのみ実装済み |
-| ★★★★☆ | 7 | [🗺️ プロダクト設計](#s7) | ページ構成・フォルダ構成完備 |
-| ★★★★☆ | 8 | [⚙️ 技術・データ設計](#s8) | スタック・DBテーブル・環境変数完備 |
-| ★★★☆☆ | 9 | [📣 GTM・集客・エコシステム](#s9) | Coolify/Cloudflare/GitHub連携完備 |
-| ★★★★☆ | 10 | [🖥️ 運用・組織・実装ルール](#s10) | ルール・管理ダッシュボード・実装済み機能 |
-| ★★★☆☆ | 11 | [📚 リソース一覧](#s11) | 主要ツール×URL |
+| ★★★☆☆ | 5 | [📈 ロードマップ・PMF](#s5) | 全面リニューアル実装計画あり |
+| ★☆☆☆☆ | 6 | [⚖️ Exit・法的リスク](#s6) | 特定商取引法・プライバシーページのみ |
+| ★★★★☆ | 7 | [🗺️ プロダクト設計](#s7) | /[locale]/構造・全ページ構成確定 |
+| ★★★★☆ | 8 | [⚙️ 技術・データ設計](#s8) | next-intl・新デザインシステム・DBスキーマ変更確定 |
+| ★★★☆☆ | 9 | [📣 GTM・集客・エコシステム](#s9) | インフラ・SEO設定完備 |
+| ★★★★☆ | 10 | [🖥️ 運用・組織・実装ルール](#s10) | 2言語対応コーディング規約追加 |
+| ★★★☆☆ | 11 | [📚 リソース一覧](#s11) | next-intl追加 |
 
-⚠️ **要強化セクション**: 2 競合 / 4 財務 / 6 Exit（将来SaaS化時 or LP強化時に記入）
+⚠️ **要強化セクション**: 4 財務 / 6 Exit / Q5 middlewareルーティング未確定
 
 ---
 
 ## <a id="s1"></a>1. 🎯 事業概要・市場機会
 
 - **法人**: Paradigm合同会社
-- **プロダクト**: paradigmjp.com — Paradigm公式コーポレートHP + リード獲得サイト
+- **プロダクト**: paradigmjp.com — Paradigm公式コーポレートHP（2言語サイト・全面リニューアル）
 - **ドメイン管理**: ラッコドメイン → Cloudflare DNS
 - **サーバー**: DigitalOcean（Coolifyセルフホスト）— appexx.meと同一サーバー（IP: 139.59.250.5）
 - **Git**: `Paradigmllc/Paradigm-HP`（main ブランチ）
 
-**解決しているジョブ**: Web制作 / MEO / SEO / AI導入の4サービスを訴求し、コンタクトフォーム経由でリード獲得 → Supabaseに保存 → Twenty CRMで管理するコーポレートHP
+### 2言語サイト設計（確定）
 
-**4サービス**: Web制作 / MEO対策 / SEO・GEO対策 / AI導入支援
+| | `/ja` | `/en` |
+|--|-------|-------|
+| **ターゲット** | 日本のSMB（飲食・クリニック・サービス業・小売） | 日本進出を検討する海外SMB・個人事業主 |
+| **大企業** | 含む | 含まない |
+| **コンセプト** | 地域密着・数値実績・信頼 | "Your local digital partner in Japan" |
+| **コンテンツ** | 完全独立（翻訳ではない別設計） | 完全独立（翻訳ではない別設計） |
+| **ブログ** | 日本語・日本向け内容 | 英語・Japan business tips（完全別記事） |
+
+### サービス構成
+
+**`/ja` サービス（4本）**: Web制作 / MEO対策 / SEO・GEO対策 / AI導入支援
+
+**`/en` サービス**: Japan Entry Package（メイン）+ サブサービス複数
+→ Japan Entry Packageは複数サービスをバンドルしたパッケージ商品
 
 ---
 
 ## <a id="s2"></a>2. 🏆 競合・差別化
 
-> N/A（コーポレートHPのため。将来LP強化・競合比較ページ追加時に記入）
+### `/en` ポジショニング
+
+**Japan Entry Package** は「外国企業が日本でデジタルプレゼンスを構築する際に必要なものをすべてバンドルした唯一のパッケージ」として差別化。
+
+競合が持たない優位性:
+- 日本語・英語バイリンガル対応のプロジェクト進行
+- 日本固有のデジタル環境（MEO・LINE・Yahoo! Japan）への精通
+- 小規模〜中規模向けの現実的な価格帯（USD）
+
+> `/ja` の競合分析: 将来LP強化時に記入
 
 ---
 
 ## <a id="s3"></a>3. 💰 ビジネスモデル
 
-- **収益モデル**: 月額顧問 + プロジェクト型（Web制作・MEO・SEO・AI導入）
-- **料金プラン**: 4サービス×3プラン（Supabase `cms_pricing` で管理）
-- **リード獲得導線**: /contact フォーム → Slack通知 + Supabase保存 → Twenty CRM管理
+### `/ja` 料金体系
 
-> 詳細マネタイズ設計は将来SaaS化時に → SAAS-POSITIONルール参照
+- **通貨**: JPY（日本円）
+- **構造**: 月額顧問 + プロジェクト型（Web制作・MEO・SEO・AI導入）
+- **プラン**: 4サービス×3プラン（Supabase `cms_pricing` locale='ja' で管理）
+
+### `/en` 料金体系（確定）
+
+- **通貨**: USD固定（JPY併記なし）
+- **メインプロダクト**: Japan Entry Package（3段構成）
+
+| プラン | 想定価格帯 | 内容 |
+|--------|----------|------|
+| Starter | ~$499/mo | 基本的な日本向けデジタルプレゼンス構築 |
+| Growth | ~$999/mo | フルパッケージ（Web+SEO+MEO管理） |
+| Enterprise | ~$1,999/mo | Growth + AI自動化 + 専任サポート |
+
+> 価格は実装時に確定・Supabase `cms_pricing` locale='en' currency='usd' で管理
+
+### リード獲得導線
+
+- `/ja`: `/ja/contact` フォーム → Slack通知 + Supabase leads保存 → Twenty CRM
+- `/en`: `/en/contact` フォーム + Cal.com「Book a free 30-min call in English」直結
 
 ---
 
@@ -58,24 +98,55 @@
 
 ## <a id="s5"></a>5. 📈 ロードマップ・PMF
 
-### 未実装（今後の予定）
+### 全面リニューアル実装計画
 
-- **Umami Website ID設定** — analytics.appexx.meで新サイト追加 + 環境変数設定
-- **Ghost連携** — ブログをGhost API経由に切り替え（現在はSupabase DB + フォールバック）
-- **メール自動返信** — フォーム送信時にResend/SMTP経由で確認メール送信
-- **Authentik OIDC** — 管理画面(/admin)の認証強化
-- **パフォーマンス計測** — Lighthouse CI / Web Vitals監視の自動化
-- **ラッコドメインNS変更** — Cloudflareネームサーバーへ変更（手動操作が必要）
-- **多言語対応** — 英語LP（海外クライアント向け）
-- **提案ページ強化** — /p/[slug] の心理トリガー設計をappexx-dashboardと同期
+#### Phase 1: 基盤（i18n + デザインシステム）
+- [ ] next-intl導入（`/[locale]/` ルーティング）
+- [ ] middleware.ts（locale自動振り分けロジック — **Q5未確定、下記参照**）
+- [ ] globals.css 新デザイントークン適用（Warm Modern Tech）
+- [ ] フォント設定（/ja: Noto Sans JP、/en: Plus Jakarta Sans or Inter）
+- [ ] CMSテーブルに `locale` カラム追加（Supabase migration）
+
+#### Phase 2: `/ja` 全面リニューアル
+- [ ] トップページ（Warm Modern Tech デザイン）
+- [ ] 全サービスページリニューアル
+- [ ] Aboutページ（チーム写真セクション追加）
+- [ ] 実績ページ（before/after + クライアント顔写真）
+- [ ] ブログ（日本語専用コンテンツ）
+
+#### Phase 3: `/en` 新規構築
+- [ ] トップページ（"Your local digital partner in Japan"）
+- [ ] Japan Entry Package ページ
+- [ ] サブサービスページ群
+- [ ] 英語ブログ（完全別コンテンツ）
+- [ ] `/en/contact`（Cal.com連携 English booking）
+- [ ] `/en/faq`（外国人向けQ&A）
+
+#### Phase 4: SEO・インフラ整備
+- [ ] hreflang タグ（/ja ↔ /en）
+- [ ] locale別サイトマップ
+- [ ] Umami Website ID設定
+- [ ] Lighthouse CI自動化
+
+### middleware ロジック（確定）
+
+```
+/ アクセス時の振り分けフロー:
+  1. Cookie に locale_preference があればそれを優先
+  2. なければ accept-language ヘッダーで自動判定（ja → /ja、その他 → /en）
+  3. フッターの言語スイッチャー押下 → Cookie 保存 + リダイレクト
+  ※ ヘッダーには言語スイッチャーなし（フッターのみ）
+  ※ URL /ja /en はユーザーには基本的に意識させない設計
+```
 
 ---
 
 ## <a id="s6"></a>6. ⚖️ Exit・法的リスク
 
-- **特定商取引法**: `/legal` ページ実装済み（9条）
-- **プライバシーポリシー**: `/privacy` ページ実装済み
-- **お問い合わせフォーム**: 個人情報の取り扱い同意チェックボックスの追加が必要
+- **特定商取引法**: `/ja/legal` ページ実装済み（9条）
+- **プライバシーポリシー**: `/ja/privacy` ページ実装済み
+- **`/en` 法的ページ**: `/en/legal` `/en/privacy` 英語版を新規作成必要
+- **お問い合わせフォーム**: 個人情報取り扱い同意チェックボックス追加が必要
 
 > Exit戦略: N/A（コーポレートHP）
 
@@ -83,76 +154,111 @@
 
 ## <a id="s7"></a>7. 🗺️ プロダクト設計
 
-### サイト構成
+### ルート構造（確定）
 
 ```
-paradigmjp.com/
-├── /                  ← トップページ（ヒーロー+サービス概要+実績プレビュー+選ばれる理由+CTA）
-├── /about             ← 会社概要（ミッション/価値観3つ/基本情報テーブル）
-├── /services          ← サービス一覧（4サービス交互レイアウト）
-│   ├── /services/web  ← Web制作（詳細+特徴+料金3プラン+CTA）
-│   ├── /services/meo  ← MEO対策（詳細+対策の流れ4ステップ+料金+CTA）
-│   ├── /services/seo  ← SEO/GEO対策（SEO vs GEO比較+料金+CTA）
-│   └── /services/ai   ← AI導入支援（導入事例4件+料金+CTA）
-├── /pricing           ← 料金一覧（4カテゴリ×3プラン+料金補足Q&A）
-├── /faq               ← よくある質問（10問のアコーディオンUI）
-├── /works             ← 制作実績（6件のケーススタディ+メトリクス+タグ）
-├── /contact           ← お問い合わせ（フォーム+API送信+サイドバー+Cal.comリンク）
-├── /blog              ← ブログ一覧（カテゴリ/タグ/読了時間表示）
-│   └── /blog/[slug]   ← ブログ記事（Markdownレンダリング+BlogPosting JSON-LD）
-├── /lp/web            ← Web制作LP（ペインポイント+ソリューション+料金+CTA）
-├── /lp/meo            ← MEO対策LP（数値実績+対象業種+CTA）
-├── /lp/seo            ← SEO/GEO対策LP（SEO vs GEO比較+CTA）
-├── /lp/ai             ← AI導入支援LP（インパクト数値+FAQ+CTA）
-├── /p/[slug]          ← 顧客向け提案ページ（心理トリガー設計・appexx-dashboardと同期）
-├── /privacy           ← プライバシーポリシー（9条）
-├── /legal             ← 特定商取引法に基づく表記
-└── /admin             ← 管理ダッシュボード（認証付き）
-    ├── /admin/posts   ← ブログ管理（CRUD+Markdownエディタ）
-    ├── /admin/services ← サービス管理
-    ├── /admin/pricing ← 料金管理
-    ├── /admin/faqs    ← FAQ管理（D&D並替え）
-    ├── /admin/works   ← 実績管理
-    ├── /admin/leads   ← リード管理（問い合わせ一覧）
-    └── /admin/settings ← サイト設定
+/                      → middleware で /ja or /en に振り分け
+/ja/                   ← 日本語トップ（完全リニューアル）
+/ja/about
+/ja/services
+/ja/services/web
+/ja/services/meo
+/ja/services/seo
+/ja/services/ai
+/ja/pricing
+/ja/works
+/ja/blog
+/ja/blog/[slug]        ← 日本語専用記事
+/ja/contact
+/ja/faq
+/ja/legal
+/ja/privacy
+/ja/lp/web             ← LP群
+/ja/lp/meo
+/ja/lp/seo
+/ja/lp/ai
+/ja/p/[slug]           ← 顧客向け提案ページ
+
+/en/                   ← 英語トップ（完全別設計）
+/en/about
+/en/services
+/en/services/japan-entry-package  ← メイン
+/en/services/web
+/en/services/seo
+/en/services/ai
+/en/pricing            ← USD表示
+/en/works              ← 英語対応可の事例のみ
+/en/blog
+/en/blog/[slug]        ← 英語専用記事（/jaとは別コンテンツ）
+/en/contact            ← Cal.com English booking
+/en/faq                ← 外国人向けQ&A
+/en/legal              ← English legal page
+/en/privacy            ← English privacy policy
+
+/admin/                ← locale非依存（日英両方を管理）
+/api/                  ← locale非依存
+/p/[slug]              ← 提案ページ（locale非依存）
 ```
 
-### API エンドポイント
-
-- `POST /api/contact` — お問い合わせ（Slack通知 + Supabase leads保存）
-- `GET/POST/PATCH/DELETE /api/admin/*` — 管理CRUD API（ブログ/サービス/料金/FAQ/実績）
-
-### フォルダ構成
+### フォルダ構成（リニューアル後）
 
 ```
 paradigmjpcom/
 ├── CLAUDE.md
+├── middleware.ts              ← locale振り分け（next-intl）
+├── i18n/
+│   └── routing.ts             ← locales: ['ja', 'en'], defaultLocale: 'ja'
+├── messages/
+│   ├── ja.json                ← /ja 共通UI文言（ナビ・フッター等）
+│   └── en.json                ← /en 共通UI文言
 ├── package.json / tsconfig.json / next.config.ts
 ├── src/
 │   ├── app/
-│   │   ├── globals.css          ← Tailwind v4 @themeブロック（primary/accent/surface色定義）
-│   │   ├── layout.tsx           ← ルートレイアウト（Header/Footer/メタデータ/OGP）
-│   │   ├── page.tsx             ← ホームページ
-│   │   ├── about/ contact/ faq/ legal/ pricing/ privacy/ works/
-│   │   ├── blog/
-│   │   │   ├── page.tsx         ← ブログ一覧
-│   │   │   └── [slug]/page.tsx  ← ブログ記事（SSG）
-│   │   ├── lp/ web/ meo/ seo/ ai/
-│   │   ├── services/ web/ meo/ seo/ ai/
-│   │   ├── p/[slug]/            ← 提案ページ（AllInOneClient.tsx）
-│   │   ├── admin/               ← 管理ダッシュボード（layout.tsx + 7ページ）
-│   │   ├── api/contact/ admin/
-│   │   ├── sitemap.ts / robots.ts / opengraph-image.tsx
+│   │   ├── globals.css        ← 新デザイントークン（Warm Modern Tech）
+│   │   ├── [locale]/          ← locale動的ルート（next-intl）
+│   │   │   ├── layout.tsx     ← locale別レイアウト（lang属性・フォント切替）
+│   │   │   ├── page.tsx       ← トップページ（locale別コンポーネント呼び出し）
+│   │   │   ├── about/
+│   │   │   ├── services/
+│   │   │   │   └── [slug]/
+│   │   │   ├── pricing/
+│   │   │   ├── works/
+│   │   │   ├── blog/
+│   │   │   │   └── [slug]/
+│   │   │   ├── contact/
+│   │   │   ├── faq/
+│   │   │   ├── legal/
+│   │   │   ├── privacy/
+│   │   │   └── lp/            ← /ja のみ
+│   │   ├── admin/             ← locale非依存
+│   │   ├── api/               ← locale非依存
+│   │   ├── p/[slug]/          ← 提案ページ（locale非依存）
+│   │   ├── sitemap.ts         ← locale別サイトマップ
+│   │   └── robots.ts
 │   ├── components/
-│   │   ├── Header.tsx / Footer.tsx
-│   │   └── ui/                  ← shadcn/ui互換
+│   │   ├── Header.tsx         ← locale対応（言語切替ボタン含む）
+│   │   ├── Footer.tsx         ← locale対応
+│   │   ├── PageHero.tsx
+│   │   ├── DifyChatbot.tsx
+│   │   ├── SiteWrapper.tsx
+│   │   ├── ja/                ← /ja 専用コンポーネント
+│   │   └── en/                ← /en 専用コンポーネント
 │   └── lib/
-│       ├── data.ts              ← コンテンツデータ（フォールバック用、DB優先）
-│       ├── blog.ts              ← ブログ記事データ（フォールバック用）
-│       ├── jsonld.ts            ← JSON-LD構造化データ
-│       └── supabase.ts          ← Supabase接続ヘルパー
+│       ├── data.ts            ← /ja フォールバックデータ
+│       ├── data-en.ts         ← /en フォールバックデータ（新規）
+│       ├── blog.ts
+│       ├── jsonld.ts          ← locale対応JSON-LD
+│       └── supabase.ts
 └── public/
+    ├── images/
+    │   ├── team/              ← チーム写真
+    │   └── clients/           ← クライアント写真
 ```
+
+### APIエンドポイント
+
+- `POST /api/contact` — お問い合わせ（locale判定でSlack通知文言切替 + Supabase leads保存）
+- `GET/POST/PATCH/DELETE /api/admin/*` — 管理CRUD（locale指定パラメータ追加）
 
 ---
 
@@ -163,61 +269,137 @@ paradigmjpcom/
 | レイヤー | 使用ツール |
 |---|---|
 | フレームワーク | Next.js 15（App Router）+ TypeScript + Tailwind CSS v4 |
-| フォント | Noto Sans JP (300-800ウェイト、Google Fonts) |
+| **i18n** | **next-intl**（`/[locale]/` App Router対応） |
+| フォント `/ja` | Noto Sans JP (300-800ウェイト、Google Fonts) |
+| フォント `/en` | Plus Jakarta Sans or Inter（Google Fonts）|
 | アニメーション | framer-motion |
 | アイコン | lucide-react |
 | UI | shadcn/ui互換 + Radix UI + Sonner (Toast) |
 | フォーム | React Hook Form + Zod |
 | 状態管理 | TanStack Query + Zustand |
-| CMS | カスタム管理ダッシュボード（/admin） |
+| CMS | カスタム管理ダッシュボード（/admin）— locale別タブ切替 |
 | データベース | Supabase（appexxと同一プロジェクト yihdmgtxiqfdgdueolub） |
 | ホスト | Coolify（同一サーバー: 139.59.250.5） |
 | DNS | Cloudflare |
 | CI/CD | GitHub Actions → Coolify Webhook（private repo対応） |
 
-### Supabase CMSテーブル（7テーブル）
+### デザインシステム（新・確定）
 
-| テーブル | 内容 |
-|---------|------|
-| `cms_posts` | ブログ記事（slug/title/excerpt/content/category/tags/status/published_at） |
-| `cms_services` | サービス（service_id/icon/title/tagline/description/features/results/color/sort_order） |
-| `cms_pricing` | 料金プラン（service_id/plan_name/price/period/description/features/is_popular/sort_order/monthly_note） |
-| `cms_faqs` | FAQ（question/answer/sort_order/is_active） |
-| `cms_works` | 実績（title/industry/description/metrics/tags/color/sort_order/is_active） |
-| `cms_settings` | サイト設定（key/value(jsonb)） |
-| `cms_media` | メディアライブラリ（filename/url/alt_text/mime_type/size_bytes） |
+**コンセプト**: Warm Modern Tech — カラフル・実在人物写真・温かみのあるモダンテック
 
-**共有テーブル（appexx-dashboardと同一プロジェクト）**: `leads`（問い合わせ保存先）
+参照ブランド: Loom / Notion / Figma / Intercom
 
-**フォールバック（src/lib/data.ts）**: SERVICES(4) / PRICING(4カテゴリ×3プラン) / FAQS(10) / WORKS(6)
+#### カラーパレット
+
+```css
+@theme {
+  /* ── Backgrounds ──────────────────── */
+  --color-bg-base:     #FAFAF7;   /* ウォームオフホワイト */
+  --color-bg-card:     #FFFFFF;
+  --color-bg-ink:      #0D1117;   /* ダークセクション */
+
+  /* ── Brand ────────────────────────── */
+  --color-primary:     #1C1C2E;
+  --color-accent:      #6366F1;   /* インディゴ */
+  --color-accent-light:#818CF8;
+
+  /* ── Warm Accents（新規）─────────── */
+  --color-amber:       #F59E0B;   /* 温かみ・エネルギー */
+  --color-coral:       #F97316;   /* 親しみ・CTAサブ */
+  --color-teal:        #14B8A6;   /* AI・テック領域 */
+  --color-rose:        #F43F5E;   /* 差し色 */
+
+  /* ── Text ─────────────────────────── */
+  --color-text:        #111827;
+  --color-text-muted:  #6B7280;
+
+  /* ── Surface（旧 #ffffff 純白から変更）*/
+  --color-surface:     #FAFAF7;
+}
+```
+
+#### フォント
+
+| locale | フォント | 用途 |
+|--------|---------|------|
+| `/ja` | Noto Sans JP (300-800) | 本文・見出し全般 |
+| `/en` | Plus Jakarta Sans (400-800) | 本文・見出し全般 |
+
+#### セクション構成パターン（両locale共通ガイドライン）
+
+```
+Hero:         Meshグラデ（紫↔ティール↔アンバー）+ 実在人物写真
+Social Proof: ウォームオフホワイト地 + クライアントロゴ
+Services:     インク地（ダーク） + カラフルカード
+Works:        ウォームオフホワイト地 + before/after + 顔写真
+Team:         アンバー/コーラル系グラデ地 + 顔写真 + ひとこと
+Blog:         ウォームオフホワイト地
+CTA:          インディゴ↔ティールメッシュグラデ
+```
+
+#### 写真方針（確定）
+
+- **フリー素材を使用**（Unsplash / Pexels / Pixabay 等）
+- **⚠️ アニメ・漫画・イラスト素材は一切使用禁止。必ず実在人物の写真・動画のみ使用**
+- スタイル: 典型的なストックフォトポーズを避け、自然・candid・作業感のあるものを厳選
+- `/ja` 用: 日本人・アジア系・オフィス・対話・作業シーン
+- `/en` 用: 多国籍・英語ビジネス・ラップトップ・カジュアルミーティングシーン
+- ブログ著者写真: フリー素材の人物写真を使用
+- 動画素材（ヒーロー背景等）: Pexels Videos 等のフリー動画も活用可
+
+#### Difyチャットボット（locale別・確定）
+
+| | `/ja` Bot | `/en` Bot |
+|--|----------|----------|
+| **言語** | 日本語 | 英語 |
+| **学習内容** | 日本語版HP全ページ・サービス仕様・Docs・Supabase CMSデータ | 英語版HP全ページ・Japan Entry Package詳細・英語Docs |
+| **共通学習** | Supabase テーブル構造・FAQ・料金・実績データ（最新を常時反映） | ← 同左 |
+| **更新方法** | コンテンツ更新時にDifyナレッジベースを再インデックス（n8n自動化推奨） | ← 同左 |
+| **配置** | 右下固定、デフォルト展開 | 右下固定、デフォルト展開 |
+
+#### locale別トーン差分
+
+| | `/ja` | `/en` |
+|--|-------|-------|
+| 第一印象 | 温かい・信頼・地に足がついた | グローバル・スタートアップ感・爽快 |
+| アクセント主役 | アンバー＋インディゴ | ティール＋コーラル |
+| 写真 | 日本的丁寧さ・対話感 | 多様な国籍・英語コミュニケーション |
+
+### Supabase CMSテーブル（localeカラム追加）
+
+| テーブル | 変更内容 |
+|---------|---------|
+| `cms_posts` | `locale TEXT DEFAULT 'ja'` カラム追加 |
+| `cms_services` | `locale TEXT DEFAULT 'ja'` カラム追加 |
+| `cms_pricing` | `locale TEXT DEFAULT 'ja'`, `currency TEXT DEFAULT 'jpy'` カラム追加 |
+| `cms_faqs` | `locale TEXT DEFAULT 'ja'` カラム追加 |
+| `cms_works` | `locale TEXT DEFAULT 'ja'` カラム追加 |
+| `cms_settings` | `locale TEXT DEFAULT 'ja'` カラム追加 |
+
+**マイグレーションSQL**:
+```sql
+ALTER TABLE cms_posts    ADD COLUMN IF NOT EXISTS locale TEXT DEFAULT 'ja';
+ALTER TABLE cms_services ADD COLUMN IF NOT EXISTS locale TEXT DEFAULT 'ja';
+ALTER TABLE cms_pricing  ADD COLUMN IF NOT EXISTS locale TEXT DEFAULT 'ja',
+                         ADD COLUMN IF NOT EXISTS currency TEXT DEFAULT 'jpy';
+ALTER TABLE cms_faqs     ADD COLUMN IF NOT EXISTS locale TEXT DEFAULT 'ja';
+ALTER TABLE cms_works    ADD COLUMN IF NOT EXISTS locale TEXT DEFAULT 'ja';
+ALTER TABLE cms_settings ADD COLUMN IF NOT EXISTS locale TEXT DEFAULT 'ja';
+```
+
+**共有テーブル（appexx-dashboardと同一プロジェクト）**: `leads`（locale='ja'/'en' カラムで区別）
 
 ### 環境変数（Coolify設定）
 
 ```bash
-# Supabase（appexxと同一プロジェクト）
 NEXT_PUBLIC_SUPABASE_URL=https://yihdmgtxiqfdgdueolub.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=(Coolify appexx-dashboardから参照)
 SUPABASE_SERVICE_ROLE_KEY=(Coolify appexx-dashboardから参照)
-
-# サイト
 NEXT_PUBLIC_SITE_URL=https://paradigmjp.com
 NEXT_PUBLIC_COMPANY_NAME=Paradigm合同会社
-
-# 管理画面認証
 ADMIN_PASSWORD=paradigm-admin-2025
-
-# アナリティクス（要設定）
 NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 ```
-
-### デザインシステム
-
-- **カラー**: primary(#1a1a2e) / accent(#4f46e5) / accent-light(#818cf8) / surface(#fff) / text(#1e293b) / text-muted(#64748b)
-- **フォント**: Noto Sans JP（Google Fonts、300-800ウェイト）
-- **角丸**: rounded-xl(カード) / rounded-2xl(大カード) / rounded-xl(ボタン)
-- **影**: shadow-lg shadow-accent/25（CTAボタン）
-- **グラデーション**: ヒーロー from-primary to-slate-900 / CTA from-accent to-indigo-600
-- **サービス別カラー**: indigo(Web) / emerald(MEO) / amber(SEO) / purple(AI)
 
 ---
 
@@ -234,35 +416,34 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 
 - **Zone ID**: `f191afabddabaf1658ebfe79a9a9b723`
 - **Aレコード**: paradigmjp.com → 139.59.250.5（Proxied）
-- **管理**: ラッコドメイン → Cloudflare NSで委任済み
 
 ### GitHub 設定
 
 - **レポ**: `Paradigmllc/Paradigm-HP`
 - **ブランチ**: `main`
-- **CI/CD**: GitHub Actions `deploy.yml`（ポーリングループ削除済み — Coolifyは`running:unknown`のみ返すため）
+- **CI/CD**: GitHub Actions `deploy.yml`
 
 ### appexx.meインフラとの共有接続
 
 | リソース | 接続方法 |
 |---|---|
-| Supabase | 同一プロジェクト（yihdmgtxiqfdgdueolub）— cms_* テーブルで分離 |
+| Supabase | 同一プロジェクト（yihdmgtxiqfdgdueolub）— cms_* テーブル locale列で分離 |
 | 認証 | Authentik（authentik.appexx.me）— 将来OIDC連携予定 |
 | LLM | https://appexx.me/api/studio/llm 経由 |
 | Slack通知 | https://appexx.me/api/studio/notify 経由 |
 | CRM | Twenty CRM（crm.appexx.me） |
-| フォーム | Formbricks（forms.appexx.me） |
-| アナリティクス | Umami（analytics.appexx.me） |
-| Ghost | ghost.appexx.me（ブログ記事共有可能） |
-| Cal.com | cal.appexx.me（商談予約リンク） |
+| Cal.com | cal.appexx.me（/ja: 商談予約 / /en: English booking） |
+| アナリティクス | Umami（analytics.appexx.me）— locale別Website ID推奨 |
+| Ghost | ghost.appexx.me（ブログ記事 locale別管理） |
+| Dify | dify.appexx.me（/ja: 日本語Bot / /en: English Bot 別設定推奨） |
 
-### SEO設定（実装済み）
+### SEO設定
 
-- **構造化データ**: Organization / Services / FAQ / BreadcrumbList / BlogPosting（JSON-LD）— `src/lib/jsonld.ts`
-- **サイトマップ**: `sitemap.ts`（22 URL、優先度/更新頻度付き）
-- **robots.txt**: `robots.ts`（/api/ のみ除外）
-- **OGP画像**: `opengraph-image.tsx`（Edge Runtime動的生成）
-- **Umami**: `layout.tsx` にスクリプト埋め込み済み
+- **hreflang**: `<link rel="alternate" hreflang="ja" href="https://paradigmjp.com/ja/...">` + `hreflang="en"` 両方必須
+- **サイトマップ**: locale別（`/sitemap.xml` でja/en両方を含む）
+- **robots.txt**: `/api/` `/admin/` のみ Disallow
+- **構造化データ**: Organization / Services / FAQ / BreadcrumbList / BlogPosting（JSON-LD、locale対応）
+- **OGP**: locale別 `og:locale`（`ja_JP` / `en_US`）
 
 ---
 
@@ -271,57 +452,49 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 ### コーディング規約
 
 > 📌 **全プロジェクト共通ルール（A〜TT等）はグローバル設定 `~/.claude/CLAUDE.md` に定義済み。**
-> ルール変更時の同期先: ① `~/.claude/CLAUDE.md`（主） ② `memory/feedback_important_rules.md` ③ `Paradigmllc/dotfiles/claude/CLAUDE.md`
 
-1. UIテキストは日本語で統一
-2. デザインはモダンで洗練されたコーポレートサイト（framer-motionは上品に、過度な演出NG）
-3. レスポンシブ必須（モバイルファースト、`sm:` `md:` `lg:` 必ず設定）
-4. Core Web Vitals / Lighthouse 90+ を目標
-5. SEO最適化（構造化データ/OGP/サイトマップ/robots.txt — 全ページ必須）
-6. 画像は `next/image` + WebP + 適切なサイズ指定
-7. appexxインフラへのAPI呼び出しはサーバーサイド（Route Handler）から実行
-8. コンテンツはDB優先（cms_*テーブル）、`src/lib/data.ts` はフォールバック
-9. git push → GitHub Actions → Coolify Webhook で自動デプロイ
-10. コード変更後は: ① CLAUDE.md更新 → ② git commit+push → ③ URL確認
+1. **`/ja` UIテキスト**: 日本語で統一
+2. **`/en` UIテキスト**: 英語で統一（日本語混在禁止）
+3. **コンポーネント分離**: `/ja` 専用は `components/ja/`、`/en` 専用は `components/en/`、共通は `components/`
+4. **デザイン**: Warm Modern Tech（カラフル・実在人物写真・温かみのあるモダンテック）
+5. **写真**: ストックフォト禁止。Paradigm実際のメンバー・クライアントのみ
+6. **アニメーション**: framer-motion を品よく使用（過度な演出NG）
+7. **レスポンシブ**: モバイルファースト、`sm:` `md:` `lg:` 必ず設定
+8. **Core Web Vitals**: Lighthouse 90+ を目標
+9. **SEO**: hreflang・構造化データ・OGP・サイトマップ — 全ページ必須
+10. **画像**: `next/image` + WebP + 適切なサイズ指定
+11. **appexxインフラAPI**: サーバーサイド（Route Handler）から実行
+12. **コンテンツ**: DB優先（cms_* locale指定クエリ）、`src/lib/data.ts` / `data-en.ts` はフォールバック
+13. **デプロイ**: git push → GitHub Actions → Coolify Webhook 自動デプロイ
+14. **変更後**: ① CLAUDE.md更新 → ② git commit+push → ③ URL確認
 
 ### 管理ダッシュボード（/admin）
 
 | 項目 | 内容 |
 |-----|------|
 | 認証方式 | 環境変数 `ADMIN_PASSWORD` + Cookie `paradigm_admin_token` |
-| 将来予定 | Authentik OIDC統合 |
-| ダッシュボード | 記事数/サービス数/問い合わせ数/今月のアクセス |
-| ブログ管理 | 記事CRUD・Markdownエディタ・プレビュー・下書き/公開切替 |
-| サービス管理 | 4サービスの説明・特徴・実績テキスト編集 |
-| 料金管理 | プラン名/価格/特徴の編集 |
-| FAQ管理 | Q&A追加/編集/削除/並べ替え（D&D） |
-| 実績管理 | ケーススタディ追加/編集/削除 |
-| リード管理 | 問い合わせ一覧+ステータス管理 |
-| サイト設定 | 会社情報・メール設定・OGP設定 |
+| **locale切替** | **管理画面に「日本語 / English」タブを追加（locale別コンテンツ管理）** |
+| ダッシュボード | 記事数/サービス数/問い合わせ数（locale別表示） |
+| ブログ管理 | locale別記事CRUD（/ja と /en は完全別コンテンツ） |
+| 料金管理 | locale別プラン管理（/en はUSD表示） |
 
-### 実装済み機能
+### 実装済み機能（リニューアル前の現状）
 
-- ✅ トップページ — ヒーロー+サービス概要+実績プレビュー+選ばれる理由+CTA
-- ✅ 全サービスページ — `/services/web` `/services/meo` `/services/seo` `/services/ai`
-- ✅ LP 4ページ — `/lp/web` `/lp/meo` `/lp/seo` `/lp/ai`
-- ✅ ブログ — Markdown→HTMLレンダリング、BlogPosting JSON-LD
-- ✅ お問い合わせフォーム — `POST /api/contact`（Slack通知 + Supabase leads保存）
-- ✅ OGP画像 — `opengraph-image.tsx`（Edge Runtime動的生成）
-- ✅ 構造化データ — Organization/Services/FAQ/BreadcrumbList/BlogPosting
-- ✅ サイトマップ — `sitemap.ts`（22 URL、優先度/更新頻度付き）
-- ✅ robots.txt — `robots.ts`（/api/ のみ除外）
-- ✅ Umami — layout.tsxにスクリプト埋め込み済み
-- ✅ 管理ダッシュボード — `/admin`（認証+7セクション+CRUD API）
-- ✅ Difyチャットボット — デフォルト展開（`useState(true)`）
-- ✅ 提案ページ — `/p/[slug]`（AllInOneClient.tsx、appexx-dashboardと同期）
-- ✅ GitHub Actions deploy.yml — ポーリングループ削除済み（Coolify対応）
-- ✅ framer-motion型修正 — `EASE as const` タプル型（nixpacksビルド対応）
+- ✅ トップページ（リニューアル対象）
+- ✅ 全サービスページ（リニューアル対象）
+- ✅ LP 4ページ（`/ja/lp/*` に移動）
+- ✅ ブログ（locale対応リニューアル対象）
+- ✅ お問い合わせフォーム
+- ✅ OGP画像
+- ✅ 構造化データ（hreflang追加必要）
+- ✅ サイトマップ（locale別対応必要）
+- ✅ 管理ダッシュボード（locale切替タブ追加必要）
+- ✅ Difyチャットボット
+- ✅ 提案ページ `/p/[slug]`
 
 ---
 
 ## <a id="s11"></a>11. 📚 リソース一覧
-
-> プロジェクトで使用・参照するすべてのツール・サービス・法令のURL一覧。新サービス追加時は随時更新。
 
 #### フロントエンド・フレームワーク
 | ツール/サービス | 用途 | URL |
@@ -329,7 +502,9 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 | Next.js 15 (App Router) | フルスタックReactフレームワーク | https://nextjs.org |
 | TypeScript | 型安全JavaScript | https://www.typescriptlang.org |
 | Tailwind CSS v4 | ユーティリティCSSフレームワーク | https://tailwindcss.com |
-| Noto Sans JP | 日本語Webフォント | https://fonts.google.com/noto/specimen/Noto+Sans+JP |
+| **next-intl** | **i18n・/[locale]/ルーティング** | **https://next-intl-docs.vercel.app** |
+| Noto Sans JP | 日本語Webフォント（/ja） | https://fonts.google.com/noto/specimen/Noto+Sans+JP |
+| Plus Jakarta Sans | 英語Webフォント（/en 候補） | https://fonts.google.com/specimen/Plus+Jakarta+Sans |
 
 #### UI・コンポーネント
 | ツール/サービス | 用途 | URL |
@@ -363,11 +538,13 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 |----------------|------|-----|
 | Twenty CRM | セルフホストCRM（crm.appexx.me） | https://twenty.com |
 | Umami | アクセス解析（analytics.appexx.me） | https://umami.is |
-| Cal.com | 商談予約（cal.appexx.me） | https://cal.com |
+| Cal.com | 商談予約（cal.appexx.me、/en English booking兼用） | https://cal.com |
 | Formbricks | フォーム・アンケート（forms.appexx.me） | https://formbricks.com |
-| Ghost | ブログCMS（ghost.appexx.me） | https://ghost.org |
+| Ghost | ブログCMS（ghost.appexx.me、locale別管理） | https://ghost.org |
 | Resend | トランザクションメール送信（未設定） | https://resend.com |
-| Dify | AIチャットボット（dify.appexx.me） | https://dify.ai |
+| Dify | AIチャットボット（dify.appexx.me、locale別Bot・HP/Docs/Supabase学習） | https://dify.ai |
+| Unsplash | フリー人物写真素材（/ja・/en ビジュアル用） | https://unsplash.com |
+| Pexels | フリー写真・動画素材（ヒーロー動画背景等） | https://www.pexels.com |
 
 #### SEO・GEO
 | ツール/サービス | 用途 | URL |
@@ -379,14 +556,15 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 #### 法令・規制（コンプライアンス参照）
 | 機関/法令 | 内容 | URL |
 |----------|------|-----|
-| 消費者庁 特定商取引法 | 通販・メール営業の規制（/legal ページ対応済み） | https://www.no-trouble.caa.go.jp |
-| 個人情報保護委員会 | 個人情報保護法（/privacy ページ対応済み） | https://www.ppc.go.jp |
+| 消費者庁 特定商取引法 | 通販・メール営業の規制（/ja/legal 対応済み） | https://www.no-trouble.caa.go.jp |
+| 個人情報保護委員会 | 個人情報保護法（/ja/privacy 対応済み） | https://www.ppc.go.jp |
 | 総務省 特定電子メール法 | 営業メール・オプトアウト義務 | https://www.soumu.go.jp/main_sosiki/joho_tsusin/d_syohi/anti_spam.html |
 
 #### 参考リンク・ドキュメント
 | タイトル | 内容 | URL |
 |---------|------|-----|
 | Next.js Docs | App Router・Metadata・sitemap APIリファレンス | https://nextjs.org/docs |
+| next-intl Docs | App Router i18nセットアップ | https://next-intl-docs.vercel.app/docs/getting-started/app-router |
 | Supabase Docs | RLS・Auth・Storage APIリファレンス | https://supabase.com/docs |
 | Coolify Docs | セルフホストデプロイ設定 | https://coolify.io/docs |
 | Google JSON-LD | 構造化データリファレンス | https://developers.google.com/search/docs/appearance/structured-data |
