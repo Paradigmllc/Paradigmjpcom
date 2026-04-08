@@ -40,7 +40,20 @@
 
 ### サービス構成
 
-**`/ja` サービス（4本）**: Web制作 / MEO対策 / SEO・GEO対策 / AI導入支援
+**`/ja` サービス（8本+）** — 3カテゴリに分類
+
+| カテゴリ | サービス | slug |
+|---------|---------|------|
+| **制作系** | Web制作（コーポレートサイト） | `web` |
+| | LP制作 | `lp` |
+| | EC（ECサイト構築） | `ec` |
+| | 広告クリエイティブ制作 | `creative` |
+| **集客・マーケ系** | MEO対策 | `meo` |
+| | SEO・GEO対策 | `seo` |
+| **AI・SaaS系** | AI導入支援 | `ai` |
+| | 業界別バーティカルSaaS | `saas` |
+
+> 「など」のため追加サービスは随時追加可能。CMSで動的管理。
 
 **`/en` サービス**: Japan Entry Package（メイン）+ サブサービス複数
 → Japan Entry Packageは複数サービスをバンドルしたパッケージ商品
@@ -67,8 +80,9 @@
 ### `/ja` 料金体系
 
 - **通貨**: JPY（日本円）
-- **構造**: 月額顧問 + プロジェクト型（Web制作・MEO・SEO・AI導入）
-- **プラン**: 4サービス×3プラン（Supabase `cms_pricing` locale='ja' で管理）
+- **構造**: 月額顧問 + プロジェクト型
+- **プラン**: 8本サービス×各3プラン（Supabase `cms_pricing` locale='ja' で管理）
+- **サービスカテゴリ**: 制作系（web/lp/ec/creative）/ 集客・マーケ系（meo/seo）/ AI・SaaS系（ai/saas）
 
 ### `/en` 料金体系（確定）
 
@@ -161,10 +175,14 @@
 /ja/                   ← 日本語トップ（完全リニューアル）
 /ja/about
 /ja/services
-/ja/services/web
-/ja/services/meo
+/ja/services/web       ← 制作系
+/ja/services/lp
+/ja/services/ec
+/ja/services/creative
+/ja/services/meo       ← 集客・マーケ系
 /ja/services/seo
-/ja/services/ai
+/ja/services/ai        ← AI・SaaS系
+/ja/services/saas
 /ja/pricing
 /ja/works
 /ja/blog
@@ -173,10 +191,7 @@
 /ja/faq
 /ja/legal
 /ja/privacy
-/ja/lp/web             ← LP群
-/ja/lp/meo
-/ja/lp/seo
-/ja/lp/ai
+/ja/lp/[slug]          ← 各サービスLP（動的・CMS管理）
 /ja/p/[slug]           ← 顧客向け提案ページ
 
 /en/                   ← 英語トップ（完全別設計）
