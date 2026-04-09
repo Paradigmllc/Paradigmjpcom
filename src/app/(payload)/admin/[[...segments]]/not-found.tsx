@@ -1,6 +1,5 @@
-import { NotFoundPage } from "@payloadcms/next/views"
-import { importMap } from "../importMap.js"
+import { redirect } from "next/navigation"
 
 export default function NotFound() {
-  return NotFoundPage({ importMap })
+  redirect("/admin")
 }
