@@ -13,14 +13,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Sync GitHub PAT into Coolify
-        if: ${{ secrets.GH_PAT != '' }}
+        continue-on-error: true
         run: |
-          REPO_URL="https://${{ secrets.GH_PAT }}@github.com/Paradigmllc/Paradigm-HP"
+          if [ -z "$GH_PAT" ]; then
+            echo "GH_PAT not set, skipping sync"
+            exit 0
+          fi
+          REPO_URL="https://${GH_PAT}@github.com/Paradigmllc/Paradigm-HP"
           curl -s -X PATCH "${{ env.COOLIFY_URL }}/api/v1/applications/${{ env.APP_UUID }}" \
             -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d "{\"git_repository\": \"$REPO_URL\"}"
           echo "Coolify git_repository synced"
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
 
       - name: Trigger Coolify deployment
         id: trigger
@@ -34,43 +40,39 @@ jobs:
             echo "Failed to trigger deployment: $RESPONSE"
             exit 1
           fi
-          echo "deploy_uuid=$DEPLOY_UUID" >> $GITHUB_OUTPUT
+          echo "deploy_uuid=$DEPLOY_UUID" >> "$GITHUB_OUTPUT"
           echo "Deployment queued: $DEPLOY_UUID"
 
       - name: Wait for deployment to complete
-        id: poll
         run: |
           DEPLOY_UUID="${{ steps.trigger.outputs.deploy_uuid }}"
           echo "Polling deployment $DEPLOY_UUID ..."
           for i in $(seq 1 30); do
             sleep 15
-            STATUS=$(curl -s \
+            RESULT=$(curl -s \
               -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}" \
-              "${{ env.COOLIFY_URL }}/api/v1/deployments/$DEPLOY_UUID" \
-              | grep -o '"status":"[^"]*"' | grep -v "running:healthy" | head -1 | cut -d'"' -f4)
+              "${{ env.COOLIFY_URL }}/api/v1/deployments/$DEPLOY_UUID")
+            STATUS=$(echo "$RESULT" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
             echo "[$i/30] status: $STATUS"
             if [ "$STATUS" = "finished" ]; then
               echo "Deployment finished successfully"
               exit 0
             fi
             if [ "$STATUS" = "failed" ] || [ "$STATUS" = "error" ]; then
-              echo "Deployment failed"
+              echo "Deployment failed with status: $STATUS"
               exit 1
             fi
           done
-          echo "Deployment timed out after 7.5 minutes"
+          echo "Deployment timed out"
           exit 1
 
-      - name: Notify Slack on failure
+      - name: Notify on failure
         if: failure()
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          COMMIT_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
         run: |
-          COMMIT_MSG=$(echo "${{ github.event.head_commit.message }}" | head -c 100)
-          COMMIT_URL="https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+          MSG=$(echo "$COMMIT_MSG" | head -c 100)
           curl -s -X POST "https://appexx.me/api/studio/notify" \
             -H "Content-Type: application/json" \
-            -d "{
-              \"title\": \"paradigmjp.com deploy failed\",
-              \"message\": \"Commit: ${COMMIT_MSG}\",
-              \"link\": \"${COMMIT_URL}\",
-              \"type\": \"error\"
-            }" || true
+            -d "{\"title\":\"paradigmjp.com deploy failed\",\"message\":\"${MSG}\",\"link\":\"${COMMIT_URL}\",\"type\":\"error\"}" || true
