@@ -4,13 +4,75 @@ on:
   push:
     branches: [main]
 
+env:
+  APP_UUID: i12am4vvcbggefnqdizhnv9a
+  COOLIFY_URL: https://coolify.appexx.me
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to Coolify
+      # PATが更新されたとき、Coolify DB も自動で追随させる
+      # GITHUB_PAT シークレットが設定されている場合のみ実行
+      - name: Sync GitHub PAT into Coolify
+        if: ${{ secrets.GH_PAT != '' }}
         run: |
-          curl -s -X GET \
+          REPO_URL="https://${{ secrets.GH_PAT }}@github.com/Paradigmllc/Paradigm-HP"
+          curl -s -X PATCH "${{ env.COOLIFY_URL }}/api/v1/applications/${{ env.APP_UUID }}" \
             -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}" \
-            "https://coolify.appexx.me/api/v1/deploy?uuid=i12am4vvcbggefnqdizhnv9a&force=true"
-          echo "Deployment triggered successfully"
+            -H "Content-Type: application/json" \
+            -d "{\"git_repository\": \"$REPO_URL\"}"
+          echo "✅ Coolify git_repository synced"
+
+      - name: Trigger Coolify deployment
+        id: trigger
+        run: |
+          RESPONSE=$(curl -s \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}" \
+            "${{ env.COOLIFY_URL }}/api/v1/deploy?uuid=${{ env.APP_UUID }}&force=true")
+          echo "response=$RESPONSE"
+          DEPLOY_UUID=$(echo "$RESPONSE" | grep -o '"deployment_uuid":"[^"]*"' | cut -d'"' -f4)
+          if [ -z "$DEPLOY_UUID" ]; then
+            echo "❌ Failed to trigger deployment: $RESPONSE"
+            exit 1
+          fi
+          echo "deploy_uuid=$DEPLOY_UUID" >> $GITHUB_OUTPUT
+          echo "✅ Deployment queued: $DEPLOY_UUID"
+
+      - name: Wait for deployment to complete
+        id: poll
+        run: |
+          DEPLOY_UUID="${{ steps.trigger.outputs.deploy_uuid }}"
+          echo "Polling deployment $DEPLOY_UUID ..."
+          for i in $(seq 1 30); do
+            sleep 15
+            STATUS=$(curl -s \
+              -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}" \
+              "${{ env.COOLIFY_URL }}/api/v1/deployments/$DEPLOY_UUID" \
+              | grep -o '"status":"[^"]*"' | grep -v "running:healthy" | head -1 | cut -d'"' -f4)
+            echo "[$i/30] status: $STATUS"
+            if [ "$STATUS" = "finished" ]; then
+              echo "✅ Deployment finished successfully"
+              exit 0
+            fi
+            if [ "$STATUS" = "failed" ] || [ "$STATUS" = "error" ]; then
+              echo "❌ Deployment failed"
+              exit 1
+            fi
+          done
+          echo "⏱️ Deployment timed out after 7.5 minutes"
+          exit 1
+
+      - name: Notify Slack on failure
+        if: failure()
+        run: |
+          COMMIT_MSG=$(echo "${{ github.event.head_commit.message }}" | head -c 100)
+          COMMIT_URL="https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+          curl -s -X POST "https://appexx.me/api/studio/notify" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"title\": \"🚨 paradigmjp.com デプロイ失敗\",
+              \"message\": \"コミット: ${COMMIT_MSG}\",
+              \"link\": \"${COMMIT_URL}\",
+              \"type\": \"error\"
+            }" || true
