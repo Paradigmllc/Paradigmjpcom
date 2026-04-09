@@ -12,8 +12,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # PATが更新されたとき、Coolify DB も自動で追随させる
-      # GITHUB_PAT シークレットが設定されている場合のみ実行
       - name: Sync GitHub PAT into Coolify
         if: ${{ secrets.GH_PAT != '' }}
         run: |
@@ -22,7 +20,7 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d "{\"git_repository\": \"$REPO_URL\"}"
-          echo "✅ Coolify git_repository synced"
+          echo "Coolify git_repository synced"
 
       - name: Trigger Coolify deployment
         id: trigger
@@ -33,11 +31,11 @@ jobs:
           echo "response=$RESPONSE"
           DEPLOY_UUID=$(echo "$RESPONSE" | grep -o '"deployment_uuid":"[^"]*"' | cut -d'"' -f4)
           if [ -z "$DEPLOY_UUID" ]; then
-            echo "❌ Failed to trigger deployment: $RESPONSE"
+            echo "Failed to trigger deployment: $RESPONSE"
             exit 1
           fi
           echo "deploy_uuid=$DEPLOY_UUID" >> $GITHUB_OUTPUT
-          echo "✅ Deployment queued: $DEPLOY_UUID"
+          echo "Deployment queued: $DEPLOY_UUID"
 
       - name: Wait for deployment to complete
         id: poll
@@ -52,15 +50,15 @@ jobs:
               | grep -o '"status":"[^"]*"' | grep -v "running:healthy" | head -1 | cut -d'"' -f4)
             echo "[$i/30] status: $STATUS"
             if [ "$STATUS" = "finished" ]; then
-              echo "✅ Deployment finished successfully"
+              echo "Deployment finished successfully"
               exit 0
             fi
             if [ "$STATUS" = "failed" ] || [ "$STATUS" = "error" ]; then
-              echo "❌ Deployment failed"
+              echo "Deployment failed"
               exit 1
             fi
           done
-          echo "⏱️ Deployment timed out after 7.5 minutes"
+          echo "Deployment timed out after 7.5 minutes"
           exit 1
 
       - name: Notify Slack on failure
@@ -71,8 +69,8 @@ jobs:
           curl -s -X POST "https://appexx.me/api/studio/notify" \
             -H "Content-Type: application/json" \
             -d "{
-              \"title\": \"🚨 paradigmjp.com デプロイ失敗\",
-              \"message\": \"コミット: ${COMMIT_MSG}\",
+              \"title\": \"paradigmjp.com deploy failed\",
+              \"message\": \"Commit: ${COMMIT_MSG}\",
               \"link\": \"${COMMIT_URL}\",
               \"type\": \"error\"
             }" || true
