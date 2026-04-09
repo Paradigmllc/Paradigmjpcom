@@ -7,7 +7,6 @@ export const Leads: CollectionConfig = {
     defaultColumns: ["companyName", "name", "email", "pipelineStage", "source", "createdAt"],
     description: "お問い合わせ・リードの管理",
     group: "営業",
-    defaultColumns: ["companyName", "name", "email", "pipelineStage", "source"],
   },
   access: {
     create: () => true, // フォームからの送信を許可
