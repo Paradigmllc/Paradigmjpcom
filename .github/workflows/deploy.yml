@@ -54,11 +54,11 @@ jobs:
               "${{ env.COOLIFY_URL }}/api/v1/deployments/$DEPLOY_UUID")
             STATUS=$(echo "$RESULT" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
             echo "[$i/30] status: $STATUS"
-            if [ "$STATUS" = "finished" ]; then
-              echo "Deployment finished successfully"
+            if [ "$STATUS" = "finished" ] || [ "$STATUS" = "running:healthy" ]; then
+              echo "Deployment succeeded (status: $STATUS)"
               exit 0
             fi
-            if [ "$STATUS" = "failed" ] || [ "$STATUS" = "error" ]; then
+            if [ "$STATUS" = "failed" ] || [ "$STATUS" = "error" ] || [ "$STATUS" = "cancelled" ]; then
               echo "Deployment failed with status: $STATUS"
               exit 1
             fi
