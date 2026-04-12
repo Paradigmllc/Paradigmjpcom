@@ -4,25 +4,60 @@
 
 | 進捗 | # | セクション | 状態メモ |
 |------|---|-----------|---------|
-| ★★★★☆ | 1 | [🎯 事業概要・市場機会](#s1) | 2言語サイト設計確定（/ja日本向け・/en海外向け） |
-| ★★☆☆☆ | 2 | [🏆 競合・差別化](#s2) | Japan Entry Packageポジション記載あり |
-| ★★★☆☆ | 3 | [💰 ビジネスモデル](#s3) | /ja JPY・/en USD確定・Japan Entry Package設計確定 |
-| ☆☆☆☆☆ | 4 | [📊 財務計画・KPI](#s4) | N/A |
-| ★★★☆☆ | 5 | [📈 ロードマップ・PMF](#s5) | 全面リニューアル実装計画あり |
-| ★☆☆☆☆ | 6 | [⚖️ Exit・法的リスク](#s6) | 特定商取引法・プライバシーページのみ |
-| ★★★★☆ | 7 | [🗺️ プロダクト設計](#s7) | /[locale]/構造・全ページ構成確定 |
-| ★★★★☆ | 8 | [⚙️ 技術・データ設計](#s8) | next-intl・新デザインシステム・DBスキーマ変更確定 |
-| ★★★☆☆ | 9 | [📣 GTM・集客・エコシステム](#s9) | インフラ・SEO設定完備 |
-| ★★★★☆ | 10 | [🖥️ 運用・組織・実装ルール](#s10) | 2言語対応コーディング規約追加 |
-| ☆☆☆☆☆ | 11 | [💸 経費・収益シミュレーション](#s11) | 未着手 |
-| | s11-1 | [固定費表](#s11-1) | |
-| | s11-2 | [収益シミュレーション](#s11-2) | |
-| | s11-3 | [損益分岐シナリオ](#s11-3) | |
-| ☆☆☆☆☆ | 12 | [🏷️ ドメイン・アカウント・商標・ライセンス](#s12) | 未着手 |
-| | s12-1 | [ドメイン一覧](#s12-1) | |
-| | s12-2 | [アカウント一覧](#s12-2) | |
-| | s12-3 | [商標・特許・ライセンス](#s12-3) | |
-| ★★★☆☆ | 13 | [📚 リソース一覧](#s13) | next-intl追加 |
+| ★★★★☆ | 1 | [事業概要・市場機会](#s1) | 2言語サイト設計確定（/ja日本向け・/en海外向け） |
+| | | [s1-1 2言語サイト設計](#s1-1) | |
+| | | [s1-2 サービス構成](#s1-2) | |
+| ★★☆☆☆ | 2 | [競合・差別化](#s2) | Japan Entry Packageポジション記載あり |
+| | | [s2-1 /en ポジショニング](#s2-1) | |
+| | | [s2-2 /ja 競合分析](#s2-2) | |
+| ★★★☆☆ | 3 | [ビジネスモデル](#s3) | /ja JPY・/en USD確定・Japan Entry Package設計確定 |
+| | | [s3-1 /ja 料金体系](#s3-1) | |
+| | | [s3-2 /en 料金体系](#s3-2) | |
+| | | [s3-3 リード獲得導線](#s3-3) | |
+| ☆☆☆☆☆ | 4 | [財務計画・KPI](#s4) | N/A |
+| | | [s4-1 KPI計測](#s4-1) | |
+| | | [s4-2 アナリティクス](#s4-2) | |
+| ★★★☆☆ | 5 | [ロードマップ・PMF](#s5) | 全面リニューアル実装計画あり |
+| | | [s5-1 全面リニューアル実装計画](#s5-1) | |
+| | | [s5-2 middleware ロジック](#s5-2) | |
+| ★☆☆☆☆ | 6 | [Exit・法的リスク](#s6) | 特定商取引法・プライバシーページのみ |
+| | | [s6-1 法的ページ一覧](#s6-1) | |
+| | | [s6-2 /en 法的対応](#s6-2) | |
+| ★★★★☆ | 7 | [プロダクト設計](#s7) | /[locale]/構造・全ページ構成確定 |
+| | | [s7-1 ルート構造](#s7-1) | |
+| | | [s7-2 フォルダ構成](#s7-2) | |
+| | | [s7-3 APIエンドポイント](#s7-3) | |
+| ★★★★☆ | 8 | [技術・データ設計](#s8) | next-intl・新デザインシステム・DBスキーマ変更確定 |
+| | | [s8-1 技術スタック](#s8-1) | |
+| | | [s8-2 デザインシステム](#s8-2) | |
+| | | [s8-3 Supabase CMSテーブル](#s8-3) | |
+| | | [s8-4 環境変数](#s8-4) | |
+| ★★★☆☆ | 9 | [GTM・集客・エコシステム](#s9) | インフラ・SEO設定完備 |
+| | | [s9-1 Coolify設定](#s9-1) | |
+| | | [s9-2 Cloudflare設定](#s9-2) | |
+| | | [s9-3 appexxインフラ共有接続](#s9-3) | |
+| | | [s9-4 SEO設定](#s9-4) | |
+| ★★★★☆ | 10 | [運用・組織・実装ルール](#s10) | 2言語対応コーディング規約追加 |
+| | | [s10-1 コーディング規約](#s10-1) | |
+| | | [s10-2 管理ダッシュボード](#s10-2) | |
+| | | [s10-3 実装済み機能](#s10-3) | |
+| ☆☆☆☆☆ | 11 | [経費・収益シミュレーション](#s11) | 未着手 |
+| | | [s11-1 固定費表](#s11-1) | |
+| | | [s11-2 収益シミュレーション](#s11-2) | |
+| | | [s11-3 損益分岐シナリオ](#s11-3) | |
+| ☆☆☆☆☆ | 12 | [ドメイン・アカウント・商標・ライセンス](#s12) | 未着手 |
+| | | [s12-1 ドメイン一覧](#s12-1) | |
+| | | [s12-2 アカウント一覧](#s12-2) | |
+| | | [s12-3 商標・特許・ライセンス](#s12-3) | |
+| ★★★☆☆ | 13 | [リソース一覧](#s13) | next-intl追加 |
+| | | [s13-1 フロントエンド・フレームワーク](#s13-1) | |
+| | | [s13-2 UI・コンポーネント](#s13-2) | |
+| | | [s13-3 データベース・BaaS](#s13-3) | |
+| | | [s13-4 インフラ・ホスティング](#s13-4) | |
+| | | [s13-5 マーケティング・CRM・分析](#s13-5) | |
+| | | [s13-6 SEO・GEO](#s13-6) | |
+| | | [s13-7 法令・規制](#s13-7) | |
+| | | [s13-8 参考リンク・ドキュメント](#s13-8) | |
 
 ⚠️ **要強化セクション**: 4 財務 / 6 Exit / 11 経費 / 12 ドメイン・アカウント
 
@@ -36,6 +71,8 @@
 - **サーバー**: DigitalOcean（Coolifyセルフホスト）— appexx.meと同一サーバー（IP: 139.59.250.5）
 - **Git**: `Paradigmllc/Paradigm-HP`（main ブランチ）
 
+<a id="s1-1"></a>
+
 ### 2言語サイト設計（確定）
 
 | | `/ja` | `/en` |
@@ -45,6 +82,8 @@
 | **コンセプト** | 全国展開・温かみ・数値実績・信頼 | "Your local digital partner in Japan" |
 | **コンテンツ** | 完全独立（翻訳ではない別設計） | 完全独立（翻訳ではない別設計） |
 | **ブログ** | 日本語・日本向け内容 | 英語・Japan business tips（完全別記事） |
+
+<a id="s1-2"></a>
 
 ### サービス構成
 
@@ -70,6 +109,8 @@
 
 ## <a id="s2"></a>2. 🏆 競合・差別化
 
+<a id="s2-1"></a>
+
 ### `/en` ポジショニング
 
 **Japan Entry Package** は「外国企業が日本でデジタルプレゼンスを構築する際に必要なものをすべてバンドルした唯一のパッケージ」として差別化。
@@ -85,12 +126,18 @@
 
 ## <a id="s3"></a>3. 💰 ビジネスモデル
 
+<a id="s3-1"></a>
+
+<a id="s2-2"></a>
+
 ### `/ja` 料金体系
 
 - **通貨**: JPY（日本円）
 - **構造**: 月額顧問 + プロジェクト型
 - **プラン**: 8本サービス×各3プラン（Supabase `cms_pricing` locale='ja' で管理）
 - **サービスカテゴリ**: 制作系（web/lp/ec/creative）/ 集客・マーケ系（meo/seo）/ AI・SaaS系（ai/saas）
+
+<a id="s3-2"></a>
 
 ### `/en` 料金体系（確定）
 
@@ -105,6 +152,8 @@
 
 > 価格は実装時に確定・Supabase `cms_pricing` locale='en' currency='usd' で管理
 
+<a id="s3-3"></a>
+
 ### リード獲得導線
 
 - `/ja`: `/ja/contact` フォーム → Slack通知 + Supabase leads保存 → Twenty CRM
@@ -114,13 +163,23 @@
 
 ## <a id="s4"></a>4. 📊 財務計画・KPI
 
-> N/A（コーポレートHP。KPIはUmami analytics.appexx.meで計測）
+<a id="s4-1"></a>
+
+> KPIはUmami analytics.appexx.meで計測
+
+<a id="s4-2"></a>
+
+> N/A（コーポレートHP）
 
 ---
 
 ## <a id="s5"></a>5. 📈 ロードマップ・PMF
 
+<a id="s5-1"></a>
+
 ### 全面リニューアル実装計画
+
+<a id="s8-2"></a>
 
 #### Phase 1: 基盤（i18n + デザインシステム）
 - [ ] next-intl導入（`/[locale]/` ルーティング）
@@ -150,6 +209,8 @@
 - [ ] Umami Website ID設定
 - [ ] Lighthouse CI自動化
 
+<a id="s5-2"></a>
+
 ### middleware ロジック（確定）
 
 ```
@@ -165,8 +226,13 @@
 
 ## <a id="s6"></a>6. ⚖️ Exit・法的リスク
 
+<a id="s6-1"></a>
+
 - **特定商取引法**: `/ja/legal` ページ実装済み（9条）
 - **プライバシーポリシー**: `/ja/privacy` ページ実装済み
+
+<a id="s6-2"></a>
+
 - **`/en` 法的ページ**: `/en/legal` `/en/privacy` 英語版を新規作成必要
 - **お問い合わせフォーム**: 個人情報取り扱い同意チェックボックス追加が必要
 
@@ -175,6 +241,8 @@
 ---
 
 ## <a id="s7"></a>7. 🗺️ プロダクト設計
+
+<a id="s7-1"></a>
 
 ### ルート構造（確定）
 
@@ -222,6 +290,8 @@
 /api/                  ← locale非依存
 /p/[slug]              ← 提案ページ（locale非依存）
 ```
+
+<a id="s7-2"></a>
 
 ### フォルダ構成（リニューアル後）
 
@@ -278,6 +348,8 @@ paradigmjpcom/
     │   └── clients/           ← クライアント写真
 ```
 
+<a id="s7-3"></a>
+
 ### APIエンドポイント
 
 - `POST /api/contact` — お問い合わせ（locale判定でSlack通知文言切替 + Supabase leads保存）
@@ -286,6 +358,8 @@ paradigmjpcom/
 ---
 
 ## <a id="s8"></a>8. ⚙️ 技術・データ設計
+
+<a id="s8-1"></a>
 
 ### 技術スタック
 
@@ -388,6 +462,8 @@ CTA:          インディゴ↔ティールメッシュグラデ
 | アクセント主役 | アンバー＋インディゴ | ティール＋コーラル |
 | 写真 | 日本的丁寧さ・対話感 | 多様な国籍・英語コミュニケーション |
 
+<a id="s8-3"></a>
+
 ### Supabase CMSテーブル（localeカラム追加）
 
 | テーブル | 変更内容 |
@@ -412,6 +488,8 @@ ALTER TABLE cms_settings ADD COLUMN IF NOT EXISTS locale TEXT DEFAULT 'ja';
 
 **共有テーブル（appexx-dashboardと同一プロジェクト）**: `leads`（locale='ja'/'en' カラムで区別）
 
+<a id="s8-4"></a>
+
 ### 環境変数（Coolify設定）
 
 ```bash
@@ -428,12 +506,16 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 
 ## <a id="s9"></a>9. 📣 GTM・集客・エコシステム
 
+<a id="s9-1"></a>
+
 ### Coolify 設定
 
 - **UUID**: `i12am4vvcbggefnqdizhnv9a`（Nixpacks/Next.js）
 - **ドメイン**: `https://paradigmjp.com`, `https://www.paradigmjp.com`
 - **ポート**: 3000
 - **デプロイコマンド**: `curl -H "Authorization: Bearer {COOLIFY_TOKEN}" "https://coolify.appexx.me/api/v1/deploy?uuid=i12am4vvcbggefnqdizhnv9a&force=true"`
+
+<a id="s9-2"></a>
 
 ### Cloudflare 設定
 
@@ -445,6 +527,8 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 - **レポ**: `Paradigmllc/Paradigm-HP`
 - **ブランチ**: `main`
 - **CI/CD**: GitHub Actions `deploy.yml`
+
+<a id="s9-3"></a>
 
 ### appexx.meインフラとの共有接続
 
@@ -460,6 +544,8 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 | Ghost | ghost.appexx.me（ブログ記事 locale別管理） |
 | Dify | dify.appexx.me（/ja: 日本語Bot / /en: English Bot 別設定推奨） |
 
+<a id="s9-4"></a>
+
 ### SEO設定
 
 - **hreflang**: `<link rel="alternate" hreflang="ja" href="https://paradigmjp.com/ja/...">` + `hreflang="en"` 両方必須
@@ -471,6 +557,8 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 ---
 
 ## <a id="s10"></a>10. 🖥️ 運用・組織・実装ルール
+
+<a id="s10-1"></a>
 
 ### コーディング規約
 
@@ -491,6 +579,8 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 13. **デプロイ**: git push → GitHub Actions → Coolify Webhook 自動デプロイ
 14. **変更後**: ① CLAUDE.md更新 → ② git commit+push → ③ URL確認
 
+<a id="s10-2"></a>
+
 ### 管理ダッシュボード（/admin）
 
 | 項目 | 内容 |
@@ -500,6 +590,8 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 | ダッシュボード | 記事数/サービス数/問い合わせ数（locale別表示） |
 | ブログ管理 | locale別記事CRUD（/ja と /en は完全別コンテンツ） |
 | 料金管理 | locale別プラン管理（/en はUSD表示） |
+
+<a id="s10-3"></a>
 
 ### 実装済み機能（リニューアル前の現状）
 
@@ -577,6 +669,8 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 <a id="s13"></a>
 ## 13. 📚 リソース一覧
 
+<a id="s13-1"></a>
+
 #### フロントエンド・フレームワーク
 | ツール/サービス | 用途 | URL |
 |----------------|------|-----|
@@ -586,6 +680,8 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 | **next-intl** | **i18n・/[locale]/ルーティング** | **https://next-intl-docs.vercel.app** |
 | Noto Sans JP | 日本語Webフォント（/ja） | https://fonts.google.com/noto/specimen/Noto+Sans+JP |
 | Plus Jakarta Sans | 英語Webフォント（/en 候補） | https://fonts.google.com/specimen/Plus+Jakarta+Sans |
+
+<a id="s13-2"></a>
 
 #### UI・コンポーネント
 | ツール/サービス | 用途 | URL |
@@ -600,10 +696,14 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 | TanStack Query | サーバーステート管理 | https://tanstack.com/query |
 | Zustand | クライアントステート管理 | https://zustand-demo.pmnd.rs |
 
+<a id="s13-3"></a>
+
 #### データベース・BaaS
 | ツール/サービス | 用途 | URL |
 |----------------|------|-----|
 | Supabase | PostgreSQL+Auth+Storage（appexxと同一プロジェクト） | https://supabase.com |
+
+<a id="s13-4"></a>
 
 #### インフラ・ホスティング
 | ツール/サービス | 用途 | URL |
@@ -613,6 +713,8 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 | Cloudflare | DNS・CDN・SSL（Zone ID: f191afabddabaf1658ebfe79a9a9b723） | https://www.cloudflare.com |
 | GitHub Actions | CI/CDパイプライン（Paradigmllc/Paradigm-HP） | https://github.com/features/actions |
 | ラッコドメイン | ドメイン取得・NS委任 | https://rakko.tools |
+
+<a id="s13-5"></a>
 
 #### マーケティング・CRM・分析
 | ツール/サービス | 用途 | URL |
@@ -627,6 +729,8 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 | Unsplash | フリー人物写真素材（/ja・/en ビジュアル用） | https://unsplash.com |
 | Pexels | フリー写真・動画素材（ヒーロー動画背景等） | https://www.pexels.com |
 
+<a id="s13-6"></a>
+
 #### SEO・GEO
 | ツール/サービス | 用途 | URL |
 |----------------|------|-----|
@@ -634,12 +738,16 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 | Google Analytics 4 | トラフィック計測 | https://analytics.google.com |
 | Bing Webmaster Tools | Bing/ChatGPT向けインデックス | https://www.bing.com/webmasters |
 
+<a id="s13-7"></a>
+
 #### 法令・規制（コンプライアンス参照）
 | 機関/法令 | 内容 | URL |
 |----------|------|-----|
 | 消費者庁 特定商取引法 | 通販・メール営業の規制（/ja/legal 対応済み） | https://www.no-trouble.caa.go.jp |
 | 個人情報保護委員会 | 個人情報保護法（/ja/privacy 対応済み） | https://www.ppc.go.jp |
 | 総務省 特定電子メール法 | 営業メール・オプトアウト義務 | https://www.soumu.go.jp/main_sosiki/joho_tsusin/d_syohi/anti_spam.html |
+
+<a id="s13-8"></a>
 
 #### 参考リンク・ドキュメント
 | タイトル | 内容 | URL |
