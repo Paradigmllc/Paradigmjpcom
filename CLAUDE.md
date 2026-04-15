@@ -758,6 +758,32 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 
 ---
 
+**脱SaaS MAスタック（Paradigm実装優先順）**:
+- **Listmonk**（OSS Docker）: ステップメール配信基盤。1分数万通・開封率/クリック率をn8n Webhookで返却→Supabase自動更新。Airtable/ActiveCampaign不要
+- **NocoDB**（Supabase上に重ねるGUI）: リード・提案書ステータスの管理画面。SQLを書かずにSupabaseを操作できるAirtable代替
+- **LINE Messaging API直接接続**: Lステップ（月額¥2〜10万）不要→LINE Messaging API + n8n Webhook + Dify でステップ配信・シナリオ分岐・AI返信を月額ほぼゼロで実現
+- **Meta Graph API直接接続**: ManyChat不要→Instagram DMの自動化をn8nから直接実行。コメントトリガー→パーソナライズFake LoomをDM送信
+- **メール使い分け必須**: コールドメール=Smartlead（専用MTA・ドメイン評判分離）/ サンクス・通知メール=Resend（到達率高いがコールドで使用すると即BAN）
+
+**ABテスト多次元同時化（n8n分岐設計）**:
+- Supabase `ab_experiments` テーブル: `lead_id / variant_avatar / variant_tone / variant_channel / variant_price / opened_at / converted_at`
+- n8n分岐ロジック: `Math.random() < 0.5 ? 'fear' : 'hope'` でトーンを自動振り分け→結果を即Supabaseに書き戻す
+- 計測対象4変数: ①アバター（若女性/落ち着いた男性/本人） ②トーン（Fear vs Hope） ③媒体（LINE vs メール vs LinkedIn DM） ④価格（一括 vs サブスク）
+- Notionダッシュボードまたはメタベース（OSS BI）でリアルタイム勝者バリアントを可視化
+
+**LinkedIn架空アバター×HeyReach（海外SMB向け多垢運用）**:
+- ComfyUIで生成した実写級プロ顔画像でSDRアバター垢を5〜10個作成（個人垢が攻めに有効・会社ページではない）
+- HeyReach設定: 1垢=1専用レジデンシャルIP自動付与・ブラウザ指紋完全隔離・Unified Inbox。APIでn8nと接続し承認イベントをWebhookで受信
+- **⚠️ 2026年3月 LinkedInがHeyReachを狙い撃ちBAN**: メイン垢は絶対繋がない。ステルス優先なら GoLogin+Smartproxy+n8n自作に切替
+- ウォーミングアップ: 最初2週間はいいね/グループ参加のみ→その後つながり申請→承認後Fake Loom自動DM→返信が来たらFounder本人がクロージング
+
+**Cloudflare R2（Fake Loom動画配信インフラ）**:
+- S3互換API・転送コスト（Egress）完全無料→物量生成した動画の配信コストゼロ
+- フロー: n8n → ComfyUI（動画生成）→ FFmpeg（PiP合成）→ R2 `PUT` → 署名付きURL → メール/LINE/LinkedIn DM に埋め込み
+- バケット設計: `/fake-loom/{lead_id}/{version}.mp4` で1社1URL管理・DocSendと同様に「誰が開封したか」をサーバーログで追跡可能
+
+---
+
 **海外EC 日本ローカライズ戦略（`/en` グローバルヴァンパイア）**:
 - **ターゲット抽出**: [StoreLeads](https://storeleads.app/)（Shopify/BigCommerce/WooCommerce店舗DB）で「EC平均月商 $XX万以上 × 日本向け出荷なし × JP対応カート未使用」を絞り込み → 日本進出未参入の海外ECが確実な顕在ニーズ層
 - **日本市場損失4指標**（英語アウトリーチの痛み可視化に使用）:
