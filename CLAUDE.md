@@ -836,6 +836,85 @@ export async function POST(req: Request) {
 - **Stripe Webhook で失効管理**: `customer.subscription.deleted` → `area_slots` を `expired` に更新 → 次の入札者にスロット解放
 - **ダブルマネタイズ判定**: n8n が `hojin.tech_stack` を確認 → IT導入補助金対象ツール未導入なら IT商材アップセルメッセージを自動付与
 
+**非士業リードオークション実装（Vampire 2.0 — 解体工事/産廃/遺品整理）**:
+```typescript
+// Supabase: non_gyosha_leads テーブル（非士業業者向け）
+// industry: 'demolition' | 'industrial_waste' | 'estate_clearance'
+// lead_status: 'open' | 'sold_3' | 'fulfilled'  ← 同一リードを最大3社に並売
+// unit_price: 50000 (1リード5万×3社=15万)  成果報酬は別途 deal_fee_pct: 0.15
+
+// app/api/lead-auction/non-gyosha/route.ts
+export async function POST(req: Request) {
+  const { lead_id, buyer_id } = await req.json();
+  const { data: lead } = await supabase.from('non_gyosha_leads')
+    .select('sold_count').eq('id', lead_id).single();
+  if ((lead?.sold_count ?? 0) >= 3) return Response.json({ error: 'sold_out' }, { status: 409 });
+  await stripe.paymentIntents.create({ amount: 50000, currency: 'jpy',
+    customer: buyer_id, confirm: true, metadata: { lead_id } });
+  await supabase.from('non_gyosha_leads')
+    .update({ sold_count: (lead?.sold_count ?? 0) + 1 }).eq('id', lead_id);
+  return Response.json({ ok: true });
+}
+```
+
+**シャドウ・リスティング通知ロジック（n8n）**:
+```
+[Supabase Trigger: area_slots INSERT] 
+→ [Code Node] 同エリア×業種で未購入の業者を抽出
+→ [Telegram/LINE Node] 「⚠️ {競合名}がこのエリアをアンロックしました。残り1枠」
+→ [Wait: 6時間]
+→ [Stripe Node] 未購入業者のデポジットから自動決済 (urgency_purchase)
+→ [Supabase Update] area_slots に 2社目を追加
+```
+
+**中抜き防止n8nワークフロー（顧客自動フォロー + 密告ボタン）**:
+```
+[Trigger: deal_status = 'completed'] 
+→ [Wait: 14日]
+→ [LINE Bot: 顧客向け] 「工事は完了しましたか？満足度を教えてください [1-5] 」
+→ [If: 評価 <= 2 OR 直接連絡あり]
+  → [Dify] 密告判定（キーワード抽出: 直接払い/割引/紹介）
+  → [If: バイパス判定 = true]
+    → [Stripe] 業者デポジットから違約金自動引き落とし (penalty: 100000)
+    → [LINE Bot: 密告者] 「5万円の密告ボーナスをお支払いします」→ 送金
+    → [Supabase] vendor_blacklist に追加
+```
+
+**認定バッジ Stripe Subscription 実装**:
+```typescript
+// 認定バッジ = 月額課金 + スコア改善の双方向ロック
+// Supabase: vendor_badges テーブル
+// badge_tier: 'bronze'(¥9,800/月) | 'silver'(¥29,800/月) | 'gold'(¥89,800/月)
+
+// app/api/badge/subscribe/route.ts
+export async function POST(req: Request) {
+  const { vendor_id, tier } = await req.json();
+  const priceId = { bronze: process.env.BADGE_BRONZE_PRICE_ID,
+    silver: process.env.BADGE_SILVER_PRICE_ID, gold: process.env.BADGE_GOLD_PRICE_ID }[tier];
+  const sub = await stripe.subscriptions.create({
+    customer: vendor_id, items: [{ price: priceId }],
+    metadata: { vendor_id, tier },
+  });
+  // バッジ = pSEOページのスコア表示に即時反映（ISR revalidate: 60秒）
+  await supabase.from('vendor_badges').upsert({ vendor_id, tier,
+    valid_until: new Date(sub.current_period_end * 1000) });
+  revalidatePath(`/vendor/${vendor_id}`);
+  return Response.json({ subscription_id: sub.id });
+}
+```
+
+**マネタイズ完全体アーキテクチャ（6レイヤー合算式）**:
+```
+Total = LeadFee(5万×3社) + DealFee(成約額×15%) + SaaS(月額9,800〜89,800) 
+        + PaymentFee(Stripe手数料転嫁1.5%) + BadgeFee(月9,800〜89,800) + Affiliate(IT導入補助金紹介料)
+
+// 1案件あたり期待値試算（解体工事・成約300万円の場合）
+// LeadFee: 5万×3 = 15万
+// DealFee: 300万×15% = 45万
+// SaaS: 2.98万/月（silver）× 12 = 35.76万/年
+// Total per vendor/year ≈ 95万円超
+```
+
 ---
 
 **n8n Jitter × ポアソン分布（等間隔送信禁止・クラスター検知回避）**:
