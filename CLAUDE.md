@@ -782,6 +782,48 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 - フロー: n8n → ComfyUI（動画生成）→ FFmpeg（PiP合成）→ R2 `PUT` → 署名付きURL → メール/LINE/LinkedIn DM に埋め込み
 - バケット設計: `/fake-loom/{lead_id}/{version}.mp4` で1社1URL管理・DocSendと同様に「誰が開封したか」をサーバーログで追跡可能
 
+**n8n Jitter × ポアソン分布（等間隔送信禁止・クラスター検知回避）**:
+- Wait nodeに `{{Math.round(-Math.log(Math.random())*300)}}` 秒を設定（平均5分・実際は1.5〜13分にランダム分散）
+- 金額端数も散らす: `¥29,800` 固定値禁止 → `{{28400 + Math.floor(Math.random()*2800)}}` で都度変動
+- 実行日も分散: 月曜に1,000件一斉送信ではなく月〜金に200件ずつ。スパイクでメールプロバイダーのスロットリングを回避
+
+**iProxy.online（格安SIM = 自前レジデンシャルIPファーム）**:
+- Androidスマホ1台 + 楽天/ワイモバイル格安SIM → iProxy.online経由でHTTP/SOCKSプロキシ化
+- n8nから `GET /api/rotate` を叩くだけで機内モードON/OFF → キャリアIPが毎回変わる
+- 日本IP専用なら楽天モバイル1枚で100垢を時分割利用可能（月$6〜10）
+- HeyReachアバター垢の専用IPとして1垢=1SIM割り当て（BAN防止の最終防壁）
+
+**SMSPool.net + TOTP防弾化フロー（LinkedIn/Xアバター垢の長期生存設計）**:
+1. SMSPool.net で Non-VoIP 物理SIM番号を購入（$0.5〜2/回）→ 初回SMS認証突破
+2. 認証直後に Google Authenticator 相当の TOTP をセットアップ
+3. シークレットキーを Supabase `totp_secrets` テーブルに保存
+4. 以降は `pyotp.TOTP(secret).now()` で自己生成 → SMSPool不要・コスト¼
+```python
+import pyotp, supabase
+secret = sb.table("totp_secrets").select("secret").eq("account_id", aid).single().data["secret"]
+token = pyotp.TOTP(secret).now()  # 6桁コードを自動生成
+```
+
+**Playwright通信量90%カット（物量スキャン・Life Simulatorに必須）**:
+```javascript
+// すべてのPlaywright自動化の冒頭に挿入
+await page.route('**/*', route => {
+  const type = route.request().resourceType();
+  if (['image', 'media', 'font', 'stylesheet'].includes(type)) {
+    route.abort();
+  } else {
+    route.continue();
+  }
+});
+```
+- ヴァンパイアスキャン（1,000件/日）で転送量が10分の1に → Vast.ai/RunPodのコスト激減
+- Life Simulator（LinkedIn垢ウォーミング）でも適用 → セッション数を増やせる
+
+**ElizaOS × Playwright Life Simulator（LinkedIn垢のウォーミング自動化）**:
+- 垢作成後3〜5日間: Google検索・ニュース閲覧・YouTube視聴（途中離脱）の生活足跡を自動生成
+- ElizaOS Character.json で垢ごとに固有人格（職種/関心/投稿スタイル）を設定
+- LLMをClaude/DeepSeek/Llamaで垢ごとに分散 → スタイル指紋によるクラスター検知を防ぐ
+
 ---
 
 **海外EC 日本ローカライズ戦略（`/en` グローバルヴァンパイア）**:
