@@ -701,6 +701,21 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 - **自社HP（城）**: 診断後の必須身元調査をクリアする唯一の手段。paradigmjp.comが「地元の信頼できるパートナー」として認識されることで全アウトリーチ施策の成約率が底上げされる
 - **注意**: Notionはリッチコンテンツに強いがPDF印刷レイアウト崩れあり→ITリテラシー低い地方SMBはPDF要求あり（DocSend推奨）
 
+**Notion API自動提案ページ（一社一URL・10セクション構成）**:
+- **自動化フロー**: Supabase/Google Sheetsのリードデータ → Make/n8n → Notion APIでマスターテンプレート複製 → 動的データ埋め込み → URL自動発行（メール/フォーム送付）→ DocSendまたはNotion共有リンクでトラッキング
+- **10セクション構成**: ①ヘッダー（企業名・担当者名・診断スコア） ②HeyGen AIアバター動画（院長の画面操作解説1分） ③診断サマリー（Lighthouse/Wappalyzer/HaveIBeenPwned3指標） ④ご近所デスマッチ競合比較表（SerpApi近隣同業5社スコアランキング） ⑤財務シミュレーション（機会損失額・補助金後実質負担・投資回収期間） ⑥ソリューション提案（課題別処方箋+改善後モックアップ） ⑦同業種事例（実績・数字入り） ⑧サポート工程（14日ロードマップ） ⑨料金プラン（補助金適用で75万円〜・3プラン） ⑩CTA（Calendly直予約+フォーム+WhatsApp）
+- **実装**: Python `notion-client` ライブラリ / Make Notionモジュール → テンプレートID複製 → ブロック毎にリードデータ差し込み → ページURLを自動メール送付
+
+**IPトラッキング実装（DocSend開封＋HP訪問の瞬間を検知→即電話）**:
+- **List Finder（リストファインダー）**: GA4連携で訪問企業のIPを法人名に逆引き→「どの会社が今日HPを見たか」をSlack通知→即電話。月額数万円〜。国内SMBトラッキングに特化
+- **GA4＋逆引きIPカスタム実装**: `gtag` + `ipinfo.io API`（月50,000リクエスト無料）→ 企業名/業種/地域取得 → Supabaseに保存 → n8nでSlack通知（完全無料で構築可能）
+- **発火タイミング**: DocSend料金ページ60秒以上閲覧 → 即Slack「🔥HOT: ○○株式会社が料金ページを90秒閲覧」→ 30分以内電話がアポ率最大化
+
+**縦型PDF自動生成スタック（動的長文AIコンテンツ対応）**:
+- **正解: HTML + Jinja2 + Playwright**（`page.pdf()`）— コンテンツ量変動に自動対応・`break-before: page`でページ分割制御・Tailwind CSS対応・日本語フォント対応・ChromiumレンダラーでCSS完全適用
+- **Marpは不可**: スライド専用（横向き固定）→ 縦型長文診断書・提案資料には不向き（自動改ページ不可）
+- **実装パイプライン**: DeepSeek V3でHTML生成（Jinja2テンプレ変数差し込み）→ Playwright Docker（serverless）→ `buffer`をSupabase Storageに保存 → DocSend/Notion埋め込みURL返却
+
 **海外EC 日本ローカライズ戦略（`/en` グローバルヴァンパイア）**:
 - **ターゲット抽出**: [StoreLeads](https://storeleads.app/)（Shopify/BigCommerce/WooCommerce店舗DB）で「EC平均月商 $XX万以上 × 日本向け出荷なし × JP対応カート未使用」を絞り込み → 日本進出未参入の海外ECが確実な顕在ニーズ層
 - **日本市場損失4指標**（英語アウトリーチの痛み可視化に使用）:
