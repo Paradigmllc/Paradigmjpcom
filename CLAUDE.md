@@ -782,6 +782,62 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 - フロー: n8n → ComfyUI（動画生成）→ FFmpeg（PiP合成）→ R2 `PUT` → 署名付きURL → メール/LINE/LinkedIn DM に埋め込み
 - バケット設計: `/fake-loom/{lead_id}/{version}.mp4` で1社1URL管理・DocSendと同様に「誰が開封したか」をサーバーログで追跡可能
 
+---
+
+**補助金ネット pPersonalizeページ実装設計**:
+
+```typescript
+// app/hojin/[hojin_id]/hojokin/page.tsx — pPersonalize補助金特化版
+// ①ファーストビュー: 推定受給可能額を大字表示
+// ②根拠ブロック: 業種×技術スタック×適合率
+// ③社会的証明: 近隣同業種の平均採択額
+// ④Claimボタン → 行政書士無料相談枠の確保 + 詳細マニュアルDL
+// ⑤フッター: 「gBizINFO公開データ + jGrants公募情報を基に算出」
+export async function generateStaticParams() {
+  // Supabase から hojin_id 一覧取得 → ISR
+  const { data } = await supabase.from('hojin_subsidies').select('hojin_id');
+  return data.map(({ hojin_id }) => ({ hojin_id }));
+}
+```
+
+- **「善意の通知」メール件名テンプレ**: `【重要】株式会社〇〇様：未請求補助金に関する診断結果のお知らせ`
+- **キラーフレーズ**: `御社の法人番号(XXXXXXXXXX)での補助金受給履歴は現在確認できておりません` → gBizINFO採択DBと突合して「未受給企業のみ」に送付
+- **マルチチャネル3層の発火順**: ①pSEOページ先行インデックス（D-3）→②フォーム営業自動送信（D-0）→③SNSメンション企業X垢あれば同日（D-0）→④フォロー（D+3）
+
+---
+
+**行政書士オークション取引所 — Stripe + n8n 実装**:
+
+```typescript
+// api/admin/lead-auction/route.ts
+// エリア独占権モデル: 地域×業種スロットの月額サブスク管理
+import Stripe from 'stripe';
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+// 行政書士がエリア独占権を購入
+export async function POST(req: Request) {
+  const { scrivener_id, area_code, industry_code } = await req.json();
+  // デポジット（先買いポイント）方式
+  const subscription = await stripe.subscriptions.create({
+    customer: scrivener_id,
+    items: [{ price: process.env.AREA_MONOPOLY_PRICE_ID }], // 月額¥200,000
+    metadata: { area_code, industry_code },
+  });
+  // Supabase に独占権スロット登録
+  await supabase.from('area_slots').upsert({
+    scrivener_id, area_code, industry_code,
+    expires_at: new Date(subscription.current_period_end * 1000),
+  });
+  return Response.json({ subscription_id: subscription.id });
+}
+```
+
+- **n8n リード通知フロー**: 補助金Claim発生 → Supabase Webhook → n8n → `area_slots` で担当行政書士を特定 → Telegram/Slack `「⚡ 早い者勝ち！Sランクリード（推定採択額800万円）が入りました。残り枠 1件」` → Stripe即引き落とし → リード情報開示
+- **Stripe Webhook で失効管理**: `customer.subscription.deleted` → `area_slots` を `expired` に更新 → 次の入札者にスロット解放
+- **ダブルマネタイズ判定**: n8n が `hojin.tech_stack` を確認 → IT導入補助金対象ツール未導入なら IT商材アップセルメッセージを自動付与
+
+---
+
 **n8n Jitter × ポアソン分布（等間隔送信禁止・クラスター検知回避）**:
 - Wait nodeに `{{Math.round(-Math.log(Math.random())*300)}}` 秒を設定（平均5分・実際は1.5〜13分にランダム分散）
 - 金額端数も散らす: `¥29,800` 固定値禁止 → `{{28400 + Math.floor(Math.random()*2800)}}` で都度変動
