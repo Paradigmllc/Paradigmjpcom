@@ -915,6 +915,139 @@ Total = LeadFee(5万×3社) + DealFee(成約額×15%) + SaaS(月額9,800〜89,80
 // Total per vendor/year ≈ 95万円超
 ```
 
+**業者向けアプリ「首輪」実装（Push通知 + 0.5秒争奪戦UI）**:
+```typescript
+// app/api/notify/new-lead/route.ts — Sランクリード発生時の45秒カウントダウン通知
+import { sendPushNotification } from '@/lib/push'; // web-push ライブラリ
+
+export async function POST(req: Request) {
+  const { lead_id, rank, area_code, industry_code } = await req.json();
+  // エリア担当業者（プラチナ→ゴールド→シルバー の順で time delay をずらす）
+  const vendorsByTier = await supabase.from('vendor_subscriptions')
+    .select('vendor_id, push_subscription, tier')
+    .eq('area_code', area_code).eq('industry_code', industry_code)
+    .in('tier', ['platinum', 'gold', 'silver']);
+
+  for (const vendor of vendorsByTier.data ?? []) {
+    const delay = { platinum: 0, gold: 600000, silver: 3600000 }[vendor.tier]; // ms
+    setTimeout(() => sendPushNotification(vendor.push_subscription, {
+      title: `⚡ ${rank}ランク案件（45秒で一般公開）`,
+      body: `今すぐ「対応可能」を押した3社のみ閲覧できます`,
+      data: { lead_id, action_url: `/leads/${lead_id}/claim` },
+    }), delay);
+  }
+  return Response.json({ ok: true });
+}
+```
+
+```typescript
+// app/leads/[lead_id]/claim/route.ts — 0.5秒争奪戦: 先着3社のみ解禁
+export async function POST(req: Request) {
+  const { lead_id, vendor_id } = await req.json();
+  // Supabase の row-level locking で同時アクセス競合を防ぐ
+  const { data, error } = await supabase.rpc('claim_lead', { p_lead_id: lead_id, p_vendor_id: vendor_id });
+  if (error || !data?.success) return Response.json({ error: 'sold_out' }, { status: 409 });
+  // レスポンス速度をスコアに記録 (response_time_ms)
+  await supabase.from('vendor_response_log').insert({
+    vendor_id, lead_id, response_time_ms: data.elapsed_ms,
+  });
+  return Response.json({ lead: data.lead });
+}
+```
+
+```sql
+-- Supabase Function: claim_lead (atomic upsert)
+CREATE OR REPLACE FUNCTION claim_lead(p_lead_id uuid, p_vendor_id uuid)
+RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE v_count int; v_lead jsonb; v_elapsed bigint;
+BEGIN
+  SELECT claimed_count INTO v_count FROM leads WHERE id = p_lead_id FOR UPDATE;
+  IF v_count >= 3 THEN RETURN jsonb_build_object('success', false); END IF;
+  UPDATE leads SET claimed_count = v_count + 1 WHERE id = p_lead_id;
+  SELECT row_to_json(l) INTO v_lead FROM leads l WHERE id = p_lead_id;
+  RETURN jsonb_build_object('success', true, 'lead', v_lead, 'elapsed_ms',
+    EXTRACT(EPOCH FROM (now() - created_at))*1000)
+  FROM leads WHERE id = p_lead_id;
+END; $$;
+```
+
+**エスクロー決済（客向けアプリ — 工事完了まで業者に支払わない）**:
+```typescript
+// app/api/payment/escrow/route.ts
+export async function POST(req: Request) {
+  const { job_id, customer_id, amount } = await req.json();
+  // PaymentIntent を capture_method: 'manual' で作成 → 工事完了まで capture しない
+  const pi = await stripe.paymentIntents.create({
+    amount, currency: 'jpy', customer: customer_id,
+    capture_method: 'manual',  // ← エスクローの核心
+    metadata: { job_id },
+  });
+  await supabase.from('escrow_payments').insert({ job_id, payment_intent_id: pi.id, status: 'held' });
+  return Response.json({ client_secret: pi.client_secret });
+}
+
+// 工事完了時に capture（業者に送金）
+export async function PATCH(req: Request) {
+  const { job_id } = await req.json();
+  const { data } = await supabase.from('escrow_payments').select('payment_intent_id').eq('job_id', job_id).single();
+  await stripe.paymentIntents.capture(data!.payment_intent_id);
+  await supabase.from('escrow_payments').update({ status: 'released' }).eq('job_id', job_id);
+  return Response.json({ ok: true });
+}
+```
+
+**従業員「ポータブル・レピュテーション」+ チップ直結実装**:
+```typescript
+// Supabase: worker_scores テーブル（会社に紐づかない個人スコア）
+// worker_id: auth.users.id | company_id: nullable（独立後もスコアが残る）
+// score: float | jobs_completed: int | avg_customer_rating: float | portable: boolean
+
+// 客側: チップ送金（アプリ未登録の業者は受け取り不可）
+// app/api/tip/route.ts
+export async function POST(req: Request) {
+  const { worker_id, amount, job_id } = await req.json();
+  const { data: worker } = await supabase.from('worker_scores')
+    .select('stripe_account_id').eq('worker_id', worker_id).single();
+  if (!worker?.stripe_account_id) return Response.json(
+    { error: 'このスタッフはまだアプリに登録していません。登録を促してください。' }, { status: 400 });
+  await stripe.transfers.create({
+    amount, currency: 'jpy', destination: worker.stripe_account_id,
+    metadata: { job_id, tip: true },
+  });
+  // チップ受取がスコアボーナスにも直結
+  await supabase.rpc('add_score_bonus', { p_worker_id: worker_id, bonus: 0.5 });
+  return Response.json({ ok: true });
+}
+```
+
+**オークション・エスカレーション（Supabase Cron で時間差解禁）**:
+```sql
+-- pg_cron で10分後・1時間後に通知を段階解禁
+SELECT cron.schedule('gold-notify', '*/1 * * * *', $$
+  UPDATE leads SET gold_notified_at = now()
+  WHERE created_at < now() - interval '10 minutes'
+    AND gold_notified_at IS NULL AND claimed_count < 3;
+  -- n8n webhook を叩いてゴールド業者へ通知
+  PERFORM net.http_post('https://n8n.example.com/webhook/gold-lead',
+    jsonb_build_object('lead_ids', array_agg(id)))
+  FROM leads WHERE gold_notified_at = now();
+$$);
+```
+
+**LTV_Human パイプライン（教育→就職→稼働→転職→独立融資）**:
+```typescript
+// worker のライフサイクルステージを追跡して各フェーズで課金
+// stage: 'student' | 'employed' | 'active' | 'transfer' | 'independent'
+// 各ステージで発火するマネタイズアクション:
+const MONETIZE_BY_STAGE = {
+  student:     { action: 'sell_course',      amount: 29800 },      // AI入門講座
+  employed:    { action: 'charge_client',    amount: 300000 },     // 入社紹介料（年収30%）
+  active:      { action: 'subscription',     amount: 980 },        // 個人スコアサブスク/月
+  transfer:    { action: 'charge_new_client',amount: 500000 },     // ヘッドハンティング料
+  independent: { action: 'loan_origination', amount: null },       // 融資（返済=売上天引き5%）
+} as const;
+```
+
 ---
 
 **n8n Jitter × ポアソン分布（等間隔送信禁止・クラスター検知回避）**:
