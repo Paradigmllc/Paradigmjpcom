@@ -716,6 +716,48 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 - **Marpは不可**: スライド専用（横向き固定）→ 縦型長文診断書・提案資料には不向き（自動改ページ不可）
 - **実装パイプライン**: DeepSeek V3でHTML生成（Jinja2テンプレ変数差し込み）→ Playwright Docker（serverless）→ `buffer`をSupabase Storageに保存 → DocSend/Notion埋め込みURL返却
 
+**ヴァンパイア完全体6フェーズ（実装アーキテクチャ）**:
+
+| フェーズ | 処理 | ツール | 出力 |
+|---------|------|-------|------|
+| ①抽出 | リスト収集 | FUMA/BIZMAPS/Apify Maps | 業種×地域CSV |
+| ②診断 | 速度・技術・競合一括スキャン | Lighthouse CI / WhatWeb / DataForSEO / Tavily | スコアJSON |
+| ③生成 | パーソナライズPDF/スライド生成 | DeepSeek V3（Context Caching）+ Slidev or HTML+Playwright | 提案資料URL |
+| ④配信 | メール/フォーム一斉送信+開封追跡 | Instantly.ai / Gmail API + DocSend | 開封イベント |
+| ⑤精査 | 料金ページ60秒閲覧→詳細資料自動生成 | SerpApi（競合順位）+ Shodan（脆弱性）+ HeyGen（AI動画） | 精密提案ページ |
+| ⑥錬成 | 商談資料自動更新・Slack通知・電話 | DeepSeek + Notion MCP + Twilio / n8n | 確勝クロージング資料 |
+
+**月総コスト目安**: 基本7,500〜18,000円 + メール配信5,000〜10,000円 + プロキシ2,000〜5,000円 = **総計15,000〜33,000円/月**（Apollo.io代替で完全自前構築の場合）
+
+---
+
+**Fake Loom全自動錬成パイプライン（Playwright + ComfyUI + FFmpeg）**:
+- **音声主導アーキテクチャ**: TTS（ElevenLabsまたはXTTSv2）で音声ファイル生成→秒数取得→Playwrightに「〇秒かけてスクロール」を渡す（音声が先・画面が後）
+- **Visual-Agnostic台本設計**: 「左にボタン」「上の青いバナー」などの画面指示語禁止。「ページが表示された後に〜」のように音声だけで成立する台本にする
+- **3段合成フロー**:
+  1. **Playwright**: ターゲットのHPを自動スクロール録画（`page.screenshot()` x n → FFmpegでmp4化）
+  2. **ComfyUI（EchoMimic/LivePortrait）**: AI アバターに音声波形を食わせて口パク+瞬き自動生成（透過背景PNG連番）
+  3. **FFmpeg PiP合成**: `ffmpeg -i screen.mp4 -i avatar.mp4 -filter_complex "[1]scale=240:240[av];[0][av]overlay=W-w-20:H-h-20" output.mp4`
+- **ハイブリッド動画3分構成**: 冒頭15〜30秒（毎回生成・社名/URL読み上げ）→ 中盤1〜2分（テンプレ共通）→ 結び30秒（テンプレ共通）。`ffmpeg -i intro.mp4 -i middle.mp4 -i outro.mp4 -filter_complex concat=n=3:v=1:a=1 final.mp4`
+- **「わざと不完全なAI」人間味ハック**: ElevenLabsでStability低下+[breath][chuckle]タグ追加→「完璧なCM」ではなく「手作り感のあるビデオレター」として処理される心理的効果
+
+---
+
+**DXパッケージ6種（Paradigm HP提供サービス・「月給5万円のAI社員派遣」として売る）**:
+
+| # | パッケージ名 | 内容 | 価格目安 |
+|---|------------|------|---------|
+| ① | 営業DX | ヴァンパイアエンジン一式（リスト収集〜自動送信〜クロージング）| 初期50万+月10万 |
+| ② | 顧客対応DX | Dify RAGチャットボット+LINE公式連携+Chatwoot | 初期30万+月5万 |
+| ③ | 競合監視DX | 近隣ライバル毎朝LINE通知（Tavily+DeepSeek+LINE Bot）| 初期20万+月3万 |
+| ④ | 採用DX | n8n求人票自動収集+Dify RAG面接シミュレータ | 初期30万+月5万 |
+| ⑤ | 現場集客DX | LINE写真→DeepSeek Vision→WordPress自動公開 | 初期20万+月3万 |
+| ⑥ | 教育継承DX | ベテラン職人AIクローン（Dify RAG+Whisper文字起こし）| 初期50万+月5万 |
+
+**自作自演クロージング（最強デモ）**: ヴァンパイアエンジン自体でアプローチ→商談で「実はこのメールも提案資料もAIが自動生成しました」と種明かし→「このシステムを御社に導入します」がそのまま最強のデモになる
+
+---
+
 **海外EC 日本ローカライズ戦略（`/en` グローバルヴァンパイア）**:
 - **ターゲット抽出**: [StoreLeads](https://storeleads.app/)（Shopify/BigCommerce/WooCommerce店舗DB）で「EC平均月商 $XX万以上 × 日本向け出荷なし × JP対応カート未使用」を絞り込み → 日本進出未参入の海外ECが確実な顕在ニーズ層
 - **日本市場損失4指標**（英語アウトリーチの痛み可視化に使用）:
