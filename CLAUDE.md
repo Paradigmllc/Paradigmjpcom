@@ -682,6 +682,19 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 2. **処方箋（提案）**: HP/EC/セキュリティのどこに致命的欠陥があるか解説 → 1枚エグゼクティブサマリー
 3. **手術（受注・バックエンド）**: 補助金使って全て最新AI/SaaS環境へフルリプレイス
 
+**海外EC 日本ローカライズ戦略（`/en` グローバルヴァンパイア）**:
+- **ターゲット抽出**: [StoreLeads](https://storeleads.app/)（Shopify/BigCommerce/WooCommerce店舗DB）で「EC平均月商 $XX万以上 × 日本向け出荷なし × JP対応カート未使用」を絞り込み → 日本進出未参入の海外ECが確実な顕在ニーズ層
+- **日本市場損失4指標**（英語アウトリーチの痛み可視化に使用）:
+  - **TAM損失**: 「日本EC市場22兆円（経産省2023）のうち御社が取れていない市場規模 = $X.XM/年」
+  - **UX摩擦**: 日本語未対応・YEN価格なし・コンビニ払い非対応 → カート離脱率85%超（国内EC平均比+40pt）
+  - **SEOゴースト**: 日本語キーワードでGoogle.co.jpにほぼ未インデックス → 月間検索需要〇万件を取り逃がしている
+  - **広告費ドブ捨て**: 日本IPからの流入があっても日本語LP未整備 → 広告費$XX/月が完全無駄
+- **英語キラーフレーズテンプレート**（Subject → Body CTA の流れ）:
+  - Subject: `[Company Name] is missing out on $X.XM in the Japanese market`
+  - 冒頭: `I ran [Company Name]'s site through our Japan Market Readiness Scanner — you're currently invisible to 48M Japanese online shoppers.`
+  - 痛みトリガー: `Your cart abandonment rate from Japanese visitors is likely 85%+ due to no JPY pricing, no Japanese payment methods (konbini/PayPay), and English-only checkout.`
+  - 救済CTA: `We've helped [Competitor/Similar Brand] capture $XXK/month from Japan within 90 days. Here's a 3-min breakdown specific to [Company Name]: https://paradigmjp.com/en/p/[slug]`
+
 ---
 
 ## <a id="s10"></a>10. 🖥️ 運用・組織・実装ルール
