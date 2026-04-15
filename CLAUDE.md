@@ -7,12 +7,12 @@
 | ★★★★☆ | 1 | [事業概要・市場機会](#s1) | 2言語サイト設計確定（/ja日本向け・/en海外向け） |
 | | | [s1-1 2言語サイト設計](#s1-1) | |
 | | | [s1-2 サービス構成](#s1-2) | |
-| ★★☆☆☆ | 2 | [競合・差別化](#s2) | Japan Entry Packageポジション記載あり |
-| | | [s2-1 /en ポジショニング](#s2-1) | |
+| ★★★★☆ | 2 | [競合・差別化](#s2) | 国ティア3段・Japan-Ready AI Suite概念・保険+ブースターポジション確定 |
+| | | [s2-1 /en ポジショニング](#s2-1) | Kickstarter/ShopifyD2C/SaaS 3段ターゲット・Productized Service優位性・国ティア確定 |
 | | | [s2-2 /ja 競合分析](#s2-2) | |
-| ★★★☆☆ | 3 | [ビジネスモデル](#s3) | /ja JPY・/en USD確定・Japan Entry Package設計確定 |
+| ★★★★☆ | 3 | [ビジネスモデル](#s3) | バリューベース3ティア価格表確定・アンカリング設計・LTV試算追加 |
 | | | [s3-1 /ja 料金体系](#s3-1) | |
-| | | [s3-2 /en 料金体系](#s3-2) | |
+| | | [s3-2 /en 料金体系](#s3-2) | バリューベース3ティア($3,500/$8,500/$18,000+)確定・アンカリング設計・コミッション設計 |
 | | | [s3-3 リード獲得導線](#s3-3) | |
 | ☆☆☆☆☆ | 4 | [財務計画・KPI](#s4) | N/A |
 | | | [s4-1 KPI計測](#s4-1) | |
@@ -32,12 +32,13 @@
 | | | [s8-2 デザインシステム](#s8-2) | |
 | | | [s8-3 Supabase CMSテーブル](#s8-3) | |
 | | | [s8-4 環境変数](#s8-4) | |
-| ★★★★☆ | 9 | [GTM・集客・エコシステム](#s9) | インフラ・SEO+コールドアウトリーチ設計追加 |
+| ★★★★☆ | 9 | [GTM・集客・エコシステム](#s9) | インフラ・SEO+/ja/enコールドアウトリーチ戦略確定 |
 | | | [s9-1 Coolify設定](#s9-1) | |
 | | | [s9-2 Cloudflare設定](#s9-2) | |
 | | | [s9-3 appexxインフラ共有接続](#s9-3) | |
 | | | [s9-4 SEO設定](#s9-4) | |
-| | | [s9-5 コールドアウトリーチ戦略](#s9-5) | |
+| | | [s9-5 コールドアウトリーチ戦略](#s9-5) | /ja 日本SMB向け（補助金・ヴァンパイアエンジン） |
+| | | [s9-6 /en 海外SMBアウトリーチ戦略](#s9-6) | Japan Entry Package /en向け・Productized Service販売設計確定 |
 | ★★★★☆ | 10 | [運用・組織・実装ルール](#s10) | 2言語対応コーディング規約追加 |
 | | | [s10-1 コーディング規約](#s10-1) | |
 | | | [s10-2 管理ダッシュボード](#s10-2) | |
@@ -50,7 +51,7 @@
 | | | [s12-1 ドメイン一覧](#s12-1) | |
 | | | [s12-2 アカウント一覧](#s12-2) | |
 | | | [s12-3 商標・特許・ライセンス](#s12-3) | |
-| ★★★☆☆ | 13 | [リソース一覧](#s13) | next-intl追加 |
+| ★★★★☆ | 13 | [リソース一覧](#s13) | next-intl・StoreLeads・/en営業ツール・PandaDoc・Clay・Instantly追加 |
 | | | [s13-1 フロントエンド・フレームワーク](#s13-1) | |
 | | | [s13-2 UI・コンポーネント](#s13-2) | |
 | | | [s13-3 データベース・BaaS](#s13-3) | |
@@ -59,6 +60,7 @@
 | | | [s13-6 SEO・GEO](#s13-6) | |
 | | | [s13-7 法令・規制](#s13-7) | |
 | | | [s13-8 参考リンク・ドキュメント](#s13-8) | |
+| | | [s13-9 /en 営業・英語対応ツール](#s13-9) | ElevenLabs/Deeptrue/Fathom/ELSA/PandaDoc/Clay/Instantly追加 |
 
 ⚠️ **要強化セクション**: 4 財務 / 6 Exit / 11 経費 / 12 ドメイン・アカウント
 
@@ -116,10 +118,45 @@
 
 **Japan Entry Package** は「外国企業が日本でデジタルプレゼンスを構築する際に必要なものをすべてバンドルした唯一のパッケージ」として差別化。
 
-競合が持たない優位性:
-- 日本語・英語バイリンガル対応のプロジェクト進行
-- 日本固有のデジタル環境（MEO・LINE・Yahoo! Japan）への精通
-- 小規模〜中規模向けの現実的な価格帯（USD）
+#### ターゲットセグメント（3層・優先順）
+
+| 層 | ターゲット | 特徴 | リーチ方法 |
+|----|----------|------|----------|
+| **Tier 1** | Kickstarter/Indiegogo成功済みブランド（日本バッカー多数） | 日本人支持者がいる証明済み・次の一手として日本ローンチを検討中 | バッカーコメントから日本人比率が高いプロジェクトを特定→Product Hunt Launch直後にアプローチ |
+| **Tier 2** | Shopify D2C（月商$5K〜$50K・Amazon.co.jp未出店） | 日本語ページなし・円決済なし・国際送料設定のまま放置 → 日本TAM取り逃がし | StoreLeads等でShopify店舗DB×Amazon.co.jp未出店フィルタ |
+| **Tier 3** | SaaS/デジタルプロダクト（海外に英語ランディングページがある・日本語版なし） | 限界費用ゼロで日本市場に展開できるのに放置 → ローカライズのみで市場獲得可能 | Product Hunt past launches / G2/Capterra/AppSumo出品リストからスクレイプ |
+
+#### 競合が持たない優位性
+
+- **バイリンガル非同期コミュニケーション**: 英語で受けて日本側をすべて日本語で処理→クライアントに日本語負担ゼロ
+- **日本固有デジタル環境への精通**: MEO（Googleマップ）・LINE公式アカウント・Yahoo! Japan SEO・コンビニ決済（GMO/PAY.JP）
+- **Productized Service（スコープ固定）**: "What exactly do I get?"に即答できる明確なスコープ → 高額でも買いやすい
+- **低リスクエントリー**: フロントエンドオファー（$1,500 Research Report）で信頼構築してから本命パッケージを提案
+
+#### ポジショニングフレーミング（「保険+ブースター」設計）
+
+- **保険サイド**: 「日本語サイトなし = 法人登記なし企業と同等の信頼性。日本BtoB商談で真剣に扱われないリスク」
+- **ブースターサイド**: 「EC市場22兆円（経産省2023）・インバウンド消費5.8兆円（2023）のうち御社が取れていない分」
+- → 損失回避（守り）と利益獲得（攻め）の両方を同時に訴求することで「やらない理由がない」状態を作る
+
+#### ターゲット国ティア（アウトリーチ優先順）
+
+| Tier | 国 | 理由 |
+|------|---|------|
+| **S（最優先）** | 🇺🇸 US / 🇬🇧 UK / 🇦🇺 AU | D2C・Shopifyブランドの集積地。Kickstarter成功案件も最多。英語で直接交渉可能 |
+| **A** | 🇸🇬 Singapore / 🇦🇪 UAE | キャッシュリッチ・意思決定が速い（決裁まで平均1〜2週間）。アジア進出拠点として日本を狙う企業が多い |
+| **B** | 🇸🇪 Sweden / 🇳🇴 Norway / 🇩🇰 Denmark | 日本文化への親和性が高い（デザイン/アニメ/ゲーム/フード）。高品質志向でParadigmのプレミアム価格に抵抗が少ない |
+
+#### "Japan-Ready AI & Compliance Suite" — プロダクトコンセプト
+
+**タグライン**: "Turn your website into a legally compliant, fully localized Japanese storefront in 14 days, powered by AI and local experts"
+
+**3つのコア機能**:
+1. **AI日本語カスタマーサポート**: 日本語訪問者にのみ表示するチャットボット（条件分岐JS埋め込み）→ Tokushoho FAQ・返品規則・配送対応を24時間自動応答
+2. **特定商取引法コンプライアンス**: 必要記載事項を自動チェック＋整備（日本で販売するための法的最低要件をワンストップで充足）
+3. **カルチャーローカライゼーション**: 単なる翻訳ではなく、日本の消費者心理・UI慣習・決済手段（コンビニ払い・PayPay）に合わせた全面最適化
+
+> 技術実装詳細 → [→ s9-6 AIエージェント実装仕様](#s9-6)
 
 > `/ja` の競合分析: 将来LP強化時に記入
 
@@ -157,18 +194,59 @@
 
 <a id="s3-2"></a>
 
-### `/en` 料金体系（確定）
+### `/en` 料金体系（Productized Service型・確定）
 
 - **通貨**: USD固定（JPY併記なし）
-- **メインプロダクト**: Japan Entry Package（3段構成）
+- **モデル**: Productized Service（スコープ固定 + 初期費用 + 月額リテイナー）— SaaSではない
+- **設計思想**: 月額サブスクより「初期で大きな価値提供 → 小額リテイナーで維持」の方がクライアントに買いやすく、かつARPUが高い
 
-| プラン | 想定価格帯 | 内容 |
-|--------|----------|------|
-| Starter | ~$499/mo | 基本的な日本向けデジタルプレゼンス構築 |
-| Growth | ~$999/mo | フルパッケージ（Web+SEO+MEO管理） |
-| Enterprise | ~$1,999/mo | Growth + AI自動化 + 専任サポート |
+#### フロントエンドオファー（エントリー商品・信頼構築用）
 
-> 価格は実装時に確定・Supabase `cms_pricing` locale='en' currency='usd' で管理
+| 商品 | 価格 | 内容 | 目的 |
+|------|------|------|------|
+| Japan Market Fit Research | **$1,500〜$2,500** (one-time) | 日本市場参入可能性レポート（競合分析・消費者ペルソナ・推奨チャネル・リスク一覧・ROI試算）| 「まず小さく試したい」層に購入してもらい、信頼構築 → 本命パッケージへのアップセル導線 |
+
+> リサーチ料金は本命プラン初月費用に全額充当（"First step credit"として提示）→ 購入ハードルを下げつつ実質的なデポジットとして機能
+
+#### メインパッケージ（3段構成）
+
+| プラン | 初期費用 | 月額リテイナー | スコープ |
+|--------|---------|------------|---------|
+| **Standard Launch** ⭐ | **$4,000〜$7,000** | $300〜500/mo | 日本語LP（5ページ）+ MEO設定 + Google Merchant Center + SNS初期設定 + 月次レポート |
+| **Premium Growth** | **$6,000〜$10,000** | $1,000〜2,000/mo | Standard + EC日本語化（Shopify多言語）+ LINE公式 + AI自動翻訳カスタマーサポート + 週次PDCAレポート |
+| **Enterprise** | 要見積り | 要見積り | Premium + 日本法人設立サポート連携 + 専任PM + SLA保証 |
+
+> スコープ確定後は追加作業を原則受けない（スコープクリープ防止）。追加は別途SOW発行
+
+#### バリューベース3ティア価格表（確定・アンカリング設計）
+
+| Tier | 名称 | 初期費用 | 月額リテイナー | 推奨対象 |
+|------|-----|---------|------------|---------|
+| **Tier 1** | **Essential** | **$3,500** (one-time) | $200/mo | 月商$5K〜$15K・シンプルLPのみ必要・初回テスト購入層 |
+| **Tier 2** ⭐ | **Growth** | **$8,500** | $500/mo | 月商$15K〜$50K・EC+AI CS+MEO+LINE公式が必要な本命層 |
+| **Tier 3** | **Enterprise** | **$18,000+** | $2,000+/mo | 月商$50K+・専任PM+法人設立サポート+SLA+カスタム開発 |
+
+**アンカリング設計の意図**:
+- Tier 3（$18,000）がデコイ: 実際の成約ターゲットはTier 2（$8,500）。Tier 3と並べることでTier 2が「お値打ち」に見える
+- Tier 1（$3,500）はエントリー: 「試しに」で購入してもらいTier 2へのアップセル導線として機能
+- **月額リテイナーの積み上げ**: 月$500×12ヶ月=年$6,000。初期費用+リテイナーのLTVはTier 2で$14,500/年
+
+> 旧プラン（Standard Launch/Premium Growth）はこの3ティアに統合。Supabase `cms_pricing` locale='en' currency='usd' で管理
+
+#### 価格設計の根拠
+
+- **バリューベース**: コスト積み上げではなく「日本市場TAM×CVR改善×12ヶ月」のROIから価格を逆算
+- **初期費用を大きく**: 制作・設定作業コストの回収 + 「真剣なクライアント」のフィルタリング機能
+- **月額を小さく**: 解約率低下・"no-brainer renewal"設計。月$500は日本市場の維持コストとして正当化しやすい
+- **Growth（Tier 2）を推奨（⭐）**: EC日本語化+AI CS+MEO+LINEの組み合わせは「最大ROIが出る完結パッケージ」として説明しやすい
+
+#### コミッション設計（Closer採用時）
+
+- Closer手数料: **初期費用の30〜50%**（月額は含まない）
+- 例: Standard Launch $5,000成約 → Closer $1,500〜$2,500
+- 採用方法: Upwork/LinkedIn「commission-only sales」投稿・日本市場経験者のexpat SalesとJapan Desk系フリーランサーを優先
+
+> Supabase `cms_pricing` locale='en' currency='usd' で管理
 
 <a id="s3-3"></a>
 
@@ -397,6 +475,10 @@ paradigmjpcom/
 | ホスト | Coolify（同一サーバー: 139.59.250.5） |
 | DNS | Cloudflare |
 | CI/CD | GitHub Actions → Coolify Webhook（private repo対応） |
+| **AIエージェントウィジェット** | **Chatbase（ノーコード）または Dify self-hosted（フル制御）** — 日本語訪問者にのみ条件分岐で表示（`navigator.language.startsWith('ja')` または IP判定） |
+| Shopifyアクセス | Collaborator権限（パスワード共有不要・安全）でクライアントストア設定にアクセス |
+
+> AIエージェント実装詳細（JS条件分岐コード・RAGビルダー比較）→ [→ s9-6 AIエージェント実装仕様](#s9-6)
 
 ### デザインシステム（新・確定）
 
@@ -1201,6 +1283,245 @@ await page.route('**/*', route => {
   - 痛みトリガー: `Your cart abandonment rate from Japanese visitors is likely 85%+ due to no JPY pricing, no Japanese payment methods (konbini/PayPay), and English-only checkout.`
   - 救済CTA: `We've helped [Competitor/Similar Brand] capture $XXK/month from Japan within 90 days. Here's a 3-min breakdown specific to [Company Name]: https://paradigmjp.com/en/p/[slug]`
 
+<a id="s9-6"></a>
+
+### `/en` 海外SMB向けアウトリーチ戦略（Japan Entry Package販売）
+
+> `/ja` 国内SMB向けはs9-5参照。こちらは英語でアプローチする海外企業向けの専用戦略。
+
+#### リードリスト構築（無料〜低コスト・Tier別）
+
+| Tier | ソース | 抽出方法 | 特徴 |
+|------|-------|---------|------|
+| **S（最高質）** | Kickstarter/Indiegogo成功プロジェクト | バッカーコメントで日本人比率が高いプロジェクトをスクレイプ → 運営者メール特定 | 「日本市場に潜在需要があると証明された」層。説得不要 |
+| **A** | Product Hunt | PH Launch直後の「Japan」「Japanese market」タグ付き製品、または説明文に「expanding to Asia」含む | 今まさに成長フェーズ・拡張意欲が高い |
+| **B** | Meta Ads Library | `meta.com/ads/library` で「Japan」含む広告を出稿中の海外ブランド特定 | 日本向け広告費を払っているのにJP対応サイトがない → 予算あり・ミスマッチ |
+| **B** | Amazon US ベストセラー × Amazon.co.jp未出品 | Amazon US Top 1,000から `keepa.com` APIでASIN取得 → Amazon.co.jp で同ASINの有無チェック | 商品が証明済み・日本ECチャネルだけ空白 |
+| **C** | 展示会出展者リスト | Tokyo Game Show / Tokyo Motor Show / Foodex等のOfficial exhibitor PDFをパース → メールスクレイプ | 日本に既に来る意欲がある海外企業 |
+| **C** | StoreLeads | Shopify/WooCommerce月商$5K+・日本語版なし・国際送料設定 | [→ s9-5 海外EC 日本ローカライズ戦略](#s9-5)で詳細記載 |
+
+#### 英語コールドメール 4ステップ構成
+
+```
+Step 1: Personalized opener（テンプレ感を消す）
+  "I actually bought [product] last year — love what you've built."
+  "Congrats on [recent launch / Product Hunt feature / Kickstarter milestone]."
+
+Step 2: Pain point（第三者データ主語・リアクタンス回避）
+  "Japan is the world's 3rd-largest e-commerce market ($180B), 
+   but 78% of overseas brands lose Japanese visitors at checkout 
+   due to no JPY pricing or Japanese payment methods (Mercari, konbini pay)."
+  ※ 「御社が悪い」ではなく「市場環境がこうなっている」と提示
+
+Step 3: Specific signal（相手の現状を可視化・医師ポジション）
+  "I ran [domain] through our Japan Market Readiness Scanner — 
+   you're currently invisible on Google.co.jp for [product category keywords 
+   with ~X,000 monthly searches]."
+  ※ Wappalyzer + SerpApi + Lighthouse で自動生成
+
+Step 4: Low-friction CTA（Zoom不要・非同期ファースト）
+  "Here's a 3-min breakdown I put together for [Company Name]: 
+   paradigmjp.com/en/p/[company-slug]
+   No call needed — just let me know if it looks relevant."
+  ※ Zoom提案をしない。相手のペースに委ねる設計が返信率を上げる
+```
+
+#### 非同期販売（Async Sales）設計
+
+- **Zoom不要ファースト**: 初回〜2回目までは非同期。Loom動画（2〜3分）+ テキストのみで完結させる
+- **Zoom開催時の翻訳ツール**: 英語商談が必要な場合は以下を活用
+
+| ツール | 特徴 | 用途 |
+|-------|------|------|
+| **Deeptrue** | 日本語↔英語リアルタイム通訳（AIアバター型）| Zoomに接続・ほぼネイティブ品質 |
+| **VoicePing** | チャンネル分離型同時通訳・低遅延 | 複数言語対応が必要な商談 |
+| **JotMe** | 会議録音→多言語要約→議事録自動生成 | 会議後フォローアップ資料に |
+| **Fathom / tl;dv** | Zoom録画→AIサマリー→CRM自動連携 | 商談記録・Twenty CRM連携 |
+
+- **1週間英語商談準備ワークフロー**（英語に自信がない場合のプロトコル）:
+  1. **D1〜2**: DeepSeek V3 で「Japan Entry Package for [相手業種]」の英語ピッチスクリプト（3分）を生成
+  2. **D3〜4**: ElevenLabs Speech Synthesis でスクリプトを読み上げ → シャドーイング練習（発音矯正）
+  3. **D5〜6**: Gemini Live（リアルタイム会話AI）と模擬商談ロールプレイ（「あなたはShopify D2Cの創業者です」プロンプト）
+  4. **D7**: ELSA Speak で頻出フレーズの発音スコアを確認・仕上げ
+  5. **当日**: Fathom録画ON + Deeptrue待機 + 冒頭の「survival phrases（Nice to meet you / Let me pull up the slide / Could you repeat that?）」で会話開始
+
+#### Closerコミッション設計（外部営業委託時）
+
+- **コミッション**: 初期費用の **30〜50%**（月額リテイナーは含まない）
+- **例**: Standard Launch $5,000成約 → Closer $1,500〜$2,500（支払いは入金確認後7日以内）
+- **採用チャネル**: Upwork「Japan market sales」/ LinkedIn「commission-only B2B Japan entry」/ Expat Japan business Facebookグループ
+- **優先プロフィール**: Japan DeskまたはJapan事業経験のある海外SalesフリーランサーまたはJapan-based expat（日英バイリンガルまたは英語ネイティブ×日本在住）
+- **注意**: Closer採用後も「Async提案資料（/en/p/[slug]）」と「Fathom商談録画」は必ず共有しスコープ逸脱を防ぐ
+
+#### /en専用 pPersonalizeページ構成（`/en/p/[slug]`）
+
+| セクション | 内容 |
+|----------|------|
+| Header | Company name / Japan Market Readiness Score / 3-metric summary |
+| Market Opportunity | TAM estimate for their category in Japan (JPY + USD) |
+| Gap Analysis | What's missing: JP landing page / JPY checkout / Google.co.jp visibility |
+| Competitive Intel | 2〜3 similar brands already operating in Japan (success proof) |
+| Our Solution | Scoped deliverables with timeline (no vague promises) |
+| ROI Estimate | Time-to-revenue estimate based on comparable brands |
+| Pricing | 3 tiers with "Japan Market Fit Research" as entry offer |
+| CTA | Cal.com booking (「Book a free 30-min Japan market call」) |
+
+#### AI翻訳ツール詳細コスト比較（2026年最新）
+
+| ツール | 月額 | 通訳時間 | 特徴 | 推奨用途 |
+|-------|------|---------|------|---------|
+| **Deeptrue Pro** | $29/月 | 300分 | AIアバター型・ほぼネイティブ品質・Zoom接続 | 商談用（コスパ最優先） |
+| **JotMe Pro** | ¥1,440/月 | 200分 | リアルタイム字幕・多言語対応・会議後議事録 | 文字起こし重視の商談 |
+| **VoicePing** | ¥6,300+/月 | 450分 | チャンネル分離型同時通訳・低遅延 | 複数言語が混在する商談 |
+| **Fathom / tl;dv** | 無料〜$19 | 録画無制限 | AI要約→CRM自動連携・商談記録 | 全商談の録画・議事録 |
+
+> 推奨: Deeptrue Pro ($29) + Fathom (無料) の組み合わせが月$29〜で最大カバレッジ
+
+#### AI通訳 3つの壁と回避策
+
+| 壁 | 問題 | 回避策 |
+|---|------|-------|
+| **タイムラグ3〜5秒** | 会話のリズムが崩れ、相手が不安になる | 冒頭に「AIアシストを使っています、少し間があります」と先に告知して心理的許可を取る |
+| **AI音声の感情欠如** | 謝罪・感謝・断りのトーンがフラットで失礼に聞こえる | 感情的ニュアンスが必要な箇所は事前にスクリプト化→ElevenLabsで自然な音声に変換してから使用 |
+| **日本語主語抜けによる誤訳** | 「します」→ who does it? がAIに判定できず誤訳 | DeepLよりGemini（コンテキスト読み込み済み）を使用。主語を明示した英語ドラフトを先にGeminiに書かせてから送信 |
+
+#### バックオフィス・スタック（確定）
+
+| ツール | 用途 | コスト |
+|-------|------|-------|
+| **PandaDoc** | 提案書作成 + 電子署名 + 閲覧追跡（ページ別滞在時間） | $35/月〜 |
+| **Stripe** | 初期費用請求・月額リテイナー定期課金。**支払い確認後にキックオフ開始**（先払い鉄則） | 手数料3.6%（JP）|
+| **Slack Connect** | クライアントと同一Slackチャンネルで非同期コミュニケーション | 無料〜 |
+| **Notion** | プロジェクト進捗・納品物管理・クライアント共有ページ | 無料〜$16 |
+| **DeepL + Gemini** | 翻訳・ドラフト作成（[→ 使い分けルール](#degit-vs-deepl)） | DeepL Pro ¥3,200/月 |
+
+#### DeepL vs Gemini 使い分けルール
+
+| ケース | 使用ツール | 理由 |
+|--------|----------|------|
+| 短い事実確認メッセージ（「明日14時はいかがでしょうか」） | **DeepL** | 高速・精度十分 |
+| 複雑な交渉・断り・感謝・提案変更 | **Gemini（コンテキスト込み）** | プロジェクト背景をシステムプロンプトとして事前ロード→トーン・敬語・文化的ニュアンスを自動調整 |
+| Slack/メールの長文ドラフト | **Gemini** | 全会話履歴を踏まえた自然な返信を生成 |
+| 翻訳後のファクトチェック | **DeepL後にGeminiで確認** | 固有名詞・製品名の誤訳をGeminiが検出 |
+
+> Geminiセットアップ: システムプロンプトに「あなたはParadigm合同会社の/en担当です。クライアントは[会社名]の[担当者名]です。プロジェクト概要: [Notion URL]」を毎プロジェクト開始時に設定
+
+#### AIエージェント実装仕様（Japan-Ready AI & Compliance Suite）
+
+**コンセプト**: 「Turn your website into a legally compliant, fully localized Japanese storefront in 14 days, powered by AI and local experts」
+
+AIチャットボットウィジェットを**日本語訪問者にのみ表示**する条件分岐実装:
+
+```javascript
+// 実装方法1: ブラウザ言語判定（推奨・即時）
+if (navigator.language.startsWith('ja') || navigator.languages.includes('ja')) {
+  // Chatbase または Dify ウィジェットを動的ロード
+  const script = document.createElement('script');
+  script.src = 'https://www.chatbase.co/embed.min.js';
+  script.setAttribute('chatbotId', 'YOUR_CHATBASE_ID');
+  document.head.appendChild(script);
+}
+
+// 実装方法2: IP判定（より正確・サーバーサイド）
+// Next.js middleware.ts で Accept-Language ヘッダー + IP geolocation を組み合わせ
+// → locale='ja' ユーザーのみ <JapanAIWidget /> コンポーネントをレンダリング
+```
+
+**AIエージェント3機能**:
+1. **日本語カスタマーサポート**: Chatbase/Dify に商品FAQ・返品規則・配送ルールをRAGとして学習 → 24時間日本語自動応答
+2. **Tokushoho（特定商取引法）コンプライアンス**: 必要記載事項チェックリストをナレッジベース化 → LP審査を自動化
+3. **Shopify統合**: Collaborator権限（パスワード共有不要・安全）でストア設定にアクセス → 日本語メタ情報・送料設定・支払い方法を自動設定
+
+**RAGビルダー比較**:
+| ツール | 特徴 | 推奨用途 |
+|-------|------|---------|
+| Chatbase | ノーコード・Shopify/WordPress埋め込み簡単・月$19〜 | クライアントサイトへの即時デプロイ |
+| Dify (self-hosted) | フル制御・多言語・n8n連携可・コストゼロ | 高度カスタマイズが必要な案件 |
+
+#### ROI計算テンプレート（クライアント提示用）
+
+```
+Before Paradigm:
+  JP CS staff: $600/month (part-time)
+  JP sales (unoptimized): ~$2,000/month
+  Total: $2,600/month
+
+After Paradigm (Standard Launch $4,500 setup + $300/month):
+  AI handles 80% of JP inquiries: $0 CS labor
+  Optimized JP storefront: ~$4,500/month in JP revenue
+  Total: $4,500/month revenue - $300 retainer = $4,200/month net
+
+ROI = ($4,200 - $2,600) / ($4,500 setup + $300/month)
+    = $1,600/month extra ÷ $750/month (annualized setup) = 213% ROI
+    Payback period: ~3 months
+```
+
+> このROI計算テンプレートをPandaDoc提案書に動的変数として埋め込む（クライアントの月商を入力すると自動計算）
+
+#### 100件の法則（キャッシュフロー・シミュレーション）
+
+| フェーズ | 件数 | 転換率 | 説明 |
+|--------|------|-------|------|
+| コールドアウトリーチ | 100件 | 100% | 1週間で100件送信（Clay自動化で可能） |
+| デモ・商談アポ | 5件 | 5% | 5% = アポ獲得率の現実的目標 |
+| 成約 | 1件 | 20% | 商談からクローズは20〜30%目標 |
+| **収益** | **$3,500〜$8,500** | — | **Essential or Growth tier成約時の初期費用** |
+
+> 月2〜3件成約 = ARR $84K〜$102K（Growth tier平均$7,000×12件/年）。100件ループを週次で回すことで安定受注が生まれる
+
+#### ディープリサーチ3戦術（リードの「隠れた日本ポテンシャル」を発掘）
+
+| 戦術 | 手順 | 何がわかるか |
+|-----|------|------------|
+| **①転売検出** | Amazon.co.jp で対象ブランド名を検索 → サードパーティセラーが多数出品している場合 | 日本需要は証明済み・公式チャネルが空白 → 「御社の利益が転売業者に流れています」が最強フック |
+| **②チェックアウト摩擦テスト** | 対象サイトで「東京都渋谷区」宛に購入を試みる → 国際送料/$50+・日本語なし・円決済なし を確認 | 具体的なUX障壁を実測値として提示（スクリーンショット証拠付き） |
+| **③Tokushoho違反ギャップ** | 日本語LPの有無 + 特商法ページ（会社名・住所・返品規則）の有無を確認 | 日本で販売しているのに特商法対応なし → 法的リスクを痛みとして提示し、コンプライアンス整備をサービスに組み込む |
+
+> SimilarWebの地理フィルターで「日本からのトラフィック比率 10%+」を事前確認してからリサーチ実施 → 確度の高いターゲットに絞れる
+
+#### クロージング4トリガー（断る理由ゼロ設計）
+
+| トリガー | 内容 | 心理効果 |
+|--------|------|---------|
+| **①リスクリバーサル** | 「14日間で成果が出なければ全額返金保証」 | 金銭的リスクをゼロにする → 「試しに」が発動 |
+| **②Done-for-You** | 「コード1行をサイトに貼るだけ。残りは全部Paradigmがやります」 | 作業負担の心理的障壁を除去 |
+| **③ハイバリュー特典** | 「日本PR会社コネクション + 日本語インフルエンサーリスト（30名）を無料提供」 | 価格以上の価値を感じさせるバンドル効果 |
+| **④スカーシティ** | 「月3社限定（品質維持のため）。現在1社空き」 | 希少性 → 先送り阻止 → 即決誘発 |
+
+#### オフライン業務の扱いルール（スコープ外・紹介のみ）
+
+以下はParadigmのスコープ**外**。紹介（referral）のみ行い、直接ハンドリングしない:
+
+| オフライン業務 | 紹介先 | 紹介料目安 |
+|------------|------|---------|
+| 日本向け在庫・物流・倉庫 | オープンロジ（3PL） | 紹介料5〜10% |
+| 日本法人設立（GK/KK） | 司法書士・行政書士パートナー | 紹介料¥5〜10万/件 |
+| Amazon.co.jp出品代行 | ACP（Amazon代行）パートナー | 紹介料5〜10% |
+
+> 「できません」ではなく「最適なパートナーを紹介します」→ 紹介料で追加収益にする設計
+
+#### スケール自動化スタック + 週次ゴールデンルーティン
+
+**自動化スタック（100件/週を1人で回す）**:
+
+| ツール | 役割 | コスト |
+|-------|------|-------|
+| **Clay** | リスト収集 + 自動パーソナライズ（会社情報・JP traffic %・転売検出を自動取得してメール変数に埋め込み） | $149/月〜 |
+| **Instantly / Smartlead** | コールドメール一括送信 + 開封追跡 | $37〜97/月 |
+| **Calendly + 事前アンケート** | アポ予約 + 「月商・現在のJP売上・Shopify使用有無」を自動収集 | $12/月〜 |
+| **PandaDoc** | 提案書動的生成（ROI計算・クライアント名・tier推奨を変数で自動挿入）+ 電子署名 | $35/月〜 |
+| **Notion 納品Kit** | 各クライアントに共有するオンボーディングページテンプレート（手順書・進捗・成果物置き場） | 無料〜 |
+
+**週次ゴールデンルーティン（月曜スタート）**:
+
+| 曜日 | アクション | 所要時間 |
+|-----|----------|---------|
+| **月** | Clayでリスト100件生成 + メール配信 | 1〜2時間 |
+| **火〜水** | 返信対応 + PandaDoc提案書送付 | 随時 |
+| **木** | アポ商談（Deeptrue + Fathom録画） | 商談数×30分 |
+| **金** | 成約クライアントのキックオフ + 既存クライアントの月次レポート送付 | 2〜3時間 |
+| **週末** | Notion納品Kit更新 + 翌週リスト候補のディープリサーチ（転売検出・Tokushoho違反）| 1時間 |
+
 ---
 
 ## <a id="s10"></a>10. 🖥️ 運用・組織・実装ルール
@@ -1386,6 +1707,7 @@ await page.route('**/*', route => {
 | Dify | AIチャットボット（dify.appexx.me、locale別Bot・HP/Docs/Supabase学習） | https://dify.ai |
 | Unsplash | フリー人物写真素材（/ja・/en ビジュアル用） | https://unsplash.com |
 | Pexels | フリー写真・動画素材（ヒーロー動画背景等） | https://www.pexels.com |
+| StoreLeads | Shopify/BigCommerce/WooCommerce店舗DB（/en アウトリーチリスト用） | https://storeleads.app |
 
 <a id="s13-6"></a>
 
@@ -1416,3 +1738,21 @@ await page.route('**/*', route => {
 | Coolify Docs | セルフホストデプロイ設定 | https://coolify.io/docs |
 | Google JSON-LD | 構造化データリファレンス | https://developers.google.com/search/docs/appearance/structured-data |
 | Tailwind v4 Docs | @themeブロック・CSS変数リファレンス | https://tailwindcss.com/docs |
+
+<a id="s13-9"></a>
+
+#### /en 営業・英語対応ツール
+| ツール/サービス | 用途 | URL |
+|----------------|------|-----|
+| ElevenLabs | 音声合成・英語スクリプト読み上げ→シャドーイング練習（1週間英語集中ブートキャンプ） | https://elevenlabs.io |
+| Gemini Live | 英語会話AIロールプレイ（商談シミュレーション・発音練習） | https://gemini.google.com |
+| ELSA Speak | 英語発音スコアリングアプリ（頻出フレーズ仕上げ・当日前確認） | https://elsaspeak.com |
+| Deeptrue | 日本語↔英語リアルタイム通訳（AIアバター型・Zoom接続・ネイティブ品質） | https://deeptrue.ai |
+| VoicePing | リアルタイム字幕通訳（Zoom/Teams対応・聞き取り補助） | https://voiceping.io |
+| JotMe | 多言語リアルタイム文字起こし・翻訳（会議中の字幕表示） | https://jot.me |
+| Fathom | Zoom録画→AIサマリー→CRM自動連携（商談記録・Twenty CRM連携） | https://fathom.video |
+| tl;dv | 会議録画・AI要約・CRM連携（Fathom代替） | https://tldv.io |
+| PandaDoc | 提案書作成・電子署名・ページ別閲覧トラッキング（料金ページ滞在時間で即架電判定） | https://www.pandadoc.com |
+| Clay | アウトリーチリストの自動パーソナライズ（100件→5件デモ用メール文生成自動化） | https://www.clay.com |
+| Instantly | コールドメール大量配信・ドメイン評判分離（Smartlead代替・$37〜97/月） | https://instantly.ai |
+| StoreLeads | Shopify/BigCommerce/WooCommerce店舗DB（/en アウトリーチリスト用・[→ s9-5](#s9-5)詳細） | https://storeleads.app |
