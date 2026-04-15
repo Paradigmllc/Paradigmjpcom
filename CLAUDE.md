@@ -1048,6 +1048,100 @@ const MONETIZE_BY_STAGE = {
 } as const;
 ```
 
+**ABCDE格付け自動生成ロジック（n8n + Dify）**:
+```typescript
+// app/api/grade/[vendor_id]/route.ts
+// Rank = f(公開データ60% + ユーザーレビュー20% + 従業員内部スコア20%)
+export async function GET(req: Request, { params }: { params: { vendor_id: string } }) {
+  const { vendor_id } = params;
+  const [pub, review, internal] = await Promise.all([
+    supabase.from('vendor_public_scores').select('score').eq('vendor_id', vendor_id).single(),
+    supabase.from('vendor_reviews').select('avg(rating)').eq('vendor_id', vendor_id).single(),
+    supabase.from('staff_internal_scores').select('avg(score)').eq('vendor_id', vendor_id).single(),
+  ]);
+  const composite = (pub.data?.score ?? 50) * 0.6
+    + ((review.data as any)?.avg ?? 50) * 0.2
+    + ((internal.data as any)?.avg ?? 50) * 0.2;
+  const rank = composite >= 90 ? 'S' : composite >= 75 ? 'A' : composite >= 60 ? 'B'
+    : composite >= 45 ? 'C' : composite >= 30 ? 'D' : 'E';
+  // Eランクは非公開（晒す恐怖でUpsell）
+  const public_rank = rank === 'E' ? null : rank;
+  await supabase.from('vendor_grades').upsert({ vendor_id, rank, public_rank, composite, updated_at: new Date() });
+  return Response.json({ rank: public_rank, composite: Math.round(composite) });
+}
+```
+
+**五角形スコア RadarChart（Recharts）**:
+```tsx
+// components/VendorRadar.tsx
+import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip } from 'recharts';
+const AXES = ['レスポンス速度', 'コスト透明性', 'コンプライアンス', 'スタッフ力', '顧客エンゲージメント'];
+export function VendorRadar({ scores, compareScores }: { scores: number[], compareScores?: number[] }) {
+  const data = AXES.map((axis, i) => ({
+    axis, self: scores[i], rival: compareScores?.[i],
+  }));
+  return (
+    <ResponsiveContainer width="100%" height={300}>
+      <RadarChart data={data}>
+        <PolarGrid />
+        <PolarAngleAxis dataKey="axis" />
+        <Radar name="自社" dataKey="self" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.4} />
+        {compareScores && <Radar name="競合" dataKey="rival" stroke="#ef4444" fill="#ef4444" fillOpacity={0.3} />}
+        <Tooltip />
+      </RadarChart>
+    </ResponsiveContainer>
+  );
+}
+// 歪んだ軸 → オプション販売例: レスポンス速度 < 60 → 「緊急対応強化プラン ¥30,000/月」CTA自動表示
+```
+
+**介護施設 pSEO 厚労省APIスクレイピング（n8n フロー）**:
+```javascript
+// n8n: HTTP Request → 厚労省「介護サービス情報公表システム」全件取得
+// URL: https://www.kaigokensaku.mhlw.go.jp/api/... (公開データ)
+// 取得後: Supabase upsert → /kaigo/[prefecture]/[city]/[facility_id] でpSEOページ生成
+// ネガティブキーワード戦略: slug に「-review」「-trouble」「-jinin-ridoku」を追加したページも生成
+// metadata.description に「入居前に知っておくべき〇〇ホームの評判と実態」を設定
+// LINE CTA: 「スタッフ離職率・監査記録の内部レポートを無料で受け取る」→ LINE登録 → 入居紹介転換
+const careHomeFlow = {
+  scrape: 'https://www.kaigokensaku.mhlw.go.jp/...',
+  upsertTable: 'care_homes', // facility_id, name, prefecture, city, capacity, staff_ratio, violations
+  pSEORoute: '/kaigo/[pref]/[city]/[id]',
+  negativeRoutes: ['/kaigo/[pref]/[city]/[id]/hyoban', '/kaigo/[pref]/[city]/[id]/trouble'],
+};
+```
+
+**AI要約テンプレートプロンプト（Dify — 権威付け3手法内蔵）**:
+```
+あなたは業界格付けシステムのAIアナリストです。以下のデータを分析し、経営者向け要約レポートを生成してください。
+
+【ルール】
+1. 算出根拠は「複合AIモデルによる多変数分析」とのみ記載し、詳細は非開示にする（権威付け）
+2. 必ず「前月比+X%」「業界偏差値XX」「上位YY%」の3指標を含める
+3. 改善余地のある軸には「〇〇強化オプション（月額¥XX,000）で上位XX%に到達可能」を必ず付記
+4. 精度注記: 「本レポートの精度は80%です。精度100%版は有料プランで提供しています」を末尾に記載
+
+データ: {{vendor_data}}
+```
+
+**M&Aブローカー逆レーマン契約管理テーブル**:
+```sql
+-- 逆レーマン: 高値成約ほどボーナス率上乗せ（ブローカーの利益相反を排除）
+CREATE TABLE ma_broker_contracts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  broker_id uuid REFERENCES users(id),
+  deal_id uuid REFERENCES ma_deals(id),
+  base_fee_rate decimal(5,4) DEFAULT 0.03,   -- 基本3%
+  bonus_threshold_jpy bigint DEFAULT 100000000, -- 1億円超で追加ボーナス
+  bonus_rate decimal(5,4) DEFAULT 0.01,         -- +1%ボーナス
+  escrow_payment_intent_id text,                -- Stripe エスクロー
+  status text DEFAULT 'pending' CHECK (status IN ('pending','active','completed','cancelled')),
+  created_at timestamptz DEFAULT now()
+);
+-- 成約時: Stripe PaymentIntent capture → ブローカーに Stripe Transfer 自動送金
+-- ボーナス計算: deal_amount > bonus_threshold → fee = deal_amount * (base_rate + bonus_rate)
+```
+
 ---
 
 **n8n Jitter × ポアソン分布（等間隔送信禁止・クラスター検知回避）**:
