@@ -38,7 +38,7 @@
 | | | [s9-3 appexxインフラ共有接続](#s9-3) | |
 | | | [s9-4 SEO設定](#s9-4) | |
 | | | [s9-5 コールドアウトリーチ戦略](#s9-5) | /ja 日本SMB向け（補助金・ヴァンパイアエンジン） |
-| | | [s9-6 /en 海外SMBアウトリーチ戦略](#s9-6) | Japan Entry Package /en向け・Productized Service販売設計確定・コンタクト取得Tier表追加 |
+| | | [s9-6 /en 海外SMBアウトリーチ戦略](#s9-6) | Japan Entry Package /en向け・Productized Service販売設計確定・コンタクト取得Tier表追加・SMBポータル現実解+Apollo Exporter+D7+フォームURL2ステップ+Kompass+Wappalyzer3択+テクノグラフィクスDS |
 | ★★★★☆ | 10 | [運用・組織・実装ルール](#s10) | 2言語対応コーディング規約追加 |
 | | | [s10-1 コーディング規約](#s10-1) | |
 | | | [s10-2 管理ダッシュボード](#s10-2) | |
@@ -51,7 +51,7 @@
 | | | [s12-1 ドメイン一覧](#s12-1) | |
 | | | [s12-2 アカウント一覧](#s12-2) | |
 | | | [s12-3 商標・特許・ライセンス](#s12-3) | |
-| ★★★★☆ | 13 | [リソース一覧](#s13) | next-intl・StoreLeads・/en営業ツール・PandaDoc・Clay・Instantly追加 |
+| ★★★★☆ | 13 | [リソース一覧](#s13) | next-intl・StoreLeads・/en営業ツール・PandaDoc・Clay・Instantly追加・公的DB/OSSスクレイピング12ソース・SMBポータル・Kompass・Wappalyzer3択・テクノグラフィクスDS |
 | | | [s13-1 フロントエンド・フレームワーク](#s13-1) | |
 | | | [s13-2 UI・コンポーネント](#s13-2) | |
 | | | [s13-3 データベース・BaaS](#s13-3) | |
@@ -60,7 +60,7 @@
 | | | [s13-6 SEO・GEO](#s13-6) | |
 | | | [s13-7 法令・規制](#s13-7) | |
 | | | [s13-8 参考リンク・ドキュメント](#s13-8) | |
-| | | [s13-9 /en 営業・英語対応ツール](#s13-9) | ElevenLabs/Deeptrue/Fathom/ELSA/PandaDoc/Clay/Instantly追加+コンタクトDB19ツール |
+| | | [s13-9 /en 営業・英語対応ツール](#s13-9) | ElevenLabs/Deeptrue/Fathom/ELSA/PandaDoc/Clay/Instantly追加+コンタクトDB19ツール+公的DB/OSSスクレイピング+SMBポータル+Kompass+Wappalyzer3択+テクノグラフィクスDS |
 
 ⚠️ **要強化セクション**: 4 財務 / 6 Exit / 11 経費 / 12 ドメイン・アカウント
 
@@ -1579,6 +1579,112 @@ ROI = ($4,200 - $2,600) / ($4,500 setup + $300/month)
 | **金** | 成約クライアントのキックオフ + 既存クライアントの月次レポート送付 | 2〜3時間 |
 | **週末** | Notion納品Kit更新 + 翌週リスト候補のディープリサーチ（転売検出・Tokushoho違反）| 1時間 |
 
+#### フォームURL取得 2ステップフロー（ドメイン→コンタクトページ抽出）
+
+B2BリードポータルはドメインURLしか提供しない。メアド・電話番号・フォームURLを取得するには以下の2段階が必要:
+
+**Step 1**: Apollo.io / BIZMAPS / FUMA でドメイン一覧をCSV取得（ポータルが提供する唯一の無料情報）
+
+**Step 2**: Crawl4AI で各ドメインのコンタクトページを自動探索
+
+```python
+import asyncio
+from crawl4ai import AsyncWebCrawler
+
+contact_paths = [
+    '/contact', '/contact-us', '/inquiry',
+    '/about', '/get-in-touch', '/reach-us',
+    '/support', '/help', '/request'
+]
+
+async def extract_contact(domain: str):
+    async with AsyncWebCrawler() as crawler:
+        for path in contact_paths:
+            result = await crawler.arun(url=f"https://{domain}{path}")
+            if result.success:
+                # <form> action, mailto:, tel: を抽出
+                # → Supabase leads テーブルに contact_url / email / phone を保存
+                return parse_contact_info(result.html)
+    return None
+```
+
+#### フルアウトリーチパイプライン
+
+```
+Apollo.io（ドメイン取得・月10,000件無料）
+  → n8n（URLリストをバッチ処理・Jitter付き）
+    → Crawl4AI（コンタクトページ探索 + メアド/電話/フォームURL抽出）
+      → Supabase（leads テーブルに保存・重複排除）
+        → DeepSeek V3（Context Caching 90%OFF でパーソナライズ文生成）
+          → Listmonk（OSS・無制限メール一括送信）
+          または Playwright（フォーム自動入力・メアド非公開企業向け）
+```
+
+**Apollo Exporter 拡張機能（無料上限突破の現実解）**: [apolloexporter.scrapejob.net](https://apolloexporter.scrapejob.net) — Apollo.io の検索結果ページをChrome拡張でCSV化。Apollo 有料プランのCSV export（年120件制限）を迂回し、月最大10,000件の閲覧データをそのまま出力。Apollo 無料プランと組み合わせて「実質無料でCSV月1万件」が現実的な最大値
+
+**D7 Lead Finder（SMBポータル補完）**: Yelp/Trustpilot型のSMBディレクトリ。1検索1,200件・フィルタ豊富。CSV exportは有料（$25〜50/月）。無料プランは検索+プレビューのみ。「Apollo でドメインを取れない業種・地域」の補完として活用
+
+#### Kompass（EU製造業向け補完ツール）
+
+1944年スイス創業。70カ国以上・6,000万社以上を収録した世界最大級のBtoBディレクトリ。**基本閲覧は無料、CSV export は有料**（Enterprise契約が必要）。
+
+**Apollo との使い分け**:
+- Apollo: テック系・SaaS・D2C・英語圏SMBに強い
+- Kompass: 欧州製造業・卸売・工業（ドイツ/フランス/イタリア等）に強い。業種コード（SIC/NACE）で絞り込みが精緻
+
+**位置づけ**: 無料リスト取得ツールではなく、Apollo でカバーできないEU製造業・卸売セグメントへのリーチを補完する「Apollo補完ポータル」として位置づける
+
+#### Wappalyzer OSS 3択（テクノグラフィクス抽出）
+
+| ツール | 言語 | 特徴 | 推奨用途 |
+|-------|------|------|---------|
+| **webanalyze** | Go | CLI一発・並列20ワーカー・CSV出力・最速 | バルクスキャン（1万件〜）の第1段階 |
+| **wappalyzer-next** | Python | 最高精度・JSON出力・定期更新 | フラグ付きサイトの詳細確認（第2段階） |
+| **MassWappalyzer** | Node.js | Windows向け・GUI対応 | Windows環境での単発スキャン |
+
+**2段戦略（推奨）**: webanalyze でバルクスキャン → Shopify/WordPressフラグが立ったサイトのみ wappalyzer-next で精度確認。速度と精度を両立できる
+
+```bash
+# webanalyze（Go・バルク向け）
+go install -v github.com/rverton/webanalyze/cmd/webanalyze@latest
+webanalyze -update
+webanalyze -hosts urls.txt -output csv -worker 20 > results.csv
+grep -i "shopify" results.csv > shopify_sites.csv
+```
+
+```bash
+# wappalyzer-next（Python・精度確認向け）
+pip install wappalyzer
+wappalyzer -i flagged_urls.txt -t 10 -oJ results.json
+```
+
+#### テクノグラフィクスデータセット（無料・ゼロコスト起点）
+
+| データセット | 件数 | ライセンス | 取得方法 |
+|------------|------|----------|---------|
+| **leadita/tech-stack-datasets** | 500件/技術（403技術） | MIT | GitHub直DL |
+| **PDL free technographics** | 51M企業×403技術 | MIT（500件/技術制限） | PDL APIキー無料登録 |
+| **Kaggle「shopify domains」** | 465,000件 | CC | Kaggle Dataset |
+| **CommonCrawl WAT files** | 無制限 | Public Domain | S3直接DL |
+
+**ゼロコスト5万件パイプライン**:
+
+```
+Step 1 [ソース選定]  GLEIF全件CSV（215万社）または Companies House UK（500万社）をDL
+Step 2 [絞り込み]   業種コード（SIC/NACE）+ 国 + 従業員規模フィルタ → 対象5万件を抽出
+Step 3 [URL補完]    OpenCorporates API（100件/日無料）で公式URL付与
+Step 4 [コンタクト] Hunter.io（25件/月無料）+ Apollo.io（10,000件/月無料）でメアド補完
+Step 5 [送信]       Listmonk（OSS・無制限）でステップメール + n8n で開封追跡
+```
+
+| 公的DB | 件数 | 無料範囲 | URL |
+|--------|------|---------|-----|
+| GLEIF | 215万社 | 全件CSV無料DL | https://www.gleif.org/en/lei-data/gleif-concatenated-file |
+| Companies House UK | 500万社 | 全件CSV無料DL | https://find-and-update.company-information.service.gov.uk/bulk-download |
+| OpenCorporates API | 1.6億社 | 100件/日無料 | https://api.opencorporates.com |
+| EU Open Data Portal | 政府調達・助成DB | 無制限 | https://data.europa.eu |
+| Swiss Zefix | 全スイス企業 | 全件無料 | https://www.zefix.admin.ch |
+
 ---
 
 ## <a id="s10"></a>10. 🖥️ 運用・組織・実装ルール
@@ -1837,3 +1943,37 @@ ROI = ($4,200 - $2,600) / ($4,500 setup + $300/month)
 | IGLeads | Instagram投稿・フォロワーからメール収集・D2C/EC特化（トライアルあり・$49〜） | https://igleads.io |
 | LinkedIn + Crawl4AI | OSINTスクレイプ・プロフィール→コンタクト情報自動取得（完全無料） | https://crawl4ai.com |
 | CommonCrawl CDX API | ドメインのサブページ・コンタクトページURL取得（完全無料） | https://commoncrawl.org |
+| Google Maps Places API | 電話番号・住所・WebサイトURL取得（月$200無料枠） | https://developers.google.com/maps/documentation/places |
+
+**Wappalyzer OSS テクノグラフィクス（技術スタック判定・無料）**
+
+| ツール/サービス | 用途 | URL |
+|----------------|------|-----|
+| webanalyze | Go製CLIツール・並列20ワーカー・CSV出力・バルクスキャン（1万件〜）向け第1段階 | https://github.com/rverton/webanalyze |
+| wappalyzer-next | Python製・精度確認フェーズ向け・webanalyzeフラグサイトの詳細判定 | https://github.com/wappalyzer/wappalyzer |
+| MassWappalyzer | Node.js製・Windows環境向け・GUI操作可 | https://github.com/AliasIO/wappalyzer |
+
+**テクノグラフィクスデータセット（無料公開・ゼロコスト5万件）**
+
+| データセット | 規模 | ライセンス | URL |
+|------------|------|-----------|-----|
+| leadita/tech-stack-datasets | GitHub MIT・技術別500件サンプル | MIT | https://github.com/leadita/tech-stack-datasets |
+| PDL Free Technographics | 5,100万社×403技術・技術別500件無料 | MIT | https://www.peopledatalabs.com/technographics |
+| Kaggle "shopify domains" | 46.5万件ドメインリスト | Public | https://www.kaggle.com/datasets |
+| CommonCrawl WAT files | 無制限・Content-Typeヘッダー抽出 | Public Domain | https://commoncrawl.org/the-data/get-started |
+
+**公的DB / オープンデータ（大量リスト無料取得）**
+
+| DB / ソース | 規模 | 無料範囲 | URL |
+|------------|------|---------|-----|
+| GLEIF | 215万社（LEI全件CSV） | 全件無料 | https://www.gleif.org/en/lei-data/gleif-golden-copy |
+| Companies House UK | 500万社（全件CSV週次更新） | 全件無料 | https://www.gov.uk/get-information-about-a-company |
+| OpenCorporates API | 1.6億社 | 100件/日無料 | https://api.opencorporates.com |
+| EU Open Data Portal | EU企業公開データ | 全件無料 | https://data.europa.eu |
+| Swiss Zefix | スイス全企業 | 全件無料 | https://www.zefix.admin.ch |
+
+**グローバルBtoB補完ポータル（EU製造業・卸売向け）**
+
+| ツール/サービス | 用途 | URL |
+|----------------|------|-----|
+| Kompass | 1944年スイス創業・70+カ国・6,000万社DB。EU製造業・卸売・Apollo非カバー領域の補完用（閲覧は無料・CSV出力は有料）。Apollo補完ポジション。D7 Lead Finder（SMBポータル・1検索1,200件・CSV出力$25〜50/月）も参照 | https://www.kompass.com |
