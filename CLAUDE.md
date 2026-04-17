@@ -38,7 +38,7 @@
 | | | [s9-3 appexxインフラ共有接続](#s9-3) | |
 | | | [s9-4 SEO設定](#s9-4) | |
 | | | [s9-5 コールドアウトリーチ戦略](#s9-5) | /ja 日本SMB向け（補助金・ヴァンパイアエンジン） |
-| | | [s9-6 /en 海外SMBアウトリーチ戦略](#s9-6) | Japan Entry Package /en向け・Productized Service販売設計確定 |
+| | | [s9-6 /en 海外SMBアウトリーチ戦略](#s9-6) | Japan Entry Package /en向け・Productized Service販売設計確定・コンタクト取得Tier表追加 |
 | ★★★★☆ | 10 | [運用・組織・実装ルール](#s10) | 2言語対応コーディング規約追加 |
 | | | [s10-1 コーディング規約](#s10-1) | |
 | | | [s10-2 管理ダッシュボード](#s10-2) | |
@@ -60,7 +60,7 @@
 | | | [s13-6 SEO・GEO](#s13-6) | |
 | | | [s13-7 法令・規制](#s13-7) | |
 | | | [s13-8 参考リンク・ドキュメント](#s13-8) | |
-| | | [s13-9 /en 営業・英語対応ツール](#s13-9) | ElevenLabs/Deeptrue/Fathom/ELSA/PandaDoc/Clay/Instantly追加 |
+| | | [s13-9 /en 営業・英語対応ツール](#s13-9) | ElevenLabs/Deeptrue/Fathom/ELSA/PandaDoc/Clay/Instantly追加+コンタクトDB19ツール |
 
 ⚠️ **要強化セクション**: 4 財務 / 6 Exit / 11 経費 / 12 ドメイン・アカウント
 
@@ -1300,6 +1300,63 @@ await page.route('**/*', route => {
 | **C** | 展示会出展者リスト | Tokyo Game Show / Tokyo Motor Show / Foodex等のOfficial exhibitor PDFをパース → メールスクレイプ | 日本に既に来る意欲がある海外企業 |
 | **C** | StoreLeads | Shopify/WooCommerce月商$5K+・日本語版なし・国際送料設定 | [→ s9-5 海外EC 日本ローカライズ戦略](#s9-5)で詳細記載 |
 
+#### コンタクト情報取得ツール（Tier別・確定）
+
+> リードリスト構築（ターゲット企業の特定）→ s9-6 リードリスト構築表が担当。このセクションは**メールアドレス・電話番号等のコンタクト情報取得**フェーズのツール一覧。両者は同一パイプラインの異なるステップで重複ゼロ。
+
+**Tier S — 精度・コスパ最優先（メインスタック）**
+
+| ツール | 無料枠 | 有料 | 特徴 |
+|-------|-------|------|------|
+| [Hunter.io](https://hunter.io) | 25件/月 | $34/月〜 | ドメイン入力→全メアド一覧取得・Verify機能内蔵・最速 |
+| [Apollo.io](https://apollo.io) | 10,000メール/月 | $49/月〜 | メール+電話+LinkedIn+シーケンス一体型・最強コスパ |
+| [Snov.io](https://snov.io) | 50クレジット/月 | $30/月〜 | ドメイン検索+メール確認+ドリップキャンペーン機能 |
+| [RocketReach](https://rocketreach.co) | 5件/月 | $39/月〜 | LinkedIn/会社HP→メール・電話を直接取得。精度高い |
+
+**Tier A — 特定用途・補完ツール**
+
+| ツール | 無料枠 | 有料 | 特徴 |
+|-------|-------|------|------|
+| [Cognism](https://cognism.com) | なし | 要見積り | GDPR準拠データベース・EU/UK向け最強。電話番号精度◎ |
+| [Kaspr](https://kaspr.io) | 15メール+5電話/月 | $49/月〜 | LinkedIn拡張・リアルタイム電話番号取得。Cognism傘下 |
+| [Lusha](https://lusha.com) | 40クレジット/月 | $29/月〜 | Chrome拡張でLinkedIn上に直接表示。簡単操作 |
+| [Skrapp.io](https://skrapp.io) | 月50件 | $39/月〜 | LinkedIn Sales Navigator連携・バルクエクスポート対応 |
+| [Prospeo](https://prospeo.io) | 75件/月 | $49/月〜 | LinkedInプロフィールURL→メール取得API。n8n連携容易 |
+| [Crunchbase](https://crunchbase.com) | 7日トライアル | $49/月〜 | スタートアップ・資金調達企業DB。投資家・創業者特定に特化 |
+| [PhantomBuster](https://phantombuster.com) | 2時間/日 | $56/月〜 | LinkedIn/Instagram/Twitter等SNSからの自動スクレイプBot |
+
+**Tier B — ニッチ・補完用途**
+
+| ツール | 無料枠 | 有料 | 特徴 |
+|-------|-------|------|------|
+| [Wiza](https://wiza.co) | 20メール+5電話/月 | $83/月〜 | LinkedIn Sales Navigator→CSV一括エクスポート特化 |
+| [FindThatLead](https://findthatlead.com) | 50件/月 | $49/月〜 | ドメイン→メール取得。スペイン語圏（EU中小企業）に強い |
+| [Dealfront/Echobot](https://dealfront.com) | デモのみ | €165/月〜 | DACH地域（独・墺・瑞）特化・GDPR準拠・電話番号精度最高 |
+| [Ampliz](https://ampliz.com) | 月10件 | $50/月〜 | アジア太平洋・中東・アフリカ地域特化。グローバル展開時に追加 |
+| [ContactOut](https://contactout.com) | Gmail拡張無料 | $29/月〜 | GitHub/LinkedIn→個人メール取得。エンジニア・開発者特定に特化 |
+| [IGLeads](https://igleads.io) | トライアルあり | $49/月（無制限） | Instagram投稿・フォロワーからメール収集。D2C・EC特化 |
+
+**OSINT自前構築（完全無料・n8n自動化推奨）**
+
+| 手法 | コスト | 取得情報 | 実装難易度 |
+|-----|-------|---------|---------|
+| LinkedIn + Crawl4AI | 完全無料 | プロフィールURL・名前・役職・会社 | ★★☆（Python要） |
+| CommonCrawl CDX API | 完全無料 | ドメインのサブページ・コンタクトページURL | ★★★（API知識要） |
+| Google Maps Places API | $200/月無料枠 | 電話番号・住所・Webサイト・営業時間 | ★☆☆（APIキーのみ） |
+| CT Log / crt.sh | 完全無料 | サブドメイン→サービス特定→担当者推定 | ★★★（技術知識要） |
+| Wappalyzer API | 月50件無料 | 技術スタック→担当エンジニア特定 | ★☆☆（APIキーのみ） |
+
+**推奨スタック（地域別）**
+
+| ターゲット地域 | メインツール | 補完ツール | 理由 |
+|-------------|-----------|---------|------|
+| 🇺🇸 US / 🇦🇺 AU | Apollo.io | Hunter.io | 無料枠が最大・精度高い・Shopify/D2C企業DB豊富 |
+| 🇬🇧 UK / 🇪🇺 EU | Cognism | Kaspr | **GDPR Legitimate Interest準拠データのみ**使用必須 |
+| 🇸🇬 SG / 🇦🇪 UAE | RocketReach | Ampliz | アジア・中東企業のLinkedIn連絡先取得精度が高い |
+| 🇸🇪 SE / 🇩🇰 DK / 🇩🇪 DE | Cognism / Dealfront | — | DACH/北欧はGDPR厳格・現地DB必須 |
+
+> ⚠️ **GDPR注意**: EU/UK向けコールドメール送信は「正当な利益（Legitimate Interest）」要件を満たす設計が必要。Cognism・Dealfrontは準拠データを保証。Apollo.io等のUS系ツールをEU企業に使う場合はLI根拠文書を整備すること。
+
 #### 英語コールドメール 4ステップ構成
 
 ```
@@ -1756,3 +1813,27 @@ ROI = ($4,200 - $2,600) / ($4,500 setup + $300/month)
 | Clay | アウトリーチリストの自動パーソナライズ（100件→5件デモ用メール文生成自動化） | https://www.clay.com |
 | Instantly | コールドメール大量配信・ドメイン評判分離（Smartlead代替・$37〜97/月） | https://instantly.ai |
 | StoreLeads | Shopify/BigCommerce/WooCommerce店舗DB（/en アウトリーチリスト用・[→ s9-5](#s9-5)詳細） | https://storeleads.app |
+
+**コンタクトDB・リード取得**（メールアドレス・電話番号取得フェーズ・[→ s9-6 コンタクト情報取得ツール](#s9-6)詳細）
+
+| ツール/サービス | 用途 | URL |
+|----------------|------|-----|
+| Hunter.io | ドメイン→メアド一覧取得・Verify内蔵（無料25件/月・$34〜） | https://hunter.io |
+| Apollo.io | メール+電話+LinkedIn+シーケンス一体型・最強コスパ（無料10,000メール/月・$49〜） | https://apollo.io |
+| Snov.io | ドメイン検索+メール確認+ドリップキャンペーン（無料50クレジット/月・$30〜） | https://snov.io |
+| RocketReach | LinkedIn/会社HP→メール・電話直接取得・精度高い（無料5件/月・$39〜） | https://rocketreach.co |
+| Cognism | GDPR準拠データベース・EU/UK向け最強・電話番号精度◎（要見積り） | https://cognism.com |
+| Kaspr | LinkedIn拡張・リアルタイム電話番号取得・Cognism傘下（無料15メール+5電話/月・$49〜） | https://kaspr.io |
+| Lusha | Chrome拡張でLinkedIn上に直接表示・簡単操作（無料40クレジット/月・$29〜） | https://lusha.com |
+| Skrapp.io | LinkedIn Sales Navigator連携・バルクエクスポート（月50件無料・$39〜） | https://skrapp.io |
+| Prospeo | LinkedInプロフィールURL→メール取得API・n8n連携容易（75件/月無料・$49〜） | https://prospeo.io |
+| Crunchbase | スタートアップ・資金調達企業DB・投資家/創業者特定（7日トライアル・$49〜） | https://crunchbase.com |
+| PhantomBuster | LinkedIn/Instagram/Twitter等SNS自動スクレイプBot（2時間/日無料・$56〜） | https://phantombuster.com |
+| Wiza | LinkedIn Sales Navigator→CSV一括エクスポート特化（20メール+5電話/月無料・$83〜） | https://wiza.co |
+| FindThatLead | ドメイン→メール取得・スペイン語圏EU中小企業に強い（50件/月無料・$49〜） | https://findthatlead.com |
+| Dealfront/Echobot | DACH地域（独・墺・瑞）特化・GDPR準拠（デモのみ・€165〜） | https://dealfront.com |
+| Ampliz | アジア太平洋・中東・アフリカ地域特化（月10件無料・$50〜） | https://ampliz.com |
+| ContactOut | GitHub/LinkedIn→個人メール取得・エンジニア/開発者特定（Gmail拡張無料・$29〜） | https://contactout.com |
+| IGLeads | Instagram投稿・フォロワーからメール収集・D2C/EC特化（トライアルあり・$49〜） | https://igleads.io |
+| LinkedIn + Crawl4AI | OSINTスクレイプ・プロフィール→コンタクト情報自動取得（完全無料） | https://crawl4ai.com |
+| CommonCrawl CDX API | ドメインのサブページ・コンタクトページURL取得（完全無料） | https://commoncrawl.org |
