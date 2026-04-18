@@ -1,0 +1,169 @@
+<!-- Preview: https://htmlpreview.github.io/?https://github.com/Paradigmllc/Paradigmjpcom/blob/main/docs/artifacts/free_technographics_kaggle_httparchive.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>無料テクノグラフィクス取得：Kaggle × HTTP Archive BigQuery</title>
+<style>
+  body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 24px; }
+  h1 { color: #38bdf8; font-size: 1.4rem; border-bottom: 2px solid #38bdf8; padding-bottom: 8px; }
+  h2 { color: #818cf8; font-size: 1.1rem; margin-top: 28px; }
+  h3 { color: #34d399; font-size: 0.95rem; margin-top: 20px; }
+  .card { background: #1e293b; border-radius: 10px; padding: 18px; margin: 14px 0; border-left: 4px solid #38bdf8; }
+  .card.green { border-left-color: #34d399; }
+  .card.purple { border-left-color: #818cf8; }
+  .card.amber { border-left-color: #f59e0b; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.88rem; }
+  th { background: #334155; color: #94a3b8; padding: 8px 10px; text-align: left; }
+  td { padding: 8px 10px; border-bottom: 1px solid #334155; vertical-align: top; }
+  tr:hover td { background: #1e293b; }
+  code { background: #0f172a; color: #34d399; padding: 2px 6px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.85rem; }
+  pre { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 14px; overflow-x: auto; font-size: 0.82rem; line-height: 1.6; color: #7dd3fc; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; margin-left: 6px; }
+  .badge.free { background: #064e3b; color: #34d399; }
+  .badge.paid { background: #451a03; color: #fb923c; }
+  .badge.best { background: #1e1b4b; color: #818cf8; }
+  .flow { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 14px; margin: 12px 0; font-family: monospace; font-size: 0.85rem; line-height: 2; }
+  .arrow { color: #38bdf8; }
+  .highlight { background: #1a2744; border: 1px solid #38bdf8; border-radius: 6px; padding: 10px 14px; margin: 10px 0; }
+  .limit { background: #1c1010; border: 1px solid #7f1d1d; border-radius: 6px; padding: 10px 14px; margin: 10px 0; color: #fca5a5; }
+</style>
+</head>
+<body>
+
+<h1>🔍 無料テクノグラフィクス取得：Kaggle × HTTP Archive BigQuery</h1>
+<p style="color:#64748b;font-size:0.85rem;">CommonCrawl処理済みデータを活用して、コストゼロで技術スタック別ドメインリストを大量取得する</p>
+
+<!-- ======= PART 1: Kaggle Shopify ======= -->
+<h2>① Kaggle Shopify Domain List — 465,000件 <span class="badge free">完全無料</span></h2>
+
+<div class="card">
+  <p>CommonCrawl（全Web 3TB超）を誰かが既に処理して、<strong>Shopifyを使っているドメインだけを抽出したリストを無料公開。</strong></p>
+
+  <div class="flow">
+    CommonCrawl（全Web 3TB） <span class="arrow">↓</span> 誰かが処理済み<br>
+    Shopifyドメインリスト 465,000件 <span class="arrow">↓</span> 無料ダウンロード<br>
+    Kaggle で公開中 → CSV即ダウンロード可
+  </div>
+
+  <p><strong>URL:</strong> <code>https://kaggle.com/code/alighafoori/shopify2024</code></p>
+  <p>GoogleスプレッドシートでもCSV一括ダウンロード可。アカウント登録のみで即取得。</p>
+</div>
+
+<h3>完全パイプライン（無料・5万件規模）</h3>
+
+<pre>
+# Step 1: Kaggle からCSVダウンロード（465,000件）
+# https://kaggle.com/code/alighafoori/shopify2024
+
+# Step 2: 国フィルタ（TLDで判定）
+grep "\.co\.uk$" shopify_domains.csv > uk_shopify.csv    # 英国
+grep "\.com\.au$" shopify_domains.csv > au_shopify.csv   # 豪州
+grep "\.ae$"      shopify_domains.csv > ae_shopify.csv   # UAE
+grep "\.de$"      shopify_domains.csv > de_shopify.csv   # ドイツ
+grep "\.com$"     shopify_domains.csv > us_shopify.csv   # 主に米国
+
+# Step 3: webanalyze で技術詳細確認
+webanalyze -hosts uk_shopify.csv -output csv -worker 20
+
+# Step 4: Hunter.io でメール補完
+# ドメインリスト → Hunter API → メールアドレス取得
+
+# Step 5: Crawl4AI でフォームURL抽出
+# contactページをクロール → /contact, /contact-us, /inquiry
+</pre>
+
+<table>
+  <tr><th>軸</th><th>内容</th><th>実現可否</th></tr>
+  <tr><td>Shopify使用</td><td>465,000件確定</td><td>✅ 完全無料</td></tr>
+  <tr><td>国指定</td><td>TLDフィルタで判定</td><td>✅ 完全無料</td></tr>
+  <tr><td>業種・従業員規模</td><td>このリストでは取れない</td><td>❌ 別途補完必要</td></tr>
+  <tr><td>メールアドレス</td><td>Hunter.io等で補完</td><td>△ 別途ツール要</td></tr>
+</table>
+
+<div class="limit">
+  <strong>⚠️ 限界:</strong> 業種・従業員規模はここでは取れない。2024年時点のスナップショットなので一部古い。ただし「Shopify使用 × 国指定」の2軸は完全無料で5万件規模で実現できる。
+</div>
+
+<!-- ======= PART 2: Kaggle 他技術スタック ======= -->
+<h2>② Kaggle 他技術スタック — 既処理リストの実態</h2>
+
+<div class="card amber">
+  <p>Kaggle検索結果、技術スタック別の既処理ドメインリストは<strong>Shopify版ほど充実していない。</strong></p>
+</div>
+
+<table>
+  <tr><th>データセット</th><th>URL</th><th>内容</th><th>評価</th></tr>
+  <tr><td>Shopify domains（処理済み）</td><td><code>kaggle.com/code/alighafoori/shopify2024</code></td><td>465,000件</td><td>✅ 最良</td></tr>
+  <tr><td>46M domains（CommonCrawl）</td><td><code>kaggle.com/datasets/bpmtips/46-million-domain-names-with-size-common-crawl/data</code></td><td>全ドメイン・技術分類なし</td><td>△ 要処理</td></tr>
+  <tr><td>Random CC domains 2021</td><td><code>kaggle.com/datasets/harshsinghal/random-sample-of-common-crawl-domains-from-2021</code></td><td>サンプルのみ</td><td>❌ 用途限定</td></tr>
+  <tr><td>Global eCommerce sites</td><td><code>kaggle.com/datasets/wiredwith/websites-list</code></td><td>ECサイト全般</td><td>△ 要確認</td></tr>
+</table>
+
+<div class="highlight">
+  <strong>結論：</strong> WordPress・WooCommerce・Squarespace・Webflowの<strong>処理済みドメインリストはKaggleには存在しない。</strong><br>
+  → これらはHTTP Archive BigQueryで取得するのが正解。
+</div>
+
+<!-- ======= PART 3: HTTP Archive BigQuery ======= -->
+<h2>③ HTTP Archive BigQuery — 本命 <span class="badge best">最強</span></h2>
+
+<div class="card green">
+  <p>HTTP ArchiveはWappalyzerのフォーク版で技術検出を行っており、<strong>月次クロールデータをBigQueryで公開。</strong>実質的な「PublicWWWの無料OSS版」。月1TBまで無料なのでこのクエリは実質無料。</p>
+</div>
+
+<pre style="color:#86efac;">
+-- WordPress使用サイト一覧を無料取得
+SELECT
+  url,
+  technologies
+FROM `httparchive.all.pages`
+WHERE date = '2024-06-01'
+  AND LOWER(technologies) LIKE '%wordpress%'
+LIMIT 50000
+</pre>
+
+<table>
+  <tr><th>技術</th><th>BigQueryクエリ例</th><th>用途</th></tr>
+  <tr><td>WordPress</td><td><code>LIKE '%wordpress%'</code></td><td>WP案件・ブログリニューアル</td></tr>
+  <tr><td>WooCommerce</td><td><code>LIKE '%woocommerce%'</code></td><td>EC移行ターゲット</td></tr>
+  <tr><td>Shopify</td><td><code>LIKE '%shopify%'</code></td><td>ShopifyストアDB（Kaggleと相互補完）</td></tr>
+  <tr><td>Squarespace</td><td><code>LIKE '%squarespace%'</code></td><td>デザイン重視サイト</td></tr>
+  <tr><td>Webflow</td><td><code>LIKE '%webflow%'</code></td><td>デザイナー系ターゲット</td></tr>
+  <tr><td>Wix</td><td><code>LIKE '%wix%'</code></td><td>中小企業・個人事業主</td></tr>
+</table>
+
+<div class="highlight">
+  <strong>特徴:</strong>
+  <ul>
+    <li>月次更新（最新データ）</li>
+    <li>Wappalyzer判定済み（精度高）</li>
+    <li>TLDで国別絞り込み可能</li>
+    <li>月1TBまで完全無料（Google BigQueryサンドボックス）</li>
+    <li>全技術スタック対応（WordPress/WooCommerce/Squarespace/Webflow/Wix等）</li>
+  </ul>
+</div>
+
+<!-- ======= 比較まとめ ======= -->
+<h2>④ 取得戦略 まとめ</h2>
+
+<table>
+  <tr><th>ターゲット技術</th><th>最適ソース</th><th>コスト</th><th>件数規模</th></tr>
+  <tr><td>Shopify</td><td>Kaggle（alighafoori/shopify2024）</td><td>無料</td><td>465,000件</td></tr>
+  <tr><td>WordPress / WooCommerce</td><td>HTTP Archive BigQuery</td><td>無料（月1TB）</td><td>数十万〜</td></tr>
+  <tr><td>Squarespace / Webflow / Wix</td><td>HTTP Archive BigQuery</td><td>無料（月1TB）</td><td>数十万〜</td></tr>
+  <tr><td>全技術・最新</td><td>HTTP Archive BigQuery</td><td>無料（月1TB）</td><td>最大数百万</td></tr>
+  <tr><td>国別絞り込み</td><td>TLDフィルタ（grep）</td><td>無料</td><td>技術×国の掛け合わせ</td></tr>
+</table>
+
+<div class="card green">
+  <strong>🏆 結論：HTTP Archive BigQuery が最強の答え</strong><br><br>
+  Kaggleで探すより、HTTP ArchiveのBigQueryを直接叩く方が圧倒的に確実・高品質・無料。<br>
+  月次更新・全技術対応・国別TLD絞り込み可・Wappalyzer判定済み・月1TB無料。<br><br>
+  <strong>推奨コンビ:</strong> Kaggle Shopify（即戦力・465K件）× HTTP Archive BigQuery（全技術・月次最新）
+</div>
+
+<p style="color:#475569;font-size:0.75rem;margin-top:30px;">Generated: 2026-04-18 | Paradigm合同会社 Sales Intelligence</p>
+</body>
+</html>

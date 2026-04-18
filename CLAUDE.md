@@ -773,9 +773,18 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 **日本SMBリスト構築（Apollo代替・無料）**:
 - BIZMAPS（月100件無料・170万社・タグ検索「SaaS導入積極的/代替わりしたばかり」）
 - FUMA（160万社・無料・Pythonスクレイピング可）
+- **e-Gov 法人番号API**（国税庁・全国300万社・業種コード×地域×設立年フィルタ・完全無料・APIキー不要）
 - Apify Google Maps Scraper（月$5分無料・「横浜市 歯科」→店舗URL/電話/評価を一括CSV）
 - Indeed/求人ボックス スクレイピング（求人中→予算あり×人手不足シグナル→「事務員採用より弊社AIが月5万で自動化」フック）
 - お問い合わせフォームURL自動検知（Python: `contact`/`inquiry`/「お問い合わせ」リンクをURLリストからスキャン→フォーム一覧を生成）
+
+**数万件スケール設計（月1,200円・完全自前構築）**:
+- **Layer 1 リスト取得**: FUMA（160万社）+ 法人番号API（300万社）→ Supabaseに保存（無料）
+- **Layer 2 技術スタック検出**: HTTP Archive BigQuery（月1TB無料）→ `httparchive.technologies.*` テーブル × `.co.jp`ドメイン絞り込み → 古いWordPress/競合SaaS利用企業を一括抽出（Wappalyzerスキャンコストゼロ）
+- **Layer 3 JOIN**: FUMA会社名 × HTTP Archiveドメインを名寄せ（DeepSeek V3・Context Caching）→「連絡先+技術スタック」完備リスト
+- **Layer 4 補完**: HTTP Archive未収録企業のみCrawl4AI（Hetzner VPS 月700円）でフォームURL取得
+- **HPなし企業の扱い**: Lighthouseスキャン不要 → 「デジタル不在の機会損失（月○人が競合へ流出）」訴求に切替 → **Web構築提案の最有望ターゲット**
+- **総コスト**: Hetzner VPS 700円 + DeepSeek V3 500円 = **月1,200円で数万件処理**
 
 **営業資料3点セット（DocSend / Notion / HP）**:
 - **診断レポート（矛）**: 機会損失PDF自動生成 / Notion共有URL（Loom動画+FigmaプロトタイプDラフ埋め込み可）
@@ -802,7 +811,7 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 
 | フェーズ | 処理 | ツール | 出力 |
 |---------|------|-------|------|
-| ①抽出 | リスト収集 | FUMA/BIZMAPS/Apify Maps | 業種×地域CSV |
+| ①抽出 | リスト収集 | 法人番号API + FUMA + HTTP Archive BigQuery（月1TB無料）/ BIZMAPS / Apify Maps | 連絡先+技術スタック完備CSV |
 | ②診断 | 速度・技術・競合一括スキャン | Lighthouse CI / WhatWeb / DataForSEO / Tavily | スコアJSON |
 | ③生成 | パーソナライズPDF/スライド生成 | DeepSeek V3（Context Caching）+ Slidev or HTML+Playwright | 提案資料URL |
 | ④配信 | メール/フォーム一斉送信+開封追跡 | Instantly.ai / Gmail API + DocSend | 開封イベント |
@@ -810,6 +819,7 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 | ⑥錬成 | 商談資料自動更新・Slack通知・電話 | DeepSeek + Notion MCP + Twilio / n8n | 確勝クロージング資料 |
 
 **月総コスト目安**: 基本7,500〜18,000円 + メール配信5,000〜10,000円 + プロキシ2,000〜5,000円 = **総計15,000〜33,000円/月**（Apollo.io代替で完全自前構築の場合）
+**最安スケール設計（数万件）**: 法人番号API（無料）+ FUMA（無料）+ HTTP Archive BigQuery（無料）+ Hetzner VPS（700円）+ DeepSeek V3（500円）= **月1,200円**（Tavily/SerpApi/Firecrawl不要）
 
 ---
 

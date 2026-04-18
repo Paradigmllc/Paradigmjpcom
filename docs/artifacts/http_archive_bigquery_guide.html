@@ -1,0 +1,115 @@
+<!-- Preview: https://htmlpreview.github.io/?https://github.com/Paradigmllc/Paradigmjpcom/blob/main/docs/artifacts/http_archive_bigquery_guide.html -->
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.wrap{padding:1rem 0}
+.card{background:var(--color-background-primary);border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:12px}
+.card-title{font-size:14px;font-weight:500;color:var(--color-text-primary);margin-bottom:10px}
+.row{display:flex;gap:8px;margin-bottom:6px;align-items:baseline}
+.label{font-size:12px;color:var(--color-text-secondary);min-width:90px;flex-shrink:0}
+.val{font-size:13px;color:var(--color-text-primary);line-height:1.5}
+.url{font-size:12px;color:var(--color-text-info);cursor:pointer;word-break:break-all}
+.url:hover{text-decoration:underline}
+.badge{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:4px;white-space:nowrap;margin-right:4px}
+.free{background:#EAF3DE;color:#27500A}
+.warn{background:#FAEEDA;color:#633806}
+.info{background:#E6F1FB;color:#0C447C}
+.divider{border:none;border-top:.5px solid var(--color-border-tertiary);margin:10px 0}
+pre{background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px;font-size:12px;font-family:var(--font-mono);overflow-x:auto;line-height:1.6;color:var(--color-text-primary)}
+.kw{color:#185FA5}
+.str{color:#3B6D11}
+.cm{color:var(--color-text-tertiary)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;color:var(--color-text-secondary);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding:6px 8px;border-bottom:.5px solid var(--color-border-tertiary)}
+td{padding:7px 8px;border-bottom:.5px solid var(--color-border-tertiary);color:var(--color-text-primary);vertical-align:top}
+tr:last-child td{border-bottom:none}
+</style>
+<div class="wrap">
+
+<div class="card">
+  <div class="card-title">概要</div>
+  <div class="row"><div class="label">運営</div><div class="val">HTTP Archive（非営利・オープンソース）</div></div>
+  <div class="row"><div class="label">データ</div><div class="val">毎月100万件以上のWebサイトをクロール。2010年から履歴保持</div></div>
+  <div class="row"><div class="label">技術判定</div><div class="val">Wappalyzerのフォーク版で全サイトの技術スタックを自動判定済み</div></div>
+  <div class="row"><div class="label">公開先</div><div class="val">Google BigQuery パブリックデータセット（誰でも無料アクセス可）</div></div>
+  <div class="row"><div class="label">コスト</div><div class="val"><span class="badge free">月1TB無料</span><span class="badge warn">超過は$5/TB</span></div></div>
+</div>
+
+<div class="card">
+  <div class="card-title">主要URL</div>
+  <div class="row"><div class="label">公式サイト</div><div class="url" onclick="openLink('https://httparchive.org')">httparchive.org</div></div>
+  <div class="row"><div class="label">入門ガイド</div><div class="url" onclick="openLink('https://har.fyi/guides/getting-started/')">har.fyi/guides/getting-started</div></div>
+  <div class="row"><div class="label">BigQuery console</div><div class="url" onclick="openLink('https://console.cloud.google.com/bigquery')">console.cloud.google.com/bigquery</div></div>
+  <div class="row"><div class="label">テーブル仕様</div><div class="url" onclick="openLink('https://har.fyi/reference/tables/pages/')">har.fyi/reference/tables/pages</div></div>
+  <div class="row"><div class="label">コスト節約ガイド</div><div class="url" onclick="openLink('https://har.fyi/guides/minimizing-costs/')">har.fyi/guides/minimizing-costs</div></div>
+</div>
+
+<div class="card">
+  <div class="card-title">テーブル構造</div>
+  <table>
+    <thead><tr><th>テーブル名</th><th>内容</th><th>月次サイズ</th><th>履歴</th></tr></thead>
+    <tbody>
+      <tr><td><code>httparchive.crawl.pages</code></td><td>各URLのページ情報・技術スタック</td><td>~30TB</td><td>2011年〜</td></tr>
+      <tr><td><code>httparchive.crawl.requests</code></td><td>各リソースのリクエスト情報</td><td>~199TB</td><td>2011年〜</td></tr>
+      <tr><td><code>httparchive.all.pages</code></td><td>デスクトップ+モバイル統合版（推奨）</td><td>大</td><td>最新〜</td></tr>
+    </tbody>
+  </table>
+  <hr class="divider">
+  <div style="font-size:12px;color:var(--color-text-secondary);margin-top:6px">technologiesカラム：JSON配列で技術名・カテゴリ・バージョンが格納されている</div>
+</div>
+
+<div class="card">
+  <div class="card-title">Shopify使用サイト抽出クエリ（月1TB無料枠内）</div>
+  <pre><span class="kw">SELECT</span>
+  url,
+  <span class="cm">-- 国判定（TLDから）</span>
+  REGEXP_EXTRACT(url, <span class="str">r'\.(co\.uk|com\.au|de|fr|ae)/'</span>) <span class="kw">AS</span> country_tld,
+  tech.technology <span class="kw">AS</span> tech_name
+<span class="kw">FROM</span>
+  <span class="str">`httparchive.all.pages`</span>,
+  UNNEST(technologies) <span class="kw">AS</span> tech
+<span class="kw">WHERE</span>
+  date = <span class="str">'2024-06-01'</span>
+  <span class="kw">AND</span> tech.technology = <span class="str">'Shopify'</span>
+<span class="kw">LIMIT</span> 50000</pre>
+</div>
+
+<div class="card">
+  <div class="card-title">対応している主な技術（抽出可能）</div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
+    <span class="badge info">Shopify</span>
+    <span class="badge info">WordPress</span>
+    <span class="badge info">WooCommerce</span>
+    <span class="badge info">Squarespace</span>
+    <span class="badge info">Webflow</span>
+    <span class="badge info">Wix</span>
+    <span class="badge info">Magento</span>
+    <span class="badge info">BigCommerce</span>
+    <span class="badge info">React</span>
+    <span class="badge info">Next.js</span>
+    <span class="badge info">Google Analytics</span>
+    <span class="badge info">HubSpot</span>
+    <span class="badge info">Stripe</span>
+    <span class="badge info">Cloudflare</span>
+    <span class="badge info">400+ 技術</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">セットアップ手順（5ステップ）</div>
+  <div class="row"><div class="label" style="min-width:32px">Step 1</div><div class="val">Googleアカウントで <span class="url" onclick="openLink('https://console.cloud.google.com/bigquery')">console.cloud.google.com/bigquery</span> にアクセス</div></div>
+  <div class="row"><div class="label" style="min-width:32px">Step 2</div><div class="val">新規プロジェクトを作成（無料）</div></div>
+  <div class="row"><div class="label" style="min-width:32px">Step 3</div><div class="val">左サイドバー「+ Add」→「Star a project by name」→ <code>httparchive</code> と入力</div></div>
+  <div class="row"><div class="label" style="min-width:32px">Step 4</div><div class="val">上記のSQLをエディタに貼り付けてRUN</div></div>
+  <div class="row"><div class="label" style="min-width:32px">Step 5</div><div class="val">結果をCSVでエクスポート（最大1GB無料）</div></div>
+</div>
+
+<div class="card">
+  <div class="card-title">注意点</div>
+  <div class="row"><div class="label">クロール対象</div><div class="val">上位100万サイト（CrUXレポート基準）。零細SMBは含まれない場合あり</div></div>
+  <div class="row"><div class="label">更新頻度</div><div class="val">月次（毎月新しいdateが追加される）</div></div>
+  <div class="row"><div class="label">コスト注意</div><div class="val">フルスキャンは30TB処理 = $150。必ずLIMITと日付絞り込みを入れること</div></div>
+  <div class="row"><div class="label">業種・規模</div><div class="val">技術と国TLDは取れるが、業種・従業員規模は含まれない</div></div>
+</div>
+
+</div>

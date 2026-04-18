@@ -1,0 +1,140 @@
+<!-- Preview: https://htmlpreview.github.io/?https://github.com/Paradigmllc/Paradigmjpcom/blob/main/docs/artifacts/crawl4ai_contact_form_detection.html -->
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.wrap{padding:1rem 0}
+.card{background:var(--color-background-primary);border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:12px}
+.card-title{font-size:14px;font-weight:500;color:var(--color-text-primary);margin-bottom:10px}
+.row{display:flex;gap:8px;margin-bottom:6px;align-items:baseline}
+.label{font-size:12px;color:var(--color-text-secondary);min-width:100px;flex-shrink:0}
+.val{font-size:13px;color:var(--color-text-primary);line-height:1.5}
+.badge{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:4px;white-space:nowrap;margin-right:4px}
+.good{background:#EAF3DE;color:#27500A}
+.warn{background:#FAEEDA;color:#633806}
+.bad{background:#FDECEA;color:#7C1D1D}
+.divider{border:none;border-top:.5px solid var(--color-border-tertiary);margin:10px 0}
+pre{background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px;font-size:12px;font-family:var(--font-mono);overflow-x:auto;line-height:1.6;color:var(--color-text-primary)}
+.kw{color:#185FA5}
+.fn{color:#7E3A9B}
+.str{color:#3B6D11}
+.cm{color:var(--color-text-tertiary)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;color:var(--color-text-secondary);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding:6px 8px;border-bottom:.5px solid var(--color-border-tertiary)}
+td{padding:7px 8px;border-bottom:.5px solid var(--color-border-tertiary);color:var(--color-text-primary);vertical-align:top}
+tr:last-child td{border-bottom:none}
+</style>
+<div class="wrap">
+
+<div class="card">
+  <div class="card-title">Crawl4AI — コンタクトフォーム自動検出</div>
+  <div class="row"><div class="label">ライブラリ</div><div class="val">Crawl4AI（Python・Playwright バックエンド・非同期クローラー）</div></div>
+  <div class="row"><div class="label">主な用途</div><div class="val">リストのドメインから問い合わせフォームURLを自動抽出→Playwright自動送信へのパイプライン</div></div>
+  <div class="row"><div class="label">コスト</div><div class="val"><span class="badge good">完全無料（OSS）</span><span class="badge warn">サーバー費用のみ</span></div></div>
+  <div class="row"><div class="label">インストール</div><div class="val"><code>pip install crawl4ai && playwright install chromium</code></div></div>
+</div>
+
+<div class="card">
+  <div class="card-title">検索候補パス（優先順）</div>
+  <pre><span class="cm"># コンタクトページとして存在率の高いパス（上から順に試行）</span>
+contact_paths = [
+    <span class="str">'/contact'</span>,
+    <span class="str">'/contact-us'</span>,
+    <span class="str">'/inquiry'</span>,
+    <span class="str">'/get-in-touch'</span>,
+    <span class="str">'/reach-us'</span>,
+    <span class="str">'/support'</span>,
+    <span class="str">'/about'</span>,
+    <span class="str">'/hello'</span>,
+    <span class="str">'/request-demo'</span>,
+]</pre>
+</div>
+
+<div class="card">
+  <div class="card-title">基本実装 — フォームURL検出</div>
+  <pre><span class="kw">import</span> asyncio
+<span class="kw">from</span> crawl4ai <span class="kw">import</span> AsyncWebCrawler
+
+<span class="kw">async def</span> <span class="fn">find_contact_form</span>(url: <span class="fn">str</span>):
+    <span class="kw">async with</span> AsyncWebCrawler() <span class="kw">as</span> crawler:
+        <span class="kw">for</span> path <span class="kw">in</span> contact_paths:
+            result = <span class="kw">await</span> crawler.arun(url=url + path)
+            <span class="kw">if</span> result.success:
+                <span class="kw">if</span> <span class="str">'&lt;form'</span> <span class="kw">in</span> result.html.lower():
+                    <span class="cm"># action URL・mailto:・inputフィールド名を抽出</span>
+                    <span class="kw">return</span> result
+    <span class="kw">return None</span></pre>
+</div>
+
+<div class="card">
+  <div class="card-title">フルサイト解析（ドメイン→全情報一括取得）</div>
+  <pre><span class="kw">async def</span> <span class="fn">analyze_site</span>(domain: <span class="fn">str</span>):
+    results = {
+        <span class="str">'domain'</span>: domain,
+        <span class="str">'contact_url'</span>: <span class="kw">None</span>,
+        <span class="str">'has_form'</span>: <span class="kw">False</span>,
+        <span class="str">'email'</span>: <span class="kw">None</span>,
+        <span class="str">'form_fields'</span>: [],
+        <span class="str">'cms'</span>: <span class="kw">None</span>,
+    }
+    <span class="kw">async with</span> AsyncWebCrawler() <span class="kw">as</span> crawler:
+        <span class="cm"># トップページ取得（CMS判定・全体構造把握）</span>
+        top = <span class="kw">await</span> crawler.arun(url=<span class="fn">f</span><span class="str">'https://{domain}'</span>)
+
+        <span class="cm"># コンタクトページ探索</span>
+        <span class="kw">for</span> path <span class="kw">in</span> [<span class="str">'/contact'</span>, <span class="str">'/contact-us'</span>, <span class="str">'/inquiry'</span>]:
+            r = <span class="kw">await</span> crawler.arun(url=<span class="fn">f</span><span class="str">'https://{domain}{path}'</span>)
+            <span class="kw">if</span> r.success <span class="kw">and</span> <span class="str">'&lt;form'</span> <span class="kw">in</span> r.html.lower():
+                results[<span class="str">'contact_url'</span>] = <span class="fn">f</span><span class="str">'https://{domain}{path}'</span>
+                results[<span class="str">'has_form'</span>] = <span class="kw">True</span>
+                <span class="kw">break</span>
+
+    <span class="kw">return</span> results</pre>
+</div>
+
+<div class="card">
+  <div class="card-title">JSレンダリング対応（動的フォーム検出）</div>
+  <pre><span class="cm"># React/Vue等でCSRされるフォームはJS実行が必要</span>
+result = <span class="kw">await</span> crawler.arun(
+    url=url + <span class="str">'/contact'</span>,
+    js_code=<span class="str">"window.scrollTo(0, document.body.scrollHeight)"</span>,
+    wait_for=<span class="str">"css:.contact-form"</span>   <span class="cm"># フォーム要素が現れるまで待機</span>
+)</pre>
+</div>
+
+<div class="card">
+  <div class="card-title">検出精度</div>
+  <table>
+    <thead><tr><th>検出対象</th><th>精度</th><th>補足</th></tr></thead>
+    <tbody>
+      <tr><td>フォームURL（パス検索）</td><td><span class="badge good">◎ 高</span></td><td>候補パスを上から順に試行・ヒット率高</td></tr>
+      <tr><td><code>&lt;form&gt;</code>タグ存在確認</td><td><span class="badge good">◎ 高</span></td><td>SSRページは即時取得可能</td></tr>
+      <tr><td>mailto: リンク抽出</td><td><span class="badge good">◎ 高</span></td><td>正規表現で安定抽出</td></tr>
+      <tr><td>form action URL</td><td><span class="badge warn">○ 中</span></td><td>相対パスの解決が必要なケースあり</td></tr>
+      <tr><td>input フィールド名</td><td><span class="badge warn">○ 中</span></td><td>name属性がないフォームは取得困難</td></tr>
+      <tr><td>JS動的フォーム</td><td><span class="badge bad">△ 低</span></td><td>js_code + wait_for の組み合わせが必要・複雑</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <div class="card-title">パイプライン全体像（リスト→自動送信）</div>
+  <pre><span class="cm"># Apollo / BIZMAPS / FUMA → ドメインリストCSV取得
+# ↓
+# Crawl4AI でコンタクトページ・フォームURL・メアドを一括抽出
+# ↓
+# Supabase leads テーブルに保存（contact_url / email / has_form）
+# ↓
+# DeepSeek V3（Context Caching）でパーソナライズ文生成
+# ↓
+# Playwright でフォーム自動入力・送信（メアド非公開企業向け）
+# または Listmonk/Instantly でメール一括配信（メアド取得済み企業向け）</span></pre>
+</div>
+
+<div class="card">
+  <div class="card-title">注意点</div>
+  <div class="row"><div class="label">利用規約</div><div class="val">スクレイピング禁止サイトへの適用は避けること（robots.txt を事前確認）</div></div>
+  <div class="row"><div class="label">レート制限</div><div class="val">並列リクエスト数を制限（worker=5〜10）・Jitter付き Wait を挿入してBAN回避</div></div>
+  <div class="row"><div class="label">次のステップ</div><div class="val">Playwright フォーム自動送信との統合 → n8n ワークフロー化 → Supabase への結果保存</div></div>
+</div>
+
+</div>
