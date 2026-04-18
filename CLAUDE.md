@@ -770,21 +770,21 @@ NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
 - **キラーフレーズ**: 「御社は横浜市内の同業10社のスマホ表示速度ランキングで**9位（ワースト2位）**です。1位のA社（○○院）が新患を毎月〇名刈り取っている間、御社のサイトは5秒の待機で患者が離脱しています」→近所の実名でプライドと恐怖を同時刺激
 - **法的安全**: Lighthouseの客観スコア・SerpApiの実際の順位という「事実のみ」を使用。「遅い」は事実、「ダサい」はNG
 
-**日本SMBリスト構築（Apollo代替・無料）**:
+**日本SMBリスト構築（Apollo代替・無料・Google Maps系不要）**:
 - BIZMAPS（月100件無料・170万社・タグ検索「SaaS導入積極的/代替わりしたばかり」）
-- FUMA（160万社・無料・Pythonスクレイピング可）
+- FUMA（160万社・無料・Pythonスクレイピング可・URLなし→Layer 2で補完）
 - **e-Gov 法人番号API**（国税庁・全国300万社・業種コード×地域×設立年フィルタ・完全無料・APIキー不要）
-- Apify Google Maps Scraper（月$5分無料・「横浜市 歯科」→店舗URL/電話/評価を一括CSV）
+- **⚠️ Apify Google Maps / Gosom等はコスト高のため不採用** → ハローワーク求人API + CommonCrawl CDXで代替
 - Indeed/求人ボックス スクレイピング（求人中→予算あり×人手不足シグナル→「事務員採用より弊社AIが月5万で自動化」フック）
 - お問い合わせフォームURL自動検知（Python: `contact`/`inquiry`/「お問い合わせ」リンクをURLリストからスキャン→フォーム一覧を生成）
 
-**数万件スケール設計（月1,200円・完全自前構築）**:
-- **Layer 1 リスト取得**: FUMA（160万社）+ 法人番号API（300万社）→ Supabaseに保存（無料）
-- **Layer 2 技術スタック検出**: HTTP Archive BigQuery（月1TB無料）→ `httparchive.technologies.*` テーブル × `.co.jp`ドメイン絞り込み → 古いWordPress/競合SaaS利用企業を一括抽出（Wappalyzerスキャンコストゼロ）
-- **Layer 3 JOIN**: FUMA会社名 × HTTP Archiveドメインを名寄せ（DeepSeek V3・Context Caching）→「連絡先+技術スタック」完備リスト
-- **Layer 4 補完**: HTTP Archive未収録企業のみCrawl4AI（Hetzner VPS 月700円）でフォームURL取得
-- **HPなし企業の扱い**: Lighthouseスキャン不要 → 「デジタル不在の機会損失（月○人が競合へ流出）」訴求に切替 → **Web構築提案の最有望ターゲット**
-- **総コスト**: Hetzner VPS 700円 + DeepSeek V3 500円 = **月1,200円で数万件処理**
+**数万件スケール設計（月1,200〜2,000円・Google Maps系ゼロ）**:
+- **Layer 1 企業マスター**: FUMA（160万社・電話/FAX）+ 法人番号API（300万社）→ 会社名+住所でJOIN → Supabase（無料）
+- **Layer 2 URL取得 主力**: ①**ハローワーク求人API**（厚労省・完全無料・求人票にHP URL記載あり・求人中シグナル同時取得）②**e-Gov 企業職場情報API**（厚労省・職場環境情報→ホームページURL項目あり）
+- **Layer 3 URL補完**: ①**CommonCrawl CDX API**（無料・会社名→ドメイン候補生成→`*.co.jp`で存在確認）②**Wayback Machine CDX API**（無料・過去クロール済みco.jpドメインをフォールバック検索）
+- **Layer 4 技術スタック検出**: URL取得済み企業 → **webanalyze**（Go製Wappalyzer実装・並列100ワーカー・OSS）で一括スキャン → CMS/PHP版数/jQuery古さ/HPB依存を自動検出。HTTP Archive BigQuery（月1TB無料）でも `httparchive.technologies.*` × `.co.jp` で大企業補完
+- **HPなし企業の扱い**: Lighthouseスキャン不要 → 「デジタル不在の機会損失（月○人が競合へ流出）」訴求に切替 → **Web構築提案の最有望ターゲット**。法人番号APIの住所から郵送DM+FAX+SNS DMに自動切替
+- **総コスト**: DeepSeek V3名寄せ/スコアリング $8〜15 = **月1,200〜2,000円で数万件処理**
 
 **営業資料3点セット（DocSend / Notion / HP）**:
 - **診断レポート（矛）**: 機会損失PDF自動生成 / Notion共有URL（Loom動画+FigmaプロトタイプDラフ埋め込み可）
