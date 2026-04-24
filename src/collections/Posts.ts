@@ -1,4 +1,6 @@
 import type { CollectionConfig } from "payload"
+import { isAdmin, isAdminOrEditor, isLoggedIn } from "../access/byRole"
+import { makeAfterChangeAudit, makeAfterDeleteAudit } from "../hooks/auditLog"
 
 export const Posts: CollectionConfig = {
   slug: "posts",
@@ -9,12 +11,19 @@ export const Posts: CollectionConfig = {
     description: "ブログ記事の管理（日本語・英語）",
     group: "コンテンツ",
   },
+  access: {
+    read: isLoggedIn,
+    create: isAdminOrEditor,
+    update: isAdminOrEditor,
+    delete: isAdmin,
+  },
   versions: {
     drafts: {
       autosave: {
         interval: 1000,
       },
     },
+    maxPerDoc: 10,
   },
   fields: [
     {
@@ -108,17 +117,33 @@ export const Posts: CollectionConfig = {
       },
     },
     {
-      name: "locale",
+      name: "availableLocales",
       type: "select",
-      label: "言語",
+      label: "配信ロケール",
+      hasMany: true,
       options: [
         { label: "日本語 (/ja)", value: "ja" },
         { label: "English (/en)", value: "en" },
       ],
-      defaultValue: "ja",
+      defaultValue: ["ja"],
       required: true,
       admin: {
         position: "sidebar",
+        description: "この記事を表示するロケール（複数選択可）。JAのみ・ENのみ・両方から選択。",
+      },
+    },
+    {
+      name: "locale",
+      type: "select",
+      label: "[legacy] 言語",
+      options: [
+        { label: "日本語 (/ja)", value: "ja" },
+        { label: "English (/en)", value: "en" },
+      ],
+      admin: {
+        position: "sidebar",
+        description: "非推奨: availableLocalesを使用してください。",
+        condition: (data) => Boolean(data?.locale),
       },
     },
     {
@@ -154,5 +179,7 @@ export const Posts: CollectionConfig = {
         return data
       },
     ],
+    afterChange: [makeAfterChangeAudit("posts")],
+    afterDelete: [makeAfterDeleteAudit("posts")],
   },
 }

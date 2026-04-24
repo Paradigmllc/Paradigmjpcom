@@ -1,29 +1,39 @@
 "use client"
 
-import Link from "next/link"
+import { Link } from "@/i18n/routing"
 import { usePathname } from "next/navigation"
+import { useTranslations } from "next-intl"
 
-const LINKS = {
-  services: [
-    { href: "/services/web", label: "Web制作" },
-    { href: "/services/meo", label: "MEO対策" },
-    { href: "/services/seo", label: "SEO/GEO対策" },
-    { href: "/services/ai", label: "AI導入支援" },
-  ],
-  company: [
-    { href: "/about", label: "会社概要" },
-    { href: "/blog", label: "ブログ" },
-    { href: "/contact", label: "お問い合わせ" },
-  ],
-  legal: [
-    { href: "/privacy", label: "プライバシーポリシー" },
-    { href: "/legal", label: "特定商取引法" },
-  ],
-}
-
+/**
+ * Footer — locale-aware site footer
+ *
+ * 仕様: すべての href は `@/i18n/routing` の Link が自動で `/{locale}` prefix を付与する。
+ * 提案ページ（/ja/p/xxx / /en/p/xxx）では非表示。
+ */
 export default function Footer() {
+  const t = useTranslations("footer")
+  const tNav = useTranslations("nav")
+  const tCta = useTranslations("cta")
   const pathname = usePathname()
-  if (pathname.startsWith("/p/")) return null
+  if (pathname.includes("/p/")) return null
+
+  const services = [
+    { href: "/services/web", label: t("services.web") },
+    { href: "/services/meo", label: t("services.meo") },
+    { href: "/services/seo", label: t("services.seo") },
+    { href: "/services/ai", label: t("services.ai") },
+  ]
+
+  const company = [
+    { href: "/about", label: tNav("about") },
+    { href: "/blog", label: tNav("blog") },
+    { href: "/contact", label: tNav("contact") },
+  ]
+
+  const legal = [
+    { href: "/privacy", label: t("privacy") },
+    { href: "/legal", label: t("legal") },
+  ]
 
   return (
     <footer className="bg-primary text-white/70">
@@ -36,15 +46,15 @@ export default function Footer() {
               <span className="text-lg font-bold text-white">Paradigm</span>
             </div>
             <p className="text-sm leading-relaxed">
-              デジタル技術で中小企業の成長を支援する、Paradigm合同会社です。
+              {t("companyTagline")}
             </p>
           </div>
 
           {/* Services */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-4">サービス</h4>
+            <h4 className="text-white font-semibold text-sm mb-4">{t("servicesHeading")}</h4>
             <ul className="space-y-2.5">
-              {LINKS.services.map(l => (
+              {services.map(l => (
                 <li key={l.href}>
                   <Link href={l.href} className="text-sm hover:text-white transition-colors">{l.label}</Link>
                 </li>
@@ -54,9 +64,9 @@ export default function Footer() {
 
           {/* Company */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-4">企業情報</h4>
+            <h4 className="text-white font-semibold text-sm mb-4">{t("companyHeading")}</h4>
             <ul className="space-y-2.5">
-              {LINKS.company.map(l => (
+              {company.map(l => (
                 <li key={l.href}>
                   <Link href={l.href} className="text-sm hover:text-white transition-colors">{l.label}</Link>
                 </li>
@@ -66,11 +76,11 @@ export default function Footer() {
 
           {/* Contact Info */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-4">お問い合わせ</h4>
+            <h4 className="text-white font-semibold text-sm mb-4">{t("contactHeading")}</h4>
             <div className="space-y-2.5 text-sm">
               <p>contact@paradigmjp.com</p>
               <Link href="/contact" className="inline-block mt-3 px-5 py-2.5 rounded-lg bg-accent/20 text-accent-light hover:bg-accent/30 font-medium transition-colors">
-                無料相談を予約
+                {tCta("bookConsult")}
               </Link>
             </div>
           </div>
@@ -78,9 +88,9 @@ export default function Footer() {
 
         {/* Bottom */}
         <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs">&copy; {new Date().getFullYear()} Paradigm合同会社. All rights reserved.</p>
+          <p className="text-xs">&copy; {new Date().getFullYear()} {t("company")}. {t("rights")}</p>
           <div className="flex items-center gap-6">
-            {LINKS.legal.map(l => (
+            {legal.map(l => (
               <Link key={l.href} href={l.href} className="text-xs hover:text-white transition-colors">{l.label}</Link>
             ))}
           </div>

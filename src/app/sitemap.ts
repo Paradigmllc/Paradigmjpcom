@@ -1,34 +1,91 @@
 import type { MetadataRoute } from "next"
 import { BLOG_POSTS } from "@/lib/blog"
+import { routing } from "@/i18n/routing"
 
 const BASE = "https://paradigmjp.com"
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const staticPages = [
-    { url: BASE, lastModified: new Date(), changeFrequency: "weekly" as const, priority: 1.0 },
-    { url: `${BASE}/about`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.8 },
-    { url: `${BASE}/services`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.9 },
-    { url: `${BASE}/services/web`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.8 },
-    { url: `${BASE}/services/meo`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.8 },
-    { url: `${BASE}/services/seo`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.8 },
-    { url: `${BASE}/services/ai`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.8 },
-{ url: `${BASE}/faq`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.7 },
-    { url: `${BASE}/blog`, lastModified: new Date(), changeFrequency: "weekly" as const, priority: 0.8 },
-    { url: `${BASE}/contact`, lastModified: new Date(), changeFrequency: "yearly" as const, priority: 0.9 },
-    { url: `${BASE}/privacy`, lastModified: new Date(), changeFrequency: "yearly" as const, priority: 0.3 },
-    { url: `${BASE}/legal`, lastModified: new Date(), changeFrequency: "yearly" as const, priority: 0.3 },
-    // LP pages
-    { url: `${BASE}/lp/web`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.7 },
-    { url: `${BASE}/lp/meo`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.7 },
-    { url: `${BASE}/lp/seo`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.7 },
-    { url: `${BASE}/lp/ai`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.7 },
-  ]
+/**
+ * Google hreflang 仕様:
+ *   - sitemap.xml の各 <url> に <xhtml:link rel="alternate" hreflang="ja" href=".../ja/..." /> を
+ *     同じロケールグループの全URL分だけ並べる
+ *   - x-default は defaultLocale（= "ja"）に揃える
+ *   - Next.js の MetadataRoute.Sitemap は `alternates.languages` オブジェクトを受け付け、
+ *     XML 出力時に自動で <xhtml:link> として emit してくれる
+ *
+ * なぜ静的配列を先に作るのか:
+ *   ロケール分岐の分岐回数を減らし、将来 ko/zh を追加するときに
+ *   routing.locales の配列 1 箇所を触るだけで済むようにする（AE-10 URL-state supremacy 準拠）
+ */
 
-  const blogPages = BLOG_POSTS.map(post => ({
-    url: `${BASE}/blog/${post.slug}`,
+type StaticRoute = {
+  path: string
+  changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"]
+  priority: number
+}
+
+const STATIC_ROUTES: StaticRoute[] = [
+  { path: "", changeFrequency: "weekly", priority: 1.0 },
+  { path: "/about", changeFrequency: "monthly", priority: 0.8 },
+  { path: "/services", changeFrequency: "monthly", priority: 0.9 },
+  { path: "/services/web", changeFrequency: "monthly", priority: 0.8 },
+  { path: "/services/meo", changeFrequency: "monthly", priority: 0.8 },
+  { path: "/services/seo", changeFrequency: "monthly", priority: 0.8 },
+  { path: "/services/ai", changeFrequency: "monthly", priority: 0.8 },
+  { path: "/faq", changeFrequency: "monthly", priority: 0.7 },
+  { path: "/blog", changeFrequency: "weekly", priority: 0.8 },
+  { path: "/contact", changeFrequency: "yearly", priority: 0.9 },
+  { path: "/privacy", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/legal", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/lp/web", changeFrequency: "monthly", priority: 0.7 },
+  { path: "/lp/meo", changeFrequency: "monthly", priority: 0.7 },
+  { path: "/lp/seo", changeFrequency: "monthly", priority: 0.7 },
+  { path: "/lp/ai", changeFrequency: "monthly", priority: 0.7 },
+]
+
+/**
+ * 同一コンテンツの全ロケール分のURLをペアにして alternates.languages に詰めたオブジェクトを作る。
+ */
+function languageAlternates(path: string) {
+  const languages: Record<string, string> = {
+    "x-default": `${BASE}/${routing.defaultLocale}${path}`,
+  }
+  for (const locale of routing.locales) {
+    languages[locale] = `${BASE}/${locale}${path}`
+  }
+  return languages
+}
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  const now = new Date()
+
+  const staticPages: MetadataRoute.Sitemap = STATIC_ROUTES.flatMap((route) =>
+    routing.locales.map((locale) => ({
+      url: `${BASE}/${locale}${route.path}`,
+      lastModified: now,
+      changeFrequency: route.changeFrequency,
+      priority: route.priority,
+      alternates: {
+        languages: languageAlternates(route.path),
+      },
+    })),
+  )
+
+  /**
+   * ブログ記事は現状 JP 原稿のみ。将来 EN 翻訳を追加した際は
+   * BlogPost 側に `availableLocales?: string[]` を追加して
+   * ここで locales.filter(l => post.availableLocales.includes(l)) する。
+   */
+  const blogPages: MetadataRoute.Sitemap = BLOG_POSTS.map((post) => ({
+    url: `${BASE}/ja/blog/${post.slug}`,
     lastModified: new Date(post.date),
-    changeFrequency: "monthly" as const,
+    changeFrequency: "monthly",
     priority: 0.6,
+    alternates: {
+      languages: {
+        ja: `${BASE}/ja/blog/${post.slug}`,
+        "x-default": `${BASE}/ja/blog/${post.slug}`,
+      },
+    },
   }))
 
   return [...staticPages, ...blogPages]

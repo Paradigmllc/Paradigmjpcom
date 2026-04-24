@@ -2,17 +2,21 @@
 
 import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
-import Link from "next/link"
+import { Link } from "@/i18n/routing"
+import { useTranslations } from "next-intl"
 import { Menu, X } from "lucide-react"
+import LocaleSwitcher from "./LocaleSwitcher"
 
-const NAV = [
-  { href: "/about", label: "会社概要" },
-  { href: "/services", label: "サービス" },
-  { href: "/faq", label: "FAQ" },
-  { href: "/blog", label: "ブログ" },
-]
-
+/**
+ * Header — locale-aware top navigation
+ *
+ * AE-10 準拠: locale の切替UIは LocaleSwitcher のみが担当。
+ * Header は useTranslations 経由でラベルを読むだけで locale を持たない。
+ * Link は `@/i18n/routing` 由来を使い、クリック時に自動で /{locale}/… prefix を付与する。
+ */
 export default function Header() {
+  const t = useTranslations("nav")
+  const tCta = useTranslations("cta")
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const pathname = usePathname()
@@ -23,11 +27,20 @@ export default function Header() {
     return () => window.removeEventListener("scroll", h)
   }, [])
 
-  if (pathname.startsWith("/p/")) return null
+  // 提案ページ（/ja/p/xxx / /en/p/xxx）では Header 非表示
+  if (pathname.includes("/p/")) return null
 
-  const isHome = pathname === "/"
+  // ホームは /ja または /en で終わる
+  const isHome = pathname === "/" || /^\/(ja|en)\/?$/.test(pathname)
 
   const transparent = isHome && !scrolled
+
+  const NAV = [
+    { href: "/about", label: t("about") },
+    { href: "/services", label: t("services") },
+    { href: "/faq", label: t("faq") },
+    { href: "/blog", label: t("blog") },
+  ]
 
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -35,7 +48,6 @@ export default function Header() {
         ? "bg-transparent border-b border-transparent"
         : "bg-white/90 backdrop-blur-xl border-b border-gray-100 shadow-sm"
     }`}>
-      {/* Dark top gradient when hero photo is behind — ensures nav text is always readable */}
       {transparent && (
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent pointer-events-none" />
       )}
@@ -62,15 +74,19 @@ export default function Header() {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
+          <span className={transparent ? "text-white/90" : "text-slate-700"}>
+            <LocaleSwitcher />
+          </span>
           <Link href="/contact"
             className="h-9 px-5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-bold flex items-center shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:shadow-[0_0_28px_rgba(139,92,246,0.5)] transition-all">
-            無料相談
+            {tCta("primary")}
           </Link>
         </div>
 
         {/* Mobile Toggle */}
         <button onClick={() => setOpen(!open)}
-          className={`md:hidden transition-colors ${transparent ? "text-white" : "text-slate-700"}`}>
+          className={`md:hidden transition-colors ${transparent ? "text-white" : "text-slate-700"}`}
+          aria-label={open ? "Close menu" : "Open menu"}>
           {open ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
@@ -84,9 +100,12 @@ export default function Header() {
               {n.label}
             </Link>
           ))}
+          <div className="flex items-center justify-between pt-3">
+            <span className="text-slate-700"><LocaleSwitcher /></span>
+          </div>
           <Link href="/contact" onClick={() => setOpen(false)}
             className="block mt-3 text-center py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-bold">
-            無料相談
+            {tCta("primary")}
           </Link>
         </div>
       )}

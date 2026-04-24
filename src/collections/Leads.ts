@@ -1,4 +1,6 @@
 import type { CollectionConfig } from "payload"
+import { isAdmin, isLoggedIn } from "../access/byRole"
+import { makeAfterChangeAudit, makeAfterDeleteAudit } from "../hooks/auditLog"
 
 export const Leads: CollectionConfig = {
   slug: "leads",
@@ -9,10 +11,14 @@ export const Leads: CollectionConfig = {
     group: "営業",
   },
   access: {
-    create: () => true, // フォームからの送信を許可
-    read: ({ req }) => !!req.user, // ログイン済みのみ閲覧
-    update: ({ req }) => !!req.user,
-    delete: ({ req }) => req.user?.role === "admin",
+    create: () => true,
+    read: isLoggedIn,
+    update: isLoggedIn,
+    delete: isAdmin,
+  },
+  hooks: {
+    afterChange: [makeAfterChangeAudit("leads")],
+    afterDelete: [makeAfterDeleteAudit("leads")],
   },
   fields: [
     {

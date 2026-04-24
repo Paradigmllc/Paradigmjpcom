@@ -1,4 +1,6 @@
 import type { CollectionConfig } from "payload"
+import { isAdmin, isAdminOrEditor, isLoggedIn } from "../access/byRole"
+import { makeAfterChangeAudit, makeAfterDeleteAudit } from "../hooks/auditLog"
 
 export const Pricing: CollectionConfig = {
   slug: "pricing",
@@ -6,7 +8,21 @@ export const Pricing: CollectionConfig = {
     useAsTitle: "planName",
     defaultColumns: ["planName", "serviceId", "price", "currency", "locale"],
     description: "料金プランの管理",
-    group: "コンテンツ",
+    group: "商材",
+  },
+  access: {
+    read: isLoggedIn,
+    create: isAdminOrEditor,
+    update: isAdminOrEditor,
+    delete: isAdmin,
+  },
+  versions: {
+    drafts: { autosave: { interval: 1500 } },
+    maxPerDoc: 10,
+  },
+  hooks: {
+    afterChange: [makeAfterChangeAudit("pricing")],
+    afterDelete: [makeAfterDeleteAudit("pricing")],
   },
   fields: [
     {
@@ -113,18 +129,34 @@ export const Pricing: CollectionConfig = {
       },
     },
     {
+      name: "availableLocales",
+      type: "select",
+      label: "配信ロケール",
+      hasMany: true,
+      options: [
+        { label: "日本語 (/ja)", value: "ja" },
+        { label: "English (/en)", value: "en" },
+      ],
+      defaultValue: ["ja"],
+      required: true,
+      admin: {
+        position: "sidebar",
+        description: "このプランを表示するロケール（複数選択可）。JPY=JAのみ / USD=ENのみが自然なデフォルト。",
+      },
+    },
+    {
       name: "locale",
       type: "select",
-      label: "言語",
+      label: "[legacy] 言語",
       options: [
         { label: "日本語 (/ja)", value: "ja" },
         { label: "English (/en)", value: "en" },
         { label: "両方", value: "both" },
       ],
-      defaultValue: "ja",
-      required: true,
       admin: {
         position: "sidebar",
+        description: "非推奨: availableLocalesを使用。",
+        condition: (data) => Boolean(data?.locale),
       },
     },
   ],
