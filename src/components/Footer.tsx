@@ -3,6 +3,7 @@
 import { Link } from "@/i18n/routing"
 import { usePathname } from "next/navigation"
 import { useTranslations } from "next-intl"
+import LocaleSwitcher from "./LocaleSwitcher"
 
 /**
  * Footer — locale-aware site footer
@@ -93,6 +94,7 @@ export default function Footer() {
             {legal.map(l => (
               <Link key={l.href} href={l.href} className="text-xs hover:text-white transition-colors">{l.label}</Link>
             ))}
+            <LocaleSwitcher />
           </div>
         </div>
       </div>
