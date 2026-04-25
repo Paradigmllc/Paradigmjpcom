@@ -7,7 +7,7 @@ type Req = Parameters<Access>[0]["req"]
 const roleOf = (req: Req): UserRole | null =>
   ((req.user as any)?.role as UserRole | undefined) ?? null
 
-export const isLoggedIn: Access = ({ req }) => Boolean(req.user)
+export const isLoggedIn: Access = ({ req }): boolean => Boolean(req.user)
 
 export const isAdmin: Access = ({ req }) => roleOf(req) === "admin"
 
