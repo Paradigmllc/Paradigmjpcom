@@ -1,9 +1,9 @@
-import type { Access, FieldAccess } from "payload"
+import type { Access, FieldAccess, PayloadRequest } from "payload"
 
 type UserRole = "admin" | "editor" | "viewer"
 
-const roleOf = (req: { user?: { role?: string } | null }): UserRole | null =>
-  (req.user?.role as UserRole | undefined) ?? null
+const roleOf = (req: PayloadRequest): UserRole | null =>
+  ((req.user as { role?: string } | null | undefined)?.role as UserRole | undefined) ?? null
 
 export const isLoggedIn: Access = ({ req }) => Boolean(req.user)
 
