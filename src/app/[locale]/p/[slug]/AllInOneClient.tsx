@@ -797,30 +797,30 @@ function ResultsSection({ d, tpl }: { d: ProspectData; tpl: ProposalTemplate }) 
 
         <AnimSection delay={0.15}>
           <div className="pp-stats">
-            {tpl.stats.map(s => (
-              <div key={s.label} className="pp-stat">
-                <div className="pp-stat-num" style={{ color: accent }}>{s.num}</div>
-                <div className="pp-stat-label">{s.label}</div>
-                <div className="pp-stat-sub">{s.sub}</div>
+            {(Array.isArray(tpl.stats) ? tpl.stats : []).map((s, i) => (
+              <div key={i} className="pp-stat">
+                <div className="pp-stat-num" style={{ color: accent }}>{String(s?.num ?? "")}</div>
+                <div className="pp-stat-label">{String(s?.label ?? "")}</div>
+                <div className="pp-stat-sub">{String(s?.sub ?? "")}</div>
               </div>
             ))}
           </div>
         </AnimSection>
 
-        {tpl.testimonials.length > 0 && (
+        {Array.isArray(tpl.testimonials) && tpl.testimonials.length > 0 && (
           <AnimSection delay={0.3}>
             <div className="pp-testimonials">
               {tpl.testimonials.map((t, i) => (
                 <div key={i} className="pp-testimonial">
                   <div className="pp-testimonial-top">
-                    <div className="pp-testimonial-avatar" style={{ background: `linear-gradient(135deg, ${accent}, ${tpl.accent2})` }}>{t.avatar}</div>
+                    <div className="pp-testimonial-avatar" style={{ background: `linear-gradient(135deg, ${accent}, ${tpl.accent2})` }}>{String(t?.avatar ?? "👤")}</div>
                     <div>
-                      <div className="pp-testimonial-name">{t.name}</div>
-                      <div className="pp-testimonial-biz">{t.biz}</div>
+                      <div className="pp-testimonial-name">{String(t?.name ?? "")}</div>
+                      <div className="pp-testimonial-biz">{String(t?.biz ?? "")}</div>
                     </div>
                   </div>
                   <div className="pp-testimonial-result" style={{ background: `${accent}08`, borderColor: `${accent}20`, color: accent }}>
-                    ✓ {t.result}
+                    ✓ {String(t?.result ?? "")}
                   </div>
                 </div>
               ))}

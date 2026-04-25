@@ -665,6 +665,22 @@ export function applyPatternToTemplate(
   pattern: PagePattern
 ): ProposalTemplate {
   const td = pattern.template_data
+  // Sanitize AI-generated arrays: ensure each item's fields are strings (prevent React "Objects are not valid as React child" crash)
+  const safeStats: ProposalTemplate["stats"] | undefined = Array.isArray(td.stats)
+    ? td.stats.map((s: Record<string, unknown>) => ({
+        num: String(s?.num ?? ""),
+        label: String(s?.label ?? ""),
+        sub: String(s?.sub ?? ""),
+      }))
+    : undefined
+  const safeTestimonials: ProposalTemplate["testimonials"] | undefined = Array.isArray(td.testimonials)
+    ? td.testimonials.map((t: Record<string, unknown>) => ({
+        avatar: String(t?.avatar ?? "👤"),
+        name: String(t?.name ?? ""),
+        biz: String(t?.biz ?? ""),
+        result: String(t?.result ?? ""),
+      }))
+    : undefined
   return {
     ...baseTemplate,
     ...(td.accent ? { accent: td.accent as string } : {}),
@@ -674,8 +690,8 @@ export function applyPatternToTemplate(
     ...(td.cta_text ? { cta_text: td.cta_text as string } : {}),
     ...(td.cta_url ? { cta_url: td.cta_url as string } : {}),
     ...(td.demo_tabs ? { demo_tabs: td.demo_tabs as DemoTab[] } : {}),
-    ...(td.stats ? { stats: td.stats as ProposalTemplate["stats"] } : {}),
-    ...(td.testimonials ? { testimonials: td.testimonials as ProposalTemplate["testimonials"] } : {}),
+    ...(safeStats ? { stats: safeStats } : {}),
+    ...(safeTestimonials ? { testimonials: safeTestimonials } : {}),
     ...(td.loss_context ? { loss_context: td.loss_context as string } : {}),
     ...(td.badge_features ? { badge_features: td.badge_features as ProposalTemplate["badge_features"] } : {}),
     ...(td.section_order ? { section_order: td.section_order as string[] } : {}),
