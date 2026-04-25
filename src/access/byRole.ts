@@ -1,9 +1,11 @@
-import type { Access, FieldAccess, PayloadRequest } from "payload"
+import type { Access, FieldAccess } from "payload"
 
 type UserRole = "admin" | "editor" | "viewer"
+type Req = Parameters<Access>[0]["req"]
 
-const roleOf = (req: PayloadRequest): UserRole | null =>
-  ((req.user as { role?: string } | null | undefined)?.role as UserRole | undefined) ?? null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const roleOf = (req: Req): UserRole | null =>
+  ((req.user as any)?.role as UserRole | undefined) ?? null
 
 export const isLoggedIn: Access = ({ req }) => Boolean(req.user)
 
