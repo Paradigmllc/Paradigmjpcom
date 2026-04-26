@@ -541,12 +541,12 @@ function DemoSection({ d, tpl }: { d: ProspectData; tpl: ProposalTemplate }) {
         {tpl.badge_features.length > 0 && (
           <AnimSection delay={0.3}>
             <div className="pp-features">
-              {tpl.badge_features.map(f => (
-                <div key={f.title} className="pp-feature">
-                  <span style={{ fontSize: 22 }}>{f.icon}</span>
+              {tpl.badge_features.map((f, fi) => (
+                <div key={fi} className="pp-feature">
+                  <span style={{ fontSize: 22 }}>{String(f?.icon ?? "")}</span>
                   <div>
-                    <div className="pp-feature-t">{f.title}</div>
-                    <div className="pp-feature-s">{f.sub}</div>
+                    <div className="pp-feature-t">{String(f?.title ?? "")}</div>
+                    <div className="pp-feature-s">{String(f?.sub ?? "")}</div>
                   </div>
                 </div>
               ))}
@@ -601,8 +601,8 @@ function DemoTabRenderer({ tab, d, accent }: { tab: DemoTab; d: ProspectData; ac
         <div style={{ fontSize: 13, fontWeight: 700, color: "#333", marginBottom: 14 }}>{heading}</div>
         {d.ai_reply_samples.slice(0, 2).map((s, i) => (
           <div key={i} style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "14px 16px", marginBottom: 12, fontSize: 12 }}>
-            <div style={{ color: "#888", marginBottom: 8, lineHeight: 1.5 }}>📝 &quot;{s.original.slice(0, 60)}...&quot;</div>
-            <div style={{ color: "#0A6649", borderLeft: `3px solid ${accent}`, paddingLeft: 10, lineHeight: 1.6 }}>✓ {s.reply.slice(0, 90)}...</div>
+            <div style={{ color: "#888", marginBottom: 8, lineHeight: 1.5 }}>📝 &quot;{String(s?.original ?? "").slice(0, 60)}...&quot;</div>
+            <div style={{ color: "#0A6649", borderLeft: `3px solid ${accent}`, paddingLeft: 10, lineHeight: 1.6 }}>✓ {String(s?.reply ?? "").slice(0, 90)}...</div>
           </div>
         ))}
       </div>
@@ -761,10 +761,10 @@ function MarketSection({ d, tpl }: { d: ProspectData; tpl: ProposalTemplate }) {
               <div className="pp-reply-title">💬 AIが生成した口コミ返信サンプル</div>
               {d.ai_reply_samples.map((s, i) => (
                 <div key={i} className="pp-reply-item">
-                  <div className="pp-reply-original">📝 「{s.original}」</div>
+                  <div className="pp-reply-original">📝 「{String(s?.original ?? "")}」</div>
                   <div className="pp-reply-ai" style={{ borderLeftColor: accent }}>
                     <span className="pp-reply-badge" style={{ background: `${accent}15`, color: accent }}>AI返信</span>
-                    {s.reply}
+                    {String(s?.reply ?? "")}
                   </div>
                 </div>
               ))}
@@ -1142,7 +1142,7 @@ function CTASection({ d, onCta, tpl }: { d: ProspectData; onCta: () => void; tpl
         {/* 安心ポイント */}
         <div className="pp-cta-trust">
           {(tpl.trust_points?.length
-            ? tpl.trust_points.map(tp => ({ icon: tp.slice(0, 2), text: tp.slice(2).trim() }))
+            ? tpl.trust_points.map(tp => { const s = String(tp ?? ""); return { icon: s.slice(0, 2), text: s.slice(2).trim() } })
             : [
                 { icon: "🛡️", text: "個人情報は厳重に管理" },
                 { icon: "⏱️", text: "15分のお電話で完結" },

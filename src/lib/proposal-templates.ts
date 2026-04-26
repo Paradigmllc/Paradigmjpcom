@@ -699,7 +699,7 @@ export function applyPatternToTemplate(
     ...(td.demo_tabs ? { demo_tabs: td.demo_tabs as DemoTab[] } : {}),
     ...(safeStats ? { stats: safeStats } : {}),
     ...(safeTestimonials ? { testimonials: safeTestimonials } : {}),
-    ...(td.badge_features ? { badge_features: td.badge_features as ProposalTemplate["badge_features"] } : {}),
+    ...(Array.isArray(td.badge_features) ? { badge_features: (td.badge_features as Record<string, unknown>[]).map((f) => ({ icon: String(f?.icon ?? ""), title: String(f?.title ?? ""), sub: String(f?.sub ?? "") })) } : {}),
     ...(td.section_order ? { section_order: td.section_order as string[] } : {}),
   }
 }
