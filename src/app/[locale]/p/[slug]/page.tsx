@@ -54,6 +54,8 @@ export default function ProposalPageWrapper() {
         primary_product: p.primary_product || "hp",
         demo_url: demoData.demo_url || "",
         report_url: demoData.report_url || "",
+        prescriptions: demoData.prescriptions || [],
+        reciprocity_package: demoData.reciprocity?.cta_package || null,
         ai_analysis: p.ai_analysis || null,
         review_analysis: p.review_analysis || null,
         competitor_analysis: p.competitor_analysis || null,
