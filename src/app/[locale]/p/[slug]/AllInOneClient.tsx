@@ -157,11 +157,15 @@ function AnimSection({ children, className = "", delay = 0, style }: { children:
   )
 }
 
-const VULN_COLORS = {
+const VULN_COLORS: Record<string, { color: string; bg: string; border: string; label: string }> = {
   critical: { color: "#DC2626", bg: "rgba(220,38,38,.06)", border: "rgba(220,38,38,.15)", label: "重大" },
-  high: { color: "#D97706", bg: "rgba(217,119,6,.06)", border: "rgba(217,119,6,.15)", label: "注意" },
-  mid: { color: "#2563EB", bg: "rgba(37,99,235,.06)", border: "rgba(37,99,235,.15)", label: "軽微" },
+  high:     { color: "#D97706", bg: "rgba(217,119,6,.06)", border: "rgba(217,119,6,.15)", label: "注意" },
+  mid:      { color: "#2563EB", bg: "rgba(37,99,235,.06)", border: "rgba(37,99,235,.15)", label: "軽微" },
+  medium:   { color: "#2563EB", bg: "rgba(37,99,235,.06)", border: "rgba(37,99,235,.15)", label: "軽微" },
+  low:      { color: "#64748B", bg: "rgba(100,116,139,.06)", border: "rgba(100,116,139,.15)", label: "情報" },
+  info:     { color: "#64748B", bg: "rgba(100,116,139,.06)", border: "rgba(100,116,139,.15)", label: "情報" },
 }
+const DEFAULT_VULN_COLOR = VULN_COLORS.high
 
 // ═══════════════════════════════════════════════════════════════
 // 1. Navigation — 桜花ナビ
@@ -399,15 +403,18 @@ function DiagnosisSection({ d, tpl }: { d: ProspectData; tpl: ProposalTemplate }
           <AnimSection delay={0.4}>
             <div className="pp-alerts">
               <div className="pp-alerts-title">⚠️ 検出された問題点</div>
-              {d.vulnerabilities.map((v, i) => (
-                <div key={i} className="pp-alert" style={{ borderLeftColor: VULN_COLORS[v.level].color }}>
-                  <span className="pp-alert-level" style={{ color: VULN_COLORS[v.level].color, background: VULN_COLORS[v.level].bg }}>{VULN_COLORS[v.level].label}</span>
-                  <div>
-                    <div className="pp-alert-name">{v.name}</div>
-                    <p className="pp-alert-desc">{v.desc}</p>
+              {d.vulnerabilities.map((v, i) => {
+                const vc = (v && VULN_COLORS[v.level]) ?? DEFAULT_VULN_COLOR
+                return (
+                  <div key={i} className="pp-alert" style={{ borderLeftColor: vc.color }}>
+                    <span className="pp-alert-level" style={{ color: vc.color, background: vc.bg }}>{vc.label}</span>
+                    <div>
+                      <div className="pp-alert-name">{String(v?.name ?? "")}</div>
+                      <p className="pp-alert-desc">{String(v?.desc ?? "")}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </AnimSection>
         )}
