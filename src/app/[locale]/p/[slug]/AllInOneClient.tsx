@@ -58,7 +58,7 @@ export interface ProspectData {
   has_ads?: boolean
   phone?: string
   email?: string
-  visible_sections?: Record<string, boolean>
+  visible_sections?: Record<string, boolean> | string[]
   template_accent?: string
   template_cta_text?: string
   template_cta_url?: string
@@ -1313,7 +1313,12 @@ export default function PersuasionPage({ data }: { data?: ProspectData }) {
     }
     return base
   }, [d.category, d.db_template, d.matched_pattern])
-  const vis = (key: string) => d.visible_sections?.[key] !== false
+  const vis = (key: string) => {
+    const vs = d.visible_sections
+    if (!vs) return true
+    if (Array.isArray(vs)) return (vs as unknown as string[]).includes(key)
+    return (vs as Record<string, boolean>)[key] !== false
+  }
   const accent = d.template_accent || tpl.accent
 
   const handleCTA = useCallback(async () => {
@@ -1429,7 +1434,7 @@ body{
 .pp-hero-title{
   font-size:clamp(32px,6vw,60px);font-weight:900;color:#0f172a;
   line-height:1.15;letter-spacing:-2px;margin-bottom:8px;
-  animation:fadeUp .8s ease both .15s;opacity:0;
+  animation:fadeUp .8s ease both .15s;
 }
 .pp-hero-title-sub{font-size:clamp(18px,3vw,28px);font-weight:400;color:#64748b;letter-spacing:0;}
 .pp-cursor{animation:pulse 1s ease infinite;font-weight:300;color:#cbd5e1;}
@@ -1437,7 +1442,7 @@ body{
 .pp-product-tag{
   display:inline-flex;align-items:center;gap:14px;
   padding:14px 24px;border-radius:14px;margin-bottom:24px;
-  animation:fadeUp .8s ease both .25s;opacity:0;
+  animation:fadeUp .8s ease both .25s;
 }
 .pp-product-icon{
   display:flex;align-items:center;justify-content:center;
@@ -1449,10 +1454,10 @@ body{
 
 .pp-hero-sub{
   font-size:clamp(14px,1.6vw,16px);color:#64748b;
-  line-height:1.9;margin-bottom:40px;animation:fadeUp .8s ease both .3s;opacity:0;
+  line-height:1.9;margin-bottom:40px;animation:fadeUp .8s ease both .3s;
 }
 .pp-hero-metrics{
-  display:flex;gap:1px;animation:fadeUp .8s ease both .45s;opacity:0;
+  display:flex;gap:1px;animation:fadeUp .8s ease both .45s;
   background:#fff;border:1px solid #e2e8f0;
   border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.06);
 }
@@ -1543,7 +1548,7 @@ body{
 .pp-hook-alert{
   padding:12px 20px;border-radius:12px;border:1px solid;
   font-size:14px;font-weight:600;line-height:1.6;margin-bottom:20px;
-  animation:fadeUp .8s ease both .2s;opacity:0;max-width:560px;text-align:left;
+  animation:fadeUp .8s ease both .2s;max-width:560px;text-align:left;
 }
 
 /* AI KPI row — score + loss + recovery */
