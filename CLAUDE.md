@@ -1765,7 +1765,11 @@ Step 5 [送信]       Listmonk（OSS・無制限）でステップメール + n8
 - ✅ サイトマップ（locale別対応必要）
 - ✅ 管理ダッシュボード（locale切替タブ追加必要）
 - ✅ Difyチャットボット
-- ✅ 提案ページ `/p/[slug]`
+- ✅ 提案ページ `/p/[slug]`（**2026-04-26 AllInOneClient.tsx 大幅強化**）
+  - `ProspectData` 型拡張: `ai_analysis` に `executive_summary/overall_score/total_annual_loss_jpy/estimated_recovery_jpy/copy.*` 追加
+  - `page.tsx` で `prescriptions` と `reciprocity_package` を `demo_data` から正しくマッピング
+  - 新レンダリングセクション: HookアラートバナーAI・診断KPI行（スコア/損失/回収）・処方箋リスト・年間損失カード・往復見出し・パッケージカード・信頼ポイント一覧
+  - Appexxme worktree の `/p/[slug]/AllInOneClient.tsx` にも同等変更を同期済み（commit `a0c0e29`）
 
 ---
 
