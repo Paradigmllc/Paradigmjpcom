@@ -29,26 +29,144 @@
     "privacy": "Chính sách bảo mật",
     "legal": "Điều khoản & Giao dịch thương mại cụ thể",
     "services": {
-      "web": "Phát triển Web",
+      "web": "Phát triển web",
       "meo": "SEO địa phương (MEO)",
       "seo": "SEO / GEO",
-      "ai": "Hỗ trợ AI"
+      "ai": "Kích hoạt AI"
     }
   },
   "home": {
-    "heroTitle": "Dịch vụ được sản phẩm hóa cho doanh nghiệp vừa và nhỏ nước ngoài gia nhập thị trường Nhật Bản",
-    "heroSubtitle": "Hỗ trợ gia nhập không cần dịch thuật, tuân thủ địa phương và tự động hóa bằng AI — được xây dựng bởi các nhà điều hành tại Tokyo.",
-    "trusted": "Các công ty chúng tôi đã hỗ trợ"
+    "heroBadge": "Đối tác kỹ thuật số địa phương của bạn tại Nhật Bản",
+    "heroTitle": "Dịch vụ được sản phẩm hóa cho doanh nghiệp vừa và nhỏ nước ngoài thâm nhập Nhật Bản",
+    "heroSubtitle": "Triển khai không cần dịch thuật, tuân thủ địa phương và tự động hóa bằng AI — được xây dựng bởi các nhà điều hành tại Tokyo.",
+    "heroSuffix": " để đẩy nhanh việc thâm nhập Nhật Bản của bạn.",
+    "heroSubheadline": "Web, SEO địa phương, SEO/GEO và Kích hoạt AI — hỗ trợ toàn diện để đặt chân và phát triển tại Nhật Bản.",
+    "heroTypingWords": [
+      "SEO địa phương",
+      "Tự động hóa AI",
+      "Xây dựng web",
+      "SEO/GEO"
+    ],
+    "heroBookConsult": "Đặt lịch tư vấn miễn phí",
+    "heroSeeServices": "Khám phá dịch vụ",
+    "trusted": "Các công ty chúng tôi đã hỗ trợ",
+    "stats": {
+      "support": {
+        "suffix": "+",
+        "label": "Công ty được hỗ trợ"
+      },
+      "retention": {
+        "suffix": "%",
+        "label": "Tỷ lệ giữ chân"
+      },
+      "growth": {
+        "suffix": "x",
+        "label": "Mức tăng lưu lượng trung bình"
+      },
+      "consult": {
+        "suffix": " phút",
+        "label": "Buổi tư vấn đầu tiên"
+      }
+    },
+    "servicesEyebrow": "Dịch vụ",
+    "servicesHeading": "Bốn dịch vụ giúp phát triển doanh nghiệp Nhật Bản của bạn",
+    "servicesViewMore": "Tìm hiểu thêm",
+    "services": {
+      "web": {
+        "title": "Phát triển web",
+        "tagline": "Trang web hiện đại được xây dựng để thu hút khách hàng",
+        "desc": "Responsive, tối ưu SEO, có CMS. Chúng tôi xử lý việc ra mắt và vòng quay thu hút khách hàng tiếp theo.",
+        "results": "+3x lượt yêu cầu",
+        "badge": "Phổ biến nhất"
+      },
+      "meo": {
+        "title": "SEO địa phương (MEO)",
+        "tagline": "Đứng đầu Google Maps tại Nhật Bản",
+        "desc": "Quản lý đánh giá, lịch đăng bài và theo dõi thứ hạng — nhắm đến vị trí số 1 trong gói địa phương của bạn.",
+        "results": "+220% lượt ghé cửa hàng",
+        "badge": ""
+      },
+      "seo": {
+        "title": "SEO / GEO",
+        "tagline": "Chiến thắng Google + tìm kiếm AI",
+        "desc": "SEO thế hệ mới mà ChatGPT, Gemini và Perplexity thực sự trích dẫn khi khách hàng tiềm năng hỏi.",
+        "results": "+180% lưu lượng tự nhiên",
+        "badge": "Tiêu chuẩn mới"
+      },
+      "ai": {
+        "title": "Kích hoạt AI",
+        "tagline": "Tự động hóa vận hành từ đầu đến cuối",
+        "desc": "Chatbot AI, tự động hóa vận hành và pipeline quảng cáo AI — từ triển khai đến vận hành liên tục.",
+        "results": "-45% chi phí vận hành",
+        "badge": ""
+      }
+    },
+    "featuresEyebrow": "Tại sao chọn Paradigm",
+    "featuresHeading": "Bốn lý do khách hàng chọn chúng tôi",
+    "features": {
+      "speed": {
+        "title": "Bàn giao trong 2 tuần",
+        "desc": "Quy trình tinh gọn mang lại chất lượng nhanh chóng — bao gồm cả công việc vào phút chót."
+      },
+      "guarantee": {
+        "title": "Kế hoạch đảm bảo kết quả",
+        "desc": "SEO địa phương và SEO/GEO đi kèm với chính sách hoàn tiền nếu kết quả không đạt được."
+      },
+      "team": {
+        "title": "Người phụ trách riêng",
+        "desc": "Cùng một đầu mối liên hệ từ đầu đến cuối — báo cáo hàng tháng và đánh giá định kỳ."
+      },
+      "aiFusion": {
+        "title": "Kết hợp AI × kỹ thuật số",
+        "desc": "Các công cụ AI mới nhất được sử dụng để thu hút khách hàng — chiến lược vượt qua đối thủ cạnh tranh của bạn."
+      }
+    },
+    "testimonialsEyebrow": "Khách hàng nói gì",
+    "testimonialsHeading": "Cảm nhận của khách hàng",
+    "testimonials": {
+      "1": {
+        "name": "Chủ nhà hàng",
+        "location": "Shibuya, Tokyo",
+        "text": "Ba tháng sau, MEO mang lại hơn 30 lượt khách mới mỗi tháng. ROI rõ ràng không thể nhầm lẫn."
+      },
+      "2": {
+        "name": "Giám đốc phòng khám",
+        "location": "Kita-ku, Osaka",
+        "text": "Lượt yêu cầu tăng gấp đôi sau khi xây dựng lại website. Chat AI được bệnh nhân đón nhận nồng nhiệt."
+      },
+      "3": {
+        "name": "Nhà vận hành DTC",
+        "location": "Nagoya, Aichi",
+        "text": "GEO đã mở ra lưu lượng từ các tìm kiếm trên ChatGPT. Một kênh thu hút khách hàng hoàn toàn mới."
+      }
+    },
+    "trustBadges": {
+      "1": "Hỗ trợ hơn 200 công ty",
+      "2": "Tỷ lệ giữ chân 98%",
+      "3": "Hỗ trợ sau ra mắt miễn phí 3 tháng",
+      "4": "Không ép bán hàng"
+    },
+    "ctaEyebrow": "Bắt đầu",
+    "ctaHeading": "Bắt đầu với ",
+    "ctaHeadingHighlight": "tư vấn miễn phí",
+    "ctaHeadingSuffix": "",
+    "ctaSubheading": "Tư vấn trực tuyến 15 phút. Chúng tôi sẽ chẩn đoán tình hình của bạn và đề xuất các bước có ROI cao nhất — miễn phí.",
+    "ctaButton": "Đặt lịch tư vấn miễn phí",
+    "ctaBullets": {
+      "1": "Luôn miễn phí",
+      "2": "Không có cuộc gọi bán hàng",
+      "3": "Tối đa 15 phút"
+    }
   },
   "chatbot": {
     "title": "Trợ lý Paradigm",
     "status": "AI agent trực tuyến · phản hồi tức thì",
     "openLabel": "Hỏi trợ lý AI của chúng tôi",
-    "greeting": "Xin chào! Tôi là trợ lý AI của Paradigm LLC 👋\n\nHãy hỏi tôi bất cứ điều gì về phát triển web, SEO địa phương, SEO/GEO, hoặc hỗ trợ AI cho việc gia nhập thị trường Nhật Bản của bạn.\nNhấn vào câu hỏi nhanh bên dưới, hoặc tự nhập câu hỏi của bạn.",
+    "greeting": "Xin chào! Tôi là trợ lý AI của Paradigm LLC 👋\n\nHãy hỏi tôi bất cứ điều gì về phát triển web, SEO địa phương, SEO/GEO hoặc kích hoạt AI cho việc thâm nhập thị trường Nhật Bản của bạn.\nNhấn vào câu hỏi nhanh bên dưới hoặc tự nhập câu hỏi của bạn.",
     "placeholder": "Hỏi chúng tôi bất cứ điều gì...",
     "errorReply": "Xin lỗi — đã xảy ra lỗi khi tạo phản hồi.",
     "errorNetwork": "Xin lỗi — đã xảy ra lỗi kết nối.\n\n📧 info@paradigmjp.com",
-    "footerLine": "Được hỗ trợ bởi Paradigm AI",
+    "footerLine": "Được cung cấp bởi Paradigm AI",
     "footerContact": "Nói chuyện với người thật →",
     "quick": {
       "pricingLabel": "Bảng giá & báo giá",
@@ -59,10 +177,10 @@
       "timelineMessage": "Một website điển hình mất bao lâu để hoàn thành?",
       "meoLabel": "MEO là gì?",
       "meoMessage": "MEO (SEO địa phương tại Nhật Bản) là gì và nó có hiệu quả không?",
-      "aiLabel": "Hỗ trợ AI",
-      "aiMessage": "Hỗ trợ AI thực sự bao gồm những gì trong các hợp đồng của bạn?",
+      "aiLabel": "Kích hoạt AI",
+      "aiMessage": "Kích hoạt AI thực sự bao gồm những gì trong các hợp đồng của bạn?",
       "supportLabel": "Hỗ trợ & bảo trì",
-      "supportMessage": "Bạn cung cấp loại hỗ trợ và sửa lỗi sau khi ra mắt nào?"
+      "supportMessage": "Bạn cung cấp loại hỗ trợ và sửa chữa nào sau khi ra mắt?"
     }
   },
   "report": {
@@ -95,11 +213,11 @@
       "medium": "Trung bình",
       "low": "Nhẹ"
     },
-    "competitorsHeading": "Điểm chuẩn đối thủ cạnh tranh",
+    "competitorsHeading": "Đối thủ cạnh tranh tham khảo",
     "competitor": {
       "name": "Công ty",
       "rating": "Đánh giá",
-      "reviews": "Lượt đánh giá",
+      "reviews": "Đánh giá",
       "strengths": "Điểm mạnh"
     },
     "recommendationsHeading": "Hành động được đề xuất",
@@ -110,9 +228,9 @@
     },
     "impact": "Tác động dự kiến",
     "ctaHeading": "Hãy biến những hiểu biết này thành một kế hoạch cụ thể.",
-    "ctaSubheading": "Đặt lịch tư vấn 30 phút — chúng tôi sẽ đề xuất các bước tiếp theo có tác động cao nhất.",
+    "ctaSubheading": "Đặt lịch tư vấn 30 phút — chúng tôi sẽ đề xuất các bước có đòn bẩy cao nhất.",
     "ctaButton": "Đặt lịch tư vấn miễn phí",
     "ctaEmail": "Trả lời qua email",
-    "intro": "Dưới đây là tổng quan về website, SEO, tình hình đối thủ cạnh tranh và phản hồi đánh giá của bạn."
+    "intro": "Đây là cách web, SEO, vị thế cạnh tranh và phản hồi đánh giá của bạn được đánh giá."
   }
 }

@@ -21,55 +21,173 @@
   },
   "footer": {
     "company": "Paradigm LLC",
-    "companyTagline": "Paradigm LLC — produktisierte Dienstleistungen, die ausländischen KMU helfen, in Japan Fuß zu fassen und zu wachsen.",
+    "companyTagline": "Paradigm LLC – Produktisierte Dienstleistungen, die ausländischen KMU helfen, in Japan Fuß zu fassen und zu wachsen.",
     "servicesHeading": "Leistungen",
     "companyHeading": "Unternehmen",
     "contactHeading": "Kontakt",
     "rights": "Alle Rechte vorbehalten.",
     "privacy": "Datenschutzerklärung",
-    "legal": "AGB & spezifizierte Handelsgeschäfte",
+    "legal": "AGB & spezifizierte kommerzielle Transaktionen",
     "services": {
       "web": "Webentwicklung",
-      "meo": "Lokales SEO (MEO)",
+      "meo": "Local SEO (MEO)",
       "seo": "SEO / GEO",
       "ai": "KI-Integration"
     }
   },
   "home": {
-    "heroTitle": "Produktisierte Dienstleistungen für ausländische KMU beim Markteintritt in Japan",
+    "heroBadge": "Ihr lokaler digitaler Partner in Japan",
+    "heroTitle": "Produktisierte Dienstleistungen für ausländische KMU beim Eintritt in Japan",
     "heroSubtitle": "Übersetzungsfreies Onboarding, lokale Compliance und KI-gestützte Automatisierung – entwickelt von Betreibern in Tokio.",
-    "trusted": "Unternehmen, die wir unterstützt haben"
+    "heroSuffix": " um Ihren Japan-Eintritt zu beschleunigen.",
+    "heroSubheadline": "Web, Local SEO, SEO/GEO und KI-Integration – Full-Stack-Unterstützung, um in Japan Fuß zu fassen und zu wachsen.",
+    "heroTypingWords": [
+      "Local SEO",
+      "KI-Automatisierung",
+      "Webentwicklung",
+      "SEO/GEO"
+    ],
+    "heroBookConsult": "Kostenlose Beratung buchen",
+    "heroSeeServices": "Leistungen entdecken",
+    "trusted": "Unternehmen, die wir unterstützt haben",
+    "stats": {
+      "support": {
+        "suffix": "+",
+        "label": "Unterstützte Unternehmen"
+      },
+      "retention": {
+        "suffix": "%",
+        "label": "Kundenbindung"
+      },
+      "growth": {
+        "suffix": "x",
+        "label": "Durchschn. Traffic-Steigerung"
+      },
+      "consult": {
+        "suffix": " Min.",
+        "label": "Erste Beratung"
+      }
+    },
+    "servicesEyebrow": "Leistungen",
+    "servicesHeading": "Vier Dienstleistungen, die Ihr Japan-Geschäft ausbauen",
+    "servicesViewMore": "Mehr erfahren",
+    "services": {
+      "web": {
+        "title": "Webentwicklung",
+        "tagline": "Moderne Websites für Inbound",
+        "desc": "Responsive, SEO-optimiert, mit CMS. Wir kümmern uns um den Launch und den anschließenden Inbound-Flywheel.",
+        "results": "+3x Anfragen",
+        "badge": "Am beliebtesten"
+      },
+      "meo": {
+        "title": "Local SEO (MEO)",
+        "tagline": "Top bei Google Maps in Japan",
+        "desc": "Bewertungsmanagement, Beitragsrhythmus und Ranking-Tracking – mit dem Ziel der Nr. 1 in Ihrem lokalen Paket.",
+        "results": "+220% Filialbesuche",
+        "badge": ""
+      },
+      "seo": {
+        "title": "SEO / GEO",
+        "tagline": "Google + KI-Suche gewinnen",
+        "desc": "Next-Gen-SEO, das ChatGPT, Gemini und Perplexity tatsächlich zitieren, wenn Interessenten fragen.",
+        "results": "+180% organischer Traffic",
+        "badge": "Neuer Standard"
+      },
+      "ai": {
+        "title": "KI-Integration",
+        "tagline": "Automatisieren Sie Abläufe Ende-zu-Ende",
+        "desc": "KI-Chatbots, Betriebsautomatisierung und KI-Anzeigen-Pipelines – vom Rollout bis zum laufenden Betrieb.",
+        "results": "-45% Betriebskosten",
+        "badge": ""
+      }
+    },
+    "featuresEyebrow": "Warum Paradigm",
+    "featuresHeading": "Vier Gründe, warum Kunden uns wählen",
+    "features": {
+      "speed": {
+        "title": "2-wöchige Lieferung",
+        "desc": "Ein schlanker Prozess, der schnell Qualität liefert – auch bei kurzfristigen Arbeiten."
+      },
+      "guarantee": {
+        "title": "Ergebnisorientierter Plan",
+        "desc": "Local SEO und SEO/GEO kommen mit einem Rückerstattungsfenster, falls Ergebnisse ausbleiben."
+      },
+      "team": {
+        "title": "Dedizierter Ansprechpartner",
+        "desc": "Derselbe Ansprechpartner von Anfang bis Ende – monatliche Berichte und regelmäßige Reviews."
+      },
+      "aiFusion": {
+        "title": "KI × digitale Fusion",
+        "desc": "Neueste KI-Tools für Inbound eingesetzt – Strategien, die Ihre Konkurrenten schlagen."
+      }
+    },
+    "testimonialsEyebrow": "Testimonials",
+    "testimonialsHeading": "Was Kunden sagen",
+    "testimonials": {
+      "1": {
+        "name": "Restaurantbesitzer",
+        "location": "Shibuya, Tokio",
+        "text": "Nach drei Monaten brachte MEO über 30 Erstbesuche pro Monat. Der ROI war unübersehbar."
+      },
+      "2": {
+        "name": "Klinikdirektor",
+        "location": "Kita-ku, Osaka",
+        "text": "Die Anfragen haben sich nach dem Website-Neubau verdoppelt. Der KI-Chat kommt bei Patienten gut an."
+      },
+      "3": {
+        "name": "DTC-Betreiber",
+        "location": "Nagoya, Aichi",
+        "text": "GEO hat Traffic aus ChatGPT-Suchen freigeschaltet. Ein völlig neuer Akquisitionskanal."
+      }
+    },
+    "trustBadges": {
+      "1": "Über 200 unterstützte Unternehmen",
+      "2": "98 % Kundenbindung",
+      "3": "3 Monate kostenloser Support nach dem Launch",
+      "4": "Keine harten Verkaufsgespräche"
+    },
+    "ctaEyebrow": "Loslegen",
+    "ctaHeading": "Starten Sie mit einer ",
+    "ctaHeadingHighlight": "kostenlosen Beratung",
+    "ctaHeadingSuffix": "",
+    "ctaSubheading": "15-minütige Online-Beratung. Wir diagnostizieren Ihre Situation und empfehlen die Maßnahmen mit dem höchsten ROI – kostenlos.",
+    "ctaButton": "Kostenlose Beratung buchen",
+    "ctaBullets": {
+      "1": "Immer kostenlos",
+      "2": "Keine Verkaufsgespräche",
+      "3": "Maximal 15 Minuten"
+    }
   },
   "chatbot": {
     "title": "Paradigm Assistent",
     "status": "KI-Agent online · sofortige Antworten",
-    "openLabel": "Unseren KI-Assistenten fragen",
-    "greeting": "Hallo! Ich bin der KI-Assistent von Paradigm LLC 👋\n\nFragen Sie mich alles zu Webentwicklung, lokalem SEO, SEO/GEO oder KI-Integration für Ihren Markteintritt in Japan.\nKlicken Sie auf eine der Schnellfragen unten oder geben Sie Ihre eigene ein.",
-    "placeholder": "Stellen Sie uns eine Frage...",
+    "openLabel": "Fragen Sie unseren KI-Assistenten",
+    "greeting": "Hallo! Ich bin der KI-Assistent von Paradigm LLC 👋\n\nStellen Sie mir alles zu Webentwicklung, Local SEO, SEO/GEO oder KI-Integration für Ihren Japan-Markteintritt.\nTippen Sie unten eine Schnellfrage oder schreiben Sie einfach Ihre eigene.",
+    "placeholder": "Fragen Sie uns alles...",
     "errorReply": "Entschuldigung – bei der Generierung einer Antwort ist ein Fehler aufgetreten.",
     "errorNetwork": "Entschuldigung – ein Verbindungsfehler ist aufgetreten.\n\n📧 info@paradigmjp.com",
     "footerLine": "Bereitgestellt von Paradigm AI",
     "footerContact": "Mit einem Menschen sprechen →",
     "quick": {
       "pricingLabel": "Preise & Angebote",
-      "pricingMessage": "Können Sie mir die Preise für eine Website-Erstellung nennen?",
-      "processLabel": "Ablauf",
-      "processMessage": "Wie sieht der Lieferprozess für eine Website aus?",
+      "pricingMessage": "Können Sie mir die Preise für einen Website-Bau nennen?",
+      "processLabel": "So funktioniert's",
+      "processMessage": "Wie läuft der Website-Lieferprozess ab?",
       "timelineLabel": "Zeitplan",
-      "timelineMessage": "Wie lange dauert die Erstellung einer typischen Website?",
+      "timelineMessage": "Wie lange dauert eine typische Website bis zur Auslieferung?",
       "meoLabel": "Was ist MEO?",
-      "meoMessage": "Was ist MEO (lokales SEO in Japan) und funktioniert es?",
+      "meoMessage": "Was ist MEO (Local SEO in Japan) und funktioniert es?",
       "aiLabel": "KI-Integration",
-      "aiMessage": "Was umfasst die KI-Integration in Ihren Projekten genau?",
+      "aiMessage": "Was umfasst die KI-Integration in Ihren Engagements tatsächlich?",
       "supportLabel": "Support & Wartung",
-      "supportMessage": "Welchen Support und welche Fehlerbehebungen bieten Sie nach dem Start an?"
+      "supportMessage": "Welche Art von Support und Fehlerbehebungen nach dem Launch bieten Sie an?"
     }
   },
   "report": {
     "eyebrow": "Digital Asset Audit",
     "reportOf": "Bericht für {name}",
     "confidential": "Vertraulich – erstellt für {name}",
-    "autoGenerated": "Dieser Bericht wurde automatisch generiert.",
+    "autoGenerated": "Dieser Bericht wird automatisch generiert.",
     "loading": "Diagnosebericht wird geladen...",
     "errorTitle": "Bericht kann nicht angezeigt werden",
     "errorGeneric": "Der Bericht konnte nicht geladen werden.",
@@ -81,7 +199,7 @@
       "improve": "Verbesserungspotenzial",
       "critical": "Handlungsbedarf"
     },
-    "aiSummaryHeading": "KI-Zusammenfassung",
+    "aiSummaryHeading": "KI-Zusammenfassung für die Geschäftsleitung",
     "scoreCardsHeading": "Bewertungskarten",
     "metric": {
       "googleRating": "Google-Bewertung",
@@ -95,7 +213,7 @@
       "medium": "Mittel",
       "low": "Gering"
     },
-    "competitorsHeading": "Wettbewerbsvergleich",
+    "competitorsHeading": "Wettbewerbsvergleiche",
     "competitor": {
       "name": "Unternehmen",
       "rating": "Bewertung",
@@ -113,6 +231,6 @@
     "ctaSubheading": "Buchen Sie eine 30-minütige Beratung – wir empfehlen die nächsten Schritte mit der größten Hebelwirkung.",
     "ctaButton": "Kostenlose Beratung buchen",
     "ctaEmail": "Per E-Mail antworten",
-    "intro": "Hier sehen Sie, wie Ihre Webpräsenz, SEO, Wettbewerbsposition und Bewertungsreaktion abschneiden."
+    "intro": "Hier sehen Sie, wie Ihre Webpräsenz, SEO, Wettbewerbsposition und Bewertungsreaktionen abschneiden."
   }
 }

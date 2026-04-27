@@ -6,7 +6,7 @@
   "nav": {
     "about": "소개",
     "services": "서비스",
-    "works": "작업 사례",
+    "works": "작업",
     "pricing": "가격",
     "faq": "FAQ",
     "blog": "블로그",
@@ -17,17 +17,17 @@
     "secondary": "서비스 살펴보기",
     "bookConsult": "무료 상담 예약",
     "diagnose": "무료 진단 받기",
-    "reportCta": "이 리포트 논의하기"
+    "reportCta": "이 보고서 논의하기"
   },
   "footer": {
     "company": "Paradigm LLC",
-    "companyTagline": "Paradigm LLC — 해외 중소기업이 일본 시장에 진출하고 성장할 수 있도록 돕는 제품화된 서비스.",
+    "companyTagline": "Paradigm LLC — 해외 중소기업이 일본에 진출하여 성장할 수 있도록 돕는 프로덕트화된 서비스.",
     "servicesHeading": "서비스",
     "companyHeading": "회사",
     "contactHeading": "연락처",
     "rights": "모든 권리 보유.",
-    "privacy": "개인정보 처리방침",
-    "legal": "이용약관 및 특정 상거래법",
+    "privacy": "개인정보처리방침",
+    "legal": "이용약관 및 특정 상거래",
     "services": {
       "web": "웹 개발",
       "meo": "로컬 SEO (MEO)",
@@ -36,52 +36,170 @@
     }
   },
   "home": {
-    "heroTitle": "일본 진출을 위한 해외 중소기업 맞춤형 제품화 서비스",
-    "heroSubtitle": "번역 없는 온보딩, 현지 규정 준수, AI 기반 자동화 — 도쿄의 운영 전문가가 구축합니다.",
-    "trusted": "저희가 지원한 기업"
+    "heroBadge": "일본 내 현지 디지털 파트너",
+    "heroTitle": "일본에 진출하는 해외 중소기업을 위한 프로덕트화된 서비스",
+    "heroSubtitle": "번역 없는 온보딩, 현지 규정 준수, AI 기반 자동화 — 도쿄의 운영자가 구축합니다.",
+    "heroSuffix": " 일본 진출을 가속화하세요.",
+    "heroSubheadline": "웹, 로컬 SEO, SEO/GEO, AI 도입 — 일본에 안착하고 성장하기 위한 풀스택 지원.",
+    "heroTypingWords": [
+      "로컬 SEO",
+      "AI 자동화",
+      "웹 구축",
+      "SEO/GEO"
+    ],
+    "heroBookConsult": "무료 상담 예약",
+    "heroSeeServices": "서비스 살펴보기",
+    "trusted": "저희가 지원한 기업",
+    "stats": {
+      "support": {
+        "suffix": "+",
+        "label": "지원 기업 수"
+      },
+      "retention": {
+        "suffix": "%",
+        "label": "유지율"
+      },
+      "growth": {
+        "suffix": "x",
+        "label": "평균 트래픽 증가"
+      },
+      "consult": {
+        "suffix": "분",
+        "label": "첫 상담 시간"
+      }
+    },
+    "servicesEyebrow": "서비스",
+    "servicesHeading": "일본 비즈니스를 성장시키는 네 가지 서비스",
+    "servicesViewMore": "자세히 알아보기",
+    "services": {
+      "web": {
+        "title": "웹 개발",
+        "tagline": "인바운드를 위해 구축된 현대적 사이트",
+        "desc": "반응형, SEO 최적화, CMS 포함. 출시와 그에 따른 인바운드 플라이휠을 처리합니다.",
+        "results": "+3배 문의 증가",
+        "badge": "가장 인기"
+      },
+      "meo": {
+        "title": "로컬 SEO (MEO)",
+        "tagline": "일본 구글 지도 상위 노출",
+        "desc": "리뷰 관리, 게시 주기, 순위 추적 — 로컬 팩에서 1위를 목표로 합니다.",
+        "results": "+220% 매장 방문",
+        "badge": ""
+      },
+      "seo": {
+        "title": "SEO / GEO",
+        "tagline": "Google + AI 검색에서 승리",
+        "desc": "잠재 고객이 질문할 때 ChatGPT, Gemini, Perplexity가 실제로 인용하는 차세대 SEO.",
+        "results": "+180% 유기적 트래픽",
+        "badge": "새로운 기준"
+      },
+      "ai": {
+        "title": "AI 도입",
+        "tagline": "운영을 종단간 자동화",
+        "desc": "AI 챗봇, 운영 자동화, AI 광고 파이프라인 — 롤아웃부터 지속 운영까지.",
+        "results": "-45% 운영 비용",
+        "badge": ""
+      }
+    },
+    "featuresEyebrow": "Paradigm을 선택하는 이유",
+    "featuresHeading": "고객이 저희를 선택하는 네 가지 이유",
+    "features": {
+      "speed": {
+        "title": "2주 배송",
+        "desc": "마감 직전 작업을 포함하여 품질을 빠르게 제공하는 린 프로세스."
+      },
+      "guarantee": {
+        "title": "결과 기반 계획",
+        "desc": "로컬 SEO 및 SEO/GEO는 결과가 나타나지 않을 경우 환불 기간이 제공됩니다."
+      },
+      "team": {
+        "title": "전담 담당자",
+        "desc": "종단간 동일한 담당자 — 월간 보고서 및 정기 검토."
+      },
+      "aiFusion": {
+        "title": "AI × 디지털 융합",
+        "desc": "인바운드를 위해 무장한 최신 AI 도구 — 경쟁사를 능가하는 전략."
+      }
+    },
+    "testimonialsEyebrow": "고객 후기",
+    "testimonialsHeading": "고객의 말",
+    "testimonials": {
+      "1": {
+        "name": "레스토랑 주인",
+        "location": "시부야, 도쿄",
+        "text": "3개월 만에 MEO가 월 30회 이상 첫 방문을 유도했습니다. ROI는 명백했습니다."
+      },
+      "2": {
+        "name": "클리닉 원장",
+        "location": "기타구, 오사카",
+        "text": "웹사이트 재구축 후 문의가 두 배로 늘었습니다. AI 채팅이 환자들에게 인기입니다."
+      },
+      "3": {
+        "name": "DTC 운영자",
+        "location": "나고야, 아이치",
+        "text": "GEO가 ChatGPT 검색에서 트래픽을 열었습니다. 완전히 새로운 획득 채널입니다."
+      }
+    },
+    "trustBadges": {
+      "1": "200개 이상 기업 지원",
+      "2": "98% 유지율",
+      "3": "출시 후 3개월 무료 지원",
+      "4": "강매 없음"
+    },
+    "ctaEyebrow": "시작하기",
+    "ctaHeading": " ",
+    "ctaHeadingHighlight": "무료 상담",
+    "ctaHeadingSuffix": "으로 시작하세요",
+    "ctaSubheading": "15분 온라인 상담. 귀하의 상황을 진단하고 가장 ROI가 높은 조치를 추천해 드립니다 — 무료.",
+    "ctaButton": "무료 상담 예약",
+    "ctaBullets": {
+      "1": "항상 무료",
+      "2": "영업 전화 없음",
+      "3": "최대 15분"
+    }
   },
   "chatbot": {
     "title": "Paradigm 어시스턴트",
     "status": "AI 에이전트 온라인 · 즉시 응답",
     "openLabel": "AI 어시스턴트에게 물어보기",
-    "greeting": "안녕하세요! 저는 Paradigm LLC의 AI 어시스턴트입니다 👋\n\n웹 개발, 로컬 SEO, SEO/GEO, 또는 일본 시장 진출을 위한 AI 도입에 대해 무엇이든 물어보세요.\n아래 빠른 질문을 탭하거나 직접 입력해 주세요.",
+    "greeting": "안녕하세요! 저는 Paradigm LLC의 AI 어시스턴트입니다 👋\n\n웹 개발, 로컬 SEO, SEO/GEO 또는 일본 시장 진출을 위한 AI 도입에 대해 무엇이든 물어보세요.\n아래 빠른 질문을 탭하거나 직접 입력해 주세요.",
     "placeholder": "무엇이든 물어보세요...",
-    "errorReply": "죄송합니다. 응답 생성 중 오류가 발생했습니다.",
-    "errorNetwork": "죄송합니다. 연결 오류가 발생했습니다.\n\n📧 info@paradigmjp.com",
+    "errorReply": "죄송합니다 — 응답 생성 중 오류가 발생했습니다.",
+    "errorNetwork": "죄송합니다 — 연결 오류가 발생했습니다.\n\n📧 info@paradigmjp.com",
     "footerLine": "Paradigm AI 제공",
-    "footerContact": "담당자와 상담하기 →",
+    "footerContact": "인간과 대화하기 →",
     "quick": {
       "pricingLabel": "가격 및 견적",
       "pricingMessage": "웹사이트 구축 비용을 알려주실 수 있나요?",
-      "processLabel": "진행 과정",
-      "processMessage": "웹사이트 제공 프로세스는 어떻게 되나요?",
+      "processLabel": "진행 방식",
+      "processMessage": "웹사이트 전달 프로세스는 어떻게 되나요?",
       "timelineLabel": "일정",
-      "timelineMessage": "일반적인 웹사이트 구축에 얼마나 걸리나요?",
+      "timelineMessage": "일반적인 웹사이트 구축에는 얼마나 걸리나요?",
       "meoLabel": "MEO란?",
       "meoMessage": "MEO(일본 로컬 SEO)란 무엇이며 효과가 있나요?",
       "aiLabel": "AI 도입",
-      "aiMessage": "AI 도입 서비스에는 실제로 무엇이 포함되나요?",
+      "aiMessage": "귀사의 업무에서 AI 도입은 실제로 무엇을 포함하나요?",
       "supportLabel": "지원 및 유지보수",
-      "supportMessage": "런칭 후 어떤 지원과 수정을 제공하시나요?"
+      "supportMessage": "출시 후 어떤 지원과 수정을 제공하시나요?"
     }
   },
   "report": {
     "eyebrow": "디지털 자산 감사",
-    "reportOf": "{name}님을 위한 리포트",
-    "confidential": "기밀 — {name}님을 위해 작성됨",
-    "autoGenerated": "이 리포트는 자동 생성되었습니다.",
-    "loading": "진단 리포트 로딩 중...",
-    "errorTitle": "리포트를 표시할 수 없습니다",
-    "errorGeneric": "리포트를 불러오지 못했습니다.",
-    "notFound": "리포트를 찾을 수 없습니다.",
-    "expired": "이 리포트는 만료되었습니다.",
+    "reportOf": "{name} 보고서",
+    "confidential": "기밀 — {name}을(를) 위해 작성됨",
+    "autoGenerated": "이 보고서는 자동 생성되었습니다.",
+    "loading": "진단 보고서 로딩 중...",
+    "errorTitle": "보고서를 표시할 수 없습니다",
+    "errorGeneric": "보고서를 불러오지 못했습니다.",
+    "notFound": "보고서를 찾을 수 없습니다.",
+    "expired": "이 보고서는 만료되었습니다.",
     "overallScore": "종합 점수",
     "scoreLabel": {
       "good": "우수",
       "improve": "개선 필요",
       "critical": "시급"
     },
-    "aiSummaryHeading": "AI 경영진 요약",
+    "aiSummaryHeading": "AI 경영 요약",
     "scoreCardsHeading": "점수 카드",
     "metric": {
       "googleRating": "Google 평점",
@@ -97,7 +215,7 @@
     },
     "competitorsHeading": "경쟁사 벤치마크",
     "competitor": {
-      "name": "회사명",
+      "name": "회사",
       "rating": "평점",
       "reviews": "리뷰",
       "strengths": "강점"
@@ -110,9 +228,9 @@
     },
     "impact": "예상 효과",
     "ctaHeading": "이 인사이트를 구체적인 계획으로 전환해 보세요.",
-    "ctaSubheading": "30분 무료 상담을 예약하시면 가장 효과적인 다음 단계를 추천해 드립니다.",
+    "ctaSubheading": "30분 상담을 예약하세요 — 가장 효과적인 다음 단계를 추천해 드립니다.",
     "ctaButton": "무료 상담 예약",
-    "ctaEmail": "이메일로 답변",
-    "intro": "웹사이트, SEO, 경쟁사 현황, 리뷰 대응 상태를 종합적으로 분석한 결과입니다."
+    "ctaEmail": "이메일로 답장",
+    "intro": "웹, SEO, 경쟁사 현황 및 리뷰 응대가 어떻게 구성되어 있는지 확인하세요."
   }
 }

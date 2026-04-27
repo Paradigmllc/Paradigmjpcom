@@ -32,19 +32,137 @@
       "web": "Développement web",
       "meo": "SEO local (MEO)",
       "seo": "SEO / GEO",
-      "ai": "Activation IA"
+      "ai": "Intégration IA"
     }
   },
   "home": {
-    "heroTitle": "Services packagés pour les PME étrangères entrant au Japon",
+    "heroBadge": "Votre partenaire digital local au Japon",
+    "heroTitle": "Services packagés pour les PME étrangères qui entrent au Japon",
     "heroSubtitle": "Intégration sans traduction, conformité locale et automatisation par IA — conçus par des opérateurs à Tokyo.",
-    "trusted": "Entreprises que nous avons accompagnées"
+    "heroSuffix": " pour accélérer votre entrée au Japon.",
+    "heroSubheadline": "Web, SEO local, SEO/GEO et intégration IA — un support complet pour s'implanter et se développer au Japon.",
+    "heroTypingWords": [
+      "SEO local",
+      "Automatisation IA",
+      "Création web",
+      "SEO/GEO"
+    ],
+    "heroBookConsult": "Réserver une consultation gratuite",
+    "heroSeeServices": "Découvrir nos services",
+    "trusted": "Entreprises que nous avons accompagnées",
+    "stats": {
+      "support": {
+        "suffix": "+",
+        "label": "Entreprises accompagnées"
+      },
+      "retention": {
+        "suffix": "%",
+        "label": "Taux de rétention"
+      },
+      "growth": {
+        "suffix": "x",
+        "label": "Augmentation moyenne du trafic"
+      },
+      "consult": {
+        "suffix": "min",
+        "label": "Première consultation"
+      }
+    },
+    "servicesEyebrow": "Services",
+    "servicesHeading": "Quatre services pour développer votre activité au Japon",
+    "servicesViewMore": "En savoir plus",
+    "services": {
+      "web": {
+        "title": "Développement web",
+        "tagline": "Des sites modernes conçus pour l'inbound",
+        "desc": "Responsive, optimisé SEO, avec CMS. Nous gérons le lancement et le volant d'inbound qui s'ensuit.",
+        "results": "+3x demandes",
+        "badge": "Le plus populaire"
+      },
+      "meo": {
+        "title": "SEO local (MEO)",
+        "tagline": "En haut de Google Maps au Japon",
+        "desc": "Gestion des avis, rythme de publication et suivi du classement — viser la première place dans votre pack local.",
+        "results": "+220% visites en magasin",
+        "badge": ""
+      },
+      "seo": {
+        "title": "SEO / GEO",
+        "tagline": "Gagnez Google + la recherche IA",
+        "desc": "SEO nouvelle génération que ChatGPT, Gemini et Perplexity citent réellement lorsque les prospects posent des questions.",
+        "results": "+180% trafic organique",
+        "badge": "Nouveau standard"
+      },
+      "ai": {
+        "title": "Intégration IA",
+        "tagline": "Automatisez les opérations de bout en bout",
+        "desc": "Chatbots IA, automatisation des opérations et pipelines publicitaires IA — du déploiement aux opérations continues.",
+        "results": "-45% coûts opérationnels",
+        "badge": ""
+      }
+    },
+    "featuresEyebrow": "Pourquoi Paradigm",
+    "featuresHeading": "Quatre raisons pour lesquelles les clients nous choisissent",
+    "features": {
+      "speed": {
+        "title": "Livraison en 2 semaines",
+        "desc": "Un processus lean qui livre de la qualité rapidement — y compris les travaux de dernière minute."
+      },
+      "guarantee": {
+        "title": "Plan garanti par les résultats",
+        "desc": "Le SEO local et le SEO/GEO sont assortis d'une fenêtre de remboursement si les résultats ne se concrétisent pas."
+      },
+      "team": {
+        "title": "Interlocuteur dédié",
+        "desc": "Même point de contact de bout en bout — rapports mensuels et réunions régulières."
+      },
+      "aiFusion": {
+        "title": "Fusion IA × digital",
+        "desc": "Les derniers outils IA utilisés pour l'inbound — des stratégies qui battent vos concurrents."
+      }
+    },
+    "testimonialsEyebrow": "Témoignages",
+    "testimonialsHeading": "Ce que disent nos clients",
+    "testimonials": {
+      "1": {
+        "name": "Propriétaire de restaurant",
+        "location": "Shibuya, Tokyo",
+        "text": "Trois mois après, le MEO a généré plus de 30 premières visites par mois. Le ROI était indéniable."
+      },
+      "2": {
+        "name": "Directeur de clinique",
+        "location": "Kita-ku, Osaka",
+        "text": "Les demandes ont doublé après la refonte du site. Le chat IA est un succès auprès des patients."
+      },
+      "3": {
+        "name": "Opérateur DTC",
+        "location": "Nagoya, Aichi",
+        "text": "Le GEO a débloqué du trafic provenant des recherches ChatGPT. Un tout nouveau canal d'acquisition."
+      }
+    },
+    "trustBadges": {
+      "1": "Plus de 200 entreprises accompagnées",
+      "2": "98% de rétention",
+      "3": "3 mois de support post-lancement gratuits",
+      "4": "Pas de vente agressive"
+    },
+    "ctaEyebrow": "Commencez",
+    "ctaHeading": "Commencez par une ",
+    "ctaHeadingHighlight": "consultation gratuite",
+    "ctaHeadingSuffix": "",
+    "ctaSubheading": "Consultation en ligne de 15 minutes. Nous diagnostiquons votre situation et recommandons les actions au meilleur ROI — gratuitement.",
+    "ctaButton": "Réserver une consultation gratuite",
+    "ctaBullets": {
+      "1": "Toujours gratuit",
+      "2": "Pas d'appels commerciaux",
+      "3": "15 minutes maximum"
+    }
   },
   "chatbot": {
     "title": "Assistant Paradigm",
     "status": "Agent IA en ligne · réponses instantanées",
     "openLabel": "Interroger notre assistant IA",
-    "greeting": "Bonjour ! Je suis l'assistant IA de Paradigm LLC 👋\n\nPosez-moi toutes vos questions sur le développement web, le SEO local, le SEO/GEO ou l'activation IA pour votre entrée sur le marché japonais.\nAppuyez sur une question rapide ci-dessous, ou tapez la vôtre.",
+    "greeting": "Bonjour ! Je suis l'assistant IA de Paradigm LLC 👋\n\nPosez-moi toutes vos questions sur le développement web, le SEO local, le SEO/GEO ou l'intégration IA pour votre entrée sur le marché japonais.\nAppuyez sur une question rapide ci-dessous, ou tapez la vôtre.",
     "placeholder": "Posez-nous une question...",
     "errorReply": "Désolé — une erreur s'est produite lors de la génération de la réponse.",
     "errorNetwork": "Désolé — une erreur de connexion s'est produite.\n\n📧 info@paradigmjp.com",
@@ -52,17 +170,17 @@
     "footerContact": "Parler à un humain →",
     "quick": {
       "pricingLabel": "Tarifs et devis",
-      "pricingMessage": "Pouvez-vous communiquer les tarifs pour la création d'un site web ?",
+      "pricingMessage": "Pouvez-vous partager les tarifs pour la création d'un site web ?",
       "processLabel": "Comment ça marche",
       "processMessage": "À quoi ressemble le processus de livraison d'un site web ?",
       "timelineLabel": "Calendrier",
-      "timelineMessage": "Combien de temps faut-il en moyenne pour livrer un site web ?",
+      "timelineMessage": "Combien de temps faut-il pour livrer un site web typique ?",
       "meoLabel": "Qu'est-ce que le MEO ?",
       "meoMessage": "Qu'est-ce que le MEO (SEO local au Japon) et est-ce que ça marche ?",
-      "aiLabel": "Activation IA",
-      "aiMessage": "Que couvre réellement l'activation IA dans vos missions ?",
+      "aiLabel": "Intégration IA",
+      "aiMessage": "Que couvre réellement l'intégration IA dans vos missions ?",
       "supportLabel": "Support et maintenance",
-      "supportMessage": "Quel type de support et de correctifs post-lancement proposez-vous ?"
+      "supportMessage": "Quel type de support et de corrections post-lancement proposez-vous ?"
     }
   },
   "report": {
@@ -104,7 +222,7 @@
     },
     "recommendationsHeading": "Actions recommandées",
     "priority": {
-      "high": "Priorité : Élevée",
+      "high": "Priorité : Haute",
       "medium": "Priorité : Moyenne",
       "low": "Priorité : Faible"
     },
@@ -112,7 +230,7 @@
     "ctaHeading": "Transformons ces informations en un plan concret.",
     "ctaSubheading": "Réservez une consultation de 30 minutes — nous recommanderons les prochaines étapes à plus fort impact.",
     "ctaButton": "Réserver une consultation gratuite",
-    "ctaEmail": "Répondre par e-mail",
-    "intro": "Voici comment se comparent votre site web, votre SEO, votre position concurrentielle et votre gestion des avis."
+    "ctaEmail": "Répondre par email",
+    "intro": "Voici comment se positionnent votre site web, votre SEO, votre posture concurrentielle et votre gestion des avis."
   }
 }

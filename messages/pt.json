@@ -16,7 +16,7 @@
     "primary": "Consultoria Gratuita",
     "secondary": "Explorar Serviços",
     "bookConsult": "Agende uma Consultoria Gratuita",
-    "diagnose": "Obtenha um Diagnóstico Gratuito",
+    "diagnose": "Faça um Diagnóstico Gratuito",
     "reportCta": "Discutir Este Relatório"
   },
   "footer": {
@@ -36,9 +36,127 @@
     }
   },
   "home": {
+    "heroBadge": "Seu parceiro digital local no Japão",
     "heroTitle": "Serviços Produtizados para PMEs Estrangeiras Entrando no Japão",
     "heroSubtitle": "Integração sem tradução, conformidade local e automação com IA — construído por operadores em Tóquio.",
-    "trusted": "Empresas que apoiamos"
+    "heroSuffix": " para acelerar sua entrada no Japão.",
+    "heroSubheadline": "Web, SEO Local, SEO/GEO e Capacitação em IA — suporte completo para se estabelecer e crescer no Japão.",
+    "heroTypingWords": [
+      "SEO Local",
+      "Automação com IA",
+      "Construção Web",
+      "SEO/GEO"
+    ],
+    "heroBookConsult": "Agende uma Consultoria Gratuita",
+    "heroSeeServices": "Explorar Serviços",
+    "trusted": "Empresas que apoiamos",
+    "stats": {
+      "support": {
+        "suffix": "+",
+        "label": "Empresas apoiadas"
+      },
+      "retention": {
+        "suffix": "%",
+        "label": "Retenção"
+      },
+      "growth": {
+        "suffix": "x",
+        "label": "Aumento médio de tráfego"
+      },
+      "consult": {
+        "suffix": "min",
+        "label": "Primeira consultoria"
+      }
+    },
+    "servicesEyebrow": "Serviços",
+    "servicesHeading": "Quatro serviços que impulsionam seu negócio no Japão",
+    "servicesViewMore": "Saiba mais",
+    "services": {
+      "web": {
+        "title": "Desenvolvimento Web",
+        "tagline": "Sites modernos feitos para inbound",
+        "desc": "Responsivos, otimizados para SEO, com CMS. Cuidamos do lançamento e do funil de inbound que se segue.",
+        "results": "+3x consultas",
+        "badge": "Mais popular"
+      },
+      "meo": {
+        "title": "SEO Local (MEO)",
+        "tagline": "Topo do Google Maps no Japão",
+        "desc": "Gestão de avaliações, cadência de postagens e monitoramento de ranking — visando o #1 no seu pacote local.",
+        "results": "+220% visitas à loja",
+        "badge": ""
+      },
+      "seo": {
+        "title": "SEO / GEO",
+        "tagline": "Ganhe no Google + busca por IA",
+        "desc": "SEO de próxima geração que ChatGPT, Gemini e Perplexity realmente citam quando prospects perguntam.",
+        "results": "+180% tráfego orgânico",
+        "badge": "Novo padrão"
+      },
+      "ai": {
+        "title": "Capacitação em IA",
+        "tagline": "Automatize operações de ponta a ponta",
+        "desc": "Chatbots de IA, automação de operações e pipelines de anúncios com IA — da implantação às operações contínuas.",
+        "results": "-45% custos operacionais",
+        "badge": ""
+      }
+    },
+    "featuresEyebrow": "Por que a Paradigm",
+    "featuresHeading": "Quatro razões pelas quais os clientes nos escolhem",
+    "features": {
+      "speed": {
+        "title": "Entrega em 2 semanas",
+        "desc": "Um processo enxuto que entrega qualidade rapidamente — incluindo trabalhos de última hora."
+      },
+      "guarantee": {
+        "title": "Plano baseado em resultados",
+        "desc": "SEO Local e SEO/GEO vêm com janela de reembolso se os resultados não se concretizarem."
+      },
+      "team": {
+        "title": "Responsável dedicado",
+        "desc": "Mesmo ponto de contato do início ao fim — relatórios mensais e reuniões periódicas."
+      },
+      "aiFusion": {
+        "title": "Fusão IA × digital",
+        "desc": "Ferramentas de IA mais recentes usadas para inbound — estratégias que superam seus concorrentes."
+      }
+    },
+    "testimonialsEyebrow": "Depoimentos",
+    "testimonialsHeading": "O que os clientes dizem",
+    "testimonials": {
+      "1": {
+        "name": "Proprietário de Restaurante",
+        "location": "Shibuya, Tóquio",
+        "text": "Três meses depois, o MEO gerou mais de 30 primeiras visitas por mês. O ROI foi inegável."
+      },
+      "2": {
+        "name": "Diretor de Clínica",
+        "location": "Kita-ku, Osaka",
+        "text": "As consultas dobraram após a reformulação do site. O chat de IA é um sucesso com os pacientes."
+      },
+      "3": {
+        "name": "Operador DTC",
+        "location": "Nagoya, Aichi",
+        "text": "O GEO desbloqueou tráfego de buscas no ChatGPT. Um canal de aquisição totalmente novo."
+      }
+    },
+    "trustBadges": {
+      "1": "Mais de 200 empresas apoiadas",
+      "2": "98% de retenção",
+      "3": "3 meses de suporte pós-lançamento gratuito",
+      "4": "Sem vendas agressivas"
+    },
+    "ctaEyebrow": "Comece Agora",
+    "ctaHeading": "Comece com uma ",
+    "ctaHeadingHighlight": "consultoria gratuita",
+    "ctaHeadingSuffix": "",
+    "ctaSubheading": "Consultoria online de 15 minutos. Diagnosticaremos sua situação e recomendaremos as ações de maior ROI — gratuitamente.",
+    "ctaButton": "Agende uma consultoria gratuita",
+    "ctaBullets": {
+      "1": "Sempre gratuito",
+      "2": "Sem ligações de vendas",
+      "3": "Máximo de 15 minutos"
+    }
   },
   "chatbot": {
     "title": "Assistente Paradigm",
@@ -52,17 +170,17 @@
     "footerContact": "Fale com um humano →",
     "quick": {
       "pricingLabel": "Preços e orçamentos",
-      "pricingMessage": "Você pode compartilhar os preços para a criação de um site?",
+      "pricingMessage": "Você pode compartilhar os preços para a construção de um site?",
       "processLabel": "Como funciona",
       "processMessage": "Como é o processo de entrega do site?",
-      "timelineLabel": "Cronograma",
-      "timelineMessage": "Quanto tempo leva para um site típico ser lançado?",
+      "timelineLabel": "Prazo",
+      "timelineMessage": "Quanto tempo leva para entregar um site típico?",
       "meoLabel": "O que é MEO?",
       "meoMessage": "O que é MEO (SEO local no Japão) e funciona?",
       "aiLabel": "Capacitação em IA",
       "aiMessage": "O que a capacitação em IA cobre exatamente em seus engajamentos?",
       "supportLabel": "Suporte e manutenção",
-      "supportMessage": "Que tipo de suporte pós-lançamento e correções vocês oferecem?"
+      "supportMessage": "Que tipo de suporte e correções pós-lançamento vocês oferecem?"
     }
   },
   "report": {
@@ -78,7 +196,7 @@
     "overallScore": "Pontuação Geral",
     "scoreLabel": {
       "good": "Forte",
-      "improve": "Espaço para melhorar",
+      "improve": "Pode melhorar",
       "critical": "Precisa de trabalho"
     },
     "aiSummaryHeading": "Resumo Executivo de IA",
@@ -110,9 +228,9 @@
     },
     "impact": "Impacto Esperado",
     "ctaHeading": "Vamos transformar esses insights em um plano concreto.",
-    "ctaSubheading": "Agende uma consulta de 30 minutos — recomendaremos os próximos passos de maior alavancagem.",
-    "ctaButton": "Agende uma consulta gratuita",
-    "ctaEmail": "Responder por e-mail",
+    "ctaSubheading": "Agende uma consultoria de 30 minutos — recomendaremos os próximos passos de maior alavancagem.",
+    "ctaButton": "Agende uma consultoria gratuita",
+    "ctaEmail": "Responda por e-mail",
     "intro": "Veja como seu site, SEO, postura competitiva e resposta a avaliações se comparam."
   }
 }

@@ -36,9 +36,86 @@
     }
   },
   "home": {
+    "heroBadge": "中小企業のデジタルパートナー",
     "heroTitle": "AIと自動化で、中小企業のDXを加速する",
     "heroSubtitle": "業務の自動化から顧客獲得まで、Paradigmが一気通貫で支援します。",
-    "trusted": "これまでに支援した企業"
+    "heroSuffix": "で事業を加速する。",
+    "heroSubheadline": "Web制作・MEO対策・SEO/GEO・AI導入支援。中小企業のデジタル変革をワンストップで支援します。",
+    "heroTypingWords": ["MEO対策", "AI活用", "Web制作", "SEO/GEO"],
+    "heroBookConsult": "無料相談を予約",
+    "heroSeeServices": "サービスを見る",
+    "trusted": "これまでに支援した企業",
+    "stats": {
+      "support": { "suffix": "社+", "label": "支援実績" },
+      "retention": { "suffix": "%", "label": "継続率" },
+      "growth": { "suffix": "倍", "label": "平均集客増加" },
+      "consult": { "suffix": "分", "label": "初回相談時間" }
+    },
+    "servicesEyebrow": "Services",
+    "servicesHeading": "事業を成長させる4つのサービス",
+    "servicesViewMore": "詳しく見る",
+    "services": {
+      "web": {
+        "title": "ホームページ制作",
+        "tagline": "集客に強いモダンサイト",
+        "desc": "レスポンシブ・SEO最適化・CMS付き。制作後の集客もワンストップでサポート。",
+        "results": "問い合わせ数 +3倍",
+        "badge": "最人気"
+      },
+      "meo": {
+        "title": "MEO対策",
+        "tagline": "Googleマップで上位表示",
+        "desc": "口コミ管理・投稿運用・順位改善で近隣検索1位を目指します。",
+        "results": "来店数 +220%",
+        "badge": ""
+      },
+      "seo": {
+        "title": "SEO/GEO対策",
+        "tagline": "AI検索・Google双方に対応",
+        "desc": "ChatGPT・Gemini等のAI検索でも推薦される次世代SEO。",
+        "results": "自然流入 +180%",
+        "badge": "新定番"
+      },
+      "ai": {
+        "title": "AI導入支援",
+        "tagline": "業務を自動化・効率化",
+        "desc": "AIチャットボット・業務自動化・AI広告など導入から運用まで一括対応。",
+        "results": "業務コスト -45%",
+        "badge": ""
+      }
+    },
+    "featuresEyebrow": "Why Paradigm",
+    "featuresHeading": "選ばれる4つの理由",
+    "features": {
+      "speed": { "title": "最短2週間で納品", "desc": "スリムなプロセスで高品質・スピード納品。急ぎの案件も対応可能。" },
+      "guarantee": { "title": "成果保証プラン", "desc": "MEO・SEOは一定期間内に成果が出なければ返金対応。安心してお任せください。" },
+      "team": { "title": "専任担当が伴走", "desc": "担当者が変わらない。月次レポート+定例MTGで継続サポート。" },
+      "aiFusion": { "title": "AI×デジタルの融合", "desc": "最新AIツールを活用した次世代集客。競合に差をつける戦略を提供。" }
+    },
+    "testimonialsEyebrow": "Testimonials",
+    "testimonialsHeading": "お客様の声",
+    "testimonials": {
+      "1": { "name": "飲食店オーナー", "location": "東京都渋谷区", "text": "MEO対策を始めて3ヶ月で月30件以上の新規来店。費用対効果が明確で驚きました。" },
+      "2": { "name": "クリニック院長", "location": "大阪府北区", "text": "ホームページをリニューアルしてから問い合わせが倍増。AIチャットも好評です。" },
+      "3": { "name": "EC運営者", "location": "愛知県名古屋市", "text": "GEO対策でChatGPT検索からの流入が急増。新しい集客チャンネルができました。" }
+    },
+    "trustBadges": {
+      "1": "実績200社以上",
+      "2": "継続率98%",
+      "3": "導入後3ヶ月無料サポート",
+      "4": "押し売りなし"
+    },
+    "ctaEyebrow": "Get Started",
+    "ctaHeading": "まずは",
+    "ctaHeadingHighlight": "無料相談",
+    "ctaHeadingSuffix": "から",
+    "ctaSubheading": "15分のオンライン相談。課題をヒアリングし、最適なデジタル戦略を無料でご提案します。",
+    "ctaButton": "無料相談を予約する",
+    "ctaBullets": {
+      "1": "完全無料",
+      "2": "営業電話なし",
+      "3": "最短15分"
+    }
   },
   "chatbot": {
     "title": "Paradigm アシスタント",

@@ -17,11 +17,11 @@
     "secondary": "Explorar Servicios",
     "bookConsult": "Reserve una Consulta Gratuita",
     "diagnose": "Obtenga un Diagnóstico Gratuito",
-    "reportCta": "Discutir este Informe"
+    "reportCta": "Discutir Este Informe"
   },
   "footer": {
     "company": "Paradigm LLC",
-    "companyTagline": "Paradigm LLC — servicios empaquetados que ayudan a las PYME extranjeras a aterrizar y crecer en Japón.",
+    "companyTagline": "Paradigm LLC — servicios empaquetados que ayudan a las PYME extranjeras a establecerse y crecer en Japón.",
     "servicesHeading": "Servicios",
     "companyHeading": "Empresa",
     "contactHeading": "Contacto",
@@ -36,9 +36,127 @@
     }
   },
   "home": {
+    "heroBadge": "Su socio digital local en Japón",
     "heroTitle": "Servicios Empaquetados para PYME Extranjeras que Ingresan a Japón",
     "heroSubtitle": "Incorporación sin traducción, cumplimiento local y automatización impulsada por IA — construido por operadores en Tokio.",
-    "trusted": "Empresas que hemos apoyado"
+    "heroSuffix": " para acelerar su entrada a Japón.",
+    "heroSubheadline": "Web, SEO Local, SEO/GEO y Habilitación de IA — soporte integral para establecerse y crecer en Japón.",
+    "heroTypingWords": [
+      "SEO Local",
+      "Automatización con IA",
+      "Construcción Web",
+      "SEO/GEO"
+    ],
+    "heroBookConsult": "Reserve una Consulta Gratuita",
+    "heroSeeServices": "Explorar Servicios",
+    "trusted": "Empresas que hemos apoyado",
+    "stats": {
+      "support": {
+        "suffix": "+",
+        "label": "Empresas apoyadas"
+      },
+      "retention": {
+        "suffix": "%",
+        "label": "Retención"
+      },
+      "growth": {
+        "suffix": "x",
+        "label": "Aumento promedio de tráfico"
+      },
+      "consult": {
+        "suffix": "min",
+        "label": "Primera consulta"
+      }
+    },
+    "servicesEyebrow": "Servicios",
+    "servicesHeading": "Cuatro servicios que hacen crecer su negocio en Japón",
+    "servicesViewMore": "Más información",
+    "services": {
+      "web": {
+        "title": "Desarrollo Web",
+        "tagline": "Sitios modernos diseñados para inbound",
+        "desc": "Responsivos, optimizados para SEO, con CMS. Gestionamos el lanzamiento y el volante inbound que le sigue.",
+        "results": "+3x consultas",
+        "badge": "Más popular"
+      },
+      "meo": {
+        "title": "SEO Local (MEO)",
+        "tagline": "Arriba en Google Maps en Japón",
+        "desc": "Gestión de reseñas, cadencia de publicaciones y seguimiento de posiciones — apuntando al #1 en su paquete local.",
+        "results": "+220% visitas a la tienda",
+        "badge": ""
+      },
+      "seo": {
+        "title": "SEO / GEO",
+        "tagline": "Gane en Google + búsqueda con IA",
+        "desc": "SEO de próxima generación que ChatGPT, Gemini y Perplexity realmente citan cuando los prospectos preguntan.",
+        "results": "+180% tráfico orgánico",
+        "badge": "Nuevo estándar"
+      },
+      "ai": {
+        "title": "Habilitación de IA",
+        "tagline": "Automatice operaciones de principio a fin",
+        "desc": "Chatbots de IA, automatización de operaciones y pipelines de anuncios con IA — desde el despliegue hasta las operaciones continuas.",
+        "results": "-45% costos operativos",
+        "badge": ""
+      }
+    },
+    "featuresEyebrow": "Por qué Paradigm",
+    "featuresHeading": "Cuatro razones por las que los clientes nos eligen",
+    "features": {
+      "speed": {
+        "title": "Entrega en 2 semanas",
+        "desc": "Un proceso ágil que entrega calidad rápidamente — incluyendo trabajo de última hora."
+      },
+      "guarantee": {
+        "title": "Plan respaldado por resultados",
+        "desc": "SEO Local y SEO/GEO incluyen un período de reembolso si no se materializan los resultados."
+      },
+      "team": {
+        "title": "Responsable dedicado",
+        "desc": "El mismo punto de contacto de principio a fin — informes mensuales y reuniones periódicas."
+      },
+      "aiFusion": {
+        "title": "Fusión de IA y digital",
+        "desc": "Las últimas herramientas de IA aplicadas al inbound — estrategias que superan a sus competidores."
+      }
+    },
+    "testimonialsEyebrow": "Testimonios",
+    "testimonialsHeading": "Lo que dicen los clientes",
+    "testimonials": {
+      "1": {
+        "name": "Dueño de Restaurante",
+        "location": "Shibuya, Tokio",
+        "text": "A los tres meses, MEO generó más de 30 visitas nuevas por mes. El ROI fue inconfundible."
+      },
+      "2": {
+        "name": "Director de Clínica",
+        "location": "Kita-ku, Osaka",
+        "text": "Las consultas se duplicaron después de la reconstrucción del sitio web. El chat de IA es un éxito entre los pacientes."
+      },
+      "3": {
+        "name": "Operador DTC",
+        "location": "Nagoya, Aichi",
+        "text": "GEO desbloqueó tráfico de búsquedas en ChatGPT. Un canal de adquisición completamente nuevo."
+      }
+    },
+    "trustBadges": {
+      "1": "Más de 200 empresas apoyadas",
+      "2": "98% de retención",
+      "3": "3 meses de soporte post-lanzamiento gratuito",
+      "4": "Sin ventas agresivas"
+    },
+    "ctaEyebrow": "Comience",
+    "ctaHeading": "Comience con una ",
+    "ctaHeadingHighlight": "consulta gratuita",
+    "ctaHeadingSuffix": "",
+    "ctaSubheading": "Consulta en línea de 15 minutos. Diagnosticaremos su situación y recomendaremos las acciones de mayor ROI — sin costo.",
+    "ctaButton": "Reserve una consulta gratuita",
+    "ctaBullets": {
+      "1": "Siempre gratis",
+      "2": "Sin llamadas de ventas",
+      "3": "Máximo 15 minutos"
+    }
   },
   "chatbot": {
     "title": "Asistente de Paradigm",
@@ -46,15 +164,15 @@
     "openLabel": "Pregunte a nuestro asistente de IA",
     "greeting": "¡Hola! Soy el asistente de IA de Paradigm LLC 👋\n\nPregúnteme cualquier cosa sobre desarrollo web, SEO local, SEO/GEO o habilitación de IA para su entrada al mercado japonés.\nToque una pregunta rápida a continuación, o simplemente escriba la suya.",
     "placeholder": "Pregúntenos cualquier cosa...",
-    "errorReply": "Lo siento — ocurrió un error al generar una respuesta.",
-    "errorNetwork": "Lo siento — ocurrió un error de conexión.\n\n📧 info@paradigmjp.com",
+    "errorReply": "Lo sentimos — ocurrió un error al generar una respuesta.",
+    "errorNetwork": "Lo sentimos — ocurrió un error de conexión.\n\n📧 info@paradigmjp.com",
     "footerLine": "Desarrollado por Paradigm AI",
     "footerContact": "Hable con un humano →",
     "quick": {
       "pricingLabel": "Precios y cotizaciones",
       "pricingMessage": "¿Puede compartir los precios para la construcción de un sitio web?",
       "processLabel": "Cómo funciona",
-      "processMessage": "¿Cómo es el proceso de entrega del sitio web?",
+      "processMessage": "¿Cómo es el proceso de entrega de un sitio web?",
       "timelineLabel": "Cronograma",
       "timelineMessage": "¿Cuánto tiempo toma típicamente lanzar un sitio web?",
       "meoLabel": "¿Qué es MEO?",
@@ -110,7 +228,7 @@
     },
     "impact": "Impacto Esperado",
     "ctaHeading": "Convirtamos estos conocimientos en un plan concreto.",
-    "ctaSubheading": "Reserve una consulta de 30 minutos — le recomendaremos los próximos pasos de mayor impacto.",
+    "ctaSubheading": "Reserve una consulta de 30 minutos — le recomendaremos los próximos pasos de mayor apalancamiento.",
     "ctaButton": "Reserve una consulta gratuita",
     "ctaEmail": "Responder por correo electrónico",
     "intro": "Así es como se comparan su web, SEO, postura competitiva y respuesta a reseñas."

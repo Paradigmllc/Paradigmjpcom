@@ -21,30 +21,148 @@
   },
   "footer": {
     "company": "Paradigm LLC",
-    "companyTagline": "Paradigm LLC — layanan terstruktur yang membantu UKM asing masuk dan berkembang di Jepang.",
+    "companyTagline": "Paradigm LLC — layanan terproduktisasi yang membantu UKM asing masuk dan berkembang di Jepang.",
     "servicesHeading": "Layanan",
     "companyHeading": "Perusahaan",
     "contactHeading": "Kontak",
-    "rights": "Hak cipta dilindungi.",
+    "rights": "Hak cipta dilindungi undang-undang.",
     "privacy": "Kebijakan Privasi",
-    "legal": "Syarat & Ketentuan Transaksi Komersial",
+    "legal": "Syarat & Ketentuan Transaksi Komersial Tertentu",
     "services": {
       "web": "Pengembangan Web",
       "meo": "SEO Lokal (MEO)",
       "seo": "SEO / GEO",
-      "ai": "Penerapan AI"
+      "ai": "Pemberdayaan AI"
     }
   },
   "home": {
-    "heroTitle": "Layanan Terstruktur untuk UKM Asing yang Masuk ke Jepang",
-    "heroSubtitle": "Onboarding tanpa penerjemahan, kepatuhan lokal, dan otomatisasi bertenaga AI — dibangun oleh operator di Tokyo.",
-    "trusted": "Perusahaan yang telah kami dukung"
+    "heroBadge": "Mitra digital lokal Anda di Jepang",
+    "heroTitle": "Layanan Terproduktisasi untuk UKM Asing yang Masuk ke Jepang",
+    "heroSubtitle": "Onboarding tanpa terjemahan, kepatuhan lokal, dan otomatisasi bertenaga AI — dibangun oleh operator di Tokyo.",
+    "heroSuffix": " untuk mempercepat masuk Anda ke Jepang.",
+    "heroSubheadline": "Web, SEO Lokal, SEO/GEO, dan Pemberdayaan AI — dukungan penuh untuk masuk dan berkembang di Jepang.",
+    "heroTypingWords": [
+      "SEO Lokal",
+      "Otomatisasi AI",
+      "Pembangunan Web",
+      "SEO/GEO"
+    ],
+    "heroBookConsult": "Pesan Konsultasi Gratis",
+    "heroSeeServices": "Jelajahi Layanan",
+    "trusted": "Perusahaan yang telah kami dukung",
+    "stats": {
+      "support": {
+        "suffix": "+",
+        "label": "Perusahaan didukung"
+      },
+      "retention": {
+        "suffix": "%",
+        "label": "Retensi"
+      },
+      "growth": {
+        "suffix": "x",
+        "label": "Rata-rata peningkatan lalu lintas"
+      },
+      "consult": {
+        "suffix": "menit",
+        "label": "Konsultasi pertama"
+      }
+    },
+    "servicesEyebrow": "Layanan",
+    "servicesHeading": "Empat layanan yang mengembangkan bisnis Jepang Anda",
+    "servicesViewMore": "Pelajari lebih lanjut",
+    "services": {
+      "web": {
+        "title": "Pengembangan Web",
+        "tagline": "Situs modern yang dibangun untuk inbound",
+        "desc": "Responsif, dioptimalkan SEO, dengan CMS. Kami menangani peluncuran dan roda gila inbound yang menyertainya.",
+        "results": "+3x pertanyaan",
+        "badge": "Paling populer"
+      },
+      "meo": {
+        "title": "SEO Lokal (MEO)",
+        "tagline": "Puncak Google Maps di Jepang",
+        "desc": "Manajemen ulasan, jadwal posting, dan pelacakan peringkat — bertujuan untuk #1 di paket lokal Anda.",
+        "results": "+220% kunjungan toko",
+        "badge": ""
+      },
+      "seo": {
+        "title": "SEO / GEO",
+        "tagline": "Menangkan Google + pencarian AI",
+        "desc": "SEO generasi berikutnya yang benar-benar dikutip oleh ChatGPT, Gemini, dan Perplexity saat prospek bertanya.",
+        "results": "+180% lalu lintas organik",
+        "badge": "Standar baru"
+      },
+      "ai": {
+        "title": "Pemberdayaan AI",
+        "tagline": "Otomatiskan operasi dari ujung ke ujung",
+        "desc": "Chatbot AI, otomatisasi operasi, dan pipeline iklan AI — dari peluncuran hingga operasi berkelanjutan.",
+        "results": "-45% biaya operasi",
+        "badge": ""
+      }
+    },
+    "featuresEyebrow": "Mengapa Paradigm",
+    "featuresHeading": "Empat alasan klien memilih kami",
+    "features": {
+      "speed": {
+        "title": "Pengiriman 2 minggu",
+        "desc": "Proses ramping yang mengirimkan kualitas dengan cepat — termasuk pekerjaan mendadak."
+      },
+      "guarantee": {
+        "title": "Rencana berbasis hasil",
+        "desc": "SEO Lokal dan SEO/GEO dilengkapi dengan jendela pengembalian dana jika hasil tidak tercapai."
+      },
+      "team": {
+        "title": "Pemilik khusus",
+        "desc": "Kontak yang sama dari awal hingga akhir — laporan bulanan dan tinjauan berkala."
+      },
+      "aiFusion": {
+        "title": "Fusi AI × digital",
+        "desc": "Alat AI terbaru yang dipersenjatai untuk inbound — strategi yang mengalahkan pesaing Anda."
+      }
+    },
+    "testimonialsEyebrow": "Testimoni",
+    "testimonialsHeading": "Kata klien",
+    "testimonials": {
+      "1": {
+        "name": "Pemilik Restoran",
+        "location": "Shibuya, Tokyo",
+        "text": "Tiga bulan berjalan, MEO mendorong 30+ kunjungan pertama per bulan. ROI-nya tidak terbantahkan."
+      },
+      "2": {
+        "name": "Direktur Klinik",
+        "location": "Kita-ku, Osaka",
+        "text": "Pertanyaan berlipat ganda setelah pembangunan ulang situs web. Chat AI sangat disukai pasien."
+      },
+      "3": {
+        "name": "Operator DTC",
+        "location": "Nagoya, Aichi",
+        "text": "GEO membuka lalu lintas dari pencarian ChatGPT. Saluran akuisisi baru yang utuh."
+      }
+    },
+    "trustBadges": {
+      "1": "200+ perusahaan didukung",
+      "2": "98% retensi",
+      "3": "3 bulan dukungan pasca-peluncuran gratis",
+      "4": "Tanpa penjualan paksa"
+    },
+    "ctaEyebrow": "Mulai",
+    "ctaHeading": "Mulai dengan ",
+    "ctaHeadingHighlight": "konsultasi gratis",
+    "ctaHeadingSuffix": "",
+    "ctaSubheading": "Konsultasi online 15 menit. Kami akan mendiagnosis situasi Anda dan merekomendasikan langkah dengan ROI tertinggi — gratis.",
+    "ctaButton": "Pesan konsultasi gratis",
+    "ctaBullets": {
+      "1": "Selalu gratis",
+      "2": "Tanpa panggilan penjualan",
+      "3": "Maksimal 15 menit"
+    }
   },
   "chatbot": {
     "title": "Asisten Paradigm",
     "status": "Agen AI online · balasan instan",
     "openLabel": "Tanya asisten AI kami",
-    "greeting": "Halo! Saya asisten AI Paradigm LLC 👋\n\nTanyakan apa pun tentang pengembangan web, SEO lokal, SEO/GEO, atau penerapan AI untuk masuk pasar Jepang Anda.\nKetuk pertanyaan cepat di bawah, atau ketik pertanyaan Anda sendiri.",
+    "greeting": "Halo! Saya asisten AI Paradigm LLC 👋\n\nTanyakan apa pun tentang pengembangan web, SEO lokal, SEO/GEO, atau pemberdayaan AI untuk masuk pasar Jepang Anda.\nKetuk pertanyaan cepat di bawah, atau ketik sendiri.",
     "placeholder": "Tanyakan apa pun...",
     "errorReply": "Maaf — terjadi kesalahan saat menghasilkan balasan.",
     "errorNetwork": "Maaf — terjadi kesalahan koneksi.\n\n📧 info@paradigmjp.com",
@@ -52,17 +170,17 @@
     "footerContact": "Bicara dengan manusia →",
     "quick": {
       "pricingLabel": "Harga & penawaran",
-      "pricingMessage": "Bisakah Anda membagikan harga untuk pembuatan situs web?",
+      "pricingMessage": "Bisakah Anda membagikan harga untuk pembangunan situs web?",
       "processLabel": "Cara kerja",
       "processMessage": "Seperti apa proses pengiriman situs web?",
       "timelineLabel": "Jadwal",
       "timelineMessage": "Berapa lama waktu yang dibutuhkan untuk menyelesaikan situs web?",
       "meoLabel": "Apa itu MEO?",
-      "meoMessage": "Apa itu MEO (SEO lokal di Jepang) dan apakah efektif?",
-      "aiLabel": "Penerapan AI",
-      "aiMessage": "Apa saja yang tercakup dalam penerapan AI dalam keterlibatan Anda?",
+      "meoMessage": "Apa itu MEO (SEO lokal di Jepang) dan apakah berhasil?",
+      "aiLabel": "Pemberdayaan AI",
+      "aiMessage": "Apa saja yang sebenarnya dicakup oleh pemberdayaan AI dalam keterlibatan Anda?",
       "supportLabel": "Dukungan & pemeliharaan",
-      "supportMessage": "Dukungan dan perbaikan pasca peluncuran seperti apa yang Anda tawarkan?"
+      "supportMessage": "Dukungan dan perbaikan pasca-peluncuran seperti apa yang Anda tawarkan?"
     }
   },
   "report": {
@@ -78,8 +196,8 @@
     "overallScore": "Skor Keseluruhan",
     "scoreLabel": {
       "good": "Kuat",
-      "improve": "Perlu ditingkatkan",
-      "critical": "Perlu perbaikan"
+      "improve": "Perlu perbaikan",
+      "critical": "Perlu kerja"
     },
     "aiSummaryHeading": "Ringkasan Eksekutif AI",
     "scoreCardsHeading": "Kartu Skor",
@@ -95,7 +213,7 @@
       "medium": "Sedang",
       "low": "Ringan"
     },
-    "competitorsHeading": "Tolok Ukur Kompetitor",
+    "competitorsHeading": "Tolok Ukur Pesaing",
     "competitor": {
       "name": "Perusahaan",
       "rating": "Peringkat",
@@ -113,6 +231,6 @@
     "ctaSubheading": "Pesan konsultasi 30 menit — kami akan merekomendasikan langkah selanjutnya yang paling berdampak.",
     "ctaButton": "Pesan konsultasi gratis",
     "ctaEmail": "Balas melalui email",
-    "intro": "Berikut ringkasan posisi web, SEO, kompetitor, dan respons ulasan Anda."
+    "intro": "Berikut ringkasan posisi web, SEO, pesaing, dan respons ulasan Anda."
   }
 }
