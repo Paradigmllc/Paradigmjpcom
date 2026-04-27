@@ -10,8 +10,19 @@ import {
   InlineCodeFeature,
   HorizontalRuleFeature,
 } from "@payloadcms/richtext-lexical"
+// Admin UI 多言語（@payloadcms/translations から import）
 import { ja } from "@payloadcms/translations/languages/ja"
 import { en } from "@payloadcms/translations/languages/en"
+import { ko } from "@payloadcms/translations/languages/ko"
+import { zh } from "@payloadcms/translations/languages/zh"
+import { de } from "@payloadcms/translations/languages/de"
+import { fr } from "@payloadcms/translations/languages/fr"
+import { es } from "@payloadcms/translations/languages/es"
+import { pt } from "@payloadcms/translations/languages/pt"
+import { ru } from "@payloadcms/translations/languages/ru"
+import { ar } from "@payloadcms/translations/languages/ar"
+import { vi } from "@payloadcms/translations/languages/vi"
+import { id } from "@payloadcms/translations/languages/id"
 import path from "path"
 import { fileURLToPath } from "url"
 import sharp from "sharp"
@@ -75,9 +86,10 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
+  // P17 2026-04-27: admin UI も 12 言語対応
   i18n: {
     fallbackLanguage: "ja",
-    supportedLanguages: { ja, en },
+    supportedLanguages: { ja, en, ko, zh, de, fr, es, pt, ru, ar, vi, id },
   },
   collections: [Users, Posts, Services, FAQs, Works, Pricing, Leads, Media, AuditLogs],
   globals: [Settings],
@@ -117,10 +129,23 @@ export default buildConfig({
     push: true,
   }),
   sharp,
+  // P17 2026-04-27: コンテンツ多言語化も 12 言語対応
+  // 既存 Posts/Services/Works/FAQs/Pricing/Settings の `localized: true` 列が自動で 12 言語分の JSONB 値を持つ
+  // fallback: true で空翻訳は ja に自動フォールバック（next-intl と整合）
   localization: {
     locales: [
       { label: "日本語", code: "ja" },
       { label: "English", code: "en" },
+      { label: "한국어", code: "ko" },
+      { label: "中文", code: "zh" },
+      { label: "Deutsch", code: "de" },
+      { label: "Français", code: "fr" },
+      { label: "Español", code: "es" },
+      { label: "Português", code: "pt" },
+      { label: "Русский", code: "ru" },
+      { label: "العربية", code: "ar", rtl: true },
+      { label: "Tiếng Việt", code: "vi" },
+      { label: "Bahasa Indonesia", code: "id" },
     ],
     defaultLocale: "ja",
     fallback: true,

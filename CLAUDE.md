@@ -10,10 +10,11 @@
 | ★★★★☆ | 2 | [競合・差別化](#s2) | 国ティア3段・Japan-Ready AI Suite概念・保険+ブースターポジション確定 |
 | | | [s2-1 /en ポジショニング](#s2-1) | Kickstarter/ShopifyD2C/SaaS 3段ターゲット・Productized Service優位性・国ティア確定 |
 | | | [s2-2 /ja 競合分析](#s2-2) | |
-| ★★★★☆ | 3 | [ビジネスモデル](#s3) | バリューベース3ティア価格表確定・アンカリング設計・LTV試算追加 |
+| ★★★★★ | 3 | [ビジネスモデル](#s3) | バリューベース3ティア価格表確定・PPP 補正 12-locale 価格表追加（P17）|
 | | | [s3-1 /ja 料金体系](#s3-1) | |
 | | | [s3-2 /en 料金体系](#s3-2) | バリューベース3ティア($3,500/$8,500/$18,000+)確定・アンカリング設計・コミッション設計 |
 | | | [s3-3 リード獲得導線](#s3-3) | |
+| | | [s3-4 12-locale PPP 価格表](#s3-4) | 🆕 P17 2026-04-27・en基準×PPP係数で全12locale計算 |
 | ☆☆☆☆☆ | 4 | [財務計画・KPI](#s4) | N/A |
 | | | [s4-1 KPI計測](#s4-1) | |
 | | | [s4-2 アナリティクス](#s4-2) | |
@@ -23,12 +24,12 @@
 | ★☆☆☆☆ | 6 | [Exit・法的リスク](#s6) | 特定商取引法・プライバシーページのみ |
 | | | [s6-1 法的ページ一覧](#s6-1) | |
 | | | [s6-2 /en 法的対応](#s6-2) | |
-| ★★★★☆ | 7 | [プロダクト設計](#s7) | /[locale]/構造・全ページ構成確定 |
-| | | [s7-1 ルート構造](#s7-1) | |
+| ★★★★★ | 7 | [プロダクト設計](#s7) | 🆕 P17 12-locale 拡張・/[locale]/構造（12言語）・全ページ構成確定 |
+| | | [s7-1 ルート構造](#s7-1) | 🆕 12-locale 化 |
 | | | [s7-2 フォルダ構成](#s7-2) | |
 | | | [s7-3 APIエンドポイント](#s7-3) | |
-| ★★★★☆ | 8 | [技術・データ設計](#s8) | next-intl・新デザインシステム・DBスキーマ変更確定 |
-| | | [s8-1 技術スタック](#s8-1) | |
+| ★★★★★ | 8 | [技術・データ設計](#s8) | next-intl 12-locale + PayloadCMS 12言語 localization + DeepSeek V3 翻訳 |
+| | | [s8-1 技術スタック](#s8-1) | 🆕 DEEPSEEK_API_KEY 追記 |
 | | | [s8-2 デザインシステム](#s8-2) | |
 | | | [s8-3 Supabase CMSテーブル](#s8-3) | |
 | | | [s8-4 環境変数](#s8-4) | |
@@ -248,6 +249,36 @@
 
 > Supabase `cms_pricing` locale='en' currency='usd' で管理
 
+<a id="s3-4"></a>
+
+### 12-locale PPP 補正価格表（P17 2026-04-27 拡張・Plan B）
+
+> **背景**: 12-locale i18n 拡張 (P17) により、`/en` 価格 (`$3,500/$8,500/$18,000+`) を基準に PPP 係数で各 locale 別価格を表示する。Worldbank PPP 2024 保守的目安。実装は `src/lib/locale-map.ts::pppPrice()` で動的計算（固定価格表をハードコードしない）。
+
+| Locale | 母語/対象 | RTL | PPP係数 | Tier 1 Essential | Tier 2 Growth | Tier 3 Scale |
+|--------|----------|-----|---------|------------------|---------------|--------------|
+| `ja` | 日本（独自設計・s3-1 参照） | — | 1.0 | JPY 固定 | JPY 固定 | JPY 固定 |
+| `en` | 英語汎用（Japan Entry Package母版） | — | 1.0 | $3,500 | $8,500 | $18,000+ |
+| `ko` | 韓国 | — | 0.85 | $2,975 | $7,225 | $15,300+ |
+| `zh` | 中国（簡体字） | — | 0.55 | $1,925 | $4,675 | $9,900+ |
+| `de` | ドイツ・DACH | — | 0.95 | €3,150 | €7,650 | €16,200+ |
+| `fr` | フランス・欧州+西アフリカ仏語圏 | — | 0.95 | €3,150 | €7,650 | €16,200+ |
+| `es` | スペイン語（欧州+ラテンアメリカ） | — | 0.75 | $2,625 | $6,375 | $13,500+ |
+| `pt` | ポルトガル語（ブラジル基準） | — | 0.45 | $1,575 | $3,825 | $8,100+ |
+| `ru` | ロシア・CIS | — | 0.40 | $1,400 | $3,400 | $7,200+ |
+| `ar` | アラビア（MENA） | **✅** | 0.65 | $2,275 | $5,525 | $11,700+ |
+| `vi` | ベトナム（SEA 主言語） | — | 0.40 | $1,400 | $3,400 | $7,200+ |
+| `id` | インドネシア（SEA 副言語） | — | 0.40 | $1,400 | $3,400 | $7,200+ |
+
+**SalesRegion (appexx canonical 12値) → Locale primary マッピング**:
+- `ja → ja` / `en → en` / `ko → ko` / `zh → zh` / `es → es` / `pt → pt` / `ru → ru` / `ar → ar`
+- `europe → de` (alts: `fr`, `es`)
+- `sea → vi` (alts: `id`)
+- `africa → fr` (alts: `en`, `pt`)
+- `others → en` (fallback only)
+
+**コード実装**: `src/lib/locale-map.ts` に `LOCALE_PPP_FACTOR` / `EN_BASE_PRICES` / `pppPrice(locale, tier)` を集約。新 locale 追加時もこのファイル 1 箇所だけ更新する（pricing component 側はハードコード禁止）。
+
 <a id="s3-3"></a>
 
 ### リード獲得導線
@@ -340,51 +371,30 @@
 
 <a id="s7-1"></a>
 
-### ルート構造（確定）
+### ルート構造（P17 2026-04-27 12-locale 拡張）
 
 ```
-/                      → middleware で /ja or /en に振り分け
-/ja/                   ← 日本語トップ（完全リニューアル）
-/ja/about
-/ja/services
-/ja/services/web       ← 制作系
-/ja/services/lp
-/ja/services/ec
-/ja/services/creative
-/ja/services/meo       ← 集客・マーケ系
-/ja/services/seo
-/ja/services/ai        ← AI・SaaS系
-/ja/services/saas
-/ja/pricing
-/ja/works
-/ja/blog
-/ja/blog/[slug]        ← 日本語専用記事
-/ja/contact
-/ja/faq
-/ja/legal
-/ja/privacy
-/ja/lp/[slug]          ← 各サービスLP（動的・CMS管理）
-/ja/p/[slug]           ← 顧客向け提案ページ
+/                      → middleware で locale 自動検出（Accept-Language → /ja または /en へ）
+/{locale}/             ← 12 locale: ja / en / ko / zh / de / fr / es / pt / ru / ar / vi / id
 
-/en/                   ← 英語トップ（完全別設計）
-/en/about
-/en/services
-/en/services/japan-entry-package  ← メイン
-/en/services/web
-/en/services/seo
-/en/services/ai
-/en/pricing            ← USD表示
-/en/works              ← 英語対応可の事例のみ
-/en/blog
-/en/blog/[slug]        ← 英語専用記事（/jaとは別コンテンツ）
-/en/contact            ← Cal.com English booking
-/en/faq                ← 外国人向けQ&A
-/en/legal              ← English legal page
-/en/privacy            ← English privacy policy
+/ja/*                  ← 日本SMB向け独自設計（Plan B = 翻訳ではない別設計）
+  /ja/about, /services, /services/{web,lp,ec,creative,meo,seo,ai,saas},
+  /pricing, /works, /blog, /blog/[slug], /contact, /faq, /legal, /privacy,
+  /lp/[slug], /p/[slug]
 
-/admin/                ← locale非依存（日英両方を管理）
+/en/*                  ← 海外SMB向け Japan Entry Package 母版（独自設計）
+  /en/about, /services, /services/japan-entry-package, /services/{web,seo,ai},
+  /pricing (USD), /works, /blog, /blog/[slug], /contact (Cal.com EN), /faq, /legal, /privacy
+
+/{ko,zh,de,fr,es,pt,ru,ar,vi,id}/*    ← Plan B 残10ロケール（Japan Entry Package 翻訳のみ）
+  - messages/{locale}.json は DeepSeek V3 で en.json から自動翻訳済み
+  - 価格は PPP 係数で en 基準価格を補正表示（s3-4 参照）
+  - ar は RTL（dir="rtl" + Noto Sans Arabic）
+  - 新規ページ追加時は ja/en のみ翻訳責務・他10ロケールは t() 経由で messages から取得
+
+/admin/                ← locale非依存（PayloadCMS / 12言語admin UI対応）
 /api/                  ← locale非依存
-/p/[slug]              ← 提案ページ（locale非依存）
+/p/[slug]              ← 提案ページ（locale非依存・Sales OS と連携）
 ```
 
 <a id="s7-2"></a>
@@ -600,7 +610,14 @@ NEXT_PUBLIC_SITE_URL=https://paradigmjp.com
 NEXT_PUBLIC_COMPANY_NAME=Paradigm合同会社
 ADMIN_PASSWORD=paradigm-admin-2025
 NEXT_PUBLIC_UMAMI_WEBSITE_ID=(Umamiで新サイト追加後に設定)
+DATABASE_URI=(Supabase PostgreSQL 接続文字列・PayloadCMS 用)
+PAYLOAD_SECRET=(PayloadCMS セッション署名鍵)
+PAYLOAD_PUBLIC_SERVER_URL=https://paradigmjp.com
+DIFY_API_KEY=(Dify チャットボット API キー)
+DEEPSEEK_API_KEY=(P17 2026-04-27 追加・i18n 翻訳・Context Cache 90%OFF)
 ```
+
+**P17 注意**: `DEEPSEEK_API_KEY` は **scripts/i18n-translate.mjs 実行時のみ必要**（buildtime/runtime には不要）。新ページ追加で messages key を増やした際にローカルで `DEEPSEEK_API_KEY=sk-xxx node scripts/i18n-translate.mjs` を走らせて 10 言語 messages を再生成する用途。
 
 ---
 
