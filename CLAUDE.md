@@ -309,11 +309,12 @@
 <a id="s8-2"></a>
 
 #### Phase 1: 基盤（i18n + デザインシステム）
-- [ ] next-intl導入（`/[locale]/` ルーティング）
-- [ ] middleware.ts（locale自動振り分けロジック — **Q5未確定、下記参照**）
-- [ ] globals.css 新デザイントークン適用（Warm Modern Tech）
-- [ ] フォント設定（/ja: Noto Sans JP、/en: Plus Jakarta Sans or Inter）
-- [ ] CMSテーブルに `locale` カラム追加（Supabase migration）
+- [x] next-intl導入（`/[locale]/` ルーティング）— P10-10 完了
+- [x] middleware.ts（locale自動振り分けロジック）— P10-10 完了
+- [x] **P17 12-locale 拡張完了**（ja/en/ko/zh/de/fr/es/pt/ru/ar/vi/id・PPP価格補正・RTL対応）— 2026-04-27
+- [x] globals.css 新デザイントークン適用（Warm Modern Tech）
+- [x] フォント設定（/ja: Noto Sans JP / ar: Noto Sans Arabic 動的ロード / 他: system font）
+- [ ] CMSテーブルに `locale` カラム追加（Supabase migration）— PayloadCMS localization で代替実装済み（payload.config.ts）
 
 #### Phase 2: `/ja` 全面リニューアル
 - [ ] トップページ（Warm Modern Tech デザイン）
@@ -331,8 +332,8 @@
 - [ ] `/en/faq`（外国人向けQ&A）
 
 #### Phase 4: SEO・インフラ整備
-- [ ] hreflang タグ（/ja ↔ /en）
-- [ ] locale別サイトマップ
+- [x] hreflang タグ（全12 locale 自動生成・layout.tsx generateMetadata）— P17 完了 2026-04-27
+- [ ] locale別サイトマップ（12 locale × 各 URL）
 - [ ] Umami Website ID設定
 - [ ] Lighthouse CI自動化
 

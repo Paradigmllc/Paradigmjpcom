@@ -14,7 +14,7 @@
   - [x] P17-7. `messages/{ko,zh,de,fr,es,pt,ru,ar,vi,id}.json` 新規作成（DeepSeek V3 自動翻訳・10ファイル）
   - [x] P17-8. `scripts/i18n-translate.mjs` 翻訳スクリプト（DeepSeek V3 + Context Cache）
   - [x] P17-9. CLAUDE.md s3-4 PPP 価格表追加・s7-1 ルート構造 12-locale 化・s8-1 env 追記
-  - [ ] P17-10. `src/app/[locale]/HomeClient.tsx` (426行) の messages 化（hero/services/CTA抽出）
+  - [x] P17-10. `src/app/[locale]/HomeClient.tsx` (426行) の messages 化（hero/services/features/testimonials/CTA 全 messages 化完了・配列定数を visual property のみに削減・commit a090d66）
   - [ ] P17-11. `src/app/[locale]/services/page.tsx`/contact/about の messages 化
   - [ ] P17-12. `src/app/[locale]/p/[slug]/AllInOneClient.tsx` (1972行) の messages 化（Plan B 範囲外・別 PR）
   - [ ] P17-13. PayloadCMS 既存 Posts/Services/Works content の DeepSeek 自動翻訳実行（手動キュレーション補正後）
