@@ -1,3 +1,12 @@
+/**
+ * /[locale]/faq — よくあるご質問 (FAQPage 構造化データ + Q&A list)
+ *
+ * 役割:   よくあるご質問 (FAQPage 構造化データ + Q&A list)
+ * 入力:   params.locale
+ * 出力:   PageHero + FAQ accordion + JSON-LD FAQPage schema
+ *
+ * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
+ */
 import type { Metadata } from "next"
 import { getPayload } from "payload"
 import config from "@payload-config"

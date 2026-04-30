@@ -1,3 +1,12 @@
+/**
+ * /[locale]/pricing — 全サービス料金プラン一覧 (バリューベース 3 ティア)
+ *
+ * 役割:   全サービス料金プラン一覧 (バリューベース 3 ティア)
+ * 入力:   params.locale (currency: ja=JPY / en=USD with PPP)
+ * 出力:   PageHero + 3-tier pricing table + comparison grid
+ *
+ * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
+ */
 import type { Metadata } from "next"
 import { headers } from "next/headers"
 import { getPayload } from "payload"

@@ -1,3 +1,12 @@
+/**
+ * /[locale]/services — サービス一覧 (Web/MEO/SEO/AI を横並び比較)
+ *
+ * 役割:   サービス一覧 (Web/MEO/SEO/AI を横並び比較)
+ * 入力:   params.locale
+ * 出力:   PageHero + ItemList JSON-LD + 4 service cards + RichCtaBand
+ *
+ * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
+ */
 import type { Metadata } from "next"
 import { getPayload } from "payload"
 import config from "@payload-config"

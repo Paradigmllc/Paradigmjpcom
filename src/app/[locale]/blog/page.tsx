@@ -1,3 +1,12 @@
+/**
+ * /[locale]/blog — ブログ一覧 (lib/blog-cms.ts 経由 PayloadCMS posts collection から取得)
+ *
+ * 役割:   ブログ一覧 (lib/blog-cms.ts 経由 PayloadCMS posts collection から取得)
+ * 入力:   params.locale
+ * 出力:   ブログ記事一覧グリッド
+ *
+ * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
+ */
 import type { Metadata } from "next"
 import { getPayload } from "payload"
 import config from "@payload-config"

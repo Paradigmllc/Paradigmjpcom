@@ -1,3 +1,12 @@
+/**
+ * /[locale]/services/ai — AI 導入支援サービス詳細
+ *
+ * 役割:   AI 導入支援サービス詳細
+ * 入力:   params.locale
+ * 出力:   ServiceDetailLayout + middleBand sections
+ *
+ * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
+ */
 import type { Metadata } from "next"
 import PageHero from "@/components/PageHero"
 import ServiceDetailLayout from "@/components/aesop/ServiceDetailLayout"

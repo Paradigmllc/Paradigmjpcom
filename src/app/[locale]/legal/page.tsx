@@ -1,3 +1,12 @@
+/**
+ * /[locale]/legal — 特定商取引法に基づく表記 (法定情報・9 条)
+ *
+ * 役割:   特定商取引法に基づく表記 (法定情報・9 条)
+ * 入力:   params.locale
+ * 出力:   PageHero + 9 sections (会社名・所在地・代表・連絡先・販売価格・支払方法・引渡時期・返品・申込有効期限)
+ *
+ * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
+ */
 import type { Metadata } from "next"
 import PageHero from "@/components/PageHero"
 import FadeIn from "@/components/aesop/FadeIn"

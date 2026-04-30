@@ -35,9 +35,18 @@ export const Pages: CollectionConfig = {
     description: "Block ベースのビジュアルページ (Hero/Section/CardGrid/CTA/FAQ/RichText 等を組み合わせ)",
     group: "サイト",
     livePreview: {
-      url: ({ data }) => {
+      // locale-aware: admin が編集中の locale (document locale) で preview。
+      // Payload v3 では callback の第 2 引数経由で document locale を取得できる。
+      // fallback は ja。
+      url: ({ data, locale }) => {
         const slug = (data as { slug?: string } | undefined)?.slug ?? ""
-        return `${process.env.PAYLOAD_PUBLIC_SERVER_URL ?? "https://paradigmjp.com"}/ja/cms/${slug}?draft=true`
+        const previewLocale =
+          (typeof locale === "object" && locale && "code" in locale
+            ? (locale as { code: string }).code
+            : undefined) ??
+          (typeof locale === "string" ? locale : undefined) ??
+          "ja"
+        return `${process.env.PAYLOAD_PUBLIC_SERVER_URL ?? "https://paradigmjp.com"}/${previewLocale}/cms/${slug}?draft=true`
       },
     },
   },

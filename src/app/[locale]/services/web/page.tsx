@@ -1,3 +1,12 @@
+/**
+ * /[locale]/services/web — Web 制作サービス詳細
+ *
+ * 役割:   Web 制作サービス詳細
+ * 入力:   params.locale
+ * 出力:   ServiceDetailLayout + middleBand sections (process / use cases / pricing)
+ *
+ * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
+ */
 import type { Metadata } from "next"
 import PageHero from "@/components/PageHero"
 import ServiceDetailLayout from "@/components/aesop/ServiceDetailLayout"

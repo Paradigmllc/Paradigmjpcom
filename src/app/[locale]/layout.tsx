@@ -13,6 +13,8 @@ import CookieConsent from "@/components/aesop/CookieConsent"
 import ScrollProgress from "@/components/aesop/ScrollProgress"
 import BackToTop from "@/components/aesop/BackToTop"
 import { getOrganizationJsonLd, getServicesJsonLd } from "@/lib/jsonld"
+import { getSiteSettings, umamiWebsiteIdFor } from "@/lib/settings"
+import MaintenanceScreen from "@/components/MaintenanceScreen"
 import { routing } from "@/i18n/routing"
 import {
   isRtlLocale,
@@ -157,6 +159,10 @@ export default async function LocaleLayout({ children, params }: Props) {
   const dir = localeDirection(typedLocale) // ar=rtl / 他=ltr
   const isRtl = isRtlLocale(typedLocale)
 
+  // PayloadCMS Settings global を取得 (admin で編集可能なサイト設定)
+  const settings = await getSiteSettings(locale)
+  const umamiId = umamiWebsiteIdFor(settings, locale) ?? process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ?? null
+
   return (
     <html lang={locale} dir={dir} suppressHydrationWarning>
       <head>
@@ -179,11 +185,11 @@ export default async function LocaleLayout({ children, params }: Props) {
         {/* Favicon — Aesop ink + paper "P" mark (32x32 SVG) */}
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="apple-touch-icon" href="/favicon.svg" />
-        {process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID && (
+        {umamiId && (
           <script
             defer
             src="https://analytics.appexx.me/script.js"
-            data-website-id={process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID}
+            data-website-id={umamiId}
           />
         )}
         <script
@@ -248,20 +254,26 @@ export default async function LocaleLayout({ children, params }: Props) {
       <body className="min-h-screen bg-paradigm-paper text-paradigm-ink antialiased">
         <ThemeProvider>
           <NextIntlClientProvider locale={locale} messages={messages}>
-            {/* relative wrapper sits above body::before paper-grain (z-0) */}
-            <div className="relative z-10">
-              <ScrollProgress />
-              <LuxuryLoader />
-              <SiteHeader />
-              <SiteWrapper>
-                <PageTransition>{children}</PageTransition>
-              </SiteWrapper>
-              <SiteFooter />
-              <CookieConsent />
-              <BackToTop />
-            </div>
-            {/* DifyChatbot は ja/en のみ最適化（残10ロケールは en にフォールバック） */}
-            <DifyChatbot locale={(locale === "ja" ? "ja" : "en") as "ja" | "en"} />
+            {settings.maintenance.maintenanceMode ? (
+              <MaintenanceScreen locale={locale} message={settings.maintenance.maintenanceMessage} />
+            ) : (
+              <>
+                {/* relative wrapper sits above body::before paper-grain (z-0) */}
+                <div className="relative z-10">
+                  <ScrollProgress />
+                  <LuxuryLoader />
+                  <SiteHeader />
+                  <SiteWrapper>
+                    <PageTransition>{children}</PageTransition>
+                  </SiteWrapper>
+                  <SiteFooter />
+                  <CookieConsent />
+                  <BackToTop />
+                </div>
+                {/* DifyChatbot は ja/en のみ最適化（残10ロケールは en にフォールバック） */}
+                <DifyChatbot locale={(locale === "ja" ? "ja" : "en") as "ja" | "en"} />
+              </>
+            )}
           </NextIntlClientProvider>
         </ThemeProvider>
       </body>

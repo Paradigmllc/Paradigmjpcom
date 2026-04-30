@@ -1,3 +1,12 @@
+/**
+ * /[locale]/privacy — プライバシーポリシー (個人情報取扱い 9 条)
+ *
+ * 役割:   プライバシーポリシー (個人情報取扱い 9 条)
+ * 入力:   params.locale
+ * 出力:   PageHero + 9 sections (取得・利用目的・第三者提供・安全管理・開示等)
+ *
+ * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
+ */
 import type { Metadata } from "next"
 import PageHero from "@/components/PageHero"
 import FadeIn from "@/components/aesop/FadeIn"
