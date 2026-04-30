@@ -1,40 +1,50 @@
 import type { Metadata } from "next"
 import PageHero from "@/components/PageHero"
 import ServiceDetailLayout from "@/components/aesop/ServiceDetailLayout"
-import { SERVICES, PRICING } from "@/lib/data"
+import { getServiceByKey, getPricingFor } from "@/lib/data"
 
-export const metadata: Metadata = {
-  title: "Web制作",
-  description: "Next.js/WordPressによる高速・SEO最適化されたWebサイト制作。デザインからコーディング、公開後の運用まで一貫してサポートします。",
+interface Props { params: Promise<{ locale: string }> }
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params
+  const isJa = locale === "ja"
+  return {
+    title: isJa ? "Web制作" : "Web Development",
+    description: isJa
+      ? "Next.js/WordPressによる高速・SEO最適化されたWebサイト制作。デザインからコーディング、公開後の運用まで一貫してサポート。"
+      : "High-performance, SEO-optimised Next.js / WordPress sites — design through post-launch operations.",
+  }
 }
 
-export default function WebServicePage() {
-  const service = SERVICES.find((s) => s.id === "web")!
-  const pricing = PRICING.web
+export default async function WebServicePage({ params }: Props) {
+  const { locale } = await params
+  const isJa = locale === "ja"
+  const service = getServiceByKey(locale, "web")
+  const pricing = getPricingFor(locale, "web")
 
   return (
     <>
       <PageHero
-        badge="Web 制作"
+        badge={isJa ? "Web 制作" : "Web Development"}
         title={service.title}
-        highlight={service.title.includes("制作") ? "制作" : undefined}
         desc={service.tagline}
       />
       <ServiceDetailLayout
-        badge="Web 制作"
+        badge={isJa ? "Web 制作" : "Web Development"}
         title={service.title}
         desc={service.desc}
         features={service.features}
         results={service.results}
         plans={pricing.plans}
         pricingFootnote={pricing.monthly}
+        locale={locale}
         iconBg="from-pink-400 via-paradigm-accent to-paradigm-tech"
         beamFrom="rgb(244 114 182)"
         beamTo="rgb(14 165 233)"
-        ctaTitle="Web 制作のご相談はこちら"
-        ctaHighlight="ご相談"
-        ctaDesc="初回30分の無料オンライン相談を受け付けています。"
-        ctaLabel="無料相談を予約する"
+        ctaTitle={isJa ? "Web 制作のご相談はこちら" : "Talk to us about web development"}
+        ctaHighlight={isJa ? "ご相談" : "Talk to us"}
+        ctaDesc={isJa ? "初回30分の無料オンライン相談を受け付けています。" : "First 30-minute consultation is on us."}
+        ctaLabel={isJa ? "無料相談を予約する" : "Book a free consultation"}
       />
     </>
   )

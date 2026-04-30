@@ -119,9 +119,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
       <RichCtaBand
         eyebrow="Talk"
-        title="無料相談を受け付けています"
-        highlight="無料相談"
-        desc="この記事のテーマについて、御社に合った具体的な提案をいたします。"
+        title="この記事についてご相談ください"
+        highlight="ご相談"
+        desc="御社に合った具体的な提案をいたします。"
         buttonLabel="無料相談を予約する"
       />
 
