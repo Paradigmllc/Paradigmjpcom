@@ -72,7 +72,7 @@ export default function LocaleSwitcher() {
         <div
           role="listbox"
           aria-label="Languages"
-          className="absolute right-0 mt-1.5 min-w-[180px] max-h-[60vh] overflow-y-auto rounded-lg border border-black/10 bg-white shadow-xl ring-1 ring-black/5 z-50 py-1"
+          className="absolute right-0 mt-1.5 min-w-[180px] max-h-[60vh] overflow-y-auto border border-paradigm-line bg-paradigm-paper z-50 py-1"
         >
           {LOCALES.map((l) => {
             const active = l === locale
@@ -85,15 +85,15 @@ export default function LocaleSwitcher() {
                 onClick={() => selectLocale(l)}
                 className={`w-full flex items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${
                   active
-                    ? "bg-violet-50 text-violet-700 font-semibold"
-                    : "text-gray-700 hover:bg-gray-50"
+                    ? "bg-paradigm-paper-deep text-paradigm-ink font-medium"
+                    : "text-paradigm-ink-soft hover:bg-paradigm-paper-deep hover:text-paradigm-ink"
                 }`}
               >
                 <span aria-hidden className="text-base leading-none">
                   {LOCALE_FLAG[l]}
                 </span>
                 <span className="flex-1">{LOCALE_DISPLAY_NAME[l]}</span>
-                {active && <span className="text-violet-600 text-xs">✓</span>}
+                {active && <span className="paradigm-eyebrow text-paradigm-accent">✓</span>}
               </button>
             )
           })}
