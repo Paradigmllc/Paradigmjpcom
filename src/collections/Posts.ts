@@ -132,20 +132,9 @@ export const Posts: CollectionConfig = {
         description: "この記事を表示するロケール（複数選択可）。JAのみ・ENのみ・両方から選択。",
       },
     },
-    {
-      name: "locale",
-      type: "select",
-      label: "[legacy] 言語",
-      options: [
-        { label: "日本語 (/ja)", value: "ja" },
-        { label: "English (/en)", value: "en" },
-      ],
-      admin: {
-        position: "sidebar",
-        description: "非推奨: availableLocalesを使用してください。",
-        condition: (data) => Boolean(data?.locale),
-      },
-    },
+    // 2026-05-01 audit cleanup: legacy `locale` field removed.
+    // 旧 single-locale 値は `availableLocales` (multi-select) で代替。
+    // Payload v3 では migration 経由で DB column を drop する必要あり (P19)。
     {
       name: "seo",
       type: "group",

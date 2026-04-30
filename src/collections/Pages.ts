@@ -95,6 +95,41 @@ export const Pages: CollectionConfig = {
       relationTo: "media",
       label: "OG 画像 (1200×630 px 推奨)",
     },
+    // 2026-05-01 audit fix: Posts と同じ SEO group を Pages にも追加
+    {
+      name: "seo",
+      type: "group",
+      label: "SEO 設定 (詳細)",
+      admin: {
+        position: "sidebar",
+        description: "title / description / canonical / robots — page.tsx の generateMetadata から参照",
+      },
+      fields: [
+        {
+          name: "metaTitle",
+          type: "text",
+          label: "メタタイトル (空のとき title を使用)",
+          localized: true,
+        },
+        {
+          name: "metaDescription",
+          type: "textarea",
+          label: "メタディスクリプション (空のとき description を使用)",
+          localized: true,
+        },
+        {
+          name: "noindex",
+          type: "checkbox",
+          label: "noindex (検索エンジンにインデックスさせない)",
+          defaultValue: false,
+        },
+        {
+          name: "canonical",
+          type: "text",
+          label: "canonical URL (空のとき自動生成)",
+        },
+      ],
+    },
     {
       name: "layout",
       type: "blocks",
