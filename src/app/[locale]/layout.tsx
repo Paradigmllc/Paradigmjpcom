@@ -12,7 +12,7 @@ import LuxuryLoader from "@/components/aesop/LuxuryLoader"
 import CookieConsent from "@/components/aesop/CookieConsent"
 import ScrollProgress from "@/components/aesop/ScrollProgress"
 import BackToTop from "@/components/aesop/BackToTop"
-import { ORGANIZATION_JSONLD, SERVICES_JSONLD } from "@/lib/jsonld"
+import { getOrganizationJsonLd, getServicesJsonLd } from "@/lib/jsonld"
 import { routing } from "@/i18n/routing"
 import {
   isRtlLocale,
@@ -188,11 +188,11 @@ export default async function LocaleLayout({ children, params }: Props) {
         )}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_JSONLD) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(getOrganizationJsonLd(locale)) }}
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(SERVICES_JSONLD) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(getServicesJsonLd(locale)) }}
         />
         {/* 2026-04-30 SEO/GEO 強化: LocalBusiness + WebSite (SearchAction 付) を全ページに注入 */}
         <script
@@ -202,12 +202,15 @@ export default async function LocaleLayout({ children, params }: Props) {
               "@context": "https://schema.org",
               "@type": "ProfessionalService",
               "@id": "https://paradigmjp.com#organization",
-              name: "Paradigm合同会社",
-              alternateName: ["Paradigm LLC", "パラダイム"],
+              name: locale === "ja" ? "Paradigm合同会社" : "Paradigm LLC",
+              alternateName: locale === "ja" ? ["Paradigm LLC", "パラダイム"] : ["Paradigm 合同会社", "パラダイム"],
               url: "https://paradigmjp.com",
               logo: "https://paradigmjp.com/logo.png",
               image: "https://paradigmjp.com/og-image.png",
-              description: "Web 制作・MEO 対策・SEO/GEO・AI 導入支援。Paradigm合同会社が提供する 4 つのデジタル支援サービス。",
+              description:
+                locale === "ja"
+                  ? "Web 制作・MEO 対策・SEO/GEO・AI 導入支援。Paradigm合同会社が提供する 4 つのデジタル支援サービス。"
+                  : "Web development, MEO, SEO/GEO, and AI integration. Four productized services from Paradigm LLC.",
               address: { "@type": "PostalAddress", addressCountry: "JP", addressRegion: "Tokyo" },
               sameAs: ["https://github.com/Paradigmllc"],
               priceRange: "¥¥¥",
