@@ -163,7 +163,9 @@
       "1": "Immer kostenlos",
       "2": "Keine Verkaufsgespräche",
       "3": "Maximal 15 Minuten"
-    }
+    },
+    "processEyebrow": "Process",
+    "processHeading": "In vier Schritten zum erfolgreichen Projekt."
   },
   "chatbot": {
     "title": "Paradigm Assistent",

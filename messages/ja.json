@@ -163,7 +163,9 @@
       "1": "完全無料",
       "2": "営業電話なし",
       "3": "最短15分"
-    }
+    },
+    "processEyebrow": "Process",
+    "processHeading": "御社のプロジェクトを成功に導く 4 ステップ。"
   },
   "chatbot": {
     "title": "Paradigm アシスタント",

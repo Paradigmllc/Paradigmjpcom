@@ -163,7 +163,9 @@
       "1": "Toujours gratuit",
       "2": "Pas d'appels commerciaux",
       "3": "15 minutes maximum"
-    }
+    },
+    "processEyebrow": "Process",
+    "processHeading": "Quatre étapes pour réussir votre projet."
   },
   "chatbot": {
     "title": "Assistant Paradigm",

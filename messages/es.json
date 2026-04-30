@@ -163,7 +163,9 @@
       "1": "Siempre gratis",
       "2": "Sin llamadas de ventas",
       "3": "Máximo 15 minutos"
-    }
+    },
+    "processEyebrow": "Process",
+    "processHeading": "Cuatro pasos para entregar tu proyecto con éxito."
   },
   "chatbot": {
     "title": "Asistente de Paradigm",

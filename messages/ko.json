@@ -163,7 +163,9 @@
       "1": "항상 무료",
       "2": "영업 전화 없음",
       "3": "최대 15분"
-    }
+    },
+    "processEyebrow": "Process",
+    "processHeading": "프로젝트 성공을 이끄는 4단계"
   },
   "chatbot": {
     "title": "Paradigm 어시스턴트",

@@ -163,7 +163,9 @@
       "1": "始终免费",
       "2": "无销售电话",
       "3": "最长15分钟"
-    }
+    },
+    "processEyebrow": "Process",
+    "processHeading": "四步走向项目成功"
   },
   "chatbot": {
     "title": "Paradigm助手",

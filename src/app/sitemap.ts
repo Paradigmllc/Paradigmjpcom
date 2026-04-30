@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next"
-import { BLOG_POSTS } from "@/lib/blog"
+import { getAllBlogPosts } from "@/lib/blog-cms"
 import { routing } from "@/i18n/routing"
 
 const BASE = "https://paradigmjp.com"
@@ -55,7 +55,7 @@ function languageAlternates(path: string) {
   return languages
 }
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date()
 
   const staticPages: MetadataRoute.Sitemap = STATIC_ROUTES.flatMap((route) =>
@@ -71,22 +71,28 @@ export default function sitemap(): MetadataRoute.Sitemap {
   )
 
   /**
-   * ブログ記事は現状 JP 原稿のみ。将来 EN 翻訳を追加した際は
-   * BlogPost 側に `availableLocales?: string[]` を追加して
-   * ここで locales.filter(l => post.availableLocales.includes(l)) する。
+   * ブログ記事は PayloadCMS Posts collection から取得し、availableLocales で
+   * 各 locale ごとに表示可否を判定する。Payload が空の場合は legacy BLOG_POSTS
+   * (JP-only 4 件 seed) にフォールバックされる (lib/blog-cms.ts で吸収)。
    */
-  const blogPages: MetadataRoute.Sitemap = BLOG_POSTS.map((post) => ({
-    url: `${BASE}/ja/blog/${post.slug}`,
-    lastModified: new Date(post.date),
-    changeFrequency: "monthly",
-    priority: 0.6,
-    alternates: {
-      languages: {
-        ja: `${BASE}/ja/blog/${post.slug}`,
-        "x-default": `${BASE}/ja/blog/${post.slug}`,
-      },
-    },
-  }))
+  const blogPagesPerLocale = await Promise.all(
+    routing.locales.map(async (locale) => {
+      const posts = await getAllBlogPosts(locale)
+      return posts.map((post) => ({
+        url: `${BASE}/${locale}/blog/${post.slug}`,
+        lastModified: post.date ? new Date(post.date) : now,
+        changeFrequency: "monthly" as const,
+        priority: 0.6,
+        alternates: {
+          languages: {
+            [locale]: `${BASE}/${locale}/blog/${post.slug}`,
+            "x-default": `${BASE}/${routing.defaultLocale}/blog/${post.slug}`,
+          },
+        },
+      }))
+    }),
+  )
+  const blogPages: MetadataRoute.Sitemap = blogPagesPerLocale.flat()
 
   return [...staticPages, ...blogPages]
 }
