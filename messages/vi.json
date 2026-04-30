@@ -10,7 +10,11 @@
     "pricing": "Bảng giá",
     "faq": "FAQ",
     "blog": "Blog",
-    "contact": "Liên hệ"
+    "contact": "Liên hệ",
+    "menu": "Trình đơn",
+    "openMenu": "Mở trình đơn",
+    "closeMenu": "Đóng trình đơn",
+    "primaryNav": "Điều hướng chính"
   },
   "cta": {
     "primary": "Tư vấn miễn phí",
@@ -33,7 +37,10 @@
       "meo": "SEO địa phương (MEO)",
       "seo": "SEO / GEO",
       "ai": "Kích hoạt AI"
-    }
+    },
+    "studioLocation": "Tokyo, Nhật Bản · Paradigm",
+    "socialGithub": "GitHub",
+    "socialEmail": "Email"
   },
   "home": {
     "heroBadge": "Đối tác kỹ thuật số địa phương của bạn tại Nhật Bản",

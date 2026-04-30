@@ -10,7 +10,11 @@
     "pricing": "Pricing",
     "faq": "FAQ",
     "blog": "Blog",
-    "contact": "Contact"
+    "contact": "Contact",
+    "menu": "Menu",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "primaryNav": "Primary navigation"
   },
   "cta": {
     "primary": "Free Consult",
@@ -33,7 +37,10 @@
       "meo": "Local SEO (MEO)",
       "seo": "SEO / GEO",
       "ai": "AI Enablement"
-    }
+    },
+    "studioLocation": "Tokyo, Japan · Paradigm LLC",
+    "socialGithub": "GitHub",
+    "socialEmail": "Email"
   },
   "home": {
     "heroBadge": "Your local digital partner in Japan",
@@ -41,15 +48,32 @@
     "heroSubtitle": "Translation-free onboarding, local compliance, and AI-powered automation — built by operators in Tokyo.",
     "heroSuffix": " to accelerate your Japan entry.",
     "heroSubheadline": "Web, Local SEO, SEO/GEO, and AI Enablement — full-stack support to land and grow in Japan.",
-    "heroTypingWords": ["Local SEO", "AI Automation", "Web Build", "SEO/GEO"],
+    "heroTypingWords": [
+      "Local SEO",
+      "AI Automation",
+      "Web Build",
+      "SEO/GEO"
+    ],
     "heroBookConsult": "Book a Free Consult",
     "heroSeeServices": "Explore Services",
     "trusted": "Companies we've supported",
     "stats": {
-      "support": { "suffix": "+", "label": "Companies supported" },
-      "retention": { "suffix": "%", "label": "Retention" },
-      "growth": { "suffix": "x", "label": "Avg. traffic lift" },
-      "consult": { "suffix": "min", "label": "First consult" }
+      "support": {
+        "suffix": "+",
+        "label": "Companies supported"
+      },
+      "retention": {
+        "suffix": "%",
+        "label": "Retention"
+      },
+      "growth": {
+        "suffix": "x",
+        "label": "Avg. traffic lift"
+      },
+      "consult": {
+        "suffix": "min",
+        "label": "First consult"
+      }
     },
     "servicesEyebrow": "Services",
     "servicesHeading": "Four services that grow your Japan business",
@@ -87,17 +111,41 @@
     "featuresEyebrow": "Why Paradigm",
     "featuresHeading": "Four reasons clients choose us",
     "features": {
-      "speed": { "title": "2-week delivery", "desc": "A lean process that ships quality fast — including last-minute work." },
-      "guarantee": { "title": "Outcome-backed plan", "desc": "Local SEO and SEO/GEO come with a refund window if outcomes don't materialize." },
-      "team": { "title": "Dedicated owner", "desc": "Same point of contact end-to-end — monthly reports and standing reviews." },
-      "aiFusion": { "title": "AI × digital fusion", "desc": "Latest AI tools weaponized for inbound — strategies that beat your competitors." }
+      "speed": {
+        "title": "2-week delivery",
+        "desc": "A lean process that ships quality fast — including last-minute work."
+      },
+      "guarantee": {
+        "title": "Outcome-backed plan",
+        "desc": "Local SEO and SEO/GEO come with a refund window if outcomes don't materialize."
+      },
+      "team": {
+        "title": "Dedicated owner",
+        "desc": "Same point of contact end-to-end — monthly reports and standing reviews."
+      },
+      "aiFusion": {
+        "title": "AI × digital fusion",
+        "desc": "Latest AI tools weaponized for inbound — strategies that beat your competitors."
+      }
     },
     "testimonialsEyebrow": "Testimonials",
     "testimonialsHeading": "What clients say",
     "testimonials": {
-      "1": { "name": "Restaurant Owner", "location": "Shibuya, Tokyo", "text": "Three months in, MEO drove 30+ first-time visits per month. The ROI was unmistakable." },
-      "2": { "name": "Clinic Director", "location": "Kita-ku, Osaka", "text": "Inquiries doubled after the website rebuild. The AI chat is a hit with patients." },
-      "3": { "name": "DTC Operator", "location": "Nagoya, Aichi", "text": "GEO unlocked traffic from ChatGPT searches. A whole new acquisition channel." }
+      "1": {
+        "name": "Restaurant Owner",
+        "location": "Shibuya, Tokyo",
+        "text": "Three months in, MEO drove 30+ first-time visits per month. The ROI was unmistakable."
+      },
+      "2": {
+        "name": "Clinic Director",
+        "location": "Kita-ku, Osaka",
+        "text": "Inquiries doubled after the website rebuild. The AI chat is a hit with patients."
+      },
+      "3": {
+        "name": "DTC Operator",
+        "location": "Nagoya, Aichi",
+        "text": "GEO unlocked traffic from ChatGPT searches. A whole new acquisition channel."
+      }
     },
     "trustBadges": {
       "1": "200+ companies supported",

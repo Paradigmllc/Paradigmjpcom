@@ -10,7 +10,11 @@
     "pricing": "Tarifs",
     "faq": "FAQ",
     "blog": "Blog",
-    "contact": "Contact"
+    "contact": "Contact",
+    "menu": "Menu",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu",
+    "primaryNav": "Navigation principale"
   },
   "cta": {
     "primary": "Consultation gratuite",
@@ -33,7 +37,10 @@
       "meo": "SEO local (MEO)",
       "seo": "SEO / GEO",
       "ai": "Intégration IA"
-    }
+    },
+    "studioLocation": "Tokyo, Japon · Paradigm",
+    "socialGithub": "GitHub",
+    "socialEmail": "Email"
   },
   "home": {
     "heroBadge": "Votre partenaire digital local au Japon",

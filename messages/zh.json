@@ -10,7 +10,11 @@
     "pricing": "定价",
     "faq": "常见问题",
     "blog": "博客",
-    "contact": "联系我们"
+    "contact": "联系我们",
+    "menu": "菜单",
+    "openMenu": "打开菜单",
+    "closeMenu": "关闭菜单",
+    "primaryNav": "主导航"
   },
   "cta": {
     "primary": "免费咨询",
@@ -33,7 +37,10 @@
       "meo": "本地SEO (MEO)",
       "seo": "SEO / GEO",
       "ai": "AI赋能"
-    }
+    },
+    "studioLocation": "东京 · 日本 · Paradigm",
+    "socialGithub": "GitHub",
+    "socialEmail": "电子邮件"
   },
   "home": {
     "heroBadge": "您在日本的本地数字化合作伙伴",

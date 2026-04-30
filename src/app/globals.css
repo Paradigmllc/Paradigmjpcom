@@ -57,20 +57,25 @@
 }
 
 /* Tailwind v4 @theme — registers tokens under the `--color-*` and
-   `--font-*` namespaces so utilities like `bg-paradigm-paper`,
-   `font-display`, `text-paradigm-accent/60` are auto-generated. */
+   `--font-*` namespaces. Note: the v3 `<alpha-value>` placeholder
+   syntax does NOT work in v4 — Turbopack ships the literal string
+   to the browser instead of substituting opacity. Use plain
+   `rgb(var(--paradigm-X))` instead. v4's opacity modifiers
+   (e.g. `bg-paradigm-ink/30`) apply via color-mix at the utility
+   level, so the base token must be a valid CSS color, not a
+   templated expression. */
 @theme {
-  --color-paradigm-paper: rgb(var(--paradigm-paper) / <alpha-value>);
-  --color-paradigm-paper-deep: rgb(var(--paradigm-paper-deep) / <alpha-value>);
-  --color-paradigm-paper-card: rgb(var(--paradigm-paper-card) / <alpha-value>);
-  --color-paradigm-ink: rgb(var(--paradigm-ink) / <alpha-value>);
-  --color-paradigm-ink-soft: rgb(var(--paradigm-ink-soft) / <alpha-value>);
-  --color-paradigm-ink-mute: rgb(var(--paradigm-ink-mute) / <alpha-value>);
-  --color-paradigm-line: rgb(var(--paradigm-line) / <alpha-value>);
-  --color-paradigm-accent: rgb(var(--paradigm-accent) / <alpha-value>);
-  --color-paradigm-accent-soft: rgb(var(--paradigm-accent-soft) / <alpha-value>);
-  --color-paradigm-glow: rgb(var(--paradigm-glow) / <alpha-value>);
-  --color-paradigm-tech: rgb(var(--paradigm-tech) / <alpha-value>);
+  --color-paradigm-paper: rgb(var(--paradigm-paper));
+  --color-paradigm-paper-deep: rgb(var(--paradigm-paper-deep));
+  --color-paradigm-paper-card: rgb(var(--paradigm-paper-card));
+  --color-paradigm-ink: rgb(var(--paradigm-ink));
+  --color-paradigm-ink-soft: rgb(var(--paradigm-ink-soft));
+  --color-paradigm-ink-mute: rgb(var(--paradigm-ink-mute));
+  --color-paradigm-line: rgb(var(--paradigm-line));
+  --color-paradigm-accent: rgb(var(--paradigm-accent));
+  --color-paradigm-accent-soft: rgb(var(--paradigm-accent-soft));
+  --color-paradigm-glow: rgb(var(--paradigm-glow));
+  --color-paradigm-tech: rgb(var(--paradigm-tech));
 
   --font-display: "Cormorant Garamond", "Noto Serif JP", "Times New Roman", serif;
   --font-sans: "Inter", "Noto Sans JP", system-ui, -apple-system, "Helvetica Neue", sans-serif;

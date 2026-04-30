@@ -10,7 +10,11 @@
     "pricing": "Harga",
     "faq": "FAQ",
     "blog": "Blog",
-    "contact": "Kontak"
+    "contact": "Kontak",
+    "menu": "Menu",
+    "openMenu": "Buka menu",
+    "closeMenu": "Tutup menu",
+    "primaryNav": "Navigasi utama"
   },
   "cta": {
     "primary": "Konsultasi Gratis",
@@ -33,7 +37,10 @@
       "meo": "SEO Lokal (MEO)",
       "seo": "SEO / GEO",
       "ai": "Pemberdayaan AI"
-    }
+    },
+    "studioLocation": "Tokyo, Jepang · Paradigm",
+    "socialGithub": "GitHub",
+    "socialEmail": "Email"
   },
   "home": {
     "heroBadge": "Mitra digital lokal Anda di Jepang",

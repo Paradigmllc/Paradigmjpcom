@@ -2,8 +2,8 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { NextIntlClientProvider, hasLocale } from "next-intl"
 import { getMessages, setRequestLocale } from "next-intl/server"
-import Header from "@/components/Header"
-import Footer from "@/components/Footer"
+import SiteHeader from "@/components/aesop/SiteHeader"
+import SiteFooter from "@/components/aesop/SiteFooter"
 import DifyChatbot from "@/components/DifyChatbot"
 import SiteWrapper from "@/components/SiteWrapper"
 import { ThemeProvider } from "@/components/aesop/ThemeProvider"
@@ -234,9 +234,9 @@ export default async function LocaleLayout({ children, params }: Props) {
           <NextIntlClientProvider locale={locale} messages={messages}>
             {/* relative wrapper sits above body::before paper-grain (z-0) */}
             <div className="relative z-10">
-              <Header />
+              <SiteHeader />
               <SiteWrapper>{children}</SiteWrapper>
-              <Footer />
+              <SiteFooter />
             </div>
             {/* DifyChatbot は ja/en のみ最適化（残10ロケールは en にフォールバック） */}
             <DifyChatbot locale={(locale === "ja" ? "ja" : "en") as "ja" | "en"} />
