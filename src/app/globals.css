@@ -194,6 +194,63 @@ body.no-grain::before { display: none; }
   animation: meteor 5s linear infinite;
 }
 
+/* Marquee — horizontal/vertical seamless scroll loop */
+@keyframes mq-horizontal {
+  from { transform: translateX(0); }
+  to   { transform: translateX(calc(-100% - var(--mq-gap, 3rem))); }
+}
+@keyframes mq-vertical {
+  from { transform: translateY(0); }
+  to   { transform: translateY(calc(-100% - var(--mq-gap, 3rem))); }
+}
+.animate-mq-horizontal { animation: mq-horizontal var(--mq-duration, 30s) linear infinite; }
+.animate-mq-vertical   { animation: mq-vertical   var(--mq-duration, 30s) linear infinite; }
+
+/* Gradient text shift — used on bg-gradient text for shimmer effect */
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Shimmer slide for ShimmerButton */
+@keyframes shimmer-slide {
+  to { transform: translate(calc(100cqw - 100%), 0); }
+}
+@keyframes spin-around {
+  0%   { transform: translateZ(0) rotate(0); }
+  15%, 35% { transform: translateZ(0) rotate(90deg); }
+  65%, 85% { transform: translateZ(0) rotate(270deg); }
+  100% { transform: translateZ(0) rotate(360deg); }
+}
+.animate-shimmer-slide { animation: shimmer-slide var(--speed, 2.5s) ease-in-out infinite alternate; }
+.animate-spin-around   { animation: spin-around   calc(var(--speed, 2.5s) * 2) infinite; }
+
+/* Animated gradient mesh — slow drifting hue background.
+   Used as a section bg layer (z-0 absolute inset-0) for "色の層" depth. */
+@keyframes meshDrift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(2%, -3%) scale(1.05); }
+  66%      { transform: translate(-3%, 2%) scale(1.02); }
+}
+.paradigm-mesh {
+  position: absolute;
+  inset: -10%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 20% 20%, rgb(var(--paradigm-accent) / 0.12), transparent 45%),
+    radial-gradient(circle at 80% 30%, rgb(var(--paradigm-tech) / 0.10), transparent 45%),
+    radial-gradient(circle at 50% 80%, rgb(var(--paradigm-glow) / 0.10), transparent 45%);
+  filter: blur(60px);
+  animation: meshDrift 22s ease-in-out infinite;
+}
+[data-theme="dark"] .paradigm-mesh {
+  background:
+    radial-gradient(circle at 20% 20%, rgb(var(--paradigm-accent) / 0.22), transparent 45%),
+    radial-gradient(circle at 80% 30%, rgb(var(--paradigm-tech) / 0.18), transparent 45%),
+    radial-gradient(circle at 50% 80%, rgb(var(--paradigm-glow) / 0.18), transparent 45%);
+}
+
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 @keyframes blobFloat {
   0%, 100% { transform: translate(0, 0) scale(1); }
