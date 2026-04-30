@@ -1,3 +1,12 @@
+/**
+ * /[locale]/blog/[slug] — ブログ記事詳細 (PayloadCMS Posts → fallback BLOG_POSTS)
+ *
+ * 役割:   ブログ記事詳細 (PayloadCMS Posts → fallback BLOG_POSTS)
+ * 入力:   params.locale, params.slug
+ * 出力:   BlogPosting 構造化データ + markdown render + RichCtaBand
+ *
+ * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
+ */
 import type { Metadata } from "next"
 import { Link } from "@/i18n/routing"
 import { getAllBlogSlugs, getBlogPostBySlug } from "@/lib/blog-cms"

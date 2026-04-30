@@ -1,3 +1,12 @@
+/**
+ * /[locale]/lp/meo — MEO 対策専用 LP
+ *
+ * 役割:   MEO 対策専用 LP
+ * 入力:   params.locale
+ * 出力:   Pain → Solution → Plans → FAQ → CTA Band
+ *
+ * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
+ */
 import type { Metadata } from "next"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"

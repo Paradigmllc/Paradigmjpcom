@@ -1,3 +1,12 @@
+/**
+ * /[locale]/contact — お問い合わせ (form + Cal.com sidebar)
+ *
+ * 役割:   お問い合わせ (form + Cal.com sidebar)
+ * 入力:   params.locale
+ * 出力:   PageHero + ContactForm + Cal.com booking aside
+ *
+ * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
+ */
 import type { Metadata } from "next"
 import { Mail, Clock, Calendar } from "lucide-react"
 import PageHero from "@/components/PageHero"

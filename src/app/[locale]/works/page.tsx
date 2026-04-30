@@ -1,3 +1,12 @@
+/**
+ * /[locale]/works — 制作実績一覧 (PayloadCMS Works collection 連動)
+ *
+ * 役割:   制作実績一覧 (PayloadCMS Works collection 連動)
+ * 入力:   params.locale
+ * 出力:   PageHero + before/after grid + RichCtaBand
+ *
+ * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
+ */
 import type { Metadata } from "next"
 import { getPayload } from "payload"
 import config from "@payload-config"

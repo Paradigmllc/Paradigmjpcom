@@ -1,3 +1,12 @@
+/**
+ * /[locale]/lp/web — Web 制作専用 LP (リード獲得導線)
+ *
+ * 役割:   Web 制作専用 LP (リード獲得導線)
+ * 入力:   params.locale
+ * 出力:   Pain → Solution → Plans → FAQ → CTA Band
+ *
+ * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
+ */
 import type { Metadata } from "next"
 import { X, Check } from "lucide-react"
 import PageHero from "@/components/PageHero"

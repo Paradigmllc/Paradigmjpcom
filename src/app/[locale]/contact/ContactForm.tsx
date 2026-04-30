@@ -119,11 +119,11 @@ export function ContactForm({ locale = "ja" }: Props) {
           <label className="block paradigm-eyebrow text-paradigm-ink-soft mb-2">
             {T.name} <span className="text-pink-500">{T.required}</span>
           </label>
-          <input type="text" required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className={FIELD_BASE} placeholder={T.namePh} />
+          <input type="text" required autoComplete="name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className={FIELD_BASE} placeholder={T.namePh} />
         </div>
         <div>
           <label className="block paradigm-eyebrow text-paradigm-ink-soft mb-2">{T.company}</label>
-          <input type="text" value={form.company} onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))} className={FIELD_BASE} placeholder={T.companyPh} />
+          <input type="text" autoComplete="organization" value={form.company} onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))} className={FIELD_BASE} placeholder={T.companyPh} />
         </div>
       </div>
 
@@ -131,12 +131,12 @@ export function ContactForm({ locale = "ja" }: Props) {
         <label className="block paradigm-eyebrow text-paradigm-ink-soft mb-2">
           {T.email} <span className="text-pink-500">{T.required}</span>
         </label>
-        <input type="email" required value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} className={FIELD_BASE} placeholder={T.emailPh} />
+        <input type="email" required autoComplete="email" inputMode="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} className={FIELD_BASE} placeholder={T.emailPh} />
       </div>
 
       <div>
         <label className="block paradigm-eyebrow text-paradigm-ink-soft mb-2">{T.phone}</label>
-        <input type="tel" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} className={FIELD_BASE} placeholder={T.phonePh} />
+        <input type="tel" autoComplete="tel" inputMode="tel" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} className={FIELD_BASE} placeholder={T.phonePh} />
       </div>
 
       <div>

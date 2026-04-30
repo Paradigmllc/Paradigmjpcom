@@ -51,7 +51,16 @@ export default function HeroSection() {
       className="relative min-h-[88vh] flex items-center justify-center overflow-hidden bg-paradigm-ink"
     >
       <motion.div style={{ y: heroParallaxY }} className="absolute inset-0 z-0">
-        <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          aria-hidden="true"
+          tabIndex={-1}
+          poster="/paper-grain.svg"
+          className="absolute inset-0 w-full h-full object-cover motion-reduce:hidden"
+        >
           <source src={HERO_VIDEO_URL} type="video/mp4" />
         </video>
         <div className="absolute inset-0 bg-gradient-to-b from-paradigm-ink/60 via-paradigm-ink/70 to-paradigm-ink/90" />
