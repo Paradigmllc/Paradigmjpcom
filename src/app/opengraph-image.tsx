@@ -1,7 +1,9 @@
 import { ImageResponse } from "next/og"
 
 export const runtime = "edge"
-export const alt = "Paradigm合同会社 | デジタルで事業を加速する"
+// Brand-neutral OG image (shared across all locales — sits outside [locale] segment).
+// Locale-aware OG is a P19 candidate via app/[locale]/opengraph-image.tsx.
+export const alt = "Paradigm — Digital growth partner"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 
@@ -10,7 +12,8 @@ export default async function Image() {
     (
       <div
         style={{
-          background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+          background:
+            "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
           width: "100%",
           height: "100%",
           display: "flex",
@@ -61,7 +64,7 @@ export default async function Image() {
             marginBottom: "24px",
           }}
         >
-          デジタルで、事業を加速する。
+          Digital growth partner.
         </div>
 
         {/* Services */}
@@ -73,13 +76,13 @@ export default async function Image() {
             fontSize: "20px",
           }}
         >
-          <span>Web制作</span>
-          <span>・</span>
-          <span>MEO対策</span>
-          <span>・</span>
-          <span>SEO/GEO</span>
-          <span>・</span>
-          <span>AI導入支援</span>
+          <span>Web</span>
+          <span>·</span>
+          <span>MEO</span>
+          <span>·</span>
+          <span>SEO / GEO</span>
+          <span>·</span>
+          <span>AI</span>
         </div>
 
         {/* URL */}

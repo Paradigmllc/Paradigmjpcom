@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback, useMemo, type CSSProperties } from "react"
+import { useLocale } from "next-intl"
 import { matchTemplateWithDB, applyPatternToTemplate, type ProposalTemplate, type DemoTab, type PagePattern } from "@/lib/proposal-templates"
 
 // ═══════════════════════════════════════════════════════════════
@@ -1056,6 +1057,8 @@ function WhyUsSection({ d, tpl }: { d: ProspectData; tpl: ProposalTemplate }) {
 }
 
 function CTASection({ d, onCta, tpl }: { d: ProspectData; onCta: () => void; tpl: ProposalTemplate }) {
+  const locale = useLocale()
+  const isJa = locale === "ja"
   const accent = d.template_accent || tpl.accent
   const ctaUrl = d.template_cta_url || tpl.cta_url
   // 3モード: null=選択画面, "consult"=オンライン相談, "chat"=チャット, "docs"=資料請求
@@ -1313,13 +1316,16 @@ function CTASection({ d, onCta, tpl }: { d: ProspectData; onCta: () => void; tpl
         </div>
 
         <div className="pp-cta-badges">
-          {["SSL暗号化通信", "相談無料", "秘密厳守"].map(b => (
+          {(isJa
+            ? ["SSL暗号化通信", "相談無料", "秘密厳守"]
+            : ["SSL encrypted", "Free consultation", "Strictly confidential"]
+          ).map(b => (
             <span key={b} className="pp-cta-badge">🔒 {b}</span>
           ))}
         </div>
 
         <div className="pp-footer">
-          Paradigm合同会社 · 東京都目黒区<br />
+          {isJa ? "Paradigm合同会社 · 東京都目黒区" : "Paradigm LLC · Meguro, Tokyo"}<br />
           info@paradigmjp.com · paradigmjp.com
         </div>
       </div>
