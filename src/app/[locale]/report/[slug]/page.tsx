@@ -14,7 +14,9 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useParams } from "next/navigation"
-import PersuasionPage, { type ProspectData } from "@/app/[locale]/p/[slug]/AllInOneClient"
+// 2026-05-01 audit: AllInOneClient.tsx (2123 行) retire — ProposalRenderer のみで動作。
+// ?legacy=1 escape hatch も廃止。ProspectData 型は lib/proposal/prospect-data に移管済み。
+import type { ProspectData } from "@/lib/proposal/prospect-data"
 import ProposalRenderer from "@/components/proposal/ProposalRenderer"
 
 export const dynamic = "force-dynamic"
@@ -128,9 +130,6 @@ export default function ReportPageWrapper() {
     </div>
   )
 
-  // V2 (manifest-driven Magic UI redesign) を default で使う。
-  // 旧 PersuasionPage (AllInOneClient) は ?legacy=1 でフォールバック可能。
-  const useLegacy = typeof window !== "undefined" && window.location.search.includes("legacy=1")
-  if (useLegacy) return <PersuasionPage data={data} />
+  // ProposalRenderer (Manifest-driven · 13 sections) のみで動作。
   return <ProposalRenderer data={data} />
 }

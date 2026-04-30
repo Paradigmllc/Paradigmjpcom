@@ -8,8 +8,8 @@
  * (2026-07-30 目安) に 404 化予定。
  *
  * Why client-side redirect:
- *   AllInOneClient.tsx は新 ProposalRenderer 経路から type 経由で参照されている
- *   ため同階層に維持。useEffect で client redirect・query string 保持。
+ *   2026-05-01 audit: AllInOneClient.tsx (2123 行) は retire 済み。本 shim は
+ *   redirect だけの薄い client component。useEffect で client redirect・query string 保持。
  */
 
 import { useEffect } from "react"
