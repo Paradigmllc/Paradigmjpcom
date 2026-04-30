@@ -23,7 +23,21 @@
 
 ## 📋 未着手（順番厳守）
 
-（なし — P17 完遂後に追加）
+- [ ] **P18-A-FIX-1. /[locale]/report/[token] orphan 削除後の token ハンドリング再統合**（2026-04-30 発覚 / commit 10496d9 で `[slug]` を canonical 化した際に既存の `[locale]/report/[token]/page.tsx` が削除されず Next.js dynamic-route slug 名衝突で dev server が起動不能だった / `[token]/page.tsx` を削除して P18-A verification を通したが diagnostic token-fetch ロジックが宙に浮いている — `[slug]/page.tsx` 側で `slug.length === 36` 等の UUID 判定→`/api/report/${slug}` フォールバックで再統合する / API `src/app/api/report/[token]/route.ts` は維持・削除しない）
+
+- [ ] **P18. Aesop 風ラグジュアリー全面リニューアル**（開始: 2026-04-30 / 規模: 4 PR / Sericia 既存資産フォーク移植 + paradigm-Aesop ハイブリッド = Modern Tech × Aesop / dark mode 入れる / EC 系部品はスキップ / `/report/[slug]` は対象外 — s10-4 鉄則維持）
+  - [x] **P18-A. Design Token Migration**（完了: 2026-04-30 / globals.css Aesop foundation + paradigm-paper/ink/line/accent + dark mode + paper-grain + 新フォント Cormorant/Inter/JetBrains Mono/Noto Serif JP / next-themes 導入 / layout.tsx rewire / **副産物**: ① `src/app/[locale]/report/[token]/page.tsx` orphan 削除 (P18-A-FIX-1 で再統合予定) / ② `next.config.ts` に `turbopack.root: path.resolve(__dirname)` を追加 — 親 D:/dev/paradigmjpcom/package-lock.json の存在で Turbopack が worktree node_modules を見えなかった問題を解決 / **検証**: light bg `#f8f8f6` / dark bg `#0c0e12` / Inter+Noto Sans JP / paper-grain.svg / data-theme切替全動作 / console エラーゼロ）
+  - [ ] **P18-B. Core Layout Port**（SiteHeader / SiteFooter / MegaMenu / Logo / ThemeToggle / LocaleSwitcher Aesop 化 — Sericia から移植 + paradigm services 構造へ rewire / 旧 Header.tsx・Footer.tsx 廃止）
+  - [ ] **P18-C. Motion & Polish**（FadeIn / MagneticButton / SmoothScroll / ScrollProgress / CustomCursor / LuxuryLoader / PageTransition / CookieConsent — Sericia から移植）
+  - [ ] **P18-D. Page Refactor**（HomeClient.tsx / about / services / contact / pricing / blog の Aesop 風 hero/section パターンへ書き換え / messages 経由維持・AE-PHP-2 厳守 / section-per-file ≤ 200 行 / AE-PHP-1〜6 全準拠）
+
+### P18 確定方針（2026-04-30 ユーザ承認）
+
+1. **4 PR 段階リリース** A→B→C→D 順
+2. **Modern Tech × Aesop ハイブリッド** — Sericia の warm beige (#f5f0e8) ではなく cooler neutral cream (#f8f8f6) + ink #121419 + indigo refined accent。Sericia とブランド衝突回避
+3. **dark mode 入れる** — `[data-theme="dark"]` 切替・`next-themes` 採用
+4. **EC 系不要 components はスキップ** — Cart/Checkout/Crossmint/Wishlist/ProductCard/NotifyMe/Drop/SamplerBanner/SakuraFall/AnimatedHeart は移植しない
+5. **`/report/[slug]` は Aesop 化対象外** — s10-4 提案ページ 4 鉄則アーキ維持。提案ページは KPI / 訴求重視で別 design language
 
 ## ✅ 完了
 

@@ -1,65 +1,191 @@
 @import "tailwindcss";
 
-@theme {
-  --color-primary: #1a1a2e;
-  --color-accent: #4f46e5;
-  --color-accent-light: #818cf8;
-  --color-surface: #ffffff;
-  --color-surface-dark: #0f172a;
-  --color-text: #1e293b;
-  --color-text-muted: #64748b;
-  --font-sans: "Noto Sans JP", system-ui, -apple-system, sans-serif;
+/* ────────────────────────────────────────────────────────────────────────
+   Paradigm "Modern Tech × Aesop" Design Tokens (P18-A — 2026-04-30)
+   ────────────────────────────────────────────────────────────────────────
+   Single source of truth for both Tailwind v4 (`@theme` namespace) and raw
+   CSS (`var(--paradigm-*)`). Tokens are space-separated RGB triplets so
+   Tailwind's opacity modifiers (`text-paradigm-ink/80`) resolve correctly.
+   When using raw `var(--paradigm-*)` directly, wrap with `rgb()`.
+   Hex equivalents (kept as comments for designers):
+     LIGHT   paper #f8f8f6  paper-deep #eeeeea  paper-card #fcfcfa
+             ink #121419    ink-soft   #404650  ink-mute   #828a94
+             line #dcdee2   accent     #4f46e5  glow       #818cf8
+     DARK    paper #0c0e12  paper-deep #080a0d  paper-card #161920
+             ink #e8ebf0    ink-soft   #b4bcc8  ink-mute   #828a94
+             line #232830   accent     #818cf8  glow       #a5b4fc
+   Sericia とのブランド衝突回避: cooler neutral cream + 冷めの ink + indigo
+   refined accent。Sericia の warm beige (#f5f0e8 + olive) とは差別化済み。 */
+
+:root,
+[data-theme="light"] {
+  --paradigm-paper: 248 248 246;
+  --paradigm-paper-deep: 238 238 234;
+  --paradigm-paper-card: 252 252 250;
+  --paradigm-ink: 18 20 25;
+  --paradigm-ink-soft: 64 70 80;
+  --paradigm-ink-mute: 130 138 148;
+  --paradigm-line: 220 222 226;
+  --paradigm-accent: 79 70 229;
+  --paradigm-accent-soft: 99 102 241;
+  --paradigm-glow: 129 140 248;
+  --paradigm-tech: 14 165 233;
+
+  --background: rgb(var(--paradigm-paper));
+  --foreground: rgb(var(--paradigm-ink));
+
+  color-scheme: light;
 }
 
+[data-theme="dark"] {
+  --paradigm-paper: 12 14 18;
+  --paradigm-paper-deep: 8 10 13;
+  --paradigm-paper-card: 22 25 32;
+  --paradigm-ink: 232 235 240;
+  --paradigm-ink-soft: 180 188 200;
+  --paradigm-ink-mute: 130 138 148;
+  --paradigm-line: 35 40 48;
+  --paradigm-accent: 129 140 248;
+  --paradigm-accent-soft: 165 180 252;
+  --paradigm-glow: 199 210 254;
+  --paradigm-tech: 56 189 248;
+
+  --background: rgb(var(--paradigm-paper));
+  --foreground: rgb(var(--paradigm-ink));
+
+  color-scheme: dark;
+}
+
+/* Tailwind v4 @theme — registers tokens under the `--color-*` and
+   `--font-*` namespaces so utilities like `bg-paradigm-paper`,
+   `font-display`, `text-paradigm-accent/60` are auto-generated. */
+@theme {
+  --color-paradigm-paper: rgb(var(--paradigm-paper) / <alpha-value>);
+  --color-paradigm-paper-deep: rgb(var(--paradigm-paper-deep) / <alpha-value>);
+  --color-paradigm-paper-card: rgb(var(--paradigm-paper-card) / <alpha-value>);
+  --color-paradigm-ink: rgb(var(--paradigm-ink) / <alpha-value>);
+  --color-paradigm-ink-soft: rgb(var(--paradigm-ink-soft) / <alpha-value>);
+  --color-paradigm-ink-mute: rgb(var(--paradigm-ink-mute) / <alpha-value>);
+  --color-paradigm-line: rgb(var(--paradigm-line) / <alpha-value>);
+  --color-paradigm-accent: rgb(var(--paradigm-accent) / <alpha-value>);
+  --color-paradigm-accent-soft: rgb(var(--paradigm-accent-soft) / <alpha-value>);
+  --color-paradigm-glow: rgb(var(--paradigm-glow) / <alpha-value>);
+  --color-paradigm-tech: rgb(var(--paradigm-tech) / <alpha-value>);
+
+  --font-display: "Cormorant Garamond", "Noto Serif JP", "Times New Roman", serif;
+  --font-sans: "Inter", "Noto Sans JP", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* Smooth theme cross-fade — paint properties only. Animating `all` would
+   jank scroll-driven framer-motion transforms. */
 html {
   scroll-behavior: smooth;
+  transition:
+    background-color 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  html { transition: none; scroll-behavior: auto; }
 }
 
 body {
   font-family: var(--font-sans);
-  color: var(--color-text);
-  background: var(--color-surface);
+  background: var(--background);
+  color: var(--foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "ss01", "cv01", "cv02"; /* Inter alternate forms */
 }
 
 ::selection {
-  background: var(--color-accent);
-  color: white;
+  background: rgb(var(--paradigm-accent));
+  color: rgb(var(--paradigm-paper));
 }
 
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+/* ────────────────────────────────────────────────────────────────────────
+   Aesop-style typographic primitives
+   ──────────────────────────────────────────────────────────────────────── */
+
+/* Display (Cormorant Garamond) — large editorial headlines. Use sparingly. */
+.font-display { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.01em; }
+
+/* Eyebrow — Aesop's signature small caps with wide tracking, used above
+   section headings to anchor hierarchy without competing for attention. */
+.paradigm-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;       /* 11px */
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgb(var(--paradigm-ink-mute));
+  font-weight: 500;
 }
 
-/* ── Page hero decorative blobs ── */
+/* Hairline — single-pixel divider used between sections instead of shadows. */
+.paradigm-rule {
+  height: 1px;
+  background: rgb(var(--paradigm-line));
+  width: 100%;
+}
+
+/* Generous section padding — Aesop's whitespace ratio. */
+.paradigm-section {
+  padding-top: clamp(4rem, 8vw, 8rem);
+  padding-bottom: clamp(4rem, 8vw, 8rem);
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   Paper grain — subtle SVG noise overlay. Mounted as ::before on body
+   so it sits above bg color but below content. Toggleable via .no-grain.
+   Dark mode lowers opacity since the noise reads stronger on dark paper. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url("/paper-grain.svg");
+  background-size: 280px 280px;
+  opacity: 0.045;
+  mix-blend-mode: multiply;
+}
+[data-theme="dark"] body::before {
+  opacity: 0.08;
+  mix-blend-mode: screen;
+}
+body.no-grain::before { display: none; }
+
+/* ────────────────────────────────────────────────────────────────────────
+   Legacy compat (pre-P18 globals — kept until Phase D refactor lands)
+   PageHero.tsx + about/page.tsx still reference these. Will be removed
+   when P18-D rewrites those pages.
+   ──────────────────────────────────────────────────────────────────────── */
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 @keyframes blobFloat {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  33%       { transform: translate(20px, -24px) scale(1.06); }
-  66%       { transform: translate(-16px, 12px) scale(0.96); }
+  33%      { transform: translate(20px, -24px) scale(1.06); }
+  66%      { transform: translate(-16px, 12px) scale(0.96); }
 }
 @keyframes blobFloat2 {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  33%       { transform: translate(-28px, 16px) scale(1.04); }
-  66%       { transform: translate(22px, -12px) scale(0.97); }
+  33%      { transform: translate(-28px, 16px) scale(1.04); }
+  66%      { transform: translate(22px, -12px) scale(0.97); }
 }
 @keyframes blobFloat3 {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  50%       { transform: translate(14px, 20px) scale(1.08); }
+  50%      { transform: translate(14px, 20px) scale(1.08); }
 }
 .ph-blob-1 { animation: blobFloat  14s ease-in-out infinite; }
 .ph-blob-2 { animation: blobFloat2 18s ease-in-out infinite; }
 .ph-blob-3 { animation: blobFloat3 11s ease-in-out infinite; }
 
-/* ── Subtle section decorative patterns ── */
 .section-dots {
-  background-image: radial-gradient(circle, #6366f120 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgb(var(--paradigm-accent) / 0.12) 1px, transparent 1px);
   background-size: 28px 28px;
 }
 .section-grid {
   background-image:
-    linear-gradient(rgba(99,102,241,0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(99,102,241,0.06) 1px, transparent 1px);
+    linear-gradient(rgb(var(--paradigm-accent) / 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--paradigm-accent) / 0.06) 1px, transparent 1px);
   background-size: 48px 48px;
 }

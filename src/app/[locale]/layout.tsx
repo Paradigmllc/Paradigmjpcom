@@ -6,6 +6,7 @@ import Header from "@/components/Header"
 import Footer from "@/components/Footer"
 import DifyChatbot from "@/components/DifyChatbot"
 import SiteWrapper from "@/components/SiteWrapper"
+import { ThemeProvider } from "@/components/aesop/ThemeProvider"
 import { ORGANIZATION_JSONLD, SERVICES_JSONLD } from "@/lib/jsonld"
 import { routing } from "@/i18n/routing"
 import {
@@ -152,13 +153,18 @@ export default async function LocaleLayout({ children, params }: Props) {
   const isRtl = isRtlLocale(typedLocale)
 
   return (
-    <html lang={locale} dir={dir}>
+    <html lang={locale} dir={dir} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* ja は Noto Sans JP / 他 locale は system font + 必要に応じて Noto Sans Arabic 等を追加 */}
+        {/* P18-A Aesop foundation fonts:
+              - Cormorant Garamond  → editorial display headings
+              - Inter               → body sans (modern tech feel)
+              - JetBrains Mono      → eyebrow / mono accents
+            Combined with Noto Sans JP (body) and Noto Serif JP (display) for
+            Japanese coverage. Single weighted bundle = 1 round-trip. */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@300;400;500;600;700;800&family=Noto+Serif+JP:wght@400;500;600&display=swap"
           rel="stylesheet"
         />
         {isRtl && (
@@ -223,14 +229,19 @@ export default async function LocaleLayout({ children, params }: Props) {
           }}
         />
       </head>
-      <body className="min-h-screen">
-        <NextIntlClientProvider locale={locale} messages={messages}>
-          <Header />
-          <SiteWrapper>{children}</SiteWrapper>
-          <Footer />
-          {/* DifyChatbot は ja/en のみ最適化（残10ロケールは en にフォールバック） */}
-          <DifyChatbot locale={(locale === "ja" ? "ja" : "en") as "ja" | "en"} />
-        </NextIntlClientProvider>
+      <body className="min-h-screen bg-paradigm-paper text-paradigm-ink antialiased">
+        <ThemeProvider>
+          <NextIntlClientProvider locale={locale} messages={messages}>
+            {/* relative wrapper sits above body::before paper-grain (z-0) */}
+            <div className="relative z-10">
+              <Header />
+              <SiteWrapper>{children}</SiteWrapper>
+              <Footer />
+            </div>
+            {/* DifyChatbot は ja/en のみ最適化（残10ロケールは en にフォールバック） */}
+            <DifyChatbot locale={(locale === "ja" ? "ja" : "en") as "ja" | "en"} />
+          </NextIntlClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
