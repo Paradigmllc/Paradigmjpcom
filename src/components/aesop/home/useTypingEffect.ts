@@ -1,15 +1,9 @@
 "use client"
 
 /**
- * useTypingEffect — cycles through `words[]` typing each char at `speed`,
- * pausing `pause` ms when full, then deleting and moving to the next.
- *
- * The pattern of dependent timers (one for typing, one for pause, one
- * for delete) is intentional — using a single setInterval with a state
- * machine produces visible jitter on slow browsers. The setTimeout
- * chain gives each phase its own clean cancellation point.
- *
- * AE-PHP-1: 32 lines.
+ * useTypingEffect — re-export from canonical location.
+ * Original at /aesop/home/useTypingEffect.ts (now this file). Kept colocated
+ * in the home/ subfolder so all home-specific helpers live together.
  */
 
 import { useEffect, useState } from "react"
