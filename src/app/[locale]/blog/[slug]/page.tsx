@@ -1,36 +1,35 @@
 import type { Metadata } from "next"
 import { Link } from "@/i18n/routing"
-import { BLOG_POSTS, getPost } from "@/lib/blog"
+import { getAllBlogSlugs, getBlogPostBySlug } from "@/lib/blog-cms"
 import { notFound } from "next/navigation"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
 
-export function generateStaticParams() {
-  return BLOG_POSTS.map((p) => ({ slug: p.slug }))
+export async function generateStaticParams() {
+  return await getAllBlogSlugs()
 }
 
-export function generateMetadata({
+export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string; locale: string }>
 }): Promise<Metadata> {
-  return params.then(({ slug, locale }) => {
-    const post = getPost(slug)
-    const isJa = locale === "ja"
-    if (!post) return { title: isJa ? "記事が見つかりません" : "Article not found" }
-    return {
+  const { slug, locale } = await params
+  const isJa = locale === "ja"
+  const post = await getBlogPostBySlug(slug, locale)
+  if (!post) return { title: isJa ? "記事が見つかりません" : "Article not found" }
+  return {
+    title: post.title,
+    description: post.excerpt,
+    openGraph: {
       title: post.title,
       description: post.excerpt,
-      openGraph: {
-        title: post.title,
-        description: post.excerpt,
-        type: "article",
-        publishedTime: post.date,
-        locale: isJa ? "ja_JP" : "en_US",
-      },
-    }
-  })
+      type: "article",
+      publishedTime: post.date,
+      locale: isJa ? "ja_JP" : "en_US",
+    },
+  }
 }
 
 function formatInline(text: string): string {
@@ -110,7 +109,7 @@ export default async function BlogPostPage({
   params: Promise<{ slug: string; locale: string }>
 }) {
   const { slug, locale } = await params
-  const post = getPost(slug)
+  const post = await getBlogPostBySlug(slug, locale)
   if (!post) notFound()
   const isJa = locale === "ja"
   const orgName = isJa ? "Paradigm合同会社" : "Paradigm LLC"

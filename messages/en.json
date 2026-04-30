@@ -163,7 +163,9 @@
       "1": "Always free",
       "2": "No sales calls",
       "3": "15 minutes max"
-    }
+    },
+    "processEyebrow": "Process",
+    "processHeading": "Four steps to ship your project successfully."
   },
   "chatbot": {
     "title": "Paradigm Assistant",

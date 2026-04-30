@@ -1,4 +1,19 @@
-// ─── ブログ記事データ ───
+/**
+ * lib/blog.ts — DEPRECATED: legacy in-code blog seed (4 JP-only posts).
+ *
+ * 2026-05-01 (P18 P19 移行): 新しい consumer は必ず `lib/blog-cms.ts` の
+ * `getAllBlogPosts(locale)` / `getBlogPostBySlug(slug, locale)` /
+ * `getAllBlogSlugs()` を使うこと。BLOG_POSTS は Payload Posts collection が
+ * 空の場合のフォールバック seed として残してある。
+ *
+ * 移行手順:
+ *   1. /admin (PayloadCMS) を開く
+ *   2. Posts collection で同じ slug の Post を作成
+ *   3. content (richText) と availableLocales=["ja"] を設定
+ *   4. 全 4 件移行完了後、このファイルから BLOG_POSTS を削除
+ */
+
+// ─── ブログ記事データ (legacy seed) ───
 export type BlogPost = {
   slug: string
   title: string
@@ -10,6 +25,7 @@ export type BlogPost = {
   readTime: string
 }
 
+/** @deprecated Use lib/blog-cms.ts. Remaining only as Payload-empty fallback. */
 export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "what-is-geo",
@@ -213,6 +229,7 @@ Paradigm合同会社では、御社に最適なAI導入プランを無料でご�
   },
 ]
 
+/** @deprecated Use lib/blog-cms.ts `getBlogPostBySlug(slug, locale)` instead. */
 export function getPost(slug: string): BlogPost | undefined {
   return BLOG_POSTS.find(p => p.slug === slug)
 }

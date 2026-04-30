@@ -6,7 +6,7 @@
  */
 
 import { useRef } from "react"
-import { useLocale } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { motion } from "framer-motion"
 import { Headphones, PenTool, Code2, TrendingUp } from "lucide-react"
 import { AnimatedBeam } from "@/components/magicui/animated-beam"
@@ -36,12 +36,10 @@ export default function ProcessSection() {
   const containerRef = useRef<HTMLDivElement>(null)
   const refs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)]
 
-  // Bilingual literals (avoids MISSING_MESSAGE during SSG when keys are absent in messages/{locale}.json).
-  // P19 candidate: move to messages/ json + auto-translate via DeepSeek for 10 non-ja/en locales.
-  const heading = isJa
-    ? "御社のプロジェクトを成功に導く 4 ステップ。"
-    : "Four steps to ship your project successfully."
-  const eyebrow = "Process"
+  // i18n strict (AE-PHP-2): keys live in messages/{locale}.json (all 12 locales seeded).
+  const t = useTranslations("home")
+  const eyebrow = t("processEyebrow")
+  const heading = t("processHeading")
 
   return (
     <section className="relative bg-paradigm-paper-deep paradigm-section overflow-hidden">
