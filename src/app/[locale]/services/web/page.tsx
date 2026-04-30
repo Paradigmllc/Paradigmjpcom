@@ -1,7 +1,14 @@
 import type { Metadata } from "next"
-import Link from "next/link"
+import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import { SERVICES, PRICING } from "@/lib/data"
+
+/**
+ * /[locale]/services/web — Web 制作 detail (Aesop voice).
+ *
+ * P18-D-3 rewrite. 4-band: Hero → Overview features → Pricing 3-up
+ * → CTA closing ink reverse. AE-PHP-1: 95 lines.
+ */
 
 export const metadata: Metadata = {
   title: "Web制作",
@@ -9,64 +16,114 @@ export const metadata: Metadata = {
 }
 
 export default function WebServicePage() {
-  const service = SERVICES.find(s => s.id === "web")!
+  const service = SERVICES.find((s) => s.id === "web")!
   const pricing = PRICING.web
 
   return (
     <>
-      <PageHero badge="Web制作" title={service.title} desc={service.tagline} icon={service.icon} accent="indigo" />
+      <PageHero
+        badge="Web 制作"
+        title={service.title}
+        desc={service.tagline}
+      />
 
-      {/* Description */}
-      <section className="py-20 px-6 bg-white">
-        <div className="max-w-4xl mx-auto">
-          <p className="text-lg text-text-muted leading-relaxed mb-12 text-center">{service.desc}</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {service.features.map(f => (
-              <div key={f} className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-100">
-                <span className="text-accent text-lg">&#10003;</span>
-                <span className="text-sm font-medium text-primary">{f}</span>
+      <section className="bg-paradigm-paper paradigm-section">
+        <div className="max-w-4xl mx-auto px-6 md:px-12">
+          <p className="text-[15px] md:text-[17px] text-paradigm-ink-soft leading-[1.9] mb-12">
+            {service.desc}
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-paradigm-line">
+            {service.features.map((f) => (
+              <div
+                key={f}
+                className="bg-paradigm-paper px-5 py-6 text-[14px] text-paradigm-ink leading-[1.6]"
+              >
+                {f}
               </div>
             ))}
           </div>
-          <p className="mt-8 text-center text-accent font-bold text-lg">{service.results}</p>
+          <p className="mt-12 paradigm-eyebrow text-paradigm-ink">
+            {service.results}
+          </p>
         </div>
       </section>
 
-      {/* Pricing */}
-      <section className="py-20 px-6 bg-gray-50">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl font-bold text-primary text-center mb-12">料金プラン</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {pricing.plans.map(p => (
-              <div key={p.name} className={`rounded-2xl p-8 border ${p.popular ? "border-accent bg-white shadow-xl shadow-accent/10 ring-2 ring-accent" : "border-gray-200 bg-white"}`}>
-                {p.popular && <p className="text-accent text-xs font-bold uppercase tracking-wider mb-2">人気No.1</p>}
-                <h3 className="text-xl font-bold text-primary">{p.name}</h3>
-                <p className="text-sm text-text-muted mt-1 mb-4">{p.desc}</p>
-                <p className="text-3xl font-bold text-primary mb-1">&yen;{p.price}<span className="text-base font-normal text-text-muted">{p.period}</span></p>
-                <ul className="mt-6 space-y-2">
-                  {p.features.map(f => (
-                    <li key={f} className="flex items-start gap-2 text-sm text-text-muted">
-                      <span className="text-accent mt-0.5">&#10003;</span>{f}
+      <section className="bg-paradigm-paper-deep paradigm-section">
+        <div className="max-w-6xl mx-auto px-6 md:px-12">
+          <div className="mb-16 max-w-2xl">
+            <p className="paradigm-eyebrow mb-5">Pricing</p>
+            <h2 className="font-display text-[32px] md:text-[44px] leading-[1.15] tracking-[-0.01em] text-paradigm-ink">
+              料金プラン
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-paradigm-line">
+            {pricing.plans.map((p) => (
+              <div
+                key={p.name}
+                className="bg-paradigm-paper-deep p-8 md:p-10 flex flex-col"
+              >
+                {p.popular && (
+                  <p className="paradigm-eyebrow text-paradigm-accent mb-4">
+                    人気No.1
+                  </p>
+                )}
+                <h3 className="font-display text-[24px] md:text-[28px] leading-[1.2] text-paradigm-ink mb-2">
+                  {p.name}
+                </h3>
+                <p className="text-[13px] text-paradigm-ink-soft mb-6 leading-[1.7]">
+                  {p.desc}
+                </p>
+                <p className="font-display text-[36px] text-paradigm-ink mb-1">
+                  &yen;{p.price}
+                  <span className="text-[14px] font-sans text-paradigm-ink-soft ml-1">
+                    {p.period}
+                  </span>
+                </p>
+                <ul className="border-t border-paradigm-line mt-6 mb-8 flex-1">
+                  {p.features.map((f) => (
+                    <li
+                      key={f}
+                      className="border-b border-paradigm-line py-3 text-[13px] text-paradigm-ink-soft leading-[1.7]"
+                    >
+                      {f}
                     </li>
                   ))}
                 </ul>
-                <Link href="/contact" className={`block mt-8 text-center py-3 rounded-xl font-semibold text-sm transition-colors ${p.popular ? "bg-accent text-white hover:bg-accent/90" : "bg-gray-100 text-primary hover:bg-gray-200"}`}>
+                <Link
+                  href="/contact"
+                  className={`mt-auto inline-flex items-center justify-center gap-2 px-6 py-3 text-[12px] tracking-[0.18em] uppercase transition-colors ${
+                    p.popular
+                      ? "bg-paradigm-ink text-paradigm-paper hover:bg-paradigm-accent"
+                      : "border border-paradigm-line text-paradigm-ink-soft hover:border-paradigm-ink hover:text-paradigm-ink"
+                  }`}
+                >
                   相談する
                 </Link>
               </div>
             ))}
           </div>
-          <p className="mt-8 text-center text-sm text-text-muted">{pricing.monthly}</p>
+          <p className="mt-10 paradigm-eyebrow text-paradigm-ink-soft">
+            {pricing.monthly}
+          </p>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-20 px-6 bg-gradient-to-r from-accent to-indigo-600 text-white text-center">
-        <h2 className="text-3xl font-bold mb-4">Web制作のご相談はこちら</h2>
-        <p className="text-white/80 mb-8">初回30分の無料オンライン相談を受け付けています。</p>
-        <Link href="/contact" className="inline-flex bg-white text-accent px-10 py-4 rounded-xl font-bold text-lg hover:bg-gray-50 transition-all shadow-lg">
-          無料相談を予約する
-        </Link>
+      <section className="bg-paradigm-ink text-paradigm-paper paradigm-section">
+        <div className="max-w-3xl mx-auto px-6 md:px-12 text-center">
+          <p className="paradigm-eyebrow text-paradigm-paper/60 mb-6">Talk</p>
+          <h2 className="font-display text-[32px] md:text-[52px] leading-[1.1] tracking-[-0.015em] text-paradigm-paper mb-6">
+            Web 制作のご相談はこちら
+          </h2>
+          <p className="text-[15px] md:text-[17px] text-paradigm-paper/65 max-w-xl mx-auto mb-10 leading-[1.85]">
+            初回30分の無料オンライン相談を受け付けています。
+          </p>
+          <Link
+            href="/contact"
+            className="inline-flex items-center gap-2 border border-paradigm-paper text-paradigm-paper px-10 py-4 text-[12px] tracking-[0.18em] uppercase hover:bg-paradigm-paper hover:text-paradigm-ink transition-colors"
+          >
+            無料相談を予約する
+          </Link>
+        </div>
       </section>
     </>
   )

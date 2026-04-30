@@ -5,6 +5,16 @@ import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import { filterByLocale, coerceLocale, localeFindOptions } from "@/lib/cms/filters"
 
+/**
+ * /[locale]/blog — index of published posts (Aesop voice).
+ *
+ * P18-D-3 rewrite. Posts render as horizontal-rule separated rows
+ * rather than card chrome. Category becomes a paradigm-eyebrow caps
+ * tag. Tags become subtle inline links.
+ *
+ * AE-PHP-1: 145 lines.
+ */
+
 export const dynamic = "force-dynamic"
 
 interface Props {
@@ -31,15 +41,6 @@ type PostDoc = {
   readTime?: string
   tags?: Array<{ tag?: string }>
   publishedAt?: string
-}
-
-const CAT_COLORS: Record<string, string> = {
-  "SEO/GEO": "bg-amber-100 text-amber-700",
-  MEO: "bg-emerald-100 text-emerald-700",
-  AI: "bg-purple-100 text-purple-700",
-  "Web制作": "bg-indigo-100 text-indigo-700",
-  "Web Development": "bg-indigo-100 text-indigo-700",
-  Strategy: "bg-rose-100 text-rose-700",
 }
 
 function formatDate(iso: string | undefined, locale: string): string {
@@ -77,82 +78,83 @@ export default async function BlogPage({ params }: Props) {
   return (
     <>
       <PageHero
-        badge="Blog"
-        title={isJa ? "ブログ" : "Blog"}
+        badge="Journal"
+        title={isJa ? "ブログ" : "Journal"}
         desc={
           isJa
-            ? "デジタルマーケティングの最新情報とノウハウ"
+            ? "デジタルマーケティングの最新情報とノウハウ。"
             : "Insights on Japan market entry, productized services, and AI-native operations."
         }
-        accent="rose"
       />
 
-      <section className="py-24 px-6 bg-white">
-        <div className="max-w-4xl mx-auto">
+      <section className="bg-paradigm-paper paradigm-section">
+        <div className="max-w-3xl mx-auto px-6 md:px-12">
           {posts.length === 0 ? (
-            <div className="text-center py-20">
-              <p className="text-lg text-text-muted mb-6">
+            <div className="text-center py-16">
+              <p className="text-[15px] text-paradigm-ink-soft leading-[1.85] mb-10 max-w-md mx-auto">
                 {isJa
                   ? "現在、公開中の記事はありません。新しい記事をお待ちください。"
                   : "No posts are published yet. Check back soon."}
               </p>
               <Link
                 href="/contact"
-                className="inline-flex bg-accent text-white px-8 py-3 rounded-xl font-semibold hover:bg-accent/90 transition-colors"
+                className="inline-flex items-center gap-2 border border-paradigm-ink text-paradigm-ink px-8 py-4 text-[12px] tracking-[0.18em] uppercase hover:bg-paradigm-ink hover:text-paradigm-paper transition-colors"
               >
-                {isJa ? "お問い合わせ" : "Contact Us"}
+                {isJa ? "お問い合わせ" : "Contact us"}
               </Link>
             </div>
           ) : (
-            <div className="space-y-8">
+            <ul className="border-t border-paradigm-line">
               {posts.map((post) => {
-                const catClass = post.category ? CAT_COLORS[post.category] : undefined
-                const tags = (post.tags ?? []).map((t) => t.tag).filter(Boolean) as string[]
+                const tags = (post.tags ?? [])
+                  .map((t) => t.tag)
+                  .filter(Boolean) as string[]
                 return (
-                  <Link
-                    key={String(post.id)}
-                    href={post.slug ? `/blog/${post.slug}` : "#"}
-                    className="group block rounded-2xl border border-gray-100 p-8 hover:border-accent/20 hover:shadow-xl transition-all duration-300"
-                  >
-                    <div className="flex items-center gap-3 mb-3 flex-wrap">
-                      {post.category && (
-                        <span
-                          className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                            catClass ?? "bg-gray-100 text-gray-600"
-                          }`}
-                        >
-                          {post.category}
-                        </span>
-                      )}
-                      <span className="text-xs text-text-muted">{formatDate(post.publishedAt, locale)}</span>
-                      {post.readTime && (
-                        <span className="text-xs text-text-muted">
-                          ・{isJa ? `${post.readTime}で読める` : `${post.readTime} read`}
-                        </span>
-                      )}
-                    </div>
-                    <h2 className="text-xl font-bold text-primary group-hover:text-accent transition-colors mb-3">
-                      {post.title ?? "—"}
-                    </h2>
-                    {post.excerpt && (
-                      <p className="text-sm text-text-muted leading-relaxed">{post.excerpt}</p>
-                    )}
-                    {tags.length > 0 && (
-                      <div className="flex gap-2 mt-4 flex-wrap">
-                        {tags.map((t) => (
-                          <span
-                            key={t}
-                            className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-text-muted"
-                          >
-                            #{t}
+                  <li key={String(post.id)} className="border-b border-paradigm-line">
+                    <Link
+                      href={post.slug ? `/blog/${post.slug}` : "#"}
+                      className="group block py-10 md:py-12"
+                    >
+                      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mb-5">
+                        {post.category && (
+                          <span className="paradigm-eyebrow text-paradigm-accent">
+                            {post.category}
                           </span>
-                        ))}
+                        )}
+                        <span className="paradigm-eyebrow text-paradigm-ink-mute">
+                          {formatDate(post.publishedAt, locale)}
+                        </span>
+                        {post.readTime && (
+                          <span className="paradigm-eyebrow text-paradigm-ink-mute">
+                            {isJa ? `${post.readTime}で読める` : `${post.readTime} read`}
+                          </span>
+                        )}
                       </div>
-                    )}
-                  </Link>
+                      <h2 className="font-display text-[26px] md:text-[34px] leading-[1.2] tracking-[-0.005em] text-paradigm-ink group-hover:text-paradigm-accent transition-colors mb-4">
+                        {post.title ?? "—"}
+                      </h2>
+                      {post.excerpt && (
+                        <p className="text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.85] max-w-2xl">
+                          {post.excerpt}
+                        </p>
+                      )}
+                      {tags.length > 0 && (
+                        <div className="flex gap-x-4 gap-y-2 mt-5 flex-wrap">
+                          {tags.map((t) => (
+                            <span
+                              key={t}
+                              className="paradigm-eyebrow text-paradigm-ink-mute"
+                            >
+                              #{t}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </Link>
+                  </li>
                 )
               })}
-            </div>
+            </ul>
           )}
         </div>
       </section>

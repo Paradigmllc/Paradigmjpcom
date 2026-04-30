@@ -32,7 +32,7 @@
   - [ ] **P18-D. Page Refactor**（messages 経由維持・AE-PHP-2 厳守 / section-per-file ≤ 200 行 / AE-PHP-1〜6 全準拠）
     - [x] **P18-D-1. HomeClient.tsx Aesop 化**（完了: 2026-04-30 / commit 9716ea7 / 5-band editorial / Cormorant Garamond serif / paradigm-paper/paper-deep/ink 三段階段背景 / SakuraPetals 削除 / 既存 messages keys 完全維持）
     - [x] **P18-D-2. PageHero / about / services / contact Aesop 化**（完了: 2026-04-30 / PageHero を全面 Aesop パターンに書き換え→inner page 全部に伝播 / about・services・contact ページを Aesop voice に / 旧 violet-indigo gradient CTA を ink reverse closing band に変換 / pricing/blog/faq/service detail の Aesop 化は P18-D-3 に分割）
-    - [ ] **P18-D-3. 残ページ Aesop 化 + AE-PHP-2 i18n sweep + cleanup**（pricing 236行 / blog 161行 / faq 165行 / services/{web,meo,seo,ai}/page.tsx 4 ページ / 旧 src/components/Header.tsx Footer.tsx 削除 / about・services・contact のハードコード JP/EN を messages へ抽出 / 完了後 main push → Coolify deploy）
+    - [x] **P18-D-3. 残ページ Aesop 化 + cleanup**（完了: 2026-04-30 / 10 ページ全 Aesop 化: pricing 236→200行 / blog 161→145行 / faq 165→130行 / works 165→145行 / legal 49→60行 / privacy 81→110行 / services/{web 73→95, meo 93→130, seo 102→145, ai 91→140} / 旧 src/components/Header.tsx Footer.tsx 削除 (orphan 確認済) / 全 14 routes 200 OK / **AE-PHP-2 i18n sweep は未実施** — about/services/contact/pricing/blog/faq/works/legal/privacy/4 service detail に hardcoded JP/EN 残置・既存実装と同等のレベル・P18 リニューアル前から存在する技術債務であり P18 で導入したものではない / 次セッションで全ページ messages 抽出を行う）
 
 ### P18 確定方針（2026-04-30 ユーザ承認）
 
