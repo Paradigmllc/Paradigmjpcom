@@ -5,7 +5,7 @@
  * 業種知識・region 知識を持たない。manifest が決めた variant + theme を受けて
  * 「与えられたデータをその見せ方で render する」役割に専念する。
  */
-import type { ProspectData } from "@/app/[locale]/p/[slug]/AllInOneClient"
+import type { ProspectData } from "@/lib/proposal/prospect-data"
 import type { ProposalLayoutManifest } from "@/lib/proposal/manifest"
 import type { ProposalTheme } from "@/lib/proposal/theme"
 import type { ProposalT } from "@/lib/proposal/i18n"

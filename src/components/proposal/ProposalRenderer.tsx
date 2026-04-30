@@ -14,7 +14,7 @@
  */
 
 import { useMemo } from "react"
-import type { ProspectData } from "@/app/[locale]/p/[slug]/AllInOneClient"
+import type { ProspectData } from "@/lib/proposal/prospect-data"
 import {
   buildDefaultManifest,
   isValidManifest,
