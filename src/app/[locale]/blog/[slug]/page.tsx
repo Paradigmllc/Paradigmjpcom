@@ -3,16 +3,8 @@ import { Link } from "@/i18n/routing"
 import { BLOG_POSTS, getPost } from "@/lib/blog"
 import { notFound } from "next/navigation"
 import PageHero from "@/components/PageHero"
-
-/**
- * /[locale]/blog/[slug] — article detail (Aesop voice).
- *
- * P18-D-3 followup rewrite. Hero now uses shared PageHero (paper bg +
- * serif). Markdown→HTML renderer outputs paradigm-* tokens. CTA closing
- * band switches from gradient pill to ink reverse.
- *
- * AE-PHP-1: 130 lines.
- */
+import RichCtaBand from "@/components/aesop/RichCtaBand"
+import FadeIn from "@/components/aesop/FadeIn"
 
 export function generateStaticParams() {
   return BLOG_POSTS.map((p) => ({ slug: p.slug }))
@@ -33,10 +25,10 @@ export function generateMetadata({ params }: { params: Promise<{ slug: string }>
 function formatInline(text: string): string {
   return text
     .replace(/\*\*(.+?)\*\*/g, '<strong class="text-paradigm-ink font-medium">$1</strong>')
-    .replace(/`(.+?)`/g, '<code class="font-mono text-[13px] bg-paradigm-paper-deep px-1.5 py-0.5 border border-paradigm-line">$1</code>')
-    .replace(/❌/g, '<span class="text-paradigm-accent">❌</span>')
-    .replace(/◎/g, '<span class="text-paradigm-ink font-medium">◎</span>')
-    .replace(/○/g, '<span class="text-paradigm-ink-soft">○</span>')
+    .replace(/`(.+?)`/g, '<code class="font-mono text-[13px] bg-paradigm-paper-deep px-1.5 py-0.5 rounded border border-paradigm-line">$1</code>')
+    .replace(/❌/g, '<span class="text-pink-500">❌</span>')
+    .replace(/◎/g, '<span class="text-paradigm-tech font-medium">◎</span>')
+    .replace(/○/g, '<span class="text-paradigm-glow">○</span>')
     .replace(/△/g, '<span class="text-paradigm-ink-mute">△</span>')
 }
 
@@ -59,16 +51,16 @@ function renderMarkdown(md: string) {
       if (trimmed.replace(/[|\-\s]/g, "") === "") continue
       const cells = trimmed.split("|").filter(Boolean).map((c) => c.trim())
       if (!inTable) {
-        html.push('<div class="overflow-x-auto my-8"><table class="w-full text-[14px] border-collapse"><thead><tr>')
+        html.push('<div class="overflow-x-auto my-8 paradigm-glass rounded-2xl paradigm-glow-sm"><table class="w-full text-[14px] border-collapse"><thead><tr>')
         cells.forEach((c) =>
-          html.push(`<th class="text-left py-3 px-4 bg-paradigm-paper-deep border border-paradigm-line paradigm-eyebrow">${c}</th>`),
+          html.push(`<th class="text-left py-3 px-4 border-b border-paradigm-line paradigm-eyebrow text-paradigm-accent">${c}</th>`),
         )
         html.push("</tr></thead><tbody>")
         inTable = true
       } else {
         html.push("<tr>")
         cells.forEach((c) =>
-          html.push(`<td class="py-3 px-4 border border-paradigm-line text-paradigm-ink-soft">${c}</td>`),
+          html.push(`<td class="py-3 px-4 border-b border-paradigm-line/60 text-paradigm-ink-soft">${c}</td>`),
         )
         html.push("</tr>")
       }
@@ -77,23 +69,23 @@ function renderMarkdown(md: string) {
     if (inTable) { html.push("</tbody></table></div>"); inTable = false }
 
     if (trimmed.startsWith("### ")) {
-      html.push(`<h3 class="font-display text-[22px] md:text-[24px] leading-[1.25] text-paradigm-ink mt-12 mb-4">${trimmed.slice(4)}</h3>`)
+      html.push(`<h3 class="font-display text-[20px] md:text-[22px] leading-[1.25] text-paradigm-ink mt-10 mb-3 tracking-[-0.01em]">${trimmed.slice(4)}</h3>`)
       continue
     }
     if (trimmed.startsWith("## ")) {
-      html.push(`<h2 class="font-display text-[26px] md:text-[32px] leading-[1.2] text-paradigm-ink mt-16 mb-6">${trimmed.slice(3)}</h2>`)
+      html.push(`<h2 class="font-display text-[24px] md:text-[28px] leading-[1.2] mt-12 mb-5 tracking-[-0.015em]"><span class="bg-gradient-to-br from-paradigm-ink via-paradigm-accent to-paradigm-tech bg-clip-text text-transparent">${trimmed.slice(3)}</span></h2>`)
       continue
     }
 
     if (/^[-*]\s/.test(trimmed) || /^\d+\.\s/.test(trimmed)) {
-      if (!inList) { html.push('<ul class="border-t border-paradigm-line my-6">'); inList = true }
+      if (!inList) { html.push('<ul class="my-5 space-y-2">'); inList = true }
       const content = trimmed.replace(/^[-*]\s|^\d+\.\s/, "")
-      html.push(`<li class="border-b border-paradigm-line py-3 text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.85]">${formatInline(content)}</li>`)
+      html.push(`<li class="flex gap-2.5 items-start text-[13px] md:text-[14px] text-paradigm-ink-soft leading-[1.85]"><span class="inline-block w-1.5 h-1.5 rounded-full bg-gradient-to-br from-paradigm-accent to-paradigm-tech mt-2 flex-shrink-0"></span><span>${formatInline(content)}</span></li>`)
       continue
     }
     if (inList) { html.push("</ul>"); inList = false }
 
-    html.push(`<p class="text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.9] my-5">${formatInline(trimmed)}</p>`)
+    html.push(`<p class="text-[13px] md:text-[14px] text-paradigm-ink-soft leading-[1.9] my-4">${formatInline(trimmed)}</p>`)
   }
   if (inList) html.push("</ul>")
   if (inTable) html.push("</tbody></table></div>")
@@ -110,35 +102,28 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     <>
       <PageHero badge={post.category} title={post.title} desc={`${post.date} · ${post.readTime}で読める`} />
 
-      <article className="bg-paradigm-paper paradigm-section">
-        <div className="max-w-3xl mx-auto px-6 md:px-12" dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }} />
+      <article className="relative bg-paradigm-paper paradigm-section overflow-hidden">
+        <div className="paradigm-mesh opacity-20" />
+        <FadeIn className="relative z-10 max-w-3xl mx-auto px-6 md:px-8">
+          <div className="paradigm-glass rounded-2xl p-7 md:p-9 paradigm-glow-md" dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }} />
+        </FadeIn>
       </article>
 
-      <section className="bg-paradigm-paper-deep paradigm-section">
-        <div className="max-w-3xl mx-auto px-6 md:px-12 text-center">
-          <p className="paradigm-eyebrow mb-5">Talk</p>
-          <h2 className="font-display text-[28px] md:text-[40px] leading-[1.15] tracking-[-0.01em] text-paradigm-ink mb-6">
-            無料相談を受け付けています
-          </h2>
-          <p className="text-[15px] text-paradigm-ink-soft mb-10 leading-[1.85] max-w-xl mx-auto">
-            この記事のテーマについて、御社に合った具体的な提案をいたします。
-          </p>
-          <Link
-            href="/contact"
-            className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-10 py-4 text-[12px] tracking-[0.18em] uppercase hover:bg-paradigm-accent transition-colors"
-          >
-            無料相談を予約する
-          </Link>
-        </div>
-      </section>
-
-      <section className="bg-paradigm-paper border-t border-paradigm-line py-8">
-        <div className="max-w-3xl mx-auto px-6 md:px-12">
-          <Link href="/blog" className="paradigm-eyebrow text-paradigm-ink-soft hover:text-paradigm-ink transition-colors">
+      <section className="relative bg-paradigm-paper-deep py-8 overflow-hidden">
+        <FadeIn className="max-w-3xl mx-auto px-6 md:px-8">
+          <Link href="/blog" className="paradigm-eyebrow text-paradigm-ink-soft hover:text-paradigm-accent transition-colors inline-flex items-center gap-2">
             ← ブログ一覧に戻る
           </Link>
-        </div>
+        </FadeIn>
       </section>
+
+      <RichCtaBand
+        eyebrow="Talk"
+        title="無料相談を受け付けています"
+        highlight="無料相談"
+        desc="この記事のテーマについて、御社に合った具体的な提案をいたします。"
+        buttonLabel="無料相談を予約する"
+      />
 
       <script
         type="application/ld+json"

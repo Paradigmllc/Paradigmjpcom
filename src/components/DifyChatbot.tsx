@@ -105,44 +105,59 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
           onClick={() => setOpen(true)}
           style={{
             position: "fixed",
-            bottom: 28,
-            right: 28,
+            bottom: 24,
+            right: 24,
             zIndex: 9999,
             width: 56,
             height: 56,
-            background: TOKENS.ink,
-            border: `1px solid ${TOKENS.ink}`,
+            borderRadius: 9999,
+            background: "linear-gradient(135deg, rgb(244 114 182), rgb(99 102 241), rgb(14 165 233))",
+            backgroundSize: "200% 100%",
+            border: "none",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            transition: "background 0.2s, color 0.2s",
+            transition: "transform 0.25s, box-shadow 0.25s",
             fontFamily: FONT_STACK,
+            boxShadow: "0 12px 32px -8px rgba(99, 102, 241, 0.45), 0 4px 12px -2px rgba(244, 114, 182, 0.3)",
+            animation: "gradientShift 4s linear infinite",
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = TOKENS.paper
-            e.currentTarget.style.color = TOKENS.ink
+            e.currentTarget.style.transform = "scale(1.08) translateY(-2px)"
+            e.currentTarget.style.boxShadow = "0 20px 48px -12px rgba(99, 102, 241, 0.55), 0 8px 16px -4px rgba(244, 114, 182, 0.4)"
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = TOKENS.ink
-            e.currentTarget.style.color = TOKENS.paper
+            e.currentTarget.style.transform = "scale(1) translateY(0)"
+            e.currentTarget.style.boxShadow = "0 12px 32px -8px rgba(99, 102, 241, 0.45), 0 4px 12px -2px rgba(244, 114, 182, 0.3)"
           }}
           aria-label={t("openLabel")}
           title={t("openLabel")}
         >
           <svg
-            width="20"
-            height="20"
+            width="22"
+            height="22"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="1.5"
+            strokeWidth="1.6"
             strokeLinecap="round"
             strokeLinejoin="round"
-            style={{ color: TOKENS.paper }}
+            style={{ color: "#fff" }}
           >
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
+          {/* Pulse ring overlay */}
+          <span
+            aria-hidden
+            style={{
+              position: "absolute",
+              inset: -4,
+              borderRadius: 9999,
+              border: "2px solid rgba(165, 180, 252, 0.5)",
+              animation: "pulse-ring 2.5s ease-out infinite",
+            }}
+          />
         </button>
       )}
 
@@ -169,23 +184,26 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
 
           <div
             style={{
-              padding: "20px 22px",
-              background: TOKENS.paper,
-              color: TOKENS.ink,
+              padding: "18px 22px",
+              background: "linear-gradient(135deg, rgb(244 114 182), rgb(99 102 241), rgb(14 165 233))",
+              backgroundSize: "200% 100%",
+              animation: "gradientShift 6s ease infinite",
+              color: "#fff",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
               flexShrink: 0,
-              borderBottom: `1px solid ${TOKENS.line}`,
+              position: "relative",
+              overflow: "hidden",
             }}
           >
-            <div>
+            <div style={{ position: "relative", zIndex: 1 }}>
               <p
                 style={{
                   fontSize: 11,
                   letterSpacing: "0.18em",
                   textTransform: "uppercase",
-                  color: TOKENS.inkMute,
+                  color: "rgba(255, 255, 255, 0.75)",
                   margin: 0,
                   marginBottom: 4,
                   fontWeight: 500,
@@ -193,37 +211,35 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
               >
                 Paradigm
               </p>
-              <p style={{ fontWeight: 400, fontSize: 16, color: TOKENS.ink, margin: 0, letterSpacing: "-0.01em" }}>
+              <p style={{ fontWeight: 500, fontSize: 16, color: "#fff", margin: 0, letterSpacing: "-0.01em" }}>
                 {t("title")}
               </p>
-              <p style={{ fontSize: 11, color: TOKENS.inkMute, margin: 0, marginTop: 4, display: "flex", alignItems: "center", gap: 6, letterSpacing: "0.05em" }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: TOKENS.accent, display: "inline-block" }} />
+              <p style={{ fontSize: 11, color: "rgba(255, 255, 255, 0.85)", margin: 0, marginTop: 4, display: "flex", alignItems: "center", gap: 6, letterSpacing: "0.05em" }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "rgb(74, 222, 128)", display: "inline-block", boxShadow: "0 0 8px rgb(74, 222, 128)" }} />
                 {t("status")}
               </p>
             </div>
             <button
               onClick={() => setOpen(false)}
               style={{
-                background: "transparent",
-                border: `1px solid ${TOKENS.line}`,
+                position: "relative",
+                zIndex: 1,
+                background: "rgba(255, 255, 255, 0.18)",
+                border: "1px solid rgba(255, 255, 255, 0.25)",
+                borderRadius: 8,
                 width: 32,
                 height: 32,
                 cursor: "pointer",
-                color: TOKENS.inkSoft,
+                color: "#fff",
                 fontSize: 14,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                transition: "border-color 0.15s, color 0.15s",
+                transition: "background 0.15s",
+                backdropFilter: "blur(4px)",
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = TOKENS.ink
-                e.currentTarget.style.color = TOKENS.ink
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = TOKENS.line
-                e.currentTarget.style.color = TOKENS.inkSoft
-              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.30)" }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.18)" }}
               aria-label="Close"
             >
               ✕

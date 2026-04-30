@@ -11,6 +11,7 @@ import PageTransition from "@/components/aesop/PageTransition"
 import LuxuryLoader from "@/components/aesop/LuxuryLoader"
 import CookieConsent from "@/components/aesop/CookieConsent"
 import ScrollProgress from "@/components/aesop/ScrollProgress"
+import BackToTop from "@/components/aesop/BackToTop"
 import { ORGANIZATION_JSONLD, SERVICES_JSONLD } from "@/lib/jsonld"
 import { routing } from "@/i18n/routing"
 import {
@@ -247,6 +248,7 @@ export default async function LocaleLayout({ children, params }: Props) {
               </SiteWrapper>
               <SiteFooter />
               <CookieConsent />
+              <BackToTop />
             </div>
             {/* DifyChatbot は ja/en のみ最適化（残10ロケールは en にフォールバック） */}
             <DifyChatbot locale={(locale === "ja" ? "ja" : "en") as "ja" | "en"} />
