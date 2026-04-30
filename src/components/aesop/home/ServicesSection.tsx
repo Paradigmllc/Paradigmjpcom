@@ -1,16 +1,10 @@
 "use client"
 
 /**
- * ServicesSection — Premium bento with rounded-3xl glass cards + 3D tilt.
+ * ServicesSection — Bento w/ balanced typography (P18-D-8 right-sized).
  *
- * P18-D-7 leap:
- *   - rounded-3xl (24px) — soft luxurious corners
- *   - paradigm-tilt 3D hover (rotateY/X)
- *   - vivid gradient mesh per card
- *   - BorderBeam each w/ unique color
- *   - glow shadow on hover (paradigm-glow-lg)
- *   - icon: gradient bg + scale-110 -rotate-6 on hover
- *   - results: bigger gradient text
+ * Card title 22-28px / body 14-15px / padding p-6 md:p-8 / row 240-280px.
+ * Removed paradigm-tilt (was distracting). Keep BorderBeam + glow + mesh.
  */
 
 import { Link } from "@/i18n/routing"
@@ -31,9 +25,9 @@ const SERVICES = [
     iconBg: "from-pink-400 via-paradigm-accent to-paradigm-tech",
     beamFrom: "rgb(244 114 182)",
     beamTo: "rgb(14 165 233)",
-    meshA: "rgba(244, 114, 182, 0.18)",
-    meshB: "rgba(14, 165, 233, 0.15)",
-    accent: "text-pink-400",
+    meshA: "rgba(244, 114, 182, 0.15)",
+    meshB: "rgba(14, 165, 233, 0.12)",
+    accent: "text-pink-500",
   },
   {
     key: "meo",
@@ -43,8 +37,8 @@ const SERVICES = [
     iconBg: "from-paradigm-tech via-paradigm-glow to-violet-300",
     beamFrom: "rgb(14 165 233)",
     beamTo: "rgb(165 180 252)",
-    meshA: "rgba(14, 165, 233, 0.18)",
-    meshB: "rgba(165, 180, 252, 0.12)",
+    meshA: "rgba(14, 165, 233, 0.15)",
+    meshB: "rgba(165, 180, 252, 0.10)",
     accent: "text-paradigm-tech",
   },
   {
@@ -55,9 +49,9 @@ const SERVICES = [
     iconBg: "from-paradigm-glow via-violet-400 to-paradigm-accent",
     beamFrom: "rgb(165 180 252)",
     beamTo: "rgb(79 70 229)",
-    meshA: "rgba(165, 180, 252, 0.18)",
-    meshB: "rgba(79, 70, 229, 0.12)",
-    accent: "text-violet-400",
+    meshA: "rgba(165, 180, 252, 0.15)",
+    meshB: "rgba(79, 70, 229, 0.10)",
+    accent: "text-violet-500",
   },
   {
     key: "ai",
@@ -67,9 +61,9 @@ const SERVICES = [
     iconBg: "from-paradigm-accent via-pink-400 to-orange-300",
     beamFrom: "rgb(79 70 229)",
     beamTo: "rgb(251 146 60)",
-    meshA: "rgba(79, 70, 229, 0.18)",
-    meshB: "rgba(251, 146, 60, 0.15)",
-    accent: "text-orange-400",
+    meshA: "rgba(79, 70, 229, 0.15)",
+    meshB: "rgba(251, 146, 60, 0.12)",
+    accent: "text-orange-500",
   },
 ] as const
 
@@ -78,11 +72,11 @@ export default function ServicesSection() {
 
   return (
     <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
-      <div className="paradigm-mesh opacity-50" />
-      <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12">
-        <FadeIn className="mb-20 max-w-3xl">
-          <p className="paradigm-eyebrow mb-5 text-paradigm-accent">{t("servicesEyebrow")}</p>
-          <h2 className="font-display text-[40px] md:text-[80px] leading-[0.98] tracking-[-0.03em] text-paradigm-ink">
+      <div className="paradigm-mesh opacity-40" />
+      <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-8">
+        <FadeIn className="mb-10 max-w-2xl">
+          <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{t("servicesEyebrow")}</p>
+          <h2 className="font-display text-[28px] md:text-[44px] leading-[1.1] tracking-[-0.025em] text-paradigm-ink">
             <span className="bg-gradient-to-br from-paradigm-ink via-paradigm-accent to-paradigm-tech bg-clip-text text-transparent">
               {t("servicesHeading")}
             </span>
@@ -94,7 +88,7 @@ export default function ServicesSection() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.8 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 auto-rows-[280px] md:auto-rows-[340px]"
+          className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 auto-rows-[220px] md:auto-rows-[260px]"
         >
           {SERVICES.map((s, idx) => {
             const Icon = s.icon
@@ -102,37 +96,36 @@ export default function ServicesSection() {
             return (
               <motion.div
                 key={s.key}
-                initial={{ opacity: 0, y: 32 }}
+                initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-80px" }}
-                transition={{ duration: 0.7, delay: idx * 0.1, ease: EASE }}
+                transition={{ duration: 0.6, delay: idx * 0.08, ease: EASE }}
                 className={s.span}
               >
                 <Link
                   href={s.href}
-                  className="group paradigm-tilt relative block h-full bg-paradigm-paper-card border border-paradigm-line rounded-3xl p-8 md:p-10 hover:border-paradigm-accent/50 transition-colors duration-500 overflow-hidden hover:paradigm-glow-xl"
+                  className="group relative block h-full bg-paradigm-paper-card border border-paradigm-line rounded-2xl p-6 md:p-7 hover:border-paradigm-accent/50 hover:-translate-y-1 hover:paradigm-glow-lg transition-all duration-500 overflow-hidden"
                 >
-                  {/* per-card vivid mesh */}
                   <div
-                    className="absolute inset-0 opacity-50 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-3xl"
+                    className="absolute inset-0 opacity-50 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none rounded-2xl"
                     style={{
                       background: `radial-gradient(circle at 25% 15%, ${s.meshA}, transparent 55%), radial-gradient(circle at 75% 85%, ${s.meshB}, transparent 55%)`,
-                      filter: "blur(20px)",
+                      filter: "blur(16px)",
                     }}
                     aria-hidden
                   />
 
                   <BorderBeam
-                    size={220}
+                    size={180}
                     duration={9}
                     colorFrom={s.beamFrom}
                     colorTo={s.beamTo}
                     delay={idx * 1.5}
-                    borderWidth={1.8}
+                    borderWidth={1.5}
                   />
 
                   {badge && (
-                    <span className="absolute top-6 right-6 paradigm-eyebrow text-paradigm-accent z-10 paradigm-glass rounded-full px-3 py-1 paradigm-glow-sm">
+                    <span className="absolute top-4 right-4 paradigm-eyebrow text-paradigm-accent z-10 paradigm-glass rounded-full px-2.5 py-1 paradigm-glow-sm text-[10px]">
                       {badge}
                     </span>
                   )}
@@ -140,26 +133,26 @@ export default function ServicesSection() {
                   <div className="relative z-10 h-full flex flex-col">
                     <div className="mb-auto">
                       <div
-                        className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${s.iconBg} text-paradigm-paper mb-7 paradigm-glow-md group-hover:scale-110 group-hover:-rotate-6 transition-all duration-500`}
+                        className={`inline-flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br ${s.iconBg} text-paradigm-paper mb-4 paradigm-glow-sm group-hover:scale-110 group-hover:-rotate-6 transition-all duration-500`}
                       >
-                        <Icon size={26} strokeWidth={1.5} />
+                        <Icon size={20} strokeWidth={1.5} />
                       </div>
-                      <h3 className="font-display text-[30px] md:text-[42px] leading-[1.05] text-paradigm-ink mb-3 tracking-[-0.025em]">
+                      <h3 className="font-display text-[20px] md:text-[24px] leading-[1.15] text-paradigm-ink mb-1.5 tracking-[-0.015em]">
                         {t(`services.${s.key}.title`)}
                       </h3>
-                      <p className={`paradigm-eyebrow mb-5 ${s.accent}`}>{t(`services.${s.key}.tagline`)}</p>
-                      <p className="text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.85] max-w-md">
+                      <p className={`paradigm-eyebrow mb-3 text-[10px] ${s.accent}`}>{t(`services.${s.key}.tagline`)}</p>
+                      <p className="text-[13px] text-paradigm-ink-soft leading-[1.7] max-w-md">
                         {t(`services.${s.key}.desc`)}
                       </p>
                     </div>
 
-                    <div className="flex items-center justify-between border-t border-paradigm-line/60 pt-6 mt-7">
-                      <span className="text-[14px] font-semibold bg-gradient-to-r from-paradigm-accent via-paradigm-tech to-paradigm-glow bg-clip-text text-transparent">
+                    <div className="flex items-center justify-between border-t border-paradigm-line/60 pt-3 mt-4">
+                      <span className="text-[12px] font-semibold bg-gradient-to-r from-paradigm-accent via-paradigm-tech to-paradigm-glow bg-clip-text text-transparent">
                         {t(`services.${s.key}.results`)}
                       </span>
-                      <span className="paradigm-eyebrow text-paradigm-ink-soft group-hover:text-paradigm-accent transition-colors flex items-center gap-1">
+                      <span className="paradigm-eyebrow text-paradigm-ink-soft group-hover:text-paradigm-accent transition-colors flex items-center gap-1 text-[10px]">
                         {t("servicesViewMore")}
-                        <ArrowUpRight size={12} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                        <ArrowUpRight size={11} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                       </span>
                     </div>
                   </div>

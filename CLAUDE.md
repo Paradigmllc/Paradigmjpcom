@@ -1883,6 +1883,24 @@ paradigm-HP は既に `next-intl` v4 を導入済 → **JSX 内の生の日本�
 - ProposalLayoutManifest を使わず手動で section を組み立てる新規ページ
 - 「同じ機能を持つ component の重複」(必ず 1 箇所に統合する・AE-2 single-route-owner と同じ)
 
+#### AE-PHP-7: 全コンテンツ DB 化 + PayloadCMS 編集可能化（2026-04-30 ユーザ指示・永久ルール）
+
+> **3 大原則**: ① 全 visible content は **ハードコード NG** ② **DB (Supabase) 化** ③ **PayloadCMS で編集可能** にする。
+>
+> 違反: hero タイトル / section heading / card title / desc / FAQ / testimonials / process steps / 規約 等を JSX 内で literal string として書くこと。
+> 例外: ブランド固有名詞（PARADIGM 等）、code 例示、a11y aria-label の最低限のみ。
+>
+> 推奨実装パターン:
+> 1. **Pages collection (Payload) の `layout` Block 配列で組む** — 新セクションは Block 拡張で対応。
+>    既存 Block: Hero / Section / CardGrid / CTA / FAQ / RichText
+>    新規追加時は `src/blocks/{NewBlock}.ts` (config) + `BlockRenderer.tsx` に 1 行 dispatcher 追加で完結。
+> 2. **専用 collection** (Services / Pricing / FAQs / Works / Posts) は既に DB 化済み — page.tsx は payload.find で取得して描画するだけ。
+> 3. **HomeClient + 8 sections** は P19 で Pages collection の layout に移行予定 (現在は次善策として messages 経由で i18n 対応済 / hardcoded JP/EN は削減進行中)。
+>
+> 本ルール違反時のアクション:
+> - 私（Claude Code）は新ページ作成・既存ページ編集時に**生 string を JSX に書きそうになったら即座に Block 化または既存 collection 取得に切り替える**（指示待ち禁止）。
+> - admin UI から編集できないテキストを発見したら即「→ PayloadCMS Block 化提案」を出す。
+
 ---
 
 <a id="s11"></a>
