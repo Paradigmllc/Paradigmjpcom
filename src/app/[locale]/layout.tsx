@@ -161,22 +161,23 @@ export default async function LocaleLayout({ children, params }: Props) {
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* P18-A Aesop foundation fonts:
-              - Cormorant Garamond  → editorial display headings
-              - Inter               → body sans (modern tech feel)
-              - JetBrains Mono      → eyebrow / mono accents
-            Combined with Noto Sans JP (body) and Noto Serif JP (display) for
-            Japanese coverage. Single weighted bundle = 1 round-trip. */}
+        {/* P18 follow-up (2026-04-30): site-wide single sans family per ユーザ指示
+              「サイト全体のフォントは Noto Sans（Arial）で」.
+            Noto Sans (Latin) + Noto Sans JP (CJK) を 1 bundle ロード。
+            Cormorant Garamond / Inter / JetBrains Mono / Noto Serif JP は撤去。 */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@300;400;500;600;700;800&family=Noto+Serif+JP:wght@400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap"
           rel="stylesheet"
         />
         {isRtl && (
           <link
-            href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700;800&display=swap"
+            href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap"
             rel="stylesheet"
           />
         )}
+        {/* Favicon — Aesop ink + paper "P" mark (32x32 SVG) */}
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="apple-touch-icon" href="/favicon.svg" />
         {process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID && (
           <script
             defer

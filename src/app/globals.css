@@ -77,9 +77,14 @@
   --color-paradigm-glow: rgb(var(--paradigm-glow));
   --color-paradigm-tech: rgb(var(--paradigm-tech));
 
-  --font-display: "Cormorant Garamond", "Noto Serif JP", "Times New Roman", serif;
-  --font-sans: "Inter", "Noto Sans JP", system-ui, -apple-system, "Helvetica Neue", sans-serif;
-  --font-mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  /* Site-wide single sans family: Noto Sans (Latin) + Noto Sans JP (CJK)
+     + Arial / system fallback. P18 follow-up rewrite (2026-04-30 ユーザ指示):
+     editorial serif (Cormorant Garamond / Noto Serif JP) を全廃して
+     Noto Sans 一本に統一。display は同 family の lighter weight (300) で
+     大型化することで quiet luxury feel を維持。 */
+  --font-sans: "Noto Sans", "Noto Sans JP", Arial, system-ui, "Helvetica Neue", sans-serif;
+  --font-display: "Noto Sans", "Noto Sans JP", Arial, system-ui, "Helvetica Neue", sans-serif;
+  --font-mono: "Noto Sans", "Noto Sans JP", Arial, sans-serif;
 }
 
 /* Smooth theme cross-fade — paint properties only. Animating `all` would
@@ -112,8 +117,10 @@ body {
    Aesop-style typographic primitives
    ──────────────────────────────────────────────────────────────────────── */
 
-/* Display (Cormorant Garamond) — large editorial headlines. Use sparingly. */
-.font-display { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.01em; }
+/* Display — large editorial headlines. After P18 follow-up the family is
+   the same as body sans (Noto Sans), so display weight is dropped to 300
+   and tracking tightened to keep the quiet-luxury hierarchy without serif. */
+.font-display { font-family: var(--font-display); font-weight: 300; letter-spacing: -0.02em; }
 
 /* Eyebrow — Aesop's signature small caps with wide tracking, used above
    section headings to anchor hierarchy without competing for attention. */
@@ -165,6 +172,28 @@ body.no-grain::before { display: none; }
    PageHero.tsx + about/page.tsx still reference these. Will be removed
    when P18-D rewrites those pages.
    ──────────────────────────────────────────────────────────────────────── */
+/* ────────────────────────────────────────────────────────────────────────
+   Magic UI keyframes (BorderBeam / Meteors / Sparkles)
+   2026-04-30 ユーザ指示「Aesop.com のように…MagicUI 要素や
+   アニメーションをフル活用」で home に配置するため globals に追加。
+   ──────────────────────────────────────────────────────────────────────── */
+
+@keyframes border-beam {
+  100% { offset-distance: 100%; }
+}
+.animate-border-beam {
+  animation: border-beam calc(var(--duration, 8) * 1s) infinite linear;
+}
+
+@keyframes meteor {
+  0% { transform: rotate(215deg) translateX(0); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: rotate(215deg) translateX(-500px); opacity: 0; }
+}
+.animate-meteor {
+  animation: meteor 5s linear infinite;
+}
+
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 @keyframes blobFloat {
   0%, 100% { transform: translate(0, 0) scale(1); }
