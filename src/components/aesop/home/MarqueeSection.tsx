@@ -1,13 +1,8 @@
 "use client"
 
 /**
- * MarqueeSection — infinite scrolling trust ribbon between hero & services.
- *
- * 「殺風景」回避のため hero と services の間に動的な帯を挿入。
- * MagicUI Marquee で 30s 周期 + reverse 副ライン × 2 layer で
- * 立体感のある motion を作る。trust badges は messages keys から取得。
- *
- * AE-PHP-1: 60 lines.
+ * MarqueeSection — trust ribbon w/ balanced typography (P18-D-8 right-sized).
+ * 大型 display 40px → 22px に削減。py-12 → py-6 で余白 tight。
  */
 
 import { useTranslations } from "next-intl"
@@ -21,17 +16,17 @@ export default function MarqueeSection() {
   const tStats = (key: string) => t(`stats.${key}.label`)
 
   return (
-    <section className="relative bg-paradigm-paper-deep py-12 overflow-hidden border-y border-paradigm-line">
-      <div className="paradigm-mesh opacity-50" />
-      <div className="relative z-10 space-y-3">
+    <section className="relative bg-paradigm-paper-deep py-6 md:py-8 overflow-hidden border-y border-paradigm-line">
+      <div className="paradigm-mesh opacity-30" />
+      <div className="relative z-10 space-y-2">
         <Marquee duration={45} pauseOnHover={false} className="text-paradigm-ink-soft">
           {TRUST_BADGE_KEYS.map((k) => (
             <span
               key={k}
-              className="font-display text-[28px] md:text-[40px] leading-none tracking-[-0.01em] whitespace-nowrap"
+              className="font-display text-[16px] md:text-[22px] leading-none tracking-[-0.01em] whitespace-nowrap"
             >
               {t(`trustBadges.${k}`)}
-              <span className="mx-8 md:mx-12 text-paradigm-accent inline-block">●</span>
+              <span className="mx-6 md:mx-10 text-paradigm-accent inline-block">●</span>
             </span>
           ))}
         </Marquee>
@@ -39,10 +34,10 @@ export default function MarqueeSection() {
           {SECONDARY_KEYS.map((k) => (
             <span
               key={k}
-              className="paradigm-eyebrow text-[14px] md:text-[16px] whitespace-nowrap"
+              className="paradigm-eyebrow text-[10px] md:text-[12px] whitespace-nowrap"
             >
               {tStats(k)}
-              <span className="mx-6 md:mx-8 text-paradigm-line inline-block">/</span>
+              <span className="mx-5 md:mx-7 text-paradigm-line inline-block">/</span>
             </span>
           ))}
         </Marquee>

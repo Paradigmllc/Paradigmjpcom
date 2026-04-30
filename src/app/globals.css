@@ -140,10 +140,10 @@ body {
   width: 100%;
 }
 
-/* Generous section padding — Aesop's whitespace ratio. */
+/* Section padding — balanced rhythm (P18-D-8 reduced from 4-8rem to 3-5rem). */
 .paradigm-section {
-  padding-top: clamp(4rem, 8vw, 8rem);
-  padding-bottom: clamp(4rem, 8vw, 8rem);
+  padding-top: clamp(3rem, 5vw, 5rem);
+  padding-bottom: clamp(3rem, 5vw, 5rem);
 }
 
 /* ────────────────────────────────────────────────────────────────────────
