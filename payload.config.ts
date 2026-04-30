@@ -126,6 +126,12 @@ export default buildConfig({
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URI || "",
+      // 2026-04-30 Supabase Supavisor pooler の self-signed cert chain を許可
+      // (rejectUnauthorized: false). sslmode=no-verify URI param は pg lib が
+      // 解釈しないため、TLS 検証は pool option で明示無効化する必要あり。
+      ssl: process.env.NODE_ENV === "production"
+        ? { rejectUnauthorized: false }
+        : false,
     },
     push: true,
   }),
