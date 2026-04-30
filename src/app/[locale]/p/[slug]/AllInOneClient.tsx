@@ -52,6 +52,9 @@ export interface ProspectData {
       cta_subtitle?: string
     }
   } | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  prescriptions?: Array<Record<string, any>>
+  reciprocity_package?: { name?: string; priceJpy?: number; includedDeliverables?: string[] } | null
   review_analysis?: { strengths?: string[]; weaknesses?: string[]; suggestions?: string[] } | null
   competitor_analysis?: { competitors?: Array<{ name: string; score: number }> } | null
   has_sns?: boolean
@@ -68,9 +71,10 @@ export interface ProspectData {
   demo_html?: string
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   matched_pattern?: Record<string, any>
+  // 2026-04-25: 16ツール並列診断 report_snapshot (新エンジン Sales OS v2)。
+  // null なら legacy prospect (旧 full_pipeline 経由) で diagnostic セクションは非表示。
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  prescriptions?: Array<Record<string, any>>
-  reciprocity_package?: { name?: string; priceJpy?: number; includedDeliverables?: string[] } | null
+  diagnostic_report?: Record<string, any> | null
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -292,19 +296,33 @@ function HeroSection({ d, tpl }: { d: ProspectData; tpl: ProposalTemplate }) {
           {d.ai_analysis?.copy?.hook_sub || tpl.hook_sub || "御社のウェブサイト・口コミ・デジタル環境をAIが徹底分析し、最適な改善プランをご用意しました。"}
         </p>
 
-        {/* Key metrics — show "—" for genuinely missing data */}
+        {/* Key metrics — legacy DB fields with diagnostic_report fallback */}
         <div className="pp-hero-metrics">
-          {[
-            { val: d.rating > 0 ? `${d.rating}` : "—", label: "Google評点", sub: `競合平均 ${d.competitor_avg_rating}`, warn: d.rating > 0 && d.rating < d.competitor_avg_rating },
-            { val: d.page_speed_mobile > 0 ? `${d.page_speed_mobile}` : "—", label: "モバイル速度", sub: "100点満点", warn: d.page_speed_mobile > 0 && d.page_speed_mobile < 50 },
-            { val: d.reply_rate > 0 ? `${d.reply_rate}%` : "—", label: "口コミ返信率", sub: `競合平均 ${d.competitor_avg_reply_rate}%`, warn: d.reply_rate > 0 && d.reply_rate < d.competitor_avg_reply_rate },
-          ].map(m => (
-            <div key={m.label} className={`pp-hero-metric ${m.warn ? "warn" : ""}`}>
-              <div className="pp-hero-metric-val" style={m.warn ? { color: "#DC2626" } : { color: accent }}>{m.val}</div>
-              <div className="pp-hero-metric-label">{m.label}</div>
-              <div className="pp-hero-metric-sub">{m.sub}</div>
-            </div>
-          ))}
+          {(() => {
+            const diagReport = d.diagnostic_report as Record<string, any> | null
+            const diagScore = Number(diagReport?.page1?.overallScore ?? 0)
+            const diagIssues = ((diagReport?.page2?.findings ?? []) as any[]).length
+            const metrics: { val: string; label: string; sub: string; warn: boolean }[] = [
+              d.rating > 0
+                ? { val: `${d.rating}`, label: "Google評点", sub: `競合平均 ${d.competitor_avg_rating}`, warn: d.rating < d.competitor_avg_rating }
+                : diagScore > 0
+                ? { val: String(diagScore), label: "診断スコア", sub: "100点満点", warn: diagScore < 60 }
+                : { val: `${d.rating}`, label: "Google評点", sub: `競合平均 ${d.competitor_avg_rating}`, warn: false },
+              d.page_speed_mobile > 0
+                ? { val: `${d.page_speed_mobile}`, label: "モバイル速度", sub: "100点満点", warn: d.page_speed_mobile < 50 }
+                : diagIssues > 0
+                ? { val: `${diagIssues}件`, label: "改善課題数", sub: "AI診断検出", warn: true }
+                : { val: `${d.page_speed_mobile}`, label: "モバイル速度", sub: "100点満点", warn: false },
+              { val: `${d.reply_rate}%`, label: "口コミ返信率", sub: `競合平均 ${d.competitor_avg_reply_rate}%`, warn: d.reply_rate < d.competitor_avg_reply_rate },
+            ]
+            return metrics.map(m => (
+              <div key={m.label} className={`pp-hero-metric ${m.warn ? "warn" : ""}`}>
+                <div className="pp-hero-metric-val" style={m.warn ? { color: "#DC2626" } : { color: accent }}>{m.val}</div>
+                <div className="pp-hero-metric-label">{m.label}</div>
+                <div className="pp-hero-metric-sub">{m.sub}</div>
+              </div>
+            ))
+          })()}
         </div>
 
         <div className="pp-scroll-hint">
@@ -386,7 +404,7 @@ function DiagnosisSection({ d, tpl }: { d: ProspectData; tpl: ProposalTemplate }
           </div>
         </AnimSection>
 
-        {/* AI診断スコアサマリーカード — overall_score + 損失額 */}
+        {/* AI診断KPIカード (overall_score / annual_loss / recovery) */}
         {d.ai_analysis?.overall_score != null && (
           <AnimSection delay={0.28}>
             <div className="pp-ai-kpi-row">
@@ -398,47 +416,67 @@ function DiagnosisSection({ d, tpl }: { d: ProspectData; tpl: ProposalTemplate }
                 <div className="pp-ai-kpi-label">AI診断スコア</div>
               </div>
               {d.ai_analysis.total_annual_loss_jpy != null && d.ai_analysis.total_annual_loss_jpy > 0 && (
-                <div className="pp-ai-kpi">
+                <div className="pp-ai-kpi pp-ai-kpi-loss">
                   <div className="pp-ai-kpi-icon">📉</div>
                   <div className="pp-ai-kpi-val" style={{ color: "#DC2626" }}>
-                    ¥{(d.ai_analysis.total_annual_loss_jpy / 10000).toLocaleString()}<span className="pp-ai-kpi-unit">万/年</span>
+                    ¥{Math.round(d.ai_analysis.total_annual_loss_jpy / 10000).toLocaleString()}<span className="pp-ai-kpi-unit">万/年</span>
                   </div>
-                  <div className="pp-ai-kpi-label">推定・年間機会損失</div>
+                  <div className="pp-ai-kpi-label">機会損失額</div>
                 </div>
               )}
               {d.ai_analysis.estimated_recovery_jpy != null && d.ai_analysis.estimated_recovery_jpy > 0 && (
-                <div className="pp-ai-kpi">
-                  <div className="pp-ai-kpi-icon">📈</div>
+                <div className="pp-ai-kpi pp-ai-kpi-recovery">
+                  <div className="pp-ai-kpi-icon">💡</div>
                   <div className="pp-ai-kpi-val" style={{ color: "#16A34A" }}>
-                    ¥{(d.ai_analysis.estimated_recovery_jpy / 10000).toLocaleString()}<span className="pp-ai-kpi-unit">万/年</span>
+                    ¥{Math.round(d.ai_analysis.estimated_recovery_jpy / 10000).toLocaleString()}<span className="pp-ai-kpi-unit">万/年</span>
                   </div>
-                  <div className="pp-ai-kpi-label">対策後・回復可能額</div>
+                  <div className="pp-ai-kpi-label">回復可能額</div>
                 </div>
               )}
             </div>
           </AnimSection>
         )}
 
-        {/* AI分析コメント — supports both summary and executive_summary */}
+        {/* AI分析コメント */}
         {(d.ai_analysis?.summary || d.ai_analysis?.executive_summary) && (
           <AnimSection delay={0.3}>
             <div className="pp-insight-card">
               <div className="pp-insight-icon">🤖</div>
               <div>
                 <div className="pp-insight-title">AI分析コメント</div>
-                <p className="pp-insight-text">{d.ai_analysis.summary || d.ai_analysis.executive_summary}</p>
+                <p className="pp-insight-text">{String(d.ai_analysis.summary || d.ai_analysis.executive_summary)}</p>
                 {d.ai_analysis.strengths && d.ai_analysis.strengths.length > 0 && (
                   <div className="pp-insight-tags">
                     <span className="pp-insight-tag ok">強み:</span>
-                    {d.ai_analysis.strengths.map((s, i) => <span key={i} className="pp-insight-tag ok">{s}</span>)}
+                    {d.ai_analysis.strengths.map((s, i) => <span key={i} className="pp-insight-tag ok">{String(s)}</span>)}
                   </div>
                 )}
                 {d.ai_analysis.weaknesses && d.ai_analysis.weaknesses.length > 0 && (
                   <div className="pp-insight-tags">
                     <span className="pp-insight-tag ng">課題:</span>
-                    {d.ai_analysis.weaknesses.map((w, i) => <span key={i} className="pp-insight-tag ng">{w}</span>)}
+                    {d.ai_analysis.weaknesses.map((w, i) => <span key={i} className="pp-insight-tag ng">{String(w)}</span>)}
                   </div>
                 )}
+              </div>
+            </div>
+          </AnimSection>
+        )}
+
+        {/* AIが提案する改善アクション (legacy prescriptions prop — diagnostic_reportがある場合はそちら優先) */}
+        {!d.diagnostic_report && Array.isArray(d.prescriptions) && d.prescriptions.length > 0 && (
+          <AnimSection delay={0.48}>
+            <div className="pp-prescriptions">
+              <div className="pp-prescriptions-title">💊 AIが提案する改善アクション</div>
+              <div className="pp-prescriptions-list">
+                {d.prescriptions.slice(0, 5).map((p, i) => (
+                  <div key={i} className="pp-prescription-item">
+                    <div className="pp-prescription-num" style={{ background: accent, color: "#fff" }}>{i + 1}</div>
+                    <div className="pp-prescription-body">
+                      <div className="pp-prescription-title-text">{String(p?.title ?? p?.name ?? "")}</div>
+                      {(p?.desc || p?.description) && <div className="pp-prescription-desc">{String(p?.desc ?? p?.description ?? "")}</div>}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </AnimSection>
@@ -466,13 +504,13 @@ function DiagnosisSection({ d, tpl }: { d: ProspectData; tpl: ProposalTemplate }
               {d.vulnerabilities.map((v, i) => {
                 const vc = (v && VULN_COLORS[v.level]) ?? DEFAULT_VULN_COLOR
                 return (
-                  <div key={i} className="pp-alert" style={{ borderLeftColor: vc.color }}>
-                    <span className="pp-alert-level" style={{ color: vc.color, background: vc.bg }}>{vc.label}</span>
-                    <div>
-                      <div className="pp-alert-name">{String(v?.name ?? "")}</div>
-                      <p className="pp-alert-desc">{String(v?.desc ?? "")}</p>
-                    </div>
+                <div key={i} className="pp-alert" style={{ borderLeftColor: vc.color }}>
+                  <span className="pp-alert-level" style={{ color: vc.color, background: vc.bg }}>{vc.label}</span>
+                  <div>
+                    <div className="pp-alert-name">{String(v.name)}</div>
+                    <p className="pp-alert-desc">{String(v.desc)}</p>
                   </div>
+                </div>
                 )
               })}
             </div>
@@ -488,44 +526,22 @@ function DiagnosisSection({ d, tpl }: { d: ProspectData; tpl: ProposalTemplate }
                 {d.review_analysis.strengths && d.review_analysis.strengths.length > 0 && (
                   <div className="pp-review-col positive">
                     <div className="pp-review-col-title">👍 お客様が評価するポイント</div>
-                    {d.review_analysis.strengths.map((s, i) => <div key={i} className="pp-review-item">✓ {s}</div>)}
+                    {d.review_analysis.strengths.map((s, i) => <div key={i} className="pp-review-item">✓ {String(s)}</div>)}
                   </div>
                 )}
                 {d.review_analysis.weaknesses && d.review_analysis.weaknesses.length > 0 && (
                   <div className="pp-review-col negative">
                     <div className="pp-review-col-title">⚡ 改善すると効果が出るポイント</div>
-                    {d.review_analysis.weaknesses.map((w, i) => <div key={i} className="pp-review-item">→ {w}</div>)}
+                    {d.review_analysis.weaknesses.map((w, i) => <div key={i} className="pp-review-item">→ {String(w)}</div>)}
                   </div>
                 )}
               </div>
               {d.review_analysis.suggestions && d.review_analysis.suggestions.length > 0 && (
                 <div className="pp-review-suggestions">
                   <div className="pp-review-col-title">💡 AI提案</div>
-                  {d.review_analysis.suggestions.map((s, i) => <div key={i} className="pp-review-item">{i + 1}. {s}</div>)}
+                  {d.review_analysis.suggestions.map((s, i) => <div key={i} className="pp-review-item">{i + 1}. {String(s)}</div>)}
                 </div>
               )}
-            </div>
-          </AnimSection>
-        )}
-
-        {/* 改善アクション（prescriptions） */}
-        {Array.isArray(d.prescriptions) && d.prescriptions.length > 0 && (
-          <AnimSection delay={0.48}>
-            <div className="pp-prescriptions">
-              <div className="pp-prescriptions-title">💊 AIが提案する改善アクション</div>
-              <div className="pp-prescriptions-list">
-                {d.prescriptions.slice(0, 5).map((p, i) => (
-                  <div key={i} className="pp-prescription-item">
-                    <div className="pp-prescription-num" style={{ background: accent, color: "#fff" }}>{i + 1}</div>
-                    <div className="pp-prescription-body">
-                      <div className="pp-prescription-title-text">{String(p?.title ?? p?.name ?? "")}</div>
-                      {(p?.desc || p?.description) && (
-                        <div className="pp-prescription-desc">{String(p?.desc ?? p?.description ?? "")}</div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
           </AnimSection>
         )}
@@ -584,6 +600,27 @@ function DemoSection({ d, tpl }: { d: ProspectData; tpl: ProposalTemplate }) {
             御社の業種・立地・顧客層をもとに、実際にサイトを組み立てました。<br />
             下のプレビューでご確認ください。
           </p>
+
+          {/* 提案パッケージカード */}
+          {d.reciprocity_package && (
+            <div className="pp-package-card" style={{ borderColor: `${accent}30` }}>
+              <div className="pp-package-header" style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}>
+                <div className="pp-package-name">{d.reciprocity_package.name || "提案パッケージ"}</div>
+                {d.reciprocity_package.priceJpy != null && (
+                  <div className="pp-package-price">
+                    ¥{d.reciprocity_package.priceJpy.toLocaleString()}<span className="pp-package-price-tax">（税別）</span>
+                  </div>
+                )}
+              </div>
+              {Array.isArray(d.reciprocity_package.includedDeliverables) && d.reciprocity_package.includedDeliverables.length > 0 && (
+                <ul className="pp-package-deliverables">
+                  {d.reciprocity_package.includedDeliverables.map((item, i) => (
+                    <li key={i} className="pp-package-item">✓ {String(item)}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </AnimSection>
 
         <AnimSection delay={0.15}>
@@ -642,36 +679,14 @@ function DemoSection({ d, tpl }: { d: ProspectData; tpl: ProposalTemplate }) {
             </div>
           </AnimSection>
         )}
-
-        {/* 提案パッケージ (reciprocity_package) */}
-        {d.reciprocity_package && (
-          <AnimSection delay={0.4}>
-            <div className="pp-package-card" style={{ borderColor: `${accent}30`, background: `${accent}04` }}>
-              <div className="pp-package-header">
-                <div className="pp-package-name" style={{ color: accent }}>{d.reciprocity_package.name || "Paradigm DX診断パッケージ"}</div>
-                {d.reciprocity_package.priceJpy != null && (
-                  <div className="pp-package-price">¥{d.reciprocity_package.priceJpy.toLocaleString()}<span className="pp-package-price-tax">（税込）</span></div>
-                )}
-              </div>
-              {Array.isArray(d.reciprocity_package.includedDeliverables) && d.reciprocity_package.includedDeliverables.length > 0 && (
-                <ul className="pp-package-deliverables">
-                  {d.reciprocity_package.includedDeliverables.map((item, i) => (
-                    <li key={i} className="pp-package-item">
-                      <span style={{ color: accent }}>✓</span> {String(item)}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </AnimSection>
-        )}
       </div>
     </section>
   )
 }
 
 // ─── 汎用デモタブレンダラー ───
-function DemoTabRenderer({ tab, d, accent }: { tab: DemoTab; d: ProspectData; accent: string }) {
+function DemoTabRenderer({ tab, d, accent }: { tab: DemoTab | undefined; d: ProspectData; accent: string }) {
+  if (!tab) return null
   const c = tab.content || {}
   const font = "'Noto Sans JP', sans-serif"
 
@@ -713,8 +728,8 @@ function DemoTabRenderer({ tab, d, accent }: { tab: DemoTab; d: ProspectData; ac
         <div style={{ fontSize: 13, fontWeight: 700, color: "#333", marginBottom: 14 }}>{heading}</div>
         {d.ai_reply_samples.slice(0, 2).map((s, i) => (
           <div key={i} style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: "14px 16px", marginBottom: 12, fontSize: 12 }}>
-            <div style={{ color: "#888", marginBottom: 8, lineHeight: 1.5 }}>📝 &quot;{String(s?.original ?? "").slice(0, 60)}...&quot;</div>
-            <div style={{ color: "#0A6649", borderLeft: `3px solid ${accent}`, paddingLeft: 10, lineHeight: 1.6 }}>✓ {String(s?.reply ?? "").slice(0, 90)}...</div>
+            <div style={{ color: "#888", marginBottom: 8, lineHeight: 1.5 }}>📝 &quot;{String(s.original).slice(0, 60)}...&quot;</div>
+            <div style={{ color: "#0A6649", borderLeft: `3px solid ${accent}`, paddingLeft: 10, lineHeight: 1.6 }}>✓ {String(s.reply).slice(0, 90)}...</div>
           </div>
         ))}
       </div>
@@ -772,7 +787,7 @@ function OpportunitySection({ d, tpl }: { d: ProspectData; tpl: ProposalTemplate
           </div>
         </AnimSection>
 
-        {/* AI診断：年間損失 + 回復可能額 */}
+        {/* AI診断ベースの年間損失・回復額 */}
         {d.ai_analysis?.total_annual_loss_jpy != null && d.ai_analysis.total_annual_loss_jpy > 0 && (
           <AnimSection delay={0.2}>
             <div className="pp-annual-kpi-row">
@@ -1152,6 +1167,18 @@ function CTASection({ d, onCta, tpl }: { d: ProspectData; onCta: () => void; tpl
           {d.ai_analysis?.copy?.cta_subtitle || tpl.cta_subtitle || "初期費用ゼロ・最低契約期間なし。設定はすべて弊社が対応いたします。"}
         </p>
 
+        {/* トラストポイント (ai_analysis.copy > tpl.trust_points) */}
+        {(d.ai_analysis?.copy?.trust_points?.length || tpl.trust_points?.length) ? (
+          <div className="pp-trust-points">
+            {(d.ai_analysis?.copy?.trust_points || tpl.trust_points || []).map((pt: string, i: number) => (
+              <div key={i} className="pp-trust-point">
+                <span className="pp-trust-check" style={{ color: accent }}>✓</span>
+                {String(pt)}
+              </div>
+            ))}
+          </div>
+        ) : null}
+
         {/* === メインコンテンツ切り替え === */}
 
         {/* ① 3ボタン選択画面 */}
@@ -1271,19 +1298,18 @@ function CTASection({ d, onCta, tpl }: { d: ProspectData; onCta: () => void; tpl
 
         {/* 安心ポイント */}
         <div className="pp-cta-trust">
-          {((d.ai_analysis?.copy?.trust_points?.length ? d.ai_analysis.copy.trust_points : null)
-            ?? (tpl.trust_points?.length ? tpl.trust_points : null)
-            ?? ["🛡️ 個人情報は厳重に管理", "⏱️ 15分のお電話で完結", "🚫 営業電話は一切なし"]
-          ).map((tp, i) => {
-            const s = String(tp ?? "")
-            const icon = s.slice(0, 2)
-            const text = s.slice(2).trim()
-            return (
-              <div key={i} className="pp-cta-trust-item">
-                <span>{icon}</span><span>{text}</span>
-              </div>
-            )
-          })}
+          {(tpl.trust_points?.length
+            ? tpl.trust_points.map(tp => { const s = String(tp ?? ""); return { icon: s.slice(0, 2), text: s.slice(2).trim() } })
+            : [
+                { icon: "🛡️", text: "個人情報は厳重に管理" },
+                { icon: "⏱️", text: "15分のお電話で完結" },
+                { icon: "🚫", text: "営業電話は一切なし" },
+              ]
+          ).map((t, i) => (
+            <div key={i} className="pp-cta-trust-item">
+              <span>{t.icon}</span><span>{t.text}</span>
+            </div>
+          ))}
         </div>
 
         <div className="pp-cta-badges">
@@ -1344,6 +1370,9 @@ export default function PersuasionPage({ data }: { data?: ProspectData }) {
       <style>{STYLES(accent)}</style>
       <Nav name={d.business_name} accent={accent} />
       {vis("hook") && <HeroSection d={d} tpl={tpl} />}
+      {/* 2026-04-25: 16ツール並列診断 hero — Sales OS v2 で生成された prospect (run_id 経由) のみ表示。
+          Pain Top 3 / 総合スコア / 年間損失額 / 処方箋を上位に配置し「リニューアル」感を担保 */}
+      {d.diagnostic_report && <Sales16ToolDiagnosticHero report={d.diagnostic_report} accent={accent} />}
       {vis("diagnostic") && <DiagnosisSection d={d} tpl={tpl} />}
       {vis("reciprocity") && <DemoSection d={d} tpl={tpl} />}
       {vis("prospect") && <OpportunitySection d={d} tpl={tpl} />}
@@ -1352,6 +1381,119 @@ export default function PersuasionPage({ data }: { data?: ProspectData }) {
       {vis("cta") && <WhyUsSection d={d} tpl={tpl} />}
       {vis("cta") && <CTASection d={d} onCta={handleCTA} tpl={tpl} />}
     </>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 16ツール並列診断 Hero (新エンジン Sales OS v2 用 / 2026-04-25 追加)
+// ═══════════════════════════════════════════════════════════════
+// report_snapshot (DiagnosticReport JSONB) を受け取り上位 hero として表示。
+// page1 (overallScore/totalAnnualLossJpy/topPains/estimatedRecoveryJpy/executiveSummary) +
+// page2.findings (Pain 詳細) + page4.prescriptions (処方箋 Top 3) を可視化。
+// legacy full_pipeline 経由の prospect (run_id 無し) では呼ばれない。
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function Sales16ToolDiagnosticHero({ report, accent }: { report: Record<string, any>; accent: string }) {
+  const page1 = report.page1 || {}
+  const page2 = report.page2 || {}
+  const page4 = report.page4 || {}
+  const overallScore = Number(page1.overallScore ?? 0)
+  const scoreLabel = String(page1.scoreLabel ?? "")
+  const totalLoss = Number(page1.totalAnnualLossJpy ?? 0)
+  const recovery = Number(page1.estimatedRecoveryJpy ?? 0)
+  const summary = String(page1.executiveSummary ?? "")
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const findings: Array<Record<string, any>> = Array.isArray(page2.findings) ? page2.findings : []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const prescriptions: Array<Record<string, any>> = Array.isArray(page4.prescriptions) ? page4.prescriptions : []
+  const topPains = findings.slice(0, 3)
+  const topRx = prescriptions.slice(0, 3)
+  const sevColor = (s: string) =>
+    s === "critical" ? "#dc2626" : s === "high" ? "#f59e0b" : s === "medium" ? "#3b82f6" : "#64748b"
+  const fmt = (n: number) => n.toLocaleString("ja-JP")
+
+  return (
+    <section style={{ padding: "48px 16px", background: "linear-gradient(180deg, #FFF8EE 0%, #FFFFFF 100%)" }}>
+      <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+        <div style={{ display: "inline-block", padding: "4px 10px", borderRadius: 999, background: accent, color: "white", fontSize: 11, fontWeight: 700, marginBottom: 12 }}>
+          🔍 16ツール並列診断レポート
+        </div>
+        <h2 style={{ fontSize: 28, fontWeight: 800, color: "#0f172a", marginBottom: 8, lineHeight: 1.3 }}>
+          現状の課題を {findings.length} 項目検出 ─ 年間 <span style={{ color: "#dc2626" }}>¥{fmt(totalLoss)}</span> の機会損失
+        </h2>
+        {summary && <p style={{ fontSize: 14, color: "#475569", marginBottom: 24, lineHeight: 1.7 }}>{summary}</p>}
+
+        {/* スコア + 損失 + 回復見込み 3カラム */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginBottom: 32 }}>
+          <div style={{ padding: 20, borderRadius: 16, background: "white", border: "1px solid #e2e8f0", textAlign: "center" }}>
+            <div style={{ fontSize: 11, color: "#64748b", marginBottom: 6 }}>総合スコア</div>
+            <div style={{ fontSize: 36, fontWeight: 800, color: overallScore >= 65 ? "#16a34a" : overallScore >= 50 ? "#f59e0b" : "#dc2626" }}>
+              {overallScore}<span style={{ fontSize: 14, color: "#94a3b8" }}>/100</span>
+            </div>
+            {scoreLabel && <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>{scoreLabel}</div>}
+          </div>
+          <div style={{ padding: 20, borderRadius: 16, background: "white", border: "1px solid #fecaca", textAlign: "center" }}>
+            <div style={{ fontSize: 11, color: "#dc2626", marginBottom: 6 }}>年間機会損失</div>
+            <div style={{ fontSize: 28, fontWeight: 800, color: "#dc2626" }}>¥{fmt(totalLoss)}</div>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>放置時の試算</div>
+          </div>
+          <div style={{ padding: 20, borderRadius: 16, background: "white", border: "1px solid #bbf7d0", textAlign: "center" }}>
+            <div style={{ fontSize: 11, color: "#16a34a", marginBottom: 6 }}>改善で回復見込み</div>
+            <div style={{ fontSize: 28, fontWeight: 800, color: "#16a34a" }}>¥{fmt(recovery)}</div>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>処方箋実行時</div>
+          </div>
+        </div>
+
+        {/* Pain Top 3 */}
+        {topPains.length > 0 && (
+          <div style={{ marginBottom: 32 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", marginBottom: 12 }}>🔥 重点課題 Top {topPains.length}</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {topPains.map((f, i) => (
+                <div key={i} style={{ padding: 16, borderRadius: 12, background: "white", border: "1px solid #e2e8f0", borderLeft: `4px solid ${sevColor(String(f.severity ?? "medium"))}` }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 4, background: sevColor(String(f.severity ?? "medium")), color: "white" }}>
+                      {String(f.severity ?? "medium").toUpperCase()}
+                    </span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>{String(f.title ?? "")}</span>
+                  </div>
+                  {f.description && <p style={{ fontSize: 12, color: "#64748b", lineHeight: 1.6, margin: "4px 0 0" }}>{String(f.description)}</p>}
+                  {f.estimatedAnnualLossJpy != null && (
+                    <div style={{ fontSize: 11, color: "#dc2626", marginTop: 6 }}>
+                      想定損失: ¥{fmt(Number(f.estimatedAnnualLossJpy))}/年
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 処方箋 Top 3 */}
+        {topRx.length > 0 && (
+          <div>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", marginBottom: 12 }}>💊 推奨処方箋 Top {topRx.length}</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12 }}>
+              {topRx.map((p, i) => (
+                <div key={i} style={{ padding: 16, borderRadius: 12, background: "white", border: "2px solid #bbf7d0" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginBottom: 8 }}>{String(p.title ?? "")}</div>
+                  {Array.isArray(p.actions) && p.actions.length > 0 && (
+                    <ul style={{ paddingLeft: 18, margin: "4px 0 8px", fontSize: 12, color: "#475569", lineHeight: 1.6 }}>
+                      {(p.actions as string[]).slice(0, 3).map((a, j) => (
+                        <li key={j}>{a}</li>
+                      ))}
+                    </ul>
+                  )}
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#64748b", paddingTop: 8, borderTop: "1px solid #f1f5f9" }}>
+                    {p.effortDays != null && <span>⏱ {Number(p.effortDays)}日</span>}
+                    {p.expectedLiftJpy != null && <span style={{ color: "#16a34a", fontWeight: 700 }}>+¥{fmt(Number(p.expectedLiftJpy))}/年</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
   )
 }
 
@@ -1544,69 +1686,6 @@ body{
 .pp-review-item{font-size:12px;color:#475569;line-height:1.7;margin-bottom:3px;}
 .pp-review-suggestions{border-top:1px solid #f1f5f9;padding-top:14px;}
 
-/* Hook alert — AI-personalized headline */
-.pp-hook-alert{
-  padding:12px 20px;border-radius:12px;border:1px solid;
-  font-size:14px;font-weight:600;line-height:1.6;margin-bottom:20px;
-  animation:fadeUp .8s ease both .2s;max-width:560px;text-align:left;
-}
-
-/* AI KPI row — score + loss + recovery */
-.pp-ai-kpi-row{
-  display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;
-}
-.pp-ai-kpi{
-  flex:1;min-width:160px;background:#fff;border:1px solid #e2e8f0;
-  border-radius:14px;padding:20px 18px;text-align:center;
-  box-shadow:0 2px 12px rgba(0,0,0,.04);
-}
-.pp-ai-kpi-icon{font-size:22px;margin-bottom:6px;}
-.pp-ai-kpi-val{font-size:26px;font-weight:900;letter-spacing:-1px;line-height:1.1;}
-.pp-ai-kpi-unit{font-size:14px;font-weight:500;color:#64748b;letter-spacing:0;}
-.pp-ai-kpi-label{font-size:11px;color:#64748b;margin-top:6px;font-weight:600;}
-
-/* Prescriptions */
-.pp-prescriptions{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 24px;margin-bottom:20px;}
-.pp-prescriptions-title{font-size:13px;font-weight:700;color:#334155;margin-bottom:14px;}
-.pp-prescriptions-list{display:flex;flex-direction:column;gap:10px;}
-.pp-prescription-item{display:flex;gap:12px;align-items:flex-start;}
-.pp-prescription-num{
-  width:24px;height:24px;border-radius:50%;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  font-size:11px;font-weight:800;
-}
-.pp-prescription-body{flex:1;}
-.pp-prescription-title-text{font-size:13px;font-weight:600;color:#1e293b;line-height:1.5;}
-.pp-prescription-desc{font-size:12px;color:#64748b;line-height:1.6;margin-top:2px;}
-
-/* Annual KPI row — opportunity section */
-.pp-annual-kpi-row{
-  display:flex;gap:16px;flex-wrap:wrap;margin-bottom:32px;
-}
-.pp-annual-kpi{
-  flex:1;min-width:200px;border-radius:16px;padding:24px 20px;text-align:center;
-}
-.pp-annual-kpi-loss{background:#FFF5F5;border:2px solid #fecaca;}
-.pp-annual-kpi-recovery{background:#F0FDF4;border:2px solid #bbf7d0;}
-.pp-annual-kpi-label{font-size:12px;font-weight:700;color:#475569;margin-bottom:10px;}
-.pp-annual-kpi-val{
-  font-size:clamp(22px,4vw,34px);font-weight:900;letter-spacing:-1.5px;
-}
-.pp-annual-kpi-loss .pp-annual-kpi-val{color:#DC2626;}
-.pp-annual-kpi-recovery .pp-annual-kpi-val{color:#16A34A;}
-
-/* Package card */
-.pp-package-card{
-  border:1.5px solid;border-radius:16px;padding:24px 28px;margin-top:24px;
-  max-width:600px;
-}
-.pp-package-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
-.pp-package-name{font-size:16px;font-weight:800;letter-spacing:-.3px;}
-.pp-package-price{font-size:24px;font-weight:900;color:#0f172a;letter-spacing:-1px;}
-.pp-package-price-tax{font-size:12px;font-weight:400;color:#64748b;}
-.pp-package-deliverables{list-style:none;display:flex;flex-direction:column;gap:8px;}
-.pp-package-item{font-size:13px;color:#334155;display:flex;gap:8px;align-items:flex-start;line-height:1.5;}
-
 .pp-report-link{
   display:inline-flex;align-items:center;gap:8px;
   padding:12px 24px;border-radius:12px;border:1px solid;
@@ -1614,6 +1693,72 @@ body{
   background:#fff;
 }
 .pp-report-link:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.08);}
+
+/* ─── Hook Alert ─── */
+.pp-hook-alert{
+  padding:12px 18px;border-radius:10px;border:1px solid;
+  font-size:14px;font-weight:600;line-height:1.5;
+  margin:16px 0 0;
+}
+
+/* ─── AI KPI Row ─── */
+.pp-ai-kpi-row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;}
+.pp-ai-kpi{
+  flex:1;min-width:140px;background:#fff;border:1px solid #e2e8f0;
+  border-radius:14px;padding:20px 16px;text-align:center;
+}
+.pp-ai-kpi.pp-ai-kpi-loss{border-color:#FCA5A5;}
+.pp-ai-kpi.pp-ai-kpi-recovery{border-color:#86EFAC;}
+.pp-ai-kpi-icon{font-size:24px;margin-bottom:8px;}
+.pp-ai-kpi-val{font-size:28px;font-weight:800;line-height:1;}
+.pp-ai-kpi-unit{font-size:14px;font-weight:600;margin-left:2px;}
+.pp-ai-kpi-label{font-size:11px;color:#64748b;margin-top:6px;}
+
+/* ─── Prescriptions ─── */
+.pp-prescriptions{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 24px;margin-bottom:20px;}
+.pp-prescriptions-title{font-size:14px;font-weight:700;color:#1e293b;margin-bottom:14px;}
+.pp-prescriptions-list{display:flex;flex-direction:column;gap:12px;}
+.pp-prescription-item{display:flex;gap:12px;align-items:flex-start;}
+.pp-prescription-num{
+  width:26px;height:26px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;
+}
+.pp-prescription-body{flex:1;}
+.pp-prescription-title-text{font-size:14px;font-weight:600;color:#1e293b;}
+.pp-prescription-desc{font-size:12px;color:#64748b;margin-top:4px;line-height:1.5;}
+
+/* ─── Annual KPI Row ─── */
+.pp-annual-kpi-row{display:flex;gap:16px;flex-wrap:wrap;margin:20px 0;}
+.pp-annual-kpi{
+  flex:1;min-width:200px;border-radius:14px;padding:20px 24px;
+}
+.pp-annual-kpi-loss{background:#FEF2F2;border:1px solid #FECACA;}
+.pp-annual-kpi-recovery{background:#F0FDF4;border:1px solid #BBF7D0;}
+.pp-annual-kpi-label{font-size:12px;font-weight:600;color:#64748b;margin-bottom:8px;}
+.pp-annual-kpi-val{font-size:24px;font-weight:800;color:#1e293b;}
+.pp-annual-kpi-loss .pp-annual-kpi-val{color:#DC2626;}
+.pp-annual-kpi-recovery .pp-annual-kpi-val{color:#16A34A;}
+
+/* ─── Package Card ─── */
+.pp-package-card{
+  border:1px solid;border-radius:14px;overflow:hidden;
+  margin:20px 0;max-width:480px;
+}
+.pp-package-header{padding:20px 24px;color:#fff;}
+.pp-package-name{font-size:16px;font-weight:700;margin-bottom:8px;}
+.pp-package-price{font-size:26px;font-weight:800;}
+.pp-package-price-tax{font-size:12px;font-weight:400;margin-left:4px;}
+.pp-package-deliverables{
+  margin:0;padding:16px 24px;list-style:none;
+  display:flex;flex-direction:column;gap:8px;background:#fff;
+}
+.pp-package-item{font-size:13px;color:#1e293b;font-weight:500;}
+
+/* ─── Trust Points ─── */
+.pp-trust-points{display:flex;flex-direction:column;gap:8px;margin:12px 0 20px;}
+.pp-trust-point{display:flex;align-items:center;gap:8px;font-size:14px;color:#1e293b;}
+.pp-trust-check{font-weight:800;font-size:16px;}
 
 /* ─── Browser Mock ─── */
 .pp-browser{
