@@ -6,7 +6,7 @@
  */
 
 import { useRef } from "react"
-import { useTranslations, useLocale } from "next-intl"
+import { useLocale } from "next-intl"
 import { motion } from "framer-motion"
 import { Headphones, PenTool, Code2, TrendingUp } from "lucide-react"
 import { AnimatedBeam } from "@/components/magicui/animated-beam"
@@ -29,7 +29,6 @@ const STEPS_EN = [
 ] as const
 
 export default function ProcessSection() {
-  const t = useTranslations("home")
   const locale = useLocale()
   const isJa = locale === "ja"
   const STEPS = isJa ? STEPS_JA : STEPS_EN
@@ -37,8 +36,12 @@ export default function ProcessSection() {
   const containerRef = useRef<HTMLDivElement>(null)
   const refs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)]
 
-  const heading = (() => { try { return t("processHeading") } catch { return isJa ? "御社のプロジェクトを成功に導く 4 ステップ。" : "Four steps to ship your project successfully." } })()
-  const eyebrow = (() => { try { return t("processEyebrow") } catch { return "Process" } })()
+  // Bilingual literals (avoids MISSING_MESSAGE during SSG when keys are absent in messages/{locale}.json).
+  // P19 candidate: move to messages/ json + auto-translate via DeepSeek for 10 non-ja/en locales.
+  const heading = isJa
+    ? "御社のプロジェクトを成功に導く 4 ステップ。"
+    : "Four steps to ship your project successfully."
+  const eyebrow = "Process"
 
   return (
     <section className="relative bg-paradigm-paper-deep paradigm-section overflow-hidden">
