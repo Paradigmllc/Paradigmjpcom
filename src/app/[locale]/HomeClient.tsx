@@ -1,70 +1,44 @@
 "use client"
 
-import { useState, useEffect, useRef, useMemo } from "react"
-import Link from "next/link"
+/**
+ * HomeClient — paradigm /[locale] homepage in Aesop / Le Labo grammar.
+ *
+ * Five editorial bands, each with the same eyebrow+serif heading pattern:
+ *   1. Hero            — full-viewport paper + serif typing headline + outline CTA
+ *   2. Services        — 4-card hairline grid, no gradients
+ *   3. Features        — paper-deep contrast band, 4-up monoline grid
+ *   4. Testimonials    — 3 hairline cards + caps trust strip
+ *   5. CTA closing     — full-viewport ink reverse, single outline button
+ *
+ * AE-PHP-2 厳守: every visible string resolved through `useTranslations("home")`
+ * and the existing message keys (which were already i18n-correct in the
+ * P17 messages migration). Only structure / styling changed in P18-D.
+ *
+ * AE-PHP-1: 415 lines (under 500). Could be section-per-file but the
+ * sections share container width / motion variants enough that a single
+ * file is the cleaner read here. Refactor to /home/{Hero,Services,…}
+ * if any section grows past ~150 lines.
+ *
+ * AE-PHP-4 role: this file is the home-page composition. Sub-helpers
+ * (AnimCounter, useTypingEffect) live in /aesop/home/ for reuse on
+ * about / services / pricing pages.
+ */
+
+import { Link } from "@/i18n/routing"
 import { useTranslations } from "next-intl"
-import { motion, useInView, useMotionValue, useSpring } from "framer-motion"
-import { ArrowRight, Sparkles, TrendingUp, Search, Bot, Globe, CheckCircle, Star, ChevronRight, Zap, Shield, Users } from "lucide-react"
+import { motion } from "framer-motion"
+import { ArrowRight, Bot, Globe, Search, TrendingUp, Zap, Shield, Users, Sparkles } from "lucide-react"
+import AnimCounter from "@/components/aesop/home/AnimCounter"
+import { useTypingEffect } from "@/components/aesop/home/useTypingEffect"
+import FadeIn from "@/components/aesop/FadeIn"
 
-// ── Typing effect hook
-function useTypingEffect(words: string[], speed = 80, pause = 2000) {
-  const [text, setText] = useState("")
-  const [wordIdx, setWordIdx] = useState(0)
-  const [typing, setTyping] = useState(true)
-
-  useEffect(() => {
-    const word = words[wordIdx]
-    if (!word) return
-    if (typing) {
-      if (text.length < word.length) {
-        const t = setTimeout(() => setText(word.slice(0, text.length + 1)), speed)
-        return () => clearTimeout(t)
-      } else {
-        const t = setTimeout(() => setTyping(false), pause)
-        return () => clearTimeout(t)
-      }
-    } else {
-      if (text.length > 0) {
-        const t = setTimeout(() => setText(text.slice(0, -1)), speed / 2)
-        return () => clearTimeout(t)
-      } else {
-        setWordIdx((wordIdx + 1) % words.length)
-        setTyping(true)
-      }
-    }
-  }, [text, typing, wordIdx, words, speed, pause])
-
-  return text
-}
-
-// ── Counter animation
-function AnimCounter({ to, suffix = "", prefix = "" }: { to: number; suffix?: string; prefix?: string }) {
-  const ref = useRef<HTMLSpanElement>(null)
-  const inView = useInView(ref, { once: true })
-  const value = useMotionValue(0)
-  const spring = useSpring(value, { stiffness: 60, damping: 20 })
-  const [display, setDisplay] = useState(0)
-
-  useEffect(() => {
-    if (inView) value.set(to)
-  }, [inView, to, value])
-  useEffect(() => spring.on("change", v => setDisplay(Math.round(v))), [spring])
-
-  return <span ref={ref}>{prefix}{display}{suffix}</span>
-}
-
-// ── Stagger variants
 const EASE = [0.22, 1, 0.36, 1] as const
-const container = { hidden: {}, show: { transition: { staggerChildren: 0.1 } } }
-const item = { hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } } }
-const fadeUp = { hidden: { opacity: 0, y: 32 }, show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } } }
 
-// ── Service definitions（visual only — text は messages から取得）
 const SERVICE_DEFS = [
-  { key: "web", icon: Globe, color: "from-violet-500 to-purple-600", bg: "bg-violet-50", border: "border-violet-100", href: "/services/web" },
-  { key: "meo", icon: Search, color: "from-blue-500 to-cyan-500", bg: "bg-blue-50", border: "border-blue-100", href: "/services/meo" },
-  { key: "seo", icon: TrendingUp, color: "from-emerald-500 to-teal-500", bg: "bg-emerald-50", border: "border-emerald-100", href: "/services/seo" },
-  { key: "ai", icon: Bot, color: "from-orange-500 to-rose-500", bg: "bg-orange-50", border: "border-orange-100", href: "/services/ai" },
+  { key: "web", icon: Globe, href: "/services/web" },
+  { key: "meo", icon: Search, href: "/services/meo" },
+  { key: "seo", icon: TrendingUp, href: "/services/seo" },
+  { key: "ai", icon: Bot, href: "/services/ai" },
 ] as const
 
 const STAT_DEFS = [
@@ -85,298 +59,299 @@ const TESTIMONIAL_KEYS = ["1", "2", "3"] as const
 const TRUST_BADGE_KEYS = ["1", "2", "3", "4"] as const
 const CTA_BULLET_KEYS = ["1", "2", "3"] as const
 
-// ── City photo background with Ken Burns zoom (Unsplash CDN allows hotlinking)
-function CityPhotoBackground() {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <motion.img
-        src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1920&q=85&fit=crop&crop=center"
-        alt=""
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{ opacity: 0.45, filter: "brightness(1.15) saturate(1.5) contrast(1.05)" }}
-        animate={{ scale: [1, 1.07] }}
-        transition={{ duration: 14, ease: "linear", repeat: Infinity, repeatType: "reverse" }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#05070d]/35 via-[#05070d]/70 to-[#05070d]/88" />
-    </div>
-  )
-}
-
-// ── Sakura petals — pure CSS approach
-const SAKURA_CSS = `
-@keyframes sakuraFall {
-  0%   { transform: translateY(-60px) rotate(0deg) translateX(0px); opacity: 0; }
-  8%   { opacity: 1; }
-  88%  { opacity: 0.65; }
-  100% { transform: translateY(110vh) rotate(540deg) translateX(70px); opacity: 0; }
-}
-.sakura-petal {
-  position: absolute;
-  top: -40px;
-  animation: sakuraFall linear infinite;
-  filter: blur(0.4px);
-  user-select: none;
-}
-`
-
-function SakuraPetals() {
-  const petals = useMemo(() =>
-    Array.from({ length: 20 }, (_, i) => ({
-      id: i,
-      left: `${4 + (i * 4.6) % 90}%`,
-      delay: `${(i * 0.42) % 4}s`,
-      duration: `${7 + (i * 1.1) % 7}s`,
-      fontSize: `${18 + (i * 5) % 16}px`,
-      opacity: 0.4 + (i % 3) * 0.15,
-    }))
-  , [])
-
-  return (
-    <>
-      <style dangerouslySetInnerHTML={{ __html: SAKURA_CSS }} />
-      <div
-        className="absolute inset-0 pointer-events-none select-none overflow-hidden"
-        style={{ zIndex: 0 }}
-        aria-hidden
-      >
-        {petals.map(p => (
-          <span
-            key={p.id}
-            className="sakura-petal"
-            style={{
-              left: p.left,
-              fontSize: p.fontSize,
-              opacity: p.opacity,
-              animationDelay: p.delay,
-              animationDuration: p.duration,
-            }}
-          >
-            🌸
-          </span>
-        ))}
-      </div>
-    </>
-  )
-}
-
 export default function HomeClient() {
   const t = useTranslations("home")
 
-  // Typing words: t.raw() で配列を取得（next-intl v4）
   const typingWords = (t.raw("heroTypingWords") as string[]) ?? ["MEO対策"]
   const typingText = useTypingEffect(typingWords, 90, 1800)
 
   return (
     <div className="overflow-x-hidden">
 
-      {/* ══ Hero ══ */}
-      <section className="relative min-h-[92vh] flex items-center justify-center bg-[#05070d] overflow-hidden">
-        <CityPhotoBackground />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(99,102,241,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.05)_1px,transparent_1px)] bg-[size:64px_64px]" />
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-violet-600/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-0 left-1/4 w-[300px] h-[300px] bg-indigo-500/8 rounded-full blur-[80px] pointer-events-none" />
-
-        <div className="relative max-w-5xl mx-auto px-6 text-center">
-          {/* Badge */}
-          <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.5 }}
-            className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-xs text-white/60 mb-8">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+      {/* ════════════════════════════════════════════════
+          1. Hero — full-viewport paper editorial
+          ════════════════════════════════════════════════ */}
+      <section className="relative min-h-[92vh] flex items-center justify-center bg-paradigm-paper">
+        <div className="relative max-w-5xl mx-auto px-6 md:px-12 text-center pt-24 pb-16">
+          <motion.p
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: EASE }}
+            className="paradigm-eyebrow mb-10"
+          >
             {t("heroBadge")}
-          </motion.div>
+          </motion.p>
 
-          {/* Headline */}
-          <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="text-5xl md:text-7xl font-black text-white leading-[1.1] mb-4">
-            <span className="bg-gradient-to-r from-violet-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">
+          <motion.h1
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.7, ease: EASE }}
+            className="font-display text-[44px] md:text-[88px] leading-[1.05] tracking-[-0.015em] text-paradigm-ink mb-8"
+          >
+            <span className="block">
               {typingText}
-              <span className="inline-block w-0.5 h-[0.85em] bg-violet-400 ml-1 animate-[blink_1s_step-end_infinite] align-middle" />
+              <span
+                aria-hidden
+                className="inline-block w-[2px] h-[0.78em] bg-paradigm-ink ml-2 align-middle animate-[blink_1s_step-end_infinite]"
+              />
             </span>
-            <br className="hidden sm:block" />
-            <span className="text-white">{t("heroSuffix")}</span>
+            <span className="block italic font-light text-paradigm-ink-soft">
+              {t("heroSuffix")}
+            </span>
           </motion.h1>
 
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55, duration: 0.6 }}
-            className="text-lg text-white/50 max-w-2xl mx-auto mb-10 leading-relaxed">
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+            className="text-[15px] md:text-[17px] text-paradigm-ink-soft max-w-2xl mx-auto mb-12 leading-[1.85]"
+          >
             {t("heroSubheadline")}
           </motion.p>
 
-          {/* CTAs */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.5 }}
-            className="flex items-center justify-center gap-4 flex-wrap">
-            <Link href="/contact"
-              className="group inline-flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-8 py-4 rounded-2xl font-bold text-base transition-all shadow-[0_0_32px_rgba(139,92,246,0.4)] hover:shadow-[0_0_48px_rgba(139,92,246,0.6)]">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55, duration: 0.5 }}
+            className="flex items-center justify-center gap-3 md:gap-4 flex-wrap"
+          >
+            <Link
+              href="/contact"
+              className="group inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-8 py-4 text-[12px] tracking-[0.18em] uppercase hover:bg-paradigm-accent transition-colors"
+            >
               {t("heroBookConsult")}
-              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
             </Link>
-            <Link href="/services"
-              className="inline-flex items-center gap-2 border border-white/15 hover:border-white/30 text-white/80 hover:text-white px-8 py-4 rounded-2xl font-semibold text-base transition-all hover:bg-white/5">
+            <Link
+              href="/services"
+              className="inline-flex items-center gap-2 border border-paradigm-line text-paradigm-ink-soft hover:border-paradigm-ink hover:text-paradigm-ink px-8 py-4 text-[12px] tracking-[0.18em] uppercase transition-colors"
+            >
               {t("heroSeeServices")}
-              <ChevronRight size={16} />
             </Link>
           </motion.div>
 
-          {/* Stats strip */}
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9, duration: 0.5 }}
-            className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-px bg-white/8 rounded-2xl overflow-hidden border border-white/8">
-            {STAT_DEFS.map(s => (
-              <div key={s.key} className="bg-white/3 px-6 py-4 text-center">
-                <div className="text-2xl md:text-3xl font-black text-white">
+          {/* Stats strip — no card chrome, just a 4-column tabular row */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.75, duration: 0.5 }}
+            className="mt-20 grid grid-cols-2 md:grid-cols-4 border-t border-paradigm-line"
+          >
+            {STAT_DEFS.map((s, i) => (
+              <div
+                key={s.key}
+                className={`px-4 py-6 text-center ${
+                  i > 0 ? "md:border-l border-paradigm-line" : ""
+                } ${i === 1 ? "border-l border-paradigm-line md:border-l" : ""} ${
+                  i === 2 ? "border-t md:border-t-0 border-paradigm-line" : ""
+                } ${i === 3 ? "border-t border-l md:border-t-0 border-paradigm-line" : ""}`}
+              >
+                <div className="font-display text-[28px] md:text-[36px] text-paradigm-ink">
                   <AnimCounter to={s.to} suffix={t(`stats.${s.key}.suffix`)} />
                 </div>
-                <div className="text-xs text-white/40 mt-0.5">{t(`stats.${s.key}.label`)}</div>
+                <div className="paradigm-eyebrow mt-2">{t(`stats.${s.key}.label`)}</div>
               </div>
             ))}
           </motion.div>
         </div>
       </section>
 
-      {/* ══ Services ══ */}
-      <section className="relative py-28 px-6 bg-white overflow-hidden">
-        <SakuraPetals />
-        <div className="max-w-6xl mx-auto relative z-10">
-          <motion.div className="text-center mb-16" initial="hidden" whileInView="show" viewport={{ once: true }} variants={fadeUp}>
-            <p className="text-violet-600 text-xs font-bold tracking-[0.2em] uppercase mb-3">{t("servicesEyebrow")}</p>
-            <h2 className="text-3xl md:text-5xl font-black text-slate-900 leading-tight">
+      {/* ════════════════════════════════════════════════
+          2. Services — hairline 4-card grid on paper
+          ════════════════════════════════════════════════ */}
+      <section className="bg-paradigm-paper paradigm-section">
+        <div className="max-w-6xl mx-auto px-6 md:px-12">
+          <FadeIn className="mb-16 max-w-3xl">
+            <p className="paradigm-eyebrow mb-5">{t("servicesEyebrow")}</p>
+            <h2 className="font-display text-[32px] md:text-[52px] leading-[1.15] tracking-[-0.01em] text-paradigm-ink">
               {t("servicesHeading")}
             </h2>
-          </motion.div>
+          </FadeIn>
 
-          <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-5" initial="hidden" whileInView="show" viewport={{ once: true }} variants={container}>
-            {SERVICE_DEFS.map(s => {
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-paradigm-line">
+            {SERVICE_DEFS.map((s) => {
               const Icon = s.icon
               const badge = t(`services.${s.key}.badge`)
               return (
-                <motion.div key={s.key} variants={item}>
-                  <Link href={s.href}
-                    className={`group relative block rounded-3xl border ${s.border} ${s.bg} p-8 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden`}>
-                    {badge && (
-                      <span className={`absolute top-5 right-5 bg-gradient-to-r ${s.color} text-white text-[10px] font-bold px-2.5 py-1 rounded-full`}>
-                        {badge}
-                      </span>
-                    )}
-                    <div className={`inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br ${s.color} text-white mb-5 shadow-lg`}>
-                      <Icon size={22} />
-                    </div>
-                    <h3 className="text-xl font-black text-slate-900 mb-1 group-hover:text-violet-700 transition-colors">{t(`services.${s.key}.title`)}</h3>
-                    <p className="text-xs font-semibold text-slate-500 mb-3">{t(`services.${s.key}.tagline`)}</p>
-                    <p className="text-sm text-slate-600 leading-relaxed mb-4">{t(`services.${s.key}.desc`)}</p>
-                    <div className="flex items-center justify-between">
-                      <span className={`text-sm font-bold bg-gradient-to-r ${s.color} bg-clip-text text-transparent`}>{t(`services.${s.key}.results`)}</span>
-                      <span className="text-xs text-slate-400 group-hover:text-violet-500 flex items-center gap-1 transition-colors">
-                        {t("servicesViewMore")} <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
-                      </span>
-                    </div>
-                  </Link>
-                </motion.div>
+                <Link
+                  key={s.key}
+                  href={s.href}
+                  className="group relative block bg-paradigm-paper p-10 md:p-12 hover:bg-paradigm-paper-card transition-colors"
+                >
+                  {badge && (
+                    <span className="absolute top-6 right-6 paradigm-eyebrow text-paradigm-accent">
+                      {badge}
+                    </span>
+                  )}
+                  <Icon
+                    size={28}
+                    strokeWidth={1.25}
+                    className="text-paradigm-ink-soft mb-6"
+                  />
+                  <h3 className="font-display text-[26px] md:text-[32px] leading-[1.2] text-paradigm-ink mb-2">
+                    {t(`services.${s.key}.title`)}
+                  </h3>
+                  <p className="paradigm-eyebrow mb-5">
+                    {t(`services.${s.key}.tagline`)}
+                  </p>
+                  <p className="text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.85] mb-8 max-w-md">
+                    {t(`services.${s.key}.desc`)}
+                  </p>
+                  <div className="flex items-center justify-between border-t border-paradigm-line pt-5">
+                    <span className="text-[13px] text-paradigm-ink font-medium">
+                      {t(`services.${s.key}.results`)}
+                    </span>
+                    <span className="paradigm-eyebrow text-paradigm-ink-soft group-hover:text-paradigm-ink transition-colors flex items-center gap-1">
+                      {t("servicesViewMore")}
+                      <ArrowRight
+                        size={11}
+                        className="group-hover:translate-x-1 transition-transform"
+                      />
+                    </span>
+                  </div>
+                </Link>
               )
             })}
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* ══ Features ══ */}
-      <section className="py-28 px-6 bg-slate-950 overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(99,102,241,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
-        <div className="max-w-6xl mx-auto relative">
-          <motion.div className="text-center mb-16" initial="hidden" whileInView="show" viewport={{ once: true }} variants={fadeUp}>
-            <p className="text-violet-400 text-xs font-bold tracking-[0.2em] uppercase mb-3">{t("featuresEyebrow")}</p>
-            <h2 className="text-3xl md:text-5xl font-black text-white leading-tight">
+      {/* ════════════════════════════════════════════════
+          3. Features — paper-deep contrast band
+          ════════════════════════════════════════════════ */}
+      <section className="bg-paradigm-paper-deep paradigm-section">
+        <div className="max-w-6xl mx-auto px-6 md:px-12">
+          <FadeIn className="mb-16 max-w-3xl">
+            <p className="paradigm-eyebrow mb-5">{t("featuresEyebrow")}</p>
+            <h2 className="font-display text-[32px] md:text-[52px] leading-[1.15] tracking-[-0.01em] text-paradigm-ink">
               {t("featuresHeading")}
             </h2>
-          </motion.div>
+          </FadeIn>
 
-          <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" initial="hidden" whileInView="show" viewport={{ once: true }} variants={container}>
-            {FEATURE_DEFS.map(f => {
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-paradigm-line">
+            {FEATURE_DEFS.map((f) => {
               const Icon = f.icon
               return (
-                <motion.div key={f.key} variants={item}
-                  className="group bg-white/5 border border-white/8 rounded-2xl p-6 hover:bg-white/8 hover:border-violet-500/30 transition-all duration-300">
-                  <div className="w-10 h-10 rounded-xl bg-violet-500/15 flex items-center justify-center mb-4 group-hover:bg-violet-500/25 transition-colors">
-                    <Icon size={18} className="text-violet-400" />
-                  </div>
-                  <h3 className="text-base font-bold text-white mb-2">{t(`features.${f.key}.title`)}</h3>
-                  <p className="text-sm text-white/40 leading-relaxed">{t(`features.${f.key}.desc`)}</p>
-                </motion.div>
+                <div
+                  key={f.key}
+                  className="bg-paradigm-paper-deep p-8 md:p-10"
+                >
+                  <Icon
+                    size={26}
+                    strokeWidth={1.25}
+                    className="text-paradigm-ink-soft mb-5"
+                  />
+                  <h3 className="font-display text-[22px] md:text-[24px] leading-[1.25] text-paradigm-ink mb-3">
+                    {t(`features.${f.key}.title`)}
+                  </h3>
+                  <p className="text-[14px] text-paradigm-ink-soft leading-[1.8]">
+                    {t(`features.${f.key}.desc`)}
+                  </p>
+                </div>
               )
             })}
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* ══ Testimonials ══ */}
-      <section className="relative py-28 px-6 bg-gradient-to-b from-slate-50 to-white overflow-hidden">
-        <SakuraPetals />
-        <div className="max-w-6xl mx-auto relative z-10">
-          <motion.div className="text-center mb-16" initial="hidden" whileInView="show" viewport={{ once: true }} variants={fadeUp}>
-            <p className="text-violet-600 text-xs font-bold tracking-[0.2em] uppercase mb-3">{t("testimonialsEyebrow")}</p>
-            <h2 className="text-3xl md:text-5xl font-black text-slate-900">{t("testimonialsHeading")}</h2>
-          </motion.div>
+      {/* ════════════════════════════════════════════════
+          4. Testimonials — 3 quote cards + caps trust strip
+          ════════════════════════════════════════════════ */}
+      <section className="bg-paradigm-paper paradigm-section">
+        <div className="max-w-6xl mx-auto px-6 md:px-12">
+          <FadeIn className="mb-16 max-w-3xl">
+            <p className="paradigm-eyebrow mb-5">{t("testimonialsEyebrow")}</p>
+            <h2 className="font-display text-[32px] md:text-[52px] leading-[1.15] tracking-[-0.01em] text-paradigm-ink">
+              {t("testimonialsHeading")}
+            </h2>
+          </FadeIn>
 
-          <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-6" initial="hidden" whileInView="show" viewport={{ once: true }} variants={container}>
-            {TESTIMONIAL_KEYS.map(k => {
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-paradigm-line">
+            {TESTIMONIAL_KEYS.map((k) => {
               const name = t(`testimonials.${k}.name`)
               return (
-                <motion.div key={k} variants={item}
-                  className="bg-white rounded-3xl border border-slate-100 p-7 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                  <div className="flex gap-0.5 mb-4">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} size={14} className="fill-amber-400 text-amber-400" />
-                    ))}
+                <div
+                  key={k}
+                  className="bg-paradigm-paper p-9 md:p-10 flex flex-col"
+                >
+                  <p className="font-display text-[20px] md:text-[22px] leading-[1.45] text-paradigm-ink mb-8 flex-1">
+                    <span className="text-paradigm-ink-mute" aria-hidden>
+                      &ldquo;
+                    </span>
+                    {t(`testimonials.${k}.text`)}
+                    <span className="text-paradigm-ink-mute" aria-hidden>
+                      &rdquo;
+                    </span>
+                  </p>
+                  <div className="border-t border-paradigm-line pt-5">
+                    <p className="text-[13px] font-medium text-paradigm-ink mb-1">
+                      {name}
+                    </p>
+                    <p className="paradigm-eyebrow">
+                      {t(`testimonials.${k}.location`)}
+                    </p>
                   </div>
-                  <p className="text-sm text-slate-700 leading-relaxed mb-5">&ldquo;{t(`testimonials.${k}.text`)}&rdquo;</p>
-                  <div className="flex items-center gap-3 pt-4 border-t border-slate-50">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">
-                      {name[0]}
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-800">{name}</p>
-                      <p className="text-[10px] text-slate-400">{t(`testimonials.${k}.location`)}</p>
-                    </div>
-                  </div>
-                </motion.div>
+                </div>
               )
             })}
-          </motion.div>
+          </div>
 
-          {/* Trust badges */}
-          <motion.div className="mt-14 flex flex-wrap items-center justify-center gap-4" initial="hidden" whileInView="show" viewport={{ once: true }} variants={fadeUp}>
-            {TRUST_BADGE_KEYS.map(k => (
-              <span key={k} className="flex items-center gap-1.5 bg-violet-50 border border-violet-100 rounded-full px-4 py-2 text-xs text-violet-700 font-semibold">
-                <CheckCircle size={12} className="text-violet-500" />
+          {/* Trust strip — no pill chrome, just caps text */}
+          <FadeIn
+            delay={0.1}
+            className="mt-16 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 border-t border-paradigm-line pt-10"
+          >
+            {TRUST_BADGE_KEYS.map((k) => (
+              <span
+                key={k}
+                className="paradigm-eyebrow text-paradigm-ink-soft"
+              >
                 {t(`trustBadges.${k}`)}
               </span>
             ))}
-          </motion.div>
+          </FadeIn>
         </div>
       </section>
 
-      {/* ══ CTA ══ */}
-      <section className="relative py-28 px-6 bg-[#05070d] overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(139,92,246,0.15),transparent_70%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(99,102,241,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.04)_1px,transparent_1px)] bg-[size:40px_40px]" />
-
-        <motion.div className="relative max-w-3xl mx-auto text-center" initial="hidden" whileInView="show" viewport={{ once: true }} variants={fadeUp}>
-          <p className="text-violet-400 text-xs font-bold tracking-[0.2em] uppercase mb-4">{t("ctaEyebrow")}</p>
-          <h2 className="text-4xl md:text-6xl font-black text-white leading-[1.1] mb-5">
-            {t("ctaHeading")}<span className="bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">{t("ctaHeadingHighlight")}</span>{t("ctaHeadingSuffix")}
+      {/* ════════════════════════════════════════════════
+          5. CTA — full-viewport ink reverse
+          ════════════════════════════════════════════════ */}
+      <section className="bg-paradigm-ink text-paradigm-paper paradigm-section">
+        <FadeIn className="max-w-3xl mx-auto px-6 md:px-12 text-center">
+          <p className="paradigm-eyebrow text-paradigm-paper/60 mb-6">
+            {t("ctaEyebrow")}
+          </p>
+          <h2 className="font-display text-[40px] md:text-[64px] leading-[1.1] tracking-[-0.015em] text-paradigm-paper mb-6">
+            {t("ctaHeading")}
+            <span className="italic text-paradigm-paper/80">
+              {t("ctaHeadingHighlight")}
+            </span>
+            {t("ctaHeadingSuffix")}
           </h2>
-          <p className="text-white/50 text-lg mb-10 leading-relaxed">
+          <p className="text-[16px] md:text-[17px] text-paradigm-paper/65 max-w-xl mx-auto mb-12 leading-[1.85]">
             {t("ctaSubheading")}
           </p>
-          <div className="flex items-center justify-center gap-4 flex-wrap">
-            <Link href="/contact"
-              className="group inline-flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white px-10 py-4 rounded-2xl font-bold text-lg transition-all shadow-[0_0_40px_rgba(139,92,246,0.5)] hover:shadow-[0_0_60px_rgba(139,92,246,0.7)]">
-              {t("ctaButton")}
-              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
-          <div className="mt-6 flex items-center justify-center gap-6 text-xs text-white/30">
-            {CTA_BULLET_KEYS.map(k => (
-              <span key={k} className="flex items-center gap-1.5"><CheckCircle size={11} /> {t(`ctaBullets.${k}`)}</span>
+          <Link
+            href="/contact"
+            className="group inline-flex items-center gap-2 border border-paradigm-paper text-paradigm-paper px-10 py-4 text-[12px] tracking-[0.18em] uppercase hover:bg-paradigm-paper hover:text-paradigm-ink transition-colors"
+          >
+            {t("ctaButton")}
+            <ArrowRight
+              size={14}
+              className="group-hover:translate-x-0.5 transition-transform"
+            />
+          </Link>
+          <div className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+            {CTA_BULLET_KEYS.map((k) => (
+              <span
+                key={k}
+                className="paradigm-eyebrow text-paradigm-paper/50"
+              >
+                {t(`ctaBullets.${k}`)}
+              </span>
             ))}
           </div>
-        </motion.div>
+        </FadeIn>
       </section>
 
     </div>
