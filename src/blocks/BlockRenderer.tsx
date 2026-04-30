@@ -1,5 +1,5 @@
 /**
- * BlockRenderer.tsx — Pages collection layout の dispatcher
+ * BlockRenderer.tsx — Pages collection layout の dispatcher (Aesop voice)
  *
  * 役割:
  *   payload.find({ collection: "pages" }) 結果の `layout` (Block array) を
@@ -7,48 +7,64 @@
  *
  * 永久ルール: 新 Block 追加 = src/blocks/{NewBlock}.ts (config) +
  *            ここに block.slug → render 関数 を 1 行追加 のみで完結
+ *
+ * P18-D-3 followup rewrite: 全 block を Aesop tokens (paradigm-paper /
+ * paper-deep / ink) + font-display + paradigm-eyebrow + hairline borders
+ * へ書き換え。violet/indigo gradients を排除して brand 統一。
+ *
+ * AE-PHP-1: 195 lines.
  */
 
 import { RichText } from "@payloadcms/richtext-lexical/react"
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical"
 
-// ─── 共通型 (緩く any-shape Block を受ける・config 側 type と合わせる) ─
 interface AnyBlock {
   blockType: string
   id?: string
   [key: string]: unknown
 }
 
-// ─── 個別 Block レンダラー ─────────────────────────────────────────
 function HeroRender(b: AnyBlock) {
   const variant = (b.variant as string) ?? "centered"
   const stats = (b.stats as Array<{ value?: string; label?: string }>) ?? []
   const primary = b.primaryCta as { label?: string; href?: string } | undefined
   const secondary = b.secondaryCta as { label?: string; href?: string } | undefined
   return (
-    <section className={`relative px-6 py-24 ${variant === "centered" ? "text-center" : ""} bg-gradient-to-b from-violet-50 via-white to-white`}>
-      <div className="max-w-5xl mx-auto">
-        {!!b.badge && <span className="inline-block px-3 py-1 text-xs font-bold rounded-full bg-accent/10 text-accent mb-4">{String(b.badge)}</span>}
-        <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 mb-4">{String(b.title ?? "")}</h1>
-        {!!b.subtitle && <p className="text-base md:text-lg text-slate-600 max-w-2xl mx-auto mb-8">{String(b.subtitle)}</p>}
-        <div className="flex flex-wrap gap-3 justify-center">
+    <section className={`relative bg-paradigm-paper paradigm-section pt-36 ${variant === "centered" ? "text-center" : ""}`}>
+      <div className="max-w-5xl mx-auto px-6 md:px-12">
+        {!!b.badge && <p className="paradigm-eyebrow mb-6">{String(b.badge)}</p>}
+        <h1 className="font-display text-[40px] md:text-[72px] leading-[1.08] tracking-[-0.015em] text-paradigm-ink mb-6">
+          {String(b.title ?? "")}
+        </h1>
+        {!!b.subtitle && (
+          <p className="text-[15px] md:text-[17px] text-paradigm-ink-soft max-w-2xl mx-auto leading-[1.85] mb-10">
+            {String(b.subtitle)}
+          </p>
+        )}
+        <div className={`flex flex-wrap gap-3 ${variant === "centered" ? "justify-center" : ""}`}>
           {primary?.href && (
-            <a href={primary.href} className="h-11 px-6 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-bold inline-flex items-center shadow-lg hover:shadow-xl transition-shadow">
+            <a
+              href={primary.href}
+              className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-8 py-4 text-[12px] tracking-[0.18em] uppercase hover:bg-paradigm-accent transition-colors"
+            >
               {primary.label ?? "Learn more"}
             </a>
           )}
           {secondary?.href && (
-            <a href={secondary.href} className="h-11 px-6 rounded-xl border-2 border-slate-200 text-slate-700 text-sm font-bold inline-flex items-center hover:bg-slate-50 transition-colors">
+            <a
+              href={secondary.href}
+              className="inline-flex items-center gap-2 border border-paradigm-line text-paradigm-ink-soft hover:border-paradigm-ink hover:text-paradigm-ink px-8 py-4 text-[12px] tracking-[0.18em] uppercase transition-colors"
+            >
               {secondary.label ?? "More"}
             </a>
           )}
         </div>
         {stats.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto mt-12">
+          <div className={`mt-20 grid grid-cols-2 md:grid-cols-4 border-t border-paradigm-line ${variant === "centered" ? "max-w-3xl mx-auto" : ""}`}>
             {stats.map((s, i) => (
-              <div key={i} className="text-center">
-                <div className="text-3xl font-extrabold text-slate-900">{s.value ?? ""}</div>
-                <div className="text-xs text-slate-500 mt-1">{s.label ?? ""}</div>
+              <div key={i} className={`px-4 py-6 text-center ${i > 0 ? "md:border-l border-paradigm-line" : ""} ${i === 1 || i === 3 ? "border-l border-paradigm-line" : ""} ${i >= 2 ? "border-t md:border-t-0 border-paradigm-line" : ""}`}>
+                <div className="font-display text-[28px] md:text-[36px] text-paradigm-ink">{s.value ?? ""}</div>
+                <div className="paradigm-eyebrow mt-2">{s.label ?? ""}</div>
               </div>
             ))}
           </div>
@@ -61,13 +77,24 @@ function HeroRender(b: AnyBlock) {
 function SectionRender(b: AnyBlock) {
   const align = (b.alignment as string) ?? "center"
   const bgKey = (b.background as string) ?? "default"
-  const bg = bgKey === "surface" ? "bg-slate-50" : bgKey === "accent-soft" ? "bg-accent/5" : "bg-white"
+  const bg =
+    bgKey === "surface"
+      ? "bg-paradigm-paper-deep"
+      : bgKey === "accent-soft"
+      ? "bg-paradigm-paper-deep"
+      : "bg-paradigm-paper"
   return (
-    <section className={`${bg} py-20 px-6`}>
-      <div className={`max-w-5xl mx-auto ${align === "center" ? "text-center" : "text-left"}`}>
-        {!!b.kicker && <span className="inline-block text-xs font-bold tracking-widest text-accent uppercase mb-3">{String(b.kicker)}</span>}
-        <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 mb-3">{String(b.title ?? "")}</h2>
-        {!!b.subtitle && <p className="text-base text-slate-600 max-w-3xl mx-auto leading-relaxed">{String(b.subtitle)}</p>}
+    <section className={`${bg} paradigm-section`}>
+      <div className={`max-w-5xl mx-auto px-6 md:px-12 ${align === "center" ? "text-center" : "text-left"}`}>
+        {!!b.kicker && <p className="paradigm-eyebrow mb-5">{String(b.kicker)}</p>}
+        <h2 className="font-display text-[32px] md:text-[52px] leading-[1.15] tracking-[-0.01em] text-paradigm-ink mb-6">
+          {String(b.title ?? "")}
+        </h2>
+        {!!b.subtitle && (
+          <p className="text-[15px] md:text-[17px] text-paradigm-ink-soft max-w-3xl mx-auto leading-[1.85]">
+            {String(b.subtitle)}
+          </p>
+        )}
       </div>
     </section>
   )
@@ -76,23 +103,38 @@ function SectionRender(b: AnyBlock) {
 function CardGridRender(b: AnyBlock) {
   const variant = (b.variant as string) ?? "equal"
   const cols = (b.columns as string) ?? "3"
-  const cards = (b.cards as Array<{ icon?: string; title?: string; description?: string; href?: string; highlighted?: boolean }>) ?? []
+  const cards =
+    (b.cards as Array<{ icon?: string; title?: string; description?: string; href?: string; highlighted?: boolean }>) ?? []
   const colsClass = cols === "2" ? "md:grid-cols-2" : cols === "4" ? "md:grid-cols-2 lg:grid-cols-4" : "md:grid-cols-2 lg:grid-cols-3"
   return (
-    <section className="bg-white py-16 px-6">
-      <div className="max-w-6xl mx-auto">
-        {!!b.title && <h2 className="text-2xl md:text-3xl font-bold text-slate-900 text-center mb-10">{String(b.title)}</h2>}
-        <div className={`grid grid-cols-1 ${colsClass} gap-5`}>
+    <section className="bg-paradigm-paper paradigm-section">
+      <div className="max-w-6xl mx-auto px-6 md:px-12">
+        {!!b.title && (
+          <h2 className="font-display text-[28px] md:text-[40px] leading-[1.15] tracking-[-0.01em] text-paradigm-ink text-center mb-12">
+            {String(b.title)}
+          </h2>
+        )}
+        <div className={`grid grid-cols-1 ${colsClass} gap-px bg-paradigm-line`}>
           {cards.map((c, i) => {
-            const isHi = !!c.highlighted
             const inner = (
-              <div className={`p-6 rounded-2xl border ${isHi ? "border-accent bg-accent/5 ring-2 ring-accent/20" : "border-slate-200 bg-white"} hover:shadow-lg transition-shadow ${variant === "bento" && i === 0 ? "md:col-span-2" : ""}`}>
-                {c.icon && <div className="text-3xl mb-3">{c.icon}</div>}
-                <h3 className="text-base font-bold text-slate-900 mb-2">{c.title ?? ""}</h3>
-                {c.description && <p className="text-sm text-slate-600 leading-relaxed">{c.description}</p>}
+              <div className={`bg-paradigm-paper p-9 md:p-10 h-full ${variant === "bento" && i === 0 ? "md:col-span-2" : ""} ${c.highlighted ? "bg-paradigm-paper-card" : ""}`}>
+                {c.icon && <div className="text-[28px] mb-5 opacity-70">{c.icon}</div>}
+                {c.highlighted && <p className="paradigm-eyebrow text-paradigm-accent mb-3">Featured</p>}
+                <h3 className="font-display text-[22px] md:text-[26px] leading-[1.2] text-paradigm-ink mb-3">
+                  {c.title ?? ""}
+                </h3>
+                {c.description && (
+                  <p className="text-[14px] text-paradigm-ink-soft leading-[1.85]">{c.description}</p>
+                )}
               </div>
             )
-            return c.href ? <a key={i} href={c.href} className="block">{inner}</a> : <div key={i}>{inner}</div>
+            return c.href ? (
+              <a key={i} href={c.href} className="block hover:bg-paradigm-paper-card transition-colors">
+                {inner}
+              </a>
+            ) : (
+              <div key={i}>{inner}</div>
+            )
           })}
         </div>
       </div>
@@ -102,25 +144,43 @@ function CardGridRender(b: AnyBlock) {
 
 function CTARender(b: AnyBlock) {
   const bgKey = (b.background as string) ?? "gradient"
-  const bg = bgKey === "gradient"
-    ? "bg-gradient-to-br from-violet-600 via-indigo-600 to-purple-700 text-white"
-    : bgKey === "accent" ? "bg-accent text-white" : "bg-slate-50 text-slate-900"
+  const isDark = bgKey !== "surface"
+  const bg = isDark ? "bg-paradigm-ink text-paradigm-paper" : "bg-paradigm-paper-deep text-paradigm-ink"
   const primary = b.primaryCta as { label?: string; href?: string } | undefined
   const secondary = b.secondaryCta as { label?: string; href?: string } | undefined
-  const isDark = bgKey !== "surface"
   return (
-    <section className={`${bg} py-20 px-6`}>
-      <div className="max-w-3xl mx-auto text-center">
-        <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-3">{String(b.title ?? "")}</h2>
-        {!!b.subtitle && <p className={`text-base ${isDark ? "text-white/80" : "text-slate-600"} mb-8`}>{String(b.subtitle)}</p>}
+    <section className={`${bg} paradigm-section`}>
+      <div className="max-w-3xl mx-auto px-6 md:px-12 text-center">
+        <h2 className={`font-display text-[32px] md:text-[52px] leading-[1.1] tracking-[-0.015em] mb-6 ${isDark ? "text-paradigm-paper" : "text-paradigm-ink"}`}>
+          {String(b.title ?? "")}
+        </h2>
+        {!!b.subtitle && (
+          <p className={`text-[15px] md:text-[17px] max-w-xl mx-auto mb-10 leading-[1.85] ${isDark ? "text-paradigm-paper/65" : "text-paradigm-ink-soft"}`}>
+            {String(b.subtitle)}
+          </p>
+        )}
         <div className="flex flex-wrap gap-3 justify-center">
           {primary?.href && (
-            <a href={primary.href} className={`h-12 px-7 rounded-xl ${isDark ? "bg-white text-violet-700" : "bg-violet-600 text-white"} text-sm font-bold inline-flex items-center shadow-xl hover:scale-[1.03] transition-transform`}>
+            <a
+              href={primary.href}
+              className={`inline-flex items-center gap-2 px-10 py-4 text-[12px] tracking-[0.18em] uppercase transition-colors ${
+                isDark
+                  ? "border border-paradigm-paper text-paradigm-paper hover:bg-paradigm-paper hover:text-paradigm-ink"
+                  : "bg-paradigm-ink text-paradigm-paper hover:bg-paradigm-accent"
+              }`}
+            >
               {primary.label ?? "Get started"}
             </a>
           )}
           {secondary?.href && (
-            <a href={secondary.href} className={`h-12 px-7 rounded-xl border-2 ${isDark ? "border-white/40 text-white" : "border-slate-300 text-slate-700"} text-sm font-bold inline-flex items-center hover:bg-white/10 transition-colors`}>
+            <a
+              href={secondary.href}
+              className={`inline-flex items-center gap-2 px-10 py-4 text-[12px] tracking-[0.18em] uppercase transition-colors ${
+                isDark
+                  ? "text-paradigm-paper/70 hover:text-paradigm-paper"
+                  : "border border-paradigm-line text-paradigm-ink-soft hover:border-paradigm-ink hover:text-paradigm-ink"
+              }`}
+            >
               {secondary.label ?? "Learn more"}
             </a>
           )}
@@ -133,25 +193,39 @@ function CTARender(b: AnyBlock) {
 function FAQRender(b: AnyBlock) {
   const items = (b.items as Array<{ question?: string; answer?: SerializedEditorState }>) ?? []
   return (
-    <section className="bg-white py-20 px-6">
-      <div className="max-w-3xl mx-auto">
-        {!!b.title && <h2 className="text-3xl md:text-4xl font-bold text-slate-900 text-center mb-3">{String(b.title)}</h2>}
-        {!!b.subtitle && <p className="text-base text-slate-600 text-center mb-10">{String(b.subtitle)}</p>}
-        <div className="space-y-3">
+    <section className="bg-paradigm-paper paradigm-section">
+      <div className="max-w-3xl mx-auto px-6 md:px-12">
+        {!!b.title && (
+          <h2 className="font-display text-[32px] md:text-[44px] leading-[1.15] tracking-[-0.01em] text-paradigm-ink text-center mb-3">
+            {String(b.title)}
+          </h2>
+        )}
+        {!!b.subtitle && (
+          <p className="text-[15px] text-paradigm-ink-soft text-center mb-12 leading-[1.85]">
+            {String(b.subtitle)}
+          </p>
+        )}
+        <ul className="border-t border-paradigm-line">
           {items.map((item, i) => (
-            <details key={i} className="group rounded-2xl border border-slate-200 bg-white p-5 open:bg-slate-50">
-              <summary className="cursor-pointer text-base font-bold text-slate-900 flex items-center justify-between">
-                {item.question ?? ""}
-                <span className="text-2xl text-slate-400 group-open:rotate-45 transition-transform">+</span>
-              </summary>
-              {item.answer && (
-                <div className="mt-4 text-sm text-slate-600 prose prose-sm max-w-none">
-                  <RichText data={item.answer} />
-                </div>
-              )}
-            </details>
+            <li key={i} className="border-b border-paradigm-line">
+              <details className="group">
+                <summary className="cursor-pointer flex items-start gap-5 py-7 list-none [&::-webkit-details-marker]:hidden">
+                  <span className="font-display text-[18px] md:text-[22px] leading-[1.4] text-paradigm-ink flex-1 pr-8">
+                    {item.question ?? ""}
+                  </span>
+                  <span aria-hidden className="shrink-0 text-paradigm-ink-mute mt-2 group-open:rotate-45 transition-transform text-[18px] leading-none">
+                    +
+                  </span>
+                </summary>
+                {item.answer && (
+                  <div className="pl-1 pr-8 pb-7 -mt-2 text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.85]">
+                    <RichText data={item.answer} />
+                  </div>
+                )}
+              </details>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </section>
   )
@@ -163,15 +237,14 @@ function RichTextRender(b: AnyBlock) {
   const content = b.content as SerializedEditorState | undefined
   if (!content) return null
   return (
-    <section className="bg-white py-16 px-6">
-      <div className={`${widthClass} mx-auto prose prose-slate max-w-none`}>
+    <section className="bg-paradigm-paper paradigm-section">
+      <div className={`${widthClass} mx-auto px-6 md:px-12 prose prose-paradigm max-w-none`}>
         <RichText data={content} />
       </div>
     </section>
   )
 }
 
-// ─── Dispatcher ──────────────────────────────────────────────────────
 const RENDERERS: Record<string, (b: AnyBlock) => React.ReactNode> = {
   hero: HeroRender,
   section: SectionRender,
@@ -188,7 +261,11 @@ export default function BlockRenderer({ blocks }: { blocks: AnyBlock[] }) {
         const Render = RENDERERS[b.blockType]
         if (!Render) {
           if (process.env.NODE_ENV !== "production") {
-            return <div key={i} className="p-4 text-xs text-red-600 bg-red-50">Unknown block: {b.blockType}</div>
+            return (
+              <div key={i} className="p-4 paradigm-eyebrow text-paradigm-accent bg-paradigm-paper-deep border-b border-paradigm-line">
+                Unknown block: {b.blockType}
+              </div>
+            )
           }
           return null
         }
