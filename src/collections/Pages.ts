@@ -122,5 +122,22 @@ export const Pages: CollectionConfig = {
       defaultValue: false,
       admin: { position: "sidebar" },
     },
+    // 2026-04-30: filterByLocale (lib/cms/filters.ts) が `locale` field を query するため
+    // 後方互換用に追加 (新規 entry は availableLocales のみ使用推奨)
+    {
+      name: "locale",
+      type: "select",
+      label: "[legacy] 言語",
+      options: [
+        { label: "日本語 (/ja)", value: "ja" },
+        { label: "English (/en)", value: "en" },
+        { label: "両方", value: "both" },
+      ],
+      admin: {
+        position: "sidebar",
+        description: "非推奨: availableLocales を使用してください。filterByLocale 互換維持用。",
+        condition: (data) => Boolean(data?.locale),
+      },
+    },
   ],
 }
