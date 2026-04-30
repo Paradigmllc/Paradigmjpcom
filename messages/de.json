@@ -239,5 +239,12 @@
     "ctaButton": "Kostenlose Beratung buchen",
     "ctaEmail": "Per E-Mail antworten",
     "intro": "Hier sehen Sie, wie Ihre Webpräsenz, SEO, Wettbewerbsposition und Bewertungsreaktionen abschneiden."
+  },
+  "cookieConsent": {
+    "srTitle": "Hinweis zur Cookie-Zustimmung",
+    "bodyBeforeLink": "Wir verwenden ein Minimum an Cookies für Leistung und Nutzungsanalyse. Mehr dazu in unserer",
+    "privacyLink": "Datenschutzerklärung",
+    "accept": "Akzeptieren",
+    "decline": "Ablehnen"
   }
 }

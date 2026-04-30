@@ -239,5 +239,12 @@
     "ctaButton": "Réserver une consultation gratuite",
     "ctaEmail": "Répondre par email",
     "intro": "Voici comment se positionnent votre site web, votre SEO, votre posture concurrentielle et votre gestion des avis."
+  },
+  "cookieConsent": {
+    "srTitle": "Avis de consentement aux cookies",
+    "bodyBeforeLink": "Nous utilisons un minimum de cookies pour la performance et les analyses. Pour en savoir plus, consultez notre",
+    "privacyLink": "politique de confidentialité",
+    "accept": "Accepter",
+    "decline": "Refuser"
   }
 }

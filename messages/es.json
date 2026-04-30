@@ -239,5 +239,12 @@
     "ctaButton": "Reserve una consulta gratuita",
     "ctaEmail": "Responder por correo electrónico",
     "intro": "Así es como se comparan su web, SEO, postura competitiva y respuesta a reseñas."
+  },
+  "cookieConsent": {
+    "srTitle": "Aviso de consentimiento de cookies",
+    "bodyBeforeLink": "Usamos un mínimo de cookies para rendimiento y análisis de uso. Para más detalles, consulta nuestra",
+    "privacyLink": "política de privacidad",
+    "accept": "Aceptar",
+    "decline": "Rechazar"
   }
 }

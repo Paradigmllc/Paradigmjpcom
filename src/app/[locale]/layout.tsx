@@ -7,6 +7,10 @@ import SiteFooter from "@/components/aesop/SiteFooter"
 import DifyChatbot from "@/components/DifyChatbot"
 import SiteWrapper from "@/components/SiteWrapper"
 import { ThemeProvider } from "@/components/aesop/ThemeProvider"
+import PageTransition from "@/components/aesop/PageTransition"
+import LuxuryLoader from "@/components/aesop/LuxuryLoader"
+import CookieConsent from "@/components/aesop/CookieConsent"
+import ScrollProgress from "@/components/aesop/ScrollProgress"
 import { ORGANIZATION_JSONLD, SERVICES_JSONLD } from "@/lib/jsonld"
 import { routing } from "@/i18n/routing"
 import {
@@ -234,9 +238,14 @@ export default async function LocaleLayout({ children, params }: Props) {
           <NextIntlClientProvider locale={locale} messages={messages}>
             {/* relative wrapper sits above body::before paper-grain (z-0) */}
             <div className="relative z-10">
+              <ScrollProgress />
+              <LuxuryLoader />
               <SiteHeader />
-              <SiteWrapper>{children}</SiteWrapper>
+              <SiteWrapper>
+                <PageTransition>{children}</PageTransition>
+              </SiteWrapper>
               <SiteFooter />
+              <CookieConsent />
             </div>
             {/* DifyChatbot は ja/en のみ最適化（残10ロケールは en にフォールバック） */}
             <DifyChatbot locale={(locale === "ja" ? "ja" : "en") as "ja" | "en"} />

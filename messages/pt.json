@@ -239,5 +239,12 @@
     "ctaButton": "Agende uma consultoria gratuita",
     "ctaEmail": "Responda por e-mail",
     "intro": "Veja como seu site, SEO, postura competitiva e resposta a avaliações se comparam."
+  },
+  "cookieConsent": {
+    "srTitle": "Aviso de consentimento de cookies",
+    "bodyBeforeLink": "Usamos um mínimo de cookies para desempenho e análise de uso. Para mais detalhes, consulte nossa",
+    "privacyLink": "política de privacidade",
+    "accept": "Aceitar",
+    "decline": "Recusar"
   }
 }

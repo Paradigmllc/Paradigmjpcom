@@ -239,5 +239,12 @@
     "ctaButton": "预约免费咨询",
     "ctaEmail": "通过邮件回复",
     "intro": "以下是您的网站、SEO、竞争对手态势和评论回复的评估结果。"
+  },
+  "cookieConsent": {
+    "srTitle": "Cookie 同意通知",
+    "bodyBeforeLink": "我们使用最少的 cookie 用于性能和使用分析。详情请参阅我们的",
+    "privacyLink": "隐私政策",
+    "accept": "接受",
+    "decline": "拒绝"
   }
 }

@@ -239,5 +239,12 @@
     "ctaButton": "無料相談を予約する",
     "ctaEmail": "メールで相談する",
     "intro": "貴社のWeb・SEO・競合・口コミ体制を診断した結果をお届けします。"
+  },
+  "cookieConsent": {
+    "srTitle": "クッキー同意のお知らせ",
+    "bodyBeforeLink": "パフォーマンス向上と利用状況分析のため最小限のクッキーを使用しています。詳細は",
+    "privacyLink": "プライバシーポリシー",
+    "accept": "同意する",
+    "decline": "辞退"
   }
 }

@@ -239,5 +239,12 @@
     "ctaButton": "Book a free consult",
     "ctaEmail": "Reply by email",
     "intro": "Here's how your web, SEO, competitor posture, and review response stack up."
+  },
+  "cookieConsent": {
+    "srTitle": "Cookie consent notice",
+    "bodyBeforeLink": "We use a minimum of cookies for performance and usage analytics. For more, see our",
+    "privacyLink": "privacy policy",
+    "accept": "Accept",
+    "decline": "Decline"
   }
 }

@@ -239,5 +239,12 @@
     "ctaButton": "Pesan konsultasi gratis",
     "ctaEmail": "Balas melalui email",
     "intro": "Berikut ringkasan posisi web, SEO, pesaing, dan respons ulasan Anda."
+  },
+  "cookieConsent": {
+    "srTitle": "Pemberitahuan persetujuan cookie",
+    "bodyBeforeLink": "Kami menggunakan cookie seminimal mungkin untuk performa dan analitik penggunaan. Selengkapnya lihat",
+    "privacyLink": "kebijakan privasi",
+    "accept": "Setuju",
+    "decline": "Tolak"
   }
 }
