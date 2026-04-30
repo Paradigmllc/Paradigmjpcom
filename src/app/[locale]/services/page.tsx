@@ -3,20 +3,9 @@ import { getPayload } from "payload"
 import config from "@payload-config"
 import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
+import RichCtaBand from "@/components/aesop/RichCtaBand"
+import FadeIn from "@/components/aesop/FadeIn"
 import { filterByLocale, coerceLocale, localeFindOptions } from "@/lib/cms/filters"
-
-/**
- * /[locale]/services — Productized service catalogue, Aesop voice.
- *
- * P18-D-2 rewrite. PageHero already paper-bg + serif (handled by the
- * shared PageHero rewrite). Card grid switches from gradient illustration
- * tiles to hairline alternating rows: image-tile (paper-deep) on one side,
- * editorial copy on the other. CTA closing band is paradigm-ink reverse.
- *
- * Empty state: minimal message + outline CTA (no accent pill chrome).
- *
- * AE-PHP-1: 130 lines.
- */
 
 export const dynamic = "force-dynamic"
 
@@ -45,6 +34,13 @@ type ServiceDoc = {
   sortOrder?: number
 }
 
+const CARD_GRADIENTS = [
+  "from-pink-400 via-paradigm-accent to-paradigm-tech",
+  "from-paradigm-tech via-paradigm-glow to-violet-400",
+  "from-paradigm-glow via-violet-400 to-paradigm-accent",
+  "from-paradigm-accent via-pink-400 to-orange-300",
+]
+
 export default async function ServicesPage({ params }: Props) {
   const { locale: rawLocale } = await params
   const locale = coerceLocale(rawLocale)
@@ -70,96 +66,91 @@ export default async function ServicesPage({ params }: Props) {
     <>
       <PageHero
         badge="Services"
-        title={isJa ? "サービス一覧" : "Productized Services"}
+        title={isJa ? "デジタル技術で事業を加速する。" : "Productized services that move Japan."}
+        highlight={isJa ? "事業を加速" : "move Japan"}
         desc={
           isJa
-            ? "デジタル技術で事業を加速する、ソリューション一覧。"
+            ? "Web 制作・MEO 対策・SEO/GEO 対策・AI 導入支援を一貫してご提供します。"
             : "Productized engagements that help foreign SMBs enter and scale in Japan."
         }
       />
 
-      <section className="bg-paradigm-paper paradigm-section">
-        <div className="max-w-6xl mx-auto px-6 md:px-12">
+      <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
+        <div className="paradigm-mesh opacity-30" />
+        <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-8">
           {services.length === 0 ? (
-            <div className="text-center py-16 max-w-xl mx-auto">
-              <p className="text-[15px] text-paradigm-ink-soft leading-[1.85] mb-10">
+            <FadeIn className="text-center py-12 max-w-xl mx-auto paradigm-glass rounded-2xl p-8 paradigm-glow-md">
+              <p className="text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.85] mb-7">
                 {isJa
                   ? "現在、公開中のサービスはありません。詳細は直接お問い合わせください。"
                   : "No services are currently published. Please contact us for a tailored engagement."}
               </p>
               <Link
                 href="/contact"
-                className="inline-flex items-center gap-2 border border-paradigm-ink text-paradigm-ink px-8 py-4 text-[12px] tracking-[0.18em] uppercase hover:bg-paradigm-ink hover:text-paradigm-paper transition-colors"
+                className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-xl text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
               >
                 {isJa ? "お問い合わせ" : "Contact us"}
               </Link>
-            </div>
+            </FadeIn>
           ) : (
-            <div className="space-y-24 md:space-y-32">
+            <div className="space-y-12 md:space-y-16">
               {services.map((s, i) => {
                 const features = (s.features ?? []).map((f) => f.feature).filter(Boolean) as string[]
                 const reversed = i % 2 === 1
+                const gradient = CARD_GRADIENTS[i % CARD_GRADIENTS.length]
                 return (
-                  <article
-                    key={String(s.id)}
-                    className={`flex flex-col ${reversed ? "md:flex-row-reverse" : "md:flex-row"} gap-10 md:gap-16 items-stretch`}
-                  >
-                    {/* Image tile — paper-deep editorial card, no gradient */}
-                    <div className="flex-1 w-full">
-                      <div className="relative bg-paradigm-paper-deep aspect-[4/3] flex items-center justify-center border border-paradigm-line">
-                        <div className="text-center px-8">
-                          {s.icon && (
-                            <span aria-hidden className="block mb-4 text-[44px] leading-none opacity-70">
-                              {s.icon}
-                            </span>
-                          )}
+                  <FadeIn key={String(s.id)} delay={i * 0.05}>
+                    <article
+                      className={`grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-stretch ${reversed ? "md:[direction:rtl]" : ""}`}
+                    >
+                      <div className={`relative rounded-2xl bg-gradient-to-br ${gradient} aspect-[4/3] flex items-center justify-center text-paradigm-paper paradigm-glow-lg ${reversed ? "md:[direction:ltr]" : ""}`}>
+                        <div className="absolute inset-0 paradigm-mesh opacity-30 rounded-2xl" />
+                        <div className="relative z-10 text-center px-6">
+                          {s.icon && <span aria-hidden className="block mb-3 text-[44px] leading-none opacity-90">{s.icon}</span>}
                           {s.tagline && (
-                            <p className="font-display text-[24px] md:text-[28px] leading-[1.2] text-paradigm-ink">
+                            <p className="font-display text-[20px] md:text-[26px] leading-[1.2] tracking-[-0.015em] paradigm-glow-text">
                               {s.tagline}
                             </p>
                           )}
                         </div>
                       </div>
-                    </div>
 
-                    {/* Editorial copy column */}
-                    <div className="flex-1 flex flex-col justify-center">
-                      <p className="paradigm-eyebrow mb-5">
-                        {String(i + 1).padStart(2, "0")}
-                      </p>
-                      <h2 className="font-display text-[32px] md:text-[44px] leading-[1.15] tracking-[-0.01em] text-paradigm-ink mb-6">
-                        {s.name ?? "—"}
-                      </h2>
-                      {features.length > 0 && (
-                        <ul className="border-t border-paradigm-line mb-10">
-                          {features.map((f, idx) => (
-                            <li
-                              key={idx}
-                              className="border-b border-paradigm-line py-3 text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.7]"
-                            >
-                              {f}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      <div className="flex gap-3 flex-wrap">
-                        {s.slug && (
-                          <Link
-                            href={`/services/${s.slug}`}
-                            className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3 text-[12px] tracking-[0.18em] uppercase hover:bg-paradigm-accent transition-colors"
-                          >
-                            {isJa ? "詳しく見る" : "Learn more"}
-                          </Link>
+                      <div className={`flex flex-col justify-center ${reversed ? "md:[direction:ltr]" : ""}`}>
+                        <p className="paradigm-eyebrow text-paradigm-accent mb-3">{String(i + 1).padStart(2, "0")}</p>
+                        <h2 className="font-display text-[24px] md:text-[34px] leading-[1.15] tracking-[-0.02em] text-paradigm-ink mb-4">
+                          {s.name ?? "—"}
+                        </h2>
+                        {features.length > 0 && (
+                          <ul className="paradigm-glass rounded-xl divide-y divide-paradigm-line/60 mb-6 paradigm-glow-sm">
+                            {features.map((f, idx) => (
+                              <li
+                                key={idx}
+                                className="px-4 py-2.5 text-[13px] md:text-[14px] text-paradigm-ink-soft leading-[1.6]"
+                              >
+                                {f}
+                              </li>
+                            ))}
+                          </ul>
                         )}
-                        <Link
-                          href="/contact"
-                          className="inline-flex items-center gap-2 border border-paradigm-line text-paradigm-ink-soft hover:border-paradigm-ink hover:text-paradigm-ink px-7 py-3 text-[12px] tracking-[0.18em] uppercase transition-colors"
-                        >
-                          {isJa ? "相談する" : "Get in touch"}
-                        </Link>
+                        <div className="flex gap-2 flex-wrap">
+                          {s.slug && (
+                            <Link
+                              href={`/services/${s.slug}`}
+                              className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-6 py-3 rounded-xl text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
+                            >
+                              {isJa ? "詳しく見る" : "Learn more"}
+                            </Link>
+                          )}
+                          <Link
+                            href="/contact"
+                            className="inline-flex items-center gap-2 paradigm-glass text-paradigm-ink-soft hover:text-paradigm-ink px-6 py-3 rounded-xl text-[12px] tracking-[0.14em] uppercase font-medium transition-colors"
+                          >
+                            {isJa ? "相談する" : "Get in touch"}
+                          </Link>
+                        </div>
                       </div>
-                    </div>
-                  </article>
+                    </article>
+                  </FadeIn>
                 )
               })}
             </div>
@@ -167,28 +158,13 @@ export default async function ServicesPage({ params }: Props) {
         </div>
       </section>
 
-      {/* CTA closing — ink reverse */}
-      <section className="bg-paradigm-ink text-paradigm-paper paradigm-section">
-        <div className="max-w-3xl mx-auto px-6 md:px-12 text-center">
-          <p className="paradigm-eyebrow text-paradigm-paper/60 mb-6">Together</p>
-          <h2 className="font-display text-[32px] md:text-[52px] leading-[1.1] tracking-[-0.015em] text-paradigm-paper mb-6">
-            {isJa
-              ? "どのサービスが最適かわからない？"
-              : "Not sure which service fits?"}
-          </h2>
-          <p className="text-[15px] md:text-[17px] text-paradigm-paper/65 max-w-xl mx-auto mb-10 leading-[1.85]">
-            {isJa
-              ? "無料相談で御社に最適なプランをご提案します。"
-              : "Book a free consultation and we'll scope the right engagement for you."}
-          </p>
-          <Link
-            href="/contact"
-            className="inline-flex items-center gap-2 border border-paradigm-paper text-paradigm-paper px-10 py-4 text-[12px] tracking-[0.18em] uppercase hover:bg-paradigm-paper hover:text-paradigm-ink transition-colors"
-          >
-            {isJa ? "無料相談を予約する" : "Book a free consultation"}
-          </Link>
-        </div>
-      </section>
+      <RichCtaBand
+        eyebrow="Together"
+        title={isJa ? "どのサービスが最適かわからない？" : "Not sure which service fits?"}
+        highlight={isJa ? "最適" : "fits"}
+        desc={isJa ? "無料相談で御社に最適なプランをご提案します。" : "Book a free consultation and we'll scope the right engagement for you."}
+        buttonLabel={isJa ? "無料相談を予約する" : "Book a free consultation"}
+      />
     </>
   )
 }

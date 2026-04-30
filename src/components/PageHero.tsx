@@ -1,47 +1,60 @@
 /**
- * PageHero — shared inner-page hero (Aesop / Le Labo grammar).
+ * PageHero — Rich shared inner-page hero (P18-D-9 quality leap).
  *
- * P18-D-2 rewrite: drops the dark gradient + violet blobs + sakura petals
- * pattern in favour of paradigm-paper bg + paradigm-eyebrow + serif h1.
- * The `accent` and `icon` props are kept for callsite compatibility but
- * `accent` is now ignored (single brand voice). `icon` still renders if
- * passed but is rare on Aesop pages.
+ * 全 inner page で使用される共通 hero。home 並みの richness を提供:
+ *   - paradigm-mesh-vivid (5-stop rainbow drift)
+ *   - Sparkles overlay (subtle)
+ *   - gradient text headline (font-display + multi-color clip)
+ *   - paradigm-glass badge with pulse dot
+ *   - paradigm-glow-text ambient halo
  *
- * Server component: CSS-only, no client motion. The PageTransition
- * wrapper at the layout level handles the fade-in for route changes.
+ * Server component: client motion は使わず CSS animation のみで軽量化。
  *
- * AE-PHP-1: 60 lines. AE-PHP-4: shared inner hero only — section content
- * lives in the page itself.
+ * AE-PHP-1: 80 lines.
  */
 
+import { Sparkles } from "@/components/magicui/sparkles"
+
 interface PageHeroProps {
-  /** Small caps eyebrow above the headline. */
   badge: string
-  /** Serif display headline. */
   title: string
-  /** Optional one-line description below the headline. */
   desc?: string
-  /** @deprecated kept for callsite compatibility — Aesop pages avoid icons. */
+  /** @deprecated kept for callsite compatibility */
   icon?: string
-  /** @deprecated accent variant ignored in Aesop voice. */
+  /** @deprecated accent variant ignored in unified voice */
   accent?: "violet" | "indigo" | "emerald" | "rose" | "amber"
+  /** Optional gradient highlight portion (will be styled with rainbow text) */
+  highlight?: string
 }
 
-export default function PageHero({ badge, title, desc, icon }: PageHeroProps) {
+export default function PageHero({ badge, title, desc, highlight }: PageHeroProps) {
   return (
-    <section className="relative bg-paradigm-paper pt-36 pb-20 md:pt-44 md:pb-28 px-6 md:px-12 border-b border-paradigm-line">
-      <div className="max-w-5xl mx-auto">
-        <p className="paradigm-eyebrow mb-6">{badge}</p>
-        {icon && (
-          <span aria-hidden className="block mb-6 text-[40px] leading-none opacity-70">
-            {icon}
-          </span>
-        )}
-        <h1 className="font-display text-[40px] md:text-[72px] leading-[1.08] tracking-[-0.015em] text-paradigm-ink max-w-4xl">
-          {title}
+    <section className="relative bg-paradigm-ink text-paradigm-paper pt-32 pb-16 md:pt-40 md:pb-20 px-6 md:px-8 overflow-hidden border-b border-paradigm-line">
+      <div className="paradigm-mesh-vivid opacity-70" />
+      <Sparkles count={14} color="rgba(165, 180, 252, 0.45)" duration={4} />
+
+      <div className="relative z-10 max-w-5xl mx-auto">
+        <div className="inline-flex items-center gap-2 paradigm-glass rounded-full px-4 py-2 mb-6 paradigm-glow-sm">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-paradigm-glow animate-pulse" />
+          <span className="paradigm-eyebrow text-paradigm-paper">{badge}</span>
+        </div>
+
+        <h1 className="font-display text-[34px] md:text-[56px] leading-[1.05] tracking-[-0.025em] text-paradigm-paper max-w-4xl paradigm-glow-text">
+          {highlight ? (
+            <>
+              {title.split(highlight)[0]}
+              <span className="bg-gradient-to-r from-pink-300 via-paradigm-glow via-paradigm-tech to-paradigm-glow bg-[length:200%_100%] bg-clip-text text-transparent animate-[gradientShift_6s_ease_infinite]">
+                {highlight}
+              </span>
+              {title.split(highlight)[1]}
+            </>
+          ) : (
+            title
+          )}
         </h1>
+
         {desc && (
-          <p className="mt-8 text-[15px] md:text-[17px] text-paradigm-ink-soft leading-[1.85] max-w-2xl">
+          <p className="mt-6 text-[14px] md:text-[16px] text-paradigm-paper/80 leading-[1.85] max-w-2xl">
             {desc}
           </p>
         )}
