@@ -1788,6 +1788,100 @@ Step 5 [送信]       Listmonk（OSS・無制限）でステップメール + n8
   - `page.tsx` で `prescriptions` と `reciprocity_package` を `demo_data` から正しくマッピング
   - 新レンダリングセクション: HookアラートバナーAI・診断KPI行（スコア/損失/回収）・処方箋リスト・年間損失カード・往復見出し・パッケージカード・信頼ポイント一覧
   - Appexxme worktree の `/p/[slug]/AllInOneClient.tsx` にも同等変更を同期済み（commit `a0c0e29`）
+- ✅ **[2026-04-30] /report/[slug] canonical 統一**: 顧客向けページの正規 URL を `paradigmjp.com/report/[slug]` に固定 / 旧 `/p/[slug]` は redirect shim 化 (3 ヶ月後 404 化予定) / Magic UI + Section-per-file + i18n + Manifest 駆動 4 鉄則完全準拠
+
+<a id="s10-4"></a>
+
+### 🆕 提案ページ アーキテクチャ 4 鉄則 (2026-04-30 ユーザー指示・全 PJ 共通永久ルール・Appexxme s10-4 同期)
+
+> **背景**: `/p/[slug]/AllInOneClient.tsx` が 2117 行モノリシック + ハードコード JP 文字列で `/en` でも全部日本語が出る・業種で見せ方を変えられない・訴求角度でセクション順序を変えられない問題を構造的に再発不可能にする。
+
+#### 4 鉄則 (CI / PR レビューで強制)
+
+1. **Section-per-file (≤ 200 行)**: `/[locale]/report/[slug]/`・`/[locale]/p/[slug]/` 配下のページは `src/components/proposal/sections/{Hero,KpiCards,Pain,Demo,...}.tsx` に分割。**1 ファイル 200 行を超える section component は分割必須**。orchestrator (`ProposalRenderer.tsx`) は 200 行以下の薄い renderer に保つ
+2. **Zero hardcoded strings**: 提案ページの全 UI 文字列は `src/messages/proposal/{locale}.json` 経由 (`useProposalT(locale)` で参照)。**JSX 内に生の日本語/英語/中国語/韓国語/etc. の UI 文字列を書くのは禁止**。会社名・人名・データ値などプロップス由来の文字列は OK
+3. **Manifest-driven composition**: section の順序・variant・theme は `ProposalLayoutManifest` (`src/lib/proposal/manifest.ts`) で宣言。**JSX レベルでの `if (industry === "...")` 業種分岐禁止**。業種追加 = manifest 行追加・既存コード触らず
+4. **Pure section components**: 各 section は `(data, locale, theme, t, variant) => JSX` の純関数。**業種知識・region 知識を持たず**、与えられたデータをその見せ方で render する役割に専念
+
+#### 訴求角度 (pitch_angle) — 6 種カノニカル
+
+`loss / opportunity / trust / urgency / competitive / compliance` の 6 種。`pitch_angle × industry × region = 720 通り` を Appexxme `proposal_page_patterns` テーブルで DB 管理 (paradigm-HP 側は read-only で参照のみ)。
+
+#### Magic UI 必須採用
+
+提案ページの**視覚的感動 (= 高 CVR)** のため Magic UI コンポーネントを必須採用:
+- Hero: `AnimatedGradientText` + `Sparkles` + `BorderBeam`
+- KPI: `NumberTicker` + `BorderBeam`
+- Cases / WhyUs: `BentoGrid` + `BentoCard`
+- MarketTrend: `Meteors`
+- CTA: `ShimmerButton` + `Sparkles`
+- Video: Remotion 60s パーソナライズ動画 (Pipeline 3 連携・appexx.me/api/sales-automation get_diagnostic_video で取得)
+
+<a id="s10-5"></a>
+
+### 🆕 顧客向けページのドメイン・URL canonical 永久ルール (2026-04-30 ユーザ指示)
+
+| 用途 | canonical URL | 旧 URL (shim 化) |
+|------|--------------|----------------|
+| **提案/診断レポート公開ページ (顧客向け)** | `https://paradigmjp.com/{locale}/report/[slug]` | `paradigmjp.com/{locale}/p/[slug]` (3ヶ月後 404・redirect shim) |
+| **root locale-less URL** | (308 redirect) | `paradigmjp.com/report/[slug]` → `/ja/report/[slug]` |
+| **PDF レポート (Slidev → Gotenberg)** | Supabase Storage 直リンク (domain-agnostic) | — |
+| **動画レポート (Remotion)** | Supabase Storage 直リンク (domain-agnostic) | — |
+
+#### 鉄則
+
+1. **顧客向け公開 URL は paradigmjp.com 配下のみ**: appexx.me 配下は社内ツール扱い (検索 noindex 対象)
+2. **DB/コード/通知/メール本文に書く URL も paradigmjp.com/{locale}/report**: 新規生成での `/p/` 形式禁止
+3. **Paradigm-HP に Appexxme と同じ proposal stack を sync 配置**: `src/components/proposal/{ProposalRenderer.tsx, sections/*}` + `src/lib/proposal/{manifest,theme,i18n}.ts` + `src/messages/proposal/{ja,en}.json` + `src/components/magicui/*` (10 components) + `src/lib/stores/sales-region.ts` を Appexxme から同期
+4. **shim 廃止スケジュール**: `paradigmjp.com/{locale}/p/[slug]` shim は **2026-07-30 で 404 化**予定
+
+<a id="s10-6"></a>
+
+### 🆕 Anti-Entropy 防止ルール — paradigmjp.com 版 (2026-04-30 ユーザー指示「appexxme 同様厳格ルールを適用」)
+
+> **背景**: paradigm-HP も Appexxme と同様に **モノリシック化 / ハードコード / 黒箱化** を構造的に防ぐ必要がある。Appexxme の Anti-Entropy 13 ルールから paradigm-HP に適用すべき項目を抜粋・新設。
+
+#### AE-PHP-1: ファイル分割の鉄則 (≤ 500 行・section ≤ 200 行)
+
+`src/components/` 配下の各 React component は **500 行を超えたら分割必須**。提案ページの section component は 200 行が上限 (s10-4 鉄則 1 と一致)。違反検知時は即分割 PR を切る。
+
+#### AE-PHP-2: i18n strict (next-intl 既導入のため強制)
+
+paradigm-HP は既に `next-intl` v4 を導入済 → **JSX 内の生の日本語/英語/etc UI 文字列は禁止**。`useTranslations()` 経由で必ず `messages/{locale}.json` から取得する。例外: 会社名・データ値・URL・コードブロック内の例示文字列。
+
+#### AE-PHP-3: SEO/GEO metadata の必須化
+
+すべての page.tsx は `generateMetadata` を export し、以下を最低限含めること:
+- `title` / `description` (locale 別)
+- `openGraph` (image / type / locale)
+- `twitter` (card / title / description)
+- `alternates.canonical` (canonical URL)
+- `alternates.languages` (hreflang・全 locale 分)
+- ページ種別に応じた JSON-LD 構造化データ (LocalBusiness / Service / Article / FAQPage / BreadcrumbList のいずれか以上)
+
+詳細は s5 SEO・GEO 戦略セクション参照。
+
+#### AE-PHP-4: ブラックボックス化禁止 (各ページに目的明示)
+
+新規 page.tsx 追加時は冒頭コメントに **役割 (このページの存在意義) / 受け取る入力 / 出力する効果** を明記。CMS 連動ページは「どの collection から何を引くか」を明示。違反検知時は即追記する。
+
+#### AE-PHP-5: 提案ページ 4 鉄則の強制 (s10-4 と同期)
+
+`/[locale]/report/[slug]/`・`/[locale]/p/[slug]/` 配下は s10-4 4 鉄則完全準拠。違反は build pre-check で検出 (200 行制限・hardcoded JSX 文字列検出)。
+
+#### AE-PHP-6: Payload CMS フル活用 (Block-based composition)
+
+サイトのデザイン・コンテンツの主要部分は **Payload Pages collection の Block 配列で構成** する (Hero / Section / CardGrid / CTA / FAQ / RichText 等の Block を組み合わせる方式)。**ハードコード Page を増やすのは禁止** (例外: middleware が必要な認証ページ等)。Block の追加 = `src/blocks/{NewBlock}.ts` + Pages collection への登録 のみで完結すること。
+
+#### 違反検知時の自動アクション
+
+私 (Claude Code) は以下を発見したら**指示待ちなく**修正する:
+- 500 行超えの component / 200 行超えの section
+- JSX 内の生の日本語/英語 UI 文字列 (会社名等プロップスは除く)
+- canonical metadata 欠如・hreflang 欠如・JSON-LD 欠如の page.tsx
+- 役割コメント欠如の新規 page.tsx
+- ProposalLayoutManifest を使わず手動で section を組み立てる新規ページ
+- 「同じ機能を持つ component の重複」(必ず 1 箇所に統合する・AE-2 single-route-owner と同じ)
 
 ---
 
