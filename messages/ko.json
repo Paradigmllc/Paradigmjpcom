@@ -10,7 +10,11 @@
     "pricing": "가격",
     "faq": "FAQ",
     "blog": "블로그",
-    "contact": "문의"
+    "contact": "문의",
+    "menu": "메뉴",
+    "openMenu": "메뉴 열기",
+    "closeMenu": "메뉴 닫기",
+    "primaryNav": "주 내비게이션"
   },
   "cta": {
     "primary": "무료 상담",
@@ -33,7 +37,10 @@
       "meo": "로컬 SEO (MEO)",
       "seo": "SEO / GEO",
       "ai": "AI 도입"
-    }
+    },
+    "studioLocation": "도쿄, 일본 · Paradigm",
+    "socialGithub": "GitHub",
+    "socialEmail": "이메일"
   },
   "home": {
     "heroBadge": "일본 내 현지 디지털 파트너",
@@ -232,5 +239,12 @@
     "ctaButton": "무료 상담 예약",
     "ctaEmail": "이메일로 답장",
     "intro": "웹, SEO, 경쟁사 현황 및 리뷰 응대가 어떻게 구성되어 있는지 확인하세요."
+  },
+  "cookieConsent": {
+    "srTitle": "쿠키 동의 안내",
+    "bodyBeforeLink": "성능 및 이용 분석을 위해 최소한의 쿠키를 사용합니다. 자세한 내용은",
+    "privacyLink": "개인정보 처리방침",
+    "accept": "동의",
+    "decline": "거절"
   }
 }

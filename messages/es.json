@@ -10,7 +10,11 @@
     "pricing": "Precios",
     "faq": "Preguntas Frecuentes",
     "blog": "Blog",
-    "contact": "Contacto"
+    "contact": "Contacto",
+    "menu": "Menú",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú",
+    "primaryNav": "Navegación principal"
   },
   "cta": {
     "primary": "Consulta Gratuita",
@@ -33,7 +37,10 @@
       "meo": "SEO Local (MEO)",
       "seo": "SEO / GEO",
       "ai": "Habilitación de IA"
-    }
+    },
+    "studioLocation": "Tokio, Japón · Paradigm",
+    "socialGithub": "GitHub",
+    "socialEmail": "Correo"
   },
   "home": {
     "heroBadge": "Su socio digital local en Japón",
@@ -232,5 +239,12 @@
     "ctaButton": "Reserve una consulta gratuita",
     "ctaEmail": "Responder por correo electrónico",
     "intro": "Así es como se comparan su web, SEO, postura competitiva y respuesta a reseñas."
+  },
+  "cookieConsent": {
+    "srTitle": "Aviso de consentimiento de cookies",
+    "bodyBeforeLink": "Usamos un mínimo de cookies para rendimiento y análisis de uso. Para más detalles, consulta nuestra",
+    "privacyLink": "política de privacidad",
+    "accept": "Aceptar",
+    "decline": "Rechazar"
   }
 }

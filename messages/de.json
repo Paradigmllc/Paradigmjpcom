@@ -10,7 +10,11 @@
     "pricing": "Preise",
     "faq": "FAQ",
     "blog": "Blog",
-    "contact": "Kontakt"
+    "contact": "Kontakt",
+    "menu": "Menü",
+    "openMenu": "Menü öffnen",
+    "closeMenu": "Menü schließen",
+    "primaryNav": "Hauptnavigation"
   },
   "cta": {
     "primary": "Kostenlose Beratung",
@@ -33,7 +37,10 @@
       "meo": "Local SEO (MEO)",
       "seo": "SEO / GEO",
       "ai": "KI-Integration"
-    }
+    },
+    "studioLocation": "Tokio, Japan · Paradigm",
+    "socialGithub": "GitHub",
+    "socialEmail": "E-Mail"
   },
   "home": {
     "heroBadge": "Ihr lokaler digitaler Partner in Japan",
@@ -232,5 +239,12 @@
     "ctaButton": "Kostenlose Beratung buchen",
     "ctaEmail": "Per E-Mail antworten",
     "intro": "Hier sehen Sie, wie Ihre Webpräsenz, SEO, Wettbewerbsposition und Bewertungsreaktionen abschneiden."
+  },
+  "cookieConsent": {
+    "srTitle": "Hinweis zur Cookie-Zustimmung",
+    "bodyBeforeLink": "Wir verwenden ein Minimum an Cookies für Leistung und Nutzungsanalyse. Mehr dazu in unserer",
+    "privacyLink": "Datenschutzerklärung",
+    "accept": "Akzeptieren",
+    "decline": "Ablehnen"
   }
 }

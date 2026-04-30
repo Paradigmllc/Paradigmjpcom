@@ -10,7 +10,11 @@
     "pricing": "料金",
     "faq": "FAQ",
     "blog": "ブログ",
-    "contact": "お問い合わせ"
+    "contact": "お問い合わせ",
+    "menu": "メニュー",
+    "openMenu": "メニューを開く",
+    "closeMenu": "メニューを閉じる",
+    "primaryNav": "メインナビゲーション"
   },
   "cta": {
     "primary": "無料相談",
@@ -33,7 +37,10 @@
       "meo": "MEO対策",
       "seo": "SEO/GEO対策",
       "ai": "AI導入支援"
-    }
+    },
+    "studioLocation": "東京・日本 · Paradigm 合同会社",
+    "socialGithub": "GitHub",
+    "socialEmail": "メール"
   },
   "home": {
     "heroBadge": "中小企業のデジタルパートナー",
@@ -41,15 +48,32 @@
     "heroSubtitle": "業務の自動化から顧客獲得まで、Paradigmが一気通貫で支援します。",
     "heroSuffix": "で事業を加速する。",
     "heroSubheadline": "Web制作・MEO対策・SEO/GEO・AI導入支援。中小企業のデジタル変革をワンストップで支援します。",
-    "heroTypingWords": ["MEO対策", "AI活用", "Web制作", "SEO/GEO"],
+    "heroTypingWords": [
+      "MEO対策",
+      "AI活用",
+      "Web制作",
+      "SEO/GEO"
+    ],
     "heroBookConsult": "無料相談を予約",
     "heroSeeServices": "サービスを見る",
     "trusted": "これまでに支援した企業",
     "stats": {
-      "support": { "suffix": "社+", "label": "支援実績" },
-      "retention": { "suffix": "%", "label": "継続率" },
-      "growth": { "suffix": "倍", "label": "平均集客増加" },
-      "consult": { "suffix": "分", "label": "初回相談時間" }
+      "support": {
+        "suffix": "社+",
+        "label": "支援実績"
+      },
+      "retention": {
+        "suffix": "%",
+        "label": "継続率"
+      },
+      "growth": {
+        "suffix": "倍",
+        "label": "平均集客増加"
+      },
+      "consult": {
+        "suffix": "分",
+        "label": "初回相談時間"
+      }
     },
     "servicesEyebrow": "Services",
     "servicesHeading": "事業を成長させる4つのサービス",
@@ -87,17 +111,41 @@
     "featuresEyebrow": "Why Paradigm",
     "featuresHeading": "選ばれる4つの理由",
     "features": {
-      "speed": { "title": "最短2週間で納品", "desc": "スリムなプロセスで高品質・スピード納品。急ぎの案件も対応可能。" },
-      "guarantee": { "title": "成果保証プラン", "desc": "MEO・SEOは一定期間内に成果が出なければ返金対応。安心してお任せください。" },
-      "team": { "title": "専任担当が伴走", "desc": "担当者が変わらない。月次レポート+定例MTGで継続サポート。" },
-      "aiFusion": { "title": "AI×デジタルの融合", "desc": "最新AIツールを活用した次世代集客。競合に差をつける戦略を提供。" }
+      "speed": {
+        "title": "最短2週間で納品",
+        "desc": "スリムなプロセスで高品質・スピード納品。急ぎの案件も対応可能。"
+      },
+      "guarantee": {
+        "title": "成果保証プラン",
+        "desc": "MEO・SEOは一定期間内に成果が出なければ返金対応。安心してお任せください。"
+      },
+      "team": {
+        "title": "専任担当が伴走",
+        "desc": "担当者が変わらない。月次レポート+定例MTGで継続サポート。"
+      },
+      "aiFusion": {
+        "title": "AI×デジタルの融合",
+        "desc": "最新AIツールを活用した次世代集客。競合に差をつける戦略を提供。"
+      }
     },
     "testimonialsEyebrow": "Testimonials",
     "testimonialsHeading": "お客様の声",
     "testimonials": {
-      "1": { "name": "飲食店オーナー", "location": "東京都渋谷区", "text": "MEO対策を始めて3ヶ月で月30件以上の新規来店。費用対効果が明確で驚きました。" },
-      "2": { "name": "クリニック院長", "location": "大阪府北区", "text": "ホームページをリニューアルしてから問い合わせが倍増。AIチャットも好評です。" },
-      "3": { "name": "EC運営者", "location": "愛知県名古屋市", "text": "GEO対策でChatGPT検索からの流入が急増。新しい集客チャンネルができました。" }
+      "1": {
+        "name": "飲食店オーナー",
+        "location": "東京都渋谷区",
+        "text": "MEO対策を始めて3ヶ月で月30件以上の新規来店。費用対効果が明確で驚きました。"
+      },
+      "2": {
+        "name": "クリニック院長",
+        "location": "大阪府北区",
+        "text": "ホームページをリニューアルしてから問い合わせが倍増。AIチャットも好評です。"
+      },
+      "3": {
+        "name": "EC運営者",
+        "location": "愛知県名古屋市",
+        "text": "GEO対策でChatGPT検索からの流入が急増。新しい集客チャンネルができました。"
+      }
     },
     "trustBadges": {
       "1": "実績200社以上",
@@ -191,5 +239,12 @@
     "ctaButton": "無料相談を予約する",
     "ctaEmail": "メールで相談する",
     "intro": "貴社のWeb・SEO・競合・口コミ体制を診断した結果をお届けします。"
+  },
+  "cookieConsent": {
+    "srTitle": "クッキー同意のお知らせ",
+    "bodyBeforeLink": "パフォーマンス向上と利用状況分析のため最小限のクッキーを使用しています。詳細は",
+    "privacyLink": "プライバシーポリシー",
+    "accept": "同意する",
+    "decline": "辞退"
   }
 }

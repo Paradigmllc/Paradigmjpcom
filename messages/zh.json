@@ -10,7 +10,11 @@
     "pricing": "定价",
     "faq": "常见问题",
     "blog": "博客",
-    "contact": "联系我们"
+    "contact": "联系我们",
+    "menu": "菜单",
+    "openMenu": "打开菜单",
+    "closeMenu": "关闭菜单",
+    "primaryNav": "主导航"
   },
   "cta": {
     "primary": "免费咨询",
@@ -33,7 +37,10 @@
       "meo": "本地SEO (MEO)",
       "seo": "SEO / GEO",
       "ai": "AI赋能"
-    }
+    },
+    "studioLocation": "东京 · 日本 · Paradigm",
+    "socialGithub": "GitHub",
+    "socialEmail": "电子邮件"
   },
   "home": {
     "heroBadge": "您在日本的本地数字化合作伙伴",
@@ -232,5 +239,12 @@
     "ctaButton": "预约免费咨询",
     "ctaEmail": "通过邮件回复",
     "intro": "以下是您的网站、SEO、竞争对手态势和评论回复的评估结果。"
+  },
+  "cookieConsent": {
+    "srTitle": "Cookie 同意通知",
+    "bodyBeforeLink": "我们使用最少的 cookie 用于性能和使用分析。详情请参阅我们的",
+    "privacyLink": "隐私政策",
+    "accept": "接受",
+    "decline": "拒绝"
   }
 }

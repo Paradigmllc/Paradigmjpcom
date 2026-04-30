@@ -6,6 +6,16 @@ import PageHero from "@/components/PageHero"
 import { filterByLocale, coerceLocale, localeFindOptions } from "@/lib/cms/filters"
 import { FAQ_JSONLD } from "@/lib/jsonld"
 
+/**
+ * /[locale]/faq — accordion FAQ list (Aesop voice).
+ *
+ * P18-D-3 rewrite. <details>/<summary> remain (native disclosure
+ * = best a11y), but card chrome → hairline divider list. The Q
+ * pill drops in favour of a serif "Q." prefix typographic mark.
+ *
+ * AE-PHP-1: 130 lines.
+ */
+
 export const dynamic = "force-dynamic"
 
 interface Props {
@@ -90,47 +100,52 @@ export default async function FaqPage({ params }: Props) {
             ? "お客様からよくいただくご質問にお答えします。"
             : "Answers to the questions we hear most from foreign SMBs entering Japan."
         }
-        accent="emerald"
       />
 
-      <section className="py-24 px-6 bg-white">
-        <div className="max-w-3xl mx-auto">
+      <section className="bg-paradigm-paper paradigm-section">
+        <div className="max-w-3xl mx-auto px-6 md:px-12">
           {faqPairs.length === 0 ? (
-            <div className="text-center py-20">
-              <p className="text-lg text-text-muted mb-6">
+            <div className="text-center py-16">
+              <p className="text-[15px] text-paradigm-ink-soft leading-[1.85] mb-10 max-w-md mx-auto">
                 {isJa
                   ? "現在、公開中のFAQはありません。ご質問は直接お問い合わせください。"
                   : "No FAQs are published yet. Please reach out directly with your questions."}
               </p>
               <Link
                 href="/contact"
-                className="inline-flex bg-accent text-white px-8 py-3 rounded-xl font-semibold hover:bg-accent/90 transition-colors"
+                className="inline-flex items-center gap-2 border border-paradigm-ink text-paradigm-ink px-8 py-4 text-[12px] tracking-[0.18em] uppercase hover:bg-paradigm-ink hover:text-paradigm-paper transition-colors"
               >
-                {isJa ? "お問い合わせ" : "Contact Us"}
+                {isJa ? "お問い合わせ" : "Contact us"}
               </Link>
             </div>
           ) : (
-            <div className="space-y-4">
+            <ul className="border-t border-paradigm-line">
               {faqPairs.map((faq, i) => (
-                <details
-                  key={i}
-                  className="group rounded-2xl border border-gray-100 bg-white hover:border-accent/20 transition-all"
-                >
-                  <summary className="flex items-start gap-4 p-6 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-                    <span className="shrink-0 h-7 w-7 rounded-full bg-accent/10 text-accent text-sm font-bold flex items-center justify-center mt-0.5">
-                      Q
-                    </span>
-                    <span className="font-semibold text-primary flex-1 pr-8">{faq.q}</span>
-                    <span className="shrink-0 text-text-muted group-open:rotate-180 transition-transform mt-1">
-                      &#9660;
-                    </span>
-                  </summary>
-                  <div className="px-6 pb-6 pl-[4.25rem]">
-                    <p className="text-text-muted leading-relaxed whitespace-pre-line">{faq.a}</p>
-                  </div>
-                </details>
+                <li key={i} className="border-b border-paradigm-line">
+                  <details className="group">
+                    <summary className="flex items-start gap-5 py-7 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                      <span className="font-display text-[20px] text-paradigm-ink-mute mt-0.5 leading-none italic">
+                        Q.
+                      </span>
+                      <span className="font-display text-[18px] md:text-[22px] leading-[1.4] text-paradigm-ink flex-1 pr-8">
+                        {faq.q}
+                      </span>
+                      <span
+                        aria-hidden
+                        className="shrink-0 text-paradigm-ink-mute mt-2 group-open:rotate-45 transition-transform text-[18px] leading-none"
+                      >
+                        +
+                      </span>
+                    </summary>
+                    <div className="pl-10 pr-8 pb-8 -mt-2">
+                      <p className="text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.85] whitespace-pre-line">
+                        {faq.a}
+                      </p>
+                    </div>
+                  </details>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
       </section>
@@ -142,21 +157,22 @@ export default async function FaqPage({ params }: Props) {
         />
       )}
 
-      <section className="py-20 px-6 bg-gray-50">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-2xl font-bold text-primary mb-4">
+      <section className="bg-paradigm-ink text-paradigm-paper paradigm-section">
+        <div className="max-w-3xl mx-auto px-6 md:px-12 text-center">
+          <p className="paradigm-eyebrow text-paradigm-paper/60 mb-6">Still curious</p>
+          <h2 className="font-display text-[32px] md:text-[44px] leading-[1.15] tracking-[-0.01em] text-paradigm-paper mb-6">
             {isJa ? "解決しない疑問がありますか？" : "Still have questions?"}
           </h2>
-          <p className="text-text-muted mb-8">
+          <p className="text-[15px] md:text-[17px] text-paradigm-paper/65 max-w-xl mx-auto mb-10 leading-[1.85]">
             {isJa
               ? "お気軽にお問い合わせください。担当者が丁寧にお答えします。"
               : "Reach out anytime — we'll get back to you within one business day."}
           </p>
           <Link
             href="/contact"
-            className="inline-flex bg-accent text-white px-8 py-3.5 rounded-xl font-semibold hover:bg-accent/90 transition-colors shadow-lg shadow-accent/25"
+            className="inline-flex items-center gap-2 border border-paradigm-paper text-paradigm-paper px-10 py-4 text-[12px] tracking-[0.18em] uppercase hover:bg-paradigm-paper hover:text-paradigm-ink transition-colors"
           >
-            {isJa ? "お問い合わせ" : "Contact Us"}
+            {isJa ? "お問い合わせ" : "Contact us"}
           </Link>
         </div>
       </section>

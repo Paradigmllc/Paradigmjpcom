@@ -10,7 +10,11 @@
     "pricing": "Bảng giá",
     "faq": "FAQ",
     "blog": "Blog",
-    "contact": "Liên hệ"
+    "contact": "Liên hệ",
+    "menu": "Trình đơn",
+    "openMenu": "Mở trình đơn",
+    "closeMenu": "Đóng trình đơn",
+    "primaryNav": "Điều hướng chính"
   },
   "cta": {
     "primary": "Tư vấn miễn phí",
@@ -33,7 +37,10 @@
       "meo": "SEO địa phương (MEO)",
       "seo": "SEO / GEO",
       "ai": "Kích hoạt AI"
-    }
+    },
+    "studioLocation": "Tokyo, Nhật Bản · Paradigm",
+    "socialGithub": "GitHub",
+    "socialEmail": "Email"
   },
   "home": {
     "heroBadge": "Đối tác kỹ thuật số địa phương của bạn tại Nhật Bản",
@@ -232,5 +239,12 @@
     "ctaButton": "Đặt lịch tư vấn miễn phí",
     "ctaEmail": "Trả lời qua email",
     "intro": "Đây là cách web, SEO, vị thế cạnh tranh và phản hồi đánh giá của bạn được đánh giá."
+  },
+  "cookieConsent": {
+    "srTitle": "Thông báo đồng ý cookie",
+    "bodyBeforeLink": "Chúng tôi sử dụng tối thiểu cookie cho hiệu suất và phân tích sử dụng. Chi tiết xem tại",
+    "privacyLink": "chính sách bảo mật",
+    "accept": "Đồng ý",
+    "decline": "Từ chối"
   }
 }

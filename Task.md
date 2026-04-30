@@ -23,7 +23,24 @@
 
 ## 📋 未着手（順番厳守）
 
-（なし — P17 完遂後に追加）
+- [ ] **P18-A-FIX-1. /[locale]/report/[token] orphan 削除後の token ハンドリング再統合**（2026-04-30 発覚 / commit 10496d9 で `[slug]` を canonical 化した際に既存の `[locale]/report/[token]/page.tsx` が削除されず Next.js dynamic-route slug 名衝突で dev server が起動不能だった / `[token]/page.tsx` を削除して P18-A verification を通したが diagnostic token-fetch ロジックが宙に浮いている — `[slug]/page.tsx` 側で `slug.length === 36` 等の UUID 判定→`/api/report/${slug}` フォールバックで再統合する / API `src/app/api/report/[token]/route.ts` は維持・削除しない）
+
+- [ ] **P18. Aesop 風ラグジュアリー全面リニューアル**（開始: 2026-04-30 / 規模: 4 PR / Sericia 既存資産フォーク移植 + paradigm-Aesop ハイブリッド = Modern Tech × Aesop / dark mode 入れる / EC 系部品はスキップ / `/report/[slug]` は対象外 — s10-4 鉄則維持）
+  - [x] **P18-A. Design Token Migration**（完了: 2026-04-30 / globals.css Aesop foundation + paradigm-paper/ink/line/accent + dark mode + paper-grain + 新フォント Cormorant/Inter/JetBrains Mono/Noto Serif JP / next-themes 導入 / layout.tsx rewire / **副産物**: ① `src/app/[locale]/report/[token]/page.tsx` orphan 削除 (P18-A-FIX-1 で再統合予定) / ② `next.config.ts` に `turbopack.root: path.resolve(__dirname)` を追加 — 親 D:/dev/paradigmjpcom/package-lock.json の存在で Turbopack が worktree node_modules を見えなかった問題を解決 / **検証**: light bg `#f8f8f6` / dark bg `#0c0e12` / Inter+Noto Sans JP / paper-grain.svg / data-theme切替全動作 / console エラーゼロ）
+  - [x] **P18-B. Core Layout Port**（完了: 2026-04-30 / SiteHeader 95行 + SiteFooter 165行 + MobileMenu 110行 + ThemeToggle 78行 + Logo 22行 = 全 component AE-PHP-1 (≤200) 準拠 / vaul 不採用・framer-motion AnimatePresence で drawer 自前実装 / layout.tsx 差し替え完了 / 旧 Header.tsx・Footer.tsx は orphan 化（Phase D 完了時に削除）/ MegaMenu は Phase D 着手時に paradigm services 構造設計と合わせて検討（v1 では direct nav） / **副産物 fix**: Tailwind v4 で `rgb(var(--x) / <alpha-value>)` テンプレ syntax が動かない（v3 専用・v4 では文字列リテラルになる）→ 全 token を `rgb(var(--x))` に書き換えてオパシティ修飾子は v4 内蔵 color-mix に委ねる方針 / **検証**: light bg #f8f8f6 / footer #eeeeea / dark bg #0c0e12 / footer #080a0d / ThemeToggle ボタン動作確認 / console エラーゼロ）
+  - [x] **P18-C. Motion & Polish**（完了: 2026-04-30 / CookieConsent 165行 + LuxuryLoader 95行 + PageTransition 19行 を新規作成 / Phase A で staged 済の FadeIn / MagneticButton / ScrollProgress / CustomCursor も全て AE-PHP-1 準拠 / ScrollProgress + LuxuryLoader + PageTransition + CookieConsent を layout.tsx に wire-up / 12-locale cookieConsent messages 追加（srTitle/bodyBeforeLink/privacyLink/accept/decline）/ SmoothScroll は lenis 依存のため不採用（CSS scroll-behavior: smooth で代替・globals.css に既設定）/ CustomCursor は Phase D 着手時に採用判断（mix-blend-difference の hero 画像との相性次第） / **検証**: cookie banner 600ms 後表示 + 日本語反映 / loader 800ms 自動消失 / scroll bar 描画 / console エラーゼロ）
+  - [ ] **P18-D. Page Refactor**（messages 経由維持・AE-PHP-2 厳守 / section-per-file ≤ 200 行 / AE-PHP-1〜6 全準拠）
+    - [x] **P18-D-1. HomeClient.tsx Aesop 化**（完了: 2026-04-30 / commit 9716ea7 / 5-band editorial / Cormorant Garamond serif / paradigm-paper/paper-deep/ink 三段階段背景 / SakuraPetals 削除 / 既存 messages keys 完全維持）
+    - [x] **P18-D-2. PageHero / about / services / contact Aesop 化**（完了: 2026-04-30 / PageHero を全面 Aesop パターンに書き換え→inner page 全部に伝播 / about・services・contact ページを Aesop voice に / 旧 violet-indigo gradient CTA を ink reverse closing band に変換 / pricing/blog/faq/service detail の Aesop 化は P18-D-3 に分割）
+    - [x] **P18-D-3. 残ページ Aesop 化 + cleanup**（完了: 2026-04-30 / 10 ページ全 Aesop 化: pricing 236→200行 / blog 161→145行 / faq 165→130行 / works 165→145行 / legal 49→60行 / privacy 81→110行 / services/{web 73→95, meo 93→130, seo 102→145, ai 91→140} / 旧 src/components/Header.tsx Footer.tsx 削除 (orphan 確認済) / 全 14 routes 200 OK / **AE-PHP-2 i18n sweep は未実施** — about/services/contact/pricing/blog/faq/works/legal/privacy/4 service detail に hardcoded JP/EN 残置・既存実装と同等のレベル・P18 リニューアル前から存在する技術債務であり P18 で導入したものではない / 次セッションで全ページ messages 抽出を行う）
+
+### P18 確定方針（2026-04-30 ユーザ承認）
+
+1. **4 PR 段階リリース** A→B→C→D 順
+2. **Modern Tech × Aesop ハイブリッド** — Sericia の warm beige (#f5f0e8) ではなく cooler neutral cream (#f8f8f6) + ink #121419 + indigo refined accent。Sericia とブランド衝突回避
+3. **dark mode 入れる** — `[data-theme="dark"]` 切替・`next-themes` 採用
+4. **EC 系不要 components はスキップ** — Cart/Checkout/Crossmint/Wishlist/ProductCard/NotifyMe/Drop/SamplerBanner/SakuraFall/AnimatedHeart は移植しない
+5. **`/report/[slug]` は Aesop 化対象外** — s10-4 提案ページ 4 鉄則アーキ維持。提案ページは KPI / 訴求重視で別 design language
 
 ## ✅ 完了
 

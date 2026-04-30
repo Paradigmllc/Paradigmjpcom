@@ -5,6 +5,19 @@ import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import { filterByLocale, coerceLocale, localeFindOptions } from "@/lib/cms/filters"
 
+/**
+ * /[locale]/services — Productized service catalogue, Aesop voice.
+ *
+ * P18-D-2 rewrite. PageHero already paper-bg + serif (handled by the
+ * shared PageHero rewrite). Card grid switches from gradient illustration
+ * tiles to hairline alternating rows: image-tile (paper-deep) on one side,
+ * editorial copy on the other. CTA closing band is paradigm-ink reverse.
+ *
+ * Empty state: minimal message + outline CTA (no accent pill chrome).
+ *
+ * AE-PHP-1: 130 lines.
+ */
+
 export const dynamic = "force-dynamic"
 
 interface Props {
@@ -32,14 +45,6 @@ type ServiceDoc = {
   sortOrder?: number
 }
 
-const COLOR_CYCLE = ["indigo", "emerald", "amber", "purple"] as const
-const COLOR_MAP: Record<string, string> = {
-  indigo: "from-indigo-500 to-indigo-600",
-  emerald: "from-emerald-500 to-emerald-600",
-  amber: "from-amber-500 to-amber-600",
-  purple: "from-purple-500 to-purple-600",
-}
-
 export default async function ServicesPage({ params }: Props) {
   const { locale: rawLocale } = await params
   const locale = coerceLocale(rawLocale)
@@ -64,82 +69,97 @@ export default async function ServicesPage({ params }: Props) {
   return (
     <>
       <PageHero
-        badge={isJa ? "Services" : "Services"}
+        badge="Services"
         title={isJa ? "サービス一覧" : "Productized Services"}
         desc={
           isJa
             ? "デジタル技術で事業を加速する、ソリューション一覧。"
             : "Productized engagements that help foreign SMBs enter and scale in Japan."
         }
-        accent="indigo"
       />
 
-      <section className="py-24 px-6 bg-white">
-        <div className="max-w-6xl mx-auto">
+      <section className="bg-paradigm-paper paradigm-section">
+        <div className="max-w-6xl mx-auto px-6 md:px-12">
           {services.length === 0 ? (
-            <div className="text-center py-20">
-              <p className="text-lg text-text-muted mb-6">
+            <div className="text-center py-16 max-w-xl mx-auto">
+              <p className="text-[15px] text-paradigm-ink-soft leading-[1.85] mb-10">
                 {isJa
                   ? "現在、公開中のサービスはありません。詳細は直接お問い合わせください。"
                   : "No services are currently published. Please contact us for a tailored engagement."}
               </p>
               <Link
                 href="/contact"
-                className="inline-flex bg-accent text-white px-8 py-3 rounded-xl font-semibold hover:bg-accent/90 transition-colors"
+                className="inline-flex items-center gap-2 border border-paradigm-ink text-paradigm-ink px-8 py-4 text-[12px] tracking-[0.18em] uppercase hover:bg-paradigm-ink hover:text-paradigm-paper transition-colors"
               >
-                {isJa ? "お問い合わせ" : "Contact Us"}
+                {isJa ? "お問い合わせ" : "Contact us"}
               </Link>
             </div>
           ) : (
-            <div className="space-y-20">
+            <div className="space-y-24 md:space-y-32">
               {services.map((s, i) => {
-                const color = COLOR_CYCLE[i % COLOR_CYCLE.length]
                 const features = (s.features ?? []).map((f) => f.feature).filter(Boolean) as string[]
+                const reversed = i % 2 === 1
                 return (
-                  <div
+                  <article
                     key={String(s.id)}
-                    className={`flex flex-col ${i % 2 === 1 ? "md:flex-row-reverse" : "md:flex-row"} items-center gap-12`}
+                    className={`flex flex-col ${reversed ? "md:flex-row-reverse" : "md:flex-row"} gap-10 md:gap-16 items-stretch`}
                   >
+                    {/* Image tile — paper-deep editorial card, no gradient */}
                     <div className="flex-1 w-full">
-                      <div
-                        className={`relative rounded-3xl bg-gradient-to-br ${COLOR_MAP[color]} p-12 text-white aspect-[4/3] flex items-center justify-center`}
-                      >
-                        <div className="text-center">
-                          <span className="text-7xl block mb-4">{s.icon ?? "✨"}</span>
-                          {s.tagline && <p className="text-2xl font-bold">{s.tagline}</p>}
+                      <div className="relative bg-paradigm-paper-deep aspect-[4/3] flex items-center justify-center border border-paradigm-line">
+                        <div className="text-center px-8">
+                          {s.icon && (
+                            <span aria-hidden className="block mb-4 text-[44px] leading-none opacity-70">
+                              {s.icon}
+                            </span>
+                          )}
+                          {s.tagline && (
+                            <p className="font-display text-[24px] md:text-[28px] leading-[1.2] text-paradigm-ink">
+                              {s.tagline}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
-                    <div className="flex-1">
-                      <h2 className="text-3xl font-bold text-primary mb-4">{s.name ?? "—"}</h2>
+
+                    {/* Editorial copy column */}
+                    <div className="flex-1 flex flex-col justify-center">
+                      <p className="paradigm-eyebrow mb-5">
+                        {String(i + 1).padStart(2, "0")}
+                      </p>
+                      <h2 className="font-display text-[32px] md:text-[44px] leading-[1.15] tracking-[-0.01em] text-paradigm-ink mb-6">
+                        {s.name ?? "—"}
+                      </h2>
                       {features.length > 0 && (
-                        <ul className="space-y-2 mb-8">
+                        <ul className="border-t border-paradigm-line mb-10">
                           {features.map((f, idx) => (
-                            <li key={idx} className="flex items-start gap-2 text-sm">
-                              <span className="text-accent mt-0.5">&#10003;</span>
-                              <span className="text-text-muted">{f}</span>
+                            <li
+                              key={idx}
+                              className="border-b border-paradigm-line py-3 text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.7]"
+                            >
+                              {f}
                             </li>
                           ))}
                         </ul>
                       )}
-                      <div className="flex gap-3">
+                      <div className="flex gap-3 flex-wrap">
                         {s.slug && (
                           <Link
                             href={`/services/${s.slug}`}
-                            className="px-6 py-3 bg-accent text-white rounded-xl font-semibold hover:bg-accent/90 transition-colors text-sm"
+                            className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3 text-[12px] tracking-[0.18em] uppercase hover:bg-paradigm-accent transition-colors"
                           >
-                            {isJa ? "詳しく見る" : "Learn More"}
+                            {isJa ? "詳しく見る" : "Learn more"}
                           </Link>
                         )}
                         <Link
                           href="/contact"
-                          className="px-6 py-3 border border-gray-200 text-text-muted rounded-xl font-semibold hover:border-accent hover:text-accent transition-colors text-sm"
+                          className="inline-flex items-center gap-2 border border-paradigm-line text-paradigm-ink-soft hover:border-paradigm-ink hover:text-paradigm-ink px-7 py-3 text-[12px] tracking-[0.18em] uppercase transition-colors"
                         >
-                          {isJa ? "相談する" : "Get in Touch"}
+                          {isJa ? "相談する" : "Get in touch"}
                         </Link>
                       </div>
                     </div>
-                  </div>
+                  </article>
                 )
               })}
             </div>
@@ -147,21 +167,25 @@ export default async function ServicesPage({ params }: Props) {
         </div>
       </section>
 
-      <section className="py-20 px-6 bg-gradient-to-r from-accent to-indigo-600">
-        <div className="max-w-3xl mx-auto text-center text-white">
-          <h2 className="text-3xl font-bold mb-4">
-            {isJa ? "どのサービスが最適かわからない？" : "Not sure which service fits?"}
+      {/* CTA closing — ink reverse */}
+      <section className="bg-paradigm-ink text-paradigm-paper paradigm-section">
+        <div className="max-w-3xl mx-auto px-6 md:px-12 text-center">
+          <p className="paradigm-eyebrow text-paradigm-paper/60 mb-6">Together</p>
+          <h2 className="font-display text-[32px] md:text-[52px] leading-[1.1] tracking-[-0.015em] text-paradigm-paper mb-6">
+            {isJa
+              ? "どのサービスが最適かわからない？"
+              : "Not sure which service fits?"}
           </h2>
-          <p className="text-lg text-white/80 mb-8">
+          <p className="text-[15px] md:text-[17px] text-paradigm-paper/65 max-w-xl mx-auto mb-10 leading-[1.85]">
             {isJa
               ? "無料相談で御社に最適なプランをご提案します。"
               : "Book a free consultation and we'll scope the right engagement for you."}
           </p>
           <Link
             href="/contact"
-            className="inline-flex bg-white text-accent px-10 py-4 rounded-xl font-bold text-lg hover:bg-gray-50 transition-all shadow-lg"
+            className="inline-flex items-center gap-2 border border-paradigm-paper text-paradigm-paper px-10 py-4 text-[12px] tracking-[0.18em] uppercase hover:bg-paradigm-paper hover:text-paradigm-ink transition-colors"
           >
-            {isJa ? "無料相談を予約する" : "Book a Free Consultation"}
+            {isJa ? "無料相談を予約する" : "Book a free consultation"}
           </Link>
         </div>
       </section>
