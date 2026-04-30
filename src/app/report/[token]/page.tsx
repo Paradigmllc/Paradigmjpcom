@@ -1,15 +1,16 @@
 /**
- * Legacy /report/[token] — 308 permanent redirect to /ja/report/[token]
+ * /report/[token] — 308 permanent redirect to /ja/report/[token]
  *
- * なぜこのファイルが必要か:
- *   - appexx.me 側から配信された過去のメール・LP・ブックマークは
- *     ロケールプレフィックスなしの paradigmjp.com/report/{token} を指している。
- *   - next-intl v4 の localePrefix: "always" により新規URLは必ず
- *     /ja/... または /en/... になったため、旧URLを 308 で吸収する。
- *   - 308（Permanent Redirect）を使う理由: クローラに「恒久的に移動した」と伝え
- *     被リンクの価値を /ja/report/{token} に集約させる。
- *     301 ではなく 308 を選ぶのは、HTTP methodを保持してくれるから
- *     （将来 POST beacon が legacy URL に来たときも /ja/ に引き継がれる）。
+ * 2026-04-30 拡張: 「顧客向けページ canonical = /[locale]/report/[slug]」永久ルール
+ * (Appexxme CLAUDE.md s10-4) 準拠。本 shim は token (legacy diagnostic_reports) と
+ * slug (proposal_pages) の両形式を /ja/ にリダイレクトする (param 名は便宜上 token)。
+ *
+ * 役割:
+ *   - appexx.me 側から配信されるロケールプレフィックスなし URL の正規化
+ *     (paradigmjp.com/report/{slug-or-token} → /ja/report/{slug-or-token})
+ *   - next-intl v4 の localePrefix: "always" 配下に統合
+ *   - 308 (Permanent Redirect) で被リンクの価値を /ja/ に集約
+ *   - HTTP method を保持 (POST beacon も /ja/ に引き継がれる)
  */
 
 import { permanentRedirect } from "next/navigation"

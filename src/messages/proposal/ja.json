@@ -1,0 +1,103 @@
+{
+  "nav": {
+    "overview": "概要",
+    "diagnosis": "分析",
+    "demo": "制作イメージ",
+    "video": "動画レポート",
+    "improvement": "改善効果",
+    "market": "市場動向",
+    "cases": "実績",
+    "whyus": "選ばれる理由",
+    "contact": "ご相談"
+  },
+  "hero": {
+    "badge": "御社専用にカスタマイズされたご提案",
+    "title_company_suffix": "様へのご提案書",
+    "subtitle": "現状のサイトを分析し、機会損失を最小化するための具体的な施策を提示します。",
+    "metric_score": "診断スコア",
+    "metric_score_unit": "100点満点",
+    "metric_issues": "改善課題数",
+    "metric_issues_sub": "AI診断検出",
+    "metric_reply_rate": "口コミ返信率",
+    "metric_reply_rate_sub": "競合平均{competitor}%",
+    "loss_warning": "あなたのサイト、年間{loss}万円の損失を放置していませんか？",
+    "loss_detail": "診断スコア{score}/100。{detail}"
+  },
+  "diagnosis": {
+    "label": "ANALYSIS",
+    "title": "現状の課題を可視化",
+    "subtitle": "{name}様のサイトを 16 ツールで並列診断しました",
+    "strengths_title": "強み",
+    "weaknesses_title": "課題",
+    "score_label": "総合スコア"
+  },
+  "demo": {
+    "label": "PREVIEW",
+    "title": "制作イメージ",
+    "subtitle": "御社向けにカスタマイズしたモック",
+    "tab_home": "ホーム",
+    "tab_menu": "メニュー",
+    "tab_reviews": "レビュー管理",
+    "open_full": "フルスクリーンで開く"
+  },
+  "video": {
+    "label": "VIDEO REPORT",
+    "title": "60秒で分かる御社の現状",
+    "subtitle": "AI が御社サイトを分析し、改善ポイントを動画で解説",
+    "play": "動画を再生",
+    "duration": "{seconds}秒",
+    "not_ready": "動画レポートを生成中です。完成次第ご連絡します。"
+  },
+  "opportunity": {
+    "label": "OPPORTUNITY",
+    "title": "今あなたのサイトで失われている機会",
+    "subtitle": "問題を放置することで失われている価値の試算",
+    "monthly_loss_label": "月間推定損失",
+    "annual_loss_label": "年間推定損失",
+    "recovery_label": "改善で回復可能"
+  },
+  "reciprocity": {
+    "label": "AI ASSIST SAMPLE",
+    "title": "AI が自動生成した返信サンプル",
+    "subtitle": "未返信のレビューに対して AI が文脈を読んで返信案を提示",
+    "original": "投稿",
+    "reply": "AI返信案"
+  },
+  "market": {
+    "label": "MARKET INSIGHT",
+    "title": "市場動向",
+    "subtitle": "業界全体のトレンドと御社のポジション"
+  },
+  "cases": {
+    "label": "RESULTS",
+    "title": "導入実績",
+    "subtitle": "同業種での改善実績"
+  },
+  "whyus": {
+    "label": "WHY PARADIGM",
+    "title": "Paradigm が選ばれる理由",
+    "subtitle": "他社にはない強みで、{name}様のビジネスを加速します",
+    "feature_speed": "圧倒的なスピード",
+    "feature_speed_desc": "従来の制作会社より 5 倍速い納品",
+    "feature_ai": "AI 自動化",
+    "feature_ai_desc": "クロール・分析・提案まで AI が自動実行",
+    "feature_full_stack": "ワンストップ対応",
+    "feature_full_stack_desc": "戦略・制作・運用・改善まで一気通貫",
+    "feature_global": "多言語対応",
+    "feature_global_desc": "12 言語自動翻訳でグローバル展開支援"
+  },
+  "cta": {
+    "title": "まずは無料相談から",
+    "subtitle": "オンライン 15 分・お気軽にどうぞ",
+    "button": "無料で相談する（15分）",
+    "or": "または",
+    "phone": "お電話でもどうぞ",
+    "back": "← 他の方法でもご相談いただけます"
+  },
+  "footer": {
+    "copyright": "© Paradigm 合同会社",
+    "powered": "Powered by Appexxme",
+    "privacy": "プライバシーポリシー",
+    "terms": "利用規約"
+  }
+}
