@@ -10,14 +10,25 @@ export function generateStaticParams() {
   return BLOG_POSTS.map((p) => ({ slug: p.slug }))
 }
 
-export function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  return params.then(({ slug }) => {
+export function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string; locale: string }>
+}): Promise<Metadata> {
+  return params.then(({ slug, locale }) => {
     const post = getPost(slug)
-    if (!post) return { title: "記事が見つかりません" }
+    const isJa = locale === "ja"
+    if (!post) return { title: isJa ? "記事が見つかりません" : "Article not found" }
     return {
       title: post.title,
       description: post.excerpt,
-      openGraph: { title: post.title, description: post.excerpt, type: "article", publishedTime: post.date },
+      openGraph: {
+        title: post.title,
+        description: post.excerpt,
+        type: "article",
+        publishedTime: post.date,
+        locale: isJa ? "ja_JP" : "en_US",
+      },
     }
   })
 }
@@ -93,14 +104,38 @@ function renderMarkdown(md: string) {
   return html.join("\n")
 }
 
-export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params
+export default async function BlogPostPage({
+  params,
+}: {
+  params: Promise<{ slug: string; locale: string }>
+}) {
+  const { slug, locale } = await params
   const post = getPost(slug)
   if (!post) notFound()
+  const isJa = locale === "ja"
+  const orgName = isJa ? "Paradigm合同会社" : "Paradigm LLC"
+
+  const T = isJa
+    ? {
+        readTime: `${post.date} · ${post.readTime}で読める`,
+        back: "← ブログ一覧に戻る",
+        ctaTitle: "この記事についてご相談ください",
+        ctaHighlight: "ご相談",
+        ctaDesc: "御社に合った具体的な提案をいたします。",
+        ctaButton: "無料相談を予約する",
+      }
+    : {
+        readTime: `${post.date} · ${post.readTime} read`,
+        back: "← Back to all posts",
+        ctaTitle: "Talk to us about this article",
+        ctaHighlight: "Talk",
+        ctaDesc: "We'll tailor a concrete proposal for your business.",
+        ctaButton: "Book a free consultation",
+      }
 
   return (
     <>
-      <PageHero badge={post.category} title={post.title} desc={`${post.date} · ${post.readTime}で読める`} />
+      <PageHero badge={post.category} title={post.title} desc={T.readTime} />
 
       <article className="relative bg-paradigm-paper paradigm-section overflow-hidden">
         <div className="paradigm-mesh opacity-20" />
@@ -112,17 +147,17 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       <section className="relative bg-paradigm-paper-deep py-8 overflow-hidden">
         <FadeIn className="max-w-3xl mx-auto px-6 md:px-8">
           <Link href="/blog" className="paradigm-eyebrow text-paradigm-ink-soft hover:text-paradigm-accent transition-colors inline-flex items-center gap-2">
-            ← ブログ一覧に戻る
+            {T.back}
           </Link>
         </FadeIn>
       </section>
 
       <RichCtaBand
         eyebrow="Talk"
-        title="この記事についてご相談ください"
-        highlight="ご相談"
-        desc="御社に合った具体的な提案をいたします。"
-        buttonLabel="無料相談を予約する"
+        title={T.ctaTitle}
+        highlight={T.ctaHighlight}
+        desc={T.ctaDesc}
+        buttonLabel={T.ctaButton}
       />
 
       <script
@@ -134,8 +169,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             headline: post.title,
             description: post.excerpt,
             datePublished: post.date,
-            author: { "@type": "Organization", name: "Paradigm合同会社" },
-            publisher: { "@type": "Organization", name: "Paradigm合同会社", url: "https://paradigmjp.com" },
+            author: { "@type": "Organization", name: orgName },
+            publisher: { "@type": "Organization", name: orgName, url: "https://paradigmjp.com" },
+            inLanguage: locale,
           }),
         }}
       />

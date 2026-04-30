@@ -226,12 +226,19 @@ export default async function LocaleLayout({ children, params }: Props) {
               "@type": "WebSite",
               "@id": "https://paradigmjp.com#website",
               url: "https://paradigmjp.com",
-              name: "Paradigm合同会社",
+              name: locale === "ja" ? "Paradigm合同会社" : "Paradigm LLC",
               inLanguage: ["ja", "en", "ko", "zh", "de", "fr", "es", "pt", "ru", "ar"],
-              publisher: { "@type": "Organization", "@id": "https://paradigmjp.com#organization", name: "Paradigm合同会社" },
+              publisher: {
+                "@type": "Organization",
+                "@id": "https://paradigmjp.com#organization",
+                name: locale === "ja" ? "Paradigm合同会社" : "Paradigm LLC",
+              },
               potentialAction: {
                 "@type": "SearchAction",
-                target: { "@type": "EntryPoint", urlTemplate: "https://paradigmjp.com/ja/blog?q={search_term_string}" },
+                target: {
+                  "@type": "EntryPoint",
+                  urlTemplate: `https://paradigmjp.com/${locale}/blog?q={search_term_string}`,
+                },
                 "query-input": "required name=search_term_string",
               },
             }),
