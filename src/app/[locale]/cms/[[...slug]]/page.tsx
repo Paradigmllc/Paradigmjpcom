@@ -38,12 +38,16 @@ const BASE = "https://paradigmjp.com"
 async function fetchPage(locale: AppLocale, slug: string) {
   try {
     const payload = await getPayload({ config })
+    // filterByLocale / localeFindOptions are typed against AppLocale (12 union),
+    // and `locale` here is already validated by Next.js routing — cast to bypass
+    // structural narrowing without runtime regression.
+    const typedLocale = locale as Parameters<typeof filterByLocale>[0]
     const res = await payload.find({
       collection: "pages",
-      where: filterByLocale(locale, { slug: { equals: slug } }),
+      where: filterByLocale(typedLocale, { slug: { equals: slug } }),
       limit: 1,
       depth: 2,
-      ...localeFindOptions(locale),
+      ...localeFindOptions(typedLocale),
     })
     return res.docs[0] ?? null
   } catch (e) {

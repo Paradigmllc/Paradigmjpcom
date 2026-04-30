@@ -28,7 +28,7 @@ async function loadKpis(): Promise<{ kpis: Kpi[]; recentLeads: Array<{ id: strin
       sort: "-createdAt",
       depth: 0,
     })
-    const recentLeads = (recentLeadsRes.docs as Array<Record<string, unknown>>).map((d) => ({
+    const recentLeads = (recentLeadsRes.docs as unknown as Array<Record<string, unknown>>).map((d) => ({
       id: (d.id as string | number) ?? "",
       name: (d.name as string) ?? "",
       email: (d.email as string) ?? "",
