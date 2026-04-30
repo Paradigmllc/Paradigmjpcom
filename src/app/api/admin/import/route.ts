@@ -134,26 +134,31 @@ export async function POST(req: NextRequest) {
           const keyVal = row[body.upsertKey]
           if (keyVal !== undefined && keyVal !== null) {
             const existing = await payload.find({
-              collection: body.collection as Parameters<typeof payload.find>[0]["collection"],
+              collection: body.collection,
               where: { [body.upsertKey]: { equals: keyVal } },
               limit: 1,
               depth: 0,
-            })
+            } as Parameters<typeof payload.find>[0])
             if (existing.totalDocs > 0) {
+              // Payload v3 collection slugs form a discriminated union with
+              // `data`; with `body.collection` typed as `string` we cannot
+              // satisfy that narrowing without a runtime collection-by-collection
+              // dispatch. The whole-object cast keeps the boundary local
+              // and the runtime safety guard is ALLOWED_COLLECTIONS above.
               await payload.update({
-                collection: body.collection as Parameters<typeof payload.update>[0]["collection"],
+                collection: body.collection,
                 id: existing.docs[0].id,
-                data: row as Parameters<typeof payload.update>[0]["data"],
-              })
+                data: row,
+              } as Parameters<typeof payload.update>[0])
               results.updated++
               continue
             }
           }
         }
         await payload.create({
-          collection: body.collection as Parameters<typeof payload.create>[0]["collection"],
-          data: row as Parameters<typeof payload.create>[0]["data"],
-        })
+          collection: body.collection,
+          data: row,
+        } as Parameters<typeof payload.create>[0])
         results.created++
       } catch (e) {
         results.failed++

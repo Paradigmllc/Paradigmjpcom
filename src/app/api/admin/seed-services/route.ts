@@ -159,20 +159,24 @@ export async function POST(req: Request) {
 
       let docId: string | number
       if (existing.length > 0) {
-        const updated = await payload.update({
+        // Payload v3 narrows `data` against the collection slug; the seed
+        // shape (string availableLocales[]) widens slightly past the
+        // generated Service type — cast as `unknown` then to the parameter
+        // shape to bypass without an unsafe `any`.
+        const updated = (await payload.update({
           collection: "services",
           id: existing[0].id,
           data: baseDataJa,
           locale: "ja",
-        })
+        } as unknown as Parameters<typeof payload.update>[0])) as { id: string | number }
         docId = updated.id
         results.push({ slug: svc.slug, action: "updated" })
       } else {
-        const created = await payload.create({
+        const created = (await payload.create({
           collection: "services",
           data: baseDataJa,
           locale: "ja",
-        })
+        } as unknown as Parameters<typeof payload.create>[0])) as { id: string | number }
         docId = created.id
         results.push({ slug: svc.slug, action: "created" })
       }

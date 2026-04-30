@@ -28,9 +28,9 @@ function HeroRender(b: AnyBlock) {
   return (
     <section className={`relative px-6 py-24 ${variant === "centered" ? "text-center" : ""} bg-gradient-to-b from-violet-50 via-white to-white`}>
       <div className="max-w-5xl mx-auto">
-        {b.badge && <span className="inline-block px-3 py-1 text-xs font-bold rounded-full bg-accent/10 text-accent mb-4">{String(b.badge)}</span>}
+        {!!b.badge && <span className="inline-block px-3 py-1 text-xs font-bold rounded-full bg-accent/10 text-accent mb-4">{String(b.badge)}</span>}
         <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 mb-4">{String(b.title ?? "")}</h1>
-        {b.subtitle && <p className="text-base md:text-lg text-slate-600 max-w-2xl mx-auto mb-8">{String(b.subtitle)}</p>}
+        {!!b.subtitle && <p className="text-base md:text-lg text-slate-600 max-w-2xl mx-auto mb-8">{String(b.subtitle)}</p>}
         <div className="flex flex-wrap gap-3 justify-center">
           {primary?.href && (
             <a href={primary.href} className="h-11 px-6 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-bold inline-flex items-center shadow-lg hover:shadow-xl transition-shadow">
@@ -65,9 +65,9 @@ function SectionRender(b: AnyBlock) {
   return (
     <section className={`${bg} py-20 px-6`}>
       <div className={`max-w-5xl mx-auto ${align === "center" ? "text-center" : "text-left"}`}>
-        {b.kicker && <span className="inline-block text-xs font-bold tracking-widest text-accent uppercase mb-3">{String(b.kicker)}</span>}
+        {!!b.kicker && <span className="inline-block text-xs font-bold tracking-widest text-accent uppercase mb-3">{String(b.kicker)}</span>}
         <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 mb-3">{String(b.title ?? "")}</h2>
-        {b.subtitle && <p className="text-base text-slate-600 max-w-3xl mx-auto leading-relaxed">{String(b.subtitle)}</p>}
+        {!!b.subtitle && <p className="text-base text-slate-600 max-w-3xl mx-auto leading-relaxed">{String(b.subtitle)}</p>}
       </div>
     </section>
   )
@@ -81,7 +81,7 @@ function CardGridRender(b: AnyBlock) {
   return (
     <section className="bg-white py-16 px-6">
       <div className="max-w-6xl mx-auto">
-        {b.title && <h2 className="text-2xl md:text-3xl font-bold text-slate-900 text-center mb-10">{String(b.title)}</h2>}
+        {!!b.title && <h2 className="text-2xl md:text-3xl font-bold text-slate-900 text-center mb-10">{String(b.title)}</h2>}
         <div className={`grid grid-cols-1 ${colsClass} gap-5`}>
           {cards.map((c, i) => {
             const isHi = !!c.highlighted
@@ -112,7 +112,7 @@ function CTARender(b: AnyBlock) {
     <section className={`${bg} py-20 px-6`}>
       <div className="max-w-3xl mx-auto text-center">
         <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-3">{String(b.title ?? "")}</h2>
-        {b.subtitle && <p className={`text-base ${isDark ? "text-white/80" : "text-slate-600"} mb-8`}>{String(b.subtitle)}</p>}
+        {!!b.subtitle && <p className={`text-base ${isDark ? "text-white/80" : "text-slate-600"} mb-8`}>{String(b.subtitle)}</p>}
         <div className="flex flex-wrap gap-3 justify-center">
           {primary?.href && (
             <a href={primary.href} className={`h-12 px-7 rounded-xl ${isDark ? "bg-white text-violet-700" : "bg-violet-600 text-white"} text-sm font-bold inline-flex items-center shadow-xl hover:scale-[1.03] transition-transform`}>
@@ -135,8 +135,8 @@ function FAQRender(b: AnyBlock) {
   return (
     <section className="bg-white py-20 px-6">
       <div className="max-w-3xl mx-auto">
-        {b.title && <h2 className="text-3xl md:text-4xl font-bold text-slate-900 text-center mb-3">{String(b.title)}</h2>}
-        {b.subtitle && <p className="text-base text-slate-600 text-center mb-10">{String(b.subtitle)}</p>}
+        {!!b.title && <h2 className="text-3xl md:text-4xl font-bold text-slate-900 text-center mb-3">{String(b.title)}</h2>}
+        {!!b.subtitle && <p className="text-base text-slate-600 text-center mb-10">{String(b.subtitle)}</p>}
         <div className="space-y-3">
           {items.map((item, i) => (
             <details key={i} className="group rounded-2xl border border-slate-200 bg-white p-5 open:bg-slate-50">
