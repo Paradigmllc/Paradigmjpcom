@@ -1,5 +1,5 @@
 /**
- * /api/report/[token] — 公開診断レポート API (paradigmjp.com)
+ * /api/report/[slug] — 公開診断レポート API (paradigmjp.com)
  *
  * 設計メモ:
  *   - appexx.me と同じ `diagnostic_reports` テーブルを共有（Supabase 1個）
@@ -14,10 +14,10 @@ import { getServiceSupabase } from "@/lib/supabase"
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ token: string }> },
+  { params }: { params: Promise<{ slug: string }> },
 ) {
   try {
-    const { token } = await params
+    const { slug } = await params
     const db = getServiceSupabase()
     if (!db) {
       return NextResponse.json({ error: "server_not_configured" }, { status: 500 })
@@ -26,7 +26,7 @@ export async function GET(
     const { data: report, error } = await db
       .from("diagnostic_reports")
       .select("*")
-      .eq("token", token)
+      .eq("token", slug)
       .eq("status", "active")
       .single()
 
@@ -98,22 +98,22 @@ export async function GET(
 
     return NextResponse.json({ report })
   } catch (e) {
-    console.error("GET /api/report/[token] failed:", e)
+    console.error("GET /api/report/[slug] failed:", e)
     return NextResponse.json({ error: String(e) }, { status: 500 })
   }
 }
 
 /**
- * POST /api/report/[token] — 滞在時間 beacon
+ * POST /api/report/[slug] — 滞在時間 beacon
  * navigator.sendBeacon 経由で Content-Type が text/plain になる可能性があるため
  * JSON.parse を try-catch で包む。
  */
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ token: string }> },
+  { params }: { params: Promise<{ slug: string }> },
 ) {
   try {
-    const { token } = await params
+    const { slug } = await params
     const db = getServiceSupabase()
     if (!db) return NextResponse.json({ success: false }, { status: 500 })
 
@@ -130,7 +130,7 @@ export async function POST(
       const { data: report } = await db
         .from("diagnostic_reports")
         .select("id, avg_duration_seconds, view_count, is_hot, lead_id, business_name")
-        .eq("token", token)
+        .eq("token", slug)
         .single()
 
       if (report) {
@@ -170,7 +170,7 @@ export async function POST(
 
     return NextResponse.json({ success: true })
   } catch (e) {
-    console.error("POST /api/report/[token] failed:", e)
+    console.error("POST /api/report/[slug] failed:", e)
     return NextResponse.json({ success: false }, { status: 500 })
   }
 }
