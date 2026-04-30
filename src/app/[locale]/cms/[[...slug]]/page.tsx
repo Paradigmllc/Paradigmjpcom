@@ -20,7 +20,7 @@ import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { getPayload } from "payload"
 import config from "@payload-config"
-import { coerceLocale, filterByLocale, localeFindOptions } from "@/lib/cms/filters"
+import { coerceLocale, filterByLocale, localeFindOptions, type AppLocale } from "@/lib/cms/filters"
 import BlockRenderer from "@/blocks/BlockRenderer"
 import JsonLd from "@/components/seo/JsonLd"
 import { buildArticleSchema, buildBreadcrumbSchema } from "@/lib/seo/schemas"
@@ -35,7 +35,7 @@ interface PageProps {
 
 const BASE = "https://paradigmjp.com"
 
-async function fetchPage(locale: string, slug: string) {
+async function fetchPage(locale: AppLocale, slug: string) {
   try {
     const payload = await getPayload({ config })
     const res = await payload.find({
