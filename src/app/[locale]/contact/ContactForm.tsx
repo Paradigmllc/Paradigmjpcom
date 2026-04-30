@@ -3,10 +3,36 @@
 /**
  * ContactForm — bilingual (P18-D-11). Receives `locale` prop, switches all
  * labels / placeholders / messages between JA and EN.
+ *
+ * 2026-05-01 audit: Cloudflare Turnstile invisible widget 統合。
+ *   NEXT_PUBLIC_TURNSTILE_SITE_KEY が設定されている時のみ widget 表示。
+ *   未設定時は完全にスキップ (CAPTCHA なしで送信可)。
  */
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import Script from "next/script"
 import { Link } from "@/i18n/routing"
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ""
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (
+        container: HTMLElement,
+        options: {
+          sitekey: string
+          callback: (token: string) => void
+          "error-callback"?: () => void
+          "expired-callback"?: () => void
+          theme?: "light" | "dark" | "auto"
+          size?: "normal" | "compact" | "invisible"
+        },
+      ) => string
+      reset: (widgetId?: string) => void
+    }
+  }
+}
 
 const FIELD_BASE =
   "w-full px-0 py-3 bg-transparent border-b border-paradigm-line focus:border-paradigm-accent outline-none transition-colors text-[15px] text-paradigm-ink placeholder:text-paradigm-ink-mute"
@@ -71,6 +97,37 @@ export function ContactForm({ locale = "ja" }: Props) {
   const [services, setServices] = useState<string[]>([])
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [msg, setMsg] = useState("")
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const turnstileRef = useRef<HTMLDivElement>(null)
+  const turnstileWidgetIdRef = useRef<string | null>(null)
+
+  // Turnstile widget 描画 (TURNSTILE_SITE_KEY 設定時のみ)
+  useEffect(() => {
+    if (!TURNSTILE_SITE_KEY) return
+    if (!turnstileRef.current) return
+    let mounted = true
+    const tryRender = () => {
+      if (!mounted) return
+      const ts = window.turnstile
+      if (!ts || !turnstileRef.current) {
+        setTimeout(tryRender, 200)
+        return
+      }
+      if (turnstileWidgetIdRef.current) return
+      turnstileWidgetIdRef.current = ts.render(turnstileRef.current, {
+        sitekey: TURNSTILE_SITE_KEY,
+        callback: (token: string) => setTurnstileToken(token),
+        "expired-callback": () => setTurnstileToken(null),
+        "error-callback": () => setTurnstileToken(null),
+        theme: "light",
+        size: "normal",
+      })
+    }
+    tryRender()
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const toggleService = (s: string) =>
     setServices((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]))
@@ -82,7 +139,7 @@ export function ContactForm({ locale = "ja" }: Props) {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, services, locale }),
+        body: JSON.stringify({ ...form, services, locale, turnstileToken }),
       })
       const data = await res.json()
       if (res.ok) {
@@ -170,6 +227,19 @@ export function ContactForm({ locale = "ja" }: Props) {
         </select>
       </div>
 
+      {/* Cloudflare Turnstile (TURNSTILE_SITE_KEY 設定時のみ表示) */}
+      {TURNSTILE_SITE_KEY && (
+        <>
+          <Script
+            src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+            strategy="afterInteractive"
+            async
+            defer
+          />
+          <div ref={turnstileRef} className="flex justify-center" aria-label="CAPTCHA" />
+        </>
+      )}
+
       {status === "error" && (
         <div className="paradigm-glass rounded-xl p-4 border border-pink-500/40 paradigm-glow-sm">
           <p className="text-[13px] text-pink-500">{msg}</p>
@@ -178,7 +248,7 @@ export function ContactForm({ locale = "ja" }: Props) {
 
       <button
         type="submit"
-        disabled={status === "loading"}
+        disabled={status === "loading" || (Boolean(TURNSTILE_SITE_KEY) && !turnstileToken)}
         className="group relative w-full inline-flex items-center justify-center gap-2 bg-paradigm-ink text-paradigm-paper py-3.5 rounded-xl text-[12px] tracking-[0.14em] uppercase font-semibold paradigm-glow-md hover:paradigm-glow-lg disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden transition-all"
       >
         <span aria-hidden className="absolute inset-0 bg-gradient-to-r from-pink-300/0 via-paradigm-glow/40 to-paradigm-tech/0 bg-[length:200%_100%] animate-[gradientShift_2.5s_linear_infinite] opacity-0 group-hover:opacity-100 transition-opacity" />

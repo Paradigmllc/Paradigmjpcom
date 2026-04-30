@@ -15,6 +15,7 @@
 import { useEffect } from "react"
 import { useLocale } from "next-intl"
 import Link from "next/link"
+import { captureException } from "@/lib/error-monitor"
 
 export default function Error({
   error,
@@ -27,8 +28,12 @@ export default function Error({
   const isJa = locale === "ja"
 
   useEffect(() => {
-    console.error("[route-error]", { message: error.message, digest: error.digest, stack: error.stack })
-  }, [error])
+    captureException(error, {
+      source: "[locale]/error.tsx",
+      severity: "error",
+      context: { digest: error.digest, locale },
+    })
+  }, [error, locale])
 
   const T = isJa
     ? {

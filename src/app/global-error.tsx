@@ -10,6 +10,7 @@
  */
 
 import { useEffect } from "react"
+import { captureException } from "@/lib/error-monitor"
 
 export default function GlobalError({
   error,
@@ -19,7 +20,11 @@ export default function GlobalError({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error("[global-error]", { message: error.message, digest: error.digest })
+    captureException(error, {
+      source: "global-error",
+      severity: "fatal",
+      context: { digest: error.digest },
+    })
   }, [error])
 
   return (

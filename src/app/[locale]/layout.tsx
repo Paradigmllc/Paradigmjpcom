@@ -266,7 +266,12 @@ export default async function LocaleLayout({ children, params }: Props) {
                   <SiteWrapper>
                     <PageTransition>{children}</PageTransition>
                   </SiteWrapper>
-                  <SiteFooter />
+                  <SiteFooter
+                    settings={{
+                      contactEmail: settings.contact.email,
+                      social: settings.social,
+                    }}
+                  />
                   <CookieConsent />
                   <BackToTop />
                 </div>

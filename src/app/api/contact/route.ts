@@ -16,6 +16,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { checkRateLimit, getClientIp, verifyTurnstile } from "@/lib/rate-limit"
+import { captureException } from "@/lib/error-monitor"
 
 export async function POST(req: NextRequest) {
   try {
@@ -130,7 +131,7 @@ export async function POST(req: NextRequest) {
         : "Thank you. We'll reply within one business day.",
     })
   } catch (e) {
-    console.error("[contact] unexpected error:", e)
+    await captureException(e, { source: "/api/contact", severity: "error" })
     return NextResponse.json(
       { error: "送信に失敗しました。しばらく後にお試しください。" },
       { status: 500 },

@@ -11,6 +11,7 @@ import type { Metadata } from "next"
 import { Mail, Clock, Calendar } from "lucide-react"
 import PageHero from "@/components/PageHero"
 import { ContactForm } from "./ContactForm"
+import { calendarUrlFor, getSiteSettings } from "@/lib/settings"
 
 interface Props { params: Promise<{ locale: string }> }
 
@@ -59,6 +60,9 @@ export default async function ContactPage({ params }: Props) {
   const { locale } = await params
   const isJa = locale === "ja"
   const SIDEBAR_BLOCKS = isJa ? SIDEBAR_BLOCKS_JA : SIDEBAR_BLOCKS_EN
+  // PayloadCMS Settings global から admin 編集可能な calendar URL を取得
+  const settings = await getSiteSettings(locale)
+  const bookingUrl = calendarUrlFor(settings, locale)
 
   return (
     <>
@@ -105,7 +109,7 @@ export default async function ContactPage({ params }: Props) {
                 {isJa ? "Cal.com でオンライン相談をすぐにご予約いただけます。" : "Book directly via Cal.com."}
               </p>
               <a
-                href="https://cal.appexx.me"
+                href={bookingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex w-full justify-center items-center gap-2 bg-paradigm-ink text-paradigm-paper rounded-xl py-3 text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
