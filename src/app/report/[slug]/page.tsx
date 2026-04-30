@@ -1,5 +1,5 @@
 /**
- * /report/[token] — 308 permanent redirect to /ja/report/[token]
+ * /report/[slug] — 308 permanent redirect to /ja/report/[slug]
  *
  * 2026-04-30 拡張: 「顧客向けページ canonical = /[locale]/report/[slug]」永久ルール
  * (Appexxme CLAUDE.md s10-4) 準拠。本 shim は token (legacy diagnostic_reports) と
@@ -18,8 +18,8 @@ import { permanentRedirect } from "next/navigation"
 export default async function LegacyReportRedirect({
   params,
 }: {
-  params: Promise<{ token: string }>
+  params: Promise<{ slug: string }>
 }) {
-  const { token } = await params
-  permanentRedirect(`/ja/report/${token}`)
+  const { slug } = await params
+  permanentRedirect(`/ja/report/${slug}`)
 }

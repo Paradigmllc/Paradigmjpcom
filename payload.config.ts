@@ -36,6 +36,7 @@ import { Pricing } from "./src/collections/Pricing"
 import { Leads } from "./src/collections/Leads"
 import { Media } from "./src/collections/Media"
 import { AuditLogs } from "./src/collections/AuditLogs"
+import { Pages } from "./src/collections/Pages"
 import { Settings } from "./src/globals/Settings"
 
 const filename = fileURLToPath(import.meta.url)
@@ -75,7 +76,7 @@ export default buildConfig({
         if (col === "faqs" && id) return `${SERVER_URL}/ja/faq?highlight=${id}&draft=true`
         return `${SERVER_URL}/ja?draft=true`
       },
-      collections: ["posts", "services", "works", "pricing", "faqs"],
+      collections: ["posts", "services", "works", "pricing", "faqs", "pages"],
       breakpoints: [
         { label: "Mobile", name: "mobile", width: 375, height: 667 },
         { label: "Tablet", name: "tablet", width: 768, height: 1024 },
@@ -91,7 +92,7 @@ export default buildConfig({
     fallbackLanguage: "ja",
     supportedLanguages: { ja, en, ko, zh, de, fr, es, pt, ru, ar, vi, id },
   },
-  collections: [Users, Posts, Services, FAQs, Works, Pricing, Leads, Media, AuditLogs],
+  collections: [Users, Posts, Services, FAQs, Works, Pricing, Leads, Media, AuditLogs, Pages],
   globals: [Settings],
   editor: lexicalEditor({
     features: ({ defaultFeatures }) => [

@@ -182,6 +182,46 @@ export default async function LocaleLayout({ children, params }: Props) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(SERVICES_JSONLD) }}
         />
+        {/* 2026-04-30 SEO/GEO 強化: LocalBusiness + WebSite (SearchAction 付) を全ページに注入 */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "ProfessionalService",
+              "@id": "https://paradigmjp.com#organization",
+              name: "Paradigm合同会社",
+              alternateName: ["Paradigm LLC", "パラダイム"],
+              url: "https://paradigmjp.com",
+              logo: "https://paradigmjp.com/logo.png",
+              image: "https://paradigmjp.com/og-image.png",
+              description: "Web 制作・MEO 対策・SEO/GEO・AI 導入支援。Paradigm合同会社が提供する 4 つのデジタル支援サービス。",
+              address: { "@type": "PostalAddress", addressCountry: "JP", addressRegion: "Tokyo" },
+              sameAs: ["https://github.com/Paradigmllc"],
+              priceRange: "¥¥¥",
+              areaServed: ["JP", "US", "EU", "Worldwide"],
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "@id": "https://paradigmjp.com#website",
+              url: "https://paradigmjp.com",
+              name: "Paradigm合同会社",
+              inLanguage: ["ja", "en", "ko", "zh", "de", "fr", "es", "pt", "ru", "ar"],
+              publisher: { "@type": "Organization", "@id": "https://paradigmjp.com#organization", name: "Paradigm合同会社" },
+              potentialAction: {
+                "@type": "SearchAction",
+                target: { "@type": "EntryPoint", urlTemplate: "https://paradigmjp.com/ja/blog?q={search_term_string}" },
+                "query-input": "required name=search_term_string",
+              },
+            }),
+          }}
+        />
       </head>
       <body className="min-h-screen">
         <NextIntlClientProvider locale={locale} messages={messages}>
