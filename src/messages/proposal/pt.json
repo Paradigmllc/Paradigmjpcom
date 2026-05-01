@@ -1,0 +1,103 @@
+{
+  "nav": {
+    "overview": "Visão geral",
+    "diagnosis": "Análise",
+    "demo": "Demonstração",
+    "video": "Relatório em vídeo",
+    "improvement": "Melhorias",
+    "market": "Tendências de mercado",
+    "cases": "Casos de sucesso",
+    "whyus": "Por que nos escolher",
+    "contact": "Contato"
+  },
+  "hero": {
+    "badge": "Proposta personalizada exclusivamente para sua empresa",
+    "title_company_suffix": "Proposta para {name}",
+    "subtitle": "Analisamos seu site atual e apresentamos medidas concretas para minimizar a perda de oportunidades.",
+    "metric_score": "Pontuação de diagnóstico",
+    "metric_score_unit": "Pontuação máxima de 100",
+    "metric_issues": "Número de problemas a melhorar",
+    "metric_issues_sub": "Detectado por IA",
+    "metric_reply_rate": "Taxa de resposta a comentários",
+    "metric_reply_rate_sub": "Média concorrente {competitor}%",
+    "loss_warning": "Você está ignorando uma perda anual de {loss} man ienes em seu site?",
+    "loss_detail": "Pontuação de diagnóstico {score}/100. {detail}."
+  },
+  "diagnosis": {
+    "label": "ANÁLISE",
+    "title": "Visualize os desafios atuais",
+    "subtitle": "Site da {name} analisado com 16 ferramentas em paralelo",
+    "strengths_title": "Pontos fortes",
+    "weaknesses_title": "Desafios",
+    "score_label": "Pontuação geral"
+  },
+  "demo": {
+    "label": "PRÉ-VISUALIZAÇÃO",
+    "title": "Demonstração",
+    "subtitle": "Mock personalizado para sua empresa",
+    "tab_home": "Início",
+    "tab_menu": "Menu",
+    "tab_reviews": "Gerenciamento de avaliações",
+    "open_full": "Abrir em tela cheia"
+  },
+  "video": {
+    "label": "RELATÓRIO EM VÍDEO",
+    "title": "Entenda a situação atual da sua empresa em 60 segundos",
+    "subtitle": "IA analisa seu site e explica os pontos de melhoria em vídeo",
+    "play": "Reproduzir vídeo",
+    "duration": "{seconds} segundos",
+    "not_ready": "O relatório em vídeo está sendo gerado. Entraremos em contato assim que estiver pronto."
+  },
+  "opportunity": {
+    "label": "OPORTUNIDADE",
+    "title": "Oportunidades perdidas atualmente em seu site",
+    "subtitle": "Estimativa do valor perdido por negligenciar os problemas",
+    "monthly_loss_label": "Perda mensal estimada",
+    "annual_loss_label": "Perda anual estimada",
+    "recovery_label": "Recuperável com melhorias"
+  },
+  "reciprocity": {
+    "label": "EXEMPLO DE RESPOSTA DE IA",
+    "title": "Amostra de resposta gerada automaticamente por IA",
+    "subtitle": "Para avaliações não respondidas, a IA lê o contexto e sugere uma resposta",
+    "original": "Postagem",
+    "reply": "Resposta sugerida pela IA"
+  },
+  "market": {
+    "label": "INSIGHT DE MERCADO",
+    "title": "Tendências de mercado",
+    "subtitle": "Tendências gerais do setor e posição da sua empresa"
+  },
+  "cases": {
+    "label": "RESULTADOS",
+    "title": "Casos de sucesso",
+    "subtitle": "Resultados de melhoria no mesmo setor"
+  },
+  "whyus": {
+    "label": "POR QUE PARADIGM",
+    "title": "Por que a Paradigm é a escolha certa",
+    "subtitle": "Vantagens exclusivas que aceleram o negócio da {name}",
+    "feature_speed": "Velocidade incomparável",
+    "feature_speed_desc": "Entrega 5x mais rápida que agências tradicionais",
+    "feature_ai": "Automação com IA",
+    "feature_ai_desc": "IA executa automaticamente desde o rastreamento até a análise e proposta",
+    "feature_full_stack": "Solução completa",
+    "feature_full_stack_desc": "Da estratégia à produção, operação e melhoria, tudo integrado",
+    "feature_global": "Suporte multilíngue",
+    "feature_global_desc": "Tradução automática em 12 idiomas para expansão global"
+  },
+  "cta": {
+    "title": "Agende uma consulta gratuita",
+    "subtitle": "Online, 15 minutos, sem compromisso",
+    "button": "Consultar gratuitamente (15 min)",
+    "or": "ou",
+    "phone": "Ligue para nós",
+    "back": "← Você também pode consultar por outros meios"
+  },
+  "footer": {
+    "copyright": "© Paradigm 合同会社",
+    "powered": "Powered by Appexxme",
+    "privacy": "Política de Privacidade",
+    "terms": "Termos de Uso"
+  }
+}

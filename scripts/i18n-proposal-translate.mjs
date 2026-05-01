@@ -120,10 +120,21 @@ Return ONLY the translated JSON with the same key structure.`
   const translated = JSON.parse(cleaned)
 
   // silently-JA-leak 検知 (target != ja)
+  // 例外: 法人固有名詞 "合同会社" は翻訳しない仕様 (system prompt 6番)
+  // 例外: zh (Chinese) は Han 範囲 (一-龥) を CJK 共通文字として共有するため除外
   if (targetLocale !== "ja") {
     const flat = JSON.stringify(translated)
-    if (/[ぁ-んァ-ヶー一-龥]/.test(flat)) {
-      throw new Error(`silently-JA-leak detected in ${targetLocale} output`)
+      .replace(/合同会社/g, "")  // 法人格は許容
+      .replace(/Paradigm/g, "")   // ブランド名は許容
+    // Hiragana / Katakana は確実に日本語固有 (zh では発生しない)
+    const hasHiraganaKatakana = /[ぁ-んァ-ヶー]/.test(flat)
+    // Han characters (一-龥): zh では合法・他 locale では JA leak の可能性
+    const hasHan = /[一-龥]/.test(flat)
+    if (hasHiraganaKatakana) {
+      throw new Error(`silently-JA-leak detected (hiragana/katakana) in ${targetLocale}`)
+    }
+    if (hasHan && targetLocale !== "zh") {
+      throw new Error(`silently-JA-leak detected (Han chars) in ${targetLocale}`)
     }
   }
 
