@@ -5,7 +5,14 @@ import { Sparkles } from "@/components/magicui/sparkles"
 import type { SectionProps } from "./_types"
 
 export default function Cta({ data, theme, t, onCtaClick }: SectionProps) {
-  const ctaUrl = data.template_cta_url || "https://cal.appexx.me"
+  // H-2 (2026-05-01): "appexx.me 顧客表示禁止" 対応
+  // NEXT_PUBLIC_CAL_URL を Coolify env に設定すれば paradigmjp.com 配下の予約 URL に切替可能
+  // (例: https://cal.paradigmjp.com を CNAME alias で運用)
+  // env 未設定時は内部 /contact ページにフォールバック (cal.appexx.me 直リンク廃止)
+  const ctaUrl =
+    data.template_cta_url
+    || process.env.NEXT_PUBLIC_CAL_URL
+    || "/contact"
   const ctaText = data.template_cta_text || t("cta.button")
 
   return (

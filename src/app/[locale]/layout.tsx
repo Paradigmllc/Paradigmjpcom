@@ -203,11 +203,17 @@ export default async function LocaleLayout({ children, params }: Props) {
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="apple-touch-icon" href="/favicon.svg" />
         {umamiId && (
-          <script
-            defer
-            src="https://analytics.appexx.me/script.js"
-            data-website-id={umamiId}
-          />
+          // H-2 (2026-05-01): "appexx.me 顧客表示禁止" 対応
+          // NEXT_PUBLIC_UMAMI_HOST 未設定時は analytics 無効化 (cal.appexx.me 直接表示を回避)
+          // Coolify env に NEXT_PUBLIC_UMAMI_HOST=https://analytics.paradigmjp.com 設定推奨
+          // (CNAME alias で analytics.appexx.me に解決)
+          process.env.NEXT_PUBLIC_UMAMI_HOST && (
+            <script
+              defer
+              src={`${process.env.NEXT_PUBLIC_UMAMI_HOST}/script.js`}
+              data-website-id={umamiId}
+            />
+          )
         )}
         <script
           type="application/ld+json"
