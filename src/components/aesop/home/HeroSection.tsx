@@ -23,7 +23,12 @@ import { Sparkles } from "@/components/magicui/sparkles"
 import { Meteors } from "@/components/magicui/meteors"
 
 const EASE = [0.22, 1, 0.36, 1] as const
-const HERO_VIDEO_URL = "https://videos.pexels.com/video-files/3209663/3209663-uhd_2560_1440_25fps.mp4"
+// Hero video sources (priority order — Pexels CDN primary, mirror fallback).
+// 2026-05-01 audit: 環境変数 NEXT_PUBLIC_HERO_VIDEO_URL で R2 / Cloudflare Stream
+// 等の自社 CDN URL に置き換え可能。デフォルトは Pexels CDN にフォールバック。
+const HERO_VIDEO_URL =
+  process.env.NEXT_PUBLIC_HERO_VIDEO_URL
+  ?? "https://videos.pexels.com/video-files/3209663/3209663-uhd_2560_1440_25fps.mp4"
 
 const STAT_DEFS = [
   { key: "support", to: 200, gradient: "from-pink-300 via-paradigm-glow to-paradigm-tech" },
@@ -51,6 +56,8 @@ export default function HeroSection() {
       className="relative min-h-[88vh] flex items-center justify-center overflow-hidden bg-paradigm-ink"
     >
       <motion.div style={{ y: heroParallaxY }} className="absolute inset-0 z-0">
+        {/* gradient mesh poster (LCP-stable・video が読込中もこちらが見える) */}
+        <div className="absolute inset-0 paradigm-mesh-vivid opacity-90" />
         <video
           autoPlay
           loop
@@ -59,6 +66,13 @@ export default function HeroSection() {
           aria-hidden="true"
           tabIndex={-1}
           poster="/paper-grain.svg"
+          preload="metadata"
+          onError={(e) => {
+            // Pexels CDN が落ちても poster + meshグラデが見えるため graceful degrade。
+            // eslint-disable-next-line no-console
+            console.warn("[hero] video load failed, falling back to gradient", e)
+            e.currentTarget.style.display = "none"
+          }}
           className="absolute inset-0 w-full h-full object-cover motion-reduce:hidden"
         >
           <source src={HERO_VIDEO_URL} type="video/mp4" />

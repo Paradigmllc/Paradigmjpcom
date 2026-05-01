@@ -13,7 +13,9 @@
     "test:coverage": "vitest run --coverage",
     "e2e": "playwright test",
     "e2e:local": "E2E_BASE_URL=http://localhost:3000 playwright test",
-    "e2e:headed": "playwright test --headed"
+    "e2e:headed": "playwright test --headed",
+    "e2e:a11y": "playwright test e2e/a11y.spec.ts",
+    "lhci": "lhci autorun --config=lighthouserc.json"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -48,6 +50,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.3",
     "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4.1.4",
     "@testing-library/jest-dom": "^6.9.1",
