@@ -28,10 +28,12 @@ export default function ReportPageWrapper() {
   const [error, setError] = useState("")
   const startTime = useRef(Date.now())
 
-  // データ取得 (appexx.me API を常に使用 — paradigmjp.com からも共通)
+  // データ取得 (paradigmjp.com 内 API proxy 経由・H-2 2026-05-01)
+  // 旧: 顧客ブラウザから直接 appexx.me を叩いていたが、ユーザ制約 "appexx.me 表示禁止" 違反
+  // 新: 相対パス /api/sales-automation → paradigmjp.com 内で server-side proxy or 直接 Supabase fetch
   useEffect(() => {
     if (!slug) return
-    fetch("https://appexx.me/api/sales-automation", {
+    fetch("/api/sales-automation", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "get_prospect", slug }),
     }).then(r => r.json()).then(d => {
@@ -87,13 +89,13 @@ export default function ReportPageWrapper() {
     }).catch(() => { setError("読み込みに失敗しました / Loading failed"); setLoading(false) })
   }, [slug])
 
-  // 閲覧トラッキング (appexx.me API 経由)
+  // 閲覧トラッキング (paradigmjp.com 内 API proxy 経由・H-2 2026-05-01)
   useEffect(() => {
     if (!slug || !data) return
     const send = () => {
       const sec = Math.round((Date.now() - startTime.current) / 1000)
       if (sec > 3) {
-        navigator.sendBeacon("https://appexx.me/api/demo-view", JSON.stringify({
+        navigator.sendBeacon("/api/demo-view", JSON.stringify({
           prospect_id: data.id, slug, duration_sec: sec,
           pattern_id: data.matched_pattern?.id || null,
           pattern_name: data.matched_pattern?.name || null,
@@ -102,7 +104,7 @@ export default function ReportPageWrapper() {
     }
     window.addEventListener("beforeunload", send)
     const timer = setTimeout(() => {
-      fetch("https://appexx.me/api/demo-view", {
+      fetch("/api/demo-view", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prospect_id: data.id, slug, duration_sec: 30, pattern_id: data.matched_pattern?.id || null, pattern_name: data.matched_pattern?.name || null }),
       }).catch(() => {})
