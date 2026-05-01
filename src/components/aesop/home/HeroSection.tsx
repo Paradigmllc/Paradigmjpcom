@@ -89,7 +89,10 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.9, ease: EASE }}
-          className="font-display text-[40px] md:text-[64px] leading-[1.05] tracking-[-0.025em] text-paradigm-paper mb-6"
+          // clamp() で 320px 端末から 1440px+ までスムーズなレスポンシブ。
+          // min: 32px (smol mobile折返し抑制) / preferred: 6vw / max: 64px (デスクトップ)
+          style={{ fontSize: "clamp(2rem, 6vw, 4rem)" }}
+          className="font-display leading-[1.05] tracking-[-0.025em] text-paradigm-paper mb-6"
         >
           <span className="block">
             <span className="bg-gradient-to-r from-pink-300 via-paradigm-glow via-paradigm-tech to-paradigm-glow bg-clip-text text-transparent bg-[length:300%_100%] animate-[gradientShift_8s_ease_infinite]">

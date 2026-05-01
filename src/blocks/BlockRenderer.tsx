@@ -245,6 +245,137 @@ function RichTextRender(b: AnyBlock) {
   )
 }
 
+function StatsRender(b: AnyBlock) {
+  const stats = (b.stats as Array<{ value?: string; label?: string; sublabel?: string }>) ?? []
+  const bgKey = (b.background as string) ?? "default"
+  const bg =
+    bgKey === "dark"
+      ? "bg-paradigm-ink text-paradigm-paper"
+      : bgKey === "surface"
+      ? "bg-paradigm-paper-deep"
+      : "bg-paradigm-paper"
+  const isDark = bgKey === "dark"
+  return (
+    <section className={`${bg} paradigm-section`}>
+      <div className="max-w-6xl mx-auto px-6 md:px-12 text-center">
+        {!!b.kicker && <p className={`paradigm-eyebrow mb-4 ${isDark ? "text-paradigm-glow" : ""}`}>{String(b.kicker)}</p>}
+        {!!b.title && (
+          <h2 className={`font-display text-[28px] md:text-[44px] leading-[1.15] tracking-[-0.01em] mb-4 ${isDark ? "text-paradigm-paper" : "text-paradigm-ink"}`}>
+            {String(b.title)}
+          </h2>
+        )}
+        {!!b.subtitle && (
+          <p className={`text-[15px] max-w-2xl mx-auto mb-12 leading-[1.85] ${isDark ? "text-paradigm-paper/65" : "text-paradigm-ink-soft"}`}>
+            {String(b.subtitle)}
+          </p>
+        )}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10">
+          {stats.map((s, i) => (
+            <div key={i} className="text-center">
+              <div className={`font-display text-[40px] md:text-[56px] leading-[1] mb-2 ${isDark ? "text-paradigm-paper" : "text-paradigm-ink"}`}>
+                {s.value ?? ""}
+              </div>
+              <div className={`paradigm-eyebrow mb-1 ${isDark ? "text-paradigm-glow" : "text-paradigm-accent"}`}>{s.label ?? ""}</div>
+              {s.sublabel && (
+                <div className={`text-[12px] ${isDark ? "text-paradigm-paper/55" : "text-paradigm-ink-mute"}`}>{s.sublabel}</div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function TestimonialsRender(b: AnyBlock) {
+  const items = (b.items as Array<{ name?: string; location?: string; text?: string; rating?: number }>) ?? []
+  return (
+    <section className="bg-paradigm-paper-deep paradigm-section">
+      <div className="max-w-6xl mx-auto px-6 md:px-12">
+        {!!b.kicker && <p className="paradigm-eyebrow text-paradigm-accent mb-4 text-center">{String(b.kicker)}</p>}
+        {!!b.title && (
+          <h2 className="font-display text-[28px] md:text-[44px] leading-[1.15] tracking-[-0.01em] text-paradigm-ink text-center mb-12">
+            {String(b.title)}
+          </h2>
+        )}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {items.map((it, i) => (
+            <figure key={i} className="paradigm-glass rounded-2xl p-6 paradigm-glow-sm hover:paradigm-glow-md transition-all">
+              {typeof it.rating === "number" && (
+                <div className="text-paradigm-accent mb-3 text-[14px]" aria-label={`${it.rating} / 5`}>
+                  {"★".repeat(Math.max(1, Math.min(5, Math.round(it.rating))))}
+                </div>
+              )}
+              <blockquote className="text-[14px] md:text-[15px] text-paradigm-ink leading-[1.85] mb-5">
+                “{it.text ?? ""}”
+              </blockquote>
+              <figcaption className="paradigm-eyebrow text-paradigm-ink-soft">
+                {it.name ?? ""}
+                {it.location && <span className="text-paradigm-ink-mute ml-2">· {it.location}</span>}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function ProcessRender(b: AnyBlock) {
+  const steps = (b.steps as Array<{ title?: string; description?: string }>) ?? []
+  return (
+    <section className="bg-paradigm-paper paradigm-section">
+      <div className="max-w-6xl mx-auto px-6 md:px-12">
+        {!!b.kicker && <p className="paradigm-eyebrow text-paradigm-accent mb-3">{String(b.kicker)}</p>}
+        {!!b.title && (
+          <h2 className="font-display text-[28px] md:text-[40px] leading-[1.15] tracking-[-0.01em] text-paradigm-ink mb-4">
+            {String(b.title)}
+          </h2>
+        )}
+        {!!b.subtitle && (
+          <p className="text-[15px] text-paradigm-ink-soft max-w-2xl mb-12 leading-[1.85]">{String(b.subtitle)}</p>
+        )}
+        <ol className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-paradigm-line">
+          {steps.map((s, i) => (
+            <li key={i} className="bg-paradigm-paper p-7">
+              <div className="paradigm-eyebrow text-paradigm-accent mb-3">0{i + 1}</div>
+              <h3 className="font-display text-[20px] md:text-[22px] leading-[1.2] text-paradigm-ink mb-3 tracking-[-0.015em]">
+                {s.title ?? ""}
+              </h3>
+              <p className="text-[13px] text-paradigm-ink-soft leading-[1.8]">{s.description ?? ""}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  )
+}
+
+function MarqueeRender(b: AnyBlock) {
+  const items = (b.items as Array<{ text?: string }>) ?? []
+  const direction = (b.direction as string) ?? "left"
+  const speed = (b.speed as string) ?? "normal"
+  // CSS animation duration based on speed setting (slower = larger value)
+  const duration = speed === "slow" ? "60s" : speed === "fast" ? "20s" : "40s"
+  const animDir = direction === "right" ? "reverse" : "normal"
+  const repeated = [...items, ...items, ...items] // 3x for seamless loop
+  return (
+    <section className="bg-paradigm-paper-deep py-8 overflow-hidden border-y border-paradigm-line">
+      <div
+        className="flex whitespace-nowrap"
+        style={{ animation: `gradientShift ${duration} linear infinite ${animDir}` }}
+      >
+        {repeated.map((it, i) => (
+          <span key={i} className="inline-flex items-center px-8 paradigm-eyebrow text-paradigm-ink-soft">
+            {it.text ?? ""}
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-paradigm-accent/40 ml-8" />
+          </span>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 const RENDERERS: Record<string, (b: AnyBlock) => React.ReactNode> = {
   hero: HeroRender,
   section: SectionRender,
@@ -252,6 +383,10 @@ const RENDERERS: Record<string, (b: AnyBlock) => React.ReactNode> = {
   cta: CTARender,
   faq: FAQRender,
   "rich-text": RichTextRender,
+  stats: StatsRender,
+  testimonials: TestimonialsRender,
+  process: ProcessRender,
+  marquee: MarqueeRender,
 }
 
 export default function BlockRenderer({ blocks }: { blocks: AnyBlock[] }) {

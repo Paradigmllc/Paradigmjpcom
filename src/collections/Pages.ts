@@ -8,6 +8,10 @@ import { CardGridBlock } from "../blocks/CardGrid"
 import { CTABlock } from "../blocks/CTA"
 import { FAQBlock } from "../blocks/FAQ"
 import { RichTextBlock } from "../blocks/RichText"
+import { StatsBlock } from "../blocks/Stats"
+import { TestimonialsBlock } from "../blocks/Testimonials"
+import { ProcessBlock } from "../blocks/Process"
+import { MarqueeBlock } from "../blocks/Marquee"
 
 /**
  * Pages collection — Block ベースの Visual Page Builder
@@ -142,6 +146,10 @@ export const Pages: CollectionConfig = {
         CTABlock,
         FAQBlock,
         RichTextBlock,
+        StatsBlock,
+        TestimonialsBlock,
+        ProcessBlock,
+        MarqueeBlock,
       ],
     },
     {

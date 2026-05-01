@@ -58,23 +58,28 @@ export default buildConfig({
         Logo: "/src/components/admin/Logo#default",
         Icon: "/src/components/admin/Icon#default",
       },
-      views: {
-        dashboard: {
-          Component: "/src/components/admin/Dashboard#default",
-        },
-      },
+      // 2026-05-01 audit cleanup: 旧 dashboard カスタム view を削除
+      // (admin/Dashboard.tsx が orphan だったため)。
+      // PayloadCMS デフォルトの dashboard が使われる。
     },
     livePreview: {
-      url: ({ data, collectionConfig }) => {
+      // locale-aware: admin が編集中の locale を URL に反映 (Pages collection と整合)。
+      url: ({ data, collectionConfig, locale }) => {
         const slug = (data as { slug?: string } | undefined)?.slug
         const id = (data as { id?: string | number } | undefined)?.id
         const col = collectionConfig?.slug
-        if (col === "posts" && slug) return `${SERVER_URL}/ja/blog/${slug}?draft=true`
-        if (col === "services" && slug) return `${SERVER_URL}/ja/services/${slug}?draft=true`
-        if (col === "works" && slug) return `${SERVER_URL}/ja/works/${slug}?draft=true`
-        if (col === "pricing" && id) return `${SERVER_URL}/ja/pricing?highlight=${id}&draft=true`
-        if (col === "faqs" && id) return `${SERVER_URL}/ja/faq?highlight=${id}&draft=true`
-        return `${SERVER_URL}/ja?draft=true`
+        const previewLocale =
+          (typeof locale === "object" && locale && "code" in locale
+            ? (locale as { code: string }).code
+            : undefined) ??
+          (typeof locale === "string" ? locale : undefined) ??
+          "ja"
+        if (col === "posts" && slug) return `${SERVER_URL}/${previewLocale}/blog/${slug}?draft=true`
+        if (col === "services" && slug) return `${SERVER_URL}/${previewLocale}/services/${slug}?draft=true`
+        if (col === "works" && slug) return `${SERVER_URL}/${previewLocale}/works/${slug}?draft=true`
+        if (col === "pricing" && id) return `${SERVER_URL}/${previewLocale}/pricing?highlight=${id}&draft=true`
+        if (col === "faqs" && id) return `${SERVER_URL}/${previewLocale}/faq?highlight=${id}&draft=true`
+        return `${SERVER_URL}/${previewLocale}?draft=true`
       },
       collections: ["posts", "services", "works", "pricing", "faqs", "pages"],
       breakpoints: [

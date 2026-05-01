@@ -9,8 +9,10 @@ export const AuditLogs: CollectionConfig = {
   },
   admin: {
     useAsTitle: "action",
-    defaultColumns: ["collection", "action", "userEmail", "documentId", "createdAt"],
-    description: "コレクション変更の監査ログ（自動記録・読み取り専用）",
+    defaultColumns: ["createdAt", "collection", "action", "userEmail", "documentId"],
+    listSearchableFields: ["collection", "documentId", "userEmail", "userRole"],
+    pagination: { defaultLimit: 50, limits: [25, 50, 100] },
+    description: "コレクション変更の監査ログ（自動記録・読み取り専用）。新しい順に表示。",
     group: "設定",
   },
   access: {

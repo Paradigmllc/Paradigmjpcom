@@ -143,6 +143,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "website",
       locale: meta.ogLocale,
       siteName: meta.ogSiteName,
+      images: [
+        {
+          url: `/${locale}/opengraph-image`,
+          width: 1200,
+          height: 630,
+          alt: meta.default,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: meta.default,
+      description: meta.description,
+      images: [`/${locale}/opengraph-image`],
     },
     robots: { index: true, follow: true },
   }

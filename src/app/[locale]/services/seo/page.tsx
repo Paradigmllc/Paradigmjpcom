@@ -13,6 +13,7 @@ import ServiceDetailLayout from "@/components/aesop/ServiceDetailLayout"
 import FadeIn from "@/components/aesop/FadeIn"
 import { BorderBeam } from "@/components/magicui/border-beam"
 import { getServiceByKey, getPricingFor } from "@/lib/data"
+import { buildServiceSchema, buildBreadcrumbSchema } from "@/lib/seo/schemas"
 
 interface Props { params: Promise<{ locale: string }> }
 
@@ -99,6 +100,18 @@ export default async function SeoServicePage({ params }: Props) {
   const isJa = locale === "ja"
   const service = getServiceByKey(locale, "seo")
   const pricing = getPricingFor(locale, "seo")
+  const serviceSchema = buildServiceSchema({
+    name: service.title,
+    description: service.desc,
+    url: `https://paradigmjp.com/${locale}/services/seo`,
+    locale,
+    serviceType: "Search Engine Optimization",
+  })
+  const breadcrumbSchema = buildBreadcrumbSchema([
+    { name: isJa ? "ホーム" : "Home", url: `https://paradigmjp.com/${locale}` },
+    { name: isJa ? "サービス" : "Services", url: `https://paradigmjp.com/${locale}/services` },
+    { name: service.title, url: `https://paradigmjp.com/${locale}/services/seo` },
+  ])
   return (
     <>
       <PageHero badge={isJa ? "SEO / GEO 対策" : "SEO / GEO"} title={service.title} desc={service.tagline} />
@@ -120,6 +133,10 @@ export default async function SeoServicePage({ params }: Props) {
         ctaDesc={isJa ? "SEO + GEO の無料サイト診断を実施中。" : "Free SEO + GEO site audit available."}
         ctaLabel={isJa ? "無料診断を受ける" : "Get a free audit"}
       />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }} />
+
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+
     </>
   )
 }

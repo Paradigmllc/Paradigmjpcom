@@ -12,6 +12,7 @@ import PageHero from "@/components/PageHero"
 import ServiceDetailLayout from "@/components/aesop/ServiceDetailLayout"
 import FadeIn from "@/components/aesop/FadeIn"
 import { getServiceByKey, getPricingFor } from "@/lib/data"
+import { buildServiceSchema, buildBreadcrumbSchema } from "@/lib/seo/schemas"
 
 interface Props { params: Promise<{ locale: string }> }
 
@@ -75,6 +76,18 @@ export default async function AiServicePage({ params }: Props) {
   const isJa = locale === "ja"
   const service = getServiceByKey(locale, "ai")
   const pricing = getPricingFor(locale, "ai")
+  const serviceSchema = buildServiceSchema({
+    name: service.title,
+    description: service.desc,
+    url: `https://paradigmjp.com/${locale}/services/ai`,
+    locale,
+    serviceType: "AI Integration",
+  })
+  const breadcrumbSchema = buildBreadcrumbSchema([
+    { name: isJa ? "ホーム" : "Home", url: `https://paradigmjp.com/${locale}` },
+    { name: isJa ? "サービス" : "Services", url: `https://paradigmjp.com/${locale}/services` },
+    { name: service.title, url: `https://paradigmjp.com/${locale}/services/ai` },
+  ])
   return (
     <>
       <PageHero badge={isJa ? "AI 導入支援" : "AI Integration"} title={service.title} desc={service.tagline} />
@@ -96,6 +109,10 @@ export default async function AiServicePage({ params }: Props) {
         ctaDesc={isJa ? "無料相談で AI 活用の可能性を診断します。" : "Free consultation to scope your AI roadmap."}
         ctaLabel={isJa ? "無料相談を予約する" : "Book a free consultation"}
       />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }} />
+
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+
     </>
   )
 }

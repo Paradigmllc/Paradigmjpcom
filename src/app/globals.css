@@ -353,3 +353,27 @@ body.no-grain::before { display: none; }
     linear-gradient(90deg, rgb(var(--paradigm-accent) / 0.06) 1px, transparent 1px);
   background-size: 48px 48px;
 }
+
+/* ─── prefers-reduced-motion blanket suppression (a11y / 5-1) ──────────────
+ * 動きに敏感なユーザー / OS 設定でアニメーションを抑制したいユーザーへの配慮。
+ * - すべての CSS animation を 0.01s に圧縮 (実質即時)
+ * - すべての CSS transition を 0.01s に圧縮
+ * - blob/marquee/gradient-shift 等の装飾アニメーション無効化
+ * - framer-motion 個別の motion-reduce:hidden は各 component 側で別途指定
+ *   (例: HeroSection の <video motion-reduce:hidden>)
+ * --------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .ph-blob-1,
+  .ph-blob-2,
+  .ph-blob-3 {
+    animation: none !important;
+  }
+}

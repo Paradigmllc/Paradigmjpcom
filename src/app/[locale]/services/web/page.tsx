@@ -11,6 +11,7 @@ import type { Metadata } from "next"
 import PageHero from "@/components/PageHero"
 import ServiceDetailLayout from "@/components/aesop/ServiceDetailLayout"
 import { getServiceByKey, getPricingFor } from "@/lib/data"
+import { buildServiceSchema, buildBreadcrumbSchema } from "@/lib/seo/schemas"
 
 interface Props { params: Promise<{ locale: string }> }
 
@@ -30,6 +31,19 @@ export default async function WebServicePage({ params }: Props) {
   const isJa = locale === "ja"
   const service = getServiceByKey(locale, "web")
   const pricing = getPricingFor(locale, "web")
+
+  const serviceSchema = buildServiceSchema({
+    name: service.title,
+    description: service.desc,
+    url: `https://paradigmjp.com/${locale}/services/web`,
+    locale,
+    serviceType: "Web Development",
+  })
+  const breadcrumbSchema = buildBreadcrumbSchema([
+    { name: isJa ? "ホーム" : "Home", url: `https://paradigmjp.com/${locale}` },
+    { name: isJa ? "サービス" : "Services", url: `https://paradigmjp.com/${locale}/services` },
+    { name: service.title, url: `https://paradigmjp.com/${locale}/services/web` },
+  ])
 
   return (
     <>
@@ -55,6 +69,8 @@ export default async function WebServicePage({ params }: Props) {
         ctaDesc={isJa ? "初回30分の無料オンライン相談を受け付けています。" : "First 30-minute consultation is on us."}
         ctaLabel={isJa ? "無料相談を予約する" : "Book a free consultation"}
       />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
     </>
   )
 }

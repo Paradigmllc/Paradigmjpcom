@@ -21,7 +21,7 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     include: ["src/**/*.{test,spec}.{ts,tsx}", "tests/**/*.{test,spec}.{ts,tsx}"],
-    exclude: ["node_modules", ".next", "dist", "src/payload-types.ts"],
+    exclude: ["node_modules", ".next", "dist", "src/payload-types.ts", "e2e/**"],
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "lcov"],
