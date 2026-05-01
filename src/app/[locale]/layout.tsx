@@ -14,6 +14,7 @@ import ScrollProgress from "@/components/aesop/ScrollProgress"
 import BackToTop from "@/components/aesop/BackToTop"
 import { getOrganizationJsonLd, getServicesJsonLd } from "@/lib/jsonld"
 import { getSiteSettings, umamiWebsiteIdFor } from "@/lib/settings"
+import { themeTokensToCss } from "@/lib/theme-tokens"
 import MaintenanceScreen from "@/components/MaintenanceScreen"
 import { routing } from "@/i18n/routing"
 import {
@@ -176,6 +177,8 @@ export default async function LocaleLayout({ children, params }: Props) {
   // PayloadCMS Settings global を取得 (admin で編集可能なサイト設定)
   const settings = await getSiteSettings(locale)
   const umamiId = umamiWebsiteIdFor(settings, locale) ?? process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ?? null
+  // admin が編集した color/font/radius tokens を CSS 変数として注入 (空なら ""・globals.css default を使用)
+  const themeOverrideCss = themeTokensToCss(settings.theme)
 
   return (
     <html lang={locale} dir={dir} suppressHydrationWarning>
@@ -264,6 +267,11 @@ export default async function LocaleLayout({ children, params }: Props) {
             }),
           }}
         />
+        {/* admin が PayloadCMS Settings.theme で編集した色/フォント/角丸を CSS 変数として注入。
+            globals.css の default を override する。settings.theme が null なら何も出力しない。 */}
+        {themeOverrideCss && (
+          <style id="theme-overrides" dangerouslySetInnerHTML={{ __html: themeOverrideCss }} />
+        )}
       </head>
       <body className="min-h-screen bg-paradigm-paper text-paradigm-ink antialiased">
         <ThemeProvider>

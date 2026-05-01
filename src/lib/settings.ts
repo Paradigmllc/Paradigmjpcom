@@ -9,6 +9,7 @@
  */
 
 import { cache } from "react"
+import type { ThemeTokens } from "./theme-tokens"
 
 export interface SiteSettings {
   siteName: string
@@ -39,6 +40,8 @@ export interface SiteSettings {
     ja?: string | null
     en?: string | null
   }
+  /** admin が編集可能な color / font / radius tokens (globals.css default を override) */
+  theme?: ThemeTokens | null
 }
 
 const DEFAULTS: SiteSettings = {
@@ -56,6 +59,7 @@ const DEFAULTS: SiteSettings = {
   maintenance: { maintenanceMode: false, maintenanceMessage: null },
   analytics: { umamiWebsiteId: null, umamiWebsiteIdEn: null },
   calendarUrl: { ja: "https://cal.appexx.me", en: "https://cal.appexx.me" },
+  theme: null, // null = globals.css default をそのまま使用
 }
 
 /**
@@ -80,6 +84,7 @@ export const getSiteSettings = cache(async (locale: string = "ja"): Promise<Site
       maintenance?: SiteSettings["maintenance"]
       analytics?: SiteSettings["analytics"]
       calendarUrl?: SiteSettings["calendarUrl"]
+      theme?: ThemeTokens | null
     }
 
     return {
@@ -91,6 +96,7 @@ export const getSiteSettings = cache(async (locale: string = "ja"): Promise<Site
       maintenance: { ...DEFAULTS.maintenance, ...(s.maintenance ?? {}) },
       analytics: { ...DEFAULTS.analytics, ...(s.analytics ?? {}) },
       calendarUrl: { ...DEFAULTS.calendarUrl, ...(s.calendarUrl ?? {}) },
+      theme: (s as { theme?: ThemeTokens | null }).theme ?? null,
     }
   } catch (e) {
     console.error("[settings] payload.findGlobal failed, using defaults:", e)

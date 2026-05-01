@@ -142,5 +142,73 @@ export const Settings: GlobalConfig = {
         },
       ],
     },
+    // 2026-05-01: admin で色・フォント・角丸を直接編集可能にする theme group。
+    // layout.tsx で themeTokensToCss() 経由で <style id="theme-overrides"> として注入。
+    {
+      name: "theme",
+      type: "group",
+      label: "デザインテーマ (色 / フォント / 角丸)",
+      admin: {
+        description:
+          "色・フォント・角丸を admin から編集します。空のままならデフォルトを使用。色は #FAFAF7 / rgb(250, 250, 247) / 250 250 247 のいずれかの形式。",
+      },
+      fields: [
+        {
+          name: "colors",
+          type: "group",
+          label: "カラーパレット",
+          fields: [
+            { name: "paper", type: "text", label: "Paper (背景)", admin: { description: "デフォルト: #FAFAF7" } },
+            { name: "paperDeep", type: "text", label: "Paper Deep (サーフェス)", admin: { description: "デフォルト: #F1F0EA" } },
+            { name: "ink", type: "text", label: "Ink (主要テキスト・暗色背景)", admin: { description: "デフォルト: #1C1C2E" } },
+            { name: "inkSoft", type: "text", label: "Ink Soft (副テキスト)" },
+            { name: "inkMute", type: "text", label: "Ink Mute (薄テキスト)" },
+            { name: "line", type: "text", label: "Line (罫線)" },
+            {
+              name: "accent",
+              type: "text",
+              label: "Accent (主要アクセント)",
+              admin: { description: "デフォルト: #6366F1 (インディゴ)" },
+            },
+            {
+              name: "tech",
+              type: "text",
+              label: "Tech (テクノロジーティール)",
+              admin: { description: "デフォルト: #14B8A6" },
+            },
+            { name: "glow", type: "text", label: "Glow (ハイライト)" },
+          ],
+        },
+        {
+          name: "fonts",
+          type: "group",
+          label: "フォントスタック",
+          fields: [
+            {
+              name: "display",
+              type: "text",
+              label: "Display フォント (見出し)",
+              admin: { description: "例: 'Noto Sans JP', system-ui, sans-serif" },
+            },
+            {
+              name: "body",
+              type: "text",
+              label: "Body フォント (本文)",
+              admin: { description: "例: 'Noto Sans', 'Noto Sans JP', sans-serif" },
+            },
+          ],
+        },
+        {
+          name: "radius",
+          type: "group",
+          label: "角丸",
+          fields: [
+            { name: "sm", type: "text", label: "Small (例: 8px)" },
+            { name: "md", type: "text", label: "Default (例: 12px)" },
+            { name: "lg", type: "text", label: "Large (例: 24px)" },
+          ],
+        },
+      ],
+    },
   ],
 }
