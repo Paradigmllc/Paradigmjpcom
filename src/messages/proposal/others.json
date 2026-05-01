@@ -1,0 +1,103 @@
+{
+  "nav": {
+    "overview": "Overview",
+    "diagnosis": "Analysis",
+    "demo": "Preview",
+    "video": "Video Report",
+    "improvement": "Improvement Results",
+    "market": "Market Trends",
+    "cases": "Results",
+    "whyus": "Why Us",
+    "contact": "Contact"
+  },
+  "hero": {
+    "badge": "A proposal customized specifically for your company",
+    "title_company_suffix": "Proposal for Your Company",
+    "subtitle": "We analyze your current website and present concrete measures to minimize opportunity loss.",
+    "metric_score": "Diagnostic Score",
+    "metric_score_unit": "out of 100",
+    "metric_issues": "Number of Improvement Issues",
+    "metric_issues_sub": "Detected by AI Diagnosis",
+    "metric_reply_rate": "Review Reply Rate",
+    "metric_reply_rate_sub": "Competitor Average {competitor}%",
+    "loss_warning": "Is your website overlooking an annual loss of {loss} million yen?",
+    "loss_detail": "Diagnostic score {score}/100. {detail}"
+  },
+  "diagnosis": {
+    "label": "ANALYSIS",
+    "title": "Visualize Current Issues",
+    "subtitle": "We performed a parallel diagnosis of {name}'s website using 16 tools.",
+    "strengths_title": "Strengths",
+    "weaknesses_title": "Weaknesses",
+    "score_label": "Overall Score"
+  },
+  "demo": {
+    "label": "PREVIEW",
+    "title": "Preview",
+    "subtitle": "A mockup customized for your company",
+    "tab_home": "Home",
+    "tab_menu": "Menu",
+    "tab_reviews": "Review Management",
+    "open_full": "Open Full Screen"
+  },
+  "video": {
+    "label": "VIDEO REPORT",
+    "title": "Understand Your Company's Current Situation in 60 Seconds",
+    "subtitle": "AI analyzes your website and explains improvement points in a video",
+    "play": "Play Video",
+    "duration": "{seconds} seconds",
+    "not_ready": "The video report is being generated. We will contact you upon completion."
+  },
+  "opportunity": {
+    "label": "OPPORTUNITY",
+    "title": "Opportunities Currently Lost on Your Website",
+    "subtitle": "Estimated value lost by neglecting the issues",
+    "monthly_loss_label": "Estimated Monthly Loss",
+    "annual_loss_label": "Estimated Annual Loss",
+    "recovery_label": "Recoverable through Improvement"
+  },
+  "reciprocity": {
+    "label": "AI ASSIST SAMPLE",
+    "title": "AI-Generated Reply Samples",
+    "subtitle": "For unreplied reviews, AI reads the context and suggests reply drafts",
+    "original": "Review",
+    "reply": "AI Reply Draft"
+  },
+  "market": {
+    "label": "MARKET INSIGHT",
+    "title": "Market Trends",
+    "subtitle": "Industry-wide trends and your company's position"
+  },
+  "cases": {
+    "label": "RESULTS",
+    "title": "Implementation Results",
+    "subtitle": "Improvement results in the same industry"
+  },
+  "whyus": {
+    "label": "WHY PARADIGM",
+    "title": "Why Choose Paradigm",
+    "subtitle": "With strengths that others don't have, we accelerate {name}'s business",
+    "feature_speed": "Overwhelming Speed",
+    "feature_speed_desc": "Delivery 5x faster than traditional production companies",
+    "feature_ai": "AI Automation",
+    "feature_ai_desc": "AI automatically executes crawling, analysis, and proposals",
+    "feature_full_stack": "One-Stop Solution",
+    "feature_full_stack_desc": "Seamlessly covers strategy, production, operation, and improvement",
+    "feature_global": "Multilingual Support",
+    "feature_global_desc": "Supports global expansion with automatic translation in 12 languages"
+  },
+  "cta": {
+    "title": "Start with a Free Consultation",
+    "subtitle": "15 minutes online, feel free to join",
+    "button": "Free Consultation (15 min)",
+    "or": "or",
+    "phone": "Feel free to call us",
+    "back": "← You can also consult via other methods"
+  },
+  "footer": {
+    "copyright": "© Paradigm LLC",
+    "powered": "Powered by Appexxme",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  }
+}

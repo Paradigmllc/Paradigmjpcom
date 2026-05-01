@@ -15,6 +15,7 @@ import { TestimonialBlock } from "./Testimonial"
 import { FAQBlock } from "./FAQ"
 import { FooterBlock } from "./Footer"
 import { VideoEmbedBlock } from "./VideoEmbed"
+import { HtmlEmbedBlock } from "./HtmlEmbed"
 
 interface BlockRendererProps {
   blocks: Block[]
@@ -69,6 +70,7 @@ export function BlockRenderer({ blocks, region }: BlockRendererProps) {
           case "faq":           return <FAQBlock key={block.id} {...(props as BlockProps["faq"])} />
           case "footer":        return <FooterBlock key={block.id} {...(props as BlockProps["footer"])} />
           case "video":         return <VideoEmbedBlock key={block.id} {...(props as BlockProps["video"])} />
+          case "html":          return <HtmlEmbedBlock key={block.id} {...(props as BlockProps["html"])} />
           default:
             // 未知の type は無視 (将来追加 block への前方互換性)
             console.warn(`[BlockRenderer] unknown block type: ${(block as Block).type}`)

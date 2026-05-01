@@ -76,6 +76,20 @@ export interface VideoEmbedProps {
   aspectRatio?: "16:9" | "4:3" | "1:1"
 }
 
+/**
+ * HtmlEmbedProps — 生 HTML を Block として埋め込む (Phase 3-A migration 用)。
+ * セキュリティ規約:
+ *   - admin が cms_content_blocks に書き込んだ HTML のみ render される
+ *   - Composer の Palette からは追加できない (UI 経由禁止)
+ *   - 用途: web_demos.html_content 等の legacy HTML を 1:1 移行する場合のみ
+ *   - 将来 LLM で semantic block に分解して置き換える前提
+ */
+export interface HtmlEmbedProps {
+  html: string              // sanitize 済みの HTML 文字列を期待
+  cssScope?: string         // クラスプレフィックス (CSS 衝突回避・任意)
+  source?: "web_demos" | "manual" | "import"  // 由来トラッキング
+}
+
 // ─── 統合 type — Block の discriminated union ──────────────────────
 
 export type BlockType =
@@ -87,6 +101,7 @@ export type BlockType =
   | "faq"
   | "footer"
   | "video"
+  | "html"
 
 export type BlockProps = {
   hero: HeroProps
@@ -97,6 +112,7 @@ export type BlockProps = {
   faq: FAQProps
   footer: FooterProps
   video: VideoEmbedProps
+  html: HtmlEmbedProps
 }
 
 export interface Block<T extends BlockType = BlockType> {
