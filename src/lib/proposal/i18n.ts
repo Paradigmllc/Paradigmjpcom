@@ -16,26 +16,37 @@
  */
 import type { SalesRegion } from "@/lib/stores/sales-region"
 
+// H-0-6 (2026-05-01): 12 locale 完全実装
+// scripts/i18n-proposal-translate.mjs で DeepSeek V4 Cache 経由で生成
 import jaMessages from "@/messages/proposal/ja.json"
 import enMessages from "@/messages/proposal/en.json"
+import koMessages from "@/messages/proposal/ko.json"
+import zhMessages from "@/messages/proposal/zh.json"
+import europeMessages from "@/messages/proposal/europe.json"
+import esMessages from "@/messages/proposal/es.json"
+import ptMessages from "@/messages/proposal/pt.json"
+import ruMessages from "@/messages/proposal/ru.json"
+import arMessages from "@/messages/proposal/ar.json"
+import seaMessages from "@/messages/proposal/sea.json"
+import africaMessages from "@/messages/proposal/africa.json"
+import othersMessages from "@/messages/proposal/others.json"
 
 type MessageMap = Record<string, unknown>
 
-// 全 locale 用 messages map (ja/en は実装・他は ja fallback で MVP)
-// 将来 admin endpoint で DeepSeek V4 に翻訳させて補完する
+// 全 12 locale 完全実装 (silently-JA-leak 防止規律準拠・en fallback 不要)
 const MESSAGES: Record<SalesRegion, MessageMap> = {
   ja: jaMessages as MessageMap,
   en: enMessages as MessageMap,
-  ko: enMessages as MessageMap,
-  zh: enMessages as MessageMap,
-  europe: enMessages as MessageMap,
-  es: enMessages as MessageMap,
-  pt: enMessages as MessageMap,
-  ru: enMessages as MessageMap,
-  ar: enMessages as MessageMap,
-  sea: enMessages as MessageMap,
-  africa: enMessages as MessageMap,
-  others: enMessages as MessageMap,
+  ko: koMessages as MessageMap,
+  zh: zhMessages as MessageMap,
+  europe: europeMessages as MessageMap,
+  es: esMessages as MessageMap,
+  pt: ptMessages as MessageMap,
+  ru: ruMessages as MessageMap,
+  ar: arMessages as MessageMap,
+  sea: seaMessages as MessageMap,
+  africa: africaMessages as MessageMap,
+  others: othersMessages as MessageMap,
 }
 
 function getNested(obj: MessageMap, path: string): string | undefined {
@@ -60,16 +71,23 @@ function interpolate(template: string, vars?: Record<string, string | number>): 
 
 /**
  * Returns a translation function `t(key, vars?)` for the given locale.
- * - Falls back to `ja` if key missing in target locale
- * - Falls back to the key itself if missing in both (visible bug indicator)
+ *
+ * silently-JA-leak 防止規律 (CLAUDE.md s10-5 #9):
+ *   - locale === "ja" の時のみ ja → en の順で fallback OK
+ *   - locale !== "ja" の時は en → key の順で fallback (JA を見せない)
+ *   - 全 12 locale が直接実装されているため、通常は fallback 不要
  */
 export function useProposalT(locale: SalesRegion = "ja") {
   return (key: string, vars?: Record<string, string | number>): string => {
-    const primary = getNested(MESSAGES[locale] ?? MESSAGES.ja, key)
+    const primary = getNested(MESSAGES[locale] ?? MESSAGES.en, key)
     if (primary !== undefined) return interpolate(primary, vars)
-    const fallback = getNested(MESSAGES.ja, key)
+
+    // ja は ja-self-fallback OK、それ以外は en fallback (JA leak 防止)
+    const fallbackLocale: SalesRegion = locale === "ja" ? "ja" : "en"
+    const fallback = getNested(MESSAGES[fallbackLocale], key)
     if (fallback !== undefined) return interpolate(fallback, vars)
-    // 開発時の missing key 可視化 (本番では英語で key そのものが出る・ESLint で防ぐ前提)
+
+    // 開発時の missing key 可視化
     if (process.env.NODE_ENV !== "production") {
       console.warn(`[proposal/i18n] missing key: "${key}" (locale: ${locale})`)
     }
