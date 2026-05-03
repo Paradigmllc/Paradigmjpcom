@@ -21,13 +21,27 @@ export { PROPOSAL_TEMPLATES } from "./proposal-templates-data"
 
 import { PROPOSAL_TEMPLATES, type ProposalTemplate, type DemoTab } from "./proposal-templates-data"
 
+// 業種マッチングパターン (proposal-templates-data の id と整合)
+const INDUSTRY_PATTERNS: { id: string; pattern: RegExp }[] = [
+  { id: "restaurant", pattern: /飲食|レストラン|カフェ|バー|居酒屋|寿司|ラーメン|焼肉|食/ },
+  { id: "beauty",     pattern: /美容|サロン|ヘア|ネイル|エステ|まつ/ },
+  { id: "medical",    pattern: /クリニック|医|歯科|病院|整骨|薬局|眼科|皮膚/ },
+  { id: "realestate", pattern: /不動産|賃貸|物件|マンション|住宅/ },
+  { id: "ec",         pattern: /ec|ショップ|通販|shopify|base|stores|d2c|コスメ|アパレル/i },
+  { id: "saas",       pattern: /it|saas|テック|スタートアップ|ソフトウェア|ai|fintech|hrtech/i },
+]
+
 export function matchTemplate(category?: string): ProposalTemplate {
-  if (!category) return PROPOSAL_TEMPLATES.find(t => t.id === "general")!
+  const fallback = () => PROPOSAL_TEMPLATES.find(t => t.id === "general") ?? PROPOSAL_TEMPLATES[0]
+  if (!category) return fallback()
   const cat = category.toLowerCase()
   for (const { id, pattern } of INDUSTRY_PATTERNS) {
-    if (pattern.test(cat)) return PROPOSAL_TEMPLATES.find(t => t.id === id)!
+    if (pattern.test(cat)) {
+      const matched = PROPOSAL_TEMPLATES.find(t => t.id === id)
+      if (matched) return matched
+    }
   }
-  return PROPOSAL_TEMPLATES.find(t => t.id === "general")!
+  return fallback()
 }
 
 // ─── DBテンプレート → ProposalTemplate変換 ─────────────────
