@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* 2026-05-03: @paradigmllc/blocks 内の Tailwind class を scan 対象に追加。
+   node_modules は v4 default では scan されないため @source 必須。
+   Block 内で使われる urgency 別配色 (red-50/orange-50/amber-50/blue-50/emerald-50)
+   や rounded-3xl 等を確実に bundle するため。 */
+@source "../../node_modules/@paradigmllc/blocks";
+
 /* ────────────────────────────────────────────────────────────────────────
    Paradigm "Modern Tech × Aesop" Design Tokens (P18-A — 2026-04-30)
    ────────────────────────────────────────────────────────────────────────

@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
+  // 2026-05-03: @paradigmllc/blocks は TypeScript ソース直配布 (no build step)
+  // Appexxme と同一 Block 実装を共有するため transpile 必須。
+  transpilePackages: ["@paradigmllc/blocks"],
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "**" },

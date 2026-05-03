@@ -19,9 +19,9 @@
 import { useState, useEffect, useRef } from "react"
 import { useParams } from "next/navigation"
 import type { ProspectData } from "@/lib/proposal/prospect-data"
-import type { ContentDoc } from "@/components/blocks/types"
+import type { ContentDoc } from "@paradigmllc/blocks/types"
 import ProposalRenderer from "@/components/proposal/ProposalRenderer"
-import BlocksReportRenderer from "@/components/blocks/BlocksReportRenderer"
+import { BlocksReportRenderer } from "@paradigmllc/blocks"
 
 export const dynamic = "force-dynamic"
 

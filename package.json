@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
+    "@paradigmllc/blocks": "github:Paradigmllc/paradigm-blocks#main",
     "@payloadcms/db-postgres": "^3.82.0",
     "@payloadcms/next": "^3.82.0",
     "@payloadcms/richtext-lexical": "^3.82.0",
