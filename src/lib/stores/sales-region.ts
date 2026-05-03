@@ -62,7 +62,8 @@ import { persist, createJSONStorage } from "zustand/middleware"
 // "@/lib/stores/sales-region" から全て import 可能。
 export * from "./sales-region/types"
 export { REGION_THEMES } from "./sales-region/themes"
-import type { SalesRegion, RegionTheme, SalesRegionState } from "./sales-region/types"
+// 全 export を network import: types.ts を split した時の取りこぼし防止 (永久対策)
+import type { SalesRegion, RegionTheme, SalesRegionState, ClusterType } from "./sales-region/types"
 import { ALL_REGIONS } from "./sales-region/types"
 import { REGION_THEMES } from "./sales-region/themes"
 
