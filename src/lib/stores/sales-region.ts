@@ -63,6 +63,7 @@ import { persist, createJSONStorage } from "zustand/middleware"
 export * from "./sales-region/types"
 export { REGION_THEMES } from "./sales-region/themes"
 import type { SalesRegion, RegionTheme, SalesRegionState } from "./sales-region/types"
+import { ALL_REGIONS } from "./sales-region/types"
 import { REGION_THEMES } from "./sales-region/themes"
 
 export const useSalesRegion = create<SalesRegionState>()(
