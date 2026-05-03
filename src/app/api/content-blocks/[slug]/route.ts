@@ -54,17 +54,17 @@ export async function GET(
         const { data: run } = await sb
           .from('diagnostic_runs')
           .select('id,company_name,target_url,overall_score,total_annual_loss_jpy,started_at,status')
-          .like('id', )
+          .like('id', `${slug}%`)
           .limit(1)
           .maybeSingle()
         if (run) {
           return NextResponse.json({
             slug, page_type: 'report', region: 'ja',
-            title: ,
+            title: `${run.company_name ?? 'お客様'} 様 — 診断レポート (準備中)`,
             blocks: [
               { id: 'fallback-hero', type: 'hero', props: {
-                title: ,
-                subtitle: ,
+                title: `${run.company_name ?? 'お客様'} 様の診断レポートを準備しています`,
+                subtitle: '詳細レポートは engine v2 パイプラインで再生成中です。完了次第こちらに表示されます。',
                 ctaLabel: 'Cal.com で 30 分相談予約', ctaUrl: 'https://cal.com/paradigm/japan-entry-30min',
                 variant: 'centered',
               }},
