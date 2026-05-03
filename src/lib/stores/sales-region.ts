@@ -62,7 +62,7 @@ import { persist, createJSONStorage } from "zustand/middleware"
 // "@/lib/stores/sales-region" から全て import 可能。
 export * from "./sales-region/types"
 export { REGION_THEMES } from "./sales-region/themes"
-import type { SalesRegion, RegionTheme } from "./sales-region/types"
+import type { SalesRegion, RegionTheme, SalesRegionState } from "./sales-region/types"
 import { REGION_THEMES } from "./sales-region/themes"
 
 export const useSalesRegion = create<SalesRegionState>()(
