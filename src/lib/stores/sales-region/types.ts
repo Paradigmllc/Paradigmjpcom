@@ -51,7 +51,7 @@ export interface RegionTheme {
   dataSource: string     // 下部バー表示用（主要データソース）
 }
 
-interface SalesRegionState {
+export interface SalesRegionState {
   activeRegion: SalesRegion
   setRegion: (region: SalesRegion) => void
   getTheme: () => RegionTheme
