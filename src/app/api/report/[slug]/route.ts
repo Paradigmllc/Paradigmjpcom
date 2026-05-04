@@ -75,7 +75,7 @@ export async function GET(
       }
 
       const slackToken = process.env.SLACK_BOT_TOKEN
-      const slackChannel = process.env.SLACK_CHANNEL || "C0A9SPSTL4X"
+      const slackChannel = process.env.SLACK_CHANNEL || "C0B1JJ1L276"
       if (slackToken) {
         try {
           await fetch("https://slack.com/api/chat.postMessage", {
