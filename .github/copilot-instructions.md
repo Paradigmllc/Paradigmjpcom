@@ -1,14 +1,5 @@
-# AGENTS.md — Paradigm Projects
-
-> OpenAI Codex agent instructions for Paradigm LLC projects.
-> このファイルは `docs/ai-rules-coding.md` から自動生成されます。
-> 直接編集せず、正本を編集して `bash sync.sh deploy-ai-rules` を実行してください。
-
-## Agent Instructions
-
-このリポジトリで作業する際は以下のルールに**例外なく**従うこと。
-
----
+<!-- GitHub Copilot Instructions — Paradigm Projects -->
+<!-- このファイルは docs/ai-rules-coding.md から自動生成されます。直接編集しないこと。 -->
 
 # Paradigm Coding Rules — All AI Agents
 
