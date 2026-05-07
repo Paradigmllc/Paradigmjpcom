@@ -1,4 +1,21 @@
 {
+  "contactPage": {
+    "metaTitle": "お問い合わせ",
+    "metaDescription": "Paradigm合同会社へのお問い合わせ・無料相談のご予約はこちらから。",
+    "heroBadge": "Contact",
+    "heroTitle": "お気軽にご相談ください。",
+    "heroHighlight": "ご相談",
+    "heroDesc": "初回30分のオンライン相談は無料です。",
+    "formEyebrow": "Form",
+    "formTitle": "お問い合わせフォーム",
+    "consultLabel": "無料相談について",
+    "consultItems": ["初回30分間、完全無料", "Zoom / Google Meet で実施", "平日 10:00〜18:00", "課題ヒアリング+簡易提案"],
+    "contactLabel": "お問い合わせ先",
+    "contactItems": ["メール: contact@paradigmjp.com", "対応時間: 平日 10:00〜18:00", "返信: 1営業日以内にご連絡します"],
+    "hurryLabel": "お急ぎの方へ",
+    "hurryDesc": "Cal.com でオンライン相談をすぐにご予約いただけます。",
+    "hurryButton": "オンライン相談を予約"
+  },
   "faqPage": {
     "metaTitle": "よくあるご質問",
     "metaDescription": "Web制作・MEO・SEO/GEO・AI導入支援のよくあるご質問と回答。",

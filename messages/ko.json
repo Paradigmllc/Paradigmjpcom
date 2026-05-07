@@ -344,5 +344,31 @@
     "ctaHighlight": "questions",
     "ctaDesc": "Reach out anytime — we'll get back within one business day.",
     "ctaButton": "Contact us"
+  },
+  "contactPage": {
+    "metaTitle": "Contact",
+    "metaDescription": "Contact Paradigm LLC. Book a free first consultation here.",
+    "heroBadge": "Contact",
+    "heroTitle": "Drop us a line.",
+    "heroHighlight": "Drop us",
+    "heroDesc": "First 30-minute consultation is on us.",
+    "formEyebrow": "Form",
+    "formTitle": "Get in touch",
+    "consultLabel": "About the consultation",
+    "consultItems": [
+      "First 30 minutes are free",
+      "Zoom or Google Meet",
+      "Weekdays 10:00-18:00 JST",
+      "Discovery + initial proposal"
+    ],
+    "contactLabel": "Contact details",
+    "contactItems": [
+      "Email: contact@paradigmjp.com",
+      "Hours: weekdays 10:00-18:00 JST",
+      "Reply: within one business day"
+    ],
+    "hurryLabel": "In a hurry?",
+    "hurryDesc": "Book directly via Cal.com.",
+    "hurryButton": "Book online"
   }
 }
