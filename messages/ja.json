@@ -1,4 +1,38 @@
 {
+  "aboutPage": {
+    "metaTitle": "会社概要",
+    "metaDescription": "Paradigm合同会社の会社概要。デジタル技術で中小企業の成長を支援するパートナーです。",
+    "heroBadge": "About",
+    "heroTitle": "テクノロジーで、ビジネスの常識を変える。",
+    "heroHighlight": "ビジネスの常識",
+    "heroDesc": "Web 制作・MEO 対策・SEO/GEO 対策・AI 導入支援を一貫してご提供し、中小企業のデジタルトランスフォーメーションを包括的に支援するパートナーです。",
+    "missionEyebrow": "Mission",
+    "missionTitle": "デジタルで、事業を加速する。",
+    "missionDesc": "私たち Paradigm 合同会社は、Web 制作・MEO 対策・SEO/GEO 対策・AI 導入支援を通じて、中小企業のデジタルトランスフォーメーションを包括的にサポートします。最新の AI 技術とデジタルマーケティングの知見を組み合わせ、お客様のビジネスが持続的に成長できる基盤を構築します。",
+    "valuesEyebrow": "Values",
+    "valuesTitle": "大切にしている価値観",
+    "values": [
+      { "title": "成果にコミットする", "desc": "「納品して終わり」ではなく、数字で成果が出るまで伴走します。KPI を共有し、データに基づく改善を継続します。" },
+      { "title": "ワンストップで安心", "desc": "Web 制作・集客・AI を一貫して提供。複数業者への発注コストと管理の手間をなくします。" },
+      { "title": "最新技術を、わかりやすく", "desc": "AI・GEO 等の最先端技術も、お客様にわかりやすくお伝えし、無理のない形で導入を支援します。" }
+    ],
+    "companyEyebrow": "Company",
+    "companyTitle": "基本情報",
+    "companyInfo": [
+      ["会社名", "Paradigm 合同会社（パラダイム）"],
+      ["設立", "2025 年"],
+      ["代表", "代表社員"],
+      ["所在地", "日本"],
+      ["事業内容", "Web 制作 / MEO 対策 / SEO・GEO 対策 / AI 導入支援"],
+      ["メール", "contact@paradigmjp.com"],
+      ["Webサイト", "https://paradigmjp.com"]
+    ],
+    "ctaEyebrow": "Together",
+    "ctaTitle": "一緒にデジタルを活用しませんか？",
+    "ctaHighlight": "デジタル",
+    "ctaDesc": "御社のデジタル課題、お気軽にご相談ください。",
+    "ctaButton": "無料相談を予約する"
+  },
   "servicesPage": {
     "metaTitle": "サービス一覧",
     "metaDescription": "Web制作・MEO対策・SEO/GEO対策・AI導入支援。Paradigm合同会社が提供する4つのデジタル支援サービスをご紹介します。",

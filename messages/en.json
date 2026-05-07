@@ -1,4 +1,38 @@
 {
+  "aboutPage": {
+    "metaTitle": "About",
+    "metaDescription": "About Paradigm LLC. We help SMBs grow through digital technology.",
+    "heroBadge": "About",
+    "heroTitle": "Reframe what business does with technology.",
+    "heroHighlight": "what business does",
+    "heroDesc": "End-to-end web, MEO, SEO/GEO, and AI integration. We are your partner for SMB digital transformation.",
+    "missionEyebrow": "Mission",
+    "missionTitle": "Accelerate business with digital.",
+    "missionDesc": "Paradigm LLC supports SMB digital transformation through web development, MEO, SEO/GEO, and AI integration. We combine state-of-the-art AI with proven digital marketing expertise to build foundations for sustained growth.",
+    "valuesEyebrow": "Values",
+    "valuesTitle": "What we stand for",
+    "values": [
+      { "title": "Outcomes over deliverables", "desc": "Not 'ship and forget' — we partner until the numbers move. Shared KPIs, data-driven iteration." },
+      { "title": "One-stop confidence", "desc": "Web build + traffic + AI under one roof. No fragmented vendors to coordinate." },
+      { "title": "Plain-spoken modern tech", "desc": "AI / GEO and other frontier tech, explained clearly. Adopted at a sustainable pace." }
+    ],
+    "companyEyebrow": "Company",
+    "companyTitle": "Company information",
+    "companyInfo": [
+      ["Company", "Paradigm LLC (Paradigm 合同会社)"],
+      ["Founded", "2025"],
+      ["Representative", "Managing Member"],
+      ["Location", "Japan"],
+      ["Services", "Web development / MEO / SEO+GEO / AI integration"],
+      ["Email", "contact@paradigmjp.com"],
+      ["Website", "https://paradigmjp.com"]
+    ],
+    "ctaEyebrow": "Together",
+    "ctaTitle": "Let's go digital together",
+    "ctaHighlight": "digital",
+    "ctaDesc": "Tell us about your digital challenges — we'd love to help.",
+    "ctaButton": "Book a free consultation"
+  },
   "servicesPage": {
     "metaTitle": "Services",
     "metaDescription": "Web development, MEO (local SEO), SEO/GEO, and AI integration — Paradigm LLC's productized service suite for foreign SMBs entering Japan.",

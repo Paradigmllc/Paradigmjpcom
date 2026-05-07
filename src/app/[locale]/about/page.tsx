@@ -5,10 +5,13 @@
  * 入力:   params.locale
  * 出力:   PageHero + content sections + RichCtaBand
  *
+ * AE-PHP-2 (P18-D 2026-05-08): 全 visible text を messages/{locale}.json:aboutPage 経由に統一.
+ *   旧 isJa ? "JP" : "EN" の二択 hardcode → 12 locale 対応 (next-intl getTranslations).
  * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
  */
 import type { Metadata } from "next"
 import { Rocket, Handshake, Lightbulb } from "lucide-react"
+import { getTranslations } from "next-intl/server"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
@@ -17,73 +20,53 @@ interface Props { params: Promise<{ locale: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  const isJa = locale === "ja"
+  const t = await getTranslations({ locale, namespace: "aboutPage" })
   return {
-    title: isJa ? "会社概要" : "About",
-    description: isJa
-      ? "Paradigm合同会社の会社概要。デジタル技術で中小企業の成長を支援するパートナーです。"
-      : "About Paradigm LLC. We help SMBs grow through digital technology.",
+    title: t("metaTitle"),
+    description: t("metaDescription"),
   }
 }
 
-const VALUES_JA = [
-  { icon: Rocket, gradient: "from-pink-400 via-paradigm-accent to-paradigm-tech", title: "成果にコミットする", desc: "「納品して終わり」ではなく、数字で成果が出るまで伴走します。KPI を共有し、データに基づく改善を継続します。" },
-  { icon: Handshake, gradient: "from-paradigm-tech via-paradigm-glow to-violet-400", title: "ワンストップで安心", desc: "Web 制作・集客・AI を一貫して提供。複数業者への発注コストと管理の手間をなくします。" },
-  { icon: Lightbulb, gradient: "from-paradigm-glow via-violet-400 to-pink-400", title: "最新技術を、わかりやすく", desc: "AI・GEO 等の最先端技術も、お客様にわかりやすくお伝えし、無理のない形で導入を支援します。" },
-] as const
-const VALUES_EN = [
-  { icon: Rocket, gradient: "from-pink-400 via-paradigm-accent to-paradigm-tech", title: "Outcomes over deliverables", desc: "Not 'ship and forget' — we partner until the numbers move. Shared KPIs, data-driven iteration." },
-  { icon: Handshake, gradient: "from-paradigm-tech via-paradigm-glow to-violet-400", title: "One-stop confidence", desc: "Web build + traffic + AI under one roof. No fragmented vendors to coordinate." },
-  { icon: Lightbulb, gradient: "from-paradigm-glow via-violet-400 to-pink-400", title: "Plain-spoken modern tech", desc: "AI / GEO and other frontier tech, explained clearly. Adopted at a sustainable pace." },
+const VALUE_ICONS = [Rocket, Handshake, Lightbulb] as const
+const VALUE_GRADIENTS = [
+  "from-pink-400 via-paradigm-accent to-paradigm-tech",
+  "from-paradigm-tech via-paradigm-glow to-violet-400",
+  "from-paradigm-glow via-violet-400 to-pink-400",
 ] as const
 
-const COMPANY_INFO_JA: ReadonlyArray<readonly [string, string]> = [
-  ["会社名", "Paradigm 合同会社（パラダイム）"],
-  ["設立", "2025 年"],
-  ["代表", "代表社員"],
-  ["所在地", "日本"],
-  ["事業内容", "Web 制作 / MEO 対策 / SEO・GEO 対策 / AI 導入支援"],
-  ["メール", "contact@paradigmjp.com"],
-  ["Webサイト", "https://paradigmjp.com"],
-]
-const COMPANY_INFO_EN: ReadonlyArray<readonly [string, string]> = [
-  ["Company", "Paradigm LLC (Paradigm 合同会社)"],
-  ["Founded", "2025"],
-  ["Representative", "Managing Member"],
-  ["Location", "Japan"],
-  ["Services", "Web development / MEO / SEO+GEO / AI integration"],
-  ["Email", "contact@paradigmjp.com"],
-  ["Website", "https://paradigmjp.com"],
-]
+interface ValueRow { title: string; desc: string }
 
 export default async function AboutPage({ params }: Props) {
   const { locale } = await params
-  const isJa = locale === "ja"
-  const VALUES = isJa ? VALUES_JA : VALUES_EN
-  const COMPANY_INFO = isJa ? COMPANY_INFO_JA : COMPANY_INFO_EN
+  const t = await getTranslations({ locale, namespace: "aboutPage" })
+  const VALUES = (t.raw("values") as ValueRow[]).map((v, i) => ({
+    icon: VALUE_ICONS[i] ?? Rocket,
+    gradient: VALUE_GRADIENTS[i] ?? VALUE_GRADIENTS[0],
+    title: v.title,
+    desc: v.desc,
+  }))
+  const COMPANY_INFO = t.raw("companyInfo") as Array<[string, string]>
 
   return (
     <>
       <PageHero
-        badge="About"
-        title={isJa ? "テクノロジーで、ビジネスの常識を変える。" : "Reframe what business does with technology."}
-        highlight={isJa ? "ビジネスの常識" : "what business does"}
-        desc={isJa ? "Web 制作・MEO 対策・SEO/GEO 対策・AI 導入支援を一貫してご提供し、中小企業のデジタルトランスフォーメーションを包括的に支援するパートナーです。" : "End-to-end web, MEO, SEO/GEO, and AI integration. We are your partner for SMB digital transformation."}
+        badge={t("heroBadge")}
+        title={t("heroTitle")}
+        highlight={t("heroHighlight")}
+        desc={t("heroDesc")}
       />
 
       <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
         <div className="paradigm-mesh opacity-40" />
         <FadeIn className="relative z-10 max-w-3xl mx-auto px-6 md:px-8 text-center">
-          <p className="paradigm-eyebrow mb-3 text-paradigm-accent">Mission</p>
+          <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{t("missionEyebrow")}</p>
           <h2 className="font-display text-[28px] md:text-[44px] leading-[1.1] tracking-[-0.025em] text-paradigm-ink mb-6">
             <span className="bg-gradient-to-br from-paradigm-ink via-paradigm-accent to-paradigm-tech bg-clip-text text-transparent">
-              {isJa ? "デジタルで、事業を加速する。" : "Accelerate business with digital."}
+              {t("missionTitle")}
             </span>
           </h2>
           <p className="text-[14px] md:text-[16px] text-paradigm-ink-soft leading-[1.85] max-w-2xl mx-auto">
-            {isJa
-              ? "私たち Paradigm 合同会社は、Web 制作・MEO 対策・SEO/GEO 対策・AI 導入支援を通じて、中小企業のデジタルトランスフォーメーションを包括的にサポートします。最新の AI 技術とデジタルマーケティングの知見を組み合わせ、お客様のビジネスが持続的に成長できる基盤を構築します。"
-              : "Paradigm LLC supports SMB digital transformation through web development, MEO, SEO/GEO, and AI integration. We combine state-of-the-art AI with proven digital marketing expertise to build foundations for sustained growth."}
+            {t("missionDesc")}
           </p>
         </FadeIn>
       </section>
@@ -92,10 +75,10 @@ export default async function AboutPage({ params }: Props) {
         <div className="paradigm-mesh opacity-50" />
         <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-8">
           <FadeIn className="mb-10 max-w-2xl">
-            <p className="paradigm-eyebrow text-paradigm-accent mb-3">Values</p>
+            <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("valuesEyebrow")}</p>
             <h2 className="font-display text-[26px] md:text-[40px] leading-[1.1] tracking-[-0.025em] text-paradigm-ink">
               <span className="bg-gradient-to-br from-paradigm-ink via-paradigm-tech to-paradigm-glow bg-clip-text text-transparent">
-                {isJa ? "大切にしている価値観" : "What we stand for"}
+                {t("valuesTitle")}
               </span>
             </h2>
           </FadeIn>
@@ -121,9 +104,9 @@ export default async function AboutPage({ params }: Props) {
       <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
         <div className="relative z-10 max-w-3xl mx-auto px-6 md:px-8">
           <FadeIn className="mb-8">
-            <p className="paradigm-eyebrow text-paradigm-accent mb-3">Company</p>
+            <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("companyEyebrow")}</p>
             <h2 className="font-display text-[26px] md:text-[36px] leading-[1.15] tracking-[-0.025em] text-paradigm-ink">
-              {isJa ? "基本情報" : "Company information"}
+              {t("companyTitle")}
             </h2>
           </FadeIn>
           <FadeIn>
@@ -142,11 +125,11 @@ export default async function AboutPage({ params }: Props) {
       </section>
 
       <RichCtaBand
-        eyebrow="Together"
-        title={isJa ? "一緒にデジタルを活用しませんか？" : "Let's go digital together"}
-        highlight={isJa ? "デジタル" : "digital"}
-        desc={isJa ? "御社のデジタル課題、お気軽にご相談ください。" : "Tell us about your digital challenges — we'd love to help."}
-        buttonLabel={isJa ? "無料相談を予約する" : "Book a free consultation"}
+        eyebrow={t("ctaEyebrow")}
+        title={t("ctaTitle")}
+        highlight={t("ctaHighlight")}
+        desc={t("ctaDesc")}
+        buttonLabel={t("ctaButton")}
       />
     </>
   )
