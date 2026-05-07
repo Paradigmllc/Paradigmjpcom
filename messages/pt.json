@@ -393,5 +393,61 @@
     "ctaHighlight": "custom",
     "ctaDesc": "Enterprise / retainers / white-label — let's talk.",
     "ctaButton": "Book a free consultation"
+  },
+  "privacyPage": {
+    "metaTitle": "Privacy Policy",
+    "metaDescription": "Paradigm LLC privacy policy.",
+    "heroBadge": "Privacy",
+    "heroTitle": "Privacy Policy",
+    "heroDesc": "Last updated: April 2025",
+    "sections": [
+      {
+        "title": "1. Definition of personal information",
+        "body": "Personal information refers to information about a living individual that can identify the individual through items such as name, date of birth, or other descriptions."
+      },
+      {
+        "title": "2. Collection methods",
+        "body": "We may collect personal information via contact forms, email, or phone. Collected items include name, email, phone number, and company name."
+      },
+      {
+        "title": "3. Purposes of use",
+        "body": "We use collected personal information for:",
+        "bullets": [
+          "Responding to inquiries",
+          "Service delivery and improvement",
+          "Announcements of new services / updates",
+          "Contract and billing operations",
+          "Usage analysis and statistics"
+        ]
+      },
+      {
+        "title": "4. Third-party disclosure",
+        "body": "We do not disclose personal information to third parties without your consent, except as required by law."
+      },
+      {
+        "title": "5. Security measures",
+        "body": "We take appropriate security measures to prevent leakage, loss, or damage of personal information."
+      },
+      {
+        "title": "6. Cookies",
+        "body": "This site may use cookies for usage analysis and service improvement."
+      },
+      {
+        "title": "7. Disclosure / correction / deletion",
+        "body": "You may request disclosure, correction, or deletion of your personal information. Please contact us at the address below."
+      },
+      {
+        "title": "8. Policy changes",
+        "body": "We may revise this policy as needed. The updated policy takes effect on publication on this site."
+      },
+      {
+        "title": "9. Contact",
+        "body": "For inquiries regarding personal information handling, please contact:",
+        "contact": {
+          "name": "Paradigm LLC",
+          "email": "contact@paradigmjp.com"
+        }
+      }
+    ]
   }
 }
