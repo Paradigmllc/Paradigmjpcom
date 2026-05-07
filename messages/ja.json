@@ -1,4 +1,27 @@
 {
+  "pricingPage": {
+    "metaTitle": "料金プラン",
+    "metaDescription": "Paradigm合同会社の料金プラン。Web制作・MEO・SEO/GEO・AI導入の明朗な定額制パッケージ。",
+    "heroBadge": "Pricing",
+    "heroTitle": "明朗な定額制パッケージ。",
+    "heroHighlight": "明朗",
+    "heroDesc": "お客様の地域に合わせた価格調整（PPP）対応。",
+    "emptyMessage": "現在、公開中のプランはありません。",
+    "emptyCta": "お問い合わせ",
+    "popularBadge": "人気No.1",
+    "planEyebrow": "Plan",
+    "billingMonthly": "/月",
+    "billingYearly": "/年",
+    "billingOnetime": "一括",
+    "defaultCta": "お問い合わせ",
+    "pppHint": "PPP 調整 — 通常 ¥{originalPrice}",
+    "regionFooter": "価格は {country} からのアクセスに基づき表示しています。",
+    "ctaEyebrow": "Custom",
+    "ctaTitle": "カスタムプランをご希望の方へ",
+    "ctaHighlight": "カスタム",
+    "ctaDesc": "大規模案件・継続支援・ホワイトラベルのご相談もお気軽にどうぞ。",
+    "ctaButton": "無料相談を予約する"
+  },
   "contactPage": {
     "metaTitle": "お問い合わせ",
     "metaDescription": "Paradigm合同会社へのお問い合わせ・無料相談のご予約はこちらから。",

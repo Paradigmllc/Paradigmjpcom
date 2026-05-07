@@ -5,12 +5,15 @@
  * 入力:   params.locale (currency: ja=JPY / en=USD with PPP)
  * 出力:   PageHero + 3-tier pricing table + comparison grid
  *
+ * AE-PHP-2 (P18-D 2026-05-08): 全 visible text を messages/{locale}.json:pricingPage 経由に統一.
+ *   旧 isJa ? "JP" : "EN" の二択 hardcode → 12 locale 対応 (next-intl getTranslations).
  * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
  */
 import type { Metadata } from "next"
 import { headers } from "next/headers"
 import { getPayload } from "payload"
 import config from "@payload-config"
+import { getTranslations } from "next-intl/server"
 import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
@@ -32,12 +35,10 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  const isJa = locale === "ja"
+  const t = await getTranslations({ locale, namespace: "pricingPage" })
   return {
-    title: isJa ? "料金プラン" : "Pricing",
-    description: isJa
-      ? "Paradigm合同会社の料金プラン。Web制作・MEO・SEO/GEO・AI導入の明朗な定額制パッケージ。"
-      : "Transparent, productized pricing from Paradigm LLC.",
+    title: t("metaTitle"),
+    description: t("metaDescription"),
   }
 }
 
@@ -54,17 +55,21 @@ type PricingDoc = {
   ctaLabel?: string
 }
 
-const BILLING_LABEL: Record<string, { ja: string; en: string }> = {
-  monthly: { ja: "/月", en: "/mo" },
-  yearly: { ja: "/年", en: "/yr" },
-  "one-time": { ja: "一括", en: "one-time" },
-}
-
 export default async function PricingPage({ params, searchParams }: Props) {
   const { locale: rawLocale } = await params
   const { force_country } = await searchParams
   const locale = coerceLocale(rawLocale)
-  const isJa = locale === "ja"
+  const t = await getTranslations({ locale, namespace: "pricingPage" })
+
+  // Billing cycle ラベルは namespace 経由で locale 別取得 (旧 BILLING_LABEL hardcode 廃止)
+  const billingLabelFor = (cycle: string | undefined): string => {
+    switch (cycle) {
+      case "monthly": return t("billingMonthly")
+      case "yearly": return t("billingYearly")
+      case "one-time": return t("billingOnetime")
+      default: return ""
+    }
+  }
 
   const h = await headers()
   const forcedCountry = force_country?.toUpperCase()
@@ -97,10 +102,10 @@ export default async function PricingPage({ params, searchParams }: Props) {
   return (
     <>
       <PageHero
-        badge="Pricing"
-        title={isJa ? "明朗な定額制パッケージ。" : "Transparent productized pricing."}
-        highlight={isJa ? "明朗" : "Transparent"}
-        desc={isJa ? "お客様の地域に合わせた価格調整（PPP）対応。" : "Prices auto-adjust to your region's purchasing power."}
+        badge={t("heroBadge")}
+        title={t("heroTitle")}
+        highlight={t("heroHighlight")}
+        desc={t("heroDesc")}
       />
 
       <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
@@ -109,10 +114,10 @@ export default async function PricingPage({ params, searchParams }: Props) {
           {plans.length === 0 ? (
             <FadeIn className="text-center max-w-xl mx-auto paradigm-glass rounded-2xl p-8 paradigm-glow-md">
               <p className="text-[14px] text-paradigm-ink-soft leading-[1.85] mb-7">
-                {isJa ? "現在、公開中のプランはありません。" : "No pricing plans are currently published."}
+                {t("emptyMessage")}
               </p>
               <Link href="/contact" className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-xl text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors">
-                {isJa ? "お問い合わせ" : "Contact us"}
+                {t("emptyCta")}
               </Link>
             </FadeIn>
           ) : (
@@ -120,9 +125,9 @@ export default async function PricingPage({ params, searchParams }: Props) {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 {plans.map((plan, idx) => {
                   const price = priceFor(plan)
-                  const billing = BILLING_LABEL[plan.billingCycle ?? "one-time"]
-                  const billingLabel = isJa ? billing?.ja : billing?.en
-                  const cta = plan.ctaLabel ?? (isJa ? "お問い合わせ" : "Get started")
+                  const billingLabel = billingLabelFor(plan.billingCycle)
+                  const cta = plan.ctaLabel ?? t("defaultCta")
+                  const localeForFmt = locale === "ja" ? "ja-JP" : "en-US"
                   return (
                     <FadeIn key={String(plan.id)} delay={idx * 0.08}>
                       <div
@@ -135,10 +140,10 @@ export default async function PricingPage({ params, searchParams }: Props) {
                         <p className="paradigm-eyebrow mb-3">
                           {plan.isPopular ? (
                             <span className="text-paradigm-accent paradigm-glass rounded-full px-2.5 py-1 paradigm-glow-sm text-[10px]">
-                              {isJa ? "人気No.1" : "Most popular"}
+                              {t("popularBadge")}
                             </span>
                           ) : (
-                            <span className="text-paradigm-ink-mute text-[10px]">Plan</span>
+                            <span className="text-paradigm-ink-mute text-[10px]">{t("planEyebrow")}</span>
                           )}
                         </p>
                         <h3 className="font-display text-[20px] md:text-[24px] leading-[1.15] text-paradigm-ink mb-2 tracking-[-0.015em]">
@@ -158,9 +163,7 @@ export default async function PricingPage({ params, searchParams }: Props) {
                           </div>
                           {price.discounted && (
                             <p className="mt-1.5 paradigm-eyebrow text-paradigm-ink-mute text-[10px]">
-                              {isJa
-                                ? `PPP 調整 — 通常 ¥${price.original.toLocaleString("ja-JP")}`
-                                : `PPP-adjusted — standard ¥${price.original.toLocaleString("en-US")}`}
+                              {t("pppHint", { originalPrice: price.original.toLocaleString(localeForFmt) })}
                             </p>
                           )}
                         </div>
@@ -196,9 +199,7 @@ export default async function PricingPage({ params, searchParams }: Props) {
                 })}
               </div>
               <p className="mt-6 paradigm-eyebrow text-paradigm-ink-mute text-center text-[10px]">
-                {isJa
-                  ? `価格は ${country} からのアクセスに基づき表示しています。`
-                  : `Prices shown are adjusted for visitors from ${country}.`}
+                {t("regionFooter", { country })}
               </p>
             </>
           )}
@@ -206,11 +207,11 @@ export default async function PricingPage({ params, searchParams }: Props) {
       </section>
 
       <RichCtaBand
-        eyebrow="Custom"
-        title={isJa ? "カスタムプランをご希望の方へ" : "Need a custom scope?"}
-        highlight={isJa ? "カスタム" : "custom"}
-        desc={isJa ? "大規模案件・継続支援・ホワイトラベルのご相談もお気軽にどうぞ。" : "Enterprise / retainers / white-label — let's talk."}
-        buttonLabel={isJa ? "無料相談を予約する" : "Book a free consultation"}
+        eyebrow={t("ctaEyebrow")}
+        title={t("ctaTitle")}
+        highlight={t("ctaHighlight")}
+        desc={t("ctaDesc")}
+        buttonLabel={t("ctaButton")}
       />
     </>
   )

@@ -1,4 +1,27 @@
 {
+  "pricingPage": {
+    "metaTitle": "Pricing",
+    "metaDescription": "Transparent, productized pricing from Paradigm LLC.",
+    "heroBadge": "Pricing",
+    "heroTitle": "Transparent productized pricing.",
+    "heroHighlight": "Transparent",
+    "heroDesc": "Prices auto-adjust to your region's purchasing power.",
+    "emptyMessage": "No pricing plans are currently published.",
+    "emptyCta": "Contact us",
+    "popularBadge": "Most popular",
+    "planEyebrow": "Plan",
+    "billingMonthly": "/mo",
+    "billingYearly": "/yr",
+    "billingOnetime": "one-time",
+    "defaultCta": "Get started",
+    "pppHint": "PPP-adjusted — standard ¥{originalPrice}",
+    "regionFooter": "Prices shown are adjusted for visitors from {country}.",
+    "ctaEyebrow": "Custom",
+    "ctaTitle": "Need a custom scope?",
+    "ctaHighlight": "custom",
+    "ctaDesc": "Enterprise / retainers / white-label — let's talk.",
+    "ctaButton": "Book a free consultation"
+  },
   "contactPage": {
     "metaTitle": "Contact",
     "metaDescription": "Contact Paradigm LLC. Book a free first consultation here.",
