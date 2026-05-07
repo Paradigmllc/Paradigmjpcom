@@ -5,9 +5,12 @@
  * 入力:   params.locale
  * 出力:   ServiceDetailLayout + middleBand sections
  *
+ * AE-PHP-2 (P18-D 2026-05-08): 全 visible text を messages/{locale}.json:serviceDetail.meo 経由に統一.
+ *   PROCESS 配列も serviceDetail.meo.process[] で構造化 (12 locale で個別翻訳可能).
  * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
  */
 import type { Metadata } from "next"
+import { getTranslations } from "next-intl/server"
 import PageHero from "@/components/PageHero"
 import ServiceDetailLayout from "@/components/aesop/ServiceDetailLayout"
 import FadeIn from "@/components/aesop/FadeIn"
@@ -18,40 +21,27 @@ interface Props { params: Promise<{ locale: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  const isJa = locale === "ja"
+  const t = await getTranslations({ locale, namespace: "serviceDetail" })
   return {
-    title: isJa ? "MEO対策" : "MEO (Local SEO)",
-    description: isJa
-      ? "Googleビジネスプロフィール最適化で地域検索上位表示。来店型ビジネスの集客を最大化するMEO対策。"
-      : "Google Business Profile optimisation. Top local rankings, foot-traffic conversions.",
+    title: t("meo.metaTitle"),
+    description: t("meo.metaDescription"),
   }
 }
 
-const PROCESS_JA = [
-  { step: "01", title: "現状分析", desc: "Googleビジネスプロフィールの現状を診断し、競合状況と改善ポイントを洗い出します。" },
-  { step: "02", title: "プロフィール最適化", desc: "カテゴリ・属性・説明文・写真を SEO 観点で最適化。NAP 情報の統一も実施します。" },
-  { step: "03", title: "口コミ施策+投稿運用", desc: "口コミ獲得の仕組みを構築し、定期的な投稿で鮮度を維持します。" },
-  { step: "04", title: "効果測定・改善", desc: "順位トラッキングと月次レポートで効果を可視化。データに基づく改善を継続します。" },
-] as const
+interface ProcessStep { step: string; title: string; desc: string }
 
-const PROCESS_EN = [
-  { step: "01", title: "Audit", desc: "Diagnose your Google Business Profile and surface competitor / improvement points." },
-  { step: "02", title: "Optimise", desc: "Tune categories, attributes, descriptions, photos. NAP unification across the web." },
-  { step: "03", title: "Reviews + Posts", desc: "Stand up review-generation playbooks. Maintain freshness via regular posts." },
-  { step: "04", title: "Measure + Iterate", desc: "Rank tracking and monthly reports. Data-driven continuous improvement." },
-] as const
-
-function ProcessBand({ isJa }: { isJa: boolean }) {
-  const STEPS = isJa ? PROCESS_JA : PROCESS_EN
+async function ProcessBand({ locale }: { locale: string }) {
+  const t = await getTranslations({ locale, namespace: "serviceDetail" })
+  const STEPS = t.raw("meo.process") as ProcessStep[]
   return (
     <section className="relative bg-paradigm-paper-deep paradigm-section overflow-hidden">
       <div className="paradigm-mesh opacity-40" />
       <div className="relative z-10 max-w-4xl mx-auto px-6 md:px-8">
         <FadeIn className="mb-8 max-w-2xl">
-          <p className="paradigm-eyebrow text-paradigm-accent mb-3">Process</p>
+          <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("meo.processEyebrow")}</p>
           <h2 className="font-display text-[24px] md:text-[36px] leading-[1.15] tracking-[-0.02em] text-paradigm-ink">
             <span className="bg-gradient-to-br from-paradigm-ink via-paradigm-tech to-paradigm-glow bg-clip-text text-transparent">
-              {isJa ? "MEO 対策の流れ" : "How MEO works"}
+              {t("meo.processTitle")}
             </span>
           </h2>
         </FadeIn>
@@ -75,7 +65,7 @@ function ProcessBand({ isJa }: { isJa: boolean }) {
 
 export default async function MeoServicePage({ params }: Props) {
   const { locale } = await params
-  const isJa = locale === "ja"
+  const t = await getTranslations({ locale, namespace: "serviceDetail" })
   const service = getServiceByKey(locale, "meo")
   const pricing = getPricingFor(locale, "meo")
   const serviceSchema = buildServiceSchema({
@@ -86,16 +76,16 @@ export default async function MeoServicePage({ params }: Props) {
     serviceType: "Local SEO",
   })
   const breadcrumbSchema = buildBreadcrumbSchema([
-    { name: isJa ? "ホーム" : "Home", url: `https://paradigmjp.com/${locale}` },
-    { name: isJa ? "サービス" : "Services", url: `https://paradigmjp.com/${locale}/services` },
+    { name: t("breadcrumbHome"), url: `https://paradigmjp.com/${locale}` },
+    { name: t("breadcrumbServices"), url: `https://paradigmjp.com/${locale}/services` },
     { name: service.title, url: `https://paradigmjp.com/${locale}/services/meo` },
   ])
 
   return (
     <>
-      <PageHero badge={isJa ? "MEO 対策" : "MEO (Local SEO)"} title={service.title} desc={service.tagline} />
+      <PageHero badge={t("meo.heroBadge")} title={service.title} desc={service.tagline} />
       <ServiceDetailLayout
-        badge={isJa ? "MEO 対策" : "MEO"}
+        badge={t("meo.heroBadgeShort")}
         title={service.title}
         desc={service.desc}
         features={service.features}
@@ -106,16 +96,14 @@ export default async function MeoServicePage({ params }: Props) {
         iconBg="from-paradigm-tech via-paradigm-glow to-violet-400"
         beamFrom="rgb(14 165 233)"
         beamTo="rgb(165 180 252)"
-        middleBand={<ProcessBand isJa={isJa} />}
-        ctaTitle={isJa ? "MEO 対策を始めませんか？" : "Ready to start MEO?"}
-        ctaHighlight={isJa ? "MEO 対策" : "MEO"}
-        ctaDesc={isJa ? "地域 No.1 を目指す無料診断を実施中。" : "Free local-SEO audit on us."}
-        ctaLabel={isJa ? "無料診断を受ける" : "Get a free audit"}
+        middleBand={<ProcessBand locale={locale} />}
+        ctaTitle={t("meo.ctaTitle")}
+        ctaHighlight={t("meo.ctaHighlight")}
+        ctaDesc={t("meo.ctaDesc")}
+        ctaLabel={t("meo.ctaLabel")}
       />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }} />
-
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-
     </>
   )
 }

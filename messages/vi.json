@@ -535,5 +535,64 @@
     "emptyMessage": "No posts are published yet. Check back soon.",
     "emptyCta": "Contact us",
     "readTimeFormat": "{readTime} read"
+  },
+  "serviceDetail": {
+    "breadcrumbHome": "Home",
+    "breadcrumbServices": "Services",
+    "ctaHighlight": "Talk to us",
+    "ctaDesc": "First 30-minute consultation is on us.",
+    "ctaLabel": "Book a free consultation",
+    "web": {
+      "metaTitle": "Web Development",
+      "metaDescription": "High-performance, SEO-optimised Next.js / WordPress sites — design through post-launch operations.",
+      "heroBadge": "Web Development",
+      "ctaTitle": "Talk to us about web development"
+    },
+    "meo": {
+      "metaTitle": "MEO (Local SEO)",
+      "metaDescription": "Google Business Profile optimisation. Top local rankings, foot-traffic conversions.",
+      "heroBadge": "MEO (Local SEO)",
+      "heroBadgeShort": "MEO",
+      "ctaTitle": "Ready to start MEO?",
+      "ctaHighlight": "MEO",
+      "ctaDesc": "Free local-SEO audit on us.",
+      "ctaLabel": "Get a free audit",
+      "processEyebrow": "Process",
+      "processTitle": "How MEO works",
+      "process": [
+        {
+          "step": "01",
+          "title": "Audit",
+          "desc": "Diagnose your Google Business Profile and surface competitor / improvement points."
+        },
+        {
+          "step": "02",
+          "title": "Optimise",
+          "desc": "Tune categories, attributes, descriptions, photos. NAP unification across the web."
+        },
+        {
+          "step": "03",
+          "title": "Reviews + Posts",
+          "desc": "Stand up review-generation playbooks. Maintain freshness via regular posts."
+        },
+        {
+          "step": "04",
+          "title": "Measure + Iterate",
+          "desc": "Rank tracking and monthly reports. Data-driven continuous improvement."
+        }
+      ]
+    },
+    "seo": {
+      "metaTitle": "SEO / GEO",
+      "metaDescription": "Search engine optimization (SEO) + AI search optimization (GEO) — Core Web Vitals, JSON-LD, content strategy end to end.",
+      "heroBadge": "SEO / GEO",
+      "ctaTitle": "Talk to us about SEO / GEO"
+    },
+    "ai": {
+      "metaTitle": "AI Integration",
+      "metaDescription": "Full-stack support for AI agent deployment and business automation using n8n × Dify × LLM.",
+      "heroBadge": "AI Integration",
+      "ctaTitle": "Talk to us about AI integration"
+    }
   }
 }

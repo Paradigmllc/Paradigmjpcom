@@ -5,9 +5,12 @@
  * 入力:   params.locale
  * 出力:   ServiceDetailLayout + middleBand sections (process / use cases / pricing)
  *
+ * AE-PHP-2 (P18-D 2026-05-08): 全 visible text を messages/{locale}.json:serviceDetail.web 経由に統一.
+ *   service 共通 keys (breadcrumb / cta) は serviceDetail 直下、service 固有は serviceDetail.web 配下.
  * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
  */
 import type { Metadata } from "next"
+import { getTranslations } from "next-intl/server"
 import PageHero from "@/components/PageHero"
 import ServiceDetailLayout from "@/components/aesop/ServiceDetailLayout"
 import { getServiceByKey, getPricingFor } from "@/lib/data"
@@ -17,18 +20,16 @@ interface Props { params: Promise<{ locale: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  const isJa = locale === "ja"
+  const t = await getTranslations({ locale, namespace: "serviceDetail" })
   return {
-    title: isJa ? "Web制作" : "Web Development",
-    description: isJa
-      ? "Next.js/WordPressによる高速・SEO最適化されたWebサイト制作。デザインからコーディング、公開後の運用まで一貫してサポート。"
-      : "High-performance, SEO-optimised Next.js / WordPress sites — design through post-launch operations.",
+    title: t("web.metaTitle"),
+    description: t("web.metaDescription"),
   }
 }
 
 export default async function WebServicePage({ params }: Props) {
   const { locale } = await params
-  const isJa = locale === "ja"
+  const t = await getTranslations({ locale, namespace: "serviceDetail" })
   const service = getServiceByKey(locale, "web")
   const pricing = getPricingFor(locale, "web")
 
@@ -40,20 +41,20 @@ export default async function WebServicePage({ params }: Props) {
     serviceType: "Web Development",
   })
   const breadcrumbSchema = buildBreadcrumbSchema([
-    { name: isJa ? "ホーム" : "Home", url: `https://paradigmjp.com/${locale}` },
-    { name: isJa ? "サービス" : "Services", url: `https://paradigmjp.com/${locale}/services` },
+    { name: t("breadcrumbHome"), url: `https://paradigmjp.com/${locale}` },
+    { name: t("breadcrumbServices"), url: `https://paradigmjp.com/${locale}/services` },
     { name: service.title, url: `https://paradigmjp.com/${locale}/services/web` },
   ])
 
   return (
     <>
       <PageHero
-        badge={isJa ? "Web 制作" : "Web Development"}
+        badge={t("web.heroBadge")}
         title={service.title}
         desc={service.tagline}
       />
       <ServiceDetailLayout
-        badge={isJa ? "Web 制作" : "Web Development"}
+        badge={t("web.heroBadge")}
         title={service.title}
         desc={service.desc}
         features={service.features}
@@ -64,10 +65,10 @@ export default async function WebServicePage({ params }: Props) {
         iconBg="from-pink-400 via-paradigm-accent to-paradigm-tech"
         beamFrom="rgb(244 114 182)"
         beamTo="rgb(14 165 233)"
-        ctaTitle={isJa ? "Web 制作のご相談はこちら" : "Talk to us about web development"}
-        ctaHighlight={isJa ? "ご相談" : "Talk to us"}
-        ctaDesc={isJa ? "初回30分の無料オンライン相談を受け付けています。" : "First 30-minute consultation is on us."}
-        ctaLabel={isJa ? "無料相談を予約する" : "Book a free consultation"}
+        ctaTitle={t("web.ctaTitle")}
+        ctaHighlight={t("ctaHighlight")}
+        ctaDesc={t("ctaDesc")}
+        ctaLabel={t("ctaLabel")}
       />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />

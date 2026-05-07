@@ -8,6 +8,7 @@
  * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
  */
 import type { Metadata } from "next"
+import { getTranslations } from "next-intl/server"
 import PageHero from "@/components/PageHero"
 import ServiceDetailLayout from "@/components/aesop/ServiceDetailLayout"
 import FadeIn from "@/components/aesop/FadeIn"
@@ -18,12 +19,10 @@ interface Props { params: Promise<{ locale: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  const isJa = locale === "ja"
+  const t = await getTranslations({ locale, namespace: "serviceDetail" })
   return {
-    title: isJa ? "AI導入支援" : "AI Integration",
-    description: isJa
-      ? "ChatGPT/Gemini等の最新AIを業務に導入。チャットボット、業務自動化、データ分析で生産性を劇的に向上。"
-      : "Bring ChatGPT / Gemini-class AI into your operations. Chatbots, automation, analytics.",
+    title: t("ai.metaTitle"),
+    description: t("ai.metaDescription"),
   }
 }
 

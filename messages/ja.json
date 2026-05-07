@@ -1,4 +1,47 @@
 {
+  "serviceDetail": {
+    "breadcrumbHome": "ホーム",
+    "breadcrumbServices": "サービス",
+    "ctaHighlight": "ご相談",
+    "ctaDesc": "初回30分の無料オンライン相談を受け付けています。",
+    "ctaLabel": "無料相談を予約する",
+    "web": {
+      "metaTitle": "Web制作",
+      "metaDescription": "Next.js/WordPressによる高速・SEO最適化されたWebサイト制作。デザインからコーディング、公開後の運用まで一貫してサポート。",
+      "heroBadge": "Web 制作",
+      "ctaTitle": "Web 制作のご相談はこちら"
+    },
+    "meo": {
+      "metaTitle": "MEO対策",
+      "metaDescription": "Googleビジネスプロフィール最適化で地域検索上位表示。来店型ビジネスの集客を最大化するMEO対策。",
+      "heroBadge": "MEO 対策",
+      "heroBadgeShort": "MEO 対策",
+      "ctaTitle": "MEO 対策を始めませんか？",
+      "ctaHighlight": "MEO 対策",
+      "ctaDesc": "地域 No.1 を目指す無料診断を実施中。",
+      "ctaLabel": "無料診断を受ける",
+      "processEyebrow": "Process",
+      "processTitle": "MEO 対策の流れ",
+      "process": [
+        { "step": "01", "title": "現状分析", "desc": "Googleビジネスプロフィールの現状を診断し、競合状況と改善ポイントを洗い出します。" },
+        { "step": "02", "title": "プロフィール最適化", "desc": "カテゴリ・属性・説明文・写真を SEO 観点で最適化。NAP 情報の統一も実施します。" },
+        { "step": "03", "title": "口コミ施策+投稿運用", "desc": "口コミ獲得の仕組みを構築し、定期的な投稿で鮮度を維持します。" },
+        { "step": "04", "title": "効果測定・改善", "desc": "順位トラッキングと月次レポートで効果を可視化。データに基づく改善を継続します。" }
+      ]
+    },
+    "seo": {
+      "metaTitle": "SEO/GEO対策",
+      "metaDescription": "検索エンジン最適化(SEO)+AI検索最適化(GEO)を統合支援。Core Web Vitals・JSON-LD・コンテンツ戦略まで一貫。",
+      "heroBadge": "SEO/GEO 対策",
+      "ctaTitle": "SEO/GEO 対策のご相談はこちら"
+    },
+    "ai": {
+      "metaTitle": "AI導入支援",
+      "metaDescription": "n8n×Dify×LLMを組み合わせた業務自動化・AIエージェント導入のフルスタック支援。",
+      "heroBadge": "AI 導入支援",
+      "ctaTitle": "AI 導入のご相談はこちら"
+    }
+  },
   "blogPage": {
     "metaTitle": "ブログ",
     "metaDescription": "Web制作・MEO・SEO/GEO・AI導入の最新情報やノウハウをお届けします。",
