@@ -5,7 +5,7 @@
  * 128px → 56-72px / py-16 → py-10 / suffix 40px → 18-22px.
  */
 
-import { useTranslations, useLocale } from "next-intl"
+import { useTranslations } from "next-intl"
 import { motion } from "framer-motion"
 import { NumberTicker } from "@/components/magicui/number-ticker"
 import { Meteors } from "@/components/magicui/meteors"
@@ -23,8 +23,6 @@ const EASE = [0.22, 1, 0.36, 1] as const
 
 export default function StatsHeroicSection() {
   const t = useTranslations("home")
-  const locale = useLocale()
-  const isJa = locale === "ja"
 
   return (
     <section className="relative bg-paradigm-ink text-paradigm-paper paradigm-section overflow-hidden">
@@ -36,24 +34,13 @@ export default function StatsHeroicSection() {
         <FadeIn className="mb-10 text-center max-w-2xl mx-auto">
           <p className="paradigm-eyebrow text-paradigm-glow mb-3 inline-flex items-center gap-2">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-paradigm-glow animate-pulse" />
-            By the numbers
+            {t("statsEyebrow")}
           </p>
           <h2 className="font-display text-[26px] md:text-[40px] leading-[1.1] tracking-[-0.025em] text-paradigm-paper">
-            {isJa ? (
-              <>
-                実績で語る、
-                <span className="bg-gradient-to-r from-pink-300 via-paradigm-glow to-paradigm-tech bg-clip-text text-transparent">
-                  Paradigm の支援力。
-                </span>
-              </>
-            ) : (
-              <>
-                Numbers that prove{" "}
-                <span className="bg-gradient-to-r from-pink-300 via-paradigm-glow to-paradigm-tech bg-clip-text text-transparent">
-                  Paradigm delivers.
-                </span>
-              </>
-            )}
+            {t("statsHeading")}
+            <span className="bg-gradient-to-r from-pink-300 via-paradigm-glow to-paradigm-tech bg-clip-text text-transparent">
+              {t("statsHeadingHighlight")}
+            </span>
           </h2>
         </FadeIn>
 

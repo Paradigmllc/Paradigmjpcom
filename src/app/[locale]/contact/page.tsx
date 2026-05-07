@@ -65,7 +65,7 @@ export default async function ContactPage({ params }: Props) {
             <h2 className="font-display text-[22px] md:text-[28px] leading-[1.2] text-paradigm-ink mb-7 tracking-[-0.015em]">
               {t("formTitle")}
             </h2>
-            <ContactForm locale={locale} />
+            <ContactForm />
           </div>
 
           <aside className="lg:col-span-2 space-y-4">

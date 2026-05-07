@@ -165,7 +165,24 @@
       "3": "Máximo 15 minutos"
     },
     "processEyebrow": "Process",
-    "processHeading": "Cuatro pasos para entregar tu proyecto con éxito."
+    "processHeading": "Cuatro pasos para entregar tu proyecto con éxito.",
+    "statsEyebrow": "By the numbers",
+    "statsHeading": "Numbers that prove ",
+    "statsHeadingHighlight": "Paradigm delivers.",
+    "process": {
+      "listen": {
+        "desc": "Discover goals through deep interviews"
+      },
+      "design": {
+        "desc": "Strategy + UX architecture + wireframes"
+      },
+      "build": {
+        "desc": "Next.js implementation + AI integration"
+      },
+      "grow": {
+        "desc": "PDCA + KPI optimisation as your partner"
+      }
+    }
   },
   "chatbot": {
     "title": "Asistente de Paradigm",
@@ -651,5 +668,61 @@
         }
       ]
     }
+  },
+  "contactForm": {
+    "name": "Your name",
+    "namePh": "Jane Smith",
+    "company": "Company",
+    "companyPh": "Acme Inc.",
+    "email": "Email",
+    "emailPh": "you@example.com",
+    "phone": "Phone",
+    "phonePh": "+1 555 123 4567",
+    "services": "Services you are interested in",
+    "servicesList": [
+      "Web Development",
+      "MEO (Local SEO)",
+      "SEO / GEO",
+      "AI Integration"
+    ],
+    "message": "Message",
+    "messagePh": "Tell us about your challenges and goals.",
+    "budget": "Budget",
+    "budgetOptions": [
+      {
+        "v": "",
+        "l": "Please select"
+      },
+      {
+        "v": "~$2K",
+        "l": "Up to $2K"
+      },
+      {
+        "v": "$2-5K",
+        "l": "$2K – $5K"
+      },
+      {
+        "v": "$5-10K",
+        "l": "$5K – $10K"
+      },
+      {
+        "v": "$10K+",
+        "l": "$10K+"
+      },
+      {
+        "v": "undecided",
+        "l": "Not sure / want to discuss"
+      }
+    ],
+    "submit": "Send",
+    "submitting": "Sending…",
+    "success": "Sent",
+    "successDefault": "Thanks for reaching out. We will reply within one business day.",
+    "errorDefault": "Failed to send",
+    "errorNetwork": "A network error occurred",
+    "privacy": "Submissions are handled in accordance with our",
+    "privacyLink": "privacy policy",
+    "privacySuffix": ".",
+    "required": "*"
   }
 }
