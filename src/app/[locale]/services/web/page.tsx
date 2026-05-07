@@ -61,7 +61,6 @@ export default async function WebServicePage({ params }: Props) {
         results={service.results}
         plans={pricing.plans}
         pricingFootnote={pricing.monthly}
-        locale={locale}
         iconBg="from-pink-400 via-paradigm-accent to-paradigm-tech"
         beamFrom="rgb(244 114 182)"
         beamTo="rgb(14 165 233)"

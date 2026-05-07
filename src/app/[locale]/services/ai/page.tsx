@@ -89,7 +89,6 @@ export default async function AiServicePage({ params }: Props) {
         results={service.results}
         plans={pricing.plans}
         pricingFootnote={pricing.monthly}
-        locale={locale}
         iconBg="from-paradigm-accent via-pink-400 to-orange-300"
         beamFrom="rgb(79 70 229)"
         beamTo="rgb(251 146 60)"

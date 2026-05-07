@@ -120,7 +120,6 @@ export default async function SeoServicePage({ params }: Props) {
         results={service.results}
         plans={pricing.plans}
         pricingFootnote={pricing.monthly}
-        locale={locale}
         iconBg="from-paradigm-glow via-violet-400 to-paradigm-accent"
         beamFrom="rgb(165 180 252)"
         beamTo="rgb(79 70 229)"

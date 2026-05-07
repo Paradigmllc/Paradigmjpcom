@@ -724,5 +724,250 @@
     "privacyLink": "privacy policy",
     "privacySuffix": ".",
     "required": "*"
+  },
+  "errorPage": {
+    "eyebrow": "Error",
+    "title": "Something went wrong",
+    "desc": "An unexpected error occurred. Please try again, or return to the home page.",
+    "retry": "Try again",
+    "home": "Back to home",
+    "contact": "Contact us if the problem persists"
+  },
+  "notFoundPage": {
+    "eyebrow": "404",
+    "title": "Page not found",
+    "desc": "The page you are looking for has been moved or deleted.",
+    "home": "Back to home",
+    "services": "Our services",
+    "contact": "Contact us"
+  },
+  "serviceDetailLayout": {
+    "pricingEyebrow": "Pricing",
+    "pricingHeading": "Pricing plans",
+    "popularBadge": "Most popular",
+    "consultButton": "Get in touch"
+  },
+  "maintenancePage": {
+    "eyebrow": "Maintenance",
+    "title": "We will be right back",
+    "desc": "The site is currently undergoing scheduled maintenance. Please check back in a moment.",
+    "contact": "For urgent matters, please email info@paradigmjp.com."
+  },
+  "blogPostPage": {
+    "readTimeFormat": "{date} · {readTime} read",
+    "backLink": "← Back to all posts",
+    "ctaEyebrow": "Talk",
+    "ctaTitle": "Talk to us about this article",
+    "ctaHighlight": "Talk",
+    "ctaDesc": "We will tailor a concrete proposal for your business.",
+    "ctaButton": "Book a free consultation",
+    "notFound": "Article not found"
+  },
+  "lpWeb": {
+    "metaTitle": "Web development free consultation | Paradigm",
+    "metaDescription": "High-performance Next.js / WordPress sites from $2,000+. Lighthouse 95+ quality. Free first consultation.",
+    "heroBadge": "Web Development Landing",
+    "heroTitle": "Sites that sell, on modern stacks.",
+    "heroHighlight": "sell",
+    "heroDesc": "Lighthouse 95+ sites from $2,000+. Design → code → SEO → ops, end-to-end. First 30-minute call free.",
+    "painsEyebrow": "Pains",
+    "painsHeading": "Any of these sound familiar?",
+    "pains": [
+      "Slow page loads driving users away",
+      "Layout breaks on mobile",
+      "Set-and-forget site getting zero leads",
+      "Slow turnaround from your current agency",
+      "Weak SEO — invisible in search",
+      "Can't update content yourself (no CMS)"
+    ],
+    "solutionsEyebrow": "Solution",
+    "solutionsHeading": "Paradigm solves all of these.",
+    "solutions": [
+      {
+        "gradient": "from-pink-400 via-paradigm-accent to-paradigm-tech",
+        "title": "Lighthouse 95+",
+        "desc": "Next.js / WordPress optimised for Core Web Vitals. SEO benefits as a bonus."
+      },
+      {
+        "gradient": "from-paradigm-tech via-paradigm-glow to-violet-400",
+        "title": "Mobile-first",
+        "desc": "Designed for mobile UX first. Renders beautifully across every device."
+      },
+      {
+        "gradient": "from-paradigm-glow via-violet-400 to-pink-400",
+        "title": "SEO included",
+        "desc": "Structured data, meta tags, sitemap — on-page SEO baseline included."
+      }
+    ],
+    "pricingEyebrow": "Pricing",
+    "pricingHeading": "Transparent pricing",
+    "priceSuffix": "+",
+    "popularBadge": "Most popular",
+    "consultButton": "Get in touch",
+    "plans": [
+      {
+        "name": "Light",
+        "price": "298,000",
+        "desc": "Up to 5 pages",
+        "features": [
+          "Home + 4 pages",
+          "Responsive",
+          "SEO basics",
+          "1 month support"
+        ]
+      },
+      {
+        "name": "Standard",
+        "price": "598,000",
+        "desc": "Up to 10 pages",
+        "features": [
+          "Home + 9 pages",
+          "CMS",
+          "On-page SEO",
+          "Animations",
+          "3 month support"
+        ],
+        "popular": true
+      },
+      {
+        "name": "Premium",
+        "price": "980,000",
+        "desc": "Unlimited pages",
+        "features": [
+          "Next.js custom",
+          "i18n",
+          "3 design variants",
+          "6 month support"
+        ]
+      }
+    ],
+    "ctaEyebrow": "Begin",
+    "ctaTitle": "Start with a free consultation",
+    "ctaHighlight": "free consultation",
+    "ctaDesc": "Rebuild your site in as little as 2 weeks.",
+    "ctaButton": "Book a free 30-min call"
+  },
+  "lpMeo": {
+    "metaTitle": "MEO free audit | Paradigm",
+    "metaDescription": "Win local on Google Maps. TOP3 listing in ~3 months. From ¥29,800/mo. Free audit available.",
+    "heroBadge": "MEO Landing",
+    "heroTitle": "Win local on Google Maps.",
+    "heroHighlight": "Win local",
+    "heroDesc": "TOP3 Google Maps listing in ~3 months. Maximise foot-traffic conversions. From ¥29,800/mo, free audit included.",
+    "outcomesEyebrow": "Outcomes",
+    "outcomesHeading": "What MEO unlocks",
+    "stats": [
+      {
+        "num": "TOP 3",
+        "label": "Google Maps rank",
+        "desc": "Top 3 in local search. Click-through rates spike noticeably.",
+        "gradient": "from-pink-400 via-paradigm-accent to-paradigm-tech"
+      },
+      {
+        "num": "+30/mo",
+        "label": "More visits / month",
+        "desc": "Average client outcome: 30+ extra visits/month within 3 months.",
+        "gradient": "from-paradigm-tech via-paradigm-glow to-violet-400"
+      },
+      {
+        "num": "3 mo",
+        "label": "Time to results",
+        "desc": "Sometimes 1 month. Typically 3 months to TOP3 visibility.",
+        "gradient": "from-paradigm-glow via-violet-400 to-pink-400"
+      }
+    ],
+    "bestFitEyebrow": "Best Fit",
+    "bestFitHeading": "Industries that fit best",
+    "targets": [
+      "Restaurants / cafés",
+      "Hair salons / spas",
+      "Clinics / dental",
+      "Real estate",
+      "Chiropractic / wellness",
+      "Schools / tutors",
+      "Professional services",
+      "Hotels / inns"
+    ],
+    "ctaEyebrow": "Begin",
+    "ctaTitle": "Start with a free audit",
+    "ctaHighlight": "free audit",
+    "ctaDesc": "We'll audit your Google Business Profile on us.",
+    "ctaButton": "Get a free audit"
+  },
+  "lpSeo": {
+    "metaTitle": "SEO / GEO free audit | Paradigm",
+    "metaDescription": "Conventional SEO + AI-search (GEO). Organic traffic 2.5x on average. From ¥49,800/mo.",
+    "heroBadge": "SEO / GEO Landing",
+    "heroTitle": "Build a discovery engine.",
+    "heroHighlight": "discovery engine",
+    "heroDesc": "Google + AI-search (ChatGPT / Gemini) dual strategy. Organic traffic 2.5x on average. From ¥49,800/mo, free audit included.",
+    "comparisonEyebrow": "Comparison",
+    "comparisonHeading": "SEO alone isn't enough anymore.",
+    "conventionalLabel": "Conventional",
+    "conventionalTitle": "Conventional SEO",
+    "conventionalDesc": "Top rankings on Google / Yahoo",
+    "conventionalStat": "2.5x average",
+    "conventionalStatLabel": "organic traffic uplift",
+    "newLabel": "New",
+    "newTitle": "GEO (AI-search ready)",
+    "newDesc": "Get recommended in ChatGPT / Gemini / Perplexity",
+    "newStat": "Industry first",
+    "newStatLabel": "AI-search optimisation",
+    "ctaEyebrow": "Future",
+    "ctaTitle": "Start your AI-era search strategy",
+    "ctaHighlight": "AI-era search",
+    "ctaDesc": "Free SEO / GEO audit report on request.",
+    "ctaButton": "Get a free audit"
+  },
+  "lpAi": {
+    "metaTitle": "AI Integration free consultation | Paradigm",
+    "metaDescription": "Bring ChatGPT / Gemini into operations. Chatbots, automation, analytics. Reduce ops time by ~40%. From ¥198,000+.",
+    "heroBadge": "AI Integration Landing",
+    "heroTitle": "Turn AI into a business weapon.",
+    "heroHighlight": "business weapon",
+    "heroDesc": "Chatbots, automation, analytics. Latest AI cuts ops time by ~40%. From ¥198,000+, free first consultation.",
+    "outcomesEyebrow": "Outcomes",
+    "outcomesHeading": "Three numbers AI changes",
+    "stats": [
+      {
+        "num": "-40%",
+        "label": "Operating time",
+        "desc": "AI automates repetitive work. Humans focus on creative tasks.",
+        "gradient": "from-pink-400 via-paradigm-accent to-paradigm-tech"
+      },
+      {
+        "num": "80%",
+        "label": "CS auto-handled",
+        "desc": "AI chatbot answers 24/7. Major labour cost reduction.",
+        "gradient": "from-paradigm-tech via-paradigm-glow to-violet-400"
+      },
+      {
+        "num": "1/5",
+        "label": "Reporting time",
+        "desc": "Collect → analyse → write — all automated. Faster decisions.",
+        "gradient": "from-paradigm-glow via-violet-400 to-paradigm-accent"
+      }
+    ],
+    "faqEyebrow": "FAQ",
+    "faqHeading": "No expert knowledge required",
+    "faqs": [
+      {
+        "q": "No coding knowledge — am I OK?",
+        "a": "Yes. We support deployment through operations end-to-end. Manuals and in-house training included."
+      },
+      {
+        "q": "How long does deployment take?",
+        "a": "Chatbots: ~2 weeks. Workflow automation: 1-2 months typically."
+      },
+      {
+        "q": "Will it integrate with our existing tools?",
+        "a": "Yes. Google Workspace, Slack, and major CRMs are supported."
+      }
+    ],
+    "ctaEyebrow": "Begin",
+    "ctaTitle": "Take the first step into AI",
+    "ctaHighlight": "AI",
+    "ctaDesc": "Free consultation to scope your AI roadmap.",
+    "ctaButton": "Book a free consultation"
   }
 }

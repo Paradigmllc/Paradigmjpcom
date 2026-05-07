@@ -724,5 +724,250 @@
     "privacyLink": "プライバシーポリシー",
     "privacySuffix": "に基づき適切に管理いたします。",
     "required": "*"
+  },
+  "errorPage": {
+    "eyebrow": "Error",
+    "title": "申し訳ありません",
+    "desc": "予期しないエラーが発生しました。お手数ですが、もう一度お試しください。",
+    "retry": "もう一度試す",
+    "home": "ホームへ戻る",
+    "contact": "問題が続く場合はお問い合わせください"
+  },
+  "notFoundPage": {
+    "eyebrow": "404",
+    "title": "ページが見つかりません",
+    "desc": "お探しのページは移動または削除された可能性があります。",
+    "home": "ホームへ戻る",
+    "services": "サービス一覧",
+    "contact": "お問い合わせ"
+  },
+  "serviceDetailLayout": {
+    "pricingEyebrow": "Pricing",
+    "pricingHeading": "料金プラン",
+    "popularBadge": "人気No.1",
+    "consultButton": "相談する"
+  },
+  "maintenancePage": {
+    "eyebrow": "Maintenance",
+    "title": "メンテナンス中",
+    "desc": "現在システムメンテナンスを実施しております。\nしばらく時間をおいて再度アクセスしてください。",
+    "contact": "お急ぎの方は info@paradigmjp.com までご連絡ください。"
+  },
+  "blogPostPage": {
+    "readTimeFormat": "{date} · {readTime}で読める",
+    "backLink": "← ブログ一覧に戻る",
+    "ctaEyebrow": "Begin",
+    "ctaTitle": "この記事についてご相談ください",
+    "ctaHighlight": "ご相談",
+    "ctaDesc": "御社に合った具体的な提案をいたします。",
+    "ctaButton": "無料相談を予約する",
+    "notFound": "記事が見つかりません"
+  },
+  "lpWeb": {
+    "metaTitle": "【無料相談】Web制作 | Paradigm合同会社",
+    "metaDescription": "Next.js/WordPressによる高速・SEO最適化サイトを298,000円〜。Lighthouse 95+の高品質サイトを制作。初回相談無料。",
+    "heroBadge": "Web 制作 Landing",
+    "heroTitle": "売れるサイトを、最新技術で。",
+    "heroHighlight": "売れるサイト",
+    "heroDesc": "Lighthouse 95+ の高速サイトを 298,000 円〜。デザイン → コーディング → SEO → 公開後運用まで一貫対応。初回 30 分のオンライン相談は完全無料。",
+    "painsEyebrow": "Pains",
+    "painsHeading": "こんなお悩みありませんか？",
+    "pains": [
+      "サイトの表示が遅くてユーザーが離脱している",
+      "スマホで見ると崩れる・読みにくい",
+      "作ったまま放置で問い合わせが来ない",
+      "制作会社に頼んだが修正対応が遅い",
+      "SEO が弱くて検索から見つけてもらえない",
+      "自分で更新できない（CMS 未導入）"
+    ],
+    "solutionsEyebrow": "Solution",
+    "solutionsHeading": "Paradigm が全て解決します",
+    "solutions": [
+      {
+        "gradient": "from-pink-400 via-paradigm-accent to-paradigm-tech",
+        "title": "表示速度 95+",
+        "desc": "Next.js / WordPress で高速化。Core Web Vitals を最適化し、SEO にも好影響。"
+      },
+      {
+        "gradient": "from-paradigm-tech via-paradigm-glow to-violet-400",
+        "title": "モバイルファースト",
+        "desc": "スマホでの操作性を最優先にデザイン。全デバイスで美しく表示。"
+      },
+      {
+        "gradient": "from-paradigm-glow via-violet-400 to-pink-400",
+        "title": "SEO 標準装備",
+        "desc": "構造化データ・メタタグ・サイトマップ等、SEO 内部対策を標準で実施。"
+      }
+    ],
+    "pricingEyebrow": "Pricing",
+    "pricingHeading": "明確な料金体系",
+    "priceSuffix": "〜",
+    "popularBadge": "人気No.1",
+    "consultButton": "相談する",
+    "plans": [
+      {
+        "name": "ライト",
+        "price": "298,000",
+        "desc": "5 ページ以内",
+        "features": [
+          "トップ+4 ページ",
+          "レスポンシブ",
+          "SEO 基本",
+          "1 ヶ月サポート"
+        ]
+      },
+      {
+        "name": "スタンダード",
+        "price": "598,000",
+        "desc": "10 ページ以内",
+        "features": [
+          "トップ+9 ページ",
+          "CMS 導入",
+          "SEO 内部対策",
+          "アニメーション",
+          "3 ヶ月サポート"
+        ],
+        "popular": true
+      },
+      {
+        "name": "プレミアム",
+        "price": "980,000",
+        "desc": "ページ数無制限",
+        "features": [
+          "Next.js カスタム",
+          "多言語対応",
+          "デザイン 3 案",
+          "6 ヶ月サポート"
+        ]
+      }
+    ],
+    "ctaEyebrow": "Begin",
+    "ctaTitle": "まずは無料相談から",
+    "ctaHighlight": "無料相談",
+    "ctaDesc": "御社の Web サイトを最短 2 週間で刷新します。",
+    "ctaButton": "無料相談を予約する（30 分）"
+  },
+  "lpMeo": {
+    "metaTitle": "【無料診断】MEO対策 | Paradigm合同会社",
+    "metaDescription": "Googleマップで地域No.1へ。平均3ヶ月でTOP3表示を実現するMEO対策サービス。月額29,800円〜。初回無料診断実施中。",
+    "heroBadge": "MEO 対策 Landing",
+    "heroTitle": "地域 No.1 を、Google マップで。",
+    "heroHighlight": "地域 No.1",
+    "heroDesc": "平均 3 ヶ月で Google マップ TOP3 表示を実現。来店型ビジネスの集客を最大化。月額 29,800 円〜・初回無料診断実施中。",
+    "outcomesEyebrow": "Outcomes",
+    "outcomesHeading": "MEO 対策で実現できること",
+    "stats": [
+      {
+        "num": "TOP 3",
+        "label": "Google Maps 表示",
+        "desc": "地域検索で上位 3 位以内に表示。クリック率が大幅に向上します。",
+        "gradient": "from-pink-400 via-paradigm-accent to-paradigm-tech"
+      },
+      {
+        "num": "+30 件",
+        "label": "月間来店増加",
+        "desc": "実績平均。MEO 対策後 3 ヶ月で月間来店数が 30 件以上増加。",
+        "gradient": "from-paradigm-tech via-paradigm-glow to-violet-400"
+      },
+      {
+        "num": "3 ヶ月",
+        "label": "効果が出る目安",
+        "desc": "早い場合は 1 ヶ月。平均 3 ヶ月で TOP3 表示が見込めます。",
+        "gradient": "from-paradigm-glow via-violet-400 to-pink-400"
+      }
+    ],
+    "bestFitEyebrow": "Best Fit",
+    "bestFitHeading": "こんな業種に最適です",
+    "targets": [
+      "飲食店・カフェ",
+      "美容室・サロン",
+      "クリニック・歯科",
+      "不動産",
+      "整骨院・整体",
+      "学習塾",
+      "士業事務所",
+      "ホテル・旅館"
+    ],
+    "ctaEyebrow": "Begin",
+    "ctaTitle": "まずは無料診断から",
+    "ctaHighlight": "無料診断",
+    "ctaDesc": "御社の Google ビジネスプロフィールを無料で診断します。",
+    "ctaButton": "無料診断を受ける"
+  },
+  "lpSeo": {
+    "metaTitle": "【無料診断】SEO/GEO対策 | Paradigm合同会社",
+    "metaDescription": "従来のSEO+AI検索対応(GEO)の二刀流。オーガニック流入を平均2.5倍に。月額49,800円〜。",
+    "heroBadge": "SEO / GEO Landing",
+    "heroTitle": "検索される仕組みを、つくる。",
+    "heroHighlight": "検索される仕組み",
+    "heroDesc": "Google 検索 + AI 検索（ChatGPT/Gemini）の二刀流対策。オーガニック流入を平均 2.5 倍に。月額 49,800 円〜・無料サイト診断実施中。",
+    "comparisonEyebrow": "Comparison",
+    "comparisonHeading": "SEO だけでは、もう足りない",
+    "conventionalLabel": "Conventional",
+    "conventionalTitle": "従来の SEO",
+    "conventionalDesc": "Google / Yahoo 検索での上位表示",
+    "conventionalStat": "平均 2.5 倍",
+    "conventionalStatLabel": "オーガニック流入増加",
+    "newLabel": "New",
+    "newTitle": "GEO（AI 検索対応）",
+    "newDesc": "ChatGPT / Gemini / Perplexity での推薦",
+    "newStat": "業界初",
+    "newStatLabel": "AI 検索最適化サービス",
+    "ctaEyebrow": "Future",
+    "ctaTitle": "AI 時代の検索対策、始めませんか？",
+    "ctaHighlight": "AI 時代の検索対策",
+    "ctaDesc": "無料の SEO / GEO 診断レポートをお送りします。",
+    "ctaButton": "無料診断を受ける"
+  },
+  "lpAi": {
+    "metaTitle": "【無料相談】AI導入支援 | Paradigm合同会社",
+    "metaDescription": "ChatGPT/Geminiを業務に導入。チャットボット構築、業務自動化、データ分析で業務時間を平均40%削減。198,000円〜。",
+    "heroBadge": "AI 導入支援 Landing",
+    "heroTitle": "AI を、ビジネスの武器に。",
+    "heroHighlight": "ビジネスの武器",
+    "heroDesc": "チャットボット構築・業務自動化・データ分析。最新 AI で業務時間を平均 40% 削減。198,000 円〜・初回相談無料。",
+    "outcomesEyebrow": "Outcomes",
+    "outcomesHeading": "AI 導入で変わる 3 つの数字",
+    "stats": [
+      {
+        "num": "40%",
+        "label": "業務時間削減",
+        "desc": "繰り返し作業を AI が自動化。人間はクリエイティブな業務に集中。",
+        "gradient": "from-pink-400 via-paradigm-accent to-paradigm-tech"
+      },
+      {
+        "num": "80%",
+        "label": "問い合わせ自動化",
+        "desc": "AI チャットボットが 24 時間対応。人件費を大幅に削減。",
+        "gradient": "from-paradigm-tech via-paradigm-glow to-violet-400"
+      },
+      {
+        "num": "1/5",
+        "label": "レポート作成時間",
+        "desc": "データ収集 → 分析 → 作成を AI が自動化。意思決定を加速。",
+        "gradient": "from-paradigm-glow via-violet-400 to-paradigm-accent"
+      }
+    ],
+    "faqEyebrow": "FAQ",
+    "faqHeading": "専門知識は不要です",
+    "faqs": [
+      {
+        "q": "プログラミング知識がなくても大丈夫？",
+        "a": "はい。導入から運用まで全てサポートします。操作マニュアルと社内研修もセットです。"
+      },
+      {
+        "q": "どのくらいの期間で導入できる？",
+        "a": "チャットボットなら最短 2 週間。業務自動化は 1〜2 ヶ月が目安です。"
+      },
+      {
+        "q": "既存のシステムと連携できる？",
+        "a": "はい。Google Workspace、Slack、各種 CRM 等との連携が可能です。"
+      }
+    ],
+    "ctaEyebrow": "Begin",
+    "ctaTitle": "AI 導入の第一歩を踏み出しませんか？",
+    "ctaHighlight": "AI 導入",
+    "ctaDesc": "無料相談で御社に最適な AI 活用プランをご提案します。",
+    "ctaButton": "無料相談を予約する"
   }
 }

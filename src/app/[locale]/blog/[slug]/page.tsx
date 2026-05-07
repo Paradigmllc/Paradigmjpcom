@@ -9,6 +9,7 @@
  */
 import type { Metadata } from "next"
 import { Link } from "@/i18n/routing"
+import { getTranslations } from "next-intl/server"
 import { getAllBlogSlugs, getBlogPostBySlug } from "@/lib/blog-cms"
 import { notFound } from "next/navigation"
 import PageHero from "@/components/PageHero"
@@ -25,9 +26,9 @@ export async function generateMetadata({
   params: Promise<{ slug: string; locale: string }>
 }): Promise<Metadata> {
   const { slug, locale } = await params
-  const isJa = locale === "ja"
+  const t = await getTranslations({ locale, namespace: "blogPostPage" })
   const post = await getBlogPostBySlug(slug, locale)
-  if (!post) return { title: isJa ? "記事が見つかりません" : "Article not found" }
+  if (!post) return { title: t("notFound") }
   return {
     title: post.title,
     description: post.excerpt,
@@ -36,7 +37,7 @@ export async function generateMetadata({
       description: post.excerpt,
       type: "article",
       publishedTime: post.date,
-      locale: isJa ? "ja_JP" : "en_US",
+      locale: locale === "ja" ? "ja_JP" : "en_US",
     },
   }
 }
@@ -118,32 +119,14 @@ export default async function BlogPostPage({
   params: Promise<{ slug: string; locale: string }>
 }) {
   const { slug, locale } = await params
+  const t = await getTranslations({ locale, namespace: "blogPostPage" })
   const post = await getBlogPostBySlug(slug, locale)
   if (!post) notFound()
-  const isJa = locale === "ja"
-  const orgName = isJa ? "Paradigm合同会社" : "Paradigm LLC"
-
-  const T = isJa
-    ? {
-        readTime: `${post.date} · ${post.readTime}で読める`,
-        back: "← ブログ一覧に戻る",
-        ctaTitle: "この記事についてご相談ください",
-        ctaHighlight: "ご相談",
-        ctaDesc: "御社に合った具体的な提案をいたします。",
-        ctaButton: "無料相談を予約する",
-      }
-    : {
-        readTime: `${post.date} · ${post.readTime} read`,
-        back: "← Back to all posts",
-        ctaTitle: "Talk to us about this article",
-        ctaHighlight: "Talk",
-        ctaDesc: "We'll tailor a concrete proposal for your business.",
-        ctaButton: "Book a free consultation",
-      }
+  const orgName = locale === "ja" ? "Paradigm合同会社" : "Paradigm LLC"
 
   return (
     <>
-      <PageHero badge={post.category} title={post.title} desc={T.readTime} />
+      <PageHero badge={post.category} title={post.title} desc={t("readTimeFormat", { date: post.date, readTime: post.readTime })} />
 
       <article className="relative bg-paradigm-paper paradigm-section overflow-hidden">
         <div className="paradigm-mesh opacity-20" />
@@ -155,17 +138,17 @@ export default async function BlogPostPage({
       <section className="relative bg-paradigm-paper-deep py-8 overflow-hidden">
         <FadeIn className="max-w-3xl mx-auto px-6 md:px-8">
           <Link href="/blog" className="paradigm-eyebrow text-paradigm-ink-soft hover:text-paradigm-accent transition-colors inline-flex items-center gap-2">
-            {T.back}
+            {t("backLink")}
           </Link>
         </FadeIn>
       </section>
 
       <RichCtaBand
-        eyebrow="Talk"
-        title={T.ctaTitle}
-        highlight={T.ctaHighlight}
-        desc={T.ctaDesc}
-        buttonLabel={T.ctaButton}
+        eyebrow={t("ctaEyebrow")}
+        title={t("ctaTitle")}
+        highlight={t("ctaHighlight")}
+        desc={t("ctaDesc")}
+        buttonLabel={t("ctaButton")}
       />
 
       <script
