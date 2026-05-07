@@ -6,7 +6,7 @@
  */
 
 import { useRef } from "react"
-import { useLocale, useTranslations } from "next-intl"
+import { useTranslations } from "next-intl"
 import { motion } from "framer-motion"
 import { Headphones, PenTool, Code2, TrendingUp } from "lucide-react"
 import { AnimatedBeam } from "@/components/magicui/animated-beam"
@@ -14,29 +14,17 @@ import FadeIn from "@/components/aesop/FadeIn"
 
 const EASE = [0.22, 1, 0.36, 1] as const
 
-const STEPS_JA = [
-  { key: "listen", icon: Headphones, gradient: "from-pink-400 to-paradigm-accent", title: "Listen", desc: "ヒアリングで現状と目標を整理" },
-  { key: "design", icon: PenTool, gradient: "from-paradigm-accent to-paradigm-tech", title: "Design", desc: "戦略 + UX 設計 + ワイヤー" },
-  { key: "build", icon: Code2, gradient: "from-paradigm-tech to-paradigm-glow", title: "Build", desc: "Next.js 実装 + AI 連携" },
-  { key: "grow", icon: TrendingUp, gradient: "from-paradigm-glow to-pink-400", title: "Grow", desc: "PDCA + KPI 改善で伴走" },
-] as const
-
-const STEPS_EN = [
-  { key: "listen", icon: Headphones, gradient: "from-pink-400 to-paradigm-accent", title: "Listen", desc: "Discover goals through deep interviews" },
-  { key: "design", icon: PenTool, gradient: "from-paradigm-accent to-paradigm-tech", title: "Design", desc: "Strategy + UX architecture + wireframes" },
-  { key: "build", icon: Code2, gradient: "from-paradigm-tech to-paradigm-glow", title: "Build", desc: "Next.js implementation + AI integration" },
-  { key: "grow", icon: TrendingUp, gradient: "from-paradigm-glow to-pink-400", title: "Grow", desc: "PDCA + KPI optimisation as your partner" },
+const STEP_META = [
+  { key: "listen", icon: Headphones, gradient: "from-pink-400 to-paradigm-accent",    title: "Listen" },
+  { key: "design", icon: PenTool,    gradient: "from-paradigm-accent to-paradigm-tech", title: "Design" },
+  { key: "build",  icon: Code2,      gradient: "from-paradigm-tech to-paradigm-glow",   title: "Build"  },
+  { key: "grow",   icon: TrendingUp, gradient: "from-paradigm-glow to-pink-400",        title: "Grow"   },
 ] as const
 
 export default function ProcessSection() {
-  const locale = useLocale()
-  const isJa = locale === "ja"
-  const STEPS = isJa ? STEPS_JA : STEPS_EN
-
   const containerRef = useRef<HTMLDivElement>(null)
   const refs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)]
 
-  // i18n strict (AE-PHP-2): keys live in messages/{locale}.json (all 12 locales seeded).
   const t = useTranslations("home")
   const eyebrow = t("processEyebrow")
   const heading = t("processHeading")
@@ -56,7 +44,7 @@ export default function ProcessSection() {
         </FadeIn>
 
         <div ref={containerRef} className="relative grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
-          {STEPS.map((s, idx) => {
+          {STEP_META.map((s, idx) => {
             const Icon = s.icon
             return (
               <motion.div
@@ -78,7 +66,7 @@ export default function ProcessSection() {
                   {s.title}
                 </h3>
                 <p className="text-[12px] md:text-[13px] text-paradigm-ink-soft leading-[1.65]">
-                  {s.desc}
+                  {t(`process.${s.key}.desc`)}
                 </p>
               </motion.div>
             )
