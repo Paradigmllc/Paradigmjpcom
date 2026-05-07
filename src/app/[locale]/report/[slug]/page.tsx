@@ -12,8 +12,11 @@
  *   Stage 1: proposal_pages (V2 ProposalRenderer)
  *   Stage 2: error
  *
- * V1 (Appexxme diagnostic_reports token-based) は Paradigm-HP では非対応。
- * V1 token URL を踏んだ顧客は /report/[slug] redirect shim 経由で V2/V3 に流れる。
+ * P18-A-FIX-1 (2026-05-08): V1 token 再統合
+ *   slug が UUID-36 形式なら Stage 0 より前に V1 (diagnostic_reports) を試行し、
+ *   ヒット時は report row → ProspectData minimal mapping → ProposalRenderer で描画。
+ *   `/[locale]/report/[token]` orphan 削除後の旧 token URL 互換性確保 (404 防止)。
+ *   API `/api/report/[slug]` は維持・閲覧トラッキング/HOT 検出も継続発火。
  */
 
 import { useState, useEffect, useRef } from "react"
@@ -41,6 +44,70 @@ export default function ReportPageWrapper() {
     let cancelled = false
 
     async function load() {
+      // ── Stage -1) V1 token 互換 (P18-A-FIX-1 2026-05-08) ───────────
+      // UUID-36 形式 (8-4-4-4-12 hex) のみ V1 を試行。短い slug は V2/V3 のみ。
+      const isUuid =
+        slug.length === 36 &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)
+      if (isUuid) {
+        try {
+          const rV1 = await fetch(`/api/report/${slug}`, { cache: "no-store" })
+          if (!cancelled && rV1.ok) {
+            const dV1 = await rV1.json()
+            const r = dV1?.report
+            if (r && r.token) {
+              // diagnostic_reports row → ProspectData minimal mapping
+              setData({
+                diagnostic_report: r,
+                id: r.id,
+                slug: r.token,
+                business_name: r.business_name || "",
+                category: r.category || "",
+                address: r.address || "",
+                rating: r.rating || 0,
+                review_count: r.review_count || 0,
+                unanswered_reviews: r.unanswered_reviews || 0,
+                unanswered_english: r.unanswered_english || 0,
+                reply_rate: r.reply_rate || 0,
+                competitor_avg_reply_rate: r.competitor_avg_reply_rate || 78,
+                competitor_avg_rating: 4.4,
+                page_speed_mobile: r.page_speed_mobile || 0,
+                page_speed_desktop: r.page_speed_desktop || 0,
+                has_website: !!r.website_url,
+                website_url: r.website_url || null,
+                tech_stack: r.tech_stack || [],
+                vulnerabilities: r.vulnerabilities || [],
+                has_english_page: r.has_english_page || false,
+                foreign_review_ratio: 0,
+                sample_reviews: [],
+                ai_reply_samples: r.ai_reply_samples || [],
+                loss_aversion_hook: r.loss_aversion_hook || "",
+                estimated_monthly_loss: r.estimated_monthly_loss || 0,
+                match_score: r.match_score || 0,
+                primary_product: r.primary_product || "hp",
+                demo_url: r.demo_url || "",
+                report_url: r.report_url || "",
+                ai_analysis: r.ai_analysis || null,
+                review_analysis: r.review_analysis || null,
+                competitor_analysis: r.competitor_analysis || null,
+                has_sns: r.has_sns || false,
+                has_ads: r.has_ads || false,
+                phone: r.phone || "",
+                email: r.email || "",
+                visible_sections: r.visible_sections || undefined,
+              })
+              setLoading(false)
+              return
+            }
+          } else if (!cancelled && rV1.status !== 404 && rV1.status !== 410) {
+            console.warn(`[paradigm-hp/report] V1 unexpected status: ${rV1.status}`)
+          }
+        } catch (e) {
+          console.warn("[paradigm-hp/report] V1 fetch failed, falling to V2/V3:", e)
+        }
+        if (cancelled) return
+      }
+
       // ── Stage 0) cms_content_blocks (V3 canonical) ─────────────────
       try {
         const r0 = await fetch(`/api/content-blocks/${slug}`, { cache: "no-store" })
