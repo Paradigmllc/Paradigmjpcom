@@ -1,4 +1,25 @@
 {
+  "legalPage": {
+    "metaTitle": "Specified Commercial Transactions Act notice",
+    "metaDescription": "Paradigm LLC commercial transactions disclosure (Japan SCT Act).",
+    "heroBadge": "Legal",
+    "heroTitle": "Specified Commercial Transactions Act notice",
+    "rows": [
+      ["Vendor", "Paradigm LLC"],
+      ["Representative", "Managing Member"],
+      ["Address", "Disclosed promptly on request"],
+      ["Phone", "Disclosed promptly on request"],
+      ["Email", "contact@paradigmjp.com"],
+      ["URL", "https://paradigmjp.com"],
+      ["Pricing", "As listed on each service page (excl. tax)"],
+      ["Payment", "Bank transfer (invoice-based)"],
+      ["Payment timing", "Net 30 (invoice issued, paid by end of next month)"],
+      ["Service start", "On contract signing, per mutually agreed schedule"],
+      ["Returns / cancellations", "Due to the service nature, no refunds after start. Thorough scoping before signing."],
+      ["Termination", "Web dev: ends on delivery. MEO/SEO: 6-month minimum, no early-termination fee (ends end of month)."],
+      ["Extra fees", "Any out-of-scope work requires prior approval before execution."]
+    ]
+  },
   "privacyPage": {
     "metaTitle": "Privacy Policy",
     "metaDescription": "Paradigm LLC privacy policy.",
