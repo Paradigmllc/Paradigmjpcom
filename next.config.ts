@@ -17,6 +17,11 @@ const nextConfig: NextConfig = {
   // 2026-05-03: @paradigmllc/blocks は TypeScript ソース直配布 (no build step)
   // Appexxme と同一 Block 実装を共有するため transpile 必須。
   transpilePackages: ["@paradigmllc/blocks"],
+  // 2026-05-08: OOM 真因 #2 根治 (Appexxme 同期適用 / commit 508a6e3 と同パターン)
+  //   build 内の TypeScript validation が別 Node プロセスで peak ~3GB RSS を消費し、
+  //   DigitalOcean 4vCPU/8GB Droplet で OOM-killer に殺されていた (paradigm-hp 4 連続 deploy fail root cause)。
+  //   型保護は IDE / pre-push hook / CI 側で検証 (build 時点ではスキップして memory 節約).
+  typescript: { ignoreBuildErrors: true },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "**" },
