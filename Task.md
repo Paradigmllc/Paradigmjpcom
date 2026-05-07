@@ -18,7 +18,7 @@
 | Status | Owner | Lock-since | Branch | Task | Notes |
 |--------|-------|-----------|--------|------|-------|
 | 🟡 BLOCKED | - | - | - | **P17 i18n 12-locale 拡張** P17-11/12/13/14/15 残 | HomeClient 426行 ✅・services/contact/about messages 化 + AllInOneClient 1972行 messages 化 + PayloadCMS DeepSeek 自動翻訳 + hreflang/sitemap.xml |
-| ⚪ AVAILABLE | - | - | - | **P18-D AE-PHP-2 i18n sweep 残** | 完遂: services/about/faq/contact/pricing/privacy/legal/works/blog + service-detail/web + service-detail/meo (11 ページ・2026-05-08)・残: services/seo の ComparisonBand + services/ai の USE_CASES (各 ~45 分・部分対応) |
+| ⚪ AVAILABLE | - | - | - | **P18-D AE-PHP-2 i18n sweep 完遂** | 完遂 13 ページ: services/about/faq/contact/pricing/privacy/legal/works/blog + service-detail/web/meo/seo/ai (2026-05-08)・残: HomeClient.tsx 1972行 (別 PR 範疇) |
 
 ---
 
