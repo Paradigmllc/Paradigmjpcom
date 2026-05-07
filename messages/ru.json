@@ -524,5 +524,16 @@
     "ctaHighlight": "together",
     "ctaDesc": "Book a free consultation to scope your Japan entry.",
     "ctaButton": "Book a free consultation"
+  },
+  "blogPage": {
+    "metaTitle": "Blog",
+    "metaDescription": "Insights from Paradigm LLC on Japan market entry, SEO/GEO, and AI integration.",
+    "heroBadge": "Journal",
+    "heroTitle": "Insights from the front lines.",
+    "heroHighlight": "front lines",
+    "heroDesc": "Real-world knowledge on Japan market entry, productized services, and AI-native operations.",
+    "emptyMessage": "No posts are published yet. Check back soon.",
+    "emptyCta": "Contact us",
+    "readTimeFormat": "{readTime} read"
   }
 }

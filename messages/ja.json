@@ -1,4 +1,15 @@
 {
+  "blogPage": {
+    "metaTitle": "ブログ",
+    "metaDescription": "Web制作・MEO・SEO/GEO・AI導入の最新情報やノウハウをお届けします。",
+    "heroBadge": "Journal",
+    "heroTitle": "デジタルマーケティングの最新ノウハウ。",
+    "heroHighlight": "最新ノウハウ",
+    "heroDesc": "Web 制作・MEO・SEO/GEO・AI 導入の現場知見をまとめます。",
+    "emptyMessage": "現在、公開中の記事はありません。新しい記事をお待ちください。",
+    "emptyCta": "お問い合わせ",
+    "readTimeFormat": "{readTime}で読める"
+  },
   "worksPage": {
     "metaTitle": "制作実績",
     "metaDescription": "Paradigm合同会社の制作実績・事例。Web制作・MEO・SEO/GEO・AI導入の成果事例。",

@@ -10,6 +10,7 @@
 import type { Metadata } from "next"
 import { getPayload } from "payload"
 import config from "@payload-config"
+import { getTranslations } from "next-intl/server"
 import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import FadeIn from "@/components/aesop/FadeIn"
@@ -21,12 +22,10 @@ interface Props { params: Promise<{ locale: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  const isJa = locale === "ja"
+  const t = await getTranslations({ locale, namespace: "blogPage" })
   return {
-    title: isJa ? "ブログ" : "Blog",
-    description: isJa
-      ? "Web制作・MEO・SEO/GEO・AI導入の最新情報やノウハウをお届けします。"
-      : "Insights from Paradigm LLC on Japan market entry, SEO/GEO, and AI integration.",
+    title: t("metaTitle"),
+    description: t("metaDescription"),
   }
 }
 
@@ -62,7 +61,7 @@ function formatDate(iso: string | undefined, locale: string): string {
 export default async function BlogPage({ params }: Props) {
   const { locale: rawLocale } = await params
   const locale = coerceLocale(rawLocale)
-  const isJa = locale === "ja"
+  const t = await getTranslations({ locale, namespace: "blogPage" })
 
   let posts: PostDoc[] = []
   try {
@@ -83,10 +82,10 @@ export default async function BlogPage({ params }: Props) {
   return (
     <>
       <PageHero
-        badge="Journal"
-        title={isJa ? "デジタルマーケティングの最新ノウハウ。" : "Insights from the front lines."}
-        highlight={isJa ? "最新ノウハウ" : "front lines"}
-        desc={isJa ? "Web 制作・MEO・SEO/GEO・AI 導入の現場知見をまとめます。" : "Real-world knowledge on Japan market entry, productized services, and AI-native operations."}
+        badge={t("heroBadge")}
+        title={t("heroTitle")}
+        highlight={t("heroHighlight")}
+        desc={t("heroDesc")}
       />
 
       <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
@@ -95,10 +94,10 @@ export default async function BlogPage({ params }: Props) {
           {posts.length === 0 ? (
             <FadeIn className="text-center max-w-xl mx-auto paradigm-glass rounded-2xl p-8 paradigm-glow-md">
               <p className="text-[14px] text-paradigm-ink-soft leading-[1.85] mb-7">
-                {isJa ? "現在、公開中の記事はありません。新しい記事をお待ちください。" : "No posts are published yet. Check back soon."}
+                {t("emptyMessage")}
               </p>
               <Link href="/contact" className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-xl text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors">
-                {isJa ? "お問い合わせ" : "Contact us"}
+                {t("emptyCta")}
               </Link>
             </FadeIn>
           ) : (
@@ -121,7 +120,7 @@ export default async function BlogPage({ params }: Props) {
                         <span className="paradigm-eyebrow text-paradigm-ink-mute text-[10px]">{formatDate(post.publishedAt, locale)}</span>
                         {post.readTime && (
                           <span className="paradigm-eyebrow text-paradigm-ink-mute text-[10px]">
-                            {isJa ? `${post.readTime}で読める` : `${post.readTime} read`}
+                            {t("readTimeFormat", { readTime: post.readTime })}
                           </span>
                         )}
                       </div>
