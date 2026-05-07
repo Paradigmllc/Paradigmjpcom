@@ -10,6 +10,7 @@
 import { Link } from "@/i18n/routing"
 import { motion } from "framer-motion"
 import { ArrowRight } from "lucide-react"
+import { useTranslations } from "next-intl"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
 import { BorderBeam } from "@/components/magicui/border-beam"
@@ -41,8 +42,6 @@ interface ServiceDetailLayoutProps {
   ctaHighlight?: string
   ctaDesc: string
   ctaLabel: string
-  /** Locale "ja" | "en" for in-component UI strings (人気No.1 / 相談する / 料金プラン) */
-  locale?: "ja" | "en" | string
   /** Optional middle band (e.g. process / use cases / comparison) */
   middleBand?: React.ReactNode
 }
@@ -59,16 +58,9 @@ export default function ServiceDetailLayout({
   ctaHighlight,
   ctaDesc,
   ctaLabel,
-  locale = "ja",
   middleBand,
 }: ServiceDetailLayoutProps) {
-  const isJa = locale === "ja"
-  const T = {
-    pricing: isJa ? "Pricing" : "Pricing",
-    pricingHeading: isJa ? "料金プラン" : "Pricing plans",
-    popular: isJa ? "人気No.1" : "Most popular",
-    consult: isJa ? "相談する" : "Get in touch",
-  }
+  const t = useTranslations("serviceDetailLayout")
   return (
     <>
       {/* Features */}
@@ -106,10 +98,10 @@ export default function ServiceDetailLayout({
         <div className="paradigm-mesh opacity-50" />
         <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-8">
           <FadeIn className="mb-8 max-w-2xl">
-            <p className="paradigm-eyebrow text-paradigm-accent mb-3">{T.pricing}</p>
+            <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("pricingEyebrow")}</p>
             <h2 className="font-display text-[26px] md:text-[40px] leading-[1.1] tracking-[-0.025em] text-paradigm-ink">
               <span className="bg-gradient-to-br from-paradigm-ink via-paradigm-accent to-paradigm-tech bg-clip-text text-transparent">
-                {T.pricingHeading}
+                {t("pricingHeading")}
               </span>
             </h2>
           </FadeIn>
@@ -126,7 +118,7 @@ export default function ServiceDetailLayout({
                   )}
                   {p.popular && (
                     <p className="absolute top-4 right-4 paradigm-eyebrow text-paradigm-accent paradigm-glass rounded-full px-2.5 py-1 paradigm-glow-sm text-[10px]">
-                      {T.popular}
+                      {t("popularBadge")}
                     </p>
                   )}
                   <h3 className="font-display text-[20px] md:text-[24px] leading-[1.15] text-paradigm-ink mb-1 tracking-[-0.015em] relative z-10">
@@ -152,7 +144,7 @@ export default function ServiceDetailLayout({
                         : "paradigm-glass text-paradigm-ink-soft hover:text-paradigm-ink"
                     }`}
                   >
-                    {T.consult}
+                    {t("consultButton")}
                     <ArrowRight size={12} />
                   </Link>
                 </div>

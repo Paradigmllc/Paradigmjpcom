@@ -92,7 +92,6 @@ export default async function MeoServicePage({ params }: Props) {
         results={service.results}
         plans={pricing.plans}
         pricingFootnote={pricing.monthly}
-        locale={locale}
         iconBg="from-paradigm-tech via-paradigm-glow to-violet-400"
         beamFrom="rgb(14 165 233)"
         beamTo="rgb(165 180 252)"
