@@ -10,6 +10,7 @@
 import type { Metadata } from "next"
 import { getPayload } from "payload"
 import config from "@payload-config"
+import { getTranslations } from "next-intl/server"
 import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
@@ -23,12 +24,10 @@ interface Props { params: Promise<{ locale: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  const isJa = locale === "ja"
+  const t = await getTranslations({ locale, namespace: "faqPage" })
   return {
-    title: isJa ? "よくあるご質問" : "Frequently Asked Questions",
-    description: isJa
-      ? "Web制作・MEO・SEO/GEO・AI導入支援のよくあるご質問と回答。"
-      : "Common questions about Paradigm LLC's productized services.",
+    title: t("metaTitle"),
+    description: t("metaDescription"),
   }
 }
 
@@ -51,7 +50,7 @@ function lexicalToPlainText(node: unknown): string {
 export default async function FaqPage({ params }: Props) {
   const { locale: rawLocale } = await params
   const locale = coerceLocale(rawLocale)
-  const isJa = locale === "ja"
+  const t = await getTranslations({ locale, namespace: "faqPage" })
 
   let faqs: FaqDoc[] = []
   try {
@@ -74,10 +73,10 @@ export default async function FaqPage({ params }: Props) {
   return (
     <>
       <PageHero
-        badge="FAQ"
-        title={isJa ? "よくあるご質問にお答えします。" : "Answers to common questions."}
-        highlight={isJa ? "よくあるご質問" : "common questions"}
-        desc={isJa ? "お客様からよくいただくご質問をまとめました。" : "Answers to the questions we hear most from foreign SMBs entering Japan."}
+        badge={t("heroBadge")}
+        title={t("heroTitle")}
+        highlight={t("heroHighlight")}
+        desc={t("heroDesc")}
       />
 
       <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
@@ -86,10 +85,10 @@ export default async function FaqPage({ params }: Props) {
           {faqPairs.length === 0 ? (
             <FadeIn className="text-center paradigm-glass rounded-2xl p-8 paradigm-glow-md">
               <p className="text-[14px] text-paradigm-ink-soft leading-[1.85] mb-7">
-                {isJa ? "現在、公開中の FAQ はありません。" : "No FAQs are published yet."}
+                {t("emptyMessage")}
               </p>
               <Link href="/contact" className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-xl text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors">
-                {isJa ? "お問い合わせ" : "Contact us"}
+                {t("emptyCta")}
               </Link>
             </FadeIn>
           ) : (
@@ -124,11 +123,11 @@ export default async function FaqPage({ params }: Props) {
       )}
 
       <RichCtaBand
-        eyebrow="Still curious"
-        title={isJa ? "解決しない疑問がありますか？" : "Still have questions?"}
-        highlight={isJa ? "解決しない疑問" : "questions"}
-        desc={isJa ? "お気軽にお問い合わせください。担当者が丁寧にお答えします。" : "Reach out anytime — we'll get back within one business day."}
-        buttonLabel={isJa ? "お問い合わせ" : "Contact us"}
+        eyebrow={t("ctaEyebrow")}
+        title={t("ctaTitle")}
+        highlight={t("ctaHighlight")}
+        desc={t("ctaDesc")}
+        buttonLabel={t("ctaButton")}
       />
     </>
   )

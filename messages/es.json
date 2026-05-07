@@ -329,5 +329,20 @@
     "ctaHighlight": "digital",
     "ctaDesc": "Tell us about your digital challenges — we'd love to help.",
     "ctaButton": "Book a free consultation"
+  },
+  "faqPage": {
+    "metaTitle": "Frequently Asked Questions",
+    "metaDescription": "Common questions about Paradigm LLC's productized services.",
+    "heroBadge": "FAQ",
+    "heroTitle": "Answers to common questions.",
+    "heroHighlight": "common questions",
+    "heroDesc": "Answers to the questions we hear most from foreign SMBs entering Japan.",
+    "emptyMessage": "No FAQs are published yet.",
+    "emptyCta": "Contact us",
+    "ctaEyebrow": "Still curious",
+    "ctaTitle": "Still have questions?",
+    "ctaHighlight": "questions",
+    "ctaDesc": "Reach out anytime — we'll get back within one business day.",
+    "ctaButton": "Contact us"
   }
 }

@@ -1,4 +1,19 @@
 {
+  "faqPage": {
+    "metaTitle": "よくあるご質問",
+    "metaDescription": "Web制作・MEO・SEO/GEO・AI導入支援のよくあるご質問と回答。",
+    "heroBadge": "FAQ",
+    "heroTitle": "よくあるご質問にお答えします。",
+    "heroHighlight": "よくあるご質問",
+    "heroDesc": "お客様からよくいただくご質問をまとめました。",
+    "emptyMessage": "現在、公開中の FAQ はありません。",
+    "emptyCta": "お問い合わせ",
+    "ctaEyebrow": "Still curious",
+    "ctaTitle": "解決しない疑問がありますか？",
+    "ctaHighlight": "解決しない疑問",
+    "ctaDesc": "お気軽にお問い合わせください。担当者が丁寧にお答えします。",
+    "ctaButton": "お問い合わせ"
+  },
   "aboutPage": {
     "metaTitle": "会社概要",
     "metaDescription": "Paradigm合同会社の会社概要。デジタル技術で中小企業の成長を支援するパートナーです。",
