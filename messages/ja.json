@@ -1,4 +1,21 @@
 {
+  "servicesPage": {
+    "metaTitle": "サービス一覧",
+    "metaDescription": "Web制作・MEO対策・SEO/GEO対策・AI導入支援。Paradigm合同会社が提供する4つのデジタル支援サービスをご紹介します。",
+    "heroBadge": "Services",
+    "heroTitle": "デジタル技術で事業を加速する。",
+    "heroHighlight": "事業を加速",
+    "heroDesc": "Web 制作・MEO 対策・SEO/GEO 対策・AI 導入支援を一貫してご提供します。",
+    "emptyMessage": "現在、公開中のサービスはありません。詳細は直接お問い合わせください。",
+    "emptyCta": "お問い合わせ",
+    "learnMore": "詳しく見る",
+    "getInTouch": "相談する",
+    "ctaEyebrow": "Together",
+    "ctaTitle": "どのサービスが最適かわからない？",
+    "ctaHighlight": "最適",
+    "ctaDesc": "無料相談で御社に最適なプランをご提案します。",
+    "ctaButton": "無料相談を予約する"
+  },
   "locale": {
     "name": "日本語",
     "switchTo": "English"

@@ -248,5 +248,22 @@
     "privacyLink": "سياسة الخصوصية",
     "accept": "قبول",
     "decline": "رفض"
+  },
+  "servicesPage": {
+    "metaTitle": "Services",
+    "metaDescription": "Web development, MEO (local SEO), SEO/GEO, and AI integration — Paradigm LLC's productized service suite for foreign SMBs entering Japan.",
+    "heroBadge": "Services",
+    "heroTitle": "Productized services that move Japan.",
+    "heroHighlight": "move Japan",
+    "heroDesc": "Productized engagements that help foreign SMBs enter and scale in Japan.",
+    "emptyMessage": "No services are currently published. Please contact us for a tailored engagement.",
+    "emptyCta": "Contact us",
+    "learnMore": "Learn more",
+    "getInTouch": "Get in touch",
+    "ctaEyebrow": "Together",
+    "ctaTitle": "Not sure which service fits?",
+    "ctaHighlight": "fits",
+    "ctaDesc": "Book a free consultation and we'll scope the right engagement for you.",
+    "ctaButton": "Book a free consultation"
   }
 }

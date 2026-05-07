@@ -5,11 +5,14 @@
  * 入力:   params.locale
  * 出力:   PageHero + ItemList JSON-LD + 4 service cards + RichCtaBand
  *
+ * AE-PHP-2 (P18-D 2026-05-08): 全 visible text を messages/{locale}.json:servicesPage 経由に統一.
+ *   旧 isJa ? "JP" : "EN" の二択 hardcode → 12 locale 対応 (next-intl getTranslations).
  * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
  */
 import type { Metadata } from "next"
 import { getPayload } from "payload"
 import config from "@payload-config"
+import { getTranslations } from "next-intl/server"
 import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
@@ -24,12 +27,10 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  const isJa = locale === "ja"
+  const t = await getTranslations({ locale, namespace: "servicesPage" })
   return {
-    title: isJa ? "サービス一覧" : "Services",
-    description: isJa
-      ? "Web制作・MEO対策・SEO/GEO対策・AI導入支援。Paradigm合同会社が提供する4つのデジタル支援サービスをご紹介します。"
-      : "Web development, MEO (local SEO), SEO/GEO, and AI integration — Paradigm LLC's productized service suite for foreign SMBs entering Japan.",
+    title: t("metaTitle"),
+    description: t("metaDescription"),
   }
 }
 
@@ -53,7 +54,7 @@ const CARD_GRADIENTS = [
 export default async function ServicesPage({ params }: Props) {
   const { locale: rawLocale } = await params
   const locale = coerceLocale(rawLocale)
-  const isJa = locale === "ja"
+  const t = await getTranslations({ locale, namespace: "servicesPage" })
 
   let services: ServiceDoc[] = []
   try {
@@ -74,14 +75,10 @@ export default async function ServicesPage({ params }: Props) {
   return (
     <>
       <PageHero
-        badge="Services"
-        title={isJa ? "デジタル技術で事業を加速する。" : "Productized services that move Japan."}
-        highlight={isJa ? "事業を加速" : "move Japan"}
-        desc={
-          isJa
-            ? "Web 制作・MEO 対策・SEO/GEO 対策・AI 導入支援を一貫してご提供します。"
-            : "Productized engagements that help foreign SMBs enter and scale in Japan."
-        }
+        badge={t("heroBadge")}
+        title={t("heroTitle")}
+        highlight={t("heroHighlight")}
+        desc={t("heroDesc")}
       />
 
       <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
@@ -90,15 +87,13 @@ export default async function ServicesPage({ params }: Props) {
           {services.length === 0 ? (
             <FadeIn className="text-center py-12 max-w-xl mx-auto paradigm-glass rounded-2xl p-8 paradigm-glow-md">
               <p className="text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.85] mb-7">
-                {isJa
-                  ? "現在、公開中のサービスはありません。詳細は直接お問い合わせください。"
-                  : "No services are currently published. Please contact us for a tailored engagement."}
+                {t("emptyMessage")}
               </p>
               <Link
                 href="/contact"
                 className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-xl text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
               >
-                {isJa ? "お問い合わせ" : "Contact us"}
+                {t("emptyCta")}
               </Link>
             </FadeIn>
           ) : (
@@ -147,14 +142,14 @@ export default async function ServicesPage({ params }: Props) {
                               href={`/services/${s.slug}`}
                               className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-6 py-3 rounded-xl text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
                             >
-                              {isJa ? "詳しく見る" : "Learn more"}
+                              {t("learnMore")}
                             </Link>
                           )}
                           <Link
                             href="/contact"
                             className="inline-flex items-center gap-2 paradigm-glass text-paradigm-ink-soft hover:text-paradigm-ink px-6 py-3 rounded-xl text-[12px] tracking-[0.14em] uppercase font-medium transition-colors"
                           >
-                            {isJa ? "相談する" : "Get in touch"}
+                            {t("getInTouch")}
                           </Link>
                         </div>
                       </div>
@@ -168,11 +163,11 @@ export default async function ServicesPage({ params }: Props) {
       </section>
 
       <RichCtaBand
-        eyebrow="Together"
-        title={isJa ? "どのサービスが最適かわからない？" : "Not sure which service fits?"}
-        highlight={isJa ? "最適" : "fits"}
-        desc={isJa ? "無料相談で御社に最適なプランをご提案します。" : "Book a free consultation and we'll scope the right engagement for you."}
-        buttonLabel={isJa ? "無料相談を予約する" : "Book a free consultation"}
+        eyebrow={t("ctaEyebrow")}
+        title={t("ctaTitle")}
+        highlight={t("ctaHighlight")}
+        desc={t("ctaDesc")}
+        buttonLabel={t("ctaButton")}
       />
     </>
   )
