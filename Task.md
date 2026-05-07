@@ -42,9 +42,20 @@
 4. **EC 系不要 components はスキップ** — Cart/Checkout/Crossmint/Wishlist/ProductCard/NotifyMe/Drop/SamplerBanner/SakuraFall/AnimatedHeart は移植しない
 5. **`/report/[slug]` は Aesop 化対象外** — s10-4 提案ページ 4 鉄則アーキ維持。提案ページは KPI / 訴求重視で別 design language
 
-## ✅ 完了
+## ✅ 完了 (直近 14 日のみ・以前は git log 参照)
 
-（過去のタスクは git log 参照）
+- [x] **B33 Phase 2 middleware locale-aware redirect** (完了: 2026-05-07 / commit: ec4a1eb)
+  - `/report/[slug]` (locale-less) を `cms_content_blocks.region` lookup → `regionToLocale()` で正しい locale prefix へ 308 redirect
+  - 旧版 (next-intl auto-prefix で全部 /ja/ に丸まる致命バグ) を根治
+  - Supabase REST 直叩き + 60s ISR cache で edge-friendly
+  - 詳細: appexxme `Task.md` § B33 Phase 2 + appexxme `CLAUDE.md` s10-5 #17
+
+- [x] **B33 /[locale]/themes-showcase QA ページ** (完了: 2026-05-07 / commit: 8c0aead)
+  - paradigm-blocks の 6 design theme を視覚比較する内部 QA ページ
+  - URL: `/[locale]/themes-showcase` (全 6 縦並び) / `?theme=raycast` (1 テーマ全画面)
+
+- [x] **/[locale]/report/[slug] page.tsx region lookup shim** (完了: 2026-05-07 / commit: 2e5beea)
+  - middleware 昇格前の中間実装. middleware で代替されたが page.tsx は safety net として維持
 
 ## 📝 壁打ちメモ（確定済み事項・2026-04-27）
 
