@@ -3,8 +3,10 @@
  *
  * 役割:   AI 導入支援サービス詳細
  * 入力:   params.locale
- * 出力:   ServiceDetailLayout + middleBand sections
+ * 出力:   ServiceDetailLayout + UseCasesBand (4 業界別事例)
  *
+ * AE-PHP-2 (P18-D 2026-05-08): 全 visible text を messages/{locale}.json:serviceDetail.ai 経由に統一.
+ *   USE_CASES 配列も serviceDetail.ai.useCases[] で構造化 (12 locale で個別翻訳可能).
  * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
  */
 import type { Metadata } from "next"
@@ -26,31 +28,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-const USE_CASES_JA = [
-  { tag: "Chatbot", gradient: "from-pink-400 to-paradigm-accent", title: "カスタマー対応の80%自動化", desc: "AIチャットボットにFAQを学習させ、問い合わせの8割を自動応答。人件費を大幅に削減。" },
-  { tag: "Automation", gradient: "from-paradigm-accent to-paradigm-tech", title: "レポート作成時間を1/5に", desc: "月次レポートの作成をAIが自動化。データ収集から分析、グラフ作成まで一気通貫。" },
-  { tag: "Content", gradient: "from-paradigm-tech to-paradigm-glow", title: "コンテンツ制作コスト60%減", desc: "ブログ記事のドラフトをAIが作成。人間が監修・仕上げるハイブリッド体制で品質を維持。" },
-  { tag: "Analytics", gradient: "from-paradigm-glow to-pink-400", title: "売上予測精度が2倍に", desc: "過去の販売データをAIが分析し、需要予測の精度を大幅に向上。在庫ロスを最小化。" },
-] as const
+interface UseCase { tag: string; gradient: string; title: string; desc: string }
 
-const USE_CASES_EN = [
-  { tag: "Chatbot", gradient: "from-pink-400 to-paradigm-accent", title: "80% of CS auto-answered", desc: "Train AI chatbot on FAQs. Eight out of ten inquiries answered automatically — major labour cost reduction." },
-  { tag: "Automation", gradient: "from-paradigm-accent to-paradigm-tech", title: "5x faster reports", desc: "Monthly reports automated. Collection → analysis → charts, end-to-end." },
-  { tag: "Content", gradient: "from-paradigm-tech to-paradigm-glow", title: "60% lower content cost", desc: "AI drafts blog articles. Humans review / polish — quality maintained at 40% the price." },
-  { tag: "Analytics", gradient: "from-paradigm-glow to-pink-400", title: "2x sales forecast accuracy", desc: "AI analyses historical sales data. Demand forecasting accuracy doubles. Inventory waste minimised." },
-] as const
-
-function UseCasesBand({ isJa }: { isJa: boolean }) {
-  const CASES = isJa ? USE_CASES_JA : USE_CASES_EN
+async function UseCasesBand({ locale }: { locale: string }) {
+  const t = await getTranslations({ locale, namespace: "serviceDetail" })
+  const CASES = t.raw("ai.useCases") as UseCase[]
   return (
     <section className="relative bg-paradigm-paper-deep paradigm-section overflow-hidden">
       <div className="paradigm-mesh opacity-40" />
       <div className="relative z-10 max-w-5xl mx-auto px-6 md:px-8">
         <FadeIn className="mb-8 max-w-2xl">
-          <p className="paradigm-eyebrow text-paradigm-accent mb-3">Use Cases</p>
+          <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("ai.useCasesEyebrow")}</p>
           <h2 className="font-display text-[24px] md:text-[36px] leading-[1.15] tracking-[-0.02em] text-paradigm-ink">
             <span className="bg-gradient-to-br from-paradigm-ink via-paradigm-accent to-pink-400 bg-clip-text text-transparent">
-              {isJa ? "AI 導入事例" : "AI integration cases"}
+              {t("ai.useCasesTitle")}
             </span>
           </h2>
         </FadeIn>
@@ -72,7 +63,7 @@ function UseCasesBand({ isJa }: { isJa: boolean }) {
 
 export default async function AiServicePage({ params }: Props) {
   const { locale } = await params
-  const isJa = locale === "ja"
+  const t = await getTranslations({ locale, namespace: "serviceDetail" })
   const service = getServiceByKey(locale, "ai")
   const pricing = getPricingFor(locale, "ai")
   const serviceSchema = buildServiceSchema({
@@ -83,15 +74,15 @@ export default async function AiServicePage({ params }: Props) {
     serviceType: "AI Integration",
   })
   const breadcrumbSchema = buildBreadcrumbSchema([
-    { name: isJa ? "ホーム" : "Home", url: `https://paradigmjp.com/${locale}` },
-    { name: isJa ? "サービス" : "Services", url: `https://paradigmjp.com/${locale}/services` },
+    { name: t("breadcrumbHome"), url: `https://paradigmjp.com/${locale}` },
+    { name: t("breadcrumbServices"), url: `https://paradigmjp.com/${locale}/services` },
     { name: service.title, url: `https://paradigmjp.com/${locale}/services/ai` },
   ])
   return (
     <>
-      <PageHero badge={isJa ? "AI 導入支援" : "AI Integration"} title={service.title} desc={service.tagline} />
+      <PageHero badge={t("ai.heroBadge")} title={service.title} desc={service.tagline} />
       <ServiceDetailLayout
-        badge={isJa ? "AI 導入支援" : "AI Integration"}
+        badge={t("ai.heroBadgeShort")}
         title={service.title}
         desc={service.desc}
         features={service.features}
@@ -102,16 +93,14 @@ export default async function AiServicePage({ params }: Props) {
         iconBg="from-paradigm-accent via-pink-400 to-orange-300"
         beamFrom="rgb(79 70 229)"
         beamTo="rgb(251 146 60)"
-        middleBand={<UseCasesBand isJa={isJa} />}
-        ctaTitle={isJa ? "AI 導入で業務を変えませんか？" : "Transform your operations with AI"}
-        ctaHighlight={isJa ? "AI 導入" : "AI"}
-        ctaDesc={isJa ? "無料相談で AI 活用の可能性を診断します。" : "Free consultation to scope your AI roadmap."}
-        ctaLabel={isJa ? "無料相談を予約する" : "Book a free consultation"}
+        middleBand={<UseCasesBand locale={locale} />}
+        ctaTitle={t("ai.ctaTitle")}
+        ctaHighlight={t("ai.ctaHighlight")}
+        ctaDesc={t("ai.ctaDesc")}
+        ctaLabel={t("ai.ctaLabel")}
       />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }} />
-
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-
     </>
   )
 }

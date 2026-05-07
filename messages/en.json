@@ -31,15 +31,42 @@
     },
     "seo": {
       "metaTitle": "SEO / GEO",
-      "metaDescription": "Search engine optimization (SEO) + AI search optimization (GEO) — Core Web Vitals, JSON-LD, content strategy end to end.",
+      "metaDescription": "Conventional SEO plus AI-search optimisation (GEO) for ChatGPT / Gemini.",
       "heroBadge": "SEO / GEO",
-      "ctaTitle": "Talk to us about SEO / GEO"
+      "heroBadgeShort": "SEO / GEO",
+      "ctaTitle": "Start your AI-era search strategy",
+      "ctaHighlight": "AI-era search",
+      "ctaDesc": "Free SEO + GEO site audit available.",
+      "ctaLabel": "Get a free audit",
+      "comparisonEyebrow": "Comparison",
+      "comparisonTitle": "SEO vs. GEO",
+      "seoColEyebrow": "Conventional",
+      "seoColTitle": "SEO (Conventional)",
+      "seoColDesc": "Rank top on Google / Yahoo search.",
+      "seoFeatures": ["Keyword strategy + research", "Content SEO (articles)", "Technical / on-page SEO", "Structured data"],
+      "geoColEyebrow": "New",
+      "geoColTitle": "GEO (AI-search ready)",
+      "geoColDesc": "Get recommended in ChatGPT / Gemini search.",
+      "geoFeatures": ["AI-search citation optimisation", "Entity SEO", "FAQ structuring", "Trust signal reinforcement"],
+      "geoBadge": "Paradigm exclusive"
     },
     "ai": {
       "metaTitle": "AI Integration",
-      "metaDescription": "Full-stack support for AI agent deployment and business automation using n8n × Dify × LLM.",
+      "metaDescription": "Bring ChatGPT / Gemini-class AI into your operations. Chatbots, automation, analytics.",
       "heroBadge": "AI Integration",
-      "ctaTitle": "Talk to us about AI integration"
+      "heroBadgeShort": "AI Integration",
+      "ctaTitle": "Transform your operations with AI",
+      "ctaHighlight": "AI",
+      "ctaDesc": "Free consultation to scope your AI roadmap.",
+      "ctaLabel": "Book a free consultation",
+      "useCasesEyebrow": "Use Cases",
+      "useCasesTitle": "AI integration cases",
+      "useCases": [
+        { "tag": "Chatbot", "gradient": "from-pink-400 to-paradigm-accent", "title": "80% of CS auto-answered", "desc": "Train AI chatbot on FAQs. Eight out of ten inquiries answered automatically — major labour cost reduction." },
+        { "tag": "Automation", "gradient": "from-paradigm-accent to-paradigm-tech", "title": "5x faster reports", "desc": "Monthly reports automated. Collection → analysis → charts, end-to-end." },
+        { "tag": "Content", "gradient": "from-paradigm-tech to-paradigm-glow", "title": "60% lower content cost", "desc": "AI drafts blog articles. Humans review / polish — quality maintained at 40% the price." },
+        { "tag": "Analytics", "gradient": "from-paradigm-glow to-pink-400", "title": "2x sales forecast accuracy", "desc": "AI analyses historical sales data. Demand forecasting accuracy doubles. Inventory waste minimised." }
+      ]
     }
   },
   "blogPage": {
