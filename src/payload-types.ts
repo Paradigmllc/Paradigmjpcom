@@ -219,10 +219,6 @@ export interface Post {
    */
   availableLocales: ('ja' | 'en')[];
   /**
-   * 非推奨: availableLocalesを使用してください。
-   */
-  locale?: ('ja' | 'en') | null;
-  /**
    * 検索エンジン最適化
    */
   seo?: {
@@ -489,7 +485,7 @@ export interface Lead {
   createdAt: string;
 }
 /**
- * コレクション変更の監査ログ（自動記録・読み取り専用）
+ * コレクション変更の監査ログ（自動記録・読み取り専用）。新しい順に表示。
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "audit-logs".
@@ -526,11 +522,97 @@ export interface Page {
    */
   description?: string | null;
   ogImage?: (number | null) | Media;
+  /**
+   * title / description / canonical / robots — page.tsx の generateMetadata から参照
+   */
+  seo?: {
+    metaTitle?: string | null;
+    metaDescription?: string | null;
+    noindex?: boolean | null;
+    canonical?: string | null;
+  };
   layout?:
-    | (HeroBlockType | SectionBlockType | CardGridBlockType | CTABlockType | FAQBlockType | RichTextBlockType)[]
+    | (
+        | HeroBlockType
+        | SectionBlockType
+        | CardGridBlockType
+        | CTABlockType
+        | FAQBlockType
+        | RichTextBlockType
+        | {
+            kicker?: string | null;
+            title?: string | null;
+            subtitle?: string | null;
+            stats?:
+              | {
+                  value: string;
+                  label: string;
+                  sublabel?: string | null;
+                  id?: string | null;
+                }[]
+              | null;
+            background?: ('default' | 'surface' | 'dark') | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'stats';
+          }
+        | {
+            kicker?: string | null;
+            title?: string | null;
+            items?:
+              | {
+                  name: string;
+                  location?: string | null;
+                  text: string;
+                  avatar?: (number | null) | Media;
+                  rating?: number | null;
+                  id?: string | null;
+                }[]
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'testimonials';
+          }
+        | {
+            kicker?: string | null;
+            title?: string | null;
+            subtitle?: string | null;
+            steps?:
+              | {
+                  title: string;
+                  description: string;
+                  /**
+                   * 例: Headphones / PenTool / Code2 / TrendingUp
+                   */
+                  icon?: string | null;
+                  id?: string | null;
+                }[]
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'process';
+          }
+        | {
+            items?:
+              | {
+                  text: string;
+                  id?: string | null;
+                }[]
+              | null;
+            direction?: ('left' | 'right') | null;
+            speed?: ('slow' | 'normal' | 'fast') | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'marquee';
+          }
+      )[]
     | null;
   availableLocales: ('ja' | 'en' | 'ko' | 'zh')[];
   isHomepage?: boolean | null;
+  /**
+   * 非推奨: availableLocales を使用してください。filterByLocale 互換維持用。
+   */
+  locale?: ('ja' | 'en' | 'both') | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -830,7 +912,6 @@ export interface PostsSelect<T extends boolean = true> {
   status?: T;
   publishedAt?: T;
   availableLocales?: T;
-  locale?: T;
   seo?:
     | T
     | {
@@ -1047,6 +1128,14 @@ export interface PagesSelect<T extends boolean = true> {
   slug?: T;
   description?: T;
   ogImage?: T;
+  seo?:
+    | T
+    | {
+        metaTitle?: T;
+        metaDescription?: T;
+        noindex?: T;
+        canonical?: T;
+      };
   layout?:
     | T
     | {
@@ -1056,9 +1145,77 @@ export interface PagesSelect<T extends boolean = true> {
         cta?: T | CTABlockTypeSelect<T>;
         faq?: T | FAQBlockTypeSelect<T>;
         'rich-text'?: T | RichTextBlockTypeSelect<T>;
+        stats?:
+          | T
+          | {
+              kicker?: T;
+              title?: T;
+              subtitle?: T;
+              stats?:
+                | T
+                | {
+                    value?: T;
+                    label?: T;
+                    sublabel?: T;
+                    id?: T;
+                  };
+              background?: T;
+              id?: T;
+              blockName?: T;
+            };
+        testimonials?:
+          | T
+          | {
+              kicker?: T;
+              title?: T;
+              items?:
+                | T
+                | {
+                    name?: T;
+                    location?: T;
+                    text?: T;
+                    avatar?: T;
+                    rating?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        process?:
+          | T
+          | {
+              kicker?: T;
+              title?: T;
+              subtitle?: T;
+              steps?:
+                | T
+                | {
+                    title?: T;
+                    description?: T;
+                    icon?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        marquee?:
+          | T
+          | {
+              items?:
+                | T
+                | {
+                    text?: T;
+                    id?: T;
+                  };
+              direction?: T;
+              speed?: T;
+              id?: T;
+              blockName?: T;
+            };
       };
   availableLocales?: T;
   isHomepage?: T;
+  locale?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
@@ -1257,6 +1414,52 @@ export interface Setting {
     ja?: string | null;
     en?: string | null;
   };
+  /**
+   * 色・フォント・角丸を admin から編集します。空のままならデフォルトを使用。色は #FAFAF7 / rgb(250, 250, 247) / 250 250 247 のいずれかの形式。
+   */
+  theme?: {
+    colors?: {
+      /**
+       * デフォルト: #FAFAF7
+       */
+      paper?: string | null;
+      /**
+       * デフォルト: #F1F0EA
+       */
+      paperDeep?: string | null;
+      /**
+       * デフォルト: #1C1C2E
+       */
+      ink?: string | null;
+      inkSoft?: string | null;
+      inkMute?: string | null;
+      line?: string | null;
+      /**
+       * デフォルト: #6366F1 (インディゴ)
+       */
+      accent?: string | null;
+      /**
+       * デフォルト: #14B8A6
+       */
+      tech?: string | null;
+      glow?: string | null;
+    };
+    fonts?: {
+      /**
+       * 例: 'Noto Sans JP', system-ui, sans-serif
+       */
+      display?: string | null;
+      /**
+       * 例: 'Noto Sans', 'Noto Sans JP', sans-serif
+       */
+      body?: string | null;
+    };
+    radius?: {
+      sm?: string | null;
+      md?: string | null;
+      lg?: string | null;
+    };
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1302,6 +1505,36 @@ export interface SettingsSelect<T extends boolean = true> {
     | {
         ja?: T;
         en?: T;
+      };
+  theme?:
+    | T
+    | {
+        colors?:
+          | T
+          | {
+              paper?: T;
+              paperDeep?: T;
+              ink?: T;
+              inkSoft?: T;
+              inkMute?: T;
+              line?: T;
+              accent?: T;
+              tech?: T;
+              glow?: T;
+            };
+        fonts?:
+          | T
+          | {
+              display?: T;
+              body?: T;
+            };
+        radius?:
+          | T
+          | {
+              sm?: T;
+              md?: T;
+              lg?: T;
+            };
       };
   updatedAt?: T;
   createdAt?: T;
