@@ -18,7 +18,7 @@
 | Status | Owner | Lock-since | Branch | Task | Notes |
 |--------|-------|-----------|--------|------|-------|
 | 🟡 BLOCKED | - | - | - | **P17 i18n 12-locale 拡張** P17-11/12/13/14/15 残 | HomeClient 426行 ✅・services/contact/about messages 化 + AllInOneClient 1972行 messages 化 + PayloadCMS DeepSeek 自動翻訳 + hreflang/sitemap.xml |
-| ⚪ AVAILABLE | - | - | - | **P18-D AE-PHP-2 i18n sweep 残** | services/about/faq ✅ (3/10 完了 2026-05-08)・残: contact/pricing/blog/works/legal/privacy/4 service detail (~7 ページ・各 30-60 分) |
+| ⚪ AVAILABLE | - | - | - | **P18-D AE-PHP-2 i18n sweep 残** | 完遂: services/about/faq/contact/pricing/privacy/legal/works/blog + service-detail/web + service-detail/meo (11 ページ・2026-05-08)・残: services/seo の ComparisonBand + services/ai の USE_CASES (各 ~45 分・部分対応) |
 
 ---
 
@@ -38,7 +38,8 @@
 | 完了日 | Owner | Task | Commit |
 |--------|-------|------|--------|
 | 2026-05-08 | claude-code | **P18-A-FIX-1 V1 token 再統合** (UUID-36 検出 → /api/report fallback で旧 token URL 互換確保) | 32299a4 |
-| 2026-05-08 | claude-code | **P18-D i18n sweep services/about/faq 3 ページ** (12 locale namespace 化・isJa 二択 hardcode 廃止) | 1a9f8b8, 25b2336, eba169d |
+| 2026-05-08 | claude-code | **paradigmjpcom lockfile 修正** (git+ssh→git+https・Coolify build 連続失敗根治) | 3fc42bf |
+| 2026-05-08 | claude-code | **P18-D i18n sweep 11 ページ完遂** (services/about/faq/contact/pricing/privacy/legal/works/blog + service-detail/web + service-detail/meo・全 12 locale namespace 化) | 1a9f8b8, 25b2336, eba169d, a7d89d3, f9d5575, 64d077a, d16b36b, 521e38c, 0b93d12, 6c13f80 |
 | 2026-05-08 | claude-code | **CEP 永久ルール準拠 CLAUDE.md 圧縮 143KB → 58KB** (60% 削減・docs/knowledge/poss-paradigmjpcom-implementation.md 外出し) | 9aef560 |
 | 2026-05-08 | claude-code | **TEAM-DEV 協業プロトコル適用** (Task.md 構造化) | (本コミット) |
 | 2026-05-07 | claude-code | **B33 Phase 2 middleware locale-aware redirect** (`/report/[slug]` (locale-less) → `cms_content_blocks.region` lookup → 308 redirect・next-intl 全 /ja/ 丸まり致命バグ根治) | ec4a1eb |
