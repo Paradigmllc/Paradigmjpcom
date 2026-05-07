@@ -1,4 +1,19 @@
 {
+  "worksPage": {
+    "metaTitle": "Case Studies",
+    "metaDescription": "Case studies from Paradigm LLC.",
+    "heroBadge": "Case studies",
+    "heroTitle": "Real results we've shipped together.",
+    "heroHighlight": "shipped together",
+    "heroDesc": "Real results from productized engagements with foreign SMBs entering Japan.",
+    "emptyMessage": "No case studies are published yet.",
+    "emptyCta": "Contact us",
+    "ctaEyebrow": "Together",
+    "ctaTitle": "Let's build your next case study together",
+    "ctaHighlight": "together",
+    "ctaDesc": "Book a free consultation to scope your Japan entry.",
+    "ctaButton": "Book a free consultation"
+  },
   "legalPage": {
     "metaTitle": "Specified Commercial Transactions Act notice",
     "metaDescription": "Paradigm LLC commercial transactions disclosure (Japan SCT Act).",

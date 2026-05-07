@@ -1,4 +1,19 @@
 {
+  "worksPage": {
+    "metaTitle": "制作実績",
+    "metaDescription": "Paradigm合同会社の制作実績・事例。Web制作・MEO・SEO/GEO・AI導入の成果事例。",
+    "heroBadge": "Works",
+    "heroTitle": "お客様の事業を加速した事例。",
+    "heroHighlight": "事業を加速",
+    "heroDesc": "実績数字+ストーリーでご紹介します。",
+    "emptyMessage": "現在、公開中の実績はありません。詳細は直接お問い合わせください。",
+    "emptyCta": "お問い合わせ",
+    "ctaEyebrow": "Together",
+    "ctaTitle": "御社の事例を一緒に作りましょう",
+    "ctaHighlight": "一緒に",
+    "ctaDesc": "無料相談で最適なプランをご提案します。",
+    "ctaButton": "無料相談を予約する"
+  },
   "legalPage": {
     "metaTitle": "特定商取引法に基づく表記",
     "metaDescription": "Paradigm合同会社の特定商取引法に基づく表記。",

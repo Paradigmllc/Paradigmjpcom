@@ -10,6 +10,7 @@
 import type { Metadata } from "next"
 import { getPayload } from "payload"
 import config from "@payload-config"
+import { getTranslations } from "next-intl/server"
 import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
@@ -22,12 +23,10 @@ interface Props { params: Promise<{ locale: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  const isJa = locale === "ja"
+  const t = await getTranslations({ locale, namespace: "worksPage" })
   return {
-    title: isJa ? "制作実績" : "Case Studies",
-    description: isJa
-      ? "Paradigm合同会社の制作実績・事例。Web制作・MEO・SEO/GEO・AI導入の成果事例。"
-      : "Case studies from Paradigm LLC.",
+    title: t("metaTitle"),
+    description: t("metaDescription"),
   }
 }
 
@@ -50,7 +49,7 @@ const TILE_GRADIENTS = [
 export default async function WorksPage({ params }: Props) {
   const { locale: rawLocale } = await params
   const locale = coerceLocale(rawLocale)
-  const isJa = locale === "ja"
+  const t = await getTranslations({ locale, namespace: "worksPage" })
 
   let works: WorkDoc[] = []
   try {
@@ -71,10 +70,10 @@ export default async function WorksPage({ params }: Props) {
   return (
     <>
       <PageHero
-        badge={isJa ? "Works" : "Case studies"}
-        title={isJa ? "お客様の事業を加速した事例。" : "Real results we've shipped together."}
-        highlight={isJa ? "事業を加速" : "shipped together"}
-        desc={isJa ? "実績数字+ストーリーでご紹介します。" : "Real results from productized engagements with foreign SMBs entering Japan."}
+        badge={t("heroBadge")}
+        title={t("heroTitle")}
+        highlight={t("heroHighlight")}
+        desc={t("heroDesc")}
       />
 
       <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
@@ -83,10 +82,10 @@ export default async function WorksPage({ params }: Props) {
           {works.length === 0 ? (
             <FadeIn className="text-center max-w-xl mx-auto paradigm-glass rounded-2xl p-8 paradigm-glow-md">
               <p className="text-[14px] text-paradigm-ink-soft leading-[1.85] mb-7">
-                {isJa ? "現在、公開中の実績はありません。詳細は直接お問い合わせください。" : "No case studies are published yet."}
+                {t("emptyMessage")}
               </p>
               <Link href="/contact" className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-xl text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors">
-                {isJa ? "お問い合わせ" : "Contact us"}
+                {t("emptyCta")}
               </Link>
             </FadeIn>
           ) : (
@@ -133,11 +132,11 @@ export default async function WorksPage({ params }: Props) {
       </section>
 
       <RichCtaBand
-        eyebrow="Together"
-        title={isJa ? "御社の事例を一緒に作りましょう" : "Let's build your next case study together"}
-        highlight={isJa ? "一緒に" : "together"}
-        desc={isJa ? "無料相談で最適なプランをご提案します。" : "Book a free consultation to scope your Japan entry."}
-        buttonLabel={isJa ? "無料相談を予約する" : "Book a free consultation"}
+        eyebrow={t("ctaEyebrow")}
+        title={t("ctaTitle")}
+        highlight={t("ctaHighlight")}
+        desc={t("ctaDesc")}
+        buttonLabel={t("ctaButton")}
       />
     </>
   )
