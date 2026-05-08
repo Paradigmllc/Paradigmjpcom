@@ -17,6 +17,17 @@
  *   ヒット時は report row → ProspectData minimal mapping → ProposalRenderer で描画。
  *   `/[locale]/report/[token]` orphan 削除後の旧 token URL 互換性確保 (404 防止)。
  *   API `/api/report/[slug]` は維持・閲覧トラッキング/HOT 検出も継続発火。
+ *
+ * D-11 R5 (2026-05-08): リサーチレポート級 12 block 対応
+ *   paradigm-blocks v0.5.1+ で 5 research-grade block (cover_summary / methodology /
+ *   industry_context / risk_quantification / appendix_references) + 7 narrative block
+ *   を BlocksReportRenderer 経由で自動 dispatch (BlockRenderer の switch case 拡張済).
+ *   依存関係: github:Paradigmllc/paradigm-blocks#main で次回 deploy 時に auto-fetch.
+ *   appexxme composer v2 (composeReportWithPersonalize_v2) が cms_content_blocks に
+ *   新 12 block JSON を書き込んだ時点で本ページが新 UI で render される.
+ *   Citation cross-ref `[N]` ↔ `#ref-N` anchor は AppendixReferences 内で実装済.
+ *   詳細 spec → docs/knowledge/diagnostic-report-research-grade-spec.md (appexxme)
+ *   全面監査 → docs/audit/whole-sales-os-holistic-2026-05-08.md (appexxme)
  */
 
 import { useState, useEffect, useRef } from "react"
