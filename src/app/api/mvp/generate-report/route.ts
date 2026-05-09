@@ -212,19 +212,20 @@ export async function POST(req: Request) {
     },
   };
 
+  // Note: cms_content_blocks does NOT have a `language` column — language は meta に格納
+  const cmsMeta = { ...trackingMeta, language };
   const { data: cmsRow, error: cmsErr } = await sb
     .from("cms_content_blocks")
     .insert({
       slug,
       page_type: "report",
       region,
-      language,
       schema_version: schemaVersion,
       canonical_url: canonicalUrl,
       generated_by_run_id: runId,
       blocks: reportGen.outputs.blocks,
       title: reportGen.outputs.title ?? `${lead.company_name} 健康診断レポート`,
-      meta: trackingMeta,
+      meta: cmsMeta,
       is_published: true,
       is_active: true,
     })
