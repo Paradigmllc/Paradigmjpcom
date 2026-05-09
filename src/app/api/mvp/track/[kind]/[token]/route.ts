@@ -15,6 +15,7 @@
 import { NextResponse } from "next/server";
 import { getMvpSupabase } from "@/lib/mvp/supabase";
 import { parseTrackToken, hashIp } from "@/lib/mvp/tracking";
+import { postToSlack, buildAlertBlocks } from "@/lib/mvp/slack";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -67,6 +68,42 @@ export async function GET(req: Request, ctx: { params: Promise<{ kind: string; t
     cta_destination: payload.destination ?? null,
     ip_hash: ipHash, user_agent: userAgent, referer,
   });
+
+  // Phase 4: hot lead detection — CTA click → Slack 緊急通知 + lead.meta.cta_clicked_at
+  // 同 lead で 24h 以内に同じ click_type の event が記録されていれば dedup (=2 重通知防止)
+  if (payload.kind === "cta") {
+    const since24h = new Date(Date.now() - 86400_000).toISOString();
+    const { count } = await sb
+      .from("mvp_click_events")
+      .select("id", { count: "exact", head: true })
+      .eq("lead_id", payload.lead_id)
+      .eq("click_type", "cta")
+      .gte("occurred_at", since24h);
+    const isFirstCtaIn24h = (count ?? 0) <= 1;
+    if (isFirstCtaIn24h) {
+      // lead.meta.cta_clicked_at atomic update
+      const { data: cur } = await sb.from("leads").select("company_name, domain, meta").eq("id", payload.lead_id).maybeSingle();
+      const newMeta = { ...(cur?.meta ?? {}), cta_clicked_at: new Date().toISOString(), cta_clicked_run_id: payload.run_id };
+      await sb.from("leads").update({ meta: newMeta }).eq("id", payload.lead_id);
+
+      const region = (cur?.meta as { region?: string } | undefined)?.region ?? "ja";
+      await postToSlack({
+        text: `🔥 HOT LEAD: ${cur?.company_name ?? payload.lead_id} が report CTA をクリックしました`,
+        blocks: buildAlertBlocks({
+          level: "🟢",
+          kind: "hot_lead",
+          title: `🔥 HOT LEAD — CTA click 検出`,
+          fields: [
+            { label: "Company", value: cur?.company_name ?? "—" },
+            { label: "Domain", value: cur?.domain ?? "—" },
+            { label: "Run ID", value: payload.run_id },
+            { label: "CTA dest", value: payload.destination ?? "—" },
+          ],
+          cta: { label: "📋 監視 UI で確認", url: `${PARADIGMJP_BASE}/sales/${region}/mvp/${payload.run_id}` },
+        }),
+      });
+    }
+  }
 
   if (kind === "pixel") {
     return new Response(PIXEL, {

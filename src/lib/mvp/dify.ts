@@ -8,12 +8,14 @@ const DIFY_BASE = process.env.DIFY_API_BASE ?? "https://api.dify.ai/v1";
 export type DifyWorkflowKey =
   | "templatePicker"
   | "karteToReport"
+  | "karteToSalesMaterial"
   | "formMessageGenerator"
   | "formViolationDetector";
 
 const KEY_ENV: Record<DifyWorkflowKey, string> = {
   templatePicker: "DIFY_TEMPLATE_PICKER_KEY",
   karteToReport: "DIFY_KARTE_TO_REPORT_KEY",
+  karteToSalesMaterial: "DIFY_KARTE_TO_SALES_MATERIAL_KEY",
   formMessageGenerator: "DIFY_FORM_MESSAGE_KEY",
   formViolationDetector: "DIFY_FORM_VIOLATION_KEY",
 };

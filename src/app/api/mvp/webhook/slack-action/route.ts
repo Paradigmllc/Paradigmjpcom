@@ -8,7 +8,7 @@
 import { NextResponse } from "next/server";
 import { getMvpSupabase } from "@/lib/mvp/supabase";
 import { postToSlack, buildAlertBlocks } from "@/lib/mvp/slack";
-import { requireMvpSecret } from "@/lib/mvp/auth";
+import { requireMvpSecret, verifySlackSignature } from "@/lib/mvp/auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -95,14 +95,22 @@ async function handleSlackInteractivity(req: Request): Promise<Response> {
   const ct = req.headers.get("content-type") ?? "";
   let payload: Record<string, unknown> = {};
 
+  // Slack interactivity raw body 取得 (signature 検証で必要)
+  const rawBody = await req.clone().text();
+  // Slack signing secret verification (Phase 4)
+  const slackVerify = await verifySlackSignature(req, rawBody);
+  if (!slackVerify.ok) {
+    return NextResponse.json({ ok: false, error: `slack signature invalid: ${slackVerify.error}` }, { status: 401 });
+  }
+
   if (ct.includes("application/x-www-form-urlencoded")) {
-    const form = await req.formData();
-    const raw = form.get("payload");
+    const params = new URLSearchParams(rawBody);
+    const raw = params.get("payload");
     if (typeof raw === "string") {
       try { payload = JSON.parse(raw); } catch { /* ignore */ }
     }
   } else if (ct.includes("application/json")) {
-    payload = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+    try { payload = JSON.parse(rawBody) as Record<string, unknown>; } catch { /* ignore */ }
   }
 
   const actions = (payload.actions as Array<{ action_id: string; value: string }> | undefined) ?? [];

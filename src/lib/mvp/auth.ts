@@ -29,6 +29,43 @@ export function requireMvpSecret(req: Request): NextResponse | null {
 }
 
 /**
+ * Slack interactivity signature verification (Phase 4).
+ * https://api.slack.com/authentication/verifying-requests-from-slack
+ *
+ * Slack signs each request with X-Slack-Signature header (v0:HMAC-SHA256(body)).
+ * Replay attack 防止のため timestamp が 5 分以上ずれていれば reject.
+ */
+export async function verifySlackSignature(
+  req: Request,
+  rawBody: string
+): Promise<{ ok: boolean; error?: string }> {
+  const signingSecret = process.env.SLACK_SIGNING_SECRET;
+  if (!signingSecret) {
+    // 未設定 = fail-open (Phase 1 動作互換). 設定後は fail-closed
+    return { ok: process.env.SLACK_SIGNING_SECRET_REQUIRED !== "true" };
+  }
+  const timestamp = req.headers.get("x-slack-request-timestamp") ?? "";
+  const slackSig = req.headers.get("x-slack-signature") ?? "";
+  if (!timestamp || !slackSig) return { ok: false, error: "missing slack signature headers" };
+
+  const ts = parseInt(timestamp, 10);
+  if (!Number.isFinite(ts) || Math.abs(Date.now() / 1000 - ts) > 300) {
+    return { ok: false, error: "stale request (>5min skew)" };
+  }
+
+  const baseString = `v0:${timestamp}:${rawBody}`;
+  const { createHmac, timingSafeEqual } = await import("node:crypto");
+  const expected = "v0=" + createHmac("sha256", signingSecret).update(baseString).digest("hex");
+
+  // timing-safe compare
+  if (slackSig.length !== expected.length) return { ok: false, error: "sig length mismatch" };
+  const a = Buffer.from(slackSig);
+  const b = Buffer.from(expected);
+  if (!timingSafeEqual(a, b)) return { ok: false, error: "sig mismatch" };
+  return { ok: true };
+}
+
+/**
  * UI-called read endpoints 用. Basic Auth (MVP_BASIC_AUTH_USER/PASS) または
  * X-MVP-Secret のいずれかを受け入れる. middleware が api を除外するため、
  * ブラウザが自動送信する Basic Auth クレデンシャルをここで再チェック.
