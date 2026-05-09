@@ -12,7 +12,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getMvpSupabase } from "@/lib/mvp/supabase";
-import { callDify } from "@/lib/mvp/dify";
+import { callDifyJson } from "@/lib/mvp/dify";
+import { SYSTEM_PROMPT_KARTE_TO_REPORT } from "@/lib/mvp/dify-prompts";
 import { verifyReportUrl } from "@/lib/mvp/verify-report-url";
 import { isValidRegion, isValidLanguage, regionToPrimaryLanguage, type Language, type SalesRegion } from "@/lib/mvp/pick-template";
 import { postToSlack, buildAlertBlocks } from "@/lib/mvp/slack";
@@ -94,27 +95,41 @@ export async function POST(req: Request) {
   }
   const runId: string = runIdMut!;
 
-  const tpkPick = await callDify<{ template_id: string }>("templatePicker", {
-    region,
-    language,
-    industry_slug: industrySlug,
-    product_slug: lead.meta?.matched_product_slug ?? "default",
-    design_theme: lead.meta?.design_theme ?? "raycast",
-    variant: "a",
-  });
-  if (!tpkPick.ok || !tpkPick.outputs?.template_id) {
-    await markFailed(runId, "failed_report", "report_generating", `template-picker: ${tpkPick.errorMessage ?? "no template_id"}`);
-    return NextResponse.json({ ok: false, run_id: runId, error: tpkPick.errorMessage ?? "no template_id" }, { status: 500 });
+  // ── 3. Template selection (deterministic DB SELECT・no LLM・cost saving) ──
+  // report_templates schema は (language, country_iso, product_slug, industry_slug, variant_label, design_theme).
+  // SalesRegion からは language を派生させて language eq で絞る (s10-5 #5 STRICT_LANGUAGE_GUARD).
+  const productSlug = (lead.meta?.matched_product_slug ?? "default") as string;
+  const designTheme = (lead.meta?.design_theme ?? "raycast") as string;
+  const phases: Array<{ industry?: string; product?: string; design?: string }> = [
+    { industry: industrySlug, product: productSlug, design: designTheme },
+    { industry: industrySlug, product: productSlug },
+    { industry: industrySlug },
+    {},
+  ];
+  let templateId: string | null = null;
+  for (const phase of phases) {
+    let q = sb.from("report_templates").select("id").eq("language", language).eq("is_active", true);
+    if (phase.industry) q = q.eq("industry_slug", phase.industry);
+    if (phase.product) q = q.eq("product_slug", phase.product);
+    if (phase.design) q = q.eq("design_theme", phase.design);
+    const { data } = await q.order("conversion_rate", { ascending: false, nullsFirst: false }).limit(1).maybeSingle();
+    if (data?.id) {
+      templateId = data.id as string;
+      break;
+    }
   }
-  const templateId = tpkPick.outputs.template_id;
+  if (!templateId) {
+    await markFailed(runId, "failed_report", "report_generating", `no report_template for language=${language}`);
+    return NextResponse.json({ ok: false, run_id: runId, error: "no template" }, { status: 500 });
+  }
   await sb.from("mvp_outreach_runs").update({ template_id: templateId, step: "dify_karte_to_report" }).eq("id", runId);
 
-  const reportGen = await callDify<{
+  const reportGen = await callDifyJson<{
     blocks: unknown[];
     schema_version: string;
     title?: string;
     pain_summary?: string;
-  }>("karteToReport", {
+  }>("karteToReport", SYSTEM_PROMPT_KARTE_TO_REPORT, {
     lead_id: lead.id,
     template_id: templateId,
     region,

@@ -12,7 +12,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getMvpSupabase } from "@/lib/mvp/supabase";
-import { callDify } from "@/lib/mvp/dify";
+import { callDifyJson } from "@/lib/mvp/dify";
+import {
+  SYSTEM_PROMPT_FORM_MESSAGE_GENERATOR,
+  SYSTEM_PROMPT_FORM_VIOLATION_DETECTOR,
+} from "@/lib/mvp/dify-prompts";
 import { pickFormMessageTemplate, isValidRegion, isValidLanguage, type Language, type SalesRegion } from "@/lib/mvp/pick-template";
 import { postToSlack, buildViolationApprovalBlocks } from "@/lib/mvp/slack";
 import { requireMvpSecret } from "@/lib/mvp/auth";
@@ -92,18 +96,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "no template" }, { status: 404 });
   }
 
-  const msgGen = await callDify<{ subject?: string; body: string }>("formMessageGenerator", {
-    template_id: template.id,
-    template_body: template.body_template,
-    template_subject: template.subject_template ?? "",
-    template_cta: template.cta_phrase ?? "",
-    company_name: lead.company_name,
-    lead_domain: lead.domain,
-    report_url: run.report_canonical_url,
-    region,
-    language,
-    top_pain_summary: lead.meta?.unified_profile?.top_pain_summary ?? "",
-  });
+  const msgGen = await callDifyJson<{ subject?: string; body: string }>(
+    "formMessageGenerator",
+    SYSTEM_PROMPT_FORM_MESSAGE_GENERATOR,
+    {
+      template_body: template.body_template,
+      template_subject: template.subject_template ?? "",
+      template_cta: template.cta_phrase ?? "",
+      company_name: lead.company_name,
+      lead_domain: lead.domain,
+      report_url: run.report_canonical_url,
+      region,
+      language,
+      top_pain_summary: lead.meta?.unified_profile?.top_pain_summary ?? "",
+    },
+  );
   if (!msgGen.ok || !msgGen.outputs?.body) {
     await markFailed(run.id, "failed_violation", `form-message-gen: ${msgGen.errorMessage ?? "no body"}`);
     return NextResponse.json({ ok: false, error: msgGen.errorMessage ?? "no body" }, { status: 500 });
@@ -116,12 +123,16 @@ export async function POST(req: Request) {
     step: "violation_detect",
   }).eq("id", run.id);
 
-  const violation = await callDify<{ verdict: "ok" | "ng"; reason?: string }>("formViolationDetector", {
-    body: messageBody,
-    form_url: lead.contact_form_url,
-    company_name: lead.company_name,
-    language,
-  });
+  const violation = await callDifyJson<{ verdict: "ok" | "ng"; reason?: string }>(
+    "formViolationDetector",
+    SYSTEM_PROMPT_FORM_VIOLATION_DETECTOR,
+    {
+      body: messageBody,
+      form_url: lead.contact_form_url,
+      company_name: lead.company_name,
+      language,
+    },
+  );
   const verdict = violation.outputs?.verdict ?? "ng";
   const reason = violation.outputs?.reason ?? violation.errorMessage ?? "no verdict";
 

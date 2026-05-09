@@ -26,6 +26,39 @@ export interface DifyRunResult<T = unknown> {
   workflowRunId?: string;
 }
 
+/**
+ * Boilerplate DSL pattern: workflow は (system_prompt + user_payload) を入力に取り、
+ * outputs.result に LLM 生 text を返す. caller は purpose ごとに system_prompt を
+ * 切替えることで 1 boilerplate を 9+ workflow に再利用する.
+ *
+ * `~/.claude/knowledge/dify-cloud-automation.md` Hack 2 参照.
+ */
+export async function callDifyJson<T>(
+  workflow: DifyWorkflowKey,
+  systemPrompt: string,
+  payload: Record<string, unknown>,
+  opts?: { user?: string; timeoutMs?: number }
+): Promise<DifyRunResult<T>> {
+  const r = await callDify<{ result?: string }>(workflow, {
+    system_prompt: systemPrompt,
+    user_payload: JSON.stringify(payload),
+  }, opts);
+  if (!r.ok) return { ok: false, errorMessage: r.errorMessage, raw: r.raw };
+  const text = r.outputs?.result ?? "";
+  try {
+    // tolerate ```json ... ``` wrapper if LLM disregards format rule
+    const stripped = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+    const parsed = JSON.parse(stripped) as T;
+    return { ok: true, outputs: parsed, raw: r.raw, workflowRunId: r.workflowRunId };
+  } catch (e) {
+    return {
+      ok: false,
+      errorMessage: `[dify ${workflow}] JSON parse failed: ${e instanceof Error ? e.message : String(e)} (raw head: ${text.slice(0, 200)})`,
+      raw: r.raw,
+    };
+  }
+}
+
 export async function callDify<T = unknown>(
   workflow: DifyWorkflowKey,
   inputs: Record<string, unknown>,
