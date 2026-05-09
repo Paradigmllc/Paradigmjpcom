@@ -5,7 +5,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import Link from "next/link";
 
 interface RunDetail {
@@ -70,7 +70,10 @@ export default function MvpRunDetailPage() {
         <div className="text-sm text-gray-600 font-mono">
           run_id: {run.id} / lead_id: {run.lead_id} / status: <span className="font-bold">{run.status}</span>
         </div>
-        <button onClick={() => refetch()} className="px-3 py-1 text-sm border rounded hover:bg-gray-50">再読込</button>
+        <div className="flex gap-2">
+          <button onClick={() => refetch()} className="px-3 py-1 text-sm border rounded hover:bg-gray-50">再読込</button>
+          <RetryButton runId={run.id} status={run.status} onDone={() => refetch()} />
+        </div>
       </header>
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -165,6 +168,29 @@ export default function MvpRunDetailPage() {
         )}
       </section>
     </div>
+  );
+}
+
+function RetryButton({ runId, status, onDone }: { runId: string; status: string; onDone: () => void }) {
+  const RETRYABLE = ["dead_letter", "failed_report", "failed_form_url", "failed_violation", "failed_submit", "skipped"];
+  const enabled = RETRYABLE.includes(status);
+  const m = useMutation({
+    mutationFn: async () => {
+      const r = await fetch(`/api/mvp/runs/${runId}/retry`, { method: "POST" });
+      if (!r.ok) throw new Error(`${r.status}`);
+      return r.json();
+    },
+    onSuccess: () => onDone(),
+  });
+  if (!enabled) return null;
+  return (
+    <button
+      onClick={() => m.mutate()}
+      disabled={m.isPending}
+      className="px-3 py-1 text-sm bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
+    >
+      {m.isPending ? "再投入中..." : "🔄 再投入"}
+    </button>
   );
 }
 
