@@ -123,10 +123,17 @@ export async function POST(req: Request) {
   }
 
   // Hard delete (cascade not configured・順序で削除)
+  // 1. cms_content_blocks は generated_by_run_id 経由で lead に紐付く → 先に run_ids 取得
+  const { data: runs } = await sb.from("mvp_outreach_runs").select("id").in("lead_id", uniqueLeadIds);
+  const runIds = (runs ?? []).map((r) => r.id);
+  if (runIds.length > 0) {
+    await sb.from("cms_content_blocks").delete().in("generated_by_run_id", runIds);
+  }
+  // 2. lead 関連 row 削除
   for (const tbl of ["mvp_click_events", "mvp_optout_tokens", "mvp_outreach_runs"]) {
     await sb.from(tbl).delete().in("lead_id", uniqueLeadIds);
   }
-  await sb.from("cms_content_blocks").delete().in("generated_by_run_id", []); // Note: run_id は既に消えてる
+  // 3. lead 本体削除 (最後)
   await sb.from("leads").delete().in("id", uniqueLeadIds);
 
   // blocklist に永久 record を残す (再 crawl で再収集されないように)
