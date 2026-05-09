@@ -5,11 +5,14 @@
 
 import { NextResponse } from "next/server";
 import { getMvpSupabase } from "@/lib/mvp/supabase";
+import { requireMvpUiAuth } from "@/lib/mvp/auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET(req: Request) {
+  const denied = requireMvpUiAuth(req);
+  if (denied) return denied;
   const sb = getMvpSupabase();
   const url = new URL(req.url);
   const region = url.searchParams.get("region");

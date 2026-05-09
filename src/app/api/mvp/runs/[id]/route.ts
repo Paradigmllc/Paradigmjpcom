@@ -5,14 +5,17 @@
 
 import { NextResponse } from "next/server";
 import { getMvpSupabase } from "@/lib/mvp/supabase";
+import { requireMvpUiAuth } from "@/lib/mvp/auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET(
-  _req: Request,
+  req: Request,
   ctx: { params: Promise<{ id: string }> }
 ) {
+  const denied = requireMvpUiAuth(req);
+  if (denied) return denied;
   const sb = getMvpSupabase();
   const { id } = await ctx.params;
 
