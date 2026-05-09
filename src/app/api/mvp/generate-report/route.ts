@@ -25,6 +25,7 @@ import { postToSlack, buildAlertBlocks } from "@/lib/mvp/slack";
 import { requireMvpSecret } from "@/lib/mvp/auth";
 import { checkEligibility } from "@/lib/mvp/eligibility";
 import { incrementQuota } from "@/lib/mvp/cost-guard";
+import { buildTrackedUrl, makeOptoutToken } from "@/lib/mvp/tracking";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -188,6 +189,27 @@ export async function POST(req: Request) {
   // ── 6. cms_content_blocks INSERT ──
   const slug = `${lead.id}-${Date.now()}`;
   const canonicalUrl = buildReportUrl(region, slug);
+
+  // Tracking metadata for in-page pixel + CTA + opt-out (P3)
+  const optoutToken = makeOptoutToken();
+  await sb.from("mvp_optout_tokens").insert({
+    token: optoutToken,
+    entity_id: entityId,
+    lead_id: lead.id,
+    domain: lead.domain ?? null,
+  });
+  const trackingMeta = {
+    tracking: {
+      pixel_url: buildTrackedUrl(PARADIGMJP_BASE, runId, lead.id, "pixel"),
+      cta_url: buildTrackedUrl(PARADIGMJP_BASE, runId, lead.id, "cta", process.env.CAL_COM_URL ?? `${PARADIGMJP_BASE}/${language}/contact`),
+      optout_url: `${PARADIGMJP_BASE}/api/mvp/track/optout/${optoutToken}`,
+      privacy_url: `${PARADIGMJP_BASE}/${language}/privacy`,
+      lead_id: lead.id,
+      run_id: runId,
+      generated_at: new Date().toISOString(),
+    },
+  };
+
   const { data: cmsRow, error: cmsErr } = await sb
     .from("cms_content_blocks")
     .insert({
@@ -200,6 +222,9 @@ export async function POST(req: Request) {
       generated_by_run_id: runId,
       blocks: reportGen.outputs.blocks,
       title: reportGen.outputs.title ?? `${lead.company_name} 健康診断レポート`,
+      meta: trackingMeta,
+      is_published: true,
+      is_active: true,
     })
     .select("id")
     .single();

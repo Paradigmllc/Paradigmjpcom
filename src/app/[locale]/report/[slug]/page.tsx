@@ -241,10 +241,17 @@ export default function ReportPageWrapper() {
   )
 
   // Stage 0) cms_content_blocks ヒット → BlocksReportRenderer (V3 Phase 3-B canonical)
-  if (blocksDoc) return <BlocksReportRenderer doc={blocksDoc} slugOrToken={slug} />
+  if (blocksDoc) return (
+    <>
+      <BlocksReportRenderer doc={blocksDoc} slugOrToken={slug} />
+      <MvpTrackingInjection meta={(blocksDoc as { meta?: { tracking?: TrackingMeta } }).meta?.tracking} />
+    </>
+  )
 
   // Stage 1) proposal_pages ヒット → ProposalRenderer V2 (Manifest-driven · 13 sections)
   if (data) return <ProposalRenderer data={data} />
+
+  // ── helper end ──
 
   // Stage 2) どちらも該当なし → エラー
   return (
@@ -255,5 +262,77 @@ export default function ReportPageWrapper() {
         <p style={{ fontSize: 13, color: "#94a3b8" }}>{error || "Invalid URL"}</p>
       </div>
     </div>
+  )
+}
+
+// ── B36-P3: MVP tracking injection (pixel + CTA + footer links) ────────
+interface TrackingMeta {
+  pixel_url: string
+  cta_url: string
+  optout_url: string
+  privacy_url: string
+  lead_id: string
+  run_id: string
+  generated_at: string
+}
+
+function MvpTrackingInjection({ meta }: { meta?: TrackingMeta }) {
+  if (!meta) return null
+  return (
+    <>
+      {/* 1x1 transparent pixel for open tracking */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={meta.pixel_url}
+        alt=""
+        width={1}
+        height={1}
+        style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
+        aria-hidden="true"
+      />
+      {/* CTA + footer at the very bottom of the report */}
+      <section
+        style={{
+          maxWidth: 720,
+          margin: "48px auto 32px",
+          padding: "32px 24px",
+          textAlign: "center",
+          borderTop: "1px solid #E2E8F0",
+        }}
+      >
+        <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12, color: "#0F172A" }}>
+          所見をご一緒に確認しませんか?
+        </h3>
+        <p style={{ fontSize: 14, color: "#64748B", marginBottom: 20, lineHeight: 1.7 }}>
+          診断結果について、当社のシニアコンサルタントが 30 分のオンラインセッションで詳細をご説明いたします。<br />
+          無料・参加義務なし・その場での意思決定は不要です。
+        </p>
+        <a
+          href={meta.cta_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "inline-block",
+            padding: "12px 32px",
+            background: "#635BFF",
+            color: "#fff",
+            borderRadius: 8,
+            fontSize: 14,
+            fontWeight: 600,
+            textDecoration: "none",
+          }}
+        >
+          📅 セッションを予約する
+        </a>
+        <div style={{ marginTop: 32, fontSize: 11, color: "#94A3B8" }}>
+          <a href={meta.optout_url} style={{ color: "#94A3B8", textDecoration: "underline", marginRight: 16 }}>
+            配信停止
+          </a>
+          <a href={meta.privacy_url} target="_blank" rel="noopener noreferrer" style={{ color: "#94A3B8", textDecoration: "underline" }}>
+            プライバシーポリシー
+          </a>
+        </div>
+      </section>
+    </>
   )
 }
