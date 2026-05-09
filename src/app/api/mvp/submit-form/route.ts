@@ -23,6 +23,7 @@ import { renderTemplate, appendLegalFooter } from "@/lib/mvp/template-engine";
 import { checkEligibility } from "@/lib/mvp/eligibility";
 import { incrementQuota } from "@/lib/mvp/cost-guard";
 import { makeOptoutToken, buildTrackedUrl } from "@/lib/mvp/tracking";
+import { LEAD_SELECT_COLUMNS, normalizeLead } from "@/lib/mvp/lead-adapter";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -51,9 +52,10 @@ export async function POST(req: Request) {
   if (run.status !== "report_ready") return NextResponse.json({ ok: false, error: `run status invalid: ${run.status}` }, { status: 409 });
   if (!run.report_canonical_url) return NextResponse.json({ ok: false, error: "report_canonical_url missing" }, { status: 400 });
 
-  const { data: lead, error: leadErr } = await sb.from("leads")
-    .select("id, company_name, domain, region, language, country_code, contact_form_url, meta")
+  const { data: leadRaw, error: leadErr } = await sb.from("leads")
+    .select(LEAD_SELECT_COLUMNS)
     .eq("id", run.lead_id).maybeSingle();
+  const lead = normalizeLead(leadRaw);
   if (leadErr || !lead) return NextResponse.json({ ok: false, error: `lead not found: ${run.lead_id}` }, { status: 404 });
 
   // Eligibility re-check (form submission 時も再評価・state may have changed since report_ready)

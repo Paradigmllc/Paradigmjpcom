@@ -26,6 +26,7 @@ import { requireMvpSecret } from "@/lib/mvp/auth";
 import { checkEligibility } from "@/lib/mvp/eligibility";
 import { incrementQuota } from "@/lib/mvp/cost-guard";
 import { buildTrackedUrl, makeOptoutToken } from "@/lib/mvp/tracking";
+import { LEAD_SELECT_COLUMNS, normalizeLead } from "@/lib/mvp/lead-adapter";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -62,19 +63,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "invalid body" }, { status: 400 });
   }
 
-  // ── 1. lead 取得 ──
-  const { data: lead, error: leadErr } = await sb
+  // ── 1. lead 取得 (schema adapter 経由・leads 実 schema は business_name/website_url/country) ──
+  const { data: leadRaw, error: leadErr } = await sb
     .from("leads")
-    .select("id, company_name, domain, region, language, country_code, contact_form_url, meta")
+    .select(LEAD_SELECT_COLUMNS)
     .eq("id", body.lead_id)
     .maybeSingle();
+  const lead = normalizeLead(leadRaw);
   if (leadErr || !lead) {
     return NextResponse.json({ ok: false, error: `lead not found: ${body.lead_id}` }, { status: 404 });
   }
 
   const region = (body.override?.region ?? lead.region ?? regionFromCountry(lead.country_code)) as string;
   const language = (body.override?.language ?? lead.language ?? regionToPrimaryLanguage(region as SalesRegion)) as string;
-  const industrySlug = body.override?.industry_slug ?? lead.meta?.industry_slug ?? "default";
+  const industrySlug = (body.override?.industry_slug ?? (lead.meta?.industry_slug as string | undefined) ?? lead.industry ?? "default") as string;
   if (!isValidRegion(region) || !isValidLanguage(language)) {
     return NextResponse.json({ ok: false, error: `invalid region/language: ${region}/${language}` }, { status: 400 });
   }

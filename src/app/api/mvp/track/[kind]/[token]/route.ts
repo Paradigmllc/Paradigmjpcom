@@ -82,20 +82,23 @@ export async function GET(req: Request, ctx: { params: Promise<{ kind: string; t
     const isFirstCtaIn24h = (count ?? 0) <= 1;
     if (isFirstCtaIn24h) {
       // lead.meta.cta_clicked_at atomic update
-      const { data: cur } = await sb.from("leads").select("company_name, domain, meta").eq("id", payload.lead_id).maybeSingle();
-      const newMeta = { ...(cur?.meta ?? {}), cta_clicked_at: new Date().toISOString(), cta_clicked_run_id: payload.run_id };
+      // Note: leads schema = business_name / website_url (NOT company_name / domain)
+      const { data: cur } = await sb.from("leads").select("business_name, website_url, region, meta").eq("id", payload.lead_id).maybeSingle();
+      const newMeta = { ...((cur?.meta as Record<string, unknown> | undefined) ?? {}), cta_clicked_at: new Date().toISOString(), cta_clicked_run_id: payload.run_id };
       await sb.from("leads").update({ meta: newMeta }).eq("id", payload.lead_id);
 
-      const region = (cur?.meta as { region?: string } | undefined)?.region ?? "ja";
+      const region = (cur as { region?: string } | undefined)?.region ?? "ja";
+      const company = (cur as { business_name?: string } | undefined)?.business_name ?? payload.lead_id;
+      const domain = (cur as { website_url?: string } | undefined)?.website_url ?? "—";
       await postToSlack({
-        text: `🔥 HOT LEAD: ${cur?.company_name ?? payload.lead_id} が report CTA をクリックしました`,
+        text: `🔥 HOT LEAD: ${company} が report CTA をクリックしました`,
         blocks: buildAlertBlocks({
           level: "🟢",
           kind: "hot_lead",
           title: `🔥 HOT LEAD — CTA click 検出`,
           fields: [
-            { label: "Company", value: cur?.company_name ?? "—" },
-            { label: "Domain", value: cur?.domain ?? "—" },
+            { label: "Company", value: company },
+            { label: "Domain", value: domain },
             { label: "Run ID", value: payload.run_id },
             { label: "CTA dest", value: payload.destination ?? "—" },
           ],

@@ -6,6 +6,7 @@
 import { NextResponse } from "next/server";
 import { getMvpSupabase } from "@/lib/mvp/supabase";
 import { requireMvpUiAuth } from "@/lib/mvp/auth";
+import { LEAD_SELECT_COLUMNS, normalizeLead } from "@/lib/mvp/lead-adapter";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -27,11 +28,12 @@ export async function GET(
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   if (!run) return NextResponse.json({ ok: false, error: "not found" }, { status: 404 });
 
-  const { data: lead } = await sb
+  const { data: leadRaw } = await sb
     .from("leads")
-    .select("id, company_name, domain, country_code, contact_form_url, meta")
+    .select(LEAD_SELECT_COLUMNS)
     .eq("id", run.lead_id)
     .maybeSingle();
+  const lead = normalizeLead(leadRaw);
 
   let cmsBlock: unknown = null;
   if (run.cms_content_block_id) {

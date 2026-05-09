@@ -45,13 +45,14 @@ export async function GET(req: Request) {
 
 async function pickupForReport(sb: ReturnType<typeof getMvpSupabase>, region: string | null, workerId: string): Promise<Response> {
   // ① enrichment 完了で MVP run 未生成の lead を新規 pickup → INSERT (status=queued)
+  // 注意: leads schema は language 列なし → meta.language or region から派生
   let q = sb
     .from("leads")
-    .select("id, region, language, meta")
+    .select("id, region, meta")
     .eq("meta->>enrichment_complete", "true")
     .not("contact_form_url", "is", null);
   if (region) q = q.eq("region", region);
-  q = q.limit(PICKUP_LIMIT * 2); // dedup でフィルタされる前提で多めに取得
+  q = q.limit(PICKUP_LIMIT * 2);
 
   const { data: leads, error } = await q;
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
@@ -59,12 +60,11 @@ async function pickupForReport(sb: ReturnType<typeof getMvpSupabase>, region: st
   const filteredIds = await filterAlreadyHasActiveRun(sb, (leads ?? []).map((l) => l.id));
   const newLeads = (leads ?? []).filter((l) => filteredIds.includes(l.id)).slice(0, PICKUP_LIMIT);
 
-  // INSERT new run rows (status=queued) for these leads — caller (n8n) will then call generate-report for each.
-  // 直接 INSERT は idempotency 制約 (mvp_outreach_runs_lead_active_unique) で重複防止.
   const enqueued: string[] = [];
   for (const lead of newLeads) {
     const region = (lead.region ?? "ja") as string;
-    const language = (lead.language ?? region) as string;
+    const meta = (lead.meta ?? {}) as Record<string, unknown>;
+    const language = (meta.language as string | undefined) ?? region;
     const { error: insErr } = await sb.from("mvp_outreach_runs").insert({
       lead_id: lead.id,
       region, language,

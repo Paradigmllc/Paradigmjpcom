@@ -20,6 +20,7 @@ import { getMvpSupabase } from "@/lib/mvp/supabase";
 import { callDifyJson } from "@/lib/mvp/dify";
 import { postToSlack } from "@/lib/mvp/slack";
 import { requireMvpUiAuth } from "@/lib/mvp/auth";
+import { LEAD_SELECT_COLUMNS, normalizeLead } from "@/lib/mvp/lead-adapter";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -69,7 +70,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const { data: run } = await sb.from("mvp_outreach_runs").select("*").eq("id", runId).maybeSingle();
   if (!run) return NextResponse.json({ ok: false, error: "run not found" }, { status: 404 });
 
-  const { data: lead } = await sb.from("leads").select("id, company_name, domain, region, language, meta").eq("id", run.lead_id).maybeSingle();
+  const { data: leadRaw } = await sb.from("leads").select(LEAD_SELECT_COLUMNS).eq("id", run.lead_id).maybeSingle();
+  const lead = normalizeLead(leadRaw);
   if (!lead) return NextResponse.json({ ok: false, error: "lead not found" }, { status: 404 });
 
   // Stage 2 起動条件: CTA clicked (反応者) OR force=true
