@@ -3,6 +3,10 @@
  *   Layer 1: DB SELECT で language eq filter
  *   Layer 2: post-fetch で再度 language === expected を assertion
  *   Layer 3: caller (Dify pickup 後) で final assertion
+ *
+ * B36-P7B (2026-05-10): pitch_angle 5 軸対応 + 8-phase fallback.
+ *   most-specific (industry × pitch_angle × variant) →
+ *   variant 緩和 → angle 緩和 → industry 緩和 → ultimate (default × null × a)
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -13,14 +17,19 @@ const VALID_LANGUAGES = [
 const VALID_REGIONS = [
   "ja", "ko", "zh", "en", "europe", "es", "pt", "ru", "ar", "sea", "africa", "others",
 ] as const;
+const VALID_PITCH_ANGLES = [
+  "risk", "opportunity", "competitor", "authority", "social_proof",
+] as const;
 
 export type Language = (typeof VALID_LANGUAGES)[number];
 export type SalesRegion = (typeof VALID_REGIONS)[number];
+export type PitchAngle = (typeof VALID_PITCH_ANGLES)[number];
 
 export interface PickTemplateInput {
   region: SalesRegion;
   language: Language;
   industrySlug?: string;
+  pitchAngle?: PitchAngle;
   variant?: string;
 }
 
@@ -29,6 +38,7 @@ export interface FormMessageTemplate {
   region: SalesRegion;
   language: Language;
   industry_slug: string;
+  pitch_angle: PitchAngle | null;
   variant: string;
   applicability: "jp_only" | "overseas_only" | "global";
   subject_template: string | null;
@@ -36,21 +46,45 @@ export interface FormMessageTemplate {
   cta_phrase: string | null;
 }
 
+/**
+ * 8-phase fallback (B36-P7B).
+ * most-specific (industry × pitch_angle × variant) → ultimate (default × null × 'a').
+ * pitch_angle が `null` の phase は DB の `pitch_angle IS NULL` 行に hit する
+ * (Phase 6 LP/CRO rewrite で投入した default+a 行は pitch_angle=NULL のまま残置).
+ */
+function buildPhases(
+  industry: string,
+  pitchAngle: PitchAngle | undefined,
+  variant: string,
+): Array<{ industry: string; pitch_angle: PitchAngle | null; variant: string }> {
+  const phases: Array<{ industry: string; pitch_angle: PitchAngle | null; variant: string }> = [];
+  // industry × angle × variant
+  if (pitchAngle) phases.push({ industry, pitch_angle: pitchAngle, variant });
+  // variant fallback ('a')
+  if (pitchAngle && variant !== "a") phases.push({ industry, pitch_angle: pitchAngle, variant: "a" });
+  // angle fallback (NULL — 旧 default+a 行が hit)
+  phases.push({ industry, pitch_angle: null, variant });
+  if (variant !== "a") phases.push({ industry, pitch_angle: null, variant: "a" });
+  // industry fallback ('default')
+  if (industry !== "default") {
+    if (pitchAngle) phases.push({ industry: "default", pitch_angle: pitchAngle, variant });
+    if (pitchAngle && variant !== "a") phases.push({ industry: "default", pitch_angle: pitchAngle, variant: "a" });
+    phases.push({ industry: "default", pitch_angle: null, variant });
+    if (variant !== "a") phases.push({ industry: "default", pitch_angle: null, variant: "a" });
+  }
+  return phases;
+}
+
 export async function pickFormMessageTemplate(
   sb: SupabaseClient,
   input: PickTemplateInput
 ): Promise<FormMessageTemplate | null> {
-  const { region, language } = input;
+  const { region, language, pitchAngle } = input;
   const industry = input.industrySlug ?? "default";
   const variant = input.variant ?? "a";
 
   // ── Layer 1: DB SELECT で language eq filter (STRICT) ──
-  const phases: Array<Partial<{ industry: string; variant: string }>> = [
-    { industry, variant },
-    { industry: "default", variant },
-    { industry, variant: "a" },
-    { industry: "default", variant: "a" },
-  ];
+  const phases = buildPhases(industry, pitchAngle, variant);
 
   for (const phase of phases) {
     const q = sb
@@ -58,9 +92,15 @@ export async function pickFormMessageTemplate(
       .select("*")
       .eq("region", region)
       .eq("language", language)
-      .eq("is_active", true);
-    if (phase.industry) q.eq("industry_slug", phase.industry);
-    if (phase.variant) q.eq("variant", phase.variant);
+      .eq("is_active", true)
+      .eq("industry_slug", phase.industry)
+      .eq("variant", phase.variant);
+    // pitch_angle: NULL or specific value (Supabase JS では .is(col, null) を使う)
+    if (phase.pitch_angle === null) {
+      q.is("pitch_angle", null);
+    } else {
+      q.eq("pitch_angle", phase.pitch_angle);
+    }
     const { data, error } = await q.limit(1).maybeSingle();
     if (error) {
       if ((error as { code?: string }).code !== "PGRST116") {
@@ -103,6 +143,9 @@ export function isValidLanguage(x: unknown): x is Language {
 }
 export function isValidRegion(x: unknown): x is SalesRegion {
   return typeof x === "string" && (VALID_REGIONS as readonly string[]).includes(x);
+}
+export function isValidPitchAngle(x: unknown): x is PitchAngle {
+  return typeof x === "string" && (VALID_PITCH_ANGLES as readonly string[]).includes(x);
 }
 
 export function regionToPrimaryLanguage(region: SalesRegion): Language {
