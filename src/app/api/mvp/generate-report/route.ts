@@ -97,35 +97,107 @@ export async function POST(req: Request) {
     }
   }
 
-  // ── 3. run upsert ──
+  // ── 3. run upsert (idempotent: 既存 active run があれば再利用) ──
+  // 2026-05-10 fix: EXCLUDE constraint mvp_outreach_runs_lead_active_unique
+  // (status NOT IN sent/replied/dead_letter/skipped) により同一 lead で 2 回目以降の
+  // INSERT が duplicate key error になる致命バグを根治. Appexxme カルテからの
+  // 「MVP 送信」「dry-run」連打が当該 error を返していた.
+  //
+  // 設計判断:
+  //   1. body.run_id 明示指定 → 従来通り update (caller 主導の retry)
+  //   2. 既存 active run あり → reuse + status を report_generating にリセット
+  //      (manual/dry-run の混在切替も尊重: is_dry_run, recipient, triggered_by を上書き)
+  //   3. 既存なし → INSERT (新規 run)
+  //
+  // EXCLUDE constraint のため ON CONFLICT が使えない (btree UNIQUE のみ対応) →
+  // 明示 SELECT → 分岐で対応.
   const triggeredBy = body.triggered_by ?? "cron";
   const priority = body.priority ?? (triggeredBy === "manual" ? "hot" : "normal");
   const entityId = await getOrComputeEntityId(sb, lead);
 
   let runIdMut: string | undefined = body.run_id;
   if (!runIdMut) {
-    const { data: ins, error: insErr } = await sb
+    // Step 3a: 既存 active run を SELECT (status NOT IN 終端状態)
+    const { data: existing } = await sb
       .from("mvp_outreach_runs")
-      .insert({
-        lead_id: lead.id,
-        region,
-        language,
-        status: "report_generating",
-        step: "init",
-        step_started_at: new Date().toISOString(),
-        entity_id: entityId,
-        priority,
-        is_dry_run: body.is_dry_run ?? false,
-        dry_run_recipient: body.dry_run_recipient ?? null,
-        campaign_id: body.campaign_id ?? null,
-        triggered_by: triggeredBy,
-      })
       .select("id")
-      .single();
-    if (insErr || !ins) {
-      return NextResponse.json({ ok: false, error: insErr?.message ?? "run insert failed" }, { status: 500 });
+      .eq("lead_id", lead.id)
+      .not("status", "in", "(sent,replied,dead_letter,skipped)")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existing?.id) {
+      // Step 3b: reuse — 連打 / 再 trigger は同じ run row を更新
+      runIdMut = existing.id as string;
+      const { error: updErr } = await sb
+        .from("mvp_outreach_runs")
+        .update({
+          status: "report_generating",
+          step: "init",
+          step_started_at: new Date().toISOString(),
+          step_completed_at: null,
+          pickup_locked_at: null,
+          // mode 切替に追従 (manual ↔ dry_run 行き来しても同じ row)
+          is_dry_run: body.is_dry_run ?? false,
+          dry_run_recipient: body.dry_run_recipient ?? null,
+          campaign_id: body.campaign_id ?? null,
+          triggered_by: triggeredBy,
+          priority,
+          region,
+          language,
+        })
+        .eq("id", runIdMut);
+      if (updErr) {
+        return NextResponse.json({ ok: false, error: `run reuse failed: ${updErr.message}` }, { status: 500 });
+      }
+    } else {
+      // Step 3c: 新規 INSERT
+      const { data: ins, error: insErr } = await sb
+        .from("mvp_outreach_runs")
+        .insert({
+          lead_id: lead.id,
+          region,
+          language,
+          status: "report_generating",
+          step: "init",
+          step_started_at: new Date().toISOString(),
+          entity_id: entityId,
+          priority,
+          is_dry_run: body.is_dry_run ?? false,
+          dry_run_recipient: body.dry_run_recipient ?? null,
+          campaign_id: body.campaign_id ?? null,
+          triggered_by: triggeredBy,
+        })
+        .select("id")
+        .single();
+      if (insErr || !ins) {
+        // race: 同時 2 リクエストで両方が「既存なし」を見て INSERT した場合に
+        // 後発が unique constraint で失敗する. 1 回だけ retry (最新 active run を再取得).
+        const code = (insErr as { code?: string } | null)?.code;
+        const msg = insErr?.message ?? "";
+        const isDuplicate = code === "23P01" || msg.includes("lead_active_unique");
+        if (isDuplicate) {
+          const { data: late } = await sb
+            .from("mvp_outreach_runs")
+            .select("id")
+            .eq("lead_id", lead.id)
+            .not("status", "in", "(sent,replied,dead_letter,skipped)")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (late?.id) {
+            runIdMut = late.id as string;
+          } else {
+            return NextResponse.json({ ok: false, error: insErr?.message ?? "run insert failed (race)" }, { status: 500 });
+          }
+        } else {
+          return NextResponse.json({ ok: false, error: insErr?.message ?? "run insert failed" }, { status: 500 });
+        }
+      } else {
+        runIdMut = ins.id as string;
+      }
     }
-    runIdMut = ins.id as string;
   } else {
     await sb.from("mvp_outreach_runs")
       .update({ status: "report_generating", step: "init", step_started_at: new Date().toISOString(), pickup_locked_at: null })
