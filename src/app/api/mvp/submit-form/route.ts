@@ -24,6 +24,7 @@ import { checkEligibility } from "@/lib/mvp/eligibility";
 import { incrementQuota } from "@/lib/mvp/cost-guard";
 import { makeOptoutToken, buildTrackedUrl } from "@/lib/mvp/tracking";
 import { LEAD_SELECT_COLUMNS, normalizeLead } from "@/lib/mvp/lead-adapter";
+import { fetchFormTos } from "@/lib/mvp/form-tos-fetch";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -149,7 +150,9 @@ export async function POST(req: Request) {
     form_message_body: messageBody, status: "form_violation_check", step: "violation_detect",
   }).eq("id", run.id);
 
-  // ─── C-fix lite: violation detector with confidence + categories ───
+  // ─── Phase 5: form ToS fetch + LLM judge 強化 (C-fix 完全版) ───
+  // form_url を GET → 「営業お断り」等のキーワード抽出 → violation detector に inject
+  const tos = await fetchFormTos(lead.contact_form_url ?? "");
   const violation = await callDifyJson<{
     verdict: "ok" | "ng";
     confidence: number;
@@ -160,22 +163,29 @@ export async function POST(req: Request) {
     form_url: lead.contact_form_url ?? "",
     company_name: lead.company_name,
     language,
+    // form ToS scan 結果 (LLM が判定強化に使う)
+    form_tos_signals: tos.keywords_found,
+    form_tos_excerpt: tos.excerpt,
+    form_tos_fetched: tos.ok,
   });
+
+  // **規約 keyword 検出時は強制 NG escalate** (LLM 判定とは独立した hard rule)
+  const tosForceNg = tos.ok && tos.keywords_found.length > 0;
 
   const verdict = violation.outputs?.verdict ?? "ng";
   const confidence = Number(violation.outputs?.confidence ?? 0);
   const categories = violation.outputs?.categories ?? [];
   const reason = violation.outputs?.reason ?? violation.errorMessage ?? "no verdict";
 
-  // Slack escalate のしきい値: ng AND confidence >= threshold (低 confidence は ok 扱いで Slack 飽和回避)
-  const needsHumanReview = verdict === "ng" && confidence >= VIOLATION_NG_THRESHOLD;
+  // Slack escalate のしきい値: ng AND confidence >= threshold + form ToS 規約検出時は強制 escalate
+  const needsHumanReview = (verdict === "ng" && confidence >= VIOLATION_NG_THRESHOLD) || tosForceNg;
   if (needsHumanReview && !run.is_dry_run) {
     const slackRes = await postToSlack({
       text: `🟡 規約違反疑い (conf=${confidence}) — run ${run.id}`,
       blocks: buildViolationApprovalBlocks({
         runId: run.id, leadId: lead.id, companyName: lead.company_name ?? lead.id,
         formUrl: lead.contact_form_url ?? "", body: messageBody,
-        violationReason: `${reason} (categories: ${categories.join(",")} / conf=${confidence})`,
+        violationReason: `${reason}${tosForceNg ? ` ⚠️ ToS keywords detected: ${tos.keywords_found.join(",")} ("${tos.excerpt}")` : ""} (categories: ${categories.join(",")} / conf=${confidence})`,
       }),
     });
     await sb.from("mvp_outreach_runs").update({
