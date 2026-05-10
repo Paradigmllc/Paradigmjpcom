@@ -19,6 +19,7 @@ import { z } from "zod";
 import { getMvpSupabase } from "@/lib/mvp/supabase";
 import { callDifyJson } from "@/lib/mvp/dify";
 import { SYSTEM_PROMPT_KARTE_TO_REPORT } from "@/lib/mvp/dify-prompts";
+import { withPersonaPrefix } from "@/lib/mvp/persona-injection";
 import { verifyReportUrl } from "@/lib/mvp/verify-report-url";
 import { isValidRegion, isValidLanguage, regionToPrimaryLanguage, type Language, type SalesRegion } from "@/lib/mvp/pick-template";
 import { postToSlack, buildAlertBlocks } from "@/lib/mvp/slack";
@@ -161,12 +162,15 @@ export async function POST(req: Request) {
   const profile = (lead.meta?.unified_profile ?? {}) as Record<string, unknown>;
   const derivedPainSummary = derivePainSummary(profile, language);
 
+  // B36-P7B: Persona-as-Data injection (paradigm-advisor-{language})
+  const systemWithPersona = await withPersonaPrefix(sb, language, SYSTEM_PROMPT_KARTE_TO_REPORT);
+
   const reportGen = await callDifyJson<{
     blocks: unknown[];
     schema_version: string;
     title?: string;
     pain_summary?: string;
-  }>("karteToReport", SYSTEM_PROMPT_KARTE_TO_REPORT, {
+  }>("karteToReport", systemWithPersona, {
     lead_id: lead.id,
     template_id: templateId,
     region,

@@ -17,6 +17,7 @@ import { callDifyJson } from "@/lib/mvp/dify";
 import { postToSlack } from "@/lib/mvp/slack";
 import { requireMvpUiAuth } from "@/lib/mvp/auth";
 import { LEAD_SELECT_COLUMNS, normalizeLead } from "@/lib/mvp/lead-adapter";
+import { withPersonaPrefix } from "@/lib/mvp/persona-injection";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -113,9 +114,17 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const profile = (lead.meta?.unified_profile as Record<string, unknown> | undefined) ?? {};
   const top_pain_summary = (profile.top_pain_summary as string | undefined) ?? "";
 
+  // B36-P7B: Persona-as-Data injection (paradigm-advisor-{locale} from paradigm_personas).
+  // base system_prompt 冒頭に persona payload を prepend して B2B 大人語彙を構造的に強制.
+  const systemWithPersona = await withPersonaPrefix(
+    sb,
+    lead.language ?? "ja",
+    STAGE2_SYSTEM_PROMPT,
+  );
+
   const result = await callDifyJson<{ subject: string; body: string; key_points: string[]; next_action_hint?: string }>(
     "karteToSalesMaterial",
-    STAGE2_SYSTEM_PROMPT,
+    systemWithPersona,
     {
       company_name: lead.company_name,
       domain: lead.domain,
