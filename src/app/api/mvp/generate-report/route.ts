@@ -27,6 +27,7 @@ import { checkEligibility } from "@/lib/mvp/eligibility";
 import { incrementQuota } from "@/lib/mvp/cost-guard";
 import { buildTrackedUrl, makeOptoutToken } from "@/lib/mvp/tracking";
 import { LEAD_SELECT_COLUMNS, normalizeLead } from "@/lib/mvp/lead-adapter";
+import { sanitizeBlocks } from "@/lib/mvp/hallucination-guard";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -188,6 +189,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, run_id: runId, error: "schema mismatch" }, { status: 500 });
   }
 
+  // ── 5.5 hallucination guard (80% Real Data 規律 strict) ──
+  // LLM が unified_profile に存在しない数値を捏造する問題を server-side で物理排除
+  const sanitized = sanitizeBlocks(reportGen.outputs.blocks, lead.meta?.unified_profile as Record<string, unknown> | undefined);
+  if (sanitized.stripped_keys.length > 0) {
+    console.warn(`[hallucination-guard] run=${runId} stripped ${sanitized.stripped_keys.length} fields:`, sanitized.stripped_keys.slice(0, 10));
+  }
+
   // ── 6. cms_content_blocks INSERT ──
   const slug = `${lead.id}-${Date.now()}`;
   const canonicalUrl = buildReportUrl(region, slug);
@@ -223,9 +231,9 @@ export async function POST(req: Request) {
       schema_version: schemaVersion,
       canonical_url: canonicalUrl,
       generated_by_run_id: runId,
-      blocks: reportGen.outputs.blocks,
+      blocks: sanitized.blocks,
       title: reportGen.outputs.title ?? `${lead.company_name} 健康診断レポート`,
-      meta: cmsMeta,
+      meta: { ...cmsMeta, hallucination_stripped: sanitized.stripped_keys },
       is_published: true,
       is_active: true,
     })

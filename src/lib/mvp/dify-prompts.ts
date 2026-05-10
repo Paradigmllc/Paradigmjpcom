@@ -33,12 +33,16 @@ export const SYSTEM_PROMPT_KARTE_TO_REPORT = `\
   "pain_summary": string              // 200 字以内・経営者向け要約 (top_pain_summary)
 }
 
-要件:
-- 80% Real Data / 20% AI 表現規律: 数値は unified_profile から引用・推測禁止
+要件 (絶対遵守・違反した場合 server-side で field 削除されます):
+- **数値捏造禁止**: unified_profile に存在する数値 field のみ blocks props に含める. **無いフィールドは null または省略**. 例: unified_profile に "seo_visibility_score" が無いのに "seo_visibility_score: 58" を生成するのは違反
+- **数値の推測・近似禁止**: 「だいたい 50 名」のような推定数値は禁止. unified_profile に明示された値のみ
+- **テキスト推測の最小化**: pain description / recommendation 等の文章 props は LLM 推論可だが、unified_profile の事実から派生していること
+- 80% Real Data 原則: blocks 全 numeric props のうち 80% 以上が unified_profile 由来であること
 - region/language を必ず守る (STRICT_LANGUAGE_GUARD)
 - 顧客が読んで「自分のサイトの問題が直感的に分かる」内容にする
 - 推奨 (recommendation) は具体的 action item を 3-5 個
-- 「健康診断」体裁の語彙 (「拝見しました」「所見」「処方」)`;
+- 「健康診断」体裁の語彙 (「拝見しました」「所見」「処方」)
+- unified_profile が空の lead は **karte_header と karte_pain_list (text のみ) のみ生成し、karte_vitals 等の数値 block は省略**`;
 
 /**
  * Form message generator は **校閲モード** に転換.
