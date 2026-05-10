@@ -2,16 +2,8 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { NextIntlClientProvider, hasLocale } from "next-intl"
 import { getMessages, setRequestLocale } from "next-intl/server"
-import SiteHeader from "@/components/aesop/SiteHeader"
-import SiteFooter from "@/components/aesop/SiteFooter"
-import DifyChatbot from "@/components/DifyChatbot"
-import SiteWrapper from "@/components/SiteWrapper"
 import { ThemeProvider } from "@/components/aesop/ThemeProvider"
-import PageTransition from "@/components/aesop/PageTransition"
-import LuxuryLoader from "@/components/aesop/LuxuryLoader"
-import CookieConsent from "@/components/aesop/CookieConsent"
-import ScrollProgress from "@/components/aesop/ScrollProgress"
-import BackToTop from "@/components/aesop/BackToTop"
+import ConditionalSiteChrome from "@/components/aesop/ConditionalSiteChrome"
 import { getOrganizationJsonLd, getServicesJsonLd } from "@/lib/jsonld"
 import { getSiteSettings, umamiWebsiteIdFor } from "@/lib/settings"
 import { themeTokensToCss } from "@/lib/theme-tokens"
@@ -285,27 +277,18 @@ export default async function LocaleLayout({ children, params }: Props) {
             {settings.maintenance.maintenanceMode ? (
               <MaintenanceScreen locale={locale} message={settings.maintenance.maintenanceMessage} />
             ) : (
-              <>
-                {/* relative wrapper sits above body::before paper-grain (z-0) */}
-                <div className="relative z-10">
-                  <ScrollProgress />
-                  <LuxuryLoader />
-                  <SiteHeader />
-                  <SiteWrapper>
-                    <PageTransition>{children}</PageTransition>
-                  </SiteWrapper>
-                  <SiteFooter
-                    settings={{
-                      contactEmail: settings.contact.email,
-                      social: settings.social,
-                    }}
-                  />
-                  <CookieConsent />
-                  <BackToTop />
-                </div>
-                {/* DifyChatbot は ja/en のみ最適化（残10ロケールは en にフォールバック） */}
-                <DifyChatbot locale={(locale === "ja" ? "ja" : "en") as "ja" | "en"} />
-              </>
+              // ConditionalSiteChrome (2026-05-10): /{locale}/report/* と /p/* 配下では
+              // header/footer/chrome を一切描画せず LP 表示にする (B36 MVP 診断レポート LP 化).
+              // 通常ページは site chrome 全部入り (従来挙動).
+              <ConditionalSiteChrome
+                locale={locale}
+                footerSettings={{
+                  contactEmail: settings.contact.email,
+                  social: settings.social,
+                }}
+              >
+                {children}
+              </ConditionalSiteChrome>
             )}
           </NextIntlClientProvider>
         </ThemeProvider>
