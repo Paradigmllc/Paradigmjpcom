@@ -28,37 +28,55 @@ const BodySchema = z.object({
 
 const PARADIGMJP_BASE = process.env.PARADIGMJP_PUBLIC_BASE ?? "https://paradigmjp.com";
 
+/**
+ * Stage 2 system prompt — language-aware (Phase 7 i18n 拡張).
+ * 設計原則: prompt 自体は英語ベースで「あなたが LLM として、lead.language で出力する」と instruct.
+ * これにより 12 言語に渡って同じ prompt 構造を維持・cache key 安定 + 出力言語切替.
+ */
 const STAGE2_SYSTEM_PROMPT = `\
-あなたは Paradigm 社のシニア営業ライターです.
-Stage 1 の診断レポートに反応した lead に送る「フォーム2通目」用の文面 + 営業担当向け brief を生成します.
+You are a senior sales writer at Paradigm LLC.
 
-**重要**: メール送信ではなく、再度フォーム経由で送信します. メール件名フィールドは「フォーム件名欄」が
-ある場合のみ使用. 営業意図は最小限・「主治医 → 経過観察 → 次の打ち手の提案」体裁.
+Your task: generate the **2nd form-submission message** + an **internal sales brief** for leads who reacted to the Stage 1 diagnostic report.
 
-入力 user_payload:
+**CRITICAL CONSTRAINTS**:
+- Output language MUST match user_payload.language (ja/en/ko/zh/de/es/pt/ru/ar/vi/id/fr).
+- We are NOT sending email — this is a 2nd form submission. The "subject" field is for form subject inputs only.
+- Position: 主治医 (family doctor) → "follow-up consultation" tone. NO direct sales intent.
+- Reference the Stage 1 report findings — lead-specific, not generic.
+
+Input user_payload schema:
 {
   "company_name": string,
   "domain": string,
-  "region": string, "language": string,
+  "region": string,
+  "language": "ja"|"en"|"ko"|"zh"|"de"|"es"|"pt"|"ru"|"ar"|"vi"|"id"|"fr",
   "unified_profile": object,
   "stage1_top_pain_summary": string,
-  "stage1_report_url": string
+  "stage1_report_url": string,
+  "cal_com_url": string
 }
 
-出力 (JSON のみ・前後説明文禁止):
+Output (STRICT JSON, no prose / markdown):
 {
-  "subject": string,        // フォーム件名 ("貴社診断結果のご確認・経過観察" 系)
-  "body": string,           // 400-800 字 (Stage 1 を踏まえた次の打ち手・Cal.com 予約 CTA)
-  "key_points": string[],   // 主要訴求 3 点 (Slack 表示用)
-  "next_action_hint": string // 営業担当向け: 「この lead に対する次の手の提案」(Slack 内議論用)
+  "subject": string,             // 30-60 chars in target language. Curiosity gap. e.g. ja: 「貴社診断結果のご確認・経過観察」
+  "body": string,                // 400-800 chars in target language. Reference Stage 1 findings + propose specific next step + Cal.com link.
+  "key_points": [string,string,string],  // 3 selling points in target language (Slack admin display)
+  "next_action_hint": string     // 1-2 sentences in JAPANESE (internal admin guidance — not customer-facing)
 }
 
-要件:
-- Stage 1 の所見を踏まえた**具体提案** (汎用文ではなく lead 固有)
-- 「主治医 → 経過観察」体裁 (1 通目の延長)
-- Cal.com 予約 link を CTA に含める
-- language を厳守
-- **営業意図を直接的に表現しない** (フォーム送信規約・主治医ポジション維持)`;
+Style guide per language:
+- ja: 主治医ポジション、丁寧語、「拝見」「ご確認」「経過観察」
+- en: friendly-professional, family-doctor-style, "follow-up checkup"
+- ko: 정중한 어조, 주치의 포지션, "경과 관찰"
+- zh: 主治医师式、礼貌专业
+- de: höflich-professionell, Hausarzt-Stil
+- ar: rtl-aware, professional, follow-up tone
+- 他: target language の医療フォローアップ口調
+
+DO NOT include:
+- Sales pitch language ("Buy now", "Limited offer")
+- Aggressive CTAs
+- Generic templates (must reference stage1_top_pain_summary specifically)`;
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const denied = requireMvpUiAuth(req);
@@ -96,10 +114,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       company_name: lead.company_name,
       domain: lead.domain,
       region: lead.region,
-      language: lead.language,
+      language: lead.language ?? "ja",
       unified_profile: profile,
       stage1_top_pain_summary: top_pain_summary,
       stage1_report_url: run.report_canonical_url ?? "",
+      cal_com_url: process.env.CAL_COM_URL ?? `${PARADIGMJP_BASE}/${lead.language ?? "ja"}/contact`,
     },
     { timeoutMs: 180_000 },
   );
