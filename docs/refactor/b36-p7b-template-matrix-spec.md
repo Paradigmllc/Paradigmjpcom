@@ -1,8 +1,16 @@
-# B36-P7B Template Matrix Spec — 4 業種 × 3 Pitch Angle
+# B36-P7B Template Matrix Spec — 4 業種 × 5 Pitch Angle
 
-> **状態**: 📋 **DRAFT — ユーザー壁打ち待ち**
-> **作成**: 2026-05-10
-> **背景**: ユーザー指示「テンプレは全面設計から壁打ちし直す必要」(B36 Phase 6 LP/CRO rewrite 後の再 reject 受け). 業種別差別化 + pitch_angle 軸を加えて 12 cells に segment 化する.
+> **状態**: 🟢 **PARTIALLY IMPLEMENTED** (ja×saas×5 angles 投入済・migration apply 済)
+> **作成 / 更新**: 2026-05-10
+> **背景**: ユーザー指示「authority + social_proof 追加で 5 軸」 + 「ElizaOS なども含めてどんどん進めて」 → 即時実装フェーズ移行.
+> **完了済 (2026-05-10)**:
+>   - ✅ migration `b36_p7b_pitch_angle_and_personas` apply (form_message_templates.pitch_angle 列 + paradigm_personas テーブル)
+>   - ✅ migration `b36_p7b_unique_includes_pitch_angle` apply (UNIQUE constraint extend)
+>   - ✅ ja×saas×5 angles seed 投入 (459-505 chars each・100% B2B 大人語彙)
+>   - ✅ paradigm-advisor-ja persona seed (system_prompt / tone / vocab_allowed / vocab_banned / style_examples)
+>   - ✅ pick-template.ts 8-phase fallback 拡張
+>   - ✅ /api/persona/[slug] endpoint 実装
+> **残**: 3 業種 (ec/consulting/restaurant_retail) seed + 11 region 翻訳 propagation + Dify workflow に persona HTTP fetch wire
 
 ---
 
