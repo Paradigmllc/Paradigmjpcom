@@ -8,6 +8,15 @@
  * `~/.claude/knowledge/dify-cloud-automation.md` Hack 2 参照.
  */
 
+/**
+ * Phase 6 i18n 徹底: 全 system prompt は **language-agnostic** に書かれており、
+ * caller (route) が user_payload の `language` field を渡すと LLM がその言語で出力する.
+ *
+ * 「region」(SalesRegion 12 値) と「language」(IETF lang code) を分離:
+ * - region = 規制環境・geographic context (jp_only / overseas_only / global)
+ * - language = 顧客可視 text の出力言語 (ja/en/ko/zh/de/es/pt/ru/ar/vi/id/fr)
+ */
+
 export const SYSTEM_PROMPT_KARTE_TO_REPORT = `\
 あなたは Paradigm 社のシニア DX コンサルタントです.
 

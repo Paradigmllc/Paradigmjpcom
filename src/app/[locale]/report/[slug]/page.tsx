@@ -40,7 +40,7 @@ import { BlocksReportRenderer } from "@paradigmllc/blocks"
 export const dynamic = "force-dynamic"
 
 export default function ReportPageWrapper() {
-  const { slug } = useParams<{ slug: string }>()
+  const { slug, locale } = useParams<{ slug: string; locale: string }>()
   const [data, setData] = useState<ProspectData | null>(null)
   const [blocksDoc, setBlocksDoc] = useState<ContentDoc | null>(null)
   const [loading, setLoading] = useState(true)
@@ -244,7 +244,7 @@ export default function ReportPageWrapper() {
   if (blocksDoc) return (
     <>
       <BlocksReportRenderer doc={blocksDoc} slugOrToken={slug} />
-      <MvpTrackingInjection meta={(blocksDoc as { meta?: { tracking?: TrackingMeta } }).meta?.tracking} />
+      <MvpTrackingInjection meta={(blocksDoc as { meta?: { tracking?: TrackingMeta } }).meta?.tracking} locale={locale} />
     </>
   )
 
@@ -276,61 +276,42 @@ interface TrackingMeta {
   generated_at: string
 }
 
-function MvpTrackingInjection({ meta }: { meta?: TrackingMeta }) {
+// 12-language CTA copy (Phase 6 i18n 徹底)
+type Lang = "ja" | "en" | "ko" | "zh" | "es" | "pt" | "ru" | "ar" | "vi" | "id" | "de" | "fr"
+const TRACKING_COPY: Record<Lang, { heading: string; subheading: string; cta: string; optout: string; privacy: string }> = {
+  ja: { heading: "所見をご一緒に確認しませんか?", subheading: "診断結果について、当社のシニアコンサルタントが 30 分のオンラインセッションで詳細をご説明いたします。\n無料・参加義務なし・その場での意思決定は不要です。", cta: "📅 セッションを予約する", optout: "配信停止", privacy: "プライバシーポリシー" },
+  en: { heading: "Want to review the findings together?", subheading: "Our senior consultant will walk you through the diagnostic results in a 30-min online session.\nFree · no commitment · no decision required on the spot.", cta: "📅 Book a session", optout: "Unsubscribe", privacy: "Privacy Policy" },
+  ko: { heading: "발견사항을 함께 확인하시겠어요?", subheading: "당사의 시니어 컨설턴트가 30분 온라인 세션에서 진단 결과를 자세히 설명해드립니다.\n무료 · 참여 의무 없음 · 즉시 의사결정 불필요.", cta: "📅 세션 예약하기", optout: "수신 거부", privacy: "개인정보 보호정책" },
+  zh: { heading: "想一起查看诊断结果吗?", subheading: "我们的资深顾问将在 30 分钟在线会议中详细解读诊断结果。\n免费 · 无义务 · 无需当场决策。", cta: "📅 预约会议", optout: "退订", privacy: "隐私政策" },
+  es: { heading: "¿Quiere revisar los hallazgos juntos?", subheading: "Nuestro consultor senior le explicará los resultados del diagnóstico en una sesión online de 30 minutos.\nGratis · sin compromiso · sin necesidad de decidir en el momento.", cta: "📅 Reservar sesión", optout: "Darse de baja", privacy: "Política de privacidad" },
+  pt: { heading: "Gostaria de revisar os achados juntos?", subheading: "Nosso consultor sênior explicará os resultados do diagnóstico em uma sessão online de 30 minutos.\nGrátis · sem compromisso · sem necessidade de decisão no momento.", cta: "📅 Agendar sessão", optout: "Cancelar inscrição", privacy: "Política de Privacidade" },
+  ru: { heading: "Хотите рассмотреть результаты вместе?", subheading: "Наш старший консультант подробно расскажет о результатах диагностики в 30-минутной онлайн-сессии.\nБесплатно · без обязательств · решение принимать сразу не требуется.", cta: "📅 Записаться на сессию", optout: "Отписаться", privacy: "Политика конфиденциальности" },
+  ar: { heading: "هل تودون مراجعة النتائج معاً؟", subheading: "سيقوم مستشارنا الكبير بشرح نتائج التشخيص بالتفصيل في جلسة عبر الإنترنت لمدة 30 دقيقة.\nمجاني · بدون التزام · لا يلزم اتخاذ قرار في الحال.", cta: "📅 احجز جلسة", optout: "إلغاء الاشتراك", privacy: "سياسة الخصوصية" },
+  vi: { heading: "Cùng xem xét kết quả?", subheading: "Chuyên gia cấp cao của chúng tôi sẽ giải thích chi tiết kết quả chẩn đoán trong phiên online 30 phút.\nMiễn phí · không cam kết · không cần quyết định ngay.", cta: "📅 Đặt lịch", optout: "Hủy đăng ký", privacy: "Chính sách bảo mật" },
+  id: { heading: "Mau telaah hasilnya bersama?", subheading: "Konsultan senior kami akan menjelaskan hasil diagnostik secara detail dalam sesi online 30 menit.\nGratis · tanpa kewajiban · tidak perlu memutuskan saat itu juga.", cta: "📅 Pesan sesi", optout: "Berhenti berlangganan", privacy: "Kebijakan Privasi" },
+  de: { heading: "Befunde gemeinsam besprechen?", subheading: "Unser Senior-Berater erläutert die Diagnoseergebnisse in einer 30-minütigen Online-Sitzung.\nKostenlos · unverbindlich · keine Entscheidung vor Ort erforderlich.", cta: "📅 Termin buchen", optout: "Abmelden", privacy: "Datenschutz" },
+  fr: { heading: "Examinons les résultats ensemble?", subheading: "Notre consultant senior vous expliquera les résultats du diagnostic en 30 minutes en visioconférence.\nGratuit · sans engagement · aucune décision à prendre sur le moment.", cta: "📅 Réserver une session", optout: "Se désabonner", privacy: "Politique de confidentialité" },
+}
+
+function MvpTrackingInjection({ meta, locale }: { meta?: TrackingMeta; locale?: string }) {
   if (!meta) return null
+  // meta.tracking には language 直接無いので親 page locale を使う (i18n route は /[locale])
+  const lang = (locale && (locale in TRACKING_COPY)) ? (locale as Lang) : "en"
+  const copy = TRACKING_COPY[lang]
   return (
     <>
-      {/* 1x1 transparent pixel for open tracking */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={meta.pixel_url}
-        alt=""
-        width={1}
-        height={1}
-        style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
-        aria-hidden="true"
-      />
-      {/* CTA + footer at the very bottom of the report */}
-      <section
-        style={{
-          maxWidth: 720,
-          margin: "48px auto 32px",
-          padding: "32px 24px",
-          textAlign: "center",
-          borderTop: "1px solid #E2E8F0",
-        }}
-      >
-        <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12, color: "#0F172A" }}>
-          所見をご一緒に確認しませんか?
-        </h3>
-        <p style={{ fontSize: 14, color: "#64748B", marginBottom: 20, lineHeight: 1.7 }}>
-          診断結果について、当社のシニアコンサルタントが 30 分のオンラインセッションで詳細をご説明いたします。<br />
-          無料・参加義務なし・その場での意思決定は不要です。
-        </p>
-        <a
-          href={meta.cta_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: "inline-block",
-            padding: "12px 32px",
-            background: "#635BFF",
-            color: "#fff",
-            borderRadius: 8,
-            fontSize: 14,
-            fontWeight: 600,
-            textDecoration: "none",
-          }}
-        >
-          📅 セッションを予約する
+      <img src={meta.pixel_url} alt="" width={1} height={1} style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }} aria-hidden="true" />
+      <section style={{ maxWidth: 720, margin: "48px auto 32px", padding: "32px 24px", textAlign: "center", borderTop: "1px solid #E2E8F0" }}>
+        <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12, color: "#0F172A" }}>{copy.heading}</h3>
+        <p style={{ fontSize: 14, color: "#64748B", marginBottom: 20, lineHeight: 1.7, whiteSpace: "pre-line" }}>{copy.subheading}</p>
+        <a href={meta.cta_url} target="_blank" rel="noopener noreferrer"
+          style={{ display: "inline-block", padding: "12px 32px", background: "#635BFF", color: "#fff", borderRadius: 8, fontSize: 14, fontWeight: 600, textDecoration: "none" }}>
+          {copy.cta}
         </a>
         <div style={{ marginTop: 32, fontSize: 11, color: "#94A3B8" }}>
-          <a href={meta.optout_url} style={{ color: "#94A3B8", textDecoration: "underline", marginRight: 16 }}>
-            配信停止
-          </a>
-          <a href={meta.privacy_url} target="_blank" rel="noopener noreferrer" style={{ color: "#94A3B8", textDecoration: "underline" }}>
-            プライバシーポリシー
-          </a>
+          <a href={meta.optout_url} style={{ color: "#94A3B8", textDecoration: "underline", marginRight: 16 }}>{copy.optout}</a>
+          <a href={meta.privacy_url} target="_blank" rel="noopener noreferrer" style={{ color: "#94A3B8", textDecoration: "underline" }}>{copy.privacy}</a>
         </div>
       </section>
     </>

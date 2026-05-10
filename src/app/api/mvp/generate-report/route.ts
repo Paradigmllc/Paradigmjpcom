@@ -28,6 +28,7 @@ import { incrementQuota } from "@/lib/mvp/cost-guard";
 import { buildTrackedUrl, makeOptoutToken } from "@/lib/mvp/tracking";
 import { LEAD_SELECT_COLUMNS, normalizeLead } from "@/lib/mvp/lead-adapter";
 import { sanitizeBlocks } from "@/lib/mvp/hallucination-guard";
+import { derivePainSummary, parseDifyUsage } from "@/lib/mvp/personalization";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -156,6 +157,10 @@ export async function POST(req: Request) {
   await sb.from("mvp_outreach_runs").update({ template_id: templateId, step: "dify_karte_to_report" }).eq("id", runId);
 
   // ── 5. Dify karteToReport ──
+  // Phase 6: server-side で top_pain_summary 派生 (LLM 推測ゼロ・cache hit 率向上)
+  const profile = (lead.meta?.unified_profile ?? {}) as Record<string, unknown>;
+  const derivedPainSummary = derivePainSummary(profile, language);
+
   const reportGen = await callDifyJson<{
     blocks: unknown[];
     schema_version: string;
@@ -166,10 +171,14 @@ export async function POST(req: Request) {
     template_id: templateId,
     region,
     language,
-    unified_profile: lead.meta?.unified_profile ?? {},
+    unified_profile: profile,
+    derived_pain_summary: derivedPainSummary, // server 派生・LLM はこれを尊重
     company_name: lead.company_name,
     domain: lead.domain,
   }, { timeoutMs: 180_000 });
+
+  // Cache telemetry (Phase 6 ROI 監視)
+  const telemetry = parseDifyUsage(reportGen.raw);
   if (!reportGen.ok || !reportGen.outputs?.blocks) {
     await markFailed(runId, "failed_report", "dify_karte_to_report", `karte-to-report: ${reportGen.errorMessage ?? "no blocks"}`);
     return NextResponse.json({ ok: false, run_id: runId, error: reportGen.errorMessage ?? "no blocks" }, { status: 500 });
@@ -284,9 +293,16 @@ export async function POST(req: Request) {
   };
   await sb.from("leads").update({ meta: newMeta }).eq("id", lead.id);
 
-  // ── 9. cost increment (Dify karteToReport の概算 ¥0.05/run) ──
-  const llmCostJpy = body.is_dry_run ? 0 : 0.05;
-  await sb.from("mvp_outreach_runs").update({ cost_jpy: llmCostJpy, status: "report_ready", step: "done", step_completed_at: new Date().toISOString(), pickup_locked_at: null }).eq("id", runId);
+  // ── 9. cost increment (Phase 6: Dify response から actual cost + cache_hit_rate を採用) ──
+  const llmCostJpy = body.is_dry_run ? 0 : (telemetry?.cost_jpy ?? 0.05);
+  await sb.from("mvp_outreach_runs").update({
+    cost_jpy: llmCostJpy,
+    cache_hit_rate: telemetry?.cache_hit_rate ?? null,
+    total_tokens: telemetry?.total_tokens ?? null,
+    status: "report_ready", step: "done",
+    step_completed_at: new Date().toISOString(),
+    pickup_locked_at: null,
+  }).eq("id", runId);
   if (llmCostJpy > 0) {
     await incrementQuota(sb, "global", "all", "llm_cost_jpy", llmCostJpy);
     await incrementQuota(sb, "region", region, "llm_cost_jpy", llmCostJpy);
