@@ -108,14 +108,19 @@ export async function POST(req: Request) {
   }
   // 関連データ hard delete
   // ※ Supabase 制約: cms_content_blocks や mvp_outreach_runs は lead_id 経由でリンクされるため、entity_id → lead_id 解決後に削除
+  // B36-AUDIT FIX #3: leads schema は entity_id を top-level 列で保持、domain は website_url 列.
+  //   旧 .eq("meta->>entity_id", ...) と .eq("domain", ...) は silently zero match → GDPR 違反リスク.
   const targetLeadIds: string[] = [];
   if (body.entity_id) {
-    const { data } = await sb.from("leads").select("id").eq("meta->>entity_id", body.entity_id);
+    const { data } = await sb.from("leads").select("id").eq("entity_id", body.entity_id);
     (data ?? []).forEach((r) => targetLeadIds.push(r.id));
   }
   if (body.domain) {
-    const { data } = await sb.from("leads").select("id").eq("domain", body.domain);
-    (data ?? []).forEach((r) => targetLeadIds.push(r.id));
+    // domain 入力 (例: "cybozu.co.jp") に対し ① website_url ilike (https://www.cybozu.co.jp/ 等) ② meta->>'domain' 互換
+    const { data: byUrl } = await sb.from("leads").select("id").ilike("website_url", `%${body.domain}%`);
+    (byUrl ?? []).forEach((r) => targetLeadIds.push(r.id));
+    const { data: byMeta } = await sb.from("leads").select("id").eq("meta->>domain", body.domain);
+    (byMeta ?? []).forEach((r) => targetLeadIds.push(r.id));
   }
   const uniqueLeadIds = Array.from(new Set(targetLeadIds));
   if (uniqueLeadIds.length === 0) {

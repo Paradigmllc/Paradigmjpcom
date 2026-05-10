@@ -11,6 +11,7 @@ import { NextResponse } from "next/server";
 import { getMvpSupabase } from "@/lib/mvp/supabase";
 import { requireMvpSecret } from "@/lib/mvp/auth";
 import { isPaused } from "@/lib/mvp/cost-guard";
+import { regionToPrimaryLanguage, isValidRegion, type SalesRegion } from "@/lib/mvp/pick-template";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -64,7 +65,11 @@ async function pickupForReport(sb: ReturnType<typeof getMvpSupabase>, region: st
   for (const lead of newLeads) {
     const region = (lead.region ?? "ja") as string;
     const meta = (lead.meta ?? {}) as Record<string, unknown>;
-    const language = (meta.language as string | undefined) ?? region;
+    // B36-AUDIT FIX #4: language fallback was returning region literal (europe/sea/africa/others)
+    // which fails VALID_LANGUAGES gate downstream. Use regionToPrimaryLanguage canonical mapping.
+    const metaLang = meta.language as string | undefined;
+    const language = metaLang
+      ?? (isValidRegion(region) ? regionToPrimaryLanguage(region as SalesRegion) : "ja");
     const { error: insErr } = await sb.from("mvp_outreach_runs").insert({
       lead_id: lead.id,
       region, language,

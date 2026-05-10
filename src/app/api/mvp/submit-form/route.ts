@@ -16,7 +16,7 @@ import { z } from "zod";
 import { getMvpSupabase } from "@/lib/mvp/supabase";
 import { callDifyJson } from "@/lib/mvp/dify";
 import { SYSTEM_PROMPT_FORM_MESSAGE_GENERATOR_POLISH, SYSTEM_PROMPT_FORM_VIOLATION_DETECTOR } from "@/lib/mvp/dify-prompts";
-import { pickFormMessageTemplate, isValidRegion, isValidLanguage, type Language, type SalesRegion } from "@/lib/mvp/pick-template";
+import { pickFormMessageTemplate, isValidRegion, isValidLanguage, isValidPitchAngle, type Language, type SalesRegion, type PitchAngle } from "@/lib/mvp/pick-template";
 import { postToSlack, buildViolationApprovalBlocks } from "@/lib/mvp/slack";
 import { requireMvpSecret } from "@/lib/mvp/auth";
 import { renderTemplate, appendLegalFooter } from "@/lib/mvp/template-engine";
@@ -84,9 +84,19 @@ export async function POST(req: Request) {
     step_started_at: new Date().toISOString(), form_url: lead.contact_form_url,
   }).eq("id", run.id);
 
+  // B36-P7B FIX: pitch_angle を pick に渡す (Phase 7-B 240 row 到達のため必須).
+  // 1) admin が lead.meta.preferred_pitch_angle を手動設定していれば優先
+  // 2) なければ unified_profile.severity_distribution から auto-derive
+  // 3) いずれも無ければ undefined (8-phase fallback で pitch_angle=null 行に降格)
+  const preferredAngleRaw = (lead.meta as Record<string, unknown> | undefined)?.preferred_pitch_angle;
+  const autoAngle = derivePitchAngleFromProfile(lead.meta as Record<string, unknown> | undefined);
+  const pitchAngle: PitchAngle | undefined =
+    isValidPitchAngle(preferredAngleRaw) ? preferredAngleRaw : autoAngle;
+
   const template = await pickFormMessageTemplate(sb, {
     region, language,
     industrySlug: (lead.meta?.industry_slug as string | undefined) ?? "default",
+    pitchAngle,
     variant: "a",
   });
   if (!template) {
@@ -263,4 +273,25 @@ async function markSkipped(runId: string, step: string, reason: string): Promise
     status: "skipped", step, error_log: errLog,
     completed_at: new Date().toISOString(), pickup_locked_at: null,
   }).eq("id", runId);
+}
+
+/**
+ * B36-P7B: lead.meta.unified_profile から pitch_angle を auto-derive.
+ *   - severity_distribution に critical/high が多い → 'risk' (損失回避訴求)
+ *   - 業界 benchmark で competitive index 高い → 'competitor'
+ *   - finding 数少 (健全) → 'opportunity' (前向き提案)
+ *   - paradigm 200社実績がある業種 → 'authority'
+ *   - 何も判定できない → undefined (8-phase fallback で null 行)
+ */
+function derivePitchAngleFromProfile(meta: Record<string, unknown> | undefined): PitchAngle | undefined {
+  if (!meta) return undefined;
+  const profile = (meta.unified_profile as Record<string, unknown> | undefined) ?? {};
+  const findings = Array.isArray(profile.findings) ? (profile.findings as Array<{ severity?: string }>) : [];
+  const critical = findings.filter((f) => f.severity === "critical" || f.severity === "high").length;
+  if (critical >= 3) return "risk";
+  if (findings.length === 0 && Object.keys(profile).length > 5) return "opportunity";
+  // benchmarks に competitor 軸データがあれば competitor
+  const benchmarks = profile.industry_benchmarks as Record<string, unknown> | undefined;
+  if (benchmarks && typeof benchmarks === "object" && Object.keys(benchmarks).length > 0) return "competitor";
+  return undefined; // 8-phase fallback で null 行に降格
 }

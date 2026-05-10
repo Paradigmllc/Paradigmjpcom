@@ -9,6 +9,7 @@ import { NextResponse } from "next/server";
 import { getMvpSupabase } from "@/lib/mvp/supabase";
 import { postToSlack, buildAlertBlocks } from "@/lib/mvp/slack";
 import { requireMvpSecret, verifySlackSignature } from "@/lib/mvp/auth";
+import { LEAD_SELECT_COLUMNS, normalizeLead } from "@/lib/mvp/lead-adapter";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -143,25 +144,46 @@ async function handleSlackInteractivity(req: Request): Promise<Response> {
       step: "playwright_dispatch_after_approval",
     }).eq("id", runId);
 
-    const { data: lead } = await sb.from("leads").select("id, company_name, contact_form_url").eq("id", run.lead_id).maybeSingle();
+    // B36-AUDIT FIX #2: lead schema uses business_name/website_url, not company_name/domain.
+    // Use normalizeLead() canonical adapter (LEAD_SELECT_COLUMNS) to avoid schema drift.
+    const { data: leadRaw } = await sb.from("leads").select(LEAD_SELECT_COLUMNS).eq("id", run.lead_id).maybeSingle();
+    const lead = normalizeLead(leadRaw);
     if (!lead?.contact_form_url) {
       return NextResponse.json({ ok: false, error: "lead form_url missing" }, { status: 400 });
     }
 
     const callbackUrl = `${process.env.PARADIGMJP_PUBLIC_BASE ?? "https://paradigmjp.com"}/api/mvp/webhook/slack-action?evt=playwright_callback&run_id=${runId}&secret=${encodeURIComponent(process.env.MVP_API_SECRET ?? "")}`;
-    await fetch(process.env.N8N_PLAYWRIGHT_FORM_WEBHOOK ?? "https://n8n.appexx.me/webhook/form-outreach", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        item_id: runId,
-        campaign_id: "mvp-b36",
-        lead_id: lead.id,
-        company_name: lead.company_name,
-        form_url: lead.contact_form_url,
-        body: run.form_message_body,
-        callback_url: callbackUrl,
-      }),
-    });
+    // B36-AUDIT FIX #5: error check on n8n dispatch (silent stuck-at-form_submitting prevention)
+    let dispatchOk = true; let dispatchErr = "";
+    try {
+      const res = await fetch(process.env.N8N_PLAYWRIGHT_FORM_WEBHOOK ?? "https://n8n.appexx.me/webhook/form-outreach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          item_id: runId,
+          campaign_id: "mvp-b36",
+          lead_id: lead.id,
+          company_name: lead.company_name,
+          form_url: lead.contact_form_url,
+          body: run.form_message_body,
+          callback_url: callbackUrl,
+        }),
+        signal: AbortSignal.timeout(30_000),
+      });
+      if (!res.ok) { dispatchOk = false; dispatchErr = `n8n HTTP ${res.status}`; }
+    } catch (e) {
+      dispatchOk = false; dispatchErr = e instanceof Error ? e.message : String(e);
+    }
+    if (!dispatchOk) {
+      // フォールバック: 失敗時は status を failed_submit にして再 retry 可能化 (CLAUDE.md s10-1 障害対応)
+      const { data: cur } = await sb.from("mvp_outreach_runs").select("error_log").eq("id", runId).maybeSingle();
+      const errLog = Array.isArray(cur?.error_log) ? cur.error_log : [];
+      errLog.push({ step: "playwright_dispatch_after_approval", error: dispatchErr, ts: new Date().toISOString() });
+      await sb.from("mvp_outreach_runs").update({
+        status: "failed_submit", error_log: errLog, step_completed_at: new Date().toISOString(),
+      }).eq("id", runId);
+      return NextResponse.json({ ok: false, response_action: "update", text: `❌ 送信失敗: ${dispatchErr}` }, { status: 502 });
+    }
     return NextResponse.json({ ok: true, response_action: "update", text: "✅ 承認・送信開始" });
   }
 
