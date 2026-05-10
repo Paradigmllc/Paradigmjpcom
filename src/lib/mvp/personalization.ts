@@ -111,34 +111,59 @@ function synthesizeFromMetrics(profile: UnifiedProfile, language: string): strin
 }
 
 /**
- * Dify response.usage を mvp_outreach_runs.cost_jpy + cache_hit_rate に変換.
- * DeepSeek V4 経由の場合 cache hit で 90% OFF (input_cache_hit_tokens / input_tokens 比率).
+ * Dify Cloud workflow response → mvp_outreach_runs.cost_jpy + total_tokens 変換.
+ *
+ * 実 Dify Cloud workflow response shape (smoke test 確認 2026-05-10):
+ *   { data: { status, outputs, total_tokens, total_steps, elapsed_time, ... } }
+ *
+ * Notes:
+ *   - cost (total_price) は Dify Cloud workflow API で expose されない → token 数 × 単価で estimate
+ *   - prompt_cache_hit_tokens も expose されない → cache_hit_rate は null (DeepSeek 直叩き時のみ取得可)
+ *   - underlying DeepSeek V4 cache hit は per-token cost に反映されるが、Dify が抽象化しているため見えない
  */
 export interface CacheTelemetry {
   cost_jpy: number;
-  cache_hit_rate: number; // 0-1
+  cache_hit_rate: number | null; // null = Dify が cache stat 非公開
   total_tokens: number;
-  cache_hit_tokens: number;
 }
+
+// DeepSeek V4 token 単価 (¥/1M tokens・cache hit + miss 平均推定)
+const PROMPT_TOKEN_JPY_PER_1M = 14;     // cache hit (90% OFF) 想定 default ¥0.014/1M ≈ ¥14/100M
+const COMPLETION_TOKEN_JPY_PER_1M = 280; // ¥0.28/1M ≈ ¥280/1M
 
 export function parseDifyUsage(rawData: unknown): CacheTelemetry | null {
   if (!rawData || typeof rawData !== "object") return null;
-  const data = rawData as { usage?: { total_price?: string | number; total_tokens?: number; prompt_tokens?: number; completion_tokens?: number; prompt_unit_price?: string | number; prompt_cache_hit_tokens?: number } };
-  const u = data.usage;
-  if (!u) return null;
+  const root = rawData as { data?: { total_tokens?: number; usage?: { total_price?: string | number; prompt_tokens?: number; completion_tokens?: number; total_tokens?: number; prompt_cache_hit_tokens?: number } } };
+  const data = root.data;
+  if (!data) return null;
 
-  const totalPriceUsd = typeof u.total_price === "string" ? parseFloat(u.total_price) : (u.total_price ?? 0);
-  const usdToJpy = 150; // approx exchange (could be env)
-  const cost_jpy = totalPriceUsd * usdToJpy;
+  // Prefer data.usage.* if present (some Dify versions return it), else data.total_tokens
+  const usage = data.usage ?? {};
+  const total = usage.total_tokens ?? data.total_tokens ?? 0;
+  if (total === 0) return null;
 
-  const total = u.total_tokens ?? 0;
-  const cacheHit = u.prompt_cache_hit_tokens ?? 0;
-  const cache_hit_rate = total > 0 ? Math.min(cacheHit / total, 1) : 0;
+  // cost: prefer Dify-provided total_price (USD) when available, else estimate from token count
+  let cost_jpy = 0;
+  if (usage.total_price != null) {
+    const totalPriceUsd = typeof usage.total_price === "string" ? parseFloat(usage.total_price) : usage.total_price;
+    cost_jpy = totalPriceUsd * 150; // USD → JPY rough
+  } else {
+    // Estimate: assume 60% prompt / 40% completion if not split
+    const prompt = usage.prompt_tokens ?? Math.floor(total * 0.6);
+    const completion = usage.completion_tokens ?? (total - prompt);
+    cost_jpy = (prompt / 1_000_000) * PROMPT_TOKEN_JPY_PER_1M + (completion / 1_000_000) * COMPLETION_TOKEN_JPY_PER_1M;
+  }
+
+  // cache_hit_rate: only available if Dify exposes prompt_cache_hit_tokens
+  let cache_hit_rate: number | null = null;
+  if (usage.prompt_cache_hit_tokens != null && total > 0) {
+    cache_hit_rate = Math.min(usage.prompt_cache_hit_tokens / total, 1);
+    cache_hit_rate = Math.round(cache_hit_rate * 1000) / 1000;
+  }
 
   return {
     cost_jpy: Math.round(cost_jpy * 10000) / 10000,
-    cache_hit_rate: Math.round(cache_hit_rate * 1000) / 1000,
+    cache_hit_rate,
     total_tokens: total,
-    cache_hit_tokens: cacheHit,
   };
 }
