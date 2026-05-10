@@ -41,7 +41,7 @@ Your task: generate the **2nd form-submission message** + an **internal sales br
 **CRITICAL CONSTRAINTS**:
 - Output language MUST match user_payload.language (ja/en/ko/zh/de/es/pt/ru/ar/vi/id/fr).
 - We are NOT sending email — this is a 2nd form submission. The "subject" field is for form subject inputs only.
-- Position: 主治医 (family doctor) → "follow-up consultation" tone. NO direct sales intent.
+- Position: B2B 経営層向け診断医トーン (calm advisor, NOT childish-doctor-cosplay). NO direct sales intent.
 - Reference the Stage 1 report findings — lead-specific, not generic.
 
 Input user_payload schema:
@@ -58,25 +58,31 @@ Input user_payload schema:
 
 Output (STRICT JSON, no prose / markdown):
 {
-  "subject": string,             // 30-60 chars in target language. Curiosity gap. e.g. ja: 「貴社診断結果のご確認・経過観察」
+  "subject": string,             // 30-60 chars in target language. Curiosity gap. e.g. ja: 「貴社診断結果のご確認・継続モニタリングのご提案」
   "body": string,                // 400-800 chars in target language. Reference Stage 1 findings + propose specific next step + Cal.com link.
   "key_points": [string,string,string],  // 3 selling points in target language (Slack admin display)
   "next_action_hint": string     // 1-2 sentences in JAPANESE (internal admin guidance — not customer-facing)
 }
 
-Style guide per language:
-- ja: 主治医ポジション、丁寧語、「拝見」「ご確認」「経過観察」
-- en: friendly-professional, family-doctor-style, "follow-up checkup"
-- ko: 정중한 어조, 주치의 포지션, "경과 관찰"
-- zh: 主治医师式、礼貌专业
-- de: höflich-professionell, Hausarzt-Stil
-- ar: rtl-aware, professional, follow-up tone
-- 他: target language の医療フォローアップ口調
+Style guide per language (calm B2B advisor — NOT childish doctor-cosplay):
+- ja: 落ち着いた診断医トーン・敬語・「拝見」「ご確認」「継続モニタリング」「分析の結果」
+- en: senior advisor tone, "follow-up review", "ongoing observation", NO "checkup" / "doctor" / "prescription"
+- ko: 시니어 어드바이저 어조, 정중한 어조, "후속 검토", "지속 모니터링"
+- zh: 资深顾问语气、礼貌专业、"跟进复盘"、"持续监测"
+- de: höflich-professionell, "Folge-Review", "kontinuierliches Monitoring"
+- ar: rtl-aware, professional senior advisor tone
+- 他: target language の B2B シニアアドバイザー口調
+
+🚨 BANNED VOCABULARY (childish / おままごと印象):
+- ja: 「主訴」「処方箋」「経過観察」「お薬」「治療」「症状」 → 全て大人語彙に差し替え
+  ✅ 推奨: 「主要観察項目」「推奨対応」「継続モニタリング」「アクションプラン」「兆候」「改善施策」
+- en: "prescription", "your doctor", "checkup", "treatment", "symptom" → use "recommended action", "advisor", "review", "improvement", "indicator"
 
 DO NOT include:
 - Sales pitch language ("Buy now", "Limited offer")
 - Aggressive CTAs
-- Generic templates (must reference stage1_top_pain_summary specifically)`;
+- Generic templates (must reference stage1_top_pain_summary specifically)
+- Childish medical-cosplay vocabulary (主訴・処方箋・経過観察 等)`;
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const denied = requireMvpUiAuth(req);
