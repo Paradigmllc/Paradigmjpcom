@@ -12,6 +12,7 @@
 import type { Metadata } from "next"
 import { Mail, Clock, Calendar } from "lucide-react"
 import { getTranslations } from "next-intl/server"
+import { pageAlternates } from "@/lib/page-metadata"
 import PageHero from "@/components/PageHero"
 import { ContactForm } from "./ContactForm"
 import { calendarUrlFor, getSiteSettings } from "@/lib/settings"
@@ -24,6 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: t("metaTitle"),
     description: t("metaDescription"),
+    alternates: pageAlternates(locale, "/contact"),
   }
 }
 

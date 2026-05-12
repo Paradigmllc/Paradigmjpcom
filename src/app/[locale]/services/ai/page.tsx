@@ -11,6 +11,7 @@
  */
 import type { Metadata } from "next"
 import { getTranslations } from "next-intl/server"
+import { pageAlternates } from "@/lib/page-metadata"
 import PageHero from "@/components/PageHero"
 import ServiceDetailLayout from "@/components/aesop/ServiceDetailLayout"
 import FadeIn from "@/components/aesop/FadeIn"
@@ -25,6 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: t("ai.metaTitle"),
     description: t("ai.metaDescription"),
+    alternates: pageAlternates(locale, "/services/ai"),
   }
 }
 

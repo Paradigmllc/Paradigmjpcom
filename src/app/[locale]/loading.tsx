@@ -7,9 +7,13 @@
  * 出力: ページ全幅の minimal loader (コンテンツが描画されるまで一瞬で消える)
  *
  * H ルール (3 状態): ローディング状態 — 必須実装。
+ * 2026-05-13 audit fix: ハードコード JP "少々お待ちください…" を 12-locale messages 化。
  */
 
-export default function Loading() {
+import { getTranslations } from "next-intl/server"
+
+export default async function Loading() {
+  const t = await getTranslations("loadingPage")
   return (
     <div className="min-h-[60vh] flex items-center justify-center bg-paradigm-paper">
       <div className="paradigm-glass rounded-2xl px-8 py-6 paradigm-glow-md flex items-center gap-4">
@@ -18,8 +22,8 @@ export default function Loading() {
           <div className="absolute inset-0 rounded-full border-2 border-paradigm-accent border-t-transparent animate-spin" />
         </div>
         <div className="flex flex-col">
-          <span className="paradigm-eyebrow text-paradigm-accent">Loading</span>
-          <span className="text-[13px] text-paradigm-ink-soft">少々お待ちください…</span>
+          <span className="paradigm-eyebrow text-paradigm-accent">{t("eyebrow")}</span>
+          <span className="text-[13px] text-paradigm-ink-soft">{t("message")}</span>
         </div>
       </div>
     </div>

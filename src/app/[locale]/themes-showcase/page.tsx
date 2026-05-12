@@ -10,8 +10,11 @@
  *   - URL: /[locale]/themes-showcase?theme=raycast           → 1 テーマだけ全画面表示
  *   - URL: /[locale]/themes-showcase?layout=grid             → 24 セル grid 比較 (4 Block × 6 theme・Phase 7)
  *   - URL: /[locale]/themes-showcase?layout=grid&block=hero  → 1 Block × 6 theme の横並び比較
+ *
+ * 2026-05-13 audit fix: 内部 QA ページのため SAMPLE_* data は JP のみ (intentional)・
+ *   生 JP 文字が i18n 対象外であることを示すために robots: noindex,nofollow を強制。
  */
-
+import type { Metadata } from "next"
 import {
   ThemeProvider,
   DESIGN_THEMES,
@@ -23,6 +26,17 @@ import { HeroBlock } from "@paradigmllc/blocks/blocks/Hero"
 import { FeatureGridBlock } from "@paradigmllc/blocks/blocks/FeatureGrid"
 import { PricingBlock } from "@paradigmllc/blocks/blocks/Pricing"
 import { CTABlock } from "@paradigmllc/blocks/blocks/CTA"
+
+export const metadata: Metadata = {
+  title: "Themes Showcase (internal QA)",
+  description: "Internal design theme comparison page. Not for public consumption.",
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: { index: false, follow: false },
+  },
+}
 
 export const dynamic = "force-dynamic"
 

@@ -16,6 +16,7 @@ import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
 import { LOCALE_OG_LOCALE, LOCALE_ORG_NAME } from "@/lib/locale-map"
+import { pageAlternates } from "@/lib/page-metadata"
 
 export async function generateStaticParams() {
   return await getAllBlogSlugs()
@@ -33,6 +34,7 @@ export async function generateMetadata({
   return {
     title: post.title,
     description: post.excerpt,
+    alternates: pageAlternates(locale, `/blog/${slug}`),
     openGraph: {
       title: post.title,
       description: post.excerpt,

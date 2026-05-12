@@ -14,6 +14,7 @@ import { headers } from "next/headers"
 import { getPayload } from "payload"
 import config from "@payload-config"
 import { getTranslations } from "next-intl/server"
+import { pageAlternates } from "@/lib/page-metadata"
 import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
@@ -40,6 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: t("metaTitle"),
     description: t("metaDescription"),
+    alternates: pageAlternates(locale, "/pricing"),
   }
 }
 

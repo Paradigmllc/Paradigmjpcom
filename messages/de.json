@@ -969,5 +969,9 @@
     "ctaHighlight": "AI",
     "ctaDesc": "Free consultation to scope your AI roadmap.",
     "ctaButton": "Book a free consultation"
+  },
+  "loadingPage": {
+    "eyebrow": "Loading",
+    "message": "Einen Moment bitte…"
   }
 }

@@ -47,7 +47,10 @@ export default function HeroSection() {
   const heroParallaxY = useTransform(scrollYProgress, [0, 1], [0, 120])
   const heroOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0])
 
-  const typingWords = (t.raw("heroTypingWords") as string[]) ?? ["MEO対策"]
+  // 2026-05-13 audit fix: fallback を locale-neutral 空配列に変更。
+  // messages/{12}.json には全 locale heroTypingWords があるため通常 fallback は発火しないが、
+  // 万が一 t.raw が undefined を返した場合に旧 ["MEO対策"] は非 ja locale で JP leak を起こす。
+  const typingWords = (t.raw("heroTypingWords") as string[]) ?? []
   const typingText = useTypingEffect(typingWords, 90, 1800)
 
   return (

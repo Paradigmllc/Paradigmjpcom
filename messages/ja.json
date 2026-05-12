@@ -969,5 +969,9 @@
     "ctaHighlight": "AI 導入",
     "ctaDesc": "無料相談で御社に最適な AI 活用プランをご提案します。",
     "ctaButton": "無料相談を予約する"
+  },
+  "loadingPage": {
+    "eyebrow": "Loading",
+    "message": "少々お待ちください…"
   }
 }

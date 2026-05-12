@@ -10,6 +10,7 @@
  */
 import type { Metadata } from "next"
 import { getTranslations } from "next-intl/server"
+import { pageAlternates } from "@/lib/page-metadata"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
@@ -23,6 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: t("metaTitle"),
     description: t("metaDescription"),
+    alternates: pageAlternates(locale, "/lp/seo"),
   }
 }
 
