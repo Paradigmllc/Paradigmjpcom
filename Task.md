@@ -17,7 +17,8 @@
 
 | Status | Owner | Lock-since | Branch | Task | Notes |
 |--------|-------|-----------|--------|------|-------|
-| ⚪ AVAILABLE | - | - | - | **B36 audit Open Items (#6 #7 #8 #9 H1)** | docs/audit/2026-05-10-holistic-e2e-audit.md・MVP archived 後の整理として残課題 |
+| 🟡 BLOCKED | - | - | - | **診断レポート ゼロから設計** | 旧 proposal stack は archive 済 (Sprint 5・2026-05-12)・ユーザー壁打ち待ち |
+| ⚪ AVAILABLE | - | - | - | ~~B36 audit Open Items~~ | MVP archive 済のため moot |
 
 ---
 
@@ -25,7 +26,7 @@
 
 | Priority | Status | Owner | Task | 工数 | Branch (推奨) |
 |----------|--------|-------|------|------|---------------|
-| P1 | ⚪ AVAILABLE | - | **診断レポート (`/[locale]/report/[slug]`) 刷新** — ユーザ指示で別途壁打ち | TBD | `agent/{X}/report-redesign` |
+| P1 | 🟡 BLOCKED | - | **診断レポート ゼロから再構築** — ユーザー壁打ち承認後着手 (旧 stack archive 済) | TBD | `agent/{X}/report-rebuild` |
 | P2 | ⚪ AVAILABLE | - | PayloadCMS Pages collection Block 追加 (PricingBlock / LogoCloud / Video / SplitContent / Timeline) — 必要に応じて | 1 日 | `agent/{X}/cms-blocks-ext` |
 | P3 | ⚪ AVAILABLE | - | legacy `locale` field の DB column drop migration (Pages/Services/Works/Pricing/FAQs) — admin が手動で availableLocales へ移行後 | 0.5 日 | `agent/{X}/legacy-locale-drop` |
 | P3 | ⚪ AVAILABLE | - | legacy `analytics.umamiWebsiteId*` / `calendarUrl.ja/en` の DB drop migration — admin が手動で *byLocale array へ移行後 | 0.5 日 | `agent/{X}/legacy-settings-drop` |
@@ -36,7 +37,8 @@
 
 | 完了日 | Owner | Task | Commit |
 |--------|-------|------|--------|
-| 2026-05-12 | claude-code | **Sprint 0–4: MVP archived + i18n/CMS 完璧化** (sales/api/mvp/optout/docs-admin _archive_ prefix 化 + middleware sales gate 撤去 + 6 collection availableLocales 12-locale 化 + Settings global umami/calendar 12-locale array 形式 + 8 ファイル hardcoded locale 分岐 sweep + 5 collection legacy locale field [DEPRECATED] 表示化・disabled 化 + tests 41/41 ✅ + TS clean ✅) | (本コミット) |
+| 2026-05-12 | claude-code | **Sprint 5: 診断レポート archive (ゼロから作り直し前段)** (`/[locale]/report/*` + `/report/*` + `/api/report/*` + `components/proposal/*` + `lib/proposal/*` + `lib/proposal-templates*.ts` → `_archive_*` prefix + middleware `/report /p` redirect ロジック撤去 (noindex header だけ残置) + tsconfig.json `_archive_*` exclude 追加 + tests 41/41 ✅ + TS clean ✅) | (本コミット) |
+| 2026-05-12 | claude-code | **Sprint 0–4: MVP archived + i18n/CMS 完璧化** (sales/api/mvp/optout/docs-admin _archive_ prefix 化 + middleware sales gate 撤去 + 6 collection availableLocales 12-locale 化 + Settings global umami/calendar 12-locale array 形式 + 8 ファイル hardcoded locale 分岐 sweep + 5 collection legacy locale field [DEPRECATED] 表示化・disabled 化 + tests 41/41 ✅ + TS clean ✅) | cd98be2 |
 | 2026-05-08 | claude-code | **P18-A-FIX-1 V1 token 再統合** (UUID-36 検出 → /api/report fallback で旧 token URL 互換確保) | 32299a4 |
 | 2026-05-08 | claude-code | **paradigmjpcom lockfile 修正** (git+ssh→git+https・Coolify build 連続失敗根治) | 3fc42bf |
 | 2026-05-08 | claude-code | **P18-D i18n sweep 13 ページ完遂** (services + about + faq + contact + pricing + privacy + legal + works + blog + service-detail/web + service-detail/meo + service-detail/seo + service-detail/ai・全 12 locale namespace 化・isJa hardcode 全廃) | 1a9f8b8, 25b2336, eba169d, a7d89d3, f9d5575, 64d077a, d16b36b, 521e38c, 0b93d12, 6c13f80, 382311e |
@@ -52,19 +54,28 @@
 
 ## 🗄️ アーカイブ済み (削除はしないけど使わない・2026-05-12)
 
-| 範囲 | 元パス | 新パス (_archive_ prefix で Next.js build 除外) | 復活方法 |
-|------|--------|--------------------------------------------|---------|
+| 範囲 | 元パス | 新パス (_archive_ prefix で Next.js build & tsc 除外) | 復活方法 |
+|------|--------|----------------------------------------------------|---------|
 | MVP frontend UI | `src/app/sales/[region]/mvp/*` | `src/app/_archive_sales/[region]/mvp/*` | rename 戻し 1 発 |
 | MVP API endpoints (14) | `src/app/api/mvp/*` | `src/app/api/_archive_mvp/*` | rename 戻し 1 発 |
 | MVP optout 着地ページ | `src/app/[locale]/optout` | `src/app/[locale]/_archive_optout` | rename 戻し 1 発 |
 | MVP 管理 quick ref | `src/app/[locale]/docs/admin/mvp-operations` | `src/app/[locale]/docs/admin/_archive_mvp-operations` | rename 戻し 1 発 |
 | middleware `/sales/*` gate | `src/middleware.ts` の SALES_PATH_PATTERN | 撤去済 (route 自体が 404 になるため不要) | B36 #19 Basic Auth ブロックを復活 |
+| **🆕 診断レポートページ** (locale ルート) | `src/app/[locale]/report/*` | `src/app/[locale]/_archive_report/*` | rename 戻し 1 発 |
+| **🆕 診断レポート shim** (locale-less) | `src/app/report/*` | `src/app/_archive_report_shim/*` | rename 戻し 1 発 |
+| **🆕 診断レポート API** | `src/app/api/report/*` | `src/app/api/_archive_report/*` | rename 戻し 1 発 |
+| **🆕 Proposal components (13 sections + Renderer)** | `src/components/proposal/*` | `src/components/_archive_proposal/*` | rename 戻し 1 発 |
+| **🆕 Proposal lib** (manifest/i18n/theme/prospect-data/default-translations) | `src/lib/proposal/*` | `src/lib/_archive_proposal/*` | rename 戻し 1 発 |
+| **🆕 Proposal templates** (業種×訴求軸マッチング) | `src/lib/proposal-templates*.ts` | `src/lib/_archive_proposal-templates*.ts` | rename 戻し 1 発 |
+| **🆕 middleware /report /p redirect** | `src/middleware.ts` の resolveLocaleFromSlug + redirect | 撤去済 (X-Robots-Tag noindex header だけ残置・古い indexed URL 防御) | git history から復元 |
+| **🆕 tsconfig** | `tsconfig.json` exclude | `_archive_*` パターン追加 | 同 exclude を消すだけ |
 
 **残置物 (アーカイブしていないが現在 unused)**:
 - `src/lib/mvp/*` (auth/tracking 等) — archived route だけが import していたため orphan・harmless
-- DB tables `mvp_outreach_runs` / `mvp_optout_tokens` / `paradigm_personas` / `form_message_templates` — データ保護のため触らない
+- DB tables `mvp_outreach_runs` / `mvp_optout_tokens` / `paradigm_personas` / `form_message_templates` / `cms_content_blocks` (B36 既存 report 永続データ) — データ保護のため触らない
 - Coolify cron jobs (cron-pickup / ab-winner-judge) — 404 で no-op になる (副作用なし)
 - `/api/persona/*` / `/api/sales-automation/*` — MVP と共有していたが汎用 API なので残置
+- `src/components/magicui/*` — proposal で使われていたが、他 page でも使う可能性あり残置
 
 ---
 
