@@ -64,7 +64,10 @@ const DEFAULTS: SiteSettings = {
   },
   maintenance: { maintenanceMode: false, maintenanceMessage: null },
   analytics: { umamiWebsiteId: null, umamiWebsiteIdEn: null },
-  calendarUrl: { ja: "https://cal.appexx.me", en: "https://cal.appexx.me" },
+  // 2026-05-13 appexx.me 一時断絶: 旧 default "https://cal.appexx.me" を空文字に変更。
+  // admin が PayloadCMS Settings > calendarByLocale (12-locale array) で URL を設定する想定。
+  // consumer (contact page) は空なら CTA ボタンを skip render する責務を持つ。
+  calendarUrl: { ja: "", en: "" },
   umamiByLocale: null,
   calendarByLocale: null,
   theme: null, // null = globals.css default をそのまま使用

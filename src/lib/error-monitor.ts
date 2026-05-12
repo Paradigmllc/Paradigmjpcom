@@ -21,8 +21,10 @@ interface CaptureOptions {
   source?: string // e.g. "/api/contact", "blog/[slug]"
 }
 
-const SLACK_NOTIFY_URL = "https://appexx.me/api/studio/notify"
-const SLACK_CHANNEL = "#all-paradigm"
+// 2026-05-13 appexx.me 連携一時断絶: SLACK_WEBHOOK_URL env から
+// Slack Incoming Webhook を直接呼ぶ。未設定なら no-op + console (fail-soft)。
+// 旧: "https://appexx.me/api/studio/notify" hardcode (archived 2026-05-13)
+const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL ?? ""
 const NODE_ENV = process.env.NODE_ENV ?? "development"
 
 /**
@@ -46,6 +48,13 @@ export async function captureException(
   // Skip if NODE_ENV is production but explicit override is set.
   if (process.env.ERROR_MONITOR_DISABLED === "1") return
 
+  // Skip if SLACK_WEBHOOK_URL not configured (appexx.me archive 2026-05-13).
+  if (!SLACK_WEBHOOK_URL) {
+    // eslint-disable-next-line no-console
+    console.warn("[error-monitor] SLACK_WEBHOOK_URL not set — production error logged to stdout only")
+    return
+  }
+
   try {
     const errorObj = error instanceof Error
       ? { message: error.message, name: error.name, stack: error.stack?.split("\n").slice(0, 8).join("\n") }
@@ -62,10 +71,10 @@ export async function captureException(
       .filter(Boolean)
       .join("\n")
 
-    await fetch(SLACK_NOTIFY_URL, {
+    await fetch(SLACK_WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ channel: SLACK_CHANNEL, text: slackText }),
+      body: JSON.stringify({ text: slackText }),
       signal: AbortSignal.timeout(3_000),
     })
   } catch {

@@ -86,23 +86,28 @@ export default async function ContactPage({ params }: Props) {
               )
             })}
 
-            <div className="paradigm-glass rounded-2xl p-6 paradigm-glow-md border border-paradigm-accent/30">
-              <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-paradigm-glow via-paradigm-accent to-pink-400 text-paradigm-paper mb-3 paradigm-glow-sm">
-                <Clock size={18} strokeWidth={1.5} />
+            {/* 2026-05-13 fail-soft: bookingUrl 未設定なら CTA カードを skip render.
+                admin が PayloadCMS Settings > calendarByLocale (12-locale) で URL を
+                設定したら自動的に表示される。 */}
+            {bookingUrl && (
+              <div className="paradigm-glass rounded-2xl p-6 paradigm-glow-md border border-paradigm-accent/30">
+                <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-paradigm-glow via-paradigm-accent to-pink-400 text-paradigm-paper mb-3 paradigm-glow-sm">
+                  <Clock size={18} strokeWidth={1.5} />
+                </div>
+                <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("hurryLabel")}</p>
+                <p className="text-[13px] text-paradigm-ink-soft leading-[1.75] mb-4">
+                  {t("hurryDesc")}
+                </p>
+                <a
+                  href={bookingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-full justify-center items-center gap-2 bg-paradigm-ink text-paradigm-paper rounded-xl py-3 text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
+                >
+                  {t("hurryButton")}
+                </a>
               </div>
-              <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("hurryLabel")}</p>
-              <p className="text-[13px] text-paradigm-ink-soft leading-[1.75] mb-4">
-                {t("hurryDesc")}
-              </p>
-              <a
-                href={bookingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex w-full justify-center items-center gap-2 bg-paradigm-ink text-paradigm-paper rounded-xl py-3 text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
-              >
-                {t("hurryButton")}
-              </a>
-            </div>
+            )}
           </aside>
         </div>
       </section>

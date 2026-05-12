@@ -154,7 +154,7 @@ export const Settings: GlobalConfig = {
           name: "url",
           type: "text",
           required: true,
-          admin: { width: "70%", description: "例: https://cal.appexx.me/paradigm-en" },
+          admin: { width: "70%", description: "例: https://cal.com/paradigm/intro-en" },
         },
       ],
     },

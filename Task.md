@@ -37,7 +37,9 @@
 
 | 完了日 | Owner | Task | Commit |
 |--------|-------|------|--------|
-| 2026-05-12 | claude-code | **Sprint 5: 診断レポート archive (ゼロから作り直し前段)** (`/[locale]/report/*` + `/report/*` + `/api/report/*` + `components/proposal/*` + `lib/proposal/*` + `lib/proposal-templates*.ts` → `_archive_*` prefix + middleware `/report /p` redirect ロジック撤去 (noindex header だけ残置) + tsconfig.json `_archive_*` exclude 追加 + tests 41/41 ✅ + TS clean ✅) | (本コミット) |
+| 2026-05-13 | claude-code | **Sprint 7: appexx.me 連携一時断絶 (fail-soft archive)** (`api/sales-automation` + `api/persona` + `lib/authentik-oidc.ts` → `_archive_*` / Slack `appexx.me/api/studio/notify` hardcode → env `SLACK_WEBHOOK_URL` + 未設定 no-op / Dify fallback `dify.appexx.me` → `api.dify.ai` (DIFY-CLOUD-ONLY 準拠) / Cal URL default `cal.appexx.me` → 空文字 + contact page で空時 skip render / tests 41/41 ✅ + TS clean ✅) | (本コミット) |
+| 2026-05-13 | claude-code | **Sprint 6: 全面 i18n + CMS audit + 4 件 bug 修正** (Layer 1-5 監査 / loading.tsx i18n-ify + 12 locale messages 追加 / 18 page で page-specific canonical+hreflang override・`lib/page-metadata.ts` helper 新設 / themes-showcase noindex / HeroSection cosmetic fallback / audit script 4 本追加 (regression 防止) / tests 41/41 ✅ + TS clean ✅) | b216286 |
+| 2026-05-12 | claude-code | **Sprint 5: 診断レポート archive (ゼロから作り直し前段)** (`/[locale]/report/*` + `/report/*` + `/api/report/*` + `components/proposal/*` + `lib/proposal/*` + `lib/proposal-templates*.ts` → `_archive_*` prefix + middleware `/report /p` redirect ロジック撤去 (noindex header だけ残置) + tsconfig.json `_archive_*` exclude 追加 + tests 41/41 ✅ + TS clean ✅) | 2a26343 |
 | 2026-05-12 | claude-code | **Sprint 0–4: MVP archived + i18n/CMS 完璧化** (sales/api/mvp/optout/docs-admin _archive_ prefix 化 + middleware sales gate 撤去 + 6 collection availableLocales 12-locale 化 + Settings global umami/calendar 12-locale array 形式 + 8 ファイル hardcoded locale 分岐 sweep + 5 collection legacy locale field [DEPRECATED] 表示化・disabled 化 + tests 41/41 ✅ + TS clean ✅) | cd98be2 |
 | 2026-05-08 | claude-code | **P18-A-FIX-1 V1 token 再統合** (UUID-36 検出 → /api/report fallback で旧 token URL 互換確保) | 32299a4 |
 | 2026-05-08 | claude-code | **paradigmjpcom lockfile 修正** (git+ssh→git+https・Coolify build 連続失敗根治) | 3fc42bf |
@@ -69,6 +71,12 @@
 | **🆕 Proposal templates** (業種×訴求軸マッチング) | `src/lib/proposal-templates*.ts` | `src/lib/_archive_proposal-templates*.ts` | rename 戻し 1 発 |
 | **🆕 middleware /report /p redirect** | `src/middleware.ts` の resolveLocaleFromSlug + redirect | 撤去済 (X-Robots-Tag noindex header だけ残置・古い indexed URL 防御) | git history から復元 |
 | **🆕 tsconfig** | `tsconfig.json` exclude | `_archive_*` パターン追加 | 同 exclude を消すだけ |
+| **🆕 appexx.me 連携 (2026-05-13 一時断絶)** | `api/sales-automation/*` | `api/_archive_sales-automation/*` | rename 戻し 1 発 |
+| **🆕 Persona API (MVP infra)** | `api/persona/[slug]/*` | `api/_archive_persona/[slug]/*` | rename 戻し 1 発 |
+| **🆕 Authentik OIDC stub** (未使用) | `lib/authentik-oidc.ts` | `lib/_archive_authentik-oidc.ts` | rename 戻し 1 発 |
+| **🆕 Slack 通知 hardcode** (appexx.me/api/studio/notify) | `api/contact/route.ts` + `lib/error-monitor.ts` | env `SLACK_WEBHOOK_URL` + fail-soft (未設定 = no-op) | env 設定で再有効化 |
+| **🆕 Dify base URL fallback** (dify.appexx.me) | `api/chat/route.ts` | Dify Cloud `api.dify.ai` を default に (DIFY-CLOUD-ONLY 永久ルール準拠) | env DIFY_BASE_URL 設定 |
+| **🆕 Cal.com URL default** (cal.appexx.me) | `lib/settings.ts` DEFAULTS / `globals/Settings.ts` admin description | 空文字 default + contact page で空時 skip render | admin が `calendarByLocale` 設定 |
 
 **残置物 (アーカイブしていないが現在 unused)**:
 - `src/lib/mvp/*` (auth/tracking 等) — archived route だけが import していたため orphan・harmless

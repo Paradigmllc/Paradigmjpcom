@@ -74,15 +74,24 @@ export async function POST(req: NextRequest) {
       .filter(Boolean)
       .join("\n")
 
-    try {
-      await fetch("https://appexx.me/api/studio/notify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ channel: "#all-paradigm", text: slackText }),
-        signal: AbortSignal.timeout(5_000),
-      })
-    } catch (e) {
-      console.error("[contact] Slack notify failed (best-effort):", e)
+    // 2026-05-13 appexx.me 連携一時断絶: SLACK_WEBHOOK_URL env から
+    // Slack Incoming Webhook を直接呼ぶ。env 未設定なら no-op + warn (fail-soft)。
+    const slackWebhookUrl = process.env.SLACK_WEBHOOK_URL
+    if (slackWebhookUrl) {
+      try {
+        await fetch(slackWebhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: slackText }),
+          signal: AbortSignal.timeout(5_000),
+        })
+      } catch (e) {
+        console.error("[contact] Slack notify failed (best-effort):", e)
+      }
+    } else {
+      console.warn(
+        "[contact] SLACK_WEBHOOK_URL not set — skipping Slack notify (appexx.me archive 2026-05-13)",
+      )
     }
 
     // 5. Supabase leads insert (best-effort)
