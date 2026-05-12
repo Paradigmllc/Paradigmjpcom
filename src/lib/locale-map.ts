@@ -2,6 +2,9 @@
  * locale-map.ts — Locale × SalesRegion × PPP 係数 × RTL の単一の真実の源
  *
  * P17 2026-04-27 新規実装（12-locale 拡張）
+ * 2026-05-12: routing.ts (next-intl) からの import を削除し、データ層を独立化
+ *             (Vitest 環境で next-intl/navigation が解決できない問題を回避・
+ *              chrome data 層と routing 層の責務分離も同時に達成).
  *
  * 設計原則:
  * - SalesRegion (appexx canonical 12値) と Locale (paradigmjp 12 言語コード) は別概念
@@ -10,16 +13,32 @@
  * - RTL は ar のみ — `isRtlLocale()` で判定
  * - AE-10 URL-state supremacy: locale は URL の `[locale]` segment が唯一の正
  *
+ * 同期責任:
+ *   この LOCALES tuple と src/i18n/routing.ts の routing.locales は 12 個の同じ値を
+ *   持つ必要がある。片方を変えたら必ずもう一方も同期する (12 → 13 locale 拡張時等)。
+ *
  * 参考: グローバル CLAUDE.md s10-5 (Sericia ar RTL 実装パターン)
  */
 
-import { routing } from "@/i18n/routing"
-
 // ──────────────────────────────────────────────
-// Locale (12 個・routing.ts と完全同期)
+// Locale (12 個・i18n/routing.ts と同期維持)
 // ──────────────────────────────────────────────
 
-export const LOCALES = routing.locales
+export const LOCALES = [
+  "ja",
+  "en",
+  "ko",
+  "zh",
+  "de",
+  "fr",
+  "es",
+  "pt",
+  "ru",
+  "ar",
+  "vi",
+  "id",
+] as const
+
 export type Locale = (typeof LOCALES)[number]
 
 export const isValidLocale = (l: string): l is Locale =>
@@ -61,6 +80,7 @@ export const LOCALE_FLAG: Record<Locale, string> = {
 }
 
 // hreflang attribute 値（ISO 639-1 / BCP 47）
+// 同じ値が Intl.NumberFormat / Intl.DateTimeFormat / toLocaleString の locale 引数にも使える
 export const LOCALE_HREFLANG: Record<Locale, string> = {
   ja: "ja-JP",
   en: "en-US",
@@ -74,6 +94,102 @@ export const LOCALE_HREFLANG: Record<Locale, string> = {
   ar: "ar-SA",
   vi: "vi-VN",
   id: "id-ID",
+}
+
+// Open Graph locale (BCP 47 underscore 形式)
+// hreflang と用途が違う (og:locale は underscore・hreflang は hyphen) ので別マップで持つ
+export const LOCALE_OG_LOCALE: Record<Locale, string> = {
+  ja: "ja_JP",
+  en: "en_US",
+  ko: "ko_KR",
+  zh: "zh_CN",
+  de: "de_DE",
+  fr: "fr_FR",
+  es: "es_ES",
+  pt: "pt_BR",
+  ru: "ru_RU",
+  ar: "ar_SA",
+  vi: "vi_VN",
+  id: "id_ID",
+}
+
+// 組織表記 — locale ごとに最も自然な表記を選択
+// ja は法人格表示が必須・他は LLC 表記または brand-only。JSON-LD の name に使用。
+export const LOCALE_ORG_NAME: Record<Locale, string> = {
+  ja: "Paradigm合同会社",
+  en: "Paradigm LLC",
+  ko: "Paradigm LLC",
+  zh: "Paradigm LLC",
+  de: "Paradigm LLC",
+  fr: "Paradigm LLC",
+  es: "Paradigm LLC",
+  pt: "Paradigm LLC",
+  ru: "Paradigm LLC",
+  ar: "Paradigm LLC",
+  vi: "Paradigm LLC",
+  id: "Paradigm LLC",
+}
+
+// JSON-LD `alternateName` — 検索で hit するための別表記
+export const LOCALE_ORG_ALTERNATE_NAMES: Record<Locale, string[]> = {
+  ja: ["Paradigm LLC", "パラダイム"],
+  en: ["Paradigm合同会社", "パラダイム"],
+  ko: ["Paradigm合同会社", "パラダイム"],
+  zh: ["Paradigm合同会社", "パラダイム"],
+  de: ["Paradigm合同会社", "パラダイム"],
+  fr: ["Paradigm合同会社", "パラダイム"],
+  es: ["Paradigm合同会社", "パラダイム"],
+  pt: ["Paradigm合同会社", "パラダイム"],
+  ru: ["Paradigm合同会社", "パラダイム"],
+  ar: ["Paradigm合同会社", "パラダイム"],
+  vi: ["Paradigm合同会社", "パラダイム"],
+  id: ["Paradigm合同会社", "パラダイム"],
+}
+
+/**
+ * Plan B 12-locale → seed content 2 variant collapse helper.
+ *
+ * 背景: ja は独自設計母版・他 11 ロケールは Japan Entry Package en の翻訳 (CLAUDE.md s1).
+ * JSON-LD description / knowsAbout 等の seed text は ja と en の 2 variant しか持たない。
+ * Visible UI text は messages/{locale}.json で 12-locale 完全対応 (P17 完遂)。
+ *
+ * 使用箇所: jsonld.ts / seo/schemas.ts / api/contact 等の「seed text を出し分ける」場面
+ */
+export const localeContentVariant = (l: string): "ja" | "en" =>
+  l === "ja" ? "ja" : "en"
+
+// Breadcrumb 「ホーム」chrome string — 12 locale native 表記
+// 設計判断: 「ホーム」は messages ではなく chrome data (LOCALE_DISPLAY_NAME 等と同じ層) として扱う。
+// 理由: site chrome の short string (1 word) は admin 編集対象ではなく、ブランド統一の navigation primitive。
+export const LOCALE_BREADCRUMB_HOME: Record<Locale, string> = {
+  ja: "ホーム",
+  en: "Home",
+  ko: "홈",
+  zh: "首页",
+  de: "Startseite",
+  fr: "Accueil",
+  es: "Inicio",
+  pt: "Início",
+  ru: "Главная",
+  ar: "الرئيسية",
+  vi: "Trang chủ",
+  id: "Beranda",
+}
+
+// 国コード (ISO 3166-1 alpha-2) — Slack notify / Twenty CRM enrich / OG metadata 等で使用
+export const LOCALE_COUNTRY: Record<Locale, string> = {
+  ja: "JP",
+  en: "US",
+  ko: "KR",
+  zh: "CN",
+  de: "DE",
+  fr: "FR",
+  es: "ES",
+  pt: "BR",
+  ru: "RU",
+  ar: "SA",
+  vi: "VN",
+  id: "ID",
 }
 
 // ──────────────────────────────────────────────

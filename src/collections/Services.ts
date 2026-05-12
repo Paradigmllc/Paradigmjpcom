@@ -1,6 +1,7 @@
 import type { CollectionConfig } from "payload"
 import { isAdmin, isAdminOrEditor, isLoggedIn } from "../access/byRole"
 import { makeAfterChangeAudit, makeAfterDeleteAudit } from "../hooks/auditLog"
+import { AVAILABLE_LOCALE_OPTIONS } from "./_localeOptions"
 
 export const Services: CollectionConfig = {
   slug: "services",
@@ -86,21 +87,19 @@ export const Services: CollectionConfig = {
       type: "select",
       label: "配信ロケール",
       hasMany: true,
-      options: [
-        { label: "日本語 (/ja)", value: "ja" },
-        { label: "English (/en)", value: "en" },
-      ],
+      options: AVAILABLE_LOCALE_OPTIONS,
       defaultValue: ["ja"],
       required: true,
       admin: {
         position: "sidebar",
-        description: "このサービスを表示するロケール（複数選択可）。EN/JAで異なる商品カタログを出せる。",
+        description: "このサービスを表示するロケール（複数選択可）。12 locale から自由に組み合わせ可能。",
       },
     },
+    // 2026-05-12 [DEPRECATED soft removal] — availableLocales (12-locale) に統合済み
     {
       name: "locale",
       type: "select",
-      label: "[legacy] 言語",
+      label: "⚠️ [DEPRECATED 2026-05-12] 旧言語フィールド",
       options: [
         { label: "日本語 (/ja)", value: "ja" },
         { label: "English (/en)", value: "en" },
@@ -108,7 +107,9 @@ export const Services: CollectionConfig = {
       ],
       admin: {
         position: "sidebar",
-        description: "非推奨: availableLocalesを使用してください。バックワードコンパチ用。",
+        disabled: true,
+        description:
+          "⚠️ このフィールドは 2026-05-12 に廃止されました。availableLocales を使用してください。",
         condition: (data) => Boolean(data?.locale),
       },
     },

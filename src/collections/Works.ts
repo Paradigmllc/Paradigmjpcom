@@ -1,6 +1,7 @@
 import type { CollectionConfig } from "payload"
 import { isAdmin, isAdminOrEditor, isLoggedIn } from "../access/byRole"
 import { makeAfterChangeAudit, makeAfterDeleteAudit } from "../hooks/auditLog"
+import { AVAILABLE_LOCALE_OPTIONS } from "./_localeOptions"
 
 export const Works: CollectionConfig = {
   slug: "works",
@@ -135,21 +136,19 @@ export const Works: CollectionConfig = {
       type: "select",
       label: "配信ロケール",
       hasMany: true,
-      options: [
-        { label: "日本語 (/ja)", value: "ja" },
-        { label: "English (/en)", value: "en" },
-      ],
+      options: AVAILABLE_LOCALE_OPTIONS,
       defaultValue: ["ja"],
       required: true,
       admin: {
         position: "sidebar",
-        description: "この実績を表示するロケール（複数選択可）。海外向け事例はEN単独公開も可。",
+        description: "この実績を表示するロケール（複数選択可・12 locale）。海外向け事例は EN/各言語単独公開も可。",
       },
     },
+    // 2026-05-12 [DEPRECATED soft removal] — availableLocales (12-locale) に統合済み
     {
       name: "locale",
       type: "select",
-      label: "[legacy] 言語",
+      label: "⚠️ [DEPRECATED 2026-05-12] 旧言語フィールド",
       options: [
         { label: "日本語 (/ja)", value: "ja" },
         { label: "English (/en)", value: "en" },
@@ -157,7 +156,9 @@ export const Works: CollectionConfig = {
       ],
       admin: {
         position: "sidebar",
-        description: "非推奨: availableLocalesを使用。",
+        disabled: true,
+        description:
+          "⚠️ このフィールドは 2026-05-12 に廃止されました。availableLocales を使用してください。",
         condition: (data) => Boolean(data?.locale),
       },
     },

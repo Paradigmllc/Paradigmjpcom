@@ -1,4 +1,5 @@
 import type { GlobalConfig } from "payload"
+import { AVAILABLE_LOCALE_OPTIONS } from "../collections/_localeOptions"
 
 export const Settings: GlobalConfig = {
   slug: "settings",
@@ -108,37 +109,92 @@ export const Settings: GlobalConfig = {
         },
       ],
     },
+    // 2026-05-12: 12-locale 対応のため array 形式に移行。
+    // 旧 `analytics.umamiWebsiteId(En)` / `calendarUrl.ja(en)` は legacy として残す
+    // (data loss 防止・admin が手動で新 array へ移行後 P19 で drop 予定)。
+    {
+      name: "umamiByLocale",
+      type: "array",
+      label: "Umami Website ID (locale 別・12 locale 対応)",
+      admin: {
+        description: "locale 別の Umami site ID。lookup は当該 locale → ja → null の順で fallback。",
+      },
+      fields: [
+        {
+          name: "locale",
+          type: "select",
+          required: true,
+          options: AVAILABLE_LOCALE_OPTIONS,
+          admin: { width: "30%" },
+        },
+        {
+          name: "websiteId",
+          type: "text",
+          required: true,
+          admin: { width: "70%", description: "Umami が払い出す UUID" },
+        },
+      ],
+    },
+    {
+      name: "calendarByLocale",
+      type: "array",
+      label: "予約カレンダー URL (locale 別・12 locale 対応)",
+      admin: {
+        description: "locale 別の Cal.com URL。lookup は当該 locale → ja → default の順で fallback。",
+      },
+      fields: [
+        {
+          name: "locale",
+          type: "select",
+          required: true,
+          options: AVAILABLE_LOCALE_OPTIONS,
+          admin: { width: "30%" },
+        },
+        {
+          name: "url",
+          type: "text",
+          required: true,
+          admin: { width: "70%", description: "例: https://cal.appexx.me/paradigm-en" },
+        },
+      ],
+    },
     {
       name: "analytics",
       type: "group",
-      label: "アナリティクス設定",
+      label: "[legacy] アナリティクス設定 (旧 2-locale 形式・新規は umamiByLocale を使用)",
+      admin: {
+        description: "非推奨: umamiByLocale (array) を使用してください。後方互換のため残存。",
+      },
       fields: [
         {
           name: "umamiWebsiteId",
           type: "text",
-          label: "Umami Website ID",
+          label: "[legacy] Umami Website ID (ja)",
         },
         {
           name: "umamiWebsiteIdEn",
           type: "text",
-          label: "Umami Website ID（英語版）",
+          label: "[legacy] Umami Website ID (en)",
         },
       ],
     },
     {
       name: "calendarUrl",
       type: "group",
-      label: "予約カレンダー",
+      label: "[legacy] 予約カレンダー (旧 2-locale 形式・新規は calendarByLocale を使用)",
+      admin: {
+        description: "非推奨: calendarByLocale (array) を使用してください。後方互換のため残存。",
+      },
       fields: [
         {
           name: "ja",
           type: "text",
-          label: "日本語予約URL",
+          label: "[legacy] 日本語予約URL",
         },
         {
           name: "en",
           type: "text",
-          label: "English booking URL",
+          label: "[legacy] English booking URL",
         },
       ],
     },

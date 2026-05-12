@@ -24,6 +24,8 @@
  *   ```
  */
 
+import { LOCALE_HREFLANG } from "@/lib/locale-map"
+
 export type CountryCode = string // ISO 3166-1 alpha-2
 
 /**
@@ -176,7 +178,9 @@ export function formatPricePPP(
       ? `~$${usd.toLocaleString("en-US")}`
       : `$${usd.toLocaleString("en-US")}`
   } else {
-    const formatted = adjusted.toLocaleString(locale === "ja" ? "ja-JP" : "en-US")
+    // 12-locale 拡張 (2026-05-12): LOCALE_HREFLANG map 経由で正しい BCP47 locale を引く
+    const fmtLocale = (LOCALE_HREFLANG as Record<string, string>)[locale] ?? "en-US"
+    const formatted = adjusted.toLocaleString(fmtLocale)
     display = discounted ? `~¥${formatted}` : `¥${formatted}`
   }
 

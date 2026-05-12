@@ -15,6 +15,7 @@ import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import FadeIn from "@/components/aesop/FadeIn"
 import { filterByLocale, coerceLocale, localeFindOptions } from "@/lib/cms/filters"
+import { LOCALE_HREFLANG } from "@/lib/locale-map"
 
 export const dynamic = "force-dynamic"
 
@@ -51,7 +52,8 @@ function formatDate(iso: string | undefined, locale: string): string {
   if (!iso) return ""
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return ""
-  return d.toLocaleDateString(locale === "ja" ? "ja-JP" : "en-US", {
+  const fmtLocale = (LOCALE_HREFLANG as Record<string, string>)[locale] ?? "en-US"
+  return d.toLocaleDateString(fmtLocale, {
     year: "numeric",
     month: "short",
     day: "numeric",

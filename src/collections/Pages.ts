@@ -1,6 +1,7 @@
 import type { CollectionConfig } from "payload"
 import { isAdmin, isAdminOrEditor, isLoggedIn } from "../access/byRole"
 import { makeAfterChangeAudit, makeAfterDeleteAudit } from "../hooks/auditLog"
+import { AVAILABLE_LOCALE_OPTIONS } from "./_localeOptions"
 
 import { HeroBlock } from "../blocks/Hero"
 import { SectionBlock } from "../blocks/Section"
@@ -157,15 +158,13 @@ export const Pages: CollectionConfig = {
       type: "select",
       label: "配信ロケール",
       hasMany: true,
-      options: [
-        { label: "日本語 (/ja)", value: "ja" },
-        { label: "English (/en)", value: "en" },
-        { label: "한국어 (/ko)", value: "ko" },
-        { label: "中文 (/zh)", value: "zh" },
-      ],
+      options: AVAILABLE_LOCALE_OPTIONS,
       defaultValue: ["ja", "en"],
       required: true,
-      admin: { position: "sidebar" },
+      admin: {
+        position: "sidebar",
+        description: "12 locale から多選択。ja/en は独自設計母版・他10ロケールは翻訳版として展開。",
+      },
     },
     {
       name: "isHomepage",
@@ -174,12 +173,14 @@ export const Pages: CollectionConfig = {
       defaultValue: false,
       admin: { position: "sidebar" },
     },
-    // 2026-04-30: filterByLocale (lib/cms/filters.ts) が `locale` field を query するため
-    // 後方互換用に追加 (新規 entry は availableLocales のみ使用推奨)
+    // 2026-05-12 [DEPRECATED soft removal]: 旧 single-locale フィールド。
+    // 新規 entry は availableLocales (12-locale multi-select) を使用してください。
+    // 既存データ保護のため `condition` で値が入っているドキュメントだけ表示し、
+    // `disabled: true` で読み取り専用化。DB column は migration P19 で drop 予定。
     {
       name: "locale",
       type: "select",
-      label: "[legacy] 言語",
+      label: "⚠️ [DEPRECATED 2026-05-12] 旧言語フィールド",
       options: [
         { label: "日本語 (/ja)", value: "ja" },
         { label: "English (/en)", value: "en" },
@@ -187,7 +188,10 @@ export const Pages: CollectionConfig = {
       ],
       admin: {
         position: "sidebar",
-        description: "非推奨: availableLocales を使用してください。filterByLocale 互換維持用。",
+        disabled: true,
+        description:
+          "⚠️ このフィールドは 2026-05-12 に廃止されました。availableLocales を使用してください。" +
+          "既存データ移行後に DB 列も drop 予定。",
         condition: (data) => Boolean(data?.locale),
       },
     },

@@ -68,55 +68,12 @@ async function resolveLocaleFromSlug(
   }
 }
 
-// ─── B36 #19 (2026-05-09): /sales/* gate (Basic Auth + noindex) ─────
-// MVP 監視 UI を public web から隠す. SEO indexing 漏洩防止 + 内部のみアクセス可.
-// Phase 1 = Basic Auth (Coolify env: MVP_BASIC_AUTH_USER / MVP_BASIC_AUTH_PASS).
-// Phase 2 (将来): Authentik OIDC 昇格.
-const SALES_PATH_PATTERN = /^\/sales(?:\/|$)/i
-
-function checkBasicAuth(request: NextRequest): NextResponse | null {
-  const expectedUser = process.env.MVP_BASIC_AUTH_USER
-  const expectedPass = process.env.MVP_BASIC_AUTH_PASS
-  if (!expectedUser || !expectedPass) {
-    // env 未設定 = 全 reject (fail-closed・SEO 事故防止)
-    return new NextResponse("MVP gate not configured", {
-      status: 503,
-      headers: { "X-Robots-Tag": NOINDEX_VALUE },
-    })
-  }
-  const authHeader = request.headers.get("authorization") ?? ""
-  if (authHeader.startsWith("Basic ")) {
-    const decoded = atob(authHeader.slice(6))
-    const idx = decoded.indexOf(":")
-    if (idx > 0) {
-      const user = decoded.slice(0, idx)
-      const pass = decoded.slice(idx + 1)
-      if (user === expectedUser && pass === expectedPass) {
-        return null // pass-through
-      }
-    }
-  }
-  return new NextResponse("Authentication required", {
-    status: 401,
-    headers: {
-      "WWW-Authenticate": 'Basic realm="Paradigm MVP", charset="UTF-8"',
-      "X-Robots-Tag": NOINDEX_VALUE,
-    },
-  })
-}
+// 2026-05-12: MVP セクション (`/sales/*`) はアーカイブ済 (`src/app/_archive_sales/`).
+// `/sales/*` route はもう存在しないので Basic Auth gate も不要 → 撤去.
+// 将来 MVP を unarchive する際は B36 #19 (Basic Auth or Authentik OIDC) を復活させる.
 
 export default async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl
-
-  // ─── /sales/* gate (B36 #19) ────────────────────────────────────────
-  if (SALES_PATH_PATTERN.test(pathname)) {
-    const gate = checkBasicAuth(request)
-    if (gate) return gate
-    // pass-through: noindex 強制 + next-intl skip (sales is not localized content)
-    const res = NextResponse.next()
-    res.headers.set("X-Robots-Tag", NOINDEX_VALUE)
-    return res
-  }
 
   // ─── /report/[slug] (locale-less) → /[locale]/report/[slug] (B33 Phase 2) ───
   // cms_content_blocks.region を lookup → regionToLocale() で正しい locale prefix へ.

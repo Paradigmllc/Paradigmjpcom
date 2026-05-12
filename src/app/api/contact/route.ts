@@ -17,6 +17,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { checkRateLimit, getClientIp, verifyTurnstile } from "@/lib/rate-limit"
 import { captureException } from "@/lib/error-monitor"
+import { LOCALE_COUNTRY, localeContentVariant } from "@/lib/locale-map"
 
 export async function POST(req: NextRequest) {
   try {
@@ -55,7 +56,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const isJa = locale === "ja"
+    const variant = localeContentVariant(locale ?? "ja")
+    const country = (LOCALE_COUNTRY as Record<string, string>)[locale ?? "ja"] ?? "US"
 
     // 4. Slack notification (best-effort)
     const slackText = [
@@ -100,7 +102,7 @@ export async function POST(req: NextRequest) {
             business_name: company || name,
             email,
             phone: phone || null,
-            country: locale === "ja" ? "JP" : "US",
+            country,
             industry: services?.[0] || "問い合わせ",
             pipeline_stage: "inbound",
             source: "paradigmjp.com",
@@ -126,7 +128,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: isJa
+      message: variant === "ja"
         ? "お問い合わせを受け付けました。1営業日以内にご連絡いたします。"
         : "Thank you. We'll reply within one business day.",
     })

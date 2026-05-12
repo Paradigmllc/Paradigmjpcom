@@ -25,6 +25,7 @@ import BlockRenderer from "@/blocks/BlockRenderer"
 import JsonLd from "@/components/seo/JsonLd"
 import { buildArticleSchema, buildBreadcrumbSchema } from "@/lib/seo/schemas"
 import { routing } from "@/i18n/routing"
+import { LOCALE_BREADCRUMB_HOME } from "@/lib/locale-map"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 60
@@ -106,8 +107,10 @@ export default async function CMSPage({ params }: PageProps) {
     url,
     locale,
   })
+  const homeLabel =
+    (LOCALE_BREADCRUMB_HOME as Record<string, string>)[locale] ?? "Home"
   const breadcrumbSchema = buildBreadcrumbSchema([
-    { name: locale === "ja" ? "ホーム" : "Home", url: `${BASE}/${locale}` },
+    { name: homeLabel, url: `${BASE}/${locale}` },
     { name: (page as { title?: string }).title ?? slugStr, url },
   ])
 

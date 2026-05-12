@@ -13,6 +13,9 @@ import {
   isRtlLocale,
   localeDirection,
   LOCALE_HREFLANG,
+  LOCALE_ORG_NAME,
+  LOCALE_ORG_ALTERNATE_NAMES,
+  localeContentVariant,
   type Locale,
 } from "@/lib/locale-map"
 
@@ -216,6 +219,9 @@ export default async function LocaleLayout({ children, params }: Props) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(getServicesJsonLd(locale)) }}
         />
         {/* 2026-04-30 SEO/GEO 強化: LocalBusiness + WebSite (SearchAction 付) を全ページに注入 */}
+        {/* 2026-05-12 12-locale 拡張: LOCALE_ORG_NAME / LOCALE_ORG_ALTERNATE_NAMES /
+            localeContentVariant 経由で全 12 locale 対応の structured data を生成。
+            seed text (description) は ja/en 2 variant 母版 (Plan B). */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -223,13 +229,15 @@ export default async function LocaleLayout({ children, params }: Props) {
               "@context": "https://schema.org",
               "@type": "ProfessionalService",
               "@id": "https://paradigmjp.com#organization",
-              name: locale === "ja" ? "Paradigm合同会社" : "Paradigm LLC",
-              alternateName: locale === "ja" ? ["Paradigm LLC", "パラダイム"] : ["Paradigm 合同会社", "パラダイム"],
+              name: (LOCALE_ORG_NAME as Record<string, string>)[locale] ?? "Paradigm LLC",
+              alternateName:
+                (LOCALE_ORG_ALTERNATE_NAMES as Record<string, string[]>)[locale] ??
+                LOCALE_ORG_ALTERNATE_NAMES.en,
               url: "https://paradigmjp.com",
               logo: "https://paradigmjp.com/logo.png",
               image: "https://paradigmjp.com/og-image.png",
               description:
-                locale === "ja"
+                localeContentVariant(locale) === "ja"
                   ? "Web 制作・MEO 対策・SEO/GEO・AI 導入支援。Paradigm合同会社が提供する 4 つのデジタル支援サービス。"
                   : "Web development, MEO, SEO/GEO, and AI integration. Four productized services from Paradigm LLC.",
               address: { "@type": "PostalAddress", addressCountry: "JP", addressRegion: "Tokyo" },
@@ -247,12 +255,12 @@ export default async function LocaleLayout({ children, params }: Props) {
               "@type": "WebSite",
               "@id": "https://paradigmjp.com#website",
               url: "https://paradigmjp.com",
-              name: locale === "ja" ? "Paradigm合同会社" : "Paradigm LLC",
-              inLanguage: ["ja", "en", "ko", "zh", "de", "fr", "es", "pt", "ru", "ar"],
+              name: (LOCALE_ORG_NAME as Record<string, string>)[locale] ?? "Paradigm LLC",
+              inLanguage: ["ja", "en", "ko", "zh", "de", "fr", "es", "pt", "ru", "ar", "vi", "id"],
               publisher: {
                 "@type": "Organization",
                 "@id": "https://paradigmjp.com#organization",
-                name: locale === "ja" ? "Paradigm合同会社" : "Paradigm LLC",
+                name: (LOCALE_ORG_NAME as Record<string, string>)[locale] ?? "Paradigm LLC",
               },
               potentialAction: {
                 "@type": "SearchAction",

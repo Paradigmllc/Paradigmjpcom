@@ -33,6 +33,7 @@ import BackToTop from "./BackToTop"
 import PageTransition from "./PageTransition"
 import SiteWrapper from "@/components/SiteWrapper"
 import DifyChatbot from "@/components/DifyChatbot"
+import { localeContentVariant } from "@/lib/locale-map"
 
 /**
  * SiteFooter prop shape を最小限ミラー (PayloadCMS Settings global から渡される
@@ -96,8 +97,10 @@ export default function ConditionalSiteChrome({ children, locale, footerSettings
         <CookieConsent />
         <BackToTop />
       </div>
-      {/* DifyChatbot は ja/en のみ最適化（残10ロケールは en にフォールバック） */}
-      <DifyChatbot locale={(locale === "ja" ? "ja" : "en") as "ja" | "en"} />
+      {/* DifyChatbot は ja/en の 2 bot のみ存在 (Plan B 母版).
+          localeContentVariant() で 12 locale を ja/en に collapse — chatbot 側の
+          2-variant 制約と一致させ、将来 Dify が他 locale bot を持った時はマップ拡張で対応. */}
+      <DifyChatbot locale={localeContentVariant(locale)} />
     </>
   )
 }

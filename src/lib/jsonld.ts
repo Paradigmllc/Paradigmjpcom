@@ -1,40 +1,54 @@
-// ─── 構造化データ（JSON-LD） — locale-aware (P18-D-12) ──────────────
+// ─── 構造化データ（JSON-LD） — locale-aware (P18-D-12 / 2026-05-12 12-locale 拡張) ──
 //
 // `getOrganizationJsonLd(locale)` / `getServicesJsonLd(locale)` が locale
 // 別の structured data を返す。layout.tsx は locale を渡して呼び出す。
 //
-// SEO 上も Google は同一 URL 内で言語混在より、locale ごとに正しい言語の
-// description / knowsAbout / Service.name を出す方が評価される。
+// 設計: 構造的データ (name/alternateName) は 12 locale 完全対応 (LOCALE_ORG_NAME map)、
+//       seed text (description/knowsAbout) は Plan B により ja/en 2 variant 母版を維持
+//       (localeContentVariant ヘルパで collapse). 詳細 → lib/locale-map.ts.
 
-type Locale = "ja" | "en" | string
+import {
+  LOCALE_ORG_NAME,
+  LOCALE_ORG_ALTERNATE_NAMES,
+  localeContentVariant,
+} from "@/lib/locale-map"
 
-export function getOrganizationJsonLd(locale: Locale = "ja") {
-  const isJa = locale === "ja"
+const orgNameOf = (locale: string) =>
+  (LOCALE_ORG_NAME as Record<string, string>)[locale] ?? "Paradigm LLC"
+
+const altNamesOf = (locale: string) =>
+  (LOCALE_ORG_ALTERNATE_NAMES as Record<string, string[]>)[locale] ??
+  LOCALE_ORG_ALTERNATE_NAMES.en
+
+export function getOrganizationJsonLd(locale: string = "ja") {
+  const variant = localeContentVariant(locale)
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: isJa ? "Paradigm合同会社" : "Paradigm LLC",
-    alternateName: isJa ? ["Paradigm LLC", "パラダイム"] : ["Paradigm 合同会社", "パラダイム"],
+    name: orgNameOf(locale),
+    alternateName: altNamesOf(locale),
     url: "https://paradigmjp.com",
     logo: "https://paradigmjp.com/opengraph-image",
-    description: isJa
-      ? "Web制作・MEO対策・SEO/GEO対策・AI導入支援。デジタル技術で中小企業の成長を支援するParadigm合同会社。"
-      : "Web development, MEO, SEO/GEO, and AI integration. Paradigm LLC supports SMB growth through digital technology.",
+    description:
+      variant === "ja"
+        ? "Web制作・MEO対策・SEO/GEO対策・AI導入支援。デジタル技術で中小企業の成長を支援するParadigm合同会社。"
+        : "Web development, MEO, SEO/GEO, and AI integration. Paradigm LLC supports SMB growth through digital technology.",
     email: "contact@paradigmjp.com",
     sameAs: ["https://github.com/Paradigmllc"],
     foundingDate: "2025",
     areaServed: { "@type": "Country", name: "Japan" },
     serviceArea: { "@type": "Country", name: "Japan" },
-    knowsAbout: isJa
-      ? ["Web制作", "MEO対策", "SEO", "GEO", "AI導入支援", "デジタルマーケティング"]
-      : ["Web Development", "Local SEO (MEO)", "SEO", "GEO", "AI Integration", "Digital Marketing"],
+    knowsAbout:
+      variant === "ja"
+        ? ["Web制作", "MEO対策", "SEO", "GEO", "AI導入支援", "デジタルマーケティング"]
+        : ["Web Development", "Local SEO (MEO)", "SEO", "GEO", "AI Integration", "Digital Marketing"],
   }
 }
 
-export function getServicesJsonLd(locale: Locale = "ja") {
-  const isJa = locale === "ja"
-  const orgName = isJa ? "Paradigm合同会社" : "Paradigm LLC"
-  const services = isJa
+export function getServicesJsonLd(locale: string = "ja") {
+  const variant = localeContentVariant(locale)
+  const orgName = orgNameOf(locale)
+  const services = variant === "ja"
     ? [
         { name: "Web制作", desc: "Next.js/WordPressによる高速・SEO最適化されたWebサイト制作", url: "/services/web", price: "298000", priceDesc: "ライトプラン〜" },
         { name: "MEO対策", desc: "Googleビジネスプロフィール最適化による地域検索上位表示", url: "/services/meo", price: "29800", priceDesc: "月額エントリープラン〜" },

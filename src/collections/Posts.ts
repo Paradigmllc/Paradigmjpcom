@@ -1,6 +1,7 @@
 import type { CollectionConfig } from "payload"
 import { isAdmin, isAdminOrEditor, isLoggedIn } from "../access/byRole"
 import { makeAfterChangeAudit, makeAfterDeleteAudit } from "../hooks/auditLog"
+import { AVAILABLE_LOCALE_OPTIONS } from "./_localeOptions"
 
 export const Posts: CollectionConfig = {
   slug: "posts",
@@ -121,15 +122,12 @@ export const Posts: CollectionConfig = {
       type: "select",
       label: "配信ロケール",
       hasMany: true,
-      options: [
-        { label: "日本語 (/ja)", value: "ja" },
-        { label: "English (/en)", value: "en" },
-      ],
+      options: AVAILABLE_LOCALE_OPTIONS,
       defaultValue: ["ja"],
       required: true,
       admin: {
         position: "sidebar",
-        description: "この記事を表示するロケール（複数選択可）。JAのみ・ENのみ・両方から選択。",
+        description: "この記事を表示するロケール（複数選択可・12 locale）。",
       },
     },
     // 2026-05-01 audit cleanup: legacy `locale` field removed.

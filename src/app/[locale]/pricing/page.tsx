@@ -25,6 +25,7 @@ import {
   detectCountryFromHeaders,
   type FormatPriceResult,
 } from "@/lib/ppp"
+import { LOCALE_HREFLANG } from "@/lib/locale-map"
 
 export const dynamic = "force-dynamic"
 
@@ -127,7 +128,8 @@ export default async function PricingPage({ params, searchParams }: Props) {
                   const price = priceFor(plan)
                   const billingLabel = billingLabelFor(plan.billingCycle)
                   const cta = plan.ctaLabel ?? t("defaultCta")
-                  const localeForFmt = locale === "ja" ? "ja-JP" : "en-US"
+                  const localeForFmt =
+                    (LOCALE_HREFLANG as Record<string, string>)[locale] ?? "en-US"
                   return (
                     <FadeIn key={String(plan.id)} delay={idx * 0.08}>
                       <div

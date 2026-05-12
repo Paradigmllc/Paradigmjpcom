@@ -17,8 +17,7 @@
 
 | Status | Owner | Lock-since | Branch | Task | Notes |
 |--------|-------|-----------|--------|------|-------|
-| 🟡 BLOCKED | - | - | - | **P17 i18n 12-locale 拡張** P17-11/12/13/14/15 残 | HomeClient 426行 ✅・services/contact/about messages 化 + AllInOneClient 1972行 messages 化 + PayloadCMS DeepSeek 自動翻訳 + hreflang/sitemap.xml |
-| ⚪ AVAILABLE | - | - | - | **P18-D AE-PHP-2 i18n sweep 完遂** | 完遂 13 ページ: services/about/faq/contact/pricing/privacy/legal/works/blog + service-detail/web/meo/seo/ai (2026-05-08)・残: HomeClient.tsx 1972行 (別 PR 範疇) |
+| ⚪ AVAILABLE | - | - | - | **B36 audit Open Items (#6 #7 #8 #9 H1)** | docs/audit/2026-05-10-holistic-e2e-audit.md・MVP archived 後の整理として残課題 |
 
 ---
 
@@ -26,10 +25,10 @@
 
 | Priority | Status | Owner | Task | 工数 | Branch (推奨) |
 |----------|--------|-------|------|------|---------------|
-| P1 | ⚪ AVAILABLE | - | i18n messages 完全抽出 (全 14 routes) | 2 日 | `agent/{X}/i18n-sweep` |
-| P2 | ⚪ AVAILABLE | - | hreflang + sitemap.xml 12-locale 出力 | 0.5 日 | `agent/{X}/seo-i18n` |
-| P2 | ⚪ AVAILABLE | - | PayloadCMS Posts/Services/Works DeepSeek 自動翻訳 | 1 日 | `agent/{X}/payload-translate` |
-| P3 | ⚪ AVAILABLE | - | AllInOneClient.tsx (1972行) の messages 化 (Plan B 範囲外・別 PR) | 3 日 | `agent/{X}/allinone-i18n` |
+| P1 | ⚪ AVAILABLE | - | **診断レポート (`/[locale]/report/[slug]`) 刷新** — ユーザ指示で別途壁打ち | TBD | `agent/{X}/report-redesign` |
+| P2 | ⚪ AVAILABLE | - | PayloadCMS Pages collection Block 追加 (PricingBlock / LogoCloud / Video / SplitContent / Timeline) — 必要に応じて | 1 日 | `agent/{X}/cms-blocks-ext` |
+| P3 | ⚪ AVAILABLE | - | legacy `locale` field の DB column drop migration (Pages/Services/Works/Pricing/FAQs) — admin が手動で availableLocales へ移行後 | 0.5 日 | `agent/{X}/legacy-locale-drop` |
+| P3 | ⚪ AVAILABLE | - | legacy `analytics.umamiWebsiteId*` / `calendarUrl.ja/en` の DB drop migration — admin が手動で *byLocale array へ移行後 | 0.5 日 | `agent/{X}/legacy-settings-drop` |
 
 ---
 
@@ -37,6 +36,7 @@
 
 | 完了日 | Owner | Task | Commit |
 |--------|-------|------|--------|
+| 2026-05-12 | claude-code | **Sprint 0–4: MVP archived + i18n/CMS 完璧化** (sales/api/mvp/optout/docs-admin _archive_ prefix 化 + middleware sales gate 撤去 + 6 collection availableLocales 12-locale 化 + Settings global umami/calendar 12-locale array 形式 + 8 ファイル hardcoded locale 分岐 sweep + 5 collection legacy locale field [DEPRECATED] 表示化・disabled 化 + tests 41/41 ✅ + TS clean ✅) | (本コミット) |
 | 2026-05-08 | claude-code | **P18-A-FIX-1 V1 token 再統合** (UUID-36 検出 → /api/report fallback で旧 token URL 互換確保) | 32299a4 |
 | 2026-05-08 | claude-code | **paradigmjpcom lockfile 修正** (git+ssh→git+https・Coolify build 連続失敗根治) | 3fc42bf |
 | 2026-05-08 | claude-code | **P18-D i18n sweep 13 ページ完遂** (services + about + faq + contact + pricing + privacy + legal + works + blog + service-detail/web + service-detail/meo + service-detail/seo + service-detail/ai・全 12 locale namespace 化・isJa hardcode 全廃) | 1a9f8b8, 25b2336, eba169d, a7d89d3, f9d5575, 64d077a, d16b36b, 521e38c, 0b93d12, 6c13f80, 382311e |
@@ -47,6 +47,24 @@
 | 2026-05-07 | claude-code | **/[locale]/report/[slug] page.tsx region lookup shim** (middleware 昇格前の中間実装・safety net 維持) | 2e5beea |
 | 2026-04-30 | claude-code | **P18 Aesop ラグジュアリー全面リニューアル** (P18-A Design Token + P18-B Core Layout + P18-C Motion & Polish + P18-D-1/2/3 全ページ Aesop 化・10 ページ 全 14 routes 200 OK・dark mode 対応) | 9716ea7 ほか |
 | 2026-04-27 → 2026-05 | claude-code | **P17 i18n 12-locale 拡張 P17-1〜10** (routing/locale-map/LocaleSwitcher/PayloadCMS拡張/messages.json 全 12 言語/HomeClient messages 化) | a090d66 ほか |
+
+---
+
+## 🗄️ アーカイブ済み (削除はしないけど使わない・2026-05-12)
+
+| 範囲 | 元パス | 新パス (_archive_ prefix で Next.js build 除外) | 復活方法 |
+|------|--------|--------------------------------------------|---------|
+| MVP frontend UI | `src/app/sales/[region]/mvp/*` | `src/app/_archive_sales/[region]/mvp/*` | rename 戻し 1 発 |
+| MVP API endpoints (14) | `src/app/api/mvp/*` | `src/app/api/_archive_mvp/*` | rename 戻し 1 発 |
+| MVP optout 着地ページ | `src/app/[locale]/optout` | `src/app/[locale]/_archive_optout` | rename 戻し 1 発 |
+| MVP 管理 quick ref | `src/app/[locale]/docs/admin/mvp-operations` | `src/app/[locale]/docs/admin/_archive_mvp-operations` | rename 戻し 1 発 |
+| middleware `/sales/*` gate | `src/middleware.ts` の SALES_PATH_PATTERN | 撤去済 (route 自体が 404 になるため不要) | B36 #19 Basic Auth ブロックを復活 |
+
+**残置物 (アーカイブしていないが現在 unused)**:
+- `src/lib/mvp/*` (auth/tracking 等) — archived route だけが import していたため orphan・harmless
+- DB tables `mvp_outreach_runs` / `mvp_optout_tokens` / `paradigm_personas` / `form_message_templates` — データ保護のため触らない
+- Coolify cron jobs (cron-pickup / ab-winner-judge) — 404 で no-op になる (副作用なし)
+- `/api/persona/*` / `/api/sales-automation/*` — MVP と共有していたが汎用 API なので残置
 
 ---
 

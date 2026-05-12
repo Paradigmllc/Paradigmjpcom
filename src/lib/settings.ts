@@ -32,14 +32,20 @@ export interface SiteSettings {
     maintenanceMode: boolean
     maintenanceMessage?: string | null
   }
+  /** [legacy 2-locale 形式] 後方互換のため残置・新規は umamiByLocale を使用 */
   analytics: {
     umamiWebsiteId?: string | null
     umamiWebsiteIdEn?: string | null
   }
+  /** [legacy 2-locale 形式] 後方互換のため残置・新規は calendarByLocale を使用 */
   calendarUrl: {
     ja?: string | null
     en?: string | null
   }
+  /** 12-locale 対応 (2026-05-12 追加・admin で行を増やすだけで locale 拡張可能) */
+  umamiByLocale?: Array<{ locale: string; websiteId: string }> | null
+  /** 12-locale 対応 (2026-05-12 追加) */
+  calendarByLocale?: Array<{ locale: string; url: string }> | null
   /** admin が編集可能な color / font / radius tokens (globals.css default を override) */
   theme?: ThemeTokens | null
 }
@@ -59,6 +65,8 @@ const DEFAULTS: SiteSettings = {
   maintenance: { maintenanceMode: false, maintenanceMessage: null },
   analytics: { umamiWebsiteId: null, umamiWebsiteIdEn: null },
   calendarUrl: { ja: "https://cal.appexx.me", en: "https://cal.appexx.me" },
+  umamiByLocale: null,
+  calendarByLocale: null,
   theme: null, // null = globals.css default をそのまま使用
 }
 
@@ -84,6 +92,8 @@ export const getSiteSettings = cache(async (locale: string = "ja"): Promise<Site
       maintenance?: SiteSettings["maintenance"]
       analytics?: SiteSettings["analytics"]
       calendarUrl?: SiteSettings["calendarUrl"]
+      umamiByLocale?: SiteSettings["umamiByLocale"]
+      calendarByLocale?: SiteSettings["calendarByLocale"]
       theme?: ThemeTokens | null
     }
 
@@ -96,6 +106,8 @@ export const getSiteSettings = cache(async (locale: string = "ja"): Promise<Site
       maintenance: { ...DEFAULTS.maintenance, ...(s.maintenance ?? {}) },
       analytics: { ...DEFAULTS.analytics, ...(s.analytics ?? {}) },
       calendarUrl: { ...DEFAULTS.calendarUrl, ...(s.calendarUrl ?? {}) },
+      umamiByLocale: s.umamiByLocale ?? null,
+      calendarByLocale: s.calendarByLocale ?? null,
       theme: (s as { theme?: ThemeTokens | null }).theme ?? null,
     }
   } catch (e) {
@@ -104,16 +116,45 @@ export const getSiteSettings = cache(async (locale: string = "ja"): Promise<Site
   }
 })
 
-/** Pick the right calendar URL for the current locale. */
+/**
+ * Pick the right calendar URL for the current locale.
+ *
+ * Lookup priority (2026-05-12 12-locale 対応):
+ *   1. calendarByLocale (new array form) — exact locale match
+ *   2. calendarByLocale — ja fallback (defaultLocale)
+ *   3. calendarUrl.ja (legacy) when locale=ja
+ *   4. calendarUrl.en (legacy) for non-ja
+ *   5. DEFAULTS.calendarUrl
+ */
 export function calendarUrlFor(settings: SiteSettings, locale: string): string {
-  return locale === "ja"
-    ? settings.calendarUrl.ja ?? DEFAULTS.calendarUrl.ja!
-    : settings.calendarUrl.en ?? DEFAULTS.calendarUrl.en!
+  if (settings.calendarByLocale && settings.calendarByLocale.length > 0) {
+    const exact = settings.calendarByLocale.find((r) => r.locale === locale)
+    if (exact?.url) return exact.url
+    const jaEntry = settings.calendarByLocale.find((r) => r.locale === "ja")
+    if (jaEntry?.url) return jaEntry.url
+  }
+  if (locale === "ja") return settings.calendarUrl.ja ?? DEFAULTS.calendarUrl.ja!
+  return settings.calendarUrl.en ?? DEFAULTS.calendarUrl.en!
 }
 
-/** Pick the right Umami site id for the current locale. */
+/**
+ * Pick the right Umami site id for the current locale.
+ *
+ * Lookup priority (2026-05-12 12-locale 対応):
+ *   1. umamiByLocale (new array form) — exact locale match
+ *   2. umamiByLocale — ja fallback
+ *   3. analytics.umamiWebsiteId (legacy) when locale=ja
+ *   4. analytics.umamiWebsiteIdEn (legacy) for non-ja
+ *   5. analytics.umamiWebsiteId (legacy ja fallback) for non-ja
+ *   6. null (Umami が無効化される)
+ */
 export function umamiWebsiteIdFor(settings: SiteSettings, locale: string): string | null {
-  return locale === "ja"
-    ? settings.analytics.umamiWebsiteId ?? null
-    : settings.analytics.umamiWebsiteIdEn ?? settings.analytics.umamiWebsiteId ?? null
+  if (settings.umamiByLocale && settings.umamiByLocale.length > 0) {
+    const exact = settings.umamiByLocale.find((r) => r.locale === locale)
+    if (exact?.websiteId) return exact.websiteId
+    const jaEntry = settings.umamiByLocale.find((r) => r.locale === "ja")
+    if (jaEntry?.websiteId) return jaEntry.websiteId
+  }
+  if (locale === "ja") return settings.analytics.umamiWebsiteId ?? null
+  return settings.analytics.umamiWebsiteIdEn ?? settings.analytics.umamiWebsiteId ?? null
 }

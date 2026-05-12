@@ -15,6 +15,7 @@ import { notFound } from "next/navigation"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
+import { LOCALE_OG_LOCALE, LOCALE_ORG_NAME } from "@/lib/locale-map"
 
 export async function generateStaticParams() {
   return await getAllBlogSlugs()
@@ -37,7 +38,7 @@ export async function generateMetadata({
       description: post.excerpt,
       type: "article",
       publishedTime: post.date,
-      locale: locale === "ja" ? "ja_JP" : "en_US",
+      locale: (LOCALE_OG_LOCALE as Record<string, string>)[locale] ?? "en_US",
     },
   }
 }
@@ -122,7 +123,7 @@ export default async function BlogPostPage({
   const t = await getTranslations({ locale, namespace: "blogPostPage" })
   const post = await getBlogPostBySlug(slug, locale)
   if (!post) notFound()
-  const orgName = locale === "ja" ? "Paradigm合同会社" : "Paradigm LLC"
+  const orgName = (LOCALE_ORG_NAME as Record<string, string>)[locale] ?? "Paradigm LLC"
 
   return (
     <>

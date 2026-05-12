@@ -7,9 +7,16 @@
  * 永久ルール (CLAUDE.md s10-6 AE-PHP-3): 全 page.tsx は以下のいずれか以上を
  * 含むこと: LocalBusiness / Service / Article / FAQPage / BreadcrumbList
  *
- * 2026-05-01 (P18 i18n cleanup): すべてのビルダーが locale を受け取り、
- * `Paradigm合同会社` / `Paradigm LLC` を locale ベースで切り替える。
+ * 2026-05-12 12-locale 拡張: LOCALE_ORG_NAME / LOCALE_ORG_ALTERNATE_NAMES を
+ * 経由して 12 locale 構造的データを生成。seed text (description) は
+ * localeContentVariant() で ja/en 2 variant に collapse (Plan B 母版)。
  */
+
+import {
+  LOCALE_ORG_NAME,
+  LOCALE_ORG_ALTERNATE_NAMES,
+  localeContentVariant,
+} from "@/lib/locale-map"
 
 const BASE = "https://paradigmjp.com"
 
@@ -20,24 +27,25 @@ export interface SchemaContext {
 }
 
 const orgNameFor = (locale: string) =>
-  locale === "ja" ? "Paradigm合同会社" : "Paradigm LLC"
+  (LOCALE_ORG_NAME as Record<string, string>)[locale] ?? "Paradigm LLC"
+
+const altNamesFor = (locale: string) =>
+  (LOCALE_ORG_ALTERNATE_NAMES as Record<string, string[]>)[locale] ??
+  LOCALE_ORG_ALTERNATE_NAMES.en
 
 const orgDescFor = (locale: string) =>
-  locale === "ja"
+  localeContentVariant(locale) === "ja"
     ? "Web 制作・MEO 対策・SEO/GEO・AI 導入支援。Paradigm合同会社が提供する 4 つのデジタル支援サービス。"
     : "Web development, MEO, SEO/GEO, and AI integration. Four productized services from Paradigm LLC."
 
 // ─── LocalBusiness (組織) ────────────────────────────────────────
 export function buildLocalBusinessSchema(locale: string = "ja") {
-  const isJa = locale === "ja"
   return {
     "@context": "https://schema.org",
     "@type": "ProfessionalService",
     "@id": `${BASE}#organization`,
     name: orgNameFor(locale),
-    alternateName: isJa
-      ? ["Paradigm LLC", "パラダイム"]
-      : ["Paradigm 合同会社", "パラダイム"],
+    alternateName: altNamesFor(locale),
     url: BASE,
     logo: `${BASE}/logo.png`,
     image: `${BASE}/og-image.png`,
