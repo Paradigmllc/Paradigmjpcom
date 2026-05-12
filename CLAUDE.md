@@ -308,8 +308,9 @@
 
 #### Phase 4: SEO・インフラ整備
 - [x] hreflang タグ（全12 locale 自動生成・layout.tsx generateMetadata）— P17 完了 2026-04-27
-- [ ] locale別サイトマップ（12 locale × 各 URL）
-- [ ] Umami Website ID設定
+- [x] locale別サイトマップ（12 locale × static 16 + blog × 12 locale・alternates.languages hreflang 完備）— 2026-05-12 確認済 (sitemap.ts)
+- [x] JSON-LD inLanguage 12-locale 完全対応 (vi/id 追加)・LOCALE_ORG_NAME map で 12 locale 構造的データ生成 — 2026-05-12
+- [ ] Umami Website ID設定 (12-locale array 形式は実装済・admin で実値投入のみ残)
 - [ ] Lighthouse CI自動化
 
 <a id="s5-2"></a>
