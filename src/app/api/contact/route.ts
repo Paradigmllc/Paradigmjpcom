@@ -18,6 +18,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { checkRateLimit, getClientIp, verifyTurnstile } from "@/lib/rate-limit"
 import { captureException } from "@/lib/error-monitor"
 import { LOCALE_COUNTRY, localeContentVariant } from "@/lib/locale-map"
+import { enrichFromContact } from "@/lib/sales/enrich"
+import { notifySlack } from "@/lib/notify"
 
 export async function POST(req: NextRequest) {
   try {
@@ -134,6 +136,71 @@ export async function POST(req: NextRequest) {
         console.error("[contact] Supabase insert failed (best-effort):", e)
       }
     }
+
+    // 6. sales_companies auto-enrich (fire-and-forget・client への応答は遅延させない)
+    //    corporate domain なら PSI + gBizInfo + scanDomain で 1 行作成
+    //    自由メール (gmail 等) は skip
+    void (async () => {
+      try {
+        const enrich = await enrichFromContact({
+          email,
+          company: company ?? null,
+          message,
+          services,
+          source: "paradigmjp.com/contact",
+        })
+        if (enrich.ok && enrich.company) {
+          const c = enrich.company
+          const blocks = [
+            {
+              type: "header",
+              text: { type: "plain_text", text: `🌱 新規リード: ${c.company_name}` },
+            },
+            {
+              type: "section",
+              fields: [
+                { type: "mrkdwn", text: `*ドメイン*\n${c.domain}` },
+                { type: "mrkdwn", text: `*業種*\n${c.industry ?? "未推定"}` },
+                {
+                  type: "mrkdwn",
+                  text: `*PSI モバイル*\n${c.pagespeed_mobile ?? "?"} / 100`,
+                },
+                {
+                  type: "mrkdwn",
+                  text: `*検出課題*\n${(c.detected_issues ?? []).join(", ") || "なし"}`,
+                },
+              ],
+            },
+            {
+              type: "actions",
+              elements: [
+                {
+                  type: "button",
+                  text: { type: "plain_text", text: "診断レポート" },
+                  url: `https://paradigmjp.com/ja/diagnostic/${c.id}`,
+                  style: "primary",
+                },
+                {
+                  type: "button",
+                  text: { type: "plain_text", text: "管理画面で見る" },
+                  url: `https://paradigmjp.com/ja/admin/sales`,
+                },
+              ],
+            },
+          ]
+          await notifySlack(
+            `🌱 新規リード: ${c.company_name} (${c.domain})`,
+            blocks,
+          )
+        } else if (enrich.skipped === "personal_domain") {
+          console.log("[contact] enrich skipped (personal_domain):", email)
+        } else if (enrich.error) {
+          console.error("[contact] enrich failed:", enrich.error)
+        }
+      } catch (e) {
+        console.error("[contact] enrich pipeline error:", e)
+      }
+    })()
 
     return NextResponse.json({
       success: true,
