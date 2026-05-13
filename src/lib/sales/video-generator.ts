@@ -21,6 +21,7 @@
 
 import { callDeepSeek } from "@/lib/deepseek"
 import { fetchDiagnosticReport, type DiagnosticReportData } from "./diagnostic"
+import { findCompanyById, findCompanyByDomain, findCompanyBySlug } from "./companies"
 
 /* ───── DeepSeek V4 PRO によるナレーション原稿生成 ───── */
 
@@ -198,23 +199,42 @@ export interface VideoGenerationResult {
   error?: string
 }
 
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://paradigmjp.com"
+
+const isUuid = (s: string): boolean =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)
+const isDomain = (s: string): boolean => /\./.test(s)
+
 /**
- * 完全な動画生成パイプライン:
- *   1. fetchDiagnosticReport
- *   2. generateNarrationScript (DeepSeek V4 PRO)
- *   3. buildHyperFramesHtml
- *   4. HyperFrames API (env 未設定なら HTML だけ返却・fail-soft)
+ * 完全な動画生成パイプライン (Sprint 14 リファクタ):
+ *   1. companyIdOrSlugOrDomain → SalesCompany 解決
+ *   2. fetchDiagnosticReport
+ *   3. generateNarrationScript (DeepSeek V4 PRO)
+ *   4. buildHyperFramesHtml (HyperFrames API 用)
+ *   5. HyperFrames API call (env 設定時のみ) or HTML preview URL (fallback)
+ *
+ * 戻り値:
+ *   - HYPERFRAMES_API_URL 設定時:  video_url = MP4 URL
+ *   - HYPERFRAMES_API_URL 未設定:  video_url = /ja/report/[slug]/video (HTML auto-play)
+ *
+ * どちらも顧客にメール/Slack で送付可能 (HTML preview URL も「動画版レポート」として完結)
  */
 export async function generateDiagnosticVideo(
-  companyIdOrDomain: string,
+  companyIdOrSlugOrDomain: string,
 ): Promise<VideoGenerationResult> {
-  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-    companyIdOrDomain,
-  )
-  const data = isUuid
-    ? await fetchDiagnosticReport({ companyId: companyIdOrDomain })
-    : await fetchDiagnosticReport({ domain: companyIdOrDomain })
-  if (!data) return { ok: false, error: "company not found" }
+  // Sprint 14: slug 優先 lookup
+  let company = await findCompanyBySlug(companyIdOrSlugOrDomain)
+  if (!company) {
+    company = isUuid(companyIdOrSlugOrDomain)
+      ? await findCompanyById(companyIdOrSlugOrDomain)
+      : isDomain(companyIdOrSlugOrDomain)
+        ? await findCompanyByDomain(companyIdOrSlugOrDomain)
+        : null
+  }
+  if (!company) return { ok: false, error: "company not found" }
+
+  const data = await fetchDiagnosticReport({ companyId: company.id })
+  if (!data) return { ok: false, error: "diagnostic data unavailable" }
 
   const narration = await generateNarrationScript(data)
   if (!narration.ok || !narration.script) {
@@ -222,19 +242,23 @@ export async function generateDiagnosticVideo(
   }
 
   const html = buildHyperFramesHtml(data, narration.script)
+  const previewUrl = company.slug
+    ? `${BASE_URL}/ja/report/${company.slug}/video`
+    : null
 
-  // env 未設定: HTML テンプレだけ返す (debug 用)
+  // HYPERFRAMES_API_URL 未設定: HTML preview URL を返す (Sprint 14・fail-soft)
   if (!HYPERFRAMES_API) {
     return {
       ok: true,
+      video_url: previewUrl ?? undefined,
       script: narration.script,
       html,
       duration_sec: 60,
-      error: "HYPERFRAMES_API_URL not set — returning HTML preview only",
+      ...(previewUrl ? {} : { error: "company.slug not set — preview URL unavailable" }),
     }
   }
 
-  // HyperFrames API call (実装は Sprint 11 で endpoint shape 確定後)
+  // HyperFrames API call (MP4 化)
   try {
     const res = await fetch(`${HYPERFRAMES_API}/render`, {
       method: "POST",
@@ -247,22 +271,35 @@ export async function generateDiagnosticVideo(
         fps: 30,
         duration_sec: 60,
       }),
-      signal: AbortSignal.timeout(180_000), // 3min timeout
+      signal: AbortSignal.timeout(180_000),
     })
     if (!res.ok) {
-      return { ok: false, error: `HyperFrames API ${res.status}: ${res.statusText}` }
+      // MP4 化失敗時も HTML preview URL を fallback として返す
+      return {
+        ok: !!previewUrl,
+        video_url: previewUrl ?? undefined,
+        script: narration.script,
+        html,
+        duration_sec: 60,
+        error: `HyperFrames API ${res.status}: ${res.statusText} (returning HTML preview)`,
+      }
     }
     const result = (await res.json()) as { video_url?: string }
     return {
       ok: true,
-      video_url: result.video_url,
+      video_url: result.video_url ?? previewUrl ?? undefined,
       script: narration.script,
       html,
       duration_sec: 60,
     }
   } catch (e) {
+    // タイムアウト等で MP4 化失敗 → HTML preview にフォールバック
     return {
-      ok: false,
+      ok: !!previewUrl,
+      video_url: previewUrl ?? undefined,
+      script: narration.script,
+      html,
+      duration_sec: 60,
       error: e instanceof Error ? e.message : String(e),
     }
   }

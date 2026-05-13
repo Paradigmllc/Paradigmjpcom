@@ -17,6 +17,7 @@ interface HotLeadPayload {
   domain: string
   report_views: number
   diagnostic_url: string
+  video_url?: string | null // Sprint 14: HTML 動画 preview URL (/ja/report/[slug]/video)
 }
 
 async function slackPost(method: string, body: Record<string, unknown>): Promise<{ ok: boolean; error?: string }> {
@@ -65,10 +66,19 @@ export async function notifyHotLead(p: HotLeadPayload): Promise<void> {
         elements: [
           {
             type: "button",
-            text: { type: "plain_text", text: "診断レポートを見る" },
+            text: { type: "plain_text", text: "📋 診断レポートを見る" },
             url: p.diagnostic_url,
             style: "primary",
           },
+          ...(p.video_url
+            ? [
+                {
+                  type: "button",
+                  text: { type: "plain_text", text: "🎬 60 秒動画版" },
+                  url: p.video_url,
+                },
+              ]
+            : []),
         ],
       },
     ],

@@ -64,15 +64,19 @@ export async function GET(req: NextRequest) {
       // HOT lead 判定: 3 回閲覧で HOT 化
       if (newCount >= HOT_THRESHOLD && !company.is_hot_lead) {
         await markHotLead(company.id, true)
-        // Slack 通知 (best-effort)
+        // Slack 通知 (best-effort・Sprint 14 で動画 preview URL も追加)
         const reportUrl = company.slug
           ? `https://paradigmjp.com/ja/report/${company.slug}`
           : `https://paradigmjp.com/ja/report/${company.domain}`
+        const videoUrl = company.slug
+          ? `https://paradigmjp.com/ja/report/${company.slug}/video`
+          : null
         await notifyHotLead({
           company_name: company.company_name,
           domain: company.domain,
           report_views: newCount,
           diagnostic_url: reportUrl,
+          video_url: videoUrl,
         }).catch(() => {}) // never throw
       }
     }
