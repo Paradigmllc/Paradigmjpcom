@@ -67,10 +67,19 @@ curl -sS -X POST "https://api.notion.com/v1/databases/8cbab1f501144f83872c1738ce
 - Coolify env 投入 (5 個): `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `PRICE_*`
 - Webhook URL: https://paradigmjp.com/api/stripe/webhook
 
-#### 5. `HYPERFRAMES_API_URL` (パーソナライズ動画生成)
-- 自分でセルフホスト or HyperFrames サービス契約
-- 60s 動画 HTML→MP4 レンダリング
-- 未設定でも他機能は動くが /api/sales/generate-diagnostic-video は失敗
+#### 5. `HYPERFRAMES_API_URL` — Sprint 14 で HTML preview ルートに切替 (✅ ほぼ完了)
+**Sprint 14 設計変更**: HYPERFRAMES_API_URL 未設定でも動画は配信可能。HTML 自動再生プレビュー (`/[locale]/report/[slug]/video`) で代替し、URL 共有で完結。
+
+**実装済 fallback chain**:
+1. HYPERFRAMES_API_URL **設定済** → MP4 を生成 (HyperFrames API call) → R2 アップ
+2. HYPERFRAMES_API_URL **未設定** → HTML preview URL (`https://paradigmjp.com/ja/report/[slug]/video`) を返す
+3. MP4 化が失敗しても HTML preview にフォールバック
+
+**MP4 化が必要になったら** (後段拡張・任意):
+- Plan A: Coolify に新 service `paradigm-video-renderer` (Node.js + Puppeteer + ffmpeg) を立てる
+- Plan B: Remotion lambda を AWS or Cloudflare Workers にデプロイ
+- Plan C: Vast.ai + ComfyUI + Wan2.2 (avatar 動画パイプライン)
+- どの方式でも endpoint URL を `HYPERFRAMES_API_URL` に投入すれば自動切替
 
 ## 📅 Cron スケジュール (Coolify で設定)
 
