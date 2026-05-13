@@ -19,22 +19,29 @@
 
 ## ⚠️ 残作業 (ユーザー手動・優先度順)
 
-### 🔴 P0 (運用開始前に必須)
+### 🔴 P0 (運用開始前に必須・ユーザー手動 1 step のみ)
 
-#### 1. `NOTION_API_KEY` (Internal Integration Token)
-- 取得: https://www.notion.so/my-integrations → `+ New integration` → "Paradigm Sales OS" → Secret コピー
-- 4 DB に invite: 各 DB ページの `Share` → integration を Editor で追加
-  - 🎯 リード DB: https://www.notion.so/8cbab1f501144f83872c1738ce3e79c4
-  - 🏢 顧客 DB: https://www.notion.so/86b1d93e3b854862ae7b2750d2585677
-  - 📦 納品 DB: https://www.notion.so/b3cbef9dd96f4e5bbbecc404c703a298
-  - 📝 テンプレ DB: https://www.notion.so/115e2b0e79424bb0813fc05402096f95
-- Coolify env 投入:
-  ```bash
-  curl -sS -X POST -H "Authorization: Bearer $COOLIFY_TOKEN" \
-    -H "Content-Type: application/json" \
-    "https://coolify.appexx.me/api/v1/applications/i12am4vvcbggefnqdizhnv9a/envs" \
-    -d '{"key":"NOTION_API_KEY","value":"secret_xxx","is_preview":false}'
-  ```
+#### 1. ✅ NOTION_API_KEY (2026-05-13 投入済)
+- ✅ Internal Integration Token 取得済: `ntn_436790200281...` (Paradigm Sales OS)
+- ✅ Coolify env `NOTION_API_KEY` 投入済 (UUID: kpjqu3ec4y4igplo0nz12qea)
+- ⚠️ **残作業 (ユーザー手動・1 step)**: integration を 4 DB に invite (現状 API access ゼロ)
+
+**最も簡単な手順** (親ページに 1 回 invite で配下 4 DB に継承):
+1. Notion を開く: https://www.notion.so/35fa2b78f3fc81299d91e457889ee393 (旧親ページ "Paradigm 営業 OS")
+2. ページ右上の **⋮ (3-dot メニュー) → 「コネクトを追加」**
+3. **"Paradigm Sales OS"** を検索 → 選択 → 確認
+4. 配下 4 DB (リード/顧客/納品/テンプレ) に自動継承
+
+**動作確認**:
+```bash
+curl -sS -X POST "https://api.notion.com/v1/databases/8cbab1f501144f83872c1738ce3e79c4/query" \
+  -H "Authorization: Bearer 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" \
+  -H "Notion-Version: 2022-06-28" -H "Content-Type: application/json" -d '{"page_size":1}'
+# 期待: {"object":"list","results":[...]} (204 OK)
+# NG時: {"object":"error","status":404,"code":"object_not_found",...} ← invite 未完
+```
+
+**新しい親ページ (342a2b78-...) を使う場合**: 4 DB を新ページに移動するか、新親ページにも invite を追加する。
 
 ### 🟡 P1 (本番運用品質を上げる)
 
