@@ -162,6 +162,17 @@ export async function fetchDiagnosticReport(opts: {
         : null
   if (!company) return null
 
+  // Sprint 15: DeepSeek パーソナライズ文面があれば優先採用
+  const personalizedCopy = (company.meta as Record<string, unknown>)?.personalized_copy as
+    | {
+        personalized_hook?: string
+        personalized_pain?: string
+        personalized_fear?: string
+        personalized_loss?: string
+        personalized_cta?: string
+      }
+    | undefined
+
   // detected_issues の上位 3 件で 3-Act 構成
   const issues = (company.detected_issues ?? []).slice(0, 3)
   const templates = company.industry
@@ -191,15 +202,28 @@ export async function fetchDiagnosticReport(opts: {
   expiresAt.setDate(expiresAt.getDate() + 30)
   const expiresStr = `${expiresAt.getFullYear()}年${expiresAt.getMonth() + 1}月${expiresAt.getDate()}日`
 
+  // Sprint 15: パーソナライズ文面で上書き (あれば優先)
+  const finalHook = personalizedCopy?.personalized_hook || buildHook(company.industry)
+  const finalCta = personalizedCopy?.personalized_cta || templates[0]?.cta_text || "まず話だけ聞いてみる"
+  if (personalizedCopy?.personalized_pain && acts[0]) {
+    acts[0] = { ...acts[0], body: personalizedCopy.personalized_pain }
+  }
+  if (personalizedCopy?.personalized_fear && acts[1]) {
+    acts[1] = { ...acts[1], body: personalizedCopy.personalized_fear }
+  }
+  if (personalizedCopy?.personalized_loss && acts[2]) {
+    acts[2] = { ...acts[2], body: personalizedCopy.personalized_loss }
+  }
+
   return {
     company_name: company.company_name,
     industry: company.industry,
     prefecture: company.prefecture,
     expires_at: expiresStr,
-    hook: buildHook(company.industry),
+    hook: finalHook,
     total_loss: formatYen(totalLossYen || 340_000),
     acts,
-    cta_text: templates[0]?.cta_text ?? "まず話だけ聞いてみる",
+    cta_text: finalCta,
     video_thumbnail: null,
     report_url: company.report_url ?? "",
   }

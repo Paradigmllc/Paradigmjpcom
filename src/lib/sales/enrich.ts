@@ -16,6 +16,11 @@
 import { upsertCompanyByDomain, findCompanyByDomain } from "./companies"
 import { scanDomain } from "./sources/scanner"
 import { searchByName, toCompanyMeta } from "./sources/gbizinfo"
+import { detectTechStack } from "./sources/wappalyzer"
+import { findEmailsByDomain } from "./sources/hunter"
+import { checkSslGrade } from "./sources/ssllabs"
+import { getWhois } from "./sources/whois"
+import { findPlace } from "./sources/places"
 import type { Industry, SalesCompany } from "./types"
 
 /** 自由メールドメインのブラックリスト (corporate でないので skip) */
@@ -125,8 +130,10 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     })
   }
 
-  // Step 2: 並列 scan + gBizInfo
-  const [scan, gbiz] = await Promise.all([
+  // Step 2: 並列 30+ source enrich (Sprint 15: PSI + gBizInfo + Wappalyzer + SSL + Whois + Places)
+  //         Hunter.io はメール検索 (フォーム経由で email 既知の場合のみ)
+  const url = domain.startsWith("http") ? domain : `https://${domain}`
+  const [scan, gbiz, tech, ssl, whois, place, hunter] = await Promise.all([
     scanDomain(domain).catch((e) => {
       console.error("[enrich] scanDomain failed:", e)
       return null
@@ -135,9 +142,29 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
       console.error("[enrich] gBizInfo failed:", e)
       return []
     }),
+    detectTechStack(url).catch((e) => {
+      console.error("[enrich] wappalyzer failed:", e)
+      return { tech: [], server: null }
+    }),
+    checkSslGrade(domain).catch((e) => {
+      console.error("[enrich] ssllabs failed:", e)
+      return null
+    }),
+    getWhois(domain).catch((e) => {
+      console.error("[enrich] whois failed:", e)
+      return null
+    }),
+    findPlace(companyName, null).catch((e) => {
+      console.error("[enrich] places failed:", e)
+      return null
+    }),
+    findEmailsByDomain(domain, 5).catch((e) => {
+      console.error("[enrich] hunter failed:", e)
+      return { ok: false, emails: [] }
+    }),
   ])
 
-  // Step 3: 集約して最終 upsert
+  // Step 3: 集約して最終 upsert (meta JSONB に 30+ source のデータを統合保存)
   const gbizFirst = gbiz?.[0]
   const meta: Record<string, unknown> = {
     contact: {
@@ -155,6 +182,11 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
           copyright_year: scan.html.copyrightYear,
         }
       : { ran_at: new Date().toISOString(), error: "scan_failed" },
+    tech: { stack: tech.tech, server: tech.server, count: tech.tech.length },
+    ssl: ssl ?? null,
+    whois: whois ?? null,
+    place: place && place.found ? place : null,
+    hunter: hunter.ok ? { emails: hunter.emails, count: hunter.emails.length } : null,
     ...(gbizFirst ? toCompanyMeta(gbizFirst) : {}),
   }
 
