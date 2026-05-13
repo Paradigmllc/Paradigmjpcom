@@ -17,8 +17,8 @@
 
 | Status | Owner | Lock-since | Branch | Task | Notes |
 |--------|-------|-----------|--------|------|-------|
-| 🟡 BLOCKED | - | - | - | **診断レポート ゼロから設計** | 旧 proposal stack は archive 済 (Sprint 5・2026-05-12)・ユーザー壁打ち待ち |
-| ⚪ AVAILABLE | - | - | - | ~~B36 audit Open Items~~ | MVP archive 済のため moot |
+| 🟢 ACTIVE | claude-code | 2026-05-13 | main | **Sprint 8: Notion × Supabase ハブ整備** | sales_* schema (5 table) + lib/notion.ts + n8n 3 workflow skeleton + .env.example |
+| 🛑 DECISION | - | 2026-05-13 | - | **🗄️ 旧営業 OS 撤廃確定 (unarchive 計画なし)** | Sprint 5-7 で _archive_* 化済の旧 proposal/MVP/sales-automation/persona/authentik は **永久に再起動しない** ことを宣言。新営業 OS は sales_* schema を真のソースとし、旧 mvp_* や cms_content_blocks (B36 既存 report 永続データ) は **read だけはする** が write しない |
 
 ---
 
@@ -37,6 +37,7 @@
 
 | 完了日 | Owner | Task | Commit |
 |--------|-------|------|--------|
+| 2026-05-13 | claude-code | **Sprint 8 着手: Notion × Supabase ハブ整備 (営業 OS 新基盤)** (sales_* schema 5 table 設計・lib/notion.ts API wrapper・n8n 3 workflow JSON skeleton・.env.example 新規・旧 archive 撤廃確定宣言) | (本コミット) |
 | 2026-05-13 | claude-code | **Sprint 7: appexx.me 連携一時断絶 (fail-soft archive)** (`api/sales-automation` + `api/persona` + `lib/authentik-oidc.ts` → `_archive_*` / Slack `appexx.me/api/studio/notify` hardcode → env `SLACK_WEBHOOK_URL` + 未設定 no-op / Dify fallback `dify.appexx.me` → `api.dify.ai` (DIFY-CLOUD-ONLY 準拠) / Cal URL default `cal.appexx.me` → 空文字 + contact page で空時 skip render / tests 41/41 ✅ + TS clean ✅) | (本コミット) |
 | 2026-05-13 | claude-code | **Sprint 6: 全面 i18n + CMS audit + 4 件 bug 修正** (Layer 1-5 監査 / loading.tsx i18n-ify + 12 locale messages 追加 / 18 page で page-specific canonical+hreflang override・`lib/page-metadata.ts` helper 新設 / themes-showcase noindex / HeroSection cosmetic fallback / audit script 4 本追加 (regression 防止) / tests 41/41 ✅ + TS clean ✅) | b216286 |
 | 2026-05-12 | claude-code | **Sprint 5: 診断レポート archive (ゼロから作り直し前段)** (`/[locale]/report/*` + `/report/*` + `/api/report/*` + `components/proposal/*` + `lib/proposal/*` + `lib/proposal-templates*.ts` → `_archive_*` prefix + middleware `/report /p` redirect ロジック撤去 (noindex header だけ残置) + tsconfig.json `_archive_*` exclude 追加 + tests 41/41 ✅ + TS clean ✅) | 2a26343 |
