@@ -37,6 +37,7 @@
 
 | 完了日 | Owner | Task | Commit |
 |--------|-------|------|--------|
+| 2026-05-13 | claude-code | **Sprint 9 (A+D+B+C): 営業 OS LP × API × 診断レポート LP 一気通貫実装** (A: 3 API route /api/sales/{sync-to-notion,sync-from-notion,upsert-template} + lib/sales/auth.ts shared secret / D: /[locale]/diagnostic/[slug] LP + DiagnosticReport component + lib/sales/diagnostic.ts (3-Act builder) + middleware noindex pattern 拡張 / B: /[locale]/video 動画サブスク LP (3 plan + 比較表 + Process) / C: /[locale]/agency 代理店 WL LP + RoiCalculator (損失訴求 Aha モーメント) / TS clean + 41/41 tests ✅) | (本コミット) |
 | 2026-05-13 | claude-code | **Sprint 8 着手: Notion × Supabase ハブ整備 (営業 OS 新基盤)** (sales_* schema 5 table 設計・lib/notion.ts API wrapper・n8n 3 workflow JSON skeleton・.env.example 新規・旧 archive 撤廃確定宣言) | (本コミット) |
 | 2026-05-13 | claude-code | **Sprint 7: appexx.me 連携一時断絶 (fail-soft archive)** (`api/sales-automation` + `api/persona` + `lib/authentik-oidc.ts` → `_archive_*` / Slack `appexx.me/api/studio/notify` hardcode → env `SLACK_WEBHOOK_URL` + 未設定 no-op / Dify fallback `dify.appexx.me` → `api.dify.ai` (DIFY-CLOUD-ONLY 準拠) / Cal URL default `cal.appexx.me` → 空文字 + contact page で空時 skip render / tests 41/41 ✅ + TS clean ✅) | (本コミット) |
 | 2026-05-13 | claude-code | **Sprint 6: 全面 i18n + CMS audit + 4 件 bug 修正** (Layer 1-5 監査 / loading.tsx i18n-ify + 12 locale messages 追加 / 18 page で page-specific canonical+hreflang override・`lib/page-metadata.ts` helper 新設 / themes-showcase noindex / HeroSection cosmetic fallback / audit script 4 本追加 (regression 防止) / tests 41/41 ✅ + TS clean ✅) | b216286 |
