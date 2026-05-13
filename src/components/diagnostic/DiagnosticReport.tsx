@@ -135,7 +135,13 @@ function ActCard({ act, index }: { act: DiagnosticAct; index: number }) {
 
 /* ───── Main component ───── */
 
-export default function DiagnosticReport({ data }: { data: DiagnosticReportData }) {
+export default function DiagnosticReport({
+  data,
+  trackingSlug,
+}: {
+  data: DiagnosticReportData
+  trackingSlug?: string
+}) {
   const [lossRef, lossInView] = useInView()
   const lossNumeric = Number.parseInt(data.total_loss.replace(/[^0-9]/g, ""), 10) || 0
   const lossCount = useCountUp(lossNumeric, 2000, lossInView)
@@ -143,6 +149,18 @@ export default function DiagnosticReport({ data }: { data: DiagnosticReportData 
 
   return (
     <div className="font-sans bg-slate-50 min-h-screen">
+      {/* Sprint 11: 閲覧トラッキングピクセル (HOT lead 判定用・3 回閲覧で is_hot_lead=true) */}
+      {trackingSlug && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={`/api/sales/track-view?slug=${encodeURIComponent(trackingSlug)}`}
+          alt=""
+          width={1}
+          height={1}
+          style={{ position: "absolute", left: -9999, top: -9999, opacity: 0, pointerEvents: "none" }}
+          aria-hidden
+        />
+      )}
       <style>{`
         @keyframes diagnostic-pulse {
           0%, 100% { opacity: 1; }

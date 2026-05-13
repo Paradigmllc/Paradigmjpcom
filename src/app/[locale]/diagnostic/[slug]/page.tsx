@@ -56,5 +56,5 @@ export default async function DiagnosticReportPage({ params }: Props) {
 
   if (!data) notFound()
 
-  return <DiagnosticReport data={data} />
+  return <DiagnosticReport data={data} trackingSlug={slug} />
 }
