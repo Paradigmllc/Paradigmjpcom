@@ -18,6 +18,7 @@ import {
   type NarrationScript,
 } from "@/lib/sales/video-generator"
 import VideoPlayer from "@/components/diagnostic/VideoPlayer"
+import { localeToRegion } from "@/lib/sales/types"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 300 // 5 min cache (narration DeepSeek call は重い)
@@ -59,8 +60,9 @@ function fallbackScript(data: {
 }
 
 export default async function ReportVideoPage({ params }: Props) {
-  const { slug } = await params
-  const data = await fetchDiagnosticReport({ slug })
+  const { locale, slug } = await params
+  const region = localeToRegion(locale) // Sprint 16: jp / global 分離
+  const data = await fetchDiagnosticReport({ slug, region })
   if (!data) notFound()
 
   // narration 生成 (DeepSeek V4 PRO・失敗時 fallback)

@@ -16,6 +16,7 @@ import { getTemplatesByIndustry } from "./templates"
 import type {
   Industry,
   IssueCode,
+  Region,
   SalesCompany,
   SalesTemplate,
   Severity,
@@ -152,9 +153,11 @@ export async function fetchDiagnosticReport(opts: {
   companyId?: string
   domain?: string
   slug?: string
+  region?: Region // Sprint 16: jp / global filter (default 'jp')
 }): Promise<DiagnosticReportData | null> {
+  const region: Region = opts.region ?? "jp"
   const company = opts.slug
-    ? await findCompanyBySlug(opts.slug)
+    ? await findCompanyBySlug(opts.slug, region)
     : opts.companyId
       ? await findCompanyById(opts.companyId)
       : opts.domain
@@ -173,10 +176,10 @@ export async function fetchDiagnosticReport(opts: {
       }
     | undefined
 
-  // detected_issues の上位 3 件で 3-Act 構成
+  // detected_issues の上位 3 件で 3-Act 構成 (Sprint 16: region scope)
   const issues = (company.detected_issues ?? []).slice(0, 3)
   const templates = company.industry
-    ? await getTemplatesByIndustry(company.industry, issues)
+    ? await getTemplatesByIndustry(company.industry, issues, region)
     : []
   const templateByIssue = new Map(templates.map((t) => [t.issue_code, t]))
 

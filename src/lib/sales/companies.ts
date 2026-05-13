@@ -17,11 +17,13 @@ import type {
   DealStage,
   Industry,
   IssueCode,
+  Region,
 } from "./types"
 
 export interface UpsertCompanyInput {
   domain: string
   company_name: string
+  region?: Region // Sprint 16: default 'jp' for backward compat
   industry?: Industry | null
   prefecture?: string | null
   pipeline_status?: PipelineStatus
@@ -33,7 +35,7 @@ export interface UpsertCompanyInput {
   meta?: Record<string, unknown>
 }
 
-/** domain で既存リードを upsert (重複作成防止) */
+/** domain で既存リードを upsert (重複作成防止・region 必須 default 'jp') */
 export async function upsertCompanyByDomain(
   input: UpsertCompanyInput,
 ): Promise<{ ok: boolean; company?: SalesCompany; error?: string }> {
@@ -43,6 +45,7 @@ export async function upsertCompanyByDomain(
     .from("sales_companies")
     .upsert(
       {
+        region: input.region ?? "jp", // Sprint 16: default 'jp' for backward compat
         domain: input.domain,
         company_name: input.company_name,
         industry: input.industry ?? null,
@@ -77,14 +80,18 @@ export async function findCompanyByDomain(
   return (data as SalesCompany) ?? null
 }
 
-/** slug で 1 件取得 (Sprint 13 /[locale]/report/[slug] の lookup) */
-export async function findCompanyBySlug(slug: string): Promise<SalesCompany | null> {
+/** slug で 1 件取得 (Sprint 16: region scope 必須・default 'jp') */
+export async function findCompanyBySlug(
+  slug: string,
+  region: Region = "jp",
+): Promise<SalesCompany | null> {
   const sb = getServiceSupabase()
   if (!sb) return null
   const { data } = await sb
     .from("sales_companies")
     .select("*")
     .eq("slug", slug)
+    .eq("region", region)
     .maybeSingle()
   return (data as SalesCompany) ?? null
 }

@@ -11,14 +11,16 @@
 
 import { ImageResponse } from "next/og"
 import { findCompanyBySlug } from "@/lib/sales/companies"
+import { localeToRegion } from "@/lib/sales/types"
 
 export const runtime = "nodejs"
 export const contentType = "image/png"
 export const size = { width: 1200, height: 630 }
 
 export default async function OG({ params }: { params: { locale: string; slug: string } }) {
-  const slug = params.slug
-  const company = await findCompanyBySlug(slug)
+  const { locale, slug } = params
+  const region = localeToRegion(locale) // Sprint 16
+  const company = await findCompanyBySlug(slug, region)
 
   const name = company?.company_name ?? "御社"
   const lossLine = company?.detected_issues?.length

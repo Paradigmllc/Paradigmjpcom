@@ -12,6 +12,18 @@
 
 /* ───── enum tuples (DB CHECK と完全一致) ───── */
 
+/** s10-5 国ドリブン永久ルール: region は DB 列で完全分離 */
+export const REGIONS = ["jp", "global"] as const
+export type Region = (typeof REGIONS)[number]
+
+export const isValidRegion = (s: string): s is Region =>
+  (REGIONS as readonly string[]).includes(s)
+
+/** locale から region を 1 純関数で判定 (paradigm-blocks regionToLocale() と対称) */
+export function localeToRegion(locale: string): Region {
+  return locale === "ja" ? "jp" : "global"
+}
+
 export const INDUSTRIES = [
   "beauty_salon",
   "dental",
@@ -106,7 +118,8 @@ export type DeliveryStatus = (typeof DELIVERY_STATUSES)[number]
 
 export interface SalesCompany {
   id: string
-  slug: string | null // URL-safe 事業者名 (/[locale]/report/[slug] で公開・Sprint 13)
+  region: Region // Sprint 16: jp / global 完全分離 (s10-5 国ドリブン永久ルール)
+  slug: string | null
   domain: string
   company_name: string
   industry: Industry | null
@@ -133,6 +146,7 @@ export interface SalesCompany {
 
 export interface SalesCustomer {
   id: string
+  region: Region // Sprint 16
   company_id: string | null
   customer_name: string
   contract_products: ContractProduct[]
@@ -154,6 +168,7 @@ export interface SalesCustomer {
 
 export interface SalesDelivery {
   id: string
+  region: Region // Sprint 16
   customer_id: string | null
   delivery_name: string
   delivery_type: DeliveryType | null
@@ -170,6 +185,7 @@ export interface SalesDelivery {
 
 export interface SalesTemplate {
   id: string
+  region: Region // Sprint 16: jp / global 完全分離
   template_name: string
   industry: Industry
   issue_code: IssueCode

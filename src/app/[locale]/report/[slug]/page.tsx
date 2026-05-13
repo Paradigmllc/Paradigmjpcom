@@ -22,6 +22,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import DiagnosticReport from "@/components/diagnostic/DiagnosticReport"
 import { fetchDiagnosticReport } from "@/lib/sales/diagnostic"
+import { localeToRegion } from "@/lib/sales/types"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 60 // ISR 60s
@@ -46,8 +47,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ReportPage({ params }: Props) {
-  const { slug } = await params
-  const data = await fetchDiagnosticReport({ slug })
+  const { locale, slug } = await params
+  // Sprint 16: locale → region 1 純関数で判定 (ja=jp / others=global)
+  const region = localeToRegion(locale)
+  const data = await fetchDiagnosticReport({ slug, region })
   if (!data) notFound()
 
   return <DiagnosticReport data={data} trackingSlug={slug} />
