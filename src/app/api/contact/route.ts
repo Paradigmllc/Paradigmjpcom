@@ -174,16 +174,22 @@ export async function POST(req: NextRequest) {
             {
               type: "actions",
               elements: [
+                // Sprint 13: 営業データは Notion ⇔ Supabase MCP に集約 (admin dashboard 撤廃)
+                // 診断レポート URL は slug 設定後のみ active (未設定なら domain 直リンク)
+                ...(c.slug
+                  ? [
+                      {
+                        type: "button",
+                        text: { type: "plain_text", text: "診断レポート" },
+                        url: `https://paradigmjp.com/ja/report/${c.slug}`,
+                        style: "primary",
+                      },
+                    ]
+                  : []),
                 {
                   type: "button",
-                  text: { type: "plain_text", text: "診断レポート" },
-                  url: `https://paradigmjp.com/ja/diagnostic/${c.id}`,
-                  style: "primary",
-                },
-                {
-                  type: "button",
-                  text: { type: "plain_text", text: "管理画面で見る" },
-                  url: `https://paradigmjp.com/ja/admin/sales`,
+                  text: { type: "plain_text", text: "Notion で開く" },
+                  url: `https://www.notion.so/8cbab1f501144f83872c1738ce3e79c4`,
                 },
               ],
             },

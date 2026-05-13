@@ -1,15 +1,20 @@
 /**
- * GET /api/sales/track-view?slug=... — Sprint 11
+ * GET /api/sales/track-view?slug=... — Sprint 11 (Sprint 13 URL refactor)
  *
  * 役割: 診断レポート閲覧トラッキング (1x1 透明 GIF) + report_views++
- *       3 回以上閲覧で is_hot_lead = true → Slack 通知 (n8n 経由 or 直接).
+ *       3 回以上閲覧で is_hot_lead = true → Slack 通知.
  *
  * 認証: なし (public・閲覧トラッキング用)
- *       slug = sales_companies.id (uuid) or domain
+ *       slug = sales_companies.slug (Sprint 13 以降) / 旧 id(uuid)/domain も互換維持
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { findCompanyById, findCompanyByDomain, markHotLead } from "@/lib/sales/companies"
+import {
+  findCompanyById,
+  findCompanyByDomain,
+  findCompanyBySlug,
+  markHotLead,
+} from "@/lib/sales/companies"
 import { getServiceSupabase } from "@/lib/supabase"
 import { notifyHotLead } from "@/lib/notify"
 
@@ -26,6 +31,7 @@ const TRANSPARENT_GIF = Buffer.from(
 
 const isUuid = (s: string): boolean =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)
+const isDomain = (s: string): boolean => /\./.test(s)
 
 export async function GET(req: NextRequest) {
   const slug = req.nextUrl.searchParams.get("slug")
@@ -36,9 +42,15 @@ export async function GET(req: NextRequest) {
     })
   }
 
-  const company = isUuid(slug)
-    ? await findCompanyById(slug)
-    : await findCompanyByDomain(slug)
+  // Sprint 13: slug 優先 lookup. 旧形式 (uuid / domain) も backward compat.
+  let company = await findCompanyBySlug(slug)
+  if (!company) {
+    company = isUuid(slug)
+      ? await findCompanyById(slug)
+      : isDomain(slug)
+        ? await findCompanyByDomain(slug)
+        : null
+  }
 
   if (company) {
     const sb = getServiceSupabase()
@@ -53,11 +65,14 @@ export async function GET(req: NextRequest) {
       if (newCount >= HOT_THRESHOLD && !company.is_hot_lead) {
         await markHotLead(company.id, true)
         // Slack 通知 (best-effort)
+        const reportUrl = company.slug
+          ? `https://paradigmjp.com/ja/report/${company.slug}`
+          : `https://paradigmjp.com/ja/report/${company.domain}`
         await notifyHotLead({
           company_name: company.company_name,
           domain: company.domain,
           report_views: newCount,
-          diagnostic_url: `https://paradigmjp.com/ja/diagnostic/${company.id}`,
+          diagnostic_url: reportUrl,
         }).catch(() => {}) // never throw
       }
     }

@@ -61,6 +61,8 @@ export async function POST(
     mobile: scan.mobile.performance,
     desktop: scan.desktop.performance,
     issues: scan.issues,
-    diagnostic_url: `https://paradigmjp.com/ja/diagnostic/${domain}`,
+    // Sprint 13: /report/[slug] が正式 URL. scan は domain ベース呼出のため slug は別途設定要.
+    //   ここでは scan 結果としての domain-based URL ではなく "未設定" を返し、報告 URL は別所で生成.
+    report_url: existing?.slug ? `https://paradigmjp.com/ja/report/${existing.slug}` : null,
   })
 }

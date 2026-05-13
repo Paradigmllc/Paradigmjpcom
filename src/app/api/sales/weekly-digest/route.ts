@@ -30,7 +30,13 @@ interface DigestData {
   weekEnd: string
   totalCompanies: number
   newLeads: number
-  hotLeads: { id: string; company_name: string; domain: string; report_views: number }[]
+  hotLeads: {
+    id: string
+    slug: string | null
+    company_name: string
+    domain: string
+    report_views: number
+  }[]
   stageCounts: Record<string, number>
   issueCounts: Record<string, number>
   prefectureCounts: Record<string, number>
@@ -54,7 +60,7 @@ async function collectDigest(): Promise<DigestData | { error: string }> {
       .gte("created_at", weekStart),
     sb
       .from("sales_companies")
-      .select("id, company_name, domain, report_views")
+      .select("id, slug, company_name, domain, report_views")
       .eq("is_hot_lead", true)
       .order("report_views", { ascending: false })
       .limit(5),
@@ -102,10 +108,13 @@ function buildSlackBlocks(d: DigestData) {
     d.hotLeads.length === 0
       ? "今週は HOT lead なし"
       : d.hotLeads
-          .map(
-            (h, i) =>
-              `${i + 1}. *<https://paradigmjp.com/ja/diagnostic/${h.id}|${h.company_name}>* — ${h.report_views} views`,
-          )
+          .map((h, i) => {
+            // Sprint 13: slug があれば /report/[slug]・なければ Notion 直リンク
+            const link = h.slug
+              ? `https://paradigmjp.com/ja/report/${h.slug}`
+              : `https://www.notion.so/8cbab1f501144f83872c1738ce3e79c4`
+            return `${i + 1}. *<${link}|${h.company_name}>* — ${h.report_views} views`
+          })
           .join("\n")
 
   return [
@@ -140,10 +149,11 @@ function buildSlackBlocks(d: DigestData) {
     {
       type: "actions",
       elements: [
+        // Sprint 13: 営業ダッシュボードは Notion に集約 (admin 撤廃)
         {
           type: "button",
-          text: { type: "plain_text", text: "ダッシュボードを開く" },
-          url: "https://paradigmjp.com/ja/admin/sales",
+          text: { type: "plain_text", text: "Notion で開く (リード DB)" },
+          url: "https://www.notion.so/8cbab1f501144f83872c1738ce3e79c4",
           style: "primary",
         },
       ],

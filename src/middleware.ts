@@ -28,10 +28,9 @@ import { routing } from "./i18n/routing"
 const intlMiddleware = createMiddleware(routing)
 
 // /report/* /p/* /diagnostic/* matcher (locale prefix の有無両対応)
-// 例: /report/abc, /ja/report/abc, /p/abc, /ja/diagnostic/abc
-// 2026-05-12: 旧 report は archive 済 (404 になる) だが、Google の古い indexed URL が
-//             残っていた場合に noindex を確実に返すため header だけは保持。
-// 2026-05-13 (Sprint 9-D): 新診断レポート /diagnostic/* も同パターンで noindex 強制。
+// 例: /report/abc, /ja/report/izakaya-en, /p/abc, /ja/diagnostic/abc (legacy)
+// 2026-05-13 (Sprint 13 URL refactor): canonical = /report/[slug] (事業者名 URL-safe)
+// /diagnostic/* は archive 済だが古い indexed URL の safety net として pattern には残す.
 const NOINDEX_PATTERN = /^\/(?:[a-z]{2}\/)?(?:report|p|diagnostic)(?:\/|$)/i
 
 // X-Robots-Tag: SEO 完全禁止の最強構成

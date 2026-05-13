@@ -77,6 +77,18 @@ export async function findCompanyByDomain(
   return (data as SalesCompany) ?? null
 }
 
+/** slug で 1 件取得 (Sprint 13 /[locale]/report/[slug] の lookup) */
+export async function findCompanyBySlug(slug: string): Promise<SalesCompany | null> {
+  const sb = getServiceSupabase()
+  if (!sb) return null
+  const { data } = await sb
+    .from("sales_companies")
+    .select("*")
+    .eq("slug", slug)
+    .maybeSingle()
+  return (data as SalesCompany) ?? null
+}
+
 /** id で 1 件取得 */
 export async function findCompanyById(id: string): Promise<SalesCompany | null> {
   const sb = getServiceSupabase()

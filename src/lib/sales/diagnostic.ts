@@ -11,7 +11,7 @@
  *   - 各 act は severity + headline + body + metric_value で構成
  */
 
-import { findCompanyById, findCompanyByDomain } from "./companies"
+import { findCompanyById, findCompanyByDomain, findCompanyBySlug } from "./companies"
 import { getTemplatesByIndustry } from "./templates"
 import type {
   Industry,
@@ -151,12 +151,15 @@ function formatYen(n: number): string {
 export async function fetchDiagnosticReport(opts: {
   companyId?: string
   domain?: string
+  slug?: string
 }): Promise<DiagnosticReportData | null> {
-  const company = opts.companyId
-    ? await findCompanyById(opts.companyId)
-    : opts.domain
-      ? await findCompanyByDomain(opts.domain)
-      : null
+  const company = opts.slug
+    ? await findCompanyBySlug(opts.slug)
+    : opts.companyId
+      ? await findCompanyById(opts.companyId)
+      : opts.domain
+        ? await findCompanyByDomain(opts.domain)
+        : null
   if (!company) return null
 
   // detected_issues の上位 3 件で 3-Act 構成

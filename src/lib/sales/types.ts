@@ -106,6 +106,7 @@ export type DeliveryStatus = (typeof DELIVERY_STATUSES)[number]
 
 export interface SalesCompany {
   id: string
+  slug: string | null // URL-safe 事業者名 (/[locale]/report/[slug] で公開・Sprint 13)
   domain: string
   company_name: string
   industry: Industry | null
