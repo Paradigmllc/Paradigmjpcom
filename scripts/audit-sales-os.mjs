@@ -16,7 +16,8 @@
 
 const BASE = process.env.AUDIT_BASE ?? "https://paradigmjp.com"
 const SECRET = process.env.AUDIT_WEBHOOK_SECRET ?? ""
-const COMPANY_ID = process.env.AUDIT_TEST_COMPANY_ID ?? "00335ac8-fe51-40bb-bd00-b5b018b6d4e3"
+// Sprint 13: slug ベース URL に切替 (旧 UUID ID は backward compat に track-view でのみ使用)
+const TEST_SLUG = process.env.AUDIT_TEST_SLUG ?? "izakaya-en"
 const TEST_DOMAIN = process.env.AUDIT_DOMAIN ?? "example.com"
 
 const C = {
@@ -91,7 +92,7 @@ async function checkPost(name, path, body, expectStatus = 200, opts = {}) {
 async function main() {
   console.log(C.bold("\n🔍 Sales OS End-to-End 監査"))
   console.log(C.dim(`Base: ${BASE}`))
-  console.log(C.dim(`Test company: ${COMPANY_ID}`))
+  console.log(C.dim(`Test slug: ${TEST_SLUG}`))
   console.log(C.dim(`Test domain: ${TEST_DOMAIN}`))
   console.log()
 
@@ -100,13 +101,13 @@ async function main() {
   await checkGet("HP root /ja", "/ja", 200)
   await checkGet("Video LP", "/ja/video", 200)
   await checkGet("Agency LP", "/ja/agency", 200)
-  await checkGet("Diagnostic LP (seeded company)", `/ja/diagnostic/${COMPANY_ID}`, 200)
-  await checkGet("OG dynamic image", `/ja/diagnostic/${COMPANY_ID}/opengraph-image`, 200)
+  await checkGet(`Report LP /ja/report/${TEST_SLUG}`, `/ja/report/${TEST_SLUG}`, 200)
+  await checkGet("OG dynamic image", `/ja/report/${TEST_SLUG}/opengraph-image`, 200)
   console.log()
 
   /* Layer 2: 公開 API (no-auth) */
   console.log(C.bold("Layer 2: 公開 API"))
-  await checkGet("Track view pixel", `/api/sales/track-view?slug=${COMPANY_ID}`, 200)
+  await checkGet("Track view pixel (by slug)", `/api/sales/track-view?slug=${TEST_SLUG}`, 200)
   console.log()
 
   /* Layer 3: Webhook-protected API (X-Webhook-Secret 必須) */
@@ -145,9 +146,10 @@ async function main() {
   }
   console.log()
 
-  /* Layer 4: Admin (Cookie auth・200 + UnauthorizedView rendering) */
-  console.log(C.bold("Layer 4: Admin (Cookie 認証)"))
-  await checkGet("Admin sales dashboard (no cookie = 200 + UnauthorizedView)", "/ja/admin/sales", 200)
+  /* Layer 4: 営業 OS = Notion 集約・PayloadCMS は コンテンツのみ (Sprint 13) */
+  console.log(C.bold("Layer 4: 営業 OS Notion 集約 (admin/sales 撤廃済)"))
+  await checkGet("Old /admin/sales (撤廃済・404 必須)", "/ja/admin/sales", 404)
+  console.log(C.dim(`  ${C.info} 営業 OS の操作は Notion で行う: https://www.notion.so/8cbab1f501144f83872c1738ce3e79c4`))
   console.log()
 
   /* サマリ */
