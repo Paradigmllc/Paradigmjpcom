@@ -145,9 +145,9 @@ async function main() {
   }
   console.log()
 
-  /* Layer 4: Admin (Cookie auth・基本は 200 if Cookie OK / 302 if not) */
+  /* Layer 4: Admin (Cookie auth・200 + UnauthorizedView rendering) */
   console.log(C.bold("Layer 4: Admin (Cookie 認証)"))
-  await checkGet("Admin sales dashboard (no cookie = redirect)", "/ja/admin/sales", 307)
+  await checkGet("Admin sales dashboard (no cookie = 200 + UnauthorizedView)", "/ja/admin/sales", 200)
   console.log()
 
   /* サマリ */

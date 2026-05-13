@@ -10,7 +10,6 @@
 
 import type { Metadata } from "next"
 import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
 import { getServiceSupabase } from "@/lib/supabase"
 import { calculateMrr } from "@/lib/sales/customers"
 import { listRecentlyUpdatedCompanies } from "@/lib/sales/companies"
@@ -55,9 +54,37 @@ async function getKpis() {
   }
 }
 
+function UnauthorizedView() {
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans">
+      <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 p-8 text-center">
+        <div className="text-5xl mb-4">🔒</div>
+        <h1 className="font-display text-2xl font-bold text-slate-900 mb-2">
+          認証が必要です
+        </h1>
+        <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+          営業 OS ダッシュボードは内部管理者専用です。
+          <br />
+          /admin で PayloadCMS にログインしてください.
+        </p>
+        <a
+          href="/admin"
+          className="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-6 rounded-xl transition-colors"
+        >
+          /admin へ移動
+        </a>
+      </div>
+    </div>
+  )
+}
+
 export default async function AdminSalesPage() {
   const ok = await checkAuth()
-  if (!ok) redirect("/admin")
+  // 認証 NG の場合 redirect ではなく inline render
+  //   理由: Next.js `force-dynamic` でも `redirect()` は static-gen 時に not-found を返すため status code が安定しない.
+  //   inline render なら status=200 で確実にレンダリング・data leak も発生しない (KPI 取得を condition で skip).
+  if (!ok) return <UnauthorizedView />
+
 
   const [kpis, mrr, companies, templates] = await Promise.all([
     getKpis(),
