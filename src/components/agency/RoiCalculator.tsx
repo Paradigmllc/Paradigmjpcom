@@ -7,15 +7,18 @@
  * 設計:
  *   - Client component (slider + リアルタイム計算)
  *   - 計算ロジックは pure function で隔離 (test 可能)
+ *
+ * AE-PHP-5 (2026-05-14): agencyPage namespace 経由の完全 i18n 化.
  */
 
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 
 interface CalcInputs {
-  declinedPerMonth: number // 月あたり断っている件数 (1-10)
-  avgValuePerProject: number // 1 件単価 (USD)
+  declinedPerMonth: number
+  avgValuePerProject: number
 }
 
 function calculateAnnualLoss(inputs: CalcInputs): {
@@ -26,25 +29,16 @@ function calculateAnnualLoss(inputs: CalcInputs): {
 } {
   const monthlyLoss = inputs.declinedPerMonth * inputs.avgValuePerProject
   const annualLoss = monthlyLoss * 12
-  const paradigmAnnual = 9997 * 12 // White plan $9,997/月
+  const paradigmAnnual = 9997 * 12
   const netGain = annualLoss - paradigmAnnual
   return { monthlyLoss, annualLoss, paradigmAnnual, netGain }
 }
 
-const DECLINED_OPTIONS = [
-  { value: 1, label: "1 件" },
-  { value: 2, label: "2 件" },
-  { value: 4, label: "4 件" },
-  { value: 6, label: "6 件以上" },
-] as const
-
-const VALUE_OPTIONS = [
-  { value: 2000, label: "$1K-$3K" },
-  { value: 5000, label: "$3K-$8K" },
-  { value: 10000, label: "$8K+" },
-] as const
+const DECLINED_VALUES = [1, 2, 4, 6] as const
+const VALUE_OPTIONS = [2000, 5000, 10000] as const
 
 export default function RoiCalculator() {
+  const t = useTranslations("agencyPage")
   const [declinedPerMonth, setDeclined] = useState<number>(2)
   const [avgValue, setAvgValue] = useState<number>(5000)
 
@@ -53,39 +47,44 @@ export default function RoiCalculator() {
     avgValuePerProject: avgValue,
   })
 
-  const fmtUsd = (n: number) =>
-    `$${Math.abs(n).toLocaleString("en-US")}${n < 0 ? " (赤字)" : ""}`
+  const roiQ1Labels = t.raw("roiQ1Options") as string[]
+  const roiQ2Labels = t.raw("roiQ2Options") as string[]
+
+  const fmtUsd = (n: number) => {
+    const abs = Math.abs(n).toLocaleString("en-US")
+    return `$${abs}${n < 0 ? ` ${t("roiNetLossLabel")}` : ""}`
+  }
 
   return (
     <div className="paradigm-glass rounded-3xl p-8 md:p-10 paradigm-glow-lg max-w-3xl mx-auto">
       <p className="paradigm-eyebrow text-paradigm-accent mb-2 text-center">
-        Loss Calculator
+        {t("roiEyebrow")}
       </p>
       <h3 className="font-display text-[22px] md:text-[28px] text-paradigm-ink text-center mb-2 tracking-tight">
-        御社は今月、いくら損していますか?
+        {t("roiTitle")}
       </h3>
       <p className="text-[13px] text-paradigm-ink-soft text-center mb-8 leading-relaxed">
-        動画案件を断る / 外注に出すたびに、利益が他社へ流れています。
+        {t("roiDesc")}
       </p>
 
       {/* Q1: 断り件数 */}
       <div className="mb-7">
         <label className="block text-[12px] paradigm-eyebrow text-paradigm-ink-soft mb-3">
-          Q1. 月に動画案件を断る or 外注する件数は?
+          {t("roiQ1")}
         </label>
         <div className="grid grid-cols-4 gap-2">
-          {DECLINED_OPTIONS.map((opt) => (
+          {DECLINED_VALUES.map((value, idx) => (
             <button
-              key={opt.value}
+              key={value}
               type="button"
-              onClick={() => setDeclined(opt.value)}
+              onClick={() => setDeclined(value)}
               className={`py-3 rounded-xl text-[13px] font-semibold transition-all ${
-                declinedPerMonth === opt.value
+                declinedPerMonth === value
                   ? "bg-paradigm-ink text-paradigm-paper paradigm-glow-md"
                   : "border border-paradigm-line text-paradigm-ink-soft hover:border-paradigm-ink"
               }`}
             >
-              {opt.label}
+              {roiQ1Labels[idx]}
             </button>
           ))}
         </div>
@@ -94,21 +93,21 @@ export default function RoiCalculator() {
       {/* Q2: 単価 */}
       <div className="mb-9">
         <label className="block text-[12px] paradigm-eyebrow text-paradigm-ink-soft mb-3">
-          Q2. 1 件あたりの平均受注金額は?
+          {t("roiQ2")}
         </label>
         <div className="grid grid-cols-3 gap-2">
-          {VALUE_OPTIONS.map((opt) => (
+          {VALUE_OPTIONS.map((value, idx) => (
             <button
-              key={opt.value}
+              key={value}
               type="button"
-              onClick={() => setAvgValue(opt.value)}
+              onClick={() => setAvgValue(value)}
               className={`py-3 rounded-xl text-[13px] font-semibold transition-all ${
-                avgValue === opt.value
+                avgValue === value
                   ? "bg-paradigm-ink text-paradigm-paper paradigm-glow-md"
                   : "border border-paradigm-line text-paradigm-ink-soft hover:border-paradigm-ink"
               }`}
             >
-              {opt.label}
+              {roiQ2Labels[idx]}
             </button>
           ))}
         </div>
@@ -118,7 +117,7 @@ export default function RoiCalculator() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-7">
         <div className="paradigm-glass rounded-xl p-5 text-center bg-paradigm-paper-card">
           <div className="paradigm-eyebrow text-paradigm-ink-mute mb-2 text-[10px]">
-            月間損失
+            {t("roiMonthly")}
           </div>
           <div className="font-display text-[24px] text-paradigm-ink leading-none">
             {fmtUsd(result.monthlyLoss)}
@@ -131,7 +130,7 @@ export default function RoiCalculator() {
           }}
         >
           <div className="paradigm-eyebrow text-paradigm-paper/70 mb-2 text-[10px]">
-            年間損失
+            {t("roiAnnual")}
           </div>
           <div className="font-display text-[28px] leading-none font-black">
             {fmtUsd(result.annualLoss)}
@@ -139,7 +138,7 @@ export default function RoiCalculator() {
         </div>
         <div className="paradigm-glass rounded-xl p-5 text-center bg-paradigm-paper-card">
           <div className="paradigm-eyebrow text-paradigm-ink-mute mb-2 text-[10px]">
-            Paradigm 年間費
+            {t("roiParadigm")}
           </div>
           <div className="font-display text-[24px] text-paradigm-ink-soft leading-none">
             {fmtUsd(result.paradigmAnnual)}
@@ -154,13 +153,13 @@ export default function RoiCalculator() {
         }}
       >
         <div className="paradigm-eyebrow text-paradigm-paper/70 mb-2 text-[10px]">
-          回収可能粗利 (年間)
+          {t("roiNetGain")}
         </div>
         <div className="font-display text-[40px] md:text-[48px] leading-none font-black mb-2">
           {fmtUsd(result.netGain)}
         </div>
         <p className="text-[12px] text-paradigm-paper/80 leading-relaxed">
-          今、御社を素通りしている動画案件を WL で回収できる粗利です。
+          {t("roiNetGainDesc")}
         </p>
       </div>
 
@@ -169,7 +168,7 @@ export default function RoiCalculator() {
           href="mailto:info@paradigmjp.com?subject=代理店WLパッケージの相談"
           className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper rounded-xl px-9 py-4 text-[12px] tracking-wider uppercase font-semibold paradigm-glow-md hover:paradigm-glow-lg transition-all"
         >
-          この損失を止める方法を 15 分で説明します
+          {t("roiCta")}
         </a>
       </div>
     </div>

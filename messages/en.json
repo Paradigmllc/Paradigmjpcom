@@ -992,32 +992,157 @@
     "popularLabel": "Most popular"
   },
   "agencyPage": {
-    "metaTitle": "Agency White-Label | 動画案件を断らずに済む唯一の方法",
-    "metaDescription": "AI 動画制作パイプラインを御社ブランドで提供。クライアント数無制限・粗利率 85%+。Paradigm が裏方として全自動レンダリング。",
+    "metaTitle": "Agency White-Label | The Only Way to Stop Turning Down Video Projects",
+    "metaDescription": "Offer AI video production under your agency brand. Unlimited clients, 85%+ margins. Paradigm handles all rendering behind the scenes.",
     "heroBadge": "Agency White-Label",
-    "heroTitle": "動画案件を断るたびに、御社の利益が他社へ流れています",
-    "heroHighlight": "WL で取り返す",
-    "heroDesc": "月 2-3 件の動画案件を断っているなら、年 $72,000-$288,000 が素通りしています。Paradigm の AI パイプラインを御社ブランドで提供すれば、断らずに済みます。",
+    "heroTitle": "Every time you turn down a video project, your profit goes to a competitor",
+    "heroHighlight": "Recapture it with WL",
+    "heroDesc": "If you're turning down 2-3 video projects a month, $72,000-$288,000 a year is slipping through your fingers. Offer Paradigm's AI pipeline under your own brand and never say no again.",
     "roiEyebrow": "Loss Calculator",
-    "roiTitle": "御社は今月、いくら損していますか?",
-    "roiDesc": "動画案件を断る / 外注に出すたびに、利益が他社へ流れています。",
-    "roiQ1": "Q1. 月に動画案件を断る or 外注する件数は?",
-    "roiQ2": "Q2. 1 件あたりの平均受注金額は?",
-    "roiMonthly": "月間損失",
-    "roiAnnual": "年間損失",
-    "roiParadigm": "Paradigm 年間費",
-    "roiNetGain": "回収可能粗利 (年間)",
-    "roiNetGainDesc": "今、御社を素通りしている動画案件を WL で回収できる粗利です。",
-    "roiCta": "この損失を止める方法を 15 分で説明します",
+    "roiTitle": "How much are you losing this month?",
+    "roiDesc": "Every project you turn down or outsource means profit flowing to someone else.",
+    "roiQ1": "Q1. How many video projects do you turn down or outsource per month?",
+    "roiQ2": "Q2. What's your average project value?",
+    "roiMonthly": "Monthly Loss",
+    "roiAnnual": "Annual Loss",
+    "roiParadigm": "Paradigm Annual Cost",
+    "roiNetGain": "Recoverable Gross Profit (Annual)",
+    "roiNetGainDesc": "The gross profit that currently passes you by — now recaptured through WL.",
+    "roiCta": "Learn how to stop this loss in 15 minutes",
     "howItWorksEyebrow": "How it works",
-    "howItWorksTitle": "御社が表・Paradigm が裏方",
-    "pricingTitle": "WL 専用 2 プラン",
-    "pricingDesc": "超過課金: 1 本あたり $80。年払いで Agency 20%・White 25% OFF。",
+    "howItWorksTitle": "Your Agency Front-of-House, Paradigm Behind the Scenes",
+    "pricingEyebrow": "Pricing",
+    "pricingTitle": "Two WL Plans",
+    "pricingDesc": "Overage: $80/video. Annual billing saves 20% (Agency) / 25% (White).",
+    "pricingDescExcess": "Overage: $80/video. Annual billing saves 20% (Agency) / 25% (White).",
+    "recommendedLabel": "Recommended",
+    "planButton": "Start WL Partnership",
+    "plans": {
+      "agency": {
+        "name": "Agency",
+        "price": "$8,000",
+        "period": "/mo",
+        "videos": "Up to 100 videos/mo",
+        "desc": "For mid-size agencies — unlimited clients",
+        "features": [
+          "White-label delivery (zero Paradigm branding)",
+          "Per-client Notion databases",
+          "Automated n8n request processing",
+          "Slack integration / Webhook",
+          "Monthly check-in (optional)"
+        ],
+        "popular": false
+      },
+      "white": {
+        "name": "White",
+        "price": "$15,000",
+        "period": "/mo",
+        "videos": "Up to 300 videos/mo",
+        "desc": "For large agencies — includes branded dashboard",
+        "features": [
+          "Branded management dashboard (custom domain)",
+          "Per-client white-label delivery reports",
+          "AI avatar video (Wan2.2 + MuseTalk)",
+          "Dedicated Slack channel + 1 Engineer attached",
+          "Annual billing — 25% OFF"
+        ],
+        "popular": true
+      }
+    },
+    "steps": [
+      {
+        "step": "01",
+        "title": "Client places order with your agency",
+        "desc": "The client only sees your brand. Paradigm's existence is invisible to them."
+      },
+      {
+        "step": "02",
+        "title": "Your team submits via Notion",
+        "desc": "Enter title + assets into a Notion DB. n8n handles the rest — fully automated."
+      },
+      {
+        "step": "03",
+        "title": "Delivery under your brand",
+        "desc": "MP4 ready in 24-48h. Delivered under your logo and domain."
+      }
+    ],
+    "comparison": {
+      "headerItem": "Item",
+      "headerParadigm": "Paradigm WL",
+      "headerOutsourcing": "Outsourcing",
+      "rows": [
+        {
+          "item": "Cost per video",
+          "paradigm": "$80",
+          "outsourcing": "$300-800"
+        },
+        {
+          "item": "Client billing per video",
+          "paradigm": "$150-400",
+          "outsourcing": "$500-1,500"
+        },
+        {
+          "item": "Gross margin",
+          "paradigm": "85%+",
+          "outsourcing": "30-50%"
+        },
+        {
+          "item": "Turnaround",
+          "paradigm": "24-48 hours",
+          "outsourcing": "1-3 weeks"
+        },
+        {
+          "item": "Scale",
+          "paradigm": "Flat rate up to 300/mo",
+          "outsourcing": "Negotiated per project"
+        },
+        {
+          "item": "Risk",
+          "paradigm": "Paradigm quality guarantee",
+          "outsourcing": "Contractor black-box risk"
+        }
+      ]
+    },
+    "faqs": [
+      {
+        "q": "Will my clients ever see the Paradigm name?",
+        "a": "Never. Deliverables, emails, and invoices are all issued under your agency brand. DNS, email sender, and video filenames are all configured under your settings."
+      },
+      {
+        "q": "Is there a limit on the number of clients?",
+        "a": "Both Agency and White plans have unlimited clients. The billing axis is total monthly deliveries (100 or 300 videos)."
+      },
+      {
+        "q": "We already have a designer. Will there be overlap?",
+        "a": "It's complementary. Creative decisions (color, composition) stay with your designer; production volume (template rollout, subtitles, voice synthesis) runs through Paradigm — that's where margins are highest."
+      },
+      {
+        "q": "Can we cancel anytime?",
+        "a": "Monthly plans can be canceled anytime. Annual billing (25% OFF) has a 12-month commitment."
+      }
+    ],
     "comparisonEyebrow": "Why WL",
-    "comparisonTitle": "外注の限界 vs WL の構造優位",
+    "comparisonTitle": "Outsourcing Limits vs. WL Structural Advantage",
     "faqEyebrow": "FAQ",
-    "faqTitle": "よくある質問",
-    "recommendedLabel": "Recommended"
+    "faqTitle": "Frequently Asked Questions",
+    "cta": {
+      "eyebrow": "Partnership",
+      "title": "Let's diagnose your video pipeline in 15 minutes",
+      "desc": "We'll map out your current workflow, lost projects, and margins in 15 minutes — then calculate how much WL could recover annually.",
+      "buttonLabel": "Book a Free Diagnostic"
+    },
+    "roiQ1Options": [
+      "1 project",
+      "2 projects",
+      "4 projects",
+      "6+ projects"
+    ],
+    "roiQ2Options": [
+      "$1K-$3K",
+      "$3K-$8K",
+      "$8K+"
+    ],
+    "roiNetLossLabel": "(loss)"
   },
   "diagnosticReport": {
     "diagnosticBadge": "診断対象",

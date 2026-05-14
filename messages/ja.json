@@ -1011,13 +1011,138 @@
     "roiCta": "この損失を止める方法を 15 分で説明します",
     "howItWorksEyebrow": "How it works",
     "howItWorksTitle": "御社が表・Paradigm が裏方",
+    "pricingEyebrow": "Pricing",
     "pricingTitle": "WL 専用 2 プラン",
     "pricingDesc": "超過課金: 1 本あたり $80。年払いで Agency 20%・White 25% OFF。",
+    "pricingDescExcess": "超過課金: 1 本あたり $80。年払いで Agency 20%・White 25% OFF。",
+    "recommendedLabel": "Recommended",
+    "planButton": "Start WL Partnership",
+    "plans": {
+      "agency": {
+        "name": "Agency",
+        "price": "$8,000",
+        "period": "/月",
+        "videos": "月 100 本まで",
+        "desc": "中規模代理店向け・クライアント数無制限",
+        "features": [
+          "WL 納品 (Paradigm の名前一切なし)",
+          "Notion クライアント別 DB",
+          "n8n リクエスト自動処理",
+          "Slack 連携 / Webhook",
+          "月次 MTG (オプション)"
+        ],
+        "popular": false
+      },
+      "white": {
+        "name": "White",
+        "price": "$15,000",
+        "period": "/月",
+        "videos": "月 300 本まで",
+        "desc": "大規模代理店・自社ブランドダッシュボード付",
+        "features": [
+          "自社ブランド管理画面 (custom domain)",
+          "クライアント別納品レポート (WL)",
+          "AI アバター動画 (Wan2.2 + MuseTalk)",
+          "専任 Slack チャンネル + Engineer 1 名 attached",
+          "年払い 25% OFF"
+        ],
+        "popular": true
+      }
+    },
+    "steps": [
+      {
+        "step": "01",
+        "title": "クライアントが御社に発注",
+        "desc": "クライアントは御社ブランドのみ認識。Paradigm の存在は知らない。"
+      },
+      {
+        "step": "02",
+        "title": "御社が Notion でリクエスト",
+        "desc": "Notion DB にタイトル + 素材を投入。n8n が裏で全自動処理。"
+      },
+      {
+        "step": "03",
+        "title": "御社ブランドで納品",
+        "desc": "24-48h で MP4 完成。御社ロゴ・御社ドメインで配信。"
+      }
+    ],
+    "comparison": {
+      "headerItem": "項目",
+      "headerParadigm": "Paradigm WL",
+      "headerOutsourcing": "外注",
+      "rows": [
+        {
+          "item": "1 本仕入れ値",
+          "paradigm": "$80",
+          "outsourcing": "$300-800"
+        },
+        {
+          "item": "1 本クライアント請求",
+          "paradigm": "$150-400",
+          "outsourcing": "$500-1,500"
+        },
+        {
+          "item": "粗利率",
+          "paradigm": "85% 以上",
+          "outsourcing": "30-50%"
+        },
+        {
+          "item": "納期",
+          "paradigm": "24-48 時間",
+          "outsourcing": "1-3 週間"
+        },
+        {
+          "item": "スケール",
+          "paradigm": "月 300 本まで定額",
+          "outsourcing": "1 案件ごと交渉"
+        },
+        {
+          "item": "リスク",
+          "paradigm": "Paradigm が品質保証",
+          "outsourcing": "外注先がブラック化"
+        }
+      ]
+    },
+    "faqs": [
+      {
+        "q": "クライアントに Paradigm の名前が出てしまうことはありますか?",
+        "a": "ありません。納品物・メール・請求書すべて御社ブランドで発行されます。技術的にも DNS / メール送信元 / 動画ファイル名すべて御社設定です。"
+      },
+      {
+        "q": "クライアント数に上限はありますか?",
+        "a": "Agency / White プラン共にクライアント数は無制限です。月の合計納品本数 (100 本 or 300 本) が課金軸です。"
+      },
+      {
+        "q": "うちのデザイナーが既にいます。被りませんか?",
+        "a": "むしろ補完関係です。クリエイティブ判断 (色 / 構成) は御社デザイナー、量産 (テンプレ展開 / 字幕 / 音声合成) は Paradigm という分担が最も粗利が出ます。"
+      },
+      {
+        "q": "解約は自由ですか?",
+        "a": "月額プランは月単位解約自由です。年払い 25% OFF を選んだ場合のみ 12 ヶ月コミットです。"
+      }
+    ],
     "comparisonEyebrow": "Why WL",
     "comparisonTitle": "外注の限界 vs WL の構造優位",
     "faqEyebrow": "FAQ",
     "faqTitle": "よくある質問",
-    "recommendedLabel": "Recommended"
+    "cta": {
+      "eyebrow": "Partnership",
+      "title": "まず 15 分、御社の動画パイプラインを診断します",
+      "desc": "現在の動画案件処理フロー・断っている件数・粗利率を 15 分で把握 → WL で年いくら回収できるか試算します。",
+      "buttonLabel": "無料診断を予約する"
+    },
+    "roiQ1Options": [
+      "1 件",
+      "2 件",
+      "4 件",
+      "6 件以上"
+    ],
+    "roiQ2Options": [
+      "$1K-$3K",
+      "$3K-$8K",
+      "$8K+"
+    ],
+    "roiNetLossLabel": "(赤字)"
   },
   "diagnosticReport": {
     "diagnosticBadge": "診断対象",
