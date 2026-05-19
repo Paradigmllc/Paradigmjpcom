@@ -444,9 +444,13 @@ PAYLOAD_SECRET=(PayloadCMS セッション署名鍵)
 PAYLOAD_PUBLIC_SERVER_URL=https://paradigmjp.com
 DIFY_API_KEY=(Dify チャットボット API キー)
 DEEPSEEK_API_KEY=(P17 2026-04-27 追加・i18n 翻訳・Context Cache 90%OFF)
+DATAFORSEO_LOGIN=(Sprint 14 Phase A 追加・SEO scan 用・https://dataforseo.com アカウント email)
+DATAFORSEO_PASSWORD=(Sprint 14 Phase A 追加・dataforseo dashboard で発行)
 ```
 
 **P17 注意**: `DEEPSEEK_API_KEY` は **scripts/i18n-translate.mjs 実行時のみ必要**（buildtime/runtime には不要）。新ページ追加で messages key を増やした際にローカルで `DEEPSEEK_API_KEY=sk-xxx node scripts/i18n-translate.mjs` を走らせて 10 言語 messages を再生成する用途。
+
+**Sprint 14 注意**: `DATAFORSEO_LOGIN` / `DATAFORSEO_PASSWORD` は `scanDomainSeo()` 呼出時のみ必要（buildtime/runtime 全体には不要）。未設定時は明示エラー (V ルール: 空文字 fallback 禁止)。新規アカウント $1 無料クレジット。1 scan (mobile+desktop) 約 $0.01。`lib/sales/enrich.ts` の自動 enrich からは呼ばないこと（コスト保護）— 診断 CTA / report 生成時のみ明示呼出。
 
 ---
 
@@ -589,6 +593,7 @@ DEEPSEEK_API_KEY=(P17 2026-04-27 追加・i18n 翻訳・Context Cache 90%OFF)
 - 🆕 **[2026-05-13] Sprint 13 (URL リネーム + 営業 OS Notion 集約)**: ユーザー指示「URL おかしい. paradigmjp.com/[]/report/事業者名・余計な文字なし. 営業ダッシュボードは Notion ⇔ Supabase MCP 集約・PayloadCMS はコンテンツ管理特化」: ① `sales_companies.slug` カラム追加 + 6 seed slug 付与 (izakaya-en/kansai-construction/hairsalon-lufre/minato-dental/chuo-accounting/select-shop-roppongi) ② `findCompanyBySlug()` + `fetchDiagnosticReport({ slug })` ③ `/[locale]/report/[slug]/page.tsx` + `opengraph-image.tsx` 新規 ④ `/[locale]/diagnostic/* → _archive_diagnostic/*` + `admin/sales → admin/_archive_sales` (Next.js `_` prefix build 除外) ⑤ middleware NOINDEX `/report` 継続カバー ⑥ Slack 通知 URL 一斉置換 (`/report/[slug]`) + admin ボタン → Notion DB 直リンク ⑦ track-view: slug 優先 lookup (uuid/domain backward compat) ⑧ audit script `TEST_SLUG=izakaya-en` / **本番動作確認 11/11 pass** (commit f28655c + 7edbbda) / TS clean ✅
 - 🆕 **[2026-05-13] Sprint 12 (実運用カバレッジ完成 — P1 全消化)**: ① 56 templates (8業種×7課題マトリクス) `scripts/seed-sales-templates.mjs` 一括 seed (絶望→希望 5 段階フレーム自動 encode・headline/pain/fear/loss/cta_text) ② `lib/sales/sources/scanner.ts` 共通スキャナ抽出 (scan API と enrich pipeline で共用) ③ `lib/sales/enrich.ts` contact form → corporate domain 検出 → scanDomain + gBizInfo 並列 → sales_companies UPSERT + Slack Block Kit 新規リード通知 (28 自由メール blacklist) ④ `/api/sales/weekly-digest` Slack 週次ダイジェスト (HOT top 5 + ステージ別 + 課題別 + 都道府県別) ⑤ `/api/contact` 拡張 fire-and-forget 非同期 enrich ⑥ `scripts/audit-sales-os.mjs` Layer 1-4 E2E 監査 (LP/公開API/Webhook認証/Admin) ⑦ 6 demo companies seeded (多業種/ステージ) ⑧ `docs/sales-os-setup-runbook.md` (NOTION_API_KEY / Stripe / PSI / GBIZ 設定手順) ⑨ Coolify env DEEPSEEK_API_KEY 投入 (commit 94a76b4 + 8393fa0 + 11ebee7) / TS clean ✅
 - 🗄️ **[2026-05-13] appexx.me 連携一時断絶 (fail-soft archive)**: `src/app/api/sales-automation/*` → `_archive_*` / `src/app/api/persona/*` → `_archive_*` / `src/lib/authentik-oidc.ts` → `_archive_*` / Slack 通知 `appexx.me/api/studio/notify` hardcode → `env SLACK_WEBHOOK_URL` + 未設定 no-op (api/contact + lib/error-monitor) / Dify fallback URL `dify.appexx.me` → `api.dify.ai` (DIFY-CLOUD-ONLY 準拠) / Cal.com URL default `cal.appexx.me` → 空文字 + contact page で空時 skip render / Supabase 共有 (PayloadCMS schema `payload`) は維持・データ保護 / 復活は rename 戻し + env 設定で 1 発・詳細 → Task.md「🗄️ アーカイブ済み」
+- 🆕 **[2026-05-19] Sprint 14 Phase A: DataForSEO lib 移植 (8 つ目のソース)**: `src/lib/sales/sources/dataforseo/` 新設 (cost.ts / client.ts / lighthouse.ts / index.ts orchestrator) — every-app/open-seo MIT を **リファレンスとして参照しつつ Paradigm-native コードを書く** 戦略採用 (Cloudflare Workers / Autumn 課金 / PostHog 依存を全排除し scanner.ts/ssllabs.ts スタイルに完全統一) / `scanDomainSeo(domain)` で mobile + desktop Lighthouse 並列取得 → Core Web Vitals (LCP/CLS/INP) + 4 scores 抽出 / 1 scan 約 $0.01 (mobile+desktop) / Vitest 15 tests + 全体 56/56 + TS clean / **重要**: 従量課金のため `enrich.ts` 自動 enrich からは呼ばない・診断 CTA や report 生成時のみ明示呼出 (s8-4 env 詳細) / Phase B (on-page audit / backlinks / GEO LLM mentions) は report 設計後
 
 <a id="s10-4"></a>
 
