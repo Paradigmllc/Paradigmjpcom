@@ -1,14 +1,16 @@
 /**
- * DiagnosticReport.tsx — 診断レポート LP (Sprint 9-D)
+ * DiagnosticReport.tsx — 診断レポート LP (Sprint 9-D / 2026-05-20 i18n 化)
  *
  * 役割: sales_companies + sales_templates から組み立てた DiagnosticReportData を
  *       3-Act 構造 (pain / fear / hope) で表示する pure section components.
  *
- * 設計原則 (s10-4 提案ページ 4 鉄則の継承):
- *   ① Section-per-file (本 file = orchestrator・各 act は ActCard sub-component)
- *   ② Manifest-driven (acts 配列の順序が表示順)
- *   ③ Zero hardcoded JP strings (visible text は props 経由・i18n は将来)
- *   ④ Pure component (data + locale → JSX の純関数)
+ * i18n 方針 (2026-05-20):
+ *   レポートの DATA は region (jp / global) で生成される (localeToRegion)。よって
+ *   chrome (固定 UI 文言) も DATA と同じ言語で出すのが正しく、next-intl の 12 locale
+ *   ではなく **region 連動の 2 言語 (ja / en)** を REPORT_COPY で持つ。
+ *   (例: /de 訪問者 → region=global → DATA=英語 → chrome も英語。German chrome を
+ *    next-intl で出すと英語 DATA と言語が混在してしまうため。)
+ *   旧実装は chrome を日本語ハードコードしており global region で日本語 leak していた。
  *
  * mock 原典: C:/Users/apple/Downloads/diagnostic-report-lp.jsx (2026-05-13)
  */
@@ -17,6 +19,55 @@
 
 import { useState, useEffect, useRef } from "react"
 import type { DiagnosticReportData, DiagnosticAct } from "@/lib/sales/diagnostic"
+
+type Lang = "ja" | "en"
+
+/* ───── region 連動 2 言語 copy ───── */
+
+const REPORT_COPY = {
+  ja: {
+    sevCritical: "緊急対応", sevWarning: "要対応", sevInfo: "推奨",
+    brand: "Paradigm Web診断",
+    expiresLabel: "有効期限",
+    targetLabel: "診断対象",
+    lossCaption: "ESTIMATED MONTHLY LOSS",
+    lossExplain1: "上記の課題による月間推定機会損失の合算です。",
+    lossExplain2: "改善により回収可能な損失として試算しています。",
+    videoTitle: "改善した場合の試算を2分で説明します",
+    videoSubtitleSuffix: " 専用の解説動画",
+    videoComingSoon: "動画は準備中です。",
+    videoCaption: "御社サイトの診断結果と、具体的な改善シミュレーションをまとめました。まずは動画をご覧ください。",
+    nextStep: "NEXT STEP",
+    ctaHeading: "まず30分、話だけでも聞いてみてください",
+    ctaBody1: "費用の話は一切しません。",
+    ctaBody2: "診断結果の詳細説明と、改善の優先順位をお伝えします。",
+    mailSubject: "診断レポートについて",
+    ctaFootnote: "無料 · オンライン対応 · 30分",
+    footerValid1: "このレポートは",
+    footerValid2: "まで有効です",
+  },
+  en: {
+    sevCritical: "Critical", sevWarning: "Action needed", sevInfo: "Recommended",
+    brand: "Paradigm Web Diagnostics",
+    expiresLabel: "Valid until",
+    targetLabel: "Diagnosed",
+    lossCaption: "ESTIMATED MONTHLY LOSS",
+    lossExplain1: "Total estimated monthly opportunity loss from the issues above.",
+    lossExplain2: "Estimated as recoverable through improvements.",
+    videoTitle: "A 2-minute walkthrough of your improvement projection",
+    videoSubtitleSuffix: " — a walkthrough made for you",
+    videoComingSoon: "Video coming soon.",
+    videoCaption: "We've summarized your site's diagnosis and a concrete improvement simulation. Please start with the video.",
+    nextStep: "NEXT STEP",
+    ctaHeading: "Start with a 30-minute conversation",
+    ctaBody1: "No pricing pressure at all.",
+    ctaBody2: "We'll walk through your diagnosis in detail and the priority of improvements.",
+    mailSubject: "About the diagnostic report",
+    ctaFootnote: "Free · Online · 30 min",
+    footerValid1: "This report is valid until ",
+    footerValid2: "",
+  },
+} as const
 
 /* ───── Hooks: count up + in-view ───── */
 
@@ -55,14 +106,18 @@ function useInView(threshold = 0.2): [React.RefObject<HTMLDivElement | null>, bo
 
 /* ───── Sub-components ───── */
 
-const SEVERITY_STYLES = {
-  critical: { bg: "#fef2f2", color: "#dc2626", dot: "#dc2626", label: "緊急対応" },
-  warning: { bg: "#fffbeb", color: "#d97706", dot: "#f59e0b", label: "要対応" },
-  info: { bg: "#f0fdf4", color: "#16a34a", dot: "#22c55e", label: "推奨" },
+const SEVERITY_COLORS = {
+  critical: { bg: "#fef2f2", color: "#dc2626", dot: "#dc2626" },
+  warning: { bg: "#fffbeb", color: "#d97706", dot: "#f59e0b" },
+  info: { bg: "#f0fdf4", color: "#16a34a", dot: "#22c55e" },
 } as const
 
-function SeverityBadge({ severity }: { severity: DiagnosticAct["severity"] }) {
-  const s = SEVERITY_STYLES[severity]
+function severityLabel(severity: DiagnosticAct["severity"], c: (typeof REPORT_COPY)[Lang]): string {
+  return severity === "critical" ? c.sevCritical : severity === "warning" ? c.sevWarning : c.sevInfo
+}
+
+function SeverityBadge({ severity, c }: { severity: DiagnosticAct["severity"]; c: (typeof REPORT_COPY)[Lang] }) {
+  const s = SEVERITY_COLORS[severity]
   return (
     <span
       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide"
@@ -75,12 +130,12 @@ function SeverityBadge({ severity }: { severity: DiagnosticAct["severity"] }) {
           animation: severity === "critical" ? "diagnostic-pulse 1.5s infinite" : "none",
         }}
       />
-      {s.label}
+      {severityLabel(severity, c)}
     </span>
   )
 }
 
-function ActCard({ act, index }: { act: DiagnosticAct; index: number }) {
+function ActCard({ act, index, c }: { act: DiagnosticAct; index: number; c: (typeof REPORT_COPY)[Lang] }) {
   const [ref, inView] = useInView()
   const numericVal = Number.parseInt(act.metric_value.replace(/[^0-9]/g, ""), 10) || 0
   const count = useCountUp(numericVal, 1400, inView)
@@ -103,7 +158,7 @@ function ActCard({ act, index }: { act: DiagnosticAct; index: number }) {
       <div>
         <div className="flex items-center gap-2.5 mb-3.5">
           <span className="text-xl">{act.icon}</span>
-          <SeverityBadge severity={act.severity} />
+          <SeverityBadge severity={act.severity} c={c} />
         </div>
         <h3 className="text-[17px] font-extrabold text-slate-900 leading-tight tracking-tight mb-2.5">
           {act.headline}
@@ -138,10 +193,14 @@ function ActCard({ act, index }: { act: DiagnosticAct; index: number }) {
 export default function DiagnosticReport({
   data,
   trackingSlug,
+  locale,
 }: {
   data: DiagnosticReportData
   trackingSlug?: string
+  locale?: string
 }) {
+  // region 連動 chrome: ja のみ日本語・それ以外は英語 (DATA の region と一致)
+  const c = REPORT_COPY[locale === "ja" ? "ja" : "en"]
   const [lossRef, lossInView] = useInView()
   const lossNumeric = Number.parseInt(data.total_loss.replace(/[^0-9]/g, ""), 10) || 0
   const lossCount = useCountUp(lossNumeric, 2000, lossInView)
@@ -181,10 +240,10 @@ export default function DiagnosticReport({
           >
             P
           </div>
-          <span className="text-xs text-slate-400 font-mono">Paradigm Web診断</span>
+          <span className="text-xs text-slate-400 font-mono">{c.brand}</span>
         </div>
         <span className="text-[11px] text-slate-400 font-mono">
-          有効期限: {data.expires_at}
+          {c.expiresLabel}: {data.expires_at}
         </span>
       </div>
 
@@ -192,7 +251,7 @@ export default function DiagnosticReport({
         {/* ── Hero ─────────────────────────────────────────────── */}
         <div className="mb-10" style={{ animation: "diagnostic-fade-up 0.7s ease both" }}>
           <div className="inline-flex items-center gap-2 bg-slate-100 rounded-lg px-3.5 py-1.5 mb-5">
-            <span className="text-[11px] text-slate-500">診断対象</span>
+            <span className="text-[11px] text-slate-500">{c.targetLabel}</span>
             <span className="text-[11px] font-bold text-slate-900">{data.company_name}</span>
             {data.prefecture && (
               <span className="text-[10px] bg-slate-200 text-slate-500 px-2 py-0.5 rounded">
@@ -215,7 +274,7 @@ export default function DiagnosticReport({
         {/* ── 課題カード群 ─────────────────────────────────────── */}
         <div className="flex flex-col gap-4 mb-10">
           {data.acts.map((act, i) => (
-            <ActCard key={i} act={act} index={i} />
+            <ActCard key={i} act={act} index={i} c={c} />
           ))}
         </div>
 
@@ -239,7 +298,7 @@ export default function DiagnosticReport({
           />
           <div className="relative">
             <div className="text-xs text-slate-500 font-mono tracking-widest mb-3">
-              ESTIMATED MONTHLY LOSS
+              {c.lossCaption}
             </div>
             <div
               className="font-black text-white font-mono tracking-tighter leading-none mb-4"
@@ -249,9 +308,9 @@ export default function DiagnosticReport({
               {lossCount.toLocaleString()}
             </div>
             <p className="text-[13px] text-slate-400 leading-relaxed m-0">
-              上記の課題による月間推定機会損失の合算です。
+              {c.lossExplain1}
               <br />
-              改善により回収可能な損失として試算しています。
+              {c.lossExplain2}
             </p>
           </div>
         </div>
@@ -279,23 +338,18 @@ export default function DiagnosticReport({
               </div>
               <div className="text-center">
                 <div className="text-[15px] font-bold text-white mb-1.5">
-                  改善した場合の試算を2分で説明します
+                  {c.videoTitle}
                 </div>
-                <div className="text-xs text-white/70">{data.company_name} 専用の解説動画</div>
+                <div className="text-xs text-white/70">{data.company_name}{c.videoSubtitleSuffix}</div>
               </div>
             </button>
           ) : (
             <div className="bg-black p-6 flex items-center justify-center min-h-[200px]">
-              <span className="text-slate-500 text-[13px]">
-                ※ HyperFrames / Loom 動画を埋め込み予定 (Sprint 10)
-              </span>
+              <span className="text-slate-500 text-[13px]">{c.videoComingSoon}</span>
             </div>
           )}
           <div className="p-5 px-6">
-            <p className="text-[13px] text-slate-500 leading-relaxed m-0">
-              御社サイトの診断結果と、具体的な改善シミュレーションをまとめました。
-              まずは動画をご覧ください。
-            </p>
+            <p className="text-[13px] text-slate-500 leading-relaxed m-0">{c.videoCaption}</p>
           </div>
         </div>
 
@@ -307,17 +361,17 @@ export default function DiagnosticReport({
             border: "1px solid #f1f5f9",
           }}
         >
-          <div className="text-[11px] text-slate-400 font-mono tracking-widest mb-3">NEXT STEP</div>
+          <div className="text-[11px] text-slate-400 font-mono tracking-widest mb-3">{c.nextStep}</div>
           <h2 className="text-xl font-extrabold text-slate-900 mb-2.5 tracking-tight">
-            まず30分、話だけでも聞いてみてください
+            {c.ctaHeading}
           </h2>
           <p className="text-[13px] text-slate-500 leading-relaxed mb-7">
-            費用の話は一切しません。
+            {c.ctaBody1}
             <br />
-            診断結果の詳細説明と、改善の優先順位をお伝えします。
+            {c.ctaBody2}
           </p>
           <a
-            href="mailto:info@paradigmjp.com?subject=診断レポートについて"
+            href={`mailto:info@paradigmjp.com?subject=${encodeURIComponent(c.mailSubject)}`}
             className="inline-flex items-center gap-2.5 text-white px-9 py-4 rounded-2xl text-sm font-bold transition-transform hover:-translate-y-0.5"
             style={{
               background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
@@ -328,12 +382,12 @@ export default function DiagnosticReport({
             {data.cta_text}
           </a>
           <div className="mt-4 text-[11px] text-slate-400">
-            無料 · オンライン対応 · 30分
+            {c.ctaFootnote}
           </div>
         </div>
 
         <div className="text-center mt-12 text-[11px] text-slate-300 font-mono">
-          Paradigm Web Diagnostics · このレポートは{data.expires_at}まで有効です
+          {c.brand} · {c.footerValid1}{data.expires_at}{c.footerValid2}
         </div>
       </div>
     </div>

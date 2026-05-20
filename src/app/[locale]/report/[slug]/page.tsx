@@ -32,10 +32,13 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params
+  const { slug, locale } = await params
+  const isJa = locale === "ja"
   return {
-    title: "Paradigm Web診断レポート",
-    description: "御社サイトの個別診断レポートです。",
+    title: isJa ? "Paradigm Web診断レポート" : "Paradigm Web Diagnostic Report",
+    description: isJa
+      ? "御社サイトの個別診断レポートです。"
+      : "Your individual website diagnostic report from Paradigm.",
     robots: {
       index: false,
       follow: false,
@@ -53,5 +56,5 @@ export default async function ReportPage({ params }: Props) {
   const data = await fetchDiagnosticReport({ slug, region })
   if (!data) notFound()
 
-  return <DiagnosticReport data={data} trackingSlug={slug} />
+  return <DiagnosticReport data={data} trackingSlug={slug} locale={locale} />
 }

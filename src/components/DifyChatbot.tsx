@@ -306,9 +306,12 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
               </div>
             )}
 
-            {messages.length <= 1 && !loading && (
+            {/* quick prompts: 旧実装は messages.length<=1 のみ表示で初回以降 dead-end
+                ("ただの一問一答" の主因)。bot 返信後は常に再表示し会話を継続させる。
+                初回は全 6 件・以降は上位 3 件に絞ってクラッタを抑える。 */}
+            {!loading && messages.length > 0 && messages[messages.length - 1].role === "bot" && (
               <div style={{ display: "flex", flexDirection: "column", gap: 0, marginTop: 8, borderTop: `1px solid ${TOKENS.line}` }}>
-                {QUICK_QUESTIONS.map((q, i) => (
+                {(messages.length <= 1 ? QUICK_QUESTIONS : QUICK_QUESTIONS.slice(0, 3)).map((q, i) => (
                   <button
                     key={i}
                     onClick={() => sendMessage(q.message)}
