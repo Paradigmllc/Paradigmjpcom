@@ -510,6 +510,13 @@
         "desc": "AIチャットボット・業務自動化・AI広告など導入から運用まで一括対応。",
         "results": "業務コスト -45%",
         "badge": ""
+      },
+      "video": {
+        "title": "動画サブスク",
+        "tagline": "月額定額・依頼無制限",
+        "desc": "Web/LP/SNS 用動画を月20-100本量産。24-48時間納品・修正無制限・いつでも停止。",
+        "results": "1本あたり ¥15,000〜",
+        "badge": "新"
       }
     },
     "featuresEyebrow": "Why Paradigm",
@@ -981,20 +988,120 @@
   },
   "videoPage": {
     "metaTitle": "月額動画サブスク | 制作会社に頼むより安く、月20本納品",
-    "metaDescription": "ComfyUI + Remotion + DeepSeek V4 PRO で動画制作を自動化。月額¥30万から、24-48 時間納品。Web/LP/SNS 用動画を月 20-100 本量産。",
+    "metaDescription": "動画制作を自動化。月額¥30万から、24-48 時間納品。Web/LP/SNS 用動画を月 20-100 本量産。依頼無制限・解約自由。",
     "heroBadge": "月額動画サブスク",
-    "heroTitle": "制作会社に頼むより、安く・速く・量を量産する",
+    "heroTitle": "御社専属の動画チームを、サブスクで",
     "heroHighlight": "月額 ¥30 万から",
-    "heroDesc": "ComfyUI + Remotion + DeepSeek V4 PRO のフル自動化パイプラインで、Web / LP / SNS 用動画を月 20-100 本納品。24-48 時間で 1 本完了。",
+    "heroDesc": "依頼無制限・月額定額・いつでも停止。Web / LP / SNS 用動画を月 20-100 本、24-48 時間で納品。採用も代理店も契約も不要。",
     "comparisonEyebrow": "Comparison",
     "comparisonTitle": "制作会社の限界と、Paradigm の解",
+    "comparisonItemHead": "項目",
+    "comparisonParadigmHead": "Paradigm",
+    "comparisonTraditionalHead": "制作会社",
     "pricingEyebrow": "Pricing",
     "pricingTitle": "月額定額・本数で選ぶ 3 プラン",
     "pricingDesc": "超過課金あり (1 本 +¥10,000)。年払い 20% OFF。\n全プラン解約自由・最低契約期間なし。",
     "processEyebrow": "Process",
-    "processTitle": "発注から納品まで、全自動 4 ステップ",
+    "processTitle": "発注から納品まで 4 ステップ",
     "ctaButton": "まず話を聞く",
-    "popularLabel": "Most popular"
+    "popularLabel": "Most popular",
+    "ctaBandEyebrow": "Start now",
+    "ctaBandTitle": "まず 30 分、御社の動画運用を診断します",
+    "ctaBandDesc": "費用の話は一切しません。月何本必要か、どんな用途で使うか、を 30 分で診断 → 最適プランを提案します。",
+    "ctaBandButton": "無料診断を予約する",
+    "plans": [
+      {
+        "name": "Basic",
+        "price": "¥300,000",
+        "period": "/月",
+        "volume": "月 20 本",
+        "popular": false,
+        "features": [
+          "24-48 時間納品",
+          "ボードでリクエスト管理",
+          "縦/横/正方形 全フォーマット対応",
+          "字幕自動生成",
+          "永久配信ホスティング"
+        ]
+      },
+      {
+        "name": "Pro",
+        "price": "¥500,000",
+        "period": "/月",
+        "volume": "月 50 本",
+        "popular": true,
+        "features": [
+          "24 時間納品 (優先キュー)",
+          "AI 音声ナレーション",
+          "ロゴ/テロップ/エンドカード自動合成",
+          "月次レポート動画",
+          "Slack 連携でリクエスト"
+        ]
+      },
+      {
+        "name": "Scale",
+        "price": "¥800,000",
+        "period": "/月",
+        "volume": "月 100 本",
+        "popular": false,
+        "features": [
+          "12 時間納品 (高速キュー)",
+          "AI アバター動画",
+          "カスタムテンプレ作成支援",
+          "専任 Slack チャンネル",
+          "月次戦略 MTG 込み"
+        ]
+      }
+    ],
+    "comparison": [
+      {
+        "item": "1 本あたりコスト",
+        "paradigm": "¥15,000 (Pro 換算)",
+        "traditional": "¥80,000-300,000"
+      },
+      {
+        "item": "納期",
+        "paradigm": "24-48 時間",
+        "traditional": "1-3 週間"
+      },
+      {
+        "item": "修正回数",
+        "paradigm": "無制限 (キュー再投入)",
+        "traditional": "2-3 回まで"
+      },
+      {
+        "item": "スケール",
+        "paradigm": "月 100 本まで定額",
+        "traditional": "1 本ごとに追加見積"
+      },
+      {
+        "item": "支払い",
+        "paradigm": "月額サブスク・解約自由",
+        "traditional": "都度契約・最低発注額"
+      }
+    ],
+    "process": [
+      {
+        "step": "01",
+        "title": "購読してボードを受け取る",
+        "desc": "サブスク開始後、専用リクエストボードを発行"
+      },
+      {
+        "step": "02",
+        "title": "動画を依頼する",
+        "desc": "タイトル / ジャンル / 素材 (任意) をボードに書くだけ"
+      },
+      {
+        "step": "03",
+        "title": "24-48 時間で納品",
+        "desc": "MP4 をボードに納品・Slack 通知"
+      },
+      {
+        "step": "04",
+        "title": "修正は無制限",
+        "desc": "気に入るまでキュー再投入。月の本数は変わらない"
+      }
+    ]
   },
   "agencyPage": {
     "metaTitle": "Agency White-Label | 動画案件を断らずに済む唯一の方法",

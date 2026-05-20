@@ -10,7 +10,7 @@
 import { Link } from "@/i18n/routing"
 import { useTranslations } from "next-intl"
 import { motion } from "framer-motion"
-import { Bot, Globe, Search, TrendingUp, ArrowUpRight } from "lucide-react"
+import { Bot, Globe, Search, Video, ArrowUpRight } from "lucide-react"
 import { BorderBeam } from "@/components/magicui/border-beam"
 import FadeIn from "@/components/aesop/FadeIn"
 
@@ -42,9 +42,11 @@ const SERVICES = [
     accent: "text-paradigm-tech",
   },
   {
-    key: "seo",
-    icon: TrendingUp,
-    href: "/services/seo",
+    // 2026-05-20 壁打ち: /ja 商材は MEO/AI/Web/動画サブスク の4本に整理。
+    // homepage の seo カードを 動画サブスク (→/video) に差し替え。SEO は sub-service として残置。
+    key: "video",
+    icon: Video,
+    href: "/video",
     span: "md:col-span-1",
     iconBg: "from-paradigm-glow via-violet-400 to-paradigm-accent",
     beamFrom: "rgb(165 180 252)",
