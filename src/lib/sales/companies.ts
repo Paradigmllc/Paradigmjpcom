@@ -11,6 +11,7 @@
  */
 
 import { getServiceSupabase } from "@/lib/supabase"
+import { normalizeDomain, normalizeCompanyName } from "./dedup"
 import type {
   SalesCompany,
   PipelineStatus,
@@ -41,13 +42,16 @@ export async function upsertCompanyByDomain(
 ): Promise<{ ok: boolean; company?: SalesCompany; error?: string }> {
   const sb = getServiceSupabase()
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
+  // canonical domain (www/proto 除去) で「同一企業 = 同一 domain 行」を物理担保
+  const domain = normalizeDomain(input.domain) ?? input.domain.trim().toLowerCase()
   const { data, error } = await sb
     .from("sales_companies")
     .upsert(
       {
         region: input.region ?? "jp", // Sprint 16: default 'jp' for backward compat
-        domain: input.domain,
+        domain,
         company_name: input.company_name,
+        name_key: normalizeCompanyName(input.company_name), // dedup 鍵 (同名異表記の統合)
         industry: input.industry ?? null,
         prefecture: input.prefecture ?? null,
         pipeline_status: input.pipeline_status ?? "pending",
@@ -182,6 +186,46 @@ export async function setPipelineStatus(
     .eq("id", companyId)
   if (error) return { ok: false, error: error.message }
   return { ok: true }
+}
+
+/**
+ * dedup resolver: notion_page_id → canonical domain → name_key の順で既存企業を 1 件特定。
+ * リスト内重複・同名異表記・www 差を吸収し「1 企業 = 1 行」を保証する照合の中核。
+ * create 前に必ずこれで照合し、ヒットしたら update・無ければ create する。
+ */
+export async function findExistingCompany(input: {
+  notionPageId?: string | null
+  domain?: string | null
+  nameKey?: string | null
+  region?: Region
+}): Promise<SalesCompany | null> {
+  const sb = getServiceSupabase()
+  if (!sb) return null
+  const region = input.region ?? "jp"
+  if (input.notionPageId) {
+    const { data } = await sb
+      .from("sales_companies")
+      .select("*")
+      .eq("notion_page_id", input.notionPageId)
+      .maybeSingle()
+    if (data) return data as SalesCompany
+  }
+  const domain = normalizeDomain(input.domain)
+  if (domain) {
+    const { data } = await sb.from("sales_companies").select("*").eq("domain", domain).maybeSingle()
+    if (data) return data as SalesCompany
+  }
+  if (input.nameKey) {
+    const { data } = await sb
+      .from("sales_companies")
+      .select("*")
+      .eq("region", region)
+      .eq("name_key", input.nameKey)
+      .limit(1)
+      .maybeSingle()
+    if (data) return data as SalesCompany
+  }
+  return null
 }
 
 /** 最近更新された companies を取得 (debug/monitoring 用) */

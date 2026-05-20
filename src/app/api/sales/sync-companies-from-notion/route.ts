@@ -17,8 +17,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { verifyWebhookSecret } from "@/lib/sales/auth"
 import { notionQueryDatabase, extractProperty } from "@/lib/notion"
 import { getServiceSupabase } from "@/lib/supabase"
-import { upsertCompanyByDomain, setNotionPageId } from "@/lib/sales/companies"
+import { upsertCompanyByDomain, setNotionPageId, findExistingCompany } from "@/lib/sales/companies"
 import { enrichFromContact } from "@/lib/sales/enrich"
+import { normalizeDomain, normalizeCompanyName } from "@/lib/sales/dedup"
 import {
   isValidDealStage,
   isValidIndustry,
@@ -33,17 +34,6 @@ export const maxDuration = 60
 
 const DB_JP = "8cbab1f501144f83872c1738ce3e79c4"
 const DB_GLOBAL = "35fa2b78-f3fc-8107-aa0b-f28694e1009c"
-
-/** Notion の url/text プロパティから clean domain を取り出す */
-function cleanDomain(raw: unknown): string | null {
-  if (typeof raw !== "string" || !raw) return null
-  const d = raw
-    .replace(/^https?:\/\//, "")
-    .replace(/\/.*$/, "")
-    .trim()
-    .toLowerCase()
-  return d.includes(".") ? d : null
-}
 
 export async function POST(req: NextRequest) {
   const authErr = verifyWebhookSecret(req)
@@ -82,7 +72,7 @@ export async function POST(req: NextRequest) {
       extractProperty(props, "会社名") ||
       extractProperty(props, "Company") ||
       extractProperty(props, "Name")
-    const domain = cleanDomain(
+    const domain = normalizeDomain(
       extractProperty(props, "ドメイン") ||
         extractProperty(props, "Website") ||
         extractProperty(props, "Domain") ||
@@ -96,14 +86,9 @@ export async function POST(req: NextRequest) {
     const industry: Industry | null =
       typeof industryRaw === "string" && isValidIndustry(industryRaw) ? industryRaw : null
 
-    // 既存判定: notion_page_id → domain の順
-    const { data: existing } = await sb
-      .from("sales_companies")
-      .select("id, notion_page_id")
-      .or(`notion_page_id.eq.${row.id}${domain ? `,domain.eq.${domain}` : ""}`)
-      .eq("region", region)
-      .limit(1)
-      .maybeSingle()
+    // 既存判定: notion_page_id → canonical domain → name_key (重複作成防止)
+    const nameKey = normalizeCompanyName(typeof name === "string" ? name : null)
+    const existing = await findExistingCompany({ notionPageId: row.id, domain, nameKey, region })
 
     if (existing) {
       // ── 既存: 編集可フィールドのみ反映 ──

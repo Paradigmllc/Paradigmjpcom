@@ -43,8 +43,9 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { verifyWebhookSecret } from "@/lib/sales/auth"
-import { upsertCompanyByDomain, findCompanyByDomain } from "@/lib/sales/companies"
+import { upsertCompanyByDomain, findExistingCompany } from "@/lib/sales/companies"
 import { enrichFromContact } from "@/lib/sales/enrich"
+import { normalizeDomain, normalizeCompanyName } from "@/lib/sales/dedup"
 import type { Industry } from "@/lib/sales/types"
 
 export const runtime = "nodejs"
@@ -101,28 +102,40 @@ export async function POST(req: NextRequest) {
 
   const shouldEnrich = body.enrich !== false // default true
 
+  // バッチ内重複排除: canonical domain || name_key で同一企業を 1 件に統廃合
+  const seenKeys = new Set<string>()
+  const dedupedRows = rows.filter((r) => {
+    const key = normalizeDomain(r.domain) ?? normalizeCompanyName(r.company_name)
+    if (!key) return true // key 無し → loop で検証して failure に
+    if (seenKeys.has(key)) return false
+    seenKeys.add(key)
+    return true
+  })
+  const batchDuplicates = rows.length - dedupedRows.length
+
   let inserted = 0
   let skipped = 0
   let enrichTriggered = 0
   const failures: { row: number; reason: string }[] = []
 
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i]
+  for (let i = 0; i < dedupedRows.length; i++) {
+    const row = dedupedRows[i]
     if (!row.company_name || !row.domain) {
       failures.push({ row: i, reason: "company_name and domain required" })
       continue
     }
-    const cleanDomain = row.domain
-      .replace(/^https?:\/\//, "")
-      .replace(/\/.*$/, "")
-      .trim()
-      .toLowerCase()
-    if (!cleanDomain.includes(".")) {
+    const cleanDomain = normalizeDomain(row.domain)
+    if (!cleanDomain) {
       failures.push({ row: i, reason: "invalid domain format" })
       continue
     }
 
-    const existing = await findCompanyByDomain(cleanDomain)
+    // dedup: notion_page_id 無し・canonical domain → name_key で既存照合 (重複作成防止)
+    const existing = await findExistingCompany({
+      domain: cleanDomain,
+      nameKey: normalizeCompanyName(row.company_name),
+      region: "jp",
+    })
     if (existing) {
       skipped++
       continue
@@ -186,8 +199,10 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     total: rows.length,
+    batch_duplicates_removed: batchDuplicates, // リスト内の重複を統廃合した件数
+    deduped_total: dedupedRows.length,
     inserted,
-    skipped,
+    skipped, // 既存DB企業 (domain/name_key 一致) のため作成スキップ
     enrich_triggered: enrichTriggered,
     failures: failures.slice(0, 20), // 最大 20 件まで返す
     note: shouldEnrich

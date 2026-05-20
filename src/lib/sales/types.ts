@@ -120,6 +120,7 @@ export interface SalesCompany {
   id: string
   region: Region // Sprint 16: jp / global 完全分離 (s10-5 国ドリブン永久ルール)
   slug: string | null
+  name_key: string | null // 2026-05-20: 正規化企業名 (dedup 鍵・lib/sales/dedup.ts)
   domain: string
   company_name: string
   industry: Industry | null
