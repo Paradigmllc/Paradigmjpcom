@@ -148,6 +148,11 @@ export function makeAutoTranslateHook(opts: AutoTranslateOpts): CollectionAfterC
         // 全 locale 配信化
         const available = Array.from(new Set([...(routing.locales as readonly string[])]))
         data.availableLocales = available
+        // drafts 有効 collection で翻訳が draft 版に入って公開版に反映されない問題の対策:
+        // ソース doc の publish 状態 (_status) を翻訳 update にも伝播させる
+        // (ja を published で保存 → 各 locale 翻訳も published 版へ保存される)。
+        const srcStatus = (doc as Record<string, unknown>)._status
+        if (typeof srcStatus === "string") data._status = srcStatus
         if (Object.keys(data).length === 0) continue
         await payload.update({
           collection: collection.slug as Parameters<typeof payload.update>[0]["collection"],
