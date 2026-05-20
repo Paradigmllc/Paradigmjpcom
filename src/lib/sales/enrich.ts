@@ -22,6 +22,7 @@ import { checkSslGrade } from "./sources/ssllabs"
 import { getWhois } from "./sources/whois"
 import { findPlace } from "./sources/places"
 import { discoverFormUrl } from "./sources/form-discovery"
+import { autoPersonalize } from "./personalize"
 import type { Industry, SalesCompany } from "./types"
 
 /** 自由メールドメインのブラックリスト (corporate でないので skip) */
@@ -217,5 +218,14 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   if (!result.ok) {
     return { ok: false, error: result.error }
   }
+
+  // 🧠 DeepSeek 作り込み文面を自動生成 (fire-and-forget・report_ready 時のみ)
+  //    → カルテ完成と同時にレポート文面も「データ寄せ集め」でなく作り込み済になる
+  if (result.company && scan) {
+    void autoPersonalize(result.company.id).catch((e) =>
+      console.error("[enrich] autoPersonalize failed:", e),
+    )
+  }
+
   return { ok: true, company: result.company }
 }

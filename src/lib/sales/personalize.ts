@@ -16,6 +16,8 @@
  */
 
 import { callDeepSeek, cacheHitRatio } from "@/lib/deepseek"
+import { findCompanyById, upsertCompanyByDomain } from "./companies"
+import { fetchDiagnosticReport } from "./diagnostic"
 import type { SalesCompany } from "./types"
 import type { DiagnosticReportData } from "./diagnostic"
 
@@ -31,6 +33,16 @@ Web サイト診断レポートに、顧客固有データを踏まえたパー�
 - 「御社」を主語・「弊社」は最小限
 - 業界用語は適度に使う (専門性アピール)
 - 1 段落 3-4 文以内・読みやすい改行
+
+# 作り込みの鉄則 (最重要・これが守れないなら失敗)
+- **データの羅列・寄せ集めは禁止**。検出した具体値 (スコア/年数/口コミ数/技術名等) を文中に
+  自然に織り込み、「その企業固有の物語」として一貫した説得文を書く。
+- 汎用文 (例「御社サイトは速度が遅いです」) を禁止。必ず "具体値 + ビジネス示唆" をセットで:
+  例「モバイル 38 点 — 業界平均 71 点に対し、訪問者の約 6 割が表示完了前に離脱している計算です」
+- 各段階は前段を論理的に受けて繋ぐこと (絶望→なぜ起きるか→放置した未来→金額根拠→解決の道)。
+  バラバラの断片ではなく、読み進めると 1 本の説得ストーリーになるように。
+- その業種の客単価・主戦場 (下記知識) を必ず 1 箇所以上で損失計算の根拠に使う。
+- 検出データが乏しい場合でも、業種の構造的課題から具体的な仮説を立てて書く (空疎な一般論にしない)。
 
 # 業種別 Hook 知識
 - 美容室: Instagram 予約導線 / 客単価 ¥8,000 / 店舗探しの 60% が SNS 経由
@@ -174,4 +186,43 @@ ${(company.detected_issues ?? []).map((i) => `- ${i}`).join("\n")}
       error: `JSON parse failed: ${e instanceof Error ? e.message : String(e)}`,
     }
   }
+}
+
+/**
+ * companyId からカルテを読み、DeepSeek で作り込んだ文面を生成して
+ * sales_companies.meta.personalized_copy に保存する (自動発火用)。
+ *
+ * enrich 完了時に fire-and-forget で呼ぶ → 全リードが「データ寄せ集め」ではなく
+ * DeepSeek 作り込みレポートになる (diagnostic.ts が personalized_copy を優先採用)。
+ *
+ * industry 未判定・診断データ無しの場合は no-op (空疎な文面を作らない)。
+ */
+export async function autoPersonalize(
+  companyId: string,
+): Promise<{ ok: boolean; skipped?: string; error?: string }> {
+  const company = await findCompanyById(companyId)
+  if (!company) return { ok: false, error: "company not found" }
+  if (!company.industry) return { ok: false, skipped: "no_industry" }
+
+  const data = await fetchDiagnosticReport({ companyId, region: company.region })
+  if (!data) return { ok: false, skipped: "no_diagnostic_data" }
+
+  const result = await personalizeReport(company, data)
+  if (!result.ok || !result.copy) return { ok: false, error: result.error ?? "personalize failed" }
+
+  const save = await upsertCompanyByDomain({
+    domain: company.domain,
+    company_name: company.company_name,
+    region: company.region,
+    meta: {
+      ...(company.meta as Record<string, unknown>),
+      personalized_copy: {
+        ...result.copy,
+        generated_at: new Date().toISOString(),
+        cache_hit_ratio: result.cache_hit_ratio,
+        model: "deepseek (fallback chain)",
+      },
+    },
+  })
+  return save.ok ? { ok: true } : { ok: false, error: save.error }
 }
