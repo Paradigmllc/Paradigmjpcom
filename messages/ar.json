@@ -987,119 +987,119 @@
     "message": "يرجى الانتظار…"
   },
   "videoPage": {
-    "metaTitle": "Video subscription — your entire video team, on subscription",
-    "metaDescription": "Unlimited video requests, one flat monthly fee, pause anytime. 20-100 videos/month delivered in 24-48h. Cheaper than hiring or agencies.",
-    "heroBadge": "Productized video subscription",
-    "heroTitle": "Your entire video team, on subscription",
-    "heroHighlight": "from ¥300K / mo",
-    "heroDesc": "Unlimited video requests, one flat monthly fee, pause anytime. 20-100 videos a month, delivered in 24-48h. No hiring, no agencies, no contracts.",
-    "comparisonEyebrow": "Comparison",
-    "comparisonTitle": "The limits of hiring & agencies — and how we fix them",
-    "comparisonItemHead": "Item",
+    "metaTitle": "اشْتِرَاكُ الْفِيدْيُو — فَرِيقُ الْفِيدْيُو كَامِلًا، بِاشْتِرَاكٍ شَهْرِيٍّ",
+    "metaDescription": "طَلَبَاتُ فِيدْيُو غَيْرُ مَحْدُودَةٍ، رَسْمٌ شَهْرِيٌّ ثَابِتٌ، إِيقَافٌ فِي أَيِّ وَقْتٍ. 20-100 فِيدْيُو/شَهْرًا تُسَلَّمُ فِي 24-48 سَاعَةً. أَرْخَصُ مِنَ التَّوْظِيفِ أَوْ الْوَكَالَاتِ.",
+    "heroBadge": "اشْتِرَاكُ فِيدْيُو مُنْتَجٌ",
+    "heroTitle": "فَرِيقُ الْفِيدْيُو كَامِلًا، بِاشْتِرَاكٍ شَهْرِيٍّ",
+    "heroHighlight": "مِنْ ¥300,000 / شَهْرًا",
+    "heroDesc": "طَلَبَاتُ فِيدْيُو غَيْرُ مَحْدُودَةٍ، رَسْمٌ شَهْرِيٌّ ثَابِتٌ، إِيقَافٌ فِي أَيِّ وَقْتٍ. 20-100 فِيدْيُو فِي الشَّهْرِ، تُسَلَّمُ فِي 24-48 سَاعَةً. لَا تَوْظِيفَ، لَا وَكَالَاتِ، لَا عُقُودَ.",
+    "comparisonEyebrow": "مُقَارَنَةٌ",
+    "comparisonTitle": "حُدُودُ التَّوْظِيفِ وَالْوَكَالَاتِ — وَكَيْفَ نُصَلِّحُهَا",
+    "comparisonItemHead": "الْبَنْدُ",
     "comparisonParadigmHead": "Paradigm",
-    "comparisonTraditionalHead": "Agency / hire",
-    "pricingEyebrow": "Pricing",
-    "pricingTitle": "Flat monthly. Pick by volume.",
-    "pricingDesc": "Overage ¥10,000 per extra video. 20% off annual.\nCancel anytime, no minimum term.",
-    "processEyebrow": "Process",
-    "processTitle": "From request to delivery — 4 steps",
-    "ctaButton": "Talk to us first",
-    "popularLabel": "Most popular",
-    "ctaBandEyebrow": "Start now",
-    "ctaBandTitle": "Book a free 15-min intro",
-    "ctaBandDesc": "No pricing pressure. We'll work out how many videos you need and what for, then recommend the right plan.",
-    "ctaBandButton": "Book a free intro",
+    "comparisonTraditionalHead": "وَكَالَةٌ / تَوْظِيفٌ",
+    "pricingEyebrow": "التَّسْعِيرُ",
+    "pricingTitle": "شَهْرِيٌّ ثَابِتٌ. اخْتَرْ حَسَبَ الْحَجْمِ.",
+    "pricingDesc": "الزِّيَادَةُ ¥10,000 لِكُلِّ فِيدْيُو إِضَافِيٍّ. خَصْمُ 20% لِلْخُطَّةِ السَّنَوِيَّةِ.\nأَلْغِ فِي أَيِّ وَقْتٍ، لَا حَدٌّ أَدْنَى لِلْمُدَّةِ.",
+    "processEyebrow": "الْعَمَلِيَّةُ",
+    "processTitle": "مِنَ الطَّلَبِ إِلَى التَّسْلِيمِ — 4 خُطُوَاتٍ",
+    "ctaButton": "تَحَدَّثْ إِلَيْنَا أَوَّلًا",
+    "popularLabel": "الْأَكْثَرُ شُيُوعًا",
+    "ctaBandEyebrow": "ابْدَأِ الْآنَ",
+    "ctaBandTitle": "احْجُزْ مُقَابَلَةً تَعْرِيفِيَّةً مُدَّتُهَا 15 دَقِيقَةً",
+    "ctaBandDesc": "لَا ضَغْطَ فِي التَّسْعِيرِ. سَنَعْمَلُ عَلَى تَحْدِيدِ عَدَدِ الْفِيدْيُوهَاتِ الَّتِي تَحْتَاجُهَا وَلِمَاذَا، ثُمَّ نُوصِي بِالْخُطَّةِ الْمُنَاسِبَةِ.",
+    "ctaBandButton": "احْجُزْ مُقَابَلَةً تَعْرِيفِيَّةً",
     "plans": [
       {
-        "name": "Basic",
+        "name": "أساسي",
         "price": "¥300,000",
-        "period": "/mo",
-        "volume": "20 videos / mo",
+        "period": "/شَهْرًا",
+        "volume": "20 فِيدْيُو / شَهْرًا",
         "popular": false,
         "features": [
-          "24-48h delivery",
-          "Request via your board",
-          "All formats (vertical / square / wide)",
-          "Auto subtitles",
-          "Permanent hosting"
+          "تَسْلِيمٌ فِي 24-48 سَاعَةً",
+          "طَلَبٌ عَنْ طَرِيقِ لَوْحَةِ طَلَبَاتِكَ",
+          "جَمِيعُ الصِّيَغِ (عَمُودِيّ / مُرَبَّع / عَرِيض)",
+          "تَرْجَمَةٌ تِلْقَائِيَّةٌ",
+          "اسْتِضَافَةٌ دَائِمَةٌ"
         ]
       },
       {
-        "name": "Pro",
+        "name": "احترافي",
         "price": "¥500,000",
-        "period": "/mo",
-        "volume": "50 videos / mo",
+        "period": "/شَهْرًا",
+        "volume": "50 فِيدْيُو / شَهْرًا",
         "popular": true,
         "features": [
-          "24h delivery (priority queue)",
-          "AI voiceover",
-          "Auto logo / captions / end cards",
-          "Monthly report videos",
-          "Request via Slack"
+          "تَسْلِيمٌ فِي 24 سَاعَةً (طَابُورُ أَوْلَوِيَّةٍ)",
+          "تَعْلِيقٌ صَوْتِيٌّ بِالذَّكَاءِ الِاصْطِنَاعِيِّ",
+          "شِعَارٌ / تَعْلِيقَاتٌ / بُطَاقَاتُ نِهَايَةٍ تِلْقَائِيَّةٌ",
+          "فِيدْيُوهَاتُ تَقْرِيرٍ شَهْرِيَّةٌ",
+          "طَلَبٌ عَنْ طَرِيقِ Slack"
         ]
       },
       {
-        "name": "Scale",
+        "name": "توسع",
         "price": "¥800,000",
-        "period": "/mo",
-        "volume": "100 videos / mo",
+        "period": "/شَهْرًا",
+        "volume": "100 فِيدْيُو / شَهْرًا",
         "popular": false,
         "features": [
-          "12h delivery (fast queue)",
-          "AI avatar videos",
-          "Custom template support",
-          "Dedicated Slack channel",
-          "Monthly strategy call"
+          "تَسْلِيمٌ فِي 12 سَاعَةً (طَابُورٌ سَرِيعٌ)",
+          "فِيدْيُوهَاتُ أَفَاتَارَاتِ الذَّكَاءِ الِاصْطِنَاعِيِّ",
+          "دَعْمُ الْقَوَالِبِ الْمُخَصَّصَةِ",
+          "قَنَاةُ Slack مُخَصَّصَةٌ",
+          "مُكَالَمَةُ اسْتِرَاتِيجِيَّةٌ شَهْرِيَّةٌ"
         ]
       }
     ],
     "comparison": [
       {
-        "item": "Cost per video",
-        "paradigm": "¥15,000 (Pro)",
+        "item": "التَّكْلِفَةُ لِكُلِّ فِيدْيُو",
+        "paradigm": "¥15,000 (احترافي)",
         "traditional": "¥80,000-300,000"
       },
       {
-        "item": "Turnaround",
-        "paradigm": "24-48h",
-        "traditional": "1-3 weeks"
+        "item": "مُدَّةُ التَّسْلِيمِ",
+        "paradigm": "24-48 سَاعَةً",
+        "traditional": "1-3 أَسَابِيعَ"
       },
       {
-        "item": "Revisions",
-        "paradigm": "Unlimited (re-queue)",
-        "traditional": "2-3 max"
+        "item": "التَّعْدِيلَاتُ",
+        "paradigm": "غَيْرُ مَحْدُودَةٍ (إِعَادَةُ الطَّلَبِ)",
+        "traditional": "2-3 كَحَدٍّ أَقْصَى"
       },
       {
-        "item": "Scale",
-        "paradigm": "Up to 100 / mo, flat",
-        "traditional": "Per-video quote"
+        "item": "الْحَجْمُ",
+        "paradigm": "حَتَّى 100 / شَهْرًا، ثَابِتٌ",
+        "traditional": "تَسْعِيرٌ لِكُلِّ فِيدْيُو"
       },
       {
-        "item": "Billing",
-        "paradigm": "Monthly, cancel anytime",
-        "traditional": "Per-project, minimums"
+        "item": "الْفَوْتَرَةُ",
+        "paradigm": "شَهْرِيَّةٌ، أَلْغِ فِي أَيِّ وَقْتٍ",
+        "traditional": "لِكُلِّ مَشْرُوعٍ، حُدُودٌ دُنْيَا"
       }
     ],
     "process": [
       {
         "step": "01",
-        "title": "Subscribe & get your board",
-        "desc": "Start your subscription and we issue your request board"
+        "title": "اشْتَرِكْ وَاحْصُلْ عَلَى لَوْحَتِكَ",
+        "desc": "ابْدَأِ اشْتِرَاكَكَ وَنُصْدِرُ لَوْحَةَ طَلَبَاتِكَ"
       },
       {
         "step": "02",
-        "title": "Request any video",
-        "desc": "Just drop a title / type / assets (optional) on the board"
+        "title": "اطْلُبْ أَيَّ فِيدْيُو",
+        "desc": "فَقَطْ ضَعْ عُنْوَانًا / نَوْعًا / مَوَادَّ (اخْتِيَارِيَّةً) عَلَى اللَّوْحَةِ"
       },
       {
         "step": "03",
-        "title": "Delivered in 24-48h",
-        "desc": "MP4 delivered to your board with a Slack ping"
+        "title": "يُسَلَّمُ فِي 24-48 سَاعَةً",
+        "desc": "يُسَلَّمُ فِيدْيُو MP4 إِلَى لَوْحَتِكَ مَعَ إِشْعَارٍ عَلَى Slack"
       },
       {
         "step": "04",
-        "title": "Revise until perfect",
-        "desc": "Re-queue until you love it. Your monthly count doesn't change"
+        "title": "عَدِّلْ حَتَّى الْإِتْقَانِ",
+        "desc": "أَعِدِ الطَّلَبَ حَتَّى تُحِبَّهُ. عَدَدُكَ الشَّهْرِيُّ لَا يَتَغَيَّرُ"
       }
     ]
   },
@@ -1150,81 +1150,81 @@
   },
   "homeEn": {
     "hero": {
-      "eyebrow": "FOR FOREIGN BRANDS ENTERING JAPAN",
-      "h1": "You're invisible in the world's 3rd-largest economy — and it's costing you every month.",
-      "sub": "Japan's ¥22T e-commerce and ¥5.8T inbound market is wide open. But with no Japanese site, no legal compliance, and no Konbini / PayPay checkout, Japanese buyers can't find you, trust you, or pay you. Paradigm makes you Japan-ready end-to-end — you never touch a word of Japanese.",
-      "ctaPrimary": "Get your Japan Market Fit Report",
-      "ctaPrimaryNote": "$1,500 · credited to your first month",
-      "ctaSecondary": "Book a free 30-min call",
-      "trust": "Built for Kickstarter-funded brands · Shopify D2C · SaaS entering Japan"
+      "eyebrow": "لِلْعَلَامَاتِ التِّجَارِيَّةِ الْأَجْنَبِيَّةِ الدَّاخِلَةِ إِلَى الْيَابَانِ",
+      "h1": "أَنْتَ غَيْرُ مَرْئِيٍّ فِي ثَالِثِ أَكْبَرِ اقْتِصَادٍ فِي الْعَالَمِ — وَهَذَا يُكَلِّفُكَ كُلَّ شَهْرٍ.",
+      "sub": "سُوقُ التِّجَارَةِ الْإِلِكْتْرُونِيَّةِ الْيَابَانِيَّةُ الَّذِي تَبْلُغُ قِيمَتُهُ 22 تِرِيلْيُونَ يَنٍ وَسُوقُ السِّيَاحَةِ الْوَارِدَةِ الَّذِي تَبْلُغُ قِيمَتُهُ 5.8 تِرِيلْيُونَ يَنٍ مَفْتُوحَانِ عَلَى مِصْرَاعَيْهِمَا. لَكِنْ بِدُونِ مَوْقِعٍ يَابَانِيٍّ، وَامْتِثَالٍ قَانُونِيٍّ، وَخِيَارَيْ دَفْعِ Konbini / PayPay، لَا يَسْتَطِيعُ الْمُشْتَرُونَ الْيَابَانِيُّونَ الْعُثُورَ عَلَيْكَ أَوْ الثِّقَةَ بِكَ أَوْ الدَّفْعَ لَكَ. Paradigm تُجْعِلُكَ جَاهِزًا لِلْيَابَانِ مِنَ الْبِدَايَةِ إِلَى النِّهَايَةِ — لَا تَلْمَسُ كَلِمَةً وَاحِدَةً بِالْيَابَانِيَّةِ.",
+      "ctaPrimary": "احْصُلْ عَلَى تَقْرِيرِ مُلَاءَمَتِكَ لِلسُّوقِ الْيَابَانِيِّ",
+      "ctaPrimaryNote": "1,500 دولار · يُخَصَّمُ مِنْ شَهْرِكَ الْأَوَّلِ",
+      "ctaSecondary": "احْجُزْ مُكَالَمَةً مَجَّانِيَّةً مُدَّتُهَا 30 دَقِيقَةً",
+      "trust": "مُصَمَّمَةٌ لِلْعَلَامَاتِ التِّجَارِيَّةِ الْمُمَوَّلَةِ عَنْ طَرِيقِ Kickstarter · Shopify D2C · SaaS الدَّاخِلَةِ إِلَى الْيَابَانِ"
     },
     "loss": {
-      "eyebrow": "THE COST OF WAITING",
-      "heading": "What “not being in Japan” actually costs you",
-      "sub": "Every month without a Japan-ready presence is revenue handed to competitors who localized first.",
+      "eyebrow": "ثَمَنُ الِانْتِظَارِ",
+      "heading": "مَا يُكَلِّفُكَهُ عَدَمُ التَّوَجُّدِ فِي الْيَابَانِ فِعْلِيًّا",
+      "sub": "كُلُّ شَهْرٍ بِدُونِ وُجُودٍ جَاهِزٍ لِلْيَابَانِ هُوَ إِيرَادٌ يُسَلَّمُ لِلْمُنَافِسِينَ الَّذِينَ تَمَكَّنُوا مِنَ التَّكْيِيفِ الْمَحَلِّيِّ أَوَّلًا.",
       "card1Stat": "0",
-      "card1Label": "Japanese buyers who can read your English-only site",
+      "card1Label": "مُشْتَرٍ يَابَانِيٌّ يَسْتَطِيعُ قِرَاءَةَ مَوْقِعِكَ الْإِنْجْلِيزِيِّ فَقَطْ",
       "card2Stat": "~70%",
-      "card2Label": "of Japanese shoppers abandon carts without Konbini / PayPay",
-      "card3Stat": "Invisible",
-      "card3Label": "on Google Maps & LINE — where Japanese discovery actually happens",
-      "card4Stat": "Non-compliant",
-      "card4Label": "you legally cannot sell to Japanese consumers without proper disclosures"
+      "card2Label": "مِنَ الْمُتَسَوِّقِينَ الْيَابَانِيِّينَ يَتَخَلَّوْنَ عَنْ عَرَبَاتِ التَّسَوُّقِ بِدُونِ Konbini / PayPay",
+      "card3Stat": "غَيْرُ مَرْئِيٍّ",
+      "card3Label": "عَلَى Google Maps وَ LINE — حَيْثُ يَحْدُثُ الِاكْتِشَافُ الْيَابَانِيُّ فِعْلِيًّا",
+      "card4Stat": "غَيْرُ مُمْتَثِلٍ",
+      "card4Label": "لَا يُمْكِنُكَ الْبَيْعُ لِلْمُسْتَهْلِكِينَ الْيَابَانِيِّينَ قَانُونِيًّا بِدُونِ إِفْصَاحَاتٍ مُنَاسِبَةٍ"
     },
     "offer": {
-      "eyebrow": "THE FIX — JaaS",
-      "heading": "Japan-as-a-Service: your entire Japan operation, handled",
-      "sub": "One fixed-scope engagement covers everything you'd otherwise need a Tokyo office and a Japanese team for. You work in English. We run Japan in Japanese.",
-      "point1": "Japanese site & localization — not translation, but culturally rebuilt for Japanese buyers",
-      "point2": "Legal compliance — required disclosures so you can sell to consumers legally",
-      "point3": "Local payments & logistics — Konbini, PayPay, credit, domestic delivery",
-      "point4": "Discovery & support — MEO (Google Maps), LINE official, AI customer support in Japanese"
+      "eyebrow": "الْحَلُّ — JaaS",
+      "heading": "الْيَابَانُ كَخِدْمَةٍ: عَمَلِيَّاتُكَ الْيَابَانِيَّةُ كُلُّهَا، مُعَالَجَةٌ",
+      "sub": "نِطَاقٌ وَاحِدٌ ثَابِتٌ يُغَطِّي كُلَّ مَا قَدْ تَحْتَاجُ إِلَيْهِ مِنْ مَكْتَبٍ فِي طُوكْيُو وَفَرِيقٍ يَابَانِيٍّ. أَنْتَ تَعْمَلُ بِالْإِنْجْلِيزِيَّةِ. نَحْنُ نُدِيرُ الْيَابَانَ بِالْيَابَانِيَّةِ.",
+      "point1": "مَوْقِعٌ يَابَانِيٌّ وَتَكْيِيفٌ مَحَلِّيٌّ — لَيْسَ تَرْجَمَةً، بَلْ إِعَادَةُ بِنَاءٍ ثَقَافِيٍّ لِلْمُشْتَرِينَ الْيَابَانِيِّينَ",
+      "point2": "الِامْتِثَالُ الْقَانُونِيُّ — الْإِفْصَاحَاتُ الْمَطْلُوبَةُ لِلْبَيْعِ لِلْمُسْتَهْلِكِينَ قَانُونِيًّا",
+      "point3": "الْمَدْفُوعَاتُ وَاللَّوْجِسْتِيُّ الْمَحَلِّيَّةُ — Konbini، PayPay، بِطَاقَاتُ الِائْتِمَانِ، التَّوْصِيلُ الْمَحَلِّيُّ",
+      "point4": "الِاكْتِشَافُ وَالدَّعْمُ — MEO (خرائط Google)، LINE الرَّسْمِيُّ، دَعْمُ الْعُمَلَاءِ بِالذَّكَاءِ الِاصْطِنَاعِيِّ بِالْيَابَانِيَّةِ"
     },
     "mechanism": {
-      "eyebrow": "WHY IT WORKS",
-      "heading": "Insurance against failure. Booster for growth.",
-      "item1Title": "Bilingual, async",
-      "item1Body": "We take everything in English and handle the Japanese side entirely. Zero Japanese burden on your team.",
-      "item2Title": "Japan-specific stack",
-      "item2Body": "MEO, LINE, Yahoo! Japan SEO, Konbini & PayPay — the channels Japanese customers actually use.",
-      "item3Title": "AI + local experts",
-      "item3Body": "AI handles scale (support, content); Tokyo operators handle judgment, culture, and compliance.",
-      "item4Title": "Fixed scope, fixed price",
-      "item4Body": "You know exactly what you get and what it costs. No scope creep, no surprise invoices."
+      "eyebrow": "لِمَاذَا يَنْجَحُ",
+      "heading": "تَأْمِينٌ ضِدَّ الْفَشَلِ. مُعَزِّزٌ لِلنُّمُوِّ.",
+      "item1Title": "ثُنَائِيُّ اللُّغَةِ، غَيْرُ مُتَزَامِنٍ",
+      "item1Body": "نَتَلَقَّى كُلَّ شَيْءٍ بِالْإِنْجْلِيزِيَّةِ وَنَتَعَامَلُ مَعَ الْجَانِبِ الْيَابَانِيِّ بِالْكَامِلِ. لَا عِبْءٍ يَابَانِيٍّ عَلَى فَرِيقِكَ.",
+      "item2Title": "مَجْمُوعَةٌ تِقْنِيَّةٌ خَاصَّةٌ بِالْيَابَانِ",
+      "item2Body": "MEO، LINE، Yahoo! Japan SEO، Konbini & PayPay — الْقَنَوَاتُ الَّتِي يَسْتَخْدِمُهَا الْعُمَلَاءُ الْيَابَانِيُّونَ فِعْلِيًّا.",
+      "item3Title": "ذَكَاءٌ اصْطِنَاعِيٌّ + خُبَرَاءُ مَحَلِّيُّونَ",
+      "item3Body": "الذَّكَاءُ الِاصْطِنَاعِيُّ يَتَعَامَلُ مَعَ الْحَجْمِ (الدَّعْمُ، الْمُحْتَوَى)؛ الْمُشَغِّلُونَ فِي طُوكْيُو يَتَعَامَلُونَ مَعَ الْحُكْمِ وَالثَّقَافَةِ وَالِامْتِثَالِ.",
+      "item4Title": "نِطَاقٌ ثَابِتٌ، سِعْرٌ ثَابِتٌ",
+      "item4Body": "تَعْرِفُ بِالضَّبْطِ مَا سَتَحْصُلُ عَلَيْهِ وَمَا يُكَلِّفُهُ. لَا تَوَسُّعَ فِي النِّطَاقِ، لَا فَوَاتِيرَ مُفَاجِئَةٍ."
     },
     "proof": {
-      "eyebrow": "PROOF",
-      "heading": "Real results from real clients",
-      "placeholder": "Anonymized client case studies are being prepared. Want references? Ask on your intro call."
+      "eyebrow": "إِثْبَاتٌ",
+      "heading": "نَتَائِجُ حَقِيقِيَّةٌ مِنْ عُمَلَاءَ حَقِيقِيِّينَ",
+      "placeholder": "دِرَاسَاتُ حَالَةِ الْعُمَلَاءِ الْمُسْتَتِرِينَ قَيْدُ الْإِعْدَادِ. هَلْ تُرِيدُ مَرَاجِعَ؟ اطْلُبْهَا فِي مُكَالَمَتِكَ التَّعْرِيفِيَّةِ."
     },
     "report": {
-      "eyebrow": "START HERE — LOW RISK",
-      "heading": "See exactly what Japan is worth to you — for $1,500",
-      "body": "Before any commitment, get a Japan Market Fit Report: your addressable market, competitor landscape, recommended channels, compliance gaps, and a concrete revenue projection. If you move forward, the full $1,500 is credited to your first month.",
-      "bullet1": "Your specific Japan TAM & missed revenue, quantified",
-      "bullet2": "Competitor & channel analysis (MEO / LINE / EC)",
-      "bullet3": "Compliance checklist + a prioritized 90-day entry plan",
-      "cta": "Get your Japan Market Fit Report — $1,500",
-      "note": "Fully credited to your first month if you proceed."
+      "eyebrow": "ابْدَأْ هُنَا — مُخَاطَرَةٌ مُنْخَفِضَةٌ",
+      "heading": "اِعْرِفْ بِالضَّبْطِ قِيمَةَ الْيَابَانِ لَكَ — مُقَابِلَ 1,500 دُولَارٍ",
+      "body": "قَبْلَ أَيِّ الْتِزَامٍ، احْصُلْ عَلَى تَقْرِيرِ مُلَاءَمَةِ السُّوقِ الْيَابَانِيِّ: سُوقُكَ الْمُسْتَهْدَفُ، مَشْهَدُ الْمُنَافَسَةِ، الْقَنَوَاتُ الْمُوصَى بِهَا، فَجَوَاتُ الِامْتِثَالِ، وَتَوَقُّعُ الْإِيرَادَاتِ الْمَادِّيِّ. إِذَا مَضَيْتَ قُدُمًا، فَإِنَّ 1,500 دُولَارٍ كَامِلَةً تُخَصَّمُ مِنْ شَهْرِكَ الْأَوَّلِ.",
+      "bullet1": "سُوقُكَ الْيَابَانِيُّ الْمُسْتَهْدَفُ وَالْإِيرَادُ الْمَفْقُودُ، مَحْسُوبَانِ",
+      "bullet2": "تَحْلِيلُ الْمُنَافِسِينَ وَالْقَنَوَاتِ (MEO / LINE / EC)",
+      "bullet3": "قَائِمَةُ الِامْتِثَالِ + خُطَّةُ دُخُولٍ مُدَّتُهَا 90 يَوْمًا مُرَتَّبَةٌ حَسَبَ الْأَوْلَوِيَّةِ",
+      "cta": "احْصُلْ عَلَى تَقْرِيرِ مُلَاءَمَتِكَ لِلسُّوقِ الْيَابَانِيِّ — 1,500 دُولَارٍ",
+      "note": "يُخَصَّمُ كَامِلًا مِنْ شَهْرِكَ الْأَوَّلِ إِذَا تَابَعْتَ."
     },
     "faq": {
-      "heading": "Questions foreign founders ask",
-      "q1": "Do I need a Japanese legal entity to start?",
-      "a1": "Not to begin. We can launch your localized presence and test the market first; entity setup is part of the Enterprise tier or a later step once demand is proven.",
-      "q2": "How do payments work without a Japanese bank?",
-      "a2": "We set up Japan-friendly payment rails (Konbini, PayPay, cards) through providers that work for foreign sellers, and advise on settlement.",
-      "q3": "How long until I'm live in Japan?",
-      "a3": "A localized launch typically takes 30–90 days depending on tier and scope. The Market Fit Report gives you a precise timeline up front.",
-      "q4": "Do I need to speak or write Japanese?",
-      "a4": "No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side.",
-      "q5": "What does it cost?",
-      "a5": "Three fixed-scope tiers (Essential / Growth / Enterprise). Start with the $1,500 Market Fit Report, which is credited to your first month."
+      "heading": "أَسْئِلَةُ الْمُؤَسِّسِينَ الْأَجَانِبِ",
+      "q1": "هَلْ أَحْتَاجُ إِلَى كِيَانٍ قَانُونِيٍّ يَابَانِيٍّ لِلْبَدْءِ؟",
+      "a1": "لَيْسَ لِلْبَدْءِ. يُمْكِنُنَا إِطْلَاقُ وُجُودِكَ الْمُكَيِّفِ مَحَلِّيًّا وَاخْتِبَارُ السُّوقِ أَوَّلًا؛ إِنْشَاءُ الْكِيَانِ جُزْءٌ مِنْ مَرْتَبَةِ الْمُؤَسَّسَاتِ أَوْ خُطْوَةٌ لَاحِقَةٌ بَعْدَ إِثْبَاتِ الطَّلَبِ.",
+      "q2": "كَيْفَ تَعْمَلُ الْمَدْفُوعَاتُ بِدُونِ بَنْكٍ يَابَانِيٍّ؟",
+      "a2": "نَقُومُ بِإِعْدَادِ قَنَوَاتِ دَفْعٍ مُلَائِمَةٍ لِلْيَابَانِ (Konbini، PayPay، بِطَاقَاتُ ائْتِمَانٍ) مِنْ خِلَالِ مُزَوِّدِينَ يَعْمَلُونَ لِلْبَائِعِينَ الْأَجَانِبِ، وَنُقَدِّمُ النَّصِيحَةَ حَوْلَ التَّسْوِيَةِ.",
+      "q3": "كَمْ مِنَ الْوَقْتِ حَتَّى أَكُونَ نَشِطًا فِي الْيَابَانِ؟",
+      "a3": "يَسْتَغْرِقُ الْإِطْلَاقُ الْمُكَيِّفُ مَحَلِّيًّا عَادَةً 30–90 يَوْمًا اعْتِمَادًا عَلَى الْمَرْتَبَةِ وَالنِّطَاقِ. يَمْنَحُكَ تَقْرِيرُ مُلَاءَمَةِ السُّوقِ جَدْوَلًا زَمَنِيًّا دَقِيقًا مُقَدَّمًا.",
+      "q4": "هَلْ أَحْتَاجُ إِلَى التَّحَدُّثِ أَوْ الْكِتَابَةِ بِالْيَابَانِيَّةِ؟",
+      "a4": "لَا. كُلُّ شَيْءٍ مَعَكَ بِالْإِنْجْلِيزِيَّةِ. جَمِيعُ الْأَعْمَالِ الْمُوَجَّهَةِ لِلْيَابَانِ — الْمَوْقِعُ، الدَّعْمُ، الِامْتِثَالُ — تُعَالَجُ مِنْ جَانِبِنَا.",
+      "q5": "مَا هِيَ التَّكْلِفَةُ؟",
+      "a5": "ثَلَاثُ مَرَاتِبَ ثَابِتَةِ النِّطَاقِ (أساسي / نمو / مؤسسات). ابْدَأْ بِتَقْرِيرِ مُلَاءَمَةِ السُّوقِ بِقِيمَةِ 1,500 دُولَارٍ، وَالَّذِي يُخَصَّمُ مِنْ شَهْرِكَ الْأَوَّلِ."
     },
     "finalCta": {
-      "heading": "Stop leaving Japan on the table.",
-      "sub": "Start with a $1,500 report or a free 30-minute call. Either way, you'll know exactly what Japan is worth — and how to capture it.",
-      "button": "Get your Japan Market Fit Report",
-      "secondary": "Book a free 30-min call"
+      "heading": "تَوَقَّفْ عَنْ تَرْكِ الْيَابَانِ عَلَى الطَّاوِلَةِ.",
+      "sub": "ابْدَأْ بِتَقْرِيرٍ بِقِيمَةِ 1,500 دُولَارٍ أَوْ مُكَالَمَةٍ مَجَّانِيَّةٍ مُدَّتُهَا 30 دَقِيقَةً. فِي كِلْتَا الْحَالَتَيْنِ، سَتَعْرِفُ بِالضَّبْطِ قِيمَةَ الْيَابَانِ — وَكَيْفَ تَحْصُلُ عَلَيْهَا.",
+      "button": "احْصُلْ عَلَى تَقْرِيرِ مُلَاءَمَتِكَ لِلسُّوقِ الْيَابَانِيِّ",
+      "secondary": "احْجُزْ مُكَالَمَةً مَجَّانِيَّةً مُدَّتُهَا 30 دَقِيقَةً"
     }
   }
 }

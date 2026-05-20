@@ -987,119 +987,119 @@
     "message": "请稍候…"
   },
   "videoPage": {
-    "metaTitle": "Video subscription — your entire video team, on subscription",
-    "metaDescription": "Unlimited video requests, one flat monthly fee, pause anytime. 20-100 videos/month delivered in 24-48h. Cheaper than hiring or agencies.",
-    "heroBadge": "Productized video subscription",
-    "heroTitle": "Your entire video team, on subscription",
-    "heroHighlight": "from ¥300K / mo",
-    "heroDesc": "Unlimited video requests, one flat monthly fee, pause anytime. 20-100 videos a month, delivered in 24-48h. No hiring, no agencies, no contracts.",
-    "comparisonEyebrow": "Comparison",
-    "comparisonTitle": "The limits of hiring & agencies — and how we fix them",
-    "comparisonItemHead": "Item",
+    "metaTitle": "视频订阅——你的整个视频团队，按订阅制",
+    "metaDescription": "无限视频需求，固定月费，随时暂停。每月20-100个视频，24-48小时交付。比招聘或代理更便宜。",
+    "heroBadge": "产品化视频订阅",
+    "heroTitle": "你的整个视频团队，按订阅制",
+    "heroHighlight": "起价 ¥300,000 / 月",
+    "heroDesc": "无限视频需求，固定月费，随时暂停。每月20-100个视频，24-48小时交付。无需招聘、无需代理、无需合同。",
+    "comparisonEyebrow": "对比",
+    "comparisonTitle": "招聘与代理的局限——以及我们如何解决",
+    "comparisonItemHead": "项目",
     "comparisonParadigmHead": "Paradigm",
-    "comparisonTraditionalHead": "Agency / hire",
-    "pricingEyebrow": "Pricing",
-    "pricingTitle": "Flat monthly. Pick by volume.",
-    "pricingDesc": "Overage ¥10,000 per extra video. 20% off annual.\nCancel anytime, no minimum term.",
-    "processEyebrow": "Process",
-    "processTitle": "From request to delivery — 4 steps",
-    "ctaButton": "Talk to us first",
-    "popularLabel": "Most popular",
-    "ctaBandEyebrow": "Start now",
-    "ctaBandTitle": "Book a free 15-min intro",
-    "ctaBandDesc": "No pricing pressure. We'll work out how many videos you need and what for, then recommend the right plan.",
-    "ctaBandButton": "Book a free intro",
+    "comparisonTraditionalHead": "代理/招聘",
+    "pricingEyebrow": "定价",
+    "pricingTitle": "固定月费。按量选择。",
+    "pricingDesc": "超出部分每视频10,000日元。年付享8折。\n随时取消，无最低期限。",
+    "processEyebrow": "流程",
+    "processTitle": "从需求到交付——4个步骤",
+    "ctaButton": "先与我们沟通",
+    "popularLabel": "最受欢迎",
+    "ctaBandEyebrow": "立即开始",
+    "ctaBandTitle": "预约免费15分钟介绍",
+    "ctaBandDesc": "无定价压力。我们会确定你需要的视频数量及用途，然后推荐合适的方案。",
+    "ctaBandButton": "预约免费介绍",
     "plans": [
       {
-        "name": "Basic",
+        "name": "基础版",
         "price": "¥300,000",
-        "period": "/mo",
-        "volume": "20 videos / mo",
+        "period": "/月",
+        "volume": "20个视频/月",
         "popular": false,
         "features": [
-          "24-48h delivery",
-          "Request via your board",
-          "All formats (vertical / square / wide)",
-          "Auto subtitles",
-          "Permanent hosting"
+          "24-48小时交付",
+          "通过看板提交需求",
+          "所有格式（竖屏/方形/横屏）",
+          "自动字幕",
+          "永久托管"
         ]
       },
       {
-        "name": "Pro",
+        "name": "专业版",
         "price": "¥500,000",
-        "period": "/mo",
-        "volume": "50 videos / mo",
+        "period": "/月",
+        "volume": "50个视频/月",
         "popular": true,
         "features": [
-          "24h delivery (priority queue)",
-          "AI voiceover",
-          "Auto logo / captions / end cards",
-          "Monthly report videos",
-          "Request via Slack"
+          "24小时交付（优先队列）",
+          "AI配音",
+          "自动Logo/字幕/片尾",
+          "月度报告视频",
+          "通过Slack提交需求"
         ]
       },
       {
-        "name": "Scale",
+        "name": "规模版",
         "price": "¥800,000",
-        "period": "/mo",
-        "volume": "100 videos / mo",
+        "period": "/月",
+        "volume": "100个视频/月",
         "popular": false,
         "features": [
-          "12h delivery (fast queue)",
-          "AI avatar videos",
-          "Custom template support",
-          "Dedicated Slack channel",
-          "Monthly strategy call"
+          "12小时交付（快速队列）",
+          "AI虚拟形象视频",
+          "自定义模板支持",
+          "专属Slack频道",
+          "月度策略会议"
         ]
       }
     ],
     "comparison": [
       {
-        "item": "Cost per video",
-        "paradigm": "¥15,000 (Pro)",
+        "item": "每个视频成本",
+        "paradigm": "¥15,000（专业版）",
         "traditional": "¥80,000-300,000"
       },
       {
-        "item": "Turnaround",
-        "paradigm": "24-48h",
-        "traditional": "1-3 weeks"
+        "item": "交付周期",
+        "paradigm": "24-48小时",
+        "traditional": "1-3周"
       },
       {
-        "item": "Revisions",
-        "paradigm": "Unlimited (re-queue)",
-        "traditional": "2-3 max"
+        "item": "修改次数",
+        "paradigm": "无限（重新排队）",
+        "traditional": "最多2-3次"
       },
       {
-        "item": "Scale",
-        "paradigm": "Up to 100 / mo, flat",
-        "traditional": "Per-video quote"
+        "item": "规模",
+        "paradigm": "每月最多100个，固定费用",
+        "traditional": "按视频报价"
       },
       {
-        "item": "Billing",
-        "paradigm": "Monthly, cancel anytime",
-        "traditional": "Per-project, minimums"
+        "item": "计费方式",
+        "paradigm": "月付，随时取消",
+        "traditional": "按项目，有最低消费"
       }
     ],
     "process": [
       {
         "step": "01",
-        "title": "Subscribe & get your board",
-        "desc": "Start your subscription and we issue your request board"
+        "title": "订阅并获取你的看板",
+        "desc": "开始订阅后，我们会为你提供需求看板"
       },
       {
         "step": "02",
-        "title": "Request any video",
-        "desc": "Just drop a title / type / assets (optional) on the board"
+        "title": "提交任何视频需求",
+        "desc": "只需在看板上填写标题/类型/素材（可选）"
       },
       {
         "step": "03",
-        "title": "Delivered in 24-48h",
-        "desc": "MP4 delivered to your board with a Slack ping"
+        "title": "24-48小时内交付",
+        "desc": "MP4文件交付到看板，并通过Slack通知"
       },
       {
         "step": "04",
-        "title": "Revise until perfect",
-        "desc": "Re-queue until you love it. Your monthly count doesn't change"
+        "title": "修改至完美",
+        "desc": "重新排队直到你满意。月配额不变"
       }
     ]
   },
@@ -1150,81 +1150,81 @@
   },
   "homeEn": {
     "hero": {
-      "eyebrow": "FOR FOREIGN BRANDS ENTERING JAPAN",
-      "h1": "You're invisible in the world's 3rd-largest economy — and it's costing you every month.",
-      "sub": "Japan's ¥22T e-commerce and ¥5.8T inbound market is wide open. But with no Japanese site, no legal compliance, and no Konbini / PayPay checkout, Japanese buyers can't find you, trust you, or pay you. Paradigm makes you Japan-ready end-to-end — you never touch a word of Japanese.",
-      "ctaPrimary": "Get your Japan Market Fit Report",
-      "ctaPrimaryNote": "$1,500 · credited to your first month",
-      "ctaSecondary": "Book a free 30-min call",
-      "trust": "Built for Kickstarter-funded brands · Shopify D2C · SaaS entering Japan"
+      "eyebrow": "助力海外品牌进入日本市场",
+      "h1": "你在全球第三大经济体中隐形——这每个月都在让你付出代价。",
+      "sub": "日本22万亿日元的电商市场和5.8万亿日元的入境旅游市场完全开放。但没有日语网站、没有法律合规、没有便利店/PayPay支付，日本买家找不到你、不信任你、也无法付款。Paradigm 提供端到端的日本市场适配服务——你完全不需要接触日语。",
+      "ctaPrimary": "获取你的日本市场适配报告",
+      "ctaPrimaryNote": "1,500美元 · 可抵扣首月费用",
+      "ctaSecondary": "预约免费30分钟咨询",
+      "trust": "专为Kickstarter众筹品牌 · Shopify D2C · 进入日本的SaaS企业打造"
     },
     "loss": {
-      "eyebrow": "THE COST OF WAITING",
-      "heading": "What “not being in Japan” actually costs you",
-      "sub": "Every month without a Japan-ready presence is revenue handed to competitors who localized first.",
+      "eyebrow": "等待的代价",
+      "heading": "“不在日本”实际让你损失多少",
+      "sub": "每个月没有日本市场适配，就等于把收入拱手让给先一步本地化的竞争对手。",
       "card1Stat": "0",
-      "card1Label": "Japanese buyers who can read your English-only site",
-      "card2Stat": "~70%",
-      "card2Label": "of Japanese shoppers abandon carts without Konbini / PayPay",
-      "card3Stat": "Invisible",
-      "card3Label": "on Google Maps & LINE — where Japanese discovery actually happens",
-      "card4Stat": "Non-compliant",
-      "card4Label": "you legally cannot sell to Japanese consumers without proper disclosures"
+      "card1Label": "能阅读你纯英文网站的日本买家",
+      "card2Stat": "约70%",
+      "card2Label": "的日本购物者因没有便利店/PayPay支付而放弃购物车",
+      "card3Stat": "隐形",
+      "card3Label": "在Google地图和LINE上——日本消费者真正发现产品的地方",
+      "card4Stat": "不合规",
+      "card4Label": "没有适当披露，你无法合法向日本消费者销售"
     },
     "offer": {
-      "eyebrow": "THE FIX — JaaS",
-      "heading": "Japan-as-a-Service: your entire Japan operation, handled",
-      "sub": "One fixed-scope engagement covers everything you'd otherwise need a Tokyo office and a Japanese team for. You work in English. We run Japan in Japanese.",
-      "point1": "Japanese site & localization — not translation, but culturally rebuilt for Japanese buyers",
-      "point2": "Legal compliance — required disclosures so you can sell to consumers legally",
-      "point3": "Local payments & logistics — Konbini, PayPay, credit, domestic delivery",
-      "point4": "Discovery & support — MEO (Google Maps), LINE official, AI customer support in Japanese"
+      "eyebrow": "解决方案——JaaS",
+      "heading": "日本即服务：你的整个日本业务，我们全权处理",
+      "sub": "一个固定范围的合作涵盖了你原本需要东京办公室和日本团队才能完成的一切。你用英语工作。我们用日语运营日本业务。",
+      "point1": "日语网站与本地化——不是翻译，而是为日本买家进行文化重建",
+      "point2": "法律合规——必要的披露，让你合法向消费者销售",
+      "point3": "本地支付与物流——便利店、PayPay、信用卡、国内配送",
+      "point4": "发现与支持——MEO（Google地图）、LINE官方账号、日语AI客服"
     },
     "mechanism": {
-      "eyebrow": "WHY IT WORKS",
-      "heading": "Insurance against failure. Booster for growth.",
-      "item1Title": "Bilingual, async",
-      "item1Body": "We take everything in English and handle the Japanese side entirely. Zero Japanese burden on your team.",
-      "item2Title": "Japan-specific stack",
-      "item2Body": "MEO, LINE, Yahoo! Japan SEO, Konbini & PayPay — the channels Japanese customers actually use.",
-      "item3Title": "AI + local experts",
-      "item3Body": "AI handles scale (support, content); Tokyo operators handle judgment, culture, and compliance.",
-      "item4Title": "Fixed scope, fixed price",
-      "item4Body": "You know exactly what you get and what it costs. No scope creep, no surprise invoices."
+      "eyebrow": "为什么有效",
+      "heading": "失败的保险。增长的助推器。",
+      "item1Title": "双语、异步",
+      "item1Body": "我们接收所有英文内容，完全处理日语方面。你的团队零日语负担。",
+      "item2Title": "日本专属技术栈",
+      "item2Body": "MEO、LINE、Yahoo! Japan SEO、便利店和PayPay——日本客户实际使用的渠道。",
+      "item3Title": "AI + 本地专家",
+      "item3Body": "AI处理规模化任务（客服、内容）；东京运营人员处理判断、文化和合规。",
+      "item4Title": "固定范围、固定价格",
+      "item4Body": "你确切知道能得到什么以及成本。没有范围蔓延，没有意外账单。"
     },
     "proof": {
-      "eyebrow": "PROOF",
-      "heading": "Real results from real clients",
-      "placeholder": "Anonymized client case studies are being prepared. Want references? Ask on your intro call."
+      "eyebrow": "证明",
+      "heading": "来自真实客户的真实成果",
+      "placeholder": "匿名客户案例研究正在准备中。想要参考？在初次通话中提出即可。"
     },
     "report": {
-      "eyebrow": "START HERE — LOW RISK",
-      "heading": "See exactly what Japan is worth to you — for $1,500",
-      "body": "Before any commitment, get a Japan Market Fit Report: your addressable market, competitor landscape, recommended channels, compliance gaps, and a concrete revenue projection. If you move forward, the full $1,500 is credited to your first month.",
-      "bullet1": "Your specific Japan TAM & missed revenue, quantified",
-      "bullet2": "Competitor & channel analysis (MEO / LINE / EC)",
-      "bullet3": "Compliance checklist + a prioritized 90-day entry plan",
-      "cta": "Get your Japan Market Fit Report — $1,500",
-      "note": "Fully credited to your first month if you proceed."
+      "eyebrow": "从这里开始——低风险",
+      "heading": "只需1,500美元，看清日本对你的价值",
+      "body": "在做出任何承诺之前，获取一份日本市场适配报告：你的可寻址市场、竞争对手格局、推荐渠道、合规差距以及具体的收入预测。如果你继续合作，全部1,500美元将抵扣首月费用。",
+      "bullet1": "量化你的日本TAM和错失的收入",
+      "bullet2": "竞争对手与渠道分析（MEO / LINE / 电商）",
+      "bullet3": "合规清单 + 优先排序的90天进入计划",
+      "cta": "获取你的日本市场适配报告——1,500美元",
+      "note": "如果继续合作，全额抵扣首月费用。"
     },
     "faq": {
-      "heading": "Questions foreign founders ask",
-      "q1": "Do I need a Japanese legal entity to start?",
-      "a1": "Not to begin. We can launch your localized presence and test the market first; entity setup is part of the Enterprise tier or a later step once demand is proven.",
-      "q2": "How do payments work without a Japanese bank?",
-      "a2": "We set up Japan-friendly payment rails (Konbini, PayPay, cards) through providers that work for foreign sellers, and advise on settlement.",
-      "q3": "How long until I'm live in Japan?",
-      "a3": "A localized launch typically takes 30–90 days depending on tier and scope. The Market Fit Report gives you a precise timeline up front.",
-      "q4": "Do I need to speak or write Japanese?",
-      "a4": "No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side.",
-      "q5": "What does it cost?",
-      "a5": "Three fixed-scope tiers (Essential / Growth / Enterprise). Start with the $1,500 Market Fit Report, which is credited to your first month."
+      "heading": "外国创始人常问的问题",
+      "q1": "我需要成立日本法人实体才能开始吗？",
+      "a1": "不需要立即成立。我们可以先启动你的本地化存在并测试市场；实体设立属于企业级服务的一部分，或者是在需求得到验证后的后续步骤。",
+      "q2": "没有日本银行账户如何收款？",
+      "a2": "我们通过适用于外国卖家的服务商设置日本友好的支付通道（便利店、PayPay、信用卡），并提供结算建议。",
+      "q3": "多久能在日本上线？",
+      "a3": "根据服务级别和范围，本地化上线通常需要30-90天。市场适配报告会提前给出精确的时间表。",
+      "q4": "我需要会说或写日语吗？",
+      "a4": "不需要。与你的一切沟通都用英语。所有面向日语的工作——网站、客服、合规——都由我们处理。",
+      "q5": "费用是多少？",
+      "a5": "三个固定范围的服务级别（基础/增长/企业）。从1,500美元的市场适配报告开始，该费用可抵扣首月费用。"
     },
     "finalCta": {
-      "heading": "Stop leaving Japan on the table.",
-      "sub": "Start with a $1,500 report or a free 30-minute call. Either way, you'll know exactly what Japan is worth — and how to capture it.",
-      "button": "Get your Japan Market Fit Report",
-      "secondary": "Book a free 30-min call"
+      "heading": "别再让日本市场白白流失。",
+      "sub": "从1,500美元的报告或免费30分钟通话开始。无论哪种方式，你都会清楚知道日本的价值——以及如何抓住它。",
+      "button": "获取你的日本市场适配报告",
+      "secondary": "预约免费30分钟咨询"
     }
   }
 }

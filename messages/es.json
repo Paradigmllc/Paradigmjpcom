@@ -987,119 +987,119 @@
     "message": "Por favor, espere…"
   },
   "videoPage": {
-    "metaTitle": "Video subscription — your entire video team, on subscription",
-    "metaDescription": "Unlimited video requests, one flat monthly fee, pause anytime. 20-100 videos/month delivered in 24-48h. Cheaper than hiring or agencies.",
-    "heroBadge": "Productized video subscription",
-    "heroTitle": "Your entire video team, on subscription",
-    "heroHighlight": "from ¥300K / mo",
-    "heroDesc": "Unlimited video requests, one flat monthly fee, pause anytime. 20-100 videos a month, delivered in 24-48h. No hiring, no agencies, no contracts.",
-    "comparisonEyebrow": "Comparison",
-    "comparisonTitle": "The limits of hiring & agencies — and how we fix them",
-    "comparisonItemHead": "Item",
+    "metaTitle": "Suscripción de video — todo tu equipo de video, por suscripción",
+    "metaDescription": "Solicitudes de video ilimitadas, una tarifa plana mensual, pausa cuando quieras. 20-100 videos/mes entregados en 24-48h. Más barato que contratar o agencias.",
+    "heroBadge": "Suscripción de video productizada",
+    "heroTitle": "Todo tu equipo de video, por suscripción",
+    "heroHighlight": "desde ¥300,000 / mes",
+    "heroDesc": "Solicitudes de video ilimitadas, una tarifa plana mensual, pausa cuando quieras. 20-100 videos al mes, entregados en 24-48h. Sin contrataciones, sin agencias, sin contratos.",
+    "comparisonEyebrow": "Comparación",
+    "comparisonTitle": "Los límites de contratar y agencias — y cómo los solucionamos",
+    "comparisonItemHead": "Elemento",
     "comparisonParadigmHead": "Paradigm",
-    "comparisonTraditionalHead": "Agency / hire",
-    "pricingEyebrow": "Pricing",
-    "pricingTitle": "Flat monthly. Pick by volume.",
-    "pricingDesc": "Overage ¥10,000 per extra video. 20% off annual.\nCancel anytime, no minimum term.",
-    "processEyebrow": "Process",
-    "processTitle": "From request to delivery — 4 steps",
-    "ctaButton": "Talk to us first",
-    "popularLabel": "Most popular",
-    "ctaBandEyebrow": "Start now",
-    "ctaBandTitle": "Book a free 15-min intro",
-    "ctaBandDesc": "No pricing pressure. We'll work out how many videos you need and what for, then recommend the right plan.",
-    "ctaBandButton": "Book a free intro",
+    "comparisonTraditionalHead": "Agencia / contratación",
+    "pricingEyebrow": "Precios",
+    "pricingTitle": "Tarifa plana mensual. Elige por volumen.",
+    "pricingDesc": "Excedente ¥10,000 por video extra. 20% de descuento anual.\nCancela cuando quieras, sin plazo mínimo.",
+    "processEyebrow": "Proceso",
+    "processTitle": "De la solicitud a la entrega — 4 pasos",
+    "ctaButton": "Habla con nosotros primero",
+    "popularLabel": "Más popular",
+    "ctaBandEyebrow": "Empieza ahora",
+    "ctaBandTitle": "Reserva una introducción gratuita de 15 min",
+    "ctaBandDesc": "Sin presión de precios. Determinaremos cuántos videos necesitas y para qué, luego recomendaremos el plan adecuado.",
+    "ctaBandButton": "Reserva una introducción gratuita",
     "plans": [
       {
-        "name": "Basic",
+        "name": "Básico",
         "price": "¥300,000",
-        "period": "/mo",
-        "volume": "20 videos / mo",
+        "period": "/mes",
+        "volume": "20 videos / mes",
         "popular": false,
         "features": [
-          "24-48h delivery",
-          "Request via your board",
-          "All formats (vertical / square / wide)",
-          "Auto subtitles",
-          "Permanent hosting"
+          "Entrega en 24-48h",
+          "Solicita a través de tu tablero",
+          "Todos los formatos (vertical / cuadrado / horizontal)",
+          "Subtítulos automáticos",
+          "Alojamiento permanente"
         ]
       },
       {
         "name": "Pro",
         "price": "¥500,000",
-        "period": "/mo",
-        "volume": "50 videos / mo",
+        "period": "/mes",
+        "volume": "50 videos / mes",
         "popular": true,
         "features": [
-          "24h delivery (priority queue)",
-          "AI voiceover",
-          "Auto logo / captions / end cards",
-          "Monthly report videos",
-          "Request via Slack"
+          "Entrega en 24h (cola prioritaria)",
+          "Locución con IA",
+          "Logo / subtítulos / tarjetas finales automáticos",
+          "Videos de informe mensual",
+          "Solicita a través de Slack"
         ]
       },
       {
-        "name": "Scale",
+        "name": "Escala",
         "price": "¥800,000",
-        "period": "/mo",
-        "volume": "100 videos / mo",
+        "period": "/mes",
+        "volume": "100 videos / mes",
         "popular": false,
         "features": [
-          "12h delivery (fast queue)",
-          "AI avatar videos",
-          "Custom template support",
-          "Dedicated Slack channel",
-          "Monthly strategy call"
+          "Entrega en 12h (cola rápida)",
+          "Videos con avatar IA",
+          "Soporte de plantillas personalizadas",
+          "Canal de Slack dedicado",
+          "Llamada estratégica mensual"
         ]
       }
     ],
     "comparison": [
       {
-        "item": "Cost per video",
+        "item": "Costo por video",
         "paradigm": "¥15,000 (Pro)",
         "traditional": "¥80,000-300,000"
       },
       {
-        "item": "Turnaround",
+        "item": "Tiempo de entrega",
         "paradigm": "24-48h",
-        "traditional": "1-3 weeks"
+        "traditional": "1-3 semanas"
       },
       {
-        "item": "Revisions",
-        "paradigm": "Unlimited (re-queue)",
-        "traditional": "2-3 max"
+        "item": "Revisiones",
+        "paradigm": "Ilimitadas (re-encolar)",
+        "traditional": "2-3 máximo"
       },
       {
-        "item": "Scale",
-        "paradigm": "Up to 100 / mo, flat",
-        "traditional": "Per-video quote"
+        "item": "Escala",
+        "paradigm": "Hasta 100 / mes, tarifa plana",
+        "traditional": "Cotización por video"
       },
       {
-        "item": "Billing",
-        "paradigm": "Monthly, cancel anytime",
-        "traditional": "Per-project, minimums"
+        "item": "Facturación",
+        "paradigm": "Mensual, cancela cuando quieras",
+        "traditional": "Por proyecto, mínimos"
       }
     ],
     "process": [
       {
         "step": "01",
-        "title": "Subscribe & get your board",
-        "desc": "Start your subscription and we issue your request board"
+        "title": "Suscríbete y obtén tu tablero",
+        "desc": "Inicia tu suscripción y emitimos tu tablero de solicitudes"
       },
       {
         "step": "02",
-        "title": "Request any video",
-        "desc": "Just drop a title / type / assets (optional) on the board"
+        "title": "Solicita cualquier video",
+        "desc": "Solo coloca un título / tipo / activos (opcional) en el tablero"
       },
       {
         "step": "03",
-        "title": "Delivered in 24-48h",
-        "desc": "MP4 delivered to your board with a Slack ping"
+        "title": "Entregado en 24-48h",
+        "desc": "MP4 entregado en tu tablero con un ping de Slack"
       },
       {
         "step": "04",
-        "title": "Revise until perfect",
-        "desc": "Re-queue until you love it. Your monthly count doesn't change"
+        "title": "Revisa hasta que sea perfecto",
+        "desc": "Re-encola hasta que te encante. Tu conteo mensual no cambia"
       }
     ]
   },
@@ -1150,81 +1150,81 @@
   },
   "homeEn": {
     "hero": {
-      "eyebrow": "FOR FOREIGN BRANDS ENTERING JAPAN",
-      "h1": "You're invisible in the world's 3rd-largest economy — and it's costing you every month.",
-      "sub": "Japan's ¥22T e-commerce and ¥5.8T inbound market is wide open. But with no Japanese site, no legal compliance, and no Konbini / PayPay checkout, Japanese buyers can't find you, trust you, or pay you. Paradigm makes you Japan-ready end-to-end — you never touch a word of Japanese.",
-      "ctaPrimary": "Get your Japan Market Fit Report",
-      "ctaPrimaryNote": "$1,500 · credited to your first month",
-      "ctaSecondary": "Book a free 30-min call",
-      "trust": "Built for Kickstarter-funded brands · Shopify D2C · SaaS entering Japan"
+      "eyebrow": "PARA MARCAS EXTRANJERAS QUE ENTRAN EN JAPÓN",
+      "h1": "Eres invisible en la tercera economía más grande del mundo, y te está costando cada mes.",
+      "sub": "El mercado de comercio electrónico de ¥22 billones y el mercado inbound de ¥5,8 billones de Japón están abiertos. Pero sin un sitio en japonés, sin cumplimiento legal y sin pago Konbini/PayPay, los compradores japoneses no pueden encontrarte, confiar en ti ni pagarte. Paradigm te prepara para Japón de principio a fin: nunca tocas una palabra de japonés.",
+      "ctaPrimary": "Obtén tu Informe de Ajuste al Mercado Japonés",
+      "ctaPrimaryNote": "$1,500 · acreditado a tu primer mes",
+      "ctaSecondary": "Reserva una llamada gratuita de 30 min",
+      "trust": "Creado para marcas financiadas por Kickstarter · Shopify D2C · SaaS que entran en Japón"
     },
     "loss": {
-      "eyebrow": "THE COST OF WAITING",
-      "heading": "What “not being in Japan” actually costs you",
-      "sub": "Every month without a Japan-ready presence is revenue handed to competitors who localized first.",
+      "eyebrow": "EL COSTO DE ESPERAR",
+      "heading": "Lo que realmente te cuesta \"no estar en Japón\"",
+      "sub": "Cada mes sin presencia preparada para Japón son ingresos entregados a competidores que se localizaron primero.",
       "card1Stat": "0",
-      "card1Label": "Japanese buyers who can read your English-only site",
+      "card1Label": "Compradores japoneses que pueden leer tu sitio solo en inglés",
       "card2Stat": "~70%",
-      "card2Label": "of Japanese shoppers abandon carts without Konbini / PayPay",
+      "card2Label": "de los compradores japoneses abandonan el carrito sin Konbini/PayPay",
       "card3Stat": "Invisible",
-      "card3Label": "on Google Maps & LINE — where Japanese discovery actually happens",
-      "card4Stat": "Non-compliant",
-      "card4Label": "you legally cannot sell to Japanese consumers without proper disclosures"
+      "card3Label": "en Google Maps y LINE, donde realmente ocurre el descubrimiento japonés",
+      "card4Stat": "No conforme",
+      "card4Label": "legalmente no puedes vender a consumidores japoneses sin las divulgaciones adecuadas"
     },
     "offer": {
-      "eyebrow": "THE FIX — JaaS",
-      "heading": "Japan-as-a-Service: your entire Japan operation, handled",
-      "sub": "One fixed-scope engagement covers everything you'd otherwise need a Tokyo office and a Japanese team for. You work in English. We run Japan in Japanese.",
-      "point1": "Japanese site & localization — not translation, but culturally rebuilt for Japanese buyers",
-      "point2": "Legal compliance — required disclosures so you can sell to consumers legally",
-      "point3": "Local payments & logistics — Konbini, PayPay, credit, domestic delivery",
-      "point4": "Discovery & support — MEO (Google Maps), LINE official, AI customer support in Japanese"
+      "eyebrow": "LA SOLUCIÓN — JaaS",
+      "heading": "Japón como Servicio: toda tu operación en Japón, gestionada",
+      "sub": "Un compromiso de alcance fijo cubre todo lo que de otro modo necesitarías una oficina en Tokio y un equipo japonés. Trabajas en inglés. Nosotros gestionamos Japón en japonés.",
+      "point1": "Sitio web y localización en japonés — no traducción, sino reconstrucción cultural para compradores japoneses",
+      "point2": "Cumplimiento legal — divulgaciones requeridas para que puedas vender legalmente a consumidores",
+      "point3": "Pagos y logística locales — Konbini, PayPay, tarjetas, entrega nacional",
+      "point4": "Descubrimiento y soporte — MEO (Google Maps), LINE oficial, atención al cliente con IA en japonés"
     },
     "mechanism": {
-      "eyebrow": "WHY IT WORKS",
-      "heading": "Insurance against failure. Booster for growth.",
-      "item1Title": "Bilingual, async",
-      "item1Body": "We take everything in English and handle the Japanese side entirely. Zero Japanese burden on your team.",
-      "item2Title": "Japan-specific stack",
-      "item2Body": "MEO, LINE, Yahoo! Japan SEO, Konbini & PayPay — the channels Japanese customers actually use.",
-      "item3Title": "AI + local experts",
-      "item3Body": "AI handles scale (support, content); Tokyo operators handle judgment, culture, and compliance.",
-      "item4Title": "Fixed scope, fixed price",
-      "item4Body": "You know exactly what you get and what it costs. No scope creep, no surprise invoices."
+      "eyebrow": "POR QUÉ FUNCIONA",
+      "heading": "Seguro contra el fracaso. Impulso para el crecimiento.",
+      "item1Title": "Bilingüe, asíncrono",
+      "item1Body": "Recibimos todo en inglés y gestionamos el lado japonés por completo. Cero carga de japonés para tu equipo.",
+      "item2Title": "Stack específico para Japón",
+      "item2Body": "MEO, LINE, Yahoo! Japón SEO, Konbini y PayPay — los canales que realmente usan los clientes japoneses.",
+      "item3Title": "IA + expertos locales",
+      "item3Body": "La IA maneja la escala (soporte, contenido); los operadores en Tokio manejan el juicio, la cultura y el cumplimiento.",
+      "item4Title": "Alcance fijo, precio fijo",
+      "item4Body": "Sabes exactamente lo que obtienes y lo que cuesta. Sin aumento de alcance, sin facturas sorpresa."
     },
     "proof": {
-      "eyebrow": "PROOF",
-      "heading": "Real results from real clients",
-      "placeholder": "Anonymized client case studies are being prepared. Want references? Ask on your intro call."
+      "eyebrow": "PRUEBA",
+      "heading": "Resultados reales de clientes reales",
+      "placeholder": "Se están preparando casos de estudio anónimos de clientes. ¿Quieres referencias? Pregunta en tu llamada de introducción."
     },
     "report": {
-      "eyebrow": "START HERE — LOW RISK",
-      "heading": "See exactly what Japan is worth to you — for $1,500",
-      "body": "Before any commitment, get a Japan Market Fit Report: your addressable market, competitor landscape, recommended channels, compliance gaps, and a concrete revenue projection. If you move forward, the full $1,500 is credited to your first month.",
-      "bullet1": "Your specific Japan TAM & missed revenue, quantified",
-      "bullet2": "Competitor & channel analysis (MEO / LINE / EC)",
-      "bullet3": "Compliance checklist + a prioritized 90-day entry plan",
-      "cta": "Get your Japan Market Fit Report — $1,500",
-      "note": "Fully credited to your first month if you proceed."
+      "eyebrow": "EMPIEZA AQUÍ — BAJO RIESGO",
+      "heading": "Ve exactamente lo que Japón vale para ti — por $1,500",
+      "body": "Antes de cualquier compromiso, obtén un Informe de Ajuste al Mercado Japonés: tu mercado direccionable, panorama competitivo, canales recomendados, brechas de cumplimiento y una proyección de ingresos concreta. Si continúas, los $1,500 completos se acreditan a tu primer mes.",
+      "bullet1": "Tu TAM específico de Japón e ingresos perdidos, cuantificados",
+      "bullet2": "Análisis de competidores y canales (MEO / LINE / EC)",
+      "bullet3": "Lista de verificación de cumplimiento + un plan de entrada priorizado a 90 días",
+      "cta": "Obtén tu Informe de Ajuste al Mercado Japonés — $1,500",
+      "note": "Totalmente acreditado a tu primer mes si continúas."
     },
     "faq": {
-      "heading": "Questions foreign founders ask",
-      "q1": "Do I need a Japanese legal entity to start?",
-      "a1": "Not to begin. We can launch your localized presence and test the market first; entity setup is part of the Enterprise tier or a later step once demand is proven.",
-      "q2": "How do payments work without a Japanese bank?",
-      "a2": "We set up Japan-friendly payment rails (Konbini, PayPay, cards) through providers that work for foreign sellers, and advise on settlement.",
-      "q3": "How long until I'm live in Japan?",
-      "a3": "A localized launch typically takes 30–90 days depending on tier and scope. The Market Fit Report gives you a precise timeline up front.",
-      "q4": "Do I need to speak or write Japanese?",
-      "a4": "No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side.",
-      "q5": "What does it cost?",
-      "a5": "Three fixed-scope tiers (Essential / Growth / Enterprise). Start with the $1,500 Market Fit Report, which is credited to your first month."
+      "heading": "Preguntas que hacen los fundadores extranjeros",
+      "q1": "¿Necesito una entidad legal japonesa para empezar?",
+      "a1": "No para empezar. Podemos lanzar tu presencia localizada y probar el mercado primero; la creación de la entidad es parte del nivel Enterprise o un paso posterior una vez que la demanda esté probada.",
+      "q2": "¿Cómo funcionan los pagos sin un banco japonés?",
+      "a2": "Configuramos canales de pago adaptados a Japón (Konbini, PayPay, tarjetas) a través de proveedores que funcionan para vendedores extranjeros y asesoramos sobre la liquidación.",
+      "q3": "¿Cuánto tiempo hasta que esté activo en Japón?",
+      "a3": "Un lanzamiento localizado generalmente toma de 30 a 90 días dependiendo del nivel y el alcance. El Informe de Ajuste al Mercado te da un cronograma preciso de antemano.",
+      "q4": "¿Necesito hablar o escribir japonés?",
+      "a4": "No. Todo contigo es en inglés. Todo el trabajo orientado al japonés — sitio, soporte, cumplimiento — se maneja de nuestro lado.",
+      "q5": "¿Cuánto cuesta?",
+      "a5": "Tres niveles de alcance fijo (Essential / Growth / Enterprise). Comienza con el Informe de Ajuste al Mercado de $1,500, que se acredita a tu primer mes."
     },
     "finalCta": {
-      "heading": "Stop leaving Japan on the table.",
-      "sub": "Start with a $1,500 report or a free 30-minute call. Either way, you'll know exactly what Japan is worth — and how to capture it.",
-      "button": "Get your Japan Market Fit Report",
-      "secondary": "Book a free 30-min call"
+      "heading": "Deja de dejar Japón sobre la mesa.",
+      "sub": "Comienza con un informe de $1,500 o una llamada gratuita de 30 minutos. De cualquier manera, sabrás exactamente lo que Japón vale — y cómo capturarlo.",
+      "button": "Obtén tu Informe de Ajuste al Mercado Japonés",
+      "secondary": "Reserva una llamada gratuita de 30 min"
     }
   }
 }

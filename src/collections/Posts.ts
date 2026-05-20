@@ -169,7 +169,10 @@ export const Posts: CollectionConfig = {
     ],
     afterChange: [
       makeAfterChangeAudit("posts"),
-      makeAutoTranslateHook({ text: ["title", "excerpt", "category", "readTime"], rich: ["content"] }),
+      makeAutoTranslateHook({
+        text: ["title", "excerpt", "category", "readTime", "seo.metaTitle", "seo.metaDescription"],
+        rich: ["content"],
+      }),
     ],
     afterDelete: [makeAfterDeleteAudit("posts")],
   },

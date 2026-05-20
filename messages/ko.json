@@ -987,119 +987,119 @@
     "message": "잠시만 기다려 주세요…"
   },
   "videoPage": {
-    "metaTitle": "Video subscription — your entire video team, on subscription",
-    "metaDescription": "Unlimited video requests, one flat monthly fee, pause anytime. 20-100 videos/month delivered in 24-48h. Cheaper than hiring or agencies.",
-    "heroBadge": "Productized video subscription",
-    "heroTitle": "Your entire video team, on subscription",
-    "heroHighlight": "from ¥300K / mo",
-    "heroDesc": "Unlimited video requests, one flat monthly fee, pause anytime. 20-100 videos a month, delivered in 24-48h. No hiring, no agencies, no contracts.",
-    "comparisonEyebrow": "Comparison",
-    "comparisonTitle": "The limits of hiring & agencies — and how we fix them",
-    "comparisonItemHead": "Item",
+    "metaTitle": "비디오 구독 — 전체 비디오 팀을 구독으로",
+    "metaDescription": "무제한 비디오 요청, 월 고정 요금, 언제든지 일시 중지 가능. 월 20-100개 비디오, 24-48시간 내 전달. 채용이나 에이전시보다 저렴합니다.",
+    "heroBadge": "상품화된 비디오 구독",
+    "heroTitle": "전체 비디오 팀을 구독으로",
+    "heroHighlight": "월 ¥300,000부터",
+    "heroDesc": "무제한 비디오 요청, 월 고정 요금, 언제든지 일시 중지 가능. 월 20-100개 비디오, 24-48시간 내 전달. 채용, 에이전시, 계약 불필요.",
+    "comparisonEyebrow": "비교",
+    "comparisonTitle": "채용 및 에이전시의 한계 — 그리고 저희가 해결하는 방법",
+    "comparisonItemHead": "항목",
     "comparisonParadigmHead": "Paradigm",
-    "comparisonTraditionalHead": "Agency / hire",
-    "pricingEyebrow": "Pricing",
-    "pricingTitle": "Flat monthly. Pick by volume.",
-    "pricingDesc": "Overage ¥10,000 per extra video. 20% off annual.\nCancel anytime, no minimum term.",
-    "processEyebrow": "Process",
-    "processTitle": "From request to delivery — 4 steps",
-    "ctaButton": "Talk to us first",
-    "popularLabel": "Most popular",
-    "ctaBandEyebrow": "Start now",
-    "ctaBandTitle": "Book a free 15-min intro",
-    "ctaBandDesc": "No pricing pressure. We'll work out how many videos you need and what for, then recommend the right plan.",
-    "ctaBandButton": "Book a free intro",
+    "comparisonTraditionalHead": "에이전시/채용",
+    "pricingEyebrow": "가격",
+    "pricingTitle": "월 고정. 볼륨별 선택.",
+    "pricingDesc": "초과 시 비디오당 ¥10,000. 연간 20% 할인.\n언제든지 취소 가능, 최소 계약 기간 없음.",
+    "processEyebrow": "프로세스",
+    "processTitle": "요청에서 전달까지 — 4단계",
+    "ctaButton": "먼저 문의하기",
+    "popularLabel": "가장 인기",
+    "ctaBandEyebrow": "지금 시작",
+    "ctaBandTitle": "무료 15분 소개 예약",
+    "ctaBandDesc": "가격 압박 없음. 필요한 비디오 수와 용도를 파악한 후 적합한 요금제를 추천해 드립니다.",
+    "ctaBandButton": "무료 소개 예약",
     "plans": [
       {
         "name": "Basic",
         "price": "¥300,000",
-        "period": "/mo",
-        "volume": "20 videos / mo",
+        "period": "/월",
+        "volume": "월 20개 비디오",
         "popular": false,
         "features": [
-          "24-48h delivery",
-          "Request via your board",
-          "All formats (vertical / square / wide)",
-          "Auto subtitles",
-          "Permanent hosting"
+          "24-48시간 전달",
+          "보드를 통해 요청",
+          "모든 형식 (세로/정사각형/가로)",
+          "자동 자막",
+          "영구 호스팅"
         ]
       },
       {
         "name": "Pro",
         "price": "¥500,000",
-        "period": "/mo",
-        "volume": "50 videos / mo",
+        "period": "/월",
+        "volume": "월 50개 비디오",
         "popular": true,
         "features": [
-          "24h delivery (priority queue)",
-          "AI voiceover",
-          "Auto logo / captions / end cards",
-          "Monthly report videos",
-          "Request via Slack"
+          "24시간 전달 (우선 큐)",
+          "AI 음성 해설",
+          "자동 로고/자막/엔드 카드",
+          "월간 리포트 비디오",
+          "Slack을 통한 요청"
         ]
       },
       {
         "name": "Scale",
         "price": "¥800,000",
-        "period": "/mo",
-        "volume": "100 videos / mo",
+        "period": "/월",
+        "volume": "월 100개 비디오",
         "popular": false,
         "features": [
-          "12h delivery (fast queue)",
-          "AI avatar videos",
-          "Custom template support",
-          "Dedicated Slack channel",
-          "Monthly strategy call"
+          "12시간 전달 (빠른 큐)",
+          "AI 아바타 비디오",
+          "커스텀 템플릿 지원",
+          "전용 Slack 채널",
+          "월간 전략 통화"
         ]
       }
     ],
     "comparison": [
       {
-        "item": "Cost per video",
+        "item": "비디오당 비용",
         "paradigm": "¥15,000 (Pro)",
         "traditional": "¥80,000-300,000"
       },
       {
-        "item": "Turnaround",
-        "paradigm": "24-48h",
-        "traditional": "1-3 weeks"
+        "item": "처리 시간",
+        "paradigm": "24-48시간",
+        "traditional": "1-3주"
       },
       {
-        "item": "Revisions",
-        "paradigm": "Unlimited (re-queue)",
-        "traditional": "2-3 max"
+        "item": "수정",
+        "paradigm": "무제한 (재큐)",
+        "traditional": "최대 2-3회"
       },
       {
-        "item": "Scale",
-        "paradigm": "Up to 100 / mo, flat",
-        "traditional": "Per-video quote"
+        "item": "규모",
+        "paradigm": "월 최대 100개, 고정",
+        "traditional": "비디오당 견적"
       },
       {
-        "item": "Billing",
-        "paradigm": "Monthly, cancel anytime",
-        "traditional": "Per-project, minimums"
+        "item": "결제",
+        "paradigm": "월별, 언제든지 취소",
+        "traditional": "프로젝트별, 최소 금액"
       }
     ],
     "process": [
       {
         "step": "01",
-        "title": "Subscribe & get your board",
-        "desc": "Start your subscription and we issue your request board"
+        "title": "구독 및 보드 받기",
+        "desc": "구독을 시작하면 요청 보드가 발급됩니다."
       },
       {
         "step": "02",
-        "title": "Request any video",
-        "desc": "Just drop a title / type / assets (optional) on the board"
+        "title": "모든 비디오 요청",
+        "desc": "보드에 제목/유형/자산(선택 사항)만 입력하세요."
       },
       {
         "step": "03",
-        "title": "Delivered in 24-48h",
-        "desc": "MP4 delivered to your board with a Slack ping"
+        "title": "24-48시간 내 전달",
+        "desc": "MP4가 보드에 전달되고 Slack 알림이 옵니다."
       },
       {
         "step": "04",
-        "title": "Revise until perfect",
-        "desc": "Re-queue until you love it. Your monthly count doesn't change"
+        "title": "완벽할 때까지 수정",
+        "desc": "마음에 들 때까지 재큐하세요. 월간 카운트는 변하지 않습니다."
       }
     ]
   },
@@ -1150,81 +1150,81 @@
   },
   "homeEn": {
     "hero": {
-      "eyebrow": "FOR FOREIGN BRANDS ENTERING JAPAN",
-      "h1": "You're invisible in the world's 3rd-largest economy — and it's costing you every month.",
-      "sub": "Japan's ¥22T e-commerce and ¥5.8T inbound market is wide open. But with no Japanese site, no legal compliance, and no Konbini / PayPay checkout, Japanese buyers can't find you, trust you, or pay you. Paradigm makes you Japan-ready end-to-end — you never touch a word of Japanese.",
-      "ctaPrimary": "Get your Japan Market Fit Report",
-      "ctaPrimaryNote": "$1,500 · credited to your first month",
-      "ctaSecondary": "Book a free 30-min call",
-      "trust": "Built for Kickstarter-funded brands · Shopify D2C · SaaS entering Japan"
+      "eyebrow": "일본에 진출하는 해외 브랜드를 위한",
+      "h1": "당신은 세계 3위 경제 대국에서 보이지 않으며, 매달 비용이 발생하고 있습니다.",
+      "sub": "일본의 22조 엔 전자상거래 및 5.8조 엔 인바운드 시장은 활짝 열려 있습니다. 하지만 일본어 사이트, 법적 규정 준수, 편의점/PayPay 결제가 없으면 일본 구매자가 당신을 찾고, 신뢰하고, 결제할 수 없습니다. Paradigm이 엔드투엔드로 일본 진출을 준비합니다. 일본어는 전혀 건드릴 필요가 없습니다.",
+      "ctaPrimary": "Japan Market Fit Report 받기",
+      "ctaPrimaryNote": "$1,500 · 첫 달 크레딧으로 사용 가능",
+      "ctaSecondary": "무료 30분 상담 예약",
+      "trust": "Kickstarter 펀딩 브랜드 · Shopify D2C · 일본 진출 SaaS 기업 대상"
     },
     "loss": {
-      "eyebrow": "THE COST OF WAITING",
-      "heading": "What “not being in Japan” actually costs you",
-      "sub": "Every month without a Japan-ready presence is revenue handed to competitors who localized first.",
+      "eyebrow": "기다림의 대가",
+      "heading": "\"일본에 진출하지 않음\"이 실제로 당신에게 얼마나 손해인가",
+      "sub": "일본 진출 준비가 없는 매달은 먼저 현지화한 경쟁자에게 수익을 넘겨주는 것입니다.",
       "card1Stat": "0",
-      "card1Label": "Japanese buyers who can read your English-only site",
+      "card1Label": "영어 전용 사이트를 읽을 수 있는 일본 구매자",
       "card2Stat": "~70%",
-      "card2Label": "of Japanese shoppers abandon carts without Konbini / PayPay",
-      "card3Stat": "Invisible",
-      "card3Label": "on Google Maps & LINE — where Japanese discovery actually happens",
-      "card4Stat": "Non-compliant",
-      "card4Label": "you legally cannot sell to Japanese consumers without proper disclosures"
+      "card2Label": "편의점/PayPay 결제 없이 장바구니를 포기하는 일본 쇼핑객",
+      "card3Stat": "보이지 않음",
+      "card3Label": "일본에서 실제로 발견이 이루어지는 Google Maps 및 LINE에서",
+      "card4Stat": "규정 미준수",
+      "card4Label": "적절한 공개 없이는 일본 소비자에게 법적으로 판매할 수 없음"
     },
     "offer": {
-      "eyebrow": "THE FIX — JaaS",
-      "heading": "Japan-as-a-Service: your entire Japan operation, handled",
-      "sub": "One fixed-scope engagement covers everything you'd otherwise need a Tokyo office and a Japanese team for. You work in English. We run Japan in Japanese.",
-      "point1": "Japanese site & localization — not translation, but culturally rebuilt for Japanese buyers",
-      "point2": "Legal compliance — required disclosures so you can sell to consumers legally",
-      "point3": "Local payments & logistics — Konbini, PayPay, credit, domestic delivery",
-      "point4": "Discovery & support — MEO (Google Maps), LINE official, AI customer support in Japanese"
+      "eyebrow": "해결책 — JaaS",
+      "heading": "Japan-as-a-Service: 일본 운영 전체를 처리합니다",
+      "sub": "하나의 고정 범위 계약으로 도쿄 사무소와 일본 팀이 필요했던 모든 것을 처리합니다. 귀하는 영어로 작업합니다. 저희가 일본어로 일본을 운영합니다.",
+      "point1": "일본어 사이트 및 현지화 — 단순 번역이 아닌, 일본 구매자를 위해 문화적으로 재구축",
+      "point2": "법적 규정 준수 — 소비자에게 합법적으로 판매할 수 있도록 필요한 공개 사항",
+      "point3": "현지 결제 및 물류 — 편의점, PayPay, 신용카드, 국내 배송",
+      "point4": "발견 및 지원 — MEO (Google Maps), LINE 공식 계정, 일본어 AI 고객 지원"
     },
     "mechanism": {
-      "eyebrow": "WHY IT WORKS",
-      "heading": "Insurance against failure. Booster for growth.",
-      "item1Title": "Bilingual, async",
-      "item1Body": "We take everything in English and handle the Japanese side entirely. Zero Japanese burden on your team.",
-      "item2Title": "Japan-specific stack",
-      "item2Body": "MEO, LINE, Yahoo! Japan SEO, Konbini & PayPay — the channels Japanese customers actually use.",
-      "item3Title": "AI + local experts",
-      "item3Body": "AI handles scale (support, content); Tokyo operators handle judgment, culture, and compliance.",
-      "item4Title": "Fixed scope, fixed price",
-      "item4Body": "You know exactly what you get and what it costs. No scope creep, no surprise invoices."
+      "eyebrow": "작동 원리",
+      "heading": "실패에 대한 보험. 성장을 위한 부스터.",
+      "item1Title": "이중 언어, 비동기",
+      "item1Body": "모든 것을 영어로 받아들이고 일본어 측면을 전적으로 처리합니다. 팀에 일본어 부담이 전혀 없습니다.",
+      "item2Title": "일본 특화 스택",
+      "item2Body": "MEO, LINE, Yahoo! Japan SEO, 편의점 및 PayPay — 일본 고객이 실제로 사용하는 채널.",
+      "item3Title": "AI + 현지 전문가",
+      "item3Body": "AI는 규모(지원, 콘텐츠)를 처리하고, 도쿄 운영자는 판단, 문화 및 규정 준수를 처리합니다.",
+      "item4Title": "고정 범위, 고정 가격",
+      "item4Body": "무엇을 얻고 비용이 얼마인지 정확히 알 수 있습니다. 범위 확장 없음, 예상치 못한 청구서 없음."
     },
     "proof": {
-      "eyebrow": "PROOF",
-      "heading": "Real results from real clients",
-      "placeholder": "Anonymized client case studies are being prepared. Want references? Ask on your intro call."
+      "eyebrow": "증거",
+      "heading": "실제 고객의 실제 결과",
+      "placeholder": "익명 처리된 고객 사례 연구가 준비 중입니다. 참고 자료를 원하시면 소개 통화 시 요청해 주세요."
     },
     "report": {
-      "eyebrow": "START HERE — LOW RISK",
-      "heading": "See exactly what Japan is worth to you — for $1,500",
-      "body": "Before any commitment, get a Japan Market Fit Report: your addressable market, competitor landscape, recommended channels, compliance gaps, and a concrete revenue projection. If you move forward, the full $1,500 is credited to your first month.",
-      "bullet1": "Your specific Japan TAM & missed revenue, quantified",
-      "bullet2": "Competitor & channel analysis (MEO / LINE / EC)",
-      "bullet3": "Compliance checklist + a prioritized 90-day entry plan",
-      "cta": "Get your Japan Market Fit Report — $1,500",
-      "note": "Fully credited to your first month if you proceed."
+      "eyebrow": "여기서 시작 — 낮은 위험",
+      "heading": "일본이 당신에게 얼마나 가치 있는지 정확히 확인하세요 — $1,500",
+      "body": "어떤 약속도 하기 전에 Japan Market Fit Report를 받으세요: 접근 가능한 시장, 경쟁사 분석, 권장 채널, 규정 준수 격차, 구체적인 수익 예측. 진행하시면 전액 $1,500이 첫 달에 크레딧으로 적용됩니다.",
+      "bullet1": "귀하의 특정 일본 TAM 및 놓친 수익, 정량화",
+      "bullet2": "경쟁사 및 채널 분석 (MEO / LINE / EC)",
+      "bullet3": "규정 준수 체크리스트 + 우선순위가 지정된 90일 진출 계획",
+      "cta": "Japan Market Fit Report 받기 — $1,500",
+      "note": "진행 시 첫 달에 전액 크레딧 적용."
     },
     "faq": {
-      "heading": "Questions foreign founders ask",
-      "q1": "Do I need a Japanese legal entity to start?",
-      "a1": "Not to begin. We can launch your localized presence and test the market first; entity setup is part of the Enterprise tier or a later step once demand is proven.",
-      "q2": "How do payments work without a Japanese bank?",
-      "a2": "We set up Japan-friendly payment rails (Konbini, PayPay, cards) through providers that work for foreign sellers, and advise on settlement.",
-      "q3": "How long until I'm live in Japan?",
-      "a3": "A localized launch typically takes 30–90 days depending on tier and scope. The Market Fit Report gives you a precise timeline up front.",
-      "q4": "Do I need to speak or write Japanese?",
-      "a4": "No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side.",
-      "q5": "What does it cost?",
-      "a5": "Three fixed-scope tiers (Essential / Growth / Enterprise). Start with the $1,500 Market Fit Report, which is credited to your first month."
+      "heading": "해외 창업자들이 묻는 질문",
+      "q1": "시작하려면 일본 법인이 필요한가요?",
+      "a1": "처음에는 필요하지 않습니다. 현지화된 프레즌스를 시작하고 시장을 먼저 테스트할 수 있습니다. 법인 설립은 Enterprise 등급의 일부이거나 수요가 입증된 후의 단계입니다.",
+      "q2": "일본 은행 계좌 없이 결제는 어떻게 하나요?",
+      "a2": "해외 판매자에게 적합한 제공업체를 통해 일본 친화적인 결제 수단(편의점, PayPay, 카드)을 설정하고 정산에 대해 조언합니다.",
+      "q3": "일본에서 라이브까지 얼마나 걸리나요?",
+      "a3": "현지화된 출시는 일반적으로 등급과 범위에 따라 30~90일이 소요됩니다. Market Fit Report에서 정확한 일정을 미리 알려드립니다.",
+      "q4": "일본어를 말하거나 쓸 수 있어야 하나요?",
+      "a4": "아니요. 모든 커뮤니케이션은 영어로 진행됩니다. 일본어 관련 작업(사이트, 지원, 규정 준수)은 저희 측에서 처리합니다.",
+      "q5": "비용은 얼마인가요?",
+      "a5": "세 가지 고정 범위 등급(에센셜/그로스/엔터프라이즈)이 있습니다. $1,500 Market Fit Report로 시작하며, 이는 첫 달에 크레딧으로 적용됩니다."
     },
     "finalCta": {
-      "heading": "Stop leaving Japan on the table.",
-      "sub": "Start with a $1,500 report or a free 30-minute call. Either way, you'll know exactly what Japan is worth — and how to capture it.",
-      "button": "Get your Japan Market Fit Report",
-      "secondary": "Book a free 30-min call"
+      "heading": "일본 시장을 더 이상 미루지 마세요.",
+      "sub": "$1,500 보고서 또는 무료 30분 통화로 시작하세요. 어느 쪽이든 일본의 가치와 이를 포착하는 방법을 정확히 알게 됩니다.",
+      "button": "Japan Market Fit Report 받기",
+      "secondary": "무료 30분 상담 예약"
     }
   }
 }

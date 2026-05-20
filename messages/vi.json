@@ -987,119 +987,119 @@
     "message": "Vui lòng đợi trong giây lát…"
   },
   "videoPage": {
-    "metaTitle": "Video subscription — your entire video team, on subscription",
-    "metaDescription": "Unlimited video requests, one flat monthly fee, pause anytime. 20-100 videos/month delivered in 24-48h. Cheaper than hiring or agencies.",
-    "heroBadge": "Productized video subscription",
-    "heroTitle": "Your entire video team, on subscription",
-    "heroHighlight": "from ¥300K / mo",
-    "heroDesc": "Unlimited video requests, one flat monthly fee, pause anytime. 20-100 videos a month, delivered in 24-48h. No hiring, no agencies, no contracts.",
-    "comparisonEyebrow": "Comparison",
-    "comparisonTitle": "The limits of hiring & agencies — and how we fix them",
-    "comparisonItemHead": "Item",
+    "metaTitle": "Gói thuê bao video — toàn bộ đội ngũ video của bạn, theo thuê bao",
+    "metaDescription": "Yêu cầu video không giới hạn, một khoản phí cố định hàng tháng, tạm dừng bất cứ lúc nào. 20-100 video/tháng giao trong 24-48h. Rẻ hơn thuê nhân viên hoặc agency.",
+    "heroBadge": "Gói thuê bao video dạng sản phẩm",
+    "heroTitle": "Toàn bộ đội ngũ video của bạn, theo thuê bao",
+    "heroHighlight": "từ ¥300.000 / tháng",
+    "heroDesc": "Yêu cầu video không giới hạn, một khoản phí cố định hàng tháng, tạm dừng bất cứ lúc nào. 20-100 video mỗi tháng, giao trong 24-48h. Không cần tuyển dụng, không agency, không hợp đồng dài hạn.",
+    "comparisonEyebrow": "So sánh",
+    "comparisonTitle": "Giới hạn của việc thuê nhân viên & agency — và cách chúng tôi khắc phục",
+    "comparisonItemHead": "Mục",
     "comparisonParadigmHead": "Paradigm",
-    "comparisonTraditionalHead": "Agency / hire",
-    "pricingEyebrow": "Pricing",
-    "pricingTitle": "Flat monthly. Pick by volume.",
-    "pricingDesc": "Overage ¥10,000 per extra video. 20% off annual.\nCancel anytime, no minimum term.",
-    "processEyebrow": "Process",
-    "processTitle": "From request to delivery — 4 steps",
-    "ctaButton": "Talk to us first",
-    "popularLabel": "Most popular",
-    "ctaBandEyebrow": "Start now",
-    "ctaBandTitle": "Book a free 15-min intro",
-    "ctaBandDesc": "No pricing pressure. We'll work out how many videos you need and what for, then recommend the right plan.",
-    "ctaBandButton": "Book a free intro",
+    "comparisonTraditionalHead": "Agency / thuê",
+    "pricingEyebrow": "Bảng giá",
+    "pricingTitle": "Phí cố định hàng tháng. Chọn theo khối lượng.",
+    "pricingDesc": "Vượt mức ¥10.000 mỗi video thêm. Giảm 20% khi thanh toán năm.\nHủy bất cứ lúc nào, không cam kết tối thiểu.",
+    "processEyebrow": "Quy trình",
+    "processTitle": "Từ yêu cầu đến giao hàng — 4 bước",
+    "ctaButton": "Nói chuyện với chúng tôi trước",
+    "popularLabel": "Phổ biến nhất",
+    "ctaBandEyebrow": "Bắt đầu ngay",
+    "ctaBandTitle": "Đặt lịch giới thiệu 15 phút miễn phí",
+    "ctaBandDesc": "Không áp lực giá cả. Chúng tôi sẽ xác định bạn cần bao nhiêu video và cho mục đích gì, sau đó đề xuất gói phù hợp.",
+    "ctaBandButton": "Đặt lịch giới thiệu miễn phí",
     "plans": [
       {
-        "name": "Basic",
-        "price": "¥300,000",
-        "period": "/mo",
-        "volume": "20 videos / mo",
+        "name": "Cơ bản",
+        "price": "¥300.000",
+        "period": "/tháng",
+        "volume": "20 video / tháng",
         "popular": false,
         "features": [
-          "24-48h delivery",
-          "Request via your board",
-          "All formats (vertical / square / wide)",
-          "Auto subtitles",
-          "Permanent hosting"
+          "Giao trong 24-48h",
+          "Yêu cầu qua bảng của bạn",
+          "Tất cả định dạng (dọc / vuông / ngang)",
+          "Phụ đề tự động",
+          "Lưu trữ vĩnh viễn"
         ]
       },
       {
-        "name": "Pro",
-        "price": "¥500,000",
-        "period": "/mo",
-        "volume": "50 videos / mo",
+        "name": "Chuyên nghiệp",
+        "price": "¥500.000",
+        "period": "/tháng",
+        "volume": "50 video / tháng",
         "popular": true,
         "features": [
-          "24h delivery (priority queue)",
-          "AI voiceover",
-          "Auto logo / captions / end cards",
-          "Monthly report videos",
-          "Request via Slack"
+          "Giao trong 24h (hàng đợi ưu tiên)",
+          "Lồng tiếng AI",
+          "Tự động logo / phụ đề / end card",
+          "Video báo cáo hàng tháng",
+          "Yêu cầu qua Slack"
         ]
       },
       {
-        "name": "Scale",
-        "price": "¥800,000",
-        "period": "/mo",
-        "volume": "100 videos / mo",
+        "name": "Mở rộng",
+        "price": "¥800.000",
+        "period": "/tháng",
+        "volume": "100 video / tháng",
         "popular": false,
         "features": [
-          "12h delivery (fast queue)",
-          "AI avatar videos",
-          "Custom template support",
-          "Dedicated Slack channel",
-          "Monthly strategy call"
+          "Giao trong 12h (hàng đợi nhanh)",
+          "Video đại diện AI",
+          "Hỗ trợ mẫu tùy chỉnh",
+          "Kênh Slack riêng",
+          "Cuộc gọi chiến lược hàng tháng"
         ]
       }
     ],
     "comparison": [
       {
-        "item": "Cost per video",
-        "paradigm": "¥15,000 (Pro)",
-        "traditional": "¥80,000-300,000"
+        "item": "Chi phí mỗi video",
+        "paradigm": "¥15.000 (Pro)",
+        "traditional": "¥80.000-300.000"
       },
       {
-        "item": "Turnaround",
+        "item": "Thời gian xử lý",
         "paradigm": "24-48h",
-        "traditional": "1-3 weeks"
+        "traditional": "1-3 tuần"
       },
       {
-        "item": "Revisions",
-        "paradigm": "Unlimited (re-queue)",
-        "traditional": "2-3 max"
+        "item": "Chỉnh sửa",
+        "paradigm": "Không giới hạn (xếp hàng lại)",
+        "traditional": "Tối đa 2-3 lần"
       },
       {
-        "item": "Scale",
-        "paradigm": "Up to 100 / mo, flat",
-        "traditional": "Per-video quote"
+        "item": "Quy mô",
+        "paradigm": "Lên đến 100/tháng, phí cố định",
+        "traditional": "Báo giá theo từng video"
       },
       {
-        "item": "Billing",
-        "paradigm": "Monthly, cancel anytime",
-        "traditional": "Per-project, minimums"
+        "item": "Thanh toán",
+        "paradigm": "Hàng tháng, hủy bất cứ lúc nào",
+        "traditional": "Theo dự án, tối thiểu"
       }
     ],
     "process": [
       {
         "step": "01",
-        "title": "Subscribe & get your board",
-        "desc": "Start your subscription and we issue your request board"
+        "title": "Đăng ký & nhận bảng yêu cầu",
+        "desc": "Bắt đầu thuê bao và chúng tôi cấp bảng yêu cầu của bạn"
       },
       {
         "step": "02",
-        "title": "Request any video",
-        "desc": "Just drop a title / type / assets (optional) on the board"
+        "title": "Yêu cầu bất kỳ video nào",
+        "desc": "Chỉ cần nhập tiêu đề / loại / tài sản (tùy chọn) lên bảng"
       },
       {
         "step": "03",
-        "title": "Delivered in 24-48h",
-        "desc": "MP4 delivered to your board with a Slack ping"
+        "title": "Giao trong 24-48h",
+        "desc": "MP4 được giao đến bảng của bạn kèm thông báo Slack"
       },
       {
         "step": "04",
-        "title": "Revise until perfect",
-        "desc": "Re-queue until you love it. Your monthly count doesn't change"
+        "title": "Chỉnh sửa đến khi hoàn hảo",
+        "desc": "Xếp hàng lại cho đến khi bạn hài lòng. Số lượng hàng tháng không thay đổi"
       }
     ]
   },
@@ -1150,81 +1150,81 @@
   },
   "homeEn": {
     "hero": {
-      "eyebrow": "FOR FOREIGN BRANDS ENTERING JAPAN",
-      "h1": "You're invisible in the world's 3rd-largest economy — and it's costing you every month.",
-      "sub": "Japan's ¥22T e-commerce and ¥5.8T inbound market is wide open. But with no Japanese site, no legal compliance, and no Konbini / PayPay checkout, Japanese buyers can't find you, trust you, or pay you. Paradigm makes you Japan-ready end-to-end — you never touch a word of Japanese.",
-      "ctaPrimary": "Get your Japan Market Fit Report",
-      "ctaPrimaryNote": "$1,500 · credited to your first month",
-      "ctaSecondary": "Book a free 30-min call",
-      "trust": "Built for Kickstarter-funded brands · Shopify D2C · SaaS entering Japan"
+      "eyebrow": "DÀNH CHO CÁC THƯƠNG HIỆU NƯỚC NGOÀI GIA NHẬP NHẬT BẢN",
+      "h1": "Bạn vô hình trước nền kinh tế lớn thứ 3 thế giới — và điều đó đang khiến bạn mất tiền mỗi tháng.",
+      "sub": "Thị trường thương mại điện tử ¥22 nghìn tỷ và du lịch inbound ¥5,8 nghìn tỷ của Nhật Bản đang rộng mở. Nhưng nếu không có trang web tiếng Nhật, không tuân thủ pháp luật, không có Konbini / PayPay, người mua Nhật không thể tìm thấy, tin tưởng hay thanh toán cho bạn. Paradigm giúp bạn sẵn sàng cho Nhật Bản từ đầu đến cuối — bạn không cần chạm một từ tiếng Nhật nào.",
+      "ctaPrimary": "Nhận Báo cáo Phù hợp Thị trường Nhật Bản",
+      "ctaPrimaryNote": "$1.500 · được khấu trừ vào tháng đầu tiên",
+      "ctaSecondary": "Đặt lịch tư vấn 30 phút miễn phí",
+      "trust": "Được xây dựng cho các thương hiệu gọi vốn Kickstarter · Shopify D2C · SaaS gia nhập Nhật Bản"
     },
     "loss": {
-      "eyebrow": "THE COST OF WAITING",
-      "heading": "What “not being in Japan” actually costs you",
-      "sub": "Every month without a Japan-ready presence is revenue handed to competitors who localized first.",
+      "eyebrow": "CHI PHÍ CỦA VIỆC CHẦN CHỪ",
+      "heading": "Việc “không có mặt tại Nhật” thực sự khiến bạn mất bao nhiêu",
+      "sub": "Mỗi tháng không có sự hiện diện sẵn sàng cho Nhật Bản là doanh thu rơi vào tay đối thủ đã bản địa hóa trước.",
       "card1Stat": "0",
-      "card1Label": "Japanese buyers who can read your English-only site",
+      "card1Label": "Người mua Nhật có thể đọc trang web chỉ bằng tiếng Anh của bạn",
       "card2Stat": "~70%",
-      "card2Label": "of Japanese shoppers abandon carts without Konbini / PayPay",
-      "card3Stat": "Invisible",
-      "card3Label": "on Google Maps & LINE — where Japanese discovery actually happens",
-      "card4Stat": "Non-compliant",
-      "card4Label": "you legally cannot sell to Japanese consumers without proper disclosures"
+      "card2Label": "Người mua sắm Nhật bỏ giỏ hàng nếu không có Konbini / PayPay",
+      "card3Stat": "Vô hình",
+      "card3Label": "trên Google Maps & LINE — nơi người Nhật thực sự khám phá",
+      "card4Stat": "Không tuân thủ",
+      "card4Label": "bạn không thể bán hợp pháp cho người tiêu dùng Nhật nếu không có công bố đầy đủ"
     },
     "offer": {
-      "eyebrow": "THE FIX — JaaS",
-      "heading": "Japan-as-a-Service: your entire Japan operation, handled",
-      "sub": "One fixed-scope engagement covers everything you'd otherwise need a Tokyo office and a Japanese team for. You work in English. We run Japan in Japanese.",
-      "point1": "Japanese site & localization — not translation, but culturally rebuilt for Japanese buyers",
-      "point2": "Legal compliance — required disclosures so you can sell to consumers legally",
-      "point3": "Local payments & logistics — Konbini, PayPay, credit, domestic delivery",
-      "point4": "Discovery & support — MEO (Google Maps), LINE official, AI customer support in Japanese"
+      "eyebrow": "GIẢI PHÁP — JaaS",
+      "heading": "Japan-as-a-Service: toàn bộ hoạt động Nhật Bản của bạn, được xử lý",
+      "sub": "Một gói dịch vụ phạm vi cố định bao gồm mọi thứ bạn cần nếu không phải mở văn phòng Tokyo và thuê đội ngũ Nhật. Bạn làm việc bằng tiếng Anh. Chúng tôi vận hành Nhật Bản bằng tiếng Nhật.",
+      "point1": "Trang web & bản địa hóa tiếng Nhật — không chỉ dịch thuật, mà được xây dựng lại về mặt văn hóa cho người mua Nhật",
+      "point2": "Tuân thủ pháp luật — công bố bắt buộc để bạn có thể bán hàng hợp pháp cho người tiêu dùng",
+      "point3": "Thanh toán & hậu cần địa phương — Konbini, PayPay, thẻ tín dụng, giao hàng nội địa",
+      "point4": "Khám phá & hỗ trợ — MEO (Google Maps), LINE official, hỗ trợ khách hàng AI bằng tiếng Nhật"
     },
     "mechanism": {
-      "eyebrow": "WHY IT WORKS",
-      "heading": "Insurance against failure. Booster for growth.",
-      "item1Title": "Bilingual, async",
-      "item1Body": "We take everything in English and handle the Japanese side entirely. Zero Japanese burden on your team.",
-      "item2Title": "Japan-specific stack",
-      "item2Body": "MEO, LINE, Yahoo! Japan SEO, Konbini & PayPay — the channels Japanese customers actually use.",
-      "item3Title": "AI + local experts",
-      "item3Body": "AI handles scale (support, content); Tokyo operators handle judgment, culture, and compliance.",
-      "item4Title": "Fixed scope, fixed price",
-      "item4Body": "You know exactly what you get and what it costs. No scope creep, no surprise invoices."
+      "eyebrow": "TẠI SAO HIỆU QUẢ",
+      "heading": "Bảo hiểm chống thất bại. Đòn bẩy cho tăng trưởng.",
+      "item1Title": "Song ngữ, không đồng bộ",
+      "item1Body": "Chúng tôi nhận mọi thứ bằng tiếng Anh và xử lý hoàn toàn phía tiếng Nhật. Không gánh nặng tiếng Nhật cho đội ngũ của bạn.",
+      "item2Title": "Ngăn xếp dành riêng cho Nhật Bản",
+      "item2Body": "MEO, LINE, Yahoo! Japan SEO, Konbini & PayPay — các kênh mà khách hàng Nhật thực sự sử dụng.",
+      "item3Title": "AI + chuyên gia địa phương",
+      "item3Body": "AI xử lý quy mô (hỗ trợ, nội dung); các nhà điều hành Tokyo xử lý phán đoán, văn hóa và tuân thủ.",
+      "item4Title": "Phạm vi cố định, giá cố định",
+      "item4Body": "Bạn biết chính xác những gì mình nhận được và chi phí. Không mở rộng phạm vi, không hóa đơn bất ngờ."
     },
     "proof": {
-      "eyebrow": "PROOF",
-      "heading": "Real results from real clients",
-      "placeholder": "Anonymized client case studies are being prepared. Want references? Ask on your intro call."
+      "eyebrow": "BẰNG CHỨNG",
+      "heading": "Kết quả thực tế từ khách hàng thực",
+      "placeholder": "Nghiên cứu điển hình khách hàng ẩn danh đang được chuẩn bị. Muốn tham khảo? Hãy hỏi trong cuộc gọi giới thiệu."
     },
     "report": {
-      "eyebrow": "START HERE — LOW RISK",
-      "heading": "See exactly what Japan is worth to you — for $1,500",
-      "body": "Before any commitment, get a Japan Market Fit Report: your addressable market, competitor landscape, recommended channels, compliance gaps, and a concrete revenue projection. If you move forward, the full $1,500 is credited to your first month.",
-      "bullet1": "Your specific Japan TAM & missed revenue, quantified",
-      "bullet2": "Competitor & channel analysis (MEO / LINE / EC)",
-      "bullet3": "Compliance checklist + a prioritized 90-day entry plan",
-      "cta": "Get your Japan Market Fit Report — $1,500",
-      "note": "Fully credited to your first month if you proceed."
+      "eyebrow": "BẮT ĐẦU TẠI ĐÂY — RỦI RO THẤP",
+      "heading": "Xem chính xác Nhật Bản đáng giá bao nhiêu với bạn — chỉ $1.500",
+      "body": "Trước bất kỳ cam kết nào, hãy nhận Báo cáo Phù hợp Thị trường Nhật Bản: thị trường mục tiêu của bạn, phân tích đối thủ cạnh tranh, kênh đề xuất, khoảng trống tuân thủ và dự báo doanh thu cụ thể. Nếu bạn tiến triển, toàn bộ $1.500 sẽ được khấu trừ vào tháng đầu tiên.",
+      "bullet1": "TAM Nhật Bản cụ thể & doanh thu bị bỏ lỡ, được định lượng",
+      "bullet2": "Phân tích đối thủ cạnh tranh & kênh (MEO / LINE / EC)",
+      "bullet3": "Danh sách kiểm tra tuân thủ + kế hoạch gia nhập 90 ngày ưu tiên",
+      "cta": "Nhận Báo cáo Phù hợp Thị trường Nhật Bản — $1.500",
+      "note": "Được khấu trừ toàn bộ vào tháng đầu tiên nếu bạn tiếp tục."
     },
     "faq": {
-      "heading": "Questions foreign founders ask",
-      "q1": "Do I need a Japanese legal entity to start?",
-      "a1": "Not to begin. We can launch your localized presence and test the market first; entity setup is part of the Enterprise tier or a later step once demand is proven.",
-      "q2": "How do payments work without a Japanese bank?",
-      "a2": "We set up Japan-friendly payment rails (Konbini, PayPay, cards) through providers that work for foreign sellers, and advise on settlement.",
-      "q3": "How long until I'm live in Japan?",
-      "a3": "A localized launch typically takes 30–90 days depending on tier and scope. The Market Fit Report gives you a precise timeline up front.",
-      "q4": "Do I need to speak or write Japanese?",
-      "a4": "No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side.",
-      "q5": "What does it cost?",
-      "a5": "Three fixed-scope tiers (Essential / Growth / Enterprise). Start with the $1,500 Market Fit Report, which is credited to your first month."
+      "heading": "Câu hỏi của nhà sáng lập nước ngoài",
+      "q1": "Tôi có cần thành lập pháp nhân Nhật Bản để bắt đầu không?",
+      "a1": "Không cần để bắt đầu. Chúng tôi có thể triển khai sự hiện diện bản địa hóa và thử nghiệm thị trường trước; việc thành lập pháp nhân là một phần của gói Enterprise hoặc bước sau khi nhu cầu được chứng minh.",
+      "q2": "Thanh toán hoạt động thế nào nếu không có ngân hàng Nhật?",
+      "a2": "Chúng tôi thiết lập các kênh thanh toán thân thiện với Nhật Bản (Konbini, PayPay, thẻ) thông qua các nhà cung cấp hoạt động cho người bán nước ngoài và tư vấn về thanh toán.",
+      "q3": "Bao lâu thì tôi có mặt tại Nhật Bản?",
+      "a3": "Một bản địa hóa thường mất 30–90 ngày tùy theo gói và phạm vi. Báo cáo Phù hợp Thị trường cung cấp cho bạn lịch trình chính xác ngay từ đầu.",
+      "q4": "Tôi có cần nói hoặc viết tiếng Nhật không?",
+      "a4": "Không. Mọi thứ với bạn đều bằng tiếng Anh. Tất cả công việc hướng đến người Nhật — trang web, hỗ trợ, tuân thủ — được xử lý ở phía chúng tôi.",
+      "q5": "Chi phí là bao nhiêu?",
+      "a5": "Ba gói phạm vi cố định (Essential / Growth / Enterprise). Bắt đầu với Báo cáo Phù hợp Thị trường $1.500, được khấu trừ vào tháng đầu tiên."
     },
     "finalCta": {
-      "heading": "Stop leaving Japan on the table.",
-      "sub": "Start with a $1,500 report or a free 30-minute call. Either way, you'll know exactly what Japan is worth — and how to capture it.",
-      "button": "Get your Japan Market Fit Report",
-      "secondary": "Book a free 30-min call"
+      "heading": "Đừng để Nhật Bản trên bàn nữa.",
+      "sub": "Bắt đầu với báo cáo $1.500 hoặc cuộc gọi 30 phút miễn phí. Dù thế nào, bạn sẽ biết chính xác Nhật Bản đáng giá bao nhiêu — và cách chinh phục nó.",
+      "button": "Nhận Báo cáo Phù hợp Thị trường Nhật Bản",
+      "secondary": "Đặt lịch tư vấn 30 phút miễn phí"
     }
   }
 }

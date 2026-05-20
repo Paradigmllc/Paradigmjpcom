@@ -25,7 +25,11 @@ export const Services: CollectionConfig = {
   hooks: {
     afterChange: [
       makeAfterChangeAudit("services"),
-      makeAutoTranslateHook({ text: ["name", "tagline"], rich: ["description"] }),
+      makeAutoTranslateHook({
+        text: ["name", "tagline"],
+        rich: ["description"],
+        arrays: [{ name: "features", text: ["feature"] }],
+      }),
     ],
     afterDelete: [makeAfterDeleteAudit("services")],
   },

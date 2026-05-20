@@ -25,7 +25,10 @@ export const Pricing: CollectionConfig = {
   hooks: {
     afterChange: [
       makeAfterChangeAudit("pricing"),
-      makeAutoTranslateHook({ text: ["planName", "description", "ctaLabel"] }),
+      makeAutoTranslateHook({
+        text: ["planName", "description", "ctaLabel"],
+        arrays: [{ name: "features", text: ["feature"] }],
+      }),
     ],
     afterDelete: [makeAfterDeleteAudit("pricing")],
   },

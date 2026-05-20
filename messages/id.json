@@ -987,119 +987,119 @@
     "message": "Mohon tunggu sebentar…"
   },
   "videoPage": {
-    "metaTitle": "Video subscription — your entire video team, on subscription",
-    "metaDescription": "Unlimited video requests, one flat monthly fee, pause anytime. 20-100 videos/month delivered in 24-48h. Cheaper than hiring or agencies.",
-    "heroBadge": "Productized video subscription",
-    "heroTitle": "Your entire video team, on subscription",
-    "heroHighlight": "from ¥300K / mo",
-    "heroDesc": "Unlimited video requests, one flat monthly fee, pause anytime. 20-100 videos a month, delivered in 24-48h. No hiring, no agencies, no contracts.",
-    "comparisonEyebrow": "Comparison",
-    "comparisonTitle": "The limits of hiring & agencies — and how we fix them",
+    "metaTitle": "Langganan video — seluruh tim video Anda, dengan langganan",
+    "metaDescription": "Permintaan video tak terbatas, biaya bulanan tetap, jeda kapan saja. 20-100 video/bulan dikirim dalam 24-48 jam. Lebih murah daripada merekrut atau agensi.",
+    "heroBadge": "Langganan video terproduktisasi",
+    "heroTitle": "Seluruh tim video Anda, dengan langganan",
+    "heroHighlight": "dari ¥300.000 / bln",
+    "heroDesc": "Permintaan video tak terbatas, biaya bulanan tetap, jeda kapan saja. 20-100 video per bulan, dikirim dalam 24-48 jam. Tidak perlu merekrut, tidak perlu agensi, tidak ada kontrak.",
+    "comparisonEyebrow": "Perbandingan",
+    "comparisonTitle": "Keterbatasan merekrut & agensi — dan cara kami memperbaikinya",
     "comparisonItemHead": "Item",
     "comparisonParadigmHead": "Paradigm",
-    "comparisonTraditionalHead": "Agency / hire",
-    "pricingEyebrow": "Pricing",
-    "pricingTitle": "Flat monthly. Pick by volume.",
-    "pricingDesc": "Overage ¥10,000 per extra video. 20% off annual.\nCancel anytime, no minimum term.",
-    "processEyebrow": "Process",
-    "processTitle": "From request to delivery — 4 steps",
-    "ctaButton": "Talk to us first",
-    "popularLabel": "Most popular",
-    "ctaBandEyebrow": "Start now",
-    "ctaBandTitle": "Book a free 15-min intro",
-    "ctaBandDesc": "No pricing pressure. We'll work out how many videos you need and what for, then recommend the right plan.",
-    "ctaBandButton": "Book a free intro",
+    "comparisonTraditionalHead": "Agensi / rekrut",
+    "pricingEyebrow": "Harga",
+    "pricingTitle": "Bulanan tetap. Pilih berdasarkan volume.",
+    "pricingDesc": "Kelebihan ¥10.000 per video tambahan. Diskon 20% untuk tahunan.\nBatalkan kapan saja, tanpa minimum jangka waktu.",
+    "processEyebrow": "Proses",
+    "processTitle": "Dari permintaan hingga pengiriman — 4 langkah",
+    "ctaButton": "Bicara dengan kami dulu",
+    "popularLabel": "Paling populer",
+    "ctaBandEyebrow": "Mulai sekarang",
+    "ctaBandTitle": "Pesan perkenalan 15 menit gratis",
+    "ctaBandDesc": "Tanpa tekanan harga. Kami akan menghitung berapa banyak video yang Anda butuhkan dan untuk apa, lalu merekomendasikan paket yang tepat.",
+    "ctaBandButton": "Pesan perkenalan gratis",
     "plans": [
       {
         "name": "Basic",
-        "price": "¥300,000",
-        "period": "/mo",
-        "volume": "20 videos / mo",
+        "price": "¥300.000",
+        "period": "/bln",
+        "volume": "20 video / bln",
         "popular": false,
         "features": [
-          "24-48h delivery",
-          "Request via your board",
-          "All formats (vertical / square / wide)",
-          "Auto subtitles",
-          "Permanent hosting"
+          "Pengiriman 24-48 jam",
+          "Permintaan melalui papan Anda",
+          "Semua format (vertikal / persegi / lebar)",
+          "Teks otomatis",
+          "Hosting permanen"
         ]
       },
       {
         "name": "Pro",
-        "price": "¥500,000",
-        "period": "/mo",
-        "volume": "50 videos / mo",
+        "price": "¥500.000",
+        "period": "/bln",
+        "volume": "50 video / bln",
         "popular": true,
         "features": [
-          "24h delivery (priority queue)",
-          "AI voiceover",
-          "Auto logo / captions / end cards",
-          "Monthly report videos",
-          "Request via Slack"
+          "Pengiriman 24 jam (antrian prioritas)",
+          "Sulih suara AI",
+          "Logo / teks / kartu akhir otomatis",
+          "Video laporan bulanan",
+          "Permintaan melalui Slack"
         ]
       },
       {
         "name": "Scale",
-        "price": "¥800,000",
-        "period": "/mo",
-        "volume": "100 videos / mo",
+        "price": "¥800.000",
+        "period": "/bln",
+        "volume": "100 video / bln",
         "popular": false,
         "features": [
-          "12h delivery (fast queue)",
-          "AI avatar videos",
-          "Custom template support",
-          "Dedicated Slack channel",
-          "Monthly strategy call"
+          "Pengiriman 12 jam (antrian cepat)",
+          "Video avatar AI",
+          "Dukungan template kustom",
+          "Saluran Slack khusus",
+          "Panggilan strategi bulanan"
         ]
       }
     ],
     "comparison": [
       {
-        "item": "Cost per video",
-        "paradigm": "¥15,000 (Pro)",
-        "traditional": "¥80,000-300,000"
+        "item": "Biaya per video",
+        "paradigm": "¥15.000 (Pro)",
+        "traditional": "¥80.000-300.000"
       },
       {
-        "item": "Turnaround",
-        "paradigm": "24-48h",
-        "traditional": "1-3 weeks"
+        "item": "Waktu pengerjaan",
+        "paradigm": "24-48 jam",
+        "traditional": "1-3 minggu"
       },
       {
-        "item": "Revisions",
-        "paradigm": "Unlimited (re-queue)",
-        "traditional": "2-3 max"
+        "item": "Revisi",
+        "paradigm": "Tak terbatas (antrian ulang)",
+        "traditional": "Maks 2-3"
       },
       {
-        "item": "Scale",
-        "paradigm": "Up to 100 / mo, flat",
-        "traditional": "Per-video quote"
+        "item": "Skala",
+        "paradigm": "Hingga 100 / bln, tetap",
+        "traditional": "Penawaran per video"
       },
       {
-        "item": "Billing",
-        "paradigm": "Monthly, cancel anytime",
-        "traditional": "Per-project, minimums"
+        "item": "Penagihan",
+        "paradigm": "Bulanan, batalkan kapan saja",
+        "traditional": "Per proyek, minimum"
       }
     ],
     "process": [
       {
         "step": "01",
-        "title": "Subscribe & get your board",
-        "desc": "Start your subscription and we issue your request board"
+        "title": "Berlangganan & dapatkan papan Anda",
+        "desc": "Mulai langganan Anda dan kami menerbitkan papan permintaan Anda"
       },
       {
         "step": "02",
-        "title": "Request any video",
-        "desc": "Just drop a title / type / assets (optional) on the board"
+        "title": "Minta video apa pun",
+        "desc": "Cukup beri judul / jenis / aset (opsional) di papan"
       },
       {
         "step": "03",
-        "title": "Delivered in 24-48h",
-        "desc": "MP4 delivered to your board with a Slack ping"
+        "title": "Dikirim dalam 24-48 jam",
+        "desc": "MP4 dikirim ke papan Anda dengan ping Slack"
       },
       {
         "step": "04",
-        "title": "Revise until perfect",
-        "desc": "Re-queue until you love it. Your monthly count doesn't change"
+        "title": "Revisi hingga sempurna",
+        "desc": "Antri ulang sampai Anda menyukainya. Jumlah bulanan Anda tidak berubah"
       }
     ]
   },
@@ -1150,81 +1150,81 @@
   },
   "homeEn": {
     "hero": {
-      "eyebrow": "FOR FOREIGN BRANDS ENTERING JAPAN",
-      "h1": "You're invisible in the world's 3rd-largest economy — and it's costing you every month.",
-      "sub": "Japan's ¥22T e-commerce and ¥5.8T inbound market is wide open. But with no Japanese site, no legal compliance, and no Konbini / PayPay checkout, Japanese buyers can't find you, trust you, or pay you. Paradigm makes you Japan-ready end-to-end — you never touch a word of Japanese.",
-      "ctaPrimary": "Get your Japan Market Fit Report",
-      "ctaPrimaryNote": "$1,500 · credited to your first month",
-      "ctaSecondary": "Book a free 30-min call",
-      "trust": "Built for Kickstarter-funded brands · Shopify D2C · SaaS entering Japan"
+      "eyebrow": "UNTUK MEREK ASING YANG MEMASUKI JEPANG",
+      "h1": "Anda tidak terlihat di ekonomi terbesar ke-3 dunia — dan itu merugikan Anda setiap bulan.",
+      "sub": "Pasar e-commerce Jepang senilai ¥22T dan pasar inbound ¥5,8T terbuka lebar. Namun tanpa situs Jepang, kepatuhan hukum, dan checkout Konbini/PayPay, pembeli Jepang tidak dapat menemukan, mempercayai, atau membayar Anda. Paradigm membuat Anda siap-Jepang secara end-to-end — Anda tidak perlu menyentuh satu kata pun bahasa Jepang.",
+      "ctaPrimary": "Dapatkan Laporan Kesesuaian Pasar Jepang Anda",
+      "ctaPrimaryNote": "$1.500 · dikreditkan ke bulan pertama Anda",
+      "ctaSecondary": "Pesan panggilan 30 menit gratis",
+      "trust": "Dibangun untuk merek yang didanai Kickstarter · Shopify D2C · SaaS yang memasuki Jepang"
     },
     "loss": {
-      "eyebrow": "THE COST OF WAITING",
-      "heading": "What “not being in Japan” actually costs you",
-      "sub": "Every month without a Japan-ready presence is revenue handed to competitors who localized first.",
+      "eyebrow": "BIAYA MENUNGGU",
+      "heading": "Apa arti 'tidak berada di Jepang' sebenarnya bagi Anda",
+      "sub": "Setiap bulan tanpa kehadiran siap-Jepang adalah pendapatan yang diserahkan kepada pesaing yang melakukan lokalisasi lebih dulu.",
       "card1Stat": "0",
-      "card1Label": "Japanese buyers who can read your English-only site",
+      "card1Label": "Pembeli Jepang yang dapat membaca situs berbahasa Inggris Anda",
       "card2Stat": "~70%",
-      "card2Label": "of Japanese shoppers abandon carts without Konbini / PayPay",
-      "card3Stat": "Invisible",
-      "card3Label": "on Google Maps & LINE — where Japanese discovery actually happens",
-      "card4Stat": "Non-compliant",
-      "card4Label": "you legally cannot sell to Japanese consumers without proper disclosures"
+      "card2Label": "pembeli Jepang meninggalkan keranjang tanpa Konbini/PayPay",
+      "card3Stat": "Tidak terlihat",
+      "card3Label": "di Google Maps & LINE — tempat penemuan Jepang sebenarnya terjadi",
+      "card4Stat": "Tidak patuh",
+      "card4Label": "Anda secara hukum tidak dapat menjual ke konsumen Jepang tanpa pengungkapan yang tepat"
     },
     "offer": {
-      "eyebrow": "THE FIX — JaaS",
-      "heading": "Japan-as-a-Service: your entire Japan operation, handled",
-      "sub": "One fixed-scope engagement covers everything you'd otherwise need a Tokyo office and a Japanese team for. You work in English. We run Japan in Japanese.",
-      "point1": "Japanese site & localization — not translation, but culturally rebuilt for Japanese buyers",
-      "point2": "Legal compliance — required disclosures so you can sell to consumers legally",
-      "point3": "Local payments & logistics — Konbini, PayPay, credit, domestic delivery",
-      "point4": "Discovery & support — MEO (Google Maps), LINE official, AI customer support in Japanese"
+      "eyebrow": "SOLUSI — JaaS",
+      "heading": "Japan-as-a-Service: seluruh operasi Jepang Anda, ditangani",
+      "sub": "Satu lingkup tetap mencakup semua yang biasanya membutuhkan kantor Tokyo dan tim Jepang. Anda bekerja dalam bahasa Inggris. Kami menjalankan Jepang dalam bahasa Jepang.",
+      "point1": "Situs & lokalisasi Jepang — bukan terjemahan, tetapi dibangun kembali secara budaya untuk pembeli Jepang",
+      "point2": "Kepatuhan hukum — pengungkapan yang diperlukan sehingga Anda dapat menjual ke konsumen secara legal",
+      "point3": "Pembayaran & logistik lokal — Konbini, PayPay, kredit, pengiriman domestik",
+      "point4": "Penemuan & dukungan — MEO (Google Maps), LINE official, dukungan pelanggan AI dalam bahasa Jepang"
     },
     "mechanism": {
-      "eyebrow": "WHY IT WORKS",
-      "heading": "Insurance against failure. Booster for growth.",
-      "item1Title": "Bilingual, async",
-      "item1Body": "We take everything in English and handle the Japanese side entirely. Zero Japanese burden on your team.",
-      "item2Title": "Japan-specific stack",
-      "item2Body": "MEO, LINE, Yahoo! Japan SEO, Konbini & PayPay — the channels Japanese customers actually use.",
-      "item3Title": "AI + local experts",
-      "item3Body": "AI handles scale (support, content); Tokyo operators handle judgment, culture, and compliance.",
-      "item4Title": "Fixed scope, fixed price",
-      "item4Body": "You know exactly what you get and what it costs. No scope creep, no surprise invoices."
+      "eyebrow": "MENGAPA INI BEKERJA",
+      "heading": "Asuransi terhadap kegagalan. Booster untuk pertumbuhan.",
+      "item1Title": "Bilingual, asinkron",
+      "item1Body": "Kami mengambil semuanya dalam bahasa Inggris dan menangani sisi Jepang sepenuhnya. Beban nol bahasa Jepang di tim Anda.",
+      "item2Title": "Stack khusus Jepang",
+      "item2Body": "MEO, LINE, Yahoo! Japan SEO, Konbini & PayPay — saluran yang benar-benar digunakan pelanggan Jepang.",
+      "item3Title": "AI + pakar lokal",
+      "item3Body": "AI menangani skala (dukungan, konten); operator Tokyo menangani penilaian, budaya, dan kepatuhan.",
+      "item4Title": "Lingkup tetap, harga tetap",
+      "item4Body": "Anda tahu persis apa yang Anda dapatkan dan berapa biayanya. Tidak ada perluasan lingkup, tidak ada faktur kejutan."
     },
     "proof": {
-      "eyebrow": "PROOF",
-      "heading": "Real results from real clients",
-      "placeholder": "Anonymized client case studies are being prepared. Want references? Ask on your intro call."
+      "eyebrow": "BUKTI",
+      "heading": "Hasil nyata dari klien nyata",
+      "placeholder": "Studi kasus klien anonim sedang disiapkan. Ingin referensi? Tanyakan pada panggilan perkenalan Anda."
     },
     "report": {
-      "eyebrow": "START HERE — LOW RISK",
-      "heading": "See exactly what Japan is worth to you — for $1,500",
-      "body": "Before any commitment, get a Japan Market Fit Report: your addressable market, competitor landscape, recommended channels, compliance gaps, and a concrete revenue projection. If you move forward, the full $1,500 is credited to your first month.",
-      "bullet1": "Your specific Japan TAM & missed revenue, quantified",
-      "bullet2": "Competitor & channel analysis (MEO / LINE / EC)",
-      "bullet3": "Compliance checklist + a prioritized 90-day entry plan",
-      "cta": "Get your Japan Market Fit Report — $1,500",
-      "note": "Fully credited to your first month if you proceed."
+      "eyebrow": "MULAI DI SINI — RISIKO RENDAH",
+      "heading": "Lihat persis berapa nilai Jepang bagi Anda — seharga $1.500",
+      "body": "Sebelum komitmen apa pun, dapatkan Laporan Kesesuaian Pasar Jepang: pasar yang dapat Anda jangkau, lanskap pesaing, saluran yang direkomendasikan, kesenjangan kepatuhan, dan proyeksi pendapatan konkret. Jika Anda melanjutkan, seluruh $1.500 akan dikreditkan ke bulan pertama Anda.",
+      "bullet1": "TAM Jepang spesifik Anda & pendapatan yang hilang, dikuantifikasi",
+      "bullet2": "Analisis pesaing & saluran (MEO / LINE / EC)",
+      "bullet3": "Daftar periksa kepatuhan + rencana masuk 90 hari yang diprioritaskan",
+      "cta": "Dapatkan Laporan Kesesuaian Pasar Jepang Anda — $1.500",
+      "note": "Sepenuhnya dikreditkan ke bulan pertama Anda jika Anda melanjutkan."
     },
     "faq": {
-      "heading": "Questions foreign founders ask",
-      "q1": "Do I need a Japanese legal entity to start?",
-      "a1": "Not to begin. We can launch your localized presence and test the market first; entity setup is part of the Enterprise tier or a later step once demand is proven.",
-      "q2": "How do payments work without a Japanese bank?",
-      "a2": "We set up Japan-friendly payment rails (Konbini, PayPay, cards) through providers that work for foreign sellers, and advise on settlement.",
-      "q3": "How long until I'm live in Japan?",
-      "a3": "A localized launch typically takes 30–90 days depending on tier and scope. The Market Fit Report gives you a precise timeline up front.",
-      "q4": "Do I need to speak or write Japanese?",
-      "a4": "No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side.",
-      "q5": "What does it cost?",
-      "a5": "Three fixed-scope tiers (Essential / Growth / Enterprise). Start with the $1,500 Market Fit Report, which is credited to your first month."
+      "heading": "Pertanyaan yang sering diajukan pendiri asing",
+      "q1": "Apakah saya perlu badan hukum Jepang untuk memulai?",
+      "a1": "Tidak untuk memulai. Kami dapat meluncurkan kehadiran terlokalisasi Anda dan menguji pasar terlebih dahulu; pengaturan entitas adalah bagian dari tingkat Enterprise atau langkah selanjutnya setelah permintaan terbukti.",
+      "q2": "Bagaimana cara pembayaran bekerja tanpa bank Jepang?",
+      "a2": "Kami menyiapkan jalur pembayaran ramah-Jepang (Konbini, PayPay, kartu) melalui penyedia yang bekerja untuk penjual asing, dan memberikan saran tentang penyelesaian.",
+      "q3": "Berapa lama sampai saya aktif di Jepang?",
+      "a3": "Peluncuran terlokalisasi biasanya memakan waktu 30–90 hari tergantung pada tingkat dan lingkup. Laporan Kesesuaian Pasar memberi Anda garis waktu yang tepat di awal.",
+      "q4": "Apakah saya perlu berbicara atau menulis bahasa Jepang?",
+      "a4": "Tidak. Semua yang berhubungan dengan Anda dalam bahasa Inggris. Semua pekerjaan yang menghadap Jepang — situs, dukungan, kepatuhan — ditangani di pihak kami.",
+      "q5": "Berapa biayanya?",
+      "a5": "Tiga tingkat lingkup tetap (Essential / Growth / Enterprise). Mulailah dengan Laporan Kesesuaian Pasar seharga $1.500, yang dikreditkan ke bulan pertama Anda."
     },
     "finalCta": {
-      "heading": "Stop leaving Japan on the table.",
-      "sub": "Start with a $1,500 report or a free 30-minute call. Either way, you'll know exactly what Japan is worth — and how to capture it.",
-      "button": "Get your Japan Market Fit Report",
-      "secondary": "Book a free 30-min call"
+      "heading": "Berhenti meninggalkan Jepang di atas meja.",
+      "sub": "Mulailah dengan laporan $1.500 atau panggilan 30 menit gratis. Either way, Anda akan tahu persis berapa nilai Jepang — dan cara mengambilnya.",
+      "button": "Dapatkan Laporan Kesesuaian Pasar Jepang Anda",
+      "secondary": "Pesan panggilan 30 menit gratis"
     }
   }
 }

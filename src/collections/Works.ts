@@ -25,7 +25,10 @@ export const Works: CollectionConfig = {
   hooks: {
     afterChange: [
       makeAfterChangeAudit("works"),
-      makeAutoTranslateHook({ text: ["title", "industry", "description", "challenge", "solution", "metrics"] }),
+      makeAutoTranslateHook({
+        text: ["title", "industry", "description", "challenge", "solution", "metrics"],
+        arrays: [{ name: "gallery", text: ["caption"] }],
+      }),
     ],
     afterDelete: [makeAfterDeleteAudit("works")],
   },
