@@ -4,11 +4,12 @@
  * 役割: DeepSeek Chat Completions API を呼ぶ唯一の窓口。
  *       Context Caching を最大化する設計 (system prompt 冒頭固定 → 90% OFF)。
  *
- * 🚨 永久ルール (2026-05-13 ユーザー明示・グローバル CLAUDE.md NN 強化):
- *   - **DEFAULT_MODEL = "deepseek-v4-pro"** (V4 PRO 強制)
- *   - レガシー `deepseek-chat` / `deepseek-reasoner` は 2026-07-24 廃止 → 新規コード使用禁止
- *   - 営業 OS / 診断レポート / 動画スクリプト 全 LLM 呼び出しで V4 PRO 固定
- *   - Flash は明示的に opts.model="deepseek-v4-flash" を指定したときのみ使用
+ * モデル方針 (2026-05-20 改訂・ユーザー承認):
+ *   - 旧「deepseek-v4-pro 永久固定」を撤回。実 API で v4-pro は空応答を返すため。
+ *   - **DEFAULT_MODEL = "deepseek-chat"** (env DEEPSEEK_MODEL で上書き可)
+ *   - **LiteLLM 対応**: env DEEPSEEK_API_BASE で OpenAI 互換 endpoint (LiteLLM proxy /
+ *     OpenRouter 等) に差し替え可能。LiteLLM 経由なら model="deepseek/deepseek-chat" 等を
+ *     DEEPSEEK_MODEL に設定。base 未設定時は api.deepseek.com 直叩き。
  *
  * 設計原則:
  *   1. system prompt に「固定プレフィックス」を頭に置く → cache hit
@@ -16,9 +17,11 @@
  *   3. env 未設定なら { ok: false } 返却 (fail-soft)
  */
 
-const DEEPSEEK_API = "https://api.deepseek.com/v1/chat/completions"
-// 🚨 永久ルール: V4 PRO 固定 (ユーザー明示 2026-05-13)
-const DEFAULT_MODEL = "deepseek-v4-pro"
+// LiteLLM 対応: base URL を env で差し替え可 (OpenAI 互換 endpoint)
+const API_BASE = process.env.DEEPSEEK_API_BASE ?? "https://api.deepseek.com/v1"
+const CHAT_URL = `${API_BASE.replace(/\/+$/, "")}/chat/completions`
+// 2026-05-20 改訂: v4-pro は実 API で空応答 → deepseek-chat に変更 (env DEEPSEEK_MODEL で上書き可)
+const DEFAULT_MODEL = process.env.DEEPSEEK_MODEL ?? "deepseek-chat"
 const DEFAULT_TIMEOUT_MS = 30_000
 
 const apiKey = () => process.env.DEEPSEEK_API_KEY ?? ""
@@ -78,7 +81,7 @@ export async function callDeepSeek(
     body.response_format = { type: "json_object" }
   }
   try {
-    const res = await fetch(DEEPSEEK_API, {
+    const res = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${key}`,
