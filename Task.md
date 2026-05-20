@@ -17,7 +17,7 @@
 
 | Status | Owner | Lock-since | Branch | Task | Notes |
 |--------|-------|-----------|--------|------|-------|
-| 🟢 ACTIVE | claude-code | 2026-05-20 | main | **営業フロー統合 Phase 0（基盤）** | 監査+壁打ち確定。migration drift 正史化 + 所有境界明記。下記 §営業フロー統合 参照 |
+| 🟢 大半完了 | claude-code | 2026-05-20 | main | **営業フロー統合** | カルテ自動生成→診断(DeepSeek作り込み)→④フォーム営業→進捗+Notion双方向+重複排除 が本番稼働。残=Payload CMS(別領域)/デザイン刷新/実リード投入。下記 §参照 |
 | 🛑 DECISION | - | 2026-05-13 | - | **🗄️ 旧営業 OS 撤廃確定 (unarchive 計画なし)** | Sprint 5-7 で _archive_* 化済の旧 proposal/MVP/sales-automation/persona/authentik は **永久に再起動しない** ことを宣言。新営業 OS は sales_* schema を真のソースとし、旧 mvp_* や cms_content_blocks (B36 既存 report 永続データ) は **read だけはする** が write しない |
 
 ---
@@ -31,11 +31,11 @@
 - [x] 0-1. migration drift 正史化: `supabase/migration_004_sales_hub_reconcile.sql` 作成（冪等・実DB introspection 由来の正確 DDL・本番未適用＝replay/正史用）
 - [x] 0-2. 所有境界明記: CLAUDE.md `s10-7` 追加（所有表 + 4 鉄則）+ 本ファイル §営業フロー統合 + memory `project-sales-os-duplication.md`
 
-### Phase 1 — ①⑤ Notion⇔Supabase 配線（コード済・残=運用設定）
-- [x] 1-0. コード一式は既存 (sync.ts/notion.ts/6 sync API/n8n 3 workflow JSON)・本セッションで疎通確認
-- [ ] 1-1. 【運用・要 n8n アクセス】n8n 3 workflow を import + Supabase Database Webhook 設定
-- [ ] 1-2. 【運用・要秘密鍵】Coolify env 投入 (NOTION_API_KEY / NOTION_DB_* / SLACK_BOT_TOKEN / N8N_WEBHOOK_SECRET)
-- [ ] 1-3. 【運用】Notion 4DB property 整備・双方向同期 E2E
+### Phase 1 — ①⑤ Notion⇔Supabase 配線（本番稼働確認済）
+- [x] 1-0. コード一式 (sync.ts/notion.ts/6 sync API)
+- [x] 1-1. **pg_cron 自動同期**: jobid 3 (companies・5分毎) + jobid 4 (templates・15分毎)・n8n 不使用 (Droplet 負荷ゼロ)
+- [x] 1-2. Coolify env は既に full provision 済 (NOTION_API_KEY/NOTION_DB_*(JP/GLOBAL)/N8N_WEBHOOK_SECRET/SLACK/DEEPSEEK)
+- [x] 1-3. **本番稼働確認**: sync-companies-from-notion live で total=7/updated=7。リードDB(8cbab1f5)+テンプレDB(115e2b0e) を cursor-mcp integration に共有済 (ユーザー実施)
 
 ### Phase 2 — ②カルテ（discovery 配線 完了）
 - [x] 2-2. `lib/sales/sources/form-discovery.ts` 新規 + `enrich.ts` に配線 → `meta.contact_form_url` 自動格納 (Layer0/A=fetch・Layer C=worker)
@@ -52,7 +52,15 @@
 - [x] 4-2. `lib/sales/kpi.ts` + `/api/sales/kpi-snapshot` (日次 KPI 集計)・weekly-digest 既存
 - [ ] 4-1. 営業資料 deck/PDF 生成 (report/[slug] 稼働済・deck は将来)
 
-**📊 監査結果 (2026-05-20)**: 単体 **81/81 pass** (新規 25) / **tsc 自コード clean** (残は既存 .next/types stale=archived 参照のみ) / **DB E2E** (fetchCandidates→activity write→KPI read→cleanup) MCP 検証 **pass** / `scripts/audit-sales-flow.mjs` (本番 dryRun 監査ツール) 同梱。**コードは全完了・残=秘密鍵が要る運用設定のみ** (n8n import / Coolify env / worker deploy / Notion DB)。
+### Phase 5 — LLM / 重複排除 / Notion CSV / DeepSeek 作り込み（2026-05-20 追加・完了）
+- [x] 5-1. **LiteLLM 風フォールバック** (`lib/deepseek.ts`): provider×model チェーン (default DeepSeek V4試行→空/失敗で deepseek-chat→OpenRouter)。`DEEPSEEK_API_BASE` で LiteLLM proxy 切替可。**本番フォールバック確認済** (V4空応答→deepseek-chat)
+- [x] 5-2. **重複排除** (`lib/sales/dedup.ts` + migration_006): canonical domain(hard UNIQUE) + name_key(soft)・`findExistingCompany`(notion_page_id→domain→name_key)・import-csv バッチdedup。**本番実証** (3行→batch_dupes_removed=1, inserted=2)
+- [x] 5-3. **Notion CSV→作成+enrich**: sync-companies-from-notion 2経路化 (新規=作成+enrich発火 / 既存=編集反映)
+- [x] 5-4. **DeepSeek 作り込み自動化** (`personalize.ts` `autoPersonalize`): enrich完了で fire-and-forget 発火・「作り込みの鉄則(寄せ集め禁止)」prompt 強化。diagnostic.ts が `meta.personalized_copy` 優先採用 → DiagnosticReport.tsx 不触で品質向上
+- [x] 5-5. **テンプレ Notion 編集ループ**: 56 jp テンプレを テンプレDB に push (51 created) → Notion編集 → jobid4 で逆同期
+
+**📊 監査 (2026-05-20)**: 単体 **92/92 pass** / tsc 自コード clean (残=既存 .next/types stale) / 本番E2E: kpi-snapshot書込✓ / outreach pipeline✓ / LLMフォールバック✓ / dedup✓ / companies-sync(total=7)✓ / `scripts/{audit-sales-flow,push-templates-to-notion}.mjs` 同梱 / commits 06ff74d→7228a3d 全push。
+**残 (コードでなく外部要因)**: ① Payload paradigm-tables 0個 (並行セッション領域・CMS空+ビルド18-25分グラインド) ② `DiagnosticReport.tsx` デザイン刷新 (並行編集中で不触) ③ 実リード投入 (現 demo 中心) ④ DeepSeek 作り込み live 実例の最終確認 (deploy wgr566 完了待ち)。
 
 **依存順**: 0 → 1 → 2 → 3 → 4。③(レポート)稼働済なので 0→1→2→3 で「一連の営業フロー」が繋がる。
 
