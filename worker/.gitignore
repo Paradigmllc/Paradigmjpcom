@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.log
+# Playwright がDLするブラウザバイナリ (絶対に commit しない・ディスク膨張源)
+.cache/
+ms-playwright/
+storage/

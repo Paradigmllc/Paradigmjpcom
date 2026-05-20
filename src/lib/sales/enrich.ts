@@ -21,6 +21,7 @@ import { findEmailsByDomain } from "./sources/hunter"
 import { checkSslGrade } from "./sources/ssllabs"
 import { getWhois } from "./sources/whois"
 import { findPlace } from "./sources/places"
+import { discoverFormUrl } from "./sources/form-discovery"
 import type { Industry, SalesCompany } from "./types"
 
 /** 自由メールドメインのブラックリスト (corporate でないので skip) */
@@ -133,7 +134,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   // Step 2: 並列 30+ source enrich (Sprint 15: PSI + gBizInfo + Wappalyzer + SSL + Whois + Places)
   //         Hunter.io はメール検索 (フォーム経由で email 既知の場合のみ)
   const url = domain.startsWith("http") ? domain : `https://${domain}`
-  const [scan, gbiz, tech, ssl, whois, place, hunter] = await Promise.all([
+  const [scan, gbiz, tech, ssl, whois, place, hunter, form] = await Promise.all([
     scanDomain(domain).catch((e) => {
       console.error("[enrich] scanDomain failed:", e)
       return null
@@ -162,6 +163,10 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
       console.error("[enrich] hunter failed:", e)
       return { ok: false, emails: [] }
     }),
+    discoverFormUrl({ homeUrl: domain }).catch((e) => {
+      console.error("[enrich] form-discovery failed:", e)
+      return null
+    }),
   ])
 
   // Step 3: 集約して最終 upsert (meta JSONB に 30+ source のデータを統合保存)
@@ -187,6 +192,12 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     whois: whois ?? null,
     place: place && place.found ? place : null,
     hunter: hunter.ok ? { emails: hunter.emails, count: hunter.emails.length } : null,
+    // ④フォーム営業の入力: 実フォーム URL のみ格納 (origin fallback は除外)
+    contact_form_url:
+      form && form.formUrl && form.method !== "fallback" && form.method !== "none"
+        ? form.formUrl
+        : null,
+    form_discovery: form ? { method: form.method, confidence: form.confidence } : null,
     ...(gbizFirst ? toCompanyMeta(gbizFirst) : {}),
   }
 

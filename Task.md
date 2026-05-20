@@ -17,8 +17,43 @@
 
 | Status | Owner | Lock-since | Branch | Task | Notes |
 |--------|-------|-----------|--------|------|-------|
-| 🟢 ACTIVE | claude-code | 2026-05-13 | main | **Sprint 8: Notion × Supabase ハブ整備** | sales_* schema (5 table) + lib/notion.ts + n8n 3 workflow skeleton + .env.example |
+| 🟢 ACTIVE | claude-code | 2026-05-20 | main | **営業フロー統合 Phase 0（基盤）** | 監査+壁打ち確定。migration drift 正史化 + 所有境界明記。下記 §営業フロー統合 参照 |
 | 🛑 DECISION | - | 2026-05-13 | - | **🗄️ 旧営業 OS 撤廃確定 (unarchive 計画なし)** | Sprint 5-7 で _archive_* 化済の旧 proposal/MVP/sales-automation/persona/authentik は **永久に再起動しない** ことを宣言。新営業 OS は sales_* schema を真のソースとし、旧 mvp_* や cms_content_blocks (B36 既存 report 永続データ) は **read だけはする** が write しない |
+
+---
+
+## 🎯 営業フロー統合（2026-05-20 壁打ち確定）
+
+> **監査結論**: 営業OSは共有Supabaseで二重化（本番=Appexxme `leads`(198)/`proposal_pages`(173)・paradigm-HP=`sales_companies`(7デモ)）。両者は別プロジェクトだが同 public スキーマに `sales_*` 同居。詳細 → memory `project-sales-os-duplication.md`。
+> **確定方針**: **paradigm-HP 自己完結**（背骨=`sales_companies`・Appexxme `leads`系は触らない）/ ④フォーム営業の所有=paradigm-HP・実行=隔離worker（`BrowserProvider` 抽象で 案1リモートbrowser ⇄ 案2 scale-to-zero を env 切替）/ discovery=Appexxme `form-discovery.ts` 参考コピー・依存なし / Chromium は共有Droplet常駐禁止。
+
+### Phase 0 — 基盤（低リスク・進行中）
+- [x] 0-1. migration drift 正史化: `supabase/migration_004_sales_hub_reconcile.sql` 作成（冪等・実DB introspection 由来の正確 DDL・本番未適用＝replay/正史用）
+- [x] 0-2. 所有境界明記: CLAUDE.md `s10-7` 追加（所有表 + 4 鉄則）+ 本ファイル §営業フロー統合 + memory `project-sales-os-duplication.md`
+
+### Phase 1 — ①⑤ Notion⇔Supabase 配線（コード済・残=運用設定）
+- [x] 1-0. コード一式は既存 (sync.ts/notion.ts/6 sync API/n8n 3 workflow JSON)・本セッションで疎通確認
+- [ ] 1-1. 【運用・要 n8n アクセス】n8n 3 workflow を import + Supabase Database Webhook 設定
+- [ ] 1-2. 【運用・要秘密鍵】Coolify env 投入 (NOTION_API_KEY / NOTION_DB_* / SLACK_BOT_TOKEN / N8N_WEBHOOK_SECRET)
+- [ ] 1-3. 【運用】Notion 4DB property 整備・双方向同期 E2E
+
+### Phase 2 — ②カルテ（discovery 配線 完了）
+- [x] 2-2. `lib/sales/sources/form-discovery.ts` 新規 + `enrich.ts` に配線 → `meta.contact_form_url` 自動格納 (Layer0/A=fetch・Layer C=worker)
+- [ ] 2-1. 能動 list-building (GLEIF/gBizInfo/Places→bulk) — `import-csv` 経路は既存・自動巡回は将来
+
+### Phase 3 — ④フォーム営業 worker（コード完了）
+- [x] 3-1. `outreach/browser-provider.ts` (DryRun/Remote・案1⇄案2 env 切替で賭けない設計)
+- [x] 3-2. `outreach/{types,state-machine,form-classifier,preflight,activity,orchestrator}.ts` + `/api/sales/outreach/run` (dryRun=default true)
+- [x] 3-3. `worker/` 別パッケージ (Playwright Stealth + Crawlee・Dockerfile・README)・deps 未 install (共有 Droplet ディスク安全)
+- [ ] 3-4. 【運用】worker を Coolify scale-to-zero サービスでデプロイ + `OUTREACH_BROWSER_PROVIDER`/`OUTREACH_WORKER_URL`/`OUTREACH_WORKER_SECRET` 設定
+
+### Phase 4 — ③営業資料 + 仕上げ（KPI 完了）
+- [x] 4-2. `lib/sales/kpi.ts` + `/api/sales/kpi-snapshot` (日次 KPI 集計)・weekly-digest 既存
+- [ ] 4-1. 営業資料 deck/PDF 生成 (report/[slug] 稼働済・deck は将来)
+
+**📊 監査結果 (2026-05-20)**: 単体 **77/77 pass** (新規 21) / **tsc 自コード clean** (残は既存 .next/types stale=archived 参照のみ) / **DB E2E** (fetchCandidates→activity write→KPI read→cleanup) MCP 検証 **pass** / `scripts/audit-sales-flow.mjs` (本番 dryRun 監査ツール) 同梱。**コードは全完了・残=秘密鍵が要る運用設定のみ** (n8n import / Coolify env / worker deploy / Notion DB)。
+
+**依存順**: 0 → 1 → 2 → 3 → 4。③(レポート)稼働済なので 0→1→2→3 で「一連の営業フロー」が繋がる。
 
 ---
 
@@ -26,7 +61,7 @@
 
 | Priority | Status | Owner | Task | 工数 | Branch (推奨) |
 |----------|--------|-------|------|------|---------------|
-| P1 | 🟡 BLOCKED | - | **診断レポート ゼロから再構築** — ユーザー壁打ち承認後着手 (旧 stack archive 済) | TBD | `agent/{X}/report-rebuild` |
+| — | ✅ 置換 | - | ~~診断レポート ゼロから再構築~~ → 下記 §営業フロー統合 に統合 (report/[slug] は稼働済・Phase 4 で deck 再建) | — | — |
 | P2 | ⚪ AVAILABLE | - | PayloadCMS Pages collection Block 追加 (PricingBlock / LogoCloud / Video / SplitContent / Timeline) — 必要に応じて | 1 日 | `agent/{X}/cms-blocks-ext` |
 | P3 | ⚪ AVAILABLE | - | legacy `locale` field の DB column drop migration (Pages/Services/Works/Pricing/FAQs) — admin が手動で availableLocales へ移行後 | 0.5 日 | `agent/{X}/legacy-locale-drop` |
 | P3 | ⚪ AVAILABLE | - | legacy `analytics.umamiWebsiteId*` / `calendarUrl.ja/en` の DB drop migration — admin が手動で *byLocale array へ移行後 | 0.5 日 | `agent/{X}/legacy-settings-drop` |

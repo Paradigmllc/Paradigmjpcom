@@ -1,0 +1,26 @@
+{
+  "name": "paradigm-outreach-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "④フォーム営業 専用ワーカー (Playwright Stealth × Crawlee)。Next アプリの BrowserProvider=remote から HTTP 委譲される。Coolify scale-to-zero で常駐させない。",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node --import tsx src/index.ts",
+    "install:browser": "playwright install chromium --with-deps",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "crawlee": "^3.11.5",
+    "playwright": "^1.48.0",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  },
+  "comment_disk_safety": "⚠️ npm install と playwright install chromium はコンテナビルド時のみ実行。共有 Droplet には入れない (案1=CDP_ENDPOINT 指定でリモートブラウザに逃がせば Chromium 自体不要)。"
+}
