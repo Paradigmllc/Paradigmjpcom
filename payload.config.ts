@@ -136,9 +136,13 @@ export default buildConfig({
         ? { rejectUnauthorized: false }
         : false,
     },
-    // 2026-04-30: Appexxme と DB を共有しているため Payload は専用 schema "payload"
-    // に分離 (public.leads が Appexxme 営業リード用に既存・衝突回避)
-    schemaName: "payload",
+    // 2026-05-20: 専用 schema "paradigm" に分離。旧 "payload" は別アプリ
+    // (articles/guides/tools/homepage 等・owner=postgres) に占有され、paradigm の
+    // posts/services/pricing/works/faqs/pages が作成できず動的コンテンツ未配信 +
+    // build 時 EMAXCONNSESSION の根本原因だった。"paradigm" スキーマ
+    // (owner=payload_user・migration_005 で作成済) に切替え push でテーブル生成。
+    // 問題時は "payload" に 1 行 revert 可。
+    schemaName: "paradigm",
     push: true,
   }),
   sharp,
