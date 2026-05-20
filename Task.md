@@ -22,6 +22,18 @@
 
 ---
 
+## ✅ 完了 — i18n / コンテンツ誠実化 / 自動翻訳（2026-05-20・別領域 session）
+
+> 営業フロー統合とは別領域（i18n + Payload CMS + サイトコンテンツ）。`main` 直 commit + auto-push。
+
+- [x] **ハードコード i18n 全廃 検証**: 全 live render component に非コメント日本語ゼロを ripgrep `\p{Han}` 等で確認（残存は archive / admin label / server lib のみ）
+- [x] **自動翻訳 v2**（`src/lib/cms/autoTranslate.ts`・commit `0eaa363`）: PayloadCMS afterChange で ja 保存→11 locale を DeepSeek V4 PRO 自動翻訳。dot-path group (seo.metaTitle) + array sub-field (features/gallery) 対応・非ローカライズ兄弟 (included/image) 保持・upload→bare id 正規化・`_status` 伝播・loop guard・90s timeout。Posts/Services/Works/Pricing/FAQs に配線
+- [x] **10-locale 新 namespace 翻訳**（commit `0eaa363`）: homeEn(JaaS) + videoPage を ko/zh/de/fr/es/pt/ru/ar/vi/id へ。parity 維持
+- [x] **/ja home 捏造コンテンツ全廃**（commit `ae4231c`）: 200社/98%/+3倍/15分/架空証言3件 → 検証可能な事実(12言語/4領域/24h/¥0)+ /en 同型 honest proof パネル。全12 messages から捏造 purge・parity 610 均一・tests 92/92 ✅ TS clean ✅
+- [x] **deploy + 本番検証 ✅**: zombie deploy(5df42be・17分 hang)を cancel → `ae4231c` 単独ビルド (OOM 回避) → `running:healthy`。live 確認: /ja=誠実コンテンツ表示・捏造残渣ゼロ / /ko=韓国語 / /ar=アラビア語+`dir="rtl"` / /vi・/id/video=現地語。DEEPSEEK_API_KEY は Coolify runtime env 在で自動翻訳 hook 本番動作可
+
+---
+
 ## 🎯 営業フロー統合（2026-05-20 壁打ち確定）
 
 > **監査結論**: 営業OSは共有Supabaseで二重化（本番=Appexxme `leads`(198)/`proposal_pages`(173)・paradigm-HP=`sales_companies`(7デモ)）。両者は別プロジェクトだが同 public スキーマに `sales_*` 同居。詳細 → memory `project-sales-os-duplication.md`。
