@@ -15,6 +15,7 @@
  */
 
 import type { SubmitFormInput, SubmitFormResult } from "./types"
+import { HttpFormProvider } from "./http-form-provider"
 
 export interface BrowserProvider {
   readonly name: string
@@ -96,17 +97,22 @@ export class RemoteWorkerProvider implements BrowserProvider {
 }
 
 /**
- * env から provider を解決。未設定 or remote 設定不足なら dry に fail-soft。
+ * env から provider を解決。
+ *   - "http"   (既定): HttpFormProvider — ブラウザ不要 HTTP 送信 (サーバー増設不要・Droplet ディスク汚染ゼロ)
+ *   - "dry"          : DryRunProvider — 一切送信しない (監査/CI)
+ *   - "remote"       : RemoteWorkerProvider — worker (managed CDP / Playwright) に委譲 (SPA 用・将来)
+ * 安全性: 実送信の可否は orchestrator の dryRun フラグが握る (provider は「送り方」だけ)。
  */
 export function getBrowserProvider(): BrowserProvider {
-  const mode = process.env.OUTREACH_BROWSER_PROVIDER ?? "dry"
+  const mode = process.env.OUTREACH_BROWSER_PROVIDER ?? "http"
+  if (mode === "dry") return new DryRunProvider()
   if (mode === "remote") {
     const endpoint = process.env.OUTREACH_WORKER_URL
     const secret = process.env.OUTREACH_WORKER_SECRET
     if (endpoint && secret) return new RemoteWorkerProvider(endpoint, secret)
     console.warn(
-      "[outreach] OUTREACH_BROWSER_PROVIDER=remote だが OUTREACH_WORKER_URL/SECRET 未設定 → dry にフォールバック",
+      "[outreach] OUTREACH_BROWSER_PROVIDER=remote だが OUTREACH_WORKER_URL/SECRET 未設定 → http にフォールバック",
     )
   }
-  return new DryRunProvider()
+  return new HttpFormProvider()
 }

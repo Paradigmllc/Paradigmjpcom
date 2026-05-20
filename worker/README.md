@@ -1,8 +1,14 @@
-# Paradigm Outreach Worker — ④フォーム営業エンジン (Playwright Stealth × Crawlee)
+# Paradigm Outreach Worker — SPA フォーム専用オプション (Playwright Stealth × Crawlee)
+
+> ⚠️ **既定では不要。** 標準フォーム (CF7/WPForms/素の POST) は Next アプリ内の
+> `HttpFormProvider` (ブラウザ不要 HTTP 送信) が捌くため、サーバー増設なしで動く。
+> 本ワーカーは **JS-only な SPA フォーム** という少数ケース専用の将来オプション。
+> **共有 Droplet にローカル Chromium を常駐させない方針** → 使うなら `CDP_ENDPOINT` に
+> managed リモートブラウザ (案1) を指定し、この箱には Chromium を置かない。
 
 Next アプリ (`src/lib/sales/outreach/browser-provider.ts` の `RemoteWorkerProvider`) から
-HTTP で委譲される、**実ブラウザ送信専用**のワーカー。判断 (discovery/classify/preflight) は
-Next 側で済んでおり、本ワーカーは「重い Chromium 操作」だけを担う。
+HTTP で委譲される実ブラウザ送信ワーカー。判断 (discovery/classify/preflight) は Next 側で済み、
+本ワーカーは「重い Chromium 操作」だけを担う。
 
 ## なぜ別パッケージか（ディスク/メモリ安全）
 

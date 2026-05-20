@@ -41,17 +41,18 @@
 - [x] 2-2. `lib/sales/sources/form-discovery.ts` 新規 + `enrich.ts` に配線 → `meta.contact_form_url` 自動格納 (Layer0/A=fetch・Layer C=worker)
 - [ ] 2-1. 能動 list-building (GLEIF/gBizInfo/Places→bulk) — `import-csv` 経路は既存・自動巡回は将来
 
-### Phase 3 — ④フォーム営業 worker（コード完了）
-- [x] 3-1. `outreach/browser-provider.ts` (DryRun/Remote・案1⇄案2 env 切替で賭けない設計)
-- [x] 3-2. `outreach/{types,state-machine,form-classifier,preflight,activity,orchestrator}.ts` + `/api/sales/outreach/run` (dryRun=default true)
-- [x] 3-3. `worker/` 別パッケージ (Playwright Stealth + Crawlee・Dockerfile・README)・deps 未 install (共有 Droplet ディスク安全)
-- [ ] 3-4. 【運用】worker を Coolify scale-to-zero サービスでデプロイ + `OUTREACH_BROWSER_PROVIDER`/`OUTREACH_WORKER_URL`/`OUTREACH_WORKER_SECRET` 設定
+### Phase 3 — ④フォーム営業（コード完了・サーバー増設なし方針）
+- [x] 3-1. `outreach/browser-provider.ts` 3 provider (既定=**http** / dry / remote)・実送信可否は dryRun が握る
+- [x] 3-1b. `outreach/http-form-provider.ts` — <form>解析→hidden保持→直接 HTTP POST。**新サーバー/Chromium/課金ゼロ**で標準フォーム (CF7/WPForms/素POST) を送信 (旧MVP cheerio 系統)。ユーザー制約「サーバー増強不可」への解
+- [x] 3-2. `outreach/{types,state-machine,form-classifier,preflight,activity,orchestrator}.ts` + `/api/sales/outreach/run` (dryRun=default true=安全)
+- [x] 3-3. `worker/` (Playwright Stealth × Crawlee) は **SPA フォーム専用の将来オプション**に格下げ。ローカル Chromium 常駐は不可方針 → 使うなら managed CDP (`OUTREACH_BROWSER_PROVIDER=remote`)・Droplet には置かない
+- 残: なし (HTTP 送信は deploy 即動作・SPA 比率が問題化したら worker を managed CDP で起動)
 
 ### Phase 4 — ③営業資料 + 仕上げ（KPI 完了）
 - [x] 4-2. `lib/sales/kpi.ts` + `/api/sales/kpi-snapshot` (日次 KPI 集計)・weekly-digest 既存
 - [ ] 4-1. 営業資料 deck/PDF 生成 (report/[slug] 稼働済・deck は将来)
 
-**📊 監査結果 (2026-05-20)**: 単体 **77/77 pass** (新規 21) / **tsc 自コード clean** (残は既存 .next/types stale=archived 参照のみ) / **DB E2E** (fetchCandidates→activity write→KPI read→cleanup) MCP 検証 **pass** / `scripts/audit-sales-flow.mjs` (本番 dryRun 監査ツール) 同梱。**コードは全完了・残=秘密鍵が要る運用設定のみ** (n8n import / Coolify env / worker deploy / Notion DB)。
+**📊 監査結果 (2026-05-20)**: 単体 **81/81 pass** (新規 25) / **tsc 自コード clean** (残は既存 .next/types stale=archived 参照のみ) / **DB E2E** (fetchCandidates→activity write→KPI read→cleanup) MCP 検証 **pass** / `scripts/audit-sales-flow.mjs` (本番 dryRun 監査ツール) 同梱。**コードは全完了・残=秘密鍵が要る運用設定のみ** (n8n import / Coolify env / worker deploy / Notion DB)。
 
 **依存順**: 0 → 1 → 2 → 3 → 4。③(レポート)稼働済なので 0→1→2→3 で「一連の営業フロー」が繋がる。
 
