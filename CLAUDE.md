@@ -706,6 +706,23 @@ paradigm-HP は既に `next-intl` v4 を導入済 → **JSX 内の生の日本�
 > - 私（Claude Code）は新ページ作成・既存ページ編集時に**生 string を JSX に書きそうになったら即座に Block 化または既存 collection 取得に切り替える**（指示待ち禁止）。
 > - admin UI から編集できないテキストを発見したら即「→ PayloadCMS Block 化提案」を出す。
 
+<a id="s10-7"></a>
+
+### 🆕 営業 OS スキーマ所有境界（2026-05-20 監査確定・永久ルール）
+
+> **背景**: paradigmjpcom と Appexxme は Supabase `yihdmgtxiqfdgdueolub` を共有し、両者とも `public` スキーマに `sales_*` テーブルを持つ（名前衝突）。誤って相手の本番データを触る事故を構造的に防ぐための所有境界。詳細監査 → memory `project-sales-os-duplication.md`。
+
+| 所有 | 背骨 | テーブル | 本リポジトリの扱い |
+|------|------|---------|------------------|
+| **paradigm-HP（自己完結）** | `sales_companies` | sales_companies / sales_customers / sales_deliveries / sales_templates / sales_sync_logs / sales_activity_log / sales_calendar_events / sales_contracts / sales_kpi | **read + write 可**（lib/sales/* + migration_003/004） |
+| **Appexxme（別 PJ）** | `leads` | leads / proposal_pages / sales_activities / sales_materials / sales_flows / sales_sequences / sequence_executions / sales_knowledge / sales_documents | **触らない**（read も原則しない・archive/legacy 除く） |
+
+**鉄則**:
+1. paradigm-HP の営業 OS は `sales_companies` を背骨に**自己完結**（Appexxme `leads` 系に依存しない）
+2. Appexxme 所有テーブルへの write 禁止・名前が紛らわしくても**別物**（例: `sales_activity_log`=自社 ⇄ `sales_activities`=Appexxme）
+3. 名前衝突は **rename で解消しない**（両 PJ のコード破壊リスク大）。境界はこの表とコメントで管理
+4. スキーマ変更は必ず `supabase/migration_*.sql` に記録（MCP 直 DDL の正史化漏れ＝ドリフトを再発させない）
+
 ---
 
 <a id="s11"></a>
