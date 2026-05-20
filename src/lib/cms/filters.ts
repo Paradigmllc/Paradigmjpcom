@@ -64,11 +64,17 @@ export type AppLocale = "ja" | "en"
  * @param locale  有効化したいロケール（"ja" | "en"）
  * @param extraWhere  呼び出し側の追加フィルタ（optional）
  */
-export function filterByLocale(locale: AppLocale, extraWhere?: Where): Where {
+export function filterByLocale(locale: Locale | AppLocale, extraWhere?: Where): Where {
+  // 12-locale 配信 (2026-05-20 B): availableLocales が当 locale を含む doc を配信。
+  // en も含めることで「未翻訳でも en で marked された doc は全 locale に出る」graceful
+  // fallback を実現 (field 値は localeFindOptions の fallbackLocale="en" で補完)。
+  // 自動翻訳フック (A) が保存時に availableLocales を全 12 に設定するため、翻訳済 doc は
+  // 各 locale でネイティブ表示される。
   const localeCondition: Where = {
     or: [
       { availableLocales: { contains: locale } },
-      { locale: { equals: locale } },
+      { availableLocales: { contains: "en" } },
+      { locale: { equals: locale } }, // 旧スキーマ後方互換
       { locale: { equals: "both" } },
     ],
   }
@@ -113,13 +119,16 @@ export function coerceLocale(raw: string | undefined | null): AppLocale {
 /**
  * PayloadCMS localized フィールドを指定ロケールで取得するときの共通オプション。
  *
- * - `locale`: text/richText の localized フィールドを指定言語で返す
- * - `fallbackLocale: false`: 翻訳が無い場合に defaultLocale に落ちるのを禁止する
- *   （「ロケール分けしたのに en ページで ja が出る」事故を予防）
+ * 12-locale 配信 (2026-05-20 B):
+ * - `locale`: 実 locale (12種) を渡す。当 locale の localized フィールド値を返す。
+ * - `fallbackLocale: "en"`: 当 locale に翻訳が無いフィールドは **英語で補完**。
+ *   日本語起点の自動翻訳フック (A) が ja → 全 locale を埋めるため通常は fallback 不要だが、
+ *   翻訳漏れ・新規フィールドでも日本語 leak せず英語にフォールバックする安全網。
+ *   (ja 自身は source なので常に値があり fallback は発火しない。)
  */
-export function localeFindOptions(locale: AppLocale) {
+export function localeFindOptions(locale: Locale | AppLocale) {
   return {
     locale,
-    fallbackLocale: false as const,
+    fallbackLocale: "en" as const,
   }
 }

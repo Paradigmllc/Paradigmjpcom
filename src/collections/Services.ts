@@ -1,6 +1,7 @@
 import type { CollectionConfig } from "payload"
 import { isAdmin, isAdminOrEditor, isLoggedIn } from "../access/byRole"
 import { makeAfterChangeAudit, makeAfterDeleteAudit } from "../hooks/auditLog"
+import { makeAutoTranslateHook } from "../lib/cms/autoTranslate"
 import { AVAILABLE_LOCALE_OPTIONS } from "./_localeOptions"
 
 export const Services: CollectionConfig = {
@@ -22,7 +23,10 @@ export const Services: CollectionConfig = {
     maxPerDoc: 10,
   },
   hooks: {
-    afterChange: [makeAfterChangeAudit("services")],
+    afterChange: [
+      makeAfterChangeAudit("services"),
+      makeAutoTranslateHook({ text: ["name", "tagline"], rich: ["description"] }),
+    ],
     afterDelete: [makeAfterDeleteAudit("services")],
   },
   fields: [

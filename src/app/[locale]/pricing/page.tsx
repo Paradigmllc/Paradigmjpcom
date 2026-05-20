@@ -61,8 +61,8 @@ type PricingDoc = {
 export default async function PricingPage({ params, searchParams }: Props) {
   const { locale: rawLocale } = await params
   const { force_country } = await searchParams
-  const locale = assertLocale(rawLocale)            // 実 locale（静的 UI）
-  const contentLocale = coerceLocale(rawLocale)     // ja/en（CMS 配信・通貨判定・英語フォールバック）
+  const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
+  const contentLocale = coerceLocale(rawLocale)     // ja/en（通貨フォーマット判定専用: formatPricePPP）
   const t = await getTranslations({ locale, namespace: "pricingPage" })
 
   // Billing cycle ラベルは namespace 経由で locale 別取得 (旧 BILLING_LABEL hardcode 廃止)
@@ -84,11 +84,11 @@ export default async function PricingPage({ params, searchParams }: Props) {
     const payload = await getPayload({ config })
     const res = await payload.find({
       collection: "pricing",
-      where: filterByLocale(contentLocale),
+      where: filterByLocale(locale),
       sort: "sortOrder",
       limit: 100,
       depth: 0,
-      ...localeFindOptions(contentLocale),
+      ...localeFindOptions(locale),
     })
     plans = (res.docs as unknown as PricingDoc[]) ?? []
   } catch (e) {

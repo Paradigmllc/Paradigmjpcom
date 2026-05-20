@@ -1,6 +1,7 @@
 import type { CollectionConfig } from "payload"
 import { isAdmin, isAdminOrEditor, isLoggedIn } from "../access/byRole"
 import { makeAfterChangeAudit, makeAfterDeleteAudit } from "../hooks/auditLog"
+import { makeAutoTranslateHook } from "../lib/cms/autoTranslate"
 import { AVAILABLE_LOCALE_OPTIONS } from "./_localeOptions"
 
 export const Posts: CollectionConfig = {
@@ -166,7 +167,10 @@ export const Posts: CollectionConfig = {
         return data
       },
     ],
-    afterChange: [makeAfterChangeAudit("posts")],
+    afterChange: [
+      makeAfterChangeAudit("posts"),
+      makeAutoTranslateHook({ text: ["title", "excerpt", "category", "readTime"], rich: ["content"] }),
+    ],
     afterDelete: [makeAfterDeleteAudit("posts")],
   },
 }
