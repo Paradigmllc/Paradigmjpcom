@@ -60,20 +60,20 @@
     "trusted": "저희가 지원한 기업",
     "stats": {
       "support": {
-        "suffix": "+",
-        "label": "지원 기업 수"
+        "suffix": " langs",
+        "label": "Languages served"
       },
       "retention": {
-        "suffix": "%",
-        "label": "유지율"
+        "suffix": " areas",
+        "label": "Service lines"
       },
       "growth": {
-        "suffix": "x",
-        "label": "평균 트래픽 증가"
+        "suffix": "h",
+        "label": "AI chat support"
       },
       "consult": {
-        "suffix": "분",
-        "label": "첫 상담 시간"
+        "suffix": " yen",
+        "label": "Initial diagnosis"
       }
     },
     "servicesEyebrow": "서비스",
@@ -84,35 +84,35 @@
         "title": "웹 개발",
         "tagline": "인바운드를 위해 구축된 현대적 사이트",
         "desc": "반응형, SEO 최적화, CMS 포함. 출시와 그에 따른 인바운드 플라이휠을 처리합니다.",
-        "results": "+3배 문의 증가",
+        "results": "We stay on after launch",
         "badge": "가장 인기"
       },
       "meo": {
         "title": "로컬 SEO (MEO)",
         "tagline": "일본 구글 지도 상위 노출",
         "desc": "리뷰 관리, 게시 주기, 순위 추적 — 로컬 팩에서 1위를 목표로 합니다.",
-        "results": "+220% 매장 방문",
+        "results": "Aim for the map pack",
         "badge": ""
       },
       "seo": {
         "title": "SEO / GEO",
         "tagline": "Google + AI 검색에서 승리",
         "desc": "잠재 고객이 질문할 때 ChatGPT, Gemini, Perplexity가 실제로 인용하는 차세대 SEO.",
-        "results": "+180% 유기적 트래픽",
+        "results": "Optimized for AI search",
         "badge": "새로운 기준"
       },
       "ai": {
         "title": "AI 도입",
         "tagline": "운영을 종단간 자동화",
         "desc": "AI 챗봇, 운영 자동화, AI 광고 파이프라인 — 롤아웃부터 지속 운영까지.",
-        "results": "-45% 운영 비용",
+        "results": "From rollout to operations",
         "badge": ""
       },
       "video": {
         "title": "Video subscription",
         "tagline": "Flat monthly · unlimited requests",
         "desc": "20-100 videos/month for web, LP & social. 24-48h delivery, unlimited revisions, pause anytime.",
-        "results": "from ¥15,000/video",
+        "results": "Flat monthly, unlimited",
         "badge": "New"
       }
     },
@@ -136,28 +136,11 @@
         "desc": "인바운드를 위해 무장한 최신 AI 도구 — 경쟁사를 능가하는 전략."
       }
     },
-    "testimonialsEyebrow": "고객 후기",
-    "testimonialsHeading": "고객의 말",
-    "testimonials": {
-      "1": {
-        "name": "레스토랑 주인",
-        "location": "시부야, 도쿄",
-        "text": "3개월 만에 MEO가 월 30회 이상 첫 방문을 유도했습니다. ROI는 명백했습니다."
-      },
-      "2": {
-        "name": "클리닉 원장",
-        "location": "기타구, 오사카",
-        "text": "웹사이트 재구축 후 문의가 두 배로 늘었습니다. AI 채팅이 환자들에게 인기입니다."
-      },
-      "3": {
-        "name": "DTC 운영자",
-        "location": "나고야, 아이치",
-        "text": "GEO가 ChatGPT 검색에서 트래픽을 열었습니다. 완전히 새로운 획득 채널입니다."
-      }
-    },
+    "testimonialsEyebrow": "Proof",
+    "testimonialsHeading": "Proof, built together.",
     "trustBadges": {
-      "1": "200개 이상 기업 지원",
-      "2": "98% 유지율",
+      "1": "Bilingual JP / EN",
+      "2": "Outcome-based pricing",
       "3": "출시 후 3개월 무료 지원",
       "4": "강매 없음"
     },
@@ -165,18 +148,18 @@
     "ctaHeading": " ",
     "ctaHeadingHighlight": "무료 상담",
     "ctaHeadingSuffix": "으로 시작하세요",
-    "ctaSubheading": "15분 온라인 상담. 귀하의 상황을 진단하고 가장 ROI가 높은 조치를 추천해 드립니다 — 무료.",
+    "ctaSubheading": "A free online consultation to map your current challenges and propose the right digital strategy — at no cost.",
     "ctaButton": "무료 상담 예약",
     "ctaBullets": {
       "1": "항상 무료",
       "2": "영업 전화 없음",
-      "3": "최대 15분"
+      "3": "Fully online"
     },
     "processEyebrow": "Process",
     "processHeading": "프로젝트 성공을 이끄는 4단계",
     "statsEyebrow": "By the numbers",
-    "statsHeading": "Numbers that prove ",
-    "statsHeadingHighlight": "Paradigm delivers.",
+    "statsHeading": "Paradigm, ",
+    "statsHeadingHighlight": "by the numbers.",
     "process": {
       "listen": {
         "title": "경청",
@@ -194,7 +177,8 @@
         "title": "성장",
         "desc": "PDCA + KPI optimisation as your partner"
       }
-    }
+    },
+    "testimonialsBody": "As a young studio, we don't post inflated numbers or anonymous testimonials. Instead, on a free initial diagnosis we show you — in concrete figures — the revenue your site is leaving on the table. Want client references? Just ask on the call."
   },
   "chatbot": {
     "title": "Paradigm 어시스턴트",

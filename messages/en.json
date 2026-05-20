@@ -463,20 +463,20 @@
     "trusted": "Companies we've supported",
     "stats": {
       "support": {
-        "suffix": "+",
-        "label": "Companies supported"
+        "suffix": " langs",
+        "label": "Languages served"
       },
       "retention": {
-        "suffix": "%",
-        "label": "Retention"
+        "suffix": " areas",
+        "label": "Service lines"
       },
       "growth": {
-        "suffix": "x",
-        "label": "Avg. traffic lift"
+        "suffix": "h",
+        "label": "AI chat support"
       },
       "consult": {
-        "suffix": "min",
-        "label": "First consult"
+        "suffix": " yen",
+        "label": "Initial diagnosis"
       }
     },
     "servicesEyebrow": "Services",
@@ -487,35 +487,35 @@
         "title": "Web Development",
         "tagline": "Modern sites built for inbound",
         "desc": "Responsive, SEO-optimized, with CMS. We handle launch and the inbound flywheel that follows.",
-        "results": "+3x inquiries",
+        "results": "We stay on after launch",
         "badge": "Most popular"
       },
       "meo": {
         "title": "Local SEO (MEO)",
         "tagline": "Top of Google Maps in Japan",
         "desc": "Review management, posting cadence, and rank tracking — aimed at #1 in your local pack.",
-        "results": "+220% store visits",
+        "results": "Aim for the map pack",
         "badge": ""
       },
       "seo": {
         "title": "SEO / GEO",
         "tagline": "Win Google + AI search",
         "desc": "Next-gen SEO that ChatGPT, Gemini, and Perplexity actually cite when prospects ask.",
-        "results": "+180% organic traffic",
+        "results": "Optimized for AI search",
         "badge": "New standard"
       },
       "ai": {
         "title": "AI Enablement",
         "tagline": "Automate operations end-to-end",
         "desc": "AI chatbots, ops automation, and AI ad pipelines — from rollout to ongoing operations.",
-        "results": "-45% ops cost",
+        "results": "From rollout to operations",
         "badge": ""
       },
       "video": {
         "title": "Video subscription",
         "tagline": "Flat monthly · unlimited requests",
         "desc": "20-100 videos/month for web, LP & social. 24-48h delivery, unlimited revisions, pause anytime.",
-        "results": "from ¥15,000/video",
+        "results": "Flat monthly, unlimited",
         "badge": "New"
       }
     },
@@ -539,28 +539,11 @@
         "desc": "Latest AI tools weaponized for inbound — strategies that beat your competitors."
       }
     },
-    "testimonialsEyebrow": "Testimonials",
-    "testimonialsHeading": "What clients say",
-    "testimonials": {
-      "1": {
-        "name": "Restaurant Owner",
-        "location": "Shibuya, Tokyo",
-        "text": "Three months in, MEO drove 30+ first-time visits per month. The ROI was unmistakable."
-      },
-      "2": {
-        "name": "Clinic Director",
-        "location": "Kita-ku, Osaka",
-        "text": "Inquiries doubled after the website rebuild. The AI chat is a hit with patients."
-      },
-      "3": {
-        "name": "DTC Operator",
-        "location": "Nagoya, Aichi",
-        "text": "GEO unlocked traffic from ChatGPT searches. A whole new acquisition channel."
-      }
-    },
+    "testimonialsEyebrow": "Proof",
+    "testimonialsHeading": "Proof, built together.",
     "trustBadges": {
-      "1": "200+ companies supported",
-      "2": "98% retention",
+      "1": "Bilingual JP / EN",
+      "2": "Outcome-based pricing",
       "3": "3 months free post-launch support",
       "4": "No hard sells"
     },
@@ -568,18 +551,18 @@
     "ctaHeading": "Start with a ",
     "ctaHeadingHighlight": "free consult",
     "ctaHeadingSuffix": "",
-    "ctaSubheading": "15-minute online consult. We'll diagnose your situation and recommend the highest-ROI moves — free.",
+    "ctaSubheading": "A free online consultation to map your current challenges and propose the right digital strategy — at no cost.",
     "ctaButton": "Book a free consult",
     "ctaBullets": {
       "1": "Always free",
       "2": "No sales calls",
-      "3": "15 minutes max"
+      "3": "Fully online"
     },
     "processEyebrow": "Process",
     "processHeading": "Four steps to ship your project successfully.",
     "statsEyebrow": "By the numbers",
-    "statsHeading": "Numbers that prove ",
-    "statsHeadingHighlight": "Paradigm delivers.",
+    "statsHeading": "Paradigm, ",
+    "statsHeadingHighlight": "by the numbers.",
     "process": {
       "listen": {
         "title": "Listen",
@@ -597,7 +580,8 @@
         "title": "Grow",
         "desc": "PDCA + KPI optimisation as your partner"
       }
-    }
+    },
+    "testimonialsBody": "As a young studio, we don't post inflated numbers or anonymous testimonials. Instead, on a free initial diagnosis we show you — in concrete figures — the revenue your site is leaving on the table. Want client references? Just ask on the call."
   },
   "chatbot": {
     "title": "Paradigm Assistant",

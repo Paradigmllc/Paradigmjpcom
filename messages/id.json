@@ -60,20 +60,20 @@
     "trusted": "Perusahaan yang telah kami dukung",
     "stats": {
       "support": {
-        "suffix": "+",
-        "label": "Perusahaan didukung"
+        "suffix": " langs",
+        "label": "Languages served"
       },
       "retention": {
-        "suffix": "%",
-        "label": "Retensi"
+        "suffix": " areas",
+        "label": "Service lines"
       },
       "growth": {
-        "suffix": "x",
-        "label": "Rata-rata peningkatan lalu lintas"
+        "suffix": "h",
+        "label": "AI chat support"
       },
       "consult": {
-        "suffix": "menit",
-        "label": "Konsultasi pertama"
+        "suffix": " yen",
+        "label": "Initial diagnosis"
       }
     },
     "servicesEyebrow": "Layanan",
@@ -84,35 +84,35 @@
         "title": "Pengembangan Web",
         "tagline": "Situs modern yang dibangun untuk inbound",
         "desc": "Responsif, dioptimalkan SEO, dengan CMS. Kami menangani peluncuran dan roda gila inbound yang menyertainya.",
-        "results": "+3x pertanyaan",
+        "results": "We stay on after launch",
         "badge": "Paling populer"
       },
       "meo": {
         "title": "SEO Lokal (MEO)",
         "tagline": "Puncak Google Maps di Jepang",
         "desc": "Manajemen ulasan, jadwal posting, dan pelacakan peringkat — bertujuan untuk #1 di paket lokal Anda.",
-        "results": "+220% kunjungan toko",
+        "results": "Aim for the map pack",
         "badge": ""
       },
       "seo": {
         "title": "SEO / GEO",
         "tagline": "Menangkan Google + pencarian AI",
         "desc": "SEO generasi berikutnya yang benar-benar dikutip oleh ChatGPT, Gemini, dan Perplexity saat prospek bertanya.",
-        "results": "+180% lalu lintas organik",
+        "results": "Optimized for AI search",
         "badge": "Standar baru"
       },
       "ai": {
         "title": "Pemberdayaan AI",
         "tagline": "Otomatiskan operasi dari ujung ke ujung",
         "desc": "Chatbot AI, otomatisasi operasi, dan pipeline iklan AI — dari peluncuran hingga operasi berkelanjutan.",
-        "results": "-45% biaya operasi",
+        "results": "From rollout to operations",
         "badge": ""
       },
       "video": {
         "title": "Video subscription",
         "tagline": "Flat monthly · unlimited requests",
         "desc": "20-100 videos/month for web, LP & social. 24-48h delivery, unlimited revisions, pause anytime.",
-        "results": "from ¥15,000/video",
+        "results": "Flat monthly, unlimited",
         "badge": "New"
       }
     },
@@ -136,28 +136,11 @@
         "desc": "Alat AI terbaru yang dipersenjatai untuk inbound — strategi yang mengalahkan pesaing Anda."
       }
     },
-    "testimonialsEyebrow": "Testimoni",
-    "testimonialsHeading": "Kata klien",
-    "testimonials": {
-      "1": {
-        "name": "Pemilik Restoran",
-        "location": "Shibuya, Tokyo",
-        "text": "Tiga bulan berjalan, MEO mendorong 30+ kunjungan pertama per bulan. ROI-nya tidak terbantahkan."
-      },
-      "2": {
-        "name": "Direktur Klinik",
-        "location": "Kita-ku, Osaka",
-        "text": "Pertanyaan berlipat ganda setelah pembangunan ulang situs web. Chat AI sangat disukai pasien."
-      },
-      "3": {
-        "name": "Operator DTC",
-        "location": "Nagoya, Aichi",
-        "text": "GEO membuka lalu lintas dari pencarian ChatGPT. Saluran akuisisi baru yang utuh."
-      }
-    },
+    "testimonialsEyebrow": "Proof",
+    "testimonialsHeading": "Proof, built together.",
     "trustBadges": {
-      "1": "200+ perusahaan didukung",
-      "2": "98% retensi",
+      "1": "Bilingual JP / EN",
+      "2": "Outcome-based pricing",
       "3": "3 bulan dukungan pasca-peluncuran gratis",
       "4": "Tanpa penjualan paksa"
     },
@@ -165,18 +148,18 @@
     "ctaHeading": "Mulai dengan ",
     "ctaHeadingHighlight": "konsultasi gratis",
     "ctaHeadingSuffix": "",
-    "ctaSubheading": "Konsultasi online 15 menit. Kami akan mendiagnosis situasi Anda dan merekomendasikan langkah dengan ROI tertinggi — gratis.",
+    "ctaSubheading": "A free online consultation to map your current challenges and propose the right digital strategy — at no cost.",
     "ctaButton": "Pesan konsultasi gratis",
     "ctaBullets": {
       "1": "Selalu gratis",
       "2": "Tanpa panggilan penjualan",
-      "3": "Maksimal 15 menit"
+      "3": "Fully online"
     },
     "processEyebrow": "Process",
     "processHeading": "Empat langkah untuk meluncurkan proyek Anda dengan sukses.",
     "statsEyebrow": "By the numbers",
-    "statsHeading": "Numbers that prove ",
-    "statsHeadingHighlight": "Paradigm delivers.",
+    "statsHeading": "Paradigm, ",
+    "statsHeadingHighlight": "by the numbers.",
     "process": {
       "listen": {
         "title": "Mendengar",
@@ -194,7 +177,8 @@
         "title": "Pertumbuhan",
         "desc": "PDCA + KPI optimisation as your partner"
       }
-    }
+    },
+    "testimonialsBody": "As a young studio, we don't post inflated numbers or anonymous testimonials. Instead, on a free initial diagnosis we show you — in concrete figures — the revenue your site is leaving on the table. Want client references? Just ask on the call."
   },
   "chatbot": {
     "title": "Asisten Paradigm",

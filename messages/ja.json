@@ -463,20 +463,20 @@
     "trusted": "これまでに支援した企業",
     "stats": {
       "support": {
-        "suffix": "社+",
-        "label": "支援実績"
+        "suffix": "言語",
+        "label": "対応言語"
       },
       "retention": {
-        "suffix": "%",
-        "label": "継続率"
+        "suffix": "領域",
+        "label": "提供サービス"
       },
       "growth": {
-        "suffix": "倍",
-        "label": "平均集客増加"
+        "suffix": "時間",
+        "label": "AIチャット対応"
       },
       "consult": {
-        "suffix": "分",
-        "label": "初回相談時間"
+        "suffix": "円",
+        "label": "初回診断"
       }
     },
     "servicesEyebrow": "Services",
@@ -487,35 +487,35 @@
         "title": "ホームページ制作",
         "tagline": "集客に強いモダンサイト",
         "desc": "レスポンシブ・SEO最適化・CMS付き。制作後の集客もワンストップでサポート。",
-        "results": "問い合わせ数 +3倍",
+        "results": "公開後の集客まで伴走",
         "badge": "最人気"
       },
       "meo": {
         "title": "MEO対策",
         "tagline": "Googleマップで上位表示",
         "desc": "口コミ管理・投稿運用・順位改善で近隣検索1位を目指します。",
-        "results": "来店数 +220%",
+        "results": "地図検索で上位を狙う",
         "badge": ""
       },
       "seo": {
         "title": "SEO/GEO対策",
         "tagline": "AI検索・Google双方に対応",
         "desc": "ChatGPT・Gemini等のAI検索でも推薦される次世代SEO。",
-        "results": "自然流入 +180%",
+        "results": "AI検索にも最適化",
         "badge": "新定番"
       },
       "ai": {
         "title": "AI導入支援",
         "tagline": "業務を自動化・効率化",
         "desc": "AIチャットボット・業務自動化・AI広告など導入から運用まで一括対応。",
-        "results": "業務コスト -45%",
+        "results": "導入から運用まで一貫",
         "badge": ""
       },
       "video": {
         "title": "動画サブスク",
         "tagline": "月額定額・依頼無制限",
         "desc": "Web/LP/SNS 用動画を月20-100本量産。24-48時間納品・修正無制限・いつでも停止。",
-        "results": "1本あたり ¥15,000〜",
+        "results": "月額定額・本数無制限",
         "badge": "新"
       }
     },
@@ -539,28 +539,11 @@
         "desc": "最新AIツールを活用した次世代集客。競合に差をつける戦略を提供。"
       }
     },
-    "testimonialsEyebrow": "Testimonials",
-    "testimonialsHeading": "お客様の声",
-    "testimonials": {
-      "1": {
-        "name": "飲食店オーナー",
-        "location": "東京都渋谷区",
-        "text": "MEO対策を始めて3ヶ月で月30件以上の新規来店。費用対効果が明確で驚きました。"
-      },
-      "2": {
-        "name": "クリニック院長",
-        "location": "大阪府北区",
-        "text": "ホームページをリニューアルしてから問い合わせが倍増。AIチャットも好評です。"
-      },
-      "3": {
-        "name": "EC運営者",
-        "location": "愛知県名古屋市",
-        "text": "GEO対策でChatGPT検索からの流入が急増。新しい集客チャンネルができました。"
-      }
-    },
+    "testimonialsEyebrow": "Proof",
+    "testimonialsHeading": "実績は、これから一緒に。",
     "trustBadges": {
-      "1": "実績200社以上",
-      "2": "継続率98%",
+      "1": "日英バイリンガル対応",
+      "2": "成果ベースの料金設計",
       "3": "導入後3ヶ月無料サポート",
       "4": "押し売りなし"
     },
@@ -568,18 +551,18 @@
     "ctaHeading": "まずは",
     "ctaHeadingHighlight": "無料相談",
     "ctaHeadingSuffix": "から",
-    "ctaSubheading": "15分のオンライン相談。課題をヒアリングし、最適なデジタル戦略を無料でご提案します。",
+    "ctaSubheading": "無料のオンライン相談で、御社の現状の課題を整理し、最適なデジタル戦略を無料でご提案します。",
     "ctaButton": "無料相談を予約する",
     "ctaBullets": {
       "1": "完全無料",
       "2": "営業電話なし",
-      "3": "最短15分"
+      "3": "オンライン完結"
     },
     "processEyebrow": "Process",
     "processHeading": "御社のプロジェクトを成功に導く 4 ステップ。",
     "statsEyebrow": "By the numbers",
-    "statsHeading": "実績で語る、",
-    "statsHeadingHighlight": "Paradigm の支援力。",
+    "statsHeading": "数字で見る、",
+    "statsHeadingHighlight": "Paradigm。",
     "process": {
       "listen": {
         "title": "ヒアリング",
@@ -597,7 +580,8 @@
         "title": "グロース",
         "desc": "PDCA + KPI 改善で伴走"
       }
-    }
+    },
+    "testimonialsBody": "創業まもない私たちは、誇張した数字や匿名の体験談を載せません。代わりに、初回の無料診断で、御社サイトが取りこぼしている機会損失を具体的な数字でお見せします。事例の照会をご希望の方は、ご相談時にお伝えください。"
   },
   "chatbot": {
     "title": "Paradigm アシスタント",

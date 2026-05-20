@@ -60,20 +60,20 @@
     "trusted": "الشركات التي دعمناها",
     "stats": {
       "support": {
-        "suffix": "+",
-        "label": "شركة تم دعمها"
+        "suffix": " langs",
+        "label": "Languages served"
       },
       "retention": {
-        "suffix": "%",
-        "label": "معدل الاحتفاظ"
+        "suffix": " areas",
+        "label": "Service lines"
       },
       "growth": {
-        "suffix": "x",
-        "label": "متوسط زيادة الزيارات"
+        "suffix": "h",
+        "label": "AI chat support"
       },
       "consult": {
-        "suffix": "دقيقة",
-        "label": "الاستشارة الأولى"
+        "suffix": " yen",
+        "label": "Initial diagnosis"
       }
     },
     "servicesEyebrow": "الخدمات",
@@ -84,35 +84,35 @@
         "title": "تطوير الويب",
         "tagline": "مواقع حديثة مصممة للجذب",
         "desc": "متجاوبة، محسّنة لمحركات البحث، مع نظام إدارة محتوى. نطلق الموقع ونشغل محرك الجذب بعده.",
-        "results": "+3 أضعاف الاستفسارات",
+        "results": "We stay on after launch",
         "badge": "الأكثر طلبًا"
       },
       "meo": {
         "title": "تحسين محركات البحث المحلية (MEO)",
         "tagline": "في صدارة خرائط Google في اليابان",
         "desc": "إدارة المراجعات، جدولة النشر، وتتبع الترتيب — بهدف الوصول إلى #1 في الحزمة المحلية.",
-        "results": "+220% زيارات المتجر",
+        "results": "Aim for the map pack",
         "badge": ""
       },
       "seo": {
         "title": "SEO / GEO",
         "tagline": "اربح Google + بحث الذكاء الاصطناعي",
         "desc": "جيل جديد من تحسين محركات البحث يستشهد به ChatGPT وGemini وPerplexity عندما يسأل العملاء المحتملون.",
-        "results": "+180% زيارات عضوية",
+        "results": "Optimized for AI search",
         "badge": "المعيار الجديد"
       },
       "ai": {
         "title": "تمكين الذكاء الاصطناعي",
         "tagline": "أتمتة العمليات من البداية إلى النهاية",
         "desc": "روبوتات محادثة ذكية، أتمتة العمليات، وخطوط إعلانات ذكية — من الإطلاق إلى التشغيل المستمر.",
-        "results": "-45% تكلفة التشغيل",
+        "results": "From rollout to operations",
         "badge": ""
       },
       "video": {
         "title": "Video subscription",
         "tagline": "Flat monthly · unlimited requests",
         "desc": "20-100 videos/month for web, LP & social. 24-48h delivery, unlimited revisions, pause anytime.",
-        "results": "from ¥15,000/video",
+        "results": "Flat monthly, unlimited",
         "badge": "New"
       }
     },
@@ -136,28 +136,11 @@
         "desc": "أحدث أدوات الذكاء الاصطناعي مسخرة للجذب — استراتيجيات تتفوق على منافسيك."
       }
     },
-    "testimonialsEyebrow": "شهادات العملاء",
-    "testimonialsHeading": "ماذا يقول العملاء",
-    "testimonials": {
-      "1": {
-        "name": "صاحب مطعم",
-        "location": "شيبويا، طوكيو",
-        "text": "بعد ثلاثة أشهر، حقق MEO أكثر من 30 زيارة أولى شهريًا. كان العائد على الاستثمار واضحًا."
-      },
-      "2": {
-        "name": "مدير عيادة",
-        "location": "كيتا-كو، أوساكا",
-        "text": "تضاعفت الاستفسارات بعد إعادة بناء الموقع. الدردشة الذكية نالت إعجاب المرضى."
-      },
-      "3": {
-        "name": "مشغل DTC",
-        "location": "ناغويا، آيتشي",
-        "text": "فتح GEO حركة مرور من عمليات بحث ChatGPT. قناة اكتساب جديدة تمامًا."
-      }
-    },
+    "testimonialsEyebrow": "Proof",
+    "testimonialsHeading": "Proof, built together.",
     "trustBadges": {
-      "1": "دعم أكثر من 200 شركة",
-      "2": "معدل احتفاظ 98%",
+      "1": "Bilingual JP / EN",
+      "2": "Outcome-based pricing",
       "3": "دعم مجاني لمدة 3 أشهر بعد الإطلاق",
       "4": "لا مبيعات قسرية"
     },
@@ -165,18 +148,18 @@
     "ctaHeading": "ابدأ بـ ",
     "ctaHeadingHighlight": "استشارة مجانية",
     "ctaHeadingSuffix": "",
-    "ctaSubheading": "استشارة عبر الإنترنت لمدة 15 دقيقة. سنشخص وضعك ونوصي بأعلى الخطوات عائدًا — مجانًا.",
+    "ctaSubheading": "A free online consultation to map your current challenges and propose the right digital strategy — at no cost.",
     "ctaButton": "احجز استشارة مجانية",
     "ctaBullets": {
       "1": "دائمًا مجاني",
       "2": "لا مكالمات بيع",
-      "3": "15 دقيقة كحد أقصى"
+      "3": "Fully online"
     },
     "processEyebrow": "Process",
     "processHeading": "أربع خطوات لإطلاق مشروعك بنجاح.",
     "statsEyebrow": "By the numbers",
-    "statsHeading": "Numbers that prove ",
-    "statsHeadingHighlight": "Paradigm delivers.",
+    "statsHeading": "Paradigm, ",
+    "statsHeadingHighlight": "by the numbers.",
     "process": {
       "listen": {
         "title": "الاستماع",
@@ -194,7 +177,8 @@
         "title": "النمو",
         "desc": "PDCA + KPI optimisation as your partner"
       }
-    }
+    },
+    "testimonialsBody": "As a young studio, we don't post inflated numbers or anonymous testimonials. Instead, on a free initial diagnosis we show you — in concrete figures — the revenue your site is leaving on the table. Want client references? Just ask on the call."
   },
   "chatbot": {
     "title": "مساعد Paradigm",

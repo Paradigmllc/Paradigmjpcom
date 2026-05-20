@@ -60,20 +60,20 @@
     "trusted": "Компании, которые мы поддерживали",
     "stats": {
       "support": {
-        "suffix": "+",
-        "label": "Поддержанных компаний"
+        "suffix": " langs",
+        "label": "Languages served"
       },
       "retention": {
-        "suffix": "%",
-        "label": "Удержание"
+        "suffix": " areas",
+        "label": "Service lines"
       },
       "growth": {
-        "suffix": "x",
-        "label": "Средний рост трафика"
+        "suffix": "h",
+        "label": "AI chat support"
       },
       "consult": {
-        "suffix": " мин",
-        "label": "Первая консультация"
+        "suffix": " yen",
+        "label": "Initial diagnosis"
       }
     },
     "servicesEyebrow": "Услуги",
@@ -84,35 +84,35 @@
         "title": "Веб-разработка",
         "tagline": "Современные сайты для входящего маркетинга",
         "desc": "Адаптивные, SEO-оптимизированные, с CMS. Мы запускаем сайт и поддерживаем входящий поток.",
-        "results": "+3x запросов",
+        "results": "We stay on after launch",
         "badge": "Самый популярный"
       },
       "meo": {
         "title": "Локальное SEO (MEO)",
         "tagline": "Топ Google Maps в Японии",
         "desc": "Управление отзывами, регулярные публикации и отслеживание позиций — цель #1 в локальном пакете.",
-        "results": "+220% посещений магазина",
+        "results": "Aim for the map pack",
         "badge": ""
       },
       "seo": {
         "title": "SEO / GEO",
         "tagline": "Побеждайте в Google + AI-поиске",
         "desc": "SEO нового поколения, которое ChatGPT, Gemini и Perplexity цитируют, когда потенциальные клиенты спрашивают.",
-        "results": "+180% органического трафика",
+        "results": "Optimized for AI search",
         "badge": "Новый стандарт"
       },
       "ai": {
         "title": "Внедрение AI",
         "tagline": "Автоматизация операций от начала до конца",
         "desc": "AI-чатботы, автоматизация операций и AI-рекламные воронки — от запуска до текущей поддержки.",
-        "results": "-45% операционных затрат",
+        "results": "From rollout to operations",
         "badge": ""
       },
       "video": {
         "title": "Video subscription",
         "tagline": "Flat monthly · unlimited requests",
         "desc": "20-100 videos/month for web, LP & social. 24-48h delivery, unlimited revisions, pause anytime.",
-        "results": "from ¥15,000/video",
+        "results": "Flat monthly, unlimited",
         "badge": "New"
       }
     },
@@ -136,28 +136,11 @@
         "desc": "Новейшие AI-инструменты, используемые для входящего маркетинга — стратегии, превосходящие конкурентов."
       }
     },
-    "testimonialsEyebrow": "Отзывы",
-    "testimonialsHeading": "Что говорят клиенты",
-    "testimonials": {
-      "1": {
-        "name": "Владелец ресторана",
-        "location": "Сибуя, Токио",
-        "text": "Через три месяца MEO привело 30+ новых посещений в месяц. ROI был очевиден."
-      },
-      "2": {
-        "name": "Директор клиники",
-        "location": "Кита-ку, Осака",
-        "text": "Количество запросов удвоилось после переделки сайта. AI-чат пользуется успехом у пациентов."
-      },
-      "3": {
-        "name": "Оператор DTC",
-        "location": "Нагоя, Айти",
-        "text": "GEO открыло трафик из поисков ChatGPT. Целый новый канал привлечения."
-      }
-    },
+    "testimonialsEyebrow": "Proof",
+    "testimonialsHeading": "Proof, built together.",
     "trustBadges": {
-      "1": "Поддержано более 200 компаний",
-      "2": "98% удержание",
+      "1": "Bilingual JP / EN",
+      "2": "Outcome-based pricing",
       "3": "3 месяца бесплатной поддержки после запуска",
       "4": "Без навязчивых продаж"
     },
@@ -165,18 +148,18 @@
     "ctaHeading": "Начните с ",
     "ctaHeadingHighlight": "бесплатной консультации",
     "ctaHeadingSuffix": "",
-    "ctaSubheading": "15-минутная онлайн-консультация. Мы диагностируем вашу ситуацию и порекомендуем действия с максимальной ROI — бесплатно.",
+    "ctaSubheading": "A free online consultation to map your current challenges and propose the right digital strategy — at no cost.",
     "ctaButton": "Записаться на бесплатную консультацию",
     "ctaBullets": {
       "1": "Всегда бесплатно",
       "2": "Без продающих звонков",
-      "3": "Максимум 15 минут"
+      "3": "Fully online"
     },
     "processEyebrow": "Process",
     "processHeading": "Четыре шага к успеху вашего проекта.",
     "statsEyebrow": "By the numbers",
-    "statsHeading": "Numbers that prove ",
-    "statsHeadingHighlight": "Paradigm delivers.",
+    "statsHeading": "Paradigm, ",
+    "statsHeadingHighlight": "by the numbers.",
     "process": {
       "listen": {
         "title": "Слушаем",
@@ -194,7 +177,8 @@
         "title": "Рост",
         "desc": "PDCA + KPI optimisation as your partner"
       }
-    }
+    },
+    "testimonialsBody": "As a young studio, we don't post inflated numbers or anonymous testimonials. Instead, on a free initial diagnosis we show you — in concrete figures — the revenue your site is leaving on the table. Want client references? Just ask on the call."
   },
   "chatbot": {
     "title": "Помощник Paradigm",

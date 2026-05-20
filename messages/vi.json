@@ -60,20 +60,20 @@
     "trusted": "Các công ty chúng tôi đã hỗ trợ",
     "stats": {
       "support": {
-        "suffix": "+",
-        "label": "Công ty được hỗ trợ"
+        "suffix": " langs",
+        "label": "Languages served"
       },
       "retention": {
-        "suffix": "%",
-        "label": "Tỷ lệ giữ chân"
+        "suffix": " areas",
+        "label": "Service lines"
       },
       "growth": {
-        "suffix": "x",
-        "label": "Mức tăng lưu lượng trung bình"
+        "suffix": "h",
+        "label": "AI chat support"
       },
       "consult": {
-        "suffix": " phút",
-        "label": "Buổi tư vấn đầu tiên"
+        "suffix": " yen",
+        "label": "Initial diagnosis"
       }
     },
     "servicesEyebrow": "Dịch vụ",
@@ -84,35 +84,35 @@
         "title": "Phát triển web",
         "tagline": "Trang web hiện đại được xây dựng để thu hút khách hàng",
         "desc": "Responsive, tối ưu SEO, có CMS. Chúng tôi xử lý việc ra mắt và vòng quay thu hút khách hàng tiếp theo.",
-        "results": "+3x lượt yêu cầu",
+        "results": "We stay on after launch",
         "badge": "Phổ biến nhất"
       },
       "meo": {
         "title": "SEO địa phương (MEO)",
         "tagline": "Đứng đầu Google Maps tại Nhật Bản",
         "desc": "Quản lý đánh giá, lịch đăng bài và theo dõi thứ hạng — nhắm đến vị trí số 1 trong gói địa phương của bạn.",
-        "results": "+220% lượt ghé cửa hàng",
+        "results": "Aim for the map pack",
         "badge": ""
       },
       "seo": {
         "title": "SEO / GEO",
         "tagline": "Chiến thắng Google + tìm kiếm AI",
         "desc": "SEO thế hệ mới mà ChatGPT, Gemini và Perplexity thực sự trích dẫn khi khách hàng tiềm năng hỏi.",
-        "results": "+180% lưu lượng tự nhiên",
+        "results": "Optimized for AI search",
         "badge": "Tiêu chuẩn mới"
       },
       "ai": {
         "title": "Kích hoạt AI",
         "tagline": "Tự động hóa vận hành từ đầu đến cuối",
         "desc": "Chatbot AI, tự động hóa vận hành và pipeline quảng cáo AI — từ triển khai đến vận hành liên tục.",
-        "results": "-45% chi phí vận hành",
+        "results": "From rollout to operations",
         "badge": ""
       },
       "video": {
         "title": "Video subscription",
         "tagline": "Flat monthly · unlimited requests",
         "desc": "20-100 videos/month for web, LP & social. 24-48h delivery, unlimited revisions, pause anytime.",
-        "results": "from ¥15,000/video",
+        "results": "Flat monthly, unlimited",
         "badge": "New"
       }
     },
@@ -136,28 +136,11 @@
         "desc": "Các công cụ AI mới nhất được sử dụng để thu hút khách hàng — chiến lược vượt qua đối thủ cạnh tranh của bạn."
       }
     },
-    "testimonialsEyebrow": "Khách hàng nói gì",
-    "testimonialsHeading": "Cảm nhận của khách hàng",
-    "testimonials": {
-      "1": {
-        "name": "Chủ nhà hàng",
-        "location": "Shibuya, Tokyo",
-        "text": "Ba tháng sau, MEO mang lại hơn 30 lượt khách mới mỗi tháng. ROI rõ ràng không thể nhầm lẫn."
-      },
-      "2": {
-        "name": "Giám đốc phòng khám",
-        "location": "Kita-ku, Osaka",
-        "text": "Lượt yêu cầu tăng gấp đôi sau khi xây dựng lại website. Chat AI được bệnh nhân đón nhận nồng nhiệt."
-      },
-      "3": {
-        "name": "Nhà vận hành DTC",
-        "location": "Nagoya, Aichi",
-        "text": "GEO đã mở ra lưu lượng từ các tìm kiếm trên ChatGPT. Một kênh thu hút khách hàng hoàn toàn mới."
-      }
-    },
+    "testimonialsEyebrow": "Proof",
+    "testimonialsHeading": "Proof, built together.",
     "trustBadges": {
-      "1": "Hỗ trợ hơn 200 công ty",
-      "2": "Tỷ lệ giữ chân 98%",
+      "1": "Bilingual JP / EN",
+      "2": "Outcome-based pricing",
       "3": "Hỗ trợ sau ra mắt miễn phí 3 tháng",
       "4": "Không ép bán hàng"
     },
@@ -165,18 +148,18 @@
     "ctaHeading": "Bắt đầu với ",
     "ctaHeadingHighlight": "tư vấn miễn phí",
     "ctaHeadingSuffix": "",
-    "ctaSubheading": "Tư vấn trực tuyến 15 phút. Chúng tôi sẽ chẩn đoán tình hình của bạn và đề xuất các bước có ROI cao nhất — miễn phí.",
+    "ctaSubheading": "A free online consultation to map your current challenges and propose the right digital strategy — at no cost.",
     "ctaButton": "Đặt lịch tư vấn miễn phí",
     "ctaBullets": {
       "1": "Luôn miễn phí",
       "2": "Không có cuộc gọi bán hàng",
-      "3": "Tối đa 15 phút"
+      "3": "Fully online"
     },
     "processEyebrow": "Process",
     "processHeading": "Bốn bước để dự án của bạn thành công.",
     "statsEyebrow": "By the numbers",
-    "statsHeading": "Numbers that prove ",
-    "statsHeadingHighlight": "Paradigm delivers.",
+    "statsHeading": "Paradigm, ",
+    "statsHeadingHighlight": "by the numbers.",
     "process": {
       "listen": {
         "title": "Lắng nghe",
@@ -194,7 +177,8 @@
         "title": "Tăng trưởng",
         "desc": "PDCA + KPI optimisation as your partner"
       }
-    }
+    },
+    "testimonialsBody": "As a young studio, we don't post inflated numbers or anonymous testimonials. Instead, on a free initial diagnosis we show you — in concrete figures — the revenue your site is leaving on the table. Want client references? Just ask on the call."
   },
   "chatbot": {
     "title": "Trợ lý Paradigm",

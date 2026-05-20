@@ -60,20 +60,20 @@
     "trusted": "Empresas que apoiamos",
     "stats": {
       "support": {
-        "suffix": "+",
-        "label": "Empresas apoiadas"
+        "suffix": " langs",
+        "label": "Languages served"
       },
       "retention": {
-        "suffix": "%",
-        "label": "Retenção"
+        "suffix": " areas",
+        "label": "Service lines"
       },
       "growth": {
-        "suffix": "x",
-        "label": "Aumento médio de tráfego"
+        "suffix": "h",
+        "label": "AI chat support"
       },
       "consult": {
-        "suffix": "min",
-        "label": "Primeira consultoria"
+        "suffix": " yen",
+        "label": "Initial diagnosis"
       }
     },
     "servicesEyebrow": "Serviços",
@@ -84,35 +84,35 @@
         "title": "Desenvolvimento Web",
         "tagline": "Sites modernos feitos para inbound",
         "desc": "Responsivos, otimizados para SEO, com CMS. Cuidamos do lançamento e do funil de inbound que se segue.",
-        "results": "+3x consultas",
+        "results": "We stay on after launch",
         "badge": "Mais popular"
       },
       "meo": {
         "title": "SEO Local (MEO)",
         "tagline": "Topo do Google Maps no Japão",
         "desc": "Gestão de avaliações, cadência de postagens e monitoramento de ranking — visando o #1 no seu pacote local.",
-        "results": "+220% visitas à loja",
+        "results": "Aim for the map pack",
         "badge": ""
       },
       "seo": {
         "title": "SEO / GEO",
         "tagline": "Ganhe no Google + busca por IA",
         "desc": "SEO de próxima geração que ChatGPT, Gemini e Perplexity realmente citam quando prospects perguntam.",
-        "results": "+180% tráfego orgânico",
+        "results": "Optimized for AI search",
         "badge": "Novo padrão"
       },
       "ai": {
         "title": "Capacitação em IA",
         "tagline": "Automatize operações de ponta a ponta",
         "desc": "Chatbots de IA, automação de operações e pipelines de anúncios com IA — da implantação às operações contínuas.",
-        "results": "-45% custos operacionais",
+        "results": "From rollout to operations",
         "badge": ""
       },
       "video": {
         "title": "Video subscription",
         "tagline": "Flat monthly · unlimited requests",
         "desc": "20-100 videos/month for web, LP & social. 24-48h delivery, unlimited revisions, pause anytime.",
-        "results": "from ¥15,000/video",
+        "results": "Flat monthly, unlimited",
         "badge": "New"
       }
     },
@@ -136,28 +136,11 @@
         "desc": "Ferramentas de IA mais recentes usadas para inbound — estratégias que superam seus concorrentes."
       }
     },
-    "testimonialsEyebrow": "Depoimentos",
-    "testimonialsHeading": "O que os clientes dizem",
-    "testimonials": {
-      "1": {
-        "name": "Proprietário de Restaurante",
-        "location": "Shibuya, Tóquio",
-        "text": "Três meses depois, o MEO gerou mais de 30 primeiras visitas por mês. O ROI foi inegável."
-      },
-      "2": {
-        "name": "Diretor de Clínica",
-        "location": "Kita-ku, Osaka",
-        "text": "As consultas dobraram após a reformulação do site. O chat de IA é um sucesso com os pacientes."
-      },
-      "3": {
-        "name": "Operador DTC",
-        "location": "Nagoya, Aichi",
-        "text": "O GEO desbloqueou tráfego de buscas no ChatGPT. Um canal de aquisição totalmente novo."
-      }
-    },
+    "testimonialsEyebrow": "Proof",
+    "testimonialsHeading": "Proof, built together.",
     "trustBadges": {
-      "1": "Mais de 200 empresas apoiadas",
-      "2": "98% de retenção",
+      "1": "Bilingual JP / EN",
+      "2": "Outcome-based pricing",
       "3": "3 meses de suporte pós-lançamento gratuito",
       "4": "Sem vendas agressivas"
     },
@@ -165,18 +148,18 @@
     "ctaHeading": "Comece com uma ",
     "ctaHeadingHighlight": "consultoria gratuita",
     "ctaHeadingSuffix": "",
-    "ctaSubheading": "Consultoria online de 15 minutos. Diagnosticaremos sua situação e recomendaremos as ações de maior ROI — gratuitamente.",
+    "ctaSubheading": "A free online consultation to map your current challenges and propose the right digital strategy — at no cost.",
     "ctaButton": "Agende uma consultoria gratuita",
     "ctaBullets": {
       "1": "Sempre gratuito",
       "2": "Sem ligações de vendas",
-      "3": "Máximo de 15 minutos"
+      "3": "Fully online"
     },
     "processEyebrow": "Process",
     "processHeading": "Quatro passos para entregar seu projeto com sucesso.",
     "statsEyebrow": "By the numbers",
-    "statsHeading": "Numbers that prove ",
-    "statsHeadingHighlight": "Paradigm delivers.",
+    "statsHeading": "Paradigm, ",
+    "statsHeadingHighlight": "by the numbers.",
     "process": {
       "listen": {
         "title": "Escuta",
@@ -194,7 +177,8 @@
         "title": "Crescimento",
         "desc": "PDCA + KPI optimisation as your partner"
       }
-    }
+    },
+    "testimonialsBody": "As a young studio, we don't post inflated numbers or anonymous testimonials. Instead, on a free initial diagnosis we show you — in concrete figures — the revenue your site is leaving on the table. Want client references? Just ask on the call."
   },
   "chatbot": {
     "title": "Assistente Paradigm",

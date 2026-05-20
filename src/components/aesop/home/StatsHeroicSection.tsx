@@ -12,11 +12,14 @@ import { Meteors } from "@/components/magicui/meteors"
 import { Sparkles } from "@/components/magicui/sparkles"
 import FadeIn from "@/components/aesop/FadeIn"
 
+// 2026-05-20 壁打ち: 捏造実績 (200社/98%/3倍/15分) を全廃し、検証可能な事実のみに置換。
+//   support=対応言語(12 locale i18n) / retention=提供サービス領域(MEO/AI/Web/動画) /
+//   growth=AIチャット24h / consult=初回診断 ¥0。数値はすべて真実。
 const STAT_DEFS = [
-  { key: "support", to: 200, gradient: "from-pink-400 via-paradigm-accent to-paradigm-tech" },
-  { key: "retention", to: 98, gradient: "from-paradigm-tech via-paradigm-glow to-pink-400" },
-  { key: "growth", to: 3, gradient: "from-paradigm-glow via-violet-400 to-paradigm-accent" },
-  { key: "consult", to: 15, gradient: "from-paradigm-accent via-pink-400 to-orange-300" },
+  { key: "support", to: 12, gradient: "from-pink-400 via-paradigm-accent to-paradigm-tech" },
+  { key: "retention", to: 4, gradient: "from-paradigm-tech via-paradigm-glow to-pink-400" },
+  { key: "growth", to: 24, gradient: "from-paradigm-glow via-violet-400 to-paradigm-accent" },
+  { key: "consult", to: 0, gradient: "from-paradigm-accent via-pink-400 to-orange-300" },
 ] as const
 
 const EASE = [0.22, 1, 0.36, 1] as const

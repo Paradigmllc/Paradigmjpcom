@@ -60,20 +60,20 @@
     "trusted": "我们支持过的企业",
     "stats": {
       "support": {
-        "suffix": "+",
-        "label": "支持的企业数"
+        "suffix": " langs",
+        "label": "Languages served"
       },
       "retention": {
-        "suffix": "%",
-        "label": "客户留存率"
+        "suffix": " areas",
+        "label": "Service lines"
       },
       "growth": {
-        "suffix": "倍",
-        "label": "平均流量提升"
+        "suffix": "h",
+        "label": "AI chat support"
       },
       "consult": {
-        "suffix": "分钟",
-        "label": "首次咨询时长"
+        "suffix": " yen",
+        "label": "Initial diagnosis"
       }
     },
     "servicesEyebrow": "服务",
@@ -84,35 +84,35 @@
         "title": "网站开发",
         "tagline": "为获客而建的现代网站",
         "desc": "响应式、SEO优化、带CMS。我们负责上线及后续的获客飞轮。",
-        "results": "询盘量提升3倍",
+        "results": "We stay on after launch",
         "badge": "最受欢迎"
       },
       "meo": {
         "title": "本地SEO (MEO)",
         "tagline": "日本Google Maps排名前列",
         "desc": "评论管理、发布节奏、排名追踪——目标锁定本地包中的第一名。",
-        "results": "到店访问量提升220%",
+        "results": "Aim for the map pack",
         "badge": ""
       },
       "seo": {
         "title": "SEO / GEO",
         "tagline": "赢得Google + AI搜索",
         "desc": "新一代SEO，让ChatGPT、Gemini和Perplexity在潜在客户询问时实际引用您。",
-        "results": "自然流量提升180%",
+        "results": "Optimized for AI search",
         "badge": "新标准"
       },
       "ai": {
         "title": "AI赋能",
         "tagline": "端到端运营自动化",
         "desc": "AI聊天机器人、运营自动化和AI广告管道——从部署到持续运营。",
-        "results": "运营成本降低45%",
+        "results": "From rollout to operations",
         "badge": ""
       },
       "video": {
         "title": "Video subscription",
         "tagline": "Flat monthly · unlimited requests",
         "desc": "20-100 videos/month for web, LP & social. 24-48h delivery, unlimited revisions, pause anytime.",
-        "results": "from ¥15,000/video",
+        "results": "Flat monthly, unlimited",
         "badge": "New"
       }
     },
@@ -136,28 +136,11 @@
         "desc": "最新AI工具用于获客——超越竞争对手的策略。"
       }
     },
-    "testimonialsEyebrow": "客户评价",
-    "testimonialsHeading": "客户心声",
-    "testimonials": {
-      "1": {
-        "name": "餐厅老板",
-        "location": "东京涩谷",
-        "text": "三个月内，MEO每月带来30多次首次到访。ROI非常明显。"
-      },
-      "2": {
-        "name": "诊所主任",
-        "location": "大阪北区",
-        "text": "网站重建后询盘量翻倍。AI聊天功能深受患者欢迎。"
-      },
-      "3": {
-        "name": "DTC运营者",
-        "location": "爱知县名古屋",
-        "text": "GEO从ChatGPT搜索中带来了流量。一个全新的获客渠道。"
-      }
-    },
+    "testimonialsEyebrow": "Proof",
+    "testimonialsHeading": "Proof, built together.",
     "trustBadges": {
-      "1": "支持200+企业",
-      "2": "98%客户留存率",
+      "1": "Bilingual JP / EN",
+      "2": "Outcome-based pricing",
       "3": "上线后3个月免费支持",
       "4": "无硬性推销"
     },
@@ -165,18 +148,18 @@
     "ctaHeading": "从",
     "ctaHeadingHighlight": "免费咨询",
     "ctaHeadingSuffix": "开始",
-    "ctaSubheading": "15分钟在线咨询。我们将诊断您的情况并推荐最高ROI的行动方案——完全免费。",
+    "ctaSubheading": "A free online consultation to map your current challenges and propose the right digital strategy — at no cost.",
     "ctaButton": "预约免费咨询",
     "ctaBullets": {
       "1": "始终免费",
       "2": "无销售电话",
-      "3": "最长15分钟"
+      "3": "Fully online"
     },
     "processEyebrow": "Process",
     "processHeading": "四步走向项目成功",
     "statsEyebrow": "By the numbers",
-    "statsHeading": "Numbers that prove ",
-    "statsHeadingHighlight": "Paradigm delivers.",
+    "statsHeading": "Paradigm, ",
+    "statsHeadingHighlight": "by the numbers.",
     "process": {
       "listen": {
         "title": "倾听",
@@ -194,7 +177,8 @@
         "title": "增长",
         "desc": "PDCA + KPI optimisation as your partner"
       }
-    }
+    },
+    "testimonialsBody": "As a young studio, we don't post inflated numbers or anonymous testimonials. Instead, on a free initial diagnosis we show you — in concrete figures — the revenue your site is leaving on the table. Want client references? Just ask on the call."
   },
   "chatbot": {
     "title": "Paradigm助手",
