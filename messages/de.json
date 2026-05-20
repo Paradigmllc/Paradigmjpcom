@@ -40,7 +40,8 @@
     },
     "studioLocation": "Tokio, Japan · Paradigm",
     "socialGithub": "GitHub",
-    "socialEmail": "E-Mail"
+    "socialEmail": "E-Mail",
+    "companyHeadline": "Technologie, die Ihr Unternehmen voranbringt."
   },
   "home": {
     "heroBadge": "Ihr lokaler digitaler Partner in Japan",
@@ -171,15 +172,19 @@
     "statsHeadingHighlight": "Paradigm delivers.",
     "process": {
       "listen": {
+        "title": "Zuhören",
         "desc": "Discover goals through deep interviews"
       },
       "design": {
+        "title": "Design",
         "desc": "Strategy + UX architecture + wireframes"
       },
       "build": {
+        "title": "Umsetzung",
         "desc": "Next.js implementation + AI integration"
       },
       "grow": {
+        "title": "Wachstum",
         "desc": "PDCA + KPI optimisation as your partner"
       }
     }
@@ -969,5 +974,15 @@
     "ctaHighlight": "AI",
     "ctaDesc": "Free consultation to scope your AI roadmap.",
     "ctaButton": "Book a free consultation"
+  },
+  "common": {
+    "loading": "Lädt",
+    "loadingMessage": "Einen Moment bitte…"
+  },
+  "optoutPage": {
+    "title": "Abmelden",
+    "subtitle": "Wir entschuldigen uns für etwaige Unannehmlichkeiten.",
+    "success": "Ihre Abmeldung wurde verarbeitet. Wir senden Ihnen keine formularbasierten Nachrichten von Paradigm mehr.",
+    "invalid": "Dieser Link ist ungültig oder abgelaufen. Bitte verwenden Sie den Abmeldelink in der ursprünglichen Nachricht."
   }
 }

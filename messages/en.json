@@ -443,7 +443,8 @@
     },
     "studioLocation": "Tokyo, Japan · Paradigm LLC",
     "socialGithub": "GitHub",
-    "socialEmail": "Email"
+    "socialEmail": "Email",
+    "companyHeadline": "Technology that moves your business forward."
   },
   "home": {
     "heroBadge": "Your local digital partner in Japan",
@@ -574,15 +575,19 @@
     "statsHeadingHighlight": "Paradigm delivers.",
     "process": {
       "listen": {
+        "title": "Listen",
         "desc": "Discover goals through deep interviews"
       },
       "design": {
+        "title": "Design",
         "desc": "Strategy + UX architecture + wireframes"
       },
       "build": {
+        "title": "Build",
         "desc": "Next.js implementation + AI integration"
       },
       "grow": {
+        "title": "Grow",
         "desc": "PDCA + KPI optimisation as your partner"
       }
     }
@@ -969,5 +974,15 @@
     "ctaHighlight": "AI",
     "ctaDesc": "Free consultation to scope your AI roadmap.",
     "ctaButton": "Book a free consultation"
+  },
+  "common": {
+    "loading": "Loading",
+    "loadingMessage": "Just a moment…"
+  },
+  "optoutPage": {
+    "title": "Unsubscribe",
+    "subtitle": "We're sorry for any inconvenience.",
+    "success": "Your unsubscribe request has been processed. We will no longer send form-based outreach from Paradigm.",
+    "invalid": "This link is invalid or expired. Please try the unsubscribe link in the original message."
   }
 }

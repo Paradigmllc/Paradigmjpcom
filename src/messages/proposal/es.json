@@ -71,7 +71,29 @@
   "cases": {
     "label": "RESULTADOS",
     "title": "Casos de éxito",
-    "subtitle": "Resultados de mejora en el mismo sector"
+    "subtitle": "Resultados de mejora en el mismo sector",
+    "items": [
+      {
+        "label": "Consultas",
+        "industry": "Restaurante",
+        "duration": "3 meses"
+      },
+      {
+        "label": "Reseñas sin responder",
+        "industry": "Salón de belleza",
+        "duration": "1 mes"
+      },
+      {
+        "label": "CVR de reservas",
+        "industry": "Hotel",
+        "duration": "6 meses"
+      },
+      {
+        "label": "Tráfico orgánico",
+        "industry": "IT / SaaS",
+        "duration": "4 meses"
+      }
+    ]
   },
   "whyus": {
     "label": "POR QUÉ PARADIGM",

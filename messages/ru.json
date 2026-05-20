@@ -40,7 +40,8 @@
     },
     "studioLocation": "Токио, Япония · Paradigm",
     "socialGithub": "GitHub",
-    "socialEmail": "Эл. почта"
+    "socialEmail": "Эл. почта",
+    "companyHeadline": "Технологии, которые двигают ваш бизнес вперёд."
   },
   "home": {
     "heroBadge": "Ваш локальный цифровой партнер в Японии",
@@ -171,15 +172,19 @@
     "statsHeadingHighlight": "Paradigm delivers.",
     "process": {
       "listen": {
+        "title": "Слушаем",
         "desc": "Discover goals through deep interviews"
       },
       "design": {
+        "title": "Дизайн",
         "desc": "Strategy + UX architecture + wireframes"
       },
       "build": {
+        "title": "Разработка",
         "desc": "Next.js implementation + AI integration"
       },
       "grow": {
+        "title": "Рост",
         "desc": "PDCA + KPI optimisation as your partner"
       }
     }
@@ -969,5 +974,15 @@
     "ctaHighlight": "AI",
     "ctaDesc": "Free consultation to scope your AI roadmap.",
     "ctaButton": "Book a free consultation"
+  },
+  "common": {
+    "loading": "Загрузка",
+    "loadingMessage": "Подождите немного…"
+  },
+  "optoutPage": {
+    "title": "Отписаться",
+    "subtitle": "Приносим извинения за возможные неудобства.",
+    "success": "Ваш запрос на отписку обработан. Мы больше не будем отправлять вам рассылки Paradigm через формы.",
+    "invalid": "Эта ссылка недействительна или устарела. Воспользуйтесь ссылкой для отписки в исходном сообщении."
   }
 }

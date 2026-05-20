@@ -5,10 +5,16 @@ import { BorderBeam } from "@/components/magicui/border-beam"
 import type { SectionProps } from "./_types"
 
 /** Reusable diagnostic KPI card row — used in trust/competitive angles too */
-export default function KpiCards({ data, theme, t }: SectionProps) {
+export default function KpiCards({ data, theme, t, locale }: SectionProps) {
   const score = data.ai_analysis?.overall_score ?? data.match_score ?? 0
   const annualLoss = (data.estimated_monthly_loss ?? 0) * 12
   const recovery = data.ai_analysis?.estimated_recovery_jpy ?? Math.round(annualLoss * 0.65)
+
+  // 金額は JPY が正準。ja は「¥120万」表記、それ以外は「万」が通じないため
+  // 全額表示「¥1,200,000」にする (旧: 全 region で "万" がハードコード leak)。
+  const isJa = locale === "ja"
+  const yen = (jpy: number) => (isJa ? Math.round(jpy / 10000) : Math.round(jpy))
+  const yenSuffix = isJa ? "万" : ""
 
   const cards = [
     {
@@ -19,18 +25,18 @@ export default function KpiCards({ data, theme, t }: SectionProps) {
       beam: score < 60,
     },
     {
-      value: Math.round(annualLoss / 10000),
+      value: yen(annualLoss),
       label: t("opportunity.annual_loss_label"),
       prefix: "¥",
-      suffix: "万",
+      suffix: yenSuffix,
       color: theme.warn,
       beam: true,
     },
     {
-      value: Math.round(recovery / 10000),
+      value: yen(recovery),
       label: t("opportunity.recovery_label"),
       prefix: "¥",
-      suffix: "万",
+      suffix: yenSuffix,
       color: theme.accent,
       beam: false,
     },

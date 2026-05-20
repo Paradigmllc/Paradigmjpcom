@@ -443,7 +443,8 @@
     },
     "studioLocation": "東京・日本 · Paradigm 合同会社",
     "socialGithub": "GitHub",
-    "socialEmail": "メール"
+    "socialEmail": "メール",
+    "companyHeadline": "テクノロジーで、ビジネスを前へ。"
   },
   "home": {
     "heroBadge": "中小企業のデジタルパートナー",
@@ -574,15 +575,19 @@
     "statsHeadingHighlight": "Paradigm の支援力。",
     "process": {
       "listen": {
+        "title": "ヒアリング",
         "desc": "ヒアリングで現状と目標を整理"
       },
       "design": {
+        "title": "設計",
         "desc": "戦略 + UX 設計 + ワイヤー"
       },
       "build": {
+        "title": "開発",
         "desc": "Next.js 実装 + AI 連携"
       },
       "grow": {
+        "title": "グロース",
         "desc": "PDCA + KPI 改善で伴走"
       }
     }
@@ -969,5 +974,15 @@
     "ctaHighlight": "AI 導入",
     "ctaDesc": "無料相談で御社に最適な AI 活用プランをご提案します。",
     "ctaButton": "無料相談を予約する"
+  },
+  "common": {
+    "loading": "読み込み中",
+    "loadingMessage": "少々お待ちください…"
+  },
+  "optoutPage": {
+    "title": "配信停止のお手続き",
+    "subtitle": "ご不便をおかけして申し訳ございません。",
+    "success": "配信停止を承りました。今後、Paradigm 合同会社からのフォーム経由のご案内は配信いたしません。",
+    "invalid": "リンクが無効または期限切れです。お手数ですが、再度メッセージ内の配信停止リンクからお試しください。"
   }
 }

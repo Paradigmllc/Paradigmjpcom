@@ -71,7 +71,29 @@
   "cases": {
     "label": "RESULTS",
     "title": "導入実績",
-    "subtitle": "同業種での改善実績"
+    "subtitle": "同業種での改善実績",
+    "items": [
+      {
+        "label": "問い合わせ数",
+        "industry": "飲食店",
+        "duration": "3ヶ月"
+      },
+      {
+        "label": "口コミ未返信",
+        "industry": "美容室",
+        "duration": "1ヶ月"
+      },
+      {
+        "label": "予約 CVR",
+        "industry": "ホテル",
+        "duration": "6ヶ月"
+      },
+      {
+        "label": "オーガニック流入",
+        "industry": "IT/SaaS",
+        "duration": "4ヶ月"
+      }
+    ]
   },
   "whyus": {
     "label": "WHY PARADIGM",

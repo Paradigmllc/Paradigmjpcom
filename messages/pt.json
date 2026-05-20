@@ -40,7 +40,8 @@
     },
     "studioLocation": "Tóquio, Japão · Paradigm",
     "socialGithub": "GitHub",
-    "socialEmail": "E-mail"
+    "socialEmail": "E-mail",
+    "companyHeadline": "Tecnologia que move o seu negócio para frente."
   },
   "home": {
     "heroBadge": "Seu parceiro digital local no Japão",
@@ -171,15 +172,19 @@
     "statsHeadingHighlight": "Paradigm delivers.",
     "process": {
       "listen": {
+        "title": "Escuta",
         "desc": "Discover goals through deep interviews"
       },
       "design": {
+        "title": "Design",
         "desc": "Strategy + UX architecture + wireframes"
       },
       "build": {
+        "title": "Desenvolvimento",
         "desc": "Next.js implementation + AI integration"
       },
       "grow": {
+        "title": "Crescimento",
         "desc": "PDCA + KPI optimisation as your partner"
       }
     }
@@ -969,5 +974,15 @@
     "ctaHighlight": "AI",
     "ctaDesc": "Free consultation to scope your AI roadmap.",
     "ctaButton": "Book a free consultation"
+  },
+  "common": {
+    "loading": "Carregando",
+    "loadingMessage": "Um momento…"
+  },
+  "optoutPage": {
+    "title": "Cancelar inscrição",
+    "subtitle": "Pedimos desculpas por qualquer inconveniente.",
+    "success": "Sua solicitação de cancelamento foi processada. Não enviaremos mais comunicações por formulário da Paradigm.",
+    "invalid": "Este link é inválido ou expirou. Use o link de cancelamento na mensagem original."
   }
 }

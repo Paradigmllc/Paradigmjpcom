@@ -14,7 +14,7 @@ import { getTranslations } from "next-intl/server"
 import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import FadeIn from "@/components/aesop/FadeIn"
-import { filterByLocale, coerceLocale, localeFindOptions } from "@/lib/cms/filters"
+import { filterByLocale, coerceLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
 
 export const dynamic = "force-dynamic"
 
@@ -60,7 +60,8 @@ function formatDate(iso: string | undefined, locale: string): string {
 
 export default async function BlogPage({ params }: Props) {
   const { locale: rawLocale } = await params
-  const locale = coerceLocale(rawLocale)
+  const locale = assertLocale(rawLocale)            // 実 locale（静的 UI / 日付）
+  const contentLocale = coerceLocale(rawLocale)     // ja/en（CMS 配信・英語フォールバック）
   const t = await getTranslations({ locale, namespace: "blogPage" })
 
   let posts: PostDoc[] = []
@@ -68,11 +69,11 @@ export default async function BlogPage({ params }: Props) {
     const payload = await getPayload({ config })
     const res = await payload.find({
       collection: "posts",
-      where: filterByLocale(locale, { status: { equals: "published" } }),
+      where: filterByLocale(contentLocale, { status: { equals: "published" } }),
       sort: "-publishedAt",
       limit: 100,
       depth: 0,
-      ...localeFindOptions(locale),
+      ...localeFindOptions(contentLocale),
     })
     posts = (res.docs as unknown as PostDoc[]) ?? []
   } catch (e) {

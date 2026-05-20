@@ -3,12 +3,14 @@ import { motion } from "framer-motion"
 import { BentoGrid, BentoCard } from "@/components/magicui/bento-grid"
 import type { SectionProps } from "./_types"
 
-// MVP: 業種ごとの汎用ケーススタディ (将来 DB から動的取得に拡張可能)
+// MVP: 業種ごとの汎用ケーススタディ (将来 DB から動的取得に拡張可能)。
+// metric/icon は universal・label/industry/duration は cases.items[i] から i18n 取得
+// (旧: 日本語ハードコードで全 region に日本語 leak していた)。
 const GENERIC_CASES = [
-  { metric: "+312%", label: "問い合わせ数", industry: "飲食店", duration: "3ヶ月", icon: "🍽️" },
-  { metric: "-67%", label: "口コミ未返信", industry: "美容室", duration: "1ヶ月", icon: "💇" },
-  { metric: "x4.8", label: "予約 CVR", industry: "ホテル", duration: "6ヶ月", icon: "🏨" },
-  { metric: "+89%", label: "オーガニック流入", industry: "IT/SaaS", duration: "4ヶ月", icon: "💻" },
+  { metric: "+312%", icon: "🍽️" },
+  { metric: "-67%", icon: "💇" },
+  { metric: "x4.8", icon: "🏨" },
+  { metric: "+89%", icon: "💻" },
 ]
 
 export default function CaseStudies({ theme, t }: SectionProps) {
@@ -39,7 +41,7 @@ export default function CaseStudies({ theme, t }: SectionProps) {
           {GENERIC_CASES.map((c, i) => (
             <BentoCard
               key={i}
-              name={`${c.icon} ${c.label}`}
+              name={`${c.icon} ${t(`cases.items.${i}.label`)}`}
               className={i === 0 ? "md:col-span-2" : ""}
               header={
                 <div style={{ fontSize: 48, fontWeight: 900, color: theme.accent, lineHeight: 1, letterSpacing: "-0.03em" }}>
@@ -48,7 +50,7 @@ export default function CaseStudies({ theme, t }: SectionProps) {
               }
               description={
                 <span style={{ fontSize: 12, color: theme.textMuted }}>
-                  {c.industry} · {c.duration}
+                  {t(`cases.items.${i}.industry`)} · {t(`cases.items.${i}.duration`)}
                 </span>
               }
             />

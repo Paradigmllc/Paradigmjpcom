@@ -18,7 +18,7 @@ import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
-import { filterByLocale, coerceLocale, localeFindOptions } from "@/lib/cms/filters"
+import { filterByLocale, coerceLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
 import {
   formatPricePPP,
   formatPricePPPFromHeaders,
@@ -58,7 +58,8 @@ type PricingDoc = {
 export default async function PricingPage({ params, searchParams }: Props) {
   const { locale: rawLocale } = await params
   const { force_country } = await searchParams
-  const locale = coerceLocale(rawLocale)
+  const locale = assertLocale(rawLocale)            // 実 locale（静的 UI）
+  const contentLocale = coerceLocale(rawLocale)     // ja/en（CMS 配信・通貨判定・英語フォールバック）
   const t = await getTranslations({ locale, namespace: "pricingPage" })
 
   // Billing cycle ラベルは namespace 経由で locale 別取得 (旧 BILLING_LABEL hardcode 廃止)
@@ -80,11 +81,11 @@ export default async function PricingPage({ params, searchParams }: Props) {
     const payload = await getPayload({ config })
     const res = await payload.find({
       collection: "pricing",
-      where: filterByLocale(locale),
+      where: filterByLocale(contentLocale),
       sort: "sortOrder",
       limit: 100,
       depth: 0,
-      ...localeFindOptions(locale),
+      ...localeFindOptions(contentLocale),
     })
     plans = (res.docs as unknown as PricingDoc[]) ?? []
   } catch (e) {
@@ -95,8 +96,8 @@ export default async function PricingPage({ params, searchParams }: Props) {
     const priceJPY = plan.price ?? 0
     const currency = (plan.currency ?? "jpy").toUpperCase() as "JPY" | "USD"
     return forcedCountry
-      ? formatPricePPP(priceJPY, currency, forcedCountry, locale)
-      : formatPricePPPFromHeaders(priceJPY, currency, h, locale)
+      ? formatPricePPP(priceJPY, currency, forcedCountry, contentLocale)
+      : formatPricePPPFromHeaders(priceJPY, currency, h, contentLocale)
   }
 
   return (
@@ -127,7 +128,7 @@ export default async function PricingPage({ params, searchParams }: Props) {
                   const price = priceFor(plan)
                   const billingLabel = billingLabelFor(plan.billingCycle)
                   const cta = plan.ctaLabel ?? t("defaultCta")
-                  const localeForFmt = locale === "ja" ? "ja-JP" : "en-US"
+                  const localeForFmt = contentLocale === "ja" ? "ja-JP" : "en-US"
                   return (
                     <FadeIn key={String(plan.id)} delay={idx * 0.08}>
                       <div

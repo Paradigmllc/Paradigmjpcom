@@ -60,8 +60,10 @@ export default function SiteFooter({ settings }: FooterProps = {}) {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
             <div className="lg:col-span-7">
               <p className="paradigm-eyebrow mb-6">{t("company")}</p>
+              {/* 編集見出し (companyHeadline) と説明文 (companyTagline) は別キー。
+                  旧実装は両方 companyTagline で同一文が二重表示されていた。 */}
               <h2 className="font-display text-[28px] md:text-[40px] leading-[1.18] font-normal tracking-tight max-w-[560px] text-paradigm-ink">
-                {t("companyTagline")}
+                {t("companyHeadline")}
               </h2>
             </div>
             <div className="lg:col-span-5 flex flex-col gap-6">

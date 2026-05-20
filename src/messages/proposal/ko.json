@@ -71,7 +71,29 @@
   "cases": {
     "label": "결과",
     "title": "도입 실적",
-    "subtitle": "동업종에서의 개선 실적"
+    "subtitle": "동업종에서의 개선 실적",
+    "items": [
+      {
+        "label": "문의 수",
+        "industry": "음식점",
+        "duration": "3개월"
+      },
+      {
+        "label": "미응답 리뷰",
+        "industry": "미용실",
+        "duration": "1개월"
+      },
+      {
+        "label": "예약 전환율",
+        "industry": "호텔",
+        "duration": "6개월"
+      },
+      {
+        "label": "오가닉 유입",
+        "industry": "IT/SaaS",
+        "duration": "4개월"
+      }
+    ]
   },
   "whyus": {
     "label": "WHY PARADIGM",

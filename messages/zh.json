@@ -40,7 +40,8 @@
     },
     "studioLocation": "东京 · 日本 · Paradigm",
     "socialGithub": "GitHub",
-    "socialEmail": "电子邮件"
+    "socialEmail": "电子邮件",
+    "companyHeadline": "用技术推动您的业务向前。"
   },
   "home": {
     "heroBadge": "您在日本的本地数字化合作伙伴",
@@ -171,15 +172,19 @@
     "statsHeadingHighlight": "Paradigm delivers.",
     "process": {
       "listen": {
+        "title": "倾听",
         "desc": "Discover goals through deep interviews"
       },
       "design": {
+        "title": "设计",
         "desc": "Strategy + UX architecture + wireframes"
       },
       "build": {
+        "title": "开发",
         "desc": "Next.js implementation + AI integration"
       },
       "grow": {
+        "title": "增长",
         "desc": "PDCA + KPI optimisation as your partner"
       }
     }
@@ -969,5 +974,15 @@
     "ctaHighlight": "AI",
     "ctaDesc": "Free consultation to scope your AI roadmap.",
     "ctaButton": "Book a free consultation"
+  },
+  "common": {
+    "loading": "加载中",
+    "loadingMessage": "请稍候…"
+  },
+  "optoutPage": {
+    "title": "取消订阅",
+    "subtitle": "对于给您带来的不便，我们深表歉意。",
+    "success": "您的取消订阅请求已处理。我们将不再通过表单向您发送 Paradigm 的推广信息。",
+    "invalid": "此链接无效或已过期。请使用原始消息中的取消订阅链接。"
   }
 }

@@ -71,7 +71,29 @@
   "cases": {
     "label": "案例实绩",
     "title": "导入实绩",
-    "subtitle": "同行业的改善实绩"
+    "subtitle": "同行业的改善实绩",
+    "items": [
+      {
+        "label": "咨询量",
+        "industry": "餐饮店",
+        "duration": "3个月"
+      },
+      {
+        "label": "未回复评价",
+        "industry": "美容院",
+        "duration": "1个月"
+      },
+      {
+        "label": "预订转化率",
+        "industry": "酒店",
+        "duration": "6个月"
+      },
+      {
+        "label": "自然流量",
+        "industry": "IT/SaaS",
+        "duration": "4个月"
+      }
+    ]
   },
   "whyus": {
     "label": "选择Paradigm的理由",

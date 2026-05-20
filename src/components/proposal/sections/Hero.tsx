@@ -6,7 +6,7 @@ import { AnimatedGradientText } from "@/components/magicui/animated-gradient-tex
 import { Sparkles } from "@/components/magicui/sparkles"
 import type { SectionProps } from "./_types"
 
-export default function Hero({ data, theme, t, pitchAngle }: SectionProps) {
+export default function Hero({ data, theme, t, pitchAngle, locale }: SectionProps) {
   const score = data.ai_analysis?.overall_score ?? data.match_score ?? 43
   const issuesCount = (data.vulnerabilities?.length ?? 0) + (data.review_analysis?.weaknesses?.length ?? 0)
   const annualLossMan = Math.round((data.estimated_monthly_loss ?? 0) * 12 / 10000)
@@ -110,7 +110,7 @@ export default function Hero({ data, theme, t, pitchAngle }: SectionProps) {
         >
           {[
             { value: score, label: t("hero.metric_score"), sub: t("hero.metric_score_unit"), warn: score < 60 },
-            { value: issuesCount, label: t("hero.metric_issues"), sub: t("hero.metric_issues_sub"), suffix: "件" },
+            { value: issuesCount, label: t("hero.metric_issues"), sub: t("hero.metric_issues_sub"), suffix: locale === "ja" ? "件" : "" },
             { value: data.reply_rate ?? 0, label: t("hero.metric_reply_rate"), sub: t("hero.metric_reply_rate_sub", { competitor: data.competitor_avg_reply_rate ?? 78 }), suffix: "%" },
           ].map((m) => (
             <div key={m.label} style={{

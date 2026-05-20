@@ -14,11 +14,13 @@ import FadeIn from "@/components/aesop/FadeIn"
 
 const EASE = [0.22, 1, 0.36, 1] as const
 
+// title は messages/{locale}.json:home.process.{key}.title から取得（AE-PHP-2）。
+// 旧: ここに英語 title をハードコードしており全 locale で英語固定だった。
 const STEP_META = [
-  { key: "listen", icon: Headphones, gradient: "from-pink-400 to-paradigm-accent",    title: "Listen" },
-  { key: "design", icon: PenTool,    gradient: "from-paradigm-accent to-paradigm-tech", title: "Design" },
-  { key: "build",  icon: Code2,      gradient: "from-paradigm-tech to-paradigm-glow",   title: "Build"  },
-  { key: "grow",   icon: TrendingUp, gradient: "from-paradigm-glow to-pink-400",        title: "Grow"   },
+  { key: "listen", icon: Headphones, gradient: "from-pink-400 to-paradigm-accent" },
+  { key: "design", icon: PenTool,    gradient: "from-paradigm-accent to-paradigm-tech" },
+  { key: "build",  icon: Code2,      gradient: "from-paradigm-tech to-paradigm-glow" },
+  { key: "grow",   icon: TrendingUp, gradient: "from-paradigm-glow to-pink-400" },
 ] as const
 
 export default function ProcessSection() {
@@ -63,7 +65,7 @@ export default function ProcessSection() {
                   <Icon size={18} strokeWidth={1.5} />
                 </div>
                 <h3 className="font-display text-[18px] md:text-[20px] leading-[1.2] text-paradigm-ink mb-1.5 tracking-[-0.015em]">
-                  {s.title}
+                  {t(`process.${s.key}.title`)}
                 </h3>
                 <p className="text-[12px] md:text-[13px] text-paradigm-ink-soft leading-[1.65]">
                   {t(`process.${s.key}.desc`)}

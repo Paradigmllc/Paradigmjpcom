@@ -17,6 +17,7 @@
 
 | Status | Owner | Lock-since | Branch | Task | Notes |
 |--------|-------|-----------|--------|------|-------|
+| 🟢 IN-PROGRESS | claude-code | 2026-05-20 | fix/mvp-run-idempotency | **P20 全面 i18n 監査 + 動的コンテンツ修復** | ✅ 静的UI 12-locale 完備確認 / ✅ 動的層 locale 分離 (realLocale=UI vs contentLocale=ja/en CMS) blog/services/pricing/works/faq / ✅ coerceLocale を英語フォールバックに反転 (旧: 非en→日本語 leak) / ✅ ProcessSection/loading/optout/footer 二重表示 hardcode 修正 / ✅ messages +11 key×12 locale parity OK / ✅ tsc 0 error. **残**: ① 提案ページ i18n (件/万/cases 12 region) ② **PayloadCMS 本番DBテーブル欠落 調査・修復** (payload schema が別アプリ占有・posts/services等 不在) ③ 内容壁打ち (数字/文言/testimonials) |
 | 🟡 BLOCKED | - | - | - | **P17 i18n 12-locale 拡張** P17-11/12/13/14/15 残 | HomeClient 426行 ✅・services/contact/about messages 化 + AllInOneClient 1972行 messages 化 + PayloadCMS DeepSeek 自動翻訳 + hreflang/sitemap.xml |
 | ⚪ AVAILABLE | - | - | - | **P18-D AE-PHP-2 i18n sweep 完遂** | 完遂 13 ページ: services/about/faq/contact/pricing/privacy/legal/works/blog + service-detail/web/meo/seo/ai (2026-05-08)・残: HomeClient.tsx 1972行 (別 PR 範疇) |
 
@@ -26,6 +27,10 @@
 
 | Priority | Status | Owner | Task | 工数 | Branch (推奨) |
 |----------|--------|-------|------|------|---------------|
+| P0 | 🔴 CRITICAL | - | **PayloadCMS 本番DBテーブル欠落の調査・修復** (Coolify DATABASE_URI 確認 → schema 衝突解消 → migration で posts/services/pricing/works/faqs/pages 作成) | 1 日 | `agent/{X}/payload-db-fix` |
+| P1 | ⚪ AVAILABLE | - | 提案ページ i18n (Hero `件` / KpiCards `万¥` / CaseStudies JP data) 12 region 化 | 0.5 日 | `agent/{X}/proposal-i18n` |
+| P2 | ⚪ AVAILABLE | - | 内容壁打ち: stats 数字 (200社+/98%/3倍/15分) の実態整合 + testimonials の真正性 + footer headline / process titles コピー | 壁打ち | - |
+| P3 | ⚪ AVAILABLE | - | 孤立キー掃除 (home.heroTitle/heroSubtitle/trusted) | 0.1 日 | - |
 | P1 | ⚪ AVAILABLE | - | i18n messages 完全抽出 (全 14 routes) | 2 日 | `agent/{X}/i18n-sweep` |
 | P2 | ⚪ AVAILABLE | - | hreflang + sitemap.xml 12-locale 出力 | 0.5 日 | `agent/{X}/seo-i18n` |
 | P2 | ⚪ AVAILABLE | - | PayloadCMS Posts/Services/Works DeepSeek 自動翻訳 | 1 日 | `agent/{X}/payload-translate` |

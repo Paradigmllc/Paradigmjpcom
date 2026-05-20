@@ -40,7 +40,8 @@
     },
     "studioLocation": "Tokyo, Jepang · Paradigm",
     "socialGithub": "GitHub",
-    "socialEmail": "Email"
+    "socialEmail": "Email",
+    "companyHeadline": "Teknologi yang memajukan bisnis Anda."
   },
   "home": {
     "heroBadge": "Mitra digital lokal Anda di Jepang",
@@ -171,15 +172,19 @@
     "statsHeadingHighlight": "Paradigm delivers.",
     "process": {
       "listen": {
+        "title": "Mendengar",
         "desc": "Discover goals through deep interviews"
       },
       "design": {
+        "title": "Desain",
         "desc": "Strategy + UX architecture + wireframes"
       },
       "build": {
+        "title": "Pengembangan",
         "desc": "Next.js implementation + AI integration"
       },
       "grow": {
+        "title": "Pertumbuhan",
         "desc": "PDCA + KPI optimisation as your partner"
       }
     }
@@ -969,5 +974,15 @@
     "ctaHighlight": "AI",
     "ctaDesc": "Free consultation to scope your AI roadmap.",
     "ctaButton": "Book a free consultation"
+  },
+  "common": {
+    "loading": "Memuat",
+    "loadingMessage": "Mohon tunggu…"
+  },
+  "optoutPage": {
+    "title": "Berhenti berlangganan",
+    "subtitle": "Kami mohon maaf atas ketidaknyamanannya.",
+    "success": "Permintaan berhenti berlangganan Anda telah diproses. Kami tidak akan lagi mengirim pesan berbasis formulir dari Paradigm.",
+    "invalid": "Tautan ini tidak valid atau kedaluwarsa. Silakan gunakan tautan berhenti berlangganan di pesan asli."
   }
 }

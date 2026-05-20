@@ -71,7 +71,29 @@
   "cases": {
     "label": "RESULTS",
     "title": "Implementation Results",
-    "subtitle": "Improvement results in the same industry"
+    "subtitle": "Improvement results in the same industry",
+    "items": [
+      {
+        "label": "Inquiries",
+        "industry": "Restaurant",
+        "duration": "3 months"
+      },
+      {
+        "label": "Unanswered reviews",
+        "industry": "Beauty salon",
+        "duration": "1 month"
+      },
+      {
+        "label": "Booking CVR",
+        "industry": "Hotel",
+        "duration": "6 months"
+      },
+      {
+        "label": "Organic traffic",
+        "industry": "IT / SaaS",
+        "duration": "4 months"
+      }
+    ]
   },
   "whyus": {
     "label": "WHY PARADIGM",

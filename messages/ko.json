@@ -40,7 +40,8 @@
     },
     "studioLocation": "도쿄, 일본 · Paradigm",
     "socialGithub": "GitHub",
-    "socialEmail": "이메일"
+    "socialEmail": "이메일",
+    "companyHeadline": "비즈니스를 앞으로 나아가게 하는 기술."
   },
   "home": {
     "heroBadge": "일본 내 현지 디지털 파트너",
@@ -171,15 +172,19 @@
     "statsHeadingHighlight": "Paradigm delivers.",
     "process": {
       "listen": {
+        "title": "경청",
         "desc": "Discover goals through deep interviews"
       },
       "design": {
+        "title": "설계",
         "desc": "Strategy + UX architecture + wireframes"
       },
       "build": {
+        "title": "구축",
         "desc": "Next.js implementation + AI integration"
       },
       "grow": {
+        "title": "성장",
         "desc": "PDCA + KPI optimisation as your partner"
       }
     }
@@ -969,5 +974,15 @@
     "ctaHighlight": "AI",
     "ctaDesc": "Free consultation to scope your AI roadmap.",
     "ctaButton": "Book a free consultation"
+  },
+  "common": {
+    "loading": "로딩 중",
+    "loadingMessage": "잠시만 기다려 주세요…"
+  },
+  "optoutPage": {
+    "title": "수신 거부",
+    "subtitle": "불편을 드려 죄송합니다.",
+    "success": "수신 거부 요청이 처리되었습니다. 앞으로 Paradigm의 폼을 통한 안내를 보내지 않습니다.",
+    "invalid": "이 링크는 유효하지 않거나 만료되었습니다. 원본 메시지의 수신 거부 링크를 사용해 주세요."
   }
 }

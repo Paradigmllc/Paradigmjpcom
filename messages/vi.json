@@ -40,7 +40,8 @@
     },
     "studioLocation": "Tokyo, Nhật Bản · Paradigm",
     "socialGithub": "GitHub",
-    "socialEmail": "Email"
+    "socialEmail": "Email",
+    "companyHeadline": "Công nghệ đưa doanh nghiệp của bạn tiến lên."
   },
   "home": {
     "heroBadge": "Đối tác kỹ thuật số địa phương của bạn tại Nhật Bản",
@@ -171,15 +172,19 @@
     "statsHeadingHighlight": "Paradigm delivers.",
     "process": {
       "listen": {
+        "title": "Lắng nghe",
         "desc": "Discover goals through deep interviews"
       },
       "design": {
+        "title": "Thiết kế",
         "desc": "Strategy + UX architecture + wireframes"
       },
       "build": {
+        "title": "Xây dựng",
         "desc": "Next.js implementation + AI integration"
       },
       "grow": {
+        "title": "Tăng trưởng",
         "desc": "PDCA + KPI optimisation as your partner"
       }
     }
@@ -969,5 +974,15 @@
     "ctaHighlight": "AI",
     "ctaDesc": "Free consultation to scope your AI roadmap.",
     "ctaButton": "Book a free consultation"
+  },
+  "common": {
+    "loading": "Đang tải",
+    "loadingMessage": "Vui lòng đợi…"
+  },
+  "optoutPage": {
+    "title": "Hủy đăng ký",
+    "subtitle": "Chúng tôi xin lỗi vì sự bất tiện này.",
+    "success": "Yêu cầu hủy đăng ký của bạn đã được xử lý. Chúng tôi sẽ không gửi thông tin qua biểu mẫu từ Paradigm nữa.",
+    "invalid": "Liên kết này không hợp lệ hoặc đã hết hạn. Vui lòng dùng liên kết hủy đăng ký trong tin nhắn gốc."
   }
 }

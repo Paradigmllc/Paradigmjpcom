@@ -40,7 +40,8 @@
     },
     "studioLocation": "طوكيو، اليابان · Paradigm",
     "socialGithub": "GitHub",
-    "socialEmail": "البريد الإلكتروني"
+    "socialEmail": "البريد الإلكتروني",
+    "companyHeadline": "تقنية تدفع عملك إلى الأمام."
   },
   "home": {
     "heroBadge": "شريكك الرقمي المحلي في اليابان",
@@ -171,15 +172,19 @@
     "statsHeadingHighlight": "Paradigm delivers.",
     "process": {
       "listen": {
+        "title": "الاستماع",
         "desc": "Discover goals through deep interviews"
       },
       "design": {
+        "title": "التصميم",
         "desc": "Strategy + UX architecture + wireframes"
       },
       "build": {
+        "title": "البناء",
         "desc": "Next.js implementation + AI integration"
       },
       "grow": {
+        "title": "النمو",
         "desc": "PDCA + KPI optimisation as your partner"
       }
     }
@@ -969,5 +974,15 @@
     "ctaHighlight": "AI",
     "ctaDesc": "Free consultation to scope your AI roadmap.",
     "ctaButton": "Book a free consultation"
+  },
+  "common": {
+    "loading": "جارٍ التحميل",
+    "loadingMessage": "لحظة من فضلك…"
+  },
+  "optoutPage": {
+    "title": "إلغاء الاشتراك",
+    "subtitle": "نعتذر عن أي إزعاج.",
+    "success": "تمت معالجة طلب إلغاء الاشتراك. لن نرسل لك بعد الآن رسائل عبر النماذج من Paradigm.",
+    "invalid": "هذا الرابط غير صالح أو منتهي الصلاحية. يرجى استخدام رابط إلغاء الاشتراك في الرسالة الأصلية."
   }
 }
