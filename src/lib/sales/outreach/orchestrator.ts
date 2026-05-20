@@ -42,8 +42,11 @@ export interface RunOutreachOptions {
 }
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://paradigmjp.com"
-const FROM_EMAIL = process.env.OUTREACH_FROM_EMAIL ?? "contact@paradigmjp.com"
-const FROM_NAME = process.env.OUTREACH_FROM_NAME ?? "PARADIGM 合同会社"
+// 既存 Coolify env (PARADIGM_SENDER_*) を fallback に採用 (archived MVP と共通の送信者識別)
+const FROM_EMAIL =
+  process.env.OUTREACH_FROM_EMAIL ?? process.env.PARADIGM_SENDER_ADDRESS ?? "contact@paradigmjp.com"
+const FROM_NAME =
+  process.env.OUTREACH_FROM_NAME ?? process.env.PARADIGM_SENDER_NAME ?? "PARADIGM 合同会社"
 
 function reportUrlFor(company: SalesCompany): string {
   if (company.report_url) return company.report_url
