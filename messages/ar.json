@@ -1040,5 +1040,84 @@
     "severityCritical": "緊急対応",
     "severityWarning": "要対応",
     "severityInfo": "推奨"
+  },
+  "homeEn": {
+    "hero": {
+      "eyebrow": "FOR FOREIGN BRANDS ENTERING JAPAN",
+      "h1": "You're invisible in the world's 3rd-largest economy — and it's costing you every month.",
+      "sub": "Japan's ¥22T e-commerce and ¥5.8T inbound market is wide open. But with no Japanese site, no legal compliance, and no Konbini / PayPay checkout, Japanese buyers can't find you, trust you, or pay you. Paradigm makes you Japan-ready end-to-end — you never touch a word of Japanese.",
+      "ctaPrimary": "Get your Japan Market Fit Report",
+      "ctaPrimaryNote": "$1,500 · credited to your first month",
+      "ctaSecondary": "Book a free 30-min call",
+      "trust": "Built for Kickstarter-funded brands · Shopify D2C · SaaS entering Japan"
+    },
+    "loss": {
+      "eyebrow": "THE COST OF WAITING",
+      "heading": "What “not being in Japan” actually costs you",
+      "sub": "Every month without a Japan-ready presence is revenue handed to competitors who localized first.",
+      "card1Stat": "0",
+      "card1Label": "Japanese buyers who can read your English-only site",
+      "card2Stat": "~70%",
+      "card2Label": "of Japanese shoppers abandon carts without Konbini / PayPay",
+      "card3Stat": "Invisible",
+      "card3Label": "on Google Maps & LINE — where Japanese discovery actually happens",
+      "card4Stat": "Non-compliant",
+      "card4Label": "you legally cannot sell to Japanese consumers without proper disclosures"
+    },
+    "offer": {
+      "eyebrow": "THE FIX — JaaS",
+      "heading": "Japan-as-a-Service: your entire Japan operation, handled",
+      "sub": "One fixed-scope engagement covers everything you'd otherwise need a Tokyo office and a Japanese team for. You work in English. We run Japan in Japanese.",
+      "point1": "Japanese site & localization — not translation, but culturally rebuilt for Japanese buyers",
+      "point2": "Legal compliance — required disclosures so you can sell to consumers legally",
+      "point3": "Local payments & logistics — Konbini, PayPay, credit, domestic delivery",
+      "point4": "Discovery & support — MEO (Google Maps), LINE official, AI customer support in Japanese"
+    },
+    "mechanism": {
+      "eyebrow": "WHY IT WORKS",
+      "heading": "Insurance against failure. Booster for growth.",
+      "item1Title": "Bilingual, async",
+      "item1Body": "We take everything in English and handle the Japanese side entirely. Zero Japanese burden on your team.",
+      "item2Title": "Japan-specific stack",
+      "item2Body": "MEO, LINE, Yahoo! Japan SEO, Konbini & PayPay — the channels Japanese customers actually use.",
+      "item3Title": "AI + local experts",
+      "item3Body": "AI handles scale (support, content); Tokyo operators handle judgment, culture, and compliance.",
+      "item4Title": "Fixed scope, fixed price",
+      "item4Body": "You know exactly what you get and what it costs. No scope creep, no surprise invoices."
+    },
+    "proof": {
+      "eyebrow": "PROOF",
+      "heading": "Real results from real clients",
+      "placeholder": "Anonymized client case studies are being prepared. Want references? Ask on your intro call."
+    },
+    "report": {
+      "eyebrow": "START HERE — LOW RISK",
+      "heading": "See exactly what Japan is worth to you — for $1,500",
+      "body": "Before any commitment, get a Japan Market Fit Report: your addressable market, competitor landscape, recommended channels, compliance gaps, and a concrete revenue projection. If you move forward, the full $1,500 is credited to your first month.",
+      "bullet1": "Your specific Japan TAM & missed revenue, quantified",
+      "bullet2": "Competitor & channel analysis (MEO / LINE / EC)",
+      "bullet3": "Compliance checklist + a prioritized 90-day entry plan",
+      "cta": "Get your Japan Market Fit Report — $1,500",
+      "note": "Fully credited to your first month if you proceed."
+    },
+    "faq": {
+      "heading": "Questions foreign founders ask",
+      "q1": "Do I need a Japanese legal entity to start?",
+      "a1": "Not to begin. We can launch your localized presence and test the market first; entity setup is part of the Enterprise tier or a later step once demand is proven.",
+      "q2": "How do payments work without a Japanese bank?",
+      "a2": "We set up Japan-friendly payment rails (Konbini, PayPay, cards) through providers that work for foreign sellers, and advise on settlement.",
+      "q3": "How long until I'm live in Japan?",
+      "a3": "A localized launch typically takes 30–90 days depending on tier and scope. The Market Fit Report gives you a precise timeline up front.",
+      "q4": "Do I need to speak or write Japanese?",
+      "a4": "No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side.",
+      "q5": "What does it cost?",
+      "a5": "Three fixed-scope tiers (Essential / Growth / Enterprise). Start with the $1,500 Market Fit Report, which is credited to your first month."
+    },
+    "finalCta": {
+      "heading": "Stop leaving Japan on the table.",
+      "sub": "Start with a $1,500 report or a free 30-minute call. Either way, you'll know exactly what Japan is worth — and how to capture it.",
+      "button": "Get your Japan Market Fit Report",
+      "secondary": "Book a free 30-min call"
+    }
   }
 }

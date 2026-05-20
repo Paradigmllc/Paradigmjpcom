@@ -12,9 +12,10 @@
 
 import { getPayload } from "payload"
 import config from "@payload-config"
-import { coerceLocale, filterByLocale, localeFindOptions } from "@/lib/cms/filters"
+import { coerceLocale, assertLocale, filterByLocale, localeFindOptions } from "@/lib/cms/filters"
 import BlockRenderer from "@/blocks/BlockRenderer"
 import HomeClient from "./HomeClient"
+import HomeEnClient from "./HomeEnClient"
 
 interface Props {
   params: Promise<{ locale: string }>
@@ -58,8 +59,9 @@ export default async function HomePage({ params }: Props) {
     }
   }
 
-  // Fallback: legacy HomeClient (8 hardcoded sections — Hero/Marquee/Services/
-  // Process/Stats/Features/Testimonials/CTA). Admin が Pages collection で
-  // isHomepage=true & published な document を作成すればそちらが優先される。
-  return <HomeClient />
+  // Fallback (CMS homepage 未作成時):
+  //   /ja          → HomeClient (国内SMB・4商材 構成)
+  //   /en + 10locale → HomeEnClient (JaaS 痛み/損失可視化アーク・Plan B)
+  // 2026-05-20 壁打ち確定: /ja と /en は構造が別 → locale 分岐 (CLAUDE.md s1-2)。
+  return assertLocale(rawLocale) === "ja" ? <HomeClient /> : <HomeEnClient />
 }
