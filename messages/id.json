@@ -40,7 +40,8 @@
     },
     "studioLocation": "Tokyo, Jepang · Paradigm",
     "socialGithub": "GitHub",
-    "socialEmail": "Email"
+    "socialEmail": "Email",
+    "companyHeadline": "Teknologi yang memajukan bisnis Anda."
   },
   "home": {
     "heroBadge": "Mitra digital lokal Anda di Jepang",
@@ -171,15 +172,19 @@
     "statsHeadingHighlight": "Paradigm delivers.",
     "process": {
       "listen": {
+        "title": "Mendengar",
         "desc": "Discover goals through deep interviews"
       },
       "design": {
+        "title": "Desain",
         "desc": "Strategy + UX architecture + wireframes"
       },
       "build": {
+        "title": "Pengembangan",
         "desc": "Next.js implementation + AI integration"
       },
       "grow": {
+        "title": "Pertumbuhan",
         "desc": "PDCA + KPI optimisation as your partner"
       }
     }

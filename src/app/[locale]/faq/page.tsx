@@ -16,7 +16,7 @@ import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
-import { filterByLocale, coerceLocale, localeFindOptions } from "@/lib/cms/filters"
+import { filterByLocale, coerceLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
 import { FAQ_JSONLD } from "@/lib/jsonld"
 
 export const dynamic = "force-dynamic"
@@ -51,7 +51,8 @@ function lexicalToPlainText(node: unknown): string {
 
 export default async function FaqPage({ params }: Props) {
   const { locale: rawLocale } = await params
-  const locale = coerceLocale(rawLocale)
+  const locale = assertLocale(rawLocale)            // 実 locale（静的 UI）
+  const contentLocale = coerceLocale(rawLocale)     // ja/en（CMS 配信・英語フォールバック）
   const t = await getTranslations({ locale, namespace: "faqPage" })
 
   let faqs: FaqDoc[] = []
@@ -59,11 +60,11 @@ export default async function FaqPage({ params }: Props) {
     const payload = await getPayload({ config })
     const res = await payload.find({
       collection: "faqs",
-      where: filterByLocale(locale),
+      where: filterByLocale(contentLocale),
       sort: "sortOrder",
       limit: 100,
       depth: 0,
-      ...localeFindOptions(locale),
+      ...localeFindOptions(contentLocale),
     })
     faqs = (res.docs as unknown as FaqDoc[]) ?? []
   } catch (e) {

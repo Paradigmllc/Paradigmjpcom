@@ -40,7 +40,8 @@
     },
     "studioLocation": "东京 · 日本 · Paradigm",
     "socialGithub": "GitHub",
-    "socialEmail": "电子邮件"
+    "socialEmail": "电子邮件",
+    "companyHeadline": "用技术推动您的业务向前。"
   },
   "home": {
     "heroBadge": "您在日本的本地数字化合作伙伴",
@@ -171,15 +172,19 @@
     "statsHeadingHighlight": "Paradigm delivers.",
     "process": {
       "listen": {
+        "title": "倾听",
         "desc": "Discover goals through deep interviews"
       },
       "design": {
+        "title": "设计",
         "desc": "Strategy + UX architecture + wireframes"
       },
       "build": {
+        "title": "开发",
         "desc": "Next.js implementation + AI integration"
       },
       "grow": {
+        "title": "增长",
         "desc": "PDCA + KPI optimisation as your partner"
       }
     }

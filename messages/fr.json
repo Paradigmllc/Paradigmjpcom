@@ -40,7 +40,8 @@
     },
     "studioLocation": "Tokyo, Japon · Paradigm",
     "socialGithub": "GitHub",
-    "socialEmail": "Email"
+    "socialEmail": "Email",
+    "companyHeadline": "La technologie qui fait avancer votre entreprise."
   },
   "home": {
     "heroBadge": "Votre partenaire digital local au Japon",
@@ -171,15 +172,19 @@
     "statsHeadingHighlight": "Paradigm delivers.",
     "process": {
       "listen": {
+        "title": "Écoute",
         "desc": "Discover goals through deep interviews"
       },
       "design": {
+        "title": "Conception",
         "desc": "Strategy + UX architecture + wireframes"
       },
       "build": {
+        "title": "Développement",
         "desc": "Next.js implementation + AI integration"
       },
       "grow": {
+        "title": "Croissance",
         "desc": "PDCA + KPI optimisation as your partner"
       }
     }

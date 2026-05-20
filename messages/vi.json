@@ -40,7 +40,8 @@
     },
     "studioLocation": "Tokyo, Nhật Bản · Paradigm",
     "socialGithub": "GitHub",
-    "socialEmail": "Email"
+    "socialEmail": "Email",
+    "companyHeadline": "Công nghệ đưa doanh nghiệp của bạn tiến lên."
   },
   "home": {
     "heroBadge": "Đối tác kỹ thuật số địa phương của bạn tại Nhật Bản",
@@ -171,15 +172,19 @@
     "statsHeadingHighlight": "Paradigm delivers.",
     "process": {
       "listen": {
+        "title": "Lắng nghe",
         "desc": "Discover goals through deep interviews"
       },
       "design": {
+        "title": "Thiết kế",
         "desc": "Strategy + UX architecture + wireframes"
       },
       "build": {
+        "title": "Xây dựng",
         "desc": "Next.js implementation + AI integration"
       },
       "grow": {
+        "title": "Tăng trưởng",
         "desc": "PDCA + KPI optimisation as your partner"
       }
     }

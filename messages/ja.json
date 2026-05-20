@@ -443,7 +443,8 @@
     },
     "studioLocation": "東京・日本 · Paradigm 合同会社",
     "socialGithub": "GitHub",
-    "socialEmail": "メール"
+    "socialEmail": "メール",
+    "companyHeadline": "テクノロジーで、ビジネスを前へ。"
   },
   "home": {
     "heroBadge": "中小企業のデジタルパートナー",
@@ -574,15 +575,19 @@
     "statsHeadingHighlight": "Paradigm の支援力。",
     "process": {
       "listen": {
+        "title": "ヒアリング",
         "desc": "ヒアリングで現状と目標を整理"
       },
       "design": {
+        "title": "設計",
         "desc": "戦略 + UX 設計 + ワイヤー"
       },
       "build": {
+        "title": "開発",
         "desc": "Next.js 実装 + AI 連携"
       },
       "grow": {
+        "title": "グロース",
         "desc": "PDCA + KPI 改善で伴走"
       }
     }

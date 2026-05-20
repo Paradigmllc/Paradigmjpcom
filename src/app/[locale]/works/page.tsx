@@ -16,7 +16,7 @@ import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
-import { filterByLocale, coerceLocale, localeFindOptions } from "@/lib/cms/filters"
+import { filterByLocale, coerceLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
 
 export const dynamic = "force-dynamic"
 
@@ -50,7 +50,8 @@ const TILE_GRADIENTS = [
 
 export default async function WorksPage({ params }: Props) {
   const { locale: rawLocale } = await params
-  const locale = coerceLocale(rawLocale)
+  const locale = assertLocale(rawLocale)            // 実 locale（静的 UI）
+  const contentLocale = coerceLocale(rawLocale)     // ja/en（CMS 配信・英語フォールバック）
   const t = await getTranslations({ locale, namespace: "worksPage" })
 
   let works: WorkDoc[] = []
@@ -58,11 +59,11 @@ export default async function WorksPage({ params }: Props) {
     const payload = await getPayload({ config })
     const res = await payload.find({
       collection: "works",
-      where: filterByLocale(locale, { isPublished: { equals: true } }),
+      where: filterByLocale(contentLocale, { isPublished: { equals: true } }),
       sort: "sortOrder",
       limit: 100,
       depth: 1,
-      ...localeFindOptions(locale),
+      ...localeFindOptions(contentLocale),
     })
     works = (res.docs as unknown as WorkDoc[]) ?? []
   } catch (e) {

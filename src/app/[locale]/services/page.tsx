@@ -18,7 +18,7 @@ import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
-import { filterByLocale, coerceLocale, localeFindOptions } from "@/lib/cms/filters"
+import { filterByLocale, coerceLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
 
 export const dynamic = "force-dynamic"
 
@@ -55,7 +55,8 @@ const CARD_GRADIENTS = [
 
 export default async function ServicesPage({ params }: Props) {
   const { locale: rawLocale } = await params
-  const locale = coerceLocale(rawLocale)
+  const locale = assertLocale(rawLocale)            // 実 locale（静的 UI）
+  const contentLocale = coerceLocale(rawLocale)     // ja/en（CMS 配信・英語フォールバック）
   const t = await getTranslations({ locale, namespace: "servicesPage" })
 
   let services: ServiceDoc[] = []
@@ -63,11 +64,11 @@ export default async function ServicesPage({ params }: Props) {
     const payload = await getPayload({ config })
     const res = await payload.find({
       collection: "services",
-      where: filterByLocale(locale, { isActive: { equals: true } }),
+      where: filterByLocale(contentLocale, { isActive: { equals: true } }),
       sort: "sortOrder",
       limit: 100,
       depth: 0,
-      ...localeFindOptions(locale),
+      ...localeFindOptions(contentLocale),
     })
     services = (res.docs as unknown as ServiceDoc[]) ?? []
   } catch (e) {
