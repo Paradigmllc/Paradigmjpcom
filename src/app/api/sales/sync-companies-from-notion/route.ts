@@ -1,33 +1,29 @@
 /**
- * POST /api/sales/sync-companies-from-notion — Sprint 17 双方向 sync (N → S)
+ * POST /api/sales/sync-companies-from-notion — Notion → Supabase 同期 + 新規エンリッチ
  *
- * 役割: Notion リード DB の編集を Supabase sales_companies に反映.
- *       Notion = GUI / Supabase = SSOT で「人が編集する場所は Notion」「機械が読む場所は Supabase」の分業.
+ * 役割: Notion リード DB を Supabase sales_companies に反映する。2 経路:
+ *   1. **既存リード**: 編集可フィールド (deal_stage/memo/follow_up/industry/prefecture) を Supabase へ反映
+ *   2. **新規リード (CSV を Notion にアップロード等)**: Supabase に **新規作成** し、
+ *      30+ API enrich pipeline を fire-and-forget で発火 → カルテ自動生成
  *
- * 反映可フィールド (safety: Notion 編集 > Supabase 既存値):
- *   - 商談ステージ (deal_stage)
- *   - メモ (memo)
- *   - フォローアップ日 (follow_up_date)
- *   - 担当者 (assigned_to)
- *   - 業種・都道府県 (industry / prefecture)
+ *   → これにより「Notion に CSV をアップロード → 自動で Supabase 追加 + 各社カルテ生成」が成立。
  *
- * 編集不可 (Supabase が SSOT・Notion 編集無視):
- *   - id / region / domain / slug / company_name (作成 only)
- *   - pagespeed_* / detected_issues / report_views / is_hot_lead (機械的に更新)
- *   - notion_page_id (紐付け固定)
- *
- * 認証: X-Webhook-Secret 必須
- * Body: { region?: "jp"|"global" }
+ * Notion = GUI / Supabase = SSOT。新規判定は notion_page_id (無ければ domain) で照合。
+ * 認証: X-Webhook-Secret 必須 / Body: { region?: "jp"|"global" }
+ * cron (n8n / pg_cron) が 数分間隔で叩く想定 → アップロードから数分でカルテ完成。
  */
 
 import { NextRequest, NextResponse } from "next/server"
 import { verifyWebhookSecret } from "@/lib/sales/auth"
 import { notionQueryDatabase, extractProperty } from "@/lib/notion"
 import { getServiceSupabase } from "@/lib/supabase"
+import { upsertCompanyByDomain, setNotionPageId } from "@/lib/sales/companies"
+import { enrichFromContact } from "@/lib/sales/enrich"
 import {
   isValidDealStage,
   isValidIndustry,
   isValidRegion,
+  type Industry,
   type Region,
 } from "@/lib/sales/types"
 
@@ -38,16 +34,22 @@ export const maxDuration = 60
 const DB_JP = "8cbab1f501144f83872c1738ce3e79c4"
 const DB_GLOBAL = "35fa2b78-f3fc-8107-aa0b-f28694e1009c"
 
+/** Notion の url/text プロパティから clean domain を取り出す */
+function cleanDomain(raw: unknown): string | null {
+  if (typeof raw !== "string" || !raw) return null
+  const d = raw
+    .replace(/^https?:\/\//, "")
+    .replace(/\/.*$/, "")
+    .trim()
+    .toLowerCase()
+  return d.includes(".") ? d : null
+}
+
 export async function POST(req: NextRequest) {
   const authErr = verifyWebhookSecret(req)
   if (authErr) return authErr
 
-  let body: { region?: string }
-  try {
-    body = (await req.json().catch(() => ({}))) as { region?: string }
-  } catch {
-    body = {}
-  }
+  const body = (await req.json().catch(() => ({}))) as { region?: string }
   const region: Region = isValidRegion(body.region ?? "") ? (body.region as Region) : "jp"
   const dbId =
     region === "jp"
@@ -55,74 +57,112 @@ export async function POST(req: NextRequest) {
       : process.env.NOTION_DB_COMPANIES_GLOBAL ?? DB_GLOBAL
 
   const sb = getServiceSupabase()
-  if (!sb) {
-    return NextResponse.json({ ok: false, error: "Supabase not configured" }, { status: 500 })
+  if (!sb) return NextResponse.json({ ok: false, error: "Supabase not configured" }, { status: 500 })
+
+  // Notion 取得 (※ notionQueryDatabase は cursor 非対応のため最大 100 件・id で dedupe)
+  const q = await notionQueryDatabase(dbId, undefined, 100)
+  if (!q.ok || !q.data) {
+    return NextResponse.json({ ok: false, error: `Notion query failed: ${q.error}` }, { status: 500 })
   }
+  const seen = new Set<string>()
+  const rows = q.data.results.filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)))
 
-  // Notion 全件取得 (cursor)
-  const allRows: Array<{ id: string; properties: Record<string, unknown>; last_edited_time: string }> = []
-  let cursor: string | undefined
-  let pages = 0
-  do {
-    const r = await notionQueryDatabase(dbId, undefined, 100)
-    if (!r.ok || !r.data) {
-      return NextResponse.json({ ok: false, error: `Notion query failed: ${r.error}` }, { status: 500 })
-    }
-    allRows.push(...r.data.results)
-    cursor = r.data.has_more ? r.data.next_cursor ?? undefined : undefined
-    pages++
-    if (pages > 20) break // safety
-  } while (cursor)
-
-  let synced = 0
+  let updated = 0
+  let created = 0
+  let enrichTriggered = 0
+  let skipped = 0
   const errors: { notion_page_id: string; reason: string }[] = []
 
-  for (const row of allRows) {
+  for (const row of rows) {
     const props = row.properties
 
-    // 編集可フィールドのみ抽出 (jp と global で property name 異なる)
+    // 共通抽出
+    const name =
+      extractProperty(props, "企業名") ||
+      extractProperty(props, "会社名") ||
+      extractProperty(props, "Company") ||
+      extractProperty(props, "Name")
+    const domain = cleanDomain(
+      extractProperty(props, "ドメイン") ||
+        extractProperty(props, "Website") ||
+        extractProperty(props, "Domain") ||
+        extractProperty(props, "URL"),
+    )
     const dealStageRaw = extractProperty(props, "商談ステージ") || extractProperty(props, "Deal Stage")
     const memo = extractProperty(props, "メモ") || extractProperty(props, "Notes")
     const followUp = extractProperty(props, "フォローアップ日") || extractProperty(props, "Follow-up Date")
     const industryRaw = extractProperty(props, "業種") || extractProperty(props, "Industry")
     const prefecture = extractProperty(props, "都道府県") || extractProperty(props, "Country")
+    const industry: Industry | null =
+      typeof industryRaw === "string" && isValidIndustry(industryRaw) ? industryRaw : null
 
-    // 更新可能フィールドのみで update
-    const update: Record<string, unknown> = {}
-    if (typeof dealStageRaw === "string" && isValidDealStage(dealStageRaw)) {
-      update.deal_stage = dealStageRaw
-    }
-    if (typeof memo === "string") update.memo = memo
-    if (typeof followUp === "string") update.follow_up_date = followUp
-    if (typeof industryRaw === "string" && isValidIndustry(industryRaw)) {
-      update.industry = industryRaw
-    }
-    if (typeof prefecture === "string") update.prefecture = prefecture
-
-    // 何も更新できなければ skip
-    if (Object.keys(update).length === 0) continue
-
-    // notion_page_id で対象 row を特定 (Supabase 側)
-    const { error } = await sb
+    // 既存判定: notion_page_id → domain の順
+    const { data: existing } = await sb
       .from("sales_companies")
-      .update({ ...update, updated_at: new Date().toISOString() })
-      .eq("notion_page_id", row.id)
+      .select("id, notion_page_id")
+      .or(`notion_page_id.eq.${row.id}${domain ? `,domain.eq.${domain}` : ""}`)
       .eq("region", region)
+      .limit(1)
+      .maybeSingle()
 
-    if (error) {
-      errors.push({ notion_page_id: row.id, reason: error.message })
-    } else {
-      synced++
+    if (existing) {
+      // ── 既存: 編集可フィールドのみ反映 ──
+      const update: Record<string, unknown> = { updated_at: new Date().toISOString() }
+      if (typeof dealStageRaw === "string" && isValidDealStage(dealStageRaw)) update.deal_stage = dealStageRaw
+      if (typeof memo === "string") update.memo = memo
+      if (typeof followUp === "string") update.follow_up_date = followUp
+      if (industry) update.industry = industry
+      if (typeof prefecture === "string") update.prefecture = prefecture
+      if (!existing.notion_page_id) update.notion_page_id = row.id // domain 一致なら紐付け
+      const { error } = await sb.from("sales_companies").update(update).eq("id", existing.id)
+      if (error) errors.push({ notion_page_id: row.id, reason: error.message })
+      else updated++
+      continue
     }
+
+    // ── 新規: domain があれば作成 + enrich 発火 ──
+    if (!domain) {
+      skipped++
+      continue
+    }
+    const companyName = typeof name === "string" && name ? name : domain
+    const result = await upsertCompanyByDomain({
+      domain,
+      company_name: companyName,
+      region,
+      industry,
+      prefecture: typeof prefecture === "string" ? prefecture : null,
+      pipeline_status: "scanning",
+      source: "notion_csv",
+      meta: { notion_origin: row.id, created_via: "notion_sync", received_at: new Date().toISOString() },
+    })
+    if (!result.ok || !result.company) {
+      errors.push({ notion_page_id: row.id, reason: result.error ?? "create failed" })
+      continue
+    }
+    created++
+    await setNotionPageId(result.company.id, row.id)
+
+    // 🚀 30+ API enrich pipeline (fire-and-forget) → カルテ生成
+    enrichTriggered++
+    void enrichFromContact({
+      email: `info@${domain}`,
+      company: companyName,
+      message: "Notion CSV import",
+      source: "notion_csv",
+    }).catch((e) => console.error(`[sync-from-notion] enrich ${domain} failed:`, e))
   }
 
   return NextResponse.json({
     ok: true,
     region,
-    total: allRows.length,
-    synced,
+    total: rows.length,
+    updated,
+    created,
+    enrich_triggered: enrichTriggered,
+    skipped,
     errors_count: errors.length,
     errors: errors.slice(0, 10),
-    note: "Companies edits in Notion reflected to Supabase. Fields: deal_stage / memo / follow_up_date / industry / prefecture only (others are SSOT-only).",
+    note: "既存=編集フィールド反映 / 新規(domain有)=作成+enrich発火。新規は数分でカルテ完成。cursor 非対応のため1回最大100件。",
   })
 }
