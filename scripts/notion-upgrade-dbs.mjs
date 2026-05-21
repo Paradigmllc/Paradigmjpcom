@@ -64,10 +64,58 @@ async function upgradeLeads() {
     properties: {
       // Sprint 13: URL-safe 事業者名 slug
       "slug (URL)": { rich_text: {} },
+      "対象国": {
+        select: {
+          options: [
+            { name: "JP", color: "red" },
+            { name: "US", color: "blue" },
+            { name: "KR", color: "purple" },
+            { name: "CN", color: "yellow" },
+            { name: "DE", color: "brown" },
+            { name: "FR", color: "pink" },
+            { name: "ES", color: "orange" },
+            { name: "BR", color: "green" },
+            { name: "AE", color: "gray" },
+            { name: "VN", color: "green" },
+            { name: "ID", color: "green" },
+          ],
+        },
+      },
+      "表示言語": {
+        select: {
+          options: [
+            { name: "ja", color: "red" },
+            { name: "en", color: "blue" },
+            { name: "ko", color: "purple" },
+            { name: "zh", color: "yellow" },
+            { name: "de", color: "brown" },
+            { name: "fr", color: "pink" },
+            { name: "es", color: "orange" },
+            { name: "pt", color: "green" },
+            { name: "ru", color: "gray" },
+            { name: "ar", color: "gray" },
+            { name: "vi", color: "green" },
+            { name: "id", color: "green" },
+          ],
+        },
+      },
+      "テンプレ種別": {
+        select: {
+          options: [
+            { name: "website_diagnostic", color: "blue" },
+            { name: "meo", color: "green" },
+            { name: "security", color: "red" },
+            { name: "japan_entry", color: "purple" },
+            { name: "video_subscription", color: "orange" },
+            { name: "subsidy", color: "yellow" },
+            { name: "outreach", color: "pink" },
+          ],
+        },
+      },
       // Sprint 13: 自動 URL (computed via formula)
       "📋 診断レポート": {
         formula: {
-          expression: `if(empty(prop("slug (URL)")), "", "https://paradigmjp.com/ja/report/" + prop("slug (URL)"))`,
+          expression: `if(empty(prop("slug (URL)")), "", "https://paradigmjp.com/" + if(empty(prop("表示言語")), "ja", format(prop("表示言語"))) + "/report/" + prop("slug (URL)"))`,
         },
       },
       "🎬 動画レポート": {
@@ -81,6 +129,16 @@ async function upgradeLeads() {
       "資本金 (gBiz・円)": { number: { format: "yen" } },
       "設立年 (gBiz)": { rich_text: {} },
       // Last touched
+      "同期状態": {
+        formula: {
+          expression: `if(empty(prop("ドメイン")), "URL不足", if(empty(prop("slug (URL)")), "slug生成待ち", "公開URLあり"))`,
+        },
+      },
+      "次アクション": {
+        formula: {
+          expression: `if(format(prop("パイプライン")) == "pending", "企業URLを確認", if(format(prop("パイプライン")) == "scanning", "自動診断待ち", if(format(prop("パイプライン")) == "report_ready", "レポート送付", if(format(prop("パイプライン")) == "manual_queue", "手動確認", "フォロー"))))`,
+        },
+      },
       "最終更新": { last_edited_time: {} },
     },
   })
@@ -174,6 +232,59 @@ async function upgradeTemplates() {
     properties: {
       "使用回数": { number: { format: "number" } },
       "平均 CVR (%)": { number: { format: "percent" } },
+      "テンプレ種別": {
+        select: {
+          options: [
+            { name: "website_diagnostic", color: "blue" },
+            { name: "meo", color: "green" },
+            { name: "security", color: "red" },
+            { name: "japan_entry", color: "purple" },
+            { name: "video_subscription", color: "orange" },
+            { name: "subsidy", color: "yellow" },
+            { name: "outreach", color: "pink" },
+          ],
+        },
+      },
+      "対象国": {
+        select: {
+          options: [
+            { name: "JP", color: "red" },
+            { name: "US", color: "blue" },
+            { name: "KR", color: "purple" },
+            { name: "CN", color: "yellow" },
+            { name: "DE", color: "brown" },
+            { name: "FR", color: "pink" },
+            { name: "ES", color: "orange" },
+            { name: "BR", color: "green" },
+            { name: "AE", color: "gray" },
+            { name: "VN", color: "green" },
+            { name: "ID", color: "green" },
+          ],
+        },
+      },
+      "表示言語": {
+        select: {
+          options: [
+            { name: "ja", color: "red" },
+            { name: "en", color: "blue" },
+            { name: "ko", color: "purple" },
+            { name: "zh", color: "yellow" },
+            { name: "de", color: "brown" },
+            { name: "fr", color: "pink" },
+            { name: "es", color: "orange" },
+            { name: "pt", color: "green" },
+            { name: "ru", color: "gray" },
+            { name: "ar", color: "gray" },
+            { name: "vi", color: "green" },
+            { name: "id", color: "green" },
+          ],
+        },
+      },
+      "自動適用キー": {
+        formula: {
+          expression: `format(prop("テンプレ種別")) + " / " + format(prop("対象国")) + " / " + format(prop("表示言語")) + " / " + format(prop("業種")) + " / " + format(prop("課題コード"))`,
+        },
+      },
       "最終使用日": { date: {} },
       "備考": { rich_text: {} },
     },

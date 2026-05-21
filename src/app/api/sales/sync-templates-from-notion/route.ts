@@ -25,6 +25,11 @@ import { verifyWebhookSecret } from "@/lib/sales/auth"
 import { notionQueryDatabase, extractProperty } from "@/lib/notion"
 import { upsertTemplateFromNotion } from "@/lib/sales/templates"
 import {
+  normalizeReportLocale,
+  normalizeTargetCountry,
+  normalizeTemplateVariant,
+} from "@/lib/sales/routing"
+import {
   isValidIndustry,
   isValidIssueCode,
   isValidRegion,
@@ -96,6 +101,17 @@ export async function POST(req: NextRequest) {
     const template_name = extractProperty(props, "テンプレ名") as string | null
     const industry = extractProperty(props, "業種") as string | null
     const issue_code = extractProperty(props, "課題コード") as string | null
+    const templateVariant = normalizeTemplateVariant(
+      extractProperty(props, "テンプレ種別") || extractProperty(props, "Template Variant"),
+    )
+    const reportLocale = normalizeReportLocale(
+      extractProperty(props, "表示言語") || extractProperty(props, "Report Locale"),
+      region,
+    )
+    const targetCountry = normalizeTargetCountry(
+      extractProperty(props, "対象国") || extractProperty(props, "Target Country"),
+      reportLocale,
+    )
     const severity = extractProperty(props, "重要度") as string | null
     const headline = extractProperty(props, "headline") as string | null
     const pain = extractProperty(props, "pain") as string | null
@@ -135,6 +151,9 @@ export async function POST(req: NextRequest) {
     const result = await upsertTemplateFromNotion({
       notion_page_id: row.id,
       region,
+      template_variant: templateVariant,
+      report_locale: reportLocale,
+      target_country: targetCountry,
       template_name,
       industry: industryCode,
       issue_code: issueCodeNormalized,

@@ -212,7 +212,7 @@ export default function DiagnosticReport({
       {trackingSlug && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={`/api/sales/track-view?slug=${encodeURIComponent(trackingSlug)}`}
+          src={`/api/sales/track-view?slug=${encodeURIComponent(trackingSlug)}&locale=${encodeURIComponent(locale ?? "ja")}`}
           alt=""
           width={1}
           height={1}

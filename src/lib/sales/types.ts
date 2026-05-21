@@ -59,6 +59,33 @@ export const PIPELINE_STATUSES = [
 ] as const
 export type PipelineStatus = (typeof PIPELINE_STATUSES)[number]
 
+export const REPORT_LOCALES = [
+  "ja",
+  "en",
+  "ko",
+  "zh",
+  "de",
+  "fr",
+  "es",
+  "pt",
+  "ru",
+  "ar",
+  "vi",
+  "id",
+] as const
+export type ReportLocale = (typeof REPORT_LOCALES)[number]
+
+export const TEMPLATE_VARIANTS = [
+  "website_diagnostic",
+  "meo",
+  "security",
+  "japan_entry",
+  "video_subscription",
+  "subsidy",
+  "outreach",
+] as const
+export type TemplateVariant = (typeof TEMPLATE_VARIANTS)[number]
+
 export const DEAL_STAGES = [
   "未対応",
   "架電済",
@@ -121,6 +148,9 @@ export interface SalesCompany {
   region: Region // Sprint 16: jp / global 完全分離 (s10-5 国ドリブン永久ルール)
   slug: string | null
   name_key: string | null // 2026-05-20: 正規化企業名 (dedup 鍵・lib/sales/dedup.ts)
+  report_locale?: ReportLocale | null
+  target_country?: string | null
+  template_variant?: TemplateVariant | null
   domain: string
   company_name: string
   industry: Industry | null
@@ -187,6 +217,9 @@ export interface SalesDelivery {
 export interface SalesTemplate {
   id: string
   region: Region // Sprint 16: jp / global 完全分離
+  template_variant?: TemplateVariant | null
+  report_locale?: ReportLocale | null
+  target_country?: string | null
   template_name: string
   industry: Industry
   issue_code: IssueCode
@@ -229,3 +262,9 @@ export const isValidDealStage = (s: string): s is DealStage =>
 
 export const isValidPipelineStatus = (s: string): s is PipelineStatus =>
   (PIPELINE_STATUSES as readonly string[]).includes(s)
+
+export const isValidReportLocale = (s: string): s is ReportLocale =>
+  (REPORT_LOCALES as readonly string[]).includes(s)
+
+export const isValidTemplateVariant = (s: string): s is TemplateVariant =>
+  (TEMPLATE_VARIANTS as readonly string[]).includes(s)

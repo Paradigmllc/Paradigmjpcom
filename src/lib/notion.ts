@@ -139,9 +139,18 @@ export async function notionFindPageByDomain(
   domain: string,
   domainPropertyName: string = "ドメイン",
 ): Promise<NotionResponse<{ id: string } | null>> {
+  const clean = domain
+    .trim()
+    .replace(/^https?:\/\//i, "")
+    .replace(/\/.*$/, "")
+    .replace(/^www\./i, "")
+    .toLowerCase()
   const res = await notionQueryDatabase(databaseId, {
-    property: domainPropertyName,
-    url: { equals: domain },
+    or: [
+      { property: domainPropertyName, url: { equals: clean } },
+      { property: domainPropertyName, url: { equals: `https://${clean}` } },
+      { property: domainPropertyName, url: { equals: `https://www.${clean}` } },
+    ],
   })
   if (!res.ok) return { ok: false, error: res.error }
   const first = res.data?.results[0]

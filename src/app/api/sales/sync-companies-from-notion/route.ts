@@ -21,6 +21,13 @@ import { upsertCompanyByDomain, setNotionPageId, findExistingCompany } from "@/l
 import { enrichFromContact } from "@/lib/sales/enrich"
 import { normalizeDomain, normalizeCompanyName } from "@/lib/sales/dedup"
 import {
+  buildCompanySlug,
+  buildReportUrl,
+  normalizeReportLocale,
+  normalizeTargetCountry,
+  normalizeTemplateVariant,
+} from "@/lib/sales/routing"
+import {
   isValidDealStage,
   isValidIndustry,
   isValidRegion,
@@ -83,6 +90,18 @@ export async function POST(req: NextRequest) {
     const followUp = extractProperty(props, "フォローアップ日") || extractProperty(props, "Follow-up Date")
     const industryRaw = extractProperty(props, "業種") || extractProperty(props, "Industry")
     const prefecture = extractProperty(props, "都道府県") || extractProperty(props, "Country")
+    const reportLocale = normalizeReportLocale(
+      extractProperty(props, "表示言語") || extractProperty(props, "Report Locale"),
+      region,
+    )
+    const targetCountry = normalizeTargetCountry(
+      extractProperty(props, "対象国") || extractProperty(props, "Target Country"),
+      reportLocale,
+    )
+    const templateVariant = normalizeTemplateVariant(
+      extractProperty(props, "テンプレ種別") || extractProperty(props, "Template Variant"),
+    )
+    const slugRaw = extractProperty(props, "slug (URL)") || extractProperty(props, "Slug")
     const industry: Industry | null =
       typeof industryRaw === "string" && isValidIndustry(industryRaw) ? industryRaw : null
 
@@ -98,6 +117,26 @@ export async function POST(req: NextRequest) {
       if (typeof followUp === "string") update.follow_up_date = followUp
       if (industry) update.industry = industry
       if (typeof prefecture === "string") update.prefecture = prefecture
+      const nextSlug =
+        typeof slugRaw === "string" && slugRaw.trim()
+          ? slugRaw.trim()
+          : domain && typeof name === "string" && name
+            ? buildCompanySlug(name, domain)
+            : existing.slug
+      if (nextSlug) {
+        update.slug = nextSlug
+        update.report_url = buildReportUrl(reportLocale, nextSlug)
+      }
+      update.meta = {
+        ...(existing.meta ?? {}),
+        routing: {
+          ...(((existing.meta ?? {}).routing as Record<string, unknown> | undefined) ?? {}),
+          report_locale: reportLocale,
+          target_country: targetCountry,
+          template_variant: templateVariant,
+          report_url: nextSlug ? buildReportUrl(reportLocale, nextSlug) : existing.report_url,
+        },
+      }
       if (!existing.notion_page_id) update.notion_page_id = row.id // domain 一致なら紐付け
       const { error } = await sb.from("sales_companies").update(update).eq("id", existing.id)
       if (error) errors.push({ notion_page_id: row.id, reason: error.message })
@@ -117,6 +156,13 @@ export async function POST(req: NextRequest) {
       region,
       industry,
       prefecture: typeof prefecture === "string" ? prefecture : null,
+      report_locale: reportLocale,
+      target_country: targetCountry,
+      template_variant: templateVariant,
+      slug:
+        typeof slugRaw === "string" && slugRaw.trim()
+          ? slugRaw.trim()
+          : buildCompanySlug(companyName, domain),
       pipeline_status: "scanning",
       source: "notion_csv",
       meta: { notion_origin: row.id, created_via: "notion_sync", received_at: new Date().toISOString() },

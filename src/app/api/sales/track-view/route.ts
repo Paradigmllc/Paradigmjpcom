@@ -15,6 +15,8 @@ import {
   findCompanyBySlug,
   markHotLead,
 } from "@/lib/sales/companies"
+import { localeToRegion } from "@/lib/sales/types"
+import { getRoutingMeta } from "@/lib/sales/routing"
 import { getServiceSupabase } from "@/lib/supabase"
 import { notifyHotLead } from "@/lib/notify"
 
@@ -35,6 +37,7 @@ const isDomain = (s: string): boolean => /\./.test(s)
 
 export async function GET(req: NextRequest) {
   const slug = req.nextUrl.searchParams.get("slug")
+  const locale = req.nextUrl.searchParams.get("locale") ?? "ja"
   if (!slug) {
     return new NextResponse(TRANSPARENT_GIF, {
       status: 200,
@@ -43,7 +46,8 @@ export async function GET(req: NextRequest) {
   }
 
   // Sprint 13: slug 優先 lookup. 旧形式 (uuid / domain) も backward compat.
-  let company = await findCompanyBySlug(slug)
+  const region = localeToRegion(locale)
+  let company = await findCompanyBySlug(slug, region)
   if (!company) {
     company = isUuid(slug)
       ? await findCompanyById(slug)
@@ -65,11 +69,13 @@ export async function GET(req: NextRequest) {
       if (newCount >= HOT_THRESHOLD && !company.is_hot_lead) {
         await markHotLead(company.id, true)
         // Slack 通知 (best-effort・Sprint 14 で動画 preview URL も追加)
+        const routing = getRoutingMeta(company.meta)
+        const reportLocale = company.report_locale ?? routing.report_locale ?? locale
         const reportUrl = company.slug
-          ? `https://paradigmjp.com/ja/report/${company.slug}`
-          : `https://paradigmjp.com/ja/report/${company.domain}`
+          ? `https://paradigmjp.com/${reportLocale}/report/${company.slug}`
+          : `https://paradigmjp.com/${reportLocale}/report/${company.domain}`
         const videoUrl = company.slug
-          ? `https://paradigmjp.com/ja/report/${company.slug}/video`
+          ? `https://paradigmjp.com/${reportLocale}/report/${company.slug}/video`
           : null
         await notifyHotLead({
           company_name: company.company_name,

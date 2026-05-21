@@ -13,6 +13,16 @@
 
 import { findCompanyById, findCompanyByDomain, findCompanyBySlug } from "./companies"
 import { getTemplatesByIndustry } from "./templates"
+import {
+  buildReportUrl,
+  getRoutingMeta,
+  inferVariant,
+  normalizeReportLocale,
+  normalizeTargetCountry,
+  normalizeTemplateVariant,
+  type ReportLocale,
+  type TemplateVariant,
+} from "./routing"
 import type {
   Industry,
   IssueCode,
@@ -36,6 +46,9 @@ export interface DiagnosticAct {
 
 export interface DiagnosticReportData {
   company_name: string
+  report_locale: ReportLocale
+  target_country: string
+  template_variant: TemplateVariant
   industry: Industry | null
   prefecture: string | null
   expires_at: string
@@ -154,6 +167,9 @@ export async function fetchDiagnosticReport(opts: {
   domain?: string
   slug?: string
   region?: Region // Sprint 16: jp / global filter (default 'jp')
+  reportLocale?: ReportLocale | string
+  targetCountry?: string
+  templateVariant?: TemplateVariant | string
 }): Promise<DiagnosticReportData | null> {
   const region: Region = opts.region ?? "jp"
   const company = opts.slug
@@ -164,6 +180,27 @@ export async function fetchDiagnosticReport(opts: {
         ? await findCompanyByDomain(opts.domain)
         : null
   if (!company) return null
+
+  const routing = getRoutingMeta(company.meta)
+  const reportLocale = normalizeReportLocale(
+    opts.reportLocale ?? company.report_locale ?? routing.report_locale,
+    region,
+  )
+  const targetCountry = normalizeTargetCountry(
+    opts.targetCountry ?? company.target_country ?? routing.target_country,
+    reportLocale,
+  )
+  const templateVariant = normalizeTemplateVariant(
+    opts.templateVariant ??
+      company.template_variant ??
+      routing.template_variant ??
+      inferVariant({
+        reportLocale,
+        targetCountry,
+        issues: company.detected_issues,
+        meta: company.meta,
+      }),
+  )
 
   // Sprint 15: DeepSeek パーソナライズ文面があれば優先採用
   const personalizedCopy = (company.meta as Record<string, unknown>)?.personalized_copy as
@@ -179,7 +216,11 @@ export async function fetchDiagnosticReport(opts: {
   // detected_issues の上位 3 件で 3-Act 構成 (Sprint 16: region scope)
   const issues = (company.detected_issues ?? []).slice(0, 3)
   const templates = company.industry
-    ? await getTemplatesByIndustry(company.industry, issues, region)
+    ? await getTemplatesByIndustry(company.industry, issues, region, {
+        reportLocale,
+        targetCountry,
+        templateVariant,
+      })
     : []
   const templateByIssue = new Map(templates.map((t) => [t.issue_code, t]))
 
@@ -220,6 +261,9 @@ export async function fetchDiagnosticReport(opts: {
 
   return {
     company_name: company.company_name,
+    report_locale: reportLocale,
+    target_country: targetCountry,
+    template_variant: templateVariant,
     industry: company.industry,
     prefecture: company.prefecture,
     expires_at: expiresStr,
@@ -228,6 +272,7 @@ export async function fetchDiagnosticReport(opts: {
     acts,
     cta_text: finalCta,
     video_thumbnail: null,
-    report_url: company.report_url ?? "",
+    report_url:
+      company.slug ? buildReportUrl(reportLocale, company.slug) : company.report_url ?? "",
   }
 }

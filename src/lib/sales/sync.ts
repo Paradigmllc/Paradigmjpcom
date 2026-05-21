@@ -21,7 +21,19 @@ import {
   extractProperty,
 } from "@/lib/notion"
 import { setNotionPageId, findCompanyByDomain, updateCompanyFromNotion } from "./companies"
-import type { SalesCompany, DealStage, SalesSyncLog } from "./types"
+import {
+  buildCompanySlug,
+  buildReportUrl,
+  getRoutingMeta,
+  normalizeReportLocale,
+} from "./routing"
+import type {
+  SalesCompany,
+  SalesCustomer,
+  SalesDelivery,
+  DealStage,
+  SalesSyncLog,
+} from "./types"
 import { isValidDealStage } from "./types"
 
 /* ───── audit log helper ───── */
@@ -47,6 +59,13 @@ export async function syncCompanyToNotion(
   company: SalesCompany,
   notionDbId: string,
 ): Promise<{ ok: boolean; notion_page_id?: string; error?: string }> {
+  const routing = getRoutingMeta(company.meta)
+  const reportLocale = normalizeReportLocale(
+    company.report_locale ?? routing.report_locale,
+    company.region,
+  )
+  const slug = company.slug ?? buildCompanySlug(company.company_name, company.domain)
+  const reportUrl = company.report_url ?? buildReportUrl(reportLocale, slug)
   const properties = {
     企業名: N.title(company.company_name),
     ドメイン: N.url(`https://${company.domain}`),
@@ -54,6 +73,12 @@ export async function syncCompanyToNotion(
     都道府県: company.prefecture
       ? N.select(company.prefecture)
       : { select: null },
+    対象国: N.select(company.target_country ?? routing.target_country ?? "JP"),
+    表示言語: N.select(reportLocale),
+    テンプレ種別: N.select(
+      company.template_variant ?? routing.template_variant ?? "website_diagnostic",
+    ),
+    "slug (URL)": N.richText(slug),
     パイプライン: N.select(company.pipeline_status),
     商談ステージ: N.select(company.deal_stage),
     モバイルスコア: N.number(company.pagespeed_mobile ?? 0),
@@ -64,7 +89,7 @@ export async function syncCompanyToNotion(
       ? N.select(company.send_result)
       : { select: null },
     送信日時: N.date(company.sent_at),
-    レポートURL: company.report_url ? N.url(company.report_url) : { url: null },
+    レポートURL: N.url(reportUrl),
     フォローアップ日: N.date(company.follow_up_date),
     メモ: N.richText(company.memo ?? ""),
   }
@@ -199,4 +224,71 @@ export async function rehydrateCompanyByDomain(
       .eq("id", company.id)
   }
   return syncCompanyToNotion({ ...company, notion_page_id: null }, notionDbId)
+}
+
+/* ───── Supabase → Notion: 顧客 / 納品 (update-only・確認済みプロパティのみ) ───── */
+
+/**
+ * sales_customers row を Notion 顧客 DB に反映 (update-only)。
+ * 既存の sync-customers-from-notion が読む = 存在が確実なプロパティのみ書く (PATCH 全体失敗を防ぐ)。
+ * notion_page_id が無い row は skip (顧客ページの新規作成は Stripe/契約フローの責務)。
+ */
+export async function syncCustomerToNotion(
+  customer: SalesCustomer,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!customer.notion_page_id) return { ok: true } // ページ未作成 → S→N 対象外
+  const properties: Record<string, unknown> = {
+    契約ステータス: N.select(customer.contract_status),
+    健全度: N.select(customer.health),
+    補助金申請状況: N.select(customer.subsidy_status),
+    次回ミーティング: N.date(customer.next_meeting),
+    月額: N.number(customer.monthly_amount ?? 0),
+    WLクライアント数: N.number(customer.wl_client_count ?? 0),
+  }
+  const res = await notionUpdatePage(customer.notion_page_id, properties)
+  await recordSyncLog({
+    direction: "supabase->notion",
+    entity_type: "customer",
+    entity_id: customer.id,
+    notion_page_id: customer.notion_page_id,
+    action: "update",
+    status: res.ok ? "success" : "error",
+    error_message: res.error ?? null,
+    payload: { contract_status: customer.contract_status },
+  })
+  return res.ok ? { ok: true } : { ok: false, error: res.error }
+}
+
+/**
+ * sales_deliveries row を Notion 納品 DB に反映 (update-only)。
+ * 確認済みプロパティのみ。進捗 % / 公開 は meta から。notion_page_id 無しは skip。
+ */
+export async function syncDeliveryToNotion(
+  delivery: SalesDelivery,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!delivery.notion_page_id) return { ok: true }
+  const meta = delivery.meta ?? {}
+  const properties: Record<string, unknown> = {
+    ステータス: N.select(delivery.status),
+    納品URL: delivery.delivery_url ? N.url(delivery.delivery_url) : { url: null },
+    "Cloudflare R2 パス": N.richText(delivery.r2_path ?? ""),
+  }
+  if (typeof meta.progress_percent === "number") {
+    properties["進捗 %"] = N.number(meta.progress_percent)
+  }
+  if (typeof meta.is_public === "boolean") {
+    properties["公開"] = N.checkbox(meta.is_public)
+  }
+  const res = await notionUpdatePage(delivery.notion_page_id, properties)
+  await recordSyncLog({
+    direction: "supabase->notion",
+    entity_type: "delivery",
+    entity_id: delivery.id,
+    notion_page_id: delivery.notion_page_id,
+    action: "update",
+    status: res.ok ? "success" : "error",
+    error_message: res.error ?? null,
+    payload: { status: delivery.status },
+  })
+  return res.ok ? { ok: true } : { ok: false, error: res.error }
 }

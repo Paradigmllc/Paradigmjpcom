@@ -53,7 +53,7 @@ export default async function ReportPage({ params }: Props) {
   const { locale, slug } = await params
   // Sprint 16: locale → region 1 純関数で判定 (ja=jp / others=global)
   const region = localeToRegion(locale)
-  const data = await fetchDiagnosticReport({ slug, region })
+  const data = await fetchDiagnosticReport({ slug, region, reportLocale: locale })
   if (!data) notFound()
 
   return <DiagnosticReport data={data} trackingSlug={slug} locale={locale} />

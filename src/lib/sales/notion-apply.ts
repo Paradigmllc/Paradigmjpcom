@@ -28,8 +28,16 @@ import {
 import { enrichFromContact } from "./enrich"
 import { normalizeDomain, normalizeCompanyName } from "./dedup"
 import {
+  buildCompanySlug,
+  buildReportUrl,
+  normalizeReportLocale,
+  normalizeTargetCountry,
+  normalizeTemplateVariant,
+} from "./routing"
+import {
   isValidDealStage,
   isValidIndustry,
+  isValidIssueCode,
   type Region,
 } from "./types"
 
@@ -43,9 +51,9 @@ function normId(id: string): string {
 }
 
 /** 既知 DB id (env override 優先・fallback は親ページ実 id)。global テンプレは env のみ */
-function buildDbMap(): Map<string, { entity: Entity; region: Region }> {
+function dbEntries(): Array<[string | undefined, Entity, Region]> {
   const E = process.env
-  const entries: Array<[string | undefined, Entity, Region]> = [
+  return [
     [E.NOTION_DB_COMPANIES_JP ?? "8cbab1f501144f83872c1738ce3e79c4", "company", "jp"],
     [E.NOTION_DB_COMPANIES_GLOBAL ?? "35fa2b78f3fc8107aa0bf28694e1009c", "company", "global"],
     [E.NOTION_DB_CUSTOMERS_JP ?? "86b1d93e3b854862ae7b2750d2585677", "customer", "jp"],
@@ -55,11 +63,22 @@ function buildDbMap(): Map<string, { entity: Entity; region: Region }> {
     [E.NOTION_DB_TEMPLATES_JP ?? "115e2b0e79424bb0813fc05402096f95", "template", "jp"],
     [E.NOTION_DB_TEMPLATES_GLOBAL, "template", "global"],
   ]
+}
+
+function buildDbMap(): Map<string, { entity: Entity; region: Region }> {
   const map = new Map<string, { entity: Entity; region: Region }>()
-  for (const [id, entity, region] of entries) {
+  for (const [id, entity, region] of dbEntries()) {
     if (id) map.set(normId(id), { entity, region })
   }
   return map
+}
+
+/** entity + region → Notion DB id (S→N 押し出しで会社/顧客/納品 DB を引く) */
+export function resolveNotionDbId(entity: Entity, region: Region): string | null {
+  for (const [id, e, r] of dbEntries()) {
+    if (e === entity && r === region && id) return id
+  }
+  return null
 }
 
 /* ───── audit log ───── */
@@ -158,6 +177,18 @@ async function applyCompany(
   const industryRaw = extractProperty(props, "業種") || extractProperty(props, "Industry")
   const prefecture = extractProperty(props, "都道府県") || extractProperty(props, "Country")
   const assignedTo = extractProperty(props, "担当者") || extractProperty(props, "Assignee")
+  const reportLocale = normalizeReportLocale(
+    extractProperty(props, "表示言語") || extractProperty(props, "Report Locale"),
+    region,
+  )
+  const targetCountry = normalizeTargetCountry(
+    extractProperty(props, "対象国") || extractProperty(props, "Target Country"),
+    reportLocale,
+  )
+  const templateVariant = normalizeTemplateVariant(
+    extractProperty(props, "テンプレ種別") || extractProperty(props, "Template Variant"),
+  )
+  const slug = extractProperty(props, "slug (URL)") || extractProperty(props, "Slug")
 
   // 編集可フィールドのみ build (識別子・システム計測値は触らない)
   const update: Record<string, unknown> = { updated_at: new Date().toISOString() }
@@ -168,6 +199,16 @@ async function applyCompany(
   if (typeof industryRaw === "string" && isValidIndustry(industryRaw)) update.industry = industryRaw
   if (typeof prefecture === "string") update.prefecture = prefecture
   if (typeof assignedTo === "string") update.assigned_to = assignedTo
+  const finalSlug =
+    typeof slug === "string" && slug.trim()
+      ? slug.trim()
+      : domain && typeof name === "string" && name
+        ? buildCompanySlug(name, domain)
+        : null
+  if (finalSlug) {
+    update.slug = finalSlug
+    update.report_url = buildReportUrl(reportLocale, finalSlug)
+  }
 
   // 既存照合: notion_page_id → domain → name_key
   const nameKey = normalizeCompanyName(typeof name === "string" ? name : null)
@@ -175,6 +216,16 @@ async function applyCompany(
 
   if (existing) {
     if (!existing.notion_page_id) update.notion_page_id = pageId // domain/name 一致なら紐付け
+    update.meta = {
+      ...(existing.meta ?? {}),
+      routing: {
+        ...(((existing.meta ?? {}).routing as Record<string, unknown> | undefined) ?? {}),
+        report_locale: reportLocale,
+        target_country: targetCountry,
+        template_variant: templateVariant,
+        report_url: finalSlug ? buildReportUrl(reportLocale, finalSlug) : existing.report_url,
+      },
+    }
     const { error } = await sb.from("sales_companies").update(update).eq("id", existing.id)
     await recordSyncLog({
       entity_type: "company",
@@ -199,6 +250,10 @@ async function applyCompany(
     region,
     industry: typeof industryRaw === "string" && isValidIndustry(industryRaw) ? industryRaw : null,
     prefecture: typeof prefecture === "string" ? prefecture : null,
+    report_locale: reportLocale,
+    target_country: targetCountry,
+    template_variant: templateVariant,
+    slug: finalSlug,
     pipeline_status: "scanning",
     source: "notion_manual",
     meta: { notion_origin: pageId, created_via: "notion_webhook", received_at: new Date().toISOString() },
@@ -375,6 +430,24 @@ async function applyTemplate(
   const update: Record<string, unknown> = { last_synced: new Date().toISOString() }
   const template_name = extractProperty(props, "テンプレ名")
   if (typeof template_name === "string" && template_name) update.template_name = template_name
+  const templateVariant = normalizeTemplateVariant(
+    extractProperty(props, "テンプレ種別") || extractProperty(props, "Template Variant"),
+  )
+  const reportLocale = normalizeReportLocale(
+    extractProperty(props, "表示言語") || extractProperty(props, "Report Locale"),
+    region,
+  )
+  const targetCountry = normalizeTargetCountry(
+    extractProperty(props, "対象国") || extractProperty(props, "Target Country"),
+    reportLocale,
+  )
+  const industry = extractProperty(props, "業種")
+  const issue = extractProperty(props, "課題コード")
+  update.template_variant = templateVariant
+  update.report_locale = reportLocale
+  update.target_country = targetCountry
+  if (typeof industry === "string" && isValidIndustry(industry)) update.industry = industry
+  if (typeof issue === "string" && isValidIssueCode(issue)) update.issue_code = issue
   for (const field of ["headline", "pain", "fear", "loss", "cta_text"] as const) {
     const v = extractProperty(props, field)
     if (typeof v === "string") update[field] = v
@@ -388,11 +461,29 @@ async function applyTemplate(
   if (Object.keys(update).length <= 1) {
     return { ok: true, entity: "template", action: "skipped" }
   }
-  const { error } = await sb
+  let { error } = await sb
     .from("sales_templates")
     .update({ ...update, updated_at: new Date().toISOString() })
     .eq("notion_page_id", pageId)
     .eq("region", region)
+  if (
+    error &&
+    /template_variant|report_locale|target_country/.test(error.message) &&
+    /column|schema cache/i.test(error.message)
+  ) {
+    const {
+      template_variant: _templateVariant,
+      report_locale: _reportLocale,
+      target_country: _targetCountry,
+      ...legacyUpdate
+    } = update
+    const retry = await sb
+      .from("sales_templates")
+      .update({ ...legacyUpdate, updated_at: new Date().toISOString() })
+      .eq("notion_page_id", pageId)
+      .eq("region", region)
+    error = retry.error
+  }
   await recordSyncLog({
     entity_type: "template",
     notion_page_id: pageId,

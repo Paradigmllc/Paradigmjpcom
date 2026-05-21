@@ -23,6 +23,7 @@ import { getBrowserProvider } from "./browser-provider"
 import { logOutreachActivity, recentlyContacted, type ActivityResult } from "./activity"
 import { stageToPipelineStatus } from "./state-machine"
 import { notifySlack } from "@/lib/notify"
+import { getRoutingMeta } from "../routing"
 import type { Region, SalesCompany } from "../types"
 import type {
   OutreachBatchResult,
@@ -51,7 +52,8 @@ const FROM_NAME =
 function reportUrlFor(company: SalesCompany): string {
   if (company.report_url) return company.report_url
   if (!company.slug) return SITE
-  const locale = company.region === "jp" ? "ja" : "en"
+  const routing = getRoutingMeta(company.meta)
+  const locale = company.report_locale ?? routing.report_locale ?? (company.region === "jp" ? "ja" : "en")
   return `${SITE}/${locale}/report/${company.slug}`
 }
 

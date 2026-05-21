@@ -77,6 +77,15 @@
 
 **依存順**: 0 → 1 → 2 → 3 → 4。③(レポート)稼働済なので 0→1→2→3 で「一連の営業フロー」が繋がる。
 
+### Phase 6 — 国・言語・テンプレ routing / Notion GUI 改修（2026-05-21 追加）
+
+- [x] `/{locale}/report/{slug}` を正規ルート化。Notion 追加行でも `slug (URL)` と `レポートURL` を自動生成し、国・表示言語・テンプレ種別を `meta.routing` に保持する互換実装へ修正。
+- [x] Notion Lead/Template DB を live upgrade: `対象国` / `表示言語` / `テンプレ種別` / `slug (URL)` / `📋 診断レポート` / `同期状態` / `次アクション` / `自動適用キー` を追加。`scripts/notion-upgrade-dbs.mjs` は 4/4 DB upgrade 済。
+- [x] テンプレ自動適用: 明示テンプレ優先 → セキュリティ課題 → MEO/ローカル課題 → 海外企業の日本進出 → 通常Web診断の順で推論。テンプレ選択は `region + 対象国 + 表示言語 + テンプレ種別` の一致度でスコアリング。
+- [x] 既存 7 leads を routing repair し、Notion へ逆同期済。本番確認: `/ja/report/izakaya-en` / `/ja/report/hairsalon-lufre` / `/ja/report/examplecom-1ofa56` は HTTP 200。
+- [x] 検証: `npx tsc --noEmit --pretty false` clean、routing smoke pass。Vitest は checkout の `D:\dev\paradigmjpcom` 解決問題で runner 側が失敗するため、同等ロジックを `tsx` で確認。
+- [ ] `supabase/migration_008_sales_country_locale_templates.sql` は追加済だが、live DDL は DB owner 権限で `must be owner of table sales_companies`。現コードは `meta.routing` fallback で稼働、owner 適用後に first-class columns へ移行可。
+
 ---
 
 ## 🗂️ CMS拡張 (2026-05-21・ユーザー指示「管理画面が機能少なすぎる」→全領域)

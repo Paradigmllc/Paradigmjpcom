@@ -12,6 +12,17 @@
 
 import { getServiceSupabase } from "@/lib/supabase"
 import { normalizeDomain, normalizeCompanyName } from "./dedup"
+import {
+  buildCompanySlug,
+  buildReportUrl,
+  getRoutingMeta,
+  inferVariant,
+  normalizeReportLocale,
+  normalizeTargetCountry,
+  normalizeTemplateVariant,
+  type ReportLocale,
+  type TemplateVariant,
+} from "./routing"
 import type {
   SalesCompany,
   PipelineStatus,
@@ -25,6 +36,10 @@ export interface UpsertCompanyInput {
   domain: string
   company_name: string
   region?: Region // Sprint 16: default 'jp' for backward compat
+  slug?: string | null
+  report_locale?: ReportLocale | string | null
+  target_country?: string | null
+  template_variant?: TemplateVariant | string | null
   industry?: Industry | null
   prefecture?: string | null
   pipeline_status?: PipelineStatus
@@ -44,23 +59,68 @@ export async function upsertCompanyByDomain(
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
   // canonical domain (www/proto 除去) で「同一企業 = 同一 domain 行」を物理担保
   const domain = normalizeDomain(input.domain) ?? input.domain.trim().toLowerCase()
+  const { data: existing } = await sb
+    .from("sales_companies")
+    .select("*")
+    .eq("domain", domain)
+    .maybeSingle()
+  const current = (existing as SalesCompany | null) ?? null
+  const region = input.region ?? current?.region ?? "jp"
+  const currentRouting = getRoutingMeta(current?.meta)
+  const reportLocale = normalizeReportLocale(
+    input.report_locale ?? current?.report_locale ?? currentRouting.report_locale,
+    region,
+  )
+  const targetCountry = normalizeTargetCountry(
+    input.target_country ?? current?.target_country ?? currentRouting.target_country,
+    reportLocale,
+  )
+  const mergedMeta = {
+    ...((current?.meta as Record<string, unknown> | null) ?? {}),
+    ...(input.meta ?? {}),
+  }
+  const templateVariant = normalizeTemplateVariant(
+    input.template_variant ??
+      current?.template_variant ??
+      currentRouting.template_variant ??
+      inferVariant({
+        targetCountry,
+        reportLocale,
+        issues: input.detected_issues ?? current?.detected_issues,
+        meta: mergedMeta,
+      }),
+  )
+  const slug = input.slug ?? current?.slug ?? buildCompanySlug(input.company_name, domain)
+  const reportUrl = buildReportUrl(reportLocale, slug)
+  const metaWithRouting = {
+    ...mergedMeta,
+    routing: {
+      ...((mergedMeta.routing as Record<string, unknown> | undefined) ?? {}),
+      report_locale: reportLocale,
+      target_country: targetCountry,
+      template_variant: templateVariant,
+      report_url: reportUrl,
+    },
+  }
   const { data, error } = await sb
     .from("sales_companies")
     .upsert(
       {
-        region: input.region ?? "jp", // Sprint 16: default 'jp' for backward compat
+        region,
         domain,
         company_name: input.company_name,
         name_key: normalizeCompanyName(input.company_name), // dedup 鍵 (同名異表記の統合)
-        industry: input.industry ?? null,
-        prefecture: input.prefecture ?? null,
-        pipeline_status: input.pipeline_status ?? "pending",
-        deal_stage: input.deal_stage ?? "未対応",
-        pagespeed_mobile: input.pagespeed_mobile ?? null,
-        pagespeed_desktop: input.pagespeed_desktop ?? null,
-        detected_issues: input.detected_issues ?? [],
-        source: input.source ?? null,
-        meta: input.meta ?? {},
+        slug,
+        report_url: reportUrl,
+        industry: input.industry ?? current?.industry ?? null,
+        prefecture: input.prefecture ?? current?.prefecture ?? null,
+        pipeline_status: input.pipeline_status ?? current?.pipeline_status ?? "pending",
+        deal_stage: input.deal_stage ?? current?.deal_stage ?? "未対応",
+        pagespeed_mobile: input.pagespeed_mobile ?? current?.pagespeed_mobile ?? null,
+        pagespeed_desktop: input.pagespeed_desktop ?? current?.pagespeed_desktop ?? null,
+        detected_issues: input.detected_issues ?? current?.detected_issues ?? [],
+        source: input.source ?? current?.source ?? null,
+        meta: metaWithRouting,
       },
       { onConflict: "domain", ignoreDuplicates: false },
     )

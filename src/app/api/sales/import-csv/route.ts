@@ -46,6 +46,13 @@ import { verifyWebhookSecret } from "@/lib/sales/auth"
 import { upsertCompanyByDomain, findExistingCompany } from "@/lib/sales/companies"
 import { enrichFromContact } from "@/lib/sales/enrich"
 import { normalizeDomain, normalizeCompanyName } from "@/lib/sales/dedup"
+import {
+  normalizeReportLocale,
+  normalizeTargetCountry,
+  normalizeTemplateVariant,
+  type ReportLocale,
+  type TemplateVariant,
+} from "@/lib/sales/routing"
 import type { Industry } from "@/lib/sales/types"
 
 export const runtime = "nodejs"
@@ -57,6 +64,10 @@ interface CsvRow {
   domain?: string
   industry?: Industry
   prefecture?: string
+  report_locale?: ReportLocale
+  target_country?: string
+  country?: string
+  template_variant?: TemplateVariant
   email?: string
   phone?: string
   contact_name?: string
@@ -67,16 +78,6 @@ interface CsvRow {
 interface Body {
   rows?: CsvRow[]
   enrich?: boolean
-}
-
-function slugify(name: string): string {
-  // 簡易 ASCII slugify (日本語含む場合は raw でも OK)
-  return name
-    .toLowerCase()
-    .replace(/[^\w぀-ゟ゠-ヿ一-鿿\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .slice(0, 80)
 }
 
 export async function POST(req: NextRequest) {
@@ -140,11 +141,17 @@ export async function POST(req: NextRequest) {
       skipped++
       continue
     }
+    const reportLocale = normalizeReportLocale(row.report_locale, "jp")
+    const targetCountry = normalizeTargetCountry(row.target_country ?? row.country, reportLocale)
+    const templateVariant = normalizeTemplateVariant(row.template_variant)
 
     // Stub UPSERT (即時) — slug 自動生成
     const result = await upsertCompanyByDomain({
       domain: cleanDomain,
       company_name: row.company_name,
+      report_locale: reportLocale,
+      target_country: targetCountry,
+      template_variant: templateVariant,
       industry: row.industry ?? null,
       prefecture: row.prefecture ?? null,
       pipeline_status: shouldEnrich ? "scanning" : "pending",
@@ -168,18 +175,6 @@ export async function POST(req: NextRequest) {
       continue
     }
     inserted++
-
-    // 自動で slug を埋める (重複時 -2 など suffix)
-    if (result.company) {
-      const baseSlug = slugify(row.company_name)
-      // Note: 重複チェックは別途 unique 制約に任せる (重複時 INSERT エラー → null retain)
-      // ここでは best-effort で UPSERT (再 update)
-      await upsertCompanyByDomain({
-        domain: cleanDomain,
-        company_name: result.company.company_name,
-        meta: { ...result.company.meta, generated_slug: baseSlug },
-      })
-    }
 
     // 🚀 enrich pipeline 発火 (fire-and-forget・非同期)
     if (shouldEnrich) {
