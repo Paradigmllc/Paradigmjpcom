@@ -24,7 +24,12 @@ const SOURCE_LOCALE = "ja"
 const TARGET_LOCALES = routing.locales.filter((l) => l !== SOURCE_LOCALE)
 const TRANSLATE_TIMEOUT_MS = 90_000
 
-const LANG_NAME: Record<string, string> = {
+// 2026-05-21: globals (Header/Footer) の auto-translate でも再利用するため export 化。
+// 真のソースは本ファイル (collection 版)。global 版 (autoTranslateGlobal.ts) は
+// 同じ翻訳エンジン・同じ言語名マップ・同じ起点 locale を共有して挙動を一致させる。
+export { SOURCE_LOCALE, TARGET_LOCALES, TRANSLATE_TIMEOUT_MS }
+
+export const LANG_NAME: Record<string, string> = {
   en: "English", ko: "Korean", zh: "Simplified Chinese", de: "German", fr: "French",
   es: "Spanish", pt: "Portuguese (Brazil)", ru: "Russian", ar: "Arabic", vi: "Vietnamese", id: "Indonesian",
 }
@@ -69,7 +74,7 @@ function applyText(node: Lexical, texts: string[], cur: { i: number }): void {
   if (Array.isArray(kids)) for (const k of kids) applyText(k, texts, cur)
 }
 
-async function translateValues(values: Record<string, string>, targetLang: string): Promise<Record<string, string> | null> {
+export async function translateValues(values: Record<string, string>, targetLang: string): Promise<Record<string, string> | null> {
   const res = await callDeepSeek(
     [
       { role: "system", content: TRANSLATE_SYSTEM },

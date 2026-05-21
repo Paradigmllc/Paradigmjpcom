@@ -48,6 +48,40 @@ export interface SiteSettings {
   calendarByLocale?: Array<{ locale: string; url: string }> | null
   /** admin が編集可能な color / font / radius tokens (globals.css default を override) */
   theme?: ThemeTokens | null
+  /** 2026-05-21 追加: SEO 既定値 (各 page が個別指定しないときの fallback) */
+  seo: {
+    defaultMetaTitle?: string | null
+    defaultMetaDescription?: string | null
+    keywords?: string | null
+    defaultOgImageUrl?: string | null
+    faviconUrl?: string | null
+    twitterHandle?: string | null
+  }
+  /** 2026-05-21 追加: 解析タグ。空文字は「無効」を意味する (V ルール準拠) */
+  tracking: {
+    gtmId?: string | null
+    ga4Id?: string | null
+    metaPixelId?: string | null
+    headScripts?: string | null
+    bodyScripts?: string | null
+  }
+  /** 2026-05-21 追加: お知らせバー */
+  announcement: {
+    enabled: boolean
+    message?: string | null
+    linkLabel?: string | null
+    linkHref?: string | null
+    variant: "ink" | "accent" | "tech"
+  }
+  /** 2026-05-21 追加: 会社情報 (法的表記・特商法・構造化データ用) */
+  company: {
+    legalName?: string | null
+    representativeName?: string | null
+    registrationNumber?: string | null
+    foundedYear?: string | null
+    postalCode?: string | null
+    address?: string | null
+  }
 }
 
 const DEFAULTS: SiteSettings = {
@@ -71,6 +105,33 @@ const DEFAULTS: SiteSettings = {
   umamiByLocale: null,
   calendarByLocale: null,
   theme: null, // null = globals.css default をそのまま使用
+  seo: {
+    defaultMetaTitle: null,
+    defaultMetaDescription: null,
+    keywords: null,
+    defaultOgImageUrl: null,
+    faviconUrl: null,
+    twitterHandle: null,
+  },
+  tracking: { gtmId: null, ga4Id: null, metaPixelId: null, headScripts: null, bodyScripts: null },
+  announcement: { enabled: false, message: null, linkLabel: null, linkHref: null, variant: "ink" },
+  company: {
+    legalName: "Paradigm合同会社",
+    representativeName: null,
+    registrationNumber: null,
+    foundedYear: null,
+    postalCode: null,
+    address: null,
+  },
+}
+
+/** upload field (depth>=1 で populate) から URL を安全に取り出す */
+function mediaUrl(v: unknown): string | null {
+  if (v && typeof v === "object" && "url" in (v as Record<string, unknown>)) {
+    const u = (v as { url?: unknown }).url
+    return typeof u === "string" ? u : null
+  }
+  return null
 }
 
 /**
@@ -86,7 +147,8 @@ export const getSiteSettings = cache(async (locale: string = "ja"): Promise<Site
     const settings = await payload.findGlobal({
       slug: "settings",
       locale: locale as Parameters<typeof payload.findGlobal>[0]["locale"],
-      depth: 0,
+      // depth: 1 で seo.defaultOgImage / seo.favicon (upload) を populate して URL を得る
+      depth: 1,
     })
 
     const s = settings as unknown as Partial<SiteSettings> & {
@@ -98,6 +160,17 @@ export const getSiteSettings = cache(async (locale: string = "ja"): Promise<Site
       umamiByLocale?: SiteSettings["umamiByLocale"]
       calendarByLocale?: SiteSettings["calendarByLocale"]
       theme?: ThemeTokens | null
+      seo?: {
+        defaultMetaTitle?: string | null
+        defaultMetaDescription?: string | null
+        keywords?: string | null
+        defaultOgImage?: unknown
+        favicon?: unknown
+        twitterHandle?: string | null
+      }
+      tracking?: SiteSettings["tracking"]
+      announcement?: Partial<SiteSettings["announcement"]>
+      company?: SiteSettings["company"]
     }
 
     return {
@@ -112,6 +185,18 @@ export const getSiteSettings = cache(async (locale: string = "ja"): Promise<Site
       umamiByLocale: s.umamiByLocale ?? null,
       calendarByLocale: s.calendarByLocale ?? null,
       theme: (s as { theme?: ThemeTokens | null }).theme ?? null,
+      seo: {
+        ...DEFAULTS.seo,
+        defaultMetaTitle: s.seo?.defaultMetaTitle ?? null,
+        defaultMetaDescription: s.seo?.defaultMetaDescription ?? null,
+        keywords: s.seo?.keywords ?? null,
+        defaultOgImageUrl: mediaUrl(s.seo?.defaultOgImage),
+        faviconUrl: mediaUrl(s.seo?.favicon),
+        twitterHandle: s.seo?.twitterHandle ?? null,
+      },
+      tracking: { ...DEFAULTS.tracking, ...(s.tracking ?? {}) },
+      announcement: { ...DEFAULTS.announcement, ...(s.announcement ?? {}) },
+      company: { ...DEFAULTS.company, ...(s.company ?? {}) },
     }
   } catch (e) {
     console.error("[settings] payload.findGlobal failed, using defaults:", e)

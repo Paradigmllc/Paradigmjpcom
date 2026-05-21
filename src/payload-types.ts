@@ -77,6 +77,9 @@ export interface Config {
     media: Media;
     'audit-logs': AuditLog;
     pages: Page;
+    'team-members': TeamMember;
+    testimonials: Testimonial;
+    categories: Category;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -94,6 +97,9 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     'audit-logs': AuditLogsSelect<false> | AuditLogsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
+    'team-members': TeamMembersSelect<false> | TeamMembersSelect<true>;
+    testimonials: TestimonialsSelect<false> | TestimonialsSelect<true>;
+    categories: CategoriesSelect<false> | CategoriesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -110,9 +116,13 @@ export interface Config {
     | ('ja' | 'en' | 'ko' | 'zh' | 'de' | 'fr' | 'es' | 'pt' | 'ru' | 'ar' | 'vi' | 'id')[];
   globals: {
     settings: Setting;
+    header: Header;
+    footer: Footer;
   };
   globalsSelect: {
     settings: SettingsSelect<false> | SettingsSelect<true>;
+    header: HeaderSelect<false> | HeaderSelect<true>;
+    footer: FooterSelect<false> | FooterSelect<true>;
   };
   locale: 'ja' | 'en' | 'ko' | 'zh' | 'de' | 'fr' | 'es' | 'pt' | 'ru' | 'ar' | 'vi' | 'id';
   widgets: {
@@ -206,6 +216,10 @@ export interface Post {
   coverImage?: (number | null) | Media;
   category?: string | null;
   readTime?: string | null;
+  /**
+   * Categories から選択。設定すると上の自由テキスト category より優先表示されます。
+   */
+  categoryRef?: (number | null) | Category;
   tags?:
     | {
         tag?: string | null;
@@ -215,9 +229,9 @@ export interface Post {
   status: 'draft' | 'published';
   publishedAt?: string | null;
   /**
-   * この記事を表示するロケール（複数選択可）。JAのみ・ENのみ・両方から選択。
+   * この記事を表示するロケール（複数選択可・12 locale）。
    */
-  availableLocales: ('ja' | 'en')[];
+  availableLocales: ('ja' | 'en' | 'ko' | 'zh' | 'de' | 'fr' | 'es' | 'pt' | 'ru' | 'ar' | 'vi' | 'id')[];
   /**
    * 検索エンジン最適化
    */
@@ -286,6 +300,29 @@ export interface Media {
   };
 }
 /**
+ * ブログ記事のカテゴリー分類。Posts から参照されます。
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: number;
+  name: string;
+  /**
+   * 英数字とハイフンのみ。例: japan-business, ai-automation
+   */
+  slug: string;
+  description?: string | null;
+  color?: ('indigo' | 'emerald' | 'rose' | 'amber' | 'violet' | 'teal') | null;
+  sortOrder?: number | null;
+  /**
+   * このカテゴリーを表示するロケール（複数選択可・12 locale）。
+   */
+  availableLocales: ('ja' | 'en' | 'ko' | 'zh' | 'de' | 'fr' | 'es' | 'pt' | 'ru' | 'ar' | 'vi' | 'id')[];
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * サービスの管理
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -323,11 +360,11 @@ export interface Service {
     | null;
   sortOrder?: number | null;
   /**
-   * このサービスを表示するロケール（複数選択可）。EN/JAで異なる商品カタログを出せる。
+   * このサービスを表示するロケール（複数選択可）。12 locale から自由に組み合わせ可能。
    */
-  availableLocales: ('ja' | 'en')[];
+  availableLocales: ('ja' | 'en' | 'ko' | 'zh' | 'de' | 'fr' | 'es' | 'pt' | 'ru' | 'ar' | 'vi' | 'id')[];
   /**
-   * 非推奨: availableLocalesを使用してください。バックワードコンパチ用。
+   * ⚠️ このフィールドは 2026-05-12 に廃止されました。availableLocales を使用してください。
    */
   locale?: ('ja' | 'en' | 'both') | null;
   isActive?: boolean | null;
@@ -361,11 +398,11 @@ export interface Faq {
   };
   sortOrder?: number | null;
   /**
-   * このFAQを表示するロケール（複数選択可）。
+   * この FAQ を表示するロケール（複数選択可・12 locale）。
    */
-  availableLocales: ('ja' | 'en')[];
+  availableLocales: ('ja' | 'en' | 'ko' | 'zh' | 'de' | 'fr' | 'es' | 'pt' | 'ru' | 'ar' | 'vi' | 'id')[];
   /**
-   * 非推奨: availableLocalesを使用。
+   * ⚠️ このフィールドは 2026-05-12 に廃止されました。availableLocales を使用してください。
    */
   locale?: ('ja' | 'en' | 'both') | null;
   category?: string | null;
@@ -407,11 +444,11 @@ export interface Work {
     | null;
   sortOrder?: number | null;
   /**
-   * この実績を表示するロケール（複数選択可）。海外向け事例はEN単独公開も可。
+   * この実績を表示するロケール（複数選択可・12 locale）。海外向け事例は EN/各言語単独公開も可。
    */
-  availableLocales: ('ja' | 'en')[];
+  availableLocales: ('ja' | 'en' | 'ko' | 'zh' | 'de' | 'fr' | 'es' | 'pt' | 'ru' | 'ar' | 'vi' | 'id')[];
   /**
-   * 非推奨: availableLocalesを使用。
+   * ⚠️ このフィールドは 2026-05-12 に廃止されました。availableLocales を使用してください。
    */
   locale?: ('ja' | 'en' | 'both') | null;
   isPublished?: boolean | null;
@@ -447,11 +484,11 @@ export interface Pricing {
   ctaLabel?: string | null;
   sortOrder?: number | null;
   /**
-   * このプランを表示するロケール（複数選択可）。JPY=JAのみ / USD=ENのみが自然なデフォルト。
+   * このプランを表示するロケール（複数選択可・12 locale）。JPY=JA / USD=その他が自然なデフォルト・PPP 価格表は s3-4 参照。
    */
-  availableLocales: ('ja' | 'en')[];
+  availableLocales: ('ja' | 'en' | 'ko' | 'zh' | 'de' | 'fr' | 'es' | 'pt' | 'ru' | 'ar' | 'vi' | 'id')[];
   /**
-   * 非推奨: availableLocalesを使用。
+   * ⚠️ このフィールドは 2026-05-12 に廃止されました。availableLocales を使用してください。
    */
   locale?: ('ja' | 'en' | 'both') | null;
   updatedAt: string;
@@ -607,10 +644,13 @@ export interface Page {
           }
       )[]
     | null;
-  availableLocales: ('ja' | 'en' | 'ko' | 'zh')[];
+  /**
+   * 12 locale から多選択。ja/en は独自設計母版・他10ロケールは翻訳版として展開。
+   */
+  availableLocales: ('ja' | 'en' | 'ko' | 'zh' | 'de' | 'fr' | 'es' | 'pt' | 'ru' | 'ar' | 'vi' | 'id')[];
   isHomepage?: boolean | null;
   /**
-   * 非推奨: availableLocales を使用してください。filterByLocale 互換維持用。
+   * ⚠️ このフィールドは 2026-05-12 に廃止されました。availableLocales を使用してください。既存データ移行後に DB 列も drop 予定。
    */
   locale?: ('ja' | 'en' | 'both') | null;
   updatedAt: string;
@@ -762,6 +802,71 @@ export interface RichTextBlockType {
   blockType: 'rich-text';
 }
 /**
+ * About ページのチームメンバー。実在メンバーのみ (ストックフォト禁止)。
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "team-members".
+ */
+export interface TeamMember {
+  id: number;
+  name: string;
+  role?: string | null;
+  bio?: string | null;
+  photo?: (number | null) | Media;
+  socials?:
+    | {
+        platform?: ('twitter' | 'linkedin' | 'github' | 'website' | 'email') | null;
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  sortOrder?: number | null;
+  /**
+   * このメンバーを表示するロケール（複数選択可・12 locale）。
+   */
+  availableLocales: ('ja' | 'en' | 'ko' | 'zh' | 'de' | 'fr' | 'es' | 'pt' | 'ru' | 'ar' | 'vi' | 'id')[];
+  isActive?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * 実在顧客の声のみ掲載 (捏造・架空証言禁止)。掲載許諾済みのものだけ公開されます。
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "testimonials".
+ */
+export interface Testimonial {
+  id: number;
+  quote: string;
+  authorName: string;
+  authorTitle?: string | null;
+  company?: string | null;
+  photo?: (number | null) | Media;
+  rating?: number | null;
+  serviceTag?: ('web' | 'meo' | 'seo' | 'ai' | 'video' | 'japan-entry' | 'other') | null;
+  /**
+   * 🚨 顧客から掲載許諾を得ている場合のみ ON。OFF のものは公開対象外。
+   */
+  consentGiven?: boolean | null;
+  /**
+   * 氏名を伏せて業種・会社規模のみ表示する場合に ON。
+   */
+  isAnonymous?: boolean | null;
+  sortOrder?: number | null;
+  /**
+   * この声を表示するロケール（複数選択可・12 locale）。
+   */
+  availableLocales: ('ja' | 'en' | 'ko' | 'zh' | 'de' | 'fr' | 'es' | 'pt' | 'ru' | 'ar' | 'vi' | 'id')[];
+  /**
+   * consentGiven と両方 ON で初めて公開されます。
+   */
+  isPublished?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -824,6 +929,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'pages';
         value: number | Page;
+      } | null)
+    | ({
+        relationTo: 'team-members';
+        value: number | TeamMember;
+      } | null)
+    | ({
+        relationTo: 'testimonials';
+        value: number | Testimonial;
+      } | null)
+    | ({
+        relationTo: 'categories';
+        value: number | Category;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -903,6 +1020,7 @@ export interface PostsSelect<T extends boolean = true> {
   coverImage?: T;
   category?: T;
   readTime?: T;
+  categoryRef?: T;
   tags?:
     | T
     | {
@@ -1340,6 +1458,64 @@ export interface RichTextBlockTypeSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "team-members_select".
+ */
+export interface TeamMembersSelect<T extends boolean = true> {
+  name?: T;
+  role?: T;
+  bio?: T;
+  photo?: T;
+  socials?:
+    | T
+    | {
+        platform?: T;
+        url?: T;
+        id?: T;
+      };
+  sortOrder?: T;
+  availableLocales?: T;
+  isActive?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "testimonials_select".
+ */
+export interface TestimonialsSelect<T extends boolean = true> {
+  quote?: T;
+  authorName?: T;
+  authorTitle?: T;
+  company?: T;
+  photo?: T;
+  rating?: T;
+  serviceTag?: T;
+  consentGiven?: T;
+  isAnonymous?: T;
+  sortOrder?: T;
+  availableLocales?: T;
+  isPublished?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories_select".
+ */
+export interface CategoriesSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  description?: T;
+  color?: T;
+  sortOrder?: T;
+  availableLocales?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -1406,10 +1582,99 @@ export interface Setting {
     maintenanceMode?: boolean | null;
     maintenanceMessage?: string | null;
   };
+  /**
+   * 各ページが個別指定しない場合に使われる既定の SEO 値。
+   */
+  seo?: {
+    defaultMetaTitle?: string | null;
+    defaultMetaDescription?: string | null;
+    keywords?: string | null;
+    defaultOgImage?: (number | null) | Media;
+    favicon?: (number | null) | Media;
+    /**
+     * 例: @paradigm_jp
+     */
+    twitterHandle?: string | null;
+  };
+  /**
+   * GTM / GA4 / Meta Pixel の ID。空欄なら読み込みません。Umami は別 (umamiByLocale)。
+   */
+  tracking?: {
+    /**
+     * 例: GTM-XXXXXXX
+     */
+    gtmId?: string | null;
+    /**
+     * 例: G-XXXXXXXXXX
+     */
+    ga4Id?: string | null;
+    metaPixelId?: string | null;
+    /**
+     * ⚠️ admin のみ編集可。信頼できるコードのみ。<head> 末尾に挿入されます (XSS リスク)。
+     */
+    headScripts?: string | null;
+    /**
+     * ⚠️ admin のみ編集可。信頼できるコードのみ。<body> 末尾に挿入されます (XSS リスク)。
+     */
+    bodyScripts?: string | null;
+  };
+  /**
+   * サイト最上部の告知バー。表示する場合は enabled を ON。
+   */
+  announcement?: {
+    enabled?: boolean | null;
+    message?: string | null;
+    linkLabel?: string | null;
+    linkHref?: string | null;
+    variant?: ('ink' | 'accent' | 'tech') | null;
+  };
+  /**
+   * 特定商取引法・フッター・構造化データで使う会社の正式情報。
+   */
+  company?: {
+    legalName?: string | null;
+    representativeName?: string | null;
+    registrationNumber?: string | null;
+    foundedYear?: string | null;
+    postalCode?: string | null;
+    address?: string | null;
+  };
+  /**
+   * locale 別の Umami site ID。lookup は当該 locale → ja → null の順で fallback。
+   */
+  umamiByLocale?:
+    | {
+        locale: 'ja' | 'en' | 'ko' | 'zh' | 'de' | 'fr' | 'es' | 'pt' | 'ru' | 'ar' | 'vi' | 'id';
+        /**
+         * Umami が払い出す UUID
+         */
+        websiteId: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * locale 別の Cal.com URL。lookup は当該 locale → ja → default の順で fallback。
+   */
+  calendarByLocale?:
+    | {
+        locale: 'ja' | 'en' | 'ko' | 'zh' | 'de' | 'fr' | 'es' | 'pt' | 'ru' | 'ar' | 'vi' | 'id';
+        /**
+         * 例: https://cal.com/paradigm/intro-en
+         */
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * 非推奨: umamiByLocale (array) を使用してください。後方互換のため残存。
+   */
   analytics?: {
     umamiWebsiteId?: string | null;
     umamiWebsiteIdEn?: string | null;
   };
+  /**
+   * 非推奨: calendarByLocale (array) を使用してください。後方互換のため残存。
+   */
   calendarUrl?: {
     ja?: string | null;
     en?: string | null;
@@ -1464,6 +1729,106 @@ export interface Setting {
   createdAt?: string | null;
 }
 /**
+ * サイト上部のナビゲーション・CTA ボタン。日本語で保存すると全 12 言語に自動翻訳されます。
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "header".
+ */
+export interface Header {
+  id: number;
+  /**
+   * ヘッダー中央に並ぶリンク。上から順に表示。href は内部パス (/about) または外部 URL。
+   */
+  navItems?:
+    | {
+        label: string;
+        href: string;
+        openInNewTab?: boolean | null;
+        /**
+         * 設定するとこのリンクがドロップダウンメニューになります。
+         */
+        children?:
+          | {
+              label: string;
+              href: string;
+              openInNewTab?: boolean | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  cta?: {
+    enabled?: boolean | null;
+    /**
+     * 空のとき messages の cta.primary を使用
+     */
+    label?: string | null;
+    href?: string | null;
+  };
+  showLocaleSwitcher?: boolean | null;
+  showThemeToggle?: boolean | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * サイト下部のリンク列・SNS・法的リンク。日本語で保存すると全 12 言語に自動翻訳されます。
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer".
+ */
+export interface Footer {
+  id: number;
+  /**
+   * フッター上部の editorial 見出し横に出る一文。
+   */
+  tagline?: string | null;
+  studioLocation?: string | null;
+  /**
+   * フッター中段のリンク列 (最大 4 列)。
+   */
+  columns?:
+    | {
+        heading: string;
+        links?:
+          | {
+              label: string;
+              href: string;
+              openInNewTab?: boolean | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * フッターに表示する SNS アイコン。
+   */
+  socialLinks?:
+    | {
+        platform: 'twitter' | 'instagram' | 'facebook' | 'linkedin' | 'line' | 'youtube' | 'github';
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * コピーライト行の横に出るリンク (プライバシー / 特商法 等)。
+   */
+  legalLinks?:
+    | {
+        label: string;
+        href: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * 例: Paradigm合同会社 · All rights reserved (年は自動付与)。
+   */
+  copyright?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "settings_select".
  */
@@ -1493,6 +1858,58 @@ export interface SettingsSelect<T extends boolean = true> {
     | {
         maintenanceMode?: T;
         maintenanceMessage?: T;
+      };
+  seo?:
+    | T
+    | {
+        defaultMetaTitle?: T;
+        defaultMetaDescription?: T;
+        keywords?: T;
+        defaultOgImage?: T;
+        favicon?: T;
+        twitterHandle?: T;
+      };
+  tracking?:
+    | T
+    | {
+        gtmId?: T;
+        ga4Id?: T;
+        metaPixelId?: T;
+        headScripts?: T;
+        bodyScripts?: T;
+      };
+  announcement?:
+    | T
+    | {
+        enabled?: T;
+        message?: T;
+        linkLabel?: T;
+        linkHref?: T;
+        variant?: T;
+      };
+  company?:
+    | T
+    | {
+        legalName?: T;
+        representativeName?: T;
+        registrationNumber?: T;
+        foundedYear?: T;
+        postalCode?: T;
+        address?: T;
+      };
+  umamiByLocale?:
+    | T
+    | {
+        locale?: T;
+        websiteId?: T;
+        id?: T;
+      };
+  calendarByLocale?:
+    | T
+    | {
+        locale?: T;
+        url?: T;
+        id?: T;
       };
   analytics?:
     | T
@@ -1536,6 +1953,80 @@ export interface SettingsSelect<T extends boolean = true> {
               lg?: T;
             };
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "header_select".
+ */
+export interface HeaderSelect<T extends boolean = true> {
+  navItems?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+        openInNewTab?: T;
+        children?:
+          | T
+          | {
+              label?: T;
+              href?: T;
+              openInNewTab?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  cta?:
+    | T
+    | {
+        enabled?: T;
+        label?: T;
+        href?: T;
+      };
+  showLocaleSwitcher?: T;
+  showThemeToggle?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer_select".
+ */
+export interface FooterSelect<T extends boolean = true> {
+  tagline?: T;
+  studioLocation?: T;
+  columns?:
+    | T
+    | {
+        heading?: T;
+        links?:
+          | T
+          | {
+              label?: T;
+              href?: T;
+              openInNewTab?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  socialLinks?:
+    | T
+    | {
+        platform?: T;
+        url?: T;
+        id?: T;
+      };
+  legalLinks?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+        id?: T;
+      };
+  copyright?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

@@ -28,6 +28,8 @@ type PayloadPost = {
   excerpt?: string
   content?: unknown
   category?: string
+  /** depth>=1 で populate される Categories relationship (name は locale 解決済) */
+  categoryRef?: { name?: string } | string | number | null
   readTime?: string
   publishedAt?: string
   status?: string
@@ -54,6 +56,9 @@ function lexicalToText(node: unknown): string {
 function mapPayloadToBlogPost(p: PayloadPost, fallbackBySlug?: BlogPost): BlogPost {
   const contentText = lexicalToText(p.content).trim()
   const tags = (p.tags ?? []).map((t) => t.tag).filter((t): t is string => Boolean(t))
+  // Categories relationship (categoryRef) を優先・無ければ自由テキスト category
+  const refName =
+    p.categoryRef && typeof p.categoryRef === "object" ? p.categoryRef.name : undefined
   return {
     slug: p.slug ?? fallbackBySlug?.slug ?? String(p.id),
     title: p.title ?? fallbackBySlug?.title ?? "",
@@ -62,7 +67,7 @@ function mapPayloadToBlogPost(p: PayloadPost, fallbackBySlug?: BlogPost): BlogPo
     date: p.publishedAt
       ? new Date(p.publishedAt).toISOString().split("T")[0]
       : fallbackBySlug?.date ?? "",
-    category: p.category ?? fallbackBySlug?.category ?? "",
+    category: refName || p.category || fallbackBySlug?.category || "",
     tags: tags.length > 0 ? tags : fallbackBySlug?.tags ?? [],
     readTime: p.readTime ?? fallbackBySlug?.readTime ?? "5分",
   }

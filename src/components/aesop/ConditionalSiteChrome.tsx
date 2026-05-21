@@ -28,12 +28,14 @@ import ScrollProgress from "./ScrollProgress"
 import LuxuryLoader from "./LuxuryLoader"
 import SiteHeader from "./SiteHeader"
 import SiteFooter from "./SiteFooter"
+import AnnouncementBar from "./AnnouncementBar"
 import CookieConsent from "./CookieConsent"
 import BackToTop from "./BackToTop"
 import PageTransition from "./PageTransition"
 import SiteWrapper from "@/components/SiteWrapper"
 import DifyChatbot from "@/components/DifyChatbot"
 import { localeContentVariant } from "@/lib/locale-map"
+import type { HeaderNav, FooterNav } from "@/lib/navigation"
 
 /**
  * SiteFooter prop shape を最小限ミラー (PayloadCMS Settings global から渡される
@@ -52,10 +54,25 @@ type SiteFooterSettings = {
   }
 }
 
+/** CMS Settings.announcement 由来の告知バー設定 */
+type AnnouncementSettings = {
+  enabled: boolean
+  message?: string | null
+  linkLabel?: string | null
+  linkHref?: string | null
+  variant?: "ink" | "accent" | "tech"
+}
+
 interface Props {
   children: ReactNode
   locale: string
   footerSettings: SiteFooterSettings
+  /** PayloadCMS Header global 由来ナビ (null=既定ナビ) */
+  headerNav?: HeaderNav | null
+  /** PayloadCMS Footer global 由来ナビ (null=既定フッター) */
+  footerNav?: FooterNav | null
+  /** PayloadCMS Settings.announcement 由来の告知バー */
+  announcement?: AnnouncementSettings
 }
 
 /**
@@ -74,7 +91,14 @@ function isLpRoute(pathname: string): boolean {
   return false
 }
 
-export default function ConditionalSiteChrome({ children, locale, footerSettings }: Props) {
+export default function ConditionalSiteChrome({
+  children,
+  locale,
+  footerSettings,
+  headerNav,
+  footerNav,
+  announcement,
+}: Props) {
   const pathname = usePathname()
 
   if (isLpRoute(pathname)) {
@@ -83,17 +107,27 @@ export default function ConditionalSiteChrome({ children, locale, footerSettings
     return <>{children}</>
   }
 
+  const announcementActive = Boolean(announcement?.enabled && announcement?.message)
+
   // 通常 site chrome
   return (
     <>
       <div className="relative z-10">
+        {announcementActive && (
+          <AnnouncementBar
+            message={announcement!.message as string}
+            linkLabel={announcement!.linkLabel}
+            linkHref={announcement!.linkHref}
+            variant={announcement!.variant ?? "ink"}
+          />
+        )}
         <ScrollProgress />
         <LuxuryLoader />
-        <SiteHeader />
+        <SiteHeader nav={headerNav} announcementActive={announcementActive} />
         <SiteWrapper>
           <PageTransition>{children}</PageTransition>
         </SiteWrapper>
-        <SiteFooter settings={footerSettings} />
+        <SiteFooter settings={footerSettings} nav={footerNav} />
         <CookieConsent />
         <BackToTop />
       </div>

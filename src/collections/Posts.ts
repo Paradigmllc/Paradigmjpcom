@@ -82,6 +82,15 @@ export const Posts: CollectionConfig = {
       ],
     },
     {
+      name: "categoryRef",
+      type: "relationship",
+      relationTo: "categories",
+      label: "カテゴリー (Categories コレクション・推奨)",
+      admin: {
+        description: "Categories から選択。設定すると上の自由テキスト category より優先表示されます。",
+      },
+    },
+    {
       name: "tags",
       type: "array",
       label: "タグ",

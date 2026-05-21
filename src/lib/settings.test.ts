@@ -14,6 +14,10 @@ const FIXTURE: SiteSettings = {
   maintenance: { maintenanceMode: false },
   analytics: { umamiWebsiteId: "ja-id", umamiWebsiteIdEn: "en-id" },
   calendarUrl: { ja: "https://cal.example.com/ja", en: "https://cal.example.com/en" },
+  seo: {},
+  tracking: {},
+  announcement: { enabled: false, variant: "ink" },
+  company: {},
 }
 
 describe("calendarUrlFor", () => {

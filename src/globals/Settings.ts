@@ -1,5 +1,6 @@
 import type { GlobalConfig } from "payload"
 import { AVAILABLE_LOCALE_OPTIONS } from "../collections/_localeOptions"
+import { isAdminField } from "../access/byRole"
 
 export const Settings: GlobalConfig = {
   slug: "settings",
@@ -107,6 +108,96 @@ export const Settings: GlobalConfig = {
           label: "メンテナンスメッセージ",
           localized: true,
         },
+      ],
+    },
+    // 2026-05-21: 管理画面拡張 — SEO 既定値。各 page.tsx が個別指定しない場合の fallback。
+    {
+      name: "seo",
+      type: "group",
+      label: "SEO 既定値",
+      admin: {
+        description: "各ページが個別指定しない場合に使われる既定の SEO 値。",
+      },
+      fields: [
+        { name: "defaultMetaTitle", type: "text", label: "既定メタタイトル", localized: true },
+        { name: "defaultMetaDescription", type: "textarea", label: "既定メタディスクリプション", localized: true },
+        { name: "keywords", type: "text", label: "キーワード (カンマ区切り)", localized: true },
+        { name: "defaultOgImage", type: "upload", relationTo: "media", label: "既定 OG 画像 (1200×630px)" },
+        { name: "favicon", type: "upload", relationTo: "media", label: "Favicon (任意・未設定時 /favicon.svg)" },
+        { name: "twitterHandle", type: "text", label: "X (Twitter) @ハンドル", admin: { description: "例: @paradigm_jp" } },
+      ],
+    },
+    // 2026-05-21: 解析・トラッキング ID。空なら読み込まない (V ルール: 空文字 fallback 禁止 → 未設定=無効)。
+    {
+      name: "tracking",
+      type: "group",
+      label: "解析・トラッキング",
+      admin: {
+        description: "GTM / GA4 / Meta Pixel の ID。空欄なら読み込みません。Umami は別 (umamiByLocale)。",
+      },
+      fields: [
+        { name: "gtmId", type: "text", label: "Google Tag Manager ID", admin: { description: "例: GTM-XXXXXXX" } },
+        { name: "ga4Id", type: "text", label: "GA4 測定 ID", admin: { description: "例: G-XXXXXXXXXX" } },
+        { name: "metaPixelId", type: "text", label: "Meta Pixel ID" },
+        {
+          name: "headScripts",
+          type: "code",
+          label: "<head> カスタムスクリプト",
+          access: { update: isAdminField, read: isAdminField },
+          admin: {
+            language: "html",
+            description: "⚠️ admin のみ編集可。信頼できるコードのみ。<head> 末尾に挿入されます (XSS リスク)。",
+          },
+        },
+        {
+          name: "bodyScripts",
+          type: "code",
+          label: "<body> 末尾カスタムスクリプト",
+          access: { update: isAdminField, read: isAdminField },
+          admin: {
+            language: "html",
+            description: "⚠️ admin のみ編集可。信頼できるコードのみ。<body> 末尾に挿入されます (XSS リスク)。",
+          },
+        },
+      ],
+    },
+    // 2026-05-21: お知らせバー (上部帯)。enabled=true で全ページ最上部に表示。
+    {
+      name: "announcement",
+      type: "group",
+      label: "お知らせバー (上部帯)",
+      admin: { description: "サイト最上部の告知バー。表示する場合は enabled を ON。" },
+      fields: [
+        { name: "enabled", type: "checkbox", label: "表示する", defaultValue: false },
+        { name: "message", type: "text", label: "メッセージ", localized: true },
+        { name: "linkLabel", type: "text", label: "リンクテキスト (任意)", localized: true },
+        { name: "linkHref", type: "text", label: "リンク先 (任意)" },
+        {
+          name: "variant",
+          type: "select",
+          label: "配色",
+          defaultValue: "ink",
+          options: [
+            { label: "Ink (濃色)", value: "ink" },
+            { label: "Accent (アクセント)", value: "accent" },
+            { label: "Tech (ティール)", value: "tech" },
+          ],
+        },
+      ],
+    },
+    // 2026-05-21: 会社情報 (法的表記・特商法・構造化データ用)。
+    {
+      name: "company",
+      type: "group",
+      label: "会社情報 (法的表記・特商法)",
+      admin: { description: "特定商取引法・フッター・構造化データで使う会社の正式情報。" },
+      fields: [
+        { name: "legalName", type: "text", label: "正式名称", defaultValue: "Paradigm合同会社" },
+        { name: "representativeName", type: "text", label: "代表者名" },
+        { name: "registrationNumber", type: "text", label: "法人番号 / 登記番号" },
+        { name: "foundedYear", type: "text", label: "設立年" },
+        { name: "postalCode", type: "text", label: "郵便番号" },
+        { name: "address", type: "textarea", label: "所在地", localized: true },
       ],
     },
     // 2026-05-12: 12-locale 対応のため array 形式に移行。

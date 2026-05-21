@@ -18,6 +18,7 @@
 | Status | Owner | Lock-since | Branch | Task | Notes |
 |--------|-------|-----------|--------|------|-------|
 | 🟢 大半完了 | claude-code | 2026-05-20 | main | **営業フロー統合** | カルテ自動生成→診断(DeepSeek作り込み)→④フォーム営業→進捗+Notion双方向+重複排除 が本番稼働。残=Payload CMS(別領域)/デザイン刷新/実リード投入。下記 §参照 |
+| 🔄 進行中 | claude-code | 2026-05-21 | main | **PayloadCMS 管理画面 全面拡張** (ユーザー指示「機能少なすぎ」→全領域+RLS) | 下記 §CMS拡張 参照。ナビglobal/新3コレクション/Settings強化/dashboard/RLS有効化 |
 | 🛑 DECISION | - | 2026-05-13 | - | **🗄️ 旧営業 OS 撤廃確定 (unarchive 計画なし)** | Sprint 5-7 で _archive_* 化済の旧 proposal/MVP/sales-automation/persona/authentik は **永久に再起動しない** ことを宣言。新営業 OS は sales_* schema を真のソースとし、旧 mvp_* や cms_content_blocks (B36 既存 report 永続データ) は **read だけはする** が write しない |
 
 ---
@@ -75,6 +76,22 @@
 **残 (コードでなく外部要因)**: ① Payload paradigm-tables 0個 (並行セッション領域・CMS空+ビルド18-25分グラインド) ② `DiagnosticReport.tsx` デザイン刷新 (並行編集中で不触) ③ 実リード投入 (現 demo 中心) ④ DeepSeek 作り込み live 実例の最終確認 (deploy wgr566 完了待ち)。
 
 **依存順**: 0 → 1 → 2 → 3 → 4。③(レポート)稼働済なので 0→1→2→3 で「一連の営業フロー」が繋がる。
+
+---
+
+## 🗂️ CMS拡張 (2026-05-21・ユーザー指示「管理画面が機能少なすぎる」→全領域)
+
+> 壁打ち確定: 4領域すべて + RLS有効化＋ポリシー設計。RLS安全性検証済 (payload_user が全134 paradigm tableのowner→RLSバイパス・service_role rolbypassrls=true)。
+
+**Phase A — DB+API:** ✅ A1 `lib/cms/autoTranslateGlobal.ts`(path-key再帰) / A2 `globals/Header.ts` / A3 `globals/Footer.ts` / A4 `collections/TeamMembers.ts` / A5 `collections/Testimonials.ts`(consent掲載許諾) / A6 `collections/Categories.ts` / A7 `globals/Settings.ts`拡張(seo/tracking/announcement/company・script field は admin限定) / A8 payload.config 登録
+
+**Phase B — GUI配線:** ✅ B1 `lib/navigation.ts`(null→既定fallback非破壊) / B2 `lib/settings.ts`拡張(depth1でOG/favicon populate) / B3 SiteHeader/SiteFooter/ConditionalSiteChrome を CMS nav 配線 / B4 `AnnouncementBar.tsx`+GTM/GA4/Pixel/customScript を layout 注入 / B5 Posts.categoryRef relationship + blog-cms 優先採用
+
+**Phase C — ダッシュボード:** ✅ C1 `components/admin/BeforeDashboard.tsx`(件数/リードpipeline/最近監査6/新規作成shortcut) + payload.config beforeDashboard 登録 + importMap 再生成
+
+**Phase D — RLS:** ✅ D1 `supabase/migration_007_rls_paradigm.sql`(DO-block冪等) / D2 apply_migration 適用→**paradigm 134/134 RLS ON 確認**。owner(payload_user)+service_role bypass で Payload無影響・anon deny。⚠️ deploy後の新table(categories/team_members/testimonials/header/footer)に再実行要(D2-b)。public schema の60 rls_disabled は他PJ所有(s10-7)→不触
+
+**Phase E — 検証/deploy:** ✅ E1 tsc clean(残=既存.next stale 4件のみ)+vitest 101/101 / 🔄 E2 docs / ⏳ E3 commit+push+Coolify+本番確認 + D2-b 新table RLS再実行
 
 ---
 

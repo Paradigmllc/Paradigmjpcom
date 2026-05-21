@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/aesop/ThemeProvider"
 import ConditionalSiteChrome from "@/components/aesop/ConditionalSiteChrome"
 import { getOrganizationJsonLd, getServicesJsonLd } from "@/lib/jsonld"
 import { getSiteSettings, umamiWebsiteIdFor } from "@/lib/settings"
+import { getHeaderNav, getFooterNav } from "@/lib/navigation"
 import { themeTokensToCss } from "@/lib/theme-tokens"
 import MaintenanceScreen from "@/components/MaintenanceScreen"
 import { routing } from "@/i18n/routing"
@@ -169,11 +170,16 @@ export default async function LocaleLayout({ children, params }: Props) {
   const dir = localeDirection(typedLocale) // ar=rtl / 他=ltr
   const isRtl = isRtlLocale(typedLocale)
 
-  // PayloadCMS Settings global を取得 (admin で編集可能なサイト設定)
-  const settings = await getSiteSettings(locale)
+  // PayloadCMS Settings / Header / Footer global を並列取得 (admin で編集可能)
+  const [settings, headerNav, footerNav] = await Promise.all([
+    getSiteSettings(locale),
+    getHeaderNav(locale),
+    getFooterNav(locale),
+  ])
   const umamiId = umamiWebsiteIdFor(settings, locale) ?? process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ?? null
   // admin が編集した color/font/radius tokens を CSS 変数として注入 (空なら ""・globals.css default を使用)
   const themeOverrideCss = themeTokensToCss(settings.theme)
+  const tracking = settings.tracking
 
   return (
     <html lang={locale} dir={dir} suppressHydrationWarning>
@@ -194,9 +200,38 @@ export default async function LocaleLayout({ children, params }: Props) {
             rel="stylesheet"
           />
         )}
-        {/* Favicon — Aesop ink + paper "P" mark (32x32 SVG) */}
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="apple-touch-icon" href="/favicon.svg" />
+        {/* Favicon — admin が Settings.seo.favicon を設定していればそれを優先、無ければ既定 SVG */}
+        <link rel="icon" type="image/svg+xml" href={settings.seo.faviconUrl ?? "/favicon.svg"} />
+        <link rel="apple-touch-icon" href={settings.seo.faviconUrl ?? "/favicon.svg"} />
+        {/* 解析タグ (CMS Settings.tracking)。空 ID なら出力しない (V ルール: 未設定=無効)。 */}
+        {tracking.gtmId && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${tracking.gtmId}');`,
+            }}
+          />
+        )}
+        {tracking.ga4Id && (
+          <>
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${tracking.ga4Id}`} />
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${tracking.ga4Id}');`,
+              }}
+            />
+          </>
+        )}
+        {tracking.metaPixelId && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${tracking.metaPixelId}');fbq('track','PageView');`,
+            }}
+          />
+        )}
+        {/* admin (管理者のみ編集可) のカスタム <head> スクリプト */}
+        {tracking.headScripts && (
+          <script dangerouslySetInnerHTML={{ __html: tracking.headScripts }} />
+        )}
         {umamiId && (
           // H-2 (2026-05-01): "appexx.me 顧客表示禁止" 対応
           // NEXT_PUBLIC_UMAMI_HOST 未設定時は analytics 無効化 (cal.appexx.me 直接表示を回避)
@@ -280,6 +315,18 @@ export default async function LocaleLayout({ children, params }: Props) {
         )}
       </head>
       <body className="min-h-screen bg-paradigm-paper text-paradigm-ink antialiased">
+        {/* GTM noscript fallback (JS 無効環境用)。gtmId 未設定なら出力しない。 */}
+        {tracking.gtmId && (
+          <noscript>
+            <iframe
+              src={`https://www.googletagmanager.com/ns.html?id=${tracking.gtmId}`}
+              height="0"
+              width="0"
+              style={{ display: "none", visibility: "hidden" }}
+              title="gtm"
+            />
+          </noscript>
+        )}
         <ThemeProvider>
           <NextIntlClientProvider locale={locale} messages={messages}>
             {settings.maintenance.maintenanceMode ? (
@@ -288,18 +335,26 @@ export default async function LocaleLayout({ children, params }: Props) {
               // ConditionalSiteChrome (2026-05-10): /{locale}/report/* と /p/* 配下では
               // header/footer/chrome を一切描画せず LP 表示にする (B36 MVP 診断レポート LP 化).
               // 通常ページは site chrome 全部入り (従来挙動).
+              // 2026-05-21: header/footer ナビ + 告知バーを CMS global から渡す。
               <ConditionalSiteChrome
                 locale={locale}
                 footerSettings={{
                   contactEmail: settings.contact.email,
                   social: settings.social,
                 }}
+                headerNav={headerNav}
+                footerNav={footerNav}
+                announcement={settings.announcement}
               >
                 {children}
               </ConditionalSiteChrome>
             )}
           </NextIntlClientProvider>
         </ThemeProvider>
+        {/* admin (管理者のみ編集可) のカスタム <body> 末尾スクリプト */}
+        {tracking.bodyScripts && (
+          <script dangerouslySetInnerHTML={{ __html: tracking.bodyScripts }} />
+        )}
       </body>
     </html>
   )

@@ -37,7 +37,12 @@ import { Leads } from "./src/collections/Leads"
 import { Media } from "./src/collections/Media"
 import { AuditLogs } from "./src/collections/AuditLogs"
 import { Pages } from "./src/collections/Pages"
+import { TeamMembers } from "./src/collections/TeamMembers"
+import { Testimonials } from "./src/collections/Testimonials"
+import { Categories } from "./src/collections/Categories"
 import { Settings } from "./src/globals/Settings"
+import { Header } from "./src/globals/Header"
+import { Footer } from "./src/globals/Footer"
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -58,9 +63,9 @@ export default buildConfig({
         Logo: "/src/components/admin/Logo#default",
         Icon: "/src/components/admin/Icon#default",
       },
-      // 2026-05-01 audit cleanup: 旧 dashboard カスタム view を削除
-      // (admin/Dashboard.tsx が orphan だったため)。
-      // PayloadCMS デフォルトの dashboard が使われる。
+      // 2026-05-21: dashboard 上部にサイト概要パネル (件数 / リード / 監査 / 新規作成)。
+      // 既定 dashboard は維持し、その上に概要を足す (beforeDashboard)。
+      beforeDashboard: ["/src/components/admin/BeforeDashboard#default"],
     },
     livePreview: {
       // locale-aware: admin が編集中の locale を URL に反映 (Pages collection と整合)。
@@ -97,8 +102,22 @@ export default buildConfig({
     fallbackLanguage: "ja",
     supportedLanguages: { ja, en, ko, zh, de, fr, es, pt, ru, ar, vi, id },
   },
-  collections: [Users, Posts, Services, FAQs, Works, Pricing, Leads, Media, AuditLogs, Pages],
-  globals: [Settings],
+  collections: [
+    Users,
+    Posts,
+    Services,
+    FAQs,
+    Works,
+    Pricing,
+    Leads,
+    Media,
+    AuditLogs,
+    Pages,
+    TeamMembers,
+    Testimonials,
+    Categories,
+  ],
+  globals: [Settings, Header, Footer],
   editor: lexicalEditor({
     features: ({ defaultFeatures }) => [
       ...defaultFeatures,
