@@ -164,6 +164,45 @@ export async function notionQueryRecentlyEdited(
   )
 }
 
+/* ───── Public API: 単一ページ取得 + Bot 自己識別 (Webhook 用) ───── */
+
+interface NotionPage {
+  id: string
+  parent: { type: string; database_id?: string; data_source_id?: string }
+  properties: Record<string, unknown>
+  last_edited_time: string
+  archived?: boolean
+  in_trash?: boolean
+}
+
+/** 単一 Notion ページを取得 (properties + parent.database_id)。Webhook で entity.id から実値を引く */
+export async function notionGetPage(
+  pageId: string,
+): Promise<NotionResponse<NotionPage>> {
+  return notionFetch<NotionPage>(`/pages/${pageId}`)
+}
+
+/**
+ * この integration の bot user id を取得 (cache)。
+ * Webhook のエコーループ防止に使う: 変更者 (authors) が自分の bot なら無視する
+ * (= Supabase→Notion 同期で自分が書いた変更を再び拾わない)。
+ */
+let cachedBotId: string | null = null
+export async function notionGetBotId(): Promise<string | null> {
+  if (cachedBotId) return cachedBotId
+  const envBot = process.env.NOTION_BOT_ID
+  if (envBot) {
+    cachedBotId = envBot
+    return cachedBotId
+  }
+  const res = await notionFetch<{ id: string }>("/users/me")
+  if (res.ok && res.data?.id) {
+    cachedBotId = res.data.id
+    return cachedBotId
+  }
+  return null
+}
+
 /* ───── Helpers: Notion property シリアライゼーション ───── */
 
 /** Notion property shape を簡潔に作るヘルパ群 */
@@ -200,6 +239,16 @@ export function extractProperty(
       return (p.select as { name: string } | null)?.name ?? null
     case "multi_select":
       return ((p.multi_select as Array<{ name: string }>) ?? []).map((s) => s.name)
+    case "status":
+      // Notion "status" 型 (Kanban 用・select とは別物) — 商談ステージ等で使用
+      return (p.status as { name: string } | null)?.name ?? null
+    case "people":
+      // 担当者 (people 型) — 先頭ユーザーの表示名 (なければ id) を返す
+      return (
+        ((p.people as Array<{ name?: string; id: string }>) ?? [])[0]?.name ??
+        ((p.people as Array<{ id: string }>) ?? [])[0]?.id ??
+        null
+      )
     case "checkbox":
       return (p.checkbox as boolean) ?? false
     case "date":
