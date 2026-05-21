@@ -550,15 +550,14 @@ DATAFORSEO_PASSWORD=(Sprint 14 Phase A 追加・dataforseo dashboard で発行)
 
 <a id="s10-2"></a>
 
-### 管理ダッシュボード（/admin）
+### 管理ダッシュボード（PayloadCMS `/admin`）
 
-| 項目 | 内容 |
-|-----|------|
-| 認証方式 | 環境変数 `ADMIN_PASSWORD` + Cookie `paradigm_admin_token` |
-| **locale切替** | **管理画面に「日本語 / English」タブを追加（locale別コンテンツ管理）** |
-| ダッシュボード | 記事数/サービス数/問い合わせ数（locale別表示） |
-| ブログ管理 | locale別記事CRUD（/ja と /en は完全別コンテンツ） |
-| 料金管理 | locale別プラン管理（/en はUSD表示） |
+> 認証=PayloadCMS Users collection (role: admin/editor/viewer・byRole access)。12 言語 admin UI。全 localized field は ja 保存→11 locale 自動翻訳 (autoTranslate hook)。
+
+**コレクション (13)**: Users / Posts / Services / FAQs / Works / Pricing / Leads / Media / AuditLogs / Pages(Block ビルダー10種) / **TeamMembers** / **Testimonials**(掲載許諾 consent 必須) / **Categories**(blog taxonomy・Posts.categoryRef)
+**グローバル (3)**: Settings(siteName/contact/social/maintenance/umami・cal byLocale/theme + **seo既定値/tracking GTM・GA4・Pixel・customScript(admin限定)/announcementバー/company法的情報**) / **Header**(navItems+dropdown/cta/toggle) / **Footer**(columns/social/legal/copyright)
+**ダッシュボード**: `components/admin/BeforeDashboard.tsx` = コンテンツ件数 + リードpipeline内訳 + 直近監査ログ + 新規作成ショートカット (beforeDashboard 登録)
+**ナビ配線**: Header/Footer global → `lib/navigation.ts` → ConditionalSiteChrome → SiteHeader/SiteFooter (未設定時は i18n 既定にフォールバック・非破壊)。AnnouncementBar + tracking script は `layout.tsx` 注入
 
 <a id="s10-3"></a>
 
