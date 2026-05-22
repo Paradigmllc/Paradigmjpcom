@@ -60,12 +60,12 @@ export default buildConfig({
     },
     components: {
       graphics: {
-        Logo: "/src/components/admin/Logo#default",
-        Icon: "/src/components/admin/Icon#default",
+        Logo: "./src/components/admin/Logo#default",
+        Icon: "./src/components/admin/Icon#default",
       },
       // 2026-05-21: dashboard 上部にサイト概要パネル (件数 / リード / 監査 / 新規作成)。
       // 既定 dashboard は維持し、その上に概要を足す (beforeDashboard)。
-      beforeDashboard: ["/src/components/admin/BeforeDashboard#default"],
+      beforeDashboard: ["./src/components/admin/BeforeDashboard#default"],
     },
     livePreview: {
       // locale-aware: admin が編集中の locale を URL に反映 (Pages collection と整合)。
@@ -94,7 +94,7 @@ export default buildConfig({
       ],
     },
     importMap: {
-      baseDir: path.resolve(dirname),
+      baseDir: process.cwd(),
     },
   },
   // P17 2026-04-27: admin UI も 12 言語対応

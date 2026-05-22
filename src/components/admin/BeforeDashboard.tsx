@@ -13,8 +13,7 @@
  *   console.error で可視化しつつ UI は degrade して継続)。
  */
 
-import { getPayload } from "payload"
-import config from "@payload-config"
+import type { Payload } from "payload"
 
 type Counts = Record<string, number>
 
@@ -46,13 +45,12 @@ const card: React.CSSProperties = {
   background: "var(--theme-elevation-50)",
 }
 
-export default async function BeforeDashboard() {
+export default async function BeforeDashboard({ payload }: { payload: Payload }) {
   let counts: Counts = {}
   let leadsByStage: Counts = {}
   let recent: Array<{ collection?: string; action?: string; userEmail?: string | null; createdAt?: string }> = []
 
   try {
-    const payload = await getPayload({ config })
 
     // ① コンテンツ件数 (並列 count)
     const countResults = await Promise.all(

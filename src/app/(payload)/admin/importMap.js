@@ -22,9 +22,9 @@ import { StrikethroughFeatureClient as StrikethroughFeatureClient_e70f5e05f09f93
 import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
-import { default as default_b04c0db8d89d68ff5dd20d513b3034b9 } from '../../../../src/components/admin/Icon'
-import { default as default_4522c7900ab0b0df414ce3e1574aaee4 } from '../../../../src/components/admin/Logo'
-import { default as default_788fbffef1309cbe213c18a9b228fd68 } from '../../../../src/components/admin/BeforeDashboard'
+import { default as default_910fbd41db4599531c5dd733cbf6422a } from '../../../../src/components/admin/Icon'
+import { default as default_2162a1138ad740950650c8c1da77367e } from '../../../../src/components/admin/Logo'
+import { default as default_b27121187c2bd7925b032f184f72bef4 } from '../../../../src/components/admin/BeforeDashboard'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 export const importMap = {
@@ -52,8 +52,8 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#UnderlineFeatureClient": UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
-  "/src/components/admin/Icon#default": default_b04c0db8d89d68ff5dd20d513b3034b9,
-  "/src/components/admin/Logo#default": default_4522c7900ab0b0df414ce3e1574aaee4,
-  "/src/components/admin/BeforeDashboard#default": default_788fbffef1309cbe213c18a9b228fd68,
+  "./src/components/admin/Icon#default": default_910fbd41db4599531c5dd733cbf6422a,
+  "./src/components/admin/Logo#default": default_2162a1138ad740950650c8c1da77367e,
+  "./src/components/admin/BeforeDashboard#default": default_b27121187c2bd7925b032f184f72bef4,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

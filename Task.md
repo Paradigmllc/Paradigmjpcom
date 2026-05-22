@@ -100,7 +100,7 @@
 
 **Phase D — RLS:** ✅ D1 `supabase/migration_007_rls_paradigm.sql`(DO-block冪等) / D2 apply_migration 適用→**paradigm 134/134 RLS ON 確認**。owner(payload_user)+service_role bypass で Payload無影響・anon deny。⚠️ deploy後の新table(categories/team_members/testimonials/header/footer)に再実行要(D2-b)。public schema の60 rls_disabled は他PJ所有(s10-7)→不触
 
-**Phase E — 検証/deploy:** ✅ E1 tsc clean(残=既存.next stale 4件のみ)+vitest 101/101 / 🔄 E2 docs / ⏳ E3 commit+push+Coolify+本番確認 + D2-b 新table RLS再実行
+**Phase E — 検証/deploy:** ✅ E1 tsc clean(残=既存.next stale 4件のみ)+vitest 101/101 / ✅ E2 docs / ✅ E3 hotfix admin panel crash & build successful (Antigravity 2026-05-22) / ⏳ E4 deploy verification + D2-b 新table RLS再実行
 
 ---
 
