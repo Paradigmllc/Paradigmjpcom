@@ -34,6 +34,7 @@ export const AuditLogs: CollectionConfig = {
       type: "select",
       label: "操作",
       required: true,
+      defaultValue: "update",
       options: [
         { label: "作成", value: "create" },
         { label: "更新", value: "update" },
