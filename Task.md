@@ -18,7 +18,7 @@
 | Status | Owner | Lock-since | Branch | Task | Notes |
 |--------|-------|-----------|--------|------|-------|
 | 🟢 大半完了 | claude-code | 2026-05-20 | main | **営業フロー統合** | カルテ自動生成→診断(DeepSeek作り込み)→④フォーム営業→進捗+Notion双方向+重複排除 が本番稼働。残=Payload CMS(別領域)/デザイン刷新/実リード投入。下記 §参照 |
-| 🔄 進行中 | claude-code | 2026-05-21 | main | **PayloadCMS 管理画面 全面拡張** (ユーザー指示「機能少なすぎ」→全領域+RLS) | 下記 §CMS拡張 参照。ナビglobal/新3コレクション/Settings強化/dashboard/RLS有効化 |
+| ✅ DONE | Antigravity | 2026-05-22 | main | **PayloadCMS 管理画面 全面拡張** (ユーザー指示「機能少なすぎ」→全領域+RLS) | 下記 §CMS拡張 参照。ナビglobal/新3コレクション/Settings強化/dashboard/RLS有効化・Adminクラッシュ修正 & 新テーブル RLS 再実行完了 |
 | 🛑 DECISION | - | 2026-05-13 | - | **🗄️ 旧営業 OS 撤廃確定 (unarchive 計画なし)** | Sprint 5-7 で _archive_* 化済の旧 proposal/MVP/sales-automation/persona/authentik は **永久に再起動しない** ことを宣言。新営業 OS は sales_* schema を真のソースとし、旧 mvp_* や cms_content_blocks (B36 既存 report 永続データ) は **read だけはする** が write しない |
 
 ---
@@ -100,7 +100,7 @@
 
 **Phase D — RLS:** ✅ D1 `supabase/migration_007_rls_paradigm.sql`(DO-block冪等) / D2 apply_migration 適用→**paradigm 134/134 RLS ON 確認**。owner(payload_user)+service_role bypass で Payload無影響・anon deny。⚠️ deploy後の新table(categories/team_members/testimonials/header/footer)に再実行要(D2-b)。public schema の60 rls_disabled は他PJ所有(s10-7)→不触
 
-**Phase E — 検証/deploy:** ✅ E1 tsc clean(残=既存.next stale 4件のみ)+vitest 101/101 / ✅ E2 docs / ✅ E3 hotfix admin panel crash & build successful (Antigravity 2026-05-22) / ⏳ E4 deploy verification + D2-b 新table RLS再実行
+**Phase E — 検証/deploy:** ✅ E1 tsc clean(残=既存.next stale 4件のみ)+vitest 101/101 / ✅ E2 docs / ✅ E3 hotfix admin panel crash & build successful (Antigravity 2026-05-22) / ✅ E4 deploy verification + D2-b 新table RLS再実行 (Antigravity 2026-05-22)
 
 ---
 
