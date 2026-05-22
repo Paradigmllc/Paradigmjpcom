@@ -2,6 +2,7 @@ import { withPayload } from "@payloadcms/next/withPayload"
 import createNextIntlPlugin from "next-intl/plugin"
 import type { NextConfig } from "next"
 import path from "node:path"
+import fs from "node:fs"
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts")
 
@@ -12,7 +13,7 @@ const nextConfig: NextConfig = {
   // the worktree's node_modules → "Module not found" for any package
   // installed only in the worktree (e.g. next-themes added by P18-A).
   turbopack: {
-    root: path.resolve(__dirname),
+    root: fs.realpathSync(path.resolve(__dirname)),
   },
   // 2026-05-03: @paradigmllc/blocks は TypeScript ソース直配布 (no build step)
   // Appexxme と同一 Block 実装を共有するため transpile 必須。
