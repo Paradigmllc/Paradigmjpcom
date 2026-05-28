@@ -18,7 +18,7 @@
 | Status | Owner | Lock-since | Branch | Task | Notes |
 |--------|-------|-----------|--------|------|-------|
 | 🟢 大半完了 | claude-code | 2026-05-20 | main | **営業フロー統合** | カルテ自動生成→診断(DeepSeek作り込み)→④フォーム営業→進捗+Notion双方向+重複排除 が本番稼働。残=Payload CMS(別領域)/デザイン刷新/実リード投入。下記 §参照 |
-| 🟡 検証中 | Codex | 2026-05-28 | main | **営業OS 統合管理画面 / OSSツール実体化** | Supabase CloudをSSOTに固定。NocoDB/Appsmith/Twenty/Metabase/n8nはOSS版をCoolify上で起動し、PayloadCMS adminと営業ダッシュボードから横断リンク化。Supabase Cloud RESTは現時点でHTTP 522のためDB適用・実データ同期は復旧後に再開 |
+| ✅ DONE | Codex | 2026-05-28 | main | **営業OS 統合管理画面 / OSSツール実体化** | commit `c91e845` 本番反映。Supabase CloudをSSOTに固定。NocoDB/Appsmith/Twenty/Metabase/n8nはOSS版をCoolify上で起動し、PayloadCMS adminと営業ダッシュボードから横断リンク化。Supabase Cloud RESTは現時点でHTTP 522のためDB適用・実データ同期は復旧後に再開 |
 | ✅ DONE | Antigravity | 2026-05-22 | main | **PayloadCMS 管理画面 全面拡張** (ユーザー指示「機能少なすぎ」→全領域+RLS) | 下記 §CMS拡張 参照。ナビglobal/新3コレクション/Settings強化/dashboard/RLS有効化・Adminクラッシュ修正 & 新テーブル RLS 再実行完了 |
 | 🛑 DECISION | - | 2026-05-13 | - | **🗄️ 旧営業 OS 撤廃確定 (unarchive 計画なし)** | Sprint 5-7 で _archive_* 化済の旧 proposal/MVP/sales-automation/persona/authentik は **永久に再起動しない** ことを宣言。新営業 OS は sales_* schema を真のソースとし、旧 mvp_* や cms_content_blocks (B36 既存 report 永続データ) は **read だけはする** が write しない |
 
@@ -85,6 +85,7 @@
 - [x] **公開URL確認**: `https://nocodb-paradigm.139.59.250.5.sslip.io` / `https://appsmith-paradigm.139.59.250.5.sslip.io` / `https://twenty-paradigm.139.59.250.5.sslip.io` / `https://metabase.appexx.me` / `https://n8n.appexx.me` が HTTP 200。
 - [x] **PayloadCMS admin統合**: `/admin` の BeforeDashboard に Supabase Cloud / NocoDB / Appsmith / Twenty / Metabase / n8n / Notion Legacy の状態カードを追加。URL未設定・未構築でも隠さず表示し、接続済みは外部OSS画面へ新規タブで遷移。
 - [x] **営業ダッシュボード統合**: `/ja/admin/sales` のツール状態表示を日本語化。`N8N_BASE_URL` 未設定でも `N8N_PLAYWRIGHT_FORM_WEBHOOK` から n8n origin を推定して表示。
+- [x] **本番反映**: commit `c91e845` / image `i12am4vvcbggefnqdizhnv9a:c91e8451a4df1d73611b4a30f5374af85fdd583b`。`/admin` / `/ja/admin/sales` / `/ja` は HTTP 200、`/api/sales/dashboard` は webhook secret 認可で `toolConnections` 7件を返却。
 - [ ] **Supabase Cloud復旧後の残作業**: 現在 `https://yihdmgtxiqfdgdueolub.supabase.co/rest/v1/...` が service role でも HTTP 522。復旧後に `sales_tool_connections` 等へ正式URLをUPSERTし、NocoDB/Twenty/Appsmith/Metabaseを同じSupabase Cloud DB/APIへ接続する。
 
 ### Phase 6 — 国・言語・テンプレ routing / Notion GUI 改修（2026-05-21 追加）
