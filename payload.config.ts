@@ -159,8 +159,7 @@ export default buildConfig({
     // build 時 EMAXCONNSESSION の根本原因だった。"paradigm" スキーマ
     // (owner=payload_user・migration_005 で作成済) に切替え push でテーブル生成。
     // 問題時は "payload" に 1 行 revert 可。
-    // Use Postgres' default public schema. Payload/Drizzle rejects an explicit
-    // schemaName: "public"; omit schemaName instead.
+    schemaName: "paradigm",
     push: true,
   }),
   sharp,
