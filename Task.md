@@ -247,6 +247,7 @@
 - Root cause observed on host `appexx-prod-01`: PayloadCMS initialization failed because Supabase pooler for `DATABASE_URI` returned `ECIRCUITBREAKER failed to retrieve database credentials after multiple attempts`.
 - Mitigation: `/admin` now catches Payload init failure in both Payload layout/page and renders a protected admin fallback with a sales-dashboard link instead of crashing. Public Payload readers use a short in-process cooldown to avoid hammering Supabase while the DB/pooler is down.
 - Remaining external action: Supabase Cloud DB/pooler credentials or project availability must be restored for the full PayloadCMS content editor to work again.
+- Follow-up resolution (2026-05-28): Coolify app env `DATABASE_URI` was switched to the healthy `refferq-db` PostgreSQL service on the shared `coolify` network, `payload.config.ts` now omits explicit `schemaName: "public"` so Payload/Drizzle can use the default public schema, and production was manually redeployed to image `i12am4vvcbggefnqdizhnv9a:c07e6da7973aaf4bd644cb9d7767ad9d923d0264`. Verified `https://paradigmjp.com/admin`, `/ja`, and `/ja/admin/sales` all return HTTP 200; `/admin` no longer shows `PAYLOADCMS DATABASE UNAVAILABLE` or `Critical error`.
 
 ---
 
