@@ -1,3 +1,13 @@
+## Codex Update - 2026-05-29 Sales OS SSOT Verification
+
+- [x] Fixed CSV import upsert so first insert does not depend on app-side `deal_stage` literals; DB default now remains the SSOT for initial stage.
+- [x] Fixed `scripts/deploy.mjs` to keep Coolify on the SSH deploy-key Git source instead of rewriting the private repo to HTTPS.
+- [x] Added production Coolify env `SALES_SUPABASE_URL` and `SALES_SUPABASE_SERVICE_ROLE_KEY` so sales data uses Supabase OSS instead of the legacy cloud fallback.
+- [x] Deployed commit `666d39d` to Coolify and verified the running image `i12am4vvcbggefnqdizhnv9a:666d39d...`.
+- [x] Live CSV verification: POST `/api/sales/import-csv` inserted 1 lead, queued 1 enrichment job, and manual runner completed it.
+- [x] Live artifacts verified: diagnostic report `/ja/report/codex-oss-verification-demo-qnxbms` HTTP 200, Astro-style demo `/ja/d/codex-oss-verification-demo-qnxbms-demo` HTTP 200, `sales_source_runs` = 22, `web_demos` = 1.
+- [x] Live tools verified: NocoDB/Appsmith/Twenty/Metabase/n8n HTTP 200; Supabase Studio HTTP 401 as expected without auth.
+
 ## Codex Update — 2026-05-28 Sales Enrichment Automation
 
 - [x] Added `sales_enrichment_jobs` and `sales_diagnosis_events` as the durable Supabase OSS queue for CSV/NocoDB/Twenty-origin leads.
