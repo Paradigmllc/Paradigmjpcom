@@ -20,7 +20,7 @@ jobs:
             echo "GH_PAT not set, skipping sync"
             exit 0
           fi
-REPO_URL="https://${GH_PAT}@github.com/Paradigmllc/Paradigmjpcom"
+          REPO_URL="https://${GH_PAT}@github.com/Paradigmllc/Paradigmjpcom"
           curl -s -X PATCH "${{ env.COOLIFY_URL }}/api/v1/applications/${{ env.APP_UUID }}" \
             -H "Authorization: Bearer ${{ secrets.COOLIFY_TOKEN }}" \
             -H "Content-Type: application/json" \
