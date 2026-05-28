@@ -443,6 +443,11 @@ function SplitContentRender(b: AnyBlock) {
   const image = b.image as { url?: string; alt?: string } | undefined
   const bgKey = (b.background as string) ?? "default"
   const bg = bgKey === "surface" ? "bg-paradigm-paper-deep" : "bg-paradigm-paper"
+  const ctaLabel = typeof b.ctaLabel === "string" ? b.ctaLabel : undefined
+  const ctaHref = typeof b.ctaHref === "string" ? b.ctaHref : undefined
+  const ctaIsExternal = ctaHref ? /^https?:\/\//i.test(ctaHref) : false
+  const imagePlaceholder =
+    typeof b.imagePlaceholder === "string" ? b.imagePlaceholder : "Image"
   return (
     <section className={`${bg} paradigm-section py-24 md:py-32`}>
       <div className={`max-w-6xl mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center ${reverse ? "" : ""}`}>
@@ -450,13 +455,13 @@ function SplitContentRender(b: AnyBlock) {
           {!!b.kicker && <p className="paradigm-eyebrow text-paradigm-accent mb-4">{String(b.kicker)}</p>}
           {!!b.title && <h2 className="font-display text-[28px] md:text-[40px] leading-[1.15] tracking-[-0.01em] text-paradigm-ink mb-5">{String(b.title)}</h2>}
           {content && <div className="text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.85] prose prose-paradigm max-w-none"><RichText data={content} /></div>}
-          {b.ctaLabel && b.ctaHref && <a href={String(b.ctaHref)} className="inline-flex items-center gap-2 mt-8 text-paradigm-ink border-b border-paradigm-ink pb-1 text-[12px] tracking-[0.14em] uppercase hover:text-paradigm-accent hover:border-paradigm-accent transition-colors">{String(b.ctaLabel)} →</a>}
+          {ctaLabel && ctaHref && <a href={ctaHref} target={ctaIsExternal ? "_blank" : undefined} rel={ctaIsExternal ? "noopener noreferrer" : undefined} className="inline-flex items-center gap-2 mt-8 text-paradigm-ink border-b border-paradigm-ink pb-1 text-[12px] tracking-[0.14em] uppercase hover:text-paradigm-accent hover:border-paradigm-accent transition-colors">{ctaLabel} →</a>}
         </div>
         <div className={reverse ? "md:order-1" : ""}>
           {image?.url ? (
             <img src={image.url} alt={image.alt ?? ""} className="rounded-2xl paradigm-glass w-full" />
           ) : (
-            <div className="bg-paradigm-line/20 rounded-2xl aspect-square flex items-center justify-center paradigm-eyebrow text-paradigm-ink-mute">{b.imagePlaceholder ?? "Image"}</div>
+            <div className="bg-paradigm-line/20 rounded-2xl aspect-square flex items-center justify-center paradigm-eyebrow text-paradigm-ink-mute">{imagePlaceholder}</div>
           )}
         </div>
       </div>
