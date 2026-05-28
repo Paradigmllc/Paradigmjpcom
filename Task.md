@@ -1,3 +1,14 @@
+## Codex Update — 2026-05-28 Sales Enrichment Automation
+
+- [x] Added `sales_enrichment_jobs` and `sales_diagnosis_events` as the durable Supabase OSS queue for CSV/NocoDB/Twenty-origin leads.
+- [x] Added database trigger on `sales_companies` insert so direct NocoDB/Twenty writes are queued for company karte generation.
+- [x] Reworked `/api/sales/import-csv` so dashboard/API CSV imports save to Supabase SSOT and enqueue enrichment jobs instead of relying on transient fire-and-forget only.
+- [x] Added `/api/sales/enrichment/run` for n8n/Trigger.dev/manual dashboard execution.
+- [x] Added Dify diagnosis integration with local fallback, saved under `sales_companies.meta.pain_diagnosis` / `dify_diagnosis`.
+- [x] Added dashboard CSV import and job monitor tab: `CSV・自動診断`.
+- [x] Applied `supabase/migration_015_sales_enrichment_jobs.sql` to Supabase OSS and verified PostgREST HTTP 200 for `sales_enrichment_jobs`.
+- [x] Verification: `npx tsc --noEmit --pretty false` pass, `npm run build` pass, `npm test` pass from real path `D:\dev\paradigmjpcom` (106/106).
+
 # Task.md — paradigmjpcom (multi-agent edition)
 
 > 永久ルール **TASK / TASK-CLEAN / ANTI-BLOAT / TEAM-DEV** 準拠 (Global CLAUDE.md).

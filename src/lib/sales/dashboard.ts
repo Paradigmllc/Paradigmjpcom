@@ -1,6 +1,7 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { calculateMrr } from "@/lib/sales/customers"
 import { getInfrastructureMigrationData } from "@/lib/sales/infrastructure"
+import { fetchRecentEnrichmentJobs } from "@/lib/sales/enrichment-jobs"
 import type {
   DashboardCompany,
   DashboardKpis,
@@ -92,15 +93,7 @@ interface QueueRow {
   sales_companies?: { company_name?: string | null } | null
 }
 
-const TOOL_ORDER: DashboardToolConnection["slug"][] = [
-  "supabase",
-  "nocodb",
-  "appsmith",
-  "twenty",
-  "metabase",
-  "n8n",
-  "notion",
-]
+const TOOL_ORDER: DashboardToolConnection["slug"][] = ["supabase", "nocodb", "appsmith", "twenty", "metabase", "n8n", "notion"]
 
 const TOOL_ENV: Record<DashboardToolConnection["slug"], string | null> = {
   supabase: "NEXT_PUBLIC_SUPABASE_URL",
@@ -271,7 +264,10 @@ function mapCompany(row: SalesCompanyRow): DashboardCompany {
     updatedAt: row.updated_at,
     createdAt: row.created_at,
     contactFormUrl: extractString(row.meta, ["contact_form_url"]) ?? extractString(row.meta, ["discovery", "contact_form_url"]),
-    personalizedCopy: extractString(row.meta, ["personalized_copy", "opening"]),
+    personalizedCopy:
+      extractString(row.meta, ["personalized_copy", "personalized_hook"]) ??
+      extractString(row.meta, ["pain_diagnosis", "primaryPain"]) ??
+      extractString(row.meta, ["personalized_copy", "opening"]),
   }
 }
 
@@ -343,6 +339,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
       syncLogs: [],
       toolConnections: mergeFallbackTools([]),
       operatorQueue: [],
+      enrichmentJobs: [],
       infrastructure,
     }
   }
@@ -360,6 +357,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     meetingsRes,
     contractsRes,
     mrr,
+    enrichmentJobs,
     infrastructure,
   ] = await Promise.all([
     fetchDashboardCompanies(sb),
@@ -392,6 +390,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
       .select("amount_yen")
       .gte("signed_at", thirtyDaysAgo),
     calculateMrr(),
+    fetchRecentEnrichmentJobs(40),
     getInfrastructureMigrationData(sb),
   ])
 
@@ -495,6 +494,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     syncLogs,
     toolConnections,
     operatorQueue,
+    enrichmentJobs,
     infrastructure,
   }
 }

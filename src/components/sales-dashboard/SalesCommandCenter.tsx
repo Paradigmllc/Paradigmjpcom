@@ -10,8 +10,11 @@ import {
   MonitorCog,
   ServerCog,
   Sheet,
+  UploadCloud,
 } from "lucide-react"
+import { Toaster } from "sonner"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
+import { SalesAutomationPanel } from "./SalesAutomationPanel"
 import {
   AnalyticsPanel,
   CrmPanel,
@@ -25,7 +28,15 @@ import {
   statusTone,
 } from "./SalesCommandPanels"
 
-type TabId = "overview" | "workspace" | "operator" | "crm" | "analytics" | "integrations" | "migration"
+type TabId =
+  | "overview"
+  | "automation"
+  | "workspace"
+  | "operator"
+  | "crm"
+  | "analytics"
+  | "integrations"
+  | "migration"
 
 interface Props {
   data: SalesDashboardData
@@ -33,7 +44,8 @@ interface Props {
 
 const TABS: { id: TabId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "overview", label: "司令塔", icon: LayoutDashboard },
-  { id: "workspace", label: "リード作業場", icon: Sheet },
+  { id: "automation", label: "CSV・自動診断", icon: UploadCloud },
+  { id: "workspace", label: "リスト作業場", icon: Sheet },
   { id: "operator", label: "オペレーター", icon: ListChecks },
   { id: "crm", label: "CRM", icon: BriefcaseBusiness },
   { id: "analytics", label: "分析", icon: BarChart3 },
@@ -44,9 +56,11 @@ const TABS: { id: TabId; label: string; icon: typeof LayoutDashboard }[] = [
 export function SalesCommandCenter({ data }: Props) {
   const [activeTab, setActiveTab] = useState<TabId>("overview")
   const activeToolCount = data.toolConnections.filter((tool) => tool.status === "active").length
+  const runningJobs = data.enrichmentJobs.filter((job) => job.status === "queued" || job.status === "running").length
 
   return (
     <main className="min-h-screen bg-zinc-50 text-zinc-950">
+      <Toaster richColors position="top-right" />
       <div className="mx-auto w-full max-w-[1480px] px-4 py-5 sm:px-6 lg:px-8">
         <header className="flex flex-col gap-4 border-b border-zinc-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -69,8 +83,8 @@ export function SalesCommandCenter({ data }: Props) {
               <div className="mt-1 text-xl font-semibold">{formatYen(data.kpis.revenue30d)}</div>
             </div>
             <div className="rounded-lg border border-zinc-200 bg-white p-3">
-              <div className="text-xs text-zinc-500">警告</div>
-              <div className="mt-1 text-xl font-semibold">{data.warnings.length}</div>
+              <div className="text-xs text-zinc-500">生成待ち</div>
+              <div className="mt-1 text-xl font-semibold">{runningJobs}</div>
             </div>
           </div>
         </header>
@@ -114,6 +128,7 @@ export function SalesCommandCenter({ data }: Props) {
           className="mt-5"
         >
           {activeTab === "overview" && <OverviewPanel data={data} />}
+          {activeTab === "automation" && <SalesAutomationPanel data={data} />}
           {activeTab === "workspace" && <WorkspacePanel data={data} />}
           {activeTab === "operator" && <OperatorPanel data={data} />}
           {activeTab === "crm" && <CrmPanel data={data} />}

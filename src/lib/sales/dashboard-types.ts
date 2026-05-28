@@ -1,4 +1,5 @@
 import type { InfrastructureMigrationData } from "@/lib/sales/infrastructure"
+import type { DashboardEnrichmentJob } from "@/lib/sales/enrichment-jobs"
 
 export type SalesDashboardStatus = "ready" | "degraded"
 
@@ -106,5 +107,6 @@ export interface SalesDashboardData {
   syncLogs: DashboardSyncLog[]
   toolConnections: DashboardToolConnection[]
   operatorQueue: DashboardQueueItem[]
+  enrichmentJobs: DashboardEnrichmentJob[]
   infrastructure: InfrastructureMigrationData
 }

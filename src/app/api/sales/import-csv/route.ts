@@ -1,50 +1,7 @@
-/**
- * POST /api/sales/import-csv — Sprint 15 Apollo/外部 CSV 一括インポート
- *
- * 役割: Apollo / Hunter / 自前リスト等の CSV を投入し、各行を sales_companies に bulk INSERT.
- *       INSERT 直後に 30+ API enrich pipeline を fire-and-forget で発火.
- *       結果: インポート後 5-30 分で全リードの企業カルテが完成する.
- *
- * 認証: X-Webhook-Secret header 必須 (Notion or n8n or 内部管理から呼ぶ)
- *
- * Body (JSON):
- *   {
- *     rows: Array<{
- *       company_name: string,         // 必須
- *       domain: string,               // 必須
- *       industry?: Industry,
- *       prefecture?: string,
- *       email?: string,               // contact form 様式・enrich pipeline トリガー用
- *       phone?: string,
- *       contact_name?: string,
- *       contact_title?: string,
- *       source?: string,              // "apollo" | "hunter" | "manual" 等
- *     }>,
- *     enrich?: boolean                // default true・false なら INSERT のみ (enrich しない)
- *   }
- *
- * 出力: { ok, total, inserted, skipped, enrich_triggered }
- *
- * Apollo CSV → JSON 変換例 (クライアント側):
- *   ```js
- *   const csv = await fetch('apollo-leads.csv').then(r=>r.text())
- *   const rows = csvToJson(csv, mapping: {
- *     'Company': 'company_name',
- *     'Website': 'domain',
- *     'Industry': 'industry',
- *     'State': 'prefecture',
- *     'Email': 'email',
- *     'First Name + Last Name': 'contact_name',
- *     'Title': 'contact_title',
- *   })
- *   await fetch('/api/sales/import-csv', { method:'POST', body: JSON.stringify({rows}) })
- *   ```
- */
-
 import { NextRequest, NextResponse } from "next/server"
-import { verifyWebhookSecret } from "@/lib/sales/auth"
+import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { upsertCompanyByDomain, findExistingCompany } from "@/lib/sales/companies"
-import { enrichFromContact } from "@/lib/sales/enrich"
+import { enqueueCompanyEnrichment, triggerEnrichmentRunner } from "@/lib/sales/enrichment-jobs"
 import { normalizeDomain, normalizeCompanyName } from "@/lib/sales/dedup"
 import {
   normalizeReportLocale,
@@ -80,18 +37,25 @@ interface Body {
   enrich?: boolean
 }
 
+function isCsvRowArray(value: unknown): value is CsvRow[] {
+  return Array.isArray(value) && value.every((row) => row && typeof row === "object" && !Array.isArray(row))
+}
+
 export async function POST(req: NextRequest) {
-  const authErr = verifyWebhookSecret(req)
-  if (authErr) return authErr
+  if (!(await isSalesApiAuthorized(req))) {
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+  }
 
   let body: Body
   try {
     body = (await req.json()) as Body
-  } catch {
+  } catch (e) {
+    console.error("[import-csv] invalid JSON body:", e)
     return NextResponse.json({ ok: false, error: "invalid json body" }, { status: 400 })
   }
-  const rows = body.rows ?? []
-  if (!Array.isArray(rows) || rows.length === 0) {
+
+  const rows = body.rows
+  if (!isCsvRowArray(rows) || rows.length === 0) {
     return NextResponse.json({ ok: false, error: "rows[] required" }, { status: 400 })
   }
   if (rows.length > 1000) {
@@ -101,22 +65,19 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const shouldEnrich = body.enrich !== false // default true
-
-  // バッチ内重複排除: canonical domain || name_key で同一企業を 1 件に統廃合
+  const shouldEnrich = body.enrich !== false
   const seenKeys = new Set<string>()
-  const dedupedRows = rows.filter((r) => {
-    const key = normalizeDomain(r.domain) ?? normalizeCompanyName(r.company_name)
-    if (!key) return true // key 無し → loop で検証して failure に
+  const dedupedRows = rows.filter((row) => {
+    const key = normalizeDomain(row.domain) ?? normalizeCompanyName(row.company_name)
+    if (!key) return true
     if (seenKeys.has(key)) return false
     seenKeys.add(key)
     return true
   })
-  const batchDuplicates = rows.length - dedupedRows.length
 
   let inserted = 0
   let skipped = 0
-  let enrichTriggered = 0
+  let jobsEnqueued = 0
   const failures: { row: number; reason: string }[] = []
 
   for (let i = 0; i < dedupedRows.length; i++) {
@@ -125,13 +86,13 @@ export async function POST(req: NextRequest) {
       failures.push({ row: i, reason: "company_name and domain required" })
       continue
     }
+
     const cleanDomain = normalizeDomain(row.domain)
     if (!cleanDomain) {
       failures.push({ row: i, reason: "invalid domain format" })
       continue
     }
 
-    // dedup: notion_page_id 無し・canonical domain → name_key で既存照合 (重複作成防止)
     const existing = await findExistingCompany({
       domain: cleanDomain,
       nameKey: normalizeCompanyName(row.company_name),
@@ -139,13 +100,23 @@ export async function POST(req: NextRequest) {
     })
     if (existing) {
       skipped++
+      if (shouldEnrich && existing.pipeline_status !== "report_ready") {
+        const queued = await enqueueCompanyEnrichment({
+          companyId: existing.id,
+          source: row.source ?? "csv_import_existing",
+          triggeredBy: "csv_import_api",
+          priority: 55,
+          payload: { domain: cleanDomain, company_name: row.company_name, existing: true },
+        })
+        if (queued.ok) jobsEnqueued++
+        else failures.push({ row: i, reason: queued.error ?? "enrichment enqueue failed" })
+      }
       continue
     }
+
     const reportLocale = normalizeReportLocale(row.report_locale, "jp")
     const targetCountry = normalizeTargetCountry(row.target_country ?? row.country, reportLocale)
     const templateVariant = normalizeTemplateVariant(row.template_variant)
-
-    // Stub UPSERT (即時) — slug 自動生成
     const result = await upsertCompanyByDomain({
       domain: cleanDomain,
       company_name: row.company_name,
@@ -170,38 +141,53 @@ export async function POST(req: NextRequest) {
         },
       },
     })
-    if (!result.ok) {
+
+    if (!result.ok || !result.company) {
       failures.push({ row: i, reason: result.error ?? "upsert failed" })
       continue
     }
-    inserted++
 
-    // 🚀 enrich pipeline 発火 (fire-and-forget・非同期)
-    if (shouldEnrich) {
-      enrichTriggered++
-      void enrichFromContact({
-        email: row.email ?? `info@${cleanDomain}`,
-        company: row.company_name,
-        message: `CSV import (${row.source ?? "manual"})`,
-        services: [],
-        source: row.source ?? "csv_import",
-      }).catch((e) => {
-        console.error(`[import-csv] enrich row ${i} failed:`, e)
-      })
-    }
+    inserted++
+    if (!shouldEnrich) continue
+
+    const queued = await enqueueCompanyEnrichment({
+      companyId: result.company.id,
+      source: row.source ?? "csv_import",
+      triggeredBy: "csv_import_api",
+      priority: row.source === "apollo" || row.source === "apollo_exporter" ? 75 : 60,
+      payload: {
+        row_index: i,
+        domain: cleanDomain,
+        company_name: row.company_name,
+        contact_seed: {
+          email: row.email ?? null,
+          phone: row.phone ?? null,
+          name: row.contact_name ?? null,
+          title: row.contact_title ?? null,
+        },
+      },
+    })
+
+    if (queued.ok) jobsEnqueued++
+    else failures.push({ row: i, reason: queued.error ?? "enrichment enqueue failed" })
+  }
+
+  if (jobsEnqueued > 0) {
+    await triggerEnrichmentRunner(Math.min(jobsEnqueued, 3))
   }
 
   return NextResponse.json({
     ok: true,
     total: rows.length,
-    batch_duplicates_removed: batchDuplicates, // リスト内の重複を統廃合した件数
+    batch_duplicates_removed: rows.length - dedupedRows.length,
     deduped_total: dedupedRows.length,
     inserted,
-    skipped, // 既存DB企業 (domain/name_key 一致) のため作成スキップ
-    enrich_triggered: enrichTriggered,
-    failures: failures.slice(0, 20), // 最大 20 件まで返す
+    skipped,
+    jobs_enqueued: jobsEnqueued,
+    enrich_triggered: jobsEnqueued,
+    failures: failures.slice(0, 20),
     note: shouldEnrich
-      ? "Enrich pipeline triggered for each row (non-blocking・5-30 min to complete depending on PSI rate-limit)"
-      : "Enrich skipped (enrich=false)",
+      ? "Rows were saved to Supabase SSOT and durable enrichment jobs were queued."
+      : "Rows were saved only. Enrichment was skipped because enrich=false.",
   })
 }

@@ -25,6 +25,7 @@ import {
   syncCustomerToNotion,
   syncDeliveryToNotion,
 } from "@/lib/sales/sync"
+import { enqueueCompanyEnrichment, triggerEnrichmentRunner } from "@/lib/sales/enrichment-jobs"
 import { resolveNotionDbId } from "@/lib/sales/notion-apply"
 import type { SalesCompany, SalesCustomer, SalesDelivery, Region } from "@/lib/sales/types"
 
@@ -101,6 +102,19 @@ export async function POST(req: NextRequest) {
   try {
     switch (table) {
       case "sales_companies": {
+        if (type === "INSERT" && typeof record.id === "string") {
+          const queued = await enqueueCompanyEnrichment({
+            companyId: record.id,
+            source: typeof record.source === "string" ? record.source : "supabase_webhook",
+            triggeredBy: "supabase_database_webhook",
+            priority: 55,
+            payload: {
+              domain: typeof record.domain === "string" ? record.domain : null,
+              company_name: typeof record.company_name === "string" ? record.company_name : null,
+            },
+          })
+          if (queued.ok) await triggerEnrichmentRunner(1)
+        }
         const dbId = resolveNotionDbId("company", region)
         if (!dbId) return NextResponse.json({ ok: false, error: `no company DB id for ${region}` })
         const result = await syncCompanyToNotion(record as unknown as SalesCompany, dbId)
