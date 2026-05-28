@@ -376,6 +376,119 @@ function MarqueeRender(b: AnyBlock) {
   )
 }
 
+function PricingRender(b: AnyBlock) {
+  const tiers = (b.tiers as Array<{ name?: string; price?: string; period?: string; description?: string; features?: string; ctaLabel?: string; ctaHref?: string; highlighted?: boolean }>) ?? []
+  return (
+    <section className="bg-paradigm-paper paradigm-section py-24 md:py-32">
+      <div className="max-w-6xl mx-auto px-6 md:px-12">
+        {!!b.title && <h2 className="font-display text-[28px] md:text-[44px] leading-[1.15] tracking-[-0.01em] text-paradigm-ink text-center mb-4">{String(b.title)}</h2>}
+        {!!b.subtitle && <p className="text-[15px] text-paradigm-ink-soft max-w-2xl mx-auto text-center mb-16 leading-[1.85]">{String(b.subtitle)}</p>}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          {tiers.map((t, i) => (
+            <div key={i} className={`rounded-2xl p-8 paradigm-glass ${t.highlighted ? "ring-2 ring-paradigm-accent relative" : "border border-paradigm-line"}`}>
+              {t.highlighted && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-paradigm-accent text-paradigm-paper text-[11px] tracking-[0.14em] uppercase px-3 py-1 rounded-full">人気</span>}
+              <h3 className="font-display text-[22px] text-paradigm-ink mb-3">{t.name ?? ""}</h3>
+              <div className="mb-4"><span className="font-display text-[40px] text-paradigm-ink">{t.price ?? ""}</span>{t.period && <span className="text-[14px] text-paradigm-ink-mute ml-1">/{t.period}</span>}</div>
+              {t.description && <p className="text-[13px] text-paradigm-ink-soft leading-[1.75] mb-6">{t.description}</p>}
+              {t.features && <ul className="space-y-3 mb-8">
+                {t.features.split("\n").filter(Boolean).map((f, j) => <li key={j} className="flex items-start gap-2 text-[13px] text-paradigm-ink-soft"><span className="text-paradigm-accent shrink-0 mt-0.5">✓</span>{f}</li>)}
+              </ul>}
+              {t.ctaHref && <a href={t.ctaHref} className={`block text-center py-3 text-[12px] tracking-[0.14em] uppercase transition-colors ${t.highlighted ? "bg-paradigm-ink text-paradigm-paper hover:bg-paradigm-accent" : "border border-paradigm-ink text-paradigm-ink hover:bg-paradigm-ink hover:text-paradigm-paper"}`}>{t.ctaLabel ?? "Get started"}</a>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function LogoCloudRender(b: AnyBlock) {
+  const logos = (b.logos as Array<{ image?: unknown; alt?: string }>) ?? []
+  // media upload の image は PayloadCMS 独自オブジェクト。公開ページでは簡易的に alt を表示
+  return (
+    <section className="bg-paradigm-paper-deep paradigm-section py-16 border-y border-paradigm-line">
+      <div className="max-w-6xl mx-auto px-6 md:px-12 text-center">
+        {!!b.title && <p className="paradigm-eyebrow mb-8">{String(b.title)}</p>}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 items-center justify-items-center opacity-30 hover:opacity-50 transition-opacity grayscale">
+          {logos.map((l, i) => (
+            <div key={i} className="paradigm-eyebrow text-paradigm-ink-mute text-[11px] tracking-[0.14em] uppercase">
+              {l.alt ?? `Logo ${i + 1}`}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function VideoRender(b: AnyBlock) {
+  const embedUrl = b.embedUrl as string | undefined
+  if (!embedUrl) return null
+  return (
+    <section className="bg-paradigm-paper paradigm-section">
+      <div className="max-w-4xl mx-auto px-6 md:px-12">
+        {!!b.title && <h2 className="font-display text-[28px] md:text-[40px] leading-[1.15] tracking-[-0.01em] text-paradigm-ink mb-4">{String(b.title)}</h2>}
+        {!!b.subtitle && <p className="text-[15px] text-paradigm-ink-soft mb-8 leading-[1.85]">{String(b.subtitle)}</p>}
+        <div className="aspect-video rounded-2xl overflow-hidden paradigm-glass">
+          <iframe src={embedUrl} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="w-full h-full" title={String(b.title ?? "")} />
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function SplitContentRender(b: AnyBlock) {
+  const reverse = (b.reverse as boolean) ?? false
+  const content = b.content as SerializedEditorState | undefined
+  const image = b.image as { url?: string; alt?: string } | undefined
+  const bgKey = (b.background as string) ?? "default"
+  const bg = bgKey === "surface" ? "bg-paradigm-paper-deep" : "bg-paradigm-paper"
+  return (
+    <section className={`${bg} paradigm-section py-24 md:py-32`}>
+      <div className={`max-w-6xl mx-auto px-6 md:px-12 grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center ${reverse ? "" : ""}`}>
+        <div className={reverse ? "md:order-2" : ""}>
+          {!!b.kicker && <p className="paradigm-eyebrow text-paradigm-accent mb-4">{String(b.kicker)}</p>}
+          {!!b.title && <h2 className="font-display text-[28px] md:text-[40px] leading-[1.15] tracking-[-0.01em] text-paradigm-ink mb-5">{String(b.title)}</h2>}
+          {content && <div className="text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.85] pros`e prose-paradigm max-w-none"><RichText data={content} /></div>}
+          {b.ctaLabel && b.ctaHref && <a href={String(b.ctaHref)} className="inline-flex items-center gap-2 mt-8 text-paradigm-ink border-b border-paradigm-ink pb-1 text-[12px] tracking-[0.14em] uppercase hover:text-paradigm-accent hover:border-paradigm-accent transition-colors">{String(b.ctaLabel)} →</a>}
+        </div>
+        <div className={reverse ? "md:order-1" : ""}>
+          {image?.url ? (
+            <img src={image.url} alt={image.alt ?? ""} className="rounded-2xl paradigm-glass w-full" />
+          ) : (
+            <div className="bg-paradigm-line/20 rounded-2xl aspect-square flex items-center justify-center paradigm-eyebrow text-paradigm-ink-mute">{b.imagePlaceholder ?? "Image"}</div>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function TimelineRender(b: AnyBlock) {
+  const items = (b.items as Array<{ date?: string; title?: string; description?: string }>) ?? []
+  return (
+    <section className="bg-paradigm-paper paradigm-section py-24 md:py-32">
+      <div className="max-w-4xl mx-auto px-6 md:px-12">
+        {!!b.kicker && <p className="paradigm-eyebrow text-paradigm-accent mb-4 text-center">{String(b.kicker)}</p>}
+        {!!b.title && <h2 className="font-display text-[28px] md:text-[44px] leading-[1.15] tracking-[-0.01em] text-paradigm-ink text-center mb-16">{String(b.title)}</h2>}
+        <div className="relative pl-8 md:pl-0 space-y-0">
+          {items.map((it, i) => (
+            <div key={i} className="relative pb-12 pl-8 md:pl-0 md:grid md:grid-cols-[120px_1fr] md:gap-8 border-l-2 border-paradigm-line last:border-transparent">
+              <div className="hidden md:block paradigm-eyebrow text-paradigm-accent pt-1 text-[11px]">{it.date ?? ""}</div>
+              <div>
+                <div className="absolute left-0 top-1 w-3 h-3 rounded-full bg-paradigm-accent -translate-x-[7px]" />
+                <div className="md:hidden paradigm-eyebrow text-paradigm-accent mb-1 text-[11px]">{it.date ?? ""}</div>
+                <h3 className="font-display text-[20px] text-paradigm-ink mb-2">{it.title ?? ""}</h3>
+                {it.description && <p className="text-[13px] md:text-[14px] text-paradigm-ink-soft leading-[1.8]">{it.description}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 const RENDERERS: Record<string, (b: AnyBlock) => React.ReactNode> = {
   hero: HeroRender,
   section: SectionRender,
@@ -387,6 +500,11 @@ const RENDERERS: Record<string, (b: AnyBlock) => React.ReactNode> = {
   testimonials: TestimonialsRender,
   process: ProcessRender,
   marquee: MarqueeRender,
+  pricing: PricingRender,
+  "logo-cloud": LogoCloudRender,
+  video: VideoRender,
+  "split-content": SplitContentRender,
+  timeline: TimelineRender,
 }
 
 export default function BlockRenderer({ blocks }: { blocks: AnyBlock[] }) {
