@@ -1,0 +1,83 @@
+# Supabase OSS on Coolify — paradigmjp.com 専用
+# Coolify → New Service → Docker Compose でこのファイルを指定
+#
+# 最小構成: PostgreSQL + Studio + PostgREST + GoTrue
+# Kong と Storage は省略（PayloadCMS が Auth 内蔵・publicサイトに Storage 不要）
+
+services:
+  db:
+    image: supabase/postgres:15.8.1.040
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: Paradigm2026SecureDB
+      POSTGRES_USER: supabase_admin
+      POSTGRES_DB: postgres
+    volumes:
+      - supabase-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U supabase_admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  studio:
+    image: supabase/studio:2025.04.07-sha-37fbef5
+    restart: unless-stopped
+    environment:
+      STUDIO_PG_META_URL: http://meta:8080
+      POSTGRES_PASSWORD: Paradigm2026SecureDB
+      SUPABASE_URL: http://localhost:8000
+      DEFAULT_ORGANIZATION_NAME: Paradigm
+      DEFAULT_PROJECT_NAME: paradigm-os
+    depends_on:
+      db:
+        condition: service_healthy
+
+  meta:
+    image: supabase/postgres-meta:v0.84.2
+    restart: unless-stopped
+    environment:
+      PG_META_PORT: 8080
+      PG_META_DB_HOST: db
+      PG_META_DB_PORT: 5432
+      PG_META_DB_NAME: postgres
+      PG_META_DB_USER: supabase_admin
+      PG_META_DB_PASSWORD: Paradigm2026SecureDB
+    depends_on:
+      db:
+        condition: service_healthy
+
+  rest:
+    image: postgrest/postgrest:v12.2.3
+    restart: unless-stopped
+    environment:
+      PGRST_DB_URI: postgres://supabase_admin:Paradigm2026SecureDB@db:5432/postgres
+      PGRST_DB_SCHEMAS: public,paradigm,storage
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  auth:
+    image: supabase/gotrue:v2.167.0
+    restart: unless-stopped
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_admin:Paradigm2026SecureDB@db:5432/postgres
+      GOTRUE_SITE_URL: https://paradigmjp.com
+      GOTRUE_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      GOTRUE_LOG_LEVEL: info
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  supabase-db-data:
