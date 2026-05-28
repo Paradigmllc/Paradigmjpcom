@@ -247,3 +247,44 @@
 - Root cause observed on host `appexx-prod-01`: PayloadCMS initialization failed because Supabase pooler for `DATABASE_URI` returned `ECIRCUITBREAKER failed to retrieve database credentials after multiple attempts`.
 - Mitigation: `/admin` now catches Payload init failure in both Payload layout/page and renders a protected admin fallback with a sales-dashboard link instead of crashing. Public Payload readers use a short in-process cooldown to avoid hammering Supabase while the DB/pooler is down.
 - Remaining external action: Supabase Cloud DB/pooler credentials or project availability must be restored for the full PayloadCMS content editor to work again.
+
+---
+
+## 🔒 永久ルール — インフラ安全規約（2026-05-28制定）
+
+### Deploy 手順
+- **GitHub Actions 不使用** (ランナー不在のため)
+- `git push` → `node scripts/deploy.mjs` で Coolify API 直接デプロイ
+- 環境変数 `COOLIFY_API_TOKEN` 必須
+- deploy 時に Supabase ヘルスチェックを自動実行（失敗時警告・デプロイ継続）
+
+### Supabase ヘルスチェック
+- デプロイ前に `node scripts/supabase-health-check.mjs` を実行
+- 異常時は `node scripts/supabase-health-check.mjs --restore` で復旧試行
+- Supabase 停止中でもサイト本体は fallback (`PayloadAdminUnavailable`) 付きで稼働するためデプロイは継続可
+- `SUPABASE_PAT` があれば Management API 経由でプロジェクト状態確認・復旧可能
+
+### 再発防止チェックリスト
+1. Coolify 環境変数に以下が設定されていること
+   - `DATABASE_URI` (Supabase pooler: `aws-1-ap-northeast-1.pooler.supabase.com`)
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `NEXT_PUBLIC_SUPABASE_URL` = `https://yihdmgtxiqfdgdueolub.supabase.co`
+2. Supabase プロジェクトが paused でないこと
+   - https://supabase.com/dashboard/project/yihdmgtxiqfdgdueolub
+3. `COOLIFY_API_TOKEN` がローカル `.env` に設定されていること
+4. `PARADIGM_APP_UUID` = `i12am4vvcbggefnqdizhnv9a` (デフォルト)
+5. `scripts/deploy.mjs` でデプロイすること（GitHub Actions 不使用）
+6. Supabase プロジェクト paused 時の復旧手順:
+   - Supabase Dashboard から手動で Resume
+   - または `SUPABASE_PAT` を `.env` に設定して `node scripts/supabase-health-check.mjs --restore`
+
+### Migration 管理
+- 新 migration は `supabase/migration_NNN_xxx.sql` に格納（冪等必須・`IF EXISTS` / `IF NOT EXISTS`）
+- 適用は `node scripts/supabase-health-check.mjs --migrate` で一括実行
+- 目視確認用に `scripts/legacy-cleanup-*.mjs` で SQL を再生成可能
+
+### 管理画面 fallback 動作
+- PayloadCMS DB 接続失敗時 → `/admin` は `PayloadAdminUnavailable` を表示
+- 営業ダッシュボード (`/ja/admin/sales`) は独立稼働
+- クールダウン: 120秒間は再接続試行せず保護表示を優先（`PAYLOAD_INIT_FAILURE_COOLDOWN_MS` で調整可）

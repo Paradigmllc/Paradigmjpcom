@@ -27,6 +27,7 @@ if (!TOKEN) {
 const BASE = process.env.COOLIFY_API_URL || "https://coolify.appexx.me"
 const APP_UUID = process.env.PARADIGM_APP_UUID || "i12am4vvcbggefnqdizhnv9a"
 const GH_REPO = "https://github.com/Paradigmllc/Paradigmjpcom"
+const SUPABASE_DATA_API = "https://yihdmgtxiqfdgdueolub.supabase.co"
 
 async function api(path, options = {}) {
   const url = `${BASE}${path}`
@@ -45,8 +46,42 @@ async function api(path, options = {}) {
   return res.json()
 }
 
+async function checkSupabaseHealth() {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!key) {
+    console.log("  ⚠ SUPABASE_SERVICE_ROLE_KEY not set — skipping Supabase health check")
+    return { ok: false, reason: "no key" }
+  }
+  try {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 8000)
+    const res = await fetch(`${SUPABASE_DATA_API}/rest/v1/?limit=0`, {
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+      },
+      signal: controller.signal,
+    })
+    clearTimeout(timer)
+    if (res.ok) {
+      console.log(`  ✓ Supabase Data API: HTTP ${res.status}`)
+      return { ok: true }
+    }
+    const body = await res.text()
+    console.warn(`  ⚠ Supabase Data API: HTTP ${res.status} — ${body.substring(0, 100)}`)
+    return { ok: false, reason: `HTTP ${res.status}` }
+  } catch (e) {
+    console.warn(`  ⚠ Supabase Data API unreachable: ${e.message}`)
+    return { ok: false, reason: e.message }
+  }
+}
+
 async function run() {
   console.log("🚀 paradigmjp.com deploy via Coolify API")
+
+  // 0. Supabase health check
+  console.log("  → Checking Supabase health...")
+  const health = await checkSupabaseHealth()
 
   // 1. Sync git_repository
   console.log("  → Syncing git_repository to Coolify...")

@@ -69,40 +69,52 @@ export default async function BeforeDashboard({ payload }: { payload: Payload })
   let recent: Array<{ collection?: string; action?: string; userEmail?: string | null; createdAt?: string }> = []
   const adminToolLinks = getAdminToolLinks()
 
-  try {
-
-    // ① コンテンツ件数 (並列 count)
-    const countResults = await Promise.all(
-      CONTENT_CARDS.map(async (c) => {
-        try {
-          const r = await payload.count({ collection: c.slug as "pages" })
-          return [c.slug, r.totalDocs] as const
-        } catch (e) {
-          console.error("[BeforeDashboard] count failed:", c.slug, e)
-          return [c.slug, -1] as const // -1 = 取得不可 (テーブル未作成等)
-        }
-      }),
-    )
-    counts = Object.fromEntries(countResults)
-
-    // ② リードのパイプライン内訳
-    const leads = await payload.find({ collection: "leads", limit: 1000, depth: 0 })
-    for (const l of leads.docs as Array<{ pipelineStage?: string }>) {
-      const k = l.pipelineStage ?? "new"
-      leadsByStage[k] = (leadsByStage[k] ?? 0) + 1
+    // IO Budget 保護: PayloadCMS DB が使用不可の場合は即座に fallback
+    let dbUnavailable = false
+    try {
+      // 軽量な疎通確認のみ（count 1件）
+      await payload.count({ collection: "pages" })
+    } catch (e) {
+      dbUnavailable = true
+      console.warn("[BeforeDashboard] DB unavailable, showing cached view:", e instanceof Error ? e.message : e)
     }
 
-    // ③ 直近の監査ログ 6 件
-    const audit = await payload.find({
-      collection: "audit-logs",
-      limit: 6,
-      sort: "-createdAt",
-      depth: 0,
-    })
-    recent = audit.docs as typeof recent
-  } catch (e) {
-    console.error("[BeforeDashboard] 集計に失敗:", e instanceof Error ? e.message : e)
-  }
+    if (!dbUnavailable) {
+      try {
+        // ① コンテンツ件数（並列 count・IO保護のため limit=4 に絞る）
+        const ESSENTIAL_CARDS = CONTENT_CARDS.slice(0, 4)
+        const countResults = await Promise.all(
+          ESSENTIAL_CARDS.map(async (c) => {
+            try {
+              const r = await payload.count({ collection: c.slug as "pages" })
+              return [c.slug, r.totalDocs] as const
+            } catch (e) {
+              console.error("[BeforeDashboard] count failed:", c.slug, e)
+              return [c.slug, -1] as const
+            }
+          }),
+        )
+        counts = Object.fromEntries(countResults)
+
+        // ② リードのパイプライン内訳（max 200件に制限・IO保護）
+        const leads = await payload.find({ collection: "leads", limit: 200, depth: 0 })
+        for (const l of leads.docs as Array<{ pipelineStage?: string }>) {
+          const k = l.pipelineStage ?? "new"
+          leadsByStage[k] = (leadsByStage[k] ?? 0) + 1
+        }
+
+        // ③ 直近の監査ログ 3 件（6→3に削減）
+        const audit = await payload.find({
+          collection: "audit-logs",
+          limit: 3,
+          sort: "-createdAt",
+          depth: 0,
+        })
+        recent = audit.docs as typeof recent
+      } catch (e) {
+        console.error("[BeforeDashboard] 集計に失敗:", e instanceof Error ? e.message : e)
+      }
+    }
 
   const totalLeads = Object.values(leadsByStage).reduce((a, b) => a + b, 0)
 

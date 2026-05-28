@@ -449,7 +449,7 @@ function SplitContentRender(b: AnyBlock) {
         <div className={reverse ? "md:order-2" : ""}>
           {!!b.kicker && <p className="paradigm-eyebrow text-paradigm-accent mb-4">{String(b.kicker)}</p>}
           {!!b.title && <h2 className="font-display text-[28px] md:text-[40px] leading-[1.15] tracking-[-0.01em] text-paradigm-ink mb-5">{String(b.title)}</h2>}
-          {content && <div className="text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.85] pros`e prose-paradigm max-w-none"><RichText data={content} /></div>}
+          {content && <div className="text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.85] prose prose-paradigm max-w-none"><RichText data={content} /></div>}
           {b.ctaLabel && b.ctaHref && <a href={String(b.ctaHref)} className="inline-flex items-center gap-2 mt-8 text-paradigm-ink border-b border-paradigm-ink pb-1 text-[12px] tracking-[0.14em] uppercase hover:text-paradigm-accent hover:border-paradigm-accent transition-colors">{String(b.ctaLabel)} →</a>}
         </div>
         <div className={reverse ? "md:order-1" : ""}>

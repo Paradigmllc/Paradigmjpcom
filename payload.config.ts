@@ -162,7 +162,7 @@ export default buildConfig({
     // (owner=payload_user・migration_005 で作成済) に切替え push でテーブル生成。
     // 問題時は "payload" に 1 行 revert 可。
     schemaName: "paradigm",
-    push: false,
+    push: true,
   }),
   sharp,
   // P17 2026-04-27: コンテンツ多言語化も 12 言語対応
