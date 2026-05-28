@@ -26,7 +26,7 @@ if (!TOKEN) {
 
 const BASE = process.env.COOLIFY_API_URL || "https://coolify.appexx.me"
 const APP_UUID = process.env.PARADIGM_APP_UUID || "i12am4vvcbggefnqdizhnv9a"
-const GH_REPO = "https://github.com/Paradigmllc/Paradigmjpcom"
+const GH_REPO = "git@github.com:Paradigmllc/Paradigmjpcom.git"
 const SUPABASE_DATA_API = "https://yihdmgtxiqfdgdueolub.supabase.co"
 
 async function api(path, options = {}) {
