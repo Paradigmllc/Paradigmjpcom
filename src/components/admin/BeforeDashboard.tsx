@@ -48,19 +48,115 @@ const card: CSSProperties = {
 
 const SALES_DASHBOARD_PATH = "/ja/admin/sales"
 
+type AdminToolLink = {
+  label: string
+  role: string
+  url: string | null
+  status: "active" | "missing" | "legacy"
+  location: string
+}
+
+const TOOL_STATUS_LABEL: Record<AdminToolLink["status"], string> = {
+  active: "接続済み",
+  missing: "URL未設定",
+  legacy: "移行元",
+}
+
+const TOOL_STATUS_COLOR: Record<AdminToolLink["status"], string> = {
+  active: "#0f7b4f",
+  missing: "#8a5a00",
+  legacy: "#6b7280",
+}
+
 function envUrl(name: string): string | null {
   const value = process.env[name]
   if (!value || value.trim().length === 0) return null
   return value
 }
 
-function getAdminToolLinks(): Array<{ label: string; role: string; url: string }> {
+function originFromEnvUrl(name: string): string | null {
+  const value = envUrl(name)
+  if (!value) return null
+  try {
+    return new URL(value).origin
+  } catch (e) {
+    console.error("[BeforeDashboard] invalid URL env:", name, e)
+    return null
+  }
+}
+
+function getToolUrl(primaryEnv: string, fallbackEnv?: string): string | null {
+  return envUrl(primaryEnv) ?? (fallbackEnv ? originFromEnvUrl(fallbackEnv) : null)
+}
+
+function toolStatus(url: string | null, legacy = false): AdminToolLink["status"] {
+  if (legacy) return "legacy"
+  return url ? "active" : "missing"
+}
+
+function coolifyLocation(url: string | null): string {
+  return url ? "Coolify" : "Coolify未構築"
+}
+
+function getAdminToolLinks(): AdminToolLink[] {
+  const supabaseUrl = getToolUrl("NEXT_PUBLIC_SUPABASE_URL")
+  const nocodbUrl = getToolUrl("NOCODB_BASE_URL")
+  const appsmithUrl = getToolUrl("APPSMITH_BASE_URL")
+  const twentyUrl = getToolUrl("TWENTY_BASE_URL")
+  const metabaseUrl = getToolUrl("METABASE_BASE_URL")
+  const n8nUrl = getToolUrl("N8N_BASE_URL", "N8N_PLAYWRIGHT_FORM_WEBHOOK")
+
   return [
-    { label: "NocoDB", role: "大量リストの一括編集", url: envUrl("NOCODB_BASE_URL") },
-    { label: "Appsmith", role: "オペレーター作業画面", url: envUrl("APPSMITH_BASE_URL") },
-    { label: "Twenty", role: "商談・CRM", url: envUrl("TWENTY_BASE_URL") },
-    { label: "Metabase", role: "営業分析", url: envUrl("METABASE_BASE_URL") },
-  ].flatMap((tool) => (tool.url ? [{ ...tool, url: tool.url }] : []))
+    {
+      label: "Supabase Cloud",
+      role: "営業データの正本DB/API/RLS",
+      url: supabaseUrl,
+      status: toolStatus(supabaseUrl),
+      location: "Cloud",
+    },
+    {
+      label: "NocoDB OSS",
+      role: "大量リストの一括編集",
+      url: nocodbUrl,
+      status: toolStatus(nocodbUrl),
+      location: coolifyLocation(nocodbUrl),
+    },
+    {
+      label: "Appsmith OSS",
+      role: "オペレーター専用作業画面",
+      url: appsmithUrl,
+      status: toolStatus(appsmithUrl),
+      location: coolifyLocation(appsmithUrl),
+    },
+    {
+      label: "Twenty OSS",
+      role: "商談・CRM・活動履歴",
+      url: twentyUrl,
+      status: toolStatus(twentyUrl),
+      location: coolifyLocation(twentyUrl),
+    },
+    {
+      label: "Metabase OSS",
+      role: "営業分析・経営KPI",
+      url: metabaseUrl,
+      status: toolStatus(metabaseUrl),
+      location: coolifyLocation(metabaseUrl),
+    },
+    {
+      label: "n8n OSS",
+      role: "同期・通知・自動化ワークフロー",
+      url: n8nUrl,
+      status: toolStatus(n8nUrl),
+      location: "Coolify",
+    },
+    {
+      label: "Notion Legacy",
+      role: "旧営業ダッシュボード。新規運用の正本から外す",
+      url: "https://www.notion.so/35fa2b78f3fc81299d91e457889ee393",
+      status: "legacy",
+      location: "External",
+    },
+  ]
 }
 
 export default async function BeforeDashboard({ payload }: { payload: Payload }) {
@@ -169,24 +265,90 @@ export default async function BeforeDashboard({ payload }: { payload: Payload })
             Payload リード
           </a>
           {adminToolLinks.map((tool) => (
-            <a
-              key={tool.label}
-              href={tool.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={tool.role}
-              style={{
-                border: "1px solid var(--theme-elevation-200)",
-                borderRadius: 6,
-                color: "inherit",
-                fontSize: 12,
-                padding: "7px 10px",
-                textDecoration: "none",
-              }}
-            >
-              {tool.label}
-            </a>
+            tool.url ? (
+              <a
+                key={tool.label}
+                href={tool.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`${tool.role} / ${TOOL_STATUS_LABEL[tool.status]}`}
+                style={{
+                  border: "1px solid var(--theme-elevation-200)",
+                  borderRadius: 6,
+                  color: "inherit",
+                  fontSize: 12,
+                  padding: "7px 10px",
+                  textDecoration: "none",
+                }}
+              >
+                {tool.label}
+              </a>
+            ) : (
+              <span
+                key={tool.label}
+                title={`${tool.role} / ${TOOL_STATUS_LABEL[tool.status]}`}
+                style={{
+                  border: "1px solid var(--theme-elevation-150)",
+                  borderRadius: 6,
+                  color: "var(--theme-elevation-500)",
+                  fontSize: 12,
+                  padding: "7px 10px",
+                }}
+              >
+                {tool.label}
+              </span>
+            )
           ))}
+        </div>
+      </section>
+
+      <section style={{ marginBottom: 24 }}>
+        <h2 style={{ fontSize: 18, marginBottom: 4 }}>営業OS 統合ステータス</h2>
+        <p style={{ color: "var(--theme-elevation-500)", marginBottom: 16, fontSize: 13 }}>
+          Supabase Cloud を正本にし、各OSSツールは用途別の操作面として接続します。未構築のツールも隠さず表示します。
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+          {adminToolLinks.map((tool) => {
+            const content = (
+              <div style={{ ...card, minHeight: 124 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}>
+                  <strong style={{ fontSize: 14 }}>{tool.label}</strong>
+                  <span
+                    style={{
+                      border: "1px solid var(--theme-elevation-150)",
+                      borderRadius: 999,
+                      color: TOOL_STATUS_COLOR[tool.status],
+                      fontSize: 11,
+                      padding: "2px 8px",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {TOOL_STATUS_LABEL[tool.status]}
+                  </span>
+                </div>
+                <p style={{ color: "var(--theme-elevation-600)", fontSize: 12, lineHeight: 1.6, margin: "10px 0 12px" }}>
+                  {tool.role}
+                </p>
+                <div style={{ color: "var(--theme-elevation-500)", fontSize: 12 }}>{tool.location}</div>
+              </div>
+            )
+
+            if (!tool.url) {
+              return <div key={tool.label}>{content}</div>
+            }
+
+            return (
+              <a
+                key={tool.label}
+                href={tool.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "inherit", textDecoration: "none" }}
+              >
+                {content}
+              </a>
+            )
+          })}
         </div>
       </section>
 

@@ -302,7 +302,18 @@ const FALLBACK_TOOLS: DashboardToolConnection[] = [
 function readToolUrl(slug: DashboardToolConnection["slug"]): string | null {
   const envName = TOOL_ENV[slug]
   if (!envName) return null
-  return process.env[envName] ?? null
+  const value = process.env[envName]
+  if (value && value.trim().length > 0) return value
+  if (slug !== "n8n") return null
+
+  const webhookUrl = process.env.N8N_PLAYWRIGHT_FORM_WEBHOOK
+  if (!webhookUrl || webhookUrl.trim().length === 0) return null
+  try {
+    return new URL(webhookUrl).origin
+  } catch (e) {
+    console.error("[sales-dashboard] invalid N8N_PLAYWRIGHT_FORM_WEBHOOK:", e)
+    return null
+  }
 }
 
 function emptyKpis(): DashboardKpis {

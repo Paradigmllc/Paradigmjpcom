@@ -67,6 +67,13 @@ const TOOL_ACCENTS: Record<string, string> = {
   notion: "border-slate-200 bg-slate-50 text-slate-600",
 }
 
+const TOOL_STATUS_LABELS: Record<string, string> = {
+  active: "接続済み",
+  planned: "URL未設定",
+  legacy: "移行元",
+  degraded: "要確認",
+}
+
 function externalUrlForCompany(company: DashboardCompany): string {
   if (company.reportUrl) return company.reportUrl
   if (company.slug) return `/ja/report/${company.slug}`
@@ -113,7 +120,7 @@ function ToolBadge({ tool }: { tool: DashboardToolConnection }) {
       <div className="flex items-center justify-between gap-3">
         <div className="font-semibold">{tool.displayName}</div>
         <span className={`rounded-full px-2 py-0.5 text-[11px] ${statusTone(tool.status)}`}>
-          {tool.status}
+          {TOOL_STATUS_LABELS[tool.status] ?? tool.status}
         </span>
       </div>
       <div className="mt-2 text-xs leading-relaxed opacity-90">{tool.role}</div>
