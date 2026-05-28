@@ -143,6 +143,12 @@ export async function POST(req: NextRequest) {
     })
 
     if (!result.ok || !result.company) {
+      console.error("[import-csv] upsert failed:", {
+        row: i,
+        domain: cleanDomain,
+        company_name: row.company_name,
+        error: result.error,
+      })
       failures.push({ row: i, reason: result.error ?? "upsert failed" })
       continue
     }

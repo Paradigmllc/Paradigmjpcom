@@ -102,28 +102,28 @@ export async function upsertCompanyByDomain(
       report_url: reportUrl,
     },
   }
+  const payload: Record<string, unknown> = {
+    region,
+    domain,
+    company_name: input.company_name,
+    name_key: normalizeCompanyName(input.company_name),
+    slug,
+    report_url: reportUrl,
+    industry: input.industry ?? current?.industry ?? null,
+    prefecture: input.prefecture ?? current?.prefecture ?? null,
+    pipeline_status: input.pipeline_status ?? current?.pipeline_status ?? "pending",
+    pagespeed_mobile: input.pagespeed_mobile ?? current?.pagespeed_mobile ?? null,
+    pagespeed_desktop: input.pagespeed_desktop ?? current?.pagespeed_desktop ?? null,
+    detected_issues: input.detected_issues ?? current?.detected_issues ?? [],
+    source: input.source ?? current?.source ?? null,
+    meta: metaWithRouting,
+  }
+  const dealStage = input.deal_stage ?? current?.deal_stage
+  if (dealStage) payload.deal_stage = dealStage
+
   const { data, error } = await sb
     .from("sales_companies")
-    .upsert(
-      {
-        region,
-        domain,
-        company_name: input.company_name,
-        name_key: normalizeCompanyName(input.company_name), // dedup 鍵 (同名異表記の統合)
-        slug,
-        report_url: reportUrl,
-        industry: input.industry ?? current?.industry ?? null,
-        prefecture: input.prefecture ?? current?.prefecture ?? null,
-        pipeline_status: input.pipeline_status ?? current?.pipeline_status ?? "pending",
-        deal_stage: input.deal_stage ?? current?.deal_stage ?? "未対応",
-        pagespeed_mobile: input.pagespeed_mobile ?? current?.pagespeed_mobile ?? null,
-        pagespeed_desktop: input.pagespeed_desktop ?? current?.pagespeed_desktop ?? null,
-        detected_issues: input.detected_issues ?? current?.detected_issues ?? [],
-        source: input.source ?? current?.source ?? null,
-        meta: metaWithRouting,
-      },
-      { onConflict: "domain", ignoreDuplicates: false },
-    )
+    .upsert(payload, { onConflict: "domain", ignoreDuplicates: false })
     .select()
     .single()
   if (error) return { ok: false, error: error.message }
