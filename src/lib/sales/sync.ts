@@ -12,7 +12,7 @@
  *   - Next.js API route (将来・admin から手動同期を triggerする時)
  */
 
-import { getServiceSupabase } from "@/lib/supabase"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 import {
   N,
   notionCreatePage,
@@ -41,7 +41,7 @@ import { isValidDealStage } from "./types"
 async function recordSyncLog(
   entry: Omit<SalesSyncLog, "id" | "created_at">,
 ): Promise<void> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return
   await sb.from("sales_sync_logs").insert(entry)
 }
@@ -216,7 +216,7 @@ export async function rehydrateCompanyByDomain(
   const company = await findCompanyByDomain(domain)
   if (!company) return { ok: false, error: "company not found in Supabase" }
   // notion_page_id をクリアして再 sync (新規作成 path に入る)
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (sb) {
     await sb
       .from("sales_companies")

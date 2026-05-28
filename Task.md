@@ -300,3 +300,19 @@
 - PayloadCMS DB 接続失敗時 → `/admin` は `PayloadAdminUnavailable` を表示
 - 営業ダッシュボード (`/ja/admin/sales`) は独立稼働
 - クールダウン: 120秒間は再接続試行せず保護表示を優先（`PAYLOAD_INIT_FAILURE_COOLDOWN_MS` で調整可）
+
+---
+
+## Active Handoff - 2026-05-28 - Codex - Sales SSOT and migration dashboard
+
+- Owner: Codex
+- Status: implemented locally; verification in progress.
+- Scope:
+  - Sales OS data access now uses `getServiceSalesSupabase()` so `SALES_SUPABASE_URL` and `SALES_SUPABASE_SERVICE_ROLE_KEY` can switch only the sales dashboard/API to Supabase OSS while PayloadCMS can keep its existing database path.
+  - Added `supabase/migration_014_infrastructure_migration.sql` and applied it to the current Supabase OSS host at `/data/paradigm-supabase-oss`.
+  - Verified `public.sales_infrastructure_migration` by Postgres query and PostgREST. REST returned HTTP 200 with 3 rows.
+  - Added the Sales Command Center `移行計画` tab for DigitalOcean current state, Hetzner target state, and the full migration runbook.
+  - DigitalOcean resize re-check: current `appexx-prod-01` remains `s-4vcpu-8gb-intel` in `sgp1`; the API exposes no available SGP1 target above 8GB RAM for this account.
+- Next:
+  - Commit/push/deploy this dashboard update.
+  - Set production `SALES_SUPABASE_URL` and `SALES_SUPABASE_SERVICE_ROLE_KEY` only after deciding the sales UI should cut over from the legacy Supabase env to the OSS Supabase endpoint.

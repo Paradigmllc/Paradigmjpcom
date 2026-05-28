@@ -17,7 +17,7 @@ import {
 } from "@/lib/sales/companies"
 import { localeToRegion } from "@/lib/sales/types"
 import { getRoutingMeta } from "@/lib/sales/routing"
-import { getServiceSupabase } from "@/lib/supabase"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 import { notifyHotLead } from "@/lib/notify"
 
 export const runtime = "nodejs"
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
   }
 
   if (company) {
-    const sb = getServiceSupabase()
+    const sb = getServiceSalesSupabase()
     if (sb) {
       const newCount = (company.report_views ?? 0) + 1
       await sb

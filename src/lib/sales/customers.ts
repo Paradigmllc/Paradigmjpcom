@@ -5,7 +5,7 @@
  *       WL 戦略 (is_white_label) を初日から対応。
  */
 
-import { getServiceSupabase } from "@/lib/supabase"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 import type {
   SalesCustomer,
   ContractStatus,
@@ -31,7 +31,7 @@ export interface CreateCustomerInput {
 export async function createCustomer(
   input: CreateCustomerInput,
 ): Promise<{ ok: boolean; customer?: SalesCustomer; error?: string }> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
   const { data, error } = await sb
     .from("sales_customers")
@@ -61,7 +61,7 @@ export async function calculateMrr(): Promise<{
   wl_count: number
   wl_revenue: number
 }> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return { total: 0, active_count: 0, wl_count: 0, wl_revenue: 0 }
   const { data } = await sb
     .from("sales_customers")
@@ -91,7 +91,7 @@ export async function calculateMrr(): Promise<{
 export async function findCustomerByNotionId(
   notionPageId: string,
 ): Promise<SalesCustomer | null> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return null
   const { data } = await sb
     .from("sales_customers")
@@ -106,7 +106,7 @@ export async function updateCustomerHealth(
   customerId: string,
   health: HealthLevel,
 ): Promise<{ ok: boolean; error?: string }> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
   const { error } = await sb
     .from("sales_customers")

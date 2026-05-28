@@ -19,7 +19,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { getServiceSupabase } from "@/lib/supabase"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 import {
   syncCompanyToNotion,
   syncCustomerToNotion,
@@ -52,7 +52,7 @@ function safeEqual(a: string, b: string): boolean {
 
 /** 直近 ECHO_WINDOW 内に Notion 由来の変更ログがあるか (echo 抑止) */
 async function isNotionSourced(notionPageId: string): Promise<boolean> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return false
   const since = new Date(Date.now() - ECHO_WINDOW_MS).toISOString()
   const { data } = await sb

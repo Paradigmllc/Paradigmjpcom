@@ -9,7 +9,7 @@
  *           global = 英語ベース・他 11 locale fill 用 (paradigmjp.com/en|ko|...)
  */
 
-import { getServiceSupabase } from "@/lib/supabase"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 import {
   inferVariant,
   normalizeReportLocale,
@@ -67,7 +67,7 @@ export async function getTemplatesByIndustry(
   region: Region = "jp",
   scope: TemplateScope = {},
 ): Promise<SalesTemplate[]> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return []
   let q = sb
     .from("sales_templates")
@@ -109,7 +109,7 @@ export async function upsertTemplateFromNotion(input: {
   cta_text?: string | null
   is_active?: boolean
 }): Promise<{ ok: boolean; error?: string }> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
   const payload = {
       notion_page_id: input.notion_page_id,
@@ -155,7 +155,7 @@ export async function upsertTemplateFromNotion(input: {
 
 /** 全テンプレ取得 (admin / debug 用・region scope・最大 1000 件) */
 export async function listAllTemplates(region?: Region): Promise<SalesTemplate[]> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return []
   let q = sb
     .from("sales_templates")

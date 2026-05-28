@@ -8,7 +8,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { verifyWebhookSecret } from "@/lib/sales/auth"
-import { getServiceSupabase } from "@/lib/supabase"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 import { upsertCompanyByDomain } from "@/lib/sales/companies"
 import {
   inferVariant,
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     return {}
   })) as { limit?: number; all?: boolean }
 
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) {
     return NextResponse.json({ ok: false, error: "Supabase not configured" }, { status: 503 })
   }

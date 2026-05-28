@@ -9,7 +9,7 @@
  * (既存 id があれば update・無ければ insert)。
  */
 
-import { getServiceSupabase } from "@/lib/supabase"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 
 export interface KpiSnapshot {
   date: string
@@ -35,7 +35,7 @@ async function countIn(
   start: string,
   end: string,
 ): Promise<number> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return 0
   const { count } = await sb
     .from(table)
@@ -49,7 +49,7 @@ async function countIn(
 export async function computeKpiForDate(dateIso?: string): Promise<KpiSnapshot> {
   const date = dateIso ?? new Date().toISOString().slice(0, 10)
   const { start, end } = dayRange(date)
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) {
     return {
       date,
@@ -121,7 +121,7 @@ export async function computeKpiForDate(dateIso?: string): Promise<KpiSnapshot> 
 export async function snapshotKpi(
   dateIso?: string,
 ): Promise<{ ok: boolean; snapshot?: KpiSnapshot; error?: string }> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
   const snapshot = await computeKpiForDate(dateIso)
 

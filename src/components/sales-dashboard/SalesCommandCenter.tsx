@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   ListChecks,
   MonitorCog,
+  ServerCog,
   Sheet,
 } from "lucide-react"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
@@ -15,6 +16,7 @@ import {
   AnalyticsPanel,
   CrmPanel,
   IntegrationsPanel,
+  MigrationPanel,
   OperatorPanel,
   OverviewPanel,
   WorkspacePanel,
@@ -23,7 +25,7 @@ import {
   statusTone,
 } from "./SalesCommandPanels"
 
-type TabId = "overview" | "workspace" | "operator" | "crm" | "analytics" | "integrations"
+type TabId = "overview" | "workspace" | "operator" | "crm" | "analytics" | "integrations" | "migration"
 
 interface Props {
   data: SalesDashboardData
@@ -36,6 +38,7 @@ const TABS: { id: TabId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "crm", label: "CRM", icon: BriefcaseBusiness },
   { id: "analytics", label: "分析", icon: BarChart3 },
   { id: "integrations", label: "統合", icon: MonitorCog },
+  { id: "migration", label: "移行計画", icon: ServerCog },
 ]
 
 export function SalesCommandCenter({ data }: Props) {
@@ -53,7 +56,7 @@ export function SalesCommandCenter({ data }: Props) {
               <span>{formatDate(data.generatedAt)}</span>
             </div>
             <h1 className="mt-3 text-2xl font-semibold tracking-normal text-zinc-950 sm:text-3xl">
-              Salesforce x Apollo.io風 営業ダッシュボード
+              Salesforce x Apollo.io 風 営業ダッシュボード
             </h1>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:min-w-[420px]">
@@ -116,6 +119,7 @@ export function SalesCommandCenter({ data }: Props) {
           {activeTab === "crm" && <CrmPanel data={data} />}
           {activeTab === "analytics" && <AnalyticsPanel data={data} />}
           {activeTab === "integrations" && <IntegrationsPanel data={data} />}
+          {activeTab === "migration" && <MigrationPanel data={data} />}
         </motion.section>
       </div>
     </main>

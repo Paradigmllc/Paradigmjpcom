@@ -16,7 +16,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { verifyWebhookSecret } from "@/lib/sales/auth"
 import { notionQueryDatabase, extractProperty } from "@/lib/notion"
-import { getServiceSupabase } from "@/lib/supabase"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 import { upsertCompanyByDomain, setNotionPageId, findExistingCompany } from "@/lib/sales/companies"
 import { enrichFromContact } from "@/lib/sales/enrich"
 import { normalizeDomain, normalizeCompanyName } from "@/lib/sales/dedup"
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
       ? process.env.NOTION_DB_COMPANIES_JP ?? DB_JP
       : process.env.NOTION_DB_COMPANIES_GLOBAL ?? DB_GLOBAL
 
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return NextResponse.json({ ok: false, error: "Supabase not configured" }, { status: 500 })
 
   // Notion 取得 (※ notionQueryDatabase は cursor 非対応のため最大 100 件・id で dedupe)

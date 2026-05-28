@@ -19,7 +19,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { verifyWebhookSecret } from "@/lib/sales/auth"
-import { getServiceSupabase } from "@/lib/supabase"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 import { notifySlack } from "@/lib/notify"
 
 export const runtime = "nodejs"
@@ -43,7 +43,7 @@ interface DigestData {
 }
 
 async function collectDigest(): Promise<DigestData | { error: string }> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return { error: "Supabase service_role not configured" }
 
   const now = new Date()

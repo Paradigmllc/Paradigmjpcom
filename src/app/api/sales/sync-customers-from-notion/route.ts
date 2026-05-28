@@ -16,7 +16,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { verifyWebhookSecret } from "@/lib/sales/auth"
 import { notionQueryDatabase, extractProperty } from "@/lib/notion"
-import { getServiceSupabase } from "@/lib/supabase"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 import { isValidRegion, type Region } from "@/lib/sales/types"
 
 export const runtime = "nodejs"
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       ? process.env.NOTION_DB_CUSTOMERS_JP ?? DB_JP
       : process.env.NOTION_DB_CUSTOMERS_GLOBAL ?? DB_GLOBAL
 
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return NextResponse.json({ ok: false, error: "Supabase not configured" }, { status: 500 })
 
   const allRows: Array<{ id: string; properties: Record<string, unknown> }> = []

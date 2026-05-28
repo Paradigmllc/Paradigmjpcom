@@ -18,7 +18,7 @@
  * 2026-05-21 新規 (Notion 即時 GUI 化 / 旧 5min cron を Webhook 駆動へ)。
  */
 
-import { getServiceSupabase } from "@/lib/supabase"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 import { notionGetPage, extractProperty } from "@/lib/notion"
 import {
   upsertCompanyByDomain,
@@ -91,7 +91,7 @@ async function recordSyncLog(entry: {
   error_message?: string | null
   payload?: Record<string, unknown> | null
 }): Promise<void> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return
   await sb.from("sales_sync_logs").insert({
     direction: "notion->supabase",
@@ -157,7 +157,7 @@ async function applyCompany(
   props: Record<string, unknown>,
   region: Region,
 ): Promise<ApplyResult> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase not configured" }
 
   const name =
@@ -291,7 +291,7 @@ async function applyCustomer(
   props: Record<string, unknown>,
   region: Region,
 ): Promise<ApplyResult> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase not configured" }
 
   const update: Record<string, unknown> = {}
@@ -359,7 +359,7 @@ async function applyDelivery(
   props: Record<string, unknown>,
   region: Region,
 ): Promise<ApplyResult> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase not configured" }
 
   const update: Record<string, unknown> = {}
@@ -424,7 +424,7 @@ async function applyTemplate(
   props: Record<string, unknown>,
   region: Region,
 ): Promise<ApplyResult> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase not configured" }
 
   const update: Record<string, unknown> = { last_synced: new Date().toISOString() }

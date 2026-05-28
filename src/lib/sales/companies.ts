@@ -5,12 +5,12 @@
  *       n8n webhook / API route / 内部スクリプトが共通で使う窓口。
  *
  * 設計:
- *   - getServiceSupabase() で service_role 鍵を使う (RLS bypass)
+ *   - getServiceSalesSupabase() で service_role 鍵を使う (RLS bypass)
  *   - upsertByDomain で「同じ domain は 1 行」を保証 (重複 insert 防止)
  *   - notion_page_id の round-trip を意識した update/fetch を提供
  */
 
-import { getServiceSupabase } from "@/lib/supabase"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 import { normalizeDomain, normalizeCompanyName } from "./dedup"
 import {
   buildCompanySlug,
@@ -55,7 +55,7 @@ export interface UpsertCompanyInput {
 export async function upsertCompanyByDomain(
   input: UpsertCompanyInput,
 ): Promise<{ ok: boolean; company?: SalesCompany; error?: string }> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
   // canonical domain (www/proto 除去) で「同一企業 = 同一 domain 行」を物理担保
   const domain = normalizeDomain(input.domain) ?? input.domain.trim().toLowerCase()
@@ -134,7 +134,7 @@ export async function upsertCompanyByDomain(
 export async function findCompanyByDomain(
   domain: string,
 ): Promise<SalesCompany | null> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return null
   const { data } = await sb
     .from("sales_companies")
@@ -149,7 +149,7 @@ export async function findCompanyBySlug(
   slug: string,
   region: Region = "jp",
 ): Promise<SalesCompany | null> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return null
   const { data } = await sb
     .from("sales_companies")
@@ -162,7 +162,7 @@ export async function findCompanyBySlug(
 
 /** id で 1 件取得 */
 export async function findCompanyById(id: string): Promise<SalesCompany | null> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return null
   const { data } = await sb
     .from("sales_companies")
@@ -177,7 +177,7 @@ export async function setNotionPageId(
   companyId: string,
   notionPageId: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
   const { error } = await sb
     .from("sales_companies")
@@ -199,7 +199,7 @@ export async function updateCompanyFromNotion(
   notionPageId: string,
   input: NotionReverseInput,
 ): Promise<{ ok: boolean; error?: string }> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
   // 編集可能 4 field 以外は無視 (safety: Notion 側から domain 等を上書きさせない)
   const safePayload: Record<string, unknown> = {}
@@ -223,7 +223,7 @@ export async function markHotLead(
   companyId: string,
   isHot: boolean = true,
 ): Promise<{ ok: boolean; error?: string }> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
   const { error } = await sb
     .from("sales_companies")
@@ -238,7 +238,7 @@ export async function setPipelineStatus(
   companyId: string,
   status: PipelineStatus,
 ): Promise<{ ok: boolean; error?: string }> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
   const { error } = await sb
     .from("sales_companies")
@@ -259,7 +259,7 @@ export async function findExistingCompany(input: {
   nameKey?: string | null
   region?: Region
 }): Promise<SalesCompany | null> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return null
   const region = input.region ?? "jp"
   if (input.notionPageId) {
@@ -292,7 +292,7 @@ export async function findExistingCompany(input: {
 export async function listRecentlyUpdatedCompanies(
   limit: number = 50,
 ): Promise<SalesCompany[]> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return []
   const { data } = await sb
     .from("sales_companies")

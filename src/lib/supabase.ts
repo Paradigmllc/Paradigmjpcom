@@ -11,7 +11,11 @@ function readEnv(name: string): string | null {
   return value
 }
 
-// クライアントサイド（anon key）。build 時 env 評価を避けるため lazy に生成する。
+function readOptionalEnv(name: string): string | null {
+  const value = process.env[name]
+  return value && value.trim().length > 0 ? value : null
+}
+
 export function getSupabaseClient() {
   if (browserClient) return browserClient
   const url = readEnv("NEXT_PUBLIC_SUPABASE_URL")
@@ -32,7 +36,6 @@ export const supabase = new Proxy({} as ReturnType<typeof createClient>, {
   },
 })
 
-// サーバーサイド（service_role key — 全テーブルアクセス）
 export function getServiceSupabase() {
   const url = readEnv("NEXT_PUBLIC_SUPABASE_URL")
   const serviceKey = readEnv("SUPABASE_SERVICE_ROLE_KEY")
@@ -40,3 +43,17 @@ export function getServiceSupabase() {
   return createClient(url, serviceKey, { auth: { persistSession: false } })
 }
 
+export function getServiceSalesSupabase() {
+  const salesUrl = readOptionalEnv("SALES_SUPABASE_URL")
+  const salesServiceKey = readOptionalEnv("SALES_SUPABASE_SERVICE_ROLE_KEY")
+
+  if (salesUrl && salesServiceKey) {
+    return createClient(salesUrl, salesServiceKey, { auth: { persistSession: false } })
+  }
+
+  if (salesUrl || salesServiceKey) {
+    console.error("[supabase] SALES_SUPABASE_URL and SALES_SUPABASE_SERVICE_ROLE_KEY must be configured together")
+  }
+
+  return getServiceSupabase()
+}

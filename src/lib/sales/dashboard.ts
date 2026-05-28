@@ -1,116 +1,16 @@
-import { getServiceSupabase } from "@/lib/supabase"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 import { calculateMrr } from "@/lib/sales/customers"
+import { getInfrastructureMigrationData } from "@/lib/sales/infrastructure"
+import type {
+  DashboardCompany,
+  DashboardKpis,
+  DashboardToolConnection,
+  SalesDashboardData,
+} from "@/lib/sales/dashboard-types"
+export type { DashboardActivity, DashboardCompany, DashboardKpis, DashboardQueueItem, DashboardSyncLog, DashboardToolConnection, SalesDashboardData, SalesDashboardStatus } from "@/lib/sales/dashboard-types"
 
 type JsonRecord = Record<string, unknown>
-type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSupabase>>
-
-export type SalesDashboardStatus = "ready" | "degraded"
-
-export interface DashboardKpis {
-  totalLeads: number
-  hotLeads: number
-  scanning: number
-  reportReady: number
-  sent: number
-  manualQueue: number
-  followUpDue: number
-  outreach7d: number
-  meetings7d: number
-  revenue30d: number
-  mrr: number
-  activeCustomers: number
-}
-
-export interface DashboardCompany {
-  id: string
-  region: string
-  slug: string | null
-  companyName: string
-  domain: string
-  industry: string | null
-  prefecture: string | null
-  pipelineStatus: string
-  dealStage: string
-  reportViews: number
-  isHotLead: boolean
-  pagespeedMobile: number | null
-  pagespeedDesktop: number | null
-  reportUrl: string | null
-  followUpDate: string | null
-  assignedTo: string | null
-  source: string | null
-  targetCountry: string | null
-  reportLocale: string | null
-  templateVariant: string | null
-  updatedAt: string
-  createdAt: string
-  contactFormUrl: string | null
-  personalizedCopy: string | null
-}
-
-export interface DashboardActivity {
-  id: string
-  companyId: string | null
-  activityType: string
-  subject: string | null
-  result: string | null
-  assignedTo: string | null
-  occurredAt: string
-}
-
-export interface DashboardSyncLog {
-  id: string
-  direction: string
-  entityType: string
-  action: string
-  status: string
-  errorMessage: string | null
-  createdAt: string
-}
-
-export interface DashboardToolConnection {
-  slug: "supabase" | "twenty" | "nocodb" | "appsmith" | "metabase" | "notion" | "n8n"
-  displayName: string
-  role: string
-  interfaceType: string
-  deploymentType: string
-  status: string
-  baseUrl: string | null
-  healthUrl: string | null
-  owner: string | null
-  lastCheckedAt: string | null
-}
-
-export interface DashboardQueueItem {
-  id: string
-  companyId: string | null
-  companyName: string | null
-  queueType: string
-  priority: number
-  status: string
-  assignedTo: string | null
-  sourceTool: string | null
-  targetTool: string | null
-  dueAt: string | null
-  createdAt: string
-}
-
-export interface SalesDashboardData {
-  status: SalesDashboardStatus
-  generatedAt: string
-  warnings: string[]
-  kpis: DashboardKpis
-  stageCounts: Record<string, number>
-  pipelineCounts: Record<string, number>
-  industryCounts: Record<string, number>
-  issueCounts: Record<string, number>
-  sourceCounts: Record<string, number>
-  companies: DashboardCompany[]
-  activities: DashboardActivity[]
-  syncLogs: DashboardSyncLog[]
-  toolConnections: DashboardToolConnection[]
-  operatorQueue: DashboardQueueItem[]
-}
+type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 
 interface SalesCompanyRow {
   id: string
@@ -215,10 +115,10 @@ const TOOL_ENV: Record<DashboardToolConnection["slug"], string | null> = {
 const FALLBACK_TOOLS: DashboardToolConnection[] = [
   {
     slug: "supabase",
-    displayName: "Supabase Cloud",
-    role: "全営業データの正本。PostgreSQL、RLS、API、自動化の中心。",
+    displayName: "Supabase OSS",
+    role: "営業データのSSOT。PostgreSQL、RLS、REST API、自動化の中心。",
     interfaceType: "database",
-    deploymentType: "supabase_cloud",
+    deploymentType: "oss_or_cloud",
     status: "active",
     baseUrl: readToolUrl("supabase"),
     healthUrl: null,
@@ -240,7 +140,7 @@ const FALLBACK_TOOLS: DashboardToolConnection[] = [
   {
     slug: "appsmith",
     displayName: "Appsmith OSS",
-    role: "外部オペレーターが1件ずつ処理する安全な作業画面。",
+    role: "外部オペレーターが1件ずつ安全に処理する専用画面。",
     interfaceType: "operator_console",
     deploymentType: "oss_self_hosted",
     status: readToolUrl("appsmith") ? "active" : "planned",
@@ -252,7 +152,7 @@ const FALLBACK_TOOLS: DashboardToolConnection[] = [
   {
     slug: "twenty",
     displayName: "Twenty OSS",
-    role: "商談、関係性、担当者、時系列履歴のCRM。",
+    role: "商談、関係性、担当者、時系列履歴を扱うCRM。",
     interfaceType: "crm",
     deploymentType: "oss_self_hosted",
     status: readToolUrl("twenty") ? "active" : "planned",
@@ -288,7 +188,7 @@ const FALLBACK_TOOLS: DashboardToolConnection[] = [
   {
     slug: "notion",
     displayName: "Notion Legacy",
-    role: "旧営業ダッシュボード。新規運用の中心からは外す。",
+    role: "旧営業ダッシュボード。新規運用の中心から外す。",
     interfaceType: "legacy_workspace",
     deploymentType: "legacy_external",
     status: "legacy",
@@ -298,7 +198,6 @@ const FALLBACK_TOOLS: DashboardToolConnection[] = [
     lastCheckedAt: null,
   },
 ]
-
 function readToolUrl(slug: DashboardToolConnection["slug"]): string | null {
   const envName = TOOL_ENV[slug]
   if (!envName) return null
@@ -423,11 +322,12 @@ async function fetchDashboardCompanies(sb: ServiceSupabase) {
 
 export async function getSalesDashboardData(): Promise<SalesDashboardData> {
   const warnings: string[] = []
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   const generatedAt = new Date().toISOString()
 
   if (!sb) {
     warnings.push("Supabase service_role is not configured. Showing empty dashboard shell.")
+    const infrastructure = await getInfrastructureMigrationData(null)
     return {
       status: "degraded",
       generatedAt,
@@ -443,6 +343,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
       syncLogs: [],
       toolConnections: mergeFallbackTools([]),
       operatorQueue: [],
+      infrastructure,
     }
   }
 
@@ -459,6 +360,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     meetingsRes,
     contractsRes,
     mrr,
+    infrastructure,
   ] = await Promise.all([
     fetchDashboardCompanies(sb),
     sb
@@ -490,6 +392,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
       .select("amount_yen")
       .gte("signed_at", thirtyDaysAgo),
     calculateMrr(),
+    getInfrastructureMigrationData(sb),
   ])
 
   if (companyRes.error) warnings.push(`sales_companies: ${companyRes.error.message}`)
@@ -499,6 +402,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
   if (queueRes.error) warnings.push(`sales_operator_queue_items: ${queueRes.error.message}`)
   if (meetingsRes.error) warnings.push(`sales_calendar_events: ${meetingsRes.error.message}`)
   if (contractsRes.error) warnings.push(`sales_contracts: ${contractsRes.error.message}`)
+  warnings.push(...infrastructure.warnings)
 
   for (const warning of warnings) console.error(`[sales-dashboard] ${warning}`)
 
@@ -591,5 +495,6 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     syncLogs,
     toolConnections,
     operatorQueue,
+    infrastructure,
   }
 }

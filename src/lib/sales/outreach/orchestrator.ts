@@ -13,7 +13,7 @@
  *   - first5Approval: 最初の N 件だけ Slack 承認通知を出す (SALES-CENTER #5)
  */
 
-import { getServiceSupabase } from "@/lib/supabase"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 import { findCompanyById } from "../companies"
 import { generateFormMessage, fillReportUrl } from "../form-message"
 import { discoverFormUrl } from "../sources/form-discovery"
@@ -85,7 +85,7 @@ async function fetchPageHtml(url: string, timeoutMs: number): Promise<string | n
 
 /** 候補リード取得: report_ready・業種あり・課題ありを updated_at 順で */
 async function fetchCandidates(region: Region, limit: number): Promise<SalesCompany[]> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return []
   const { data } = await sb
     .from("sales_companies")
@@ -104,7 +104,7 @@ async function applyOutcome(
   stage: OutreachStage,
   sendResult: string,
 ): Promise<void> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return
   const pipeline = stageToPipelineStatus(stage)
   const patch: Record<string, unknown> = {

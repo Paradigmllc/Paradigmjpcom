@@ -8,7 +8,7 @@
  * dedup: 直近 N 日に同 company へ送信済みか判定 (二重送信防止)。
  */
 
-import { getServiceSupabase } from "@/lib/supabase"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 import type { Region } from "../types"
 
 /** activity_log.result CHECK = success|no_answer|follow_up|declined|completed */
@@ -27,7 +27,7 @@ export interface LogOutreachInput {
 export async function logOutreachActivity(
   input: LogOutreachInput,
 ): Promise<{ ok: boolean; error?: string }> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
   const { error } = await sb.from("sales_activity_log").insert({
     region: input.region,
@@ -50,7 +50,7 @@ export async function recentlyContacted(
   companyId: string,
   withinDays: number = 30,
 ): Promise<boolean> {
-  const sb = getServiceSupabase()
+  const sb = getServiceSalesSupabase()
   if (!sb) return false
   const since = new Date(Date.now() - withinDays * 86_400_000).toISOString()
   const { data } = await sb
