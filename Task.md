@@ -316,3 +316,17 @@
 - Next:
   - Commit/push/deploy this dashboard update.
   - Set production `SALES_SUPABASE_URL` and `SALES_SUPABASE_SERVICE_ROLE_KEY` only after deciding the sales UI should cut over from the legacy Supabase env to the OSS Supabase endpoint.
+### Deployment Result - 2026-05-28 - Codex
+
+- Commit: `d23c188` (`feat: add sales oss migration dashboard`)
+- Deployed image: `i12am4vvcbggefnqdizhnv9a:d23c188a1b3a785c94ffe67d5a6cbc5ee10f3dff`
+- Production verification:
+  - `https://paradigmjp.com/admin` -> HTTP 200, no `DATABASE UNAVAILABLE` / `Critical error` visible after DB alias repair.
+  - `https://paradigmjp.com/ja/admin/sales` -> HTTP 200.
+  - `https://paradigmjp.com/ja` -> HTTP 200.
+  - Sales dashboard JS chunk contains `移行計画` and `Salesforce x Apollo`.
+  - Internal `/api/sales/dashboard` with webhook auth -> HTTP 200, includes `hetzner-target-cx43` from Supabase OSS.
+- Infrastructure repair during deploy:
+  - Coolify app Git source was restored to SSH deploy-key mode because HTTPS private repo fetch failed.
+  - PayloadCMS DB alias was corrected: `fti8tm95747tmreqc5qiodnn` is the `refferq` Postgres container and is connected to the `coolify` network with alias `refferq-db`.
+  - Production app env now includes `SALES_SUPABASE_URL` and `SALES_SUPABASE_SERVICE_ROLE_KEY`, pointing Sales OS reads to the OSS Supabase endpoint while PayloadCMS remains on its Postgres database.
