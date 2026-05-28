@@ -99,7 +99,7 @@ function coolifyLocation(url: string | null): string {
 }
 
 function getAdminToolLinks(): AdminToolLink[] {
-  const supabaseUrl = getToolUrl("NEXT_PUBLIC_SUPABASE_URL")
+  const supabaseUrl = getToolUrl("SALES_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL")
   const nocodbUrl = getToolUrl("NOCODB_BASE_URL")
   const appsmithUrl = getToolUrl("APPSMITH_BASE_URL")
   const twentyUrl = getToolUrl("TWENTY_BASE_URL")
@@ -108,7 +108,7 @@ function getAdminToolLinks(): AdminToolLink[] {
 
   return [
     {
-      label: "Supabase Cloud",
+      label: "Supabase OSS",
       role: "営業データの正本DB/API/RLS",
       url: supabaseUrl,
       status: toolStatus(supabaseUrl),

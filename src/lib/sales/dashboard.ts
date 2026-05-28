@@ -96,7 +96,7 @@ interface QueueRow {
 const TOOL_ORDER: DashboardToolConnection["slug"][] = ["supabase", "nocodb", "appsmith", "twenty", "metabase", "n8n", "notion"]
 
 const TOOL_ENV: Record<DashboardToolConnection["slug"], string | null> = {
-  supabase: "NEXT_PUBLIC_SUPABASE_URL",
+  supabase: "SALES_SUPABASE_URL",
   nocodb: "NOCODB_BASE_URL",
   appsmith: "APPSMITH_BASE_URL",
   twenty: "TWENTY_BASE_URL",
