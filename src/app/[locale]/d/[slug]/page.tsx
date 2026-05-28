@@ -10,8 +10,8 @@
  *   - DemoClient (Client Component): iframe 描画 + ?name パーソナライズ + 滞在トラッキング
  */
 
-import { createClient } from "@supabase/supabase-js"
 import { notFound } from "next/navigation"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 import DemoClient from "./DemoClient"
 
 export const dynamic = "force-dynamic"
@@ -27,10 +27,8 @@ interface Demo {
 }
 
 async function getDemo(slug: string): Promise<Demo | null> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) return null
-  const sb = createClient(url, key, { auth: { persistSession: false } })
+  const sb = getServiceSalesSupabase()
+  if (!sb) return null
   const { data } = await sb
     .from("web_demos")
     .select("id, slug, name, html_content, html, is_published")

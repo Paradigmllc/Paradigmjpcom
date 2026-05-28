@@ -2,6 +2,9 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { enrichFromContact } from "./enrich"
 import { findCompanyById, upsertCompanyByDomain } from "./companies"
 import { runDifyDiagnosis } from "./dify-diagnosis"
+import { fetchDiagnosticReport } from "./diagnostic"
+import { generateReplacementDemo } from "./demo-generator"
+import { computeSourceCoverage, saveSourceCoverageRows } from "./source-coverage"
 import type { SalesCompany } from "./types"
 
 type JsonRecord = Record<string, unknown>
@@ -319,6 +322,21 @@ async function processJob(sb: ServiceSupabase, job: SalesEnrichmentJob): Promise
   if (!refreshed) return { ok: false, error: "company disappeared after enrichment" }
 
   const dify = await runDifyDiagnosis(refreshed)
+  const mergedMeta: JsonRecord = {
+    ...(refreshed.meta ?? {}),
+    pain_diagnosis: {
+      ...dify.summary,
+      generated_at: new Date().toISOString(),
+      engine: dify.configured ? "dify" : "local_fallback",
+      ok: dify.ok,
+    },
+    dify_diagnosis: dify.raw ?? null,
+    enrichment: {
+      job_id: job.id,
+      completed_at: new Date().toISOString(),
+      report_url: reportUrlFor(refreshed),
+    },
+  }
   const save = await upsertCompanyByDomain({
     domain: refreshed.domain,
     company_name: refreshed.company_name,
@@ -330,27 +348,35 @@ async function processJob(sb: ServiceSupabase, job: SalesEnrichmentJob): Promise
     detected_issues: refreshed.detected_issues,
     pipeline_status: "report_ready",
     source: refreshed.source,
-    meta: {
-      ...(refreshed.meta ?? {}),
-      pain_diagnosis: {
-        ...dify.summary,
-        generated_at: new Date().toISOString(),
-        engine: dify.configured ? "dify" : "local_fallback",
-        ok: dify.ok,
-      },
-      dify_diagnosis: dify.raw ?? null,
-      enrichment: {
-        job_id: job.id,
-        completed_at: new Date().toISOString(),
-        report_url: reportUrlFor(refreshed),
-      },
-    },
+    meta: mergedMeta,
   })
 
   if (!save.ok || !save.company) return { ok: false, error: save.error ?? "company save failed" }
 
+  const report = await fetchDiagnosticReport({ companyId: save.company.id, region: save.company.region })
+  const demo = report ? await generateReplacementDemo(save.company, report) : { ok: false, demoUrl: null }
+  const finalMeta = demo.ok && demo.demoUrl
+    ? {
+        ...(save.company.meta ?? {}),
+        demo_site: {
+          url: demo.demoUrl,
+          type: "astro_replacement_demo",
+          generated_at: new Date().toISOString(),
+        },
+      }
+    : (save.company.meta ?? {})
+  const finalCompany = { ...save.company, meta: finalMeta }
+  if (demo.ok && demo.demoUrl) {
+    const { error } = await sb.from("sales_companies").update({ meta: finalMeta }).eq("id", save.company.id)
+    if (error) console.error("[sales-enrichment] demo meta update failed:", error.message)
+  }
+  await saveSourceCoverageRows(finalCompany)
+  const coverage = computeSourceCoverage(finalCompany)
+
   await completeJob(sb, job, save.company, {
     report_url: reportUrlFor(save.company),
+    demo_url: demo.demoUrl,
+    source_coverage_score: coverage.score,
     dify_configured: dify.configured,
     dify_ok: dify.ok,
     pain_summary: dify.summary.primaryPain,

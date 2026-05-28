@@ -341,3 +341,11 @@
   - Coolify app Git source was restored to SSH deploy-key mode because HTTPS private repo fetch failed.
   - PayloadCMS DB alias was corrected: `fti8tm95747tmreqc5qiodnn` is the `refferq` Postgres container and is connected to the `coolify` network with alias `refferq-db`.
   - Production app env now includes `SALES_SUPABASE_URL` and `SALES_SUPABASE_SERVICE_ROLE_KEY`, pointing Sales OS reads to the OSS Supabase endpoint while PayloadCMS remains on its Postgres database.
+## Codex Update - 2026-05-29 Report Quality, Demo, and Source Coverage
+
+- [x] Added `web_demos` and `sales_source_runs` to Supabase OSS so generated Astro-style demo pages and per-company data-source coverage are stored in the SSOT.
+- [x] Updated Sales OS tool URLs in `sales_tool_connections`: Supabase OSS, NocoDB, Appsmith, Twenty, Metabase, and n8n now have live URLs instead of dashboard-only placeholders.
+- [x] Added source coverage scoring for PageSpeed, DataForSEO, Wappalyzer, SSL Labs, gBizInfo, Google Places, Dify, DeepSeek, Crawlee/Crawl4AI, Browserless/Camoufox, and related APIs.
+- [x] The enrichment runner now generates a published `/d/[slug]` Astro-style replacement demo page and stores the demo URL back into `sales_companies.meta.demo_site`.
+- [x] The public Next.js report now shows data coverage and links to the generated replacement demo when available.
+- [x] Applied `supabase/migration_016_sales_report_assets_sources.sql` to Supabase OSS and verified `web_demos` / `sales_source_runs` exist.

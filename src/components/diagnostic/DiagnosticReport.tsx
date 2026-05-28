@@ -190,6 +190,64 @@ function ActCard({ act, index, c }: { act: DiagnosticAct; index: number; c: (typ
 
 /* ───── Main component ───── */
 
+function SourceCoveragePanel({ data }: { data: DiagnosticReportData }) {
+  const coverage = data.source_coverage
+  const visible = coverage.items
+    .filter((item) => item.status === "collected" || item.status === "configured")
+    .slice(0, 9)
+
+  return (
+    <div
+      className="bg-white rounded-2xl p-6 mb-8"
+      style={{
+        boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04)",
+        border: "1px solid #f1f5f9",
+      }}
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="text-[11px] text-slate-400 font-mono tracking-widest mb-2">DATA COVERAGE</div>
+          <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">
+            レポート根拠データ {coverage.score}%
+          </h2>
+          <p className="mt-2 text-[13px] text-slate-500 leading-relaxed">
+            取得済み {coverage.collected} / 接続済み {coverage.configured} / 未接続 {coverage.missing}
+          </p>
+        </div>
+        {data.demo_url && (
+          <a
+            href={data.demo_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center rounded-lg border border-slate-200 px-4 py-2 text-xs font-bold text-slate-900 hover:bg-slate-50"
+          >
+            差し替えデモを見る
+          </a>
+        )}
+      </div>
+      <div className="mt-5 grid gap-2 sm:grid-cols-3">
+        {visible.map((item) => (
+          <div key={item.slug} className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="truncate text-xs font-bold text-slate-900">{item.label}</span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                  item.status === "collected"
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-amber-100 text-amber-700"
+                }`}
+              >
+                {item.status === "collected" ? "取得済み" : "接続済み"}
+              </span>
+            </div>
+            <p className="mt-2 text-[11px] leading-relaxed text-slate-500">{item.detail}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function DiagnosticReport({
   data,
   trackingSlug,
@@ -314,6 +372,8 @@ export default function DiagnosticReport({
             </p>
           </div>
         </div>
+
+        <SourceCoveragePanel data={data} />
 
         {/* ── 動画セクション ───────────────────────────────────── */}
         <div

@@ -23,6 +23,7 @@ import {
   type ReportLocale,
   type TemplateVariant,
 } from "./routing"
+import { computeSourceCoverage, type SourceCoverageSnapshot } from "./source-coverage"
 import type {
   Industry,
   IssueCode,
@@ -57,6 +58,8 @@ export interface DiagnosticReportData {
   acts: DiagnosticAct[]
   cta_text: string
   video_thumbnail: string | null
+  demo_url: string | null
+  source_coverage: SourceCoverageSnapshot
   report_url: string
 }
 
@@ -272,6 +275,9 @@ export async function fetchDiagnosticReport(opts: {
     acts,
     cta_text: finalCta,
     video_thumbnail: null,
+    demo_url:
+      ((company.meta as Record<string, unknown>)?.demo_site as { url?: string } | undefined)?.url ?? null,
+    source_coverage: computeSourceCoverage(company),
     report_url:
       company.slug ? buildReportUrl(reportLocale, company.slug) : company.report_url ?? "",
   }
