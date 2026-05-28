@@ -224,3 +224,26 @@
 - **Domains**: paradigmjp.com / 提案ページ canonical = `paradigmjp.com/{locale}/report/[slug]` (308 redirect 経由)
 - **Dify**: 🚨 **Cloud 版 api.dify.ai のみ** (DIFY-CLOUD-ONLY 永久ルール) / OSS dify.appexx.me 削除済
 - **デプロイ**: trigger ≠ 完了 (DEPLOY-VERIFY 永久ルール) / Background poll + auto-retry max 3
+---
+
+## Active Handoff - 2026-05-28 - Codex
+
+- Task: Notionベースの営業ダッシュボードを Supabase Cloud 正本 + OSS版 Twenty/NocoDB/Appsmith/Metabase/n8n 統合ポータルへ作り替え。
+- Owner: Codex
+- Status: implemented locally; PayloadCMS admin unified as the primary entry/login; Supabase cloud migration blocked by app reauthentication/permission
+- Scope:
+  - `supabase/migration_009_sales_stack_integrations.sql`
+  - `/api/sales/dashboard`
+  - `/[locale]/admin/sales`
+  - `src/lib/sales/dashboard.ts`
+  - `src/lib/admin-auth.ts`
+  - `src/components/admin/BeforeDashboard.tsx`
+  - `src/components/sales-dashboard/*`
+- Direction: Supabaseのみクラウド版。NocoDB/Appsmith/Twenty/Metabase/n8nはOSSセルフホストURLを `.env.example` に追加し、断絶したリンク集ではなく同一Sales Command Center上で状態・導線・作業キュー・分析を統合する。管理入口は PayloadCMS `/admin` に寄せ、`/[locale]/admin/sales` と `/api/sales/dashboard` は PayloadCMS セッションを第一認証にする（旧 `paradigm_admin_token` は移行用 fallback）。
+
+### Production incident - 2026-05-28
+
+- Symptom: `https://paradigmjp.com/admin` returned the global Critical error page.
+- Root cause observed on host `appexx-prod-01`: PayloadCMS initialization failed because Supabase pooler for `DATABASE_URI` returned `ECIRCUITBREAKER failed to retrieve database credentials after multiple attempts`.
+- Mitigation: `/admin` now catches Payload init failure in both Payload layout/page and renders a protected admin fallback with a sales-dashboard link instead of crashing. Public Payload readers use a short in-process cooldown to avoid hammering Supabase while the DB/pooler is down.
+- Remaining external action: Supabase Cloud DB/pooler credentials or project availability must be restored for the full PayloadCMS content editor to work again.

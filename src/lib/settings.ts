@@ -9,6 +9,7 @@
  */
 
 import { cache } from "react"
+import { isPayloadInitCoolingDown, markPayloadInitFailure } from "./payload-availability"
 import type { ThemeTokens } from "./theme-tokens"
 
 export interface SiteSettings {
@@ -139,6 +140,10 @@ function mediaUrl(v: unknown): string | null {
  * React cache() でリクエスト中の重複呼び出しを排除。
  */
 export const getSiteSettings = cache(async (locale: string = "ja"): Promise<SiteSettings> => {
+  if (isPayloadInitCoolingDown()) {
+    return DEFAULTS
+  }
+
   try {
     const { getPayload } = await import("payload")
     const config = (await import("@payload-config")).default
@@ -199,6 +204,7 @@ export const getSiteSettings = cache(async (locale: string = "ja"): Promise<Site
       company: { ...DEFAULTS.company, ...(s.company ?? {}) },
     }
   } catch (e) {
+    markPayloadInitFailure(e)
     console.error("[settings] payload.findGlobal failed, using defaults:", e)
     return DEFAULTS
   }

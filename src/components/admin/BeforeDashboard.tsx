@@ -13,6 +13,7 @@
  *   console.error で可視化しつつ UI は degrade して継続)。
  */
 
+import type { CSSProperties } from "react"
 import type { Payload } from "payload"
 
 type Counts = Record<string, number>
@@ -38,17 +39,35 @@ const STAGE_LABELS: Record<string, string> = {
   closed_lost: "不成約",
 }
 
-const card: React.CSSProperties = {
+const card: CSSProperties = {
   border: "1px solid var(--theme-elevation-150)",
   borderRadius: 8,
   padding: "16px 18px",
   background: "var(--theme-elevation-50)",
 }
 
+const SALES_DASHBOARD_PATH = "/ja/admin/sales"
+
+function envUrl(name: string): string | null {
+  const value = process.env[name]
+  if (!value || value.trim().length === 0) return null
+  return value
+}
+
+function getAdminToolLinks(): Array<{ label: string; role: string; url: string }> {
+  return [
+    { label: "NocoDB", role: "大量リストの一括編集", url: envUrl("NOCODB_BASE_URL") },
+    { label: "Appsmith", role: "オペレーター作業画面", url: envUrl("APPSMITH_BASE_URL") },
+    { label: "Twenty", role: "商談・CRM", url: envUrl("TWENTY_BASE_URL") },
+    { label: "Metabase", role: "営業分析", url: envUrl("METABASE_BASE_URL") },
+  ].flatMap((tool) => (tool.url ? [{ ...tool, url: tool.url }] : []))
+}
+
 export default async function BeforeDashboard({ payload }: { payload: Payload }) {
   let counts: Counts = {}
   let leadsByStage: Counts = {}
   let recent: Array<{ collection?: string; action?: string; userEmail?: string | null; createdAt?: string }> = []
+  const adminToolLinks = getAdminToolLinks()
 
   try {
 
@@ -58,7 +77,8 @@ export default async function BeforeDashboard({ payload }: { payload: Payload })
         try {
           const r = await payload.count({ collection: c.slug as "pages" })
           return [c.slug, r.totalDocs] as const
-        } catch {
+        } catch (e) {
+          console.error("[BeforeDashboard] count failed:", c.slug, e)
           return [c.slug, -1] as const // -1 = 取得不可 (テーブル未作成等)
         }
       }),
@@ -88,6 +108,76 @@ export default async function BeforeDashboard({ payload }: { payload: Payload })
 
   return (
     <div style={{ marginBottom: 32 }}>
+      <section
+        style={{
+          ...card,
+          marginBottom: 24,
+          background: "linear-gradient(135deg, var(--theme-elevation-50), var(--theme-elevation-0))",
+        }}
+      >
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 16, justifyContent: "space-between" }}>
+          <div style={{ maxWidth: 720 }}>
+            <div style={{ fontSize: 12, color: "var(--theme-elevation-500)", marginBottom: 6 }}>
+              PayloadCMS 共通管理
+            </div>
+            <h2 style={{ fontSize: 20, margin: 0 }}>営業司令塔</h2>
+            <p style={{ color: "var(--theme-elevation-600)", margin: "8px 0 0", fontSize: 13, lineHeight: 1.7 }}>
+              営業ダッシュボードはこの管理画面と同じログインで利用します。Supabase Cloud を正本にし、
+              NocoDB / Appsmith / Twenty / Metabase / n8n の OSS 画面はここから横断できるように集約します。
+            </p>
+          </div>
+          <a
+            href={SALES_DASHBOARD_PATH}
+            style={{
+              alignSelf: "flex-start",
+              borderRadius: 6,
+              background: "var(--theme-text)",
+              color: "var(--theme-bg)",
+              fontSize: 13,
+              fontWeight: 600,
+              padding: "10px 14px",
+              textDecoration: "none",
+            }}
+          >
+            営業ダッシュボードを開く
+          </a>
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 16 }}>
+          <a
+            href="/admin/collections/leads"
+            style={{
+              border: "1px solid var(--theme-elevation-200)",
+              borderRadius: 6,
+              color: "inherit",
+              fontSize: 12,
+              padding: "7px 10px",
+              textDecoration: "none",
+            }}
+          >
+            Payload リード
+          </a>
+          {adminToolLinks.map((tool) => (
+            <a
+              key={tool.label}
+              href={tool.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={tool.role}
+              style={{
+                border: "1px solid var(--theme-elevation-200)",
+                borderRadius: 6,
+                color: "inherit",
+                fontSize: 12,
+                padding: "7px 10px",
+                textDecoration: "none",
+              }}
+            >
+              {tool.label}
+            </a>
+          ))}
+        </div>
+      </section>
+
       <h2 style={{ fontSize: 18, marginBottom: 4 }}>サイト概要</h2>
       <p style={{ color: "var(--theme-elevation-500)", marginBottom: 16, fontSize: 13 }}>
         Paradigm HP の状況を一覧表示します。各カードからコンテンツ管理へ移動できます。

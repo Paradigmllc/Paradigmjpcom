@@ -112,9 +112,9 @@ curl -i https://paradigmjp.com/api/sales/track-view?slug=00335ac8-fe51-40bb-bd00
 curl -i https://paradigmjp.com/ja/diagnostic/00335ac8-fe51-40bb-bd00-b5b018b6d4e3/opengraph-image
 # 期待: 200 + Content-Type: image/png
 
-# 4. admin dashboard (Cookie auth)
-curl -i -H "Cookie: paradigm_admin_token=<set>" https://paradigmjp.com/ja/admin/sales
-# 期待: 200 + dashboard HTML
+# 4. sales dashboard (PayloadCMS共通ログイン)
+# ブラウザで https://paradigmjp.com/admin にログイン後、管理画面上部の「営業ダッシュボードを開く」から遷移
+# 期待: /ja/admin/sales が 200 + dashboard HTML
 
 # 5. diagnostic LP (seeded company)
 curl -i https://paradigmjp.com/ja/diagnostic/00335ac8-fe51-40bb-bd00-b5b018b6d4e3

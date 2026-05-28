@@ -13,6 +13,7 @@
 import { getPayload } from "payload"
 import config from "@payload-config"
 import { coerceLocale, assertLocale, filterByLocale, localeFindOptions } from "@/lib/cms/filters"
+import { isPayloadInitCoolingDown, markPayloadInitFailure } from "@/lib/payload-availability"
 import BlockRenderer from "@/blocks/BlockRenderer"
 import HomeClient from "./HomeClient"
 import HomeEnClient from "./HomeEnClient"
@@ -22,6 +23,10 @@ interface Props {
 }
 
 async function fetchHomepage(locale: string) {
+  if (isPayloadInitCoolingDown()) {
+    return null
+  }
+
   try {
     const payload = await getPayload({ config: config as Parameters<typeof getPayload>[0]["config"] })
     const typedLocale = locale as Parameters<typeof filterByLocale>[0]
@@ -39,6 +44,7 @@ async function fetchHomepage(locale: string) {
     } as Parameters<typeof payload.find>[0])
     return res.docs[0] ?? null
   } catch (e) {
+    markPayloadInitFailure(e)
     console.error("[home] payload.find homepage failed:", e)
     return null
   }

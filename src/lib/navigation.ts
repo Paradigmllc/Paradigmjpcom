@@ -14,6 +14,7 @@
  */
 
 import { cache } from "react"
+import { isPayloadInitCoolingDown, markPayloadInitFailure } from "./payload-availability"
 
 export interface NavLink {
   label: string
@@ -45,6 +46,10 @@ export interface FooterNav {
 
 /** locale-aware で payload global を取得する共通ヘルパ。失敗時 null。 */
 async function findGlobal<T>(slug: string, locale: string): Promise<T | null> {
+  if (isPayloadInitCoolingDown()) {
+    return null
+  }
+
   try {
     const { getPayload } = await import("payload")
     const config = (await import("@payload-config")).default
@@ -56,6 +61,7 @@ async function findGlobal<T>(slug: string, locale: string): Promise<T | null> {
     })
     return doc as unknown as T
   } catch (e) {
+    markPayloadInitFailure(e)
     console.error(`[navigation] findGlobal("${slug}") failed:`, e instanceof Error ? e.message : e)
     return null
   }

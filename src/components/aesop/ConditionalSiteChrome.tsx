@@ -86,6 +86,7 @@ interface Props {
 function isLpRoute(pathname: string): boolean {
   // /{2-letter-locale}/report/{anything} に厳密一致
   if (/^\/[a-z]{2}\/report\//.test(pathname)) return true
+  if (/^\/[a-z]{2}\/admin(\/|$)/.test(pathname)) return true
   // /p/{anything} (legacy proposal pages)
   if (/^\/p\//.test(pathname)) return true
   return false
