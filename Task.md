@@ -1,3 +1,11 @@
+## Codex Update - 2026-05-29 Formal Sales OS Domains
+
+- [x] Repaired MCP config sync: `~/.claude/mcp.json`, Cursor dotfiles MCP config, Cline MCP config, and Claude Desktop config now parse and include Cloudflare/Coolify/Supabase.
+- [x] Authenticated Codex `cloudflare-api` MCP via OAuth and created DNS-only A records to `139.59.250.5` for `supabase`, `nocodb`, `appsmith`, `twenty`, `metabase`, `n8n`, and `crawl4` under `paradigmjp.com`.
+- [x] Updated server routing and OSS service public URLs so the formal hosts are accepted by Traefik/Coolify while old sslip/appexx URLs remain backward-compatible during transition.
+- [x] Updated production app env and Supabase SSOT `sales_tool_connections` so admin/sales dashboard links point to formal `*.paradigmjp.com` URLs.
+- [x] Deployed production app and verified DNS resolution plus HTTP reachability for all seven formal tool domains.
+
 ## Codex Update - 2026-05-29 Sales OS SSOT Verification
 
 - [x] Fixed CSV import upsert so first insert does not depend on app-side `deal_stage` literals; DB default now remains the SSOT for initial stage.
