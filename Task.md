@@ -1,3 +1,14 @@
+## Codex Update - 2026-05-30 Sales OS Completion Pass
+
+- [x] Rebuilt form discovery with readable Japanese/global contact-path candidates, sitemap/anchor scoring, form-signature checks, and logged fail-soft handling.
+- [x] Cleaned outreach provider result text and added a unit test for contact-form discovery.
+- [x] Added authenticated `POST /api/sales/twenty/pull` so Twenty company HOME fields can be pulled back into Supabase SSOT without reintroducing Notion as a source of truth.
+- [x] Added authenticated `POST /api/sales/calcom/webhook` and `POST /api/sales/docuseal/webhook`; Cal.com writes `sales_calendar_events`, Docuseal writes `sales_contracts`.
+- [x] Added `supabase/migration_020_sales_cal_docuseal_webhooks.sql` and applied it live, creating a Docuseal submission unique index for idempotent contract webhooks.
+- [x] Reworked the Sales Command Center UI text so the dashboard is a control plane, not a duplicate Twenty CRM; added a Twenty -> Supabase sync button in the integration tab.
+- [x] Updated `.env.example` to formal `*.paradigmjp.com` OSS URLs and documented Cal.com/Docuseal webhook URLs.
+- [x] Verification: `npx tsc --noEmit --pretty false` passed; `npx vitest run src/lib/sales/company-karte.test.ts src/lib/sales/products.test.ts src/lib/sales/sources/form-discovery.test.ts` passed from `D:\dev\paradigmjpcom` (6 tests).
+
 ## Codex Update - 2026-05-29 Sales OS E2E Automation
 
 - [x] Cleaned garbled labels in company karte, product recommendation, and Twenty HOME sync payloads so Japanese text is readable in Twenty and reports.

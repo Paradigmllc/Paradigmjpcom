@@ -77,7 +77,7 @@ export function SalesCommandCenter({ data }: Props) {
               Salesforce x Apollo.io風 営業ダッシュボード
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-500">
-              Supabase OSSをSSOTにし、CSV投入、企業カルテ生成、診断レポート、Twenty CRM、NocoDB、Metabase、n8n、フォーム営業パイプラインを一画面で監視します。
+              Supabase OSSをSSOTに、CSV投入、企業カルテ生成、診断レポート、Twenty CRM、NocoDB、Metabase、n8n、フォーム営業パイプラインを一画面で監視します。
             </p>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:min-w-[420px]">
@@ -90,7 +90,7 @@ export function SalesCommandCenter({ data }: Props) {
               <div className="mt-1 text-xl font-semibold">{formatYen(data.kpis.revenue30d)}</div>
             </div>
             <div className="rounded-lg border border-zinc-200 bg-white p-3">
-              <div className="text-xs text-zinc-500">実行待ち</div>
+              <div className="text-xs text-zinc-500">生成待ち</div>
               <div className="mt-1 text-xl font-semibold">{runningJobs}</div>
             </div>
           </div>
@@ -111,6 +111,7 @@ export function SalesCommandCenter({ data }: Props) {
             return (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex h-10 shrink-0 items-center gap-2 rounded-md border px-3 text-sm font-medium transition ${
                   isActive

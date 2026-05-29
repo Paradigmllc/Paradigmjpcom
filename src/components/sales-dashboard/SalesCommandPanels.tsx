@@ -12,6 +12,7 @@ import {
   HardDrive,
   ListChecks,
   PhoneCall,
+  RefreshCw,
   Search,
   ServerCog,
   Send,
@@ -19,6 +20,7 @@ import {
   Users,
   WalletCards,
 } from "lucide-react"
+import { toast } from "sonner"
 import type { DashboardCompany, DashboardToolConnection, SalesDashboardData } from "@/lib/sales/dashboard"
 
 export function formatNumber(value: number): string {
@@ -64,17 +66,7 @@ const TOOL_STATUS_LABELS: Record<string, string> = {
   planned: "準備中",
   legacy: "移行元",
   degraded: "要確認",
-}
-
-const TOOL_ACCENTS: Record<string, string> = {
-  supabase: "border-emerald-200 bg-emerald-50 text-emerald-800",
-  nocodb: "border-sky-200 bg-sky-50 text-sky-800",
-  appsmith: "border-amber-200 bg-amber-50 text-amber-800",
-  twenty: "border-indigo-200 bg-indigo-50 text-indigo-800",
-  metabase: "border-violet-200 bg-violet-50 text-violet-800",
-  n8n: "border-rose-200 bg-rose-50 text-rose-800",
-  calcom: "border-emerald-200 bg-emerald-50 text-emerald-800",
-  docuseal: "border-stone-200 bg-stone-50 text-stone-800",
+  disabled: "無効",
 }
 
 function externalUrlForCompany(company: DashboardCompany): string {
@@ -117,27 +109,26 @@ function KpiCard({
 }
 
 function ToolBadge({ tool }: { tool: DashboardToolConnection }) {
-  const accent = TOOL_ACCENTS[tool.slug] ?? "border-zinc-200 bg-zinc-50 text-zinc-700"
   return (
-    <div className={`rounded-lg border p-3 ${accent}`}>
+    <div className="rounded-lg border border-zinc-200 bg-white p-4">
       <div className="flex items-center justify-between gap-3">
-        <div className="font-semibold">{tool.displayName}</div>
+        <div className="font-semibold text-zinc-950">{tool.displayName}</div>
         <span className={`rounded-full px-2 py-0.5 text-[11px] ${statusTone(tool.status)}`}>
           {TOOL_STATUS_LABELS[tool.status] ?? tool.status}
         </span>
       </div>
-      <div className="mt-2 text-xs leading-relaxed opacity-90">{tool.role}</div>
+      <div className="mt-2 text-xs leading-relaxed text-zinc-500">{tool.role}</div>
       {tool.baseUrl ? (
         <a
           href={tool.baseUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-3 inline-flex items-center gap-1 text-xs font-semibold underline-offset-2 hover:underline"
+          className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-zinc-950 underline-offset-2 hover:underline"
         >
           開く <ExternalLink size={12} aria-hidden />
         </a>
       ) : (
-        <div className="mt-3 text-xs opacity-70">URL未設定</div>
+        <div className="mt-3 text-xs text-zinc-400">URL未設定</div>
       )}
     </div>
   )
@@ -166,6 +157,45 @@ function BarList({ title, rows, empty }: { title: string; rows: [string, number]
         )}
       </div>
     </div>
+  )
+}
+
+function SyncButton() {
+  const [running, setRunning] = useState(false)
+
+  async function runSync() {
+    setRunning(true)
+    try {
+      const res = await fetch("/api/sales/twenty/pull", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: 200 }),
+      })
+      const data = (await res.json()) as { ok?: boolean; updated?: number; skipped?: number; error?: string }
+      if (!res.ok || !data.ok) {
+        toast.error(data.error ?? "Twenty同期に失敗しました")
+        return
+      }
+      toast.success(`TwentyからSupabaseへ同期しました: 更新 ${data.updated ?? 0} / skip ${data.skipped ?? 0}`)
+    } catch (error) {
+      console.error("[sales-dashboard] Twenty pull failed:", error)
+      toast.error(error instanceof Error ? error.message : "Twenty同期に失敗しました")
+    } finally {
+      setRunning(false)
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={runSync}
+      disabled={running}
+      aria-label="TwentyからSupabaseへ企業カルテを同期"
+      className="inline-flex h-9 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-sm font-medium text-zinc-800 transition hover:border-zinc-400 disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      <RefreshCw size={15} className={running ? "animate-spin" : ""} aria-hidden />
+      Twenty → Supabase 同期
+    </button>
   )
 }
 
@@ -198,10 +228,10 @@ export function OverviewPanel({ data }: { data: SalesDashboardData }) {
     <div className="grid gap-4 xl:grid-cols-[1.5fr_1fr]">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <KpiCard label="総リード" value={formatNumber(data.kpis.totalLeads)} helper="Supabase sales_companies" icon={Users} tone="bg-sky-100 text-sky-700" />
-        <KpiCard label="HOT" value={formatNumber(data.kpis.hotLeads)} helper="閲覧や反応が強い営業先" icon={Target} tone="bg-rose-100 text-rose-700" />
+        <KpiCard label="HOT" value={formatNumber(data.kpis.hotLeads)} helper="閲覧・反応が強い営業先" icon={Target} tone="bg-rose-100 text-rose-700" />
         <KpiCard label="送信待ち" value={formatNumber(data.kpis.reportReady)} helper="フォーム営業キュー候補" icon={Send} tone="bg-amber-100 text-amber-800" />
         <KpiCard label="手動確認" value={formatNumber(data.kpis.manualQueue)} helper="Appsmith向け作業" icon={ListChecks} tone="bg-violet-100 text-violet-700" />
-        <KpiCard label="7日商談" value={formatNumber(data.kpis.meetings7d)} helper="カレンダー登録数" icon={PhoneCall} tone="bg-emerald-100 text-emerald-700" />
+        <KpiCard label="7日商談" value={formatNumber(data.kpis.meetings7d)} helper="Cal.com登録数" icon={PhoneCall} tone="bg-emerald-100 text-emerald-700" />
         <KpiCard label="MRR" value={formatYen(data.kpis.mrr)} helper={`${data.kpis.activeCustomers} active customers`} icon={Gauge} tone="bg-zinc-100 text-zinc-800" />
       </div>
       <div className="rounded-lg border border-zinc-200 bg-white p-4">
@@ -242,8 +272,8 @@ export function WorkspacePanel({ data }: { data: SalesDashboardData }) {
     <div className="rounded-lg border border-zinc-200 bg-white">
       <div className="flex flex-col gap-3 border-b border-zinc-200 p-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-zinc-950">リード作業場</h2>
-          <p className="mt-1 text-xs text-zinc-500">NocoDBで一括編集する前の営業ビュー</p>
+          <h2 className="text-sm font-semibold text-zinc-950">リスト作業場</h2>
+          <p className="mt-1 text-xs text-zinc-500">NocoDBで一括編集する前後の営業ビューです。</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <label className="relative block">
@@ -359,7 +389,13 @@ export function IntegrationsPanel({ data }: { data: SalesDashboardData }) {
         {data.toolConnections.map((tool) => <ToolBadge key={tool.slug} tool={tool} />)}
       </div>
       <div className="rounded-lg border border-zinc-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-zinc-950">同期ログ</h2>
+        <div className="flex flex-col gap-3 border-b border-zinc-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-950">同期ログ</h2>
+            <p className="mt-1 text-xs text-zinc-500">SupabaseをSSOTにし、Twenty側の営業編集だけ限定的に取り込みます。</p>
+          </div>
+          <SyncButton />
+        </div>
         <div className="mt-4 divide-y divide-zinc-100">
           {data.syncLogs.length === 0 ? <p className="py-8 text-sm text-zinc-500">同期ログはまだありません。</p> : data.syncLogs.slice(0, 14).map((log) => (
             <div key={log.id} className="flex items-start gap-3 py-3">
@@ -388,7 +424,7 @@ export function MigrationPanel({ data }: { data: SalesDashboardData }) {
           <div>
             <h2 className="text-sm font-semibold text-zinc-950">サーバー全面移行</h2>
             <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-              DigitalOceanは16GB以上がアカウント制限で不可。月3,000円前後ではHetzner CX43相当への移行を本命にします。
+              現在はDigitalOceanクレジットを使い、最終的にHetzner VPSへ集約する前提の移行計画です。
             </p>
           </div>
           <span className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">

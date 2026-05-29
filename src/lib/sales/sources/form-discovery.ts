@@ -1,18 +1,10 @@
 /**
- * lib/sales/sources/form-discovery.ts — 問い合わせフォーム URL 発見 (Phase 2)
+ * Lightweight contact-form discovery for the sales outreach pipeline.
  *
- * 役割: リードの「問い合わせフォーム URL」を fetch ベースで高精度に特定する。
- *       ④フォーム営業 worker の入力 (contact_form_url) を作る。
- *
- * 設計 (Appexxme form-discovery.ts のウォーターフォールを self-contained 移植):
- *   Layer 0: homepage HTML の anchor regex          (free, ~1s)
- *   Layer A: sitemap.xml + heuristic パスの GET 200  (free, ~1-2s, 主力)
- *   Layer B: DeepSeek 抽出 (opts.enableLlm=true 時)   (~$0.001, optional)
- *   Layer C: SPA 追跡 (opts.spaDiscover hook=worker)  (重い・worker のみ)
- *
- * コストゲーティング: 前 layer がヒットしたら以降は実行しない。
- * 依存ゼロ (fetch のみ)・Next.js serverless で動く (Chromium 不要)。
- * Chromium が要る Layer C は worker の BrowserProvider 経由で注入。
+ * The function intentionally starts with cheap, non-browser checks:
+ * homepage anchors, sitemap URLs, and common contact paths. Browser-based SPA
+ * discovery is delegated to BrowserProvider so the Next.js app does not need a
+ * local Chromium dependency.
  */
 
 import { callDeepSeek } from "@/lib/deepseek"
@@ -28,30 +20,21 @@ export type DiscoveryMethod =
   | "none"
 
 export interface FormDiscoveryResult {
-  /** 決定した問い合わせフォーム URL。全 layer ミスで origin fallback も無ければ null */
   formUrl: string | null
   method: DiscoveryMethod
-  /** 0-100 の信頼度 */
   confidence: number
-  /** 他 layer で見つかった候補 (デバッグ用) */
   candidates: string[]
   traceMs: number
 }
 
 export interface FormDiscoveryOptions {
-  /** 対象サイトのホーム URL (例 https://example.com) */
   homeUrl: string
   region?: Region
-  /** 既に取得済みの homepage HTML があれば渡す (二重 fetch 回避) */
   homepageHtml?: string
-  /** Layer B (DeepSeek 抽出) を有効化 */
   enableLlm?: boolean
-  /** Layer C (SPA 追跡) フック — worker の BrowserProvider が提供 */
   spaDiscover?: (url: string) => Promise<string | null>
   timeoutMs?: number
 }
-
-/* ───── heuristic パス辞書 (region 別) ───── */
 
 const HEURISTIC_PATHS_JP = [
   "/contact",
@@ -62,11 +45,20 @@ const HEURISTIC_PATHS_JP = [
   "/inquiry/",
   "/toiawase",
   "/otoiawase",
-  "/お問い合わせ",
-  "/お問合せ",
+  "/otoiawase/",
   "/contact-us",
   "/form",
   "/form/",
+  "/お問い合わせ",
+  "/お問い合わせ/",
+  "/お問合せ",
+  "/お問合せ/",
+  "/問い合わせ",
+  "/問い合わせ/",
+  "/資料請求",
+  "/資料請求/",
+  "/相談",
+  "/相談/",
 ]
 
 const HEURISTIC_PATHS_GLOBAL = [
@@ -80,67 +72,66 @@ const HEURISTIC_PATHS_GLOBAL = [
   "/enquiry",
   "/support",
   "/form",
+  "/request-a-demo",
+  "/book-a-demo",
 ]
 
-/* ───── URL helpers ───── */
+const CONTACT_KEYWORDS =
+  /contact|inquiry|enquiry|toiawase|otoiawase|get-in-touch|contact-us|form|request-a-demo|book-a-demo|お問い合わせ|お問合せ|問い合わせ|資料請求|相談|ご相談/i
 
-/** http(s):// を補い、末尾スラッシュ無しの origin を返す */
+const FORM_SIGNATURE_RE =
+  /<form\b|contact\s*form\s*7|wpforms|gravityforms|mw_wp_form|formrun|hubspot|hs-form|pardot|marketo|typeform|google\.com\/forms/i
+
 export function normalizeOrigin(input: string): string | null {
   try {
     const withProto = input.startsWith("http") ? input : `https://${input}`
-    const u = new URL(withProto)
-    return `${u.protocol}//${u.host}`
-  } catch {
+    const url = new URL(withProto)
+    return `${url.protocol}//${url.host}`
+  } catch (error) {
+    console.warn("[form-discovery] invalid origin:", error)
     return null
   }
 }
 
-/** 相対/絶対 href を origin に解決 (失敗時 null) */
 export function resolveHref(origin: string, href: string): string | null {
   try {
     return new URL(href, origin).toString()
-  } catch {
+  } catch (error) {
+    console.warn("[form-discovery] invalid href:", { href, error })
     return null
   }
 }
 
-const CONTACT_KEYWORDS =
-  /contact|inquiry|enquiry|toiawase|otoiawase|お問い?合(わ)?せ|問い合わせ|get-in-touch|フォーム/i
+function uniqueUrls(urls: Iterable<string>): string[] {
+  return [...new Set(urls)].slice(0, 80)
+}
 
-/* ───── Layer 0: homepage anchor regex ───── */
+function scoreContactUrl(url: string): number {
+  const normalized = url.toLowerCase()
+  if (/contact|inquiry|enquiry|otoiawase|toiawase|お問い合わせ|お問合せ|問い合わせ/.test(normalized)) return 90
+  if (/form|相談|資料請求|get-in-touch/.test(normalized)) return 78
+  return 40
+}
+
+function pickBestCandidate(urls: string[]): string | null {
+  return [...urls].sort((a, b) => scoreContactUrl(b) - scoreContactUrl(a))[0] ?? null
+}
 
 function extractContactAnchors(origin: string, html: string): string[] {
   const hits = new Set<string>()
   const anchorRe = /<a\b[^>]*href=["']([^"'#]+)["'][^>]*>([\s\S]*?)<\/a>/gi
-  let m: RegExpExecArray | null
-  while ((m = anchorRe.exec(html)) !== null) {
-    const href = m[1]
-    const label = m[2].replace(/<[^>]+>/g, " ")
-    if (CONTACT_KEYWORDS.test(href) || CONTACT_KEYWORDS.test(label)) {
-      const abs = resolveHref(origin, href)
-      if (abs && abs.startsWith("http")) hits.add(abs)
-    }
-  }
-  return [...hits]
-}
+  let match: RegExpExecArray | null
 
-/* ───── fetch helpers (HEAD→GET、200+HTML 判定) ───── */
+  while ((match = anchorRe.exec(html)) !== null) {
+    const href = match[1]
+    const label = match[2].replace(/<[^>]+>/g, " ")
+    if (!CONTACT_KEYWORDS.test(href) && !CONTACT_KEYWORDS.test(label)) continue
 
-async function urlExistsAsHtml(url: string, timeoutMs: number): Promise<boolean> {
-  // 一部サーバは HEAD を弾くため GET で軽く確認 (本文は読み切らない)
-  try {
-    const res = await fetch(url, {
-      method: "GET",
-      redirect: "follow",
-      signal: AbortSignal.timeout(timeoutMs),
-      headers: { "User-Agent": "ParadigmFormDiscovery/1.0 (+https://paradigmjp.com)" },
-    })
-    if (!res.ok) return false
-    const ct = res.headers.get("content-type") ?? ""
-    return ct.includes("text/html") || ct === ""
-  } catch {
-    return false
+    const absoluteUrl = resolveHref(origin, href)
+    if (absoluteUrl?.startsWith("http")) hits.add(absoluteUrl)
   }
+
+  return uniqueUrls(hits)
 }
 
 async function fetchText(url: string, timeoutMs: number): Promise<string | null> {
@@ -148,28 +139,35 @@ async function fetchText(url: string, timeoutMs: number): Promise<string | null>
     const res = await fetch(url, {
       redirect: "follow",
       signal: AbortSignal.timeout(timeoutMs),
-      headers: { "User-Agent": "ParadigmFormDiscovery/1.0 (+https://paradigmjp.com)" },
+      headers: { "User-Agent": "ParadigmFormDiscovery/1.1 (+https://paradigmjp.com)" },
     })
     if (!res.ok) return null
+    const contentType = res.headers.get("content-type") ?? ""
+    if (contentType && !contentType.includes("text/") && !contentType.includes("xml")) return null
     return await res.text()
-  } catch {
+  } catch (error) {
+    console.warn("[form-discovery] fetch failed:", { url, error })
     return null
   }
 }
 
-/* ───── Layer A: sitemap.xml ───── */
+async function inspectContactPage(url: string, timeoutMs: number): Promise<"form" | "page" | "missing"> {
+  const html = await fetchText(url, timeoutMs)
+  if (!html) return "missing"
+  if (FORM_SIGNATURE_RE.test(html)) return "form"
+  return CONTACT_KEYWORDS.test(html) ? "page" : "missing"
+}
 
 function extractSitemapUrls(xml: string): string[] {
   const out: string[] = []
   const locRe = /<loc>([^<]+)<\/loc>/gi
-  let m: RegExpExecArray | null
-  while ((m = locRe.exec(xml)) !== null) out.push(m[1].trim())
-  return out
+  let match: RegExpExecArray | null
+  while ((match = locRe.exec(xml)) !== null) out.push(match[1].trim())
+  return uniqueUrls(out)
 }
 
-/* ───── Layer B: DeepSeek 抽出 ───── */
-
-const LLM_SYSTEM = `あなたは Web サイトから「問い合わせフォームのページ URL」を 1 つ特定する抽出器です。与えられたリンク一覧から最も問い合わせフォームらしい URL を 1 つだけ選び JSON で返す: {"url":"https://...","confidence":0.0-1.0}。該当が無ければ {"url":null,"confidence":0}。`
+const LLM_SYSTEM =
+  'You identify the best contact-form URL for B2B outbound outreach. Return JSON only: {"url":"https://...","confidence":0.0-1.0}. If no contact form or inquiry page is likely, return {"url":null,"confidence":0}.'
 
 async function llmPickFormUrl(
   origin: string,
@@ -177,23 +175,24 @@ async function llmPickFormUrl(
   timeoutMs: number,
 ): Promise<{ url: string | null; confidence: number }> {
   if (candidates.length === 0) return { url: null, confidence: 0 }
+
   const res = await callDeepSeek(
     [
       { role: "system", content: LLM_SYSTEM },
-      { role: "user", content: `サイト: ${origin}\nリンク候補:\n${candidates.slice(0, 60).join("\n")}` },
+      { role: "user", content: `Site: ${origin}\nCandidate URLs:\n${candidates.slice(0, 60).join("\n")}` },
     ],
     { temperature: 0.1, maxTokens: 120, responseFormat: "json_object", timeoutMs },
   )
   if (!res.ok || !res.text) return { url: null, confidence: 0 }
+
   try {
     const parsed = JSON.parse(res.text) as { url?: string | null; confidence?: number }
     return { url: parsed.url ?? null, confidence: parsed.confidence ?? 0 }
-  } catch {
+  } catch (error) {
+    console.warn("[form-discovery] LLM JSON parse failed:", error)
     return { url: null, confidence: 0 }
   }
 }
-
-/* ───── Public API ───── */
 
 export async function discoverFormUrl(
   opts: FormDiscoveryOptions,
@@ -211,57 +210,62 @@ export async function discoverFormUrl(
     formUrl,
     method,
     confidence,
-    candidates: [...candidates],
+    candidates: uniqueUrls(candidates),
     traceMs: Date.now() - started,
   })
 
   if (!origin) return done(null, "none", 0)
 
-  // Layer 0: homepage anchor regex
-  const html = opts.homepageHtml ?? (await fetchText(origin, timeoutMs))
-  if (html) {
-    for (const a of extractContactAnchors(origin, html)) candidates.add(a)
-    const first = [...candidates][0]
-    if (first) return done(first, "regex", 75)
-  }
-
-  // Layer A-1: sitemap.xml
-  const sitemapXml = await fetchText(`${origin}/sitemap.xml`, timeoutMs)
-  if (sitemapXml) {
-    const contactSitemapUrls = extractSitemapUrls(sitemapXml).filter((u) =>
-      CONTACT_KEYWORDS.test(u),
-    )
-    for (const u of contactSitemapUrls) candidates.add(u)
-    const first = contactSitemapUrls[0]
-    if (first) return done(first, "sitemap", 80)
-  }
-
-  // Layer A-2: heuristic パスを順に GET 200 確認
-  const paths = opts.region === "global" ? HEURISTIC_PATHS_GLOBAL : HEURISTIC_PATHS_JP
-  for (const p of paths) {
-    const candidate = `${origin}${p}`
-    // eslint-disable-next-line no-await-in-loop -- 前ヒットで即 return するため逐次で十分
-    if (await urlExistsAsHtml(candidate, timeoutMs)) {
-      candidates.add(candidate)
-      return done(candidate, "heuristic", 70)
+  const homepageHtml = opts.homepageHtml ?? (await fetchText(origin, timeoutMs))
+  if (homepageHtml) {
+    for (const url of extractContactAnchors(origin, homepageHtml)) candidates.add(url)
+    const best = pickBestCandidate([...candidates])
+    if (best) {
+      const pageType = await inspectContactPage(best, timeoutMs)
+      if (pageType === "form") return done(best, "regex", 88)
+      if (pageType === "page") return done(best, "regex", 72)
     }
   }
 
-  // Layer B: DeepSeek 抽出 (opt-in・候補から選ぶ)
+  const sitemapXml = await fetchText(`${origin}/sitemap.xml`, timeoutMs)
+  if (sitemapXml) {
+    const contactSitemapUrls = extractSitemapUrls(sitemapXml).filter((url) => CONTACT_KEYWORDS.test(url))
+    for (const url of contactSitemapUrls) candidates.add(url)
+    const best = pickBestCandidate(contactSitemapUrls)
+    if (best) {
+      const pageType = await inspectContactPage(best, timeoutMs)
+      if (pageType === "form") return done(best, "sitemap", 90)
+      if (pageType === "page") return done(best, "sitemap", 74)
+    }
+  }
+
+  const paths = opts.region === "global" ? HEURISTIC_PATHS_GLOBAL : HEURISTIC_PATHS_JP
+  for (const path of paths) {
+    const candidate = `${origin}${encodeURI(path)}`
+    const pageType = await inspectContactPage(candidate, Math.min(timeoutMs, 4_000))
+    if (pageType === "missing") continue
+
+    candidates.add(candidate)
+    if (pageType === "form") return done(candidate, "heuristic", 82)
+    return done(candidate, "heuristic", 65)
+  }
+
   if (opts.enableLlm && candidates.size > 0) {
     const picked = await llmPickFormUrl(origin, [...candidates], timeoutMs)
     if (picked.url) return done(picked.url, "llm", Math.round(picked.confidence * 100))
   }
 
-  // Layer C: SPA 追跡 (worker の BrowserProvider が hook を渡す)
   if (opts.spaDiscover) {
-    const spaUrl = await opts.spaDiscover(origin)
-    if (spaUrl) {
-      candidates.add(spaUrl)
-      return done(spaUrl, "spa", 65)
+    try {
+      const spaUrl = await opts.spaDiscover(origin)
+      if (spaUrl) {
+        candidates.add(spaUrl)
+        return done(spaUrl, "spa", 65)
+      }
+    } catch (error) {
+      console.warn("[form-discovery] SPA discovery failed:", error)
     }
   }
 
-  // 全 layer ミス → origin を最終 fallback (worker 側で人間 escalate 判断)
   return done(origin, "fallback", 20)
 }

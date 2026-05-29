@@ -6,12 +6,22 @@ import {
   type CompanyProductRecommendation,
 } from "@/lib/sales/products"
 
+interface TwentyLinkField {
+  primaryLinkUrl?: string | null
+  primaryLinkLabel?: string | null
+}
+
 interface TwentyRecord {
   id?: string
   name?: string
-  domainName?: {
-    primaryLinkUrl?: string | null
-    primaryLinkLabel?: string | null
+  domainName?: TwentyLinkField | null
+  paradigmReportUrl?: TwentyLinkField | null
+  paradigmFormUrl?: TwentyLinkField | null
+  paradigmKarteScore?: number | null
+  paradigmSourceCoverage?: number | null
+  paradigmRecommendedProducts?: string[] | null
+  paradigmKarteSummary?: {
+    markdown?: string | null
   } | null
 }
 
@@ -43,6 +53,15 @@ export interface TwentySyncResult {
   error?: string
 }
 
+export interface TwentyPullResult {
+  ok: boolean
+  configured: boolean
+  scanned: number
+  updated: number
+  skipped: number
+  error?: string
+}
+
 function env(name: string): string | null {
   const value = process.env[name]
   return value && value.trim().length > 0 ? value.trim() : null
@@ -53,11 +72,22 @@ function twentyBaseUrl(): string | null {
   return base ? base.replace(/\/$/, "") : null
 }
 
+function normalizeDomain(input: string | null | undefined): string | null {
+  if (!input) return null
+  try {
+    const withProto = input.startsWith("http") ? input : `https://${input}`
+    return new URL(withProto).hostname.replace(/^www\./, "").toLowerCase()
+  } catch (error) {
+    console.warn("[twenty-sync] invalid domain:", { input, error })
+    return null
+  }
+}
+
 function domainMatches(record: TwentyRecord, domain: string): boolean {
   const normalized = domain.toLowerCase()
-  const url = record.domainName?.primaryLinkUrl?.toLowerCase() ?? ""
-  const label = record.domainName?.primaryLinkLabel?.toLowerCase() ?? ""
-  return url.includes(normalized) || label === normalized
+  const url = normalizeDomain(record.domainName?.primaryLinkUrl)
+  const label = normalizeDomain(record.domainName?.primaryLinkLabel)
+  return url === normalized || label === normalized
 }
 
 async function twentyFetch<T>(
@@ -82,8 +112,8 @@ async function twentyFetch<T>(
 
   try {
     return { ok: true, data: JSON.parse(text) as T }
-  } catch (e) {
-    console.error("[twenty-sync] invalid JSON response:", e)
+  } catch (error) {
+    console.error("[twenty-sync] invalid JSON response:", error)
     return { ok: false, error: "Twenty API returned invalid JSON" }
   }
 }
@@ -311,9 +341,9 @@ export async function syncCompanyKarteToTwenty(companyId: string): Promise<Twent
       opportunityIds,
       recommendationCount: recommendations.length,
     }
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "Twenty sync failed"
-    console.error("[twenty-sync] failed:", e)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Twenty sync failed"
+    console.error("[twenty-sync] failed:", error)
     await sb.from("sales_sync_logs").insert({
       direction: "supabase->twenty",
       entity_type: "company",
@@ -327,4 +357,115 @@ export async function syncCompanyKarteToTwenty(companyId: string): Promise<Twent
     })
     return { ok: false, configured: true, error: message, recommendationCount: recommendations.length }
   }
+}
+
+export async function pullTwentyCompaniesToSupabase(limit = 200): Promise<TwentyPullResult> {
+  const baseUrl = twentyBaseUrl()
+  const apiKey = env("TWENTY_API_KEY")
+  if (!baseUrl || !apiKey) {
+    return {
+      ok: false,
+      configured: false,
+      scanned: 0,
+      updated: 0,
+      skipped: 0,
+      error: "TWENTY_BASE_URL or TWENTY_API_KEY is not configured",
+    }
+  }
+
+  const sb = getServiceSalesSupabase()
+  if (!sb) {
+    return {
+      ok: false,
+      configured: true,
+      scanned: 0,
+      updated: 0,
+      skipped: 0,
+      error: "Supabase service_role not configured",
+    }
+  }
+
+  const safeLimit = Math.min(Math.max(limit, 1), 500)
+  const result = await twentyFetch<TwentyListResponse<TwentyRecord>>(`/rest/companies?limit=${safeLimit}`)
+  if (!result.ok) {
+    return { ok: false, configured: true, scanned: 0, updated: 0, skipped: 0, error: result.error }
+  }
+
+  const records = result.data.data?.companies ?? []
+  let updated = 0
+  let skipped = 0
+
+  for (const record of records) {
+    const domain =
+      normalizeDomain(record.domainName?.primaryLinkUrl) ??
+      normalizeDomain(record.domainName?.primaryLinkLabel)
+    if (!domain) {
+      skipped += 1
+      continue
+    }
+
+    const { data: company, error: findError } = await sb
+      .from("sales_companies")
+      .select("id, meta")
+      .eq("domain", domain)
+      .maybeSingle()
+
+    if (findError) {
+      console.error("[twenty-sync] Supabase company lookup failed:", findError.message)
+      skipped += 1
+      continue
+    }
+    if (!company?.id) {
+      skipped += 1
+      continue
+    }
+
+    const currentMeta = (company.meta ?? {}) as Record<string, unknown>
+    const reportUrl = record.paradigmReportUrl?.primaryLinkUrl ?? null
+    const formUrl = record.paradigmFormUrl?.primaryLinkUrl ?? null
+    const patchMeta: Record<string, unknown> = {
+      ...currentMeta,
+      twenty: {
+        id: record.id ?? null,
+        lastPulledAt: new Date().toISOString(),
+        karteScore: record.paradigmKarteScore ?? null,
+        sourceCoverage: record.paradigmSourceCoverage ?? null,
+        recommendedProducts: record.paradigmRecommendedProducts ?? [],
+        summary: record.paradigmKarteSummary?.markdown ?? null,
+      },
+    }
+    if (formUrl) patchMeta.contact_form_url = formUrl
+
+    const patch: Record<string, unknown> = { meta: patchMeta }
+    if (reportUrl) patch.report_url = reportUrl
+
+    const { error: updateError } = await sb
+      .from("sales_companies")
+      .update(patch)
+      .eq("id", company.id)
+
+    if (updateError) {
+      console.error("[twenty-sync] Supabase company update failed:", updateError.message)
+      skipped += 1
+      continue
+    }
+
+    await sb.from("sales_sync_logs").insert({
+      direction: "twenty->supabase",
+      entity_type: "company",
+      entity_id: company.id,
+      action: "update",
+      status: "success",
+      payload: {
+        twenty_company_id: record.id ?? null,
+        domain,
+        report_url: reportUrl,
+        form_url: formUrl,
+      },
+    })
+
+    updated += 1
+  }
+
+  return { ok: true, configured: true, scanned: records.length, updated, skipped }
 }

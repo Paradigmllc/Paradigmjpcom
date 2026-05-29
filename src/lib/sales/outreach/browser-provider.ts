@@ -1,34 +1,12 @@
-/**
- * lib/sales/outreach/browser-provider.ts — ブラウザ実行の抽象化 (Phase 3)
- *
- * 役割: 「重い Chromium をどこで動かすか」を 1 枚の interface で隠蔽する。
- *       Next.js (serverless) は実ブラウザを持たず、provider 越しに submit を委譲。
- *
- * これにより 案1(リモートブラウザ) ⇄ 案2(scale-to-zero 自前 worker) を
- * env `OUTREACH_BROWSER_PROVIDER` の切替だけで行き来でき、アーキを賭けない。
- *
- *   - "dry"    : DryRunProvider — Chromium 不要・実送信しない (default・監査/CI 用)
- *   - "remote" : RemoteWorkerProvider — worker の HTTP endpoint に委譲
- *                (worker 内部で local Chromium=案2 か remote CDP=案1 を選ぶ)
- *
- * ディスク安全: Next アプリ側に playwright/crawlee 依存を一切持たない。
- */
-
 import type { SubmitFormInput, SubmitFormResult } from "./types"
 import { HttpFormProvider } from "./http-form-provider"
 
 export interface BrowserProvider {
   readonly name: string
-  /** フォーム送信 (dryRun=true なら検証のみ) */
   submitForm(input: SubmitFormInput): Promise<SubmitFormResult>
-  /** Layer C: SPA フォーム発見 (未対応 provider は undefined) */
   discoverSpaForm?(homeUrl: string): Promise<string | null>
 }
 
-/**
- * DryRunProvider: ブラウザを起動せず、実送信もしない。
- * serverless / 監査 / CI のデフォルト。常に "uncertain"(未送信) を返す。
- */
 export class DryRunProvider implements BrowserProvider {
   readonly name = "dry"
 
@@ -36,16 +14,12 @@ export class DryRunProvider implements BrowserProvider {
     return {
       ok: true,
       outcome: "uncertain",
-      detail: `dry-run: provider=dry・実送信なし (form=${input.formUrl}, chars=${input.message.length})`,
+      detail: `dry-run: provider=dry, no form was submitted (form=${input.formUrl}, chars=${input.message.length})`,
       evidenceUrl: null,
     }
   }
 }
 
-/**
- * RemoteWorkerProvider: 別コンテナの worker (Playwright+Crawlee) に HTTP 委譲。
- * worker 側で stealth submit を実行し結果を返す。Next アプリには Chromium 不要。
- */
 export class RemoteWorkerProvider implements BrowserProvider {
   readonly name = "remote"
 
@@ -66,15 +40,18 @@ export class RemoteWorkerProvider implements BrowserProvider {
         signal: AbortSignal.timeout(input.timeoutMs ?? 120_000),
       })
       if (!res.ok) {
-        const text = await res.text().catch(() => "")
+        const text = await res.text().catch((error) => {
+          console.warn("[outreach-worker] failed to read error body:", error)
+          return ""
+        })
         return { ok: false, outcome: "failed", detail: `worker HTTP ${res.status}: ${text.slice(0, 200)}` }
       }
       return (await res.json()) as SubmitFormResult
-    } catch (e) {
+    } catch (error) {
       return {
         ok: false,
         outcome: "failed",
-        detail: `worker unreachable: ${e instanceof Error ? e.message : String(e)}`,
+        detail: `worker unreachable: ${error instanceof Error ? error.message : String(error)}`,
       }
     }
   }
@@ -90,19 +67,13 @@ export class RemoteWorkerProvider implements BrowserProvider {
       if (!res.ok) return null
       const data = (await res.json()) as { formUrl?: string | null }
       return data.formUrl ?? null
-    } catch {
+    } catch (error) {
+      console.warn("[outreach-worker] SPA discovery endpoint failed:", error)
       return null
     }
   }
 }
 
-/**
- * env から provider を解決。
- *   - "http"   (既定): HttpFormProvider — ブラウザ不要 HTTP 送信 (サーバー増設不要・Droplet ディスク汚染ゼロ)
- *   - "dry"          : DryRunProvider — 一切送信しない (監査/CI)
- *   - "remote"       : RemoteWorkerProvider — worker (managed CDP / Playwright) に委譲 (SPA 用・将来)
- * 安全性: 実送信の可否は orchestrator の dryRun フラグが握る (provider は「送り方」だけ)。
- */
 export function getBrowserProvider(): BrowserProvider {
   const mode = process.env.OUTREACH_BROWSER_PROVIDER ?? "http"
   if (mode === "dry") return new DryRunProvider()
@@ -110,9 +81,7 @@ export function getBrowserProvider(): BrowserProvider {
     const endpoint = process.env.OUTREACH_WORKER_URL
     const secret = process.env.OUTREACH_WORKER_SECRET
     if (endpoint && secret) return new RemoteWorkerProvider(endpoint, secret)
-    console.warn(
-      "[outreach] OUTREACH_BROWSER_PROVIDER=remote だが OUTREACH_WORKER_URL/SECRET 未設定 → http にフォールバック",
-    )
+    console.warn("[outreach] OUTREACH_BROWSER_PROVIDER=remote but OUTREACH_WORKER_URL/SECRET is missing; using http")
   }
   return new HttpFormProvider()
 }
