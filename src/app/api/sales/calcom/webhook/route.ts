@@ -39,6 +39,17 @@ function statusFromEvent(eventType: string | null): string {
   return "scheduled"
 }
 
+function eventKindFromCalcom(eventType: string | null): string {
+  const event = eventType?.toLowerCase() ?? ""
+  if (event.includes("demo")) return "demo"
+  if (event.includes("proposal")) return "proposal"
+  if (event.includes("closing") || event.includes("close")) return "closing"
+  if (event.includes("follow")) return "follow_up"
+  if (event.includes("review")) return "review"
+  if (event.includes("booking") || event.includes("meeting")) return "discovery"
+  return "other"
+}
+
 function attendeesFromPayload(payload: JsonRecord): unknown[] {
   const attendees = payload.attendees
   if (Array.isArray(attendees)) return attendees
@@ -79,7 +90,7 @@ export async function POST(req: NextRequest) {
     region: regionFromMetadata(meta),
     company_id: companyId,
     title: text(payload, ["title", "eventTypeSlug", "eventTitle"]) ?? "Cal.com 商談",
-    event_type: eventType,
+    event_type: eventKindFromCalcom(eventType),
     start_at: startAt,
     end_at: endAt,
     cal_event_id: externalId,
