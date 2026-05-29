@@ -13,11 +13,14 @@ import { NextRequest, NextResponse } from "next/server"
 import { verifyWebhookSecret } from "@/lib/sales/auth"
 import { syncCompanyToNotion } from "@/lib/sales/sync"
 import { findCompanyById } from "@/lib/sales/companies"
+import { isNotionLegacySyncEnabled, notionLegacyDisabledResponse } from "@/lib/sales/notion-legacy-guard"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 export async function POST(req: NextRequest) {
+  if (!isNotionLegacySyncEnabled()) return notionLegacyDisabledResponse()
+
   const authErr = verifyWebhookSecret(req)
   if (authErr) return authErr
 

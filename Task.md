@@ -5,6 +5,9 @@
 - [x] Extended Twenty sync so a completed company karte creates/updates the Twenty company, writes structured HOME fields (`診断レポートURL`, `フォームURL`, `推奨商材`, `カルテスコア`, `データ取得率`, `企業カルテ要約`), and creates product-based opportunities when `TWENTY_API_KEY` is configured. Long karte notes are no longer the primary UI.
 - [x] Added Cal.com OSS and Docuseal OSS to Sales OS tool registry, admin dashboard links, env examples, and Supabase `sales_tool_connections`.
 - [x] Disabled Notion Legacy from the Sales OS control surface; Notion remains available only as a customer-facing workspace tool, not the SSOT.
+- [x] Deployed Cal.com OSS and Docuseal OSS into the Hetzner/DigitalOcean Sales stack with formal `cal.paradigmjp.com` and `docuseal.paradigmjp.com` Traefik routes.
+- [x] Added `NOTION_LEGACY_SYNC_ENABLED=false` default guard behavior: legacy Notion Sales OS sync/webhook routes return HTTP 410 unless explicitly re-enabled.
+- [x] Expanded free/OSS company source coverage with HTML metadata, robots/sitemap, and HTTP security-header evidence for Twenty/Supabase company karte data.
 - [x] Created Cloudflare DNS-only A records for `cal.paradigmjp.com` and `docuseal.paradigmjp.com` pointing at `139.59.250.5`.
 - [x] Applied Twenty metadata patch `scripts/twenty-karte-home-fields.sql` so Company HOME exposes first-class Paradigm karte fields instead of requiring the timeline memo view.
 - [x] Verification: `npx tsc --noEmit --pretty false` passed; `npx vitest run src/lib/sales/company-karte.test.ts src/lib/sales/products.test.ts` passed from real path `D:\dev\paradigmjpcom`.

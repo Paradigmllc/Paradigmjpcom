@@ -34,6 +34,7 @@ import {
   type Industry,
   type Region,
 } from "@/lib/sales/types"
+import { isNotionLegacySyncEnabled, notionLegacyDisabledResponse } from "@/lib/sales/notion-legacy-guard"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -43,6 +44,8 @@ const DB_JP = "8cbab1f501144f83872c1738ce3e79c4"
 const DB_GLOBAL = "35fa2b78-f3fc-8107-aa0b-f28694e1009c"
 
 export async function POST(req: NextRequest) {
+  if (!isNotionLegacySyncEnabled()) return notionLegacyDisabledResponse()
+
   const authErr = verifyWebhookSecret(req)
   if (authErr) return authErr
 

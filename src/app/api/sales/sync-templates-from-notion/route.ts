@@ -35,6 +35,7 @@ import {
   isValidRegion,
   type Region,
 } from "@/lib/sales/types"
+import { isNotionLegacySyncEnabled, notionLegacyDisabledResponse } from "@/lib/sales/notion-legacy-guard"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -44,6 +45,8 @@ const DEFAULT_DB_JP = "115e2b0e79424bb0813fc05402096f95" // 既存テンプレ D
 // グローバル版 DB はあとで作成・env から取得
 
 export async function POST(req: NextRequest) {
+  if (!isNotionLegacySyncEnabled()) return notionLegacyDisabledResponse()
+
   const authErr = verifyWebhookSecret(req)
   if (authErr) return authErr
 

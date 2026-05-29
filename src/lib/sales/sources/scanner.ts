@@ -1,20 +1,7 @@
-/**
- * lib/sales/sources/scanner.ts — Sprint 11
- *
- * 役割: domain を渡すと PageSpeed Insights + HTML inspect を実行し,
- *       Sales OS の IssueCode 配列に変換して返す共通スキャナ.
- *
- * 入力: domain (例 "example.com")
- * 出力: { mobile, desktop, issues, htmlInspect }
- *
- * 利用者: /api/sales/scan (n8n webhook) / lib/sales/enrich (contact form 経由)
- *
- * AE-PHP-4 準拠.
- */
-
 import type { IssueCode } from "../types"
 
 const PSI_API = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
+const USER_AGENT = "Mozilla/5.0 (Paradigm Diagnostic Bot/1.0; +https://paradigmjp.com)"
 
 export interface PsiResult {
   performance: number | null
@@ -26,29 +13,45 @@ export interface HtmlInspect {
   isWordPress: boolean
   copyrightYear: number | null
   title: string | null
+  description: string | null
+  canonicalUrl: string | null
+  formCount: number
+  contactLinkCount: number
+}
+
+export interface HttpSecurityHeaders {
+  hasHsts: boolean
+  hasCsp: boolean
+  hasXFrameOptions: boolean
+  hasNoSniff: boolean
+  server: string | null
+}
+
+export interface RobotsSitemapInspect {
+  robotsTxt: boolean
+  sitemapXml: boolean
+  sitemapUrlCount: number
 }
 
 export interface ScanResult {
   mobile: PsiResult
   desktop: PsiResult
   html: HtmlInspect
+  securityHeaders: HttpSecurityHeaders
+  robotsSitemap: RobotsSitemapInspect
   issues: IssueCode[]
 }
 
-async function runPsi(
-  url: string,
-  strategy: "mobile" | "desktop",
-): Promise<PsiResult> {
+async function runPsi(url: string, strategy: "mobile" | "desktop"): Promise<PsiResult> {
   const key = process.env.GOOGLE_PSI_API_KEY ?? ""
   const params = new URLSearchParams({ url, strategy, category: "performance" })
   if (key) params.set("key", key)
+
   try {
     const res = await fetch(`${PSI_API}?${params.toString()}`, {
       signal: AbortSignal.timeout(60_000),
     })
-    if (!res.ok) {
-      return { performance: null, https: url.startsWith("https") }
-    }
+    if (!res.ok) return { performance: null, https: url.startsWith("https") }
     const data = (await res.json()) as {
       lighthouseResult?: { categories?: { performance?: { score?: number } } }
     }
@@ -57,48 +60,116 @@ async function runPsi(
       performance: typeof score === "number" ? Math.round(score * 100) : null,
       https: url.startsWith("https"),
     }
-  } catch {
+  } catch (e) {
+    console.warn("[sales-scanner] PageSpeed request failed:", e)
     return { performance: null, https: url.startsWith("https") }
   }
+}
+
+function emptyHtmlInspect(): HtmlInspect {
+  return {
+    hasOgp: false,
+    isWordPress: false,
+    copyrightYear: null,
+    title: null,
+    description: null,
+    canonicalUrl: null,
+    formCount: 0,
+    contactLinkCount: 0,
+  }
+}
+
+function firstMetaContent(html: string, name: string): string | null {
+  const pattern = new RegExp(`<meta[^>]+name=["']${name}["'][^>]+content=["']([^"']+)["']`, "i")
+  return html.match(pattern)?.[1]?.trim() ?? null
 }
 
 async function inspectHtml(url: string): Promise<HtmlInspect> {
   try {
     const res = await fetch(url, {
       signal: AbortSignal.timeout(10_000),
-      headers: { "User-Agent": "Mozilla/5.0 (Paradigm Diagnostic Bot/1.0)" },
+      headers: { "User-Agent": USER_AGENT },
     })
     const html = await res.text()
-    const hasOgp = /<meta[^>]+property=["']og:/i.test(html)
-    const isWordPress = /wp-content|wp-includes|generator.*wordpress/i.test(html)
-    const yearMatch = html.match(/©\s*(\d{4})|copyright\s*(\d{4})|&copy;\s*(\d{4})/i)
-    const copyrightYear = yearMatch
-      ? Number.parseInt(yearMatch[1] || yearMatch[2] || yearMatch[3], 10)
-      : null
+    const yearMatch = html.match(/(?:copyright|&copy;|©)\s*(\d{4})/i)
     const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i)
-    const title = titleMatch?.[1]?.trim() ?? null
-    return { hasOgp, isWordPress, copyrightYear, title }
-  } catch {
-    return { hasOgp: false, isWordPress: false, copyrightYear: null, title: null }
+    const canonicalMatch = html.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i)
+
+    return {
+      hasOgp: /<meta[^>]+property=["']og:/i.test(html),
+      isWordPress: /wp-content|wp-includes|generator.*wordpress/i.test(html),
+      copyrightYear: yearMatch ? Number.parseInt(yearMatch[1] ?? "", 10) : null,
+      title: titleMatch?.[1]?.trim() ?? null,
+      description: firstMetaContent(html, "description"),
+      canonicalUrl: canonicalMatch?.[1]?.trim() ?? null,
+      formCount: (html.match(/<form\b/gi) ?? []).length,
+      contactLinkCount: (
+        html.match(/href=["'][^"']*(contact|inquiry|toiawase|otoiawase|form)[^"']*["']/gi) ?? []
+      ).length,
+    }
+  } catch (e) {
+    console.warn("[sales-scanner] HTML inspect failed:", e)
+    return emptyHtmlInspect()
   }
 }
 
-/**
- * domain を完全スキャンして IssueCode 配列に変換.
- *
- * 課題推定ルール:
- *   - mobile PSI < 50  → speed_critical
- *   - https なし       → ssl_expired
- *   - WordPress        → wp_outdated (簡易版・後で Wappalyzer)
- *   - OGP meta なし    → no_ogp
- *   - copyright 2 年以上前 → copyright_old
- */
+async function inspectSecurityHeaders(url: string): Promise<HttpSecurityHeaders> {
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      signal: AbortSignal.timeout(10_000),
+      headers: { "User-Agent": USER_AGENT },
+    })
+    return {
+      hasHsts: !!res.headers.get("strict-transport-security"),
+      hasCsp: !!res.headers.get("content-security-policy"),
+      hasXFrameOptions: !!res.headers.get("x-frame-options"),
+      hasNoSniff: (res.headers.get("x-content-type-options") ?? "").toLowerCase() === "nosniff",
+      server: res.headers.get("server"),
+    }
+  } catch (e) {
+    console.warn("[sales-scanner] security header inspect failed:", e)
+    return { hasHsts: false, hasCsp: false, hasXFrameOptions: false, hasNoSniff: false, server: null }
+  }
+}
+
+async function fetchOptionalText(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, {
+      redirect: "follow",
+      signal: AbortSignal.timeout(8_000),
+      headers: { "User-Agent": USER_AGENT },
+    })
+    if (!res.ok) return null
+    return await res.text()
+  } catch (e) {
+    console.warn("[sales-scanner] optional text fetch failed:", e)
+    return null
+  }
+}
+
+async function inspectRobotsSitemap(origin: string): Promise<RobotsSitemapInspect> {
+  const [robots, sitemap] = await Promise.all([
+    fetchOptionalText(`${origin}/robots.txt`),
+    fetchOptionalText(`${origin}/sitemap.xml`),
+  ])
+  return {
+    robotsTxt: !!robots,
+    sitemapXml: !!sitemap,
+    sitemapUrlCount: sitemap ? (sitemap.match(/<loc>/gi) ?? []).length : 0,
+  }
+}
+
 export async function scanDomain(domain: string): Promise<ScanResult> {
   const url = domain.startsWith("http") ? domain : `https://${domain}`
-  const [mobile, desktop, html] = await Promise.all([
+  const origin = new URL(url).origin
+  const [mobile, desktop, html, securityHeaders, robotsSitemap] = await Promise.all([
     runPsi(url, "mobile"),
     runPsi(url, "desktop"),
     inspectHtml(url),
+    inspectSecurityHeaders(url),
+    inspectRobotsSitemap(origin),
   ])
 
   const issues: IssueCode[] = []
@@ -110,5 +181,5 @@ export async function scanDomain(domain: string): Promise<ScanResult> {
     issues.push("copyright_old")
   }
 
-  return { mobile, desktop, html, issues }
+  return { mobile, desktop, html, securityHeaders, robotsSitemap, issues }
 }

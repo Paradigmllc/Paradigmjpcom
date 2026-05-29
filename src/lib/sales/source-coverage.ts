@@ -40,9 +40,12 @@ interface SourceDefinition {
 
 const SOURCES: SourceDefinition[] = [
   { slug: "pagespeed", label: "PageSpeed Insights", category: "analysis", env: ["GOOGLE_PSI_API_KEY"], detect: (_meta, c) => c.pagespeed_mobile !== null || c.pagespeed_desktop !== null, detail: "Core Web Vitals and speed risk" },
+  { slug: "html_metadata", label: "HTML metadata scan", category: "analysis", detect: (m) => !!(m.scan as JsonRecord | undefined)?.html_title || !!(m.scan as JsonRecord | undefined)?.html_description, detail: "Title, description, canonical, OGP, and visible HTML evidence" },
+  { slug: "robots_sitemap", label: "robots.txt / sitemap.xml", category: "analysis", detect: (m) => !!(m.robots_sitemap as JsonRecord | undefined)?.robotsTxt || !!(m.robots_sitemap as JsonRecord | undefined)?.sitemapXml, detail: "Crawlability and public URL inventory" },
+  { slug: "security_headers_free", label: "HTTP security headers", category: "analysis", detect: (m) => !!m.security_headers, detail: "HSTS, CSP, X-Frame-Options, nosniff, and server header" },
   { slug: "dataforseo", label: "DataForSEO", category: "analysis", env: ["DATAFORSEO_LOGIN", "DATAFORSEO_PASSWORD"], detect: (m) => !!m.dataforseo, detail: "SEO and lighthouse enrichment" },
   { slug: "wappalyzer", label: "Wappalyzer CLI", category: "analysis", detect: (m) => Array.isArray((m.tech as JsonRecord | undefined)?.stack), detail: "CMS/framework/analytics stack" },
-  { slug: "whatweb", label: "WhatWeb API", category: "analysis", env: ["WHATWEB_API_URL"], detect: (m) => !!m.whatweb, detail: "Technology fingerprint fallback" },
+  { slug: "whatweb", label: "WhatWeb API", category: "analysis", env: ["WHATWEB_API_URL"], detect: (m) => !!m.whatweb || !!(m.tech as JsonRecord | undefined)?.server, detail: "Technology fingerprint fallback" },
   { slug: "urlscan", label: "urlscan.io", category: "analysis", env: ["URLSCAN_API_KEY"], detect: (m) => !!m.urlscan, detail: "Security and resource evidence" },
   { slug: "publicwww", label: "PublicWWW", category: "analysis", env: ["PUBLICWWW_API_KEY"], detect: (m) => !!m.publicwww, detail: "Tracking/script footprint" },
   { slug: "ssllabs", label: "SSL Labs", category: "analysis", detect: (m) => !!m.ssl, detail: "TLS grade and certificate risk" },

@@ -18,6 +18,7 @@ import { verifyWebhookSecret } from "@/lib/sales/auth"
 import { notionQueryDatabase, extractProperty } from "@/lib/notion"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { isValidRegion, type Region } from "@/lib/sales/types"
+import { isNotionLegacySyncEnabled, notionLegacyDisabledResponse } from "@/lib/sales/notion-legacy-guard"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -27,6 +28,8 @@ const DB_JP = "86b1d93e3b854862ae7b2750d2585677"
 const DB_GLOBAL = "35fa2b78-f3fc-81aa-b57f-fcc729431181"
 
 export async function POST(req: NextRequest) {
+  if (!isNotionLegacySyncEnabled()) return notionLegacyDisabledResponse()
+
   const authErr = verifyWebhookSecret(req)
   if (authErr) return authErr
 

@@ -22,6 +22,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { notionGetBotId } from "@/lib/notion"
 import { routeNotionPage } from "@/lib/sales/notion-apply"
 import { verifyNotionSignature } from "@/lib/sales/notion-webhook-verify"
+import { isNotionLegacySyncEnabled, notionLegacyDisabledResponse } from "@/lib/sales/notion-legacy-guard"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -35,6 +36,8 @@ interface NotionWebhookEvent {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isNotionLegacySyncEnabled()) return notionLegacyDisabledResponse()
+
   // ── 生ボディを取得 (署名検証は生バイトで行う必要がある) ──
   const rawBody = await req.text()
   let event: NotionWebhookEvent
