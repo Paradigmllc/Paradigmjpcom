@@ -1,8 +1,5 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
-import {
-  fetchCompanyKarte,
-  type CompanyKarteSnapshot,
-} from "@/lib/sales/company-karte"
+import { fetchCompanyKarte, type CompanyKarteSnapshot } from "@/lib/sales/company-karte"
 import {
   ensureCompanyProductRecommendations,
   markRecommendationOpportunityCreated,
@@ -21,7 +18,6 @@ interface TwentyRecord {
 interface TwentyListResponse<T> {
   data?: {
     companies?: T[]
-    notes?: T[]
     opportunities?: T[]
   }
 }
@@ -32,6 +28,7 @@ interface TwentyMutationResponse {
     updateCompany?: TwentyRecord
     company?: TwentyRecord
     createOpportunity?: { id?: string }
+    updateOpportunity?: { id?: string }
     opportunity?: { id?: string }
   }
 }
@@ -40,7 +37,6 @@ export interface TwentySyncResult {
   ok: boolean
   configured: boolean
   companyId?: string
-  noteId?: string
   homeSynced?: boolean
   opportunityIds?: string[]
   recommendationCount?: number
@@ -139,7 +135,7 @@ function karteHomeSummary(karte: CompanyKarteSnapshot): string {
 
   return [
     `対象: ${karte.targetCountry} / ${karte.reportLocale} / ${karte.templateVariant}`,
-    `取得率: ${karte.sourceScore}% (${karte.collectedCount} collected, ${karte.configuredCount} configured, ${karte.missingCount} missing)`,
+    `取得状況: ${karte.sourceScore}% (${karte.collectedCount} collected, ${karte.configuredCount} configured, ${karte.missingCount} missing)`,
     `主な痛み: ${karte.diagnosisSummary ?? "Dify診断待ち"}`,
     `推奨提案: ${karte.recommendedOffer ?? (products || "商材判定待ち")}`,
     `推奨商材: ${products || "未判定"}`,
@@ -153,7 +149,7 @@ async function syncTwentyCompanyHomeFields(
   const result = await twentyFetch<TwentyMutationResponse>(`/rest/companies/${twentyCompanyId}`, {
     method: "PATCH",
     body: JSON.stringify({
-      paradigmReportUrl: linkField("診断レポート", karte.reportUrl),
+      paradigmReportUrl: linkField("診断レポートURL", karte.reportUrl),
       paradigmFormUrl: linkField("フォームURL", karte.formUrl),
       paradigmRecommendedProducts: karte.recommendedProducts.map((product) => productOptionValue(product.code)),
       paradigmKarteScore: karteScore(karte),

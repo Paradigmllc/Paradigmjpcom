@@ -78,7 +78,7 @@ const FALLBACK_PRODUCTS: Record<SalesProductCode, Omit<SalesProduct, "id">> = {
     default_currency: "JPY",
     default_amount_yen: 450000,
     is_subscription: false,
-    description: "診断レポートとAstro差し替えデモを起点にしたWeb制作商材。",
+    description: "診断レポートとAstro差し替えデモを起点にしたWeb制作提案。",
     sort_order: 10,
     meta: {},
   },
@@ -114,7 +114,7 @@ const FALLBACK_PRODUCTS: Record<SalesProductCode, Omit<SalesProduct, "id">> = {
     default_currency: "JPY",
     default_amount_yen: 250000,
     is_subscription: true,
-    description: "海外SMB向けの動画制作、字幕、短尺動画の継続提供。",
+    description: "海外SMB向けの動画制作、字幕、短尺動画の継続納品。",
     sort_order: 40,
     meta: {},
   },
@@ -137,23 +137,23 @@ export function inferCompanyProductRecommendations(input: ProductRecommendationI
   if (isJapanTarget(input)) {
     return wantsDx
       ? [
-          { code: "jp_dx_package", priority: 1, fitScore: 88, reason: "国内向けで営業自動化・業務改善の文脈が強いため。" },
+          { code: "jp_dx_package", priority: 1, fitScore: 88, reason: "国内向けで営業自動化や業務改善の文脈が強いため。" },
           { code: "jp_web_production", priority: 2, fitScore: 78, reason: "診断レポートとデモサイトをWeb改善提案へ接続できるため。" },
         ]
       : [
-          { code: "jp_web_production", priority: 1, fitScore: 86, reason: "国内企業のWeb診断、フォーム改善、Astro差し替えデモと最も相性が良いため。" },
-          { code: "jp_dx_package", priority: 2, fitScore: 72, reason: "Web改善後の業務改善・営業自動化へ拡張しやすいため。" },
+          { code: "jp_web_production", priority: 1, fitScore: 86, reason: "国内企業のWeb診断、フォーム改善、Astroデモとの相性が高いため。" },
+          { code: "jp_dx_package", priority: 2, fitScore: 72, reason: "Web改善後に業務改善や営業自動化へ拡張しやすいため。" },
         ]
   }
 
   return wantsVideo
     ? [
-        { code: "global_video_subscription", priority: 1, fitScore: 88, reason: "海外向けで動画納品・字幕・短尺コンテンツの継続提案に接続しやすいため。" },
+        { code: "global_video_subscription", priority: 1, fitScore: 88, reason: "海外向けで動画納品、字幕、短尺コンテンツの継続提案に接続しやすいため。" },
         { code: "global_jaas", priority: 2, fitScore: 76, reason: "動画提案後に日本市場参入支援へ展開できるため。" },
       ]
     : [
-        { code: "global_jaas", priority: 1, fitScore: 88, reason: "海外SMB向けの日本市場参入診断・LP・営業導線構築と一致するため。" },
-        { code: "global_video_subscription", priority: 2, fitScore: 74, reason: "日本向け訴求の動画・字幕・営業資料化へ拡張できるため。" },
+        { code: "global_jaas", priority: 1, fitScore: 88, reason: "海外SMB向けの日本市場参入診断、LP、営業導線構築と一致するため。" },
+        { code: "global_video_subscription", priority: 2, fitScore: 74, reason: "日本向け訴求を動画や字幕の営業資料化へ拡張できるため。" },
       ]
 }
 
@@ -294,9 +294,6 @@ export async function markRecommendationOpportunityCreated(
     .update({
       status: "opportunity_created",
       twenty_opportunity_id: twentyOpportunityId,
-      meta: {
-        last_twenty_sync_at: new Date().toISOString(),
-      },
     })
     .eq("id", recommendationId)
 

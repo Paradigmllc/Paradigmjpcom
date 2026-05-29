@@ -221,15 +221,9 @@ export async function fetchCompanyKarte(
 }
 
 export function companyKarteMarkdown(karte: CompanyKarteSnapshot): string {
-  const sourceLines = karte.sourceItems
-    .map((item) => `- ${item.label}: ${item.status} / ${item.score} - ${item.detail}`)
-    .join("\n")
-  const evidenceLines = karte.evidence
-    .map((item) => `- ${item.label}: ${item.value} (${item.source})`)
-    .join("\n")
-  const localizedLinks = karte.localizedReportUrls
-    .map((link) => `- ${link.label}: ${link.url}`)
-    .join("\n")
+  const sourceLines = karte.sourceItems.map((item) => `- ${item.label}: ${item.status} / ${item.score} - ${item.detail}`).join("\n")
+  const evidenceLines = karte.evidence.map((item) => `- ${item.label}: ${item.value} (${item.source})`).join("\n")
+  const localizedLinks = karte.localizedReportUrls.map((link) => `- ${link.label}: ${link.url}`).join("\n")
   const productLines = karte.recommendedProducts
     .map((product) => `- P${product.priority} ${product.displayName}: fit ${product.fitScore} / ${product.reason}`)
     .join("\n")
