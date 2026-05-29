@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { verifyWebhookSecret } from "@/lib/sales/auth"
 import { upsertCompanyByDomain, setPipelineStatus, findCompanyByDomain } from "@/lib/sales/companies"
 import { scanDomain } from "@/lib/sales/sources/scanner"
+import { saveSourceCoverageRows } from "@/lib/sales/source-coverage"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -46,14 +47,31 @@ export async function POST(
   const scan = await scanDomain(domain)
 
   // 結果を Supabase に書込
-  await upsertCompanyByDomain({
+  const result = await upsertCompanyByDomain({
     domain,
     company_name: existing?.company_name ?? scan.html.title ?? domain,
     pagespeed_mobile: scan.mobile.performance,
     pagespeed_desktop: scan.desktop.performance,
     detected_issues: scan.issues,
     pipeline_status: "report_ready",
+    meta: {
+      scan: {
+        ran_at: new Date().toISOString(),
+        mobile_score: scan.mobile.performance,
+        desktop_score: scan.desktop.performance,
+        html_title: scan.html.title,
+        html_description: scan.html.description,
+        canonical_url: scan.html.canonicalUrl,
+        is_wordpress: scan.html.isWordPress,
+        copyright_year: scan.html.copyrightYear,
+        form_count: scan.html.formCount,
+        contact_link_count: scan.html.contactLinkCount,
+      },
+      security_headers: scan.securityHeaders,
+      robots_sitemap: scan.robotsSitemap,
+    },
   })
+  if (result.company) await saveSourceCoverageRows(result.company)
 
   return NextResponse.json({
     ok: true,
