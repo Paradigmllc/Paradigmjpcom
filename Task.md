@@ -3,7 +3,7 @@
 - [x] Added Supabase SSOT company-karte builder that consolidates `sales_companies.meta`, `sales_source_runs`, report URLs, form URLs, Astro demo URLs, Dify pain diagnosis, and source coverage into one snapshot.
 - [x] Added authenticated API `GET /api/sales/companies/[companyId]/karte` for the dashboard, n8n, and operator tools.
 - [x] Added authenticated API `POST /api/sales/companies/[companyId]/twenty-sync` plus enrichment-job hook so completed karte generation can project a note into the Twenty company page when `TWENTY_API_KEY` is configured.
-- [x] Added dashboard `企業カルテ` tab with loading, empty, error, source coverage, i18n-per-locale report links, form URL, report URL, and demo URL visibility.
+- [x] UX correction: removed the dashboard `企業カルテ` tab because the company-karte UI must live in Twenty company detail pages; the dashboard remains a control plane for SSOT, CSV import, jobs, and tool health.
 - [x] Applied `supabase/migration_017_sales_twenty_karte_sync.sql` to Supabase OSS so `sales_sync_logs` accepts `supabase->twenty` and `karte_note_sync`.
 - [x] Verification: `npx tsc --noEmit --pretty false` passed; `npx vitest run src/lib/sales/company-karte.test.ts` passed from real path `D:\dev\paradigmjpcom`.
 

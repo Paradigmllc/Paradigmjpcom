@@ -5,7 +5,6 @@ import { motion } from "framer-motion"
 import {
   BarChart3,
   BriefcaseBusiness,
-  FileText,
   LayoutDashboard,
   ListChecks,
   MonitorCog,
@@ -15,7 +14,6 @@ import {
 } from "lucide-react"
 import { Toaster } from "sonner"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
-import { CompanyKartePanel } from "./CompanyKartePanel"
 import { SalesAutomationPanel } from "./SalesAutomationPanel"
 import {
   AnalyticsPanel,
@@ -33,7 +31,6 @@ import {
 type TabId =
   | "overview"
   | "automation"
-  | "karte"
   | "workspace"
   | "operator"
   | "crm"
@@ -48,7 +45,6 @@ interface Props {
 const TABS: { id: TabId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "overview", label: "司令塔", icon: LayoutDashboard },
   { id: "automation", label: "CSV・自動診断", icon: UploadCloud },
-  { id: "karte", label: "企業カルテ", icon: FileText },
   { id: "workspace", label: "リスト作業場", icon: Sheet },
   { id: "operator", label: "オペレーター", icon: ListChecks },
   { id: "crm", label: "CRM", icon: BriefcaseBusiness },
@@ -76,6 +72,9 @@ export function SalesCommandCenter({ data }: Props) {
             <h1 className="mt-3 text-2xl font-semibold tracking-normal text-zinc-950 sm:text-3xl">
               Salesforce x Apollo.io風 営業ダッシュボード
             </h1>
+            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-500">
+              この画面はSSOT、CSV投入、ジョブ監視、OSS連携状態の司令塔です。企業ごとのカルテ閲覧と営業活動はTwentyの企業個別ページに集約します。
+            </p>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:min-w-[420px]">
             <div className="rounded-lg border border-zinc-200 bg-white p-3">
@@ -133,7 +132,6 @@ export function SalesCommandCenter({ data }: Props) {
         >
           {activeTab === "overview" && <OverviewPanel data={data} />}
           {activeTab === "automation" && <SalesAutomationPanel data={data} />}
-          {activeTab === "karte" && <CompanyKartePanel data={data} />}
           {activeTab === "workspace" && <WorkspacePanel data={data} />}
           {activeTab === "operator" && <OperatorPanel data={data} />}
           {activeTab === "crm" && <CrmPanel data={data} />}
