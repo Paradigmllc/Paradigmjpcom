@@ -8,6 +8,7 @@
 - [x] Deployed Cal.com OSS and Docuseal OSS into the Hetzner/DigitalOcean Sales stack with formal `cal.paradigmjp.com` and `docuseal.paradigmjp.com` Traefik routes.
 - [x] Added `NOTION_LEGACY_SYNC_ENABLED=false` default guard behavior: legacy Notion Sales OS sync/webhook routes return HTTP 410 unless explicitly re-enabled.
 - [x] Expanded free/OSS company source coverage with HTML metadata, robots/sitemap, and HTTP security-header evidence for Twenty/Supabase company karte data.
+- [x] Changed form outreach dry-run behavior so missing/fallback form discovery is routed to the manual operator queue instead of counted as a hard failure.
 - [x] Created Cloudflare DNS-only A records for `cal.paradigmjp.com` and `docuseal.paradigmjp.com` pointing at `139.59.250.5`.
 - [x] Applied Twenty metadata patch `scripts/twenty-karte-home-fields.sql` so Company HOME exposes first-class Paradigm karte fields instead of requiring the timeline memo view.
 - [x] Verification: `npx tsc --noEmit --pretty false` passed; `npx vitest run src/lib/sales/company-karte.test.ts src/lib/sales/products.test.ts` passed from real path `D:\dev\paradigmjpcom`.

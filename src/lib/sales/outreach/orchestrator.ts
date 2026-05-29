@@ -163,12 +163,30 @@ async function processOne(
     })
     formUrl = discovery.formUrl
     if (!formUrl || discovery.method === "fallback") {
-      return { ...base("discovery_failed", `form URL not found: ${discovery.method}`), formUrl, message }
+      await persistOutcome(
+        company,
+        "manual_queue",
+        "follow_up",
+        `form URL not found: ${discovery.method}`,
+        { formUrl, discovery, message },
+        opts.dryRun,
+      )
+      return { ...base("manual_queue", `form URL not found: ${discovery.method}`), formUrl, message }
     }
   }
 
   const html = await fetchPageHtml(formUrl, 8_000)
-  if (!html) return { ...base("discovery_failed", "form HTML fetch failed"), formUrl, message }
+  if (!html) {
+    await persistOutcome(
+      company,
+      "manual_queue",
+      "follow_up",
+      "form HTML fetch failed",
+      { formUrl, message },
+      opts.dryRun,
+    )
+    return { ...base("manual_queue", "form HTML fetch failed"), formUrl, message }
+  }
   const classification = await classifyForm({ formHtml: html, pageUrl: formUrl, enableLlm: opts.enableLlm })
 
   if (classification.classification === "risky_captcha") {
