@@ -73,7 +73,8 @@ const TOOL_ACCENTS: Record<string, string> = {
   twenty: "border-indigo-200 bg-indigo-50 text-indigo-800",
   metabase: "border-violet-200 bg-violet-50 text-violet-800",
   n8n: "border-rose-200 bg-rose-50 text-rose-800",
-  notion: "border-slate-200 bg-slate-50 text-slate-600",
+  calcom: "border-emerald-200 bg-emerald-50 text-emerald-800",
+  docuseal: "border-stone-200 bg-stone-50 text-stone-800",
 }
 
 function externalUrlForCompany(company: DashboardCompany): string {

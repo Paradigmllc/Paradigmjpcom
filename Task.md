@@ -1,3 +1,13 @@
+## Codex Update - 2026-05-29 Sales Products and Twenty Opportunities
+
+- [x] Added Supabase OSS product/package master for four primary offers: Japan web production, Japan DX package, global Japan Entry Package (JaaS), and global video subscription.
+- [x] Added company-product recommendation ledger so each completed company karte can persist which offers should become Twenty opportunities.
+- [x] Extended Twenty sync so a completed company karte creates/updates the Twenty company, writes the karte note, and creates product-based opportunities when `TWENTY_API_KEY` is configured.
+- [x] Added Cal.com OSS and Docuseal OSS to Sales OS tool registry, admin dashboard links, env examples, and Supabase `sales_tool_connections`.
+- [x] Disabled Notion Legacy from the Sales OS control surface; Notion remains available only as a customer-facing workspace tool, not the SSOT.
+- [x] Created Cloudflare DNS-only A records for `cal.paradigmjp.com` and `docuseal.paradigmjp.com` pointing at `139.59.250.5`.
+- [x] Verification: `npx tsc --noEmit --pretty false` passed; `npx vitest run src/lib/sales/company-karte.test.ts src/lib/sales/products.test.ts` passed from real path `D:\dev\paradigmjpcom`.
+
 ## Codex Update - 2026-05-29 Company Karte Evidence Projection
 
 - [x] Added Supabase SSOT company-karte builder that consolidates `sales_companies.meta`, `sales_source_runs`, report URLs, form URLs, Astro demo URLs, Dify pain diagnosis, and source coverage into one snapshot.

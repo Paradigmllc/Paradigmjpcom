@@ -93,7 +93,7 @@ interface QueueRow {
   sales_companies?: { company_name?: string | null } | null
 }
 
-const TOOL_ORDER: DashboardToolConnection["slug"][] = ["supabase", "nocodb", "appsmith", "twenty", "metabase", "n8n", "notion"]
+const TOOL_ORDER: DashboardToolConnection["slug"][] = ["supabase", "nocodb", "appsmith", "twenty", "metabase", "n8n", "calcom", "docuseal"]
 
 const TOOL_ENV: Record<DashboardToolConnection["slug"], string | null> = {
   supabase: "SALES_SUPABASE_URL",
@@ -102,7 +102,8 @@ const TOOL_ENV: Record<DashboardToolConnection["slug"], string | null> = {
   twenty: "TWENTY_BASE_URL",
   metabase: "METABASE_BASE_URL",
   n8n: "N8N_BASE_URL",
-  notion: null,
+  calcom: "CALCOM_BASE_URL",
+  docuseal: "DOCUSEAL_BASE_URL",
 }
 
 const FALLBACK_TOOLS: DashboardToolConnection[] = [
@@ -178,18 +179,8 @@ const FALLBACK_TOOLS: DashboardToolConnection[] = [
     owner: null,
     lastCheckedAt: null,
   },
-  {
-    slug: "notion",
-    displayName: "Notion Legacy",
-    role: "旧営業ダッシュボード。新規運用の中心から外す。",
-    interfaceType: "legacy_workspace",
-    deploymentType: "legacy_external",
-    status: "legacy",
-    baseUrl: "https://www.notion.so/35fa2b78f3fc81299d91e457889ee393",
-    healthUrl: null,
-    owner: null,
-    lastCheckedAt: null,
-  },
+  { slug: "calcom", displayName: "Cal.com OSS", role: "Meeting booking, post-diagnosis consultation slots, and owner calendar routing.", interfaceType: "scheduling", deploymentType: "oss_self_hosted", status: readToolUrl("calcom") ? "active" : "planned", baseUrl: readToolUrl("calcom"), healthUrl: null, owner: null, lastCheckedAt: null },
+  { slug: "docuseal", displayName: "Docuseal OSS", role: "Contract, order form, NDA, and e-signature status management.", interfaceType: "contract", deploymentType: "oss_self_hosted", status: readToolUrl("docuseal") ? "active" : "planned", baseUrl: readToolUrl("docuseal"), healthUrl: null, owner: null, lastCheckedAt: null },
 ]
 function readToolUrl(slug: DashboardToolConnection["slug"]): string | null {
   const envName = TOOL_ENV[slug]

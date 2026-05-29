@@ -1,6 +1,7 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { buildReportUrl, REPORT_LOCALES, type ReportLocale } from "@/lib/sales/routing"
 import { computeSourceCoverage, type SourceCoverageItem } from "@/lib/sales/source-coverage"
+import type { CompanyProductRecommendation } from "@/lib/sales/products"
 import type { SalesCompany } from "@/lib/sales/types"
 
 type JsonRecord = Record<string, unknown>
@@ -45,6 +46,7 @@ export interface CompanyKarteSnapshot {
   missingCount: number
   sourceItems: SourceCoverageItem[]
   evidence: CompanyKarteEvidence[]
+  recommendedProducts: CompanyProductRecommendation[]
   diagnosisSummary: string | null
   recommendedOffer: string | null
   generatedAt: string
@@ -64,13 +66,21 @@ function stringAt(meta: JsonRecord, path: string[]): string | null {
   return typeof cursor === "string" && cursor.trim().length > 0 ? cursor.trim() : null
 }
 
+function firstString(meta: JsonRecord, paths: string[][]): string | null {
+  for (const path of paths) {
+    const value = stringAt(meta, path)
+    if (value) return value
+  }
+  return null
+}
+
 function numberEvidence(label: string, value: number | null, source: string): CompanyKarteEvidence | null {
   if (value === null || !Number.isFinite(value)) return null
   return {
     label,
     value: String(value),
     source,
-    tone: value >= 80 ? "good" : value >= 50 ? "warning" : "warning",
+    tone: value >= 80 ? "good" : "warning",
   }
 }
 
@@ -82,14 +92,6 @@ function textEvidence(
 ): CompanyKarteEvidence | null {
   if (!value) return null
   return { label, value, source, tone }
-}
-
-function firstString(meta: JsonRecord, paths: string[][]): string | null {
-  for (const path of paths) {
-    const value = stringAt(meta, path)
-    if (value) return value
-  }
-  return null
 }
 
 function sourceItemFromRun(row: SourceRunRow): SourceCoverageItem {
@@ -128,7 +130,12 @@ function evidenceFromCompany(company: SalesCompany): CompanyKarteEvidence[] {
   return [
     numberEvidence("PageSpeed Mobile", company.pagespeed_mobile, "PageSpeed Insights"),
     numberEvidence("PageSpeed Desktop", company.pagespeed_desktop, "PageSpeed Insights"),
-    textEvidence("フォームURL", firstString(meta, [["contact_form_url"], ["form_discovery", "form_url"], ["discovery", "contact_form_url"]]), "Crawlee / Crawl4AI", "good"),
+    textEvidence(
+      "フォームURL",
+      firstString(meta, [["contact_form_url"], ["form_discovery", "form_url"], ["discovery", "contact_form_url"]]),
+      "Crawlee / Crawl4AI",
+      "good",
+    ),
     textEvidence("診断レポートURL", company.report_url, "Paradigm Report", "good"),
     textEvidence("AstroデモURL", typeof demo?.url === "string" ? demo.url : null, "Astro demo generator", "good"),
     textEvidence("主な痛み", typeof diagnosis?.primaryPain === "string" ? diagnosis.primaryPain : null, "Dify / DeepSeek", "warning"),
@@ -150,7 +157,11 @@ function coverageCounts(items: SourceCoverageItem[]) {
   }
 }
 
-export function buildCompanyKarte(company: SalesCompany, sourceRows: SourceRunRow[] = []): CompanyKarteSnapshot {
+export function buildCompanyKarte(
+  company: SalesCompany,
+  sourceRows: SourceRunRow[] = [],
+  recommendedProducts: CompanyProductRecommendation[] = [],
+): CompanyKarteSnapshot {
   const meta = (company.meta ?? {}) as JsonRecord
   const routing = asRecord(meta.routing)
   const reportLocale = (company.report_locale ?? routing?.report_locale ?? "ja") as ReportLocale
@@ -178,6 +189,7 @@ export function buildCompanyKarte(company: SalesCompany, sourceRows: SourceRunRo
     localizedReportUrls: localizedReportUrls(company, reportLocale),
     sourceItems,
     evidence: evidenceFromCompany(company),
+    recommendedProducts,
     diagnosisSummary: typeof diagnosis?.primaryPain === "string" ? diagnosis.primaryPain : null,
     recommendedOffer: typeof diagnosis?.recommendedOffer === "string" ? diagnosis.recommendedOffer : null,
     generatedAt: new Date().toISOString(),
@@ -218,6 +230,9 @@ export function companyKarteMarkdown(karte: CompanyKarteSnapshot): string {
   const localizedLinks = karte.localizedReportUrls
     .map((link) => `- ${link.label}: ${link.url}`)
     .join("\n")
+  const productLines = karte.recommendedProducts
+    .map((product) => `- P${product.priority} ${product.displayName}: fit ${product.fitScore} / ${product.reason}`)
+    .join("\n")
 
   return [
     `# 企業カルテ - ${karte.companyName}`,
@@ -227,7 +242,7 @@ export function companyKarteMarkdown(karte: CompanyKarteSnapshot): string {
     `Template: ${karte.templateVariant}`,
     `Source coverage: ${karte.sourceScore}% (${karte.collectedCount} collected, ${karte.configuredCount} configured, ${karte.missingCount} missing)`,
     "",
-    "## 営業必須URL",
+    "## 営業URL",
     `- フォームURL: ${karte.formUrl ?? "未検出"}`,
     `- 診断レポートURL: ${karte.reportUrl ?? "未生成"}`,
     `- AstroデモURL: ${karte.demoUrl ?? "未生成"}`,
@@ -238,6 +253,9 @@ export function companyKarteMarkdown(karte: CompanyKarteSnapshot): string {
     "## 痛みと提案",
     `- 主な痛み: ${karte.diagnosisSummary ?? "Dify診断待ち"}`,
     `- 推奨提案: ${karte.recommendedOffer ?? "テンプレ判定待ち"}`,
+    "",
+    "## 推奨商材 / Twenty商談候補",
+    productLines || "- 商材判定待ち",
     "",
     "## 無料API/OSS取得データ",
     evidenceLines || "- まだ取得データがありません",

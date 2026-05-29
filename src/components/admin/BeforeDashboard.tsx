@@ -105,6 +105,8 @@ function getAdminToolLinks(): AdminToolLink[] {
   const twentyUrl = getToolUrl("TWENTY_BASE_URL")
   const metabaseUrl = getToolUrl("METABASE_BASE_URL")
   const n8nUrl = getToolUrl("N8N_BASE_URL", "N8N_PLAYWRIGHT_FORM_WEBHOOK")
+  const calcomUrl = getToolUrl("CALCOM_BASE_URL")
+  const docusealUrl = getToolUrl("DOCUSEAL_BASE_URL")
 
   return [
     {
@@ -150,11 +152,18 @@ function getAdminToolLinks(): AdminToolLink[] {
       location: "Coolify",
     },
     {
-      label: "Notion Legacy",
-      role: "旧営業ダッシュボード。新規運用の正本から外す",
-      url: "https://www.notion.so/35fa2b78f3fc81299d91e457889ee393",
-      status: "legacy",
-      location: "External",
+      label: "Cal.com OSS",
+      role: "Meeting booking and post-diagnosis consultation slots.",
+      url: calcomUrl,
+      status: toolStatus(calcomUrl),
+      location: coolifyLocation(calcomUrl),
+    },
+    {
+      label: "Docuseal OSS",
+      role: "Contract, order form, NDA e-signature management.",
+      url: docusealUrl,
+      status: toolStatus(docusealUrl),
+      location: coolifyLocation(docusealUrl),
     },
   ]
 }
