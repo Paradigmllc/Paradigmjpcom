@@ -1,0 +1,75 @@
+import { describe, expect, it } from "vitest"
+import { buildCompanyKarte } from "./company-karte"
+import { DEAL_STAGES, type SalesCompany } from "./types"
+
+const fixtureCompany: SalesCompany = {
+  id: "00000000-0000-0000-0000-000000000001",
+  region: "global",
+  slug: "acme-123",
+  name_key: "acme",
+  report_locale: "en",
+  target_country: "US",
+  template_variant: "japan_entry",
+  domain: "acme.example",
+  company_name: "Acme",
+  industry: null,
+  prefecture: null,
+  pipeline_status: "report_ready",
+  deal_stage: DEAL_STAGES[0],
+  pagespeed_mobile: 42,
+  pagespeed_desktop: 88,
+  detected_issues: [],
+  report_views: 0,
+  is_hot_lead: false,
+  send_result: null,
+  sent_at: null,
+  report_url: "https://paradigmjp.com/en/report/acme-123",
+  follow_up_date: null,
+  memo: null,
+  assigned_to: null,
+  notion_page_id: null,
+  source: "test",
+  meta: {
+    contact_form_url: "https://acme.example/contact",
+    pain_diagnosis: {
+      primaryPain: "Mobile speed is below benchmark",
+      recommendedOffer: "Japan entry diagnostic",
+    },
+    tech: {
+      stack: ["Next.js", "Vercel"],
+    },
+    demo_site: {
+      url: "https://paradigmjp.com/en/d/acme-123-demo",
+    },
+  },
+  created_at: "2026-05-29T00:00:00.000Z",
+  updated_at: "2026-05-29T00:00:00.000Z",
+}
+
+describe("buildCompanyKarte", () => {
+  it("keeps i18n report URLs separated by locale and exposes key sales URLs", () => {
+    const karte = buildCompanyKarte(fixtureCompany, [
+      {
+        source_slug: "pagespeed",
+        category: "analysis",
+        status: "collected",
+        score: 100,
+        details: { label: "PageSpeed Insights", detail: "Core Web Vitals" },
+        measured_at: "2026-05-29T00:00:00.000Z",
+      },
+    ])
+
+    expect(karte.reportLocale).toBe("en")
+    expect(karte.targetCountry).toBe("US")
+    expect(karte.formUrl).toBe("https://acme.example/contact")
+    expect(karte.reportUrl).toBe("https://paradigmjp.com/en/report/acme-123")
+    expect(karte.demoUrl).toBe("https://paradigmjp.com/en/d/acme-123-demo")
+    expect(karte.localizedReportUrls.map((link) => link.url)).toContain(
+      "https://paradigmjp.com/ja/report/acme-123",
+    )
+    expect(karte.localizedReportUrls.map((link) => link.url)).toContain(
+      "https://paradigmjp.com/en/report/acme-123",
+    )
+    expect(karte.sourceItems[0]?.label).toBe("PageSpeed Insights")
+  })
+})

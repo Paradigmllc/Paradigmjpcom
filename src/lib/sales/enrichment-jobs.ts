@@ -5,6 +5,7 @@ import { runDifyDiagnosis } from "./dify-diagnosis"
 import { fetchDiagnosticReport } from "./diagnostic"
 import { generateReplacementDemo } from "./demo-generator"
 import { computeSourceCoverage, saveSourceCoverageRows } from "./source-coverage"
+import { syncCompanyKarteToTwenty } from "./twenty-sync"
 import type { SalesCompany } from "./types"
 
 type JsonRecord = Record<string, unknown>
@@ -372,11 +373,16 @@ async function processJob(sb: ServiceSupabase, job: SalesEnrichmentJob): Promise
   }
   await saveSourceCoverageRows(finalCompany)
   const coverage = computeSourceCoverage(finalCompany)
+  const twentySync = await syncCompanyKarteToTwenty(finalCompany.id)
+  if (!twentySync.ok && twentySync.configured) {
+    console.error("[sales-enrichment] Twenty karte sync failed:", twentySync.error)
+  }
 
   await completeJob(sb, job, save.company, {
     report_url: reportUrlFor(save.company),
     demo_url: demo.demoUrl,
     source_coverage_score: coverage.score,
+    twenty_sync: twentySync.ok ? "synced" : twentySync.configured ? "failed" : "not_configured",
     dify_configured: dify.configured,
     dify_ok: dify.ok,
     pain_summary: dify.summary.primaryPain,

@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import {
   BarChart3,
   BriefcaseBusiness,
+  FileText,
   LayoutDashboard,
   ListChecks,
   MonitorCog,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react"
 import { Toaster } from "sonner"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
+import { CompanyKartePanel } from "./CompanyKartePanel"
 import { SalesAutomationPanel } from "./SalesAutomationPanel"
 import {
   AnalyticsPanel,
@@ -31,6 +33,7 @@ import {
 type TabId =
   | "overview"
   | "automation"
+  | "karte"
   | "workspace"
   | "operator"
   | "crm"
@@ -45,6 +48,7 @@ interface Props {
 const TABS: { id: TabId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "overview", label: "司令塔", icon: LayoutDashboard },
   { id: "automation", label: "CSV・自動診断", icon: UploadCloud },
+  { id: "karte", label: "企業カルテ", icon: FileText },
   { id: "workspace", label: "リスト作業場", icon: Sheet },
   { id: "operator", label: "オペレーター", icon: ListChecks },
   { id: "crm", label: "CRM", icon: BriefcaseBusiness },
@@ -70,7 +74,7 @@ export function SalesCommandCenter({ data }: Props) {
               <span>{formatDate(data.generatedAt)}</span>
             </div>
             <h1 className="mt-3 text-2xl font-semibold tracking-normal text-zinc-950 sm:text-3xl">
-              Salesforce x Apollo.io 風 営業ダッシュボード
+              Salesforce x Apollo.io風 営業ダッシュボード
             </h1>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:min-w-[420px]">
@@ -83,7 +87,7 @@ export function SalesCommandCenter({ data }: Props) {
               <div className="mt-1 text-xl font-semibold">{formatYen(data.kpis.revenue30d)}</div>
             </div>
             <div className="rounded-lg border border-zinc-200 bg-white p-3">
-              <div className="text-xs text-zinc-500">生成待ち</div>
+              <div className="text-xs text-zinc-500">実行待ち</div>
               <div className="mt-1 text-xl font-semibold">{runningJobs}</div>
             </div>
           </div>
@@ -129,6 +133,7 @@ export function SalesCommandCenter({ data }: Props) {
         >
           {activeTab === "overview" && <OverviewPanel data={data} />}
           {activeTab === "automation" && <SalesAutomationPanel data={data} />}
+          {activeTab === "karte" && <CompanyKartePanel data={data} />}
           {activeTab === "workspace" && <WorkspacePanel data={data} />}
           {activeTab === "operator" && <OperatorPanel data={data} />}
           {activeTab === "crm" && <CrmPanel data={data} />}
