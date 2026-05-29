@@ -33,6 +33,8 @@ interface TwentyMutationResponse {
     company?: TwentyRecord
     createNote?: { id?: string }
     note?: { id?: string }
+    createNoteTarget?: { id?: string }
+    noteTarget?: { id?: string }
     createOpportunity?: { id?: string }
     opportunity?: { id?: string }
   }
@@ -121,17 +123,24 @@ async function createTwentyKarteNote(karte: CompanyKarteSnapshot, twentyCompanyI
     method: "POST",
     body: JSON.stringify({
       title: `企業カルテ: ${karte.companyName}`,
-      bodyV2Markdown: companyKarteMarkdown(karte),
-      noteTargets: [
-        {
-          targetCompanyId: twentyCompanyId,
-        },
-      ],
+      bodyV2: {
+        markdown: companyKarteMarkdown(karte),
+      },
     }),
   })
   if (!result.ok) throw new Error(result.error)
   const noteId = result.data.data?.createNote?.id ?? result.data.data?.note?.id
   if (!noteId) throw new Error("Twenty note create response did not include id")
+
+  const targetResult = await twentyFetch<TwentyMutationResponse>("/rest/noteTargets", {
+    method: "POST",
+    body: JSON.stringify({
+      noteId,
+      targetCompanyId: twentyCompanyId,
+    }),
+  })
+  if (!targetResult.ok) throw new Error(targetResult.error)
+
   return noteId
 }
 
