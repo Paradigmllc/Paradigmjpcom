@@ -1,30 +1,14 @@
-/**
- * lib/sales/outreach/orchestrator.ts — ④フォーム営業オーケストレータ (Phase 3)
- *
- * 役割: report_ready のリードを取り、1 件ずつ
- *       文面生成 → discovery → classify → preflight → submit →
- *       sales_companies 更新 + sales_activity_log 記録 + Slack 通知
- *       を回す自走ループ。判断は Next 側、実ブラウザは BrowserProvider 越し。
- *
- * 安全弁:
- *   - dryRun=true (default) では実送信しない (監査・preflight 用)
- *   - dedup: 直近 30 日送信済みは skip
- *   - risky_captcha → manual_queue + Slack escalate (人間判断)
- *   - first5Approval: 最初の N 件だけ Slack 承認通知を出す (SALES-CENTER #5)
- */
-
 import { getServiceSalesSupabase } from "@/lib/supabase"
-import { findCompanyById } from "../companies"
+import { notifySlack } from "@/lib/notify"
 import { generateFormMessage, fillReportUrl } from "../form-message"
 import { discoverFormUrl } from "../sources/form-discovery"
-import { classifyForm, guessFieldRole } from "./form-classifier"
+import { getRoutingMeta } from "../routing"
+import type { Region, SalesCompany } from "../types"
+import { classifyForm } from "./form-classifier"
 import { preflight } from "./preflight"
 import { getBrowserProvider } from "./browser-provider"
 import { logOutreachActivity, recentlyContacted, type ActivityResult } from "./activity"
 import { stageToPipelineStatus } from "./state-machine"
-import { notifySlack } from "@/lib/notify"
-import { getRoutingMeta } from "../routing"
-import type { Region, SalesCompany } from "../types"
 import type {
   OutreachBatchResult,
   OutreachItemResult,
@@ -43,11 +27,8 @@ export interface RunOutreachOptions {
 }
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://paradigmjp.com"
-// 既存 Coolify env (PARADIGM_SENDER_*) を fallback に採用 (archived MVP と共通の送信者識別)
-const FROM_EMAIL =
-  process.env.OUTREACH_FROM_EMAIL ?? process.env.PARADIGM_SENDER_ADDRESS ?? "contact@paradigmjp.com"
-const FROM_NAME =
-  process.env.OUTREACH_FROM_NAME ?? process.env.PARADIGM_SENDER_NAME ?? "PARADIGM 合同会社"
+const FROM_EMAIL = process.env.OUTREACH_FROM_EMAIL ?? process.env.PARADIGM_SENDER_ADDRESS ?? "contact@paradigmjp.com"
+const FROM_NAME = process.env.OUTREACH_FROM_NAME ?? process.env.PARADIGM_SENDER_NAME ?? "PARADIGM"
 
 function reportUrlFor(company: SalesCompany): string {
   if (company.report_url) return company.report_url
@@ -57,7 +38,6 @@ function reportUrlFor(company: SalesCompany): string {
   return `${SITE}/${locale}/report/${company.slug}`
 }
 
-/** 営業文面 → フォームフィールド辞書 (worker 側 field-mapper が実マッピング) */
 function buildFields(message: string): Record<string, string> {
   return { name: FROM_NAME, company: FROM_NAME, email: FROM_EMAIL, message }
 }
@@ -78,45 +58,75 @@ async function fetchPageHtml(url: string, timeoutMs: number): Promise<string | n
     })
     if (!res.ok) return null
     return await res.text()
-  } catch {
+  } catch (e) {
+    console.warn("[sales-outreach] fetch form html failed:", e)
     return null
   }
 }
 
-/** 候補リード取得: report_ready・業種あり・課題ありを updated_at 順で */
 async function fetchCandidates(region: Region, limit: number): Promise<SalesCompany[]> {
   const sb = getServiceSalesSupabase()
   if (!sb) return []
-  const { data } = await sb
+  const { data, error } = await sb
     .from("sales_companies")
     .select("*")
     .eq("region", region)
     .eq("pipeline_status", "report_ready")
     .not("industry", "is", null)
     .order("updated_at", { ascending: true })
-    .limit(limit * 3) // detected_issues フィルタは JS 側で (空配列除外)
+    .limit(limit * 3)
+
+  if (error) {
+    console.error("[sales-outreach] fetch candidates failed:", error.message)
+    return []
+  }
+
   const rows = (data as SalesCompany[]) ?? []
-  return rows.filter((c) => (c.detected_issues ?? []).length > 0).slice(0, limit)
+  return rows.filter((company) => (company.detected_issues ?? []).length > 0).slice(0, limit)
 }
 
-async function applyOutcome(
-  company: SalesCompany,
-  stage: OutreachStage,
-  sendResult: string,
-): Promise<void> {
+async function applyOutcome(company: SalesCompany, stage: OutreachStage, sendResult: string): Promise<void> {
   const sb = getServiceSalesSupabase()
   if (!sb) return
-  const pipeline = stageToPipelineStatus(stage)
   const patch: Record<string, unknown> = {
-    pipeline_status: pipeline,
+    pipeline_status: stageToPipelineStatus(stage),
     send_result: sendResult,
     report_url: reportUrlFor(company),
   }
   if (stage === "submitted") patch.sent_at = new Date().toISOString()
-  await sb.from("sales_companies").update(patch).eq("id", company.id)
+  const { error } = await sb.from("sales_companies").update(patch).eq("id", company.id)
+  if (error) console.error("[sales-outreach] outcome update failed:", error.message)
 }
 
-/** 1 件処理 */
+async function logActivity(
+  company: SalesCompany,
+  stage: OutreachStage,
+  result: ActivityResult,
+  meta: Record<string, unknown>,
+): Promise<void> {
+  await logOutreachActivity({
+    companyId: company.id,
+    region: company.region,
+    subject: `Form outreach (${stage})`,
+    body: typeof meta.message === "string" ? meta.message : "",
+    result,
+    meta,
+  })
+}
+
+async function persistOutcome(
+  company: SalesCompany,
+  stage: OutreachStage,
+  result: ActivityResult,
+  sendResult: string,
+  meta: Record<string, unknown>,
+  dryRun: boolean,
+): Promise<void> {
+  if (dryRun) return
+  await applyOutcome(company, stage, sendResult)
+  await logActivity(company, stage, result, meta)
+}
+
 async function processOne(
   company: SalesCompany,
   opts: Required<RunOutreachOptions>,
@@ -130,66 +140,83 @@ async function processOne(
     dryRun: opts.dryRun,
   })
 
-  // 0) dedup
   if (await recentlyContacted(company.id, opts.dedupDays)) {
-    return base("classified_skip", `dedup: 直近 ${opts.dedupDays} 日に送信済み`)
+    return base("classified_skip", `dedup: contacted within ${opts.dedupDays} days`)
   }
 
-  // 1) 文面生成
   const reportUrl = reportUrlFor(company)
-  const gen = await generateFormMessage(company.id)
-  if (!gen.ok || !gen.message) {
-    return base("discovery_failed", `文面生成失敗: ${gen.error ?? "empty"}`)
+  const generated = await generateFormMessage(company.id)
+  if (!generated.ok || !generated.message) {
+    return base("discovery_failed", `message generation failed: ${generated.error ?? "empty"}`)
   }
-  const message = fillReportUrl(gen.message, reportUrl)
+  const message = fillReportUrl(generated.message, reportUrl)
 
-  // 2) discovery
   const provider = getBrowserProvider()
-  const knownFormUrl = (company.meta as Record<string, unknown>)?.contact_form_url as string | undefined
-  let formUrl = knownFormUrl ?? null
+  const meta = (company.meta ?? {}) as Record<string, unknown>
+  let formUrl = typeof meta.contact_form_url === "string" ? meta.contact_form_url : null
   if (!formUrl) {
-    const disc = await discoverFormUrl({
+    const discovery = await discoverFormUrl({
       homeUrl: company.domain,
       region: company.region,
       enableLlm: opts.enableLlm,
       spaDiscover: provider.discoverSpaForm?.bind(provider),
     })
-    formUrl = disc.formUrl
-    if (!formUrl || disc.method === "fallback") {
-      return { ...base("discovery_failed", `フォーム URL 未特定 (method=${disc.method})`), formUrl, message }
+    formUrl = discovery.formUrl
+    if (!formUrl || discovery.method === "fallback") {
+      return { ...base("discovery_failed", `form URL not found: ${discovery.method}`), formUrl, message }
     }
   }
 
-  // 3) classify
   const html = await fetchPageHtml(formUrl, 8_000)
-  if (!html) return { ...base("discovery_failed", "フォーム HTML 取得失敗"), formUrl, message }
-  const cls = await classifyForm({ formHtml: html, pageUrl: formUrl, enableLlm: opts.enableLlm })
+  if (!html) return { ...base("discovery_failed", "form HTML fetch failed"), formUrl, message }
+  const classification = await classifyForm({ formHtml: html, pageUrl: formUrl, enableLlm: opts.enableLlm })
 
-  if (cls.classification === "risky_captcha") {
-    await applyOutcome(company, "manual_queue", "captcha: 人間対応")
-    await logActivity(company, "manual_queue", "follow_up", { formUrl, classification: cls.classification, message })
-    await notifySlack(
-      `🟡 手動対応キュー: ${company.company_name} (${company.domain}) — CAPTCHA 検出。フォーム手動送信を要請。`,
+  if (classification.classification === "risky_captcha") {
+    await persistOutcome(
+      company,
+      "manual_queue",
+      "follow_up",
+      "captcha requires manual handling",
+      { formUrl, classification: classification.classification, message },
+      opts.dryRun,
     )
-    return { ...base("manual_queue", "captcha 検出 → 手動キュー"), formUrl, message, classification: cls.classification }
-  }
-  if (!cls.classification.startsWith("safe_")) {
-    await applyOutcome(company, "classified_skip", `unsafe: ${cls.classification}`)
-    await logActivity(company, "classified_skip", "declined", { formUrl, classification: cls.classification })
-    return { ...base("classified_skip", `送信不可: ${cls.classification}`), formUrl, message, classification: cls.classification }
+    if (!opts.dryRun) {
+      await notifySlack(`Manual form queue: ${company.company_name} (${company.domain}) requires CAPTCHA handling.`)
+    }
+    return { ...base("manual_queue", "captcha detected"), formUrl, message, classification: classification.classification }
   }
 
-  // 4) preflight
-  const pf = await preflight({ formUrl, classification: cls, checkRobots: opts.checkRobots })
-  if (!pf.pass) {
-    await applyOutcome(company, "preflight_failed", `preflight: ${pf.reason}`)
-    await logActivity(company, "preflight_failed", "declined", { formUrl, classification: cls.classification, preflight: pf.reason })
-    return { ...base("preflight_failed", pf.reason), formUrl, message, classification: cls.classification }
+  if (!classification.classification.startsWith("safe_")) {
+    await persistOutcome(
+      company,
+      "classified_skip",
+      "declined",
+      `unsafe: ${classification.classification}`,
+      { formUrl, classification: classification.classification },
+      opts.dryRun,
+    )
+    return { ...base("classified_skip", `unsafe: ${classification.classification}`), formUrl, message, classification: classification.classification }
   }
 
-  // 5) submit (dryRun なら provider が未送信を返す)
-  const fields = buildFields(message)
-  const submit = await provider.submitForm({ formUrl, fields, message, dryRun: opts.dryRun })
+  const preflightResult = await preflight({ formUrl, classification, checkRobots: opts.checkRobots })
+  if (!preflightResult.pass) {
+    await persistOutcome(
+      company,
+      "preflight_failed",
+      "declined",
+      `preflight: ${preflightResult.reason}`,
+      { formUrl, classification: classification.classification, preflight: preflightResult.reason },
+      opts.dryRun,
+    )
+    return { ...base("preflight_failed", preflightResult.reason), formUrl, message, classification: classification.classification }
+  }
+
+  const submit = await provider.submitForm({
+    formUrl,
+    fields: buildFields(message),
+    message,
+    dryRun: opts.dryRun,
+  })
   const stage: OutreachStage =
     submit.outcome === "submitted"
       ? "submitted"
@@ -199,53 +226,37 @@ async function processOne(
           ? "classified_skip"
           : "submit_failed"
 
-  await applyOutcome(company, stage, `${submit.outcome}: ${submit.detail.slice(0, 120)}`)
-  await logActivity(company, stage, OUTCOME_TO_RESULT[submit.outcome], {
-    formUrl,
-    classification: cls.classification,
-    provider: provider.name,
-    outcome: submit.outcome,
-    detail: submit.detail,
-    evidenceUrl: submit.evidenceUrl ?? null,
-    message,
-  })
+  await persistOutcome(
+    company,
+    stage,
+    OUTCOME_TO_RESULT[submit.outcome],
+    `${submit.outcome}: ${submit.detail.slice(0, 120)}`,
+    {
+      formUrl,
+      classification: classification.classification,
+      provider: provider.name,
+      outcome: submit.outcome,
+      detail: submit.detail,
+      evidenceUrl: submit.evidenceUrl ?? null,
+      message,
+    },
+    opts.dryRun,
+  )
 
-  // first5 承認通知 (実送信時のみ)
   if (!opts.dryRun && opts.first5Approval && index < 5 && stage === "submitted") {
-    await notifySlack(
-      `✅ フォーム送信 #${index + 1}: ${company.company_name} (${company.domain})\nレポート: ${reportUrl}`,
-    )
+    await notifySlack(`Form submitted #${index + 1}: ${company.company_name} (${company.domain})\nReport: ${reportUrl}`)
   }
 
   return {
     ...base(stage, submit.detail.slice(0, 160)),
     formUrl,
     message,
-    classification: cls.classification,
+    classification: classification.classification,
     outcome: submit.outcome,
   }
 }
 
-async function logActivity(
-  company: SalesCompany,
-  stage: OutreachStage,
-  result: ActivityResult,
-  meta: Record<string, unknown>,
-): Promise<void> {
-  await logOutreachActivity({
-    companyId: company.id,
-    region: company.region,
-    subject: `フォーム営業 (${stage})`,
-    body: typeof meta.message === "string" ? meta.message : "",
-    result,
-    meta,
-  })
-}
-
-/** バッチ実行 (cron / API / audit から呼ぶ) */
-export async function runOutreachBatch(
-  options: RunOutreachOptions = {},
-): Promise<OutreachBatchResult> {
+export async function runOutreachBatch(options: RunOutreachOptions = {}): Promise<OutreachBatchResult> {
   const opts: Required<RunOutreachOptions> = {
     region: options.region ?? "jp",
     limit: options.limit ?? 5,
@@ -262,19 +273,18 @@ export async function runOutreachBatch(
   for (let i = 0; i < candidates.length; i++) {
     const result = await processOne(candidates[i], opts, i)
     items.push(result)
-    // ドメイン別レート制御 (実送信時のみ・礼儀的 1.5s 間隔)
     if (!opts.dryRun && i < candidates.length - 1) {
-      await new Promise((r) => setTimeout(r, 1_500))
+      await new Promise((resolve) => setTimeout(resolve, 1_500))
     }
   }
 
   return {
     processed: items.length,
-    submitted: items.filter((i) => i.finalStage === "submitted").length,
-    manualQueue: items.filter((i) => i.finalStage === "manual_queue").length,
-    skipped: items.filter((i) => i.finalStage === "classified_skip").length,
-    failed: items.filter((i) =>
-      ["discovery_failed", "preflight_failed", "submit_failed"].includes(i.finalStage),
+    submitted: items.filter((item) => item.finalStage === "submitted").length,
+    manualQueue: items.filter((item) => item.finalStage === "manual_queue").length,
+    skipped: items.filter((item) => item.finalStage === "classified_skip").length,
+    failed: items.filter((item) =>
+      ["discovery_failed", "preflight_failed", "submit_failed"].includes(item.finalStage),
     ).length,
     dryRun: opts.dryRun,
     items,
