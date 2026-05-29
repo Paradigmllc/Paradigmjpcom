@@ -8,6 +8,8 @@
 - [x] Reworked the Sales Command Center UI text so the dashboard is a control plane, not a duplicate Twenty CRM; added a Twenty -> Supabase sync button in the integration tab.
 - [x] Updated `.env.example` to formal `*.paradigmjp.com` OSS URLs and documented Cal.com/Docuseal webhook URLs.
 - [x] Verification: `npx tsc --noEmit --pretty false` passed; `npx vitest run src/lib/sales/company-karte.test.ts src/lib/sales/products.test.ts src/lib/sales/sources/form-discovery.test.ts` passed from `D:\dev\paradigmjpcom` (6 tests).
+- [x] Deployed production image `i12am4vvcbggefnqdizhnv9a:b82ee660...` and verified `/ja/admin/sales`, Twenty, NocoDB, Metabase, Cal.com, and Docuseal return HTTP 200.
+- [x] Production smoke passed: Cal.com webhook -> `sales_calendar_events` HTTP 200, Docuseal webhook -> `sales_contracts` HTTP 200, Twenty -> Supabase pull updated 2 records, outreach dry-run processed 2 records and safely routed both to manual queue.
 
 ## Codex Update - 2026-05-29 Sales OS E2E Automation
 
