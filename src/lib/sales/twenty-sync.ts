@@ -1,6 +1,5 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import {
-  companyKarteMarkdown,
   fetchCompanyKarte,
   type CompanyKarteSnapshot,
 } from "@/lib/sales/company-karte"
@@ -30,11 +29,8 @@ interface TwentyListResponse<T> {
 interface TwentyMutationResponse {
   data?: {
     createCompany?: TwentyRecord
+    updateCompany?: TwentyRecord
     company?: TwentyRecord
-    createNote?: { id?: string }
-    note?: { id?: string }
-    createNoteTarget?: { id?: string }
-    noteTarget?: { id?: string }
     createOpportunity?: { id?: string }
     opportunity?: { id?: string }
   }
@@ -45,6 +41,7 @@ export interface TwentySyncResult {
   configured: boolean
   companyId?: string
   noteId?: string
+  homeSynced?: boolean
   opportunityIds?: string[]
   recommendationCount?: number
   error?: string
@@ -118,30 +115,56 @@ async function createTwentyCompany(karte: CompanyKarteSnapshot): Promise<TwentyR
   return company
 }
 
-async function createTwentyKarteNote(karte: CompanyKarteSnapshot, twentyCompanyId: string): Promise<string> {
-  const result = await twentyFetch<TwentyMutationResponse>("/rest/notes", {
-    method: "POST",
+function linkField(label: string, url: string | null): { primaryLinkLabel: string; primaryLinkUrl: string } {
+  return {
+    primaryLinkLabel: url ? label : "",
+    primaryLinkUrl: url ?? "",
+  }
+}
+
+function productOptionValue(code: CompanyProductRecommendation["code"]): string {
+  return code.toUpperCase()
+}
+
+function karteScore(karte: CompanyKarteSnapshot): number {
+  const topFit = karte.recommendedProducts[0]?.fitScore ?? 70
+  return Math.max(0, Math.min(100, Math.round((karte.sourceScore + topFit) / 2)))
+}
+
+function karteHomeSummary(karte: CompanyKarteSnapshot): string {
+  const products = karte.recommendedProducts
+    .slice(0, 3)
+    .map((product) => `${product.displayName}(${product.fitScore})`)
+    .join(" / ")
+
+  return [
+    `対象: ${karte.targetCountry} / ${karte.reportLocale} / ${karte.templateVariant}`,
+    `取得率: ${karte.sourceScore}% (${karte.collectedCount} collected, ${karte.configuredCount} configured, ${karte.missingCount} missing)`,
+    `主な痛み: ${karte.diagnosisSummary ?? "Dify診断待ち"}`,
+    `推奨提案: ${karte.recommendedOffer ?? (products || "商材判定待ち")}`,
+    `推奨商材: ${products || "未判定"}`,
+  ].join("\n")
+}
+
+async function syncTwentyCompanyHomeFields(
+  karte: CompanyKarteSnapshot,
+  twentyCompanyId: string,
+): Promise<void> {
+  const result = await twentyFetch<TwentyMutationResponse>(`/rest/companies/${twentyCompanyId}`, {
+    method: "PATCH",
     body: JSON.stringify({
-      title: `企業カルテ: ${karte.companyName}`,
-      bodyV2: {
-        markdown: companyKarteMarkdown(karte),
+      paradigmReportUrl: linkField("診断レポート", karte.reportUrl),
+      paradigmFormUrl: linkField("フォームURL", karte.formUrl),
+      paradigmRecommendedProducts: karte.recommendedProducts.map((product) => productOptionValue(product.code)),
+      paradigmKarteScore: karteScore(karte),
+      paradigmSourceCoverage: karte.sourceScore,
+      paradigmKarteSummary: {
+        markdown: karteHomeSummary(karte),
       },
     }),
   })
+
   if (!result.ok) throw new Error(result.error)
-  const noteId = result.data.data?.createNote?.id ?? result.data.data?.note?.id
-  if (!noteId) throw new Error("Twenty note create response did not include id")
-
-  const targetResult = await twentyFetch<TwentyMutationResponse>("/rest/noteTargets", {
-    method: "POST",
-    body: JSON.stringify({
-      noteId,
-      targetCompanyId: twentyCompanyId,
-    }),
-  })
-  if (!targetResult.ok) throw new Error(targetResult.error)
-
-  return noteId
 }
 
 function closeDateIso(): string {
@@ -253,7 +276,7 @@ export async function syncCompanyKarteToTwenty(companyId: string): Promise<Twent
     const twentyCompany = existing?.id ? existing : await createTwentyCompany(karte)
     if (!twentyCompany.id) throw new Error("Twenty company id missing")
 
-    const noteId = await createTwentyKarteNote(karte, twentyCompany.id)
+    await syncTwentyCompanyHomeFields(karte, twentyCompany.id)
     const opportunityIds = await syncTwentyOpportunities(sb, karte, twentyCompany.id)
 
     await sb.from("sales_sync_logs").insert([
@@ -261,13 +284,13 @@ export async function syncCompanyKarteToTwenty(companyId: string): Promise<Twent
         direction: "supabase->twenty",
         entity_type: "company",
         entity_id: companyId,
-        action: "karte_note_sync",
+        action: "karte_home_sync",
         status: "success",
         payload: {
           twenty_company_id: twentyCompany.id,
-          twenty_note_id: noteId,
           report_url: karte.reportUrl,
           form_url: karte.formUrl,
+          product_codes: recommendations.map((product) => product.code),
         },
       },
       {
@@ -288,7 +311,7 @@ export async function syncCompanyKarteToTwenty(companyId: string): Promise<Twent
       ok: true,
       configured: true,
       companyId: twentyCompany.id,
-      noteId,
+      homeSynced: true,
       opportunityIds,
       recommendationCount: recommendations.length,
     }
