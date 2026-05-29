@@ -5,6 +5,7 @@
 - [x] Verified CSV import E2E on production: `/api/sales/import-csv` inserted a new company, queued enrichment, completed the job, generated a report URL, generated an Astro demo URL, synced Twenty HOME fields, and created two Twenty opportunities.
 - [x] Live E2E record: `e2e-sales-1780066521239.paradigmjp.com` moved to `report_ready`; report and demo returned HTTP 200.
 - [x] Twenty live verification: company HOME fields include report URL, karte score, source coverage, recommended products, and Japanese karte summary; opportunities were created for `Web制作` and `DXパッケージ`.
+- [x] Form outreach dry-run verification: `/api/sales/outreach/run` processed 2 report-ready leads, generated Dify/local proposal messages, and routed both to manual review because no reliable form URL was found.
 
 ## Codex Update - 2026-05-29 Sales Products and Twenty Opportunities
 
