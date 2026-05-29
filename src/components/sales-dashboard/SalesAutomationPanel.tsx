@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { FileUp, Play, RotateCw, UploadCloud } from "lucide-react"
+import { FileUp, Play, RotateCw, Send, UploadCloud } from "lucide-react"
 import { toast } from "sonner"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 import { formatDate, statusTone } from "./SalesCommandPanels"
@@ -93,7 +93,9 @@ function countByStatus(data: SalesDashboardData) {
 export function SalesAutomationPanel({ data }: { data: SalesDashboardData }) {
   const [csvText, setCsvText] = useState("")
   const [busy, setBusy] = useState(false)
+  const [outreachBusy, setOutreachBusy] = useState(false)
   const [lastResult, setLastResult] = useState<string | null>(null)
+  const [lastOutreachResult, setLastOutreachResult] = useState<string | null>(null)
   const parsedRows = useMemo(() => mapCsvRows(parseCsv(csvText)), [csvText])
   const validRows = parsedRows.filter((row) => row.company_name && row.domain)
   const statusCounts = countByStatus(data)
@@ -151,6 +153,45 @@ export function SalesAutomationPanel({ data }: { data: SalesDashboardData }) {
       toast.error(message)
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function runOutreachDryRun() {
+    setOutreachBusy(true)
+    try {
+      const res = await fetch("/api/sales/outreach/run", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          region: "jp",
+          limit: 3,
+          dryRun: true,
+          first5Approval: true,
+          enableLlm: false,
+          checkRobots: true,
+          dedupDays: 30,
+        }),
+      })
+      const json = (await res.json()) as {
+        ok?: boolean
+        processed?: number
+        submitted?: number
+        manualQueue?: number
+        skipped?: number
+        failed?: number
+        error?: string
+      }
+      if (!res.ok || !json.ok) throw new Error(json.error ?? `HTTP ${res.status}`)
+      const message = `dry-run ${json.processed ?? 0}件 / 手動 ${json.manualQueue ?? 0}件 / 失敗 ${json.failed ?? 0}件`
+      setLastOutreachResult(message)
+      toast.success(message)
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e)
+      console.error("[sales-outreach-dry-run] failed:", e)
+      toast.error(message)
+    } finally {
+      setOutreachBusy(false)
     }
   }
 
@@ -240,6 +281,31 @@ export function SalesAutomationPanel({ data }: { data: SalesDashboardData }) {
                 )}
               </div>
             ))
+          )}
+        </div>
+        <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-950">フォーム営業 dry-run</h3>
+              <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                送信せずにフォームURL探索、分類、robots/preflight、文面差し込みまで確認します。
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={runOutreachDryRun}
+              disabled={outreachBusy}
+              className="inline-flex h-10 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+              aria-label="フォーム営業dry-runを実行"
+            >
+              {outreachBusy ? <RotateCw size={16} className="animate-spin" aria-hidden /> : <Send size={16} aria-hidden />}
+              dry-run
+            </button>
+          </div>
+          {lastOutreachResult && (
+            <div className="mt-3 rounded-md bg-sky-50 px-2 py-1 text-xs font-medium text-sky-700">
+              {lastOutreachResult}
+            </div>
           )}
         </div>
       </section>

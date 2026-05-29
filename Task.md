@@ -387,3 +387,17 @@
 - [x] The enrichment runner now generates a published `/d/[slug]` Astro-style replacement demo page and stores the demo URL back into `sales_companies.meta.demo_site`.
 - [x] The public Next.js report now shows data coverage and links to the generated replacement demo when available.
 - [x] Applied `supabase/migration_016_sales_report_assets_sources.sql` to Supabase OSS and verified `web_demos` / `sales_source_runs` exist.
+
+## Codex Update - 2026-05-29 Sales Dashboard Operational Audit
+
+- [x] Added a DB/API/UI operational audit surface to `/[locale]/admin/sales`.
+- [x] Audit covers SSOT/tool connectivity, enrichment job health, report URL readiness, source coverage, Dify availability, Twenty sync errors, and form outreach readiness.
+- [x] `/api/sales/outreach/run` now accepts the same admin session used by the dashboard, while preserving webhook-secret auth for n8n/cron.
+- [x] Added a dashboard dry-run button for the form outreach pipeline. It checks discovery/classification/preflight/robots without submitting forms.
+- [x] Rebuilt `SalesCommandCenter.tsx` with clean Japanese UI strings after TypeScript exposed corrupted string literals.
+- Current production data snapshot before deploy: `sales_companies=2`, enrichment jobs `completed=2`, pipeline `report_ready=2`, source runs `collected=12 configured=2 missing=30`.
+- Remaining operational gaps:
+  - Cal.com and Docuseal DNS/tool records exist, but the actual OSS app containers still need formal Coolify deployment and health checks.
+  - Source coverage is still below production quality. Missing/error sources must be reduced before large-scale outbound.
+  - Browserless/Camoufox/Playwright Stealth must be verified against real forms before enabling `dryRun:false`.
+  - Past `opportunity_sync` errors remain in `sales_sync_logs`; rerun Twenty sync after confirming current custom fields.

@@ -10,11 +10,13 @@ import {
   MonitorCog,
   ServerCog,
   Sheet,
+  ShieldCheck,
   UploadCloud,
 } from "lucide-react"
 import { Toaster } from "sonner"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 import { SalesAutomationPanel } from "./SalesAutomationPanel"
+import { SalesOperationsAuditPanel } from "./SalesOperationsAuditPanel"
 import {
   AnalyticsPanel,
   CrmPanel,
@@ -36,6 +38,7 @@ type TabId =
   | "crm"
   | "analytics"
   | "integrations"
+  | "audit"
   | "migration"
 
 interface Props {
@@ -50,6 +53,7 @@ const TABS: { id: TabId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "crm", label: "CRM", icon: BriefcaseBusiness },
   { id: "analytics", label: "分析", icon: BarChart3 },
   { id: "integrations", label: "統合", icon: MonitorCog },
+  { id: "audit", label: "運用監査", icon: ShieldCheck },
   { id: "migration", label: "移行計画", icon: ServerCog },
 ]
 
@@ -73,7 +77,7 @@ export function SalesCommandCenter({ data }: Props) {
               Salesforce x Apollo.io風 営業ダッシュボード
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-500">
-              この画面はSSOT、CSV投入、ジョブ監視、OSS連携状態の司令塔です。企業ごとのカルテ閲覧と営業活動はTwentyの企業個別ページに集約します。
+              Supabase OSSをSSOTにし、CSV投入、企業カルテ生成、診断レポート、Twenty CRM、NocoDB、Metabase、n8n、フォーム営業パイプラインを一画面で監視します。
             </p>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:min-w-[420px]">
@@ -137,6 +141,7 @@ export function SalesCommandCenter({ data }: Props) {
           {activeTab === "crm" && <CrmPanel data={data} />}
           {activeTab === "analytics" && <AnalyticsPanel data={data} />}
           {activeTab === "integrations" && <IntegrationsPanel data={data} />}
+          {activeTab === "audit" && <SalesOperationsAuditPanel data={data} />}
           {activeTab === "migration" && <MigrationPanel data={data} />}
         </motion.section>
       </div>

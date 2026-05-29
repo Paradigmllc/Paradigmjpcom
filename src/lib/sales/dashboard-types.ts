@@ -92,6 +92,33 @@ export interface DashboardQueueItem {
   createdAt: string
 }
 
+export type DashboardAuditStatus = "ready" | "warning" | "blocked"
+
+export interface DashboardAuditCheck {
+  id: string
+  label: string
+  status: DashboardAuditStatus
+  detail: string
+  action: string
+  count?: number
+}
+
+export interface DashboardAuditSection {
+  id: string
+  title: string
+  summary: string
+  checks: DashboardAuditCheck[]
+}
+
+export interface DashboardOperationalAudit {
+  score: number
+  status: DashboardAuditStatus
+  blockers: number
+  warnings: number
+  ready: number
+  sections: DashboardAuditSection[]
+}
+
 export interface SalesDashboardData {
   status: SalesDashboardStatus
   generatedAt: string
@@ -109,4 +136,5 @@ export interface SalesDashboardData {
   operatorQueue: DashboardQueueItem[]
   enrichmentJobs: DashboardEnrichmentJob[]
   infrastructure: InfrastructureMigrationData
+  operationalAudit: DashboardOperationalAudit
 }

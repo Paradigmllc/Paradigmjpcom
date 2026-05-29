@@ -14,6 +14,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { verifyWebhookSecret } from "@/lib/sales/auth"
+import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { runOutreachBatch } from "@/lib/sales/outreach/orchestrator"
 import { isValidRegion } from "@/lib/sales/types"
 
@@ -32,13 +33,15 @@ interface Body {
 }
 
 export async function POST(req: NextRequest) {
-  const authErr = verifyWebhookSecret(req)
-  if (authErr) return authErr
+  const dashboardAuth = await isSalesApiAuthorized(req)
+  const webhookAuthErr = dashboardAuth ? null : verifyWebhookSecret(req)
+  if (webhookAuthErr) return webhookAuthErr
 
   let body: Body
   try {
     body = (await req.json()) as Body
-  } catch {
+  } catch (e) {
+    console.warn("[sales-outreach-run] empty or invalid JSON body:", e)
     body = {}
   }
 
