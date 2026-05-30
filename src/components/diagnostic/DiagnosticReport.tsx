@@ -25,6 +25,8 @@ const COPY = {
     ctaButton: "相談する",
     mailSubject: "診断レポートについて",
     dataCoverage: "データ取得率",
+    templateTitle: "提案テンプレート",
+    qualityBar: "品質基準",
   },
   en: {
     brand: "Paradigm Web Diagnostics",
@@ -43,6 +45,8 @@ const COPY = {
     ctaButton: "Talk to us",
     mailSubject: "About the diagnostic report",
     dataCoverage: "Data coverage",
+    templateTitle: "Proposal template",
+    qualityBar: "Quality bar",
   },
 } as const
 
@@ -327,6 +331,16 @@ export default function DiagnosticReport({
         </section>
 
         <SourceCoveragePanel data={data} lang={lang} />
+
+        <section className="mt-8 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="text-xs font-semibold tracking-widest text-slate-400">{c.templateTitle}</div>
+          <h2 className="mt-2 text-lg font-black tracking-normal text-slate-950">{data.content_template.title}</h2>
+          <p className="mt-3 text-sm leading-7 text-slate-600">{data.content_template.purpose}</p>
+          <div className="mt-4 rounded-lg border border-slate-100 bg-slate-50 p-4">
+            <div className="text-xs font-semibold text-slate-500">{c.qualityBar}</div>
+            <p className="mt-2 text-sm leading-7 text-slate-700">{data.content_template.quality_bar}</p>
+          </div>
+        </section>
 
         <section className="mt-8 rounded-lg border border-slate-200 bg-white p-7 text-center shadow-sm">
           <div className="text-xs font-semibold tracking-widest text-slate-400">{c.videoTitle}</div>

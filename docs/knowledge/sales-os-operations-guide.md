@@ -33,6 +33,7 @@
 - 企業カルテ生成
 - 診断レポートURL生成
 - Astro差し替えデモURL生成
+- 言語・業界・商材・訴求・成果物タイプ別のテンプレート選定
 - Twenty企業HOME項目同期
 - 推奨商材からTwenty商談候補生成
 - Dify優先のフォーム文面生成
@@ -57,6 +58,23 @@
 - Metabaseでソース別返信率と商談化率の週次レビュー
 - Appsmithで手動キュー処理UIをさらに薄くする
 - Twenty側の項目名/表示順を実運用に合わせて微調整する
+
+## 成果物テンプレート運用
+
+営業成果物は `sales_content_templates` をSSOTにする。対象は次の4種類です。
+
+- 診断レポート: Next.js の `/[locale]/report/[slug]` で表示する。
+- デモサイト: Astroで本番化しやすい差し替えデモとして `/[locale]/d/[slug]` に出す。
+- 営業資料: Slidev Markdownを生成し、GotenbergでPDF化する。
+- 営業動画: ComfyUI / HyperFrames / Remotion / Faster Whisper / MoviePy / R2 を使う動画ブリーフとして生成する。
+
+初期テンプレートは日本語と英語だけを作る。全12言語を一気に作ると運用不能な量になるため、まず `ja` と `en` の `言語 x 業界 x 成果物 x 訴求角度` を整える。Difyはテンプレートの `dify_selection_rule` と企業カルテの痛み根拠を見て、最適なテンプレートを選ぶ。
+
+実行系:
+
+- `POST /api/sales/content-templates/match`: Dify/n8nがテンプレート選定だけを行う。
+- `POST /api/sales/generate-sales-asset`: Slidev資料、動画ブリーフ、Astroデモブリーフ、診断JSONを生成し、`sales_deliveries` にレビュー待ちで記録する。
+- `node scripts/seed-sales-content-templates.mjs`: migration_022適用後に初期テンプレートをSupabaseへ投入する。
 
 ## Coolifyにログインできない場合
 

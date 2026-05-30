@@ -245,6 +245,7 @@ async function main() {
       { file: "migration_008_sales_country_locale_templates.sql", label: "008 (sales routing)" },
       { file: "migration_010_legacy_cleanup.sql", label: "010 (legacy locale drop)" },
       { file: "migration_011_legacy_settings_cleanup.sql", label: "011 (legacy settings drop)" },
+      { file: "migration_022_sales_content_templates.sql", label: "022 (sales content templates)" },
     ]
 
     for (const m of migrations) {

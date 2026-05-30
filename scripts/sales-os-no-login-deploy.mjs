@@ -15,6 +15,7 @@
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
+import { spawnSync } from "node:child_process"
 
 const APP_UUID = process.env.PARADIGM_APP_UUID || "i12am4vvcbggefnqdizhnv9a"
 const DEFAULT_COOLIFY_URL = "https://coolify.appexx.me"
@@ -182,6 +183,51 @@ async function applySalesProducts(envs) {
   return json.length
 }
 
+async function applyContentTemplateMigration(envs) {
+  const { url, key } = salesSupabase(envs)
+  const sqlPath = path.join(process.cwd(), "supabase", "migration_022_sales_content_templates.sql")
+  if (!fs.existsSync(sqlPath)) return "Content template migration: local SQL file missing"
+  const sql = fs.readFileSync(sqlPath, "utf8")
+  const res = await fetch(`${url}/rest/v1/rpc/exec_sql`, {
+    method: "POST",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ query: sql }),
+  })
+  if (res.ok) return "Content template migration: applied"
+  const text = await res.text()
+  if (res.status === 404 || /function.*exec_sql|schema cache/i.test(text)) {
+    return "Content template migration: exec_sql unavailable, relying on bundled fallback until DB migration is applied"
+  }
+  if (/already exists|duplicate/i.test(text)) return "Content template migration: already applied"
+  throw new Error(`Content template migration failed: HTTP ${res.status} ${text.slice(0, 180)}`)
+}
+
+function applyContentTemplates(envs) {
+  const { url, key } = salesSupabase(envs)
+  const result = spawnSync(process.execPath, ["scripts/seed-sales-content-templates.mjs"], {
+    cwd: process.cwd(),
+    env: {
+      ...process.env,
+      SALES_SUPABASE_URL: url,
+      SALES_SUPABASE_SERVICE_ROLE_KEY: key,
+    },
+    encoding: "utf8",
+  })
+  if (result.status === 0) {
+    return result.stdout.trim() || "Seeded sales_content_templates"
+  }
+
+  const message = `${result.stderr || result.stdout || ""}`.trim()
+  if (/sales_content_templates|schema cache|relation|does not exist|404/i.test(message)) {
+    return "Content templates: skipped until migration_022 is applied"
+  }
+  throw new Error(`Content template seed failed: ${message.slice(0, 180)}`)
+}
+
 async function triggerDeploy() {
   const deploy = await coolify(`/api/v1/deploy?uuid=${APP_UUID}&force=true`, { method: "POST" })
   const uuid = deploy?.deployments?.[0]?.deployment_uuid
@@ -217,6 +263,8 @@ async function main() {
   if (!DRY) {
     const count = await applySalesProducts(envs)
     console.log(`Sales products: verified ${count}`)
+    console.log(await applyContentTemplateMigration(envs))
+    console.log(applyContentTemplates(envs))
   } else {
     console.log("Dry run: skipped Supabase product upsert")
   }

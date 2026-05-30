@@ -20,6 +20,7 @@
  */
 
 import { callDeepSeek } from "@/lib/deepseek"
+import { matchContentTemplate } from "./content-templates"
 import { fetchDiagnosticReport, type DiagnosticReportData } from "./diagnostic"
 import { findCompanyById, findCompanyByDomain, findCompanyBySlug } from "./companies"
 
@@ -196,6 +197,11 @@ export interface VideoGenerationResult {
   duration_sec?: number
   script?: NarrationScript
   html?: string
+  content_template?: {
+    title: string
+    quality_bar: string
+    dify_selection_rule: string
+  }
   error?: string
 }
 
@@ -242,6 +248,13 @@ export async function generateDiagnosticVideo(
   }
 
   const html = buildHyperFramesHtml(data, narration.script)
+  const contentTemplate = await matchContentTemplate({
+    reportLocale: data.report_locale,
+    targetCountry: data.target_country,
+    industry: data.industry,
+    assetType: "sales_video",
+    templateVariant: data.template_variant,
+  })
   const previewUrl = company.slug
     ? `${BASE_URL}/ja/report/${company.slug}/video`
     : null
@@ -253,6 +266,11 @@ export async function generateDiagnosticVideo(
       video_url: previewUrl ?? undefined,
       script: narration.script,
       html,
+      content_template: {
+        title: contentTemplate.title,
+        quality_bar: contentTemplate.quality_bar,
+        dify_selection_rule: contentTemplate.dify_selection_rule,
+      },
       duration_sec: 60,
       ...(previewUrl ? {} : { error: "company.slug not set — preview URL unavailable" }),
     }
@@ -280,6 +298,11 @@ export async function generateDiagnosticVideo(
         video_url: previewUrl ?? undefined,
         script: narration.script,
         html,
+        content_template: {
+          title: contentTemplate.title,
+          quality_bar: contentTemplate.quality_bar,
+          dify_selection_rule: contentTemplate.dify_selection_rule,
+        },
         duration_sec: 60,
         error: `HyperFrames API ${res.status}: ${res.statusText} (returning HTML preview)`,
       }
@@ -290,6 +313,11 @@ export async function generateDiagnosticVideo(
       video_url: result.video_url ?? previewUrl ?? undefined,
       script: narration.script,
       html,
+      content_template: {
+        title: contentTemplate.title,
+        quality_bar: contentTemplate.quality_bar,
+        dify_selection_rule: contentTemplate.dify_selection_rule,
+      },
       duration_sec: 60,
     }
   } catch (e) {
@@ -299,6 +327,11 @@ export async function generateDiagnosticVideo(
       video_url: previewUrl ?? undefined,
       script: narration.script,
       html,
+      content_template: {
+        title: contentTemplate.title,
+        quality_bar: contentTemplate.quality_bar,
+        dify_selection_rule: contentTemplate.dify_selection_rule,
+      },
       duration_sec: 60,
       error: e instanceof Error ? e.message : String(e),
     }

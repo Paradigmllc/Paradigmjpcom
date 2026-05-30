@@ -1,3 +1,11 @@
+## Codex Update - 2026-05-30 Sales Asset Template Quality Pass
+
+- [x] Added a cross-asset `sales_content_templates` design so diagnostic reports, Astro demos, Slidev/Gotenberg decks, and ComfyUI/HyperFrames/Remotion videos can share one Dify-selectable template library.
+- [x] Added `supabase/migration_022_sales_content_templates.sql` with RLS-enabled SSOT storage for language, country, industry, offer, asset type, appeal angle, prompt, quality bar, output contract, and toolchain.
+- [x] Added bundled ja/en initial templates: 8 industries x 4 appeal angles x 4 asset types x 2 languages = 256 generated patterns, with Supabase fallback if the migration has not been applied yet.
+- [x] Added `POST /api/sales/content-templates/match` for Dify/n8n template selection and `POST /api/sales/generate-sales-asset` for generating/review-queueing sales decks, video briefs, Astro briefs, and report JSON.
+- [x] Connected the content-template choice into the public diagnostic report, Astro demo generator, video generator, Sales OS docs tab, and no-login deploy seed path.
+
 ## Codex Update - 2026-05-30 Sales OS Operations Docs
 
 - [x] Added an in-dashboard `使い方` Docs tab covering daily workflow, tool roles, automation boundaries, manual approval gates, Coolify no-login deploy, and practical operations gaps.

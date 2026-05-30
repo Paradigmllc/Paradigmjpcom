@@ -18,6 +18,7 @@ import {
   type TemplateVariant,
 } from "./routing"
 import { computeSourceCoverage, type SourceCoverageSnapshot } from "./source-coverage"
+import { matchContentTemplate, type SalesContentTemplate } from "./content-templates"
 import { getTemplatesByIndustry } from "./templates"
 import type { Industry, IssueCode, Region, SalesCompany, SalesTemplate, Severity } from "./types"
 import { ISSUE_CODES } from "./types"
@@ -50,6 +51,10 @@ export interface DiagnosticReportData {
   demo_url: string | null
   source_coverage: SourceCoverageSnapshot
   intelligence: CompanyIntelligence
+  content_template: Pick<
+    SalesContentTemplate,
+    "title" | "purpose" | "quality_bar" | "dify_selection_rule" | "prompt_template"
+  >
   report_url: string
 }
 
@@ -246,6 +251,19 @@ function reportUrlFor(company: SalesCompany, locale: ReportLocale): string {
   return company.report_url ?? ""
 }
 
+function appealAngleFor(input: {
+  reportLocale: ReportLocale
+  templateVariant: TemplateVariant
+  issues: IssueCode[]
+}): string {
+  if (input.templateVariant === "video_subscription") return "video_retention"
+  if (input.templateVariant === "japan_entry" || input.reportLocale !== "ja") return "japan_entry"
+  if (input.templateVariant === "outreach") return "automation_dx"
+  if (input.issues.includes("speed_critical")) return "speed_conversion"
+  if (input.issues.includes("no_ogp") || input.issues.includes("no_sns")) return "trust_authority"
+  return "revenue_recovery"
+}
+
 export async function fetchDiagnosticReport(opts: {
   companyId?: string
   domain?: string
@@ -299,6 +317,14 @@ export async function fetchDiagnosticReport(opts: {
   const acts = issues.map((issueCode, index) =>
     buildAct(company, issueCode, templateByIssue.get(issueCode), metricValueFor(company, issueCode, index)),
   )
+  const contentTemplate = await matchContentTemplate({
+    reportLocale,
+    targetCountry,
+    industry: company.industry,
+    assetType: "diagnostic_report",
+    appealAngle: appealAngleFor({ reportLocale, templateVariant, issues }),
+    templateVariant,
+  })
 
   const personalizedCopy = readPersonalizedCopy(company.meta)
   if (personalizedCopy?.personalized_pain && acts[0]) {
@@ -330,6 +356,13 @@ export async function fetchDiagnosticReport(opts: {
     demo_url: demoSite?.url ?? null,
     source_coverage: sourceCoverage,
     intelligence: buildCompanyIntelligence(company, sourceCoverage.items),
+    content_template: {
+      title: contentTemplate.title,
+      purpose: contentTemplate.purpose,
+      quality_bar: contentTemplate.quality_bar,
+      dify_selection_rule: contentTemplate.dify_selection_rule,
+      prompt_template: contentTemplate.prompt_template,
+    },
     report_url: reportUrlFor(company, reportLocale),
   }
 }

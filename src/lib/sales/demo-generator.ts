@@ -1,4 +1,5 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { matchContentTemplate } from "./content-templates"
 import type { DiagnosticReportData } from "./diagnostic"
 import type { SalesCompany } from "./types"
 
@@ -11,7 +12,7 @@ function escapeHtml(value: string): string {
     .replaceAll("'", "&#039;")
 }
 
-function buildDemoHtml(company: SalesCompany, report: DiagnosticReportData): string {
+function buildDemoHtml(company: SalesCompany, report: DiagnosticReportData, templateTitle: string): string {
   const name = escapeHtml(company.company_name)
   const hook = escapeHtml(report.hook.replace(/\s+/g, " "))
   const primaryAct = report.acts[0]
@@ -42,6 +43,7 @@ function buildDemoHtml(company: SalesCompany, report: DiagnosticReportData): str
     .secondary { color:var(--ink); border:1px solid var(--line); }
     .visual { min-height:440px; border-radius:10px; background:linear-gradient(160deg,#eef2ff,#f8fafc 48%,#dbeafe); border:1px solid var(--line); padding:24px; display:flex; flex-direction:column; justify-content:flex-end; }
     .visual-card { background:#fff; border:1px solid var(--line); border-radius:8px; padding:20px; box-shadow:0 18px 60px rgba(15,23,42,.12); }
+    .template-note { margin-top:14px; font-size:12px; color:var(--muted); }
     .band { padding:40px clamp(20px,5vw,64px); background:var(--soft); border-block:1px solid var(--line); display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
     .metric { background:#fff; border:1px solid var(--line); border-radius:8px; padding:20px; }
     .metric b { display:block; font-size:28px; margin-bottom:6px; }
@@ -72,6 +74,7 @@ function buildDemoHtml(company: SalesCompany, report: DiagnosticReportData): str
         <div class="visual-card">
           <strong>${issue}</strong>
           <p style="color:var(--muted);line-height:1.7;margin-bottom:0">診断データをもとに、ファーストビュー・導線・信頼情報を整理した差し替えデモです。</p>
+          <div class="template-note">${escapeHtml(templateTitle)}</div>
         </div>
       </div>
     </section>
@@ -101,7 +104,14 @@ export async function generateReplacementDemo(
   if (!company.slug) return { ok: false, demoUrl: null, error: "company slug is missing" }
 
   const slug = `${company.slug}-demo`
-  const html = buildDemoHtml(company, report)
+  const contentTemplate = await matchContentTemplate({
+    reportLocale: company.report_locale ?? report.report_locale,
+    targetCountry: company.target_country ?? report.target_country,
+    industry: company.industry,
+    assetType: "astro_demo_site",
+    templateVariant: company.template_variant ?? report.template_variant,
+  })
+  const html = buildDemoHtml(company, report, contentTemplate.title)
   const { error } = await sb.from("web_demos").upsert(
     {
       company_id: company.id,
@@ -113,6 +123,11 @@ export async function generateReplacementDemo(
       is_published: true,
       meta: {
         generator: "astro_replacement_demo",
+        content_template: {
+          title: contentTemplate.title,
+          quality_bar: contentTemplate.quality_bar,
+          dify_selection_rule: contentTemplate.dify_selection_rule,
+        },
         report_url: report.report_url,
         generated_at: new Date().toISOString(),
       },

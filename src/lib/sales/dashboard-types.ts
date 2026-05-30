@@ -119,6 +119,14 @@ export interface DashboardOperationalAudit {
   sections: DashboardAuditSection[]
 }
 
+export interface DashboardContentTemplateCoverage {
+  total: number
+  byLocale: Record<string, number>
+  byAssetType: Record<string, number>
+  byIndustry: Record<string, number>
+  fallbackUsed: boolean
+}
+
 export interface SalesDashboardData {
   status: SalesDashboardStatus
   generatedAt: string
@@ -137,4 +145,5 @@ export interface SalesDashboardData {
   enrichmentJobs: DashboardEnrichmentJob[]
   infrastructure: InfrastructureMigrationData
   operationalAudit: DashboardOperationalAudit
+  contentTemplates: DashboardContentTemplateCoverage
 }

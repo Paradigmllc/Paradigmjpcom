@@ -11,6 +11,7 @@ import {
   ListChecks,
   MailCheck,
   Settings2,
+  Sparkles,
 } from "lucide-react"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 import { formatNumber } from "./SalesCommandPanels"
@@ -84,6 +85,13 @@ const OPERATION_GAPS = [
   },
 ]
 
+const CONTENT_ASSET_LABELS: Record<string, string> = {
+  diagnostic_report: "診断レポート (Next.js)",
+  astro_demo_site: "デモサイト (Astro)",
+  sales_deck: "営業資料 (Slidev/Gotenberg)",
+  sales_video: "動画 (ComfyUI/HyperFrames)",
+}
+
 function StepCard({ title, body, index }: { title: string; body: string; index: number }) {
   return (
     <div className="rounded-lg border border-zinc-200 bg-white p-4">
@@ -109,6 +117,7 @@ function GapIcon({ status }: { status: string }) {
 export function SalesDocsPanel({ data }: { data: SalesDashboardData }) {
   const activeTools = data.toolConnections.filter((tool) => tool.status === "active").length
   const pendingJobs = data.enrichmentJobs.filter((job) => job.status === "queued" || job.status === "running").length
+  const contentTemplates = data.contentTemplates
 
   return (
     <div className="space-y-4">
@@ -138,6 +147,63 @@ export function SalesDocsPanel({ data }: { data: SalesDashboardData }) {
               <div className="text-xs text-zinc-500">生成中</div>
               <div className="mt-1 text-lg font-semibold tabular-nums">{pendingJobs}</div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-zinc-200 bg-white p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <Sparkles size={16} aria-hidden />
+              <h2 className="text-sm font-semibold text-zinc-950">成果物テンプレート基盤</h2>
+            </div>
+            <p className="mt-2 max-w-4xl text-sm leading-7 text-zinc-600">
+              診断レポート、Astroデモ、営業資料、営業動画は同じ企業カルテを使い、Difyが言語・業界・商材・訴求・成果物タイプから最適なテンプレートを選びます。
+              初期版は日本語と英語を優先し、数十から数百の組み合わせをSupabaseに保存できる構成です。
+            </p>
+            {contentTemplates.fallbackUsed && (
+              <p className="mt-2 text-xs leading-6 text-amber-700">
+                DBテーブルが未適用、または未接続の場合でも、アプリ内蔵テンプレートで選定ロジックは継続します。migration_022適用後はSupabase SSOTに切り替わります。
+              </p>
+            )}
+          </div>
+          <div className="rounded-lg bg-zinc-50 p-4 text-right">
+            <div className="text-xs text-zinc-500">テンプレート数</div>
+            <div className="mt-1 text-2xl font-semibold tabular-nums">{formatNumber(contentTemplates.total)}</div>
+            <div className="mt-1 text-xs text-zinc-500">{contentTemplates.fallbackUsed ? "Bundled fallback" : "Supabase SSOT"}</div>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {Object.entries(CONTENT_ASSET_LABELS).map(([key, label]) => (
+            <div key={key} className="rounded-lg border border-zinc-100 bg-zinc-50 p-4">
+              <div className="text-sm font-semibold text-zinc-950">{label}</div>
+              <div className="mt-2 text-2xl font-semibold tabular-nums">
+                {formatNumber(contentTemplates.byAssetType[key] ?? 0)}
+              </div>
+              <p className="mt-2 text-xs leading-6 text-zinc-600">
+                Difyのテンプレ選定APIから呼び出し、n8nが生成・保存・Slack承認へつなぎます。
+              </p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="rounded-lg border border-zinc-100 bg-white p-4">
+            <h3 className="text-sm font-semibold text-zinc-950">言語別</h3>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {Object.entries(contentTemplates.byLocale).map(([locale, count]) => (
+                <span key={locale} className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-700">
+                  {locale}: {formatNumber(count)}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-lg border border-zinc-100 bg-white p-4">
+            <h3 className="text-sm font-semibold text-zinc-950">Dify / n8n の判断順</h3>
+            <p className="mt-2 text-xs leading-6 text-zinc-600">
+              1. 対象言語、2. 業界、3. 商材、4. 成果物タイプ、5. 訴求角度、6. 企業カルテの痛み根拠の順にスコアリングします。
+              人間判断が必要な場合はSlackとAppsmithの承認キューに回します。
+            </p>
           </div>
         </div>
       </section>
