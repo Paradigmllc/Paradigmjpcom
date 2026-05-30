@@ -517,3 +517,13 @@
   - Source coverage is still below production quality. Missing/error sources must be reduced before large-scale outbound.
   - Browserless/Camoufox/Playwright Stealth must be verified against real forms before enabling `dryRun:false`.
   - Past `opportunity_sync` errors remain in `sales_sync_logs`; rerun Twenty sync after confirming current custom fields.
+
+## Codex Update - 2026-05-30 Sales Video Pipeline GUI
+
+- [x] Added Supabase SSOT table `sales_video_jobs` via `supabase/migration_026_sales_video_pipeline.sql` and applied it to production Supabase OSS.
+- [x] Added API routes for video job list/create/action: `/api/sales/video-pipeline/jobs` and `/api/sales/video-pipeline/jobs/[jobId]/action`.
+- [x] Added the `/ja/admin/sales` `動画制作` tab with company selection, job type, platform, renderer, priority, job creation, n8n dispatch, human approval, revision, and completion URL controls.
+- [x] Modeled n8n as orchestration only. HyperFrames/Remotion handle sales videos; OpenMontage + ComfyUI + Vast.ai + R2 handle subscription/video delivery.
+- [x] Readiness detection now recognizes existing production env aliases: `N8N_BASE_URL`, Dify task keys, `HYPERFRAMES_API_URL`, and Slack bot/channel envs.
+- [x] Cleaned the video pipeline GUI strings and kept files under the 500-line rule.
+- Verification: `npx tsc --noEmit --pretty false`, `npm test -- --run`, and `npm run build` passed. Local build still prints existing PayloadCMS local Postgres fallback warnings, but exits 0.

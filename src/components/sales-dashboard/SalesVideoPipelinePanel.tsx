@@ -40,7 +40,7 @@ const RENDER_OPTIONS = [
   ["remotion", "Remotion"],
   ["openmontage", "OpenMontage"],
   ["comfyui", "ComfyUI"],
-  ["external", "外部レンダー"],
+  ["external", "外部レンダラー"],
 ] as const
 
 const STATUS_LABELS: Record<VideoJobStatus, string> = {
@@ -228,174 +228,217 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
           </label>
 
           <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setJobType("sales_video")}
-              className={`h-10 rounded-md border text-sm font-medium ${jobType === "sales_video" ? "border-zinc-950 bg-zinc-950 text-white" : "border-zinc-200 bg-white text-zinc-700"}`}
-            >
-              営業動画
-            </button>
-            <button
-              type="button"
-              onClick={() => setJobType("subscription_video")}
-              className={`h-10 rounded-md border text-sm font-medium ${jobType === "subscription_video" ? "border-zinc-950 bg-zinc-950 text-white" : "border-zinc-200 bg-white text-zinc-700"}`}
-            >
-              動画サブスク
-            </button>
+            {Object.entries(JOB_TYPE_LABELS).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setJobType(value as "sales_video" | "subscription_video")}
+                className={`h-10 rounded-md border text-sm font-medium ${jobType === value ? "border-zinc-950 bg-zinc-950 text-white" : "border-zinc-200 bg-white text-zinc-700"}`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
 
           <label className="grid gap-1 text-xs font-medium text-zinc-600">
             <span>用途</span>
-            <select value={platform} onChange={(event) => setPlatform(event.target.value as typeof platform)} className="h-10 rounded-md border border-zinc-200 bg-white px-2 text-sm">
+            <select
+              value={platform}
+              onChange={(event) => setPlatform(event.target.value as (typeof PLATFORM_OPTIONS)[number][0])}
+              className="h-10 rounded-md border border-zinc-200 bg-white px-2 text-sm text-zinc-950 outline-none focus:border-zinc-500"
+            >
               {PLATFORM_OPTIONS.map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
+                <option key={value} value={value}>
+                  {label}
+                </option>
               ))}
             </select>
           </label>
+
           <label className="grid gap-1 text-xs font-medium text-zinc-600">
-            <span>優先レンダー</span>
-            <select value={renderer} onChange={(event) => setRenderer(event.target.value as typeof renderer)} className="h-10 rounded-md border border-zinc-200 bg-white px-2 text-sm">
+            <span>レンダー系</span>
+            <select
+              value={renderer}
+              onChange={(event) => setRenderer(event.target.value as (typeof RENDER_OPTIONS)[number][0])}
+              className="h-10 rounded-md border border-zinc-200 bg-white px-2 text-sm text-zinc-950 outline-none focus:border-zinc-500"
+            >
               {RENDER_OPTIONS.map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
+                <option key={value} value={value}>
+                  {label}
+                </option>
               ))}
             </select>
           </label>
+
           <label className="grid gap-1 text-xs font-medium text-zinc-600">
-            <span>優先度: {priority}</span>
+            <span>優先度 {priority}</span>
             <input
               type="range"
               min={0}
               max={100}
               value={priority}
               onChange={(event) => setPriority(Number(event.target.value))}
-              className="w-full"
+              className="w-full accent-zinc-950"
             />
           </label>
+
           <button
             type="button"
             onClick={() => void createJob()}
-            disabled={busy === "create" || data.companies.length === 0}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={busy === "create" || !selectedCompany}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-zinc-950 px-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <WandSparkles size={16} aria-hidden />
+            <Rocket size={16} aria-hidden />
             制作ジョブを作成
           </button>
         </div>
-
-        <div className="mt-5 grid grid-cols-3 gap-2">
-          <div className="rounded-lg bg-zinc-50 p-3">
-            <div className="text-xs text-zinc-500">進行中</div>
-            <div className="mt-1 text-xl font-semibold text-zinc-950">{jobStats.active}</div>
-          </div>
-          <div className="rounded-lg bg-zinc-50 p-3">
-            <div className="text-xs text-zinc-500">確認待ち</div>
-            <div className="mt-1 text-xl font-semibold text-zinc-950">{jobStats.review}</div>
-          </div>
-          <div className="rounded-lg bg-zinc-50 p-3">
-            <div className="text-xs text-zinc-500">完了</div>
-            <div className="mt-1 text-xl font-semibold text-zinc-950">{jobStats.completed}</div>
-          </div>
-        </div>
       </section>
 
-      <div className="grid gap-4">
-        <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4">
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="rounded-lg border border-zinc-200 bg-white p-4">
+            <div className="flex items-center gap-2 text-xs text-zinc-500">
+              <Play size={14} aria-hidden />
+              進行中
+            </div>
+            <div className="mt-2 text-2xl font-semibold text-zinc-950">{jobStats.active}</div>
+          </div>
+          <div className="rounded-lg border border-zinc-200 bg-white p-4">
+            <div className="flex items-center gap-2 text-xs text-zinc-500">
+              <ShieldCheck size={14} aria-hidden />
+              承認待ち
+            </div>
+            <div className="mt-2 text-2xl font-semibold text-zinc-950">{jobStats.review}</div>
+          </div>
+          <div className="rounded-lg border border-zinc-200 bg-white p-4">
+            <div className="flex items-center gap-2 text-xs text-zinc-500">
+              <CheckCircle2 size={14} aria-hidden />
+              完了
+            </div>
+            <div className="mt-2 text-2xl font-semibold text-zinc-950">{jobStats.completed}</div>
+          </div>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <ConfigCard label="n8n" ready={config.n8n.ready} note={config.n8n.note} url={config.n8n.url} />
           <ConfigCard label="Dify Cloud" ready={config.dify.ready} note={config.dify.note} />
           <ConfigCard label="ComfyUI" ready={config.comfyui.ready} note={config.comfyui.note} url={config.comfyui.url} />
-          <ConfigCard label="Vast.ai / R2" ready={config.vast.ready && config.r2.ready} note={`${config.vast.note} ${config.r2.note}`} url={config.r2.publicBaseUrl} />
-        </section>
+          <ConfigCard label="Vast.ai" ready={config.vast.ready} note={config.vast.note} />
+          <ConfigCard label="Cloudflare R2" ready={config.r2.ready} note={config.r2.note} url={config.r2.publicBaseUrl} />
+          <ConfigCard label="Slack承認" ready={config.slack.ready} note={config.slack.note} />
+        </div>
 
-        <section className="rounded-lg border border-zinc-200 bg-white p-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-zinc-950">制作ステージ</h3>
-              <p className="mt-1 text-xs text-zinc-500">n8nが各ツールへ渡す順番と、人間承認の境界です。</p>
-            </div>
-            <div className="flex items-center gap-2 rounded-md bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
-              <ShieldCheck size={14} aria-hidden />
-              初回納品・GPU起動・契約前送信は承認制
-            </div>
+        <div className="rounded-lg border border-zinc-200 bg-white p-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
+            <WandSparkles size={16} aria-hidden />
+            制作ステージ
           </div>
           <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-            {config.stages.map((stage, index) => (
+            {config.stages.map((stage) => (
               <div key={stage.id} className="rounded-lg border border-zinc-200 p-3">
-                <div className="text-xs font-semibold text-zinc-400">STEP {index + 1}</div>
-                <div className="mt-1 text-sm font-semibold text-zinc-950">{stage.label}</div>
-                <div className="mt-2 text-xs text-zinc-500">{stage.owner}</div>
-                <div className="mt-2 text-xs leading-5 text-zinc-600">{stage.gate}</div>
+                <div className="text-sm font-semibold text-zinc-950">{stage.label}</div>
+                <div className="mt-1 text-xs text-zinc-500">{stage.owner}</div>
+                <p className="mt-2 text-xs leading-5 text-zinc-600">{stage.gate}</p>
               </div>
             ))}
           </div>
-        </section>
+        </div>
 
-        <section className="rounded-lg border border-zinc-200 bg-white">
-          <div className="flex flex-col gap-3 border-b border-zinc-200 p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="rounded-lg border border-zinc-200 bg-white p-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <h3 className="text-sm font-semibold text-zinc-950">動画ジョブ一覧</h3>
-              <p className="mt-1 text-xs text-zinc-500">作成後はn8n投入、承認、完了URL記録までここから操作します。</p>
+              <div className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
+                <Film size={16} aria-hidden />
+                動画ジョブ
+              </div>
+              <p className="mt-1 text-xs text-zinc-600">n8n投入、承認、完了URL反映をここで操作します。</p>
             </div>
-            <input
-              value={outputUrl}
-              onChange={(event) => setOutputUrl(event.target.value)}
-              placeholder="完了時のR2/動画URL"
-              className="h-10 min-w-0 rounded-md border border-zinc-200 px-3 text-sm outline-none focus:border-zinc-500 lg:w-[360px]"
-            />
+            <label className="grid gap-1 text-xs font-medium text-zinc-600 md:w-80">
+              <span>完成URL / プレビューURL</span>
+              <input
+                value={outputUrl}
+                onChange={(event) => setOutputUrl(event.target.value)}
+                placeholder="https://..."
+                className="h-10 rounded-md border border-zinc-200 px-3 text-sm text-zinc-950 outline-none focus:border-zinc-500"
+              />
+            </label>
           </div>
-          <div className="divide-y divide-zinc-100">
+
+          <div className="mt-4 grid gap-3">
             {jobs.length === 0 ? (
-              <div className="p-6 text-sm text-zinc-500">まだ動画ジョブがありません。左のフォームから作成してください。</div>
+              <div className="rounded-lg border border-dashed border-zinc-200 p-6 text-sm text-zinc-500">
+                まだ動画ジョブはありません。左側で企業と用途を選び、制作ジョブを作成してください。
+              </div>
             ) : (
               jobs.map((job) => (
-                <article key={job.id} className="grid gap-4 p-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Film size={16} className="text-zinc-500" aria-hidden />
-                      <h4 className="font-semibold text-zinc-950">{job.title}</h4>
-                      <JobStatusBadge status={job.status} />
-                    </div>
-                    <div className="mt-2 text-xs text-zinc-500">
-                      {JOB_TYPE_LABELS[job.job_type]} / {job.render_engine} / {job.target_platform} / 優先度 {job.priority}
-                    </div>
-                    <div className="mt-3 grid gap-2 text-xs text-zinc-600 md:grid-cols-3">
-                      <div>企業: {job.sales_companies?.company_name ?? job.company_id ?? "-"}</div>
-                      <div>段階: {stageLabel(job.orchestration_stage)}</div>
-                      <div>作成: {formatDate(job.created_at)}</div>
-                    </div>
-                    {job.error_message ? <p className="mt-3 rounded-md bg-amber-50 p-2 text-xs text-amber-800">{job.error_message}</p> : null}
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {job.preview_url ? (
-                        <a href={job.preview_url} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center gap-1 rounded-md border border-zinc-200 px-2 text-xs font-medium text-zinc-800 hover:border-zinc-400">
-                          プレビュー <ExternalLink size={12} aria-hidden />
-                        </a>
-                      ) : null}
-                      {job.r2_output_url ? (
-                        <a href={job.r2_output_url} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 items-center gap-1 rounded-md border border-zinc-200 px-2 text-xs font-medium text-zinc-800 hover:border-zinc-400">
-                          納品URL <ExternalLink size={12} aria-hidden />
+                <article key={job.id} className="rounded-lg border border-zinc-200 p-4">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-sm font-semibold text-zinc-950">{job.title}</h3>
+                        <JobStatusBadge status={job.status} />
+                        <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] text-zinc-600">{JOB_TYPE_LABELS[job.job_type]}</span>
+                      </div>
+                      <p className="mt-2 text-xs text-zinc-600">
+                        {job.sales_companies?.company_name ?? "企業未紐付け"} / {job.sales_companies?.domain ?? "-"} / {stageLabel(job.orchestration_stage)}
+                      </p>
+                      <p className="mt-1 text-xs text-zinc-500">作成 {formatDate(job.created_at)} / 更新 {formatDate(job.updated_at)}</p>
+                      {job.error_message ? <p className="mt-2 text-xs text-rose-600">{job.error_message}</p> : null}
+                      {job.preview_url || job.r2_output_url ? (
+                        <a
+                          href={job.preview_url ?? job.r2_output_url ?? "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-zinc-950 hover:underline"
+                        >
+                          成果物を開く <ExternalLink size={12} aria-hidden />
                         </a>
                       ) : null}
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-2">
-                    <button type="button" onClick={() => void runAction(job.id, "dispatch")} className="inline-flex h-9 items-center justify-center gap-1 rounded-md bg-zinc-950 px-2 text-xs font-semibold text-white">
-                      <Send size={13} aria-hidden /> n8n投入
-                    </button>
-                    <button type="button" onClick={() => void runAction(job.id, "approve_render")} className="inline-flex h-9 items-center justify-center gap-1 rounded-md border border-zinc-200 px-2 text-xs font-semibold text-zinc-800">
-                      <Rocket size={13} aria-hidden /> 承認
-                    </button>
-                    <button type="button" onClick={() => void runAction(job.id, "complete")} className="inline-flex h-9 items-center justify-center gap-1 rounded-md border border-zinc-200 px-2 text-xs font-semibold text-zinc-800">
-                      <CheckCircle2 size={13} aria-hidden /> 完了
-                    </button>
-                    <button type="button" onClick={() => void runAction(job.id, "request_revision")} className="inline-flex h-9 items-center justify-center gap-1 rounded-md border border-zinc-200 px-2 text-xs font-semibold text-zinc-800">
-                      <Play size={13} aria-hidden /> 修正
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void runAction(job.id, "dispatch")}
+                        disabled={busy === `dispatch:${job.id}` || ["completed", "cancelled"].includes(job.status)}
+                        className="inline-flex h-9 items-center gap-1 rounded-md border border-zinc-200 px-3 text-xs font-semibold text-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <Send size={14} aria-hidden />
+                        n8n投入
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void runAction(job.id, "approve_render")}
+                        disabled={busy === `approve_render:${job.id}` || job.status === "completed"}
+                        className="inline-flex h-9 items-center gap-1 rounded-md border border-zinc-200 px-3 text-xs font-semibold text-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <ShieldCheck size={14} aria-hidden />
+                        承認
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void runAction(job.id, "complete")}
+                        disabled={busy === `complete:${job.id}` || !outputUrl.trim()}
+                        className="inline-flex h-9 items-center gap-1 rounded-md bg-zinc-950 px-3 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <CheckCircle2 size={14} aria-hidden />
+                        完了
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void runAction(job.id, "request_revision")}
+                        disabled={busy === `request_revision:${job.id}` || job.status === "completed"}
+                        className="inline-flex h-9 items-center rounded-md border border-zinc-200 px-3 text-xs font-semibold text-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        修正
+                      </button>
+                    </div>
                   </div>
                 </article>
               ))
             )}
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
     </div>
   )
 }

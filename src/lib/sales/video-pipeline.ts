@@ -73,6 +73,7 @@ export const VIDEO_PIPELINE_STAGES = [
   { id: "delivery", label: "R2配信・Twenty記録", owner: "Sales OS", gate: "URLと納品ステータスをSSOTへ保存" },
 ] as const
 
+
 const isUuid = (value: string): boolean =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
 
@@ -89,45 +90,65 @@ function normalizeIndustry(value: string | null | undefined): Industry | null {
   return typeof value === "string" && (INDUSTRIES as readonly string[]).includes(value) ? (value as Industry) : null
 }
 
-function pipelineConfig(): VideoPipelineConfig {
-  const n8nUrl = optionalEnv("N8N_VIDEO_PIPELINE_WEBHOOK_URL")
-  const comfyUrl = optionalEnv("COMFYUI_API_URL")
-  const r2Base = optionalEnv("CLOUDFLARE_R2_PUBLIC_BASE_URL") ?? optionalEnv("R2_PUBLIC_BASE_URL")
+function buildReadablePipelineConfig(input: {
+  n8nUrl: string | null
+  comfyUrl: string | null
+  r2Base: string | null
+}): VideoPipelineConfig {
   return {
     n8n: {
-      ready: n8nUrl !== null && envReady("N8N_WEBHOOK_SECRET"),
-      url: n8nUrl,
-      note: n8nUrl ? "n8nへジョブ投入できます。" : "n8n未設定時はジョブ作成と手動コピーまで行います。",
+      ready: input.n8nUrl !== null && envReady("N8N_WEBHOOK_SECRET"),
+      url: input.n8nUrl,
+      note: input.n8nUrl ? "n8nへ動画ジョブを投入できます。" : "n8n未設定時はジョブ作成と手動コピーまで行います。",
     },
     dify: {
-      ready: envReady("DIFY_API_KEY", "DIFY_API_KEY_JA", "DIFY_API_KEY_EN"),
-      note: "文面・構成・テンプレ判断はDify Cloudを優先します。",
+      ready: envReady(
+        "DIFY_API_KEY",
+        "DIFY_API_KEY_JA",
+        "DIFY_API_KEY_EN",
+        "DIFY_VIDEO_WORKFLOW_API_KEY",
+        "DIFY_FORM_MESSAGE_KEY",
+        "DIFY_KARTE_TO_REPORT_KEY",
+        "DIFY_KARTE_TO_SALES_MATERIAL_KEY",
+        "DIFY_TEMPLATE_PICKER_KEY",
+      ),
+      note: "文面・構成・テンプレ判定はDify Cloudを優先します。",
     },
     comfyui: {
-      ready: comfyUrl !== null,
-      url: comfyUrl,
-      note: "営業動画の背景素材と動画サブスク用生成素材に使います。",
+      ready: input.comfyUrl !== null,
+      url: input.comfyUrl,
+      note: "営業動画の背景素材と動画サブスク用の生成素材に使います。",
     },
     vast: {
       ready: envReady("VAST_API_KEY"),
       note: "GPU起動は動画サブスクや重いComfyUI生成だけに限定します。",
     },
     renderers: {
-      hyperframes: true,
+      hyperframes: envReady("HYPERFRAMES_RENDERER_URL", "HYPERFRAMES_API_URL"),
       remotion: envReady("REMOTION_RENDER_URL", "REMOTION_RENDERER_URL"),
       openmontage: envReady("OPENMONTAGE_API_URL"),
     },
     r2: {
-      ready: r2Base !== null,
-      publicBaseUrl: r2Base,
+      ready: input.r2Base !== null,
+      publicBaseUrl: input.r2Base,
       note: "完成MP4、字幕、サムネイル、素材を配信する置き場です。",
     },
     slack: {
-      ready: envReady("SLACK_WEBHOOK_URL"),
+      ready: envReady("SLACK_WEBHOOK_URL") || (envReady("SLACK_BOT_TOKEN") && envReady("SLACK_CHANNEL", "SLACK_CHANNEL_ID")),
       note: "人間承認が必要なジョブを通知します。",
     },
     stages: [...VIDEO_PIPELINE_STAGES],
   }
+}
+
+function pipelineConfig(): VideoPipelineConfig {
+  const n8nBaseUrl = optionalEnv("N8N_BASE_URL")
+  const n8nUrl =
+    optionalEnv("N8N_VIDEO_PIPELINE_WEBHOOK_URL") ??
+    (n8nBaseUrl ? `${n8nBaseUrl.replace(/\/+$/, "")}/webhook/sales-video-pipeline` : null)
+  const comfyUrl = optionalEnv("COMFYUI_API_URL")
+  const r2Base = optionalEnv("CLOUDFLARE_R2_PUBLIC_BASE_URL") ?? optionalEnv("R2_PUBLIC_BASE_URL")
+  return buildReadablePipelineConfig({ n8nUrl, comfyUrl, r2Base })
 }
 
 export function getVideoPipelineConfig(): VideoPipelineConfig {
