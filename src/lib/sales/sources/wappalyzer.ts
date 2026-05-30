@@ -34,6 +34,8 @@ const SIGNATURES: Signature[] = [
   { name: "Google Analytics", category: "Analytics", confidence: 88, patterns: [/google-analytics\.com|gtag\/js|G-[A-Z0-9]{6,}/i] },
   { name: "Google Tag Manager", category: "Analytics", confidence: 90, patterns: [/googletagmanager\.com|GTM-[A-Z0-9]+/i] },
   { name: "Meta Pixel", category: "Analytics", confidence: 82, patterns: [/connect\.facebook\.net\/.*\/fbevents\.js|fbq\(/i] },
+  { name: "TikTok Pixel", category: "Analytics", confidence: 82, patterns: [/analytics\.tiktok\.com\/i18n\/pixel|ttq\.load|ttq\.track|TikTokAnalyticsObject/i] },
+  { name: "Klaviyo", category: "Marketing", confidence: 84, patterns: [/static\.klaviyo\.com|klaviyo\.js|learnq\.push|_learnq/i], cookiePatterns: [/__kla_id/i] },
   { name: "Microsoft Clarity", category: "Analytics", confidence: 82, patterns: [/clarity\.ms\/tag|clarity\(/i] },
   { name: "Mixpanel", category: "Analytics", confidence: 80, patterns: [/mixpanel/i] },
   { name: "Hotjar", category: "Analytics", confidence: 84, patterns: [/hotjar\.com|static\.hotjar|hj\(/i] },

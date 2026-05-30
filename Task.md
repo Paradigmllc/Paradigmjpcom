@@ -1,6 +1,7 @@
 ## Codex Update - 2026-05-30 Sales Integration Registry and Safe Form Guard
 
 - [x] Added a no-secret API/OSS inventory for the Sales OS: Dify Cloud, DeepSeek, n8n, Trigger.dev, Browserless, Crawlee/Crawl4AI, Playwright Stealth/Camoufox, DataForSEO, Google Places, Apollo/Fumadata/BIZMap/gBizInfo/jGrants/Houjin Bangou, Wappalyzer-style detection, PageSpeed, urlscan, PublicWWW, security APIs, Slidev/Gotenberg, video stack, mail/phone tools, Cal.com, Docuseal, and proxy vendors.
+- [x] Imported wall-reference deltas from the readable Gemini links: Similarweb, Meta/TikTok ad library evidence, Pexels, ElevenLabs, Faster Whisper, TikTok Pixel and Klaviyo. Claude share links were blocked by Cloudflare verification in headless retrieval and need manual/authenticated review if required.
 - [x] Added authenticated `GET /api/sales/integration-status` with optional `?live=1` balance/pressure checks. The endpoint returns missing env names and status only; API keys and token values are never returned.
 - [x] Added the Sales OS integration inventory panel so operators can see which APIs/OSS are ready, missing, optional, or manual from the dashboard without opening multiple admin tools.
 - [x] Added `supabase/migration_024_sales_integration_status.sql` with RLS-enabled snapshot storage for integration status. Current Coolify/PostgREST path does not expose `exec_sql`, so the app falls back to the code registry until the DB migration is applied manually or by a privileged migration runner.

@@ -34,4 +34,27 @@ describe("detectTechStack", () => {
     expect(names).toContain("Cloudflare")
     expect(names).toContain("Cloudflare Turnstile")
   })
+
+  it("detects Shopify, TikTok Pixel, and Klaviyo for global SMB offers", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          [
+            '<script src="https://cdn.shopify.com/s/files/1/theme.js"></script>',
+            '<script src="https://analytics.tiktok.com/i18n/pixel/events.js"></script>',
+            "<script>ttq.load('PIXEL_ID'); window._learnq = window._learnq || [];</script>",
+            '<script src="https://static.klaviyo.com/onsite/js/klaviyo.js"></script>',
+          ].join(""),
+          { status: 200 },
+        ),
+      ),
+    )
+
+    const result = await detectTechStack("https://shop.example")
+    const names = result.tech.map((item) => item.name)
+    expect(names).toContain("Shopify")
+    expect(names).toContain("TikTok Pixel")
+    expect(names).toContain("Klaviyo")
+  })
 })

@@ -23,4 +23,12 @@ describe("getSalesIntegrationStatus", () => {
     expect(dify?.configuredEnv).toEqual(["DIFY_API_KEY"])
     expect(JSON.stringify(dify)).not.toContain("secret-value")
   })
+
+  it("includes global SMB and video-delivery evidence sources from wall references", async () => {
+    const rows = await getSalesIntegrationStatus()
+    const slugs = rows.map((row) => row.slug)
+    expect(slugs).toContain("similarweb")
+    expect(slugs).toContain("ad_libraries")
+    expect(slugs).toContain("video_media_sources")
+  })
 })
