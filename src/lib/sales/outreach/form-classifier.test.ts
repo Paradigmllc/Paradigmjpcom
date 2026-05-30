@@ -47,6 +47,17 @@ describe("classifyForm (regex)", () => {
   })
 })
 
+describe("Cloudflare challenge guard", () => {
+  it("routes challenge pages to human handling", async () => {
+    const r = await classifyForm({
+      formHtml: '<script src="/cdn-cgi/challenge-platform/h/b/orchestrate/chl_page/v1"></script><form id="challenge-form"></form>',
+      pageUrl: "https://a.com/contact",
+    })
+    expect(r.classification).toBe("risky_captcha")
+    expect(r.reason).toContain("human")
+  })
+})
+
 describe("detectFormFields / guessFieldRole", () => {
   it("input/textarea の name を抽出", () => {
     const fields = detectFormFields('<input name="お名前"><textarea name="message"></textarea><input name="email">')

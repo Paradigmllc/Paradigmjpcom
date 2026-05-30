@@ -190,6 +190,12 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
           copyright_year: scan.html.copyrightYear,
           form_count: scan.html.formCount,
           contact_link_count: scan.html.contactLinkCount,
+          automation_guard: {
+            recaptcha: scan.html.hasRecaptcha,
+            turnstile: scan.html.hasTurnstile,
+            cloudflare_challenge: scan.html.hasCloudflareChallenge,
+            human_review_required: scan.html.hasRecaptcha || scan.html.hasTurnstile || scan.html.hasCloudflareChallenge,
+          },
         }
       : { ran_at: new Date().toISOString(), error: "scan_failed" },
     tech: { stack: tech.tech, server: tech.server, count: tech.tech.length },

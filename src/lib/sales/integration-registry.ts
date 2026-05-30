@@ -1,0 +1,612 @@
+import { getServiceSalesSupabase } from "@/lib/supabase"
+
+export type SalesIntegrationCategory =
+  | "orchestration"
+  | "list_source"
+  | "analysis"
+  | "asset_generation"
+  | "video"
+  | "demo_site"
+  | "outreach"
+  | "proxy"
+  | "crm_ops"
+
+export type SalesIntegrationDeployment = "cloud" | "oss" | "api" | "local" | "manual"
+export type SalesIntegrationStatusKind = "ready" | "missing" | "partial" | "manual" | "optional"
+export type SalesIntegrationBalanceStatus = "not_applicable" | "not_configured" | "manual" | "checkable" | "ok" | "error"
+
+export interface SalesIntegrationDefinition {
+  slug: string
+  displayName: string
+  category: SalesIntegrationCategory
+  deployment: SalesIntegrationDeployment
+  role: string
+  requiredEnv: string[]
+  optionalEnv?: string[]
+  balance: "none" | "manual" | "dataforseo_user_data" | "browserless_pressure"
+  docsUrl?: string
+  recommended: boolean
+  notes: string
+}
+
+export interface SalesIntegrationStatus {
+  slug: string
+  displayName: string
+  category: SalesIntegrationCategory
+  deployment: SalesIntegrationDeployment
+  role: string
+  status: SalesIntegrationStatusKind
+  configuredEnv: string[]
+  missingEnv: string[]
+  optionalMissingEnv: string[]
+  balanceStatus: SalesIntegrationBalanceStatus
+  balanceLabel: string
+  docsUrl?: string
+  recommended: boolean
+  notes: string
+  checkedAt: string
+}
+
+interface IntegrationStatusOptions {
+  liveBalance?: boolean
+}
+
+const REGISTRY: SalesIntegrationDefinition[] = [
+  {
+    slug: "dify_cloud",
+    displayName: "Dify Cloud",
+    category: "orchestration",
+    deployment: "cloud",
+    role: "DeepSeek V4 workflow for diagnosis, message generation, template selection, and human-review routing.",
+    requiredEnv: ["DIFY_API_KEY"],
+    optionalEnv: ["DIFY_BASE_URL", "DIFY_DIAGNOSIS_API_KEY", "DIFY_FORM_MESSAGE_API_KEY"],
+    balance: "manual",
+    docsUrl: "https://docs.dify.ai/api-reference/workflows/run-workflow",
+    recommended: true,
+    notes: "Cloud版を正とする。残量/課金はDify側のワークスペースで確認し、APIキーはサーバー環境変数だけに置く。",
+  },
+  {
+    slug: "deepseek",
+    displayName: "DeepSeek API",
+    category: "orchestration",
+    deployment: "api",
+    role: "LLM fallback and JSON generation when Dify workflow is unavailable.",
+    requiredEnv: ["DEEPSEEK_API_KEY"],
+    optionalEnv: ["DEEPSEEK_BASE_URL"],
+    balance: "manual",
+    recommended: true,
+    notes: "Dify Cloud内の推論モデルを優先し、直APIは補助・検証用に限定する。",
+  },
+  {
+    slug: "n8n",
+    displayName: "n8n OSS",
+    category: "orchestration",
+    deployment: "oss",
+    role: "Webhook orchestration for enrichment, outreach dry-run, approvals, and notifications.",
+    requiredEnv: ["N8N_WEBHOOK_SECRET"],
+    optionalEnv: ["N8N_BASE_URL", "N8N_SALES_ENRICHMENT_WEBHOOK_URL", "N8N_PLAYWRIGHT_FORM_WEBHOOK"],
+    balance: "none",
+    recommended: true,
+    notes: "大量実行はn8n側の同時実行数とSales OS側のbatch limitで抑制する。",
+  },
+  {
+    slug: "trigger_dev",
+    displayName: "Trigger.dev",
+    category: "orchestration",
+    deployment: "cloud",
+    role: "Durable background jobs for long-running enrichment and asset generation.",
+    requiredEnv: ["TRIGGER_DEV_API_KEY"],
+    optionalEnv: ["TRIGGER_DEV_SALES_ENRICHMENT_WEBHOOK_URL"],
+    balance: "manual",
+    recommended: false,
+    notes: "n8nで足りない長時間ジョブや再試行制御に使う候補。",
+  },
+  {
+    slug: "browserless",
+    displayName: "Browserless",
+    category: "outreach",
+    deployment: "api",
+    role: "Remote browser runtime for SPA form discovery and safe preflight checks.",
+    requiredEnv: ["BROWSERLESS_URL"],
+    optionalEnv: ["BROWSERLESS_TOKEN"],
+    balance: "browserless_pressure",
+    docsUrl: "https://docs.browserless.io/enterprise/utility-functions/pressure",
+    recommended: true,
+    notes: "送信前にpressureを確認できる場合は、running/queuedを見て過負荷時に停止する。",
+  },
+  {
+    slug: "crawlee",
+    displayName: "Crawlee",
+    category: "outreach",
+    deployment: "oss",
+    role: "Structured crawling and contact path discovery.",
+    requiredEnv: ["CRAWLEE_WORKER_URL"],
+    optionalEnv: [],
+    balance: "none",
+    docsUrl: "https://crawlee.dev/",
+    recommended: true,
+    notes: "Next.js本体では軽量fetch、重いクロールはworkerに逃がす。",
+  },
+  {
+    slug: "crawl4ai",
+    displayName: "Crawl4AI",
+    category: "outreach",
+    deployment: "oss",
+    role: "AI-ready crawling and content extraction for company karte evidence.",
+    requiredEnv: ["CRAWL4AI_BASE_URL"],
+    optionalEnv: [],
+    balance: "none",
+    recommended: true,
+    notes: "HTML本文とフォーム候補の抽出を担当。送信は別ガードを通す。",
+  },
+  {
+    slug: "playwright_stealth",
+    displayName: "Playwright Stealth Worker",
+    category: "outreach",
+    deployment: "oss",
+    role: "Approved form automation worker after CAPTCHA/anti-bot gates pass.",
+    requiredEnv: ["OUTREACH_WORKER_URL"],
+    optionalEnv: ["PLAYWRIGHT_STEALTH_ENABLED"],
+    balance: "none",
+    recommended: true,
+    notes: "CAPTCHA/Cloudflare Challenge検出時は自動送信せず、人間キューへ切り替える。",
+  },
+  {
+    slug: "camoufox",
+    displayName: "Camoufox",
+    category: "outreach",
+    deployment: "oss",
+    role: "Fingerprint-hardened browser option for manual review and QA, not blind bypass.",
+    requiredEnv: ["CAMOUFOX_WS_URL"],
+    optionalEnv: [],
+    balance: "none",
+    recommended: false,
+    notes: "回避目的ではなく、人間確認付きの再現・検証に限定する。",
+  },
+  {
+    slug: "dataforseo",
+    displayName: "DataForSEO",
+    category: "analysis",
+    deployment: "api",
+    role: "SEO, SERP, OnPage, Lighthouse, keyword and business-data enrichment.",
+    requiredEnv: ["DATAFORSEO_LOGIN", "DATAFORSEO_PASSWORD"],
+    optionalEnv: [],
+    balance: "dataforseo_user_data",
+    docsUrl: "https://docs.dataforseo.com/v3/appendix-user-data/",
+    recommended: true,
+    notes: "user_data APIで利用状況・支出・アカウント情報を確認できる。費用が乗る分析はsource_runsへ記録する。",
+  },
+  {
+    slug: "google_places",
+    displayName: "Google Places API",
+    category: "list_source",
+    deployment: "api",
+    role: "Local presence, address, rating, categories, and MEO signals.",
+    requiredEnv: ["GOOGLE_PLACES_API_KEY"],
+    optionalEnv: [],
+    balance: "manual",
+    docsUrl: "https://developers.google.com/maps/documentation/places/web-service/reference/rest",
+    recommended: true,
+    notes: "Google Cloud請求/無料枠はCloud Consoleで監視する。取得データの保存範囲は規約に合わせる。",
+  },
+  {
+    slug: "apollo",
+    displayName: "Apollo.io",
+    category: "list_source",
+    deployment: "api",
+    role: "B2B account/contact enrichment and exported lead lists.",
+    requiredEnv: ["APOLLO_API_KEY"],
+    optionalEnv: ["APOLLO_EXPORTER_TOKEN"],
+    balance: "manual",
+    docsUrl: "https://docs.apollo.io/docs/api-overview",
+    recommended: true,
+    notes: "クレジット/レート制限はApollo Developer Portalで監視。CSV投入はSupabaseを入口にする。",
+  },
+  {
+    slug: "fumadata",
+    displayName: "Fumadata",
+    category: "list_source",
+    deployment: "api",
+    role: "Japan SMB lead collection.",
+    requiredEnv: ["FUMADATA_API_KEY"],
+    optionalEnv: [],
+    balance: "manual",
+    recommended: true,
+    notes: "日本市場の業界別リスト補強用。",
+  },
+  {
+    slug: "bizmap",
+    displayName: "BIZMap",
+    category: "list_source",
+    deployment: "api",
+    role: "Japan company list enrichment.",
+    requiredEnv: ["BIZMAP_API_KEY"],
+    optionalEnv: [],
+    balance: "manual",
+    recommended: false,
+    notes: "Apollo/Fumadataで不足する国内SMB補完。",
+  },
+  {
+    slug: "gbizinfo",
+    displayName: "gBizInfo API",
+    category: "list_source",
+    deployment: "api",
+    role: "Official Japanese company facts and corporate registry evidence.",
+    requiredEnv: [],
+    optionalEnv: ["GBIZINFO_API_KEY"],
+    balance: "none",
+    recommended: true,
+    notes: "無料の公的情報を優先して企業カルテへ入れる。",
+  },
+  {
+    slug: "houjin_bangou",
+    displayName: "国税庁 法人番号API",
+    category: "list_source",
+    deployment: "api",
+    role: "Corporate number and legal entity verification.",
+    requiredEnv: ["HOUJIN_BANGOU_API_ID"],
+    optionalEnv: [],
+    balance: "none",
+    recommended: true,
+    notes: "正式法人名・所在地の正規化に使う。",
+  },
+  {
+    slug: "jgrants",
+    displayName: "jGrants API",
+    category: "analysis",
+    deployment: "api",
+    role: "Subsidy and grant-fit evidence for DX/Web proposals.",
+    requiredEnv: ["JGRANTS_API_KEY"],
+    optionalEnv: [],
+    balance: "manual",
+    recommended: true,
+    notes: "補助金適合の提案材料にする。",
+  },
+  {
+    slug: "apify",
+    displayName: "Apify",
+    category: "list_source",
+    deployment: "api",
+    role: "Actor-based scraping and dataset enrichment.",
+    requiredEnv: ["APIFY_API_TOKEN"],
+    optionalEnv: [],
+    balance: "manual",
+    recommended: false,
+    notes: "専用actorがある情報源だけに絞る。",
+  },
+  {
+    slug: "outscraper",
+    displayName: "Outscraper",
+    category: "list_source",
+    deployment: "api",
+    role: "Google Maps/local business enrichment alternative.",
+    requiredEnv: ["OUTSCRAPER_API_KEY"],
+    optionalEnv: [],
+    balance: "manual",
+    recommended: false,
+    notes: "Places APIの補完候補。利用規約と保存範囲を確認して使う。",
+  },
+  {
+    slug: "wappalyzer_webanalyze",
+    displayName: "Wappalyzer / webanalyze",
+    category: "analysis",
+    deployment: "oss",
+    role: "Technology fingerprinting from HTML, scripts, headers, cookies and public markers.",
+    requiredEnv: [],
+    optionalEnv: ["WAPPALYZER_API_KEY", "WEBANALYZE_BIN"],
+    balance: "manual",
+    docsUrl: "https://www.wappalyzer.com/technologies/",
+    recommended: true,
+    notes: "内蔵regexを強化済み。必要ならwebanalyze CLIをworker化して精度を上げる。",
+  },
+  {
+    slug: "pagespeed",
+    displayName: "PageSpeed Insights",
+    category: "analysis",
+    deployment: "api",
+    role: "Performance and Core Web Vitals evidence.",
+    requiredEnv: [],
+    optionalEnv: ["GOOGLE_PSI_API_KEY"],
+    balance: "manual",
+    recommended: true,
+    notes: "APIキーなしでも低頻度なら動くが、大量診断ではキー必須。",
+  },
+  {
+    slug: "urlscan",
+    displayName: "urlscan.io",
+    category: "analysis",
+    deployment: "api",
+    role: "Security/resource evidence and suspicious dependency checks.",
+    requiredEnv: ["URLSCAN_API_KEY"],
+    optionalEnv: [],
+    balance: "manual",
+    recommended: false,
+    notes: "公開スキャンの扱いに注意。顧客候補サイトへ過剰アクセスしない。",
+  },
+  {
+    slug: "publicwww",
+    displayName: "PublicWWW",
+    category: "analysis",
+    deployment: "api",
+    role: "Script, tag and footprint search.",
+    requiredEnv: ["PUBLICWWW_API_KEY"],
+    optionalEnv: [],
+    balance: "manual",
+    recommended: false,
+    notes: "タグ・埋め込み検出の補完。",
+  },
+  {
+    slug: "security_apis",
+    displayName: "SecurityTrails / Shodan / Censys / Observatory / SSL Labs",
+    category: "analysis",
+    deployment: "api",
+    role: "DNS, exposure, TLS and security posture evidence.",
+    requiredEnv: [],
+    optionalEnv: ["SECURITYTRAILS_API_KEY", "SHODAN_API_KEY", "CENSYS_API_ID", "MOZILLA_OBSERVATORY_API_URL"],
+    balance: "manual",
+    recommended: true,
+    notes: "無料枠・公的チェックを優先し、危険な能動スキャンは避ける。",
+  },
+  {
+    slug: "mobsf",
+    displayName: "Mobile Security Framework MobSF",
+    category: "analysis",
+    deployment: "oss",
+    role: "Mobile-app security checks when the prospect has apps.",
+    requiredEnv: ["MOBSF_BASE_URL"],
+    optionalEnv: ["MOBSF_API_KEY"],
+    balance: "none",
+    recommended: false,
+    notes: "Web制作営業では対象外が多いので必要時だけ。",
+  },
+  {
+    slug: "slidev_gotenberg",
+    displayName: "Slidev / Gotenberg",
+    category: "asset_generation",
+    deployment: "oss",
+    role: "Proposal deck and PDF generation.",
+    requiredEnv: ["GOTENBERG_URL"],
+    optionalEnv: ["SLIDEV_RENDER_URL"],
+    balance: "none",
+    recommended: true,
+    notes: "Difyが構成案を生成し、Slidev/GotenbergでPDF化する。",
+  },
+  {
+    slug: "serp_tavily",
+    displayName: "SerpAPI / Tavily",
+    category: "analysis",
+    deployment: "api",
+    role: "Search result, competitor and market context evidence.",
+    requiredEnv: [],
+    optionalEnv: ["SERPAPI_API_KEY", "TAVILY_API_KEY"],
+    balance: "manual",
+    recommended: true,
+    notes: "DataForSEOを主、Tavily/SerpAPIを補助にする。",
+  },
+  {
+    slug: "video_stack",
+    displayName: "OpenMontage / ComfyUI / HyperFrames / Remotion",
+    category: "video",
+    deployment: "oss",
+    role: "Sales video and delivery-subscription video generation.",
+    requiredEnv: [],
+    optionalEnv: ["OPENMONTAGE_API_URL", "COMFYUI_API_URL", "REMOTION_RENDER_URL", "HYPERFRAMES_API_URL"],
+    balance: "manual",
+    recommended: true,
+    notes: "営業資料埋め込み用の短尺動画と、動画納品サブスク用の制作ラインを分ける。",
+  },
+  {
+    slug: "r2_delivery",
+    displayName: "Cloudflare R2",
+    category: "video",
+    deployment: "api",
+    role: "Fast delivery for generated reports, videos, PDFs and demo assets.",
+    requiredEnv: ["CLOUDFLARE_R2_BUCKET"],
+    optionalEnv: ["R2_ACCESS_KEY_ID", "R2_PUBLIC_BASE_URL"],
+    balance: "manual",
+    recommended: true,
+    notes: "大容量成果物はDBに置かずR2 URLをSupabaseに保存する。",
+  },
+  {
+    slug: "astro_demo",
+    displayName: "Astro",
+    category: "demo_site",
+    deployment: "oss",
+    role: "Fast reusable replacement demo sites for Web production proposals.",
+    requiredEnv: [],
+    optionalEnv: ["ASTRO_DEMO_FACTORY_URL"],
+    balance: "none",
+    recommended: true,
+    notes: "テンプレートは言語・業界・訴求別に分け、Difyが選択する。",
+  },
+  {
+    slug: "email_phone_stack",
+    displayName: "Zoho / Smartlead / Resend / Listmonk / Twilio / HeyReach",
+    category: "outreach",
+    deployment: "api",
+    role: "Email, newsletter, SMS/phone and LinkedIn fallback channels.",
+    requiredEnv: [],
+    optionalEnv: ["ZOHO_MAIL_CLIENT_ID", "SMARTLEAD_API_KEY", "RESEND_API_KEY", "LISTMONK_BASE_URL", "TWILIO_ACCOUNT_SID", "HEYREACH_API_KEY"],
+    balance: "manual",
+    recommended: true,
+    notes: "フォーム自動送信が危険な場合の代替。ドメインウォームアップと上限監視が必須。",
+  },
+  {
+    slug: "calcom_docuseal",
+    displayName: "Cal.com / Docuseal",
+    category: "crm_ops",
+    deployment: "oss",
+    role: "Meeting booking and contract signature after a hot response.",
+    requiredEnv: [],
+    optionalEnv: ["CALCOM_BASE_URL", "CALCOM_API_KEY", "DOCUSEAL_BASE_URL", "DOCUSEAL_API_KEY"],
+    balance: "none",
+    recommended: true,
+    notes: "成約時はDocuseal signed webhookから顧客ハンドオフを起動する。",
+  },
+  {
+    slug: "proxy_pool",
+    displayName: "DataImpulse / IPRoyal Proxy",
+    category: "proxy",
+    deployment: "api",
+    role: "Proxy pool for compliant crawling, not for CAPTCHA bypass.",
+    requiredEnv: [],
+    optionalEnv: ["DATAIMPULSE_PROXY_URL", "DATAIMPULSE_API_KEY", "IPROYAL_PROXY_URL", "IPROYAL_API_KEY"],
+    balance: "manual",
+    recommended: true,
+    notes: "残量は各プロバイダ管理画面/APIで確認。CAPTCHAやCloudflare Challengeは回避せず人間確認に切り替える。",
+  },
+]
+
+function envValue(name: string): string | null {
+  const value = process.env[name]
+  return value && value.trim().length > 0 ? value.trim() : null
+}
+
+function configuredEnv(names: string[]): string[] {
+  return names.filter((name) => envValue(name))
+}
+
+function missingEnv(names: string[]): string[] {
+  return names.filter((name) => !envValue(name))
+}
+
+function statusFor(def: SalesIntegrationDefinition): SalesIntegrationStatusKind {
+  if (def.requiredEnv.length === 0) {
+    return configuredEnv(def.optionalEnv ?? []).length > 0 ? "ready" : def.recommended ? "optional" : "manual"
+  }
+  const missing = missingEnv(def.requiredEnv)
+  if (missing.length === 0) return "ready"
+  if (missing.length < def.requiredEnv.length) return "partial"
+  return "missing"
+}
+
+function defaultBalance(def: SalesIntegrationDefinition, status: SalesIntegrationStatusKind): Pick<SalesIntegrationStatus, "balanceStatus" | "balanceLabel"> {
+  if (def.balance === "none") return { balanceStatus: "not_applicable", balanceLabel: "残量チェック不要" }
+  if (status === "missing" || status === "partial") return { balanceStatus: "not_configured", balanceLabel: "APIキー未設定" }
+  if (def.balance === "manual") return { balanceStatus: "manual", balanceLabel: "管理画面で確認" }
+  return { balanceStatus: "checkable", balanceLabel: "liveチェック可能" }
+}
+
+function summarizeObjectNumbers(value: unknown, keys: string[] = []): string | null {
+  if (!value || typeof value !== "object") return null
+  const record = value as Record<string, unknown>
+  for (const key of keys) {
+    const found = record[key]
+    if (typeof found === "number") return `${key}: ${found}`
+    if (typeof found === "string" && found.trim().length > 0) return `${key}: ${found}`
+  }
+  for (const item of Object.values(record)) {
+    const nested = summarizeObjectNumbers(item, keys)
+    if (nested) return nested
+  }
+  return null
+}
+
+async function checkDataForSeoBalance(): Promise<Pick<SalesIntegrationStatus, "balanceStatus" | "balanceLabel">> {
+  const login = envValue("DATAFORSEO_LOGIN")
+  const password = envValue("DATAFORSEO_PASSWORD")
+  if (!login || !password) return { balanceStatus: "not_configured", balanceLabel: "DATAFORSEO_LOGIN/PASSWORD未設定" }
+  try {
+    const auth = Buffer.from(`${login}:${password}`).toString("base64")
+    const res = await fetch("https://api.dataforseo.com/v3/appendix/user_data", {
+      headers: { Authorization: `Basic ${auth}` },
+      signal: AbortSignal.timeout(8_000),
+    })
+    const body = (await res.json()) as unknown
+    if (!res.ok) return { balanceStatus: "error", balanceLabel: `HTTP ${res.status}` }
+    const label = summarizeObjectNumbers(body, ["money", "balance", "cost", "spent", "total"])
+    return { balanceStatus: "ok", balanceLabel: label ?? "user_data取得済み" }
+  } catch (error) {
+    console.error("[integration-registry] DataForSEO balance check failed:", error)
+    return { balanceStatus: "error", balanceLabel: error instanceof Error ? error.message : "DataForSEO check failed" }
+  }
+}
+
+async function checkBrowserlessPressure(): Promise<Pick<SalesIntegrationStatus, "balanceStatus" | "balanceLabel">> {
+  const rawUrl = envValue("BROWSERLESS_URL")
+  if (!rawUrl) return { balanceStatus: "not_configured", balanceLabel: "BROWSERLESS_URL未設定" }
+  try {
+    const url = new URL(rawUrl)
+    const token = envValue("BROWSERLESS_TOKEN") ?? url.searchParams.get("token")
+    url.pathname = "/pressure"
+    if (token) url.searchParams.set("token", token)
+    const res = await fetch(url.toString(), { signal: AbortSignal.timeout(8_000) })
+    const body = (await res.json()) as { isAvailable?: boolean; running?: number; maxConcurrent?: number; queued?: number; reason?: string }
+    if (!res.ok) return { balanceStatus: "error", balanceLabel: `HTTP ${res.status}` }
+    return {
+      balanceStatus: body.isAvailable === false ? "error" : "ok",
+      balanceLabel: `running ${body.running ?? "-"} / ${body.maxConcurrent ?? "-"}, queued ${body.queued ?? 0}${body.reason ? `, ${body.reason}` : ""}`,
+    }
+  } catch (error) {
+    console.error("[integration-registry] Browserless pressure check failed:", error)
+    return { balanceStatus: "error", balanceLabel: error instanceof Error ? error.message : "Browserless check failed" }
+  }
+}
+
+async function liveBalance(def: SalesIntegrationDefinition): Promise<Pick<SalesIntegrationStatus, "balanceStatus" | "balanceLabel"> | null> {
+  if (def.balance === "dataforseo_user_data") return checkDataForSeoBalance()
+  if (def.balance === "browserless_pressure") return checkBrowserlessPressure()
+  return null
+}
+
+export function getSalesIntegrationDefinitions(): SalesIntegrationDefinition[] {
+  return REGISTRY
+}
+
+export async function getSalesIntegrationStatus(
+  options: IntegrationStatusOptions = {},
+): Promise<SalesIntegrationStatus[]> {
+  const checkedAt = new Date().toISOString()
+  const rows: SalesIntegrationStatus[] = []
+  for (const def of REGISTRY) {
+    const status = statusFor(def)
+    const defaults = defaultBalance(def, status)
+    const live = options.liveBalance ? await liveBalance(def) : null
+    rows.push({
+      slug: def.slug,
+      displayName: def.displayName,
+      category: def.category,
+      deployment: def.deployment,
+      role: def.role,
+      status,
+      configuredEnv: configuredEnv(def.requiredEnv),
+      missingEnv: missingEnv(def.requiredEnv),
+      optionalMissingEnv: missingEnv(def.optionalEnv ?? []),
+      balanceStatus: live?.balanceStatus ?? defaults.balanceStatus,
+      balanceLabel: live?.balanceLabel ?? defaults.balanceLabel,
+      docsUrl: def.docsUrl,
+      recommended: def.recommended,
+      notes: def.notes,
+      checkedAt,
+    })
+  }
+  return rows
+}
+
+export async function saveSalesIntegrationStatus(rows: SalesIntegrationStatus[]): Promise<void> {
+  const sb = getServiceSalesSupabase()
+  if (!sb || rows.length === 0) return
+  const { error } = await sb.from("sales_integration_status").upsert(
+    rows.map((row) => ({
+      slug: row.slug,
+      display_name: row.displayName,
+      category: row.category,
+      deployment: row.deployment,
+      status: row.status,
+      configured_env: row.configuredEnv,
+      missing_env: row.missingEnv,
+      optional_missing_env: row.optionalMissingEnv,
+      balance_status: row.balanceStatus,
+      balance_label: row.balanceLabel,
+      docs_url: row.docsUrl ?? null,
+      recommended: row.recommended,
+      notes: row.notes,
+      checked_at: row.checkedAt,
+      updated_at: new Date().toISOString(),
+    })),
+    { onConflict: "slug" },
+  )
+  if (error && !/schema cache|relation .* does not exist/i.test(error.message)) {
+    console.error("[integration-registry] status snapshot upsert failed:", error.message)
+  }
+}

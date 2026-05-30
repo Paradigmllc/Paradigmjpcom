@@ -19,8 +19,13 @@ export interface ClassifyFormResult {
   source: "regex" | "deepseek"
 }
 
-const REGEX_HINTS: Array<{ classification: FormClassification; pattern: RegExp; conf: number }> = [
-  { classification: "risky_captcha", pattern: /recaptcha|g-recaptcha|hcaptcha|cf-turnstile|turnstile/i, conf: 0.95 },
+const REGEX_HINTS: Array<{ classification: FormClassification; pattern: RegExp; conf: number; reason?: string }> = [
+  {
+    classification: "risky_captcha",
+    pattern: /recaptcha|g-recaptcha|grecaptcha|hcaptcha|h-captcha|cf-turnstile|turnstile|challenges\.cloudflare\.com|cdn-cgi\/challenge-platform|cf-chl-|cf-browser-verification|attention required! \| cloudflare|datadome|perimeterx|px-captcha|arkose|funcaptcha|botdetect/i,
+    conf: 0.96,
+    reason: "captcha / bot-protection detected; switch to human-led queue",
+  },
   { classification: "risky_login", pattern: /<input[^>]+type=["']password["']/i, conf: 0.9 },
   { classification: "skip_payment", pattern: /stripe|paypal|braintree|square|checkout\.js|card-number/i, conf: 0.75 },
   { classification: "risky_iframe", pattern: /<iframe[^>]+(form|contact|hsforms|typeform)/i, conf: 0.8 },
@@ -61,7 +66,7 @@ function regexClassify(html: string): ClassifyFormResult {
       return {
         classification: h.classification,
         confidence: h.conf,
-        reason: `regex: ${h.pattern.source.slice(0, 36)}`,
+        reason: h.reason ?? `regex: ${h.pattern.source.slice(0, 36)}`,
         detectedFields: fields,
         source: "regex",
       }

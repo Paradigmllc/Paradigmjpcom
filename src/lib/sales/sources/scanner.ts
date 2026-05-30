@@ -11,6 +11,9 @@ export interface PsiResult {
 export interface HtmlInspect {
   hasOgp: boolean
   isWordPress: boolean
+  hasRecaptcha: boolean
+  hasTurnstile: boolean
+  hasCloudflareChallenge: boolean
   copyrightYear: number | null
   title: string | null
   description: string | null
@@ -70,6 +73,9 @@ function emptyHtmlInspect(): HtmlInspect {
   return {
     hasOgp: false,
     isWordPress: false,
+    hasRecaptcha: false,
+    hasTurnstile: false,
+    hasCloudflareChallenge: false,
     copyrightYear: null,
     title: null,
     description: null,
@@ -98,6 +104,9 @@ async function inspectHtml(url: string): Promise<HtmlInspect> {
     return {
       hasOgp: /<meta[^>]+property=["']og:/i.test(html),
       isWordPress: /wp-content|wp-includes|generator.*wordpress/i.test(html),
+      hasRecaptcha: /google\.com\/recaptcha|g-recaptcha|grecaptcha/i.test(html),
+      hasTurnstile: /cf-turnstile|challenges\.cloudflare\.com\/turnstile|turnstile\.render/i.test(html),
+      hasCloudflareChallenge: /cdn-cgi\/challenge-platform|cf-chl-|cf-browser-verification|Attention Required! \| Cloudflare/i.test(html),
       copyrightYear: yearMatch ? Number.parseInt(yearMatch[1] ?? "", 10) : null,
       title: titleMatch?.[1]?.trim() ?? null,
       description: firstMetaContent(html, "description"),

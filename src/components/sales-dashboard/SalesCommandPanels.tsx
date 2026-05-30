@@ -47,9 +47,9 @@ export function formatDate(value: string | null): string {
 
 export function statusTone(status: string): string {
   if (status === "active" || status === "ready" || status === "completed") return "bg-emerald-100 text-emerald-700"
-  if (status === "recommended" || status === "planned" || status === "in_progress" || status === "queued") return "bg-amber-100 text-amber-800"
-  if (status === "legacy") return "bg-slate-100 text-slate-600"
-  if (status === "degraded" || status === "blocked" || status === "tier_blocked" || status === "failed") return "bg-rose-100 text-rose-700"
+  if (status === "recommended" || status === "planned" || status === "in_progress" || status === "queued" || status === "partial" || status === "manual" || status === "checkable") return "bg-amber-100 text-amber-800"
+  if (status === "legacy" || status === "optional" || status === "not_applicable") return "bg-slate-100 text-slate-600"
+  if (status === "degraded" || status === "blocked" || status === "tier_blocked" || status === "failed" || status === "missing" || status === "error" || status === "not_configured") return "bg-rose-100 text-rose-700"
   return "bg-zinc-100 text-zinc-700"
 }
 
@@ -383,7 +383,18 @@ export function AnalyticsPanel({ data }: { data: SalesDashboardData }) {
 }
 
 export function IntegrationsPanel({ data }: { data: SalesDashboardData }) {
+  const readyIntegrations = data.integrationStatus.filter((item) => item.status === "ready").length
+  const missingRecommended = data.integrationStatus.filter((item) => item.recommended && item.status === "missing").length
+  const categories = sortedEntries(
+    data.integrationStatus.reduce<Record<string, number>>((acc, item) => {
+      acc[item.category] = (acc[item.category] ?? 0) + 1
+      return acc
+    }, {}),
+    12,
+  )
+
   return (
+    <div className="space-y-4">
     <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
       <div className="grid gap-3 sm:grid-cols-2">
         {data.toolConnections.map((tool) => <ToolBadge key={tool.slug} tool={tool} />)}
@@ -406,6 +417,89 @@ export function IntegrationsPanel({ data }: { data: SalesDashboardData }) {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+    </div>
+    <IntegrationInventoryPanel
+      data={data}
+      readyIntegrations={readyIntegrations}
+      missingRecommended={missingRecommended}
+      categories={categories}
+    />
+    </div>
+  )
+}
+
+function IntegrationInventoryPanel({
+  data,
+  readyIntegrations,
+  missingRecommended,
+  categories,
+}: {
+  data: SalesDashboardData
+  readyIntegrations: number
+  missingRecommended: number
+  categories: [string, number][]
+}) {
+  return (
+    <div className="rounded-lg border border-zinc-200 bg-white p-4">
+      <div className="flex flex-col gap-3 border-b border-zinc-100 pb-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-950">API / OSS 接続台帳</h2>
+          <p className="mt-1 max-w-3xl text-xs leading-6 text-zinc-500">
+            Dify Cloud、外部API、OSS worker、プロキシの設定有無を環境変数名だけで監査します。キー値は表示せず、未設定は missing として企業カルテの取得状況に反映します。
+          </p>
+        </div>
+        <div className="grid min-w-[260px] grid-cols-2 gap-2 text-xs">
+          <div className="rounded-md bg-emerald-50 p-3 text-emerald-800">
+            <div className="font-medium">利用可能</div>
+            <div className="mt-1 text-xl font-semibold">{readyIntegrations}</div>
+          </div>
+          <div className="rounded-md bg-rose-50 p-3 text-rose-800">
+            <div className="font-medium">推奨missing</div>
+            <div className="mt-1 text-xl font-semibold">{missingRecommended}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 lg:grid-cols-[0.55fr_1.45fr]">
+        <BarList title="カテゴリ別" rows={categories} empty="接続台帳がまだありません。" />
+        <div className="overflow-hidden rounded-lg border border-zinc-200">
+          <div className="grid grid-cols-[1.2fr_0.8fr_0.7fr_1fr] gap-3 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-600">
+            <div>ツール</div>
+            <div>状態</div>
+            <div>残量</div>
+            <div>不足ENV</div>
+          </div>
+          <div className="max-h-[520px] divide-y divide-zinc-100 overflow-y-auto">
+            {data.integrationStatus.map((item) => (
+              <div key={item.slug} className="grid grid-cols-[1.2fr_0.8fr_0.7fr_1fr] gap-3 px-3 py-3 text-xs">
+                <div>
+                  <div className="font-semibold text-zinc-950">{item.displayName}</div>
+                  <div className="mt-1 line-clamp-2 text-zinc-500">{item.role}</div>
+                  {item.docsUrl && (
+                    <a href={item.docsUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 font-semibold text-zinc-800 underline-offset-2 hover:underline">
+                      docs <ExternalLink size={11} aria-hidden />
+                    </a>
+                  )}
+                </div>
+                <div>
+                  <span className={`inline-flex rounded-full px-2 py-0.5 ${statusTone(item.status)}`}>{item.status}</span>
+                  <div className="mt-2 text-zinc-500">{item.category} / {item.deployment}</div>
+                </div>
+                <div>
+                  <span className={`inline-flex rounded-full px-2 py-0.5 ${statusTone(item.balanceStatus)}`}>{item.balanceStatus}</span>
+                  <div className="mt-2 text-zinc-500">{item.balanceLabel}</div>
+                </div>
+                <div className="text-zinc-500">
+                  {item.missingEnv.length > 0 ? item.missingEnv.join(", ") : "必須ENV OK"}
+                  {item.optionalMissingEnv.length > 0 && (
+                    <div className="mt-1 text-zinc-400">optional: {item.optionalMissingEnv.slice(0, 3).join(", ")}</div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

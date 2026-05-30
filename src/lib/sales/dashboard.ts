@@ -4,6 +4,7 @@ import { getInfrastructureMigrationData } from "@/lib/sales/infrastructure"
 import { getContentTemplateCoverage } from "@/lib/sales/content-templates"
 import { fetchRecentEnrichmentJobs, type DashboardEnrichmentJob } from "@/lib/sales/enrichment-jobs"
 import { getDashboardAgentTeam } from "@/lib/sales/agent-team"
+import { getSalesIntegrationStatus } from "@/lib/sales/integration-registry"
 import type {
   DashboardAuditCheck,
   DashboardAuditSection,
@@ -594,6 +595,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     const infrastructure = await getInfrastructureMigrationData(null)
     const contentTemplates = await getContentTemplateCoverage()
     const agentTeam = await getDashboardAgentTeam()
+    const integrationStatus = await getSalesIntegrationStatus()
     return {
       status: "degraded",
       generatedAt,
@@ -614,6 +616,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
       operationalAudit: emptyOperationalAudit(),
       contentTemplates,
       agentTeam,
+      integrationStatus,
     }
   }
 
@@ -635,6 +638,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     infrastructure,
     contentTemplates,
     agentTeam,
+    integrationStatus,
   ] = await Promise.all([
     fetchDashboardCompanies(sb),
     sb
@@ -675,6 +679,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     getInfrastructureMigrationData(sb),
     getContentTemplateCoverage(),
     getDashboardAgentTeam(),
+    getSalesIntegrationStatus(),
   ])
 
   if (companyRes.error) warnings.push(`sales_companies: ${companyRes.error.message}`)
@@ -792,5 +797,6 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     }),
     contentTemplates,
     agentTeam,
+    integrationStatus,
   }
 }
