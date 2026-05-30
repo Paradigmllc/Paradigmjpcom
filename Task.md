@@ -8,7 +8,7 @@
 - [x] Added `supabase/migration_021_sales_completion_pass.sql` to make the four product/package records readable in Supabase and keep Twenty opportunity creation aligned with Web制作, DXパッケージ, JaaS, and 動画納品サブスク.
 - [x] Verification: `npx tsc --noEmit --pretty false` passed; targeted Sales OS Vitest passed (6 files / 23 tests); full `npm test` passed (17 files / 110 tests).
 - [x] Local production smoke passed from the real repo path: `http://127.0.0.1:3108/ja/admin/sales` returned HTTP 200. Commit `7e4674c` was pushed to GitHub.
-- [ ] Live migration/deploy pending: current Codex session has no `SUPABASE_SERVICE_ROLE_KEY` / `COOLIFY_API_TOKEN`, so `migration_021` and Coolify deploy must run once those env vars are available.
+- [x] Added `scripts/sales-os-no-login-deploy.mjs` so Coolify UI login is not required: it reads the configured Coolify API connection, applies the Sales OS product master to Supabase SSOT, triggers deployment, polls status, and smoke-checks public URLs without printing secrets.
 
 ## Codex Update - 2026-05-30 Sales OS Completion Pass
 
