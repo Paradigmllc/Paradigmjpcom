@@ -223,6 +223,10 @@ async function applyRuntimeHardeningMigration(envs) {
   return applySqlMigration(envs, "migration_025_sales_runtime_hardening.sql", "Runtime hardening migration")
 }
 
+async function applyVideoPipelineMigration(envs) {
+  return applySqlMigration(envs, "migration_026_sales_video_pipeline.sql", "Video pipeline migration")
+}
+
 function applyContentTemplates(envs) {
   const { url, key } = salesSupabase(envs)
   const result = spawnSync(process.execPath, ["scripts/seed-sales-content-templates.mjs"], {
@@ -282,8 +286,9 @@ async function main() {
     console.log(`Sales products: verified ${count}`)
     console.log(await applyContentTemplateMigration(envs))
     console.log(await applyAgentTeamMigration(envs))
-    console.log(await applyIntegrationStatusMigration(envs))
-    console.log(await applyRuntimeHardeningMigration(envs))
+  console.log(await applyIntegrationStatusMigration(envs))
+  console.log(await applyRuntimeHardeningMigration(envs))
+  console.log(await applyVideoPipelineMigration(envs))
     console.log(applyContentTemplates(envs))
   } else {
     console.log("Dry run: skipped Supabase product upsert")
