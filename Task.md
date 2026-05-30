@@ -1,3 +1,14 @@
+## Codex Update - 2026-05-30 Sales Integration Registry and Safe Form Guard
+
+- [x] Added a no-secret API/OSS inventory for the Sales OS: Dify Cloud, DeepSeek, n8n, Trigger.dev, Browserless, Crawlee/Crawl4AI, Playwright Stealth/Camoufox, DataForSEO, Google Places, Apollo/Fumadata/BIZMap/gBizInfo/jGrants/Houjin Bangou, Wappalyzer-style detection, PageSpeed, urlscan, PublicWWW, security APIs, Slidev/Gotenberg, video stack, mail/phone tools, Cal.com, Docuseal, and proxy vendors.
+- [x] Added authenticated `GET /api/sales/integration-status` with optional `?live=1` balance/pressure checks. The endpoint returns missing env names and status only; API keys and token values are never returned.
+- [x] Added the Sales OS integration inventory panel so operators can see which APIs/OSS are ready, missing, optional, or manual from the dashboard without opening multiple admin tools.
+- [x] Added `supabase/migration_024_sales_integration_status.sql` with RLS-enabled snapshot storage for integration status. Current Coolify/PostgREST path does not expose `exec_sql`, so the app falls back to the code registry until the DB migration is applied manually or by a privileged migration runner.
+- [x] Strengthened Wappalyzer-style detection with headers, cookies, HTML signatures, evidence labels, confidence, and detection for Cloudflare, Turnstile, reCAPTCHA, hCaptcha, DataDome, Vercel/Netlify/AWS, analytics, CMS, ecommerce, booking, and CRM tools.
+- [x] Strengthened form outreach safety: Cloudflare challenge, Turnstile, reCAPTCHA, hCaptcha, DataDome, PerimeterX, Arkose/FunCaptcha, and BotDetect now classify as `risky_captcha` and route to human-led/manual queue instead of automatic form submission.
+- [x] Verification: `npx tsc --noEmit --pretty false` passed; full `npm test` passed (22 files / 120 tests); `npm run build` passed with the known local Payload Postgres fallback warnings.
+- [x] Deployed commit `9a7d9ad` via Coolify API. Production smoke passed for `/ja/admin/sales`, `/ja`, Twenty, and authenticated `/api/sales/integration-status` (33 integrations; current live status ready 4 / missing 20 / optional 9).
+
 ## Codex Update - 2026-05-30 Paradigm AI Bot Agent Team
 
 - [x] Added Supabase SSOT command/event ledger for Telegram-driven sales agents: `sales_agent_commands` and `sales_agent_events` in `supabase/migration_023_sales_agent_team.sql`.
