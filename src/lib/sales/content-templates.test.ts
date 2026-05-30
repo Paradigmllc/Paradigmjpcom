@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest"
-import { buildInitialContentTemplates, matchContentTemplate } from "./content-templates"
+import { buildInitialContentTemplates, CONTENT_ASSET_LABELS, INDUSTRY_LABELS, matchContentTemplate } from "./content-templates"
+
+const mojibakePattern = /繝|蜍|譛|縺|邯|荳|逶|螟|諡|蛻|蟇|髢|遯|鬚|蝟|繧|譁ｭ|險/
 
 describe("sales content templates", () => {
   it("builds a ja/en matrix for four asset types", () => {
@@ -22,5 +24,24 @@ describe("sales content templates", () => {
     expect(template.asset_type).toBe("sales_deck")
     expect(template.appeal_angle).toBe("japan_entry")
     expect(template.prompt_template.toLowerCase()).toContain("never invent unavailable evidence")
+  })
+
+  it("keeps Japanese template labels and prompt guardrails readable", () => {
+    const rows = buildInitialContentTemplates()
+    const restaurantReport = rows.find(
+      (row) =>
+        row.report_locale === "ja" &&
+        row.industry === "restaurant" &&
+        row.asset_type === "diagnostic_report" &&
+        row.appeal_angle === "revenue_recovery",
+    )
+
+    expect(INDUSTRY_LABELS.restaurant.ja).toBe("飲食店")
+    expect(CONTENT_ASSET_LABELS.diagnostic_report.ja).toBe("診断レポート")
+    expect(restaurantReport?.title).toContain("飲食店")
+    expect(restaurantReport?.title).toContain("診断レポート")
+    expect(restaurantReport?.dify_selection_rule).toContain("未検証")
+    expect(restaurantReport?.prompt_template).toContain("一次情報URL")
+    expect(JSON.stringify(rows.filter((row) => row.report_locale === "ja"))).not.toMatch(mojibakePattern)
   })
 })

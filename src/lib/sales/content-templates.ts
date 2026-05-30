@@ -2,12 +2,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import type { Industry, Region, ReportLocale, TemplateVariant } from "./types"
 import { INDUSTRIES } from "./types"
 
-export const CONTENT_ASSET_TYPES = [
-  "diagnostic_report",
-  "astro_demo_site",
-  "sales_deck",
-  "sales_video",
-] as const
+export const CONTENT_ASSET_TYPES = ["diagnostic_report", "astro_demo_site", "sales_deck", "sales_video"] as const
 export type ContentAssetType = (typeof CONTENT_ASSET_TYPES)[number]
 
 export const CONTENT_APPEAL_ANGLES = [
@@ -72,6 +67,13 @@ export interface ContentTemplateListInput {
 
 export interface ContentTemplateUpdateInput {
   id: string
+  report_locale?: string
+  target_country?: string
+  industry?: string
+  offer_code?: string
+  asset_type?: string
+  appeal_angle?: string
+  template_variant?: string
   title?: string
   purpose?: string
   quality_bar?: string
@@ -81,7 +83,8 @@ export interface ContentTemplateUpdateInput {
   is_active?: boolean
 }
 
-const REPORT_LOCALES = ["ja", "en", "ko", "zh", "de", "fr", "es", "pt", "ru", "ar", "vi", "id"] as const
+export const REPORT_LOCALES = ["ja", "en", "ko", "zh", "de", "fr", "es", "pt", "ru", "ar", "vi", "id"] as const
+
 const REGION_BY_LOCALE: Record<ReportLocale, Region> = {
   ja: "jp",
   en: "global",
@@ -110,18 +113,28 @@ export const INDUSTRY_LABELS: Record<Industry, { ja: string; en: string }> = {
 
 export const CONTENT_ASSET_LABELS: Record<ContentAssetType, { ja: string; en: string }> = {
   diagnostic_report: { ja: "診断レポート", en: "diagnostic report" },
-  astro_demo_site: { ja: "Astro差し替えデモ", en: "Astro replacement demo" },
+  astro_demo_site: { ja: "Astroデモサイト", en: "Astro replacement demo" },
   sales_deck: { ja: "営業資料", en: "sales deck" },
   sales_video: { ja: "営業動画", en: "sales video" },
 }
 
 export const CONTENT_APPEAL_LABELS: Record<ContentAppealAngle, { ja: string; en: string }> = {
-  revenue_recovery: { ja: "売上機会の回復", en: "revenue recovery" },
+  revenue_recovery: { ja: "売上機会の回収", en: "revenue recovery" },
   trust_authority: { ja: "信頼・権威づけ", en: "trust and authority" },
   speed_conversion: { ja: "速度・CV改善", en: "speed and conversion" },
   automation_dx: { ja: "DX・自動化", en: "automation and DX" },
   japan_entry: { ja: "日本市場参入", en: "Japan market entry" },
   video_retention: { ja: "動画継続納品", en: "video retention" },
+}
+
+export const CONTENT_TEMPLATE_VARIANT_LABELS: Record<TemplateVariant, string> = {
+  website_diagnostic: "Web診断",
+  meo: "MEO",
+  security: "セキュリティ",
+  japan_entry: "日本参入",
+  video_subscription: "動画サブスク",
+  subsidy: "補助金",
+  outreach: "アウトリーチ",
 }
 
 const OFFER_BY_ANGLE: Record<ContentAppealAngle, { code: string; variant: TemplateVariant }> = {
@@ -178,6 +191,10 @@ function isReportLocale(value: unknown): value is ReportLocale {
   return typeof value === "string" && (REPORT_LOCALES as readonly string[]).includes(value)
 }
 
+function isTemplateVariant(value: unknown): value is TemplateVariant {
+  return typeof value === "string" && value in CONTENT_TEMPLATE_VARIANT_LABELS
+}
+
 function language(locale: ReportLocale): "ja" | "en" {
   return locale === "ja" ? "ja" : "en"
 }
@@ -204,13 +221,14 @@ function purposeFor(locale: ReportLocale, assetType: ContentAssetType, angle: Co
       ? "商談前後に共有できる、根拠・提案・費用感・進行計画が揃った意思決定用資料にする。"
       : "Package proof, proposal, pricing logic, and rollout into a decision-ready deck."
   }
-  return ja
-    ? angle === "video_retention"
+  if (angle === "video_retention") {
+    return ja
       ? "月次で量産できる動画納品サブスクの価値を、初回提案から具体的に見せる。"
-      : "診断の要点を短い営業動画にして、資料内やフォローで視聴されやすくする。"
-    : angle === "video_retention"
-      ? "Show the value of a recurring short-video production subscription from the first proposal."
-      : "Create a compact sales video that makes the diagnostic story easy to watch and share."
+      : "Show the value of a recurring short-video production subscription from the first proposal."
+  }
+  return ja
+    ? "診断の要点を短い営業動画にして、資料内やフォローで視聴されやすくする。"
+    : "Create a compact sales video that makes the diagnostic story easy to watch and share."
 }
 
 function qualityBarFor(locale: ReportLocale, assetType: ContentAssetType): string {
@@ -222,7 +240,7 @@ function qualityBarFor(locale: ReportLocale, assetType: ContentAssetType): strin
   }
   if (assetType === "astro_demo_site") {
     return ja
-      ? "スマホで見た瞬間に、現状サイトとの差分、信頼要素、予約/問い合わせ導線がわかる。装飾より速度と明瞭さを優先する。"
+      ? "スマホで見た瞬間に、現状サイトとの差分、信頼要素、予約・問い合わせ導線が分かる。装飾より速度と明瞭さを優先する。"
       : "On mobile, the visitor immediately sees the improved difference, trust proof, and CTA path."
   }
   if (assetType === "sales_deck") {
@@ -244,7 +262,7 @@ function selectionRuleFor(locale: ReportLocale, industry: Industry, assetType: C
     `成果物=${CONTENT_ASSET_LABELS[assetType][lang]}`,
     `訴求=${CONTENT_APPEAL_LABELS[angle][lang]}`,
     "優先順位: 完全一致 > 業界一致 > 商材一致 > 痛み根拠の強さ > 最新version",
-    "Difyは存在しない数値を作らず、企業カルテ/source_runsにある根拠だけを使う。",
+    "Difyは企業カルテとsource_runsに存在する根拠だけを使い、未検証の法改正・罰金・市場統計・CAGRを断定しない。",
   ].join(" / ")
 }
 
@@ -255,12 +273,14 @@ function promptFor(locale: ReportLocale, industry: Industry, assetType: ContentA
     ? [
         `あなたはParadigmの営業戦略・制作ディレクターです。対象は${industryName}です。`,
         "入力される企業カルテ、公開データ、実測値、診断レポートURL、デモURLだけを根拠にしてください。",
-        "相手を煽りすぎず、経営者が次の15分相談を自然に受けたくなる温度で書いてください。",
+        "相手を煽りすぎず、経営者が次の15分商談を自然に受けたくなる温度で書いてください。",
+        "法改正、罰金額、市場統計、CAGR、業界平均は一次情報URLが無い限り顧客向けに断定しないでください。",
       ]
     : [
         `You are Paradigm's sales strategist and production director. The target is a ${industryName}.`,
         "Use only the provided company dossier, public evidence, measured data, report URL, and demo URL.",
         "Keep the tone executive, specific, and helpful. Never invent unavailable evidence or overclaim results.",
+        "Do not assert legal, penalty, market, CAGR, or benchmark claims without a primary-source URL.",
       ]
   const assetInstruction: Record<ContentAssetType, string> = {
     diagnostic_report: ja
@@ -273,7 +293,7 @@ function promptFor(locale: ReportLocale, industry: Industry, assetType: ContentA
       ? "Slidev/GotenbergでPDF化できる営業資料として、10枚以内のMarkdownを出力してください。"
       : "Output Slidev-compatible Markdown for a PDF proposal deck in ten slides or fewer.",
     sales_video: ja
-      ? "HyperFrames/Remotion/ComfyUI用に、60秒前後の構成、ナレーション、ビジュアル指示、字幕要点を出力してください。"
+      ? "HyperFrames/Remotion/ComfyUI用に、60秒前後の構成、ナレーション、ビジュアル指示、字幕要約を出力してください。"
       : "Output a roughly 60-second brief for HyperFrames/Remotion/ComfyUI with scenes, narration, visuals, and captions.",
   }
   return [...base, `訴求角度: ${CONTENT_APPEAL_LABELS[angle][language(locale)]}`, assetInstruction[assetType], "URLは必ずそのまま保持してください。"].join("\n")
@@ -290,7 +310,7 @@ function structureFor(assetType: ContentAssetType, angle: ContentAppealAngle): R
 function sampleCopyFor(locale: ReportLocale, industry: Industry, assetType: ContentAssetType, angle: ContentAppealAngle): string {
   const ja = locale === "ja"
   if (ja) {
-    return `${INDUSTRY_LABELS[industry].ja}向けに「${CONTENT_APPEAL_LABELS[angle].ja}」を軸に、企業カルテの実測根拠から${CONTENT_ASSET_LABELS[assetType].ja}へ展開する。`
+    return `${INDUSTRY_LABELS[industry].ja}向けに「${CONTENT_APPEAL_LABELS[angle].ja}」を軸に、企業カルテと実測根拠から${CONTENT_ASSET_LABELS[assetType].ja}へ展開する。`
   }
   return `For a ${INDUSTRY_LABELS[industry].en}, turn measured evidence into a ${CONTENT_ASSET_LABELS[assetType].en} around ${CONTENT_APPEAL_LABELS[angle].en}.`
 }
@@ -336,7 +356,7 @@ function normalizeMatchInput(input: ContentTemplateMatchInput): Required<Content
   const offer = OFFER_BY_ANGLE[appealAngle]
   return {
     reportLocale,
-    targetCountry: typeof input.targetCountry === "string" && input.targetCountry ? input.targetCountry : reportLocale === "ja" ? "JP" : "US",
+    targetCountry: typeof input.targetCountry === "string" && input.targetCountry ? input.targetCountry.toUpperCase() : reportLocale === "ja" ? "JP" : "US",
     industry: isIndustry(input.industry) ? input.industry : "consulting",
     offerCode: typeof input.offerCode === "string" && input.offerCode ? input.offerCode : offer.code,
     assetType: isAssetType(input.assetType) ? input.assetType : "diagnostic_report",
@@ -386,13 +406,23 @@ export async function listContentTemplates(input: ContentTemplateListInput = {})
 
 function filterTemplates(rows: SalesContentTemplate[], input: ContentTemplateListInput): SalesContentTemplate[] {
   const q = typeof input.q === "string" ? input.q.trim().toLowerCase() : ""
-  return rows.filter((row) => !q || `${row.title} ${row.purpose} ${row.quality_bar}`.toLowerCase().includes(q))
+  return rows.filter((row) => !q || `${row.title} ${row.purpose} ${row.quality_bar} ${row.dify_selection_rule}`.toLowerCase().includes(q))
 }
 
 export async function updateContentTemplate(input: ContentTemplateUpdateInput): Promise<SalesContentTemplate> {
   const sb = getServiceSalesSupabase()
   if (!sb) throw new Error("Sales Supabase is not configured")
   const patch: Partial<SalesContentTemplate> = {}
+  if (isReportLocale(input.report_locale)) {
+    patch.report_locale = input.report_locale
+    patch.region = REGION_BY_LOCALE[input.report_locale]
+  }
+  if (typeof input.target_country === "string" && /^[A-Z]{2}$/i.test(input.target_country)) patch.target_country = input.target_country.toUpperCase()
+  if (isIndustry(input.industry)) patch.industry = input.industry
+  if (typeof input.offer_code === "string" && input.offer_code.trim()) patch.offer_code = input.offer_code.trim()
+  if (isAssetType(input.asset_type)) patch.asset_type = input.asset_type
+  if (isAppealAngle(input.appeal_angle)) patch.appeal_angle = input.appeal_angle
+  if (isTemplateVariant(input.template_variant)) patch.template_variant = input.template_variant
   for (const key of ["title", "purpose", "quality_bar", "dify_selection_rule", "prompt_template", "sample_copy"] as const) {
     const value = input[key]
     if (typeof value === "string") patch[key] = value

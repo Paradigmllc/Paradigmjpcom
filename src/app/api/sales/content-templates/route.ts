@@ -43,6 +43,13 @@ export async function PATCH(req: NextRequest) {
 
     const template = await updateContentTemplate({
       id: body.id,
+      report_locale: typeof body.report_locale === "string" ? body.report_locale : undefined,
+      target_country: typeof body.target_country === "string" ? body.target_country : undefined,
+      industry: typeof body.industry === "string" ? body.industry : undefined,
+      offer_code: typeof body.offer_code === "string" ? body.offer_code : undefined,
+      asset_type: typeof body.asset_type === "string" ? body.asset_type : undefined,
+      appeal_angle: typeof body.appeal_angle === "string" ? body.appeal_angle : undefined,
+      template_variant: typeof body.template_variant === "string" ? body.template_variant : undefined,
       title: typeof body.title === "string" ? body.title : undefined,
       purpose: typeof body.purpose === "string" ? body.purpose : undefined,
       quality_bar: typeof body.quality_bar === "string" ? body.quality_bar : undefined,

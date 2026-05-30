@@ -1,3 +1,11 @@
+## Codex Update - 2026-05-31 Sales Template GUI Edit Pass
+
+- [x] Rebuilt the Sales OS `テンプレ` workbench so operators can confirm, search, match-test, edit, activate/deactivate, and save Dify/n8n templates from `/ja/admin/sales`.
+- [x] Extended authenticated `PATCH /api/sales/content-templates` so the GUI can edit both content fields and selection metadata: language, country, industry, offer code, asset type, appeal angle, and template variant.
+- [x] Rebuilt the bundled template generator and Supabase seeder with readable ja/en copy, primary-source guardrails, and no-secret env handling.
+- [x] Added regression coverage for the 256-template matrix, Japanese readability, mojibake prevention, and legal/market-claim guardrails.
+- [x] Verification: `npx tsc --noEmit --pretty false` passed, `npx vitest run src/lib/sales/content-templates.test.ts` passed, full `npm test -- --run` passed from `D:\dev\paradigmjpcom`, and `npm run build` passed with the known local Payload Postgres fallback warnings.
+
 ## Codex Update - 2026-05-30 Sales Template Workbench
 
 - [x] Added a first-class `テンプレ` tab to `/ja/admin/sales` for checking, editing, and testing Dify/n8n content-template selection.
