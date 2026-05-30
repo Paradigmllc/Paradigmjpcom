@@ -75,7 +75,7 @@ export const VIDEO_PIPELINE_STAGES = [
 
 
 const isUuid = (value: string): boolean =>
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
 
 function optionalEnv(name: string): string | null {
   const value = process.env[name]
