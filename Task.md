@@ -1,3 +1,11 @@
+## Codex Update - 2026-05-30 Sales Template Workbench
+
+- [x] Added a first-class `テンプレ` tab to `/ja/admin/sales` for checking, editing, and testing Dify/n8n content-template selection.
+- [x] Added authenticated `GET/PATCH /api/sales/content-templates` so operators can list and update `sales_content_templates` from the dashboard.
+- [x] Rebuilt `src/lib/sales/content-templates.ts` and `scripts/seed-sales-content-templates.mjs` with readable, professional ja/en template copy for reports, Astro demos, decks, and sales videos.
+- [x] The workbench lets operators filter by language, industry, asset type, and appeal angle, run a match preview, edit quality bars, edit Dify selection rules, edit prompts, and save back to Supabase SSOT.
+- [ ] Next quality pass: replace the current text-level templates with actual designed renderer templates for Next.js reports, Astro demo themes, Slidev decks, and HyperFrames/Remotion video compositions.
+
 ## Codex Update - 2026-05-30 Coolify and Supabase OSS Repair
 
 - [x] Repaired the production Sales OS SSOT schema on Supabase OSS by applying migrations 022-025 directly to the live PostgreSQL database.
