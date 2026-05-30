@@ -5,6 +5,7 @@ import { getContentTemplateCoverage } from "@/lib/sales/content-templates"
 import { fetchRecentEnrichmentJobs, type DashboardEnrichmentJob } from "@/lib/sales/enrichment-jobs"
 import { getDashboardAgentTeam } from "@/lib/sales/agent-team"
 import { getSalesIntegrationStatus } from "@/lib/sales/integration-registry"
+import { getVideoPipelineConfig, listVideoJobs } from "@/lib/sales/video-pipeline"
 import type {
   DashboardAuditCheck,
   DashboardAuditSection,
@@ -596,6 +597,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     const contentTemplates = await getContentTemplateCoverage()
     const agentTeam = await getDashboardAgentTeam()
     const integrationStatus = await getSalesIntegrationStatus()
+    const videoConfig = getVideoPipelineConfig()
     return {
       status: "degraded",
       generatedAt,
@@ -617,6 +619,11 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
       contentTemplates,
       agentTeam,
       integrationStatus,
+      videoPipeline: {
+        jobs: [],
+        config: videoConfig,
+        error: "Supabase service_role is not configured.",
+      },
     }
   }
 
@@ -639,6 +646,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     contentTemplates,
     agentTeam,
     integrationStatus,
+    videoJobsRes,
   ] = await Promise.all([
     fetchDashboardCompanies(sb),
     sb
@@ -680,6 +688,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     getContentTemplateCoverage(),
     getDashboardAgentTeam(),
     getSalesIntegrationStatus(),
+    listVideoJobs(25),
   ])
 
   if (companyRes.error) warnings.push(`sales_companies: ${companyRes.error.message}`)
@@ -690,6 +699,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
   if (sourceRunsRes.error) warnings.push(`sales_source_runs: ${sourceRunsRes.error.message}`)
   if (meetingsRes.error) warnings.push(`sales_calendar_events: ${meetingsRes.error.message}`)
   if (contractsRes.error) warnings.push(`sales_contracts: ${contractsRes.error.message}`)
+  if (!videoJobsRes.ok) warnings.push(`sales_video_jobs: ${videoJobsRes.error}`)
   warnings.push(...infrastructure.warnings)
 
   for (const warning of warnings) console.error(`[sales-dashboard] ${warning}`)
@@ -798,5 +808,10 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     contentTemplates,
     agentTeam,
     integrationStatus,
+    videoPipeline: {
+      jobs: videoJobsRes.jobs,
+      config: videoJobsRes.config,
+      error: videoJobsRes.ok ? null : videoJobsRes.error,
+    },
   }
 }

@@ -16,6 +16,16 @@
 - [x] Cleaned remaining mojibake in the sales diagnostic/company-intelligence render path and rebuilt demo/report/video client copy in readable Japanese/English.
 - [x] Verification: mojibake scan on touched renderer files passed, `npx tsc --noEmit --pretty false` passed, full `npm test -- --run` passed from `D:\dev\paradigmjpcom` (22 files / 122 tests), and `npm run build` passed with known local Payload Postgres fallback warnings.
 
+## Codex Update - 2026-05-30 Sales Video Pipeline GUI
+
+- [x] Added `sales_video_jobs` as the Supabase SSOT table for sales videos and video-subscription delivery jobs, with RLS, service-role policy, status checks, and n8n tool metadata.
+- [x] Added `/api/sales/video-pipeline/jobs` for listing and creating production jobs, and `/api/sales/video-pipeline/jobs/[jobId]/action` for n8n dispatch, render approval, revision, completion, failure, and cancellation.
+- [x] Added `src/lib/sales/video-pipeline.ts` so n8n is a traffic controller only: Dify builds copy, ComfyUI creates assets, Vast.ai handles heavy GPU jobs, HyperFrames/Remotion/OpenMontage render, R2 stores outputs, and Slack/Appsmith handle review.
+- [x] Added a first-class `動画制作` tab in `/ja/admin/sales` with practical controls for target company, job type, platform, renderer, priority, readiness checks, production stages, and per-job actions.
+- [x] Added `docs/knowledge/sales-video-pipeline-runbook.md` and `.env.example` entries for n8n, HyperFrames, Remotion, OpenMontage, ComfyUI, Vast.ai, R2, and Slack.
+- [x] Applied `supabase/migration_026_sales_video_pipeline.sql` to the live Supabase OSS database on `139.59.250.5` and reloaded PostgREST schema.
+- [x] Verification: `npx tsc --noEmit --pretty false` passed, `npx vitest run src/lib/sales/video-pipeline.test.ts src/lib/sales/content-templates.test.ts` passed, and `npm run build` passed with the known local Payload Postgres fallback warnings.
+
 ## Codex Update - 2026-05-30 Coolify and Supabase OSS Repair
 
 - [x] Repaired the production Sales OS SSOT schema on Supabase OSS by applying migrations 022-025 directly to the live PostgreSQL database.

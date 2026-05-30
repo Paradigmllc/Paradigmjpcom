@@ -7,6 +7,7 @@ import {
   BookOpen,
   Bot,
   BriefcaseBusiness,
+  Clapperboard,
   LayoutDashboard,
   ListChecks,
   MonitorCog,
@@ -23,6 +24,7 @@ import { SalesAgentTeamPanel } from "./SalesAgentTeamPanel"
 import { SalesDocsPanel } from "./SalesDocsPanel"
 import { SalesOperationsAuditPanel } from "./SalesOperationsAuditPanel"
 import { SalesTemplateWorkbenchPanel } from "./SalesTemplateWorkbenchPanel"
+import { SalesVideoPipelinePanel } from "./SalesVideoPipelinePanel"
 import {
   AnalyticsPanel,
   CrmPanel,
@@ -43,6 +45,7 @@ type TabId =
   | "operator"
   | "agentTeam"
   | "templates"
+  | "videoPipeline"
   | "crm"
   | "analytics"
   | "integrations"
@@ -61,6 +64,7 @@ const TABS: { id: TabId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "operator", label: "オペレーター", icon: ListChecks },
   { id: "agentTeam", label: "AIチーム", icon: Bot },
   { id: "templates", label: "テンプレ", icon: Palette },
+  { id: "videoPipeline", label: "動画制作", icon: Clapperboard },
   { id: "crm", label: "CRM", icon: BriefcaseBusiness },
   { id: "analytics", label: "分析", icon: BarChart3 },
   { id: "integrations", label: "統合", icon: MonitorCog },
@@ -89,7 +93,8 @@ export function SalesCommandCenter({ data }: Props) {
               Salesforce x Apollo.io風 営業ダッシュボード
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-500">
-              Supabase OSSをSSOTに、CSV投入、企業カルテ生成、診断レポート、Twenty CRM、NocoDB、Metabase、n8n、フォーム営業パイプラインを一画面で管理します。
+              Supabase OSSをSSOTに、CSV投入、企業カルテ生成、診断レポート、Twenty CRM、NocoDB、Metabase、n8n、
+              フォーム営業、動画制作パイプラインを一画面で管理します。
             </p>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:min-w-[420px]">
@@ -153,6 +158,7 @@ export function SalesCommandCenter({ data }: Props) {
           {activeTab === "operator" && <OperatorPanel data={data} />}
           {activeTab === "agentTeam" && <SalesAgentTeamPanel data={data} />}
           {activeTab === "templates" && <SalesTemplateWorkbenchPanel data={data} />}
+          {activeTab === "videoPipeline" && <SalesVideoPipelinePanel data={data} />}
           {activeTab === "crm" && <CrmPanel data={data} />}
           {activeTab === "analytics" && <AnalyticsPanel data={data} />}
           {activeTab === "integrations" && <IntegrationsPanel data={data} />}

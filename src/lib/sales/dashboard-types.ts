@@ -2,6 +2,7 @@ import type { InfrastructureMigrationData } from "@/lib/sales/infrastructure"
 import type { DashboardEnrichmentJob } from "@/lib/sales/enrichment-jobs"
 import type { DashboardAgentTeam } from "@/lib/sales/agent-team"
 import type { SalesIntegrationStatus } from "@/lib/sales/integration-registry"
+import type { SalesVideoJob, VideoPipelineConfig } from "@/lib/sales/video-pipeline"
 
 export type SalesDashboardStatus = "ready" | "degraded"
 
@@ -150,4 +151,9 @@ export interface SalesDashboardData {
   contentTemplates: DashboardContentTemplateCoverage
   agentTeam: DashboardAgentTeam
   integrationStatus: SalesIntegrationStatus[]
+  videoPipeline: {
+    jobs: SalesVideoJob[]
+    config: VideoPipelineConfig
+    error: string | null
+  }
 }
