@@ -1,13 +1,6 @@
 "use client"
 
-/**
- * DemoClient — /d/[slug] のクライアント側 (iframe + パーソナライズ + トラッキング)
- *
- * H-2-6 (2026-05-01): server component から html を受け取って描画。
- * すべての fetch は paradigmjp.com 内の相対パス経由 (appexx.me 通信ゼロ)。
- */
-
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 
 interface Props {
@@ -23,66 +16,67 @@ export default function DemoClient({ demoId, slug, name, html: htmlInitial }: Pr
   const [startTime] = useState(Date.now())
   const [html, setHtml] = useState(htmlInitial)
 
-  // パーソナライズ: ?name=田中 で企業名差し替え
   useEffect(() => {
     const customName = searchParams.get("name")
     if (!customName || !htmlInitial) return
-    let h = htmlInitial
-    h = h.replace(/\{\{business_name\}\}/g, customName)
-    h = h.replace(/サンプル企業/g, customName)
-    h = h.replace(/株式会社〇〇/g, customName)
-    setHtml(h)
+    setHtml(htmlInitial.replace(/\{\{business_name\}\}/g, customName))
   }, [htmlInitial, searchParams])
 
-  // 閲覧時間トラッキング (paradigmjp.com 内 endpoint)
   useEffect(() => {
-    const beacon = () => {
-      const duration = Math.floor((Date.now() - startTime) / 1000)
-      navigator.sendBeacon("/api/demo-view", JSON.stringify({
-        demo_id: demoId, slug, duration_sec: duration,
-        device_type: window.innerWidth < 768 ? "mobile" : window.innerWidth < 1024 ? "tablet" : "desktop",
-      }))
-    }
-    window.addEventListener("beforeunload", beacon)
-    const interval = setInterval(() => {
-      const duration = Math.floor((Date.now() - startTime) / 1000)
+    const track = (payload: Record<string, unknown>) => {
       fetch("/api/demo-view", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ demo_id: demoId, slug, duration_sec: duration }),
-      }).catch(() => {})
-    }, 30000)
+        body: JSON.stringify(payload),
+      }).catch((error) => {
+        console.warn("[demo-view] tracking failed:", error)
+      })
+    }
+
+    const durationPayload = () => ({
+      demo_id: demoId,
+      slug,
+      duration_sec: Math.floor((Date.now() - startTime) / 1000),
+      device_type: window.innerWidth < 768 ? "mobile" : window.innerWidth < 1024 ? "tablet" : "desktop",
+    })
+
+    const beacon = () => {
+      navigator.sendBeacon("/api/demo-view", JSON.stringify(durationPayload()))
+    }
+    window.addEventListener("beforeunload", beacon)
+    const interval = setInterval(() => track(durationPayload()), 30000)
     return () => {
       window.removeEventListener("beforeunload", beacon)
       clearInterval(interval)
     }
   }, [demoId, startTime, slug])
 
-  // CTA クリックトラッキング (iframe same-origin 限定)
   useEffect(() => {
-    if (!iframeRef.current) return
-    const handler = () => {
-      fetch("/api/demo-view", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          demo_id: demoId, slug, cta_clicked: true,
-          duration_sec: Math.floor((Date.now() - startTime) / 1000),
-        }),
-      }).catch(() => {})
+    const documentRef = iframeRef.current?.contentDocument
+    if (!documentRef) return
+    const handler = (event: MouseEvent) => {
+      const target = event.target instanceof HTMLElement ? event.target : null
+      if (!target) return
+      if (target.tagName === "A" || target.closest("a") || target.tagName === "BUTTON" || target.closest("button")) {
+        fetch("/api/demo-view", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            demo_id: demoId,
+            slug,
+            cta_clicked: true,
+            duration_sec: Math.floor((Date.now() - startTime) / 1000),
+          }),
+        }).catch((error) => {
+          console.warn("[demo-view] cta tracking failed:", error)
+        })
+      }
     }
     try {
-      iframeRef.current.contentDocument?.addEventListener("click", (e) => {
-        const target = e.target as HTMLElement
-        if (
-          target.tagName === "A" || target.closest("a") ||
-          target.tagName === "BUTTON" || target.closest("button")
-        ) {
-          handler()
-        }
-      })
-    } catch {
-      // cross-origin: トラッキング不可 (期待動作)
+      documentRef.addEventListener("click", handler)
+      return () => documentRef.removeEventListener("click", handler)
+    } catch (error) {
+      console.warn("[demo-view] iframe click tracking unavailable:", error)
     }
   }, [demoId, startTime, slug, html])
 

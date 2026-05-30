@@ -1,8 +1,9 @@
 /**
  * Diagnostic report data builder.
  *
- * Supabase SSOT の企業データ、取得ソース、診断テンプレートをまとめて
- * `/[locale]/report/[slug]` で使う 3-act レポートデータへ変換する。
+ * Builds the public/private report payload from the Supabase Sales OS SSOT:
+ * company facts, collected OSS/API evidence, diagnosis templates, and selected
+ * content templates for `/[locale]/report/[slug]`.
  */
 
 import { findCompanyByDomain, findCompanyById, findCompanyBySlug } from "./companies"
@@ -58,23 +59,26 @@ export interface DiagnosticReportData {
   report_url: string
 }
 
-const INDUSTRY_HOOK: Record<Industry, string> = {
-  beauty_salon:
-    "検索から予約までの導線に小さな離脱が重なり、来店意欲の高い見込み客を取りこぼしている可能性があります。",
-  dental:
-    "地域検索で比較される時間は短く、信頼材料と予約導線の弱さが新患獲得に直結します。",
-  restaurant:
-    "来店前の比較はスマホ上で完結します。表示速度、口コミ導線、写真の見え方が予約率を左右します。",
-  construction:
-    "施工事例と問い合わせ導線が弱いと、比較検討中の施主が競合サイトへ流れやすくなります。",
-  accounting:
-    "専門性は伝わっていても、相談前の不安を解く導線が弱いと問い合わせ化しにくくなります。",
-  retail:
-    "商品や店舗の魅力が検索・SNS・スマホ表示で十分に伝わらないと、購入前の離脱が増えます。",
-  cleaning:
-    "見積もり依頼までの導線が少し長いだけで、急ぎの見込み客は別サービスへ移動します。",
-  consulting:
-    "専門性の証拠と初回相談の導線が整理されていないと、検討中の企業に選ばれにくくなります。",
+const INDUSTRY_HOOK_JA: Record<Industry, string> = {
+  beauty_salon: "検索から予約までの導線に小さな離脱が重なり、来店意欲の高い見込み客を取りこぼしている可能性があります。",
+  dental: "地域検索で比較される時間は短く、信頼材料と予約導線の弱さが新患獲得に直結します。",
+  restaurant: "来店前の比較はスマホ上で完結します。表示速度、口コミ導線、写真の見え方が予約率を左右します。",
+  construction: "施工事例と問い合わせ導線が弱いと、比較検討中の施主が競合サイトへ流れやすくなります。",
+  accounting: "専門性が伝わっていても、相談前の不安を解く導線が弱いと問い合わせ化しにくくなります。",
+  retail: "商品や店舗の魅力が検索、SNS、スマホ表示で十分に伝わらないと、購入前の離脱が増えます。",
+  cleaning: "見積もり依頼までの導線が少し長いだけで、急ぎの見込み客は別サービスへ移動します。",
+  consulting: "専門性の証拠と初回相談への導線が整理されていないと、検討中の企業に選ばれにくくなります。",
+}
+
+const INDUSTRY_HOOK_EN: Record<Industry, string> = {
+  beauty_salon: "Small gaps between search, trust proof, and booking can quietly leak high-intent salon customers.",
+  dental: "Local dental prospects compare quickly, so weak trust proof or booking paths directly affect new patient acquisition.",
+  restaurant: "Restaurant decisions happen on mobile before the visit. Speed, reviews, photos, and booking clarity shape conversion.",
+  construction: "If project proof and inquiry paths are unclear, homeowners can move to a competitor during comparison.",
+  accounting: "Even strong expertise may not convert if the site does not reduce uncertainty before the first consultation.",
+  retail: "When product appeal is not clear across search, social, and mobile, buyers leave before purchase intent matures.",
+  cleaning: "Urgent prospects often choose the easiest quote path, so even a slightly long inquiry flow can lose demand.",
+  consulting: "Clear proof of expertise and a low-friction first consultation path are essential to be shortlisted.",
 }
 
 const ISSUE_ICON: Partial<Record<string, string>> = {
@@ -92,19 +96,19 @@ const ISSUE_METRIC: Partial<
   speed_critical: {
     label: "モバイル速度スコア",
     unit: "点",
-    bench: "目安 75点以上",
+    bench: "目安: 75点以上",
     fallbackValue: 38,
   },
   ssl_expired: {
     label: "SSL/HTTPSリスク",
     unit: "",
-    bench: "常時HTTPSかつ証明書正常",
+    bench: "HTTPSかつ証明書が正常",
     fallbackValue: "要確認",
   },
   wp_outdated: {
     label: "CMS/技術スタックリスク",
     unit: "",
-    bench: "脆弱性がない状態を維持",
+    bench: "脆弱性のない状態を維持",
     fallbackValue: "要確認",
   },
   no_ogp: {
@@ -134,8 +138,8 @@ const UNKNOWN_ISSUE_METRIC = {
   fallbackValue: "要確認",
 } as const
 
-const DEFAULT_CTA =
-  "診断結果をもとに、改善優先度・概算費用・最短の実装順を15分で整理します。"
+const DEFAULT_CTA_JA = "診断結果をもとに、改善優先度、概算費用、最短の実装順を15分で整理します。"
+const DEFAULT_CTA_EN = "Use the diagnostic evidence to review priorities, effort, and the shortest implementation path."
 
 type PersonalizedCopy = {
   personalized_hook?: string
@@ -145,11 +149,13 @@ type PersonalizedCopy = {
   personalized_cta?: string
 }
 
-function buildHook(industry: Industry | null): string {
+function buildHook(industry: Industry | null, locale: ReportLocale): string {
   if (!industry) {
-    return "オンライン上の公開データを見る限り、問い合わせ前の不安解消と比較検討の導線に改善余地があります。"
+    return locale === "ja"
+      ? "オンライン上の公開データを見る限り、問い合わせ前の不安解消と比較検討の導線に改善余地があります。"
+      : "Public evidence suggests room to improve pre-inquiry confidence and the comparison journey."
   }
-  return INDUSTRY_HOOK[industry]
+  return locale === "ja" ? INDUSTRY_HOOK_JA[industry] : INDUSTRY_HOOK_EN[industry]
 }
 
 function issueLabel(issueCode: IssueCode): string {
@@ -172,8 +178,11 @@ function issueIcon(issueCode: IssueCode): string {
   return ISSUE_ICON[issueCode] ?? "DATA"
 }
 
-function issueFallbackBody(company: SalesCompany, issueCode: IssueCode): string {
+function issueFallbackBody(company: SalesCompany, issueCode: IssueCode, locale: ReportLocale): string {
   const label = issueLabel(issueCode)
+  if (locale !== "ja") {
+    return `${company.company_name} shows room to improve ${label}. The finding is based on public data and OSS diagnostics, then translated into proposal-ready evidence.`
+  }
   return `${company.company_name} の ${label} に改善余地があります。公開データとOSS診断の結果を組み合わせ、営業提案で使える根拠として整理しました。`
 }
 
@@ -198,6 +207,7 @@ function buildAct(
   issueCode: IssueCode,
   template: SalesTemplate | undefined,
   metricValue: number | string,
+  locale: ReportLocale,
 ): DiagnosticAct {
   const severity: Severity = template?.severity ?? (issueCode === "speed_critical" ? "critical" : "warning")
   const meta = issueMetric(issueCode)
@@ -205,7 +215,7 @@ function buildAct(
     type: severityToActType(severity),
     icon: issueIcon(issueCode),
     headline: template?.headline ?? `${issueLabel(issueCode)}の改善余地`,
-    body: template?.pain ?? template?.fear ?? template?.loss ?? issueFallbackBody(company, issueCode),
+    body: template?.pain ?? template?.fear ?? template?.loss ?? issueFallbackBody(company, issueCode, locale),
     metric_label: meta.label,
     metric_value: String(metricValue),
     metric_unit: meta.unit,
@@ -225,9 +235,12 @@ function formatYen(amount: number): string {
   return `¥${amount.toLocaleString("ja-JP")}`
 }
 
-function formatExpiry(): string {
+function formatExpiry(locale: ReportLocale): string {
   const expiresAt = new Date()
   expiresAt.setDate(expiresAt.getDate() + 30)
+  if (locale !== "ja") {
+    return expiresAt.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+  }
   return `${expiresAt.getFullYear()}年${expiresAt.getMonth() + 1}月${expiresAt.getDate()}日`
 }
 
@@ -315,7 +328,13 @@ export async function fetchDiagnosticReport(opts: {
     : []
   const templateByIssue = new Map(templates.map((template) => [template.issue_code, template]))
   const acts = issues.map((issueCode, index) =>
-    buildAct(company, issueCode, templateByIssue.get(issueCode), metricValueFor(company, issueCode, index)),
+    buildAct(
+      company,
+      issueCode,
+      templateByIssue.get(issueCode),
+      metricValueFor(company, issueCode, index),
+      reportLocale,
+    ),
   )
   const contentTemplate = await matchContentTemplate({
     reportLocale,
@@ -327,15 +346,9 @@ export async function fetchDiagnosticReport(opts: {
   })
 
   const personalizedCopy = readPersonalizedCopy(company.meta)
-  if (personalizedCopy?.personalized_pain && acts[0]) {
-    acts[0] = { ...acts[0], body: personalizedCopy.personalized_pain }
-  }
-  if (personalizedCopy?.personalized_fear && acts[1]) {
-    acts[1] = { ...acts[1], body: personalizedCopy.personalized_fear }
-  }
-  if (personalizedCopy?.personalized_loss && acts[2]) {
-    acts[2] = { ...acts[2], body: personalizedCopy.personalized_loss }
-  }
+  if (personalizedCopy?.personalized_pain && acts[0]) acts[0] = { ...acts[0], body: personalizedCopy.personalized_pain }
+  if (personalizedCopy?.personalized_fear && acts[1]) acts[1] = { ...acts[1], body: personalizedCopy.personalized_fear }
+  if (personalizedCopy?.personalized_loss && acts[2]) acts[2] = { ...acts[2], body: personalizedCopy.personalized_loss }
 
   const totalLossYen = templates.reduce((sum, template) => sum + parseLossYen(template.loss), 0)
   const demoSite = company.meta.demo_site as { url?: string } | undefined
@@ -347,11 +360,11 @@ export async function fetchDiagnosticReport(opts: {
     template_variant: templateVariant,
     industry: company.industry,
     prefecture: company.prefecture,
-    expires_at: formatExpiry(),
-    hook: personalizedCopy?.personalized_hook ?? buildHook(company.industry),
+    expires_at: formatExpiry(reportLocale),
+    hook: personalizedCopy?.personalized_hook ?? buildHook(company.industry, reportLocale),
     total_loss: formatYen(totalLossYen || 340_000),
     acts,
-    cta_text: personalizedCopy?.personalized_cta ?? templates[0]?.cta_text ?? DEFAULT_CTA,
+    cta_text: personalizedCopy?.personalized_cta ?? templates[0]?.cta_text ?? (reportLocale === "ja" ? DEFAULT_CTA_JA : DEFAULT_CTA_EN),
     video_thumbnail: null,
     demo_url: demoSite?.url ?? null,
     source_coverage: sourceCoverage,

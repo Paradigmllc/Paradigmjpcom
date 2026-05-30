@@ -4,7 +4,17 @@
 - [x] Added authenticated `GET/PATCH /api/sales/content-templates` so operators can list and update `sales_content_templates` from the dashboard.
 - [x] Rebuilt `src/lib/sales/content-templates.ts` and `scripts/seed-sales-content-templates.mjs` with readable, professional ja/en template copy for reports, Astro demos, decks, and sales videos.
 - [x] The workbench lets operators filter by language, industry, asset type, and appeal angle, run a match preview, edit quality bars, edit Dify selection rules, edit prompts, and save back to Supabase SSOT.
-- [ ] Next quality pass: replace the current text-level templates with actual designed renderer templates for Next.js reports, Astro demo themes, Slidev decks, and HyperFrames/Remotion video compositions.
+- [x] Next quality pass completed: replaced text-level outputs with designed renderer templates for Next.js diagnostic reports, Astro demo themes, Slidev/Gotenberg decks, and HyperFrames/Remotion video compositions.
+
+## Codex Update - 2026-05-30 Sales Asset Renderer Quality Pass
+
+- [x] Added shared industry-aware render themes for reports, demos, decks, and videos so Dify-selected templates produce visibly different designs by language, industry, and appeal angle.
+- [x] Upgraded the public diagnostic report Next.js UI into an executive report layout with evidence cards, loss summary, source coverage, Dify quality metadata, and report/demo/video CTAs.
+- [x] Upgraded generated Astro demo HTML with industry-specific art direction, proof metrics, improvement plan sections, and reusable `professional-v2` metadata.
+- [x] Upgraded sales deck generation to produce a styled Slidev/Gotenberg-ready proposal with executive summary, evidence, proposal scope, rollout plan, and next actions.
+- [x] Upgraded sales video generation into a HyperFrames/Remotion-ready brief plus animated preview composition guidance, including ComfyUI prompt hooks and fallback narration.
+- [x] Cleaned remaining mojibake in the sales diagnostic/company-intelligence render path and rebuilt demo/report/video client copy in readable Japanese/English.
+- [x] Verification: mojibake scan on touched renderer files passed, `npx tsc --noEmit --pretty false` passed, full `npm test -- --run` passed from `D:\dev\paradigmjpcom` (22 files / 122 tests), and `npm run build` passed with known local Payload Postgres fallback warnings.
 
 ## Codex Update - 2026-05-30 Coolify and Supabase OSS Repair
 

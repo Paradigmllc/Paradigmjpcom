@@ -1,25 +1,9 @@
-/**
- * components/diagnostic/VideoPlayer.tsx — HTML auto-play 診断動画 (Sprint 14)
- *
- * 役割: 5 scene (5s + 15s×3 + 10s = 60s) を CSS keyframes で auto-play する HTML 動画.
- *       MP4 サーバー (HyperFrames) 未構築時の代替・URL 共有で完結.
- *
- * 入力: data (DiagnosticReportData), script (NarrationScript), trackingSlug
- * 出力: 全画面アニメーション + replay / open report ボタン + tracking pixel
- *
- * 設計:
- *   - scene 切替は単純な setTimeout / state machine ではなく
- *     CSS animation の delay で実装 (JS なくても動く)
- *   - speechSynthesis (Web Speech API) で日本語 TTS 同期再生 (オプション)
- *
- * AE-PHP-4 準拠.
- */
-
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import type { DiagnosticReportData } from "@/lib/sales/diagnostic"
 import type { NarrationScript } from "@/lib/sales/video-generator"
+import { themeForIndustry } from "@/lib/sales/render-quality"
 
 interface Props {
   data: DiagnosticReportData
@@ -28,95 +12,70 @@ interface Props {
 }
 
 interface Scene {
+  id: string
   start: number
   end: number
-  bg: string
+  label: string
   text: string
-  metric?: { value: string; unit: string } | null
+  metric?: string
 }
 
+const TOTAL = 60
+
 export default function VideoPlayer({ data, script, trackingSlug }: Props) {
+  const theme = themeForIndustry(data.industry)
   const [time, setTime] = useState(0)
   const [playing, setPlaying] = useState(true)
   const [ttsEnabled, setTtsEnabled] = useState(false)
   const rafRef = useRef<number | null>(null)
   const startRef = useRef<number>(0)
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
 
-  const scenes: Scene[] = [
-    { start: 0, end: 5, bg: "linear-gradient(135deg,#6366f1,#8b5cf6)", text: script.hook, metric: null },
-    {
-      start: 5,
-      end: 20,
-      bg: "linear-gradient(135deg,#dc2626,#991b1b)",
-      text: script.pain,
-      metric: data.acts[0]
-        ? { value: String(data.acts[0].metric_value), unit: data.acts[0].metric_unit }
-        : null,
-    },
-    {
-      start: 20,
-      end: 35,
-      bg: "linear-gradient(135deg,#d97706,#92400e)",
-      text: script.fear,
-      metric: data.acts[1]
-        ? { value: String(data.acts[1].metric_value), unit: data.acts[1].metric_unit }
-        : null,
-    },
-    {
-      start: 35,
-      end: 50,
-      bg: "linear-gradient(135deg,#16a34a,#14532d)",
-      text: script.hope,
-      metric: null,
-    },
-    { start: 50, end: 60, bg: "linear-gradient(135deg,#0f172a,#1e293b)", text: script.cta, metric: null },
-  ]
+  const scenes: Scene[] = useMemo(
+    () => [
+      { id: "hook", start: 0, end: 8, label: "HOOK", text: script.hook, metric: data.company_name },
+      { id: "pain", start: 8, end: 22, label: "EVIDENCE", text: script.pain, metric: data.acts[0]?.metric_value },
+      { id: "fear", start: 22, end: 36, label: "IMPACT", text: script.fear, metric: data.total_loss },
+      { id: "hope", start: 36, end: 52, label: "SOLUTION", text: script.hope, metric: data.demo_url ?? data.report_url },
+      { id: "cta", start: 52, end: 60, label: "NEXT STEP", text: script.cta, metric: data.report_url },
+    ],
+    [data, script],
+  )
 
-  const TOTAL = 60
-  const currentScene = scenes.find((s) => time >= s.start && time < s.end) ?? scenes[scenes.length - 1]
-  const sceneProgress = (time - currentScene.start) / (currentScene.end - currentScene.start)
+  const currentScene = scenes.find((scene) => time >= scene.start && time < scene.end) ?? scenes[scenes.length - 1]
+  const sceneProgress = Math.max(0, Math.min(1, (time - currentScene.start) / (currentScene.end - currentScene.start)))
   const totalProgress = Math.min(1, time / TOTAL)
 
-  // animation loop
   useEffect(() => {
     if (!playing) return
     startRef.current = performance.now() - time * 1000
     const tick = (now: number) => {
-      const t = (now - startRef.current) / 1000
-      if (t >= TOTAL) {
+      const next = (now - startRef.current) / 1000
+      if (next >= TOTAL) {
         setTime(TOTAL)
         setPlaying(false)
         return
       }
-      setTime(t)
+      setTime(next)
       rafRef.current = requestAnimationFrame(tick)
     }
     rafRef.current = requestAnimationFrame(tick)
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playing])
+  }, [playing, time])
 
-  // TTS 同期
   useEffect(() => {
     if (!ttsEnabled || typeof window === "undefined" || !("speechSynthesis" in window)) return
     if (!playing) {
       window.speechSynthesis.cancel()
       return
     }
-    const fullText = [script.hook, script.pain, script.fear, script.hope, script.cta].join("。 ")
-    const u = new SpeechSynthesisUtterance(fullText)
-    u.lang = "ja-JP"
-    u.rate = 1.0
-    u.pitch = 1.0
-    utteranceRef.current = u
-    window.speechSynthesis.speak(u)
-    return () => {
-      window.speechSynthesis.cancel()
-    }
-  }, [ttsEnabled, playing, script])
+    const utterance = new SpeechSynthesisUtterance([script.hook, script.pain, script.fear, script.hope, script.cta].join("。"))
+    utterance.lang = data.report_locale === "ja" ? "ja-JP" : "en-US"
+    utterance.rate = 0.96
+    window.speechSynthesis.speak(utterance)
+    return () => window.speechSynthesis.cancel()
+  }, [data.report_locale, playing, script, ttsEnabled])
 
   const replay = () => {
     setTime(0)
@@ -124,97 +83,83 @@ export default function VideoPlayer({ data, script, trackingSlug }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black flex items-center justify-center">
-      {/* Scene canvas */}
+    <div className="fixed inset-0 flex items-center justify-center overflow-hidden bg-zinc-950 text-white">
       <div
-        className="absolute inset-0 transition-all duration-500 flex items-center justify-center p-8 md:p-16"
-        style={{ background: currentScene.bg }}
-      >
-        <div className="max-w-4xl w-full text-center text-white">
-          {currentScene.metric && (
-            <div
-              className="font-mono font-black text-7xl md:text-9xl mb-4 transition-all"
-              style={{
-                opacity: Math.min(1, sceneProgress * 3),
-                transform: `scale(${0.8 + sceneProgress * 0.2})`,
-              }}
-            >
-              {currentScene.metric.value}
-              <span className="text-3xl md:text-4xl ml-2">{currentScene.metric.unit}</span>
-            </div>
-          )}
-          <h1
-            className="text-2xl md:text-5xl font-bold leading-tight whitespace-pre-line"
+        className="absolute inset-0 transition-colors duration-500"
+        style={{
+          background: `radial-gradient(circle at 72% 18%, ${theme.accent}55, transparent 28%), linear-gradient(140deg, ${theme.ink}, ${theme.accentDark})`,
+        }}
+      />
+      <main className="relative z-10 flex h-full w-full flex-col justify-center gap-7 px-7 py-20 sm:px-14 lg:px-24">
+        <div className="text-sm font-semibold text-white/60">{currentScene.label}</div>
+        <h1
+          key={currentScene.id}
+          className="max-w-5xl text-3xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl"
+          style={{
+            opacity: Math.min(1, sceneProgress * 2),
+            transform: `translateY(${Math.max(0, (1 - sceneProgress * 2) * 26)}px)`,
+          }}
+        >
+          {currentScene.text}
+        </h1>
+        {currentScene.metric && (
+          <div
+            className="max-w-3xl overflow-hidden rounded-lg border border-white/15 bg-white/10 p-4 text-lg font-semibold text-white/82 sm:text-2xl"
             style={{
-              opacity: Math.min(1, sceneProgress * 2),
-              transform: `translateY(${Math.max(0, (1 - sceneProgress * 2) * 20)}px)`,
+              opacity: Math.min(1, sceneProgress * 2.6),
+              transform: `translateY(${Math.max(0, (1 - sceneProgress * 2.6) * 18)}px)`,
             }}
           >
-            {currentScene.text}
-          </h1>
-        </div>
-      </div>
-
-      {/* Header overlay (company name + scene indicator) */}
-      <div className="absolute top-0 inset-x-0 p-4 md:p-6 flex items-center justify-between text-white pointer-events-none">
-        <div className="text-xs md:text-sm tracking-widest uppercase font-bold opacity-80">
-          Paradigm Web Diagnostics
-        </div>
-        <div className="text-xs md:text-sm opacity-80">
-          {data.company_name}
-        </div>
-      </div>
-
-      {/* Progress bar + controls */}
-      <div className="absolute bottom-0 inset-x-0 p-4 md:p-6 flex flex-col gap-3">
-        <div className="h-1 bg-white/20 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-white transition-all"
-            style={{ width: `${totalProgress * 100}%` }}
-          />
-        </div>
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="text-white text-xs md:text-sm font-mono tabular-nums opacity-80">
-            {Math.floor(time)}s / 60s
+            {currentScene.metric}
           </div>
-          <div className="flex items-center gap-2">
+        )}
+      </main>
+
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between p-5 text-white sm:p-7">
+        <div className="text-xs font-semibold uppercase tracking-normal text-white/70">Paradigm Sales OS</div>
+        <div className="text-xs text-white/70">{data.company_name}</div>
+      </header>
+
+      <footer className="absolute inset-x-0 bottom-0 z-20 p-5 sm:p-7">
+        <div className="h-1 overflow-hidden rounded-full bg-white/20">
+          <div className="h-full bg-white transition-all" style={{ width: `${totalProgress * 100}%` }} />
+        </div>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="font-mono text-xs tabular-nums text-white/70">{Math.floor(time)}s / 60s</div>
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => setTtsEnabled((v) => !v)}
-              className={`text-xs md:text-sm px-3 py-1.5 rounded-full font-bold transition-colors ${
-                ttsEnabled
-                  ? "bg-white text-slate-900"
-                  : "bg-white/20 text-white hover:bg-white/30"
+              onClick={() => setTtsEnabled((value) => !value)}
+              className={`rounded-md px-3 py-2 text-xs font-semibold transition-colors ${
+                ttsEnabled ? "bg-white text-zinc-950" : "bg-white/15 text-white hover:bg-white/25"
               }`}
             >
-              {ttsEnabled ? "🔊 音声 ON" : "🔇 音声 OFF"}
+              {ttsEnabled ? "音声 ON" : "音声 OFF"}
             </button>
             {!playing && (
-              <button
-                type="button"
-                onClick={replay}
-                className="text-xs md:text-sm px-3 py-1.5 rounded-full bg-white text-slate-900 font-bold"
-              >
-                ⟲ もう一度再生
+              <button type="button" onClick={replay} className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-zinc-950">
+                もう一度再生
               </button>
             )}
             <a
-              href={`/ja/report/${trackingSlug}`}
-              className="text-xs md:text-sm px-3 py-1.5 rounded-full bg-yellow-400 text-slate-900 font-bold hover:bg-yellow-300 transition-colors"
+              href={`/${data.report_locale}/report/${trackingSlug}`}
+              className="rounded-md px-3 py-2 text-xs font-semibold text-zinc-950"
+              style={{ background: theme.signal }}
             >
-              📋 詳細レポートを見る
+              詳細レポート
             </a>
           </div>
         </div>
-      </div>
+      </footer>
 
-      {/* Tracking pixel (一覧と同じく閲覧記録) */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={`/api/sales/track-view?slug=${encodeURIComponent(trackingSlug)}`}
         alt=""
         width={1}
         height={1}
-        style={{ position: "absolute", top: 0, left: 0, opacity: 0, pointerEvents: "none" }}
+        className="pointer-events-none absolute left-0 top-0 opacity-0"
+        aria-hidden
       />
     </div>
   )

@@ -1,49 +1,24 @@
-/**
- * lib/sales/video-generator.ts — HyperFrames 診断動画生成 (Sprint 10-B)
- *
- * 役割: sales_companies + sales_templates → HTML video template 生成 → HyperFrames API
- *       で MP4 化 → Cloudflare R2 にアップロード → URL を返す。
- *
- * 戦略原典:
- *   - Notion 営業MVP壁打ち②: HyperFrames は HTML→MP4 (CPU)・Vast.ai 不要
- *   - 「写真+動くデータ+音声」で 60-90 秒の診断動画を量産
- *   - Cap (人間録画) は HOT リード後段の Sprint 11+ で実装
- *
- * 実装方針:
- *   1. fetchDiagnosticReport() で 3-Act データ取得
- *   2. DeepSeek V4 PRO でナレーション原稿生成 (60-90 秒 = 約 200-300 字)
- *   3. HTML テンプレに 3-Act + ナレーション + 音声タイミングを埋込
- *   4. HyperFrames API (Cloud or self-hosted) で MP4 化
- *   5. Cloudflare R2 にアップ → 公開 URL
- *
- * MVP では steps 1-3 までを完成させ、4-5 は HyperFrames endpoint 接続後に有効化。
- */
-
 import { callDeepSeek } from "@/lib/deepseek"
+import { findCompanyByDomain, findCompanyById, findCompanyBySlug } from "./companies"
 import { matchContentTemplate } from "./content-templates"
 import { fetchDiagnosticReport, type DiagnosticReportData } from "./diagnostic"
-import { findCompanyById, findCompanyByDomain, findCompanyBySlug } from "./companies"
+import { escapeHtml, themeForIndustry } from "./render-quality"
 
-/* ───── DeepSeek V4 PRO によるナレーション原稿生成 ───── */
+const NARRATION_SYSTEM_PROMPT = `You are Paradigm's sales video director.
 
-const NARRATION_SYSTEM_PROMPT = `あなたは Paradigm 合同会社の診断レポート動画ナレーション原稿を生成するエディタです。
-
-【制約】
-1. 60-90 秒の動画用 → 約 200-300 字 (1 字 = 0.3 秒換算)
-2. 構成: ① フック (5 秒) ② Pain (15 秒) ③ Fear (15 秒) ④ Hope (15 秒) ⑤ CTA (10 秒)
-3. ですます調・冷静で誠実な口調 (煽らない)
-4. 「御社」を主語・「弊社」自称は最小限
-5. 損失額・数値は具体的に・「業界平均」を根拠に
-6. 最後は「30 分の無料診断」CTA
-
-【出力フォーマット】
-JSON 形式で次の shape を返す:
+Create a concise 60-second diagnostic sales video narration.
+Rules:
+- Use only provided report evidence. Never invent unavailable data.
+- Tone is calm, executive, specific, and helpful.
+- Structure: hook, pain, fear, hope, cta.
+- Keep URLs exact.
+- Return JSON only:
 {
-  "hook": "5 秒のオープニング (約 15-20 字)",
-  "pain": "最初の課題 (約 50-70 字)",
-  "fear": "二番目の課題 (約 50-70 字)",
-  "hope": "三番目の課題 (約 50-70 字)",
-  "cta": "CTA (約 30-40 字)"
+  "hook": "...",
+  "pain": "...",
+  "fear": "...",
+  "hope": "...",
+  "cta": "..."
 }`
 
 export interface NarrationScript {
@@ -54,142 +29,147 @@ export interface NarrationScript {
   cta: string
 }
 
+function fallbackScript(data: DiagnosticReportData): NarrationScript {
+  const isJa = data.report_locale === "ja"
+  return {
+    hook: data.hook.slice(0, 90),
+    pain: data.acts[0]?.body.slice(0, 130) ?? (isJa ? "公開データから改善余地が見つかりました。" : "The public data shows room for improvement."),
+    fear: data.acts[1]?.body.slice(0, 130) ?? (isJa ? "放置すると比較検討の段階で選ばれにくくなります。" : "Left unresolved, the business can lose buyers during comparison."),
+    hope: isJa
+      ? `推定機会損失 ${data.total_loss} の一部は、導線と信頼要素の改善で回収できる可能性があります。`
+      : `Part of the estimated ${data.total_loss} opportunity loss may be recovered by improving clarity and trust.`,
+    cta: isJa
+      ? `${data.company_name}様向けの診断レポートとデモをもとに、優先順位を30分で確認しましょう。`
+      : `Use the report and demo to review priorities in a 30-minute call.`,
+  }
+}
+
+function isNarrationScript(value: unknown): value is NarrationScript {
+  if (!value || typeof value !== "object") return false
+  const record = value as Record<string, unknown>
+  return ["hook", "pain", "fear", "hope", "cta"].every((key) => typeof record[key] === "string")
+}
+
 export async function generateNarrationScript(
   data: DiagnosticReportData,
 ): Promise<{ ok: boolean; script?: NarrationScript; error?: string }> {
-  const userPrompt = `【対象企業】
-会社名: ${data.company_name}
-${data.industry ? `業種: ${data.industry}` : ""}
-${data.prefecture ? `所在: ${data.prefecture}` : ""}
-
-【フック】
-${data.hook}
-
-【検出課題 (3 Acts)】
-${data.acts
-  .map(
-    (act, i) =>
-      `${i + 1}. ${act.headline} (${act.severity}) — ${act.body.slice(0, 100)} [指標: ${act.metric_label} = ${act.metric_value}${act.metric_unit}・${act.metric_bench}]`,
+  const userPrompt = JSON.stringify(
+    {
+      company: data.company_name,
+      locale: data.report_locale,
+      industry: data.industry,
+      hook: data.hook,
+      total_loss: data.total_loss,
+      report_url: data.report_url,
+      demo_url: data.demo_url,
+      acts: data.acts.map((act) => ({
+        headline: act.headline,
+        body: act.body,
+        metric: `${act.metric_label}: ${act.metric_value}${act.metric_unit}`,
+        benchmark: act.metric_bench,
+        severity: act.severity,
+      })),
+    },
+    null,
+    2,
   )
-  .join("\n")}
-
-【損失合計】
-月間 ${data.total_loss}
-
-上記をもとに JSON 形式の動画ナレーション原稿を生成してください。`
 
   const res = await callDeepSeek(
     [
       { role: "system", content: NARRATION_SYSTEM_PROMPT },
       { role: "user", content: userPrompt },
     ],
-    {
-      // 🚨 V4 PRO 永久指定 (deepseek.ts default で適用済)
-      temperature: 0.4,
-      maxTokens: 800,
-      responseFormat: "json_object",
-    },
+    { temperature: 0.35, maxTokens: 900, responseFormat: "json_object" },
   )
 
   if (!res.ok || !res.text) {
-    return { ok: false, error: res.error ?? "DeepSeek empty response" }
+    return { ok: true, script: fallbackScript(data), error: res.error ?? "DeepSeek empty response; fallback used" }
   }
 
   try {
-    const parsed = JSON.parse(res.text) as NarrationScript
-    if (!parsed.hook || !parsed.pain || !parsed.fear || !parsed.hope || !parsed.cta) {
-      return { ok: false, error: "Incomplete narration JSON shape" }
+    const parsed = JSON.parse(res.text) as unknown
+    if (!isNarrationScript(parsed)) {
+      return { ok: true, script: fallbackScript(data), error: "Incomplete narration JSON shape; fallback used" }
     }
     return { ok: true, script: parsed }
-  } catch (e) {
+  } catch (error) {
     return {
-      ok: false,
-      error: `JSON parse failed: ${e instanceof Error ? e.message : String(e)}`,
+      ok: true,
+      script: fallbackScript(data),
+      error: `JSON parse failed; fallback used: ${error instanceof Error ? error.message : String(error)}`,
     }
   }
 }
 
-/* ───── HyperFrames HTML テンプレ generator ───── */
+export function buildHyperFramesHtml(data: DiagnosticReportData, script: NarrationScript): string {
+  const theme = themeForIndustry(data.industry)
+  const scenes = [
+    { id: "hook", start: 0, duration: 8, label: "HOOK", text: script.hook, metric: data.company_name },
+    { id: "pain", start: 8, duration: 14, label: "EVIDENCE", text: script.pain, metric: data.acts[0]?.metric_value ?? "" },
+    { id: "fear", start: 22, duration: 14, label: "IMPACT", text: script.fear, metric: data.total_loss },
+    { id: "hope", start: 36, duration: 16, label: "SOLUTION", text: script.hope, metric: data.demo_url ?? data.report_url },
+    { id: "cta", start: 52, duration: 8, label: "NEXT STEP", text: script.cta, metric: data.report_url },
+  ]
 
-/**
- * HyperFrames 用の HTML composition を生成。
- * シーン構成: 5 scene (5s + 15s × 3 + 10s)
- *
- * 注: HyperFrames は HTML + data-hf-* 属性を読んで MP4 にする仕様 (仮想)。
- *     詳細は HyperFrames 公式ドキュメント参照 (Sprint 11 で実 endpoint 接続)。
- */
-export function buildHyperFramesHtml(
-  data: DiagnosticReportData,
-  script: NarrationScript,
-): string {
-  const escape = (s: string) =>
-    s
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-
-  return `<!DOCTYPE html>
-<html lang="ja">
+  return `<!doctype html>
+<html lang="${escapeHtml(data.report_locale)}">
 <head>
   <meta charset="utf-8" />
-  <title>Paradigm 診断動画 — ${escape(data.company_name)}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${escapeHtml(data.company_name)} diagnostic video</title>
   <style>
-    body { margin: 0; font-family: 'Noto Sans JP', sans-serif; background: #0f172a; color: #fff; }
-    .hf-scene { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 80px; }
-    .hf-scene h1, .hf-scene h2 { text-align: center; }
-    .hook { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
-    .pain { background: linear-gradient(135deg, #dc2626, #991b1b); }
-    .fear { background: linear-gradient(135deg, #d97706, #92400e); }
-    .hope { background: linear-gradient(135deg, #16a34a, #14532d); }
-    .cta  { background: linear-gradient(135deg, #0f172a, #1e293b); }
-    .metric { font-size: 96px; font-weight: 900; font-family: 'DM Mono', monospace; }
+    body { margin:0; background:${theme.ink}; color:#fff; font-family:Inter,ui-sans-serif,system-ui,sans-serif; overflow:hidden; }
+    [data-composition-id="paradigm-sales-video"] { width:100vw; height:100vh; position:relative; background:${theme.ink}; }
+    .scene { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; gap:26px; padding:110px 150px; box-sizing:border-box; opacity:0; }
+    .scene::before { content:""; position:absolute; inset:0; background:radial-gradient(circle at 72% 18%, ${theme.accent}55, transparent 28%), linear-gradient(140deg, ${theme.ink}, ${theme.accentDark}); z-index:-1; }
+    .label { font-size:22px; font-weight:800; color:${theme.signal}; }
+    h1 { margin:0; max-width:1180px; font-size:72px; line-height:1.08; letter-spacing:0; }
+    .metric { max-width:980px; border:1px solid rgba(255,255,255,.18); border-radius:8px; padding:22px; background:rgba(255,255,255,.09); font-size:30px; color:rgba(255,255,255,.82); overflow-wrap:anywhere; }
+    .footer { position:absolute; left:150px; right:150px; bottom:72px; display:flex; justify-content:space-between; color:rgba(255,255,255,.62); font-size:20px; }
   </style>
 </head>
-<body data-hf-fps="30" data-hf-width="1920" data-hf-height="1080">
-  <!-- Scene 1: Hook (0-5s) -->
-  <div class="hf-scene hook" data-hf-start="0" data-hf-end="5">
-    <h1 style="font-size: 64px; line-height: 1.3;">${escape(script.hook)}</h1>
+<body>
+  <div data-composition-id="paradigm-sales-video" data-width="1920" data-height="1080" data-duration="60">
+    ${scenes
+      .map(
+        (scene) => `<section id="${scene.id}" class="scene" data-start="${scene.start}" data-duration="${scene.duration}" data-track-index="1">
+      <div class="label">${escapeHtml(scene.label)}</div>
+      <h1>${escapeHtml(scene.text)}</h1>
+      <div class="metric">${escapeHtml(scene.metric)}</div>
+    </section>`,
+      )
+      .join("\n")}
+    <div class="footer"><span>Paradigm Sales OS</span><span>${escapeHtml(data.company_name)}</span></div>
   </div>
-  <!-- Scene 2: Pain (5-20s) -->
-  <div class="hf-scene pain" data-hf-start="5" data-hf-end="20">
-    <div style="text-align: center;">
-      <div class="metric">${escape(data.acts[0]?.metric_value ?? "")}<span style="font-size: 32px;">${escape(data.acts[0]?.metric_unit ?? "")}</span></div>
-      <h2 style="font-size: 40px; margin-top: 24px; max-width: 80%; margin-left: auto; margin-right: auto;">${escape(script.pain)}</h2>
-    </div>
-  </div>
-  <!-- Scene 3: Fear (20-35s) -->
-  <div class="hf-scene fear" data-hf-start="20" data-hf-end="35">
-    <div style="text-align: center;">
-      <div class="metric">${escape(data.acts[1]?.metric_value ?? "")}<span style="font-size: 32px;">${escape(data.acts[1]?.metric_unit ?? "")}</span></div>
-      <h2 style="font-size: 40px; margin-top: 24px; max-width: 80%; margin-left: auto; margin-right: auto;">${escape(script.fear)}</h2>
-    </div>
-  </div>
-  <!-- Scene 4: Hope (35-50s) -->
-  <div class="hf-scene hope" data-hf-start="35" data-hf-end="50">
-    <div style="text-align: center;">
-      <h2 style="font-size: 48px; max-width: 80%; margin: 0 auto;">${escape(script.hope)}</h2>
-      <div style="margin-top: 32px; font-size: 56px; font-family: 'DM Mono', monospace; font-weight: 900;">月間損失: ${escape(data.total_loss)}</div>
-    </div>
-  </div>
-  <!-- Scene 5: CTA (50-60s) -->
-  <div class="hf-scene cta" data-hf-start="50" data-hf-end="60">
-    <div style="text-align: center;">
-      <h2 style="font-size: 56px; line-height: 1.3;">${escape(script.cta)}</h2>
-      <div style="margin-top: 32px; font-size: 24px; color: #94a3b8;">paradigmjp.com/diagnostic</div>
-    </div>
-  </div>
-  <!-- Narration audio cues (HyperFrames が ElevenLabs と連携する場合) -->
-  <script type="application/json" data-hf-narration>
-    ${JSON.stringify(script, null, 2)}
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    ${scenes
+      .map(
+        (scene) => `tl.to("#${scene.id}", { opacity: 1, duration: 0.4 }, ${scene.start})
+  .from("#${scene.id} h1", { y: 46, opacity: 0, duration: 0.75, ease: "power3.out" }, ${scene.start + 0.1})
+  .from("#${scene.id} .metric", { y: 24, opacity: 0, duration: 0.55, ease: "power2.out" }, ${scene.start + 0.45})
+  .to("#${scene.id}", { opacity: 0, duration: 0.35 }, ${scene.start + scene.duration - 0.35});`,
+      )
+      .join("\n")}
+    window.__timelines["paradigm-sales-video"] = tl;
   </script>
+  <script type="application/json" data-narration>${JSON.stringify(script)}</script>
 </body>
 </html>`
 }
 
-/* ───── HyperFrames API call (stub・本実装は Sprint 11) ───── */
+function getHyperframesApi(): string | null {
+  const value = process.env.HYPERFRAMES_API_URL
+  if (!value) return null
+  return value.replace(/\/+$/, "")
+}
 
-const HYPERFRAMES_API = process.env.HYPERFRAMES_API_URL ?? ""
+function getBaseUrl(): string {
+  const value = process.env.NEXT_PUBLIC_SITE_URL
+  return value ? value.replace(/\/+$/, "") : "https://paradigmjp.com"
+}
 
 export interface VideoGenerationResult {
   ok: boolean
@@ -205,35 +185,15 @@ export interface VideoGenerationResult {
   error?: string
 }
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://paradigmjp.com"
-
 const isUuid = (s: string): boolean =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)
-const isDomain = (s: string): boolean => /\./.test(s)
 
-/**
- * 完全な動画生成パイプライン (Sprint 14 リファクタ):
- *   1. companyIdOrSlugOrDomain → SalesCompany 解決
- *   2. fetchDiagnosticReport
- *   3. generateNarrationScript (DeepSeek V4 PRO)
- *   4. buildHyperFramesHtml (HyperFrames API 用)
- *   5. HyperFrames API call (env 設定時のみ) or HTML preview URL (fallback)
- *
- * 戻り値:
- *   - HYPERFRAMES_API_URL 設定時:  video_url = MP4 URL
- *   - HYPERFRAMES_API_URL 未設定:  video_url = /ja/report/[slug]/video (HTML auto-play)
- *
- * どちらも顧客にメール/Slack で送付可能 (HTML preview URL も「動画版レポート」として完結)
- */
-export async function generateDiagnosticVideo(
-  companyIdOrSlugOrDomain: string,
-): Promise<VideoGenerationResult> {
-  // Sprint 14: slug 優先 lookup
+export async function generateDiagnosticVideo(companyIdOrSlugOrDomain: string): Promise<VideoGenerationResult> {
   let company = await findCompanyBySlug(companyIdOrSlugOrDomain)
   if (!company) {
     company = isUuid(companyIdOrSlugOrDomain)
       ? await findCompanyById(companyIdOrSlugOrDomain)
-      : isDomain(companyIdOrSlugOrDomain)
+      : companyIdOrSlugOrDomain.includes(".")
         ? await findCompanyByDomain(companyIdOrSlugOrDomain)
         : null
   }
@@ -243,11 +203,8 @@ export async function generateDiagnosticVideo(
   if (!data) return { ok: false, error: "diagnostic data unavailable" }
 
   const narration = await generateNarrationScript(data)
-  if (!narration.ok || !narration.script) {
-    return { ok: false, error: narration.error }
-  }
-
-  const html = buildHyperFramesHtml(data, narration.script)
+  const script = narration.script ?? fallbackScript(data)
+  const html = buildHyperFramesHtml(data, script)
   const contentTemplate = await matchContentTemplate({
     reportLocale: data.report_locale,
     targetCountry: data.target_country,
@@ -255,85 +212,52 @@ export async function generateDiagnosticVideo(
     assetType: "sales_video",
     templateVariant: data.template_variant,
   })
-  const previewUrl = company.slug
-    ? `${BASE_URL}/ja/report/${company.slug}/video`
-    : null
+  const previewUrl = company.slug ? `${getBaseUrl()}/${data.report_locale}/report/${company.slug}/video` : null
+  const api = getHyperframesApi()
 
-  // HYPERFRAMES_API_URL 未設定: HTML preview URL を返す (Sprint 14・fail-soft)
-  if (!HYPERFRAMES_API) {
-    return {
-      ok: true,
-      video_url: previewUrl ?? undefined,
-      script: narration.script,
-      html,
-      content_template: {
-        title: contentTemplate.title,
-        quality_bar: contentTemplate.quality_bar,
-        dify_selection_rule: contentTemplate.dify_selection_rule,
-      },
-      duration_sec: 60,
-      ...(previewUrl ? {} : { error: "company.slug not set — preview URL unavailable" }),
-    }
+  const baseResult = {
+    script,
+    html,
+    content_template: {
+      title: contentTemplate.title,
+      quality_bar: contentTemplate.quality_bar,
+      dify_selection_rule: contentTemplate.dify_selection_rule,
+    },
+    duration_sec: 60,
   }
 
-  // HyperFrames API call (MP4 化)
-  try {
-    const res = await fetch(`${HYPERFRAMES_API}/render`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        html,
-        format: "mp4",
-        width: 1920,
-        height: 1080,
-        fps: 30,
-        duration_sec: 60,
-      }),
-      signal: AbortSignal.timeout(180_000),
-    })
-    if (!res.ok) {
-      // MP4 化失敗時も HTML preview URL を fallback として返す
-      return {
-        ok: !!previewUrl,
-        video_url: previewUrl ?? undefined,
-        script: narration.script,
-        html,
-        content_template: {
-          title: contentTemplate.title,
-          quality_bar: contentTemplate.quality_bar,
-          dify_selection_rule: contentTemplate.dify_selection_rule,
-        },
-        duration_sec: 60,
-        error: `HyperFrames API ${res.status}: ${res.statusText} (returning HTML preview)`,
-      }
-    }
-    const result = (await res.json()) as { video_url?: string }
-    return {
-      ok: true,
-      video_url: result.video_url ?? previewUrl ?? undefined,
-      script: narration.script,
-      html,
-      content_template: {
-        title: contentTemplate.title,
-        quality_bar: contentTemplate.quality_bar,
-        dify_selection_rule: contentTemplate.dify_selection_rule,
-      },
-      duration_sec: 60,
-    }
-  } catch (e) {
-    // タイムアウト等で MP4 化失敗 → HTML preview にフォールバック
+  if (!api) {
     return {
       ok: !!previewUrl,
       video_url: previewUrl ?? undefined,
-      script: narration.script,
-      html,
-      content_template: {
-        title: contentTemplate.title,
-        quality_bar: contentTemplate.quality_bar,
-        dify_selection_rule: contentTemplate.dify_selection_rule,
-      },
-      duration_sec: 60,
-      error: e instanceof Error ? e.message : String(e),
+      ...baseResult,
+      ...(previewUrl ? {} : { error: "company.slug not set; preview URL unavailable" }),
+    }
+  }
+
+  try {
+    const res = await fetch(`${api}/render`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ html, format: "mp4", width: 1920, height: 1080, fps: 30, duration_sec: 60 }),
+      signal: AbortSignal.timeout(180_000),
+    })
+    if (!res.ok) {
+      return {
+        ok: !!previewUrl,
+        video_url: previewUrl ?? undefined,
+        ...baseResult,
+        error: `HyperFrames API ${res.status}: ${res.statusText}; HTML preview returned`,
+      }
+    }
+    const result = (await res.json()) as { video_url?: string }
+    return { ok: true, video_url: result.video_url ?? previewUrl ?? undefined, ...baseResult }
+  } catch (error) {
+    return {
+      ok: !!previewUrl,
+      video_url: previewUrl ?? undefined,
+      ...baseResult,
+      error: error instanceof Error ? error.message : String(error),
     }
   }
 }
