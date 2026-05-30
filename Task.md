@@ -9,6 +9,7 @@
 - [x] Verification: `npx tsc --noEmit --pretty false` passed; targeted Sales OS Vitest passed (6 files / 23 tests); full `npm test` passed (17 files / 110 tests).
 - [x] Local production smoke passed from the real repo path: `http://127.0.0.1:3108/ja/admin/sales` returned HTTP 200. Commit `7e4674c` was pushed to GitHub.
 - [x] Added `scripts/sales-os-no-login-deploy.mjs` so Coolify UI login is not required: it reads the configured Coolify API connection, applies the Sales OS product master to Supabase SSOT, triggers deployment, polls status, and smoke-checks public URLs without printing secrets.
+- [x] Live no-login release completed: Supabase SSOT product master verified 4 readable products, Coolify deployment finished, app status returned `running:healthy`, and production smoke passed for `/ja/admin/sales`, `/ja`, Twenty, NocoDB, Metabase, and the sample report URL.
 
 ## Codex Update - 2026-05-30 Sales OS Completion Pass
 
