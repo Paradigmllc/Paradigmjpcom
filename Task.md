@@ -1,3 +1,14 @@
+## Codex Update - 2026-05-30 Coolify and Supabase OSS Repair
+
+- [x] Repaired the production Sales OS SSOT schema on Supabase OSS by applying migrations 022-025 directly to the live PostgreSQL database.
+- [x] Verified `sales_content_templates`, `sales_agent_commands`, `sales_agent_events`, `sales_integration_status`, and `sales_platform_health_snapshots` exist with RLS enabled and `service_role` grants.
+- [x] Seeded 256 ja/en sales content templates and persisted the 36-item integration-status snapshot.
+- [x] Confirmed Coolify, Docker, PostgREST, Supabase DB, Supabase Studio, and Sales OS app routes are reachable. Current stable SSOT endpoint is `https://supabase.paradigmjp.com/rest/v1/`.
+- [x] Hardened the host janitor so daily cleanup prunes build cache and unused images, with aggressive unused-image pruning once root disk usage reaches 70%. Docker volumes are intentionally not pruned.
+- [x] Removed hardcoded Supabase secret values from `docker-compose.supabase.yml`; the file is now an env-only safe template.
+- [x] Added `docs/knowledge/coolify-supabase-repair-log.md` documenting current state, guardrails, and the staged path to full Supabase parity.
+- [ ] Supabase OSS full-stack parity remains staged, not cut over: Kong/Auth/Storage/Realtime are not deployed yet, so `/auth/v1/health` still returns 404 by design.
+
 ## Codex Update - 2026-05-30 Sales Integration Registry and Safe Form Guard
 
 - [x] Added a no-secret API/OSS inventory for the Sales OS: Dify Cloud, DeepSeek, n8n, Trigger.dev, Browserless, Crawlee/Crawl4AI, Playwright Stealth/Camoufox, DataForSEO, Google Places, Apollo/Fumadata/BIZMap/gBizInfo/jGrants/Houjin Bangou, Wappalyzer-style detection, PageSpeed, urlscan, PublicWWW, security APIs, Slidev/Gotenberg, video stack, mail/phone tools, Cal.com, Docuseal, and proxy vendors.
