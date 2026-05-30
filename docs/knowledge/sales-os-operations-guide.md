@@ -25,6 +25,7 @@
 | n8n OSS | 自動化 | ジョブ起動、Slack通知、外部API連携 |
 | Cal.com OSS | 予約 | 商談予約 |
 | Docuseal OSS | 契約 | 契約書送付、署名ステータス |
+| Paradigm AI Bot | Telegram司令塔 | @aiparadigmbot からHermes/Paperclip/OpenCode/OpenClawへ営業指示を渡す |
 
 ## 自動化済み
 
@@ -40,6 +41,7 @@
 - フォームURL判定と手動キュー振り分け
 - Cal.com / Docuseal webhook のSupabase反映
 - Coolify UIログインなしのデプロイ導線
+- Telegram経由のAIチーム指示受付、コマンド台帳、営業ジョブ起動、手動承認キュー化
 
 ## 意図的に手動確認を残している箇所
 
@@ -48,6 +50,42 @@
 - 法務・業種リスクがある送信先
 - Dify文面の初期品質確認
 - 大量送信前のドメインウォームアップと送信上限調整
+- Telegramからのライブ送信、契約、DNS/インフラ変更
+
+## Paradigm AI Bot / 自律営業チーム
+
+`@aiparadigmbot` は営業OSのチャット入口です。Telegramからの指示は n8n または Hermes Agent が
+`POST /api/sales/agent/telegram-command` に渡し、Supabaseの `sales_agent_commands` に記録します。
+
+役割:
+
+- CEO Hermes Agent: 指示を営業方針、優先度、承認要否に分解する。
+- Paperclip Operator: Supabaseジョブ、Appsmith手動キュー、Slack通知、証跡保存を担当する。
+- OpenCode Engineer: コード修正、テスト、デプロイ準備、Docs更新を担当する。
+- OpenClaw Researcher: Crawlee、Crawl4AI、PageSpeed、Wappalyzer、公開APIから企業情報を集める。
+- Outreach Worker: Dify文面生成、フォーム判定、dry-run、承認後の送信準備を担当する。
+
+使える指示例:
+
+- `今日の営業OS状況を見て`
+- `カルテ生成を3件進めて`
+- `フォーム営業dry-runを5件実行して`
+- `Twenty同期して`
+- `Web制作向けの資料と動画ブリーフを準備して`
+
+自律レベル:
+
+- `observe`: 状況確認のみ。DBや外部サービスを更新しない。
+- `copilot`: ジョブ作成、下書き、手動キュー化まで。実送信はしない。
+- `autopilot_guarded`: カルテ生成やdry-runを実行。ただしライブ送信と契約は承認必須。
+
+安全ルール:
+
+- Supabaseが唯一の正本。Twenty、NocoDB、Metabase、Appsmithは用途別UIとして同期する。
+- Telegramからのフォーム営業は常にdry-runから開始する。
+- 初回ライブ送信5件、CAPTCHA、ログイン必須、強いSPA、法務/業種リスクはAppsmith承認へ回す。
+- 契約書、請求、DNS、インフラ、APIキー変更はTelegram単独では実行しない。
+- すべての指示と結果をSupabaseに記録し、営業ダッシュボードの `AIチーム` タブで監査する。
 
 ## 実務運用面の残課題
 

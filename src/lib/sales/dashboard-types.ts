@@ -1,5 +1,6 @@
 import type { InfrastructureMigrationData } from "@/lib/sales/infrastructure"
 import type { DashboardEnrichmentJob } from "@/lib/sales/enrichment-jobs"
+import type { DashboardAgentTeam } from "@/lib/sales/agent-team"
 
 export type SalesDashboardStatus = "ready" | "degraded"
 
@@ -146,4 +147,5 @@ export interface SalesDashboardData {
   infrastructure: InfrastructureMigrationData
   operationalAudit: DashboardOperationalAudit
   contentTemplates: DashboardContentTemplateCoverage
+  agentTeam: DashboardAgentTeam
 }

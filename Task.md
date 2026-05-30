@@ -1,3 +1,12 @@
+## Codex Update - 2026-05-30 Paradigm AI Bot Agent Team
+
+- [x] Added Supabase SSOT command/event ledger for Telegram-driven sales agents: `sales_agent_commands` and `sales_agent_events` in `supabase/migration_023_sales_agent_team.sql`.
+- [x] Added authenticated `POST /api/sales/agent/telegram-command` so n8n/Hermes/Paperclip can pass `@aiparadigmbot` Telegram instructions into the Sales OS.
+- [x] Added `src/lib/sales/agent-team.ts` with intent routing for status reports, company karte generation, outreach dry-run, asset preparation, Twenty sync, and manual review.
+- [x] Preserved guardrails: Telegram cannot perform live bulk form submission, contracts, DNS, infrastructure, or secret changes without human approval; risky commands are routed to Appsmith/manual review.
+- [x] Added the Sales OS `AIチーム` dashboard tab showing roles, autonomy levels, endpoint, guardrails, and recent Telegram command logs.
+- [x] Updated the operations guide so Paperclip / CEO Hermes Agent / OpenCode / OpenClaw / Outreach Worker usage is clear for 実務運用.
+
 ## Codex Update - 2026-05-30 Sales Asset Template Quality Pass
 
 - [x] Added a cross-asset `sales_content_templates` design so diagnostic reports, Astro demos, Slidev/Gotenberg decks, and ComfyUI/HyperFrames/Remotion videos can share one Dify-selectable template library.

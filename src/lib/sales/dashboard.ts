@@ -3,6 +3,7 @@ import { calculateMrr } from "@/lib/sales/customers"
 import { getInfrastructureMigrationData } from "@/lib/sales/infrastructure"
 import { getContentTemplateCoverage } from "@/lib/sales/content-templates"
 import { fetchRecentEnrichmentJobs, type DashboardEnrichmentJob } from "@/lib/sales/enrichment-jobs"
+import { getDashboardAgentTeam } from "@/lib/sales/agent-team"
 import type {
   DashboardAuditCheck,
   DashboardAuditSection,
@@ -592,6 +593,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     warnings.push("Supabase service_role is not configured. Showing empty dashboard shell.")
     const infrastructure = await getInfrastructureMigrationData(null)
     const contentTemplates = await getContentTemplateCoverage()
+    const agentTeam = await getDashboardAgentTeam()
     return {
       status: "degraded",
       generatedAt,
@@ -611,6 +613,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
       infrastructure,
       operationalAudit: emptyOperationalAudit(),
       contentTemplates,
+      agentTeam,
     }
   }
 
@@ -631,6 +634,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     enrichmentJobs,
     infrastructure,
     contentTemplates,
+    agentTeam,
   ] = await Promise.all([
     fetchDashboardCompanies(sb),
     sb
@@ -670,6 +674,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     fetchRecentEnrichmentJobs(40),
     getInfrastructureMigrationData(sb),
     getContentTemplateCoverage(),
+    getDashboardAgentTeam(),
   ])
 
   if (companyRes.error) warnings.push(`sales_companies: ${companyRes.error.message}`)
@@ -786,5 +791,6 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
       warnings,
     }),
     contentTemplates,
+    agentTeam,
   }
 }

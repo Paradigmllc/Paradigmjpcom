@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import {
   BarChart3,
   BookOpen,
+  Bot,
   BriefcaseBusiness,
   LayoutDashboard,
   ListChecks,
@@ -17,6 +18,7 @@ import {
 import { Toaster } from "sonner"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 import { SalesAutomationPanel } from "./SalesAutomationPanel"
+import { SalesAgentTeamPanel } from "./SalesAgentTeamPanel"
 import { SalesDocsPanel } from "./SalesDocsPanel"
 import { SalesOperationsAuditPanel } from "./SalesOperationsAuditPanel"
 import {
@@ -37,6 +39,7 @@ type TabId =
   | "automation"
   | "workspace"
   | "operator"
+  | "agentTeam"
   | "crm"
   | "analytics"
   | "integrations"
@@ -53,6 +56,7 @@ const TABS: { id: TabId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "automation", label: "CSV・自動診断", icon: UploadCloud },
   { id: "workspace", label: "リスト作業場", icon: Sheet },
   { id: "operator", label: "オペレーター", icon: ListChecks },
+  { id: "agentTeam", label: "AIチーム", icon: Bot },
   { id: "crm", label: "CRM", icon: BriefcaseBusiness },
   { id: "analytics", label: "分析", icon: BarChart3 },
   { id: "integrations", label: "統合", icon: MonitorCog },
@@ -143,6 +147,7 @@ export function SalesCommandCenter({ data }: Props) {
           {activeTab === "automation" && <SalesAutomationPanel data={data} />}
           {activeTab === "workspace" && <WorkspacePanel data={data} />}
           {activeTab === "operator" && <OperatorPanel data={data} />}
+          {activeTab === "agentTeam" && <SalesAgentTeamPanel data={data} />}
           {activeTab === "crm" && <CrmPanel data={data} />}
           {activeTab === "analytics" && <AnalyticsPanel data={data} />}
           {activeTab === "integrations" && <IntegrationsPanel data={data} />}

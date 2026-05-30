@@ -76,7 +76,8 @@ const PRODUCTS = [
 function readJson(file) {
   try {
     return JSON.parse(fs.readFileSync(file, "utf8"))
-  } catch {
+  } catch (error) {
+    console.warn(`Skipped unreadable JSON backup ${path.basename(file)}: ${error instanceof Error ? error.message : String(error)}`)
     return null
   }
 }
@@ -183,10 +184,10 @@ async function applySalesProducts(envs) {
   return json.length
 }
 
-async function applyContentTemplateMigration(envs) {
+async function applySqlMigration(envs, fileName, label) {
   const { url, key } = salesSupabase(envs)
-  const sqlPath = path.join(process.cwd(), "supabase", "migration_022_sales_content_templates.sql")
-  if (!fs.existsSync(sqlPath)) return "Content template migration: local SQL file missing"
+  const sqlPath = path.join(process.cwd(), "supabase", fileName)
+  if (!fs.existsSync(sqlPath)) return `${label}: local SQL file missing`
   const sql = fs.readFileSync(sqlPath, "utf8")
   const res = await fetch(`${url}/rest/v1/rpc/exec_sql`, {
     method: "POST",
@@ -197,13 +198,21 @@ async function applyContentTemplateMigration(envs) {
     },
     body: JSON.stringify({ query: sql }),
   })
-  if (res.ok) return "Content template migration: applied"
+  if (res.ok) return `${label}: applied`
   const text = await res.text()
   if (res.status === 404 || /function.*exec_sql|schema cache/i.test(text)) {
-    return "Content template migration: exec_sql unavailable, relying on bundled fallback until DB migration is applied"
+    return `${label}: exec_sql unavailable, relying on app fallback until DB migration is applied`
   }
-  if (/already exists|duplicate/i.test(text)) return "Content template migration: already applied"
-  throw new Error(`Content template migration failed: HTTP ${res.status} ${text.slice(0, 180)}`)
+  if (/already exists|duplicate/i.test(text)) return `${label}: already applied`
+  throw new Error(`${label} failed: HTTP ${res.status} ${text.slice(0, 180)}`)
+}
+
+async function applyContentTemplateMigration(envs) {
+  return applySqlMigration(envs, "migration_022_sales_content_templates.sql", "Content template migration")
+}
+
+async function applyAgentTeamMigration(envs) {
+  return applySqlMigration(envs, "migration_023_sales_agent_team.sql", "Agent team migration")
 }
 
 function applyContentTemplates(envs) {
@@ -264,6 +273,7 @@ async function main() {
     const count = await applySalesProducts(envs)
     console.log(`Sales products: verified ${count}`)
     console.log(await applyContentTemplateMigration(envs))
+    console.log(await applyAgentTeamMigration(envs))
     console.log(applyContentTemplates(envs))
   } else {
     console.log("Dry run: skipped Supabase product upsert")

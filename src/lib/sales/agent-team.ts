@@ -1,0 +1,511 @@
+import { getServiceSalesSupabase } from "@/lib/supabase"
+import { notifySlack } from "@/lib/notify"
+import { runEnrichmentJobs } from "@/lib/sales/enrichment-jobs"
+import { runOutreachBatch } from "@/lib/sales/outreach/orchestrator"
+import { pullTwentyCompaniesToSupabase } from "@/lib/sales/twenty-sync"
+import { isValidRegion, type Region } from "@/lib/sales/types"
+
+type JsonRecord = Record<string, unknown>
+type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
+
+export const SALES_AGENT_INTENTS = [
+  "status_report",
+  "run_enrichment",
+  "run_outreach_dry_run",
+  "prepare_assets",
+  "sync_twenty",
+  "manual_review",
+  "unknown",
+] as const
+export type SalesAgentIntent = (typeof SALES_AGENT_INTENTS)[number]
+
+export const SALES_AGENT_AUTONOMY_LEVELS = ["observe", "copilot", "autopilot_guarded"] as const
+export type SalesAgentAutonomyLevel = (typeof SALES_AGENT_AUTONOMY_LEVELS)[number]
+
+export const SALES_AGENT_SOURCES = [
+  "telegram",
+  "hermes_agent",
+  "paperclip",
+  "opencode",
+  "openclaw",
+  "n8n",
+  "dashboard",
+] as const
+export type SalesAgentSource = (typeof SALES_AGENT_SOURCES)[number]
+
+export interface SalesAgentCommandInput {
+  text: string
+  chatId?: string | null
+  username?: string | null
+  source?: string | null
+  autonomyLevel?: string | null
+  region?: string | null
+  limit?: number | null
+}
+
+export interface SalesAgentCommandResult {
+  ok: boolean
+  commandId: string | null
+  intent: SalesAgentIntent
+  status: "completed" | "blocked" | "failed"
+  approvalRequired: boolean
+  summary: string
+  reply: string
+  result: JsonRecord
+}
+
+export interface SalesAgentRole {
+  id: "ceo_hermes" | "paperclip_operator" | "opencode_engineer" | "openclaw_researcher" | "outreach_worker"
+  name: string
+  owner: string
+  responsibility: string
+  autonomy: string
+  guardrail: string
+}
+
+export interface DashboardAgentCommand {
+  id: string
+  source: SalesAgentSource | string
+  telegramUser: string | null
+  commandText: string
+  intent: SalesAgentIntent | string
+  autonomyLevel: SalesAgentAutonomyLevel | string
+  status: string
+  approvalRequired: boolean
+  runSummary: string | null
+  createdAt: string
+  completedAt: string | null
+}
+
+export interface DashboardAgentTeam {
+  status: "ready" | "degraded"
+  endpointPath: string
+  telegramBot: string
+  roles: SalesAgentRole[]
+  autonomyLevels: Array<{ id: SalesAgentAutonomyLevel; label: string; description: string }>
+  guardrails: string[]
+  recentCommands: DashboardAgentCommand[]
+  storageStatus: "supabase" | "pending_migration" | "unconfigured"
+}
+
+const AGENT_ROLES: SalesAgentRole[] = [
+  {
+    id: "ceo_hermes",
+    name: "CEO Hermes Agent",
+    owner: "Hermes",
+    responsibility: "Telegram指示を営業方針、優先度、承認要否に分解する司令塔。",
+    autonomy: "戦略判断と承認依頼まで。危険な実送信や契約操作は人間確認へ回す。",
+    guardrail: "ライブフォーム送信、契約、DNS/インフラ変更は承認なしで実行しない。",
+  },
+  {
+    id: "paperclip_operator",
+    name: "Paperclip Operator",
+    owner: "Paperclip",
+    responsibility: "Supabaseジョブ、Appsmith手動キュー、Slack通知、証跡保存を担当。",
+    autonomy: "カルテ生成やdry-runなど安全なバックグラウンド処理を進める。",
+    guardrail: "失敗やCAPTCHA/SPA/法務リスクは手動キューに落とす。",
+  },
+  {
+    id: "opencode_engineer",
+    name: "OpenCode Engineer",
+    owner: "OpenCode",
+    responsibility: "コード修正、テスト、デプロイ準備、運用Docs更新を担当。",
+    autonomy: "リポジトリ内の安全な実装と検証まで。秘密情報や本番DB破壊操作はしない。",
+    guardrail: "push/deployは既存の安全スクリプトとスモーク確認を通す。",
+  },
+  {
+    id: "openclaw_researcher",
+    name: "OpenClaw Researcher",
+    owner: "OpenClaw",
+    responsibility: "Crawlee、Crawl4AI、PageSpeed、Wappalyzer、公開APIから企業情報を集める。",
+    autonomy: "無料API/OSS中心の証拠収集、痛み仮説、ソースカバレッジ更新。",
+    guardrail: "ログイン突破、規約違反、強いスクレイピングはしない。",
+  },
+  {
+    id: "outreach_worker",
+    name: "Outreach Worker",
+    owner: "n8n / Browserless",
+    responsibility: "Dify文面生成、フォーム判定、dry-run、承認後の送信準備を担当。",
+    autonomy: "デフォルトはdry-run。初回5件と危険判定はAppsmith承認。",
+    guardrail: "Telegram指示だけで大量ライブ送信しない。",
+  },
+]
+
+const AUTONOMY_LEVELS: DashboardAgentTeam["autonomyLevels"] = [
+  { id: "observe", label: "Observe", description: "状況確認だけ。DBや外部サービスは更新しない。" },
+  { id: "copilot", label: "Copilot", description: "ジョブ作成、下書き、手動キュー化まで。実送信はしない。" },
+  { id: "autopilot_guarded", label: "Guarded Autopilot", description: "カルテ生成やdry-runを実行。ただしライブ送信と契約は承認必須。" },
+]
+
+const GUARDRAILS = [
+  "Supabaseが唯一の正本。Twenty、NocoDB、Metabase、Appsmithは用途別UIとして同期する。",
+  "Telegramからのフォーム営業は常にdry-runから開始し、初回ライブ送信5件は人間承認に回す。",
+  "CAPTCHA、ログイン必須、強いSPA、法務/業種リスクはAppsmithの手動キューへ送る。",
+  "契約書、請求、DNS、インフラ、APIキー変更はTelegram単独では実行しない。",
+  "すべての指示と実行結果をSupabaseに記録し、Slack/管理画面で監査できるようにする。",
+]
+
+function normalizeSource(source: string | null | undefined): SalesAgentSource {
+  if (source && (SALES_AGENT_SOURCES as readonly string[]).includes(source)) return source as SalesAgentSource
+  return "telegram"
+}
+
+function normalizeAutonomy(level: string | null | undefined): SalesAgentAutonomyLevel {
+  if (level && (SALES_AGENT_AUTONOMY_LEVELS as readonly string[]).includes(level)) {
+    return level as SalesAgentAutonomyLevel
+  }
+  return "copilot"
+}
+
+function normalizeRegion(region: string | null | undefined): Region {
+  return region && isValidRegion(region) ? region : "jp"
+}
+
+function normalizeLimit(limit: number | null | undefined, max: number): number {
+  if (!Number.isFinite(limit ?? Number.NaN)) return Math.min(3, max)
+  return Math.max(1, Math.min(Math.trunc(limit as number), max))
+}
+
+export function classifyAgentCommand(text: string): SalesAgentIntent {
+  const value = text.toLowerCase()
+  if (/(状況|進捗|status|kpi|件数|サマリ|summary)/i.test(text)) return "status_report"
+  if (/(カルテ|診断|enrich|enrichment|解析|生成|report|レポート)/i.test(text)) return "run_enrichment"
+  if (/(フォーム|送信|営業|outreach|dry.?run|preflight|文面)/i.test(text)) return "run_outreach_dry_run"
+  if (/(資料|スライド|動画|デモ|asset|deck|slidev|gotenberg|hyperframes|remotion|astro)/i.test(text)) {
+    return "prepare_assets"
+  }
+  if (/(twenty|crm|同期|sync|pull)/i.test(text)) return "sync_twenty"
+  if (value.trim().length === 0) return "unknown"
+  return "manual_review"
+}
+
+function wantsLiveOutreach(text: string): boolean {
+  return /(実送信|本送信|live\s*send|dry\s*run\s*false|dryrun\s*false|承認なし|大量送信)/i.test(text)
+}
+
+async function insertCommand(
+  sb: ServiceSupabase | null,
+  input: {
+    commandText: string
+    source: SalesAgentSource
+    chatId: string | null
+    telegramUser: string | null
+    intent: SalesAgentIntent
+    autonomyLevel: SalesAgentAutonomyLevel
+    approvalRequired: boolean
+  },
+): Promise<string | null> {
+  if (!sb) return null
+  const { data, error } = await sb
+    .from("sales_agent_commands")
+    .insert({
+      source: input.source,
+      chat_id: input.chatId,
+      telegram_user: input.telegramUser,
+      command_text: input.commandText,
+      intent: input.intent,
+      autonomy_level: input.autonomyLevel,
+      status: "running",
+      approval_required: input.approvalRequired,
+    })
+    .select("id")
+    .single()
+
+  if (error) {
+    console.error("[sales-agent-team] command insert failed:", error.message)
+    return null
+  }
+  return typeof data?.id === "string" ? data.id : null
+}
+
+async function updateCommand(
+  sb: ServiceSupabase | null,
+  commandId: string | null,
+  patch: {
+    status: "completed" | "blocked" | "failed"
+    runSummary: string
+    resultPayload: JsonRecord
+  },
+): Promise<void> {
+  if (!sb || !commandId) return
+  const { error } = await sb
+    .from("sales_agent_commands")
+    .update({
+      status: patch.status,
+      run_summary: patch.runSummary,
+      result_payload: patch.resultPayload,
+      completed_at: new Date().toISOString(),
+    })
+    .eq("id", commandId)
+
+  if (error) console.error("[sales-agent-team] command update failed:", error.message)
+}
+
+async function logAgentEvent(
+  sb: ServiceSupabase | null,
+  input: {
+    commandId: string | null
+    agentRole: string
+    eventType: string
+    status: "info" | "success" | "warning" | "error"
+    title: string
+    message?: string
+    payload?: JsonRecord
+  },
+): Promise<void> {
+  if (!sb || !input.commandId) return
+  const { error } = await sb.from("sales_agent_events").insert({
+    command_id: input.commandId,
+    agent_role: input.agentRole,
+    event_type: input.eventType,
+    status: input.status,
+    title: input.title,
+    message: input.message ?? null,
+    payload: input.payload ?? {},
+  })
+  if (error) console.error("[sales-agent-team] event insert failed:", error.message)
+}
+
+async function countRows(sb: ServiceSupabase, table: string): Promise<number> {
+  const { count, error } = await sb.from(table).select("id", { count: "exact", head: true })
+  if (error) {
+    console.error(`[sales-agent-team] count ${table} failed:`, error.message)
+    return 0
+  }
+  return count ?? 0
+}
+
+async function countRowsByStatus(sb: ServiceSupabase, table: string, statuses: string[]): Promise<number> {
+  const { count, error } = await sb.from(table).select("id", { count: "exact", head: true }).in("status", statuses)
+  if (error) {
+    console.error(`[sales-agent-team] count ${table} by status failed:`, error.message)
+    return 0
+  }
+  return count ?? 0
+}
+
+async function statusReport(sb: ServiceSupabase | null): Promise<JsonRecord> {
+  if (!sb) return { configured: false }
+  const [companies, queuedJobs, openQueue, recentCommands] = await Promise.all([
+    countRows(sb, "sales_companies"),
+    countRowsByStatus(sb, "sales_enrichment_jobs", ["queued", "running"]),
+    countRowsByStatus(sb, "sales_operator_queue_items", ["open", "in_progress", "blocked"]),
+    countRows(sb, "sales_agent_commands"),
+  ])
+  return { configured: true, companies, queuedJobs, openQueue, recentCommands }
+}
+
+async function enqueueManualReview(
+  sb: ServiceSupabase | null,
+  input: { reason: string; commandText: string; intent: SalesAgentIntent; region: Region; priority?: number },
+): Promise<{ queued: boolean; error?: string }> {
+  if (!sb) return { queued: false, error: "Supabase service_role not configured" }
+  const { error } = await sb.from("sales_operator_queue_items").insert({
+    region: input.region,
+    queue_type: "analysis",
+    priority: input.priority ?? 80,
+    status: "open",
+    source_tool: "n8n",
+    target_tool: "appsmith",
+    meta: {
+      reason: input.reason,
+      command_text: input.commandText,
+      intent: input.intent,
+      created_by: "sales_agent_team",
+      approval_required: true,
+    },
+  })
+  if (error) {
+    console.error("[sales-agent-team] manual queue insert failed:", error.message)
+    return { queued: false, error: error.message }
+  }
+  return { queued: true }
+}
+
+function replyFor(input: { intent: SalesAgentIntent; summary: string; approvalRequired: boolean; status: string }): string {
+  const approval = input.approvalRequired ? "\n承認: 必要です。Appsmith/Slack側の確認キューを見てください。" : ""
+  return `Paradigm AI営業チーム: ${input.summary}\nIntent: ${input.intent}\nStatus: ${input.status}${approval}`
+}
+
+async function notifyHumanReview(input: { intent: SalesAgentIntent; summary: string; commandText: string }): Promise<void> {
+  await notifySlack(
+    `Paradigm AI Bot approval required\nIntent: ${input.intent}\nSummary: ${input.summary}\nCommand: ${input.commandText}`,
+  )
+}
+
+export async function handleAgentCommand(input: SalesAgentCommandInput): Promise<SalesAgentCommandResult> {
+  const commandText = input.text.trim()
+  const source = normalizeSource(input.source)
+  const autonomyLevel = normalizeAutonomy(input.autonomyLevel)
+  const region = normalizeRegion(input.region)
+  const intent = classifyAgentCommand(commandText)
+  const liveBlocked = wantsLiveOutreach(commandText)
+  const approvalRequired = intent === "run_outreach_dry_run" || intent === "prepare_assets" || intent === "manual_review" || liveBlocked
+  const sb = getServiceSalesSupabase()
+  const commandId = await insertCommand(sb, {
+    commandText,
+    source,
+    chatId: input.chatId ?? null,
+    telegramUser: input.username ?? null,
+    intent,
+    autonomyLevel,
+    approvalRequired,
+  })
+
+  try {
+    if (liveBlocked) {
+      const queue = await enqueueManualReview(sb, {
+        reason: "Telegramからライブ送信/大量送信の指示が来たため承認待ちにしました。",
+        commandText,
+        intent: "run_outreach_dry_run",
+        region,
+        priority: 95,
+      })
+      const result = { queue }
+      const summary = "ライブ送信指示は安全ゲートで停止し、手動承認キューへ回しました。"
+      await logAgentEvent(sb, {
+        commandId,
+        agentRole: "ceo_hermes",
+        eventType: "approval_gate",
+        status: "warning",
+        title: "ライブ送信を承認待ちにしました",
+        message: commandText,
+        payload: result,
+      })
+      await notifyHumanReview({ intent: "run_outreach_dry_run", summary, commandText })
+      await updateCommand(sb, commandId, { status: "blocked", runSummary: summary, resultPayload: result })
+      return { ok: true, commandId, intent: "run_outreach_dry_run", status: "blocked", approvalRequired: true, summary, reply: replyFor({ intent: "run_outreach_dry_run", summary, approvalRequired: true, status: "blocked" }), result }
+    }
+
+    if (intent === "status_report" || autonomyLevel === "observe") {
+      const result = await statusReport(sb)
+      const summary = `状況確認を返しました。リード ${String(result.companies ?? 0)}件、生成待ち ${String(result.queuedJobs ?? 0)}件、手動キュー ${String(result.openQueue ?? 0)}件。`
+      await logAgentEvent(sb, { commandId, agentRole: "ceo_hermes", eventType: "status_report", status: "success", title: "営業OS状況を確認しました", payload: result })
+      await updateCommand(sb, commandId, { status: "completed", runSummary: summary, resultPayload: result })
+      return { ok: true, commandId, intent, status: "completed", approvalRequired: false, summary, reply: replyFor({ intent, summary, approvalRequired: false, status: "completed" }), result }
+    }
+
+    if (intent === "run_enrichment") {
+      const limit = normalizeLimit(input.limit, 5)
+      const result = await runEnrichmentJobs(limit)
+      const summary = `企業カルテ生成を実行しました。処理 ${result.processed}件、完了 ${result.completed}件、失敗 ${result.failed}件。`
+      await logAgentEvent(sb, { commandId, agentRole: "openclaw_researcher", eventType: "enrichment_run", status: result.ok ? "success" : "warning", title: "企業カルテ生成を実行しました", payload: result as unknown as JsonRecord })
+      await updateCommand(sb, commandId, { status: result.ok ? "completed" : "failed", runSummary: summary, resultPayload: result as unknown as JsonRecord })
+      return { ok: result.ok, commandId, intent, status: result.ok ? "completed" : "failed", approvalRequired: false, summary, reply: replyFor({ intent, summary, approvalRequired: false, status: result.ok ? "completed" : "failed" }), result: result as unknown as JsonRecord }
+    }
+
+    if (intent === "run_outreach_dry_run") {
+      const limit = normalizeLimit(input.limit, 5)
+      const result = await runOutreachBatch({
+        region,
+        limit,
+        dryRun: true,
+        first5Approval: true,
+        enableLlm: true,
+        checkRobots: true,
+        dedupDays: 30,
+      })
+      const summary = `フォーム営業dry-runを実行しました。処理 ${result.processed}件、手動確認 ${result.manualQueue}件、skip ${result.skipped}件。`
+      await logAgentEvent(sb, { commandId, agentRole: "outreach_worker", eventType: "outreach_dry_run", status: "success", title: "フォーム営業dry-runを実行しました", payload: result as unknown as JsonRecord })
+      await updateCommand(sb, commandId, { status: "completed", runSummary: summary, resultPayload: result as unknown as JsonRecord })
+      return { ok: true, commandId, intent, status: "completed", approvalRequired: true, summary, reply: replyFor({ intent, summary, approvalRequired: true, status: "completed" }), result: result as unknown as JsonRecord }
+    }
+
+    if (intent === "sync_twenty") {
+      const result = await pullTwentyCompaniesToSupabase(normalizeLimit(input.limit, 200))
+      const summary = result.configured
+        ? `TwentyからSupabaseへ同期しました。更新 ${result.updated}件、skip ${result.skipped}件。`
+        : "Twenty APIが未設定のため、同期は実行できませんでした。"
+      await logAgentEvent(sb, { commandId, agentRole: "paperclip_operator", eventType: "twenty_sync", status: result.ok ? "success" : "warning", title: "Twenty同期を処理しました", payload: result as unknown as JsonRecord })
+      await updateCommand(sb, commandId, { status: result.ok ? "completed" : "blocked", runSummary: summary, resultPayload: result as unknown as JsonRecord })
+      return { ok: result.ok, commandId, intent, status: result.ok ? "completed" : "blocked", approvalRequired: !result.ok, summary, reply: replyFor({ intent, summary, approvalRequired: !result.ok, status: result.ok ? "completed" : "blocked" }), result: result as unknown as JsonRecord }
+    }
+
+    if (intent === "prepare_assets") {
+      const queue = await enqueueManualReview(sb, {
+        reason: "診断レポート/デモサイト/営業資料/営業動画の生成ブリーフを作るため、人間が対象企業またはセグメントを確認します。",
+        commandText,
+        intent,
+        region,
+        priority: 85,
+      })
+      const result = { queue, next: "Dify template selection -> generate-sales-asset -> Slack/Appsmith review" }
+      const summary = "成果物生成の準備キューを作りました。対象企業/セグメント確認後にDifyテンプレ選定へ進めます。"
+      await logAgentEvent(sb, { commandId, agentRole: "paperclip_operator", eventType: "asset_prepare", status: queue.queued ? "success" : "warning", title: "成果物生成準備をキュー化しました", payload: result })
+      await notifyHumanReview({ intent, summary, commandText })
+      await updateCommand(sb, commandId, { status: queue.queued ? "completed" : "blocked", runSummary: summary, resultPayload: result })
+      return { ok: queue.queued, commandId, intent, status: queue.queued ? "completed" : "blocked", approvalRequired: true, summary, reply: replyFor({ intent, summary, approvalRequired: true, status: queue.queued ? "completed" : "blocked" }), result }
+    }
+
+    const queue = await enqueueManualReview(sb, {
+      reason: "Telegram指示の意図が自動実行ルールに一致しないため、CEO Hermes Agentの確認待ちにしました。",
+      commandText,
+      intent,
+      region,
+      priority: 70,
+    })
+    const result = { queue }
+    const summary = "指示を手動レビューに回しました。必要なら具体的に『カルテ生成』『フォーム営業dry-run』『Twenty同期』などで再指示してください。"
+    await logAgentEvent(sb, { commandId, agentRole: "ceo_hermes", eventType: "manual_review", status: queue.queued ? "success" : "warning", title: "手動レビューへ回しました", payload: result })
+    await notifyHumanReview({ intent, summary, commandText })
+    await updateCommand(sb, commandId, { status: queue.queued ? "blocked" : "failed", runSummary: summary, resultPayload: result })
+    return { ok: queue.queued, commandId, intent, status: queue.queued ? "blocked" : "failed", approvalRequired: true, summary, reply: replyFor({ intent, summary, approvalRequired: true, status: queue.queued ? "blocked" : "failed" }), result }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Agent command failed"
+    console.error("[sales-agent-team] command failed:", error)
+    const result = { error: message }
+    await logAgentEvent(sb, { commandId, agentRole: "system", eventType: "exception", status: "error", title: "AIチーム実行に失敗しました", message, payload: result })
+    await updateCommand(sb, commandId, { status: "failed", runSummary: message, resultPayload: result })
+    return { ok: false, commandId, intent, status: "failed", approvalRequired, summary: message, reply: replyFor({ intent, summary: message, approvalRequired, status: "failed" }), result }
+  }
+}
+
+export async function fetchRecentAgentCommands(limit = 12): Promise<{
+  commands: DashboardAgentCommand[]
+  storageStatus: DashboardAgentTeam["storageStatus"]
+}> {
+  const sb = getServiceSalesSupabase()
+  if (!sb) return { commands: [], storageStatus: "unconfigured" }
+
+  const { data, error } = await sb
+    .from("sales_agent_commands")
+    .select("id, source, telegram_user, command_text, intent, autonomy_level, status, approval_required, run_summary, created_at, completed_at")
+    .order("created_at", { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    console.error("[sales-agent-team] fetch recent commands failed:", error.message)
+    return { commands: [], storageStatus: "pending_migration" }
+  }
+
+  return {
+    storageStatus: "supabase",
+    commands: ((data ?? []) as Array<Record<string, unknown>>).map((row) => ({
+      id: String(row.id),
+      source: String(row.source ?? "telegram"),
+      telegramUser: typeof row.telegram_user === "string" ? row.telegram_user : null,
+      commandText: String(row.command_text ?? ""),
+      intent: String(row.intent ?? "unknown"),
+      autonomyLevel: String(row.autonomy_level ?? "copilot"),
+      status: String(row.status ?? "queued"),
+      approvalRequired: row.approval_required === true,
+      runSummary: typeof row.run_summary === "string" ? row.run_summary : null,
+      createdAt: String(row.created_at ?? new Date().toISOString()),
+      completedAt: typeof row.completed_at === "string" ? row.completed_at : null,
+    })),
+  }
+}
+
+export async function getDashboardAgentTeam(): Promise<DashboardAgentTeam> {
+  const recent = await fetchRecentAgentCommands()
+  return {
+    status: recent.storageStatus === "supabase" ? "ready" : "degraded",
+    endpointPath: "/api/sales/agent/telegram-command",
+    telegramBot: "@aiparadigmbot",
+    roles: AGENT_ROLES,
+    autonomyLevels: AUTONOMY_LEVELS,
+    guardrails: GUARDRAILS,
+    recentCommands: recent.commands,
+    storageStatus: recent.storageStatus,
+  }
+}
