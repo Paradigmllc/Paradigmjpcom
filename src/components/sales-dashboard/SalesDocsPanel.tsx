@@ -92,6 +92,13 @@ const CONTENT_ASSET_LABELS: Record<string, string> = {
   sales_video: "動画 (ComfyUI/HyperFrames)",
 }
 
+const CUSTOMER_SUCCESS_FLOW = [
+  "入口は sales_companies.deal_stage = 成約、Docuseal signed webhook、または /api/sales/customer-success/handoff。",
+  "Supabaseで sales_customers と sales_contracts を作成し、契約・顧客運用の正本を切り替える。",
+  "Notion顧客共有ページを作成し、顧客とのやり取り・素材・納品物のポータルにする。",
+  "Twenty HOMEへ顧客共有Notion URL、契約名、Cal.com、Docuseal状況を投影する。",
+]
+
 function StepCard({ title, body, index }: { title: string; body: string; index: number }) {
   return (
     <div className="rounded-lg border border-zinc-200 bg-white p-4">
@@ -264,6 +271,24 @@ export function SalesDocsPanel({ data }: { data: SalesDashboardData }) {
               <div className="text-sm font-semibold text-zinc-950">{name}</div>
               <div className="mt-1 text-xs font-semibold text-zinc-500">{role}</div>
               <p className="mt-3 text-xs leading-6 text-zinc-600">{detail}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-zinc-200 bg-white p-5">
+        <div className="flex items-center gap-2">
+          <CheckCircle2 size={16} aria-hidden />
+          <h2 className="text-sm font-semibold text-zinc-950">成約後パイプライン</h2>
+        </div>
+        <p className="mt-2 text-sm leading-7 text-zinc-600">
+          成約後はNotionをSSOTに戻さず、顧客共有ページとしてだけ使います。正本はSupabase、営業担当の閲覧面はTwenty HOMEです。
+        </p>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          {CUSTOMER_SUCCESS_FLOW.map((step, index) => (
+            <div key={step} className="rounded-lg border border-zinc-100 bg-zinc-50 p-4">
+              <div className="text-xs font-semibold text-zinc-500">STEP {index + 1}</div>
+              <p className="mt-2 text-sm leading-6 text-zinc-700">{step}</p>
             </div>
           ))}
         </div>

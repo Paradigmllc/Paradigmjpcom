@@ -17,6 +17,7 @@ interface TwentyRecord {
   domainName?: TwentyLinkField | null
   paradigmReportUrl?: TwentyLinkField | null
   paradigmFormUrl?: TwentyLinkField | null
+  paradigmCustomerPortalUrl?: TwentyLinkField | null
   paradigmKarteScore?: number | null
   paradigmSourceCoverage?: number | null
   paradigmRecommendedProducts?: string[] | null
@@ -59,6 +60,25 @@ export interface TwentyPullResult {
   scanned: number
   updated: number
   skipped: number
+  error?: string
+}
+
+export interface TwentyCustomerHandoffInput {
+  domain: string
+  companyName: string
+  customerPortalUrl: string | null
+  contractName: string | null
+  contractStatus: string | null
+  contractAmountYen: number | null
+  docusealUrl: string | null
+  calComUrl: string | null
+}
+
+export interface TwentyCustomerHandoffResult {
+  ok: boolean
+  configured: boolean
+  companyId?: string
+  customerPortalFieldSynced?: boolean
   error?: string
 }
 
@@ -172,6 +192,27 @@ function karteHomeSummary(karte: CompanyKarteSnapshot): string {
   ].join("\n")
 }
 
+function customerHandoffSummary(input: TwentyCustomerHandoffInput): string {
+  return [
+    `成約後ハンドオフ: ${input.companyName}`,
+    `顧客共有Notion: ${input.customerPortalUrl ?? "作成待ち"}`,
+    `契約: ${input.contractName ?? "未設定"} / ${input.contractStatus ?? "unknown"}`,
+    `契約金額: ${input.contractAmountYen === null ? "未設定" : `JPY ${input.contractAmountYen.toLocaleString("ja-JP")}`}`,
+    `Docuseal: ${input.docusealUrl ?? "未設定"}`,
+    `Cal.com: ${input.calComUrl ?? "未設定"}`,
+  ].join("\n")
+}
+
+async function patchTwentyCompanyHome(
+  twentyCompanyId: string,
+  payload: Record<string, unknown>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  return twentyFetch<TwentyMutationResponse>(`/rest/companies/${twentyCompanyId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  })
+}
+
 async function syncTwentyCompanyHomeFields(
   karte: CompanyKarteSnapshot,
   twentyCompanyId: string,
@@ -191,6 +232,71 @@ async function syncTwentyCompanyHomeFields(
   })
 
   if (!result.ok) throw new Error(result.error)
+}
+
+export async function syncCustomerHandoffToTwenty(
+  input: TwentyCustomerHandoffInput,
+): Promise<TwentyCustomerHandoffResult> {
+  const baseUrl = twentyBaseUrl()
+  const apiKey = env("TWENTY_API_KEY")
+  if (!baseUrl || !apiKey) {
+    return { ok: false, configured: false, error: "TWENTY_BASE_URL or TWENTY_API_KEY is not configured" }
+  }
+
+  const pseudoKarte: CompanyKarteSnapshot = {
+    companyId: "customer-handoff",
+    region: "jp",
+    companyName: input.companyName,
+    domain: input.domain,
+    reportLocale: "ja",
+    targetCountry: "JP",
+    templateVariant: "website_diagnostic",
+    reportUrl: null,
+    formUrl: null,
+    demoUrl: null,
+    localizedReportUrls: [],
+    sourceScore: 0,
+    collectedCount: 0,
+    configuredCount: 0,
+    missingCount: 0,
+    sourceItems: [],
+    evidence: [],
+    intelligence: {
+      signals: [],
+      painPoints: [],
+      nextActions: ["Notion顧客共有ページでオンボーディングを開始する"],
+    },
+    diagnosisSummary: null,
+    recommendedOffer: null,
+    recommendedProducts: [],
+    generatedAt: new Date().toISOString(),
+  }
+
+  try {
+    const existing = await findTwentyCompany(pseudoKarte)
+    const twentyCompany = existing?.id ? existing : await createTwentyCompany(pseudoKarte)
+    if (!twentyCompany.id) throw new Error("Twenty company id missing")
+
+    const summary = customerHandoffSummary(input)
+    const fullPayload = {
+      paradigmCustomerPortalUrl: linkField("顧客共有Notion", input.customerPortalUrl),
+      paradigmKarteSummary: { markdown: summary },
+    }
+    const full = await patchTwentyCompanyHome(twentyCompany.id, fullPayload)
+    if (full.ok) {
+      return { ok: true, configured: true, companyId: twentyCompany.id, customerPortalFieldSynced: true }
+    }
+
+    const fallback = await patchTwentyCompanyHome(twentyCompany.id, {
+      paradigmKarteSummary: { markdown: summary },
+    })
+    if (!fallback.ok) throw new Error(fallback.error)
+    return { ok: true, configured: true, companyId: twentyCompany.id, customerPortalFieldSynced: false }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Twenty customer handoff sync failed"
+    console.error("[twenty-sync] customer handoff failed:", error)
+    return { ok: false, configured: true, error: message }
+  }
 }
 
 function closeDateIso(): string {

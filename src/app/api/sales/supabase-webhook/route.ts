@@ -27,6 +27,7 @@ import {
 } from "@/lib/sales/sync"
 import { enqueueCompanyEnrichment, triggerEnrichmentRunner } from "@/lib/sales/enrichment-jobs"
 import { resolveNotionDbId } from "@/lib/sales/notion-apply"
+import { runCustomerSuccessHandoff } from "@/lib/sales/customer-handoff"
 import type { SalesCompany, SalesCustomer, SalesDelivery, Region } from "@/lib/sales/types"
 
 export const runtime = "nodejs"
@@ -41,6 +42,14 @@ interface SupabaseWebhookPayload {
   schema?: string
   record?: Record<string, unknown> | null
   old_record?: Record<string, unknown> | null
+}
+
+function stringArrayFromMeta(record: Record<string, unknown>, key: string): string[] | null {
+  const meta = record.meta
+  if (!meta || typeof meta !== "object" || Array.isArray(meta)) return null
+  const value = (meta as Record<string, unknown>)[key]
+  if (!Array.isArray(value)) return null
+  return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
 }
 
 /** constant-time 比較 (timing attack 防止) */
@@ -102,6 +111,20 @@ export async function POST(req: NextRequest) {
   try {
     switch (table) {
       case "sales_companies": {
+        if (
+          type === "UPDATE" &&
+          typeof record.id === "string" &&
+          record.deal_stage === "成約" &&
+          payload.old_record?.deal_stage !== "成約"
+        ) {
+          await runCustomerSuccessHandoff({
+            companyId: record.id,
+            source: "supabase_webhook",
+            contractProducts: stringArrayFromMeta(record, "recommended_products"),
+            assignedTo: typeof record.assigned_to === "string" ? record.assigned_to : null,
+            meta: { trigger: "deal_stage_closed_won" },
+          })
+        }
         if (type === "INSERT" && typeof record.id === "string") {
           const queued = await enqueueCompanyEnrichment({
             companyId: record.id,

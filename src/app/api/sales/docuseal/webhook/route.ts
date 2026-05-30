@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { authorizeWebhookRequest } from "@/lib/admin-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { runCustomerSuccessHandoff } from "@/lib/sales/customer-handoff"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -109,6 +110,27 @@ export async function POST(req: NextRequest) {
   if (error) {
     console.error("[docuseal-webhook] upsert failed:", error.message)
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+  }
+
+  const companyId = text(metadata, ["companyId", "company_id"])
+  const productCode = text(metadata, ["productCode", "product_code"])
+  if (status === "signed" && companyId) {
+    const handoff = await runCustomerSuccessHandoff({
+      companyId,
+      source: "docuseal",
+      contractName: row.contract_name,
+      contractProducts: productCode ? [productCode] : null,
+      contractAmountYen: Number(text(metadata, ["amountYen", "amount_yen"]) ?? NaN),
+      contractStatus: "active",
+      docusealSubmissionId: externalId,
+      docusealUrl: row.pdf_r2_url,
+      notionPageUrl: text(metadata, ["notionPageUrl", "notion_page_url"]),
+      calComUrl: text(metadata, ["calComUrl", "cal_com_url"]),
+      meta: { docuseal_status: rawStatus },
+    })
+    if (!handoff.ok) {
+      console.warn("[docuseal-webhook] customer handoff failed:", handoff.error)
+    }
   }
 
   return NextResponse.json({ ok: true, provider: "docuseal", submission_id: externalId, status })

@@ -6,6 +6,7 @@ set
   label = case name
     when 'paradigmReportUrl' then '診断レポートURL'
     when 'paradigmFormUrl' then 'フォームURL'
+    when 'paradigmCustomerPortalUrl' then '顧客共有Notion URL'
     when 'paradigmRecommendedProducts' then '推奨商材'
     when 'paradigmKarteScore' then 'カルテスコア'
     when 'paradigmSourceCoverage' then 'データ取得率'
@@ -15,6 +16,7 @@ set
   description = case name
     when 'paradigmReportUrl' then 'Paradigm診断レポートの公開URL'
     when 'paradigmFormUrl' then '検出した問い合わせフォームURL'
+    when 'paradigmCustomerPortalUrl' then '成約後に顧客と共有するNotionプロジェクトページURL'
     when 'paradigmRecommendedProducts' then 'Supabase企業カルテから推定した提案商材'
     when 'paradigmKarteScore' then '痛み可視化とデータ充足度から算出した営業優先度'
     when 'paradigmSourceCoverage' then '無料API/OSSデータソースの取得率'
@@ -26,6 +28,7 @@ set
 where name in (
   'paradigmReportUrl',
   'paradigmFormUrl',
+  'paradigmCustomerPortalUrl',
   'paradigmRecommendedProducts',
   'paradigmKarteScore',
   'paradigmSourceCoverage',

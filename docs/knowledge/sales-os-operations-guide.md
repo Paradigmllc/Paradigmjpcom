@@ -123,3 +123,25 @@ node scripts/sales-os-no-login-deploy.mjs
 ```
 
 このスクリプトは、Supabase商品マスター反映、Coolifyデプロイ、デプロイ完了待ち、主要URLのHTTP確認まで行います。秘密情報は出力しません。
+## 種別
+
+営業OSで分けて管理する種別は次の通りです。
+
+- 商材種別: `jp_web_production`、`jp_dx_package`、`global_jaas`、`global_video_subscription`
+- テンプレ種別: `website_diagnostic`、`outreach`、`japan_entry`、`video_subscription` など
+- AIチーム指示種別: `status_report`、`run_enrichment`、`run_outreach_dry_run`、`prepare_assets`、`sync_twenty`、`manual_review`
+- オペレーターキュー種別: `cleanse`、`call`、`form_send`、`follow_up`、`crm_update`、`meeting_prep`、`analysis`
+- 成約後ハンドオフ種別: `manual`、`supabase_webhook`、`docuseal`、`stripe`、`twenty`、`telegram`、`n8n`
+
+## 成約後パイプライン
+
+成約は Twenty の商談だけで完結させず、Supabase を起点に顧客運用へ切り替えます。
+
+1. `sales_companies.deal_stage = 成約`、Docuseal signed webhook、または `POST /api/sales/customer-success/handoff` が入口になる。
+2. `runCustomerSuccessHandoff()` が `sales_customers` を作成または更新する。
+3. `sales_contracts` に契約を作成または Docuseal submission ID で upsert する。
+4. Notion 顧客DBに顧客共有ページを作成し、`sales_customers.notion_page_id` と `meta.customer_success.notion_page_url` に保存する。
+5. Twenty 企業HOMEへ、顧客共有Notion URL、契約名、契約ステータス、Cal.com URL、Docuseal URLを投影する。
+6. `sales_activity_log` と `sales_sync_logs` にハンドオフ履歴を残す。
+
+Twenty 側に `paradigmCustomerPortalUrl` カスタム項目がある場合はそこへ URL を入れます。項目がまだ無い環境では、HOME の企業カルテ要約に URL を追記する fallback にします。

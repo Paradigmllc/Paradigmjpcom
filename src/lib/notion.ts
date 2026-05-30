@@ -89,6 +89,11 @@ export async function notionCreatePage(
   })
 }
 
+/** Notion page URL helper. Notion accepts both dashed and undashed ids in URLs. */
+export function notionPageUrl(pageId: string): string {
+  return `https://www.notion.so/${pageId.replace(/-/g, "")}`
+}
+
 /** Notion page の properties を更新 (Supabase → Notion 一方向同期) */
 export async function notionUpdatePage(
   pageId: string,
