@@ -1,5 +1,7 @@
 ## Codex Update - 2026-05-30 Sales OS Completion Pass
 
+- [x] Follow-up audit fixed the Twenty HOME field label bug shown as `?????URL`: the reusable `scripts/twenty-karte-home-fields.sql` patch had stale mojibake text, so it was rewritten, applied to the live Twenty DB via SCP/psql, and Twenty server/worker were restarted to clear metadata cache.
+- [x] Full regression audit found and fixed one test regression in `HttpFormProvider` detail text; full Vitest now passes (17 files / 110 tests).
 - [x] Rebuilt form discovery with readable Japanese/global contact-path candidates, sitemap/anchor scoring, form-signature checks, and logged fail-soft handling.
 - [x] Cleaned outreach provider result text and added a unit test for contact-form discovery.
 - [x] Added authenticated `POST /api/sales/twenty/pull` so Twenty company HOME fields can be pulled back into Supabase SSOT without reintroducing Notion as a source of truth.

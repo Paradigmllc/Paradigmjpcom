@@ -21,6 +21,7 @@ set
     when 'paradigmKarteSummary' then '営業担当がHOMEで読むための短い企業カルテ要約'
     else description
   end,
+  "isLabelSyncedWithName" = false,
   "updatedAt" = now()
 where name in (
   'paradigmReportUrl',

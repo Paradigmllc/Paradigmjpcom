@@ -94,7 +94,7 @@ export class HttpFormProvider implements BrowserProvider {
       return {
         ok: true,
         outcome: "uncertain",
-        detail: "server-rendered form was not detected; browser worker or manual handling is required",
+        detail: "SPA or client-rendered form suspected; browser worker or manual handling is required",
       }
     }
 
