@@ -2,14 +2,9 @@
 /**
  * Run the Sales OS release path without logging in to Coolify UI.
  *
- * Steps:
- * 1. Load Coolify API token from env or local MCP backup.
- * 2. Read production app envs from Coolify.
- * 3. Apply the readable Sales OS product master to Supabase/PostgREST.
- * 4. Trigger and poll the Coolify deployment.
- * 5. Smoke-check the public URLs.
- *
- * Secrets are never printed.
+ * Secrets are read from environment variables or local MCP backups and are
+ * never printed. A deployment webhook HTTP 200 only means queued; this script
+ * also polls deployment state and smoke-checks public URLs.
  */
 
 import fs from "node:fs"
@@ -17,7 +12,13 @@ import os from "node:os"
 import path from "node:path"
 import { spawnSync } from "node:child_process"
 
-const APP_UUID = process.env.PARADIGM_APP_UUID || "i12am4vvcbggefnqdizhnv9a"
+function envValue(name, fallback = null) {
+  const value = process.env[name]
+  if (typeof value === "string" && value.trim().length > 0) return value.trim()
+  return fallback
+}
+
+const APP_UUID = envValue("PARADIGM_APP_UUID", "i12am4vvcbggefnqdizhnv9a")
 const DEFAULT_COOLIFY_URL = "https://coolify.appexx.me"
 const DRY = process.argv.includes("--dry")
 const SKIP_DEPLOY = process.argv.includes("--skip-deploy")
@@ -108,11 +109,11 @@ function findCoolifyFromMcpBackup() {
 }
 
 function getCoolifyAuth() {
-  const token = process.env.COOLIFY_API_TOKEN
+  const token = envValue("COOLIFY_API_TOKEN")
   if (token) {
     return {
       token,
-      baseUrl: process.env.COOLIFY_API_URL || DEFAULT_COOLIFY_URL,
+      baseUrl: envValue("COOLIFY_API_URL", DEFAULT_COOLIFY_URL),
     }
   }
   const backup = findCoolifyFromMcpBackup()
@@ -177,9 +178,7 @@ async function applySalesProducts(envs) {
   if (!verify.ok) throw new Error(`Sales product verify failed: HTTP ${verify.status}`)
   const names = new Set(json.map((row) => row.display_name))
   for (const product of PRODUCTS) {
-    if (!names.has(product.display_name)) {
-      throw new Error(`Sales product verify missed ${product.display_name}`)
-    }
+    if (!names.has(product.display_name)) throw new Error(`Sales product verify missed ${product.display_name}`)
   }
   return json.length
 }
@@ -201,7 +200,7 @@ async function applySqlMigration(envs, fileName, label) {
   if (res.ok) return `${label}: applied`
   const text = await res.text()
   if (res.status === 404 || /function.*exec_sql|schema cache/i.test(text)) {
-    return `${label}: exec_sql unavailable, relying on app fallback until DB migration is applied`
+    return `${label}: exec_sql unavailable; apply SQL through the DB channel`
   }
   if (/already exists|duplicate/i.test(text)) return `${label}: already applied`
   throw new Error(`${label} failed: HTTP ${res.status} ${text.slice(0, 180)}`)
@@ -227,6 +226,10 @@ async function applyVideoPipelineMigration(envs) {
   return applySqlMigration(envs, "migration_026_sales_video_pipeline.sql", "Video pipeline migration")
 }
 
+async function applyVideoStrategyMigration(envs) {
+  return applySqlMigration(envs, "migration_027_sales_video_segments_loss_guard.sql", "Video strategy migration")
+}
+
 function applyContentTemplates(envs) {
   const { url, key } = salesSupabase(envs)
   const result = spawnSync(process.execPath, ["scripts/seed-sales-content-templates.mjs"], {
@@ -238,9 +241,7 @@ function applyContentTemplates(envs) {
     },
     encoding: "utf8",
   })
-  if (result.status === 0) {
-    return result.stdout.trim() || "Seeded sales_content_templates"
-  }
+  if (result.status === 0) return result.stdout.trim() || "Seeded sales_content_templates"
 
   const message = `${result.stderr || result.stdout || ""}`.trim()
   if (/sales_content_templates|schema cache|relation|does not exist|404/i.test(message)) {
@@ -286,9 +287,10 @@ async function main() {
     console.log(`Sales products: verified ${count}`)
     console.log(await applyContentTemplateMigration(envs))
     console.log(await applyAgentTeamMigration(envs))
-  console.log(await applyIntegrationStatusMigration(envs))
-  console.log(await applyRuntimeHardeningMigration(envs))
-  console.log(await applyVideoPipelineMigration(envs))
+    console.log(await applyIntegrationStatusMigration(envs))
+    console.log(await applyRuntimeHardeningMigration(envs))
+    console.log(await applyVideoPipelineMigration(envs))
+    console.log(await applyVideoStrategyMigration(envs))
     console.log(applyContentTemplates(envs))
   } else {
     console.log("Dry run: skipped Supabase product upsert")
@@ -302,12 +304,7 @@ async function main() {
     console.log("Dry/skip mode: skipped Coolify deploy")
   }
 
-  const checks = [
-    "https://paradigmjp.com/ja/admin/sales",
-    "https://paradigmjp.com/ja",
-    "https://twenty.paradigmjp.com",
-  ]
-  for (const url of checks) {
+  for (const url of ["https://paradigmjp.com/ja/admin/sales", "https://paradigmjp.com/ja", "https://twenty.paradigmjp.com"]) {
     const status = await smoke(url)
     console.log(`Smoke OK: ${url} HTTP ${status}`)
   }

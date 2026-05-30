@@ -94,7 +94,7 @@ export function SalesCommandCenter({ data }: Props) {
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-500">
               Supabase OSSをSSOTに、CSV投入、企業カルテ生成、診断レポート、Twenty CRM、NocoDB、Metabase、n8n、
-              フォーム営業、動画制作パイプラインを一画面で管理します。
+              フォーム営業、動画制作ラインを一画面で管理します。
             </p>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:min-w-[420px]">

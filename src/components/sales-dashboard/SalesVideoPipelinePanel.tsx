@@ -11,11 +11,26 @@ import {
   Rocket,
   Send,
   ShieldCheck,
+  SlidersHorizontal,
   WandSparkles,
 } from "lucide-react"
 import { toast } from "sonner"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
-import type { SalesVideoJob, VideoJobStatus } from "@/lib/sales/video-pipeline"
+import type {
+  SalesVideoJob,
+  VideoJobStatus,
+  VideoLossInputs,
+  VideoOfferAngle,
+  VideoTargetSegment,
+} from "@/lib/sales/video-pipeline"
+import {
+  VIDEO_OFFER_ANGLES,
+  VIDEO_OFFER_ANGLE_LABELS,
+  VIDEO_TARGET_SEGMENTS,
+  VIDEO_SEGMENT_LABELS,
+  buildVideoLossSimulation,
+  defaultVideoLossInputs,
+} from "@/lib/sales/video-strategy"
 import { formatDate, statusTone } from "./SalesCommandPanels"
 
 type ApiListResponse = SalesDashboardData["videoPipeline"] & { ok?: boolean; error?: string }
@@ -55,6 +70,10 @@ const STATUS_LABELS: Record<VideoJobStatus, string> = {
   cancelled: "取消",
 }
 
+function formatUsd(value: number): string {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value)
+}
+
 function boolTone(value: boolean): string {
   return value ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-800"
 }
@@ -63,17 +82,7 @@ function JobStatusBadge({ status }: { status: VideoJobStatus }) {
   return <span className={`rounded-full px-2 py-0.5 text-[11px] ${statusTone(status)}`}>{STATUS_LABELS[status]}</span>
 }
 
-function ConfigCard({
-  label,
-  ready,
-  note,
-  url,
-}: {
-  label: string
-  ready: boolean
-  note: string
-  url?: string | null
-}) {
+function ConfigCard({ label, ready, note, url }: { label: string; ready: boolean; note: string; url?: string | null }) {
   return (
     <div className="rounded-lg border border-zinc-200 bg-white p-4">
       <div className="flex items-center justify-between gap-3">
@@ -82,12 +91,7 @@ function ConfigCard({
       </div>
       <p className="mt-2 text-xs leading-5 text-zinc-600">{note}</p>
       {url ? (
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-zinc-950 hover:underline"
-        >
+        <a href={url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-zinc-950 hover:underline">
           開く <ExternalLink size={12} aria-hidden />
         </a>
       ) : null}
@@ -95,9 +99,36 @@ function ConfigCard({
   )
 }
 
+function NumberInput({
+  label,
+  value,
+  onChange,
+  suffix,
+}: {
+  label: string
+  value: number
+  onChange: (value: number) => void
+  suffix?: string
+}) {
+  return (
+    <label className="grid gap-1 text-xs font-medium text-zinc-600">
+      <span>{label}</span>
+      <div className="flex h-10 items-center rounded-md border border-zinc-200 bg-white px-2 focus-within:border-zinc-500">
+        <input
+          type="number"
+          min={0}
+          value={value}
+          onChange={(event) => onChange(Number(event.target.value))}
+          className="min-w-0 flex-1 bg-transparent text-sm text-zinc-950 outline-none"
+        />
+        {suffix ? <span className="ml-2 text-xs text-zinc-500">{suffix}</span> : null}
+      </div>
+    </label>
+  )
+}
+
 function stageLabel(stage: string): string {
-  if (!stage) return "-"
-  return stage.replaceAll("_", " ")
+  return stage ? stage.replaceAll("_", " ") : "-"
 }
 
 export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) {
@@ -107,9 +138,17 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
   const [jobType, setJobType] = useState<"sales_video" | "subscription_video">("sales_video")
   const [platform, setPlatform] = useState<(typeof PLATFORM_OPTIONS)[number][0]>("sales_deck_embed")
   const [renderer, setRenderer] = useState<(typeof RENDER_OPTIONS)[number][0]>("hyperframes")
+  const [targetSegment, setTargetSegment] = useState<VideoTargetSegment>("agency_white_label")
+  const [offerAngle, setOfferAngle] = useState<VideoOfferAngle>("lost_revenue")
+  const [lossInputs, setLossInputs] = useState<Required<VideoLossInputs>>(defaultVideoLossInputs("agency_white_label"))
   const [priority, setPriority] = useState(60)
   const [busy, setBusy] = useState<string | null>(null)
   const [outputUrl, setOutputUrl] = useState("")
+
+  const lossSimulation = useMemo(
+    () => buildVideoLossSimulation({ segment: targetSegment, offerAngle, inputs: lossInputs }),
+    [targetSegment, offerAngle, lossInputs],
+  )
 
   const jobStats = useMemo(() => {
     const active = jobs.filter((job) => ["queued", "routing", "waiting_render", "rendering"].includes(job.status)).length
@@ -117,6 +156,20 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
     const completed = jobs.filter((job) => job.status === "completed").length
     return { active, review, completed }
   }, [jobs])
+  const statCards: Array<{ label: string; value: number; icon: typeof Play }> = [
+    { label: "進行中", value: jobStats.active, icon: Play },
+    { label: "承認待ち", value: jobStats.review, icon: ShieldCheck },
+    { label: "完了", value: jobStats.completed, icon: CheckCircle2 },
+  ]
+
+  function changeSegment(value: VideoTargetSegment) {
+    setTargetSegment(value)
+    setLossInputs(defaultVideoLossInputs(value))
+  }
+
+  function updateLossInput(key: keyof Required<VideoLossInputs>, value: number) {
+    setLossInputs((current) => ({ ...current, [key]: Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0 }))
+  }
 
   async function refreshJobs() {
     setBusy("refresh")
@@ -150,6 +203,9 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
           job_type: jobType,
           target_platform: platform,
           render_engine: renderer,
+          target_segment: targetSegment,
+          offer_angle: offerAngle,
+          loss_inputs: lossInputs,
           priority,
         }),
       })
@@ -186,18 +242,17 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
   }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[380px_minmax(0,1fr)]">
+    <div className="grid gap-4 xl:grid-cols-[420px_minmax(0,1fr)]">
       <section className="rounded-lg border border-zinc-200 bg-white p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500">
               <Clapperboard size={15} aria-hidden />
-              n8nは交通整理、レンダーは専門エンジン
+              n8nは交通整理、レンダーは専用エンジン
             </div>
             <h2 className="mt-2 text-lg font-semibold text-zinc-950">動画制作ライン</h2>
             <p className="mt-2 text-xs leading-6 text-zinc-600">
-              営業動画はHyperFrames/Remotion中心、動画サブスクはOpenMontage + ComfyUI + Vast.ai + R2まで使います。
-              初回納品と高コストGPU起動は人間承認を挟みます。
+              セグメント、訴求軸、損失仮説を先に固定し、Difyが最適テンプレと文面を選びます。法改正、罰金額、市場統計、CAGRは一次情報URLが無い限り顧客向けに断定しません。
             </p>
           </div>
           <button
@@ -214,11 +269,7 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
         <div className="mt-4 grid gap-3">
           <label className="grid gap-1 text-xs font-medium text-zinc-600">
             <span>対象企業</span>
-            <select
-              value={selectedCompany}
-              onChange={(event) => setSelectedCompany(event.target.value)}
-              className="h-10 rounded-md border border-zinc-200 bg-white px-2 text-sm text-zinc-950 outline-none focus:border-zinc-500"
-            >
+            <select value={selectedCompany} onChange={(event) => setSelectedCompany(event.target.value)} className="h-10 rounded-md border border-zinc-200 bg-white px-2 text-sm text-zinc-950 outline-none focus:border-zinc-500">
               {data.companies.map((company) => (
                 <option key={company.id} value={company.id}>
                   {company.companyName} / {company.domain}
@@ -241,53 +292,71 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
           </div>
 
           <label className="grid gap-1 text-xs font-medium text-zinc-600">
-            <span>用途</span>
-            <select
-              value={platform}
-              onChange={(event) => setPlatform(event.target.value as (typeof PLATFORM_OPTIONS)[number][0])}
-              className="h-10 rounded-md border border-zinc-200 bg-white px-2 text-sm text-zinc-950 outline-none focus:border-zinc-500"
-            >
-              {PLATFORM_OPTIONS.map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
+            <span>セグメント別テンプレ</span>
+            <select value={targetSegment} onChange={(event) => changeSegment(event.target.value as VideoTargetSegment)} className="h-10 rounded-md border border-zinc-200 bg-white px-2 text-sm text-zinc-950 outline-none focus:border-zinc-500">
+              {VIDEO_TARGET_SEGMENTS.map((segment) => (
+                <option key={segment} value={segment}>
+                  {VIDEO_SEGMENT_LABELS[segment]}
                 </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="grid gap-1 text-xs font-medium text-zinc-600">
+            <span>訴求軸</span>
+            <select value={offerAngle} onChange={(event) => setOfferAngle(event.target.value as VideoOfferAngle)} className="h-10 rounded-md border border-zinc-200 bg-white px-2 text-sm text-zinc-950 outline-none focus:border-zinc-500">
+              {VIDEO_OFFER_ANGLES.map((angle) => (
+                <option key={angle} value={angle}>
+                  {VIDEO_OFFER_ANGLE_LABELS[angle]}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+            <div className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
+              <SlidersHorizontal size={15} aria-hidden />
+              損失シミュレータ
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <NumberInput label="月間失注件数" value={lossInputs.monthlyRejectedProjects} onChange={(value) => updateLossInput("monthlyRejectedProjects", value)} suffix="件" />
+              <NumberInput label="平均案件単価" value={lossInputs.averageProjectValueUsd} onChange={(value) => updateLossInput("averageProjectValueUsd", value)} suffix="USD" />
+              <NumberInput label="月間動画予算" value={lossInputs.monthlyVideoBudgetUsd} onChange={(value) => updateLossInput("monthlyVideoBudgetUsd", value)} suffix="USD" />
+              <NumberInput label="現動画本数" value={lossInputs.currentVideosPerMonth} onChange={(value) => updateLossInput("currentVideosPerMonth", value)} suffix="本/月" />
+              <NumberInput label="競合動画本数" value={lossInputs.competitorVideosPerMonth} onChange={(value) => updateLossInput("competitorVideosPerMonth", value)} suffix="本/月" />
+              <NumberInput label="粗利率" value={lossInputs.grossMarginPercent} onChange={(value) => updateLossInput("grossMarginPercent", value)} suffix="%" />
+            </div>
+            <div className="mt-3 rounded-md border border-zinc-200 bg-white p-3">
+              <div className="text-xs text-zinc-500">推定年間機会損失</div>
+              <div className="mt-1 text-2xl font-semibold text-zinc-950">{formatUsd(lossSimulation.annual_loss_usd)}</div>
+              <p className="mt-2 text-xs leading-5 text-zinc-600">{lossSimulation.customer_safe_summary_ja}</p>
+            </div>
+          </div>
+
+          <label className="grid gap-1 text-xs font-medium text-zinc-600">
+            <span>用途</span>
+            <select value={platform} onChange={(event) => setPlatform(event.target.value as (typeof PLATFORM_OPTIONS)[number][0])} className="h-10 rounded-md border border-zinc-200 bg-white px-2 text-sm text-zinc-950 outline-none focus:border-zinc-500">
+              {PLATFORM_OPTIONS.map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
               ))}
             </select>
           </label>
 
           <label className="grid gap-1 text-xs font-medium text-zinc-600">
             <span>レンダー系</span>
-            <select
-              value={renderer}
-              onChange={(event) => setRenderer(event.target.value as (typeof RENDER_OPTIONS)[number][0])}
-              className="h-10 rounded-md border border-zinc-200 bg-white px-2 text-sm text-zinc-950 outline-none focus:border-zinc-500"
-            >
+            <select value={renderer} onChange={(event) => setRenderer(event.target.value as (typeof RENDER_OPTIONS)[number][0])} className="h-10 rounded-md border border-zinc-200 bg-white px-2 text-sm text-zinc-950 outline-none focus:border-zinc-500">
               {RENDER_OPTIONS.map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
+                <option key={value} value={value}>{label}</option>
               ))}
             </select>
           </label>
 
           <label className="grid gap-1 text-xs font-medium text-zinc-600">
             <span>優先度 {priority}</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={priority}
-              onChange={(event) => setPriority(Number(event.target.value))}
-              className="w-full accent-zinc-950"
-            />
+            <input type="range" min={0} max={100} value={priority} onChange={(event) => setPriority(Number(event.target.value))} className="w-full accent-zinc-950" />
           </label>
 
-          <button
-            type="button"
-            onClick={() => void createJob()}
-            disabled={busy === "create" || !selectedCompany}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-zinc-950 px-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-          >
+          <button type="button" onClick={() => void createJob()} disabled={busy === "create" || !selectedCompany} className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-zinc-950 px-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">
             <Rocket size={16} aria-hidden />
             制作ジョブを作成
           </button>
@@ -296,27 +365,15 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
 
       <section className="grid gap-4">
         <div className="grid gap-3 md:grid-cols-3">
-          <div className="rounded-lg border border-zinc-200 bg-white p-4">
-            <div className="flex items-center gap-2 text-xs text-zinc-500">
-              <Play size={14} aria-hidden />
-              進行中
+          {statCards.map(({ label, value, icon: Icon }) => (
+            <div key={label} className="rounded-lg border border-zinc-200 bg-white p-4">
+              <div className="flex items-center gap-2 text-xs text-zinc-500">
+                <Icon size={14} aria-hidden />
+                {label}
+              </div>
+              <div className="mt-2 text-2xl font-semibold text-zinc-950">{value}</div>
             </div>
-            <div className="mt-2 text-2xl font-semibold text-zinc-950">{jobStats.active}</div>
-          </div>
-          <div className="rounded-lg border border-zinc-200 bg-white p-4">
-            <div className="flex items-center gap-2 text-xs text-zinc-500">
-              <ShieldCheck size={14} aria-hidden />
-              承認待ち
-            </div>
-            <div className="mt-2 text-2xl font-semibold text-zinc-950">{jobStats.review}</div>
-          </div>
-          <div className="rounded-lg border border-zinc-200 bg-white p-4">
-            <div className="flex items-center gap-2 text-xs text-zinc-500">
-              <CheckCircle2 size={14} aria-hidden />
-              完了
-            </div>
-            <div className="mt-2 text-2xl font-semibold text-zinc-950">{jobStats.completed}</div>
-          </div>
+          ))}
         </div>
 
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -355,19 +412,14 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
             </div>
             <label className="grid gap-1 text-xs font-medium text-zinc-600 md:w-80">
               <span>完成URL / プレビューURL</span>
-              <input
-                value={outputUrl}
-                onChange={(event) => setOutputUrl(event.target.value)}
-                placeholder="https://..."
-                className="h-10 rounded-md border border-zinc-200 px-3 text-sm text-zinc-950 outline-none focus:border-zinc-500"
-              />
+              <input value={outputUrl} onChange={(event) => setOutputUrl(event.target.value)} placeholder="https://..." className="h-10 rounded-md border border-zinc-200 px-3 text-sm text-zinc-950 outline-none focus:border-zinc-500" />
             </label>
           </div>
 
           <div className="mt-4 grid gap-3">
             {jobs.length === 0 ? (
               <div className="rounded-lg border border-dashed border-zinc-200 p-6 text-sm text-zinc-500">
-                まだ動画ジョブはありません。左側で企業と用途を選び、制作ジョブを作成してください。
+                まだ動画ジョブがありません。左側で企業、セグメント、損失仮説を選んで制作ジョブを作成してください。
               </div>
             ) : (
               jobs.map((job) => (
@@ -382,53 +434,33 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
                       <p className="mt-2 text-xs text-zinc-600">
                         {job.sales_companies?.company_name ?? "企業未紐付け"} / {job.sales_companies?.domain ?? "-"} / {stageLabel(job.orchestration_stage)}
                       </p>
-                      <p className="mt-1 text-xs text-zinc-500">作成 {formatDate(job.created_at)} / 更新 {formatDate(job.updated_at)}</p>
+                      <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+                        <span className="rounded-full bg-sky-50 px-2 py-0.5 text-sky-700">{VIDEO_SEGMENT_LABELS[job.target_segment] ?? job.target_segment}</span>
+                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700">{VIDEO_OFFER_ANGLE_LABELS[job.offer_angle] ?? job.offer_angle}</span>
+                        <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-zinc-700">{formatUsd(job.loss_simulation?.annual_loss_usd ?? 0)} / 年</span>
+                      </div>
+                      <p className="mt-2 text-xs text-zinc-500">作成 {formatDate(job.created_at)} / 更新 {formatDate(job.updated_at)}</p>
                       {job.error_message ? <p className="mt-2 text-xs text-rose-600">{job.error_message}</p> : null}
                       {job.preview_url || job.r2_output_url ? (
-                        <a
-                          href={job.preview_url ?? job.r2_output_url ?? "#"}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-zinc-950 hover:underline"
-                        >
+                        <a href={job.preview_url ?? job.r2_output_url ?? "#"} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-zinc-950 hover:underline">
                           成果物を開く <ExternalLink size={12} aria-hidden />
                         </a>
                       ) : null}
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => void runAction(job.id, "dispatch")}
-                        disabled={busy === `dispatch:${job.id}` || ["completed", "cancelled"].includes(job.status)}
-                        className="inline-flex h-9 items-center gap-1 rounded-md border border-zinc-200 px-3 text-xs font-semibold text-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
+                      <button type="button" onClick={() => void runAction(job.id, "dispatch")} disabled={busy === `dispatch:${job.id}` || ["completed", "cancelled"].includes(job.status)} className="inline-flex h-9 items-center gap-1 rounded-md border border-zinc-200 px-3 text-xs font-semibold text-zinc-700 disabled:cursor-not-allowed disabled:opacity-50">
                         <Send size={14} aria-hidden />
                         n8n投入
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => void runAction(job.id, "approve_render")}
-                        disabled={busy === `approve_render:${job.id}` || job.status === "completed"}
-                        className="inline-flex h-9 items-center gap-1 rounded-md border border-zinc-200 px-3 text-xs font-semibold text-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
+                      <button type="button" onClick={() => void runAction(job.id, "approve_render")} disabled={busy === `approve_render:${job.id}` || job.status === "completed"} className="inline-flex h-9 items-center gap-1 rounded-md border border-zinc-200 px-3 text-xs font-semibold text-zinc-700 disabled:cursor-not-allowed disabled:opacity-50">
                         <ShieldCheck size={14} aria-hidden />
                         承認
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => void runAction(job.id, "complete")}
-                        disabled={busy === `complete:${job.id}` || !outputUrl.trim()}
-                        className="inline-flex h-9 items-center gap-1 rounded-md bg-zinc-950 px-3 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-                      >
+                      <button type="button" onClick={() => void runAction(job.id, "complete")} disabled={busy === `complete:${job.id}` || !outputUrl.trim()} className="inline-flex h-9 items-center gap-1 rounded-md bg-zinc-950 px-3 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">
                         <CheckCircle2 size={14} aria-hidden />
                         完了
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => void runAction(job.id, "request_revision")}
-                        disabled={busy === `request_revision:${job.id}` || job.status === "completed"}
-                        className="inline-flex h-9 items-center rounded-md border border-zinc-200 px-3 text-xs font-semibold text-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
+                      <button type="button" onClick={() => void runAction(job.id, "request_revision")} disabled={busy === `request_revision:${job.id}` || job.status === "completed"} className="inline-flex h-9 items-center rounded-md border border-zinc-200 px-3 text-xs font-semibold text-zinc-700 disabled:cursor-not-allowed disabled:opacity-50">
                         修正
                       </button>
                     </div>

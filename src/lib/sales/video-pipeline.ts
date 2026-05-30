@@ -3,7 +3,21 @@ import { findCompanyByDomain, findCompanyById, findCompanyBySlug } from "./compa
 import { fetchDiagnosticReport } from "./diagnostic"
 import { labelForIndustry, themeForIndustry } from "./render-quality"
 import { INDUSTRIES, type Industry } from "./types"
+import {
+  VIDEO_PIPELINE_STAGES,
+  buildVideoClaimGuard,
+  buildVideoLossSimulation,
+  isVideoOfferAngle,
+  isVideoTargetSegment,
+  type VideoClaimGuard,
+  type VideoLossInputs,
+  type VideoLossSimulation,
+  type VideoOfferAngle,
+  type VideoTargetSegment,
+} from "./video-strategy"
 
+export { VIDEO_PIPELINE_STAGES }
+export type { VideoClaimGuard, VideoLossInputs, VideoLossSimulation, VideoOfferAngle, VideoTargetSegment }
 export type VideoJobType = "sales_video" | "subscription_video"
 export type VideoJobStatus =
   | "draft"
@@ -34,6 +48,8 @@ export interface SalesVideoJob {
   locale: string
   target_platform: VideoTargetPlatform
   render_engine: VideoRenderEngine
+  target_segment: VideoTargetSegment
+  offer_angle: VideoOfferAngle
   orchestration_stage: string
   n8n_workflow_url: string | null
   n8n_execution_id: string | null
@@ -42,6 +58,8 @@ export interface SalesVideoJob {
   preview_url: string | null
   storyboard: Record<string, unknown>
   production_plan: Record<string, unknown>
+  loss_simulation: VideoLossSimulation
+  claim_guard: VideoClaimGuard
   input_assets: Record<string, unknown>
   render_outputs: Record<string, unknown>
   approvals: Record<string, unknown>
@@ -63,17 +81,6 @@ export interface VideoPipelineConfig {
   stages: Array<{ id: string; label: string; owner: string; gate: string }>
 }
 
-export const VIDEO_PIPELINE_STAGES = [
-  { id: "brief", label: "企画ブリーフ作成", owner: "Dify / DeepSeek", gate: "企業カルテと目的が揃っている" },
-  { id: "storyboard", label: "絵コンテ・字幕・CTA", owner: "Sales OS", gate: "誇張表現と未取得データを除外" },
-  { id: "asset_prompts", label: "ComfyUI素材指示", owner: "n8n -> ComfyUI", gate: "ブランド・業界・用途に合う" },
-  { id: "gpu_route", label: "Vast.ai GPU割当", owner: "n8n -> Vast.ai", gate: "月額動画サブスクのみ自動起動" },
-  { id: "render", label: "HyperFrames / Remotionレンダー", owner: "Renderer", gate: "営業動画は軽量レンダー優先" },
-  { id: "review", label: "Slack / Appsmith確認", owner: "Human", gate: "初回納品・契約前・危険表現は承認必須" },
-  { id: "delivery", label: "R2配信・Twenty記録", owner: "Sales OS", gate: "URLと納品ステータスをSSOTへ保存" },
-] as const
-
-
 const isUuid = (value: string): boolean =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
 
@@ -90,16 +97,19 @@ function normalizeIndustry(value: string | null | undefined): Industry | null {
   return typeof value === "string" && (INDUSTRIES as readonly string[]).includes(value) ? (value as Industry) : null
 }
 
-function buildReadablePipelineConfig(input: {
-  n8nUrl: string | null
-  comfyUrl: string | null
-  r2Base: string | null
-}): VideoPipelineConfig {
+function pipelineConfig(): VideoPipelineConfig {
+  const n8nBaseUrl = optionalEnv("N8N_BASE_URL")
+  const n8nUrl =
+    optionalEnv("N8N_VIDEO_PIPELINE_WEBHOOK_URL") ??
+    (n8nBaseUrl ? `${n8nBaseUrl.replace(/\/+$/, "")}/webhook/sales-video-pipeline` : null)
+  const comfyUrl = optionalEnv("COMFYUI_API_URL")
+  const r2Base = optionalEnv("CLOUDFLARE_R2_PUBLIC_BASE_URL") ?? optionalEnv("R2_PUBLIC_BASE_URL")
+
   return {
     n8n: {
-      ready: input.n8nUrl !== null && envReady("N8N_WEBHOOK_SECRET"),
-      url: input.n8nUrl,
-      note: input.n8nUrl ? "n8nへ動画ジョブを投入できます。" : "n8n未設定時はジョブ作成と手動コピーまで行います。",
+      ready: n8nUrl !== null && envReady("N8N_WEBHOOK_SECRET"),
+      url: n8nUrl,
+      note: n8nUrl ? "n8nへ動画ジョブを投入できます。" : "n8n未設定時はジョブ作成と手動コピーまで行います。",
     },
     dify: {
       ready: envReady(
@@ -112,11 +122,11 @@ function buildReadablePipelineConfig(input: {
         "DIFY_KARTE_TO_SALES_MATERIAL_KEY",
         "DIFY_TEMPLATE_PICKER_KEY",
       ),
-      note: "文面・構成・テンプレ判定はDify Cloudを優先します。",
+      note: "文面、構成、テンプレ判定はDify Cloudを優先します。未検証の断定は禁止です。",
     },
     comfyui: {
-      ready: input.comfyUrl !== null,
-      url: input.comfyUrl,
+      ready: comfyUrl !== null,
+      url: comfyUrl,
       note: "営業動画の背景素材と動画サブスク用の生成素材に使います。",
     },
     vast: {
@@ -129,8 +139,8 @@ function buildReadablePipelineConfig(input: {
       openmontage: envReady("OPENMONTAGE_API_URL"),
     },
     r2: {
-      ready: input.r2Base !== null,
-      publicBaseUrl: input.r2Base,
+      ready: r2Base !== null,
+      publicBaseUrl: r2Base,
       note: "完成MP4、字幕、サムネイル、素材を配信する置き場です。",
     },
     slack: {
@@ -139,16 +149,6 @@ function buildReadablePipelineConfig(input: {
     },
     stages: [...VIDEO_PIPELINE_STAGES],
   }
-}
-
-function pipelineConfig(): VideoPipelineConfig {
-  const n8nBaseUrl = optionalEnv("N8N_BASE_URL")
-  const n8nUrl =
-    optionalEnv("N8N_VIDEO_PIPELINE_WEBHOOK_URL") ??
-    (n8nBaseUrl ? `${n8nBaseUrl.replace(/\/+$/, "")}/webhook/sales-video-pipeline` : null)
-  const comfyUrl = optionalEnv("COMFYUI_API_URL")
-  const r2Base = optionalEnv("CLOUDFLARE_R2_PUBLIC_BASE_URL") ?? optionalEnv("R2_PUBLIC_BASE_URL")
-  return buildReadablePipelineConfig({ n8nUrl, comfyUrl, r2Base })
 }
 
 export function getVideoPipelineConfig(): VideoPipelineConfig {
@@ -177,21 +177,25 @@ function buildStoryboard(input: {
   totalLoss: string
   reportUrl: string | null
   demoUrl: string | null
-  industry: string | null
+  lossSimulation: VideoLossSimulation
+  claimGuard: VideoClaimGuard
 }): Record<string, unknown> {
   const spec = platformSpec(input.platform)
   const isJa = input.locale === "ja"
   return {
     format: spec,
     narrative: isJa
-      ? "問題を煽らず、公開データに基づいて改善余地と次の一手を提示する。"
-      : "Evidence-first, calm sales video with one clear next action.",
+      ? "公開データと推定値を分けて、危機感と次の一手を短く見せる営業動画。"
+      : "Evidence-first sales video that separates verified evidence from estimates.",
+    claim_guard: input.claimGuard,
+    loss_summary: input.lossSimulation,
     scenes: [
-      { id: "hook", seconds: 7, text: input.hook, visual: "現サイトのファーストビューと客観データを重ねる" },
-      { id: "evidence", seconds: 12, text: input.totalLoss, visual: "速度・技術・導線・信頼要素をカード化" },
-      { id: "demo", seconds: 16, text: input.demoUrl ? "改善後のデモを提示" : "改善後イメージを提示", visual: "Astroデモまたはワイヤーフレームを表示" },
-      { id: "offer", seconds: 14, text: input.jobType === "subscription_video" ? "継続動画納品の運用ラインを提示" : "Web/DX提案への接続", visual: "提案スコープと納品物" },
-      { id: "cta", seconds: 8, text: input.reportUrl ?? input.domain, visual: "レポートURL・予約CTA・担当者導線" },
+      { id: "hook", seconds: 7, text: input.hook, visual: "現サイト、商品、広告、競合比較のファーストビュー" },
+      { id: "evidence", seconds: 12, text: input.totalLoss, visual: "PageSpeed、技術スタック、フォーム導線、口コミなどの根拠カード" },
+      { id: "loss", seconds: 10, text: input.lossSimulation.customer_safe_summary_ja, visual: "損失シミュレータの年間推定値" },
+      { id: "demo", seconds: 16, text: input.demoUrl ? "改善後のデモを提示" : "改善後イメージを提示", visual: "Astroデモまたはワイヤーフレーム" },
+      { id: "offer", seconds: 14, text: input.jobType === "subscription_video" ? "継続動画納品ラインを提示" : "Web/DX提案への接続", visual: "提案スコープと納品物" },
+      { id: "cta", seconds: 8, text: input.reportUrl ?? input.domain, visual: "レポートURL、予約CTA、担当者導線" },
     ],
   }
 }
@@ -204,14 +208,16 @@ function buildProductionPlan(input: {
   jobType: VideoJobType
   renderEngine: VideoRenderEngine
   industry: string | null
+  lossSimulation: VideoLossSimulation
+  claimGuard: VideoClaimGuard
 }): Record<string, unknown> {
   const industry = normalizeIndustry(input.industry)
   const theme = themeForIndustry(industry)
   const industryLabel = labelForIndustry(industry, input.locale)
   const config = pipelineConfig()
   return {
-    version: "video-pipeline-v1",
-    architecture: "n8n coordinates, renderers render",
+    version: "video-pipeline-v2-segment-loss-guard",
+    architecture: "n8n coordinates; renderers render",
     job_intent: input.jobType === "subscription_video" ? "recurring_delivery" : "sales_enablement",
     company: { name: input.companyName, domain: input.domain, industry: industryLabel },
     renderer: {
@@ -221,11 +227,12 @@ function buildProductionPlan(input: {
     },
     n8n_steps: [
       "Load company karte from Supabase",
-      "Ask Dify Cloud to select template and generate narration",
+      "Ask Dify Cloud to select the segment template and generate narration",
+      "Reject unverified legal, penalty, market, CAGR, and benchmark claims unless primary_source_url exists",
       "Create ComfyUI prompts only when visual assets are needed",
-      "Start Vast.ai GPU only for subscription/heavy ComfyUI jobs",
-      "Send render payload to HyperFrames/Remotion/OpenMontage",
-      "Upload MP4/SRT/thumb/assets to R2",
+      "Start Vast.ai GPU only for subscription or heavy ComfyUI jobs",
+      "Send render payload to HyperFrames, Remotion, or OpenMontage",
+      "Upload MP4, SRT, thumbnail, and assets to R2",
       "Post Slack review card and write status back to Supabase",
       "Update Twenty company HOME fields after approval",
     ],
@@ -234,7 +241,9 @@ function buildProductionPlan(input: {
       no_live_gpu_without_cost_context: true,
       no_unverified_claims: true,
       skip_renderer_if_required_api_missing: true,
+      claim_guard: input.claimGuard,
     },
+    loss_simulation: input.lossSimulation,
     theme: {
       accent: theme.accent,
       accentDark: theme.accentDark,
@@ -279,6 +288,9 @@ export async function createVideoJob(input: {
   jobType: VideoJobType
   targetPlatform: VideoTargetPlatform
   renderEngine: VideoRenderEngine
+  targetSegment?: VideoTargetSegment
+  offerAngle?: VideoOfferAngle
+  lossInputs?: VideoLossInputs
   priority?: number
   requestedBy?: string
 }): Promise<{ ok: boolean; job?: SalesVideoJob; config: VideoPipelineConfig; error?: string }> {
@@ -289,6 +301,10 @@ export async function createVideoJob(input: {
   const company = await resolveCompany(input.companyIdOrSlugOrDomain)
   if (!company) return { ok: false, config, error: "company not found" }
 
+  const targetSegment = isVideoTargetSegment(input.targetSegment) ? input.targetSegment : "agency_white_label"
+  const offerAngle = isVideoOfferAngle(input.offerAngle) ? input.offerAngle : "lost_revenue"
+  const lossSimulation = buildVideoLossSimulation({ segment: targetSegment, offerAngle, inputs: input.lossInputs })
+  const claimGuard = buildVideoClaimGuard()
   const report = await fetchDiagnosticReport({ companyId: company.id, reportLocale: company.report_locale ?? undefined })
   const locale = report?.report_locale ?? company.report_locale ?? "ja"
   const reportUrl = report?.report_url ?? company.report_url ?? null
@@ -300,11 +316,12 @@ export async function createVideoJob(input: {
     locale,
     platform: input.targetPlatform,
     jobType: input.jobType,
-    hook: report?.hook ?? `${company.company_name}のWeb/営業導線を公開データから診断します。`,
+    hook: report?.hook ?? `${company.company_name}のWebと営業導線を公開データから診断します。`,
     totalLoss: report?.total_loss ?? "未算出",
     reportUrl,
     demoUrl: report?.demo_url ?? null,
-    industry: company.industry,
+    lossSimulation,
+    claimGuard,
   })
   const productionPlan = buildProductionPlan({
     companyName: company.company_name,
@@ -314,6 +331,8 @@ export async function createVideoJob(input: {
     jobType: input.jobType,
     renderEngine: input.renderEngine,
     industry: company.industry,
+    lossSimulation,
+    claimGuard,
   })
 
   const { data, error } = await sb
@@ -327,11 +346,15 @@ export async function createVideoJob(input: {
       locale,
       target_platform: input.targetPlatform,
       render_engine: input.renderEngine,
+      target_segment: targetSegment,
+      offer_angle: offerAngle,
       orchestration_stage: "draft",
       n8n_workflow_url: config.n8n.url,
       preview_url: previewUrl,
       storyboard,
       production_plan: productionPlan,
+      loss_simulation: lossSimulation,
+      claim_guard: claimGuard,
       input_assets: {
         company_domain: company.domain,
         report_url: reportUrl,
@@ -395,8 +418,12 @@ async function dispatchToN8n(job: SalesVideoJob): Promise<{ executionId: string 
       locale: job.locale,
       target_platform: job.target_platform,
       render_engine: job.render_engine,
+      target_segment: job.target_segment,
+      offer_angle: job.offer_angle,
       storyboard: job.storyboard,
       production_plan: job.production_plan,
+      loss_simulation: job.loss_simulation,
+      claim_guard: job.claim_guard,
       input_assets: job.input_assets,
     }),
   })
@@ -452,13 +479,7 @@ export async function runVideoJobAction(input: {
     if (input.action === "complete") {
       const outputUrl = input.outputUrl?.trim() ? input.outputUrl.trim() : job.r2_output_url
       const renderOutputs = { ...safeRecord(job.render_outputs), completed_at: new Date().toISOString(), output_url: outputUrl, note: input.note ?? null }
-      const updated = await updateJob(job.id, {
-        status: "completed",
-        orchestration_stage: "delivered",
-        r2_output_url: outputUrl,
-        render_outputs: renderOutputs,
-        error_message: null,
-      })
+      const updated = await updateJob(job.id, { status: "completed", orchestration_stage: "delivered", r2_output_url: outputUrl, render_outputs: renderOutputs, error_message: null })
       return { ok: true, job: updated, config, message: "completed" }
     }
     if (input.action === "cancel") {

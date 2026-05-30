@@ -527,3 +527,11 @@
 - [x] Readiness detection now recognizes existing production env aliases: `N8N_BASE_URL`, Dify task keys, `HYPERFRAMES_API_URL`, and Slack bot/channel envs.
 - [x] Cleaned the video pipeline GUI strings and kept files under the 500-line rule.
 - Verification: `npx tsc --noEmit --pretty false`, `npm test -- --run`, and `npm run build` passed. Local build still prints existing PayloadCMS local Postgres fallback warnings, but exits 0.
+## Codex Update - 2026-05-30 Video Segment Strategy
+
+- [x] Added segment-aware video strategy logic for agency white-label, SaaS, EC, local SMB, creators, JaaS, and GTM engineering.
+- [x] Added a loss simulator that stores operator-estimate monthly/annual loss assumptions in Supabase and keeps customer-facing copy explicitly framed as an estimate.
+- [x] Added a Dify claim guard so legal dates, penalties, market-size claims, CAGR, and benchmark multipliers require primary-source URLs before customer-facing use.
+- [x] Added `supabase/migration_027_sales_video_segments_loss_guard.sql` for `target_segment`, `offer_angle`, `loss_simulation`, and `claim_guard`.
+- [x] Rebuilt the `/ja/admin/sales` video tab UI with readable Japanese labels, segment selection, offer-angle selection, live simulator controls, and job cards showing segment/loss metadata.
+- [x] Updated the no-login deploy script to include the new video strategy migration and readable product master labels.
