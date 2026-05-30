@@ -10,7 +10,7 @@ type ParsedRow = Record<string, string>
 
 const FIELD_ALIASES: Record<string, string[]> = {
   company_name: ["company", "company name", "会社名", "企業名", "organization", "account name"],
-  domain: ["website", "domain", "url", "会社url", "企業url", "ホームページ", "webサイト"],
+  domain: ["website", "domain", "url", "会社url", "企業url", "homepage", "ホームページ", "webサイト"],
   industry: ["industry", "業種"],
   prefecture: ["state", "prefecture", "都道府県", "所在地", "country"],
   email: ["email", "mail", "メール"],
@@ -176,14 +176,12 @@ export function SalesAutomationPanel({ data }: { data: SalesDashboardData }) {
       const json = (await res.json()) as {
         ok?: boolean
         processed?: number
-        submitted?: number
         manualQueue?: number
-        skipped?: number
         failed?: number
         error?: string
       }
       if (!res.ok || !json.ok) throw new Error(json.error ?? `HTTP ${res.status}`)
-      const message = `dry-run ${json.processed ?? 0}件 / 手動 ${json.manualQueue ?? 0}件 / 失敗 ${json.failed ?? 0}件`
+      const message = `dry-run ${json.processed ?? 0}件 / 手動確認 ${json.manualQueue ?? 0}件 / 失敗 ${json.failed ?? 0}件`
       setLastOutreachResult(message)
       toast.success(message)
     } catch (e) {
@@ -202,7 +200,7 @@ export function SalesAutomationPanel({ data }: { data: SalesDashboardData }) {
           <div>
             <h2 className="text-base font-semibold text-zinc-950">CSV投入</h2>
             <p className="mt-1 text-sm leading-relaxed text-zinc-500">
-              Apollo、Fumadata、BIZMapなどのCSVをここに貼り付けると、Supabaseへ保存し、企業カルテ生成ジョブを即時キューに入れます。
+              Apollo、Fumadata、BIZMapなどのCSVを貼り付けると、Supabase SSOTへ保存し、企業カルテ生成ジョブを即時キューに入れます。
             </p>
           </div>
           <div className="flex gap-2">
@@ -288,7 +286,7 @@ export function SalesAutomationPanel({ data }: { data: SalesDashboardData }) {
             <div>
               <h3 className="text-sm font-semibold text-zinc-950">フォーム営業 dry-run</h3>
               <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-                送信せずにフォームURL探索、分類、robots/preflight、文面差し込みまで確認します。
+                実送信せずにフォームURL探索、分類、robots/preflight、文面差し込みまで確認します。本送信は初回承認キューを通します。
               </p>
             </div>
             <button

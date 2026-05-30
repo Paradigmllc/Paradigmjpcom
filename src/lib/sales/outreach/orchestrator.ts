@@ -114,6 +114,40 @@ async function logActivity(
   })
 }
 
+async function enqueueOperatorTask(
+  company: SalesCompany,
+  input: {
+    reason: string
+    formUrl?: string | null
+    message?: string | null
+    classification?: string | null
+    priority?: number
+    approvalRequired?: boolean
+  },
+): Promise<void> {
+  const sb = getServiceSalesSupabase()
+  if (!sb) return
+  const { error } = await sb.from("sales_operator_queue_items").insert({
+    region: company.region,
+    company_id: company.id,
+    queue_type: "form_send",
+    priority: input.priority ?? (input.approvalRequired ? 90 : 70),
+    status: "open",
+    source_tool: "n8n",
+    target_tool: "appsmith",
+    meta: {
+      reason: input.reason,
+      form_url: input.formUrl ?? null,
+      message: input.message ?? null,
+      classification: input.classification ?? null,
+      approval_required: input.approvalRequired ?? false,
+      report_url: reportUrlFor(company),
+      created_by: "sales_outreach_orchestrator",
+    },
+  })
+  if (error) console.error("[sales-outreach] operator queue insert failed:", error.message)
+}
+
 async function persistOutcome(
   company: SalesCompany,
   stage: OutreachStage,
@@ -125,6 +159,16 @@ async function persistOutcome(
   if (dryRun) return
   await applyOutcome(company, stage, sendResult)
   await logActivity(company, stage, result, meta)
+  if (stage === "manual_queue") {
+    await enqueueOperatorTask(company, {
+      reason: sendResult,
+      formUrl: typeof meta.formUrl === "string" ? meta.formUrl : null,
+      message: typeof meta.message === "string" ? meta.message : null,
+      classification: typeof meta.classification === "string" ? meta.classification : null,
+      priority: meta.approvalRequired === true ? 95 : undefined,
+      approvalRequired: meta.approvalRequired === true,
+    })
+  }
 }
 
 async function processOne(
@@ -227,6 +271,21 @@ async function processOne(
       opts.dryRun,
     )
     return { ...base("preflight_failed", preflightResult.reason), formUrl, message, classification: classification.classification }
+  }
+
+  if (!opts.dryRun && opts.first5Approval && index < 5) {
+    await persistOutcome(
+      company,
+      "manual_queue",
+      "follow_up",
+      "first-5 approval gate before live form submit",
+      { formUrl, classification: classification.classification, message, approvalRequired: true },
+      opts.dryRun,
+    )
+    await notifySlack(
+      `Approval required before first live form submit: ${company.company_name} (${company.domain})\nForm: ${formUrl}\nReport: ${reportUrl}`,
+    )
+    return { ...base("manual_queue", "approval required before live form submit"), formUrl, message, classification: classification.classification }
   }
 
   const submit = await provider.submitForm({

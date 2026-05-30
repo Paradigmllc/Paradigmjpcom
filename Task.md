@@ -1,3 +1,13 @@
+## Codex Update - 2026-05-30 Sales OS Remaining Implementation Pass
+
+- [x] Added company-intelligence aggregation so the Twenty company karte and diagnostic report use one Supabase SSOT view of free API/OSS evidence, pain points, recommended actions, and source confidence.
+- [x] Rebuilt the diagnostic report data path and UI so stale mojibake copy is removed, pain evidence is visible, source coverage is shown, and Astro demo/report links are first-class.
+- [x] Switched form-message generation to Dify-first behavior with DeepSeek fallback, preserving report URL placeholders and surfacing the generation engine.
+- [x] Added a first-live-send approval gate: live form outreach can prepare messages and operator tasks, but the first five sends route to Appsmith/manual review instead of auto-submit.
+- [x] Expanded source coverage metadata for Crawlee, Crawl4AI, Browserless, Camoufox, Playwright Stealth, Listmonk, Smartlead, Resend, Docsend, Twilio, Slidev/Gotenberg, and video/R2 delivery.
+- [x] Added `supabase/migration_021_sales_completion_pass.sql` to make the four product/package records readable in Supabase and keep Twenty opportunity creation aligned with Web制作, DXパッケージ, JaaS, and 動画納品サブスク.
+- [x] Verification: `npx tsc --noEmit --pretty false` passed; targeted Sales OS Vitest passed (6 files / 23 tests); full `npm test` passed (17 files / 110 tests).
+
 ## Codex Update - 2026-05-30 Sales OS Completion Pass
 
 - [x] Follow-up audit fixed the Twenty HOME field label bug shown as `?????URL`: the reusable `scripts/twenty-karte-home-fields.sql` patch had stale mojibake text, so it was rewritten, applied to the live Twenty DB via SCP/psql, and Twenty server/worker were restarted to clear metadata cache.

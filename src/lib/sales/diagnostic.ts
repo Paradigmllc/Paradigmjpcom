@@ -1,18 +1,12 @@
 /**
- * lib/sales/diagnostic.ts — 診断レポート LP のデータ取得 (Sprint 9-D)
+ * Diagnostic report data builder.
  *
- * 役割: sales_companies + sales_templates を組み合わせて、
- *       3-Act 構造 (pain → fear → hope) の診断レポートデータを返す.
- *
- * 設計:
- *   - input: companyId or domain
- *   - output: DiagnosticReportData (LP component が受け取る型)
- *   - 業種 + detected_issues (最大3つ) で sales_templates を matching
- *   - 各 act は severity + headline + body + metric_value で構成
+ * Supabase SSOT の企業データ、取得ソース、診断テンプレートをまとめて
+ * `/[locale]/report/[slug]` で使う 3-act レポートデータへ変換する。
  */
 
-import { findCompanyById, findCompanyByDomain, findCompanyBySlug } from "./companies"
-import { getTemplatesByIndustry } from "./templates"
+import { findCompanyByDomain, findCompanyById, findCompanyBySlug } from "./companies"
+import { buildCompanyIntelligence, type CompanyIntelligence } from "./company-intelligence"
 import {
   buildReportUrl,
   getRoutingMeta,
@@ -24,14 +18,9 @@ import {
   type TemplateVariant,
 } from "./routing"
 import { computeSourceCoverage, type SourceCoverageSnapshot } from "./source-coverage"
-import type {
-  Industry,
-  IssueCode,
-  Region,
-  SalesCompany,
-  SalesTemplate,
-  Severity,
-} from "./types"
+import { getTemplatesByIndustry } from "./templates"
+import type { Industry, IssueCode, Region, SalesCompany, SalesTemplate, Severity } from "./types"
+import { ISSUE_CODES } from "./types"
 
 export interface DiagnosticAct {
   type: "pain" | "fear" | "hope"
@@ -60,67 +49,144 @@ export interface DiagnosticReportData {
   video_thumbnail: string | null
   demo_url: string | null
   source_coverage: SourceCoverageSnapshot
+  intelligence: CompanyIntelligence
   report_url: string
 }
 
-/* ───── 業種別の icon / hook 母版 (Plan B 母版・後で Notion 側に外出し可) ───── */
-
 const INDUSTRY_HOOK: Record<Industry, string> = {
   beauty_salon:
-    "今この瞬間、御社サイトを訪れた10人のうち6人は\n内容を見る前に帰っています",
-  dental: "近隣の歯科医院を探している患者の70%が\n御社のサイトに辿り着けていません",
-  restaurant: "ランチ時間の検索流入が\n月間推定4,200件、漏れています",
-  construction: "施工事例を探す施主の80%が\n御社のサイトを5秒で閉じています",
+    "検索から予約までの導線に小さな離脱が重なり、来店意欲の高い見込み客を取りこぼしている可能性があります。",
+  dental:
+    "地域検索で比較される時間は短く、信頼材料と予約導線の弱さが新患獲得に直結します。",
+  restaurant:
+    "来店前の比較はスマホ上で完結します。表示速度、口コミ導線、写真の見え方が予約率を左右します。",
+  construction:
+    "施工事例と問い合わせ導線が弱いと、比較検討中の施主が競合サイトへ流れやすくなります。",
   accounting:
-    "決算前の顧問先候補が御社を比較検討した結果、\n7割が他事務所に流れています",
-  retail: "オンライン購買意欲のある顧客の60%が\n御社のサイトを完了せずに離脱しています",
+    "専門性は伝わっていても、相談前の不安を解く導線が弱いと問い合わせ化しにくくなります。",
+  retail:
+    "商品や店舗の魅力が検索・SNS・スマホ表示で十分に伝わらないと、購入前の離脱が増えます。",
   cleaning:
-    "見積もり依頼の問い合わせフォームに\n50%以上が到達せず離脱しています",
+    "見積もり依頼までの導線が少し長いだけで、急ぎの見込み客は別サービスへ移動します。",
   consulting:
-    "新規問い合わせの大半が、御社の専門性に\n気付かないまま競合へ流れています",
+    "専門性の証拠と初回相談の導線が整理されていないと、検討中の企業に選ばれにくくなります。",
 }
 
-const ISSUE_ICON: Record<IssueCode, string> = {
-  speed_critical: "⚡",
-  ua_残存: "📉",
-  ssl_expired: "🔒",
-  wp_outdated: "🛠",
-  no_ogp: "🖼",
-  no_sns: "📸",
-  copyright_old: "📅",
+const ISSUE_ICON: Partial<Record<string, string>> = {
+  speed_critical: "S",
+  ssl_expired: "SSL",
+  wp_outdated: "WP",
+  no_ogp: "OGP",
+  no_sns: "SNS",
+  copyright_old: "COPY",
 }
 
-const ISSUE_METRIC: Record<
-  IssueCode,
-  { label: string; unit: string; bench: string }
+const ISSUE_METRIC: Partial<
+  Record<string, { label: string; unit: string; bench: string; fallbackValue: string | number }>
 > = {
   speed_critical: {
-    label: "モバイルスコア",
+    label: "モバイル速度スコア",
     unit: "点",
-    bench: "業界平均 71点",
+    bench: "目安 75点以上",
+    fallbackValue: 38,
   },
-  ua_残存: {
-    label: "データ欠損期間",
-    unit: "ヶ月",
-    bench: "2023年7月から継続中",
+  ssl_expired: {
+    label: "SSL/HTTPSリスク",
+    unit: "",
+    bench: "常時HTTPSかつ証明書正常",
+    fallbackValue: "要確認",
   },
-  ssl_expired: { label: "SSL期限", unit: "日後", bench: "業界推奨 30日以上前更新" },
-  wp_outdated: { label: "WP脆弱性", unit: "件", bench: "標準は 0 件" },
-  no_ogp: { label: "OGP設定", unit: "", bench: "SNSシェア時のクリック率 -45%" },
-  no_sns: { label: "SNS連携", unit: "", bench: "競合上位3社は全て運用中" },
-  copyright_old: { label: "最終更新", unit: "年前", bench: "業界推奨 6ヶ月以内" },
+  wp_outdated: {
+    label: "CMS/技術スタックリスク",
+    unit: "",
+    bench: "脆弱性がない状態を維持",
+    fallbackValue: "要確認",
+  },
+  no_ogp: {
+    label: "SNS共有最適化",
+    unit: "",
+    bench: "OGP/タイトル/説明文を整備",
+    fallbackValue: "未整備",
+  },
+  no_sns: {
+    label: "SNS/外部導線",
+    unit: "",
+    bench: "主要導線を明示",
+    fallbackValue: "弱い",
+  },
+  copyright_old: {
+    label: "更新鮮度",
+    unit: "",
+    bench: "半年以内の更新感を表示",
+    fallbackValue: "要確認",
+  },
 }
 
-/* ───── Hook 文言を組立 ───── */
+const UNKNOWN_ISSUE_METRIC = {
+  label: "取得データ品質",
+  unit: "",
+  bench: "主要ソースで確認済みの状態",
+  fallbackValue: "要確認",
+} as const
+
+const DEFAULT_CTA =
+  "診断結果をもとに、改善優先度・概算費用・最短の実装順を15分で整理します。"
+
+type PersonalizedCopy = {
+  personalized_hook?: string
+  personalized_pain?: string
+  personalized_fear?: string
+  personalized_loss?: string
+  personalized_cta?: string
+}
 
 function buildHook(industry: Industry | null): string {
   if (!industry) {
-    return "御社サイトを訪れた訪問者の半数以上が\n機会を活かしきれずに離脱しています"
+    return "オンライン上の公開データを見る限り、問い合わせ前の不安解消と比較検討の導線に改善余地があります。"
   }
   return INDUSTRY_HOOK[industry]
 }
 
-/* ───── 3-Act を build (template が無い issue は static fallback) ───── */
+function issueLabel(issueCode: IssueCode): string {
+  const labels: Partial<Record<string, string>> = {
+    speed_critical: "表示速度",
+    ssl_expired: "HTTPS/SSL",
+    wp_outdated: "CMS/技術スタック",
+    no_ogp: "OGP/SNS表示",
+    no_sns: "SNS導線",
+    copyright_old: "更新鮮度",
+  }
+  return labels[issueCode] ?? "公開データ"
+}
+
+function issueMetric(issueCode: IssueCode) {
+  return ISSUE_METRIC[issueCode] ?? UNKNOWN_ISSUE_METRIC
+}
+
+function issueIcon(issueCode: IssueCode): string {
+  return ISSUE_ICON[issueCode] ?? "DATA"
+}
+
+function issueFallbackBody(company: SalesCompany, issueCode: IssueCode): string {
+  const label = issueLabel(issueCode)
+  return `${company.company_name} の ${label} に改善余地があります。公開データとOSS診断の結果を組み合わせ、営業提案で使える根拠として整理しました。`
+}
+
+function severityToActType(severity: Severity): DiagnosticAct["type"] {
+  if (severity === "critical") return "pain"
+  if (severity === "info") return "hope"
+  return "fear"
+}
+
+function metricValueFor(company: SalesCompany, issueCode: IssueCode, index: number): string | number {
+  if (issueCode === "speed_critical") {
+    return company.pagespeed_mobile ?? ISSUE_METRIC.speed_critical?.fallbackValue ?? 38
+  }
+  if (index === 0 && typeof company.pagespeed_mobile === "number") {
+    return company.pagespeed_mobile
+  }
+  return issueMetric(issueCode).fallbackValue
+}
 
 function buildAct(
   company: SalesCompany,
@@ -128,20 +194,13 @@ function buildAct(
   template: SalesTemplate | undefined,
   metricValue: number | string,
 ): DiagnosticAct {
-  const meta = ISSUE_METRIC[issueCode]
-  // type 判定 (severity の critical=pain / warning=fear / info=hope)
-  const severity: Severity = template?.severity ?? "warning"
-  const type: "pain" | "fear" | "hope" =
-    severity === "critical" ? "pain" : severity === "info" ? "hope" : "fear"
+  const severity: Severity = template?.severity ?? (issueCode === "speed_critical" ? "critical" : "warning")
+  const meta = issueMetric(issueCode)
   return {
-    type,
-    icon: ISSUE_ICON[issueCode],
-    headline: template?.headline ?? `${issueCode} を検出`,
-    body:
-      template?.pain ||
-      template?.fear ||
-      template?.loss ||
-      `${company.company_name} のサイトで ${issueCode} を確認しました。詳細レポートをご参照ください。`,
+    type: severityToActType(severity),
+    icon: issueIcon(issueCode),
+    headline: template?.headline ?? `${issueLabel(issueCode)}の改善余地`,
+    body: template?.pain ?? template?.fear ?? template?.loss ?? issueFallbackBody(company, issueCode),
     metric_label: meta.label,
     metric_value: String(metricValue),
     metric_unit: meta.unit,
@@ -150,8 +209,6 @@ function buildAct(
   }
 }
 
-/* ───── 損失合計を計算 (template.loss の数字を合算・stub) ───── */
-
 function parseLossYen(loss: string | null | undefined): number {
   if (!loss) return 0
   const match = loss.match(/[¥￥]\s*([\d,]+)/u)
@@ -159,17 +216,41 @@ function parseLossYen(loss: string | null | undefined): number {
   return Number.parseInt(match[1].replace(/,/g, ""), 10) || 0
 }
 
-function formatYen(n: number): string {
-  return `¥${n.toLocaleString("ja-JP")}`
+function formatYen(amount: number): string {
+  return `¥${amount.toLocaleString("ja-JP")}`
 }
 
-/* ───── Public API ───── */
+function formatExpiry(): string {
+  const expiresAt = new Date()
+  expiresAt.setDate(expiresAt.getDate() + 30)
+  return `${expiresAt.getFullYear()}年${expiresAt.getMonth() + 1}月${expiresAt.getDate()}日`
+}
+
+function readPersonalizedCopy(meta: Record<string, unknown>): PersonalizedCopy | undefined {
+  const copy = meta.personalized_copy
+  if (!copy || typeof copy !== "object") return undefined
+  return copy as PersonalizedCopy
+}
+
+function defaultIssues(company: SalesCompany): IssueCode[] {
+  const issues = company.detected_issues?.filter((issue) =>
+    (ISSUE_CODES as readonly string[]).includes(issue),
+  )
+  if (issues?.length) return issues.slice(0, 3)
+  if ((company.pagespeed_mobile ?? 100) < 70) return ["speed_critical"]
+  return ["no_ogp", "no_sns", "copyright_old"]
+}
+
+function reportUrlFor(company: SalesCompany, locale: ReportLocale): string {
+  if (company.slug) return buildReportUrl(locale, company.slug)
+  return company.report_url ?? ""
+}
 
 export async function fetchDiagnosticReport(opts: {
   companyId?: string
   domain?: string
   slug?: string
-  region?: Region // Sprint 16: jp / global filter (default 'jp')
+  region?: Region
   reportLocale?: ReportLocale | string
   targetCountry?: string
   templateVariant?: TemplateVariant | string
@@ -205,19 +286,8 @@ export async function fetchDiagnosticReport(opts: {
       }),
   )
 
-  // Sprint 15: DeepSeek パーソナライズ文面があれば優先採用
-  const personalizedCopy = (company.meta as Record<string, unknown>)?.personalized_copy as
-    | {
-        personalized_hook?: string
-        personalized_pain?: string
-        personalized_fear?: string
-        personalized_loss?: string
-        personalized_cta?: string
-      }
-    | undefined
-
-  // detected_issues の上位 3 件で 3-Act 構成 (Sprint 16: region scope)
-  const issues = (company.detected_issues ?? []).slice(0, 3)
+  const sourceCoverage = computeSourceCoverage(company)
+  const issues = defaultIssues(company)
   const templates = company.industry
     ? await getTemplatesByIndustry(company.industry, issues, region, {
         reportLocale,
@@ -225,33 +295,12 @@ export async function fetchDiagnosticReport(opts: {
         templateVariant,
       })
     : []
-  const templateByIssue = new Map(templates.map((t) => [t.issue_code, t]))
-
-  const acts: DiagnosticAct[] = issues.map((issueCode, i) => {
-    // metric_value のデフォルト: pagespeed_mobile (1st act) / その他は static
-    const metric =
-      i === 0 && issueCode === "speed_critical"
-        ? company.pagespeed_mobile ?? 38
-        : issueCode === "ua_残存"
-          ? 23
-          : "—"
-    return buildAct(company, issueCode, templateByIssue.get(issueCode), metric)
-  })
-
-  // 損失合計
-  const totalLossYen = acts.reduce(
-    (sum, _act, i) => sum + parseLossYen(templates[i]?.loss),
-    0,
+  const templateByIssue = new Map(templates.map((template) => [template.issue_code, template]))
+  const acts = issues.map((issueCode, index) =>
+    buildAct(company, issueCode, templateByIssue.get(issueCode), metricValueFor(company, issueCode, index)),
   )
 
-  // 期限: 30 日後
-  const expiresAt = new Date()
-  expiresAt.setDate(expiresAt.getDate() + 30)
-  const expiresStr = `${expiresAt.getFullYear()}年${expiresAt.getMonth() + 1}月${expiresAt.getDate()}日`
-
-  // Sprint 15: パーソナライズ文面で上書き (あれば優先)
-  const finalHook = personalizedCopy?.personalized_hook || buildHook(company.industry)
-  const finalCta = personalizedCopy?.personalized_cta || templates[0]?.cta_text || "まず話だけ聞いてみる"
+  const personalizedCopy = readPersonalizedCopy(company.meta)
   if (personalizedCopy?.personalized_pain && acts[0]) {
     acts[0] = { ...acts[0], body: personalizedCopy.personalized_pain }
   }
@@ -262,6 +311,9 @@ export async function fetchDiagnosticReport(opts: {
     acts[2] = { ...acts[2], body: personalizedCopy.personalized_loss }
   }
 
+  const totalLossYen = templates.reduce((sum, template) => sum + parseLossYen(template.loss), 0)
+  const demoSite = company.meta.demo_site as { url?: string } | undefined
+
   return {
     company_name: company.company_name,
     report_locale: reportLocale,
@@ -269,16 +321,15 @@ export async function fetchDiagnosticReport(opts: {
     template_variant: templateVariant,
     industry: company.industry,
     prefecture: company.prefecture,
-    expires_at: expiresStr,
-    hook: finalHook,
+    expires_at: formatExpiry(),
+    hook: personalizedCopy?.personalized_hook ?? buildHook(company.industry),
     total_loss: formatYen(totalLossYen || 340_000),
     acts,
-    cta_text: finalCta,
+    cta_text: personalizedCopy?.personalized_cta ?? templates[0]?.cta_text ?? DEFAULT_CTA,
     video_thumbnail: null,
-    demo_url:
-      ((company.meta as Record<string, unknown>)?.demo_site as { url?: string } | undefined)?.url ?? null,
-    source_coverage: computeSourceCoverage(company),
-    report_url:
-      company.slug ? buildReportUrl(reportLocale, company.slug) : company.report_url ?? "",
+    demo_url: demoSite?.url ?? null,
+    source_coverage: sourceCoverage,
+    intelligence: buildCompanyIntelligence(company, sourceCoverage.items),
+    report_url: reportUrlFor(company, reportLocale),
   }
 }

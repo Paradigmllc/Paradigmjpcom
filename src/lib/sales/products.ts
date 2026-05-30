@@ -153,7 +153,7 @@ export function inferCompanyProductRecommendations(input: ProductRecommendationI
       ]
     : [
         { code: "global_jaas", priority: 1, fitScore: 88, reason: "海外SMB向けの日本市場参入診断、LP、営業導線構築と一致するため。" },
-        { code: "global_video_subscription", priority: 2, fitScore: 74, reason: "日本向け訴求を動画や字幕の営業資料化へ拡張できるため。" },
+        { code: "global_video_subscription", priority: 2, fitScore: 74, reason: "日本向け訴求を動画や字幕付き営業資料へ拡張できるため。" },
       ]
 }
 

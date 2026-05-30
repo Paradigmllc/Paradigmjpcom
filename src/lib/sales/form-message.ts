@@ -17,6 +17,8 @@ import { findCompanyById } from "./companies"
 import { matchTemplate } from "./templates"
 import type { Industry, IssueCode, SalesCompany } from "./types"
 
+type JsonRecord = Record<string, unknown>
+
 /* ───── 固定 System Prompt (Context Cache 最大化のため毎回同じ) ───── */
 
 const SALES_SYSTEM_PROMPT = `あなたは Paradigm 合同会社のシニアセールス担当として、日本の中小企業 (SMB) のお問い合わせフォームに送る短い営業メッセージを生成します。
@@ -77,9 +79,95 @@ ${company.pagespeed_desktop != null ? `PCスコア: ${company.pagespeed_desktop}
 export interface GenerateFormMessageResult {
   ok: boolean
   message?: string
+  engine?: "dify" | "deepseek_fallback"
   used_template_id?: string | null
   usage?: DeepSeekResponse["usage"]
   error?: string
+}
+
+function readOptionalEnv(name: string): string | null {
+  const value = process.env[name]
+  return value && value.trim().length > 0 ? value.trim() : null
+}
+
+function asRecord(value: unknown): JsonRecord | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : null
+}
+
+function readDifyMessage(raw: JsonRecord): string | null {
+  const data = asRecord(raw.data) ?? raw
+  const outputs = asRecord(data.outputs) ?? asRecord(raw.outputs)
+  const candidates = [
+    outputs?.message,
+    outputs?.text,
+    outputs?.body,
+    outputs?.result,
+    data.answer,
+    raw.answer,
+  ]
+  const hit = candidates.find((value) => typeof value === "string" && value.trim().length > 0)
+  return typeof hit === "string" ? hit.trim() : null
+}
+
+async function generateWithDify(input: {
+  company: SalesCompany
+  issueCode: IssueCode
+  templateHeadline: string | null
+  templatePain: string | null
+  templateLoss: string | null
+}): Promise<{ ok: true; message: string } | { ok: false; configured: boolean; error: string }> {
+  const apiKey =
+    readOptionalEnv("DIFY_FORM_MESSAGE_API_KEY") ??
+    readOptionalEnv("DIFY_FORM_MESSAGE_KEY") ??
+    readOptionalEnv("DIFY_API_KEY")
+  const baseUrl = readOptionalEnv("DIFY_FORM_MESSAGE_BASE_URL") ?? readOptionalEnv("DIFY_BASE_URL") ?? "https://api.dify.ai"
+  const endpoint =
+    readOptionalEnv("DIFY_FORM_MESSAGE_API_URL") ?? `${baseUrl.replace(/\/+$/, "")}/v1/workflows/run`
+  if (!apiKey) return { ok: false, configured: false, error: "Dify form-message API key is not configured" }
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        inputs: {
+          company_id: input.company.id,
+          company_name: input.company.company_name,
+          domain: input.company.domain,
+          industry: input.company.industry,
+          region: input.company.region,
+          issue_code: input.issueCode,
+          template_headline: input.templateHeadline,
+          template_pain: input.templatePain,
+          template_loss: input.templateLoss,
+          pagespeed_mobile: input.company.pagespeed_mobile,
+          pagespeed_desktop: input.company.pagespeed_desktop,
+          detected_issues: input.company.detected_issues,
+          enrichment_meta: input.company.meta,
+          required_placeholder: "{{report_url}}",
+        },
+        response_mode: "blocking",
+        user: `paradigm-sales-form-${input.company.id}`,
+      }),
+      signal: AbortSignal.timeout(60_000),
+    })
+    const text = await res.text()
+    const raw = text ? (JSON.parse(text) as JsonRecord) : {}
+    if (!res.ok) {
+      console.error("[sales-form-message] Dify request failed:", res.status, text.slice(0, 300))
+      return { ok: false, configured: true, error: `Dify HTTP ${res.status}` }
+    }
+    const message = readDifyMessage(raw)
+    if (!message) return { ok: false, configured: true, error: "Dify response did not include a message" }
+    return { ok: true, message: message.includes("{{report_url}}") ? message : `${message}\n{{report_url}}` }
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
+    console.error("[sales-form-message] Dify failed:", message)
+    return { ok: false, configured: true, error: message }
+  }
 }
 
 /**
@@ -111,6 +199,25 @@ export async function generateFormMessage(
     templateLoss: template?.loss ?? null,
   })
 
+  const dify = await generateWithDify({
+    company,
+    issueCode: firstIssue,
+    templateHeadline: template?.headline ?? null,
+    templatePain: template?.pain ?? null,
+    templateLoss: template?.loss ?? null,
+  })
+  if (dify.ok) {
+    return {
+      ok: true,
+      message: dify.message,
+      engine: "dify",
+      used_template_id: template?.id ?? null,
+    }
+  }
+  if (dify.configured) {
+    console.warn("[sales-form-message] falling back to DeepSeek after Dify error:", dify.error)
+  }
+
   const res = await callDeepSeek(
     [
       { role: "system", content: SALES_SYSTEM_PROMPT },
@@ -126,6 +233,7 @@ export async function generateFormMessage(
   return {
     ok: true,
     message: res.text.trim(),
+    engine: "deepseek_fallback",
     used_template_id: template?.id ?? null,
     usage: res.usage,
   }

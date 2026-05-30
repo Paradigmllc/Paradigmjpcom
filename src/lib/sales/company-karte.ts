@@ -1,4 +1,5 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { buildCompanyIntelligence, type CompanyIntelligence } from "@/lib/sales/company-intelligence"
 import { buildReportUrl, REPORT_LOCALES, type ReportLocale } from "@/lib/sales/routing"
 import { computeSourceCoverage, type SourceCoverageItem } from "@/lib/sales/source-coverage"
 import type { CompanyProductRecommendation } from "@/lib/sales/products"
@@ -46,6 +47,7 @@ export interface CompanyKarteSnapshot {
   missingCount: number
   sourceItems: SourceCoverageItem[]
   evidence: CompanyKarteEvidence[]
+  intelligence: CompanyIntelligence
   recommendedProducts: CompanyProductRecommendation[]
   diagnosisSummary: string | null
   recommendedOffer: string | null
@@ -189,6 +191,7 @@ export function buildCompanyKarte(
     localizedReportUrls: localizedReportUrls(company, reportLocale),
     sourceItems,
     evidence: evidenceFromCompany(company),
+    intelligence: buildCompanyIntelligence(company, sourceItems),
     recommendedProducts,
     diagnosisSummary: typeof diagnosis?.primaryPain === "string" ? diagnosis.primaryPain : null,
     recommendedOffer: typeof diagnosis?.recommendedOffer === "string" ? diagnosis.recommendedOffer : null,
@@ -224,6 +227,13 @@ export function companyKarteMarkdown(karte: CompanyKarteSnapshot): string {
   const sourceLines = karte.sourceItems.map((item) => `- ${item.label}: ${item.status} / ${item.score} - ${item.detail}`).join("\n")
   const evidenceLines = karte.evidence.map((item) => `- ${item.label}: ${item.value} (${item.source})`).join("\n")
   const localizedLinks = karte.localizedReportUrls.map((link) => `- ${link.label}: ${link.url}`).join("\n")
+  const signalLines = karte.intelligence.signals
+    .map((signal) => `- ${signal.label}: ${signal.value} (${signal.source}) - ${signal.detail}`)
+    .join("\n")
+  const painLines = karte.intelligence.painPoints
+    .map((pain) => `- [${pain.severity}] ${pain.title}: ${pain.evidence} / ${pain.recommendedAction}`)
+    .join("\n")
+  const actionLines = karte.intelligence.nextActions.map((action) => `- ${action}`).join("\n")
   const productLines = karte.recommendedProducts
     .map((product) => `- P${product.priority} ${product.displayName}: fit ${product.fitScore} / ${product.reason}`)
     .join("\n")
@@ -248,11 +258,17 @@ export function companyKarteMarkdown(karte: CompanyKarteSnapshot): string {
     `- 主な痛み: ${karte.diagnosisSummary ?? "Dify診断待ち"}`,
     `- 推奨提案: ${karte.recommendedOffer ?? "テンプレ判定待ち"}`,
     "",
+    "## 痛みの根拠",
+    painLines || "- まだ痛みの根拠がありません",
+    "",
+    "## 次の営業アクション",
+    actionLines || "- カルテ生成を再実行してください",
+    "",
     "## 推奨商材 / Twenty商談候補",
     productLines || "- 商材判定待ち",
     "",
     "## 無料API/OSS取得データ",
-    evidenceLines || "- まだ取得データがありません",
+    signalLines || evidenceLines || "- まだ取得データがありません",
     "",
     "## ソース別取得状況",
     sourceLines || "- まだソース実行履歴がありません",
