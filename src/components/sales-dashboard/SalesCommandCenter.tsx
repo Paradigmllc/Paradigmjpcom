@@ -4,6 +4,7 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import {
   BarChart3,
+  BookOpen,
   BriefcaseBusiness,
   LayoutDashboard,
   ListChecks,
@@ -16,6 +17,7 @@ import {
 import { Toaster } from "sonner"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 import { SalesAutomationPanel } from "./SalesAutomationPanel"
+import { SalesDocsPanel } from "./SalesDocsPanel"
 import { SalesOperationsAuditPanel } from "./SalesOperationsAuditPanel"
 import {
   AnalyticsPanel,
@@ -39,6 +41,7 @@ type TabId =
   | "analytics"
   | "integrations"
   | "audit"
+  | "docs"
   | "migration"
 
 interface Props {
@@ -54,6 +57,7 @@ const TABS: { id: TabId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "analytics", label: "分析", icon: BarChart3 },
   { id: "integrations", label: "統合", icon: MonitorCog },
   { id: "audit", label: "運用監査", icon: ShieldCheck },
+  { id: "docs", label: "使い方", icon: BookOpen },
   { id: "migration", label: "移行計画", icon: ServerCog },
 ]
 
@@ -143,6 +147,7 @@ export function SalesCommandCenter({ data }: Props) {
           {activeTab === "analytics" && <AnalyticsPanel data={data} />}
           {activeTab === "integrations" && <IntegrationsPanel data={data} />}
           {activeTab === "audit" && <SalesOperationsAuditPanel data={data} />}
+          {activeTab === "docs" && <SalesDocsPanel data={data} />}
           {activeTab === "migration" && <MigrationPanel data={data} />}
         </motion.section>
       </div>

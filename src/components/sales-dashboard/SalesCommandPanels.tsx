@@ -47,9 +47,9 @@ export function formatDate(value: string | null): string {
 
 export function statusTone(status: string): string {
   if (status === "active" || status === "ready" || status === "completed") return "bg-emerald-100 text-emerald-700"
-  if (status === "recommended" || status === "planned" || status === "in_progress") return "bg-amber-100 text-amber-800"
+  if (status === "recommended" || status === "planned" || status === "in_progress" || status === "queued") return "bg-amber-100 text-amber-800"
   if (status === "legacy") return "bg-slate-100 text-slate-600"
-  if (status === "degraded" || status === "blocked" || status === "tier_blocked") return "bg-rose-100 text-rose-700"
+  if (status === "degraded" || status === "blocked" || status === "tier_blocked" || status === "failed") return "bg-rose-100 text-rose-700"
   return "bg-zinc-100 text-zinc-700"
 }
 
@@ -194,7 +194,7 @@ function SyncButton() {
       className="inline-flex h-9 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-sm font-medium text-zinc-800 transition hover:border-zinc-400 disabled:cursor-not-allowed disabled:opacity-60"
     >
       <RefreshCw size={15} className={running ? "animate-spin" : ""} aria-hidden />
-      Twenty → Supabase 同期
+      Twenty {"->"} Supabase 同期
     </button>
   )
 }
@@ -228,7 +228,7 @@ export function OverviewPanel({ data }: { data: SalesDashboardData }) {
     <div className="grid gap-4 xl:grid-cols-[1.5fr_1fr]">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <KpiCard label="総リード" value={formatNumber(data.kpis.totalLeads)} helper="Supabase sales_companies" icon={Users} tone="bg-sky-100 text-sky-700" />
-        <KpiCard label="HOT" value={formatNumber(data.kpis.hotLeads)} helper="閲覧・反応が強い営業先" icon={Target} tone="bg-rose-100 text-rose-700" />
+        <KpiCard label="HOT" value={formatNumber(data.kpis.hotLeads)} helper="閲覧や反応が強い営業先" icon={Target} tone="bg-rose-100 text-rose-700" />
         <KpiCard label="送信待ち" value={formatNumber(data.kpis.reportReady)} helper="フォーム営業キュー候補" icon={Send} tone="bg-amber-100 text-amber-800" />
         <KpiCard label="手動確認" value={formatNumber(data.kpis.manualQueue)} helper="Appsmith向け作業" icon={ListChecks} tone="bg-violet-100 text-violet-700" />
         <KpiCard label="7日商談" value={formatNumber(data.kpis.meetings7d)} helper="Cal.com登録数" icon={PhoneCall} tone="bg-emerald-100 text-emerald-700" />
@@ -273,7 +273,7 @@ export function WorkspacePanel({ data }: { data: SalesDashboardData }) {
       <div className="flex flex-col gap-3 border-b border-zinc-200 p-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h2 className="text-sm font-semibold text-zinc-950">リスト作業場</h2>
-          <p className="mt-1 text-xs text-zinc-500">NocoDBで一括編集する前後の営業ビューです。</p>
+          <p className="mt-1 text-xs text-zinc-500">NocoDBで一括編集する前後の営業ビューです。正本は常にSupabaseです。</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <label className="relative block">
@@ -324,7 +324,7 @@ export function OperatorPanel({ data }: { data: SalesDashboardData }) {
             <div key={item.id} className="flex items-center justify-between gap-3 py-3">
               <div>
                 <div className="text-sm font-medium text-zinc-950">{item.companyName ?? "未紐付け"}</div>
-                <div className="mt-1 text-xs text-zinc-500">{item.queueType} / {item.sourceTool ?? "system"} → {item.targetTool ?? "operator"}</div>
+                <div className="mt-1 text-xs text-zinc-500">{item.queueType} / {item.sourceTool ?? "system"} {"->"} {item.targetTool ?? "operator"}</div>
               </div>
               <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">P{item.priority}</span>
             </div>
@@ -392,7 +392,7 @@ export function IntegrationsPanel({ data }: { data: SalesDashboardData }) {
         <div className="flex flex-col gap-3 border-b border-zinc-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-sm font-semibold text-zinc-950">同期ログ</h2>
-            <p className="mt-1 text-xs text-zinc-500">SupabaseをSSOTにし、Twenty側の営業編集だけ限定的に取り込みます。</p>
+            <p className="mt-1 text-xs text-zinc-500">SupabaseをSSOTにし、Twenty側の営業編集だけを限定的に取り込みます。</p>
           </div>
           <SyncButton />
         </div>

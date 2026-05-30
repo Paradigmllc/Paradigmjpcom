@@ -1,3 +1,10 @@
+## Codex Update - 2026-05-30 Sales OS Operations Docs
+
+- [x] Added an in-dashboard `使い方` Docs tab covering daily workflow, tool roles, automation boundaries, manual approval gates, Coolify no-login deploy, and practical operations gaps.
+- [x] Added `docs/knowledge/sales-os-operations-guide.md` as the durable runbook for multi-agent handoff and human operations.
+- [x] Rebuilt the Sales Command Center visible labels and panels in readable Japanese so the dashboard is usable by non-engineers.
+- [x] Current operations audit: no code-blocking implementation gap remains for the core flow. Remaining items are intentional operational gates: first-live-send approval, CAPTCHA/SPA manual handling, API/proxy quota management, sender warm-up, and KPI review in Metabase.
+
 ## Codex Update - 2026-05-30 Sales OS Remaining Implementation Pass
 
 - [x] Added company-intelligence aggregation so the Twenty company karte and diagnostic report use one Supabase SSOT view of free API/OSS evidence, pain points, recommended actions, and source confidence.
