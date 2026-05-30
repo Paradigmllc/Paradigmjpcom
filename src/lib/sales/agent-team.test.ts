@@ -4,6 +4,7 @@ import { classifyAgentCommand } from "./agent-team"
 describe("classifyAgentCommand", () => {
   it("routes Telegram sales operations to safe intents", () => {
     expect(classifyAgentCommand("今日の営業OS状況を見て")).toBe("status_report")
+    expect(classifyAgentCommand("\u55b6\u696d\u72b6\u6cc1\u3092\u78ba\u8a8d\u3057\u3066")).toBe("status_report")
     expect(classifyAgentCommand("カルテ生成を3件進めて")).toBe("run_enrichment")
     expect(classifyAgentCommand("フォーム営業dry-runを5件実行して")).toBe("run_outreach_dry_run")
     expect(classifyAgentCommand("Twenty同期して")).toBe("sync_twenty")
