@@ -8,6 +8,8 @@
 - [x] Verified Playwright Stealth x Crawlee dry-run locally: it filled 3 fields and did not click submit, matching the safe automation gate.
 - [x] Fixed Coolify/Nixpacks build fragility by adding `scripts/build-next.mjs` and disabling build-time PayloadCMS reads while keeping runtime CMS reads enabled.
 - [x] Verification: worker typecheck passed, targeted Sales OS Vitest passed (7 files / 29 tests), `npx tsc --noEmit --pretty false` passed, and `npm run build` passed without Payload Postgres fallback spam.
+- [x] Deployed commit `b179e22` via Coolify API. Production smoke passed for `/ja/admin/sales`, `/ja`, Twenty, and the sample diagnostic report.
+- [x] Browser render verification passed for `https://paradigmjp.com/ja/report/codex-oss-verification-demo-qnxbms`: report shows meaning, missing-data impact, next action, and not-numbers-only narrative sections.
 - [ ] Residual dependency note: `npm audit --omit=dev` in `worker/` still reports moderate `file-type` advisories through Crawlee; do not run forced downgrade. Track upstream and keep worker away from untrusted binary uploads.
 
 ## Codex Update - 2026-05-31 Sales Locale Scope Audit
