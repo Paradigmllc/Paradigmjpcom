@@ -13,6 +13,26 @@ describe("sales content templates", () => {
     expect(rows.some((row) => row.report_locale === "pt" && row.target_country === "BR")).toBe(true)
   })
 
+  it("uses native locale copy for non-English global templates", () => {
+    const rows = buildInitialContentTemplates()
+    const korean = rows.find(
+      (row) => row.report_locale === "ko" && row.industry === "restaurant" && row.asset_type === "sales_deck",
+    )
+    const arabic = rows.find(
+      (row) => row.report_locale === "ar" && row.industry === "consulting" && row.asset_type === "sales_video",
+    )
+    const russian = rows.find(
+      (row) => row.report_locale === "ru" && row.industry === "dental" && row.asset_type === "diagnostic_report",
+    )
+
+    expect(korean?.title).toContain("음식점")
+    expect(korean?.prompt_template).toContain("당신은")
+    expect(korean?.prompt_template).not.toContain("You are Paradigm")
+    expect(arabic?.title).toContain("شركة استشارات")
+    expect(arabic?.dify_selection_rule).toContain("اللغة=ar")
+    expect(russian?.sample_copy).toContain("стоматологическая клиника")
+  })
+
   it("matches by locale, industry, asset, and appeal angle with bundled fallback", async () => {
     const template = await matchContentTemplate({
       reportLocale: "en",

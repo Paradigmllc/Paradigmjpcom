@@ -1,5 +1,8 @@
 ## Codex Update - 2026-05-31 Sales Locale Scope Audit
 
+- [x] Follow-up native template pass: moved Sales OS content-template labels, purpose copy, quality bars, Dify selection rules, generation prompts, and sample copy into `src/lib/sales/content-template-locales.json` so app generation and Supabase seeding share one 12-locale source of truth.
+- [x] Replaced the previous non-ja English fallback for template copy with locale-native template text for ja/en/ko/zh/de/fr/es/pt/ru/ar/vi/id. This keeps data scope and generated customer-facing guidance aligned by country/language.
+- [x] Added regression coverage proving non-English global templates use native copy, not the old English fallback.
 - [x] Scoped `/[locale]/admin/sales` from the URL locale through `getSalesDashboardData`, `GET /api/sales/dashboard`, company list, activities, operator queue, meetings, contracts, and video jobs so JP/global rows do not mix in the cockpit.
 - [x] Added `src/lib/sales/locale-scope.ts` as the shared routing guard for `report_locale`, `target_country`, `region`, and report links.
 - [x] Updated CSV import, scan, weekly digest, sales asset generation, diagnostic video generation, and video job APIs to accept/pass locale/country instead of falling back to `/ja`.

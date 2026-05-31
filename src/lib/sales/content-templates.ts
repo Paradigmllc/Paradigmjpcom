@@ -1,4 +1,5 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import localeData from "./content-template-locales.json"
 import { countryForLocale } from "./routing"
 import type { Industry, Region, ReportLocale, TemplateVariant } from "./types"
 import { INDUSTRIES } from "./types"
@@ -86,6 +87,27 @@ export interface ContentTemplateUpdateInput {
 
 export const REPORT_LOCALES = ["ja", "en", "ko", "zh", "de", "fr", "es", "pt", "ru", "ar", "vi", "id"] as const
 
+type LocaleText = Record<ReportLocale, string>
+
+const CONTENT_TEMPLATE_LOCALES = localeData as {
+  industries: Record<Industry, LocaleText>
+  assets: Record<ContentAssetType, LocaleText>
+  appeals: Record<ContentAppealAngle, LocaleText>
+  purpose: Record<ContentAssetType | "sales_video_retention", LocaleText>
+  quality: Record<ContentAssetType, LocaleText>
+  selection: Record<"language" | "country" | "industry" | "asset" | "appeal" | "priority" | "guard", LocaleText>
+  prompt: {
+    intro: LocaleText
+    evidence: LocaleText
+    tone: LocaleText
+    claimGuard: LocaleText
+    appealPrefix: LocaleText
+    urlGuard: LocaleText
+    assetInstruction: Record<ContentAssetType, LocaleText>
+  }
+  sample: LocaleText
+}
+
 const REGION_BY_LOCALE: Record<ReportLocale, Region> = {
   ja: "jp",
   en: "global",
@@ -101,32 +123,11 @@ const REGION_BY_LOCALE: Record<ReportLocale, Region> = {
   id: "global",
 }
 
-export const INDUSTRY_LABELS: Record<Industry, { ja: string; en: string }> = {
-  beauty_salon: { ja: "美容サロン", en: "beauty salon" },
-  dental: { ja: "歯科医院", en: "dental clinic" },
-  restaurant: { ja: "飲食店", en: "restaurant" },
-  construction: { ja: "建設・工務店", en: "construction company" },
-  accounting: { ja: "会計事務所", en: "accounting firm" },
-  retail: { ja: "小売・店舗", en: "retail business" },
-  cleaning: { ja: "清掃・メンテナンス", en: "cleaning service" },
-  consulting: { ja: "コンサルティング", en: "consulting firm" },
-}
+export const INDUSTRY_LABELS: Record<Industry, LocaleText> = CONTENT_TEMPLATE_LOCALES.industries
 
-export const CONTENT_ASSET_LABELS: Record<ContentAssetType, { ja: string; en: string }> = {
-  diagnostic_report: { ja: "診断レポート", en: "diagnostic report" },
-  astro_demo_site: { ja: "Astroデモサイト", en: "Astro replacement demo" },
-  sales_deck: { ja: "営業資料", en: "sales deck" },
-  sales_video: { ja: "営業動画", en: "sales video" },
-}
+export const CONTENT_ASSET_LABELS: Record<ContentAssetType, LocaleText> = CONTENT_TEMPLATE_LOCALES.assets
 
-export const CONTENT_APPEAL_LABELS: Record<ContentAppealAngle, { ja: string; en: string }> = {
-  revenue_recovery: { ja: "売上機会の回収", en: "revenue recovery" },
-  trust_authority: { ja: "信頼・権威づけ", en: "trust and authority" },
-  speed_conversion: { ja: "速度・CV改善", en: "speed and conversion" },
-  automation_dx: { ja: "DX・自動化", en: "automation and DX" },
-  japan_entry: { ja: "日本市場参入", en: "Japan market entry" },
-  video_retention: { ja: "動画継続納品", en: "video retention" },
-}
+export const CONTENT_APPEAL_LABELS: Record<ContentAppealAngle, LocaleText> = CONTENT_TEMPLATE_LOCALES.appeals
 
 export const CONTENT_TEMPLATE_VARIANT_LABELS: Record<TemplateVariant, string> = {
   website_diagnostic: "Web診断",
@@ -196,108 +197,49 @@ function isTemplateVariant(value: unknown): value is TemplateVariant {
   return typeof value === "string" && value in CONTENT_TEMPLATE_VARIANT_LABELS
 }
 
-function language(locale: ReportLocale): "ja" | "en" {
-  return locale === "ja" ? "ja" : "en"
-}
-
 function titleFor(locale: ReportLocale, industry: Industry, assetType: ContentAssetType, angle: ContentAppealAngle): string {
-  const lang = language(locale)
-  return `${INDUSTRY_LABELS[industry][lang]} | ${CONTENT_APPEAL_LABELS[angle][lang]} | ${CONTENT_ASSET_LABELS[assetType][lang]}`
+  return `${INDUSTRY_LABELS[industry][locale]} | ${CONTENT_APPEAL_LABELS[angle][locale]} | ${CONTENT_ASSET_LABELS[assetType][locale]}`
 }
 
 function purposeFor(locale: ReportLocale, assetType: ContentAssetType, angle: ContentAppealAngle): string {
-  const ja = locale === "ja"
-  if (assetType === "diagnostic_report") {
-    return ja
-      ? "公開データと実測値を、相手がすぐ理解できる損失仮説・改善優先度・提案導線へ変換する。"
-      : "Turn public evidence into a clear loss hypothesis, prioritized actions, and a proposal path."
+  if (assetType === "sales_video" && angle === "video_retention") {
+    return CONTENT_TEMPLATE_LOCALES.purpose.sales_video_retention[locale]
   }
-  if (assetType === "astro_demo_site") {
-    return ja
-      ? "診断で見つけた弱点を、改善後のファーストビューとCTA導線として体験できるデモにする。"
-      : "Convert diagnostic weaknesses into a tangible improved first view and CTA journey."
-  }
-  if (assetType === "sales_deck") {
-    return ja
-      ? "商談前後に共有できる、根拠・提案・費用感・進行計画が揃った意思決定用資料にする。"
-      : "Package proof, proposal, pricing logic, and rollout into a decision-ready deck."
-  }
-  if (angle === "video_retention") {
-    return ja
-      ? "月次で量産できる動画納品サブスクの価値を、初回提案から具体的に見せる。"
-      : "Show the value of a recurring short-video production subscription from the first proposal."
-  }
-  return ja
-    ? "診断の要点を短い営業動画にして、資料内やフォローで視聴されやすくする。"
-    : "Create a compact sales video that makes the diagnostic story easy to watch and share."
+  return CONTENT_TEMPLATE_LOCALES.purpose[assetType][locale]
 }
 
 function qualityBarFor(locale: ReportLocale, assetType: ContentAssetType): string {
-  const ja = locale === "ja"
-  if (assetType === "diagnostic_report") {
-    return ja
-      ? "1画面目で結論・根拠・損失仮説・次アクションが読める。脅しではなく、客観データと改善余地を中心にする。"
-      : "The first viewport shows conclusion, evidence, loss hypothesis, and next action without hype."
-  }
-  if (assetType === "astro_demo_site") {
-    return ja
-      ? "スマホで見た瞬間に、現状サイトとの差分、信頼要素、予約・問い合わせ導線が分かる。装飾より速度と明瞭さを優先する。"
-      : "On mobile, the visitor immediately sees the improved difference, trust proof, and CTA path."
-  }
-  if (assetType === "sales_deck") {
-    return ja
-      ? "10枚以内。問題提起、実測根拠、提案、概算、導入順序、予約導線まで過不足なく入れる。"
-      : "Ten slides or fewer, from problem and evidence to proposal, estimate, rollout, and booking."
-  }
-  return ja
-    ? "冒頭15秒で相手企業固有の痛みを提示し、60秒前後で改善後の未来とCTAまで到達する。"
-    : "Within 15 seconds, show the account-specific pain; around 60 seconds, reach the improved future and CTA."
+  return CONTENT_TEMPLATE_LOCALES.quality[assetType][locale]
 }
 
 function selectionRuleFor(locale: ReportLocale, industry: Industry, assetType: ContentAssetType, angle: ContentAppealAngle): string {
-  const lang = language(locale)
+  const selection = CONTENT_TEMPLATE_LOCALES.selection
   return [
-    `言語=${locale}`,
-    `国=${countryForLocale(locale)}`,
-    `業界=${INDUSTRY_LABELS[industry][lang]}`,
-    `成果物=${CONTENT_ASSET_LABELS[assetType][lang]}`,
-    `訴求=${CONTENT_APPEAL_LABELS[angle][lang]}`,
-    "優先順位: 完全一致 > 業界一致 > 商材一致 > 痛み根拠の強さ > 最新version",
-    "Difyは企業カルテとsource_runsに存在する根拠だけを使い、未検証の法改正・罰金・市場統計・CAGRを断定しない。",
+    `${selection.language[locale]}=${locale}`,
+    `${selection.country[locale]}=${countryForLocale(locale)}`,
+    `${selection.industry[locale]}=${INDUSTRY_LABELS[industry][locale]}`,
+    `${selection.asset[locale]}=${CONTENT_ASSET_LABELS[assetType][locale]}`,
+    `${selection.appeal[locale]}=${CONTENT_APPEAL_LABELS[angle][locale]}`,
+    selection.priority[locale],
+    selection.guard[locale],
   ].join(" / ")
 }
 
 function promptFor(locale: ReportLocale, industry: Industry, assetType: ContentAssetType, angle: ContentAppealAngle): string {
-  const ja = locale === "ja"
-  const industryName = INDUSTRY_LABELS[industry][language(locale)]
-  const base = ja
-    ? [
-        `あなたはParadigmの営業戦略・制作ディレクターです。対象は${industryName}です。`,
-        "入力される企業カルテ、公開データ、実測値、診断レポートURL、デモURLだけを根拠にしてください。",
-        "相手を煽りすぎず、経営者が次の15分商談を自然に受けたくなる温度で書いてください。",
-        "法改正、罰金額、市場統計、CAGR、業界平均は一次情報URLが無い限り顧客向けに断定しないでください。",
-      ]
-    : [
-        `You are Paradigm's sales strategist and production director. The target is a ${industryName}.`,
-        "Use only the provided company dossier, public evidence, measured data, report URL, and demo URL.",
-        "Keep the tone executive, specific, and helpful. Never invent unavailable evidence or overclaim results.",
-        "Do not assert legal, penalty, market, CAGR, or benchmark claims without a primary-source URL.",
-      ]
-  const assetInstruction: Record<ContentAssetType, string> = {
-    diagnostic_report: ja
-      ? "Next.js診断レポート用に、hero、根拠カード、損失仮説、改善優先度、提案、CTAをJSONで出力してください。"
-      : "Output JSON for a Next.js diagnostic report: hero, evidence cards, loss hypothesis, priorities, proposal, and CTA.",
-    astro_demo_site: ja
-      ? "Astroデモサイト用に、hero、信頼証拠、サービス導線、改善後CTA、計測イベントをセクション単位で出力してください。"
-      : "Output Astro demo sections: hero, trust proof, service path, improved CTA, and tracking events.",
-    sales_deck: ja
-      ? "Slidev/GotenbergでPDF化できる営業資料として、10枚以内のMarkdownを出力してください。"
-      : "Output Slidev-compatible Markdown for a PDF proposal deck in ten slides or fewer.",
-    sales_video: ja
-      ? "HyperFrames/Remotion/ComfyUI用に、60秒前後の構成、ナレーション、ビジュアル指示、字幕要約を出力してください。"
-      : "Output a roughly 60-second brief for HyperFrames/Remotion/ComfyUI with scenes, narration, visuals, and captions.",
-  }
-  return [...base, `訴求角度: ${CONTENT_APPEAL_LABELS[angle][language(locale)]}`, assetInstruction[assetType], "URLは必ずそのまま保持してください。"].join("\n")
+  const prompt = CONTENT_TEMPLATE_LOCALES.prompt
+  const industryName = INDUSTRY_LABELS[industry][locale]
+  const base = [
+    prompt.intro[locale].replace("{industry}", industryName),
+    prompt.evidence[locale],
+    prompt.tone[locale],
+    prompt.claimGuard[locale],
+  ]
+  return [
+    ...base,
+    `${prompt.appealPrefix[locale]}: ${CONTENT_APPEAL_LABELS[angle][locale]}`,
+    prompt.assetInstruction[assetType][locale],
+    prompt.urlGuard[locale],
+  ].join("\n")
 }
 
 function structureFor(assetType: ContentAssetType, angle: ContentAppealAngle): Record<string, unknown> {
@@ -309,11 +251,10 @@ function structureFor(assetType: ContentAssetType, angle: ContentAppealAngle): R
 }
 
 function sampleCopyFor(locale: ReportLocale, industry: Industry, assetType: ContentAssetType, angle: ContentAppealAngle): string {
-  const ja = locale === "ja"
-  if (ja) {
-    return `${INDUSTRY_LABELS[industry].ja}向けに「${CONTENT_APPEAL_LABELS[angle].ja}」を軸に、企業カルテと実測根拠から${CONTENT_ASSET_LABELS[assetType].ja}へ展開する。`
-  }
-  return `For a ${INDUSTRY_LABELS[industry].en}, turn measured evidence into a ${CONTENT_ASSET_LABELS[assetType].en} around ${CONTENT_APPEAL_LABELS[angle].en}.`
+  return CONTENT_TEMPLATE_LOCALES.sample[locale]
+    .replace("{industry}", INDUSTRY_LABELS[industry][locale])
+    .replace("{appeal}", CONTENT_APPEAL_LABELS[angle][locale])
+    .replace("{asset}", CONTENT_ASSET_LABELS[assetType][locale])
 }
 
 export function buildInitialContentTemplates(): SalesContentTemplate[] {
