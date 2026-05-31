@@ -9,7 +9,7 @@
  */
 
 import { cache } from "react"
-import { isPayloadInitCoolingDown, markPayloadInitFailure } from "./payload-availability"
+import { markPayloadInitFailure, shouldSkipPayloadReads } from "./payload-availability"
 import type { ThemeTokens } from "./theme-tokens"
 
 export interface SiteSettings {
@@ -140,7 +140,7 @@ function mediaUrl(v: unknown): string | null {
  * React cache() でリクエスト中の重複呼び出しを排除。
  */
 export const getSiteSettings = cache(async (locale: string = "ja"): Promise<SiteSettings> => {
-  if (isPayloadInitCoolingDown()) {
+  if (shouldSkipPayloadReads()) {
     return DEFAULTS
   }
 

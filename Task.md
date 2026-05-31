@@ -6,7 +6,8 @@
 - [x] Strengthened contact-form discovery for Japanese/global inquiry paths and kept CAPTCHA/Cloudflare/DataDome/Arkose-style forms in manual review instead of automatic submission.
 - [x] Repaired the outreach worker text path, cleaned remaining mojibake in worker comments/regex, upgraded Crawlee to 3.16.0, and added a reproducible `worker/package-lock.json`.
 - [x] Verified Playwright Stealth x Crawlee dry-run locally: it filled 3 fields and did not click submit, matching the safe automation gate.
-- [x] Verification: worker typecheck passed, targeted Sales OS Vitest passed (7 files / 29 tests), `npx tsc --noEmit --pretty false` passed, and `npm run build` passed with known local Payload Postgres fallback warnings.
+- [x] Fixed Coolify/Nixpacks build fragility by adding `scripts/build-next.mjs` and disabling build-time PayloadCMS reads while keeping runtime CMS reads enabled.
+- [x] Verification: worker typecheck passed, targeted Sales OS Vitest passed (7 files / 29 tests), `npx tsc --noEmit --pretty false` passed, and `npm run build` passed without Payload Postgres fallback spam.
 - [ ] Residual dependency note: `npm audit --omit=dev` in `worker/` still reports moderate `file-type` advisories through Crawlee; do not run forced downgrade. Track upstream and keep worker away from untrusted binary uploads.
 
 ## Codex Update - 2026-05-31 Sales Locale Scope Audit

@@ -14,7 +14,7 @@
  */
 
 import { cache } from "react"
-import { isPayloadInitCoolingDown, markPayloadInitFailure } from "./payload-availability"
+import { markPayloadInitFailure, shouldSkipPayloadReads } from "./payload-availability"
 
 export interface NavLink {
   label: string
@@ -46,7 +46,7 @@ export interface FooterNav {
 
 /** locale-aware で payload global を取得する共通ヘルパ。失敗時 null。 */
 async function findGlobal<T>(slug: string, locale: string): Promise<T | null> {
-  if (isPayloadInitCoolingDown()) {
+  if (shouldSkipPayloadReads()) {
     return null
   }
 

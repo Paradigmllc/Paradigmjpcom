@@ -18,6 +18,7 @@ import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
 import { filterByLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
 import { FAQ_JSONLD } from "@/lib/jsonld"
+import { markPayloadInitFailure, shouldSkipPayloadReads } from "@/lib/payload-availability"
 
 export const dynamic = "force-dynamic"
 
@@ -55,19 +56,22 @@ export default async function FaqPage({ params }: Props) {
   const t = await getTranslations({ locale, namespace: "faqPage" })
 
   let faqs: FaqDoc[] = []
-  try {
-    const payload = await getPayload({ config })
-    const res = await payload.find({
-      collection: "faqs",
-      where: filterByLocale(locale),
-      sort: "sortOrder",
-      limit: 100,
-      depth: 0,
-      ...localeFindOptions(locale),
-    })
-    faqs = (res.docs as unknown as FaqDoc[]) ?? []
-  } catch (e) {
-    console.error("[faq] payload.find failed:", e)
+  if (!shouldSkipPayloadReads()) {
+    try {
+      const payload = await getPayload({ config })
+      const res = await payload.find({
+        collection: "faqs",
+        where: filterByLocale(locale),
+        sort: "sortOrder",
+        limit: 100,
+        depth: 0,
+        ...localeFindOptions(locale),
+      })
+      faqs = (res.docs as unknown as FaqDoc[]) ?? []
+    } catch (e) {
+      markPayloadInitFailure(e)
+      console.error("[faq] payload.find failed:", e)
+    }
   }
 
   const faqPairs = faqs.map((f) => ({ q: f.question ?? "", a: lexicalToPlainText(f.answer) }))

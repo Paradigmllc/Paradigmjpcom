@@ -13,7 +13,7 @@
 import { getPayload } from "payload"
 import config from "@payload-config"
 import { coerceLocale, assertLocale, filterByLocale, localeFindOptions } from "@/lib/cms/filters"
-import { isPayloadInitCoolingDown, markPayloadInitFailure } from "@/lib/payload-availability"
+import { markPayloadInitFailure, shouldSkipPayloadReads } from "@/lib/payload-availability"
 import BlockRenderer from "@/blocks/BlockRenderer"
 import HomeClient from "./HomeClient"
 import HomeEnClient from "./HomeEnClient"
@@ -23,7 +23,7 @@ interface Props {
 }
 
 async function fetchHomepage(locale: string) {
-  if (isPayloadInitCoolingDown()) {
+  if (shouldSkipPayloadReads()) {
     return null
   }
 

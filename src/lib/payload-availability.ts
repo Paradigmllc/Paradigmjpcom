@@ -19,6 +19,17 @@ export function isPayloadInitCoolingDown(): boolean {
   return payloadInitCooldownRemainingMs() > 0
 }
 
+export function arePayloadReadsDisabled(): boolean {
+  return (
+    process.env.PAYLOAD_READS_DISABLED === "1" ||
+    process.env.PAYLOAD_READS_DISABLED_DURING_BUILD === "1"
+  )
+}
+
+export function shouldSkipPayloadReads(): boolean {
+  return arePayloadReadsDisabled() || isPayloadInitCoolingDown()
+}
+
 export function markPayloadInitFailure(error: unknown): void {
   lastFailureAt = Date.now()
   lastFailureMessage = error instanceof Error ? error.message : String(error)

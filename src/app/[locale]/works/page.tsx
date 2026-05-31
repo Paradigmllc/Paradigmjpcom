@@ -17,6 +17,7 @@ import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
 import { filterByLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
+import { markPayloadInitFailure, shouldSkipPayloadReads } from "@/lib/payload-availability"
 
 export const dynamic = "force-dynamic"
 
@@ -54,19 +55,22 @@ export default async function WorksPage({ params }: Props) {
   const t = await getTranslations({ locale, namespace: "worksPage" })
 
   let works: WorkDoc[] = []
-  try {
-    const payload = await getPayload({ config })
-    const res = await payload.find({
-      collection: "works",
-      where: filterByLocale(locale, { isPublished: { equals: true } }),
-      sort: "sortOrder",
-      limit: 100,
-      depth: 1,
-      ...localeFindOptions(locale),
-    })
-    works = (res.docs as unknown as WorkDoc[]) ?? []
-  } catch (e) {
-    console.error("[works] payload.find failed:", e)
+  if (!shouldSkipPayloadReads()) {
+    try {
+      const payload = await getPayload({ config })
+      const res = await payload.find({
+        collection: "works",
+        where: filterByLocale(locale, { isPublished: { equals: true } }),
+        sort: "sortOrder",
+        limit: 100,
+        depth: 1,
+        ...localeFindOptions(locale),
+      })
+      works = (res.docs as unknown as WorkDoc[]) ?? []
+    } catch (e) {
+      markPayloadInitFailure(e)
+      console.error("[works] payload.find failed:", e)
+    }
   }
 
   return (

@@ -17,6 +17,7 @@ import PageHero from "@/components/PageHero"
 import FadeIn from "@/components/aesop/FadeIn"
 import { filterByLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
 import { LOCALE_HREFLANG } from "@/lib/locale-map"
+import { markPayloadInitFailure, shouldSkipPayloadReads } from "@/lib/payload-availability"
 
 export const dynamic = "force-dynamic"
 
@@ -68,19 +69,22 @@ export default async function BlogPage({ params }: Props) {
   const t = await getTranslations({ locale, namespace: "blogPage" })
 
   let posts: PostDoc[] = []
-  try {
-    const payload = await getPayload({ config })
-    const res = await payload.find({
-      collection: "posts",
-      where: filterByLocale(locale, { status: { equals: "published" } }),
-      sort: "-publishedAt",
-      limit: 100,
-      depth: 0,
-      ...localeFindOptions(locale),
-    })
-    posts = (res.docs as unknown as PostDoc[]) ?? []
-  } catch (e) {
-    console.error("[blog] payload.find failed:", e)
+  if (!shouldSkipPayloadReads()) {
+    try {
+      const payload = await getPayload({ config })
+      const res = await payload.find({
+        collection: "posts",
+        where: filterByLocale(locale, { status: { equals: "published" } }),
+        sort: "-publishedAt",
+        limit: 100,
+        depth: 0,
+        ...localeFindOptions(locale),
+      })
+      posts = (res.docs as unknown as PostDoc[]) ?? []
+    } catch (e) {
+      markPayloadInitFailure(e)
+      console.error("[blog] payload.find failed:", e)
+    }
   }
 
   return (

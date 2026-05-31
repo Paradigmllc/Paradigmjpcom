@@ -27,6 +27,7 @@ import {
   type FormatPriceResult,
 } from "@/lib/ppp"
 import { LOCALE_HREFLANG } from "@/lib/locale-map"
+import { markPayloadInitFailure, shouldSkipPayloadReads } from "@/lib/payload-availability"
 
 export const dynamic = "force-dynamic"
 
@@ -80,19 +81,22 @@ export default async function PricingPage({ params, searchParams }: Props) {
   const country = forcedCountry || detectCountryFromHeaders(h)
 
   let plans: PricingDoc[] = []
-  try {
-    const payload = await getPayload({ config })
-    const res = await payload.find({
-      collection: "pricing",
-      where: filterByLocale(locale),
-      sort: "sortOrder",
-      limit: 100,
-      depth: 0,
-      ...localeFindOptions(locale),
-    })
-    plans = (res.docs as unknown as PricingDoc[]) ?? []
-  } catch (e) {
-    console.error("[pricing] payload.find failed:", e)
+  if (!shouldSkipPayloadReads()) {
+    try {
+      const payload = await getPayload({ config })
+      const res = await payload.find({
+        collection: "pricing",
+        where: filterByLocale(locale),
+        sort: "sortOrder",
+        limit: 100,
+        depth: 0,
+        ...localeFindOptions(locale),
+      })
+      plans = (res.docs as unknown as PricingDoc[]) ?? []
+    } catch (e) {
+      markPayloadInitFailure(e)
+      console.error("[pricing] payload.find failed:", e)
+    }
   }
 
   const priceFor = (plan: PricingDoc): FormatPriceResult => {

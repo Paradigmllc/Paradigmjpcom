@@ -19,6 +19,7 @@ import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
 import { filterByLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
+import { markPayloadInitFailure, shouldSkipPayloadReads } from "@/lib/payload-availability"
 
 export const dynamic = "force-dynamic"
 
@@ -59,19 +60,22 @@ export default async function ServicesPage({ params }: Props) {
   const t = await getTranslations({ locale, namespace: "servicesPage" })
 
   let services: ServiceDoc[] = []
-  try {
-    const payload = await getPayload({ config })
-    const res = await payload.find({
-      collection: "services",
-      where: filterByLocale(locale, { isActive: { equals: true } }),
-      sort: "sortOrder",
-      limit: 100,
-      depth: 0,
-      ...localeFindOptions(locale),
-    })
-    services = (res.docs as unknown as ServiceDoc[]) ?? []
-  } catch (e) {
-    console.error("[services] payload.find failed:", e)
+  if (!shouldSkipPayloadReads()) {
+    try {
+      const payload = await getPayload({ config })
+      const res = await payload.find({
+        collection: "services",
+        where: filterByLocale(locale, { isActive: { equals: true } }),
+        sort: "sortOrder",
+        limit: 100,
+        depth: 0,
+        ...localeFindOptions(locale),
+      })
+      services = (res.docs as unknown as ServiceDoc[]) ?? []
+    } catch (e) {
+      markPayloadInitFailure(e)
+      console.error("[services] payload.find failed:", e)
+    }
   }
 
   return (

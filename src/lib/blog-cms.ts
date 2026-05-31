@@ -20,7 +20,7 @@
 
 import type { BlogPost } from "./blog"
 import { BLOG_POSTS } from "./blog"
-import { isPayloadInitCoolingDown, markPayloadInitFailure } from "./payload-availability"
+import { markPayloadInitFailure, shouldSkipPayloadReads } from "./payload-availability"
 
 type PayloadPost = {
   id: string | number
@@ -75,7 +75,7 @@ function mapPayloadToBlogPost(p: PayloadPost, fallbackBySlug?: BlogPost): BlogPo
 }
 
 async function fetchAllPayloadPosts(locale: string): Promise<BlogPost[]> {
-  if (isPayloadInitCoolingDown()) {
+  if (shouldSkipPayloadReads()) {
     return []
   }
 
