@@ -5,6 +5,7 @@
 - [x] Pinned the outreach worker to a Crawlee release with clean production audit output while keeping Playwright Stealth x Crawlee worker execution off the shared Droplet unless delegated through remote browser endpoints.
 - [x] Added `scripts/host-disk-preflight.mjs` and wired it into both deploy paths so production deploys check root disk pressure before hitting Coolify, prune only Docker build cache/unused images when needed, and fail before another 100% disk deploy outage.
 - [x] Added and installed `scripts/install-host-disk-guard.mjs`; the live host now has `appexx-host-disk-guard.timer` running every 15 minutes. It never prunes Docker volumes.
+- [x] Restored the missing Cal.com app container in the OSS sales stack without touching Cal.com DB/Redis volumes; `https://cal.paradigmjp.com` is back to HTTP 200 and `paradigm-calcom` is healthy.
 - [x] Verification: `npm audit --omit=dev`, `npm --prefix worker audit --omit=dev`, `npm --prefix worker run typecheck`, `npx tsc --noEmit --pretty false`, targeted Sales OS Vitest (6 files / 17 tests), and `npm run build` all passed.
 
 ## Codex Update - 2026-05-31 Sales Mobile UI and Host Recovery
