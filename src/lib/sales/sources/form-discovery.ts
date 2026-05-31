@@ -59,7 +59,9 @@ const HEURISTIC_PATHS_JP = [
   "/資料請求/",
   "/相談",
   "/相談/",
-]
+  "/無料相談",
+  "/無料相談/",
+] as const
 
 const HEURISTIC_PATHS_GLOBAL = [
   "/contact",
@@ -74,10 +76,10 @@ const HEURISTIC_PATHS_GLOBAL = [
   "/form",
   "/request-a-demo",
   "/book-a-demo",
-]
+] as const
 
 const CONTACT_KEYWORDS =
-  /contact|inquiry|enquiry|toiawase|otoiawase|get-in-touch|contact-us|form|request-a-demo|book-a-demo|お問い合わせ|お問合せ|問い合わせ|資料請求|相談|ご相談/i
+  /contact|inquiry|enquiry|toiawase|otoiawase|get-in-touch|contact-us|form|request-a-demo|book-a-demo|お問い合わせ|お問合せ|問い合わせ|資料請求|相談|無料相談|見積|ご相談/i
 
 const FORM_SIGNATURE_RE =
   /<form\b|contact\s*form\s*7|wpforms|gravityforms|mw_wp_form|formrun|hubspot|hs-form|pardot|marketo|typeform|google\.com\/forms/i
@@ -108,8 +110,10 @@ function uniqueUrls(urls: Iterable<string>): string[] {
 
 function scoreContactUrl(url: string): number {
   const normalized = url.toLowerCase()
-  if (/contact|inquiry|enquiry|otoiawase|toiawase|お問い合わせ|お問合せ|問い合わせ/.test(normalized)) return 90
-  if (/form|相談|資料請求|get-in-touch/.test(normalized)) return 78
+  if (/contact|inquiry|enquiry|otoiawase|toiawase|お問い合わせ|お問合せ|問い合わせ/.test(normalized)) {
+    return 90
+  }
+  if (/form|相談|無料相談|資料請求|見積|get-in-touch/.test(normalized)) return 78
   return 40
 }
 
@@ -194,19 +198,13 @@ async function llmPickFormUrl(
   }
 }
 
-export async function discoverFormUrl(
-  opts: FormDiscoveryOptions,
-): Promise<FormDiscoveryResult> {
+export async function discoverFormUrl(opts: FormDiscoveryOptions): Promise<FormDiscoveryResult> {
   const started = Date.now()
   const timeoutMs = opts.timeoutMs ?? 8_000
   const origin = normalizeOrigin(opts.homeUrl)
   const candidates = new Set<string>()
 
-  const done = (
-    formUrl: string | null,
-    method: DiscoveryMethod,
-    confidence: number,
-  ): FormDiscoveryResult => ({
+  const done = (formUrl: string | null, method: DiscoveryMethod, confidence: number): FormDiscoveryResult => ({
     formUrl,
     method,
     confidence,

@@ -13,6 +13,8 @@ export interface IntelligenceSignal {
   category: "website" | "seo" | "security" | "company" | "outreach" | "automation"
   tone: IntelligenceTone
   detail: string
+  whyItMatters: string
+  missingConsequence?: string
 }
 
 export interface PainPoint {
@@ -60,6 +62,18 @@ function stackValue(tech: JsonRecord | null, scan: JsonRecord | null): string {
   return yesNo(scan?.is_wordpress === true)
 }
 
+function sourceItem(sourceItems: SourceCoverageItem[], slug: string): SourceCoverageItem | undefined {
+  return sourceItems.find((item) => item.slug === slug)
+}
+
+function meaningFor(sourceItems: SourceCoverageItem[], slug: string, fallback: string): string {
+  return sourceItem(sourceItems, slug)?.meaning ?? fallback
+}
+
+function missingFor(sourceItems: SourceCoverageItem[], slug: string): string | undefined {
+  return sourceItem(sourceItems, slug)?.missingConsequence
+}
+
 export function buildCompanyIntelligence(
   company: SalesCompany,
   sourceItems: SourceCoverageItem[],
@@ -87,6 +101,8 @@ export function buildCompanyIntelligence(
       category: "website",
       tone: scoreTone(company.pagespeed_mobile),
       detail: "A primary proxy for first-view friction on mobile search and ad traffic.",
+      whyItMatters: meaningFor(sourceItems, "pagespeed", "Speed influences whether visitors stay long enough to see the offer."),
+      missingConsequence: company.pagespeed_mobile === null ? missingFor(sourceItems, "pagespeed") : undefined,
     },
     {
       id: "pagespeed-desktop",
@@ -96,6 +112,8 @@ export function buildCompanyIntelligence(
       category: "website",
       tone: scoreTone(company.pagespeed_desktop),
       detail: "Useful for B2B comparison, office browsing, and post-click inquiry flow.",
+      whyItMatters: "Desktop speed still matters for B2B review, comparison, and internal sharing after the first visit.",
+      missingConsequence: company.pagespeed_desktop === null ? missingFor(sourceItems, "pagespeed") : undefined,
     },
     {
       id: "metadata",
@@ -105,6 +123,10 @@ export function buildCompanyIntelligence(
       category: "seo",
       tone: asString(scan?.html_title) && asString(scan?.html_description) ? "good" : "warning",
       detail: "Metadata shapes the first impression in search, social previews, and browser sharing.",
+      whyItMatters: meaningFor(sourceItems, "html_metadata", "Metadata shapes the first impression before a prospect clicks."),
+      missingConsequence: !asString(scan?.html_title) || !asString(scan?.html_description)
+        ? missingFor(sourceItems, "html_metadata")
+        : undefined,
     },
     {
       id: "wordpress",
@@ -114,6 +136,8 @@ export function buildCompanyIntelligence(
       category: "website",
       tone: scan?.is_wordpress === true ? "warning" : "neutral",
       detail: "Technology stack helps estimate rebuild risk, security posture, and performance constraints.",
+      whyItMatters: meaningFor(sourceItems, "wappalyzer", "Technology stack explains rebuild effort and likely bottlenecks."),
+      missingConsequence: !Array.isArray(tech?.stack) ? missingFor(sourceItems, "wappalyzer") : undefined,
     },
     {
       id: "security-headers",
@@ -123,6 +147,8 @@ export function buildCompanyIntelligence(
       category: "security",
       tone: headerCount >= 3 ? "good" : "warning",
       detail: "Checks HSTS, CSP, X-Frame-Options, and nosniff as trust and risk signals.",
+      whyItMatters: meaningFor(sourceItems, "security_headers_free", "Security headers reduce avoidable trust and review risk."),
+      missingConsequence: !headers ? missingFor(sourceItems, "security_headers_free") : undefined,
     },
     {
       id: "ssl",
@@ -132,6 +158,8 @@ export function buildCompanyIntelligence(
       category: "security",
       tone: asString(ssl?.grade)?.startsWith("A") ? "good" : ssl ? "warning" : "neutral",
       detail: "Certificate and TLS quality influence trust, browser warnings, and B2B review.",
+      whyItMatters: "SSL/TLS quality is a basic trust signal before booking, contact, and procurement review.",
+      missingConsequence: !ssl ? missingFor(sourceItems, "ssllabs") : undefined,
     },
     {
       id: "robots-sitemap",
@@ -141,6 +169,8 @@ export function buildCompanyIntelligence(
       category: "seo",
       tone: robots?.sitemapXml === true ? "good" : "warning",
       detail: "Shows whether crawlers can understand the public URL inventory.",
+      whyItMatters: meaningFor(sourceItems, "robots_sitemap", "Crawler visibility affects search and AI discovery."),
+      missingConsequence: !robots ? missingFor(sourceItems, "robots_sitemap") : undefined,
     },
     {
       id: "places",
@@ -150,6 +180,8 @@ export function buildCompanyIntelligence(
       category: "company",
       tone: place ? "good" : "neutral",
       detail: "Useful for local proof, MEO facts, opening hours, reviews, and map context.",
+      whyItMatters: meaningFor(sourceItems, "google_places", "Local proof affects trust before inquiry."),
+      missingConsequence: !place ? missingFor(sourceItems, "google_places") : undefined,
     },
     {
       id: "form",
@@ -159,6 +191,8 @@ export function buildCompanyIntelligence(
       category: "outreach",
       tone: asString(meta.contact_form_url) ? "good" : "warning",
       detail: `Discovery method: ${asString(formDiscovery?.method) ?? "not collected"}`,
+      whyItMatters: meaningFor(sourceItems, "crawlee", "A discoverable inquiry path matters for both users and outreach automation."),
+      missingConsequence: !asString(meta.contact_form_url) ? missingFor(sourceItems, "crawlee") : undefined,
     },
     {
       id: "dify",
@@ -168,6 +202,8 @@ export function buildCompanyIntelligence(
       category: "automation",
       tone: asString(diagnosis?.primaryPain) ? "good" : "warning",
       detail: asString(diagnosis?.primaryPain) ?? "Local deterministic diagnosis is used until Dify returns a result.",
+      whyItMatters: meaningFor(sourceItems, "dify", "Dify turns evidence into industry-specific language and offer selection."),
+      missingConsequence: !asString(diagnosis?.primaryPain) ? missingFor(sourceItems, "dify") : undefined,
     },
   ]
 

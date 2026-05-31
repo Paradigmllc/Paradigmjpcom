@@ -131,7 +131,7 @@ export function themeForIndustry(industry: Industry | null | undefined): SalesRe
 }
 
 export function labelForIndustry(industry: Industry | null | undefined, locale: ReportLocale | string = "ja"): string {
-  if (!industry) return locale === "ja" ? "対象業界" : "target industry"
+  if (!industry) return locale === "ja" ? "対象業種" : "target industry"
   return locale === "ja" ? INDUSTRY_LABEL[industry].ja : INDUSTRY_LABEL[industry].en
 }
 
@@ -147,7 +147,7 @@ export function escapeHtml(value: string | number | null | undefined): string {
 export function compactText(value: string | null | undefined, fallback: string, max = 180): string {
   const text = (value ?? "").replace(/\s+/g, " ").trim()
   if (!text) return fallback
-  return text.length > max ? `${text.slice(0, max - 1)}…` : text
+  return text.length > max ? `${text.slice(0, max - 1)}...` : text
 }
 
 export function scoreTone(score: number | null | undefined): "good" | "warning" | "critical" | "neutral" {

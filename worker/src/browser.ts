@@ -1,28 +1,24 @@
 /**
- * worker/src/browser.ts — ブラウザのライフサイクル管理 (ディスク/メモリ安全)
+ * Browser lifecycle for the outreach worker.
  *
- * 案1: CDP_ENDPOINT 指定 → リモートブラウザに connectOverCDP (ローカル Chromium 不要)
- * 案2: 空 → ローカル Chromium を 1 個だけ起動し使い回す
- *
- * context は 1 ジョブ = 1 個・使い終わったら必ず close (メモリリーク防止)。
+ * - CDP_ENDPOINT set: connect to Browserless or another remote browser.
+ * - CDP_ENDPOINT empty: launch one local Chromium instance and reuse it.
+ * Each job gets an isolated context that is always closed after use.
  */
 
 import { chromium } from "playwright-extra"
 import StealthPlugin from "puppeteer-extra-plugin-stealth"
 import type { Browser, BrowserContext } from "playwright"
 
-// Playwright Stealth: 自動化検知を回避 (navigator.webdriver 等を隠す)
+// Playwright Stealth reduces common automation fingerprints such as navigator.webdriver.
 chromium.use(StealthPlugin())
 
 let browserPromise: Promise<Browser> | null = null
 
 async function launch(): Promise<Browser> {
   const cdp = process.env.CDP_ENDPOINT
-  if (cdp) {
-    // 案1: リモートブラウザ (Browserless 等)。この箱に Chromium を置かない。
-    return chromium.connectOverCDP(cdp)
-  }
-  // 案2: ローカル Chromium (scale-to-zero 前提)
+  if (cdp) return chromium.connectOverCDP(cdp)
+
   return chromium.launch({
     headless: true,
     args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
@@ -34,7 +30,6 @@ export async function getBrowser(): Promise<Browser> {
   return browserPromise
 }
 
-/** 1 ジョブ 1 context・確実に close する高階関数 */
 export async function withContext<T>(
   fn: (ctx: BrowserContext) => Promise<T>,
 ): Promise<T> {

@@ -1,8 +1,8 @@
 /**
- * worker/src/submit.ts — フォーム入力 → 送信 (Playwright Stealth)
+ * Fill and optionally submit safe contact forms with Playwright Stealth.
  *
- * Next 側の preflight を通過した safe フォームのみ来る前提。
- * dryRun=true なら入力までで送信ボタンは押さない (監査)。
+ * Next.js performs discovery, classification, robots checks, and approval gates
+ * first. dryRun=true fills fields only and never clicks the submit button.
  */
 
 import type { Page } from "playwright"
@@ -28,14 +28,17 @@ type Role = "name" | "email" | "phone" | "company" | "message" | "other"
 function roleOf(name: string): Role {
   const n = name.toLowerCase()
   if (/mail|email|e-mail/.test(n)) return "email"
-  if (/tel|phone|denwa|電話/.test(n)) return "phone"
-  if (/company|corp|kaisha|会社|法人/.test(n)) return "company"
-  if (/message|body|content|inquiry|honbun|本文|内容|問い合わせ/.test(n)) return "message"
-  if (/name|namae|お名前|氏名|担当/.test(n)) return "name"
+  if (/tel|phone|denwa|電話|携帯/.test(n)) return "phone"
+  if (/company|corp|kaisha|会社|法人|企業|貴社/.test(n)) return "company"
+  if (/message|body|content|inquiry|honbun|本文|内容|お問い合わせ|問い合わせ|相談/.test(n)) {
+    return "message"
+  }
+  if (/name|namae|お名前|氏名|名前|担当者|担当/.test(n)) return "name"
   return "other"
 }
 
-const SUCCESS_RE = /ありがとう|送信(が)?(完了|されました|を受け付け)|受け付けました|thank you|successfully sent|message sent/i
+const SUCCESS_RE =
+  /ありがとうございます|送信(が)?(完了しました|されました|を受け付け)|受け付けました|受付しました|thank you|successfully sent|message sent|mail_sent/i
 
 async function fillFields(page: Page, input: SubmitInput): Promise<number> {
   const controls = await page.$$("input, textarea")
@@ -61,8 +64,8 @@ async function fillFields(page: Page, input: SubmitInput): Promise<number> {
     try {
       await el.fill(value)
       filled++
-    } catch {
-      // 個別フィールド失敗は無視 (必須でないことが多い)
+    } catch (error) {
+      console.warn("[worker/submit] failed to fill field:", { name, role, error })
     }
   }
   return filled
@@ -74,18 +77,18 @@ export async function submitForm(input: SubmitInput): Promise<SubmitResult> {
     return await withContext(async (ctx) => {
       const page = await ctx.newPage()
       page.setDefaultTimeout(timeout)
-      await page.goto(input.formUrl, { waitUntil: "domcontentloaded" })
+      await page.goto(input.formUrl, { waitUntil: "domcontentloaded", timeout })
 
       const filled = await fillFields(page, input)
       if (filled === 0) {
-        return { ok: false, outcome: "failed", detail: "入力可能なフィールドが見つからない" }
+        return { ok: false, outcome: "failed", detail: "No fillable fields were found." }
       }
 
       if (input.dryRun) {
         return {
           ok: true,
           outcome: "uncertain",
-          detail: `dry-run: ${filled} フィールド入力済 (送信ボタン未押下)`,
+          detail: `dry-run: filled ${filled} fields; submit button was not clicked.`,
         }
       }
 
@@ -95,16 +98,18 @@ export async function submitForm(input: SubmitInput): Promise<SubmitResult> {
         )
         .first()
       if ((await submitBtn.count()) === 0) {
-        return { ok: false, outcome: "failed", detail: "送信ボタンが見つからない" }
+        return { ok: false, outcome: "failed", detail: "Submit button was not found." }
       }
       await submitBtn.click()
-      await page.waitForLoadState("networkidle").catch(() => {})
+      await page.waitForLoadState("networkidle", { timeout }).catch((error) => {
+        console.warn("[worker/submit] networkidle wait failed:", error)
+      })
 
       const body = await page.content()
       if (SUCCESS_RE.test(body)) {
-        return { ok: true, outcome: "submitted", detail: "送信完了 (確認文言検出)" }
+        return { ok: true, outcome: "submitted", detail: "Submit completed; success text detected." }
       }
-      return { ok: true, outcome: "uncertain", detail: "送信したが確認文言を検出できず" }
+      return { ok: true, outcome: "uncertain", detail: "Submitted, but success text was not detected." }
     })
   } catch (e) {
     return {

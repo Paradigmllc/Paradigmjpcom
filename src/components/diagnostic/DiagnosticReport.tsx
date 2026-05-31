@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import type { RefObject } from "react"
 import type { DiagnosticAct, DiagnosticReportData } from "@/lib/sales/diagnostic"
 import { signalScore, type IntelligenceSignal, type PainPoint } from "@/lib/sales/company-intelligence"
+import type { SourceCoverageItem } from "@/lib/sales/source-coverage"
 import { labelForIndustry, scoreTone, themeForIndustry } from "@/lib/sales/render-quality"
 import { REPORT_COPY, normalizeReportLang, type ReportCopy, type ReportLang } from "./report-copy"
 
@@ -107,7 +108,7 @@ function ActCard({ act, index, lang }: { act: DiagnosticAct; index: number; lang
   )
 }
 
-function SignalCard({ signal }: { signal: IntelligenceSignal }) {
+function SignalCard({ signal, copy }: { signal: IntelligenceSignal; copy: ReportCopy }) {
   return (
     <div className="rounded-lg border border-zinc-200 bg-white p-4">
       <div className="flex items-start justify-between gap-3">
@@ -120,6 +121,16 @@ function SignalCard({ signal }: { signal: IntelligenceSignal }) {
         </span>
       </div>
       <p className="mt-3 text-xs leading-6 text-zinc-600">{signal.detail}</p>
+      <div className="mt-3 rounded-md bg-zinc-50 p-3 text-xs leading-6 text-zinc-700">
+        <div className="font-semibold text-zinc-500">{copy.whyImportant}</div>
+        <p className="mt-1">{signal.whyItMatters}</p>
+        {signal.missingConsequence && (
+          <>
+            <div className="mt-3 font-semibold text-zinc-500">{copy.missingTreatment}</div>
+            <p className="mt-1">{signal.missingConsequence}</p>
+          </>
+        )}
+      </div>
     </div>
   )
 }
@@ -152,8 +163,36 @@ function PainCard({ pain, copy }: { pain: PainPoint; copy: ReportCopy }) {
   )
 }
 
+function SourceRow({ item, copy }: { item: SourceCoverageItem; copy: ReportCopy }) {
+  const tone = scoreTone(item.score)
+  return (
+    <div className="border-t border-zinc-100 py-4 first:border-t-0 first:pt-0 last:pb-0">
+      <div className="flex items-center justify-between gap-2">
+        <span className="truncate text-xs font-semibold text-zinc-950">{item.label}</span>
+        <span className={`rounded border px-2 py-0.5 text-[11px] font-semibold ${TONE_BADGE[tone]}`}>
+          {item.status}
+        </span>
+      </div>
+      <p className="mt-2 text-[11px] leading-5 text-zinc-500">{item.detail}</p>
+      <div className="mt-3 space-y-2 text-[11px] leading-5 text-zinc-700">
+        <p><span className="font-semibold text-zinc-500">{copy.sourceMeaning}: </span>{item.meaning}</p>
+        {item.status === "missing" ? (
+          <p><span className="font-semibold text-rose-700">{copy.sourceMissingImpact}: </span>{item.missingConsequence}</p>
+        ) : (
+          <p><span className="font-semibold text-emerald-700">{copy.sourceUse}: </span>{copy.sourceUseBody}</p>
+        )}
+        <p><span className="font-semibold text-zinc-500">{copy.sourceNext}: </span>{item.nextStep}</p>
+      </div>
+    </div>
+  )
+}
+
 function SourceCoveragePanel({ data, copy }: { data: DiagnosticReportData; copy: ReportCopy }) {
   const visible = [...data.source_coverage.items].sort((a, b) => b.score - a.score).slice(0, 16)
+  const missingImportant = data.source_coverage.items
+    .filter((item) => item.status === "missing")
+    .sort((a, b) => (a.category === "analysis" ? -1 : 0) - (b.category === "analysis" ? -1 : 0))
+    .slice(0, 4)
 
   return (
     <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
@@ -172,17 +211,22 @@ function SourceCoveragePanel({ data, copy }: { data: DiagnosticReportData; copy:
           <div className="h-full bg-zinc-950" style={{ width: `${data.source_coverage.score}%` }} />
         </div>
       </div>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+      {missingImportant.length > 0 && (
+        <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <div className="text-xs font-semibold text-amber-900">{copy.missingImportantData}</div>
+          <p className="mt-2 text-xs leading-6 text-amber-900">{copy.missingImportantBody}</p>
+          <ul className="mt-3 space-y-2 text-xs leading-6 text-amber-950">
+            {missingImportant.map((item) => (
+              <li key={item.slug}>
+                <span className="font-semibold">{item.label}: </span>{item.missingConsequence}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <div className="mt-5">
         {visible.map((item) => (
-          <div key={item.slug} className="rounded-lg border border-zinc-100 bg-zinc-50 p-3">
-            <div className="flex items-center justify-between gap-2">
-              <span className="truncate text-xs font-semibold text-zinc-950">{item.label}</span>
-              <span className={`rounded border px-2 py-0.5 text-[11px] font-semibold ${TONE_BADGE[scoreTone(item.score)]}`}>
-                {item.status}
-              </span>
-            </div>
-            <p className="mt-2 text-[11px] leading-5 text-zinc-500">{item.detail}</p>
-          </div>
+          <SourceRow key={item.slug} item={item} copy={copy} />
         ))}
       </div>
     </section>
@@ -288,9 +332,7 @@ export default function DiagnosticReport({
               </span>
               {data.prefecture && <span className="rounded bg-zinc-100 px-2 py-0.5 text-zinc-600">{data.prefecture}</span>}
             </div>
-            <h1 className="max-w-4xl text-3xl font-semibold leading-tight text-zinc-950 sm:text-4xl">
-              {data.hook}
-            </h1>
+            <h1 className="max-w-4xl text-3xl font-semibold leading-tight text-zinc-950 sm:text-4xl">{data.hook}</h1>
             <div className="mt-5 flex flex-wrap gap-2">
               {data.demo_url && (
                 <a
@@ -346,7 +388,7 @@ export default function DiagnosticReport({
               <h2 className="mb-4 text-xl font-semibold text-zinc-950">{copy.evidence}</h2>
               <div className="grid gap-3 sm:grid-cols-2">
                 {data.intelligence.signals.slice(0, 10).map((signal) => (
-                  <SignalCard key={signal.id} signal={signal} />
+                  <SignalCard key={signal.id} signal={signal} copy={copy} />
                 ))}
               </div>
             </section>

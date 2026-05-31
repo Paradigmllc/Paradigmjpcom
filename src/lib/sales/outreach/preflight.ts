@@ -1,12 +1,10 @@
 /**
- * lib/sales/outreach/preflight.ts — 送信前チェック (Phase 3)
+ * Final pre-submit gate for form outreach.
  *
- * 役割: 実送信の直前に「送ってよいか」を最終ゲートする。
- *   1. classification が safe_* か
- *   2. robots.txt がそのパスを明示 Disallow していないか (良き市民として尊重)
- *   3. フォーム URL が到達可能か
- *
- * いずれか NG なら preflight_failed。法的グレー回避 (SALES-CENTER #4) の安全弁。
+ * Requirements:
+ * 1. classification is safe_*
+ * 2. robots.txt does not explicitly disallow the target path
+ * 3. form URL is parseable
  */
 
 import type { ClassifyFormResult } from "./form-classifier"
@@ -18,7 +16,7 @@ export interface PreflightResult {
   reason: string
 }
 
-/** robots.txt を取得し、対象パスが Disallow されていないか確認 (best-effort) */
+/** Best-effort robots.txt check for the target form path. */
 async function robotsAllows(formUrl: string, timeoutMs: number): Promise<boolean> {
   const origin = normalizeOrigin(formUrl)
   if (!origin) return true
@@ -28,18 +26,21 @@ async function robotsAllows(formUrl: string, timeoutMs: number): Promise<boolean
       signal: AbortSignal.timeout(timeoutMs),
       headers: { "User-Agent": "ParadigmFormDiscovery/1.0 (+https://paradigmjp.com)" },
     })
-    if (!res.ok) return true // robots 無し = 制限なし
+    if (!res.ok) return true
     txt = await res.text()
-  } catch {
-    return true // 取得失敗時は許可側に倒す (robots は推奨であり禁止規定ではない)
+  } catch (error) {
+    console.warn("[sales-preflight] robots.txt fetch failed:", error)
+    return true
   }
   let path: string
   try {
     path = new URL(formUrl).pathname
-  } catch {
+  } catch (error) {
+    console.warn("[sales-preflight] invalid form URL:", error)
     return true
   }
-  // 全 UA (User-agent: *) の Disallow のみ確認 (簡易パーサ)
+
+  // Minimal parser: honor only User-agent: * Disallow rules.
   const lines = txt.split(/\r?\n/).map((l) => l.trim())
   let inStar = false
   for (const line of lines) {

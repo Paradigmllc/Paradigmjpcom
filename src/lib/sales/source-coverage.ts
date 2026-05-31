@@ -19,6 +19,9 @@ export interface SourceCoverageItem {
   status: SourceCoverageStatus
   score: number
   detail: string
+  meaning: string
+  missingConsequence: string
+  nextStep: string
 }
 
 export interface SourceCoverageSnapshot {
@@ -36,16 +39,65 @@ interface SourceDefinition {
   env?: string[]
   detect: (meta: JsonRecord, company: SalesCompany) => boolean
   detail: string
+  meaning?: string
+  missingConsequence?: string
+  nextStep?: string
 }
 
 const SOURCES: SourceDefinition[] = [
-  { slug: "pagespeed", label: "PageSpeed Insights", category: "analysis", env: ["GOOGLE_PSI_API_KEY"], detect: (_meta, c) => c.pagespeed_mobile !== null || c.pagespeed_desktop !== null, detail: "Core Web Vitals and speed risk" },
-  { slug: "html_metadata", label: "HTML metadata scan", category: "analysis", detect: (m) => !!(m.scan as JsonRecord | undefined)?.html_title || !!(m.scan as JsonRecord | undefined)?.html_description, detail: "Title, description, canonical, OGP, and visible HTML evidence" },
-  { slug: "robots_sitemap", label: "robots.txt / sitemap.xml", category: "analysis", detect: (m) => !!(m.robots_sitemap as JsonRecord | undefined)?.robotsTxt || !!(m.robots_sitemap as JsonRecord | undefined)?.sitemapXml, detail: "Crawlability and public URL inventory" },
-  { slug: "security_headers_free", label: "HTTP security headers", category: "analysis", detect: (m) => !!m.security_headers, detail: "HSTS, CSP, X-Frame-Options, nosniff, and server header" },
+  {
+    slug: "pagespeed",
+    label: "PageSpeed Insights",
+    category: "analysis",
+    env: ["GOOGLE_PSI_API_KEY"],
+    detect: (_meta, c) => c.pagespeed_mobile !== null || c.pagespeed_desktop !== null,
+    detail: "Core Web Vitals and speed risk",
+    meaning: "表示速度は、広告・検索・SNSから来た見込み客が最初の数秒で残るか離脱するかを左右します。",
+    missingConsequence: "未取得だと「遅い気がする」以上の説明ができず、損失仮説を自分事化しにくくなります。",
+    nextStep: "PageSpeed / Lighthouse を取得し、LCP・INP・CLSを改善優先度へ変換します。",
+  },
+  {
+    slug: "html_metadata",
+    label: "HTML metadata scan",
+    category: "analysis",
+    detect: (m) => !!(m.scan as JsonRecord | undefined)?.html_title || !!(m.scan as JsonRecord | undefined)?.html_description,
+    detail: "Title, description, canonical, OGP, and visible HTML evidence",
+    meaning: "検索結果・SNS共有・チャット共有で最初に見られる約束文です。弱いとクリック前に比較から落ちます。",
+    missingConsequence: "未取得だと、見込み客が最初に目にする訴求のズレを診断できません。",
+    nextStep: "title / description / OGP / canonical を取得し、業種別の強い訴求に置き換えます。",
+  },
+  {
+    slug: "robots_sitemap",
+    label: "robots.txt / sitemap.xml",
+    category: "analysis",
+    detect: (m) => !!(m.robots_sitemap as JsonRecord | undefined)?.robotsTxt || !!(m.robots_sitemap as JsonRecord | undefined)?.sitemapXml,
+    detail: "Crawlability and public URL inventory",
+    meaning: "GoogleやAI検索がサイト構造を理解できるかを見る台帳です。見つからないページは営業機会にもなりません。",
+    missingConsequence: "未取得だと、SEO/GEOで拾われていない導線の特定が曖昧になります。",
+    nextStep: "robots.txt と sitemap.xml を確認し、重要ページの発見性を整えます。",
+  },
+  {
+    slug: "security_headers_free",
+    label: "HTTP security headers",
+    category: "analysis",
+    detect: (m) => !!m.security_headers,
+    detail: "HSTS, CSP, X-Frame-Options, nosniff, and server header",
+    meaning: "B2B検討・採用・予約前の信頼性に関わる基礎防御です。小さな不備でも不安材料になります。",
+    missingConsequence: "未取得だと、信頼棄損や調達審査で引っかかる可能性を説明できません。",
+    nextStep: "HSTS / CSP / X-Frame-Options / nosniff を確認し、標準の堅牢化項目に落とします。",
+  },
   { slug: "dataforseo", label: "DataForSEO", category: "analysis", env: ["DATAFORSEO_LOGIN", "DATAFORSEO_PASSWORD"], detect: (m) => !!m.dataforseo, detail: "SEO and lighthouse enrichment" },
   { slug: "lighthouse_api", label: "Lighthouse API", category: "analysis", env: ["GOOGLE_PSI_API_KEY", "LIGHTHOUSE_API_URL"], detect: (m, c) => !!m.lighthouse || c.pagespeed_mobile !== null || c.pagespeed_desktop !== null, detail: "Performance and Core Web Vitals details" },
-  { slug: "wappalyzer", label: "Wappalyzer CLI", category: "analysis", detect: (m) => Array.isArray((m.tech as JsonRecord | undefined)?.stack), detail: "CMS/framework/analytics stack" },
+  {
+    slug: "wappalyzer",
+    label: "Wappalyzer CLI",
+    category: "analysis",
+    detect: (m) => Array.isArray((m.tech as JsonRecord | undefined)?.stack),
+    detail: "CMS/framework/analytics stack",
+    meaning: "CMS・計測・フレームワークは、改修難度、表示速度、セキュリティ負債、既存投資の見込みを読む材料です。",
+    missingConsequence: "未取得だと、なぜAstro/Next.js差し替えが効くのか、既存環境に合わせた説明が薄くなります。",
+    nextStep: "Wappalyzer/WhatWebで技術スタックを取得し、負債・移行難度・既存投資を分類します。",
+  },
   { slug: "whatweb", label: "WhatWeb API", category: "analysis", env: ["WHATWEB_API_URL"], detect: (m) => !!m.whatweb || !!(m.tech as JsonRecord | undefined)?.server, detail: "Technology fingerprint fallback" },
   { slug: "urlscan", label: "urlscan.io", category: "analysis", env: ["URLSCAN_API_KEY"], detect: (m) => !!m.urlscan, detail: "Security and resource evidence" },
   { slug: "publicwww", label: "PublicWWW", category: "analysis", env: ["PUBLICWWW_API_KEY"], detect: (m) => !!m.publicwww, detail: "Tracking/script footprint" },
@@ -61,14 +113,54 @@ const SOURCES: SourceDefinition[] = [
   { slug: "jgrants", label: "jGrants API", category: "list", env: ["JGRANTS_API_KEY"], detect: (m) => !!m.jgrants, detail: "Subsidy opportunity evidence" },
   { slug: "apify", label: "Apify API", category: "list", env: ["APIFY_API_TOKEN"], detect: (m) => !!m.apify, detail: "Crawler and dataset enrichment" },
   { slug: "outscraper", label: "Outscraper", category: "list", env: ["OUTSCRAPER_API_KEY"], detect: (m) => !!m.outscraper, detail: "Maps and local business enrichment" },
-  { slug: "google_places", label: "Google Places", category: "list", env: ["GOOGLE_PLACES_API_KEY"], detect: (m) => !!m.place, detail: "Local presence and MEO facts" },
+  {
+    slug: "google_places",
+    label: "Google Places",
+    category: "list",
+    env: ["GOOGLE_PLACES_API_KEY"],
+    detect: (m) => !!m.place,
+    detail: "Local presence and MEO facts",
+    meaning: "店舗・地域ビジネスでは、口コミ、営業時間、写真、地図上の見え方が予約前の比較を決めます。",
+    missingConsequence: "未取得だと、競合比較や評判ギャップを本人が納得できる形で示せません。",
+    nextStep: "Google Places を取得し、口コミ・評価・営業時間・地図導線を改善項目へ変換します。",
+  },
   { slug: "hunter", label: "Hunter/Apollo contacts", category: "list", env: ["HUNTER_API_KEY", "APOLLO_API_KEY"], detect: (m) => !!m.hunter || !!m.apollo, detail: "Contact discovery" },
-  { slug: "crawlee", label: "Crawlee", category: "outreach", env: ["CRAWLEE_WORKER_URL"], detect: (m) => !!m.crawlee || !!m.form_discovery, detail: "Contact path crawl and anchor scoring" },
-  { slug: "crawl4ai", label: "Crawl4AI form discovery", category: "outreach", env: ["CRAWL4AI_BASE_URL"], detect: (m) => !!m.crawl4ai || !!m.contact_form_url || !!m.form_discovery, detail: "Contact form URL evidence" },
+  {
+    slug: "crawlee",
+    label: "Crawlee",
+    category: "outreach",
+    env: ["CRAWLEE_WORKER_URL"],
+    detect: (m) => !!m.crawlee || !!m.form_discovery,
+    detail: "Contact path crawl and anchor scoring",
+    meaning: "問い合わせ導線が機械的に見つかるかは、ユーザーにも営業自動化にも同じくらい重要です。",
+    missingConsequence: "未取得だと、フォーム営業の可否だけでなく、実ユーザーが迷う導線かどうかも判断できません。",
+    nextStep: "Crawlee/Playwright worker でSPAフォームまで確認し、CAPTCHA時は人間確認へ切り替えます。",
+  },
+  {
+    slug: "crawl4ai",
+    label: "Crawl4AI form discovery",
+    category: "outreach",
+    env: ["CRAWL4AI_BASE_URL"],
+    detect: (m) => !!m.crawl4ai || !!m.contact_form_url || !!m.form_discovery,
+    detail: "Contact form URL evidence",
+    meaning: "公開ページ全体から問い合わせ・資料請求・予約導線を探し、営業文面に確実な着地点を作ります。",
+    missingConsequence: "未取得だと、診断レポートを見てもらう前の送信経路が不安定になります。",
+    nextStep: "Crawl4AIで候補URLを抽出し、フォーム分類とpreflightへ渡します。",
+  },
   { slug: "browserless", label: "Browserless", category: "outreach", env: ["BROWSERLESS_URL"], detect: (m) => !!m.browserless || !!m.browser_worker, detail: "Remote browser execution for SPA forms" },
   { slug: "camoufox", label: "Camoufox", category: "outreach", env: ["CAMOUFOX_WS_URL"], detect: (m) => !!m.camoufox, detail: "Fingerprint-hardened browser escalation" },
   { slug: "playwright_stealth", label: "Playwright Stealth", category: "outreach", env: ["OUTREACH_WORKER_URL"], detect: (m) => !!m.playwright_stealth || !!m.browser_worker, detail: "Final form automation worker with approval gates" },
-  { slug: "dify", label: "Dify pain diagnosis", category: "orchestration", env: ["DIFY_DIAGNOSIS_API_KEY", "DIFY_API_KEY"], detect: (m) => !!m.pain_diagnosis || !!m.dify_diagnosis, detail: "Pain summary and offer mapping" },
+  {
+    slug: "dify",
+    label: "Dify pain diagnosis",
+    category: "orchestration",
+    env: ["DIFY_DIAGNOSIS_API_KEY", "DIFY_API_KEY"],
+    detect: (m) => !!m.pain_diagnosis || !!m.dify_diagnosis,
+    detail: "Pain summary and offer mapping",
+    meaning: "取得した事実を、相手の業種・国・商材に合わせた痛みと言葉へ変換する中核です。",
+    missingConsequence: "未取得だと、レポートは数字の羅列に寄り、相手が自分事として理解しにくくなります。",
+    nextStep: "Dify Cloud + DeepSeek V4 で、痛み・損失仮説・提案テンプレを選定します。",
+  },
   { slug: "deepseek", label: "DeepSeek V4 copy", category: "orchestration", env: ["DEEPSEEK_API_KEY"], detect: (m) => !!m.personalized_copy, detail: "Personalized diagnosis copy" },
   { slug: "n8n_trigger", label: "n8n / Trigger.dev", category: "orchestration", env: ["N8N_SALES_ENRICHMENT_WEBHOOK_URL", "TRIGGER_DEV_SALES_ENRICHMENT_WEBHOOK_URL"], detect: (m) => !!m.enrichment, detail: "Job execution and audit trail" },
   { slug: "hermes_slack", label: "Hermes Agent / Slack", category: "orchestration", env: ["SLACK_WEBHOOK_URL", "HERMES_AGENT_WEBHOOK_URL"], detect: (m) => !!m.hermes || !!m.slack_notification, detail: "Human approval and alert routing" },
@@ -100,6 +192,25 @@ function scoreFor(status: SourceCoverageStatus): number {
   return 0
 }
 
+function genericMeaning(source: SourceDefinition): string {
+  if (source.category === "analysis") return "診断の根拠を増やし、技術的な事実を事業上の改善優先度に変換します。"
+  if (source.category === "list") return "企業属性・地域・連絡先・予算シグナルを補強し、提案の外し方を減らします。"
+  if (source.category === "outreach") return "レポートを届ける経路と営業実行の安全性を確認します。"
+  if (source.category === "orchestration") return "人間判断・文面生成・ジョブ実行をつなぎ、営業を止めないための運用情報です。"
+  if (source.category === "video") return "診断内容を短い動画に変換し、理解と共有の摩擦を下げます。"
+  if (source.category === "demo") return "改善後の未来を見える化し、検討を抽象論から具体案に進めます。"
+  return "営業判断に必要な追加証拠を補強します。"
+}
+
+function genericMissingConsequence(source: SourceDefinition): string {
+  return `${source.label} が未取得のため、${source.detail} を根拠にした断定は避け、仮説として扱います。`
+}
+
+function genericNextStep(source: SourceDefinition): string {
+  if (source.env?.length) return `${source.env[0]} を設定し、次回のカルテ生成ジョブで再取得します。`
+  return `${source.label} の取得ジョブを再実行し、取得できない場合は手動確認キューに回します。`
+}
+
 export function computeSourceCoverage(company: SalesCompany): SourceCoverageSnapshot {
   const meta = (company.meta ?? {}) as JsonRecord
   const items = SOURCES.map((source): SourceCoverageItem => {
@@ -113,6 +224,9 @@ export function computeSourceCoverage(company: SalesCompany): SourceCoverageSnap
       status,
       score: scoreFor(status),
       detail: source.detail,
+      meaning: source.meaning ?? genericMeaning(source),
+      missingConsequence: source.missingConsequence ?? genericMissingConsequence(source),
+      nextStep: source.nextStep ?? genericNextStep(source),
     }
   })
   const scored = items.filter((item) => item.status !== "not_applicable")
@@ -137,7 +251,13 @@ export async function saveSourceCoverageRows(company: SalesCompany): Promise<voi
     category: item.category,
     status: item.status,
     score: item.score,
-    details: { label: item.label, detail: item.detail },
+    details: {
+      label: item.label,
+      detail: item.detail,
+      meaning: item.meaning,
+      missingConsequence: item.missingConsequence,
+      nextStep: item.nextStep,
+    },
     measured_at: measuredAt,
   }))
 

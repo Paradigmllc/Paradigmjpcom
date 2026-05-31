@@ -98,13 +98,27 @@ function textEvidence(
 
 function sourceItemFromRun(row: SourceRunRow): SourceCoverageItem {
   const details = asRecord(row.details)
+  const label = typeof details?.label === "string" ? details.label : row.source_slug
+  const detail = typeof details?.detail === "string" ? details.detail : "Evidence source"
   return {
     slug: row.source_slug,
     category: row.category,
     status: row.status,
     score: row.score,
-    label: typeof details?.label === "string" ? details.label : row.source_slug,
-    detail: typeof details?.detail === "string" ? details.detail : "Evidence source",
+    label,
+    detail,
+    meaning:
+      typeof details?.meaning === "string"
+        ? details.meaning
+        : `${label} は企業カルテの根拠を補強し、営業判断を数字の羅列から改善理由へ変換するためのソースです。`,
+    missingConsequence:
+      typeof details?.missingConsequence === "string"
+        ? details.missingConsequence
+        : `${label} が未取得のため、${detail} を根拠にした断定は避けます。`,
+    nextStep:
+      typeof details?.nextStep === "string"
+        ? details.nextStep
+        : `${label} の取得ジョブを再実行し、取得できない場合は手動確認キューに回します。`,
   }
 }
 

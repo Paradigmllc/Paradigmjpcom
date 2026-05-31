@@ -1,12 +1,10 @@
 /**
- * worker/src/index.ts — HTTP サーバ (Next の RemoteWorkerProvider から委譲)
+ * Minimal HTTP server used by Next.js RemoteWorkerProvider.
  *
- * エンドポイント:
- *   GET  /health        → { ok }
- *   POST /submit        → SubmitResult        (X-Worker-Secret 必須)
- *   POST /discover-spa  → { formUrl }          (X-Worker-Secret 必須)
- *
- * 依存追加ゼロのため node:http を直接使用。
+ * Endpoints:
+ * - GET /health
+ * - POST /submit       with X-Worker-Secret
+ * - POST /discover-spa with X-Worker-Secret
  */
 
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http"
@@ -34,7 +32,6 @@ const server = createServer(async (req, res) => {
     if (req.method === "GET" && req.url === "/health") {
       return send(res, 200, { ok: true, provider: process.env.CDP_ENDPOINT ? "remote-cdp" : "local-chromium" })
     }
-    // 認証 (health 以外)
     if (!SECRET) return send(res, 503, { ok: false, error: "WORKER_SECRET not configured" })
     if (req.headers["x-worker-secret"] !== SECRET) {
       return send(res, 401, { ok: false, error: "unauthorized" })
@@ -61,11 +58,14 @@ const server = createServer(async (req, res) => {
   }
 })
 
-server.listen(PORT, () => console.log(`[worker] ④フォーム営業 worker listening on :${PORT}`))
+server.listen(PORT, () => console.log(`[worker] outreach browser worker listening on :${PORT}`))
 
 async function shutdown(): Promise<void> {
-  await closeBrowser().catch(() => {})
+  await closeBrowser().catch((error) => {
+    console.error("[worker] browser shutdown failed:", error)
+  })
   server.close(() => process.exit(0))
 }
+
 process.on("SIGTERM", shutdown)
 process.on("SIGINT", shutdown)

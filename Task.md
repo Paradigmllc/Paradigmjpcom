@@ -1,3 +1,14 @@
+## Codex Update - 2026-05-31 Diagnostic Meaning and Outreach Worker Audit
+
+- [x] Re-read the Paradigm wall-reference guidance and converted the report path from "source numbers only" into "evidence -> meaning -> business pain -> next action" copy.
+- [x] Added meaning, missing-data consequence, and next-step metadata to source coverage so free API/OSS results explain why each signal matters instead of appearing as raw counts.
+- [x] Updated company intelligence and public diagnostic reports to show why each signal matters, how missing evidence is treated, and what the customer should fix first.
+- [x] Strengthened contact-form discovery for Japanese/global inquiry paths and kept CAPTCHA/Cloudflare/DataDome/Arkose-style forms in manual review instead of automatic submission.
+- [x] Repaired the outreach worker text path, cleaned remaining mojibake in worker comments/regex, upgraded Crawlee to 3.16.0, and added a reproducible `worker/package-lock.json`.
+- [x] Verified Playwright Stealth x Crawlee dry-run locally: it filled 3 fields and did not click submit, matching the safe automation gate.
+- [x] Verification: worker typecheck passed, targeted Sales OS Vitest passed (7 files / 29 tests), `npx tsc --noEmit --pretty false` passed, and `npm run build` passed with known local Payload Postgres fallback warnings.
+- [ ] Residual dependency note: `npm audit --omit=dev` in `worker/` still reports moderate `file-type` advisories through Crawlee; do not run forced downgrade. Track upstream and keep worker away from untrusted binary uploads.
+
 ## Codex Update - 2026-05-31 Sales Locale Scope Audit
 
 - [x] Follow-up native template pass: moved Sales OS content-template labels, purpose copy, quality bars, Dify selection rules, generation prompts, and sample copy into `src/lib/sales/content-template-locales.json` so app generation and Supabase seeding share one 12-locale source of truth.
