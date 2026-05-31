@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import {
   BarChart3,
@@ -90,15 +90,45 @@ const LOCALE_LABELS: Record<string, string> = {
   id: "Indonesia / Indonesian",
 }
 
+const DEFAULT_TAB: TabId = "overview"
+
+function isTabId(value: string | null): value is TabId {
+  return TABS.some((tab) => tab.id === value)
+}
+
+function readTabFromUrl(): TabId {
+  if (typeof window === "undefined") return DEFAULT_TAB
+  const tab = new URLSearchParams(window.location.search).get("tab")
+  return isTabId(tab) ? tab : DEFAULT_TAB
+}
+
 export function SalesCommandCenter({ data }: Props) {
-  const [activeTab, setActiveTab] = useState<TabId>("overview")
+  const [activeTab, setActiveTab] = useState<TabId>(readTabFromUrl)
   const activeToolCount = data.toolConnections.filter((tool) => tool.status === "active").length
   const runningJobs = data.enrichmentJobs.filter((job) => job.status === "queued" || job.status === "running").length
   const currentLocale = data.scope.reportLocale
 
+  useEffect(() => {
+    const handlePopState = () => setActiveTab(readTabFromUrl())
+    window.addEventListener("popstate", handlePopState)
+    return () => window.removeEventListener("popstate", handlePopState)
+  }, [])
+
+  function selectTab(tabId: TabId) {
+    setActiveTab(tabId)
+    const url = new URL(window.location.href)
+    if (tabId === DEFAULT_TAB) {
+      url.searchParams.delete("tab")
+    } else {
+      url.searchParams.set("tab", tabId)
+    }
+    window.history.replaceState(null, "", url)
+  }
+
   function changeLocale(nextLocale: string) {
     if (nextLocale === currentLocale) return
-    window.location.href = `/${nextLocale}/admin/sales`
+    const suffix = activeTab === DEFAULT_TAB ? "" : `?tab=${encodeURIComponent(activeTab)}`
+    window.location.href = `/${nextLocale}/admin/sales${suffix}`
   }
 
   return (
@@ -173,7 +203,7 @@ export function SalesCommandCenter({ data }: Props) {
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => selectTab(tab.id)}
                 className={`flex h-10 shrink-0 items-center gap-2 rounded-md border px-3 text-sm font-medium transition ${
                   isActive
                     ? "border-zinc-950 bg-zinc-950 text-white"

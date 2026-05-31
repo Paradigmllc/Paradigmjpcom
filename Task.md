@@ -558,3 +558,10 @@
 - [x] Added `supabase/migration_027_sales_video_segments_loss_guard.sql` for `target_segment`, `offer_angle`, `loss_simulation`, and `claim_guard`.
 - [x] Rebuilt the `/ja/admin/sales` video tab UI with readable Japanese labels, segment selection, offer-angle selection, live simulator controls, and job cards showing segment/loss metadata.
 - [x] Updated the no-login deploy script to include the new video strategy migration and readable product master labels.
+
+## Codex Update - 2026-05-31 Template Deep Link and Expert Report UI
+
+- [x] Added deep-linkable Sales Command Center tabs. Template management can now be opened directly at `/ja/admin/sales?tab=templates` and locale switching preserves the active tab.
+- [x] Rebuilt the public diagnostic report UI into an expert-style report: executive assessment, evidence confidence, opportunity-loss summary, pain model, objective signal cards, source ledger, 30-day roadmap, selected template, and CTA.
+- [x] Split report locale copy into `src/components/diagnostic/report-copy.ts` so the main report component stays below the 500-line rule while retaining 12-locale UI labels.
+- [x] Verification: `npx tsc --noEmit --pretty false`, targeted Vitest sales tests, and `npm run build` passed. Local build still prints existing PayloadCMS local Postgres fallback warnings because localhost Postgres is not running, but exits 0.

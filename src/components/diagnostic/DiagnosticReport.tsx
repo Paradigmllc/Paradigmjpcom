@@ -3,79 +3,17 @@
 import { useEffect, useRef, useState } from "react"
 import type { RefObject } from "react"
 import type { DiagnosticAct, DiagnosticReportData } from "@/lib/sales/diagnostic"
-import type { IntelligenceSignal, PainPoint } from "@/lib/sales/company-intelligence"
+import { signalScore, type IntelligenceSignal, type PainPoint } from "@/lib/sales/company-intelligence"
 import { labelForIndustry, scoreTone, themeForIndustry } from "@/lib/sales/render-quality"
-
-type Lang = "ja" | "en"
-
-const COPY = {
-  ja: {
-    brand: "Paradigm Web診断",
-    privateReport: "非公開診断レポート",
-    validUntil: "有効期限",
-    diagnosed: "診断対象",
-    summary: "経営判断サマリー",
-    loss: "推定される月間機会損失",
-    evidence: "取得データと根拠",
-    pain: "客観データから見える痛み",
-    actions: "次に取るべき営業アクション",
-    sources: "API / OSS 取得状況",
-    template: "適用テンプレート",
-    quality: "品質基準",
-    demo: "差し替えデモを見る",
-    video: "60秒動画を見る",
-    ctaHeading: "30分だけ、優先順位を一緒に確認しましょう",
-    ctaBody: "費用の話ではなく、どこから直すと成果につながりやすいかを診断データベースで確認します。",
-    ctaButton: "相談する",
-    subject: "診断レポートについて",
-    collected: "取得",
-    configured: "接続済み",
-    missing: "未取得",
-  },
-  en: {
-    brand: "Paradigm Web Diagnostics",
-    privateReport: "Private diagnostic report",
-    validUntil: "Valid until",
-    diagnosed: "Diagnosed",
-    summary: "Executive summary",
-    loss: "Estimated monthly opportunity loss",
-    evidence: "Collected evidence",
-    pain: "Pain signals from objective data",
-    actions: "Recommended next actions",
-    sources: "API / OSS source coverage",
-    template: "Selected template",
-    quality: "Quality bar",
-    demo: "Open replacement demo",
-    video: "Watch 60-sec video",
-    ctaHeading: "Start with a 30-minute prioritization call",
-    ctaBody: "We will focus on the highest-impact fixes, not a generic sales pitch.",
-    ctaButton: "Talk to us",
-    subject: "About the diagnostic report",
-    collected: "collected",
-    configured: "configured",
-    missing: "missing",
-  },
-} as const
+import { REPORT_COPY, normalizeReportLang, type ReportCopy, type ReportLang } from "./report-copy"
 
 const SEVERITY = {
-  critical: {
-    ja: "最優先",
-    en: "Critical",
-    className: "border-rose-200 bg-rose-50 text-rose-700",
-  },
-  warning: {
-    ja: "要改善",
-    en: "Action needed",
-    className: "border-amber-200 bg-amber-50 text-amber-800",
-  },
-  info: {
-    ja: "改善余地",
-    en: "Opportunity",
-    className: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  },
+  critical: { ja: "最優先", en: "Critical", className: "border-rose-200 bg-rose-50 text-rose-700" },
+  warning: { ja: "要改善", en: "Action needed", className: "border-amber-200 bg-amber-50 text-amber-800" },
+  info: { ja: "機会", en: "Opportunity", className: "border-emerald-200 bg-emerald-50 text-emerald-700" },
 } as const
 
-const SIGNAL = {
+const TONE_BADGE = {
   good: "border-emerald-200 bg-emerald-50 text-emerald-700",
   warning: "border-amber-200 bg-amber-50 text-amber-800",
   critical: "border-rose-200 bg-rose-50 text-rose-700",
@@ -98,7 +36,7 @@ function useCountUp(target: number, duration = 1100, start = false): number {
   return value
 }
 
-function useInView(threshold = 0.16): [RefObject<HTMLDivElement | null>, boolean] {
+function useInView(threshold = 0.14): [RefObject<HTMLDivElement | null>, boolean] {
   const ref = useRef<HTMLDivElement>(null)
   const [inView, setInView] = useState(false)
   useEffect(() => {
@@ -114,20 +52,33 @@ function useInView(threshold = 0.16): [RefObject<HTMLDivElement | null>, boolean
   return [ref, inView]
 }
 
-function yenNumber(value: string): number {
+function numericValue(value: string): number {
   return Number.parseInt(value.replace(/[^0-9]/g, ""), 10) || 0
 }
 
-function ActCard({ act, index, lang }: { act: DiagnosticAct; index: number; lang: Lang }) {
+function formatYen(value: number, lang: ReportLang): string {
+  return new Intl.NumberFormat(lang === "ja" ? "ja-JP" : "en-US", {
+    style: "currency",
+    currency: "JPY",
+    maximumFractionDigits: 0,
+  }).format(value)
+}
+
+function reportLocale(lang: ReportLang): string {
+  return lang === "ja" ? "ja-JP" : lang
+}
+
+function ActCard({ act, index, lang }: { act: DiagnosticAct; index: number; lang: ReportLang }) {
   const [ref, inView] = useInView()
-  const numeric = yenNumber(act.metric_value)
+  const numeric = numericValue(act.metric_value)
   const counted = useCountUp(numeric, 1000, inView)
-  const metricValue = numeric > 0 ? counted.toLocaleString(lang === "ja" ? "ja-JP" : "en-US") : act.metric_value
+  const metricValue = numeric > 0 ? counted.toLocaleString(reportLocale(lang)) : act.metric_value
+  const severityLabel = lang === "ja" ? SEVERITY[act.severity].ja : SEVERITY[act.severity].en
 
   return (
     <article
       ref={ref}
-      className="grid gap-5 rounded-lg border border-zinc-200 bg-white p-5 shadow-sm md:grid-cols-[minmax(0,1fr)_150px]"
+      className="grid gap-5 rounded-lg border border-zinc-200 bg-white p-5 shadow-sm md:grid-cols-[minmax(0,1fr)_164px]"
       style={{
         opacity: inView ? 1 : 0,
         transform: inView ? "translateY(0)" : "translateY(18px)",
@@ -137,11 +88,11 @@ function ActCard({ act, index, lang }: { act: DiagnosticAct; index: number; lang
       <div>
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <span className={`rounded-md border px-2 py-1 text-[11px] font-semibold ${SEVERITY[act.severity].className}`}>
-            {SEVERITY[act.severity][lang]}
+            {severityLabel}
           </span>
           <span className="text-xs text-zinc-500">{act.metric_label}</span>
         </div>
-        <h2 className="text-lg font-semibold leading-7 text-zinc-950">{act.headline}</h2>
+        <h3 className="text-lg font-semibold leading-7 text-zinc-950">{act.headline}</h3>
         <p className="mt-3 text-sm leading-7 text-zinc-600">{act.body}</p>
       </div>
       <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-4 text-center">
@@ -164,7 +115,7 @@ function SignalCard({ signal }: { signal: IntelligenceSignal }) {
           <div className="text-sm font-semibold text-zinc-950">{signal.label}</div>
           <div className="mt-1 text-xs text-zinc-500">{signal.source}</div>
         </div>
-        <span className={`rounded-md border px-2 py-1 text-[11px] font-semibold ${SIGNAL[signal.tone]}`}>
+        <span className={`rounded-md border px-2 py-1 text-[11px] font-semibold ${TONE_BADGE[signal.tone]}`}>
           {signal.value}
         </span>
       </div>
@@ -173,7 +124,7 @@ function SignalCard({ signal }: { signal: IntelligenceSignal }) {
   )
 }
 
-function PainCard({ pain }: { pain: PainPoint }) {
+function PainCard({ pain, copy }: { pain: PainPoint; copy: ReportCopy }) {
   const tone =
     pain.severity === "critical"
       ? "border-rose-200 bg-rose-50"
@@ -181,34 +132,40 @@ function PainCard({ pain }: { pain: PainPoint }) {
         ? "border-amber-200 bg-amber-50"
         : "border-emerald-200 bg-emerald-50"
   return (
-    <div className={`rounded-lg border p-4 ${tone}`}>
+    <article className={`rounded-lg border p-4 ${tone}`}>
       <div className="text-sm font-semibold text-zinc-950">{pain.title}</div>
-      <p className="mt-2 text-xs leading-6 text-zinc-700">{pain.evidence}</p>
-      <p className="mt-2 text-xs leading-6 text-zinc-600">{pain.implication}</p>
-      <div className="mt-3 rounded-md bg-white/80 p-3 text-xs font-semibold leading-6 text-zinc-900">
-        {pain.recommendedAction}
-      </div>
-    </div>
+      <dl className="mt-3 space-y-3 text-xs leading-6 text-zinc-700">
+        <div>
+          <dt className="font-semibold text-zinc-500">{copy.assumption}</dt>
+          <dd>{pain.evidence}</dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-zinc-500">{copy.implication}</dt>
+          <dd>{pain.implication}</dd>
+        </div>
+        <div className="rounded-md bg-white/85 p-3">
+          <dt className="font-semibold text-zinc-500">{copy.recommendation}</dt>
+          <dd className="font-semibold text-zinc-900">{pain.recommendedAction}</dd>
+        </div>
+      </dl>
+    </article>
   )
 }
 
-function SourceCoveragePanel({ data, lang }: { data: DiagnosticReportData; lang: Lang }) {
-  const c = COPY[lang]
-  const visible = data.source_coverage.items
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 16)
+function SourceCoveragePanel({ data, copy }: { data: DiagnosticReportData; copy: ReportCopy }) {
+  const visible = [...data.source_coverage.items].sort((a, b) => b.score - a.score).slice(0, 16)
 
   return (
     <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <div className="text-xs font-semibold text-zinc-500">{c.sources}</div>
+          <div className="text-xs font-semibold text-zinc-500">{copy.sourceLedger}</div>
           <h2 className="mt-2 text-xl font-semibold text-zinc-950">
-            {data.source_coverage.score}% source confidence
+            {data.source_coverage.score}% {copy.sourceConfidence}
           </h2>
           <p className="mt-2 text-sm leading-7 text-zinc-600">
-            {c.collected} {data.source_coverage.collected} / {c.configured} {data.source_coverage.configured} /{" "}
-            {c.missing} {data.source_coverage.missing}
+            {copy.collected} {data.source_coverage.collected} / {copy.configured} {data.source_coverage.configured} /{" "}
+            {copy.missing} {data.source_coverage.missing}
           </p>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-zinc-100 sm:w-56">
@@ -220,11 +177,52 @@ function SourceCoveragePanel({ data, lang }: { data: DiagnosticReportData; lang:
           <div key={item.slug} className="rounded-lg border border-zinc-100 bg-zinc-50 p-3">
             <div className="flex items-center justify-between gap-2">
               <span className="truncate text-xs font-semibold text-zinc-950">{item.label}</span>
-              <span className={`text-xs font-semibold ${SIGNAL[scoreTone(item.score)]}`}>{item.status}</span>
+              <span className={`rounded border px-2 py-0.5 text-[11px] font-semibold ${TONE_BADGE[scoreTone(item.score)]}`}>
+                {item.status}
+              </span>
             </div>
             <p className="mt-2 text-[11px] leading-5 text-zinc-500">{item.detail}</p>
           </div>
         ))}
+      </div>
+    </section>
+  )
+}
+
+function ExecutiveMemo({
+  data,
+  copy,
+  confidence,
+}: {
+  data: DiagnosticReportData
+  copy: ReportCopy
+  confidence: number
+}) {
+  const topPain = data.intelligence.painPoints[0]
+  const firstAction = data.intelligence.nextActions[0]
+
+  return (
+    <section className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
+      <div className="text-xs font-semibold text-zinc-500">{copy.expertRead}</div>
+      <h2 className="mt-2 text-2xl font-semibold leading-tight text-zinc-950">{data.hook}</h2>
+      <div className="mt-6 grid gap-4 md:grid-cols-3">
+        <div className="rounded-lg bg-zinc-50 p-4">
+          <div className="text-xs font-semibold text-zinc-500">{copy.whatWeSee}</div>
+          <p className="mt-2 text-sm leading-7 text-zinc-700">{topPain?.evidence ?? data.content_template.purpose}</p>
+        </div>
+        <div className="rounded-lg bg-zinc-50 p-4">
+          <div className="text-xs font-semibold text-zinc-500">{copy.whyItMatters}</div>
+          <p className="mt-2 text-sm leading-7 text-zinc-700">{topPain?.implication ?? data.cta_text}</p>
+        </div>
+        <div className="rounded-lg bg-zinc-50 p-4">
+          <div className="text-xs font-semibold text-zinc-500">{copy.firstMove}</div>
+          <p className="mt-2 text-sm leading-7 text-zinc-700">{firstAction}</p>
+        </div>
+      </div>
+      <div className="mt-5 flex flex-wrap gap-2 text-xs">
+        <span className="rounded-md border border-zinc-200 px-2 py-1">{copy.confidence}: {confidence}/100</span>
+        <span className="rounded-md border border-zinc-200 px-2 py-1">{copy.priority}: {data.template_variant}</span>
+        <span className="rounded-md border border-zinc-200 px-2 py-1">{data.target_country}</span>
       </div>
     </section>
   )
@@ -239,13 +237,14 @@ export default function DiagnosticReport({
   trackingSlug?: string
   locale?: string
 }) {
-  const lang: Lang = locale === "ja" ? "ja" : "en"
-  const c = COPY[lang]
+  const lang = normalizeReportLang(locale ?? data.report_locale)
+  const copy = REPORT_COPY[lang]
   const theme = themeForIndustry(data.industry)
   const [lossRef, lossInView] = useInView()
-  const lossCount = useCountUp(yenNumber(data.total_loss), 1300, lossInView)
+  const lossCount = useCountUp(numericValue(data.total_loss), 1300, lossInView)
   const activeLocale = locale ?? data.report_locale
   const videoHref = trackingSlug ? `/${activeLocale}/report/${trackingSlug}/video` : null
+  const confidence = signalScore(data.intelligence.signals)
 
   return (
     <div className="min-h-screen bg-zinc-50 font-sans text-zinc-950">
@@ -268,12 +267,12 @@ export default function DiagnosticReport({
               P
             </div>
             <div>
-              <div className="text-xs font-semibold text-zinc-950">{c.brand}</div>
-              <div className="text-[11px] text-zinc-500">{c.privateReport}</div>
+              <div className="text-xs font-semibold text-zinc-950">{copy.brand}</div>
+              <div className="text-[11px] text-zinc-500">{copy.privateReport}</div>
             </div>
           </div>
           <span className="text-xs text-zinc-500">
-            {c.validUntil}: {data.expires_at}
+            {copy.validUntil}: {data.expires_at}
           </span>
         </div>
       </header>
@@ -282,7 +281,7 @@ export default function DiagnosticReport({
         <section className="grid gap-6 border-b border-zinc-200 pb-8 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div>
             <div className="mb-4 inline-flex flex-wrap items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs">
-              <span className="text-zinc-500">{c.diagnosed}</span>
+              <span className="text-zinc-500">{copy.diagnosed}</span>
               <span className="font-semibold text-zinc-950">{data.company_name}</span>
               <span className="rounded bg-zinc-100 px-2 py-0.5 text-zinc-600">
                 {labelForIndustry(data.industry, data.report_locale)}
@@ -300,7 +299,7 @@ export default function DiagnosticReport({
                   rel="noopener noreferrer"
                   className="inline-flex h-10 items-center rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white"
                 >
-                  {c.demo}
+                  {copy.demo}
                 </a>
               )}
               {videoHref && (
@@ -310,43 +309,41 @@ export default function DiagnosticReport({
                   rel="noopener noreferrer"
                   className="inline-flex h-10 items-center rounded-md border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-950"
                 >
-                  {c.video}
+                  {copy.video}
                 </a>
               )}
             </div>
           </div>
           <div ref={lossRef} className="rounded-lg p-5 text-white shadow-sm" style={{ background: theme.ink }}>
-            <div className="text-xs font-semibold text-white/60">{c.loss}</div>
-            <div className="mt-3 text-4xl font-semibold tabular-nums">
-              {new Intl.NumberFormat(lang === "ja" ? "ja-JP" : "en-US", {
-                style: "currency",
-                currency: "JPY",
-                maximumFractionDigits: 0,
-              }).format(lossInView ? lossCount : 0)}
-            </div>
-            <p className="mt-4 text-sm leading-7 text-white/70">{data.cta_text}</p>
+            <div className="text-xs font-semibold text-white/65">{copy.loss}</div>
+            <div className="mt-3 text-4xl font-semibold tabular-nums">{formatYen(lossInView ? lossCount : 0, lang)}</div>
+            <p className="mt-4 text-sm leading-7 text-white/75">{data.cta_text}</p>
           </div>
         </section>
 
-        <section className="grid gap-4 py-8 lg:grid-cols-3">
+        <section className="py-8">
+          <ExecutiveMemo data={data} copy={copy} confidence={confidence} />
+        </section>
+
+        <section className="grid gap-4 lg:grid-cols-3">
           {data.acts.map((act, index) => (
             <ActCard key={`${act.headline}-${index}`} act={act} index={index} lang={lang} />
           ))}
         </section>
 
-        <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <section className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="space-y-5">
             <section>
-              <h2 className="mb-4 text-xl font-semibold text-zinc-950">{c.pain}</h2>
+              <h2 className="mb-4 text-xl font-semibold text-zinc-950">{copy.pain}</h2>
               <div className="grid gap-3">
                 {data.intelligence.painPoints.map((pain) => (
-                  <PainCard key={pain.id} pain={pain} />
+                  <PainCard key={pain.id} pain={pain} copy={copy} />
                 ))}
               </div>
             </section>
 
             <section>
-              <h2 className="mb-4 text-xl font-semibold text-zinc-950">{c.evidence}</h2>
+              <h2 className="mb-4 text-xl font-semibold text-zinc-950">{copy.evidence}</h2>
               <div className="grid gap-3 sm:grid-cols-2">
                 {data.intelligence.signals.slice(0, 10).map((signal) => (
                   <SignalCard key={signal.id} signal={signal} />
@@ -357,7 +354,7 @@ export default function DiagnosticReport({
 
           <aside className="space-y-5">
             <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-              <h2 className="text-lg font-semibold text-zinc-950">{c.actions}</h2>
+              <h2 className="text-lg font-semibold text-zinc-950">{copy.actions}</h2>
               <ol className="mt-4 space-y-3">
                 {data.intelligence.nextActions.map((action, index) => (
                   <li key={action} className="flex gap-3 text-sm leading-7 text-zinc-700">
@@ -371,11 +368,11 @@ export default function DiagnosticReport({
             </section>
 
             <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-              <div className="text-xs font-semibold text-zinc-500">{c.template}</div>
+              <div className="text-xs font-semibold text-zinc-500">{copy.template}</div>
               <h2 className="mt-2 text-lg font-semibold text-zinc-950">{data.content_template.title}</h2>
               <p className="mt-3 text-sm leading-7 text-zinc-600">{data.content_template.purpose}</p>
               <div className="mt-4 rounded-lg p-4" style={{ background: theme.accentSoft }}>
-                <div className="text-xs font-semibold text-zinc-500">{c.quality}</div>
+                <div className="text-xs font-semibold text-zinc-500">{copy.quality}</div>
                 <p className="mt-2 text-sm leading-7 text-zinc-800">{data.content_template.quality_bar}</p>
               </div>
             </section>
@@ -383,18 +380,18 @@ export default function DiagnosticReport({
         </section>
 
         <div className="mt-5">
-          <SourceCoveragePanel data={data} lang={lang} />
+          <SourceCoveragePanel data={data} copy={copy} />
         </div>
 
         <section className="mt-8 rounded-lg border border-zinc-200 bg-white p-7 text-center shadow-sm">
-          <h2 className="text-2xl font-semibold text-zinc-950">{c.ctaHeading}</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-zinc-600">{c.ctaBody}</p>
+          <h2 className="text-2xl font-semibold text-zinc-950">{copy.ctaHeading}</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-zinc-600">{copy.ctaBody}</p>
           <a
-            href={`mailto:info@paradigmjp.com?subject=${encodeURIComponent(c.subject)}&body=${encodeURIComponent(data.report_url)}`}
+            href={`mailto:info@paradigmjp.com?subject=${encodeURIComponent(copy.subject)}&body=${encodeURIComponent(data.report_url)}`}
             className="mt-6 inline-flex h-11 items-center justify-center rounded-md px-6 text-sm font-semibold text-white"
             style={{ background: theme.accentDark }}
           >
-            {c.ctaButton}
+            {copy.ctaButton}
           </a>
         </section>
       </main>
