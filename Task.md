@@ -565,3 +565,10 @@
 - [x] Rebuilt the public diagnostic report UI into an expert-style report: executive assessment, evidence confidence, opportunity-loss summary, pain model, objective signal cards, source ledger, 30-day roadmap, selected template, and CTA.
 - [x] Split report locale copy into `src/components/diagnostic/report-copy.ts` so the main report component stays below the 500-line rule while retaining 12-locale UI labels.
 - [x] Verification: `npx tsc --noEmit --pretty false`, targeted Vitest sales tests, and `npm run build` passed. Local build still prints existing PayloadCMS local Postgres fallback warnings because localhost Postgres is not running, but exits 0.
+
+## Codex Update - 2026-05-31 Template Live Preview UI
+
+- [x] Added an in-dashboard live preview panel to the template workbench so operators can review actual structure, design, and copy while editing a template.
+- [x] Preview modes now cover diagnostic report, form outreach copy, sales deck, sales video storyboard, and Astro replacement demo layout.
+- [x] Split `TemplateRow` into `src/components/sales-dashboard/template-workbench-types.ts` and kept the preview component separate from the editor to stay under the file-size rule.
+- [x] Verification: `npx tsc --noEmit --pretty false`, targeted Vitest sales tests, and `npm run build` passed. Local build still prints existing PayloadCMS local Postgres fallback warnings because localhost Postgres is not running, but exits 0.

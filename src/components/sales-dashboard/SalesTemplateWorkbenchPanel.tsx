@@ -14,25 +14,8 @@ import {
   INDUSTRY_LABELS,
   REPORT_LOCALES,
 } from "@/lib/sales/content-templates"
-
-type TemplateRow = {
-  id?: string
-  report_locale: string
-  target_country: string
-  industry: string
-  offer_code: string
-  asset_type: string
-  appeal_angle: string
-  template_variant: string
-  title: string
-  purpose: string
-  quality_bar: string
-  dify_selection_rule: string
-  prompt_template: string
-  sample_copy: string
-  is_active: boolean
-  version: number
-}
+import { SalesTemplatePreviewPanel } from "./SalesTemplatePreviewPanel"
+import type { TemplateRow } from "./template-workbench-types"
 
 const INDUSTRY_OPTIONS = Object.entries(INDUSTRY_LABELS).map(([value, label]) => [value, label.ja] as const)
 const ASSET_OPTIONS = CONTENT_ASSET_TYPES.map((value) => [value, CONTENT_ASSET_LABELS[value].ja] as const)
@@ -375,6 +358,15 @@ export function SalesTemplateWorkbenchPanel({ data }: { data: SalesDashboardData
             <p className="mt-1 text-xs leading-6">{matched.dify_selection_rule}</p>
           </div>
         )}
+
+        <div className="mt-4">
+          <SalesTemplatePreviewPanel
+            template={draft}
+            industryLabel={labelOf(INDUSTRY_OPTIONS, draft?.industry ?? industry)}
+            assetLabel={labelOf(ASSET_OPTIONS, draft?.asset_type ?? assetType)}
+            angleLabel={labelOf(ANGLE_OPTIONS, draft?.appeal_angle ?? appealAngle)}
+          />
+        </div>
 
         {draft ? (
           <div className="mt-4 grid gap-4">
