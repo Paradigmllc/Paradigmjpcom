@@ -402,7 +402,16 @@ export async function listContentTemplates(input: ContentTemplateListInput = {})
     console.error("[sales-content-templates] list fallback:", error.message)
     return { rows: filterTemplates(fallback, input), fallbackUsed: true }
   }
-  return { rows: filterTemplates((data ?? []) as SalesContentTemplate[], input), fallbackUsed: false }
+  const rows = filterTemplates((data ?? []) as SalesContentTemplate[], input)
+  const hasScopedFilter =
+    isReportLocale(input.reportLocale) ||
+    isIndustry(input.industry) ||
+    isAssetType(input.assetType) ||
+    isAppealAngle(input.appealAngle)
+  if (rows.length === 0 && hasScopedFilter) {
+    return { rows: filterTemplates(fallback, input), fallbackUsed: true }
+  }
+  return { rows, fallbackUsed: false }
 }
 
 function filterTemplates(rows: SalesContentTemplate[], input: ContentTemplateListInput): SalesContentTemplate[] {

@@ -204,7 +204,13 @@ export async function autoPersonalize(
   if (!company) return { ok: false, error: "company not found" }
   if (!company.industry) return { ok: false, skipped: "no_industry" }
 
-  const data = await fetchDiagnosticReport({ companyId, region: company.region })
+  const data = await fetchDiagnosticReport({
+    companyId,
+    region: company.region,
+    reportLocale: company.report_locale ?? undefined,
+    targetCountry: company.target_country ?? undefined,
+    templateVariant: company.template_variant ?? undefined,
+  })
   if (!data) return { ok: false, skipped: "no_diagnostic_data" }
 
   const result = await personalizeReport(company, data)
@@ -214,6 +220,9 @@ export async function autoPersonalize(
     domain: company.domain,
     company_name: company.company_name,
     region: company.region,
+    report_locale: company.report_locale,
+    target_country: company.target_country,
+    template_variant: company.template_variant,
     meta: {
       ...(company.meta as Record<string, unknown>),
       personalized_copy: {

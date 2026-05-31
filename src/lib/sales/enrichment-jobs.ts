@@ -6,6 +6,7 @@ import { fetchDiagnosticReport } from "./diagnostic"
 import { generateReplacementDemo } from "./demo-generator"
 import { computeSourceCoverage, saveSourceCoverageRows } from "./source-coverage"
 import { syncCompanyKarteToTwenty } from "./twenty-sync"
+import { buildReportUrl, normalizeReportLocale } from "./routing"
 import type { SalesCompany } from "./types"
 
 type JsonRecord = Record<string, unknown>
@@ -263,7 +264,7 @@ async function claimJob(sb: ServiceSupabase, job: SalesEnrichmentJob, runnerId: 
 
 function reportUrlFor(company: SalesCompany): string {
   if (company.report_url) return company.report_url
-  if (company.slug) return `https://paradigmjp.com/${company.report_locale ?? "ja"}/report/${company.slug}`
+  if (company.slug) return buildReportUrl(normalizeReportLocale(company.report_locale, company.region), company.slug)
   return ""
 }
 
@@ -342,6 +343,9 @@ async function processJob(sb: ServiceSupabase, job: SalesEnrichmentJob): Promise
     domain: refreshed.domain,
     company_name: refreshed.company_name,
     region: refreshed.region,
+    report_locale: refreshed.report_locale,
+    target_country: refreshed.target_country,
+    template_variant: refreshed.template_variant,
     industry: refreshed.industry,
     prefecture: refreshed.prefecture,
     pagespeed_mobile: refreshed.pagespeed_mobile,
@@ -354,7 +358,13 @@ async function processJob(sb: ServiceSupabase, job: SalesEnrichmentJob): Promise
 
   if (!save.ok || !save.company) return { ok: false, error: save.error ?? "company save failed" }
 
-  const report = await fetchDiagnosticReport({ companyId: save.company.id, region: save.company.region })
+  const report = await fetchDiagnosticReport({
+    companyId: save.company.id,
+    region: save.company.region,
+    reportLocale: save.company.report_locale ?? undefined,
+    targetCountry: save.company.target_country ?? undefined,
+    templateVariant: save.company.template_variant ?? undefined,
+  })
   const demo = report ? await generateReplacementDemo(save.company, report) : { ok: false, demoUrl: null }
   const finalMeta = demo.ok && demo.demoUrl
     ? {

@@ -26,6 +26,7 @@ import {
 } from "@/lib/sales/companies"
 import { fetchDiagnosticReport } from "@/lib/sales/diagnostic"
 import { personalizeReport } from "@/lib/sales/personalize"
+import { normalizeReportLocale } from "@/lib/sales/routing"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -35,10 +36,17 @@ export async function POST(req: NextRequest) {
   const authErr = verifyWebhookSecret(req)
   if (authErr) return authErr
 
-  let body: { slug?: string; company_id?: string }
+  let body: { slug?: string; company_id?: string; report_locale?: string; target_country?: string; template_variant?: string }
   try {
-    body = (await req.json()) as { slug?: string; company_id?: string }
-  } catch {
+    body = (await req.json()) as {
+      slug?: string
+      company_id?: string
+      report_locale?: string
+      target_country?: string
+      template_variant?: string
+    }
+  } catch (e) {
+    console.error("[personalize-report] invalid json body:", e)
     return NextResponse.json({ ok: false, error: "invalid json body" }, { status: 400 })
   }
 
@@ -53,7 +61,15 @@ export async function POST(req: NextRequest) {
   }
 
   // 診断データ取得 (5 段階フレームベース)
-  const data = await fetchDiagnosticReport({ slug: company.slug ?? undefined, companyId: company.id })
+  const reportLocale = normalizeReportLocale(body.report_locale ?? company.report_locale, company.region)
+  const data = await fetchDiagnosticReport({
+    slug: company.slug ?? undefined,
+    companyId: company.id,
+    region: company.region,
+    reportLocale,
+    targetCountry: body.target_country ?? company.target_country ?? undefined,
+    templateVariant: body.template_variant ?? company.template_variant ?? undefined,
+  })
   if (!data) {
     return NextResponse.json({ ok: false, error: "diagnostic data unavailable" }, { status: 404 })
   }
@@ -71,6 +87,10 @@ export async function POST(req: NextRequest) {
   await upsertCompanyByDomain({
     domain: company.domain,
     company_name: company.company_name,
+    region: company.region,
+    report_locale: reportLocale,
+    target_country: data.target_country,
+    template_variant: data.template_variant,
     meta: {
       ...(company.meta as Record<string, unknown>),
       personalized_copy: {

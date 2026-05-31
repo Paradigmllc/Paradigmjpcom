@@ -19,6 +19,7 @@ import { checkRateLimit, getClientIp, verifyTurnstile } from "@/lib/rate-limit"
 import { captureException } from "@/lib/error-monitor"
 import { LOCALE_COUNTRY, localeContentVariant } from "@/lib/locale-map"
 import { enrichFromContact } from "@/lib/sales/enrich"
+import { buildReportUrl, normalizeReportLocale } from "@/lib/sales/routing"
 import { notifySlack } from "@/lib/notify"
 
 export async function POST(req: NextRequest) {
@@ -58,13 +59,14 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const variant = localeContentVariant(locale ?? "ja")
-    const country = (LOCALE_COUNTRY as Record<string, string>)[locale ?? "ja"] ?? "US"
+    const reportLocale = normalizeReportLocale(locale, "jp")
+    const variant = localeContentVariant(reportLocale)
+    const country = (LOCALE_COUNTRY as Record<string, string>)[reportLocale] ?? "US"
 
     // 4. Slack notification (best-effort)
     const slackText = [
       "📩 *paradigmjp.com お問い合わせ*",
-      `*locale:* ${locale ?? "ja"}`,
+      `*locale:* ${reportLocale}`,
       `*お名前:* ${name}`,
       company ? `*会社名:* ${company}` : null,
       `*メール:* ${email}`,
@@ -125,6 +127,7 @@ export async function POST(req: NextRequest) {
                 message,
                 budget,
                 locale,
+                report_locale: reportLocale,
                 ip,
                 submitted_at: new Date().toISOString(),
               },
@@ -147,6 +150,8 @@ export async function POST(req: NextRequest) {
           company: company ?? null,
           message,
           services,
+          reportLocale,
+          targetCountry: country,
           source: "paradigmjp.com/contact",
         })
         if (enrich.ok && enrich.company) {
@@ -181,7 +186,7 @@ export async function POST(req: NextRequest) {
                       {
                         type: "button",
                         text: { type: "plain_text", text: "診断レポート" },
-                        url: `https://paradigmjp.com/ja/report/${c.slug}`,
+                        url: c.report_url ?? buildReportUrl(normalizeReportLocale(c.report_locale, c.region), c.slug),
                         style: "primary",
                       },
                     ]

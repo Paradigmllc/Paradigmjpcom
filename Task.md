@@ -5,6 +5,9 @@
 - [x] Updated CSV import, scan, weekly digest, sales asset generation, diagnostic video generation, and video job APIs to accept/pass locale/country instead of falling back to `/ja`.
 - [x] Updated the dashboard GUI so CSV imports, outreach dry-run, template workbench, and video pipeline jobs inherit the selected country/language scope.
 - [x] Expanded bundled content-template fallback from ja/en only to all 12 supported i18n locales, with country-specific scope and English copy fallback for non-ja languages.
+- [x] Follow-up audit fix: `upsertCompanyByDomain` now persists `report_locale`, `target_country`, and `template_variant` into first-class Supabase columns, not only `meta.routing`.
+- [x] Follow-up audit fix: contact-form enrichment, auto-personalize, enrichment jobs, Astro demo URL generation, Stripe checkout return paths, and Slack report links now carry the active locale/country instead of hardcoding `/ja`.
+- [x] Follow-up audit fix: the production seeder now creates the full 576-template locale matrix and template reads fall back to bundled locale-scoped templates when a filtered DB scope is empty.
 - [x] Verification: `npx tsc --noEmit --pretty false` passed, targeted Vitest passed from `D:\dev\paradigmjpcom` (4 files / 15 tests), `git diff --check` passed, and `npm run build` passed with the known local Payload Postgres fallback warnings.
 
 ## Codex Update - 2026-05-31 Sales Template GUI Edit Pass

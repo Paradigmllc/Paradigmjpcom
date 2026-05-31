@@ -189,6 +189,6 @@ export async function generateReplacementDemo(
     return { ok: false, demoUrl: null, error: error.message }
   }
 
-  const locale = company.report_locale ?? "ja"
+  const locale = company.report_locale ?? report.report_locale
   return { ok: true, demoUrl: `https://paradigmjp.com/${locale}/d/${slug}` }
 }

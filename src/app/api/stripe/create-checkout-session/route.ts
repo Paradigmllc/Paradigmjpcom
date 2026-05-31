@@ -12,6 +12,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { createCheckoutSession } from "@/lib/stripe"
+import { normalizeReportLocale } from "@/lib/sales/routing"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -28,7 +29,7 @@ const PRICE_MAP: Record<string, string | undefined> = {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = (await req.json()) as { plan?: string; email?: string }
+    const body = (await req.json()) as { plan?: string; email?: string; locale?: string }
     if (!body?.plan || typeof body.plan !== "string") {
       return NextResponse.json(
         { ok: false, error: "plan is required" },
@@ -43,13 +44,14 @@ export async function POST(req: NextRequest) {
       )
     }
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://paradigmjp.com"
+    const locale = normalizeReportLocale(body.locale, "jp")
     const result = await createCheckoutSession({
       priceId,
       customerEmail: body.email,
-      successUrl: `${baseUrl}/ja/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancelUrl: `${baseUrl}/ja/${body.plan.startsWith("video") ? "video" : "agency"}`,
+      successUrl: `${baseUrl}/${locale}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: `${baseUrl}/${locale}/${body.plan.startsWith("video") ? "video" : "agency"}`,
       mode: "subscription",
-      metadata: { plan: body.plan },
+      metadata: { plan: body.plan, locale },
     })
     if (!result.ok || !result.data) {
       return NextResponse.json(
@@ -59,6 +61,7 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({ ok: true, url: result.data.url, session_id: result.data.id })
   } catch (e) {
+    console.error("[stripe-checkout] create session failed:", e)
     return NextResponse.json(
       { ok: false, error: e instanceof Error ? e.message : String(e) },
       { status: 500 },

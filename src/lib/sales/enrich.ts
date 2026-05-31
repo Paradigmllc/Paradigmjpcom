@@ -77,6 +77,8 @@ export interface EnrichInput {
   company?: string | null
   message?: string | null
   services?: string[] | null
+  reportLocale?: string | null
+  targetCountry?: string | null
   source?: string | null
 }
 
@@ -118,6 +120,8 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     await upsertCompanyByDomain({
       domain,
       company_name: companyName,
+      report_locale: input.reportLocale,
+      target_country: input.targetCountry,
       industry,
       pipeline_status: "scanning",
       source: input.source ?? "contact_form",
@@ -217,6 +221,8 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   const result = await upsertCompanyByDomain({
     domain,
     company_name: gbizFirst?.name ?? scan?.html.title ?? companyName,
+    report_locale: input.reportLocale,
+    target_country: input.targetCountry,
     industry,
     prefecture: gbizFirst?.prefecture ?? null,
     pagespeed_mobile: scan?.mobile.performance ?? null,

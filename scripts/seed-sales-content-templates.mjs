@@ -6,10 +6,39 @@
 
 const ASSET_TYPES = ["diagnostic_report", "astro_demo_site", "sales_deck", "sales_video"]
 const INDUSTRIES = ["beauty_salon", "dental", "restaurant", "construction", "accounting", "retail", "cleaning", "consulting"]
-const LOCALES = ["ja", "en"]
+const LOCALES = ["ja", "en", "ko", "zh", "de", "fr", "es", "pt", "ru", "ar", "vi", "id"]
 const ANGLES = {
   ja: ["revenue_recovery", "trust_authority", "speed_conversion", "automation_dx"],
   en: ["japan_entry", "trust_authority", "speed_conversion", "video_retention"],
+  ko: ["japan_entry"],
+  zh: ["japan_entry"],
+  de: ["japan_entry"],
+  fr: ["japan_entry"],
+  es: ["japan_entry"],
+  pt: ["japan_entry"],
+  ru: ["japan_entry"],
+  ar: ["japan_entry"],
+  vi: ["japan_entry"],
+  id: ["japan_entry"],
+}
+
+const COUNTRY_BY_LOCALE = {
+  ja: "JP",
+  en: "US",
+  ko: "KR",
+  zh: "CN",
+  de: "DE",
+  fr: "FR",
+  es: "ES",
+  pt: "BR",
+  ru: "RU",
+  ar: "AE",
+  vi: "VN",
+  id: "ID",
+}
+
+function countryForLocale(locale) {
+  return COUNTRY_BY_LOCALE[locale] ?? "US"
 }
 
 const INDUSTRY_LABELS = {
@@ -131,7 +160,7 @@ function templates() {
           return {
             region: locale === "ja" ? "jp" : "global",
             report_locale: locale,
-            target_country: locale === "ja" ? "JP" : "US",
+            target_country: countryForLocale(locale),
             industry,
             offer_code: offer.code,
             asset_type: asset,
@@ -140,7 +169,7 @@ function templates() {
             title: title(locale, industry, asset, angle),
             purpose: purpose(locale, asset, angle),
             quality_bar: quality(locale, asset),
-            dify_selection_rule: `言語=${locale} / 国=${locale === "ja" ? "JP" : "US"} / 業界=${INDUSTRY_LABELS[industry][l]} / 成果物=${ASSET_LABELS[asset][l]} / 訴求=${ANGLE_LABELS[angle][l]} / 優先順位: 完全一致 > 業界一致 > 商材一致 > 痛み根拠の強さ > 最新version / 未検証の法改正・罰金・市場統計・CAGRを断定しない`,
+            dify_selection_rule: `言語=${locale} / 国=${countryForLocale(locale)} / 業界=${INDUSTRY_LABELS[industry][l]} / 成果物=${ASSET_LABELS[asset][l]} / 訴求=${ANGLE_LABELS[angle][l]} / 優先順位: 完全一致 > 業界一致 > 商材一致 > 痛み根拠の強さ > 最新version / 未検証の法改正・罰金・市場統計・CAGRを断定しない`,
             structure: structure(asset, angle),
             prompt_template: prompt(locale, industry, asset, angle),
             output_contract: CONTRACT[asset],
