@@ -7,6 +7,8 @@
 - [x] Updated the video-pipeline API and n8n payload so Dify, ComfyUI, Vast.ai, HyperFrames, Remotion, OpenMontage, Slack review, and R2 storage receive the same production spec.
 - [x] Added GUI controls under `/[locale]/admin/sales?tab=videoPipeline` for selecting production genre, voice, avatar, caption style, story framework, quality tier, and previewing the R2 storage prefix.
 - [x] Rewrote the video pipeline runbook with practical GUI usage, R2 delivery contract, n8n payload, quality gates, and required environment variables.
+- [x] Verification: `npx tsc --noEmit --pretty false` passed, targeted Vitest passed from the real path `D:\dev\paradigmjpcom` (3 files / 9 tests), `npm run build` passed, root/worker `npm audit --omit=dev` passed, and `git diff --check` passed.
+- [x] Deployed commit `983f211` through Coolify; production container is healthy on image `983f211a02fd9e66950cf9e4c31a2cbe680b5b91`. Smoke passed for `/ja`, `/ja/admin/sales?tab=videoPipeline`, `/ja/video`, and sample report video.
 
 ## Codex Update - 2026-05-31 Residual Closure and Deploy Guard
 
