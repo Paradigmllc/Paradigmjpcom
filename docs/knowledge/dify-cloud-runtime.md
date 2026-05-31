@@ -19,6 +19,8 @@ Recognized key aliases:
 - `DIFY_KARTE_TO_REPORT_API_KEY`, `DIFY_KARTE_TO_REPORT_KEY`
 - `DIFY_KARTE_TO_SALES_MATERIAL_API_KEY`, `DIFY_KARTE_TO_SALES_MATERIAL_KEY`
 
+Video jobs can use the dedicated video workflow key when it exists. Until then, the sales-material workflow key is accepted as the Dify copy/story fallback because it already produces proposal-ready narrative structure from the company karte.
+
 URL aliases are allowed for compatibility, but they must still resolve to Dify Cloud:
 
 - `DIFY_BASE_URL`

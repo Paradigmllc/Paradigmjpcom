@@ -3,6 +3,7 @@
 - [x] Added `src/lib/sales/dify-cloud.ts` as the single Dify runtime resolver so production code uses Dify Cloud `https://api.dify.ai` even if an old self-host URL remains in env.
 - [x] Recognized workflow-specific Dify keys for diagnosis, form messages, template picking, video workflow, report generation, and sales-material generation without exposing secret values in UI/logs/n8n payloads.
 - [x] Updated the video pipeline config and n8n payload to include a no-secret `dify` metadata block with provider, cloud endpoint, workflow endpoint, configured groups, and missing groups.
+- [x] Mapped video Dify readiness to the dedicated video workflow key or the existing karte-to-sales-material Cloud workflow key so the current global-memory/Coolify key set can drive video story generation.
 - [x] Updated Dify diagnosis, form-message generation, and site chat to normalize Dify endpoints back to the official cloud endpoint.
 - [x] Documented the Cloud-only contract in `docs/knowledge/dify-cloud-runtime.md` and expanded `.env.example` with the supported Dify Cloud aliases.
 
