@@ -1,3 +1,14 @@
+## Codex Update - 2026-05-31 Sales Mobile UI and Host Recovery
+
+- [x] Rebuilt the Sales OS command center mobile shell: mobile uses a compact feature selector, desktop keeps the horizontal tab rail, and the header/KPI area no longer forces horizontal overflow.
+- [x] Rebuilt the template workbench and live preview with readable Japanese labels and practical preview modes for diagnostic report, form message, sales deck, video, and Astro demo.
+- [x] Hardened integration inventory rows so API/OSS status, balances, and missing ENV fields render as mobile cards instead of overflowing fixed grid columns.
+- [x] Fixed `/[locale]/admin/sales` auth-gate copy and passed locale into the dashboard shell so the page metadata and unauthenticated mobile view are readable.
+- [x] Verification: `npx tsc --noEmit --pretty false` passed, targeted Sales OS Vitest passed (7 files / 22 tests), and `npm run build` passed.
+- [x] Production incident during deploy: root disk was 100% full, causing Docker healthchecks to fail with `no space left on device` and Traefik to return `503 no available server`. Rebooted the DigitalOcean droplet through API, pruned Docker build cache/unused images, restarted Coolify, and restored app routing.
+- [x] Deployed commit `00cc31c` through Coolify after host recovery. Production smoke passed for `/ja`, `/ja/admin/sales`, sample report, Twenty, and Metabase.
+- [x] Mobile Playwright smoke at 390px passed: `/ja/admin/sales` auth gate and the sample diagnostic report both have `scrollWidth === clientWidth` with no horizontal overflow.
+
 ## Codex Update - 2026-05-31 Diagnostic Meaning and Outreach Worker Audit
 
 - [x] Re-read the Paradigm wall-reference guidance and converted the report path from "source numbers only" into "evidence -> meaning -> business pain -> next action" copy.
