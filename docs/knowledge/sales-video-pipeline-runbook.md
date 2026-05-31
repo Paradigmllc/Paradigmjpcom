@@ -61,6 +61,26 @@ sales-videos/{locale}/{company}/{yyyy-mm}/{job_type}/{production_genre}/
 - `r2`: bucket / prefix / public_url / asset_manifest
 - `storyboard`, `production_plan`, `loss_simulation`, `claim_guard`, `input_assets`
 
+## R2アップロードAPI
+
+レンダラーやn8nは、ジョブ単位で署名付きPUT URLを発行できる。
+
+```http
+POST /api/sales/video-pipeline/jobs/{jobId}/assets
+Content-Type: application/json
+X-Webhook-Secret: {N8N_WEBHOOK_SECRET}
+
+{
+  "files": [
+    { "name": "master.mp4", "content_type": "video/mp4" },
+    { "name": "captions.vtt", "content_type": "text/vtt" },
+    { "name": "thumbnail.webp", "content_type": "image/webp" }
+  ]
+}
+```
+
+レスポンスの `uploadUrl` に直接PUTし、`publicUrl` を納品URLやTwenty/Metabase表示に使う。発行履歴は `sales_video_jobs.asset_manifest.pending_uploads` に保存される。
+
 ## 品質ゲート
 
 - 1画面目で「何が損なのか」が一言で分かる。

@@ -412,6 +412,7 @@ async function dispatchToN8n(job: SalesVideoJob): Promise<{ executionId: string 
         prefix: job.r2_asset_prefix,
         public_url: job.r2_output_url,
         asset_manifest: job.asset_manifest,
+        upload_endpoint: `${(optionalEnv("PARADIGMJP_BASE_URL") ?? optionalEnv("NEXT_PUBLIC_SITE_URL") ?? "https://paradigmjp.com").replace(/\/+$/, "")}/api/sales/video-pipeline/jobs/${job.id}/assets`,
       },
       delivery_formats: job.delivery_formats,
       storyboard: job.storyboard,

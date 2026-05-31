@@ -18,6 +18,8 @@
     "lhci": "lhci autorun --config=lighthouserc.json"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1057.0",
+    "@aws-sdk/s3-request-presigner": "^3.1057.0",
     "@hookform/resolvers": "^5.2.2",
     "@paradigmllc/blocks": "github:Paradigmllc/paradigm-blocks#main",
     "@payloadcms/db-postgres": "^3.85.0",
