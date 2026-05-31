@@ -465,17 +465,18 @@ function IntegrationInventoryPanel({
 
       <div className="mt-4 grid gap-3 lg:grid-cols-[0.55fr_1.45fr]">
         <BarList title="カテゴリ別" rows={categories} empty="接続台帳がまだありません。" />
-        <div className="overflow-hidden rounded-lg border border-zinc-200">
-          <div className="grid grid-cols-[1.2fr_0.8fr_0.7fr_1fr] gap-3 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-600">
+        <div className="overflow-x-auto rounded-lg border border-zinc-200">
+          <div className="hidden min-w-[720px] grid-cols-[1.2fr_0.8fr_0.7fr_1fr] gap-3 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-600 md:grid">
             <div>ツール</div>
             <div>状態</div>
             <div>残量</div>
             <div>不足ENV</div>
           </div>
-          <div className="max-h-[520px] divide-y divide-zinc-100 overflow-y-auto">
+          <div className="max-h-[520px] min-w-0 divide-y divide-zinc-100 overflow-y-auto md:min-w-[720px]">
             {data.integrationStatus.map((item) => (
-              <div key={item.slug} className="grid grid-cols-[1.2fr_0.8fr_0.7fr_1fr] gap-3 px-3 py-3 text-xs">
-                <div>
+              <div key={item.slug} className="grid gap-3 px-3 py-3 text-xs md:grid-cols-[1.2fr_0.8fr_0.7fr_1fr]">
+                <div className="min-w-0">
+                  <div className="mb-1 text-[11px] font-semibold text-zinc-400 md:hidden">ツール</div>
                   <div className="font-semibold text-zinc-950">{item.displayName}</div>
                   <div className="mt-1 line-clamp-2 text-zinc-500">{item.role}</div>
                   {item.docsUrl && (
@@ -484,15 +485,18 @@ function IntegrationInventoryPanel({
                     </a>
                   )}
                 </div>
-                <div>
+                <div className="min-w-0">
+                  <div className="mb-1 text-[11px] font-semibold text-zinc-400 md:hidden">状態</div>
                   <span className={`inline-flex rounded-full px-2 py-0.5 ${statusTone(item.status)}`}>{item.status}</span>
                   <div className="mt-2 text-zinc-500">{item.category} / {item.deployment}</div>
                 </div>
-                <div>
+                <div className="min-w-0">
+                  <div className="mb-1 text-[11px] font-semibold text-zinc-400 md:hidden">残量</div>
                   <span className={`inline-flex rounded-full px-2 py-0.5 ${statusTone(item.balanceStatus)}`}>{item.balanceStatus}</span>
                   <div className="mt-2 text-zinc-500">{item.balanceLabel}</div>
                 </div>
-                <div className="text-zinc-500">
+                <div className="min-w-0 break-words text-zinc-500">
+                  <div className="mb-1 text-[11px] font-semibold text-zinc-400 md:hidden">不足ENV</div>
                   {item.missingEnv.length > 0 ? item.missingEnv.join(", ") : "必須ENV OK"}
                   {item.optionalMissingEnv.length > 0 && (
                     <div className="mt-1 text-zinc-400">optional: {item.optionalMissingEnv.slice(0, 3).join(", ")}</div>

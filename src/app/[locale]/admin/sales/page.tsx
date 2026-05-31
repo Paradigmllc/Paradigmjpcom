@@ -1,12 +1,12 @@
-import type { Metadata } from "next"
-import Link from "next/link"
-import { cookies, headers } from "next/headers"
-import { SalesCommandCenter } from "@/components/sales-dashboard/SalesCommandCenter"
-import { authorizePayloadAdminRequest } from "@/lib/admin-auth"
-import { getSalesDashboardData } from "@/lib/sales/dashboard"
+import type { Metadata } from "next";
+import Link from "next/link";
+import { cookies, headers } from "next/headers";
+import { SalesCommandCenter } from "@/components/sales-dashboard/SalesCommandCenter";
+import { authorizePayloadAdminRequest } from "@/lib/admin-auth";
+import { getSalesDashboardData } from "@/lib/sales/dashboard";
 
-export const dynamic = "force-dynamic"
-export const revalidate = 0
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "営業ダッシュボード | Paradigm",
@@ -16,26 +16,26 @@ export const metadata: Metadata = {
     nocache: true,
     googleBot: { index: false, follow: false },
   },
-}
+};
 
 async function checkAuth(): Promise<boolean> {
-  const cookieStore = await cookies()
-  const requestHeaders = await headers()
+  const cookieStore = await cookies();
+  const requestHeaders = await headers();
   const auth = await authorizePayloadAdminRequest({
     headers: new Headers(requestHeaders),
     legacyToken: cookieStore.get("paradigm_admin_token")?.value,
-  })
-  return auth.ok
+  });
+  return auth.ok;
 }
 
 interface Props {
-  params: Promise<{ locale: string }>
+  params: Promise<{ locale: string }>;
 }
 
 function UnauthorizedView() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-zinc-50 p-6">
-      <section className="w-full max-w-md rounded-lg border border-zinc-200 bg-white p-8 text-center shadow-sm">
+    <main className="flex min-h-screen items-center justify-center bg-zinc-50 p-4 sm:p-6">
+      <section className="w-full max-w-md rounded-lg border border-zinc-200 bg-white p-6 text-center shadow-sm sm:p-8">
         <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-md bg-zinc-950 text-white">
           <span className="text-sm font-semibold">P</span>
         </div>
@@ -51,14 +51,14 @@ function UnauthorizedView() {
         </Link>
       </section>
     </main>
-  )
+  );
 }
 
 export default async function SalesDashboardPage({ params }: Props) {
-  const { locale } = await params
-  const authed = await checkAuth()
-  if (!authed) return <UnauthorizedView />
+  const { locale } = await params;
+  const authed = await checkAuth();
+  if (!authed) return <UnauthorizedView />;
 
-  const dashboard = await getSalesDashboardData({ reportLocale: locale })
-  return <SalesCommandCenter data={dashboard} />
+  const dashboard = await getSalesDashboardData({ reportLocale: locale });
+  return <SalesCommandCenter data={dashboard} locale={locale} />;
 }
