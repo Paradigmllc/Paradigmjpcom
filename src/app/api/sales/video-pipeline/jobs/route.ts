@@ -8,6 +8,7 @@ import {
   type VideoLossInputs,
   type VideoTargetPlatform,
 } from "@/lib/sales/video-pipeline"
+import { normalizeVideoProductionProfile } from "@/lib/sales/video-production"
 import { isVideoOfferAngle, isVideoTargetSegment } from "@/lib/sales/video-strategy"
 
 export const runtime = "nodejs"
@@ -67,6 +68,12 @@ export async function POST(req: NextRequest) {
       render_engine?: unknown
       target_segment?: unknown
       offer_angle?: unknown
+      production_genre?: unknown
+      voice_style?: unknown
+      avatar_style?: unknown
+      caption_style?: unknown
+      story_framework?: unknown
+      quality_tier?: unknown
       loss_inputs?: unknown
       report_locale?: unknown
       priority?: unknown
@@ -93,6 +100,14 @@ export async function POST(req: NextRequest) {
       body.loss_inputs && typeof body.loss_inputs === "object" && !Array.isArray(body.loss_inputs)
         ? (body.loss_inputs as VideoLossInputs)
         : undefined
+    const profile = normalizeVideoProductionProfile({
+      productionGenre: body.production_genre,
+      voiceStyle: body.voice_style,
+      avatarStyle: body.avatar_style,
+      captionStyle: body.caption_style,
+      storyFramework: body.story_framework,
+      qualityTier: body.quality_tier,
+    })
 
     const result = await createVideoJob({
       companyIdOrSlugOrDomain: body.company_id_or_domain.trim(),
@@ -101,6 +116,12 @@ export async function POST(req: NextRequest) {
       renderEngine: body.render_engine,
       targetSegment: isVideoTargetSegment(body.target_segment) ? body.target_segment : undefined,
       offerAngle: isVideoOfferAngle(body.offer_angle) ? body.offer_angle : undefined,
+      productionGenre: profile.productionGenre,
+      voiceStyle: profile.voiceStyle,
+      avatarStyle: profile.avatarStyle,
+      captionStyle: profile.captionStyle,
+      storyFramework: profile.storyFramework,
+      qualityTier: profile.qualityTier,
       lossInputs,
       reportLocale: typeof body.report_locale === "string" ? body.report_locale : null,
       priority: numberOrDefault(body.priority, 50),

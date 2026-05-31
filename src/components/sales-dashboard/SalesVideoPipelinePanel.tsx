@@ -1,28 +1,11 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import {
-  CheckCircle2,
-  Clapperboard,
-  ExternalLink,
-  Film,
-  Play,
-  RefreshCw,
-  Rocket,
-  Send,
-  ShieldCheck,
-  SlidersHorizontal,
-  WandSparkles,
-} from "lucide-react"
+import { CheckCircle2, Clapperboard, ExternalLink, Film, Play, RefreshCw, Rocket, Send, ShieldCheck, SlidersHorizontal, WandSparkles } from "lucide-react"
 import { toast } from "sonner"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
-import type {
-  SalesVideoJob,
-  VideoJobStatus,
-  VideoLossInputs,
-  VideoOfferAngle,
-  VideoTargetSegment,
-} from "@/lib/sales/video-pipeline"
+import type { SalesVideoJob, VideoJobStatus, VideoLossInputs, VideoOfferAngle, VideoTargetSegment } from "@/lib/sales/video-pipeline"
+import { VIDEO_PRODUCTION_GENRE_LABELS, VIDEO_QUALITY_TIER_LABELS } from "@/lib/sales/video-production"
 import {
   VIDEO_OFFER_ANGLES,
   VIDEO_OFFER_ANGLE_LABELS,
@@ -32,6 +15,7 @@ import {
   defaultVideoLossInputs,
 } from "@/lib/sales/video-strategy"
 import { formatDate, statusTone } from "./SalesCommandPanels"
+import { SalesVideoProductionControls, type SalesVideoProductionSelection } from "./SalesVideoProductionControls"
 
 type ApiListResponse = SalesDashboardData["videoPipeline"] & { ok?: boolean; error?: string }
 type ApiActionResponse = { ok?: boolean; job?: SalesVideoJob; message?: string; error?: string }
@@ -140,6 +124,14 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
   const [renderer, setRenderer] = useState<(typeof RENDER_OPTIONS)[number][0]>("hyperframes")
   const [targetSegment, setTargetSegment] = useState<VideoTargetSegment>("agency_white_label")
   const [offerAngle, setOfferAngle] = useState<VideoOfferAngle>("lost_revenue")
+  const [productionSelection, setProductionSelection] = useState<SalesVideoProductionSelection>({
+    productionGenre: "executive_diagnostic",
+    voiceStyle: "calm_consultant",
+    avatarStyle: "none",
+    captionStyle: "clean_lower_third",
+    storyFramework: "problem_agitate_solve",
+    qualityTier: "professional",
+  })
   const [lossInputs, setLossInputs] = useState<Required<VideoLossInputs>>(defaultVideoLossInputs("agency_white_label"))
   const [priority, setPriority] = useState(60)
   const [busy, setBusy] = useState<string | null>(null)
@@ -156,6 +148,10 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
     const completed = jobs.filter((job) => job.status === "completed").length
     return { active, review, completed }
   }, [jobs])
+  const selectedCompanyRecord = useMemo(
+    () => data.companies.find((company) => company.id === selectedCompany),
+    [data.companies, selectedCompany],
+  )
   const statCards: Array<{ label: string; value: number; icon: typeof Play }> = [
     { label: "進行中", value: jobStats.active, icon: Play },
     { label: "承認待ち", value: jobStats.review, icon: ShieldCheck },
@@ -206,6 +202,12 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
           render_engine: renderer,
           target_segment: targetSegment,
           offer_angle: offerAngle,
+          production_genre: productionSelection.productionGenre,
+          voice_style: productionSelection.voiceStyle,
+          avatar_style: productionSelection.avatarStyle,
+          caption_style: productionSelection.captionStyle,
+          story_framework: productionSelection.storyFramework,
+          quality_tier: productionSelection.qualityTier,
           loss_inputs: lossInputs,
           report_locale: data.scope.reportLocale,
           priority,
@@ -314,6 +316,14 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
               ))}
             </select>
           </label>
+
+          <SalesVideoProductionControls
+            value={productionSelection}
+            onChange={setProductionSelection}
+            locale={data.scope.reportLocale}
+            companySlugOrDomain={selectedCompanyRecord?.slug ?? selectedCompanyRecord?.domain ?? selectedCompany}
+            jobType={jobType}
+          />
 
           <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
             <div className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
@@ -439,6 +449,9 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
                       <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
                         <span className="rounded-full bg-sky-50 px-2 py-0.5 text-sky-700">{VIDEO_SEGMENT_LABELS[job.target_segment] ?? job.target_segment}</span>
                         <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700">{VIDEO_OFFER_ANGLE_LABELS[job.offer_angle] ?? job.offer_angle}</span>
+                        <span className="rounded-full bg-violet-50 px-2 py-0.5 text-violet-700">{VIDEO_PRODUCTION_GENRE_LABELS[job.production_genre] ?? job.production_genre}</span>
+                        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700">{VIDEO_QUALITY_TIER_LABELS[job.quality_tier] ?? job.quality_tier}</span>
+                        {job.r2_asset_prefix ? <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-zinc-700">R2: {job.r2_asset_prefix}</span> : null}
                         <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-zinc-700">{formatUsd(job.loss_simulation?.annual_loss_usd ?? 0)} / 年</span>
                       </div>
                       <p className="mt-2 text-xs text-zinc-500">作成 {formatDate(job.created_at)} / 更新 {formatDate(job.updated_at)}</p>

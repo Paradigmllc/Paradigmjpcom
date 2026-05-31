@@ -1,110 +1,93 @@
-# Sales Video Pipeline Runbook
+# Sales Video Production Pipeline Runbook
 
 ## 目的
 
-営業動画と動画サブスク納品を、Sales OS上で一元管理する。Supabase OSSをSSOTにし、n8nは交通整理だけを担当する。実レンダーはHyperFrames、Remotion、OpenMontage、ComfyUI、Vast.ai、R2に分ける。
+営業動画と動画サブスク納品を、Supabase SSOT、n8n交通整理、Dify Cloud文面生成、HyperFrames / Remotion / OpenMontage / ComfyUI / Vast.ai制作、Cloudflare R2保存で量産する。
 
-## 2段構成
+## 役割分担
 
-1. 営業動画
-   - 用途: 診断レポート、営業資料、Twenty企業ページに添える60秒前後の動画。
-   - 主レンダー: HyperFramesまたはRemotion。
-   - n8nの役割: 企業カルテ取得、Dify文面生成、レンダーAPI呼び出し、Slack確認、R2 URL保存。
-   - GPU: 原則使わない。ComfyUI素材が必要な場合だけ短時間利用する。
+- Supabase: `sales_video_jobs` をSSOTにする。制作プロファイル、ジョブ状態、R2保存先、承認履歴、エラーを保存する。
+- n8n: レンダラーではなく交通整理役。Dify、ComfyUI、Vast.ai、レンダラー、Slack、Sales OS APIをつなぐ。
+- Dify Cloud: 言語、業界、訴求、制作ジャンルから文面、構成、字幕、CTAを生成する。未検証の法規制、罰金、市場規模、CAGRは顧客向けに断定しない。
+- HyperFrames / Remotion: 営業動画、診断ページ埋め込み、営業資料内動画の主レンダラー。
+- OpenMontage + ComfyUI + Vast.ai: 動画サブスク納品、アバター、背景、B-roll、重い生成を担当する。
+- Cloudflare R2: master.mp4、review proxy、SRT、VTT、thumbnail、transcript、source-manifest、render-metadataを保存する。
+- Slack / Appsmith: 初回納品、契約前送付、危険表現、GPU高コストジョブを人間承認に回す。
 
-2. 動画サブスク納品
-   - 用途: 顧客向けに月次で複数本を納品する動画制作ライン。
-   - 主レンダー: OpenMontage + ComfyUI + Vast.ai + R2。
-   - n8nの役割: 月次ブリーフ、素材生成、GPU起動、レンダー、字幕、アップロード、納品URL記録。
-   - GPU: Vast.aiを利用する。ただし初回納品と高コスト実行は人間承認を必須にする。
+## GUIでの使い方
 
-## GUI
+`/ja/admin/sales?tab=videoPipeline` の「動画制作」タブで操作する。
 
-`/ja/admin/sales` の「動画制作」タブで操作する。
+1. 対象企業を選ぶ。
+2. 「営業動画」または「動画サブスク納品」を選ぶ。
+3. セグメント、訴求軸、損失シミュレータを調整する。
+4. プロ制作プロファイルで以下を選ぶ。
+   - 動画ジャンル: 経営診断、プロダクトデモ、UGC広告風、ショート、導入事例、日本進出ピッチ、月額納品シリーズなど。
+   - 音声: コンサル声、創業者声、高級ナレーター、地域向け、日英、音楽+字幕のみ。
+   - アバター: なし、案内役、経営アドバイザー、実務責任者、スタジオ登壇者、ブランドキャラクター。
+   - 字幕: 焼き込み二言語、下部テロップ、ハイライト、SRT/VTTのみ、SNS安全領域。
+   - ストーリー: 問題提起型、Before/After、AIDA、事例型、誤解/真実/根拠、3幕デモ。
+   - 品質: 下書き、プロ納品、プレミアム。
+5. 「制作ジョブを作成」を押す。
+6. n8n投入、承認、完了URL登録をGUIから進める。
 
-- 対象企業を選ぶ
-- 営業動画または動画サブスクを選ぶ
-- セグメント別テンプレを選ぶ
-- 訴求軸を選ぶ
-- 損失シミュレータで仮説値を調整する
-- 用途とレンダーエンジンを選ぶ
-- 制作ジョブを作成する
-- n8n投入、承認、完了URL記録を操作する
+## R2保存仕様
 
-## セグメント別テンプレ
+保存プレフィックスは自動で決まる。
 
-初期対応セグメント:
+```text
+sales-videos/{locale}/{company}/{yyyy-mm}/{job_type}/{production_genre}/
+```
 
-- 代理店ホワイトラベル
-- SaaSマーケティング
-- ECブランド
-- ローカルSMB
-- YouTube / クリエイター
-- 日本参入パッケージ
-- GTMエンジニアリング
+必須成果物:
 
-Difyは `target_segment` と `offer_angle` を見て、動画構成、ナレーション、字幕、CTAのテンプレを選ぶ。テンプレはワンパターンにせず、セグメントごとに「損失」「競合」「市場タイミング」「制作コスト」「日本参入」「地域信頼」を切り替える。
+- `master.mp4`
+- `review-proxy.mp4`
+- `poster.webp`
+- `thumbnail.webp`
+- `captions.srt`
+- `captions.vtt`
+- `transcript.txt`
+- `source-manifest.json`
+- `render-metadata.json`
 
-## 損失シミュレータ
+## n8n Webhook payload
 
-Sales OSのGUIで以下を調整する。
+`POST N8N_VIDEO_PIPELINE_WEBHOOK_URL` に以下が渡る。
 
-- 月間失注件数
-- 平均案件単価
-- 月間動画予算
-- 現動画本数
-- 競合動画本数
-- 粗利率
+- `job_id`, `job_type`, `company_id`, `locale`
+- `target_platform`, `render_engine`, `target_segment`, `offer_angle`
+- `production_profile`: genre / voice / avatar / captions / story / quality
+- `r2`: bucket / prefix / public_url / asset_manifest
+- `storyboard`, `production_plan`, `loss_simulation`, `claim_guard`, `input_assets`
 
-結果は `sales_video_jobs.loss_simulation` に保存する。これはヒアリング前の仮説なので、顧客向け文面では必ず「推定」「可能性」「仮説」として扱う。
+## 品質ゲート
 
-## 未検証断定ガード
-
-`sales_video_jobs.claim_guard` はDifyとn8nに渡す安全ルール。
-
-顧客向け文面で一次情報URLが必須なもの:
-
-- 法改正日
-- 罰金額
-- 市場規模
-- CAGR
-- 業界平均倍率
-
-一次情報URLが無い場合、Difyはこれらを動画、資料、フォーム文面、診断レポートの顧客向けコピーに入れない。内部メモとして残す場合も「未検証」と明記する。
-
-## n8n Webhook
-
-`N8N_VIDEO_PIPELINE_WEBHOOK_URL` にSales OSからジョブが送られる。n8n側は次の順番で処理する。
-
-1. Supabaseの `sales_video_jobs` と `sales_companies` を読む
-2. Dify Cloudでセグメントテンプレ、構成、ナレーション、字幕、CTAを生成する
-3. `claim_guard` に反する未検証断定を弾く
-4. 必要な場合だけComfyUIプロンプトを実行する
-5. 動画サブスクまたは重い生成の場合だけVast.ai GPUを起動する
-6. HyperFrames / Remotion / OpenMontageへレンダー依頼する
-7. MP4、SRT、サムネイル、素材をR2へ保存する
-8. Slackに確認依頼を出す
-9. Sales OS APIで `sales_video_jobs` を完了にする
+- 1画面目で「何が損なのか」が一言で分かる。
+- 数値は測定値、一次情報、または推定と明記されたものだけを使う。
+- 字幕はスマホで読め、重要な根拠カードを隠さない。
+- アバターや生成素材は業界とブランドに合う。
+- CTAは診断レポート、予約、納品ページのいずれかに接続する。
+- R2に動画本体だけでなく、字幕、サムネイル、原稿、メタデータまで残す。
 
 ## 必須環境変数
 
 - `N8N_VIDEO_PIPELINE_WEBHOOK_URL`
 - `N8N_WEBHOOK_SECRET`
-- `DIFY_API_KEY` または `DIFY_API_KEY_JA` / `DIFY_API_KEY_EN`
+- `DIFY_API_KEY` または用途別Difyキー
 - `COMFYUI_API_URL`
 - `VAST_API_KEY`
 - `OPENMONTAGE_API_URL`
 - `HYPERFRAMES_RENDERER_URL`
 - `REMOTION_RENDERER_URL`
+- `CLOUDFLARE_R2_BUCKET` または `R2_BUCKET`
 - `CLOUDFLARE_R2_PUBLIC_BASE_URL` または `R2_PUBLIC_BASE_URL`
-- `SLACK_WEBHOOK_URL`
+- R2へ実アップロードするワーカー側では `CLOUDFLARE_R2_ACCOUNT_ID`、`CLOUDFLARE_R2_ACCESS_KEY_ID`、`CLOUDFLARE_R2_SECRET_ACCESS_KEY`
 
-未設定でもUIは落ちない。不足している箇所は「未設定」または「人間確認」として表示する。
+## 禁止事項
 
-## ガードレール
-
-- n8nはレンダラーではなく交通整理役にする
-- 未検証の数値、実績、法改正、罰金、市場統計、CAGRを顧客向けに断定しない
-- 初回顧客納品、契約前送信、GPU起動は人間承認を挟む
-- CAPTCHA回避やログイン突破を動画制作パイプラインに混ぜない
-- 完成URLはR2に置き、SupabaseとTwentyに記録する
+- n8nをレンダラー化しない。
+- CAPTCHA回避、ログイン突破、危険なフォーム自動送信を動画制作パイプラインに混ぜない。
+- 未検証の法規制、罰金、市場統計、CAGR、業界平均を断定しない。
+- GPUを大量起動する前にレビューとコスト確認を省略しない。
+- 完成URLをR2以外の一時URLだけで納品しない。

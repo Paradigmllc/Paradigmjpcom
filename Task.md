@@ -1,3 +1,13 @@
+## Codex Update - 2026-05-31 Professional Video Pipeline
+
+- [x] Added production-grade video profiles for genre, voice, avatar, captions, story framework, and quality tier so delivery jobs are not one-pattern outputs.
+- [x] Added Cloudflare R2 asset manifest generation with deterministic `sales-videos/{locale}/{company}/{yyyy-mm}/{job_type}/{genre}/` prefixes and required outputs for master video, captions, thumbnails, transcript, source manifest, and metadata.
+- [x] Extended `sales_video_jobs` through `supabase/migration_028_sales_video_production_profiles_r2.sql` and wired the no-login deploy script to apply it with the other Sales OS migrations.
+- [x] Applied `supabase/migration_028_sales_video_production_profiles_r2.sql` to the live Supabase OSS database on `139.59.250.5` and verified all 10 new production/R2 columns exist.
+- [x] Updated the video-pipeline API and n8n payload so Dify, ComfyUI, Vast.ai, HyperFrames, Remotion, OpenMontage, Slack review, and R2 storage receive the same production spec.
+- [x] Added GUI controls under `/[locale]/admin/sales?tab=videoPipeline` for selecting production genre, voice, avatar, caption style, story framework, quality tier, and previewing the R2 storage prefix.
+- [x] Rewrote the video pipeline runbook with practical GUI usage, R2 delivery contract, n8n payload, quality gates, and required environment variables.
+
 ## Codex Update - 2026-05-31 Residual Closure and Deploy Guard
 
 - [x] Removed the remaining customer-facing mojibake from the sales asset generator and worker package metadata, then added a regression test that blocks old garbled Japanese tokens from returning to `src/lib/sales/sales-assets.ts`.
