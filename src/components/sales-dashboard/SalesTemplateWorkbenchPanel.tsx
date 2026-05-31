@@ -117,6 +117,23 @@ export function SalesTemplateWorkbenchPanel({ data }: { data: SalesDashboardData
     [selectedId, templates],
   );
 
+  async function fetchMatchedTemplate(): Promise<TemplateRow | null> {
+    const res = await fetch("/api/sales/content-templates/match", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        report_locale: locale,
+        target_country: countryForWorkbenchLocale(locale),
+        industry,
+        asset_type: assetType,
+        appeal_angle: appealAngle,
+      }),
+    });
+    const json = (await res.json()) as { ok?: boolean; template?: TemplateRow; error?: string };
+    if (!res.ok || !json.ok || !json.template) throw new Error(json.error ?? "選定テストに失敗しました");
+    return json.template;
+  }
+
   async function loadTemplates() {
     try {
       setLoading(true);
@@ -134,8 +151,20 @@ export function SalesTemplateWorkbenchPanel({ data }: { data: SalesDashboardData
       if (!res.ok || !json.ok) throw new Error(json.error ?? "テンプレートを読み込めませんでした");
 
       const nextTemplates = json.templates ?? [];
+      if (nextTemplates.length === 0) {
+        const nearest = await fetchMatchedTemplate();
+        if (nearest) {
+          setTemplates([nearest]);
+          setSelectedId(nearest.id ?? null);
+          setMatched(nearest);
+          setDraft(nearest);
+          toast.warning("完全一致はありません。近いテンプレートでプレビューを表示します。");
+          return;
+        }
+      }
       setTemplates(nextTemplates);
       setSelectedId(nextTemplates[0]?.id ?? null);
+      setMatched(null);
       if (nextTemplates.length === 0) toast.warning("条件に一致するテンプレートがありません");
     } catch (error) {
       console.error("[sales-template-workbench] load failed:", error);
@@ -147,22 +176,11 @@ export function SalesTemplateWorkbenchPanel({ data }: { data: SalesDashboardData
 
   async function previewMatch() {
     try {
-      const res = await fetch("/api/sales/content-templates/match", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          report_locale: locale,
-          target_country: countryForWorkbenchLocale(locale),
-          industry,
-          asset_type: assetType,
-          appeal_angle: appealAngle,
-        }),
-      });
-      const json = (await res.json()) as { ok?: boolean; template?: TemplateRow; error?: string };
-      if (!res.ok || !json.ok || !json.template) throw new Error(json.error ?? "選定テストに失敗しました");
-      setMatched(json.template);
-      setDraft(json.template);
-      setSelectedId(json.template.id ?? null);
+      const template = await fetchMatchedTemplate();
+      if (!template) throw new Error("選定テストに失敗しました");
+      setMatched(template);
+      setDraft(template);
+      setSelectedId(template.id ?? null);
       toast.success("Dify/n8n向けの選定結果を確認しました");
     } catch (error) {
       console.error("[sales-template-workbench] match failed:", error);

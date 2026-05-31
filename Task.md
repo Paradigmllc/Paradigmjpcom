@@ -1,3 +1,10 @@
+## Codex Update - 2026-06-01 Template Preview Fallback
+
+- [x] Fixed the template workbench so exact filter misses no longer leave the design preview blank.
+- [x] `listContentTemplates` now falls back to nearest active templates by locale and asset type, then ranks by industry, offer, appeal, and variant.
+- [x] The template UI now calls the match endpoint when a scoped list is empty and displays a nearest template immediately, including report, form message, deck, video, and Astro demo previews.
+- [x] Verification: `npx tsc --noEmit --pretty false`, targeted content-template Vitest, `npm run build`, `npm audit --omit=dev`, and `git diff --check` passed.
+
 ## Codex Update - 2026-05-31 Dify Cloud Runtime
 
 - [x] Added `src/lib/sales/dify-cloud.ts` as the single Dify runtime resolver so production code uses Dify Cloud `https://api.dify.ai` even if an old self-host URL remains in env.

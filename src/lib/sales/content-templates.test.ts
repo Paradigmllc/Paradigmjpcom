@@ -48,6 +48,21 @@ describe("sales content templates", () => {
     expect(template.prompt_template.toLowerCase()).toContain("never invent unavailable evidence")
   })
 
+  it("keeps previewable nearest templates when an exact locale and appeal combination is unavailable", async () => {
+    const template = await matchContentTemplate({
+      reportLocale: "en",
+      industry: "dental",
+      assetType: "diagnostic_report",
+      appealAngle: "revenue_recovery",
+    })
+
+    expect(template.report_locale).toBe("en")
+    expect(template.industry).toBe("dental")
+    expect(template.asset_type).toBe("diagnostic_report")
+    expect(template.title.length).toBeGreaterThan(0)
+    expect(template.sample_copy.length).toBeGreaterThan(0)
+  })
+
   it("keeps Japanese template labels and prompt guardrails readable", () => {
     const rows = buildInitialContentTemplates()
     const restaurantReport = rows.find(

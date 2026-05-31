@@ -327,10 +327,40 @@ export function rankContentTemplates(input: ContentTemplateMatchInput, rows: Sal
     .sort((a, b) => scoreContentTemplate(b, normalized) - scoreContentTemplate(a, normalized))
 }
 
+function limitRows(rows: SalesContentTemplate[], limit?: number): SalesContentTemplate[] {
+  return rows.slice(0, Math.max(1, limit ?? 300))
+}
+
+async function listRelaxedContentTemplates(input: ContentTemplateListInput): Promise<SalesContentTemplate[]> {
+  const sb = getServiceSalesSupabase()
+  if (!sb) return []
+
+  let query = sb.from("sales_content_templates").select("*").order("updated_at", { ascending: false }).limit(600)
+  if (isReportLocale(input.reportLocale)) query = query.eq("report_locale", input.reportLocale)
+  if (isAssetType(input.assetType)) query = query.eq("asset_type", input.assetType)
+
+  const { data, error } = await query
+  if (error) {
+    console.error("[sales-content-templates] relaxed list failed:", error.message)
+    return []
+  }
+
+  const ranked = rankContentTemplates(
+    {
+      reportLocale: input.reportLocale,
+      industry: input.industry,
+      assetType: input.assetType,
+      appealAngle: input.appealAngle,
+    },
+    (data ?? []) as SalesContentTemplate[],
+  )
+  return limitRows(filterTemplates(ranked, input), input.limit)
+}
+
 export async function listContentTemplates(input: ContentTemplateListInput = {}): Promise<{ rows: SalesContentTemplate[]; fallbackUsed: boolean }> {
   const fallback = buildInitialContentTemplates()
   const sb = getServiceSalesSupabase()
-  if (!sb) return { rows: filterTemplates(fallback, input), fallbackUsed: true }
+  if (!sb) return { rows: limitRows(filterTemplates(rankContentTemplates(input, fallback), input), input.limit), fallbackUsed: true }
 
   let query = sb.from("sales_content_templates").select("*").order("updated_at", { ascending: false }).limit(input.limit ?? 300)
   if (isReportLocale(input.reportLocale)) query = query.eq("report_locale", input.reportLocale)
@@ -343,14 +373,16 @@ export async function listContentTemplates(input: ContentTemplateListInput = {})
     console.error("[sales-content-templates] list fallback:", error.message)
     return { rows: filterTemplates(fallback, input), fallbackUsed: true }
   }
-  const rows = filterTemplates((data ?? []) as SalesContentTemplate[], input)
+  const rows = limitRows(filterTemplates((data ?? []) as SalesContentTemplate[], input), input.limit)
   const hasScopedFilter =
     isReportLocale(input.reportLocale) ||
     isIndustry(input.industry) ||
     isAssetType(input.assetType) ||
     isAppealAngle(input.appealAngle)
   if (rows.length === 0 && hasScopedFilter) {
-    return { rows: filterTemplates(fallback, input), fallbackUsed: true }
+    const relaxedRows = await listRelaxedContentTemplates(input)
+    if (relaxedRows.length > 0) return { rows: relaxedRows, fallbackUsed: false }
+    return { rows: limitRows(filterTemplates(rankContentTemplates(input, fallback), input), input.limit), fallbackUsed: true }
   }
   return { rows, fallbackUsed: false }
 }
