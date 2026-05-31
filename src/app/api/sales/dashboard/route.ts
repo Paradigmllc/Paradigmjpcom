@@ -25,7 +25,9 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const dashboard = await getSalesDashboardData()
+    const dashboard = await getSalesDashboardData({
+      reportLocale: req.nextUrl.searchParams.get("report_locale") ?? req.nextUrl.searchParams.get("locale"),
+    })
     return NextResponse.json({ ok: true, dashboard })
   } catch (e) {
     console.error("[sales-dashboard-api] failed", e)

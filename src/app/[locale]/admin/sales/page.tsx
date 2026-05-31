@@ -28,6 +28,10 @@ async function checkAuth(): Promise<boolean> {
   return auth.ok
 }
 
+interface Props {
+  params: Promise<{ locale: string }>
+}
+
 function UnauthorizedView() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-zinc-50 p-6">
@@ -50,10 +54,11 @@ function UnauthorizedView() {
   )
 }
 
-export default async function SalesDashboardPage() {
+export default async function SalesDashboardPage({ params }: Props) {
+  const { locale } = await params
   const authed = await checkAuth()
   if (!authed) return <UnauthorizedView />
 
-  const dashboard = await getSalesDashboardData()
+  const dashboard = await getSalesDashboardData({ reportLocale: locale })
   return <SalesCommandCenter data={dashboard} />
 }

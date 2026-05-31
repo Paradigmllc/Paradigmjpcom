@@ -17,7 +17,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = (await req.json()) as { company_id?: unknown; slug?: unknown; domain?: unknown; asset_type?: unknown }
+    const body = (await req.json()) as {
+      company_id?: unknown
+      slug?: unknown
+      domain?: unknown
+      asset_type?: unknown
+      report_locale?: unknown
+    }
     const companyIdOrSlugOrDomain =
       typeof body.company_id === "string"
         ? body.company_id
@@ -37,6 +43,7 @@ export async function POST(req: NextRequest) {
     const result = await generateSalesAsset({
       companyIdOrSlugOrDomain,
       assetType: body.asset_type,
+      reportLocale: typeof body.report_locale === "string" ? body.report_locale : null,
     })
     return NextResponse.json(result, { status: result.ok ? 200 : 500 })
   } catch (e) {

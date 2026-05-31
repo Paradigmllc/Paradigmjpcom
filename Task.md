@@ -1,3 +1,12 @@
+## Codex Update - 2026-05-31 Sales Locale Scope Audit
+
+- [x] Scoped `/[locale]/admin/sales` from the URL locale through `getSalesDashboardData`, `GET /api/sales/dashboard`, company list, activities, operator queue, meetings, contracts, and video jobs so JP/global rows do not mix in the cockpit.
+- [x] Added `src/lib/sales/locale-scope.ts` as the shared routing guard for `report_locale`, `target_country`, `region`, and report links.
+- [x] Updated CSV import, scan, weekly digest, sales asset generation, diagnostic video generation, and video job APIs to accept/pass locale/country instead of falling back to `/ja`.
+- [x] Updated the dashboard GUI so CSV imports, outreach dry-run, template workbench, and video pipeline jobs inherit the selected country/language scope.
+- [x] Expanded bundled content-template fallback from ja/en only to all 12 supported i18n locales, with country-specific scope and English copy fallback for non-ja languages.
+- [x] Verification: `npx tsc --noEmit --pretty false` passed, targeted Vitest passed from `D:\dev\paradigmjpcom` (4 files / 15 tests), `git diff --check` passed, and `npm run build` passed with the known local Payload Postgres fallback warnings.
+
 ## Codex Update - 2026-05-31 Sales Template GUI Edit Pass
 
 - [x] Rebuilt the Sales OS `テンプレ` workbench so operators can confirm, search, match-test, edit, activate/deactivate, and save Dify/n8n templates from `/ja/admin/sales`.

@@ -1,4 +1,5 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { countryForLocale } from "./routing"
 import type { Industry, Region, ReportLocale, TemplateVariant } from "./types"
 import { INDUSTRIES } from "./types"
 
@@ -257,7 +258,7 @@ function selectionRuleFor(locale: ReportLocale, industry: Industry, assetType: C
   const lang = language(locale)
   return [
     `言語=${locale}`,
-    `国=${locale === "ja" ? "JP" : "US"}`,
+    `国=${countryForLocale(locale)}`,
     `業界=${INDUSTRY_LABELS[industry][lang]}`,
     `成果物=${CONTENT_ASSET_LABELS[assetType][lang]}`,
     `訴求=${CONTENT_APPEAL_LABELS[angle][lang]}`,
@@ -316,7 +317,7 @@ function sampleCopyFor(locale: ReportLocale, industry: Industry, assetType: Cont
 }
 
 export function buildInitialContentTemplates(): SalesContentTemplate[] {
-  const locales: ReportLocale[] = ["ja", "en"]
+  const locales: ReportLocale[] = [...REPORT_LOCALES]
   return locales.flatMap((locale) =>
     INDUSTRIES.flatMap((industry) =>
       ANGLES_BY_LOCALE[locale].flatMap((angle) =>
@@ -325,7 +326,7 @@ export function buildInitialContentTemplates(): SalesContentTemplate[] {
           return {
             region: REGION_BY_LOCALE[locale],
             report_locale: locale,
-            target_country: locale === "ja" ? "JP" : "US",
+            target_country: countryForLocale(locale),
             industry,
             offer_code: offer.code,
             asset_type: assetType,
@@ -356,7 +357,7 @@ function normalizeMatchInput(input: ContentTemplateMatchInput): Required<Content
   const offer = OFFER_BY_ANGLE[appealAngle]
   return {
     reportLocale,
-    targetCountry: typeof input.targetCountry === "string" && input.targetCountry ? input.targetCountry.toUpperCase() : reportLocale === "ja" ? "JP" : "US",
+    targetCountry: typeof input.targetCountry === "string" && input.targetCountry ? input.targetCountry.toUpperCase() : countryForLocale(reportLocale),
     industry: isIndustry(input.industry) ? input.industry : "consulting",
     offerCode: typeof input.offerCode === "string" && input.offerCode ? input.offerCode : offer.code,
     assetType: isAssetType(input.assetType) ? input.assetType : "diagnostic_report",

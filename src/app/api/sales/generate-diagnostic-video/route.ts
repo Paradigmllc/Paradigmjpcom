@@ -21,16 +21,20 @@ export async function POST(req: NextRequest) {
   if (authErr) return authErr
 
   try {
-    const body = (await req.json()) as { company_id_or_domain?: string }
+    const body = (await req.json()) as { company_id_or_domain?: string; report_locale?: unknown }
     if (!body?.company_id_or_domain || typeof body.company_id_or_domain !== "string") {
       return NextResponse.json(
         { ok: false, error: "company_id_or_domain is required" },
         { status: 400 },
       )
     }
-    const result = await generateDiagnosticVideo(body.company_id_or_domain)
+    const result = await generateDiagnosticVideo(
+      body.company_id_or_domain,
+      typeof body.report_locale === "string" ? body.report_locale : null,
+    )
     return NextResponse.json(result, { status: result.ok ? 200 : 500 })
   } catch (e) {
+    console.error("[sales-generate-diagnostic-video] failed:", e)
     return NextResponse.json(
       { ok: false, error: e instanceof Error ? e.message : String(e) },
       { status: 500 },

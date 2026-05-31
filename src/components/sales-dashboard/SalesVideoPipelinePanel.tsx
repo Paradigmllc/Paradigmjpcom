@@ -174,7 +174,8 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
   async function refreshJobs() {
     setBusy("refresh")
     try {
-      const res = await fetch("/api/sales/video-pipeline/jobs?limit=40")
+      const params = new URLSearchParams({ limit: "40", report_locale: data.scope.reportLocale })
+      const res = await fetch(`/api/sales/video-pipeline/jobs?${params.toString()}`)
       const json = (await res.json()) as ApiListResponse
       if (!res.ok || json.ok === false) throw new Error(json.error ?? "動画ジョブを取得できませんでした")
       setJobs(json.jobs)
@@ -206,6 +207,7 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
           target_segment: targetSegment,
           offer_angle: offerAngle,
           loss_inputs: lossInputs,
+          report_locale: data.scope.reportLocale,
           priority,
         }),
       })

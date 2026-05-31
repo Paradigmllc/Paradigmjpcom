@@ -8,6 +8,7 @@ import {
   Bot,
   BriefcaseBusiness,
   Clapperboard,
+  Globe2,
   LayoutDashboard,
   ListChecks,
   MonitorCog,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react"
 import { Toaster } from "sonner"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
+import { REPORT_LOCALES } from "@/lib/sales/routing"
 import { SalesAutomationPanel } from "./SalesAutomationPanel"
 import { SalesAgentTeamPanel } from "./SalesAgentTeamPanel"
 import { SalesDocsPanel } from "./SalesDocsPanel"
@@ -73,10 +75,31 @@ const TABS: { id: TabId; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "migration", label: "移行計画", icon: ServerCog },
 ]
 
+const LOCALE_LABELS: Record<string, string> = {
+  ja: "日本 / Japanese",
+  en: "US・Global / English",
+  ko: "Korea / Korean",
+  zh: "China / Chinese",
+  de: "Germany / German",
+  fr: "France / French",
+  es: "Spain・LATAM / Spanish",
+  pt: "Brazil / Portuguese",
+  ru: "Russia / Russian",
+  ar: "MENA / Arabic",
+  vi: "Vietnam / Vietnamese",
+  id: "Indonesia / Indonesian",
+}
+
 export function SalesCommandCenter({ data }: Props) {
   const [activeTab, setActiveTab] = useState<TabId>("overview")
   const activeToolCount = data.toolConnections.filter((tool) => tool.status === "active").length
   const runningJobs = data.enrichmentJobs.filter((job) => job.status === "queued" || job.status === "running").length
+  const currentLocale = data.scope.reportLocale
+
+  function changeLocale(nextLocale: string) {
+    if (nextLocale === currentLocale) return
+    window.location.href = `/${nextLocale}/admin/sales`
+  }
 
   return (
     <main className="min-h-screen bg-zinc-50 text-zinc-950">
@@ -97,7 +120,28 @@ export function SalesCommandCenter({ data }: Props) {
               フォーム営業、動画制作ラインを一画面で管理します。
             </p>
           </div>
-          <div className="grid grid-cols-3 gap-2 sm:min-w-[420px]">
+          <div className="grid gap-2 sm:min-w-[520px] sm:grid-cols-[1.3fr_repeat(3,1fr)]">
+            <label className="rounded-lg border border-zinc-200 bg-white p-3">
+              <span className="flex items-center gap-1 text-xs text-zinc-500">
+                <Globe2 size={13} aria-hidden />
+                管理スコープ
+              </span>
+              <select
+                value={currentLocale}
+                onChange={(event) => changeLocale(event.target.value)}
+                className="mt-1 h-8 w-full rounded-md border border-zinc-200 bg-white px-2 text-sm font-semibold text-zinc-950 outline-none focus:border-zinc-500"
+                aria-label="営業ダッシュボードの国と言語を切り替え"
+              >
+                {REPORT_LOCALES.map((locale) => (
+                  <option key={locale} value={locale}>
+                    {LOCALE_LABELS[locale] ?? locale}
+                  </option>
+                ))}
+              </select>
+              <div className="mt-1 text-[11px] text-zinc-500">
+                {data.scope.targetCountry} / {data.scope.region}
+              </div>
+            </label>
             <div className="rounded-lg border border-zinc-200 bg-white p-3">
               <div className="text-xs text-zinc-500">統合ツール</div>
               <div className="mt-1 text-xl font-semibold">{activeToolCount}/{data.toolConnections.length}</div>

@@ -2,7 +2,8 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { findCompanyByDomain, findCompanyById, findCompanyBySlug } from "./companies"
 import { fetchDiagnosticReport } from "./diagnostic"
 import { labelForIndustry, themeForIndustry } from "./render-quality"
-import { INDUSTRIES, type Industry } from "./types"
+import { normalizeReportLocale } from "./routing"
+import { INDUSTRIES, localeToRegion, type Industry } from "./types"
 import {
   VIDEO_PIPELINE_STAGES,
   buildVideoClaimGuard,
@@ -259,22 +260,30 @@ function buildProductionPlan(input: {
   }
 }
 
-async function resolveCompany(idOrSlugOrDomain: string) {
+async function resolveCompany(idOrSlugOrDomain: string, reportLocale?: string | null) {
+  const requestedLocale = reportLocale ? normalizeReportLocale(reportLocale, "jp") : null
+  const requestedRegion = requestedLocale ? localeToRegion(requestedLocale) : "jp"
   if (isUuid(idOrSlugOrDomain)) return findCompanyById(idOrSlugOrDomain)
   if (idOrSlugOrDomain.includes(".")) return findCompanyByDomain(idOrSlugOrDomain)
-  return findCompanyBySlug(idOrSlugOrDomain)
+  return findCompanyBySlug(idOrSlugOrDomain, requestedRegion)
 }
 
-export async function listVideoJobs(limit = 40): Promise<{ ok: true; jobs: SalesVideoJob[]; config: VideoPipelineConfig } | { ok: false; error: string; jobs: SalesVideoJob[]; config: VideoPipelineConfig }> {
+export async function listVideoJobs(
+  limit = 40,
+  filters: { locale?: string | null } = {},
+): Promise<{ ok: true; jobs: SalesVideoJob[]; config: VideoPipelineConfig } | { ok: false; error: string; jobs: SalesVideoJob[]; config: VideoPipelineConfig }> {
   const sb = getServiceSalesSupabase()
   const config = pipelineConfig()
   if (!sb) return { ok: false, error: "Supabase is not configured", jobs: [], config }
 
-  const { data, error } = await sb
+  let query = sb
     .from("sales_video_jobs")
     .select("*, sales_companies(company_name, domain, slug)")
     .order("created_at", { ascending: false })
     .limit(limit)
+  if (filters.locale) query = query.eq("locale", filters.locale)
+
+  const { data, error } = await query
 
   if (error) {
     console.error("[sales-video-pipeline] list failed:", error.message)
@@ -291,6 +300,7 @@ export async function createVideoJob(input: {
   targetSegment?: VideoTargetSegment
   offerAngle?: VideoOfferAngle
   lossInputs?: VideoLossInputs
+  reportLocale?: string | null
   priority?: number
   requestedBy?: string
 }): Promise<{ ok: boolean; job?: SalesVideoJob; config: VideoPipelineConfig; error?: string }> {
@@ -298,14 +308,18 @@ export async function createVideoJob(input: {
   const config = pipelineConfig()
   if (!sb) return { ok: false, config, error: "Supabase is not configured" }
 
-  const company = await resolveCompany(input.companyIdOrSlugOrDomain)
+  const requestedLocale = input.reportLocale ? normalizeReportLocale(input.reportLocale, "jp") : null
+  const company = await resolveCompany(input.companyIdOrSlugOrDomain, requestedLocale)
   if (!company) return { ok: false, config, error: "company not found" }
 
   const targetSegment = isVideoTargetSegment(input.targetSegment) ? input.targetSegment : "agency_white_label"
   const offerAngle = isVideoOfferAngle(input.offerAngle) ? input.offerAngle : "lost_revenue"
   const lossSimulation = buildVideoLossSimulation({ segment: targetSegment, offerAngle, inputs: input.lossInputs })
   const claimGuard = buildVideoClaimGuard()
-  const report = await fetchDiagnosticReport({ companyId: company.id, reportLocale: company.report_locale ?? undefined })
+  const report = await fetchDiagnosticReport({
+    companyId: company.id,
+    reportLocale: requestedLocale ?? company.report_locale ?? undefined,
+  })
   const locale = report?.report_locale ?? company.report_locale ?? "ja"
   const reportUrl = report?.report_url ?? company.report_url ?? null
   const previewUrl = reportUrl ? `${reportUrl.replace(/\/$/, "")}/video` : null

@@ -3,6 +3,8 @@ import { findCompanyByDomain, findCompanyById, findCompanyBySlug } from "./compa
 import { matchContentTemplate } from "./content-templates"
 import { fetchDiagnosticReport, type DiagnosticReportData } from "./diagnostic"
 import { escapeHtml, themeForIndustry } from "./render-quality"
+import { normalizeReportLocale } from "./routing"
+import { localeToRegion } from "./types"
 
 const NARRATION_SYSTEM_PROMPT = `You are Paradigm's sales video director.
 
@@ -188,8 +190,13 @@ export interface VideoGenerationResult {
 const isUuid = (s: string): boolean =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)
 
-export async function generateDiagnosticVideo(companyIdOrSlugOrDomain: string): Promise<VideoGenerationResult> {
-  let company = await findCompanyBySlug(companyIdOrSlugOrDomain)
+export async function generateDiagnosticVideo(
+  companyIdOrSlugOrDomain: string,
+  reportLocale?: string | null,
+): Promise<VideoGenerationResult> {
+  const requestedLocale = reportLocale ? normalizeReportLocale(reportLocale, "jp") : null
+  const requestedRegion = requestedLocale ? localeToRegion(requestedLocale) : "jp"
+  let company = await findCompanyBySlug(companyIdOrSlugOrDomain, requestedRegion)
   if (!company) {
     company = isUuid(companyIdOrSlugOrDomain)
       ? await findCompanyById(companyIdOrSlugOrDomain)
@@ -199,7 +206,10 @@ export async function generateDiagnosticVideo(companyIdOrSlugOrDomain: string): 
   }
   if (!company) return { ok: false, error: "company not found" }
 
-  const data = await fetchDiagnosticReport({ companyId: company.id })
+  const data = await fetchDiagnosticReport({
+    companyId: company.id,
+    reportLocale: requestedLocale ?? company.report_locale ?? undefined,
+  })
   if (!data) return { ok: false, error: "diagnostic data unavailable" }
 
   const narration = await generateNarrationScript(data)

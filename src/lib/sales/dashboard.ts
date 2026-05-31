@@ -6,6 +6,7 @@ import { fetchRecentEnrichmentJobs, type DashboardEnrichmentJob } from "@/lib/sa
 import { getDashboardAgentTeam } from "@/lib/sales/agent-team"
 import { getSalesIntegrationStatus } from "@/lib/sales/integration-registry"
 import { getVideoPipelineConfig, listVideoJobs } from "@/lib/sales/video-pipeline"
+import { salesScopeFromLocale, type SalesLocaleScope } from "@/lib/sales/locale-scope"
 import type {
   DashboardAuditCheck,
   DashboardAuditSection,
@@ -32,6 +33,10 @@ export type {
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
+
+export interface SalesDashboardInput {
+  reportLocale?: string | null
+}
 
 interface SalesCompanyRow {
   id: string
@@ -564,10 +569,11 @@ function mergeFallbackTools(rows: DashboardToolConnection[]): DashboardToolConne
   return TOOL_ORDER.map((slug) => bySlug.get(slug)).filter(Boolean) as DashboardToolConnection[]
 }
 
-async function fetchDashboardCompanies(sb: ServiceSupabase) {
+async function fetchDashboardCompanies(sb: ServiceSupabase, scope: SalesLocaleScope) {
   const full = await sb
     .from("sales_companies")
     .select(COMPANY_SELECT_FULL)
+    .eq("report_locale", scope.reportLocale)
     .order("updated_at", { ascending: false })
     .limit(200)
 
@@ -580,16 +586,18 @@ async function fetchDashboardCompanies(sb: ServiceSupabase) {
   const legacy = await sb
     .from("sales_companies")
     .select(COMPANY_SELECT_LEGACY)
+    .eq("region", scope.region)
     .order("updated_at", { ascending: false })
     .limit(200)
 
   return legacy.error ? full : legacy
 }
 
-export async function getSalesDashboardData(): Promise<SalesDashboardData> {
+export async function getSalesDashboardData(input: SalesDashboardInput = {}): Promise<SalesDashboardData> {
   const warnings: string[] = []
   const sb = getServiceSalesSupabase()
   const generatedAt = new Date().toISOString()
+  const scope = salesScopeFromLocale(input.reportLocale)
 
   if (!sb) {
     warnings.push("Supabase service_role is not configured. Showing empty dashboard shell.")
@@ -599,6 +607,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     const integrationStatus = await getSalesIntegrationStatus()
     const videoConfig = getVideoPipelineConfig()
     return {
+      scope,
       status: "degraded",
       generatedAt,
       warnings,
@@ -648,10 +657,11 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     integrationStatus,
     videoJobsRes,
   ] = await Promise.all([
-    fetchDashboardCompanies(sb),
+    fetchDashboardCompanies(sb, scope),
     sb
       .from("sales_activity_log")
       .select("id, company_id, activity_type, subject, result, assigned_to, occurred_at")
+      .eq("region", scope.region)
       .order("occurred_at", { ascending: false })
       .limit(30),
     sb
@@ -665,6 +675,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     sb
       .from("sales_operator_queue_items")
       .select("id, company_id, queue_type, priority, status, assigned_to, source_tool, target_tool, due_at, created_at, sales_companies(company_name)")
+      .eq("region", scope.region)
       .in("status", ["open", "in_progress", "blocked"])
       .order("priority", { ascending: false })
       .order("created_at", { ascending: false })
@@ -677,10 +688,12 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     sb
       .from("sales_calendar_events")
       .select("id", { count: "exact", head: true })
+      .eq("region", scope.region)
       .gte("start_at", sevenDaysAgo),
     sb
       .from("sales_contracts")
       .select("amount_yen")
+      .eq("region", scope.region)
       .gte("signed_at", thirtyDaysAgo),
     calculateMrr(),
     fetchRecentEnrichmentJobs(40),
@@ -688,7 +701,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     getContentTemplateCoverage(),
     getDashboardAgentTeam(),
     getSalesIntegrationStatus(),
-    listVideoJobs(25),
+    listVideoJobs(25, { locale: scope.reportLocale }),
   ])
 
   if (companyRes.error) warnings.push(`sales_companies: ${companyRes.error.message}`)
@@ -706,6 +719,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
 
   const rawCompanies = (companyRes.data ?? []) as SalesCompanyRow[]
   const companies = rawCompanies.map(mapCompany)
+  const scopedCompanyIds = new Set(companies.map((company) => company.id))
   const stageCounts: Record<string, number> = {}
   const pipelineCounts: Record<string, number> = {}
   const industryCounts: Record<string, number> = {}
@@ -720,15 +734,17 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     for (const issue of row.detected_issues ?? []) increment(issueCounts, issue)
   }
 
-  const activities = ((activityRes.data ?? []) as ActivityRow[]).map((row) => ({
-    id: row.id,
-    companyId: row.company_id,
-    activityType: row.activity_type,
-    subject: row.subject,
-    result: row.result,
-    assignedTo: row.assigned_to,
-    occurredAt: row.occurred_at ?? generatedAt,
-  }))
+  const activities = ((activityRes.data ?? []) as ActivityRow[])
+    .filter((row) => !row.company_id || scopedCompanyIds.has(row.company_id))
+    .map((row) => ({
+      id: row.id,
+      companyId: row.company_id,
+      activityType: row.activity_type,
+      subject: row.subject,
+      result: row.result,
+      assignedTo: row.assigned_to,
+      occurredAt: row.occurred_at ?? generatedAt,
+    }))
 
   const syncLogs = ((syncRes.data ?? []) as SyncLogRow[]).map((row) => ({
     id: row.id,
@@ -744,21 +760,23 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
     ((toolsRes.data ?? []) as ToolConnectionRow[]).map(mapTool),
   )
 
-  const operatorQueue = ((queueRes.data ?? []) as QueueRow[]).map((row) => ({
-    id: row.id,
-    companyId: row.company_id,
-    companyName: row.sales_companies?.company_name ?? null,
-    queueType: row.queue_type,
-    priority: row.priority ?? 50,
-    status: row.status,
-    assignedTo: row.assigned_to,
-    sourceTool: row.source_tool,
-    targetTool: row.target_tool,
-    dueAt: row.due_at,
-    createdAt: row.created_at,
-  }))
+  const operatorQueue = ((queueRes.data ?? []) as QueueRow[])
+    .filter((row) => !row.company_id || scopedCompanyIds.has(row.company_id))
+    .map((row) => ({
+      id: row.id,
+      companyId: row.company_id,
+      companyName: row.sales_companies?.company_name ?? null,
+      queueType: row.queue_type,
+      priority: row.priority ?? 50,
+      status: row.status,
+      assignedTo: row.assigned_to,
+      sourceTool: row.source_tool,
+      targetTool: row.target_tool,
+      dueAt: row.due_at,
+      createdAt: row.created_at,
+    }))
 
-  const sourceRuns = (sourceRunsRes.data ?? []) as SourceRunRow[]
+  const sourceRuns = ((sourceRunsRes.data ?? []) as SourceRunRow[]).filter((row) => scopedCompanyIds.has(row.company_id))
 
   const kpis: DashboardKpis = {
     totalLeads: rawCompanies.length,
@@ -781,6 +799,7 @@ export async function getSalesDashboardData(): Promise<SalesDashboardData> {
   }
 
   return {
+    scope,
     status: warnings.length > 0 ? "degraded" : "ready",
     generatedAt,
     warnings,

@@ -244,14 +244,15 @@ export default function DiagnosticReport({
   const theme = themeForIndustry(data.industry)
   const [lossRef, lossInView] = useInView()
   const lossCount = useCountUp(yenNumber(data.total_loss), 1300, lossInView)
-  const videoHref = trackingSlug ? `/${locale ?? data.report_locale}/report/${trackingSlug}/video` : null
+  const activeLocale = locale ?? data.report_locale
+  const videoHref = trackingSlug ? `/${activeLocale}/report/${trackingSlug}/video` : null
 
   return (
     <div className="min-h-screen bg-zinc-50 font-sans text-zinc-950">
       {trackingSlug && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={`/api/sales/track-view?slug=${encodeURIComponent(trackingSlug)}&locale=${encodeURIComponent(locale ?? "ja")}`}
+          src={`/api/sales/track-view?slug=${encodeURIComponent(trackingSlug)}&locale=${encodeURIComponent(activeLocale)}`}
           alt=""
           width={1}
           height={1}

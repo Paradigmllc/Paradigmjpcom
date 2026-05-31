@@ -3,8 +3,8 @@ import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { upsertCompanyByDomain, findExistingCompany } from "@/lib/sales/companies"
 import { enqueueCompanyEnrichment, triggerEnrichmentRunner } from "@/lib/sales/enrichment-jobs"
 import { normalizeDomain, normalizeCompanyName } from "@/lib/sales/dedup"
+import { salesScopeFromCountry } from "@/lib/sales/locale-scope"
 import {
-  normalizeReportLocale,
   normalizeTargetCountry,
   normalizeTemplateVariant,
   type ReportLocale,
@@ -93,10 +93,14 @@ export async function POST(req: NextRequest) {
       continue
     }
 
+    const scope = salesScopeFromCountry({
+      reportLocale: row.report_locale,
+      targetCountry: row.target_country ?? row.country,
+    })
     const existing = await findExistingCompany({
       domain: cleanDomain,
       nameKey: normalizeCompanyName(row.company_name),
-      region: "jp",
+      region: scope.region,
     })
     if (existing) {
       skipped++
@@ -106,7 +110,14 @@ export async function POST(req: NextRequest) {
           source: row.source ?? "csv_import_existing",
           triggeredBy: "csv_import_api",
           priority: 55,
-          payload: { domain: cleanDomain, company_name: row.company_name, existing: true },
+          payload: {
+            domain: cleanDomain,
+            company_name: row.company_name,
+            existing: true,
+            report_locale: scope.reportLocale,
+            target_country: scope.targetCountry,
+            region: scope.region,
+          },
         })
         if (queued.ok) jobsEnqueued++
         else failures.push({ row: i, reason: queued.error ?? "enrichment enqueue failed" })
@@ -114,12 +125,13 @@ export async function POST(req: NextRequest) {
       continue
     }
 
-    const reportLocale = normalizeReportLocale(row.report_locale, "jp")
+    const reportLocale = scope.reportLocale
     const targetCountry = normalizeTargetCountry(row.target_country ?? row.country, reportLocale)
     const templateVariant = normalizeTemplateVariant(row.template_variant)
     const result = await upsertCompanyByDomain({
       domain: cleanDomain,
       company_name: row.company_name,
+      region: scope.region,
       report_locale: reportLocale,
       target_country: targetCountry,
       template_variant: templateVariant,
@@ -132,6 +144,11 @@ export async function POST(req: NextRequest) {
           imported_at: new Date().toISOString(),
           source_file: row.source ?? "unknown",
           original_row: row,
+          routing_scope: {
+            region: scope.region,
+            report_locale: reportLocale,
+            target_country: targetCountry,
+          },
         },
         contact_seed: {
           email: row.email ?? null,
@@ -165,6 +182,9 @@ export async function POST(req: NextRequest) {
         row_index: i,
         domain: cleanDomain,
         company_name: row.company_name,
+        report_locale: reportLocale,
+        target_country: targetCountry,
+        region: scope.region,
         contact_seed: {
           email: row.email ?? null,
           phone: row.phone ?? null,

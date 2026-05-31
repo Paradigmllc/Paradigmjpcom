@@ -3,6 +3,7 @@ import type { DashboardEnrichmentJob } from "@/lib/sales/enrichment-jobs"
 import type { DashboardAgentTeam } from "@/lib/sales/agent-team"
 import type { SalesIntegrationStatus } from "@/lib/sales/integration-registry"
 import type { SalesVideoJob, VideoPipelineConfig } from "@/lib/sales/video-pipeline"
+import type { SalesLocaleScope } from "@/lib/sales/locale-scope"
 
 export type SalesDashboardStatus = "ready" | "degraded"
 
@@ -131,6 +132,7 @@ export interface DashboardContentTemplateCoverage {
 }
 
 export interface SalesDashboardData {
+  scope: SalesLocaleScope
   status: SalesDashboardStatus
   generatedAt: string
   warnings: string[]

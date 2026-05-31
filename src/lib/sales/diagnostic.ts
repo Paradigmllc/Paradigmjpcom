@@ -22,7 +22,7 @@ import { computeSourceCoverage, type SourceCoverageSnapshot } from "./source-cov
 import { matchContentTemplate, type SalesContentTemplate } from "./content-templates"
 import { getTemplatesByIndustry } from "./templates"
 import type { Industry, IssueCode, Region, SalesCompany, SalesTemplate, Severity } from "./types"
-import { ISSUE_CODES } from "./types"
+import { ISSUE_CODES, localeToRegion } from "./types"
 
 export interface DiagnosticAct {
   type: "pain" | "fear" | "hope"
@@ -286,7 +286,9 @@ export async function fetchDiagnosticReport(opts: {
   targetCountry?: string
   templateVariant?: TemplateVariant | string
 }): Promise<DiagnosticReportData | null> {
-  const region: Region = opts.region ?? "jp"
+  const requestedLocale =
+    opts.reportLocale === undefined ? null : normalizeReportLocale(opts.reportLocale, opts.region ?? "jp")
+  const region: Region = opts.region ?? (requestedLocale ? localeToRegion(requestedLocale) : "jp")
   const company = opts.slug
     ? await findCompanyBySlug(opts.slug, region)
     : opts.companyId
@@ -301,6 +303,7 @@ export async function fetchDiagnosticReport(opts: {
     opts.reportLocale ?? company.report_locale ?? routing.report_locale,
     region,
   )
+  const templateRegion: Region = opts.region ?? company.region ?? localeToRegion(reportLocale)
   const targetCountry = normalizeTargetCountry(
     opts.targetCountry ?? company.target_country ?? routing.target_country,
     reportLocale,
@@ -320,7 +323,7 @@ export async function fetchDiagnosticReport(opts: {
   const sourceCoverage = computeSourceCoverage(company)
   const issues = defaultIssues(company)
   const templates = company.industry
-    ? await getTemplatesByIndustry(company.industry, issues, region, {
+    ? await getTemplatesByIndustry(company.industry, issues, templateRegion, {
         reportLocale,
         targetCountry,
         templateVariant,

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { CheckCircle2, Eye, FilePenLine, RefreshCw, Save, Search, SlidersHorizontal, WandSparkles } from "lucide-react"
 import { toast } from "sonner"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
+import { countryForLocale, isReportLocale, type ReportLocale } from "@/lib/sales/routing"
 import {
   CONTENT_APPEAL_ANGLES,
   CONTENT_APPEAL_LABELS,
@@ -46,6 +47,10 @@ function labelOf(entries: readonly (readonly [string, string])[], value: string)
 function fieldValue(row: TemplateRow | null, key: keyof TemplateRow): string {
   const value = row?.[key]
   return typeof value === "string" ? value : ""
+}
+
+function countryForWorkbenchLocale(locale: string): string {
+  return countryForLocale(isReportLocale(locale) ? locale : "ja")
 }
 
 function TemplateSelect({
@@ -112,7 +117,7 @@ function TextField({
 }
 
 export function SalesTemplateWorkbenchPanel({ data }: { data: SalesDashboardData }) {
-  const [locale, setLocale] = useState("ja")
+  const [locale, setLocale] = useState<ReportLocale>(data.scope.reportLocale)
   const [industry, setIndustry] = useState("restaurant")
   const [assetType, setAssetType] = useState("diagnostic_report")
   const [appealAngle, setAppealAngle] = useState("revenue_recovery")
@@ -162,7 +167,7 @@ export function SalesTemplateWorkbenchPanel({ data }: { data: SalesDashboardData
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           report_locale: locale,
-          target_country: locale === "ja" ? "JP" : "US",
+          target_country: countryForWorkbenchLocale(locale),
           industry,
           asset_type: assetType,
           appeal_angle: appealAngle,
@@ -226,6 +231,10 @@ export function SalesTemplateWorkbenchPanel({ data }: { data: SalesDashboardData
   }, [locale, industry, assetType, appealAngle])
 
   useEffect(() => {
+    setLocale(data.scope.reportLocale)
+  }, [data.scope.reportLocale])
+
+  useEffect(() => {
     setDraft(selected)
   }, [selected])
 
@@ -254,7 +263,14 @@ export function SalesTemplateWorkbenchPanel({ data }: { data: SalesDashboardData
         </div>
 
         <div className="mt-4 grid gap-3">
-          <TemplateSelect label="言語" value={locale} options={LOCALE_OPTIONS} onChange={setLocale} />
+          <TemplateSelect
+            label="言語"
+            value={locale}
+            options={LOCALE_OPTIONS}
+            onChange={(value) => {
+              if (isReportLocale(value)) setLocale(value)
+            }}
+          />
           <TemplateSelect label="業界" value={industry} options={INDUSTRY_OPTIONS} onChange={setIndustry} />
           <TemplateSelect label="成果物" value={assetType} options={ASSET_OPTIONS} onChange={setAssetType} />
           <TemplateSelect label="訴求軸" value={appealAngle} options={ANGLE_OPTIONS} onChange={setAppealAngle} />
@@ -363,7 +379,18 @@ export function SalesTemplateWorkbenchPanel({ data }: { data: SalesDashboardData
         {draft ? (
           <div className="mt-4 grid gap-4">
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              <TemplateSelect label="言語" value={draft.report_locale} options={LOCALE_OPTIONS} onChange={(value) => setDraft({ ...draft, report_locale: value })} />
+              <TemplateSelect
+                label="言語"
+                value={draft.report_locale}
+                options={LOCALE_OPTIONS}
+                onChange={(value) =>
+                  setDraft({
+                    ...draft,
+                    report_locale: value,
+                    target_country: countryForWorkbenchLocale(value),
+                  })
+                }
+              />
               <TemplateSelect label="業界" value={draft.industry} options={INDUSTRY_OPTIONS} onChange={(value) => setDraft({ ...draft, industry: value })} />
               <TemplateSelect label="成果物" value={draft.asset_type} options={ASSET_OPTIONS} onChange={(value) => setDraft({ ...draft, asset_type: value })} />
               <TemplateSelect label="訴求軸" value={draft.appeal_angle} options={ANGLE_OPTIONS} onChange={(value) => setDraft({ ...draft, appeal_angle: value })} />

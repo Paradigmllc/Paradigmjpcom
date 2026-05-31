@@ -13,6 +13,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { verifyWebhookSecret } from "@/lib/sales/auth"
 import { upsertCompanyByDomain, setPipelineStatus, findCompanyByDomain } from "@/lib/sales/companies"
+import { salesScopeFromCountry } from "@/lib/sales/locale-scope"
+import { buildReportUrl } from "@/lib/sales/routing"
 import { scanDomain } from "@/lib/sales/sources/scanner"
 import { saveSourceCoverageRows } from "@/lib/sales/source-coverage"
 
@@ -30,6 +32,10 @@ export async function POST(
   if (!domain) {
     return NextResponse.json({ ok: false, error: "domain required" }, { status: 400 })
   }
+  const scope = salesScopeFromCountry({
+    reportLocale: req.nextUrl.searchParams.get("report_locale") ?? req.nextUrl.searchParams.get("locale"),
+    targetCountry: req.nextUrl.searchParams.get("target_country") ?? req.nextUrl.searchParams.get("country"),
+  })
 
   // company 存在チェック (なければ create)
   const existing = await findCompanyByDomain(domain)
@@ -37,6 +43,9 @@ export async function POST(
     await upsertCompanyByDomain({
       domain,
       company_name: domain,
+      region: scope.region,
+      report_locale: scope.reportLocale,
+      target_country: scope.targetCountry,
       pipeline_status: "scanning",
     })
   } else {
@@ -50,6 +59,9 @@ export async function POST(
   const result = await upsertCompanyByDomain({
     domain,
     company_name: existing?.company_name ?? scan.html.title ?? domain,
+    region: existing?.region ?? scope.region,
+    report_locale: existing?.report_locale ?? scope.reportLocale,
+    target_country: existing?.target_country ?? scope.targetCountry,
     pagespeed_mobile: scan.mobile.performance,
     pagespeed_desktop: scan.desktop.performance,
     detected_issues: scan.issues,
@@ -72,6 +84,8 @@ export async function POST(
     },
   })
   if (result.company) await saveSourceCoverageRows(result.company)
+  const reportLocale = result.company?.report_locale ?? existing?.report_locale ?? scope.reportLocale
+  const slug = result.company?.slug ?? existing?.slug ?? null
 
   return NextResponse.json({
     ok: true,
@@ -81,6 +95,6 @@ export async function POST(
     issues: scan.issues,
     // Sprint 13: /report/[slug] が正式 URL. scan は domain ベース呼出のため slug は別途設定要.
     //   ここでは scan 結果としての domain-based URL ではなく "未設定" を返し、報告 URL は別所で生成.
-    report_url: existing?.slug ? `https://paradigmjp.com/ja/report/${existing.slug}` : null,
+    report_url: slug ? buildReportUrl(reportLocale, slug) : null,
   })
 }

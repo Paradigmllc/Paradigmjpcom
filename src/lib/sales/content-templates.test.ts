@@ -4,11 +4,13 @@ import { buildInitialContentTemplates, CONTENT_ASSET_LABELS, INDUSTRY_LABELS, ma
 const mojibakePattern = /繝|蜍|譛|縺|邯|荳|逶|螟|諡|蛻|蟇|髢|遯|鬚|蝟|繧|譁ｭ|險/
 
 describe("sales content templates", () => {
-  it("builds a ja/en matrix for four asset types", () => {
+  it("builds a locale-scoped matrix for all supported sales locales", () => {
     const rows = buildInitialContentTemplates()
-    expect(rows.length).toBe(256)
+    expect(rows.length).toBe(576)
     expect(rows.some((row) => row.report_locale === "ja" && row.asset_type === "diagnostic_report")).toBe(true)
     expect(rows.some((row) => row.report_locale === "en" && row.asset_type === "sales_video")).toBe(true)
+    expect(rows.some((row) => row.report_locale === "ko" && row.target_country === "KR")).toBe(true)
+    expect(rows.some((row) => row.report_locale === "pt" && row.target_country === "BR")).toBe(true)
   })
 
   it("matches by locale, industry, asset, and appeal angle with bundled fallback", async () => {

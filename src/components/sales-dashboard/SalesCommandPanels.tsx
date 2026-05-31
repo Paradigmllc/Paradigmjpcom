@@ -22,6 +22,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import type { DashboardCompany, DashboardToolConnection, SalesDashboardData } from "@/lib/sales/dashboard"
+import { scopedReportHref } from "@/lib/sales/locale-scope"
 
 export function formatNumber(value: number): string {
   return new Intl.NumberFormat("ja-JP").format(value)
@@ -70,8 +71,8 @@ const TOOL_STATUS_LABELS: Record<string, string> = {
 }
 
 function externalUrlForCompany(company: DashboardCompany): string {
-  if (company.reportUrl) return company.reportUrl
-  if (company.slug) return `/ja/report/${company.slug}`
+  const reportHref = scopedReportHref(company)
+  if (reportHref) return reportHref
   return `https://${company.domain}`
 }
 

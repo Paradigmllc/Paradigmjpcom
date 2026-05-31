@@ -48,7 +48,9 @@ export async function GET(req: NextRequest) {
   }
 
   const limit = Number(req.nextUrl.searchParams.get("limit") ?? "40")
-  const result = await listVideoJobs(Number.isFinite(limit) ? limit : 40)
+  const result = await listVideoJobs(Number.isFinite(limit) ? limit : 40, {
+    locale: req.nextUrl.searchParams.get("report_locale") ?? req.nextUrl.searchParams.get("locale"),
+  })
   return NextResponse.json(result, { status: result.ok ? 200 : 200 })
 }
 
@@ -66,6 +68,7 @@ export async function POST(req: NextRequest) {
       target_segment?: unknown
       offer_angle?: unknown
       loss_inputs?: unknown
+      report_locale?: unknown
       priority?: unknown
     }
     if (typeof body.company_id_or_domain !== "string" || body.company_id_or_domain.trim().length === 0) {
@@ -99,6 +102,7 @@ export async function POST(req: NextRequest) {
       targetSegment: isVideoTargetSegment(body.target_segment) ? body.target_segment : undefined,
       offerAngle: isVideoOfferAngle(body.offer_angle) ? body.offer_angle : undefined,
       lossInputs,
+      reportLocale: typeof body.report_locale === "string" ? body.report_locale : null,
       priority: numberOrDefault(body.priority, 50),
     })
     return NextResponse.json(result, { status: result.ok ? 200 : 500 })

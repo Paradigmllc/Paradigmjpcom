@@ -21,6 +21,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { verifyWebhookSecret } from "@/lib/sales/auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { notifySlack } from "@/lib/notify"
+import { salesScopeFromLocale, type SalesLocaleScope } from "@/lib/sales/locale-scope"
+import { buildReportUrl } from "@/lib/sales/routing"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -42,7 +44,7 @@ interface DigestData {
   prefectureCounts: Record<string, number>
 }
 
-async function collectDigest(): Promise<DigestData | { error: string }> {
+async function collectDigest(scope: SalesLocaleScope): Promise<DigestData | { error: string }> {
   const sb = getServiceSalesSupabase()
   if (!sb) return { error: "Supabase service_role not configured" }
 
@@ -53,14 +55,19 @@ async function collectDigest(): Promise<DigestData | { error: string }> {
 
   // 並列クエリ
   const [allRes, newRes, hotRes] = await Promise.all([
-    sb.from("sales_companies").select("deal_stage, prefecture, detected_issues, created_at"),
+    sb
+      .from("sales_companies")
+      .select("deal_stage, prefecture, detected_issues, created_at")
+      .eq("report_locale", scope.reportLocale),
     sb
       .from("sales_companies")
       .select("id", { count: "exact", head: true })
+      .eq("report_locale", scope.reportLocale)
       .gte("created_at", weekStart),
     sb
       .from("sales_companies")
       .select("id, slug, company_name, domain, report_views")
+      .eq("report_locale", scope.reportLocale)
       .eq("is_hot_lead", true)
       .order("report_views", { ascending: false })
       .limit(5),
@@ -96,7 +103,7 @@ async function collectDigest(): Promise<DigestData | { error: string }> {
   }
 }
 
-function buildSlackBlocks(d: DigestData) {
+function buildSlackBlocks(d: DigestData, scope: SalesLocaleScope) {
   const top = (obj: Record<string, number>, n: number) =>
     Object.entries(obj)
       .sort(([, a], [, b]) => b - a)
@@ -110,9 +117,7 @@ function buildSlackBlocks(d: DigestData) {
       : d.hotLeads
           .map((h, i) => {
             // Sprint 13: slug があれば /report/[slug]・なければ Notion 直リンク
-            const link = h.slug
-              ? `https://paradigmjp.com/ja/report/${h.slug}`
-              : `https://www.notion.so/8cbab1f501144f83872c1738ce3e79c4`
+            const link = h.slug ? buildReportUrl(scope.reportLocale, h.slug) : `https://www.notion.so/8cbab1f501144f83872c1738ce3e79c4`
             return `${i + 1}. *<${link}|${h.company_name}>* — ${h.report_views} views`
           })
           .join("\n")
@@ -165,13 +170,14 @@ async function handle(req: NextRequest) {
   const authErr = verifyWebhookSecret(req)
   if (authErr) return authErr
 
-  const d = await collectDigest()
+  const scope = salesScopeFromLocale(req.nextUrl.searchParams.get("report_locale") ?? req.nextUrl.searchParams.get("locale"))
+  const d = await collectDigest(scope)
   if ("error" in d) {
     return NextResponse.json({ ok: false, error: d.error }, { status: 500 })
   }
 
   const text = `📊 Paradigm 週次ダイジェスト: 総 ${d.totalCompanies} 社 / 新規 +${d.newLeads} / HOT ${d.hotLeads.length}`
-  const blocks = buildSlackBlocks(d)
+  const blocks = buildSlackBlocks(d, scope)
   await notifySlack(text, blocks)
 
   return NextResponse.json({ ok: true, digest: d })

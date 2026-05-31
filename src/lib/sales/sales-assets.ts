@@ -3,6 +3,8 @@ import { findCompanyByDomain, findCompanyById, findCompanyBySlug } from "./compa
 import { matchContentTemplate, type ContentAssetType } from "./content-templates"
 import { fetchDiagnosticReport, type DiagnosticReportData } from "./diagnostic"
 import { labelForIndustry, themeForIndustry } from "./render-quality"
+import { normalizeReportLocale, type ReportLocale } from "./routing"
+import { localeToRegion, type Region } from "./types"
 
 export interface SalesAssetResult {
   ok: boolean
@@ -252,6 +254,9 @@ async function saveDelivery(input: {
   assetType: ContentAssetType
   content: string
   templateTitle: string
+  region: Region
+  reportLocale: ReportLocale
+  targetCountry: string
 }): Promise<string | undefined> {
   const sb = getServiceSalesSupabase()
   if (!sb) return undefined
@@ -259,6 +264,7 @@ async function saveDelivery(input: {
   const { data, error } = await sb
     .from("sales_deliveries")
     .insert({
+      region: input.region,
       delivery_name: `${input.companyName} ${input.templateTitle}`,
       delivery_type: deliveryTypeFor(input.assetType),
       status: "レビュー待ち",
@@ -268,6 +274,8 @@ async function saveDelivery(input: {
         asset_type: input.assetType,
         generated_content: input.content,
         template_title: input.templateTitle,
+        report_locale: input.reportLocale,
+        target_country: input.targetCountry,
         renderer_version: "professional-v2",
       },
     })
@@ -284,16 +292,22 @@ async function saveDelivery(input: {
 export async function generateSalesAsset(input: {
   companyIdOrSlugOrDomain: string
   assetType: ContentAssetType
+  reportLocale?: string | null
 }): Promise<SalesAssetResult> {
+  const requestedLocale = input.reportLocale ? normalizeReportLocale(input.reportLocale, "jp") : null
+  const requestedRegion = requestedLocale ? localeToRegion(requestedLocale) : "jp"
   const company = isUuid(input.companyIdOrSlugOrDomain)
     ? await findCompanyById(input.companyIdOrSlugOrDomain)
     : input.companyIdOrSlugOrDomain.includes(".")
       ? await findCompanyByDomain(input.companyIdOrSlugOrDomain)
-      : await findCompanyBySlug(input.companyIdOrSlugOrDomain)
+      : await findCompanyBySlug(input.companyIdOrSlugOrDomain, requestedRegion)
 
   if (!company) return { ok: false, asset_type: input.assetType, error: "company not found" }
 
-  const report = await fetchDiagnosticReport({ companyId: company.id, reportLocale: company.report_locale ?? undefined })
+  const report = await fetchDiagnosticReport({
+    companyId: company.id,
+    reportLocale: requestedLocale ?? company.report_locale ?? undefined,
+  })
   if (!report) return { ok: false, asset_type: input.assetType, error: "diagnostic report unavailable" }
 
   const contentTemplate = await matchContentTemplate({
@@ -319,6 +333,9 @@ export async function generateSalesAsset(input: {
     assetType: input.assetType,
     content,
     templateTitle: contentTemplate.title,
+    region: localeToRegion(report.report_locale),
+    reportLocale: report.report_locale,
+    targetCountry: report.target_country,
   })
 
   return {

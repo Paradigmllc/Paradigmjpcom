@@ -12,7 +12,9 @@ const FIELD_ALIASES: Record<string, string[]> = {
   company_name: ["company", "company name", "会社名", "企業名", "organization", "account name"],
   domain: ["website", "domain", "url", "会社url", "企業url", "homepage", "ホームページ", "webサイト"],
   industry: ["industry", "業種"],
-  prefecture: ["state", "prefecture", "都道府県", "所在地", "country"],
+  prefecture: ["state", "prefecture", "都道府県", "所在地"],
+  target_country: ["target country", "country code", "country", "market", "region country"],
+  report_locale: ["locale", "language", "report locale"],
   email: ["email", "mail", "メール"],
   phone: ["phone", "tel", "電話"],
   contact_name: ["name", "contact", "担当者", "氏名", "first name + last name"],
@@ -97,7 +99,13 @@ export function SalesAutomationPanel({ data }: { data: SalesDashboardData }) {
   const [lastResult, setLastResult] = useState<string | null>(null)
   const [lastOutreachResult, setLastOutreachResult] = useState<string | null>(null)
   const parsedRows = useMemo(() => mapCsvRows(parseCsv(csvText)), [csvText])
-  const validRows = parsedRows.filter((row) => row.company_name && row.domain)
+  const validRows = parsedRows
+    .filter((row) => row.company_name && row.domain)
+    .map((row) => ({
+      ...row,
+      report_locale: row.report_locale || data.scope.reportLocale,
+      target_country: row.target_country || data.scope.targetCountry,
+    }))
   const statusCounts = countByStatus(data)
 
   async function importCsv() {
@@ -164,7 +172,9 @@ export function SalesAutomationPanel({ data }: { data: SalesDashboardData }) {
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          region: "jp",
+          region: data.scope.region,
+          report_locale: data.scope.reportLocale,
+          target_country: data.scope.targetCountry,
           limit: 3,
           dryRun: true,
           first5Approval: true,
