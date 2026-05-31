@@ -17,17 +17,22 @@
  * dryRun=true なので実送信は一切行わない (安全)。
  */
 
+import { readProductionEnvValue } from "./lib/coolify-env.mjs"
+
 const BASE_URL = process.env.BASE_URL ?? "https://paradigmjp.com"
-const SECRET = process.env.N8N_WEBHOOK_SECRET
-
-if (!SECRET) {
-  console.error("❌ N8N_WEBHOOK_SECRET が未設定です。本番 env を持つ環境で実行してください。")
-  process.exit(1)
-}
-
-const headers = { "Content-Type": "application/json", "X-Webhook-Secret": SECRET }
 
 async function post(path, body) {
+  const secret = await readProductionEnvValue("N8N_WEBHOOK_SECRET").catch(() => null)
+  if (!secret) {
+    return {
+      status: 0,
+      json: {
+        ok: false,
+        error: "N8N_WEBHOOK_SECRET is not configured in env or readable Coolify application envs",
+      },
+    }
+  }
+  const headers = { "Content-Type": "application/json", "X-Webhook-Secret": secret }
   const res = await fetch(`${BASE_URL}${path}`, {
     method: "POST",
     headers,

@@ -1,10 +1,18 @@
 #!/usr/bin/env node
-const TOKEN = "6|gmsqAVZz3grFurFygCGBQmBH7CE1iMzNcpa1i9dib44da608"
-const res = await fetch("https://coolify.appexx.me/api/v1/applications/i12am4vvcbggefnqdizhnv9a/envs", {
-  headers: { Authorization: `Bearer ${TOKEN}` },
-})
-const envs = await res.json()
-const target = envs.find((e) => e.key === "SUPABASE_SERVICE_ROLE_KEY")
-if (target) {
-  process.stdout.write(target.real_value || target.value || "")
+import { readProductionEnvValue } from "./lib/coolify-env.mjs"
+
+const envName = process.argv[2] || "SUPABASE_SERVICE_ROLE_KEY"
+const printSecret = process.argv.includes("--print-secret")
+const value = await readProductionEnvValue(envName)
+
+if (!value) {
+  console.error(`${envName} is not configured`)
+  process.exit(1)
 }
+
+if (!printSecret) {
+  console.log(`${envName}: configured`)
+  process.exit(0)
+}
+
+process.stdout.write(value)

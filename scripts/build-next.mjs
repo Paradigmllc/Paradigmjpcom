@@ -43,7 +43,7 @@ function run(command, args, options = {}) {
 }
 
 run(localBin("payload"), ["generate:importmap"])
-run(localBin("next"), ["build"], {
+run(localBin("next"), ["build", "--webpack"], {
   env: {
     PAYLOAD_READS_DISABLED_DURING_BUILD: "1",
   },

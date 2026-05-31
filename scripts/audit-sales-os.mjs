@@ -14,8 +14,10 @@
  * 終了コード: 0 = 全 pass / 1 = 1 件以上 fail
  */
 
+import { readProductionEnvValue } from "./lib/coolify-env.mjs"
+
 const BASE = process.env.AUDIT_BASE ?? "https://paradigmjp.com"
-const SECRET = process.env.AUDIT_WEBHOOK_SECRET ?? ""
+let SECRET = process.env.AUDIT_WEBHOOK_SECRET ?? process.env.N8N_WEBHOOK_SECRET ?? ""
 // Sprint 13: slug ベース URL に切替 (旧 UUID ID は backward compat に track-view でのみ使用)
 const TEST_SLUG = process.env.AUDIT_TEST_SLUG ?? "izakaya-en"
 const TEST_DOMAIN = process.env.AUDIT_DOMAIN ?? "example.com"
@@ -90,6 +92,10 @@ async function checkPost(name, path, body, expectStatus = 200, opts = {}) {
 }
 
 async function main() {
+  if (!SECRET) {
+    SECRET = (await readProductionEnvValue("N8N_WEBHOOK_SECRET").catch(() => null)) ?? ""
+  }
+
   console.log(C.bold("\n🔍 Sales OS End-to-End 監査"))
   console.log(C.dim(`Base: ${BASE}`))
   console.log(C.dim(`Test slug: ${TEST_SLUG}`))
@@ -146,10 +152,11 @@ async function main() {
   }
   console.log()
 
-  /* Layer 4: 営業 OS = Notion 集約・PayloadCMS は コンテンツのみ (Sprint 13) */
-  console.log(C.bold("Layer 4: 営業 OS Notion 集約 (admin/sales 撤廃済)"))
-  await checkGet("Old /admin/sales (撤廃済・404 必須)", "/ja/admin/sales", 404)
-  console.log(C.dim(`  ${C.info} 営業 OS の操作は Notion で行う: https://www.notion.so/8cbab1f501144f83872c1738ce3e79c4`))
+  /* Layer 4: 営業 OS = PayloadCMS admin と同じログインで統合 */
+  console.log(C.bold("Layer 4: 営業 OS 統合管理画面"))
+  await checkGet("Sales command center /ja/admin/sales", "/ja/admin/sales", 200)
+  await checkGet("Template workbench", "/ja/admin/sales?tab=templates", 200)
+  await checkGet("Video pipeline workbench", "/ja/admin/sales?tab=videoPipeline", 200)
   console.log()
 
   /* サマリ */

@@ -1,3 +1,12 @@
+## Codex Update - 2026-06-01 Sales OS Perfect Pass
+
+- [x] Fixed the Sales OS tab router so `/ja/admin/sales?tab=templates` and `/ja/admin/sales?tab=videoPipeline` open the requested workbench directly and keep the URL synchronized when operators switch tabs.
+- [x] Repaired the Windows Desktop junction test runner by adding `scripts/run-vitest.mjs`; `npm test -- --run` now runs from the real repo root and passes all 143 tests.
+- [x] Updated the production audit scripts to match the current Payload-integrated Sales OS instead of the old Notion-only assumption, and let them read required webhook secrets from Coolify env without printing values.
+- [x] Removed a stale hardcoded Coolify token from the Supabase-key helper and replaced it with a no-secret Coolify env reader.
+- [x] Fixed the Next.js 16 production build path by pinning `scripts/build-next.mjs` to webpack, avoiding the Turbopack/Payload `pino-*` external module failure.
+- [x] Verification: `npx tsc --noEmit --pretty false`, `npm test -- --run` (29 files / 143 tests), `npm run build`, `npm audit --omit=dev`, `git diff --check`, `node scripts/audit-sales-os.mjs`, and `node scripts/audit-sales-flow.mjs` passed.
+
 ## Codex Update - 2026-06-01 Template Preview Fallback
 
 - [x] Fixed the template workbench so exact filter misses no longer leave the design preview blank.

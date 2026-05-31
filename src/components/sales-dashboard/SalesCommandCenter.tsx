@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   BarChart3,
   Bot,
@@ -145,6 +146,12 @@ const tabItems: Array<{
   },
 ];
 
+const tabIds = new Set<SalesTab>(tabItems.map((tab) => tab.id));
+
+function normalizeTab(value: string | null): SalesTab {
+  return value && tabIds.has(value as SalesTab) ? (value as SalesTab) : "overview";
+}
+
 const localeLabels: Record<string, { country: string; language: string }> = {
   ja: { country: "日本", language: "日本語" },
   en: { country: "Global / US", language: "English" },
@@ -161,7 +168,27 @@ const localeLabels: Record<string, { country: string; language: string }> = {
 };
 
 export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
-  const [activeTab, setActiveTab] = useState<SalesTab>("overview");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<SalesTab>(() => normalizeTab(searchParams.get("tab")));
+
+  useEffect(() => {
+    const nextTab = normalizeTab(searchParams.get("tab"));
+    setActiveTab((current) => (current === nextTab ? current : nextTab));
+  }, [searchParams]);
+
+  function changeTab(tab: SalesTab) {
+    setActiveTab(tab);
+    const params = new URLSearchParams(searchParams.toString());
+    if (tab === "overview") {
+      params.delete("tab");
+    } else {
+      params.set("tab", tab);
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
 
   const localeMeta = localeLabels[locale] ?? localeLabels.ja;
   const activeTabItem = tabItems.find((item) => item.id === activeTab) ?? tabItems[0];
@@ -271,7 +298,7 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
             <span className="mb-2 block text-xs font-semibold text-zinc-600">表示する機能</span>
             <select
               value={activeTab}
-              onChange={(event) => setActiveTab(event.target.value as SalesTab)}
+              onChange={(event) => changeTab(event.target.value as SalesTab)}
               className="h-11 w-full rounded-xl border border-zinc-300 bg-white px-3 text-sm font-semibold shadow-sm outline-none focus:border-zinc-900"
               aria-label="営業ダッシュボードの機能を選択"
             >
@@ -291,7 +318,7 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => changeTab(tab.id)}
                   className={`flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${
                     isActive
                       ? "border-zinc-950 bg-zinc-950 text-white shadow-sm"
