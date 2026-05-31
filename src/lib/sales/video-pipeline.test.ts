@@ -8,6 +8,8 @@ describe("video pipeline config", () => {
     expect(config.stages.map((stage) => stage.id)).toContain("review")
     expect(config.n8n.note).toContain("n8n")
     expect(config.vast.note).toContain("GPU")
+    expect(config.dify.provider).toBe("dify_cloud")
+    expect(config.dify.baseUrl).toBe("https://api.dify.ai")
     expect(config.dify.note).toContain("未検証")
   })
 

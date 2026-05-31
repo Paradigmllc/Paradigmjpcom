@@ -1,5 +1,6 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { findCompanyByDomain, findCompanyById, findCompanyBySlug } from "./companies"
+import { getDifyCloudRuntimeConfig } from "./dify-cloud"
 import { fetchDiagnosticReport } from "./diagnostic"
 import { normalizeReportLocale } from "./routing"
 import { INDUSTRIES, localeToRegion, type Industry } from "./types"
@@ -84,7 +85,15 @@ export interface SalesVideoJob {
 
 export interface VideoPipelineConfig {
   n8n: { ready: boolean; url: string | null; note: string }
-  dify: { ready: boolean; note: string }
+  dify: {
+    ready: boolean
+    provider: "dify_cloud"
+    baseUrl: string
+    workflowUrl: string
+    configuredGroups: string[]
+    missingGroups: string[]
+    note: string
+  }
   comfyui: { ready: boolean; url: string | null; note: string }
   vast: { ready: boolean; note: string }
   renderers: { hyperframes: boolean; remotion: boolean; openmontage: boolean }
@@ -116,6 +125,14 @@ function pipelineConfig(): VideoPipelineConfig {
     (n8nBaseUrl ? `${n8nBaseUrl.replace(/\/+$/, "")}/webhook/sales-video-pipeline` : null)
   const comfyUrl = optionalEnv("COMFYUI_API_URL")
   const r2Base = optionalEnv("CLOUDFLARE_R2_PUBLIC_BASE_URL") ?? optionalEnv("R2_PUBLIC_BASE_URL")
+  const dify = getDifyCloudRuntimeConfig([
+    "diagnosis",
+    "formMessage",
+    "templatePicker",
+    "video",
+    "karteToReport",
+    "karteToSalesMaterial",
+  ])
 
   return {
     n8n: {
@@ -124,17 +141,13 @@ function pipelineConfig(): VideoPipelineConfig {
       note: n8nUrl ? "n8nへ動画ジョブを投入できます。" : "n8n未設定時はジョブ作成と手動コピーまで行います。",
     },
     dify: {
-      ready: envReady(
-        "DIFY_API_KEY",
-        "DIFY_API_KEY_JA",
-        "DIFY_API_KEY_EN",
-        "DIFY_VIDEO_WORKFLOW_API_KEY",
-        "DIFY_FORM_MESSAGE_KEY",
-        "DIFY_KARTE_TO_REPORT_KEY",
-        "DIFY_KARTE_TO_SALES_MATERIAL_KEY",
-        "DIFY_TEMPLATE_PICKER_KEY",
-      ),
-      note: "文面、構成、テンプレ判定はDify Cloudを優先します。未検証の断定は禁止です。",
+      ready: dify.ready,
+      provider: dify.provider,
+      baseUrl: dify.baseUrl,
+      workflowUrl: dify.workflowUrl,
+      configuredGroups: dify.configuredGroups,
+      missingGroups: dify.missingGroups,
+      note: "Dify Cloud (api.dify.ai) だけを使います。文面、構成、テンプレ判定を任せ、未検証の法規制・罰金・市場統計・CAGRの断定は禁止します。",
     },
     comfyui: {
       ready: comfyUrl !== null,
@@ -302,6 +315,17 @@ export async function createVideoJob(input: {
       r2: config.r2.ready,
     },
   })
+  const productionPlanWithRuntime = {
+    ...productionPlan,
+    dify: {
+      provider: config.dify.provider,
+      base_url: config.dify.baseUrl,
+      workflow_url: config.dify.workflowUrl,
+      configured_groups: config.dify.configuredGroups,
+      missing_groups: config.dify.missingGroups,
+      secret_values_in_payload: false,
+    },
+  }
 
   const { data, error } = await sb
     .from("sales_video_jobs")
@@ -328,7 +352,7 @@ export async function createVideoJob(input: {
       r2_asset_prefix: r2AssetPrefix,
       preview_url: previewUrl,
       storyboard,
-      production_plan: productionPlan,
+      production_plan: productionPlanWithRuntime,
       loss_simulation: lossSimulation,
       claim_guard: claimGuard,
       asset_manifest: assetManifest,
@@ -382,6 +406,7 @@ async function dispatchToN8n(job: SalesVideoJob): Promise<{ executionId: string 
   if (!webhookUrl) {
     return { executionId: null, manual: true, message: "N8N_VIDEO_PIPELINE_WEBHOOK_URL is not configured" }
   }
+  const dify = getDifyCloudRuntimeConfig(["video", "templatePicker", "karteToReport", "karteToSalesMaterial"])
   const headers: Record<string, string> = { "Content-Type": "application/json" }
   const secret = optionalEnv("N8N_WEBHOOK_SECRET")
   if (secret) headers["X-Webhook-Secret"] = secret
@@ -406,6 +431,14 @@ async function dispatchToN8n(job: SalesVideoJob): Promise<{ executionId: string 
         captions: job.caption_style,
         story: job.story_framework,
         quality: job.quality_tier,
+      },
+      dify: {
+        provider: dify.provider,
+        base_url: dify.baseUrl,
+        workflow_url: dify.workflowUrl,
+        configured_groups: dify.configuredGroups,
+        missing_groups: dify.missingGroups,
+        secret_values_in_payload: dify.secretValuesInPayload,
       },
       r2: {
         bucket: job.r2_bucket,

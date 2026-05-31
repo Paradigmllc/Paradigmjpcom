@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { normalizeDifyCloudBaseUrl } from "@/lib/sales/dify-cloud"
 
 /**
  * /api/chat — locale-aware Dify → Gemini fallback
@@ -9,10 +10,9 @@ import { NextRequest, NextResponse } from "next/server"
  * クライアントは { message, conversationId, locale: "ja" | "en" } を送信する。
  */
 
-// 2026-05-13 DIFY-CLOUD-ONLY 永久ルール + appexx.me 一時断絶:
-// 旧 fallback "https://dify.appexx.me" は OSS Dify (削除済) を指していたため撤去。
-// env 未設定なら Dify Cloud 公式 endpoint をデフォルトに。
-const DIFY_BASE = process.env.DIFY_BASE_URL || "https://api.dify.ai"
+// 2026-05-31 DIFY-CLOUD-ONLY:
+// env 未設定または古いDify URLが残っている場合も Dify Cloud 公式 endpoint に寄せる。
+const DIFY_BASE = normalizeDifyCloudBaseUrl(process.env.DIFY_BASE_URL)
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ""
 
 type Locale = "ja" | "en"

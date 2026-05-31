@@ -1,4 +1,5 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { DIFY_RUNTIME_KEY_ENV_NAMES, DIFY_RUNTIME_URL_ENV_NAMES } from "./dify-cloud"
 
 export type SalesIntegrationCategory =
   | "orchestration"
@@ -22,6 +23,7 @@ export interface SalesIntegrationDefinition {
   deployment: SalesIntegrationDeployment
   role: string
   requiredEnv: string[]
+  requiredAnyEnv?: string[]
   optionalEnv?: string[]
   balance: "none" | "manual" | "dataforseo_user_data" | "browserless_pressure"
   docsUrl?: string
@@ -58,12 +60,13 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     category: "orchestration",
     deployment: "cloud",
     role: "DeepSeek V4 workflow for diagnosis, message generation, template selection, and human-review routing.",
-    requiredEnv: ["DIFY_API_KEY"],
-    optionalEnv: ["DIFY_BASE_URL", "DIFY_DIAGNOSIS_API_KEY", "DIFY_FORM_MESSAGE_API_KEY"],
+    requiredEnv: [],
+    requiredAnyEnv: DIFY_RUNTIME_KEY_ENV_NAMES,
+    optionalEnv: [...DIFY_RUNTIME_URL_ENV_NAMES],
     balance: "manual",
     docsUrl: "https://docs.dify.ai/api-reference/workflows/run-workflow",
     recommended: true,
-    notes: "Cloud版を正とする。残量/課金はDify側のワークスペースで確認し、APIキーはサーバー環境変数だけに置く。",
+    notes: "DifyはCloud版 api.dify.ai のみを正とする。用途別キーを認識し、APIキーの実値はUI・ログ・n8nペイロードへ出さない。",
   },
   {
     slug: "deepseek",
@@ -510,6 +513,9 @@ function missingEnv(names: string[]): string[] {
 }
 
 function statusFor(def: SalesIntegrationDefinition): SalesIntegrationStatusKind {
+  if (def.requiredAnyEnv && def.requiredAnyEnv.length > 0) {
+    return configuredEnv(def.requiredAnyEnv).length > 0 ? "ready" : "missing"
+  }
   if (def.requiredEnv.length === 0) {
     return configuredEnv(def.optionalEnv ?? []).length > 0 ? "ready" : def.recommended ? "optional" : "manual"
   }
@@ -608,8 +614,8 @@ export async function getSalesIntegrationStatus(
       deployment: def.deployment,
       role: def.role,
       status,
-      configuredEnv: configuredEnv(def.requiredEnv),
-      missingEnv: missingEnv(def.requiredEnv),
+      configuredEnv: configuredEnv(def.requiredAnyEnv ?? def.requiredEnv),
+      missingEnv: missingEnv(def.requiredAnyEnv ?? def.requiredEnv),
       optionalMissingEnv: missingEnv(def.optionalEnv ?? []),
       balanceStatus: live?.balanceStatus ?? defaults.balanceStatus,
       balanceLabel: live?.balanceLabel ?? defaults.balanceLabel,

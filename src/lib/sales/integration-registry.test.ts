@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
+import { DIFY_RUNTIME_KEY_ENV_NAMES } from "./dify-cloud"
 import { getSalesIntegrationStatus } from "./integration-registry"
 
 afterEach(() => {
@@ -7,7 +8,7 @@ afterEach(() => {
 
 describe("getSalesIntegrationStatus", () => {
   it("reports missing required envs without exposing secret values", async () => {
-    vi.stubEnv("DIFY_API_KEY", "")
+    for (const envName of DIFY_RUNTIME_KEY_ENV_NAMES) vi.stubEnv(envName, "")
     const rows = await getSalesIntegrationStatus()
     const dify = rows.find((row) => row.slug === "dify_cloud")
     expect(dify?.status).toBe("missing")
@@ -16,11 +17,12 @@ describe("getSalesIntegrationStatus", () => {
   })
 
   it("marks Dify Cloud ready when the server env is configured", async () => {
-    vi.stubEnv("DIFY_API_KEY", "secret-value-that-must-not-render")
+    for (const envName of DIFY_RUNTIME_KEY_ENV_NAMES) vi.stubEnv(envName, "")
+    vi.stubEnv("DIFY_VIDEO_WORKFLOW_API_KEY", "secret-value-that-must-not-render")
     const rows = await getSalesIntegrationStatus()
     const dify = rows.find((row) => row.slug === "dify_cloud")
     expect(dify?.status).toBe("ready")
-    expect(dify?.configuredEnv).toEqual(["DIFY_API_KEY"])
+    expect(dify?.configuredEnv).toEqual(["DIFY_VIDEO_WORKFLOW_API_KEY"])
     expect(JSON.stringify(dify)).not.toContain("secret-value")
   })
 

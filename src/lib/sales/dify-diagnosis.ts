@@ -1,3 +1,4 @@
+import { normalizeDifyCloudApiUrl, normalizeDifyCloudBaseUrl } from "./dify-cloud"
 import type { SalesCompany } from "./types"
 
 type JsonRecord = Record<string, unknown>
@@ -105,9 +106,8 @@ function normalizeDifySummary(raw: JsonRecord, fallback: DifyDiagnosisResult["su
 export async function runDifyDiagnosis(company: SalesCompany): Promise<DifyDiagnosisResult> {
   const fallback = localDiagnosis(company)
   const apiKey = readOptionalEnv("DIFY_DIAGNOSIS_API_KEY") ?? readOptionalEnv("DIFY_API_KEY")
-  const baseUrl = readOptionalEnv("DIFY_DIAGNOSIS_BASE_URL") ?? readOptionalEnv("DIFY_BASE_URL") ?? "https://api.dify.ai"
-  const endpoint =
-    readOptionalEnv("DIFY_DIAGNOSIS_API_URL") ?? `${baseUrl.replace(/\/+$/, "")}/v1/workflows/run`
+  const baseUrl = normalizeDifyCloudBaseUrl(readOptionalEnv("DIFY_DIAGNOSIS_BASE_URL") ?? readOptionalEnv("DIFY_BASE_URL"))
+  const endpoint = normalizeDifyCloudApiUrl(readOptionalEnv("DIFY_DIAGNOSIS_API_URL") ?? `${baseUrl}/v1/workflows/run`)
 
   if (!apiKey) {
     return { ok: true, configured: false, summary: fallback, error: "Dify diagnosis API key is not configured" }

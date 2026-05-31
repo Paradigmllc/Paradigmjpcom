@@ -14,6 +14,7 @@
 
 import { callDeepSeek, type DeepSeekResponse } from "@/lib/deepseek"
 import { findCompanyById } from "./companies"
+import { normalizeDifyCloudApiUrl, normalizeDifyCloudBaseUrl } from "./dify-cloud"
 import { matchTemplate } from "./templates"
 import type { Industry, IssueCode, SalesCompany } from "./types"
 
@@ -120,9 +121,8 @@ async function generateWithDify(input: {
     readOptionalEnv("DIFY_FORM_MESSAGE_API_KEY") ??
     readOptionalEnv("DIFY_FORM_MESSAGE_KEY") ??
     readOptionalEnv("DIFY_API_KEY")
-  const baseUrl = readOptionalEnv("DIFY_FORM_MESSAGE_BASE_URL") ?? readOptionalEnv("DIFY_BASE_URL") ?? "https://api.dify.ai"
-  const endpoint =
-    readOptionalEnv("DIFY_FORM_MESSAGE_API_URL") ?? `${baseUrl.replace(/\/+$/, "")}/v1/workflows/run`
+  const baseUrl = normalizeDifyCloudBaseUrl(readOptionalEnv("DIFY_FORM_MESSAGE_BASE_URL") ?? readOptionalEnv("DIFY_BASE_URL"))
+  const endpoint = normalizeDifyCloudApiUrl(readOptionalEnv("DIFY_FORM_MESSAGE_API_URL") ?? `${baseUrl}/v1/workflows/run`)
   if (!apiKey) return { ok: false, configured: false, error: "Dify form-message API key is not configured" }
 
   try {
