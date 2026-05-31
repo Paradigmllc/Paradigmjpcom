@@ -22,6 +22,7 @@ const APP_UUID = envValue("PARADIGM_APP_UUID", "i12am4vvcbggefnqdizhnv9a")
 const DEFAULT_COOLIFY_URL = "https://coolify.appexx.me"
 const DRY = process.argv.includes("--dry")
 const SKIP_DEPLOY = process.argv.includes("--skip-deploy")
+const SKIP_HOST_PREFLIGHT = process.argv.includes("--skip-host-preflight")
 
 const PRODUCTS = [
   {
@@ -119,6 +120,23 @@ function getCoolifyAuth() {
   const backup = findCoolifyFromMcpBackup()
   if (backup) return backup
   throw new Error("COOLIFY_API_TOKEN is not set and no local MCP backup token was found")
+}
+
+function runHostDiskPreflight() {
+  if (SKIP_HOST_PREFLIGHT) {
+    console.log("Host disk preflight: skipped")
+    return
+  }
+  const result = spawnSync(process.execPath, ["scripts/host-disk-preflight.mjs"], {
+    cwd: process.cwd(),
+    env: process.env,
+    encoding: "utf8",
+  })
+  const output = `${result.stdout || ""}${result.stderr || ""}`.trim()
+  if (output) console.log(output)
+  if (result.status !== 0) {
+    throw new Error("Host disk preflight failed; refusing deployment")
+  }
 }
 
 async function coolify(pathname, options = {}) {
@@ -279,6 +297,7 @@ async function smoke(url) {
 
 async function main() {
   console.log("Sales OS no-login deploy")
+  if (!DRY && !SKIP_DEPLOY) runHostDiskPreflight()
   const envs = await readProductionEnv()
   console.log("Coolify API: connected")
 

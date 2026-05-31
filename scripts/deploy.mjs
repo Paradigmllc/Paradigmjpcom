@@ -1,37 +1,32 @@
 #!/usr/bin/env node
 /**
- * deploy.mjs — Coolify 直接 deploy（GitHub Actions 不使用）
+ * Deploy paradigmjp.com through Coolify API.
  *
- * 使用法:
- *   node scripts/deploy.mjs              # git push → Coolify deploy 実行 → 完了までポーリング
- *   node scripts/deploy.mjs --dry        # dry-run: deploy せずに確認のみ
- *   node scripts/deploy.mjs --no-wait    # deploy キューだけしてポーリングしない
- *
- * 環境変数 (必須):
- *   COOLIFY_API_TOKEN — Coolify API token
- *
- * 環境変数 (任意):
- *   COOLIFY_API_URL    — default: https://coolify.appexx.me
- *   PARADIGM_APP_UUID  — default: i12am4vvcbggefnqdizhnv9a
+ * Usage:
+ *   node scripts/deploy.mjs
+ *   node scripts/deploy.mjs --dry
+ *   node scripts/deploy.mjs --no-wait
+ *   node scripts/deploy.mjs --skip-host-preflight
  */
+
+import { spawnSync } from "node:child_process"
 
 const DRY = process.argv.includes("--dry")
 const NO_WAIT = process.argv.includes("--no-wait")
+const SKIP_HOST_PREFLIGHT = process.argv.includes("--skip-host-preflight")
 
 const TOKEN = process.env.COOLIFY_API_TOKEN
 if (!TOKEN) {
-  console.error("❌ COOLIFY_API_TOKEN is not set")
+  console.error("COOLIFY_API_TOKEN is not set")
   process.exit(1)
 }
 
 const BASE = process.env.COOLIFY_API_URL || "https://coolify.appexx.me"
 const APP_UUID = process.env.PARADIGM_APP_UUID || "i12am4vvcbggefnqdizhnv9a"
 const GH_REPO = "git@github.com:Paradigmllc/Paradigmjpcom.git"
-const SUPABASE_DATA_API = "https://yihdmgtxiqfdgdueolub.supabase.co"
 
 async function api(path, options = {}) {
-  const url = `${BASE}${path}`
-  const res = await fetch(url, {
+  const res = await fetch(`${BASE}${path}`, {
     ...options,
     headers: {
       Authorization: `Bearer ${TOKEN}`,
@@ -39,110 +34,80 @@ async function api(path, options = {}) {
       ...(options.headers || {}),
     },
   })
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`Coolify API ${res.status}: ${text.substring(0, 200)}`)
+  const text = await res.text()
+  let data = null
+  if (text.length > 0) {
+    try {
+      data = JSON.parse(text)
+    } catch {
+      throw new Error(`Coolify API ${res.status}: ${text.slice(0, 200)}`)
+    }
   }
-  return res.json()
+  if (!res.ok) throw new Error(`Coolify API ${res.status}: ${text.slice(0, 200)}`)
+  return data
 }
 
-async function checkSupabaseHealth() {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!key) {
-    console.log("  ⚠ SUPABASE_SERVICE_ROLE_KEY not set — skipping Supabase health check")
-    return { ok: false, reason: "no key" }
+function runHostDiskPreflight() {
+  if (SKIP_HOST_PREFLIGHT || DRY) {
+    console.log("Host disk preflight: skipped")
+    return
   }
-  try {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 8000)
-    const res = await fetch(`${SUPABASE_DATA_API}/rest/v1/?limit=0`, {
-      headers: {
-        apikey: key,
-        Authorization: `Bearer ${key}`,
-      },
-      signal: controller.signal,
-    })
-    clearTimeout(timer)
-    if (res.ok) {
-      console.log(`  ✓ Supabase Data API: HTTP ${res.status}`)
-      return { ok: true }
-    }
-    const body = await res.text()
-    console.warn(`  ⚠ Supabase Data API: HTTP ${res.status} — ${body.substring(0, 100)}`)
-    return { ok: false, reason: `HTTP ${res.status}` }
-  } catch (e) {
-    console.warn(`  ⚠ Supabase Data API unreachable: ${e.message}`)
-    return { ok: false, reason: e.message }
-  }
+  const result = spawnSync(process.execPath, ["scripts/host-disk-preflight.mjs"], {
+    cwd: process.cwd(),
+    env: process.env,
+    encoding: "utf8",
+  })
+  const output = `${result.stdout || ""}${result.stderr || ""}`.trim()
+  if (output) console.log(output)
+  if (result.status !== 0) throw new Error("Host disk preflight failed; refusing deployment")
 }
 
 async function run() {
-  console.log("🚀 paradigmjp.com deploy via Coolify API")
+  console.log("paradigmjp.com deploy via Coolify API")
+  runHostDiskPreflight()
 
-  // 0. Supabase health check
-  console.log("  → Checking Supabase health...")
-  const health = await checkSupabaseHealth()
-
-  // 1. Sync git_repository
-  console.log("  → Syncing git_repository to Coolify...")
+  console.log("Syncing git_repository to Coolify")
   try {
     await api(`/api/v1/applications/${APP_UUID}`, {
       method: "PATCH",
       body: JSON.stringify({ git_repository: GH_REPO }),
     })
-    console.log("  ✓ git_repository synced")
-  } catch (e) {
-    console.warn("  ⚠ git_repository sync skipped:", e.message)
+    console.log("git_repository synced")
+  } catch (error) {
+    console.warn("git_repository sync skipped:", error instanceof Error ? error.message : String(error))
   }
 
   if (DRY) {
-    console.log("  → --dry: skipping deploy")
+    console.log("--dry: skipping deploy")
     return
   }
 
-  // 2. Trigger deploy
-  console.log("  → Triggering deploy...")
-  const deployResp = await api(
-    `/api/v1/deploy?uuid=${APP_UUID}&force=true`,
-    { method: "POST" }
-  )
-
+  const deployResp = await api(`/api/v1/deploy?uuid=${APP_UUID}&force=true`, { method: "POST" })
   const deployments = deployResp?.deployments || []
-  if (deployments.length === 0) {
-    console.error("  ❌ No deployment UUID in response")
-    process.exit(1)
-  }
+  if (deployments.length === 0) throw new Error("No deployment UUID returned")
 
   const deployUuid = deployments[0].deployment_uuid
-  console.log(`  ✓ Deployment queued: ${deployUuid}`)
+  console.log(`Deployment queued: ${deployUuid}`)
 
   if (NO_WAIT) {
-    console.log("  → --no-wait: skipping poll")
+    console.log("--no-wait: skipping poll")
     return
   }
 
-  // 3. Poll until done
-  console.log("  → Polling deployment status...")
-  for (let i = 1; i <= 60; i++) {
-    await new Promise((r) => setTimeout(r, 15000))
-    try {
-      const status = await api(`/api/v1/deployments/${deployUuid}`)
-      const s = status?.status || "unknown"
-      console.log(`  [${i}/60] status: ${s}`)
-      if (s === "finished" || s === "running:healthy") {
-        console.log("  ✅ Deploy succeeded")
-        return
-      }
-      if (s === "failed" || s === "error" || s === "cancelled") {
-        console.error(`  ❌ Deploy failed: ${JSON.stringify(status).substring(0, 500)}`)
-        process.exit(1)
-      }
-    } catch (e) {
-      console.warn(`  ⚠ Poll error: ${e.message}`)
+  for (let i = 1; i <= 80; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 15_000))
+    const status = await api(`/api/v1/deployments/${deployUuid}`)
+    const state = status?.status || "unknown"
+    console.log(`[${i}/80] status: ${state}`)
+    if (state === "finished" || state === "running:healthy") return
+    if (state === "failed" || state === "error" || state === "cancelled") {
+      throw new Error(`Deployment failed: ${state}`)
     }
   }
-  console.error("  ❌ Deploy timed out after 15 minutes")
-  process.exit(1)
+  throw new Error("Deployment timed out")
 }
 
-run()
+run().catch((error) => {
+  console.error(error instanceof Error ? error.message : String(error))
+  process.exit(1)
+})

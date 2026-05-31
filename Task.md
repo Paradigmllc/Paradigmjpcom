@@ -1,3 +1,12 @@
+## Codex Update - 2026-05-31 Residual Closure and Deploy Guard
+
+- [x] Removed the remaining customer-facing mojibake from the sales asset generator and worker package metadata, then added a regression test that blocks old garbled Japanese tokens from returning to `src/lib/sales/sales-assets.ts`.
+- [x] Upgraded the root runtime stack to Next.js 16.2.6 and PayloadCMS 3.85.0, added safe `postcss` and `esbuild` overrides, and verified both root and worker dependency audits report `found 0 vulnerabilities`.
+- [x] Pinned the outreach worker to a Crawlee release with clean production audit output while keeping Playwright Stealth x Crawlee worker execution off the shared Droplet unless delegated through remote browser endpoints.
+- [x] Added `scripts/host-disk-preflight.mjs` and wired it into both deploy paths so production deploys check root disk pressure before hitting Coolify, prune only Docker build cache/unused images when needed, and fail before another 100% disk deploy outage.
+- [x] Added and installed `scripts/install-host-disk-guard.mjs`; the live host now has `appexx-host-disk-guard.timer` running every 15 minutes. It never prunes Docker volumes.
+- [x] Verification: `npm audit --omit=dev`, `npm --prefix worker audit --omit=dev`, `npm --prefix worker run typecheck`, `npx tsc --noEmit --pretty false`, targeted Sales OS Vitest (6 files / 17 tests), and `npm run build` all passed.
+
 ## Codex Update - 2026-05-31 Sales Mobile UI and Host Recovery
 
 - [x] Rebuilt the Sales OS command center mobile shell: mobile uses a compact feature selector, desktop keeps the horizontal tab rail, and the header/KPI area no longer forces horizontal overflow.
@@ -21,7 +30,7 @@
 - [x] Verification: worker typecheck passed, targeted Sales OS Vitest passed (7 files / 29 tests), `npx tsc --noEmit --pretty false` passed, and `npm run build` passed without Payload Postgres fallback spam.
 - [x] Deployed commit `b179e22` via Coolify API. Production smoke passed for `/ja/admin/sales`, `/ja`, Twenty, and the sample diagnostic report.
 - [x] Browser render verification passed for `https://paradigmjp.com/ja/report/codex-oss-verification-demo-qnxbms`: report shows meaning, missing-data impact, next action, and not-numbers-only narrative sections.
-- [ ] Residual dependency note: `npm audit --omit=dev` in `worker/` still reports moderate `file-type` advisories through Crawlee; do not run forced downgrade. Track upstream and keep worker away from untrusted binary uploads.
+- [x] Residual dependency note resolved: `npm audit --omit=dev` in `worker/` now reports `found 0 vulnerabilities`; the worker still remains isolated from direct untrusted binary uploads.
 
 ## Codex Update - 2026-05-31 Sales Locale Scope Audit
 

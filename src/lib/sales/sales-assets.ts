@@ -20,14 +20,14 @@ export interface SalesAssetResult {
   error?: string
 }
 
-const isUuid = (s: string): boolean =>
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)
+const isUuid = (value: string): boolean =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
 
 function deliveryTypeFor(assetType: ContentAssetType): string {
-  if (assetType === "sales_video") return "動画(HyperFrames)"
-  if (assetType === "astro_demo_site") return "Web制作"
+  if (assetType === "sales_video") return "動画ブリーフ"
+  if (assetType === "astro_demo_site") return "Astroデモサイト"
   if (assetType === "sales_deck") return "提案資料"
-  return "MEOレポート"
+  return "診断レポート"
 }
 
 function clean(value: string | null | undefined): string {
@@ -48,6 +48,29 @@ function deckMarkdown(report: DiagnosticReportData, templateTitle: string): stri
     .map((signal) => `- **${slideEscape(signal.label)}**: ${slideEscape(signal.value)} (${slideEscape(signal.source)})`)
     .join("\n")
   const pains = report.acts.map((act) => `- **${slideEscape(act.headline)}**: ${slideEscape(act.body)}`).join("\n")
+
+  const copy = {
+    subtitle: isJa ? "診断データから作成した、実行前提の提案資料" : "A proposal built from diagnostic evidence",
+    takeaway: isJa ? "結論" : "Executive takeaway",
+    monthlyLoss: isJa ? "推定月間機会損失" : "estimated monthly opportunity loss",
+    sourceConfidence: isJa ? "データ取得信頼度" : "source confidence",
+    priorityThemes: isJa ? "優先改善テーマ" : "priority themes",
+    evidence: isJa ? "根拠データ" : "Evidence",
+    painStructure: isJa ? "痛みの構造" : "Pain structure",
+    demoAndReport: isJa ? "診断URLと差し替えデモ" : "Demo and report",
+    report: isJa ? "診断レポート" : "Report",
+    demo: isJa ? "Astro差し替えデモ" : "Astro replacement demo",
+    notGenerated: isJa ? "未生成" : "Not generated yet",
+    selectedTemplate: isJa ? "適用テンプレート" : "Selected template",
+    proposal: isJa ? "提案" : "Proposal",
+    qualityBar: isJa ? "テンプレート品質基準" : "Template quality bar",
+    rollout: isJa ? "導入順序" : "Rollout",
+    nextActions: isJa ? "次アクション" : "Next actions",
+    step1: isJa ? "診断結果を確認し、改善優先度を決める" : "Review diagnostic findings and decide priorities",
+    step2: isJa ? "Astro/Next.jsで差し替えデモを本番設計へ変換する" : "Convert the demo into production-ready Astro/Next.js design",
+    step3: isJa ? "フォーム、予約、計測イベントを接続する" : "Connect forms, booking, and tracking events",
+    step4: isJa ? "公開後7日で初期KPIを確認する" : "Review initial KPIs after seven days",
+  }
 
   return `---
 theme: seriph
@@ -78,25 +101,25 @@ mdc: true
 
 # ${report.company_name}
 
-${isJa ? "診断データから作った、実行前提の提案資料" : "A proposal built from diagnostic evidence"}
+${copy.subtitle}
 
 <div class="mt-8 text-sm opacity-70">${industry} / ${templateTitle}</div>
 
 ---
 
-# ${isJa ? "結論" : "Executive takeaway"}
+# ${copy.takeaway}
 
 ${report.hook}
 
 <div class="grid grid-cols-3 gap-4 mt-8">
-  <div class="kpi"><b>${report.total_loss}</b><span>${isJa ? "推定月間機会損失" : "estimated monthly opportunity loss"}</span></div>
-  <div class="kpi"><b>${report.source_coverage.score}%</b><span>${isJa ? "データ取得信頼度" : "source confidence"}</span></div>
-  <div class="kpi"><b>${report.acts.length}</b><span>${isJa ? "優先改善テーマ" : "priority themes"}</span></div>
+  <div class="kpi"><b>${report.total_loss}</b><span>${copy.monthlyLoss}</span></div>
+  <div class="kpi"><b>${report.source_coverage.score}%</b><span>${copy.sourceConfidence}</span></div>
+  <div class="kpi"><b>${report.acts.length}</b><span>${copy.priorityThemes}</span></div>
 </div>
 
 ---
 
-# ${isJa ? "根拠データ" : "Evidence"}
+# ${copy.evidence}
 
 ${signals}
 
@@ -104,39 +127,39 @@ ${signals}
 
 ---
 
-# ${isJa ? "痛みの構造" : "Pain structure"}
+# ${copy.painStructure}
 
 ${pains}
 
 ---
 
-# ${isJa ? "差し替えデモと診断URL" : "Demo and report"}
+# ${copy.demoAndReport}
 
-- ${isJa ? "診断レポート" : "Report"}: ${report.report_url}
-- ${isJa ? "Astro差し替えデモ" : "Astro replacement demo"}: ${report.demo_url ?? (isJa ? "未生成" : "Not generated yet")}
-- ${isJa ? "適用テンプレート" : "Selected template"}: ${templateTitle}
+- ${copy.report}: ${report.report_url}
+- ${copy.demo}: ${report.demo_url ?? copy.notGenerated}
+- ${copy.selectedTemplate}: ${templateTitle}
 
 ---
 
-# ${isJa ? "提案" : "Proposal"}
+# ${copy.proposal}
 
 ${report.cta_text}
 
-${isJa ? "テンプレート品質基準" : "Template quality bar"}:
+${copy.qualityBar}:
 ${report.content_template.quality_bar}
 
 ---
 
-# ${isJa ? "導入順序" : "Rollout"}
+# ${copy.rollout}
 
-1. ${isJa ? "診断結果の確認と優先順位決定" : "Review diagnostic findings and decide priorities"}
-2. ${isJa ? "Astro/Next.jsで差し替えデモを本番設計へ変換" : "Convert the demo into production-ready Astro/Next.js design"}
-3. ${isJa ? "フォーム・予約・計測イベントを接続" : "Connect forms, booking, and tracking events"}
-4. ${isJa ? "公開後7日で初期KPIを確認" : "Review initial KPIs after seven days"}
+1. ${copy.step1}
+2. ${copy.step2}
+3. ${copy.step3}
+4. ${copy.step4}
 
 ---
 
-# ${isJa ? "次アクション" : "Next actions"}
+# ${copy.nextActions}
 
 ${actions}
 `
@@ -156,7 +179,9 @@ function videoBrief(report: DiagnosticReportData, templateTitle: string): string
         accent: theme.accent,
         accent_dark: theme.accentDark,
         paper: theme.paper,
-        tone: isJa ? "落ち着いた経営者向け。煽らず、根拠と改善後の姿を見せる。" : "Executive, calm, evidence-first.",
+        tone: isJa
+          ? "落ち着いた経営者向け。煽らず、根拠と改善後の姿を見せる。"
+          : "Executive, calm, evidence-first.",
       },
       toolchain: ["Dify Cloud", "DeepSeek V4", "ComfyUI", "HyperFrames", "Remotion", "Faster Whisper", "Cloudflare R2"],
       scenes: [
@@ -170,7 +195,7 @@ function videoBrief(report: DiagnosticReportData, templateTitle: string): string
           id: "evidence",
           seconds: 14,
           caption: report.acts[0]?.headline,
-          visual: "Metric card with Pagespeed/source data, no exaggerated warning effects.",
+          visual: "Metric card with PageSpeed/source data, no exaggerated warning effects.",
         },
         {
           id: "business_impact",

@@ -1,16 +1,8 @@
 /**
- * vitest.config.ts — minimal viable test configuration
+ * Minimal Vitest configuration for Paradigm.
  *
- * 役割: lib/* の純関数 unit test を回す。jsdom 環境で react component テストも可能。
- * 入力: なし
- * 出力: vitest config
- *
- * 永久ルール (LL): 共通ユーティリティ・複雑なビジネスロジックには最低限テスト必須。
- *
- * Run:
- *   npm run test          # one-shot
- *   npm run test:watch    # watch mode
- *   npm run test:coverage # with coverage
+ * Unit tests cover shared sales logic, API helpers, and complex business rules.
+ * React component tests run in jsdom when needed.
  */
 
 import { defineConfig } from "vitest/config"
