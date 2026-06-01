@@ -413,11 +413,27 @@ function buildOperationalAudit(input: {
         check(
           "dify-copy",
           "Dify文面/痛み生成",
-          envConfigured("DIFY_DIAGNOSIS_API_KEY", "DIFY_API_KEY") ? "ready" : "warning",
-          envConfigured("DIFY_DIAGNOSIS_API_KEY", "DIFY_API_KEY")
-            ? "Dify/DeepSeek推論の接続情報があります。"
+          envConfigured(
+            "DIFY_DIAGNOSIS_API_KEY",
+            "DIFY_KARTE_TO_REPORT_API_KEY",
+            "DIFY_KARTE_TO_REPORT_KEY",
+            "DIFY_KARTE_TO_SALES_MATERIAL_API_KEY",
+            "DIFY_KARTE_TO_SALES_MATERIAL_KEY",
+            "DIFY_API_KEY",
+          )
+            ? "ready"
+            : "warning",
+          envConfigured(
+            "DIFY_DIAGNOSIS_API_KEY",
+            "DIFY_KARTE_TO_REPORT_API_KEY",
+            "DIFY_KARTE_TO_REPORT_KEY",
+            "DIFY_KARTE_TO_SALES_MATERIAL_API_KEY",
+            "DIFY_KARTE_TO_SALES_MATERIAL_KEY",
+            "DIFY_API_KEY",
+          )
+            ? "Dify Cloud/DeepSeek推論の接続情報があります。"
             : "Dify APIキーが未設定のためローカルfallback中心です。",
-          "DIFY_DIAGNOSIS_API_KEYまたはDIFY_API_KEYを設定し、DeepSeek V4ワークフローを接続してください。",
+          "DIFY_DIAGNOSIS_API_KEY、または既存のKARTE_TO_REPORT/KARTE_TO_SALES_MATERIAL系Dify Cloudキーを設定してください。",
         ),
       ],
     },

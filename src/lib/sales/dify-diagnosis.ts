@@ -1,4 +1,8 @@
-import { normalizeDifyCloudApiUrl, normalizeDifyCloudBaseUrl } from "./dify-cloud"
+import {
+  DIFY_DIAGNOSIS_WORKFLOW_KEY_ENV_NAMES,
+  normalizeDifyCloudApiUrl,
+  normalizeDifyCloudBaseUrl,
+} from "./dify-cloud"
 import type { SalesCompany } from "./types"
 
 type JsonRecord = Record<string, unknown>
@@ -6,6 +10,7 @@ type JsonRecord = Record<string, unknown>
 export interface DifyDiagnosisResult {
   ok: boolean
   configured: boolean
+  workflowEnvName?: string
   summary: {
     primaryPain: string
     evidence: string[]
@@ -16,6 +21,17 @@ export interface DifyDiagnosisResult {
   error?: string
 }
 
+const DIAGNOSIS_SYSTEM_PROMPT = [
+  "You are Paradigm Revenue OS diagnosis workflow.",
+  "Use only the provided company facts, source evidence, and URLs.",
+  "Return strict JSON only. Do not wrap it in markdown.",
+  "Schema: {\"primary_pain\": string, \"evidence\": string[], \"recommended_offer\": string, \"confidence\": number}.",
+  "primary_pain must explain what the evidence means for the prospect's revenue, trust, operations, or risk.",
+  "evidence must cite concrete observed facts. Do not invent market size, law, penalty, CAGR, or competitor claims.",
+  "recommended_offer must map the pain to one Paradigm offer and the next practical action.",
+  "If evidence is thin, lower confidence and say what still needs human/API confirmation.",
+].join("\n")
+
 function readOptionalEnv(name: string): string | null {
   const value = process.env[name]
   return value && value.trim().length > 0 ? value.trim() : null
@@ -25,9 +41,34 @@ function asRecord(value: unknown): JsonRecord | null {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : null
 }
 
+function firstString(...values: unknown[]): string | null {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim().length > 0) return value.trim()
+  }
+  return null
+}
+
 function stringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return []
-  return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+  if (typeof value === "string" && value.trim().length > 0) return [value.trim()]
+  return []
+}
+
+function parseJsonObject(value: unknown): JsonRecord | null {
+  if (asRecord(value)) return asRecord(value)
+  if (typeof value !== "string") return null
+  const stripped = value.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim()
+  if (!stripped) return null
+  try {
+    return asRecord(JSON.parse(stripped))
+  } catch {
+    return null
+  }
+}
+
+function numberBetweenZeroAndOne(value: unknown, fallback: number): number {
+  const parsed = typeof value === "number" ? value : typeof value === "string" ? Number(value) : Number.NaN
+  return Number.isFinite(parsed) ? Math.max(0, Math.min(1, parsed)) : fallback
 }
 
 function localDiagnosis(company: SalesCompany): DifyDiagnosisResult["summary"] {
@@ -57,9 +98,9 @@ function localDiagnosis(company: SalesCompany): DifyDiagnosisResult["summary"] {
 
   const primaryPain =
     company.detected_issues?.includes("speed_critical")
-      ? "表示速度の低下により、問い合わせ前の離脱が発生している可能性があります。"
+      ? "表示速度の低下により、問い合わせ前の離脱や比較検討からの除外が発生している可能性があります。"
       : company.detected_issues?.includes("no_ogp")
-        ? "SNSやメッセージ共有時に、第一印象を作る情報が不足している可能性があります。"
+        ? "SNSやメッセージ共有時に第一印象を作る情報が不足し、紹介や再訪の機会を逃している可能性があります。"
         : company.detected_issues?.includes("wp_outdated")
           ? "CMSやプラグイン運用に改善余地があり、保守性と安全性の両面でリスクがあります。"
           : "Web上の信頼形成と問い合わせ導線に改善余地があります。"
@@ -72,65 +113,91 @@ function localDiagnosis(company: SalesCompany): DifyDiagnosisResult["summary"] {
   }
 }
 
+function compactMeta(meta: unknown): JsonRecord {
+  const record = asRecord(meta) ?? {}
+  return {
+    scan: record.scan ?? null,
+    tech: record.tech ?? null,
+    place: record.place ?? null,
+    form_discovery: record.form_discovery ?? null,
+    contact_form_url: record.contact_form_url ?? null,
+    source_runs: record.source_runs ?? null,
+    source_coverage: record.source_coverage ?? null,
+  }
+}
+
+function buildDifyPayload(company: SalesCompany): JsonRecord {
+  return {
+    company_id: company.id,
+    company_name: company.company_name,
+    domain: company.domain,
+    industry: company.industry,
+    region: company.region,
+    report_locale: company.report_locale,
+    target_country: company.target_country,
+    template_variant: company.template_variant,
+    source: company.source,
+    report_url: company.report_url,
+    pagespeed_mobile: company.pagespeed_mobile,
+    pagespeed_desktop: company.pagespeed_desktop,
+    detected_issues: company.detected_issues,
+    enrichment_meta: compactMeta(company.meta),
+  }
+}
+
 function normalizeDifySummary(raw: JsonRecord, fallback: DifyDiagnosisResult["summary"]): DifyDiagnosisResult["summary"] {
   const data = asRecord(raw.data) ?? raw
   const outputs = asRecord(data.outputs) ?? asRecord(raw.outputs) ?? {}
+  const result = parseJsonObject(outputs.result) ?? parseJsonObject(data.result) ?? parseJsonObject(raw.result) ?? {}
+  const merged = { ...outputs, ...result }
+
   const primaryPain =
-    typeof outputs.primary_pain === "string"
-      ? outputs.primary_pain
-      : typeof outputs.primaryPain === "string"
-        ? outputs.primaryPain
-        : typeof outputs.summary === "string"
-          ? outputs.summary
-          : fallback.primaryPain
-  const evidence = stringArray(outputs.evidence)
+    firstString(merged.primary_pain, merged.primaryPain, merged.summary, merged.pain, merged.diagnosis) ?? fallback.primaryPain
+  const evidence = stringArray(merged.evidence ?? merged.evidence_points ?? merged.facts)
   const recommendedOffer =
-    typeof outputs.recommended_offer === "string"
-      ? outputs.recommended_offer
-      : typeof outputs.recommendedOffer === "string"
-        ? outputs.recommendedOffer
-        : fallback.recommendedOffer
-  const confidence =
-    typeof outputs.confidence === "number" && Number.isFinite(outputs.confidence)
-      ? Math.max(0, Math.min(1, outputs.confidence))
-      : fallback.confidence
+    firstString(merged.recommended_offer, merged.recommendedOffer, merged.offer, merged.next_action) ?? fallback.recommendedOffer
 
   return {
     primaryPain,
     evidence: evidence.length > 0 ? evidence : fallback.evidence,
     recommendedOffer,
-    confidence,
+    confidence: numberBetweenZeroAndOne(merged.confidence, fallback.confidence),
   }
+}
+
+function resolveDifyDiagnosisCredential(): { envName: string; apiKey: string } | null {
+  for (const envName of DIFY_DIAGNOSIS_WORKFLOW_KEY_ENV_NAMES) {
+    const apiKey = readOptionalEnv(envName)
+    if (apiKey) return { envName, apiKey }
+  }
+  return null
 }
 
 export async function runDifyDiagnosis(company: SalesCompany): Promise<DifyDiagnosisResult> {
   const fallback = localDiagnosis(company)
-  const apiKey = readOptionalEnv("DIFY_DIAGNOSIS_API_KEY") ?? readOptionalEnv("DIFY_API_KEY")
+  const credential = resolveDifyDiagnosisCredential()
   const baseUrl = normalizeDifyCloudBaseUrl(readOptionalEnv("DIFY_DIAGNOSIS_BASE_URL") ?? readOptionalEnv("DIFY_BASE_URL"))
   const endpoint = normalizeDifyCloudApiUrl(readOptionalEnv("DIFY_DIAGNOSIS_API_URL") ?? `${baseUrl}/v1/workflows/run`)
 
-  if (!apiKey) {
-    return { ok: true, configured: false, summary: fallback, error: "Dify diagnosis API key is not configured" }
+  if (!credential) {
+    return { ok: true, configured: false, summary: fallback, error: "Dify diagnosis workflow key is not configured" }
   }
+
+  const payload = buildDifyPayload(company)
+  const userPayload = JSON.stringify(payload)
 
   try {
     const res = await fetch(endpoint, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${credential.apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         inputs: {
-          company_id: company.id,
-          company_name: company.company_name,
-          domain: company.domain,
-          industry: company.industry,
-          region: company.region,
-          pagespeed_mobile: company.pagespeed_mobile,
-          pagespeed_desktop: company.pagespeed_desktop,
-          detected_issues: company.detected_issues,
-          enrichment_meta: company.meta,
+          ...payload,
+          system_prompt: DIAGNOSIS_SYSTEM_PROMPT,
+          user_payload: userPayload,
         },
         response_mode: "blocking",
         user: `paradigm-sales-${company.id}`,
@@ -142,18 +209,26 @@ export async function runDifyDiagnosis(company: SalesCompany): Promise<DifyDiagn
     const raw = rawText ? (JSON.parse(rawText) as JsonRecord) : {}
     if (!res.ok) {
       console.error("[dify-diagnosis] request failed:", res.status, rawText.slice(0, 300))
-      return { ok: false, configured: true, summary: fallback, raw, error: `Dify HTTP ${res.status}` }
+      return {
+        ok: false,
+        configured: true,
+        workflowEnvName: credential.envName,
+        summary: fallback,
+        raw,
+        error: `Dify HTTP ${res.status}`,
+      }
     }
 
     return {
       ok: true,
       configured: true,
+      workflowEnvName: credential.envName,
       summary: normalizeDifySummary(raw, fallback),
       raw,
     }
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)
     console.error("[dify-diagnosis] failed:", message)
-    return { ok: false, configured: true, summary: fallback, error: message }
+    return { ok: false, configured: true, workflowEnvName: credential.envName, summary: fallback, error: message }
   }
 }

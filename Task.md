@@ -708,3 +708,12 @@
 - [x] Fixed `scripts/deploy.mjs` to reuse the existing Coolify auth helper, so the standard deploy command works with the stored no-login Coolify credentials instead of requiring a shell-only `COOLIFY_API_TOKEN`.
 - [x] Verification: local Chromium checks passed at 1365px, 1024px, and 390px with zero horizontal overflow; `npx tsc --noEmit --pretty false` passed.
 - [x] Production deploy: pushed commits `086792b` and `5291907`, deployed through Coolify deployment `dnmzn2wkryxky1yxsvf2djdt`, and verified `https://paradigmjp.com/ja/admin/sales?tab=videoPipeline`, `https://paradigmjp.com/ja`, and `https://twenty.paradigmjp.com` return HTTP 200. Coolify app status is `running:healthy`.
+
+## Codex Update - 2026-06-02 Dify Diagnosis Wiring
+
+- [x] Connected company-karte diagnosis to existing Dify Cloud workflow keys, not only `DIFY_DIAGNOSIS_API_KEY`.
+- [x] `runDifyDiagnosis()` now accepts `DIFY_DIAGNOSIS_API_KEY`, `DIFY_KARTE_TO_REPORT_API_KEY`, `DIFY_KARTE_TO_REPORT_KEY`, `DIFY_KARTE_TO_SALES_MATERIAL_API_KEY`, `DIFY_KARTE_TO_SALES_MATERIAL_KEY`, or `DIFY_API_KEY`.
+- [x] Dify payload now includes both structured company/enrichment fields and the boilerplate `system_prompt` + `user_payload` pair, so dedicated and shared Dify workflows both work.
+- [x] Dify response normalization now supports direct output fields and `outputs.result` JSON, including markdown-wrapped JSON fallback.
+- [x] Updated Revenue OS audit/source-coverage readiness so the dashboard shows Dify as ready when the existing karte workflow keys are present.
+- [x] Verification: `npx tsc --noEmit --pretty false` passed; targeted Vitest from `D:\dev\paradigmjpcom` passed for `dify-diagnosis` and `dify-cloud`.

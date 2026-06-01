@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
+import { DIFY_DIAGNOSIS_WORKFLOW_KEY_ENV_NAMES } from "./dify-cloud"
 import { runDifyDiagnosis } from "./dify-diagnosis"
 import type { SalesCompany } from "./types"
 
@@ -41,8 +42,7 @@ describe("runDifyDiagnosis", () => {
   })
 
   it("returns local fallback when Dify is not configured", async () => {
-    vi.stubEnv("DIFY_DIAGNOSIS_API_KEY", "")
-    vi.stubEnv("DIFY_API_KEY", "")
+    for (const envName of DIFY_DIAGNOSIS_WORKFLOW_KEY_ENV_NAMES) vi.stubEnv(envName, "")
 
     const result = await runDifyDiagnosis(baseCompany)
 
@@ -78,7 +78,43 @@ describe("runDifyDiagnosis", () => {
 
     expect(result.ok).toBe(true)
     expect(result.configured).toBe(true)
+    expect(result.workflowEnvName).toBe("DIFY_DIAGNOSIS_API_KEY")
     expect(result.summary.primaryPain).toBe("問い合わせ導線が弱い")
     expect(result.summary.confidence).toBe(0.91)
+  })
+
+  it("uses the existing karte-to-report workflow key and parses boilerplate result JSON", async () => {
+    vi.stubEnv("DIFY_DIAGNOSIS_API_KEY", "")
+    vi.stubEnv("DIFY_KARTE_TO_REPORT_KEY", "karte-key")
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url, init) => {
+        const body = JSON.parse(String(init?.body)) as { inputs: Record<string, unknown> }
+        expect(body.inputs.system_prompt).toContain("strict JSON")
+        expect(body.inputs.user_payload).toContain("example.com")
+        return new Response(
+          JSON.stringify({
+            data: {
+              outputs: {
+                result: JSON.stringify({
+                  primary_pain: "取得データが売上機会の取りこぼしを示している",
+                  evidence: ["PageSpeed mobile 38", "no_ogp"],
+                  recommended_offer: "Web制作パッケージ",
+                  confidence: 0.87,
+                }),
+              },
+            },
+          }),
+          { status: 200 },
+        )
+      }),
+    )
+
+    const result = await runDifyDiagnosis(baseCompany)
+
+    expect(result.ok).toBe(true)
+    expect(result.configured).toBe(true)
+    expect(result.workflowEnvName).toBe("DIFY_KARTE_TO_REPORT_KEY")
+    expect(result.summary.recommendedOffer).toBe("Web制作パッケージ")
   })
 })

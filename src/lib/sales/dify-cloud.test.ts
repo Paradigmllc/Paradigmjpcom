@@ -28,4 +28,15 @@ describe("Dify Cloud runtime", () => {
     expect(config.baseUrl).toBe(DIFY_CLOUD_BASE_URL)
     expect(JSON.stringify(config)).not.toContain("secret-value")
   })
+
+  it("marks diagnosis ready when an existing karte workflow key is configured", () => {
+    vi.stubEnv("DIFY_KARTE_TO_REPORT_KEY", "karte-secret")
+
+    const config = getDifyCloudRuntimeConfig(["diagnosis"])
+
+    expect(config.ready).toBe(true)
+    expect(config.configuredGroups).toEqual(["diagnosis"])
+    expect(config.missingGroups).toEqual([])
+    expect(JSON.stringify(config)).not.toContain("karte-secret")
+  })
 })
