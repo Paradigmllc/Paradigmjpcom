@@ -1,3 +1,11 @@
+## Codex Update - 2026-06-01 Twenty Companies Sales View
+
+- [x] Extended the Supabase SSOT company-karte snapshot with country, region/prefecture-state, industry, source, pipeline/deal status, sales-material URL, demo URL, and customer Notion portal URL.
+- [x] Extended Twenty sync so Companies receive first-class営業列: `フォームURL`, `国名`, `地域名`, `業種名`, `診断レポートURL`, `営業資料URL`, `デモURL`, `ソース元`, `営業ステータス`, and `顧客用Notion URL`.
+- [x] Added and applied `scripts/twenty-sales-companies-view.sql` to the live Twenty database, renaming the Companies table view to `営業リスト`, hiding noisy default CRM columns, and adding the営業列 to both the list and record HOME field widget.
+- [x] Restarted Twenty server/worker to reload metadata and replayed production Twenty sync for all current Supabase `sales_companies` rows.
+- [x] Verification: `npx tsc --noEmit --pretty false`, full `npm test -- --run` (29 files / 143 tests), `npm run build`, and live Twenty metadata SQL checks passed.
+
 ## Codex Update - 2026-06-01 Sales OS Perfect Pass
 
 - [x] Fixed the Sales OS tab router so `/ja/admin/sales?tab=templates` and `/ja/admin/sales?tab=videoPipeline` open the requested workbench directly and keep the URL synchronized when operators switch tabs.

@@ -34,12 +34,19 @@ export interface CompanyKarteSnapshot {
   companyName: string
   domain: string
   region: string
+  industry: string | null
+  regionName: string | null
+  sourceName: string | null
+  pipelineStatus: string
+  dealStage: string
   reportLocale: ReportLocale
   targetCountry: string
   templateVariant: string
   reportUrl: string | null
   formUrl: string | null
   demoUrl: string | null
+  salesMaterialUrl: string | null
+  customerPortalUrl: string | null
   localizedReportUrls: CompanyKarteLink[]
   sourceScore: number
   collectedCount: number
@@ -196,12 +203,35 @@ export function buildCompanyKarte(
     companyName: company.company_name,
     domain: company.domain,
     region: company.region,
+    industry: company.industry,
+    regionName:
+      company.prefecture ??
+      stringAt(meta, ["gbiz", "prefecture"]) ??
+      stringAt(meta, ["place", "prefecture"]) ??
+      stringAt(meta, ["address", "state"]),
+    sourceName: company.source,
+    pipelineStatus: company.pipeline_status,
+    dealStage: company.deal_stage,
     reportLocale,
     targetCountry,
     templateVariant,
     reportUrl: company.report_url ?? (company.slug ? buildReportUrl(reportLocale, company.slug) : null),
     formUrl,
     demoUrl: stringAt(meta, ["demo_site", "url"]),
+    salesMaterialUrl: firstString(meta, [
+      ["sales_material_url"],
+      ["sales_material_pdf"],
+      ["sales_assets", "deck_url"],
+      ["sales_assets", "pdf_url"],
+      ["slidev", "url"],
+      ["gotenberg", "url"],
+    ]),
+    customerPortalUrl: firstString(meta, [
+      ["customer_portal_url"],
+      ["notion_page_url"],
+      ["customer_success", "notion_page_url"],
+      ["customer_success", "notion_url"],
+    ]),
     localizedReportUrls: localizedReportUrls(company, reportLocale),
     sourceItems,
     evidence: evidenceFromCompany(company),

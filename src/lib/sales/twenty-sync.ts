@@ -18,6 +18,13 @@ interface TwentyRecord {
   paradigmReportUrl?: TwentyLinkField | null
   paradigmFormUrl?: TwentyLinkField | null
   paradigmCustomerPortalUrl?: TwentyLinkField | null
+  paradigmSalesMaterialUrl?: TwentyLinkField | null
+  paradigmDemoUrl?: TwentyLinkField | null
+  paradigmCountryName?: string | null
+  paradigmRegionName?: string | null
+  paradigmIndustryName?: string | null
+  paradigmSourceName?: string | null
+  paradigmSalesStatus?: string | null
   paradigmKarteScore?: number | null
   paradigmSourceCoverage?: number | null
   paradigmRecommendedProducts?: string[] | null
@@ -172,6 +179,55 @@ function productOptionValue(code: CompanyProductRecommendation["code"]): string 
   return code.toUpperCase()
 }
 
+const COUNTRY_LABELS: Record<string, string> = {
+  JP: "日本",
+  US: "United States",
+  KR: "Korea",
+  CN: "China",
+  TW: "Taiwan",
+  DE: "Germany",
+  FR: "France",
+  ES: "Spain",
+  PT: "Portugal",
+  RU: "Russia",
+  AE: "United Arab Emirates",
+  VN: "Vietnam",
+  ID: "Indonesia",
+}
+
+const INDUSTRY_LABELS: Record<string, string> = {
+  beauty_salon: "美容サロン",
+  dental: "歯科医院",
+  restaurant: "飲食店",
+  construction: "建設・工務店",
+  accounting: "会計事務所",
+  retail: "小売・店舗",
+  cleaning: "清掃・メンテナンス",
+  consulting: "コンサルティング",
+}
+
+const PIPELINE_LABELS: Record<string, string> = {
+  pending: "未診断",
+  scanning: "カルテ生成中",
+  report_ready: "送信待ち",
+  sent: "送信済み",
+  manual_queue: "手動確認",
+}
+
+function countryLabel(country: string): string {
+  return COUNTRY_LABELS[country.toUpperCase()] ?? country.toUpperCase()
+}
+
+function industryLabel(industry: string | null): string {
+  if (!industry) return ""
+  return INDUSTRY_LABELS[industry] ?? industry
+}
+
+function salesStatusLabel(karte: CompanyKarteSnapshot): string {
+  const pipeline = PIPELINE_LABELS[karte.pipelineStatus] ?? karte.pipelineStatus
+  return `${pipeline} / ${karte.dealStage}`
+}
+
 function karteScore(karte: CompanyKarteSnapshot): number {
   const topFit = karte.recommendedProducts[0]?.fitScore ?? 70
   return Math.max(0, Math.min(100, Math.round((karte.sourceScore + topFit) / 2)))
@@ -222,6 +278,14 @@ async function syncTwentyCompanyHomeFields(
     body: JSON.stringify({
       paradigmReportUrl: linkField("診断レポートURL", karte.reportUrl),
       paradigmFormUrl: linkField("フォームURL", karte.formUrl),
+      paradigmSalesMaterialUrl: linkField("営業資料URL", karte.salesMaterialUrl),
+      paradigmDemoUrl: linkField("デモURL", karte.demoUrl),
+      paradigmCustomerPortalUrl: linkField("顧客用Notion URL", karte.customerPortalUrl),
+      paradigmCountryName: countryLabel(karte.targetCountry),
+      paradigmRegionName: karte.regionName ?? "",
+      paradigmIndustryName: industryLabel(karte.industry),
+      paradigmSourceName: karte.sourceName ?? "",
+      paradigmSalesStatus: salesStatusLabel(karte),
       paradigmRecommendedProducts: karte.recommendedProducts.map((product) => productOptionValue(product.code)),
       paradigmKarteScore: karteScore(karte),
       paradigmSourceCoverage: karte.sourceScore,
@@ -254,6 +318,13 @@ export async function syncCustomerHandoffToTwenty(
     reportUrl: null,
     formUrl: null,
     demoUrl: null,
+    salesMaterialUrl: null,
+    customerPortalUrl: input.customerPortalUrl,
+    industry: null,
+    regionName: null,
+    sourceName: "customer_handoff",
+    pipelineStatus: "sent",
+    dealStage: input.contractStatus ?? "成約",
     localizedReportUrls: [],
     sourceScore: 0,
     collectedCount: 0,
@@ -529,11 +600,19 @@ export async function pullTwentyCompaniesToSupabase(limit = 200): Promise<Twenty
     const currentMeta = (company.meta ?? {}) as Record<string, unknown>
     const reportUrl = record.paradigmReportUrl?.primaryLinkUrl ?? null
     const formUrl = record.paradigmFormUrl?.primaryLinkUrl ?? null
+    const salesMaterialUrl = record.paradigmSalesMaterialUrl?.primaryLinkUrl ?? null
+    const demoUrl = record.paradigmDemoUrl?.primaryLinkUrl ?? null
+    const customerPortalUrl = record.paradigmCustomerPortalUrl?.primaryLinkUrl ?? null
     const patchMeta: Record<string, unknown> = {
       ...currentMeta,
       twenty: {
         id: record.id ?? null,
         lastPulledAt: new Date().toISOString(),
+        countryName: record.paradigmCountryName ?? null,
+        regionName: record.paradigmRegionName ?? null,
+        industryName: record.paradigmIndustryName ?? null,
+        sourceName: record.paradigmSourceName ?? null,
+        salesStatus: record.paradigmSalesStatus ?? null,
         karteScore: record.paradigmKarteScore ?? null,
         sourceCoverage: record.paradigmSourceCoverage ?? null,
         recommendedProducts: record.paradigmRecommendedProducts ?? [],
@@ -541,6 +620,9 @@ export async function pullTwentyCompaniesToSupabase(limit = 200): Promise<Twenty
       },
     }
     if (formUrl) patchMeta.contact_form_url = formUrl
+    if (salesMaterialUrl) patchMeta.sales_material_url = salesMaterialUrl
+    if (demoUrl) patchMeta.demo_site = { ...((currentMeta.demo_site as Record<string, unknown> | undefined) ?? {}), url: demoUrl }
+    if (customerPortalUrl) patchMeta.customer_portal_url = customerPortalUrl
 
     const patch: Record<string, unknown> = { meta: patchMeta }
     if (reportUrl) patch.report_url = reportUrl
@@ -567,6 +649,9 @@ export async function pullTwentyCompaniesToSupabase(limit = 200): Promise<Twenty
         domain,
         report_url: reportUrl,
         form_url: formUrl,
+        sales_material_url: salesMaterialUrl,
+        demo_url: demoUrl,
+        customer_portal_url: customerPortalUrl,
       },
     })
 
