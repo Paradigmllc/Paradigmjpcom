@@ -1,3 +1,9 @@
+## Codex Update - 2026-06-01 Template Preview Usability Fix
+
+- [x] Fixed the Sales OS template workbench preview so the active preview automatically follows the selected asset type: diagnostic report, Astro demo, sales deck, or sales video.
+- [x] Added desktop/mobile preview switches and an expanded preview dialog so operators can judge actual layout, hierarchy, and copy without hunting through the edit form.
+- [x] Verification: `npx tsc --noEmit --pretty false`, full `npm test -- --run` (29 files / 143 tests), and `npm run build` passed.
+
 ## Codex Update - 2026-06-01 Twenty Companies Sales View
 
 - [x] Extended the Supabase SSOT company-karte snapshot with country, region/prefecture-state, industry, source, pipeline/deal status, sales-material URL, demo URL, and customer Notion portal URL.

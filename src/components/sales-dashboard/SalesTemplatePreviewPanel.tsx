@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Clapperboard, FileText, Mail, Monitor, PanelsTopLeft, Presentation } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Clapperboard, Expand, FileText, Mail, Monitor, PanelsTopLeft, Presentation, Smartphone, X } from "lucide-react";
 import type { TemplateRow } from "./template-workbench-types";
 
 type PreviewMode = "report" | "message" | "deck" | "video" | "demo";
+type ViewportMode = "desktop" | "mobile";
 
 const previewModes: { id: PreviewMode; label: string; icon: typeof FileText }[] = [
   { id: "report", label: "診断レポート", icon: FileText },
@@ -13,6 +14,13 @@ const previewModes: { id: PreviewMode; label: string; icon: typeof FileText }[] 
   { id: "video", label: "動画", icon: Clapperboard },
   { id: "demo", label: "Astroデモ", icon: PanelsTopLeft },
 ];
+
+function modeForAsset(assetType: string): PreviewMode {
+  if (assetType === "astro_demo_site") return "demo";
+  if (assetType === "sales_deck") return "deck";
+  if (assetType === "sales_video") return "video";
+  return "report";
+}
 
 function splitSample(value: string): string[] {
   return value
@@ -174,6 +182,30 @@ function DemoPreview({ template, sampleLines }: { template: TemplateRow; sampleL
   );
 }
 
+function PreviewCanvas({
+  mode,
+  template,
+  sampleLines,
+  viewport,
+}: {
+  mode: PreviewMode;
+  template: TemplateRow;
+  sampleLines: string[];
+  viewport: ViewportMode;
+}) {
+  return (
+    <div className="overflow-x-auto rounded-lg bg-zinc-100 p-2 sm:p-3">
+      <div className={viewport === "mobile" ? "mx-auto w-[360px] max-w-full" : "min-w-[760px]"}>
+        {mode === "report" && <ReportPreview template={template} sampleLines={sampleLines} />}
+        {mode === "message" && <MessagePreview template={template} sampleLines={sampleLines} />}
+        {mode === "deck" && <DeckPreview template={template} sampleLines={sampleLines} />}
+        {mode === "video" && <VideoPreview template={template} sampleLines={sampleLines} />}
+        {mode === "demo" && <DemoPreview template={template} sampleLines={sampleLines} />}
+      </div>
+    </div>
+  );
+}
+
 export function SalesTemplatePreviewPanel({
   template,
   industryLabel,
@@ -185,8 +217,15 @@ export function SalesTemplatePreviewPanel({
   assetLabel: string;
   angleLabel: string;
 }) {
-  const [mode, setMode] = useState<PreviewMode>("report");
+  const [mode, setMode] = useState<PreviewMode>(modeForAsset(template?.asset_type ?? ""));
+  const [viewport, setViewport] = useState<ViewportMode>("desktop");
+  const [expanded, setExpanded] = useState(false);
   const sampleLines = useMemo(() => splitSample(template?.sample_copy ?? ""), [template?.sample_copy]);
+
+  useEffect(() => {
+    if (!template) return;
+    setMode(modeForAsset(template.asset_type));
+  }, [template?.asset_type, template?.id]);
 
   if (!template) {
     return (
@@ -200,40 +239,103 @@ export function SalesTemplatePreviewPanel({
     <section className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 sm:p-4">
       <div className="flex flex-col gap-3 border-b border-zinc-200 pb-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
-          <div className="text-xs font-semibold text-zinc-500">ライブプレビュー</div>
-          <h3 className="mt-1 text-lg font-semibold text-zinc-950">実際の構成・デザイン・文面を確認</h3>
+          <div className="text-xs font-semibold text-zinc-500">実画面プレビュー</div>
+          <h3 className="mt-1 text-lg font-semibold text-zinc-950">構成・デザイン・文面を見ながら編集</h3>
           <p className="mt-2 text-xs leading-6 text-zinc-600">
             {template.report_locale} / {industryLabel} / {assetLabel} / {angleLabel} / v{template.version}
           </p>
         </div>
-        <div className="flex gap-1 overflow-x-auto pb-1">
-          {previewModes.map((item) => {
-            const Icon = item.icon;
-            const active = mode === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setMode(item.id)}
-                className={`inline-flex h-9 shrink-0 items-center gap-1 rounded-md border px-2 text-xs font-semibold ${
-                  active ? "border-zinc-950 bg-zinc-950 text-white" : "border-zinc-200 bg-white text-zinc-700"
-                }`}
-                aria-pressed={active}
-              >
-                <Icon size={14} aria-hidden />
-                {item.label}
-              </button>
-            );
-          })}
+        <div className="flex flex-col gap-2 lg:items-end">
+          <div className="flex gap-1 overflow-x-auto pb-1">
+            {previewModes.map((item) => {
+              const Icon = item.icon;
+              const active = mode === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setMode(item.id)}
+                  className={`inline-flex h-9 shrink-0 items-center gap-1 rounded-md border px-2 text-xs font-semibold ${
+                    active ? "border-zinc-950 bg-zinc-950 text-white" : "border-zinc-200 bg-white text-zinc-700"
+                  }`}
+                  aria-pressed={active}
+                >
+                  <Icon size={14} aria-hidden />
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex gap-1 overflow-x-auto pb-1">
+            <button
+              type="button"
+              onClick={() => setViewport("desktop")}
+              className={`inline-flex h-8 shrink-0 items-center gap-1 rounded-md border px-2 text-xs font-semibold ${
+                viewport === "desktop" ? "border-zinc-950 bg-white text-zinc-950" : "border-zinc-200 bg-white text-zinc-600"
+              }`}
+              aria-pressed={viewport === "desktop"}
+            >
+              <Monitor size={14} aria-hidden />
+              Desktop
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewport("mobile")}
+              className={`inline-flex h-8 shrink-0 items-center gap-1 rounded-md border px-2 text-xs font-semibold ${
+                viewport === "mobile" ? "border-zinc-950 bg-white text-zinc-950" : "border-zinc-200 bg-white text-zinc-600"
+              }`}
+              aria-pressed={viewport === "mobile"}
+            >
+              <Smartphone size={14} aria-hidden />
+              Mobile
+            </button>
+            <button
+              type="button"
+              onClick={() => setExpanded(true)}
+              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md border border-zinc-200 bg-white px-2 text-xs font-semibold text-zinc-700"
+            >
+              <Expand size={14} aria-hidden />
+              拡大
+            </button>
+          </div>
         </div>
       </div>
       <div className="mt-4 min-w-0">
-        {mode === "report" && <ReportPreview template={template} sampleLines={sampleLines} />}
-        {mode === "message" && <MessagePreview template={template} sampleLines={sampleLines} />}
-        {mode === "deck" && <DeckPreview template={template} sampleLines={sampleLines} />}
-        {mode === "video" && <VideoPreview template={template} sampleLines={sampleLines} />}
-        {mode === "demo" && <DemoPreview template={template} sampleLines={sampleLines} />}
+        <PreviewCanvas mode={mode} template={template} sampleLines={sampleLines} viewport={viewport} />
       </div>
+      {expanded && (
+        <div className="fixed inset-0 z-50 bg-zinc-950/70 p-3 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true" aria-label="テンプレート拡大プレビュー">
+          <div className="mx-auto flex h-full max-w-7xl flex-col overflow-hidden rounded-lg bg-white shadow-2xl">
+            <div className="flex flex-col gap-3 border-b border-zinc-200 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+              <div className="min-w-0">
+                <div className="text-xs font-semibold text-zinc-500">拡大プレビュー</div>
+                <h3 className="mt-1 truncate text-base font-semibold text-zinc-950">{template.title}</h3>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setViewport(viewport === "desktop" ? "mobile" : "desktop")}
+                  className="inline-flex h-9 items-center gap-1 rounded-md border border-zinc-200 px-3 text-xs font-semibold text-zinc-700"
+                >
+                  {viewport === "desktop" ? <Smartphone size={14} aria-hidden /> : <Monitor size={14} aria-hidden />}
+                  {viewport === "desktop" ? "Mobile" : "Desktop"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExpanded(false)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-zinc-950 text-white"
+                  aria-label="拡大プレビューを閉じる"
+                >
+                  <X size={16} aria-hidden />
+                </button>
+              </div>
+            </div>
+            <div className="min-h-0 flex-1 overflow-auto p-3 sm:p-4">
+              <PreviewCanvas mode={mode} template={template} sampleLines={sampleLines} viewport={viewport} />
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
