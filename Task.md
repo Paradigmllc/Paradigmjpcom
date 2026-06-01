@@ -5,7 +5,11 @@
 - [x] Updated the production audit scripts to match the current Payload-integrated Sales OS instead of the old Notion-only assumption, and let them read required webhook secrets from Coolify env without printing values.
 - [x] Removed a stale hardcoded Coolify token from the Supabase-key helper and replaced it with a no-secret Coolify env reader.
 - [x] Fixed the Next.js 16 production build path by pinning `scripts/build-next.mjs` to webpack, avoiding the Turbopack/Payload `pino-*` external module failure.
-- [x] Verification: `npx tsc --noEmit --pretty false`, `npm test -- --run` (29 files / 143 tests), `npm run build`, `npm audit --omit=dev`, `git diff --check`, `node scripts/audit-sales-os.mjs`, and `node scripts/audit-sales-flow.mjs` passed.
+- [x] Recovered the production host after the deploy outage: root disk was 100%, Docker/Coolify stopped, and DNS for `ghcr.io` was broken. Truncated runaway syslog/kern logs, disabled noisy UFW logging, repaired `/etc/resolv.conf` and Docker daemon DNS, restarted Docker/Coolify, and verified the OSS containers came back healthy.
+- [x] Stabilized Sales OS hydration by using deterministic Asia/Tokyo date formatting in the command center and shared sales date formatter.
+- [x] Deployed commit `f83d99e` through Coolify. Production image is `i12am4vvcbggefnqdizhnv9a:f83d99e3e1bee3a1a99cd63efd6d5c242aaec382`; app container is healthy.
+- [x] Final verification: `npx tsc --noEmit --pretty false`, `npm test -- --run` (29 files / 143 tests), `npm run build`, `npm audit --omit=dev`, `git diff --check`, `node scripts/audit-sales-os.mjs`, and `node scripts/audit-sales-flow.mjs` passed.
+- [x] Final browser verification: desktop and 390px mobile both open `/ja/admin/sales?tab=templates` with the design preview visible, `/ja/admin/sales?tab=videoPipeline` with the video pipeline visible, no horizontal overflow, and no browser console/page errors.
 
 ## Codex Update - 2026-06-01 Template Preview Fallback
 
