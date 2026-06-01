@@ -1,3 +1,9 @@
+## Codex Update - 2026-06-01 Country Scoped Region Master
+
+- [x] Fixed the CRM master design so `地域名` is no longer a global Twenty select list. Twenty standard selects cannot depend on the selected `国名`, so the durable design is: Twenty displays the finalized region text, while Sales OS manages country-scoped region candidates as the Supabase SSOT.
+- [x] Added country-scoped region editing in the CRM settings GUI: when editing `地域名`, operators choose the target country first, then add/edit/reorder only that country's region candidates.
+- [x] Hardened CRM config reads/saves so stale DB rows that still mark `region` as `select` are normalized back to `text`, and Twenty metadata application coerces country-dependent fields back to TEXT via the Twenty database after metadata API updates.
+
 ## Codex Update - 2026-06-01 CRM DnD and Twenty Metadata Reflection
 
 - [x] Replaced numeric CRM display-order editing with D&D Kit sortable rows for both Twenty Companies columns and select-option masters.

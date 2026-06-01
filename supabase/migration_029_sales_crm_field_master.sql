@@ -55,7 +55,7 @@ values
   ('domain', 'domainName', 'Domain Name', 1, true, 'text', 'Webサイトドメイン'),
   ('sales_status', 'paradigmSalesStatus', '営業ステータス', 2, true, 'select', '営業の現在地'),
   ('country', 'paradigmCountryName', '国名', 3, true, 'select', '対象国'),
-  ('region', 'paradigmRegionName', '地域名', 4, true, 'select', '都道府県・州など'),
+  ('region', 'paradigmRegionName', '地域名', 4, true, 'text', '国別の地域候補はSales OSの選択肢マスタで管理し、Twentyには確定した地域名だけを表示'),
   ('industry', 'paradigmIndustryName', '業種名', 5, true, 'select', '営業テンプレ選定に使う業種'),
   ('source', 'paradigmSourceName', 'ソース元', 6, true, 'select', 'Apollo、Fumadataなどの取得元'),
   ('form_url', 'paradigmFormUrl', 'フォームURL', 7, true, 'url', 'フォーム営業対象URL'),

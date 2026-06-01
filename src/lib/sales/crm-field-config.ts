@@ -51,7 +51,7 @@ export const DEFAULT_CRM_VIEW_FIELDS: SalesCrmViewField[] = [
   { fieldKey: "domain", twentyFieldName: "domainName", label: "Domain Name", position: 1, isVisible: true, fieldType: "text", description: "Webサイトドメイン" },
   { fieldKey: "sales_status", twentyFieldName: "paradigmSalesStatus", label: "営業ステータス", position: 2, isVisible: true, fieldType: "select", description: "営業の現在地" },
   { fieldKey: "country", twentyFieldName: "paradigmCountryName", label: "国名", position: 3, isVisible: true, fieldType: "select", description: "対象国" },
-  { fieldKey: "region", twentyFieldName: "paradigmRegionName", label: "地域名", position: 4, isVisible: true, fieldType: "select", description: "都道府県・州など" },
+  { fieldKey: "region", twentyFieldName: "paradigmRegionName", label: "地域名", position: 4, isVisible: true, fieldType: "text", description: "国別の地域候補はSales OSの選択肢マスタで管理し、Twentyには確定した地域名だけを表示" },
   { fieldKey: "industry", twentyFieldName: "paradigmIndustryName", label: "業種名", position: 5, isVisible: true, fieldType: "select", description: "営業テンプレ選定に使う業種" },
   { fieldKey: "source", twentyFieldName: "paradigmSourceName", label: "ソース元", position: 6, isVisible: true, fieldType: "select", description: "Apollo、Fumadataなどの取得元" },
   { fieldKey: "form_url", twentyFieldName: "paradigmFormUrl", label: "フォームURL", position: 7, isVisible: true, fieldType: "url", description: "フォーム営業対象URL" },
@@ -235,6 +235,20 @@ function mapField(row: CrmViewFieldRow): SalesCrmViewField {
   }
 }
 
+function normalizeCrmViewFields(fields: SalesCrmViewField[]): SalesCrmViewField[] {
+  return fields.map((field) =>
+    field.fieldKey === "region"
+      ? {
+          ...field,
+          fieldType: "text",
+          description:
+            field.description ??
+            "国別の地域候補はSales OSの選択肢マスタで管理し、Twentyには確定した地域名だけを表示",
+        }
+      : field,
+  )
+}
+
 function mapOption(row: CrmSelectOptionRow): SalesCrmSelectOption {
   return {
     id: row.id,
@@ -269,7 +283,7 @@ export async function getSalesCrmFieldConfig(sb: ServiceSupabase | null = getSer
   }
 
   return {
-    fields: ((fieldsRes.data ?? []) as CrmViewFieldRow[]).map(mapField),
+    fields: normalizeCrmViewFields(((fieldsRes.data ?? []) as CrmViewFieldRow[]).map(mapField)),
     options: ((optionsRes.data ?? []) as CrmSelectOptionRow[]).map(mapOption),
     fallbackUsed: false,
     error: null,
@@ -283,7 +297,7 @@ export async function saveSalesCrmFieldConfig(input: {
   const sb = getServiceSalesSupabase()
   if (!sb) throw new Error("Supabase service_role is not configured.")
 
-  const fieldRows = input.fields.map((field) => ({
+  const fieldRows = normalizeCrmViewFields(input.fields).map((field) => ({
     field_key: field.fieldKey,
     twenty_field_name: field.twentyFieldName,
     label: field.label,

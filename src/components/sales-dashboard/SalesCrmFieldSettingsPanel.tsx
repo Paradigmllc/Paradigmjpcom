@@ -31,6 +31,7 @@ const MASTER_LABELS: Record<string, string> = {
 }
 
 const COLOR_OPTIONS = ["gray", "blue", "green", "yellow", "orange", "red", "pink", "purple", "cyan", "teal"] as const
+const DEFAULT_REGION_COUNTRY = "JP"
 
 function fieldKey(field: SalesCrmViewField) {
   return field.fieldKey
@@ -188,6 +189,7 @@ export function SalesCrmFieldSettingsPanel({
   const [fields, setFields] = useState(() => normalizeFields(initialFields))
   const [options, setOptions] = useState(() => normalizeOptions(initialOptions))
   const [master, setMaster] = useState("country")
+  const [regionCountry, setRegionCountry] = useState(DEFAULT_REGION_COUNTRY)
   const [saving, setSaving] = useState(false)
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -195,8 +197,20 @@ export function SalesCrmFieldSettingsPanel({
   )
 
   const visibleMasterOptions = useMemo(
-    () => options.filter((option) => option.fieldKey === master).sort((a, b) => a.position - b.position),
-    [master, options],
+    () =>
+      options
+        .filter((option) => option.fieldKey === master)
+        .filter((option) => master !== "region" || option.countryCode === regionCountry)
+        .sort((a, b) => a.position - b.position),
+    [master, options, regionCountry],
+  )
+
+  const countryOptions = useMemo(
+    () =>
+      options
+        .filter((option) => option.fieldKey === "country" && option.isActive)
+        .sort((a, b) => a.position - b.position),
+    [options],
   )
 
   function updateField(targetKey: string, patch: Partial<SalesCrmViewField>) {
@@ -239,7 +253,7 @@ export function SalesCrmFieldSettingsPanel({
         fieldKey: master,
         value: `${master}_${Date.now()}`,
         label: "新しい選択肢",
-        countryCode: master === "region" ? "JP" : null,
+        countryCode: master === "region" ? regionCountry : null,
         position: nextPosition,
         isActive: true,
         color: "gray",
@@ -347,7 +361,9 @@ export function SalesCrmFieldSettingsPanel({
           <div className="flex flex-col gap-3 border-b border-zinc-100 px-4 py-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h3 className="text-sm font-semibold text-zinc-950">選択肢マスタ</h3>
-              <p className="mt-1 text-xs text-zinc-500">地域名はcountry_codeで国別に分離します。</p>
+              <p className="mt-1 text-xs text-zinc-500">
+                地域名は国別に分離します。Twentyには確定した地域名だけを表示し、国ごとの候補管理はここを正本にします。
+              </p>
             </div>
             <div className="flex gap-2">
               <select
@@ -362,6 +378,20 @@ export function SalesCrmFieldSettingsPanel({
                   </option>
                 ))}
               </select>
+              {master === "region" ? (
+                <select
+                  value={regionCountry}
+                  onChange={(event) => setRegionCountry(event.target.value)}
+                  aria-label="地域候補を編集する国"
+                  className="h-9 rounded-md border border-zinc-200 px-2 text-sm"
+                >
+                  {countryOptions.map((option) => (
+                    <option key={option.countryCode ?? option.value} value={option.countryCode ?? option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              ) : null}
               <button
                 type="button"
                 onClick={addOption}

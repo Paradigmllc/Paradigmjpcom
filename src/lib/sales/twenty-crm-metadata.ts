@@ -38,6 +38,7 @@ export interface TwentyCrmMetadataApplyResult {
 }
 
 const SELECT_FIELD_KEYS = new Set(["country", "region", "industry", "source", "sales_status"])
+const TWENTY_TEXT_ONLY_FIELD_KEYS = new Set(["region"])
 
 function env(name: string): string | null {
   const value = process.env[name]
@@ -148,7 +149,58 @@ async function applyTwentyCrmMetadataViaApi(input: {
     }
   }
 
+  const textOnlyError = await forceTwentyTextOnlyFieldsViaDatabase(input.fields)
+  if (textOnlyError) {
+    return { configured: true, appliedFields, selectFields, error: textOnlyError }
+  }
+
   return { configured: true, appliedFields, selectFields, error: null }
+}
+
+async function forceTwentyTextOnlyFieldsViaDatabase(fields: SalesCrmViewField[]): Promise<string | null> {
+  const targets = fields.filter((field) => TWENTY_TEXT_ONLY_FIELD_KEYS.has(field.fieldKey))
+  if (targets.length === 0) return null
+
+  const connectionString = env("TWENTY_DATABASE_URL") ?? env("TWENTY_METADATA_DATABASE_URL")
+  if (!connectionString) {
+    return "TWENTY_DATABASE_URL is required to coerce country-dependent fields back to text."
+  }
+
+  const client = new Client({ connectionString })
+  await client.connect()
+  try {
+    await client.query("begin")
+    const objectRes = await client.query<{ id: string }>(
+      'select "id" from core."objectMetadata" where "nameSingular" = $1 limit 1',
+      ["company"],
+    )
+    const objectId = objectRes.rows[0]?.id
+    if (!objectId) throw new Error("Twenty company object metadata was not found.")
+
+    for (const field of targets) {
+      await client.query(
+        `
+          update core."fieldMetadata"
+          set
+            "type" = 'TEXT',
+            "options" = null,
+            "updatedAt" = now()
+          where "objectMetadataId" = $1
+            and "name" = $2
+        `,
+        [objectId, field.twentyFieldName],
+      )
+    }
+
+    await client.query("commit")
+    return null
+  } catch (error) {
+    await client.query("rollback")
+    console.error("[twenty-crm-metadata] text-only field coercion failed:", error)
+    return error instanceof Error ? error.message : "Twenty text-only field coercion failed."
+  } finally {
+    await client.end()
+  }
 }
 
 async function applyTwentyCrmMetadataViaDatabase(input: {
@@ -182,18 +234,19 @@ async function applyTwentyCrmMetadataViaDatabase(input: {
     for (const field of input.fields) {
       const options = selectOptionsForField(field, input.options)
       const shouldBeSelect = field.fieldType === "select" && options.length > 0
+      const shouldBeTextOnly = TWENTY_TEXT_ONLY_FIELD_KEYS.has(field.fieldKey)
       const metadataRes = await client.query(
         `
           update core."fieldMetadata"
           set
             "label" = $1,
-            "type" = case when $2 then 'SELECT' else "type" end,
-            "options" = case when $2 then $3::jsonb else "options" end,
+            "type" = case when $6 then 'TEXT' when $2 then 'SELECT' else "type" end,
+            "options" = case when $6 then null when $2 then $3::jsonb else "options" end,
             "updatedAt" = now()
           where "objectMetadataId" = $4
             and "name" = $5
         `,
-        [field.label, shouldBeSelect, JSON.stringify(options), objectId, field.twentyFieldName],
+        [field.label, shouldBeSelect, JSON.stringify(options), objectId, field.twentyFieldName, shouldBeTextOnly],
       )
       appliedFields += metadataRes.rowCount ?? 0
       if (shouldBeSelect) selectFields += 1
