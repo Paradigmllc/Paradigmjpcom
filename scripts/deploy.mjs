@@ -10,18 +10,20 @@
  */
 
 import { spawnSync } from "node:child_process"
+import { getCoolifyAuth } from "./lib/coolify-env.mjs"
 
 const DRY = process.argv.includes("--dry")
 const NO_WAIT = process.argv.includes("--no-wait")
 const SKIP_HOST_PREFLIGHT = process.argv.includes("--skip-host-preflight")
 
-const TOKEN = process.env.COOLIFY_API_TOKEN
-if (!TOKEN) {
+const AUTH = getCoolifyAuth()
+if (!AUTH) {
   console.error("COOLIFY_API_TOKEN is not set")
   process.exit(1)
 }
 
-const BASE = process.env.COOLIFY_API_URL || "https://coolify.appexx.me"
+const TOKEN = AUTH.token
+const BASE = AUTH.baseUrl
 const APP_UUID = process.env.PARADIGM_APP_UUID || "i12am4vvcbggefnqdizhnv9a"
 const GH_REPO = "git@github.com:Paradigmllc/Paradigmjpcom.git"
 
