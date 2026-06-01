@@ -53,12 +53,12 @@ function SelectField<T extends string>({
   onChange: (value: T) => void
 }) {
   return (
-    <label className="grid gap-1.5 text-xs font-medium text-zinc-600">
+    <label className="grid min-w-0 gap-1.5 text-xs font-medium text-zinc-600">
       <span>{label}</span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value as T)}
-        className="h-10 rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-950 outline-none transition focus:border-zinc-900"
+        className="h-10 min-w-0 rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-950 outline-none transition focus:border-zinc-900"
       >
         {options.map((option) => (
           <option key={option} value={option}>
@@ -81,14 +81,14 @@ export function SalesVideoProductionControls({ value, onChange, locale, companyS
   })
 
   return (
-    <section className="border-t border-zinc-200 pt-4">
+    <section className="min-w-0 border-t border-zinc-200 pt-4">
       <div className="flex flex-col gap-1">
         <h3 className="text-sm font-semibold text-zinc-950">制作プロファイル</h3>
         <p className="text-xs leading-5 text-zinc-500">
           ジャンル、音声、アバター、字幕、ストーリー型を固定し、Dify / n8n / レンダラー / R2 へ同じ仕様を渡します。
         </p>
       </div>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      <div className="mt-3 grid min-w-0 gap-3 sm:grid-cols-2">
         <SelectField label="動画ジャンル" value={value.productionGenre} options={VIDEO_PRODUCTION_GENRES} labels={VIDEO_PRODUCTION_GENRE_LABELS} onChange={(next) => update("productionGenre", next)} />
         <SelectField label="音声" value={value.voiceStyle} options={VIDEO_VOICE_STYLES} labels={VIDEO_VOICE_STYLE_LABELS} onChange={(next) => update("voiceStyle", next)} />
         <SelectField label="アバター" value={value.avatarStyle} options={VIDEO_AVATAR_STYLES} labels={VIDEO_AVATAR_STYLE_LABELS} onChange={(next) => update("avatarStyle", next)} />

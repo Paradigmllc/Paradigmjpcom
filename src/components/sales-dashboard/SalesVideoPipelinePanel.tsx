@@ -80,9 +80,9 @@ function JobStatusBadge({ status }: { status: VideoJobStatus }) {
 function ConfigCard({ label, ready, note, url }: { label: string; ready: boolean; note: string; url?: string | null }) {
   return (
     <div className="min-w-0 rounded-xl border border-zinc-200 bg-white p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-sm font-semibold text-zinc-950">{label}</div>
-        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${boolTone(ready)}`}>
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0 break-words text-sm font-semibold text-zinc-950">{label}</div>
+        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${boolTone(ready)}`}>
           {ready ? "接続可" : "未設定"}
         </span>
       </div>
@@ -255,11 +255,11 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
   }
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[minmax(360px,430px)_minmax(0,1fr)]">
-      <section className="rounded-2xl border border-zinc-200 bg-white">
+    <div className="grid min-w-0 gap-5 2xl:grid-cols-[minmax(440px,520px)_minmax(0,1fr)]">
+      <section className="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white">
         <div className="border-b border-zinc-200 p-5">
           <div className="flex items-start justify-between gap-3">
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
                 <Clapperboard size={15} aria-hidden />
                 Video Studio
@@ -281,10 +281,10 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
           </div>
         </div>
 
-        <div className="grid gap-4 p-5">
-          <label className="grid gap-1.5 text-xs font-medium text-zinc-600">
+        <div className="grid min-w-0 gap-4 p-5">
+          <label className="grid min-w-0 gap-1.5 text-xs font-medium text-zinc-600">
             <span>対象企業</span>
-            <select value={selectedCompany} onChange={(event) => setSelectedCompany(event.target.value)} className="h-10 rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-zinc-900">
+            <select value={selectedCompany} onChange={(event) => setSelectedCompany(event.target.value)} className="h-10 min-w-0 rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-zinc-900">
               {data.companies.map((company) => (
                 <option key={company.id} value={company.id}>
                   {company.companyName} / {company.domain}
@@ -293,32 +293,32 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
             </select>
           </label>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid min-w-0 grid-cols-2 gap-2">
             {Object.entries(JOB_TYPE_LABELS).map(([value, label]) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => setJobType(value as "sales_video" | "subscription_video")}
-                className={`h-10 rounded-lg border text-sm font-semibold transition ${jobType === value ? "border-zinc-950 bg-zinc-950 text-white" : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-400"}`}
+                className={`min-w-0 overflow-hidden rounded-lg border px-3 py-2 text-sm font-semibold leading-5 transition ${jobType === value ? "border-zinc-950 bg-zinc-950 text-white" : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-400"}`}
               >
-                {label}
+                <span className="block truncate">{label}</span>
               </button>
             ))}
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="grid gap-1.5 text-xs font-medium text-zinc-600">
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+            <label className="grid min-w-0 gap-1.5 text-xs font-medium text-zinc-600">
               <span>セグメント</span>
-              <select value={targetSegment} onChange={(event) => changeSegment(event.target.value as VideoTargetSegment)} className="h-10 rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-zinc-900">
+              <select value={targetSegment} onChange={(event) => changeSegment(event.target.value as VideoTargetSegment)} className="h-10 min-w-0 rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-zinc-900">
                 {VIDEO_TARGET_SEGMENTS.map((segment) => (
                   <option key={segment} value={segment}>{VIDEO_SEGMENT_LABELS[segment]}</option>
                 ))}
               </select>
             </label>
 
-            <label className="grid gap-1.5 text-xs font-medium text-zinc-600">
+            <label className="grid min-w-0 gap-1.5 text-xs font-medium text-zinc-600">
               <span>訴求軸</span>
-              <select value={offerAngle} onChange={(event) => setOfferAngle(event.target.value as VideoOfferAngle)} className="h-10 rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-zinc-900">
+              <select value={offerAngle} onChange={(event) => setOfferAngle(event.target.value as VideoOfferAngle)} className="h-10 min-w-0 rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-zinc-900">
                 {VIDEO_OFFER_ANGLES.map((angle) => (
                   <option key={angle} value={angle}>{VIDEO_OFFER_ANGLE_LABELS[angle]}</option>
                 ))}
@@ -339,7 +339,7 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
               <SlidersHorizontal size={15} aria-hidden />
               損失シミュレータ
             </div>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="mt-3 grid min-w-0 gap-3 sm:grid-cols-2">
               <NumberInput label="月間失注件数" value={lossInputs.monthlyRejectedProjects} onChange={(value) => updateLossInput("monthlyRejectedProjects", value)} suffix="件" />
               <NumberInput label="平均案件単価" value={lossInputs.averageProjectValueUsd} onChange={(value) => updateLossInput("averageProjectValueUsd", value)} suffix="USD" />
               <NumberInput label="月間動画予算" value={lossInputs.monthlyVideoBudgetUsd} onChange={(value) => updateLossInput("monthlyVideoBudgetUsd", value)} suffix="USD" />
@@ -354,16 +354,16 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
             </div>
           </section>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="grid gap-1.5 text-xs font-medium text-zinc-600">
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+            <label className="grid min-w-0 gap-1.5 text-xs font-medium text-zinc-600">
               <span>用途</span>
-              <select value={platform} onChange={(event) => setPlatform(event.target.value as (typeof PLATFORM_OPTIONS)[number][0])} className="h-10 rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-zinc-900">
+              <select value={platform} onChange={(event) => setPlatform(event.target.value as (typeof PLATFORM_OPTIONS)[number][0])} className="h-10 min-w-0 rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-zinc-900">
                 {PLATFORM_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </label>
-            <label className="grid gap-1.5 text-xs font-medium text-zinc-600">
+            <label className="grid min-w-0 gap-1.5 text-xs font-medium text-zinc-600">
               <span>レンダー系</span>
-              <select value={renderer} onChange={(event) => setRenderer(event.target.value as (typeof RENDER_OPTIONS)[number][0])} className="h-10 rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-zinc-900">
+              <select value={renderer} onChange={(event) => setRenderer(event.target.value as (typeof RENDER_OPTIONS)[number][0])} className="h-10 min-w-0 rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-zinc-900">
                 {RENDER_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </label>
@@ -397,7 +397,7 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
           </div>
         </div>
 
-        <div className="grid gap-3 lg:grid-cols-3">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <ConfigCard label="n8n" ready={config.n8n.ready} note={config.n8n.note} url={config.n8n.url} />
           <ConfigCard label="Dify Cloud" ready={config.dify.ready} note={config.dify.note} />
           <ConfigCard label="ComfyUI" ready={config.comfyui.ready} note={config.comfyui.note} url={config.comfyui.url} />
@@ -411,7 +411,7 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
             <Clapperboard size={16} aria-hidden />
             制作レーン
           </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-4 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {config.stages.map((stage, index) => (
               <div key={stage.id} className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
                 <div className="flex items-center gap-2">
