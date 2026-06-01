@@ -5,6 +5,8 @@
 - [x] Reworked the video-production tab into a clearer production workbench with job composer, production profile, loss simulator, readiness cards, production lanes, and job operations.
 - [x] Repaired video pipeline labels and production strategy labels so visible choices are readable Japanese instead of mojibake.
 - [x] Verification: `npx tsc --noEmit --pretty false`, `npm test -- --run` (29 files / 143 tests), `npm run build`, `npm audit --omit=dev`, and `git diff --check` passed. Local full-screen browser preview requires Supabase public env/auth; HTTP route validation passed from the real repo path.
+- [x] Production deploy: pushed commit `aadf829` and deployed it through Coolify deployment `ub3i0bo187n0id9d3uav8fkv`. Smoke checks passed for `https://paradigmjp.com/ja/admin/sales`, `https://paradigmjp.com/ja`, and `https://twenty.paradigmjp.com`.
+- [x] Host stabilization: the first deploy failed because `hermes-agent` gateway was repeatedly hitting its memory cgroup while trying unauthenticated MCP connections. The runaway gateway container was stopped after deploy so Revenue OS/Coolify/Twenty stay stable; Hermes gateway must be repaired before autonomous-agent production use.
 
 ## Codex Update - 2026-06-01 Country Scoped Region Master
 
