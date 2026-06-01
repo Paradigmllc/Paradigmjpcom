@@ -1,3 +1,11 @@
+## Codex Update - 2026-06-01 Revenue OS UI Redesign Pass
+
+- [x] Removed the borrowed "Salesforce x Apollo.io風" dashboard name and replaced the shell with `Paradigm Revenue OS`.
+- [x] Rebuilt the Sales OS layout from a pasted-card surface into a desktop app shell: left navigation, compact sticky work header, scoped metrics, and mobile select navigation.
+- [x] Reworked the video-production tab into a clearer production workbench with job composer, production profile, loss simulator, readiness cards, production lanes, and job operations.
+- [x] Repaired video pipeline labels and production strategy labels so visible choices are readable Japanese instead of mojibake.
+- [x] Verification: `npx tsc --noEmit --pretty false`, `npm test -- --run` (29 files / 143 tests), `npm run build`, `npm audit --omit=dev`, and `git diff --check` passed. Local full-screen browser preview requires Supabase public env/auth; HTTP route validation passed from the real repo path.
+
 ## Codex Update - 2026-06-01 Country Scoped Region Master
 
 - [x] Fixed the CRM master design so `地域名` is no longer a global Twenty select list. Twenty standard selects cannot depend on the selected `国名`, so the durable design is: Twenty displays the finalized region text, while Sales OS manages country-scoped region candidates as the Supabase SSOT.

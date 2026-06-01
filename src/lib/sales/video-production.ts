@@ -101,9 +101,9 @@ export const VIDEO_PRODUCTION_GENRE_LABELS: Record<VideoProductionGenre, string>
 
 export const VIDEO_VOICE_STYLE_LABELS: Record<VideoVoiceStyle, string> = {
   calm_consultant: "落ち着いたコンサル声",
-  energetic_founder: "熱量ある創業者声",
-  premium_narrator: "高級感あるナレーター",
-  friendly_local: "親しみある地域向け",
+  energetic_founder: "熱量のある創業者声",
+  premium_narrator: "高級感のあるナレーター",
+  friendly_local: "親しみのある地域向け",
   bilingual_ja_en: "日英バイリンガル",
   no_voice_music_caption: "音楽 + 字幕のみ",
 }
@@ -160,11 +160,15 @@ export function normalizeVideoProductionProfile(input: VideoProductionProfileInp
 }
 
 export function platformSpec(platform: string): { ratio: string; durationSec: number; useCase: string } {
-  if (platform === "shorts_9_16") return { ratio: "9:16", durationSec: 35, useCase: "SNSショート" }
+  if (platform === "shorts_9_16") return { ratio: "9:16", durationSec: 35, useCase: "SNSショート動画" }
   if (platform === "youtube_16_9") return { ratio: "16:9", durationSec: 90, useCase: "YouTube / LP埋め込み" }
   if (platform === "linkedin_1_1") return { ratio: "1:1", durationSec: 45, useCase: "LinkedIn / 投稿" }
   if (platform === "customer_subscription") return { ratio: "9:16 + 16:9", durationSec: 45, useCase: "動画サブスク納品" }
-  return { ratio: "16:9", durationSec: 60, useCase: platform === "report_page" ? "診断レポート埋め込み" : "営業資料埋め込み" }
+  return {
+    ratio: "16:9",
+    durationSec: 60,
+    useCase: platform === "report_page" ? "診断レポート埋め込み" : "営業資料埋め込み",
+  }
 }
 
 export function buildR2AssetPrefix(input: {
@@ -233,7 +237,7 @@ export function buildProfessionalStoryboard(input: {
     format: spec,
     production_profile: input.profile,
     narrative: isJa
-      ? "公開データと推定値を分けて、危機感と次の一手を短く見せる営業動画。"
+      ? "公開データと推定値を分け、危機感と次の一手を短く見せる営業動画。"
       : "Evidence-first video that separates verified facts from estimates and drives the next step.",
     claim_guard: input.claimGuard,
     loss_summary: input.lossSimulation,

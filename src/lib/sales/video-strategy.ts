@@ -65,10 +65,10 @@ export const VIDEO_SEGMENT_LABELS: Record<VideoTargetSegment, string> = {
 }
 
 export const VIDEO_OFFER_ANGLE_LABELS: Record<VideoOfferAngle, string> = {
-  lost_revenue: "今失っている収益",
+  lost_revenue: "失っている収益",
   competitor_momentum: "競合が先に動いている",
   market_window: "市場の窓が閉じる",
-  production_cost: "制作コストを下げる",
+  production_cost: "制作コスト削減",
   japan_entry_gap: "日本参入ギャップ",
   local_trust_gap: "地域信頼ギャップ",
 }
@@ -138,7 +138,7 @@ export const VIDEO_PIPELINE_STAGES = [
   { id: "asset_prompts", label: "ComfyUI素材指示", owner: "n8n -> ComfyUI", gate: "ブランド・業界・用途に合う素材だけ生成する" },
   { id: "gpu_route", label: "Vast.ai GPU割当", owner: "n8n -> Vast.ai", gate: "動画サブスクや重いComfyUI生成だけGPUを起動する" },
   { id: "render", label: "HyperFrames / Remotionレンダー", owner: "Renderer", gate: "営業動画は軽量レンダーを優先する" },
-  { id: "review", label: "Slack / Appsmith確認", owner: "Human", gate: "初回納品・契約前・危険表現は人間承認に回す" },
+  { id: "review", label: "Slack / Appsmith確認", owner: "Human", gate: "初回納品・契約前・危険表現は人間確認へ戻す" },
   { id: "delivery", label: "R2配信・Twenty記録", owner: "Sales OS", gate: "URLと納品ステータスをSSOTへ保存する" },
 ] as const
 
@@ -213,14 +213,13 @@ export function buildVideoClaimGuard(): VideoClaimGuard {
       "clearly labeled hypothesis",
     ],
     customer_copy_policy_ja:
-      "法改正日、罰金額、市場規模、CAGR、業界平均倍率は一次情報URLがある場合だけ断定する。ない場合は「未検証のため顧客向け文面では使わない」。",
+      "法改正日、罰金額、市場規模、CAGR、業界平均値は一次情報URLがある場合だけ断定する。ない場合は未検証として顧客向け文面から外す。",
     customer_copy_policy_en:
       "Legal dates, penalties, market size, CAGR, and benchmark multipliers require a primary-source URL before customer-facing assertions.",
     dify_instruction_ja:
-      "未検証の法改正・罰金額・市場統計・CAGR・業界平均を断定しない。使う場合は primary_source_url を添え、ない場合は推定/仮説としても顧客文面から外す。",
+      "未検証の法改正・罰金額・市場統計・CAGR・業界平均を断定しない。使う場合はprimary_source_urlを添え、ない場合は推定・仮説としても顧客文面から外す。",
     dify_instruction_en:
       "Do not assert unverified legal, penalty, market, CAGR, or benchmark claims. Require primary_source_url, otherwise exclude from customer-facing copy.",
     verified_sources: [],
   }
 }
-
