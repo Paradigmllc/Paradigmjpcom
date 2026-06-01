@@ -4,6 +4,7 @@ import type { DashboardAgentTeam } from "@/lib/sales/agent-team"
 import type { SalesIntegrationStatus } from "@/lib/sales/integration-registry"
 import type { SalesVideoJob, VideoPipelineConfig } from "@/lib/sales/video-pipeline"
 import type { SalesLocaleScope } from "@/lib/sales/locale-scope"
+import type { SalesCrmSelectOption, SalesCrmViewField } from "@/lib/sales/crm-field-config"
 
 export type SalesDashboardStatus = "ready" | "degraded"
 
@@ -151,6 +152,12 @@ export interface SalesDashboardData {
   infrastructure: InfrastructureMigrationData
   operationalAudit: DashboardOperationalAudit
   contentTemplates: DashboardContentTemplateCoverage
+  crmFieldConfig: {
+    fields: SalesCrmViewField[]
+    options: SalesCrmSelectOption[]
+    fallbackUsed: boolean
+    error: string | null
+  }
   agentTeam: DashboardAgentTeam
   integrationStatus: SalesIntegrationStatus[]
   videoPipeline: {

@@ -7,6 +7,7 @@ import { getDashboardAgentTeam } from "@/lib/sales/agent-team"
 import { getSalesIntegrationStatus } from "@/lib/sales/integration-registry"
 import { getVideoPipelineConfig, listVideoJobs } from "@/lib/sales/video-pipeline"
 import { salesScopeFromLocale, type SalesLocaleScope } from "@/lib/sales/locale-scope"
+import { getSalesCrmFieldConfig } from "@/lib/sales/crm-field-config"
 import type {
   DashboardAuditCheck,
   DashboardAuditSection,
@@ -603,6 +604,7 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
     warnings.push("Supabase service_role is not configured. Showing empty dashboard shell.")
     const infrastructure = await getInfrastructureMigrationData(null)
     const contentTemplates = await getContentTemplateCoverage()
+    const crmFieldConfig = await getSalesCrmFieldConfig(null)
     const agentTeam = await getDashboardAgentTeam()
     const integrationStatus = await getSalesIntegrationStatus()
     const videoConfig = getVideoPipelineConfig()
@@ -626,6 +628,7 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
       infrastructure,
       operationalAudit: emptyOperationalAudit(),
       contentTemplates,
+      crmFieldConfig,
       agentTeam,
       integrationStatus,
       videoPipeline: {
@@ -653,6 +656,7 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
     enrichmentJobs,
     infrastructure,
     contentTemplates,
+    crmFieldConfig,
     agentTeam,
     integrationStatus,
     videoJobsRes,
@@ -699,6 +703,7 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
     fetchRecentEnrichmentJobs(40),
     getInfrastructureMigrationData(sb),
     getContentTemplateCoverage(),
+    getSalesCrmFieldConfig(sb),
     getDashboardAgentTeam(),
     getSalesIntegrationStatus(),
     listVideoJobs(25, { locale: scope.reportLocale }),
@@ -713,6 +718,7 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
   if (meetingsRes.error) warnings.push(`sales_calendar_events: ${meetingsRes.error.message}`)
   if (contractsRes.error) warnings.push(`sales_contracts: ${contractsRes.error.message}`)
   if (!videoJobsRes.ok) warnings.push(`sales_video_jobs: ${videoJobsRes.error}`)
+  if (crmFieldConfig.error) warnings.push(`sales_crm_field_config: ${crmFieldConfig.error}`)
   warnings.push(...infrastructure.warnings)
 
   for (const warning of warnings) console.error(`[sales-dashboard] ${warning}`)
@@ -825,6 +831,7 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
       warnings,
     }),
     contentTemplates,
+    crmFieldConfig,
     agentTeam,
     integrationStatus,
     videoPipeline: {

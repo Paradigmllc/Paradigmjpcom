@@ -1,0 +1,324 @@
+import { getServiceSalesSupabase } from "@/lib/supabase"
+
+type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
+
+export interface SalesCrmViewField {
+  id?: string
+  fieldKey: string
+  twentyFieldName: string
+  label: string
+  position: number
+  isVisible: boolean
+  fieldType: "text" | "url" | "select" | "multi_select"
+  description: string | null
+}
+
+export interface SalesCrmSelectOption {
+  id?: string
+  fieldKey: string
+  value: string
+  label: string
+  countryCode: string | null
+  position: number
+  isActive: boolean
+  color: string
+}
+
+interface CrmViewFieldRow {
+  id: string
+  field_key: string
+  twenty_field_name: string
+  label: string
+  position: number
+  is_visible: boolean
+  field_type: string
+  description: string | null
+}
+
+interface CrmSelectOptionRow {
+  id: string
+  field_key: string
+  value: string
+  label: string
+  country_code: string | null
+  position: number
+  is_active: boolean
+  color: string | null
+}
+
+export const DEFAULT_CRM_VIEW_FIELDS: SalesCrmViewField[] = [
+  { fieldKey: "name", twentyFieldName: "name", label: "Name", position: 0, isVisible: true, fieldType: "text", description: "企業名" },
+  { fieldKey: "domain", twentyFieldName: "domainName", label: "Domain Name", position: 1, isVisible: true, fieldType: "text", description: "Webサイトドメイン" },
+  { fieldKey: "sales_status", twentyFieldName: "paradigmSalesStatus", label: "営業ステータス", position: 2, isVisible: true, fieldType: "select", description: "営業の現在地" },
+  { fieldKey: "country", twentyFieldName: "paradigmCountryName", label: "国名", position: 3, isVisible: true, fieldType: "select", description: "対象国" },
+  { fieldKey: "region", twentyFieldName: "paradigmRegionName", label: "地域名", position: 4, isVisible: true, fieldType: "select", description: "都道府県・州など" },
+  { fieldKey: "industry", twentyFieldName: "paradigmIndustryName", label: "業種名", position: 5, isVisible: true, fieldType: "select", description: "営業テンプレ選定に使う業種" },
+  { fieldKey: "source", twentyFieldName: "paradigmSourceName", label: "ソース元", position: 6, isVisible: true, fieldType: "select", description: "Apollo、Fumadataなどの取得元" },
+  { fieldKey: "form_url", twentyFieldName: "paradigmFormUrl", label: "フォームURL", position: 7, isVisible: true, fieldType: "url", description: "フォーム営業対象URL" },
+  { fieldKey: "report_url", twentyFieldName: "paradigmReportUrl", label: "診断レポートURL", position: 8, isVisible: true, fieldType: "url", description: "顧客向け診断ページ" },
+  { fieldKey: "sales_material_url", twentyFieldName: "paradigmSalesMaterialUrl", label: "営業資料URL", position: 9, isVisible: true, fieldType: "url", description: "Slidev/Gotenberg資料" },
+  { fieldKey: "demo_url", twentyFieldName: "paradigmDemoUrl", label: "デモURL", position: 10, isVisible: true, fieldType: "url", description: "Astroデモサイト" },
+  { fieldKey: "customer_portal_url", twentyFieldName: "paradigmCustomerPortalUrl", label: "顧客用Notion URL", position: 11, isVisible: true, fieldType: "url", description: "成約後の顧客ポータル" },
+]
+
+const JAPAN_PREFECTURES = [
+  "北海道",
+  "青森県",
+  "岩手県",
+  "宮城県",
+  "秋田県",
+  "山形県",
+  "福島県",
+  "茨城県",
+  "栃木県",
+  "群馬県",
+  "埼玉県",
+  "千葉県",
+  "東京都",
+  "神奈川県",
+  "新潟県",
+  "富山県",
+  "石川県",
+  "福井県",
+  "山梨県",
+  "長野県",
+  "岐阜県",
+  "静岡県",
+  "愛知県",
+  "三重県",
+  "滋賀県",
+  "京都府",
+  "大阪府",
+  "兵庫県",
+  "奈良県",
+  "和歌山県",
+  "鳥取県",
+  "島根県",
+  "岡山県",
+  "広島県",
+  "山口県",
+  "徳島県",
+  "香川県",
+  "愛媛県",
+  "高知県",
+  "福岡県",
+  "佐賀県",
+  "長崎県",
+  "熊本県",
+  "大分県",
+  "宮崎県",
+  "鹿児島県",
+  "沖縄県",
+] as const
+
+const US_STATES = [
+  "Alabama",
+  "Alaska",
+  "Arizona",
+  "Arkansas",
+  "California",
+  "Colorado",
+  "Connecticut",
+  "Delaware",
+  "Florida",
+  "Georgia",
+  "Hawaii",
+  "Idaho",
+  "Illinois",
+  "Indiana",
+  "Iowa",
+  "Kansas",
+  "Kentucky",
+  "Louisiana",
+  "Maine",
+  "Maryland",
+  "Massachusetts",
+  "Michigan",
+  "Minnesota",
+  "Mississippi",
+  "Missouri",
+  "Montana",
+  "Nebraska",
+  "Nevada",
+  "New Hampshire",
+  "New Jersey",
+  "New Mexico",
+  "New York",
+  "North Carolina",
+  "North Dakota",
+  "Ohio",
+  "Oklahoma",
+  "Oregon",
+  "Pennsylvania",
+  "Rhode Island",
+  "South Carolina",
+  "South Dakota",
+  "Tennessee",
+  "Texas",
+  "Utah",
+  "Vermont",
+  "Virginia",
+  "Washington",
+  "West Virginia",
+  "Wisconsin",
+  "Wyoming",
+] as const
+
+function option(
+  fieldKey: string,
+  value: string,
+  label: string,
+  position: number,
+  countryCode: string | null = null,
+  color = "gray",
+): SalesCrmSelectOption {
+  return { fieldKey, value, label, countryCode, position, isActive: true, color }
+}
+
+export const DEFAULT_CRM_SELECT_OPTIONS: SalesCrmSelectOption[] = [
+  option("country", "日本", "日本", 0, "JP", "green"),
+  option("country", "米国", "米国", 1, "US", "blue"),
+  option("country", "韓国", "韓国", 2, "KR", "purple"),
+  option("country", "中国", "中国", 3, "CN", "red"),
+  option("country", "台湾", "台湾", 4, "TW", "cyan"),
+  option("country", "ドイツ", "ドイツ", 5, "DE", "yellow"),
+  option("country", "フランス", "フランス", 6, "FR", "pink"),
+  option("country", "スペイン", "スペイン", 7, "ES", "orange"),
+  option("country", "ポルトガル", "ポルトガル", 8, "PT", "orange"),
+  option("country", "ロシア", "ロシア", 9, "RU", "gray"),
+  option("country", "UAE", "UAE", 10, "AE", "teal"),
+  option("country", "ベトナム", "ベトナム", 11, "VN", "green"),
+  option("country", "インドネシア", "インドネシア", 12, "ID", "green"),
+  ...JAPAN_PREFECTURES.map((name, index) => option("region", name, name, index, "JP", "green")),
+  ...US_STATES.map((name, index) => option("region", name, name, 100 + index, "US", "blue")),
+  option("industry", "美容サロン", "美容サロン", 0, null, "pink"),
+  option("industry", "歯科医院", "歯科医院", 1, null, "cyan"),
+  option("industry", "飲食店", "飲食店", 2, null, "orange"),
+  option("industry", "建設・工務店", "建設・工務店", 3, null, "yellow"),
+  option("industry", "会計事務所", "会計事務所", 4, null, "blue"),
+  option("industry", "小売・店舗", "小売・店舗", 5, null, "purple"),
+  option("industry", "清掃・メンテナンス", "清掃・メンテナンス", 6, null, "green"),
+  option("industry", "コンサルティング", "コンサルティング", 7, null, "gray"),
+  option("source", "apollo", "Apollo", 0, null, "blue"),
+  option("source", "fumadata", "Fumadata", 1, null, "purple"),
+  option("source", "bizmap", "BIZMap", 2, null, "yellow"),
+  option("source", "gbizinfo", "gBizInfo", 3, null, "green"),
+  option("source", "jgrants", "jGrants", 4, null, "cyan"),
+  option("source", "nta_corporate_number", "国税庁法人番号", 5, null, "orange"),
+  option("source", "apify", "Apify", 6, null, "pink"),
+  option("source", "outscraper", "Outscraper", 7, null, "teal"),
+  option("source", "manual_csv", "手動CSV", 8, null, "gray"),
+  option("source", "codex_verification", "Codex検証", 9, null, "red"),
+  option("source", "codex_e2e", "Codex E2E", 10, null, "red"),
+  option("sales_status", "未診断 / 未対応", "未診断 / 未対応", 0, null, "gray"),
+  option("sales_status", "カルテ生成中 / 未対応", "カルテ生成中 / 未対応", 1, null, "yellow"),
+  option("sales_status", "送信待ち / 未対応", "送信待ち / 未対応", 2, null, "orange"),
+  option("sales_status", "手動確認 / 未対応", "手動確認 / 未対応", 3, null, "purple"),
+  option("sales_status", "送信済み / 未対応", "送信済み / 未対応", 4, null, "blue"),
+  option("sales_status", "商談化 / 初回商談", "商談化 / 初回商談", 5, null, "cyan"),
+  option("sales_status", "提案中 / 提案", "提案中 / 提案", 6, null, "teal"),
+  option("sales_status", "成約 / 契約", "成約 / 契約", 7, null, "green"),
+  option("sales_status", "失注 / 失注", "失注 / 失注", 8, null, "red"),
+]
+
+function mapField(row: CrmViewFieldRow): SalesCrmViewField {
+  const fieldType = ["text", "url", "select", "multi_select"].includes(row.field_type) ? row.field_type : "text"
+  return {
+    id: row.id,
+    fieldKey: row.field_key,
+    twentyFieldName: row.twenty_field_name,
+    label: row.label,
+    position: row.position,
+    isVisible: row.is_visible,
+    fieldType: fieldType as SalesCrmViewField["fieldType"],
+    description: row.description,
+  }
+}
+
+function mapOption(row: CrmSelectOptionRow): SalesCrmSelectOption {
+  return {
+    id: row.id,
+    fieldKey: row.field_key,
+    value: row.value,
+    label: row.label,
+    countryCode: row.country_code,
+    position: row.position,
+    isActive: row.is_active,
+    color: row.color ?? "gray",
+  }
+}
+
+export async function getSalesCrmFieldConfig(sb: ServiceSupabase | null = getServiceSalesSupabase()): Promise<{
+  fields: SalesCrmViewField[]
+  options: SalesCrmSelectOption[]
+  fallbackUsed: boolean
+  error: string | null
+}> {
+  if (!sb) {
+    return { fields: DEFAULT_CRM_VIEW_FIELDS, options: DEFAULT_CRM_SELECT_OPTIONS, fallbackUsed: true, error: "Supabase is not configured." }
+  }
+
+  const [fieldsRes, optionsRes] = await Promise.all([
+    sb.from("sales_crm_view_fields").select("*").order("position", { ascending: true }),
+    sb.from("sales_crm_select_options").select("*").order("field_key", { ascending: true }).order("position", { ascending: true }),
+  ])
+
+  const error = fieldsRes.error?.message ?? optionsRes.error?.message ?? null
+  if (error) {
+    return { fields: DEFAULT_CRM_VIEW_FIELDS, options: DEFAULT_CRM_SELECT_OPTIONS, fallbackUsed: true, error }
+  }
+
+  return {
+    fields: ((fieldsRes.data ?? []) as CrmViewFieldRow[]).map(mapField),
+    options: ((optionsRes.data ?? []) as CrmSelectOptionRow[]).map(mapOption),
+    fallbackUsed: false,
+    error: null,
+  }
+}
+
+export async function saveSalesCrmFieldConfig(input: {
+  fields: SalesCrmViewField[]
+  options: SalesCrmSelectOption[]
+}): Promise<{ fields: SalesCrmViewField[]; options: SalesCrmSelectOption[] }> {
+  const sb = getServiceSalesSupabase()
+  if (!sb) throw new Error("Supabase service_role is not configured.")
+
+  const fieldRows = input.fields.map((field) => ({
+    field_key: field.fieldKey,
+    twenty_field_name: field.twentyFieldName,
+    label: field.label,
+    position: field.position,
+    is_visible: field.isVisible,
+    field_type: field.fieldType,
+    description: field.description,
+  }))
+  const optionRows = input.options.map((item) => ({
+    field_key: item.fieldKey,
+    value: item.value,
+    label: item.label,
+    country_code: item.countryCode,
+    position: item.position,
+    is_active: item.isActive,
+    color: item.color,
+  }))
+
+  const fieldsRes = await sb
+    .from("sales_crm_view_fields")
+    .upsert(fieldRows, { onConflict: "field_key" })
+    .select("*")
+    .order("position", { ascending: true })
+  if (fieldsRes.error) throw new Error(fieldsRes.error.message)
+
+  const optionsRes = await sb
+    .from("sales_crm_select_options")
+    .upsert(optionRows, { onConflict: "field_key,value" })
+    .select("*")
+    .order("field_key", { ascending: true })
+    .order("position", { ascending: true })
+  if (optionsRes.error) throw new Error(optionsRes.error.message)
+
+  return {
+    fields: ((fieldsRes.data ?? []) as CrmViewFieldRow[]).map(mapField),
+    options: ((optionsRes.data ?? []) as CrmSelectOptionRow[]).map(mapOption),
+  }
+}

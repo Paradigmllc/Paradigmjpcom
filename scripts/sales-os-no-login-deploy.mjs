@@ -252,6 +252,10 @@ async function applyVideoProductionMigration(envs) {
   return applySqlMigration(envs, "migration_028_sales_video_production_profiles_r2.sql", "Video production profile migration")
 }
 
+async function applyCrmFieldMasterMigration(envs) {
+  return applySqlMigration(envs, "migration_029_sales_crm_field_master.sql", "CRM field master migration")
+}
+
 function applyContentTemplates(envs) {
   const { url, key } = salesSupabase(envs)
   const result = spawnSync(process.execPath, ["scripts/seed-sales-content-templates.mjs"], {
@@ -315,6 +319,7 @@ async function main() {
     console.log(await applyVideoPipelineMigration(envs))
     console.log(await applyVideoStrategyMigration(envs))
     console.log(await applyVideoProductionMigration(envs))
+    console.log(await applyCrmFieldMasterMigration(envs))
     console.log(applyContentTemplates(envs))
   } else {
     console.log("Dry run: skipped Supabase product upsert")

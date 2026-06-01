@@ -23,6 +23,7 @@ import {
 import { toast } from "sonner"
 import type { DashboardCompany, DashboardToolConnection, SalesDashboardData } from "@/lib/sales/dashboard"
 import { scopedReportHref } from "@/lib/sales/locale-scope"
+import { SalesCrmFieldSettingsPanel } from "./SalesCrmFieldSettingsPanel"
 
 export function formatNumber(value: number): string {
   return new Intl.NumberFormat("ja-JP").format(value)
@@ -354,6 +355,12 @@ export function OperatorPanel({ data }: { data: SalesDashboardData }) {
 export function CrmPanel({ data }: { data: SalesDashboardData }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
+      <SalesCrmFieldSettingsPanel
+        fields={data.crmFieldConfig.fields}
+        options={data.crmFieldConfig.options}
+        fallbackUsed={data.crmFieldConfig.fallbackUsed}
+        error={data.crmFieldConfig.error}
+      />
       <BarList title="商談ステージ" rows={sortedEntries(data.stageCounts)} empty="商談データがありません。" />
       <div className="rounded-lg border border-zinc-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-zinc-950">最新アクティビティ</h2>

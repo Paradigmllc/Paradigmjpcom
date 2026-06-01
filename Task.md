@@ -663,3 +663,13 @@
 - [x] Preview modes now cover diagnostic report, form outreach copy, sales deck, sales video storyboard, and Astro replacement demo layout.
 - [x] Split `TemplateRow` into `src/components/sales-dashboard/template-workbench-types.ts` and kept the preview component separate from the editor to stay under the file-size rule.
 - [x] Verification: `npx tsc --noEmit --pretty false`, targeted Vitest sales tests, and `npm run build` passed. Local build still prints existing PayloadCMS local Postgres fallback warnings because localhost Postgres is not running, but exits 0.
+
+## Codex Update - 2026-06-01 Twenty Sales List Field Masters
+
+- [x] Added Supabase SSOT tables `sales_crm_view_fields` and `sales_crm_select_options` via `supabase/migration_029_sales_crm_field_master.sql`.
+- [x] Seeded DB-backed masters for Twenty Companies column labels/order/visibility plus country, region, industry, source, and sales status options.
+- [x] Added `/api/sales/crm-field-config` and the Sales Command Center CRM tab GUI for editing column labels, order, visibility, and select-option masters.
+- [x] Added a Twenty metadata apply hook that can reflect GUI saves into Twenty when `TWENTY_DATABASE_URL` is configured.
+- [x] Applied live Twenty metadata SQL so `国名`, `地域名`, `業種名`, `ソース元`, and `営業ステータス` are SELECT fields rather than free-text fields.
+- [x] Removed the invalid `NonConvert` Twenty industry value from the live workspace data.
+- Verification: `npx tsc --noEmit --pretty false`, `npm test -- --run`, `npm run build`, and `npm audit --omit=dev` passed.
