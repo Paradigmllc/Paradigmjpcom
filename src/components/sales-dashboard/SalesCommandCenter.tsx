@@ -152,6 +152,20 @@ function normalizeTab(value: string | null): SalesTab {
   return value && tabIds.has(value as SalesTab) ? (value as SalesTab) : "overview";
 }
 
+function formatGeneratedAt(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(date);
+}
+
 const localeLabels: Record<string, { country: string; language: string }> = {
   ja: { country: "日本", language: "日本語" },
   en: { country: "Global / US", language: "English" },
@@ -260,7 +274,7 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
                 <span className="rounded-full bg-emerald-50 px-2 py-1 font-semibold text-emerald-700">
                   {data.status}
                 </span>
-                <span>{new Date(data.generatedAt).toLocaleString("ja-JP")}</span>
+                <span>{formatGeneratedAt(data.generatedAt)}</span>
               </div>
               <h1 className="mt-3 text-balance text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
                 Salesforce x Apollo.io風 営業ダッシュボード
