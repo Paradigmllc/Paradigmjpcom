@@ -1,3 +1,10 @@
+## Codex Update - 2026-06-01 CRM DnD and Twenty Metadata Reflection
+
+- [x] Replaced numeric CRM display-order editing with D&D Kit sortable rows for both Twenty Companies columns and select-option masters.
+- [x] Fixed the Twenty reflection path: CRM labels, select options, visibility, and positions now update through Twenty's official `/rest/metadata` API when `TWENTY_BASE_URL` and `TWENTY_API_KEY` are configured, instead of relying only on direct DB writes that can leave the Twenty UI cache stale.
+- [x] Kept Supabase as SSOT for the CRM display master while returning Twenty reflection status to the Sales OS toast, including the existing-tab reload note for already-open Twenty sessions.
+- [x] Verification: `npx tsc --noEmit --pretty false`, full `npm test -- --run`, `npm run build`, and `npm audit --omit=dev` passed locally before deployment.
+
 ## Codex Update - 2026-06-01 Template Preview Usability Fix
 
 - [x] Fixed the Sales OS template workbench preview so the active preview automatically follows the selected asset type: diagnostic report, Astro demo, sales deck, or sales video.

@@ -1,7 +1,24 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { Plus, Save, Settings2 } from "lucide-react"
+import { useMemo, useState, type ReactNode } from "react"
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  type DragEndEvent,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core"
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
+import { GripVertical, Plus, Save, Settings2 } from "lucide-react"
 import { toast } from "sonner"
 import type { SalesCrmSelectOption, SalesCrmViewField } from "@/lib/sales/crm-field-config"
 
@@ -15,19 +32,146 @@ const MASTER_LABELS: Record<string, string> = {
 
 const COLOR_OPTIONS = ["gray", "blue", "green", "yellow", "orange", "red", "pink", "purple", "cyan", "teal"] as const
 
+function fieldKey(field: SalesCrmViewField) {
+  return field.fieldKey
+}
+
+function optionKey(option: SalesCrmSelectOption) {
+  return option.id ?? `${option.fieldKey}:${option.value}`
+}
+
 function normalizeFields(fields: SalesCrmViewField[]) {
-  return fields
-    .map((field) => ({ ...field, position: Number(field.position) }))
-    .sort((a, b) => a.position - b.position)
+  return fields.map((field) => ({ ...field, position: Number(field.position) })).sort((a, b) => a.position - b.position)
 }
 
 function normalizeOptions(options: SalesCrmSelectOption[]) {
   return options
     .map((option) => ({ ...option, position: Number(option.position), countryCode: option.countryCode ?? null }))
-    .sort((a, b) => {
-      if (a.fieldKey !== b.fieldKey) return a.fieldKey.localeCompare(b.fieldKey)
-      return a.position - b.position
-    })
+    .sort((a, b) => (a.fieldKey === b.fieldKey ? a.position - b.position : a.fieldKey.localeCompare(b.fieldKey)))
+}
+
+function SortableShell({
+  id,
+  label,
+  children,
+  columns,
+}: {
+  id: string
+  label: string
+  children: ReactNode
+  columns: string
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`grid items-center gap-3 border-t border-zinc-100 px-3 py-2 text-sm ${columns} ${isDragging ? "relative z-10 rounded-md bg-white shadow-lg ring-1 ring-zinc-200" : "bg-white"}`}
+    >
+      <button
+        type="button"
+        aria-label={`${label}をドラッグして並び替え`}
+        className="inline-flex h-8 w-8 cursor-grab items-center justify-center rounded-md border border-zinc-200 text-zinc-500 active:cursor-grabbing"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical size={16} aria-hidden />
+      </button>
+      {children}
+    </div>
+  )
+}
+
+function FieldRow({
+  field,
+  onChange,
+}: {
+  field: SalesCrmViewField
+  onChange: (patch: Partial<SalesCrmViewField>) => void
+}) {
+  return (
+    <SortableShell
+      id={fieldKey(field)}
+      label={field.label}
+      columns="grid-cols-[32px_minmax(150px,1.25fr)_minmax(150px,1fr)_88px_72px]"
+    >
+      <input
+        value={field.label}
+        onChange={(event) => onChange({ label: event.target.value })}
+        aria-label={`${field.fieldKey}の表記名`}
+        className="h-9 rounded-md border border-zinc-200 px-2 text-sm"
+      />
+      <div className="truncate text-xs text-zinc-500">{field.twentyFieldName}</div>
+      <div className="text-xs text-zinc-500">{field.fieldType}</div>
+      <label className="inline-flex items-center gap-2 text-xs text-zinc-600">
+        <input
+          type="checkbox"
+          checked={field.isVisible}
+          onChange={(event) => onChange({ isVisible: event.target.checked })}
+          aria-label={`${field.label}を表示`}
+          className="h-4 w-4 rounded border-zinc-300"
+        />
+        表示
+      </label>
+    </SortableShell>
+  )
+}
+
+function OptionRow({
+  option,
+  onChange,
+}: {
+  option: SalesCrmSelectOption
+  onChange: (patch: Partial<SalesCrmSelectOption>) => void
+}) {
+  return (
+    <SortableShell
+      id={optionKey(option)}
+      label={option.label}
+      columns="grid-cols-[32px_minmax(150px,1fr)_minmax(150px,1fr)_96px_112px_72px]"
+    >
+      <input
+        value={option.label}
+        onChange={(event) => onChange({ label: event.target.value })}
+        aria-label={`${option.value}の表示名`}
+        className="h-9 rounded-md border border-zinc-200 px-2 text-sm"
+      />
+      <input
+        value={option.value}
+        onChange={(event) => onChange({ value: event.target.value })}
+        aria-label={`${option.label}の値`}
+        className="h-9 rounded-md border border-zinc-200 px-2 text-sm"
+      />
+      <input
+        value={option.countryCode ?? ""}
+        onChange={(event) => onChange({ countryCode: event.target.value.trim() || null })}
+        aria-label={`${option.label}の国コード`}
+        className="h-9 rounded-md border border-zinc-200 px-2 text-sm uppercase"
+      />
+      <select
+        value={option.color}
+        onChange={(event) => onChange({ color: event.target.value })}
+        aria-label={`${option.label}の色`}
+        className="h-9 rounded-md border border-zinc-200 px-2 text-sm"
+      >
+        {COLOR_OPTIONS.map((color) => (
+          <option key={color} value={color}>
+            {color}
+          </option>
+        ))}
+      </select>
+      <label className="inline-flex items-center gap-2 text-xs text-zinc-600">
+        <input
+          type="checkbox"
+          checked={option.isActive}
+          onChange={(event) => onChange({ isActive: event.target.checked })}
+          aria-label={`${option.label}を有効化`}
+          className="h-4 w-4 rounded border-zinc-300"
+        />
+        有効
+      </label>
+    </SortableShell>
+  )
 }
 
 export function SalesCrmFieldSettingsPanel({
@@ -45,18 +189,46 @@ export function SalesCrmFieldSettingsPanel({
   const [options, setOptions] = useState(() => normalizeOptions(initialOptions))
   const [master, setMaster] = useState("country")
   const [saving, setSaving] = useState(false)
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
 
   const visibleMasterOptions = useMemo(
     () => options.filter((option) => option.fieldKey === master).sort((a, b) => a.position - b.position),
     [master, options],
   )
 
-  function updateField(fieldKey: string, patch: Partial<SalesCrmViewField>) {
-    setFields((current) => current.map((field) => (field.fieldKey === fieldKey ? { ...field, ...patch } : field)))
+  function updateField(targetKey: string, patch: Partial<SalesCrmViewField>) {
+    setFields((current) => current.map((field) => (fieldKey(field) === targetKey ? { ...field, ...patch } : field)))
   }
 
-  function updateOption(index: number, patch: Partial<SalesCrmSelectOption>) {
-    setOptions((current) => current.map((option, itemIndex) => (itemIndex === index ? { ...option, ...patch } : option)))
+  function updateOption(targetKey: string, patch: Partial<SalesCrmSelectOption>) {
+    setOptions((current) => current.map((option) => (optionKey(option) === targetKey ? { ...option, ...patch } : option)))
+  }
+
+  function reorderFields(event: DragEndEvent) {
+    const activeId = String(event.active.id)
+    const overId = event.over ? String(event.over.id) : null
+    if (!overId || activeId === overId) return
+    setFields((current) => {
+      const oldIndex = current.findIndex((field) => fieldKey(field) === activeId)
+      const newIndex = current.findIndex((field) => fieldKey(field) === overId)
+      if (oldIndex < 0 || newIndex < 0) return current
+      return arrayMove(current, oldIndex, newIndex).map((field, position) => ({ ...field, position }))
+    })
+  }
+
+  function reorderOptions(event: DragEndEvent) {
+    const activeId = String(event.active.id)
+    const overId = event.over ? String(event.over.id) : null
+    if (!overId || activeId === overId) return
+    const oldIndex = visibleMasterOptions.findIndex((option) => optionKey(option) === activeId)
+    const newIndex = visibleMasterOptions.findIndex((option) => optionKey(option) === overId)
+    if (oldIndex < 0 || newIndex < 0) return
+    const reordered = arrayMove(visibleMasterOptions, oldIndex, newIndex).map((option, position) => ({ ...option, position }))
+    const reorderedByKey = new Map(reordered.map((option) => [optionKey(option), option]))
+    setOptions((current) => current.map((option) => reorderedByKey.get(optionKey(option)) ?? option))
   }
 
   function addOption() {
@@ -88,7 +260,7 @@ export function SalesCrmFieldSettingsPanel({
         error?: string
         fields?: SalesCrmViewField[]
         options?: SalesCrmSelectOption[]
-        twenty?: { configured?: boolean; error?: string | null; appliedFields?: number; selectFields?: number }
+        twenty?: { configured?: boolean; error?: string | null; appliedFields?: number }
       }
       if (!res.ok || !body.ok || !body.fields || !body.options) {
         toast.error(body.error ?? "CRM表示設定の保存に失敗しました")
@@ -97,7 +269,9 @@ export function SalesCrmFieldSettingsPanel({
       setFields(normalizeFields(body.fields))
       setOptions(normalizeOptions(body.options))
       if (body.twenty?.configured && !body.twenty.error) {
-        toast.success(`CRM表示設定を保存し、Twentyへ反映しました（${body.twenty.appliedFields ?? 0}項目）`)
+        toast.success(
+          `保存し、Twentyのmetadata APIへ反映しました（${body.twenty.appliedFields ?? 0}項目）。既に開いているTwentyタブは再読み込みで更新されます。`,
+        )
       } else if (body.twenty?.error) {
         toast.warning(`Supabaseには保存しました。Twenty反映は未完了: ${body.twenty.error}`)
       } else {
@@ -121,7 +295,7 @@ export function SalesCrmFieldSettingsPanel({
           </div>
           <h2 className="mt-2 text-lg font-semibold text-zinc-950">営業リスト表示列・選択肢マスタ</h2>
           <p className="mt-1 text-sm leading-relaxed text-zinc-500">
-            列の表記名、順番、表示状態と、国名・地域名・業種名などの選択肢をSupabase SSOTで管理します。
+            ハンドルをドラッグして並び替え、表記名と選択肢をSupabase SSOTから管理します。
           </p>
           {fallbackUsed || error ? (
             <p className="mt-2 rounded-md bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800">
@@ -145,54 +319,27 @@ export function SalesCrmFieldSettingsPanel({
         <div className="rounded-lg border border-zinc-200">
           <div className="border-b border-zinc-100 px-4 py-3">
             <h3 className="text-sm font-semibold text-zinc-950">Twenty表示列</h3>
-            <p className="mt-1 text-xs text-zinc-500">順番は数値で管理します。小さい順に左から表示されます。</p>
+            <p className="mt-1 text-xs text-zinc-500">
+              左端のハンドルをドラッグすると、その順番がTwenty Companiesに反映されます。保存後はTwentyの既存タブを再読み込みしてください。
+            </p>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-[720px] w-full text-left text-sm">
-              <thead className="bg-zinc-50 text-xs text-zinc-500">
-                <tr>
-                  <th className="px-3 py-2">順番</th>
-                  <th className="px-3 py-2">表記名</th>
-                  <th className="px-3 py-2">Twentyフィールド</th>
-                  <th className="px-3 py-2">種別</th>
-                  <th className="px-3 py-2">表示</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {fields.map((field) => (
-                  <tr key={field.fieldKey}>
-                    <td className="px-3 py-2">
-                      <input
-                        type="number"
-                        value={field.position}
-                        onChange={(event) => updateField(field.fieldKey, { position: Number(event.target.value) })}
-                        aria-label={`${field.label}の表示順`}
-                        className="h-9 w-20 rounded-md border border-zinc-200 px-2 text-sm"
-                      />
-                    </td>
-                    <td className="px-3 py-2">
-                      <input
-                        value={field.label}
-                        onChange={(event) => updateField(field.fieldKey, { label: event.target.value })}
-                        aria-label={`${field.fieldKey}の表記名`}
-                        className="h-9 w-full rounded-md border border-zinc-200 px-2 text-sm"
-                      />
-                    </td>
-                    <td className="px-3 py-2 text-xs text-zinc-500">{field.twentyFieldName}</td>
-                    <td className="px-3 py-2 text-xs text-zinc-500">{field.fieldType}</td>
-                    <td className="px-3 py-2">
-                      <input
-                        type="checkbox"
-                        checked={field.isVisible}
-                        onChange={(event) => updateField(field.fieldKey, { isVisible: event.target.checked })}
-                        aria-label={`${field.label}を表示`}
-                        className="h-4 w-4 rounded border-zinc-300"
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="min-w-[760px]">
+              <div className="grid grid-cols-[32px_minmax(150px,1.25fr)_minmax(150px,1fr)_88px_72px] gap-3 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-500">
+                <span />
+                <span>表記名</span>
+                <span>Twentyフィールド</span>
+                <span>種別</span>
+                <span>表示</span>
+              </div>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={reorderFields}>
+                <SortableContext items={fields.map(fieldKey)} strategy={verticalListSortingStrategy}>
+                  {fields.map((field) => (
+                    <FieldRow key={fieldKey(field)} field={field} onChange={(patch) => updateField(fieldKey(field), patch)} />
+                  ))}
+                </SortableContext>
+              </DndContext>
+            </div>
           </div>
         </div>
 
@@ -227,83 +374,27 @@ export function SalesCrmFieldSettingsPanel({
             </div>
           </div>
           <div className="max-h-[520px] overflow-auto">
-            <table className="min-w-[760px] w-full text-left text-sm">
-              <thead className="sticky top-0 bg-zinc-50 text-xs text-zinc-500">
-                <tr>
-                  <th className="px-3 py-2">順番</th>
-                  <th className="px-3 py-2">表示名</th>
-                  <th className="px-3 py-2">値</th>
-                  <th className="px-3 py-2">国コード</th>
-                  <th className="px-3 py-2">色</th>
-                  <th className="px-3 py-2">有効</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {visibleMasterOptions.map((option) => {
-                  const sourceIndex = options.findIndex((item) => item === option)
-                  return (
-                    <tr key={`${option.fieldKey}:${option.value}:${sourceIndex}`}>
-                      <td className="px-3 py-2">
-                        <input
-                          type="number"
-                          value={option.position}
-                          onChange={(event) => updateOption(sourceIndex, { position: Number(event.target.value) })}
-                          aria-label={`${option.label}の表示順`}
-                          className="h-9 w-20 rounded-md border border-zinc-200 px-2 text-sm"
-                        />
-                      </td>
-                      <td className="px-3 py-2">
-                        <input
-                          value={option.label}
-                          onChange={(event) => updateOption(sourceIndex, { label: event.target.value })}
-                          aria-label={`${option.value}の表示名`}
-                          className="h-9 w-full rounded-md border border-zinc-200 px-2 text-sm"
-                        />
-                      </td>
-                      <td className="px-3 py-2">
-                        <input
-                          value={option.value}
-                          onChange={(event) => updateOption(sourceIndex, { value: event.target.value })}
-                          aria-label={`${option.label}の値`}
-                          className="h-9 w-full rounded-md border border-zinc-200 px-2 text-sm"
-                        />
-                      </td>
-                      <td className="px-3 py-2">
-                        <input
-                          value={option.countryCode ?? ""}
-                          onChange={(event) => updateOption(sourceIndex, { countryCode: event.target.value.trim() || null })}
-                          aria-label={`${option.label}の国コード`}
-                          className="h-9 w-24 rounded-md border border-zinc-200 px-2 text-sm uppercase"
-                        />
-                      </td>
-                      <td className="px-3 py-2">
-                        <select
-                          value={option.color}
-                          onChange={(event) => updateOption(sourceIndex, { color: event.target.value })}
-                          aria-label={`${option.label}の色`}
-                          className="h-9 rounded-md border border-zinc-200 px-2 text-sm"
-                        >
-                          {COLOR_OPTIONS.map((color) => (
-                            <option key={color} value={color}>
-                              {color}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-3 py-2">
-                        <input
-                          type="checkbox"
-                          checked={option.isActive}
-                          onChange={(event) => updateOption(sourceIndex, { isActive: event.target.checked })}
-                          aria-label={`${option.label}を有効化`}
-                          className="h-4 w-4 rounded border-zinc-300"
-                        />
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+            <div className="min-w-[820px]">
+              <div className="sticky top-0 z-10 grid grid-cols-[32px_minmax(150px,1fr)_minmax(150px,1fr)_96px_112px_72px] gap-3 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-500">
+                <span />
+                <span>表示名</span>
+                <span>値</span>
+                <span>国コード</span>
+                <span>色</span>
+                <span>有効</span>
+              </div>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={reorderOptions}>
+                <SortableContext items={visibleMasterOptions.map(optionKey)} strategy={verticalListSortingStrategy}>
+                  {visibleMasterOptions.map((option) => (
+                    <OptionRow
+                      key={optionKey(option)}
+                      option={option}
+                      onChange={(patch) => updateOption(optionKey(option), patch)}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
+            </div>
           </div>
         </div>
       </div>
