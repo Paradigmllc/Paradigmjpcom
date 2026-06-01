@@ -3,6 +3,9 @@
 - [x] Fixed the CRM master design so `地域名` is no longer a global Twenty select list. Twenty standard selects cannot depend on the selected `国名`, so the durable design is: Twenty displays the finalized region text, while Sales OS manages country-scoped region candidates as the Supabase SSOT.
 - [x] Added country-scoped region editing in the CRM settings GUI: when editing `地域名`, operators choose the target country first, then add/edit/reorder only that country's region candidates.
 - [x] Hardened CRM config reads/saves so stale DB rows that still mark `region` as `select` are normalized back to `text`, and Twenty metadata application coerces country-dependent fields back to TEXT via the Twenty database after metadata API updates.
+- [x] Deployed commit `b9db66f` and verified live Twenty metadata: `地域名` is `TEXT` with zero global options, while `国名` and `営業ステータス` remain select fields.
+- [x] Recovered the live Twenty stack after the deploy exposed a missing `twenty-db` network alias: restored the PostgreSQL container from the preserved volume, restarted Twenty server/worker, and confirmed `https://twenty.paradigmjp.com` returns HTTP 200.
+- [x] Contained the runaway Hermes Agent gateway incident after it generated kernel OOM log storms and filled `/var/log/syslog` / `/var/log/kern.log`: logs were truncated, root disk recovered, and compose stop was tested. Coolify may revive the gateway service, so Hermes gateway remains flagged for MCP auth/runtime repair before heavy autonomous use.
 
 ## Codex Update - 2026-06-01 CRM DnD and Twenty Metadata Reflection
 
@@ -683,6 +686,6 @@
 - [x] Seeded DB-backed masters for Twenty Companies column labels/order/visibility plus country, region, industry, source, and sales status options.
 - [x] Added `/api/sales/crm-field-config` and the Sales Command Center CRM tab GUI for editing column labels, order, visibility, and select-option masters.
 - [x] Added a Twenty metadata apply hook that can reflect GUI saves into Twenty when `TWENTY_DATABASE_URL` is configured.
-- [x] Applied live Twenty metadata SQL so `国名`, `地域名`, `業種名`, `ソース元`, and `営業ステータス` are SELECT fields rather than free-text fields.
+- [x] Applied live Twenty metadata SQL so `国名`, `業種名`, `ソース元`, and `営業ステータス` are SELECT fields; `地域名` is intentionally TEXT because region options are country-dependent and are managed in Sales OS/Supabase, not as one global Twenty select.
 - [x] Removed the invalid `NonConvert` Twenty industry value from the live workspace data.
 - Verification: `npx tsc --noEmit --pretty false`, `npm test -- --run`, `npm run build`, and `npm audit --omit=dev` passed.
