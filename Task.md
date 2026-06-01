@@ -699,3 +699,12 @@
 - [x] Applied live Twenty metadata SQL so `国名`, `業種名`, `ソース元`, and `営業ステータス` are SELECT fields; `地域名` is intentionally TEXT because region options are country-dependent and are managed in Sales OS/Supabase, not as one global Twenty select.
 - [x] Removed the invalid `NonConvert` Twenty industry value from the live workspace data.
 - Verification: `npx tsc --noEmit --pretty false`, `npm test -- --run`, `npm run build`, and `npm audit --omit=dev` passed.
+## Codex Update - 2026-06-02 Video Studio Layout Stabilization
+
+- [x] Fixed the Revenue OS video-production tab layout so the composer no longer collides with readiness cards on normal desktop widths.
+- [x] Hardened long labels, select controls, job-type buttons, readiness cards, and production-lane cards with `min-w-0`, truncation, and later two-column breakpoints.
+- [x] Unified admin cross-app navigation so the Payload dashboard "open sales dashboard" link and Payload database-protection fallback link open Revenue OS in a new tab; OSS tool links were rechecked and already use `target="_blank" rel="noopener noreferrer"`.
+- [x] Confirmed CSV import behavior: `/api/sales/import-csv` defaults to enrichment on, writes rows to Supabase SSOT, queues `company_karte` jobs in `sales_enrichment_jobs`, and triggers the enrichment runner when jobs are enqueued. Production env has the required runner secret/base URL and Supabase service role present.
+- [x] Fixed `scripts/deploy.mjs` to reuse the existing Coolify auth helper, so the standard deploy command works with the stored no-login Coolify credentials instead of requiring a shell-only `COOLIFY_API_TOKEN`.
+- [x] Verification: local Chromium checks passed at 1365px, 1024px, and 390px with zero horizontal overflow; `npx tsc --noEmit --pretty false` passed.
+- [x] Production deploy: pushed commits `086792b` and `5291907`, deployed through Coolify deployment `dnmzn2wkryxky1yxsvf2djdt`, and verified `https://paradigmjp.com/ja/admin/sales?tab=videoPipeline`, `https://paradigmjp.com/ja`, and `https://twenty.paradigmjp.com` return HTTP 200. Coolify app status is `running:healthy`.

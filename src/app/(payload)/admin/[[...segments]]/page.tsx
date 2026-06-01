@@ -84,6 +84,8 @@ function PayloadAdminUnavailable() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 22 }}>
           <a
             href="/ja/admin/sales"
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               background: "#18181b",
               borderRadius: 6,

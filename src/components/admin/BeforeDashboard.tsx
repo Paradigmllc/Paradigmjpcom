@@ -245,6 +245,8 @@ export default async function BeforeDashboard({ payload }: { payload: Payload })
           </div>
           <a
             href={SALES_DASHBOARD_PATH}
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               alignSelf: "flex-start",
               borderRadius: 6,
