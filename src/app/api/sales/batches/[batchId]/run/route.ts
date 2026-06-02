@@ -10,23 +10,32 @@ interface Body {
   limit?: number
 }
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "lead batch scoring failed"
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ batchId: string }> },
 ) {
-  if (!(await isSalesApiAuthorized(req))) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
-  }
-
-  const { batchId } = await params
-  let body: Body = {}
   try {
-    body = (await req.json()) as Body
-  } catch (error) {
-    console.warn("[sales-batch-run] empty or invalid JSON body:", error)
-  }
+    if (!(await isSalesApiAuthorized(req))) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+    }
 
-  const limit = Math.max(1, Math.min(Number(body.limit ?? 500), 2000))
-  const result = await qualifyLeadBatch(batchId, limit)
-  return NextResponse.json(result, { status: result.ok ? 200 : 503 })
+    const { batchId } = await params
+    let body: Body = {}
+    try {
+      body = (await req.json()) as Body
+    } catch (error) {
+      console.warn("[sales-batch-run] empty or invalid JSON body:", error)
+    }
+
+    const limit = Math.max(1, Math.min(Number(body.limit ?? 500), 2000))
+    const result = await qualifyLeadBatch(batchId, limit)
+    return NextResponse.json(result, { status: result.ok ? 200 : 503 })
+  } catch (error) {
+    console.error("[sales-batch-run] POST failed:", error)
+    return NextResponse.json({ ok: false, error: errorMessage(error) }, { status: 500 })
+  }
 }

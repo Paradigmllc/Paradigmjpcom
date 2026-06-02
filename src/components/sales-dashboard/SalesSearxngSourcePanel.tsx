@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { DatabaseZap, DownloadCloud, RefreshCw, Search, ShieldCheck } from "lucide-react"
 import { toast } from "sonner"
+import { readSalesApiJson } from "@/lib/sales/client-api"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 import type { SalesLeadBatchSummary } from "@/lib/sales/monthly-batch"
 import type { SearxngRunSummary } from "@/lib/sales/searxng-source"
@@ -126,7 +127,7 @@ export function SalesSearxngSourcePanel({
 
   async function refresh() {
     const res = await fetch(`/api/sales/searxng/runs?locale=${data.scope.reportLocale}&limit=8`, { credentials: "include" })
-    const json = (await res.json()) as ApiRunsResult
+    const json = await readSalesApiJson<ApiRunsResult>(res)
     if (!res.ok || !json.ok) throw new Error(json.error ?? `HTTP ${res.status}`)
     setRuns(json.runs ?? [])
   }
@@ -154,7 +155,7 @@ export function SalesSearxngSourcePanel({
           target_country: data.scope.targetCountry,
         }),
       })
-      const json = (await res.json()) as ApiRunsResult
+      const json = await readSalesApiJson<ApiRunsResult>(res)
       if (!res.ok || !json.ok) throw new Error(json.error ?? `HTTP ${res.status}`)
       toast.success(`SearxNG検索を保存しました: ${formatNumber(json.run?.readyCount ?? 0)}件が投入候補`)
       await refresh()
@@ -175,7 +176,7 @@ export function SalesSearxngSourcePanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ min_score: minScore, limit, enrich: true, max_outreach_ready: 300 }),
       })
-      const json = (await res.json()) as ImportResult
+      const json = await readSalesApiJson<ImportResult>(res)
       if (!res.ok || !json.ok) throw new Error(json.error ?? `HTTP ${res.status}`)
       toast.success(`月次バッチへ投入しました: ${formatNumber(json.imported ?? 0)}件`)
       await refresh()

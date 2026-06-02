@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { DatabaseZap, Search, UploadCloud } from "lucide-react"
 import { toast } from "sonner"
+import { readSalesApiJson } from "@/lib/sales/client-api"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 import type { LeadDiscoveryCandidate, LeadDiscoverySource } from "@/lib/sales/sources/lead-discovery"
 
@@ -114,7 +115,7 @@ export function SalesLeadDiscoveryPanel({ data }: { data: SalesDashboardData }) 
           target_country: data.scope.targetCountry,
         }),
       })
-      const json = (await res.json()) as ApiResult
+      const json = await readSalesApiJson<ApiResult>(res)
       if (!res.ok || !json.ok) throw new Error(json.error ?? `HTTP ${res.status}`)
       setCandidates(json.candidates ?? [])
       if (importNow) {

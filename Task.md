@@ -807,3 +807,10 @@
 - [x] Added richer visual treatment to the management sections: impact tiles, colored business-risk bands, animated loss snapshot, category coverage bars, and clearer improvement-line comparison.
 - [x] Added `src/components/diagnostic/report-copy.test.ts` to block customer-facing mojibake from returning to report renderers and the diagnostic data builder.
 - [x] Verification: `npx tsc --noEmit --pretty false`, targeted diagnostic/report copy Vitest, full `npm test -- --run` (35 files / 158 tests), `git diff --check`, and `npm run build` passed. Local `next start` from `D:\dev\paradigmjpcom` served the route, but sample report slugs rendered 404 because Sales Supabase env is not configured locally; Desktop path still has the known Next routes-manifest path-mixing issue.
+
+## Codex Update - 2026-06-02 Revenue OS API JSON Guard
+
+- [x] Investigated the production Revenue OS toast `Unexpected token '<', "<!DOCTYPE "... is not valid JSON`; unauthenticated production API checks confirmed `/api/sales/lead-discovery` exists and returns JSON 401, so the failure is from an authenticated operation receiving an HTML error page or non-JSON response after entering the workflow.
+- [x] Added a shared client-side Sales API JSON reader that logs non-JSON response status/content type/snippet and shows an operator-readable error instead of the raw `DOCTYPE` parse failure.
+- [x] Replaced direct `res.json()` calls in the lead discovery, SearxNG run/import, monthly batch create/run, and Japan readiness panels.
+- [x] Wrapped the corresponding Sales API routes in explicit `try/catch` guards so server exceptions return structured JSON instead of falling through to a Next.js HTML error page.

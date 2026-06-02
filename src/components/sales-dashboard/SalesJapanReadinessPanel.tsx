@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { AlertTriangle, ExternalLink, FileText, Loader2, Sparkles } from "lucide-react"
 import { toast } from "sonner"
+import { readSalesApiJson } from "@/lib/sales/client-api"
 import type { DashboardCompany, SalesDashboardData } from "@/lib/sales/dashboard"
 import type { JapanReadinessInsightSummary } from "@/lib/sales/japan-readiness"
 import { formatDate, formatNumber } from "./SalesCommandPanels"
@@ -119,7 +120,7 @@ export function SalesJapanReadinessPanel({ data }: { data: SalesDashboardData })
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refresh_audit: true, probe_shopify: true, use_dify: true }),
       })
-      const json = (await res.json()) as ApiResponse
+      const json = await readSalesApiJson<ApiResponse>(res)
       if (!res.ok || !json.ok || !json.insight) throw new Error(json.error ?? `HTTP ${res.status}`)
       setInsights((current) => [json.insight as JapanReadinessInsightSummary, ...current.filter((item) => item.companyId !== company.id)].slice(0, 8))
       toast.success("日本進出インサイトを生成しました。送信前レビューに回せます。")

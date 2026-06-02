@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { CheckCircle2, FileUp, Gauge, Play, RefreshCw, UploadCloud } from "lucide-react"
 import { toast } from "sonner"
+import { readSalesApiJson } from "@/lib/sales/client-api"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 import type { SalesLeadBatchSummary } from "@/lib/sales/monthly-batch"
 import { formatDate, formatNumber, statusTone } from "./SalesCommandPanels"
@@ -192,7 +193,7 @@ export function SalesBatchOpsPanel({ data }: { data: SalesDashboardData }) {
 
   async function refresh() {
     const res = await fetch(`/api/sales/batches?locale=${data.scope.reportLocale}&limit=8`, { credentials: "include" })
-    const json = (await res.json()) as { ok?: boolean; batches?: SalesLeadBatchSummary[]; error?: string }
+    const json = await readSalesApiJson<{ ok?: boolean; batches?: SalesLeadBatchSummary[]; error?: string }>(res)
     if (!res.ok || !json.ok) throw new Error(json.error ?? `HTTP ${res.status}`)
     setBatches(json.batches ?? [])
   }
@@ -220,7 +221,7 @@ export function SalesBatchOpsPanel({ data }: { data: SalesDashboardData }) {
           dry_run_only: true,
         }),
       })
-      const json = (await res.json()) as { ok?: boolean; batch?: SalesLeadBatchSummary; error?: string }
+      const json = await readSalesApiJson<{ ok?: boolean; batch?: SalesLeadBatchSummary; error?: string }>(res)
       if (!res.ok || !json.ok) throw new Error(json.error ?? `HTTP ${res.status}`)
       toast.success("月次バッチを作成し、調査キューへ接続しました。")
       setCsvText("")
@@ -243,7 +244,7 @@ export function SalesBatchOpsPanel({ data }: { data: SalesDashboardData }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ limit: 1000 }),
       })
-      const json = (await res.json()) as { ok?: boolean; processed?: number; outreachReady?: number; manualReview?: number; rejected?: number; error?: string }
+      const json = await readSalesApiJson<{ ok?: boolean; processed?: number; outreachReady?: number; manualReview?: number; rejected?: number; error?: string }>(res)
       if (!res.ok || !json.ok) throw new Error(json.error ?? `HTTP ${res.status}`)
       toast.success(`判定完了: 処理 ${json.processed ?? 0} / 送信候補 ${json.outreachReady ?? 0} / 手動確認 ${json.manualReview ?? 0}`)
       await refresh()

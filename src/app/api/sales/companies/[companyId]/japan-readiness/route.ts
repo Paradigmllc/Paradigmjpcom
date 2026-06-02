@@ -16,33 +16,47 @@ interface GenerateBody {
   use_dify?: boolean
 }
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Japan readiness request failed"
+}
+
 export async function GET(req: NextRequest, context: RouteContext) {
-  if (!(await isSalesApiAuthorized(req))) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+  try {
+    if (!(await isSalesApiAuthorized(req))) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+    }
+    const { companyId } = await context.params
+    const result = await getJapanReadinessInsight(companyId)
+    return NextResponse.json(result, { status: result.ok ? 200 : 503 })
+  } catch (error) {
+    console.error("[sales-japan-readiness] GET failed:", error)
+    return NextResponse.json({ ok: false, error: errorMessage(error) }, { status: 500 })
   }
-  const { companyId } = await context.params
-  const result = await getJapanReadinessInsight(companyId)
-  return NextResponse.json(result, { status: result.ok ? 200 : 503 })
 }
 
 export async function POST(req: NextRequest, context: RouteContext) {
-  if (!(await isSalesApiAuthorized(req))) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
-  }
-
-  let body: GenerateBody = {}
   try {
-    body = (await req.json()) as GenerateBody
-  } catch (error) {
-    console.error("[sales-japan-readiness] invalid JSON body:", error)
-    return NextResponse.json({ ok: false, error: "invalid json body" }, { status: 400 })
-  }
+    if (!(await isSalesApiAuthorized(req))) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+    }
 
-  const { companyId } = await context.params
-  const result = await generateJapanReadinessInsight(companyId, {
-    refreshAudit: body.refresh_audit !== false,
-    probeShopify: body.probe_shopify !== false,
-    useDify: body.use_dify !== false,
-  })
-  return NextResponse.json(result, { status: result.ok ? 200 : 503 })
+    let body: GenerateBody = {}
+    try {
+      body = (await req.json()) as GenerateBody
+    } catch (error) {
+      console.error("[sales-japan-readiness] invalid JSON body:", error)
+      return NextResponse.json({ ok: false, error: "invalid json body" }, { status: 400 })
+    }
+
+    const { companyId } = await context.params
+    const result = await generateJapanReadinessInsight(companyId, {
+      refreshAudit: body.refresh_audit !== false,
+      probeShopify: body.probe_shopify !== false,
+      useDify: body.use_dify !== false,
+    })
+    return NextResponse.json(result, { status: result.ok ? 200 : 503 })
+  } catch (error) {
+    console.error("[sales-japan-readiness] POST failed:", error)
+    return NextResponse.json({ ok: false, error: errorMessage(error) }, { status: 500 })
+  }
 }
