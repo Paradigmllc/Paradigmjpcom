@@ -6,6 +6,9 @@ import type { SalesVideoJob, VideoPipelineConfig } from "@/lib/sales/video-pipel
 import type { SalesLocaleScope } from "@/lib/sales/locale-scope"
 import type { SalesCrmSelectOption, SalesCrmViewField } from "@/lib/sales/crm-field-config"
 import type { SourceAcquisitionSummary } from "@/lib/sales/source-acquisition"
+import type { SalesLeadBatchSummary } from "@/lib/sales/monthly-batch"
+import type { SearxngRunSummary } from "@/lib/sales/searxng-source"
+import type { JapanReadinessInsightSummary } from "@/lib/sales/japan-readiness"
 
 export type SalesDashboardStatus = "ready" | "degraded"
 
@@ -145,6 +148,9 @@ export interface SalesDashboardData {
   issueCounts: Record<string, number>
   sourceCounts: Record<string, number>
   sourceAcquisition: SourceAcquisitionSummary
+  leadBatches: SalesLeadBatchSummary[]
+  searxngRuns: SearxngRunSummary[]
+  japanReadinessInsights: JapanReadinessInsightSummary[]
   companies: DashboardCompany[]
   activities: DashboardActivity[]
   syncLogs: DashboardSyncLog[]

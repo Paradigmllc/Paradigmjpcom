@@ -260,6 +260,18 @@ async function applySourceTechMetricsMigration(envs) {
   return applySqlMigration(envs, "migration_030_sales_source_tech_metrics.sql", "Source tech metrics migration")
 }
 
+async function applyMonthlyLeadBatchMigration(envs) {
+  return applySqlMigration(envs, "migration_031_sales_monthly_lead_batches.sql", "Monthly lead batch migration")
+}
+
+async function applySearxngSearchRunsMigration(envs) {
+  return applySqlMigration(envs, "migration_032_sales_searxng_search_runs.sql", "SearxNG search runs migration")
+}
+
+async function applyJapanReadinessInsightsMigration(envs) {
+  return applySqlMigration(envs, "migration_033_sales_japan_readiness_insights.sql", "Japan readiness insights migration")
+}
+
 function applyContentTemplates(envs) {
   const { url, key } = salesSupabase(envs)
   const result = spawnSync(process.execPath, ["scripts/seed-sales-content-templates.mjs"], {
@@ -325,6 +337,9 @@ async function main() {
     console.log(await applyVideoProductionMigration(envs))
     console.log(await applyCrmFieldMasterMigration(envs))
     console.log(await applySourceTechMetricsMigration(envs))
+    console.log(await applyMonthlyLeadBatchMigration(envs))
+    console.log(await applySearxngSearchRunsMigration(envs))
+    console.log(await applyJapanReadinessInsightsMigration(envs))
     console.log(applyContentTemplates(envs))
   } else {
     console.log("Dry run: skipped Supabase product upsert")

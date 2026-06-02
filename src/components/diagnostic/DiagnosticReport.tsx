@@ -6,12 +6,12 @@ import type { DiagnosticAct, DiagnosticReportData } from "@/lib/sales/diagnostic
 import { signalScore, type IntelligenceSignal, type PainPoint } from "@/lib/sales/company-intelligence"
 import type { SourceCoverageItem } from "@/lib/sales/source-coverage"
 import { labelForIndustry, scoreTone, themeForIndustry } from "@/lib/sales/render-quality"
-import { REPORT_COPY, normalizeReportLang, type ReportCopy, type ReportLang } from "./report-copy"
 import { AuditConversionSections } from "./AuditConversionSections"
+import { REPORT_COPY, normalizeReportLang, type ReportCopy, type ReportLang } from "./report-copy"
 
 const SEVERITY = {
   critical: { ja: "最優先", en: "Critical", className: "border-rose-200 bg-rose-50 text-rose-700" },
-  warning: { ja: "要改善", en: "Action needed", className: "border-amber-200 bg-amber-50 text-amber-800" },
+  warning: { ja: "改善余地", en: "Action needed", className: "border-amber-200 bg-amber-50 text-amber-800" },
   info: { ja: "機会", en: "Opportunity", className: "border-emerald-200 bg-emerald-50 text-emerald-700" },
 } as const
 
@@ -42,12 +42,9 @@ function useInView(threshold = 0.14): [RefObject<HTMLDivElement | null>, boolean
   const ref = useRef<HTMLDivElement>(null)
   const [inView, setInView] = useState(false)
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) setInView(true)
-      },
-      { threshold },
-    )
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) setInView(true)
+    }, { threshold })
     if (ref.current) observer.observe(ref.current)
     return () => observer.disconnect()
   }, [threshold])
@@ -80,7 +77,7 @@ function ActCard({ act, index, lang }: { act: DiagnosticAct; index: number; lang
   return (
     <article
       ref={ref}
-      className="grid gap-5 rounded-lg border border-zinc-200 bg-white p-5 shadow-sm md:grid-cols-[minmax(0,1fr)_164px]"
+      className="grid gap-5 rounded-lg border border-zinc-200 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md md:grid-cols-[minmax(0,1fr)_164px]"
       style={{
         opacity: inView ? 1 : 0,
         transform: inView ? "translateY(0)" : "translateY(18px)",
@@ -111,7 +108,7 @@ function ActCard({ act, index, lang }: { act: DiagnosticAct; index: number; lang
 
 function SignalCard({ signal, copy }: { signal: IntelligenceSignal; copy: ReportCopy }) {
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-4">
+    <div className="rounded-lg border border-zinc-200 bg-white p-4 transition duration-300 hover:-translate-y-1 hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-sm font-semibold text-zinc-950">{signal.label}</div>
@@ -121,17 +118,13 @@ function SignalCard({ signal, copy }: { signal: IntelligenceSignal; copy: Report
           {signal.value}
         </span>
       </div>
-      <p className="mt-3 text-xs leading-6 text-zinc-600">{signal.detail}</p>
-      <div className="mt-3 rounded-md bg-zinc-50 p-3 text-xs leading-6 text-zinc-700">
-        <div className="font-semibold text-zinc-500">{copy.whyImportant}</div>
-        <p className="mt-1">{signal.whyItMatters}</p>
-        {signal.missingConsequence && (
-          <>
-            <div className="mt-3 font-semibold text-zinc-500">{copy.missingTreatment}</div>
-            <p className="mt-1">{signal.missingConsequence}</p>
-          </>
-        )}
-      </div>
+      <p className="mt-3 text-xs leading-6 text-zinc-600">{signal.whyItMatters}</p>
+      {signal.missingConsequence && (
+        <p className="mt-3 rounded-md bg-zinc-50 p-3 text-xs leading-6 text-zinc-700">
+          <span className="font-semibold text-zinc-500">{copy.missingTreatment}: </span>
+          {signal.missingConsequence}
+        </p>
+      )}
     </div>
   )
 }
@@ -170,20 +163,17 @@ function SourceRow({ item, copy }: { item: SourceCoverageItem; copy: ReportCopy 
     <div className="border-t border-zinc-100 py-4 first:border-t-0 first:pt-0 last:pb-0">
       <div className="flex items-center justify-between gap-2">
         <span className="truncate text-xs font-semibold text-zinc-950">{item.label}</span>
-        <span className={`rounded border px-2 py-0.5 text-[11px] font-semibold ${TONE_BADGE[tone]}`}>
-          {item.status}
-        </span>
+        <span className={`rounded border px-2 py-0.5 text-[11px] font-semibold ${TONE_BADGE[tone]}`}>{item.status}</span>
       </div>
       <p className="mt-2 text-[11px] leading-5 text-zinc-500">{item.detail}</p>
-      <div className="mt-3 space-y-2 text-[11px] leading-5 text-zinc-700">
-        <p><span className="font-semibold text-zinc-500">{copy.sourceMeaning}: </span>{item.meaning}</p>
-        {item.status === "missing" ? (
-          <p><span className="font-semibold text-rose-700">{copy.sourceMissingImpact}: </span>{item.missingConsequence}</p>
-        ) : (
-          <p><span className="font-semibold text-emerald-700">{copy.sourceUse}: </span>{copy.sourceUseBody}</p>
-        )}
-        <p><span className="font-semibold text-zinc-500">{copy.sourceNext}: </span>{item.nextStep}</p>
-      </div>
+      <p className="mt-3 text-[11px] leading-5 text-zinc-700">
+        <span className="font-semibold text-zinc-500">{copy.sourceMeaning}: </span>
+        {item.meaning}
+      </p>
+      <p className="mt-2 text-[11px] leading-5 text-zinc-700">
+        <span className="font-semibold text-zinc-500">{copy.sourceNext}: </span>
+        {item.nextStep}
+      </p>
     </div>
   )
 }
@@ -200,49 +190,35 @@ function SourceCoveragePanel({ data, copy }: { data: DiagnosticReportData; copy:
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="text-xs font-semibold text-zinc-500">{copy.sourceLedger}</div>
-          <h2 className="mt-2 text-xl font-semibold text-zinc-950">
-            {data.source_coverage.score}% {copy.sourceConfidence}
-          </h2>
+          <h2 className="mt-2 text-xl font-semibold text-zinc-950">{data.source_coverage.score}% {copy.sourceConfidence}</h2>
           <p className="mt-2 text-sm leading-7 text-zinc-600">
-            {copy.collected} {data.source_coverage.collected} / {copy.configured} {data.source_coverage.configured} /{" "}
-            {copy.missing} {data.source_coverage.missing}
+            {copy.collected} {data.source_coverage.collected} / {copy.configured} {data.source_coverage.configured} / {copy.missing} {data.source_coverage.missing}
           </p>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-zinc-100 sm:w-56">
-          <div className="h-full bg-zinc-950" style={{ width: `${data.source_coverage.score}%` }} />
+          <div className="h-full rounded-full bg-zinc-950 transition-all duration-700" style={{ width: `${data.source_coverage.score}%` }} />
         </div>
       </div>
       {missingImportant.length > 0 && (
         <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4">
           <div className="text-xs font-semibold text-amber-900">{copy.missingImportantData}</div>
           <p className="mt-2 text-xs leading-6 text-amber-900">{copy.missingImportantBody}</p>
-          <ul className="mt-3 space-y-2 text-xs leading-6 text-amber-950">
-            {missingImportant.map((item) => (
-              <li key={item.slug}>
-                <span className="font-semibold">{item.label}: </span>{item.missingConsequence}
-              </li>
-            ))}
-          </ul>
         </div>
       )}
-      <div className="mt-5">
-        {visible.map((item) => (
-          <SourceRow key={item.slug} item={item} copy={copy} />
-        ))}
-      </div>
+      <details className="mt-5 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+        <summary className="cursor-pointer text-sm font-semibold text-zinc-950">
+          {copy.sourceLedger}
+          <span className="ml-2 text-xs font-normal text-zinc-500">{copy.sourceUseBody}</span>
+        </summary>
+        <div className="mt-4 rounded-lg bg-white px-4">
+          {visible.map((item) => <SourceRow key={item.slug} item={item} copy={copy} />)}
+        </div>
+      </details>
     </section>
   )
 }
 
-function ExecutiveMemo({
-  data,
-  copy,
-  confidence,
-}: {
-  data: DiagnosticReportData
-  copy: ReportCopy
-  confidence: number
-}) {
+function ExecutiveMemo({ data, copy, confidence }: { data: DiagnosticReportData; copy: ReportCopy; confidence: number }) {
   const topPain = data.intelligence.painPoints[0]
   const firstAction = data.intelligence.nextActions[0]
 
@@ -251,15 +227,15 @@ function ExecutiveMemo({
       <div className="text-xs font-semibold text-zinc-500">{copy.expertRead}</div>
       <h2 className="mt-2 text-2xl font-semibold leading-tight text-zinc-950">{data.hook}</h2>
       <div className="mt-6 grid gap-4 md:grid-cols-3">
-        <div className="rounded-lg bg-zinc-50 p-4">
+        <div className="rounded-lg bg-emerald-50 p-4">
           <div className="text-xs font-semibold text-zinc-500">{copy.whatWeSee}</div>
           <p className="mt-2 text-sm leading-7 text-zinc-700">{topPain?.evidence ?? data.content_template.purpose}</p>
         </div>
-        <div className="rounded-lg bg-zinc-50 p-4">
+        <div className="rounded-lg bg-amber-50 p-4">
           <div className="text-xs font-semibold text-zinc-500">{copy.whyItMatters}</div>
           <p className="mt-2 text-sm leading-7 text-zinc-700">{topPain?.implication ?? data.cta_text}</p>
         </div>
-        <div className="rounded-lg bg-zinc-50 p-4">
+        <div className="rounded-lg bg-sky-50 p-4">
           <div className="text-xs font-semibold text-zinc-500">{copy.firstMove}</div>
           <p className="mt-2 text-sm leading-7 text-zinc-700">{firstAction}</p>
         </div>
@@ -292,69 +268,40 @@ export default function DiagnosticReport({
   const confidence = signalScore(data.intelligence.signals)
 
   return (
-    <div className="min-h-screen bg-zinc-50 font-sans text-zinc-950">
+    <div className="min-h-screen bg-[#f7f7f4] font-sans text-zinc-950">
       {trackingSlug && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={`/api/sales/track-view?slug=${encodeURIComponent(trackingSlug)}&locale=${encodeURIComponent(activeLocale)}`}
-          alt=""
-          width={1}
-          height={1}
-          className="pointer-events-none absolute -left-[9999px] -top-[9999px] opacity-0"
-          aria-hidden
-        />
+        <img src={`/api/sales/track-view?slug=${encodeURIComponent(trackingSlug)}&locale=${encodeURIComponent(activeLocale)}`} alt="" width={1} height={1} className="pointer-events-none absolute -left-[9999px] -top-[9999px] opacity-0" aria-hidden />
       )}
 
-      <header className="border-b border-zinc-200 bg-white px-5 py-4">
+      <header className="border-b border-zinc-200 bg-white/90 px-5 py-4 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md text-sm font-semibold text-white" style={{ background: theme.ink }}>
-              P
-            </div>
+            <div className="flex h-8 w-8 items-center justify-center rounded-md text-sm font-semibold text-white" style={{ background: theme.ink }}>P</div>
             <div>
               <div className="text-xs font-semibold text-zinc-950">{copy.brand}</div>
               <div className="text-[11px] text-zinc-500">{copy.privateReport}</div>
             </div>
           </div>
-          <span className="text-xs text-zinc-500">
-            {copy.validUntil}: {data.expires_at}
-          </span>
+          <span className="text-xs text-zinc-500">{copy.validUntil}: {data.expires_at}</span>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-5 py-8">
-        <section className="grid gap-6 border-b border-zinc-200 pb-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div>
-            <div className="mb-4 inline-flex flex-wrap items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs">
+        <section className="grid gap-6 pb-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="relative overflow-hidden rounded-lg border border-zinc-200 bg-white p-7 shadow-sm">
+            <div className="absolute right-6 top-6 h-24 w-24 rounded-full border border-zinc-200 animate-pulse" />
+            <div className="mb-4 inline-flex flex-wrap items-center gap-2 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs">
               <span className="text-zinc-500">{copy.diagnosed}</span>
               <span className="font-semibold text-zinc-950">{data.company_name}</span>
-              <span className="rounded bg-zinc-100 px-2 py-0.5 text-zinc-600">
-                {labelForIndustry(data.industry, data.report_locale)}
-              </span>
-              {data.prefecture && <span className="rounded bg-zinc-100 px-2 py-0.5 text-zinc-600">{data.prefecture}</span>}
+              <span className="rounded bg-white px-2 py-0.5 text-zinc-600">{labelForIndustry(data.industry, data.report_locale)}</span>
+              {data.prefecture && <span className="rounded bg-white px-2 py-0.5 text-zinc-600">{data.prefecture}</span>}
             </div>
-            <h1 className="max-w-4xl text-3xl font-semibold leading-tight text-zinc-950 sm:text-4xl">{data.hook}</h1>
-            <div className="mt-5 flex flex-wrap gap-2">
-              {data.demo_url && (
-                <a
-                  href={data.demo_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex h-10 items-center rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white"
-                >
-                  {copy.demo}
-                </a>
-              )}
-              {videoHref && (
-                <a
-                  href={videoHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex h-10 items-center rounded-md border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-950"
-                >
-                  {copy.video}
-                </a>
-              )}
+            <h1 className="max-w-4xl text-3xl font-semibold leading-tight text-zinc-950 sm:text-5xl">{copy.privateReport}</h1>
+            <p className="mt-4 max-w-3xl text-base leading-8 text-zinc-600">{data.hook}</p>
+            <div className="mt-6 flex flex-wrap gap-2">
+              {data.demo_url && <a href={data.demo_url} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 items-center rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white">{copy.demo}</a>}
+              {videoHref && <a href={videoHref} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 items-center rounded-md border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-950">{copy.video}</a>}
             </div>
           </div>
           <div ref={lossRef} className="rounded-lg p-5 text-white shadow-sm" style={{ background: theme.ink }}>
@@ -364,36 +311,22 @@ export default function DiagnosticReport({
           </div>
         </section>
 
-        <section className="py-8">
-          <ExecutiveMemo data={data} copy={copy} confidence={confidence} />
-        </section>
-
-        <AuditConversionSections data={data} lang={lang} confidence={confidence} videoHref={videoHref} />
+        <ExecutiveMemo data={data} copy={copy} confidence={confidence} />
+        <div className="mt-8"><AuditConversionSections data={data} lang={lang} confidence={confidence} videoHref={videoHref} /></div>
 
         <section className="mt-8 grid gap-4 lg:grid-cols-3">
-          {data.acts.map((act, index) => (
-            <ActCard key={`${act.headline}-${index}`} act={act} index={index} lang={lang} />
-          ))}
+          {data.acts.map((act, index) => <ActCard key={`${act.headline}-${index}`} act={act} index={index} lang={lang} />)}
         </section>
 
         <section className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="space-y-5">
             <section>
               <h2 className="mb-4 text-xl font-semibold text-zinc-950">{copy.pain}</h2>
-              <div className="grid gap-3">
-                {data.intelligence.painPoints.map((pain) => (
-                  <PainCard key={pain.id} pain={pain} copy={copy} />
-                ))}
-              </div>
+              <div className="grid gap-3">{data.intelligence.painPoints.map((pain) => <PainCard key={pain.id} pain={pain} copy={copy} />)}</div>
             </section>
-
             <section>
               <h2 className="mb-4 text-xl font-semibold text-zinc-950">{copy.evidence}</h2>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {data.intelligence.signals.slice(0, 10).map((signal) => (
-                  <SignalCard key={signal.id} signal={signal} copy={copy} />
-                ))}
-              </div>
+              <div className="grid gap-3 sm:grid-cols-2">{data.intelligence.signals.slice(0, 10).map((signal) => <SignalCard key={signal.id} signal={signal} copy={copy} />)}</div>
             </section>
           </div>
 
@@ -403,15 +336,12 @@ export default function DiagnosticReport({
               <ol className="mt-4 space-y-3">
                 {data.intelligence.nextActions.map((action, index) => (
                   <li key={action} className="flex gap-3 text-sm leading-7 text-zinc-700">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-950 text-xs font-semibold text-white">
-                      {index + 1}
-                    </span>
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-950 text-xs font-semibold text-white">{index + 1}</span>
                     <span>{action}</span>
                   </li>
                 ))}
               </ol>
             </section>
-
             <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
               <div className="text-xs font-semibold text-zinc-500">{copy.template}</div>
               <h2 className="mt-2 text-lg font-semibold text-zinc-950">{data.content_template.title}</h2>
@@ -424,18 +354,12 @@ export default function DiagnosticReport({
           </aside>
         </section>
 
-        <div className="mt-5">
-          <SourceCoveragePanel data={data} copy={copy} />
-        </div>
+        <div className="mt-5"><SourceCoveragePanel data={data} copy={copy} /></div>
 
         <section className="mt-8 rounded-lg border border-zinc-200 bg-white p-7 text-center shadow-sm">
           <h2 className="text-2xl font-semibold text-zinc-950">{copy.ctaHeading}</h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-zinc-600">{copy.ctaBody}</p>
-          <a
-            href={`mailto:info@paradigmjp.com?subject=${encodeURIComponent(copy.subject)}&body=${encodeURIComponent(data.report_url)}`}
-            className="mt-6 inline-flex h-11 items-center justify-center rounded-md px-6 text-sm font-semibold text-white"
-            style={{ background: theme.accentDark }}
-          >
+          <a href={`mailto:info@paradigmjp.com?subject=${encodeURIComponent(copy.subject)}&body=${encodeURIComponent(data.report_url)}`} className="mt-6 inline-flex h-11 items-center justify-center rounded-md px-6 text-sm font-semibold text-white" style={{ background: theme.accentDark }}>
             {copy.ctaButton}
           </a>
         </section>

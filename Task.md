@@ -8,6 +8,16 @@
 - [x] Production deploy: pushed commit `aadf829` and deployed it through Coolify deployment `ub3i0bo187n0id9d3uav8fkv`. Smoke checks passed for `https://paradigmjp.com/ja/admin/sales`, `https://paradigmjp.com/ja`, and `https://twenty.paradigmjp.com`.
 - [x] Host stabilization: the first deploy failed because `hermes-agent` gateway was repeatedly hitting its memory cgroup while trying unauthenticated MCP connections. The runaway gateway container was stopped after deploy so Revenue OS/Coolify/Twenty stay stable; Hermes gateway must be repaired before autonomous-agent production use.
 
+## Codex Update - 2026-06-02 SearxNG Lead Source Integration
+
+- [x] Added SearxNG as a DB-backed Sales OS lead source: `sales_searxng_search_runs` stores query/run metadata and `sales_searxng_search_results` stores normalized, scored, deduped result URLs before monthly-batch import.
+- [x] Added authenticated APIs: `POST/GET /api/sales/searxng/runs` for search execution/listing and `POST /api/sales/searxng/runs/[runId]/import` for converting ready results into monthly lead batches.
+- [x] Added `src/lib/sales/searxng-source.ts` and `src/lib/sales/searxng-normalize.ts` so SearxNG JSON results can be scored, filtered, saved, and then routed through the existing enrichment/Wappalyzer/company-karte queue.
+- [x] Added a SearxNG search-water-source panel to the monthly batch tab. Operators can run footprint searches, review recent search runs, set import score/limit gates, and create dry-run monthly batches.
+- [x] Wired `migration_032_sales_searxng_search_runs.sql` into `scripts/sales-os-no-login-deploy.mjs` and documented the JSON-format requirement near `SEARXNG_BASE_URL` in `.env.example`.
+- [x] Verification: `npx tsc --noEmit --pretty false`, targeted SearxNG/lead-discovery Vitest, full `npm test -- --run` (33 files / 154 tests), `node --check scripts/sales-os-no-login-deploy.mjs`, `git diff --check`, and `npm run build` passed.
+- [ ] Local HTTP smoke for `/ja/admin/sales?tab=batches` was not completed because both `next dev --webpack` and `next start` timed out before readiness in this Windows Desktop checkout. Port 3000 was cleaned up after the attempts.
+
 ## Codex Update - 2026-06-01 Country Scoped Region Master
 
 - [x] Fixed the CRM master design so `地域名` is no longer a global Twenty select list. Twenty standard selects cannot depend on the selected `国名`, so the durable design is: Twenty displays the finalized region text, while Sales OS manages country-scoped region candidates as the Supabase SSOT.
@@ -765,3 +775,35 @@
 - [x] Wired the audit into `scanDomain`, `/api/sales/scan/[domain]`, enrichment jobs after CSV import, source coverage, and company intelligence pain points.
 - [x] Kept legal/payment findings as human-reviewed sales hypotheses only; customer-facing legal, penalty, compliance, market-stat, or CAGR assertions still require primary-source verification.
 - [x] Verification: `npx tsc --noEmit --pretty false`, targeted Vitest including `japan-market-audit.test.ts`, `git diff --check`, and `npm run build` passed.
+
+## Codex Update - 2026-06-02 Monthly Lead Batch Operations
+
+- [x] Added `sales_lead_batches` and `sales_lead_batch_items` through `supabase/migration_031_sales_monthly_lead_batches.sql` so large monthly lead lists can be tracked by batch, item status, qualification score, quality gate, and rejection reason.
+- [x] Added `/api/sales/batches` for authenticated batch CSV ingestion and `/api/sales/batches/[batchId]/run` for scoring existing company rows into `outreach_ready`, `manual_review`, or `rejected`.
+- [x] Wired batch ingestion into the existing Supabase SSOT and enrichment queue instead of creating a parallel lead system; existing company karte, Dify diagnosis, report/demo generation, and Twenty sync remain the downstream path.
+- [x] Added the Revenue OS `月次処理` tab with CSV paste, score threshold, outreach cap, recent batch cards, progress, rejection reasons, and a manual scoring action.
+- [x] Kept the operating boundary explicit: pre-meeting list compression and outreach readiness are automated; payment, contract, and delivery stay behind manual gates.
+- [x] Updated `scripts/sales-os-no-login-deploy.mjs` so migration_031 is included in the no-login deploy path.
+- [x] Verification: `npx tsc --noEmit --pretty false`, `npm test -- --run` (32 files / 151 tests), `node --check scripts/sales-os-no-login-deploy.mjs`, `git diff --check`, and `npm run build` passed.
+
+## Codex Update - 2026-06-02 SearxNG and Japan Readiness Scoring
+
+- [x] Added `sales_searxng_search_runs` / `sales_searxng_search_results` through `supabase/migration_032_sales_searxng_search_runs.sql` so SERP extraction runs, normalized URLs, deduplication, and import status are stored before Wappalyzer/enrichment.
+- [x] Added authenticated SearxNG run/import APIs and the Revenue OS SearxNG panel so operators can run footprint queries, inspect ready/duplicate/rejected results, and import clean domains into the existing monthly batch pipeline.
+- [x] Added `sales_japan_readiness_insights` through `supabase/migration_033_sales_japan_readiness_insights.sql` so each company can hold its latest Japan-entry score, evidence, gap list, Dify/local draft copy, and manual-review flags.
+- [x] Added `/api/sales/companies/[companyId]/japan-readiness` with GET/POST support. POST refreshes the public-page Japan audit, probes Shopify `/products.json` when useful, scores traffic/commerce/localization/payment/legal/creative gaps, and uses Dify Cloud when configured.
+- [x] Added the Revenue OS Japan Readiness panel inside monthly batch operations: candidate companies can be scored from the GUI, generated insights show priority, Japan traffic, directional loss range, evidence gaps, and the cold-email draft.
+- [x] Kept guardrails explicit: missing traffic stays `unknown`, legal/payment findings stay human-review hypotheses, and generated copy is never allowed to assert legal violations, penalties, guaranteed traffic, or guaranteed revenue.
+- [x] Updated `.env.example` with `DIFY_JAPAN_READINESS_*` aliases and updated the no-login deploy script to include migrations 032 and 033.
+- [x] Verification: `npx tsc --noEmit --pretty false`, targeted Vitest for Japan readiness/SearxNG/Japan audit, full `npm test -- --run` (34 files / 156 tests), `node --check scripts/sales-os-no-login-deploy.mjs`, `git diff --check`, and `npm run build` passed.
+- [x] Added `docs/knowledge/sales-japan-readiness-dify-n8n-template.md` with the n8n HTTP node shape, rate limits, Dify input JSON, system prompt, required output JSON, and send-before-review rule.
+- [x] Wired the same fixed `system_prompt`, `user_payload`, and output schema into the Japan readiness Dify workflow inputs so the app does not rely only on Dify-side prompt configuration.
+
+## Codex Update - 2026-06-02 Executive Business Diagnosis Report
+
+- [x] Rebuilt the public diagnostic report language from an IT/source-audit framing into an executive business assessment focused on revenue opportunity, trust, acquisition friction, operating load, first action, and 30-day improvement priority.
+- [x] Replaced mojibake-prone Japanese report copy in `report-copy.ts`, `DiagnosticReport.tsx`, `AuditConversionSections.tsx`, and `diagnostic.ts` with clean customer-facing Japanese/English/localized labels.
+- [x] Redesigned the report hierarchy so the first viewport leads with private executive assessment, estimated monthly opportunity loss, business impact, animated counters, hover motion, and CTA buttons; technical source coverage now lives in a collapsed data appendix instead of dominating the report.
+- [x] Added richer visual treatment to the management sections: impact tiles, colored business-risk bands, animated loss snapshot, category coverage bars, and clearer improvement-line comparison.
+- [x] Added `src/components/diagnostic/report-copy.test.ts` to block customer-facing mojibake from returning to report renderers and the diagnostic data builder.
+- [x] Verification: `npx tsc --noEmit --pretty false`, targeted diagnostic/report copy Vitest, full `npm test -- --run` (35 files / 158 tests), `git diff --check`, and `npm run build` passed. Local `next start` from `D:\dev\paradigmjpcom` served the route, but sample report slugs rendered 404 because Sales Supabase env is not configured locally; Desktop path still has the known Next routes-manifest path-mixing issue.

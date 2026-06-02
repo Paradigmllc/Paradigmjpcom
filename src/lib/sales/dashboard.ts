@@ -9,6 +9,9 @@ import { getVideoPipelineConfig, listVideoJobs } from "@/lib/sales/video-pipelin
 import { salesScopeFromLocale, type SalesLocaleScope } from "@/lib/sales/locale-scope"
 import { getSalesCrmFieldConfig } from "@/lib/sales/crm-field-config"
 import { emptySourceAcquisitionSummary, getSourceAcquisitionSummary } from "@/lib/sales/source-acquisition"
+import { listLeadBatches } from "@/lib/sales/monthly-batch"
+import { listSearxngRuns } from "@/lib/sales/searxng-source"
+import { listJapanReadinessInsights } from "@/lib/sales/japan-readiness"
 import type {
   DashboardAuditCheck,
   DashboardAuditSection,
@@ -637,6 +640,9 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
       issueCounts: {},
       sourceCounts: {},
       sourceAcquisition: emptySourceAcquisitionSummary(),
+      leadBatches: [],
+      searxngRuns: [],
+      japanReadinessInsights: [],
       companies: [],
       activities: [],
       syncLogs: [],
@@ -677,6 +683,9 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
     crmFieldConfig,
     agentTeam,
     integrationStatus,
+    leadBatchesRes,
+    searxngRunsRes,
+    japanReadinessRes,
     videoJobsRes,
   ] = await Promise.all([
     fetchDashboardCompanies(sb, scope),
@@ -724,6 +733,9 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
     getSalesCrmFieldConfig(sb),
     getDashboardAgentTeam(),
     getSalesIntegrationStatus(),
+    listLeadBatches(scope, 8),
+    listSearxngRuns(scope, 8),
+    listJapanReadinessInsights(scope, 8),
     listVideoJobs(25, { locale: scope.reportLocale }),
   ])
 
@@ -737,6 +749,9 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
   if (contractsRes.error) warnings.push(`sales_contracts: ${contractsRes.error.message}`)
   if (!videoJobsRes.ok) warnings.push(`sales_video_jobs: ${videoJobsRes.error}`)
   if (crmFieldConfig.error) warnings.push(`sales_crm_field_config: ${crmFieldConfig.error}`)
+  if (!leadBatchesRes.ok && leadBatchesRes.error) warnings.push(`sales_lead_batches: ${leadBatchesRes.error}`)
+  if (!searxngRunsRes.ok && searxngRunsRes.error) warnings.push(`sales_searxng_search_runs: ${searxngRunsRes.error}`)
+  if (!japanReadinessRes.ok && japanReadinessRes.error) warnings.push(`sales_japan_readiness_insights: ${japanReadinessRes.error}`)
   warnings.push(...infrastructure.warnings)
 
   for (const warning of warnings) console.error(`[sales-dashboard] ${warning}`)
@@ -836,6 +851,9 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
     issueCounts,
     sourceCounts,
     sourceAcquisition,
+    leadBatches: leadBatchesRes.batches,
+    searxngRuns: searxngRunsRes.runs,
+    japanReadinessInsights: japanReadinessRes.insights,
     companies,
     activities,
     syncLogs,

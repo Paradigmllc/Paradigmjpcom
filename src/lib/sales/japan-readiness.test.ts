@@ -1,0 +1,80 @@
+import { describe, expect, it } from "vitest"
+import { __japanReadinessTest } from "./japan-readiness"
+import type { SalesCompany } from "./types"
+
+function company(meta: Record<string, unknown>): SalesCompany {
+  return {
+    id: "company-1",
+    region: "global",
+    slug: "demo",
+    name_key: "demo",
+    report_locale: "en",
+    target_country: "US",
+    template_variant: "japan_entry",
+    domain: "demo.example",
+    company_name: "Demo Store",
+    industry: "retail",
+    prefecture: null,
+    pipeline_status: "pending",
+    deal_stage: "未対応",
+    pagespeed_mobile: null,
+    pagespeed_desktop: null,
+    detected_issues: [],
+    report_views: 0,
+    is_hot_lead: false,
+    send_result: null,
+    sent_at: null,
+    report_url: null,
+    follow_up_date: null,
+    memo: null,
+    assigned_to: null,
+    notion_page_id: null,
+    source: "test",
+    meta,
+    created_at: "2026-06-02T00:00:00.000Z",
+    updated_at: "2026-06-02T00:00:00.000Z",
+  }
+}
+
+describe("japan readiness scoring", () => {
+  it("turns traffic, Shopify, and public-page gaps into a high-priority human-reviewed insight", () => {
+    const insight = __japanReadinessTest.buildLocalInsight(
+      company({
+        traffic: { monthly_visits: 300000, japan_share_percent: 0.5 },
+        tech: { stack: [{ name: "Shopify" }, { name: "Stripe" }, { name: "Klaviyo" }] },
+      }),
+      {
+        engine: "local_heuristic",
+        generated_at: "2026-06-02T00:00:00.000Z",
+        score: 10,
+        status: { tokushoho_missing: true, appi_missing: true, local_payments_missing: true },
+        signals: { tokushoho: [], appi: [], local_payments: [] },
+        pages_checked: ["https://demo.example/"],
+        sales_pitch_context: "missing public readiness signals",
+        human_review_required: true,
+        legal_disclaimer: "sales hypothesis only",
+      },
+      { ok: true, productCount: 50, averagePrice: 80, sampledAt: "2026-06-02T00:00:00.000Z" },
+    )
+
+    expect(insight.priority).toBe("high")
+    expect(insight.status).toBe("manual_review")
+    expect(insight.estimates.japanVisits).toBe(1500)
+    expect(insight.estimates.lossMinUsd).toBe(600)
+    expect(insight.manualReviewFlags).toContain("legal_payment_claim_requires_review")
+    expect(insight.body).toContain("sales hypothesis")
+  })
+
+  it("keeps missing traffic as explicit evidence instead of inventing numbers", () => {
+    const insight = __japanReadinessTest.buildLocalInsight(
+      company({ tech: { stack: [{ name: "Next.js" }] } }),
+      null,
+      null,
+    )
+
+    expect(insight.estimates.monthlyVisits).toBeNull()
+    expect(insight.estimates.lossMinUsd).toBeNull()
+    expect(insight.manualReviewFlags).toContain("traffic_estimate_missing")
+    expect(insight.evidence.find((item) => item.id === "monthly-visits")?.value).toBe("unknown")
+  })
+})

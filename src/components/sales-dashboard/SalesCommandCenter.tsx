@@ -33,6 +33,7 @@ import {
 } from "./SalesCommandPanels";
 import { SalesAgentTeamPanel } from "./SalesAgentTeamPanel";
 import { SalesAutomationPanel } from "./SalesAutomationPanel";
+import { SalesBatchOpsPanel } from "./SalesBatchOpsPanel";
 import { SalesDocsPanel } from "./SalesDocsPanel";
 import { SalesOperationsAuditPanel } from "./SalesOperationsAuditPanel";
 import { SalesTemplateWorkbenchPanel } from "./SalesTemplateWorkbenchPanel";
@@ -42,6 +43,7 @@ import { REPORT_LOCALES } from "@/lib/sales/routing";
 
 type SalesTab =
   | "overview"
+  | "batches"
   | "automation"
   | "workspace"
   | "operator"
@@ -75,6 +77,13 @@ const tabItems: TabItem[] = [
     eyebrow: "Command",
     description: "全体KPIと優先リード",
     icon: LayoutDashboard,
+  },
+  {
+    id: "batches",
+    label: "月次処理",
+    eyebrow: "Batch Ops",
+    description: "数万件リストを送信候補へ圧縮",
+    icon: Gauge,
   },
   {
     id: "automation",
@@ -252,6 +261,8 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
     switch (activeTab) {
       case "overview":
         return <OverviewPanel data={data} />;
+      case "batches":
+        return <SalesBatchOpsPanel data={data} />;
       case "automation":
         return <SalesAutomationPanel data={data} />;
       case "workspace":
