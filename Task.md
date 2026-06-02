@@ -737,3 +737,12 @@
 - [x] Live audit snapshot: 60 catalog sources, 13 configured in the production app env, 20 lightweight checks, 8 live OK; SSOT currently has 3 companies, 221 source rows, 79 source types, 185 collected rows, and 84% collected/usable rate.
 - [x] Live Wappalyzer scan processed 3 company domains and stored one current detection (`Cloudflare`) in company meta/source runs. The normalized `sales_tech_stack_detections` table still needs the existing `migration_030` applied through a privileged SQL channel; PostgREST `exec_sql` and schema reload RPC are not exposed on the self-hosted OSS Supabase endpoint.
 - [x] Verification: `node --check` for the new scripts, `npx tsc --noEmit --pretty false`, targeted Vitest for source acquisition/Wappalyzer/lead discovery, `node scripts/scan-sales-wappalyzer.mjs --limit=25`, `node scripts/audit-sales-data-acquisition.mjs`, and `npm run build` passed.
+
+## Codex Update - 2026-06-02 Signal Sources and Conversion Report
+
+- [x] Expanded the lead-source API and GUI beyond static SERP sources: RSSHub job signals, Wellfound, WhoisDS NRD, Clutch/Sortlist, Shopify/Webflow experts, EventsEye/10times, and OSINT contact discovery are now selectable.
+- [x] Added env placeholders for the additional signal sources plus the full video/demo production stack: OpenMontage, Vast.ai/Runpod, ComfyUI, HyperFrames, Remotion, Faster Whisper, MoviePy, Short Video Maker, LivePortrait, Edge-TTS, CosyVoice/XTTSv2, FFCreator, Editly, FFmpeg, WhisperX, Astro demo workers, and v0.
+- [x] Expanded the acquisition audit catalog and source coverage ledger so the new list, video, and demo sources are counted in readiness and missing-source reporting.
+- [x] Upgraded the public diagnostic report with conversion-oriented sections: executive loss snapshot, evidence board, hidden-cost comparison, and frictionless solution/CTA pricing panel.
+- [x] Dify remains Cloud-only; n8n remains orchestration/traffic control; HyperFrames/Remotion/OpenMontage/ComfyUI/Vast.ai/R2 remain renderer and delivery lanes.
+- [x] Live audit after writing source rows: 83 catalog sources, 14 configured env families, 21 lightweight checks, 7 live OK; SSOT now has 282 source rows, 98 source types, 251 collected rows, 253 usable rows, 36 video rows, and 9 demo/material rows.

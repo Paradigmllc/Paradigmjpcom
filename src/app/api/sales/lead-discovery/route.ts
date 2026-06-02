@@ -4,7 +4,11 @@ import { upsertCompanyByDomain, findExistingCompany } from "@/lib/sales/companie
 import { normalizeCompanyName } from "@/lib/sales/dedup"
 import { enqueueCompanyEnrichment, triggerEnrichmentRunner } from "@/lib/sales/enrichment-jobs"
 import { salesScopeFromCountry } from "@/lib/sales/locale-scope"
-import { discoverLeadCandidates, type LeadDiscoverySource } from "@/lib/sales/sources/lead-discovery"
+import {
+  discoverLeadCandidates,
+  isLeadDiscoverySource,
+  type LeadDiscoverySource,
+} from "@/lib/sales/sources/lead-discovery"
 import type { Industry } from "@/lib/sales/types"
 
 export const runtime = "nodejs"
@@ -22,10 +26,6 @@ interface Body {
   report_locale?: string | null
 }
 
-function isSource(value: unknown): value is LeadDiscoverySource {
-  return value === "searxng" || value === "whoogle" || value === "overpass" || value === "publicwww"
-}
-
 export async function POST(req: NextRequest) {
   if (!(await isSalesApiAuthorized(req))) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
 
   const query = body.query?.trim()
   if (!query) return NextResponse.json({ ok: false, error: "query is required" }, { status: 400 })
-  const source = isSource(body.source) ? body.source : "searxng"
+  const source = isLeadDiscoverySource(body.source) ? body.source : "searxng"
   const result = await discoverLeadCandidates({
     query,
     source,

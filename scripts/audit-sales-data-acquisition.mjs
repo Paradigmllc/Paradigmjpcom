@@ -57,6 +57,14 @@ const SOURCES = [
   source("google_crux", "Google CrUX API", "list", ["GOOGLE_CRUX_API_KEY", "GOOGLE_PSI_API_KEY"], [], checkCrux),
   source("crunchbase_open_data", "Crunchbase Open Data Map", "list", ["CRUNCHBASE_API_KEY"]),
   source("meta_ad_library", "Meta Ad Library API", "list", ["META_AD_LIBRARY_ACCESS_TOKEN"]),
+  source("rsshub_jobs", "Indeed / Glassdoor + RSSHub", "list", ["RSSHUB_BASE_URL", "RSSHUB_JOB_ROUTE_TEMPLATE"]),
+  source("wellfound_crawl4ai", "Wellfound + Crawl4AI", "list", ["WELLFOUND_SEARCH_URL", "CRAWL4AI_BASE_URL"]),
+  source("whoisds_nrd", "WhoisDS newly registered domains", "list", ["WHOISDS_NRD_URL"], [], checkWhoisDsNrd),
+  source("agency_directory", "Clutch / Sortlist", "list", ["CLUTCH_SEARCH_URL", "SORTLIST_SEARCH_URL"]),
+  source("platform_experts", "Shopify / Webflow Experts", "list", ["SHOPIFY_EXPERTS_URL", "WEBFLOW_EXPERTS_URL"]),
+  source("theharvester", "theHarvester", "list", ["THEHARVESTER_BIN", "THEHARVESTER_WORKER_URL"]),
+  source("hunter_snov", "Hunter.io / Snov.io", "list", ["HUNTER_API_KEY", "SNOV_CLIENT_ID", "SNOV_CLIENT_SECRET"]),
+  source("events_exhibitors", "EventsEye / 10times", "list", ["EVENTSEYE_SEARCH_URL", "TENTIMES_SEARCH_URL"]),
 
   source("cloudflare_radar", "Cloudflare Radar API", "analysis", ["CLOUDFLARE_API_TOKEN"], [], checkCloudflareRadar),
   source("wappalyzer", "Wappalyzer CLI / local signatures", "analysis", [], [], checkWappalyzerLite),
@@ -89,6 +97,23 @@ const SOURCES = [
   source("whoogle", "Whoogle Search", "analysis", ["WHOOGLE_BASE_URL"], [], checkWhoogle),
   source("overpass", "OverPass / OpenStreetMap API", "analysis", ["OVERPASS_API_URL"], [], checkOverpass),
   source("yelp_graphql", "Yelp GraphQL API", "analysis", ["YELP_API_KEY"]),
+
+  source("astro_demo", "Astro replacement demo", "demo", ["ASTRO_DEMO_WORKER_URL"]),
+  source("v0_demo", "v0 by Vercel demo accelerator", "demo", ["V0_API_KEY", "V0_WORKER_URL"]),
+  source("gotenberg_slidev", "Slidev / Gotenberg", "demo", ["GOTENBERG_URL"]),
+
+  source("openmontage", "OpenMontage orchestration", "video", ["OPENMONTAGE_API_URL", "OPENMONTAGE_BASE_URL", "OPENMONTAGE_API_KEY"]),
+  source("vast_runpod", "Vast.ai / Runpod GPU", "video", ["VAST_API_KEY", "RUNPOD_API_KEY"]),
+  source("comfyui", "ComfyUI API", "video", ["COMFYUI_API_URL", "COMFYUI_BASE_URL"]),
+  source("hyperframes", "HyperFrames", "video", ["HYPERFRAMES_RENDERER_URL", "HYPERFRAMES_API_URL"]),
+  source("remotion_video", "Remotion", "video", ["REMOTION_RENDER_URL", "REMOTION_RENDERER_URL"]),
+  source("faster_whisper", "Faster Whisper", "video", ["FASTER_WHISPER_URL"]),
+  source("moviepy_short_video", "MoviePy / Short Video Maker", "video", ["MOVIEPY_WORKER_URL", "SHORT_VIDEO_MAKER_URL"]),
+  source("liveportrait", "LivePortrait", "video", ["LIVEPORTRAIT_WORKER_URL"]),
+  source("tts_stack", "Edge-TTS / CosyVoice / XTTSv2", "video", ["EDGE_TTS_WORKER_URL", "COSYVOICE_WORKER_URL", "XTTSV2_WORKER_URL"]),
+  source("ffcreator_editly_ffmpeg", "FFCreator / Editly / FFmpeg", "video", ["FFCREATOR_WORKER_URL", "EDITLY_WORKER_URL", "FFMPEG_BIN"]),
+  source("whisperx", "WhisperX", "video", ["WHISPERX_WORKER_URL"]),
+  source("r2_video_delivery", "Cloudflare R2 delivery", "video", ["CLOUDFLARE_R2_BUCKET", "R2_ACCESS_KEY_ID", "R2_BUCKET"]),
 ]
 
 function source(slug, label, category, requiredAnyEnv = [], optionalEnv = [], check = null) {
@@ -171,6 +196,13 @@ async function checkCommonCrawl() {
 
 async function checkTranco() {
   const res = await fetch("https://tranco-list.eu/top-1m.csv.zip", { method: "HEAD", signal: AbortSignal.timeout(12_000) })
+  return { ok: res.ok, label: `HTTP ${res.status}` }
+}
+
+async function checkWhoisDsNrd(envs) {
+  const url = envValue(envs, "WHOISDS_NRD_URL")
+  if (!url) return { ok: false, label: "WHOISDS_NRD_URL not configured" }
+  const res = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(12_000) })
   return { ok: res.ok, label: `HTTP ${res.status}` }
 }
 

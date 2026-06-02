@@ -7,6 +7,7 @@ import { signalScore, type IntelligenceSignal, type PainPoint } from "@/lib/sale
 import type { SourceCoverageItem } from "@/lib/sales/source-coverage"
 import { labelForIndustry, scoreTone, themeForIndustry } from "@/lib/sales/render-quality"
 import { REPORT_COPY, normalizeReportLang, type ReportCopy, type ReportLang } from "./report-copy"
+import { AuditConversionSections } from "./AuditConversionSections"
 
 const SEVERITY = {
   critical: { ja: "最優先", en: "Critical", className: "border-rose-200 bg-rose-50 text-rose-700" },
@@ -367,7 +368,9 @@ export default function DiagnosticReport({
           <ExecutiveMemo data={data} copy={copy} confidence={confidence} />
         </section>
 
-        <section className="grid gap-4 lg:grid-cols-3">
+        <AuditConversionSections data={data} lang={lang} confidence={confidence} videoHref={videoHref} />
+
+        <section className="mt-8 grid gap-4 lg:grid-cols-3">
           {data.acts.map((act, index) => (
             <ActCard key={`${act.headline}-${index}`} act={act} index={index} lang={lang} />
           ))}
