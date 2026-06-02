@@ -1,145 +1,452 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { matchContentTemplate } from "./content-templates"
-import type { DiagnosticReportData } from "./diagnostic"
+import type { DiagnosticAct, DiagnosticReportData } from "./diagnostic"
 import { compactText, escapeHtml, labelForIndustry, themeForIndustry } from "./render-quality"
 import type { SalesCompany } from "./types"
 
-function metricBlock(label: string, value: string, unit = ""): string {
-  return `<div class="metric"><b>${escapeHtml(value)}${unit ? `<span>${escapeHtml(unit)}</span>` : ""}</b><p>${escapeHtml(label)}</p></div>`
+const CORRUPT_TEXT = /縺|繝|譁|蜑|荳|譛|谿|險|螟|豕|邨|髻|蠕|蝠|逕|莠|陦|蛻|諡|蜷|繧|�/
+
+function isJa(locale: string): boolean {
+  return locale === "ja"
+}
+
+function cleanCopy(value: string | null | undefined, fallback: string, max = 180): string {
+  const text = (value ?? "").replace(/\s+/g, " ").trim()
+  if (!text || CORRUPT_TEXT.test(text)) return fallback
+  return compactText(text, fallback, max)
+}
+
+function safeMetric(value: string | null | undefined, fallback: string): string {
+  return cleanCopy(value, fallback, 40)
+}
+
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2)
+}
+
+function metricBlock(label: string, value: string, detail: string): string {
+  return `<div class="metric-card">
+    <p>${escapeHtml(label)}</p>
+    <strong>${escapeHtml(value)}</strong>
+    <span>${escapeHtml(detail)}</span>
+  </div>`
+}
+
+function evidenceCard(act: DiagnosticAct | undefined, index: number, locale: string): string {
+  const fallbackTitles = isJa(locale)
+    ? ["第一印象の改善", "信頼材料の整理", "問い合わせ導線の短縮"]
+    : ["Sharper first impression", "Clearer trust proof", "Shorter inquiry path"]
+  const fallbackBodies = isJa(locale)
+    ? [
+        "検索やSNSから来た見込み客が、最初の画面で選ぶ理由を理解できるようにします。",
+        "実績、レビュー、対応範囲を見やすく配置し、比較中の不安を減らします。",
+        "問い合わせ前の迷いを減らし、相談や予約へ進む導線を短くします。",
+      ]
+    : [
+        "Make the first screen explain why this business should be shortlisted.",
+        "Place proof, reviews, and service scope where comparison-stage buyers need them.",
+        "Reduce pre-inquiry hesitation with a shorter path to booking or contact.",
+      ]
+  const title = cleanCopy(act?.headline, fallbackTitles[index] ?? fallbackTitles[0], 90)
+  const body = cleanCopy(act?.body, fallbackBodies[index] ?? fallbackBodies[0], 180)
+  return `<article class="evidence-card">
+    <span>0${index + 1}</span>
+    <h3>${escapeHtml(title)}</h3>
+    <p>${escapeHtml(body)}</p>
+  </article>`
 }
 
 function buildDemoHtml(company: SalesCompany, report: DiagnosticReportData, templateTitle: string): string {
   const theme = themeForIndustry(company.industry)
   const locale = company.report_locale ?? report.report_locale
-  const isJa = locale === "ja"
-  const name = escapeHtml(company.company_name)
-  const industry = escapeHtml(labelForIndustry(company.industry, locale))
-  const location = escapeHtml(company.prefecture ?? (isJa ? "地域密着" : "local market"))
-  const hook = escapeHtml(compactText(report.hook, isJa ? "診断結果をもとに、初回接点の伝わり方を再設計します。" : "A redesigned first impression based on the diagnostic evidence.", 220))
-  const cta = escapeHtml(report.cta_text)
+  const japanese = isJa(locale)
+  const name = company.company_name
+  const escapedName = escapeHtml(name)
+  const brandMark = escapeHtml(initials(name) || name.slice(0, 1))
+  const industry = labelForIndustry(company.industry, locale)
+  const location = cleanCopy(
+    company.prefecture,
+    japanese ? "対応エリア" : "service area",
+    40,
+  )
+  const hook = cleanCopy(
+    report.hook,
+    japanese
+      ? "公開データと実測値をもとに、最初の5秒で選ばれる理由が伝わるサイトへ再設計します。"
+      : "A focused replacement site that makes the reason to choose you clear in the first five seconds.",
+    230,
+  )
+  const cta = cleanCopy(report.cta_text, japanese ? "無料相談を予約する" : "Book a consultation", 36)
   const primaryAct = report.acts[0]
   const secondaryAct = report.acts[1]
   const tertiaryAct = report.acts[2]
+  const metricLabel = safeMetric(primaryAct?.metric_label, japanese ? "主要シグナル" : "Primary signal")
+  const metricValue = safeMetric(primaryAct?.metric_value, "-")
+  const issueTitle = cleanCopy(
+    primaryAct?.headline,
+    japanese ? "比較中の顧客が離脱する前に、選ばれる理由を見せます。" : "Show why you should be chosen before comparison-stage buyers leave.",
+    130,
+  )
+  const issueBody = cleanCopy(
+    primaryAct?.body,
+    japanese
+      ? "診断で見つかった弱点を、ファーストビュー、証拠、CTA導線へ変換した差し替えデモです。"
+      : "This demo converts the audit findings into a sharper first view, stronger proof, and a clearer CTA.",
+    200,
+  )
 
   return `<!doctype html>
 <html lang="${escapeHtml(locale)}">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${name} | Paradigm replacement demo</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <title>${escapedName} | ${japanese ? "改善デモサイト" : "Replacement Demo"}</title>
   <style>
     :root {
       color-scheme: light;
       --ink:${theme.ink};
       --muted:${theme.muted};
-      --paper:${theme.paper};
-      --surface:${theme.surface};
-      --line:${theme.line};
+      --paper:#fbfcff;
+      --surface:#ffffff;
+      --line:#dfe5ef;
       --accent:${theme.accent};
       --accent-dark:${theme.accentDark};
       --accent-soft:${theme.accentSoft};
       --signal:${theme.signal};
+      --radius:8px;
     }
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body { margin:0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color:var(--ink); background:var(--paper); }
-    header { position:sticky; top:0; z-index:10; display:flex; justify-content:space-between; align-items:center; gap:20px; padding:16px clamp(18px,5vw,68px); background:rgba(255,255,255,.92); border-bottom:1px solid var(--line); backdrop-filter: blur(14px); }
-    .brand { display:flex; align-items:center; gap:10px; font-weight:800; }
-    .mark { display:grid; place-items:center; width:32px; height:32px; border-radius:8px; background:var(--accent-dark); color:#fff; }
-    nav { display:flex; gap:18px; font-size:13px; color:var(--muted); }
-    nav a { color:inherit; text-decoration:none; }
-    main { min-height:100vh; }
-    .hero { display:grid; grid-template-columns:minmax(0,1.02fr) minmax(300px,.98fr); gap:46px; align-items:center; padding:70px clamp(18px,5vw,68px) 52px; }
-    .eyebrow { display:inline-flex; gap:8px; align-items:center; border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 10px; color:var(--muted); font-size:12px; font-weight:700; }
-    h1 { margin:18px 0 0; font-size:clamp(38px,7vw,76px); line-height:1; letter-spacing:0; }
-    .lead { margin-top:22px; max-width:680px; color:var(--muted); font-size:clamp(16px,2vw,20px); line-height:1.85; }
-    .actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:30px; }
-    .button { display:inline-flex; align-items:center; justify-content:center; min-height:46px; padding:0 18px; border-radius:8px; font-weight:800; text-decoration:none; }
-    .primary { background:var(--accent-dark); color:#fff; }
-    .secondary { color:var(--ink); background:#fff; border:1px solid var(--line); }
-    .showcase { border:1px solid var(--line); border-radius:8px; background:linear-gradient(150deg,#fff,var(--accent-soft)); min-height:480px; padding:24px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 24px 70px rgba(15,23,42,.10); }
-    .browser { border:1px solid var(--line); border-radius:8px; background:#fff; overflow:hidden; }
-    .bar { height:34px; display:flex; align-items:center; gap:6px; padding:0 12px; border-bottom:1px solid var(--line); }
-    .dot { width:9px; height:9px; border-radius:999px; background:var(--signal); }
-    .mock { padding:22px; display:grid; gap:14px; }
-    .mock h2 { margin:0; font-size:28px; line-height:1.18; }
-    .mock p { margin:0; color:var(--muted); line-height:1.75; }
-    .proof { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; padding:22px clamp(18px,5vw,68px); background:#fff; border-block:1px solid var(--line); }
-    .metric { border:1px solid var(--line); border-radius:8px; padding:18px; background:var(--surface); }
-    .metric b { display:block; font-size:28px; line-height:1.1; }
-    .metric b span { font-size:14px; margin-left:4px; }
-    .metric p { margin:8px 0 0; color:var(--muted); font-size:13px; line-height:1.5; }
-    section { padding:58px clamp(18px,5vw,68px); }
-    .section-head { max-width:760px; }
-    .section-head h2 { margin:0; font-size:34px; line-height:1.15; }
-    .section-head p { color:var(--muted); line-height:1.8; }
-    .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-top:24px; }
-    .item { border:1px solid var(--line); border-radius:8px; padding:22px; background:#fff; }
-    .item h3 { margin:0; font-size:17px; line-height:1.45; }
-    .item p { color:var(--muted); line-height:1.75; font-size:14px; }
-    .cta { background:var(--ink); color:#fff; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:24px; align-items:center; }
-    .cta p { color:rgba(255,255,255,.72); max-width:760px; line-height:1.8; }
-    footer { padding:28px clamp(18px,5vw,68px); color:var(--muted); border-top:1px solid var(--line); font-size:12px; }
-    @media (max-width: 880px) { .hero, .proof, .grid, .cta { grid-template-columns:1fr; } nav { display:none; } .showcase { min-height:340px; } h1 { font-size:42px; } }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body {
+      margin:0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color:var(--ink);
+      background:var(--paper);
+      letter-spacing:0;
+    }
+    a { color:inherit; }
+    .site-shell { min-height:100vh; overflow:hidden; }
+    .demo-top {
+      position:sticky;
+      top:0;
+      z-index:20;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:20px;
+      padding:14px clamp(18px,5vw,72px);
+      border-bottom:1px solid rgba(15,23,42,.08);
+      background:rgba(255,255,255,.92);
+      backdrop-filter:blur(14px);
+    }
+    .brand { display:flex; align-items:center; gap:11px; min-width:0; font-weight:850; }
+    .brand-mark {
+      display:grid;
+      place-items:center;
+      width:36px;
+      height:36px;
+      border-radius:var(--radius);
+      background:var(--ink);
+      color:#fff;
+      font-size:13px;
+      letter-spacing:0;
+    }
+    .brand-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .nav { display:flex; align-items:center; gap:20px; color:var(--muted); font-size:13px; }
+    .nav a { text-decoration:none; }
+    .header-cta {
+      min-height:38px;
+      padding:0 14px;
+      border:1px solid var(--ink);
+      border-radius:var(--radius);
+      background:var(--ink);
+      color:#fff;
+      font-weight:750;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+    }
+    .hero {
+      display:grid;
+      grid-template-columns:minmax(0,1.05fr) minmax(340px,.95fr);
+      gap:52px;
+      align-items:center;
+      padding:80px clamp(18px,5vw,72px) 64px;
+      background:
+        radial-gradient(circle at 80% 8%, var(--accent-soft), transparent 34%),
+        linear-gradient(180deg,#fff 0%,#f7f9fc 100%);
+    }
+    .eyebrow {
+      display:inline-flex;
+      flex-wrap:wrap;
+      gap:8px;
+      align-items:center;
+      color:var(--accent-dark);
+      font-size:12px;
+      font-weight:850;
+      text-transform:uppercase;
+    }
+    .eyebrow span {
+      border:1px solid var(--line);
+      border-radius:999px;
+      background:#fff;
+      padding:7px 10px;
+    }
+    h1 {
+      margin:20px 0 0;
+      max-width:850px;
+      font-size:clamp(42px,6.6vw,84px);
+      line-height:.98;
+      letter-spacing:0;
+    }
+    .lead {
+      margin:24px 0 0;
+      max-width:690px;
+      color:#475467;
+      font-size:clamp(16px,1.9vw,20px);
+      line-height:1.8;
+    }
+    .actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:32px; }
+    .button {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:48px;
+      padding:0 18px;
+      border-radius:var(--radius);
+      font-weight:850;
+      text-decoration:none;
+    }
+    .button-primary { background:var(--ink); color:#fff; }
+    .button-secondary { background:#fff; border:1px solid var(--line); color:var(--ink); }
+    .visual {
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      background:#fff;
+      box-shadow:0 28px 70px rgba(15,23,42,.12);
+      overflow:hidden;
+    }
+    .visual-top {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:14px;
+      border-bottom:1px solid var(--line);
+      background:#f8fafc;
+      color:#64748b;
+      font-size:12px;
+    }
+    .visual-body { padding:28px; display:grid; gap:22px; }
+    .proof-line { display:grid; grid-template-columns:1fr auto; gap:18px; align-items:center; }
+    .score {
+      display:grid;
+      place-items:center;
+      width:96px;
+      height:96px;
+      border-radius:999px;
+      border:10px solid var(--accent);
+      background:var(--accent-soft);
+      font-size:28px;
+      font-weight:900;
+    }
+    .issue h2 { margin:0; font-size:30px; line-height:1.18; }
+    .issue p { margin:12px 0 0; color:var(--muted); line-height:1.75; }
+    .metrics {
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:14px;
+      padding:22px clamp(18px,5vw,72px);
+      background:#fff;
+      border-block:1px solid var(--line);
+    }
+    .metric-card {
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:18px;
+      background:#fff;
+      min-height:132px;
+    }
+    .metric-card p { margin:0; color:var(--muted); font-size:13px; }
+    .metric-card strong { display:block; margin-top:12px; font-size:30px; line-height:1; }
+    .metric-card span { display:block; margin-top:10px; color:#667085; font-size:13px; line-height:1.5; }
+    section { padding:64px clamp(18px,5vw,72px); }
+    .section-head { max-width:820px; }
+    .section-head h2 { margin:0; font-size:clamp(32px,4vw,52px); line-height:1.06; }
+    .section-head p { margin:18px 0 0; color:var(--muted); line-height:1.8; font-size:17px; }
+    .evidence-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-top:28px; }
+    .evidence-card { border:1px solid var(--line); border-radius:var(--radius); background:#fff; padding:22px; min-height:230px; }
+    .evidence-card span { color:var(--accent-dark); font-weight:900; font-size:12px; }
+    .evidence-card h3 { margin:16px 0 0; font-size:20px; line-height:1.3; }
+    .evidence-card p { margin:12px 0 0; color:var(--muted); line-height:1.75; }
+    .before-after {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:18px;
+      margin-top:30px;
+    }
+    .pane {
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:24px;
+      background:#fff;
+    }
+    .pane h3 { margin:0; font-size:20px; }
+    .pane ul { margin:18px 0 0; padding-left:18px; color:var(--muted); line-height:1.9; }
+    .pane.after { background:var(--ink); color:#fff; border-color:var(--ink); }
+    .pane.after ul { color:rgba(255,255,255,.72); }
+    .final-cta {
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:26px;
+      align-items:center;
+      background:var(--ink);
+      color:#fff;
+    }
+    .final-cta p { margin:12px 0 0; color:rgba(255,255,255,.72); line-height:1.8; max-width:820px; }
+    footer {
+      padding:26px clamp(18px,5vw,72px);
+      color:#667085;
+      border-top:1px solid var(--line);
+      background:#fff;
+      font-size:12px;
+    }
+    @media (max-width: 900px) {
+      .nav { display:none; }
+      .hero, .metrics, .evidence-grid, .before-after, .final-cta { grid-template-columns:1fr; }
+      .hero { padding-top:52px; }
+      .visual-body { padding:20px; }
+      .proof-line { grid-template-columns:1fr; }
+      h1 { font-size:42px; }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <div class="brand"><span class="mark">${name.slice(0, 1)}</span>${name}</div>
-    <nav>
-      <a href="#proof">${isJa ? "根拠" : "Proof"}</a>
-      <a href="#plan">${isJa ? "改善案" : "Plan"}</a>
-      <a href="#contact">${isJa ? "相談" : "Contact"}</a>
-    </nav>
-  </header>
-  <main>
-    <section class="hero">
-      <div>
-        <div class="eyebrow"><span>${location}</span><span>${industry}</span><span>${escapeHtml(templateTitle)}</span></div>
-        <h1>${isJa ? "最初の5秒で、選ばれる理由が伝わるサイトへ。" : "Make the first five seconds explain why you should be chosen."}</h1>
-        <p class="lead">${hook}</p>
-        <div class="actions">
-          <a class="button primary" href="#contact">${cta}</a>
-          <a class="button secondary" href="#proof">${isJa ? "診断根拠を見る" : "View the evidence"}</a>
-        </div>
-      </div>
-      <div class="showcase" aria-label="Replacement demo visual">
-        <div class="browser">
-          <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
-          <div class="mock">
-            <h2>${escapeHtml(primaryAct?.headline ?? (isJa ? "問い合わせ前の不安を減らす導線" : "A clearer path before inquiry"))}</h2>
-            <p>${escapeHtml(primaryAct?.body ?? report.hook)}</p>
+  <div class="site-shell">
+    <header class="demo-top">
+      <a class="brand" href="#top" aria-label="${escapedName}">
+        <span class="brand-mark">${brandMark}</span>
+        <span class="brand-name">${escapedName}</span>
+      </a>
+      <nav class="nav" aria-label="Demo navigation">
+        <a href="#proof">${japanese ? "改善根拠" : "Proof"}</a>
+        <a href="#plan">${japanese ? "改善方針" : "Plan"}</a>
+        <a href="#difference">${japanese ? "差分" : "Difference"}</a>
+      </nav>
+      <a class="header-cta" href="#contact">${cta}</a>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div>
+          <div class="eyebrow">
+            <span>${escapeHtml(location)}</span>
+            <span>${escapeHtml(industry)}</span>
+            <span>${escapeHtml(templateTitle)}</span>
+          </div>
+          <h1>${escapeHtml(
+            japanese
+              ? `${name}が選ばれる理由を、最初の5秒で伝える。`
+              : `Make ${name} easy to choose in the first five seconds.`,
+          )}</h1>
+          <p class="lead">${escapeHtml(hook)}</p>
+          <div class="actions">
+            <a class="button button-primary" href="#contact">${cta}</a>
+            <a class="button button-secondary" href="#proof">${japanese ? "診断根拠を見る" : "See the evidence"}</a>
           </div>
         </div>
-        <p style="margin:16px 0 0;color:var(--muted);line-height:1.7;font-size:13px">${isJa ? "これは診断データから作った差し替えデモです。本番ではAstroで高速・軽量に構築します。" : "This is a replacement demo generated from the diagnostic evidence. Production can be rebuilt in Astro."}</p>
+
+        <aside class="visual" aria-label="Audit-backed preview">
+          <div class="visual-top">
+            <span>${japanese ? "診断から作った差し替え案" : "Audit-backed replacement"}</span>
+            <span>${escapeHtml(report.source_coverage.score)}% ${japanese ? "取得カバレッジ" : "coverage"}</span>
+          </div>
+          <div class="visual-body">
+            <div class="proof-line">
+              <div class="issue">
+                <h2>${escapeHtml(issueTitle)}</h2>
+                <p>${escapeHtml(issueBody)}</p>
+              </div>
+              <div class="score">${escapeHtml(metricValue)}</div>
+            </div>
+            <div class="metric-card">
+              <p>${escapeHtml(metricLabel)}</p>
+              <strong>${escapeHtml(report.total_loss)}</strong>
+              <span>${japanese ? "放置した場合に残り続ける機会損失の目安です。" : "Estimated opportunity loss that remains if nothing changes."}</span>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <div id="proof" class="metrics">
+        ${metricBlock(metricLabel, metricValue, japanese ? "公開データから見える優先シグナル" : "Priority signal from public data")}
+        ${metricBlock(japanese ? "機会損失" : "Opportunity loss", report.total_loss, japanese ? "改善余地を金額で把握するための目安" : "A directional estimate for decision-making")}
+        ${metricBlock(japanese ? "データ取得" : "Data coverage", `${report.source_coverage.score}%`, japanese ? "取得済みOSS/APIソースのカバレッジ" : "Coverage across OSS and API sources")}
       </div>
-    </section>
-    <div id="proof" class="proof">
-      ${metricBlock(primaryAct?.metric_label ?? "Primary signal", primaryAct?.metric_value ?? "-", primaryAct?.metric_unit)}
-      ${metricBlock(isJa ? "推定機会損失" : "Estimated opportunity loss", report.total_loss)}
-      ${metricBlock(isJa ? "データ取得率" : "Source confidence", `${report.source_coverage.score}%`)}
-    </div>
-    <section id="plan">
-      <div class="section-head">
-        <h2>${isJa ? "改善は装飾ではなく、選ばれる理由の整理から。" : "The upgrade starts with clarity, not decoration."}</h2>
-        <p>${isJa ? "診断で見つかった弱点を、ファーストビュー、信頼要素、問い合わせ導線に分解して改善します。" : "We turn the diagnostic findings into a better first view, stronger proof, and clearer CTA path."}</p>
-      </div>
-      <div class="grid">
-        ${[primaryAct, secondaryAct, tertiaryAct]
-          .filter(Boolean)
-          .map((act) => `<div class="item"><h3>${escapeHtml(act?.headline)}</h3><p>${escapeHtml(act?.body)}</p></div>`)
-          .join("")}
-      </div>
-    </section>
-    <section id="contact" class="cta">
-      <div>
-        <h2>${isJa ? "このデモをベースに、最短で本番サイトへ。" : "Turn this demo into a production site."}</h2>
-        <p>${escapeHtml(report.content_template.quality_bar)}</p>
-      </div>
-      <a class="button primary" style="background:#fff;color:var(--ink)" href="mailto:info@paradigmjp.com?subject=${encodeURIComponent(`${company.company_name} demo`) }">${isJa ? "相談する" : "Book a call"}</a>
-    </section>
-  </main>
-  <footer>Generated by Paradigm Sales OS. Source of truth: Supabase. Demo framework target: Astro.</footer>
+
+      <section id="plan">
+        <div class="section-head">
+          <h2>${japanese ? "数字を、顧客が動く導線に変える。" : "Turn evidence into a path buyers can follow."}</h2>
+          <p>${japanese ? "スコアを並べるだけではなく、何が機会損失につながり、どの画面をどう直すべきかまで見えるようにします。" : "The point is not to show scores. The point is to make the loss, fix, and next action obvious."}</p>
+        </div>
+        <div class="evidence-grid">
+          ${[primaryAct, secondaryAct, tertiaryAct].map((act, index) => evidenceCard(act, index, locale)).join("")}
+        </div>
+      </section>
+
+      <section id="difference">
+        <div class="section-head">
+          <h2>${japanese ? "現状サイトと、差し替え後の違い。" : "What changes from the current site."}</h2>
+          <p>${japanese ? "Astroで軽量に構築する前提で、ファーストビュー、信頼材料、問い合わせ導線を営業成果物として確認できます。" : "Built as an Astro-ready direction: lighter first view, stronger proof, and a clearer inquiry path."}</p>
+        </div>
+        <div class="before-after">
+          <div class="pane">
+            <h3>${japanese ? "Before" : "Before"}</h3>
+            <ul>
+              <li>${japanese ? "選ばれる理由が初見で伝わりにくい" : "The reason to choose the business is not obvious enough"}</li>
+              <li>${japanese ? "信頼材料が問い合わせ導線と離れている" : "Trust proof is separated from the inquiry path"}</li>
+              <li>${japanese ? "改善すべき箇所が数字だけでは判断しにくい" : "Raw scores do not explain what to fix first"}</li>
+            </ul>
+          </div>
+          <div class="pane after">
+            <h3>${japanese ? "After" : "After"}</h3>
+            <ul>
+              <li>${japanese ? "最初の5秒で強み、対象、次の行動がわかる" : "Strength, fit, and next action are clear in five seconds"}</li>
+              <li>${japanese ? "実績・レビュー・対応範囲をCTA近くに配置" : "Proof, reviews, and service scope sit near the CTA"}</li>
+              <li>${japanese ? "診断根拠を改善優先度へ変換" : "Audit evidence becomes an implementation priority list"}</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="contact" class="final-cta">
+        <div>
+          <h2>${japanese ? "この方向性で、本番サイトへ進めます。" : "This direction is ready to become the production site."}</h2>
+          <p>${escapeHtml(
+            cleanCopy(
+              report.content_template.quality_bar,
+              japanese
+                ? "1画面目で結論・根拠・次アクションが読める。煽りではなく、客観データと改善余地を中心にする。"
+                : "The first screen must make conclusion, evidence, and next action clear without unsupported claims.",
+              220,
+            ),
+          )}</p>
+        </div>
+        <a class="button button-primary" style="background:#fff;color:var(--ink)" href="mailto:info@paradigmjp.com?subject=${encodeURIComponent(`${company.company_name} demo`)}">${cta}</a>
+      </section>
+    </main>
+
+    <footer>
+      ${japanese ? "このページは診断データをもとに生成された差し替えデモです。実装時はAstroで高速・軽量に再構築します。" : "This is an audit-backed replacement demo. Production implementation can be rebuilt as a fast Astro site."}
+    </footer>
+  </div>
 </body>
 </html>`
 }
@@ -172,7 +479,7 @@ export async function generateReplacementDemo(
       is_published: true,
       meta: {
         generator: "astro_replacement_demo",
-        renderer_version: "professional-v2",
+        renderer_version: "professional-v3-independent-site",
         content_template: {
           title: contentTemplate.title,
           quality_bar: contentTemplate.quality_bar,
@@ -188,7 +495,6 @@ export async function generateReplacementDemo(
     console.error("[demo-generator] upsert failed:", error.message)
     return { ok: false, demoUrl: null, error: error.message }
   }
-
   const locale = company.report_locale ?? report.report_locale
   return { ok: true, demoUrl: `https://paradigmjp.com/${locale}/d/${slug}` }
 }

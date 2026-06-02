@@ -11,6 +11,9 @@
  */
 
 import { notFound } from "next/navigation"
+import { findCompanyById } from "@/lib/sales/companies"
+import { generateReplacementDemo } from "@/lib/sales/demo-generator"
+import { fetchDiagnosticReport } from "@/lib/sales/diagnostic"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import DemoClient from "./DemoClient"
 
@@ -20,10 +23,12 @@ export const revalidate = 60 // SWR 60s — デモ更新後 1 分以内に反映
 interface Demo {
   id: string
   slug: string
+  company_id: string | null
   name: string
   html_content: string | null
   html: string | null
   is_published: boolean
+  meta: Record<string, unknown> | null
 }
 
 async function getDemo(slug: string): Promise<Demo | null> {
@@ -31,11 +36,29 @@ async function getDemo(slug: string): Promise<Demo | null> {
   if (!sb) return null
   const { data } = await sb
     .from("web_demos")
-    .select("id, slug, name, html_content, html, is_published")
+    .select("id, slug, company_id, name, html_content, html, is_published, meta")
     .eq("slug", slug)
     .eq("is_published", true)
     .maybeSingle()
   return data as Demo | null
+}
+
+async function refreshOutdatedDemo(demo: Demo): Promise<Demo> {
+  const rendererVersion = typeof demo.meta?.renderer_version === "string" ? demo.meta.renderer_version : ""
+  if (rendererVersion === "professional-v3-independent-site") return demo
+  if (!demo.company_id) return demo
+
+  const company = await findCompanyById(demo.company_id)
+  if (!company) return demo
+  const report = await fetchDiagnosticReport({
+    companyId: company.id,
+    reportLocale: company.report_locale ?? undefined,
+  })
+  if (!report) return demo
+
+  const result = await generateReplacementDemo(company, report)
+  if (!result.ok) return demo
+  return (await getDemo(demo.slug)) ?? demo
 }
 
 export default async function PublicDemoPage({
@@ -44,7 +67,8 @@ export default async function PublicDemoPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const demo = await getDemo(slug)
+  const initialDemo = await getDemo(slug)
+  const demo = initialDemo ? await refreshOutdatedDemo(initialDemo) : null
   if (!demo) notFound()
 
   const html = demo.html_content || demo.html || ""

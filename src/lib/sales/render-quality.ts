@@ -27,7 +27,7 @@ const INDUSTRY_THEME: Record<Industry, SalesRenderTheme> = {
   beauty_salon: {
     accent: "#d9467d",
     accentDark: "#9f1239",
-    accentSoft: "#fdf2f8",
+    accentSoft: "#fff1f6",
     ink: "#18181b",
     muted: "#667085",
     paper: "#fffafb",
@@ -115,15 +115,15 @@ const INDUSTRY_THEME: Record<Industry, SalesRenderTheme> = {
 }
 
 const DEFAULT_THEME: SalesRenderTheme = {
-  accent: "#111827",
-  accentDark: "#030712",
-  accentSoft: "#f3f4f6",
+  accent: "#0f766e",
+  accentDark: "#0f172a",
+  accentSoft: "#f0fdfa",
   ink: "#111827",
   muted: "#6b7280",
   paper: "#f9fafb",
   surface: "#ffffff",
   line: "#e5e7eb",
-  signal: "#9ca3af",
+  signal: "#5eead4",
 }
 
 export function themeForIndustry(industry: Industry | null | undefined): SalesRenderTheme {

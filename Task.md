@@ -746,3 +746,13 @@
 - [x] Upgraded the public diagnostic report with conversion-oriented sections: executive loss snapshot, evidence board, hidden-cost comparison, and frictionless solution/CTA pricing panel.
 - [x] Dify remains Cloud-only; n8n remains orchestration/traffic control; HyperFrames/Remotion/OpenMontage/ComfyUI/Vast.ai/R2 remain renderer and delivery lanes.
 - [x] Live audit after writing source rows: 83 catalog sources, 14 configured env families, 21 lightweight checks, 7 live OK; SSOT now has 282 source rows, 98 source types, 251 collected rows, 253 usable rows, 36 video rows, and 9 demo/material rows.
+
+## Codex Update - 2026-06-02 Client-Ready Video and Astro Demo Pass
+
+- [x] Rebuilt the public diagnostic video viewer from a text-only gradient slide into a HyperFrames/Remotion-ready executive video preview with scene navigation, evidence panels, hidden-cost visuals, demo bridge, production-lane explanation, and report/demo CTAs.
+- [x] Replaced corrupted fallback narration with clean Japanese/English executive copy and guarded video/demo rendering against mojibake text.
+- [x] Rebuilt the Astro replacement demo generator as an independent customer-branded static site: no Paradigm HP header/footer, no inherited 404 shell, proof metrics, evidence cards, before/after section, and production-ready CTA.
+- [x] Added automatic demo regeneration on `/[locale]/d/[slug]` when an existing `web_demos` row still uses an older renderer version, so stored legacy HTML is replaced from Supabase SSOT on first view.
+- [x] Cleaned the industry label renderer so generated assets no longer inherit mojibake industry names.
+- [x] Clarified implementation split: HyperFrames is the browser-native HTML/timeline preview and render input; Remotion is the React/MP4 production renderer for final video export when the renderer lane is enabled.
+- [x] Verification: `npx tsc --noEmit --pretty false`, `git diff --check`, targeted Vitest source tests, and `npm run build` passed. Local production server returns HTTP 200 for the checked report/video and demo routes when started from `D:\dev\paradigmjpcom`; the Desktop junction path still triggers the known Next routes-manifest path issue.
