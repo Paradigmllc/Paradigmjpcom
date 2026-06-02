@@ -728,3 +728,12 @@
 - [x] Current live Wappalyzer snapshot: normalized table is not reachable yet from the exposed SQL channels, so the UI falls back to `sales_companies.meta.tech.stack`; current fallback count is 0 detected technologies.
 - [x] Live DDL note: direct `exec_sql` is not exposed, postgres-meta returned unauthorized, and DB TCP ports were closed from this environment. The migration is included in the no-login deploy path and can be applied automatically once a SQL channel is available.
 - [x] Verification: `npx tsc --noEmit --pretty false`, targeted Vitest from `D:\dev\paradigmjpcom`, and `npm run build` passed.
+## Codex Update - 2026-06-02 Data Acquisition Arsenal
+
+- [x] Expanded the Sales OS source catalog to 60 APIs/OSS/scraping sources across orchestration, lead generation, traffic/revenue estimation, tech/infrastructure, quality/security, and macro utility phases.
+- [x] Added `scripts/audit-sales-data-acquisition.mjs` to verify configured env aliases, safe live endpoints, Supabase source rows, source success rates, and Wappalyzer storage without printing API keys.
+- [x] Added `POST /api/sales/lead-discovery` plus the Sales OS lead-source GUI so SearxNG, Whoogle, Overpass, and PublicWWW can preview candidate domains and import them into Supabase SSOT with enrichment jobs.
+- [x] Added `scripts/scan-sales-wappalyzer.mjs` to scan current company domains, save Wappalyzer/local-signature detections into `sales_companies.meta.tech.stack`, and update `sales_source_runs`.
+- [x] Live audit snapshot: 60 catalog sources, 13 configured in the production app env, 20 lightweight checks, 8 live OK; SSOT currently has 3 companies, 221 source rows, 79 source types, 185 collected rows, and 84% collected/usable rate.
+- [x] Live Wappalyzer scan processed 3 company domains and stored one current detection (`Cloudflare`) in company meta/source runs. The normalized `sales_tech_stack_detections` table still needs the existing `migration_030` applied through a privileged SQL channel; PostgREST `exec_sql` and schema reload RPC are not exposed on the self-hosted OSS Supabase endpoint.
+- [x] Verification: `node --check` for the new scripts, `npx tsc --noEmit --pretty false`, targeted Vitest for source acquisition/Wappalyzer/lead discovery, `node scripts/scan-sales-wappalyzer.mjs --limit=25`, `node scripts/audit-sales-data-acquisition.mjs`, and `npm run build` passed.

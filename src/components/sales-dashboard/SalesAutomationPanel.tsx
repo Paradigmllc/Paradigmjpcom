@@ -5,6 +5,7 @@ import { FileUp, Play, RotateCw, Send, UploadCloud } from "lucide-react"
 import { toast } from "sonner"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 import { formatDate, statusTone } from "./SalesCommandPanels"
+import { SalesLeadDiscoveryPanel } from "./SalesLeadDiscoveryPanel"
 
 type ParsedRow = Record<string, string>
 
@@ -204,7 +205,9 @@ export function SalesAutomationPanel({ data }: { data: SalesDashboardData }) {
   }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+    <div className="space-y-4">
+      <SalesLeadDiscoveryPanel data={data} />
+      <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
       <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -317,6 +320,7 @@ export function SalesAutomationPanel({ data }: { data: SalesDashboardData }) {
           )}
         </div>
       </section>
+      </div>
     </div>
   )
 }
