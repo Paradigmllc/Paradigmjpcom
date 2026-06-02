@@ -717,3 +717,14 @@
 - [x] Dify response normalization now supports direct output fields and `outputs.result` JSON, including markdown-wrapped JSON fallback.
 - [x] Updated Revenue OS audit/source-coverage readiness so the dashboard shows Dify as ready when the existing karte workflow keys are present.
 - [x] Verification: `npx tsc --noEmit --pretty false` passed; targeted Vitest from `D:\dev\paradigmjpcom` passed for `dify-diagnosis` and `dify-cloud`.
+## Codex Update - 2026-06-02 Source Acquisition and Wappalyzer Metrics
+
+- [x] Strengthened the free API / OSS acquisition phase by adding a normalized source-acquisition summary path across DB migration, API, GUI, enrichment jobs, and backfill tooling.
+- [x] Added `supabase/migration_030_sales_source_tech_metrics.sql` for `sales_tech_stack_detections`, so Wappalyzer/technology-stack detections can be stored as sortable structured data instead of only JSON text.
+- [x] Added `/api/sales/source-acquisition` and the Sales OS integration panel view for current acquisition counts, source categories, success rate, missing/error state, and Wappalyzer technology/category filters.
+- [x] Wired enrichment jobs and company upsert flows to persist detected technologies when Wappalyzer/tech-stack data is present, with a fallback reader from existing `sales_companies.meta.tech.stack` until the normalized table exists in live DB.
+- [x] Added `scripts/backfill-sales-tech-stack.mjs` to replay existing company tech-stack JSON into the normalized detection table after the migration is available.
+- [x] Current live acquisition snapshot: 95 source runs, 45 source kinds, 3 measured companies, 26 collected/configured signals, 67 missing signals, 27% collected success rate. Category counts: analysis 41, list 20, outreach 16, orchestration 10, demo 4, video 4.
+- [x] Current live Wappalyzer snapshot: normalized table is not reachable yet from the exposed SQL channels, so the UI falls back to `sales_companies.meta.tech.stack`; current fallback count is 0 detected technologies.
+- [x] Live DDL note: direct `exec_sql` is not exposed, postgres-meta returned unauthorized, and DB TCP ports were closed from this environment. The migration is included in the no-login deploy path and can be applied automatically once a SQL channel is available.
+- [x] Verification: `npx tsc --noEmit --pretty false`, targeted Vitest from `D:\dev\paradigmjpcom`, and `npm run build` passed.

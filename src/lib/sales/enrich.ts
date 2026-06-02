@@ -23,6 +23,7 @@ import { getWhois } from "./sources/whois"
 import { findPlace } from "./sources/places"
 import { discoverFormUrl } from "./sources/form-discovery"
 import { autoPersonalize } from "./personalize"
+import { saveTechStackDetections } from "./source-acquisition"
 import type { Industry, SalesCompany } from "./types"
 
 /** 自由メールドメインのブラックリスト (corporate でないので skip) */
@@ -235,6 +236,12 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
 
   if (!result.ok) {
     return { ok: false, error: result.error }
+  }
+
+  if (result.company) {
+    void saveTechStackDetections(result.company).catch((e) =>
+      console.error("[enrich] saveTechStackDetections failed:", e),
+    )
   }
 
   // 🧠 DeepSeek 作り込み文面を自動生成 (fire-and-forget・report_ready 時のみ)

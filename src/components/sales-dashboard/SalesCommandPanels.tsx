@@ -24,6 +24,7 @@ import { toast } from "sonner"
 import type { DashboardCompany, DashboardToolConnection, SalesDashboardData } from "@/lib/sales/dashboard"
 import { scopedReportHref } from "@/lib/sales/locale-scope"
 import { SalesCrmFieldSettingsPanel } from "./SalesCrmFieldSettingsPanel"
+import { SalesSourceAcquisitionPanel } from "./SalesSourceAcquisitionPanel"
 
 export function formatNumber(value: number): string {
   return new Intl.NumberFormat("ja-JP").format(value)
@@ -435,6 +436,7 @@ export function IntegrationsPanel({ data }: { data: SalesDashboardData }) {
       missingRecommended={missingRecommended}
       categories={categories}
     />
+    <SalesSourceAcquisitionPanel summary={data.sourceAcquisition} />
     </div>
   )
 }

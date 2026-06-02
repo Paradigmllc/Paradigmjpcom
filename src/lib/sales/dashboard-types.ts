@@ -5,6 +5,7 @@ import type { SalesIntegrationStatus } from "@/lib/sales/integration-registry"
 import type { SalesVideoJob, VideoPipelineConfig } from "@/lib/sales/video-pipeline"
 import type { SalesLocaleScope } from "@/lib/sales/locale-scope"
 import type { SalesCrmSelectOption, SalesCrmViewField } from "@/lib/sales/crm-field-config"
+import type { SourceAcquisitionSummary } from "@/lib/sales/source-acquisition"
 
 export type SalesDashboardStatus = "ready" | "degraded"
 
@@ -143,6 +144,7 @@ export interface SalesDashboardData {
   industryCounts: Record<string, number>
   issueCounts: Record<string, number>
   sourceCounts: Record<string, number>
+  sourceAcquisition: SourceAcquisitionSummary
   companies: DashboardCompany[]
   activities: DashboardActivity[]
   syncLogs: DashboardSyncLog[]

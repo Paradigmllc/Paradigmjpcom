@@ -8,6 +8,7 @@ import { getSalesIntegrationStatus } from "@/lib/sales/integration-registry"
 import { getVideoPipelineConfig, listVideoJobs } from "@/lib/sales/video-pipeline"
 import { salesScopeFromLocale, type SalesLocaleScope } from "@/lib/sales/locale-scope"
 import { getSalesCrmFieldConfig } from "@/lib/sales/crm-field-config"
+import { emptySourceAcquisitionSummary, getSourceAcquisitionSummary } from "@/lib/sales/source-acquisition"
 import type {
   DashboardAuditCheck,
   DashboardAuditSection,
@@ -635,6 +636,7 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
       industryCounts: {},
       issueCounts: {},
       sourceCounts: {},
+      sourceAcquisition: emptySourceAcquisitionSummary(),
       companies: [],
       activities: [],
       syncLogs: [],
@@ -799,6 +801,8 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
     }))
 
   const sourceRuns = ((sourceRunsRes.data ?? []) as SourceRunRow[]).filter((row) => scopedCompanyIds.has(row.company_id))
+  const sourceAcquisition = await getSourceAcquisitionSummary(sb, scopedCompanyIds)
+  warnings.push(...sourceAcquisition.errors)
 
   const kpis: DashboardKpis = {
     totalLeads: rawCompanies.length,
@@ -831,6 +835,7 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
     industryCounts,
     issueCounts,
     sourceCounts,
+    sourceAcquisition,
     companies,
     activities,
     syncLogs,

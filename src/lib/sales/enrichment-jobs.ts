@@ -5,6 +5,7 @@ import { runDifyDiagnosis } from "./dify-diagnosis"
 import { fetchDiagnosticReport } from "./diagnostic"
 import { generateReplacementDemo } from "./demo-generator"
 import { computeSourceCoverage, saveSourceCoverageRows } from "./source-coverage"
+import { saveTechStackDetections } from "./source-acquisition"
 import { syncCompanyKarteToTwenty } from "./twenty-sync"
 import { buildReportUrl, normalizeReportLocale } from "./routing"
 import type { SalesCompany } from "./types"
@@ -382,6 +383,10 @@ async function processJob(sb: ServiceSupabase, job: SalesEnrichmentJob): Promise
     if (error) console.error("[sales-enrichment] demo meta update failed:", error.message)
   }
   await saveSourceCoverageRows(finalCompany)
+  const techSave = await saveTechStackDetections(finalCompany)
+  if (!techSave.ok && techSave.error) {
+    console.error("[sales-enrichment] tech stack save failed:", techSave.error)
+  }
   const coverage = computeSourceCoverage(finalCompany)
   const twentySync = await syncCompanyKarteToTwenty(finalCompany.id)
   if (!twentySync.ok && twentySync.configured) {
