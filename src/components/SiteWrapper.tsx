@@ -14,6 +14,6 @@ import { usePathname } from "next/navigation"
 export default function SiteWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   // LP 経路は <main pt-16> を付けない (header skip のため top spacing 不要)
-  const isLp = pathname.startsWith("/p/") || /^\/[a-z]{2}\/report\//.test(pathname)
+  const isLp = pathname.startsWith("/p/") || /^\/[a-z]{2}\/(?:report|d)\//.test(pathname)
   return <main className={isLp ? "" : "pt-16"}>{children}</main>
 }

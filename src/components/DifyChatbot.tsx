@@ -65,7 +65,7 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
     if (open) bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, open])
 
-  if (pathname.includes("/p/") || pathname.includes("/report/")) return null
+  if (pathname.includes("/p/") || pathname.includes("/report/") || /^\/[a-z]{2}\/d\//.test(pathname)) return null
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return
@@ -81,7 +81,8 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
       const data = await res.json()
       setMessages((prev) => [...prev, { role: "bot", text: data.answer || t("errorReply") }])
       if (data.conversation_id) setConversationId(data.conversation_id)
-    } catch {
+    } catch (error) {
+      console.error("[DifyChatbot] failed to send message:", error)
       setMessages((prev) => [...prev, { role: "bot", text: t("errorNetwork") }])
     }
     setLoading(false)
