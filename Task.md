@@ -756,3 +756,12 @@
 - [x] Cleaned the industry label renderer so generated assets no longer inherit mojibake industry names.
 - [x] Clarified implementation split: HyperFrames is the browser-native HTML/timeline preview and render input; Remotion is the React/MP4 production renderer for final video export when the renderer lane is enabled.
 - [x] Verification: `npx tsc --noEmit --pretty false`, `git diff --check`, targeted Vitest source tests, and `npm run build` passed. Local production server returns HTTP 200 for the checked report/video and demo routes when started from `D:\dev\paradigmjpcom`; the Desktop junction path still triggers the known Next routes-manifest path issue.
+
+## Codex Update - 2026-06-02 Demo Chrome Isolation and Japan Market Audit
+
+- [x] Fixed public Astro demo routes so `/[locale]/d/*` is no longer wrapped by the Paradigm HP header, footer, cookie consent, or chatbot chrome.
+- [x] Added demo-specific metadata for `/[locale]/d/[slug]`, including noindex robots and a customer-demo title instead of the corporate homepage title.
+- [x] Added a Japan market readiness audit source that checks public pages for Tokushoho disclosure signals, APPI/privacy signals, and Japan-local payment signals.
+- [x] Wired the audit into `scanDomain`, `/api/sales/scan/[domain]`, enrichment jobs after CSV import, source coverage, and company intelligence pain points.
+- [x] Kept legal/payment findings as human-reviewed sales hypotheses only; customer-facing legal, penalty, compliance, market-stat, or CAGR assertions still require primary-source verification.
+- [x] Verification: `npx tsc --noEmit --pretty false`, targeted Vitest including `japan-market-audit.test.ts`, `git diff --check`, and `npm run build` passed.

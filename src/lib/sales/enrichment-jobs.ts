@@ -8,6 +8,7 @@ import { computeSourceCoverage, saveSourceCoverageRows } from "./source-coverage
 import { saveTechStackDetections } from "./source-acquisition"
 import { syncCompanyKarteToTwenty } from "./twenty-sync"
 import { buildReportUrl, normalizeReportLocale } from "./routing"
+import { auditJapanMarketReadiness } from "./sources/japan-market-audit"
 import type { SalesCompany } from "./types"
 
 type JsonRecord = Record<string, unknown>
@@ -324,9 +325,13 @@ async function processJob(sb: ServiceSupabase, job: SalesEnrichmentJob): Promise
   const refreshed = (enrich.company ?? (await findCompanyById(company.id))) as SalesCompany | null
   if (!refreshed) return { ok: false, error: "company disappeared after enrichment" }
 
-  const dify = await runDifyDiagnosis(refreshed)
+  const [dify, japanMarketAudit] = await Promise.all([
+    runDifyDiagnosis(refreshed),
+    auditJapanMarketReadiness(refreshed.domain),
+  ])
   const mergedMeta: JsonRecord = {
     ...(refreshed.meta ?? {}),
+    japan_market_audit: japanMarketAudit,
     pain_diagnosis: {
       ...dify.summary,
       generated_at: new Date().toISOString(),

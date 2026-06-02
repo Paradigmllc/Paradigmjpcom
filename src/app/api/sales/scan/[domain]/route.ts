@@ -81,6 +81,7 @@ export async function POST(
       },
       security_headers: scan.securityHeaders,
       robots_sitemap: scan.robotsSitemap,
+      japan_market_audit: scan.japanMarketAudit,
     },
   })
   if (result.company) await saveSourceCoverageRows(result.company)
@@ -93,6 +94,7 @@ export async function POST(
     mobile: scan.mobile.performance,
     desktop: scan.desktop.performance,
     issues: scan.issues,
+    japan_market_audit: scan.japanMarketAudit,
     // Sprint 13: /report/[slug] が正式 URL. scan は domain ベース呼出のため slug は別途設定要.
     //   ここでは scan 結果としての domain-based URL ではなく "未設定" を返し、報告 URL は別所で生成.
     report_url: slug ? buildReportUrl(reportLocale, slug) : null,

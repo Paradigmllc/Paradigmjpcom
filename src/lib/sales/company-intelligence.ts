@@ -40,6 +40,10 @@ function asString(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null
 }
 
+function asBoolean(value: unknown): boolean | null {
+  return typeof value === "boolean" ? value : null
+}
+
 function scoreTone(score: number | null): IntelligenceTone {
   if (score === null) return "neutral"
   if (score < 50) return "critical"
@@ -87,6 +91,13 @@ export function buildCompanyIntelligence(
   const place = asRecord(meta.place)
   const diagnosis = asRecord(meta.pain_diagnosis)
   const formDiscovery = asRecord(meta.form_discovery)
+  const japanMarketAudit = asRecord(meta.japan_market_audit)
+  const japanMarketStatus = asRecord(japanMarketAudit?.status)
+  const japanMarketMissing = [
+    asBoolean(japanMarketStatus?.tokushoho_missing),
+    asBoolean(japanMarketStatus?.appi_missing),
+    asBoolean(japanMarketStatus?.local_payments_missing),
+  ].filter((value) => value === true).length
 
   const headerCount = headers
     ? [headers.hasHsts, headers.hasCsp, headers.hasXFrameOptions, headers.hasNoSniff].filter(Boolean).length
@@ -195,6 +206,23 @@ export function buildCompanyIntelligence(
       missingConsequence: !asString(meta.contact_form_url) ? missingFor(sourceItems, "crawlee") : undefined,
     },
     {
+      id: "japan-market-audit",
+      label: "Japan readiness",
+      value: japanMarketAudit ? `${3 - japanMarketMissing}/3 signals confirmed` : "not collected",
+      source: "Japan legal/payment readiness",
+      category: "company",
+      tone: !japanMarketAudit ? "neutral" : japanMarketMissing >= 2 ? "critical" : japanMarketMissing === 1 ? "warning" : "good",
+      detail:
+        asString(japanMarketAudit?.sales_pitch_context) ??
+        "Checks public-page hints for Japanese commercial disclosure, privacy/APPI explanation, and local payment readiness.",
+      whyItMatters: meaningFor(
+        sourceItems,
+        "japan_market_audit",
+        "Japan-entry buyers need localized trust, privacy, and payment cues before they commit.",
+      ),
+      missingConsequence: !japanMarketAudit ? missingFor(sourceItems, "japan_market_audit") : undefined,
+    },
+    {
       id: "dify",
       label: "Dify diagnosis",
       value: asString(diagnosis?.primaryPain) ? "generated" : "fallback / pending",
@@ -252,6 +280,19 @@ export function buildCompanyIntelligence(
       recommendedAction: "Set CSP, HSTS, X-Frame-Options, and nosniff as standard launch hardening.",
     })
   }
+  if (japanMarketAudit && japanMarketMissing > 0) {
+    painPoints.push({
+      id: "japan-market-readiness",
+      title: "Japan-entry trust and payment gaps need human review",
+      severity: japanMarketMissing >= 2 ? "critical" : "warning",
+      evidence: `${japanMarketMissing}/3 public-page readiness signals look incomplete.`,
+      implication:
+        asString(japanMarketAudit.sales_pitch_context) ??
+        "Japanese buyers may hesitate if commercial disclosure, privacy handling, or local payment options are unclear.",
+      recommendedAction:
+        "Confirm the gaps manually, then generate a Japan-entry proposal with Dify. Do not assert legal violations, penalties, or compliance claims without primary-source review.",
+    })
+  }
   if (painPoints.length === 0) {
     painPoints.push({
       id: "growth-opportunity",
@@ -268,6 +309,9 @@ export function buildCompanyIntelligence(
     asString(meta.contact_form_url)
       ? "Run form outreach in dry-run mode first and verify the message, target form, and CAPTCHA risk."
       : "Confirm the form URL in Appsmith/NocoDB before any automated outreach.",
+    japanMarketAudit
+      ? "Use the Japan readiness audit as a human-reviewed sales hypothesis, not as legal advice."
+      : "Run the Japan readiness audit before sending Japan-entry offers.",
     "Attach the diagnostic report URL and Astro replacement demo URL to the proposal message.",
     configured.length > 0
       ? `Turn configured sources into collected evidence: ${configured.slice(0, 3).join(" / ")}.`

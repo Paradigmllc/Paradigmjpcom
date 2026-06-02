@@ -11,6 +11,7 @@
  */
 
 import { notFound } from "next/navigation"
+import type { Metadata } from "next"
 import { findCompanyById } from "@/lib/sales/companies"
 import { generateReplacementDemo } from "@/lib/sales/demo-generator"
 import { fetchDiagnosticReport } from "@/lib/sales/diagnostic"
@@ -59,6 +60,21 @@ async function refreshOutdatedDemo(demo: Demo): Promise<Demo> {
   const result = await generateReplacementDemo(company, report)
   if (!result.ok) return demo
   return (await getDemo(demo.slug)) ?? demo
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const demo = await getDemo(slug)
+  const title = demo?.name ? `${demo.name} | 改善デモサイト` : "改善デモサイト"
+  return {
+    title,
+    description: "診断データから生成した、顧客専用のAstro実装前提デモサイトです。",
+    robots: { index: false, follow: false },
+  }
 }
 
 export default async function PublicDemoPage({

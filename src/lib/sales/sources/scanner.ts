@@ -1,4 +1,5 @@
 import type { IssueCode } from "../types"
+import { auditJapanMarketReadiness, type JapanMarketAudit } from "./japan-market-audit"
 
 const PSI_API = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
 const USER_AGENT = "Mozilla/5.0 (Paradigm Diagnostic Bot/1.0; +https://paradigmjp.com)"
@@ -42,6 +43,7 @@ export interface ScanResult {
   html: HtmlInspect
   securityHeaders: HttpSecurityHeaders
   robotsSitemap: RobotsSitemapInspect
+  japanMarketAudit: JapanMarketAudit
   issues: IssueCode[]
 }
 
@@ -173,12 +175,13 @@ async function inspectRobotsSitemap(origin: string): Promise<RobotsSitemapInspec
 export async function scanDomain(domain: string): Promise<ScanResult> {
   const url = domain.startsWith("http") ? domain : `https://${domain}`
   const origin = new URL(url).origin
-  const [mobile, desktop, html, securityHeaders, robotsSitemap] = await Promise.all([
+  const [mobile, desktop, html, securityHeaders, robotsSitemap, japanMarketAudit] = await Promise.all([
     runPsi(url, "mobile"),
     runPsi(url, "desktop"),
     inspectHtml(url),
     inspectSecurityHeaders(url),
     inspectRobotsSitemap(origin),
+    auditJapanMarketReadiness(origin),
   ])
 
   const issues: IssueCode[] = []
@@ -190,5 +193,5 @@ export async function scanDomain(domain: string): Promise<ScanResult> {
     issues.push("copyright_old")
   }
 
-  return { mobile, desktop, html, securityHeaders, robotsSitemap, issues }
+  return { mobile, desktop, html, securityHeaders, robotsSitemap, japanMarketAudit, issues }
 }
