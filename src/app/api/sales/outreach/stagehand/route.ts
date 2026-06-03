@@ -37,6 +37,9 @@ export async function POST(req: NextRequest) {
   if (!stagehandUrl) {
     return NextResponse.json({ ok: false, error: "STAGEHAND_URL is not configured" }, { status: 503 })
   }
+  if (!stagehandApiKey) {
+    return NextResponse.json({ ok: false, error: "STAGEHAND_API_KEY is not configured" }, { status: 503 })
+  }
 
   const provider = new StagehandProvider(stagehandUrl, stagehandApiKey)
   const result = await provider.submitForm({

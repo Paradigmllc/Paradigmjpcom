@@ -893,3 +893,12 @@
 - [ ] Operational blockers: 監査スクリプト上は96ソース中 configured=15 / liveOk=8。Stagehand、Browserless、mubeng、Scrapoxy、OpenMontage、ComfyUI、HyperFrames、Remotion、R2、Smartlead、Resend、Twilio、HeyReach、Listmonk/Mautic 等は本番env/DNS/APIキー未設定なら実働不可。UI/APIは未設定として可視化し、fail-closedで扱う。
 - [ ] Host hygiene: Coolify/Nixpacks deploy後、root diskは約74%。未使用image/build cacheの再膨張があるため、次回以降もデプロイ前後の容量監査が必要。
 - [ ] DB blocker carried forward: Sales OS Supabase の `sales_tool_connections` 旧check constraintは未解消。`supabase/migration_034_sales_post_outreach_tools.sql` をSales OS SQLへ適用するまで、DB上のツール行は完全同期できない。
+## Codex Update - 2026-06-04 Strict OSS Runtime Gates
+
+- [x] Chatwoot / Directus / Keystatic / LiveKit / Browserless / Stagehand / HyperFrames をURLだけで接続済みにしない厳格運用へ変更。
+- [x] `src/lib/sales/oss-service-health.ts` を追加し、Browserless `/pressure`、Stagehand `/health`、Chatwoot account API、Directus `/server/health` + `/users/me`、Keystatic HTTP到達、LiveKit RoomService JWT、HyperFrames health endpoint をライブチェック対象にした。
+- [x] Browserless screenshot API は `BROWSERLESS_TOKEN` 未設定なら503、Stagehand outreach API は `STAGEHAND_API_KEY` 未設定なら503でfail-closed。
+- [x] HyperFrames render は `HYPERFRAMES_API_KEY` 必須化、HTTPエラー本文と例外をログ化し、失敗時はHTML previewへ明示フォールバック。
+- [x] Coolify application env に7サービスの本番URLとキー名プレースホルダーを登録。既存の非空secretは上書きしていない。空secretは `''` と返るため `scripts/lib/coolify-env.mjs` で正規化して未設定扱いにした。
+- [x] Verification: `node --check scripts/audit-sales-data-acquisition.mjs`, `npx tsc --noEmit --pretty false`, `npm test -- --run src/lib/sales/integration-registry.test.ts`, `git diff --check`, `npm run build` passed.
+- [ ] External blockers: Chatwoot/Directus/LiveKit/Browserless/Stagehand/HyperFrames は実インスタンスDNS/APIキーが未投入。KeystaticはURL envがあるが `https://keystatic.paradigmjp.com` が現時点で `fetch failed`。監査では全て未ready/エラーとして可視化される。

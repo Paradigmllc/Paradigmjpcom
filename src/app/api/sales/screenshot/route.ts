@@ -59,15 +59,19 @@ export async function POST(req: NextRequest) {
   let bUrlObj: URL
   try {
     bUrlObj = new URL(browserlessUrl)
-  } catch {
+  } catch (error) {
+    console.warn("[api/sales/screenshot] BROWSERLESS_URL was not a direct URL, trying ws/http normalization:", error)
     // If it's a websocket path wss://, map to https://
     const normalized = browserlessUrl.replace(/^ws/, "http")
     bUrlObj = new URL(normalized)
   }
 
   const token = process.env.BROWSERLESS_TOKEN ?? bUrlObj.searchParams.get("token")
+  if (!token) {
+    return NextResponse.json({ ok: false, error: "BROWSERLESS_TOKEN is not configured" }, { status: 503 })
+  }
   bUrlObj.pathname = "/screenshot"
-  if (token) bUrlObj.searchParams.set("token", token)
+  bUrlObj.searchParams.set("token", token)
 
   const mubengProxyUrl = getMubengProxyUrl()
 

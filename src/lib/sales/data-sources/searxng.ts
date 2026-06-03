@@ -20,8 +20,12 @@ interface SearxngPayload {
 
 export class SearxngClient extends BaseApiClient {
   constructor() {
+    const baseUrl = process.env.SEARXNG_BASE_URL
+    if (!baseUrl || baseUrl.trim().length === 0) {
+      console.warn("[SearxngClient] SEARXNG_BASE_URL is not configured")
+    }
     super("searxng_source", {
-      baseUrl: process.env.SEARXNG_BASE_URL || "",
+      baseUrl: baseUrl?.trim() ?? "",
       timeoutMs: 18000,
     });
     // Fallback logic for slug to match registry

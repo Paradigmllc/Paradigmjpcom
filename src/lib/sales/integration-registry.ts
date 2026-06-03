@@ -1,5 +1,14 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DIFY_RUNTIME_KEY_ENV_NAMES, DIFY_RUNTIME_URL_ENV_NAMES } from "./dify-cloud"
+import {
+  checkBrowserlessHealth as checkBrowserlessServiceHealth,
+  checkChatwootHealth,
+  checkDirectusHealth,
+  checkHyperFramesHealth,
+  checkKeystaticHealth,
+  checkLiveKitHealth,
+  checkStagehandHealth as checkStagehandServiceHealth,
+} from "./oss-service-health"
 
 export type SalesIntegrationCategory =
   | "orchestration"
@@ -25,7 +34,18 @@ export interface SalesIntegrationDefinition {
   requiredEnv: string[]
   requiredAnyEnv?: string[]
   optionalEnv?: string[]
-  balance: "none" | "manual" | "dataforseo_user_data" | "browserless_pressure" | "stagehand_health" | "mubeng_health"
+  balance:
+    | "none"
+    | "manual"
+    | "dataforseo_user_data"
+    | "browserless_pressure"
+    | "stagehand_health"
+    | "mubeng_health"
+    | "chatwoot_health"
+    | "directus_health"
+    | "keystatic_health"
+    | "livekit_health"
+    | "hyperframes_health"
   docsUrl?: string
   recommended: boolean
   notes: string
@@ -137,8 +157,8 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     category: "outreach",
     deployment: "api",
     role: "Remote browser runtime for SPA form discovery, preflight checks, and target website screenshots.",
-    requiredEnv: ["BROWSERLESS_URL"],
-    optionalEnv: ["BROWSERLESS_TOKEN"],
+    requiredEnv: ["BROWSERLESS_URL", "BROWSERLESS_TOKEN"],
+    optionalEnv: [],
     balance: "browserless_pressure",
     docsUrl: "https://docs.browserless.io/enterprise/utility-functions/pressure",
     recommended: true,
@@ -150,8 +170,8 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     category: "outreach",
     deployment: "oss",
     role: "AI-driven web agent for autonomous and robust contact form submission using LLMs.",
-    requiredEnv: ["STAGEHAND_URL"],
-    optionalEnv: ["STAGEHAND_API_KEY"],
+    requiredEnv: ["STAGEHAND_URL", "STAGEHAND_API_KEY"],
+    optionalEnv: [],
     balance: "stagehand_health",
     docsUrl: "https://github.com/browserbase/stagehand",
     recommended: true,
@@ -459,11 +479,11 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     category: "asset_generation",
     deployment: "oss",
     role: "Asset, proposal, and slide content management studio when a dedicated Directus instance is deployed.",
-    requiredEnv: [],
-    optionalEnv: ["DIRECTUS_BASE_URL", "DIRECTUS_TOKEN", "NEXT_PUBLIC_DIRECTUS_URL"],
-    balance: "manual",
+    requiredEnv: ["DIRECTUS_BASE_URL", "DIRECTUS_TOKEN"],
+    optionalEnv: ["NEXT_PUBLIC_DIRECTUS_URL"],
+    balance: "directus_health",
     docsUrl: "https://github.com/directus/directus",
-    recommended: false,
+    recommended: true,
     notes: "未接続時はRevenue OS内の資料スタジオにフォールバックします。外部Directusが404でも営業導線は止めません。",
   },
   {
@@ -505,10 +525,26 @@ const REGISTRY: SalesIntegrationDefinition[] = [
       "COMFYUI_API_URL",
       "REMOTION_RENDER_URL",
       "HYPERFRAMES_API_URL",
+      "HYPERFRAMES_RENDERER_URL",
+      "HYPERFRAMES_API_KEY",
     ],
     balance: "manual",
     recommended: true,
     notes: "営業資料埋め込み用の短尺動画と、動画納品サブスク用の制作ラインを分ける。",
+  },
+  {
+    slug: "hyperframes_renderer",
+    displayName: "HyperFrames",
+    category: "video",
+    deployment: "oss",
+    role: "Authenticated HTML-to-video renderer for sales video assets and delivery-subscription outputs.",
+    requiredEnv: ["HYPERFRAMES_API_KEY"],
+    requiredAnyEnv: ["HYPERFRAMES_RENDERER_URL", "HYPERFRAMES_API_URL"],
+    optionalEnv: [],
+    balance: "hyperframes_health",
+    docsUrl: "https://github.com/heygen-com/hyperframes",
+    recommended: true,
+    notes: "HyperFramesはURLだけではreadyにしません。renderer/API URLのいずれかとHYPERFRAMES_API_KEYがあり、health endpointが通ることを要求します。",
   },
   {
     slug: "video_media_sources",
@@ -541,11 +577,11 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     category: "demo_site",
     deployment: "oss",
     role: "Git-backed CMS for Astro demo-site edits by non-engineering operators.",
-    requiredEnv: [],
-    optionalEnv: ["KEYSTATIC_BASE_URL", "NEXT_PUBLIC_KEYSTATIC_URL", "ASTRO_DEMO_WORKER_URL"],
-    balance: "manual",
+    requiredEnv: ["KEYSTATIC_BASE_URL"],
+    optionalEnv: ["NEXT_PUBLIC_KEYSTATIC_URL", "ASTRO_DEMO_WORKER_URL"],
+    balance: "keystatic_health",
     docsUrl: "https://github.com/Thinkmill/keystatic",
-    recommended: false,
+    recommended: true,
     notes: "未接続時はRevenue OS内のデモサイトテンプレート管理を使います。Git反映は別途Keystatic/Astro側のデプロイが必要です。",
   },
   {
@@ -753,9 +789,9 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     category: "crm_ops",
     deployment: "oss",
     role: "Unified inbox for email replies, chat, and social DMs after outreach lands.",
-    requiredEnv: ["CHATWOOT_BASE_URL"],
-    optionalEnv: ["CHATWOOT_API_KEY", "CHATWOOT_ACCOUNT_ID", "CHATWOOT_WEBHOOK_URL", "N8N_POST_OUTREACH_WEBHOOK_URL"],
-    balance: "manual",
+    requiredEnv: ["CHATWOOT_BASE_URL", "CHATWOOT_API_KEY", "CHATWOOT_ACCOUNT_ID"],
+    optionalEnv: ["CHATWOOT_WEBHOOK_URL", "N8N_POST_OUTREACH_WEBHOOK_URL"],
+    balance: "chatwoot_health",
     docsUrl: "https://github.com/chatwoot/chatwoot",
     recommended: true,
     notes: "Webhookは/api/sales/chatwoot/webhookで受け、返信を活動ログとフォローアップキューに戻します。n8n設定時はAI返信導線へ転送します。",
@@ -766,9 +802,9 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     category: "crm_ops",
     deployment: "oss",
     role: "Realtime voice/video lane for AI discovery calls and meeting transcripts.",
-    requiredEnv: ["LIVEKIT_URL"],
-    optionalEnv: ["LIVEKIT_API_KEY", "LIVEKIT_API_SECRET", "LIVEKIT_WEBHOOK_URL", "N8N_LIVEKIT_DISCOVERY_WEBHOOK_URL"],
-    balance: "manual",
+    requiredEnv: ["LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET"],
+    optionalEnv: ["LIVEKIT_WEBHOOK_URL", "N8N_LIVEKIT_DISCOVERY_WEBHOOK_URL"],
+    balance: "livekit_health",
     docsUrl: "https://github.com/livekit/livekit",
     recommended: true,
     notes: "Webhookは/api/sales/livekit/webhookで受け、初期ヒアリングの記録を活動ログと商談準備キューに戻します。",
@@ -827,7 +863,11 @@ function missingEnv(names: string[]): string[] {
 
 function statusFor(def: SalesIntegrationDefinition): SalesIntegrationStatusKind {
   if (def.requiredAnyEnv && def.requiredAnyEnv.length > 0) {
-    return configuredEnv(def.requiredAnyEnv).length > 0 ? "ready" : "missing"
+    const hasAny = configuredEnv(def.requiredAnyEnv).length > 0
+    const missingRequired = missingEnv(def.requiredEnv)
+    if (hasAny && missingRequired.length === 0) return "ready"
+    if (hasAny || missingRequired.length < def.requiredEnv.length) return "partial"
+    return "missing"
   }
   if (def.requiredEnv.length === 0) {
     return configuredEnv(def.optionalEnv ?? []).length > 0 ? "ready" : def.recommended ? "optional" : "manual"
@@ -942,9 +982,14 @@ async function checkMubengHealth(): Promise<Pick<SalesIntegrationStatus, "balanc
 
 async function liveBalance(def: SalesIntegrationDefinition): Promise<Pick<SalesIntegrationStatus, "balanceStatus" | "balanceLabel"> | null> {
   if (def.balance === "dataforseo_user_data") return checkDataForSeoBalance()
-  if (def.balance === "browserless_pressure") return checkBrowserlessPressure()
-  if (def.balance === "stagehand_health") return checkStagehandHealth()
+  if (def.balance === "browserless_pressure") return checkBrowserlessServiceHealth()
+  if (def.balance === "stagehand_health") return checkStagehandServiceHealth()
   if (def.balance === "mubeng_health") return checkMubengHealth()
+  if (def.balance === "chatwoot_health") return checkChatwootHealth()
+  if (def.balance === "directus_health") return checkDirectusHealth()
+  if (def.balance === "keystatic_health") return checkKeystaticHealth()
+  if (def.balance === "livekit_health") return checkLiveKitHealth()
+  if (def.balance === "hyperframes_health") return checkHyperFramesHealth()
   return null
 }
 
@@ -961,11 +1006,14 @@ export async function getSalesIntegrationStatus(
     const status = statusFor(def)
     const defaults = defaultBalance(def, status)
     const live = options.liveBalance ? await liveBalance(def) : null
-    const configuredRequiredEnv = configuredEnv(def.requiredAnyEnv ?? def.requiredEnv)
-    const requiredMissingEnv =
-      def.requiredAnyEnv && configuredRequiredEnv.length > 0
-        ? []
-        : missingEnv(def.requiredAnyEnv ?? def.requiredEnv)
+    const configuredRequiredEnv = [
+      ...configuredEnv(def.requiredEnv),
+      ...configuredEnv(def.requiredAnyEnv ?? []),
+    ]
+    const requiredMissingEnv = [
+      ...missingEnv(def.requiredEnv),
+      ...(def.requiredAnyEnv && configuredEnv(def.requiredAnyEnv).length === 0 ? def.requiredAnyEnv : []),
+    ]
     rows.push({
       slug: def.slug,
       displayName: def.displayName,

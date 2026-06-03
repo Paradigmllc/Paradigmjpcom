@@ -199,6 +199,11 @@ function getHyperframesApi(): string | null {
   return value.replace(/\/+$/, "")
 }
 
+function getHyperframesApiKey(): string | null {
+  const value = process.env.HYPERFRAMES_API_KEY
+  return value && value.trim().length > 0 ? value.trim() : null
+}
+
 function getBaseUrl(): string {
   const value = process.env.NEXT_PUBLIC_SITE_URL
   return value ? value.replace(/\/+$/, "") : "https://paradigmjp.com"
@@ -255,6 +260,7 @@ export async function generateDiagnosticVideo(
   })
   const previewUrl = company.slug ? `${getBaseUrl()}/${data.report_locale}/report/${company.slug}/video` : null
   const api = getHyperframesApi()
+  const apiKey = getHyperframesApiKey()
 
   const baseResult = {
     script,
@@ -275,25 +281,42 @@ export async function generateDiagnosticVideo(
       ...(previewUrl ? {} : { error: "company.slug not set; preview URL unavailable" }),
     }
   }
+  if (!apiKey) {
+    console.error("[video-generator] HYPERFRAMES_API_URL is configured but HYPERFRAMES_API_KEY is missing")
+    return {
+      ok: !!previewUrl,
+      video_url: previewUrl ?? undefined,
+      ...baseResult,
+      error: "HYPERFRAMES_API_KEY is not configured; HTML preview returned",
+    }
+  }
 
   try {
     const res = await fetch(`${api}/render`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ html, format: "mp4", width: 1920, height: 1080, fps: 30, duration_sec: 60 }),
       signal: AbortSignal.timeout(180_000),
     })
     if (!res.ok) {
+      const text = await res.text().catch((error) => {
+        console.error("[video-generator] failed to read HyperFrames error body:", error)
+        return ""
+      })
       return {
         ok: !!previewUrl,
         video_url: previewUrl ?? undefined,
         ...baseResult,
-        error: `HyperFrames API ${res.status}: ${res.statusText}; HTML preview returned`,
+        error: `HyperFrames API ${res.status}: ${(text || res.statusText).slice(0, 240)}; HTML preview returned`,
       }
     }
     const result = (await res.json()) as { video_url?: string }
     return { ok: true, video_url: result.video_url ?? previewUrl ?? undefined, ...baseResult }
   } catch (error) {
+    console.error("[video-generator] HyperFrames render failed:", error)
     return {
       ok: !!previewUrl,
       video_url: previewUrl ?? undefined,

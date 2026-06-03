@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { createHmac } from "node:crypto"
 import { createClient } from "@supabase/supabase-js"
 import { readCoolifyApplicationEnvs } from "./lib/coolify-env.mjs"
 
@@ -38,9 +39,9 @@ const SOURCES = [
   source("crawlee", "Crawlee", "orchestration", ["CRAWLEE_WORKER_URL"]),
   source("crawl4ai", "Crawl4AI", "orchestration", ["CRAWL4AI_BASE_URL"]),
   source("playwright_stealth", "Playwright Stealth", "orchestration", ["OUTREACH_WORKER_URL", "PLAYWRIGHT_STEALTH_ENABLED"]),
-  source("stagehand", "Stagehand", "orchestration", ["STAGEHAND_URL"], ["STAGEHAND_API_KEY"]),
+  sourceAll("stagehand", "Stagehand", "orchestration", ["STAGEHAND_URL", "STAGEHAND_API_KEY"], [], checkStagehand),
   source("rsshub", "RSSHub", "orchestration", ["RSSHUB_BASE_URL"], [], checkRssHub),
-  source("browserless", "Browserless", "orchestration", ["BROWSERLESS_URL"], ["BROWSERLESS_TOKEN"], checkBrowserless),
+  sourceAll("browserless", "Browserless", "orchestration", ["BROWSERLESS_URL", "BROWSERLESS_TOKEN"], [], checkBrowserless),
   source("mubeng", "mubeng", "orchestration", ["MUBENG_PROXY_URL"], ["MUBENG_PROXY_USERNAME", "MUBENG_PROXY_PASSWORD"]),
   source("scrapoxy", "Scrapoxy", "orchestration", ["SCRAPOXY_PROXY_URL"], ["SCRAPOXY_API_URL", "SCRAPOXY_API_KEY"]),
   source("camoufox", "Camoufox", "orchestration", ["CAMOUFOX_WS_URL"]),
@@ -106,13 +107,13 @@ const SOURCES = [
   source("gotenberg_slidev", "Slidev / Gotenberg", "demo", ["GOTENBERG_URL"]),
   source("marp_recharts", "Marp / Recharts", "demo", ["MARP_RENDER_URL", "RECHARTS_ENABLED"]),
   source("shadcn_blocks", "shadcn/ui blocks", "demo", ["SHADCN_BLOCKS_REGISTRY_URL"]),
-  source("directus", "Directus", "demo", ["DIRECTUS_BASE_URL"], ["DIRECTUS_TOKEN"]),
-  source("keystatic", "Keystatic", "demo", ["KEYSTATIC_BASE_URL", "NEXT_PUBLIC_KEYSTATIC_URL"]),
+  sourceAll("directus", "Directus", "demo", ["DIRECTUS_BASE_URL", "DIRECTUS_TOKEN"], [], checkDirectus),
+  sourceAll("keystatic", "Keystatic", "demo", ["KEYSTATIC_BASE_URL"], ["NEXT_PUBLIC_KEYSTATIC_URL"], checkKeystatic),
 
   source("openmontage", "OpenMontage orchestration", "video", ["OPENMONTAGE_API_URL", "OPENMONTAGE_BASE_URL", "OPENMONTAGE_API_KEY"]),
   source("vast_runpod", "Vast.ai / Runpod GPU", "video", ["VAST_API_KEY", "RUNPOD_API_KEY"]),
   source("comfyui", "ComfyUI API", "video", ["COMFYUI_API_URL", "COMFYUI_BASE_URL"]),
-  source("hyperframes", "HyperFrames", "video", ["HYPERFRAMES_RENDERER_URL", "HYPERFRAMES_API_URL"]),
+  source("hyperframes", "HyperFrames", "video", ["HYPERFRAMES_RENDERER_URL", "HYPERFRAMES_API_URL"], [], checkHyperframes, ["HYPERFRAMES_API_KEY"]),
   source("remotion_video", "Remotion", "video", ["REMOTION_RENDER_URL", "REMOTION_RENDERER_URL"]),
   source("faster_whisper", "Faster Whisper", "video", ["FASTER_WHISPER_URL"]),
   source("moviepy_short_video", "MoviePy / Short Video Maker", "video", ["MOVIEPY_WORKER_URL", "SHORT_VIDEO_MAKER_URL"]),
@@ -122,6 +123,8 @@ const SOURCES = [
   source("whisperx", "WhisperX", "video", ["WHISPERX_WORKER_URL"]),
   source("r2_video_delivery", "Cloudflare R2 delivery", "video", ["CLOUDFLARE_R2_BUCKET", "R2_ACCESS_KEY_ID", "R2_BUCKET"]),
 
+  sourceAll("chatwoot", "Chatwoot OSS", "outreach", ["CHATWOOT_BASE_URL", "CHATWOOT_API_KEY", "CHATWOOT_ACCOUNT_ID"], ["CHATWOOT_WEBHOOK_URL", "N8N_POST_OUTREACH_WEBHOOK_URL"], checkChatwoot),
+  sourceAll("livekit", "LiveKit OSS", "outreach", ["LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET"], ["LIVEKIT_WEBHOOK_URL", "N8N_LIVEKIT_DISCOVERY_WEBHOOK_URL"], checkLivekit),
   source("smartlead", "Smartlead.ai", "outreach", ["SMARTLEAD_API_KEY"]),
   source("resend", "Resend API", "outreach", ["RESEND_API_KEY"]),
   source("docsend", "DocSend", "outreach", ["DOCSEND_API_KEY"]),
@@ -130,8 +133,12 @@ const SOURCES = [
   source("twenty_cms", "TwentyCMS / Twenty CRM", "orchestration", ["TWENTY_BASE_URL"], ["TWENTY_CMS_BASE_URL"]),
 ]
 
-function source(slug, label, category, requiredAnyEnv = [], optionalEnv = [], check = null) {
-  return { slug, label, category, requiredAnyEnv, optionalEnv, check }
+function source(slug, label, category, requiredAnyEnv = [], optionalEnv = [], check = null, requiredAllEnv = []) {
+  return { slug, label, category, requiredAnyEnv, requiredAllEnv, optionalEnv, check }
+}
+
+function sourceAll(slug, label, category, requiredAllEnv = [], optionalEnv = [], check = null) {
+  return source(slug, label, category, [], optionalEnv, check, requiredAllEnv)
 }
 
 function envValue(envs, name) {
@@ -143,8 +150,10 @@ function configuredNames(envs, names) {
   return names.filter((name) => envValue(envs, name))
 }
 
-function isConfigured(envs, names) {
-  return names.length === 0 || configuredNames(envs, names).length > 0
+function isConfigured(envs, requiredAnyEnv, requiredAllEnv = []) {
+  const anyReady = requiredAnyEnv.length === 0 || configuredNames(envs, requiredAnyEnv).length > 0
+  const allReady = requiredAllEnv.every((name) => envValue(envs, name))
+  return anyReady && allReady
 }
 
 async function fetchJson(url, options = {}) {
@@ -260,10 +269,100 @@ async function checkBrowserless(envs) {
   if (!rawUrl) return { ok: false, label: "BROWSERLESS_URL not configured" }
   const url = new URL(rawUrl)
   const token = envValue(envs, "BROWSERLESS_TOKEN") ?? url.searchParams.get("token")
+  if (!token) return { ok: false, label: "BROWSERLESS_TOKEN not configured" }
   url.pathname = "/pressure"
-  if (token) url.searchParams.set("token", token)
+  url.searchParams.set("token", token)
   const res = await fetchJson(url.toString())
   return { ok: res.ok, label: res.ok ? `pressure ${JSON.stringify(res.body).slice(0, 80)}` : `HTTP ${res.status}` }
+}
+
+async function checkStagehand(envs) {
+  const rawUrl = envValue(envs, "STAGEHAND_URL")
+  const key = envValue(envs, "STAGEHAND_API_KEY")
+  if (!rawUrl || !key) return { ok: false, label: "STAGEHAND_URL/API_KEY not configured" }
+  const url = new URL(rawUrl)
+  url.pathname = "/health"
+  const res = await fetchJson(url.toString(), { headers: { Authorization: `Bearer ${key}` }, timeoutMs: 10_000 })
+  return { ok: res.ok, label: `HTTP ${res.status}` }
+}
+
+async function checkDirectus(envs) {
+  const rawUrl = envValue(envs, "DIRECTUS_BASE_URL")
+  const token = envValue(envs, "DIRECTUS_TOKEN")
+  if (!rawUrl || !token) return { ok: false, label: "DIRECTUS_BASE_URL/TOKEN not configured" }
+  const base = rawUrl.replace(/\/+$/, "")
+  const health = await fetchJson(`${base}/server/health`, { timeoutMs: 10_000 })
+  if (!health.ok) return { ok: false, label: `health HTTP ${health.status}` }
+  const me = await fetchJson(`${base}/users/me`, { headers: { Authorization: `Bearer ${token}` }, timeoutMs: 10_000 })
+  return { ok: me.ok, label: me.ok ? "health and token OK" : `token HTTP ${me.status}` }
+}
+
+async function checkKeystatic(envs) {
+  const rawUrl = envValue(envs, "KEYSTATIC_BASE_URL")
+  if (!rawUrl) return { ok: false, label: "KEYSTATIC_BASE_URL not configured" }
+  const res = await fetch(rawUrl, { redirect: "manual", signal: AbortSignal.timeout(10_000) })
+  return { ok: res.status < 500, label: `HTTP ${res.status}` }
+}
+
+async function checkChatwoot(envs) {
+  const rawUrl = envValue(envs, "CHATWOOT_BASE_URL")
+  const key = envValue(envs, "CHATWOOT_API_KEY")
+  const accountId = envValue(envs, "CHATWOOT_ACCOUNT_ID")
+  if (!rawUrl || !key || !accountId) return { ok: false, label: "CHATWOOT_BASE_URL/API_KEY/ACCOUNT_ID not configured" }
+  const base = rawUrl.replace(/\/+$/, "")
+  const res = await fetchJson(`${base}/api/v1/accounts/${encodeURIComponent(accountId)}/inboxes`, {
+    headers: { api_access_token: key },
+    timeoutMs: 10_000,
+  })
+  return { ok: res.ok, label: res.ok ? "account API OK" : `HTTP ${res.status}` }
+}
+
+function base64Url(value) {
+  return Buffer.from(value).toString("base64url")
+}
+
+function livekitJwt(apiKey, apiSecret) {
+  const now = Math.floor(Date.now() / 1000)
+  const header = base64Url(JSON.stringify({ alg: "HS256", typ: "JWT" }))
+  const payload = base64Url(JSON.stringify({
+    iss: apiKey,
+    sub: "revenue-os-audit",
+    nbf: now - 10,
+    exp: now + 60,
+    video: { roomList: true },
+  }))
+  const signature = createHmac("sha256", apiSecret).update(`${header}.${payload}`).digest("base64url")
+  return `${header}.${payload}.${signature}`
+}
+
+async function checkLivekit(envs) {
+  const rawUrl = envValue(envs, "LIVEKIT_URL")
+  const key = envValue(envs, "LIVEKIT_API_KEY")
+  const secret = envValue(envs, "LIVEKIT_API_SECRET")
+  if (!rawUrl || !key || !secret) return { ok: false, label: "LIVEKIT_URL/API_KEY/API_SECRET not configured" }
+  const url = new URL(rawUrl)
+  if (url.protocol === "wss:") url.protocol = "https:"
+  if (url.protocol === "ws:") url.protocol = "http:"
+  url.pathname = "/twirp/livekit.RoomService/ListRooms"
+  const res = await fetchJson(url.toString(), {
+    method: "POST",
+    headers: { Authorization: `Bearer ${livekitJwt(key, secret)}`, "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+    timeoutMs: 10_000,
+  })
+  return { ok: res.ok, label: res.ok ? "RoomService OK" : `HTTP ${res.status}` }
+}
+
+async function checkHyperframes(envs) {
+  const rawUrl = envValue(envs, "HYPERFRAMES_RENDERER_URL") ?? envValue(envs, "HYPERFRAMES_API_URL")
+  const key = envValue(envs, "HYPERFRAMES_API_KEY")
+  if (!rawUrl || !key) return { ok: false, label: "HYPERFRAMES_URL/API_KEY not configured" }
+  const base = rawUrl.replace(/\/+$/, "")
+  for (const path of ["/health", "/api/health"]) {
+    const res = await fetchJson(`${base}${path}`, { headers: { Authorization: `Bearer ${key}` }, timeoutMs: 10_000 })
+    if (res.ok) return { ok: true, label: `${path} OK` }
+  }
+  return { ok: false, label: "health endpoint failed" }
 }
 
 async function checkApify(envs) {
@@ -457,10 +556,12 @@ async function main() {
 
   const checks = []
   for (const def of SOURCES) {
-    const configuredEnv = configuredNames(envs, def.requiredAnyEnv)
-    const missingEnv = def.requiredAnyEnv.filter((name) => !configuredEnv.includes(name))
+    const configuredEnv = [...configuredNames(envs, def.requiredAllEnv), ...configuredNames(envs, def.requiredAnyEnv)]
+    const missingRequiredAll = def.requiredAllEnv.filter((name) => !configuredEnv.includes(name))
+    const missingRequiredAny = def.requiredAnyEnv.length > 0 && configuredNames(envs, def.requiredAnyEnv).length === 0 ? def.requiredAnyEnv : []
+    const missingEnv = [...missingRequiredAll, ...missingRequiredAny]
     let liveStatus = "not_checked"
-    let liveLabel = def.requiredAnyEnv.length > 0 && !isConfigured(envs, def.requiredAnyEnv) ? "missing env" : "configured only"
+    let liveLabel = !isConfigured(envs, def.requiredAnyEnv, def.requiredAllEnv) ? "missing env" : "configured only"
     if (def.check) {
       try {
         const result = await def.check(envs)
@@ -471,7 +572,7 @@ async function main() {
         liveLabel = checkError instanceof Error ? checkError.message : String(checkError)
       }
     }
-    checks.push({ source: def, configured: isConfigured(envs, def.requiredAnyEnv), configuredEnv, missingEnv, liveStatus, liveLabel })
+    checks.push({ source: def, configured: isConfigured(envs, def.requiredAnyEnv, def.requiredAllEnv), configuredEnv, missingEnv, liveStatus, liveLabel })
   }
 
   const before = await readDbSnapshot(sb)

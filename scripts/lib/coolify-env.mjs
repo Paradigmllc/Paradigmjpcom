@@ -14,9 +14,21 @@ function envValue(name, fallback = null) {
 function readJson(file) {
   try {
     return JSON.parse(fs.readFileSync(file, "utf8"))
-  } catch {
+  } catch (error) {
+    console.warn(`[coolify-env] failed to read JSON ${file}:`, error)
     return null
   }
+}
+
+function normalizeCoolifyEnvValue(row) {
+  const rawValue = typeof row.value === "string" && row.value.length > 0 ? row.value : row.real_value
+  if (typeof rawValue !== "string") return rawValue
+  const trimmed = rawValue.trim()
+  const singleQuoted = trimmed.match(/^'(.*)'$/s)
+  if (singleQuoted) return singleQuoted[1]
+  const doubleQuoted = trimmed.match(/^"(.*)"$/s)
+  if (doubleQuoted) return doubleQuoted[1]
+  return trimmed
 }
 
 function findCoolifyFromMcpBackup() {
@@ -76,7 +88,7 @@ export async function coolifyRequest(pathname, options = {}) {
 
 export async function readCoolifyApplicationEnvs(appUuid = envValue("PARADIGM_APP_UUID", DEFAULT_APP_UUID)) {
   const rows = await coolifyRequest(`/api/v1/applications/${appUuid}/envs`)
-  return Object.fromEntries(rows.map((row) => [row.key, row.real_value || row.value]))
+  return Object.fromEntries(rows.map((row) => [row.key, normalizeCoolifyEnvValue(row)]))
 }
 
 export async function readProductionEnvValue(name, appUuid) {

@@ -79,7 +79,7 @@ export class StagehandProvider implements BrowserProvider {
 
   constructor(
     private readonly endpoint: string,
-    private readonly apiKey?: string,
+    private readonly apiKey: string,
   ) {}
 
   async submitForm(input: SubmitFormInput): Promise<SubmitFormResult> {
@@ -87,9 +87,7 @@ export class StagehandProvider implements BrowserProvider {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       }
-      if (this.apiKey) {
-        headers["Authorization"] = `Bearer ${this.apiKey}`
-      }
+      headers["Authorization"] = `Bearer ${this.apiKey}`
       const res = await fetch(`${this.endpoint}/submit`, {
         method: "POST",
         headers,
@@ -123,8 +121,8 @@ export function getBrowserProvider(): BrowserProvider {
   if (mode === "stagehand") {
     const endpoint = process.env.STAGEHAND_URL
     const apiKey = process.env.STAGEHAND_API_KEY
-    if (endpoint) return new StagehandProvider(endpoint, apiKey)
-    console.warn("[outreach] OUTREACH_BROWSER_PROVIDER=stagehand but STAGEHAND_URL is missing; falling back to http")
+    if (endpoint && apiKey) return new StagehandProvider(endpoint, apiKey)
+    console.warn("[outreach] OUTREACH_BROWSER_PROVIDER=stagehand but STAGEHAND_URL/STAGEHAND_API_KEY is missing; falling back to http")
   }
   if (mode === "remote") {
     const endpoint = process.env.OUTREACH_WORKER_URL
