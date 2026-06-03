@@ -1,4 +1,4 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
+import { HeadBucketCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 
 export interface R2StorageConfig {
@@ -127,4 +127,22 @@ export async function uploadToR2(objectKey: string, body: Buffer | Uint8Array, c
     throw new Error("R2 public base URL is not configured")
   }
   return pub
+}
+
+export async function checkR2StorageHealth(): Promise<{ ok: boolean; label: string }> {
+  const config = getR2StorageConfig()
+  const missing = [...config.missing]
+  if (!config.publicBaseUrl) missing.push("CLOUDFLARE_R2_PUBLIC_BASE_URL or R2_PUBLIC_BASE_URL")
+  if (!config.ready || !config.bucket || missing.length > 0) {
+    return { ok: false, label: `R2 is not ready: ${missing.join(", ")}` }
+  }
+
+  try {
+    const client = createR2Client()
+    await client.send(new HeadBucketCommand({ Bucket: config.bucket }))
+    return { ok: true, label: `bucket reachable: ${config.bucket}` }
+  } catch (error) {
+    console.error("[r2-storage] HeadBucket health check failed:", error)
+    return { ok: false, label: error instanceof Error ? error.message : "R2 HeadBucket failed" }
+  }
 }

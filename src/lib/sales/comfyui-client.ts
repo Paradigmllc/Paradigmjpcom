@@ -42,6 +42,8 @@ export type ComfyuiWorkflowType =
 export interface ComfyuiClientConfig {
   ready: boolean
   baseUrl: string | null
+  apiKey: string | null
+  missing: string[]
   note: string
 }
 
@@ -85,9 +87,16 @@ let dynamicBaseUrl: string | null = null;
 
 export function getComfyuiClientConfig(overrideBaseUrl?: string): ComfyuiClientConfig {
   const baseUrl = overrideBaseUrl ?? dynamicBaseUrl ?? optionalEnv("COMFYUI_API_URL") ?? optionalEnv("COMFYUI_BASE_URL")
+  const apiKey = optionalEnv("COMFYUI_API_KEY")
+  const missing = [
+    baseUrl ? null : "COMFYUI_API_URL or COMFYUI_BASE_URL",
+    apiKey ? null : "COMFYUI_API_KEY",
+  ].filter((value): value is string => value !== null)
   return {
-    ready: baseUrl !== null,
+    ready: missing.length === 0,
     baseUrl,
+    apiKey,
+    missing,
     note: baseUrl
       ? "ComfyUI インスタンスに接続済み。背景素材、アバター、動画生成が可能。"
       : "COMFYUI_API_URL 未設定。ComfyUI を使ったプロスタジオ級生成はスキップされます。",
@@ -96,6 +105,17 @@ export function getComfyuiClientConfig(overrideBaseUrl?: string): ComfyuiClientC
 
 export function updateComfyuiClientConfig(newUrl: string) {
   dynamicBaseUrl = newUrl;
+}
+
+function comfyuiAuthHeaders(config: ComfyuiClientConfig): Record<string, string> {
+  if (!config.apiKey) {
+    console.error("[comfyui-client] COMFYUI_API_KEY is required for production API access")
+    throw new Error("COMFYUI_API_KEY is not configured")
+  }
+  return {
+    Authorization: `Bearer ${config.apiKey}`,
+    "X-API-Key": config.apiKey,
+  }
 }
 
 
@@ -140,13 +160,14 @@ export async function queueComfyuiWorkflow(
 ): Promise<ComfyuiQueueResponse> {
   const config = getComfyuiClientConfig(overrideBaseUrl)
   if (!config.ready || !config.baseUrl) {
-    return { ok: false, error: "ComfyUI is not configured (COMFYUI_API_URL missing)" }
+    return { ok: false, error: `ComfyUI is not configured (${config.missing.join(", ")})` }
   }
 
   const baseUrl = config.baseUrl.replace(/\/+$/, "")
   const timeoutMs = request.timeoutMs ?? 60_000
 
   try {
+    const authHeaders = comfyuiAuthHeaders(config)
     const body: Record<string, unknown> = {
       prompt: request.workflowJson,
       ...(request.prompt ? { extra_data: { extra_pnginfo: request.prompt } } : {}),
@@ -154,13 +175,18 @@ export async function queueComfyuiWorkflow(
 
     const res = await fetch(`${baseUrl}/prompt`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(timeoutMs),
     })
 
     if (!res.ok) {
-      const text = await res.text().catch(() => "")
+      let text = ""
+      try {
+        text = await res.text()
+      } catch (error) {
+        console.error("[comfyui-client] failed to read queue error body:", error)
+      }
       return { ok: false, error: `ComfyUI queue failed: HTTP ${res.status} ${text.slice(0, 200)}` }
     }
 
@@ -189,13 +215,15 @@ export async function getComfyuiProgress(
 ): Promise<ComfyuiProgressResponse> {
   const config = getComfyuiClientConfig(overrideBaseUrl)
   if (!config.ready || !config.baseUrl) {
-    return { ok: false, status: "error", progress: 0, error: "ComfyUI is not configured" }
+    return { ok: false, status: "error", progress: 0, error: `ComfyUI is not configured (${config.missing.join(", ")})` }
   }
 
   const baseUrl = config.baseUrl.replace(/\/+$/, "")
 
   try {
+    const authHeaders = comfyuiAuthHeaders(config)
     const res = await fetch(`${baseUrl}/history/${encodeURIComponent(promptId)}`, {
+      headers: authHeaders,
       signal: AbortSignal.timeout(timeoutMs),
     })
 

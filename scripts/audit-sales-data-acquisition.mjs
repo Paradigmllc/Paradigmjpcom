@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { createHmac } from "node:crypto"
+import { HeadBucketCommand, S3Client } from "@aws-sdk/client-s3"
 import { createClient } from "@supabase/supabase-js"
 import { readCoolifyApplicationEnvs } from "./lib/coolify-env.mjs"
 
@@ -110,9 +111,9 @@ const SOURCES = [
   sourceAll("directus", "Directus", "demo", ["DIRECTUS_BASE_URL", "DIRECTUS_TOKEN"], [], checkDirectus),
   sourceAll("keystatic", "Keystatic", "demo", ["KEYSTATIC_BASE_URL"], ["NEXT_PUBLIC_KEYSTATIC_URL"], checkKeystatic),
 
-  source("openmontage", "OpenMontage orchestration", "video", ["OPENMONTAGE_API_URL", "OPENMONTAGE_BASE_URL", "OPENMONTAGE_API_KEY"]),
+  sourceAll("openmontage", "OpenMontage orchestration", "video", ["OPENMONTAGE_API_URL", "OPENMONTAGE_API_KEY", "NEXT_PUBLIC_OPENMONTAGE_STUDIO_URL"], ["OPENMONTAGE_BASE_URL"], checkOpenMontage),
   source("vast_runpod", "Vast.ai / Runpod GPU", "video", ["VAST_API_KEY", "RUNPOD_API_KEY"]),
-  source("comfyui", "ComfyUI API", "video", ["COMFYUI_API_URL", "COMFYUI_BASE_URL"]),
+  source("comfyui", "ComfyUI API", "video", ["COMFYUI_API_URL", "COMFYUI_BASE_URL"], [], checkComfyui, ["COMFYUI_API_KEY"]),
   source("hyperframes", "HyperFrames", "video", ["HYPERFRAMES_RENDERER_URL", "HYPERFRAMES_API_URL"], [], checkHyperframes, ["HYPERFRAMES_API_KEY"]),
   source("remotion_video", "Remotion", "video", ["REMOTION_RENDER_URL", "REMOTION_RENDERER_URL"]),
   source("faster_whisper", "Faster Whisper", "video", ["FASTER_WHISPER_URL"]),
@@ -121,7 +122,11 @@ const SOURCES = [
   source("tts_stack", "Edge-TTS / CosyVoice / XTTSv2", "video", ["EDGE_TTS_WORKER_URL", "COSYVOICE_WORKER_URL", "XTTSV2_WORKER_URL"]),
   source("ffcreator_editly_ffmpeg", "FFCreator / Editly / FFmpeg", "video", ["FFCREATOR_WORKER_URL", "EDITLY_WORKER_URL", "FFMPEG_BIN"]),
   source("whisperx", "WhisperX", "video", ["WHISPERX_WORKER_URL"]),
-  source("r2_video_delivery", "Cloudflare R2 delivery", "video", ["CLOUDFLARE_R2_BUCKET", "R2_ACCESS_KEY_ID", "R2_BUCKET"]),
+  source("r2_video_delivery", "Cloudflare R2 delivery", "video", ["CLOUDFLARE_R2_BUCKET", "R2_BUCKET"], ["CLOUDFLARE_R2_PUBLIC_BASE_URL", "R2_PUBLIC_BASE_URL"], checkR2Delivery, [
+    "CLOUDFLARE_R2_ACCOUNT_ID",
+    "CLOUDFLARE_R2_ACCESS_KEY_ID",
+    "CLOUDFLARE_R2_SECRET_ACCESS_KEY",
+  ]),
 
   sourceAll("chatwoot", "Chatwoot OSS", "outreach", ["CHATWOOT_BASE_URL", "CHATWOOT_API_KEY", "CHATWOOT_ACCOUNT_ID"], ["CHATWOOT_WEBHOOK_URL", "N8N_POST_OUTREACH_WEBHOOK_URL"], checkChatwoot),
   sourceAll("livekit", "LiveKit OSS", "outreach", ["LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET"], ["LIVEKIT_WEBHOOK_URL", "N8N_LIVEKIT_DISCOVERY_WEBHOOK_URL"], checkLivekit),
@@ -363,6 +368,55 @@ async function checkHyperframes(envs) {
     if (res.ok) return { ok: true, label: `${path} OK` }
   }
   return { ok: false, label: "health endpoint failed" }
+}
+
+async function checkOpenMontage(envs) {
+  const rawUrl = envValue(envs, "OPENMONTAGE_API_URL")
+  const key = envValue(envs, "OPENMONTAGE_API_KEY")
+  const studioUrl = envValue(envs, "NEXT_PUBLIC_OPENMONTAGE_STUDIO_URL")
+  if (!rawUrl || !key || !studioUrl) return { ok: false, label: "OPENMONTAGE_API_URL/API_KEY/STUDIO_URL not configured" }
+  const base = rawUrl.replace(/\/+$/, "")
+  for (const path of ["/health", "/api/health"]) {
+    const res = await fetchJson(`${base}${path}`, { headers: { Authorization: `Bearer ${key}` }, timeoutMs: 10_000 })
+    if (res.ok) return { ok: true, label: `${path} OK` }
+  }
+  return { ok: false, label: "health endpoint failed" }
+}
+
+async function checkComfyui(envs) {
+  const rawUrl = envValue(envs, "COMFYUI_API_URL") ?? envValue(envs, "COMFYUI_BASE_URL")
+  const key = envValue(envs, "COMFYUI_API_KEY")
+  if (!rawUrl || !key) return { ok: false, label: "COMFYUI_API_URL/API_KEY not configured" }
+  const base = rawUrl.replace(/\/+$/, "")
+  const res = await fetchJson(`${base}/system_stats`, {
+    headers: { Authorization: `Bearer ${key}`, "X-API-Key": key },
+    timeoutMs: 15_000,
+  })
+  return { ok: res.ok, label: res.ok ? "system_stats OK" : `HTTP ${res.status}` }
+}
+
+async function checkR2Delivery(envs) {
+  const bucket = envValue(envs, "CLOUDFLARE_R2_BUCKET") ?? envValue(envs, "R2_BUCKET")
+  const accountId = envValue(envs, "CLOUDFLARE_R2_ACCOUNT_ID")
+  const accessKeyId = envValue(envs, "CLOUDFLARE_R2_ACCESS_KEY_ID")
+  const secretAccessKey = envValue(envs, "CLOUDFLARE_R2_SECRET_ACCESS_KEY")
+  const publicBase = envValue(envs, "CLOUDFLARE_R2_PUBLIC_BASE_URL") ?? envValue(envs, "R2_PUBLIC_BASE_URL")
+  const missing = [
+    bucket ? null : "CLOUDFLARE_R2_BUCKET or R2_BUCKET",
+    accountId ? null : "CLOUDFLARE_R2_ACCOUNT_ID",
+    accessKeyId ? null : "CLOUDFLARE_R2_ACCESS_KEY_ID",
+    secretAccessKey ? null : "CLOUDFLARE_R2_SECRET_ACCESS_KEY",
+    publicBase ? null : "CLOUDFLARE_R2_PUBLIC_BASE_URL or R2_PUBLIC_BASE_URL",
+  ].filter(Boolean)
+  if (missing.length > 0) return { ok: false, label: `R2 not configured: ${missing.join(", ")}` }
+
+  const client = new S3Client({
+    region: "auto",
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    credentials: { accessKeyId, secretAccessKey },
+  })
+  await client.send(new HeadBucketCommand({ Bucket: bucket }))
+  return { ok: true, label: `bucket reachable: ${bucket}` }
 }
 
 async function checkApify(envs) {

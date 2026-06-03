@@ -1,7 +1,9 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { findCompanyByDomain, findCompanyById, findCompanyBySlug } from "./companies"
+import { getComfyuiClientConfig } from "./comfyui-client"
 import { getDifyCloudRuntimeConfig } from "./dify-cloud"
 import { fetchDiagnosticReport } from "./diagnostic"
+import { getR2StorageConfig } from "./r2-storage"
 import { normalizeReportLocale } from "./routing"
 import { INDUSTRIES, localeToRegion, type Industry } from "./types"
 import { buildProfessionalProductionPlan, buildProfessionalStoryboard, buildR2AssetPrefix, buildVideoAssetManifest, normalizeVideoProductionProfile, type VideoAvatarStyle, type VideoCaptionStyle, type VideoProductionGenre, type VideoQualityTier, type VideoStoryFramework, type VideoVoiceStyle } from "./video-production"
@@ -123,8 +125,8 @@ function pipelineConfig(): VideoPipelineConfig {
   const n8nUrl =
     optionalEnv("N8N_VIDEO_PIPELINE_WEBHOOK_URL") ??
     (n8nBaseUrl ? `${n8nBaseUrl.replace(/\/+$/, "")}/webhook/sales-video-pipeline` : null)
-  const comfyUrl = optionalEnv("COMFYUI_API_URL")
-  const r2Base = optionalEnv("CLOUDFLARE_R2_PUBLIC_BASE_URL") ?? optionalEnv("R2_PUBLIC_BASE_URL")
+  const comfyConfig = getComfyuiClientConfig()
+  const r2Config = getR2StorageConfig()
   const dify = getDifyCloudRuntimeConfig([
     "diagnosis",
     "formMessage",
@@ -150,8 +152,8 @@ function pipelineConfig(): VideoPipelineConfig {
       note: "Dify Cloud (api.dify.ai) だけを使います。文面、構成、テンプレ判定を任せ、未検証の法規制・罰金・市場統計・CAGRの断定は禁止します。",
     },
     comfyui: {
-      ready: comfyUrl !== null,
-      url: comfyUrl,
+      ready: comfyConfig.ready,
+      url: comfyConfig.baseUrl,
       note: "営業動画の背景素材と動画サブスク用の生成素材に使います。",
     },
     vast: {
@@ -159,13 +161,13 @@ function pipelineConfig(): VideoPipelineConfig {
       note: "GPU起動は動画サブスクや重いComfyUI生成だけに限定します。",
     },
     renderers: {
-      hyperframes: envReady("HYPERFRAMES_RENDERER_URL", "HYPERFRAMES_API_URL"),
+      hyperframes: envReady("HYPERFRAMES_API_KEY") && envReady("HYPERFRAMES_RENDERER_URL", "HYPERFRAMES_API_URL"),
       remotion: envReady("REMOTION_RENDER_URL", "REMOTION_RENDERER_URL"),
-      openmontage: envReady("OPENMONTAGE_API_URL"),
+      openmontage: envReady("OPENMONTAGE_API_URL") && envReady("OPENMONTAGE_API_KEY") && envReady("NEXT_PUBLIC_OPENMONTAGE_STUDIO_URL"),
     },
     r2: {
-      ready: r2Base !== null,
-      publicBaseUrl: r2Base,
+      ready: r2Config.ready && r2Config.publicBaseUrl !== null,
+      publicBaseUrl: r2Config.publicBaseUrl,
       note: "完成MP4、字幕、サムネイル、素材を配信する置き場です。",
     },
     slack: {

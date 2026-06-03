@@ -3,10 +3,13 @@ import { DIFY_RUNTIME_KEY_ENV_NAMES, DIFY_RUNTIME_URL_ENV_NAMES } from "./dify-c
 import {
   checkBrowserlessHealth as checkBrowserlessServiceHealth,
   checkChatwootHealth,
+  checkComfyUiHealth,
   checkDirectusHealth,
   checkHyperFramesHealth,
   checkKeystaticHealth,
   checkLiveKitHealth,
+  checkOpenMontageHealth,
+  checkR2DeliveryHealth,
   checkStagehandHealth as checkStagehandServiceHealth,
 } from "./oss-service-health"
 
@@ -46,6 +49,9 @@ export interface SalesIntegrationDefinition {
     | "keystatic_health"
     | "livekit_health"
     | "hyperframes_health"
+    | "openmontage_health"
+    | "comfyui_health"
+    | "r2_health"
   docsUrl?: string
   recommended: boolean
   notes: string
@@ -530,7 +536,20 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     ],
     balance: "manual",
     recommended: true,
-    notes: "営業資料埋め込み用の短尺動画と、動画納品サブスク用の制作ラインを分ける。",
+    notes: "Overview only. Production readiness is judged by the dedicated OpenMontage, HyperFrames, ComfyUI, and R2 runtime gates below.",
+  },
+  {
+    slug: "openmontage_runtime",
+    displayName: "OpenMontage",
+    category: "video",
+    deployment: "oss",
+    role: "Authenticated orchestration API and studio URL for video-production jobs.",
+    requiredEnv: ["OPENMONTAGE_API_URL", "OPENMONTAGE_API_KEY", "NEXT_PUBLIC_OPENMONTAGE_STUDIO_URL"],
+    optionalEnv: ["OPENMONTAGE_BASE_URL", "OPENMONTAGE_STUDIO_HOST"],
+    balance: "openmontage_health",
+    docsUrl: "/docs/knowledge/revenue-os-production-service-setup.md",
+    recommended: true,
+    notes: "URLだけではreadyにしません。API URL、API key、Studio URL、health endpointの疎通を要求します。公開公式OSSとしては未確認のため、社内互換APIとして扱います。",
   },
   {
     slug: "hyperframes_renderer",
@@ -544,7 +563,21 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     balance: "hyperframes_health",
     docsUrl: "https://github.com/heygen-com/hyperframes",
     recommended: true,
-    notes: "HyperFramesはURLだけではreadyにしません。renderer/API URLのいずれかとHYPERFRAMES_API_KEYがあり、health endpointが通ることを要求します。",
+    notes: "HyperFramesはURLだけではreadyにしません。renderer/API URLのいずれか、HYPERFRAMES_API_KEY、health endpoint疎通を要求します。",
+  },
+  {
+    slug: "comfyui_api",
+    displayName: "ComfyUI API",
+    category: "video",
+    deployment: "oss",
+    role: "Authenticated GPU asset-generation API for backgrounds, avatars, thumbnails, b-roll, and video source assets.",
+    requiredEnv: ["COMFYUI_API_KEY"],
+    requiredAnyEnv: ["COMFYUI_API_URL", "COMFYUI_BASE_URL"],
+    optionalEnv: ["VAST_API_KEY", "RUNPOD_API_KEY"],
+    balance: "comfyui_health",
+    docsUrl: "https://github.com/comfyanonymous/ComfyUI",
+    recommended: true,
+    notes: "Public ComfyUI endpoints must not be unauthenticated. Revenue OS requires COMFYUI_API_KEY and /system_stats reachability before queueing jobs.",
   },
   {
     slug: "video_media_sources",
@@ -565,11 +598,16 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     category: "video",
     deployment: "api",
     role: "Fast delivery for generated reports, videos, PDFs and demo assets.",
-    requiredEnv: ["CLOUDFLARE_R2_BUCKET"],
-    optionalEnv: ["R2_ACCESS_KEY_ID", "R2_PUBLIC_BASE_URL"],
-    balance: "manual",
+    requiredEnv: [
+      "CLOUDFLARE_R2_ACCOUNT_ID",
+      "CLOUDFLARE_R2_ACCESS_KEY_ID",
+      "CLOUDFLARE_R2_SECRET_ACCESS_KEY",
+    ],
+    requiredAnyEnv: ["CLOUDFLARE_R2_BUCKET", "R2_BUCKET"],
+    optionalEnv: ["CLOUDFLARE_R2_PUBLIC_BASE_URL", "R2_PUBLIC_BASE_URL"],
+    balance: "r2_health",
     recommended: true,
-    notes: "大容量成果物はDBに置かずR2 URLをSupabaseに保存する。",
+    notes: "bucket名だけではreadyにしません。account/access/secret、bucket、public base URL、HeadBucket疎通を要求します。",
   },
   {
     slug: "keystatic_demo_cms",
@@ -990,6 +1028,9 @@ async function liveBalance(def: SalesIntegrationDefinition): Promise<Pick<SalesI
   if (def.balance === "keystatic_health") return checkKeystaticHealth()
   if (def.balance === "livekit_health") return checkLiveKitHealth()
   if (def.balance === "hyperframes_health") return checkHyperFramesHealth()
+  if (def.balance === "openmontage_health") return checkOpenMontageHealth()
+  if (def.balance === "comfyui_health") return checkComfyUiHealth()
+  if (def.balance === "r2_health") return checkR2DeliveryHealth()
   return null
 }
 

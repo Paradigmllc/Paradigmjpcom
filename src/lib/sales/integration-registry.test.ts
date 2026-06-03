@@ -47,6 +47,15 @@ describe("getSalesIntegrationStatus", () => {
     vi.stubEnv("STAGEHAND_API_KEY", "")
     vi.stubEnv("HYPERFRAMES_API_URL", "https://hyperframes.paradigmjp.com")
     vi.stubEnv("HYPERFRAMES_API_KEY", "")
+    vi.stubEnv("OPENMONTAGE_API_URL", "https://openmontage.paradigmjp.com")
+    vi.stubEnv("OPENMONTAGE_API_KEY", "")
+    vi.stubEnv("NEXT_PUBLIC_OPENMONTAGE_STUDIO_URL", "https://studio.paradigmjp.com")
+    vi.stubEnv("COMFYUI_API_URL", "https://comfyui.paradigmjp.com")
+    vi.stubEnv("COMFYUI_API_KEY", "")
+    vi.stubEnv("CLOUDFLARE_R2_BUCKET", "sales-assets")
+    vi.stubEnv("CLOUDFLARE_R2_ACCOUNT_ID", "")
+    vi.stubEnv("CLOUDFLARE_R2_ACCESS_KEY_ID", "")
+    vi.stubEnv("CLOUDFLARE_R2_SECRET_ACCESS_KEY", "")
 
     const rows = await getSalesIntegrationStatus()
     const bySlug = new Map(rows.map((row) => [row.slug, row]))
@@ -55,7 +64,17 @@ describe("getSalesIntegrationStatus", () => {
     expect(bySlug.get("browserless")?.status).toBe("partial")
     expect(bySlug.get("stagehand")?.status).toBe("partial")
     expect(bySlug.get("hyperframes_renderer")?.status).toBe("partial")
+    expect(bySlug.get("openmontage_runtime")?.status).toBe("partial")
+    expect(bySlug.get("comfyui_api")?.status).toBe("partial")
+    expect(bySlug.get("r2_delivery")?.status).toBe("partial")
     expect(bySlug.get("chatwoot")?.missingEnv).toEqual(["CHATWOOT_API_KEY", "CHATWOOT_ACCOUNT_ID"])
     expect(bySlug.get("hyperframes_renderer")?.missingEnv).toEqual(["HYPERFRAMES_API_KEY"])
+    expect(bySlug.get("openmontage_runtime")?.missingEnv).toEqual(["OPENMONTAGE_API_KEY"])
+    expect(bySlug.get("comfyui_api")?.missingEnv).toEqual(["COMFYUI_API_KEY"])
+    expect(bySlug.get("r2_delivery")?.missingEnv).toEqual([
+      "CLOUDFLARE_R2_ACCOUNT_ID",
+      "CLOUDFLARE_R2_ACCESS_KEY_ID",
+      "CLOUDFLARE_R2_SECRET_ACCESS_KEY",
+    ])
   })
 })

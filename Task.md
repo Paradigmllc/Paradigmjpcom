@@ -902,3 +902,12 @@
 - [x] Coolify application env に7サービスの本番URLとキー名プレースホルダーを登録。既存の非空secretは上書きしていない。空secretは `''` と返るため `scripts/lib/coolify-env.mjs` で正規化して未設定扱いにした。
 - [x] Verification: `node --check scripts/audit-sales-data-acquisition.mjs`, `npx tsc --noEmit --pretty false`, `npm test -- --run src/lib/sales/integration-registry.test.ts`, `git diff --check`, `npm run build` passed.
 - [ ] External blockers: Chatwoot/Directus/LiveKit/Browserless/Stagehand/HyperFrames は実インスタンスDNS/APIキーが未投入。KeystaticはURL envがあるが `https://keystatic.paradigmjp.com` が現時点で `fetch failed`。監査では全て未ready/エラーとして可視化される。
+## Codex Update - 2026-06-04 Revenue OS Production Service Gate Tightening
+
+- [x] Tightened production readiness gates for OpenMontage, ComfyUI API, HyperFrames, Browserless, Stagehand, Chatwoot, Directus, Keystatic, LiveKit, and Cloudflare R2 so URL-only configuration no longer becomes `ready`.
+- [x] Added live health checks for OpenMontage (`/health` or `/api/health` with bearer token), ComfyUI (`/system_stats` with bearer/API-key headers), and Cloudflare R2 (`HeadBucket` via S3-compatible credentials).
+- [x] Hardened ComfyUI runtime calls so `/prompt` and `/history/{prompt_id}` require `COMFYUI_API_KEY`; missing key returns a failed result instead of queueing unauthenticated GPU jobs.
+- [x] Created Coolify env placeholders for OpenMontage, ComfyUI, and R2 production URLs/keys without writing secret values to git-managed files.
+- [x] Added operator setup guide: `docs/knowledge/revenue-os-production-service-setup.md`.
+- [x] Verification: `node --check scripts/audit-sales-data-acquisition.mjs`, `npx tsc --noEmit --pretty false`, `npm test -- --run src/lib/sales/integration-registry.test.ts`, and forbidden-pattern scan passed.
+- [ ] Operator action required: paste real values into Coolify for `CHATWOOT_API_KEY`, `CHATWOOT_ACCOUNT_ID`, `DIRECTUS_TOKEN`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `BROWSERLESS_TOKEN`, `STAGEHAND_API_KEY`, `HYPERFRAMES_API_KEY`, `OPENMONTAGE_API_KEY`, `COMFYUI_API_KEY`, and Cloudflare R2 bucket/account/access/secret/public URL. Current live audit correctly reports these as missing or unreachable.

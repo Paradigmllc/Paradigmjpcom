@@ -257,9 +257,9 @@ const SOURCES: SourceDefinition[] = [
   { slug: "astro_demo", label: "Astro replacement demo", category: "demo", detect: (m) => !!m.demo_site, detail: "Generated demo page for the prospect" },
   { slug: "v0_demo", label: "v0 by Vercel demo accelerator", category: "demo", env: ["V0_API_KEY", "V0_WORKER_URL"], detect: (m) => !!m.v0_demo, detail: "AI-generated component and demo-site draft accelerator" },
   { slug: "gotenberg_slidev", label: "Slidev / Gotenberg", category: "demo", env: ["GOTENBERG_URL"], detect: (m) => !!m.slidev || !!m.gotenberg || !!m.sales_material_pdf, detail: "Proposal deck and PDF generation" },
-  { slug: "openmontage", label: "OpenMontage orchestration", category: "video", env: ["OPENMONTAGE_API_URL", "OPENMONTAGE_BASE_URL", "OPENMONTAGE_API_KEY"], detect: (m) => !!m.openmontage || !!m.video_asset, detail: "Video-subscription orchestration and job routing" },
+  { slug: "openmontage", label: "OpenMontage orchestration", category: "video", env: ["OPENMONTAGE_API_URL", "OPENMONTAGE_API_KEY", "NEXT_PUBLIC_OPENMONTAGE_STUDIO_URL", "OPENMONTAGE_BASE_URL"], detect: (m) => !!m.openmontage || !!m.video_asset, detail: "Authenticated video-subscription orchestration and job routing" },
   { slug: "vast_runpod", label: "Vast.ai / Runpod GPU", category: "video", env: ["VAST_API_KEY", "RUNPOD_API_KEY"], detect: (m) => !!m.vast || !!m.runpod, detail: "Elastic GPU lane for heavy ComfyUI and avatar generation" },
-  { slug: "comfyui", label: "ComfyUI API", category: "video", env: ["COMFYUI_API_URL", "COMFYUI_BASE_URL"], detect: (m) => !!m.comfyui, detail: "Image, background, avatar and scene asset generation" },
+  { slug: "comfyui", label: "ComfyUI API", category: "video", env: ["COMFYUI_API_URL", "COMFYUI_BASE_URL", "COMFYUI_API_KEY"], detect: (m) => !!m.comfyui, detail: "Authenticated image, background, avatar and scene asset generation" },
   { slug: "hyperframes", label: "HyperFrames", category: "video", env: ["HYPERFRAMES_RENDERER_URL", "HYPERFRAMES_API_URL", "HYPERFRAMES_API_KEY"], detect: (m) => !!m.hyperframes, detail: "HTML-first sales video compositions and motion templates" },
   { slug: "remotion_video", label: "Remotion", category: "video", env: ["REMOTION_RENDER_URL", "REMOTION_RENDERER_URL"], detect: (m) => !!m.remotion || !!m.video_asset, detail: "React-based data-driven sales video rendering" },
   { slug: "faster_whisper", label: "Faster Whisper", category: "video", env: ["FASTER_WHISPER_URL"], detect: (m) => !!m.faster_whisper, detail: "Fast transcription for captions and voiceover alignment" },
@@ -268,7 +268,7 @@ const SOURCES: SourceDefinition[] = [
   { slug: "tts_stack", label: "Edge-TTS / CosyVoice / XTTSv2", category: "video", env: ["EDGE_TTS_WORKER_URL", "COSYVOICE_WORKER_URL", "XTTSV2_WORKER_URL"], detect: (m) => !!m.edge_tts || !!m.cosyvoice || !!m.xttsv2, detail: "Voiceover, multilingual narration and voice cloning lane" },
   { slug: "ffcreator_editly_ffmpeg", label: "FFCreator / Editly / FFmpeg", category: "video", env: ["FFCREATOR_WORKER_URL", "EDITLY_WORKER_URL", "FFMPEG_BIN"], detect: (m) => !!m.ffcreator || !!m.editly || !!m.ffmpeg, detail: "Final assembly, transitions, encoding and packaging" },
   { slug: "whisperx", label: "WhisperX", category: "video", env: ["WHISPERX_WORKER_URL"], detect: (m) => !!m.whisperx, detail: "Word-level subtitle timing and diarization" },
-  { slug: "r2_video_delivery", label: "Cloudflare R2 delivery", category: "video", env: ["CLOUDFLARE_R2_BUCKET", "R2_ACCESS_KEY_ID", "R2_BUCKET"], detect: (m) => !!m.r2_asset || !!m.video_asset, detail: "Fast asset delivery for video and reports" },
+  { slug: "r2_video_delivery", label: "Cloudflare R2 delivery", category: "video", env: ["CLOUDFLARE_R2_ACCOUNT_ID", "CLOUDFLARE_R2_ACCESS_KEY_ID", "CLOUDFLARE_R2_SECRET_ACCESS_KEY", "CLOUDFLARE_R2_BUCKET", "R2_BUCKET", "CLOUDFLARE_R2_PUBLIC_BASE_URL", "R2_PUBLIC_BASE_URL"], detect: (m) => !!m.r2_asset || !!m.video_asset, detail: "Authenticated asset delivery for video and reports" },
 ]
 
 function hasConfiguredEnv(names?: string[]): boolean {
