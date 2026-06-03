@@ -884,9 +884,12 @@
 ## Codex Update - 2026-06-04 Expanded OSS/API Master Coverage
 
 - [x] ユーザー追加リスト109項目を `src/lib/sales/integration-registry.ts` / `scripts/audit-sales-data-acquisition.mjs` / `.env.example` の3面で突合し、全項目が監査対象として追跡される状態に修正。
+- [x] Commit `baedd8c` を main にpushし、Coolify deployment `yxguq4j19bfzi4tl208kcisr` で本番反映済み。初回 deployment `wtbrjqu5m8aop6nutxt089dk` はbuild途中でexit 255になったため、Docker build cache/unused imagesのみ安全に掃除して再実行した。
+- [x] Production verification: `/ja/admin/sales?tab=integrations` 200、`/ja/admin/sales?tab=videoPipeline` 200、`/ja/studio` 200、`/api/sales/source-acquisition` 200、`/api/sales/integration-status?live=1` 200 / 59 integrations / 追加主要slug欠落0。
 - [x] Revenue OS統合台帳に Hermes/Slack、Notion MCP、Supabase MCP/NocoDB、Chrome MCP、RSSHub/Wayback、Common Crawl/Tranco/HTTP Archive、WhoisDS/theHarvester/events、Slidev/Gotenberg/Marp/Recharts、Astro/v0/shadcn、Scrapoxy、Listmonk/Mautic、TwentyCMS alias を追加。
 - [x] 取得監査スクリプトに Stagehand、mubeng、Scrapoxy、Directus、Keystatic、Marp/Recharts、shadcn、Smartlead、Resend、DocSend、Twilio/IVRy、HeyReach、TwentyCMS を追加し、JSONでないレスポンスをサイレントに握りつぶさず `console.error` へ出すよう修正。
 - [x] `.env.example` に不足していたキー名のみ追加。実値・トークンは保存していない。
 - [x] Verification: 全109項目の機械突合 missing=0、`node --check scripts/audit-sales-data-acquisition.mjs`、`node --check scripts/sales-os-no-login-deploy.mjs`、`git diff --check`、`npm test -- --run src/lib/sales/integration-registry.test.ts`、`npm run build`、再生成後の `npx tsc --noEmit --pretty false` passed.
 - [ ] Operational blockers: 監査スクリプト上は96ソース中 configured=15 / liveOk=8。Stagehand、Browserless、mubeng、Scrapoxy、OpenMontage、ComfyUI、HyperFrames、Remotion、R2、Smartlead、Resend、Twilio、HeyReach、Listmonk/Mautic 等は本番env/DNS/APIキー未設定なら実働不可。UI/APIは未設定として可視化し、fail-closedで扱う。
+- [ ] Host hygiene: Coolify/Nixpacks deploy後、root diskは約74%。未使用image/build cacheの再膨張があるため、次回以降もデプロイ前後の容量監査が必要。
 - [ ] DB blocker carried forward: Sales OS Supabase の `sales_tool_connections` 旧check constraintは未解消。`supabase/migration_034_sales_post_outreach_tools.sql` をSales OS SQLへ適用するまで、DB上のツール行は完全同期できない。
