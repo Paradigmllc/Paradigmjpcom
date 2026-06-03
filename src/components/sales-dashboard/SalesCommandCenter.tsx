@@ -51,8 +51,10 @@ type SalesTab =
   | "workspace"
   | "operator"
   | "agentTeam"
-  | "templates"
   | "videoPipeline"
+  | "keystatic"
+  | "directus"
+  | "supabaseStudio"
   | "crm"
   | "analytics"
   | "integrations"
@@ -80,7 +82,9 @@ const tabItems: TabItem[] = [
   { id: "workspace", label: "リスト作業場", eyebrow: "List Ops", description: "抽出・確認・一括整理", icon: Table2 },
   { id: "operator", label: "オペレーター", eyebrow: "Queue", description: "人間確認が必要な作業", icon: ListChecks },
   { id: "agentTeam", label: "AIチーム", eyebrow: "Agents", description: "Hermes / Telegram / Slack", icon: Bot },
-  { id: "templates", label: "テンプレート", eyebrow: "Creative Logic", description: "文面・資料・動画の選定", icon: Sparkles },
+  { id: "directus", label: "資料・スライド", eyebrow: "Directus", description: "Slidev / Gotenberg 管理", icon: Sparkles },
+  { id: "keystatic", label: "デモサイト管理", eyebrow: "Keystatic", description: "AstroデモとLP", icon: Globe2 },
+  { id: "supabaseStudio", label: "診断レポート", eyebrow: "Supabase Studio", description: "SSOTデータ直結の管理", icon: Database },
   { id: "videoPipeline", label: "動画制作", eyebrow: "Video Studio", description: "営業動画と納品動画", icon: Video },
   { id: "crm", label: "CRM設定", eyebrow: "Twenty", description: "表示列・選択肢マスター", icon: BriefcaseBusiness },
   { id: "analytics", label: "分析", eyebrow: "Metabase", description: "営業KPIとボトルネック", icon: BarChart3 },
@@ -149,6 +153,22 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
   }, [searchParams]);
 
   function changeTab(tab: SalesTab) {
+    if (tab === "videoPipeline") {
+      window.open(`/${locale}/studio`, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (tab === "directus") {
+      window.open(`https://directus.paradigmjp.com`, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (tab === "keystatic") {
+      window.open(`https://demo.paradigmjp.com/keystatic`, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (tab === "supabaseStudio") {
+      window.open(`https://supabase.appexx.me/project/default/editor`, "_blank", "noopener,noreferrer");
+      return;
+    }
     setActiveTab(tab);
     const params = new URLSearchParams(searchParams.toString());
     if (tab === "overview") params.delete("tab");
@@ -182,7 +202,6 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
       case "workspace": return <WorkspacePanel data={data} />;
       case "operator": return <OperatorPanel data={data} />;
       case "agentTeam": return <SalesAgentTeamPanel data={data} />;
-      case "templates": return <SalesTemplateWorkbenchPanel data={data} />;
       case "videoPipeline": return <SalesVideoPipelinePanel data={data} />;
       case "crm": return <CrmPanel data={data} />;
       case "analytics": return <AnalyticsPanel data={data} />;
@@ -225,11 +244,18 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
                   
-                  if (tab.id === "videoPipeline") {
+                  if (tab.id === "videoPipeline" || tab.id === "keystatic" || tab.id === "supabaseStudio" || tab.id === "directus") {
+                    const href = tab.id === "videoPipeline" 
+                      ? `/${locale}/studio` 
+                      : tab.id === "directus"
+                        ? "https://directus.paradigmjp.com"
+                      : tab.id === "keystatic"
+                        ? "https://demo.paradigmjp.com/keystatic"
+                        : "https://supabase.appexx.me/project/default/editor";
                     return (
                       <a
                         key={tab.id}
-                        href={`/${locale}/studio`}
+                        href={href}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={`group relative flex w-full items-center gap-3.5 rounded-xl px-4 py-3 text-left transition-all duration-200 text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900`}
