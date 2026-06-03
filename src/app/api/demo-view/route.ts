@@ -2,9 +2,12 @@ import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
 function getDB() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-  if (!url || !key) return null
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) {
+    console.error("[demo-view] NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not configured")
+    return null
+  }
   return createClient(url, key, { auth: { persistSession: false } })
 }
 
@@ -61,7 +64,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ ok: true })
-  } catch {
+  } catch (e) {
+    console.error("[demo-view] POST failed:", e)
     return NextResponse.json({ ok: false })
   }
 }

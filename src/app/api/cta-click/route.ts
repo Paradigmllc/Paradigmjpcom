@@ -2,9 +2,12 @@ import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
 function getDB() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-  if (!url || !key) return null
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) {
+    console.error("[cta-click] NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not configured")
+    return null
+  }
   return createClient(url, key, { auth: { persistSession: false } })
 }
 
@@ -45,7 +48,7 @@ export async function POST(request: Request) {
           pipeline_stage: "hot",
           updated_at: new Date().toISOString(),
         }).eq("id", prospect.lead_id)
-      } catch { /* ignore */ }
+      } catch (e) { console.error("[cta-click] lead update failed:", e) }
     }
 
     // DB通知
@@ -67,7 +70,7 @@ export async function POST(request: Request) {
           subject: actionLabel,
           body: `提案ページ(${prospect.slug})で${actionLabel}${contactInfo}`,
         })
-      } catch { /* ignore */ }
+      } catch (e) { console.error("[cta-click] sales_activities insert failed:", e) }
     }
 
     // Slack通知

@@ -6,6 +6,12 @@ import { normalizeDifyCloudBaseUrl } from "@/lib/sales/dify-cloud"
  *
  * Dify キー戦略: locale ごとに別の App を用意できるよう、
  *   - DIFY_API_KEY_JA / DIFY_API_KEY_EN を優先
+
+/**
+ * /api/chat — locale-aware Dify → Gemini fallback
+ *
+ * Dify キー戦略: locale ごとに別の App を用意できるよう、
+ *   - DIFY_API_KEY_JA / DIFY_API_KEY_EN を優先
  *   - なければ共通の DIFY_API_KEY を使う
  * クライアントは { message, conversationId, locale: "ja" | "en" } を送信する。
  */
@@ -13,12 +19,6 @@ import { normalizeDifyCloudBaseUrl } from "@/lib/sales/dify-cloud"
 // 2026-05-31 DIFY-CLOUD-ONLY:
 // env 未設定または古いDify URLが残っている場合も Dify Cloud 公式 endpoint に寄せる。
 const DIFY_BASE = normalizeDifyCloudBaseUrl(process.env.DIFY_BASE_URL)
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ""
-
-type Locale = "ja" | "en"
-
-function resolveDifyKey(locale: Locale): string {
-  if (locale === "en") return process.env.DIFY_API_KEY_EN || process.env.DIFY_API_KEY || ""
   return process.env.DIFY_API_KEY_JA || process.env.DIFY_API_KEY || ""
 }
 
