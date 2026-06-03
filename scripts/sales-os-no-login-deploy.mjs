@@ -323,6 +323,27 @@ async function smoke(url) {
   return res.status
 }
 
+async function refreshIntegrationStatus(envs) {
+  const secret = envs.N8N_WEBHOOK_SECRET
+  if (!secret || String(secret).trim().length === 0) {
+    return "Integration status refresh: skipped; N8N_WEBHOOK_SECRET is not configured"
+  }
+
+  const baseUrl = envs.PARADIGMJP_BASE_URL || envs.NEXT_PUBLIC_SITE_URL || "https://paradigmjp.com"
+  const endpoint = `${String(baseUrl).replace(/\/+$/, "")}/api/sales/integration-status?live=1`
+  const res = await fetch(endpoint, {
+    headers: {
+      "X-Webhook-Secret": secret,
+    },
+  })
+  const body = await res.json().catch(() => null)
+  if (!res.ok || !body?.ok) {
+    throw new Error(`Integration status refresh failed: HTTP ${res.status}`)
+  }
+  const count = Array.isArray(body.integrations) ? body.integrations.length : 0
+  return `Integration status refresh: saved ${count} rows`
+}
+
 async function main() {
   console.log("Sales OS no-login deploy")
   if (!DRY && !SKIP_DEPLOY) runHostDiskPreflight()
@@ -362,6 +383,7 @@ async function main() {
     const status = await smoke(url)
     console.log(`Smoke OK: ${url} HTTP ${status}`)
   }
+  if (!DRY) console.log(await refreshIntegrationStatus(envs))
 }
 
 main().catch((error) => {

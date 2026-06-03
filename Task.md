@@ -1,3 +1,12 @@
+## Codex Update - 2026-06-04 Revenue OS OSS実務監査
+
+- [x] 全OSS要件を DB/API/GUI/環境変数/本番DB の観点で監査。`sales_integration_status` は本番API `/api/sales/integration-status?live=1` 経由で47件へ同期済み。
+- [x] Dify の代替キー監査を修正。いずれかのDify runtime keyが設定済みなら `ready` とし、未使用候補キーを `missing_env` に残さないようにした。
+- [x] Coolifyデプロイスクリプトに統合台帳の本番同期を追加。deploy後にRevenue OSの最新レジストリをSupabaseへ保存する。
+- [x] Verification: `npx tsc --noEmit --pretty false`, `npm test -- --run src/lib/sales/integration-registry.test.ts`, `node --check scripts/sales-os-no-login-deploy.mjs`, `git diff --check`, `npm run build` passed.
+- [ ] Operational blockers: Coolify env is still missing production URLs/keys for SearxNG, mubeng, Browserless, Stagehand/Crawlee, Chatwoot, LiveKit, Gotenberg, OpenMontage/ComfyUI/HyperFrames/Remotion/R2. Code paths fail closed or show missing status, but those OSS services are not fully operational until envs and DNS are provisioned.
+- [ ] DB migration blocker: `sales_tool_connections` still has the old check constraint in the Sales OS Supabase DB, so Chatwoot/LiveKit/Directus/Keystatic cannot be inserted through REST. App-side fallback still displays all 12 Revenue OS tools, but a direct Sales Supabase Postgres URL or SQL editor application of `supabase/migration_034_sales_post_outreach_tools.sql` is required for DB-level completion.
+
 ## Codex Update - 2026-06-03 Revenue OS 表示バグ修正
 
 - [x] Revenue OS のサードメニューを日本語で固定し、`動画スタジオ` を `VIDEO STUDIO` タブとして表示するよう修正。

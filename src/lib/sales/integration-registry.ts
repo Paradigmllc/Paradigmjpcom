@@ -798,6 +798,11 @@ export async function getSalesIntegrationStatus(
     const status = statusFor(def)
     const defaults = defaultBalance(def, status)
     const live = options.liveBalance ? await liveBalance(def) : null
+    const configuredRequiredEnv = configuredEnv(def.requiredAnyEnv ?? def.requiredEnv)
+    const requiredMissingEnv =
+      def.requiredAnyEnv && configuredRequiredEnv.length > 0
+        ? []
+        : missingEnv(def.requiredAnyEnv ?? def.requiredEnv)
     rows.push({
       slug: def.slug,
       displayName: def.displayName,
@@ -805,8 +810,8 @@ export async function getSalesIntegrationStatus(
       deployment: def.deployment,
       role: def.role,
       status,
-      configuredEnv: configuredEnv(def.requiredAnyEnv ?? def.requiredEnv),
-      missingEnv: missingEnv(def.requiredAnyEnv ?? def.requiredEnv),
+      configuredEnv: configuredRequiredEnv,
+      missingEnv: requiredMissingEnv,
       optionalMissingEnv: missingEnv(def.optionalEnv ?? []),
       balanceStatus: live?.balanceStatus ?? defaults.balanceStatus,
       balanceLabel: live?.balanceLabel ?? defaults.balanceLabel,
