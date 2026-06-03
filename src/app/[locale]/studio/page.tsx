@@ -1,145 +1,163 @@
-"use client"
+import type { Metadata } from "next"
+import type { ReactNode } from "react"
+import Link from "next/link"
+import { cookies, headers } from "next/headers"
+import { ArrowLeft, ExternalLink, Lock, RadioTower, ShieldCheck, Video } from "lucide-react"
+import { SalesVideoPipelinePanel } from "@/components/sales-dashboard/SalesVideoPipelinePanel"
+import { authorizePayloadAdminRequest } from "@/lib/admin-auth"
+import { getSalesDashboardData } from "@/lib/sales/dashboard"
 
-import { useState } from "react"
-import { UploadCloud, Image as ImageIcon, Video, Send, Loader2, Sparkles, Settings2 } from "lucide-react"
+export const dynamic = "force-dynamic"
+export const revalidate = 0
 
-export default function StudioPage() {
-  const [isDragging, setIsDragging] = useState(false)
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [prompt, setPrompt] = useState("")
+export const metadata: Metadata = {
+  title: "動画制作ライン | Paradigm Revenue OS",
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: { index: false, follow: false },
+  },
+}
 
-  const handleGenerate = async () => {
-    if (!prompt) return
-    setIsGenerating(true)
-    
-    try {
-      const res = await fetch("/api/studio/dispatch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, voiceId: "en-US-ChristopherNeural", pipelineId: "Premium Cinematic", images: [] })
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Dispatch failed")
-      
-      alert("ComfyUI JSON generated and dispatched to n8n orchestration tier.\\nJob ID: " + (data.jobId || data.result?.id || "N/A"))
-    } catch (e: any) {
-      alert("Error: " + e.message)
-      console.error(e)
-    } finally {
-      setIsGenerating(false)
-    }
-  }
+export default async function StudioPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}) {
+  const { locale } = await params
+  const authed = await checkAuth()
+  if (!authed) return <UnauthorizedView />
+
+  const dashboard = await getSalesDashboardData({ reportLocale: locale })
+  const studioUrl = process.env.NEXT_PUBLIC_OPENMONTAGE_STUDIO_URL?.trim() || "https://studio.paradigmjp.com"
+  const openMontageReady = dashboard.videoPipeline.config.renderers.openmontage
 
   return (
-    <div className="flex-1 w-full max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8">
-      
-      {/* Left Column: Canvas / Upload */}
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
-            New Cinematic Production
-          </h1>
-          <div className="flex gap-2">
-            <button className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm font-medium hover:bg-white/10 transition-colors flex items-center gap-2">
-              <Settings2 className="w-4 h-4" />
-              Workflow Settings
-            </button>
+    <main className="min-h-screen bg-zinc-50 text-zinc-950">
+      <section className="border-b border-zinc-200 bg-white">
+        <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-6 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0">
+              <Link
+                href={`/${locale}/admin/sales?tab=videoPipeline`}
+                className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-600 hover:text-zinc-950"
+              >
+                <ArrowLeft size={16} aria-hidden />
+                Revenue OS に戻る
+              </Link>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-950 px-3 py-1 text-xs font-semibold text-white">
+                  <Video size={14} aria-hidden />
+                  動画制作ライン
+                </span>
+                <span className="rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700 ring-1 ring-cyan-200">
+                  {studioUrl.replace(/^https?:\/\//, "")}
+                </span>
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${openMontageReady ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-amber-50 text-amber-800 ring-amber-200"}`}>
+                  OpenMontage {openMontageReady ? "接続済み" : "未設定"}
+                </span>
+              </div>
+              <h1 className="mt-4 text-3xl font-semibold tracking-tight text-zinc-950 sm:text-4xl">
+                OpenMontage / n8n 連携の正規ジョブ投入UI
+              </h1>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-600">
+                ここは OpenMontage 公式GUIの複製ではなく、Paradigm Revenue OS から動画制作ジョブを投入するための正規フロントドアです。
+                OpenMontage はレンダラー/制作エージェントとして n8n 経由で呼び出し、ジョブ・承認・納品URLは Supabase SSOT に保存します。
+              </p>
+            </div>
+            <a
+              href="https://github.com/calesthio/OpenMontage"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-700 hover:border-zinc-400"
+            >
+              OpenMontage OSS
+              <ExternalLink size={15} aria-hidden />
+            </a>
           </div>
-        </div>
 
-        <div 
-          className={`flex-1 min-h-[400px] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-all duration-300 ${
-            isDragging ? 'border-cyan-500 bg-cyan-500/5 scale-[1.02]' : 'border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]'
-          }`}
-          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={(e) => { e.preventDefault(); setIsDragging(false); }}
-        >
-          <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-6 shadow-2xl">
-            <UploadCloud className="w-8 h-8 text-cyan-400" />
-          </div>
-          <h3 className="text-xl font-semibold mb-2">Drop source material here</h3>
-          <p className="text-sm text-white/50 text-center max-w-sm mb-8">
-            Upload base images, company logos, or reference videos. OpenMontage will pass these to the ComfyUI nodes via R2 storage.
-          </p>
-          <div className="flex gap-4">
-            <button className="px-6 py-2.5 rounded-xl bg-white/10 text-sm font-medium hover:bg-white/20 transition-all flex items-center gap-2">
-              <ImageIcon className="w-4 h-4" />
-              Add Image
-            </button>
-            <button className="px-6 py-2.5 rounded-xl bg-white/10 text-sm font-medium hover:bg-white/20 transition-all flex items-center gap-2">
-              <Video className="w-4 h-4" />
-              Add Reference Video
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Column: Orchestration Controls */}
-      <div className="flex flex-col gap-6">
-        <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/10 backdrop-blur-xl flex flex-col gap-6 shadow-2xl">
-          
-          <div>
-            <h3 className="text-sm font-medium text-white/80 mb-1 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-cyan-400" />
-              Narrative Prompt
-            </h3>
-            <p className="text-xs text-white/40 mb-4">Dify will optimize this prompt before sending to ComfyUI.</p>
-            <textarea 
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="e.g. A sleek, executive cinematic presentation about real estate DX. Dark mode aesthetic..."
-              className="w-full h-32 bg-black/40 border border-white/10 rounded-xl p-4 text-sm focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 resize-none transition-all placeholder:text-white/20"
+          <div className="grid gap-3 md:grid-cols-3">
+            <StatusTile
+              icon={<RadioTower size={17} aria-hidden />}
+              label="投入経路"
+              value="n8n Webhook"
+              detail={dashboard.videoPipeline.config.n8n.ready ? "ジョブ投入可能" : "N8N_VIDEO_PIPELINE_WEBHOOK_URL を確認"}
+            />
+            <StatusTile
+              icon={<ShieldCheck size={17} aria-hidden />}
+              label="保存先"
+              value="Supabase / R2"
+              detail={dashboard.videoPipeline.config.r2.ready ? "納品URL保存可能" : "R2公開URLは未設定"}
+            />
+            <StatusTile
+              icon={<Video size={17} aria-hidden />}
+              label="制作エンジン"
+              value="OpenMontage"
+              detail={openMontageReady ? "OPENMONTAGE_API_URL 設定済み" : "環境変数設定後に有効化"}
             />
           </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="text-xs font-medium text-white/60 mb-2 block">Voice & TTS (Edge-TTS)</label>
-              <select className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 text-sm appearance-none focus:outline-none focus:border-cyan-500/50">
-                <option>en-US-ChristopherNeural (Executive Male)</option>
-                <option>en-US-JennyNeural (Professional Female)</option>
-                <option>ja-JP-NanamiNeural (Japanese Female)</option>
-                <option>ja-JP-KeitaNeural (Japanese Male)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-xs font-medium text-white/60 mb-2 block">ComfyUI Pipeline</label>
-              <select className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 text-sm appearance-none focus:outline-none focus:border-cyan-500/50">
-                <option>Premium Cinematic (Flux + SVD + LivePortrait)</option>
-                <option>Fast B-Roll Generation (SVD Only)</option>
-                <option>Executive Avatar Only (LivePortrait)</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="mt-4 pt-6 border-t border-white/10">
-            <button 
-              onClick={handleGenerate}
-              disabled={isGenerating || !prompt}
-              className="w-full h-12 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 font-bold text-white flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_40px_rgba(6,182,212,0.3)]"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Orchestrating...
-                </>
-              ) : (
-                <>
-                  <Send className="w-5 h-5" />
-                  Generate via n8n
-                </>
-              )}
-            </button>
-            <p className="text-[10px] text-center text-white/40 mt-4 uppercase tracking-widest font-medium">
-              Powered by ComfyUI API & n8n
-            </p>
-          </div>
-
         </div>
-      </div>
+      </section>
 
+      <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <SalesVideoPipelinePanel data={dashboard} />
+      </section>
+    </main>
+  )
+}
+
+async function checkAuth(): Promise<boolean> {
+  const cookieStore = await cookies()
+  const requestHeaders = await headers()
+  const auth = await authorizePayloadAdminRequest({
+    headers: new Headers(requestHeaders),
+    legacyToken: cookieStore.get("paradigm_admin_token")?.value,
+  })
+  return auth.ok
+}
+
+function UnauthorizedView() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-zinc-50 p-4 sm:p-6">
+      <section className="w-full max-w-md rounded-lg border border-zinc-200 bg-white p-6 text-center shadow-sm sm:p-8">
+        <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-md bg-zinc-950 text-white">
+          <Lock size={18} aria-hidden />
+        </div>
+        <h1 className="mt-5 text-xl font-semibold text-zinc-950">管理者認証が必要です</h1>
+        <p className="mt-3 text-sm leading-relaxed text-zinc-500">
+          動画制作ラインは Revenue OS の管理者向け画面です。Payload 管理画面へログインしてから再度アクセスしてください。
+        </p>
+        <Link
+          href="/admin"
+          className="mt-6 inline-flex h-10 items-center justify-center rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white hover:bg-zinc-800"
+        >
+          管理画面へ
+        </Link>
+      </section>
+    </main>
+  )
+}
+
+function StatusTile({
+  icon,
+  label,
+  value,
+  detail,
+}: {
+  icon: ReactNode
+  label: string
+  value: string
+  detail: string
+}) {
+  return (
+    <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+      <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500">
+        {icon}
+        {label}
+      </div>
+      <div className="mt-2 text-lg font-semibold text-zinc-950">{value}</div>
+      <p className="mt-1 text-xs leading-5 text-zinc-600">{detail}</p>
     </div>
   )
 }

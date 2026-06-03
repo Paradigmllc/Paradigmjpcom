@@ -7,21 +7,17 @@ import {
   BarChart3,
   Bot,
   BriefcaseBusiness,
-  ClipboardCheck,
   Database,
   FileText,
-  Gauge,
   Globe2,
   LayoutDashboard,
   ListChecks,
   Rocket,
   ShieldCheck,
   Sparkles,
-  Table2,
   UploadCloud,
   Video,
   ChevronRight,
-  ExternalLink,
 } from "lucide-react";
 import { Toaster } from "sonner";
 
@@ -32,11 +28,9 @@ import {
   MigrationPanel,
   OperatorPanel,
   OverviewPanel,
-  WorkspacePanel,
 } from "./SalesCommandPanels";
 import { SalesAgentTeamPanel } from "./SalesAgentTeamPanel";
 import { SalesAutomationPanel } from "./SalesAutomationPanel";
-import { SalesBatchOpsPanel } from "./SalesBatchOpsPanel";
 import { SalesDocsPanel } from "./SalesDocsPanel";
 import { SalesOperationsAuditPanel } from "./SalesOperationsAuditPanel";
 import { SalesTemplateWorkbenchPanel } from "./SalesTemplateWorkbenchPanel";
@@ -46,9 +40,7 @@ import { REPORT_LOCALES } from "@/lib/sales/routing";
 
 type SalesTab =
   | "overview"
-  | "batches"
   | "automation"
-  | "workspace"
   | "operator"
   | "agentTeam"
   | "videoPipeline"
@@ -77,15 +69,13 @@ type TabItem = {
 
 const tabItems: TabItem[] = [
   { id: "overview", label: "司令塔", eyebrow: "Command", description: "全体KPIと優先リード", icon: LayoutDashboard },
-  { id: "batches", label: "月次処理", eyebrow: "Batch Ops", description: "数万件リストを送信候補へ圧縮", icon: Gauge },
   { id: "automation", label: "CSV・自動診断", eyebrow: "Intake", description: "投入からカルテ生成", icon: UploadCloud },
-  { id: "workspace", label: "リスト作業場", eyebrow: "List Ops", description: "抽出・確認・一括整理", icon: Table2 },
+  { id: "videoPipeline", label: "動画スタジオ", eyebrow: "OpenMontage連携", description: "営業動画と納品動画", icon: Video },
   { id: "operator", label: "オペレーター", eyebrow: "Queue", description: "人間確認が必要な作業", icon: ListChecks },
   { id: "agentTeam", label: "AIチーム", eyebrow: "Agents", description: "Hermes / Telegram / Slack", icon: Bot },
-  { id: "directus", label: "資料・スライド", eyebrow: "Directus", description: "Slidev / Gotenberg 管理", icon: Sparkles },
-  { id: "keystatic", label: "デモサイト管理", eyebrow: "Keystatic", description: "AstroデモとLP", icon: Globe2 },
-  { id: "supabaseStudio", label: "診断レポート", eyebrow: "Supabase Studio", description: "SSOTデータ直結の管理", icon: Database },
-  { id: "videoPipeline", label: "動画制作", eyebrow: "Video Studio", description: "営業動画と納品動画", icon: Video },
+  { id: "directus", label: "資料スタジオ", eyebrow: "Slidev / PDF", description: "営業資料とスライド", icon: Sparkles },
+  { id: "keystatic", label: "デモサイト", eyebrow: "Astroデモ", description: "差し替えデモとLP", icon: Globe2 },
+  { id: "supabaseStudio", label: "診断レポート", eyebrow: "レポートSSOT", description: "診断レポート文面と構成", icon: Database },
   { id: "crm", label: "CRM設定", eyebrow: "Twenty", description: "表示列・選択肢マスター", icon: BriefcaseBusiness },
   { id: "analytics", label: "分析", eyebrow: "Metabase", description: "営業KPIとボトルネック", icon: BarChart3 },
   { id: "integrations", label: "統合", eyebrow: "OSS / API", description: "接続・残量・未設定", icon: Database },
@@ -99,10 +89,20 @@ const tabIds = new Set<SalesTab>(tabItems.map((tab) => tab.id));
 const localeLabels: Record<string, { country: string; language: string }> = {
   ja: { country: "日本", language: "日本語" },
   en: { country: "米国・グローバル", language: "English" },
-  // ... other locales mapped as before
+  ko: { country: "韓国", language: "한국어" },
+  zh: { country: "中国", language: "简体中文" },
+  de: { country: "ドイツ", language: "Deutsch" },
+  fr: { country: "フランス", language: "Français" },
+  es: { country: "スペイン", language: "Español" },
+  pt: { country: "ポルトガル", language: "Português" },
+  ru: { country: "ロシア", language: "Русский" },
+  ar: { country: "アラブ首長国連邦", language: "العربية" },
+  vi: { country: "ベトナム", language: "Tiếng Việt" },
+  id: { country: "インドネシア", language: "Bahasa Indonesia" },
 };
 
 function normalizeTab(value: string | null): SalesTab {
+  if (value === "batches" || value === "workspace") return "automation"
   return value && tabIds.has(value as SalesTab) ? (value as SalesTab) : "overview";
 }
 
@@ -153,28 +153,25 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
   }, [searchParams]);
 
   function changeTab(tab: SalesTab) {
-    if (tab === "videoPipeline") {
-      window.open(`/${locale}/studio`, "_blank", "noopener,noreferrer");
-      return;
-    }
-    if (tab === "directus") {
-      window.open(`https://directus.paradigmjp.com`, "_blank", "noopener,noreferrer");
-      return;
-    }
-    if (tab === "keystatic") {
-      window.open(`https://demo.paradigmjp.com/keystatic`, "_blank", "noopener,noreferrer");
-      return;
-    }
-    if (tab === "supabaseStudio") {
-      window.open(`https://supabase.appexx.me/project/default/editor`, "_blank", "noopener,noreferrer");
-      return;
-    }
     setActiveTab(tab);
     const params = new URLSearchParams(searchParams.toString());
     if (tab === "overview") params.delete("tab");
     else params.set("tab", tab);
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
+
+  function handleLocaleChange(newLocale: string) {
+    const segments = pathname.split("/");
+    if (segments.length > 1 && segments[1] === locale) {
+      segments[1] = newLocale;
+      const newPath = segments.join("/");
+      const params = new URLSearchParams(searchParams.toString());
+      const query = params.toString();
+      router.push(query ? `${newPath}?${query}` : newPath);
+    } else {
+      router.push(`/${newLocale}/admin/sales`);
+    }
   }
 
   const localeMeta = localeLabels[locale] ?? { country: "日本", language: "日本語" };
@@ -197,12 +194,37 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
   const renderTab = () => {
     switch (activeTab) {
       case "overview": return <OverviewPanel data={data} />;
-      case "batches": return <SalesBatchOpsPanel data={data} />;
       case "automation": return <SalesAutomationPanel data={data} />;
-      case "workspace": return <WorkspacePanel data={data} />;
       case "operator": return <OperatorPanel data={data} />;
       case "agentTeam": return <SalesAgentTeamPanel data={data} />;
       case "videoPipeline": return <SalesVideoPipelinePanel data={data} />;
+      case "directus": return (
+        <SalesTemplateWorkbenchPanel
+          data={data}
+          initialAssetType="sales_deck"
+          heading="資料スタジオ"
+          title="営業資料・スライドのテンプレート管理"
+          description="営業資料、PDF、提案スライドの文面と構成をRevenue OS内で管理します。"
+        />
+      );
+      case "keystatic": return (
+        <SalesTemplateWorkbenchPanel
+          data={data}
+          initialAssetType="astro_demo_site"
+          heading="デモサイト"
+          title="Astroデモ・LPのテンプレート管理"
+          description="差し替えデモサイトとLP生成に使うテンプレートを管理します。"
+        />
+      );
+      case "supabaseStudio": return (
+        <SalesTemplateWorkbenchPanel
+          data={data}
+          initialAssetType="diagnostic_report"
+          heading="診断レポート"
+          title="診断レポートのテンプレート管理"
+          description="Supabase SSOTに保存される診断レポートの構成、品質基準、Dify選定条件を確認・編集します。"
+        />
+      );
       case "crm": return <CrmPanel data={data} />;
       case "analytics": return <AnalyticsPanel data={data} />;
       case "integrations": return <IntegrationsPanel data={data} />;
@@ -238,50 +260,18 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
               </motion.div>
             </div>
 
-            <nav className="min-h-0 flex-1 overflow-y-auto px-4 py-6 custom-scrollbar" aria-label="営業機能">
-              <div className="space-y-1">
+            <nav className="min-h-0 flex-1 overflow-y-auto px-4 py-3 custom-scrollbar" aria-label="営業機能">
+              <div className="space-y-0.5">
                 {tabItems.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
-                  
-                  if (tab.id === "videoPipeline" || tab.id === "keystatic" || tab.id === "supabaseStudio" || tab.id === "directus") {
-                    const href = tab.id === "videoPipeline" 
-                      ? `/${locale}/studio` 
-                      : tab.id === "directus"
-                        ? "https://directus.paradigmjp.com"
-                      : tab.id === "keystatic"
-                        ? "https://demo.paradigmjp.com/keystatic"
-                        : "https://supabase.appexx.me/project/default/editor";
-                    return (
-                      <a
-                        key={tab.id}
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`group relative flex w-full items-center gap-3.5 rounded-xl px-4 py-3 text-left transition-all duration-200 text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900`}
-                      >
-                        <div className="relative z-10 flex items-center justify-center">
-                          <Icon className={`h-[18px] w-[18px] shrink-0 transition-transform duration-300 text-zinc-400 group-hover:text-zinc-700`} />
-                        </div>
-                        <span className="relative z-10 min-w-0 flex-1">
-                          <span className={`block truncate text-sm font-semibold tracking-wide`}>{tab.label}</span>
-                          <span className={`block truncate text-[10px] mt-0.5 font-medium uppercase tracking-widest text-zinc-400`}>
-                            {tab.eyebrow}
-                          </span>
-                        </span>
-                        <motion.div initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} className="relative z-10">
-                           <ExternalLink className="h-4 w-4 text-zinc-400" />
-                        </motion.div>
-                      </a>
-                    );
-                  }
 
                   return (
                     <button
                       key={tab.id}
                       type="button"
                       onClick={() => changeTab(tab.id)}
-                      className={`group relative flex w-full items-center gap-3.5 rounded-xl px-4 py-3 text-left transition-all duration-200 ${
+                      className={`group relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left transition-all duration-200 ${
                         isActive 
                           ? "bg-zinc-900 text-white shadow-md shadow-zinc-900/10" 
                           : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
@@ -291,16 +281,16 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
                       {isActive && (
                         <motion.div 
                           layoutId="activeTab"
-                          className="absolute inset-0 rounded-xl bg-zinc-900"
+                          className="absolute inset-0 rounded-lg bg-zinc-900"
                           transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                         />
                       )}
                       <div className="relative z-10 flex items-center justify-center">
-                        <Icon className={`h-[18px] w-[18px] shrink-0 transition-transform duration-300 ${isActive ? "scale-110 text-white" : "text-zinc-400 group-hover:text-zinc-700"}`} />
+                        <Icon className={`h-4 w-4 shrink-0 transition-transform duration-300 ${isActive ? "scale-110 text-white" : "text-zinc-400 group-hover:text-zinc-700"}`} />
                       </div>
                       <span className="relative z-10 min-w-0 flex-1">
-                        <span className={`block truncate text-sm font-semibold tracking-wide ${isActive ? "text-white" : ""}`}>{tab.label}</span>
-                        <span className={`block truncate text-[10px] mt-0.5 font-medium uppercase tracking-widest ${isActive ? "text-zinc-400" : "text-zinc-400"}`}>
+                        <span className={`block truncate text-xs font-semibold tracking-wide ${isActive ? "text-white" : ""}`}>{tab.label}</span>
+                        <span className={`block truncate text-[9px] mt-0.5 font-medium uppercase tracking-widest ${isActive ? "text-zinc-400" : "text-zinc-400"}`}>
                           {tab.eyebrow}
                         </span>
                       </span>
@@ -310,7 +300,7 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
                           animate={{ opacity: 1, x: 0 }} 
                           className="relative z-10"
                         >
-                          <ChevronRight className="h-4 w-4 text-zinc-400" />
+                          <ChevronRight className="h-3.5 w-3.5 text-zinc-400" />
                         </motion.div>
                       )}
                     </button>
@@ -319,19 +309,32 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
               </div>
             </nav>
 
-            <div className="p-6">
-              <div className="rounded-xl border border-zinc-100 bg-zinc-50/50 p-4 transition-colors hover:bg-zinc-50">
-                <div className="flex items-center gap-2.5 text-xs font-bold text-zinc-700">
+            <div className="p-4">
+              <div className="rounded-xl border border-zinc-100 bg-zinc-50/50 p-3 transition-colors hover:bg-zinc-50">
+                <div className="flex items-center gap-2 text-xs font-bold text-zinc-700">
                   <div className="bg-white p-1 rounded shadow-sm border border-zinc-100">
                     <Globe2 className="h-3.5 w-3.5 text-indigo-500" />
                   </div>
                   {localeMeta.country}
                 </div>
-                <p className="mt-2 text-[11px] font-medium text-zinc-500">
-                  Locale: {locale} / {localeMeta.language}
-                </p>
+                <div className="mt-2.5">
+                  <select
+                    id="locale-switcher"
+                    value={locale}
+                    onChange={(e) => handleLocaleChange(e.target.value)}
+                    className="w-full text-[11px] font-semibold bg-white border border-zinc-200 rounded-lg px-2 py-1.5 text-zinc-700 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                    aria-label="言語・地域切り替え"
+                  >
+                    {Object.entries(localeLabels).map(([key, meta]) => (
+                      <option key={key} value={key}>
+                        {meta.language} ({meta.country})
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
+
           </div>
         </aside>
 

@@ -34,9 +34,9 @@ export async function withContext<T>(
   fn: (ctx: BrowserContext) => Promise<T>,
 ): Promise<T> {
   const browser = await getBrowser()
-  const proxyUrl = process.env.SCRAPOXY_URL
-  const username = process.env.SCRAPOXY_USERNAME
-  const password = process.env.SCRAPOXY_PASSWORD
+  const proxyUrl = process.env.MUBENG_PROXY_URL
+  const username = process.env.MUBENG_PROXY_USERNAME
+  const password = process.env.MUBENG_PROXY_PASSWORD
   const proxyConfig = proxyUrl ? {
     server: proxyUrl,
     ...(username && password ? { username, password } : {}),

@@ -31,3 +31,4 @@ docker exec -i supabase-oss-db-1 psql -U postgres -d postgres < /root/supabase-o
 docker exec -i supabase-oss-db-1 psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_031_sales_monthly_lead_batches.sql
 docker exec -i supabase-oss-db-1 psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_032_sales_searxng_search_runs.sql
 docker exec -i supabase-oss-db-1 psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_033_sales_japan_readiness_insights.sql
+docker exec -i supabase-oss-db-1 psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_034_sales_post_outreach_tools.sql

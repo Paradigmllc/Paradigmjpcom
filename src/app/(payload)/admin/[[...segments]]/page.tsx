@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { RootPage, generatePageMetadata } from "@payloadcms/next/views"
 import { importMap } from "../importMap.js"
 import config from "@payload-config"
+import { headers } from "next/headers"
 import {
   getPayloadInitFailureMessage,
   isPayloadInitCoolingDown,
@@ -38,9 +39,10 @@ export const generateMetadata = async ({ params, searchParams }: Args): Promise<
   }
 }
 
-function PayloadAdminUnavailable() {
+function PayloadAdminUnavailable({ locale }: { locale: string }) {
   const remainingSeconds = Math.ceil(payloadInitCooldownRemainingMs() / 1000)
   const message = getPayloadInitFailureMessage()
+  const salesDashboardPath = `/${locale}/admin/sales`
   return (
     <main style={{ minHeight: "100vh", background: "#f7f7f4", color: "#18181b", padding: 24 }}>
       <section
@@ -83,7 +85,7 @@ function PayloadAdminUnavailable() {
         ) : null}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 22 }}>
           <a
-            href="/ja/admin/sales"
+            href={salesDashboardPath}
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -125,7 +127,10 @@ function PayloadAdminUnavailable() {
 
 const Page = async ({ params, searchParams }: Args) => {
   if (isPayloadInitCoolingDown()) {
-    return <PayloadAdminUnavailable />
+    const requestHeaders = await headers()
+    const acceptLang = requestHeaders.get("accept-language") || ""
+    const locale = acceptLang.toLowerCase().startsWith("en") ? "en" : "ja"
+    return <PayloadAdminUnavailable locale={locale} />
   }
 
   try {
@@ -134,7 +139,10 @@ const Page = async ({ params, searchParams }: Args) => {
     if (isNextControlFlowError(e)) throw e
     console.error("[payload-admin] RootPage failed:", e)
     markPayloadInitFailure(e)
-    return <PayloadAdminUnavailable />
+    const requestHeaders = await headers()
+    const acceptLang = requestHeaders.get("accept-language") || ""
+    const locale = acceptLang.toLowerCase().startsWith("en") ? "en" : "ja"
+    return <PayloadAdminUnavailable locale={locale} />
   }
 }
 

@@ -272,6 +272,10 @@ async function applyJapanReadinessInsightsMigration(envs) {
   return applySqlMigration(envs, "migration_033_sales_japan_readiness_insights.sql", "Japan readiness insights migration")
 }
 
+async function applyPostOutreachToolsMigration(envs) {
+  return applySqlMigration(envs, "migration_034_sales_post_outreach_tools.sql", "Post-outreach OSS tools migration")
+}
+
 function applyContentTemplates(envs) {
   const { url, key } = salesSupabase(envs)
   const result = spawnSync(process.execPath, ["scripts/seed-sales-content-templates.mjs"], {
@@ -340,6 +344,7 @@ async function main() {
     console.log(await applyMonthlyLeadBatchMigration(envs))
     console.log(await applySearxngSearchRunsMigration(envs))
     console.log(await applyJapanReadinessInsightsMigration(envs))
+    console.log(await applyPostOutreachToolsMigration(envs))
     console.log(applyContentTemplates(envs))
   } else {
     console.log("Dry run: skipped Supabase product upsert")

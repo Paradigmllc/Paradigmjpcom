@@ -75,7 +75,19 @@ export interface DashboardSyncLog {
 }
 
 export interface DashboardToolConnection {
-  slug: "supabase" | "twenty" | "nocodb" | "appsmith" | "metabase" | "n8n" | "calcom" | "docuseal"
+  slug:
+    | "supabase"
+    | "twenty"
+    | "nocodb"
+    | "appsmith"
+    | "metabase"
+    | "n8n"
+    | "calcom"
+    | "docuseal"
+    | "directus"
+    | "keystatic"
+    | "chatwoot"
+    | "livekit"
   displayName: string
   role: string
   interfaceType: string

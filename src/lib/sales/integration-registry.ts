@@ -25,7 +25,7 @@ export interface SalesIntegrationDefinition {
   requiredEnv: string[]
   requiredAnyEnv?: string[]
   optionalEnv?: string[]
-  balance: "none" | "manual" | "dataforseo_user_data" | "browserless_pressure" | "stagehand_health" | "scrapoxy_health"
+  balance: "none" | "manual" | "dataforseo_user_data" | "browserless_pressure" | "stagehand_health" | "mubeng_health"
   docsUrl?: string
   recommended: boolean
   notes: string
@@ -54,6 +54,20 @@ interface IntegrationStatusOptions {
 }
 
 const REGISTRY: SalesIntegrationDefinition[] = [
+  {
+    slug: "supabase_ssot",
+    displayName: "Supabase SSOT",
+    category: "crm_ops",
+    deployment: "oss",
+    role: "Single source of truth for leads, reports, jobs, meetings, contracts, and audit logs.",
+    requiredEnv: [],
+    requiredAnyEnv: ["SALES_SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_ROLE_KEY"],
+    optionalEnv: ["SALES_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_PAT"],
+    balance: "none",
+    docsUrl: "https://github.com/supabase/supabase",
+    recommended: true,
+    notes: "営業データの正本です。service_role未設定時はSales OSをdegraded表示にし、偽成功で処理を進めません。",
+  },
   {
     slug: "dify_cloud",
     displayName: "Dify Cloud",
@@ -91,6 +105,19 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     balance: "none",
     recommended: true,
     notes: "大量実行はn8n側の同時実行数とSales OS側のbatch limitで抑制する。",
+  },
+  {
+    slug: "twenty_crm",
+    displayName: "Twenty CRM",
+    category: "crm_ops",
+    deployment: "oss",
+    role: "CRM surface for companies, deal stages, activities, and sales ownership.",
+    requiredEnv: ["TWENTY_BASE_URL"],
+    optionalEnv: ["TWENTY_API_KEY", "TWENTY_DATABASE_URL"],
+    balance: "manual",
+    docsUrl: "https://github.com/twentyhq/twenty",
+    recommended: true,
+    notes: "Supabase SSOTの会社情報をCRM画面へ投影します。APIキーが無い場合は画面リンクのみ、メタデータ同期は無効です。",
   },
   {
     slug: "trigger_dev",
@@ -142,6 +169,19 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     docsUrl: "https://crawlee.dev/",
     recommended: true,
     notes: "Next.js本体では軽量fetch、重いクロールはworkerに逃がす。",
+  },
+  {
+    slug: "searxng",
+    displayName: "SearxNG",
+    category: "list_source",
+    deployment: "oss",
+    role: "Self-hosted SERP water source for search-result lead discovery and monthly lead batches.",
+    requiredEnv: ["SEARXNG_BASE_URL"],
+    optionalEnv: ["SEARXNG_LANGUAGE", "SEARXNG_DEFAULT_ENGINES"],
+    balance: "none",
+    docsUrl: "https://github.com/searxng/searxng",
+    recommended: true,
+    notes: "JSON形式をsettings.ymlで有効化してから使います。検索結果はDBに保存し、重複排除とスコアリング後にリード化します。",
   },
   {
     slug: "crawl4ai",
@@ -322,7 +362,7 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     deployment: "oss",
     role: "Technology fingerprinting from HTML, scripts, headers, cookies and public markers.",
     requiredEnv: [],
-    optionalEnv: ["WAPPALYZER_API_KEY", "WEBANALYZE_BIN"],
+    optionalEnv: ["WAPPALYZER_API_KEY", "WAPPALYZER_CLI_BIN", "WEBANALYZE_BIN"],
     balance: "manual",
     docsUrl: "https://www.wappalyzer.com/technologies/",
     recommended: true,
@@ -414,6 +454,32 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     notes: "Difyが構成案を生成し、Slidev/GotenbergでPDF化する。",
   },
   {
+    slug: "directus_assets",
+    displayName: "Directus",
+    category: "asset_generation",
+    deployment: "oss",
+    role: "Asset, proposal, and slide content management studio when a dedicated Directus instance is deployed.",
+    requiredEnv: [],
+    optionalEnv: ["DIRECTUS_BASE_URL", "DIRECTUS_TOKEN", "NEXT_PUBLIC_DIRECTUS_URL"],
+    balance: "manual",
+    docsUrl: "https://github.com/directus/directus",
+    recommended: false,
+    notes: "未接続時はRevenue OS内の資料スタジオにフォールバックします。外部Directusが404でも営業導線は止めません。",
+  },
+  {
+    slug: "nextjs_reports",
+    displayName: "Next.js report renderer",
+    category: "asset_generation",
+    deployment: "oss",
+    role: "Dynamic SSR rendering for customer diagnostic reports by locale and slug.",
+    requiredEnv: ["NEXT_PUBLIC_SITE_URL"],
+    optionalEnv: ["PARADIGMJP_BASE_URL"],
+    balance: "none",
+    docsUrl: "https://github.com/vercel/next.js",
+    recommended: true,
+    notes: "診断レポートはNext.jsの/[locale]/report/[slug]で描画します。顧客URLを生成するためNEXT_PUBLIC_SITE_URLは必須です。",
+  },
+  {
     slug: "serp_tavily",
     displayName: "SerpAPI / Tavily",
     category: "analysis",
@@ -432,7 +498,14 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     deployment: "oss",
     role: "Sales video and delivery-subscription video generation.",
     requiredEnv: [],
-    optionalEnv: ["OPENMONTAGE_API_URL", "COMFYUI_API_URL", "REMOTION_RENDER_URL", "HYPERFRAMES_API_URL"],
+    optionalEnv: [
+      "OPENMONTAGE_API_URL",
+      "OPENMONTAGE_BASE_URL",
+      "NEXT_PUBLIC_OPENMONTAGE_STUDIO_URL",
+      "COMFYUI_API_URL",
+      "REMOTION_RENDER_URL",
+      "HYPERFRAMES_API_URL",
+    ],
     balance: "manual",
     recommended: true,
     notes: "営業資料埋め込み用の短尺動画と、動画納品サブスク用の制作ラインを分ける。",
@@ -463,6 +536,19 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     notes: "大容量成果物はDBに置かずR2 URLをSupabaseに保存する。",
   },
   {
+    slug: "keystatic_demo_cms",
+    displayName: "Keystatic",
+    category: "demo_site",
+    deployment: "oss",
+    role: "Git-backed CMS for Astro demo-site edits by non-engineering operators.",
+    requiredEnv: [],
+    optionalEnv: ["KEYSTATIC_BASE_URL", "NEXT_PUBLIC_KEYSTATIC_URL", "ASTRO_DEMO_WORKER_URL"],
+    balance: "manual",
+    docsUrl: "https://github.com/Thinkmill/keystatic",
+    recommended: false,
+    notes: "未接続時はRevenue OS内のデモサイトテンプレート管理を使います。Git反映は別途Keystatic/Astro側のデプロイが必要です。",
+  },
+  {
     slug: "astro_demo",
     displayName: "Astro",
     category: "demo_site",
@@ -487,16 +573,54 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     notes: "フォーム自動送信が危険な場合の代替。ドメインウォームアップと上限監視が必須。",
   },
   {
-    slug: "calcom_docuseal",
-    displayName: "Cal.com / Docuseal",
+    slug: "calcom",
+    displayName: "Cal.com",
     category: "crm_ops",
     deployment: "oss",
-    role: "Meeting booking and contract signature after a hot response.",
-    requiredEnv: [],
-    optionalEnv: ["CALCOM_BASE_URL", "CALCOM_API_KEY", "DOCUSEAL_BASE_URL", "DOCUSEAL_API_KEY"],
+    role: "Meeting booking and post-diagnosis consultation scheduling.",
+    requiredEnv: ["CALCOM_BASE_URL"],
+    optionalEnv: ["CALCOM_API_KEY", "CALCOM_WEBHOOK_URL"],
     balance: "none",
     recommended: true,
     notes: "成約時はDocuseal signed webhookから顧客ハンドオフを起動する。",
+  },
+  {
+    slug: "chatwoot",
+    displayName: "Chatwoot",
+    category: "crm_ops",
+    deployment: "oss",
+    role: "Unified inbox for email replies, chat, and social DMs after outreach lands.",
+    requiredEnv: ["CHATWOOT_BASE_URL"],
+    optionalEnv: ["CHATWOOT_API_KEY", "CHATWOOT_ACCOUNT_ID", "CHATWOOT_WEBHOOK_URL", "N8N_POST_OUTREACH_WEBHOOK_URL"],
+    balance: "manual",
+    docsUrl: "https://github.com/chatwoot/chatwoot",
+    recommended: true,
+    notes: "Webhookは/api/sales/chatwoot/webhookで受け、返信を活動ログとフォローアップキューに戻します。n8n設定時はAI返信導線へ転送します。",
+  },
+  {
+    slug: "livekit",
+    displayName: "LiveKit",
+    category: "crm_ops",
+    deployment: "oss",
+    role: "Realtime voice/video lane for AI discovery calls and meeting transcripts.",
+    requiredEnv: ["LIVEKIT_URL"],
+    optionalEnv: ["LIVEKIT_API_KEY", "LIVEKIT_API_SECRET", "LIVEKIT_WEBHOOK_URL", "N8N_LIVEKIT_DISCOVERY_WEBHOOK_URL"],
+    balance: "manual",
+    docsUrl: "https://github.com/livekit/livekit",
+    recommended: true,
+    notes: "Webhookは/api/sales/livekit/webhookで受け、初期ヒアリングの記録を活動ログと商談準備キューに戻します。",
+  },
+  {
+    slug: "docuseal",
+    displayName: "Docuseal",
+    category: "crm_ops",
+    deployment: "oss",
+    role: "Contract signature and customer handoff after proposal acceptance.",
+    requiredEnv: [],
+    optionalEnv: ["DOCUSEAL_BASE_URL", "DOCUSEAL_API_KEY", "DOCUSEAL_WEBHOOK_URL"],
+    balance: "none",
+    recommended: true,
+    notes: "署名Webhookは/api/sales/docuseal/webhookで受け、sales_contractsと顧客ハンドオフへ反映します。",
   },
   {
     slug: "proxy_pool",
@@ -511,17 +635,17 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     notes: "残量は各プロバイダ管理画面/APIで確認。CAPTCHAやCloudflare Challengeは回避せず人間確認に切り替える。",
   },
   {
-    slug: "scrapoxy",
-    displayName: "Scrapoxy",
+    slug: "mubeng",
+    displayName: "mubeng",
     category: "proxy",
     deployment: "oss",
-    role: "Rotating proxy gateway for anonymizing outbound crawler/browser traffic and preventing IP bans.",
-    requiredEnv: ["SCRAPOXY_URL"],
-    optionalEnv: ["SCRAPOXY_USERNAME", "SCRAPOXY_PASSWORD"],
-    balance: "scrapoxy_health",
-    docsUrl: "https://scrapoxy.io/",
+    role: "Fast proxy checker and IP rotator for routing outbound crawler/browser traffic through a controlled proxy pool.",
+    requiredEnv: ["MUBENG_PROXY_URL"],
+    optionalEnv: ["MUBENG_PROXY_USERNAME", "MUBENG_PROXY_PASSWORD"],
+    balance: "mubeng_health",
+    docsUrl: "https://github.com/mubeng/mubeng",
     recommended: true,
-    notes: "すべてのプロキシを一括統括するローカルリバースプロキシAPI。未設定時はプロキシを通さず直接アクセスします。",
+    notes: "mubengをローカルまたはセルフホストの回転プロキシとして起動し、SearxNG/Crawl4AI/Browserless系の外向き通信を同じ防衛線へ通します。CAPTCHA回避ではなく、負荷分散とIP保護のために使います。",
   },
 ]
 
@@ -633,9 +757,9 @@ async function checkStagehandHealth(): Promise<Pick<SalesIntegrationStatus, "bal
   }
 }
 
-async function checkScrapoxyHealth(): Promise<Pick<SalesIntegrationStatus, "balanceStatus" | "balanceLabel">> {
-  const urlStr = envValue("SCRAPOXY_URL")
-  if (!urlStr) return { balanceStatus: "not_configured", balanceLabel: "SCRAPOXY_URL未設定" }
+async function checkMubengHealth(): Promise<Pick<SalesIntegrationStatus, "balanceStatus" | "balanceLabel">> {
+  const urlStr = envValue("MUBENG_PROXY_URL")
+  if (!urlStr) return { balanceStatus: "not_configured", balanceLabel: "MUBENG_PROXY_URL未設定" }
   try {
     const url = new URL(urlStr)
     // Try pinging the base url
@@ -648,7 +772,7 @@ async function checkScrapoxyHealth(): Promise<Pick<SalesIntegrationStatus, "bala
       balanceLabel: res.ok ? "正常 (HTTP 200)" : `HTTP ${res.status}`,
     }
   } catch (error) {
-    console.error("[integration-registry] Scrapoxy health check failed:", error)
+    console.error("[integration-registry] mubeng health check failed:", error)
     return { balanceStatus: "error", balanceLabel: error instanceof Error ? error.message : "接続不可" }
   }
 }
@@ -657,7 +781,7 @@ async function liveBalance(def: SalesIntegrationDefinition): Promise<Pick<SalesI
   if (def.balance === "dataforseo_user_data") return checkDataForSeoBalance()
   if (def.balance === "browserless_pressure") return checkBrowserlessPressure()
   if (def.balance === "stagehand_health") return checkStagehandHealth()
-  if (def.balance === "scrapoxy_health") return checkScrapoxyHealth()
+  if (def.balance === "mubeng_health") return checkMubengHealth()
   return null
 }
 

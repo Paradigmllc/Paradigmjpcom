@@ -8,6 +8,7 @@ import { countryForLocale, isReportLocale, type ReportLocale } from "@/lib/sales
 import {
   CONTENT_APPEAL_ANGLES,
   CONTENT_APPEAL_LABELS,
+  type ContentAssetType,
   CONTENT_ASSET_LABELS,
   CONTENT_ASSET_TYPES,
   CONTENT_TEMPLATE_VARIANT_LABELS,
@@ -34,6 +35,10 @@ function fieldValue(row: TemplateRow | null, key: keyof TemplateRow): string {
 
 function countryForWorkbenchLocale(locale: string): string {
   return countryForLocale(isReportLocale(locale) ? locale : "ja");
+}
+
+function isContentAssetType(value: string): value is ContentAssetType {
+  return (CONTENT_ASSET_TYPES as readonly string[]).includes(value);
 }
 
 function TemplateSelect({
@@ -99,10 +104,24 @@ function TextField({
   );
 }
 
-export function SalesTemplateWorkbenchPanel({ data }: { data: SalesDashboardData }) {
+type SalesTemplateWorkbenchPanelProps = {
+  data: SalesDashboardData
+  initialAssetType?: ContentAssetType
+  heading?: string
+  title?: string
+  description?: string
+}
+
+export function SalesTemplateWorkbenchPanel({
+  data,
+  initialAssetType = "diagnostic_report",
+  heading = "テンプレート管理",
+  title = "確認・検索・選定テスト",
+  description = "言語、業界、成果物、訴求軸ごとのテンプレートを確認し、Dify/n8nが使う選定条件と生成プロンプトをGUIで編集します。",
+}: SalesTemplateWorkbenchPanelProps) {
   const [locale, setLocale] = useState<ReportLocale>(data.scope.reportLocale);
   const [industry, setIndustry] = useState("restaurant");
-  const [assetType, setAssetType] = useState("diagnostic_report");
+  const [assetType, setAssetType] = useState<ContentAssetType>(initialAssetType);
   const [appealAngle, setAppealAngle] = useState("revenue_recovery");
   const [query, setQuery] = useState("");
   const [templates, setTemplates] = useState<TemplateRow[]>([]);
@@ -232,11 +251,11 @@ export function SalesTemplateWorkbenchPanel({ data }: { data: SalesDashboardData
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500">
               <SlidersHorizontal size={15} aria-hidden />
-              テンプレート管理
+              {heading}
             </div>
-            <h2 className="mt-2 text-lg font-semibold text-zinc-950">確認・検索・選定テスト</h2>
+            <h2 className="mt-2 text-lg font-semibold text-zinc-950">{title}</h2>
             <p className="mt-2 text-xs leading-6 text-zinc-600">
-              言語、業界、成果物、訴求軸ごとのテンプレートを確認し、Dify/n8nが使う選定条件と生成プロンプトをGUIで編集します。
+              {description}
             </p>
           </div>
           <button
@@ -259,7 +278,14 @@ export function SalesTemplateWorkbenchPanel({ data }: { data: SalesDashboardData
             }}
           />
           <TemplateSelect label="業界" value={industry} options={industryOptions} onChange={setIndustry} />
-          <TemplateSelect label="成果物" value={assetType} options={assetOptions} onChange={setAssetType} />
+          <TemplateSelect
+            label="成果物"
+            value={assetType}
+            options={assetOptions}
+            onChange={(value) => {
+              if (isContentAssetType(value)) setAssetType(value);
+            }}
+          />
           <TemplateSelect label="訴求軸" value={appealAngle} options={angleOptions} onChange={setAppealAngle} />
           <label className="grid gap-1 text-xs font-medium text-zinc-600">
             <span>検索</span>

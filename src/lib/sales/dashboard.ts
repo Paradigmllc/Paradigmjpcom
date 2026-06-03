@@ -130,7 +130,20 @@ interface SourceRunRow {
   measured_at: string | null
 }
 
-const TOOL_ORDER: DashboardToolConnection["slug"][] = ["supabase", "nocodb", "appsmith", "twenty", "metabase", "n8n", "calcom", "docuseal"]
+const TOOL_ORDER: DashboardToolConnection["slug"][] = [
+  "supabase",
+  "nocodb",
+  "appsmith",
+  "twenty",
+  "metabase",
+  "n8n",
+  "calcom",
+  "chatwoot",
+  "livekit",
+  "docuseal",
+  "directus",
+  "keystatic",
+]
 
 const TOOL_ENV: Record<DashboardToolConnection["slug"], string | null> = {
   supabase: "SALES_SUPABASE_URL",
@@ -141,6 +154,10 @@ const TOOL_ENV: Record<DashboardToolConnection["slug"], string | null> = {
   n8n: "N8N_BASE_URL",
   calcom: "CALCOM_BASE_URL",
   docuseal: "DOCUSEAL_BASE_URL",
+  directus: "DIRECTUS_BASE_URL",
+  keystatic: "KEYSTATIC_BASE_URL",
+  chatwoot: "CHATWOOT_BASE_URL",
+  livekit: "LIVEKIT_URL",
 }
 
 const FALLBACK_TOOLS: DashboardToolConnection[] = [
@@ -216,14 +233,29 @@ const FALLBACK_TOOLS: DashboardToolConnection[] = [
     owner: null,
     lastCheckedAt: null,
   },
-  { slug: "calcom", displayName: "Cal.com OSS", role: "Meeting booking, post-diagnosis consultation slots, and owner calendar routing.", interfaceType: "scheduling", deploymentType: "oss_self_hosted", status: readToolUrl("calcom") ? "active" : "planned", baseUrl: readToolUrl("calcom"), healthUrl: null, owner: null, lastCheckedAt: null },
-  { slug: "docuseal", displayName: "Docuseal OSS", role: "Contract, order form, NDA, and e-signature status management.", interfaceType: "contract", deploymentType: "oss_self_hosted", status: readToolUrl("docuseal") ? "active" : "planned", baseUrl: readToolUrl("docuseal"), healthUrl: null, owner: null, lastCheckedAt: null },
+  { slug: "calcom", displayName: "Cal.com OSS", role: "診断レポート後の商談予約、担当者別の空き枠管理、予約Webhookの回収導線。", interfaceType: "scheduling", deploymentType: "oss_self_hosted", status: readToolUrl("calcom") ? "active" : "planned", baseUrl: readToolUrl("calcom"), healthUrl: null, owner: null, lastCheckedAt: null },
+  { slug: "chatwoot", displayName: "Chatwoot OSS", role: "メール返信、サイトチャット、SNS DMを集約し、AI返信またはフォローアップキューへ戻す受信箱。", interfaceType: "inbox", deploymentType: "oss_self_hosted", status: readToolUrl("chatwoot") ? "active" : "planned", baseUrl: readToolUrl("chatwoot"), healthUrl: null, owner: null, lastCheckedAt: null },
+  { slug: "livekit", displayName: "LiveKit OSS", role: "AI音声面談、初期ヒアリング、議事録回収のためのリアルタイム音声・映像レーン。", interfaceType: "voice", deploymentType: "oss_self_hosted", status: readToolUrl("livekit") ? "active" : "planned", baseUrl: readToolUrl("livekit"), healthUrl: null, owner: null, lastCheckedAt: null },
+  { slug: "docuseal", displayName: "Docuseal OSS", role: "契約書、申込書、NDAの電子署名と契約ステータス管理。", interfaceType: "contract", deploymentType: "oss_self_hosted", status: readToolUrl("docuseal") ? "active" : "planned", baseUrl: readToolUrl("docuseal"), healthUrl: null, owner: null, lastCheckedAt: null },
+  { slug: "directus", displayName: "Directus OSS", role: "営業資料、提案書、スライド素材を外部CMSで管理する場合の資料スタジオ。", interfaceType: "cms", deploymentType: "oss_self_hosted", status: readToolUrl("directus") ? "active" : "planned", baseUrl: readToolUrl("directus"), healthUrl: null, owner: null, lastCheckedAt: null },
+  { slug: "keystatic", displayName: "Keystatic OSS", role: "AstroデモサイトをGitベースで安全に編集するためのデモサイトCMS。", interfaceType: "demo_cms", deploymentType: "oss_self_hosted", status: readToolUrl("keystatic") ? "active" : "planned", baseUrl: readToolUrl("keystatic"), healthUrl: null, owner: null, lastCheckedAt: null },
 ]
 function readToolUrl(slug: DashboardToolConnection["slug"]): string | null {
   const envName = TOOL_ENV[slug]
-  if (!envName) return null
-  const value = process.env[envName]
-  if (value && value.trim().length > 0) return value
+  const value = envName ? process.env[envName] : null
+  if (value && value.trim().length > 0) return value.trim()
+  if (slug === "supabase") {
+    const fallback = process.env.NEXT_PUBLIC_SUPABASE_URL
+    return fallback && fallback.trim().length > 0 ? fallback.trim() : null
+  }
+  if (slug === "directus") {
+    const fallback = process.env.NEXT_PUBLIC_DIRECTUS_URL
+    return fallback && fallback.trim().length > 0 ? fallback.trim() : null
+  }
+  if (slug === "keystatic") {
+    const fallback = process.env.NEXT_PUBLIC_KEYSTATIC_URL
+    return fallback && fallback.trim().length > 0 ? fallback.trim() : null
+  }
   if (slug !== "n8n") return null
 
   const webhookUrl = process.env.N8N_PLAYWRIGHT_FORM_WEBHOOK

@@ -3,6 +3,7 @@ import { verifyWebhookSecret } from "@/lib/sales/auth"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { uploadToR2 } from "@/lib/sales/r2-storage"
+import { getMubengProxyUrl } from "@/lib/sales/proxy-agent"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -68,10 +69,10 @@ export async function POST(req: NextRequest) {
   bUrlObj.pathname = "/screenshot"
   if (token) bUrlObj.searchParams.set("token", token)
 
-  const scrapoxyUrl = process.env.SCRAPOXY_URL
+  const mubengProxyUrl = getMubengProxyUrl()
 
   // Build browserless screenshot options
-  // Set resolution, clean overlays/popups, and configure Scrapoxy proxy rotation if available
+  // Set resolution, clean overlays/popups, and configure mubeng proxy rotation if available
   const screenshotOpts: Record<string, unknown> = {
     url: targetUrl,
     options: {
@@ -100,8 +101,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  if (scrapoxyUrl) {
-    screenshotOpts.proxy = scrapoxyUrl
+  if (mubengProxyUrl) {
+    screenshotOpts.proxy = mubengProxyUrl
   }
 
   try {

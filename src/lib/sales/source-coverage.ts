@@ -168,11 +168,11 @@ const SOURCES: SourceDefinition[] = [
     detail: "AI-driven autonomous form submission agent"
   },
   {
-    slug: "scrapoxy",
-    label: "Scrapoxy Proxy Gateway",
+    slug: "mubeng",
+    label: "mubeng Proxy Rotator",
     category: "outreach",
-    env: ["SCRAPOXY_URL"],
-    detect: (m) => !!m.proxy_used || !!m.scrapoxy,
+    env: ["MUBENG_PROXY_URL"],
+    detect: (m) => !!m.proxy_used || !!m.mubeng,
     detail: "Rotating proxy pool configuration for crawlers"
   },
   {
@@ -205,6 +205,9 @@ const SOURCES: SourceDefinition[] = [
   },
   { slug: "deepseek", label: "DeepSeek V4 copy", category: "orchestration", env: ["DEEPSEEK_API_KEY"], detect: (m) => !!m.personalized_copy, detail: "Personalized diagnosis copy" },
   { slug: "n8n_trigger", label: "n8n / Trigger.dev", category: "orchestration", env: ["N8N_SALES_ENRICHMENT_WEBHOOK_URL", "TRIGGER_DEV_SALES_ENRICHMENT_WEBHOOK_URL"], detect: (m) => !!m.enrichment, detail: "Job execution and audit trail" },
+  { slug: "chatwoot", label: "Chatwoot", category: "post_outreach", env: ["CHATWOOT_BASE_URL", "CHATWOOT_WEBHOOK_URL", "N8N_POST_OUTREACH_WEBHOOK_URL"], detect: (m) => !!m.chatwoot || !!m.post_outreach_reply, detail: "Unified inbox and AI reply handoff for landed outreach" },
+  { slug: "calcom", label: "Cal.com", category: "post_outreach", env: ["CALCOM_BASE_URL", "CALCOM_WEBHOOK_URL"], detect: (m) => !!m.calcom || !!m.meeting_booking, detail: "Embedded scheduling and booking webhook capture" },
+  { slug: "livekit", label: "LiveKit", category: "post_outreach", env: ["LIVEKIT_URL", "LIVEKIT_WEBHOOK_URL", "N8N_LIVEKIT_DISCOVERY_WEBHOOK_URL"], detect: (m) => !!m.livekit || !!m.discovery_call, detail: "Realtime AI discovery-call lane and transcript capture" },
   { slug: "hermes_slack", label: "Hermes Agent / Slack", category: "orchestration", env: ["SLACK_WEBHOOK_URL", "HERMES_AGENT_WEBHOOK_URL"], detect: (m) => !!m.hermes || !!m.slack_notification, detail: "Human approval and alert routing" },
   { slug: "listmonk", label: "Listmonk / Mautic", category: "outreach", env: ["LISTMONK_BASE_URL", "MAUTIC_BASE_URL"], detect: (m) => !!m.listmonk || !!m.mautic, detail: "Email campaign routing when form is not appropriate" },
   { slug: "smartlead", label: "Smartlead.ai", category: "outreach", env: ["SMARTLEAD_API_KEY"], detect: (m) => !!m.smartlead, detail: "Email sequence fallback" },
@@ -214,6 +217,8 @@ const SOURCES: SourceDefinition[] = [
   { slug: "serp_tavily", label: "Serp API / Tavily", category: "analysis", env: ["SERPAPI_API_KEY", "TAVILY_API_KEY"], detect: (m) => !!m.serpapi || !!m.tavily, detail: "Search result and market context evidence" },
   { slug: "notion_mcp", label: "Notion MCP", category: "orchestration", env: ["NOTION_API_KEY", "NOTION_MCP_TOKEN"], detect: (m) => !!m.notion_mcp || !!m.customer_notion_url, detail: "Customer portal and handoff page integration" },
   { slug: "supabase_mcp", label: "Supabase MCP / NocoDB", category: "orchestration", env: ["SUPABASE_ACCESS_TOKEN", "NOCODB_BASE_URL"], detect: (m) => !!m.supabase_mcp || !!m.nocodb, detail: "SSOT operations and spreadsheet workbench bridge" },
+  { slug: "directus", label: "Directus", category: "asset", env: ["DIRECTUS_BASE_URL", "DIRECTUS_TOKEN"], detect: (m) => !!m.directus || !!m.sales_material_cms, detail: "Asset and proposal management studio" },
+  { slug: "keystatic", label: "Keystatic", category: "demo", env: ["KEYSTATIC_BASE_URL"], detect: (m) => !!m.keystatic || !!m.demo_site_cms, detail: "Git-backed CMS for Astro demo sites" },
   { slug: "chrome_mcp", label: "Chrome MCP", category: "orchestration", env: ["CHROME_MCP_URL"], detect: (m) => !!m.chrome_mcp, detail: "Operator-side browser verification and demo review" },
   { slug: "rsshub", label: "RSSHub", category: "analysis", env: ["RSSHUB_BASE_URL"], detect: (m) => !!m.rsshub, detail: "News and content-feed monitoring" },
   { slug: "wayback_machine", label: "Wayback Machine", category: "analysis", detect: (m) => !!m.wayback, detail: "Historical website change evidence" },

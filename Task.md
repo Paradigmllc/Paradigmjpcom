@@ -1,10 +1,22 @@
-## Codex Update - 2026-06-03 Stagehand, Browserless, and Scrapoxy Integration
+## Codex Update - 2026-06-03 OpenMontage Studio Domain Repair
 
-- [x] Registered `stagehand` (AI Web outreach agent), `browserless` (browser-screenshot API), and `scrapoxy` (rotating proxy gateway) in `src/lib/sales/integration-registry.ts` and `src/lib/sales/source-coverage.ts` including dynamic health status hooks.
+- [x] Replaced the fake English `/[locale]/studio` surface with an authenticated Japanese `動画制作ライン` entrypoint backed by `getSalesDashboardData` and the existing Sales OS video-pipeline job UI.
+- [x] Added subdomain routing so `studio.paradigmjp.com` and `openmontage.paradigmjp.com` rewrite to `/ja/studio` via `src/middleware.ts`.
+- [x] Retired the prototype `/api/studio/dispatch` simulation endpoint with a 410 response that points callers to `/api/sales/video-pipeline/jobs`.
+- [x] Added `OPENMONTAGE_STUDIO_HOST` and `NEXT_PUBLIC_OPENMONTAGE_STUDIO_URL` placeholders in `.env.example`, and surfaced the studio URL in the video-stack integration registry.
+- [x] Fixed the Sales OS sidebar 404 trap: `資料スタジオ`, `デモサイト`, and `診断レポート` now open internal Revenue OS template workbench tabs instead of external Directus/Keystatic/Supabase Studio URLs that may not be deployed.
+- [x] Removed the old `Video Studio` label from the video pipeline panel and kept the visible UI wording as `動画スタジオ`.
+- [x] Verification: `npx tsc --noEmit --pretty false` passed. Local dev smoke from the real path returned 200 for `/ja/studio`; `Host: studio.paradigmjp.com` returned `x-middleware-rewrite: /ja/studio`; Playwright marker check found `動画制作ライン` and confirmed the old fake English Studio strings are gone.
+- [x] Verification after sidebar 404 repair: `npx tsc --noEmit --pretty false` passed, and code search confirmed no `window.open`, `Directus`, `Keystatic`, `Supabase Studio`, or `Video Studio` strings remain in the Sales OS sidebar/video panel implementation.
+- [ ] Residual risk: `git diff --check` still reports pre-existing trailing blank-line issues in `src/app/globals.css` and `src/components/sales-dashboard/SalesAutomationPanel.tsx`; this repair pass did not touch those files.
+
+## Codex Update - 2026-06-03 Stagehand, Browserless, and mubeng Integration
+
+- [x] Registered `stagehand` (AI Web outreach agent), `browserless` (browser-screenshot API), and `mubeng` (rotating proxy gateway) in `src/lib/sales/integration-registry.ts` and `src/lib/sales/source-coverage.ts` including dynamic health status hooks.
 - [x] Integrated `StagehandProvider` as a browser outreach agent in `src/lib/sales/outreach/browser-provider.ts` and created the `/api/sales/outreach/stagehand` endpoint.
-- [x] Implemented `/api/sales/screenshot` using Browserless to capture target company websites, clean cookie/chat overlays via CSS injection, dynamically route through Scrapoxy if configured, cache to Cloudflare R2, and save metadata back to Supabase.
-- [x] Configured proxy rotation via Scrapoxy in `src/lib/sales/searxng-source.ts` (using `undici` `ProxyAgent`) and `worker/src/browser.ts` (Playwright launch proxy config), with a fallback to direct request if Scrapoxy is not configured.
-- [x] Created `src/lib/sales/proxy-agent.ts` and audited all target company fetches to route through Scrapoxy to prevent Next.js server IP leaks: form extraction (`orchestrator.ts`), robots checking (`preflight.ts`), sitemap scanning (`form-discovery.ts`), technology fingerprinting (`wappalyzer.ts`), page inspector (`scanner.ts`), localized status checks (`japan-market-audit.ts`), and form dispatch (`http-form-provider.ts`).
+- [x] Implemented `/api/sales/screenshot` using Browserless to capture target company websites, clean cookie/chat overlays via CSS injection, dynamically route through mubeng if configured, cache to Cloudflare R2, and save metadata back to Supabase.
+- [x] Configured proxy rotation via mubeng in `src/lib/sales/searxng-source.ts` (using `undici` `ProxyAgent`) and `worker/src/browser.ts` (Playwright launch proxy config), with a fallback to direct request if mubeng is not configured.
+- [x] Created `src/lib/sales/proxy-agent.ts` and audited all target company fetches to route through mubeng to prevent Next.js server IP leaks: form extraction (`orchestrator.ts`), robots checking (`preflight.ts`), sitemap scanning (`form-discovery.ts`), technology fingerprinting (`wappalyzer.ts`), page inspector (`scanner.ts`), localized status checks (`japan-market-audit.ts`), and form dispatch (`http-form-provider.ts`).
 - [x] Connected screenshot previews to the diagnostic report interface in `src/components/diagnostic/DiagnosticReport.tsx` and updated reference documents in `src/components/sales-dashboard/SalesDocsPanel.tsx`.
 - [x] Resolved a TypeScript compilation error in `src/lib/sales/video-orchestrator.ts` by updating `ProfessionalVideoResult` definition in `src/lib/sales/video-generator.ts`.
 - [x] Verification: Checked types (`npx tsc --noEmit`) and ran the full unit test suite (`npm test`). All 158 tests passed successfully.
@@ -825,3 +837,30 @@
 - [x] Added a shared client-side Sales API JSON reader that logs non-JSON response status/content type/snippet and shows an operator-readable error instead of the raw `DOCTYPE` parse failure.
 - [x] Replaced direct `res.json()` calls in the lead discovery, SearxNG run/import, monthly batch create/run, and Japan readiness panels.
 - [x] Wrapped the corresponding Sales API routes in explicit `try/catch` guards so server exceptions return structured JSON instead of falling through to a Next.js HTML error page.
+
+## Codex Update - 2026-06-03 Sidebar Optimization and Admin Redirection Fix
+
+- [x] Integrated "Monthly Batch Ops" (月次処理) as a sub-tab under "CSV・自動診断" (automation) panel and removed it from the sidebar navigation link list to keep the workspace shell streamlined.
+- [x] Configured environment-aware external tool URLs via client-exposed envs (`NEXT_PUBLIC_DIRECTUS_URL`, `NEXT_PUBLIC_KEYSTATIC_URL`, `NEXT_PUBLIC_SUPABASE_STUDIO_URL`) in `.env.example`.
+- [x] Fixed TypeScript compilation errors (TS2741) in `src/app/(payload)/admin/[[...segments]]/page.tsx` by supplying the required `locale` prop to the fallback `PayloadAdminUnavailable` component.
+- [x] Removed the unused `SALES_DASHBOARD_PATH` constant in `src/components/admin/BeforeDashboard.tsx` to maintain clean codebase imports and constants.
+- [x] Verification: Successfully verified TypeScript compiler check via `npx tsc --noEmit` and all 158 tests passed via `npm test`.
+## Codex Update - 2026-06-03 Payload Admin Integration Consolidation
+
+- [x] Removed the OSS integration button/card surface from the Payload admin dashboard and scoped `src/components/admin/BeforeDashboard.tsx` back to CMS status, Payload leads, recent changes, and content creation shortcuts.
+- [x] Added a single `Revenue OS 統合` link from Payload admin to `/{locale}/admin/sales?tab=integrations` so Supabase/NocoDB/Appsmith/Twenty/Metabase/n8n/Cal.com/Docuseal details live only in Revenue OS.
+- [x] Updated Revenue OS fallback tool descriptions for Cal.com, Chatwoot, LiveKit, Docuseal, Directus, and Keystatic to Japanese operational wording.
+- [x] Verification: `npx tsc --noEmit --pretty false` passed.
+- [x] Local smoke: starting from `c:\Users\apple\Desktop\paradigmjpcom` reproduced the known Desktop/real-path `routes-manifest.json` path-mixing 500. Restarting from `D:\dev\paradigmjpcom` returned HTTP 200 for `/admin`; local Payload DB then fell back because Postgres on `localhost:5432` is not running.
+
+## Codex Update - 2026-06-03 OSS Fortress Post-Outreach Audit
+
+- [x] Audited the full OSS fortress list across lead generation, proxy, browser factory, SSOT/CRM, video/content, and post-outreach closing.
+- [x] Added authenticated Chatwoot and LiveKit webhook ingress: `/api/sales/chatwoot/webhook` and `/api/sales/livekit/webhook` now fail closed on missing shared secret/Supabase, persist to `sales_activity_log`, and create `sales_operator_queue_items` when n8n forwarding is not configured or fails.
+- [x] Added `src/lib/sales/post-outreach-webhooks.ts` for shared payload parsing, UUID guarding, n8n forwarding, activity logging, and queue fallback.
+- [x] Registered Chatwoot, LiveKit, Directus, and Keystatic as first-class Sales OS tool connections via `supabase/migration_034_sales_post_outreach_tools.sql`, `scripts/run-migrations.sh`, and `scripts/sales-os-no-login-deploy.mjs`.
+- [x] Expanded dashboard/source coverage so Directus, Keystatic, Chatwoot, and LiveKit are visible as operational surfaces instead of hidden assumptions.
+- [x] Normalized `.env.example`: removed duplicate OSS URL keys, added subdomain defaults, and added required Post-Outreach/Crawlee/Wappalyzer env placeholders.
+- [x] Added the audit record at `docs/knowledge/sales-oss-fortress-audit.md`.
+- [x] Verification: `npx tsc --noEmit --pretty false`, `node --check scripts/sales-os-no-login-deploy.mjs`, duplicate env key check, and targeted forbidden-pattern checks passed.
+- [ ] Residual risk: `git diff --check` still reports pre-existing EOF blank-line issues in `src/app/globals.css` and `src/components/sales-dashboard/SalesAutomationPanel.tsx`; not introduced by this post-outreach pass.

@@ -1,39 +1,41 @@
 import { ProxyAgent } from "undici"
 
+type ProxyFetchOptions = RequestInit & { dispatcher?: ProxyAgent }
+
 /**
- * Get configured Scrapoxy ProxyAgent for Node.js fetch/undici dispatch.
- * Returns undefined if SCRAPOXY_URL is not configured.
+ * Get configured mubeng ProxyAgent for Node.js fetch/undici dispatch.
+ * Returns undefined if MUBENG_PROXY_URL is not configured.
  */
 export function getProxyDispatcher(): ProxyAgent | undefined {
-  const scrapoxyUrl = process.env.SCRAPOXY_URL
-  if (!scrapoxyUrl || scrapoxyUrl.trim().length === 0) {
-    return undefined
-  }
+  const proxyUrl = getMubengProxyUrl()
+  return proxyUrl ? new ProxyAgent(proxyUrl) : undefined
+}
 
-  const username = process.env.SCRAPOXY_USERNAME
-  const password = process.env.SCRAPOXY_PASSWORD
+export function getMubengProxyUrl(): string | undefined {
+  const mubengUrl = process.env.MUBENG_PROXY_URL
+  if (!mubengUrl || mubengUrl.trim().length === 0) return undefined
+
+  const username = process.env.MUBENG_PROXY_USERNAME
+  const password = process.env.MUBENG_PROXY_PASSWORD
   let authPrefix = ""
   if (username && password && username.trim().length > 0 && password.trim().length > 0) {
     authPrefix = `${encodeURIComponent(username.trim())}:${encodeURIComponent(password.trim())}@`
   }
 
-  // Remove protocol if present to build a clean http proxy url
-  const hostPort = scrapoxyUrl.replace(/^(https?:\/\/)?/, "")
-  const cleanProxy = `http://${authPrefix}${hostPort}`
-  
-  return new ProxyAgent(cleanProxy)
+  const hostPort = mubengUrl.trim().replace(/^(https?:\/\/)?/, "")
+  return `http://${authPrefix}${hostPort}`
 }
 
 /**
- * Builds fetch options with proxy dispatcher if Scrapoxy is enabled.
+ * Builds fetch options with proxy dispatcher if mubeng is enabled.
  */
-export function getProxyFetchOptions(options: RequestInit = {}): RequestInit & { dispatcher?: ProxyAgent } {
+export function getProxyFetchOptions(options: RequestInit = {}): ProxyFetchOptions {
   const dispatcher = getProxyDispatcher()
   if (dispatcher) {
     return {
       ...options,
       dispatcher,
-    } as any
+    }
   }
   return options
 }

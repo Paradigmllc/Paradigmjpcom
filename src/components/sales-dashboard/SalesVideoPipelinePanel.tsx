@@ -262,7 +262,7 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
             <div className="min-w-0">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
                 <Clapperboard size={15} aria-hidden />
-                Video Studio
+                動画スタジオ
               </div>
               <h2 className="mt-2 text-xl font-semibold tracking-tight text-zinc-950">制作ジョブを組む</h2>
               <p className="mt-2 text-sm leading-6 text-zinc-600">
