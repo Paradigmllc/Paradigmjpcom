@@ -38,8 +38,11 @@ const SOURCES = [
   source("crawlee", "Crawlee", "orchestration", ["CRAWLEE_WORKER_URL"]),
   source("crawl4ai", "Crawl4AI", "orchestration", ["CRAWL4AI_BASE_URL"]),
   source("playwright_stealth", "Playwright Stealth", "orchestration", ["OUTREACH_WORKER_URL", "PLAYWRIGHT_STEALTH_ENABLED"]),
+  source("stagehand", "Stagehand", "orchestration", ["STAGEHAND_URL"], ["STAGEHAND_API_KEY"]),
   source("rsshub", "RSSHub", "orchestration", ["RSSHUB_BASE_URL"], [], checkRssHub),
   source("browserless", "Browserless", "orchestration", ["BROWSERLESS_URL"], ["BROWSERLESS_TOKEN"], checkBrowserless),
+  source("mubeng", "mubeng", "orchestration", ["MUBENG_PROXY_URL"], ["MUBENG_PROXY_USERNAME", "MUBENG_PROXY_PASSWORD"]),
+  source("scrapoxy", "Scrapoxy", "orchestration", ["SCRAPOXY_PROXY_URL"], ["SCRAPOXY_API_URL", "SCRAPOXY_API_KEY"]),
   source("camoufox", "Camoufox", "orchestration", ["CAMOUFOX_WS_URL"]),
   source("wayback_machine", "Wayback Machine", "orchestration", [], [], checkWayback),
 
@@ -101,6 +104,10 @@ const SOURCES = [
   source("astro_demo", "Astro replacement demo", "demo", ["ASTRO_DEMO_WORKER_URL"]),
   source("v0_demo", "v0 by Vercel demo accelerator", "demo", ["V0_API_KEY", "V0_WORKER_URL"]),
   source("gotenberg_slidev", "Slidev / Gotenberg", "demo", ["GOTENBERG_URL"]),
+  source("marp_recharts", "Marp / Recharts", "demo", ["MARP_RENDER_URL", "RECHARTS_ENABLED"]),
+  source("shadcn_blocks", "shadcn/ui blocks", "demo", ["SHADCN_BLOCKS_REGISTRY_URL"]),
+  source("directus", "Directus", "demo", ["DIRECTUS_BASE_URL"], ["DIRECTUS_TOKEN"]),
+  source("keystatic", "Keystatic", "demo", ["KEYSTATIC_BASE_URL", "NEXT_PUBLIC_KEYSTATIC_URL"]),
 
   source("openmontage", "OpenMontage orchestration", "video", ["OPENMONTAGE_API_URL", "OPENMONTAGE_BASE_URL", "OPENMONTAGE_API_KEY"]),
   source("vast_runpod", "Vast.ai / Runpod GPU", "video", ["VAST_API_KEY", "RUNPOD_API_KEY"]),
@@ -114,6 +121,13 @@ const SOURCES = [
   source("ffcreator_editly_ffmpeg", "FFCreator / Editly / FFmpeg", "video", ["FFCREATOR_WORKER_URL", "EDITLY_WORKER_URL", "FFMPEG_BIN"]),
   source("whisperx", "WhisperX", "video", ["WHISPERX_WORKER_URL"]),
   source("r2_video_delivery", "Cloudflare R2 delivery", "video", ["CLOUDFLARE_R2_BUCKET", "R2_ACCESS_KEY_ID", "R2_BUCKET"]),
+
+  source("smartlead", "Smartlead.ai", "outreach", ["SMARTLEAD_API_KEY"]),
+  source("resend", "Resend API", "outreach", ["RESEND_API_KEY"]),
+  source("docsend", "DocSend", "outreach", ["DOCSEND_API_KEY"]),
+  source("twilio_ivry", "Twilio / IVRy", "outreach", ["TWILIO_ACCOUNT_SID"], ["TWILIO_AUTH_TOKEN", "IVRY_API_KEY"]),
+  source("heyreach", "HeyReach", "outreach", ["HEYREACH_API_KEY"]),
+  source("twenty_cms", "TwentyCMS / Twenty CRM", "orchestration", ["TWENTY_BASE_URL"], ["TWENTY_CMS_BASE_URL"]),
 ]
 
 function source(slug, label, category, requiredAnyEnv = [], optionalEnv = [], check = null) {
@@ -146,7 +160,8 @@ async function fetchJson(url, options = {}) {
   let body = null
   try {
     body = text ? JSON.parse(text) : null
-  } catch {
+  } catch (error) {
+    console.error("[audit-sales-data-acquisition] failed to parse JSON response:", error)
     body = text.slice(0, 200)
   }
   return { ok: res.ok, status: res.status, body }

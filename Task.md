@@ -881,3 +881,12 @@
 - [x] Added the audit record at `docs/knowledge/sales-oss-fortress-audit.md`.
 - [x] Verification: `npx tsc --noEmit --pretty false`, `node --check scripts/sales-os-no-login-deploy.mjs`, duplicate env key check, and targeted forbidden-pattern checks passed.
 - [ ] Residual risk: `git diff --check` still reports pre-existing EOF blank-line issues in `src/app/globals.css` and `src/components/sales-dashboard/SalesAutomationPanel.tsx`; not introduced by this post-outreach pass.
+## Codex Update - 2026-06-04 Expanded OSS/API Master Coverage
+
+- [x] ユーザー追加リスト109項目を `src/lib/sales/integration-registry.ts` / `scripts/audit-sales-data-acquisition.mjs` / `.env.example` の3面で突合し、全項目が監査対象として追跡される状態に修正。
+- [x] Revenue OS統合台帳に Hermes/Slack、Notion MCP、Supabase MCP/NocoDB、Chrome MCP、RSSHub/Wayback、Common Crawl/Tranco/HTTP Archive、WhoisDS/theHarvester/events、Slidev/Gotenberg/Marp/Recharts、Astro/v0/shadcn、Scrapoxy、Listmonk/Mautic、TwentyCMS alias を追加。
+- [x] 取得監査スクリプトに Stagehand、mubeng、Scrapoxy、Directus、Keystatic、Marp/Recharts、shadcn、Smartlead、Resend、DocSend、Twilio/IVRy、HeyReach、TwentyCMS を追加し、JSONでないレスポンスをサイレントに握りつぶさず `console.error` へ出すよう修正。
+- [x] `.env.example` に不足していたキー名のみ追加。実値・トークンは保存していない。
+- [x] Verification: 全109項目の機械突合 missing=0、`node --check scripts/audit-sales-data-acquisition.mjs`、`node --check scripts/sales-os-no-login-deploy.mjs`、`git diff --check`、`npm test -- --run src/lib/sales/integration-registry.test.ts`、`npm run build`、再生成後の `npx tsc --noEmit --pretty false` passed.
+- [ ] Operational blockers: 監査スクリプト上は96ソース中 configured=15 / liveOk=8。Stagehand、Browserless、mubeng、Scrapoxy、OpenMontage、ComfyUI、HyperFrames、Remotion、R2、Smartlead、Resend、Twilio、HeyReach、Listmonk/Mautic 等は本番env/DNS/APIキー未設定なら実働不可。UI/APIは未設定として可視化し、fail-closedで扱う。
+- [ ] DB blocker carried forward: Sales OS Supabase の `sales_tool_connections` 旧check constraintは未解消。`supabase/migration_034_sales_post_outreach_tools.sql` をSales OS SQLへ適用するまで、DB上のツール行は完全同期できない。
