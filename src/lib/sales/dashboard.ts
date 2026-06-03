@@ -617,7 +617,22 @@ function mapTool(row: ToolConnectionRow): DashboardToolConnection {
 function mergeFallbackTools(rows: DashboardToolConnection[]): DashboardToolConnection[] {
   const bySlug = new Map(rows.map((tool) => [tool.slug, tool]))
   for (const fallback of FALLBACK_TOOLS) {
-    if (!bySlug.has(fallback.slug)) bySlug.set(fallback.slug, fallback)
+    const existing = bySlug.get(fallback.slug)
+    if (!existing) {
+      bySlug.set(fallback.slug, fallback)
+      continue
+    }
+
+    bySlug.set(fallback.slug, {
+      ...existing,
+      displayName: fallback.displayName,
+      role: fallback.role,
+      interfaceType: fallback.interfaceType,
+      deploymentType: fallback.deploymentType,
+      baseUrl: existing.baseUrl ?? fallback.baseUrl,
+      healthUrl: existing.healthUrl ?? fallback.healthUrl,
+      owner: existing.owner ?? fallback.owner,
+    })
   }
   return TOOL_ORDER.map((slug) => bySlug.get(slug)).filter(Boolean) as DashboardToolConnection[]
 }

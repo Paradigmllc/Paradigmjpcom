@@ -177,14 +177,14 @@ export function SalesTemplateWorkbenchPanel({
           setSelectedId(nearest.id ?? null);
           setMatched(nearest);
           setDraft(nearest);
-          toast.warning("完全一致はありません。近いテンプレートでプレビューを表示します。");
+          console.warn("[sales-template-workbench] exact template was not found; showing nearest preview.");
           return;
         }
       }
       setTemplates(nextTemplates);
       setSelectedId(nextTemplates[0]?.id ?? null);
       setMatched(null);
-      if (nextTemplates.length === 0) toast.warning("条件に一致するテンプレートがありません");
+      if (nextTemplates.length === 0) console.warn("[sales-template-workbench] no templates matched the current filters.");
     } catch (error) {
       console.error("[sales-template-workbench] load failed:", error);
       toast.error(error instanceof Error ? error.message : "テンプレートの読み込みに失敗しました");

@@ -185,10 +185,10 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
       if (!res.ok || json.ok === false) throw new Error(json.error ?? "動画ジョブを取得できませんでした")
       setJobs(json.jobs)
       setConfig(json.config)
-      toast.success("動画制作ラインを更新しました")
+      toast.success("動画スタジオを更新しました")
     } catch (error) {
       console.error("[sales-video-pipeline-ui] refresh failed:", error)
-      toast.error(error instanceof Error ? error.message : "動画制作ラインの更新に失敗しました")
+      toast.error(error instanceof Error ? error.message : "動画スタジオの更新に失敗しました")
     } finally {
       setBusy(null)
     }
@@ -273,7 +273,7 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
               type="button"
               onClick={() => void refreshJobs()}
               className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 text-zinc-700 hover:border-zinc-400"
-              aria-label="動画制作ラインを再読み込み"
+              aria-label="動画スタジオを再読み込み"
               disabled={busy === "refresh"}
             >
               <RefreshCw size={16} className={busy === "refresh" ? "animate-spin" : ""} aria-hidden />
@@ -337,11 +337,11 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
           <section className="border-t border-zinc-200 pt-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-zinc-950">
               <SlidersHorizontal size={15} aria-hidden />
-              損失シミュレータ
+              損失シミュレーター
             </div>
             <div className="mt-3 grid min-w-0 gap-3 sm:grid-cols-2">
               <NumberInput label="月間失注件数" value={lossInputs.monthlyRejectedProjects} onChange={(value) => updateLossInput("monthlyRejectedProjects", value)} suffix="件" />
-              <NumberInput label="平均案件単価" value={lossInputs.averageProjectValueUsd} onChange={(value) => updateLossInput("averageProjectValueUsd", value)} suffix="USD" />
+              <NumberInput label="平均1件単価" value={lossInputs.averageProjectValueUsd} onChange={(value) => updateLossInput("averageProjectValueUsd", value)} suffix="USD" />
               <NumberInput label="月間動画予算" value={lossInputs.monthlyVideoBudgetUsd} onChange={(value) => updateLossInput("monthlyVideoBudgetUsd", value)} suffix="USD" />
               <NumberInput label="現在の動画本数" value={lossInputs.currentVideosPerMonth} onChange={(value) => updateLossInput("currentVideosPerMonth", value)} suffix="本/月" />
               <NumberInput label="競合の動画本数" value={lossInputs.competitorVideosPerMonth} onChange={(value) => updateLossInput("competitorVideosPerMonth", value)} suffix="本/月" />

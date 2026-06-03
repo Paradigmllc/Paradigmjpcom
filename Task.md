@@ -1,3 +1,11 @@
+## Codex Update - 2026-06-03 Revenue OS 表示バグ修正
+
+- [x] Revenue OS のサードメニューを日本語で固定し、`動画スタジオ` を `VIDEO STUDIO` タブとして表示するよう修正。
+- [x] 動画スタジオ画面のジョブ作成、ステータス、接続カード、通知文言を日本語表示に統一。
+- [x] テンプレート作業台の「完全一致はありません」警告トーストを廃止し、近似テンプレート表示時はコンソール警告のみへ変更。
+- [x] Supabase 側に古い英語のOSSツール行が残っていても、Revenue OS の統合カードでは既知OSSの表示名・説明を日本語フォールバックで上書きするよう修正。
+- [x] Verification: `npx tsc --noEmit --pretty false`, 文字化け/旧警告文言の残存チェック, `git diff --check`, `npm run build` passed.
+
 ## Codex Update - 2026-06-03 OpenMontage Studio Domain Repair
 
 - [x] Replaced the fake English `/[locale]/studio` surface with an authenticated Japanese `動画制作ライン` entrypoint backed by `getSalesDashboardData` and the existing Sales OS video-pipeline job UI.
