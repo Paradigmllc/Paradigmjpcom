@@ -1,3 +1,14 @@
+## Codex Update - 2026-06-03 Stagehand, Browserless, and Scrapoxy Integration
+
+- [x] Registered `stagehand` (AI Web outreach agent), `browserless` (browser-screenshot API), and `scrapoxy` (rotating proxy gateway) in `src/lib/sales/integration-registry.ts` and `src/lib/sales/source-coverage.ts` including dynamic health status hooks.
+- [x] Integrated `StagehandProvider` as a browser outreach agent in `src/lib/sales/outreach/browser-provider.ts` and created the `/api/sales/outreach/stagehand` endpoint.
+- [x] Implemented `/api/sales/screenshot` using Browserless to capture target company websites, clean cookie/chat overlays via CSS injection, dynamically route through Scrapoxy if configured, cache to Cloudflare R2, and save metadata back to Supabase.
+- [x] Configured proxy rotation via Scrapoxy in `src/lib/sales/searxng-source.ts` (using `undici` `ProxyAgent`) and `worker/src/browser.ts` (Playwright launch proxy config), with a fallback to direct request if Scrapoxy is not configured.
+- [x] Created `src/lib/sales/proxy-agent.ts` and audited all target company fetches to route through Scrapoxy to prevent Next.js server IP leaks: form extraction (`orchestrator.ts`), robots checking (`preflight.ts`), sitemap scanning (`form-discovery.ts`), technology fingerprinting (`wappalyzer.ts`), page inspector (`scanner.ts`), localized status checks (`japan-market-audit.ts`), and form dispatch (`http-form-provider.ts`).
+- [x] Connected screenshot previews to the diagnostic report interface in `src/components/diagnostic/DiagnosticReport.tsx` and updated reference documents in `src/components/sales-dashboard/SalesDocsPanel.tsx`.
+- [x] Resolved a TypeScript compilation error in `src/lib/sales/video-orchestrator.ts` by updating `ProfessionalVideoResult` definition in `src/lib/sales/video-generator.ts`.
+- [x] Verification: Checked types (`npx tsc --noEmit`) and ran the full unit test suite (`npm test`). All 158 tests passed successfully.
+
 ## Codex Update - 2026-06-01 Revenue OS UI Redesign Pass
 
 - [x] Removed the borrowed "Salesforce x Apollo.io風" dashboard name and replaced the shell with `Paradigm Revenue OS`.

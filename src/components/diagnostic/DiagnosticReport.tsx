@@ -312,6 +312,28 @@ export default function DiagnosticReport({
         </section>
 
         <ExecutiveMemo data={data} copy={copy} confidence={confidence} />
+
+        {data.screenshot_url && (
+          <section className="mt-8 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-zinc-950 mb-4">
+              {lang === "ja" ? "現行ウェブサイトのビジュアル分析" : "Current Website Visual Analysis"}
+            </h2>
+            <div className="relative overflow-hidden rounded-md border border-zinc-200 bg-zinc-50">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={data.screenshot_url}
+                alt={`${data.company_name} Website Screenshot`}
+                className="w-full max-h-[500px] object-cover object-top hover:object-scale-down transition-all duration-300"
+              />
+            </div>
+            <p className="mt-3 text-xs leading-6 text-zinc-500">
+              {lang === "ja"
+                ? "※ Browserless によって自動撮影された、貴社サイトのビジュアルキャプチャです。レイアウト崩れやファーストビューの改善点を分析しています。"
+                : "* Automated visual capture of your website generated via Browserless. Analyzing layout and fold-optimization improvements."}
+            </p>
+          </section>
+        )}
+
         <div className="mt-8"><AuditConversionSections data={data} lang={lang} confidence={confidence} videoHref={videoHref} /></div>
 
         <section className="mt-8 grid gap-4 lg:grid-cols-3">

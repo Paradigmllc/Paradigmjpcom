@@ -34,11 +34,20 @@ export async function withContext<T>(
   fn: (ctx: BrowserContext) => Promise<T>,
 ): Promise<T> {
   const browser = await getBrowser()
+  const proxyUrl = process.env.SCRAPOXY_URL
+  const username = process.env.SCRAPOXY_USERNAME
+  const password = process.env.SCRAPOXY_PASSWORD
+  const proxyConfig = proxyUrl ? {
+    server: proxyUrl,
+    ...(username && password ? { username, password } : {}),
+  } : undefined
+
   const ctx = await browser.newContext({
     locale: "ja-JP",
     viewport: { width: 1280, height: 800 },
     userAgent:
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+    ...(proxyConfig ? { proxy: proxyConfig } : {}),
   })
   try {
     return await fn(ctx)

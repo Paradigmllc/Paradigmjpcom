@@ -159,6 +159,30 @@ const SOURCES: SourceDefinition[] = [
     nextStep: "Crawl4AIで候補URLを抽出し、フォーム分類とpreflightへ渡します。",
   },
   { slug: "browserless", label: "Browserless", category: "outreach", env: ["BROWSERLESS_URL"], detect: (m) => !!m.browserless || !!m.browser_worker, detail: "Remote browser execution for SPA forms" },
+  {
+    slug: "stagehand",
+    label: "Stagehand AI Agent",
+    category: "outreach",
+    env: ["STAGEHAND_URL"],
+    detect: (m) => !!m.stagehand_submit || !!m.stagehand,
+    detail: "AI-driven autonomous form submission agent"
+  },
+  {
+    slug: "scrapoxy",
+    label: "Scrapoxy Proxy Gateway",
+    category: "outreach",
+    env: ["SCRAPOXY_URL"],
+    detect: (m) => !!m.proxy_used || !!m.scrapoxy,
+    detail: "Rotating proxy pool configuration for crawlers"
+  },
+  {
+    slug: "browser_screenshot",
+    label: "Website Screenshot",
+    category: "analysis",
+    env: ["BROWSERLESS_URL"],
+    detect: (m) => !!m.screenshot_url,
+    detail: "High-resolution target website screenshot stored in R2"
+  },
   { slug: "camoufox", label: "Camoufox", category: "outreach", env: ["CAMOUFOX_WS_URL"], detect: (m) => !!m.camoufox, detail: "Fingerprint-hardened browser escalation" },
   { slug: "playwright_stealth", label: "Playwright Stealth", category: "outreach", env: ["OUTREACH_WORKER_URL"], detect: (m) => !!m.playwright_stealth || !!m.browser_worker, detail: "Final form automation worker with approval gates" },
   {

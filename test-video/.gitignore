@@ -1,0 +1,10 @@
+# レンダリング出力
+renders/
+
+# キャッシュ
+.hyperframes/
+node_modules/
+
+# 環境設定
+.env
+.env.local

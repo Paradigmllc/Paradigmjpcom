@@ -52,6 +52,9 @@ const TOOL_ROLES = [
   ["n8n OSS", "自動化", "ジョブ起動、通知、外部API連携、Slack連携。"],
   ["Cal.com OSS", "商談予約", "予約イベントをSupabaseに戻す。"],
   ["Docuseal OSS", "契約", "契約書ステータスをSupabaseに戻す。"],
+  ["Stagehand OSS", "着弾AIエージェント", "LLMとPlaywrightを融合し、各サイトの問い合わせフォーム構造を自動解釈して正確に送信します。"],
+  ["Browserless OSS", "ブラウザAPI工場", "ヘッドレスChromeをAPI化し、相手先Webサイトの診断用高解像度スクショをミリ秒で生成・R2に保存します。"],
+  ["Scrapoxy OSS", "プロキシ防弾要塞", "数万件のSearxNG/Crawl4AIクローリングとBrowserless接続のIPを自動ローテーションしBANを防ぎます。"],
 ]
 
 const AUTOMATION_BOUNDARIES = [

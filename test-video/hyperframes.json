@@ -1,0 +1,46 @@
+{
+  "$schema": "https://hyperframes.heygen.com/schema/hyperframes.json",
+  "registry": "https://raw.githubusercontent.com/heygen-com/hyperframes/main/registry",
+  "paths": {
+    "blocks": "compositions",
+    "components": "compositions/components",
+    "assets": "assets"
+  },
+  "render": {
+    "defaults": {
+      "fps": 30,
+      "quality": "standard",
+      "format": "mp4"
+    },
+    "profiles": {
+      "draft": {
+        "fps": 15,
+        "quality": "draft",
+        "description": "クイックプレビュー用（高速）"
+      },
+      "standard": {
+        "fps": 30,
+        "quality": "standard",
+        "description": "標準品質（SNS・Web公開用）"
+      },
+      "high": {
+        "fps": 60,
+        "quality": "high",
+        "video_bitrate": "20M",
+        "description": "高品質（顧客納品用）"
+      },
+      "social-portrait": {
+        "fps": 30,
+        "quality": "standard",
+        "resolution": "portrait",
+        "description": "TikTok/Reels/Shorts 縦型"
+      },
+      "social-square": {
+        "fps": 30,
+        "quality": "standard",
+        "resolution": "square",
+        "description": "Instagram スクエア"
+      }
+    }
+  }
+}

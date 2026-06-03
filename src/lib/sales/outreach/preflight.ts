@@ -10,6 +10,7 @@
 import type { ClassifyFormResult } from "./form-classifier"
 import { isSafeForm } from "./types"
 import { normalizeOrigin } from "../sources/form-discovery"
+import { getProxyFetchOptions } from "../proxy-agent"
 
 export interface PreflightResult {
   pass: boolean
@@ -22,10 +23,13 @@ async function robotsAllows(formUrl: string, timeoutMs: number): Promise<boolean
   if (!origin) return true
   let txt: string
   try {
-    const res = await fetch(`${origin}/robots.txt`, {
-      signal: AbortSignal.timeout(timeoutMs),
-      headers: { "User-Agent": "ParadigmFormDiscovery/1.0 (+https://paradigmjp.com)" },
-    })
+    const res = await fetch(
+      `${origin}/robots.txt`,
+      getProxyFetchOptions({
+        signal: AbortSignal.timeout(timeoutMs),
+        headers: { "User-Agent": "ParadigmFormDiscovery/1.0 (+https://paradigmjp.com)" },
+      })
+    )
     if (!res.ok) return true
     txt = await res.text()
   } catch (error) {

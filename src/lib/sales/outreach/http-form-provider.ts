@@ -1,6 +1,7 @@
 import type { BrowserProvider } from "./browser-provider"
 import type { SubmitFormInput, SubmitFormResult } from "./types"
 import { guessFieldRole } from "./form-classifier"
+import { getProxyFetchOptions } from "../proxy-agent"
 
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
@@ -78,11 +79,14 @@ export class HttpFormProvider implements BrowserProvider {
     let html: string
 
     try {
-      const res = await fetch(input.formUrl, {
-        redirect: "follow",
-        signal: AbortSignal.timeout(timeout),
-        headers: { "User-Agent": UA },
-      })
+      const res = await fetch(
+        input.formUrl,
+        getProxyFetchOptions({
+          redirect: "follow",
+          signal: AbortSignal.timeout(timeout),
+          headers: { "User-Agent": UA },
+        })
+      )
       if (!res.ok) return { ok: false, outcome: "failed", detail: `form GET ${res.status}` }
       html = await res.text()
     } catch (error) {
@@ -110,18 +114,21 @@ export class HttpFormProvider implements BrowserProvider {
     }
 
     try {
-      const res = await fetch(actionUrl, {
-        method: parsed.method === "GET" ? "POST" : parsed.method,
-        redirect: "follow",
-        signal: AbortSignal.timeout(timeout),
-        headers: {
-          "User-Agent": UA,
-          "Content-Type": parsed.enctype.includes("multipart") ? "application/x-www-form-urlencoded" : parsed.enctype,
-          Referer: input.formUrl,
-          Origin: new URL(input.formUrl).origin,
-        },
-        body: new URLSearchParams(body).toString(),
-      })
+      const res = await fetch(
+        actionUrl,
+        getProxyFetchOptions({
+          method: parsed.method === "GET" ? "POST" : parsed.method,
+          redirect: "follow",
+          signal: AbortSignal.timeout(timeout),
+          headers: {
+            "User-Agent": UA,
+            "Content-Type": parsed.enctype.includes("multipart") ? "application/x-www-form-urlencoded" : parsed.enctype,
+            Referer: input.formUrl,
+            Origin: new URL(input.formUrl).origin,
+          },
+          body: new URLSearchParams(body).toString(),
+        })
+      )
       const text = await res.text().catch((error) => {
         console.warn("[http-form-provider] failed to read submit response:", error)
         return ""

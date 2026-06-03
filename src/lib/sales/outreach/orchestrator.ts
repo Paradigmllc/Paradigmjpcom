@@ -8,6 +8,7 @@ import { classifyForm } from "./form-classifier"
 import { preflight } from "./preflight"
 import { getBrowserProvider } from "./browser-provider"
 import { logOutreachActivity, recentlyContacted, type ActivityResult } from "./activity"
+import { getProxyFetchOptions } from "../proxy-agent"
 import { stageToPipelineStatus } from "./state-machine"
 import type {
   OutreachBatchResult,
@@ -51,11 +52,14 @@ const OUTCOME_TO_RESULT: Record<SubmitOutcome, ActivityResult> = {
 
 async function fetchPageHtml(url: string, timeoutMs: number): Promise<string | null> {
   try {
-    const res = await fetch(url, {
-      redirect: "follow",
-      signal: AbortSignal.timeout(timeoutMs),
-      headers: { "User-Agent": "ParadigmFormDiscovery/1.0 (+https://paradigmjp.com)" },
-    })
+    const res = await fetch(
+      url,
+      getProxyFetchOptions({
+        redirect: "follow",
+        signal: AbortSignal.timeout(timeoutMs),
+        headers: { "User-Agent": "ParadigmFormDiscovery/1.0 (+https://paradigmjp.com)" },
+      })
+    )
     if (!res.ok) return null
     return await res.text()
   } catch (e) {

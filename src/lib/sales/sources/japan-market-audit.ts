@@ -1,3 +1,5 @@
+import { getProxyFetchOptions } from "../proxy-agent"
+
 const USER_AGENT = "Mozilla/5.0 (Paradigm Japan Market Auditor/1.0; +https://paradigmjp.com)"
 
 export interface JapanMarketAuditStatus {
@@ -95,11 +97,14 @@ function stripHtml(html: string): string {
 
 async function fetchAuditPage(url: string): Promise<AuditPage | null> {
   try {
-    const res = await fetch(url, {
-      redirect: "follow",
-      signal: AbortSignal.timeout(8_000),
-      headers: { "User-Agent": USER_AGENT },
-    })
+    const res = await fetch(
+      url,
+      getProxyFetchOptions({
+        redirect: "follow",
+        signal: AbortSignal.timeout(8_000),
+        headers: { "User-Agent": USER_AGENT },
+      })
+    )
     if (!res.ok) return null
     const contentType = res.headers.get("content-type") ?? ""
     if (contentType && !contentType.includes("text/html") && !contentType.includes("text/plain")) return null

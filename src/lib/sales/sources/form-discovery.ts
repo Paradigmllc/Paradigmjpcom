@@ -9,6 +9,7 @@
 
 import { callDeepSeek } from "@/lib/deepseek"
 import type { Region } from "../types"
+import { getProxyFetchOptions } from "../proxy-agent"
 
 export type DiscoveryMethod =
   | "regex"
@@ -140,11 +141,14 @@ function extractContactAnchors(origin: string, html: string): string[] {
 
 async function fetchText(url: string, timeoutMs: number): Promise<string | null> {
   try {
-    const res = await fetch(url, {
-      redirect: "follow",
-      signal: AbortSignal.timeout(timeoutMs),
-      headers: { "User-Agent": "ParadigmFormDiscovery/1.1 (+https://paradigmjp.com)" },
-    })
+    const res = await fetch(
+      url,
+      getProxyFetchOptions({
+        redirect: "follow",
+        signal: AbortSignal.timeout(timeoutMs),
+        headers: { "User-Agent": "ParadigmFormDiscovery/1.1 (+https://paradigmjp.com)" },
+      })
+    )
     if (!res.ok) return null
     const contentType = res.headers.get("content-type") ?? ""
     if (contentType && !contentType.includes("text/") && !contentType.includes("xml")) return null

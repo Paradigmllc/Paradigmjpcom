@@ -50,6 +50,7 @@ export interface DiagnosticReportData {
   cta_text: string
   video_thumbnail: string | null
   demo_url: string | null
+  screenshot_url?: string | null
   source_coverage: SourceCoverageSnapshot
   intelligence: CompanyIntelligence
   content_template: Pick<
@@ -385,6 +386,7 @@ export async function fetchDiagnosticReport(opts: {
     cta_text: personalizedCopy?.personalized_cta ?? templates[0]?.cta_text ?? (isJa(reportLocale) ? DEFAULT_CTA_JA : DEFAULT_CTA_EN),
     video_thumbnail: null,
     demo_url: demoUrl,
+    screenshot_url: (company.meta?.screenshot_url as string) ?? null,
     source_coverage: sourceCoverage,
     intelligence: buildCompanyIntelligence(company, sourceCoverage.items),
     content_template: {

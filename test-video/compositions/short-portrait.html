@@ -1,0 +1,161 @@
+<template id="short-portrait-template">
+  <div
+    data-composition-id="short-portrait"
+    data-width="1080"
+    data-height="1920"
+  >
+    <style>
+      [data-composition-id="short-portrait"] {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #0a0a0f;
+        font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+        color: #fff;
+      }
+      .sp-scene {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 80px 60px;
+        box-sizing: border-box;
+      }
+      .sp-eyebrow {
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: #6c63ff;
+        margin-bottom: 12px;
+      }
+      .sp-headline {
+        font-size: 52px;
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: -1px;
+      }
+      .sp-headline .accent {
+        background: linear-gradient(135deg, #6c63ff, #a78bfa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .sp-body {
+        font-size: 22px;
+        color: #94a3b8;
+        margin-top: 16px;
+        line-height: 1.5;
+      }
+      .sp-stat {
+        font-size: 48px;
+        font-weight: 800;
+        color: #f59e0b;
+        font-variant-numeric: tabular-nums;
+      }
+      .sp-stat-label {
+        font-size: 16px;
+        color: #94a3b8;
+        margin-top: 4px;
+      }
+      .sp-cta {
+        display: inline-block;
+        margin-top: 32px;
+        padding: 16px 40px;
+        background: linear-gradient(135deg, #6c63ff, #8b5cf6);
+        border-radius: 12px;
+        font-size: 20px;
+        font-weight: 600;
+        text-align: center;
+        box-shadow: 0 8px 32px rgba(108,99,255,0.3);
+      }
+      .sp-bottom-logo {
+        position: absolute;
+        bottom: 60px;
+        left: 60px;
+        font-size: 14px;
+        color: #64748b;
+        letter-spacing: 2px;
+      }
+    </style>
+
+    <!-- Scene 1: Hook -->
+    <div id="sp-scene-1" class="sp-scene clip" data-start="0" data-duration="4" data-track-index="1">
+      <div class="sp-eyebrow">Paradigm Japan</div>
+      <div class="sp-headline">
+        日本のB2B営業を<br>
+        <span class="accent">AIで再定義</span>
+      </div>
+      <div class="sp-body">データドリブンなリード獲得からクロージングまで、AIが生産性を10倍に</div>
+      <div class="sp-bottom-logo">PARADIGM</div>
+    </div>
+
+    <!-- Scene 2: Problem -->
+    <div id="sp-scene-2" class="sp-scene clip" data-start="4" data-duration="4" data-track-index="2">
+      <div class="sp-eyebrow" style="color:#f59e0b">The Problem</div>
+      <div class="sp-stat">73%</div>
+      <div class="sp-stat-label">のリードが適切にフォローアップされていない</div>
+      <div style="margin-top:24px">
+        <div class="sp-stat" style="font-size:36px">42日</div>
+        <div class="sp-stat-label">平均商談サイクル</div>
+      </div>
+    </div>
+
+    <!-- Scene 3: Solution -->
+    <div id="sp-scene-3" class="sp-scene clip" data-start="8" data-duration="4" data-track-index="3">
+      <div class="sp-eyebrow">Our Solution</div>
+      <div class="sp-headline" style="font-size:44px">AIエージェントが<br>すべてを変える</div>
+      <div class="sp-body">🎯 インテリジェントリード獲得<br>⚡ 自動フォローアップ<br>📊 リアルタイム分析</div>
+    </div>
+
+    <!-- Scene 4: CTA -->
+    <div id="sp-scene-4" class="sp-scene clip" data-start="12" data-duration="4" data-track-index="4" style="align-items:center;text-align:center">
+      <div class="sp-headline" style="font-size:48px;text-align:center">
+        今すぐ<span class="accent">未来の営業</span>を
+      </div>
+      <div class="sp-cta">無料デモを予約 →</div>
+      <div class="sp-body" style="font-size:14px;margin-top:16px">クレジットカード不要 • 30分で導入</div>
+      <div class="sp-bottom-logo" style="left:50%;transform:translateX(-50%)">PARADIGM</div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      // Scene 1
+      tl.from("[data-composition-id='short-portrait'] .sp-scene:nth-child(1) .sp-eyebrow", { y: 20, opacity: 0, duration: 0.4, ease: "power2.out" }, 0.2);
+      tl.from("[data-composition-id='short-portrait'] .sp-scene:nth-child(1) .sp-headline", { y: 30, opacity: 0, duration: 0.6, ease: "expo.out" }, 0.4);
+      tl.from("[data-composition-id='short-portrait'] .sp-scene:nth-child(1) .sp-body", { y: 20, opacity: 0, duration: 0.4, ease: "power2.out" }, 0.7);
+
+      // Transition 1→2
+      tl.to("[data-composition-id='short-portrait'] .sp-scene:nth-child(1)", { opacity: 0, duration: 0.4, ease: "power2.inOut" }, 3.5);
+      tl.from("[data-composition-id='short-portrait'] .sp-scene:nth-child(2)", { opacity: 0, duration: 0.4, ease: "power2.inOut" }, 3.7);
+
+      // Scene 2
+      tl.from("[data-composition-id='short-portrait'] .sp-scene:nth-child(2) .sp-eyebrow", { y: 15, opacity: 0, duration: 0.3, ease: "power2.out" }, 4.2);
+      tl.from("[data-composition-id='short-portrait'] .sp-scene:nth-child(2) .sp-stat", { scale: 0.5, opacity: 0, duration: 0.5, ease: "back.out(1.5)" }, 4.4);
+
+      // Transition 2→3
+      tl.to("[data-composition-id='short-portrait'] .sp-scene:nth-child(2)", { opacity: 0, duration: 0.4, ease: "power2.inOut" }, 7.5);
+      tl.from("[data-composition-id='short-portrait'] .sp-scene:nth-child(3)", { opacity: 0, duration: 0.4, ease: "power2.inOut" }, 7.7);
+
+      // Scene 3
+      tl.from("[data-composition-id='short-portrait'] .sp-scene:nth-child(3) .sp-eyebrow", { y: 15, opacity: 0, duration: 0.3, ease: "power2.out" }, 8.2);
+      tl.from("[data-composition-id='short-portrait'] .sp-scene:nth-child(3) .sp-headline", { y: 25, opacity: 0, duration: 0.5, ease: "expo.out" }, 8.4);
+      tl.from("[data-composition-id='short-portrait'] .sp-scene:nth-child(3) .sp-body", { y: 15, opacity: 0, duration: 0.4, ease: "power2.out" }, 8.8);
+
+      // Transition 3→4
+      tl.to("[data-composition-id='short-portrait'] .sp-scene:nth-child(3)", { opacity: 0, duration: 0.4, ease: "power2.inOut" }, 11.5);
+      tl.from("[data-composition-id='short-portrait'] .sp-scene:nth-child(4)", { opacity: 0, duration: 0.4, ease: "power2.inOut" }, 11.7);
+
+      // Scene 4
+      tl.from("[data-composition-id='short-portrait'] .sp-scene:nth-child(4) .sp-headline", { y: 30, opacity: 0, duration: 0.6, ease: "expo.out" }, 12.3);
+      tl.from("[data-composition-id='short-portrait'] .sp-scene:nth-child(4) .sp-cta", { y: 20, opacity: 0, duration: 0.5, ease: "back.out(1.5)" }, 12.8);
+      tl.from("[data-composition-id='short-portrait'] .sp-scene:nth-child(4) .sp-body", { y: 15, opacity: 0, duration: 0.3, ease: "power2.out" }, 13.2);
+
+      window.__timelines["short-portrait"] = tl;
+    </script>
+  </div>
+</template>

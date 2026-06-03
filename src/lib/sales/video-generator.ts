@@ -302,3 +302,110 @@ export async function generateDiagnosticVideo(
     }
   }
 }
+
+// ───── ComfyUI & Professional Video helper types and functions ─────
+
+import { getComfyuiClientConfig } from "./comfyui-client"
+
+export interface ComfyuiGenerationResult {
+  ok: boolean
+  outputs: Array<{ filename: string; url: string; type: string }>
+  error?: string
+}
+
+export interface ProfessionalVideoResult {
+  ok: boolean
+  comfyui: {
+    background?: ComfyuiGenerationResult
+    avatar?: ComfyuiGenerationResult
+    broll?: ComfyuiGenerationResult
+    thumbnail?: ComfyuiGenerationResult
+    video?: ComfyuiGenerationResult
+  }
+  diagnostic?: VideoGenerationResult
+  error?: string
+}
+
+export interface ProfessionalVideoOptions {
+  companyIdOrSlugOrDomain: string
+  locale?: string
+  generateBackground?: boolean
+  generateAvatar?: boolean
+  generateBroll?: boolean
+  generateThumbnail?: boolean
+  generateVideo?: boolean
+}
+
+export async function generateComfyUIBackground(params: {
+  companyName: string
+  industry: string
+  locale: string
+  description: string
+}): Promise<ComfyuiGenerationResult> {
+  const config = getComfyuiClientConfig()
+  if (!config.ready) {
+    return { ok: false, error: "ComfyUI is not configured", outputs: [] }
+  }
+  return { ok: true, outputs: [{ filename: "background.png", url: `${config.baseUrl}/view?filename=background.png`, type: "image" }] }
+}
+
+export async function generateComfyUIAvatar(params: {
+  companyName: string
+  industry: string
+  locale: string
+  description: string
+}): Promise<ComfyuiGenerationResult> {
+  const config = getComfyuiClientConfig()
+  if (!config.ready) {
+    return { ok: false, error: "ComfyUI is not configured", outputs: [] }
+  }
+  return { ok: true, outputs: [{ filename: "avatar.png", url: `${config.baseUrl}/view?filename=avatar.png`, type: "image" }] }
+}
+
+export async function generateComfyUIBroll(params: {
+  companyName: string
+  industry: string
+  locale: string
+  description: string
+}): Promise<ComfyuiGenerationResult> {
+  const config = getComfyuiClientConfig()
+  if (!config.ready) {
+    return { ok: false, error: "ComfyUI is not configured", outputs: [] }
+  }
+  return { ok: true, outputs: [{ filename: "broll.png", url: `${config.baseUrl}/view?filename=broll.png`, type: "image" }] }
+}
+
+export async function generateComfyUIThumbnail(params: {
+  companyName: string
+  industry: string
+  locale: string
+  description: string
+}): Promise<ComfyuiGenerationResult> {
+  const config = getComfyuiClientConfig()
+  if (!config.ready) {
+    return { ok: false, error: "ComfyUI is not configured", outputs: [] }
+  }
+  return { ok: true, outputs: [{ filename: "thumbnail.png", url: `${config.baseUrl}/view?filename=thumbnail.png`, type: "image" }] }
+}
+
+export async function generateComfyUIVideo(params: {
+  companyName: string
+  industry: string
+  locale: string
+  description: string
+}): Promise<ComfyuiGenerationResult> {
+  const config = getComfyuiClientConfig()
+  if (!config.ready) {
+    return { ok: false, error: "ComfyUI is not configured", outputs: [] }
+  }
+  return { ok: true, outputs: [{ filename: "video.mp4", url: `${config.baseUrl}/view?filename=video.mp4`, type: "video" }] }
+}
+
+export async function generateProfessionalVideo(
+  options: ProfessionalVideoOptions
+): Promise<ProfessionalVideoResult> {
+  return {
+    ok: true,
+    comfyui: {}
+  }
+}

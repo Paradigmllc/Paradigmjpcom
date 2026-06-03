@@ -9,6 +9,7 @@ import {
   type SearxngResultStatus,
   type SearxngTimeRange,
 } from "./searxng-normalize"
+import { getProxyDispatcher } from "./proxy-agent"
 
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 
@@ -132,13 +133,15 @@ function requiredEnv(name: string): string {
 }
 
 async function fetchSearxngPage(url: string): Promise<JsonRecord> {
+  const dispatcher = getProxyDispatcher()
   const res = await fetch(url, {
     headers: {
       Accept: "application/json",
       "User-Agent": USER_AGENT,
     },
     signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS),
-  })
+    ...(dispatcher ? { dispatcher } : {}),
+  } as any)
   const textBody = await res.text()
   if (!res.ok) throw new Error(`SearxNG HTTP ${res.status}: ${textBody.slice(0, 180)}`)
   try {

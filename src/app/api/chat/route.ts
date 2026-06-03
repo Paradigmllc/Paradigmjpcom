@@ -19,6 +19,12 @@ import { normalizeDifyCloudBaseUrl } from "@/lib/sales/dify-cloud"
 // 2026-05-31 DIFY-CLOUD-ONLY:
 // env 未設定または古いDify URLが残っている場合も Dify Cloud 公式 endpoint に寄せる。
 const DIFY_BASE = normalizeDifyCloudBaseUrl(process.env.DIFY_BASE_URL)
+
+type Locale = "ja" | "en"
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? ""
+
+function resolveDifyKey(locale: Locale): string {
+  if (locale === "en") return process.env.DIFY_API_KEY_EN || process.env.DIFY_API_KEY || ""
   return process.env.DIFY_API_KEY_JA || process.env.DIFY_API_KEY || ""
 }
 

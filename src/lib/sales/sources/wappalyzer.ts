@@ -1,3 +1,5 @@
+import { getProxyFetchOptions } from "../proxy-agent"
+
 const USER_AGENT = "Mozilla/5.0 (Paradigm Diagnostic Bot/1.2; +https://paradigmjp.com)"
 
 type EvidenceSource = "html" | "script" | "meta" | "header" | "cookie"
@@ -95,11 +97,14 @@ function evidenceFor(sig: Signature, html: string, headers: string, cookies: str
 
 export async function detectTechStack(url: string): Promise<{ tech: TechItem[]; server: string | null }> {
   try {
-    const res = await fetch(url, {
-      redirect: "follow",
-      signal: AbortSignal.timeout(12_000),
-      headers: { "User-Agent": USER_AGENT },
-    })
+    const res = await fetch(
+      url,
+      getProxyFetchOptions({
+        redirect: "follow",
+        signal: AbortSignal.timeout(12_000),
+        headers: { "User-Agent": USER_AGENT },
+      })
+    )
     const html = await res.text()
     const headers = headerText(res.headers)
     const cookies = cookieText(res.headers)

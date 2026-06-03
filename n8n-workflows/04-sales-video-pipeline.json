@@ -1,0 +1,442 @@
+{
+  "name": "Sales 04 — Video Pipeline (dispatch / render / upload)",
+  "description": "動画制作パイプラインの n8n ワークフロー。Webhook でジョブを受信し、ジョブタイプに応じて Dify / ComfyUI / HyperFrames に振り分け、レンダリング完了後 R2 にアップロードしてジョブステータスを更新する。Sprint 17 / 2026-06-03.",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sales-video-pipeline",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "name": "Webhook (Video Pipeline)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "notes": "Paradigm の video-pipeline.ts から POST 受信。payload = { jobId, action: 'dispatch', jobType, renderEngine, html?, comfyuiOutputs?, r2Prefix? }"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.PARADIGMJP_BASE_URL }}/api/sales/video-pipeline/jobs/{{ $json.jobId }}/action",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ action: 'dispatch', note: 'n8n execution started: ' + $execution.id }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "name": "Acknowledge job (dispatch)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [440, 300],
+      "notes": "既存の action API でジョブを dispatch 状態に更新"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.renderEngine }}",
+              "operation": "equal",
+              "value2": "hyperframes"
+            }
+          ]
+        }
+      },
+      "name": "Render engine?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [640, 300],
+      "notes": "HyperFrames レンダリングか ComfyUI レンダリングか分岐"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.HYPERFRAMES_RENDERER_URL || 'https://api.hyperframes.ai/v1/render' }}",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ html: $json.html, format: 'mp4', width: 1920, height: 1080, fps: 30, duration_sec: 60 }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "nodeCredential": {
+          "httpHeader": {
+            "name": "Authorization",
+            "value": "={{ $env.HYPERFRAMES_API_KEY }}"
+          }
+        },
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "name": "Render via HyperFrames API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [840, 200],
+      "notes": "HyperFrames API で HTML → MP4 レンダリング"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.renderEngine }}",
+              "operation": "equal",
+              "value2": "comfyui"
+            }
+          ]
+        }
+      },
+      "name": "ComfyUI render?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [840, 400],
+      "notes": "ComfyUI レンダリングの場合"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.COMFYUI_BASE_URL }}/prompt",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ prompt: $json.comfyuiWorkflow, client_id: 'n8n-video-pipeline-' + $execution.id }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "nodeCredential": {
+          "httpHeader": {
+            "name": "Authorization",
+            "value": "={{ $env.COMFYUI_API_KEY }}"
+          }
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "name": "Queue ComfyUI workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1040, 400],
+      "notes": "ComfyUI にワークフローをキューイング"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.renderEngine }}",
+              "operation": "equal",
+              "value2": "dify"
+            }
+          ]
+        }
+      },
+      "name": "Dify workflow?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [840, 500],
+      "notes": "Dify ワークフローの場合"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.DIFY_VIDEO_API_BASE_URL || 'https://api.dify.ai/v1' }}/workflows/run",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ inputs: { jobId: $json.jobId, companyName: $json.companyName, industry: $json.industry, locale: $json.locale, script: $json.script }, response_mode: 'blocking', user: 'n8n-video-pipeline' }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "nodeCredential": {
+          "httpHeader": {
+            "name": "Authorization",
+            "value": "={{ 'Bearer ' + $env.DIFY_VIDEO_WORKFLOW_API_KEY }}"
+          }
+        },
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "name": "Run Dify video workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1040, 500],
+      "notes": "Dify 動画ワークフローを実行（スクリプト生成・構成・テンプレ判定）"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.PARADIGMJP_BASE_URL }}/api/sales/video-pipeline/jobs/{{ $json.jobId }}/action",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ action: 'complete', output_url: $json.video_url || $json.output?.video_url, note: 'n8n render completed' }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "name": "Complete job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1040, 600],
+      "notes": "既存の action API でジョブを completed に更新"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.ok }}",
+              "operation": "equal",
+              "value2": "true"
+            }
+          ]
+        }
+      },
+      "name": "Success?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1240, 600],
+      "notes": "成功時は Slack 通知、失敗時はエラーハンドリング"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SLACK_WEBHOOK_URL }}",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: '🎬 Video pipeline completed: job ' + $json.jobId + ' (' + $json.renderEngine + ')\\nOutput: ' + ($json.output_url || 'N/A') }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "name": "Slack notification (success)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1440, 550],
+      "notes": "成功を Slack に通知"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.PARADIGMJP_BASE_URL }}/api/sales/video-pipeline/jobs/{{ $json.jobId }}/action",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ action: 'fail', note: $json.error || 'Unknown n8n error' }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "name": "Fail job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1440, 700],
+      "notes": "既存の action API でジョブを failed に更新"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SLACK_WEBHOOK_URL }}",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: '❌ Video pipeline FAILED: job ' + $json.jobId + '\\nError: ' + ($json.error || 'Unknown') }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "name": "Slack notification (failure)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1640, 700],
+      "notes": "失敗を Slack に通知"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1640, 550],
+      "notes": "Webhook 呼び出し元に結果を返却"
+    }
+  ],
+  "connections": {
+    "Webhook (Video Pipeline)": {
+      "main": [
+        [
+          {
+            "node": "Acknowledge job (dispatch)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Acknowledge job (dispatch)": {
+      "main": [
+        [
+          {
+            "node": "Render engine?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render engine?": {
+      "main": [
+        [
+          {
+            "node": "Render via HyperFrames API",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ComfyUI render?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render via HyperFrames API": {
+      "main": [
+        [
+          {
+            "node": "Complete job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ComfyUI render?": {
+      "main": [
+        [
+          {
+            "node": "Queue ComfyUI workflow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Dify workflow?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Queue ComfyUI workflow": {
+      "main": [
+        [
+          {
+            "node": "Complete job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dify workflow?": {
+      "main": [
+        [
+          {
+            "node": "Run Dify video workflow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Complete job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Dify video workflow": {
+      "main": [
+        [
+          {
+            "node": "Complete job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Complete job": {
+      "main": [
+        [
+          {
+            "node": "Success?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Success?": {
+      "main": [
+        [
+          {
+            "node": "Slack notification (success)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fail job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack notification (success)": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fail job": {
+      "main": [
+        [
+          {
+            "node": "Slack notification (failure)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack notification (failure)": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": ["sales", "video", "pipeline"],
+  "versionId": "04-sales-video-pipeline-v2"
+}

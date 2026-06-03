@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Paradigm 診断動画 テスト</title>
+  <style>
+    body { margin:0; background:#080b12; color:#fff; font-family:Inter,ui-sans-serif,system-ui,sans-serif; overflow:hidden; }
+    [data-composition-id="paradigm-sales-video"] { width:1920px; height:1080px; position:relative; background:linear-gradient(135deg,#080b12 0%,#1a3a5c 45%,#101827 100%); }
+    .grid { position:absolute; inset:0; background:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px); background-size:48px 48px; opacity:.28; }
+    .scene { position:absolute; inset:0; display:grid; grid-template-columns:1fr 420px; gap:64px; align-items:center; padding:110px 140px; box-sizing:border-box; opacity:0; }
+    .label { font-size:22px; font-weight:800; color:#3b82f6; text-transform:uppercase; }
+    h1 { margin:18px 0 0; max-width:1120px; font-size:78px; line-height:1.04; letter-spacing:0; }
+    p { margin:24px 0 0; color:rgba(255,255,255,.72); font-size:28px; line-height:1.55; }
+    .panel { border:1px solid rgba(255,255,255,.16); border-radius:8px; padding:30px; background:rgba(255,255,255,.1); backdrop-filter:blur(12px); }
+    .panel span { display:block; color:rgba(255,255,255,.58); font-size:20px; }
+    .panel strong { display:block; margin-top:18px; overflow-wrap:anywhere; font-size:42px; line-height:1.1; }
+    .footer { position:absolute; left:140px; right:140px; bottom:64px; display:flex; justify-content:space-between; color:rgba(255,255,255,.62); font-size:20px; }
+  </style>
+</head>
+<body>
+  <div data-composition-id="paradigm-sales-video" data-width="1920" data-height="1080" data-duration="60">
+    <div class="grid"></div>
+    <section id="hook" class="scene" data-start="0" data-duration="8" data-track-index="1">
+      <div>
+        <div class="label">Executive brief</div>
+        <h1>株式会社サンプルの公開データから、問い合わせ前に改善できる機会損失を可視化します。</h1>
+        <p>株式会社サンプル / technology</p>
+      </div>
+      <div class="panel"><span>Signal</span><strong>¥12,000,000</strong></div>
+    </section>
+    <section id="evidence" class="scene" data-start="8" data-duration="14" data-track-index="1">
+      <div>
+        <div class="label">Public evidence</div>
+        <h1>検索、SNS、フォーム導線、技術スタックのシグナルから、比較中の顧客が迷うポイントを特定しました。</h1>
+        <p>株式会社サンプル / technology</p>
+      </div>
+      <div class="panel"><span>Signal</span><strong>72% coverage</strong></div>
+    </section>
+    <section id="impact" class="scene" data-start="22" data-duration="14" data-track-index="1">
+      <div>
+        <div class="label">Hidden cost</div>
+        <h1>このまま放置すると、毎月の機会損失が見えないまま積み上がります。</h1>
+        <p>株式会社サンプル / technology</p>
+      </div>
+      <div class="panel"><span>Signal</span><strong>¥12,000,000</strong></div>
+    </section>
+    <section id="solution" class="scene" data-start="36" data-duration="16" data-track-index="1">
+      <div>
+        <div class="label">Replacement demo</div>
+        <h1>推定機会損失 ¥12,000,000 の一部は、信頼材料と問い合わせ導線の改善で回収できる可能性があります。</h1>
+        <p>株式会社サンプル / technology</p>
+      </div>
+      <div class="panel"><span>Signal</span><strong>https://paradigmjp.com/ja/report/sample</strong></div>
+    </section>
+    <section id="cta" class="scene" data-start="52" data-duration="8" data-track-index="1">
+      <div>
+        <div class="label">Next action</div>
+        <h1>株式会社サンプル向けの診断レポートと改善デモを見ながら、優先順位を30分で確認しましょう。</h1>
+        <p>株式会社サンプル / technology</p>
+      </div>
+      <div class="panel"><span>Signal</span><strong>https://paradigmjp.com/ja/report/sample</strong></div>
+    </section>
+    <div class="footer"><span>Paradigm Revenue Film</span><span>HyperFrames / Remotion ready</span></div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+    tl.to("#hook", { opacity: 1, duration: 0.4 }, 0)
+      .from("#hook h1", { y: 48, opacity: 0, duration: 0.8, ease: "power3.out" }, 0.08)
+      .from("#hook .panel", { x: 42, opacity: 0, duration: 0.65, ease: "power2.out" }, 0.28)
+      .to("#hook", { opacity: 0, duration: 0.35 }, 7.65)
+      .to("#evidence", { opacity: 1, duration: 0.4 }, 8)
+      .from("#evidence h1", { y: 48, opacity: 0, duration: 0.8, ease: "power3.out" }, 8.08)
+      .from("#evidence .panel", { x: 42, opacity: 0, duration: 0.65, ease: "power2.out" }, 8.28)
+      .to("#evidence", { opacity: 0, duration: 0.35 }, 21.65)
+      .to("#impact", { opacity: 1, duration: 0.4 }, 22)
+      .from("#impact h1", { y: 48, opacity: 0, duration: 0.8, ease: "power3.out" }, 22.08)
+      .from("#impact .panel", { x: 42, opacity: 0, duration: 0.65, ease: "power2.out" }, 22.28)
+      .to("#impact", { opacity: 0, duration: 0.35 }, 35.65)
+      .to("#solution", { opacity: 1, duration: 0.4 }, 36)
+      .from("#solution h1", { y: 48, opacity: 0, duration: 0.8, ease: "power3.out" }, 36.08)
+      .from("#solution .panel", { x: 42, opacity: 0, duration: 0.65, ease: "power2.out" }, 36.28)
+      .to("#solution", { opacity: 0, duration: 0.35 }, 51.65)
+      .to("#cta", { opacity: 1, duration: 0.4 }, 52)
+      .from("#cta h1", { y: 48, opacity: 0, duration: 0.8, ease: "power3.out" }, 52.08)
+      .from("#cta .panel", { x: 42, opacity: 0, duration: 0.65, ease: "power2.out" }, 52.28)
+      .to("#cta", { opacity: 0, duration: 0.35 }, 59.65);
+    window.__timelines["paradigm-sales-video"] = tl;
+  </script>
+</body>
+</html>

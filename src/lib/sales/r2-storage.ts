@@ -105,3 +105,26 @@ export async function createR2SignedUploads(requests: R2UploadRequest[]): Promis
     }),
   )
 }
+
+export async function uploadToR2(objectKey: string, body: Buffer | Uint8Array, contentType: string): Promise<string> {
+  const config = getR2StorageConfig()
+  if (!config.ready || !config.bucket) {
+    throw new Error(`R2 is not ready: ${config.missing.join(", ")}`)
+  }
+  const bucket = config.bucket
+  const client = createR2Client()
+  const key = sanitizeR2ObjectName(objectKey)
+  if (!key) throw new Error("R2 object key is empty")
+  const command = new PutObjectCommand({
+    Bucket: bucket,
+    Key: key,
+    Body: body,
+    ContentType: contentType,
+  })
+  await client.send(command)
+  const pub = publicUrlFor(config.publicBaseUrl, key)
+  if (!pub) {
+    throw new Error("R2 public base URL is not configured")
+  }
+  return pub
+}

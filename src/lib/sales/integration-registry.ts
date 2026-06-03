@@ -25,7 +25,7 @@ export interface SalesIntegrationDefinition {
   requiredEnv: string[]
   requiredAnyEnv?: string[]
   optionalEnv?: string[]
-  balance: "none" | "manual" | "dataforseo_user_data" | "browserless_pressure"
+  balance: "none" | "manual" | "dataforseo_user_data" | "browserless_pressure" | "stagehand_health" | "scrapoxy_health"
   docsUrl?: string
   recommended: boolean
   notes: string
@@ -109,13 +109,26 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     displayName: "Browserless",
     category: "outreach",
     deployment: "api",
-    role: "Remote browser runtime for SPA form discovery and safe preflight checks.",
+    role: "Remote browser runtime for SPA form discovery, preflight checks, and target website screenshots.",
     requiredEnv: ["BROWSERLESS_URL"],
     optionalEnv: ["BROWSERLESS_TOKEN"],
     balance: "browserless_pressure",
     docsUrl: "https://docs.browserless.io/enterprise/utility-functions/pressure",
     recommended: true,
-    notes: "送信前にpressureを確認できる場合は、running/queuedを見て過負荷時に停止する。",
+    notes: "送信前にpressureを確認できる場合は、running/queuedを見て過負荷時に停止する。高解像度スクショ機能も提供。",
+  },
+  {
+    slug: "stagehand",
+    displayName: "Stagehand",
+    category: "outreach",
+    deployment: "oss",
+    role: "AI-driven web agent for autonomous and robust contact form submission using LLMs.",
+    requiredEnv: ["STAGEHAND_URL"],
+    optionalEnv: ["STAGEHAND_API_KEY"],
+    balance: "stagehand_health",
+    docsUrl: "https://github.com/browserbase/stagehand",
+    recommended: true,
+    notes: "Playwrightの裏でLLMを動かし、バラバラなフォーム構造を人間のように自律解釈して送信します。",
   },
   {
     slug: "crawlee",
@@ -497,6 +510,19 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     recommended: true,
     notes: "残量は各プロバイダ管理画面/APIで確認。CAPTCHAやCloudflare Challengeは回避せず人間確認に切り替える。",
   },
+  {
+    slug: "scrapoxy",
+    displayName: "Scrapoxy",
+    category: "proxy",
+    deployment: "oss",
+    role: "Rotating proxy gateway for anonymizing outbound crawler/browser traffic and preventing IP bans.",
+    requiredEnv: ["SCRAPOXY_URL"],
+    optionalEnv: ["SCRAPOXY_USERNAME", "SCRAPOXY_PASSWORD"],
+    balance: "scrapoxy_health",
+    docsUrl: "https://scrapoxy.io/",
+    recommended: true,
+    notes: "すべてのプロキシを一括統括するローカルリバースプロキシAPI。未設定時はプロキシを通さず直接アクセスします。",
+  },
 ]
 
 function envValue(name: string): string | null {
@@ -588,9 +614,50 @@ async function checkBrowserlessPressure(): Promise<Pick<SalesIntegrationStatus, 
   }
 }
 
+async function checkStagehandHealth(): Promise<Pick<SalesIntegrationStatus, "balanceStatus" | "balanceLabel">> {
+  const urlStr = envValue("STAGEHAND_URL")
+  if (!urlStr) return { balanceStatus: "not_configured", balanceLabel: "STAGEHAND_URL未設定" }
+  try {
+    const url = new URL(urlStr)
+    url.pathname = "/health"
+    const res = await fetch(url.toString(), { signal: AbortSignal.timeout(5_000) })
+    if (!res.ok) return { balanceStatus: "error", balanceLabel: `HTTP ${res.status}` }
+    const body = await res.json().catch(() => ({})) as { status?: string; ok?: boolean }
+    return {
+      balanceStatus: "ok",
+      balanceLabel: body.status === "healthy" || body.ok === true ? "正常 (healthy)" : "応答あり",
+    }
+  } catch (error) {
+    console.error("[integration-registry] Stagehand health check failed:", error)
+    return { balanceStatus: "error", balanceLabel: error instanceof Error ? error.message : "接続不可" }
+  }
+}
+
+async function checkScrapoxyHealth(): Promise<Pick<SalesIntegrationStatus, "balanceStatus" | "balanceLabel">> {
+  const urlStr = envValue("SCRAPOXY_URL")
+  if (!urlStr) return { balanceStatus: "not_configured", balanceLabel: "SCRAPOXY_URL未設定" }
+  try {
+    const url = new URL(urlStr)
+    // Try pinging the base url
+    const res = await fetch(url.toString(), { signal: AbortSignal.timeout(5_000) })
+    if (res.status === 401) {
+      return { balanceStatus: "ok", balanceLabel: "認証が必要 (応答あり)" }
+    }
+    return {
+      balanceStatus: res.ok ? "ok" : "error",
+      balanceLabel: res.ok ? "正常 (HTTP 200)" : `HTTP ${res.status}`,
+    }
+  } catch (error) {
+    console.error("[integration-registry] Scrapoxy health check failed:", error)
+    return { balanceStatus: "error", balanceLabel: error instanceof Error ? error.message : "接続不可" }
+  }
+}
+
 async function liveBalance(def: SalesIntegrationDefinition): Promise<Pick<SalesIntegrationStatus, "balanceStatus" | "balanceLabel"> | null> {
   if (def.balance === "dataforseo_user_data") return checkDataForSeoBalance()
   if (def.balance === "browserless_pressure") return checkBrowserlessPressure()
+  if (def.balance === "stagehand_health") return checkStagehandHealth()
+  if (def.balance === "scrapoxy_health") return checkScrapoxyHealth()
   return null
 }
 

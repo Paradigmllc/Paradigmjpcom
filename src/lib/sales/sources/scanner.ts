@@ -1,5 +1,6 @@
 import type { IssueCode } from "../types"
 import { auditJapanMarketReadiness, type JapanMarketAudit } from "./japan-market-audit"
+import { getProxyFetchOptions } from "../proxy-agent"
 
 const PSI_API = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
 const USER_AGENT = "Mozilla/5.0 (Paradigm Diagnostic Bot/1.0; +https://paradigmjp.com)"
@@ -94,10 +95,13 @@ function firstMetaContent(html: string, name: string): string | null {
 
 async function inspectHtml(url: string): Promise<HtmlInspect> {
   try {
-    const res = await fetch(url, {
-      signal: AbortSignal.timeout(10_000),
-      headers: { "User-Agent": USER_AGENT },
-    })
+    const res = await fetch(
+      url,
+      getProxyFetchOptions({
+        signal: AbortSignal.timeout(10_000),
+        headers: { "User-Agent": USER_AGENT },
+      })
+    )
     const html = await res.text()
     const yearMatch = html.match(/(?:copyright|&copy;|©)\s*(\d{4})/i)
     const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i)
@@ -126,12 +130,15 @@ async function inspectHtml(url: string): Promise<HtmlInspect> {
 
 async function inspectSecurityHeaders(url: string): Promise<HttpSecurityHeaders> {
   try {
-    const res = await fetch(url, {
-      method: "GET",
-      redirect: "follow",
-      signal: AbortSignal.timeout(10_000),
-      headers: { "User-Agent": USER_AGENT },
-    })
+    const res = await fetch(
+      url,
+      getProxyFetchOptions({
+        method: "GET",
+        redirect: "follow",
+        signal: AbortSignal.timeout(10_000),
+        headers: { "User-Agent": USER_AGENT },
+      })
+    )
     return {
       hasHsts: !!res.headers.get("strict-transport-security"),
       hasCsp: !!res.headers.get("content-security-policy"),
@@ -147,11 +154,14 @@ async function inspectSecurityHeaders(url: string): Promise<HttpSecurityHeaders>
 
 async function fetchOptionalText(url: string): Promise<string | null> {
   try {
-    const res = await fetch(url, {
-      redirect: "follow",
-      signal: AbortSignal.timeout(8_000),
-      headers: { "User-Agent": USER_AGENT },
-    })
+    const res = await fetch(
+      url,
+      getProxyFetchOptions({
+        redirect: "follow",
+        signal: AbortSignal.timeout(8_000),
+        headers: { "User-Agent": USER_AGENT },
+      })
+    )
     if (!res.ok) return null
     return await res.text()
   } catch (e) {
