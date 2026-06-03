@@ -228,6 +228,24 @@ function salesStatusLabel(karte: CompanyKarteSnapshot): string {
   return `${pipeline} / ${karte.dealStage}`
 }
 
+function parseSalesStatusLabel(label: string | null): { pipelineStatus?: string; dealStage?: string } {
+  if (!label) return {}
+  const parts = label.split(" / ")
+  const pipelineLabel = parts[0]?.trim()
+  const dealStage = parts[1]?.trim()
+  
+  let pipelineStatus: string | undefined
+  if (pipelineLabel) {
+    const entry = Object.entries(PIPELINE_LABELS).find(([key, val]) => val === pipelineLabel)
+    if (entry) pipelineStatus = entry[0]
+  }
+  
+  return {
+    ...(pipelineStatus ? { pipelineStatus } : {}),
+    ...(dealStage ? { dealStage } : {}),
+  }
+}
+
 function karteScore(karte: CompanyKarteSnapshot): number {
   const topFit = karte.recommendedProducts[0]?.fitScore ?? 70
   return Math.max(0, Math.min(100, Math.round((karte.sourceScore + topFit) / 2)))
@@ -626,6 +644,13 @@ export async function pullTwentyCompaniesToSupabase(limit = 200): Promise<Twenty
 
     const patch: Record<string, unknown> = { meta: patchMeta }
     if (reportUrl) patch.report_url = reportUrl
+    
+    // Reverse map the sales status from Twenty back to Supabase
+    if (record.paradigmSalesStatus) {
+      const parsed = parseSalesStatusLabel(record.paradigmSalesStatus)
+      if (parsed.pipelineStatus) patch.pipeline_status = parsed.pipelineStatus
+      if (parsed.dealStage) patch.deal_stage = parsed.dealStage
+    }
 
     const { error: updateError } = await sb
       .from("sales_companies")

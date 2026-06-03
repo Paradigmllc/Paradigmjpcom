@@ -203,7 +203,7 @@ function SyncButton() {
   )
 }
 
-function CompanyRow({ company }: { company: DashboardCompany }) {
+function CompanyRow({ company, updating, onChangeStatus }: { company: DashboardCompany; updating: boolean; onChangeStatus: (id: string, s: string) => void }) {
   return (
     <tr className="border-t border-zinc-100 hover:bg-zinc-50">
       <td className="min-w-[240px] px-4 py-3">
@@ -214,9 +214,16 @@ function CompanyRow({ company }: { company: DashboardCompany }) {
       </td>
       <td className="px-4 py-3 text-xs text-zinc-600">{company.industry ?? "-"}</td>
       <td className="px-4 py-3">
-        <span className="rounded-full bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-700">
-          {STATUS_LABELS[company.pipelineStatus] ?? company.pipelineStatus}
-        </span>
+        <select 
+          value={company.pipelineStatus} 
+          onChange={(e) => onChangeStatus(company.id, e.target.value)}
+          disabled={updating}
+          className={`text-xs font-medium rounded-md px-2 py-1 outline-none focus:ring-2 focus:ring-zinc-950 ${statusTone(company.pipelineStatus)}`}
+        >
+          {Object.entries(STATUS_LABELS).map(([key, label]) => (
+            <option key={key} value={key}>{label}</option>
+          ))}
+        </select>
       </td>
       <td className="px-4 py-3 text-xs text-zinc-600">{company.dealStage}</td>
       <td className="px-4 py-3 text-right text-xs tabular-nums text-zinc-700">{company.pagespeedMobile ?? "-"}</td>
@@ -264,6 +271,29 @@ export function OverviewPanel({ data }: { data: SalesDashboardData }) {
 export function WorkspacePanel({ data }: { data: SalesDashboardData }) {
   const [query, setQuery] = useState("")
   const [status, setStatus] = useState("all")
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
+
+  async function changePipelineStatus(companyId: string, newStatus: string) {
+    setUpdatingId(companyId);
+    try {
+      const res = await fetch(`/api/sales/companies/${companyId}/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) throw new Error(json.error ?? "Failed to update status");
+      toast.success("ステータスを更新しました");
+      // Since this is a server component data source, we reload to get fresh data
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+      toast.error(error instanceof Error ? error.message : "更新に失敗しました");
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return data.companies.filter((company) => {
@@ -309,7 +339,7 @@ export function WorkspacePanel({ data }: { data: SalesDashboardData }) {
           <tbody>
             {filtered.length === 0 ? (
               <tr><td colSpan={7} className="px-4 py-12 text-center text-sm text-zinc-500">条件に一致するリードはありません。</td></tr>
-            ) : filtered.map((company) => <CompanyRow key={company.id} company={company} />)}
+            ) : filtered.map((company) => <CompanyRow key={company.id} company={company} updating={updatingId === company.id} onChangeStatus={changePipelineStatus} />)}
           </tbody>
         </table>
       </div>
@@ -319,6 +349,28 @@ export function WorkspacePanel({ data }: { data: SalesDashboardData }) {
 
 export function OperatorPanel({ data }: { data: SalesDashboardData }) {
   const followUps = data.companies.filter((company) => company.pipelineStatus === "manual_queue" || company.followUpDate).slice(0, 8)
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
+
+  async function resolveQueue(id: string, action: "approve" | "reject") {
+    setResolvingId(id);
+    try {
+      const res = await fetch(`/api/sales/operator-queue/${id}/resolve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action })
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) throw new Error(json.error ?? "Failed to resolve");
+      toast.success(action === "approve" ? "承認しました" : "除外しました");
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+      toast.error(error instanceof Error ? error.message : "操作に失敗しました");
+    } finally {
+      setResolvingId(null);
+    }
+  }
+
   return (
     <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
       <div className="rounded-lg border border-zinc-200 bg-white p-4">
@@ -330,7 +382,23 @@ export function OperatorPanel({ data }: { data: SalesDashboardData }) {
                 <div className="text-sm font-medium text-zinc-950">{item.companyName ?? "未紐付け"}</div>
                 <div className="mt-1 text-xs text-zinc-500">{item.queueType} / {item.sourceTool ?? "system"} {"->"} {item.targetTool ?? "operator"}</div>
               </div>
-              <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">P{item.priority}</span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">P{item.priority}</span>
+                <button 
+                  onClick={() => resolveQueue(item.id, "approve")}
+                  disabled={resolvingId === item.id}
+                  className="px-2 py-1 text-xs font-medium text-emerald-700 bg-emerald-50 rounded-md hover:bg-emerald-100 disabled:opacity-50"
+                >
+                  承認
+                </button>
+                <button 
+                  onClick={() => resolveQueue(item.id, "reject")}
+                  disabled={resolvingId === item.id}
+                  className="px-2 py-1 text-xs font-medium text-zinc-600 bg-zinc-100 rounded-md hover:bg-zinc-200 disabled:opacity-50"
+                >
+                  除外
+                </button>
+              </div>
             </div>
           ))}
         </div>
