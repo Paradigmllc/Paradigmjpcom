@@ -7,7 +7,7 @@
  * Runtime CMS reads remain enabled.
  */
 
-import { spawnSync } from "node:child_process"
+import { spawn, spawnSync } from "node:child_process"
 import path from "node:path"
 
 const binExt = process.platform === "win32" ? ".cmd" : ""
@@ -42,9 +42,43 @@ function run(command, args, options = {}) {
   }
 }
 
+function runWithHeartbeat(command, args, options = {}) {
+  const useShell = process.platform === "win32"
+  const startedAt = Date.now()
+  const display = `${command} ${args.join(" ")}`
+  const child = spawn(useShell ? [shellQuote(command), ...args.map(shellQuote)].join(" ") : command, useShell ? [] : args, {
+    stdio: "inherit",
+    shell: useShell,
+    ...options,
+    env: {
+      ...process.env,
+      ...(options.env ?? {}),
+    },
+  })
+
+  const heartbeat = setInterval(() => {
+    const elapsed = Math.round((Date.now() - startedAt) / 1000)
+    console.log(`[build] still running ${display} (${elapsed}s)`)
+  }, 30_000)
+
+  return new Promise((resolve) => {
+    child.on("error", (error) => {
+      clearInterval(heartbeat)
+      console.error(`[build] failed to start ${command}:`, error)
+      resolve(1)
+    })
+    child.on("exit", (code) => {
+      clearInterval(heartbeat)
+      if (code !== 0) console.error(`[build] ${display} exited with ${code}`)
+      resolve(code ?? 1)
+    })
+  })
+}
+
 run(localBin("payload"), ["generate:importmap"])
-run(localBin("next"), ["build", "--webpack"], {
+const nextStatus = await runWithHeartbeat(localBin("next"), ["build", "--webpack"], {
   env: {
     PAYLOAD_READS_DISABLED_DURING_BUILD: "1",
   },
 })
+if (nextStatus !== 0) process.exit(nextStatus)
