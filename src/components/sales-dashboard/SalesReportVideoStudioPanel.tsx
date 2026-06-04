@@ -25,11 +25,16 @@ function isReportVideo(job: SalesVideoJob) {
 
 function displayJobError(message: string | null) {
   if (!message) return null
-  const legacyN8nError = ["N8N_VIDEO_PIPELINE", "WEBHOOK_URL"].join("_")
-  if (message.includes(legacyN8nError)) {
-    return "旧n8nジョブのエラーです。必要ならプロ動画スタジオからTrigger.devへ再投入してください。"
+  if (isLegacyWorkflowNotice(message)) {
+    return "移行前のn8nジョブです。現在の障害ではありません。必要ならこの画面からTrigger.devへ再投入できます。"
   }
   return message
+}
+
+function isLegacyWorkflowNotice(message: string | null) {
+  if (!message) return false
+  const legacyN8nError = ["N8N_VIDEO_PIPELINE", "WEBHOOK_URL"].join("_")
+  return message.includes(legacyN8nError) || message.includes("旧ワークフロー時代") || message.includes("旧n8nジョブ")
 }
 
 export function SalesReportVideoStudioPanel({ data }: { data: SalesDashboardData }) {
@@ -149,6 +154,26 @@ export function SalesReportVideoStudioPanel({ data }: { data: SalesDashboardData
     }
   }
 
+  async function dispatchJob(jobId: string) {
+    setBusy(`dispatch:${jobId}`)
+    try {
+      const res = await fetch(`/api/sales/video-pipeline/jobs/${jobId}/action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "dispatch" }),
+      })
+      const json = (await res.json()) as ActionResponse
+      if (!res.ok || !json.ok || !json.job) throw new Error(json.error ?? "Trigger.dev再投入に失敗しました")
+      setJobs((rows) => rows.map((job) => (job.id === jobId ? (json.job as SalesVideoJob) : job)))
+      toast.success("Trigger.devへ再投入しました")
+    } catch (error) {
+      console.error("[report-video-studio] dispatch failed:", error)
+      toast.error(error instanceof Error ? error.message : "Trigger.dev再投入に失敗しました")
+    } finally {
+      setBusy(null)
+    }
+  }
+
   return (
     <div className="grid min-w-0 gap-5 overflow-hidden bg-zinc-50 p-4 lg:p-5 2xl:grid-cols-[minmax(340px,440px)_minmax(0,1fr)]">
       <section className="min-w-0 rounded-xl border border-zinc-200 bg-white">
@@ -221,6 +246,7 @@ export function SalesReportVideoStudioPanel({ data }: { data: SalesDashboardData
               <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-sm text-zinc-500">まだレポート動画ジョブがありません。</div>
             ) : jobs.map((job) => {
               const visibleError = displayJobError(job.error_message)
+              const legacyNotice = isLegacyWorkflowNotice(job.error_message)
               return (
                 <article key={job.id} className="min-w-0 rounded-xl border border-zinc-200 p-4">
                   <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -236,9 +262,16 @@ export function SalesReportVideoStudioPanel({ data }: { data: SalesDashboardData
                         <div className="rounded-lg bg-zinc-50 p-2">作成: {formatDate(job.created_at)}</div>
                         <div className="rounded-lg bg-zinc-50 p-2">更新: {formatDate(job.updated_at)}</div>
                       </div>
-                      {visibleError ? <p className="mt-2 break-words text-xs font-medium text-rose-600">{visibleError}</p> : null}
+                      {visibleError ? (
+                        <p className={`mt-2 break-words rounded-lg px-3 py-2 text-xs font-medium ${legacyNotice ? "bg-amber-50 text-amber-800" : "bg-rose-50 text-rose-700"}`}>
+                          {visibleError}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="flex shrink-0 flex-wrap gap-2">
+                      <button type="button" onClick={() => void dispatchJob(job.id)} disabled={busy === `dispatch:${job.id}` || job.status === "completed"} className="inline-flex h-9 items-center gap-1 rounded-lg border border-zinc-200 px-3 text-xs font-semibold text-zinc-700 disabled:opacity-50">
+                        <Send size={14} aria-hidden /> Trigger.dev
+                      </button>
                       <button type="button" onClick={() => void renderJob(job.id)} disabled={busy === `render:${job.id}` || job.status === "completed"} className="inline-flex h-9 items-center gap-1 rounded-lg border border-zinc-200 px-3 text-xs font-semibold text-zinc-700 disabled:opacity-50">
                         <FileVideo size={14} aria-hidden /> HyperFrames
                       </button>

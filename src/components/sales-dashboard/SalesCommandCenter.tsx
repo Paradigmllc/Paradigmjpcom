@@ -39,6 +39,7 @@ import { SalesTemplateWorkbenchPanel } from "./SalesTemplateWorkbenchPanel"
 import { SalesUnifiedOpsPanel } from "./SalesUnifiedOpsPanel"
 import { SalesProVideoStudioPanel } from "./SalesProVideoStudioPanel"
 import { SalesReportVideoStudioPanel } from "./SalesReportVideoStudioPanel"
+import { ExternalStudioSyncPanel } from "./ExternalStudioSyncPanel"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 
 type SalesTab =
@@ -91,7 +92,7 @@ const tabItems: TabItem[] = [
 ]
 
 const tabIds = new Set<SalesTab>(tabItems.map((tab) => tab.id))
-const externalGuiIds = new Set<SalesTab>(["directus"])
+const externalGuiIds = new Set<SalesTab>()
 
 const localeLabels: Record<string, { country: string; language: string }> = {
   ja: { country: "日本", language: "日本語" },
@@ -187,7 +188,7 @@ function ExternalGuiPanel({ tab, data }: { tab: SalesTab; data: SalesDashboardDa
             </div>
           </div>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-600">
-            Revenue OS内の代替ワークベンチ表示は廃止しました。この項目は正規の外部OSS管理画面を開きます。
+            外部OSSの詳細編集画面を開きます。営業データの同期と復旧は、この上のRevenue OS同期パネルから実行します。
           </p>
           <p className="mt-2 break-all font-mono text-xs text-zinc-500">{url}</p>
         </div>
@@ -264,6 +265,7 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
       case "overview":
         return (
           <div className="grid gap-5">
+            <ExternalStudioSyncPanel data={data} studio="all" />
             <SalesUnifiedOpsPanel data={data} />
             <OverviewPanel data={data} />
           </div>
@@ -279,16 +281,24 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
       case "proVideoStudio":
         return <SalesProVideoStudioPanel data={data} />
       case "directus":
-        return <ExternalGuiPanel tab="directus" data={data} />
+        return (
+          <div className="grid gap-5 p-6 sm:p-8">
+            <ExternalStudioSyncPanel data={data} studio="directus" />
+            <ExternalGuiPanel tab="directus" data={data} />
+          </div>
+        )
       case "keystatic":
         return (
-          <SalesTemplateWorkbenchPanel
-            data={data}
-            initialAssetType="astro_demo_site"
-            heading="Astro / Keystatic"
-            title="デモサイト制作ワークベンチ"
-            description="Astroデモサイトの構成、Difyプロンプト、Keystatic編集用の本文をSupabase SSOT上で管理します。外部CMSは補助画面として扱い、営業ダッシュボード側でプレビューと保存まで行います。"
-          />
+          <div className="grid gap-5 p-6 sm:p-8">
+            <ExternalStudioSyncPanel data={data} studio="keystatic" />
+            <SalesTemplateWorkbenchPanel
+              data={data}
+              initialAssetType="astro_demo_site"
+              heading="Astro / Keystatic"
+              title="デモサイト制作ワークベンチ"
+              description="Astroデモサイトの構成、Difyプロンプト、Keystatic編集用の本文をSupabase SSOT上で管理します。外部CMSは補助画面として扱い、営業ダッシュボード側でプレビューと保存まで行います。"
+            />
+          </div>
         )
       case "supabaseStudio":
         return (

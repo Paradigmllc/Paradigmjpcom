@@ -56,11 +56,16 @@ function toolUrl(data: SalesDashboardData, slug: string, fallback: string) {
 
 function displayJobError(message: string | null) {
   if (!message) return null
-  const legacyN8nError = ["N8N_VIDEO_PIPELINE", "WEBHOOK_URL"].join("_")
-  if (message.includes(legacyN8nError)) {
-    return "旧n8nジョブのエラーです。Trigger.devへ再投入してください。"
+  if (isLegacyWorkflowNotice(message)) {
+    return "移行前のn8nジョブです。現在の障害ではありません。Trigger.devへ再投入できます。"
   }
   return message
+}
+
+function isLegacyWorkflowNotice(message: string | null) {
+  if (!message) return false
+  const legacyN8nError = ["N8N_VIDEO_PIPELINE", "WEBHOOK_URL"].join("_")
+  return message.includes(legacyN8nError) || message.includes("旧ワークフロー時代") || message.includes("旧n8nジョブ")
 }
 
 export function SalesProVideoStudioPanel({ data }: { data: SalesDashboardData }) {
@@ -335,6 +340,7 @@ export function SalesProVideoStudioPanel({ data }: { data: SalesDashboardData })
               <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-sm text-zinc-500">まだプロ級動画ジョブがありません。</div>
             ) : jobs.map((job) => {
               const visibleError = displayJobError(job.error_message)
+              const legacyNotice = isLegacyWorkflowNotice(job.error_message)
               return (
                 <article key={job.id} className="min-w-0 rounded-xl border border-zinc-200 p-4">
                   <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -350,7 +356,11 @@ export function SalesProVideoStudioPanel({ data }: { data: SalesDashboardData })
                         <div className="rounded-lg bg-zinc-50 p-2">作成: {formatDate(job.created_at)}</div>
                         <div className="rounded-lg bg-zinc-50 p-2">更新: {formatDate(job.updated_at)}</div>
                       </div>
-                      {visibleError ? <p className="mt-2 break-words text-xs font-medium text-rose-600">{visibleError}</p> : null}
+                      {visibleError ? (
+                        <p className={`mt-2 break-words rounded-lg px-3 py-2 text-xs font-medium ${legacyNotice ? "bg-amber-50 text-amber-800" : "bg-rose-50 text-rose-700"}`}>
+                          {visibleError}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="flex shrink-0 flex-wrap gap-2">
                       <button type="button" onClick={() => void dispatchJob(job.id)} disabled={busy === `dispatch:${job.id}` || job.status === "completed"} className="inline-flex h-9 items-center gap-1 rounded-lg border border-zinc-200 px-3 text-xs font-semibold text-zinc-700 disabled:opacity-50">

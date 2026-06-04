@@ -276,6 +276,10 @@ async function applyPostOutreachToolsMigration(envs) {
   return applySqlMigration(envs, "migration_034_sales_post_outreach_tools.sql", "Post-outreach OSS tools migration")
 }
 
+async function applyExternalStudioSyncMigration(envs) {
+  return applySqlMigration(envs, "migration_035_sales_external_studio_sync.sql", "External studio sync migration")
+}
+
 function applyContentTemplates(envs) {
   const { url, key } = salesSupabase(envs)
   const result = spawnSync(process.execPath, ["scripts/seed-sales-content-templates.mjs"], {
@@ -366,6 +370,7 @@ async function main() {
     console.log(await applySearxngSearchRunsMigration(envs))
     console.log(await applyJapanReadinessInsightsMigration(envs))
     console.log(await applyPostOutreachToolsMigration(envs))
+    console.log(await applyExternalStudioSyncMigration(envs))
     console.log(applyContentTemplates(envs))
   } else {
     console.log("Dry run: skipped Supabase product upsert")
