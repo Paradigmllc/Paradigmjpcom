@@ -81,6 +81,16 @@ const SOURCE_NAME_JA: Record<string, string> = {
   "Stagehand AI Agent": "Stagehand AI Agent",
 }
 
+const SOURCE_CATEGORY_JA: Record<string, string> = {
+  analysis: "分析",
+  asset: "制作資産",
+  company: "企業情報",
+  compliance: "確認項目",
+  outreach: "営業導線",
+  automation: "自動化",
+  list: "リスト",
+}
+
 function translateSourceNames(value: string): string {
   return Object.entries(SOURCE_NAME_JA).reduce((text, [source, label]) => text.replaceAll(source, label), value)
 }
@@ -145,4 +155,13 @@ export function sourceCoverageDetail(configured: number, missing: number, lang: 
 
 export function sourceStatusLabel(status: SourceCoverageItem["status"], lang: ReportLang): string {
   return lang === "ja" ? SOURCE_STATUS_JA[status] : status
+}
+
+export function sourceCategoryLabel(category: string, lang: ReportLang): string {
+  return lang === "ja" ? (SOURCE_CATEGORY_JA[category] ?? category) : category
+}
+
+export function reportEvidenceText(value: string, lang: ReportLang): string {
+  if (lang !== "ja") return value
+  return translateSourceNames(TEXT_JA[value] ?? value)
 }

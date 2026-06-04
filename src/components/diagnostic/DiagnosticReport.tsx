@@ -5,7 +5,7 @@ import { signalScore, type IntelligenceSignal, type PainPoint } from "@/lib/sale
 import type { SourceCoverageItem } from "@/lib/sales/source-coverage"
 import { labelForIndustry } from "@/lib/sales/render-quality"
 import { ReportExecutiveBrief } from "./ReportExecutiveBrief"
-import { localizeReportIntelligence, severityLabel, sourceCoverageDetail, sourceStatusLabel } from "./report-intelligence-copy"
+import { localizeReportIntelligence, reportEvidenceText, severityLabel, sourceCategoryLabel, sourceCoverageDetail, sourceStatusLabel } from "./report-intelligence-copy"
 import { REPORT_COPY, normalizeReportLang, type ReportCopy, type ReportLang } from "./report-copy"
 import { getReportOfferCopy } from "./report-offer-copy"
 
@@ -180,15 +180,15 @@ function SignalCard({ signal, copy }: { signal: IntelligenceSignal; copy: Report
 }
 
 function SourceRow({ item, copy, lang }: { item: SourceCoverageItem; copy: ReportCopy; lang: ReportLang }) {
-  const label = cleanText(item.label, copy.evidence)
-  const detail = cleanText(item.detail, copy.heroLead)
-  const meaning = cleanText(item.meaning, copy.sourceMeaning)
-  const nextStep = cleanText(item.nextStep, copy.sourceNext)
+  const label = cleanText(reportEvidenceText(item.label, lang), copy.evidence)
+  const detail = cleanText(reportEvidenceText(item.detail, lang), copy.heroLead)
+  const meaning = cleanText(reportEvidenceText(item.meaning, lang), copy.sourceMeaning)
+  const nextStep = cleanText(reportEvidenceText(item.nextStep, lang), copy.sourceNext)
   return (
     <div className="grid gap-3 border-t border-zinc-200 py-4 first:border-t-0 md:grid-cols-[180px_minmax(0,1fr)_120px]">
       <div>
         <div className="text-sm font-semibold text-zinc-950">{label}</div>
-        <div className="mt-1 text-xs text-zinc-500">{item.category}</div>
+        <div className="mt-1 text-xs text-zinc-500">{sourceCategoryLabel(item.category, lang)}</div>
       </div>
       <div>
         <p className="text-xs leading-6 text-zinc-600">{detail}</p>
