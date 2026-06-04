@@ -154,13 +154,24 @@ export async function findCompanyBySlug(
 ): Promise<SalesCompany | null> {
   const sb = getServiceSalesSupabase()
   if (!sb) return null
-  const { data } = await sb
+  const { data, error } = await sb
     .from("sales_companies")
     .select("*")
     .eq("slug", slug)
     .eq("region", region)
     .maybeSingle()
-  return (data as SalesCompany) ?? null
+  if (error) console.error("[sales-companies] scoped slug fetch failed:", error.message)
+  if (data) return data as SalesCompany
+
+  const fallback = await sb
+    .from("sales_companies")
+    .select("*")
+    .eq("slug", slug)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (fallback.error) console.error("[sales-companies] fallback slug fetch failed:", fallback.error.message)
+  return (fallback.data as SalesCompany) ?? null
 }
 
 /** id で 1 件取得 */

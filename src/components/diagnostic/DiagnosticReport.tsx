@@ -5,6 +5,7 @@ import { signalScore, type IntelligenceSignal, type PainPoint } from "@/lib/sale
 import type { SourceCoverageItem } from "@/lib/sales/source-coverage"
 import { labelForIndustry } from "@/lib/sales/render-quality"
 import { REPORT_COPY, normalizeReportLang, type ReportCopy, type ReportLang } from "./report-copy"
+import { getReportOfferCopy } from "./report-offer-copy"
 
 const TONE_CLASS = {
   good: "border-emerald-200 bg-emerald-50 text-emerald-800",
@@ -31,20 +32,49 @@ function numericValue(value: string): number {
 }
 
 function formatMoney(amount: number, lang: ReportLang): string {
-  return new Intl.NumberFormat(lang === "ja" ? "ja-JP" : "en-US", {
+  return new Intl.NumberFormat(intlLocale(lang), {
     style: "currency",
     currency: "JPY",
     maximumFractionDigits: 0,
   }).format(amount)
 }
 
-function textLocale(lang: ReportLang): string {
-  return lang === "ja" ? "ja-JP" : "en-US"
+function intlLocale(lang: ReportLang): string {
+  const localeMap: Record<ReportLang, string> = {
+    ja: "ja-JP",
+    en: "en-US",
+    ko: "ko-KR",
+    zh: "zh-CN",
+    de: "de-DE",
+    fr: "fr-FR",
+    es: "es-ES",
+    pt: "pt-BR",
+    ru: "ru-RU",
+    ar: "ar-AE",
+    vi: "vi-VN",
+    id: "id-ID",
+  }
+  return localeMap[lang]
 }
 
 function formatMetric(value: string, lang: ReportLang): string {
   const numeric = numericValue(value)
-  return numeric > 0 ? numeric.toLocaleString(textLocale(lang)) : value
+  return numeric > 0 ? numeric.toLocaleString(intlLocale(lang)) : value
+}
+
+function reportTitle(companyName: string, label: string, lang: ReportLang): ReactNode {
+  if (lang === "ja") {
+    return (
+      <>
+        {companyName}の<span className="text-[#7657ff]">{label}</span>
+      </>
+    )
+  }
+  return (
+    <>
+      <span className="text-[#7657ff]">{label}</span> for {companyName}
+    </>
+  )
 }
 
 function sourceTone(score: number): keyof typeof TONE_CLASS {
@@ -261,6 +291,7 @@ export default function DiagnosticReport({
 }) {
   const lang = normalizeReportLang(locale ?? data.report_locale)
   const copy = REPORT_COPY[lang]
+  const offerCopy = getReportOfferCopy(lang, data.template_variant)
   const activeLocale = locale ?? data.report_locale
   const confidence = signalScore(data.intelligence.signals)
   const loss = numericValue(data.total_loss)
@@ -269,8 +300,8 @@ export default function DiagnosticReport({
   const industryLabel = labelForIndustry(data.industry, data.report_locale)
   const visibleSources = [...data.source_coverage.items].sort((a, b) => b.score - a.score).slice(0, 14)
   const mailHref = `mailto:info@paradigmjp.com?subject=${encodeURIComponent(copy.emailSubject)}&body=${encodeURIComponent(data.report_url)}`
-  const heroText = cleanText(data.hook, copy.heroLead)
-  const ctaText = cleanText(data.cta_text, copy.finalBody)
+  const heroText = cleanText(data.hook, offerCopy.heroLead)
+  const ctaText = cleanText(data.cta_text, offerCopy.finalBody)
   const qualityBar = cleanText(data.content_template.quality_bar, copy.qualityBar)
   const templateTitle = cleanText(data.content_template.title, copy.templateDirection)
   const templatePurpose = cleanText(data.content_template.purpose, copy.finalBody)
@@ -289,7 +320,7 @@ export default function DiagnosticReport({
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-950 text-sm font-semibold text-white">P</div>
             <div>
               <div className="text-sm font-semibold">{copy.brand}</div>
-              <div className="text-xs text-zinc-500">{copy.privateReport}</div>
+              <div className="text-xs text-zinc-500">{offerCopy.reportLabel}</div>
             </div>
           </div>
           <div className="hidden items-center gap-2 text-xs text-zinc-500 sm:flex">
@@ -306,16 +337,16 @@ export default function DiagnosticReport({
           <div className="mx-auto max-w-6xl text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-white px-4 py-2 text-sm font-semibold text-violet-700 shadow-sm">
               <Sparkles size={15} aria-hidden />
-              {copy.heroKicker}
+              {offerCopy.badge}
             </div>
             <h1 className="mx-auto mt-8 max-w-5xl text-5xl font-semibold leading-[1.04] text-zinc-950 sm:text-7xl">
-              {data.company_name}の<span className="text-[#7657ff]">{copy.privateReport}</span>
+              {reportTitle(data.company_name, offerCopy.reportLabel, lang)}
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-zinc-600">{heroText}</p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               {data.demo_url && (
                 <a href={data.demo_url} target="_blank" rel="noopener noreferrer" className="inline-flex h-12 items-center gap-2 rounded-full bg-zinc-950 px-5 text-sm font-semibold text-white shadow-lg">
-                  {copy.primaryCta}
+                  {offerCopy.primaryCta}
                   <ArrowRight size={16} aria-hidden />
                 </a>
               )}
@@ -328,7 +359,7 @@ export default function DiagnosticReport({
               <Pill tone="good"><Check size={14} aria-hidden /> {industryLabel}</Pill>
               <Pill>{data.target_country}</Pill>
               {data.prefecture && <Pill>{data.prefecture}</Pill>}
-              <Pill>{data.template_variant}</Pill>
+              <Pill>{offerCopy.reportLabel}</Pill>
             </div>
           </div>
         </section>
@@ -367,7 +398,7 @@ export default function DiagnosticReport({
               </div>
               <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={data.screenshot_url} alt={`${data.company_name} website screenshot`} className="max-h-[620px] w-full object-cover object-top" />
+                <img src={data.screenshot_url} alt={`${data.company_name} ${offerCopy.screenshotAlt}`} className="max-h-[620px] w-full object-cover object-top" />
               </div>
             </div>
           </section>
@@ -432,13 +463,13 @@ export default function DiagnosticReport({
           <div className="mx-auto max-w-6xl overflow-hidden rounded-lg bg-zinc-950 text-white">
             <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_320px]">
               <div className="p-8 sm:p-10">
-                <h2 className="max-w-3xl text-4xl font-semibold leading-tight">{copy.finalHeading}</h2>
-                <p className="mt-4 max-w-2xl text-base leading-8 text-white/70">{copy.finalBody}</p>
+                <h2 className="max-w-3xl text-4xl font-semibold leading-tight">{offerCopy.finalHeading}</h2>
+                <p className="mt-4 max-w-2xl text-base leading-8 text-white/70">{offerCopy.finalBody}</p>
               </div>
               <div className="flex flex-col justify-center gap-3 border-t border-white/10 p-8 lg:border-l lg:border-t-0">
                 {data.demo_url && (
                   <a href={data.demo_url} target="_blank" rel="noopener noreferrer" className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-zinc-950">
-                    {copy.primaryCta}
+                    {offerCopy.primaryCta}
                     <ArrowRight size={16} aria-hidden />
                   </a>
                 )}

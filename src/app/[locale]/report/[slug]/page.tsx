@@ -8,6 +8,8 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import DiagnosticReport from "@/components/diagnostic/DiagnosticReport"
+import { getReportOfferCopy } from "@/components/diagnostic/report-offer-copy"
+import { REPORT_COPY, normalizeReportLang } from "@/components/diagnostic/report-copy"
 import { fetchDiagnosticReport } from "@/lib/sales/diagnostic"
 import { localeToRegion } from "@/lib/sales/types"
 
@@ -20,19 +22,22 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, locale } = await params
-  const isJa = locale === "ja"
+  const region = localeToRegion(locale)
+  const lang = normalizeReportLang(locale)
+  const copy = REPORT_COPY[lang]
+  const data = await fetchDiagnosticReport({ slug, region, reportLocale: locale })
+  const offerCopy = data ? getReportOfferCopy(lang, data.template_variant) : null
+  const reportLabel = offerCopy?.reportLabel ?? copy.privateReport
   return {
-    title: isJa ? "Paradigm 経営診断レポート" : "Paradigm Executive Diagnostic Report",
-    description: isJa
-      ? "公開データと取得済みシグナルをもとにした個別の経営診断レポートです。"
-      : "A private executive diagnostic report based on public evidence and collected signals.",
+    title: `Paradigm ${reportLabel}`,
+    description: data?.content_template.purpose ?? offerCopy?.heroLead ?? copy.heroLead,
     robots: {
       index: false,
       follow: false,
       nocache: true,
       googleBot: { index: false, follow: false },
     },
-    alternates: { canonical: `/report/${slug}` },
+    alternates: { canonical: `/${locale}/report/${slug}` },
   }
 }
 

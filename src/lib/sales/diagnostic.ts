@@ -55,7 +55,7 @@ export interface DiagnosticReportData {
   intelligence: CompanyIntelligence
   content_template: Pick<
     SalesContentTemplate,
-    "title" | "purpose" | "quality_bar" | "dify_selection_rule" | "prompt_template"
+    "title" | "purpose" | "quality_bar" | "dify_selection_rule" | "prompt_template" | "offer_code" | "appeal_angle"
   >
   report_url: string
 }
@@ -395,6 +395,8 @@ export async function fetchDiagnosticReport(opts: {
       quality_bar: contentTemplate.quality_bar,
       dify_selection_rule: contentTemplate.dify_selection_rule,
       prompt_template: contentTemplate.prompt_template,
+      offer_code: contentTemplate.offer_code,
+      appeal_angle: contentTemplate.appeal_angle,
     },
     report_url: reportUrlFor(company, reportLocale),
   }

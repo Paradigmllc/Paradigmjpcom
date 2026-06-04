@@ -1,11 +1,11 @@
 # Task.md
 
-## CODEX UPDATE - 2026-06-04 Report URL Check And Legacy Error Cleanup
+## CODEX UPDATE - 2026-06-04 Diagnostic Report Scope
 
 - Confirmed the CompassLabs-style diagnostic report is the public route, not the Revenue OS Keystatic/admin preview: `https://paradigmjp.com/ja/report/codex-oss-verification-demo-qnxbms`.
-- Playwright production check: HTTP 200, title `Paradigm 経営診断レポート | Paradigm合同会社`, H1 rendered, no horizontal overflow on 1365px viewport, no mojibake pattern in rendered body.
-- Sanitized old DB job error output so legacy `N8N_VIDEO_PIPELINE_WEBHOOK_URL` messages are shown as a Trigger.dev requeue notice instead of the old env name.
-- Verification: `npx tsc --noEmit --pretty false`, `npm test -- --run src/lib/sales/video-pipeline.test.ts`, and `git diff --check` passed.
+- Report UI is shared by `/[locale]/report/[slug]`; added template-variant offer copy for website, Japan-entry, video, outreach, and security reports instead of hardcoding `/ja` or HP/video wording.
+- Slug lookup now falls back across regions when the requested locale region has no row, while scoped region matches still win first.
+- Verification: `npx tsc --noEmit --pretty false`, targeted vitest, `git diff --check`, Playwright production check for the sample URL.
 
 ## CODEx UPDATE - 2026-06-04 Trigger.dev Video Studio Fix
 
