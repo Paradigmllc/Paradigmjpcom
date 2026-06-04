@@ -160,10 +160,10 @@ function PainCard({ pain, copy, lang }: { pain: PainPoint; copy: ReportCopy; lan
   )
 }
 
-function SignalCard({ signal, copy }: { signal: IntelligenceSignal; copy: ReportCopy }) {
-  const label = cleanText(signal.label, copy.evidence)
-  const source = cleanText(signal.source, "Sales OS")
-  const whyItMatters = cleanText(signal.whyItMatters, copy.whyItMatters)
+function SignalCard({ signal, copy, lang }: { signal: IntelligenceSignal; copy: ReportCopy; lang: ReportLang }) {
+  const label = cleanText(reportEvidenceText(signal.label, lang), copy.evidence)
+  const source = cleanText(reportEvidenceText(signal.source, lang), "Sales OS")
+  const whyItMatters = cleanText(reportEvidenceText(signal.whyItMatters, lang), copy.whyItMatters)
   return (
     <article className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
@@ -301,14 +301,14 @@ export default function DiagnosticReport({
   const loss = numericValue(data.total_loss)
   const topPain = intelligence.painPoints[0]
   const videoHref = trackingSlug ? `/${activeLocale}/report/${trackingSlug}/video` : null
-  const industryLabel = labelForIndustry(data.industry, data.report_locale)
+  const industryLabel = labelForIndustry(data.industry, lang)
   const visibleSources = [...data.source_coverage.items].sort((a, b) => b.score - a.score).slice(0, 14)
   const mailHref = `mailto:info@paradigmjp.com?subject=${encodeURIComponent(copy.emailSubject)}&body=${encodeURIComponent(data.report_url)}`
-  const heroText = cleanText(data.hook, offerCopy.heroLead)
-  const ctaText = cleanText(data.cta_text, offerCopy.finalBody)
-  const qualityBar = cleanText(data.content_template.quality_bar, copy.qualityBar)
-  const templateTitle = cleanText(data.content_template.title, copy.templateDirection)
-  const templatePurpose = cleanText(data.content_template.purpose, copy.finalBody)
+  const heroText = cleanText(reportEvidenceText(data.hook, lang), offerCopy.heroLead)
+  const ctaText = cleanText(reportEvidenceText(data.cta_text, lang), offerCopy.finalBody)
+  const qualityBar = cleanText(reportEvidenceText(data.content_template.quality_bar, lang), copy.qualityBar)
+  const templateTitle = cleanText(reportEvidenceText(data.content_template.title, lang), copy.templateDirection)
+  const templatePurpose = cleanText(reportEvidenceText(data.content_template.purpose, lang), copy.finalBody)
   const businessImpact = cleanText(topPain?.implication, ctaText)
 
   return (
@@ -457,7 +457,7 @@ export default function DiagnosticReport({
               <div className="text-sm text-zinc-500">{data.source_coverage.collected} / {data.source_coverage.configured} / {data.source_coverage.missing}</div>
             </div>
             <div className="mt-7 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {intelligence.signals.slice(0, 9).map((signal) => <SignalCard key={signal.id} signal={signal} copy={copy} />)}
+              {intelligence.signals.slice(0, 9).map((signal) => <SignalCard key={signal.id} signal={signal} copy={copy} lang={lang} />)}
             </div>
             <div className="mt-8 rounded-lg border border-zinc-200 bg-white px-5 shadow-sm">
               {visibleSources.map((item) => <SourceRow key={item.slug} item={item} copy={copy} lang={lang} />)}

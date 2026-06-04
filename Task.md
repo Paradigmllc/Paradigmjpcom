@@ -5,6 +5,7 @@
 - Confirmed the CompassLabs-style diagnostic report is the public route, not the Revenue OS Keystatic/admin preview: `https://paradigmjp.com/ja/report/codex-oss-verification-demo-qnxbms`.
 - Report UI is shared by `/[locale]/report/[slug]`; added template-variant offer copy for website, Japan-entry, video, outreach, and security reports instead of hardcoding `/ja` or HP/video wording.
 - Added a Japanese executive brief and report-copy layer so `/ja` does not expose English audit logs, raw severity labels, or `configured/missing` status text.
+- 2026-06-05 follow-up: expanded the Japanese intelligence/source-evidence layer so signal cards, source names, detail text, and status labels render as customer-facing Japanese instead of raw audit log strings.
 - Verification: `npx tsc --noEmit --pretty false`, targeted vitest, `git diff --check`, Playwright production check for the sample URL.
 
 ## CODEx UPDATE - 2026-06-04 Trigger.dev Video Studio Fix
