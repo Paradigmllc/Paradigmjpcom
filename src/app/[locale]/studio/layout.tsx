@@ -1,8 +1,8 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "動画制作ライン | Paradigm",
-  description: "Paradigm Revenue OS の OpenMontage / n8n 連携ジョブ投入画面",
+  title: "OpenMontage | Paradigm",
+  description: "OpenMontage公式OSS入口へリダイレクトします。",
   robots: "noindex,nofollow",
 }
 

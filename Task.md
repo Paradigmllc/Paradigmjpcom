@@ -4,7 +4,7 @@
 
 - Revenue OS のサードメニューを、内部の代替ワークベンチではなく外部OSS正規GUI入口へ切り替え中。
 - Directus: `https://directus.paradigmjp.com/admin`
-- Keystatic: `https://keystatic.paradigmjp.com`
+- Keystatic: `https://keystatic.paradigmjp.com` -> `/keystatic` real Keystatic UI
 - Supabase Studio: 本番 `NEXT_PUBLIC_SUPABASE_STUDIO_URL`
 - OpenMontage: 公式OSSにWeb管理GUIがないため、Revenue OS内のStudio風UIと subdomain rewrite は廃止。入口は公式OSSへ退避。
 
@@ -14,7 +14,7 @@
 - テスト済み: `npm test -- --run src/lib/sales/integration-registry.test.ts src/lib/sales/dify-cloud.test.ts`
 - 本番ビルド済み: `npm run build`
 - 差分チェック済み: `git diff --check`
-- 次アクション: commit -> push -> Coolify deploy -> production URL fingerprint/smoke check。
+- 次アクション: Keystatic追加分を commit -> push -> Coolify deploy -> production URL fingerprint/smoke check。
 
 ## LINKS
 

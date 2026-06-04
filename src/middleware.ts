@@ -35,9 +35,34 @@ const NOINDEX_PATTERN = /^\/(?:[a-z]{2}\/)?(?:report|p|diagnostic)(?:\/|$)/i
 
 // X-Robots-Tag: SEO 完全禁止の最強構成
 const NOINDEX_VALUE = "noindex, nofollow, noarchive, nosnippet, noimageindex"
+const KEYSTATIC_HOSTS = new Set(["keystatic.paradigmjp.com"])
+
+function resolveHostname(request: NextRequest): string {
+  const forwardedHost = request.headers.get("x-forwarded-host")
+  const host = forwardedHost || request.headers.get("host") || ""
+  return host.split(",")[0]?.split(":")[0]?.trim().toLowerCase() ?? ""
+}
+
+function rewriteKeystaticSubdomain(request: NextRequest): NextResponse | null {
+  const hostname = resolveHostname(request)
+  if (!KEYSTATIC_HOSTS.has(hostname)) return null
+
+  const url = request.nextUrl.clone()
+  if (url.pathname === "/" || url.pathname === "") {
+    url.pathname = "/keystatic"
+    return NextResponse.rewrite(url)
+  }
+  if (!url.pathname.startsWith("/keystatic")) {
+    url.pathname = `/keystatic${url.pathname}`
+    return NextResponse.rewrite(url)
+  }
+  return null
+}
 
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const keystaticRewrite = rewriteKeystaticSubdomain(request)
+  if (keystaticRewrite) return keystaticRewrite
 
   // ─── 通常 routing は next-intl に委譲 ────────────────────────────────
   const response = intlMiddleware(request)
