@@ -9,6 +9,8 @@
 - `.env.example` / runbook に `TRIGGER_SECRET_KEY`, `TRIGGER_API_URL`, `TRIGGER_VIDEO_PIPELINE_TASK_ID`, `TRIGGER_DASHBOARD_URL` を追加。
 - 検証: `npx tsc --noEmit --pretty false`, targeted vitest, `npm run build`, `git diff --check`, `npm run context:audit` passed.
 - Playwright local desktop 1365px / mobile 390px: report/pro panels rendered, no horizontal overflow, no mojibake pattern, no old n8n env error. Pro studio shows Trigger.dev.
+- Commit `efdf5fb refactor: replace video pipeline n8n with trigger dev`, Coolify deployment `zl74t7u4wskkxwnj30mye2uv` finished.
+- Production UI/API audit passed. `/api/sales/video-pipeline/jobs` returns `orchestrator.provider: trigger.dev`, no legacy `config.n8n`. `orchestrator.ready` is false until real `TRIGGER_SECRET_KEY` and `TRIGGER_VIDEO_PIPELINE_TASK_ID` are added.
 
 ## CODEx UPDATE - 2026-06-04 Video Studio Split
 
