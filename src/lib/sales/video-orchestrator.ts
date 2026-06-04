@@ -227,7 +227,7 @@ export async function runVideoOrchestrator(
 
     // Vast.ai 自動オーケストレーション
     if (!comfyuiConfig.ready && (generateBackground || generateAvatar || generateBroll || generateThumbnail || generateVideo)) {
-      console.log("[Orchestrator] ComfyUI is not ready. Deploying to Vast.ai dynamically...");
+      console.warn("[Orchestrator] ComfyUI is not ready. Deploying to Vast.ai dynamically...");
       const deployStart = Date.now();
       const deploy = await deployComfyuiToVast({ gpuType: "RTX_4090", disk: 64, workload: "comfyui_full" });
       steps.push(makeStep("vast_comfyui_deploy", deploy.ok, deployStart, { error: deploy.error, data: { url: deploy.comfyuiUrl, instanceId: deploy.instanceId } }));
@@ -448,12 +448,12 @@ export async function runVideoOrchestrator(
           jobId: jobResult.job.id,
           action: "dispatch",
         })
-        steps.push(makeStep("n8n_dispatch", dispatchResult.ok, dispatchStart, { error: dispatchResult.error }))
+        steps.push(makeStep("trigger_dev_dispatch", dispatchResult.ok, dispatchStart, { error: dispatchResult.error }))
       } catch (error) {
-        steps.push(makeStep("n8n_dispatch", false, dispatchStart, { error: error instanceof Error ? error.message : String(error) }))
+        steps.push(makeStep("trigger_dev_dispatch", false, dispatchStart, { error: error instanceof Error ? error.message : String(error) }))
       }
     } else {
-      steps.push(makeStep("n8n_dispatch", true, Date.now(), { error: "Skipped by option" }))
+      steps.push(makeStep("trigger_dev_dispatch", true, Date.now(), { error: "Skipped by option" }))
     }
 
     /* ───── 完了 ───── */
@@ -495,7 +495,7 @@ export function getOrchestratorStatus(): {
     { name: "HyperFrames", ready: true, note: "HTML-based rendering" },
     { name: "OSS Renderers", ready: true, note: "6 engines available with FFmpeg fallback" },
     { name: "R2 Storage", ready: true, note: "Signed URL generation" },
-    { name: "n8n Dispatch", ready: true, note: "Pipeline orchestration" },
+    { name: "Trigger.dev Dispatch", ready: true, note: "Pipeline orchestration" },
   ]
 
   return {

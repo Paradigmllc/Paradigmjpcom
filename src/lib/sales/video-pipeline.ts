@@ -6,7 +6,20 @@ import { fetchDiagnosticReport } from "./diagnostic"
 import { getR2StorageConfig } from "./r2-storage"
 import { normalizeReportLocale } from "./routing"
 import { INDUSTRIES, localeToRegion, type Industry } from "./types"
-import { buildProfessionalProductionPlan, buildProfessionalStoryboard, buildR2AssetPrefix, buildVideoAssetManifest, normalizeVideoProductionProfile, type VideoAvatarStyle, type VideoCaptionStyle, type VideoProductionGenre, type VideoQualityTier, type VideoStoryFramework, type VideoVoiceStyle } from "./video-production"
+import { dispatchVideoJobToTriggerDev, getTriggerVideoPipelineConfig } from "./video-trigger"
+import {
+  buildProfessionalProductionPlan,
+  buildProfessionalStoryboard,
+  buildR2AssetPrefix,
+  buildVideoAssetManifest,
+  normalizeVideoProductionProfile,
+  type VideoAvatarStyle,
+  type VideoCaptionStyle,
+  type VideoProductionGenre,
+  type VideoQualityTier,
+  type VideoStoryFramework,
+  type VideoVoiceStyle,
+} from "./video-production"
 import {
   VIDEO_PIPELINE_STAGES,
   buildVideoClaimGuard,
@@ -21,27 +34,13 @@ import {
 } from "./video-strategy"
 
 export { VIDEO_PIPELINE_STAGES }
-export type { VideoClaimGuard, VideoLossInputs, VideoLossSimulation, VideoOfferAngle, VideoTargetSegment }
 export type { VideoAvatarStyle, VideoCaptionStyle, VideoProductionGenre, VideoQualityTier, VideoStoryFramework, VideoVoiceStyle } from "./video-production"
+export type { VideoClaimGuard, VideoLossInputs, VideoLossSimulation, VideoOfferAngle, VideoTargetSegment }
+
 export type VideoJobType = "sales_video" | "subscription_video"
-export type VideoJobStatus =
-  | "draft"
-  | "queued"
-  | "routing"
-  | "waiting_render"
-  | "rendering"
-  | "review_required"
-  | "completed"
-  | "failed"
-  | "cancelled"
+export type VideoJobStatus = "draft" | "queued" | "routing" | "waiting_render" | "rendering" | "review_required" | "completed" | "failed" | "cancelled"
 export type VideoRenderEngine = "hyperframes" | "remotion" | "openmontage" | "comfyui" | "external"
-export type VideoTargetPlatform =
-  | "sales_deck_embed"
-  | "report_page"
-  | "shorts_9_16"
-  | "youtube_16_9"
-  | "linkedin_1_1"
-  | "customer_subscription"
+export type VideoTargetPlatform = "sales_deck_embed" | "report_page" | "shorts_9_16" | "youtube_16_9" | "linkedin_1_1" | "customer_subscription"
 
 export interface SalesVideoJob {
   id: string
@@ -86,7 +85,14 @@ export interface SalesVideoJob {
 }
 
 export interface VideoPipelineConfig {
-  n8n: { ready: boolean; url: string | null; note: string }
+  orchestrator: {
+    provider: "trigger.dev"
+    ready: boolean
+    taskId: string | null
+    apiUrl: string
+    dashboardUrl: string | null
+    note: string
+  }
   dify: {
     ready: boolean
     provider: "dify_cloud"
@@ -121,10 +127,7 @@ function normalizeIndustry(value: string | null | undefined): Industry | null {
 }
 
 function pipelineConfig(): VideoPipelineConfig {
-  const n8nBaseUrl = optionalEnv("N8N_BASE_URL")
-  const n8nUrl =
-    optionalEnv("N8N_VIDEO_PIPELINE_WEBHOOK_URL") ??
-    (n8nBaseUrl ? `${n8nBaseUrl.replace(/\/+$/, "")}/webhook/sales-video-pipeline` : null)
+  const trigger = getTriggerVideoPipelineConfig()
   const comfyConfig = getComfyuiClientConfig()
   const r2Config = getR2StorageConfig()
   const dify = getDifyCloudRuntimeConfig([
@@ -135,12 +138,18 @@ function pipelineConfig(): VideoPipelineConfig {
     "karteToReport",
     "karteToSalesMaterial",
   ])
+  const triggerReady = trigger.taskId !== null && trigger.secretKey !== null
 
   return {
-    n8n: {
-      ready: n8nUrl !== null && envReady("N8N_WEBHOOK_SECRET"),
-      url: n8nUrl,
-      note: n8nUrl ? "n8nへ動画ジョブを投入できます。" : "n8n未設定時はジョブ作成と手動コピーまで行います。",
+    orchestrator: {
+      provider: "trigger.dev",
+      ready: triggerReady,
+      taskId: trigger.taskId,
+      apiUrl: trigger.apiUrl,
+      dashboardUrl: trigger.dashboardUrl,
+      note: triggerReady
+        ? "Trigger.devで動画ジョブをキュー投入できます。"
+        : "Trigger.devのSecret Keyまたは動画タスクIDが未設定です。ブリーフ保存と手動確認までは利用できます。",
     },
     dify: {
       ready: dify.ready,
@@ -149,12 +158,12 @@ function pipelineConfig(): VideoPipelineConfig {
       workflowUrl: dify.workflowUrl,
       configuredGroups: dify.configuredGroups,
       missingGroups: dify.missingGroups,
-      note: "Dify Cloud (api.dify.ai) だけを使います。文面、構成、テンプレ判定を任せ、未検証の法規制・罰金・市場統計・CAGRの断定は禁止します。",
+      note: "Dify Cloudで文面、構成、テンプレート判定を行います。未検証の法務・罰金・市場統計・CAGR断定は禁止します。",
     },
     comfyui: {
       ready: comfyConfig.ready,
       url: comfyConfig.baseUrl,
-      note: "営業動画の背景素材と動画サブスク用の生成素材に使います。",
+      note: "プロ級動画の背景素材、B-roll、サムネイル、動画素材生成に使います。",
     },
     vast: {
       ready: envReady("VAST_API_KEY"),
@@ -168,7 +177,7 @@ function pipelineConfig(): VideoPipelineConfig {
     r2: {
       ready: r2Config.ready && r2Config.publicBaseUrl !== null,
       publicBaseUrl: r2Config.publicBaseUrl,
-      note: "完成MP4、字幕、サムネイル、素材を配信する置き場です。",
+      note: "完成MP4、字幕、サムネイル、素材、メタデータを保存する置き場です。",
     },
     slack: {
       ready: envReady("SLACK_WEBHOOK_URL") || (envReady("SLACK_BOT_TOKEN") && envReady("SLACK_CHANNEL", "SLACK_CHANNEL_ID")),
@@ -210,7 +219,6 @@ export async function listVideoJobs(
   if (filters.locale) query = query.eq("locale", filters.locale)
 
   const { data, error } = await query
-
   if (error) {
     console.error("[sales-video-pipeline] list failed:", error.message)
     return { ok: false, error: error.message, jobs: [], config }
@@ -235,11 +243,7 @@ export async function createVideoJob(input: {
   reportLocale?: string | null
   priority?: number
   requestedBy?: string
-  creativeBrief?: {
-    narrativePrompt?: string | null
-    visualPrompt?: string | null
-    negativePrompt?: string | null
-  }
+  creativeBrief?: { narrativePrompt?: string | null; visualPrompt?: string | null; negativePrompt?: string | null }
 }): Promise<{ ok: boolean; job?: SalesVideoJob; config: VideoPipelineConfig; error?: string }> {
   const sb = getServiceSalesSupabase()
   const config = pipelineConfig()
@@ -283,9 +287,7 @@ export async function createVideoJob(input: {
     platform: input.targetPlatform,
     profile: productionProfile,
   })
-  const deliveryFormats = Array.isArray(assetManifest.formats)
-    ? (assetManifest.formats as Array<Record<string, unknown>>)
-    : []
+  const deliveryFormats = Array.isArray(assetManifest.formats) ? (assetManifest.formats as Array<Record<string, unknown>>) : []
   const storyboard = buildProfessionalStoryboard({
     companyName: company.company_name,
     domain: company.domain,
@@ -293,7 +295,7 @@ export async function createVideoJob(input: {
     platform: input.targetPlatform,
     jobType: input.jobType,
     hook: report?.hook ?? `${company.company_name}のWebと営業導線を公開データから診断します。`,
-    totalLoss: report?.total_loss ?? "未算出",
+    totalLoss: report?.total_loss ?? "未計算",
     reportUrl,
     demoUrl: report?.demo_url ?? null,
     lossSimulation,
@@ -315,26 +317,14 @@ export async function createVideoJob(input: {
     r2AssetPrefix,
     assetManifest,
     readiness: {
-      n8n: config.n8n.ready,
+      orchestrator: config.orchestrator.ready,
       dify: config.dify.ready,
       comfyui: config.comfyui.ready,
       vast: config.vast.ready,
       r2: config.r2.ready,
     },
   })
-  const productionPlanWithRuntime = {
-    ...productionPlan,
-    creative_brief: input.creativeBrief ?? null,
-    dify: {
-      provider: config.dify.provider,
-      base_url: config.dify.baseUrl,
-      workflow_url: config.dify.workflowUrl,
-      configured_groups: config.dify.configuredGroups,
-      missing_groups: config.dify.missingGroups,
-      secret_values_in_payload: false,
-    },
-  }
-
+  const trigger = getTriggerVideoPipelineConfig()
   const { data, error } = await sb
     .from("sales_video_jobs")
     .insert({
@@ -355,12 +345,24 @@ export async function createVideoJob(input: {
       story_framework: productionProfile.storyFramework,
       quality_tier: productionProfile.qualityTier,
       orchestration_stage: "draft",
-      n8n_workflow_url: config.n8n.url,
+      n8n_workflow_url: trigger.endpoint,
       r2_bucket: r2Bucket,
       r2_asset_prefix: r2AssetPrefix,
       preview_url: previewUrl,
       storyboard,
-      production_plan: productionPlanWithRuntime,
+      production_plan: {
+        ...productionPlan,
+        creative_brief: input.creativeBrief ?? null,
+        orchestrator: { provider: config.orchestrator.provider, task_id: config.orchestrator.taskId, api_url: config.orchestrator.apiUrl },
+        dify: {
+          provider: config.dify.provider,
+          base_url: config.dify.baseUrl,
+          workflow_url: config.dify.workflowUrl,
+          configured_groups: config.dify.configuredGroups,
+          missing_groups: config.dify.missingGroups,
+          secret_values_in_payload: false,
+        },
+      },
       loss_simulation: lossSimulation,
       claim_guard: claimGuard,
       asset_manifest: assetManifest,
@@ -410,78 +412,6 @@ async function fetchJob(jobId: string): Promise<SalesVideoJob> {
   return data as SalesVideoJob
 }
 
-async function dispatchToN8n(job: SalesVideoJob): Promise<{ executionId: string | null; manual: boolean; message: string }> {
-  const webhookUrl = optionalEnv("N8N_VIDEO_PIPELINE_WEBHOOK_URL")
-  if (!webhookUrl) {
-    return { executionId: null, manual: true, message: "N8N_VIDEO_PIPELINE_WEBHOOK_URL is not configured" }
-  }
-  const dify = getDifyCloudRuntimeConfig(["video", "templatePicker", "karteToReport", "karteToSalesMaterial"])
-  const headers: Record<string, string> = { "Content-Type": "application/json" }
-  const secret = optionalEnv("N8N_WEBHOOK_SECRET")
-  if (secret) headers["X-Webhook-Secret"] = secret
-
-  const res = await fetch(webhookUrl, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      job_id: job.id,
-      job_type: job.job_type,
-      company_id: job.company_id,
-      title: job.title,
-      locale: job.locale,
-      target_platform: job.target_platform,
-      render_engine: job.render_engine,
-      target_segment: job.target_segment,
-      offer_angle: job.offer_angle,
-      production_profile: {
-        genre: job.production_genre,
-        voice: job.voice_style,
-        avatar: job.avatar_style,
-        captions: job.caption_style,
-        story: job.story_framework,
-        quality: job.quality_tier,
-      },
-      dify: {
-        provider: dify.provider,
-        base_url: dify.baseUrl,
-        workflow_url: dify.workflowUrl,
-        configured_groups: dify.configuredGroups,
-        missing_groups: dify.missingGroups,
-        secret_values_in_payload: dify.secretValuesInPayload,
-      },
-      r2: {
-        bucket: job.r2_bucket,
-        prefix: job.r2_asset_prefix,
-        public_url: job.r2_output_url,
-        asset_manifest: job.asset_manifest,
-        upload_endpoint: `${(optionalEnv("PARADIGMJP_BASE_URL") ?? optionalEnv("NEXT_PUBLIC_SITE_URL") ?? "https://paradigmjp.com").replace(/\/+$/, "")}/api/sales/video-pipeline/jobs/${job.id}/assets`,
-      },
-      delivery_formats: job.delivery_formats,
-      storyboard: job.storyboard,
-      production_plan: job.production_plan,
-      loss_simulation: job.loss_simulation,
-      claim_guard: job.claim_guard,
-      input_assets: job.input_assets,
-    }),
-  })
-
-  const text = await res.text()
-  let parsed: Record<string, unknown> = {}
-  try {
-    parsed = text ? (JSON.parse(text) as Record<string, unknown>) : {}
-  } catch (error) {
-    console.warn("[sales-video-pipeline] n8n returned non-json:", error)
-  }
-  if (!res.ok) throw new Error(`n8n dispatch failed: HTTP ${res.status} ${text.slice(0, 240)}`)
-  const executionId =
-    typeof parsed.executionId === "string"
-      ? parsed.executionId
-      : typeof parsed.execution_id === "string"
-        ? parsed.execution_id
-        : null
-  return { executionId, manual: false, message: "dispatched" }
-}
-
 export async function runVideoJobAction(input: {
   jobId: string
   action: "dispatch" | "approve_render" | "request_revision" | "complete" | "fail" | "cancel"
@@ -492,12 +422,11 @@ export async function runVideoJobAction(input: {
   try {
     const job = await fetchJob(input.jobId)
     if (input.action === "dispatch") {
-      await updateJob(job.id, { status: "routing", orchestration_stage: "n8n_dispatching", error_message: null })
-      const dispatched = await dispatchToN8n(job)
-      const nextStatus: VideoJobStatus = dispatched.manual ? "review_required" : "waiting_render"
+      await updateJob(job.id, { status: "routing", orchestration_stage: "trigger_dev_dispatching", error_message: null })
+      const dispatched = await dispatchVideoJobToTriggerDev(job)
       const updated = await updateJob(job.id, {
-        status: nextStatus,
-        orchestration_stage: dispatched.manual ? "manual_dispatch_required" : "n8n_dispatched",
+        status: dispatched.manual ? "review_required" : "waiting_render",
+        orchestration_stage: dispatched.manual ? "trigger_dev_manual_required" : "trigger_dev_dispatched",
         n8n_execution_id: dispatched.executionId,
         error_message: dispatched.manual ? dispatched.message : null,
       })

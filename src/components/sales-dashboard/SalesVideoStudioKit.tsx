@@ -7,8 +7,8 @@ import type {
   VideoStoryFramework,
   VideoVoiceStyle,
 } from "@/lib/sales/video-production"
-import type { VideoOfferAngle, VideoTargetSegment } from "@/lib/sales/video-strategy"
 import type { VideoJobStatus } from "@/lib/sales/video-pipeline"
+import type { VideoOfferAngle, VideoTargetSegment } from "@/lib/sales/video-strategy"
 import { statusTone } from "./SalesCommandPanels"
 
 export const SEGMENT_LABELS: Record<VideoTargetSegment, string> = {
@@ -92,7 +92,7 @@ const STATUS_LABELS: Record<VideoJobStatus, string> = {
   routing: "投入中",
   waiting_render: "レンダー待ち",
   rendering: "レンダー中",
-  review_required: "承認待ち",
+  review_required: "確認待ち",
   completed: "完了",
   failed: "失敗",
   cancelled: "取消",
@@ -184,7 +184,7 @@ export function PromptPanel({
       <div>
         <div className="text-sm font-semibold text-zinc-950">プロンプト / 調整</div>
         <p className="mt-1 text-xs leading-5 text-zinc-500">
-          未入力ならDify Cloud / DeepSeekが診断データから生成します。入力した内容はSupabaseの制作ジョブへ保存され、ComfyUIとOpenMontage実行に渡ります。
+          未入力ならDify Cloud / DeepSeekが診断データから生成します。入力した内容はSupabaseの制作ジョブへ保存され、ComfyUIとOpenMontage実行に渡します。
         </p>
       </div>
       <PromptField
@@ -221,21 +221,21 @@ export function PipelineCard({
   icon: ComponentType<{ className?: string; "aria-hidden"?: true }>
 }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4">
+    <div className="min-w-0 rounded-xl border border-zinc-200 bg-white p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
-          <Icon className="h-4 w-4 text-zinc-500" aria-hidden />
+          <Icon className="h-4 w-4 shrink-0 text-zinc-500" aria-hidden />
           <div className="truncate text-sm font-semibold text-zinc-950">{name}</div>
         </div>
         <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${readyTone(ready)}`}>
           {ready ? "接続済み" : "要設定"}
         </span>
       </div>
-      <p className="mt-2 text-xs leading-5 text-zinc-600">{note}</p>
+      <p className="mt-2 break-words text-xs leading-5 text-zinc-600">{note}</p>
     </div>
   )
 }
 
 export function JobBadge({ status }: { status: VideoJobStatus }) {
-  return <span className={`rounded-full px-2 py-0.5 text-[11px] ${statusTone(status)}`}>{STATUS_LABELS[status]}</span>
+  return <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] ${statusTone(status)}`}>{STATUS_LABELS[status]}</span>
 }

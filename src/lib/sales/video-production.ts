@@ -266,12 +266,12 @@ export function buildProfessionalProductionPlan(input: {
   r2Bucket: string | null
   r2AssetPrefix: string
   assetManifest: Record<string, unknown>
-  readiness: { n8n: boolean; dify: boolean; comfyui: boolean; vast: boolean; r2: boolean }
+  readiness: { orchestrator: boolean; dify: boolean; comfyui: boolean; vast: boolean; r2: boolean }
 }): Record<string, unknown> {
   const theme = themeForIndustry(input.industry)
   return {
     version: "video-pipeline-v3-pro-production-r2",
-    architecture: "n8n coordinates; specialist renderers create assets; Cloudflare R2 stores deliverables",
+    architecture: "Trigger.dev coordinates; specialist renderers create assets; Cloudflare R2 stores deliverables",
     job_intent: input.jobType === "subscription_video" ? "recurring_delivery" : "sales_enablement",
     company: { name: input.companyName, domain: input.domain, industry: labelForIndustry(input.industry, input.locale) },
     production_profile: input.profile,

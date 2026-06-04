@@ -1,5 +1,15 @@
 # Task.md
 
+## CODEx UPDATE - 2026-06-04 Trigger.dev Video Studio Fix
+
+- 動画パイプライン投入をn8n webhookからTrigger.dev Management API `POST /api/v1/tasks/{taskIdentifier}/trigger` へ差し替え。
+- `src/lib/sales/video-trigger.ts` を追加し、Trigger.dev task dispatch、idempotency key、company concurrency key、queue設定を集約。
+- 既存DB列 `n8n_workflow_url` / `n8n_execution_id` は互換のため残し、中身はTrigger endpoint/run idとして利用。
+- レポート用/プロ級スタジオと共通ラベルの文字化け、横幅崩れ、旧n8nエラー表示を修正。
+- `.env.example` / runbook に `TRIGGER_SECRET_KEY`, `TRIGGER_API_URL`, `TRIGGER_VIDEO_PIPELINE_TASK_ID`, `TRIGGER_DASHBOARD_URL` を追加。
+- 検証: `npx tsc --noEmit --pretty false`, targeted vitest, `npm run build`, `git diff --check`, `npm run context:audit` passed.
+- Playwright local desktop 1365px / mobile 390px: report/pro panels rendered, no horizontal overflow, no mojibake pattern, no old n8n env error. Pro studio shows Trigger.dev.
+
 ## CODEx UPDATE - 2026-06-04 Video Studio Split
 
 - 旧「全部入り」動画制作スタジオはライブ導線から外し、`docs/handoff-archive/2026-06-04-legacy-sales-video-pipeline-panel.tsx.txt` に完全アーカイブした。

@@ -74,71 +74,22 @@ export const VIDEO_OFFER_ANGLE_LABELS: Record<VideoOfferAngle, string> = {
 }
 
 const SEGMENT_DEFAULTS: Record<VideoTargetSegment, Required<VideoLossInputs>> = {
-  agency_white_label: {
-    monthlyRejectedProjects: 2,
-    averageProjectValueUsd: 5000,
-    monthlyVideoBudgetUsd: 2500,
-    currentVideosPerMonth: 1,
-    competitorVideosPerMonth: 6,
-    grossMarginPercent: 55,
-  },
-  saas_marketing: {
-    monthlyRejectedProjects: 3,
-    averageProjectValueUsd: 3500,
-    monthlyVideoBudgetUsd: 3000,
-    currentVideosPerMonth: 2,
-    competitorVideosPerMonth: 8,
-    grossMarginPercent: 70,
-  },
-  ec_brand: {
-    monthlyRejectedProjects: 4,
-    averageProjectValueUsd: 1800,
-    monthlyVideoBudgetUsd: 2800,
-    currentVideosPerMonth: 2,
-    competitorVideosPerMonth: 10,
-    grossMarginPercent: 45,
-  },
-  local_smb: {
-    monthlyRejectedProjects: 3,
-    averageProjectValueUsd: 900,
-    monthlyVideoBudgetUsd: 900,
-    currentVideosPerMonth: 0,
-    competitorVideosPerMonth: 4,
-    grossMarginPercent: 50,
-  },
-  youtube_creator: {
-    monthlyRejectedProjects: 2,
-    averageProjectValueUsd: 1200,
-    monthlyVideoBudgetUsd: 1400,
-    currentVideosPerMonth: 4,
-    competitorVideosPerMonth: 12,
-    grossMarginPercent: 60,
-  },
-  jaas_bundle: {
-    monthlyRejectedProjects: 2,
-    averageProjectValueUsd: 6500,
-    monthlyVideoBudgetUsd: 3200,
-    currentVideosPerMonth: 1,
-    competitorVideosPerMonth: 6,
-    grossMarginPercent: 55,
-  },
-  gtm_engineering: {
-    monthlyRejectedProjects: 2,
-    averageProjectValueUsd: 8000,
-    monthlyVideoBudgetUsd: 3800,
-    currentVideosPerMonth: 1,
-    competitorVideosPerMonth: 7,
-    grossMarginPercent: 65,
-  },
+  agency_white_label: { monthlyRejectedProjects: 2, averageProjectValueUsd: 5000, monthlyVideoBudgetUsd: 2500, currentVideosPerMonth: 1, competitorVideosPerMonth: 6, grossMarginPercent: 55 },
+  saas_marketing: { monthlyRejectedProjects: 3, averageProjectValueUsd: 3500, monthlyVideoBudgetUsd: 3000, currentVideosPerMonth: 2, competitorVideosPerMonth: 8, grossMarginPercent: 70 },
+  ec_brand: { monthlyRejectedProjects: 4, averageProjectValueUsd: 1800, monthlyVideoBudgetUsd: 2800, currentVideosPerMonth: 2, competitorVideosPerMonth: 10, grossMarginPercent: 45 },
+  local_smb: { monthlyRejectedProjects: 3, averageProjectValueUsd: 900, monthlyVideoBudgetUsd: 900, currentVideosPerMonth: 0, competitorVideosPerMonth: 4, grossMarginPercent: 50 },
+  youtube_creator: { monthlyRejectedProjects: 2, averageProjectValueUsd: 1200, monthlyVideoBudgetUsd: 1400, currentVideosPerMonth: 4, competitorVideosPerMonth: 12, grossMarginPercent: 60 },
+  jaas_bundle: { monthlyRejectedProjects: 2, averageProjectValueUsd: 6500, monthlyVideoBudgetUsd: 3200, currentVideosPerMonth: 1, competitorVideosPerMonth: 6, grossMarginPercent: 55 },
+  gtm_engineering: { monthlyRejectedProjects: 2, averageProjectValueUsd: 8000, monthlyVideoBudgetUsd: 3800, currentVideosPerMonth: 1, competitorVideosPerMonth: 7, grossMarginPercent: 65 },
 }
 
 export const VIDEO_PIPELINE_STAGES = [
   { id: "brief", label: "企画ブリーフ作成", owner: "Dify / DeepSeek", gate: "企業カルテと訴求軸がそろっている" },
   { id: "storyboard", label: "絵コンテ・字幕・CTA", owner: "Sales OS", gate: "未検証の断定を入れず、推定値は推定と明記する" },
-  { id: "asset_prompts", label: "ComfyUI素材指示", owner: "n8n -> ComfyUI", gate: "ブランド・業界・用途に合う素材だけ生成する" },
-  { id: "gpu_route", label: "Vast.ai GPU割当", owner: "n8n -> Vast.ai", gate: "動画サブスクや重いComfyUI生成だけGPUを起動する" },
-  { id: "render", label: "HyperFrames / Remotionレンダー", owner: "Renderer", gate: "営業動画は軽量レンダーを優先する" },
-  { id: "review", label: "Slack / Appsmith確認", owner: "Human", gate: "初回納品・契約前・危険表現は人間確認へ戻す" },
+  { id: "asset_prompts", label: "ComfyUI素材指示", owner: "Trigger.dev -> ComfyUI", gate: "ブランド、業界、用途に合う素材だけ生成する" },
+  { id: "gpu_route", label: "Vast.ai GPU割当", owner: "Trigger.dev -> Vast.ai", gate: "動画サブスクや重いComfyUI生成だけGPUを起動する" },
+  { id: "render", label: "HyperFrames / OpenMontageレンダー", owner: "Renderer", gate: "用途に応じて軽量レンダーとプロ納品レンダーを分ける" },
+  { id: "review", label: "Slack / Appsmith確認", owner: "Human", gate: "初回納品、契約前、危険表現は人間確認へ戻す" },
   { id: "delivery", label: "R2配信・Twenty記録", owner: "Sales OS", gate: "URLと納品ステータスをSSOTへ保存する" },
 ] as const
 
@@ -173,8 +124,7 @@ export function buildVideoLossSimulation(input: {
     competitorVideosPerMonth: boundedNumber(input.inputs?.competitorVideosPerMonth, defaults.competitorVideosPerMonth, 0, 500),
     grossMarginPercent: boundedNumber(input.inputs?.grossMarginPercent, defaults.grossMarginPercent, 0, 100),
   }
-  const rejectedProfit =
-    merged.monthlyRejectedProjects * merged.averageProjectValueUsd * (merged.grossMarginPercent / 100)
+  const rejectedProfit = merged.monthlyRejectedProjects * merged.averageProjectValueUsd * (merged.grossMarginPercent / 100)
   const contentGap = Math.max(0, merged.competitorVideosPerMonth - merged.currentVideosPerMonth)
   const gapPenalty = Math.round(contentGap * Math.max(merged.averageProjectValueUsd * 0.08, merged.monthlyVideoBudgetUsd * 0.25))
   const monthlyLoss = Math.round(rejectedProfit + gapPenalty)
@@ -187,15 +137,14 @@ export function buildVideoLossSimulation(input: {
     monthly_loss_usd: monthlyLoss,
     annual_loss_usd: annualLoss,
     confidence: "operator_estimate",
-    formula:
-      "monthlyRejectedProjects * averageProjectValueUsd * grossMarginPercent + contentGap * max(projectValue * 8%, monthlyVideoBudget * 25%)",
+    formula: "monthlyRejectedProjects * averageProjectValueUsd * grossMarginPercent + contentGap * max(projectValue * 8%, monthlyVideoBudget * 25%)",
     assumptions: [
       `${segmentLabel}向けの初期仮説です。`,
       `訴求軸は「${angleLabel}」です。`,
       `月間失注 ${merged.monthlyRejectedProjects}件、平均案件単価 $${merged.averageProjectValueUsd.toLocaleString()}、粗利率 ${merged.grossMarginPercent}% として試算しています。`,
       `競合との動画本数差 ${contentGap}本/月を、信頼・比較検討での機会損失として控えめに加算しています。`,
     ],
-    customer_safe_summary_ja: `公開データとヒアリング前の仮説に基づく推定では、動画導線の不足により年間約 $${annualLoss.toLocaleString()} 規模の機会損失余地があります。`,
+    customer_safe_summary_ja: `公開データとヒアリング前の仮説に基づく推定では、動画導線の不足により年間約$${annualLoss.toLocaleString()}規模の機会損失余地があります。`,
     customer_safe_summary_en: `Based on public signals and pre-call assumptions, the video gap may represent an estimated annual opportunity loss of about $${annualLoss.toLocaleString()}.`,
     verification_status: "estimate_only",
     customer_copy_allowed: true,
@@ -217,9 +166,9 @@ export function buildVideoClaimGuard(): VideoClaimGuard {
     customer_copy_policy_en:
       "Legal dates, penalties, market size, CAGR, and benchmark multipliers require a primary-source URL before customer-facing assertions.",
     dify_instruction_ja:
-      "未検証の法改正・罰金額・市場統計・CAGR・業界平均を断定しない。使う場合はprimary_source_urlを添え、ない場合は推定・仮説としても顧客文面から外す。",
+      "未検証の法改正、罰金額、市場統計、CAGR、業界平均を断定しない。使う場合はprimary_source_urlを添え、ない場合は推定または仮説としても顧客文面から外す。",
     dify_instruction_en:
-      "Do not assert unverified legal, penalty, market, CAGR, or benchmark claims. Require primary_source_url, otherwise exclude from customer-facing copy.",
+      "Do not assert legal dates, fines, market statistics, CAGR, or industry benchmarks without a primary-source URL. Remove unsupported claims from customer-facing copy.",
     verified_sources: [],
   }
 }

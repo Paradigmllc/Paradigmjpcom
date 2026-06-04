@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest"
 import { getVideoPipelineConfig, VIDEO_PIPELINE_STAGES } from "./video-pipeline"
 
 describe("video pipeline config", () => {
-  it("keeps n8n as the orchestrator and exposes human gates", () => {
+  it("keeps Trigger.dev as the orchestrator and exposes human gates", () => {
     const config = getVideoPipelineConfig()
     expect(config.stages).toHaveLength(VIDEO_PIPELINE_STAGES.length)
     expect(config.stages.map((stage) => stage.id)).toContain("review")
-    expect(config.n8n.note).toContain("n8n")
+    expect(config.orchestrator.provider).toBe("trigger.dev")
+    expect(config.orchestrator.note).toContain("Trigger.dev")
     expect(config.vast.note).toContain("GPU")
     expect(config.dify.provider).toBe("dify_cloud")
     expect(config.dify.baseUrl).toBe("https://api.dify.ai")

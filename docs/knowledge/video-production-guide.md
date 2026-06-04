@@ -173,9 +173,9 @@ Dify (スクリプト生成)
   → Slack通知
 ```
 
-### n8n ワークフロー
+### Trigger.dev タスク
 
-`n8n-workflows/04-sales-video-pipeline.json` を n8n にインポート。
+動画量産ジョブはTrigger.devの `TRIGGER_VIDEO_PIPELINE_TASK_ID` に投入する。タスク側でVast.ai起動、ComfyUI API生成、OpenMontage組み立て、R2保存、Sales OSステータス更新を順番に行う。
 
 ### 環境変数
 
@@ -184,6 +184,8 @@ Dify (スクリプト生成)
 | HYPERFRAMES_API_URL | Cloud API利用時 | HyperFrames Cloud API |
 | COMFYUI_API_URL | ComfyUI利用時 | ComfyUI API URL |
 | VAST_API_KEY | GPU利用時 | Vast.ai API Key |
+| TRIGGER_SECRET_KEY | プロ級動画投入時 | Trigger.dev Secret API Key |
+| TRIGGER_VIDEO_PIPELINE_TASK_ID | プロ級動画投入時 | Trigger.dev task id |
 
 ---
 

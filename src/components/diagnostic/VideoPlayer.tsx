@@ -110,7 +110,7 @@ export default function VideoPlayer({ data, script, trackingSlug }: Props) {
           : "An Astro-style replacement demo shows the improved first view, CTA, and proof architecture in context.",
         210,
       ),
-      pipelineTitle: ja ? "制作ラインはn8nが交通整理し、重い生成だけを専用レンダーへ渡します。" : "n8n coordinates the line; renderers only do renderer work.",
+      pipelineTitle: ja ? "制作ラインはTrigger.devが交通整理し、重い生成だけを専用レンダーへ渡します。" : "Trigger.dev coordinates the line; renderers only do renderer work.",
       pipelineBody: ja
         ? "Dify Cloudが文面とテンプレ判定、HyperFrames/Remotionが営業動画、ComfyUI/Vast.aiは必要な素材生成、R2が配信を担当します。"
         : "Dify Cloud handles copy and template selection, HyperFrames/Remotion create the sales video, ComfyUI/Vast.ai handle heavy assets, and R2 serves delivery.",
