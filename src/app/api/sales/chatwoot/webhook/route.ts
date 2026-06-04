@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { authorizeWebhookRequest } from "@/lib/admin-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { captureException } from "@/lib/error-monitor"
 import {
   child,
   companyIdFromRecords,
@@ -35,6 +36,7 @@ export async function POST(req: NextRequest) {
     body = parsed
   } catch (error) {
     console.error("[chatwoot-webhook] invalid JSON body:", error)
+    await captureException(error, { source: "chatwoot-webhook/invalid-json" })
     return NextResponse.json({ ok: false, error: "invalid json body" }, { status: 400 })
   }
 
@@ -89,7 +91,13 @@ export async function POST(req: NextRequest) {
       raw: body,
     },
   })
-  if (!persist.ok) return NextResponse.json({ ok: false, error: persist.error }, { status: 500 })
+  if (!persist.ok) {
+    await captureException(new Error(persist.error ?? "Failed to persist Chatwoot event"), {
+      source: "chatwoot-webhook/persist",
+      context: { summary },
+    })
+    return NextResponse.json({ ok: false, error: persist.error }, { status: 500 })
+  }
 
   return NextResponse.json({
     ok: true,

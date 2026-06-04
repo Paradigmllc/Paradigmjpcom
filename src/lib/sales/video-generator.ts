@@ -317,6 +317,11 @@ export async function generateDiagnosticVideo(
     return { ok: true, video_url: result.video_url ?? previewUrl ?? undefined, ...baseResult }
   } catch (error) {
     console.error("[video-generator] HyperFrames render failed:", error)
+    const { captureException } = await import("@/lib/error-monitor")
+    await captureException(error, {
+      source: "video-generator/hyperframes-render-failed",
+      context: { companyIdOrSlugOrDomain, reportLocale, api },
+    })
     return {
       ok: !!previewUrl,
       video_url: previewUrl ?? undefined,

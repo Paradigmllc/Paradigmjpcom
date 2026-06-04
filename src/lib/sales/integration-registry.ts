@@ -11,6 +11,17 @@ import {
   checkOpenMontageHealth,
   checkR2DeliveryHealth,
   checkStagehandHealth as checkStagehandServiceHealth,
+  checkVastHealth,
+  checkAstroHealth,
+  checkCalcomHealth,
+  checkCrawleeHealth,
+  checkPlaywrightStealthHealth,
+  checkDifyHealth,
+  checkN8nHealth,
+  checkSlidevGotenbergHealth,
+  checkSupabaseStudioHealth,
+  checkFFmpegHealth,
+  checkFFCreatorHealth,
 } from "./oss-service-health"
 
 export type SalesIntegrationCategory =
@@ -52,6 +63,17 @@ export interface SalesIntegrationDefinition {
     | "openmontage_health"
     | "comfyui_health"
     | "r2_health"
+    | "vast_health"
+    | "astro_health"
+    | "calcom_health"
+    | "crawlee_health"
+    | "playwright_stealth_health"
+    | "dify_health"
+    | "n8n_health"
+    | "slidev_gotenberg_health"
+    | "supabase_studio_health"
+    | "ffmpeg_health"
+    | "ffcreator_health"
   docsUrl?: string
   recommended: boolean
   notes: string
@@ -95,6 +117,18 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     notes: "営業データの正本です。service_role未設定時はSales OSをdegraded表示にし、偽成功で処理を進めません。",
   },
   {
+    slug: "supabase_studio",
+    displayName: "Supabase Studio",
+    category: "crm_ops",
+    deployment: "oss",
+    role: "Database management GUI for Supabase SSOT.",
+    requiredEnv: ["NEXT_PUBLIC_SUPABASE_STUDIO_URL"],
+    optionalEnv: [],
+    balance: "supabase_studio_health",
+    recommended: true,
+    notes: "Allows direct row-level exploration and editing.",
+  },
+  {
     slug: "dify_cloud",
     displayName: "Dify Cloud",
     category: "orchestration",
@@ -103,7 +137,7 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     requiredEnv: [],
     requiredAnyEnv: DIFY_RUNTIME_KEY_ENV_NAMES,
     optionalEnv: [...DIFY_RUNTIME_URL_ENV_NAMES],
-    balance: "manual",
+    balance: "dify_health",
     docsUrl: "https://docs.dify.ai/api-reference/workflows/run-workflow",
     recommended: true,
     notes: "DifyはCloud版 api.dify.ai のみを正とする。用途別キーを認識し、APIキーの実値はUI・ログ・n8nペイロードへ出さない。",
@@ -128,7 +162,7 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     role: "Webhook orchestration for enrichment, outreach dry-run, approvals, and notifications.",
     requiredEnv: ["N8N_WEBHOOK_SECRET"],
     optionalEnv: ["N8N_BASE_URL", "N8N_SALES_ENRICHMENT_WEBHOOK_URL", "N8N_PLAYWRIGHT_FORM_WEBHOOK"],
-    balance: "none",
+    balance: "n8n_health",
     recommended: true,
     notes: "大量実行はn8n側の同時実行数とSales OS側のbatch limitで抑制する。",
   },
@@ -191,7 +225,7 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     role: "Structured crawling and contact path discovery.",
     requiredEnv: ["CRAWLEE_WORKER_URL"],
     optionalEnv: [],
-    balance: "none",
+    balance: "crawlee_health",
     docsUrl: "https://crawlee.dev/",
     recommended: true,
     notes: "Next.js本体では軽量fetch、重いクロールはworkerに逃がす。",
@@ -229,7 +263,7 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     role: "Approved form automation worker after CAPTCHA/anti-bot gates pass.",
     requiredEnv: ["OUTREACH_WORKER_URL"],
     optionalEnv: ["PLAYWRIGHT_STEALTH_ENABLED"],
-    balance: "none",
+    balance: "playwright_stealth_health",
     recommended: true,
     notes: "CAPTCHA/Cloudflare Challenge検出時は自動送信せず、人間キューへ切り替える。",
   },
@@ -475,7 +509,7 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     role: "Proposal deck and PDF generation.",
     requiredEnv: ["GOTENBERG_URL"],
     optionalEnv: ["SLIDEV_RENDER_URL"],
-    balance: "none",
+    balance: "slidev_gotenberg_health",
     recommended: true,
     notes: "Difyが構成案を生成し、Slidev/GotenbergでPDF化する。",
   },
@@ -580,6 +614,42 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     notes: "Public ComfyUI endpoints must not be unauthenticated. Revenue OS requires COMFYUI_API_KEY and /system_stats reachability before queueing jobs.",
   },
   {
+    slug: "vast_api",
+    displayName: "Vast.ai API",
+    category: "video",
+    deployment: "api",
+    role: "On-demand GPU instances for video and asset generation.",
+    requiredEnv: ["VAST_API_KEY"],
+    optionalEnv: [],
+    balance: "vast_health",
+    recommended: true,
+    notes: "Allocates remote GPU power when on-premise hardware is saturated.",
+  },
+  {
+    slug: "ffmpeg",
+    displayName: "FFmpeg",
+    category: "video",
+    deployment: "local",
+    role: "Local or binary video manipulation tool.",
+    requiredEnv: ["FFMPEG_BIN"],
+    optionalEnv: [],
+    balance: "ffmpeg_health",
+    recommended: true,
+    notes: "Required for base level video trimming and compression.",
+  },
+  {
+    slug: "ffcreator",
+    displayName: "FFCreator",
+    category: "video",
+    deployment: "oss",
+    role: "Video pipeline and animation worker.",
+    requiredEnv: ["FFCREATOR_WORKER_URL"],
+    optionalEnv: [],
+    balance: "ffcreator_health",
+    recommended: true,
+    notes: "Alternative Node-based worker for video generation.",
+  },
+  {
     slug: "video_media_sources",
     displayName: "Pexels / ElevenLabs / Faster Whisper",
     category: "video",
@@ -630,7 +700,7 @@ const REGISTRY: SalesIntegrationDefinition[] = [
     role: "Fast reusable replacement demo sites for Web production proposals.",
     requiredEnv: [],
     optionalEnv: ["ASTRO_DEMO_FACTORY_URL"],
-    balance: "none",
+    balance: "astro_health",
     recommended: true,
     notes: "テンプレートは言語・業界・訴求別に分け、Difyが選択する。",
   },
@@ -1044,9 +1114,13 @@ export async function getSalesIntegrationStatus(
   const checkedAt = new Date().toISOString()
   const rows: SalesIntegrationStatus[] = []
   for (const def of REGISTRY) {
-    const status = statusFor(def)
-    const defaults = defaultBalance(def, status)
+    const envStatus = statusFor(def)
+    const defaults = defaultBalance(def, envStatus)
     const live = options.liveBalance ? await liveBalance(def) : null
+    const status =
+      live && envStatus === "ready" && (live.balanceStatus === "error" || live.balanceStatus === "not_configured")
+        ? "partial"
+        : envStatus
     const configuredRequiredEnv = [
       ...configuredEnv(def.requiredEnv),
       ...configuredEnv(def.requiredAnyEnv ?? []),

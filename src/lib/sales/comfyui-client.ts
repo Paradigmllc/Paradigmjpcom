@@ -11,6 +11,7 @@
  */
 
 import { callDeepSeek } from "@/lib/deepseek"
+import { captureException } from "@/lib/error-monitor"
 
 /* ───── 型定義 ───── */
 
@@ -187,7 +188,12 @@ export async function queueComfyuiWorkflow(
       } catch (error) {
         console.error("[comfyui-client] failed to read queue error body:", error)
       }
-      return { ok: false, error: `ComfyUI queue failed: HTTP ${res.status} ${text.slice(0, 200)}` }
+      const errMsg = `ComfyUI queue failed: HTTP ${res.status} ${text.slice(0, 200)}`
+      await captureException(new Error(errMsg), {
+        source: "comfyui-client/queue-workflow-http-error",
+        context: { workflowType: request.workflowType, baseUrl, status: res.status },
+      })
+      return { ok: false, error: errMsg }
     }
 
     const data = (await res.json()) as { prompt_id?: string; error?: string }
@@ -197,6 +203,11 @@ export async function queueComfyuiWorkflow(
 
     return { ok: true, promptId: data.prompt_id }
   } catch (error) {
+    console.error("[comfyui-client] queue workflow failed:", error)
+    await captureException(error, {
+      source: "comfyui-client/queue-workflow",
+      context: { workflowType: request.workflowType, baseUrl },
+    })
     return {
       ok: false,
       error: error instanceof Error ? error.message : "ComfyUI queue network error",
@@ -232,7 +243,12 @@ export async function getComfyuiProgress(
       if (res.status === 404) {
         return { ok: true, status: "running", progress: 50 }
       }
-      return { ok: false, status: "error", progress: 0, error: `HTTP ${res.status}` }
+      const errMsg = `HTTP ${res.status}`
+      await captureException(new Error(`ComfyUI progress check failed with status: ${errMsg}`), {
+        source: "comfyui-client/progress-check-http-error",
+        context: { promptId, baseUrl, status: res.status },
+      })
+      return { ok: false, status: "error", progress: 0, error: errMsg }
     }
 
     const data = (await res.json()) as Record<string, unknown>
@@ -269,6 +285,11 @@ export async function getComfyuiProgress(
 
     return { ok: true, status: "running", progress: 50 }
   } catch (error) {
+    console.error("[comfyui-client] progress check failed:", error)
+    await captureException(error, {
+      source: "comfyui-client/progress-check",
+      context: { promptId, baseUrl },
+    })
     return {
       ok: false,
       status: "error",

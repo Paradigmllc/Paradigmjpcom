@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { authorizeWebhookRequest } from "@/lib/admin-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { captureException } from "@/lib/error-monitor"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -73,6 +74,7 @@ export async function POST(req: NextRequest) {
     body = parsed
   } catch (error) {
     console.error("[calcom-webhook] invalid JSON body:", error)
+    captureException(error instanceof Error ? error : new Error("calcom-webhook invalid JSON body"), { source: "calcom-webhook-json" })
     return NextResponse.json({ ok: false, error: "invalid json body" }, { status: 400 })
   }
 
@@ -112,6 +114,7 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     console.error("[calcom-webhook] upsert failed:", error.message)
+    captureException(new Error(`calcom-webhook upsert failed: ${error.message}`), { source: "calcom-webhook-upsert" })
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
   }
 

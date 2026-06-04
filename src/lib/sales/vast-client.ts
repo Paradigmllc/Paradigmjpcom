@@ -13,6 +13,7 @@
  */
 
 /* ───── 型定義 ───── */
+import { captureException } from "@/lib/error-monitor"
 
 export interface VastClientConfig {
   ready: boolean
@@ -132,6 +133,15 @@ function authHeaders(): Record<string, string> {
   }
 }
 
+async function readErrorBody(res: Response, source: string): Promise<string> {
+  try {
+    return await res.text()
+  } catch (error) {
+    console.error(`[vast-client] failed to read ${source} error body:`, error)
+    return ""
+  }
+}
+
 /**
  * GPU オファーを検索する。
  * フィルタ条件に合致するインスタンス一覧を返す。
@@ -164,13 +174,14 @@ export async function searchVastOffers(
     })
 
     if (!res.ok) {
-      const text = await res.text().catch(() => "")
+      const text = await readErrorBody(res, "search")
       return { ok: false, offers: [], error: `Vast.ai search failed: HTTP ${res.status} ${text.slice(0, 200)}` }
     }
 
     const data = (await res.json()) as { offers?: VastSearchOffer[] }
     return { ok: true, offers: data.offers ?? [] }
   } catch (error) {
+    captureException(error instanceof Error ? error : new Error("vast-client search error"), { source: "vast-search" })
     return {
       ok: false,
       offers: [],
@@ -214,7 +225,7 @@ export async function createVastInstance(
     })
 
     if (!res.ok) {
-      const text = await res.text().catch(() => "")
+      const text = await readErrorBody(res, "create")
       return { ok: false, error: `Vast.ai create instance failed: HTTP ${res.status} ${text.slice(0, 200)}` }
     }
 
@@ -225,6 +236,7 @@ export async function createVastInstance(
 
     return { ok: true, instanceId: data.new_instance.id }
   } catch (error) {
+    captureException(error instanceof Error ? error : new Error("vast-client create error"), { source: "vast-create" })
     return {
       ok: false,
       error: error instanceof Error ? error.message : "Vast.ai create instance network error",
@@ -250,13 +262,14 @@ export async function listVastInstances(
     })
 
     if (!res.ok) {
-      const text = await res.text().catch(() => "")
+      const text = await readErrorBody(res, "list")
       return { ok: false, instances: [], error: `Vast.ai list failed: HTTP ${res.status} ${text.slice(0, 200)}` }
     }
 
     const data = (await res.json()) as { instances?: VastInstance[] }
     return { ok: true, instances: data.instances ?? [] }
   } catch (error) {
+    captureException(error instanceof Error ? error : new Error("vast-client list error"), { source: "vast-list" })
     return {
       ok: false,
       instances: [],
@@ -313,12 +326,13 @@ async function vastInstanceAction(
     })
 
     if (!res.ok) {
-      const text = await res.text().catch(() => "")
+      const text = await readErrorBody(res, action)
       return { ok: false, error: `Vast.ai ${action} failed: HTTP ${res.status} ${text.slice(0, 200)}` }
     }
 
     return { ok: true }
   } catch (error) {
+    captureException(error instanceof Error ? error : new Error(`vast-client ${action} error`), { source: `vast-action-${action}` })
     return {
       ok: false,
       error: error instanceof Error ? error.message : `Vast.ai ${action} network error`,
@@ -363,13 +377,14 @@ export async function uploadToVastInstance(
     })
 
     if (!res.ok) {
-      const text = await res.text().catch(() => "")
+      const text = await readErrorBody(res, "upload")
       return { ok: false, error: `Vast.ai upload failed: HTTP ${res.status} ${text.slice(0, 200)}` }
     }
 
     const data = (await res.json()) as { url?: string }
     return { ok: true, url: data.url }
   } catch (error) {
+    captureException(error instanceof Error ? error : new Error("vast-client upload error"), { source: "vast-upload" })
     return {
       ok: false,
       error: error instanceof Error ? error.message : "Vast.ai upload network error",

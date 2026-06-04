@@ -300,3 +300,135 @@ export async function checkR2DeliveryHealth(): Promise<ServiceHealthResult> {
     balanceLabel: result.label,
   }
 }
+
+export async function checkVastHealth(): Promise<ServiceHealthResult> {
+  const missing = missingEnv(["VAST_API_KEY"])
+  if (missing.length > 0) return notConfigured(missing)
+  return { balanceStatus: "ok", balanceLabel: "VAST_API_KEY is configured" }
+}
+
+export async function checkAstroHealth(): Promise<ServiceHealthResult> {
+  const baseValue = envValue("ASTRO_DEMO_WORKER_URL") ?? envValue("ASTRO_DEMO_FACTORY_URL")
+  if (!baseValue) return notConfigured(["ASTRO_DEMO_WORKER_URL or ASTRO_DEMO_FACTORY_URL"])
+  try {
+    const res = await fetch(normalizeHttpBase(baseValue).toString(), { signal: AbortSignal.timeout(10_000) })
+    return { balanceStatus: res.ok ? "ok" : "error", balanceLabel: `reachable HTTP ${res.status}` }
+  } catch (error) {
+    return healthError("Astro", error)
+  }
+}
+
+export async function checkCalcomHealth(): Promise<ServiceHealthResult> {
+  const missing = missingEnv(["CALCOM_BASE_URL", "CALCOM_API_KEY"])
+  if (missing.length > 0) return notConfigured(missing)
+  try {
+    const base = normalizeHttpBase(envValue("CALCOM_BASE_URL") as string)
+    base.pathname = `${base.pathname}/api/health`.replace(/\/+/g, "/")
+    const res = await safeFetch(base.toString(), { signal: AbortSignal.timeout(10_000) })
+    return { balanceStatus: res.ok ? "ok" : "error", balanceLabel: `health endpoint HTTP ${res.status}` }
+  } catch (error) {
+    return healthError("Cal.com", error)
+  }
+}
+
+export async function checkCrawleeHealth(): Promise<ServiceHealthResult> {
+  const missing = missingEnv(["CRAWLEE_WORKER_URL"])
+  if (missing.length > 0) return notConfigured(missing)
+  try {
+    const res = await fetch(normalizeHttpBase(envValue("CRAWLEE_WORKER_URL") as string).toString(), { signal: AbortSignal.timeout(10_000) })
+    return { balanceStatus: res.ok ? "ok" : "error", balanceLabel: `reachable HTTP ${res.status}` }
+  } catch (error) {
+    return healthError("Crawlee", error)
+  }
+}
+
+export async function checkPlaywrightStealthHealth(): Promise<ServiceHealthResult> {
+  const missing = missingEnv(["OUTREACH_WORKER_URL"])
+  if (missing.length > 0) return notConfigured(missing)
+  try {
+    const res = await fetch(normalizeHttpBase(envValue("OUTREACH_WORKER_URL") as string).toString(), { signal: AbortSignal.timeout(10_000) })
+    return { balanceStatus: res.ok ? "ok" : "error", balanceLabel: `reachable HTTP ${res.status}` }
+  } catch (error) {
+    return healthError("Playwright Stealth", error)
+  }
+}
+
+export async function checkDifyHealth(): Promise<ServiceHealthResult> {
+  const missing = missingEnv(["DIFY_API_KEY", "DIFY_BASE_URL"])
+  if (missing.length > 0) return notConfigured(missing)
+  try {
+    const base = normalizeHttpBase(envValue("DIFY_BASE_URL") as string)
+    const res = await fetch(base.toString(), { signal: AbortSignal.timeout(10_000) })
+    return { balanceStatus: res.ok ? "ok" : "error", balanceLabel: `reachable HTTP ${res.status}` }
+  } catch (error) {
+    return healthError("Dify", error)
+  }
+}
+
+export async function checkN8nHealth(): Promise<ServiceHealthResult> {
+  const missing = missingEnv(["N8N_BASE_URL"])
+  if (missing.length > 0) return notConfigured(missing)
+  try {
+    const base = normalizeHttpBase(envValue("N8N_BASE_URL") as string)
+    base.pathname = `${base.pathname}/healthz`.replace(/\/+/g, "/")
+    const res = await safeFetch(base.toString(), { signal: AbortSignal.timeout(10_000) })
+    return { balanceStatus: res.ok ? "ok" : "error", balanceLabel: `healthz endpoint HTTP ${res.status}` }
+  } catch (error) {
+    return healthError("n8n", error)
+  }
+}
+
+export async function checkSlidevGotenbergHealth(): Promise<ServiceHealthResult> {
+  const missing = missingEnv(["SLIDEV_RENDER_URL", "GOTENBERG_URL"])
+  if (missing.length > 0) return notConfigured(missing)
+  try {
+    const slidev = normalizeHttpBase(envValue("SLIDEV_RENDER_URL") as string)
+    const gotenberg = normalizeHttpBase(envValue("GOTENBERG_URL") as string)
+    const fetchEndpoint = async (service: string, url: URL): Promise<{ ok: boolean; status: number }> => {
+      try {
+        return await fetch(url.toString(), { signal: AbortSignal.timeout(10_000) })
+      } catch (error) {
+        console.error(`[oss-service-health] ${service} endpoint check failed:`, error)
+        return { ok: false, status: 0 }
+      }
+    }
+    const [resSlidev, resGotenberg] = await Promise.all([
+      fetchEndpoint("Slidev", slidev),
+      fetchEndpoint("Gotenberg", gotenberg),
+    ])
+    return {
+      balanceStatus: (resSlidev.ok && resGotenberg.ok) ? "ok" : "error",
+      balanceLabel: `slidev HTTP ${resSlidev.status}, gotenberg HTTP ${resGotenberg.status}`
+    }
+  } catch (error) {
+    return healthError("Slidev/Gotenberg", error)
+  }
+}
+
+export async function checkSupabaseStudioHealth(): Promise<ServiceHealthResult> {
+  const missing = missingEnv(["NEXT_PUBLIC_SUPABASE_STUDIO_URL"])
+  if (missing.length > 0) return notConfigured(missing)
+  try {
+    const res = await fetch(normalizeHttpBase(envValue("NEXT_PUBLIC_SUPABASE_STUDIO_URL") as string).toString(), { signal: AbortSignal.timeout(10_000) })
+    return { balanceStatus: res.ok ? "ok" : "error", balanceLabel: `reachable HTTP ${res.status}` }
+  } catch (error) {
+    return healthError("Supabase Studio", error)
+  }
+}
+
+export async function checkFFmpegHealth(): Promise<ServiceHealthResult> {
+  const missing = missingEnv(["FFMPEG_BIN"])
+  if (missing.length > 0) return notConfigured(missing)
+  return { balanceStatus: "ok", balanceLabel: `FFMPEG_BIN is set to ${envValue("FFMPEG_BIN")}` }
+}
+
+export async function checkFFCreatorHealth(): Promise<ServiceHealthResult> {
+  const missing = missingEnv(["FFCREATOR_WORKER_URL"])
+  if (missing.length > 0) return notConfigured(missing)
+  try {
+    const res = await fetch(normalizeHttpBase(envValue("FFCREATOR_WORKER_URL") as string).toString(), { signal: AbortSignal.timeout(10_000) })
+    return { balanceStatus: res.ok ? "ok" : "error", balanceLabel: `reachable HTTP ${res.status}` }
+  } catch (error) {
+    return healthError("FFCreator", error)
+  }
+}

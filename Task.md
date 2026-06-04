@@ -909,6 +909,7 @@
 - [x] Hardened ComfyUI runtime calls so `/prompt` and `/history/{prompt_id}` require `COMFYUI_API_KEY`; missing key returns a failed result instead of queueing unauthenticated GPU jobs.
 - [x] Created Coolify env placeholders for OpenMontage, ComfyUI, and R2 production URLs/keys without writing secret values to git-managed files.
 - [x] Added `scripts/build-next.mjs` heartbeat output so long Next.js production builds do not look idle to Coolify remote execution.
+- [x] Adjusted live integration audit status so a service with configured URL but failed health check is downgraded from `ready` to `partial`.
 - [x] Added operator setup guide: `docs/knowledge/revenue-os-production-service-setup.md`.
 - [x] Verification: `node --check scripts/audit-sales-data-acquisition.mjs`, `npx tsc --noEmit --pretty false`, `npm test -- --run src/lib/sales/integration-registry.test.ts`, and forbidden-pattern scan passed.
 - [ ] Operator action required: paste real values into Coolify for `CHATWOOT_API_KEY`, `CHATWOOT_ACCOUNT_ID`, `DIRECTUS_TOKEN`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `BROWSERLESS_TOKEN`, `STAGEHAND_API_KEY`, `HYPERFRAMES_API_KEY`, `OPENMONTAGE_API_KEY`, `COMFYUI_API_KEY`, and Cloudflare R2 bucket/account/access/secret/public URL. Current live audit correctly reports these as missing or unreachable.

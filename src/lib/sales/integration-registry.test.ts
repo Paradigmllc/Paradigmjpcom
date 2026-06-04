@@ -4,6 +4,7 @@ import { getSalesIntegrationStatus } from "./integration-registry"
 
 afterEach(() => {
   vi.unstubAllEnvs()
+  vi.unstubAllGlobals()
 })
 
 describe("getSalesIntegrationStatus", () => {
@@ -76,5 +77,15 @@ describe("getSalesIntegrationStatus", () => {
       "CLOUDFLARE_R2_ACCESS_KEY_ID",
       "CLOUDFLARE_R2_SECRET_ACCESS_KEY",
     ])
+  })
+
+  it("downgrades URL-only ready status when live health fails", async () => {
+    vi.stubEnv("KEYSTATIC_BASE_URL", "https://keystatic.paradigmjp.com")
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 503 })))
+
+    const rows = await getSalesIntegrationStatus({ liveBalance: true })
+    const keystatic = rows.find((row) => row.slug === "keystatic_demo_cms")
+    expect(keystatic?.status).toBe("partial")
+    expect(keystatic?.balanceStatus).toBe("error")
   })
 })

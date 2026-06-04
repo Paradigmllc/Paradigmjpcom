@@ -121,7 +121,17 @@ export async function uploadToR2(objectKey: string, body: Buffer | Uint8Array, c
     Body: body,
     ContentType: contentType,
   })
-  await client.send(command)
+  try {
+    await client.send(command)
+  } catch (error) {
+    console.error("[r2-storage] uploadToR2 failed:", error)
+    const { captureException } = await import("@/lib/error-monitor")
+    await captureException(error, {
+      source: "r2-storage/uploadToR2",
+      context: { bucket, key, contentType },
+    })
+    throw error
+  }
   const pub = publicUrlFor(config.publicBaseUrl, key)
   if (!pub) {
     throw new Error("R2 public base URL is not configured")
