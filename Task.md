@@ -2,38 +2,43 @@
 
 ## CURRENT STATUS
 
-- Revenue OS の動画制作タブを旧フォームUIから削除し、Supabase `sales_video_jobs` をSSOTにした「OSS Video Studio」へ全面差し替え済み。
-- 新スタジオは HyperFrames / OpenMontage / ComfyUI API / Vast.ai / LiveKit / Cloudflare R2 / n8n を同じ制作ジョブ上で見られる構成に変更済み。
-- `/api/sales/video-pipeline/orchestrate` を追加し、既存 `runVideoOrchestrator` から Vast -> ComfyUI -> TTS -> 字幕 -> OSSレンダー -> R2 -> n8n の統合実行を呼べるようにした。
-- Keystatic は App Router の正規 catch-all page 構成へ修正し、`keystatic.paradigmjp.com` のサブドメインrewriteも next-intl に飲まれないよう修正済み。
-- 診断レポートとデモサイトは外部PostgREST/壊れたCMSリンクへ飛ばさず、Revenue OS内部の Supabase SSOT ワークベンチで編集・プレビューする形へ変更済み。
-- Chatwoot webhook は受信後に Supabase 活動ログへ保存し、会社IDが取れた場合は Twenty へ即時同期するよう変更済み。
+- Revenue OS の「動画制作」画面は、旧フォームを廃止し、Supabase `sales_video_jobs` をSSOTにする OSS Video Studio として再構成中。
+- GUIには制作条件、OSSレンダラー、ComfyUI素材生成、TTS/レンダーskip、損失シミュレーション、制作ジョブ一覧、R2納品URL、プロンプト/調整欄を表示する。
+- プロンプト/調整欄は、ナラティブ、ComfyUI向けビジュアル指示、ネガティブプロンプトをSupabase制作ジョブと `/api/sales/video-pipeline/orchestrate` に渡す。
+- ComfyUI生成はスタブURLではなく、`src/lib/sales/comfyui-client.ts` の `/prompt` 実行経路を呼ぶよう修正済み。
+- Vast.ai検索APIは公式仕様に合わせ、`POST https://console.vast.ai/api/v0/bundles/` を使う。インスタンス作成は `PUT /api/v0/asks/{offer_id}/` へ修正済み。
+- Cloudflare R2 は本番envの公開URLを保存済み実値へ修正し、監査用MP4を実際にPutして公開GETまで成功。
 
 ## ACTIVE HANDOFF
 
-- 変更ファイル:
+- 主な変更ファイル:
   - `src/components/sales-dashboard/SalesVideoPipelinePanel.tsx`
   - `src/components/sales-dashboard/SalesVideoStudioKit.tsx`
+  - `src/lib/sales/video-generator.ts`
+  - `src/lib/sales/video-orchestrator.ts`
+  - `src/lib/sales/video-pipeline.ts`
+  - `src/lib/sales/vast-client.ts`
+  - `src/lib/sales/vast-comfyui-deploy.ts`
+  - `src/app/api/sales/video-pipeline/jobs/route.ts`
   - `src/app/api/sales/video-pipeline/orchestrate/route.ts`
-  - `src/components/sales-dashboard/SalesCommandCenter.tsx`
-  - `src/app/keystatic/[[...params]]/page.tsx`
-  - `src/app/keystatic/layout.tsx`
-  - `keystatic.config.ts`
-  - `src/middleware.ts`
-  - `src/app/api/sales/chatwoot/webhook/route.ts`
-  - `content/keystatic/demo-sites/example-domain.mdoc`
-  - `content/keystatic/sales-pages/japan-entry-lp.mdoc`
+  - `scripts/audit-video-ops.mjs`
+  - `docs/knowledge/video-ops-audit-latest.json`
 - 検証済み:
   - `npx tsc --noEmit --pretty false`
   - `npm test -- --run src/lib/sales/video-pipeline.test.ts src/lib/sales/video-production.test.ts src/lib/sales/integration-registry.test.ts src/lib/sales/r2-storage.test.ts`
-  - `git diff --check`
-  - `npm run context:audit`
-  - `npm run build`
-- 次アクション:
-  - commit / push / Coolify deploy
-  - 本番URLで `/ja/admin/sales?tab=videoPipeline`, `?tab=keystatic`, `?tab=supabaseStudio`, `https://keystatic.paradigmjp.com` を確認
+  - `node scripts/audit-video-ops.mjs`
+- 監査結果:
+  - Vast.ai API: OK。オファー検索HTTP 200、インスタンス一覧HTTP 200。
+  - Cloudflare R2: OK。`HeadBucket`、監査用MP4 `PutObject`、公開URL `GET` が成功。
+  - ComfyUI API: NG。`COMFYUI_API_KEY` が本番envで空、`https://comfyui.paradigmjp.com/system_stats` はTLS検証失敗かつ `-k` でも503。Coolify上の `ComfyUI Landing` はnginx redirectサービスで、本物のComfyUI APIではない。
+
+## NEXT ACTIONS
+
+- ComfyUIは現状、本番投入できない。Vast.aiで本物のComfyUI APIインスタンスを起動するか、Coolify上にComfyUI本体を別サービスとして構築し、`COMFYUI_API_URL` と `COMFYUI_API_KEY` を同じ認証プロキシに接続する。
+- ComfyUI復旧後、`node scripts/audit-video-ops.mjs` を再実行し、ComfyUI `system_stats` / `queue`、Vast、R2の全OKを確認する。
+- コード変更後は build、commit、push、Coolify deploy、本番URL fingerprint確認まで実施する。
 
 ## RISKS
 
-- OpenMontage/ComfyUI/Vast/LiveKit の実行成否は本番環境変数と外部サービス疎通に依存する。UIとAPIは本番ビルド済みだが、実レンダーは本番デプロイ後のAPI実行で再確認する。
-- Keystaticはlocal storage構成のため、Git連携や編集権限運用は別途キー設定が必要。
+- 現時点でVastとR2は実務経路が通っているが、ComfyUIだけは実APIが存在しないため、Kling/HeyGen級の生成素材作成はまだ本番readyではない。
+- R2監査用MP4は `docs/knowledge/video-ops-audit-latest.json` に公開URLを記録している。秘密値は記録していない。

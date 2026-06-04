@@ -97,6 +97,12 @@ export interface OrchestratorOptions {
   priority?: number
   /** 依頼者 */
   requestedBy?: string
+  /** GUIから入力された制作プロンプトと調整指示 */
+  creativeBrief?: {
+    narrativePrompt?: string | null
+    visualPrompt?: string | null
+    negativePrompt?: string | null
+  }
 }
 
 export interface OrchestratorStepResult {
@@ -179,6 +185,7 @@ export async function runVideoOrchestrator(
     skipDispatch = false,
     priority,
     requestedBy,
+    creativeBrief,
   } = options
 
   try {
@@ -233,29 +240,31 @@ export async function runVideoOrchestrator(
     }
 
     if (comfyuiConfig.ready) {
+      const promptOverride = creativeBrief?.visualPrompt?.trim() || null
+      const negativePromptOverride = creativeBrief?.negativePrompt?.trim() || null
       if (generateBackground) {
         const bgStart = Date.now()
-        comfyui.background = await generateComfyUIBackground({ companyName, industry, locale, description: `${companyName}向け背景素材` })
+        comfyui.background = await generateComfyUIBackground({ companyName, industry, locale, description: `${companyName}向け背景素材`, promptOverride, negativePromptOverride })
         steps.push(makeStep("comfyui_background", comfyui.background.ok, bgStart, { error: comfyui.background.error }))
       }
       if (generateAvatar) {
         const avStart = Date.now()
-        comfyui.avatar = await generateComfyUIAvatar({ companyName, industry, locale, description: `${companyName}向けアバター` })
+        comfyui.avatar = await generateComfyUIAvatar({ companyName, industry, locale, description: `${companyName}向けアバター`, promptOverride, negativePromptOverride })
         steps.push(makeStep("comfyui_avatar", comfyui.avatar.ok, avStart, { error: comfyui.avatar.error }))
       }
       if (generateBroll) {
         const brStart = Date.now()
-        comfyui.broll = await generateComfyUIBroll({ companyName, industry, locale, description: `${companyName}向けB-Roll` })
+        comfyui.broll = await generateComfyUIBroll({ companyName, industry, locale, description: `${companyName}向けB-Roll`, promptOverride, negativePromptOverride })
         steps.push(makeStep("comfyui_broll", comfyui.broll.ok, brStart, { error: comfyui.broll.error }))
       }
       if (generateThumbnail) {
         const thStart = Date.now()
-        comfyui.thumbnail = await generateComfyUIThumbnail({ companyName, industry, locale, description: `${companyName}向けサムネイル` })
+        comfyui.thumbnail = await generateComfyUIThumbnail({ companyName, industry, locale, description: `${companyName}向けサムネイル`, promptOverride, negativePromptOverride })
         steps.push(makeStep("comfyui_thumbnail", comfyui.thumbnail.ok, thStart, { error: comfyui.thumbnail.error }))
       }
       if (generateVideo) {
         const vdStart = Date.now()
-        comfyui.video = await generateComfyUIVideo({ companyName, industry, locale, description: `${companyName}向け動画` })
+        comfyui.video = await generateComfyUIVideo({ companyName, industry, locale, description: `${companyName}向け動画`, promptOverride, negativePromptOverride })
         steps.push(makeStep("comfyui_video", comfyui.video.ok, vdStart, { error: comfyui.video.error }))
       }
     } else {
@@ -368,6 +377,7 @@ export async function runVideoOrchestrator(
       reportLocale: locale,
       priority,
       requestedBy,
+      creativeBrief,
     })
     steps.push(makeStep("create_job", jobResult.ok, jobStart, { error: jobResult.error }))
 

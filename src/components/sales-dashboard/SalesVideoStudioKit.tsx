@@ -139,6 +139,76 @@ export function SelectField<T extends string>({
   )
 }
 
+export function PromptField({
+  label,
+  value,
+  placeholder,
+  onChange,
+}: {
+  label: string
+  value: string
+  placeholder: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <label className="grid min-w-0 gap-1.5 text-xs font-medium text-zinc-600">
+      <span>{label}</span>
+      <textarea
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        rows={3}
+        className="min-h-20 resize-y rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm leading-6 text-zinc-950 outline-none focus:border-zinc-900"
+      />
+    </label>
+  )
+}
+
+export function PromptPanel({
+  narrativePrompt,
+  visualPrompt,
+  negativePrompt,
+  onNarrativePromptChange,
+  onVisualPromptChange,
+  onNegativePromptChange,
+}: {
+  narrativePrompt: string
+  visualPrompt: string
+  negativePrompt: string
+  onNarrativePromptChange: (value: string) => void
+  onVisualPromptChange: (value: string) => void
+  onNegativePromptChange: (value: string) => void
+}) {
+  return (
+    <div className="grid gap-3 rounded-xl border border-zinc-200 p-4">
+      <div>
+        <div className="text-sm font-semibold text-zinc-950">プロンプト / 調整</div>
+        <p className="mt-1 text-xs leading-5 text-zinc-500">
+          未入力ならDify Cloud / DeepSeekが診断データから生成します。入力した内容はSupabaseの制作ジョブへ保存され、ComfyUIとOpenMontage実行に渡ります。
+        </p>
+      </div>
+      <PromptField
+        label="ナラティブプロンプト"
+        value={narrativePrompt}
+        placeholder="例: 60秒で、経営者向けに機会損失、改善余地、次の商談CTAを静かなトーンで説明"
+        onChange={onNarrativePromptChange}
+      />
+      <PromptField
+        label="ビジュアル指示 / ComfyUIプロンプト"
+        value={visualPrompt}
+        placeholder="例: premium diagnostic consulting video, clean dashboard, Japanese SMB, cinematic lighting"
+        onChange={onVisualPromptChange}
+      />
+      <PromptField
+        label="ネガティブプロンプト"
+        value={negativePrompt}
+        placeholder="例: low quality, blurry, distorted, watermark, unreadable text"
+        onChange={onNegativePromptChange}
+      />
+    </div>
+  )
+}
+
 export function PipelineCard({
   name,
   ready,

@@ -235,6 +235,11 @@ export async function createVideoJob(input: {
   reportLocale?: string | null
   priority?: number
   requestedBy?: string
+  creativeBrief?: {
+    narrativePrompt?: string | null
+    visualPrompt?: string | null
+    negativePrompt?: string | null
+  }
 }): Promise<{ ok: boolean; job?: SalesVideoJob; config: VideoPipelineConfig; error?: string }> {
   const sb = getServiceSalesSupabase()
   const config = pipelineConfig()
@@ -319,6 +324,7 @@ export async function createVideoJob(input: {
   })
   const productionPlanWithRuntime = {
     ...productionPlan,
+    creative_brief: input.creativeBrief ?? null,
     dify: {
       provider: config.dify.provider,
       base_url: config.dify.baseUrl,
@@ -365,6 +371,7 @@ export async function createVideoJob(input: {
         demo_url: report?.demo_url ?? null,
         source_coverage: report?.source_coverage ?? null,
         r2_asset_prefix: r2AssetPrefix,
+        creative_brief: input.creativeBrief ?? null,
       },
       requested_by: input.requestedBy ?? "sales-os",
     })

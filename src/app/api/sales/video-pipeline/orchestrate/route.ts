@@ -58,6 +58,10 @@ export async function POST(req: NextRequest) {
       skipDispatch: bool(body.skip_dispatch, false),
       priority: priority(body.priority),
       requestedBy: "sales-video-studio",
+      creativeBrief:
+        body.creative_brief && typeof body.creative_brief === "object" && !Array.isArray(body.creative_brief)
+          ? (body.creative_brief as { narrativePrompt?: string | null; visualPrompt?: string | null; negativePrompt?: string | null })
+          : undefined,
     }
 
     const result = await runVideoOrchestrator(company.trim(), options)

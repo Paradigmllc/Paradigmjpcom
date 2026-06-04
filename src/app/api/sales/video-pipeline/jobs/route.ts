@@ -77,6 +77,7 @@ export async function POST(req: NextRequest) {
       loss_inputs?: unknown
       report_locale?: unknown
       priority?: unknown
+      creative_brief?: unknown
     }
     if (typeof body.company_id_or_domain !== "string" || body.company_id_or_domain.trim().length === 0) {
       return NextResponse.json({ ok: false, error: "company_id_or_domain is required" }, { status: 400 })
@@ -125,6 +126,10 @@ export async function POST(req: NextRequest) {
       lossInputs,
       reportLocale: typeof body.report_locale === "string" ? body.report_locale : null,
       priority: numberOrDefault(body.priority, 50),
+      creativeBrief:
+        body.creative_brief && typeof body.creative_brief === "object" && !Array.isArray(body.creative_brief)
+          ? (body.creative_brief as { narrativePrompt?: string | null; visualPrompt?: string | null; negativePrompt?: string | null })
+          : undefined,
     })
     return NextResponse.json(result, { status: result.ok ? 200 : 500 })
   } catch (error) {

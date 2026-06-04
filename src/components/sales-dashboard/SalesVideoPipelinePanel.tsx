@@ -52,6 +52,7 @@ import {
   GENRE_LABELS,
   JobBadge,
   PipelineCard,
+  PromptPanel,
   QUALITY_LABELS,
   SEGMENT_LABELS,
   STORY_LABELS,
@@ -115,6 +116,9 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
   const [skipTts, setSkipTts] = useState(false)
   const [skipRender, setSkipRender] = useState(false)
   const [outputUrl, setOutputUrl] = useState("")
+  const [narrativePrompt, setNarrativePrompt] = useState("")
+  const [visualPrompt, setVisualPrompt] = useState("")
+  const [negativePrompt, setNegativePrompt] = useState("low quality, blurry, distorted, watermark, unreadable text")
   const [busy, setBusy] = useState<string | null>(null)
 
   const selectedCompany = useMemo(() => data.companies.find((row) => row.id === company), [company, data.companies])
@@ -132,6 +136,12 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
 
   function updateLoss(key: keyof Required<VideoLossInputs>, value: number) {
     setLossInputs((current) => ({ ...current, [key]: Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0 }))
+  }
+
+  const creativeBrief = {
+    narrativePrompt: narrativePrompt.trim() || null,
+    visualPrompt: visualPrompt.trim() || null,
+    negativePrompt: negativePrompt.trim() || null,
   }
 
   async function refreshJobs() {
@@ -176,6 +186,7 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
           story_framework: story,
           quality_tier: quality,
           loss_inputs: lossInputs,
+          creative_brief: creativeBrief,
           report_locale: data.scope.reportLocale,
           priority: quality === "premium" ? 90 : 70,
         }),
@@ -214,6 +225,7 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
           generate_broll: generateAssets.broll,
           generate_thumbnail: generateAssets.thumbnail,
           generate_video: generateAssets.video,
+          creative_brief: creativeBrief,
           skip_tts: skipTts,
           skip_oss_render: skipRender,
           priority: quality === "premium" ? 95 : 75,
@@ -350,6 +362,15 @@ export function SalesVideoPipelinePanel({ data }: { data: SalesDashboardData }) 
             <SelectField label="字幕" value={caption} options={VIDEO_CAPTION_STYLES} labels={CAPTION_LABELS} onChange={setCaption} />
             <SelectField label="ストーリー" value={story} options={VIDEO_STORY_FRAMEWORKS} labels={STORY_LABELS} onChange={setStory} />
           </div>
+
+          <PromptPanel
+            narrativePrompt={narrativePrompt}
+            visualPrompt={visualPrompt}
+            negativePrompt={negativePrompt}
+            onNarrativePromptChange={setNarrativePrompt}
+            onVisualPromptChange={setVisualPrompt}
+            onNegativePromptChange={setNegativePrompt}
+          />
 
           <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
             <div className="text-xs font-semibold text-zinc-500">推定機会損失</div>

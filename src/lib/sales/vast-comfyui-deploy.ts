@@ -167,7 +167,7 @@ export async function deployComfyuiToVast(
   } = params
 
   // 1. GPU オファー検索
-  const searchResult = await searchVastOffers({
+  let searchResult = await searchVastOffers({
     gpuName: gpuType,
     minGpuRam: 24 * 1024, // 24GB VRAM 以上
     numGpus: 1,
@@ -177,10 +177,21 @@ export async function deployComfyuiToVast(
     geolocation,
   })
 
+  if (searchResult.ok && searchResult.offers.length === 0) {
+    searchResult = await searchVastOffers({
+      minGpuRam: 16 * 1024,
+      numGpus: 1,
+      maxDph,
+      minReliability: 0.9,
+      datacenter: true,
+      geolocation,
+    })
+  }
+
   if (!searchResult.ok || searchResult.offers.length === 0) {
     return {
       ok: false,
-      error: `No suitable GPU offers found for ${gpuType} under $${maxDph}/hr. Try increasing maxDph or changing gpuType.`,
+      error: `No suitable GPU offers found for ${gpuType} or fallback GPUs under $${maxDph}/hr. Try increasing maxDph or changing gpuType.`,
     }
   }
 
@@ -261,8 +272,8 @@ export async function checkComfyuiDeployStatus(
           comfyuiUrl,
         }
       }
-    } catch {
-      // ComfyUI がまだ起動していない
+    } catch (error) {
+      console.warn("[vast-comfyui-deploy] ComfyUI status check is not ready yet:", error)
     }
 
     return {

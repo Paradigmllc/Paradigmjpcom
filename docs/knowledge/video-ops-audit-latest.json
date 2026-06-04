@@ -1,0 +1,55 @@
+{
+  "auditedAt": "2026-06-04T05:56:32.478Z",
+  "source": "Coolify production env + local env override",
+  "comfyui": {
+    "ok": false,
+    "missing": [
+      "COMFYUI_API_KEY"
+    ],
+    "checks": []
+  },
+  "vast": {
+    "ok": true,
+    "apiKey": "e1b0...eb58",
+    "checks": [
+      {
+        "name": "search_available_gpu_offers",
+        "ok": true,
+        "status": 200,
+        "offerCount": 3
+      },
+      {
+        "name": "list_instances",
+        "ok": true,
+        "status": 200,
+        "instanceCount": 0
+      }
+    ]
+  },
+  "r2": {
+    "ok": true,
+    "bucket": "appexx-diagnostic-videos",
+    "objectKey": "sales-videos/audit/2026-06-04T05-56-34-256Z/r2-audit.mp4",
+    "publicUrl": "https://pub-ac30eb86a32747f1a27e304aa9c6f95a.r2.dev/sales-videos/audit/2026-06-04T05-56-34-256Z/r2-audit.mp4",
+    "checks": [
+      {
+        "name": "head_bucket",
+        "ok": true,
+        "status": 200
+      },
+      {
+        "name": "put_mp4",
+        "ok": true,
+        "bytes": 2296,
+        "contentType": "video/mp4"
+      },
+      {
+        "name": "public_get",
+        "ok": true,
+        "status": 200,
+        "skipped": false
+      }
+    ]
+  },
+  "ok": false
+}

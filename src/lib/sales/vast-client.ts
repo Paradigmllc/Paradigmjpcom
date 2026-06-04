@@ -122,7 +122,8 @@ export function getVastClientConfig(): VastClientConfig {
 
 /* ───── Vast.ai REST API ───── */
 
-const VAST_API_BASE = "https://console.vast.ai/api/v1"
+const VAST_API_V0 = "https://console.vast.ai/api/v0"
+const VAST_API_V1 = "https://console.vast.ai/api/v1"
 
 function authHeaders(): Record<string, string> {
   const config = getVastClientConfig()
@@ -156,20 +157,27 @@ export async function searchVastOffers(
   }
 
   try {
-    // クエリパラメータ構築
-    const queryParts: string[] = ["verified=true", "sort=score-"]
-    if (params.gpuName) queryParts.push(`gpu_name=${encodeURIComponent(params.gpuName)}`)
-    if (params.minGpuRam) queryParts.push(`gpu_ram=${params.minGpuRam}`)
-    if (params.numGpus) queryParts.push(`num_gpus=${params.numGpus}`)
-    if (params.maxDph) queryParts.push(`dph_total=${params.maxDph}`)
-    if (params.minReliability) queryParts.push(`reliability=${params.minReliability}`)
-    if (params.datacenter) queryParts.push("datacenter=true")
-    if (params.geolocation) queryParts.push(`geolocation=${encodeURIComponent(params.geolocation)}`)
-    if (params.diskSpace) queryParts.push(`disk_space=${params.diskSpace}`)
+    const body: Record<string, unknown> = {
+      limit: 20,
+      type: "on-demand",
+      verified: { eq: true },
+      rentable: { eq: true },
+      rented: { eq: false },
+      ...(params.gpuName ? { gpu_name: { eq: params.gpuName } } : {}),
+      ...(params.minGpuRam ? { gpu_ram: { gte: params.minGpuRam } } : {}),
+      ...(params.numGpus ? { num_gpus: { gte: params.numGpus } } : {}),
+      ...(params.maxDph ? { dph_total: { lte: params.maxDph } } : {}),
+      ...(params.minReliability ? { reliability: { gte: params.minReliability } } : {}),
+      ...(params.datacenter ? { datacenter: { eq: true } } : {}),
+      ...(params.geolocation ? { geolocation: { eq: params.geolocation } } : {}),
+      ...(params.diskSpace ? { disk_space: { gte: params.diskSpace } } : {}),
+    }
 
-    const url = `${VAST_API_BASE}/bundles?${queryParts.join("&")}`
+    const url = `${VAST_API_V0}/bundles/`
     const res = await fetch(url, {
+      method: "POST",
       headers: authHeaders(),
+      body: JSON.stringify(body),
       signal: AbortSignal.timeout(timeoutMs),
     })
 
@@ -205,20 +213,18 @@ export async function createVastInstance(
 
   try {
     const body: Record<string, unknown> = {
-      client_id: "me",
       image: params.image,
       disk: params.disk,
-      bundle_id: params.offerId,
       label: params.label ?? `paradigm-video-${Date.now()}`,
-      runtype: "ssh",
+      runtype: params.ssh ? "ssh_direct" : "args",
       ...(params.env ? { env: params.env } : {}),
       ...(params.onStart ? { onstart: params.onStart.join("\n") } : {}),
       ...(params.jupyter ? { jupyter: true, jupyter_dir: "/workspace" } : {}),
       ...(params.ssh ? { ssh: true } : {}),
     }
 
-    const res = await fetch(`${VAST_API_BASE}/instances`, {
-      method: "POST",
+    const res = await fetch(`${VAST_API_V0}/asks/${params.offerId}/`, {
+      method: "PUT",
       headers: authHeaders(),
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(timeoutMs),
@@ -229,12 +235,12 @@ export async function createVastInstance(
       return { ok: false, error: `Vast.ai create instance failed: HTTP ${res.status} ${text.slice(0, 200)}` }
     }
 
-    const data = (await res.json()) as { new_instance?: { id?: number }; success?: boolean }
-    if (!data.new_instance?.id) {
+    const data = (await res.json()) as { new_contract?: number; success?: boolean }
+    if (!data.new_contract) {
       return { ok: false, error: "Vast.ai returned no instance ID" }
     }
 
-    return { ok: true, instanceId: data.new_instance.id }
+    return { ok: true, instanceId: data.new_contract }
   } catch (error) {
     captureException(error instanceof Error ? error : new Error("vast-client create error"), { source: "vast-create" })
     return {
@@ -256,7 +262,7 @@ export async function listVastInstances(
   }
 
   try {
-    const res = await fetch(`${VAST_API_BASE}/instances`, {
+    const res = await fetch(`${VAST_API_V1}/instances`, {
       headers: authHeaders(),
       signal: AbortSignal.timeout(timeoutMs),
     })
@@ -319,7 +325,7 @@ async function vastInstanceAction(
   }
 
   try {
-    const res = await fetch(`${VAST_API_BASE}/instances/${instanceId}/${action}`, {
+    const res = await fetch(`${VAST_API_V1}/instances/${instanceId}/${action}`, {
       method: "PUT",
       headers: authHeaders(),
       signal: AbortSignal.timeout(timeoutMs),
@@ -366,7 +372,7 @@ export async function uploadToVastInstance(
   }
 
   try {
-    const res = await fetch(`${VAST_API_BASE}/instances/${instanceId}/upload`, {
+    const res = await fetch(`${VAST_API_V1}/instances/${instanceId}/upload`, {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({
