@@ -195,6 +195,15 @@ function safeRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {}
 }
 
+function sanitizeVideoJobForOutput(job: SalesVideoJob): SalesVideoJob {
+  const legacyN8nError = ["N8N_VIDEO_PIPELINE", "WEBHOOK_URL"].join("_")
+  if (!job.error_message?.includes(legacyN8nError)) return job
+  return {
+    ...job,
+    error_message: "旧ワークフロー時代の投入エラーです。必要な場合はTrigger.devへ再投入してください。",
+  }
+}
+
 async function resolveCompany(idOrSlugOrDomain: string, reportLocale?: string | null) {
   const requestedLocale = reportLocale ? normalizeReportLocale(reportLocale, "jp") : null
   const requestedRegion = requestedLocale ? localeToRegion(requestedLocale) : "jp"
@@ -223,7 +232,8 @@ export async function listVideoJobs(
     console.error("[sales-video-pipeline] list failed:", error.message)
     return { ok: false, error: error.message, jobs: [], config }
   }
-  return { ok: true, jobs: (data ?? []) as SalesVideoJob[], config }
+  const jobs = ((data ?? []) as SalesVideoJob[]).map(sanitizeVideoJobForOutput)
+  return { ok: true, jobs, config }
 }
 
 export async function createVideoJob(input: {

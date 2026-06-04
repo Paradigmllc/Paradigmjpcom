@@ -1,5 +1,12 @@
 # Task.md
 
+## CODEX UPDATE - 2026-06-04 Report URL Check And Legacy Error Cleanup
+
+- Confirmed the CompassLabs-style diagnostic report is the public route, not the Revenue OS Keystatic/admin preview: `https://paradigmjp.com/ja/report/codex-oss-verification-demo-qnxbms`.
+- Playwright production check: HTTP 200, title `Paradigm 経営診断レポート | Paradigm合同会社`, H1 rendered, no horizontal overflow on 1365px viewport, no mojibake pattern in rendered body.
+- Sanitized old DB job error output so legacy `N8N_VIDEO_PIPELINE_WEBHOOK_URL` messages are shown as a Trigger.dev requeue notice instead of the old env name.
+- Verification: `npx tsc --noEmit --pretty false`, `npm test -- --run src/lib/sales/video-pipeline.test.ts`, and `git diff --check` passed.
+
 ## CODEx UPDATE - 2026-06-04 Trigger.dev Video Studio Fix
 
 - 動画パイプライン投入をn8n webhookからTrigger.dev Management API `POST /api/v1/tasks/{taskIdentifier}/trigger` へ差し替え。
