@@ -24,6 +24,30 @@
   - プロ級動画側は既存 `/api/sales/video-pipeline/orchestrate` に接続しているが、ComfyUI本番APIの準備状態は別途 `scripts/audit-video-ops.mjs` で確認が必要。
   - n8n workflow 側の payload キー整合は次の実行テストで確認する。
 
+## CODEx UPDATE - 2026-06-04 Deploy And Audit
+
+- デプロイ:
+  - App code commit: `2625d21 refactor: split video studios`
+  - Coolify deployment UUID: `n13zyxzw8mienlu6ysoeflqc`
+  - Coolify status: `finished`
+- 本番UI監査:
+  - `https://paradigmjp.com/ja/admin/sales?tab=reportVideoStudio` は認証後に `レポート用動画スタジオ` を表示。
+  - `https://paradigmjp.com/ja/admin/sales?tab=proVideoStudio` は認証後に `プロ級動画スタジオ`、`Vast.ai API`、`ComfyUI API`、`Vast.ai + ComfyUIヘッドレス実行` を表示。
+  - 旧 `?tab=videoPipeline` は `レポート用動画スタジオ` に後方互換誘導。
+  - 旧全部入りタイトル `プロ動画スタジオ` は新タブ上に残っていない。
+- 本番API監査:
+  - `/api/sales/video-pipeline/jobs?limit=5&report_locale=ja` は認証ヘッダー付きでHTTP 200、`ok: true`、jobs 5件。
+  - 本番configは `n8n: true`、`r2: true`、`vast: true`、`comfyui: false`、`hyperframes: false`、`openmontage: false`。
+- OSS/環境監査:
+  - `node scripts/audit-video-ops.mjs` は全体 `ok: false`。理由は `COMFYUI_API_KEY` 未設定。
+  - Vast.ai APIはOK。GPU offer検索HTTP 200、instance一覧HTTP 200。
+  - Cloudflare R2はOK。`HeadBucket`、監査用MP4 `PutObject`、公開URL `GET` 成功。
+  - ComfyUI APIはNG。`src/lib/sales/comfyui-client.ts` は `COMFYUI_API_KEY` 必須のため、プロ級スタジオのヘッドレス生成はこのenvが入るまで本番実行不可。
+  - OpenMontageは `OPENMONTAGE_API_URL` はあるが `OPENMONTAGE_API_KEY` が未設定。
+  - HyperFramesはURL系envはあるが `HYPERFRAMES_API_KEY` が未設定。レポート用スタジオの本番レンダー可否は追加の実生成テストが必要。
+- インフラリスク:
+  - デプロイ前ホストpreflightでroot diskは83%。Docker build cache / unused images prune後も83%。直ちに停止する状態ではないが、継続監視が必要。
+
 ## CURRENT STATUS
 
 - Revenue OS の「動画制作」画面は、旧フォームを廃止し、Supabase `sales_video_jobs` をSSOTにする OSS Video Studio として再構成中。
