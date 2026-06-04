@@ -2,21 +2,25 @@
 
 ## CURRENT STATUS
 
-- Revenue OS のサードメニューを、内部の代替ワークベンチではなく外部OSS正規GUI入口へ切り替え済み。
-- Directus: `https://directus.paradigmjp.com/admin`
-- Keystatic: `https://keystatic.paradigmjp.com` -> `/keystatic` real Keystatic UI
-- Supabase Studio: 本番 `NEXT_PUBLIC_SUPABASE_STUDIO_URL`
-- OpenMontage: 公式OSSにWeb管理GUIがないため、Revenue OS内のStudio風UIと subdomain rewrite は廃止。入口は公式OSSへ退避。
+- Revenue OS の司令塔に Supabase SSOT 統合フローを追加済み。
+- リード取得、診断、送信、商談化、制作・納品を同一営業レコードで追う構成に整理済み。
+- 動画制作タブは外部OpenMontageリンクではなく、`sales_video_jobs` を操作する内部制作アプリへ復帰済み。
+- Directus / Keystatic / Supabase Studio は正規外部GUI入口として維持し、Revenue OS側では状態・成果物URL・同期ログをSSOTに集約する方針。
 
 ## ACTIVE HANDOFF
 
-- コード検証済み: `npx tsc --noEmit --pretty false`
-- テスト済み: `npm test -- --run src/lib/sales/integration-registry.test.ts src/lib/sales/dify-cloud.test.ts`
-- 本番ビルド済み: `npm run build`
-- 差分チェック済み: `git diff --check`
-- 本番デプロイ済み: Coolify deployment `mwnb68yy211u6kfpb3ce4bw1`, commit `e2a14b76116df2555516719c22c755f8bd6ced6f`, status `finished`。
-- Production smoke: `https://keystatic.paradigmjp.com`, `https://directus.paradigmjp.com/admin`, `https://supabase.paradigmjp.com`, `https://paradigmjp.com/ja/admin/sales?tab=keystatic` all returned HTTP 200.
-- 残リスク: Keystatic は実UIとして稼働。GitHub永続保存/OAuth連携は別途キー設定が必要になるまでローカルストレージモード。
+- 変更ファイル:
+  - `src/components/sales-dashboard/SalesCommandCenter.tsx`
+  - `src/components/sales-dashboard/SalesUnifiedOpsPanel.tsx`
+- 検証済み:
+  - `npx tsc --noEmit --pretty false`
+  - `npm test -- --run src/lib/sales/integration-registry.test.ts src/lib/sales/dify-cloud.test.ts`
+  - `git diff --check`
+  - `npm run context:audit`
+  - `npm run build`
+- 残リスク:
+  - 外部OSSの実GUI自体は各正規URLで開く。Revenue OSに埋め込むのではなく、SSOTへの書き戻しと接続監査で統合する。
+  - Keystaticは実UIとして稼働するが、GitHub永続保存/OAuth連携は別途キー設定の完了が必要。
 
 ## LINKS
 

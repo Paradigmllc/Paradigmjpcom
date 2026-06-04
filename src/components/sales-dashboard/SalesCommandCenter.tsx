@@ -34,6 +34,8 @@ import { SalesAgentTeamPanel } from "./SalesAgentTeamPanel"
 import { SalesAutomationPanel } from "./SalesAutomationPanel"
 import { SalesDocsPanel } from "./SalesDocsPanel"
 import { SalesOperationsAuditPanel } from "./SalesOperationsAuditPanel"
+import { SalesUnifiedOpsPanel } from "./SalesUnifiedOpsPanel"
+import { SalesVideoPipelinePanel } from "./SalesVideoPipelinePanel"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 
 type SalesTab =
@@ -69,7 +71,7 @@ type TabItem = {
 const tabItems: TabItem[] = [
   { id: "overview", label: "司令塔", eyebrow: "COMMAND", description: "全体KPIと優先リード", icon: LayoutDashboard },
   { id: "automation", label: "CSV・自動診断", eyebrow: "INTAKE", description: "投入から企業カルテ生成", icon: UploadCloud },
-  { id: "videoPipeline", label: "動画制作", eyebrow: "OPENMONTAGE", description: "OpenMontage正規入口", icon: Video, externalGui: true },
+  { id: "videoPipeline", label: "動画制作", eyebrow: "PRODUCTION", description: "営業動画と納品制作", icon: Video },
   { id: "operator", label: "オペレーター", eyebrow: "QUEUE", description: "人間確認が必要な作業", icon: ListChecks },
   { id: "agentTeam", label: "AIチーム", eyebrow: "AGENTS", description: "Hermes / Telegram / Slack", icon: Bot },
   { id: "directus", label: "資料・スライド", eyebrow: "DIRECTUS", description: "Directus正規GUI", icon: Sparkles, externalGui: true },
@@ -259,7 +261,12 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
   const renderTab = () => {
     switch (activeTab) {
       case "overview":
-        return <OverviewPanel data={data} />
+        return (
+          <div className="grid gap-5">
+            <SalesUnifiedOpsPanel data={data} />
+            <OverviewPanel data={data} />
+          </div>
+        )
       case "automation":
         return <SalesAutomationPanel data={data} />
       case "operator":
@@ -267,7 +274,7 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
       case "agentTeam":
         return <SalesAgentTeamPanel data={data} />
       case "videoPipeline":
-        return <ExternalGuiPanel tab="videoPipeline" data={data} />
+        return <SalesVideoPipelinePanel data={data} />
       case "directus":
         return <ExternalGuiPanel tab="directus" data={data} />
       case "keystatic":
