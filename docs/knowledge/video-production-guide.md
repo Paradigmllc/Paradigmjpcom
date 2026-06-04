@@ -238,4 +238,5 @@ npx hyperframes doctor
 | `src/lib/sales/oss-renderers.ts` | OSS レンダラー群 |
 | `src/lib/sales/audio-pipeline.ts` | 音声・字幕パイプライン |
 | `src/lib/sales/video-orchestrator.ts` | 統合オーケストレーター |
-| `src/components/sales-dashboard/SalesVideoPipelinePanel.tsx` | GUI管理画面 |
+| `src/components/sales-dashboard/SalesReportVideoStudioPanel.tsx` | GPUなしレポート動画スタジオ |
+| `src/components/sales-dashboard/SalesProVideoStudioPanel.tsx` | Vast.ai + ComfyUI APIヘッドレスのプロ級動画スタジオ |

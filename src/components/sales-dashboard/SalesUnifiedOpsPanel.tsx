@@ -66,7 +66,9 @@ function buildLanes(data: SalesDashboardData): Lane[] {
   const outreachCount = countByStatus(data, ["sent", "manual_queue"]) + data.operatorQueue.length
   const meetingCount = data.kpis.meetings7d
   const productionCount = data.videoPipeline.jobs.length
-  const productionReady = data.videoPipeline.config.n8n.ready && (data.videoPipeline.config.r2.ready || data.videoPipeline.config.comfyui.ready)
+  const productionReady =
+    data.videoPipeline.config.r2.ready &&
+    (data.videoPipeline.config.renderers.hyperframes || (data.videoPipeline.config.vast.ready && data.videoPipeline.config.comfyui.ready))
   const postOutreachReady = hasTool(data, "calcom") && hasTool(data, "chatwoot")
 
   return [
@@ -113,11 +115,11 @@ function buildLanes(data: SalesDashboardData): Lane[] {
     {
       id: "production",
       title: "制作・納品",
-      subtitle: "Video Studio / Directus / R2",
+      subtitle: "Report Studio / Pro Studio / R2",
       metric: productionCount.toLocaleString("ja-JP"),
-      detail: "営業動画、PDF、デモサイト、納品URLを sales_video_jobs と資料管理へ接続",
+      detail: "GPUなしレポート動画とVast.ai固定のプロ級動画を sales_video_jobs で分離管理",
       status: productionReady ? "ready" : data.videoPipeline.error ? "blocked" : "warning",
-      href: "?tab=videoPipeline",
+      href: "?tab=reportVideoStudio",
       icon: Clapperboard,
     },
   ]

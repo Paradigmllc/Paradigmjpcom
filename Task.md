@@ -1,5 +1,29 @@
 # Task.md
 
+## CODEx UPDATE - 2026-06-04 Video Studio Split
+
+- 旧「全部入り」動画制作スタジオはライブ導線から外し、`docs/handoff-archive/2026-06-04-legacy-sales-video-pipeline-panel.tsx.txt` に完全アーカイブした。
+- Revenue OS の動画制作入口を2つに分離した。
+  - `/ja/admin/sales?tab=reportVideoStudio`: GPUなしのレポート用動画スタジオ。HyperFramesで診断レポート解説動画を生成する。
+  - `/ja/admin/sales?tab=proVideoStudio`: GPUありのプロ級動画スタジオ。Vast.ai固定、ComfyUI APIヘッドレス、OpenMontage/n8n/R2連携を前提にする。
+- 旧 `?tab=videoPipeline` は後方互換としてレポート用動画スタジオへ誘導する。
+- 変更ファイル:
+  - `src/components/sales-dashboard/SalesCommandCenter.tsx`
+  - `src/components/sales-dashboard/SalesUnifiedOpsPanel.tsx`
+  - `src/components/sales-dashboard/SalesReportVideoStudioPanel.tsx`
+  - `src/components/sales-dashboard/SalesProVideoStudioPanel.tsx`
+  - `docs/knowledge/sales-video-pipeline-runbook.md`
+  - `docs/knowledge/video-production-guide.md`
+- 検証:
+  - `npx tsc --noEmit --pretty false` passed.
+  - `npm test -- --run src/lib/sales/video-pipeline.test.ts src/lib/sales/video-production.test.ts` passed.
+  - `npm run context:audit` passed.
+  - `git diff --check` passed with line-ending warnings only.
+- 残リスク:
+  - ローカル表示確認は `next dev --webpack -p 3000` 起動後、既知の `routes-manifest.json` パス混線で `/ja/admin/sales` が500になったため未完了。
+  - プロ級動画側は既存 `/api/sales/video-pipeline/orchestrate` に接続しているが、ComfyUI本番APIの準備状態は別途 `scripts/audit-video-ops.mjs` で確認が必要。
+  - n8n workflow 側の payload キー整合は次の実行テストで確認する。
+
 ## CURRENT STATUS
 
 - Revenue OS の「動画制作」画面は、旧フォームを廃止し、Supabase `sales_video_jobs` をSSOTにする OSS Video Studio として再構成中。

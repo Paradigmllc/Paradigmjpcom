@@ -7,6 +7,7 @@ import {
   BarChart3,
   Bot,
   BriefcaseBusiness,
+  Clapperboard,
   ChevronRight,
   Database,
   ExternalLink,
@@ -36,7 +37,8 @@ import { SalesDocsPanel } from "./SalesDocsPanel"
 import { SalesOperationsAuditPanel } from "./SalesOperationsAuditPanel"
 import { SalesTemplateWorkbenchPanel } from "./SalesTemplateWorkbenchPanel"
 import { SalesUnifiedOpsPanel } from "./SalesUnifiedOpsPanel"
-import { SalesVideoPipelinePanel } from "./SalesVideoPipelinePanel"
+import { SalesProVideoStudioPanel } from "./SalesProVideoStudioPanel"
+import { SalesReportVideoStudioPanel } from "./SalesReportVideoStudioPanel"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 
 type SalesTab =
@@ -44,7 +46,8 @@ type SalesTab =
   | "automation"
   | "operator"
   | "agentTeam"
-  | "videoPipeline"
+  | "reportVideoStudio"
+  | "proVideoStudio"
   | "keystatic"
   | "directus"
   | "supabaseStudio"
@@ -72,7 +75,8 @@ type TabItem = {
 const tabItems: TabItem[] = [
   { id: "overview", label: "司令塔", eyebrow: "COMMAND", description: "全体KPIと優先リード", icon: LayoutDashboard },
   { id: "automation", label: "CSV・自動診断", eyebrow: "INTAKE", description: "投入から企業カルテ生成", icon: UploadCloud },
-  { id: "videoPipeline", label: "動画制作", eyebrow: "PRODUCTION", description: "営業動画と納品制作", icon: Video },
+  { id: "reportVideoStudio", label: "レポート動画", eyebrow: "GPULESS", description: "診断解説・HyperFrames", icon: Video },
+  { id: "proVideoStudio", label: "プロ級動画", eyebrow: "GPU STUDIO", description: "Vast.ai + ComfyUI", icon: Clapperboard },
   { id: "operator", label: "オペレーター", eyebrow: "QUEUE", description: "人間確認が必要な作業", icon: ListChecks },
   { id: "agentTeam", label: "AIチーム", eyebrow: "AGENTS", description: "Hermes / Telegram / Slack", icon: Bot },
   { id: "directus", label: "資料・スライド", eyebrow: "DIRECTUS", description: "Directus正規GUI", icon: Sparkles, externalGui: true },
@@ -106,6 +110,7 @@ const localeLabels: Record<string, { country: string; language: string }> = {
 
 function normalizeTab(value: string | null): SalesTab {
   if (value === "batches" || value === "workspace") return "automation"
+  if (value === "videoPipeline") return "reportVideoStudio"
   return value && tabIds.has(value as SalesTab) ? (value as SalesTab) : "overview"
 }
 
@@ -146,11 +151,6 @@ function resolveExternalGuiUrl(tab: SalesTab, data: SalesDashboardData): string 
   if (tab === "directus") return withPath(toolUrl(data, "directus") ?? "https://directus.paradigmjp.com", "/admin")
   if (tab === "keystatic") return toolUrl(data, "keystatic") ?? "https://keystatic.paradigmjp.com"
   if (tab === "supabaseStudio") return process.env.NEXT_PUBLIC_SUPABASE_STUDIO_URL?.trim() || "https://supabase.com/dashboard/project/yihdmgtxiqfdgdueolub"
-  if (tab === "videoPipeline") {
-    const configured = process.env.NEXT_PUBLIC_OPENMONTAGE_STUDIO_URL?.trim()
-    if (configured && !configured.includes("studio.paradigmjp.com")) return configured
-    return "https://github.com/calesthio/OpenMontage"
-  }
   return "/"
 }
 
@@ -274,8 +274,10 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
         return <OperatorPanel data={data} />
       case "agentTeam":
         return <SalesAgentTeamPanel data={data} />
-      case "videoPipeline":
-        return <SalesVideoPipelinePanel data={data} />
+      case "reportVideoStudio":
+        return <SalesReportVideoStudioPanel data={data} />
+      case "proVideoStudio":
+        return <SalesProVideoStudioPanel data={data} />
       case "directus":
         return <ExternalGuiPanel tab="directus" data={data} />
       case "keystatic":
