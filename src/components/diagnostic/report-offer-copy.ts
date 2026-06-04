@@ -19,7 +19,7 @@ type OfferCopyByLanguage = {
 const WEBSITE: OfferCopyByLanguage = {
   ja: {
     reportLabel: "Web成長診断レポート",
-    badge: "Website growth assessment",
+    badge: "Web成長診断",
     heroLead: "公開データ、取得済みシグナル、改善デモをもとに、売上・信頼・問い合わせ導線のどこから直すべきかを整理しました。",
     primaryCta: "改善デモを見る",
     finalHeading: "30分で、最初に直すべき一点を決める",
@@ -40,7 +40,7 @@ const WEBSITE: OfferCopyByLanguage = {
 const JAPAN_ENTRY: OfferCopyByLanguage = {
   ja: {
     reportLabel: "日本市場参入診断レポート",
-    badge: "Japan entry assessment",
+    badge: "日本市場参入診断",
     heroLead: "海外企業が日本市場に入る前に確認すべき、言語・信頼・販売導線・ローカル運用の優先順位を整理しました。",
     primaryCta: "日本参入プランを見る",
     finalHeading: "日本市場で最初に整えるべき一点を決める",
@@ -61,7 +61,7 @@ const JAPAN_ENTRY: OfferCopyByLanguage = {
 const VIDEO: OfferCopyByLanguage = {
   ja: {
     reportLabel: "動画成長診断レポート",
-    badge: "Video growth assessment",
+    badge: "動画成長診断",
     heroLead: "顧客獲得・信頼形成・継続接点に効く動画導線を、既存データと制作オペレーションの両面から整理しました。",
     primaryCta: "動画プランを見る",
     finalHeading: "最初に量産すべき動画タイプを決める",
@@ -82,7 +82,7 @@ const VIDEO: OfferCopyByLanguage = {
 const OUTREACH: OfferCopyByLanguage = {
   ja: {
     reportLabel: "営業自動化診断レポート",
-    badge: "Revenue automation assessment",
+    badge: "営業自動化診断",
     heroLead: "見込み客リスト、提案文、フォーム営業、追客のどこを自動化すべきかを、取得済みシグナルから整理しました。",
     primaryCta: "営業導線を見る",
     finalHeading: "最初に自動化する営業工程を決める",
@@ -103,7 +103,7 @@ const OUTREACH: OfferCopyByLanguage = {
 const SECURITY: OfferCopyByLanguage = {
   ja: {
     reportLabel: "信頼・セキュリティ診断レポート",
-    badge: "Trust and security assessment",
+    badge: "信頼・セキュリティ診断",
     heroLead: "公開状態から見える信頼表示・運用基盤・更新鮮度の懸念を、商談前の不安解消という観点で整理しました。",
     primaryCta: "信頼改善プランを見る",
     finalHeading: "信頼を落としている一点を先に直す",
