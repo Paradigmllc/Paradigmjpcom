@@ -66,8 +66,12 @@
   - `npm run build` passed.
   - `git diff --check` passed with line-ending warnings only.
   - `npm run context:audit` passed.
+- デプロイ/本番監査:
+  - Commit `3013176 feat: refresh diagnostic report template` をCoolify deploy `zjwa9xb3a3iz9xsccvmd40oq` で `finished`。
+  - 本番サンプル `https://paradigmjp.com/ja/report/codex-oss-verification-demo-qnxbms` はHTTP 200。
+  - Playwright desktop 1440px / mobile 390px で、新UI marker、文字化けなし、横スクロールなしを確認。
 - 残リスク:
-  - ローカル `.env.local` のSupabase接続が `no available server` で、実データ表示はローカルでは未確認。本番デプロイ後に実URLでPlaywright監査を行う。
+  - ローカル `.env.local` のSupabase接続は `no available server`。ローカル実データ表示は不可だが、本番実データ表示は確認済み。
 
 ## CURRENT STATUS
 
