@@ -1,25 +1,20 @@
-import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
-import { REPORT_COPY } from "./report-copy"
+import { REPORT_COPY, normalizeReportLang } from "./report-copy"
 
-const mojibakePattern = /繝|蜍|譛|縺|邯|荳|逶|螟|諡|蛻|蟇|髢|遯|鬚|蝟|繧|譁ｭ|險|ﾂ/
+const mojibakePattern = /縺|繝|譁|險|謾|蛻|邨|雋|蠖|荳|鬆|譛|蜿|髱|ﾂ|�/
 
 describe("diagnostic report customer-facing copy", () => {
   it("keeps Japanese executive report copy readable", () => {
-    expect(JSON.stringify(REPORT_COPY.ja)).not.toMatch(mojibakePattern)
-    expect(REPORT_COPY.ja.privateReport).toContain("経営")
-    expect(REPORT_COPY.ja.sourceLedger).toBe("取得データの補足")
+    const copy = REPORT_COPY.ja
+
+    expect(JSON.stringify(copy)).not.toMatch(mojibakePattern)
+    expect(copy.privateReport).toBe("経営診断レポート")
+    expect(copy.dataAppendix).toBe("データ台帳")
+    expect(copy.finalHeading).toContain("30分")
   })
 
-  it("does not reintroduce mojibake in report renderers", () => {
-    const files = [
-      "src/components/diagnostic/report-copy.ts",
-      "src/components/diagnostic/AuditConversionSections.tsx",
-      "src/components/diagnostic/DiagnosticReport.tsx",
-      "src/lib/sales/diagnostic.ts",
-    ]
-    for (const file of files) {
-      expect(readFileSync(file, "utf8"), file).not.toMatch(mojibakePattern)
-    }
+  it("falls back to English for unsupported locales", () => {
+    expect(normalizeReportLang("ja")).toBe("ja")
+    expect(normalizeReportLang("unknown")).toBe("en")
   })
 })

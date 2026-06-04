@@ -2,7 +2,7 @@
  * Private diagnostic report page.
  *
  * The URL is intentionally noindex. It renders a company-specific report from
- * Supabase SSOT data and links to generated demo/video assets.
+ * Supabase SSOT data and links to the generated demo/video assets.
  */
 
 import type { Metadata } from "next"
@@ -22,10 +22,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, locale } = await params
   const isJa = locale === "ja"
   return {
-    title: isJa ? "Paradigm 経営診断レポート" : "Paradigm Executive Diagnostic Report",
+    title: isJa ? "Paradigm Web診断レポート" : "Paradigm Web Diagnostic Report",
     description: isJa
-      ? "公開データと取得済みシグナルをもとにした個別の経営診断レポートです。"
-      : "A private executive diagnostic report based on public evidence and collected signals.",
+      ? "貴社サイトの個別診断レポートです。"
+      : "Your individual website diagnostic report from Paradigm.",
     robots: {
       index: false,
       follow: false,

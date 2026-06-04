@@ -48,6 +48,27 @@
 - インフラリスク:
   - デプロイ前ホストpreflightでroot diskは83%。Docker build cache / unused images prune後も83%。直ちに停止する状態ではないが、継続監視が必要。
 
+## CODEx UPDATE - 2026-06-04 Diagnostic Report Template Refresh
+
+- 旧診断レポートテンプレートを `docs/handoff-archive/2026-06-04-diagnostic-report-template-refresh/` にアーカイブ。
+- `https://www.compasslabs.ai/` を参考に、白地、薄いグリッド、大見出し、ピル、暗色プロダクトサーフェス、指標カード、データ台帳を組み合わせた高品質レポートUIへ全面刷新。
+- 変更ファイル:
+  - `src/app/[locale]/report/[slug]/page.tsx`
+  - `src/components/diagnostic/DiagnosticReport.tsx`
+  - `src/components/diagnostic/report-copy.ts`
+  - `src/components/diagnostic/report-copy.test.ts`
+- 表示品質:
+  - 旧データに文字化け値が混ざっていても顧客画面へ出さないよう、表示前の文字化け検知フォールバックを追加。
+  - ページmetadataの文字化けを修正。
+- 検証:
+  - `npx tsc --noEmit --pretty false` passed.
+  - `npm test -- --run src/components/diagnostic/report-copy.test.ts` passed.
+  - `npm run build` passed.
+  - `git diff --check` passed with line-ending warnings only.
+  - `npm run context:audit` passed.
+- 残リスク:
+  - ローカル `.env.local` のSupabase接続が `no available server` で、実データ表示はローカルでは未確認。本番デプロイ後に実URLでPlaywright監査を行う。
+
 ## CURRENT STATUS
 
 - Revenue OS の「動画制作」画面は、旧フォームを廃止し、Supabase `sales_video_jobs` をSSOTにする OSS Video Studio として再構成中。
