@@ -34,6 +34,7 @@ import { SalesAgentTeamPanel } from "./SalesAgentTeamPanel"
 import { SalesAutomationPanel } from "./SalesAutomationPanel"
 import { SalesDocsPanel } from "./SalesDocsPanel"
 import { SalesOperationsAuditPanel } from "./SalesOperationsAuditPanel"
+import { SalesTemplateWorkbenchPanel } from "./SalesTemplateWorkbenchPanel"
 import { SalesUnifiedOpsPanel } from "./SalesUnifiedOpsPanel"
 import { SalesVideoPipelinePanel } from "./SalesVideoPipelinePanel"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
@@ -86,7 +87,7 @@ const tabItems: TabItem[] = [
 ]
 
 const tabIds = new Set<SalesTab>(tabItems.map((tab) => tab.id))
-const externalGuiIds = new Set<SalesTab>(tabItems.filter((tab) => tab.externalGui).map((tab) => tab.id))
+const externalGuiIds = new Set<SalesTab>(["directus"])
 
 const localeLabels: Record<string, { country: string; language: string }> = {
   ja: { country: "日本", language: "日本語" },
@@ -278,9 +279,25 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
       case "directus":
         return <ExternalGuiPanel tab="directus" data={data} />
       case "keystatic":
-        return <ExternalGuiPanel tab="keystatic" data={data} />
+        return (
+          <SalesTemplateWorkbenchPanel
+            data={data}
+            initialAssetType="astro_demo_site"
+            heading="Astro / Keystatic"
+            title="デモサイト制作ワークベンチ"
+            description="Astroデモサイトの構成、Difyプロンプト、Keystatic編集用の本文をSupabase SSOT上で管理します。外部CMSは補助画面として扱い、営業ダッシュボード側でプレビューと保存まで行います。"
+          />
+        )
       case "supabaseStudio":
-        return <ExternalGuiPanel tab="supabaseStudio" data={data} />
+        return (
+          <SalesTemplateWorkbenchPanel
+            data={data}
+            initialAssetType="diagnostic_report"
+            heading="Report SSOT"
+            title="診断レポート制作ワークベンチ"
+            description="診断レポートの構成、品質基準、Dify選定条件、顧客向け文面をSupabase SSOTで編集します。PostgRESTやSupabase Studioへ誤誘導せず、この画面で実運用のレポート素材を扱います。"
+          />
+        )
       case "crm":
         return <CrmPanel data={data} />
       case "analytics":
@@ -320,7 +337,7 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
                 {tabItems.map((tab) => {
                   const Icon = tab.icon
                   const isActive = activeTab === tab.id
-                  const externalUrl = tab.externalGui ? resolveExternalGuiUrl(tab.id, data) : null
+                  const externalUrl = tab.externalGui && tab.id === "directus" ? resolveExternalGuiUrl(tab.id, data) : null
                   const itemClassName = `group relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left transition-all duration-200 ${
                     isActive ? "bg-zinc-900 text-white shadow-md shadow-zinc-900/10" : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
                   }`

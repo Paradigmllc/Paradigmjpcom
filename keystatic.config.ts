@@ -12,7 +12,7 @@ export default config({
       format: { contentField: "body" },
       schema: {
         title: fields.slug({
-          name: { label: "タイトル" },
+          name: { label: "ページ名" },
         }),
         customerName: fields.text({
           label: "顧客名",
@@ -42,7 +42,7 @@ export default config({
       format: { contentField: "body" },
       schema: {
         title: fields.slug({
-          name: { label: "タイトル" },
+          name: { label: "ページ名" },
         }),
         locale: fields.select({
           label: "言語",

@@ -1,3 +1,4 @@
-export default function Page() {
-  return null
-}
+import { makePage } from "@keystatic/next/ui/app"
+import config from "../../../../keystatic.config"
+
+export default makePage(config)

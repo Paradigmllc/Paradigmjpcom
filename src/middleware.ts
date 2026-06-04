@@ -56,7 +56,7 @@ function rewriteKeystaticSubdomain(request: NextRequest): NextResponse | null {
     url.pathname = `/keystatic${url.pathname}`
     return NextResponse.rewrite(url)
   }
-  return null
+  return NextResponse.next()
 }
 
 export default async function middleware(request: NextRequest) {

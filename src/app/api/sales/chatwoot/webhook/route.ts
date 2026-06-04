@@ -12,6 +12,7 @@ import {
   text,
   type JsonRecord,
 } from "@/lib/sales/post-outreach-webhooks"
+import { syncCompanyKarteToTwenty } from "@/lib/sales/twenty-sync"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -99,10 +100,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: persist.error }, { status: 500 })
   }
 
+  const twentySync = companyId ? await syncCompanyKarteToTwenty(companyId) : null
+  if (twentySync && !twentySync.ok && twentySync.configured) {
+    console.error("[chatwoot-webhook] Twenty sync failed after Chatwoot inbound:", twentySync.error)
+    await captureException(new Error(twentySync.error ?? "Twenty sync failed after Chatwoot inbound"), {
+      source: "chatwoot-webhook/twenty-sync",
+      context: { summary },
+    })
+  }
+
   return NextResponse.json({
     ok: true,
     provider: "chatwoot",
     automation_forwarded: forward.ok,
     queued_for_follow_up: !forward.ok,
+    twenty_synced: twentySync?.ok ?? false,
+    twenty_configured: twentySync?.configured ?? false,
   })
 }
