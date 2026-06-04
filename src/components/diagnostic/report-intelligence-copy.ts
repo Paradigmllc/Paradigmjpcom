@@ -71,15 +71,29 @@ const SOURCE_STATUS_JA: Record<SourceCoverageItem["status"], string> = {
   error: "取得エラー",
 }
 
+const SOURCE_NAME_JA: Record<string, string> = {
+  "Japan legal/payment readiness": "日本向け法務・決済確認",
+  "HTML metadata scan": "HTMLメタデータ",
+  "robots.txt": "robots.txt",
+  "sitemap.xml": "sitemap.xml",
+  "PageSpeed Insights": "PageSpeed Insights",
+  "Browserless": "Browserless",
+  "Stagehand AI Agent": "Stagehand AI Agent",
+}
+
+function translateSourceNames(value: string): string {
+  return Object.entries(SOURCE_NAME_JA).reduce((text, [source, label]) => text.replaceAll(source, label), value)
+}
+
 function translateText(value: string, lang: ReportLang): string {
   if (lang !== "ja") return value
   const exact = TEXT_JA[value]
   if (exact) return exact
   if (value.startsWith("Turn configured sources into collected evidence:")) {
-    return value.replace("Turn configured sources into collected evidence:", "設定済みソースを取得済み根拠に変換:")
+    return translateSourceNames(value.replace("Turn configured sources into collected evidence:", "設定済みソースを取得済み根拠に変換:"))
   }
   if (value.startsWith("Review missing sources:")) {
-    return value.replace("Review missing sources:", "未取得ソースを確認:")
+    return translateSourceNames(value.replace("Review missing sources:", "未取得ソースを確認:"))
   }
   if (value.includes("signals confirmed")) {
     return value.replace("signals confirmed", "項目確認済み")

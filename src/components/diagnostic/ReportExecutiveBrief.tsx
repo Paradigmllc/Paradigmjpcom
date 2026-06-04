@@ -36,8 +36,8 @@ export function ReportExecutiveBrief({
       <div className="mx-auto max-w-6xl border-y border-zinc-200 py-10">
         <div className="grid gap-8 lg:grid-cols-[330px_minmax(0,1fr)]">
           <div>
-            <div className="text-xs font-semibold text-violet-700">{title}</div>
-            <h2 className="mt-3 text-3xl font-semibold leading-tight text-zinc-950">{reportLabel}</h2>
+            <div className="text-xs font-semibold text-violet-700">{reportLabel}</div>
+            <h2 className="mt-3 text-3xl font-semibold leading-tight text-zinc-950">{title}</h2>
             <p className="mt-4 text-sm leading-7 text-zinc-600">{lead}</p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
