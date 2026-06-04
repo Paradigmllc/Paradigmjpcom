@@ -15,7 +15,8 @@
     "e2e:local": "E2E_BASE_URL=http://localhost:3000 playwright test",
     "e2e:headed": "playwright test --headed",
     "e2e:a11y": "playwright test e2e/a11y.spec.ts",
-    "lhci": "lhci autorun --config=lighthouserc.json"
+    "lhci": "lhci autorun --config=lighthouserc.json",
+    "context:audit": "powershell -ExecutionPolicy Bypass -File %USERPROFILE%\\\\.agents\\\\scripts\\\\context-audit.ps1"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1057.0",

@@ -1,5 +1,6 @@
 import { createHmac } from "node:crypto"
 import { checkR2StorageHealth } from "./r2-storage"
+import { DIFY_CLOUD_BASE_URL, DIFY_RUNTIME_KEY_ENV_NAMES, normalizeDifyCloudBaseUrl } from "./dify-cloud"
 
 export type ServiceBalanceStatus = "not_applicable" | "not_configured" | "manual" | "checkable" | "ok" | "error"
 
@@ -154,7 +155,12 @@ export async function checkChatwootHealth(): Promise<ServiceHealthResult> {
 }
 
 export async function checkDirectusHealth(): Promise<ServiceHealthResult> {
-  const missing = missingEnv(["DIRECTUS_BASE_URL", "DIRECTUS_TOKEN"])
+  const hasToken = envValue("DIRECTUS_TOKEN") !== null
+  const hasAdminLogin = envValue("DIRECTUS_ADMIN_EMAIL") !== null && envValue("DIRECTUS_ADMIN_PASSWORD") !== null
+  const missing = [
+    ...missingEnv(["DIRECTUS_BASE_URL"]),
+    ...(!hasToken && !hasAdminLogin ? ["DIRECTUS_TOKEN or DIRECTUS_ADMIN_EMAIL/PASSWORD"] : []),
+  ]
   if (missing.length > 0) return notConfigured(missing)
 
   try {
@@ -164,10 +170,30 @@ export async function checkDirectusHealth(): Promise<ServiceHealthResult> {
     const health = await safeFetch(healthUrl.toString(), { signal: AbortSignal.timeout(10_000) })
     if (!health.ok) return { balanceStatus: "error", balanceLabel: `health HTTP ${health.status}` }
 
+    let accessToken = envValue("DIRECTUS_TOKEN")
+    if (!accessToken) {
+      const loginUrl = new URL(base)
+      loginUrl.pathname = `${loginUrl.pathname}/auth/login`.replace(/\/+/g, "/")
+      const login = await safeFetch(loginUrl.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: envValue("DIRECTUS_ADMIN_EMAIL"),
+          password: envValue("DIRECTUS_ADMIN_PASSWORD"),
+        }),
+        signal: AbortSignal.timeout(10_000),
+      })
+      if (!login.ok) return { balanceStatus: "error", balanceLabel: `admin login HTTP ${login.status}` }
+      const data = recordValue(login.body, "data")
+      const token = data && typeof data === "object" ? recordValue(data, "access_token") : null
+      accessToken = typeof token === "string" ? token : null
+      if (!accessToken) return { balanceStatus: "error", balanceLabel: "admin login did not return access token" }
+    }
+
     const meUrl = new URL(base)
     meUrl.pathname = `${meUrl.pathname}/users/me`.replace(/\/+/g, "/")
     const me = await safeFetch(meUrl.toString(), {
-      headers: { Authorization: `Bearer ${envValue("DIRECTUS_TOKEN")}` },
+      headers: { Authorization: `Bearer ${accessToken}` },
       signal: AbortSignal.timeout(10_000),
     })
     if (!me.ok) return { balanceStatus: "error", balanceLabel: `token HTTP ${me.status}` }
@@ -354,14 +380,28 @@ export async function checkPlaywrightStealthHealth(): Promise<ServiceHealthResul
 }
 
 export async function checkDifyHealth(): Promise<ServiceHealthResult> {
-  const missing = missingEnv(["DIFY_API_KEY", "DIFY_BASE_URL"])
-  if (missing.length > 0) return notConfigured(missing)
+  const apiKeyName = DIFY_RUNTIME_KEY_ENV_NAMES.find((name) => envValue(name))
+  if (!apiKeyName) return notConfigured([...DIFY_RUNTIME_KEY_ENV_NAMES])
   try {
-    const base = normalizeHttpBase(envValue("DIFY_BASE_URL") as string)
-    const res = await fetch(base.toString(), { signal: AbortSignal.timeout(10_000) })
-    return { balanceStatus: res.ok ? "ok" : "error", balanceLabel: `reachable HTTP ${res.status}` }
+    const base = normalizeDifyCloudBaseUrl(
+      envValue("DIFY_API_BASE") ??
+        envValue("DIFY_API_URL") ??
+        envValue("DIFY_BASE_URL"),
+    )
+    const url = new URL(base || DIFY_CLOUD_BASE_URL)
+    url.pathname = `${url.pathname}/v1/parameters`.replace(/\/+/g, "/")
+    const res = await safeFetch(url.toString(), {
+      headers: { Authorization: `Bearer ${envValue(apiKeyName)}` },
+      signal: AbortSignal.timeout(10_000),
+    })
+    if (!res.ok) return { balanceStatus: "error", balanceLabel: `Dify Cloud parameters HTTP ${res.status}` }
+    const inputForm = recordValue(res.body, "user_input_form")
+    return {
+      balanceStatus: "ok",
+      balanceLabel: `Dify Cloud API ok: ${Array.isArray(inputForm) ? inputForm.length : 0} inputs`,
+    }
   } catch (error) {
-    return healthError("Dify", error)
+    return healthError("Dify Cloud", error)
   }
 }
 

@@ -1101,6 +1101,17 @@ async function liveBalance(def: SalesIntegrationDefinition): Promise<Pick<SalesI
   if (def.balance === "openmontage_health") return checkOpenMontageHealth()
   if (def.balance === "comfyui_health") return checkComfyUiHealth()
   if (def.balance === "r2_health") return checkR2DeliveryHealth()
+  if (def.balance === "vast_health") return checkVastHealth()
+  if (def.balance === "astro_health") return checkAstroHealth()
+  if (def.balance === "calcom_health") return checkCalcomHealth()
+  if (def.balance === "crawlee_health") return checkCrawleeHealth()
+  if (def.balance === "playwright_stealth_health") return checkPlaywrightStealthHealth()
+  if (def.balance === "dify_health") return checkDifyHealth()
+  if (def.balance === "n8n_health") return checkN8nHealth()
+  if (def.balance === "slidev_gotenberg_health") return checkSlidevGotenbergHealth()
+  if (def.balance === "supabase_studio_health") return checkSupabaseStudioHealth()
+  if (def.balance === "ffmpeg_health") return checkFFmpegHealth()
+  if (def.balance === "ffcreator_health") return checkFFCreatorHealth()
   return null
 }
 

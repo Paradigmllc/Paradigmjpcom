@@ -44,6 +44,8 @@ export const DIFY_RUNTIME_KEY_ENV_NAMES = Array.from(
 )
 
 export const DIFY_RUNTIME_URL_ENV_NAMES = [
+  "DIFY_API_BASE",
+  "DIFY_API_URL",
   "DIFY_BASE_URL",
   "DIFY_DIAGNOSIS_BASE_URL",
   "DIFY_DIAGNOSIS_API_URL",
@@ -69,13 +71,21 @@ function isDifyCloudUrl(value: string): boolean {
 export function normalizeDifyCloudBaseUrl(value?: string | null): string {
   if (!value) return DIFY_CLOUD_BASE_URL
   const trimmed = value.trim().replace(/\/+$/, "")
-  return isDifyCloudUrl(trimmed) ? trimmed : DIFY_CLOUD_BASE_URL
+  if (!isDifyCloudUrl(trimmed)) return DIFY_CLOUD_BASE_URL
+  return DIFY_CLOUD_BASE_URL
 }
 
 export function normalizeDifyCloudApiUrl(value?: string | null): string {
   if (!value) return `${DIFY_CLOUD_BASE_URL}/v1/workflows/run`
   const trimmed = value.trim()
-  return isDifyCloudUrl(trimmed) ? trimmed : `${DIFY_CLOUD_BASE_URL}/v1/workflows/run`
+  if (!isDifyCloudUrl(trimmed)) return `${DIFY_CLOUD_BASE_URL}/v1/workflows/run`
+  try {
+    const url = new URL(trimmed)
+    if (/\/v1\/workflows\/run\/?$/i.test(url.pathname)) return url.toString().replace(/\/+$/, "")
+  } catch {
+    return `${DIFY_CLOUD_BASE_URL}/v1/workflows/run`
+  }
+  return `${DIFY_CLOUD_BASE_URL}/v1/workflows/run`
 }
 
 export function resolveDifyWorkflowKey(groups: DifyWorkflowGroup[]): string | null {
@@ -94,6 +104,8 @@ export function getDifyCloudRuntimeConfig(groups: DifyWorkflowGroup[] = ["defaul
     optionalEnv("DIFY_VIDEO_WORKFLOW_BASE_URL") ??
       optionalEnv("DIFY_DIAGNOSIS_BASE_URL") ??
       optionalEnv("DIFY_FORM_MESSAGE_BASE_URL") ??
+      optionalEnv("DIFY_API_BASE") ??
+      optionalEnv("DIFY_API_URL") ??
       optionalEnv("DIFY_BASE_URL"),
   )
   const workflowUrl = normalizeDifyCloudApiUrl(

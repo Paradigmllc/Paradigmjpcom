@@ -35,40 +35,9 @@ const NOINDEX_PATTERN = /^\/(?:[a-z]{2}\/)?(?:report|p|diagnostic)(?:\/|$)/i
 
 // X-Robots-Tag: SEO 完全禁止の最強構成
 const NOINDEX_VALUE = "noindex, nofollow, noarchive, nosnippet, noimageindex"
-const STUDIO_HOSTS = new Set(["studio.paradigmjp.com", "openmontage.paradigmjp.com"])
-const LOCALE_PATH_PATTERN = /^\/[a-z]{2}(?:\/|$)/i
-
-function resolveHostname(request: NextRequest): string {
-  const forwardedHost = request.headers.get("x-forwarded-host")
-  const host = forwardedHost || request.headers.get("host") || ""
-  return host.split(",")[0]?.split(":")[0]?.trim().toLowerCase() ?? ""
-}
-
-function rewriteStudioSubdomain(request: NextRequest): NextResponse | null {
-  const hostname = resolveHostname(request)
-  if (!STUDIO_HOSTS.has(hostname)) return null
-
-  const url = request.nextUrl.clone()
-  if (url.pathname === "/" || url.pathname === "") {
-    url.pathname = "/ja/studio"
-    return NextResponse.rewrite(url)
-  }
-  if (url.pathname === "/studio") {
-    url.pathname = "/ja/studio"
-    return NextResponse.rewrite(url)
-  }
-  if (!LOCALE_PATH_PATTERN.test(url.pathname)) {
-    url.pathname = `/ja${url.pathname}`
-    return NextResponse.rewrite(url)
-  }
-
-  return null
-}
 
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const studioRewrite = rewriteStudioSubdomain(request)
-  if (studioRewrite) return studioRewrite
 
   // ─── 通常 routing は next-intl に委譲 ────────────────────────────────
   const response = intlMiddleware(request)

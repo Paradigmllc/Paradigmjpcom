@@ -9,6 +9,7 @@ import {
   BriefcaseBusiness,
   ChevronRight,
   Database,
+  ExternalLink,
   FileText,
   Globe2,
   LayoutDashboard,
@@ -33,8 +34,6 @@ import { SalesAgentTeamPanel } from "./SalesAgentTeamPanel"
 import { SalesAutomationPanel } from "./SalesAutomationPanel"
 import { SalesDocsPanel } from "./SalesDocsPanel"
 import { SalesOperationsAuditPanel } from "./SalesOperationsAuditPanel"
-import { SalesTemplateWorkbenchPanel } from "./SalesTemplateWorkbenchPanel"
-import { SalesVideoPipelinePanel } from "./SalesVideoPipelinePanel"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 
 type SalesTab =
@@ -64,17 +63,18 @@ type TabItem = {
   eyebrow: string
   description: string
   icon: React.ComponentType<{ className?: string }>
+  externalGui?: true
 }
 
 const tabItems: TabItem[] = [
   { id: "overview", label: "司令塔", eyebrow: "COMMAND", description: "全体KPIと優先リード", icon: LayoutDashboard },
   { id: "automation", label: "CSV・自動診断", eyebrow: "INTAKE", description: "投入から企業カルテ生成", icon: UploadCloud },
-  { id: "videoPipeline", label: "動画スタジオ", eyebrow: "VIDEO STUDIO", description: "営業動画と納品動画", icon: Video },
+  { id: "videoPipeline", label: "動画制作", eyebrow: "OPENMONTAGE", description: "OpenMontage正規入口", icon: Video, externalGui: true },
   { id: "operator", label: "オペレーター", eyebrow: "QUEUE", description: "人間確認が必要な作業", icon: ListChecks },
   { id: "agentTeam", label: "AIチーム", eyebrow: "AGENTS", description: "Hermes / Telegram / Slack", icon: Bot },
-  { id: "directus", label: "資料スタジオ", eyebrow: "SLIDEV / PDF", description: "営業資料とスライド", icon: Sparkles },
-  { id: "keystatic", label: "デモサイト", eyebrow: "ASTROデモ", description: "差し替えデモとLP", icon: Globe2 },
-  { id: "supabaseStudio", label: "診断レポート", eyebrow: "レポートSSOT", description: "診断レポートの文面と構成", icon: Database },
+  { id: "directus", label: "資料・スライド", eyebrow: "DIRECTUS", description: "Directus正規GUI", icon: Sparkles, externalGui: true },
+  { id: "keystatic", label: "デモサイト管理", eyebrow: "KEYSTATIC", description: "Keystatic正規GUI", icon: Globe2, externalGui: true },
+  { id: "supabaseStudio", label: "診断レポート", eyebrow: "SUPABASE", description: "Supabase Studio", icon: Database, externalGui: true },
   { id: "crm", label: "CRM設定", eyebrow: "TWENTY", description: "表示列と選択肢マスター", icon: BriefcaseBusiness },
   { id: "analytics", label: "分析", eyebrow: "METABASE", description: "営業KPIとボトルネック", icon: BarChart3 },
   { id: "integrations", label: "統合", eyebrow: "OSS / API", description: "接続・残量・未設定", icon: Database },
@@ -84,6 +84,7 @@ const tabItems: TabItem[] = [
 ]
 
 const tabIds = new Set<SalesTab>(tabItems.map((tab) => tab.id))
+const externalGuiIds = new Set<SalesTab>(tabItems.filter((tab) => tab.externalGui).map((tab) => tab.id))
 
 const localeLabels: Record<string, { country: string; language: string }> = {
   ja: { country: "日本", language: "日本語" },
@@ -123,6 +124,33 @@ function statusLabel(status: string): string {
   return status
 }
 
+function withPath(baseUrl: string, pathname: string): string {
+  try {
+    const url = new URL(baseUrl)
+    if (!url.pathname || url.pathname === "/") url.pathname = pathname
+    return url.toString()
+  } catch (error) {
+    console.error("[sales-command-center] invalid external GUI URL:", error)
+    return baseUrl
+  }
+}
+
+function toolUrl(data: SalesDashboardData, slug: string): string | null {
+  return data.toolConnections.find((tool) => tool.slug === slug)?.baseUrl ?? null
+}
+
+function resolveExternalGuiUrl(tab: SalesTab, data: SalesDashboardData): string {
+  if (tab === "directus") return withPath(toolUrl(data, "directus") ?? "https://directus.paradigmjp.com", "/admin")
+  if (tab === "keystatic") return toolUrl(data, "keystatic") ?? "https://keystatic.paradigmjp.com"
+  if (tab === "supabaseStudio") return process.env.NEXT_PUBLIC_SUPABASE_STUDIO_URL?.trim() || "https://supabase.com/dashboard/project/yihdmgtxiqfdgdueolub"
+  if (tab === "videoPipeline") {
+    const configured = process.env.NEXT_PUBLIC_OPENMONTAGE_STUDIO_URL?.trim()
+    if (configured && !configured.includes("studio.paradigmjp.com")) return configured
+    return "https://github.com/calesthio/OpenMontage"
+  }
+  return "/"
+}
+
 function MetricTile({ label, value, helper, delay }: { label: string; value: string; helper: string; delay: number }) {
   return (
     <motion.div
@@ -135,6 +163,42 @@ function MetricTile({ label, value, helper, delay }: { label: string; value: str
       <p className="mt-1.5 text-2xl font-bold tracking-tight text-zinc-900">{value}</p>
       <p className="mt-1 truncate text-xs font-medium text-zinc-400">{helper}</p>
     </motion.div>
+  )
+}
+
+function ExternalGuiPanel({ tab, data }: { tab: SalesTab; data: SalesDashboardData }) {
+  const item = tabItems.find((candidate) => candidate.id === tab) ?? tabItems[0]
+  const Icon = item.icon
+  const url = resolveExternalGuiUrl(tab, data)
+  return (
+    <section className="p-6 sm:p-8">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50">
+              <Icon className="h-5 w-5 text-zinc-900" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">{item.eyebrow}</p>
+              <h3 className="text-xl font-bold tracking-tight text-zinc-950">{item.label}</h3>
+            </div>
+          </div>
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-600">
+            Revenue OS内の代替ワークベンチ表示は廃止しました。この項目は正規の外部OSS管理画面を開きます。
+          </p>
+          <p className="mt-2 break-all font-mono text-xs text-zinc-500">{url}</p>
+        </div>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-zinc-950 px-4 text-sm font-bold text-white shadow-sm hover:bg-zinc-800"
+        >
+          正規GUIを開く
+          <ExternalLink className="h-4 w-4" aria-hidden />
+        </a>
+      </div>
+    </section>
   )
 }
 
@@ -156,6 +220,11 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
     else params.set("tab", tab)
     const query = params.toString()
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+  }
+
+  function openExternalGui(tab: SalesTab) {
+    const url = resolveExternalGuiUrl(tab, data)
+    window.open(url, "_blank", "noopener,noreferrer")
   }
 
   function handleLocaleChange(newLocale: string) {
@@ -198,37 +267,13 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
       case "agentTeam":
         return <SalesAgentTeamPanel data={data} />
       case "videoPipeline":
-        return <SalesVideoPipelinePanel data={data} />
+        return <ExternalGuiPanel tab="videoPipeline" data={data} />
       case "directus":
-        return (
-          <SalesTemplateWorkbenchPanel
-            data={data}
-            initialAssetType="sales_deck"
-            heading="資料スタジオ"
-            title="営業資料・スライドのテンプレート管理"
-            description="営業資料、PDF、提案スライドの文面と構成をRevenue OS内で管理します。"
-          />
-        )
+        return <ExternalGuiPanel tab="directus" data={data} />
       case "keystatic":
-        return (
-          <SalesTemplateWorkbenchPanel
-            data={data}
-            initialAssetType="astro_demo_site"
-            heading="デモサイト"
-            title="Astroデモ・LPのテンプレート管理"
-            description="差し替えデモサイトとLP生成に使うテンプレートを管理します。"
-          />
-        )
+        return <ExternalGuiPanel tab="keystatic" data={data} />
       case "supabaseStudio":
-        return (
-          <SalesTemplateWorkbenchPanel
-            data={data}
-            initialAssetType="diagnostic_report"
-            heading="診断レポート"
-            title="診断レポートのテンプレート管理"
-            description="Supabase SSOTに保存される診断レポートの構成、品質基準、Dify選定条件を確認・編集します。"
-          />
-        )
+        return <ExternalGuiPanel tab="supabaseStudio" data={data} />
       case "crm":
         return <CrmPanel data={data} />
       case "analytics":
@@ -268,16 +313,12 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
                 {tabItems.map((tab) => {
                   const Icon = tab.icon
                   const isActive = activeTab === tab.id
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => changeTab(tab.id)}
-                      className={`group relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left transition-all duration-200 ${
-                        isActive ? "bg-zinc-900 text-white shadow-md shadow-zinc-900/10" : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
-                      }`}
-                      aria-pressed={isActive}
-                    >
+                  const externalUrl = tab.externalGui ? resolveExternalGuiUrl(tab.id, data) : null
+                  const itemClassName = `group relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left transition-all duration-200 ${
+                    isActive ? "bg-zinc-900 text-white shadow-md shadow-zinc-900/10" : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
+                  }`
+                  const itemContent = (
+                    <>
                       {isActive && <motion.div layoutId="activeTab" className="absolute inset-0 rounded-lg bg-zinc-900" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}
                       <Icon className={`relative z-10 h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-zinc-400 group-hover:text-zinc-700"}`} />
                       <span className="relative z-10 min-w-0 flex-1">
@@ -286,7 +327,32 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
                           {tab.eyebrow}
                         </span>
                       </span>
-                      {isActive && <ChevronRight className="relative z-10 h-3.5 w-3.5 text-zinc-400" />}
+                      {externalUrl ? <ExternalLink className="relative z-10 h-3.5 w-3.5 text-zinc-400" aria-hidden /> : isActive && <ChevronRight className="relative z-10 h-3.5 w-3.5 text-zinc-400" />}
+                    </>
+                  )
+                  if (externalUrl) {
+                    return (
+                      <a
+                        key={tab.id}
+                        href={externalUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={itemClassName}
+                        aria-current={isActive ? "page" : undefined}
+                      >
+                        {itemContent}
+                      </a>
+                    )
+                  }
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => changeTab(tab.id)}
+                      className={itemClassName}
+                      aria-pressed={isActive}
+                    >
+                      {itemContent}
                     </button>
                   )
                 })}
@@ -353,7 +419,14 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
               <span className="sr-only">営業機能を選択</span>
               <select
                 value={activeTab}
-                onChange={(event) => changeTab(event.target.value as SalesTab)}
+                onChange={(event) => {
+                  const nextTab = event.target.value as SalesTab
+                  if (externalGuiIds.has(nextTab)) {
+                    openExternalGui(nextTab)
+                    return
+                  }
+                  changeTab(nextTab)
+                }}
                 className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm font-bold shadow-sm outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
                 aria-label="営業機能を選択"
               >
