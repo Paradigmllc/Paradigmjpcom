@@ -19,6 +19,8 @@ import type {
 
 export interface RunOutreachOptions {
   region?: Region
+  companyId?: string
+  pipelineRunId?: string | null
   limit?: number
   dryRun?: boolean
   first5Approval?: boolean
@@ -68,9 +70,22 @@ async function fetchPageHtml(url: string, timeoutMs: number): Promise<string | n
   }
 }
 
-async function fetchCandidates(region: Region, limit: number): Promise<SalesCompany[]> {
+async function fetchCandidates(region: Region, limit: number, companyId?: string): Promise<SalesCompany[]> {
   const sb = getServiceSalesSupabase()
   if (!sb) return []
+  if (companyId) {
+    const { data, error } = await sb
+      .from("sales_companies")
+      .select("*")
+      .eq("id", companyId)
+      .maybeSingle()
+    if (error) {
+      console.error("[sales-outreach] fetch pipeline company failed:", error.message)
+      return []
+    }
+    return data ? [data as SalesCompany] : []
+  }
+
   const { data, error } = await sb
     .from("sales_companies")
     .select("*")
@@ -107,10 +122,12 @@ async function logActivity(
   stage: OutreachStage,
   result: ActivityResult,
   meta: Record<string, unknown>,
+  pipelineRunId?: string | null,
 ): Promise<void> {
   await logOutreachActivity({
     companyId: company.id,
     region: company.region,
+    pipelineRunId,
     subject: `Form outreach (${stage})`,
     body: typeof meta.message === "string" ? meta.message : "",
     result,
@@ -127,6 +144,7 @@ async function enqueueOperatorTask(
     classification?: string | null
     priority?: number
     approvalRequired?: boolean
+    pipelineRunId?: string | null
   },
 ): Promise<void> {
   const sb = getServiceSalesSupabase()
@@ -135,6 +153,7 @@ async function enqueueOperatorTask(
     region: company.region,
     company_id: company.id,
     queue_type: "form_send",
+    pipeline_run_id: input.pipelineRunId ?? null,
     priority: input.priority ?? (input.approvalRequired ? 90 : 70),
     status: "open",
     source_tool: "n8n",
@@ -146,6 +165,7 @@ async function enqueueOperatorTask(
       classification: input.classification ?? null,
       approval_required: input.approvalRequired ?? false,
       report_url: reportUrlFor(company),
+      pipeline_run_id: input.pipelineRunId ?? null,
       created_by: "sales_outreach_orchestrator",
     },
   })
@@ -159,10 +179,11 @@ async function persistOutcome(
   sendResult: string,
   meta: Record<string, unknown>,
   dryRun: boolean,
+  pipelineRunId?: string | null,
 ): Promise<void> {
   if (dryRun) return
   await applyOutcome(company, stage, sendResult)
-  await logActivity(company, stage, result, meta)
+  await logActivity(company, stage, result, meta, pipelineRunId)
   if (stage === "manual_queue") {
     await enqueueOperatorTask(company, {
       reason: sendResult,
@@ -171,6 +192,7 @@ async function persistOutcome(
       classification: typeof meta.classification === "string" ? meta.classification : null,
       priority: meta.approvalRequired === true ? 95 : undefined,
       approvalRequired: meta.approvalRequired === true,
+      pipelineRunId,
     })
   }
 }
@@ -218,6 +240,7 @@ async function processOne(
         `form URL not found: ${discovery.method}`,
         { formUrl, discovery, message },
         opts.dryRun,
+        opts.pipelineRunId,
       )
       return { ...base("manual_queue", `form URL not found: ${discovery.method}`), formUrl, message }
     }
@@ -232,6 +255,7 @@ async function processOne(
       "form HTML fetch failed",
       { formUrl, message },
       opts.dryRun,
+      opts.pipelineRunId,
     )
     return { ...base("manual_queue", "form HTML fetch failed"), formUrl, message }
   }
@@ -245,6 +269,7 @@ async function processOne(
       "captcha requires manual handling",
       { formUrl, classification: classification.classification, message },
       opts.dryRun,
+      opts.pipelineRunId,
     )
     if (!opts.dryRun) {
       await notifySlack(`Manual form queue: ${company.company_name} (${company.domain}) requires CAPTCHA handling.`)
@@ -260,6 +285,7 @@ async function processOne(
       `unsafe: ${classification.classification}`,
       { formUrl, classification: classification.classification },
       opts.dryRun,
+      opts.pipelineRunId,
     )
     return { ...base("classified_skip", `unsafe: ${classification.classification}`), formUrl, message, classification: classification.classification }
   }
@@ -273,6 +299,7 @@ async function processOne(
       `preflight: ${preflightResult.reason}`,
       { formUrl, classification: classification.classification, preflight: preflightResult.reason },
       opts.dryRun,
+      opts.pipelineRunId,
     )
     return { ...base("preflight_failed", preflightResult.reason), formUrl, message, classification: classification.classification }
   }
@@ -285,6 +312,7 @@ async function processOne(
       "first-5 approval gate before live form submit",
       { formUrl, classification: classification.classification, message, approvalRequired: true },
       opts.dryRun,
+      opts.pipelineRunId,
     )
     await notifySlack(
       `Approval required before first live form submit: ${company.company_name} (${company.domain})\nForm: ${formUrl}\nReport: ${reportUrl}`,
@@ -322,6 +350,7 @@ async function processOne(
       message,
     },
     opts.dryRun,
+    opts.pipelineRunId,
   )
 
   if (!opts.dryRun && opts.first5Approval && index < 5 && stage === "submitted") {
@@ -340,6 +369,8 @@ async function processOne(
 export async function runOutreachBatch(options: RunOutreachOptions = {}): Promise<OutreachBatchResult> {
   const opts: Required<RunOutreachOptions> = {
     region: options.region ?? "jp",
+    companyId: options.companyId ?? "",
+    pipelineRunId: options.pipelineRunId ?? null,
     limit: options.limit ?? 5,
     dryRun: options.dryRun ?? true,
     first5Approval: options.first5Approval ?? true,
@@ -348,7 +379,7 @@ export async function runOutreachBatch(options: RunOutreachOptions = {}): Promis
     dedupDays: options.dedupDays ?? 30,
   }
 
-  const candidates = await fetchCandidates(opts.region, opts.limit)
+  const candidates = await fetchCandidates(opts.region, opts.limit, opts.companyId || undefined)
   const items: OutreachItemResult[] = []
 
   for (let i = 0; i < candidates.length; i++) {

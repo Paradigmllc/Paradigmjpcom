@@ -1,5 +1,6 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { createLeadBatch, type LeadBatchCsvRow, type SalesLeadBatchSummary } from "./monthly-batch"
+import { callDeepSeek } from "@/lib/deepseek"
 import { salesScopeFromCountry, type SalesLocaleScope } from "./locale-scope"
 import {
   buildSearxngSearchUrl,
@@ -369,7 +370,37 @@ export async function importSearxngRunToLeadBatch(input: {
   const results = (resultRes.data ?? []) as SearxngResultRow[]
   if (results.length === 0) return { ok: false, imported: 0, error: "No ready SearxNG results match the import gate" }
 
-  const rows: LeadBatchCsvRow[] = results.map((result) => ({
+  // --- LLM Pre-filtering ---
+  const validResults: SearxngResultRow[] = []
+  const CHUNK_SIZE = 50
+  for (let i = 0; i < results.length; i += CHUNK_SIZE) {
+    const chunk = results.slice(i, i + CHUNK_SIZE)
+    const promptData = chunk.map(r => ({ id: r.id, domain: r.domain, title: r.title, snippet: r.snippet }))
+    const prompt = `Evaluate the following list of search results. Return a JSON object with keys as 'id' and value boolean true/false. True if it appears to be a legitimate B2B/B2C business or corporate site. False if it is a directory site, blog, news, aggregator, social media, or irrelevant garbage.\n\n${JSON.stringify(promptData, null, 2)}`
+    
+    try {
+      const llmRes = await callDeepSeek([{ role: "user", content: prompt }], { responseFormat: "json_object", maxTokens: 2000 })
+      if (llmRes.ok && llmRes.text) {
+        const decisionMap = JSON.parse(llmRes.text) as Record<string, boolean>
+        for (const r of chunk) {
+          if (decisionMap[r.id] === true) {
+            validResults.push(r)
+          } else {
+             await sb.from("sales_searxng_search_results").update({ status: "rejected", rejection_reason: "llm_filtered" }).eq("id", r.id)
+          }
+        }
+      } else {
+        validResults.push(...chunk) // fallback if LLM fails
+      }
+    } catch (e) {
+      console.warn("[searxng-import] LLM pre-filter failed for chunk, falling back to accept:", e)
+      validResults.push(...chunk)
+    }
+  }
+
+  if (validResults.length === 0) return { ok: false, imported: 0, error: "All results filtered out by LLM" }
+
+  const rows: LeadBatchCsvRow[] = validResults.map((result) => ({
     company_name: companyNameFromResult(result),
     domain: result.domain,
     report_locale: run.report_locale,
@@ -398,16 +429,16 @@ export async function importSearxngRunToLeadBatch(input: {
   await sb
     .from("sales_searxng_search_results")
     .update({ status: "imported" })
-    .in("id", results.map((result) => result.id))
+    .in("id", validResults.map((result) => result.id))
   await sb
     .from("sales_searxng_search_runs")
     .update({
       status: "imported",
-      imported_count: results.length,
+      imported_count: validResults.length,
       batch_id: created.batch.id,
       completed_at: new Date().toISOString(),
     })
     .eq("id", run.id)
 
-  return { ok: true, batch: created.batch, imported: results.length }
+  return { ok: true, batch: created.batch, imported: validResults.length }
 }

@@ -6,6 +6,26 @@
 - Supabase remains the SSOT for company karte data, report URLs, video jobs, sync logs, and external studio state.
 - New external studio sync work is implemented locally for Twenty, Directus, and Keystatic.
 - Video studio legacy n8n errors are now treated as old migration notices with Trigger.dev re-dispatch actions.
+- Unified Sales OS pipeline runs now link Twenty/CSV intake, Supabase normalization, karte generation, report generation, optional video jobs, R2 artifact manifests, Directus/Keystatic sync, Twenty writeback, outbound preflight/send gates, reply capture, and follow-up queues through one run/step state model.
+
+## CODEX UPDATE - 2026-06-05 Pipeline Outreach Link Audit Fix
+
+- Added `supabase/migration_037_sales_pipeline_outreach_links.sql` to allow outreach/reply steps and add nullable `pipeline_run_id` links on `sales_activity_log`, `sales_operator_queue_items`, `sales_video_jobs`, and `sales_sync_logs`.
+- Extended `src/lib/sales/sales-pipeline.ts` so karte generation no longer completes until the company is `report_ready`, video jobs carry the pipeline run id, Directus/Keystatic/Twenty sync logs carry the run id, and pipeline runs continue into outbound preflight/send/reply/follow-up state.
+- Added guarded outbound behavior: live form sending requires explicit `payload.allow_live_outreach=true`; otherwise the pipeline creates an operator approval queue item and stops at `needs_review`.
+- Updated Chatwoot/LiveKit webhook persistence so `pipeline_run_id` from external payload/custom attributes updates `reply_capture` and `follow_up_queue` pipeline steps.
+- Aligned Trigger.dev integration status with the actual Sales OS envs: `TRIGGER_SALES_OS_PIPELINE_TASK_ID` plus `TRIGGER_SECRET_KEY` or `TRIGGER_ACCESS_TOKEN`.
+- Updated `scripts/run-migrations.sh`, `scripts/sales-os-no-login-deploy.mjs`, and `SalesPipelinePanel` for migration 037 and live-outreach approval options.
+
+## CODEX UPDATE - 2026-06-05 Unified Sales OS Pipeline
+
+- Added `supabase/migration_036_sales_os_pipeline.sql` with `sales_pipeline_runs`, `sales_pipeline_steps`, and `sales_artifact_manifest` as the Supabase SSOT for end-to-end sales execution.
+- Added `src/lib/sales/sales-pipeline.ts` to create/list/dispatch/run unified pipeline runs and bind existing enrichment, report asset, video job, R2 manifest, external studio sync, and Twenty writeback functions into one flow.
+- Added `/api/sales/pipeline-runs` and `/api/sales/pipeline-runs/[runId]/action` for Sales OS run creation, local execution, and Trigger.dev dispatch.
+- Added `SalesPipelinePanel` to the Revenue OS overview so operators can start a company-level pipeline, choose optional video and CMS sync, see step state, rerun locally, or dispatch to Trigger.dev.
+- Added dashboard support for latest pipeline runs with graceful warnings when migration 036 has not reached production yet.
+- Updated deploy/run-migration scripts, `.env.example`, and production service docs for `TRIGGER_SALES_OS_PIPELINE_TASK_ID`.
+- Added `src/lib/sales/sales-pipeline.test.ts` for pipeline plan and status aggregation coverage.
 
 ## CODEX UPDATE - 2026-06-05 Sales OS External Studio Sync
 
@@ -19,26 +39,50 @@
 
 ## VERIFICATION
 
+- `npm test -- --run src/lib/sales/sales-pipeline.test.ts src/lib/sales/external-studio-sync.test.ts src/lib/sales/video-pipeline.test.ts` passed.
+- `npx tsc --noEmit --pretty false` passed.
+- `npm test -- --run src/lib/sales/sales-pipeline.test.ts src/lib/sales/external-studio-sync.test.ts src/lib/sales/outreach/state-machine.test.ts src/lib/sales/outreach/preflight.test.ts src/lib/sales/outreach/form-classifier.test.ts` passed.
+- `npx tsc --noEmit --pretty false` passed after pipeline outreach link changes.
+- `git diff --check` passed with line-ending warnings only.
+- `npm run context:audit` passed.
+- `npm run build` passed. Next.js emitted existing warnings about `middleware` convention deprecation and edge runtime static generation.
+- Local dev server verification: `npx next dev --webpack -p 3000` from `D:\dev\paradigmjpcom` returned HTTP 200 for `/ja/admin/sales`; unauthenticated view correctly stopped at the admin login gate, so the new overview panel was not visually reachable without admin session cookies.
 - `npx tsc --noEmit --pretty false` passed.
 - `npm test -- --run src/lib/sales/external-studio-sync.test.ts src/lib/sales/integration-registry.test.ts src/lib/sales/company-karte.test.ts` passed.
 - `git diff --check` passed with line-ending warnings only.
 - `npm run build` passed on the second run with a longer timeout. The first 184s run timed out before completion.
+- Commit `f65f820 feat: sync external sales studios` was pushed and Coolify deployment `loevq5y3xcdhf3s6xh8kbbbx` finished.
+- Production smoke passed for `https://paradigmjp.com/ja/admin/sales`, `https://paradigmjp.com/ja`, and `https://twenty.paradigmjp.com`.
+- Production chunk check found the new sync panel and `external-sync` route in the deployed sales dashboard JS.
+- Unauthenticated production API check returned 401 for `/api/sales/companies/:id/external-sync`, confirming the route is deployed behind auth.
 
 ## ACTIVE HANDOFF
 
+- New main files: `src/lib/sales/sales-pipeline.ts`, `src/app/api/sales/pipeline-runs/route.ts`, `src/app/api/sales/pipeline-runs/[runId]/action/route.ts`, `src/components/sales-dashboard/SalesPipelinePanel.tsx`, `supabase/migration_036_sales_os_pipeline.sql`, `supabase/migration_037_sales_pipeline_outreach_links.sql`.
+- UI entry: `/ja/admin/sales` overview now shows the unified Sales OS pipeline panel above external studio sync.
+- DB: apply `supabase/migration_036_sales_os_pipeline.sql` and `supabase/migration_037_sales_pipeline_outreach_links.sql` before relying on pipeline run/step/artifact/outreach/reply state in production.
+- Trigger.dev dispatch needs `TRIGGER_SECRET_KEY` or `TRIGGER_ACCESS_TOKEN` plus `TRIGGER_SALES_OS_PIPELINE_TASK_ID`; without it, the pipeline can still run locally/manual and displays `needs_review` for dispatch.
 - Main files: `src/lib/sales/external-studio-sync.ts`, `src/app/api/sales/companies/[companyId]/external-sync/route.ts`, `src/components/sales-dashboard/ExternalStudioSyncPanel.tsx`.
 - UI entry: `/ja/admin/sales`, `/ja/admin/sales?tab=directus`, `/ja/admin/sales?tab=keystatic`.
 - DB: apply `supabase/migration_035_sales_external_studio_sync.sql` before relying on Directus/Keystatic sync logs in production.
+- Migration 035 is not applied yet: Coolify REST `exec_sql` is unavailable, Supabase MCP DDL is permission-blocked, and the local `.env.supabase` password did not authenticate to the production project.
 - Directus real sync needs `DIRECTUS_BASE_URL`, `DIRECTUS_TOKEN`, and a compatible `sales_assets` collection or configured collection name.
 - Keystatic real sync needs `KEYSTATIC_SYNC_WEBHOOK_URL` or `ASTRO_DEMO_WORKER_URL`; Keystatic URL alone is only the GUI, not a write API.
 
 ## NEXT ACTIONS
 
+- Commit and push the unified pipeline change.
+- Run `scripts/sales-os-no-login-deploy.mjs` so migrations 036/037 and the new API/UI reach production.
+- Production smoke: open `/ja/admin/sales`, start a create-only/local pipeline run for a test company, and confirm `sales_pipeline_runs`, `sales_pipeline_steps`, `sales_artifact_manifest`, and approval queue/reply linkage rows are created as expected.
 - Commit and push the current change.
 - Run `scripts/sales-os-no-login-deploy.mjs` so migration 035 and the new API/UI reach production.
 - Production smoke: open sales dashboard, Directus tab, Keystatic tab, and confirm the sync panel renders.
 
 ## RISKS
 
+- The unified pipeline creates and records the execution chain through outbound gates, but real Trigger.dev completion still requires a deployed task that updates Supabase step state from the worker side.
+- Live outbound form submission is intentionally gated; without `allow_live_outreach=true`, the run pauses in `needs_review` and creates an operator queue item.
+- `report_generate` depends on existing diagnostic report data; companies without enough report inputs can fail the required report step and surface as a pipeline failure.
+- R2 manifest rows are now created as SSOT delivery intent; actual upload/write completion still depends on downstream workers or renderer callbacks.
 - Directus schema mismatch will surface as a visible Directus API error in the sync panel until the collection fields are aligned.
 - Keystatic is Git-backed; without a sync webhook/worker, Revenue OS can show the GUI link and log skipped sync, but cannot write demo-site changes.

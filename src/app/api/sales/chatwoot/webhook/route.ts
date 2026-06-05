@@ -7,6 +7,7 @@ import {
   companyIdFromRecords,
   forwardPostOutreachToN8n,
   isRecord,
+  pipelineRunIdFromRecords,
   persistPostOutreachEvent,
   regionFromRecords,
   text,
@@ -55,6 +56,7 @@ export async function POST(req: NextRequest) {
     "unknown contact"
   const region = regionFromRecords(customAttributes, conversation, payload, body)
   const companyId = companyIdFromRecords(customAttributes, conversation, payload, body)
+  const pipelineRunId = pipelineRunIdFromRecords(customAttributes, conversation, payload, body)
   const subject = `Chatwoot inbound: ${contactLabel}`
 
   const summary: JsonRecord = {
@@ -65,6 +67,29 @@ export async function POST(req: NextRequest) {
     conversationId: text(conversation, ["id", "display_id"]),
     contentSnippet: content ? content.slice(0, 300) : null,
   }
+
+  const accountId = process.env.CHATWOOT_ACCOUNT_ID
+  const conversationIdValue = text(conversation, ["id", "display_id"])
+
+  if (companyId && conversationIdValue && accountId && eventType === "message_created") {
+    // Only inject context if this is a new inbound message and we haven't already injected it
+    // For simplicity, we just inject it on message creation if it's the first message or if we want context.
+    // In a real app we might check if we've already done it, but here we provide context to the agent.
+    const { findCompanyById } = await import("@/lib/sales/companies")
+    const { addChatwootPrivateNote } = await import("@/lib/sales/chatwoot-client")
+    const company = await findCompanyById(companyId)
+    if (company) {
+      const painPoint = (company.meta as any)?.pain_diagnosis?.primaryPain ?? "Unknown"
+      const reportUrl = company.report_url ?? "Not generated"
+      const noteContent = `**System Context (Sales OS)**\n- Company: ${company.company_name}\n- Pain Point: ${painPoint}\n- Report URL: ${reportUrl}\n- Stage: ${company.pipeline_status}`
+      
+      const injectRes = await addChatwootPrivateNote(accountId, conversationIdValue, noteContent)
+      if (!injectRes.ok) {
+        console.warn("[chatwoot-webhook] Failed to inject private note:", injectRes.error)
+      }
+    }
+  }
+
   const postOutreachWebhook = process.env.N8N_POST_OUTREACH_WEBHOOK_URL
   const forward = await forwardPostOutreachToN8n({
     webhookUrl: postOutreachWebhook && postOutreachWebhook.trim().length > 0 ? postOutreachWebhook.trim() : null,
@@ -76,6 +101,7 @@ export async function POST(req: NextRequest) {
   const persist = await persistPostOutreachEvent({
     region,
     companyId,
+    pipelineRunId,
     activityType: "email",
     result: forward.ok ? "success" : "follow_up",
     subject,

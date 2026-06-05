@@ -238,11 +238,26 @@ export interface SalesTemplate {
 
 export interface SalesSyncLog {
   id: string
-  direction: "supabase->notion" | "notion->supabase"
+  direction:
+    | "supabase->notion"
+    | "notion->supabase"
+    | "supabase->twenty"
+    | "twenty->supabase"
+    | "supabase->directus"
+    | "directus->supabase"
+    | "supabase->keystatic"
+    | "keystatic->supabase"
   entity_type: "company" | "customer" | "delivery" | "template"
   entity_id: string | null
   notion_page_id: string | null
-  action: "create" | "update" | "delete"
+  action:
+    | "create"
+    | "update"
+    | "delete"
+    | "karte_home_sync"
+    | "opportunity_sync"
+    | "external_studio_sync"
+    | "external_studio_pull"
   status: "success" | "error" | "skipped"
   error_message: string | null
   payload: Record<string, unknown> | null

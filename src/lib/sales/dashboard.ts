@@ -12,6 +12,7 @@ import { emptySourceAcquisitionSummary, getSourceAcquisitionSummary } from "@/li
 import { listLeadBatches } from "@/lib/sales/monthly-batch"
 import { listSearxngRuns } from "@/lib/sales/searxng-source"
 import { listJapanReadinessInsights } from "@/lib/sales/japan-readiness"
+import { listSalesPipelineRuns } from "@/lib/sales/sales-pipeline"
 import type {
   DashboardAuditCheck,
   DashboardAuditSection,
@@ -711,6 +712,7 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
       leadBatches: [],
       searxngRuns: [],
       japanReadinessInsights: [],
+      salesPipeline: { runs: [], error: "Supabase service_role is not configured." },
       companies: [],
       activities: [],
       syncLogs: [],
@@ -754,6 +756,7 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
     leadBatchesRes,
     searxngRunsRes,
     japanReadinessRes,
+    salesPipeline,
     videoJobsRes,
   ] = await Promise.all([
     fetchDashboardCompanies(sb, scope),
@@ -804,6 +807,7 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
     listLeadBatches(scope, 8),
     listSearxngRuns(scope, 8),
     listJapanReadinessInsights(scope, 8),
+    listSalesPipelineRuns(20),
     listVideoJobs(25, { locale: scope.reportLocale }),
   ])
 
@@ -820,6 +824,7 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
   if (!leadBatchesRes.ok && leadBatchesRes.error) warnings.push(`sales_lead_batches: ${leadBatchesRes.error}`)
   if (!searxngRunsRes.ok && searxngRunsRes.error) warnings.push(`sales_searxng_search_runs: ${searxngRunsRes.error}`)
   if (!japanReadinessRes.ok && japanReadinessRes.error) warnings.push(`sales_japan_readiness_insights: ${japanReadinessRes.error}`)
+  if (salesPipeline.error) warnings.push(`sales_pipeline_runs: ${salesPipeline.error}`)
   warnings.push(...infrastructure.warnings)
 
   for (const warning of warnings) console.error(`[sales-dashboard] ${warning}`)
@@ -922,6 +927,7 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
     leadBatches: leadBatchesRes.batches,
     searxngRuns: searxngRunsRes.runs,
     japanReadinessInsights: japanReadinessRes.insights,
+    salesPipeline,
     companies,
     activities,
     syncLogs,

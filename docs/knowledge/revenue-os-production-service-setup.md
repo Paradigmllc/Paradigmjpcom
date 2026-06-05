@@ -23,6 +23,7 @@ This file intentionally contains no secret values. Put real values only in Cooli
 | OpenMontage | `OPENMONTAGE_API_URL=https://openmontage.paradigmjp.com`, `NEXT_PUBLIC_OPENMONTAGE_STUDIO_URL=https://studio.paradigmjp.com` | `OPENMONTAGE_API_KEY` | Use the internal OpenMontage-compatible API wrapper. Public official OSS could not be verified, so do not present this as an external official GUI. |
 | Cloudflare R2 | `CLOUDFLARE_R2_PUBLIC_BASE_URL=https://assets.paradigmjp.com`, `CLOUDFLARE_R2_BUCKET` | `CLOUDFLARE_R2_ACCOUNT_ID`, `CLOUDFLARE_R2_ACCESS_KEY_ID`, `CLOUDFLARE_R2_SECRET_ACCESS_KEY` | Create an R2 bucket, connect a production custom domain, then create an S3-compatible R2 API token with object read/write for that bucket. |
 | ComfyUI API | `COMFYUI_API_URL=https://comfyui.paradigmjp.com` | `COMFYUI_API_KEY` | Deploy ComfyUI behind an authenticated API gateway or reverse proxy. The native `/prompt` route must not be exposed without the shared bearer key. |
+| Trigger.dev Sales OS | `TRIGGER_API_URL=https://api.trigger.dev`, `TRIGGER_DASHBOARD_URL=https://cloud.trigger.dev`, `TRIGGER_SALES_OS_PIPELINE_TASK_ID` | `TRIGGER_SECRET_KEY` or `TRIGGER_ACCESS_TOKEN` | Create a Trigger.dev task that accepts `run_id` and executes the Sales OS steps against Supabase. Revenue OS falls back to local/manual execution when this task is missing. |
 
 ## Revenue OS live checks
 
@@ -36,3 +37,4 @@ This file intentionally contains no secret values. Put real values only in Cooli
 - OpenMontage: `/health` or `/api/health` with bearer token.
 - Cloudflare R2: S3 `HeadBucket`.
 - ComfyUI: `/system_stats` with bearer/API-key headers.
+- Trigger.dev Sales OS: `/api/sales/pipeline-runs` can create a run; dispatch mode queues `TRIGGER_SALES_OS_PIPELINE_TASK_ID` when configured.

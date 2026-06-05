@@ -8,6 +8,7 @@ import {
   forwardPostOutreachToN8n,
   isRecord,
   parseMaybeJsonRecord,
+  pipelineRunIdFromRecords,
   persistPostOutreachEvent,
   regionFromRecords,
   text,
@@ -56,6 +57,7 @@ export async function POST(req: NextRequest) {
   const bodyMeta = parseMaybeJsonRecord(body.metadata)
   const region = regionFromRecords(participantMeta, roomMeta, bodyMeta, body)
   const companyId = companyIdFromRecords(participantMeta, roomMeta, bodyMeta, body)
+  const pipelineRunId = pipelineRunIdFromRecords(participantMeta, roomMeta, bodyMeta, body)
   const roomName = text(room, ["name", "sid"]) ?? text(body, ["room_name", "roomName"]) ?? "unknown room"
   const participantIdentity = text(participant, ["identity", "name", "sid"]) ?? text(body, ["participant_identity", "participantIdentity"])
   const transcript =
@@ -83,6 +85,7 @@ export async function POST(req: NextRequest) {
   const persist = await persistPostOutreachEvent({
     region,
     companyId,
+    pipelineRunId,
     activityType: activity.type,
     result: forward.ok && eventIsFinished(eventType) ? "completed" : activity.result,
     subject: `LiveKit discovery: ${roomName}`,

@@ -40,6 +40,7 @@ import { SalesUnifiedOpsPanel } from "./SalesUnifiedOpsPanel"
 import { SalesProVideoStudioPanel } from "./SalesProVideoStudioPanel"
 import { SalesReportVideoStudioPanel } from "./SalesReportVideoStudioPanel"
 import { ExternalStudioSyncPanel } from "./ExternalStudioSyncPanel"
+import { SalesPipelinePanel } from "./SalesPipelinePanel"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 
 type SalesTab =
@@ -265,6 +266,7 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
       case "overview":
         return (
           <div className="grid gap-5">
+            <SalesPipelinePanel data={data} />
             <ExternalStudioSyncPanel data={data} studio="all" />
             <SalesUnifiedOpsPanel data={data} />
             <OverviewPanel data={data} />

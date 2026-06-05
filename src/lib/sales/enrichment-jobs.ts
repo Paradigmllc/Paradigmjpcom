@@ -149,8 +149,8 @@ export async function triggerEnrichmentRunner(limit = 3): Promise<{ ok: boolean;
   const url = jobRunnerUrl()
   const secret = process.env.N8N_WEBHOOK_SECRET
   if (!url || !secret) {
-    console.warn("[sales-enrichment] runner trigger skipped: URL or N8N_WEBHOOK_SECRET is not configured")
-    return { ok: false, error: "runner trigger not configured" }
+    console.error("[sales-enrichment] CRITICAL: Trigger.dev or n8n webhook URL is not configured. Running enrichment inline may cause Vercel/serverless timeouts for long tasks.")
+    return { ok: false, error: "runner trigger not configured - missing external orchestrator" }
   }
 
   try {
@@ -405,6 +405,7 @@ async function processJob(sb: ServiceSupabase, job: SalesEnrichmentJob): Promise
     twenty_sync: twentySync.ok ? "synced" : twentySync.configured ? "failed" : "not_configured",
     dify_configured: dify.configured,
     dify_ok: dify.ok,
+    dify_error: dify.ok ? null : (dify.error ?? "Dify diagnosis failed silently"),
     pain_summary: dify.summary.primaryPain,
   })
 

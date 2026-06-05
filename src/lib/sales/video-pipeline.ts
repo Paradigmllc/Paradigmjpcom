@@ -44,6 +44,7 @@ export type VideoTargetPlatform = "sales_deck_embed" | "report_page" | "shorts_9
 
 export interface SalesVideoJob {
   id: string
+  pipeline_run_id: string | null
   company_id: string | null
   job_type: VideoJobType
   status: VideoJobStatus
@@ -251,6 +252,7 @@ export async function createVideoJob(input: {
   qualityTier?: VideoQualityTier
   lossInputs?: VideoLossInputs
   reportLocale?: string | null
+  pipelineRunId?: string | null
   priority?: number
   requestedBy?: string
   creativeBrief?: { narrativePrompt?: string | null; visualPrompt?: string | null; negativePrompt?: string | null }
@@ -339,6 +341,7 @@ export async function createVideoJob(input: {
     .from("sales_video_jobs")
     .insert({
       company_id: company.id,
+      pipeline_run_id: input.pipelineRunId ?? null,
       job_type: input.jobType,
       status: "draft",
       priority: input.priority ?? 50,
@@ -422,6 +425,49 @@ async function fetchJob(jobId: string): Promise<SalesVideoJob> {
   return data as SalesVideoJob
 }
 
+async function updateLinkedPipelineVideoStep(job: SalesVideoJob, status: VideoJobStatus): Promise<void> {
+  if (!job.pipeline_run_id) return
+  const sb = getServiceSalesSupabase()
+  if (!sb) return
+  const now = new Date().toISOString()
+  const stepStatus =
+    status === "completed"
+      ? "completed"
+      : status === "failed" || status === "cancelled"
+        ? "failed"
+        : status === "review_required"
+          ? "needs_review"
+          : "waiting_external"
+
+  const step = await sb
+    .from("sales_pipeline_steps")
+    .update({
+      status: stepStatus,
+      completed_at: ["completed", "failed", "needs_review"].includes(stepStatus) ? now : null,
+      error_message: status === "failed" || status === "cancelled" ? job.error_message : null,
+      output_payload: {
+        video_job_id: job.id,
+        video_status: status,
+        r2_output_url: job.r2_output_url,
+        orchestration_stage: job.orchestration_stage,
+      },
+    })
+    .eq("run_id", job.pipeline_run_id)
+    .eq("step_key", "video_generate")
+  if (step.error) console.error("[sales-video-pipeline] linked pipeline step update failed:", step.error.message)
+
+  const runStatus = stepStatus === "failed" ? "failed" : stepStatus === "needs_review" ? "needs_review" : stepStatus === "completed" ? "running" : "waiting_external"
+  const run = await sb
+    .from("sales_pipeline_runs")
+    .update({
+      status: runStatus,
+      current_step: stepStatus === "completed" ? "r2_manifest" : "video_generate",
+      error_message: stepStatus === "failed" ? job.error_message : null,
+    })
+    .eq("id", job.pipeline_run_id)
+  if (run.error) console.error("[sales-video-pipeline] linked pipeline run update failed:", run.error.message)
+}
+
 export async function runVideoJobAction(input: {
   jobId: string
   action: "dispatch" | "approve_render" | "request_revision" | "complete" | "fail" | "cancel"
@@ -440,29 +486,35 @@ export async function runVideoJobAction(input: {
         n8n_execution_id: dispatched.executionId,
         error_message: dispatched.manual ? dispatched.message : null,
       })
+      await updateLinkedPipelineVideoStep(updated, updated.status)
       return { ok: true, job: updated, config, message: dispatched.message }
     }
     if (input.action === "approve_render") {
       const approvals = { ...safeRecord(job.approvals), render_approved_at: new Date().toISOString(), note: input.note ?? null }
       const updated = await updateJob(job.id, { status: "rendering", orchestration_stage: "render_approved", approvals })
+      await updateLinkedPipelineVideoStep(updated, updated.status)
       return { ok: true, job: updated, config, message: "render approved" }
     }
     if (input.action === "request_revision") {
       const approvals = { ...safeRecord(job.approvals), revision_requested_at: new Date().toISOString(), note: input.note ?? null }
       const updated = await updateJob(job.id, { status: "review_required", orchestration_stage: "revision_requested", approvals })
+      await updateLinkedPipelineVideoStep(updated, updated.status)
       return { ok: true, job: updated, config, message: "revision requested" }
     }
     if (input.action === "complete") {
       const outputUrl = input.outputUrl?.trim() ? input.outputUrl.trim() : job.r2_output_url
       const renderOutputs = { ...safeRecord(job.render_outputs), completed_at: new Date().toISOString(), output_url: outputUrl, note: input.note ?? null }
       const updated = await updateJob(job.id, { status: "completed", orchestration_stage: "delivered", r2_output_url: outputUrl, render_outputs: renderOutputs, error_message: null })
+      await updateLinkedPipelineVideoStep(updated, updated.status)
       return { ok: true, job: updated, config, message: "completed" }
     }
     if (input.action === "cancel") {
       const updated = await updateJob(job.id, { status: "cancelled", orchestration_stage: "cancelled", error_message: input.note ?? null })
+      await updateLinkedPipelineVideoStep(updated, updated.status)
       return { ok: true, job: updated, config, message: "cancelled" }
     }
     const updated = await updateJob(job.id, { status: "failed", orchestration_stage: "failed", error_message: input.note ?? "failed manually" })
+    await updateLinkedPipelineVideoStep(updated, updated.status)
     return { ok: true, job: updated, config, message: "failed" }
   } catch (error) {
     console.error("[sales-video-pipeline] action failed:", error)

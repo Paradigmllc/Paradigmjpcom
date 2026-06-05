@@ -146,7 +146,13 @@ async function twentyFetch<T>(
 }
 
 async function findTwentyCompany(karte: CompanyKarteSnapshot): Promise<TwentyRecord | null> {
-  const result = await twentyFetch<TwentyListResponse<TwentyRecord>>("/rest/companies?limit=200")
+  // Use Twenty API filter to avoid N+1 and fetching 200 records at once
+  const filterObj = {
+    "domainName.primaryLinkUrl": { ilike: `%${karte.domain}%` },
+  }
+  const query = `limit=10&filter=${encodeURIComponent(JSON.stringify(filterObj))}`
+  const result = await twentyFetch<TwentyListResponse<TwentyRecord>>(`/rest/companies?${query}`)
+  
   if (!result.ok) throw new Error(result.error)
   return result.data.data?.companies?.find((company) => domainMatches(company, karte.domain)) ?? null
 }
@@ -468,7 +474,10 @@ async function syncTwentyOpportunities(
   return opportunityIds
 }
 
-export async function syncCompanyKarteToTwenty(companyId: string): Promise<TwentySyncResult> {
+export async function syncCompanyKarteToTwenty(
+  companyId: string,
+  options: { pipelineRunId?: string | null } = {},
+): Promise<TwentySyncResult> {
   const baseUrl = twentyBaseUrl()
   const apiKey = env("TWENTY_API_KEY")
   if (!baseUrl || !apiKey) {
@@ -505,6 +514,7 @@ export async function syncCompanyKarteToTwenty(companyId: string): Promise<Twent
         direction: "supabase->twenty",
         entity_type: "company",
         entity_id: companyId,
+        pipeline_run_id: options.pipelineRunId ?? null,
         action: "karte_home_sync",
         status: "success",
         payload: {
@@ -518,6 +528,7 @@ export async function syncCompanyKarteToTwenty(companyId: string): Promise<Twent
         direction: "supabase->twenty",
         entity_type: "company",
         entity_id: companyId,
+        pipeline_run_id: options.pipelineRunId ?? null,
         action: "opportunity_sync",
         status: "success",
         payload: {
@@ -543,6 +554,7 @@ export async function syncCompanyKarteToTwenty(companyId: string): Promise<Twent
       direction: "supabase->twenty",
       entity_type: "company",
       entity_id: companyId,
+      pipeline_run_id: options.pipelineRunId ?? null,
       action: "opportunity_sync",
       status: "error",
       error_message: message,
@@ -554,7 +566,10 @@ export async function syncCompanyKarteToTwenty(companyId: string): Promise<Twent
   }
 }
 
-export async function pullTwentyCompaniesToSupabase(limit = 200): Promise<TwentyPullResult> {
+export async function pullTwentyCompaniesToSupabase(
+  limit = 200,
+  options: { pipelineRunId?: string | null } = {},
+): Promise<TwentyPullResult> {
   const baseUrl = twentyBaseUrl()
   const apiKey = env("TWENTY_API_KEY")
   if (!baseUrl || !apiKey) {
@@ -667,6 +682,7 @@ export async function pullTwentyCompaniesToSupabase(limit = 200): Promise<Twenty
       direction: "twenty->supabase",
       entity_type: "company",
       entity_id: company.id,
+      pipeline_run_id: options.pipelineRunId ?? null,
       action: "update",
       status: "success",
       payload: {

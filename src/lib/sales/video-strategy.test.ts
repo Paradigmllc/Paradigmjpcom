@@ -33,7 +33,7 @@ describe("video strategy", () => {
       expect.arrayContaining(["law_effective_date", "fine_amount", "market_size", "cagr"]),
     )
     expect(guard.dify_instruction_ja).toContain("未検証")
-    expect(guard.dify_instruction_en).toContain("primary_source_url")
+    expect(guard.dify_instruction_en).toContain("primary-source URL")
   })
 
   it("provides different defaults per segment for the GUI simulator", () => {

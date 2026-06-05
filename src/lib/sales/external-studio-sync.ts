@@ -121,6 +121,7 @@ export function buildExternalStudioPayload(karte: CompanyKarteSnapshot): JsonRec
 async function logSync(sb: ServiceSupabase, row: {
   direction: string
   entityId: string
+  pipelineRunId?: string | null
   action: string
   status: "success" | "error" | "skipped"
   errorMessage?: string | null
@@ -130,6 +131,7 @@ async function logSync(sb: ServiceSupabase, row: {
     direction: row.direction,
     entity_type: "company",
     entity_id: row.entityId,
+    pipeline_run_id: row.pipelineRunId ?? null,
     action: row.action,
     status: row.status,
     error_message: row.errorMessage ?? null,
@@ -197,7 +199,7 @@ async function directusFetch<T>(
   }
 }
 
-async function pushDirectus(sb: ServiceSupabase, karte: CompanyKarteSnapshot): Promise<ExternalStudioTargetResult> {
+async function pushDirectus(sb: ServiceSupabase, karte: CompanyKarteSnapshot, pipelineRunId?: string | null): Promise<ExternalStudioTargetResult> {
   const collection = env("DIRECTUS_SALES_ASSETS_COLLECTION") ?? "sales_assets"
   const payload = buildExternalStudioPayload(karte)
   const params = new URLSearchParams({
@@ -210,6 +212,7 @@ async function pushDirectus(sb: ServiceSupabase, karte: CompanyKarteSnapshot): P
     await logSync(sb, {
       direction: "supabase->directus",
       entityId: karte.companyId,
+      pipelineRunId,
       action: "external_studio_sync",
       status: existing.error.includes("not configured") ? "skipped" : "error",
       errorMessage: existing.error,
@@ -239,6 +242,7 @@ async function pushDirectus(sb: ServiceSupabase, karte: CompanyKarteSnapshot): P
     await logSync(sb, {
       direction: "supabase->directus",
       entityId: karte.companyId,
+      pipelineRunId,
       action: "external_studio_sync",
       status: "error",
       errorMessage: saved.error,
@@ -267,6 +271,7 @@ async function pushDirectus(sb: ServiceSupabase, karte: CompanyKarteSnapshot): P
   await logSync(sb, {
     direction: "supabase->directus",
     entityId: karte.companyId,
+    pipelineRunId,
     action: "external_studio_sync",
     status: "success",
     payload: { collection, directus_id: savedId, url: savedUrl },
@@ -285,7 +290,7 @@ async function pushDirectus(sb: ServiceSupabase, karte: CompanyKarteSnapshot): P
   }
 }
 
-async function pullDirectus(sb: ServiceSupabase, karte: CompanyKarteSnapshot): Promise<ExternalStudioTargetResult> {
+async function pullDirectus(sb: ServiceSupabase, karte: CompanyKarteSnapshot, pipelineRunId?: string | null): Promise<ExternalStudioTargetResult> {
   const collection = env("DIRECTUS_SALES_ASSETS_COLLECTION") ?? "sales_assets"
   const params = new URLSearchParams({
     "filter[company_id][_eq]": karte.companyId,
@@ -296,6 +301,7 @@ async function pullDirectus(sb: ServiceSupabase, karte: CompanyKarteSnapshot): P
     await logSync(sb, {
       direction: "directus->supabase",
       entityId: karte.companyId,
+      pipelineRunId,
       action: "external_studio_pull",
       status: result.error.includes("not configured") ? "skipped" : "error",
       errorMessage: result.error,
@@ -317,6 +323,7 @@ async function pullDirectus(sb: ServiceSupabase, karte: CompanyKarteSnapshot): P
     await logSync(sb, {
       direction: "directus->supabase",
       entityId: karte.companyId,
+      pipelineRunId,
       action: "external_studio_pull",
       status: "skipped",
       payload: { collection, reason: "no directus item" },
@@ -344,6 +351,7 @@ async function pullDirectus(sb: ServiceSupabase, karte: CompanyKarteSnapshot): P
   await logSync(sb, {
     direction: "directus->supabase",
     entityId: karte.companyId,
+    pipelineRunId,
     action: "external_studio_pull",
     status: "success",
     payload: { collection, directus_id: pulledId, url: pulledUrl },
@@ -403,6 +411,7 @@ async function syncKeystatic(
   sb: ServiceSupabase,
   karte: CompanyKarteSnapshot,
   mode: "push" | "pull",
+  pipelineRunId?: string | null,
 ): Promise<ExternalStudioTargetResult> {
   const result = await callKeystaticWebhook(karte, mode)
   const direction = mode === "push" ? "supabase->keystatic" : "keystatic->supabase"
@@ -411,6 +420,7 @@ async function syncKeystatic(
     await logSync(sb, {
       direction,
       entityId: karte.companyId,
+      pipelineRunId,
       action,
       status: result.configured ? "error" : "skipped",
       errorMessage: result.error,
@@ -436,6 +446,7 @@ async function syncKeystatic(
   await logSync(sb, {
     direction,
     entityId: karte.companyId,
+    pipelineRunId,
     action,
     status: "success",
     payload: { id: syncedId, url: externalUrl, response: result.data },
@@ -464,6 +475,7 @@ function normalizeTargets(targets: ExternalStudioTarget[] | undefined): External
 export async function syncCompanyAcrossSalesTools(
   companyId: string,
   targets?: ExternalStudioTarget[],
+  options: { pipelineRunId?: string | null } = {},
 ): Promise<ExternalStudioSyncResult> {
   const sb = getServiceSalesSupabase()
   if (!sb) throw new Error("Supabase service_role is not configured")
@@ -475,7 +487,7 @@ export async function syncCompanyAcrossSalesTools(
   const results: ExternalStudioTargetResult[] = []
 
   if (requestedTargets.includes("twenty")) {
-    const pushed = await syncCompanyKarteToTwenty(companyId)
+    const pushed = await syncCompanyKarteToTwenty(companyId, { pipelineRunId: options.pipelineRunId })
     results.push({
       target: "twenty",
       direction: "supabase->twenty",
@@ -491,7 +503,7 @@ export async function syncCompanyAcrossSalesTools(
       },
     })
 
-    const pulled = await pullTwentyCompaniesToSupabase(200)
+    const pulled = await pullTwentyCompaniesToSupabase(200, { pipelineRunId: options.pipelineRunId })
     results.push({
       target: "twenty",
       direction: "twenty->supabase",
@@ -506,13 +518,13 @@ export async function syncCompanyAcrossSalesTools(
   }
 
   if (requestedTargets.includes("directus")) {
-    results.push(await pushDirectus(sb, karte))
-    results.push(await pullDirectus(sb, karte))
+    results.push(await pushDirectus(sb, karte, options.pipelineRunId))
+    results.push(await pullDirectus(sb, karte, options.pipelineRunId))
   }
 
   if (requestedTargets.includes("keystatic")) {
-    results.push(await syncKeystatic(sb, karte, "push"))
-    results.push(await syncKeystatic(sb, karte, "pull"))
+    results.push(await syncKeystatic(sb, karte, "push", options.pipelineRunId))
+    results.push(await syncKeystatic(sb, karte, "pull", options.pipelineRunId))
   }
 
   return {

@@ -7,10 +7,12 @@ export async function POST(req: Request) {
     // For now, we will simply trigger a pull from Twenty to Supabase.
     // In a production environment, we could parse the event to pull only the updated company.
     
-    // We execute the pull asynchronously so we can quickly respond with 200 to the webhook.
-    pullTwentyCompaniesToSupabase(500).catch((error) => {
-      console.error("[twenty-webhook] async pull failed:", error);
-    });
+    // We execute the pull synchronously with maxDuration 60 to ensure it doesn't get killed
+    // in serverless environments.
+    const result = await pullTwentyCompaniesToSupabase(500);
+    if (!result.ok) {
+       console.error("[twenty-webhook] pull failed:", result.error);
+    }
 
     return NextResponse.json({ ok: true, message: "Webhook received, sync started" });
   } catch (error) {

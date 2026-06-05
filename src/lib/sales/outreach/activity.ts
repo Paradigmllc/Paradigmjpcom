@@ -17,6 +17,7 @@ export type ActivityResult = "success" | "no_answer" | "follow_up" | "declined" 
 export interface LogOutreachInput {
   companyId: string
   region: Region
+  pipelineRunId?: string | null
   subject: string
   body: string
   result: ActivityResult
@@ -32,6 +33,7 @@ export async function logOutreachActivity(
   const { error } = await sb.from("sales_activity_log").insert({
     region: input.region,
     company_id: input.companyId,
+    pipeline_run_id: input.pipelineRunId ?? null,
     activity_type: "note", // 既存 CHECK 内で outreach を表現 (meta.kind で識別)
     subject: input.subject,
     body: input.body,

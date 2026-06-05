@@ -9,6 +9,7 @@ import type { SourceAcquisitionSummary } from "@/lib/sales/source-acquisition"
 import type { SalesLeadBatchSummary } from "@/lib/sales/monthly-batch"
 import type { SearxngRunSummary } from "@/lib/sales/searxng-source"
 import type { JapanReadinessInsightSummary } from "@/lib/sales/japan-readiness"
+import type { DashboardSalesPipeline } from "@/lib/sales/sales-pipeline"
 
 export type SalesDashboardStatus = "ready" | "degraded"
 
@@ -163,6 +164,7 @@ export interface SalesDashboardData {
   leadBatches: SalesLeadBatchSummary[]
   searxngRuns: SearxngRunSummary[]
   japanReadinessInsights: JapanReadinessInsightSummary[]
+  salesPipeline: DashboardSalesPipeline
   companies: DashboardCompany[]
   activities: DashboardActivity[]
   syncLogs: DashboardSyncLog[]
