@@ -8,6 +8,16 @@
 - Video studio legacy n8n errors are now treated as old migration notices with Trigger.dev re-dispatch actions.
 - Unified Sales OS pipeline runs now link Twenty/CSV intake, Supabase normalization, karte generation, report generation, optional video jobs, R2 artifact manifests, Directus/Keystatic sync, Twenty writeback, outbound preflight/send gates, reply capture, and follow-up queues through one run/step state model.
 
+## CODEX UPDATE - 2026-06-05 Dynamic AI Prompts Management
+
+- Added `supabase/migration_038_sales_ai_prompts.sql` to extract hardcoded Dify and DeepSeek system prompts into the SSOT `sales_ai_prompts` table.
+- Added `src/lib/sales/ai-prompts.ts` to dynamically fetch prompts before executing diagnosis and form message generation, gracefully falling back to defaults if the DB is unavailable.
+- Updated `src/lib/sales/dify-diagnosis.ts` and `src/lib/sales/form-message.ts` to consume the dynamic prompts.
+- Added `/api/sales/ai-prompts` GET/PUT endpoints.
+- Added `AiPromptsPanel.tsx` and integrated it into `SalesCommandCenter.tsx` under the `?tab=prompts` view. Operators can now edit Dify prompts directly from the Sales OS admin GUI, with changes applied instantly.
+- Fixed prompt loading failure: `/api/sales/ai-prompts` now accepts the legacy admin cookie, returns fallback prompts instead of HTTP 500 when Supabase prompt storage is unavailable, and the GUI fetches/saves with credentials included.
+- Added `supabase/migration_039_sales_ai_prompts_auth_and_defaults.sql` to repair the prompt table service-role RLS policy/grants and replace corrupted seed prompt text where early mojibake defaults were inserted.
+
 ## CODEX UPDATE - 2026-06-05 Pipeline Outreach Link Audit Fix
 
 - Added `supabase/migration_037_sales_pipeline_outreach_links.sql` to allow outreach/reply steps and add nullable `pipeline_run_id` links on `sales_activity_log`, `sales_operator_queue_items`, `sales_video_jobs`, and `sales_sync_logs`.
@@ -39,7 +49,16 @@
 
 ## VERIFICATION
 
+- `npx tsc --noEmit --pretty false` passed after the prompt loading fix.
+- `npm test -- --run src/lib/sales/dify-diagnosis.test.ts src/lib/sales/dify-cloud.test.ts src/lib/sales/searxng-normalize.test.ts src/lib/sales/source-acquisition.test.ts src/lib/sales/sales-pipeline.test.ts` passed.
+- `git diff --check` passed with line-ending warnings only after the prompt loading fix.
+- Local route check against existing dev server: `http://localhost:3000/ja/admin/sales?tab=prompts` returned HTTP 200.
+- Local unauthenticated API check: `http://localhost:3000/api/sales/ai-prompts` returned HTTP 401, confirming the prompt API remains behind admin auth.
+- Pre-deploy check from `D:\dev\paradigmjpcom`: `npx tsc --noEmit --pretty false` passed.
+- Pre-deploy check from `D:\dev\paradigmjpcom`: `npm test -- --run src/lib/sales/dify-diagnosis.test.ts src/lib/sales/dify-cloud.test.ts src/lib/sales/searxng-normalize.test.ts src/lib/sales/source-acquisition.test.ts src/lib/sales/sales-pipeline.test.ts src/lib/sales/external-studio-sync.test.ts src/lib/sales/video-pipeline.test.ts src/lib/sales/outreach/state-machine.test.ts src/lib/sales/outreach/preflight.test.ts src/lib/sales/outreach/form-classifier.test.ts` passed.
+- Pre-deploy check from `D:\dev\paradigmjpcom`: `npm run build` passed. Next.js emitted existing warnings about `middleware` convention deprecation and edge runtime static generation.
 - `npm test -- --run src/lib/sales/sales-pipeline.test.ts src/lib/sales/external-studio-sync.test.ts src/lib/sales/video-pipeline.test.ts` passed.
+- `npx tsc --noEmit --pretty false` passed perfectly after AI Prompts GUI integration.
 - `npx tsc --noEmit --pretty false` passed.
 - `npm test -- --run src/lib/sales/sales-pipeline.test.ts src/lib/sales/external-studio-sync.test.ts src/lib/sales/outreach/state-machine.test.ts src/lib/sales/outreach/preflight.test.ts src/lib/sales/outreach/form-classifier.test.ts` passed.
 - `npx tsc --noEmit --pretty false` passed after pipeline outreach link changes.
@@ -61,6 +80,7 @@
 - New main files: `src/lib/sales/sales-pipeline.ts`, `src/app/api/sales/pipeline-runs/route.ts`, `src/app/api/sales/pipeline-runs/[runId]/action/route.ts`, `src/components/sales-dashboard/SalesPipelinePanel.tsx`, `supabase/migration_036_sales_os_pipeline.sql`, `supabase/migration_037_sales_pipeline_outreach_links.sql`.
 - UI entry: `/ja/admin/sales` overview now shows the unified Sales OS pipeline panel above external studio sync.
 - DB: apply `supabase/migration_036_sales_os_pipeline.sql` and `supabase/migration_037_sales_pipeline_outreach_links.sql` before relying on pipeline run/step/artifact/outreach/reply state in production.
+- DB: apply `supabase/migration_038_sales_ai_prompts.sql` and `supabase/migration_039_sales_ai_prompts_auth_and_defaults.sql` before relying on editable AI prompts in production.
 - Trigger.dev dispatch needs `TRIGGER_SECRET_KEY` or `TRIGGER_ACCESS_TOKEN` plus `TRIGGER_SALES_OS_PIPELINE_TASK_ID`; without it, the pipeline can still run locally/manual and displays `needs_review` for dispatch.
 - Main files: `src/lib/sales/external-studio-sync.ts`, `src/app/api/sales/companies/[companyId]/external-sync/route.ts`, `src/components/sales-dashboard/ExternalStudioSyncPanel.tsx`.
 - UI entry: `/ja/admin/sales`, `/ja/admin/sales?tab=directus`, `/ja/admin/sales?tab=keystatic`.

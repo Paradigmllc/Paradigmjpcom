@@ -146,11 +146,8 @@ async function twentyFetch<T>(
 }
 
 async function findTwentyCompany(karte: CompanyKarteSnapshot): Promise<TwentyRecord | null> {
-  // Use Twenty API filter to avoid N+1 and fetching 200 records at once
-  const filterObj = {
-    "domainName.primaryLinkUrl": { ilike: `%${karte.domain}%` },
-  }
-  const query = `limit=10&filter=${encodeURIComponent(JSON.stringify(filterObj))}`
+  // Use Twenty API bracket and colon filter syntax to avoid bad requests
+  const query = `limit=10&filter=domainName.primaryLinkUrl[ilike]:%25${encodeURIComponent(karte.domain)}%25`
   const result = await twentyFetch<TwentyListResponse<TwentyRecord>>(`/rest/companies?${query}`)
   
   if (!result.ok) throw new Error(result.error)

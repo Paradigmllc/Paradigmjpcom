@@ -288,6 +288,14 @@ async function applySalesPipelineOutreachLinksMigration(envs) {
   return applySqlMigration(envs, "migration_037_sales_pipeline_outreach_links.sql", "Sales pipeline outreach links migration")
 }
 
+async function applySalesAiPromptsMigration(envs) {
+  return applySqlMigration(envs, "migration_038_sales_ai_prompts.sql", "Sales AI prompts migration")
+}
+
+async function applySalesAiPromptsRepairMigration(envs) {
+  return applySqlMigration(envs, "migration_039_sales_ai_prompts_auth_and_defaults.sql", "Sales AI prompts repair migration")
+}
+
 function applyContentTemplates(envs) {
   const { url, key } = salesSupabase(envs)
   const result = spawnSync(process.execPath, ["scripts/seed-sales-content-templates.mjs"], {
@@ -381,6 +389,8 @@ async function main() {
     console.log(await applyExternalStudioSyncMigration(envs))
     console.log(await applySalesOsPipelineMigration(envs))
     console.log(await applySalesPipelineOutreachLinksMigration(envs))
+    console.log(await applySalesAiPromptsMigration(envs))
+    console.log(await applySalesAiPromptsRepairMigration(envs))
     console.log(applyContentTemplates(envs))
   } else {
     console.log("Dry run: skipped Supabase product upsert")

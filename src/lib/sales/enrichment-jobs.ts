@@ -297,6 +297,19 @@ async function completeJob(
     message: reportUrlFor(company),
     payload: resultPayload,
   })
+
+  // Auto-resume local manual pipeline run if it was waiting for this job
+  const pipelineRunId = typeof job.input_payload?.pipeline_run_id === "string" ? job.input_payload.pipeline_run_id : null
+  if (pipelineRunId) {
+    try {
+      const { runSalesPipelineLocally } = await import("./sales-pipeline-execution")
+      void runSalesPipelineLocally(pipelineRunId).catch((err: unknown) => {
+        console.error("[sales-enrichment] auto-resume pipeline failed:", err)
+      })
+    } catch (importErr) {
+      console.error("[sales-enrichment] failed to import runSalesPipelineLocally for auto-resume:", importErr)
+    }
+  }
 }
 
 async function processJob(sb: ServiceSupabase, job: SalesEnrichmentJob): Promise<{ ok: boolean; error?: string }> {

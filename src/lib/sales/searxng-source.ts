@@ -383,7 +383,8 @@ export async function importSearxngRunToLeadBatch(input: {
       if (llmRes.ok && llmRes.text) {
         const decisionMap = JSON.parse(llmRes.text) as Record<string, boolean>
         for (const r of chunk) {
-          if (decisionMap[r.id] === true) {
+          const decision = decisionMap[r.id]
+          if (decision === true || String(decision).toLowerCase() === "true") {
             validResults.push(r)
           } else {
              await sb.from("sales_searxng_search_results").update({ status: "rejected", rejection_reason: "llm_filtered" }).eq("id", r.id)

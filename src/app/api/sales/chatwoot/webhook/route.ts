@@ -55,8 +55,55 @@ export async function POST(req: NextRequest) {
     text(conversation, ["display_id", "id"]) ??
     "unknown contact"
   const region = regionFromRecords(customAttributes, conversation, payload, body)
-  const companyId = companyIdFromRecords(customAttributes, conversation, payload, body)
-  const pipelineRunId = pipelineRunIdFromRecords(customAttributes, conversation, payload, body)
+
+  const emailVal = text(contact, ["email"]) ?? text(sender, ["email"])
+  const COMMON_PERSONAL_DOMAINS = new Set([
+    "gmail.com",
+    "yahoo.com",
+    "yahoo.co.jp",
+    "outlook.com",
+    "outlook.jp",
+    "hotmail.com",
+    "hotmail.co.jp",
+    "icloud.com",
+    "me.com",
+    "live.com",
+    "docomo.ne.jp",
+    "ezweb.ne.jp",
+    "softbank.ne.jp",
+  ])
+
+  let companyId = companyIdFromRecords(customAttributes, conversation, payload, body)
+  let pipelineRunId = pipelineRunIdFromRecords(customAttributes, conversation, payload, body)
+
+  if (!companyId && emailVal) {
+    const atIdx = emailVal.indexOf("@")
+    if (atIdx >= 0) {
+      const emailDomain = emailVal.slice(atIdx + 1).trim().toLowerCase()
+      if (emailDomain && emailDomain.includes(".") && !COMMON_PERSONAL_DOMAINS.has(emailDomain)) {
+        try {
+          const { findCompanyByDomain } = await import("@/lib/sales/companies")
+          const matchedCompany = await findCompanyByDomain(emailDomain)
+          if (matchedCompany) {
+            companyId = matchedCompany.id
+            const { data: runs, error: runError } = await sb
+              .from("sales_pipeline_runs")
+              .select("id")
+              .eq("company_id", companyId)
+              .eq("status", "waiting_external")
+              .order("created_at", { ascending: false })
+              .limit(1)
+            if (!runError && runs && runs[0]) {
+              pipelineRunId = runs[0].id
+            }
+          }
+        } catch (findErr) {
+          console.error("[chatwoot-webhook] company domain matching failed:", findErr)
+        }
+      }
+    }
+  }
+
   const subject = `Chatwoot inbound: ${contactLabel}`
 
   const summary: JsonRecord = {
