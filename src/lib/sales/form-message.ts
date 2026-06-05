@@ -214,9 +214,15 @@ export async function generateFormMessage(
       used_template_id: template?.id ?? null,
     }
   }
+
+  // Difyが設定されているのに失敗した場合は、フォールバックせずにエラーとする（Difyの出力を重視するため）
   if (dify.configured) {
-    console.warn("[sales-form-message] falling back to DeepSeek after Dify error:", dify.error)
+    console.error("[sales-form-message] Dify failed. DeepSeek fallback is disabled for strict enforcement.", dify.error)
+    return { ok: false, error: dify.error ?? "Dify workflow failed" }
   }
+
+  // 以下、Difyが未設定（ローカル開発など）の場合のみのフォールバック
+  console.warn("[sales-form-message] Dify is not configured. Falling back to DeepSeek V3.")
 
   const res = await callDeepSeek(
     [

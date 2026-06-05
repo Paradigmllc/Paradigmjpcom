@@ -329,6 +329,12 @@ async function processJob(sb: ServiceSupabase, job: SalesEnrichmentJob): Promise
     runDifyDiagnosis(refreshed),
     auditJapanMarketReadiness(refreshed.domain),
   ])
+
+  // Difyの結果が重要であるため、エラー時はフォールバックを採用せずに明示的にジョブを失敗させる
+  if (!dify.ok && dify.configured) {
+    return { ok: false, error: dify.error ?? "Dify diagnosis failed" }
+  }
+
   const mergedMeta: JsonRecord = {
     ...(refreshed.meta ?? {}),
     japan_market_audit: japanMarketAudit,
