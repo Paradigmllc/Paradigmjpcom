@@ -41,6 +41,7 @@ import { SalesProVideoStudioPanel } from "./SalesProVideoStudioPanel"
 import { SalesReportVideoStudioPanel } from "./SalesReportVideoStudioPanel"
 import { ExternalStudioSyncPanel } from "./ExternalStudioSyncPanel"
 import { SalesPipelinePanel } from "./SalesPipelinePanel"
+import { AiPromptsPanel } from "./AiPromptsPanel"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 
 type SalesTab =
@@ -56,6 +57,7 @@ type SalesTab =
   | "crm"
   | "analytics"
   | "integrations"
+  | "prompts"
   | "audit"
   | "docs"
   | "migration"
@@ -87,6 +89,7 @@ const tabItems: TabItem[] = [
   { id: "crm", label: "CRM設定", eyebrow: "TWENTY", description: "表示列と選択肢マスター", icon: BriefcaseBusiness },
   { id: "analytics", label: "分析", eyebrow: "METABASE", description: "営業KPIとボトルネック", icon: BarChart3 },
   { id: "integrations", label: "統合", eyebrow: "OSS / API", description: "接続・残量・未設定", icon: Database },
+  { id: "prompts", label: "AIプロンプト", eyebrow: "PROMPTS", description: "Dify・DeepSeek指示", icon: Bot },
   { id: "audit", label: "運用監査", eyebrow: "GUARDRAILS", description: "安全制御と漏れ検知", icon: ShieldCheck },
   { id: "docs", label: "使い方", eyebrow: "RUNBOOK", description: "実務フローと判断基準", icon: FileText },
   { id: "migration", label: "移行計画", eyebrow: "INFRA", description: "サーバー・SSOT移行", icon: Rocket },
@@ -318,6 +321,8 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
         return <AnalyticsPanel data={data} />
       case "integrations":
         return <IntegrationsPanel data={data} />
+      case "prompts":
+        return <AiPromptsPanel data={data} />
       case "audit":
         return <SalesOperationsAuditPanel data={data} />
       case "docs":

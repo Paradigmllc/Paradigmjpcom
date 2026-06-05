@@ -1,8 +1,8 @@
 import {
   DIFY_DIAGNOSIS_WORKFLOW_KEY_ENV_NAMES,
-  normalizeDifyCloudApiUrl,
   normalizeDifyCloudBaseUrl,
 } from "./dify-cloud"
+import { getAiPrompt } from "./ai-prompts"
 import type { SalesCompany } from "./types"
 
 type JsonRecord = Record<string, unknown>
@@ -21,16 +21,12 @@ export interface DifyDiagnosisResult {
   error?: string
 }
 
-const DIAGNOSIS_SYSTEM_PROMPT = [
-  "You are Paradigm Revenue OS diagnosis workflow.",
-  "Use only the provided company facts, source evidence, and URLs.",
-  "Return strict JSON only. Do not wrap it in markdown.",
-  "Schema: {\"primary_pain\": string, \"evidence\": string[], \"recommended_offer\": string, \"confidence\": number}.",
-  "primary_pain must explain what the evidence means for the prospect's revenue, trust, operations, or risk.",
-  "evidence must cite concrete observed facts. Do not invent market size, law, penalty, CAGR, or competitor claims.",
-  "recommended_offer must map the pain to one Paradigm offer and the next practical action.",
-  "If evidence is thin, lower confidence and say what still needs human/API confirmation.",
-].join("\n")
+const FALLBACK_DIAGNOSIS = {
+  primaryPain: "ウェブサイトの表示速度低下による直帰率の上昇",
+  evidence: ["診断を実行できませんでした"],
+  recommendedOffer: "改めて診断を実行してください。",
+  confidence: 0,
+}
 
 function readOptionalEnv(name: string): string | null {
   const value = process.env[name]
@@ -165,10 +161,13 @@ function normalizeDifySummary(raw: JsonRecord, fallback: DifyDiagnosisResult["su
   }
 }
 
-function resolveDifyDiagnosisCredential(): { envName: string; apiKey: string } | null {
+function resolveDifyDiagnosisCredential(): { envName: string; apiKey: string; baseUrl: string } | null {
   for (const envName of DIFY_DIAGNOSIS_WORKFLOW_KEY_ENV_NAMES) {
     const apiKey = readOptionalEnv(envName)
-    if (apiKey) return { envName, apiKey }
+    if (apiKey) {
+      const baseUrl = normalizeDifyCloudBaseUrl(readOptionalEnv("DIFY_DIAGNOSIS_BASE_URL") ?? readOptionalEnv("DIFY_BASE_URL"))
+      return { envName, apiKey, baseUrl }
+    }
   }
   return null
 }
@@ -176,18 +175,18 @@ function resolveDifyDiagnosisCredential(): { envName: string; apiKey: string } |
 export async function runDifyDiagnosis(company: SalesCompany): Promise<DifyDiagnosisResult> {
   const fallback = localDiagnosis(company)
   const credential = resolveDifyDiagnosisCredential()
-  const baseUrl = normalizeDifyCloudBaseUrl(readOptionalEnv("DIFY_DIAGNOSIS_BASE_URL") ?? readOptionalEnv("DIFY_BASE_URL"))
-  const endpoint = normalizeDifyCloudApiUrl(readOptionalEnv("DIFY_DIAGNOSIS_API_URL") ?? `${baseUrl}/v1/workflows/run`)
-
+  
   if (!credential) {
     return { ok: true, configured: false, summary: fallback, error: "Dify diagnosis workflow key is not configured" }
   }
 
   const payload = buildDifyPayload(company)
   const userPayload = JSON.stringify(payload)
+  const abortSignal = new AbortController()
 
   try {
-    const res = await fetch(endpoint, {
+    const systemPrompt = await getAiPrompt("dify_diagnosis_system")
+    const res = await fetch(`${credential.baseUrl}/workflows/run`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${credential.apiKey}`,
@@ -196,11 +195,11 @@ export async function runDifyDiagnosis(company: SalesCompany): Promise<DifyDiagn
       body: JSON.stringify({
         inputs: {
           ...payload,
-          system_prompt: DIAGNOSIS_SYSTEM_PROMPT,
+          system_prompt: systemPrompt,
           user_payload: userPayload,
         },
         response_mode: "blocking",
-        user: `paradigm-sales-${company.id}`,
+        user: `sales-os-${company.id.slice(0, 8)}`,
       }),
       signal: AbortSignal.timeout(60_000),
     })

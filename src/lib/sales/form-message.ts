@@ -6,6 +6,14 @@
  *
  * 戦略原典:
  *   - グローバル CLAUDE.md s11.5 SALES-CENTER: Stage 1 = フォーム営業ドリブン
+/**
+ * lib/sales/form-message.ts — 営業フォームメッセージ生成 (Sprint 10-A)
+ *
+ * 役割: sales_companies (リード) と sales_templates (業種×課題) を組み合わせ、
+ *       DeepSeek V3 で「教えてあげる体裁」のフォーム送信文面を生成。
+ *
+ * 戦略原典:
+ *   - グローバル CLAUDE.md s11.5 SALES-CENTER: Stage 1 = フォーム営業ドリブン
  *   - Notion 営業MVP壁打ち②: 「1 つの痛み × 1 つの数字 × 1 つのアクション」が CVR 最大
  *   - 心理設計: 損失訴求 > 欲望訴求 (プロスペクト理論 2.5x)
  *
@@ -13,36 +21,13 @@
  */
 
 import { callDeepSeek, type DeepSeekResponse } from "@/lib/deepseek"
+import { getAiPrompt } from "@/lib/sales/ai-prompts"
 import { findCompanyById } from "./companies"
 import { normalizeDifyCloudApiUrl, normalizeDifyCloudBaseUrl } from "./dify-cloud"
 import { matchTemplate } from "./templates"
 import type { Industry, IssueCode, SalesCompany } from "./types"
 
 type JsonRecord = Record<string, unknown>
-
-/* ───── 固定 System Prompt (Context Cache 最大化のため毎回同じ) ───── */
-
-const SALES_SYSTEM_PROMPT = `あなたは Paradigm 合同会社のシニアセールス担当として、日本の中小企業 (SMB) のお問い合わせフォームに送る短い営業メッセージを生成します。
-
-【絶対ルール】
-1. 200-300 文字以内 (フォーム送信欄に収まるサイズ)
-2. 「教えてあげる」体裁 (上から目線でない・親切なアドバイザー口調)
-3. 「1 つの痛み × 1 つの数字 × 1 つのアクション」構成厳守
-4. 損失訴求を優先 (「失う」「漏れている」「素通り」が「得られる」より 2.5 倍効く)
-5. 業界統計を根拠に出す (景表法対策: 「御社固有の数値」と断言しない)
-6. 末尾に診断レポート URL のプレースホルダ {{report_url}} を必ず含める
-7. 売り込みじみた言葉 (「お得」「破格」「業界最安」) は禁止
-8. 主訴・処方箋・経過観察 等の医療用語は禁止 (B2B 大人語彙ガイドライン)
-
-【口調】
-- ですます調・丁寧だが冗長でない
-- 「御社」を主語 / 「弊社」自称は最小限
-- 〇〇社様への個別文面ではなく「業界統計を持ち寄った第三者」の立場
-
-【構成テンプレ】
-[1 行: 業界統計に基づく事実の提示]
-[1 行: 御社における推定影響 (数値)]
-[1 行: 改善方向の示唆 + 診断レポート URL: {{report_url}}]`
 
 /* ───── User Prompt builder ───── */
 
@@ -126,6 +111,7 @@ async function generateWithDify(input: {
   if (!apiKey) return { ok: false, configured: false, error: "Dify form-message API key is not configured" }
 
   try {
+    const systemPrompt = await getAiPrompt("sales_form_message_system")
     const res = await fetch(endpoint, {
       method: "POST",
       headers: {
@@ -134,6 +120,7 @@ async function generateWithDify(input: {
       },
       body: JSON.stringify({
         inputs: {
+          system_prompt: systemPrompt,
           company_id: input.company.id,
           company_name: input.company.company_name,
           domain: input.company.domain,
@@ -190,21 +177,17 @@ export async function generateFormMessage(
   // テンプレ取得 (なければ null pain/loss でも DeepSeek に投げる)
   const template = await matchTemplate(company.industry, firstIssue)
 
-  const userPrompt = buildUserPrompt({
-    company,
+  const templateContext = {
     industry: company.industry,
     issueCode: firstIssue,
     templateHeadline: template?.headline ?? null,
     templatePain: template?.pain ?? null,
     templateLoss: template?.loss ?? null,
-  })
+  }
 
   const dify = await generateWithDify({
     company,
-    issueCode: firstIssue,
-    templateHeadline: template?.headline ?? null,
-    templatePain: template?.pain ?? null,
-    templateLoss: template?.loss ?? null,
+    ...templateContext,
   })
   if (dify.ok) {
     return {
@@ -224,10 +207,11 @@ export async function generateFormMessage(
   // 以下、Difyが未設定（ローカル開発など）の場合のみのフォールバック
   console.warn("[sales-form-message] Dify is not configured. Falling back to DeepSeek V3.")
 
+  const systemPrompt = await getAiPrompt("sales_form_message_system")
   const res = await callDeepSeek(
     [
-      { role: "system", content: SALES_SYSTEM_PROMPT },
-      { role: "user", content: userPrompt },
+      { role: "system", content: systemPrompt },
+      { role: "user", content: buildUserPrompt({ company, ...templateContext }) },
     ],
     { temperature: 0.5, maxTokens: 500 },
   )
