@@ -76,3 +76,5 @@ on conflict (id) do update set
       then excluded.prompt_text
     else public.sales_ai_prompts.prompt_text
   end;
+
+notify pgrst, 'reload schema';

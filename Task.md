@@ -57,6 +57,11 @@
 - Pre-deploy check from `D:\dev\paradigmjpcom`: `npx tsc --noEmit --pretty false` passed.
 - Pre-deploy check from `D:\dev\paradigmjpcom`: `npm test -- --run src/lib/sales/dify-diagnosis.test.ts src/lib/sales/dify-cloud.test.ts src/lib/sales/searxng-normalize.test.ts src/lib/sales/source-acquisition.test.ts src/lib/sales/sales-pipeline.test.ts src/lib/sales/external-studio-sync.test.ts src/lib/sales/video-pipeline.test.ts src/lib/sales/outreach/state-machine.test.ts src/lib/sales/outreach/preflight.test.ts src/lib/sales/outreach/form-classifier.test.ts` passed.
 - Pre-deploy check from `D:\dev\paradigmjpcom`: `npm run build` passed. Next.js emitted existing warnings about `middleware` convention deprecation and edge runtime static generation.
+- Commit `1972338 fix: harden sales os prompt deployment` was pushed to `origin/main`.
+- Coolify deployment `lirylz9ci3ot33e3n4tods42` finished.
+- Production smoke passed for `https://paradigmjp.com/ja/admin/sales`, `https://paradigmjp.com/ja`, and `https://twenty.paradigmjp.com`.
+- Supabase OSS migrations 035/036/037/038/039 were applied through SSH to `paradigm-supabase-db` because REST `exec_sql` is unavailable.
+- Production authenticated prompt API check passed: `https://paradigmjp.com/api/sales/ai-prompts` returned HTTP 200, `ok=true`, two prompt rows, and no fallback warning.
 - `npm test -- --run src/lib/sales/sales-pipeline.test.ts src/lib/sales/external-studio-sync.test.ts src/lib/sales/video-pipeline.test.ts` passed.
 - `npx tsc --noEmit --pretty false` passed perfectly after AI Prompts GUI integration.
 - `npx tsc --noEmit --pretty false` passed.
@@ -79,13 +84,11 @@
 
 - New main files: `src/lib/sales/sales-pipeline.ts`, `src/app/api/sales/pipeline-runs/route.ts`, `src/app/api/sales/pipeline-runs/[runId]/action/route.ts`, `src/components/sales-dashboard/SalesPipelinePanel.tsx`, `supabase/migration_036_sales_os_pipeline.sql`, `supabase/migration_037_sales_pipeline_outreach_links.sql`.
 - UI entry: `/ja/admin/sales` overview now shows the unified Sales OS pipeline panel above external studio sync.
-- DB: apply `supabase/migration_036_sales_os_pipeline.sql` and `supabase/migration_037_sales_pipeline_outreach_links.sql` before relying on pipeline run/step/artifact/outreach/reply state in production.
-- DB: apply `supabase/migration_038_sales_ai_prompts.sql` and `supabase/migration_039_sales_ai_prompts_auth_and_defaults.sql` before relying on editable AI prompts in production.
+- DB: `supabase/migration_035_sales_external_studio_sync.sql` through `supabase/migration_039_sales_ai_prompts_auth_and_defaults.sql` have been applied to production through SSH/psql.
 - Trigger.dev dispatch needs `TRIGGER_SECRET_KEY` or `TRIGGER_ACCESS_TOKEN` plus `TRIGGER_SALES_OS_PIPELINE_TASK_ID`; without it, the pipeline can still run locally/manual and displays `needs_review` for dispatch.
 - Main files: `src/lib/sales/external-studio-sync.ts`, `src/app/api/sales/companies/[companyId]/external-sync/route.ts`, `src/components/sales-dashboard/ExternalStudioSyncPanel.tsx`.
 - UI entry: `/ja/admin/sales`, `/ja/admin/sales?tab=directus`, `/ja/admin/sales?tab=keystatic`.
-- DB: apply `supabase/migration_035_sales_external_studio_sync.sql` before relying on Directus/Keystatic sync logs in production.
-- Migration 035 is not applied yet: Coolify REST `exec_sql` is unavailable, Supabase MCP DDL is permission-blocked, and the local `.env.supabase` password did not authenticate to the production project.
+- Coolify REST `exec_sql` is unavailable; production Supabase OSS migrations must be applied through SSH/psql against `paradigm-supabase-db`.
 - Directus real sync needs `DIRECTUS_BASE_URL`, `DIRECTUS_TOKEN`, and a compatible `sales_assets` collection or configured collection name.
 - Keystatic real sync needs `KEYSTATIC_SYNC_WEBHOOK_URL` or `ASTRO_DEMO_WORKER_URL`; Keystatic URL alone is only the GUI, not a write API.
 

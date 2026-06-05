@@ -68,3 +68,5 @@ If evidence is thin, lower confidence and say what still needs human/API confirm
   '問い合わせフォーム送信用アウトバウンド文面を生成する system prompt。{{report_url}} プレースホルダーが必須です。'
 )
 on conflict (id) do nothing;
+
+notify pgrst, 'reload schema';
