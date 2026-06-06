@@ -49,7 +49,7 @@ const TOOL_ROLES = [
   ["Twenty OSS", "CRM", "企業個別ページ、商談、担当、活動履歴。企業カルテの閲覧先。"],
   ["Appsmith OSS", "オペレーター画面", "初回送信承認、フォームURL確認、CAPTCHA/SPAなどの手動処理。"],
   ["Metabase OSS", "分析", "返信率、商談化率、ソース別成績、担当別KPI。"],
-  ["n8n OSS", "自動化", "ジョブ起動、通知、外部API連携、Slack連携。"],
+  ["Trigger.dev", "自動化", "ジョブ起動、通知、外部API連携、Slack連携。"],
   ["Cal.com OSS", "商談予約", "予約イベントをSupabaseに戻す。"],
   ["Docuseal OSS", "契約", "契約書ステータスをSupabaseに戻す。"],
   ["Stagehand OSS", "着弾AIエージェント", "LLMとPlaywrightを融合し、各サイトの問い合わせフォーム構造を自動解釈して正確に送信します。"],
@@ -141,7 +141,7 @@ export function SalesDocsPanel({ data }: { data: SalesDashboardData }) {
             <h2 className="mt-2 text-xl font-semibold tracking-normal text-zinc-950">基本方針</h2>
             <p className="mt-2 max-w-4xl text-sm leading-7 text-zinc-600">
               Supabaseを唯一の正本にして、TwentyはCRM、NocoDBは一括作業場、Appsmithは手動承認、Metabaseは分析、
-              n8nは自動化として使います。営業担当は原則Twentyを見ればよく、管理者だけがこの司令塔でジョブと統合状態を確認します。
+              Trigger.devは自動化として使います。営業担当は原則Twentyを見ればよく、管理者だけがこの司令塔でジョブと統合状態を確認します。
             </p>
           </div>
           <div className="grid min-w-[280px] grid-cols-3 gap-2">
@@ -192,7 +192,7 @@ export function SalesDocsPanel({ data }: { data: SalesDashboardData }) {
                 {formatNumber(contentTemplates.byAssetType[key] ?? 0)}
               </div>
               <p className="mt-2 text-xs leading-6 text-zinc-600">
-                Difyのテンプレ選定APIから呼び出し、n8nが生成・保存・Slack承認へつなぎます。
+                Difyのテンプレ選定APIから呼び出し、Trigger.devが生成・保存・Slack承認へつなぎます。
               </p>
             </div>
           ))}
@@ -209,7 +209,7 @@ export function SalesDocsPanel({ data }: { data: SalesDashboardData }) {
             </div>
           </div>
           <div className="rounded-lg border border-zinc-100 bg-white p-4">
-            <h3 className="text-sm font-semibold text-zinc-950">Dify / n8n の判断順</h3>
+            <h3 className="text-sm font-semibold text-zinc-950">Dify / Trigger.dev の判断順</h3>
             <p className="mt-2 text-xs leading-6 text-zinc-600">
               1. 対象言語、2. 業界、3. 商材、4. 成果物タイプ、5. 訴求角度、6. 企業カルテの痛み根拠の順にスコアリングします。
               人間判断が必要な場合はSlackとAppsmithの承認キューに回します。

@@ -37,7 +37,7 @@ export function SalesAgentTeamPanel({ data }: { data: SalesDashboardData }) {
               Telegramから営業OSを動かす司令塔
             </h2>
             <p className="mt-2 max-w-4xl text-sm leading-7 text-zinc-600">
-              {agentTeam.telegramBot} に送った指示を n8n / Hermes Agent / Paperclip が受け取り、
+              {agentTeam.telegramBot} に送った指示を Trigger.dev / Hermes Agent / Paperclip が受け取り、
               Supabaseのジョブ・手動キュー・Twenty同期へ変換します。ライブ送信、契約、インフラ変更は承認なしでは実行しません。
             </p>
           </div>
@@ -85,7 +85,7 @@ export function SalesAgentTeamPanel({ data }: { data: SalesDashboardData }) {
           <div className="rounded-lg border border-zinc-200 bg-white p-5">
             <div className="flex items-center gap-2">
               <MessageSquareText size={16} aria-hidden />
-              <h3 className="text-sm font-semibold text-zinc-950">Telegram / n8n 接続口</h3>
+              <h3 className="text-sm font-semibold text-zinc-950">Telegram / Trigger.dev 接続口</h3>
             </div>
             <div className="mt-4 rounded-md bg-zinc-950 p-3 text-xs text-white">
               <div className="font-semibold">POST {agentTeam.endpointPath}</div>
@@ -142,7 +142,7 @@ export function SalesAgentTeamPanel({ data }: { data: SalesDashboardData }) {
           <div className="mt-4 divide-y divide-zinc-100">
             {agentTeam.recentCommands.length === 0 ? (
               <p className="py-8 text-sm text-zinc-500">
-                まだ指示ログがありません。migration_023適用後、Telegram/n8n経由の指示がここに残ります。
+                まだ指示ログがありません。migration_023適用後、Telegram/Trigger.dev経由の指示がここに残ります。
               </p>
             ) : (
               agentTeam.recentCommands.map((command) => (

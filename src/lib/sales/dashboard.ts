@@ -1,4 +1,4 @@
-﻿import { getServiceSalesSupabase } from "@/lib/supabase"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 import { calculateMrr } from "@/lib/sales/customers"
 import { getInfrastructureMigrationData } from "@/lib/sales/infrastructure"
 import { getContentTemplateCoverage } from "@/lib/sales/content-templates"
@@ -166,6 +166,7 @@ const TOOL_REQUIRED_ENV: Partial<Record<DashboardToolConnection["slug"], string[
   livekit: ["LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET"],
   directus: ["DIRECTUS_BASE_URL", "DIRECTUS_TOKEN"],
   keystatic: ["KEYSTATIC_BASE_URL"],
+  trigger_dev: ["TRIGGER_SECRET_KEY"],
 }
 
 const FALLBACK_TOOLS: DashboardToolConnection[] = [
@@ -384,7 +385,7 @@ function buildOperationalAudit(input: {
   const missingSources = sourceRuns.filter((run) => run.status === "missing" || run.status === "error").length
   const sourceCoverage = sourceRunCount > 0 ? Math.round((collectedSources / sourceRunCount) * 100) : 0
   const lowSourceCoverage = sourceRunCount === 0 || sourceCoverage < 50
-  const dryRunReady = reportReady > 0 && missingFormUrl === 0 && envConfigured("TRIGGER_WEBHOOK_SECRET")
+  const dryRunReady = reportReady > 0 && missingFormUrl === 0 && envConfigured("TRIGGER_SECRET_KEY", "TRIGGER_ACCESS_TOKEN")
   const submitWorkerReady = envConfigured("BROWSERLESS_URL", "OUTREACH_WORKER_URL", "CAMOUFOX_WS_URL")
   const sections: DashboardAuditSection[] = [
     {

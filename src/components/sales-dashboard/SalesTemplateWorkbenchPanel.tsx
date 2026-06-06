@@ -117,7 +117,7 @@ export function SalesTemplateWorkbenchPanel({
   initialAssetType = "diagnostic_report",
   heading = "テンプレート管理",
   title = "確認・検索・選定テスト",
-  description = "言語、業界、成果物、訴求軸ごとのテンプレートを確認し、Dify/n8nが使う選定条件と生成プロンプトをGUIで編集します。",
+  description = "言語、業界、成果物、訴求軸ごとのテンプレートを確認し、Dify/Trigger.devが使う選定条件と生成プロンプトをGUIで編集します。",
 }: SalesTemplateWorkbenchPanelProps) {
   const [locale, setLocale] = useState<ReportLocale>(data.scope.reportLocale);
   const [industry, setIndustry] = useState("restaurant");
@@ -200,7 +200,7 @@ export function SalesTemplateWorkbenchPanel({
       setMatched(template);
       setDraft(template);
       setSelectedId(template.id ?? null);
-      toast.success("Dify/n8n向けの選定結果を確認しました");
+      toast.success("Dify/Trigger.dev向けの選定結果を確認しました");
     } catch (error) {
       console.error("[sales-template-workbench] match failed:", error);
       toast.error(error instanceof Error ? error.message : "選定テストに失敗しました");
@@ -374,7 +374,7 @@ export function SalesTemplateWorkbenchPanel({
             </div>
             <h2 className="mt-2 break-words text-lg font-semibold text-zinc-950">{draft?.title ?? "テンプレート未選択"}</h2>
             <p className="mt-2 text-xs leading-6 text-zinc-600">
-              選定条件、品質基準、Difyプロンプト、サンプル文面を編集できます。保存するとSupabase SSOTに反映され、Dify/n8nの次回判定に使われます。
+              選定条件、品質基準、Difyプロンプト、サンプル文面を編集できます。保存するとSupabase SSOTに反映され、Dify/Trigger.devの次回判定に使われます。
             </p>
           </div>
           <button

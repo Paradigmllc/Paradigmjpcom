@@ -172,7 +172,7 @@ export default function VideoPlayer({ data, script, trackingSlug }: Props) {
         kicker: "05 / PRODUCTION LINE",
         title: copy.pipelineTitle,
         body: copy.pipelineBody,
-        metricLabel: "Dify / n8n / HyperFrames / Remotion / R2",
+        metricLabel: "Dify / Trigger.dev / HyperFrames / Remotion / R2",
         metricValue: ja ? "用途別に分担" : "role-separated",
         visual: "pipeline",
       },
@@ -381,7 +381,7 @@ function VisualPanel({
     { label: locale === "ja" ? "改善ライン" : "Paradigm line", value: 28 },
   ]
   const signals = data.intelligence.signals.slice(0, 5)
-  const steps = ["Dify Cloud", "n8n", "HyperFrames", "Remotion", "R2"]
+  const steps = ["Dify Cloud", "Trigger.dev", "HyperFrames", "Remotion", "R2"]
 
   return (
     <div className="rounded-lg border border-white/14 bg-white/10 p-4 shadow-2xl backdrop-blur-md">

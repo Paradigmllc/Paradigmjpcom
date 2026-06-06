@@ -85,7 +85,7 @@ export function SalesVideoProductionControls({ value, onChange, locale, companyS
       <div className="flex flex-col gap-1">
         <h3 className="text-sm font-semibold text-zinc-950">制作プロファイル</h3>
         <p className="text-xs leading-5 text-zinc-500">
-          ジャンル、音声、アバター、字幕、ストーリー型を固定し、Dify / n8n / レンダラー / R2 へ同じ仕様を渡します。
+          ジャンル、音声、アバター、字幕、ストーリー型を固定し、Dify / Trigger.dev / レンダラー / R2 へ同じ仕様を渡します。
         </p>
       </div>
       <div className="mt-3 grid min-w-0 gap-3 sm:grid-cols-2">

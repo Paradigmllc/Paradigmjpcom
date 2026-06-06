@@ -7,8 +7,8 @@
  *   3. 全同期操作を sales_sync_logs に audit 記録 (RTBF 対応)
  *
  * 使用箇所:
- *   - n8n workflow 01-supabase-to-notion-sync.json (Webhook trigger)
- *   - n8n workflow 02-notion-to-supabase-reverse.json (Cron 5min)
+ *   - Trigger.dev task 01-supabase-to-notion-sync (Webhook trigger)
+ *   - Trigger.dev task 02-notion-to-supabase-reverse (Cron 5min)
  *   - Next.js API route (将来・admin から手動同期を triggerする時)
  */
 
