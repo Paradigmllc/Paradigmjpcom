@@ -141,8 +141,6 @@ export async function POST(req: NextRequest) {
     const outputPath = resolve(RENDERS_DIR, outputFilename)
 
     const cmd = [
-      `cd /d "${TEST_VIDEO_DIR}"`,
-      "&&",
       "npx hyperframes render",
       `--fps ${fps}`,
       `--quality ${quality}`,
@@ -152,8 +150,8 @@ export async function POST(req: NextRequest) {
       .filter(Boolean)
       .join(" ")
 
-    console.log(`[render-api] executing: ${cmd}`)
-    execSync(cmd, { stdio: "pipe", timeout: 240_000 }) // 4分タイムアウト
+    console.log(`[render-api] executing: ${cmd} in ${TEST_VIDEO_DIR}`)
+    execSync(cmd, { cwd: TEST_VIDEO_DIR, stdio: "pipe", timeout: 240_000 }) // 4分タイムアウト
 
     // レンダリング結果を確認
     if (!existsSync(outputPath)) {

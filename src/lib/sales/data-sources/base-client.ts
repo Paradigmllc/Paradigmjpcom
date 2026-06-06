@@ -66,7 +66,9 @@ export class BaseApiClient {
     const { ready, missing } = this.verifyKeys();
     if (!ready) {
       const errorMsg = `Cannot execute request: Missing API keys [${missing.join(", ")}]`;
-      toast.error(errorMsg);
+      if (typeof window !== "undefined") {
+        toast.error(errorMsg);
+      }
       console.error(`[BaseApiClient:${this.integrationSlug}] ${errorMsg}`);
       return { ok: false, error: errorMsg };
     }
@@ -94,7 +96,9 @@ export class BaseApiClient {
         
         // Log to toast if it's a critical server error, else just console
         if (res.status >= 500 || res.status === 401 || res.status === 403) {
-          toast.error(`[${this.integrationSlug}] API Error: ${res.status}`);
+          if (typeof window !== "undefined") {
+            toast.error(`[${this.integrationSlug}] API Error: ${res.status}`);
+          }
         }
 
         return { ok: false, statusCode: res.status, error: errorMsg };
@@ -116,7 +120,9 @@ export class BaseApiClient {
         : error instanceof Error ? error.message : "Unknown network error";
 
       console.error(`[BaseApiClient:${this.integrationSlug}] Exception:`, error);
-      toast.error(`[${this.integrationSlug}] ${errorMsg}`);
+      if (typeof window !== "undefined") {
+        toast.error(`[${this.integrationSlug}] ${errorMsg}`);
+      }
 
       return { ok: false, error: errorMsg };
     }

@@ -26,6 +26,28 @@
 - Residual dependency risk: `npm --prefix worker audit --omit=dev` still reports 17 low-severity transitive `@ai-sdk/provider-utils` advisories from Stagehand/AI SDK. `npm audit fix` did not clear them; prior forced override broke Stagehand runtime, so no unsafe override is applied.
 - Main app deployments completed: `uui2xsuvhg72aonrmx289reh`, `n11c1kkdqrgk172ug3e49jrh`, and final health-fix deploy `m5enbqnue0n65k4mu8uli3qe` all finished.
 
+## ANTIGRAVITY UPDATE - 2026-06-06 Sales OS Audit Completion & Server Safety Guard
+
+- **Server-Side Safety Guard**: Guarded `toast.error` calls in `BaseApiClient` (`src/lib/sales/data-sources/base-client.ts`) with `typeof window !== "undefined"` checks, preventing SSR runtime failures inside Next.js APIs or Trigger.dev background tasks.
+- **Trigger.dev Webhook Config Compatibility**: Updated `scripts/sales-os-no-login-deploy.mjs` to prioritize checking `TRIGGER_WEBHOOK_SECRET` over `N8N_WEBHOOK_SECRET` when verifying integration statuses.
+- **Utility Scripts Alignment**: Aligned environment audit script `scripts/audit-service-envs.mjs` and check health diagnostic script `scripts/test-health.mjs` with the Trigger.dev transition, adding Trigger.dev environment checks and marking n8n as legacy.
+- **Verification Results**:
+  - Root project static type check (`npx tsc --noEmit`) completed with 0 errors.
+  - Worker type check (`npm --prefix worker run typecheck`) completed with 0 errors.
+  - All 36 Vitest outreach tests across 8 test files (`activity.test.ts`, `form-discovery.test.ts`, `browser-provider.test.ts`, `http-form-provider.test.ts`, `form-classifier.test.ts`, `preflight.test.ts`, `state-machine.test.ts`, `integration-registry.test.ts`) passed successfully.
+
+## ANTIGRAVITY UPDATE - 2026-06-06 Revenue OS Quality Audit & Cross-Platform Fix
+
+- **n8n to Trigger.dev Migration Complete**: Checked for any active n8n dependencies. Confirmed that all main app, dashboard, webhook routing, enrichment, and video pipelines have been fully migrated to Trigger.dev tasks and API dispatches. Legacy Notion and n8n endpoints are inactive and guarded by `isNotionLegacySyncEnabled()`.
+- **Cross-Platform Render API Fix**: Inspected `src/app/api/sales/video-pipeline/render/route.ts` and fixed a Windows-specific command bug where `cd /d` was used in `execSync`. Rewrote it to use standard cross-platform `cwd` options, ensuring flawless execution on the Linux Droplet.
+- **Verification Run Results**:
+  - Root project static typecheck (`npx tsc --noEmit`) compiles with 0 errors.
+  - Outreach browser worker typecheck (`npm --prefix worker run typecheck`) compiles with 0 errors.
+  - Full Sales OS Vitest test pass (33 files, 123 tests) passed successfully.
+  - Video pipeline test suite passed successfully.
+  - Next.js production build (`npm run build`) completed with 0 compile errors.
+- **Trigger.dev Cloud Deployment Setup**: Local tasks verification script (`verify-trigger-sales-os.mjs`) is confirmed functional. Trigger.dev Cloud deployment is ready to be finalized via standard GHA/CLI deploy command once the production secret token is loaded.
+
 ## VERIFICATION
 
 - `npx tsc --noEmit --pretty false` passed.

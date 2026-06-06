@@ -23,6 +23,8 @@ const SEARXNG_BASE_URL = env.SEARXNG_BASE_URL;
 const DIFY_API_KEY = env.DIFY_API_KEY;
 const DIFY_BASE_URL = env.DIFY_BASE_URL || "https://api.dify.ai";
 const N8N_BASE_URL = env.N8N_BASE_URL;
+const TRIGGER_SECRET_KEY = env.TRIGGER_SECRET_KEY || env.TRIGGER_ACCESS_TOKEN || env.TRIGGER_DEV_API_KEY;
+const TRIGGER_API_URL = env.TRIGGER_API_URL || "https://api.trigger.dev";
 
 async function check() {
   console.log('--- SUPABASE ---');
@@ -69,13 +71,30 @@ async function check() {
     console.log('Dify env missing');
   }
 
-  console.log('--- N8N ---');
+  console.log('--- TRIGGER.DEV ---');
+  if (TRIGGER_SECRET_KEY) {
+    try {
+      const url = new URL(TRIGGER_API_URL);
+      url.pathname = `${url.pathname}/api/v1/tasks`.replace(/\/+/g, "/");
+      const res = await fetch(url.toString(), {
+        headers: { Authorization: `Bearer ${TRIGGER_SECRET_KEY}` },
+        signal: AbortSignal.timeout(5000),
+      });
+      console.log(`Trigger.dev OK: HTTP ${res.status}`);
+    } catch(e) {
+      console.log('Trigger.dev Error:', e.message);
+    }
+  } else {
+    console.log('Trigger.dev env missing');
+  }
+
+  console.log('--- N8N (LEGACY) ---');
   if (N8N_BASE_URL) {
     try {
       const res = await fetch(`${N8N_BASE_URL}/healthz`, { signal: AbortSignal.timeout(5000) });
-      console.log(`n8n OK: HTTP ${res.status}`);
+      console.log(`n8n (legacy) OK: HTTP ${res.status}`);
     } catch(e) {
-      console.log('n8n Error:', e.message);
+      console.log('n8n (legacy) Error:', e.message);
     }
   } else {
     console.log('N8N env missing');
