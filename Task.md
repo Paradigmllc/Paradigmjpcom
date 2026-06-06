@@ -16,6 +16,8 @@
 - Updated worker Dockerfile to `mcr.microsoft.com/playwright:v1.60.0-noble` so the base image matches `playwright@^1.60.0`.
 - Deployed/rebuilt the production `paradigm-stagehand` container on the Droplet and fixed its Traefik rule to `Host(\`stagehand.paradigmjp.com\`)`.
 - Production Stagehand health is live at `https://stagehand.paradigmjp.com/health` and reports `ok=true`, `mode=local-cdp`, `model=deepseek-chat`.
+- Fixed Droplet runtime env mapping for `paradigm-stagehand`: `WORKER_SECRET`, `BROWSERLESS_TOKEN`, and `DEEPSEEK_API_KEY` now come from the non-git runtime `.env`; authenticated `/discover-spa` and `/submit` now reach validation (`400` on empty payload) instead of `503 WORKER_SECRET not configured`.
+- Fixed Crawlee and Playwright Stealth health checks to call worker `/health` rather than `/`.
 - Production env presence check: Stagehand, Browserless, Crawlee worker, Playwright Stealth worker, Crawl4AI base URL, Supabase, and DeepSeek are set.
 - Production env gap: Trigger.dev cloud dispatch is not fully live because `TRIGGER_SECRET_KEY` / `TRIGGER_ACCESS_TOKEN` / `TRIGGER_DEV_API_KEY` and task IDs are missing in Coolify production env. `TRIGGER_WEBHOOK_SECRET` is set.
 - Residual dependency risk: `npm --prefix worker audit --omit=dev` still reports 17 low-severity transitive `@ai-sdk/provider-utils` advisories from Stagehand/AI SDK. `npm audit fix` did not clear them; prior forced override broke Stagehand runtime, so no unsafe override is applied.
@@ -29,6 +31,7 @@
 - Additional auth fix verification: `npx tsc --noEmit --pretty false`, targeted `integration-registry` / `sales-pipeline` tests, and `git diff --check` passed.
 - `docker compose build stagehand && docker compose up -d stagehand` passed on the Droplet.
 - `https://stagehand.paradigmjp.com/health` returned HTTP 200 with Stagehand ready.
+- Authenticated worker smoke: `/discover-spa` and `/submit` returned expected `400` validation responses on empty payload, confirming worker auth/env is active.
 
 ## ACTIVE HANDOFF
 

@@ -378,8 +378,10 @@ export async function checkCrawleeHealth(): Promise<ServiceHealthResult> {
   const missing = missingEnv(["CRAWLEE_WORKER_URL"])
   if (missing.length > 0) return notConfigured(missing)
   try {
-    const res = await fetch(normalizeHttpBase(envValue("CRAWLEE_WORKER_URL") as string).toString(), { signal: AbortSignal.timeout(10_000) })
-    return { balanceStatus: res.ok ? "ok" : "error", balanceLabel: `reachable HTTP ${res.status}` }
+    const url = normalizeHttpBase(envValue("CRAWLEE_WORKER_URL") as string)
+    url.pathname = `${url.pathname}/health`.replace(/\/+/g, "/")
+    const res = await fetch(url.toString(), { signal: AbortSignal.timeout(10_000) })
+    return { balanceStatus: res.ok ? "ok" : "error", balanceLabel: `health endpoint HTTP ${res.status}` }
   } catch (error) {
     return healthError("Crawlee", error)
   }
@@ -389,8 +391,10 @@ export async function checkPlaywrightStealthHealth(): Promise<ServiceHealthResul
   const missing = missingEnv(["OUTREACH_WORKER_URL"])
   if (missing.length > 0) return notConfigured(missing)
   try {
-    const res = await fetch(normalizeHttpBase(envValue("OUTREACH_WORKER_URL") as string).toString(), { signal: AbortSignal.timeout(10_000) })
-    return { balanceStatus: res.ok ? "ok" : "error", balanceLabel: `reachable HTTP ${res.status}` }
+    const url = normalizeHttpBase(envValue("OUTREACH_WORKER_URL") as string)
+    url.pathname = `${url.pathname}/health`.replace(/\/+/g, "/")
+    const res = await fetch(url.toString(), { signal: AbortSignal.timeout(10_000) })
+    return { balanceStatus: res.ok ? "ok" : "error", balanceLabel: `health endpoint HTTP ${res.status}` }
   } catch (error) {
     return healthError("Playwright Stealth", error)
   }
