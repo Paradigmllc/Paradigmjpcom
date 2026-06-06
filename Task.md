@@ -17,6 +17,7 @@
 - Audit hardening: external discovery and stored `contact_form_url` values now block unrelated external domains; newly discovered safe URLs are persisted back to `sales_companies.meta.contact_form_url`; dedup now counts only actual/possible submit attempts, not manual/preflight/classification stops.
 - Audit hardening: remote worker and Stagehand endpoint URLs tolerate trailing slashes; `/api/sales/health` now checks Crawl4AI/Browserless/Stagehand/Crawlee/outreach worker and Dify real auth health without exposing API key fragments.
 - Build hardening: verified `DiagnosticReport.tsx` remains a Client Component for its `useState` FAQ accordion and cleaned trailing whitespace so production `npm run build` stays unblocked.
+- Unified PageSpeed Client: refactored `scanner.ts` to utilize the centralized `pageSpeedApi` from `pagespeed.ts` instead of raw fetches, ensuring the keyless referer-blocked fallback applies automatically to manual domain-scanning operations.
 - Updated `.env.example`, `worker/.env.example`, and `worker/README.md` with the new full-lane env contract.
 
 ## CODEX UPDATE - 2026-06-05 Non-JA HP Pricing Table
