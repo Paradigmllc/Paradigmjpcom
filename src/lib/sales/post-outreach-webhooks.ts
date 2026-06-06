@@ -214,6 +214,18 @@ export async function persistPostOutreachEvent(input: PersistPostOutreachEventIn
     return { ok: false, error: activityError.message }
   }
 
+  await updatePipelineReplySteps({
+    pipelineRunId: input.pipelineRunId,
+    queuedForFollowUp: Boolean(input.queueType),
+    summary: {
+      activity_type: input.activityType,
+      result: input.result,
+      subject: input.subject,
+      provider: input.meta.provider,
+      automation_forwarded: input.meta.automationForwarded,
+    },
+  })
+
   if (!input.queueType) return { ok: true, error: null }
 
   const { error: queueError } = await sb.from("sales_operator_queue_items").insert({
@@ -240,17 +252,6 @@ export async function persistPostOutreachEvent(input: PersistPostOutreachEventIn
     console.error("[post-outreach-webhook] sales_operator_queue_items insert failed:", queueError.message)
     return { ok: false, error: queueError.message }
   }
-
-  await updatePipelineReplySteps({
-    pipelineRunId: input.pipelineRunId,
-    queuedForFollowUp: Boolean(input.queueType),
-    summary: {
-      activity_type: input.activityType,
-      result: input.result,
-      subject: input.subject,
-      provider: input.meta.provider,
-    },
-  })
 
   return { ok: true, error: null }
 }

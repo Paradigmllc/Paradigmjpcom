@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     participantIdentity,
     transcriptSnippet: transcript ? transcript.slice(0, 300) : null,
   }
-  const discoveryTaskId = process.env.TRIGGER_LIVEKIT_DISCOVERY_TASK_ID ?? process.env.TRIGGER_POST_OUTREACH_TASK_ID
+  const discoveryTaskId = process.env.TRIGGER_LIVEKIT_DISCOVERY_TASK_ID ?? process.env.TRIGGER_POST_OUTREACH_TASK_ID ?? "livekit-discovery-router"
   const forward = await forwardPostOutreachToTriggerDev({
     taskId: discoveryTaskId && discoveryTaskId.trim().length > 0 ? discoveryTaskId.trim() : null,
     source: "livekit",

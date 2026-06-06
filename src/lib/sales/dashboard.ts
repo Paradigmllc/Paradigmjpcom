@@ -252,7 +252,7 @@ const FALLBACK_TOOLS: DashboardToolConnection[] = [
 function readToolStatus(slug: DashboardToolConnection["slug"]): DashboardToolConnection["status"] {
   if (slug === "trigger_dev") {
     const hasSecret = envConfigured("TRIGGER_SECRET_KEY", "TRIGGER_ACCESS_TOKEN", "TRIGGER_DEV_API_KEY")
-    return hasSecret && envConfigured("TRIGGER_SALES_OS_PIPELINE_TASK_ID") ? "active" : "planned"
+    return hasSecret ? "active" : "planned"
   }
 
   const required = TOOL_REQUIRED_ENV[slug]

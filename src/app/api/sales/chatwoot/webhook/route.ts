@@ -24,6 +24,12 @@ function inboundPayload(body: JsonRecord): JsonRecord {
   return Object.keys(payload).length > 0 ? payload : body
 }
 
+function primaryPainFromMeta(meta: unknown): string {
+  if (!isRecord(meta)) return "Unknown"
+  const painDiagnosis = child(meta, "pain_diagnosis")
+  return text(painDiagnosis, ["primaryPain", "primary_pain"]) ?? "Unknown"
+}
+
 export async function POST(req: NextRequest) {
   const auth = authorizeWebhookRequest(req.headers)
   if (!auth.ok) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
@@ -126,7 +132,7 @@ export async function POST(req: NextRequest) {
     const { addChatwootPrivateNote } = await import("@/lib/sales/chatwoot-client")
     const company = await findCompanyById(companyId)
     if (company) {
-      const painPoint = (company.meta as any)?.pain_diagnosis?.primaryPain ?? "Unknown"
+      const painPoint = primaryPainFromMeta(company.meta)
       const reportUrl = company.report_url ?? "Not generated"
       const noteContent = `**System Context (Sales OS)**\n- Company: ${company.company_name}\n- Pain Point: ${painPoint}\n- Report URL: ${reportUrl}\n- Stage: ${company.pipeline_status}`
       
@@ -137,7 +143,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const postOutreachTaskId = process.env.TRIGGER_CHATWOOT_REPLY_TASK_ID ?? process.env.TRIGGER_POST_OUTREACH_TASK_ID
+  const postOutreachTaskId = process.env.TRIGGER_CHATWOOT_REPLY_TASK_ID ?? process.env.TRIGGER_POST_OUTREACH_TASK_ID ?? "chatwoot-reply-router"
   const forward = await forwardPostOutreachToTriggerDev({
     taskId: postOutreachTaskId && postOutreachTaskId.trim().length > 0 ? postOutreachTaskId.trim() : null,
     source: "chatwoot",

@@ -109,8 +109,8 @@ function triggerSecretKey(): string | null {
 function enrichmentTriggerEndpoint(): string | null {
   const taskId =
     optionalEnv("TRIGGER_SALES_ENRICHMENT_TASK_ID") ??
-    optionalEnv("TRIGGER_DEV_SALES_ENRICHMENT_TASK_ID")
-  if (!taskId) return null
+    optionalEnv("TRIGGER_DEV_SALES_ENRICHMENT_TASK_ID") ??
+    "sales-enrichment-runner"
 
   const apiUrl = (optionalEnv("TRIGGER_API_URL") ?? "https://api.trigger.dev").replace(/\/+$/, "")
   return `${apiUrl}/api/v1/tasks/${encodeURIComponent(taskId)}/trigger`

@@ -19,7 +19,10 @@
 - Fixed Droplet runtime env mapping for `paradigm-stagehand`: `WORKER_SECRET`, `BROWSERLESS_TOKEN`, and `DEEPSEEK_API_KEY` now come from the non-git runtime `.env`; authenticated `/discover-spa` and `/submit` now reach validation (`400` on empty payload) instead of `503 WORKER_SECRET not configured`.
 - Fixed Crawlee and Playwright Stealth health checks to call worker `/health` rather than `/`.
 - Production env presence check: Stagehand, Browserless, Crawlee worker, Playwright Stealth worker, Crawl4AI base URL, Supabase, and DeepSeek are set.
-- Production env gap: Trigger.dev cloud dispatch is not fully live because `TRIGGER_SECRET_KEY` / `TRIGGER_ACCESS_TOKEN` / `TRIGGER_DEV_API_KEY` and task IDs are missing in Coolify production env. `TRIGGER_WEBHOOK_SECRET` is set.
+- Production env gap: Trigger.dev cloud dispatch is not fully live because `TRIGGER_SECRET_KEY` / `TRIGGER_ACCESS_TOKEN` / `TRIGGER_DEV_API_KEY` is missing. `TRIGGER_WEBHOOK_SECRET`, `TRIGGER_API_URL`, `TRIGGER_DASHBOARD_URL`, and standard Sales OS task IDs are now set in Coolify production/preview env.
+- Added Trigger.dev SDK/CLI, `trigger.config.ts`, and `trigger/sales-os.ts` task definitions for `sales-os-pipeline`, `sales-enrichment-runner`, `post-outreach-router`, `chatwoot-reply-router`, `livekit-discovery-router`, and `sales-video-pipeline`.
+- Fixed Trigger/Sales OS continuity gaps: post-outreach events update pipeline reply/follow-up steps even when external forwarding succeeds, failed/needs-review pipeline runs enqueue valid `analysis` queue items, and app code uses standard Trigger task IDs when env-specific IDs are absent.
+- Added `scripts/verify-trigger-sales-os.mjs` and `docs/knowledge/trigger-dev-sales-os-runbook.md` so Trigger.dev install/config/task readiness can be verified without printing secrets.
 - Residual dependency risk: `npm --prefix worker audit --omit=dev` still reports 17 low-severity transitive `@ai-sdk/provider-utils` advisories from Stagehand/AI SDK. `npm audit fix` did not clear them; prior forced override broke Stagehand runtime, so no unsafe override is applied.
 - Main app deployments completed: `uui2xsuvhg72aonrmx289reh`, `n11c1kkdqrgk172ug3e49jrh`, and final health-fix deploy `m5enbqnue0n65k4mu8uli3qe` all finished.
 
@@ -35,23 +38,25 @@
 - Authenticated worker smoke: `/discover-spa` and `/submit` returned expected `400` validation responses on empty payload, confirming worker auth/env is active.
 - Final production smoke after `m5enbqnue0n65k4mu8uli3qe`: `/ja` 200, `/ja/admin/sales` 200, Stagehand `/health` 200, Crawlee worker `/health` 200, Outreach worker `/health` 200.
 - Authenticated `/api/sales/health` now shows Supabase/SearxNG/Dify/Crawl4AI/Browserless/Stagehand/Crawlee/Outreach as ok; only Trigger.dev cloud remains `not_configured` because API key/task IDs are absent.
+- Additional Trigger implementation verification: `npx tsc --noEmit --pretty false` passed; `npm run test -- --run src/lib/sales/video-pipeline.test.ts` passed; `npm audit --omit=dev --audit-level=moderate` reports 0 vulnerabilities after safe overrides; `node scripts/verify-trigger-sales-os.mjs` confirms all local task definitions and defaults but exits nonzero because Trigger.dev API key is absent.
+- Trigger CLI verification: `node_modules/.bin/trigger.cmd --version` returns 4.4.0; `trigger deploy --dry-run` reaches Trigger.dev login and stops at missing cloud authorization/API token.
 
 ## ACTIVE HANDOFF
 
 - Main app files: `src/app/api/sales/health/route.ts`, `src/lib/sales/dashboard.ts`, `src/lib/sales/enrichment-jobs.ts`, `src/lib/sales/post-outreach-webhooks.ts`, `src/lib/sales/oss-service-health.ts`, `src/lib/sales/integration-definitions.ts`, `src/lib/sales/source-coverage.ts`.
 - Worker files: `worker/src/index.ts`, `worker/src/stagehand.ts`, `worker/Dockerfile`, `worker/package.json`, `worker/package-lock.json`, `worker/README.md`, `worker/.env.example`.
 - Production worker: `paradigm-stagehand` on Droplet, public URL `https://stagehand.paradigmjp.com`, internal mode Browserless CDP.
-- Needed to complete Trigger.dev cloud: set one of `TRIGGER_SECRET_KEY` / `TRIGGER_ACCESS_TOKEN` / `TRIGGER_DEV_API_KEY`, plus task IDs such as `TRIGGER_SALES_OS_PIPELINE_TASK_ID`, `TRIGGER_SALES_ENRICHMENT_TASK_ID`, `TRIGGER_POST_OUTREACH_TASK_ID`, `TRIGGER_CHATWOOT_REPLY_TASK_ID`, and `TRIGGER_LIVEKIT_DISCOVERY_TASK_ID`.
+- Needed to complete Trigger.dev cloud: set one of `TRIGGER_SECRET_KEY` / `TRIGGER_ACCESS_TOKEN` / `TRIGGER_DEV_API_KEY`, then run `npx trigger.dev@4.4.0 deploy` and rerun `node scripts/verify-trigger-sales-os.mjs`.
 
 ## NEXT ACTIONS
 
-- Commit and push the current Trigger.dev + Stagehand changes.
+- Commit and push the current Trigger.dev task implementation changes.
 - Deploy the main app through `node scripts/deploy.mjs`.
 - Production smoke after deploy: `/ja`, `/ja/admin/sales`, authenticated `/api/sales/health`, and Stagehand `/health`.
-- After Trigger.dev credentials/task IDs are available, rerun `/api/sales/health` and a safe dry-run pipeline dispatch.
+- After Trigger.dev credentials are available, deploy Trigger tasks, rerun `/api/sales/health`, and run a safe dry-run pipeline dispatch.
 
 ## RISKS
 
-- Trigger.dev code paths are implemented, but cloud execution is not complete until production credentials and task IDs are configured.
+- Trigger.dev code paths, task IDs, and Coolify non-secret env are implemented, but cloud execution is not complete until a Trigger.dev API key/login is configured and tasks are deployed to Trigger.dev Cloud.
 - Live outbound form submission remains intentionally gated by approval/dry-run settings; CAPTCHA, login, payment, and anti-bot challenges stop for manual review.
 - Stagehand is operational, but its upstream AI SDK dependency currently carries low-severity audit advisories.

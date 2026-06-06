@@ -387,14 +387,15 @@ export async function runSalesPipelineLocally(runId: string): Promise<{ ok: bool
     
     if (status === "completed" || status === "failed" || status === "needs_review") {
       const { notifySlack } = await import("@/lib/notify")
-      const icon = status === "completed" ? "✅" : status === "failed" ? "❌" : "⚠️"
+      const icon = status === "completed" ? "[OK]" : status === "failed" ? "[FAILED]" : "[REVIEW]"
       await notifySlack(`*Sales Pipeline [${status.toUpperCase()}]* ${icon}\nCompany: ${refreshed.sales_companies?.company_name ?? refreshed.company_id}\nRun ID: ${refreshed.id}`)
       
       if (status === "needs_review" || status === "failed") {
         await enqueuePipelineReviewTask(sb, refreshed, {
           reason: `Pipeline finished with status: ${status}`,
-          queueType: status === "failed" ? "error_recovery" : "pipeline_review",
+          queueType: "analysis",
           priority: status === "failed" ? 100 : 80,
+          meta: { review_reason: status === "failed" ? "error_recovery" : "pipeline_review" },
         })
       }
     }

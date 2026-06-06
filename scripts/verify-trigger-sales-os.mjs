@@ -1,0 +1,112 @@
+import fs from "node:fs"
+import path from "node:path"
+import process from "node:process"
+
+const root = process.cwd()
+const taskSource = path.join(root, "trigger", "sales-os.ts")
+const configSource = path.join(root, "trigger.config.ts")
+
+const expectedTasks = [
+  "sales-os-pipeline",
+  "sales-enrichment-runner",
+  "post-outreach-router",
+  "chatwoot-reply-router",
+  "livekit-discovery-router",
+  "sales-video-pipeline",
+]
+
+const envTaskMap = {
+  TRIGGER_SALES_OS_PIPELINE_TASK_ID: "sales-os-pipeline",
+  TRIGGER_SALES_ENRICHMENT_TASK_ID: "sales-enrichment-runner",
+  TRIGGER_POST_OUTREACH_TASK_ID: "post-outreach-router",
+  TRIGGER_CHATWOOT_REPLY_TASK_ID: "chatwoot-reply-router",
+  TRIGGER_LIVEKIT_DISCOVERY_TASK_ID: "livekit-discovery-router",
+  TRIGGER_VIDEO_PIPELINE_TASK_ID: "sales-video-pipeline",
+}
+
+function env(name) {
+  const value = process.env[name]
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null
+}
+
+function printStatus(label, ok, detail) {
+  const prefix = ok ? "[OK]" : "[MISSING]"
+  console.log(`${prefix} ${label}${detail ? ` - ${detail}` : ""}`)
+}
+
+function fail(message) {
+  console.error(`[ERROR] ${message}`)
+  process.exitCode = 1
+}
+
+printStatus("trigger.config.ts", fs.existsSync(configSource), "Trigger.dev config file")
+printStatus("trigger/sales-os.ts", fs.existsSync(taskSource), "Sales OS task source")
+
+if (!fs.existsSync(taskSource) || !fs.existsSync(configSource)) {
+  fail("Trigger.dev task source is incomplete.")
+  process.exit()
+}
+
+const source = fs.readFileSync(taskSource, "utf8")
+for (const taskId of expectedTasks) {
+  printStatus(`task:${taskId}`, source.includes(`id: "${taskId}"`), "defined in trigger/sales-os.ts")
+  if (!source.includes(`id: "${taskId}"`)) fail(`Missing Trigger.dev task ${taskId}`)
+}
+
+for (const [name, defaultId] of Object.entries(envTaskMap)) {
+  const value = env(name)
+  printStatus(name, true, value ? `set to ${value}` : `unset; app default is ${defaultId}`)
+}
+
+const projectRef = env("TRIGGER_PROJECT_REF")
+printStatus("TRIGGER_PROJECT_REF", Boolean(projectRef), projectRef ? "set" : "unset; trigger.config.ts uses repo fallback")
+
+const secretName = ["TRIGGER_SECRET_KEY", "TRIGGER_ACCESS_TOKEN", "TRIGGER_DEV_API_KEY"].find((name) => env(name))
+printStatus("Trigger.dev API key", Boolean(secretName), secretName ? `${secretName} is set` : "unset")
+
+if (!secretName) {
+  fail("Trigger.dev cloud cannot be verified or deployed until one API key env is set.")
+  process.exit()
+}
+
+const apiUrl = (env("TRIGGER_API_URL") ?? "https://api.trigger.dev").replace(/\/+$/, "")
+const url = `${apiUrl}/api/v1/tasks`
+
+try {
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${env(secretName)}` },
+    signal: AbortSignal.timeout(10_000),
+  })
+  printStatus("Trigger.dev API auth", res.ok, `HTTP ${res.status}`)
+  if (!res.ok) {
+    fail("Trigger.dev API authentication failed.")
+    process.exit()
+  }
+
+  const text = await res.text()
+  let parsed = {}
+  try {
+    parsed = text ? JSON.parse(text) : {}
+  } catch (error) {
+    console.warn("[WARN] Trigger.dev tasks response was not JSON:", error instanceof Error ? error.message : String(error))
+  }
+
+  const payload = Array.isArray(parsed) ? parsed : Array.isArray(parsed.data) ? parsed.data : Array.isArray(parsed.tasks) ? parsed.tasks : []
+  const remoteTaskIds = new Set(
+    payload
+      .map((task) => (task && typeof task === "object" ? task.id ?? task.slug ?? task.identifier : null))
+      .filter((id) => typeof id === "string"),
+  )
+
+  if (remoteTaskIds.size > 0) {
+    for (const taskId of expectedTasks) {
+      const ok = remoteTaskIds.has(taskId)
+      printStatus(`remote:${taskId}`, ok, ok ? "deployed" : "not found in Trigger.dev API")
+      if (!ok) fail(`Trigger.dev task ${taskId} is not deployed remotely.`)
+    }
+  } else {
+    console.warn("[WARN] Trigger.dev API auth passed, but task list shape was not recognized. Check dashboard manually.")
+  }
+} catch (error) {
+  fail(`Trigger.dev API verification failed: ${error instanceof Error ? error.message : String(error)}`)
+}

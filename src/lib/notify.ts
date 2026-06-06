@@ -21,8 +21,8 @@ interface HotLeadPayload {
 }
 
 async function slackPost(method: string, body: Record<string, unknown>): Promise<{ ok: boolean; error?: string }> {
-  const token = process.env.SLACK_BOT_TOKEN ?? ""
-  if (!token) {
+  const token = process.env.SLACK_BOT_TOKEN
+  if (!token || token.trim().length === 0) {
     console.warn("[notify] SLACK_BOT_TOKEN not set — no-op")
     return { ok: false, error: "SLACK_BOT_TOKEN not configured" }
   }
@@ -39,6 +39,7 @@ async function slackPost(method: string, body: Record<string, unknown>): Promise
     const data = (await res.json()) as { ok: boolean; error?: string }
     return data
   } catch (e) {
+    console.error("[notify] Slack post failed:", e)
     return { ok: false, error: e instanceof Error ? e.message : String(e) }
   }
 }
