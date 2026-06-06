@@ -69,41 +69,26 @@
 
 ## VERIFICATION
 
-- `node scripts/verify-trigger-sales-os.mjs` passed local task/config/API checks; it confirms runtime API auth via Trigger.dev runs API and warns that CLI deploy needs a PAT/login.
-- `npx tsc --noEmit --pretty false --incremental false` passed.
-- `npm --prefix worker run typecheck` passed.
-- `npm test -- --run src/lib/sales/video-pipeline.test.ts src/lib/sales/integration-registry.test.ts src/lib/sales/sales-pipeline.test.ts` passed.
-- `git diff --check` passed.
-- `npm run build` passed.
-- Pre-deploy production `/api/sales/health` still reports Trigger.dev `not_configured` because the running container has not yet been redeployed with the newly added Coolify env.
-- `npx tsc --noEmit --pretty false` passed.
-- `npm test -- --run src/lib/sales/outreach/activity.test.ts src/lib/sales/sources/form-discovery.test.ts src/lib/sales/outreach/browser-provider.test.ts src/lib/sales/outreach/http-form-provider.test.ts src/lib/sales/outreach/form-classifier.test.ts src/lib/sales/outreach/preflight.test.ts src/lib/sales/outreach/state-machine.test.ts src/lib/sales/integration-registry.test.ts src/lib/sales/sales-pipeline.test.ts` passed.
-- `npm --prefix worker run typecheck` passed.
-- `npm run build` passed.
-- Additional auth fix verification: `npx tsc --noEmit --pretty false`, targeted `integration-registry` / `sales-pipeline` tests, and `git diff --check` passed.
-- `docker compose build stagehand && docker compose up -d stagehand` passed on the Droplet.
-- `https://stagehand.paradigmjp.com/health` returned HTTP 200 with Stagehand ready.
-- Authenticated worker smoke: `/discover-spa` and `/submit` returned expected `400` validation responses on empty payload, confirming worker auth/env is active.
-- Final production smoke after `m5enbqnue0n65k4mu8uli3qe`: `/ja` 200, `/ja/admin/sales` 200, Stagehand `/health` 200, Crawlee worker `/health` 200, Outreach worker `/health` 200.
-- Authenticated `/api/sales/health` now shows Supabase/SearxNG/Dify/Crawl4AI/Browserless/Stagehand/Crawlee/Outreach as ok; only Trigger.dev cloud remains `not_configured` because API key/task IDs are absent.
-- Additional Trigger implementation verification: `npx tsc --noEmit --pretty false` passed; `npm run test -- --run src/lib/sales/video-pipeline.test.ts` passed; `npm audit --omit=dev --audit-level=moderate` reports 0 vulnerabilities after safe overrides; `node scripts/verify-trigger-sales-os.mjs` confirms all local task definitions and defaults but exits nonzero because Trigger.dev API key is absent.
-- Trigger CLI verification: `node_modules/.bin/trigger.cmd --version` returns 4.4.0; `trigger deploy --dry-run` reaches Trigger.dev login and stops at missing cloud authorization/API token.
-- Final production deploy: commit `e1a6cdc` deployed through Coolify deployment `jhh7i5kqb3blctg8uccouome` and finished. Smoke passed for `/ja` 200, `/ja/admin/sales` 200, and `https://stagehand.paradigmjp.com/health` 200.
-- Final authenticated `/api/sales/health` returns HTTP 200 with Form lane, Supabase, SearxNG, Dify, Crawl4AI, Browserless, Stagehand, Crawlee worker, and Outreach worker all `ok`; overall status remains `error` only because Trigger.dev API key is still absent.
+- Latest production container: `i12am4vvcbggefnqdizhnv9a-065233230107`, image commit `9908e0874ecf9d5dd212c82f2ecb3ec144cdfdf1`, status healthy.
+- Authenticated `https://paradigmjp.com/api/sales/health` returns HTTP 200, `status=healthy`, and no non-ok checks. Trigger.dev API auth is `ok`.
+- `node scripts/audit-sales-os.mjs` passed: 13 pass / 0 warn / 0 fail across public LPs, tracking pixel, webhook auth, scan, weekly digest, and admin Sales OS pages.
+- `node scripts/verify-trigger-sales-os.mjs` passed local Trigger.dev task/config/runtime API checks. It still warns that non-interactive Trigger CLI task deploy requires a `tr_pat_...` access token or interactive CLI login.
+- `node scripts/test-health.mjs` passed for Supabase, SearxNG, Dify, Trigger.dev, and legacy n8n compatibility.
+- Chatwoot service recovered on the Droplet: `chatwoot`, `postgres`, `redis`, and `sidekiq` containers are up; Chatwoot UI returns 200 on both `chatwoot.appexx.me` and `chatwoot.paradigmjp.com`; authenticated Chatwoot inbox API returns HTTP 200.
+- Supabase migrations `040` and `041` were applied directly through the DB container because the REST `exec_sql` channel is unavailable; `trigger_dev` is active in `sales_tool_connections`, and `sales_video_jobs.trigger_endpoint` / `trigger_run_id` exist.
 
 ## ACTIVE HANDOFF
 
-- Production worker: `paradigm-stagehand` on Droplet, public URL `https://stagehand.paradigmjp.com`, internal mode Browserless CDP.
-- Keystatic fix files: `src/app/keystatic/[[...params]]/page.tsx` and `src/app/keystatic/[[...params]]/KeystaticClient.tsx`.
-- Next deployment should verify `https://keystatic.paradigmjp.com` redirects to `/keystatic` and shows Dashboard.
+- Revenue OS is live on Trigger.dev runtime API with n8n retained only as legacy compatibility.
+- Production worker: `paradigm-stagehand`, public URL `https://stagehand.paradigmjp.com`, internal mode Browserless CDP.
+- Chatwoot Redis auth was repaired in `/data/coolify/services/z88gg84880kkogw4occgc48w/docker-compose.yml`; backups with `docker-compose.yml.bak-*` exist in that service directory.
 
 ## NEXT ACTIONS
 
-- Commit/push the Keystatic client wrapper fix.
-- Deploy the main app through Coolify and smoke `/ja`, `/ja/admin/sales`, authenticated `/api/sales/health`, `https://stagehand.paradigmjp.com/health`, and `https://keystatic.paradigmjp.com`.
+- Obtain or create a Trigger.dev `tr_pat_...` access token if fully automated CLI/GitHub task deployment is required; the provided `tr_dev_...` runtime key is valid for runtime API/dispatch but not CLI deploy auth.
+- Keep host pressure guards active; root disk is improved but still high after cleanup.
 
 ## RISKS
 
 - Live outbound form submission remains intentionally gated by approval/dry-run settings; CAPTCHA, login, payment, and anti-bot challenges stop for manual review.
 - Stagehand is operational, but its upstream AI SDK dependency currently carries low-severity audit advisories.
-- Coolify host root disk is still high (~88% before the latest deploy); keep host pressure guards active before the next large deploy.
