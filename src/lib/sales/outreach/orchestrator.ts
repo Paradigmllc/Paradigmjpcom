@@ -188,7 +188,7 @@ async function enqueueOperatorTask(
     pipeline_run_id: input.pipelineRunId ?? null,
     priority: input.priority ?? (input.approvalRequired ? 90 : 70),
     status: "open",
-    source_tool: "trigger.dev",
+    source_tool: "trigger_dev",
     target_tool: "appsmith",
     meta: {
       reason: input.reason,
@@ -324,7 +324,19 @@ async function processOne(
       opts.pipelineRunId,
     )
     if (!opts.dryRun) {
-      await notifySlack(`Manual form queue: ${company.company_name} (${company.domain}) requires CAPTCHA handling.`)
+      const { notifyBothChannels } = await import("@/lib/notify")
+      const title = `🤖 CAPTCHA手動対応: ${company.company_name}`
+      const notificationMessage = `会社「${company.company_name}」（${company.domain}）にてロボット防御（CAPTCHA）を検出したため、手動キューに送信しました。Appsmithで送信承認または手動送信を行ってください。\n送信先URL: ${formUrl ?? "不明"}`
+
+      await notifyBothChannels(
+        `🚨 *CAPTCHA手動対応が必要* 🚨\n*会社名*: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不明"}\n*対応*: 営業ダッシュボード等で手動対応を行ってください。`,
+        {
+          title,
+          message: notificationMessage,
+          link: "/ja/admin/sales",
+          type: "manual_handling"
+        }
+      ).catch((e) => console.error("[sales-outreach] notifyBothChannels failed:", e))
     }
     return { ...base("manual_queue", "captcha detected"), formUrl, message, classification: classification.classification }
   }
@@ -366,9 +378,19 @@ async function processOne(
       opts.dryRun,
       opts.pipelineRunId,
     )
-    await notifySlack(
-      `Approval required before first live form submit: ${company.company_name} (${company.domain})\nForm: ${formUrl}\nReport: ${reportUrl}`,
-    )
+    const { notifyBothChannels } = await import("@/lib/notify")
+    const title = `⏳ 送信承認待ち: ${company.company_name}`
+    const notificationMessage = `会社「${company.company_name}」（${company.domain}）への初回のフォーム送信（first-5ゲート）前に、人間による承認が必要です。営業ダッシュボードで承認してください。\n送信先URL: ${formUrl ?? "不明"}\n診断レポート: ${reportUrl}`
+
+    await notifyBothChannels(
+      `⏳ *送信承認待ち* (初回送信ゲート)\n*会社名*: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不明"}\n*診断*: ${reportUrl}\n営業ダッシュボードで確認してください。`,
+      {
+        title,
+        message: notificationMessage,
+        link: "/ja/admin/sales",
+        type: "approval_required"
+      }
+    ).catch((e) => console.error("[sales-outreach] notifyBothChannels failed:", e))
     return { ...base("manual_queue", "approval required before live form submit"), formUrl, message, classification: classification.classification }
   }
 
@@ -406,7 +428,19 @@ async function processOne(
   )
 
   if (!opts.dryRun && opts.first5Approval && index < 5 && stage === "submitted") {
-    await notifySlack(`Form submitted #${index + 1}: ${company.company_name} (${company.domain})\nReport: ${reportUrl}`)
+    const { notifyBothChannels } = await import("@/lib/notify")
+    const title = `✅ 送信完了: ${company.company_name}`
+    const notificationMessage = `会社「${company.company_name}」（${company.domain}）へのフォーム送信が完了しました。 (送信件数: #${index + 1})\n診断レポート: ${reportUrl}`
+
+    await notifyBothChannels(
+      `✅ *フォーム送信完了* (#${index + 1})\n*会社名*: ${company.company_name} (${company.domain})\n*診断*: ${reportUrl}`,
+      {
+        title,
+        message: notificationMessage,
+        link: reportUrl,
+        type: "form_submitted"
+      }
+    ).catch((e) => console.error("[sales-outreach] notifyBothChannels failed:", e))
   }
 
   return {

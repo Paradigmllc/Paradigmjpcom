@@ -34,7 +34,16 @@ function recordPayload(payload: unknown): Record<string, unknown> {
   return payload && typeof payload === "object" && !Array.isArray(payload) ? (payload as Record<string, unknown>) : {}
 }
 
+function isHealthCheckPayload(payload: unknown): boolean {
+  return recordPayload(payload).health_check === true
+}
+
+function healthCheckResult(taskId: string) {
+  return { ok: true, taskId, healthCheck: true }
+}
+
 async function handlePostOutreach(payload: unknown) {
+  if (isHealthCheckPayload(payload)) return healthCheckResult("post-outreach-router")
   const parsed = postOutreachPayload.parse(payload)
   logger.info("Post-outreach event accepted", {
     source: parsed.source,
@@ -64,6 +73,7 @@ export const salesOsPipelineTask = task({
     randomize: true,
   },
   run: async (payload: unknown) => {
+    if (isHealthCheckPayload(payload)) return healthCheckResult("sales-os-pipeline")
     const parsed = salesPipelinePayload.parse(payload)
     logger.info("Sales OS pipeline started", { runId: parsed.run_id, companyId: parsed.company_id ?? null })
 
@@ -92,6 +102,7 @@ export const salesEnrichmentRunnerTask = task({
     randomize: true,
   },
   run: async (payload: unknown) => {
+    if (isHealthCheckPayload(payload)) return healthCheckResult("sales-enrichment-runner")
     const parsed = enrichmentPayload.parse(payload ?? {})
     logger.info("Sales enrichment runner started", { limit: parsed.limit })
     return runEnrichmentJobs(parsed.limit)
@@ -111,7 +122,10 @@ export const chatwootReplyRouterTask = task({
   description: "Accept Chatwoot replies after outbound outreach.",
   queue: { name: "post-outreach", concurrencyLimit: 2 },
   maxDuration: 300,
-  run: async (payload: unknown) => handlePostOutreach({ ...recordPayload(payload), source: "chatwoot" }),
+  run: async (payload: unknown) => {
+    if (isHealthCheckPayload(payload)) return healthCheckResult("chatwoot-reply-router")
+    return handlePostOutreach({ ...recordPayload(payload), source: "chatwoot" })
+  },
 })
 
 export const livekitDiscoveryRouterTask = task({
@@ -119,7 +133,10 @@ export const livekitDiscoveryRouterTask = task({
   description: "Accept LiveKit discovery-call events after outreach.",
   queue: { name: "post-outreach", concurrencyLimit: 2 },
   maxDuration: 300,
-  run: async (payload: unknown) => handlePostOutreach({ ...recordPayload(payload), source: "livekit" }),
+  run: async (payload: unknown) => {
+    if (isHealthCheckPayload(payload)) return healthCheckResult("livekit-discovery-router")
+    return handlePostOutreach({ ...recordPayload(payload), source: "livekit" })
+  },
 })
 
 export const salesVideoPipelineTask = task({
@@ -131,6 +148,7 @@ export const salesVideoPipelineTask = task({
     maxAttempts: 1,
   },
   run: async (payload: unknown) => {
+    if (isHealthCheckPayload(payload)) return healthCheckResult("sales-video-pipeline")
     const parsed = videoPayload.parse(payload)
     if (!parsed.output_url) {
       logger.info("Sales video task accepted; waiting for renderer callback", { jobId: parsed.job_id })

@@ -432,7 +432,8 @@ export async function checkTriggerDevHealth(): Promise<ServiceHealthResult> {
   try {
     const base = envValue("TRIGGER_API_URL") ?? "https://api.trigger.dev"
     const url = new URL(base)
-    url.pathname = `${url.pathname}/api/v1/tasks`.replace(/\/+/g, "/")
+    url.pathname = `${url.pathname}/api/v1/runs`.replace(/\/+/g, "/")
+    url.searchParams.set("limit", "1")
 
     const res = await safeFetch(url.toString(), {
       headers: {
@@ -441,7 +442,7 @@ export async function checkTriggerDevHealth(): Promise<ServiceHealthResult> {
       signal: AbortSignal.timeout(10_000),
     })
     if (!res.ok) return { balanceStatus: "error", balanceLabel: `Trigger.dev API HTTP ${res.status}` }
-    return { balanceStatus: "ok", balanceLabel: "Trigger.dev connection and API key verified" }
+    return { balanceStatus: "ok", balanceLabel: "Trigger.dev runs API and secret key verified" }
   } catch (error) {
     return healthError("Trigger.dev", error)
   }

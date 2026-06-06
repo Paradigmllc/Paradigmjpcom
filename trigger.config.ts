@@ -1,7 +1,7 @@
 import { defineConfig } from "@trigger.dev/sdk/v3"
 
 export default defineConfig({
-  project: process.env.TRIGGER_PROJECT_REF ?? "proj_paradigm_sales_os",
+  project: process.env.TRIGGER_PROJECT_REF ?? "proj_ptaxneqibbeboxxboajw",
   dirs: ["./trigger"],
   runtime: "node",
   maxDuration: 1800,

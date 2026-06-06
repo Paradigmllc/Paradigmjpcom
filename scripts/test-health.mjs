@@ -75,7 +75,8 @@ async function check() {
   if (TRIGGER_SECRET_KEY) {
     try {
       const url = new URL(TRIGGER_API_URL);
-      url.pathname = `${url.pathname}/api/v1/tasks`.replace(/\/+/g, "/");
+      url.pathname = `${url.pathname}/api/v1/runs`.replace(/\/+/g, "/");
+      url.searchParams.set("limit", "1");
       const res = await fetch(url.toString(), {
         headers: { Authorization: `Bearer ${TRIGGER_SECRET_KEY}` },
         signal: AbortSignal.timeout(5000),

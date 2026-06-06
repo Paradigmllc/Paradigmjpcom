@@ -1,15 +1,3 @@
-/**
- * lib/notify.ts — Slack Bot API 通知 (Sprint 11)
- *
- * 役割: 既存 Coolify env の SLACK_BOT_TOKEN + SLACK_CHANNEL_ID を使い
- *       chat.postMessage で Slack 通知。Resend より高機能 (Block Kit 等)。
- *
- * 使用箇所:
- *   - track-view: HOT lead 検知時
- *   - api/contact: フォーム送信時
- *   - admin: 異常検知時
- */
-
 const SLACK_API = "https://slack.com/api"
 
 interface HotLeadPayload {
@@ -17,15 +5,30 @@ interface HotLeadPayload {
   domain: string
   report_views: number
   diagnostic_url: string
-  video_url?: string | null // Sprint 14: HTML 動画 preview URL (/ja/report/[slug]/video)
+  video_url?: string | null
 }
 
-async function slackPost(method: string, body: Record<string, unknown>): Promise<{ ok: boolean; error?: string }> {
+interface SlackPostResult {
+  ok: boolean
+  error?: string
+}
+
+interface NotifyBothOptions {
+  title: string
+  message: string
+  link?: string
+  type?: string
+  region?: "jp" | "global"
+  priority?: number
+}
+
+async function slackPost(method: string, body: Record<string, unknown>): Promise<SlackPostResult> {
   const token = process.env.SLACK_BOT_TOKEN
   if (!token || token.trim().length === 0) {
-    console.warn("[notify] SLACK_BOT_TOKEN not set — no-op")
+    console.warn("[notify] SLACK_BOT_TOKEN not set; Slack notification skipped")
     return { ok: false, error: "SLACK_BOT_TOKEN not configured" }
   }
+
   try {
     const res = await fetch(`${SLACK_API}/${method}`, {
       method: "POST",
@@ -36,30 +39,30 @@ async function slackPost(method: string, body: Record<string, unknown>): Promise
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(5_000),
     })
-    const data = (await res.json()) as { ok: boolean; error?: string }
+    const data = (await res.json()) as SlackPostResult
+    if (!data.ok) console.error("[notify] Slack API error:", data.error ?? "unknown error")
     return data
-  } catch (e) {
-    console.error("[notify] Slack post failed:", e)
-    return { ok: false, error: e instanceof Error ? e.message : String(e) }
+  } catch (error) {
+    console.error("[notify] Slack post failed:", error)
+    return { ok: false, error: error instanceof Error ? error.message : String(error) }
   }
 }
 
-/** HOT lead 検知時の Block Kit 通知 */
-export async function notifyHotLead(p: HotLeadPayload): Promise<void> {
+export async function notifyHotLead(payload: HotLeadPayload): Promise<void> {
   const channel = process.env.SLACK_CHANNEL_ID ?? "#all-paradigm"
   await slackPost("chat.postMessage", {
     channel,
-    text: `🔥 HOT LEAD: ${p.company_name} (${p.report_views} views)`,
+    text: `HOT LEAD: ${payload.company_name} (${payload.report_views} views)`,
     blocks: [
       {
         type: "header",
-        text: { type: "plain_text", text: `🔥 HOT LEAD: ${p.company_name}` },
+        text: { type: "plain_text", text: `HOT LEAD: ${payload.company_name}` },
       },
       {
         type: "section",
         fields: [
-          { type: "mrkdwn", text: `*ドメイン*\n${p.domain}` },
-          { type: "mrkdwn", text: `*閲覧回数*\n${p.report_views} 回 (3+ で HOT 判定)` },
+          { type: "mrkdwn", text: `*Domain*\n${payload.domain}` },
+          { type: "mrkdwn", text: `*Report views*\n${payload.report_views}` },
         ],
       },
       {
@@ -67,16 +70,16 @@ export async function notifyHotLead(p: HotLeadPayload): Promise<void> {
         elements: [
           {
             type: "button",
-            text: { type: "plain_text", text: "📋 診断レポートを見る" },
-            url: p.diagnostic_url,
+            text: { type: "plain_text", text: "Open diagnostic report" },
+            url: payload.diagnostic_url,
             style: "primary",
           },
-          ...(p.video_url
+          ...(payload.video_url
             ? [
                 {
                   type: "button",
-                  text: { type: "plain_text", text: "🎬 60 秒動画版" },
-                  url: p.video_url,
+                  text: { type: "plain_text", text: "Open video preview" },
+                  url: payload.video_url,
                 },
               ]
             : []),
@@ -86,7 +89,6 @@ export async function notifyHotLead(p: HotLeadPayload): Promise<void> {
   })
 }
 
-/** 一般通知 (text + 任意 blocks) */
 export async function notifySlack(text: string, blocks?: unknown[]): Promise<void> {
   const channel = process.env.SLACK_CHANNEL_ID ?? "#all-paradigm"
   await slackPost("chat.postMessage", {
@@ -94,4 +96,45 @@ export async function notifySlack(text: string, blocks?: unknown[]): Promise<voi
     text,
     ...(blocks ? { blocks } : {}),
   })
+}
+
+export async function notifyBothChannels(text: string, options: NotifyBothOptions): Promise<void> {
+  const slackResult = await slackPost("chat.postMessage", {
+    channel: process.env.SLACK_CHANNEL_ID ?? "#all-paradigm",
+    text,
+  })
+
+  if (!slackResult.ok) {
+    console.error("[notify] Slack notification failed:", slackResult.error ?? "unknown error")
+  }
+
+  try {
+    const { getServiceSalesSupabase } = await import("@/lib/supabase")
+    const sb = getServiceSalesSupabase()
+    if (!sb) {
+      console.warn("[notify] Supabase client not available for DB notification")
+      return
+    }
+
+    const { error } = await sb.from("sales_operator_queue_items").insert({
+      region: options.region ?? "jp",
+      queue_type: "analysis",
+      priority: options.priority ?? 80,
+      status: "open",
+      source_tool: "trigger_dev",
+      target_tool: "appsmith",
+      meta: {
+        type: options.type ?? "system_alert",
+        title: options.title,
+        message: options.message,
+        link: options.link ?? null,
+        created_by: "notify_both_channels",
+        slack_ok: slackResult.ok,
+        slack_error: slackResult.error ?? null,
+      },
+    })
+    if (error) console.error("[notify] DB queue notification insert failed:", error.message)
+  } catch (error) {
+    console.error("[notify] DB notification failed:", error)
+  }
 }

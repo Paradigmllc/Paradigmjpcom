@@ -18,7 +18,7 @@ These IDs are the production defaults used by the app when task env vars are not
 Non-secret defaults:
 
 ```env
-TRIGGER_PROJECT_REF=proj_paradigm_sales_os
+TRIGGER_PROJECT_REF=proj_ptaxneqibbeboxxboajw
 TRIGGER_API_URL=https://api.trigger.dev
 TRIGGER_DASHBOARD_URL=https://cloud.trigger.dev
 TRIGGER_SALES_OS_PIPELINE_TASK_ID=sales-os-pipeline

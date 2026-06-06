@@ -1,8 +1,12 @@
 import fs from "node:fs"
 import path from "node:path"
 import process from "node:process"
+import dotenv from "dotenv"
 
 const root = process.cwd()
+dotenv.config({ path: path.join(root, ".env.local"), quiet: true })
+dotenv.config({ path: path.join(root, ".env"), quiet: true })
+
 const taskSource = path.join(root, "trigger", "sales-os.ts")
 const configSource = path.join(root, "trigger.config.ts")
 
@@ -64,13 +68,23 @@ printStatus("TRIGGER_PROJECT_REF", Boolean(projectRef), projectRef ? "set" : "un
 const secretName = ["TRIGGER_SECRET_KEY", "TRIGGER_ACCESS_TOKEN", "TRIGGER_DEV_API_KEY"].find((name) => env(name))
 printStatus("Trigger.dev API key", Boolean(secretName), secretName ? `${secretName} is set` : "unset")
 
+const deployToken = env("TRIGGER_ACCESS_TOKEN")
+const hasDeployToken = Boolean(deployToken?.startsWith("tr_pat_"))
+printStatus(
+  "Trigger.dev deploy token",
+  true,
+  hasDeployToken
+    ? "TRIGGER_ACCESS_TOKEN is a PAT and can deploy tasks non-interactively"
+    : "not set; task deploy requires CLI login or a tr_pat_ TRIGGER_ACCESS_TOKEN",
+)
+
 if (!secretName) {
   fail("Trigger.dev cloud cannot be verified or deployed until one API key env is set.")
   process.exit()
 }
 
 const apiUrl = (env("TRIGGER_API_URL") ?? "https://api.trigger.dev").replace(/\/+$/, "")
-const url = `${apiUrl}/api/v1/tasks`
+const url = `${apiUrl}/api/v1/runs?limit=1`
 
 try {
   const res = await fetch(url, {
@@ -82,30 +96,8 @@ try {
     fail("Trigger.dev API authentication failed.")
     process.exit()
   }
-
-  const text = await res.text()
-  let parsed = {}
-  try {
-    parsed = text ? JSON.parse(text) : {}
-  } catch (error) {
-    console.warn("[WARN] Trigger.dev tasks response was not JSON:", error instanceof Error ? error.message : String(error))
-  }
-
-  const payload = Array.isArray(parsed) ? parsed : Array.isArray(parsed.data) ? parsed.data : Array.isArray(parsed.tasks) ? parsed.tasks : []
-  const remoteTaskIds = new Set(
-    payload
-      .map((task) => (task && typeof task === "object" ? task.id ?? task.slug ?? task.identifier : null))
-      .filter((id) => typeof id === "string"),
-  )
-
-  if (remoteTaskIds.size > 0) {
-    for (const taskId of expectedTasks) {
-      const ok = remoteTaskIds.has(taskId)
-      printStatus(`remote:${taskId}`, ok, ok ? "deployed" : "not found in Trigger.dev API")
-      if (!ok) fail(`Trigger.dev task ${taskId} is not deployed remotely.`)
-    }
-  } else {
-    console.warn("[WARN] Trigger.dev API auth passed, but task list shape was not recognized. Check dashboard manually.")
+  if (!hasDeployToken) {
+    console.warn("[WARN] Remote task deployment cannot be verified by the secret-key runs API. Use `trigger.dev deploy` after CLI login or set a tr_pat_ TRIGGER_ACCESS_TOKEN.")
   }
 } catch (error) {
   fail(`Trigger.dev API verification failed: ${error instanceof Error ? error.message : String(error)}`)

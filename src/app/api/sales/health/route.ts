@@ -115,7 +115,8 @@ async function checkTriggerDev(): Promise<ServiceCheck> {
 
   try {
     const url = new URL(base)
-    url.pathname = `${url.pathname}/api/v1/tasks`.replace(/\/+/g, "/")
+    url.pathname = `${url.pathname}/api/v1/runs`.replace(/\/+/g, "/")
+    url.searchParams.set("limit", "1")
     const res = await fetch(url.toString(), {
       headers: { Authorization: `Bearer ${secretKey}` },
       signal: AbortSignal.timeout(6_000),

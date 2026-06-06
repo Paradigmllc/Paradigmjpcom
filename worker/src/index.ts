@@ -20,6 +20,30 @@ import {
 
 const SECRET = process.env.WORKER_SECRET ?? ""
 const PORT = Number(process.env.PORT ?? 8080)
+const MAX_CONCURRENT = Number(process.env.MAX_CONCURRENT_BROWSERS ?? 2)
+
+class ConcurrencyLimiter {
+  private activeCount = 0
+  private queue: Array<() => void> = []
+
+  constructor(private readonly maxConcurrent: number) {}
+
+  async run<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.activeCount >= this.maxConcurrent) {
+      await new Promise<void>((resolve) => this.queue.push(resolve))
+    }
+    this.activeCount++
+    try {
+      return await fn()
+    } finally {
+      this.activeCount--
+      const next = this.queue.shift()
+      if (next) next()
+    }
+  }
+}
+
+const limiter = new ConcurrencyLimiter(MAX_CONCURRENT)
 
 function send(res: ServerResponse, code: number, obj: unknown): void {
   res.writeHead(code, { "content-type": "application/json; charset=utf-8" })
@@ -67,25 +91,27 @@ const server = createServer(async (req, res) => {
       const body = await readJson<SubmitInput | StagehandSubmitInput>(req)
       if (isStagehandSubmitInput(body)) {
         if (!body.url) return send(res, 400, { ok: false, error: "url required" })
-        const result = await submitFormWithStagehand(body)
+        const result = await limiter.run(() => submitFormWithStagehand(body))
         return send(res, 200, result)
       }
       if (!body.formUrl) return send(res, 400, { ok: false, error: "formUrl required" })
-      const result = await submitForm(body)
+      const result = await limiter.run(() => submitForm(body))
       return send(res, 200, result)
     }
 
     if (req.method === "POST" && req.url === "/discover-form") {
       const body = await readJson<{ url?: string }>(req)
       if (!body.url) return send(res, 400, { ok: false, error: "url required" })
-      const formUrl = await discoverFormWithStagehand({ url: body.url, mode: "contact_form_discovery" })
+      const targetUrl = body.url
+      const formUrl = await limiter.run(() => discoverFormWithStagehand({ url: targetUrl, mode: "contact_form_discovery" }))
       return send(res, 200, { ok: true, formUrl })
     }
 
     if (req.method === "POST" && req.url === "/discover-spa") {
       const body = await readJson<{ homeUrl?: string }>(req)
       if (!body.homeUrl) return send(res, 400, { ok: false, error: "homeUrl required" })
-      const formUrl = await discoverSpaForm(body.homeUrl)
+      const homeUrl = body.homeUrl
+      const formUrl = await limiter.run(() => discoverSpaForm(homeUrl))
       return send(res, 200, { ok: true, formUrl })
     }
 
@@ -96,7 +122,7 @@ const server = createServer(async (req, res) => {
   }
 })
 
-server.listen(PORT, () => console.log(`[worker] outreach browser worker listening on :${PORT}`))
+server.listen(PORT, () => console.log(`[worker] outreach browser worker listening on :${PORT} (max concurrent: ${MAX_CONCURRENT})`))
 
 async function shutdown(): Promise<void> {
   await closeBrowser().catch((error) => {

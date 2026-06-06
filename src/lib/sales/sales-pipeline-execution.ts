@@ -113,7 +113,7 @@ async function enqueuePipelineReviewTask(
     queue_type: input.queueType ?? "form_send",
     priority: input.priority ?? 90,
     status: "open",
-    source_tool: "trigger.dev",
+    source_tool: "trigger_dev",
     target_tool: "appsmith",
     meta: {
       reason: input.reason,

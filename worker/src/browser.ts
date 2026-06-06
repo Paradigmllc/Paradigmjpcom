@@ -48,6 +48,18 @@ async function launch(): Promise<Browser> {
 }
 
 export async function getBrowser(): Promise<Browser> {
+  if (browserPromise) {
+    try {
+      const browser = await browserPromise
+      if (!browser.isConnected()) {
+        console.warn("[worker/browser] browser is disconnected, restarting...")
+        browserPromise = null
+      }
+    } catch (error) {
+      console.warn("[worker/browser] browser connection check failed, resetting...", error)
+      browserPromise = null
+    }
+  }
   if (!browserPromise) browserPromise = launch()
   return browserPromise
 }

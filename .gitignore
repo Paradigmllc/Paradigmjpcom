@@ -33,6 +33,7 @@ supabase-secrets.json
 
 # vercel
 .vercel
+.trigger/
 
 # typescript
 *.tsbuildinfo

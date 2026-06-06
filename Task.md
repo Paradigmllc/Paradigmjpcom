@@ -7,6 +7,16 @@
 - n8n is no longer the active orchestrator for new Sales OS work. Trigger.dev is the primary orchestration target; legacy `N8N_*` values are inbound/backward-compat only where explicitly noted.
 - Form URL extraction and submission are now wired as one lane family: HTTP form submit, Crawl4AI discovery, Browserless rendered inspection, Crawlee SPA discovery, Playwright Stealth worker submission, and Stagehand agent discovery/submission.
 
+## CODEX UPDATE - 2026-06-06 Revenue OS Trigger.dev Runtime Closure
+
+- Stored the provided Trigger.dev runtime key in approved non-git locations and upserted `TRIGGER_SECRET_KEY` into Coolify production and preview envs without printing the value.
+- Fixed Trigger.dev health checks to use the v4 runs API (`/api/v1/runs?limit=1`) instead of the removed task-list endpoint that returned false `404` errors.
+- Aligned Revenue OS audit scripts with Trigger.dev as the primary orchestrator: Trigger webhook secret is now preferred, n8n remains legacy fallback only.
+- Added safe `health_check` handling to all local Trigger.dev task definitions so future task-level smoke checks can run without mutating Sales OS records.
+- Fixed the build-blocking notification helper path by preserving the Slack/DB notification exports and validating the current `notifySlack`, `notifyHotLead`, and `notifyBothChannels` module through production build.
+- Included the pending Trigger.dev database/tool-slug migrations and worker browser concurrency/reconnect hardening in the verified change set.
+- Trigger.dev CLI task deploy is still blocked by missing `tr_pat_...` personal access token or interactive CLI login. The provided `tr_dev_...` key is valid for runtime API/dispatch, not non-interactive CLI deployment.
+
 ## CODEX UPDATE - 2026-06-06 Trigger.dev + Stagehand Production Audit
 
 - Replaced remaining active dashboard/orchestration references from n8n to Trigger.dev in Sales OS health, dashboard tool connections, enrichment runner dispatch, Chatwoot/LiveKit post-outreach forwarding, source coverage, API comments, and runbooks.
@@ -50,6 +60,13 @@
 
 ## VERIFICATION
 
+- `node scripts/verify-trigger-sales-os.mjs` passed local task/config/API checks; it confirms runtime API auth via Trigger.dev runs API and warns that CLI deploy needs a PAT/login.
+- `npx tsc --noEmit --pretty false --incremental false` passed.
+- `npm --prefix worker run typecheck` passed.
+- `npm test -- --run src/lib/sales/video-pipeline.test.ts src/lib/sales/integration-registry.test.ts src/lib/sales/sales-pipeline.test.ts` passed.
+- `git diff --check` passed.
+- `npm run build` passed.
+- Pre-deploy production `/api/sales/health` still reports Trigger.dev `not_configured` because the running container has not yet been redeployed with the newly added Coolify env.
 - `npx tsc --noEmit --pretty false` passed.
 - `npm test -- --run src/lib/sales/outreach/activity.test.ts src/lib/sales/sources/form-discovery.test.ts src/lib/sales/outreach/browser-provider.test.ts src/lib/sales/outreach/http-form-provider.test.ts src/lib/sales/outreach/form-classifier.test.ts src/lib/sales/outreach/preflight.test.ts src/lib/sales/outreach/state-machine.test.ts src/lib/sales/integration-registry.test.ts src/lib/sales/sales-pipeline.test.ts` passed.
 - `npm --prefix worker run typecheck` passed.

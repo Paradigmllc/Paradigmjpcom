@@ -47,7 +47,7 @@ const PRODUCTS = [
     is_subscription: false,
     description: "営業自動化、業務改善、AI導入をまとめた日本向けDXパッケージ。",
     sort_order: 20,
-    meta: { primary_market: "japan", delivery: "n8n_dify_supabase" },
+    meta: { primary_market: "japan", delivery: "trigger_dify_supabase" },
   },
   {
     code: "global_jaas",
@@ -296,6 +296,14 @@ async function applySalesAiPromptsRepairMigration(envs) {
   return applySqlMigration(envs, "migration_039_sales_ai_prompts_auth_and_defaults.sql", "Sales AI prompts repair migration")
 }
 
+async function applySalesTriggerDevToolSlugMigration(envs) {
+  return applySqlMigration(envs, "migration_040_sales_trigger_dev_tool_slug.sql", "Sales Trigger.dev tool slug migration")
+}
+
+async function applySalesVideoTriggerColumnsMigration(envs) {
+  return applySqlMigration(envs, "migration_041_sales_video_trigger_columns.sql", "Sales video Trigger.dev columns migration")
+}
+
 function applyContentTemplates(envs) {
   const { url, key } = salesSupabase(envs)
   const result = spawnSync(process.execPath, ["scripts/seed-sales-content-templates.mjs"], {
@@ -391,6 +399,8 @@ async function main() {
     console.log(await applySalesPipelineOutreachLinksMigration(envs))
     console.log(await applySalesAiPromptsMigration(envs))
     console.log(await applySalesAiPromptsRepairMigration(envs))
+    console.log(await applySalesTriggerDevToolSlugMigration(envs))
+    console.log(await applySalesVideoTriggerColumnsMigration(envs))
     console.log(applyContentTemplates(envs))
   } else {
     console.log("Dry run: skipped Supabase product upsert")

@@ -18,7 +18,12 @@ const CATEGORY_LABELS = {
 
 const SOURCES = [
   source("deepseek", "DeepSeek V4 API", "orchestration", ["DEEPSEEK_API_KEY"]),
-  source("n8n", "n8n OSS", "orchestration", ["N8N_WEBHOOK_SECRET"], ["N8N_BASE_URL", "N8N_SALES_ENRICHMENT_WEBHOOK_URL"]),
+  source("trigger_dev", "Trigger.dev", "orchestration", ["TRIGGER_SECRET_KEY", "TRIGGER_ACCESS_TOKEN", "TRIGGER_DEV_API_KEY"], [
+    "TRIGGER_API_URL",
+    "TRIGGER_DASHBOARD_URL",
+    "TRIGGER_SALES_OS_PIPELINE_TASK_ID",
+    "TRIGGER_SALES_ENRICHMENT_TASK_ID",
+  ]),
   source("dify_cloud", "Dify Cloud", "orchestration", [
     "DIFY_API_KEY",
     "DIFY_DIAGNOSIS_API_KEY",
@@ -128,8 +133,8 @@ const SOURCES = [
     "CLOUDFLARE_R2_SECRET_ACCESS_KEY",
   ]),
 
-  sourceAll("chatwoot", "Chatwoot OSS", "outreach", ["CHATWOOT_BASE_URL", "CHATWOOT_API_KEY", "CHATWOOT_ACCOUNT_ID"], ["CHATWOOT_WEBHOOK_URL", "N8N_POST_OUTREACH_WEBHOOK_URL"], checkChatwoot),
-  sourceAll("livekit", "LiveKit OSS", "outreach", ["LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET"], ["LIVEKIT_WEBHOOK_URL", "N8N_LIVEKIT_DISCOVERY_WEBHOOK_URL"], checkLivekit),
+  sourceAll("chatwoot", "Chatwoot OSS", "outreach", ["CHATWOOT_BASE_URL", "CHATWOOT_API_KEY", "CHATWOOT_ACCOUNT_ID"], ["CHATWOOT_WEBHOOK_URL", "TRIGGER_CHATWOOT_REPLY_TASK_ID", "TRIGGER_POST_OUTREACH_TASK_ID"], checkChatwoot),
+  sourceAll("livekit", "LiveKit OSS", "outreach", ["LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET"], ["LIVEKIT_WEBHOOK_URL", "TRIGGER_LIVEKIT_DISCOVERY_TASK_ID", "TRIGGER_POST_OUTREACH_TASK_ID"], checkLivekit),
   source("smartlead", "Smartlead.ai", "outreach", ["SMARTLEAD_API_KEY"]),
   source("resend", "Resend API", "outreach", ["RESEND_API_KEY"]),
   source("docsend", "DocSend", "outreach", ["DOCSEND_API_KEY"]),

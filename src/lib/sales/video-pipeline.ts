@@ -62,6 +62,8 @@ export interface SalesVideoJob {
   story_framework: VideoStoryFramework
   quality_tier: VideoQualityTier
   orchestration_stage: string
+  trigger_endpoint: string | null
+  trigger_run_id: string | null
   n8n_workflow_url: string | null
   n8n_execution_id: string | null
   vast_instance_id: string | null
@@ -358,6 +360,7 @@ export async function createVideoJob(input: {
       story_framework: productionProfile.storyFramework,
       quality_tier: productionProfile.qualityTier,
       orchestration_stage: "draft",
+      trigger_endpoint: trigger.endpoint,
       n8n_workflow_url: trigger.endpoint,
       r2_bucket: r2Bucket,
       r2_asset_prefix: r2AssetPrefix,
@@ -483,6 +486,7 @@ export async function runVideoJobAction(input: {
       const updated = await updateJob(job.id, {
         status: dispatched.manual ? "review_required" : "waiting_render",
         orchestration_stage: dispatched.manual ? "trigger_dev_manual_required" : "trigger_dev_dispatched",
+        trigger_run_id: dispatched.executionId,
         n8n_execution_id: dispatched.executionId,
         error_message: dispatched.manual ? dispatched.message : null,
       })

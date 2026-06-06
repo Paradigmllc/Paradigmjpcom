@@ -6,7 +6,7 @@
  *
  * 使い方:
  *   AUDIT_BASE=https://paradigmjp.com \
- *   AUDIT_WEBHOOK_SECRET=$N8N_WEBHOOK_SECRET \
+ *   AUDIT_WEBHOOK_SECRET=$TRIGGER_WEBHOOK_SECRET \
  *   AUDIT_TEST_COMPANY_ID=00335ac8-fe51-40bb-bd00-b5b018b6d4e3 \
  *   AUDIT_DOMAIN=example.com \
  *   node scripts/audit-sales-os.mjs
@@ -17,7 +17,7 @@
 import { readProductionEnvValue } from "./lib/coolify-env.mjs"
 
 const BASE = process.env.AUDIT_BASE ?? "https://paradigmjp.com"
-let SECRET = process.env.AUDIT_WEBHOOK_SECRET ?? process.env.N8N_WEBHOOK_SECRET ?? ""
+let SECRET = process.env.AUDIT_WEBHOOK_SECRET ?? process.env.TRIGGER_WEBHOOK_SECRET ?? process.env.N8N_WEBHOOK_SECRET ?? ""
 // Sprint 13: slug ベース URL に切替 (旧 UUID ID は backward compat に track-view でのみ使用)
 const TEST_SLUG = process.env.AUDIT_TEST_SLUG ?? "izakaya-en"
 const TEST_DOMAIN = process.env.AUDIT_DOMAIN ?? "example.com"
@@ -93,7 +93,10 @@ async function checkPost(name, path, body, expectStatus = 200, opts = {}) {
 
 async function main() {
   if (!SECRET) {
-    SECRET = (await readProductionEnvValue("N8N_WEBHOOK_SECRET").catch(() => null)) ?? ""
+    SECRET =
+      (await readProductionEnvValue("TRIGGER_WEBHOOK_SECRET").catch(() => null)) ??
+      (await readProductionEnvValue("N8N_WEBHOOK_SECRET").catch(() => null)) ??
+      ""
   }
 
   console.log(C.bold("\n🔍 Sales OS End-to-End 監査"))

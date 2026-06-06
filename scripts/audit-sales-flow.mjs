@@ -6,7 +6,7 @@
  *
  * 使い方:
  *   BASE_URL=https://paradigmjp.com \
- *   N8N_WEBHOOK_SECRET=xxxxx \
+ *   TRIGGER_WEBHOOK_SECRET=xxxxx \
  *   node scripts/audit-sales-flow.mjs
  *
  * 検証項目:
@@ -22,13 +22,17 @@ import { readProductionEnvValue } from "./lib/coolify-env.mjs"
 const BASE_URL = process.env.BASE_URL ?? "https://paradigmjp.com"
 
 async function post(path, body) {
-  const secret = await readProductionEnvValue("N8N_WEBHOOK_SECRET").catch(() => null)
+  const secret =
+    process.env.TRIGGER_WEBHOOK_SECRET ??
+    process.env.N8N_WEBHOOK_SECRET ??
+    (await readProductionEnvValue("TRIGGER_WEBHOOK_SECRET").catch(() => null)) ??
+    (await readProductionEnvValue("N8N_WEBHOOK_SECRET").catch(() => null))
   if (!secret) {
     return {
       status: 0,
       json: {
         ok: false,
-        error: "N8N_WEBHOOK_SECRET is not configured in env or readable Coolify application envs",
+        error: "TRIGGER_WEBHOOK_SECRET is not configured in env or readable Coolify application envs",
       },
     }
   }

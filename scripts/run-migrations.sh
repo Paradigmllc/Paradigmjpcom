@@ -37,3 +37,5 @@ docker exec -i supabase-oss-db-1 psql -U postgres -d postgres < /root/supabase-o
 docker exec -i supabase-oss-db-1 psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_037_sales_pipeline_outreach_links.sql
 docker exec -i supabase-oss-db-1 psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_038_sales_ai_prompts.sql
 docker exec -i supabase-oss-db-1 psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_039_sales_ai_prompts_auth_and_defaults.sql
+docker exec -i supabase-oss-db-1 psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_040_sales_trigger_dev_tool_slug.sql
+docker exec -i supabase-oss-db-1 psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_041_sales_video_trigger_columns.sql
