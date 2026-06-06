@@ -28,7 +28,7 @@ export const SALES_AGENT_SOURCES = [
   "paperclip",
   "opencode",
   "openclaw",
-  "n8n",
+  "trigger_dev",
   "dashboard",
 ] as const
 export type SalesAgentSource = (typeof SALES_AGENT_SOURCES)[number]
@@ -124,7 +124,7 @@ const AGENT_ROLES: SalesAgentRole[] = [
   {
     id: "outreach_worker",
     name: "Outreach Worker",
-    owner: "n8n / Browserless",
+    owner: "Trigger.dev / Browserless",
     responsibility: "Dify文面生成、フォーム判定、dry-run、承認後の送信準備を担当。",
     autonomy: "デフォルトはdry-run。初回5件と危険判定はAppsmith承認。",
     guardrail: "Telegram指示だけで大量ライブ送信しない。",
@@ -305,7 +305,7 @@ async function enqueueManualReview(
     queue_type: "analysis",
     priority: input.priority ?? 80,
     status: "open",
-    source_tool: "n8n",
+    source_tool: "trigger_dev",
     target_tool: "appsmith",
     meta: {
       reason: input.reason,

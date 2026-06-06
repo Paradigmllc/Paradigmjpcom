@@ -1,13 +1,13 @@
 /**
- * lib/sales/auth.ts — n8n webhook 共有秘密 (Sprint 9-A)
+ * lib/sales/auth.ts — Trigger.dev webhook shared secret
  *
- * 役割: /api/sales/* endpoint を n8n からのみ呼び出せるように保護。
- *       header `X-Webhook-Secret` を env `N8N_WEBHOOK_SECRET` と照合。
+ * Role: protect /api/sales/* endpoints called by Trigger.dev, cron, and trusted automation.
+ *       Compare `X-Webhook-Secret` with `TRIGGER_WEBHOOK_SECRET`.
  *
  * 設計判断:
  *   - constant-time 比較 (timing attack 防止)
  *   - env 未設定なら **全 reject** (fail-closed・本番事故防止)
- *   - n8n 側の HTTP node で `X-Webhook-Secret: $env.N8N_WEBHOOK_SECRET` をセット
+ *   - Trigger.dev tasks set `X-Webhook-Secret: $env.TRIGGER_WEBHOOK_SECRET`
  */
 
 import { NextRequest, NextResponse } from "next/server"

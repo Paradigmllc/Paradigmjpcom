@@ -26,7 +26,7 @@ function userEmailFromUnknown(user: unknown): string | null {
 }
 
 export function authorizeWebhookRequest(headers: Headers): AdminAuthResult {
-  const expected = process.env.N8N_WEBHOOK_SECRET
+  const expected = process.env.TRIGGER_WEBHOOK_SECRET ?? process.env.N8N_WEBHOOK_SECRET
   const received = headers.get("x-webhook-secret")
 
   if (!received) {
@@ -34,7 +34,7 @@ export function authorizeWebhookRequest(headers: Headers): AdminAuthResult {
   }
 
   if (!expected) {
-    console.error("[admin-auth] N8N_WEBHOOK_SECRET is not configured")
+    console.error("[admin-auth] TRIGGER_WEBHOOK_SECRET is not configured")
     return { ok: false, source: "none", userEmail: null }
   }
 

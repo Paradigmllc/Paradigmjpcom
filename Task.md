@@ -10,6 +10,7 @@
 ## CODEX UPDATE - 2026-06-06 Trigger.dev + Stagehand Production Audit
 
 - Replaced remaining active dashboard/orchestration references from n8n to Trigger.dev in Sales OS health, dashboard tool connections, enrichment runner dispatch, Chatwoot/LiveKit post-outreach forwarding, source coverage, API comments, and runbooks.
+- Fixed shared webhook auth so `X-Webhook-Secret` checks `TRIGGER_WEBHOOK_SECRET` first and keeps `N8N_WEBHOOK_SECRET` only as legacy fallback.
 - Added Stagehand SDK support in `worker/`: `/health`, `/discover-form`, and Stagehand `/submit` paths now run alongside existing Crawlee `/discover-spa` and Playwright Stealth `formUrl` submission.
 - Updated worker environment contracts for Stagehand LLM keys, Browserbase/CDP/Browserless wiring, Bearer auth, and Browserless CDP auto-wiring.
 - Updated worker Dockerfile to `mcr.microsoft.com/playwright:v1.60.0-noble` so the base image matches `playwright@^1.60.0`.
@@ -25,6 +26,7 @@
 - `npm test -- --run src/lib/sales/outreach/activity.test.ts src/lib/sales/sources/form-discovery.test.ts src/lib/sales/outreach/browser-provider.test.ts src/lib/sales/outreach/http-form-provider.test.ts src/lib/sales/outreach/form-classifier.test.ts src/lib/sales/outreach/preflight.test.ts src/lib/sales/outreach/state-machine.test.ts src/lib/sales/integration-registry.test.ts src/lib/sales/sales-pipeline.test.ts` passed.
 - `npm --prefix worker run typecheck` passed.
 - `npm run build` passed.
+- Additional auth fix verification: `npx tsc --noEmit --pretty false`, targeted `integration-registry` / `sales-pipeline` tests, and `git diff --check` passed.
 - `docker compose build stagehand && docker compose up -d stagehand` passed on the Droplet.
 - `https://stagehand.paradigmjp.com/health` returned HTTP 200 with Stagehand ready.
 
