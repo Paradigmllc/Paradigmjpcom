@@ -15,6 +15,7 @@
 - Fixed Keystatic white screen: App Router was importing Keystatic through the React Server export that returns `null`; `/keystatic` now renders a dedicated client wrapper.
 - Fixed Keystatic subdomain root routing: `keystatic.paradigmjp.com` now redirects to `/keystatic` so the Keystatic client router opens Dashboard instead of a root-path not-found state.
 - Verification: `node scripts/verify-trigger-sales-os.mjs`, `node scripts/test-health.mjs`, `npx tsc --noEmit --pretty false`, `git diff --check`, and `npm run build` passed. Build artifact includes `app/keystatic/[[...params]]/page` client chunk.
+- Final Coolify deployment `v37qtl33byr8cgua2tkupfp9` finished for commit `3fb58b4`. Smoke passed: `/ja` 200, `/ja/admin/sales` 200, authenticated `/api/sales/health` 200 with `status=healthy` and Trigger.dev `ok`, Stagehand `/health` 200, Keystatic root 307 to `/keystatic`, and Keystatic Dashboard rendered with no browser errors.
 
 ## CODEX UPDATE - 2026-06-06 Revenue OS Trigger.dev Runtime Closure
 
@@ -69,10 +70,10 @@
 
 ## VERIFICATION
 
-- Latest production container: `i12am4vvcbggefnqdizhnv9a-065233230107`, image commit `9908e0874ecf9d5dd212c82f2ecb3ec144cdfdf1`, status healthy.
+- Latest production deploy: Coolify deployment `v37qtl33byr8cgua2tkupfp9`, commit `3fb58b4`, status finished.
 - Authenticated `https://paradigmjp.com/api/sales/health` returns HTTP 200, `status=healthy`, and no non-ok checks. Trigger.dev API auth is `ok`.
 - `node scripts/audit-sales-os.mjs` passed: 13 pass / 0 warn / 0 fail across public LPs, tracking pixel, webhook auth, scan, weekly digest, and admin Sales OS pages.
-- `node scripts/verify-trigger-sales-os.mjs` passed local Trigger.dev task/config/runtime API checks. It still warns that non-interactive Trigger CLI task deploy requires a `tr_pat_...` access token or interactive CLI login.
+- `node scripts/verify-trigger-sales-os.mjs` passed local Trigger.dev task/config/runtime API checks. Trigger.dev Cloud tasks are deployed in production as version `20260606.3`.
 - `node scripts/test-health.mjs` passed for Supabase, SearxNG, Dify, Trigger.dev, and legacy n8n compatibility.
 - Chatwoot service recovered on the Droplet: `chatwoot`, `postgres`, `redis`, and `sidekiq` containers are up; Chatwoot UI returns 200 on both `chatwoot.appexx.me` and `chatwoot.paradigmjp.com`; authenticated Chatwoot inbox API returns HTTP 200.
 - Supabase migrations `040` and `041` were applied directly through the DB container because the REST `exec_sql` channel is unavailable; `trigger_dev` is active in `sales_tool_connections`, and `sales_video_jobs.trigger_endpoint` / `trigger_run_id` exist.
@@ -81,12 +82,12 @@
 
 - Revenue OS is live on Trigger.dev runtime API with n8n retained only as legacy compatibility.
 - Production worker: `paradigm-stagehand`, public URL `https://stagehand.paradigmjp.com`, internal mode Browserless CDP.
+- Keystatic is live at `https://keystatic.paradigmjp.com`; root redirects to `/keystatic` and opens Dashboard.
 - Chatwoot Redis auth was repaired in `/data/coolify/services/z88gg84880kkogw4occgc48w/docker-compose.yml`; backups with `docker-compose.yml.bak-*` exist in that service directory.
 
 ## NEXT ACTIONS
 
-- Obtain or create a Trigger.dev `tr_pat_...` access token if fully automated CLI/GitHub task deployment is required; the provided `tr_dev_...` runtime key is valid for runtime API/dispatch but not CLI deploy auth.
-- Keep host pressure guards active; root disk is improved but still high after cleanup.
+- No active Revenue OS deploy blocker remains. Keep host pressure guards active; root disk improved but still runs high during builds.
 
 ## RISKS
 
