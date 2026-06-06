@@ -108,7 +108,7 @@ async function checkTriggerDev(): Promise<ServiceCheck> {
     return {
       name: "Trigger.dev",
       status: "not_configured",
-      detail: "TRIGGER_SECRET_KEY または TRIGGER_ACCESS_TOKEN が未設定です",
+      detail: "TRIGGER_SECRET_KEY / TRIGGER_ACCESS_TOKEN / TRIGGER_DEV_API_KEY が未設定です",
       url: base,
     }
   }
