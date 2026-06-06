@@ -422,16 +422,24 @@ export async function checkDifyHealth(): Promise<ServiceHealthResult> {
   }
 }
 
-export async function checkN8nHealth(): Promise<ServiceHealthResult> {
-  const missing = missingEnv(["N8N_BASE_URL"])
-  if (missing.length > 0) return notConfigured(missing)
+export async function checkTriggerDevHealth(): Promise<ServiceHealthResult> {
+  const secretKey = envValue("TRIGGER_SECRET_KEY") ?? envValue("TRIGGER_ACCESS_TOKEN") ?? envValue("TRIGGER_DEV_API_KEY")
+  if (!secretKey) return notConfigured(["TRIGGER_SECRET_KEY or TRIGGER_ACCESS_TOKEN"])
   try {
-    const base = normalizeHttpBase(envValue("N8N_BASE_URL") as string)
-    base.pathname = `${base.pathname}/healthz`.replace(/\/+/g, "/")
-    const res = await safeFetch(base.toString(), { signal: AbortSignal.timeout(10_000) })
-    return { balanceStatus: res.ok ? "ok" : "error", balanceLabel: `healthz endpoint HTTP ${res.status}` }
+    const base = envValue("TRIGGER_API_URL") ?? "https://api.trigger.dev"
+    const url = new URL(base)
+    url.pathname = `${url.pathname}/api/v1/tasks`.replace(/\/+/g, "/")
+
+    const res = await safeFetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+      },
+      signal: AbortSignal.timeout(10_000),
+    })
+    if (!res.ok) return { balanceStatus: "error", balanceLabel: `Trigger.dev API HTTP ${res.status}` }
+    return { balanceStatus: "ok", balanceLabel: "Trigger.dev connection and API key verified" }
   } catch (error) {
-    return healthError("n8n", error)
+    return healthError("Trigger.dev", error)
   }
 }
 

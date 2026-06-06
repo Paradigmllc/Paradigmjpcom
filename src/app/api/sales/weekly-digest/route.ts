@@ -4,7 +4,7 @@
  * 役割: 過去 7 日間の sales_companies アクティビティを集計し,
  *       Slack に Block Kit で送信する週次ダイジェスト.
  *
- * 認証: X-Webhook-Secret header 必須 (n8n cron / Coolify cron から)
+ * 認証: X-Webhook-Secret header 必須 (Trigger.dev / Coolify cron から)
  *
  * 集計内容:
  *   - 🔥 HOT leads (is_hot_lead=true・report_views top 5)

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 
 export type JsonRecord = Record<string, unknown>
@@ -6,7 +7,7 @@ export type SalesActivityType = "email" | "call" | "meeting" | "note" | "sms" | 
 export type SalesActivityResult = "success" | "no_answer" | "follow_up" | "declined" | "completed"
 export type SalesQueueType = "cleanse" | "call" | "form_send" | "follow_up" | "crm_update" | "meeting_prep" | "analysis"
 
-export interface N8nForwardResult {
+export interface TriggerDevForwardResult {
   ok: boolean
   error: string | null
 }
@@ -81,6 +82,71 @@ function uuidFromRecords(keys: string[], ...records: JsonRecord[]): string | nul
   return null
 }
 
+function stableHash(value: unknown): string {
+  return createHash("sha256").update(JSON.stringify(value)).digest("hex").slice(0, 24)
+}
+
+function postOutreachIdempotencyKey(input: {
+  source: "chatwoot" | "livekit"
+  payload: JsonRecord
+  summary: JsonRecord
+}): string {
+  const candidate =
+    text(input.summary, ["conversationId", "conversation_id", "roomName", "room_name", "eventId", "event_id"]) ??
+    text(input.payload, ["id", "event_id", "conversation_id", "room_name"])
+  return `post-outreach-${input.source}-${candidate ?? stableHash({ payload: input.payload, summary: input.summary })}`
+}
+
+export async function forwardPostOutreachToTriggerDev(input: {
+  taskId: string | null
+  source: "chatwoot" | "livekit"
+  payload: JsonRecord
+  summary: JsonRecord
+}): Promise<TriggerDevForwardResult> {
+  if (!input.taskId) return { ok: false, error: "Trigger.dev post outreach task ID not configured" }
+
+  const secretKey = process.env.TRIGGER_SECRET_KEY ?? process.env.TRIGGER_ACCESS_TOKEN ?? process.env.TRIGGER_DEV_API_KEY
+  if (!secretKey || secretKey.trim().length === 0) {
+    console.error("[post-outreach-webhook] TRIGGER_SECRET_KEY is not configured for outbound forwarding")
+    return { ok: false, error: "Trigger.dev secret key not configured" }
+  }
+
+  const apiUrl = (process.env.TRIGGER_API_URL ?? "https://api.trigger.dev").replace(/\/+$/, "")
+  const endpoint = `${apiUrl}/api/v1/tasks/${encodeURIComponent(input.taskId)}/trigger`
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${secretKey}`,
+      },
+      body: JSON.stringify({
+        payload: {
+          source: input.source,
+          received_at: new Date().toISOString(),
+          summary: input.summary,
+          payload: input.payload,
+        },
+        context: { source: "revenue-os", webhookSource: input.source },
+        options: {
+          idempotencyKey: postOutreachIdempotencyKey(input),
+        },
+      }),
+      signal: AbortSignal.timeout(8_000),
+    })
+
+    if (!res.ok) {
+      const text = await res.text()
+      return { ok: false, error: `Trigger.dev HTTP ${res.status}: ${text.slice(0, 200)}` }
+    }
+    return { ok: true, error: null }
+  } catch (error) {
+    console.error("[post-outreach-webhook] Trigger.dev forwarding failed:", error)
+    return { ok: false, error: error instanceof Error ? error.message : "Trigger.dev forwarding failed" }
+  }
+}
+
 async function updatePipelineReplySteps(input: {
   pipelineRunId: string | null | undefined
   queuedForFollowUp: boolean
@@ -124,42 +190,6 @@ async function updatePipelineReplySteps(input: {
   if (run.error) console.error("[post-outreach-webhook] pipeline run reply update failed:", run.error.message)
 }
 
-export async function forwardPostOutreachToN8n(input: {
-  webhookUrl: string | null
-  source: "chatwoot" | "livekit"
-  payload: JsonRecord
-  summary: JsonRecord
-}): Promise<N8nForwardResult> {
-  if (!input.webhookUrl) return { ok: false, error: "n8n webhook not configured" }
-
-  const secret = process.env.N8N_WEBHOOK_SECRET
-  if (!secret || secret.trim().length === 0) {
-    console.error("[post-outreach-webhook] N8N_WEBHOOK_SECRET is not configured for outbound forwarding")
-    return { ok: false, error: "n8n webhook secret not configured" }
-  }
-
-  try {
-    const res = await fetch(input.webhookUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Webhook-Secret": secret,
-      },
-      body: JSON.stringify({
-        source: input.source,
-        received_at: new Date().toISOString(),
-        summary: input.summary,
-        payload: input.payload,
-      }),
-      signal: AbortSignal.timeout(8_000),
-    })
-    if (!res.ok) return { ok: false, error: `n8n HTTP ${res.status}` }
-    return { ok: true, error: null }
-  } catch (error) {
-    console.error("[post-outreach-webhook] n8n forwarding failed:", error)
-    return { ok: false, error: error instanceof Error ? error.message : "n8n forwarding failed" }
-  }
-}
 
 export async function persistPostOutreachEvent(input: PersistPostOutreachEventInput): Promise<{ ok: boolean; error: string | null }> {
   const sb = getServiceSalesSupabase()

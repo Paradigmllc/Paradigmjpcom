@@ -9,7 +9,7 @@
 
 | 項目 | 状態 | 備考 |
 |------|------|------|
-| `N8N_WEBHOOK_SECRET` | ✅ Coolify env 投入済 (64 hex) | scan / weekly-digest の認証 |
+| `TRIGGER_WEBHOOK_SECRET` | ✅ Coolify env 投入対象 | scan / weekly-digest / Trigger.dev inbound の認証 |
 | `SLACK_BOT_TOKEN` | ✅ Coolify env 投入済 | chat.postMessage |
 | `SLACK_CHANNEL_ID` | ✅ Coolify env 投入済 | `C0B1JJ1L276` (#all-paradigm) |
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ Coolify env 投入済 | RLS bypass |
@@ -22,7 +22,7 @@
 ### 🔴 P0 (運用開始前に必須・ユーザー手動 1 step のみ)
 
 #### 1. ✅ NOTION_API_KEY (2026-05-13 投入済)
-- ✅ Internal Integration Token 取得済: `ntn_436790200281...` (Paradigm Sales OS)
+- ✅ Internal Integration Token は `NOTION_API_KEY` として非gitの秘密情報ストアで管理する
 - ✅ Coolify env `NOTION_API_KEY` 投入済 (UUID: kpjqu3ec4y4igplo0nz12qea)
 - ⚠️ **残作業 (ユーザー手動・1 step)**: integration を 4 DB に invite (現状 API access ゼロ)
 
@@ -35,7 +35,7 @@
 **動作確認**:
 ```bash
 curl -sS -X POST "https://api.notion.com/v1/databases/8cbab1f501144f83872c1738ce3e79c4/query" \
-  -H "Authorization: Bearer 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" \
+  -H "Authorization: Bearer $NOTION_API_KEY" \
   -H "Notion-Version: 2022-06-28" -H "Content-Type: application/json" -d '{"page_size":1}'
 # 期待: {"object":"list","results":[...]} (204 OK)
 # NG時: {"object":"error","status":404,"code":"object_not_found",...} ← invite 未完
@@ -88,12 +88,12 @@ curl -sS -X POST "https://api.notion.com/v1/databases/8cbab1f501144f83872c1738ce
   - Schedule: `0 0 * * 1` (UTC) = 毎週月曜 09:00 JST
   - Command:
     ```bash
-    curl -X POST -H "X-Webhook-Secret: $N8N_WEBHOOK_SECRET" \
+    curl -X POST -H "X-Webhook-Secret: $TRIGGER_WEBHOOK_SECRET" \
       https://paradigmjp.com/api/sales/weekly-digest
     ```
 
-### HOT lead 自動検出 (n8n で 5 分ごと polling)
-- n8n workflow で `sales_companies` を WHERE `is_hot_lead=true` AND `is_hot_lead_at` > now() - 5min で SELECT
+### HOT lead 自動検出 (Trigger.dev で 5 分ごと polling)
+- Trigger.dev task で `sales_companies` を WHERE `is_hot_lead=true` AND `is_hot_lead_at` > now() - 5min で SELECT
 - 検出時に Slack 通知 (Block Kit)
 
 ## 🧪 動作確認チェックリスト (deploy 完了後)

@@ -97,13 +97,23 @@ function getSb(): ServiceSupabase | null {
   return getServiceSalesSupabase()
 }
 
-function jobRunnerUrl(): string | null {
-  const explicit = process.env.TRIGGER_DEV_SALES_ENRICHMENT_WEBHOOK_URL ?? process.env.N8N_SALES_ENRICHMENT_WEBHOOK_URL
-  if (explicit && explicit.trim().length > 0) return explicit
+function optionalEnv(name: string): string | null {
+  const value = process.env[name]
+  return value && value.trim().length > 0 ? value.trim() : null
+}
 
-  const base = process.env.PARADIGMJP_BASE_URL ?? process.env.NEXT_PUBLIC_SITE_URL
-  if (!base || base.trim().length === 0) return null
-  return `${base.replace(/\/+$/, "")}/api/sales/enrichment/run`
+function triggerSecretKey(): string | null {
+  return optionalEnv("TRIGGER_SECRET_KEY") ?? optionalEnv("TRIGGER_ACCESS_TOKEN") ?? optionalEnv("TRIGGER_DEV_API_KEY")
+}
+
+function enrichmentTriggerEndpoint(): string | null {
+  const taskId =
+    optionalEnv("TRIGGER_SALES_ENRICHMENT_TASK_ID") ??
+    optionalEnv("TRIGGER_DEV_SALES_ENRICHMENT_TASK_ID")
+  if (!taskId) return null
+
+  const apiUrl = (optionalEnv("TRIGGER_API_URL") ?? "https://api.trigger.dev").replace(/\/+$/, "")
+  return `${apiUrl}/api/v1/tasks/${encodeURIComponent(taskId)}/trigger`
 }
 
 export async function enqueueCompanyEnrichment(
@@ -146,21 +156,29 @@ export async function enqueueCompanyEnrichment(
 }
 
 export async function triggerEnrichmentRunner(limit = 3): Promise<{ ok: boolean; error?: string }> {
-  const url = jobRunnerUrl()
-  const secret = process.env.N8N_WEBHOOK_SECRET
-  if (!url || !secret) {
-    console.error("[sales-enrichment] CRITICAL: Trigger.dev or n8n webhook URL is not configured. Running enrichment inline may cause Vercel/serverless timeouts for long tasks.")
+  const endpoint = enrichmentTriggerEndpoint()
+  const secret = triggerSecretKey()
+  if (!endpoint || !secret) {
+    console.error("[sales-enrichment] CRITICAL: Trigger.dev task or secret is not configured. Running enrichment inline may cause server timeouts for long tasks.")
     return { ok: false, error: "runner trigger not configured - missing external orchestrator" }
   }
 
   try {
-    const res = await fetch(url, {
+    const res = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-webhook-secret": secret,
+        Authorization: `Bearer ${secret}`,
       },
-      body: JSON.stringify({ limit }),
+      body: JSON.stringify({
+        payload: { limit },
+        context: { source: "revenue-os", job: "sales-enrichment" },
+        options: {
+          idempotencyKey: `sales-enrichment-runner-${new Date().toISOString().slice(0, 16)}`,
+          concurrencyKey: "sales-enrichment-runner",
+          queue: { name: "sales-enrichment", concurrencyLimit: 1 },
+        },
+      }),
       signal: AbortSignal.timeout(8_000),
     })
     if (!res.ok) {

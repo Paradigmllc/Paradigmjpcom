@@ -62,7 +62,7 @@ ComfyUI GUIはworkflow開発・調整用であり、日常の量産はComfyUI AP
 ```http
 POST /api/sales/video-pipeline/jobs/{jobId}/assets
 Content-Type: application/json
-X-Webhook-Secret: {N8N_WEBHOOK_SECRET}
+X-Webhook-Secret: {TRIGGER_WEBHOOK_SECRET}
 
 {
   "files": [
@@ -73,7 +73,7 @@ X-Webhook-Secret: {N8N_WEBHOOK_SECRET}
 }
 ```
 
-認証ヘッダー名は既存API互換のため当面 `N8N_WEBHOOK_SECRET` を使う。オーケストレーションはTrigger.devへ移行済み。
+認証ヘッダー名は `X-Webhook-Secret` のまま、値は `TRIGGER_WEBHOOK_SECRET` を使う。旧 `N8N_WEBHOOK_SECRET` は受信互換のみ。
 
 ## 必須環境変数
 

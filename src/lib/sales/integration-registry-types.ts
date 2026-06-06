@@ -42,7 +42,7 @@ export type SalesIntegrationBalanceType =
   | "crawlee_health"
   | "playwright_stealth_health"
   | "dify_health"
-  | "n8n_health"
+  | "trigger_dev_health"
   | "slidev_gotenberg_health"
   | "supabase_studio_health"
   | "ffmpeg_health"

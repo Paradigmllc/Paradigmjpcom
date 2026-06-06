@@ -137,7 +137,7 @@ const TOOL_ORDER: DashboardToolConnection["slug"][] = [
   "appsmith",
   "twenty",
   "metabase",
-  "n8n",
+  "trigger_dev",
   "calcom",
   "chatwoot",
   "livekit",
@@ -152,7 +152,7 @@ const TOOL_ENV: Record<DashboardToolConnection["slug"], string | null> = {
   appsmith: "APPSMITH_BASE_URL",
   twenty: "TWENTY_BASE_URL",
   metabase: "METABASE_BASE_URL",
-  n8n: "N8N_BASE_URL",
+  trigger_dev: "TRIGGER_DASHBOARD_URL",
   calcom: "CALCOM_BASE_URL",
   docuseal: "DOCUSEAL_BASE_URL",
   directus: "DIRECTUS_BASE_URL",
@@ -230,13 +230,13 @@ const FALLBACK_TOOLS: DashboardToolConnection[] = [
     lastCheckedAt: null,
   },
   {
-    slug: "n8n",
-    displayName: "n8n OSS",
-    role: "通知、同期、定期実行、ツール間ワークフロー。",
+    slug: "trigger_dev",
+    displayName: "Trigger.dev",
+    role: "通知、同期、定期実行、長時間ジョブを担う本番オーケストレーター。",
     interfaceType: "automation",
-    deploymentType: "oss_self_hosted",
-    status: readToolUrl("n8n") ? "active" : "planned",
-    baseUrl: readToolUrl("n8n"),
+    deploymentType: "cloud_or_self_hosted",
+    status: readToolStatus("trigger_dev"),
+    baseUrl: readToolUrl("trigger_dev"),
     healthUrl: null,
     owner: null,
     lastCheckedAt: null,
@@ -250,6 +250,11 @@ const FALLBACK_TOOLS: DashboardToolConnection[] = [
 ]
 
 function readToolStatus(slug: DashboardToolConnection["slug"]): DashboardToolConnection["status"] {
+  if (slug === "trigger_dev") {
+    const hasSecret = envConfigured("TRIGGER_SECRET_KEY", "TRIGGER_ACCESS_TOKEN", "TRIGGER_DEV_API_KEY")
+    return hasSecret && envConfigured("TRIGGER_SALES_OS_PIPELINE_TASK_ID") ? "active" : "planned"
+  }
+
   const required = TOOL_REQUIRED_ENV[slug]
   if (required && required.length > 0) {
     return required.every((name) => {
@@ -278,16 +283,8 @@ function readToolUrl(slug: DashboardToolConnection["slug"]): string | null {
     const fallback = process.env.NEXT_PUBLIC_KEYSTATIC_URL
     return fallback && fallback.trim().length > 0 ? fallback.trim() : null
   }
-  if (slug !== "n8n") return null
-
-  const webhookUrl = process.env.N8N_PLAYWRIGHT_FORM_WEBHOOK
-  if (!webhookUrl || webhookUrl.trim().length === 0) return null
-  try {
-    return new URL(webhookUrl).origin
-  } catch (e) {
-    console.error("[sales-dashboard] invalid N8N_PLAYWRIGHT_FORM_WEBHOOK:", e)
-    return null
-  }
+  if (slug !== "trigger_dev") return null
+  return "https://cloud.trigger.dev"
 }
 
 function emptyKpis(): DashboardKpis {
@@ -387,13 +384,13 @@ function buildOperationalAudit(input: {
   const missingSources = sourceRuns.filter((run) => run.status === "missing" || run.status === "error").length
   const sourceCoverage = sourceRunCount > 0 ? Math.round((collectedSources / sourceRunCount) * 100) : 0
   const lowSourceCoverage = sourceRunCount === 0 || sourceCoverage < 50
-  const dryRunReady = reportReady > 0 && missingFormUrl === 0 && envConfigured("N8N_WEBHOOK_SECRET")
+  const dryRunReady = reportReady > 0 && missingFormUrl === 0 && envConfigured("TRIGGER_WEBHOOK_SECRET")
   const submitWorkerReady = envConfigured("BROWSERLESS_URL", "OUTREACH_WORKER_URL", "CAMOUFOX_WS_URL")
   const sections: DashboardAuditSection[] = [
     {
       id: "ssot",
       title: "SSOT / OSS接続",
-      summary: "Supabaseを正本にし、Twenty・NocoDB・n8n・Metabaseを役割別UIとして使える状態かを確認します。",
+      summary: "Supabaseを正本にし、Twenty・NocoDB・Trigger.dev・Metabaseを役割別UIとして使える状態かを確認します。",
       checks: [
         check(
           "supabase-active",
@@ -447,7 +444,7 @@ function buildOperationalAudit(input: {
           "Enrichment滞留",
           statusFromCount(stuckJobs, true),
           stuckJobs === 0 ? "現在の待機/実行中ジョブはありません。" : `${stuckJobs}件が待機または実行中です。`,
-          "n8n/Trigger.devまたは /api/sales/enrichment/run を定期実行し、滞留を解消してください。",
+          "Trigger.dev または /api/sales/enrichment/run を定期実行し、滞留を解消してください。",
           stuckJobs,
         ),
         check(

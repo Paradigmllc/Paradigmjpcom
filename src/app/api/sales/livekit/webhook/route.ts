@@ -5,7 +5,7 @@ import { captureException } from "@/lib/error-monitor"
 import {
   child,
   companyIdFromRecords,
-  forwardPostOutreachToN8n,
+  forwardPostOutreachToTriggerDev,
   isRecord,
   parseMaybeJsonRecord,
   pipelineRunIdFromRecords,
@@ -74,9 +74,9 @@ export async function POST(req: NextRequest) {
     participantIdentity,
     transcriptSnippet: transcript ? transcript.slice(0, 300) : null,
   }
-  const discoveryWebhook = process.env.N8N_LIVEKIT_DISCOVERY_WEBHOOK_URL
-  const forward = await forwardPostOutreachToN8n({
-    webhookUrl: discoveryWebhook && discoveryWebhook.trim().length > 0 ? discoveryWebhook.trim() : null,
+  const discoveryTaskId = process.env.TRIGGER_LIVEKIT_DISCOVERY_TASK_ID ?? process.env.TRIGGER_POST_OUTREACH_TASK_ID
+  const forward = await forwardPostOutreachToTriggerDev({
+    taskId: discoveryTaskId && discoveryTaskId.trim().length > 0 ? discoveryTaskId.trim() : null,
     source: "livekit",
     payload: body,
     summary,
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
     body: transcript,
     queueType: forward.ok ? null : "meeting_prep",
     queuePriority: transcript ? 80 : 70,
-    queueReason: forward.ok ? null : "LiveKit discovery call needs transcript review because n8n forwarding did not complete.",
+    queueReason: forward.ok ? null : "LiveKit discovery call needs transcript review because Trigger.dev task dispatch did not complete.",
     meta: {
       provider: "livekit",
       eventType,

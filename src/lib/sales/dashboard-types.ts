@@ -82,7 +82,7 @@ export interface DashboardToolConnection {
     | "nocodb"
     | "appsmith"
     | "metabase"
-    | "n8n"
+    | "trigger_dev"
     | "calcom"
     | "docuseal"
     | "directus"

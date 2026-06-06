@@ -27,10 +27,13 @@ HTTP で委譲される実ブラウザ送信ワーカー。判断 (discovery/cla
 | Method | Path | 用途 |
 |--------|------|------|
 | GET | `/health` | ヘルスチェック |
-| POST | `/submit` | `{ formUrl, fields, message, dryRun }` → `SubmitFormResult` |
+| POST | `/submit` | `{ formUrl, fields, message, dryRun }` → Playwright Stealth `SubmitFormResult` |
+| POST | `/submit` | `{ url, fields, message, dryRun }` → Stagehand `SubmitFormResult` |
+| POST | `/discover-form` | `{ url }` → `{ formUrl }` (Stagehand contact-form discovery) |
 | POST | `/discover-spa` | `{ homeUrl }` → `{ formUrl }` (Layer C: SPA フォーム追跡) |
 
-すべて `X-Worker-Secret: $WORKER_SECRET` 必須。
+`/submit` `/discover-form` `/discover-spa` は `X-Worker-Secret: $WORKER_SECRET` または
+`Authorization: Bearer $WORKER_SECRET` 必須。Next.js `StagehandProvider` は Bearer を使う。
 
 ## ローカル開発
 
@@ -47,7 +50,9 @@ npm run dev
 1. 新規サービス `paradigm-outreach-worker`（Dockerfile or Nixpacks）。
 2. Build: `npm ci && npm run install:browser`。Start: `npm start`。
 3. env: `WORKER_SECRET` / `MAX_CONCURRENCY=2` / `CAPTURE_EVIDENCE=false`。
-4. **idle 時に停止**する設定（常時稼働禁止・グローバル GPU Serverless 思想と同じ）。
+4. Stagehand を有効化する場合は `STAGEHAND_LLM_API_KEY` か `DEEPSEEK_API_KEY`、および `CDP_ENDPOINT` または `BROWSERLESS_URL` + `BROWSERLESS_TOKEN` を設定する。
+5. Next 側は `STAGEHAND_URL=https://<worker-domain>`、`STAGEHAND_API_KEY=$WORKER_SECRET` を設定する。
+6. **idle 時に停止**する設定（常時稼働禁止・グローバル GPU Serverless 思想と同じ）。
 
 ## 案1 (リモートブラウザ・Chromium をこの箱に置かない)
 

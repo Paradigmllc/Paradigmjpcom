@@ -4,7 +4,7 @@
  * 役割: report_ready のリードに対し outreach パイプラインを 1 バッチ回す。
  *       judgment は本ルート (Next)、実ブラウザ送信は BrowserProvider 経由。
  *
- * 認証: X-Webhook-Secret (n8n / cron / admin から呼ぶ)
+ * 認証: X-Webhook-Secret (Trigger.dev / cron / admin から呼ぶ)
  * Body: { region?, limit?, dryRun?, first5Approval?, enableLlm?, checkRobots?, dedupDays? }
  *   - dryRun は **default true** (安全側)。実送信は明示的に dryRun:false が必要。
  * 出力: OutreachBatchResult (processed/submitted/manualQueue/skipped/failed/items)

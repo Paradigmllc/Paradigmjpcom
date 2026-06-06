@@ -25,13 +25,13 @@ Audited the OSS fortress requested for lead generation, technical analysis, auto
 | Content | Keystatic | Added as monitored OSS surface | `KEYSTATIC_BASE_URL`, internal fallback demo-site workbench |
 | Content | Astro | Implemented lane | demo-site factory and `web_demos` output |
 | Reports | Next.js | Implemented | dynamic report renderer and `/ja/studio` routing |
-| Post-outreach | Chatwoot | Added webhook ingress | `/api/sales/chatwoot/webhook`, activity log, follow-up queue, n8n forward |
+| Post-outreach | Chatwoot | Added webhook ingress | `/api/sales/chatwoot/webhook`, activity log, follow-up queue, Trigger.dev forward |
 | Post-outreach | Cal.com | Implemented | `/api/sales/calcom/webhook`, `sales_calendar_events` |
-| Post-outreach | LiveKit | Added webhook ingress | `/api/sales/livekit/webhook`, activity log, meeting-prep queue, n8n forward |
+| Post-outreach | LiveKit | Added webhook ingress | `/api/sales/livekit/webhook`, activity log, meeting-prep queue, Trigger.dev forward |
 
 ## Fixes Applied
 
-- Added Chatwoot and LiveKit authenticated webhook routes. Both fail closed when `N8N_WEBHOOK_SECRET` or Supabase service role is missing, log errors, write to `sales_activity_log`, and create queue items when automation forwarding is not ready.
+- Added Chatwoot and LiveKit authenticated webhook routes. Both fail closed when `TRIGGER_WEBHOOK_SECRET` or Supabase service role is missing, log errors, write to `sales_activity_log`, and create queue items when automation forwarding is not ready.
 - Added `post-outreach-webhooks.ts` shared parser/persistence utilities to avoid ad hoc payload handling and invalid company IDs.
 - Added `migration_034_sales_post_outreach_tools.sql` to register Chatwoot, LiveKit, Directus, and Keystatic in `sales_tool_connections` without expanding public DB exposure.
 - Added Directus, Keystatic, Chatwoot, and LiveKit to dashboard connection tracking and source coverage.
@@ -40,6 +40,6 @@ Audited the OSS fortress requested for lead generation, technical analysis, auto
 ## Remaining Operational Gates
 
 - DNS/proxy/service containers must exist before marking `chatwoot`, `livekit`, `directus`, or `keystatic` as `active` in `sales_tool_connections`.
-- Chatwoot and LiveKit must send `X-Webhook-Secret: $N8N_WEBHOOK_SECRET`.
-- n8n forwarding remains disabled until `N8N_POST_OUTREACH_WEBHOOK_URL` and `N8N_LIVEKIT_DISCOVERY_WEBHOOK_URL` are set. Until then, the routes deliberately create follow-up or meeting-prep queue items instead of pretending automation succeeded.
+- Chatwoot and LiveKit must send `X-Webhook-Secret: $TRIGGER_WEBHOOK_SECRET`.
+- Trigger.dev forwarding remains disabled until `TRIGGER_POST_OUTREACH_TASK_ID` / source-specific task IDs and a Trigger API key are set. Until then, the routes deliberately create follow-up or meeting-prep queue items instead of pretending automation succeeded.
 - Directus and Keystatic remain optional external studios because Revenue OS now has internal fallback workbenches for assets, demos, and reports.

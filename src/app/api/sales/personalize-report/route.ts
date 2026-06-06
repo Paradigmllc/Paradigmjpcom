@@ -5,7 +5,7 @@
  *       DeepSeek V4 PRO (Context Cache hit) でパーソナライズ文面を生成.
  *       結果を sales_companies.meta.personalized_copy に保存.
  *
- * 認証: X-Webhook-Secret 必須 (n8n から定期実行 or 手動 trigger)
+ * 認証: X-Webhook-Secret 必須 (Trigger.dev から定期実行 or 手動 trigger)
  *
  * Body: { slug: string } または { company_id: string }
  *

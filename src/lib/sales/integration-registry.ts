@@ -17,7 +17,7 @@ import {
   checkCrawleeHealth,
   checkPlaywrightStealthHealth,
   checkDifyHealth,
-  checkN8nHealth,
+  checkTriggerDevHealth,
   checkSlidevGotenbergHealth,
   checkSupabaseStudioHealth,
   checkFFmpegHealth,
@@ -187,7 +187,7 @@ async function liveBalance(def: SalesIntegrationDefinition): Promise<Pick<SalesI
   if (def.balance === "crawlee_health") return checkCrawleeHealth()
   if (def.balance === "playwright_stealth_health") return checkPlaywrightStealthHealth()
   if (def.balance === "dify_health") return checkDifyHealth()
-  if (def.balance === "n8n_health") return checkN8nHealth()
+  if (def.balance === "trigger_dev_health") return checkTriggerDevHealth()
   if (def.balance === "slidev_gotenberg_health") return checkSlidevGotenbergHealth()
   if (def.balance === "supabase_studio_health") return checkSupabaseStudioHealth()
   if (def.balance === "ffmpeg_health") return checkFFmpegHealth()

@@ -95,7 +95,7 @@ function buildLanes(data: SalesDashboardData): Lane[] {
     {
       id: "outreach",
       title: "送信・回収",
-      subtitle: "Stagehand / Browserless / n8n",
+      subtitle: "Stagehand / Browserless / Trigger.dev",
       metric: outreachCount.toLocaleString("ja-JP"),
       detail: "フォーム送信、証跡、手動確認キュー、同期ログを同じ営業レコードへ返却",
       status: integrationReady(data, "stagehand") || integrationReady(data, "browserless") ? "ready" : "warning",
@@ -148,7 +148,7 @@ export function SalesUnifiedOpsPanel({ data }: { data: SalesDashboardData }) {
   const syncErrors = data.syncLogs.filter((log) => log.status !== "success").length
   const openMontageUrl =
     data.integrationStatus.find((item) => item.slug === "openmontage")?.docsUrl ??
-    toolUrl(data, "n8n") ??
+    toolUrl(data, "trigger_dev") ??
     "https://github.com/calesthio/OpenMontage"
 
   async function refreshIntegrationStatus() {

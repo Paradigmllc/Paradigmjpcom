@@ -231,7 +231,7 @@ export async function generateFormMessage(
 
 /**
  * 生成済みメッセージの {{report_url}} を実 URL に置換するヘルパ.
- * n8n が送信直前に置換するために使う.
+ * Trigger.dev task が送信直前に置換するために使う.
  */
 export function fillReportUrl(message: string, reportUrl: string): string {
   return message.replaceAll("{{report_url}}", reportUrl)

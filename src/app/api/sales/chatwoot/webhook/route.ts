@@ -5,7 +5,7 @@ import { captureException } from "@/lib/error-monitor"
 import {
   child,
   companyIdFromRecords,
-  forwardPostOutreachToN8n,
+  forwardPostOutreachToTriggerDev,
   isRecord,
   pipelineRunIdFromRecords,
   persistPostOutreachEvent,
@@ -137,9 +137,9 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const postOutreachWebhook = process.env.N8N_POST_OUTREACH_WEBHOOK_URL
-  const forward = await forwardPostOutreachToN8n({
-    webhookUrl: postOutreachWebhook && postOutreachWebhook.trim().length > 0 ? postOutreachWebhook.trim() : null,
+  const postOutreachTaskId = process.env.TRIGGER_CHATWOOT_REPLY_TASK_ID ?? process.env.TRIGGER_POST_OUTREACH_TASK_ID
+  const forward = await forwardPostOutreachToTriggerDev({
+    taskId: postOutreachTaskId && postOutreachTaskId.trim().length > 0 ? postOutreachTaskId.trim() : null,
     source: "chatwoot",
     payload: body,
     summary,
@@ -155,7 +155,7 @@ export async function POST(req: NextRequest) {
     body: content,
     queueType: forward.ok ? null : "follow_up",
     queuePriority: 85,
-    queueReason: forward.ok ? null : "Chatwoot reply needs AI/manual follow-up because n8n forwarding did not complete.",
+    queueReason: forward.ok ? null : "Chatwoot reply needs AI/manual follow-up because Trigger.dev task dispatch did not complete.",
     meta: {
       provider: "chatwoot",
       eventType,

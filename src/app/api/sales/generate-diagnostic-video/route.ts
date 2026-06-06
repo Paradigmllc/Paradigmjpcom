@@ -2,7 +2,7 @@
  * POST /api/sales/generate-diagnostic-video — Sprint 10-B
  *
  * 役割: 診断動画 (60 秒 MP4) を生成して URL を返す.
- *       n8n や手動で呼び出す.
+ *       Trigger.dev や手動で呼び出す.
  *
  * 認証: X-Webhook-Secret header 必須
  * Body:  { company_id_or_domain: string }
