@@ -13,6 +13,7 @@ import {
   checkVastHealth,
   checkAstroHealth,
   checkCalcomHealth,
+  checkCrawl4AiHealth,
   checkCrawleeHealth,
   checkPlaywrightStealthHealth,
   checkDifyHealth,
@@ -182,6 +183,7 @@ async function liveBalance(def: SalesIntegrationDefinition): Promise<Pick<SalesI
   if (def.balance === "vast_health") return checkVastHealth()
   if (def.balance === "astro_health") return checkAstroHealth()
   if (def.balance === "calcom_health") return checkCalcomHealth()
+  if (def.balance === "crawl4ai_health") return checkCrawl4AiHealth()
   if (def.balance === "crawlee_health") return checkCrawleeHealth()
   if (def.balance === "playwright_stealth_health") return checkPlaywrightStealthHealth()
   if (def.balance === "dify_health") return checkDifyHealth()

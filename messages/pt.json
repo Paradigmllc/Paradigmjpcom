@@ -1191,6 +1191,41 @@
       "cta": "Obtenha seu Japan Market Fit Report — $1.500",
       "note": "Totalmente creditado no seu primeiro mês se você prosseguir."
     },
+    "pricing": {
+      "eyebrow": "JAPAN ENTRY PACKAGE",
+      "heading": "Choose the Japan entry package that matches your launch stage.",
+      "sub": "Three fixed-scope tiers for foreign brands entering Japan. Start lean, then add operations as demand is proven.",
+      "cycle": "one-time",
+      "popular": "Most selected",
+      "cta": "Discuss this tier",
+      "note": "USD pricing for non-Japanese locales. The $1,500 Market Fit Report is credited when you proceed.",
+      "tiers": {
+        "essential": {
+          "name": "Essential",
+          "price": "$3,000",
+          "desc": "Validate Japan demand with a localized presence and a clear buyer path.",
+          "feature1": "Japan-ready landing page and core localization",
+          "feature2": "Compliance and trust checklist",
+          "feature3": "Lead capture flow with English handoff"
+        },
+        "growth": {
+          "name": "Growth",
+          "price": "$5,000",
+          "desc": "Launch the full market-entry stack for e-commerce, SaaS, or funded brands.",
+          "feature1": "Localized site sections plus MEO foundation",
+          "feature2": "LINE / inquiry flow and AI support setup",
+          "feature3": "30-day launch improvement sprint"
+        },
+        "scale": {
+          "name": "Scale",
+          "price": "$8,000",
+          "desc": "Build a stronger Japan operation with deeper support, automation, and reporting.",
+          "feature1": "Expanded localization and conversion optimization",
+          "feature2": "AI customer support and operations automation",
+          "feature3": "Executive report with next-quarter Japan roadmap"
+        }
+      }
+    },
     "faq": {
       "heading": "Perguntas de fundadores estrangeiros",
       "q1": "Preciso de uma entidade legal japonesa para começar?",

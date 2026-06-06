@@ -10,12 +10,18 @@
 import { callDeepSeek } from "@/lib/deepseek"
 import type { Region } from "../types"
 import { getProxyFetchOptions } from "../proxy-agent"
+import {
+  discoverWithBrowserlessContent,
+  discoverWithCrawl4Ai,
+} from "./external-form-discovery"
 
 export type DiscoveryMethod =
   | "regex"
   | "sitemap"
   | "heuristic"
   | "llm"
+  | "crawl4ai"
+  | "browserless"
   | "spa"
   | "fallback"
   | "none"
@@ -241,6 +247,12 @@ export async function discoverFormUrl(opts: FormDiscoveryOptions): Promise<FormD
     }
   }
 
+  const crawl4Ai = await discoverWithCrawl4Ai({ origin, region: opts.region, timeoutMs })
+  if (crawl4Ai?.formUrl) {
+    for (const url of crawl4Ai.candidates) candidates.add(url)
+    return done(crawl4Ai.formUrl, "crawl4ai", crawl4Ai.confidence)
+  }
+
   const paths = opts.region === "global" ? HEURISTIC_PATHS_GLOBAL : HEURISTIC_PATHS_JP
   for (const path of paths) {
     const candidate = `${origin}${encodeURI(path)}`
@@ -267,6 +279,12 @@ export async function discoverFormUrl(opts: FormDiscoveryOptions): Promise<FormD
     } catch (error) {
       console.warn("[form-discovery] SPA discovery failed:", error)
     }
+  }
+
+  const browserless = await discoverWithBrowserlessContent({ origin, timeoutMs: Math.min(timeoutMs, 15_000) })
+  if (browserless?.formUrl) {
+    for (const url of browserless.candidates) candidates.add(url)
+    return done(browserless.formUrl, "browserless", browserless.confidence)
   }
 
   return done(origin, "fallback", 20)

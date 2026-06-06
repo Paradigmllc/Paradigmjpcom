@@ -8,6 +8,23 @@
 - Video studio legacy n8n errors are now treated as old migration notices with Trigger.dev re-dispatch actions.
 - Unified Sales OS pipeline runs now link Twenty/CSV intake, Supabase normalization, karte generation, report generation, optional video jobs, R2 artifact manifests, Directus/Keystatic sync, Twenty writeback, outbound preflight/send gates, reply capture, and follow-up queues through one run/step state model.
 
+## CODEX UPDATE - 2026-06-06 Full Form Outreach Lanes
+
+- Implemented real external form-discovery lanes in `src/lib/sales/sources/external-form-discovery.ts`: Crawl4AI `/discover-form`, Crawlee/worker `/discover-spa`, and Browserless `/content` rendered contact-page inspection.
+- Extended `discoverFormUrl()` so cheap homepage/sitemap checks now fall through to Crawl4AI, heuristics, LLM, Browserless, and provider SPA discovery instead of leaving Crawl4AI/Browserless as registry-only labels.
+- Changed outreach provider default to `OUTREACH_BROWSER_PROVIDER=auto`: HTTP handles standard server-rendered forms; SPA/client-rendered forms escalate to the remote Playwright/Crawlee worker and then Stagehand when configured, with conservative no-double-submit fallback rules.
+- Added Stagehand discovery support via `/discover-form`, Crawl4AI live health checks in the integration registry, and worker Browserless CDP auto-wiring from `BROWSERLESS_URL` + `BROWSERLESS_TOKEN`.
+- Audit hardening: external discovery and stored `contact_form_url` values now block unrelated external domains before automatic submission, while still allowing same-domain/subdomain and known hosted-form providers.
+- Audit hardening: remote worker and Stagehand endpoint URLs now tolerate trailing slashes instead of accidentally calling `//submit` or `//discover-form`.
+- Updated `.env.example`, `worker/.env.example`, and `worker/README.md` with the new full-lane env contract.
+
+## CODEX UPDATE - 2026-06-05 Non-JA HP Pricing Table
+
+- Added a Japan Entry Package pricing table to the non-Japanese homepage fallback with Essential/Growth/Scale at `$3,000`, `$5,000`, and `$8,000`.
+- Added `homeEn.pricing` keys across all 12 message files so non-JA routes render without missing translation keys.
+- Fixed `formatPricePPP` so CMS/Payload pricing rows marked `currency="usd"` display as fixed USD instead of being treated as JPY and divided down.
+- Updated `EN_BASE_PRICES` to the new USD package prices and added `src/lib/ppp.test.ts` coverage.
+
 ## CODEX UPDATE - 2026-06-05 Dynamic AI Prompts Management
 
 - Added `supabase/migration_038_sales_ai_prompts.sql` to extract hardcoded Dify and DeepSeek system prompts into the SSOT `sales_ai_prompts` table.
@@ -49,6 +66,12 @@
 
 ## VERIFICATION
 
+- Full form outreach lanes: `npm test -- --run src/lib/sales/sources/form-discovery.test.ts src/lib/sales/outreach/browser-provider.test.ts src/lib/sales/outreach/http-form-provider.test.ts src/lib/sales/outreach/form-classifier.test.ts src/lib/sales/outreach/preflight.test.ts src/lib/sales/integration-registry.test.ts` passed.
+- Full form outreach audit: added tests for unrelated external URL rejection and trailing-slash remote worker URLs; focused rerun `npm test -- --run src/lib/sales/sources/form-discovery.test.ts src/lib/sales/outreach/browser-provider.test.ts` passed.
+- Full form outreach lanes: `npx tsc --noEmit --pretty false` passed.
+- Full form outreach lanes: `npm run typecheck` in `worker/` passed.
+- Full form outreach lanes: scoped `git diff --check` for touched files passed. Unscoped `git diff --check` still reports pre-existing whitespace in unrelated modified files such as `src/components/diagnostic/DiagnosticReport.tsx`, `src/lib/sales/diagnostic.ts`, and `src/lib/sales/sources/places.ts`.
+
 - `npx tsc --noEmit --pretty false` passed after the prompt loading fix.
 - `npm test -- --run src/lib/sales/dify-diagnosis.test.ts src/lib/sales/dify-cloud.test.ts src/lib/sales/searxng-normalize.test.ts src/lib/sales/source-acquisition.test.ts src/lib/sales/sales-pipeline.test.ts` passed.
 - `git diff --check` passed with line-ending warnings only after the prompt loading fix.
@@ -69,6 +92,9 @@
 - `npx tsc --noEmit --pretty false` passed after pipeline outreach link changes.
 - `git diff --check` passed with line-ending warnings only.
 - `npm run context:audit` passed.
+- Non-JA HP pricing check: `npm run build` passed with `PAYLOAD_READS_DISABLED=1`; `next start -p 3001` from `D:\dev\paradigmjpcom` returned HTTP 200 for `/en`, and Playwright visible-text checks confirmed `/en` shows `$3,000`, `$5,000`, `$8,000` while `/ja` does not.
+- `npm test -- --run src/lib/ppp.test.ts` passed.
+- `npx tsc --noEmit --pretty false` passed.
 - `npm run build` passed. Next.js emitted existing warnings about `middleware` convention deprecation and edge runtime static generation.
 - Local dev server verification: `npx next dev --webpack -p 3000` from `D:\dev\paradigmjpcom` returned HTTP 200 for `/ja/admin/sales`; unauthenticated view correctly stopped at the admin login gate, so the new overview panel was not visually reachable without admin session cookies.
 - `npx tsc --noEmit --pretty false` passed.

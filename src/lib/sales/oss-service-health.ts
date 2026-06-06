@@ -357,6 +357,23 @@ export async function checkCalcomHealth(): Promise<ServiceHealthResult> {
   }
 }
 
+export async function checkCrawl4AiHealth(): Promise<ServiceHealthResult> {
+  const missing = missingEnv(["CRAWL4AI_BASE_URL"])
+  if (missing.length > 0) return notConfigured(missing)
+  try {
+    const base = normalizeHttpBase(envValue("CRAWL4AI_BASE_URL") as string)
+    const path = envValue("CRAWL4AI_HEALTH_PATH") ?? "/health"
+    base.pathname = `${base.pathname}/${path.replace(/^\/+/, "")}`.replace(/\/+/g, "/")
+    const headers: Record<string, string> = {}
+    const apiKey = envValue("CRAWL4AI_API_KEY")
+    if (apiKey) headers.Authorization = `Bearer ${apiKey}`
+    const res = await safeFetch(base.toString(), { headers, signal: AbortSignal.timeout(10_000) })
+    return { balanceStatus: res.ok ? "ok" : "error", balanceLabel: `health endpoint HTTP ${res.status}` }
+  } catch (error) {
+    return healthError("Crawl4AI", error)
+  }
+}
+
 export async function checkCrawleeHealth(): Promise<ServiceHealthResult> {
   const missing = missingEnv(["CRAWLEE_WORKER_URL"])
   if (missing.length > 0) return notConfigured(missing)

@@ -10,6 +10,7 @@
 
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import type { Region } from "../types"
+import type { OutreachStage } from "./types"
 
 /** activity_log.result CHECK = success|no_answer|follow_up|declined|completed */
 export type ActivityResult = "success" | "no_answer" | "follow_up" | "declined" | "completed"
@@ -22,6 +23,7 @@ export interface LogOutreachInput {
   body: string
   result: ActivityResult
   meta: Record<string, unknown>
+  outreachStage?: OutreachStage
   occurredAt?: string
 }
 
@@ -39,7 +41,7 @@ export async function logOutreachActivity(
     body: input.body,
     result: input.result,
     occurred_at: input.occurredAt ?? new Date().toISOString(),
-    meta: { kind: "form_outreach", ...input.meta },
+    meta: { kind: "form_outreach", outreach_stage: input.outreachStage ?? null, ...input.meta },
   })
   if (error) return { ok: false, error: error.message }
   return { ok: true }
@@ -57,10 +59,20 @@ export async function recentlyContacted(
   const since = new Date(Date.now() - withinDays * 86_400_000).toISOString()
   const { data } = await sb
     .from("sales_activity_log")
-    .select("id, meta")
+    .select("id, result, meta")
     .eq("company_id", companyId)
     .gte("occurred_at", since)
     .limit(20)
   if (!data) return false
-  return data.some((row) => (row.meta as Record<string, unknown> | null)?.kind === "form_outreach")
+  return data.some((row) => isContactAttemptLog(row.meta, row.result))
+}
+
+export function isContactAttemptLog(meta: unknown, result?: unknown): boolean {
+  const record = meta && typeof meta === "object" && !Array.isArray(meta) ? (meta as Record<string, unknown>) : {}
+  if (record.kind !== "form_outreach") return false
+  const stage = typeof record.outreach_stage === "string" ? record.outreach_stage : null
+  const outcome = typeof record.outcome === "string" ? record.outcome : null
+  if (stage === "submitted" || stage === "submit_uncertain") return true
+  if (outcome === "submitted" || outcome === "uncertain") return true
+  return result === "success" && stage === null
 }

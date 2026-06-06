@@ -1,7 +1,8 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { notifySlack } from "@/lib/notify"
 import { generateFormMessage, fillReportUrl } from "../form-message"
-import { discoverFormUrl } from "../sources/form-discovery"
+import { discoverFormUrl, normalizeOrigin } from "../sources/form-discovery"
+import { isAllowedFormUrlForOrigin } from "../sources/external-form-discovery"
 import { getRoutingMeta } from "../routing"
 import type { Region, SalesCompany } from "../types"
 import { classifyForm } from "./form-classifier"
@@ -131,8 +132,39 @@ async function logActivity(
     subject: `Form outreach (${stage})`,
     body: typeof meta.message === "string" ? meta.message : "",
     result,
+    outreachStage: stage,
     meta,
   })
+}
+
+async function persistDiscoveredFormUrl(
+  company: SalesCompany,
+  input: { formUrl: string; source: string; confidence?: number; candidates?: string[] },
+): Promise<void> {
+  const sb = getServiceSalesSupabase()
+  if (!sb) return
+  const origin = normalizeOrigin(company.domain)
+  if (origin && !isAllowedFormUrlForOrigin(origin, input.formUrl)) return
+  const currentMeta = (company.meta ?? {}) as Record<string, unknown>
+  const currentUrl = typeof currentMeta.contact_form_url === "string" ? currentMeta.contact_form_url : null
+  if (currentUrl === input.formUrl) return
+
+  const { error } = await sb
+    .from("sales_companies")
+    .update({
+      meta: {
+        ...currentMeta,
+        contact_form_url: input.formUrl,
+        form_discovery: {
+          source: input.source,
+          confidence: input.confidence ?? null,
+          candidates: input.candidates?.slice(0, 20) ?? [],
+          discovered_at: new Date().toISOString(),
+        },
+      },
+    })
+    .eq("id", company.id)
+  if (error) console.error("[sales-outreach] form URL persistence failed:", error.message)
 }
 
 async function enqueueOperatorTask(
@@ -244,6 +276,26 @@ async function processOne(
       )
       return { ...base("manual_queue", `form URL not found: ${discovery.method}`), formUrl, message }
     }
+    await persistDiscoveredFormUrl(company, {
+      formUrl,
+      source: discovery.method,
+      confidence: discovery.confidence,
+      candidates: discovery.candidates,
+    })
+  }
+
+  const origin = normalizeOrigin(company.domain)
+  if (origin && !isAllowedFormUrlForOrigin(origin, formUrl)) {
+    await persistOutcome(
+      company,
+      "manual_queue",
+      "follow_up",
+      "form URL is outside the company domain and trusted hosted-form allowlist",
+      { formUrl, message },
+      opts.dryRun,
+      opts.pipelineRunId,
+    )
+    return { ...base("manual_queue", "form URL domain is not trusted for automatic submission"), formUrl, message }
   }
 
   const html = await fetchPageHtml(formUrl, 8_000)

@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import {
+  checkBrowserlessHealth,
+  checkCrawl4AiHealth,
+  checkCrawleeHealth,
+  checkPlaywrightStealthHealth,
+  checkStagehandHealth,
+  type ServiceHealthResult,
+} from "@/lib/sales/oss-service-health"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
-export const maxDuration = 20
+export const maxDuration = 30
 
 type ServiceStatus = "ok" | "error" | "not_configured"
 
@@ -91,9 +99,53 @@ async function checkDify(): Promise<ServiceCheck> {
     if (res.status === 404 || res.status === 0) {
       return { name: "Dify", status: "error", detail: `HTTP ${res.status}`, url: base }
     }
-    return { name: "Dify", status: "ok", detail: `APIキー設定済み (${key.slice(0, 12)}...)`, url: base }
+    return { name: "Dify", status: "ok", detail: "APIキー設定済み", url: base }
   } catch (e) {
     return { name: "Dify", status: "error", detail: e instanceof Error ? e.message : String(e), url: base }
+  }
+}
+
+function serviceHealthToCheck(name: string, result: ServiceHealthResult, url?: string | null): ServiceCheck {
+  return {
+    name,
+    status:
+      result.balanceStatus === "ok" || result.balanceStatus === "checkable" || result.balanceStatus === "manual"
+        ? "ok"
+        : result.balanceStatus === "not_configured"
+          ? "not_configured"
+          : "error",
+    detail: result.balanceLabel,
+    url,
+  }
+}
+
+function checkOutreachEnvSummary(): ServiceCheck {
+  const provider = env("OUTREACH_BROWSER_PROVIDER") ?? "auto"
+  const remoteReady = !!env("OUTREACH_WORKER_URL") && !!env("OUTREACH_WORKER_SECRET")
+  const crawleeReady = !!env("CRAWLEE_WORKER_URL") && !!(env("CRAWLEE_WORKER_SECRET") ?? env("OUTREACH_WORKER_SECRET"))
+  const browserlessReady = !!env("BROWSERLESS_URL") && !!env("BROWSERLESS_TOKEN")
+  const stagehandReady = !!env("STAGEHAND_URL") && !!env("STAGEHAND_API_KEY")
+  const crawl4AiReady = !!env("CRAWL4AI_BASE_URL")
+  const externalReady = remoteReady || crawleeReady || browserlessReady || stagehandReady || crawl4AiReady
+
+  if (provider === "auto" && externalReady) {
+    return {
+      name: "フォーム営業レーン",
+      status: "ok",
+      detail: "auto: HTTP標準フォーム + 外部抽出/ブラウザレーンが設定されています",
+    }
+  }
+  if (provider === "auto") {
+    return {
+      name: "フォーム営業レーン",
+      status: "not_configured",
+      detail: "auto: 標準HTTPフォームのみ。本番SPA対応には Crawl4AI / Browserless / Stagehand / worker のいずれかを設定してください",
+    }
+  }
+  return {
+    name: "フォーム営業レーン",
+    status: externalReady || provider === "http" || provider === "dry" ? "ok" : "not_configured",
+    detail: `provider=${provider}`,
   }
 }
 
@@ -127,7 +179,13 @@ function checkEnvSummary(): ServiceCheck {
     "TWENTY_BASE_URL",
     "TWENTY_API_KEY",
     "CLOUDFLARE_R2_BUCKET",
+    "CRAWL4AI_BASE_URL",
+    "BROWSERLESS_URL",
+    "BROWSERLESS_TOKEN",
+    "STAGEHAND_URL",
+    "STAGEHAND_API_KEY",
     "OUTREACH_WORKER_URL",
+    "OUTREACH_WORKER_SECRET",
   ]
   const missing = required.filter((name) => !env(name))
   const optionalMissing = optional.filter((name) => !env(name))
@@ -153,15 +211,32 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
   }
 
-  const [supabase, searxng, dify, n8n] = await Promise.all([
+  const [supabase, searxng, dify, n8n, crawl4ai, browserless, stagehand, crawlee, worker] = await Promise.all([
     checkSupabase(),
     checkSearxng(),
     checkDify(),
     checkN8n(),
+    checkCrawl4AiHealth().then((result) => serviceHealthToCheck("Crawl4AI", result, env("CRAWL4AI_BASE_URL"))),
+    checkBrowserlessHealth().then((result) => serviceHealthToCheck("Browserless", result, env("BROWSERLESS_URL"))),
+    checkStagehandHealth().then((result) => serviceHealthToCheck("Stagehand", result, env("STAGEHAND_URL"))),
+    checkCrawleeHealth().then((result) => serviceHealthToCheck("Crawlee worker", result, env("CRAWLEE_WORKER_URL"))),
+    checkPlaywrightStealthHealth().then((result) => serviceHealthToCheck("Outreach worker", result, env("OUTREACH_WORKER_URL"))),
   ])
 
   const envCheck = checkEnvSummary()
-  const checks: ServiceCheck[] = [envCheck, supabase, searxng, dify, n8n]
+  const checks: ServiceCheck[] = [
+    envCheck,
+    checkOutreachEnvSummary(),
+    supabase,
+    searxng,
+    dify,
+    n8n,
+    crawl4ai,
+    browserless,
+    stagehand,
+    crawlee,
+    worker,
+  ]
   const hasError = checks.some((c) => c.status === "error")
   const hasNotConfigured = checks.some((c) => c.status === "not_configured")
 

@@ -140,9 +140,9 @@ export function getPPPFactor(country: CountryCode): number {
 export interface FormatPriceResult {
   /** Display string with currency symbol, e.g. "¥198,000" or "~¥130,000" */
   display: string
-  /** Raw adjusted number (JPY) */
+  /** Raw adjusted number in the input currency */
   adjusted: number
-  /** Original price (JPY) */
+  /** Original price in the input currency */
   original: number
   /** PPP factor applied */
   factor: number
@@ -161,13 +161,23 @@ export interface FormatPriceResult {
  * the sticker price isn't a marketing gimmick.
  */
 export function formatPricePPP(
-  priceJPY: number,
-  _currency: "JPY" | "USD",
+  price: number,
+  currency: "JPY" | "USD",
   country: CountryCode,
   locale: "ja" | "en" = "ja",
 ): FormatPriceResult {
+  if (currency === "USD") {
+    return {
+      display: `$${Math.round(price).toLocaleString("en-US")}`,
+      adjusted: price,
+      original: price,
+      factor: 1.0,
+      discounted: false,
+    }
+  }
+
   const factor = getPPPFactor(country)
-  const adjusted = Math.round(priceJPY * factor)
+  const adjusted = Math.round(price * factor)
   const discounted = factor < 0.95
   const showUSD = locale === "en" && country !== "JP"
 
@@ -184,7 +194,7 @@ export function formatPricePPP(
     display = discounted ? `~¥${formatted}` : `¥${formatted}`
   }
 
-  return { display, adjusted, original: priceJPY, factor, discounted }
+  return { display, adjusted, original: price, factor, discounted }
 }
 
 /**

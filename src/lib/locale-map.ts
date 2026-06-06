@@ -252,7 +252,7 @@ export const salesRegionToLocale = (region: SalesRegion): Locale =>
 
 export const LOCALE_PPP_FACTOR: Record<Locale, number> = {
   ja: 1.0, // JPY 価格は別途固定（s3-1）
-  en: 1.0, // USD 基準 ($3,500/$8,500/$18,000+)
+  en: 1.0, // USD base ($3,000/$5,000/$8,000)
   ko: 0.85,
   zh: 0.55,
   de: 0.95,
@@ -283,9 +283,9 @@ export const LOCALE_DISPLAY_CURRENCY: Record<Locale, string> = {
 
 // EN基準価格表（s3-2 確定値）
 export const EN_BASE_PRICES = {
-  essential: 3500,
-  growth: 8500,
-  scale: 18000,
+  essential: 3000,
+  growth: 5000,
+  scale: 8000,
 } as const
 
 /**

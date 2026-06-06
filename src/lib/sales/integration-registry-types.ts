@@ -38,6 +38,7 @@ export type SalesIntegrationBalanceType =
   | "vast_health"
   | "astro_health"
   | "calcom_health"
+  | "crawl4ai_health"
   | "crawlee_health"
   | "playwright_stealth_health"
   | "dify_health"

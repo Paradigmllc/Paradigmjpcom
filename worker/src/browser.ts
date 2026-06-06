@@ -15,8 +15,30 @@ chromium.use(StealthPlugin())
 
 let browserPromise: Promise<Browser> | null = null
 
+function optionalEnv(name: string): string | null {
+  const value = process.env[name]
+  return value && value.trim().length > 0 ? value.trim() : null
+}
+
+function browserlessCdpEndpoint(): string | null {
+  const raw = optionalEnv("BROWSERLESS_URL")
+  const token = optionalEnv("BROWSERLESS_TOKEN")
+  if (!raw || !token) return null
+
+  try {
+    const url = new URL(raw)
+    if (url.protocol === "http:") url.protocol = "ws:"
+    if (url.protocol === "https:") url.protocol = "wss:"
+    url.searchParams.set("token", token)
+    return url.toString()
+  } catch (error) {
+    console.warn("[worker/browser] invalid BROWSERLESS_URL:", error)
+    return null
+  }
+}
+
 async function launch(): Promise<Browser> {
-  const cdp = process.env.CDP_ENDPOINT
+  const cdp = optionalEnv("CDP_ENDPOINT") ?? browserlessCdpEndpoint()
   if (cdp) return chromium.connectOverCDP(cdp)
 
   return chromium.launch({

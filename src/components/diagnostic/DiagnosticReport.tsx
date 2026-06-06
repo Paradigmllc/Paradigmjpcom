@@ -1,12 +1,12 @@
 import { ArrowRight, Check, ExternalLink, Gauge, LineChart, ShieldCheck, Sparkles } from "lucide-react"
-import type { ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 import type { DiagnosticAct, DiagnosticReportData } from "@/lib/sales/diagnostic"
 import { signalScore, type IntelligenceSignal, type PainPoint } from "@/lib/sales/company-intelligence"
 import type { SourceCoverageItem } from "@/lib/sales/source-coverage"
 import { labelForIndustry } from "@/lib/sales/render-quality"
 import { ReportExecutiveBrief } from "./ReportExecutiveBrief"
 import { localizeReportIntelligence, reportEvidenceText, severityLabel, sourceCategoryLabel, sourceCoverageDetail, sourceStatusLabel } from "./report-intelligence-copy"
-import { REPORT_COPY, normalizeReportLang, type ReportCopy, type ReportLang } from "./report-copy"
+import { REPORT_COPY, normalizeReportLang, type ReportCopy, type ReportLang, REPORT_FAQS } from "./report-copy"
 import { getReportOfferCopy } from "./report-offer-copy"
 
 const TONE_CLASS = {
@@ -99,33 +99,299 @@ function Stat({ label, value, detail }: { label: string; value: string; detail: 
   )
 }
 
+const SOLUTION_COSTS: Record<string, number> = {
+  website_diagnostic: 450000,
+  meo: 450000,
+  subsidy: 450000,
+  japan_entry: 300000,
+  video_subscription: 250000,
+  outreach: 650000,
+  security: 350000,
+}
+
+const BLOG_LINKS: Record<string, Record<"ja" | "en", { title: string; url: string }>> = {
+  speed_critical: {
+    ja: { title: "表示速度とコンバージョンの関係性", url: "/ja/blog/pagespeed-conversion-correlation" },
+    en: { title: "Page Speed & Conversion Rates Study", url: "/en/blog/pagespeed-conversion-correlation" },
+  },
+  ssl_expired: {
+    ja: { title: "セキュリティヘッダーとAPPI/特商法準拠ガイド", url: "/ja/blog/appi-compliance-checklist" },
+    en: { title: "Security Headers & APPI Compliance Guide", url: "/en/blog/appi-compliance-checklist" },
+  },
+  wp_outdated: {
+    ja: { title: "WordPress脆弱性とヘッドレス移行のすゝめ", url: "/ja/blog/modern-web-migration" },
+    en: { title: "WordPress Security Gaps & Astro Rebuilding", url: "/en/blog/modern-web-migration" },
+  },
+  no_ogp: {
+    ja: { title: "SNSプレビュー（OGP）と信頼獲得の基礎", url: "/ja/blog/ogp-trust-mechanisms" },
+    en: { title: "Optimizing OGP for Social Sharing and Credibility", url: "/en/blog/ogp-trust-mechanisms" },
+  },
+  no_sns: {
+    ja: { title: "B2Bマーケティングにおける外部接点の設計図", url: "/ja/blog/b2b-external-touchpoints" },
+    en: { title: "Design Patterns for B2B External Channels", url: "/en/blog/b2b-external-touchpoints" },
+  },
+  copyright_old: {
+    ja: { title: "古い著作権表示がもたらす信頼低下リスク", url: "/ja/blog/freshness-and-user-trust" },
+    en: { title: "Content Freshness & Brand Professionalism", url: "/en/blog/freshness-and-user-trust" },
+  },
+}
+
+const ICON_TO_ISSUE_KEY: Record<string, string> = {
+  SPEED: "speed_critical",
+  TRUST: "ssl_expired",
+  OPS: "wp_outdated",
+  SNS: "no_ogp",
+  REACH: "no_sns",
+  FRESH: "copyright_old",
+}
+
+function CompetitorBenchmarkBar({
+  value,
+  unit,
+  icon,
+  copy,
+}: {
+  value: string
+  unit: string
+  icon: string
+  copy: ReportCopy
+}) {
+  const numericVal = Number.parseInt(value.replace(/[^0-9]/g, ""), 10) || 0
+  if (numericVal <= 0 || isNaN(numericVal)) return null
+
+  let industryAvg = 70
+  let topCompetitors = 85
+  let maxVal = 100
+  let showAsPercent = false
+
+  if (icon === "SPEED") {
+    industryAvg = 70
+    topCompetitors = 85
+  } else if (icon === "TRUST") {
+    industryAvg = 80
+    topCompetitors = 100
+    showAsPercent = true
+  } else if (icon === "OPS") {
+    industryAvg = 75
+    topCompetitors = 95
+    showAsPercent = true
+  } else {
+    industryAvg = 70
+    topCompetitors = 90
+  }
+
+  const yourPct = Math.min(100, Math.max(5, (numericVal / maxVal) * 100))
+  const avgPct = (industryAvg / maxVal) * 100
+  const topPct = (topCompetitors / maxVal) * 100
+
+  return (
+    <div className="mt-4 space-y-3 border-t border-zinc-100 pt-4 text-xs">
+      <div className="font-semibold text-zinc-700">{copy.competitorBenchmark}</div>
+      <div className="space-y-2">
+        {/* Your Site Bar */}
+        <div>
+          <div className="flex justify-between text-[11px] font-medium text-zinc-900">
+            <span>{copy.yourSite}</span>
+            <span className="font-bold text-rose-600">{numericVal}{unit || (showAsPercent ? "%" : "")}</span>
+          </div>
+          <div className="mt-1 h-2.5 w-full rounded-full bg-zinc-100">
+            <div
+              className="h-full rounded-full bg-rose-500 transition-all duration-500"
+              style={{ width: `${yourPct}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Industry Avg Bar */}
+        <div>
+          <div className="flex justify-between text-[11px] font-medium text-zinc-500">
+            <span>{copy.industryAvg}</span>
+            <span>{industryAvg}{unit || (showAsPercent ? "%" : "")}</span>
+          </div>
+          <div className="mt-1 h-2 w-full rounded-full bg-zinc-100">
+            <div
+              className="h-full rounded-full bg-zinc-400"
+              style={{ width: `${avgPct}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Top Competitors Bar */}
+        <div>
+          <div className="flex justify-between text-[11px] font-medium text-zinc-500">
+            <span>{copy.topCompetitors}</span>
+            <span>{topCompetitors}{unit || (showAsPercent ? "%" : "")}</span>
+          </div>
+          <div className="mt-1 h-2 w-full rounded-full bg-zinc-100">
+            <div
+              className="h-full rounded-full bg-emerald-500"
+              style={{ width: `${topPct}%` }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function RoiCalculatorCard({
+  variant,
+  monthlyLoss,
+  copy,
+  lang,
+}: {
+  variant: string
+  monthlyLoss: number
+  copy: ReportCopy
+  lang: ReportLang
+}) {
+  const lossValue = monthlyLoss > 0 ? monthlyLoss : 340000
+  const cost = SOLUTION_COSTS[variant] ?? 450000
+  const recoveredTwelveMonths = lossValue * 12
+  const paybackPeriod = Math.max(0.5, Number((cost / lossValue).toFixed(1)))
+  const roi = Math.round((recoveredTwelveMonths / cost) * 100)
+
+  return (
+    <div className="rounded-lg border border-violet-200 bg-white p-6 shadow-sm">
+      <div className="flex items-center gap-2 text-violet-700 font-semibold mb-4">
+        <LineChart size={18} />
+        <h3 className="text-lg font-bold text-zinc-950">{copy.roiTitle}</h3>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="bg-zinc-50 p-4 rounded-md border border-zinc-100">
+          <div className="text-xs text-zinc-500 font-medium">{copy.paybackPeriod}</div>
+          <div className="mt-1 text-2xl font-extrabold text-zinc-950 tabular-nums">
+            {paybackPeriod} <span className="text-xs font-normal text-zinc-500">{lang === "ja" ? "ヶ月" : "mo"}</span>
+          </div>
+        </div>
+        <div className="bg-zinc-50 p-4 rounded-md border border-zinc-100">
+          <div className="text-xs text-zinc-500 font-medium">{copy.recoveredTwelveMonths}</div>
+          <div className="mt-1 text-2xl font-extrabold text-emerald-600 tabular-nums">
+            {formatMoney(recoveredTwelveMonths, lang)}
+          </div>
+        </div>
+        <div className="bg-zinc-50 p-4 rounded-md border border-zinc-100">
+          <div className="text-xs text-zinc-500 font-medium">{copy.roiLabel}</div>
+          <div className="mt-1 text-2xl font-extrabold text-violet-600 tabular-nums">
+            {roi}%
+          </div>
+        </div>
+      </div>
+      <p className="mt-4 text-[11px] leading-5 text-zinc-500">
+        {lang === "ja" 
+          ? `※ 本シミュレーションは、想定パッケージ価格（${formatMoney(cost, lang)}）に対する売上機会回復効果を算出しています。`
+          : `* Simulation calculated against estimated package price (${formatMoney(cost, lang)}) and opportunity recovery potential.`}
+      </p>
+    </div>
+  )
+}
+
+function FaqAccordionItem({ faq, isOpen, onToggle }: { faq: { q: string; a: string }; isOpen: boolean; onToggle: () => void }) {
+  return (
+    <div className="border-b border-zinc-200 py-4">
+      <button
+        onClick={onToggle}
+        className="flex w-full items-center justify-between text-left font-semibold text-zinc-950 focus:outline-none"
+      >
+        <span>{faq.q}</span>
+        <span className="ml-2 text-xl font-light text-zinc-400">{isOpen ? "−" : "+"}</span>
+      </button>
+      <div
+        className={`mt-2 overflow-hidden text-sm leading-7 text-zinc-600 transition-all duration-300 ${
+          isOpen ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <p className="pb-2">{faq.a}</p>
+      </div>
+    </div>
+  )
+}
+
+function FaqSection({
+  variant,
+  lang,
+  copy,
+}: {
+  variant: string
+  lang: "ja" | "en"
+  copy: ReportCopy
+}) {
+  const faqs = REPORT_FAQS[lang]?.[variant] || REPORT_FAQS[lang]?.website_diagnostic || []
+  const [openIndex, setOpenIndex] = useState<number | null>(null)
+
+  if (faqs.length === 0) return null
+
+  return (
+    <section className="bg-white px-5 py-14 border-t border-zinc-200">
+      <div className="mx-auto max-w-4xl">
+        <h2 className="text-3xl font-semibold text-center text-zinc-950 mb-8">{copy.faqTitle}</h2>
+        <div className="space-y-1">
+          {faqs.map((faq, index) => (
+            <FaqAccordionItem
+              key={index}
+              faq={faq}
+              isOpen={openIndex === index}
+              onToggle={() => setOpenIndex(openIndex === index ? null : index)}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function FindingCard({ act, index, copy, lang }: { act: DiagnosticAct; index: number; copy: ReportCopy; lang: ReportLang }) {
   const severity = SEVERITY_LABEL[act.severity][lang === "ja" ? "ja" : "en"]
   const headline = cleanText(act.headline, lang === "ja" ? `優先改善ポイント ${index + 1}` : `Priority improvement ${index + 1}`)
   const body = cleanText(act.body, copy.heroLead)
   const metricLabel = cleanText(act.metric_label, copy.evidence)
   const metricBench = cleanText(act.metric_bench, copy.qualityBar)
+
+  const issueKey = ICON_TO_ISSUE_KEY[act.icon] || act.icon
+  const blogLink = BLOG_LINKS[issueKey]?.[lang === "ja" ? "ja" : "en"]
+
   return (
-    <article className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-950 text-sm font-semibold text-white">
-          {index + 1}
+    <article className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm flex flex-col justify-between h-full">
+      <div>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-950 text-sm font-semibold text-white">
+            {index + 1}
+          </div>
+          <Pill tone={act.severity === "critical" ? "critical" : act.severity === "warning" ? "warning" : "good"}>{severity}</Pill>
         </div>
-        <Pill tone={act.severity === "critical" ? "critical" : act.severity === "warning" ? "warning" : "good"}>{severity}</Pill>
+        <h3 className="mt-5 text-xl font-semibold leading-7 text-zinc-950">{headline}</h3>
+        <p className="mt-3 text-sm leading-7 text-zinc-600">{body}</p>
+        
+        {/* Competitor Benchmark visualization */}
+        <CompetitorBenchmarkBar value={act.metric_value} unit={act.metric_unit} icon={act.icon} copy={copy} />
       </div>
-      <h3 className="mt-5 text-xl font-semibold leading-7 text-zinc-950">{headline}</h3>
-      <p className="mt-3 text-sm leading-7 text-zinc-600">{body}</p>
-      <div className="mt-5 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4 border-t border-zinc-100 pt-4">
-        <div>
-          <div className="text-xs font-semibold text-zinc-500">{metricLabel}</div>
-          <div className="mt-1 text-[11px] leading-5 text-zinc-500">{metricBench}</div>
+
+      <div>
+        <div className="mt-5 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4 border-t border-zinc-100 pt-4">
+          <div>
+            <div className="text-xs font-semibold text-zinc-500">{metricLabel}</div>
+            <div className="mt-1 text-[11px] leading-5 text-zinc-500">{metricBench}</div>
+          </div>
+          <div className="text-right">
+            <span className="text-3xl font-semibold tabular-nums text-zinc-950">{formatMetric(act.metric_value, lang)}</span>
+            <span className="ml-1 text-xs font-semibold text-zinc-500">{act.metric_unit}</span>
+          </div>
         </div>
-        <div className="text-right">
-          <span className="text-3xl font-semibold tabular-nums text-zinc-950">{formatMetric(act.metric_value, lang)}</span>
-          <span className="ml-1 text-xs font-semibold text-zinc-500">{act.metric_unit}</span>
-        </div>
+        {blogLink && (
+          <div className="mt-3 pt-2 border-t border-zinc-100">
+            <a
+              href={blogLink.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-violet-600 hover:text-violet-700 transition-colors"
+            >
+              <span>{copy.readMore}: {blogLink.title}</span>
+              <ExternalLink size={10} />
+            </a>
+          </div>
+        )}
+        <div className="mt-4 text-xs font-semibold text-zinc-500">{copy.priorityFindings}</div>
       </div>
-      <div className="mt-4 text-xs font-semibold text-zinc-500">{copy.priorityFindings}</div>
     </article>
   )
 }
@@ -391,6 +657,9 @@ export default function DiagnosticReport({
             <div className="mt-8 grid gap-4 lg:grid-cols-3">
               {data.acts.map((act, index) => <FindingCard key={`${act.headline}-${index}`} act={act} index={index} copy={copy} lang={lang} />)}
             </div>
+            <div className="mt-8">
+              <RoiCalculatorCard variant={data.template_variant} monthlyLoss={loss} copy={copy} lang={lang} />
+            </div>
           </div>
         </section>
 
@@ -464,6 +733,8 @@ export default function DiagnosticReport({
             </div>
           </div>
         </section>
+
+        <FaqSection variant={data.template_variant} lang={lang === "ja" ? "ja" : "en"} copy={copy} />
 
         <section className="px-5 pb-16">
           <div className="mx-auto max-w-6xl overflow-hidden rounded-lg bg-zinc-950 text-white">

@@ -21,6 +21,7 @@ import { Meteors } from "@/components/magicui/meteors"
 import { Sparkles } from "@/components/magicui/sparkles"
 import { BorderBeam } from "@/components/magicui/border-beam"
 import FadeIn from "@/components/aesop/FadeIn"
+import HomeEnPricingSection from "./HomeEnPricingSection"
 
 const EASE = [0.22, 1, 0.36, 1] as const
 const REPORT_HREF = "/contact?intent=report"
@@ -221,7 +222,10 @@ export default function HomeEnClient() {
         </FadeIn>
       </section>
 
-      {/* ── 7. FAQ ────────────────────────────────────────────── */}
+      {/* 7. Pricing table */}
+      <HomeEnPricingSection />
+
+      {/* ── 8. FAQ ────────────────────────────────────────────── */}
       <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
         <div className="paradigm-mesh opacity-30" />
         <div className="relative z-10 max-w-3xl mx-auto px-6 md:px-8">
@@ -246,7 +250,7 @@ export default function HomeEnClient() {
         </div>
       </section>
 
-      {/* ── 8. Final CTA ──────────────────────────────────────── */}
+      {/* ── 9. Final CTA ──────────────────────────────────────── */}
       <section className="relative bg-paradigm-ink text-paradigm-paper paradigm-section overflow-hidden">
         <div className="paradigm-mesh-vivid opacity-80" />
         <Meteors number={16} color="rgba(255, 255, 255, 0.5)" />
