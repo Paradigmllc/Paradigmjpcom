@@ -1,8 +1,8 @@
 import type { IssueCode } from "../types"
 import { auditJapanMarketReadiness, type JapanMarketAudit } from "./japan-market-audit"
 import { getProxyFetchOptions } from "../proxy-agent"
+import { pageSpeedApi } from "../data-sources/pagespeed"
 
-const PSI_API = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
 const USER_AGENT = "Mozilla/5.0 (Paradigm Diagnostic Bot/1.0; +https://paradigmjp.com)"
 
 export interface PsiResult {
@@ -49,25 +49,17 @@ export interface ScanResult {
 }
 
 async function runPsi(url: string, strategy: "mobile" | "desktop"): Promise<PsiResult> {
-  const key = process.env.GOOGLE_PSI_API_KEY ?? ""
-  const params = new URLSearchParams({ url, strategy, category: "performance" })
-  if (key) params.set("key", key)
-
   try {
-    const res = await fetch(`${PSI_API}?${params.toString()}`, {
-      signal: AbortSignal.timeout(60_000),
-    })
-    if (!res.ok) return { performance: null, https: url.startsWith("https") }
-    const data = (await res.json()) as {
-      lighthouseResult?: { categories?: { performance?: { score?: number } } }
+    const res = await pageSpeedApi.run(url, strategy)
+    if (res.ok && res.data) {
+      return {
+        performance: res.data.performance,
+        https: res.data.https,
+      }
     }
-    const score = data.lighthouseResult?.categories?.performance?.score
-    return {
-      performance: typeof score === "number" ? Math.round(score * 100) : null,
-      https: url.startsWith("https"),
-    }
+    return { performance: null, https: url.startsWith("https") }
   } catch (e) {
-    console.warn("[sales-scanner] PageSpeed request failed:", e)
+    console.warn("[sales-scanner] PageSpeed client run failed:", e)
     return { performance: null, https: url.startsWith("https") }
   }
 }
