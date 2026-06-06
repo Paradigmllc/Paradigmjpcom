@@ -50,11 +50,11 @@ function rewriteKeystaticSubdomain(request: NextRequest): NextResponse | null {
   const url = request.nextUrl.clone()
   if (url.pathname === "/" || url.pathname === "") {
     url.pathname = "/keystatic"
-    return NextResponse.rewrite(url)
+    return NextResponse.redirect(url)
   }
   if (!url.pathname.startsWith("/keystatic")) {
     url.pathname = `/keystatic${url.pathname}`
-    return NextResponse.rewrite(url)
+    return NextResponse.redirect(url)
   }
   return NextResponse.next()
 }

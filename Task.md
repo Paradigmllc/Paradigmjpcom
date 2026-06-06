@@ -13,6 +13,7 @@
 - Replaced Coolify Trigger.dev envs with production runtime key, `TRIGGER_PROJECT_REF=proj_ptaxneqibbeboxxboajw`, and `TRIGGER_API_URL=https://api.trigger.dev` for production/preview without printing secrets.
 - Coolify deployment `vtva4jxd52h2ebdso2qs2u6d` finished; authenticated `/api/sales/health` now returns HTTP 200, `status=healthy`, and Trigger.dev `ok`.
 - Fixed Keystatic white screen: App Router was importing Keystatic through the React Server export that returns `null`; `/keystatic` now renders a dedicated client wrapper.
+- Fixed Keystatic subdomain root routing: `keystatic.paradigmjp.com` now redirects to `/keystatic` so the Keystatic client router opens Dashboard instead of a root-path not-found state.
 - Verification: `node scripts/verify-trigger-sales-os.mjs`, `node scripts/test-health.mjs`, `npx tsc --noEmit --pretty false`, `git diff --check`, and `npm run build` passed. Build artifact includes `app/keystatic/[[...params]]/page` client chunk.
 
 ## CODEX UPDATE - 2026-06-06 Revenue OS Trigger.dev Runtime Closure
@@ -94,7 +95,7 @@
 
 - Production worker: `paradigm-stagehand` on Droplet, public URL `https://stagehand.paradigmjp.com`, internal mode Browserless CDP.
 - Keystatic fix files: `src/app/keystatic/[[...params]]/page.tsx` and `src/app/keystatic/[[...params]]/KeystaticClient.tsx`.
-- Next deployment should verify `https://keystatic.paradigmjp.com` is no longer a blank body.
+- Next deployment should verify `https://keystatic.paradigmjp.com` redirects to `/keystatic` and shows Dashboard.
 
 ## NEXT ACTIONS
 
