@@ -15,7 +15,12 @@
 - Twenty pull/webhook responses now expose `dryRun`, `created`, `pipelineRunsCreated`, `pipelineRunsDispatched`, `pipelineRunsReused`, and per-record `failures` so intake problems are visible instead of silently skipped.
 - Hardened `/api/sales/twenty/webhook` with Sales API auth and added `scripts/smoke-twenty-intake.mjs` for authenticated non-mutating production/local dry-run checks.
 - Extended `scripts/verify-trigger-sales-os.mjs` to dispatch a non-mutating `health_check` payload to the `sales-os-pipeline` Trigger.dev task; Trigger.dev API auth and dispatch returned HTTP 200.
+- Deployed commit `198d0a3` through Coolify deployment `yph1mymw8qx9p0zxp0a326ks`; an earlier deploy `l129mpyj8zcya4pvrp15xvs5` failed during Docker image layer export because root disk pressure left only 22GB free.
+- Recovered host capacity without touching Docker volumes: pruned stopped containers, build cache, and unused images only; root disk improved from 87% used / 22GB free to 81% used / 30GB free before redeploy.
+- Updated `scripts/smoke-twenty-intake.mjs` to prefer Coolify production webhook secret when testing production URLs, avoiding false 401s from stale local env values.
+- Production dry-run verified `https://paradigmjp.com/api/sales/twenty/pull`: scanned 5, created 2, updated 2, skipped 1, pipelineRunsCreated 4, pipelineRunsDispatched 0, failures 1.
 - Verification: `node scripts/run-vitest.mjs src/lib/sales/twenty-sync.test.ts` (4 tests), `npx tsc --noEmit --pretty false`, `npm run build`, `git diff --check`, `npm run context:audit`, `node scripts/verify-trigger-sales-os.mjs`, and local production `node scripts/smoke-twenty-intake.mjs --base-url=http://localhost:3010 --limit=5 --dry-run=true --dispatch-pipeline=false` passed.
+- Post-deploy verification: `node scripts/test-health.mjs`, `node scripts/audit-sales-os.mjs` (13 pass / 0 warn / 0 fail), `/ja` 200, `/ja/admin/sales` 200, and production Twenty dry-run smoke passed.
 
 ## CODEX UPDATE - 2026-06-06 Keystatic + Trigger.dev Production Closure
 

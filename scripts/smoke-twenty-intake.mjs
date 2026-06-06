@@ -1,6 +1,7 @@
 import path from "node:path"
 import process from "node:process"
 import dotenv from "dotenv"
+import { readProductionEnvValue } from "./lib/coolify-env.mjs"
 
 const root = process.cwd()
 dotenv.config({ path: path.join(root, ".env.local"), quiet: true })
@@ -29,13 +30,20 @@ function fail(message) {
 }
 
 const baseUrl = (argValue("base-url", env("NEXT_PUBLIC_SITE_URL") ?? "https://paradigmjp.com") ?? "").replace(/\/+$/, "")
-const secret = env("TRIGGER_WEBHOOK_SECRET") ?? env("N8N_WEBHOOK_SECRET")
 const limit = Math.max(1, Math.min(Number(argValue("limit", "5")), 50))
 const dryRun = boolArg("dry-run", true)
 const dispatchPipeline = boolArg("dispatch-pipeline", false)
 
 if (!baseUrl) fail("base URL is empty")
-if (!secret) fail("TRIGGER_WEBHOOK_SECRET is not configured")
+
+const localSecret = env("TRIGGER_WEBHOOK_SECRET") ?? env("N8N_WEBHOOK_SECRET")
+const productionSecret =
+  (await readProductionEnvValue("TRIGGER_WEBHOOK_SECRET").catch(() => null)) ??
+  (await readProductionEnvValue("N8N_WEBHOOK_SECRET").catch(() => null))
+const isLocalBaseUrl = /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::|\/|$)/.test(baseUrl)
+const secret = isLocalBaseUrl ? localSecret ?? productionSecret : productionSecret ?? localSecret
+
+if (!secret) fail("TRIGGER_WEBHOOK_SECRET is not configured in local env or readable Coolify envs")
 
 const res = await fetch(`${baseUrl}/api/sales/twenty/pull`, {
   method: "POST",
