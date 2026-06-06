@@ -1,6 +1,7 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { fetchCompanyKarte, type CompanyKarteSnapshot } from "@/lib/sales/company-karte"
-import { pullTwentyCompaniesToSupabase, syncCompanyKarteToTwenty } from "@/lib/sales/twenty-sync"
+import { pullTwentyCompaniesToSupabase } from "@/lib/sales/twenty-pull"
+import { syncCompanyKarteToTwenty } from "@/lib/sales/twenty-sync"
 
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 type JsonRecord = Record<string, unknown>

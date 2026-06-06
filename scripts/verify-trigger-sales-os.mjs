@@ -85,10 +85,12 @@ if (!secretName) {
 
 const apiUrl = (env("TRIGGER_API_URL") ?? "https://api.trigger.dev").replace(/\/+$/, "")
 const url = `${apiUrl}/api/v1/runs?limit=1`
+const dispatchUrl = `${apiUrl}/api/v1/tasks/sales-os-pipeline/trigger`
+const authHeaders = { Authorization: `Bearer ${env(secretName)}` }
 
 try {
   const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${env(secretName)}` },
+    headers: authHeaders,
     signal: AbortSignal.timeout(10_000),
   })
   printStatus("Trigger.dev API auth", res.ok, `HTTP ${res.status}`)
@@ -101,4 +103,27 @@ try {
   }
 } catch (error) {
   fail(`Trigger.dev API verification failed: ${error instanceof Error ? error.message : String(error)}`)
+}
+
+try {
+  const res = await fetch(dispatchUrl, {
+    method: "POST",
+    headers: { ...authHeaders, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      payload: { health_check: true },
+      context: { source: "verify-trigger-sales-os", mode: "health_check" },
+      options: {
+        idempotencyKey: `verify-sales-os-pipeline-health-${new Date().toISOString().slice(0, 16)}`,
+        queue: { name: "sales-os-pipeline", concurrencyLimit: 2 },
+      },
+    }),
+    signal: AbortSignal.timeout(10_000),
+  })
+  const text = await res.text()
+  printStatus("Trigger.dev sales-os-pipeline dispatch", res.ok, `HTTP ${res.status}`)
+  if (!res.ok) {
+    fail(`Trigger.dev health dispatch failed: ${text.slice(0, 240)}`)
+  }
+} catch (error) {
+  fail(`Trigger.dev health dispatch failed: ${error instanceof Error ? error.message : String(error)}`)
 }

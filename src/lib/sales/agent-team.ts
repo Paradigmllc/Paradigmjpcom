@@ -2,7 +2,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { notifySlack } from "@/lib/notify"
 import { runEnrichmentJobs } from "@/lib/sales/enrichment-jobs"
 import { runOutreachBatch } from "@/lib/sales/outreach/orchestrator"
-import { pullTwentyCompaniesToSupabase } from "@/lib/sales/twenty-sync"
+import { pullTwentyCompaniesToSupabase } from "@/lib/sales/twenty-pull"
 import { isValidRegion, type Region } from "@/lib/sales/types"
 
 type JsonRecord = Record<string, unknown>
@@ -412,7 +412,11 @@ export async function handleAgentCommand(input: SalesAgentCommandInput): Promise
     }
 
     if (intent === "sync_twenty") {
-      const result = await pullTwentyCompaniesToSupabase(normalizeLimit(input.limit, 200))
+      const result = await pullTwentyCompaniesToSupabase(normalizeLimit(input.limit, 200), {
+        autoRunPipeline: true,
+        dispatchPipeline: true,
+        requestedBy: "sales_agent_team",
+      })
       const summary = result.configured
         ? `TwentyからSupabaseへ同期しました。更新 ${result.updated}件、skip ${result.skipped}件。`
         : "Twenty APIが未設定のため、同期は実行できませんでした。"

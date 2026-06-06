@@ -7,6 +7,16 @@
 - n8n is no longer the active orchestrator for new Sales OS work. Trigger.dev is deployed as the primary orchestration target; legacy `N8N_*` values are inbound/backward-compat only where explicitly noted.
 - Form URL extraction and submission are now wired as one lane family: HTTP form submit, Crawl4AI discovery, Browserless rendered inspection, Crawlee SPA discovery, Playwright Stealth worker submission, and Stagehand agent discovery/submission.
 
+## CODEX UPDATE - 2026-06-06 Twenty Intake Pipeline Repair
+
+- Fixed the Twenty intake gap where `/api/sales/twenty/pull` and `/api/sales/twenty/webhook` only updated matching Supabase companies and skipped newly added Twenty companies.
+- `pullTwentyCompaniesToSupabase` now creates missing `sales_companies` records from Twenty, preserves Twenty HOME/custom fields in `meta`, and starts a Sales OS pipeline when report/form artifacts are missing or the company is not `report_ready`.
+- Added duplicate protection: active queued/running/waiting pipeline runs are reused instead of creating another run for the same company.
+- Twenty pull/webhook responses now expose `dryRun`, `created`, `pipelineRunsCreated`, `pipelineRunsDispatched`, `pipelineRunsReused`, and per-record `failures` so intake problems are visible instead of silently skipped.
+- Hardened `/api/sales/twenty/webhook` with Sales API auth and added `scripts/smoke-twenty-intake.mjs` for authenticated non-mutating production/local dry-run checks.
+- Extended `scripts/verify-trigger-sales-os.mjs` to dispatch a non-mutating `health_check` payload to the `sales-os-pipeline` Trigger.dev task; Trigger.dev API auth and dispatch returned HTTP 200.
+- Verification: `node scripts/run-vitest.mjs src/lib/sales/twenty-sync.test.ts` (4 tests), `npx tsc --noEmit --pretty false`, `npm run build`, `git diff --check`, `npm run context:audit`, `node scripts/verify-trigger-sales-os.mjs`, and local production `node scripts/smoke-twenty-intake.mjs --base-url=http://localhost:3010 --limit=5 --dry-run=true --dispatch-pipeline=false` passed.
+
 ## CODEX UPDATE - 2026-06-06 Keystatic + Trigger.dev Production Closure
 
 - Deployed Trigger.dev production tasks as version `20260606.3` with 6 detected Sales OS tasks.
