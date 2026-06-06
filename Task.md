@@ -21,6 +21,7 @@
 - Production env presence check: Stagehand, Browserless, Crawlee worker, Playwright Stealth worker, Crawl4AI base URL, Supabase, and DeepSeek are set.
 - Production env gap: Trigger.dev cloud dispatch is not fully live because `TRIGGER_SECRET_KEY` / `TRIGGER_ACCESS_TOKEN` / `TRIGGER_DEV_API_KEY` and task IDs are missing in Coolify production env. `TRIGGER_WEBHOOK_SECRET` is set.
 - Residual dependency risk: `npm --prefix worker audit --omit=dev` still reports 17 low-severity transitive `@ai-sdk/provider-utils` advisories from Stagehand/AI SDK. `npm audit fix` did not clear them; prior forced override broke Stagehand runtime, so no unsafe override is applied.
+- Main app deployments completed: `uui2xsuvhg72aonrmx289reh`, `n11c1kkdqrgk172ug3e49jrh`, and final health-fix deploy `m5enbqnue0n65k4mu8uli3qe` all finished.
 
 ## VERIFICATION
 
@@ -32,6 +33,8 @@
 - `docker compose build stagehand && docker compose up -d stagehand` passed on the Droplet.
 - `https://stagehand.paradigmjp.com/health` returned HTTP 200 with Stagehand ready.
 - Authenticated worker smoke: `/discover-spa` and `/submit` returned expected `400` validation responses on empty payload, confirming worker auth/env is active.
+- Final production smoke after `m5enbqnue0n65k4mu8uli3qe`: `/ja` 200, `/ja/admin/sales` 200, Stagehand `/health` 200, Crawlee worker `/health` 200, Outreach worker `/health` 200.
+- Authenticated `/api/sales/health` now shows Supabase/SearxNG/Dify/Crawl4AI/Browserless/Stagehand/Crawlee/Outreach as ok; only Trigger.dev cloud remains `not_configured` because API key/task IDs are absent.
 
 ## ACTIVE HANDOFF
 
