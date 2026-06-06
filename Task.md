@@ -40,6 +40,8 @@
 - Authenticated `/api/sales/health` now shows Supabase/SearxNG/Dify/Crawl4AI/Browserless/Stagehand/Crawlee/Outreach as ok; only Trigger.dev cloud remains `not_configured` because API key/task IDs are absent.
 - Additional Trigger implementation verification: `npx tsc --noEmit --pretty false` passed; `npm run test -- --run src/lib/sales/video-pipeline.test.ts` passed; `npm audit --omit=dev --audit-level=moderate` reports 0 vulnerabilities after safe overrides; `node scripts/verify-trigger-sales-os.mjs` confirms all local task definitions and defaults but exits nonzero because Trigger.dev API key is absent.
 - Trigger CLI verification: `node_modules/.bin/trigger.cmd --version` returns 4.4.0; `trigger deploy --dry-run` reaches Trigger.dev login and stops at missing cloud authorization/API token.
+- Final production deploy: commit `e1a6cdc` deployed through Coolify deployment `jhh7i5kqb3blctg8uccouome` and finished. Smoke passed for `/ja` 200, `/ja/admin/sales` 200, and `https://stagehand.paradigmjp.com/health` 200.
+- Final authenticated `/api/sales/health` returns HTTP 200 with Form lane, Supabase, SearxNG, Dify, Crawl4AI, Browserless, Stagehand, Crawlee worker, and Outreach worker all `ok`; overall status remains `error` only because Trigger.dev API key is still absent.
 
 ## ACTIVE HANDOFF
 
@@ -60,3 +62,4 @@
 - Trigger.dev code paths, task IDs, and Coolify non-secret env are implemented, but cloud execution is not complete until a Trigger.dev API key/login is configured and tasks are deployed to Trigger.dev Cloud.
 - Live outbound form submission remains intentionally gated by approval/dry-run settings; CAPTCHA, login, payment, and anti-bot challenges stop for manual review.
 - Stagehand is operational, but its upstream AI SDK dependency currently carries low-severity audit advisories.
+- Coolify host root disk was 90% used during the final deploy even after safe build-cache/unused-image pruning; keep host pressure guards active before the next large deploy.
