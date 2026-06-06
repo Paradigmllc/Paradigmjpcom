@@ -19,6 +19,7 @@
 - Recovered host capacity without touching Docker volumes: pruned stopped containers, build cache, and unused images only; root disk improved from 87% used / 22GB free to 81% used / 30GB free before redeploy.
 - Updated `scripts/smoke-twenty-intake.mjs` to prefer Coolify production webhook secret when testing production URLs, avoiding false 401s from stale local env values.
 - Production dry-run verified `https://paradigmjp.com/api/sales/twenty/pull`: scanned 5, created 2, updated 2, skipped 1, pipelineRunsCreated 4, pipelineRunsDispatched 0, failures 1.
+- Production execution then ran with `dry_run=false` and `dispatch_pipeline=true`: scanned 5, created 2, updated 2, skipped 1, pipelineRunsCreated 4, pipelineRunsDispatched 4, failures 1. The skipped/failure record had no valid Twenty `domainName`, so report/form generation is blocked by missing source data rather than code.
 - Verification: `node scripts/run-vitest.mjs src/lib/sales/twenty-sync.test.ts` (4 tests), `npx tsc --noEmit --pretty false`, `npm run build`, `git diff --check`, `npm run context:audit`, `node scripts/verify-trigger-sales-os.mjs`, and local production `node scripts/smoke-twenty-intake.mjs --base-url=http://localhost:3010 --limit=5 --dry-run=true --dispatch-pipeline=false` passed.
 - Post-deploy verification: `node scripts/test-health.mjs`, `node scripts/audit-sales-os.mjs` (13 pass / 0 warn / 0 fail), `/ja` 200, `/ja/admin/sales` 200, and production Twenty dry-run smoke passed.
 
