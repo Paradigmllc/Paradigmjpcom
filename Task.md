@@ -14,8 +14,9 @@
 - Extended `discoverFormUrl()` so cheap homepage/sitemap checks now fall through to Crawl4AI, heuristics, LLM, Browserless, and provider SPA discovery instead of leaving Crawl4AI/Browserless as registry-only labels.
 - Changed outreach provider default to `OUTREACH_BROWSER_PROVIDER=auto`: HTTP handles standard server-rendered forms; SPA/client-rendered forms escalate to the remote Playwright/Crawlee worker and then Stagehand when configured, with conservative no-double-submit fallback rules.
 - Added Stagehand discovery support via `/discover-form`, Crawl4AI live health checks in the integration registry, and worker Browserless CDP auto-wiring from `BROWSERLESS_URL` + `BROWSERLESS_TOKEN`.
-- Audit hardening: external discovery and stored `contact_form_url` values now block unrelated external domains before automatic submission, while still allowing same-domain/subdomain and known hosted-form providers.
-- Audit hardening: remote worker and Stagehand endpoint URLs now tolerate trailing slashes instead of accidentally calling `//submit` or `//discover-form`.
+- Audit hardening: external discovery and stored `contact_form_url` values now block unrelated external domains; newly discovered safe URLs are persisted back to `sales_companies.meta.contact_form_url`; dedup now counts only actual/possible submit attempts, not manual/preflight/classification stops.
+- Audit hardening: remote worker and Stagehand endpoint URLs tolerate trailing slashes; `/api/sales/health` now checks Crawl4AI/Browserless/Stagehand/Crawlee/outreach worker and Dify real auth health without exposing API key fragments.
+- Build hardening: verified `DiagnosticReport.tsx` remains a Client Component for its `useState` FAQ accordion and cleaned trailing whitespace so production `npm run build` stays unblocked.
 - Updated `.env.example`, `worker/.env.example`, and `worker/README.md` with the new full-lane env contract.
 
 ## CODEX UPDATE - 2026-06-05 Non-JA HP Pricing Table
@@ -67,10 +68,10 @@
 ## VERIFICATION
 
 - Full form outreach lanes: `npm test -- --run src/lib/sales/sources/form-discovery.test.ts src/lib/sales/outreach/browser-provider.test.ts src/lib/sales/outreach/http-form-provider.test.ts src/lib/sales/outreach/form-classifier.test.ts src/lib/sales/outreach/preflight.test.ts src/lib/sales/integration-registry.test.ts` passed.
-- Full form outreach audit: added tests for unrelated external URL rejection and trailing-slash remote worker URLs; focused rerun `npm test -- --run src/lib/sales/sources/form-discovery.test.ts src/lib/sales/outreach/browser-provider.test.ts` passed.
-- Full form outreach lanes: `npx tsc --noEmit --pretty false` passed.
+- Full form outreach audit: added tests for unrelated external URL rejection, trailing-slash remote worker URLs, and submit-only dedup; `npm test -- --run src/lib/sales/outreach/activity.test.ts src/lib/sales/sources/form-discovery.test.ts src/lib/sales/outreach/browser-provider.test.ts src/lib/sales/outreach/http-form-provider.test.ts src/lib/sales/outreach/form-classifier.test.ts src/lib/sales/outreach/preflight.test.ts src/lib/sales/outreach/state-machine.test.ts src/lib/sales/integration-registry.test.ts src/lib/sales/sales-pipeline.test.ts` passed.
+- Full form outreach lanes: `npx tsc --noEmit --pretty false` and `npm run build` passed.
 - Full form outreach lanes: `npm run typecheck` in `worker/` passed.
-- Full form outreach lanes: scoped `git diff --check` for touched files passed. Unscoped `git diff --check` still reports pre-existing whitespace in unrelated modified files such as `src/components/diagnostic/DiagnosticReport.tsx`, `src/lib/sales/diagnostic.ts`, and `src/lib/sales/sources/places.ts`.
+- Full form outreach lanes: `git diff --check` passed with line-ending warnings only.
 
 - `npx tsc --noEmit --pretty false` passed after the prompt loading fix.
 - `npm test -- --run src/lib/sales/dify-diagnosis.test.ts src/lib/sales/dify-cloud.test.ts src/lib/sales/searxng-normalize.test.ts src/lib/sales/source-acquisition.test.ts src/lib/sales/sales-pipeline.test.ts` passed.

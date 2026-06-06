@@ -280,7 +280,7 @@ function RoiCalculatorCard({
         </div>
       </div>
       <p className="mt-4 text-[11px] leading-5 text-zinc-500">
-        {lang === "ja" 
+        {lang === "ja"
           ? `※ 本シミュレーションは、想定パッケージ価格（${formatMoney(cost, lang)}）に対する売上機会回復効果を算出しています。`
           : `* Simulation calculated against estimated package price (${formatMoney(cost, lang)}) and opportunity recovery potential.`}
       </p>
@@ -363,7 +363,7 @@ function FindingCard({ act, index, copy, lang }: { act: DiagnosticAct; index: nu
         </div>
         <h3 className="mt-5 text-xl font-semibold leading-7 text-zinc-950">{headline}</h3>
         <p className="mt-3 text-sm leading-7 text-zinc-600">{body}</p>
-        
+
         {/* Competitor Benchmark visualization */}
         <CompetitorBenchmarkBar value={act.metric_value} unit={act.metric_unit} icon={act.icon} copy={copy} />
       </div>

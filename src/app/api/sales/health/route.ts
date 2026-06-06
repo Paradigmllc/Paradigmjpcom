@@ -5,6 +5,7 @@ import {
   checkBrowserlessHealth,
   checkCrawl4AiHealth,
   checkCrawleeHealth,
+  checkDifyHealth,
   checkPlaywrightStealthHealth,
   checkStagehandHealth,
   type ServiceHealthResult,
@@ -75,34 +76,12 @@ async function checkSearxng(): Promise<ServiceCheck> {
 }
 
 async function checkDify(): Promise<ServiceCheck> {
-  const key =
-    env("DIFY_DIAGNOSIS_API_KEY") ??
-    env("DIFY_KARTE_TO_REPORT_API_KEY") ??
-    env("DIFY_KARTE_TO_REPORT_KEY") ??
-    env("DIFY_API_KEY")
-  const base = env("DIFY_BASE_URL") ?? env("DIFY_API_URL") ?? "https://api.dify.ai"
-  if (!key) {
-    return {
-      name: "Dify",
-      status: "not_configured",
-      detail: "DIFY_API_KEY 系が未設定 — ローカルフォールバックで動作",
-      url: base,
-    }
-  }
-  try {
-    const res = await fetch(`${base}/v1/workflows/run`, {
-      method: "HEAD",
-      headers: { Authorization: `Bearer ${key}` },
-      signal: AbortSignal.timeout(6_000),
-    })
-    // HEAD が 405 でも到達できていれば OK
-    if (res.status === 404 || res.status === 0) {
-      return { name: "Dify", status: "error", detail: `HTTP ${res.status}`, url: base }
-    }
-    return { name: "Dify", status: "ok", detail: "APIキー設定済み", url: base }
-  } catch (e) {
-    return { name: "Dify", status: "error", detail: e instanceof Error ? e.message : String(e), url: base }
-  }
+  const result = await checkDifyHealth()
+  return serviceHealthToCheck(
+    "Dify",
+    result,
+    env("DIFY_API_BASE") ?? env("DIFY_API_URL") ?? env("DIFY_BASE_URL") ?? "https://api.dify.ai",
+  )
 }
 
 function serviceHealthToCheck(name: string, result: ServiceHealthResult, url?: string | null): ServiceCheck {
