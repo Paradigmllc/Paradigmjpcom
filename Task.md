@@ -4,8 +4,16 @@
 
 - Revenue OS / Sales OS is the operating surface for company karte, reports, outreach approval, form-send lanes, post-outreach capture, and pipeline runs.
 - Supabase remains the SSOT for sales companies, activity logs, operator queues, pipeline runs/steps, video jobs, sync logs, and artifact manifests.
-- n8n is no longer the active orchestrator for new Sales OS work. Trigger.dev is the primary orchestration target; legacy `N8N_*` values are inbound/backward-compat only where explicitly noted.
+- n8n is no longer the active orchestrator for new Sales OS work. Trigger.dev is deployed as the primary orchestration target; legacy `N8N_*` values are inbound/backward-compat only where explicitly noted.
 - Form URL extraction and submission are now wired as one lane family: HTTP form submit, Crawl4AI discovery, Browserless rendered inspection, Crawlee SPA discovery, Playwright Stealth worker submission, and Stagehand agent discovery/submission.
+
+## CODEX UPDATE - 2026-06-06 Keystatic + Trigger.dev Production Closure
+
+- Deployed Trigger.dev production tasks as version `20260606.3` with 6 detected Sales OS tasks.
+- Replaced Coolify Trigger.dev envs with production runtime key, `TRIGGER_PROJECT_REF=proj_ptaxneqibbeboxxboajw`, and `TRIGGER_API_URL=https://api.trigger.dev` for production/preview without printing secrets.
+- Coolify deployment `vtva4jxd52h2ebdso2qs2u6d` finished; authenticated `/api/sales/health` now returns HTTP 200, `status=healthy`, and Trigger.dev `ok`.
+- Fixed Keystatic white screen: App Router was importing Keystatic through the React Server export that returns `null`; `/keystatic` now renders a dedicated client wrapper.
+- Verification: `node scripts/verify-trigger-sales-os.mjs`, `node scripts/test-health.mjs`, `npx tsc --noEmit --pretty false`, `git diff --check`, and `npm run build` passed. Build artifact includes `app/keystatic/[[...params]]/page` client chunk.
 
 ## CODEX UPDATE - 2026-06-06 Revenue OS Trigger.dev Runtime Closure
 
@@ -84,21 +92,17 @@
 
 ## ACTIVE HANDOFF
 
-- Main app files: `src/app/api/sales/health/route.ts`, `src/lib/sales/dashboard.ts`, `src/lib/sales/enrichment-jobs.ts`, `src/lib/sales/post-outreach-webhooks.ts`, `src/lib/sales/oss-service-health.ts`, `src/lib/sales/integration-definitions.ts`, `src/lib/sales/source-coverage.ts`.
-- Worker files: `worker/src/index.ts`, `worker/src/stagehand.ts`, `worker/Dockerfile`, `worker/package.json`, `worker/package-lock.json`, `worker/README.md`, `worker/.env.example`.
 - Production worker: `paradigm-stagehand` on Droplet, public URL `https://stagehand.paradigmjp.com`, internal mode Browserless CDP.
-- Needed to complete Trigger.dev cloud: set one of `TRIGGER_SECRET_KEY` / `TRIGGER_ACCESS_TOKEN` / `TRIGGER_DEV_API_KEY`, then run `npx trigger.dev@4.4.0 deploy` and rerun `node scripts/verify-trigger-sales-os.mjs`.
+- Keystatic fix files: `src/app/keystatic/[[...params]]/page.tsx` and `src/app/keystatic/[[...params]]/KeystaticClient.tsx`.
+- Next deployment should verify `https://keystatic.paradigmjp.com` is no longer a blank body.
 
 ## NEXT ACTIONS
 
-- Commit and push the current Trigger.dev task implementation changes.
-- Deploy the main app through `node scripts/deploy.mjs`.
-- Production smoke after deploy: `/ja`, `/ja/admin/sales`, authenticated `/api/sales/health`, and Stagehand `/health`.
-- After Trigger.dev credentials are available, deploy Trigger tasks, rerun `/api/sales/health`, and run a safe dry-run pipeline dispatch.
+- Commit/push the Keystatic client wrapper fix.
+- Deploy the main app through Coolify and smoke `/ja`, `/ja/admin/sales`, authenticated `/api/sales/health`, `https://stagehand.paradigmjp.com/health`, and `https://keystatic.paradigmjp.com`.
 
 ## RISKS
 
-- Trigger.dev code paths, task IDs, and Coolify non-secret env are implemented, but cloud execution is not complete until a Trigger.dev API key/login is configured and tasks are deployed to Trigger.dev Cloud.
 - Live outbound form submission remains intentionally gated by approval/dry-run settings; CAPTCHA, login, payment, and anti-bot challenges stop for manual review.
 - Stagehand is operational, but its upstream AI SDK dependency currently carries low-severity audit advisories.
-- Coolify host root disk was 90% used during the final deploy even after safe build-cache/unused-image pruning; keep host pressure guards active before the next large deploy.
+- Coolify host root disk is still high (~88% before the latest deploy); keep host pressure guards active before the next large deploy.
