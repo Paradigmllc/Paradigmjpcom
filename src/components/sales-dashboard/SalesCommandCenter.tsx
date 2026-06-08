@@ -133,20 +133,40 @@ function TemplateManagementPanel({ data }: { data: SalesDashboardData }) {
   return (
     <div className="space-y-4 p-4">
       <div className="rounded-lg border border-zinc-200 bg-white">
-        <div className="border-b border-zinc-100 p-4">
-          <h2 className="text-sm font-semibold text-zinc-950">テンプレート管理</h2>
-          <p className="mt-1 text-xs text-zinc-500">
-            全7バリアント × 2言語の診断レポートテンプレートを確認・編集できます。
-            Difyプロンプト、AIプロンプトもここから管理します。
-          </p>
+        <div className="border-b border-zinc-100 p-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-950">テンプレート管理</h2>
+            <p className="mt-1 text-xs text-zinc-500">
+              全7バリアント × 2言語の診断レポートテンプレートを確認・編集できます。
+            </p>
+          </div>
+          <a href="/ja/report/template-preview" target="_blank" rel="noopener noreferrer"
+            className="inline-flex h-9 items-center gap-2 rounded-lg bg-zinc-950 px-4 text-xs font-bold text-white hover:bg-zinc-800">
+            <ExternalLink className="h-3.5 w-3.5" />
+            新規タブで開く
+          </a>
         </div>
         <div className="p-4">
-          <iframe
-            src="/ja/report/template-preview"
-            className="w-full rounded-lg border border-zinc-200"
-            style={{ height: "calc(100vh - 280px)", minHeight: "600px" }}
-            title="テンプレートプレビュー"
-          />
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { variant: "website_diagnostic", label: "Web成長診断", desc: "速度・OGP・技術スタック", color: "indigo" },
+              { variant: "meo", label: "MEO診断", desc: "Googleマップ・口コミ", color: "emerald" },
+              { variant: "security", label: "セキュリティ診断", desc: "SSL・脆弱性・証明書", color: "rose" },
+              { variant: "japan_entry", label: "日本参入診断", desc: "法規制・決済・ロードマップ", color: "blue" },
+              { variant: "video_subscription", label: "動画診断", desc: "制作・配信・エンゲージメント", color: "violet" },
+              { variant: "subsidy", label: "補助金診断", desc: "マッチング・申請計画", color: "teal" },
+              { variant: "outreach", label: "アウトリーチ診断", desc: "フォーム・ファネル", color: "orange" },
+            ].map((v) => (
+              <a key={v.variant} href={`/ja/report/template-preview#${v.variant}`} target="_blank" rel="noopener noreferrer"
+                className="rounded-lg border border-zinc-200 p-4 hover:border-zinc-400 hover:shadow-sm transition-all">
+                <div className="text-xs font-bold text-zinc-900">{v.label}</div>
+                <div className="mt-1 text-[10px] text-zinc-500">{v.desc}</div>
+                <div className="mt-2">
+                  <span className={`inline-flex rounded px-1.5 py-0.5 text-[9px] font-bold bg-${v.color}-50 text-${v.color}-700`}>{v.variant}</span>
+                </div>
+              </a>
+            ))}
+          </div>
         </div>
       </div>
       <div className="rounded-lg border border-zinc-200 bg-white p-4">

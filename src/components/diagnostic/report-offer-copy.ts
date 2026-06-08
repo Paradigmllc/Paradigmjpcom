@@ -11,7 +11,7 @@ export type ReportOfferCopy = {
   screenshotAlt: string
 }
 
-type OfferCopyByLanguage = {
+export type OfferCopyByLanguage = {
   ja: ReportOfferCopy
   en: ReportOfferCopy
 }

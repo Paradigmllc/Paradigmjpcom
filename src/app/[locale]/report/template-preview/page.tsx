@@ -1,48 +1,48 @@
-import type { Metadata } from "next"
+"use client"
+
+import { useState } from "react"
 import { OFFER_COPY, type OfferCopyByLanguage } from "@/components/diagnostic/report-offer-copy"
 import { REPORT_COPY, normalizeReportLang } from "@/components/diagnostic/report-copy"
 import { INDUSTRY_HOOK_JA, INDUSTRY_HOOK_EN } from "@/lib/sales/diagnostic"
 
-export const dynamic = "force-dynamic"
-
-export const metadata: Metadata = {
-  title: "Template Preview — Revenue OS",
-  robots: { index: false, follow: false },
-}
-
-const VARIANTS = ["website_diagnostic", "meo", "security", "japan_entry", "video_subscription", "subsidy", "outreach"] as const
-const LANGS = ["ja", "en"] as const
-const INDUSTRIES = ["beauty_salon", "dental", "restaurant", "construction", "accounting", "retail", "cleaning", "consulting"] as const
-
-const ISSUE_DEMO = {
-  ja: [
-    { code: "speed_critical", label: "スマホ表示速度", icon: "SPEED", severity: "critical", metric: "38点", body: "モバイル表示速度の遅延は直帰率上昇の最大要因。1秒の遅れがコンバージョン率を約20%低下。" },
-    { code: "ssl_expired", label: "信頼表示", icon: "TRUST", severity: "warning", metric: "要確認", body: "SSL設定の不備はブラウザで「保護されていない通信」警告を表示。信頼を一瞬で損なう。" },
-    { code: "no_ogp", label: "SNS共有表示", icon: "SNS", severity: "info", metric: "未整備", body: "SNSプレビュー未整備で共有時のクリック率と初期信頼が大幅に低下。" },
-  ],
-  en: [
-    { code: "speed_critical", label: "mobile speed", icon: "SPEED", severity: "critical", metric: "38 pts", body: "Slow mobile loading is the leading cause of bounce. A 1-second delay drops conversion ~20%." },
-    { code: "ssl_expired", label: "trust display", icon: "TRUST", severity: "warning", metric: "Verify", body: "SSL issues cause browsers to show 'Not Secure'. This instantly breaks prospect trust." },
-    { code: "no_ogp", label: "social preview", icon: "SNS", severity: "info", metric: "Not set", body: "Missing social previews cause shared links to look generic, hurting click-through and credibility." },
-  ],
-}
-
-const variantDescriptions: Record<string, string> = {
-  website_diagnostic: "Web成長診断 — デフォルト。速度・OGP・鮮度を軸に改善提案",
-  meo: "MEO診断 — Googleマップ・ローカル検索最適化",
-  security: "セキュリティ診断 — SSL・CMS・運用基盤の脆弱性",
-  japan_entry: "日本市場参入診断 — 海外企業向け日本参入分析",
-  video_subscription: "動画成長診断 — 動画制作・配信",
-  subsidy: "補助金診断 — 活用可能な補助金・助成金",
-  outreach: "アウトリーチ診断 — フォーム営業自動化",
-}
-
-function getHooks(industry: string, lang: string): string {
-  if (lang === "ja") return (INDUSTRY_HOOK_JA as Record<string, string>)[industry] ?? "—"
-  return (INDUSTRY_HOOK_EN as Record<string, string>)[industry] ?? "—"
-}
-
 export default function TemplatePreviewPage() {
+  const VARIABLES = {
+    variants: ["website_diagnostic", "meo", "security", "japan_entry", "video_subscription", "subsidy", "outreach"] as const,
+    langs: ["ja", "en"] as const,
+    industries: ["beauty_salon", "dental", "restaurant", "construction", "accounting", "retail", "cleaning", "consulting"] as const,
+  }
+
+  const VARIANTS = VARIABLES.variants
+  const LANGS = VARIABLES.langs
+  const INDUSTRIES = VARIABLES.industries
+
+  const variantDescriptions: Record<string, string> = {
+    website_diagnostic: "Web成長診断",
+    meo: "MEO診断",
+    security: "セキュリティ診断",
+    japan_entry: "日本参入診断",
+    video_subscription: "動画診断",
+    subsidy: "補助金診断",
+    outreach: "アウトリーチ診断",
+  }
+
+  const ISSUE_DEMO: Record<string, Array<{ code: string; label: string; icon: string; severity: string; metric: string; body: string }>> = {
+    ja: [
+      { code: "speed_critical", label: "スマホ表示速度", icon: "SPEED", severity: "critical", metric: "38点", body: "モバイル表示速度の遅延は直帰率上昇の最大要因。1秒の遅れがコンバージョン率を約20%低下。" },
+      { code: "ssl_expired", label: "信頼表示", icon: "TRUST", severity: "warning", metric: "要確認", body: "SSL設定の不備はブラウザで「保護されていない通信」警告を表示。信頼を一瞬で損なう。" },
+      { code: "no_ogp", label: "SNS共有表示", icon: "SNS", severity: "info", metric: "未整備", body: "SNSプレビュー未整備で共有時のクリック率と初期信頼が大幅に低下。" },
+    ],
+    en: [
+      { code: "speed_critical", label: "mobile speed", icon: "SPEED", severity: "critical", metric: "38 pts", body: "Slow mobile loading is the leading cause of bounce." },
+      { code: "ssl_expired", label: "trust display", icon: "TRUST", severity: "warning", metric: "Verify", body: "SSL issues cause browsers to show Not Secure warning." },
+      { code: "no_ogp", label: "social preview", icon: "SNS", severity: "info", metric: "Not set", body: "Missing social previews hurt click-through and credibility." },
+    ],
+  }
+
+  function getHooks(industry: string, lang: string): string {
+    if (lang === "ja") return (INDUSTRY_HOOK_JA as Record<string, string>)[industry] ?? "—"
+    return (INDUSTRY_HOOK_EN as Record<string, string>)[industry] ?? "—"
+  }
   // Total patterns: 7 variants × 2 full langs × 8 industries = 112 basic combinations
   // Plus issue combos, making it effectively ~500 unique report patterns
 
