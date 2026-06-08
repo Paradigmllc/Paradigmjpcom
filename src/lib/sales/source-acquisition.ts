@@ -19,6 +19,8 @@ export interface SourceAcquisitionSourceMetric {
   successRate: number
   averageScore: number
   lastMeasuredAt: string | null
+  detail?: string
+  meaning?: string
 }
 
 export interface SourceAcquisitionCategoryMetric {
@@ -157,6 +159,8 @@ function emptySourceMetric(row: SourceRunRow): SourceAcquisitionSourceMetric {
     successRate: 0,
     averageScore: 0,
     lastMeasuredAt: null,
+    detail: typeof row.details?.detail === "string" ? row.details.detail : undefined,
+    meaning: typeof row.details?.meaning === "string" ? row.details.meaning : undefined,
   }
 }
 
@@ -181,6 +185,12 @@ function buildSourceMetrics(rows: SourceRunRow[]): {
     current.total += 1
     current.scoreSum += toNumber(row.score)
     current.lastMeasuredAt = latest([current.lastMeasuredAt, row.measured_at])
+    if (!current.detail && row.details?.detail) {
+      current.detail = row.details.detail as string
+    }
+    if (!current.meaning && row.details?.meaning) {
+      current.meaning = row.details.meaning as string
+    }
     incrementStatus(current, row.status)
     bySource.set(key, current)
   }
