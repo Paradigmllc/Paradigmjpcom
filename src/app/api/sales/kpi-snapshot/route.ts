@@ -24,7 +24,8 @@ export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as { date?: string }
     date = body.date
-  } catch {
+  } catch (e) {
+    console.error("[kpi-snapshot] failed to parse request body:", e)
     date = undefined
   }
 

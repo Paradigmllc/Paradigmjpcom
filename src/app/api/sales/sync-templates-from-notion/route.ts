@@ -53,7 +53,8 @@ export async function POST(req: NextRequest) {
   let body: { db_id?: string; region?: string }
   try {
     body = (await req.json().catch(() => ({}))) as { db_id?: string; region?: string }
-  } catch {
+  } catch (e) {
+    console.error("[sync-templates-from-notion] failed to parse request body:", e)
     body = {}
   }
   const region: Region = isValidRegion(body.region ?? "") ? (body.region as Region) : "jp"

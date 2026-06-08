@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies, headers } from "next/headers";
-import { SalesCommandCenter } from "@/components/sales-dashboard/SalesCommandCenter";
+import { SalesDashboardShell } from "@/components/sales-dashboard/SalesDashboardShell";
 import { authorizePayloadAdminRequest } from "@/lib/admin-auth";
 import { getSalesDashboardData } from "@/lib/sales/dashboard";
 
@@ -60,5 +60,5 @@ export default async function SalesDashboardPage({ params }: Props) {
   if (!authed) return <UnauthorizedView />;
 
   const dashboard = await getSalesDashboardData({ reportLocale: locale });
-  return <SalesCommandCenter data={dashboard} locale={locale} />;
+  return <SalesDashboardShell initialData={dashboard} locale={locale} />;
 }

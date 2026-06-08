@@ -43,7 +43,8 @@ export async function POST(req: NextRequest) {
   let event: NotionWebhookEvent
   try {
     event = JSON.parse(rawBody) as NotionWebhookEvent
-  } catch {
+  } catch (e) {
+    console.error("[notion-webhook] failed to parse event body:", e)
     return NextResponse.json({ ok: false, error: "invalid JSON" }, { status: 400 })
   }
 

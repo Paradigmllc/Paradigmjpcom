@@ -213,8 +213,9 @@ export async function checkKeystaticHealth(): Promise<ServiceHealthResult> {
       redirect: "manual",
       signal: AbortSignal.timeout(10_000),
     })
-    if (res.status >= 500) return { balanceStatus: "error", balanceLabel: `HTTP ${res.status}` }
-    return { balanceStatus: "ok", balanceLabel: `reachable HTTP ${res.status}` }
+    if (res.status >= 400) return { balanceStatus: "error", balanceLabel: `HTTP ${res.status}` }
+    if (res.status >= 300 && res.status < 400) return { balanceStatus: "ok", balanceLabel: `redirect HTTP ${res.status}` }
+    return { balanceStatus: "ok", balanceLabel: `HTTP ${res.status}` }
   } catch (error) {
     return healthError("Keystatic", error)
   }

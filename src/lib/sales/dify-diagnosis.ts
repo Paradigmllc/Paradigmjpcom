@@ -182,7 +182,6 @@ export async function runDifyDiagnosis(company: SalesCompany): Promise<DifyDiagn
 
   const payload = buildDifyPayload(company)
   const userPayload = JSON.stringify(payload)
-  const abortSignal = new AbortController()
 
   try {
     const systemPrompt = await getAiPrompt("dify_diagnosis_system")

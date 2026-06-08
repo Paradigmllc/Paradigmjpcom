@@ -15,9 +15,11 @@ import {
   ShieldAlert,
   Sparkles,
 } from "lucide-react"
+import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
+import { DASHBOARD_QUERY_KEY } from "./SalesDashboardShell"
 
 type LaneStatus = "ready" | "warning" | "blocked"
 
@@ -140,6 +142,7 @@ function toolUrl(data: SalesDashboardData, slug: string): string | null {
 }
 
 export function SalesUnifiedOpsPanel({ data }: { data: SalesDashboardData }) {
+  const queryClient = useQueryClient()
   const [refreshing, setRefreshing] = useState(false)
   const lanes = useMemo(() => buildLanes(data), [data])
   const rows = useMemo(() => ssotRows(data), [data])
@@ -158,7 +161,7 @@ export function SalesUnifiedOpsPanel({ data }: { data: SalesDashboardData }) {
       const json = (await res.json()) as { ok?: boolean; error?: string; count?: number }
       if (!res.ok || json.ok === false) throw new Error(json.error ?? "統合ステータスを更新できませんでした。")
       toast.success(`統合監査を更新しました。${json.count ?? 0}件をSupabaseに保存済みです。`)
-      window.location.reload()
+      await queryClient.invalidateQueries({ queryKey: DASHBOARD_QUERY_KEY })
     } catch (error) {
       console.error("[sales-unified-ops] integration refresh failed:", error)
       toast.error(error instanceof Error ? error.message : "統合ステータス更新に失敗しました。")

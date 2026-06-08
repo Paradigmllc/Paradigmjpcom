@@ -150,10 +150,24 @@ function toolUrl(data: SalesDashboardData, slug: string): string | null {
   return data.toolConnections.find((tool) => tool.slug === slug)?.baseUrl ?? null
 }
 
+function resolveSupabaseStudioUrl(): string {
+  const envUrl = process.env.NEXT_PUBLIC_SUPABASE_STUDIO_URL?.trim()
+  if (envUrl) return envUrl
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
+  if (supabaseUrl) {
+    const match = supabaseUrl.match(/https:\/\/([a-z0-9]+)\.supabase\.co/)
+    if (match?.[1]) return `https://supabase.com/dashboard/project/${match[1]}`
+  }
+
+  console.error("[sales-command-center] Cannot resolve Supabase Studio URL: NEXT_PUBLIC_SUPABASE_STUDIO_URL and NEXT_PUBLIC_SUPABASE_URL are both unset")
+  return "https://supabase.com/dashboard"
+}
+
 function resolveExternalGuiUrl(tab: SalesTab, data: SalesDashboardData): string {
   if (tab === "directus") return withPath(toolUrl(data, "directus") ?? "https://directus.paradigmjp.com", "/admin")
   if (tab === "keystatic") return toolUrl(data, "keystatic") ?? "https://keystatic.paradigmjp.com"
-  if (tab === "supabaseStudio") return process.env.NEXT_PUBLIC_SUPABASE_STUDIO_URL?.trim() || "https://supabase.com/dashboard/project/yihdmgtxiqfdgdueolub"
+  if (tab === "supabaseStudio") return resolveSupabaseStudioUrl()
   if (tab === "analytics") return toolUrl(data, "metabase") ?? process.env.METABASE_BASE_URL?.trim() ?? "https://metabase.paradigmjp.com"
   return "/"
 }
