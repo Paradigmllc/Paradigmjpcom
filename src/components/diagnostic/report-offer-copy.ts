@@ -121,10 +121,52 @@ const SECURITY: OfferCopyByLanguage = {
   },
 }
 
-const OFFER_COPY: Record<TemplateVariant, OfferCopyByLanguage> = {
+const MEO: OfferCopyByLanguage = {
+  ja: {
+    reportLabel: "MEO・ローカル集客診断レポート",
+    badge: "MEO・マップ最適化診断",
+    heroLead: "Googleマップ・ローカル検索での表示順位、口コミ、写真、営業時間の最適化状況を分析しました。地図からの集客機会損失を可視化します。",
+    primaryCta: "MEO改善プランを見る",
+    finalHeading: "地図で選ばれる店舗に変える",
+    finalBody: "検索順位だけでなく、口コミ返信・写真更新・情報鮮度の3軸でローカル集客を強化します。",
+    screenshotAlt: "MEO診断スクリーンショット",
+  },
+  en: {
+    reportLabel: "Local SEO diagnostic report",
+    badge: "Map optimization assessment",
+    heroLead: "We analyzed Google Maps visibility, reviews, photos, and business hours to quantify local discovery losses.",
+    primaryCta: "View MEO plan",
+    finalHeading: "Get chosen on the map",
+    finalBody: "Strengthen local discovery with a three-axis approach: search ranking, review management, and content freshness.",
+    screenshotAlt: "MEO diagnostic screenshot",
+  },
+}
+
+const SUBSIDY: OfferCopyByLanguage = {
+  ja: {
+    reportLabel: "補助金活用診断レポート",
+    badge: "補助金・支援制度診断",
+    heroLead: "御社の事業内容とサイトの公開情報から、活用可能性のある補助金・助成金・支援制度を整理しました。申請期限と適合条件を踏まえた優先順位付きです。",
+    primaryCta: "補助金活用プランを見る",
+    finalHeading: "使える補助金を確実に取る",
+    finalBody: "制度調査から申請代行、採択後の報告まで一貫してサポートします。期限切れや不備による不採択を防ぎます。",
+    screenshotAlt: "補助金診断スクリーンショット",
+  },
+  en: {
+    reportLabel: "Subsidy opportunity diagnostic report",
+    badge: "Government grant assessment",
+    heroLead: "We matched your business profile against available subsidies, grants, and support programs with deadline-aware prioritization.",
+    primaryCta: "View subsidy plan",
+    finalHeading: "Secure available funding",
+    finalBody: "End-to-end support from program identification through application writing to post-award reporting.",
+    screenshotAlt: "Subsidy diagnostic screenshot",
+  },
+}
+
+const OFFER_COPY: Record<string, OfferCopyByLanguage> = {
   website_diagnostic: WEBSITE,
-  meo: WEBSITE,
-  subsidy: WEBSITE,
+  meo: MEO,
+  subsidy: SUBSIDY,
   security: SECURITY,
   japan_entry: JAPAN_ENTRY,
   video_subscription: VIDEO,

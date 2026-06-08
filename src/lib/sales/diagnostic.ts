@@ -91,6 +91,7 @@ const ISSUE_ICON: Partial<Record<string, string>> = {
   no_ogp: "SNS",
   no_sns: "REACH",
   copyright_old: "FRESH",
+  ua_残存: "DATA",
 }
 
 const ISSUE_LABEL_JA: Partial<Record<string, string>> = {
@@ -100,6 +101,7 @@ const ISSUE_LABEL_JA: Partial<Record<string, string>> = {
   no_ogp: "SNS共有表示",
   no_sns: "外部接点",
   copyright_old: "更新鮮度",
+  ua_残存: "アナリティクス移行",
 }
 
 const ISSUE_LABEL_EN: Partial<Record<string, string>> = {
@@ -109,6 +111,7 @@ const ISSUE_LABEL_EN: Partial<Record<string, string>> = {
   no_ogp: "social preview",
   no_sns: "external reach",
   copyright_old: "content freshness",
+  ua_残存: "analytics migration",
 }
 
 const ISSUE_METRIC: Partial<
@@ -167,6 +170,15 @@ const ISSUE_METRIC: Partial<
     benchJa: "直近の運用感が伝わる",
     benchEn: "Recent activity is visible",
     fallbackValue: "要確認",
+  },
+  ua_残存: {
+    labelJa: "アナリティクス移行状況",
+    labelEn: "Analytics migration",
+    unitJa: "",
+    unitEn: "",
+    benchJa: "GA4移行済み・旧UAタグ撤去済み",
+    benchEn: "GA4 migrated, old UA tag removed",
+    fallbackValue: "未移行",
   },
 }
 
@@ -253,6 +265,11 @@ function issueFallbackBody(company: SalesCompany, issueCode: IssueCode, locale: 
       ? `フッターの著作権表示（Copyright）が数年前の表記のまま停止していると、情報更新の滞りや管理体制の緩さを露呈し、B2B取引の初回審査や契約時の与信判断にマイナス影響を与えます。`
       : `An outdated copyright year in the footer signals neglected website maintenance. It subtly raises credibility questions during B2B risk assessments and initial compliance checks.`
   }
+  if (issueCode === "ua_残存") {
+    return isJp
+      ? `旧UA（Universal Analytics）タグが残存していると2024年7月以降データ計測が停止し、正確なサイト分析ができなくなっています。GA4移行はGoogle検索順位にも影響する重要項目です。`
+      : `Legacy Universal Analytics tags stopped collecting data after July 2024. Migrating to GA4 is critical for accurate analytics and impacts Google search ranking factors.`
+  }
 
   const label = issueLabel(issueCode, locale)
   if (!isJp) {
@@ -304,12 +321,25 @@ function buildAct(
   locale: ReportLocale,
 ): DiagnosticAct {
   const severity: Severity = template?.severity ?? (issueCode === "speed_critical" ? "critical" : "warning")
+  const actType = severityToActType(severity)
   const meta = issueMetric(issueCode)
+
+  // Route body based on act type: pain → template.pain, fear → template.fear, hope → template.loss
+  const bodyFallback = issueFallbackBody(company, issueCode, locale)
+  let body: string
+  if (actType === "pain") {
+    body = template?.pain ?? template?.fear ?? template?.loss ?? bodyFallback
+  } else if (actType === "fear") {
+    body = template?.fear ?? template?.pain ?? template?.loss ?? bodyFallback
+  } else {
+    body = template?.loss ?? template?.fear ?? template?.pain ?? bodyFallback
+  }
+
   return {
-    type: severityToActType(severity),
+    type: actType,
     icon: issueIcon(issueCode),
     headline: template?.headline ?? `${issueLabel(issueCode, locale)}${isJa(locale) ? "の改善余地" : " improvement opportunity"}`,
-    body: template?.pain ?? template?.fear ?? template?.loss ?? issueFallbackBody(company, issueCode, locale),
+    body,
     metric_label: isJa(locale) ? meta.labelJa : meta.labelEn,
     metric_value: String(metricValue),
     metric_unit: isJa(locale) ? meta.unitJa : meta.unitEn,
