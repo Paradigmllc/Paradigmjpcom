@@ -292,7 +292,7 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
     }
     const candidates = normalizeSearxngResults(rawRows, query)
     if (candidates.length > 0) {
-      const { error } = await sb.from("sales_searxng_search_results").insert(
+      const { error } = await sb.from("sales_searxng_search_results").upsert(
         candidates.map((candidate, index) => ({
           run_id: run.id,
           result_index: index,
@@ -307,6 +307,7 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
           rejection_reason: candidate.rejectionReason,
           raw: candidate.raw,
         })),
+        { onConflict: "run_id,domain" },
       )
       if (error) throw new Error(error.message)
     }
