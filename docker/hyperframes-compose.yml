@@ -1,0 +1,22 @@
+services:
+  hyperframes:
+    image: paradigm-hyperframes:latest
+    container_name: paradigm-hyperframes
+    restart: unless-stopped
+    environment:
+      - HYPERFRAMES_API_KEY=hf-oss-20260609-key
+      - PORT=3035
+    volumes:
+      - /data/hyperframes-work:/tmp/hyperframes-work
+    networks:
+      - coolify
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=coolify"
+      - "traefik.http.routers.hyperframes.entryPoints=https"
+      - "traefik.http.routers.hyperframes.rule=Host(`hyperframes.paradigmjp.com`)"
+      - "traefik.http.routers.hyperframes.tls=true"
+      - "traefik.http.services.hyperframes.loadbalancer.server.port=3035"
+networks:
+  coolify:
+    external: true
