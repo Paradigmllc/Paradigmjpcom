@@ -24,7 +24,7 @@ const DIFY_API_KEY = env.DIFY_API_KEY;
 const DIFY_BASE_URL = env.DIFY_BASE_URL || "https://api.dify.ai";
 const N8N_BASE_URL = env.N8N_BASE_URL;
 const TRIGGER_SECRET_KEY = env.TRIGGER_SECRET_KEY || env.TRIGGER_ACCESS_TOKEN || env.TRIGGER_DEV_API_KEY;
-const TRIGGER_API_URL = env.TRIGGER_API_URL || "https://api.trigger.dev";
+const TRIGGER_API_URL = env.TRIGGER_API_URL || "http://localhost:3010";
 
 async function check() {
   console.log('--- SUPABASE ---');

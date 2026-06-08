@@ -22,9 +22,9 @@ vi.mock("./sales-pipeline-helpers", () => ({
   getSalesPipelineTriggerConfig: () => ({
     taskId: "sales-os-pipeline",
     secretKey: null,
-    apiUrl: "https://api.trigger.dev",
+    apiUrl: "http://localhost:3010",
     dashboardUrl: null,
-    endpoint: "https://api.trigger.dev/api/v1/tasks/sales-os-pipeline/trigger",
+    endpoint: "http://localhost:3010/api/v1/tasks/sales-os-pipeline/trigger",
   }),
   updateRun: mocks.updateRun,
 }))

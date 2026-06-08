@@ -12,5 +12,5 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authent
 `;
 fs.writeFileSync('grants.sql', sql);
 execSync('scp grants.sql root@139.59.250.5:/root/supabase-oss/grants.sql');
-const out = execSync('ssh root@139.59.250.5 "docker exec -i supabase-oss-db-1 psql -U postgres -d postgres < /root/supabase-oss/grants.sql"');
+const out = execSync('ssh root@139.59.250.5 "docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/grants.sql"');
 console.log('Grants executed: ' + out.toString());

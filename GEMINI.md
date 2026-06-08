@@ -11,3 +11,5 @@
 - Archive long handoffs in `docs/handoff-archive/` and long specs in `docs/knowledge/` or `docs/refactor/`.
 - Before finishing any task that edits agent/context files, run `npm run context:audit`.
 - If `npm run context:audit` fails, fix the context bloat before continuing.
+- 【永久保存ルール】ブラウザでの検証や確認を行う際は、シークレット（`browser_subagent`）ではなく、拡張機能インストール済みのユーザーの既存のログイン済みブラウザを開くため、PowerShell コマンド `Start-Process "https://..."` を実行して直接開くこと。
+

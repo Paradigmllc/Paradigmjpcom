@@ -164,44 +164,6 @@ function BarList({ title, rows, empty }: { title: string; rows: [string, number]
   )
 }
 
-function SyncButton() {
-  const [running, setRunning] = useState(false)
-
-  async function runSync() {
-    setRunning(true)
-    try {
-      const res = await fetch("/api/sales/twenty/pull", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ limit: 200 }),
-      })
-      const data = (await res.json()) as { ok?: boolean; updated?: number; skipped?: number; error?: string }
-      if (!res.ok || !data.ok) {
-        toast.error(data.error ?? "Twenty同期に失敗しました")
-        return
-      }
-      toast.success(`TwentyからSupabaseへ同期しました: 更新 ${data.updated ?? 0} / skip ${data.skipped ?? 0}`)
-    } catch (error) {
-      console.error("[sales-dashboard] Twenty pull failed:", error)
-      toast.error(error instanceof Error ? error.message : "Twenty同期に失敗しました")
-    } finally {
-      setRunning(false)
-    }
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={runSync}
-      disabled={running}
-      aria-label="TwentyからSupabaseへ企業カルテを同期"
-      className="inline-flex h-9 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-sm font-medium text-zinc-800 transition hover:border-zinc-400 disabled:cursor-not-allowed disabled:opacity-60"
-    >
-      <RefreshCw size={15} className={running ? "animate-spin" : ""} aria-hidden />
-      Twenty {"->"} Supabase 同期
-    </button>
-  )
-}
 
 function CompanyRow({ company, updating, onChangeStatus }: { company: DashboardCompany; updating: boolean; onChangeStatus: (id: string, s: string) => void }) {
   return (
@@ -480,10 +442,13 @@ export function IntegrationsPanel({ data }: { data: SalesDashboardData }) {
       <div className="rounded-lg border border-zinc-200 bg-white p-4">
         <div className="flex flex-col gap-3 border-b border-zinc-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-zinc-950">同期ログ</h2>
-            <p className="mt-1 text-xs text-zinc-500">SupabaseをSSOTにし、Twenty側の営業編集だけを限定的に取り込みます。</p>
+            <h2 className="text-sm font-semibold text-zinc-950">自動同期ログ</h2>
+            <p className="mt-1 text-xs text-zinc-500">SupabaseとTwenty CRMは自動でリアルタイムに双方向同期されています。</p>
           </div>
-          <SyncButton />
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+            リアルタイム自動相互同期中
+          </span>
         </div>
         <div className="mt-4 divide-y divide-zinc-100">
           {data.syncLogs.length === 0 ? <p className="py-8 text-sm text-zinc-500">同期ログはまだありません。</p> : data.syncLogs.slice(0, 14).map((log) => (
@@ -534,6 +499,8 @@ function IntegrationInventoryPanel({
 }) {
   const [filterType, setFilterType] = useState<"all" | "diagnostic" | "outreach" | "orchestration" | "crm" | "asset" | "proxy">("all")
   const [sortBy, setSortBy] = useState<"diagnostic_first" | "name_asc" | "status_ready">("diagnostic_first")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState<"all" | "ready" | "partial" | "missing">("all")
 
   // カテゴリ別集計のラベル日本語化
   const mappedCategories = useMemo(() => {
@@ -549,7 +516,7 @@ function IntegrationInventoryPanel({
   const processedItems = useMemo(() => {
     let items = [...data.integrationStatus]
 
-    // フィルタリング
+    // 1. カテゴリ/フィルタータイプ
     if (filterType !== "all") {
       items = items.filter((item) => {
         const mapping = CATEGORY_MAP[item.category]
@@ -575,7 +542,23 @@ function IntegrationInventoryPanel({
       })
     }
 
-    // ソート
+    // 2. ステータスフィルター
+    if (statusFilter !== "all") {
+      items = items.filter((item) => item.status === statusFilter)
+    }
+
+    // 3. テキスト検索 (ツール名 or 用途/役割)
+    if (searchTerm.trim() !== "") {
+      const q = searchTerm.toLowerCase()
+      items = items.filter(
+        (item) =>
+          item.displayName.toLowerCase().includes(q) ||
+          item.role.toLowerCase().includes(q) ||
+          item.category.toLowerCase().includes(q)
+      )
+    }
+
+    // 4. ソート
     items.sort((a, b) => {
       if (sortBy === "diagnostic_first") {
         const aDiag = CATEGORY_MAP[a.category]?.isDiagnostic ? 1 : 0
@@ -600,7 +583,7 @@ function IntegrationInventoryPanel({
     })
 
     return items
-  }, [data.integrationStatus, filterType, sortBy])
+  }, [data.integrationStatus, filterType, sortBy, searchTerm, statusFilter])
 
   return (
     <div className="rounded-lg border border-zinc-200 bg-white p-4">
@@ -623,10 +606,11 @@ function IntegrationInventoryPanel({
         </div>
       </div>
 
-      {/* 絞り込み・ソート用のコントロールバー */}
-      <div className="mt-4 flex flex-col gap-3 border-b border-zinc-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* 絞り込み・ソート・検索用のコントロールバー */}
+      <div className="mt-4 flex flex-col gap-3 border-b border-zinc-100 pb-3">
+        {/* 上段: カテゴリ選択ボタン */}
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-zinc-500">フィルター:</span>
+          <span className="text-xs font-semibold text-zinc-500">カテゴリー:</span>
           {[
             { id: "all", label: "すべて" },
             { id: "diagnostic", label: "診断ソースのみ" },
@@ -649,17 +633,53 @@ function IntegrationInventoryPanel({
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-zinc-500">ソート:</span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
-            className="rounded border border-zinc-200 bg-white px-2.5 py-1 text-xs outline-none focus:border-zinc-500"
-          >
-            <option value="diagnostic_first">診断ソース優先</option>
-            <option value="name_asc">ツール名順</option>
-            <option value="status_ready">接続状態順</option>
-          </select>
+
+        {/* 下段: 検索・ステータス・ソート */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+            {/* 検索入力 */}
+            <div className="relative flex-1 max-w-md">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-zinc-400">
+                <Search size={14} />
+              </span>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="ツール名や用途・目的で検索..."
+                className="w-full rounded border border-zinc-200 bg-white py-1.5 pl-9 pr-3 text-xs outline-none focus:border-zinc-500 placeholder-zinc-400"
+              />
+            </div>
+
+            {/* ステータス絞り込み */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-zinc-500 shrink-0">接続状態:</span>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="rounded border border-zinc-200 bg-white px-2.5 py-1.5 text-xs outline-none focus:border-zinc-500"
+              >
+                <option value="all">すべて</option>
+                <option value="ready">接続済み (ready)</option>
+                <option value="partial">一部接続 (partial)</option>
+                <option value="missing">未接続 (missing)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* ソート */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-zinc-500 shrink-0">ソート:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="rounded border border-zinc-200 bg-white px-2.5 py-1.5 text-xs outline-none focus:border-zinc-500"
+            >
+              <option value="diagnostic_first">診断ソース優先</option>
+              <option value="name_asc">ツール名順</option>
+              <option value="status_ready">接続状態順</option>
+            </select>
+          </div>
         </div>
       </div>
 

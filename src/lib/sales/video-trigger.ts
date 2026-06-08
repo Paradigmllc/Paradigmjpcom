@@ -9,7 +9,7 @@ function optionalEnv(name: string): string | null {
 export function getTriggerVideoPipelineConfig() {
   const taskId = optionalEnv("TRIGGER_VIDEO_PIPELINE_TASK_ID") ?? optionalEnv("TRIGGER_DEV_VIDEO_PIPELINE_TASK_ID") ?? optionalEnv("TRIGGER_VIDEO_TASK_ID") ?? "sales-video-pipeline"
   const secretKey = optionalEnv("TRIGGER_SECRET_KEY") ?? optionalEnv("TRIGGER_ACCESS_TOKEN") ?? optionalEnv("TRIGGER_DEV_API_KEY")
-  const apiUrl = (optionalEnv("TRIGGER_API_URL") ?? "https://api.trigger.dev").replace(/\/+$/, "")
+  const apiUrl = (optionalEnv("TRIGGER_API_URL") ?? "http://localhost:3010").replace(/\/+$/, "")
   const dashboardUrl = optionalEnv("TRIGGER_DASHBOARD_URL") ?? optionalEnv("NEXT_PUBLIC_TRIGGER_DASHBOARD_URL")
   const endpoint = taskId ? `${apiUrl}/api/v1/tasks/${encodeURIComponent(taskId)}/trigger` : null
   return { taskId, secretKey, apiUrl, dashboardUrl, endpoint }

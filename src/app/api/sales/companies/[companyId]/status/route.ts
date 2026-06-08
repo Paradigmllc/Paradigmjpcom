@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { authorizePayloadAdminRequest } from "@/lib/admin-auth";
 import { getServiceSalesSupabase } from "@/lib/supabase";
 import { isValidPipelineStatus, PIPELINE_STATUSES } from "@/lib/sales/types";
+import { syncCompanyKarteToTwenty } from "@/lib/sales/twenty-sync";
 
 export async function POST(
   req: Request,
@@ -41,6 +42,11 @@ export async function POST(
         { status: 500 }
       );
     }
+
+    // Trigger automatic real-time sync to Twenty in the background
+    syncCompanyKarteToTwenty(companyId).catch((err) => {
+      console.error("[sales-companies-status] Auto Twenty sync failed:", err);
+    });
 
     return NextResponse.json({ ok: true, company });
   } catch (error) {

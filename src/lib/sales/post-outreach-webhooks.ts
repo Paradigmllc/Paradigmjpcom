@@ -111,7 +111,7 @@ export async function forwardPostOutreachToTriggerDev(input: {
     return { ok: false, error: "Trigger.dev secret key not configured" }
   }
 
-  const apiUrl = (process.env.TRIGGER_API_URL ?? "https://api.trigger.dev").replace(/\/+$/, "")
+  const apiUrl = (process.env.TRIGGER_API_URL ?? "http://localhost:3010").replace(/\/+$/, "")
   const endpoint = `${apiUrl}/api/v1/tasks/${encodeURIComponent(input.taskId)}/trigger`
 
   try {
