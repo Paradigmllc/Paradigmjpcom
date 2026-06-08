@@ -163,7 +163,7 @@ const SUBSIDY: OfferCopyByLanguage = {
   },
 }
 
-const OFFER_COPY: Record<string, OfferCopyByLanguage> = {
+export const OFFER_COPY: Record<string, OfferCopyByLanguage> = {
   website_diagnostic: WEBSITE,
   meo: MEO,
   subsidy: SUBSIDY,

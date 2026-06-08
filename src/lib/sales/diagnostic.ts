@@ -62,7 +62,7 @@ export interface DiagnosticReportData {
   report_url: string
 }
 
-const INDUSTRY_HOOK_JA: Record<Industry, string> = {
+export const INDUSTRY_HOOK_JA: Record<Industry, string> = {
   beauty_salon: "検索から予約までの間に小さな迷いが残ると、来店意欲の高い顧客ほど競合へ流れます。まずは予約導線と信頼材料の回収余地を見ます。",
   dental: "地域検索では比較時間が短く、信頼材料と予約導線の弱さが新患獲得に直結します。最初に不安を減らす設計が必要です。",
   restaurant: "来店前の判断はスマホ上で完結します。表示速度、口コミ、写真、予約導線の見え方が売上機会を左右します。",
@@ -73,7 +73,7 @@ const INDUSTRY_HOOK_JA: Record<Industry, string> = {
   consulting: "専門性の証拠と初回相談への導線が整理されていないと、比較検討中の企業に選ばれにくくなります。",
 }
 
-const INDUSTRY_HOOK_EN: Record<Industry, string> = {
+export const INDUSTRY_HOOK_EN: Record<Industry, string> = {
   beauty_salon: "Small gaps between search, trust proof, and booking can quietly leak high-intent salon customers.",
   dental: "Local dental prospects compare quickly, so weak trust proof or booking paths directly affect new patient acquisition.",
   restaurant: "Restaurant decisions happen on mobile before the visit. Speed, reviews, photos, and booking clarity shape conversion.",
