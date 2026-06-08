@@ -251,7 +251,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     sales_os: {
       last_enriched_at: new Date().toISOString(),
       enriched_via: input.source ?? "contact_form",
-      sources_collected: [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback]
+      sources_collected: [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback, houjin, tranco, emailrep, phishtank, opencorp, greenweb]
         .filter((s) => s != null && (Array.isArray(s) ? s.length > 0 : true)).length,
     },
     contact: {
