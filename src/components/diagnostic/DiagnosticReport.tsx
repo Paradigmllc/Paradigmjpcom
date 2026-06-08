@@ -28,6 +28,7 @@ import {
 } from "./ReportCharts"
 import { getVariantLayout } from "./report-section-config"
 import { VariantSection } from "./report-variant-sections"
+import { AnimatedBackground, GlassCard, ParallaxSection, PulseGlow } from "./report-visual-effects"
 
 // ─── Constants ──────────────────────────────────────────────────
 
@@ -833,7 +834,9 @@ export default function DiagnosticReport({
   const isProjection = lang === "ja" ? "※改善しない場合の推定値" : "Projection if unaddressed"
 
   return (
-    <div className="min-h-screen bg-[#fbfaf7] text-zinc-950">
+    <div className="min-h-screen bg-[#fbfaf7] text-zinc-950 relative">
+      <AnimatedBackground />
+      <div className="relative z-10">
       {trackingSlug && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -1259,6 +1262,7 @@ export default function DiagnosticReport({
           </motion.div>
         </section>
       </main>
+      </div>
     </div>
   )
 }
