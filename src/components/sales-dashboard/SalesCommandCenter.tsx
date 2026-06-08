@@ -24,6 +24,7 @@ import {
 import { SalesAutomationPanel } from "./SalesAutomationPanel"
 import { SalesOperationsAuditPanel } from "./SalesOperationsAuditPanel"
 import { SalesReportVideoStudioPanel } from "./SalesReportVideoStudioPanel"
+import { AiPromptsPanel } from "./AiPromptsPanel"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 
 type SalesTab =
@@ -31,8 +32,6 @@ type SalesTab =
   | "reportVideoStudio"
   | "crm"
   | "system"
-
-type SystemSubTab = "integrations" | "audit"
 
 type SalesCommandCenterProps = {
   data: SalesDashboardData
@@ -53,9 +52,13 @@ const tabItems: TabItem[] = [
   { id: "system", label: "システム管理", description: "統合監査・運用", icon: ShieldCheck },
 ]
 
+type SystemSubTab = "integrations" | "audit" | "templates" | "prompts"
+
 const systemSubTabs: { id: SystemSubTab; label: string }[] = [
   { id: "integrations", label: "統合監査" },
   { id: "audit", label: "運用監査" },
+  { id: "templates", label: "テンプレート管理" },
+  { id: "prompts", label: "AIプロンプト" },
 ]
 
 const externalTools = [
@@ -88,6 +91,8 @@ function normalizeTab(value: string | null): SalesTab {
 }
 
 function normalizeSystemSubTab(value: string | null): SystemSubTab {
+  if (value === "templates") return "templates"
+  if (value === "prompts") return "prompts"
   return value === "audit" ? "audit" : "integrations"
 }
 
@@ -121,6 +126,57 @@ function MetricTile({ label, value, helper, delay, urgent }: { label: string; va
       <p className={`mt-1.5 text-2xl font-bold tracking-tight ${urgent ? "text-rose-700" : "text-zinc-900"}`}>{value}</p>
       <p className={`mt-1 truncate text-xs font-medium ${urgent ? "text-rose-500" : "text-zinc-400"}`}>{helper}</p>
     </motion.div>
+  )
+}
+
+function TemplateManagementPanel({ data }: { data: SalesDashboardData }) {
+  return (
+    <div className="space-y-4 p-4">
+      <div className="rounded-lg border border-zinc-200 bg-white">
+        <div className="border-b border-zinc-100 p-4">
+          <h2 className="text-sm font-semibold text-zinc-950">テンプレート管理</h2>
+          <p className="mt-1 text-xs text-zinc-500">
+            全7バリアント × 2言語の診断レポートテンプレートを確認・編集できます。
+            Difyプロンプト、AIプロンプトもここから管理します。
+          </p>
+        </div>
+        <div className="p-4">
+          <iframe
+            src="/ja/report/template-preview"
+            className="w-full rounded-lg border border-zinc-200"
+            style={{ height: "calc(100vh - 280px)", minHeight: "600px" }}
+            title="テンプレートプレビュー"
+          />
+        </div>
+      </div>
+      <div className="rounded-lg border border-zinc-200 bg-white p-4">
+        <h2 className="text-sm font-semibold text-zinc-950">Dify プロンプトステータス</h2>
+        <div className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+          {[
+            { label: "Dify診断ワークフロー", slug: "dify" },
+            { label: "苦痛診断", slug: "dify_diagnosis" },
+            { label: "カルテ→レポート", slug: "karte_to_report" },
+            { label: "DeepSeek文面生成", slug: "deepseek" },
+          ].map((item) => {
+            const tool = data.toolConnections.find((t) =>
+              (t as { slug: string }).slug === "dify" || t.displayName?.toLowerCase().includes(item.slug)
+            ) as { status: string } | undefined
+            const isOk = tool?.status === "connected" || tool?.status === "ready" || tool?.status === "active"
+            return (
+              <div key={item.slug} className={`rounded-md border p-2.5 ${isOk ? "border-emerald-200 bg-emerald-50" : "border-zinc-200 bg-zinc-50"}`}>
+                <div className="font-medium text-zinc-700">{item.label}</div>
+                <div className={`mt-1 text-[10px] font-bold ${isOk ? "text-emerald-700" : "text-zinc-500"}`}>
+                  {isOk ? "接続済み" : "未確認"}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        <p className="mt-3 text-[10px] text-zinc-400">
+          Difyプロンプトは「AIプロンプト」タブで編集できます。変更は即座に診断レポートに反映されます。
+        </p>
+      </div>
+    </div>
   )
 }
 
@@ -198,7 +254,10 @@ function changeTab(tab: SalesTab) {
                 </button>
               ))}
             </div>
-            {systemSubTab === "integrations" ? <IntegrationsPanel data={data} /> : <SalesOperationsAuditPanel data={data} />}
+            {systemSubTab === "integrations" && <IntegrationsPanel data={data} />}
+            {systemSubTab === "audit" && <SalesOperationsAuditPanel data={data} />}
+            {systemSubTab === "templates" && <TemplateManagementPanel data={data} />}
+            {systemSubTab === "prompts" && <AiPromptsPanel data={data} />}
           </div>
         )
       default:
