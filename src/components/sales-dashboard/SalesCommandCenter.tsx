@@ -161,8 +161,11 @@ function TemplateManagementPanel({ data }: { data: SalesDashboardData }) {
                 className="rounded-lg border border-zinc-200 p-4 hover:border-zinc-400 hover:shadow-sm transition-all">
                 <div className="text-xs font-bold text-zinc-900">{v.label}</div>
                 <div className="mt-1 text-[10px] text-zinc-500">{v.desc}</div>
-                <div className="mt-2">
+                <div className="mt-2 flex items-center gap-1.5">
                   <span className={`inline-flex rounded px-1.5 py-0.5 text-[9px] font-bold bg-${v.color}-50 text-${v.color}-700`}>{v.variant}</span>
+                  <a href={`/ja/report/demo/${v.variant}`} target="_blank" rel="noopener noreferrer" className="text-[9px] text-indigo-600 hover:underline">JA</a>
+                  <span className="text-[9px] text-zinc-300">|</span>
+                  <a href={`/en/report/demo/${v.variant}`} target="_blank" rel="noopener noreferrer" className="text-[9px] text-indigo-600 hover:underline">EN</a>
                 </div>
               </a>
             ))}
