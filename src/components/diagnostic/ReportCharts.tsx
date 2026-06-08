@@ -1,27 +1,28 @@
 "use client"
 
 import { motion } from "framer-motion"
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  PolarAngleAxis,
-  PolarGrid,
-  PolarRadiusAxis,
-  Radar,
-  RadarChart,
-  RadialBar,
-  RadialBarChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts"
 
-// ─── Paradigm Brand Palette ─────────────────────────────────────
+export interface BenchmarkItem {
+  label: string
+  yourScore: number
+  industryAvg: number
+}
+
+export interface LossImpactItem {
+  label: string
+  amount: number
+}
+
+export interface SourceCoverageItem {
+  label: string
+  value: number
+}
+
+export interface TimelinePoint {
+  month: string
+  loss: number
+  competitorGap: number
+}
 
 const COLORS = {
   darkBlue: "#1e3a5f",
@@ -29,476 +30,227 @@ const COLORS = {
   violet: "#7c5cff",
   rose: "#ef4444",
   emerald: "#10b981",
-  amber: "#f59e0b",
-  zinc: { 300: "#d4d4d8", 400: "#a1a1aa", 500: "#71717a" },
+  sky: "#0ea5e9",
+  slate: { 50: "#f8fafc", 200: "#e2e8f0", 400: "#94a3b8", 600: "#475569", 800: "#1e293b" },
 }
 
-// ─── Shared tooltip style ───────────────────────────────────────
+// ─── Performance Gauge (radial) ──────────────────────────────
 
-function renderCustomTooltip(label: string, value: string) {
+export function PerformanceGauge({
+  score,
+  maxScore = 100,
+  label,
+  industryAvg,
+}: {
+  score: number
+  maxScore?: number
+  label: string
+  industryAvg?: number
+}) {
+  const radius = 70
+  const circumference = 2 * Math.PI * radius
+  const pct = Math.min(score / maxScore, 1)
+  const color = pct < 0.4 ? COLORS.rose : pct < 0.7 ? COLORS.gold : COLORS.emerald
+
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs shadow-lg">
-      <p className="font-semibold text-zinc-800">{label}</p>
-      <p className="mt-1 text-zinc-600">{value}</p>
+    <motion.div
+      className="flex flex-col items-center"
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.6 }}
+    >
+      <svg width="180" height="180" viewBox="0 0 180 180">
+        <circle cx="90" cy="90" r={radius} fill="none" stroke={COLORS.slate[200]} strokeWidth="10" />
+        <motion.circle
+          cx="90" cy="90" r={radius} fill="none" stroke={color} strokeWidth="10"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset: circumference * (1 - pct) }}
+          transition={{ duration: 1.2, ease: "easeOut" }}
+          transform="rotate(-90 90 90)"
+        />
+        <text x="90" y="82" textAnchor="middle" className="fill-slate-800" fontSize="28" fontWeight="bold">
+          {score}
+        </text>
+        <text x="90" y="105" textAnchor="middle" className="fill-slate-400" fontSize="12">
+          / {maxScore}
+        </text>
+      </svg>
+      <p className="text-sm font-semibold text-slate-700 mt-1">{label}</p>
+      {industryAvg != null && (
+        <p className="text-xs text-slate-400">業界平均 {industryAvg} 点</p>
+      )}
+    </motion.div>
+  )
+}
+
+// ─── Loss Impact Bar Chart ──────────────────────────────────
+
+export function LossImpactBar({ items }: { items: LossImpactItem[] }) {
+  const maxVal = Math.max(...items.map((i) => i.amount), 1)
+  const barH = 28
+  const gap = 8
+  const h = items.length * (barH + gap) + 20
+  const w = 500
+
+  return (
+    <motion.div className="w-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-auto">
+        {items.map((item, i) => {
+          const pct = item.amount / maxVal
+          const y = i * (barH + gap)
+          return (
+            <g key={item.label}>
+              <motion.rect
+                x={140} y={y} width={0} height={barH} rx={4} fill={COLORS.rose}
+                initial={{ width: 0 }}
+                animate={{ width: pct * 300 }}
+                transition={{ duration: 0.8, delay: i * 0.1 }}
+              />
+              <text x={135} y={y + 18} textAnchor="end" className="fill-slate-600" fontSize="11">{item.label}</text>
+              <text x={145 + pct * 300} y={y + 18} className="fill-slate-800" fontSize="11" fontWeight="bold">
+                ¥{(item.amount / 10000).toFixed(1)}万
+              </text>
+            </g>
+          )
+        })}
+      </svg>
+    </motion.div>
+  )
+}
+
+// ─── Competitor Benchmark Chart ─────────────────────────────
+
+export function CompetitorBenchmarkChart({ items }: { items: BenchmarkItem[] }) {
+  const barH = 22
+  const gap = 10
+  const labelW = 110
+  const chartW = 280
+  const h = items.length * (barH + gap) + 10
+
+  return (
+    <div className="space-y-1">
+      {items.map((item, i) => {
+        const yourPct = item.yourScore / 100
+        const avgPct = item.industryAvg / 100
+        return (
+          <motion.div
+            key={item.label}
+            className="flex items-center gap-2"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.1 }}
+          >
+            <span className="text-xs text-slate-600 w-28 shrink-0 text-right">{item.label}</span>
+            <div className="relative h-5 flex-1 bg-slate-100 rounded">
+              <motion.div
+                className="absolute inset-y-0 left-0 rounded bg-slate-300"
+                initial={{ width: 0 }}
+                animate={{ width: `${avgPct * 100}%` }}
+                transition={{ duration: 0.6, delay: 0.2 + i * 0.1 }}
+              />
+              <motion.div
+                className="absolute inset-y-0 left-0 rounded"
+                style={{ backgroundColor: item.yourScore >= item.industryAvg ? COLORS.emerald : COLORS.rose }}
+                initial={{ width: 0 }}
+                animate={{ width: `${yourPct * 100}%` }}
+                transition={{ duration: 0.8, delay: 0.4 + i * 0.1 }}
+              />
+            </div>
+            <span className="text-xs font-bold w-10 shrink-0" style={{ color: item.yourScore >= item.industryAvg ? COLORS.emerald : COLORS.rose }}>
+              {item.yourScore}
+            </span>
+          </motion.div>
+        )
+      })}
+      <div className="flex items-center gap-2 pt-1 text-[10px] text-slate-400">
+        <span className="w-28" />
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-slate-300" /> 業界平均</span>
+        <span className="flex items-center gap-1 ml-2"><span className="w-3 h-3 rounded bg-rose-500" /> 御社</span>
+      </div>
     </div>
   )
 }
 
-// ─── 1. PerformanceGauge ────────────────────────────────────────
+// ─── Source Coverage Radar (replaced with compact bar chart) ──
 
-export interface PerformanceGaugeProps {
-  score: number
-  benchmark: number
-  label: string
-  className?: string
-  animate?: boolean
-}
-
-export function PerformanceGauge({
-  score,
-  benchmark,
-  label,
-  className,
-  animate = true,
-}: PerformanceGaugeProps) {
-  const pct = Math.min(100, Math.max(0, score))
-  const benchmarkPct = Math.min(100, Math.max(0, benchmark))
-  const gap = benchmarkPct - pct
-
-  const data = [
-    { name: "Your score", value: pct, fill: COLORS.violet },
-    { name: "Industry benchmark", value: benchmarkPct, fill: COLORS.zinc[400] },
-    { name: "Gap", value: Math.max(0, 100 - benchmarkPct), fill: "transparent" },
-  ]
-
-  const tone = pct >= 85 ? COLORS.emerald : pct >= 55 ? COLORS.amber : COLORS.rose
+export function SourceCoverageRadar({ items }: { items: SourceCoverageItem[] }) {
+  const sorted = [...items].sort((a, b) => b.value - a.value).slice(0, 8)
 
   return (
-    <motion.div
-      className={className}
-      initial={animate ? { opacity: 0, scale: 0.92 } : {}}
-      whileInView={animate ? { opacity: 1, scale: 1 } : {}}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-    >
-      <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-zinc-500">{label}</p>
-            <div className="mt-1 flex items-baseline gap-2">
-              <span className="text-3xl font-bold tabular-nums text-zinc-950">
-                {pct}
-              </span>
-              <span className="text-sm text-zinc-400">/100</span>
-            </div>
-            <p className="mt-1 text-xs text-zinc-500">
-              Benchmark: {benchmarkPct} ({gap > 0 ? `-${Math.round(gap)}` : `+${Math.round(Math.abs(gap))}`})
-            </p>
+    <motion.div className="space-y-1.5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
+      {sorted.map((item, i) => (
+        <motion.div
+          key={item.label}
+          className="flex items-center gap-2"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: i * 0.06 }}
+        >
+          <span className="text-xs text-slate-500 w-20 shrink-0 truncate">{item.label}</span>
+          <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
+            <motion.div
+              className="h-full rounded-full"
+              style={{ backgroundColor: COLORS.violet }}
+              initial={{ width: 0 }}
+              animate={{ width: `${item.value}%` }}
+              transition={{ duration: 0.6, delay: 0.1 + i * 0.05 }}
+            />
           </div>
-          <div className="flex h-20 w-20 items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadialBarChart
-                cx="50%"
-                cy="50%"
-                innerRadius="70%"
-                outerRadius="100%"
-                barSize={8}
-                data={[data[0]]}
-                startAngle={90}
-                endAngle={-270}
-              >
-                <RadialBar
-                  dataKey="value"
-                  cornerRadius={8}
-                  fill={tone}
-                  background={{ fill: "#f4f4f5" }}
-                />
-              </RadialBarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
+          <span className="text-xs font-mono text-slate-700 w-8 text-right">{item.value}%</span>
+        </motion.div>
+      ))}
     </motion.div>
   )
 }
 
-// ─── 2. LossImpactBar ───────────────────────────────────────────
+// ─── Timeline Area Chart (replaced with compact line display) ──
 
-export interface LossImpactItem {
-  name: string
-  value: number
-  fill?: string
-}
+export function TimelineChart({ points }: { points: TimelinePoint[] }) {
+  if (points.length < 2) return null
+  const h = 140
+  const w = 400
+  const pad = { top: 20, right: 20, bottom: 25, left: 50 }
+  const chartW = w - pad.left - pad.right
+  const chartH = h - pad.top - pad.bottom
+  const maxVal = Math.max(...points.map((p) => Math.max(p.loss, p.competitorGap)), 10)
 
-export interface LossImpactBarProps {
-  data: LossImpactItem[]
-  title: string
-  subtitle?: string
-  valueFormatter?: (value: number) => string
-  className?: string
-  animate?: boolean
-}
+  const toX = (i: number) => pad.left + (i / (points.length - 1)) * chartW
+  const toY = (v: number) => pad.top + chartH - (v / maxVal) * chartH
 
-export function LossImpactBar({
-  data,
-  title,
-  subtitle,
-  valueFormatter = (v) => `¥${v.toLocaleString("en-US")}`,
-  className,
-  animate = true,
-}: LossImpactBarProps) {
-  const defaultColors = [COLORS.rose, COLORS.amber, COLORS.violet, COLORS.darkBlue, COLORS.zinc[400]]
-
-  const enriched = data.map((item, i) => ({
-    ...item,
-    fill: item.fill ?? defaultColors[i % defaultColors.length],
-  }))
+  const lossPath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${toX(i)} ${toY(p.loss)}`).join(" ")
+  const gapPath = points.map((p, i) => `${i === 0 ? "M" : "L"} ${toX(i)} ${toY(p.competitorGap)}`).join(" ")
 
   return (
-    <motion.div
-      className={className}
-      initial={animate ? { opacity: 0, y: 24 } : {}}
-      whileInView={animate ? { opacity: 1, y: 0 } : {}}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-    >
-      <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <h3 className="text-sm font-semibold text-zinc-950">{title}</h3>
-        {subtitle && <p className="mt-1 text-xs text-zinc-500">{subtitle}</p>}
-        <div className="mt-4" style={{ height: Math.max(180, data.length * 44) }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={enriched}
-              layout="vertical"
-              margin={{ top: 0, right: 20, left: 10, bottom: 0 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" horizontal={false} />
-              <XAxis
-                type="number"
-                tick={{ fontSize: 11, fill: COLORS.zinc[500] }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={valueFormatter}
-              />
-              <YAxis
-                type="category"
-                dataKey="name"
-                width={120}
-                tick={{ fontSize: 11, fill: COLORS.zinc[500] }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Tooltip
-                formatter={(val) => [valueFormatter(Number(val)), ""]}
-                contentStyle={{
-                  borderRadius: 8,
-                  border: "1px solid #e4e4e7",
-                  fontSize: 12,
-                }}
-              />
-              <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={20}>
-                {enriched.map((entry, i) => (
-                  <Cell key={i} fill={entry.fill} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-// ─── 3. SourceCoverageRadar ─────────────────────────────────────
-
-export interface SourceCoverageItem {
-  category: string
-  score: number
-  fullMark?: number
-}
-
-export interface SourceCoverageRadarProps {
-  data: SourceCoverageItem[]
-  title: string
-  subtitle?: string
-  className?: string
-  animate?: boolean
-}
-
-export function SourceCoverageRadar({
-  data,
-  title,
-  subtitle,
-  className,
-  animate = true,
-}: SourceCoverageRadarProps) {
-  const fullMark = 100
-
-  return (
-    <motion.div
-      className={className}
-      initial={animate ? { opacity: 0, scale: 0.95 } : {}}
-      whileInView={animate ? { opacity: 1, scale: 1 } : {}}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-    >
-      <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <h3 className="text-sm font-semibold text-zinc-950">{title}</h3>
-        {subtitle && <p className="mt-1 text-xs text-zinc-500">{subtitle}</p>}
-        <div className="mt-4" style={{ height: 280 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <RadarChart data={data} cx="50%" cy="50%" outerRadius="75%">
-              <PolarGrid stroke="#e4e4e7" />
-              <PolarAngleAxis
-                dataKey="category"
-                tick={{ fontSize: 10, fill: COLORS.zinc[500] }}
-              />
-              <PolarRadiusAxis
-                angle={90}
-                domain={[0, fullMark]}
-                tick={{ fontSize: 9, fill: COLORS.zinc[400] }}
-                axisLine={false}
-              />
-              <Radar
-                name="Coverage"
-                dataKey="score"
-                stroke={COLORS.violet}
-                fill={COLORS.violet}
-                fillOpacity={0.25}
-                strokeWidth={2}
-              />
-            </RadarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-// ─── 4. CompetitorBenchmarkChart ────────────────────────────────
-
-export interface BenchmarkItem {
-  name: string
-  yourScore: number
-  industryAvg: number
-  topCompetitor: number
-}
-
-export interface CompetitorBenchmarkChartProps {
-  data: BenchmarkItem[]
-  title: string
-  subtitle?: string
-  className?: string
-  animate?: boolean
-  showPercent?: boolean
-}
-
-export function CompetitorBenchmarkChart({
-  data,
-  title,
-  subtitle,
-  className,
-  animate = true,
-  showPercent = true,
-}: CompetitorBenchmarkChartProps) {
-  const chartData = data.map((item) => ({
-    name: item.name,
-    yourSite: item.yourScore,
-    industryAvg: item.industryAvg,
-    topCompetitor: item.topCompetitor,
-  }))
-
-  return (
-    <motion.div
-      className={className}
-      initial={animate ? { opacity: 0, y: 24 } : {}}
-      whileInView={animate ? { opacity: 1, y: 0 } : {}}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-    >
-      <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <h3 className="text-sm font-semibold text-zinc-950">{title}</h3>
-        {subtitle && <p className="mt-1 text-xs text-zinc-500">{subtitle}</p>}
-        <div className="mt-4" style={{ height: Math.max(200, data.length * 60) }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={chartData}
-              layout="vertical"
-              margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" horizontal={false} />
-              <XAxis
-                type="number"
-                domain={[0, 100]}
-                tick={{ fontSize: 11, fill: COLORS.zinc[500] }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(v) => (showPercent ? `${v}%` : `${v}`)}
-              />
-              <YAxis
-                type="category"
-                dataKey="name"
-                width={100}
-                tick={{ fontSize: 11, fill: COLORS.zinc[500] }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Tooltip
-                contentStyle={{
-                  borderRadius: 8,
-                  border: "1px solid #e4e4e7",
-                  fontSize: 12,
-                }}
-              />
-              <Bar dataKey="yourSite" name="Your Site" fill={COLORS.rose} radius={[0, 4, 4, 0]} barSize={10} />
-              <Bar dataKey="industryAvg" name="Industry Avg" fill={COLORS.zinc[400]} radius={[0, 4, 4, 0]} barSize={10} />
-              <Bar dataKey="topCompetitor" name="Top Competitor" fill={COLORS.emerald} radius={[0, 4, 4, 0]} barSize={10} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-4 text-xs">
-          <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: COLORS.rose }} />
-            Your Site
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: COLORS.zinc[400] }} />
-            Industry Avg
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: COLORS.emerald }} />
-            Top Competitor
-          </span>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-// ─── 5. TimelineChart ───────────────────────────────────────────
-
-export interface TimelinePoint {
-  month: string
-  currentPath: number
-  improvedPath: number
-  benchmark: number
-}
-
-export interface TimelineChartProps {
-  data: TimelinePoint[]
-  title: string
-  subtitle?: string
-  valueFormatter?: (value: number) => string
-  className?: string
-  animate?: boolean
-}
-
-export function TimelineChart({
-  data,
-  title,
-  subtitle,
-  valueFormatter = (v) => `¥${v.toLocaleString("en-US")}`,
-  className,
-  animate = true,
-}: TimelineChartProps) {
-  return (
-    <motion.div
-      className={className}
-      initial={animate ? { opacity: 0, y: 24 } : {}}
-      whileInView={animate ? { opacity: 1, y: 0 } : {}}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-    >
-      <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <h3 className="text-sm font-semibold text-zinc-950">{title}</h3>
-        {subtitle && <p className="mt-1 text-xs text-zinc-500">{subtitle}</p>}
-        <div className="mt-4" style={{ height: 260 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={data}
-              margin={{ top: 5, right: 20, left: 20, bottom: 5 }}
-            >
-              <defs>
-                <linearGradient id="currentPathGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={COLORS.rose} stopOpacity={0.2} />
-                  <stop offset="95%" stopColor={COLORS.rose} stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="improvedPathGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={COLORS.emerald} stopOpacity={0.2} />
-                  <stop offset="95%" stopColor={COLORS.emerald} stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="benchmarkGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={COLORS.zinc[400]} stopOpacity={0.1} />
-                  <stop offset="95%" stopColor={COLORS.zinc[400]} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" />
-              <XAxis
-                dataKey="month"
-                tick={{ fontSize: 11, fill: COLORS.zinc[500] }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 11, fill: COLORS.zinc[500] }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={valueFormatter}
-              />
-              <Tooltip
-                formatter={(val) => [valueFormatter(Number(val)), ""]}
-                contentStyle={{
-                  borderRadius: 8,
-                  border: "1px solid #e4e4e7",
-                  fontSize: 12,
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="currentPath"
-                name="Status Quo"
-                stroke={COLORS.rose}
-                strokeWidth={2}
-                fill="url(#currentPathGrad)"
-                dot={{ r: 3, fill: COLORS.rose }}
-              />
-              <Area
-                type="monotone"
-                dataKey="improvedPath"
-                name="With Paradigm"
-                stroke={COLORS.emerald}
-                strokeWidth={2}
-                fill="url(#improvedPathGrad)"
-                dot={{ r: 3, fill: COLORS.emerald }}
-              />
-              <Area
-                type="monotone"
-                dataKey="benchmark"
-                name="Industry Avg"
-                stroke={COLORS.zinc[400]}
-                strokeWidth={1.5}
-                strokeDasharray="5 5"
-                fill="url(#benchmarkGrad)"
-                dot={false}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-4 text-xs">
-          <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: COLORS.rose }} />
-            Status Quo
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: COLORS.emerald }} />
-            With Paradigm
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-sm" style={{ border: `1px dashed ${COLORS.zinc[400]}` }} />
-            Industry Avg
-          </span>
-        </div>
-      </div>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-auto">
+        {/* Grid lines */}
+        {[0, 0.25, 0.5, 0.75, 1].map((frac) => (
+          <g key={frac}>
+            <line x1={pad.left} x2={w - pad.right} y1={pad.top + frac * chartH} y2={pad.top + frac * chartH}
+              stroke={COLORS.slate[200]} strokeWidth={0.5} />
+            <text x={pad.left - 6} y={pad.top + frac * chartH + 4} textAnchor="end" fontSize="9" className="fill-slate-400">
+              {Math.round(maxVal * (1 - frac))}
+            </text>
+          </g>
+        ))}
+        {/* X axis labels */}
+        {points.map((p, i) => (
+          <text key={i} x={toX(i)} y={h - 4} textAnchor="middle" fontSize="9" className="fill-slate-500">
+            {p.month}
+          </text>
+        ))}
+        {/* Loss line */}
+        <motion.path d={lossPath} fill="none" stroke={COLORS.rose} strokeWidth={2}
+          initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.2, delay: 0.3 }} />
+        {/* Gap line */}
+        <motion.path d={gapPath} fill="none" stroke={COLORS.sky} strokeWidth={2} strokeDasharray="4 2"
+          initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.2, delay: 0.5 }} />
+        {/* Legend */}
+        <text x={pad.left + 5} y={pad.top - 6} fontSize="9" fill={COLORS.rose}>損失</text>
+        <text x={pad.left + 35} y={pad.top - 6} fontSize="9" fill={COLORS.sky}>競合差</text>
+      </svg>
     </motion.div>
   )
 }

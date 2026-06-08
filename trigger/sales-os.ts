@@ -1,9 +1,10 @@
-import { logger, task } from "@trigger.dev/sdk/v3"
+import { logger, task, schedules } from "@trigger.dev/sdk/v3"
 import { z } from "zod"
 
 import { runEnrichmentJobs } from "../src/lib/sales/enrichment-jobs"
 import { runSalesPipelineLocally } from "../src/lib/sales/sales-pipeline-execution"
 import { runVideoJobAction } from "../src/lib/sales/video-pipeline"
+import { pullTwentyCompaniesToSupabase } from "../src/lib/sales/twenty-pull"
 
 const salesPipelinePayload = z.object({
   run_id: z.string().uuid(),
@@ -163,5 +164,31 @@ export const salesVideoPipelineTask = task({
     })
     if (!result.ok) throw new Error(result.error ?? "Sales video pipeline task failed")
     return { ok: true, jobId: parsed.job_id, status: result.job?.status ?? null }
+  },
+})
+
+/**
+ * Scheduled task: pull companies from Twenty CRM every 5 minutes.
+ * When new companies are found, automatically creates them in Supabase
+ * and dispatches the Sales OS pipeline (enrichment → report → video).
+ */
+export const twentySyncCron = schedules.task({
+  id: "twenty-sync-cron",
+  cron: "*/5 * * * *",
+  maxDuration: 180,
+  run: async () => {
+    logger.info("Twenty CRM scheduled sync starting")
+    const result = await pullTwentyCompaniesToSupabase(500, {
+      autoRunPipeline: true,
+      dispatchPipeline: true,
+      requestedBy: "twenty_sync_cron",
+    })
+    logger.info("Twenty CRM sync completed", {
+      scanned: result.scanned,
+      created: result.created,
+      updated: result.updated,
+      pipelineRunsCreated: result.pipelineRunsCreated,
+    })
+    return { ok: true, scanned: result.scanned, created: result.created, updated: result.updated, pipelineRunsCreated: result.pipelineRunsCreated }
   },
 })

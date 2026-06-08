@@ -15,11 +15,13 @@ import {
   Globe2,
   LayoutDashboard,
   ListChecks,
+  Menu,
   Rocket,
   ShieldCheck,
   Sparkles,
   UploadCloud,
   Video,
+  X,
 } from "lucide-react"
 import { Toaster } from "sonner"
 
@@ -228,6 +230,7 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<SalesTab>(() => normalizeTab(searchParams.get("tab")))
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     const nextTab = normalizeTab(searchParams.get("tab"))
@@ -350,6 +353,51 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
   return (
     <main className="min-h-screen bg-[#fafafa] font-sans text-zinc-950 selection:bg-indigo-100">
       <Toaster richColors position="top-center" />
+      
+      {/* Mobile hamburger */}
+      <div className="sticky top-0 z-50 flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-2.5 lg:hidden">
+        <button onClick={() => setMobileMenuOpen(true)} className="rounded-md p-1.5 text-zinc-600 hover:bg-zinc-100" aria-label="メニューを開く">
+          <Menu className="h-5 w-5" />
+        </button>
+        <span className="text-sm font-bold text-zinc-900">Revenue OS</span>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+          {statusLabel(data.status)}
+        </span>
+      </div>
+
+      {/* Mobile sidebar overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileMenuOpen(false)} />
+          <div className="absolute left-0 top-0 h-full w-72 bg-white shadow-xl overflow-y-auto">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100">
+              <p className="text-sm font-bold text-zinc-900">Revenue OS</p>
+              <button onClick={() => setMobileMenuOpen(false)} className="rounded-md p-1 text-zinc-500 hover:bg-zinc-100"><X className="h-4 w-4" /></button>
+            </div>
+            <nav className="py-2">
+              {tabItems.map((tab) => {
+                const Icon = tab.icon
+                const isActive = activeTab === tab.id
+                const externalUrl = tab.externalGui ? resolveExternalGuiUrl(tab.id, data) : null
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => { changeTab(tab.id); setMobileMenuOpen(false) }}
+                    className={`flex w-full items-center gap-2.5 px-5 py-2.5 text-left text-sm ${isActive ? "bg-zinc-100 font-bold text-zinc-900" : "font-medium text-zinc-600 hover:bg-zinc-50"}`}
+                  >
+                    <Icon className="h-4 w-4 shrink-0 text-zinc-500" />
+                    <span className="min-w-0 flex-1 truncate">{tab.label}</span>
+                    {externalUrl && <ExternalLink className="h-3 w-3 text-zinc-400" />}
+                  </button>
+                )
+              })}
+            </nav>
+          </div>
+        </div>
+      )}
+
       <div className="mx-auto grid min-h-screen w-full max-w-[1720px] gap-0 border-x border-zinc-100 bg-white shadow-[0_0_40px_rgba(0,0,0,0.03)] lg:grid-cols-[280px_minmax(0,1fr)]">
         <aside className="relative z-20 hidden min-h-screen border-r border-zinc-100 bg-white/80 backdrop-blur-xl lg:block">
           <div className="sticky top-0 flex h-screen flex-col">
@@ -441,7 +489,7 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
         </aside>
 
         <section className="relative min-w-0 bg-[#fafafa]">
-          <header className="sticky top-0 z-30 border-b border-zinc-200/80 bg-white/80 px-6 py-5 backdrop-blur-xl sm:px-10">
+          <header className="sticky top-0 z-30 hidden border-b border-zinc-200/80 bg-white/80 px-6 py-5 backdrop-blur-xl lg:block sm:px-10">
             <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-zinc-500">
@@ -490,7 +538,7 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
             </label>
           </header>
 
-          <div className="min-w-0 p-6 sm:p-10" aria-live="polite">
+          <div className="min-w-0 p-4 sm:p-6 lg:p-10" aria-live="polite">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}

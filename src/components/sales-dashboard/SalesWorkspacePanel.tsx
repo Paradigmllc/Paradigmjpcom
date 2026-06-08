@@ -117,8 +117,8 @@ export function WorkspacePanel({ data }: { data: SalesDashboardData }) {
           <h2 className="text-sm font-semibold text-zinc-950">リスト作業場</h2>
           <p className="mt-1 text-xs text-zinc-500">チェックボックスで複数選択→一括操作が可能です。</p>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <label className="relative block">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <label className="relative block flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={15} aria-hidden />
             <input value={query} onChange={(e) => setQuery(e.target.value)} className="h-9 w-full rounded-md border border-zinc-200 bg-white pl-9 pr-3 text-sm outline-none focus:border-zinc-500 sm:w-72" placeholder="企業名・ドメイン検索" aria-label="企業名・ドメイン検索" />
           </label>

@@ -1,6 +1,5 @@
 "use client"
 
-import dynamic from "next/dynamic"
 import { motion } from "framer-motion"
 import { ArrowRight, Check, ExternalLink, Gauge, LineChart, ShieldCheck, Sparkles } from "lucide-react"
 import { useState, type ReactNode } from "react"
@@ -17,35 +16,16 @@ import {
   StaggeredFadeIn,
 } from "./ReportAnimations"
 import { ReportExecutiveSummary } from "./ReportExecutiveSummary"
-import type {
-  BenchmarkItem,
-  LossImpactItem,
-  SourceCoverageItem as RadarItem,
-  TimelinePoint,
+import {
+  PerformanceGauge,
+  LossImpactBar,
+  SourceCoverageRadar,
+  CompetitorBenchmarkChart,
+  TimelineChart,
+  type BenchmarkItem,
+  type LossImpactItem,
+  type TimelinePoint,
 } from "./ReportCharts"
-
-// ─── Dynamic chart imports (no SSR) ─────────────────────────────
-
-const PerformanceGauge = dynamic(
-  () => import("./ReportCharts").then((m) => ({ default: m.PerformanceGauge })),
-  { ssr: false }
-)
-const LossImpactBar = dynamic(
-  () => import("./ReportCharts").then((m) => ({ default: m.LossImpactBar })),
-  { ssr: false }
-)
-const SourceCoverageRadar = dynamic(
-  () => import("./ReportCharts").then((m) => ({ default: m.SourceCoverageRadar })),
-  { ssr: false }
-)
-const CompetitorBenchmarkChart = dynamic(
-  () => import("./ReportCharts").then((m) => ({ default: m.CompetitorBenchmarkChart })),
-  { ssr: false }
-)
-const TimelineChart = dynamic(
-  () => import("./ReportCharts").then((m) => ({ default: m.TimelineChart })),
-  { ssr: false }
-)
 
 // ─── Constants ──────────────────────────────────────────────────
 
