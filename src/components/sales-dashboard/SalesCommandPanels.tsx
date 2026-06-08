@@ -509,17 +509,99 @@ export function IntegrationsPanel({ data }: { data: SalesDashboardData }) {
   )
 }
 
+const CATEGORY_MAP: Record<string, { label: string; isDiagnostic: boolean }> = {
+  analysis: { label: "診断ソース (分析)", isDiagnostic: true },
+  list_source: { label: "診断ソース (リスト収集)", isDiagnostic: true },
+  outreach: { label: "アプローチ自動化", isDiagnostic: false },
+  orchestration: { label: "オーケストレーション", isDiagnostic: false },
+  crm_ops: { label: "CRM・運用管理", isDiagnostic: false },
+  asset_generation: { label: "アセット生成 (提案資料)", isDiagnostic: false },
+  video: { label: "アセット生成 (動画)", isDiagnostic: false },
+  demo_site: { label: "アセット生成 (デモサイト)", isDiagnostic: false },
+  proxy: { label: "プロキシ・通信制御", isDiagnostic: false },
+}
+
 function IntegrationInventoryPanel({
   data,
   readyIntegrations,
   missingRecommended,
-  categories,
+  categories: rawCategories,
 }: {
   data: SalesDashboardData
   readyIntegrations: number
   missingRecommended: number
   categories: [string, number][]
 }) {
+  const [filterType, setFilterType] = useState<"all" | "diagnostic" | "outreach" | "orchestration" | "crm" | "asset" | "proxy">("all")
+  const [sortBy, setSortBy] = useState<"diagnostic_first" | "name_asc" | "status_ready">("diagnostic_first")
+
+  // カテゴリ別集計のラベル日本語化
+  const mappedCategories = useMemo(() => {
+    const counts: Record<string, number> = {}
+    data.integrationStatus.forEach((item) => {
+      const mapping = CATEGORY_MAP[item.category]
+      const label = mapping ? mapping.label : item.category
+      counts[label] = (counts[label] ?? 0) + 1
+    })
+    return Object.entries(counts).sort(([, a], [, b]) => b - a)
+  }, [data.integrationStatus])
+
+  const processedItems = useMemo(() => {
+    let items = [...data.integrationStatus]
+
+    // フィルタリング
+    if (filterType !== "all") {
+      items = items.filter((item) => {
+        const mapping = CATEGORY_MAP[item.category]
+        if (filterType === "diagnostic") {
+          return mapping?.isDiagnostic
+        }
+        if (filterType === "outreach") {
+          return item.category === "outreach"
+        }
+        if (filterType === "orchestration") {
+          return item.category === "orchestration"
+        }
+        if (filterType === "crm") {
+          return item.category === "crm_ops"
+        }
+        if (filterType === "asset") {
+          return ["asset_generation", "video", "demo_site"].includes(item.category)
+        }
+        if (filterType === "proxy") {
+          return item.category === "proxy"
+        }
+        return true
+      })
+    }
+
+    // ソート
+    items.sort((a, b) => {
+      if (sortBy === "diagnostic_first") {
+        const aDiag = CATEGORY_MAP[a.category]?.isDiagnostic ? 1 : 0
+        const bDiag = CATEGORY_MAP[b.category]?.isDiagnostic ? 1 : 0
+        if (aDiag !== bDiag) {
+          return bDiag - aDiag // 診断ソースを上にする
+        }
+        // 同種の中では displayName 順
+        return a.displayName.localeCompare(b.displayName)
+      }
+      if (sortBy === "name_asc") {
+        return a.displayName.localeCompare(b.displayName)
+      }
+      if (sortBy === "status_ready") {
+        const statusWeight = (s: string) => (s === "ready" ? 3 : s === "partial" ? 2 : 1)
+        const aW = statusWeight(a.status)
+        const bW = statusWeight(b.status)
+        if (aW !== bW) return bW - aW
+        return a.displayName.localeCompare(b.displayName)
+      }
+      return 0
+    })
+
+    return items
+  }, [data.integrationStatus, filterType, sortBy])
+
   return (
     <div className="rounded-lg border border-zinc-200 bg-white p-4">
       <div className="flex flex-col gap-3 border-b border-zinc-100 pb-4 lg:flex-row lg:items-start lg:justify-between">
@@ -541,8 +623,48 @@ function IntegrationInventoryPanel({
         </div>
       </div>
 
+      {/* 絞り込み・ソート用のコントロールバー */}
+      <div className="mt-4 flex flex-col gap-3 border-b border-zinc-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold text-zinc-500">フィルター:</span>
+          {[
+            { id: "all", label: "すべて" },
+            { id: "diagnostic", label: "診断ソースのみ" },
+            { id: "outreach", label: "アプローチ" },
+            { id: "orchestration", label: "オーケストレーション" },
+            { id: "crm", label: "CRM・運用" },
+            { id: "asset", label: "アセット生成" },
+            { id: "proxy", label: "プロキシ・通信" },
+          ].map((btn) => (
+            <button
+              key={btn.id}
+              onClick={() => setFilterType(btn.id as any)}
+              className={`rounded px-2.5 py-1 text-xs font-medium transition ${
+                filterType === btn.id
+                  ? "bg-zinc-900 text-white shadow-sm"
+                  : "bg-zinc-50 text-zinc-600 hover:bg-zinc-100"
+              }`}
+            >
+              {btn.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-zinc-500">ソート:</span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            className="rounded border border-zinc-200 bg-white px-2.5 py-1 text-xs outline-none focus:border-zinc-500"
+          >
+            <option value="diagnostic_first">診断ソース優先</option>
+            <option value="name_asc">ツール名順</option>
+            <option value="status_ready">接続状態順</option>
+          </select>
+        </div>
+      </div>
+
       <div className="mt-4 grid gap-3 lg:grid-cols-[0.55fr_1.45fr]">
-        <BarList title="カテゴリ別" rows={categories} empty="接続台帳がまだありません。" />
+        <BarList title="カテゴリ別 (日本語)" rows={mappedCategories} empty="接続台帳がまだありません。" />
         <div className="overflow-x-auto rounded-lg border border-zinc-200">
           <div className="hidden min-w-[720px] grid-cols-[1.2fr_0.8fr_0.7fr_1fr] gap-3 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-600 md:grid">
             <div>ツール</div>
@@ -551,37 +673,41 @@ function IntegrationInventoryPanel({
             <div>不足ENV</div>
           </div>
           <div className="max-h-[520px] min-w-0 divide-y divide-zinc-100 overflow-y-auto md:min-w-[720px]">
-            {data.integrationStatus.map((item) => (
-              <div key={item.slug} className="grid gap-3 px-3 py-3 text-xs md:grid-cols-[1.2fr_0.8fr_0.7fr_1fr]">
-                <div className="min-w-0">
-                  <div className="mb-1 text-[11px] font-semibold text-zinc-400 md:hidden">ツール</div>
-                  <div className="font-semibold text-zinc-950">{item.displayName}</div>
-                  <div className="mt-1 line-clamp-2 text-zinc-500">{item.role}</div>
-                  {item.docsUrl && (
-                    <a href={item.docsUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 font-semibold text-zinc-800 underline-offset-2 hover:underline">
-                      docs <ExternalLink size={11} aria-hidden />
-                    </a>
-                  )}
+            {processedItems.map((item) => {
+              const categoryInfo = CATEGORY_MAP[item.category]
+              const displayCategoryName = categoryInfo ? categoryInfo.label : item.category
+              return (
+                <div key={item.slug} className="grid gap-3 px-3 py-3 text-xs md:grid-cols-[1.2fr_0.8fr_0.7fr_1fr]">
+                  <div className="min-w-0">
+                    <div className="mb-1 text-[11px] font-semibold text-zinc-400 md:hidden">ツール</div>
+                    <div className="font-semibold text-zinc-950">{item.displayName}</div>
+                    <div className="mt-1 line-clamp-2 text-zinc-500 leading-relaxed">{item.role}</div>
+                    {item.docsUrl && (
+                      <a href={item.docsUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 font-semibold text-zinc-800 underline-offset-2 hover:underline">
+                        docs <ExternalLink size={11} aria-hidden />
+                      </a>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="mb-1 text-[11px] font-semibold text-zinc-400 md:hidden">状態</div>
+                    <span className={`inline-flex rounded-full px-2 py-0.5 ${statusTone(item.status)}`}>{item.status}</span>
+                    <div className="mt-2 text-zinc-500">{displayCategoryName} / {item.deployment}</div>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="mb-1 text-[11px] font-semibold text-zinc-400 md:hidden">残量</div>
+                    <span className={`inline-flex rounded-full px-2 py-0.5 ${statusTone(item.balanceStatus)}`}>{item.balanceStatus}</span>
+                    <div className="mt-2 text-zinc-500">{item.balanceLabel}</div>
+                  </div>
+                  <div className="min-w-0 break-words text-zinc-500">
+                    <div className="mb-1 text-[11px] font-semibold text-zinc-400 md:hidden">不足ENV</div>
+                    {item.missingEnv.length > 0 ? item.missingEnv.join(", ") : "必須ENV OK"}
+                    {item.optionalMissingEnv.length > 0 && (
+                      <div className="mt-1 text-zinc-400">optional: {item.optionalMissingEnv.slice(0, 3).join(", ")}</div>
+                    )}
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <div className="mb-1 text-[11px] font-semibold text-zinc-400 md:hidden">状態</div>
-                  <span className={`inline-flex rounded-full px-2 py-0.5 ${statusTone(item.status)}`}>{item.status}</span>
-                  <div className="mt-2 text-zinc-500">{item.category} / {item.deployment}</div>
-                </div>
-                <div className="min-w-0">
-                  <div className="mb-1 text-[11px] font-semibold text-zinc-400 md:hidden">残量</div>
-                  <span className={`inline-flex rounded-full px-2 py-0.5 ${statusTone(item.balanceStatus)}`}>{item.balanceStatus}</span>
-                  <div className="mt-2 text-zinc-500">{item.balanceLabel}</div>
-                </div>
-                <div className="min-w-0 break-words text-zinc-500">
-                  <div className="mb-1 text-[11px] font-semibold text-zinc-400 md:hidden">不足ENV</div>
-                  {item.missingEnv.length > 0 ? item.missingEnv.join(", ") : "必須ENV OK"}
-                  {item.optionalMissingEnv.length > 0 && (
-                    <div className="mt-1 text-zinc-400">optional: {item.optionalMissingEnv.slice(0, 3).join(", ")}</div>
-                  )}
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </div>

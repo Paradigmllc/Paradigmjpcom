@@ -45,7 +45,6 @@ import { AiPromptsPanel } from "./AiPromptsPanel"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 
 type SalesTab =
-  | "overview"
   | "automation"
   | "operator"
   | "agentTeam"
@@ -77,7 +76,6 @@ type TabItem = {
 }
 
 const tabItems: TabItem[] = [
-  { id: "overview", label: "司令塔", eyebrow: "COMMAND", description: "全体KPIと優先リード", icon: LayoutDashboard },
   { id: "automation", label: "CSV・自動診断", eyebrow: "INTAKE", description: "投入から企業カルテ生成", icon: UploadCloud },
   { id: "reportVideoStudio", label: "レポート動画", eyebrow: "GPULESS", description: "診断解説・HyperFrames", icon: Video },
   { id: "proVideoStudio", label: "プロ級動画", eyebrow: "GPU STUDIO", description: "Vast.ai + ComfyUI", icon: Clapperboard },
@@ -87,7 +85,7 @@ const tabItems: TabItem[] = [
   { id: "keystatic", label: "デモサイト管理", eyebrow: "KEYSTATIC", description: "Keystatic正規GUI", icon: Globe2, externalGui: true },
   { id: "supabaseStudio", label: "診断レポート", eyebrow: "SUPABASE", description: "Supabase Studio", icon: Database, externalGui: true },
   { id: "crm", label: "CRM設定", eyebrow: "TWENTY", description: "表示列と選択肢マスター", icon: BriefcaseBusiness },
-  { id: "analytics", label: "分析", eyebrow: "METABASE", description: "営業KPIとボトルネック", icon: BarChart3 },
+  { id: "analytics", label: "分析", eyebrow: "METABASE", description: "営業KPIとボトルネック", icon: BarChart3, externalGui: true },
   { id: "integrations", label: "統合", eyebrow: "OSS / API", description: "接続・残量・未設定", icon: Database },
   { id: "prompts", label: "AIプロンプト", eyebrow: "PROMPTS", description: "Dify・DeepSeek指示", icon: Bot },
   { id: "audit", label: "運用監査", eyebrow: "GUARDRAILS", description: "安全制御と漏れ検知", icon: ShieldCheck },
@@ -96,7 +94,7 @@ const tabItems: TabItem[] = [
 ]
 
 const tabIds = new Set<SalesTab>(tabItems.map((tab) => tab.id))
-const externalGuiIds = new Set<SalesTab>()
+const externalGuiIds = new Set<SalesTab>(["directus", "analytics", "keystatic", "supabaseStudio"])
 
 const localeLabels: Record<string, { country: string; language: string }> = {
   ja: { country: "日本", language: "日本語" },
@@ -116,7 +114,7 @@ const localeLabels: Record<string, { country: string; language: string }> = {
 function normalizeTab(value: string | null): SalesTab {
   if (value === "batches" || value === "workspace") return "automation"
   if (value === "videoPipeline") return "reportVideoStudio"
-  return value && tabIds.has(value as SalesTab) ? (value as SalesTab) : "overview"
+  return value && tabIds.has(value as SalesTab) ? (value as SalesTab) : "automation"
 }
 
 function formatGeneratedAt(value: string): string {
@@ -156,6 +154,7 @@ function resolveExternalGuiUrl(tab: SalesTab, data: SalesDashboardData): string 
   if (tab === "directus") return withPath(toolUrl(data, "directus") ?? "https://directus.paradigmjp.com", "/admin")
   if (tab === "keystatic") return toolUrl(data, "keystatic") ?? "https://keystatic.paradigmjp.com"
   if (tab === "supabaseStudio") return process.env.NEXT_PUBLIC_SUPABASE_STUDIO_URL?.trim() || "https://supabase.com/dashboard/project/yihdmgtxiqfdgdueolub"
+  if (tab === "analytics") return toolUrl(data, "metabase") ?? process.env.METABASE_BASE_URL?.trim() ?? "https://metabase.paradigmjp.com"
   return "/"
 }
 
@@ -222,17 +221,17 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
   }, [searchParams])
 
   function changeTab(tab: SalesTab) {
+    const tabConfig = tabItems.find((t) => t.id === tab)
+    if (tabConfig?.externalGui) {
+      const url = resolveExternalGuiUrl(tab, data)
+      window.open(url, "_blank", "noopener,noreferrer")
+      return
+    }
     setActiveTab(tab)
     const params = new URLSearchParams(searchParams.toString())
-    if (tab === "overview") params.delete("tab")
-    else params.set("tab", tab)
+    params.set("tab", tab)
     const query = params.toString()
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-  }
-
-  function openExternalGui(tab: SalesTab) {
-    const url = resolveExternalGuiUrl(tab, data)
-    window.open(url, "_blank", "noopener,noreferrer")
   }
 
   function handleLocaleChange(newLocale: string) {
@@ -266,15 +265,6 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
 
   const renderTab = () => {
     switch (activeTab) {
-      case "overview":
-        return (
-          <div className="grid gap-5">
-            <SalesPipelinePanel data={data} />
-            <ExternalStudioSyncPanel data={data} studio="all" />
-            <SalesUnifiedOpsPanel data={data} />
-            <OverviewPanel data={data} />
-          </div>
-        )
       case "automation":
         return <SalesAutomationPanel data={data} />
       case "operator":
@@ -318,7 +308,11 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
       case "crm":
         return <CrmPanel data={data} />
       case "analytics":
-        return <AnalyticsPanel data={data} />
+        return (
+          <div className="grid gap-5 p-6 sm:p-8">
+            <ExternalGuiPanel tab="analytics" data={data} />
+          </div>
+        )
       case "integrations":
         return <IntegrationsPanel data={data} />
       case "prompts":
@@ -330,7 +324,7 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
       case "migration":
         return <MigrationPanel data={data} />
       default:
-        return <OverviewPanel data={data} />
+        return <SalesAutomationPanel data={data} />
     }
   }
 
@@ -356,7 +350,7 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
                 {tabItems.map((tab) => {
                   const Icon = tab.icon
                   const isActive = activeTab === tab.id
-                  const externalUrl = tab.externalGui && tab.id === "directus" ? resolveExternalGuiUrl(tab.id, data) : null
+                  const externalUrl = tab.externalGui ? resolveExternalGuiUrl(tab.id, data) : null
                   const itemClassName = `group relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left transition-all duration-200 ${
                     isActive ? "bg-zinc-900 text-white shadow-md shadow-zinc-900/10" : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
                   }`
@@ -463,12 +457,7 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
               <select
                 value={activeTab}
                 onChange={(event) => {
-                  const nextTab = event.target.value as SalesTab
-                  if (externalGuiIds.has(nextTab)) {
-                    openExternalGui(nextTab)
-                    return
-                  }
-                  changeTab(nextTab)
+                  changeTab(event.target.value as SalesTab)
                 }}
                 className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm font-bold shadow-sm outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
                 aria-label="営業機能を選択"
