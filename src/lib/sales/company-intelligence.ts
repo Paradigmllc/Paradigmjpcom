@@ -93,6 +93,14 @@ export function buildCompanyIntelligence(
   const formDiscovery = asRecord(meta.form_discovery)
   const japanMarketAudit = asRecord(meta.japan_market_audit)
   const japanMarketStatus = asRecord(japanMarketAudit?.status)
+  const dns = asRecord(meta.dns)
+  const w3c = asRecord(meta.w3c_validation)
+  const hstsData = asRecord(meta.hsts_preload)
+  const wayback = asRecord(meta.wayback_machine)
+  const crtsh = asRecord(meta.crtsh)
+  const radar = asRecord(meta.cloudflare_radar)
+  const observatory = asRecord(meta.mozilla_observatory)
+  const trends = asRecord(meta.google_trends)
   const japanMarketMissing = [
     asBoolean(japanMarketStatus?.tokushoho_missing),
     asBoolean(japanMarketStatus?.appi_missing),
@@ -233,6 +241,76 @@ export function buildCompanyIntelligence(
       whyItMatters: meaningFor(sourceItems, "dify", "Dify turns evidence into industry-specific language and offer selection."),
       missingConsequence: !asString(diagnosis?.primaryPain) ? missingFor(sourceItems, "dify") : undefined,
     },
+    {
+      id: "dns-email",
+      label: "Email security",
+      value: dns ? (dns.email_security_ok ? "SPF+DMARC configured" : "incomplete") : "not collected",
+      source: "DNS-over-HTTPS",
+      category: "security",
+      tone: dns ? (dns.email_security_ok ? "good" : "warning") : "neutral",
+      detail: `Email provider: ${asString(dns?.email_provider) ?? "unknown"}. SPF: ${yesNo(!!asString(dns?.spf))}. DMARC: ${yesNo(!!asString(dns?.dmarc))}. DKIM: ${(dns?.dkim_selectors as string[] | undefined)?.length ?? 0} selector(s).`,
+      whyItMatters: "Email deliverability and spoofing protection affect domain reputation and cold-outreach trust.",
+    },
+    {
+      id: "w3c-html",
+      label: "HTML quality",
+      value: w3c ? `${w3c.errors} errors / ${w3c.warnings} warnings` : "not collected",
+      source: "W3C Validator",
+      category: "website",
+      tone: w3c ? (w3c.is_clean ? "good" : "warning") : "neutral",
+      detail: "Valid HTML improves accessibility, cross-browser compatibility, and SEO crawl efficiency.",
+      whyItMatters: "Clean HTML reduces rendering bugs and improves search engine understanding.",
+    },
+    {
+      id: "hsts-preload",
+      label: "HSTS Preload",
+      value: hstsData ? (hstsData.preloaded ? "preloaded" : "not preloaded") : "not collected",
+      source: "HSTS Preload",
+      category: "security",
+      tone: hstsData?.preloaded ? "good" : "neutral",
+      detail: "HSTS preload forces HTTPS and prevents downgrade attacks for all visitors.",
+      whyItMatters: "HSTS preload is a one-way security improvement that browsers enforce globally.",
+    },
+    {
+      id: "wayback-history",
+      label: "Site history",
+      value: wayback ? `${wayback.total_snapshots} snapshots / ${wayback.years_active}y active` : "not collected",
+      source: "Wayback Machine",
+      category: "company",
+      tone: wayback && (wayback.years_active as number) > 3 ? "good" : "neutral",
+      detail: `First archived: ${asString(wayback?.first_snapshot) ?? "unknown"}. Last: ${asString(wayback?.last_snapshot) ?? "unknown"}.`,
+      whyItMatters: "Historical snapshots reveal site age, redesign cadence, and long-term maintenance patterns.",
+    },
+    {
+      id: "crtsh-certs",
+      label: "SSL certificates",
+      value: crtsh ? `${crtsh.total_certs} certs found` : "not collected",
+      source: "crt.sh",
+      category: "security",
+      tone: crtsh ? ((crtsh.total_certs as number) > 0 ? "good" : "warning") : "neutral",
+      detail: `Subdomains discovered: ${(crtsh?.subdomains as string[] | undefined)?.length ?? 0}.`,
+      whyItMatters: "Certificate transparency reveals subdomains, infrastructure changes, and security history.",
+    },
+    {
+      id: "radar-ranking",
+      label: "Traffic rank",
+      value: radar?.rank_bucket ? `${radar.rank_bucket}` : "unranked / not collected",
+      source: "Cloudflare Radar",
+      category: "seo",
+      tone: radar?.rank_bucket ? "good" : "neutral",
+      detail: `Global rank: ${radar?.rank ?? "N/A"}. Categories: ${(radar?.categories as string[] | undefined)?.join(", ") ?? "none"}.`,
+      whyItMatters: "Traffic ranking helps size the opportunity and compare against industry benchmarks.",
+    },
+    {
+      id: "observatory-score",
+      label: "Security score",
+      value: observatory?.score ? `${observatory.score as number}/100 (grade ${observatory.grade as string})` : "not collected",
+      source: "Mozilla Observatory",
+      category: "security",
+      tone: observatory ? ((observatory.score as number) >= 80 ? "good" : (observatory.score as number) >= 50 ? "warning" : "critical") : "neutral",
+      detail: `Tests passed: ${observatory?.tests_passed ?? "N/A"}/${observatory?.tests_total ?? "N/A"}.`,
+      whyItMatters: "Observatory goes beyond header presence and scores actual security posture depth.",
+    },
   ]
 
   const collected = sourceNames(sourceItems, "collected")
@@ -291,6 +369,26 @@ export function buildCompanyIntelligence(
         "Japanese buyers may hesitate if commercial disclosure, privacy handling, or local payment options are unclear.",
       recommendedAction:
         "Confirm the gaps manually, then generate a Japan-entry proposal with Dify. Do not assert legal violations, penalties, or compliance claims without primary-source review.",
+    })
+  }
+  if (dns && !dns.email_security_ok) {
+    painPoints.push({
+      id: "email-security",
+      title: "Email security configuration is incomplete",
+      severity: "opportunity",
+      evidence: !asString(dns.spf) ? "SPF record is missing." : "DMARC record is missing.",
+      implication: "Without SPF+DMARC, cold-outreach emails from this domain may land in spam or risk spoofing.",
+      recommendedAction: "Configure SPF and DMARC DNS records. Consider DKIM signing for transactional email.",
+    })
+  }
+  if (w3c && !w3c.is_clean) {
+    painPoints.push({
+      id: "html-quality",
+      title: "HTML validation issues detected on the homepage",
+      severity: "opportunity",
+      evidence: `${w3c.errors} errors, ${w3c.warnings} warnings from W3C Validator.`,
+      implication: "Validation issues can cause rendering bugs across browsers and hurt accessibility.",
+      recommendedAction: `Fix top issues: ${(w3c.top_issues as string[] | undefined)?.slice(0, 2).join("; ") ?? "see validator report"}.`,
     })
   }
   if (painPoints.length === 0) {

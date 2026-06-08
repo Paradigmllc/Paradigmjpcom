@@ -26,6 +26,10 @@ import { searchCrtsh } from "./sources/crtsh"
 import { queryCloudflareRadar } from "./sources/cloudflare-radar"
 import { scanMozillaObservatory } from "./sources/mozilla-observatory"
 import { fetchGoogleTrendsInterest } from "./sources/pytrends"
+import { queryDnsRecords } from "./sources/dns-doh"
+import { validateHtml } from "./sources/w3c-validator"
+import { checkHstsPreload } from "./sources/hsts-preload"
+import { queryWaybackMachine } from "./sources/wayback-machine"
 import { autoPersonalize } from "./personalize"
 import { saveTechStackDetections } from "./source-acquisition"
 import type { Industry, SalesCompany } from "./types"
@@ -144,7 +148,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   // Step 2: 並列 30+ source enrich (Sprint 15: PSI + gBizInfo + Wappalyzer + SSL + Whois + Places)
   //         Hunter.io はメール検索 (フォーム経由で email 既知の場合のみ)
   const url = domain.startsWith("http") ? domain : `https://${domain}`
-  const [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends] = await Promise.all([
+  const [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback] = await Promise.all([
     scanDomain(domain).catch((e) => {
       console.error("[enrich] scanDomain failed:", e)
       return null
@@ -191,6 +195,22 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     }),
     fetchGoogleTrendsInterest(domain).catch((e) => {
       console.error("[enrich] pytrends failed:", e)
+      return null
+    }),
+    queryDnsRecords(domain).catch((e) => {
+      console.error("[enrich] dns-doh failed:", e)
+      return null
+    }),
+    validateHtml(url).catch((e) => {
+      console.error("[enrich] w3c-validator failed:", e)
+      return null
+    }),
+    checkHstsPreload(domain).catch((e) => {
+      console.error("[enrich] hsts-preload failed:", e)
+      return null
+    }),
+    queryWaybackMachine(domain).catch((e) => {
+      console.error("[enrich] wayback-machine failed:", e)
       return null
     }),
   ])
@@ -247,6 +267,27 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
       : null,
     google_trends: trends?.ok
       ? { interest_over_time: trends.interestOverTime }
+      : null,
+    dns: dns?.ok
+      ? {
+          mx_records: dns.mxRecords,
+          spf: dns.spfRecord,
+          dkim_selectors: dns.dkimSelectors,
+          dmarc: dns.dmarcRecord,
+          a_records: dns.aRecords,
+          cname_records: dns.cnameRecords,
+          email_provider: dns.emailProvider,
+          email_security_ok: dns.hasEmailSecurity,
+        }
+      : null,
+    w3c_validation: w3c?.ok
+      ? { errors: w3c.errors, warnings: w3c.warnings, is_clean: w3c.isClean, top_issues: w3c.topIssues }
+      : null,
+    hsts_preload: hsts?.ok
+      ? { preloaded: hsts.isPreloaded, status: hsts.status }
+      : null,
+    wayback_machine: wayback?.ok
+      ? { total_snapshots: wayback.totalSnapshots, first_snapshot: wayback.firstSnapshot, last_snapshot: wayback.lastSnapshot, years_active: wayback.yearsActive }
       : null,
     ...(gbizFirst ? toCompanyMeta(gbizFirst) : {}),
   }
