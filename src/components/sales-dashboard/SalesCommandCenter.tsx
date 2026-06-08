@@ -157,7 +157,7 @@ function TemplateManagementPanel({ data }: { data: SalesDashboardData }) {
               { variant: "subsidy", label: "補助金診断", desc: "マッチング・申請計画", color: "teal" },
               { variant: "outreach", label: "アウトリーチ診断", desc: "フォーム・ファネル", color: "orange" },
             ].map((v) => (
-              <a key={v.variant} href={`/ja/report/template-preview#${v.variant}`} target="_blank" rel="noopener noreferrer"
+              <a key={v.variant} href={`/ja/report/demo/${v.variant}`} target="_blank" rel="noopener noreferrer"
                 className="rounded-lg border border-zinc-200 p-4 hover:border-zinc-400 hover:shadow-sm transition-all">
                 <div className="text-xs font-bold text-zinc-900">{v.label}</div>
                 <div className="mt-1 text-[10px] text-zinc-500">{v.desc}</div>
