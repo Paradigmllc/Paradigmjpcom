@@ -242,7 +242,7 @@ export async function createLeadBatch(input: {
       total_rows: input.rows.length,
       min_outreach_score: Math.max(0, Math.min(100, input.minOutreachScore ?? 70)),
       max_outreach_ready: Math.max(1, Math.min(5000, input.maxOutreachReady ?? 500)),
-      dry_run_only: input.dryRunOnly ?? true,
+      dry_run_only: input.dryRunOnly ?? false,
       started_at: new Date().toISOString(),
     })
     .select("*")

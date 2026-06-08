@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
   const result = await runOutreachBatch({
     region,
     limit,
-    dryRun: body.dryRun ?? true, // 安全側 default
+    dryRun: body.dryRun ?? false,
     first5Approval: body.first5Approval ?? true,
     enableLlm: body.enableLlm ?? false,
     checkRobots: body.checkRobots ?? true,

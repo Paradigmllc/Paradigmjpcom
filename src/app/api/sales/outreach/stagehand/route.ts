@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 })
   }
 
-  const { url, fields, message, dryRun = true } = body
+  const { url, fields, message, dryRun = false } = body
   if (!url) return NextResponse.json({ ok: false, error: "url is required" }, { status: 400 })
   if (!fields) return NextResponse.json({ ok: false, error: "fields is required" }, { status: 400 })
   if (!message) return NextResponse.json({ ok: false, error: "message is required" }, { status: 400 })

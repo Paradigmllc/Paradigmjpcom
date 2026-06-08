@@ -4,19 +4,11 @@ import { useEffect, useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import {
-  BarChart3,
-  Bot,
   BriefcaseBusiness,
-  Clapperboard,
-  ChevronRight,
   Database,
   ExternalLink,
-  FileText,
   Globe2,
-  LayoutDashboard,
-  ListChecks,
   Menu,
-  Rocket,
   ShieldCheck,
   Sparkles,
   UploadCloud,
@@ -26,42 +18,21 @@ import {
 import { Toaster } from "sonner"
 
 import {
-  AnalyticsPanel,
   CrmPanel,
   IntegrationsPanel,
-  MigrationPanel,
-  OperatorPanel,
-  OverviewPanel,
 } from "./SalesCommandPanels"
-import { SalesAgentTeamPanel } from "./SalesAgentTeamPanel"
 import { SalesAutomationPanel } from "./SalesAutomationPanel"
-import { SalesDocsPanel } from "./SalesDocsPanel"
 import { SalesOperationsAuditPanel } from "./SalesOperationsAuditPanel"
-import { SalesTemplateWorkbenchPanel } from "./SalesTemplateWorkbenchPanel"
-import { SalesUnifiedOpsPanel } from "./SalesUnifiedOpsPanel"
-import { SalesProVideoStudioPanel } from "./SalesProVideoStudioPanel"
 import { SalesReportVideoStudioPanel } from "./SalesReportVideoStudioPanel"
-import { ExternalStudioSyncPanel } from "./ExternalStudioSyncPanel"
-import { SalesPipelinePanel } from "./SalesPipelinePanel"
-import { AiPromptsPanel } from "./AiPromptsPanel"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 
 type SalesTab =
   | "automation"
-  | "operator"
-  | "agentTeam"
   | "reportVideoStudio"
-  | "proVideoStudio"
-  | "keystatic"
-  | "directus"
-  | "supabaseStudio"
   | "crm"
-  | "analytics"
-  | "integrations"
-  | "prompts"
-  | "audit"
-  | "docs"
-  | "migration"
+  | "system"
+
+type SystemSubTab = "integrations" | "audit"
 
 type SalesCommandCenterProps = {
   data: SalesDashboardData
@@ -71,32 +42,30 @@ type SalesCommandCenterProps = {
 type TabItem = {
   id: SalesTab
   label: string
-  eyebrow: string
   description: string
   icon: React.ComponentType<{ className?: string }>
-  externalGui?: true
 }
 
 const tabItems: TabItem[] = [
-  { id: "automation", label: "CSV・自動診断", eyebrow: "INTAKE", description: "投入から企業カルテ生成", icon: UploadCloud },
-  { id: "reportVideoStudio", label: "レポート動画", eyebrow: "GPULESS", description: "診断解説・HyperFrames", icon: Video },
-  { id: "proVideoStudio", label: "プロ級動画", eyebrow: "GPU STUDIO", description: "Vast.ai + ComfyUI", icon: Clapperboard },
-  { id: "operator", label: "オペレーター", eyebrow: "QUEUE", description: "人間確認が必要な作業", icon: ListChecks },
-  { id: "agentTeam", label: "AIチーム", eyebrow: "AGENTS", description: "Hermes / Telegram / Slack", icon: Bot },
-  { id: "directus", label: "資料・スライド", eyebrow: "DIRECTUS", description: "Directus正規GUI", icon: Sparkles, externalGui: true },
-  { id: "keystatic", label: "デモサイト管理", eyebrow: "KEYSTATIC", description: "Keystatic正規GUI", icon: Globe2, externalGui: true },
-  { id: "supabaseStudio", label: "診断レポート", eyebrow: "SUPABASE", description: "Supabase Studio", icon: Database, externalGui: true },
-  { id: "crm", label: "CRM設定", eyebrow: "TWENTY", description: "表示列と選択肢マスター", icon: BriefcaseBusiness },
-  { id: "analytics", label: "分析", eyebrow: "METABASE", description: "営業KPIとボトルネック", icon: BarChart3, externalGui: true },
-  { id: "integrations", label: "統合", eyebrow: "OSS / API", description: "接続・残量・未設定", icon: Database },
-  { id: "prompts", label: "AIプロンプト", eyebrow: "PROMPTS", description: "Dify・DeepSeek指示", icon: Bot },
-  { id: "audit", label: "運用監査", eyebrow: "GUARDRAILS", description: "安全制御と漏れ検知", icon: ShieldCheck },
-  { id: "docs", label: "使い方", eyebrow: "RUNBOOK", description: "実務フローと判断基準", icon: FileText },
-  { id: "migration", label: "移行計画", eyebrow: "INFRA", description: "サーバー・SSOT移行", icon: Rocket },
+  { id: "automation", label: "投入・作業", description: "CSV / SearxNG / リスト", icon: UploadCloud },
+  { id: "reportVideoStudio", label: "動画生成", description: "HyperFrames", icon: Video },
+  { id: "crm", label: "CRM", description: "Twenty連携", icon: BriefcaseBusiness },
+  { id: "system", label: "システム管理", description: "統合監査・運用", icon: ShieldCheck },
+]
+
+const systemSubTabs: { id: SystemSubTab; label: string }[] = [
+  { id: "integrations", label: "統合監査" },
+  { id: "audit", label: "運用監査" },
+]
+
+const externalTools = [
+  { label: "Directus", url: "https://directus.paradigmjp.com/admin" },
+  { label: "Keystatic", url: "https://keystatic.paradigmjp.com" },
+  { label: "Supabase", url: "https://supabase.com/dashboard" },
+  { label: "Metabase", url: "https://metabase.paradigmjp.com" },
 ]
 
 const tabIds = new Set<SalesTab>(tabItems.map((tab) => tab.id))
-const externalGuiIds = new Set<SalesTab>(["directus", "analytics", "keystatic", "supabaseStudio"])
 
 const localeLabels: Record<string, { country: string; language: string }> = {
   ja: { country: "日本", language: "日本語" },
@@ -114,9 +83,12 @@ const localeLabels: Record<string, { country: string; language: string }> = {
 }
 
 function normalizeTab(value: string | null): SalesTab {
-  if (value === "batches" || value === "workspace") return "automation"
-  if (value === "videoPipeline") return "reportVideoStudio"
+  if (value === "batches" || value === "workspace" || value === "operator" || value === "proVideoStudio" || value === "videoPipeline") return "automation"
   return value && tabIds.has(value as SalesTab) ? (value as SalesTab) : "automation"
+}
+
+function normalizeSystemSubTab(value: string | null): SystemSubTab {
+  return value === "audit" ? "audit" : "integrations"
 }
 
 function formatGeneratedAt(value: string): string {
@@ -137,43 +109,6 @@ function statusLabel(status: string): string {
   return status
 }
 
-function withPath(baseUrl: string, pathname: string): string {
-  try {
-    const url = new URL(baseUrl)
-    if (!url.pathname || url.pathname === "/") url.pathname = pathname
-    return url.toString()
-  } catch (error) {
-    console.error("[sales-command-center] invalid external GUI URL:", error)
-    return baseUrl
-  }
-}
-
-function toolUrl(data: SalesDashboardData, slug: string): string | null {
-  return data.toolConnections.find((tool) => tool.slug === slug)?.baseUrl ?? null
-}
-
-function resolveSupabaseStudioUrl(): string {
-  const envUrl = process.env.NEXT_PUBLIC_SUPABASE_STUDIO_URL?.trim()
-  if (envUrl) return envUrl
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
-  if (supabaseUrl) {
-    const match = supabaseUrl.match(/https:\/\/([a-z0-9]+)\.supabase\.co/)
-    if (match?.[1]) return `https://supabase.com/dashboard/project/${match[1]}`
-  }
-
-  console.error("[sales-command-center] Cannot resolve Supabase Studio URL: NEXT_PUBLIC_SUPABASE_STUDIO_URL and NEXT_PUBLIC_SUPABASE_URL are both unset")
-  return "https://supabase.com/dashboard"
-}
-
-function resolveExternalGuiUrl(tab: SalesTab, data: SalesDashboardData): string {
-  if (tab === "directus") return withPath(toolUrl(data, "directus") ?? "https://directus.paradigmjp.com", "/admin")
-  if (tab === "keystatic") return toolUrl(data, "keystatic") ?? "https://keystatic.paradigmjp.com"
-  if (tab === "supabaseStudio") return resolveSupabaseStudioUrl()
-  if (tab === "analytics") return toolUrl(data, "metabase") ?? process.env.METABASE_BASE_URL?.trim() ?? "https://metabase.paradigmjp.com"
-  return "/"
-}
-
 function MetricTile({ label, value, helper, delay, urgent }: { label: string; value: string; helper: string; delay: number; urgent?: boolean }) {
   return (
     <motion.div
@@ -189,47 +124,12 @@ function MetricTile({ label, value, helper, delay, urgent }: { label: string; va
   )
 }
 
-function ExternalGuiPanel({ tab, data }: { tab: SalesTab; data: SalesDashboardData }) {
-  const item = tabItems.find((candidate) => candidate.id === tab) ?? tabItems[0]
-  const Icon = item.icon
-  const url = resolveExternalGuiUrl(tab, data)
-  return (
-    <section className="p-6 sm:p-8">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50">
-              <Icon className="h-5 w-5 text-zinc-900" />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">{item.eyebrow}</p>
-              <h3 className="text-xl font-bold tracking-tight text-zinc-950">{item.label}</h3>
-            </div>
-          </div>
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-600">
-            外部OSSの詳細編集画面を開きます。営業データの同期と復旧は、この上のRevenue OS同期パネルから実行します。
-          </p>
-          <p className="mt-2 break-all font-mono text-xs text-zinc-500">{url}</p>
-        </div>
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-zinc-950 px-4 text-sm font-bold text-white shadow-sm hover:bg-zinc-800"
-        >
-          正規GUIを開く
-          <ExternalLink className="h-4 w-4" aria-hidden />
-        </a>
-      </div>
-    </section>
-  )
-}
-
 export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<SalesTab>(() => normalizeTab(searchParams.get("tab")))
+  const [systemSubTab, setSystemSubTab] = useState<SystemSubTab>(() => normalizeSystemSubTab(searchParams.get("sub")))
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
@@ -237,19 +137,13 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
     setActiveTab((current) => (current === nextTab ? current : nextTab))
   }, [searchParams])
 
-  function changeTab(tab: SalesTab) {
-    const tabConfig = tabItems.find((t) => t.id === tab)
-    if (tabConfig?.externalGui) {
-      const url = resolveExternalGuiUrl(tab, data)
-      window.open(url, "_blank", "noopener,noreferrer")
-      return
-    }
-    setActiveTab(tab)
-    const params = new URLSearchParams(searchParams.toString())
-    params.set("tab", tab)
-    const query = params.toString()
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-  }
+function changeTab(tab: SalesTab) {
+  setActiveTab(tab)
+  const params = new URLSearchParams(searchParams.toString())
+  params.set("tab", tab)
+  const query = params.toString()
+  router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+}
 
   function handleLocaleChange(newLocale: string) {
     const segments = pathname.split("/")
@@ -289,62 +183,24 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
     switch (activeTab) {
       case "automation":
         return <SalesAutomationPanel data={data} />
-      case "operator":
-        return <OperatorPanel data={data} />
-      case "agentTeam":
-        return <SalesAgentTeamPanel data={data} />
       case "reportVideoStudio":
         return <SalesReportVideoStudioPanel data={data} />
-      case "proVideoStudio":
-        return <SalesProVideoStudioPanel data={data} />
-      case "directus":
-        return (
-          <div className="grid gap-5 p-6 sm:p-8">
-            <ExternalStudioSyncPanel data={data} studio="directus" />
-            <ExternalGuiPanel tab="directus" data={data} />
-          </div>
-        )
-      case "keystatic":
-        return (
-          <div className="grid gap-5 p-6 sm:p-8">
-            <ExternalStudioSyncPanel data={data} studio="keystatic" />
-            <SalesTemplateWorkbenchPanel
-              data={data}
-              initialAssetType="astro_demo_site"
-              heading="Astro / Keystatic"
-              title="デモサイト制作ワークベンチ"
-              description="Astroデモサイトの構成、Difyプロンプト、Keystatic編集用の本文をSupabase SSOT上で管理します。外部CMSは補助画面として扱い、営業ダッシュボード側でプレビューと保存まで行います。"
-            />
-          </div>
-        )
-      case "supabaseStudio":
-        return (
-          <SalesTemplateWorkbenchPanel
-            data={data}
-            initialAssetType="diagnostic_report"
-            heading="Report SSOT"
-            title="診断レポート制作ワークベンチ"
-            description="診断レポートの構成、品質基準、Dify選定条件、顧客向け文面をSupabase SSOTで編集します。PostgRESTやSupabase Studioへ誤誘導せず、この画面で実運用のレポート素材を扱います。"
-          />
-        )
       case "crm":
         return <CrmPanel data={data} />
-      case "analytics":
+      case "system":
         return (
-          <div className="grid gap-5 p-6 sm:p-8">
-            <ExternalGuiPanel tab="analytics" data={data} />
+          <div className="space-y-4">
+            <div className="flex items-center gap-1 border-b border-zinc-200 px-4 pt-4">
+              {systemSubTabs.map((st) => (
+                <button key={st.id} onClick={() => setSystemSubTab(st.id)}
+                  className={`px-3 py-2 text-xs font-semibold border-b-2 transition-colors ${systemSubTab === st.id ? "border-zinc-900 text-zinc-900" : "border-transparent text-zinc-500 hover:text-zinc-700"}`}>
+                  {st.label}
+                </button>
+              ))}
+            </div>
+            {systemSubTab === "integrations" ? <IntegrationsPanel data={data} /> : <SalesOperationsAuditPanel data={data} />}
           </div>
         )
-      case "integrations":
-        return <IntegrationsPanel data={data} />
-      case "prompts":
-        return <AiPromptsPanel data={data} />
-      case "audit":
-        return <SalesOperationsAuditPanel data={data} />
-      case "docs":
-        return <SalesDocsPanel data={data} />
-      case "migration":
-        return <MigrationPanel data={data} />
       default:
         return <SalesAutomationPanel data={data} />
     }
@@ -379,20 +235,24 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
               {tabItems.map((tab) => {
                 const Icon = tab.icon
                 const isActive = activeTab === tab.id
-                const externalUrl = tab.externalGui ? resolveExternalGuiUrl(tab.id, data) : null
                 return (
-                  <button
-                    key={tab.id}
-                    type="button"
+                  <button key={tab.id} type="button"
                     onClick={() => { changeTab(tab.id); setMobileMenuOpen(false) }}
-                    className={`flex w-full items-center gap-2.5 px-5 py-2.5 text-left text-sm ${isActive ? "bg-zinc-100 font-bold text-zinc-900" : "font-medium text-zinc-600 hover:bg-zinc-50"}`}
-                  >
+                    className={`flex w-full items-center gap-2.5 px-5 py-2.5 text-left text-sm ${isActive ? "bg-zinc-100 font-bold text-zinc-900" : "font-medium text-zinc-600 hover:bg-zinc-50"}`}>
                     <Icon className="h-4 w-4 shrink-0 text-zinc-500" />
                     <span className="min-w-0 flex-1 truncate">{tab.label}</span>
-                    {externalUrl && <ExternalLink className="h-3 w-3 text-zinc-400" />}
                   </button>
                 )
               })}
+              <div className="mt-2 border-t border-zinc-100 pt-2">
+                <p className="px-5 text-[10px] font-semibold uppercase text-zinc-400">外部ツール</p>
+                {externalTools.map((tool) => (
+                  <a key={tool.label} href={tool.url} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-5 py-2 text-sm text-zinc-500 hover:bg-zinc-50">
+                    {tool.label} <ExternalLink className="h-3 w-3 text-zinc-400" />
+                  </a>
+                ))}
+              </div>
             </nav>
           </div>
         </div>
@@ -417,49 +277,37 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
                 {tabItems.map((tab) => {
                   const Icon = tab.icon
                   const isActive = activeTab === tab.id
-                  const externalUrl = tab.externalGui ? resolveExternalGuiUrl(tab.id, data) : null
-                  const itemClassName = `group relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left transition-all duration-200 ${
-                    isActive ? "bg-zinc-900 text-white shadow-md shadow-zinc-900/10" : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
-                  }`
-                  const itemContent = (
-                    <>
-                      {isActive && <motion.div layoutId="activeTab" className="absolute inset-0 rounded-lg bg-zinc-900" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}
-                      <Icon className={`relative z-10 h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-zinc-400 group-hover:text-zinc-700"}`} />
-                      <span className="relative z-10 min-w-0 flex-1">
-                        <span className="block truncate text-xs font-semibold tracking-wide">{tab.label}</span>
-                        <span className={`mt-0.5 block truncate text-[9px] font-medium uppercase tracking-widest ${isActive ? "text-zinc-400" : "text-zinc-400"}`}>
-                          {tab.eyebrow}
-                        </span>
-                      </span>
-                      {externalUrl ? <ExternalLink className="relative z-10 h-3.5 w-3.5 text-zinc-400" aria-hidden /> : isActive && <ChevronRight className="relative z-10 h-3.5 w-3.5 text-zinc-400" />}
-                    </>
-                  )
-                  if (externalUrl) {
-                    return (
-                      <a
-                        key={tab.id}
-                        href={externalUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={itemClassName}
-                        aria-current={isActive ? "page" : undefined}
-                      >
-                        {itemContent}
-                      </a>
-                    )
-                  }
                   return (
                     <button
                       key={tab.id}
                       type="button"
                       onClick={() => changeTab(tab.id)}
-                      className={itemClassName}
+                      className={`group relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left transition-all duration-200 ${
+                        isActive ? "bg-zinc-900 text-white shadow-md shadow-zinc-900/10" : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
+                      }`}
                       aria-pressed={isActive}
                     >
-                      {itemContent}
+                      {isActive && <motion.div layoutId="activeTab" className="absolute inset-0 rounded-lg bg-zinc-900" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}
+                      <Icon className={`relative z-10 h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-zinc-400 group-hover:text-zinc-700"}`} />
+                      <span className="relative z-10 min-w-0 flex-1">
+                        <span className="block truncate text-xs font-semibold tracking-wide">{tab.label}</span>
+                        <span className="mt-0.5 block truncate text-[9px] text-zinc-400">{tab.description}</span>
+                      </span>
                     </button>
                   )
                 })}
+              </div>
+              {/* External tools */}
+              <div className="mt-4 border-t border-zinc-100 pt-3">
+                <p className="px-3 text-[9px] font-semibold uppercase tracking-widest text-zinc-400">外部ツール</p>
+                <div className="mt-1.5 space-y-0.5">
+                  {externalTools.map((tool) => (
+                    <a key={tool.label} href={tool.url} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 rounded-md px-3 py-1.5 text-[11px] font-medium text-zinc-500 hover:bg-zinc-50 hover:text-zinc-700 transition-colors">
+                      {tool.label} <ExternalLink className="h-3 w-3 text-zinc-400" />
+                    </a>
+                  ))}
+                </div>
               </div>
             </nav>
 
@@ -502,11 +350,11 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
                 </div>
 
                 <div className="mt-5 flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-zinc-200 bg-white shadow-sm">
-                    <ActiveTabIcon className="h-6 w-6 text-zinc-900" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white shadow-sm">
+                    <ActiveTabIcon className="h-5 w-5 text-zinc-900" />
                   </div>
                   <div className="min-w-0">
-                    <h2 className="truncate text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">{activeTabItem.label}</h2>
+                    <h2 className="truncate text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">{activeTabItem.label}</h2>
                     <p className="mt-1 truncate text-sm font-medium text-zinc-500">{activeTabItem.description}</p>
                   </div>
                 </div>

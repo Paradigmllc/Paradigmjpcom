@@ -179,7 +179,7 @@ export function SalesAutomationPanel({ data }: { data: SalesDashboardData }) {
           report_locale: data.scope.reportLocale,
           target_country: data.scope.targetCountry,
           limit: 3,
-          dryRun: true,
+          dryRun: false,
           first5Approval: true,
           enableLlm: false,
           checkRobots: true,

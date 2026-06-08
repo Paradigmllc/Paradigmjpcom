@@ -218,7 +218,7 @@ export function SalesBatchOpsPanel({ data }: { data: SalesDashboardData }) {
           enrich: true,
           min_outreach_score: score,
           max_outreach_ready: cap,
-          dry_run_only: true,
+          dry_run_only: false,
         }),
       })
       const json = await readSalesApiJson<{ ok?: boolean; batch?: SalesLeadBatchSummary; error?: string }>(res)
