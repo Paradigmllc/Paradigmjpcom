@@ -132,6 +132,42 @@ export function SalesSearxngSourcePanel({
     setRuns(json.runs ?? [])
   }
 
+  async function autoRun() {
+    const cleanQuery = query.trim()
+    if (!cleanQuery) { toast.error("検索クエリを入力してください"); return }
+    setBusy(true)
+    try {
+      // Step 1: execute search
+      const searchRes = await fetch("/api/sales/searxng/runs", {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: cleanQuery, engines, categories, language, pages, safesearch: 1, report_locale: data.scope.reportLocale, target_country: data.scope.targetCountry }),
+      })
+      const searchJson = await readSalesApiJson<ApiRunsResult>(searchRes)
+      if (!searchRes.ok || !searchJson.ok) throw new Error(searchJson.error ?? "Search failed")
+      const runId = searchJson.run?.id
+      if (!runId) throw new Error("No run ID returned")
+
+      // Step 2: immediately import to batch (enrichment auto-fires)
+      const importRes = await fetch(`/api/sales/searxng/runs/${runId}/import`, {
+        method: "POST", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ min_score: minScore, limit, enrich: true, max_outreach_ready: 300 }),
+      })
+      const importJson = await readSalesApiJson<ImportResult>(importRes)
+      if (!importRes.ok || !importJson.ok) throw new Error(importJson.error ?? "Import failed")
+
+      toast.success(`全自動実行完了: ${formatNumber(searchJson.run?.readyCount ?? 0)}件検出 → ${formatNumber(importJson.imported ?? 0)}件エンリッチメント開始`)
+      await refresh()
+      await onImported?.()
+    } catch (error) {
+      console.error("[sales-searxng-ui] auto-run failed:", error)
+      toast.error(error instanceof Error ? error.message : "全自動実行に失敗しました")
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function runSearch() {
     const cleanQuery = query.trim()
     if (!cleanQuery) {
@@ -201,7 +237,7 @@ export function SalesSearxngSourcePanel({
         </div>
         <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
           <ShieldCheck size={14} aria-hidden />
-          dry-run前提
+          検索→即エンリッチメント
         </span>
       </div>
       <div className="mt-4 grid gap-3 lg:grid-cols-[1fr_180px_150px_100px_auto]">
@@ -215,7 +251,11 @@ export function SalesSearxngSourcePanel({
         <input value={engines} onChange={(event) => setEngines(event.target.value)} className="h-10 rounded-md border border-zinc-200 px-3 text-sm outline-none focus:border-zinc-500" aria-label="検索エンジン" />
         <input value={categories} onChange={(event) => setCategories(event.target.value)} className="h-10 rounded-md border border-zinc-200 px-3 text-sm outline-none focus:border-zinc-500" aria-label="検索カテゴリ" />
         <input type="number" min={1} max={5} value={pages} onChange={(event) => setPages(Number(event.target.value))} className="h-10 rounded-md border border-zinc-200 px-3 text-sm outline-none focus:border-zinc-500" aria-label="検索ページ数" />
-        <button type="button" onClick={runSearch} disabled={busy} className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60" aria-label="SearxNG検索を実行">
+        <button type="button" onClick={autoRun} disabled={busy} className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 hover:bg-emerald-700" aria-label="全自動実行: 検索→インポート→エンリッチ">
+          {busy ? <RefreshCw size={16} className="animate-spin" aria-hidden /> : <DatabaseZap size={16} aria-hidden />}
+          全自動
+        </button>
+        <button type="button" onClick={runSearch} disabled={busy} className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60" aria-label="SearxNG検索のみ実行">
           {busy ? <RefreshCw size={16} className="animate-spin" aria-hidden /> : <Search size={16} aria-hidden />}
           検索保存
         </button>

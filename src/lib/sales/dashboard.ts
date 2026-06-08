@@ -611,6 +611,7 @@ function mapCompany(row: SalesCompanyRow): DashboardCompany {
     templateVariant: row.template_variant ?? extractString(row.meta, ["routing", "template_variant"]),
     updatedAt: row.updated_at,
     createdAt: row.created_at,
+    lastEnrichedAt: extractString(row.meta, ["sales_os", "last_enriched_at"]),
     contactFormUrl: extractString(row.meta, ["contact_form_url"]) ?? extractString(row.meta, ["discovery", "contact_form_url"]),
     personalizedCopy:
       extractString(row.meta, ["personalized_copy", "personalized_hook"]) ??

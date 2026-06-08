@@ -74,11 +74,12 @@ export function WorkspacePanel({ data }: { data: SalesDashboardData }) {
               <th className="px-4 py-3 text-right font-medium">速度</th>
               <th className="px-4 py-3 text-right font-medium">閲覧</th>
               <th className="px-4 py-3 font-medium">担当</th>
+              <th className="px-4 py-3 text-right font-medium">鮮度</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-12 text-center text-sm text-zinc-500">条件に一致するリードはありません。</td></tr>
+              <tr><td colSpan={8} className="px-4 py-12 text-center text-sm text-zinc-500">条件に一致するリードはありません。</td></tr>
             ) : filtered.map((company) => <CompanyRow key={company.id} company={company} updating={updatingId === company.id} onChangeStatus={changePipelineStatus} />)}
           </tbody>
         </table>

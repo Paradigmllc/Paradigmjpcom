@@ -218,6 +218,12 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   // Step 3: 集約して最終 upsert (meta JSONB に 30+ source のデータを統合保存)
   const gbizFirst = gbiz?.[0]
   const meta: Record<string, unknown> = {
+    sales_os: {
+      last_enriched_at: new Date().toISOString(),
+      enriched_via: input.source ?? "contact_form",
+      sources_collected: [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback]
+        .filter((s) => s != null && (Array.isArray(s) ? s.length > 0 : true)).length,
+    },
     contact: {
       original_email: input.email,
       services: input.services ?? [],

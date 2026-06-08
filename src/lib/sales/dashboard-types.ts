@@ -51,6 +51,7 @@ export interface DashboardCompany {
   templateVariant: string | null
   updatedAt: string
   createdAt: string
+  lastEnrichedAt: string | null
   contactFormUrl: string | null
   personalizedCopy: string | null
 }

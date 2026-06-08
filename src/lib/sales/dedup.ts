@@ -45,3 +45,57 @@ export function normalizeCompanyName(raw: unknown): string | null {
   s = s.trim()
   return s.length > 0 ? s : null
 }
+
+/**
+ * Levenshtein distance between two strings.
+ * Measures how many single-character edits are needed to transform a into b.
+ */
+export function levenshtein(a: string, b: string): number {
+  const m = a.length
+  const n = b.length
+  if (m === 0) return n
+  if (n === 0) return m
+  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0))
+  for (let i = 0; i <= m; i++) dp[i][0] = i
+  for (let j = 0; j <= n; j++) dp[0][j] = j
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      )
+    }
+  }
+  return dp[m][n]
+}
+
+/**
+ * Check if two company names are likely the same entity.
+ * Uses normalized name key comparison + Levenshtein similarity ratio.
+ * Returns a similarity score 0-100. Score >= 80 means likely duplicate.
+ */
+export function companyNameSimilarity(a: string, b: string): number {
+  const na = normalizeCompanyName(a)
+  const nb = normalizeCompanyName(b)
+  if (!na || !nb) return 0
+  if (na === nb) return 100
+  const maxLen = Math.max(na.length, nb.length)
+  if (maxLen === 0) return 0
+  const dist = levenshtein(na, nb)
+  return Math.round((1 - dist / maxLen) * 100)
+}
+
+/**
+ * Find potential duplicate companies in Supabase by company name similarity.
+ * Returns IDs of companies with >= similarityThreshold match.
+ */
+export function findDuplicatesByName(
+  target: string,
+  candidates: Array<{ id: string; company_name: string | null }>,
+  threshold = 80,
+): string[] {
+  return candidates
+    .filter((c) => c.company_name && companyNameSimilarity(target, c.company_name) >= threshold)
+    .map((c) => c.id)
+}

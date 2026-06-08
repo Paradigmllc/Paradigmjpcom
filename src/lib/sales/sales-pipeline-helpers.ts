@@ -146,3 +146,51 @@ export async function updateStepByKey(
     .eq("step_key", stepKey)
   if (error) throw new Error(error.message)
 }
+
+/**
+ * Recover stuck pipeline runs that have been "waiting_external" for too long.
+ * Resets the stuck step to "queued" and the run to "queued" so it can be re-dispatched.
+ */
+export async function recoverStuckPipelineRuns(sb: ServiceSupabase, maxStuckMinutes = 30): Promise<{ recovered: number; errors: string[] }> {
+  const cutoff = new Date(Date.now() - maxStuckMinutes * 60_000).toISOString()
+  const errors: string[] = []
+  let recovered = 0
+
+  const { data: runs, error } = await sb
+    .from("sales_pipeline_runs")
+    .select("id, updated_at")
+    .eq("status", "waiting_external")
+    .lte("updated_at", cutoff)
+    .limit(20)
+
+  if (error) {
+    errors.push(`fetch stuck runs failed: ${error.message}`)
+    return { recovered, errors }
+  }
+
+  for (const run of runs ?? []) {
+    const { data: stuckStep } = await sb
+      .from("sales_pipeline_steps")
+      .select("id, step_key")
+      .eq("run_id", run.id)
+      .eq("status", "waiting_external")
+      .maybeSingle()
+
+    if (stuckStep) {
+      await sb.from("sales_pipeline_steps").update({ status: "pending", error_message: "auto-retry: timed out", completed_at: null }).eq("id", stuckStep.id)
+    }
+
+    const { error: resetError } = await sb
+      .from("sales_pipeline_runs")
+      .update({ status: "queued", error_message: "auto-recovered from waiting_external timeout" })
+      .eq("id", run.id)
+
+    if (resetError) {
+      errors.push(`reset ${run.id} failed: ${resetError.message}`)
+    } else {
+      recovered++
+    }
+  }
+
+  return { recovered, errors }
+}
