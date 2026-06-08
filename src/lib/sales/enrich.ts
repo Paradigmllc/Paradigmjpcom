@@ -30,6 +30,8 @@ import { queryDnsRecords } from "./sources/dns-doh"
 import { validateHtml } from "./sources/w3c-validator"
 import { checkHstsPreload } from "./sources/hsts-preload"
 import { queryWaybackMachine } from "./sources/wayback-machine"
+import { lookupByCorporateNumber, searchByName as searchHoujinByName } from "./sources/houjin-bangou"
+import { queryTrancoRank } from "./sources/tranco"
 import { autoPersonalize } from "./personalize"
 import { saveTechStackDetections } from "./source-acquisition"
 import type { Industry, SalesCompany } from "./types"
@@ -148,7 +150,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   // Step 2: 並列 30+ source enrich (Sprint 15: PSI + gBizInfo + Wappalyzer + SSL + Whois + Places)
   //         Hunter.io はメール検索 (フォーム経由で email 既知の場合のみ)
   const url = domain.startsWith("http") ? domain : `https://${domain}`
-  const [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback] = await Promise.all([
+  const [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback, houjin, tranco] = await Promise.all([
     scanDomain(domain).catch((e) => {
       console.error("[enrich] scanDomain failed:", e)
       return null
@@ -211,6 +213,14 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     }),
     queryWaybackMachine(domain).catch((e) => {
       console.error("[enrich] wayback-machine failed:", e)
+      return null
+    }),
+    searchHoujinByName(companyName).catch((e) => {
+      console.error("[enrich] houjin-bangou failed:", e)
+      return []
+    }),
+    queryTrancoRank(domain).catch((e) => {
+      console.error("[enrich] tranco failed:", e)
       return null
     }),
   ])
@@ -294,6 +304,12 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
       : null,
     wayback_machine: wayback?.ok
       ? { total_snapshots: wayback.totalSnapshots, first_snapshot: wayback.firstSnapshot, last_snapshot: wayback.lastSnapshot, years_active: wayback.yearsActive }
+      : null,
+    houjin_bangou: Array.isArray(houjin) && houjin.length > 0
+      ? houjin.map((h) => ({ name: h.name, corporate_number: h.corporateNumber, prefecture: h.prefecture, city: h.city, address: h.address }))
+      : null,
+    tranco: tranco?.ok
+      ? { rank: tranco.rank }
       : null,
     ...(gbizFirst ? toCompanyMeta(gbizFirst) : {}),
   }
