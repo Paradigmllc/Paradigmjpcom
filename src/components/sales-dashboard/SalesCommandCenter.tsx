@@ -172,17 +172,17 @@ function resolveExternalGuiUrl(tab: SalesTab, data: SalesDashboardData): string 
   return "/"
 }
 
-function MetricTile({ label, value, helper, delay }: { label: string; value: string; helper: string; delay: number }) {
+function MetricTile({ label, value, helper, delay, urgent }: { label: string; value: string; helper: string; delay: number; urgent?: boolean }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: "easeOut" }}
-      className="relative min-w-0 overflow-hidden rounded-xl border border-zinc-200/60 bg-white/60 p-4 shadow-sm backdrop-blur-md transition-colors hover:border-zinc-300"
+      className={`relative min-w-0 overflow-hidden rounded-xl border p-4 shadow-sm backdrop-blur-md transition-colors ${urgent ? "border-rose-200 bg-rose-50/60 hover:border-rose-300" : "border-zinc-200/60 bg-white/60 hover:border-zinc-300"}`}
     >
-      <p className="truncate text-xs font-semibold uppercase text-zinc-500">{label}</p>
-      <p className="mt-1.5 text-2xl font-bold tracking-tight text-zinc-900">{value}</p>
-      <p className="mt-1 truncate text-xs font-medium text-zinc-400">{helper}</p>
+      <p className={`truncate text-xs font-semibold uppercase ${urgent ? "text-rose-600" : "text-zinc-500"}`}>{label}</p>
+      <p className={`mt-1.5 text-2xl font-bold tracking-tight ${urgent ? "text-rose-700" : "text-zinc-900"}`}>{value}</p>
+      <p className={`mt-1 truncate text-xs font-medium ${urgent ? "text-rose-500" : "text-zinc-400"}`}>{helper}</p>
     </motion.div>
   )
 }
@@ -265,7 +265,10 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
   const ActiveTabIcon = activeTabItem.icon
 
   const metrics = useMemo(
-    () => [
+    () => {
+      const needsReview = data.companies.filter((c) => c.pipelineStatus === "manual_queue" || (c.leadScoreTier === "hot" && c.pipelineStatus !== "report_ready")).length
+      const staleCount = data.companies.filter((c) => !c.lastEnrichedAt && c.pipelineStatus !== "pending").length
+      return [
       {
         label: "稼働ツール",
         value: `${data.toolConnections.filter((tool) => ["connected", "ready", "online", "active"].includes(tool.status)).length}/${data.toolConnections.length}`,
@@ -273,8 +276,10 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
       },
       { label: "30日売上", value: `¥${data.kpis.revenue30d.toLocaleString()}`, helper: "商談パイプライン" },
       { label: "生成待ち", value: data.kpis.reportReady.toLocaleString(), helper: "待機中アセット" },
-    ],
-    [data.kpis.reportReady, data.kpis.revenue30d, data.toolConnections],
+      { label: "要対応", value: needsReview.toString(), helper: `確認待ち・HOT未処理${staleCount > 0 ? ` / ${staleCount}件未エンリッチ` : ""}`, urgent: needsReview > 0 },
+      ]
+    },
+    [data.kpis.reportReady, data.kpis.revenue30d, data.toolConnections, data.companies],
   )
 
   const renderTab = () => {

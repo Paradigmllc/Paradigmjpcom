@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Check, Filter, Loader2, Search, Trash2, UserPlus, Zap } from "lucide-react"
+import { Check, Download, Filter, Loader2, Search, Trash2, UserPlus, Zap } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import type { DashboardCompany, SalesDashboardData } from "@/lib/sales/dashboard"
@@ -129,6 +129,10 @@ export function WorkspacePanel({ data }: { data: SalesDashboardData }) {
               {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </label>
+          <a href={`/api/sales/companies/export?status=${status !== "all" ? status : ""}&search=${encodeURIComponent(query)}&limit=1000`}
+             className="inline-flex h-9 items-center gap-1 rounded-md border border-zinc-200 bg-white px-3 text-xs font-medium text-zinc-600 hover:bg-zinc-50"
+             target="_blank" rel="noopener noreferrer"
+          ><Download className="h-3.5 w-3.5" />CSV</a>
         </div>
       </div>
       <div className="overflow-x-auto">
