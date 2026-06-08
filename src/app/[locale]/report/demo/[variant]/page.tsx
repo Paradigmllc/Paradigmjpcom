@@ -10,6 +10,99 @@ import type { CompanyIntelligence } from "@/lib/sales/company-intelligence"
 function buildDemoData(variant: string, lang: string): DiagnosticReportData {
   const isJa = lang === "ja"
 
+  // ─── Variant-specific demo data ───
+  const variantData: Record<string, {
+    companyName: { ja: string; en: string }
+    industry: string
+    hook: { ja: string; en: string }
+    acts: DiagnosticReportData["acts"]
+    totalLoss: string
+    cta: { ja: string; en: string }
+  }> = {
+    japan_entry: {
+      companyName: { ja: "GreenTech Solutions Inc.", en: "GreenTech Solutions Inc." },
+      industry: "consulting",
+      hook: {
+        ja: "日本市場で御社の製品を購入しようとした消費者が、特商法表示の不備を理由に離脱しています。競合のEcoVantage社は半年前に弊社支援で日本参入し、すでに月商1,200万円を達成。御社の参入遅れは月間280万円の機会損失です。",
+        en: "Japanese consumers attempting to purchase your product are abandoning due to missing commercial law disclosures. Competitor EcoVantage entered Japan 6 months ago through our support and is now generating $82,000/month. Your delay is costing ~$19,000/month in lost revenue.",
+      },
+      acts: [
+        {
+          type: "pain", icon: "TRUST", headline: isJa ? "日本市場で御社のブランドが信用されていない" : "Your brand lacks trust signals for Japanese consumers",
+          body: isJa
+            ? "日本消費者は購入前に必ず「特定商取引法に基づく表記」を確認します。これがないサイトからの購入率は8%以下。御社の現状では、せっかくの日本流入トラフィックの92%が信用不足で離脱しています。これは競合EcoVantageが獲得している月間1,200万円の売上を、そのまま取りこぼしている計算です。"
+            : "Japanese consumers check Commercial Law disclosures before ANY purchase. Without them, conversion drops below 8%. Your current state means 92% of Japan-bound traffic leaves without buying. This is revenue EcoVantage is capturing instead — $82,000/month that should be yours.",
+          metric_label: isJa ? "信頼スコア" : "Trust score",
+          metric_value: "8/100",
+          metric_unit: isJa ? "点" : "pts",
+          metric_bench: isJa ? "最低限: 特商法 + プライバシーポリシー" : "Minimum: Commercial Law + Privacy Policy",
+          severity: "critical",
+        },
+        {
+          type: "fear", icon: "OPS", headline: isJa ? "このまま放置すると取り返しがつかない" : "Delay is compounding your competitive disadvantage",
+          body: isJa
+            ? "日本EC市場は年率12%で成長中（2026年市場規模22兆円）。EcoVantageに続き、同業3社が2026年下期の日本参入を計画しています。先発優位の窓はあと3〜6ヶ月。このタイミングを逃すと、後発として認知獲得コストが3倍になります。"
+            : "Japan's e-commerce market is growing 12% YoY (¥22T in 2026). Three competitors are planning H2 2026 Japan entry, following EcoVantage. The first-mover window is 3-6 months. Missing it triples customer acquisition costs as a late entrant.",
+          metric_label: isJa ? "残り猶予" : "Window remaining",
+          metric_value: isJa ? "3-6ヶ月" : "3-6 months",
+          metric_unit: "",
+          metric_bench: isJa ? "今すぐ着手が最適" : "Start now for optimal timing",
+          severity: "warning",
+        },
+        {
+          type: "hope", icon: "REACH", headline: isJa ? "最短30日で日本参入・売上化が可能" : "Japan entry and revenue in 30 days is achievable",
+          body: isJa
+            ? "弊社の日本参入パッケージでは、特商法対応・決済導入・日本語サイト構築を全て並行して進め、最短30日で販売開始できます。EcoVantageの事例では、参入初月から月商320万円、3ヶ月目には1,200万円に到達。御社の製品力があれば、これを上回る成果が十分可能です。"
+            : "Our Japan entry package handles commercial law compliance, payment integration, and Japanese site build in parallel — go live in 30 days. EcoVantage's case: $22K in month 1, $82K by month 3. With your product strength, exceeding this is entirely realistic.",
+          metric_label: isJa ? "最短納期" : "Fastest delivery",
+          metric_value: isJa ? "30日" : "30 days",
+          metric_unit: "",
+          metric_bench: isJa ? "通常3-6ヶ月 → 弊社なら30日" : "Typical 3-6 months → 30 days with us",
+          severity: "info",
+        },
+      ],
+      totalLoss: isJa ? "¥2,800,000" : "$19,000",
+      cta: {
+        ja: "まずは15分の無料診断で、御社の日本参入に必要な具体的ステップを明確にします。EcoVantageと同様の成果を、より早く達成するロードマップをお渡しします。",
+        en: "In a 15-minute free assessment, we'll map your exact Japan entry steps. You'll get a roadmap to achieve — and exceed — EcoVantage-level results, faster.",
+      },
+    },
+    website_diagnostic: {
+      companyName: { ja: "株式会社サンプル美容室", en: "Sample Beauty Salon Inc." },
+      industry: "beauty_salon",
+      hook: {
+        ja: "検索から予約までの導線で、訪問者の約60%が価値提案を見る前に離脱しています。",
+        en: "About 60% of visitors leave before seeing your value proposition.",
+      },
+      acts: [
+        {
+          type: "pain", icon: "SPEED", headline: isJa ? "モバイル表示速度が機会損失を生んでいる" : "Mobile speed creating opportunity loss",
+          body: isJa ? "モバイル表示速度38点は、美容室業界平均（71点）を大きく下回ります。訪問者の約6割が3秒以内に離脱し、月間約85万円相当の予約機会が競合に流出している計算です。" : "Mobile speed 38/100 is far below beauty industry average (71). ~60% leave within 3 seconds, losing ~$7,700/month in bookings.",
+          metric_label: isJa ? "スマホ表示スコア" : "Mobile speed score", metric_value: "38", metric_unit: isJa ? "点" : "pts", metric_bench: isJa ? "目安: 75点以上" : "Target: 75+", severity: "critical",
+        },
+        {
+          type: "fear", icon: "TRUST", headline: isJa ? "SSLとセキュリティ表示が信頼を損なう" : "SSL and security display eroding trust",
+          body: isJa ? "SSLグレードBは、最新ブラウザで「保護された通信」と表示されず、B2B取引審査や予約フォームの離脱率を15%上昇させます。" : "SSL grade B doesn't show 'Secure' in modern browsers. This increases booking form abandonment by 15%.",
+          metric_label: isJa ? "信頼表示リスク" : "Trust signal risk", metric_value: isJa ? "要確認" : "Verify", metric_unit: "", metric_bench: isJa ? "証明書とHTTPSが正常" : "HTTPS and certificate healthy", severity: "warning",
+        },
+        {
+          type: "hope", icon: "SNS", headline: isJa ? "SNS共有プレビューの改善で集客力を上げる" : "Improve social previews for better reach",
+          body: isJa ? "OGP設定がないため、LINEやInstagramでURLを共有しても文字化け表示になります。美容室の新規集客の60%がSNS経由であることを踏まえると、この改善だけで月間15件以上の新規予約獲得が期待できます。" : "Without OGP, shared URLs appear garbled. With 60% of beauty salon discovery via social, fixing this alone could bring 15+ new bookings/month.",
+          metric_label: isJa ? "SNS共有の見え方" : "Social share preview", metric_value: isJa ? "未整備" : "Not set", metric_unit: "", metric_bench: isJa ? "タイトル、説明文、画像が整っている" : "Title, description, and image ready", severity: "info",
+        },
+      ],
+      totalLoss: isJa ? "¥2,450,000" : "$22,000",
+      cta: {
+        ja: "診断結果をもとに、売上機会、信頼低下、問い合わせ導線、運用負荷のどこから直すべきかを30分で整理します。",
+        en: "Based on this assessment, we will identify the highest-impact area to fix first.",
+      },
+    },
+  }
+
+  // Fallback for variants without specific demo data
+  const data = variantData[variant] ?? variantData.website_diagnostic!
+  const companyName = isJa ? data.companyName.ja : data.companyName.en
+
   const sourceCoverage: SourceCoverageSnapshot = {
     score: 72,
     collected: 18,
@@ -55,61 +148,17 @@ function buildDemoData(variant: string, lang: string): DiagnosticReportData {
   }
 
   return {
-    company_name: isJa ? "株式会社サンプル美容室" : "Sample Beauty Salon Inc.",
+    company_name: companyName,
     report_locale: lang as any,
     target_country: "JP",
     template_variant: variant as any,
-    industry: "beauty_salon",
-    prefecture: "東京都渋谷区",
+    industry: data.industry as any,
+    prefecture: isJa ? "東京都渋谷区" : "Shibuya, Tokyo",
     expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
-    hook: isJa
-      ? "検索から予約までの導線で、訪問者の約60%が価値提案を見る前に離脱しています。"
-      : "About 60% of visitors leave before seeing your value proposition.",
-    total_loss: isJa ? "¥2,450,000" : "¥2,450,000",
-    acts: [
-      {
-        type: "pain",
-        icon: "SPEED",
-        headline: isJa ? "モバイル表示速度が機会損失を生んでいる" : "Mobile speed creating opportunity loss",
-        body: isJa
-          ? "モバイル表示速度38点は、美容室業界平均（71点）を大きく下回ります。訪問者の約6割が3秒以内に離脱し、月間約85万円相当の予約機会が競合に流出している計算です。"
-          : "Mobile speed 38/100 is far below beauty industry average (71). ~60% leave within 3 seconds, losing ~$7,700/month in bookings.",
-        metric_label: isJa ? "スマホ表示スコア" : "Mobile speed score",
-        metric_value: "38",
-        metric_unit: isJa ? "点" : "pts",
-        metric_bench: isJa ? "目安: 75点以上" : "Target: 75+",
-        severity: "critical",
-      },
-      {
-        type: "fear",
-        icon: "TRUST",
-        headline: isJa ? "SSLとセキュリティ表示が信頼を損なう" : "SSL and security display eroding trust",
-        body: isJa
-          ? "SSLグレードBは、最新ブラウザで「保護された通信」と表示されず、B2B取引審査や予約フォームの離脱率を15%上昇させます。HSTS未設定も複合的な信頼低下要因です。"
-          : "SSL grade B doesn't show 'Secure' in modern browsers. This increases booking form abandonment by 15% and raises flags in B2B compliance.",
-        metric_label: isJa ? "信頼表示リスク" : "Trust signal risk",
-        metric_value: isJa ? "要確認" : "Verify",
-        metric_unit: "",
-        metric_bench: isJa ? "証明書とHTTPSが正常" : "HTTPS and certificate healthy",
-        severity: "warning",
-      },
-      {
-        type: "hope",
-        icon: "SNS",
-        headline: isJa ? "SNS共有プレビューの改善で集客力を上げる" : "Improve social previews for better reach",
-        body: isJa
-          ? "OGP設定がないため、LINEやInstagramでURLを共有しても文字化け表示になります。美容室の新規集客の60%がSNS経由であることを踏まえると、この改善だけで月間15件以上の新規予約獲得が期待できます。"
-          : "Without OGP, shared URLs appear garbled. With 60% of beauty salon discovery via social, fixing this alone could bring 15+ new bookings/month.",
-        metric_label: isJa ? "SNS共有の見え方" : "Social share preview",
-        metric_value: isJa ? "未整備" : "Not set",
-        metric_unit: "",
-        metric_bench: isJa ? "タイトル、説明文、画像が整っている" : "Title, description, and image ready",
-        severity: "info",
-      },
-    ],
-    cta_text: isJa
-      ? "診断結果をもとに、売上機会、信頼低下、問い合わせ導線、運用負荷のどこから直すべきかを30分で整理します。"
-      : "Based on this assessment, we will identify the highest-impact area to fix first.",
+    hook: isJa ? data.hook.ja : data.hook.en,
+    total_loss: data.totalLoss,
+    acts: data.acts,
+    cta_text: isJa ? data.cta.ja : data.cta.en,
     video_thumbnail: null,
     demo_url: "https://demo.paradigmjp.com",
     screenshot_url: null,
