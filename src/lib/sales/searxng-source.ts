@@ -423,7 +423,7 @@ export async function importSearxngRunToLeadBatch(input: {
     enrich: input.enrich ?? true,
     minOutreachScore: minScore,
     maxOutreachReady: input.maxOutreachReady ?? 300,
-    dryRunOnly: true,
+    dryRunOnly: false,
   })
   if (!created.ok || !created.batch) return { ok: false, imported: 0, error: created.error ?? "batch import failed" }
 
