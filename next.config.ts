@@ -25,10 +25,6 @@ const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: true },
   // standalone output for Dockerfile-based deployment (nixpacks fallback)
   output: "standalone",
-  outputFileTracingIncludes: {
-    // payload.config.ts is loaded at runtime from the project root
-    "/**/*": ["./payload.config.ts", "./public/**/*"],
-  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "**" },
