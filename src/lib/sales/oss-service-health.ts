@@ -1,4 +1,6 @@
+import { execSync } from "node:child_process"
 import { createHmac } from "node:crypto"
+import { existsSync } from "node:fs"
 import { checkR2StorageHealth } from "./r2-storage"
 import { DIFY_CLOUD_BASE_URL, DIFY_RUNTIME_KEY_ENV_NAMES, normalizeDifyCloudBaseUrl } from "./dify-cloud"
 
@@ -331,7 +333,20 @@ export async function checkR2DeliveryHealth(): Promise<ServiceHealthResult> {
 export async function checkVastHealth(): Promise<ServiceHealthResult> {
   const missing = missingEnv(["VAST_API_KEY"])
   if (missing.length > 0) return notConfigured(missing)
-  return { balanceStatus: "ok", balanceLabel: "VAST_API_KEY is configured" }
+
+  try {
+    const apiKey = envValue("VAST_API_KEY") as string
+    const res = await fetch("https://console.vast.ai/api/v0/machines/?verified=true&limit=1", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+      signal: AbortSignal.timeout(10_000),
+    })
+    if (!res.ok) return { balanceStatus: "error", balanceLabel: `Vast.ai API HTTP ${res.status}` }
+    const body = await res.json().catch(() => ({})) as { offers?: unknown[] }
+    const count = Array.isArray(body.offers) ? body.offers.length : 0
+    return { balanceStatus: "ok", balanceLabel: `Vast.ai API verified: ${count} offers available` }
+  } catch (error) {
+    return healthError("Vast.ai", error)
+  }
 }
 
 export async function checkAstroHealth(): Promise<ServiceHealthResult> {
@@ -455,21 +470,15 @@ export async function checkSlidevGotenbergHealth(): Promise<ServiceHealthResult>
   try {
     const slidev = normalizeHttpBase(envValue("SLIDEV_RENDER_URL") as string)
     const gotenberg = normalizeHttpBase(envValue("GOTENBERG_URL") as string)
-    const fetchEndpoint = async (service: string, url: URL): Promise<{ ok: boolean; status: number }> => {
-      try {
-        return await fetch(url.toString(), { signal: AbortSignal.timeout(10_000) })
-      } catch (error) {
-        console.error(`[oss-service-health] ${service} endpoint check failed:`, error)
-        return { ok: false, status: 0 }
-      }
-    }
+    slidev.pathname = `${slidev.pathname}/health`.replace(/\/+/g, "/")
+    gotenberg.pathname = `${gotenberg.pathname}/health`.replace(/\/+/g, "/")
     const [resSlidev, resGotenberg] = await Promise.all([
-      fetchEndpoint("Slidev", slidev),
-      fetchEndpoint("Gotenberg", gotenberg),
+      fetch(slidev.toString(), { signal: AbortSignal.timeout(10_000) }).catch(() => ({ ok: false, status: 0 } as Response)),
+      fetch(gotenberg.toString(), { signal: AbortSignal.timeout(10_000) }).catch(() => ({ ok: false, status: 0 } as Response)),
     ])
     return {
       balanceStatus: (resSlidev.ok && resGotenberg.ok) ? "ok" : "error",
-      balanceLabel: `slidev HTTP ${resSlidev.status}, gotenberg HTTP ${resGotenberg.status}`
+      balanceLabel: `slidev /health HTTP ${resSlidev.status}, gotenberg /health HTTP ${resGotenberg.status}`
     }
   } catch (error) {
     return healthError("Slidev/Gotenberg", error)
@@ -490,7 +499,16 @@ export async function checkSupabaseStudioHealth(): Promise<ServiceHealthResult> 
 export async function checkFFmpegHealth(): Promise<ServiceHealthResult> {
   const missing = missingEnv(["FFMPEG_BIN"])
   if (missing.length > 0) return notConfigured(missing)
-  return { balanceStatus: "ok", balanceLabel: `FFMPEG_BIN is set to ${envValue("FFMPEG_BIN")}` }
+
+  try {
+    const bin = envValue("FFMPEG_BIN") as string
+    if (!existsSync(bin)) return { balanceStatus: "error", balanceLabel: `FFMPEG_BIN path not found: ${bin}` }
+    const stdout = execSync(`"${bin}" -version`, { timeout: 5_000, encoding: "utf8" })
+    const versionLine = stdout.split("\n")[0] ?? ""
+    return { balanceStatus: "ok", balanceLabel: versionLine.slice(0, 80) }
+  } catch (error) {
+    return healthError("FFmpeg", error)
+  }
 }
 
 export async function checkFFCreatorHealth(): Promise<ServiceHealthResult> {
@@ -501,5 +519,138 @@ export async function checkFFCreatorHealth(): Promise<ServiceHealthResult> {
     return { balanceStatus: res.ok ? "ok" : "error", balanceLabel: `reachable HTTP ${res.status}` }
   } catch (error) {
     return healthError("FFCreator", error)
+  }
+}
+
+// ───── Diagnostic API health checks ─────
+
+export async function checkPageSpeedHealth(): Promise<ServiceHealthResult> {
+  const apiKey = envValue("GOOGLE_PSI_API_KEY")
+  if (!apiKey) return { balanceStatus: "ok", balanceLabel: "no API key (using public quota)" }
+
+  try {
+    const url = new URL("https://www.googleapis.com/pagespeedonline/v5/runPagespeed")
+    url.searchParams.set("url", "https://example.com")
+    url.searchParams.set("key", apiKey)
+    url.searchParams.set("strategy", "mobile")
+    const res = await fetch(url.toString(), { signal: AbortSignal.timeout(15_000) })
+    if (!res.ok) return { balanceStatus: "error", balanceLabel: `PageSpeed API HTTP ${res.status}` }
+    const body = await res.json().catch(() => ({})) as { lighthouseResult?: { categories?: { performance?: { score?: number } } } }
+    const score = body.lighthouseResult?.categories?.performance?.score
+    return { balanceStatus: "ok", balanceLabel: score != null ? `API verified (perf score: ${score})` : "API verified (key valid)" }
+  } catch (error) {
+    return healthError("PageSpeed", error)
+  }
+}
+
+export async function checkGooglePlacesHealth(): Promise<ServiceHealthResult> {
+  const missing = missingEnv(["GOOGLE_PLACES_API_KEY"])
+  if (missing.length > 0) return notConfigured(missing)
+
+  try {
+    const url = new URL("https://maps.googleapis.com/maps/api/place/findplacefromtext/json")
+    url.searchParams.set("input", "Tokyo Station")
+    url.searchParams.set("inputtype", "textquery")
+    url.searchParams.set("fields", "place_id")
+    url.searchParams.set("key", envValue("GOOGLE_PLACES_API_KEY") as string)
+    const res = await fetch(url.toString(), { signal: AbortSignal.timeout(10_000) })
+    if (!res.ok) return { balanceStatus: "error", balanceLabel: `Google Places HTTP ${res.status}` }
+    const body = await res.json().catch(() => ({})) as { status?: string; candidates?: unknown[] }
+    if (body.status === "REQUEST_DENIED") return { balanceStatus: "error", balanceLabel: "API key denied or billing disabled" }
+    if (body.status === "INVALID_REQUEST") return { balanceStatus: "error", balanceLabel: "API key invalid" }
+    return { balanceStatus: "ok", balanceLabel: `API verified (status: ${body.status ?? "ok"})` }
+  } catch (error) {
+    return healthError("Google Places", error)
+  }
+}
+
+export async function checkSimilarWebHealth(): Promise<ServiceHealthResult> {
+  const missing = missingEnv(["SIMILARWEB_API_KEY"])
+  if (missing.length > 0) return notConfigured(missing)
+
+  try {
+    const res = await fetch("https://api.similarweb.com/v1/website/example.com/total-traffic-and-engagement/visits?api_key=" + envValue("SIMILARWEB_API_KEY"), {
+      signal: AbortSignal.timeout(10_000),
+    })
+    if (!res.ok) return { balanceStatus: "error", balanceLabel: `SimilarWeb HTTP ${res.status}` }
+    return { balanceStatus: "ok", balanceLabel: "API key verified" }
+  } catch (error) {
+    return healthError("SimilarWeb", error)
+  }
+}
+
+export async function checkGbizinfoHealth(): Promise<ServiceHealthResult> {
+  const apiKey = envValue("GBIZINFO_API_KEY")
+  if (!apiKey) return { balanceStatus: "ok", balanceLabel: "no API key (unauthenticated OK)" }
+
+  try {
+    const res = await fetch(`https://info.gbiz.go.jp/hojin/v1/hojin?corporate_number=2000020125001`, {
+      headers: { "X-Hojin-Api-Key": apiKey },
+      signal: AbortSignal.timeout(10_000),
+    })
+    if (!res.ok) return { balanceStatus: "error", balanceLabel: `gBizInfo HTTP ${res.status}` }
+    return { balanceStatus: "ok", balanceLabel: "API key verified" }
+  } catch (error) {
+    return healthError("gBizInfo", error)
+  }
+}
+
+export async function checkDataForSeoHealth(): Promise<ServiceHealthResult> {
+  const login = envValue("DATAFORSEO_LOGIN")
+  const password = envValue("DATAFORSEO_PASSWORD")
+  if (!login || !password) return notConfigured(["DATAFORSEO_LOGIN", "DATAFORSEO_PASSWORD"])
+
+  try {
+    const auth = Buffer.from(`${login}:${password}`).toString("base64")
+    const res = await fetch("https://api.dataforseo.com/v3/appendix/user_data", {
+      headers: { Authorization: `Basic ${auth}` },
+      signal: AbortSignal.timeout(8_000),
+    })
+    const body = (await res.json()) as unknown
+    if (!res.ok) return { balanceStatus: "error", balanceLabel: `DataForSEO HTTP ${res.status}` }
+    const money = body && typeof body === "object" && "tasks" in body
+      ? (body as { tasks?: Array<{ result?: Array<{ money?: number; balance?: number }> }> }).tasks?.[0]?.result?.[0]
+      : null
+    const label = money ? `balance: ${money.balance ?? money.money ?? "N/A"}` : "user_data verified"
+    return { balanceStatus: "ok", balanceLabel: label }
+  } catch (error) {
+    return healthError("DataForSEO", error)
+  }
+}
+
+export async function checkSearxngHealth(): Promise<ServiceHealthResult> {
+  const missing = missingEnv(["SEARXNG_BASE_URL"])
+  if (missing.length > 0) return notConfigured(missing)
+
+  try {
+    const base = normalizeHttpBase(envValue("SEARXNG_BASE_URL") as string)
+    base.pathname = `${base.pathname}/search`.replace(/\/+/g, "/")
+    base.searchParams.set("q", "test")
+    base.searchParams.set("format", "json")
+    const res = await fetch(base.toString(), { signal: AbortSignal.timeout(10_000) })
+    if (!res.ok) return { balanceStatus: "error", balanceLabel: `SearxNG HTTP ${res.status}` }
+    const body = await res.json().catch(() => ({})) as { results?: unknown[] }
+    return {
+      balanceStatus: "ok",
+      balanceLabel: `JSON search verified: ${Array.isArray(body.results) ? body.results.length : 0} results`,
+    }
+  } catch (error) {
+    return healthError("SearxNG", error)
+  }
+}
+
+export async function checkApolloHealth(): Promise<ServiceHealthResult> {
+  const missing = missingEnv(["APOLLO_API_KEY"])
+  if (missing.length > 0) return notConfigured(missing)
+
+  try {
+    const res = await fetch("https://api.apollo.io/v1/auth/health", {
+      headers: { "X-Api-Key": envValue("APOLLO_API_KEY") as string },
+      signal: AbortSignal.timeout(10_000),
+    })
+    if (!res.ok) return { balanceStatus: "error", balanceLabel: `Apollo HTTP ${res.status}` }
+    return { balanceStatus: "ok", balanceLabel: "API key verified" }
+  } catch (error) {
+    return healthError("Apollo.io", error)
   }
 }

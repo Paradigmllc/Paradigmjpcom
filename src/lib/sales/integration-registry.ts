@@ -1,14 +1,21 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import {
+  checkApolloHealth,
   checkBrowserlessHealth as checkBrowserlessServiceHealth,
   checkChatwootHealth,
   checkComfyUiHealth,
+  checkDataForSeoHealth,
   checkDirectusHealth,
+  checkGbizinfoHealth,
+  checkGooglePlacesHealth,
   checkHyperFramesHealth,
   checkKeystaticHealth,
   checkLiveKitHealth,
   checkOpenMontageHealth,
+  checkPageSpeedHealth,
   checkR2DeliveryHealth,
+  checkSearxngHealth,
+  checkSimilarWebHealth,
   checkStagehandHealth as checkStagehandServiceHealth,
   checkVastHealth,
   checkAstroHealth,
@@ -72,41 +79,6 @@ function defaultBalance(def: SalesIntegrationDefinition, status: SalesIntegratio
   return { balanceStatus: "checkable", balanceLabel: "liveチェック可能" }
 }
 
-function summarizeObjectNumbers(value: unknown, keys: string[] = []): string | null {
-  if (!value || typeof value !== "object") return null
-  const record = value as Record<string, unknown>
-  for (const key of keys) {
-    const found = record[key]
-    if (typeof found === "number") return `${key}: ${found}`
-    if (typeof found === "string" && found.trim().length > 0) return `${key}: ${found}`
-  }
-  for (const item of Object.values(record)) {
-    const nested = summarizeObjectNumbers(item, keys)
-    if (nested) return nested
-  }
-  return null
-}
-
-async function checkDataForSeoBalance(): Promise<Pick<SalesIntegrationStatus, "balanceStatus" | "balanceLabel">> {
-  const login = envValue("DATAFORSEO_LOGIN")
-  const password = envValue("DATAFORSEO_PASSWORD")
-  if (!login || !password) return { balanceStatus: "not_configured", balanceLabel: "DATAFORSEO_LOGIN/PASSWORD未設定" }
-  try {
-    const auth = Buffer.from(`${login}:${password}`).toString("base64")
-    const res = await fetch("https://api.dataforseo.com/v3/appendix/user_data", {
-      headers: { Authorization: `Basic ${auth}` },
-      signal: AbortSignal.timeout(8_000),
-    })
-    const body = (await res.json()) as unknown
-    if (!res.ok) return { balanceStatus: "error", balanceLabel: `HTTP ${res.status}` }
-    const label = summarizeObjectNumbers(body, ["money", "balance", "cost", "spent", "total"])
-    return { balanceStatus: "ok", balanceLabel: label ?? "user_data取得済み" }
-  } catch (error) {
-    console.error("[integration-registry] DataForSEO balance check failed:", error)
-    return { balanceStatus: "error", balanceLabel: error instanceof Error ? error.message : "DataForSEO check failed" }
-  }
-}
-
 async function checkBrowserlessPressure(): Promise<Pick<SalesIntegrationStatus, "balanceStatus" | "balanceLabel">> {
   const rawUrl = envValue("BROWSERLESS_URL")
   if (!rawUrl) return { balanceStatus: "not_configured", balanceLabel: "BROWSERLESS_URL未設定" }
@@ -168,7 +140,7 @@ async function checkMubengHealth(): Promise<Pick<SalesIntegrationStatus, "balanc
 }
 
 async function liveBalance(def: SalesIntegrationDefinition): Promise<Pick<SalesIntegrationStatus, "balanceStatus" | "balanceLabel"> | null> {
-  if (def.balance === "dataforseo_user_data") return checkDataForSeoBalance()
+  if (def.balance === "dataforseo_user_data") return checkDataForSeoHealth()
   if (def.balance === "browserless_pressure") return checkBrowserlessServiceHealth()
   if (def.balance === "stagehand_health") return checkStagehandServiceHealth()
   if (def.balance === "mubeng_health") return checkMubengHealth()
@@ -192,6 +164,12 @@ async function liveBalance(def: SalesIntegrationDefinition): Promise<Pick<SalesI
   if (def.balance === "supabase_studio_health") return checkSupabaseStudioHealth()
   if (def.balance === "ffmpeg_health") return checkFFmpegHealth()
   if (def.balance === "ffcreator_health") return checkFFCreatorHealth()
+  if (def.balance === "pagespeed_health") return checkPageSpeedHealth()
+  if (def.balance === "google_places_health") return checkGooglePlacesHealth()
+  if (def.balance === "similarweb_health") return checkSimilarWebHealth()
+  if (def.balance === "gbizinfo_health") return checkGbizinfoHealth()
+  if (def.balance === "searxng_health") return checkSearxngHealth()
+  if (def.balance === "apollo_health") return checkApolloHealth()
   return null
 }
 

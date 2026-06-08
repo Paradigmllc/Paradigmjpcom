@@ -94,18 +94,41 @@
 - Chatwoot service recovered on the Droplet: `chatwoot`, `postgres`, `redis`, and `sidekiq` containers are up; Chatwoot UI returns 200 on both `chatwoot.appexx.me` and `chatwoot.paradigmjp.com`; authenticated Chatwoot inbox API returns HTTP 200.
 - Supabase migrations `040` and `041` were applied directly through the DB container because the REST `exec_sql` channel is unavailable; `trigger_dev` is active in `sales_tool_connections`, and `sales_video_jobs.trigger_endpoint` / `trigger_run_id` exist.
 
+## CODEX UPDATE - 2026-06-08 Revenue OS Quality Sweep
+
+- Fixed 5 `catch {}` silent suppression violations in Notion sync and KPI snapshot API routes (now log to `console.error`).
+- Integrated React Query (`@tanstack/react-query`) into Sales OS dashboard via `QueryProvider` + `SalesDashboardShell`: server component passes `initialData` into `useQuery`, mutations invalidate query instead of `window.location.reload()`. Three full-page reloads eliminated.
+- Split `SalesCommandPanels.tsx` (816 → 9 lines) into 7 individual panel files + shared utilities (`format-utils.ts`, `sales-panels-shared.tsx`). Existing imports preserved via barrel re-export.
+- Removed hardcoded Supabase project ref from `SalesCommandCenter.tsx`; now resolves from `NEXT_PUBLIC_SUPABASE_URL` or `NEXT_PUBLIC_SUPABASE_STUDIO_URL` env vars.
+- Tightened `checkKeystaticHealth()` to distinguish 2xx/3xx/4xx/5xx responses instead of accepting <500 as "ok".
+- Removed dead `abortSignal` variable in `dify-diagnosis.ts`.
+- Added React Query `staleTime=60s` + `refetchInterval=120s` for background dashboard refresh.
+- Fixed 3 broken health checks: `checkVastHealth()` now hits Vast.ai API, `checkFFmpegHealth()` verifies binary exists via `execSync`, `checkSlidevGotenbergHealth()` hits proper `/health` endpoints.
+- Added 6 new diagnostic API live health checks: `checkPageSpeedHealth`, `checkGooglePlacesHealth`, `checkSimilarWebHealth`, `checkGbizinfoHealth`, `checkSearxngHealth`, `checkApolloHealth`; plus moved `checkDataForSeoHealth` from inline to `oss-service-health.ts`.
+- Updated `integration-definitions.ts` balance types: pagespeed, google_places, similarweb, gbizinfo, searxng, apollo now have live balance checks instead of `"manual"`/`"none"`.
+- Added 6 new `SalesIntegrationBalanceType` values and wired all into `liveBalance()` in `integration-registry.ts`.
+
+### Diagnostic API Health Coverage (after this update)
+
+| Before | After |
+|--------|-------|
+| 1/23 (4%) diagnostic APIs had live health checks | 7/23 (30%) now have live checks |
+| PageSpeed, Google Places, SimilarWeb, gBizInfo, SearxNG, Apollo all reported "管理画面で確認" | Now report actual API reachability and key validity |
+
+Remaining 16 diagnostic APIs (jgrants, urlscan, publicwww, ad_libraries, mobsf, serp_tavily, rsshub_wayback, fumadata, bizmap, houjin_bangou, apify, outscraper, public_web_corpora, niche_list_sources, wappalyzer_webanalyze, security_apis) still use `"manual"` balance — these either have no simple REST health endpoint or are low-priority public data sources.
+
 ## ACTIVE HANDOFF
 
 - Revenue OS is live on Trigger.dev runtime API with n8n retained only as legacy compatibility.
 - Production worker: `paradigm-stagehand`, public URL `https://stagehand.paradigmjp.com`, internal mode Browserless CDP.
 - Keystatic is live at `https://keystatic.paradigmjp.com`; root redirects to `/keystatic` and opens Dashboard.
-- Chatwoot Redis auth was repaired in `/data/coolify/services/z88gg84880kkogw4occgc48w/docker-compose.yml`; backups with `docker-compose.yml.bak-*` exist in that service directory.
 
 ## NEXT ACTIONS
 
-- No active Revenue OS deploy blocker remains. Keep host pressure guards active; root disk improved but still runs high during builds.
+- Deploy commit with diagnostic health checks and verify `/api/sales/integration-status?live=1` shows live status for the 7 diagnostic APIs.
 
 ## RISKS
 
-- Live outbound form submission remains intentionally gated by approval/dry-run settings; CAPTCHA, login, payment, and anti-bot challenges stop for manual review.
-- Stagehand is operational, but its upstream AI SDK dependency currently carries low-severity audit advisories.
+- Live outbound form submission remains intentionally gated by approval/dry-run settings.
+- Stagehand AI SDK dependency carries low-severity audit advisories.
+- `oss-service-health.ts` now exceeds 500 lines (added ~120 lines for new health checks). Consider extracting diagnostic-specific health checks to a separate module if further growth.

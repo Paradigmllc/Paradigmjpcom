@@ -47,6 +47,12 @@ export type SalesIntegrationBalanceType =
   | "supabase_studio_health"
   | "ffmpeg_health"
   | "ffcreator_health"
+  | "pagespeed_health"
+  | "google_places_health"
+  | "similarweb_health"
+  | "gbizinfo_health"
+  | "searxng_health"
+  | "apollo_health"
 
 export interface SalesIntegrationDefinition {
   slug: string
