@@ -23,6 +23,12 @@ const nextConfig: NextConfig = {
   //   DigitalOcean 4vCPU/8GB Droplet で OOM-killer に殺されていた (paradigm-hp 4 連続 deploy fail root cause)。
   //   型保護は IDE / pre-push hook / CI 側で検証 (build 時点ではスキップして memory 節約).
   typescript: { ignoreBuildErrors: true },
+  // standalone output for Dockerfile-based deployment (nixpacks fallback)
+  output: "standalone",
+  outputFileTracingIncludes: {
+    // payload.config.ts is loaded at runtime from the project root
+    "/**/*": ["./payload.config.ts", "./public/**/*"],
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "**" },
