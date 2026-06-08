@@ -1,21 +1,14 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import {
-  checkApolloHealth,
   checkBrowserlessHealth as checkBrowserlessServiceHealth,
   checkChatwootHealth,
   checkComfyUiHealth,
-  checkDataForSeoHealth,
   checkDirectusHealth,
-  checkGbizinfoHealth,
-  checkGooglePlacesHealth,
   checkHyperFramesHealth,
   checkKeystaticHealth,
   checkLiveKitHealth,
   checkOpenMontageHealth,
-  checkPageSpeedHealth,
   checkR2DeliveryHealth,
-  checkSearxngHealth,
-  checkSimilarWebHealth,
   checkStagehandHealth as checkStagehandServiceHealth,
   checkVastHealth,
   checkAstroHealth,
@@ -30,6 +23,15 @@ import {
   checkFFmpegHealth,
   checkFFCreatorHealth,
 } from "./oss-service-health"
+import {
+  checkApolloHealth,
+  checkDataForSeoHealth,
+  checkGbizinfoHealth,
+  checkGooglePlacesHealth,
+  checkPageSpeedHealth,
+  checkSearxngHealth,
+  checkSimilarWebHealth,
+} from "./oss-service-health-diagnostic"
 
 import type {
   SalesIntegrationDefinition,
