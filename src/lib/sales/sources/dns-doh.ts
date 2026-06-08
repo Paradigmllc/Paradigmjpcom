@@ -23,6 +23,9 @@ export interface DnsResult {
   cnameRecords: { name: string; target: string }[]
   hasEmailSecurity: boolean
   emailProvider: string | null
+  hasDnssec: boolean
+  hasCaa: boolean
+  caaRecords: string[]
   error?: string
 }
 
@@ -42,7 +45,7 @@ function detectEmailProvider(mx: string[]): string | null {
 export async function queryDnsRecords(domain: string): Promise<DnsResult> {
   try {
     const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "")
-    const types = ["A", "AAAA", "MX", "TXT", "CNAME"]
+    const types = ["A", "AAAA", "MX", "TXT", "CNAME", "CAA", "DNSKEY"]
     const records: Record<string, DnsRecord[]> = {}
 
     for (const type of types) {
@@ -84,6 +87,9 @@ export async function queryDnsRecords(domain: string): Promise<DnsResult> {
     }))
 
     const hasEmailSecurity = !!(spfRecord && dmarcRecord)
+    const hasDnssec = (records.DNSKEY ?? []).length > 0
+    const caaRecords = (records.CAA ?? []).map((r) => r.data)
+    const hasCaa = caaRecords.length > 0
 
     return {
       ok: true,
@@ -97,6 +103,9 @@ export async function queryDnsRecords(domain: string): Promise<DnsResult> {
       cnameRecords,
       hasEmailSecurity,
       emailProvider: detectEmailProvider(mxRaw),
+      hasDnssec,
+      hasCaa,
+      caaRecords,
     }
   } catch (e) {
     console.error("[dns-doh] query failed:", e)
@@ -112,6 +121,9 @@ export async function queryDnsRecords(domain: string): Promise<DnsResult> {
       cnameRecords: [],
       hasEmailSecurity: false,
       emailProvider: null,
+      hasDnssec: false,
+      hasCaa: false,
+      caaRecords: [],
       error: e instanceof Error ? e.message : "DNS query failed",
     }
   }

@@ -32,6 +32,10 @@ import { checkHstsPreload } from "./sources/hsts-preload"
 import { queryWaybackMachine } from "./sources/wayback-machine"
 import { lookupByCorporateNumber, searchByName as searchHoujinByName } from "./sources/houjin-bangou"
 import { queryTrancoRank } from "./sources/tranco"
+import { checkEmailReputation } from "./sources/emailrep"
+import { checkPhishTank } from "./sources/phishtank"
+import { searchOpenCorporates } from "./sources/opencorporates"
+import { checkGreenHosting } from "./sources/green-web"
 import { autoPersonalize } from "./personalize"
 import { saveTechStackDetections } from "./source-acquisition"
 import type { Industry, SalesCompany } from "./types"
@@ -150,7 +154,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   // Step 2: 並列 30+ source enrich (Sprint 15: PSI + gBizInfo + Wappalyzer + SSL + Whois + Places)
   //         Hunter.io はメール検索 (フォーム経由で email 既知の場合のみ)
   const url = domain.startsWith("http") ? domain : `https://${domain}`
-  const [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback, houjin, tranco] = await Promise.all([
+  const [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback, houjin, tranco, emailrep, phishtank, opencorp, greenweb] = await Promise.all([
     scanDomain(domain).catch((e) => {
       console.error("[enrich] scanDomain failed:", e)
       return null
@@ -221,6 +225,22 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     }),
     queryTrancoRank(domain).catch((e) => {
       console.error("[enrich] tranco failed:", e)
+      return null
+    }),
+    checkEmailReputation(domain).catch((e) => {
+      console.error("[enrich] emailrep failed:", e)
+      return null
+    }),
+    checkPhishTank(domain).catch((e) => {
+      console.error("[enrich] phishtank failed:", e)
+      return null
+    }),
+    searchOpenCorporates(domain).catch((e) => {
+      console.error("[enrich] opencorporates failed:", e)
+      return null
+    }),
+    checkGreenHosting(domain).catch((e) => {
+      console.error("[enrich] green-web failed:", e)
       return null
     }),
   ])
@@ -294,6 +314,8 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
           cname_records: dns.cnameRecords,
           email_provider: dns.emailProvider,
           email_security_ok: dns.hasEmailSecurity,
+          dnssec: dns.hasDnssec,
+          caa_records: dns.caaRecords,
         }
       : null,
     w3c_validation: w3c?.ok
@@ -310,6 +332,18 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
       : null,
     tranco: tranco?.ok
       ? { rank: tranco.rank }
+      : null,
+    email_reputation: emailrep?.ok
+      ? { reputation: emailrep.reputation, suspicious: emailrep.suspicious, details: emailrep.details }
+      : null,
+    phishtank: phishtank?.ok
+      ? { is_phishing: phishtank.isPhishing }
+      : null,
+    opencorporates: opencorp?.ok
+      ? { companies: opencorp.companies, total_count: opencorp.totalCount }
+      : null,
+    green_hosting: greenweb?.ok
+      ? { is_green: greenweb.isGreen, provider: greenweb.provider }
       : null,
     ...(gbizFirst ? toCompanyMeta(gbizFirst) : {}),
   }
