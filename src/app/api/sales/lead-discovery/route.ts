@@ -3,6 +3,7 @@ import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { upsertCompanyByDomain, findExistingCompany } from "@/lib/sales/companies"
 import { normalizeCompanyName } from "@/lib/sales/dedup"
 import { enqueueCompanyEnrichment, triggerEnrichmentRunner } from "@/lib/sales/enrichment-jobs"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 import { salesScopeFromCountry } from "@/lib/sales/locale-scope"
 import {
   discoverLeadCandidates,
@@ -129,6 +130,28 @@ export async function POST(req: NextRequest) {
 
     if (jobsEnqueued > 0) {
       await triggerEnrichmentRunner(Math.min(jobsEnqueued, 3))
+    }
+
+    // Log search history for dashboard visibility
+    const sb = getServiceSalesSupabase()
+    if (sb) {
+      await sb.from("sales_sync_logs").insert({
+        direction: "lead_discovery",
+        entity_type: "search",
+        action: source,
+        status: "success",
+        pipeline_run_id: null,
+        payload: {
+          query,
+          source,
+          market: body.market ?? null,
+          candidates: result.candidates.length,
+          inserted,
+          skipped,
+          jobs_enqueued: jobsEnqueued,
+          searched_at: new Date().toISOString(),
+        },
+      }).then(() => {}, () => {})
     }
 
     return NextResponse.json({

@@ -391,11 +391,16 @@ export async function importSearxngRunToLeadBatch(input: {
           }
         }
       } else {
-        validResults.push(...chunk) // fallback if LLM fails
+        // LLM unavailable: mark as "pending_review" instead of accepting blindly
+        for (const r of chunk) {
+          await sb.from("sales_searxng_search_results").update({ status: "rejected", rejection_reason: "llm_unavailable_fallback" }).eq("id", r.id)
+        }
       }
     } catch (e) {
-      console.warn("[searxng-import] LLM pre-filter failed for chunk, falling back to accept:", e)
-      validResults.push(...chunk)
+      console.warn("[searxng-import] LLM pre-filter failed for chunk, rejecting as safety measure:", e)
+      for (const r of chunk) {
+        sb.from("sales_searxng_search_results").update({ status: "rejected", rejection_reason: "llm_error_fallback" }).eq("id", r.id).then(() => {}, () => {})
+      }
     }
   }
 

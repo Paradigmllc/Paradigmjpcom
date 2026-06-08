@@ -28,17 +28,75 @@ interface SearchUrlInput {
 }
 
 const BLOCKED_HOST_PARTS = [
+  // Global search engines
   "google.",
   "bing.",
   "duckduckgo.",
+  "yahoo.",
+  "baidu.",
+  "yandex.",
+  "naver.",
+  "seznam.",
+  "ecosia.",
+  "ask.",
+  "aol.",
+  // Social media
   "facebook.",
   "instagram.",
   "linkedin.",
   "x.com",
   "twitter.",
-  "youtube.",
   "tiktok.",
+  "snapchat.",
+  "pinterest.",
+  "reddit.",
+  "tumblr.",
+  "threads.",
+  // Video
+  "youtube.",
+  "vimeo.",
+  "dailymotion.",
+  "twitch.",
+  "nicovideo.",
+  // Wikipedia / directories
   "wikipedia.",
+  "wikimedia.",
+  "yelp.",
+  "tabelog.",
+  "hotpepper.",
+  "gurunavi.",
+  // Japanese blog / note platforms
+  "note.",
+  "ameblo.",
+  "ameba.",
+  "hatenablog.",
+  "hatena.ne.jp",
+  "fc2.",
+  "livedoor.",
+  "goo.ne.jp",
+  "blog.jp",
+  "blog.fc2",
+  // E-commerce marketplaces (not individual stores)
+  "amazon.",
+  "rakuten.co.jp",
+  "mercari.",
+  "paypaymall.",
+  // Job boards
+  "indeed.",
+  "linkedin.com/jobs",
+  "recruit.co.jp",
+  "en-japan.",
+  "baitoru.",
+  // News aggregators
+  "news.yahoo.",
+  "news.google.",
+  "prtimes.",
+  "valuepress.",
+  // Government / edu
+  ".gov.",
+  ".edu.",
+  ".ac.jp",
+  ".go.jp",
 ]
 
 function normalizeBaseUrl(raw: string): URL {
