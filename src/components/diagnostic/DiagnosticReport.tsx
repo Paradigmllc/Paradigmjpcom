@@ -386,10 +386,11 @@ function FaqSection({
   copy,
 }: {
   variant: string
-  lang: "ja" | "en"
+  lang: string
   copy: ReportCopy
 }) {
-  const faqs = REPORT_FAQS[lang]?.[variant] || REPORT_FAQS[lang]?.website_diagnostic || []
+  const faqLang = (lang === "ja" ? "ja" : "en") as "ja" | "en"
+  const faqs = REPORT_FAQS[faqLang]?.[variant] || REPORT_FAQS[faqLang]?.website_diagnostic || []
   const [openIndex, setOpenIndex] = useState<number | null>(null)
 
   if (faqs.length === 0) return null
@@ -682,6 +683,7 @@ function DarkDiagnosticSurface({
               score={sourceScore}
               industryAvg={75}
               label={lang === "ja" ? "PSI総合スコア" : "Overall PSI Score"}
+              lang={lang}
             />
           </div>
         </div>
@@ -820,12 +822,13 @@ export default function DiagnosticReport({
 
   const timelineItems: TimelinePoint[] = [
     { month: lang === "ja" ? "現在" : "Now", loss, competitorGap: loss * 0.5 },
-    ...([1, 3, 6, 9, 12].map((m) => ({
+    ...([1, 3, 6].map((m) => ({
       month: `${m}${lang === "ja" ? "ヶ月" : "mo"}`,
-      loss: Math.round(loss * (1 + m * 0.08)),
-      competitorGap: Math.round(Math.max(0, loss * (1 + m * 0.08) - loss * Math.max(0.15, 1 - m * 0.14))),
+      loss: Math.round(loss * (1 + m * 0.05)),
+      competitorGap: Math.round(Math.max(0, loss * (1 + m * 0.05) * 0.4)),
     }))),
   ]
+  const isProjection = lang === "ja" ? "※改善しない場合の推定値" : "Projection if unaddressed"
 
   return (
     <div className="min-h-screen bg-[#fbfaf7] text-zinc-950">
@@ -997,7 +1000,7 @@ export default function DiagnosticReport({
               <p className="text-sm text-slate-500 mb-4">
                 {lang === "ja" ? "あなたのサイト vs 業界平均" : "Your site vs industry average"}
               </p>
-              <CompetitorBenchmarkChart items={benchmarkItems} />
+               <CompetitorBenchmarkChart items={benchmarkItems} lang={lang} />
             </div>
           </SlideInSection>
         )}
@@ -1046,7 +1049,7 @@ export default function DiagnosticReport({
               <p className="text-sm text-slate-500 mb-4">
                 {lang === "ja" ? "各課題が月間損失に与える推定インパクト" : "Estimated monthly impact per issue"}
               </p>
-              <LossImpactBar items={lossItems} />
+               <LossImpactBar items={lossItems} lang={lang} />
             </div>
           </SlideInSection>
         )}
@@ -1151,7 +1154,8 @@ export default function DiagnosticReport({
             <p className="text-sm text-slate-500 mb-4">
               {lang === "ja" ? "現状維持の場合の月間損失推移と競合との差" : "Monthly loss trajectory and competitor gap"}
             </p>
-            <TimelineChart points={timelineItems} />
+            <TimelineChart points={timelineItems} lang={lang} />
+            <p className="mt-2 text-[10px] text-slate-400 text-center">{isProjection}</p>
           </div>
         </SlideInSection>
 

@@ -89,12 +89,13 @@ export function PerformanceGauge({
 
 // ─── Loss Impact Bar Chart ──────────────────────────────────
 
-export function LossImpactBar({ items }: { items: LossImpactItem[] }) {
+export function LossImpactBar({ items, lang = "ja" }: { items: LossImpactItem[]; lang?: string }) {
   const maxVal = Math.max(...items.map((i) => i.amount), 1)
   const barH = 28
   const gap = 8
   const h = items.length * (barH + gap) + 20
   const w = 500
+  const fmtAmount = (n: number) => lang === "ja" ? `¥${(n / 10000).toFixed(1)}万` : `$${Math.round(n / 110).toLocaleString()}`
 
   return (
     <motion.div className="w-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
@@ -112,7 +113,7 @@ export function LossImpactBar({ items }: { items: LossImpactItem[] }) {
               />
               <text x={135} y={y + 18} textAnchor="end" className="fill-slate-600" fontSize="11">{item.label}</text>
               <text x={145 + pct * 300} y={y + 18} className="fill-slate-800" fontSize="11" fontWeight="bold">
-                ¥{(item.amount / 10000).toFixed(1)}万
+                {fmtAmount(item.amount)}
               </text>
             </g>
           )
@@ -124,12 +125,13 @@ export function LossImpactBar({ items }: { items: LossImpactItem[] }) {
 
 // ─── Competitor Benchmark Chart ─────────────────────────────
 
-export function CompetitorBenchmarkChart({ items }: { items: BenchmarkItem[] }) {
+export function CompetitorBenchmarkChart({ items, lang = "ja" }: { items: BenchmarkItem[]; lang?: string }) {
   const barH = 22
   const gap = 10
   const labelW = 110
   const chartW = 280
   const h = items.length * (barH + gap) + 10
+  const labels = { industryAvg: lang === "ja" ? "業界平均" : "Industry avg", your: lang === "ja" ? "御社" : "You" }
 
   return (
     <div className="space-y-1">
@@ -168,8 +170,8 @@ export function CompetitorBenchmarkChart({ items }: { items: BenchmarkItem[] }) 
       })}
       <div className="flex items-center gap-2 pt-1 text-[10px] text-slate-400">
         <span className="w-28" />
-        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-slate-300" /> 業界平均</span>
-        <span className="flex items-center gap-1 ml-2"><span className="w-3 h-3 rounded bg-rose-500" /> 御社</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-slate-300" /> {labels.industryAvg}</span>
+        <span className="flex items-center gap-1 ml-2"><span className="w-3 h-3 rounded bg-rose-500" /> {labels.your}</span>
       </div>
     </div>
   )
@@ -209,7 +211,7 @@ export function SourceCoverageRadar({ items }: { items: SourceCoverageItem[] }) 
 
 // ─── Timeline Area Chart (replaced with compact line display) ──
 
-export function TimelineChart({ points }: { points: TimelinePoint[] }) {
+export function TimelineChart({ points, lang = "ja" }: { points: TimelinePoint[]; lang?: string }) {
   if (points.length < 2) return null
   const h = 140
   const w = 400
@@ -217,6 +219,7 @@ export function TimelineChart({ points }: { points: TimelinePoint[] }) {
   const chartW = w - pad.left - pad.right
   const chartH = h - pad.top - pad.bottom
   const maxVal = Math.max(...points.map((p) => Math.max(p.loss, p.competitorGap)), 10)
+  const legends = { loss: lang === "ja" ? "損失" : "Loss", gap: lang === "ja" ? "競合差" : "Gap" }
 
   const toX = (i: number) => pad.left + (i / (points.length - 1)) * chartW
   const toY = (v: number) => pad.top + chartH - (v / maxVal) * chartH
@@ -250,8 +253,8 @@ export function TimelineChart({ points }: { points: TimelinePoint[] }) {
         <motion.path d={gapPath} fill="none" stroke={COLORS.sky} strokeWidth={2} strokeDasharray="4 2"
           initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.2, delay: 0.5 }} />
         {/* Legend */}
-        <text x={pad.left + 5} y={pad.top - 6} fontSize="9" fill={COLORS.rose}>損失</text>
-        <text x={pad.left + 35} y={pad.top - 6} fontSize="9" fill={COLORS.sky}>競合差</text>
+        <text x={pad.left + 5} y={pad.top - 6} fontSize="9" fill={COLORS.rose}>{legends.loss}</text>
+        <text x={pad.left + 35} y={pad.top - 6} fontSize="9" fill={COLORS.sky}>{legends.gap}</text>
       </svg>
     </motion.div>
   )
