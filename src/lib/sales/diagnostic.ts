@@ -315,15 +315,10 @@ function issueFallbackBody(company: SalesCompany, issueCode: IssueCode, locale: 
   }
 
   const label = issueLabel(issueCode, locale)
-  const obsVal = safeValue(obsScore, isJp ? "未測定" : "N/A")
-  const crtshVal = crtshCerts > 0 ? `${crtshCerts}件` : (isJp ? "0件" : "0")
-  const dmarcVal = ((company.meta as any)?.dns?.dmarc) ? (isJp ? "設定済み" : "Configured") : (isJp ? "要設定" : "Not set")
-  const yearsVal = waybackYears ?? (isJp ? "不明" : "unknown")
-
   if (!isJp) {
-    return `${company.company_name} shows room to improve ${label}. Observatory: ${obsVal}. SSL certs: ${crtshVal}. DMARC: ${dmarcVal}. Site age: ${yearsVal}y. Based on public evidence, not a technical checklist.`
+    return `${company.company_name} shows room to improve ${label}. The finding is based on publicly observable evidence and translated into a business priority — not a technical checklist.`
   }
-  return `${company.company_name} の ${label} に改善余地があります。Observatory: ${obsVal}。SSL証明書: ${crtshVal}。DMARC: ${dmarcVal}。運用年数: ${yearsVal}年。ITチェックリストではなく経営判断材料として整理しています。`
+  return `${company.company_name} の ${label} に改善余地があります。この評価は公開データに基づく経営判断材料であり、ITチェックリストではありません。`
 }
 
 function severityToActType(severity: Severity): DiagnosticAct["type"] {
