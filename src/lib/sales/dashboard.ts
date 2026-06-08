@@ -13,6 +13,8 @@ import { listLeadBatches } from "@/lib/sales/monthly-batch"
 import { listSearxngRuns } from "@/lib/sales/searxng-source"
 import { listJapanReadinessInsights } from "@/lib/sales/japan-readiness"
 import { listSalesPipelineRuns } from "@/lib/sales/sales-pipeline"
+import { scoreLead } from "@/lib/sales/lead-scoring"
+import type { SalesCompany } from "@/lib/sales/types"
 import type {
   DashboardAuditCheck,
   DashboardAuditSection,
@@ -612,6 +614,8 @@ function mapCompany(row: SalesCompanyRow): DashboardCompany {
     updatedAt: row.updated_at,
     createdAt: row.created_at,
     lastEnrichedAt: extractString(row.meta, ["sales_os", "last_enriched_at"]),
+    leadScore: null,
+    leadScoreTier: null,
     contactFormUrl: extractString(row.meta, ["contact_form_url"]) ?? extractString(row.meta, ["discovery", "contact_form_url"]),
     personalizedCopy:
       extractString(row.meta, ["personalized_copy", "personalized_hook"]) ??
@@ -830,6 +834,12 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
 
   const rawCompanies = (companyRes.data ?? []) as SalesCompanyRow[]
   const companies = rawCompanies.map(mapCompany)
+  // Compute lead scores from raw company data
+  for (let i = 0; i < companies.length; i++) {
+    const scored = scoreLead(rawCompanies[i] as unknown as SalesCompany)
+    companies[i].leadScore = scored.score
+    companies[i].leadScoreTier = scored.tier
+  }
   const scopedCompanyIds = new Set(companies.map((company) => company.id))
   const stageCounts: Record<string, number> = {}
   const pipelineCounts: Record<string, number> = {}

@@ -52,6 +52,8 @@ export interface DashboardCompany {
   updatedAt: string
   createdAt: string
   lastEnrichedAt: string | null
+  leadScore: number | null
+  leadScoreTier: string | null
   contactFormUrl: string | null
   personalizedCopy: string | null
 }

@@ -120,6 +120,9 @@ export function BarList({ title, rows, empty }: { title: string; rows: [string, 
 }
 
 export function CompanyRow({ company, updating, onChangeStatus }: { company: DashboardCompany; updating: boolean; onChangeStatus: (id: string, s: string) => void }) {
+  const scoreTier = company.leadScoreTier
+  const tierClass = scoreTier === "hot" ? "bg-rose-100 text-rose-700" : scoreTier === "warm" ? "bg-amber-100 text-amber-700" : "bg-zinc-100 text-zinc-500"
+  const tierLabel = scoreTier === "hot" ? "HOT" : scoreTier === "warm" ? "WARM" : "-"
   return (
     <tr className="border-t border-zinc-100 hover:bg-zinc-50">
       <td className="min-w-[240px] px-4 py-3">
@@ -147,6 +150,12 @@ export function CompanyRow({ company, updating, onChangeStatus }: { company: Das
       <td className="px-4 py-3 text-xs text-zinc-600">{company.assignedTo ?? "-"}</td>
       <td className="px-4 py-3 text-right text-xs text-zinc-400" title={company.lastEnrichedAt ?? company.updatedAt}>
         {company.lastEnrichedAt ? freshnessLabel(company.lastEnrichedAt) : (company.updatedAt ? freshnessLabel(company.updatedAt) : "-")}
+      </td>
+      <td className="px-4 py-3 text-right">
+        <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${tierClass}`}>
+          {tierLabel}
+        </span>
+        {company.leadScore != null && <span className="ml-1 text-[10px] text-zinc-400">{company.leadScore}</span>}
       </td>
     </tr>
   )
