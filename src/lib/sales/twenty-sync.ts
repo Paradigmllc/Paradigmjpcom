@@ -5,6 +5,9 @@ import {
   markRecommendationOpportunityCreated,
   type CompanyProductRecommendation,
 } from "@/lib/sales/products"
+import { enqueueCompanyEnrichment } from "./enrichment-jobs"
+import { upsertCompanyByDomain } from "./companies"
+import { createSalesPipelineRun } from "./sales-pipeline"
 
 interface TwentyLinkField {
   primaryLinkUrl?: string | null
@@ -65,8 +68,11 @@ export interface TwentyPullResult {
   ok: boolean
   configured: boolean
   scanned: number
+  created: number
   updated: number
   skipped: number
+  pipelineRunsCreated: number
+  failures: { domain: string; reason: string }[]
   error?: string
 }
 
@@ -574,8 +580,11 @@ export async function pullTwentyCompaniesToSupabase(
       ok: false,
       configured: false,
       scanned: 0,
+      created: 0,
       updated: 0,
       skipped: 0,
+      pipelineRunsCreated: 0,
+      failures: [],
       error: "TWENTY_BASE_URL or TWENTY_API_KEY is not configured",
     }
   }
@@ -586,46 +595,124 @@ export async function pullTwentyCompaniesToSupabase(
       ok: false,
       configured: true,
       scanned: 0,
+      created: 0,
       updated: 0,
       skipped: 0,
+      pipelineRunsCreated: 0,
+      failures: [],
       error: "Supabase service_role not configured",
     }
   }
 
-  const safeLimit = Math.min(Math.max(limit, 1), 500)
-  const result = await twentyFetch<TwentyListResponse<TwentyRecord>>(`/rest/companies?limit=${safeLimit}`)
-  if (!result.ok) {
-    return { ok: false, configured: true, scanned: 0, updated: 0, skipped: 0, error: result.error }
-  }
-
-  const records = result.data.data?.companies ?? []
-  let updated = 0
-  let skipped = 0
-
-  for (const record of records) {
-    const domain =
-      normalizeDomain(record.domainName?.primaryLinkUrl) ??
-      normalizeDomain(record.domainName?.primaryLinkLabel)
-    if (!domain) {
-      skipped += 1
-      continue
+    const safeLimit = Math.min(Math.max(limit, 1), 500)
+    const result = await twentyFetch<TwentyListResponse<TwentyRecord>>(`/rest/companies?limit=${safeLimit}`)
+    if (!result.ok) {
+      return { ok: false, configured: true, scanned: 0, created: 0, updated: 0, skipped: 0, pipelineRunsCreated: 0, failures: [], error: result.error }
     }
 
-    const { data: company, error: findError } = await sb
-      .from("sales_companies")
-      .select("id, meta")
-      .eq("domain", domain)
-      .maybeSingle()
+    const records = result.data.data?.companies ?? []
+    let created = 0
+    let updated = 0
+    let skipped = 0
+    let pipelineRunsCreated = 0
+    const failures: { domain: string; reason: string }[] = []
 
-    if (findError) {
-      console.error("[twenty-sync] Supabase company lookup failed:", findError.message)
-      skipped += 1
-      continue
-    }
-    if (!company?.id) {
-      skipped += 1
-      continue
-    }
+    for (const record of records) {
+      const domain =
+        normalizeDomain(record.domainName?.primaryLinkUrl) ??
+        normalizeDomain(record.domainName?.primaryLinkLabel)
+      if (!domain) {
+        skipped += 1
+        continue
+      }
+
+      const companyName = record.name?.trim()
+      if (!companyName) {
+        skipped += 1
+        continue
+      }
+
+      const { data: company, error: findError } = await sb
+        .from("sales_companies")
+        .select("id, meta")
+        .eq("domain", domain)
+        .maybeSingle()
+
+      if (findError) {
+        console.error("[twenty-sync] Supabase company lookup failed:", findError.message)
+        skipped += 1
+        continue
+      }
+
+      // ── New company from Twenty: create in Supabase + enqueue enrichment ──
+      if (!company?.id) {
+        const createdResult = await upsertCompanyByDomain({
+          domain,
+          company_name: companyName,
+          region: "jp",
+          meta: {
+            twenty: {
+              id: record.id ?? null,
+              lastPulledAt: new Date().toISOString(),
+              countryName: record.paradigmCountryName ?? null,
+              regionName: record.paradigmRegionName ?? null,
+              industryName: record.paradigmIndustryName ?? null,
+              sourceName: record.paradigmSourceName ?? null,
+              salesStatus: record.paradigmSalesStatus ?? null,
+              karteScore: record.paradigmKarteScore ?? null,
+              sourceCoverage: record.paradigmSourceCoverage ?? null,
+              recommendedProducts: record.paradigmRecommendedProducts ?? [],
+              summary: record.paradigmKarteSummary?.markdown ?? null,
+            },
+          },
+        })
+
+        if (!createdResult.ok || !createdResult.company) {
+          failures.push({ domain, reason: createdResult.error ?? "failed to create company" })
+          skipped += 1
+          continue
+        }
+
+        const newCompany = createdResult.company
+        created += 1
+
+        // Enqueue automatic enrichment
+        const enqueueResult = await enqueueCompanyEnrichment({
+          companyId: newCompany.id,
+          source: "twenty_csv_intake",
+          triggeredBy: `pullTwentyCompaniesToSupabase:${options.pipelineRunId ?? "manual"}`,
+          priority: 60,
+        })
+
+        if (!enqueueResult.ok) {
+          console.error("[twenty-sync] enrichment enqueue failed:", enqueueResult.error)
+          failures.push({ domain, reason: `enrichment enqueue failed: ${enqueueResult.error}` })
+        }
+
+        // Create pipeline run for tracking
+        const pipelineResult = await createSalesPipelineRun({
+          companyId: newCompany.id,
+          source: "twenty_csv_intake",
+          requireVideo: false,
+        })
+
+        if (pipelineResult.ok) {
+          pipelineRunsCreated += 1
+        } else {
+          console.error("[twenty-sync] pipeline run creation failed:", pipelineResult.error)
+        }
+
+        await sb.from("sales_sync_logs").insert({
+          direction: "twenty->supabase",
+          entity_type: "company",
+          entity_id: newCompany.id,
+          action: "create",
+          status: "success",
+          payload: { twenty_company_id: record.id ?? null, domain, company_name: companyName },
+        })
+
+        continue
+      }
 
     const currentMeta = (company.meta ?? {}) as Record<string, unknown>
     const reportUrl = record.paradigmReportUrl?.primaryLinkUrl ?? null
@@ -696,5 +783,5 @@ export async function pullTwentyCompaniesToSupabase(
     updated += 1
   }
 
-  return { ok: true, configured: true, scanned: records.length, updated, skipped }
+  return { ok: true, configured: true, scanned: records.length, created, updated, skipped, pipelineRunsCreated, failures }
 }

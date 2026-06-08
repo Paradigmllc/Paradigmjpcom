@@ -22,6 +22,10 @@ import { checkSslGrade } from "./sources/ssllabs"
 import { getWhois } from "./sources/whois"
 import { findPlace } from "./sources/places"
 import { discoverFormUrl } from "./sources/form-discovery"
+import { searchCrtsh } from "./sources/crtsh"
+import { queryCloudflareRadar } from "./sources/cloudflare-radar"
+import { scanMozillaObservatory } from "./sources/mozilla-observatory"
+import { fetchGoogleTrendsInterest } from "./sources/pytrends"
 import { autoPersonalize } from "./personalize"
 import { saveTechStackDetections } from "./source-acquisition"
 import type { Industry, SalesCompany } from "./types"
@@ -140,7 +144,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   // Step 2: 並列 30+ source enrich (Sprint 15: PSI + gBizInfo + Wappalyzer + SSL + Whois + Places)
   //         Hunter.io はメール検索 (フォーム経由で email 既知の場合のみ)
   const url = domain.startsWith("http") ? domain : `https://${domain}`
-  const [scan, gbiz, tech, ssl, whois, place, hunter, form] = await Promise.all([
+  const [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends] = await Promise.all([
     scanDomain(domain).catch((e) => {
       console.error("[enrich] scanDomain failed:", e)
       return null
@@ -171,6 +175,22 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     }),
     discoverFormUrl({ homeUrl: domain }).catch((e) => {
       console.error("[enrich] form-discovery failed:", e)
+      return null
+    }),
+    searchCrtsh(domain).catch((e) => {
+      console.error("[enrich] crt.sh failed:", e)
+      return null
+    }),
+    queryCloudflareRadar(domain).catch((e) => {
+      console.error("[enrich] cloudflare-radar failed:", e)
+      return null
+    }),
+    scanMozillaObservatory(domain).catch((e) => {
+      console.error("[enrich] mozilla-observatory failed:", e)
+      return null
+    }),
+    fetchGoogleTrendsInterest(domain).catch((e) => {
+      console.error("[enrich] pytrends failed:", e)
       return null
     }),
   ])
@@ -216,6 +236,18 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
         ? form.formUrl
         : null,
     form_discovery: form ? { method: form.method, confidence: form.confidence } : null,
+    crtsh: crtsh?.ok
+      ? { total_certs: crtsh.totalCerts, subdomains: crtsh.subdomains, latest_cert: crtsh.latestCert, oldest_cert: crtsh.oldestCert }
+      : null,
+    cloudflare_radar: radar?.ok
+      ? { rank: radar.rank, rank_bucket: radar.rankBucket, categories: radar.categories }
+      : null,
+    mozilla_observatory: observatory?.ok
+      ? { score: observatory.score, grade: observatory.grade, tests_passed: observatory.testsPassed, tests_total: observatory.testsTotal }
+      : null,
+    google_trends: trends?.ok
+      ? { interest_over_time: trends.interestOverTime }
+      : null,
     ...(gbizFirst ? toCompanyMeta(gbizFirst) : {}),
   }
 

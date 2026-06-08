@@ -1,11 +1,35 @@
 # Task.md
 
-## CURRENT STATUS
+## CODEX UPDATE - 2026-06-08 Trigger.dev OSS セルフホスト移行 (進行中)
 
-- Revenue OS / Sales OS is the operating surface for company karte, reports, outreach approval, form-send lanes, post-outreach capture, and pipeline runs.
-- Supabase remains the SSOT for sales companies, activity logs, operator queues, pipeline runs/steps, video jobs, sync logs, and artifact manifests.
-- n8n is no longer the active orchestrator for new Sales OS work. Trigger.dev is deployed as the primary orchestration target; legacy `N8N_*` values are inbound/backward-compat only where explicitly noted.
-- Form URL extraction and submission are now wired as one lane family: HTTP form submit, Crawl4AI discovery, Browserless rendered inspection, Crawlee SPA discovery, Playwright Stealth worker submission, and Stagehand agent discovery/submission.
+- Trigger.dev Cloud (`api.trigger.dev` / `cloud.trigger.dev`) から OSS セルフホスト (`trigger.paradigmjp.com`) への移行を開始。
+- `docker-compose.trigger-oss.yml` 作成: webapp + supervisor + PostgreSQL + Redis + ClickHouse + MinIO + Registry + Electric + Docker Proxy の全コンテナを combined 構成で定義。v4-beta イメージにバージョンロック。
+- `scripts/setup-trigger-oss.mjs` 作成: Coolify API 経由で新 Droplet に Trigger.dev OSS をデプロイするスクリプト。シークレット自動生成、レジストリ htpasswd 生成、サービス作成。
+- コード変更: 全 dispatch コード（`sales-pipeline-helpers.ts`, `enrichment-jobs.ts`, `post-outreach-webhooks.ts`, `video-trigger.ts`）、health check（`route.ts`, `oss-service-health.ts`）、verify スクリプトの localhost フォールバックを `:3010` → `:8030`（OSS デフォルトポート）に統一。
+- `trigger.config.ts`: project ref を `proj_ptaxneqibbeboxxboajw` → `paradigm-sales-os` に変更。
+- `.env.example`: `TRIGGER_API_URL` を `https://trigger.paradigmjp.com`、`TRIGGER_DASHBOARD_URL` を同 URL に更新。`TRIGGER_PROJECT_REF=paradigm-sales-os` 追加。
+- `docs/knowledge/trigger-dev-sales-os-runbook.md`: OSS セルフホスト版に完全書き換え（アーキテクチャ図、コンテナ一覧、セットアップ手順、運用ノート、Cloud→OSS 移行表）。
+- 未完了: Coolify の新 Droplet 作成 + デプロイ + CLI login + task deploy + API key 発行はユーザーの手動操作が必要。
+- コード変更のみでは本番影響なし（環境変数が未変更のため既存 Cloud 向け dispatch が継続）。
+
+## ACTIVE HANDOFF
+
+- Trigger.dev OSS 移行のコード準備は完了。新 Droplet に `setup-trigger-oss.mjs` を実行し、環境変数を差し替えることで本番切替可能。
+- 既存の Trigger.dev Cloud はそのまま稼働中。
+
+## NEXT ACTIONS
+
+- Coolify で新 Droplet（4vCPU/8GB+）を作成し `TRIGGER_SERVER_UUID` を設定
+- `node scripts/setup-trigger-oss.mjs` を実行して Trigger.dev OSS をデプロイ
+- CLI login → project init → task deploy → PAT 発行
+- Coolify 本番 env の `TRIGGER_API_URL`, `TRIGGER_DASHBOARD_URL`, `TRIGGER_SECRET_KEY`, `TRIGGER_PROJECT_REF` を OSS 向けに更新
+- paradigm-hp を再デプロイして切替完了
+
+## RISKS
+
+- OSS 版は Cloud 版に比べて warm starts / auto-scaling / checkpoints が欠ける。ピーク時のタスク起動レイテンシに注意。
+- 新 Droplet のリソース（4vCPU/8GB）が閾値を下回るとタスク実行が遅延または失敗する可能性あり。
+- タスク実行用の Docker-in-Docker が supervisor 経由でホストの Docker socket を使用するため、ホストのディスク容量にも注意。
 
 ## CODEX UPDATE - 2026-06-06 Twenty Intake Pipeline Repair
 

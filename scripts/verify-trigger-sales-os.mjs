@@ -83,7 +83,7 @@ if (!secretName) {
   process.exit()
 }
 
-const apiUrl = (env("TRIGGER_API_URL") ?? "http://localhost:3010").replace(/\/+$/, "")
+const apiUrl = (env("TRIGGER_API_URL") ?? "http://localhost:8030").replace(/\/+$/, "")
 const url = `${apiUrl}/api/v1/runs?limit=1`
 const dispatchUrl = `${apiUrl}/api/v1/tasks/sales-os-pipeline/trigger`
 const authHeaders = { Authorization: `Bearer ${env(secretName)}` }

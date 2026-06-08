@@ -9,7 +9,7 @@ import type { ContentAssetType } from "./content-templates"
 
 export type JsonRecord = Record<string, unknown>
 
-export type SalesPipelineSource = "sales_os" | "twenty" | "csv" | "manual" | "webhook" | "batch"
+export type SalesPipelineSource = "sales_os" | "twenty" | "twenty_csv_intake" | "csv" | "manual" | "webhook" | "batch"
 export type SalesPipelineStatus = "queued" | "running" | "waiting_external" | "needs_review" | "completed" | "failed" | "cancelled"
 export type SalesPipelineStepStatus = SalesPipelineStatus | "skipped"
 
