@@ -17,6 +17,9 @@ export const REPORT_LOCALES = [
 
 export type ReportLocale = (typeof REPORT_LOCALES)[number]
 
+/** Canonical array of all 12 report locales (alias for REPORT_LOCALES) */
+export const ALL_REPORT_LOCALES: readonly ReportLocale[] = REPORT_LOCALES
+
 export const TEMPLATE_VARIANTS = [
   "website_diagnostic",
   "meo",

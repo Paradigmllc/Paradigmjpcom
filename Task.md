@@ -1,13 +1,27 @@
 # Task.md
 
-## CODEX UPDATE - 2026-06-08 Trigger.dev OSS セルフホスト移行 (進行中)
+## CODEX UPDATE - 2026-06-08 診断レポート品質全面改善
 
-- Trigger.dev Cloud (`api.trigger.dev` / `cloud.trigger.dev`) から OSS セルフホスト (`trigger.paradigmjp.com`) への移行を開始。
-- `docker-compose.trigger-oss.yml` 作成: webapp + supervisor + PostgreSQL + Redis + ClickHouse + MinIO + Registry + Electric + Docker Proxy の全コンテナを combined 構成で定義。v4-beta イメージにバージョンロック。
-- `scripts/setup-trigger-oss.mjs` 作成: Coolify API 経由で新 Droplet に Trigger.dev OSS をデプロイするスクリプト。シークレット自動生成、レジストリ htpasswd 生成、サービス作成。
-- コード変更: 全 dispatch コード（`sales-pipeline-helpers.ts`, `enrichment-jobs.ts`, `post-outreach-webhooks.ts`, `video-trigger.ts`）、health check（`route.ts`, `oss-service-health.ts`）、verify スクリプトの localhost フォールバックを `:3010` → `:8030`（OSS デフォルトポート）に統一。
-- `trigger.config.ts`: project ref を `proj_ptaxneqibbeboxxboajw` → `paradigm-sales-os` に変更。
-- `.env.example`: `TRIGGER_API_URL` を `https://trigger.paradigmjp.com`、`TRIGGER_DASHBOARD_URL` を同 URL に更新。`TRIGGER_PROJECT_REF=paradigm-sales-os` 追加。
+### Phase 1: テンプレートシステム刷新
+- `src/lib/sales/industry-profiles.ts`: 8 業種の詳細プロファイル（客単価、月間訪問者数、Web 依存率、構造的課題、損失試算ロジック、季節性）を JA/EN 両言語で定義。画一テンプレから脱却し、データドリブン多様生成の基盤。
+- `src/lib/sales/issue-profiles.ts`: 7 課題コードの詳細プロファイル（技術説明、ビジネスインパクト、業種別ベンチマーク値、3/6/12 ヶ月劣化予測、改善難易度/工数）を JA/EN 両言語で定義。`ua_残存` の完全対応（ラベル・メトリクス・影響・予測を全業種分追加）。
+- `src/lib/sales/template-engine.ts`: 業種 × 課題プロファイル + DeepSeek で多様な診断文面を生成するエンジン。プロファイルからの構造化 fallback も内蔵し、AI 利用不可時も高品質出力。
+- `supabase/migration_042_sales_template_seed.sql`: 56 業種×課題 組み合わせ × 2 地域 (jp/global) = 112 テンプレートを Supabase にシード。全テンプレが JA/EN で実文言を持つ。JS ハードコード依存を解消。
+
+### Phase 2: 完全 12 言語 i18n
+- `src/lib/sales/report-i18n.ts` (1275 行): 全 12 言語の完全なレポート UI コピー、4 種 CTA、5 件 FAQ（文化適応済み）、安心感コピー、機能バッジ、文化的トーン指示を提供。ko/zh/de/fr/es/pt/ru/ar/vi/id の 10 言語が英語フォールバックから脱却。
+- `src/lib/sales/routing.ts`: `ALL_REPORT_LOCALES` 配列をエクスポートし 12 言語列挙を正規化。
+
+### Phase 3: プロ級デザイン全面刷新
+- `src/components/diagnostic/ReportAnimations.tsx`: 5 種の framer-motion ラッパー（StaggeredFadeIn, CountUpMetric, PulseHighlight, SlideInSection, ShimmerCard）
+- `src/components/diagnostic/ReportCharts.tsx`: 5 種の Recharts チャート（PerformanceGauge=ラジアル、LossImpactBar=水平バー、SourceCoverageRadar=スパイダー、CompetitorBenchmarkChart=ベンチマーク比較、TimelineChart=劣化予測エリアチャート）
+- `src/components/diagnostic/ReportScoreCard.tsx`: SVG 円形プログレス + 深刻度バッジ + アニメーションカウントアップ付きスコアカード
+- `src/components/diagnostic/ReportExecutiveSummary.tsx`: アニメーション KPI グリッド + グラデーション背景 + スタッガードエントランス
+- `src/components/diagnostic/DiagnosticReport.tsx`: 全セクションに SlideInSection/StaggeredFadeIn 適用。dark diagnostic surface に PerformanceGauge。新規チャートセクション追加。
+- 依存追加: `recharts`, `@tremor/react`
+
+### Phase 4: Metabase 復旧
+- Coolify API 経由で Metabase サービス再起動 → `https://metabase.appexx.me/` HTTP 200 復旧完了
 - `docs/knowledge/trigger-dev-sales-os-runbook.md`: OSS セルフホスト版に完全書き換え（アーキテクチャ図、コンテナ一覧、セットアップ手順、運用ノート、Cloud→OSS 移行表）。
 - 未完了: Coolify の新 Droplet 作成 + デプロイ + CLI login + task deploy + API key 発行はユーザーの手動操作が必要。
 - コード変更のみでは本番影響なし（環境変数が未変更のため既存 Cloud 向け dispatch が継続）。

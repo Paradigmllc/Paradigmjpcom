@@ -9,6 +9,8 @@
 import { findCompanyByDomain, findCompanyById, findCompanyBySlug } from "./companies"
 import { buildCompanyIntelligence, type CompanyIntelligence } from "./company-intelligence"
 import { matchContentTemplate, type SalesContentTemplate } from "./content-templates"
+import { getIndustryProfile } from "./industry-profiles"
+import { getIssueProfile } from "./issue-profiles"
 import {
   buildReportUrl,
   getRoutingMeta,
