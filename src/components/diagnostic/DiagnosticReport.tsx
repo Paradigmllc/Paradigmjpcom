@@ -679,7 +679,7 @@ function DarkDiagnosticSurface({
           <div className="mt-6">
             <PerformanceGauge
               score={sourceScore}
-              benchmark={75}
+              industryAvg={75}
               label={lang === "ja" ? "PSI総合スコア" : "Overall PSI Score"}
             />
           </div>
@@ -784,27 +784,24 @@ export default function DiagnosticReport({
       const n = numericValue(act.metric_value)
       const maxVal = 100
       const yourScore = Math.min(100, Math.max(0, (n / maxVal) * 100))
-      const industryAvg = 70
-      const topCompetitor = act.icon === "TRUST" || act.icon === "OPS" ? 95 : 85
       return {
-        name: cleanText(act.metric_label, copy.evidence).slice(0, 20),
+        label: cleanText(act.metric_label, copy.evidence).slice(0, 20),
         yourScore,
-        industryAvg,
-        topCompetitor,
+        industryAvg: 70,
       }
     })
 
-  const lossImpactItems: LossImpactItem[] = data.acts
+  const lossItems: LossImpactItem[] = data.acts
     .filter((act) => {
       const n = numericValue(act.metric_value)
       return n > 0 && !isNaN(n)
     })
     .map((act, i) => ({
-      name: cleanText(act.headline, act.metric_label).slice(0, 30),
-      value: (loss / data.acts.length) * (data.acts.length - i) * 0.8 + loss * 0.2,
+      label: cleanText(act.headline, act.metric_label).slice(0, 30),
+      amount: Math.round((loss / data.acts.length) * (data.acts.length - i) * 0.8 + loss * 0.2),
     }))
 
-  const radarItems: RadarItem[] = (() => {
+  const radarItems = (() => {
     const categories: Record<string, { sum: number; count: number }> = {}
     for (const item of visibleSources) {
       const cat = sourceCategoryLabel(item.category, lang)
@@ -814,19 +811,18 @@ export default function DiagnosticReport({
     }
     return Object.entries(categories)
       .map(([category, v]) => ({
-        category,
-        score: Math.round(v.sum / v.count),
+        label: category,
+        value: Math.round(v.sum / v.count),
       }))
       .slice(0, 8)
   })()
 
   const timelineItems: TimelinePoint[] = [
-    { month: lang === "ja" ? "現在" : "Now", currentPath: loss, improvedPath: loss, benchmark: loss * 0.5 },
+    { month: lang === "ja" ? "現在" : "Now", loss, competitorGap: loss * 0.5 },
     ...([1, 3, 6, 9, 12].map((m) => ({
       month: `${m}${lang === "ja" ? "ヶ月" : "mo"}`,
-      currentPath: Math.round(loss * (1 + m * 0.08)),
-      improvedPath: Math.round(loss * Math.max(0.15, 1 - m * 0.14)),
-      benchmark: Math.round(loss * 0.5 * (1 + m * 0.02)),
+      loss: Math.round(loss * (1 + m * 0.08)),
+      competitorGap: Math.round(loss * (1 + m * 0.08) - loss * Math.max(0.15, 1 - m * 0.14)),
     }))),
   ]
 
@@ -996,15 +992,11 @@ export default function DiagnosticReport({
         {benchmarkItems.length > 0 && (
           <SlideInSection direction="up" className="px-5 py-10">
             <div className="mx-auto max-w-6xl">
-              <CompetitorBenchmarkChart
-                data={benchmarkItems}
-                title={copy.competitorBenchmark}
-                subtitle={
-                  lang === "ja"
-                    ? "あなたのサイト vs 業界平均 vs 上位競合"
-                    : "Your site vs industry average vs top competitors"
-                }
-              />
+              <h3 className="text-lg font-semibold text-slate-800 mb-1">{copy.competitorBenchmark}</h3>
+              <p className="text-sm text-slate-500 mb-4">
+                {lang === "ja" ? "あなたのサイト vs 業界平均" : "Your site vs industry average"}
+              </p>
+              <CompetitorBenchmarkChart items={benchmarkItems} />
             </div>
           </SlideInSection>
         )}
@@ -1044,19 +1036,16 @@ export default function DiagnosticReport({
         </section>
 
         {/* ── Loss Impact Chart ─────────────────────────────── */}
-        {lossImpactItems.length > 0 && (
+        {lossItems.length > 0 && (
           <SlideInSection direction="up" className="px-5 pb-10">
             <div className="mx-auto max-w-6xl">
-              <LossImpactBar
-                data={lossImpactItems}
-                title={lang === "ja" ? "月間損失インパクト（課題別）" : "Monthly Loss Impact by Issue"}
-                subtitle={
-                  lang === "ja"
-                    ? "各課題が月間損失に与える推定インパクト"
-                    : "Estimated monthly impact contribution per issue"
-                }
-                valueFormatter={(v) => `¥${v.toLocaleString("en-US")}`}
-              />
+              <h3 className="text-lg font-semibold text-slate-800 mb-1">
+                {lang === "ja" ? "月間損失インパクト（課題別）" : "Monthly Loss Impact by Issue"}
+              </h3>
+              <p className="text-sm text-slate-500 mb-4">
+                {lang === "ja" ? "各課題が月間損失に与える推定インパクト" : "Estimated monthly impact per issue"}
+              </p>
+              <LossImpactBar items={lossItems} />
             </div>
           </SlideInSection>
         )}
@@ -1141,19 +1130,13 @@ export default function DiagnosticReport({
         {radarItems.length > 1 && (
           <SlideInSection direction="up" className="px-5 py-10">
             <div className="mx-auto max-w-6xl">
-              <SourceCoverageRadar
-                data={radarItems}
-                title={
-                  lang === "ja"
-                    ? "ソースカバレッジ（カテゴリ別）"
-                    : "Source Coverage by Category"
-                }
-                subtitle={
-                  lang === "ja"
-                    ? "各データカテゴリのカバレッジスコア分布"
-                    : "Coverage score distribution across data categories"
-                }
-              />
+              <h3 className="text-lg font-semibold text-slate-800 mb-1">
+                {lang === "ja" ? "ソースカバレッジ（カテゴリ別）" : "Source Coverage by Category"}
+              </h3>
+              <p className="text-sm text-slate-500 mb-4">
+                {lang === "ja" ? "各データカテゴリのカバレッジスコア分布" : "Coverage score distribution across data categories"}
+              </p>
+              <SourceCoverageRadar items={radarItems} />
             </div>
           </SlideInSection>
         )}
@@ -1161,20 +1144,13 @@ export default function DiagnosticReport({
         {/* ── Timeline Forecast ─────────────────────────────── */}
         <SlideInSection direction="up" className="px-5 pb-10">
           <div className="mx-auto max-w-6xl">
-            <TimelineChart
-              data={timelineItems}
-              title={
-                lang === "ja"
-                  ? "損失予測（現状維持 vs Paradigm改善）"
-                  : "Loss Forecast (Status Quo vs Paradigm Improvement)"
-              }
-              subtitle={
-                lang === "ja"
-                  ? "改善しない場合と改善した場合の月間損失推移"
-                  : "Monthly loss trajectory with and without intervention"
-              }
-              valueFormatter={(v) => `¥${v.toLocaleString("en-US")}`}
-            />
+            <h3 className="text-lg font-semibold text-slate-800 mb-1">
+              {lang === "ja" ? "損失予測" : "Loss Forecast"}
+            </h3>
+            <p className="text-sm text-slate-500 mb-4">
+              {lang === "ja" ? "現状維持の場合の月間損失推移と競合との差" : "Monthly loss trajectory and competitor gap"}
+            </p>
+            <TimelineChart points={timelineItems} />
           </div>
         </SlideInSection>
 

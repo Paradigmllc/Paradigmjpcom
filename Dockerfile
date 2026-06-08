@@ -14,6 +14,8 @@ ENV PAYLOAD_READS_DISABLED_DURING_BUILD=1
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
+ENV NODE_OPTIONS="--max-old-space-size=2048"
+ENV GENERATE_SOURCEMAP=false
 
 RUN npx payload generate:importmap
 RUN npx next build --webpack
