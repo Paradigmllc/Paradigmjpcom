@@ -404,21 +404,22 @@ export async function fetchDiagnosticReport(opts: {
 
   const sourceCoverage = computeSourceCoverage(company)
   const issues = defaultIssues(company)
-  const templates = company.industry
-    ? await getTemplatesByIndustry(company.industry, issues, templateRegion, { reportLocale, targetCountry, templateVariant })
-    : []
+  const [templates, contentTemplate] = await Promise.all([
+    company.industry
+      ? getTemplatesByIndustry(company.industry, issues, templateRegion, { reportLocale, targetCountry, templateVariant })
+      : Promise.resolve([] as Awaited<ReturnType<typeof getTemplatesByIndustry>>),
+    matchContentTemplate({
+      reportLocale,
+      targetCountry,
+      industry: company.industry,
+      assetType: "diagnostic_report",
+      appealAngle: appealAngleFor({ reportLocale, templateVariant, issues }),
+    }),
+  ])
   const templateByIssue = new Map(templates.map((template) => [template.issue_code, template]))
   const acts = issues.map((issueCode, index) =>
     buildAct(company, issueCode, templateByIssue.get(issueCode), metricValueFor(company, issueCode, index, reportLocale), reportLocale),
   )
-  const contentTemplate = await matchContentTemplate({
-    reportLocale,
-    targetCountry,
-    industry: company.industry,
-    assetType: "diagnostic_report",
-    appealAngle: appealAngleFor({ reportLocale, templateVariant, issues }),
-    templateVariant,
-  })
 
   const personalizedCopy = readPersonalizedCopy(company.meta)
   if (personalizedCopy?.personalized_pain && acts[0]) acts[0] = { ...acts[0], body: personalizedCopy.personalized_pain }

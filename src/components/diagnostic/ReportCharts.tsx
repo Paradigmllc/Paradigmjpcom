@@ -41,11 +41,13 @@ export function PerformanceGauge({
   maxScore = 100,
   label,
   industryAvg,
+  lang = "ja",
 }: {
   score: number
   maxScore?: number
   label: string
   industryAvg?: number
+  lang?: string
 }) {
   const radius = 70
   const circumference = 2 * Math.PI * radius
@@ -79,7 +81,7 @@ export function PerformanceGauge({
       </svg>
       <p className="text-sm font-semibold text-slate-700 mt-1">{label}</p>
       {industryAvg != null && (
-        <p className="text-xs text-slate-400">業界平均 {industryAvg} 点</p>
+        <p className="text-xs text-slate-400">{lang === "ja" ? `業界平均 ${industryAvg} 点` : `Industry avg ${industryAvg}`}</p>
       )}
     </motion.div>
   )

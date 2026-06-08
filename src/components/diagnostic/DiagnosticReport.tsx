@@ -300,7 +300,8 @@ function RoiCalculatorCard({
   copy: ReportCopy
   lang: ReportLang
 }) {
-  const lossValue = monthlyLoss > 0 ? monthlyLoss : 340000
+  if (monthlyLoss <= 0) return null // No loss data, skip ROI card
+  const lossValue = monthlyLoss
   const cost = SOLUTION_COSTS[variant] ?? 450000
   const recoveredTwelveMonths = lossValue * 12
   const paybackPeriod = Math.max(0.5, Number((cost / lossValue).toFixed(1)))
@@ -822,7 +823,7 @@ export default function DiagnosticReport({
     ...([1, 3, 6, 9, 12].map((m) => ({
       month: `${m}${lang === "ja" ? "ヶ月" : "mo"}`,
       loss: Math.round(loss * (1 + m * 0.08)),
-      competitorGap: Math.round(loss * (1 + m * 0.08) - loss * Math.max(0.15, 1 - m * 0.14)),
+      competitorGap: Math.round(Math.max(0, loss * (1 + m * 0.08) - loss * Math.max(0.15, 1 - m * 0.14))),
     }))),
   ]
 
