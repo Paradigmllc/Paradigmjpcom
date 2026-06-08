@@ -26,6 +26,8 @@ import {
   type LossImpactItem,
   type TimelinePoint,
 } from "./ReportCharts"
+import { getVariantLayout } from "./report-section-config"
+import { VariantSection } from "./report-variant-sections"
 
 // ─── Constants ──────────────────────────────────────────────────
 
@@ -938,6 +940,14 @@ export default function DiagnosticReport({
             </motion.div>
           </div>
         </section>
+
+        {/* ── Variant-specific sections ─────── */}
+        {(() => {
+          const layout = getVariantLayout(data.template_variant)
+          return layout.sections
+            .filter((s) => !["hero", "stats", "executive_summary", "dark_surface", "benchmark", "findings", "loss_chart", "screenshot", "pain_points", "source_coverage", "timeline", "evidence", "faq", "cta"].includes(s.id))
+            .map((s) => <VariantSection key={s.id} sectionId={s.id} data={data} lang={lang} />)
+        })()}
 
         {/* ── Stats Row ─────────────────────────────────────── */}
         <section className="px-5 pb-12">

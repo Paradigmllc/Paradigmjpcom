@@ -55,6 +55,8 @@ export interface DiagnosticReportData {
   screenshot_url?: string | null
   source_coverage: SourceCoverageSnapshot
   intelligence: CompanyIntelligence
+  meta?: Record<string, unknown>
+  contactFormUrl?: string | null
   content_template: Pick<
     SalesContentTemplate,
     "title" | "purpose" | "quality_bar" | "dify_selection_rule" | "prompt_template" | "offer_code" | "appeal_angle"
@@ -477,6 +479,8 @@ export async function fetchDiagnosticReport(opts: {
     screenshot_url: (company.meta?.screenshot_url as string) ?? null,
     source_coverage: sourceCoverage,
     intelligence: buildCompanyIntelligence(company, sourceCoverage.items),
+    meta: (company.meta ?? {}) as Record<string, unknown>,
+    contactFormUrl: (company.meta?.contact_form_url as string) ?? null,
     content_template: {
       title: contentTemplate.title,
       purpose: contentTemplate.purpose,
