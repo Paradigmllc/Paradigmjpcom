@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isSalesApiAuthorized } from "@/lib/sales/api-auth";
 import { pullTwentyCompaniesToSupabase } from "@/lib/sales/twenty-pull";
 
 export const runtime = "nodejs";
@@ -12,8 +11,17 @@ interface Body {
   dispatch_pipeline?: boolean;
 }
 
+/**
+ * Twenty CRM webhook receiver.
+ * Twenty → Supabase リアルタイム同期の入口。
+ * 
+ * 認証: Twentyは内部サービスなので、X-Internal-Secret または standard webhook secretで認証。
+ * どちらもなければ401。
+ */
 export async function POST(req: NextRequest) {
-  if (!(await isSalesApiAuthorized(req))) {
+  const secret = req.headers.get("x-webhook-secret") ?? req.headers.get("x-internal-secret")
+  const expected = process.env.TWENTY_WEBHOOK_SECRET ?? process.env.TRIGGER_WEBHOOK_SECRET ?? process.env.N8N_WEBHOOK_SECRET
+  if (!secret || secret !== expected) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
@@ -25,12 +33,6 @@ export async function POST(req: NextRequest) {
       console.warn("[twenty-webhook] empty or invalid JSON body:", error);
     }
 
-    // The webhook payload might vary depending on the CRM structure.
-    // For now, we will simply trigger a pull from Twenty to Supabase.
-    // In a production environment, we could parse the event to pull only the updated company.
-    
-    // We execute the pull synchronously with maxDuration 60 to ensure it doesn't get killed
-    // in serverless environments.
     const result = await pullTwentyCompaniesToSupabase(body.limit ?? 500, {
       autoRunPipeline: true,
       dispatchPipeline: body.dispatch_pipeline !== false,

@@ -174,7 +174,7 @@ export const salesVideoPipelineTask = task({
  */
 export const twentySyncCron = schedules.task({
   id: "twenty-sync-cron",
-  cron: "*/5 * * * *",
+  cron: "* * * * *", // Every 1 minute — near real-time Twenty sync
   maxDuration: 180,
   run: async () => {
     logger.info("Twenty CRM scheduled sync starting")
