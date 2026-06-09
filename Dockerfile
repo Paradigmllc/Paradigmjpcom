@@ -1,27 +1,25 @@
-# Dockerfile for paradigm-hp
-FROM node:22.12-slim
+# Multi-stage Dockerfile for paradigmjp.com
+# Lighter than nixpacks — avoids OOM during build on 8GB Droplet
+
+FROM node:24-alpine AS deps
 WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts 2>&1 | tail -3
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
-
-COPY package.json package-lock.json .npmrc ./
-RUN npm ci --ignore-scripts && npm rebuild
-
+FROM node:24-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV PAYLOAD_READS_DISABLED_DURING_BUILD=1
-ENV NODE_ENV=production
-ENV PORT=3000
-ENV HOSTNAME=0.0.0.0
 ENV NODE_OPTIONS="--max-old-space-size=2048"
-ENV GENERATE_SOURCEMAP=false
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN npm run build 2>&1 | tail -10
 
-RUN npx payload generate:importmap
-RUN npx next build --webpack
-
-HEALTHCHECK --interval=10s --timeout=5s --start-period=60s --retries=5 \
-  CMD curl -f http://localhost:3000/ja || exit 1
-
+FROM node:24-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 EXPOSE 3000
-CMD ["node_modules/.bin/next", "start", "-p", "3000"]
+CMD ["node", "server.js"]
