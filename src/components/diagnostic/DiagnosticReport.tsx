@@ -28,7 +28,6 @@ import {
 } from "./ReportCharts"
 import { getVariantLayout } from "./report-section-config"
 import { VariantSection } from "./report-variant-sections"
-import VideoModal from "./VideoModal"
 import { AnimatedBackground, GlassCard, ParallaxSection, PulseGlow } from "./report-visual-effects"
 import { ReadingProgress, BackToTop, ShareReport } from "./report-ui-enhancements"
 
@@ -1087,11 +1086,18 @@ export default function DiagnosticReport({
           </div>
         </section>
 
-        {/* ── Diagnostic video CTA ─────── */}
+        {/* ── Diagnostic video — auto-embed, autoplay ─────── */}
         {videoHref && (
           <section className="px-5 pb-10">
             <div className="mx-auto max-w-6xl">
-              <VideoModal videoHref={videoHref} lang={lang} />
+              <div className="overflow-hidden rounded-2xl border border-zinc-200 shadow-lg bg-zinc-900">
+                <iframe
+                  src={videoHref}
+                  className="w-full aspect-video"
+                  title={lang === "ja" ? "60秒診断動画" : "60-second diagnostic video"}
+                  loading="lazy"
+                />
+              </div>
             </div>
           </section>
         )}
