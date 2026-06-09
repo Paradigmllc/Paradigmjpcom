@@ -29,6 +29,7 @@ import ReportSourceRow from "./ReportSourceRow"
 import ReportRoiCalculator from "./ReportRoiCalculator"
 import ReportFinalCta from "./ReportFinalCta"
 import ReportRequestModal from "./ReportRequestModal"
+import ReportFindingsSection from "./ReportFindingsSection"
 import { TRACKING_SCRIPT, PRINT_CSS } from "./report-tracking"
 
 export default function DiagnosticReport({
@@ -271,38 +272,13 @@ export default function DiagnosticReport({
         )}
 
         {/* ── Findings ──────────────────────────────────────── */}
-        <section className="px-5 py-14">
-          <div className="mx-auto max-w-6xl">
-            <SlideInSection direction="left">
-              <div className="max-w-3xl">
-                <Pill tone="neutral">{copy.priorityFindings}</Pill>
-                <h2 className="mt-5 text-4xl font-semibold leading-tight text-zinc-950">
-                  {copy.businessImpact}
-                </h2>
-                <p className="mt-4 text-base leading-8 text-zinc-600">{businessImpact}</p>
-              </div>
-            </SlideInSection>
-            <div className="mt-8 grid gap-4 lg:grid-cols-3">
-              {data.acts.map((act, index) => (
-                <ReportFindingCard
-                  key={`${act.headline}-${index}`}
-                  act={act}
-                  index={index}
-                  copy={copy}
-                  lang={lang}
-                />
-              ))}
-            </div>
-            <div className="mt-8">
-              <ReportRoiCalculator
-                variant={data.template_variant}
-                monthlyLoss={loss}
-                copy={copy}
-                lang={lang}
-              />
-            </div>
-          </div>
-        </section>
+        <ReportFindingsSection
+          data={localizedData}
+          copy={copy}
+          lang={lang}
+          businessImpact={businessImpact}
+          loss={loss}
+        />
 
         {/* ── Loss Impact Chart ─────────────────────────────── */}
         {lossItems.length > 0 && (
