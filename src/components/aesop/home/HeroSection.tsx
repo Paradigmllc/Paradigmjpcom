@@ -13,10 +13,6 @@ import { ParadigmButton } from "@/components/paradigm-ui"
 
 const EASE = [0.22, 1, 0.36, 1] as const
 
-const HERO_VIDEO_URL =
-  process.env.NEXT_PUBLIC_HERO_VIDEO_URL
-  ?? "https://videos.pexels.com/video-files/3209663/3209663-uhd_2560_1440_25fps.mp4"
-
 const STAT_DEFS = [
   { key: "support", to: 200, gradient: "from-fuchsia-400 via-paradigm-glow to-paradigm-tech" },
   { key: "retention", to: 98, gradient: "from-paradigm-tech via-paradigm-glow to-violet-400" },
@@ -41,12 +37,11 @@ export default function HeroSection() {
     >
       <motion.div style={{ y: heroParallaxY }} className="absolute inset-0 z-0">
         <div className="absolute inset-0 paradigm-mesh-vivid opacity-90" />
-        <video autoPlay loop muted playsInline aria-hidden="true" tabIndex={-1} poster="/paper-grain.svg" preload="metadata"
-          onError={(e) => { console.warn("[hero] video failed"); e.currentTarget.style.display = "none" }}
-          className="absolute inset-0 w-full h-full object-cover motion-reduce:hidden">
-          <source src={HERO_VIDEO_URL} type="video/mp4" />
-        </video>
-        <div className="absolute inset-0 bg-gradient-to-br from-paradigm-ink/80 via-paradigm-ink/65 to-transparent" />
+        {/* Animated gradient orbs — cinematic without video dependency */}
+        <div className="absolute top-[15%] left-[10%] w-[50vw] h-[50vw] max-w-[800px] max-h-[800px] rounded-full bg-gradient-to-br from-violet-500/20 via-fuchsia-500/15 to-transparent blur-[100px] animate-[blobFloat_18s_ease-in-out_infinite]" />
+        <div className="absolute top-[50%] right-[5%] w-[40vw] h-[40vw] max-w-[600px] max-h-[600px] rounded-full bg-gradient-to-bl from-amber-500/15 via-paradigm-glow/20 to-transparent blur-[100px] animate-[blobFloat2_22s_ease-in-out_infinite]" />
+        <div className="absolute bottom-[10%] left-[30%] w-[35vw] h-[35vw] max-w-[500px] max-h-[500px] rounded-full bg-gradient-to-tr from-paradigm-accent/20 via-fuchsia-400/15 to-transparent blur-[80px] animate-[blobFloat3_14s_ease-in-out_infinite]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-paradigm-ink/75 via-paradigm-ink/60 to-transparent" />
       </motion.div>
 
       <div className="absolute inset-0 section-dots opacity-[0.04] pointer-events-none" />
