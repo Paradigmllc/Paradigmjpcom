@@ -40,6 +40,9 @@ import { detectEcStore } from "./sources/storeleads"
 import { discoverSubdomains } from "./sources/massdns"
 import { searchGitHubOrg } from "./sources/github-api"
 import { detectCartPlatform } from "./sources/cartleads"
+import { scrapeSimilarwebFree } from "./sources/similarweb-scraper"
+import { lookupBuiltWithFree } from "./sources/builtwith-free"
+import { queryCommonCrawl } from "./sources/commoncrawl"
 import { autoPersonalize } from "./personalize"
 import { saveTechStackDetections } from "./source-acquisition"
 import type { Industry, SalesCompany } from "./types"
@@ -158,7 +161,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   // Step 2: 並列 30+ source enrich (Sprint 15: PSI + gBizInfo + Wappalyzer + SSL + Whois + Places)
   //         Hunter.io はメール検索 (フォーム経由で email 既知の場合のみ)
   const url = domain.startsWith("http") ? domain : `https://${domain}`
-  const [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback, houjin, tranco, emailrep, phishtank, opencorp, greenweb, storeleads, massdns, github, cartleads] = await Promise.all([
+  const [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback, houjin, tranco, emailrep, phishtank, opencorp, greenweb, storeleads, massdns, github, cartleads, simweb, builtwith, commoncrawl] = await Promise.all([
     scanDomain(domain).catch((e) => {
       console.error("[enrich] scanDomain failed:", e)
       return null
@@ -263,6 +266,18 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
       console.error("[enrich] cartleads failed:", e)
       return null
     }),
+    scrapeSimilarwebFree(domain).catch((e) => {
+      console.error("[enrich] similarweb-scraper failed:", e)
+      return null
+    }),
+    lookupBuiltWithFree(domain).catch((e) => {
+      console.error("[enrich] builtwith-free failed:", e)
+      return null
+    }),
+    queryCommonCrawl(domain).catch((e) => {
+      console.error("[enrich] commoncrawl failed:", e)
+      return null
+    }),
   ])
 
   // Step 3: 集約して最終 upsert (meta JSONB に 30+ source のデータを統合保存)
@@ -271,7 +286,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     sales_os: {
       last_enriched_at: new Date().toISOString(),
       enriched_via: input.source ?? "contact_form",
-      sources_collected: [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback, houjin, tranco, emailrep, phishtank, opencorp, greenweb, storeleads, massdns, github, cartleads]
+      sources_collected: [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback, houjin, tranco, emailrep, phishtank, opencorp, greenweb, storeleads, massdns, github, cartleads, simweb, builtwith, commoncrawl]
         .filter((s) => s != null && (Array.isArray(s) ? s.length > 0 : true)).length,
     },
     contact: {
@@ -376,6 +391,15 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
       : null,
     cart_platform: cartleads?.ok
       ? { has_cart: cartleads.hasCart, platform: cartleads.cartPlatform, checkout: cartleads.checkoutPlatform, url: cartleads.cartUrl }
+      : null,
+    similarweb_free: simweb?.ok
+      ? { visits: simweb.estimatedMonthlyVisits, rank: simweb.trafficRank, countries: simweb.topCountries }
+      : null,
+    builtwith: builtwith?.ok
+      ? { tech: builtwith.technologies, traffic: builtwith.trafficTier }
+      : null,
+    commoncrawl: commoncrawl?.ok
+      ? { pages: commoncrawl.pagesInIndex, last_crawled: commoncrawl.lastCrawled }
       : null,
     ...(gbizFirst ? toCompanyMeta(gbizFirst) : {}),
   }
