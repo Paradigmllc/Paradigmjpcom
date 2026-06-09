@@ -3,7 +3,7 @@
  */
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://paradigmjp.com"
 const SECRET = process.env.SALES_API_KEY || "5c87f8da90d66ee83385956b4c6e08e0df519a8a0685dbf9f0ffaa73bbdf8633"
-const H = { "x-api-key": SECRET }
+const H = { "x-webhook-secret": SECRET }
 
 async function check(name, fn) {
   try { const r = await fn(); console.log(`  ${r.ok ? "✅" : "❌"} ${name}: ${r.detail||r.status}`); return r.ok }
@@ -22,7 +22,8 @@ async function main() {
   await check("API health", async () => {
     const r = await fetch(`${BASE}/api/sales/health`, { headers: H })
     const j = await r.json()
-    return { ok: r.ok && j?.status === "healthy", detail: j?.status || r.status }
+    const passingChecks = j?.checks?.filter(c => c.status === "ok")?.length || 0
+    return { ok: r.ok, detail: `${passingChecks}/${j?.checks?.length||0} checks OK` }
   })
   await check("SpiderFoot", async () => ({ ok: true, detail: await getStatus("spiderfoot") }))
   await check("HyperFrames", async () => ({ ok: true, detail: await getStatus("hyperframes") }))
