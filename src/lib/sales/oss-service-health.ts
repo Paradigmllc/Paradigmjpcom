@@ -5,6 +5,7 @@ import { checkR2StorageHealth } from "./r2-storage"
 import { checkSpiderFootHealth } from "./sources/spiderfoot-source"
 import { checkKatanaHealth } from "./sources/katana-source"
 import { checkMaigretHealth } from "./sources/maigret-source"
+import { checkFlareSolverrHealth } from "./sources/flaresolverr-source"
 import { DIFY_CLOUD_BASE_URL, DIFY_RUNTIME_KEY_ENV_NAMES, normalizeDifyCloudBaseUrl } from "./dify-cloud"
 
 export type ServiceBalanceStatus = "not_applicable" | "not_configured" | "manual" | "checkable" | "ok" | "error"
@@ -118,6 +119,13 @@ export async function checkMaigretServiceHealth(): Promise<ServiceHealthResult> 
     const result = await checkMaigretHealth()
     return { ok: result.ok, name: "Maigret", detail: result.detail, url: "docker://maigret" }
   } catch (e) { return { ok: false, name: "Maigret", detail: String(e) } }
+}
+
+export async function checkFlareSolverrServiceHealth(): Promise<ServiceHealthResult> {
+  try {
+    const result = await checkFlareSolverrHealth()
+    return { ok: result.ok, name: "FlareSolverr", detail: result.detail, url: process.env.FLARESOLVERR_API_URL || "http://127.0.0.1:8191" }
+  } catch (e) { return { ok: false, name: "FlareSolverr", detail: String(e) } }
 }
 
 export async function checkBrowserlessHealth(): Promise<ServiceHealthResult> {

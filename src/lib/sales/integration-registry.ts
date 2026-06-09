@@ -20,6 +20,7 @@ import {
   checkSpiderfootHealth,
   checkKatanaServiceHealth,
   checkMaigretServiceHealth,
+  checkFlareSolverrServiceHealth,
   checkTriggerDevHealth,
   checkSlidevGotenbergHealth,
   checkSupabaseStudioHealth,
@@ -172,6 +173,7 @@ async function liveBalance(def: SalesIntegrationDefinition): Promise<Pick<SalesI
   if (def.balance === "spiderfoot_health") return checkSpiderfootHealth()
   if (def.balance === "katana_health") return checkKatanaServiceHealth()
   if (def.balance === "maigret_health") return checkMaigretServiceHealth()
+  if (def.balance === "flaresolverr_health") return checkFlareSolverrServiceHealth()
   if (def.balance === "pagespeed_health") return checkPageSpeedHealth()
   if (def.balance === "google_places_health") return checkGooglePlacesHealth()
   if (def.balance === "similarweb_health") return checkSimilarWebHealth()
