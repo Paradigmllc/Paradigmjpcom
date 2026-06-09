@@ -18,7 +18,11 @@
   }
 
   body {
-    @apply antialiased;
+    @apply antialiased bg-[#050510] text-white;
+  }
+
+  ::selection {
+    @apply bg-brand/30 text-white;
   }
 }
 
@@ -28,7 +32,7 @@
   }
 
   .glass-card-hover {
-    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-brand/20;
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-brand/10 hover:border-white/15;
   }
 
   .gradient-text {
@@ -36,16 +40,21 @@
   }
 }
 
+/* Float animations */
 @keyframes float {
   0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-20px) rotate(5deg); }
+  50% { transform: translateY(-20px) rotate(3deg); }
 }
-
+@keyframes float-slow {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(15px, -15px) scale(1.04); }
+}
 @keyframes pulse-glow {
   0%, 100% { opacity: 0.6; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.05); }
+  50% { opacity: 1; transform: scale(1.08); }
 }
 
 .animate-float { animation: float 8s ease-in-out infinite; }
-.animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 .animate-float-delayed { animation: float 10s ease-in-out infinite; animation-delay: 2s; }
+.animate-float-slow { animation: float-slow 16s ease-in-out infinite; }
+.animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }

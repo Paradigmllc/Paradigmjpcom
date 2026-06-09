@@ -1,56 +1,73 @@
 ---
 import DemoLayout from "../layouts/DemoLayout.astro"
 import HeroSection from "../components/HeroSection.astro"
-import ProofBar from "../components/ProofBar.astro"
+import BeforeAfter from "../components/BeforeAfter.astro"
 import ServicePath from "../components/ServicePath.astro"
 import CasePreview from "../components/CasePreview.astro"
+import ProcessSection from "../components/ProcessSection.astro"
+import TrustSection from "../components/TrustSection.astro"
+import FaqSection from "../components/FaqSection.astro"
 import BookingCta from "../components/BookingCta.astro"
 import { getDemoData, type DemoData } from "../keystatic/demo-data"
 
-// Dynamic data via ?slug= param (for pipeline integration)
 const slug = Astro.url.searchParams.get("slug") || "default-demo"
 const data: DemoData = getDemoData(slug)
 ---
 
 <DemoLayout title={`${data.customerName} — Demo Site`}>
   <!-- Sticky nav -->
-  <nav class="sticky top-0 z-50 bg-black/60 backdrop-blur-xl border-b border-white/5">
-    <div class="max-w-6xl mx-auto flex items-center justify-between px-6 h-16">
+  <nav class="sticky top-0 z-50 bg-black/70 backdrop-blur-2xl border-b border-white/5" id="main-nav">
+    <div class="max-w-7xl mx-auto flex items-center justify-between px-6 h-16">
       <div class="flex items-center gap-3">
-        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-xs font-bold text-black">
+        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-dark text-white text-xs font-black shadow-lg shadow-brand/20">
           P
         </div>
-        <span class="text-sm font-medium text-white truncate max-w-[200px]">
+        <span class="text-sm font-semibold text-white truncate max-w-[200px]">
           {data.customerName}
         </span>
       </div>
-      <div class="hidden sm:flex items-center gap-6 text-sm text-white/60">
-        <a href="#service-path" class="hover:text-white transition-colors">Features</a>
-        <a href="#proof-bar" class="hover:text-white transition-colors">Results</a>
-        <a href="#booking-cta" class="hover:text-white transition-colors">Contact</a>
+      <div class="hidden lg:flex items-center gap-8 text-sm text-white/50">
+        <a href="#before-after" class="hover:text-white transition-colors">改善事例</a>
+        <a href="#service-path" class="hover:text-white transition-colors">サービス</a>
+        <a href="#case-study" class="hover:text-white transition-colors">実績</a>
+        <a href="#process" class="hover:text-white transition-colors">流れ</a>
+        <a href="#faq" class="hover:text-white transition-colors">FAQ</a>
       </div>
       <a
         href={data.calBookingUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        class="rounded-full bg-white px-4 py-2 text-sm font-semibold text-black transition-all hover:scale-105"
+        target="_blank" rel="noopener noreferrer"
+        class="rounded-full bg-white px-5 py-2.5 text-sm font-bold text-black transition-all hover:scale-105 hover:shadow-lg"
       >
         無料相談
       </a>
     </div>
   </nav>
 
-  <!-- Demo sections -->
   <main>
     <HeroSection data={data} />
-    <ProofBar data={data} />
+    <BeforeAfter data={data} />
     <ServicePath data={data} />
     <CasePreview data={data} />
+    <ProcessSection data={data} />
+    <TrustSection data={data} />
+    <FaqSection data={data} />
     <BookingCta data={data} />
   </main>
 
   <!-- Footer -->
-  <footer class="border-t border-white/5 py-8 px-6 text-center text-white/30 text-sm">
-    <p>© {new Date().getFullYear()} Paradigm LLC. 診断データから自動生成されたデモサイトです。</p>
+  <footer class="border-t border-white/5 py-12 px-6">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-3">
+        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-white/60 text-xs font-bold">P</div>
+        <span class="text-sm text-white/30">Paradigm LLC</span>
+      </div>
+      <p class="text-sm text-white/20">
+        © {new Date().getFullYear()} Paradigm LLC. 診断データから自動生成されたパーソナライズドデモサイトです。
+      </p>
+      <div class="flex items-center gap-6 text-sm text-white/20">
+        <a href="#" class="hover:text-white/40 transition-colors">プライバシーポリシー</a>
+        <a href="#" class="hover:text-white/40 transition-colors">利用規約</a>
+      </div>
+    </div>
   </footer>
 </DemoLayout>

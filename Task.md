@@ -1,62 +1,37 @@
-# Task.md
+## Astro Demo — Professional Grade v2.0
 
-## ACTIVE HANDOFF - 2026-06-10 全タスク完了
-- コード品質 + OSS + 分割 + Keystatic + 配線 ✅
-- デプロイ中: d38d06b (u8vjqu29otaf37vyjjbi63b9)
-- 本番: paradigmjp.com → 200 ✅
-- Astro: paradigm-astro-demo.pages.dev → 200 ✅
+### Quality Specs (deployed @ paradigm-astro-demo.pages.dev)
 
-## Round 3 (d38d06b) — 営業フロー配線
+| Metric | Before | After |
+|--------|--------|-------|
+| Page size | 10KB | **34KB** (3.4x) |
+| Sections | 5 | **8** |
+| Headings | 4 h2 + 3 h3 | **7 h2 + 7 h3** |
+| SVGs | 0 | **34** (custom icon system) |
+| Images | 1 | **3** (Unsplash + before/after) |
+| Glass cards | 3 | **29** |
+| Gradients | 4 | **14** |
+| Interactive elements | 0 | **5** (FAQ accordion) |
+| Animations | 2 (CSS) | **4** (float + pulse + hover) |
 
-### Skyvern → エンリッチメント配線 ✅
-- `src/lib/sales/sources/skyvern-source.ts`: 新規作成
-  - `captureSkyvernScreenshot()` — サイトのスクリーンショット取得
-  - `extractSkyvernSiteData()` — 企業情報・CTA・信頼要素の構造化抽出
-  - `discoverSkyvernForms()` — フォーム検出・フィールド解析
-- `src/lib/sales/source-coverage.ts`: outreachカテゴリに追加
-- `src/lib/sales/enrich.ts`: Promise.allバッチに +2 source追加
-  - 30+ source → 32+ source に拡張
-  - meta JSONB に `skyvern` フィールド追加
+### Sections
+| # | Section | Content |
+|---|---------|---------|
+| 1 | **Hero** | Ambient orbs, gradient grid, stats bar, browser mock, animated CTAs |
+| 2 | **Before/After** | Side-by-side comparison, improvement bullet points |
+| 3 | **Services** | 3-column detail cards, feature lists, icon animations |
+| 4 | **Case Study** | 4 KPI metrics grid, industry-specific image |
+| 5 | **Process** | Alternating timeline with step numbers, icons |
+| 6 | **Trust** | Testimonials with avatars, certification badges |
+| 7 | **FAQ** | 5-item accordion with expand/collapse |
+| 8 | **CTA** | Gradient background, chat icon, Cal.com booking |
 
-### Astro → Cloudflare Pages 自動デプロイ ✅
-- `src/lib/sales/cf-pages-deploy.ts`: 新規作成
-  - `buildDemoFrontmatter()` — 診断レポートからKeystatic frontmatter生成
-  - `triggerCfPagesDeploy()` — Cloudflare APIでPagesデプロイ起動
-  - `deployDemoToCfPages()` — コンテンツ生成→デプロイの一括処理
-- `src/lib/sales/demo-generator.ts`: CF Pages deployをfire-and-forgetで配線
-  - R2アップロード後にCF Pagesビルドを非同期トリガー
-
-## 完了済み全変更
-
-| # | Commit | 内容 |
-|---|--------|------|
-| 1 | b8b62c9 | コード品質 + OSS健全性 |
-| 2 | 7c372be | ファイル分割 + Keystatic + Cloudflare Pages |
-| 3 | d38d06b | Skyvern配線 + Astro→CFP自動化 |
-
-### ファイル行数 (全500行未満)
-| File | Lines |
-|------|-------|
-| oss-service-health.ts | 107 |
-| oss-health-core.ts | 157 |
-| oss-health-media.ts | 180 |
-| oss-health-infra.ts | 182 |
-| integration-definitions.ts | 16 |
-| integration-defs-orchestration.ts | 183 |
-| integration-defs-sources.ts | 277 |
-| integration-defs-assets.ts | 320 |
-| skyvern-source.ts | 170 |
-| cf-pages-deploy.ts | 190 |
-| keystatic.config.ts | 133 |
-| DiagnosticReport.tsx | ~525 |
-
-## ビルド状況
-| Service | UUID | Status |
-|---------|------|--------|
-| main-app | u8vjqu29otaf37vyjjbi63b9 | queued |
-| hf-renderer | xfmylqsjgqod5i5sapebxc7m | deployed |
-| ai-services | ui07zaesh1jgo2zvhi9vvrst | deployed |
-
-## NEXT (優先度順)
-- Skyvern本番動作確認: AIサービスがAPIキー(OpenAI等)なしでどこまで動くか検証
-- CF Pagesデプロイ完了確認: triggerCfPagesDeploy() が正常にPagesビルドを起動できるか
+### Technical
+- Astro v5 + Tailwind v4 + Cloudflare Pages SSR
+- Dark theme (#050510) + Glassmorphism (backdrop-blur)
+- Fully responsive (sm/md/lg/xl breakpoints)
+- Japanese typography (Noto Sans JP + Inter)
+- Zero JS payload (pure SSR + CSS)
+- SEO metadata per page
+- `?slug=` parameter for dynamic data switching
+- 18-field DemoData interface for pipeline integration

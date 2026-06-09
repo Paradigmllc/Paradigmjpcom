@@ -1,8 +1,7 @@
 ﻿"use client"
 
 import { LineChart } from "lucide-react"
-import { createElement, useEffect, useState } from "react"
-import { toast } from "sonner"
+import { useState } from "react"
 import type { DiagnosticReportData } from "@/lib/sales/diagnostic"
 import { signalScore } from "@/lib/sales/company-intelligence"
 import { labelForIndustry } from "@/lib/sales/render-quality"
@@ -32,6 +31,7 @@ import ReportRoiCalculator from "./ReportRoiCalculator"
 import ReportFinalCta from "./ReportFinalCta"
 import ReportRequestModal from "./ReportRequestModal"
 import ReportFindingsSection from "./ReportFindingsSection"
+import ReportHyperFramesPlayer from "./ReportHyperFramesPlayer"
 import { TRACKING_SCRIPT, PRINT_CSS } from "./report-tracking"
 
 export default function DiagnosticReport({
@@ -64,21 +64,6 @@ export default function DiagnosticReport({
   const [isDark, setIsDark] = useState(false)
   const [actionOpen, setActionOpen] = useState(false)
   const [requestOpen, setRequestOpen] = useState(false)
-  const [playerLoadFailed, setPlayerLoadFailed] = useState(false)
-
-  useEffect(() => {
-    let active = true
-    import("@hyperframes/player").catch((error: unknown) => {
-      console.error("[diagnostic-report] HyperFrames player failed to load:", error)
-      if (active) {
-        setPlayerLoadFailed(true)
-        toast.error(lang === "ja" ? "動画プレイヤーの読み込みに失敗しました" : "Video player failed to load")
-      }
-    })
-    return () => {
-      active = false
-    }
-  }, [lang])
 
   const heroText = cleanText(reportEvidenceText(data.hook, lang), offerCopy.heroLead)
   const ctaText = cleanText(reportEvidenceText(data.cta_text, lang), offerCopy.finalBody)
@@ -196,29 +181,7 @@ export default function DiagnosticReport({
         {videoHref && (
           <section className="px-5 pb-10">
             <div className="mx-auto max-w-6xl">
-              <div className="overflow-hidden rounded-2xl border border-zinc-200 shadow-lg bg-zinc-900">
-                {playerLoadFailed
-                  ? (
-                    <iframe
-                      src={`${videoHref}?autoplay=1`}
-                      className="w-full aspect-video"
-                      title={lang === "ja" ? "60秒診断動画" : "60-second diagnostic video"}
-                      allow="autoplay; fullscreen"
-                    />
-                  )
-                  : createElement("hyperframes-player", {
-                    src: videoHref,
-                    controls: true,
-                    autoplay: true,
-                    muted: true,
-                    width: "1920",
-                    height: "1080",
-                    "shader-capture-scale": "1",
-                    "shader-loading": "player",
-                    class: "block w-full aspect-video bg-zinc-950",
-                    style: { width: "100%", aspectRatio: "16 / 9", display: "block" },
-                  } as Record<string, unknown>)}
-              </div>
+              <ReportHyperFramesPlayer src={videoHref} lang={lang} />
               {data.video_url && (
                 <p className="mt-2 text-center text-xs text-zinc-400">
                   <a href={data.video_url} download className="hover:text-zinc-300 underline">
