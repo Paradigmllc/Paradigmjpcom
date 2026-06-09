@@ -2,6 +2,9 @@ import { execSync } from "node:child_process"
 import { createHmac } from "node:crypto"
 import { existsSync } from "node:fs"
 import { checkR2StorageHealth } from "./r2-storage"
+import { checkSpiderFootHealth } from "./sources/spiderfoot-source"
+import { checkKatanaHealth } from "./sources/katana-source"
+import { checkMaigretHealth } from "./sources/maigret-source"
 import { DIFY_CLOUD_BASE_URL, DIFY_RUNTIME_KEY_ENV_NAMES, normalizeDifyCloudBaseUrl } from "./dify-cloud"
 
 export type ServiceBalanceStatus = "not_applicable" | "not_configured" | "manual" | "checkable" | "ok" | "error"
@@ -94,6 +97,27 @@ function liveKitJwt(apiKey: string, apiSecret: string): string {
     .update(`${encodedHeader}.${encodedPayload}`)
     .digest("base64url")
   return `${encodedHeader}.${encodedPayload}.${signature}`
+}
+
+export async function checkSpiderfootHealth(): Promise<ServiceHealthResult> {
+  try {
+    const result = await checkSpiderFootHealth()
+    return { ok: result.ok, name: "SpiderFoot", detail: result.detail, url: process.env.SPIDERFOOT_API_URL || "http://127.0.0.1:5001" }
+  } catch (e) { return { ok: false, name: "SpiderFoot", detail: String(e) } }
+}
+
+export async function checkKatanaHealth(): Promise<ServiceHealthResult> {
+  try {
+    const result = await checkKatanaHealth()
+    return { ok: result.ok, name: "Katana", detail: result.detail, url: "docker://projectdiscovery/katana" }
+  } catch (e) { return { ok: false, name: "Katana", detail: String(e) } }
+}
+
+export async function checkMaigretHealth(): Promise<ServiceHealthResult> {
+  try {
+    const result = await checkMaigretHealth()
+    return { ok: result.ok, name: "Maigret", detail: result.detail, url: "docker://maigret" }
+  } catch (e) { return { ok: false, name: "Maigret", detail: String(e) } }
 }
 
 export async function checkBrowserlessHealth(): Promise<ServiceHealthResult> {
