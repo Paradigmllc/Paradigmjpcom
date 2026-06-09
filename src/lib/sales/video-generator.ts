@@ -130,7 +130,30 @@ export async function generateNarrationScript(
 import { buildVariantVideoHtml } from "./video-templates"
 
 export function buildHyperFramesHtml(data: DiagnosticReportData, script: NarrationScript): string {
-  return buildVariantVideoHtml(data, script)
+  // Use HyperFrames composition template with design blocks
+  const template = buildVariantVideoHtml(data, script)
+  
+  // Inject actual data into template placeholders
+  const html = template
+    .replace(/\{\{company_name\}\}/g, data.company_name)
+    .replace(/\{\{industry\}\}/g, data.industry ?? "business")
+    .replace(/\{\{hook\}\}/g, script.hook)
+    .replace(/\{\{pain_headline\}\}/g, data.acts[0]?.headline ?? script.pain)
+    .replace(/\{\{pain_body\}\}/g, data.acts[0]?.body ?? "")
+    .replace(/\{\{fear_headline\}\}/g, data.acts[1]?.headline ?? script.fear)
+    .replace(/\{\{fear_body\}\}/g, data.acts[1]?.body ?? "")
+    .replace(/\{\{hope_headline\}\}/g, data.acts[2]?.headline ?? script.hope)
+    .replace(/\{\{hope_body\}\}/g, data.acts[2]?.body ?? "")
+    .replace(/\{\{cta_headline\}\}/g, script.cta)
+    .replace(/\{\{cta_body\}\}/g, data.cta_text ?? "")
+    .replace(/\{\{report_url\}\}/g, data.report_url)
+    .replace(/\{\{label\}\}/g, "Paradigm Diagnostic")
+    .replace(/\{\{solution_label\}\}/g, "SOLUTION")
+    .replace(/\{\{metric_value\}\}/g, data.acts[0]?.metric_value ?? "38")
+    .replace(/\{\{industry_avg\}\}/g, "71")
+    .replace(/\{\{loss_value\}\}/g, data.total_loss)
+  
+  return html
 }
 
 function getHyperframesApi(): string | null {
