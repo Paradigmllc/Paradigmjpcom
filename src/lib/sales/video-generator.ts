@@ -39,7 +39,7 @@ function cleanText(value: string | null | undefined, fallback: string, max = 150
   return text.length > max ? `${text.slice(0, max - 1)}...` : text
 }
 
-function fallbackScript(data: DiagnosticReportData): NarrationScript {
+export function fallbackScript(data: DiagnosticReportData): NarrationScript {
   const isJa = data.report_locale === "ja"
   return {
     hook: cleanText(

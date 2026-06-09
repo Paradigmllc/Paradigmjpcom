@@ -9,8 +9,9 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import VideoPlayer from "@/components/diagnostic/VideoPlayer"
 import { fetchDiagnosticReport } from "@/lib/sales/diagnostic"
-import { generateNarrationScript } from "@/lib/sales/video-generator"
+import { fallbackScript, generateNarrationScript } from "@/lib/sales/video-generator"
 import { localeToRegion } from "@/lib/sales/types"
+import { buildDemoData } from "@/lib/sales/demo-data"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 300
@@ -40,6 +41,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ReportVideoPage({ params }: Props) {
   const { locale, slug } = await params
   const region = localeToRegion(locale)
+
+  // Demo slugs: use client-side demo data without DB lookup
+  if (slug.startsWith("demo-")) {
+    const variant = slug.replace("demo-", "")
+    const data = buildDemoData(variant, locale)
+    const script = fallbackScript(data)
+    return <VideoPlayer data={data} script={script} trackingSlug={slug} />
+  }
+
   const data = await fetchDiagnosticReport({ slug, region, reportLocale: locale })
   if (!data) notFound()
 
