@@ -1,4 +1,4 @@
-/**
+﻿/**
  * app/icon.tsx — favicon / PWA icon (192/512) dynamic generator via ImageResponse
  *
  * 役割: 16x16 〜 512x512 の icon を一発で動的生成 (Next.js File Convention)。
@@ -22,7 +22,7 @@ export default function Icon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(135deg, #4f46e5 0%, #818cf8 50%, #14b8a6 100%)",
+          background: "linear-gradient(135deg, #8b5cf6 0%, #a78bfa 50%, #f59e0b 100%)",
           color: "#FAFAF7",
           fontSize: 128,
           fontWeight: 800,

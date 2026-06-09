@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
@@ -298,7 +298,7 @@ function changeTab(tab: SalesTab) {
   }
 
   return (
-    <main className="min-h-screen bg-[#fafafa] font-sans text-zinc-950 selection:bg-indigo-100">
+    <main className="min-h-screen bg-[#fafafa] font-sans text-zinc-950 selection:bg-violet-100">
       <Toaster richColors position="top-center" />
       
       {/* Mobile hamburger */}
@@ -354,7 +354,7 @@ function changeTab(tab: SalesTab) {
           <div className="sticky top-0 flex h-screen flex-col">
             <div className="relative px-6 py-8">
               <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-zinc-200 to-transparent" />
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.3em] text-indigo-500">Paradigm</p>
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.3em] text-violet-500">Paradigm</p>
               <h1 className="bg-gradient-to-br from-zinc-900 to-zinc-600 bg-clip-text text-2xl font-bold tracking-tight text-transparent">
                 Revenue OS
               </h1>
@@ -406,14 +406,14 @@ function changeTab(tab: SalesTab) {
               <div className="rounded-xl border border-zinc-100 bg-zinc-50/50 p-3">
                 <div className="flex items-center gap-2 text-xs font-bold text-zinc-700">
                   <div className="rounded border border-zinc-100 bg-white p-1 shadow-sm">
-                    <Globe2 className="h-3.5 w-3.5 text-indigo-500" />
+                    <Globe2 className="h-3.5 w-3.5 text-violet-500" />
                   </div>
                   {localeMeta.country}
                 </div>
                 <select
                   value={locale}
                   onChange={(event) => handleLocaleChange(event.target.value)}
-                  className="mt-2.5 w-full cursor-pointer rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-[11px] font-semibold text-zinc-700 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  className="mt-2.5 w-full cursor-pointer rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-[11px] font-semibold text-zinc-700 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
                   aria-label="言語・地域を切り替え"
                 >
                   {Object.entries(localeLabels).map(([key, meta]) => (

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { motion } from "framer-motion"
 import { AlertTriangle, ArrowDown, ArrowUp, Building2, MapPin, Search, Shield, TrendingDown, TrendingUp, Zap } from "lucide-react"
@@ -174,7 +174,7 @@ export function SaviorPositioning({ data, lang }: { data: DiagnosticReportData; 
   const hasDemo = !!data.demo_url
 
   return (
-    <section className="px-5 py-14 bg-gradient-to-b from-white to-indigo-50">
+    <section className="px-5 py-14 bg-gradient-to-b from-white to-violet-50">
       <div className="mx-auto max-w-6xl">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -182,7 +182,7 @@ export function SaviorPositioning({ data, lang }: { data: DiagnosticReportData; 
           viewport={{ once: true }}
           className="text-center mb-10"
         >
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold text-indigo-700 mb-4">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700 mb-4">
             <TrendingUp className="h-3 w-3" />
             {lang === "ja" ? "弊社が解決します" : "We fix this"}
           </span>

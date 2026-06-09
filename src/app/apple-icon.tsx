@@ -1,4 +1,4 @@
-/**
+﻿/**
  * app/apple-icon.tsx — Apple touch icon (180x180) for iOS home screen
  */
 
@@ -18,7 +18,7 @@ export default function AppleIcon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(135deg, #4f46e5 0%, #818cf8 50%, #14b8a6 100%)",
+          background: "linear-gradient(135deg, #8b5cf6 0%, #a78bfa 50%, #f59e0b 100%)",
           color: "#FAFAF7",
           fontSize: 120,
           fontWeight: 800,

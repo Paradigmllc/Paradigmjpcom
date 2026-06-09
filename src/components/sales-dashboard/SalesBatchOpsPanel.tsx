@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useMemo, useState } from "react"
 import { CheckCircle2, FileUp, Gauge, Play, RefreshCw, UploadCloud } from "lucide-react"
@@ -297,7 +297,7 @@ export function SalesBatchOpsPanel({ data }: { data: SalesDashboardData }) {
         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
           <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-1"><FileUp size={12} aria-hidden />読込 {formatNumber(parsedRows.length)}</span>
           <span className="rounded-full bg-emerald-50 px-2 py-1 text-emerald-700">有効 {formatNumber(validRows.length)}</span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-1 text-sky-700"><Gauge size={12} aria-hidden />score {score}+</span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-amber-700"><Gauge size={12} aria-hidden />score {score}+</span>
           <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-amber-800"><CheckCircle2 size={12} aria-hidden />送信上限 {formatNumber(cap)}</span>
         </div>
       </section>

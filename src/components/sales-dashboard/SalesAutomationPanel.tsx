@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useMemo, useState } from "react"
 import { FileUp, Play, RotateCw, Send, UploadCloud } from "lucide-react"
@@ -285,7 +285,7 @@ export function SalesAutomationPanel({ data }: { data: SalesDashboardData }) {
                     読込 {parsedRows.length}件
                   </span>
                   <span className="rounded-full bg-emerald-50 px-2 py-1 text-emerald-700">有効 {validRows.length}件</span>
-                  {lastResult && <span className="rounded-full bg-sky-50 px-2 py-1 text-sky-700">{lastResult}</span>}
+                  {lastResult && <span className="rounded-full bg-amber-50 px-2 py-1 text-amber-700">{lastResult}</span>}
                 </div>
               </section>
 
@@ -347,7 +347,7 @@ export function SalesAutomationPanel({ data }: { data: SalesDashboardData }) {
                     </button>
                   </div>
                   {lastOutreachResult && (
-                    <div className="mt-3 rounded-md bg-sky-50 px-2 py-1 text-xs font-medium text-sky-700">
+                    <div className="mt-3 rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700">
                       {lastOutreachResult}
                     </div>
                   )}

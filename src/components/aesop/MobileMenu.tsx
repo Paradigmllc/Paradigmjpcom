@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 /**
  * MobileMenu — left-side drawer for primary nav on small screens.
@@ -123,7 +123,7 @@ export default function MobileMenu({ items }: { items: MobileNavItem[] }) {
                 >
                   <span
                     aria-hidden
-                    className="absolute inset-0 bg-gradient-to-r from-pink-300/0 via-paradigm-glow/40 to-paradigm-tech/0 bg-[length:200%_100%] animate-[gradientShift_2.5s_linear_infinite] opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute inset-0 bg-gradient-to-r from-fuchsia-300/0 via-paradigm-glow/40 to-paradigm-tech/0 bg-[length:200%_100%] animate-[gradientShift_2.5s_linear_infinite] opacity-0 group-hover:opacity-100 transition-opacity"
                   />
                   <span className="relative z-10">{tCta("primary")}</span>
                 </Link>

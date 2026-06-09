@@ -1,4 +1,4 @@
-/**
+﻿/**
  * lib/theme-tokens.test.ts — admin theme token 変換ユニットテスト
  *
  * 入力フォーマット (#hex / rgb() / R G B / R, G, B) の網羅性 + CSS 出力検証。
@@ -18,7 +18,7 @@ describe("toRgbTriplet", () => {
   it("parses #RRGGBB hex", () => {
     expect(toRgbTriplet("#FAFAF7")).toBe("250 250 247")
     expect(toRgbTriplet("#1C1C2E")).toBe("28 28 46")
-    expect(toRgbTriplet("#6366F1")).toBe("99 102 241")
+    expect(toRgbTriplet("#8b5cf6")).toBe("99 102 241")
     // hex without #
     expect(toRgbTriplet("FAFAF7")).toBe("250 250 247")
     // lowercase
@@ -63,7 +63,7 @@ describe("themeTokensToCss", () => {
 
   it("emits :root with color vars", () => {
     const css = themeTokensToCss({
-      colors: { paper: "#FAFAF7", accent: "#6366F1" },
+      colors: { paper: "#FAFAF7", accent: "#8b5cf6" },
     })
     expect(css).toContain(":root {")
     expect(css).toContain("--paradigm-paper: 250 250 247;")

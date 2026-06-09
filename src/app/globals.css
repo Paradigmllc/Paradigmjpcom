@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
 /* 2026-05-03: @paradigmllc/blocks 内の Tailwind class を scan 対象に追加。
    node_modules は v4 default では scan されないため @source 必須。
@@ -20,7 +20,7 @@
              tech #f59e0b   surface    #ffffff
      DARK    paper #0a0813  paper-deep #06040c  paper-card #13101f
              ink #f0edf5    ink-soft   #c4bfd3  ink-mute   #7a7590
-             line #251f38   accent     #a78bfa  glow       #f472b6
+             line #251f38   accent     #a78bfa  glow       #ec4899
              tech #fbbf24   surface    #0f0c1a */
 
 :root,

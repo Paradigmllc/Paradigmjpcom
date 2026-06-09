@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { motion } from "framer-motion"
 
@@ -30,7 +30,7 @@ const COLORS = {
   violet: "#7c5cff",
   rose: "#ef4444",
   emerald: "#10b981",
-  sky: "#0ea5e9",
+  sky: "#f59e0b",
   slate: { 50: "#f8fafc", 200: "#e2e8f0", 400: "#94a3b8", 600: "#475569", 800: "#1e293b" },
 }
 

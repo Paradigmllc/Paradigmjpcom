@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
@@ -200,7 +200,7 @@ export function AiPromptsPanel({ data: _data }: AiPromptsPanelProps) {
                     <textarea
                       value={editText}
                       onChange={(e) => setEditText(e.target.value)}
-                      className="h-64 w-full rounded-lg border border-zinc-200 bg-zinc-50/50 p-4 font-mono text-sm leading-relaxed text-zinc-800 shadow-inner focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="h-64 w-full rounded-lg border border-zinc-200 bg-zinc-50/50 p-4 font-mono text-sm leading-relaxed text-zinc-800 shadow-inner focus:border-violet-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-violet-500"
                       spellCheck={false}
                       aria-label={`${prompt.id} のプロンプト本文`}
                     />

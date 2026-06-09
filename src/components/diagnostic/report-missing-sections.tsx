@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { motion } from "framer-motion"
 import { Camera, Clock, Film, Package, Play, Send, Smartphone, Video } from "lucide-react"
@@ -130,7 +130,7 @@ export function OutreachFunnelSection({ data, lang }: { data: DiagnosticReportDa
             { label: lang === "ja" ? "商談化" : "Conversations", value: lang === "ja" ? "推定12件/月" : "Est. 12/mo", pct: "21%", tone: "emerald" },
           ].map((item, i) => {
             const colors: Record<string, string> = {
-              indigo: "bg-indigo-50 border-indigo-200 text-indigo-700",
+              indigo: "bg-violet-50 border-violet-200 text-violet-700",
               rose: "bg-rose-50 border-rose-200 text-rose-700",
               amber: "bg-amber-50 border-amber-200 text-amber-700",
               emerald: "bg-emerald-50 border-emerald-200 text-emerald-700",

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { motion } from "framer-motion"
 import { ArrowRight, ExternalLink, Monitor, Smartphone, ZoomIn } from "lucide-react"
@@ -131,7 +131,7 @@ export function BeforeAfterComparison({ data, lang }: { data: DiagnosticReportDa
     <section className="px-5 py-14 bg-gradient-to-b from-white to-zinc-50 border-t border-zinc-200">
       <div className="mx-auto max-w-6xl">
         <div className="flex items-center gap-2 mb-6">
-          <ArrowRight className="h-5 w-5 text-indigo-600" />
+          <ArrowRight className="h-5 w-5 text-violet-600" />
           <h2 className="text-xl font-bold text-zinc-900">
             {lang === "ja" ? "Before → After" : "Before → After"}
           </h2>
@@ -205,7 +205,7 @@ export function BeforeAfterComparison({ data, lang }: { data: DiagnosticReportDa
               href={data.demo_url!}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-violet-200 hover:bg-violet-700 transition-colors"
             >
               <ZoomIn className="h-4 w-4" />
               {lang === "ja" ? "Astro改善デモサイトを見る" : "View Astro Demo Site"}

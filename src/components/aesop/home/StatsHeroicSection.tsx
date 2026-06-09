@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 /**
  * StatsHeroicSection — full-band ink stats (P18-D-8 right-sized).
@@ -16,10 +16,10 @@ import FadeIn from "@/components/aesop/FadeIn"
 //   support=対応言語(12 locale i18n) / retention=提供サービス領域(MEO/AI/Web/動画) /
 //   growth=AIチャット24h / consult=初回診断 ¥0。数値はすべて真実。
 const STAT_DEFS = [
-  { key: "support", to: 12, gradient: "from-pink-400 via-paradigm-accent to-paradigm-tech" },
-  { key: "retention", to: 4, gradient: "from-paradigm-tech via-paradigm-glow to-pink-400" },
+  { key: "support", to: 12, gradient: "from-fuchsia-400 via-paradigm-accent to-paradigm-tech" },
+  { key: "retention", to: 4, gradient: "from-paradigm-tech via-paradigm-glow to-fuchsia-400" },
   { key: "growth", to: 24, gradient: "from-paradigm-glow via-violet-400 to-paradigm-accent" },
-  { key: "consult", to: 0, gradient: "from-paradigm-accent via-pink-400 to-orange-300" },
+  { key: "consult", to: 0, gradient: "from-paradigm-accent via-fuchsia-400 to-orange-300" },
 ] as const
 
 const EASE = [0.22, 1, 0.36, 1] as const
@@ -41,7 +41,7 @@ export default function StatsHeroicSection() {
           </p>
           <h2 className="font-display text-[26px] md:text-[40px] leading-[1.1] tracking-[-0.025em] text-paradigm-paper">
             {t("statsHeading")}
-            <span className="bg-gradient-to-r from-pink-300 via-paradigm-glow to-paradigm-tech bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-fuchsia-300 via-paradigm-glow to-paradigm-tech bg-clip-text text-transparent">
               {t("statsHeadingHighlight")}
             </span>
           </h2>

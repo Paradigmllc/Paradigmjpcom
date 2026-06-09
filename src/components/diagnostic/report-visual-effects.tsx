@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useRef } from "react"
 import { motion, useScroll, useTransform } from "framer-motion"
@@ -112,7 +112,7 @@ export function ParallaxSection({ children, speed = 0.5, className = "" }: { chi
 // ─── Animated Gradient Text ──────────────────────────────────
 export function GradientText({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <span className={`bg-gradient-to-r from-violet-600 via-indigo-500 to-blue-600 bg-clip-text text-transparent animate-gradient ${className}`}>
+    <span className={`bg-gradient-to-r from-violet-600 via-violet-500 to-blue-600 bg-clip-text text-transparent animate-gradient ${className}`}>
       {children}
     </span>
   )

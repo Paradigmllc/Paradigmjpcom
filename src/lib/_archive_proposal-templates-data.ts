@@ -1,4 +1,4 @@
-/**
+﻿/**
  * lib/proposal-templates-data.ts — PROPOSAL_TEMPLATES static catalog
  *
  * 役割: 業種別 (restaurant / clinic / retail / etc.) の提案ページ
@@ -176,7 +176,7 @@ export const PROPOSAL_TEMPLATES: ProposalTemplate[] = [
     id: "medical",
     name: "クリニック・医療テンプレート",
     industry: "クリニック/医療",
-    accent: "#38BDF8",
+    accent: "#fbbf24",
     accent2: "#0284C7",
     gradient: "linear-gradient(140deg, #071520 0%, #0C2A40 30%, #0A0E12 100%)",
     copy_tone: "professional",
@@ -347,8 +347,8 @@ export const PROPOSAL_TEMPLATES: ProposalTemplate[] = [
     id: "saas",
     name: "IT/SaaSテンプレート",
     industry: "IT/SaaS",
-    accent: "#6366F1",
-    accent2: "#4F46E5",
+    accent: "#8b5cf6",
+    accent2: "#8b5cf6",
     gradient: "linear-gradient(140deg, #0A0A1F 0%, #12123A 30%, #0A0E12 100%)",
     copy_tone: "technical",
     cta_text: "無料テクニカル相談を予約",

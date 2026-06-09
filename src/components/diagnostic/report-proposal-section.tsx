@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { motion } from "framer-motion"
 import { CheckCircle2, Clock, Package, TrendingUp, Zap } from "lucide-react"
@@ -52,7 +52,7 @@ export function ProposalSection({ data, lang }: { data: DiagnosticReportData; la
   const hasDemo = !!data.demo_url
 
   return (
-    <section className={`px-5 py-14 ${lang === "ja" ? "bg-gradient-to-b from-white to-indigo-50" : "bg-gradient-to-b from-white to-indigo-50"}`}>
+    <section className={`px-5 py-14 ${lang === "ja" ? "bg-gradient-to-b from-white to-violet-50" : "bg-gradient-to-b from-white to-violet-50"}`}>
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <motion.div
@@ -61,7 +61,7 @@ export function ProposalSection({ data, lang }: { data: DiagnosticReportData; la
           viewport={{ once: true }}
           className="text-center mb-10"
         >
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-xs font-bold text-indigo-700 mb-4">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700 mb-4">
             <Package className="h-3 w-3" />
             {lang === "ja" ? "Paradigm 解決プラン" : "Paradigm Solution Plan"}
           </span>
@@ -89,7 +89,7 @@ export function ProposalSection({ data, lang }: { data: DiagnosticReportData; la
               className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow"
             >
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
                   <item.icon className="h-5 w-5" />
                 </div>
                 <div className="flex items-center gap-2">
@@ -121,7 +121,7 @@ export function ProposalSection({ data, lang }: { data: DiagnosticReportData; la
           initial={{ opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="rounded-2xl border border-indigo-200 bg-white p-6 shadow-lg"
+          className="rounded-2xl border border-violet-200 bg-white p-6 shadow-lg"
         >
           <div className="grid gap-6 lg:grid-cols-2">
             <div>
@@ -144,7 +144,7 @@ export function ProposalSection({ data, lang }: { data: DiagnosticReportData; la
                 ))}
               </div>
             </div>
-            <div className={`rounded-xl p-5 ${lang === "ja" ? "bg-indigo-50" : "bg-indigo-50"}`}>
+            <div className={`rounded-xl p-5 ${lang === "ja" ? "bg-violet-50" : "bg-violet-50"}`}>
               <h3 className="text-sm font-bold text-zinc-900 mb-3">
                 {lang === "ja" ? "納期と進め方" : "Timeline & Process"}
               </h3>
@@ -156,9 +156,9 @@ export function ProposalSection({ data, lang }: { data: DiagnosticReportData; la
                   { step: "4", label: lang === "ja" ? "公開・効果測定開始" : "Go live + measurement", time: lang === "ja" ? "即日" : "Same day" },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-200 text-xs font-bold text-indigo-700">{item.step}</span>
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-200 text-xs font-bold text-violet-700">{item.step}</span>
                     <span className="text-sm text-zinc-700 flex-1">{item.label}</span>
-                    <span className="text-[10px] font-bold text-indigo-500">{item.time}</span>
+                    <span className="text-[10px] font-bold text-violet-500">{item.time}</span>
                   </div>
                 ))}
               </div>

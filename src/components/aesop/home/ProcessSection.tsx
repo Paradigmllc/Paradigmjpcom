@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 /**
  * ProcessSection — 4-step flow w/ AnimatedBeam (P18-D-8 right-sized).
@@ -17,10 +17,10 @@ const EASE = [0.22, 1, 0.36, 1] as const
 // title は messages/{locale}.json:home.process.{key}.title から取得（AE-PHP-2）。
 // 旧: ここに英語 title をハードコードしており全 locale で英語固定だった。
 const STEP_META = [
-  { key: "listen", icon: Headphones, gradient: "from-pink-400 to-paradigm-accent" },
+  { key: "listen", icon: Headphones, gradient: "from-fuchsia-400 to-paradigm-accent" },
   { key: "design", icon: PenTool,    gradient: "from-paradigm-accent to-paradigm-tech" },
   { key: "build",  icon: Code2,      gradient: "from-paradigm-tech to-paradigm-glow" },
-  { key: "grow",   icon: TrendingUp, gradient: "from-paradigm-glow to-pink-400" },
+  { key: "grow",   icon: TrendingUp, gradient: "from-paradigm-glow to-fuchsia-400" },
 ] as const
 
 export default function ProcessSection() {
@@ -75,9 +75,9 @@ export default function ProcessSection() {
           })}
 
           <div className="hidden md:block absolute inset-0 pointer-events-none">
-            <AnimatedBeam containerRef={containerRef} fromRef={refs[0]} toRef={refs[1]} duration={4} curvature={-22} gradientStartColor="#f472b6" gradientStopColor="#6366f1" />
-            <AnimatedBeam containerRef={containerRef} fromRef={refs[1]} toRef={refs[2]} duration={4} curvature={-22} delay={0.5} gradientStartColor="#6366f1" gradientStopColor="#0ea5e9" />
-            <AnimatedBeam containerRef={containerRef} fromRef={refs[2]} toRef={refs[3]} duration={4} curvature={-22} delay={1.0} gradientStartColor="#0ea5e9" gradientStopColor="#a5b4fc" />
+            <AnimatedBeam containerRef={containerRef} fromRef={refs[0]} toRef={refs[1]} duration={4} curvature={-22} gradientStartColor="#ec4899" gradientStopColor="#8b5cf6" />
+            <AnimatedBeam containerRef={containerRef} fromRef={refs[1]} toRef={refs[2]} duration={4} curvature={-22} delay={0.5} gradientStartColor="#8b5cf6" gradientStopColor="#f59e0b" />
+            <AnimatedBeam containerRef={containerRef} fromRef={refs[2]} toRef={refs[3]} duration={4} curvature={-22} delay={1.0} gradientStartColor="#f59e0b" gradientStopColor="#c4b5fd" />
           </div>
         </div>
       </div>

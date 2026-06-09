@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import {
   Gauge,
@@ -17,7 +17,7 @@ export function OverviewPanel({ data }: { data: SalesDashboardData }) {
   return (
     <div className="grid gap-4 xl:grid-cols-[1.5fr_1fr]">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <KpiCard label="総リード" value={formatNumber(data.kpis.totalLeads)} helper="Supabase sales_companies" icon={Users} tone="bg-sky-100 text-sky-700" />
+        <KpiCard label="総リード" value={formatNumber(data.kpis.totalLeads)} helper="Supabase sales_companies" icon={Users} tone="bg-amber-100 text-amber-700" />
         <KpiCard label="HOT" value={formatNumber(data.kpis.hotLeads)} helper="閲覧や反応が強い営業先" icon={Target} tone="bg-rose-100 text-rose-700" />
         <KpiCard label="送信待ち" value={formatNumber(data.kpis.reportReady)} helper="フォーム営業キュー候補" icon={Send} tone="bg-amber-100 text-amber-800" />
         <KpiCard label="手動確認" value={formatNumber(data.kpis.manualQueue)} helper="Appsmith向け作業" icon={ListChecks} tone="bg-violet-100 text-violet-700" />

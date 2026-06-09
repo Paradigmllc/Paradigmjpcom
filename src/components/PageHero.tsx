@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PageHero — Rich shared inner-page hero (P18-D-9 quality leap).
  *
  * 全 inner page で使用される共通 hero。home 並みの richness を提供:
@@ -43,7 +43,7 @@ export default function PageHero({ badge, title, desc, highlight }: PageHeroProp
           {highlight ? (
             <>
               {title.split(highlight)[0]}
-              <span className="bg-gradient-to-r from-pink-300 via-paradigm-glow via-paradigm-tech to-paradigm-glow bg-[length:200%_100%] bg-clip-text text-transparent animate-[gradientShift_6s_ease_infinite]">
+              <span className="bg-gradient-to-r from-fuchsia-300 via-paradigm-glow via-paradigm-tech to-paradigm-glow bg-[length:200%_100%] bg-clip-text text-transparent animate-[gradientShift_6s_ease_infinite]">
                 {highlight}
               </span>
               {title.split(highlight)[1]}

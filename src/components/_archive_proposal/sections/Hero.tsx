@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 import { motion } from "framer-motion"
 import { NumberTicker } from "@/components/magicui/number-ticker"
 import { BorderBeam } from "@/components/magicui/border-beam"
@@ -17,8 +17,8 @@ export default function Hero({ data, theme, t, pitchAngle }: SectionProps) {
     pitchAngle === "opportunity" ? ["#10B981", "#06B6D4", "#10B981"] :
     pitchAngle === "trust" ? ["#635BFF", "#8B5CF6", "#635BFF"] :
     pitchAngle === "urgency" ? ["#EF4444", "#F97316", "#EF4444"] :
-    pitchAngle === "competitive" ? ["#0EA5E9", "#3B82F6", "#0EA5E9"] :
-    ["#6366F1", "#8B5CF6", "#6366F1"]
+    pitchAngle === "competitive" ? ["#f59e0b", "#3B82F6", "#f59e0b"] :
+    ["#8b5cf6", "#8B5CF6", "#8b5cf6"]
 
   return (
     <section id="hero" style={{

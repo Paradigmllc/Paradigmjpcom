@@ -1,4 +1,4 @@
-import type { Industry, ReportLocale } from "./types"
+﻿import type { Industry, ReportLocale } from "./types"
 
 export type SalesRenderTheme = {
   accent: string
@@ -102,7 +102,7 @@ const INDUSTRY_THEME: Record<Industry, SalesRenderTheme> = {
     signal: "#34d399",
   },
   consulting: {
-    accent: "#4f46e5",
+    accent: "#8b5cf6",
     accentDark: "#312e81",
     accentSoft: "#eef2ff",
     ink: "#111827",
@@ -110,7 +110,7 @@ const INDUSTRY_THEME: Record<Industry, SalesRenderTheme> = {
     paper: "#f9fafb",
     surface: "#ffffff",
     line: "#c7d2fe",
-    signal: "#818cf8",
+    signal: "#a78bfa",
   },
 }
 

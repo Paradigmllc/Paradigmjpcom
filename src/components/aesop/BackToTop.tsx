@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 /**
  * BackToTop — fixed-bottom-right floating button (P18-D-9 NEW).
@@ -44,7 +44,7 @@ export default function BackToTop() {
         >
           <span
             aria-hidden
-            className="absolute inset-0 rounded-full bg-gradient-to-br from-pink-400/0 via-paradigm-accent/30 to-paradigm-tech/0 bg-[length:200%_100%] animate-[gradientShift_4s_linear_infinite] opacity-40"
+            className="absolute inset-0 rounded-full bg-gradient-to-br from-fuchsia-400/0 via-paradigm-accent/30 to-paradigm-tech/0 bg-[length:200%_100%] animate-[gradientShift_4s_linear_infinite] opacity-40"
           />
           <ArrowUp size={18} strokeWidth={2} className="relative z-10" />
         </motion.button>

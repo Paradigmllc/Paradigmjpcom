@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { motion } from "framer-motion"
 import { CheckCircle2, MapPin, MessageSquare, Shield, Star, TrendingUp } from "lucide-react"
@@ -355,7 +355,7 @@ export function JapanMarketSection({ data, lang }: { data: DiagnosticReportData;
 
 function MetricCard({ icon, label, value, sub, tone }: { icon: string; label: string; value: string; sub?: string; tone: string }) {
   const colors: Record<string, string> = {
-    blue: "border-blue-500/20 bg-blue-500/5",
+    blue: "border-blue-500/20 bg-amber-500/5",
     emerald: "border-emerald-500/20 bg-emerald-500/5",
     rose: "border-rose-500/20 bg-rose-500/5",
     amber: "border-amber-500/20 bg-amber-500/5",
@@ -417,7 +417,7 @@ export function JapanRoadmapSection({ data, lang }: { data: DiagnosticReportData
           <div className="absolute left-4 top-0 h-full w-0.5 bg-blue-200" />
           {phases.map((phase, i) => (
             <div key={i} className="relative flex gap-4 pb-8 last:pb-0">
-              <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+              <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white">
                 {i + 1}
               </div>
               <div className="min-w-0">

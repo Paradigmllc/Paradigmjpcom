@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 /**
  * RichCtaBand — reusable closing CTA section (Meteors + Sparkles + gradient).
@@ -48,7 +48,7 @@ export default function RichCtaBand({
           {highlight ? (
             <>
               {title.split(highlight)[0]}
-              <span className="bg-gradient-to-r from-pink-300 via-paradigm-glow to-paradigm-tech bg-[length:200%_100%] bg-clip-text text-transparent animate-[gradientShift_6s_ease_infinite]">
+              <span className="bg-gradient-to-r from-fuchsia-300 via-paradigm-glow to-paradigm-tech bg-[length:200%_100%] bg-clip-text text-transparent animate-[gradientShift_6s_ease_infinite]">
                 {highlight}
               </span>
               {title.split(highlight)[1]}
@@ -68,7 +68,7 @@ export default function RichCtaBand({
         >
           <span
             aria-hidden
-            className="absolute inset-0 bg-gradient-to-r from-pink-300/0 via-paradigm-glow/40 to-paradigm-tech/0 bg-[length:200%_100%] animate-[gradientShift_2.5s_linear_infinite] opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute inset-0 bg-gradient-to-r from-fuchsia-300/0 via-paradigm-glow/40 to-paradigm-tech/0 bg-[length:200%_100%] animate-[gradientShift_2.5s_linear_infinite] opacity-0 group-hover:opacity-100 transition-opacity"
           />
           <span className="relative z-10">{buttonLabel}</span>
           <ArrowRight size={14} className="relative z-10 group-hover:translate-x-0.5 transition-transform" />

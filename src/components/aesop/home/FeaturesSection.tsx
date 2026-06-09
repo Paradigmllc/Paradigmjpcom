@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 /**
  * FeaturesSection — 4-up grid w/ Ripple hover (P18-D-8 right-sized).
@@ -14,10 +14,10 @@ import FadeIn from "@/components/aesop/FadeIn"
 const EASE = [0.22, 1, 0.36, 1] as const
 
 const FEATURES = [
-  { key: "speed", icon: Zap, gradient: "from-pink-400 via-paradigm-accent to-paradigm-tech" },
+  { key: "speed", icon: Zap, gradient: "from-fuchsia-400 via-paradigm-accent to-paradigm-tech" },
   { key: "guarantee", icon: Shield, gradient: "from-paradigm-tech via-paradigm-glow to-violet-400" },
   { key: "team", icon: Users, gradient: "from-paradigm-glow via-violet-400 to-paradigm-accent" },
-  { key: "aiFusion", icon: SparkleIcon, gradient: "from-paradigm-accent via-pink-400 to-orange-300" },
+  { key: "aiFusion", icon: SparkleIcon, gradient: "from-paradigm-accent via-fuchsia-400 to-orange-300" },
 ] as const
 
 export default function FeaturesSection() {
@@ -31,7 +31,7 @@ export default function FeaturesSection() {
         <FadeIn className="mb-10 max-w-2xl">
           <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("featuresEyebrow")}</p>
           <h2 className="font-display text-[26px] md:text-[40px] leading-[1.1] tracking-[-0.025em] text-paradigm-ink">
-            <span className="bg-gradient-to-br from-paradigm-ink via-paradigm-accent to-pink-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-br from-paradigm-ink via-paradigm-accent to-fuchsia-400 bg-clip-text text-transparent">
               {t("featuresHeading")}
             </span>
           </h2>

@@ -1,4 +1,4 @@
-import type { DiagnosticReportData } from "@/lib/sales/diagnostic"
+﻿import type { DiagnosticReportData } from "@/lib/sales/diagnostic"
 import type { ReportLang } from "./report-copy"
 
 function numericValue(value: string): number {
@@ -68,7 +68,7 @@ function coverageByCategory(data: DiagnosticReportData) {
 
 function Bar({ label, value, max, tone }: { label: string; value: string; max: number; tone: "dark" | "red" | "blue" }) {
   const width = Math.max(8, Math.min(max, 100))
-  const color = tone === "red" ? "bg-rose-500" : tone === "blue" ? "bg-sky-500" : "bg-zinc-950"
+  const color = tone === "red" ? "bg-rose-500" : tone === "blue" ? "bg-amber-500" : "bg-zinc-950"
   return (
     <div>
       <div className="flex items-center justify-between gap-3 text-xs">
@@ -119,7 +119,7 @@ export function AuditConversionSections({
             <p className="mt-3 max-w-3xl text-sm leading-7 text-zinc-600">{copy.body}</p>
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
               <ImpactTile label={copy.sourceConfidence} value={`${confidence}/100`} detail={data.content_template.quality_bar} tone="border-emerald-200 bg-emerald-50/70" />
-              <ImpactTile label={copy.collected} value={`${data.source_coverage.collected}`} detail={copy.evidenceBody} tone="border-sky-200 bg-sky-50/70" />
+              <ImpactTile label={copy.collected} value={`${data.source_coverage.collected}`} detail={copy.evidenceBody} tone="border-sky-200 bg-amber-50/70" />
               <ImpactTile label={copy.missing} value={`${data.source_coverage.missing}`} detail={copy.hiddenCostBody} tone="border-amber-200 bg-amber-50/70" />
             </div>
           </div>
@@ -180,7 +180,7 @@ export function AuditConversionSections({
             <p className="mt-2 text-sm leading-7 text-zinc-600">{copy.solutionBody}</p>
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               <ImpactTile label={copy.proof} value={`${data.source_coverage.score}%`} detail={data.content_template.quality_bar} tone="border-zinc-200 bg-zinc-50" />
-              <ImpactTile label={copy.plan} value={copy.planValue} detail={copy.planNote} tone="border-sky-200 bg-sky-50/70" />
+              <ImpactTile label={copy.plan} value={copy.planValue} detail={copy.planNote} tone="border-sky-200 bg-amber-50/70" />
               <ImpactTile label="Template" value={data.template_variant} detail={data.content_template.title} tone="border-emerald-200 bg-emerald-50/70" />
             </div>
           </div>

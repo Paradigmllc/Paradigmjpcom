@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { motion } from "framer-motion"
 import { BarChart3, Globe, TrendingUp, Users } from "lucide-react"
@@ -23,7 +23,7 @@ export function MarketPresenceSummary({ data, lang }: { data: DiagnosticReportDa
     <section className="px-5 py-14 bg-white border-t border-zinc-200">
       <div className="mx-auto max-w-6xl">
         <div className="flex items-center gap-2 mb-6">
-          <Globe className="h-5 w-5 text-indigo-600" />
+          <Globe className="h-5 w-5 text-violet-600" />
           <h2 className="text-xl font-bold text-zinc-900">
             {lang === "ja" ? "市場における御社の立ち位置" : "Your Market Position"}
           </h2>
@@ -147,7 +147,7 @@ function MarketCard({ icon, label, value, detail, tone }: {
   tone: string
 }) {
   const tones: Record<string, string> = {
-    indigo: "bg-indigo-50 text-indigo-700 border-indigo-100",
+    indigo: "bg-violet-50 text-violet-700 border-violet-100",
     blue: "bg-blue-50 text-blue-700 border-blue-100",
     purple: "bg-purple-50 text-purple-700 border-purple-100",
     emerald: "bg-emerald-50 text-emerald-700 border-emerald-100",
