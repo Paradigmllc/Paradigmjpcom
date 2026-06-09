@@ -1178,8 +1178,20 @@
     },
     "proof": {
       "eyebrow": "PROOF",
-      "heading": "Real results from real clients",
-      "placeholder": "Anonymized client case studies are being prepared. Want references? Ask on your intro call."
+      "heading": "Trusted by foreign brands entering Japan",
+      "marquee1": "Tokyo-based operations",
+      "marquee2": "Bilingual async workflow",
+      "marquee3": "Fixed scope, fixed price",
+      "marquee4": "Japan payment rails ready",
+      "metric1Value": "30–90",
+      "metric1Label": "days from kickoff to Japan-live",
+      "metric2Value": "100%",
+      "metric2Label": "English-only on your side — zero Japanese burden",
+      "metric3Value": "0",
+      "metric3Label": "surprise invoices — fixed scope, fixed price, always",
+      "metric4Value": "12",
+      "metric4Label": "locales supported across site, support, and compliance",
+      "footnote": "Client references available on request during your intro call."
     },
     "report": {
       "eyebrow": "START HERE — LOW RISK",
@@ -1237,13 +1249,32 @@
       "q4": "Do I need to speak or write Japanese?",
       "a4": "No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side.",
       "q5": "What does it cost?",
-      "a5": "Three fixed-scope tiers (Essential / Growth / Enterprise). Start with the $1,500 Market Fit Report, which is credited to your first month."
+      "a5": "Three fixed-scope tiers (Essential / Growth / Enterprise). Start with the $1,500 Market Fit Report, which is credited to your first month.",
+      "q6": "Can't I just use Google Translate or DeepL for my site?",
+      "a6": "Machine translation handles words, not trust. Japanese consumers are among the most discerning online — 78% say they won't purchase from a machine-translated site. Legal disclaimers, payment flows, and culturally appropriate UX can't be auto-translated. Our localization covers language, culture, compliance, and conversion — not just vocabulary.",
+      "q7": "How is Paradigm different from hiring my own Japanese team?",
+      "a7": "A single bilingual Tokyo hire costs $60–120K/year in salary alone, plus recruiting (3–6 months), office, and management overhead. That one person can't do web development, MEO, LINE setup, legal compliance, and AI support simultaneously. Paradigm gives you the entire cross-functional stack for a one-time engagement — and you start in weeks, not quarters.",
+      "q8": "What happens after the engagement ends? Will I be left on my own?",
+      "a8": "Every engagement includes a complete handover package (credentials, docs, playbooks) and a 90-day warranty on all deliverables. We also offer ongoing maintenance retainers for continuous optimization, content updates, and support. You'll never be left with a black box — and we stay available for questions well beyond the engagement."
     },
     "finalCta": {
       "heading": "Stop leaving Japan on the table.",
       "sub": "Start with a $1,500 report or a free 30-minute call. Either way, you'll know exactly what Japan is worth — and how to capture it.",
       "button": "Get your Japan Market Fit Report",
       "secondary": "Book a free 30-min call"
+    },
+    "comparison": {
+      "eyebrow": "WHY PARADIGM",
+      "heading": "The difference between \"translating\" and actually entering Japan",
+      "sub": "Most options leave you with a translated site that still doesn't convert. Paradigm is Japan operations — not just words.",
+      "item1Title": "vs. DIY / Machine Translation",
+      "item1Body": "Google Translate can't handle cultural adaptation, legal disclaimers, trust signals, or SEO. Japanese consumers spot machine translation instantly — and 78% won't buy from a machine-translated site.",
+      "item2Title": "vs. Traditional Japanese Agency",
+      "item2Body": "Language barrier, opaque pricing, and waterfall processes built for domestic clients. You'll spend weeks in email translation hell before seeing a single deliverable.",
+      "item3Title": "vs. Freelance Translator",
+      "item3Body": "Translation ≠ localization ≠ market entry. You need payments, compliance, discovery, and support — not just words on a page.",
+      "item4Title": "vs. Hiring In-House",
+      "item4Body": "A single bilingual Tokyo hire costs $60–120K/year and takes 3–6 months to recruit. We deliver the full stack in 30–90 days for a one-time engagement."
     }
   }
 }

@@ -3,23 +3,28 @@
 /**
  * HomeEnClient — /[locale] homepage for /en + 10 non-ja locales (Plan B).
  *
- * 役割:   JaaS (Japan-as-a-Service) を主役にした「痛み・機会損失の可視化 → 希望」
- *         アーク LP。海外SMBの日本進出を主CTA=$1,500 Market Fit Report に誘導。
+ * 役割:   JaaS (Japan-as-a-Service) を主役にした「痛み・機会損失の可視化 → 差別化 →
+ *         価格提示 → 希望」アーク LP。海外SMBの日本進出を主CTA=$1,500 Market Fit
+ *         Report に誘導。
  * 入力:   なし (locale は NextIntlClientProvider context・messages.homeEn 経由)
- * 出力:   8-section composition (Hero / Loss / Offer / Mechanism / Proof / Report / FAQ / CTA)
+ * 出力:   10-section composition (Hero / Loss / Offer / Mechanism / Comparison /
+ *         Proof / Pricing / Report / FAQ / CTA)
  *
- * AE-PHP-2: 全 visible text は useTranslations("homeEn") 経由 (zero hardcode)。
- * AE-PHP-4: 役割/入力/出力 明示。/ja は別構造 (HomeClient) — page.tsx で locale 分岐。
- * 2026-05-20 壁打ち確定: 痛み/損失可視化スパイン・honest proof・$1,500 Report 主CTA。
+ * 2026-06-09 壁打ち反映:
+ *   - Section 5 "PROOF" を Marquee + 匿名メトリクスに差し替え（旧 placeholder 廃止）
+ *   - Pricing を Report CTA より前に移動（価格文脈を先に提示）
+ *   - 競合比較セクション (Comparison) を Mechanism 後に追加
+ *   - FAQ を 5→8 問に拡充（「Google翻訳でいいのでは？」「自社雇用との差別化」「納品後どうなる？」）
  */
 
 import { Link } from "@/i18n/routing"
 import { useTranslations } from "next-intl"
 import { motion } from "framer-motion"
-import { ArrowRight, Sparkles as SparkleIcon, AlertTriangle, Check } from "lucide-react"
+import { ArrowRight, Sparkles as SparkleIcon, AlertTriangle, Check, ShieldCheck } from "lucide-react"
 import { Meteors } from "@/components/magicui/meteors"
 import { Sparkles } from "@/components/magicui/sparkles"
 import { BorderBeam } from "@/components/magicui/border-beam"
+import { Marquee } from "@/components/magicui/marquee"
 import FadeIn from "@/components/aesop/FadeIn"
 import HomeEnPricingSection from "./HomeEnPricingSection"
 
@@ -30,7 +35,10 @@ const CALL_HREF = "/contact?intent=call"
 const LOSS_CARDS = ["card1", "card2", "card3", "card4"] as const
 const OFFER_POINTS = ["point1", "point2", "point3", "point4"] as const
 const MECH_ITEMS = ["item1", "item2", "item3", "item4"] as const
-const FAQ_KEYS = ["1", "2", "3", "4", "5"] as const
+const COMPARE_ITEMS = ["item1", "item2", "item3", "item4"] as const
+const PROOF_MARQUEE = ["marquee1", "marquee2", "marquee3", "marquee4"] as const
+const PROOF_METRICS = ["metric1", "metric2", "metric3", "metric4"] as const
+const FAQ_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8"] as const
 
 export default function HomeEnClient() {
   const t = useTranslations("homeEn")
@@ -175,23 +183,100 @@ export default function HomeEnClient() {
         </div>
       </section>
 
-      {/* ── 5. Proof (placeholder — cases pending) ────────────── */}
+      {/* ── 5. Comparison — Why Paradigm vs. alternatives ─────── */}
       <section className="relative bg-paradigm-paper-deep paradigm-section overflow-hidden">
+        <div className="paradigm-mesh opacity-40" />
+        <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-8">
+          <FadeIn className="mb-10 max-w-2xl">
+            <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{t("comparison.eyebrow")}</p>
+            <h2 className="font-display text-[26px] md:text-[40px] leading-[1.12] tracking-[-0.025em] text-paradigm-ink">
+              {t("comparison.heading")}
+            </h2>
+            <p className="text-[14px] text-paradigm-ink-soft leading-[1.8] mt-4">{t("comparison.sub")}</p>
+          </FadeIn>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+            {COMPARE_ITEMS.map((item, i) => (
+              <motion.div
+                key={item}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-80px" }}
+                transition={{ duration: 0.55, delay: i * 0.07, ease: EASE }}
+                className="paradigm-glass rounded-2xl p-6 paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500"
+              >
+                <h3 className="font-display text-[16px] md:text-[18px] text-paradigm-ink mb-2 tracking-[-0.015em]">
+                  {t(`comparison.${item}Title`)}
+                </h3>
+                <p className="text-[13px] text-paradigm-ink-soft leading-[1.7]">{t(`comparison.${item}Body`)}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── 6. Proof — trust marquee + anonymized metrics ─────── */}
+      <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
         <div className="paradigm-mesh opacity-30" />
-        <div className="relative z-10 max-w-3xl mx-auto px-6 md:px-8 text-center">
-          <FadeIn>
+        <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-8">
+          <FadeIn className="mb-8 text-center">
             <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{t("proof.eyebrow")}</p>
-            <h2 className="font-display text-[26px] md:text-[36px] leading-[1.12] tracking-[-0.025em] text-paradigm-ink mb-5">
+            <h2 className="font-display text-[26px] md:text-[36px] leading-[1.12] tracking-[-0.025em] text-paradigm-ink mb-4">
               {t("proof.heading")}
             </h2>
-            <p className="text-[14px] text-paradigm-ink-soft leading-[1.8] paradigm-glass rounded-2xl p-6 paradigm-glow-sm">
-              {t("proof.placeholder")}
-            </p>
+          </FadeIn>
+
+          <FadeIn
+            delay={0.1}
+            className="mb-8 paradigm-glass rounded-xl py-3 border border-paradigm-line"
+          >
+            <Marquee duration={45} pauseOnHover className="text-paradigm-ink-soft">
+              {PROOF_MARQUEE.map((k) => (
+                <span
+                  key={k}
+                  className="paradigm-eyebrow text-[11px] md:text-[13px] whitespace-nowrap inline-flex items-center gap-2"
+                >
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-gradient-to-br from-paradigm-accent to-paradigm-tech" />
+                  {t(`proof.${k}`)}
+                  <span className="ml-2 text-paradigm-line">/</span>
+                </span>
+              ))}
+            </Marquee>
+          </FadeIn>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            {PROOF_METRICS.map((m, i) => (
+              <motion.div
+                key={m}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-80px" }}
+                transition={{ duration: 0.55, delay: i * 0.08, ease: EASE }}
+                className="bg-paradigm-paper-card border border-paradigm-line rounded-2xl p-5 text-center paradigm-glow-sm"
+              >
+                <div className="font-display text-[28px] md:text-[34px] leading-none bg-gradient-to-br from-paradigm-accent via-paradigm-tech to-paradigm-glow bg-clip-text text-transparent mb-2">
+                  {t(`proof.${m}Value`)}
+                </div>
+                <p className="text-[12px] text-paradigm-ink-soft leading-[1.6]">{t(`proof.${m}Label`)}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          <FadeIn
+            delay={0.3}
+            className="mt-8 text-center"
+          >
+            <div className="inline-flex items-center gap-2 paradigm-glass rounded-full px-4 py-2 paradigm-glow-sm">
+              <ShieldCheck size={13} className="text-paradigm-accent" strokeWidth={2} />
+              <span className="text-[11px] text-paradigm-ink-mute">{t("proof.footnote")}</span>
+            </div>
           </FadeIn>
         </div>
       </section>
 
-      {/* ── 6. $1,500 Report (main CTA) ───────────────────────── */}
+      {/* ── 7. Pricing table ──────────────────────────────────── */}
+      <HomeEnPricingSection />
+
+      {/* ── 8. $1,500 Report (main CTA) ───────────────────────── */}
       <section className="relative bg-paradigm-ink text-paradigm-paper paradigm-section overflow-hidden">
         <div className="paradigm-mesh-vivid opacity-70" />
         <Meteors number={14} color="rgba(165, 180, 252, 0.5)" />
@@ -222,10 +307,7 @@ export default function HomeEnClient() {
         </FadeIn>
       </section>
 
-      {/* 7. Pricing table */}
-      <HomeEnPricingSection />
-
-      {/* ── 8. FAQ ────────────────────────────────────────────── */}
+      {/* ── 9. FAQ ────────────────────────────────────────────── */}
       <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
         <div className="paradigm-mesh opacity-30" />
         <div className="relative z-10 max-w-3xl mx-auto px-6 md:px-8">
@@ -250,7 +332,7 @@ export default function HomeEnClient() {
         </div>
       </section>
 
-      {/* ── 9. Final CTA ──────────────────────────────────────── */}
+      {/* ── 10. Final CTA ─────────────────────────────────────── */}
       <section className="relative bg-paradigm-ink text-paradigm-paper paradigm-section overflow-hidden">
         <div className="paradigm-mesh-vivid opacity-80" />
         <Meteors number={16} color="rgba(255, 255, 255, 0.5)" />
