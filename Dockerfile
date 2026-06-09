@@ -2,9 +2,7 @@
 FROM node:24-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev --ignore-scripts && \
-    cp -r node_modules /prod_modules
-RUN npm ci --ignore-scripts
+RUN npm ci
 
 # ─── Stage 2: Build ───
 FROM node:24-alpine AS builder
@@ -25,7 +23,8 @@ RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-COPY --from=deps /prod_modules ./node_modules
+# Copy only production node_modules (pruned from full install)
+COPY --from=builder /app/node_modules ./node_modules
 USER nextjs
 EXPOSE 3000
 CMD ["node", "server.js"]
