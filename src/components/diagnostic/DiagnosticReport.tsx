@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { ArrowRight, Check, ExternalLink, Gauge, LineChart, MessageCircle, Moon, ShieldCheck, Sparkles, Sun } from "lucide-react"
+import { ArrowRight, Check, ChevronDown, ExternalLink, Gauge, LineChart, MessageCircle, Moon, ShieldCheck, Sparkles, Sun } from "lucide-react"
 import { useState, type ReactNode } from "react"
 import type { DiagnosticAct, DiagnosticReportData } from "@/lib/sales/diagnostic"
 import { signalScore, type IntelligenceSignal, type PainPoint } from "@/lib/sales/company-intelligence"
@@ -847,6 +847,8 @@ export default function DiagnosticReport({
     .slice(0, 14)
   const calHref = `https://cal.com/paradigm-jp/15min?name=${encodeURIComponent(data.company_name)}`
   const chatwootHref = "https://chatwoot.paradigmjp.com"
+  const [isDark, setIsDark] = useState(false)
+  const [actionOpen, setActionOpen] = useState(false)
   const heroText = cleanText(reportEvidenceText(data.hook, lang), offerCopy.heroLead)
   const ctaText = cleanText(reportEvidenceText(data.cta_text, lang), offerCopy.finalBody)
   const qualityBar = cleanText(
@@ -951,9 +953,29 @@ export default function DiagnosticReport({
             <button onClick={() => setIsDark(!isDark)} className={`p-1.5 rounded-md ${isDark ? "text-zinc-400 hover:text-white" : "text-zinc-500 hover:text-zinc-900"}`} title={isDark ? "ライト" : "ダーク"}>
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
-            <a href={calHref} target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-bold transition-colors ${isDark ? "bg-zinc-800 text-white hover:bg-zinc-700" : "bg-zinc-900 text-white hover:bg-zinc-800"}`}>
-              <MessageCircle className="h-3 w-3" />{lang === "ja" ? "無料相談" : "Free Consult"}
-            </a>
+            <div className="relative">
+              <button onClick={() => setActionOpen(!actionOpen)}
+                className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-bold transition-colors ${isDark ? "bg-zinc-800 text-white hover:bg-zinc-700" : "bg-zinc-900 text-white hover:bg-zinc-800"}`}>
+                <MessageCircle className="h-3 w-3" />{lang === "ja" ? "お問い合わせ" : "Contact"}
+                <ChevronDown className={`h-3 w-3 transition-transform ${actionOpen ? "rotate-180" : ""}`} />
+              </button>
+              {actionOpen && (
+                <div className={`absolute right-0 top-full mt-1 w-48 rounded-lg border py-1 shadow-lg z-50 ${isDark ? "bg-zinc-800 border-zinc-700" : "bg-white border-zinc-200"}`}>
+                  <a href={calHref} target="_blank" rel="noopener noreferrer" onClick={() => setActionOpen(false)}
+                    className={`flex items-center gap-2 px-3 py-2 text-xs hover:bg-zinc-50 ${isDark ? "text-zinc-200 hover:bg-zinc-700" : "text-zinc-700"}`}>
+                    📅 {lang === "ja" ? "無料相談を予約" : "Book Free Consult"}
+                  </a>
+                  <a href="https://chatwoot.paradigmjp.com" target="_blank" rel="noopener noreferrer" onClick={() => setActionOpen(false)}
+                    className={`flex items-center gap-2 px-3 py-2 text-xs hover:bg-zinc-50 ${isDark ? "text-zinc-200 hover:bg-zinc-700" : "text-zinc-700"}`}>
+                    💬 {lang === "ja" ? "チャットで質問" : "Chat with us"}
+                  </a>
+                  <a href={`mailto:info@paradigmjp.com?subject=${encodeURIComponent(data.company_name + " 資料請求")}`} onClick={() => setActionOpen(false)}
+                    className={`flex items-center gap-2 px-3 py-2 text-xs hover:bg-zinc-50 ${isDark ? "text-zinc-200 hover:bg-zinc-700" : "text-zinc-700"}`}>
+                    📄 {lang === "ja" ? "資料請求" : "Request Info"}
+                  </a>
+                </div>
+              )}
+            </div>
             <a href="https://paradigmjp.com/ja" className={`text-[10px] hidden sm:inline ${isDark ? "text-zinc-500 hover:text-zinc-300" : "text-zinc-400 hover:text-zinc-600"}`}>ParadigmHPへ</a>
           </div>
         </div>
@@ -1390,12 +1412,25 @@ export default function DiagnosticReport({
 
       {/* ── Dify AI Chat Widget ── */}
       <script dangerouslySetInnerHTML={{ __html: `
-        window.difyChatbotConfig = {
-          token: 'app-O1hcIrjUNhgeuKbY1J768Hia',
-          baseUrl: 'https://api.dify.ai/v1',
-        };
+        // Track scroll depth
+        let scrolled50 = false;
+        window.addEventListener('scroll', function() {
+          if (!scrolled50 && window.scrollY > document.body.scrollHeight * 0.5) {
+            scrolled50 = true;
+            new Image().src = '/api/sales/track-view?slug=${encodeURIComponent(trackingSlug || "")}&event=scroll';
+          }
+        });
+        // Track 30-second stay
+        setTimeout(function() {
+          new Image().src = '/api/sales/track-view?slug=${encodeURIComponent(trackingSlug || "")}&event=stay';
+        }, 30000);
+        // Track CTA clicks
+        document.querySelectorAll('a[href*="cal.com"], a[href*="demo"]').forEach(function(el) {
+          el.addEventListener('click', function() {
+            new Image().src = '/api/sales/track-view?slug=${encodeURIComponent(trackingSlug || "")}&event=cta';
+          });
+        });
       `}} />
-      <script src="https://api.dify.ai/v1/webapp/embed.js" async />
 
       {/* ── Footer ── */}
       <footer className={`border-t px-5 py-8 mt-10 ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"}`}>

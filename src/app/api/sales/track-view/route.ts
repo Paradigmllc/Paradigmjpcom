@@ -1,11 +1,13 @@
 /**
- * GET /api/sales/track-view?slug=... — Sprint 11 (Sprint 13 URL refactor)
- *
- * 役割: 診断レポート閲覧トラッキング (1x1 透明 GIF) + report_views++
- *       3 回以上閲覧で is_hot_lead = true → Slack 通知.
- *
- * 認証: なし (public・閲覧トラッキング用)
- *       slug = sales_companies.slug (Sprint 13 以降) / 旧 id(uuid)/domain も互換維持
+ * GET /api/sales/track-view?slug=...&event=...&ref=...
+ * 
+ * トラッキングイベント:
+ *   event=load     — 初回読み込み（report_views++）
+ *   event=scroll   — 50%スクロール到達
+ *   event=cta      — CTAボタンクリック
+ *   event=stay     — 30秒滞在（自動ping）
+ * 
+ * 3回以上閲覧で is_hot_lead = true → Slack通知.
  */
 
 import { NextRequest, NextResponse } from "next/server"
@@ -58,17 +60,18 @@ export async function GET(req: NextRequest) {
 
   if (company) {
     const sb = getServiceSalesSupabase()
+    const event = req.nextUrl.searchParams.get("event") ?? "load"
+    const referrer = req.nextUrl.searchParams.get("ref") ?? req.headers.get("referer") ?? "direct"
+
     if (sb) {
       const newCount = (company.report_views ?? 0) + 1
-      await sb
-        .from("sales_companies")
-        .update({ report_views: newCount })
-        .eq("id", company.id)
+      const now = new Date().toISOString()
 
-      // HOT lead 判定: 3 回閲覧で HOT 化
+      const patch: Record<string, unknown> = { report_views: newCount }
+
+      // HOT lead 判定
       if (newCount >= HOT_THRESHOLD && !company.is_hot_lead) {
-        await markHotLead(company.id, true)
-        // Slack 通知 (best-effort・Sprint 14 で動画 preview URL も追加)
+        patch.is_hot_lead = true
         const routing = getRoutingMeta(company.meta)
         const reportLocale = company.report_locale ?? routing.report_locale ?? locale
         const reportUrl = company.slug
@@ -83,8 +86,28 @@ export async function GET(req: NextRequest) {
           report_views: newCount,
           diagnostic_url: reportUrl,
           video_url: videoUrl,
-        }).catch(() => {}) // never throw
+        }).catch(() => {})
       }
+
+      // Mark last activity
+      if (event === "stay") {
+        patch.last_viewed_at = now
+      } else if (event === "scroll") {
+        patch.last_scrolled_at = now
+      } else if (event === "cta") {
+        patch.cta_clicked_at = now
+      }
+
+      await sb.from("sales_companies").update(patch).eq("id", company.id)
+
+      // Log tracking event
+      await sb.from("sales_activities").insert({
+        company_id: company.id,
+        activity_type: event === "load" ? "report_viewed" : event === "scroll" ? "report_scrolled" : event === "cta" ? "cta_clicked" : "report_engaged",
+        subject: event === "load" ? "レポート閲覧" : event === "scroll" ? "50%スクロール到達" : event === "cta" ? "CTAクリック" : "30秒滞在",
+        result: referrer,
+        occurred_at: now,
+      }).then(() => {}, () => {}) // best-effort
     }
   }
 
