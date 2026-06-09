@@ -1,464 +1,244 @@
-import { getServiceSalesSupabase } from "@/lib/supabase"
-import { matchContentTemplate } from "./content-templates"
-import { getR2StorageConfig, sanitizeR2ObjectName } from "./r2-storage"
+/**
+ * Professional Astro-style demo site generator — designer-quality, client-deliverable.
+ * Features: Tailwind CDN + Glassmorphism + Bento Grid + animated counters + responsive.
+ */
 import type { DiagnosticAct, DiagnosticReportData } from "./diagnostic"
-import { compactText, escapeHtml, labelForIndustry, themeForIndustry } from "./render-quality"
 import type { SalesCompany } from "./types"
+import { compactText, escapeHtml, labelForIndustry, themeForIndustry } from "./render-quality"
 
-const CORRUPT_TEXT = /縺|繝|譁|蜑|荳|譛|谿|險|螟|豕|邨|髻|蠕|蝠|逕|莠|陦|蛻|諡|蜷|繧|�/
+const CORRUPT = /縺|繝|譁|蜑|荳|譛|谿|險|螟|豕|邨|髻|蠕|蝠|逕|莠|陦|蛻|諡|蜷|繧|�/
 
-function isJa(locale: string): boolean {
-  return locale === "ja"
-}
-
-function cleanCopy(value: string | null | undefined, fallback: string, max = 180): string {
-  const text = (value ?? "").replace(/\s+/g, " ").trim()
-  if (!text || CORRUPT_TEXT.test(text)) return fallback
-  return compactText(text, fallback, max)
-}
-
-function safeMetric(value: string | null | undefined, fallback: string): string {
-  return cleanCopy(value, fallback, 40)
+function esc(s: string): string { return escapeHtml(s) }
+function cln(s: string | null | undefined, fb: string, max = 200): string {
+  const t = (s ?? "").replace(/\s+/g, " ").trim()
+  if (!t || CORRUPT.test(t)) return fb
+  return compactText(t, fb, max)
 }
 
 function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2)
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join("").toUpperCase().slice(0, 2)
 }
 
-function metricBlock(label: string, value: string, detail: string): string {
-  return `<div class="metric-card">
-    <p>${escapeHtml(label)}</p>
-    <strong>${escapeHtml(value)}</strong>
-    <span>${escapeHtml(detail)}</span>
-  </div>`
+function svgIcon(name: "chart" | "zap" | "shield" | "star" | "globe" | "arrow"): string {
+  const paths: Record<string, string> = {
+    chart: `<path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>`,
+    zap: `<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`,
+    shield: `<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>`,
+    star: `<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`,
+    globe: `<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/><path d="M2 12h20M12 2a15 15 0 0115 15M12 2a15 15 0 00-5 15M12 2a15 15 0 015 15M12 2a15 15 0 00-5 3" stroke="currentColor" stroke-width="1.5" fill="none"/>`,
+    arrow: `<path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`,
+  }
+  return paths[name] || paths.chart
 }
 
-function evidenceCard(act: DiagnosticAct | undefined, index: number, locale: string): string {
-  const fallbackTitles = isJa(locale)
-    ? ["第一印象の改善", "信頼材料の整理", "問い合わせ導線の短縮"]
-    : ["Sharper first impression", "Clearer trust proof", "Shorter inquiry path"]
-  const fallbackBodies = isJa(locale)
-    ? [
-        "検索やSNSから来た見込み客が、最初の画面で選ぶ理由を理解できるようにします。",
-        "実績、レビュー、対応範囲を見やすく配置し、比較中の不安を減らします。",
-        "問い合わせ前の迷いを減らし、相談や予約へ進む導線を短くします。",
-      ]
-    : [
-        "Make the first screen explain why this business should be shortlisted.",
-        "Place proof, reviews, and service scope where comparison-stage buyers need them.",
-        "Reduce pre-inquiry hesitation with a shorter path to booking or contact.",
-      ]
-  const title = cleanCopy(act?.headline, fallbackTitles[index] ?? fallbackTitles[0], 90)
-  const body = cleanCopy(act?.body, fallbackBodies[index] ?? fallbackBodies[0], 180)
-  return `<article class="evidence-card">
-    <span>0${index + 1}</span>
-    <h3>${escapeHtml(title)}</h3>
-    <p>${escapeHtml(body)}</p>
-  </article>`
+function evidenceSection(acts: DiagnosticAct[], locale: string): string {
+  const isJa = locale === "ja"
+  const titles = isJa ? ["第一印象の改善", "信頼材料の整理", "問い合わせ導線の短縮"] : ["Sharper first impression", "Clearer trust proof", "Shorter inquiry path"]
+  const bodies = isJa ? [
+    "検索やSNSからの訪問者が、最初の画面で選ぶ理由を理解できる構成に再設計しました。",
+    "実績・レビュー・対応範囲を効果的に配置し、比較中の不安を払拭します。",
+    "問い合わせ前の心理的障壁を取り除き、予約・相談への動線を最短にします。",
+  ] : [
+    "Redesigned so visitors instantly understand why this business should be chosen.",
+    "Proof, reviews, and scope placed exactly where comparison-stage buyers look.",
+    "Removes pre-inquiry hesitation with the shortest path to booking or contact.",
+  ]
+  return acts.slice(0, 3).map((act, i) => {
+    const title = cln(act?.headline, titles[i], 90)
+    const body = cln(act?.body, bodies[i], 180)
+    return `<div class="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:border-white/20 transition-all">
+      <div class="flex items-center gap-4 mb-4">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-400/20 flex items-center justify-center text-blue-400 font-bold text-lg">0${i+1}</div>
+        <h3 class="text-xl font-bold text-white">${esc(title)}</h3>
+      </div>
+      <p class="text-zinc-400 leading-relaxed">${esc(body)}</p>
+    </div>`
+  }).join("\n")
 }
 
-function buildDemoHtml(company: SalesCompany, report: DiagnosticReportData, templateTitle: string): string {
+function metricCards(acts: DiagnosticAct[]): string {
+  return acts.slice(0, 3).map((act, i) => {
+    const label = cln(act?.metric_label, "Metric", 30)
+    const value = cln(act?.metric_value, "-", 20)
+    const bench = cln(act?.metric_bench, "", 50)
+    const colors = ["from-emerald-500/20 to-teal-500/20 border-emerald-400/20 text-emerald-400",
+      "from-amber-500/20 to-orange-500/20 border-amber-400/20 text-amber-400",
+      "from-violet-500/20 to-purple-500/20 border-violet-400/20 text-violet-400"]
+    return `<div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 text-center">
+      <p class="text-xs uppercase tracking-widest text-zinc-500 mb-2">${esc(label)}</p>
+      <p class="text-4xl font-black mb-1"><span class="bg-gradient-to-r ${colors[i]} bg-clip-text text-transparent">${esc(value)}</span></p>
+      ${bench ? `<p class="text-xs text-zinc-500">${esc(bench)}</p>` : ""}
+    </div>`
+  }).join("\n")
+}
+
+export function buildDemoHtml(company: SalesCompany, report: DiagnosticReportData, templateTitle: string): string {
   const theme = themeForIndustry(company.industry)
-  const locale = company.report_locale ?? report.report_locale
-  const japanese = isJa(locale)
-  const name = company.company_name
-  const hasNoSite = company.pagespeed_mobile == null // No PSI data = no existing site detected
-  const isNewBuild = hasNoSite || !company.domain
-  const buildType = isNewBuild
-    ? (japanese ? "新規構築" : "New Build")
-    : (japanese ? "差し替え改善" : "Replacement")
-  const buildLabel = isNewBuild
-    ? (japanese ? "既存サイトがないため、ゼロから最適な構成で構築します。" : "No existing site detected — built from scratch with optimal structure.")
-    : (japanese ? "既存サイトの改善ポイントを反映した差し替え案です。" : "Replacement proposal reflecting improvement points from your current site.")
-  const escapedName = escapeHtml(name)
-  const brandMark = escapeHtml(initials(name) || name.slice(0, 1))
-  const industry = labelForIndustry(company.industry, locale)
-  const location = cleanCopy(
-    company.prefecture,
-    japanese ? "対応エリア" : "service area",
-    40,
-  )
-  const hook = cleanCopy(
-    report.hook,
-    japanese
-      ? "公開データと実測値をもとに、最初の5秒で選ばれる理由が伝わるサイトへ再設計します。"
-      : "A focused replacement site that makes the reason to choose you clear in the first five seconds.",
-    230,
-  )
-  const cta = cleanCopy(report.cta_text, japanese ? "無料相談を予約する" : "Book a consultation", 36)
-  const primaryAct = report.acts[0]
-  const secondaryAct = report.acts[1]
-  const tertiaryAct = report.acts[2]
-  const metricLabel = safeMetric(primaryAct?.metric_label, japanese ? "主要シグナル" : "Primary signal")
-  const metricValue = safeMetric(primaryAct?.metric_value, "-")
-  const issueTitle = cleanCopy(
-    primaryAct?.headline,
-    japanese ? "比較中の顧客が離脱する前に、選ばれる理由を見せます。" : "Show why you should be chosen before comparison-stage buyers leave.",
-    130,
-  )
-  const issueBody = cleanCopy(
-    primaryAct?.body,
-    japanese
-      ? "診断で見つかった弱点を、ファーストビュー、証拠、CTA導線へ変換した差し替えデモです。"
-      : "This demo converts the audit findings into a sharper first view, stronger proof, and a clearer CTA.",
-    200,
-  )
+  const loc = company.report_locale ?? report.report_locale
+  const ja = loc === "ja"
+  const name = esc(company.company_name)
+  const brandMark = esc(initials(company.company_name) || name.slice(0, 1))
+  const industry = labelForIndustry(company.industry, loc)
+  const locStr = cln(company.prefecture, ja ? "全国対応" : "Nationwide", 30)
+  const hook = cln(report.hook, ja ? "公開データと実測値に基づき、御社の強みが最初の5秒で伝わるサイトへ再設計しました。" : "A focused redesign that makes your strengths clear in the first five seconds.", 250)
+  const cta = cln(report.cta_text, ja ? "無料相談を予約する" : "Book a free consultation", 40)
+  const lossStr = esc(report.total_loss)
+
+  // Theme colors
+  const primary = theme.accent || "#7c5cff"
+  const primaryDark = theme.accentDark || "#3b1f8c"
+
+  const logo = `<div class="flex items-center gap-3">
+    <div class="w-9 h-9 rounded-lg bg-white flex items-center justify-center text-black font-bold text-sm">${brandMark}</div>
+    <span class="font-bold text-white text-sm truncate max-w-[200px]">${name}</span>
+  </div>`
+
+  const ogImage = `https://pub-ac30eb86a32747f1a27e304aa9c6f95a.r2.dev/ogp/${company.id}.png`
 
   return `<!doctype html>
-<html lang="${escapeHtml(locale)}">
+<html lang="${loc}">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="robots" content="noindex,nofollow" />
-  <title>${escapedName} | ${japanese ? "改善デモサイト" : "Replacement Demo"}</title>
-  <style>
-    :root {
-      color-scheme: light;
-      --ink:${theme.ink};
-      --muted:${theme.muted};
-      --paper:#fbfcff;
-      --surface:#ffffff;
-      --line:#dfe5ef;
-      --accent:${theme.accent};
-      --accent-dark:${theme.accentDark};
-      --accent-soft:${theme.accentSoft};
-      --signal:${theme.signal};
-      --radius:8px;
-    }
-    * { box-sizing:border-box; }
-    html { scroll-behavior:smooth; }
-    body {
-      margin:0;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color:var(--ink);
-      background:var(--paper);
-      letter-spacing:0;
-    }
-    a { color:inherit; }
-    .site-shell { min-height:100vh; overflow:hidden; }
-    .demo-top {
-      position:sticky;
-      top:0;
-      z-index:20;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:20px;
-      padding:14px clamp(18px,5vw,72px);
-      border-bottom:1px solid rgba(15,23,42,.08);
-      background:rgba(255,255,255,.92);
-      backdrop-filter:blur(14px);
-    }
-    .brand { display:flex; align-items:center; gap:11px; min-width:0; font-weight:850; }
-    .brand-mark {
-      display:grid;
-      place-items:center;
-      width:36px;
-      height:36px;
-      border-radius:var(--radius);
-      background:var(--ink);
-      color:#fff;
-      font-size:13px;
-      letter-spacing:0;
-    }
-    .brand-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .nav { display:flex; align-items:center; gap:20px; color:var(--muted); font-size:13px; }
-    .nav a { text-decoration:none; }
-    .header-cta {
-      min-height:38px;
-      padding:0 14px;
-      border:1px solid var(--ink);
-      border-radius:var(--radius);
-      background:var(--ink);
-      color:#fff;
-      font-weight:750;
-      text-decoration:none;
-      display:inline-flex;
-      align-items:center;
-    }
-    .hero {
-      display:grid;
-      grid-template-columns:minmax(0,1.05fr) minmax(340px,.95fr);
-      gap:52px;
-      align-items:center;
-      padding:80px clamp(18px,5vw,72px) 64px;
-      background:
-        radial-gradient(circle at 80% 8%, var(--accent-soft), transparent 34%),
-        linear-gradient(180deg,#fff 0%,#f7f9fc 100%);
-    }
-    .eyebrow {
-      display:inline-flex;
-      flex-wrap:wrap;
-      gap:8px;
-      align-items:center;
-      color:var(--accent-dark);
-      font-size:12px;
-      font-weight:850;
-      text-transform:uppercase;
-    }
-    .eyebrow span {
-      border:1px solid var(--line);
-      border-radius:999px;
-      background:#fff;
-      padding:7px 10px;
-    }
-    h1 {
-      margin:20px 0 0;
-      max-width:850px;
-      font-size:clamp(42px,6.6vw,84px);
-      line-height:.98;
-      letter-spacing:0;
-    }
-    .lead {
-      margin:24px 0 0;
-      max-width:690px;
-      color:#475467;
-      font-size:clamp(16px,1.9vw,20px);
-      line-height:1.8;
-    }
-    .actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:32px; }
-    .button {
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-height:48px;
-      padding:0 18px;
-      border-radius:var(--radius);
-      font-weight:850;
-      text-decoration:none;
-    }
-    .button-primary { background:var(--ink); color:#fff; }
-    .button-secondary { background:#fff; border:1px solid var(--line); color:var(--ink); }
-    .visual {
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      background:#fff;
-      box-shadow:0 28px 70px rgba(15,23,42,.12);
-      overflow:hidden;
-    }
-    .visual-top {
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      padding:14px;
-      border-bottom:1px solid var(--line);
-      background:#f8fafc;
-      color:#64748b;
-      font-size:12px;
-    }
-    .visual-body { padding:28px; display:grid; gap:22px; }
-    .proof-line { display:grid; grid-template-columns:1fr auto; gap:18px; align-items:center; }
-    .score {
-      display:grid;
-      place-items:center;
-      width:96px;
-      height:96px;
-      border-radius:999px;
-      border:10px solid var(--accent);
-      background:var(--accent-soft);
-      font-size:28px;
-      font-weight:900;
-    }
-    .issue h2 { margin:0; font-size:30px; line-height:1.18; }
-    .issue p { margin:12px 0 0; color:var(--muted); line-height:1.75; }
-    .metrics {
-      display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:14px;
-      padding:22px clamp(18px,5vw,72px);
-      background:#fff;
-      border-block:1px solid var(--line);
-    }
-    .metric-card {
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      padding:18px;
-      background:#fff;
-      min-height:132px;
-    }
-    .metric-card p { margin:0; color:var(--muted); font-size:13px; }
-    .metric-card strong { display:block; margin-top:12px; font-size:30px; line-height:1; }
-    .metric-card span { display:block; margin-top:10px; color:#667085; font-size:13px; line-height:1.5; }
-    section { padding:64px clamp(18px,5vw,72px); }
-    .section-head { max-width:820px; }
-    .section-head h2 { margin:0; font-size:clamp(32px,4vw,52px); line-height:1.06; }
-    .section-head p { margin:18px 0 0; color:var(--muted); line-height:1.8; font-size:17px; }
-    .evidence-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-top:28px; }
-    .evidence-card { border:1px solid var(--line); border-radius:var(--radius); background:#fff; padding:22px; min-height:230px; }
-    .evidence-card span { color:var(--accent-dark); font-weight:900; font-size:12px; }
-    .evidence-card h3 { margin:16px 0 0; font-size:20px; line-height:1.3; }
-    .evidence-card p { margin:12px 0 0; color:var(--muted); line-height:1.75; }
-    .before-after {
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:18px;
-      margin-top:30px;
-    }
-    .pane {
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      padding:24px;
-      background:#fff;
-    }
-    .pane h3 { margin:0; font-size:20px; }
-    .pane ul { margin:18px 0 0; padding-left:18px; color:var(--muted); line-height:1.9; }
-    .pane.after { background:var(--ink); color:#fff; border-color:var(--ink); }
-    .pane.after ul { color:rgba(255,255,255,.72); }
-    .final-cta {
-      display:grid;
-      grid-template-columns:minmax(0,1fr) auto;
-      gap:26px;
-      align-items:center;
-      background:var(--ink);
-      color:#fff;
-    }
-    .final-cta p { margin:12px 0 0; color:rgba(255,255,255,.72); line-height:1.8; max-width:820px; }
-    footer {
-      padding:26px clamp(18px,5vw,72px);
-      color:#667085;
-      border-top:1px solid var(--line);
-      background:#fff;
-      font-size:12px;
-    }
-    @media (max-width: 900px) {
-      .nav { display:none; }
-      .hero, .metrics, .evidence-grid, .before-after, .final-cta { grid-template-columns:1fr; }
-      .hero { padding-top:52px; }
-      .visual-body { padding:20px; }
-      .proof-line { grid-template-columns:1fr; }
-      h1 { font-size:42px; }
-    }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="robots" content="noindex,nofollow"/>
+<title>${name} | ${ja ? "Web改善デモサイト" : "Web Improvement Demo"}</title>
+<meta name="description" content="${esc(hook)}"/>
+<meta property="og:title" content="${name} | ${ja ? "Web改善デモ" : "Web Demo"}"/>
+<meta property="og:description" content="${esc(hook)}"/>
+<meta property="og:image" content="${ogImage}"/>
+<meta property="og:type" content="website"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{colors:{brand:'${primary}',brandDark:'${primaryDark}'}}}}</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+  body{font-family:'Inter','Noto Sans JP',system-ui,sans-serif}
+  .gradient-text{background:linear-gradient(135deg,#fff 0%,${primary} 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  @keyframes pulse-glow{0%,100%{box-shadow:0 0 40px ${primary}22}50%{box-shadow:0 0 80px ${primary}44}}
+  .orb{position:absolute;border-radius:50%;filter:blur(120px);opacity:.3;pointer-events:none}
+  .orb-1{width:600px;height:600px;background:${primary};top:-200px;right:-100px;animation:float 8s ease-in-out infinite}
+  .orb-2{width:400px;height:400px;background:${primaryDark};bottom:-100px;left:-50px;animation:float 10s ease-in-out infinite .5s}
+  .card-hover{transition:all .3s ease}
+  .card-hover:hover{transform:translateY(-4px);box-shadow:0 20px 60px -20px ${primary}33}
+</style>
 </head>
-<body>
-  <div class="site-shell">
-    <header class="demo-top">
-      <a class="brand" href="#top" aria-label="${escapedName}">
-        <span class="brand-mark">${brandMark}</span>
-        <span class="brand-name">${escapedName}</span>
-      </a>
-      <nav class="nav" aria-label="Demo navigation">
-        <a href="#proof">${japanese ? "改善根拠" : "Proof"}</a>
-        <a href="#plan">${japanese ? "改善方針" : "Plan"}</a>
-        <a href="#difference">${japanese ? "差分" : "Difference"}</a>
-      </nav>
-      <a class="header-cta" href="#contact">${cta}</a>
-    </header>
+<body class="bg-[#050510] text-white antialiased">
+<div class="relative min-h-screen overflow-hidden">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
 
-    <main id="top">
-      <section class="hero">
-        <div>
-          <div class="eyebrow">
-            <span>${escapeHtml(location)}</span>
-            <span>${escapeHtml(industry)}</span>
-            <span>${escapeHtml(templateTitle)}</span>
-          </div>
-          <h1>${escapeHtml(
-            japanese
-              ? `${name}が選ばれる理由を、最初の5秒で伝える。`
-              : `Make ${name} easy to choose in the first five seconds.`,
-          )}</h1>
-          <p class="lead">${escapeHtml(hook)}</p>
-          <div class="actions">
-            <a class="button button-primary" href="#contact">${cta}</a>
-            <a class="button button-secondary" href="#proof">${japanese ? "診断根拠を見る" : "See the evidence"}</a>
-          </div>
-        </div>
-
-        <aside class="visual" aria-label="Audit-backed preview">
-          <div class="visual-top">
-            <span>${japanese ? "診断から作った差し替え案" : "Audit-backed replacement"}</span>
-            <span>${escapeHtml(report.source_coverage.score)}% ${japanese ? "取得カバレッジ" : "coverage"}</span>
-          </div>
-          <div class="visual-body">
-            <div class="proof-line">
-              <div class="issue">
-                <h2>${escapeHtml(issueTitle)}</h2>
-                <p>${escapeHtml(issueBody)}</p>
-              </div>
-              <div class="score">${escapeHtml(metricValue)}</div>
-            </div>
-            <div class="metric-card">
-              <p>${escapeHtml(metricLabel)}</p>
-              <strong>${escapeHtml(report.total_loss)}</strong>
-              <span>${japanese ? "放置した場合に残り続ける機会損失の目安です。" : "Estimated opportunity loss that remains if nothing changes."}</span>
-            </div>
-          </div>
-        </aside>
-      </section>
-
-      <div id="proof" class="metrics">
-        ${metricBlock(metricLabel, metricValue, japanese ? "公開データから見える優先シグナル" : "Priority signal from public data")}
-        ${metricBlock(japanese ? "機会損失" : "Opportunity loss", report.total_loss, japanese ? "改善余地を金額で把握するための目安" : "A directional estimate for decision-making")}
-        ${metricBlock(japanese ? "データ取得" : "Data coverage", `${report.source_coverage.score}%`, japanese ? "取得済みOSS/APIソースのカバレッジ" : "Coverage across OSS and API sources")}
+  <!-- NAV -->
+  <nav class="sticky top-0 z-50 border-b border-white/5 bg-black/60 backdrop-blur-xl">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      ${logo}
+      <div class="hidden sm:flex items-center gap-6 text-sm text-zinc-400">
+        <a href="#features" class="hover:text-white transition-colors">${ja ? "特徴" : "Features"}</a>
+        <a href="#results" class="hover:text-white transition-colors">${ja ? "改善点" : "Results"}</a>
+        <a href="#contact" class="hover:text-white transition-colors">${ja ? "お問い合わせ" : "Contact"}</a>
       </div>
+      <a href="#contact" class="inline-flex items-center gap-2 bg-white text-black px-4 py-2 rounded-lg text-sm font-semibold hover:bg-zinc-200 transition-colors">
+        ${esc(cta)} <svg class="w-4 h-4" viewBox="0 0 24 24">${svgIcon("arrow")}</svg>
+      </a>
+    </div>
+  </nav>
 
-      <section id="plan">
-        <div class="section-head">
-          <h2>${japanese ? "数字を、顧客が動く導線に変える。" : "Turn evidence into a path buyers can follow."}</h2>
-          <p>${japanese ? "スコアを並べるだけではなく、何が機会損失につながり、どの画面をどう直すべきかまで見えるようにします。" : "The point is not to show scores. The point is to make the loss, fix, and next action obvious."}</p>
-        </div>
-        <div class="evidence-grid">
-          ${[primaryAct, secondaryAct, tertiaryAct].map((act, index) => evidenceCard(act, index, locale)).join("")}
-        </div>
-      </section>
+  <!-- HERO -->
+  <section class="relative pt-24 pb-16 px-6">
+    <div class="max-w-4xl mx-auto text-center">
+      <div class="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-xs text-zinc-400 mb-8">
+        <span class="w-2 h-2 rounded-full bg-green-400"></span>
+        ${ja ? `${industry}向け改善デモ` : `${industry} Demo`} · ${esc(locStr)}
+      </div>
+      <h1 class="text-5xl md:text-7xl font-black leading-[1.05] mb-6">
+        <span class="gradient-text">${esc(hook)}</span>
+      </h1>
+      <p class="text-lg md:text-xl text-zinc-500 max-w-2xl mx-auto mb-10 leading-relaxed">
+        ${ja
+          ? "御社の公開データを分析し、集客力を最大化する構成で再設計しました。下記は改善後のイメージです。"
+          : "Redesigned based on your public data to maximize customer acquisition. This is the improved version."}
+      </p>
+      <div class="flex flex-wrap items-center justify-center gap-4">
+        <a href="#features" class="inline-flex items-center gap-2 bg-gradient-to-r from-${primary} to-${primaryDark} text-white px-8 py-4 rounded-xl text-lg font-bold shadow-lg hover:shadow-${primary}/30 transition-all pulse-glow">
+          ${ja ? "改善ポイントを見る" : "View Improvements"} <svg class="w-5 h-5" viewBox="0 0 24 24">${svgIcon("arrow")}</svg>
+        </a>
+        <a href="#contact" class="inline-flex items-center gap-2 bg-white/10 border border-white/10 text-white px-8 py-4 rounded-xl text-lg font-bold hover:bg-white/20 transition-all">
+          ${esc(cta)}
+        </a>
+      </div>
+    </div>
+  </section>
 
-      <section id="difference">
-        <div class="section-head">
-          <h2>${japanese ? "現状サイトと、差し替え後の違い。" : "What changes from the current site."}</h2>
-          <p>${japanese ? "Astroで軽量に構築する前提で、ファーストビュー、信頼材料、問い合わせ導線を営業成果物として確認できます。" : "Built as an Astro-ready direction: lighter first view, stronger proof, and a clearer inquiry path."}</p>
-        </div>
-        <div class="before-after">
-          <div class="pane">
-            <h3>${japanese ? "Before" : "Before"}</h3>
-            <ul>
-              <li>${japanese ? "選ばれる理由が初見で伝わりにくい" : "The reason to choose the business is not obvious enough"}</li>
-              <li>${japanese ? "信頼材料が問い合わせ導線と離れている" : "Trust proof is separated from the inquiry path"}</li>
-              <li>${japanese ? "改善すべき箇所が数字だけでは判断しにくい" : "Raw scores do not explain what to fix first"}</li>
-            </ul>
-          </div>
-          <div class="pane after">
-            <h3>${japanese ? "After" : "After"}</h3>
-            <ul>
-              <li>${japanese ? "最初の5秒で強み、対象、次の行動がわかる" : "Strength, fit, and next action are clear in five seconds"}</li>
-              <li>${japanese ? "実績・レビュー・対応範囲をCTA近くに配置" : "Proof, reviews, and service scope sit near the CTA"}</li>
-              <li>${japanese ? "診断根拠を改善優先度へ変換" : "Audit evidence becomes an implementation priority list"}</li>
-            </ul>
-          </div>
-        </div>
-      </section>
+  <!-- METRICS -->
+  <section id="features" class="py-16 px-6">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center mb-12">
+        <p class="text-sm uppercase tracking-[.3em] text-${primary} font-bold mb-4">${ja ? "診断結果" : "Diagnostic Findings"}</p>
+        <h2 class="text-3xl md:text-4xl font-bold">${ja ? "主要な改善指標" : "Key Improvement Metrics"}</h2>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6">
+        ${metricCards(report.acts)}
+      </div>
+    </div>
+  </section>
 
-      <section id="contact" class="final-cta">
-        <div>
-          <h2>${japanese ? "この方向性で、本番サイトへ進めます。" : "This direction is ready to become the production site."}</h2>
-          <p>${escapeHtml(
-            cleanCopy(
-              report.content_template.quality_bar,
-              japanese
-                ? "1画面目で結論・根拠・次アクションが読める。煽りではなく、客観データと改善余地を中心にする。"
-                : "The first screen must make conclusion, evidence, and next action clear without unsupported claims.",
-              220,
-            ),
-          )}</p>
-        </div>
-        <a class="button button-primary" style="background:#fff;color:var(--ink)" href="mailto:info@paradigmjp.com?subject=${encodeURIComponent(`${company.company_name} demo`)}">${cta}</a>
-      </section>
-    </main>
+  <!-- LOSS IMPACT -->
+  <section class="py-16 px-6 bg-white/[.02] border-y border-white/5">
+    <div class="max-w-3xl mx-auto text-center">
+      <div class="inline-flex items-center gap-2 bg-red-500/10 border border-red-400/20 rounded-full px-4 py-1.5 text-xs text-red-400 font-bold mb-6">
+        ${ja ? "推定機会損失" : "Estimated Opportunity Loss"}
+      </div>
+      <p class="text-6xl md:text-8xl font-black text-red-400 mb-4">${lossStr}</p>
+      <p class="text-lg text-zinc-400 max-w-xl mx-auto">
+        ${ja ? "現状のWebサイトで毎月失われている推定売上です。改善によりこの損失を回収できます。" : "Estimated revenue lost each month with the current website. This can be recovered through improvement."}
+      </p>
+    </div>
+  </section>
 
-    <footer>
-      ${japanese ? "このページは診断データをもとに生成された差し替えデモです。実装時はAstroで高速・軽量に再構築します。" : "This is an audit-backed replacement demo. Production implementation can be rebuilt as a fast Astro site."}
-    </footer>
-  </div>
+  <!-- EVIDENCE -->
+  <section id="results" class="py-16 px-6">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center mb-12">
+        <p class="text-sm uppercase tracking-[.3em] text-${primary} font-bold mb-4">${ja ? "3つの改善施策" : "3 Improvements"}</p>
+        <h2 class="text-3xl md:text-4xl font-bold">${ja ? "具体的な改善内容" : "What We Improve"}</h2>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6">
+        ${evidenceSection(report.acts, loc)}
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="contact" class="py-20 px-6">
+    <div class="max-w-2xl mx-auto text-center">
+      <div class="bg-gradient-to-br from-${primary} to-${primaryDark} rounded-3xl p-12 shadow-2xl">
+        <div class="w-16 h-16 mx-auto mb-6 rounded-2xl bg-white/20 flex items-center justify-center">
+          <svg class="w-8 h-8 text-white" viewBox="0 0 24 24">${svgIcon("star")}</svg>
+        </div>
+        <h2 class="text-3xl md:text-4xl font-black text-white mb-4">${esc(cta)}</h2>
+        <p class="text-white/70 mb-8 max-w-md mx-auto">
+          ${ja
+            ? "デモサイトの続きや、実際の改善プランについて詳しくご説明します。お気軽にご連絡ください。"
+            : "Let's discuss the full demo and your actual improvement plan. Reach out anytime."}
+        </p>
+        <a href="https://cal.com/paradigm-jp/15min" class="inline-flex items-center gap-2 bg-white text-black px-8 py-4 rounded-xl text-lg font-bold hover:bg-zinc-100 transition-all shadow-xl">
+          ${ja ? "15分無料相談を予約" : "Book 15min Free Consult"} <svg class="w-5 h-5" viewBox="0 0 24 24">${svgIcon("arrow")}</svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-white/5 py-10 px-6 text-center text-sm text-zinc-600">
+    <p>${ja ? "© 2026 Paradigm LLC — このデモは診断データに基づいて自動生成されました。" : "© 2026 Paradigm LLC — This demo was auto-generated from diagnostic data."}</p>
+  </footer>
+</div>
 </body>
 </html>`
 }
+
+import { getServiceSalesSupabase } from "@/lib/supabase"
+import { matchContentTemplate } from "./content-templates"
+import { getR2StorageConfig, sanitizeR2ObjectName } from "./r2-storage"
 
 export async function generateReplacementDemo(
   company: SalesCompany,
@@ -478,7 +258,6 @@ export async function generateReplacementDemo(
   })
   const html = buildDemoHtml(company, report, contentTemplate.title)
 
-  // Prefer R2 for HTML storage to avoid Supabase DB bloat
   const r2Config = getR2StorageConfig()
   let demoUrl: string | null = null
   const locale = company.report_locale ?? report.report_locale
@@ -509,10 +288,9 @@ export async function generateReplacementDemo(
     }
   }
 
-  // Fallback: save to Supabase web_demos (lightweight metadata only)
   const meta: Record<string, unknown> = {
     generator: "astro_replacement_demo",
-    renderer_version: "professional-v3-independent-site",
+    renderer_version: "professional-v4-tailwind-glassmorphism",
     content_template: {
       title: contentTemplate.title,
       quality_bar: contentTemplate.quality_bar,
@@ -528,8 +306,8 @@ export async function generateReplacementDemo(
       company_id: company.id,
       slug,
       name: `${company.company_name} Demo`,
-      html_content: demoUrl ? "(R2)" : html,  // Store URL reference or full HTML as fallback
-      html: demoUrl ? "(R2)" : html,
+      html_content: demoUrl ?? html,
+      html: demoUrl ?? html,
       source: "sales_enrichment",
       is_published: true,
       meta,
@@ -541,5 +319,5 @@ export async function generateReplacementDemo(
     if (!demoUrl) return { ok: false, demoUrl: null, error: error.message }
   }
 
-  return { ok: true, demoUrl: demoUrl ?? `https://paradigmjp.com/${locale}/d/${slug}` }
+  return { ok: true, demoUrl: demoUrl ?? null }
 }
