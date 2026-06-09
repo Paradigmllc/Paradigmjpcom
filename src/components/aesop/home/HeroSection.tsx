@@ -126,6 +126,15 @@ export default function HeroSection() {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
+          transition={{ delay: 0.35, duration: 0.6 }}
+          className="text-[12px] md:text-[13px] text-paradigm-paper/50 max-w-lg mx-auto mb-6 leading-[1.7]"
+        >
+          {t("heroBrandStory")}
+        </motion.p>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ delay: 0.5, duration: 0.6 }}
           className="text-[14px] md:text-[16px] text-paradigm-paper/80 max-w-xl mx-auto mb-10 leading-[1.8]"
         >
