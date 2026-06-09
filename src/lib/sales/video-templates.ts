@@ -14,6 +14,7 @@ function tv(v: string): Theme {
   if (v === "video_subscription") return { bg: "#050210", orb1: "#4c1d95", orb2: "#2e1065", accent: "#8b5cf6", text: "#faf5ff", muted: "rgba(250,245,255,0.55)", signal: "#a78bfa", warn: "#fbbf24" }
   if (v === "subsidy") return { bg: "#021010", orb1: "#115e59", orb2: "#134e4a", accent: "#14b8a6", text: "#f0fdfa", muted: "rgba(240,253,250,0.55)", signal: "#2dd4bf", warn: "#fbbf24" }
   if (v === "outreach") return { bg: "#0a0402", orb1: "#7c2d12", orb2: "#431407", accent: "#f97316", text: "#fff7ed", muted: "rgba(255,247,237,0.55)", signal: "#fb923c", warn: "#fbbf24" }
+  if (v === "dx_ai_package") return { bg: "#020810", orb1: "#1e3a6e", orb2: "#0c1a3d", accent: "#06b6d4", text: "#ecfeff", muted: "rgba(236,254,255,0.55)", signal: "#22d3ee", warn: "#fbbf24" }
   return { bg: "#030308", orb1: "#3b1f8c", orb2: "#1e1040", accent: "#8b5cf6", text: "#ffffff", muted: "rgba(255,255,255,0.55)", signal: "#a78bfa", warn: "#fbbf24" }
 }
 

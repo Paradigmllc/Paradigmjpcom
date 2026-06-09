@@ -5,6 +5,12 @@ import { fetchDiagnosticReport, type DiagnosticReportData } from "./diagnostic"
 import { escapeHtml, themeForIndustry } from "./render-quality"
 import { normalizeReportLocale } from "./routing"
 import { localeToRegion } from "./types"
+import { getR2StorageConfig, sanitizeR2ObjectName } from "./r2-storage"
+import { execSync } from "node:child_process"
+import fs from "node:fs"
+import os from "node:os"
+import path from "node:path"
+import crypto from "node:crypto"
 
 const CORRUPT_TEXT = /縺|繝|譁|蜑|荳|譛|谿|險|螟|豕|邨|髻|蠕|蝠|逕|莠|陦|蛻|諡|蜷|繧|�/
 
@@ -172,6 +178,79 @@ function getBaseUrl(): string {
   return value ? value.replace(/\/+$/, "") : "https://paradigmjp.com"
 }
 
+async function renderLocallyAndUpload(
+  html: string,
+  company: { id: string; slug?: string | null },
+  locale: string,
+): Promise<{ ok: boolean; video_url?: string; error?: string }> {
+  const r2 = getR2StorageConfig()
+  const tmpDir = path.join(os.tmpdir(), `hf-render-${crypto.randomUUID().slice(0, 8)}`)
+  
+  try {
+    fs.mkdirSync(tmpDir, { recursive: true })
+    fs.mkdirSync(path.join(tmpDir, "renders"), { recursive: true })
+
+    // Write composition files
+    fs.writeFileSync(path.join(tmpDir, "index.html"), html, "utf-8")
+    fs.writeFileSync(path.join(tmpDir, "hyperframes.json"), JSON.stringify({
+      render: { defaults: { fps: 30, quality: "draft", format: "mp4" } }
+    }))
+
+    // Render MP4
+    const outName = `diagnostic-${company.id.slice(0, 8)}-${Date.now()}`
+    execSync(`npx hyperframes render --quality draft --output "renders/${outName}.mp4"`, {
+      cwd: tmpDir, stdio: "pipe", timeout: 300_000,
+    })
+
+    const renderDir = path.join(tmpDir, "renders")
+    const files = fs.readdirSync(renderDir).filter(f => f.endsWith(".mp4"))
+    if (!files.length) return { ok: false, error: "No MP4 produced by hyperframes render" }
+
+    const mp4Path = path.join(renderDir, files[0])
+    const mp4Buf = fs.readFileSync(mp4Path)
+
+    // Upload to R2
+    if (r2.ready && r2.bucket) {
+      const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3")
+      const accountId = process.env.CLOUDFLARE_R2_ACCOUNT_ID || process.env.R2_ACCOUNT_ID
+      const accessKey = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID || process.env.R2_ACCESS_KEY_ID
+      const secretKey = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || process.env.R2_SECRET_ACCESS_KEY
+      if (accountId && accessKey && secretKey) {
+        const s3 = new S3Client({
+          region: "auto",
+          endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+          credentials: { accessKeyId: accessKey, secretAccessKey: secretKey },
+        })
+        const key = sanitizeR2ObjectName(`videos/${company.slug || company.id.slice(0, 8)}/${locale}/${files[0]}`)
+        await s3.send(new PutObjectCommand({
+          Bucket: r2.bucket, Key: key, Body: mp4Buf, ContentType: "video/mp4",
+        }))
+        const publicUrl = r2.publicBaseUrl
+          ? `${r2.publicBaseUrl.replace(/\/+$/, "")}/${key}`
+          : null
+        return { ok: true, video_url: publicUrl ?? undefined }
+      }
+    }
+    return { ok: false, error: "R2 not configured" }
+  } catch (error) {
+    console.error("[video-generator] local render failed:", error)
+    return { ok: false, error: error instanceof Error ? error.message : String(error) }
+  } finally {
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }) } catch {}
+  }
+}
+
+async function saveVideoUrlToDb(companyId: string, videoUrl: string, _script: unknown) {
+  try {
+    const { getServiceSalesSupabase } = await import("./companies")
+    const sb = getServiceSalesSupabase()
+    if (!sb) return
+    await sb.from("sales_companies").update({ meta: { video_url: videoUrl, video_generated_at: new Date().toISOString() } }).eq("id", companyId)
+  } catch (error) {
+    console.error("[video-generator] failed to save video_url to DB:", error)
+  }
+}
+
 export interface VideoGenerationResult {
   ok: boolean
   video_url?: string
@@ -236,61 +315,43 @@ export async function generateDiagnosticVideo(
     duration_sec: 60,
   }
 
-  if (!api) {
-    return {
-      ok: !!previewUrl,
-      video_url: previewUrl ?? undefined,
-      ...baseResult,
-      ...(previewUrl ? {} : { error: "company.slug not set; preview URL unavailable" }),
-    }
-  }
-  if (!apiKey) {
-    console.error("[video-generator] HYPERFRAMES_API_URL is configured but HYPERFRAMES_API_KEY is missing")
-    return {
-      ok: !!previewUrl,
-      video_url: previewUrl ?? undefined,
-      ...baseResult,
-      error: "HYPERFRAMES_API_KEY is not configured; HTML preview returned",
+  // Try HyperFrames API first
+  if (api && apiKey) {
+    try {
+      const res = await fetch(`${api}/render`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ html, format: "mp4", width: 1920, height: 1080, fps: 30, duration_sec: 60 }),
+        signal: AbortSignal.timeout(180_000),
+      })
+      if (res.ok) {
+        const result = (await res.json()) as { video_url?: string; ok?: boolean }
+        const mp4Url = result.video_url
+        if (mp4Url) {
+          // Save to DB
+          await saveVideoUrlToDb(company.id, mp4Url, script)
+          return { ok: true, video_url: mp4Url, duration_sec: 60, ...baseResult }
+        }
+      }
+      console.warn("[video-generator] HF API returned non-ok, falling back to local render")
+    } catch (error) {
+      console.warn("[video-generator] HF API failed, falling back to local render:", error)
     }
   }
 
-  try {
-    const res = await fetch(`${api}/render`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ html, format: "mp4", width: 1920, height: 1080, fps: 30, duration_sec: 60 }),
-      signal: AbortSignal.timeout(180_000),
-    })
-    if (!res.ok) {
-      const text = await res.text().catch((error) => {
-        console.error("[video-generator] failed to read HyperFrames error body:", error)
-        return ""
-      })
-      return {
-        ok: !!previewUrl,
-        video_url: previewUrl ?? undefined,
-        ...baseResult,
-        error: `HyperFrames API ${res.status}: ${(text || res.statusText).slice(0, 240)}; HTML preview returned`,
-      }
-    }
-    const result = (await res.json()) as { video_url?: string }
-    return { ok: true, video_url: result.video_url ?? previewUrl ?? undefined, ...baseResult }
-  } catch (error) {
-    console.error("[video-generator] HyperFrames render failed:", error)
-    const { captureException } = await import("@/lib/error-monitor")
-    await captureException(error, {
-      source: "video-generator/hyperframes-render-failed",
-      context: { companyIdOrSlugOrDomain, reportLocale, api },
-    })
-    return {
-      ok: !!previewUrl,
-      video_url: previewUrl ?? undefined,
-      ...baseResult,
-      error: error instanceof Error ? error.message : String(error),
-    }
+  // Fallback: local render via hyperframes CLI + R2 upload
+  const localResult = await renderLocallyAndUpload(html, company, data.report_locale)
+  if (localResult.ok && localResult.video_url) {
+    await saveVideoUrlToDb(company.id, localResult.video_url, script)
+    return { ok: true, video_url: localResult.video_url, duration_sec: 60, ...baseResult }
+  }
+
+  // Final fallback: HTML preview only
+  return {
+    ok: !!previewUrl,
+    video_url: previewUrl ?? undefined,
+    ...baseResult,
+    error: localResult.error ?? "Video render unavailable; HTML preview returned",
   }
 }
 

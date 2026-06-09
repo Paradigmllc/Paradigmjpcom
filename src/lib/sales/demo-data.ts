@@ -157,6 +157,21 @@ const VARIANT_DEMO_DATA: Record<string, VariantDemoData> = {
     totalLoss: { ja: "¥11,400,000", en: "$78,000" },
     cta: { ja: "まずは無料で御社の問い合わせフォームを分析します。15分で自動化の具体的な改善案と費用対効果をお伝えします。", en: "We'll analyze your contact form for free. In 15 minutes, you'll get specific automation proposals with ROI calculations." },
   },
+  dx_ai_package: {
+    companyName: { ja: "株式会社テックイノベート", en: "TechInnovate Inc." },
+    industry: "consulting",
+    hook: {
+      ja: "御社の見積・請求・在庫管理はExcelと口頭で運用され、毎月120時間の工数ロスが発生しています。弊社のDX＋AI導入パッケージで受発注フローを自動化した同業のデジタルフォース社は、月間工数を78%削減し、年間2,400万円のコスト削減を達成しました。御社の現状維持は年間3,600万円の機会損失です。",
+      en: "Your quoting, invoicing, and inventory management run on Excel and verbal handoffs, wasting 120 hours/month. Competitor DigitalForce automated their order-to-cash flow with our DX+AI package, achieving 78% labor reduction and $160K/year savings. Your status quo is costing $240K/year.",
+    },
+    acts: [
+      { type: "pain", icon: "OPS", headline: { ja: "属人的な業務フローが成長の足枷に", en: "Manual workflows blocking growth" }, body: { ja: "見積作成に平均45分、請求書発行に30分、在庫確認に15分。月間120時間が非効率な手作業に消えています。この工数は年商5億円規模の同業平均（40時間/月）の3倍。DX化だけで年間2名分の採用コスト相当を削減可能です。", en: "45min per quote, 30min per invoice, 15min per stock check. 120 hours/month lost to manual work — 3x the industry average of 40hrs. DX alone could save the equivalent of 2 headcounts annually." }, metric_label: { ja: "月間無駄工数", en: "Monthly waste" }, metric_value: "120時間", metric_unit: "", metric_bench: { ja: "同業平均: 40時間/月", en: "Industry avg: 40 hrs/mo" }, severity: "critical" },
+      { type: "fear", icon: "DATA", headline: { ja: "AI導入に出遅れると競争力を失う", en: "Falling behind on AI means losing competitive edge" }, body: { ja: "2026年の中小企業白書によると、AI導入企業の営業利益率は非導入企業の2.4倍。同業3社がすでにRPAとAI-OCRを導入し、見積回答速度を3倍に改善。御社がこのままExcel依存を続ければ、3年以内に入札・見積競争から淘汰されるリスクがあります。", en: "2026 SME whitepaper: AI-adopting companies have 2.4x higher operating margins. 3 competitors already deployed RPA+AI-OCR, tripling quote turnaround. Staying on Excel risks being outcompeted in bids within 3 years." }, metric_label: { ja: "AI導入率", en: "AI adoption" }, metric_value: "0%", metric_unit: "", metric_bench: { ja: "3年以内に必須化", en: "Essential within 3 years" }, severity: "warning" },
+      { type: "hope", icon: "REACH", headline: { ja: "月額20万円〜 自動化＋AI導入で年間2,400万円削減", en: "From $1,300/month — automation + AI saves $160K/year" }, body: { ja: "弊社のDX＋AIパッケージでは、受発注自動化・AI-OCR帳票処理・在庫ダッシュボード・AIチャットボット問い合わせ対応を一括導入。デジタルフォース社は導入60日で月間工数が120→26時間に激減し、社員をコア業務に再配置。御社も同様の成果が十分可能です。", en: "Our DX+AI package delivers order automation, AI-OCR document processing, inventory dashboard, and AI chatbot support. DigitalForce went from 120→26 hrs/month in 60 days, redeploying staff to core work. Same results are entirely achievable." }, metric_label: { ja: "月額費用", en: "Monthly cost" }, metric_value: "¥200,000〜", metric_unit: "", metric_bench: { ja: "内製開発の1/5以下", en: "1/5th of in-house dev cost" }, severity: "info" },
+    ],
+    totalLoss: { ja: "¥3,600,000", en: "$240,000" },
+    cta: { ja: "まずは無料で御社の業務フローを可視化し、自動化できる領域を特定します。15分のヒアリングで、最初の3つの改善施策と費用対効果をお伝えします。", en: "We'll map your workflows for free and identify automation opportunities. In a 15-minute call, you'll get the first 3 improvements with ROI estimates." },
+  },
 }
 
 function localeStr(value: string | { ja: string; en: string }, lang: string): string {
