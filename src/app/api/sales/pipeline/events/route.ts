@@ -52,8 +52,8 @@ export async function GET(req: NextRequest) {
             send({ type: "update", runs: changed, at: new Date().toISOString() })
           }
           lastIds = freshIds
-        } catch {
-          // poll failure is non-fatal
+        } catch (e) {
+          console.warn("[pipeline-events] poll failed:", e)
         }
       }, 15_000)
 

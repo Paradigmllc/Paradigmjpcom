@@ -22,7 +22,7 @@ export const makeAfterChangeAudit = (collection: string): CollectionAfterChangeH
 }) => {
   try {
     await req.payload.create({
-      collection: "audit-logs" as any,
+      collection: "audit-logs",
       data: {
         collection,
         action: operation === "create" ? "create" : "update",
@@ -32,7 +32,7 @@ export const makeAfterChangeAudit = (collection: string): CollectionAfterChangeH
         diff: safeDiff(doc, previousDoc),
       },
       req,
-    } as any)
+    } as Parameters<typeof req.payload.create>[0])
   } catch (e) {
     req.payload.logger.warn(`[auditLog] afterChange failed for ${collection}: ${(e as Error).message}`)
   }
@@ -46,7 +46,7 @@ export const makeAfterDeleteAudit = (collection: string): CollectionAfterDeleteH
 }) => {
   try {
     await req.payload.create({
-      collection: "audit-logs" as any,
+      collection: "audit-logs",
       data: {
         collection,
         action: "delete",
@@ -56,7 +56,7 @@ export const makeAfterDeleteAudit = (collection: string): CollectionAfterDeleteH
         diff: safeDiff(null, doc),
       },
       req,
-    } as any)
+    } as Parameters<typeof req.payload.create>[0])
   } catch (e) {
     req.payload.logger.warn(`[auditLog] afterDelete failed for ${collection}: ${(e as Error).message}`)
   }

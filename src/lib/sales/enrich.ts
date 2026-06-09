@@ -54,6 +54,10 @@ import { autoPersonalize } from "./personalize"
 import { saveTechStackDetections } from "./source-acquisition"
 import type { Industry, SalesCompany } from "./types"
 
+interface SpiderFootItem { ok?: boolean; source?: string; data?: unknown }
+interface KatanaData { crawled?: number; urls?: string[] }
+interface MaigretData { profiles_found?: number; sites?: Array<Record<string, unknown>> }
+
 /** 自由メールドメインのブラックリスト (corporate でないので skip) */
 const PERSONAL_DOMAINS = new Set([
   "gmail.com",
@@ -431,9 +435,9 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     ahrefs: ahrefs?.ok
       ? { dr: ahrefs.domainRating, backlinks: ahrefs.backlinks, ref_domains: ahrefs.referringDomains, traffic: ahrefs.trafficEstimate }
       : null,
-    spiderfoot: Array.isArray(spiderfoot) ? spiderfoot.filter((r: any) => r?.ok).map((r: any) => ({ source: r.source, data: r.data })) : null,
-    katana: katana?.ok ? { crawled: (katana.data as any)?.crawled, urls: (katana.data as any)?.urls?.slice(0, 20) } : null,
-    maigret: maigret?.ok ? { profiles_found: (maigret.data as any)?.profiles_found, sites: (maigret.data as any)?.sites?.slice(0, 10) } : null,
+    spiderfoot: Array.isArray(spiderfoot) ? (spiderfoot as SpiderFootItem[]).filter((r) => r?.ok).map((r) => ({ source: r.source, data: r.data })) : null,
+    katana: katana?.ok ? { crawled: (katana.data as KatanaData)?.crawled, urls: (katana.data as KatanaData)?.urls?.slice(0, 20) } : null,
+    maigret: maigret?.ok ? { profiles_found: (maigret.data as MaigretData)?.profiles_found, sites: (maigret.data as MaigretData)?.sites?.slice(0, 10) } : null,
     searxng_traffic: searxng?.ok ? searxng.data : null,
     market_data: industry ? (INDUSTRY_MARKET_DATA[industry as keyof typeof INDUSTRY_MARKET_DATA] ?? null) : null,
     // SMB signals: computed after parallel fetch using Wappalyzer + DNS data

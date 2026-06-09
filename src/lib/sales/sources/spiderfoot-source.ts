@@ -38,7 +38,7 @@ function runSpiderFootScan(target: string, modules: string[]): SfResult {
     const lines = output.trim().split("\n").filter(Boolean)
     const data: unknown[] = []
     for (const line of lines) {
-      try { data.push(JSON.parse(line)) } catch { /* skip non-JSON */ }
+      try { data.push(JSON.parse(line)) } catch (e) { console.warn("[spiderfoot] per-line JSON parse failed:", e) }
     }
 
     return { source: "spiderfoot", ok: data.length > 0, data: { results: data, count: data.length } }

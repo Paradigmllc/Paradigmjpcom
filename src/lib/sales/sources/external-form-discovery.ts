@@ -156,7 +156,8 @@ async function readJsonOrText(res: Response): Promise<unknown> {
   if (!text) return null
   try {
     return JSON.parse(text)
-  } catch {
+  } catch (e) {
+    console.warn("[external-form-discovery] JSON parse failed, falling back to text:", e)
     return text
   }
 }

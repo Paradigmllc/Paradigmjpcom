@@ -19,11 +19,12 @@ function runMaigret(username: string, timeoutMs = 45_000): MgResult {
       const sites = Array.isArray(data) ? data : (data?.sites || [])
       const found = sites.filter((s: any) => s?.status?.exists).length
       return { source: "maigret", ok: true, data: { profiles_found: found, total_sites: sites.length, sites: sites.slice(0, 30) } }
-    } catch {
+    } catch (e) {
+      console.error("[maigret] JSON parse failed:", e)
       // Try line-by-line JSON
       const lines = output.trim().split("\n").filter(Boolean)
       const profiles: unknown[] = []
-      for (const line of lines) { try { profiles.push(JSON.parse(line)) } catch { /* skip */ } }
+      for (const line of lines) { try { profiles.push(JSON.parse(line)) } catch (e) { console.warn("[maigret] per-line JSON parse failed:", e) } }
       return { source: "maigret", ok: profiles.length > 0, data: { profiles_found: profiles.length, profiles } }
     }
   } catch (e: any) {

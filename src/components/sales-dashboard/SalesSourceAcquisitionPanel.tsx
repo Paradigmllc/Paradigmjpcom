@@ -9,6 +9,7 @@ import type {
 } from "@/lib/sales/source-acquisition"
 
 type SortKey = "companyCount" | "detections" | "averageConfidence" | "technologyName"
+type SourceSortBy = "total_runs" | "success_rate" | "collected" | "missing" | "name_asc"
 
 // 日本語のカテゴリーマッピング
 const SOURCE_CATEGORY_MAP: Record<string, string> = {
@@ -181,7 +182,7 @@ export function SalesSourceAcquisitionPanel({ summary }: { summary: SourceAcquis
   const [sourceSearchTerm, setSourceSearchTerm] = useState("")
   const [sourceCategoryFilter, setSourceCategoryFilter] = useState("all")
   const [sourceStatusFilter, setSourceStatusFilter] = useState("all")
-  const [sourceSortBy, setSourceSortBy] = useState<"total_runs" | "success_rate" | "collected" | "missing" | "name_asc">("total_runs")
+  const [sourceSortBy, setSourceSortBy] = useState<SourceSortBy>("total_runs")
 
   const technologies = useMemo(
     () => summary.topTechnologies.map((item) => item.technologyName).sort((a, b) => a.localeCompare(b)),
@@ -380,7 +381,7 @@ export function SalesSourceAcquisitionPanel({ summary }: { summary: SourceAcquis
               <span className="text-xs font-semibold text-zinc-500 shrink-0">ソート:</span>
               <select
                 value={sourceSortBy}
-                onChange={(e) => setSourceSortBy(e.target.value as any)}
+                onChange={(e) => setSourceSortBy(e.target.value as SourceSortBy)}
                 className="rounded border border-zinc-200 bg-white px-2 py-1.5 text-xs outline-none focus:border-zinc-500"
               >
                 <option value="total_runs">ログ数順 (多)</option>

@@ -34,8 +34,8 @@ export async function queryCommonCrawl(domain: string): Promise<CommonCrawlResul
       try {
         const last = JSON.parse(lines[lines.length - 1])
         lastCrawled = last.timestamp || null
-      } catch {
-        // ignore parse errors
+      } catch (e) {
+        console.error("[commoncrawl] last line parse failed:", e)
       }
     }
 

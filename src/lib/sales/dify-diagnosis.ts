@@ -57,7 +57,8 @@ function parseJsonObject(value: unknown): JsonRecord | null {
   if (!stripped) return null
   try {
     return asRecord(JSON.parse(stripped))
-  } catch {
+  } catch (e) {
+    console.warn("[dify-diagnosis] JSON parse failed:", e)
     return null
   }
 }

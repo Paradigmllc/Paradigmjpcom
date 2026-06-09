@@ -33,6 +33,7 @@ export async function addChatwootPrivateNote(
     }
     return { ok: true }
   } catch (e) {
+    console.error("[chatwoot-client] failed to add private note:", e)
     return { ok: false, error: e instanceof Error ? e.message : String(e) }
   }
 }

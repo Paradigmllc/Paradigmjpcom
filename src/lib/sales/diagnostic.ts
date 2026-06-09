@@ -65,6 +65,16 @@ export interface DiagnosticReportData {
   video_url?: string | null
 }
 
+type CompanyMeta = {
+  ssl?: { grade?: string; daysUntilExpiry?: number }
+  mozilla_observatory?: { score?: number }
+  tech?: { stack?: string[] }
+  crtsh?: { total_certs?: number }
+  dns?: { dmarc?: string }
+  wayback_machine?: { years_active?: number }
+  [key: string]: unknown
+}
+
 export const INDUSTRY_HOOK_JA: Record<Industry, string> = {
   beauty_salon: "検索から予約までの間に小さな迷いが残ると、来店意欲の高い顧客ほど競合へ流れます。まずは予約導線と信頼材料の回収余地を見ます。",
   dental: "地域検索では比較時間が短く、信頼材料と予約導線の弱さが新患獲得に直結します。最初に不安を減らす設計が必要です。",
@@ -226,8 +236,8 @@ function safeValue(value: unknown, fallback: string): string {
 function buildHook(company: SalesCompany, industry: Industry | null, locale: ReportLocale): string {
   const isJp = isJa(locale)
   const speed = company.pagespeed_mobile
-  const sslGrade = ((company.meta as any)?.ssl?.grade as string) ?? null
-  const obsScore = ((company.meta as any)?.mozilla_observatory?.score as number) ?? null
+  const sslGrade = (company.meta as CompanyMeta)?.ssl?.grade ?? null
+  const obsScore = (company.meta as CompanyMeta)?.mozilla_observatory?.score ?? null
 
   // Data-driven hook: incorporate actual metrics if available
   const dataPoints: string[] = []
@@ -269,13 +279,14 @@ function issueIcon(issueCode: IssueCode): string {
 function issueFallbackBody(company: SalesCompany, issueCode: IssueCode, locale: ReportLocale): string {
   const isJp = isJa(locale)
   const speed = company.pagespeed_mobile ?? "未測定"
-  const sslGrade = ((company.meta as any)?.ssl?.grade as string) ?? "未測定"
-  const sslDays = ((company.meta as any)?.ssl?.daysUntilExpiry as number) ?? null
-  const techStack = Array.isArray(((company.meta as any)?.tech?.stack)) ? ((company.meta as any)?.tech?.stack as string[]).slice(0, 3).join("、") : "不明"
-  const obsScore = ((company.meta as any)?.mozilla_observatory?.score as number) ?? null
-  const crtshCerts = ((company.meta as any)?.crtsh?.total_certs as number) ?? 0
-  const dnsDmarc = ((company.meta as any)?.dns?.dmarc) ? "設定済み" : "未設定"
-  const waybackYears = ((company.meta as any)?.wayback_machine?.years_active as number) ?? null
+  const sslGrade = (company.meta as CompanyMeta)?.ssl?.grade ?? "未測定"
+  const sslDays = (company.meta as CompanyMeta)?.ssl?.daysUntilExpiry ?? null
+  const techStackData = (company.meta as CompanyMeta)?.tech?.stack
+  const techStack = Array.isArray(techStackData) ? techStackData.slice(0, 3).join("、") : "不明"
+  const obsScore = (company.meta as CompanyMeta)?.mozilla_observatory?.score ?? null
+  const crtshCerts = (company.meta as CompanyMeta)?.crtsh?.total_certs ?? 0
+  const dnsDmarc = (company.meta as CompanyMeta)?.dns?.dmarc ? "設定済み" : "未設定"
+  const waybackYears = (company.meta as CompanyMeta)?.wayback_machine?.years_active ?? null
 
   if (issueCode === "speed_critical") {
     return isJp

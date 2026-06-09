@@ -39,8 +39,8 @@ export async function POST(req: NextRequest) {
             body: JSON.stringify({ payload: { run_id: run.id, company_id: run.company_id, source: "recovery" }, context: { source: "pipeline-recovery" } }),
           })
           dispatched++
-        } catch {
-          // dispatch failure is non-fatal
+        } catch (e) {
+          console.warn("[pipeline-recover] dispatch failed:", e)
         }
       }
     }

@@ -95,7 +95,8 @@ async function checkGoogleIndex(domain: string): Promise<number | null> {
     // Fallback: count result links
     const linkCount = (html.match(/<a[^>]*href="\/url\?q=/g) || []).length
     return linkCount > 0 ? linkCount : null
-  } catch {
+  } catch (e) {
+    console.error("[smb-signals] Google index check failed:", e)
     return null
   }
 }
@@ -124,8 +125,8 @@ async function checkSocialPresence(domain: string): Promise<SmbSignalsResult["so
     // Facebook presence
     const fbMatch = html.match(/facebook\.com\/([^/"\s]+)/i)
     if (fbMatch && !fbMatch[1].startsWith("share")) result.facebook = 1
-  } catch {
-    // ignore
+  } catch (e) {
+    console.error("[smb-signals] social presence check failed:", e)
   }
   
   return result

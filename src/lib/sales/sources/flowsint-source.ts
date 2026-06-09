@@ -5,7 +5,7 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 
 const FLOWSINT_BASE = process.env.FLOWSINT_API_URL || "http://127.0.0.1:5001"
-const FLOWSINT_TOKEN = process.env.FLOWSINT_API_TOKEN || ""
+const FLOWSINT_TOKEN = process.env.FLOWSINT_API_TOKEN
 
 interface FlowsintEnrichResult {
   source: string
@@ -16,7 +16,11 @@ interface FlowsintEnrichResult {
 
 async function flowsintRequest(path: string, method: string, body?: unknown): Promise<{ status: number; data: unknown }> {
   const headers: Record<string, string> = { "Content-Type": "application/json" }
-  if (FLOWSINT_TOKEN) headers["Authorization"] = `Bearer ${FLOWSINT_TOKEN}`
+  if (FLOWSINT_TOKEN) {
+    headers["Authorization"] = `Bearer ${FLOWSINT_TOKEN}`
+  } else {
+    console.warn("[flowsint-source] FLOWSINT_API_TOKEN is not set, authentication headers will be omitted")
+  }
   
   const res = await fetch(`${FLOWSINT_BASE}${path}`, {
     method,
@@ -26,7 +30,7 @@ async function flowsintRequest(path: string, method: string, body?: unknown): Pr
   })
   const text = await res.text()
   let data: unknown
-  try { data = JSON.parse(text) } catch { data = { raw: text } }
+  try { data = JSON.parse(text) } catch (e) { console.error("[flowsint] JSON parse failed:", e); data = { raw: text } }
   return { status: res.status, data }
 }
 
@@ -86,6 +90,7 @@ export async function enrichDomainWithFlowsint(domain: string): Promise<Flowsint
           const data = await runEnricher(nodeId, name)
           return { source: `flowsint_${key}`, ok: !!data, data: data ?? undefined, error: data ? undefined : `enricher ${name} returned no data` }
         } catch (e) {
+          console.error(`[flowsint] enricher ${name} failed:`, e)
           return { source: `flowsint_${key}`, ok: false, error: String(e) }
         }
       })

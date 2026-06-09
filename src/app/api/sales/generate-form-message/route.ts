@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
     const result = await generateFormMessage(body.company_id)
     return NextResponse.json(result, { status: result.ok ? 200 : 500 })
   } catch (e) {
+    console.error("[generate-form-message] failed:", e)
     return NextResponse.json(
       { ok: false, error: e instanceof Error ? e.message : String(e) },
       { status: 500 },

@@ -1,6 +1,8 @@
 import type { DiagnosticReportData } from "@/lib/sales/diagnostic"
 import type { SourceCoverageSnapshot } from "@/lib/sales/source-coverage"
 import type { CompanyIntelligence } from "@/lib/sales/company-intelligence"
+import type { ReportLocale, TemplateVariant } from "@/lib/sales/routing"
+import type { Industry } from "@/lib/sales/types"
 
 interface VariantDemoData {
   companyName: { ja: string; en: string }
@@ -243,10 +245,10 @@ export function buildDemoData(variant: string, lang: string): DiagnosticReportDa
 
   return {
     company_name: companyName,
-    report_locale: lang as any,
+    report_locale: lang as ReportLocale,
     target_country: "JP",
-    template_variant: variant as any,
-    industry: data.industry as any,
+    template_variant: variant as TemplateVariant,
+    industry: data.industry as Industry,
     prefecture: isJa ? "東京都渋谷区" : "Shibuya, Tokyo",
     expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
     hook: localeStr(data.hook, lang),

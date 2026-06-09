@@ -114,6 +114,10 @@ const DEFAULT_CATEGORIES = ["general"]
 const SEARCH_TIMEOUT_MS = 18_000
 const USER_AGENT = "Paradigm Sales OS SearxNG/1.0 (+https://paradigmjp.com)"
 
+interface FetchOptions extends RequestInit {
+  dispatcher?: unknown
+}
+
 function getSb(): ServiceSupabase | null {
   return getServiceSalesSupabase()
 }
@@ -142,7 +146,7 @@ async function fetchSearxngPage(url: string): Promise<JsonRecord> {
     },
     signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS),
     ...(dispatcher ? { dispatcher } : {}),
-  } as any)
+  } as FetchOptions)
   const textBody = await res.text()
   if (!res.ok) throw new Error(`SearxNG HTTP ${res.status}: ${textBody.slice(0, 180)}`)
   try {

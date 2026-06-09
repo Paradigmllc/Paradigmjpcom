@@ -48,6 +48,43 @@ function cleanText(value: string | null | undefined, fallback: string, max = 150
 
 export function fallbackScript(data: DiagnosticReportData): NarrationScript {
   const isJa = data.report_locale === "ja"
+  const safeCompanyName = cleanText(data.company_name, isJa ? "対象企業" : "the target company", 60)
+  if (isJa) {
+    return {
+      hook: cleanText(
+        data.hook,
+        `${safeCompanyName}の公開データから、改善優先度と機会損失の仮説を60秒で整理します。`,
+      ),
+      pain: cleanText(
+        data.acts[0]?.body,
+        "検索、SNS、フォーム、表示速度などの公開シグナルから、比較検討中の顧客が迷いやすい箇所を特定しました。",
+      ),
+      fear: cleanText(
+        data.acts[1]?.body,
+        "このまま放置すると、小さな摩擦が毎月の機会損失として見えないまま積み上がります。",
+      ),
+      hope: `推定機会損失 ${data.total_loss} の一部は、信頼材料と問い合わせ導線を整えることで回収できる可能性があります。`,
+      cta: `${safeCompanyName}向けの診断レポートと改善デモを見ながら、次に直すべき優先順位を確認しましょう。`,
+    }
+  }
+
+  return {
+    hook: cleanText(
+      data.hook,
+      `This brief turns public data for ${safeCompanyName} into a practical opportunity-loss view.`,
+    ),
+    pain: cleanText(
+      data.acts[0]?.body,
+      "Search, social, form, and stack signals show where comparison-stage buyers may hesitate.",
+    ),
+    fear: cleanText(
+      data.acts[1]?.body,
+      "If this remains unchanged, the opportunity loss keeps compounding quietly.",
+    ),
+    hope: `Part of the estimated ${data.total_loss} opportunity loss may be recoverable through clearer proof and a shorter CTA path.`,
+    cta: "Review the diagnostic report and replacement demo to decide the next priorities in a short call.",
+  }
+
   return {
     hook: cleanText(
       data.hook,

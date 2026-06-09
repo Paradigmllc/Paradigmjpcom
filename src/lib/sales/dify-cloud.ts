@@ -63,7 +63,8 @@ function optionalEnv(name: string): string | null {
 function isDifyCloudUrl(value: string): boolean {
   try {
     return new URL(value).hostname === "api.dify.ai"
-  } catch {
+  } catch (e) {
+    console.warn("[dify-cloud] URL parse failed:", e)
     return false
   }
 }
@@ -82,7 +83,8 @@ export function normalizeDifyCloudApiUrl(value?: string | null): string {
   try {
     const url = new URL(trimmed)
     if (/\/v1\/workflows\/run\/?$/i.test(url.pathname)) return url.toString().replace(/\/+$/, "")
-  } catch {
+  } catch (e) {
+    console.warn("[dify-cloud] URL parse failed:", e)
     return `${DIFY_CLOUD_BASE_URL}/v1/workflows/run`
   }
   return `${DIFY_CLOUD_BASE_URL}/v1/workflows/run`

@@ -22,7 +22,7 @@ function runKatana(url: string, timeoutMs = 30_000): KrResult {
         const obj = JSON.parse(line)
         if (obj?.request?.endpoint) urls.push(obj.request.endpoint)
         if (obj?.response?.raw) jsFiles.push(obj.response.raw.slice(0, 200))
-      } catch { urls.push(line) }
+      } catch (e) { console.warn("[katana] per-line JSON parse failed:", e); urls.push(line) }
     }
     return { source: "katana", ok: lines.length > 0, data: { crawled: urls.length, urls: urls.slice(0, 50), jsFiles: jsFiles.slice(0, 10) } }
   } catch (e: any) {

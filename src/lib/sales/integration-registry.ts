@@ -26,6 +26,10 @@ import {
   checkSupabaseStudioHealth,
   checkFFmpegHealth,
   checkFFCreatorHealth,
+  checkMubengHealth,
+  checkMorphicHealth,
+  checkPerplexicaHealth,
+  checkSkyvernHealth,
 } from "./oss-service-health"
 import {
   checkApolloHealth,
@@ -125,26 +129,6 @@ async function checkStagehandHealth(): Promise<Pick<SalesIntegrationStatus, "bal
   }
 }
 
-async function checkMubengHealth(): Promise<Pick<SalesIntegrationStatus, "balanceStatus" | "balanceLabel">> {
-  const urlStr = envValue("MUBENG_PROXY_URL")
-  if (!urlStr) return { balanceStatus: "not_configured", balanceLabel: "MUBENG_PROXY_URL未設定" }
-  try {
-    const url = new URL(urlStr)
-    // Try pinging the base url
-    const res = await fetch(url.toString(), { signal: AbortSignal.timeout(5_000) })
-    if (res.status === 401) {
-      return { balanceStatus: "ok", balanceLabel: "認証が必要 (応答あり)" }
-    }
-    return {
-      balanceStatus: res.ok ? "ok" : "error",
-      balanceLabel: res.ok ? "正常 (HTTP 200)" : `HTTP ${res.status}`,
-    }
-  } catch (error) {
-    console.error("[integration-registry] mubeng health check failed:", error)
-    return { balanceStatus: "error", balanceLabel: error instanceof Error ? error.message : "接続不可" }
-  }
-}
-
 async function liveBalance(def: SalesIntegrationDefinition): Promise<Pick<SalesIntegrationStatus, "balanceStatus" | "balanceLabel"> | null> {
   if (def.balance === "dataforseo_user_data") return checkDataForSeoHealth()
   if (def.balance === "browserless_pressure") return checkBrowserlessServiceHealth()
@@ -174,6 +158,9 @@ async function liveBalance(def: SalesIntegrationDefinition): Promise<Pick<SalesI
   if (def.balance === "katana_health") return checkKatanaServiceHealth()
   if (def.balance === "maigret_health") return checkMaigretServiceHealth()
   if (def.balance === "flaresolverr_health") return checkFlareSolverrServiceHealth()
+  if (def.balance === "morphic_health") return checkMorphicHealth()
+  if (def.balance === "perplexica_health") return checkPerplexicaHealth()
+  if (def.balance === "skyvern_health") return checkSkyvernHealth()
   if (def.balance === "pagespeed_health") return checkPageSpeedHealth()
   if (def.balance === "google_places_health") return checkGooglePlacesHealth()
   if (def.balance === "similarweb_health") return checkSimilarWebHealth()

@@ -57,6 +57,9 @@ export type SalesIntegrationBalanceType =
   | "katana_health"
   | "maigret_health"
   | "flaresolverr_health"
+  | "morphic_health"
+  | "perplexica_health"
+  | "skyvern_health"
 
 export interface SalesIntegrationDefinition {
   slug: string

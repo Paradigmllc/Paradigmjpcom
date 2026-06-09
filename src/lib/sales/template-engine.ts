@@ -326,8 +326,8 @@ export async function generateDiagnosticContent(
         return mapDeepSeekToOutput(parsed, issue)
       }
     }
-  } catch {
-    // AI 生成失敗 → プロファイルフォールバック
+  } catch (e) {
+    console.warn("[template-engine] AI generation failed, falling back to profile:", e)
   }
 
   return buildProfileFallbackContent(industry, issue, input)

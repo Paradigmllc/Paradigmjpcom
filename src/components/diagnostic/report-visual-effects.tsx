@@ -1,7 +1,7 @@
 ﻿"use client"
 
-import { useEffect, useRef } from "react"
-import { motion, useScroll, useTransform } from "framer-motion"
+import { useEffect, useRef, type CSSProperties } from "react"
+import { motion, useScroll, useTransform, type TargetAndTransition } from "framer-motion"
 
 // ─── Animated Particle/Gradient Background ──────────────────
 export function AnimatedBackground() {
@@ -141,12 +141,12 @@ export function AnimatedCounter({ value, duration = 1.5, className = "" }: { val
       className={className}
     >
       <motion.span
-        initial={{ "--num": 0 } as any}
-        whileInView={{ "--num": value }}
+        initial={{ "--num": 0 } as TargetAndTransition}
+        whileInView={{ "--num": value } as TargetAndTransition}
         viewport={{ once: true }}
         transition={{ duration, ease: "easeOut" }}
         className="tabular-nums"
-        style={{ counterReset: "num var(--num)" } as any}
+        style={{ counterReset: "num var(--num)" } as CSSProperties}
       >
         {value.toLocaleString()}
       </motion.span>

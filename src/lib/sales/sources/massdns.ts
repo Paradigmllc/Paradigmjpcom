@@ -57,8 +57,8 @@ export async function discoverSubdomains(domain: string): Promise<MassDnsResult>
           subdomains.push({ name, ips, cnames })
           totalResolved++
         }
-      } catch {
-        // skip individual subdomain failures
+      } catch (e) {
+        console.warn("[massdns] subdomain DNS query failed:", e)
       }
     }
 

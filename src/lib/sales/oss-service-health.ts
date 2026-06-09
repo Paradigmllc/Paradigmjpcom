@@ -108,28 +108,40 @@ export async function checkSpiderfootHealth(): Promise<ServiceHealthResult> {
   try {
     const result = await checkSpiderFootHealth()
     return { balanceStatus: "ok", balanceLabel: "Connected", ok: result.ok, name: "SpiderFoot", detail: result.detail, url: process.env.SPIDERFOOT_API_URL || "http://127.0.0.1:5001" }
-  } catch (e) { return { balanceStatus: "error", balanceLabel: "Error", ok: false, name: "SpiderFoot", detail: String(e) } }
+  } catch (e) {
+    console.error("[oss-service-health] SpiderFoot check failed:", e)
+    return { balanceStatus: "error", balanceLabel: "Error", ok: false, name: "SpiderFoot", detail: String(e) }
+  }
 }
 
 export async function checkKatanaServiceHealth(): Promise<ServiceHealthResult> {
   try {
     const result = await checkKatanaHealth()
     return { balanceStatus: "ok", balanceLabel: "Connected", ok: result.ok, name: "Katana", detail: result.detail, url: "docker://projectdiscovery/katana" }
-  } catch (e) { return { balanceStatus: "error", balanceLabel: "Error", ok: false, name: "Katana", detail: String(e) } }
+  } catch (e) {
+    console.error("[oss-service-health] Katana check failed:", e)
+    return { balanceStatus: "error", balanceLabel: "Error", ok: false, name: "Katana", detail: String(e) }
+  }
 }
 
 export async function checkMaigretServiceHealth(): Promise<ServiceHealthResult> {
   try {
     const result = await checkMaigretHealth()
     return { balanceStatus: "ok", balanceLabel: "Connected", ok: result.ok, name: "Maigret", detail: result.detail, url: "docker://maigret" }
-  } catch (e) { return { balanceStatus: "error", balanceLabel: "Error", ok: false, name: "Maigret", detail: String(e) } }
+  } catch (e) {
+    console.error("[oss-service-health] Maigret check failed:", e)
+    return { balanceStatus: "error", balanceLabel: "Error", ok: false, name: "Maigret", detail: String(e) }
+  }
 }
 
 export async function checkFlareSolverrServiceHealth(): Promise<ServiceHealthResult> {
   try {
     const result = await checkFlareSolverrHealth()
     return { balanceStatus: "ok", balanceLabel: "Connected", ok: result.ok, name: "FlareSolverr", detail: result.detail, url: process.env.FLARESOLVERR_API_URL || "http://127.0.0.1:8191" }
-  } catch (e) { return { balanceStatus: "error", balanceLabel: "Error", ok: false, name: "FlareSolverr", detail: String(e) } }
+  } catch (e) {
+    console.error("[oss-service-health] FlareSolverr check failed:", e)
+    return { balanceStatus: "error", balanceLabel: "Error", ok: false, name: "FlareSolverr", detail: String(e) }
+  }
 }
 
 export async function checkBrowserlessHealth(): Promise<ServiceHealthResult> {
@@ -555,6 +567,89 @@ export async function checkFFCreatorHealth(): Promise<ServiceHealthResult> {
     return { balanceStatus: res.ok ? "ok" : "error", balanceLabel: `reachable HTTP ${res.status}` }
   } catch (error) {
     return healthError("FFCreator", error)
+  }
+}
+
+export async function checkMubengHealth(): Promise<ServiceHealthResult> {
+  const missing = missingEnv(["MUBENG_PROXY_URL"])
+  if (missing.length > 0) return notConfigured(missing)
+  try {
+    const url = normalizeHttpBase(envValue("MUBENG_PROXY_URL") as string)
+    const res = await fetch(url.toString(), { signal: AbortSignal.timeout(5_000) })
+    if (res.status === 401) {
+      return { balanceStatus: "ok", balanceLabel: "認証が必要 (応答あり)" }
+    }
+    return {
+      balanceStatus: res.ok ? "ok" : "error",
+      balanceLabel: res.ok ? "正常 (HTTP 200)" : `HTTP ${res.status}`,
+    }
+  } catch (error) {
+    return healthError("mubeng", error)
+  }
+}
+
+export async function checkMorphicHealth(): Promise<ServiceHealthResult> {
+  const missing = missingEnv(["MORPHIC_BASE_URL"])
+  if (missing.length > 0) return notConfigured(missing)
+  try {
+    const base = normalizeHttpBase(envValue("MORPHIC_BASE_URL") as string)
+    const candidates = ["/api/health", "/health"]
+    let lastStatus: number | null = null
+    for (const path of candidates) {
+      const url = new URL(base)
+      url.pathname = `${url.pathname}${path}`.replace(/\/+/g, "/")
+      try {
+        const res = await fetch(url.toString(), { signal: AbortSignal.timeout(10_000) })
+        lastStatus = res.status
+        if (res.ok) return { balanceStatus: "ok", balanceLabel: `health endpoint ok: ${path}` }
+      } catch {
+        continue
+      }
+    }
+    return { balanceStatus: lastStatus ? "error" : "error", balanceLabel: `health unreachable HTTP ${lastStatus ?? "unknown"}` }
+  } catch (error) {
+    return healthError("Morphic", error)
+  }
+}
+
+export async function checkPerplexicaHealth(): Promise<ServiceHealthResult> {
+  const missing = missingEnv(["PERPLEXICA_BASE_URL"])
+  if (missing.length > 0) return notConfigured(missing)
+  try {
+    const base = normalizeHttpBase(envValue("PERPLEXICA_BASE_URL") as string)
+    const candidates = ["/api/health", "/health"]
+    let lastStatus: number | null = null
+    for (const path of candidates) {
+      const url = new URL(base)
+      url.pathname = `${url.pathname}${path}`.replace(/\/+/g, "/")
+      try {
+        const res = await fetch(url.toString(), { signal: AbortSignal.timeout(10_000) })
+        lastStatus = res.status
+        if (res.ok) return { balanceStatus: "ok", balanceLabel: `health endpoint ok: ${path}` }
+      } catch {
+        continue
+      }
+    }
+    return { balanceStatus: lastStatus ? "error" : "error", balanceLabel: `health unreachable HTTP ${lastStatus ?? "unknown"}` }
+  } catch (error) {
+    return healthError("Perplexica", error)
+  }
+}
+
+export async function checkSkyvernHealth(): Promise<ServiceHealthResult> {
+  const missing = missingEnv(["SKYVERN_BASE_URL"])
+  if (missing.length > 0) return notConfigured(missing)
+  try {
+    const base = normalizeHttpBase(envValue("SKYVERN_BASE_URL") as string)
+    const apiKey = envValue("SKYVERN_API_KEY")
+    const headers: Record<string, string> = {}
+    if (apiKey) headers["x-api-key"] = apiKey
+    const url = new URL(base)
+    url.pathname = `${url.pathname}/api/v1/health`.replace(/\/+/g, "/")
+    const res = await fetch(url.toString(), { headers, signal: AbortSignal.timeout(10_000) })
+    return { balanceStatus: res.ok ? "ok" : "error", balanceLabel: `health endpoint HTTP ${res.status}` }
+  } catch (error) {
+    return healthError("Skyvern", error)
   }
 }
 

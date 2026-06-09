@@ -80,7 +80,8 @@ function checkCommand(cmd: string): boolean {
   try {
     execSync(`${cmd} --version 2>&1`, { stdio: "pipe", timeout: 10_000 })
     return true
-  } catch {
+  } catch (e) {
+    console.warn("[oss-renderers] checkCommand failed:", e)
     return false
   }
 }
@@ -89,7 +90,8 @@ function checkNpmPackage(pkg: string): boolean {
   try {
     execSync(`node -e "require.resolve('${pkg}')" 2>&1`, { stdio: "pipe", timeout: 10_000 })
     return true
-  } catch {
+  } catch (e) {
+    console.warn("[oss-renderers] checkNpmPackage failed:", e)
     return false
   }
 }
@@ -98,7 +100,8 @@ function checkPythonPackage(pkg: string): boolean {
   try {
     execSync(`python -c "import ${pkg}" 2>&1`, { stdio: "pipe", timeout: 10_000 })
     return true
-  } catch {
+  } catch (e) {
+    console.warn("[oss-renderers] checkPythonPackage failed:", e)
     return false
   }
 }
@@ -162,7 +165,8 @@ function getNpmPackageVersion(pkg: string): string | null {
       timeout: 10_000,
     })
     return stdout.toString().trim()
-  } catch {
+  } catch (e) {
+    console.warn("[oss-renderers] getNpmPackageVersion failed:", e)
     return null
   }
 }
@@ -174,7 +178,8 @@ function getPythonPackageVersion(pkg: string): string | null {
       timeout: 10_000,
     })
     return stdout.toString().trim()
-  } catch {
+  } catch (e) {
+    console.warn("[oss-renderers] getPythonPackageVersion failed:", e)
     return null
   }
 }
@@ -521,7 +526,7 @@ try {
   console.log(JSON.stringify(result));
 } catch (e) {
   // SDK がない場合 FFmpeg でフォールバック
-  console.log(JSON.stringify({ fallback: true, message: e.message }));
+  console.warn(JSON.stringify({ fallback: true, message: e.message }));
 }
 `
     writeFileSync(scriptPath, script, "utf-8")

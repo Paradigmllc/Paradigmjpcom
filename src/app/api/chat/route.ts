@@ -24,8 +24,12 @@ type Locale = "ja" | "en"
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? ""
 
 function resolveDifyKey(locale: Locale): string {
-  if (locale === "en") return process.env.DIFY_API_KEY_EN || process.env.DIFY_API_KEY || ""
-  return process.env.DIFY_API_KEY_JA || process.env.DIFY_API_KEY || ""
+  const localeKey = locale === "en" ? process.env.DIFY_API_KEY_EN : process.env.DIFY_API_KEY_JA
+  const key = localeKey || process.env.DIFY_API_KEY
+  if (!key) {
+    console.warn(`[chat] Dify API key not found for locale ${locale} (checked DIFY_API_KEY_${locale.toUpperCase()} and DIFY_API_KEY)`)
+  }
+  return key || ""
 }
 
 const SYSTEM_PROMPT_JA = `あなたはParadigm合同会社の公式AIアシスタントです。
@@ -129,7 +133,8 @@ async function callGemini(message: string, locale: Locale): Promise<string> {
     if (!res.ok) return getFallbackAnswer(message, locale)
     const data = await res.json()
     return data.candidates?.[0]?.content?.parts?.[0]?.text || getFallbackAnswer(message, locale)
-  } catch {
+  } catch (e) {
+    console.error("[chat] Gemini API call failed:", e)
     return getFallbackAnswer(message, locale)
   }
 }
@@ -170,8 +175,8 @@ export async function POST(req: NextRequest) {
           })
         }
       }
-    } catch {
-      // Dify unavailable, fall through to Gemini
+    } catch (e) {
+      console.warn("[chat] Dify unavailable, falling through to Gemini:", e)
     }
   }
 

@@ -110,7 +110,8 @@ export function ContactForm() {
         setStatus("error")
         setMsg(data.error || t("errorDefault"))
       }
-    } catch {
+    } catch (e) {
+      console.error("[ContactForm] form submission failed:", e)
       setStatus("error")
       setMsg(t("errorNetwork"))
     }

@@ -43,7 +43,8 @@ function readStored(): Stored | null {
     const parsed = JSON.parse(raw) as Stored
     if (parsed?.decision && parsed?.decidedAt) return parsed
     return null
-  } catch {
+  } catch (e) {
+    console.warn("[CookieConsent] failed to read stored consent:", e)
     return null
   }
 }

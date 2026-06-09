@@ -30,7 +30,8 @@ export async function GET(_request: NextRequest, { params }: Props) {
     headers.set("Cache-Control", "public, max-age=3600")
 
     return new NextResponse(res.body, { status: 200, headers })
-  } catch {
+  } catch (e) {
+    console.error("[video-proxy] proxy fetch failed:", e)
     return NextResponse.json({ error: "proxy error" }, { status: 502 })
   }
 }

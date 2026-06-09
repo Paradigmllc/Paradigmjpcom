@@ -30,7 +30,8 @@ async function generateInsight(company: { company_name: string; industry: string
   try {
     const res = await callDeepSeek([{ role: "user", content: prompt }], { maxTokens: 300 })
     return res.ok && res.text ? res.text.trim() : null
-  } catch {
+  } catch (e) {
+    console.error("[ai-insights] DeepSeek generation failed:", e)
     return null
   }
 }

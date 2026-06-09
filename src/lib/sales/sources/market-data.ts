@@ -74,8 +74,8 @@ export async function queryEstat(industry: string): Promise<EstatResult> {
           }
         }
       }
-    } catch {
-      // parse fallback
+    } catch (e) {
+      console.error("[market-data] e-Stat stats parse failed:", e)
     }
 
     return {

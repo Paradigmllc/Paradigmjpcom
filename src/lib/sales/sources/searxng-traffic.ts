@@ -38,7 +38,8 @@ async function searxSearch(query: string): Promise<number | null> {
     if (!res.ok) return null
     const data = await res.json() as { number_of_results?: number; results?: unknown[] }
     return data.number_of_results ?? data.results?.length ?? null
-  } catch {
+  } catch (e) {
+    console.error("[searxng-traffic] search failed:", e)
     return null
   }
 }
@@ -115,6 +116,7 @@ export async function checkSearxngTrafficHealth(): Promise<{ ok: boolean; detail
     })
     return { ok: res.ok, detail: `HTTP ${res.status}` }
   } catch (e) {
+    console.error("[searxng-traffic] health check failed:", e)
     return { ok: false, detail: String(e) }
   }
 }

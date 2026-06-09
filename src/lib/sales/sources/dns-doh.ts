@@ -59,7 +59,8 @@ export async function queryDnsRecords(domain: string): Promise<DnsResult> {
           const body = (await res.json()) as { Answer?: DnsRecord[] }
           records[type] = body.Answer ?? []
         }
-      } catch {
+      } catch (e) {
+        console.warn(`[dns-doh] DNS query failed for type ${type}:`, e)
         records[type] = []
       }
     }

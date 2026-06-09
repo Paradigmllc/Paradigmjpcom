@@ -53,6 +53,7 @@ export async function checkFlareSolverrHealth(): Promise<{ ok: boolean; detail: 
     const data = await res.json()
     return { ok: data?.status === "ok" || data?.status === "error", detail: data?.message || data?.status || `HTTP ${res.status}` }
   } catch (e) {
+    console.error("[flaresolverr] health check failed:", e)
     return { ok: false, detail: String(e) }
   }
 }

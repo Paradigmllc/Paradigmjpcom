@@ -39,8 +39,8 @@ export async function detectCartPlatform(domain: string): Promise<CartLeadsResul
           cartPlatform = detectCartPlatformFromHtml(html)
           if (cartPlatform) break
         }
-      } catch {
-        // skip individual path failures
+      } catch (e) {
+        console.warn("[cartleads] cart path check failed:", e)
       }
     }
 
@@ -56,8 +56,8 @@ export async function detectCartPlatform(domain: string): Promise<CartLeadsResul
         if (!cartPlatform) cartPlatform = detectCartPlatformFromHtml(homeHtml)
         checkoutPlatform = detectCheckoutPlatform(homeHtml)
       }
-    } catch {
-      // skip
+    } catch (e) {
+      console.error("[cartleads] homepage fetch failed:", e)
     }
 
     return {
