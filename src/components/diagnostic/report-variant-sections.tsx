@@ -240,101 +240,135 @@ export function JapanMarketSection({ data, lang }: { data: DiagnosticReportData;
   const japanAudit = data.meta?.japan_market_audit as Record<string, unknown> | undefined
   const simweb = data.meta?.similarweb_free as Record<string, unknown> | undefined
   const radar = data.meta?.cloudflare_radar as Record<string, unknown> | undefined
-  const trends = data.meta?.google_trends as Record<string, unknown> | undefined
   const marketData = data.meta?.market_data as Record<string, string> | undefined
+  const smb = data.meta?.smb_signals as Record<string, unknown> | undefined
 
-  // Estimate Japan traffic from Similarweb country data
   const hasJapanTraffic = simweb?.countries && Array.isArray(simweb.countries) && (simweb.countries as string[]).includes("JP")
   const totalVisits = simweb?.visits as number | undefined
-  
-  // Estimated monthly revenue leakage: assume 2% conversion, average order ¥15,000
-  const estimatedJapanVisitors = hasJapanTraffic && totalVisits
-    ? Math.round(totalVisits * 0.08) // ~8% of traffic from Japan if JP is in top countries
-    : null
-  const estimatedLostRevenue = estimatedJapanVisitors
-    ? Math.round(estimatedJapanVisitors * 0.02 * 15000) // 2% conversion × ¥15,000
-    : null
+  const estimatedJapanVisitors = hasJapanTraffic && totalVisits ? Math.round(totalVisits * 0.08) : null
+  const estimatedLostRevenue = estimatedJapanVisitors ? Math.round(estimatedJapanVisitors * 0.02 * 15000) : null
+
+  const businessMaturity = smb?.businessMaturity as string | undefined
+  const maturityLabel = businessMaturity === "established" ? (lang === "ja" ? "成熟企業" : "Established")
+    : businessMaturity === "growing" ? (lang === "ja" ? "成長企業" : "Growing")
+    : (lang === "ja" ? "初期段階" : "Early Stage")
 
   return (
-    <section className="px-5 py-14" style={{ background: "linear-gradient(135deg, #eff6ff, #dbeafe)" }}>
-      <div className="mx-auto max-w-6xl">
-        <div className="flex items-center gap-2 mb-6">
-          <TrendingUp className="h-5 w-5 text-blue-600" />
-          <h2 className="text-xl font-bold text-zinc-900">{lang === "ja" ? "日本市場機会分析" : "Japan Market Opportunity"}</h2>
+    <section className="px-5 py-16" style={{ background: "linear-gradient(160deg, #0a1628 0%, #172554 40%, #1e3a5f 70%, #0a1628 100%)" }}>
+      <div className="mx-auto max-w-6xl text-white">
+        {/* Header */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-bold text-blue-300 mb-4 border border-white/10">
+            <TrendingUp className="h-3 w-3" />
+            {lang === "ja" ? "日本市場参入機会" : "Japan Market Entry Opportunity"}
+          </div>
+          <h2 className="text-3xl font-bold">
+            {lang === "ja" ? `${data.company_name} の日本市場ポテンシャル` : `${data.company_name}'s Japan Market Potential`}
+          </h2>
         </div>
 
-        {/* Market size context */}
+        {/* 4 key metrics */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-10">
+          <MetricCard
+            icon="🌏"
+            label={lang === "ja" ? "グローバル規模" : "Global Scale"}
+            value={radar?.rank_bucket ? (radar.rank_bucket as string) : (lang === "ja" ? "データ中" : "Collecting")}
+            sub={lang === "ja" ? "Cloudflare Radar" : "Cloudflare Radar"}
+            tone="blue"
+          />
+          <MetricCard
+            icon="🇯🇵"
+            label={lang === "ja" ? "日本流入推定" : "Est. Japan Traffic"}
+            value={hasJapanTraffic && estimatedJapanVisitors ? `${estimatedJapanVisitors.toLocaleString()} PV` : (lang === "ja" ? "分析中" : "Analyzing")}
+            sub={hasJapanTraffic ? `Similarweb ${totalVisits?.toLocaleString()} total` : (lang === "ja" ? "データ収集中" : "Collecting")}
+            tone={hasJapanTraffic ? "emerald" : "zinc"}
+          />
+          <MetricCard
+            icon="📊"
+            label={lang === "ja" ? "事業成熟度" : "Maturity"}
+            value={maturityLabel}
+            sub={smb?.emailProvider ? `${smb.emailProvider}` : ""}
+            tone={businessMaturity === "established" ? "emerald" : "amber"}
+          />
+          <MetricCard
+            icon="💰"
+            label={lang === "ja" ? "推定機会損失" : "Est. Lost Revenue"}
+            value={estimatedLostRevenue ? `¥${estimatedLostRevenue.toLocaleString()}` : (lang === "ja" ? "算出中" : "Calc...")}
+            sub={lang === "ja" ? "月間・2%CVR想定" : "Monthly・2% CVR est."}
+            tone={estimatedLostRevenue ? "rose" : "zinc"}
+          />
+        </div>
+
+        {/* Market context */}
         {marketData && (
-          <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-5">
-            <div className="text-xs text-blue-600 font-bold uppercase mb-2">{lang === "ja" ? "市場データ（政府統計）" : "Market Data (Government Stats)"}</div>
-            <div className="grid grid-cols-3 gap-4 text-sm">
-              <div><span className="text-blue-500">{lang === "ja" ? "市場規模: " : "Size: "}</span><span className="font-bold text-blue-900">{marketData.size}</span></div>
-              <div><span className="text-blue-500">{lang === "ja" ? "成長率: " : "Growth: "}</span><span className="font-bold text-blue-900">{marketData.growth}</span></div>
-              <div><span className="text-blue-500">{lang === "ja" ? "事業者数: " : "Players: "}</span><span className="font-bold text-blue-900">{marketData.players}</span></div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-lg">🏛️</span>
+              <div>
+                <div className="text-sm font-bold">{lang === "ja" ? "日本市場データ" : "Japan Market Data"}</div>
+                <div className="text-xs text-blue-300">{marketData.source}</div>
+              </div>
             </div>
-            <div className="mt-1 text-[10px] text-blue-400">{lang === "ja" ? "出典: " : "Source: "}{marketData.source}</div>
+            <div className="grid grid-cols-3 gap-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white">{marketData.size}</div>
+                <div className="text-xs text-blue-300 mt-1">{lang === "ja" ? "市場規模" : "Market Size"}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-emerald-400">{marketData.growth}</div>
+                <div className="text-xs text-blue-300 mt-1">{lang === "ja" ? "年率成長" : "Annual Growth"}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white">{marketData.players}</div>
+                <div className="text-xs text-blue-300 mt-1">{lang === "ja" ? "事業者数" : "Players"}</div>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Japan traffic estimation */}
-        <div className="grid gap-4 sm:grid-cols-2 mb-6">
-          <div className={`rounded-xl border p-5 ${hasJapanTraffic ? "border-emerald-200 bg-emerald-50" : "border-zinc-200 bg-zinc-50"}`}>
-            <div className="text-xs font-bold uppercase text-zinc-500 mb-1">
-              {lang === "ja" ? "日本からの推定流入" : "Est. Japan Traffic"}
-            </div>
-            <div className="text-2xl font-bold text-zinc-900">
-              {hasJapanTraffic && totalVisits
-                ? `${lang === "ja" ? "約" : "~"}${estimatedJapanVisitors?.toLocaleString()} PV/月`
-                : lang === "ja" ? "データ収集中" : "Collecting data"}
-            </div>
-            {hasJapanTraffic && estimatedLostRevenue && (
-              <div className="mt-2 text-sm text-rose-600 font-bold">
-                {lang === "ja" ? `推定機会損失: ¥${estimatedLostRevenue.toLocaleString()}/月` : `Est. lost revenue: ¥${estimatedLostRevenue.toLocaleString()}/mo`}
-              </div>
-            )}
-            <div className="mt-1 text-[10px] text-zinc-400">
-              {hasJapanTraffic ? `Similarweb ${totalVisits?.toLocaleString()} total → 8% JP推定` : (lang === "ja" ? "Similarwebデータ不足" : "Similarweb data insufficient")}
-            </div>
-          </div>
-
-          <div className={`rounded-xl border p-5 ${radar?.rank_bucket ? "border-emerald-200 bg-emerald-50" : "border-zinc-200 bg-zinc-50"}`}>
-            <div className="text-xs font-bold uppercase text-zinc-500 mb-1">
-              {lang === "ja" ? "グローバルランク" : "Global Rank"}
-            </div>
-            <div className="text-2xl font-bold text-zinc-900">
-              {radar?.rank_bucket
-                ? (radar.rank_bucket as string)
-                : (simweb?.rank
-                  ? `#${(simweb.rank as number).toLocaleString()}`
-                  : lang === "ja" ? "データ収集中" : "Collecting")}
-            </div>
-            {radar?.categories && (
-              <div className="mt-2 text-xs text-zinc-500">
-                {(radar.categories as string[]).slice(0, 2).join(" / ")}
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* Regulatory checklist */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          {[
-            { labelJa: "特商法表示", labelEn: "Commercial Disclosure", ok: !japanAudit?.tokushoho_missing },
-            { labelJa: "プライバシーポリシー(APPI)", labelEn: "Privacy Policy (APPI)", ok: !japanAudit?.appi_missing },
-            { labelJa: "国内決済対応", labelEn: "Local Payment Methods", ok: !japanAudit?.local_payments_missing },
-            { labelJa: "日本語コンテンツ", labelEn: "Japanese Content", ok: japanAudit ? true : false },
-          ].map((item, i) => (
-            <div key={i} className={`flex items-center gap-3 rounded-xl border p-4 ${item.ok ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
-              {item.ok ? <CheckCircle2 className="h-5 w-5 text-emerald-600" /> : <Shield className="h-5 w-5 text-amber-600" />}
-              <div>
-                <div className="font-medium text-zinc-900">{lang === "ja" ? item.labelJa : item.labelEn}</div>
-                <div className="text-xs text-zinc-500">{item.ok ? (lang === "ja" ? "確認済み" : "Verified") : (lang === "ja" ? "要確認" : "Needs review")}</div>
+        <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+          <div className="text-sm font-bold mb-4">{lang === "ja" ? "日本市場参入要件" : "Japan Entry Requirements"}</div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[
+              { labelJa: "特定商取引法に基づく表記", labelEn: "Commercial Law Disclosure", ok: !japanAudit?.tokushoho_missing, critical: true },
+              { labelJa: "個人情報保護法(APPI)対応", labelEn: "Privacy Law (APPI)", ok: !japanAudit?.appi_missing, critical: true },
+              { labelJa: "国内決済手段の導入", labelEn: "Local Payment Methods", ok: !japanAudit?.local_payments_missing, critical: true },
+              { labelJa: "日本語コンテンツ・サポート", labelEn: "Japanese Content & Support", ok: !!japanAudit, critical: false },
+            ].map((item, i) => (
+              <div key={i} className={`flex items-center gap-3 rounded-xl p-4 ${item.ok ? "bg-emerald-500/10 border border-emerald-500/20" : item.critical ? "bg-rose-500/10 border border-rose-500/20" : "bg-amber-500/10 border border-amber-500/20"}`}>
+                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm ${item.ok ? "bg-emerald-500/20 text-emerald-300" : item.critical ? "bg-rose-500/20 text-rose-300" : "bg-amber-500/20 text-amber-300"}`}>
+                  {item.ok ? "✓" : "!"}
+                </span>
+                <div>
+                  <div className="text-sm font-medium text-white">{lang === "ja" ? item.labelJa : item.labelEn}</div>
+                  <div className="text-xs text-blue-300">{item.ok ? (lang === "ja" ? "対応済み" : "Ready") : item.critical ? (lang === "ja" ? "要対応・必須" : "Required") : (lang === "ja" ? "推奨" : "Recommended")}</div>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </section>
+  )
+}
+
+function MetricCard({ icon, label, value, sub, tone }: { icon: string; label: string; value: string; sub?: string; tone: string }) {
+  const colors: Record<string, string> = {
+    blue: "border-blue-500/20 bg-blue-500/5",
+    emerald: "border-emerald-500/20 bg-emerald-500/5",
+    rose: "border-rose-500/20 bg-rose-500/5",
+    amber: "border-amber-500/20 bg-amber-500/5",
+    zinc: "border-white/10 bg-white/5",
+  }
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+      className={`rounded-xl border p-5 backdrop-blur ${colors[tone] ?? colors.zinc}`}>
+      <div className="text-2xl mb-2">{icon}</div>
+      <div className="text-xs font-bold text-blue-300 uppercase">{label}</div>
+      <div className="mt-1 text-xl font-bold text-white">{value}</div>
+      {sub && <div className="mt-0.5 text-[10px] text-blue-400/60">{sub}</div>}
+    </motion.div>
   )
 }
 
