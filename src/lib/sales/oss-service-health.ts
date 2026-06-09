@@ -106,14 +106,14 @@ export async function checkSpiderfootHealth(): Promise<ServiceHealthResult> {
   } catch (e) { return { ok: false, name: "SpiderFoot", detail: String(e) } }
 }
 
-export async function checkKatanaHealth(): Promise<ServiceHealthResult> {
+export async function checkKatanaServiceHealth(): Promise<ServiceHealthResult> {
   try {
     const result = await checkKatanaHealth()
     return { ok: result.ok, name: "Katana", detail: result.detail, url: "docker://projectdiscovery/katana" }
   } catch (e) { return { ok: false, name: "Katana", detail: String(e) } }
 }
 
-export async function checkMaigretHealth(): Promise<ServiceHealthResult> {
+export async function checkMaigretServiceHealth(): Promise<ServiceHealthResult> {
   try {
     const result = await checkMaigretHealth()
     return { ok: result.ok, name: "Maigret", detail: result.detail, url: "docker://maigret" }

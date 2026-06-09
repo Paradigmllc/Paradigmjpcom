@@ -18,8 +18,8 @@ import {
   checkPlaywrightStealthHealth,
   checkDifyHealth,
   checkSpiderfootHealth,
-  checkKatanaHealth,
-  checkMaigretHealth,
+  checkKatanaServiceHealth,
+  checkMaigretServiceHealth,
   checkTriggerDevHealth,
   checkSlidevGotenbergHealth,
   checkSupabaseStudioHealth,
@@ -170,8 +170,8 @@ async function liveBalance(def: SalesIntegrationDefinition): Promise<Pick<SalesI
   if (def.balance === "ffmpeg_health") return checkFFmpegHealth()
   if (def.balance === "ffcreator_health") return checkFFCreatorHealth()
   if (def.balance === "spiderfoot_health") return checkSpiderfootHealth()
-  if (def.balance === "katana_health") return checkKatanaHealth()
-  if (def.balance === "maigret_health") return checkMaigretHealth()
+  if (def.balance === "katana_health") return checkKatanaServiceHealth()
+  if (def.balance === "maigret_health") return checkMaigretServiceHealth()
   if (def.balance === "pagespeed_health") return checkPageSpeedHealth()
   if (def.balance === "google_places_health") return checkGooglePlacesHealth()
   if (def.balance === "similarweb_health") return checkSimilarWebHealth()
