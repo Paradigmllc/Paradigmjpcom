@@ -76,7 +76,8 @@ function runWithHeartbeat(command, args, options = {}) {
 }
 
 run(localBin("payload"), ["generate:importmap"])
-const nextStatus = await runWithHeartbeat(localBin("next"), ["build", "--webpack"], {
+const buildMode = process.argv.includes("--turbo") ? [] : ["--webpack"]
+const nextStatus = await runWithHeartbeat(localBin("next"), ["build", ...buildMode], {
   env: {
     PAYLOAD_READS_DISABLED_DURING_BUILD: "1",
   },
