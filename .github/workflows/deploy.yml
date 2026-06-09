@@ -9,7 +9,7 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -24,24 +24,11 @@ jobs:
           cache: npm
 
       - run: npm ci
-      - run: npm run build
-
-      - name: Build Docker image
-        run: |
-          cat > Dockerfile.ci << 'EOF'
-          FROM node:24-alpine
-          WORKDIR /app
-          ENV NODE_ENV=production
-          ENV NEXT_TELEMETRY_DISABLED=1
-          COPY .next ./.next
-          COPY node_modules ./node_modules
-          COPY public ./public
-          COPY package.json next.config.ts ./
-          COPY .env.example ./.env
-          EXPOSE 3000
-          CMD ["node_modules/.bin/next", "start"]
-          EOF
-          docker build -t $REGISTRY/$IMAGE_NAME:latest -f Dockerfile.ci .
+      - name: Build Next.js
+        run: npm run build
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+          PAYLOAD_READS_DISABLED_DURING_BUILD: "1"
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -50,8 +37,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push image
-        run: docker push $REGISTRY/$IMAGE_NAME:latest
+      - name: Build & push Docker image
+        run: |
+          cat > Dockerfile.ci << 'DOCKEREOF'
+          FROM node:24-alpine
+          WORKDIR /app
+          ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
+          COPY .next ./.next
+          COPY node_modules ./node_modules
+          COPY public ./public
+          COPY package.json next.config.ts ./
+          EXPOSE 3000
+          CMD ["node_modules/.bin/next", "start"]
+          DOCKEREOF
+          docker build -t $REGISTRY/$IMAGE_NAME:latest -f Dockerfile.ci .
+          docker push $REGISTRY/$IMAGE_NAME:latest
 
       - name: Deploy to Droplet
         uses: appleboy/ssh-action@v1
@@ -60,14 +60,13 @@ jobs:
           username: root
           key: ${{ secrets.DROPLET_SSH_KEY }}
           script: |
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
             docker pull $REGISTRY/$IMAGE_NAME:latest
-            docker stop paradigm-hp 2>/dev/null || true
-            docker rm paradigm-hp 2>/dev/null || true
+            docker stop paradigm-hp 2>/dev/null && docker rm paradigm-hp 2>/dev/null || true
             docker run -d --name paradigm-hp \
               --network coolify \
               --restart unless-stopped \
               -p 3000:3000 \
               $REGISTRY/$IMAGE_NAME:latest
-            sleep 5
-            curl -f http://localhost:3000/ja && echo "OK" || echo "FAIL"
+            sleep 8
+            curl -fso /dev/null http://localhost:3000/ja && echo "DEPLOY OK" || echo "DEPLOY FAILED"

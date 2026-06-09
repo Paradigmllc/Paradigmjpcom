@@ -8,6 +8,7 @@ import { AnnotatedScreenshot, BeforeAfterComparison, MobileComparison } from "./
 import { CompetitorComparison, FiveSecondAudit, SaviorPositioning } from "./report-pain-sections"
 import { MarketPresenceSummary } from "./report-market-sections"
 import { ProposalSection } from "./report-proposal-section"
+import { VideoSampleSection, VideoFlowSection, SubsidyTableSection, OutreachFunnelSection, OutreachTestSection } from "./report-missing-sections"
 
 // ─── MEO: Map Section ──────────────────────────────────────
 export function MeoMapSection({ data, lang }: { data: DiagnosticReportData; lang: string }) {
@@ -416,6 +417,11 @@ export function VariantSection({ sectionId, data, lang }: { sectionId: string; d
     case "savior_positioning": return <SaviorPositioning data={data} lang={lang} />
     case "market_presence": return <MarketPresenceSummary data={data} lang={lang} />
     case "solution_proposal": return <ProposalSection data={data} lang={lang} />
+    case "video_sample": return <VideoSampleSection data={data} lang={lang} />
+    case "video_flow": return <VideoFlowSection data={data} lang={lang} />
+    case "subsidy_table": return <SubsidyTableSection data={data} lang={lang} />
+    case "outreach_funnel": return <OutreachFunnelSection data={data} lang={lang} />
+    case "outreach_test": return <OutreachTestSection data={data} lang={lang} />
     default: return null
   }
 }
