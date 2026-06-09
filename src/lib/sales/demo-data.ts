@@ -6,8 +6,18 @@ interface VariantDemoData {
   companyName: { ja: string; en: string }
   industry: string
   hook: { ja: string; en: string }
-  acts: DiagnosticReportData["acts"]
-  totalLoss: string
+  acts: Array<{
+    type: string
+    icon: string
+    headline: { ja: string; en: string }
+    body: { ja: string; en: string }
+    metric_label: { ja: string; en: string }
+    metric_value: string | { ja: string; en: string }
+    metric_unit: string | { ja: string; en: string }
+    metric_bench: { ja: string; en: string }
+    severity: string
+  }>
+  totalLoss: { ja: string; en: string }
   cta: { ja: string; en: string }
 }
 
