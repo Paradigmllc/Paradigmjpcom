@@ -65,12 +65,13 @@ export default function HeroSection() {
             </div>
 
             <h1 style={{ fontSize: "clamp(2.2rem, 6.5vw, 4.5rem)" }}
-              className="font-display leading-[0.95] tracking-[-0.04em] text-paradigm-paper mb-6">
-              <span className="block bg-gradient-to-r from-paradigm-paper via-paradigm-glow to-paradigm-tech bg-clip-text text-transparent bg-[length:200%_100%] animate-[gradientShift_5s_ease_infinite]">
+              className="font-display leading-[1.1] tracking-[-0.04em] text-paradigm-paper mb-6">
+              <span className="bg-gradient-to-r from-paradigm-paper via-paradigm-glow to-paradigm-tech bg-clip-text text-transparent bg-[length:200%_100%] animate-[gradientShift_5s_ease_infinite]">
                 {typingText}
               </span>
               <span aria-hidden className="inline-block w-[3px] h-[0.7em] bg-paradigm-glow ml-2 align-middle animate-[blink_1s_step-end_infinite] rounded-sm" />
-              <span className="block font-light text-paradigm-paper/80 mt-3 text-[clamp(1rem,2.5vw,1.5rem)]">
+              {" "}
+              <span className="font-light text-paradigm-paper/80 text-[clamp(1rem,2.5vw,1.5rem)]">
                 {t("heroSuffix")}
               </span>
             </h1>
