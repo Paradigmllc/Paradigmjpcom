@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { ArrowRight, Check, ExternalLink, Gauge, LineChart, ShieldCheck, Sparkles } from "lucide-react"
+import { ArrowRight, Check, ExternalLink, Gauge, LineChart, MessageCircle, Moon, ShieldCheck, Sparkles, Sun } from "lucide-react"
 import { useState, type ReactNode } from "react"
 import type { DiagnosticAct, DiagnosticReportData } from "@/lib/sales/diagnostic"
 import { signalScore, type IntelligenceSignal, type PainPoint } from "@/lib/sales/company-intelligence"
@@ -934,25 +934,27 @@ export default function DiagnosticReport({
         />
       )}
 
-      <header className="sticky top-0 z-30 border-b border-zinc-200 bg-[#fbfaf7]/90 px-5 py-4 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+      <header className={`sticky top-0 z-30 border-b px-3 py-2 backdrop-blur ${isDark ? "bg-zinc-900/90 border-zinc-800" : "bg-[#fbfaf7]/90 border-zinc-200"}`}>
+        <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div className="flex items-center gap-3">
             <motion.div
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-950 text-sm font-semibold text-white"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-950 text-xs font-bold text-white"
+              initial={{ scale: 0 }} animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            >
-              P
-            </motion.div>
+            >P</motion.div>
             <div>
-              <div className="text-sm font-semibold">{copy.brand}</div>
-              <div className="text-xs text-zinc-500">{offerCopy.reportLabel}</div>
+              <div className={`text-xs font-semibold ${isDark ? "text-white" : "text-zinc-900"}`}>{copy.brand}</div>
+              <div className={`text-[10px] ${isDark ? "text-zinc-400" : "text-zinc-500"}`}>{offerCopy.reportLabel}</div>
             </div>
           </div>
-          <div className="hidden items-center gap-2 text-xs text-zinc-500 sm:flex">
-            <ShieldCheck size={16} aria-hidden />
-            {copy.validity}: {data.expires_at}
+          <div className="flex items-center gap-2">
+            <button onClick={() => setIsDark(!isDark)} className={`p-1.5 rounded-md ${isDark ? "text-zinc-400 hover:text-white" : "text-zinc-500 hover:text-zinc-900"}`} title={isDark ? "ライト" : "ダーク"}>
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
+            <a href={calHref} target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-bold transition-colors ${isDark ? "bg-zinc-800 text-white hover:bg-zinc-700" : "bg-zinc-900 text-white hover:bg-zinc-800"}`}>
+              <MessageCircle className="h-3 w-3" />{lang === "ja" ? "無料相談" : "Free Consult"}
+            </a>
+            <a href="https://paradigmjp.com/ja" className={`text-[10px] hidden sm:inline ${isDark ? "text-zinc-500 hover:text-zinc-300" : "text-zinc-400 hover:text-zinc-600"}`}>ParadigmHPへ</a>
           </div>
         </div>
       </header>
@@ -1374,6 +1376,41 @@ export default function DiagnosticReport({
         </section>
       </main>
       </div>
+
+      {/* ── Floating Chat Button (Chatwoot) ── */}
+      <a
+        href="https://chatwoot.paradigmjp.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-xl hover:bg-indigo-700 transition-all hover:scale-110 active:scale-95"
+        title={lang === "ja" ? "チャットで質問" : "Chat with us"}
+      >
+        <MessageCircle className="h-6 w-6" />
+      </a>
+
+      {/* ── Dify AI Chat Widget ── */}
+      <script dangerouslySetInnerHTML={{ __html: `
+        window.difyChatbotConfig = {
+          token: 'app-O1hcIrjUNhgeuKbY1J768Hia',
+          baseUrl: 'https://api.dify.ai/v1',
+        };
+      `}} />
+      <script src="https://api.dify.ai/v1/webapp/embed.js" async />
+
+      {/* ── Footer ── */}
+      <footer className={`border-t px-5 py-8 mt-10 ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"}`}>
+        <div className="mx-auto max-w-6xl flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className={`text-xs ${isDark ? "text-zinc-500" : "text-zinc-400"}`}>
+            © {new Date().getFullYear()} Paradigm LLC. {lang === "ja" ? "無断転載禁止" : "All rights reserved."}
+          </div>
+          <div className="flex items-center gap-4 text-xs">
+            <a href="https://paradigmjp.com/ja" className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>Paradigm HP</a>
+            <a href="https://paradigmjp.com/ja/agency" className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>{lang === "ja" ? "制作事例" : "Works"}</a>
+            <a href="https://paradigmjp.com/ja/video" className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>{lang === "ja" ? "動画制作" : "Video"}</a>
+            <a href={calHref} target="_blank" rel="noopener noreferrer" className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>{lang === "ja" ? "無料相談" : "Free Consult"}</a>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }
