@@ -28,6 +28,8 @@ import {
 } from "./ReportCharts"
 import { getVariantLayout } from "./report-section-config"
 import { VariantSection } from "./report-variant-sections"
+import { AnimatedBackground } from "./report-visual-effects"
+import { ReadingProgress, BackToTop, ShareReport } from "./report-ui-enhancements"
 import { AnimatedBackground, GlassCard, ParallaxSection, PulseGlow } from "./report-visual-effects"
 
 // ─── Constants ──────────────────────────────────────────────────
@@ -945,6 +947,7 @@ export default function DiagnosticReport({
 
   return (
     <div className="min-h-screen bg-[#fbfaf7] text-zinc-950 relative">
+      <ReadingProgress />
       <AnimatedBackground />
       <div className="relative z-10">
       {trackingSlug && (
@@ -976,6 +979,7 @@ export default function DiagnosticReport({
             <button onClick={() => setIsDark(!isDark)} className={`p-1.5 rounded-md ${isDark ? "text-zinc-400 hover:text-white" : "text-zinc-500 hover:text-zinc-900"}`} title={isDark ? "ライト" : "ダーク"}>
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
+            <ShareReport url={data.report_url} title={data.company_name} lang={lang} />
             <div className="relative">
               <button onClick={() => setActionOpen(!actionOpen)}
                 className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-bold transition-colors ${isDark ? "bg-zinc-800 text-white hover:bg-zinc-700" : "bg-zinc-900 text-white hover:bg-zinc-800"}`}>
@@ -1469,6 +1473,7 @@ export default function DiagnosticReport({
           </div>
         </div>
       </footer>
+      <BackToTop />
 
       {/* ── 資料請求 Modal ── */}
       {requestOpen && (
