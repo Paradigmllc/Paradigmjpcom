@@ -31,6 +31,8 @@ import { VariantSection } from "./report-variant-sections"
 import { ReportFaqSection } from "./ReportFaqSection"
 import { AnimatedBackground, GlassCard, ParallaxSection, PulseGlow } from "./report-visual-effects"
 import { ReadingProgress, BackToTop, ShareReport } from "./report-ui-enhancements"
+import DifyChatbot from "@/components/DifyChatbot"
+import { localeContentVariant } from "@/lib/locale-map"
 
 // ─── Constants ──────────────────────────────────────────────────
 
@@ -1394,6 +1396,7 @@ export default function DiagnosticReport({
         </div>
       )}
       <style>{`@media print{@page{margin:12mm}body{font-size:10pt;color:#000!important;background:#fff!important}.sticky,.fixed,canvas,.particles,.vignette,button:not(.print-keep),nav{display:none!important}section,div[class*=py-]{padding:5mm 0!important;page-break-inside:avoid}h1{font-size:16pt;color:#000!important}h2{font-size:13pt}h3{font-size:11pt}p,li,span{color:#333!important}a{color:#00e;text-decoration:underline}.rounded-xl,.rounded-2xl,.rounded-lg{border:1px solid #ddd!important;box-shadow:none!important;background:#fff!important}.bg-zinc-900,.bg-zinc-950{background:#f5f5f5!important;color:#000!important}.text-white{color:#000!important}}`}</style>
+      <DifyChatbot locale={localeContentVariant(locale ?? data.report_locale as string)} />
     </div>
   )
 }
