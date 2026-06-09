@@ -8,11 +8,16 @@ export const dynamic = "force-dynamic"
 
 export async function GET(_request: NextRequest, { params }: Props) {
   const { slug } = await params
-  if (!slug?.includes(".")) return NextResponse.json({ error: "invalid slug" }, { status: 400 })
+  // slug is like "japan_entry/ja.mp4" or "website_diagnostic/en.mp4"
+  const noExt = slug.replace(/\.mp4$/i, "")
+  const parts = noExt.split("/")
+  const variant = parts[0]
+  const locale = parts[1] || "ja"
 
-  // Extract variant + locale from slug (e.g., "japan_entry/ja.mp4" → videos/demo/japan_entry/ja/diagnostic-japan_entry.mp4)
-  const key = `videos/demo/${slug.replace(".mp4", "")}/diagnostic-${slug.replace("/", "-").replace(".mp4", "")}.mp4`
-  
+  if (!variant) return NextResponse.json({ error: "invalid variant" }, { status: 400 })
+
+  const key = `videos/demo/${variant}/${locale}/diagnostic-${variant}.mp4`
+
   try {
     const res = await fetch(`${R2_PUBLIC_BASE}/${key}`, {
       signal: AbortSignal.timeout(15_000),

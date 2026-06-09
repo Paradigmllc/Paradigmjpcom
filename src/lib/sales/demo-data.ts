@@ -258,7 +258,9 @@ export function buildDemoData(variant: string, lang: string): DiagnosticReportDa
     screenshot_url: null,
     source_coverage: sourceCoverage,
     intelligence,
-    video_url: `https://pub-ac30eb86a32747f1a27e304aa9c6f95a.r2.dev/videos/demo/${variant}/${lang}/diagnostic-${variant}.mp4`,
+    video_url: variant === "japan_entry"
+      ? `https://pub-ac30eb86a32747f1a27e304aa9c6f95a.r2.dev/videos/demo/${variant}/${lang}/diagnostic-${variant}.mp4`
+      : null,
     meta: {
       scan: { mobile_score: 38, desktop_score: 52, is_wordpress: true, hasHsts: false, hasCsp: false, copyrightYear: 2022 },
       tech: { stack: ["WordPress", "Stripe", "Google Analytics", "Cloudflare"] },
