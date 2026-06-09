@@ -61,10 +61,13 @@ const DEFAULT_LAYOUT: VariantLayout = {
   description: "速度・OGP・技術スタックを軸にしたデータドリブン改善提案",
   sections: [
     { id: "hero" },
-    { id: "annotated_screenshot", required: true },    // ★ スクリーンショット＋問題点マーカー
-    { id: "before_after", required: true },             // ★ Before/After比較
+    { id: "annotated_screenshot", required: true },
+    { id: "five_second_audit", required: true },          // ★ 5秒診断
+    { id: "competitor_comparison", required: true },       // ★ 競合比較
+    { id: "before_after", required: true },
     { id: "stats" },
-    { id: "mobile_comparison", required: true },        // ★ モバイル速度比較
+    { id: "savior_positioning", required: true },          // ★ 救世主ポジション
+    { id: "mobile_comparison", required: true },
     { id: "executive_summary" },
     { id: "dark_surface" },
     { id: "benchmark" },

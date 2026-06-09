@@ -5,6 +5,7 @@ import { CheckCircle2, MapPin, MessageSquare, Shield, Star, TrendingUp } from "l
 import type { DiagnosticReportData } from "@/lib/sales/diagnostic"
 import type { ReportCopy } from "./report-copy"
 import { AnnotatedScreenshot, BeforeAfterComparison, MobileComparison } from "./report-website-sections"
+import { CompetitorComparison, FiveSecondAudit, SaviorPositioning } from "./report-pain-sections"
 
 // ─── MEO: Map Section ──────────────────────────────────────
 export function MeoMapSection({ data, lang }: { data: DiagnosticReportData; lang: string }) {
@@ -337,6 +338,9 @@ export function VariantSection({ sectionId, data, lang }: { sectionId: string; d
     case "annotated_screenshot": return <AnnotatedScreenshot data={data} lang={lang} />
     case "before_after": return <BeforeAfterComparison data={data} lang={lang} />
     case "mobile_comparison": return <MobileComparison data={data} lang={lang} />
+    case "competitor_comparison": return <CompetitorComparison data={data} lang={lang} />
+    case "five_second_audit": return <FiveSecondAudit data={data} lang={lang} />
+    case "savior_positioning": return <SaviorPositioning data={data} lang={lang} />
     default: return null
   }
 }
