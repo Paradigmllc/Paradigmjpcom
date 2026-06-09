@@ -172,6 +172,9 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
   const t = labels(data.report_locale)
   const company = cleanText(data.company_name, "Target company", 56)
   const hook = cleanText(script.hook || data.hook, t.defaultHook, 92)
+  const summaryTitle = data.report_locale === "ja"
+    ? `${company}の改善優先度トップ3`
+    : `Top 3 priorities for ${company}`
   const pain = cleanText(script.pain, t.defaultPain, 104)
   const fear = cleanText(script.fear, t.defaultFear, 104)
   const hope = cleanText(script.hope, t.defaultHope, 104)
@@ -236,62 +239,62 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
     .frame{position:absolute;inset:52px;border:1px solid ${theme.rule};border-radius:34px;overflow:hidden;background:linear-gradient(135deg,rgba(255,255,255,.06),rgba(255,255,255,.015));box-shadow:0 28px 90px rgba(0,0,0,.34)}
     .brand{position:absolute;top:34px;left:44px;right:44px;display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.58);z-index:20}
     .brand b{color:${theme.accentSoft}}
-    .scene{position:absolute;inset:0;padding:112px 108px 92px;display:grid;grid-template-columns:minmax(0,1.08fr) minmax(420px,.92fr);gap:64px;align-items:center;opacity:0;visibility:hidden}
+    .scene{position:absolute;inset:0;padding:96px 92px 84px;display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,420px);gap:42px;align-items:center;opacity:0;visibility:hidden}
     .scene.full{grid-template-columns:1fr;text-align:center;place-items:center}
     .kicker{display:inline-flex;align-items:center;gap:10px;margin-bottom:22px;color:${theme.accentSoft};font-size:16px;font-weight:850;letter-spacing:.14em;text-transform:uppercase}
     .kicker::before{content:"";width:38px;height:2px;background:${theme.accentSoft};border-radius:999px}
-    h1{max-width:780px;margin:0;color:#fff;font-size:56px;line-height:1.1;letter-spacing:0;font-weight:830;text-wrap:balance}
-    h2{margin:0;color:${theme.ink};font-size:38px;line-height:1.08;letter-spacing:0;font-weight:820;text-wrap:balance}
-    p{margin:0;color:rgba(255,255,255,.68);font-size:22px;line-height:1.58;letter-spacing:0;text-wrap:pretty}
-    .panel p{color:${theme.muted};font-size:18px;line-height:1.7}
-    .lead{max-width:760px;margin-top:26px}
-    .panel{background:${theme.panel};color:${theme.ink};border-radius:28px;padding:34px;border:1px solid rgba(255,255,255,.72);box-shadow:0 32px 90px rgba(0,0,0,.26)}
+    h1{max-width:680px;margin:0;color:#fff;font-size:44px;line-height:1.12;letter-spacing:0;font-weight:830;text-wrap:balance}
+    h2{margin:0;color:${theme.ink};font-size:30px;line-height:1.14;letter-spacing:0;font-weight:820;text-wrap:balance}
+    p{margin:0;color:rgba(255,255,255,.7);font-size:18px;line-height:1.55;letter-spacing:0;text-wrap:pretty}
+    .panel p{color:${theme.muted};font-size:16px;line-height:1.6}
+    .lead{max-width:680px;margin-top:20px}
+    .panel{max-width:100%;overflow:hidden;background:${theme.panel};color:${theme.ink};border-radius:24px;padding:28px;border:1px solid rgba(255,255,255,.72);box-shadow:0 32px 90px rgba(0,0,0,.26)}
     .panel.dark{background:rgba(255,255,255,.08);border-color:${theme.rule};backdrop-filter:blur(16px);color:white}
     .panel.dark p{color:rgba(255,255,255,.64)}
-    .score-card{min-height:456px;display:flex;flex-direction:column;justify-content:space-between}
+    .score-card{min-height:392px;display:flex;flex-direction:column;justify-content:space-between}
     .score-main{display:grid;grid-template-columns:1fr auto;gap:22px;align-items:end}
-    .score-main strong{font-size:82px;line-height:.88;color:${theme.accent};letter-spacing:0}
-    .score-main span{color:${theme.muted};font-size:15px;font-weight:760;text-transform:uppercase;letter-spacing:.08em}
-    .bar-duo{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:30px}
-    .bar{height:178px;border-radius:18px;background:${theme.panelSoft};display:flex;align-items:end;padding:12px;position:relative;overflow:hidden}
+    .score-main strong{font-size:62px;line-height:.92;color:${theme.accent};letter-spacing:0}
+    .score-main span{color:${theme.muted};font-size:13px;font-weight:760;text-transform:uppercase;letter-spacing:.08em}
+    .bar-duo{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px}
+    .bar{height:132px;border-radius:16px;background:${theme.panelSoft};display:flex;align-items:end;padding:12px;position:relative;overflow:hidden}
     .bar i{display:block;width:100%;height:0;border-radius:12px;background:${theme.accent}}
     .bar.target i{background:repeating-linear-gradient(45deg,${theme.ink} 0 8px,${theme.accent} 8px 16px)}
     .bar label{position:absolute;left:14px;top:14px;color:${theme.muted};font-size:14px;font-weight:800}
-    .evidence-list{display:grid;gap:14px;margin-top:24px}
-    .evidence-row{display:grid;grid-template-columns:1.1fr 1fr 42px;gap:18px;align-items:center;padding:17px 18px;border:1px solid rgba(13,24,36,.1);border-radius:18px;background:rgba(255,255,255,.58)}
+    .evidence-list{display:grid;gap:12px;margin-top:20px}
+    .evidence-row{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(96px,.9fr) 36px;gap:14px;align-items:center;padding:14px 16px;border:1px solid rgba(13,24,36,.1);border-radius:16px;background:rgba(255,255,255,.58)}
     .evidence-row span{display:block;color:${theme.accent};font-size:12px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
     .evidence-row strong{display:block;margin-top:4px;color:${theme.ink};font-size:17px;line-height:1.25}
     .meter{height:8px;background:${theme.panelSoft};border-radius:999px;overflow:hidden}.meter i{display:block;height:100%;background:${theme.accent};border-radius:999px;width:0}
-    .metric-stack{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:24px}
-    .metric{padding:24px;border-radius:22px;background:${theme.panelSoft};min-height:158px}.metric span{display:block;color:${theme.muted};font-size:14px;font-weight:800;text-transform:uppercase}.metric strong{display:block;margin-top:16px;font-size:42px;line-height:1;color:${theme.ink}}
-    .loss-number{font-size:72px;line-height:.98;color:${theme.danger};font-weight:850;letter-spacing:0;margin-top:24px}
+    .metric-stack{display:grid;grid-template-columns:1fr;gap:12px;margin-top:22px}
+    .metric{padding:18px;border-radius:18px;background:${theme.panelSoft};min-height:104px}.metric span{display:block;color:${theme.muted};font-size:13px;font-weight:800;text-transform:uppercase}.metric strong{display:block;margin-top:12px;font-size:34px;line-height:1.08;color:${theme.ink};overflow-wrap:anywhere}
+    .loss-number{font-size:58px;line-height:.98;color:${theme.danger};font-weight:850;letter-spacing:0;margin-top:22px;overflow-wrap:anywhere}
     .demo-window{overflow:hidden;padding:0}.browser-bar{height:48px;background:${theme.panelSoft};display:flex;align-items:center;gap:9px;padding:0 18px}.dot{width:12px;height:12px;border-radius:50%;background:${theme.accent}}.dot:nth-child(2){opacity:.55}.dot:nth-child(3){opacity:.3}
-    .demo-body{padding:34px;display:grid;gap:22px}.demo-hero{height:126px;border-radius:22px;background:linear-gradient(135deg,${theme.ink},${theme.accent});padding:25px;color:white}.demo-hero b{display:block;width:70%;height:18px;background:white;border-radius:999px;opacity:.92}.demo-hero i{display:block;width:48%;height:12px;background:white;border-radius:999px;opacity:.42;margin-top:18px}
-    .demo-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.demo-cards span{height:100px;border-radius:18px;background:${theme.panelSoft};border:1px solid rgba(13,24,36,.08)}
-    .cta-box{max-width:1040px}.cta-box h1{max-width:1040px;font-size:58px}.cta-actions{display:flex;justify-content:center;gap:16px;margin-top:36px}.action{display:inline-flex;align-items:center;gap:12px;border:1px solid ${theme.rule};border-radius:999px;padding:15px 20px;background:rgba(255,255,255,.1);font-size:17px;font-weight:800;color:white}.action.primary{background:${theme.panel};color:${theme.ink};border-color:transparent}
+    .demo-body{padding:28px;display:grid;gap:18px}.demo-hero{height:108px;border-radius:20px;background:linear-gradient(135deg,${theme.ink},${theme.accent});padding:22px;color:white}.demo-hero b{display:block;width:70%;height:16px;background:white;border-radius:999px;opacity:.92}.demo-hero i{display:block;width:48%;height:10px;background:white;border-radius:999px;opacity:.42;margin-top:16px}
+    .demo-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.demo-cards span{height:78px;border-radius:16px;background:${theme.panelSoft};border:1px solid rgba(13,24,36,.08)}
+    .cta-box{max-width:920px}.cta-box h1{max-width:920px;font-size:48px}.cta-actions{display:flex;justify-content:center;gap:14px;margin-top:30px}.action{display:inline-flex;align-items:center;gap:10px;border:1px solid ${theme.rule};border-radius:999px;padding:13px 18px;background:rgba(255,255,255,.1);font-size:15px;font-weight:800;color:white}.action.primary{background:${theme.panel};color:${theme.ink};border-color:transparent}
     .footer{position:absolute;left:44px;right:44px;bottom:30px;z-index:20;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;color:rgba(255,255,255,.42);font-size:13px;font-weight:720;letter-spacing:.08em;text-transform:uppercase}.footer div:nth-child(3){text-align:right}.progress{height:4px;background:rgba(255,255,255,.12);border-radius:999px;overflow:hidden}.progress i{display:block;width:0;height:100%;background:${theme.accentSoft}}
-    @media (max-width:900px){.frame{inset:18px;border-radius:22px}.brand{top:18px;left:22px;right:22px;font-size:10px}.scene{padding:74px 28px 58px;grid-template-columns:1fr;gap:24px}h1{font-size:38px}h2{font-size:30px}p{font-size:17px}.score-card{min-height:360px}.score-main strong{font-size:60px}.loss-number{font-size:48px}.footer{left:22px;right:22px;bottom:18px;font-size:10px}.scene.full{padding:64px 26px}.cta-box h1{font-size:34px}.cta-actions{flex-wrap:wrap}.panel{border-radius:22px;padding:22px}.demo-cards{grid-template-columns:1fr 1fr}.evidence-row{grid-template-columns:1fr}.metric-stack{grid-template-columns:1fr}}
+    @media (max-width:900px){.frame{inset:18px;border-radius:22px}.brand{top:18px;left:22px;right:22px;font-size:10px}.scene{padding:74px 28px 58px;grid-template-columns:1fr;gap:24px}h1{font-size:34px}h2{font-size:26px}p{font-size:16px}.score-card{min-height:340px}.score-main strong{font-size:52px}.loss-number{font-size:44px}.footer{left:22px;right:22px;bottom:18px;font-size:10px}.scene.full{padding:64px 26px}.cta-box h1{font-size:32px}.cta-actions{flex-wrap:wrap}.panel{border-radius:22px;padding:22px}.demo-cards{grid-template-columns:1fr 1fr}.evidence-row{grid-template-columns:1fr}.metric-stack{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
   <div
     data-composition-id="diagnostic-report-video"
     data-start="0"
-    data-duration="60"
+    data-duration="36"
     data-width="1920"
     data-height="1080"
     data-hf-frameworks="hyperframes-player gsap css catalog:data-chart catalog:shimmer-sweep catalog:caption-highlight catalog:flash-through-white catalog:transitions-blur"
   >
-    <div class="clip wash" data-start="0" data-duration="60" data-track-index="0"></div>
-    <div class="clip grid-bg" data-start="0" data-duration="60" data-track-index="0"></div>
-    <div class="clip frame" data-start="0" data-duration="60" data-track-index="0"></div>
-    <div class="clip brand" data-start="0" data-duration="60" data-track-index="3"><span><b>PARADIGM</b> DIAGNOSTIC</span><span>${esc(t.generated)}</span></div>
+    <div class="clip wash" data-start="0" data-duration="36" data-track-index="0"></div>
+    <div class="clip grid-bg" data-start="0" data-duration="36" data-track-index="0"></div>
+    <div class="clip frame" data-start="0" data-duration="36" data-track-index="0"></div>
+    <div class="clip brand" data-start="0" data-duration="36" data-track-index="3"><span><b>PARADIGM</b> DIAGNOSTIC</span><span>${esc(t.generated)}</span></div>
 
-    <section id="scene-hero" class="clip scene scene-hero" data-start="0" data-duration="11.5" data-track-index="1">
+    <section id="scene-hero" class="clip scene scene-hero" data-start="0" data-duration="7" data-track-index="1">
       <div>
         <div class="kicker">${esc(t.eyebrow)}</div>
-        <h1>${esc(hook)}</h1>
-        <p class="lead">${esc(company)}</p>
+        <h1>${esc(summaryTitle)}</h1>
+        <p class="lead">${esc(hook)}</p>
       </div>
       <div class="panel score-card">
         <div>
@@ -308,7 +311,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       </div>
     </section>
 
-    <section id="scene-evidence" class="clip scene scene-evidence" data-start="11.5" data-duration="11.5" data-track-index="1">
+    <section id="scene-evidence" class="clip scene scene-evidence" data-start="7" data-duration="7" data-track-index="1">
       <div>
         <div class="kicker">${esc(t.evidence)}</div>
         <h1>${esc(cleanText(firstAct?.headline, pain, 88))}</h1>
@@ -320,7 +323,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       </div>
     </section>
 
-    <section id="scene-loss" class="clip scene scene-loss" data-start="23" data-duration="11.5" data-track-index="1">
+    <section id="scene-loss" class="clip scene scene-loss" data-start="14" data-duration="7" data-track-index="1">
       <div>
         <div class="kicker">${esc(t.loss)}</div>
         <h1>${esc(cleanText(secondAct?.headline, fear, 88))}</h1>
@@ -336,7 +339,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       </div>
     </section>
 
-    <section id="scene-demo" class="clip scene scene-demo" data-start="34.5" data-duration="11.5" data-track-index="1">
+    <section id="scene-demo" class="clip scene scene-demo" data-start="21" data-duration="7" data-track-index="1">
       <div>
         <div class="kicker">${esc(t.demo)}</div>
         <h1>${esc(hope)}</h1>
@@ -356,7 +359,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       </div>
     </section>
 
-    <section id="scene-cta" class="clip scene scene-cta full" data-start="46" data-duration="14" data-track-index="1">
+    <section id="scene-cta" class="clip scene scene-cta full" data-start="28" data-duration="8" data-track-index="1">
       <div class="cta-box">
         <div class="kicker">${esc(t.cta)}</div>
         <h1>${esc(cta)}</h1>
@@ -369,7 +372,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       </div>
     </section>
 
-    <div class="clip footer" data-start="0" data-duration="60" data-track-index="3"><div>${esc(company)}</div><div class="progress"><i></i></div><div>${esc(reportUrl)}</div></div>
+    <div class="clip footer" data-start="0" data-duration="36" data-track-index="3"><div>${esc(company)}</div><div class="progress"><i></i></div><div>${esc(reportUrl)}</div></div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script>
@@ -378,7 +381,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
     const scenes = [".scene-hero", ".scene-evidence", ".scene-loss", ".scene-demo", ".scene-cta"];
     gsap.set(scenes, { autoAlpha: 0 });
     scenes.forEach((scene, index) => {
-      const at = index * 11.5;
+      const at = index * 7;
       tl.set(scene, { autoAlpha: 1 }, at);
       tl.fromTo(scene + " .kicker", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: .55, ease: "power3.out" }, at);
       tl.fromTo(scene + " h1", { y: 34, opacity: 0 }, { y: 0, opacity: 1, duration: .75, ease: "power3.out" }, at + .1);
@@ -392,13 +395,13 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       if (meters.length) {
         tl.to(meters, { width: function(_, el){ return el.style.width || "0%"; }, duration: .75, ease: "power2.out", stagger: .07 }, at + .9);
       }
-      tl.to(".progress i", { width: ((index + 1) / scenes.length * 100) + "%", duration: 10.5, ease: "none" }, at);
+      tl.to(".progress i", { width: ((index + 1) / scenes.length * 100) + "%", duration: 6.6, ease: "none" }, at);
       if (index < scenes.length - 1) {
-        tl.to(scene + " h1, " + scene + " p, " + scene + " .panel, " + scene + " .cta-actions, " + scene + " .kicker", { y: -18, opacity: 0, duration: .42, ease: "power2.in" }, at + 10.65);
-        tl.set(scene, { autoAlpha: 0 }, at + 11.15);
+        tl.to(scene + " h1, " + scene + " p, " + scene + " .panel, " + scene + " .cta-actions, " + scene + " .kicker", { y: -18, opacity: 0, duration: .35, ease: "power2.in" }, at + 6.35);
+        tl.set(scene, { autoAlpha: 0 }, at + 6.85);
       }
     });
-    tl.to(".scene-cta", { opacity: 0, duration: .7, ease: "power2.in" }, 59.2);
+    tl.to(".scene-cta", { opacity: 0, duration: .5, ease: "power2.in" }, 35.4);
     const countEl = document.querySelector(".count");
     if (countEl) {
       tl.to({ value: 0 }, {

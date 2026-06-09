@@ -19,9 +19,15 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 
 const CF_ACCOUNT_ID = "7ff83549f2bdc7bc62c1d64a698aabf1"
 const CF_PAGES_PROJECT = "paradigm-astro-demo"
+const GITHUB_REPO = "Paradigmllc/Paradigmjpcom"
+const GITHUB_BRANCH = "main"
 
 function cfToken(): string | null {
   return process.env.CLOUDFLARE_API_TOKEN ?? null
+}
+
+function githubToken(): string | null {
+  return process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN ?? null
 }
 
 function cfHeaders(): Record<string, string> {
@@ -83,6 +89,72 @@ export function buildDemoFrontmatter(
 /** Check if Cloudflare Pages deploy is configured */
 export function isCfPagesConfigured(): boolean {
   return cfToken() !== null
+}
+
+/** Commit a file to GitHub via API (auto-triggers Cloudflare Pages rebuild) */
+async function commitToGitHub(
+  path: string,
+  content: string,
+  message: string,
+): Promise<boolean> {
+  const token = githubToken()
+  if (!token) {
+    console.warn("[cf-pages-deploy] GITHUB_TOKEN not set, skipping git commit")
+    return false
+  }
+  try {
+    // Check if file exists to get SHA (needed for update)
+    let sha: string | null = null
+    try {
+      const getRes = await fetch(
+        `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/vnd.github+json",
+          },
+          signal: AbortSignal.timeout(15_000),
+        },
+      )
+      if (getRes.ok) {
+        const getData = await getRes.json() as { sha?: string }
+        sha = getData.sha ?? null
+      }
+    } catch {
+      // File doesn't exist yet — that's fine for create
+    }
+
+    const body: Record<string, string> = {
+      message,
+      content: Buffer.from(content).toString("base64"),
+      branch: GITHUB_BRANCH,
+    }
+    if (sha) body.sha = sha
+
+    const putRes = await fetch(
+      `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github+json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(15_000),
+      },
+    )
+    if (putRes.ok) {
+      console.warn("[cf-pages-deploy] committed to GitHub:", path)
+      return true
+    }
+    const errData = await putRes.json().catch(() => ({})) as { message?: string }
+    console.error("[cf-pages-deploy] GitHub commit failed:", errData.message ?? putRes.status)
+    return false
+  } catch (error) {
+    console.error("[cf-pages-deploy] GitHub commit error:", error)
+    return false
+  }
 }
 
 /** Get the base URL for the Cloudflare Pages project */
@@ -170,17 +242,21 @@ export async function deployDemoToCfPages(
     // 1. Generate Keystatic content
     const frontmatter = buildDemoFrontmatter(company, report)
 
-    // 2. Write to content directory (picked up by next build + git commit)
+    // 2. Commit to GitHub (auto-triggers Cloudflare Pages rebuild)
+    const contentPath = `content/keystatic/demo-sites/${slug}.mdoc`
+    const commitMsg = `demo: add ${company.company_name} Astro demo site [skip ci]`
+    const committed = await commitToGitHub(contentPath, frontmatter, commitMsg)
+
+    // 3. Write to local disk (for dev mode / fallback)
     try {
       const contentDir = join(process.cwd(), "content", "keystatic", "demo-sites")
       if (!existsSync(contentDir)) mkdirSync(contentDir, { recursive: true })
       writeFileSync(join(contentDir, `${slug}.mdoc`), frontmatter, "utf8")
-      console.warn("[cf-pages-deploy] saved Keystatic content:", `${slug}.mdoc`)
     } catch (fsErr) {
-      console.error("[cf-pages-deploy] failed to write content file:", fsErr)
+      console.error("[cf-pages-deploy] local write failed:", fsErr)
     }
 
-    // 3. Save to Supabase as backup
+    // 4. Save to Supabase as backup
     try {
       const sb = getServiceSalesSupabase()
       if (sb) {
@@ -193,19 +269,23 @@ export async function deployDemoToCfPages(
           meta: {
             generator: "cf-pages-deploy",
             company_id: company.id,
+            committed_to_github: committed,
             generated_at: new Date().toISOString(),
           },
         }, { onConflict: "slug" })
-        console.warn("[cf-pages-deploy] saved to Supabase:", slug)
       }
     } catch (dbErr) {
       console.error("[cf-pages-deploy] Supabase save failed:", dbErr)
     }
 
-    // 4. Trigger Cloudflare Pages rebuild
-    const deploy = await triggerCfPagesDeploy()
-    if (!deploy.ok) {
-      console.error("[cf-pages-deploy] deploy trigger failed, demo URL may be stale:", deploy.error)
+    // 5. Trigger Cloudflare Pages rebuild (redundant if GitHub commit worked, but safe)
+    if (!committed) {
+      const deploy = await triggerCfPagesDeploy()
+      if (!deploy.ok) {
+        console.error("[cf-pages-deploy] CF Pages trigger failed:", deploy.error)
+      }
+    } else {
+      console.warn("[cf-pages-deploy] GitHub commit will auto-trigger CF Pages build, URL:", demoUrl)
     }
 
     return {

@@ -35,6 +35,7 @@ export default function ReportHyperFramesPlayer({
   const playerRef = useRef<HyperframesPlayerElement | null>(null)
   const frameRef = useRef<HTMLDivElement | null>(null)
   const [playerLoadFailed, setPlayerLoadFailed] = useState(false)
+  const [runtimeReady, setRuntimeReady] = useState(false)
   const [ready, setReady] = useState(false)
   const [paused, setPaused] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -53,20 +54,45 @@ export default function ReportHyperFramesPlayer({
 
   useEffect(() => {
     let active = true
-    import("@hyperframes/player").catch((error: unknown) => {
-      console.error("[diagnostic-report] HyperFrames player failed to load:", error)
-      if (active) {
-        setPlayerLoadFailed(true)
-        toast.error(copy.loadError)
+    async function loadRuntime() {
+      try {
+        if (!customElements.get("hyperframes-player")) {
+          await import("@hyperframes/player")
+        }
+        if (!customElements.get("hyperframes-player")) {
+          await new Promise<void>((resolve, reject) => {
+            const existing = document.querySelector<HTMLScriptElement>('script[data-hyperframes-player="cdn"]')
+            if (existing) {
+              existing.addEventListener("load", () => resolve(), { once: true })
+              existing.addEventListener("error", () => reject(new Error("HyperFrames player CDN failed")), { once: true })
+              return
+            }
+            const script = document.createElement("script")
+            script.src = "https://cdn.jsdelivr.net/npm/@hyperframes/player@0.6.87/dist/hyperframes-player.global.js"
+            script.async = true
+            script.dataset.hyperframesPlayer = "cdn"
+            script.onload = () => resolve()
+            script.onerror = () => reject(new Error("HyperFrames player CDN failed"))
+            document.head.appendChild(script)
+          })
+        }
+        if (active) setRuntimeReady(Boolean(customElements.get("hyperframes-player")))
+      } catch (error) {
+        console.error("[diagnostic-report] HyperFrames player failed to load:", error)
+        if (active) {
+          setPlayerLoadFailed(true)
+          toast.error(copy.loadError)
+        }
       }
-    })
+    }
+    void loadRuntime()
     return () => {
       active = false
     }
   }, [copy.loadError])
 
   useEffect(() => {
-    if (playerLoadFailed) return
+    if (playerLoadFailed || !runtimeReady) return
     const player = playerRef.current
     if (!player) return
 
@@ -100,7 +126,7 @@ export default function ReportHyperFramesPlayer({
       player.removeEventListener("ended", syncState)
       player.removeEventListener("error", handleError)
     }
-  }, [copy.loadError, playerLoadFailed])
+  }, [copy.loadError, playerLoadFailed, runtimeReady])
 
   async function togglePlayback() {
     const player = playerRef.current
@@ -150,8 +176,8 @@ export default function ReportHyperFramesPlayer({
   }
 
   return (
-    <div ref={frameRef} className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-950 shadow-lg">
-      {playerLoadFailed ? (
+    <div ref={frameRef} className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-950 shadow-lg">
+      {playerLoadFailed || !runtimeReady ? (
         <iframe
           src={`${src}?autoplay=1`}
           className="block w-full aspect-video bg-zinc-950"
@@ -168,11 +194,11 @@ export default function ReportHyperFramesPlayer({
         "playback-rate": String(speed),
         "shader-capture-scale": "1",
         "shader-loading": "player",
-        class: "block w-full aspect-video bg-zinc-950",
+        className: "block w-full aspect-video bg-zinc-950",
         style: { width: "100%", aspectRatio: "16 / 9", display: "block" },
       } as Record<string, unknown>)}
 
-      <div className="grid gap-3 border-t border-white/10 bg-zinc-950 px-3 py-3 text-white sm:grid-cols-[auto_1fr_auto] sm:items-center sm:px-4">
+      <div className="absolute inset-x-3 bottom-3 z-20 grid gap-3 rounded-2xl border border-white/15 bg-zinc-950/88 px-3 py-3 text-white shadow-2xl backdrop-blur sm:grid-cols-[auto_1fr_auto] sm:items-center sm:px-4">
         <div className="flex items-center gap-2">
           <button
             type="button"

@@ -1,23 +1,30 @@
-# HyperFrames MP4 Renderer — dedicated service
-# Build: docker compose -f docker-compose.hf-renderer.yml up -d
-# Render: POST http://localhost:3001/render
+# HyperFrames MP4 Renderer — production service
+# Uses pre-built Chromium + FFmpeg image with HyperFrames CLI
+# Build separately: docker build -t paradigm-hf-renderer -f docker/Dockerfile.hf-renderer .
 
 services:
   hf-renderer:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.hf-renderer
-    image: paradigm-hf-renderer:latest
+    image: mcr.microsoft.com/playwright:v1.60.0-noble
     container_name: paradigm-hf-renderer
     restart: unless-stopped
     ports:
       - "3001:3001"
     volumes:
       - hf-renders:/app/renders
-      - ./test-video:/app
     environment:
       - NODE_ENV=production
       - HYPERFRAMES_MAX_CONCURRENCY=2
+      - PORT=3001
+    command: >
+      sh -c "
+      apt-get update -qq && apt-get install -y -qq ffmpeg curl &&
+      curl -fsSL https://deb.nodesource.com/setup_24.x | bash - &&
+      apt-get install -y nodejs &&
+      npm install -g hyperframes@latest &&
+      mkdir -p /app/renders &&
+      echo 'HyperFrames renderer ready' &&
+      tail -f /dev/null
+      "
     healthcheck:
       test: ["CMD", "node", "-e", "process.exit(0)"]
       interval: 30s
