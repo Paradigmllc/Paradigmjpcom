@@ -7,6 +7,7 @@ import fs from "node:fs"
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts")
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   // Pin Turbopack workspace root to this directory so worktree node_modules
   // resolves correctly. Without this, Next.js auto-detects the parent
   // D:\dev\paradigmjpcom\package-lock.json as root, then Turbopack ignores
