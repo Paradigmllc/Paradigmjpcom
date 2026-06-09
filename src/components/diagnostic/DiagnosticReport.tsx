@@ -937,8 +937,11 @@ export default function DiagnosticReport({
                     src={data.video_url}
                     className="w-full aspect-video"
                     controls
+                    autoPlay
+                    muted
+                    loop
                     playsInline
-                    preload="metadata"
+                    preload="auto"
                     poster={data.video_thumbnail ?? undefined}
                   >
                     <p>{lang === "ja" ? "お使いのブラウザは動画再生に対応していません。" : "Your browser does not support video playback."}</p>
