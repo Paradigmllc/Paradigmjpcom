@@ -1,5 +1,6 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { matchContentTemplate } from "./content-templates"
+import { getR2StorageConfig, sanitizeR2ObjectName } from "./r2-storage"
 import type { DiagnosticAct, DiagnosticReportData } from "./diagnostic"
 import { compactText, escapeHtml, labelForIndustry, themeForIndustry } from "./render-quality"
 import type { SalesCompany } from "./types"
@@ -476,33 +477,69 @@ export async function generateReplacementDemo(
     templateVariant: company.template_variant ?? report.template_variant,
   })
   const html = buildDemoHtml(company, report, contentTemplate.title)
+
+  // Prefer R2 for HTML storage to avoid Supabase DB bloat
+  const r2Config = getR2StorageConfig()
+  let demoUrl: string | null = null
+  const locale = company.report_locale ?? report.report_locale
+
+  if (r2Config.ready && r2Config.publicBaseUrl) {
+    try {
+      const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3")
+      const accountId = process.env.CLOUDFLARE_R2_ACCOUNT_ID!
+      const client = new S3Client({
+        region: "auto",
+        endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+        credentials: {
+          accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID!,
+          secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY!,
+        },
+      })
+      const r2Key = sanitizeR2ObjectName(`demos/${company.id}/${slug}.html`)
+      await client.send(new PutObjectCommand({
+        Bucket: r2Config.bucket,
+        Key: r2Key,
+        Body: html,
+        ContentType: "text/html; charset=utf-8",
+      }))
+      demoUrl = `${r2Config.publicBaseUrl.replace(/\/+$/, "")}/${r2Key}`
+      console.log("[demo-generator] saved to R2:", r2Key)
+    } catch (r2Err) {
+      console.error("[demo-generator] R2 upload failed, falling back to Supabase:", r2Err)
+    }
+  }
+
+  // Fallback: save to Supabase web_demos (lightweight metadata only)
+  const meta: Record<string, unknown> = {
+    generator: "astro_replacement_demo",
+    renderer_version: "professional-v3-independent-site",
+    content_template: {
+      title: contentTemplate.title,
+      quality_bar: contentTemplate.quality_bar,
+      dify_selection_rule: contentTemplate.dify_selection_rule,
+    },
+    report_url: report.report_url,
+    r2_url: demoUrl,
+    generated_at: new Date().toISOString(),
+  }
+
   const { error } = await sb.from("web_demos").upsert(
     {
       company_id: company.id,
       slug,
       name: `${company.company_name} Demo`,
-      html_content: html,
-      html,
+      html_content: demoUrl ? "(R2)" : html,  // Store URL reference or full HTML as fallback
+      html: demoUrl ? "(R2)" : html,
       source: "sales_enrichment",
       is_published: true,
-      meta: {
-        generator: "astro_replacement_demo",
-        renderer_version: "professional-v3-independent-site",
-        content_template: {
-          title: contentTemplate.title,
-          quality_bar: contentTemplate.quality_bar,
-          dify_selection_rule: contentTemplate.dify_selection_rule,
-        },
-        report_url: report.report_url,
-        generated_at: new Date().toISOString(),
-      },
+      meta,
     },
     { onConflict: "slug" },
   )
   if (error) {
     console.error("[demo-generator] upsert failed:", error.message)
-    return { ok: false, demoUrl: null, error: error.message }
+    if (!demoUrl) return { ok: false, demoUrl: null, error: error.message }
   }
-  const locale = company.report_locale ?? report.report_locale
-  return { ok: true, demoUrl: `https://paradigmjp.com/${locale}/d/${slug}` }
+
+  return { ok: true, demoUrl: demoUrl ?? `https://paradigmjp.com/${locale}/d/${slug}` }
 }

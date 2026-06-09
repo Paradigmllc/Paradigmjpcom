@@ -181,27 +181,24 @@ function TemplateManagementPanel({ data }: { data: SalesDashboardData }) {
         </div>
       </div>
       <div className="rounded-lg border border-zinc-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-zinc-950">Dify プロンプトステータス</h2>
+        <h2 className="text-sm font-semibold text-zinc-950">Dify / DeepSeek ステータス</h2>
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-          {[
-            { label: "Dify診断ワークフロー", slug: "dify" },
-            { label: "苦痛診断", slug: "dify_diagnosis" },
-            { label: "カルテ→レポート", slug: "karte_to_report" },
-            { label: "DeepSeek文面生成", slug: "deepseek" },
-          ].map((item) => {
-            const tool = data.toolConnections.find((t) =>
-              (t as { slug: string }).slug === "dify" || t.displayName?.toLowerCase().includes(item.slug)
-            ) as { status: string } | undefined
-            const isOk = tool?.status === "connected" || tool?.status === "ready" || tool?.status === "active"
-            return (
-              <div key={item.slug} className={`rounded-md border p-2.5 ${isOk ? "border-emerald-200 bg-emerald-50" : "border-zinc-200 bg-zinc-50"}`}>
+          {(() => {
+            const checks = [
+              { label: "Dify Cloud API", check: data.integrationStatus.find(i => i.slug === "dify_cloud")?.status === "ready" },
+              { label: "カルテ→レポート", check: data.integrationStatus.find(i => i.slug === "dify_karte_to_report")?.status === "ready" },
+              { label: "フォーム文面生成", check: data.integrationStatus.find(i => i.slug === "dify_form_message")?.status === "ready" },
+              { label: "DeepSeek", check: !!process.env.DEEPSEEK_API_KEY || data.integrationStatus.some(i => i.slug.includes("deepseek") && i.status === "ready") },
+            ]
+            return checks.map((item) => (
+              <div key={item.label} className={`rounded-md border p-2.5 ${item.check ? "border-emerald-200 bg-emerald-50" : "border-zinc-200 bg-zinc-50"}`}>
                 <div className="font-medium text-zinc-700">{item.label}</div>
-                <div className={`mt-1 text-[10px] font-bold ${isOk ? "text-emerald-700" : "text-zinc-500"}`}>
-                  {isOk ? "接続済み" : "未確認"}
+                <div className={`mt-1 text-[10px] font-bold ${item.check ? "text-emerald-700" : "text-zinc-500"}`}>
+                  {item.check ? "接続済み" : "未確認"}
                 </div>
               </div>
-            )
-          })}
+            ))
+          })()}
         </div>
         <p className="mt-3 text-[10px] text-zinc-400">
           Difyプロンプトは「AIプロンプト」タブで編集できます。変更は即座に診断レポートに反映されます。
