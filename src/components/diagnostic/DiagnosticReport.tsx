@@ -937,26 +937,24 @@ export default function DiagnosticReport({
           </div>
         </section>
 
-        {/* ── Diagnostic video — MP4 priority, iframe fallback ─────── */}
+        {/* ── Diagnostic video — same-origin MP4 proxy (no CORS issue) ─────── */}
         {(videoHref || data.video_url) && (
           <section className="px-5 pb-10">
             <div className="mx-auto max-w-6xl">
               <div className="overflow-hidden rounded-2xl border border-zinc-200 shadow-lg bg-zinc-900">
-                {data.video_url ? (
-                  <iframe
-                    src={videoHref ?? undefined}
-                    className="w-full aspect-video"
-                    title={lang === "ja" ? "60秒診断動画" : "60-second diagnostic video"}
-                    loading="lazy"
-                  />
-                ) : (
-                  <iframe
-                    src={videoHref ?? undefined}
-                    className="w-full aspect-video"
-                    title={lang === "ja" ? "60秒診断動画" : "60-second diagnostic video"}
-                    loading="lazy"
-                  />
-                )}
+                <video
+                  ref={videoRef}
+                  src={`/api/sales/video/${data.template_variant}/${data.report_locale}.mp4`}
+                  className="w-full aspect-video"
+                  controls
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="auto"
+                >
+                  <p>{lang === "ja" ? "お使いのブラウザは動画再生に対応していません。" : "Your browser does not support video playback."}</p>
+                </video>
               </div>
             </div>
           </section>
