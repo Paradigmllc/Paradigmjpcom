@@ -941,20 +941,12 @@ export default function DiagnosticReport({
             <div className="mx-auto max-w-6xl">
               <div className="overflow-hidden rounded-2xl border border-zinc-200 shadow-lg bg-zinc-900">
                 {data.video_url ? (
-                  <video
-                    ref={videoRef}
-                    src={data.video_url}
+                  <iframe
+                    src={videoHref ?? undefined}
                     className="w-full aspect-video"
-                    controls
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    preload="auto"
-                    poster={data.video_thumbnail ?? undefined}
-                  >
-                    <p>{lang === "ja" ? "お使いのブラウザは動画再生に対応していません。" : "Your browser does not support video playback."}</p>
-                  </video>
+                    title={lang === "ja" ? "60秒診断動画" : "60-second diagnostic video"}
+                    loading="lazy"
+                  />
                 ) : (
                   <iframe
                     src={videoHref ?? undefined}
