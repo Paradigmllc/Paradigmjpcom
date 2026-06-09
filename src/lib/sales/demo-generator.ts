@@ -68,6 +68,14 @@ function buildDemoHtml(company: SalesCompany, report: DiagnosticReportData, temp
   const locale = company.report_locale ?? report.report_locale
   const japanese = isJa(locale)
   const name = company.company_name
+  const hasNoSite = company.pagespeed_mobile == null // No PSI data = no existing site detected
+  const isNewBuild = hasNoSite || !company.domain
+  const buildType = isNewBuild
+    ? (japanese ? "新規構築" : "New Build")
+    : (japanese ? "差し替え改善" : "Replacement")
+  const buildLabel = isNewBuild
+    ? (japanese ? "既存サイトがないため、ゼロから最適な構成で構築します。" : "No existing site detected — built from scratch with optimal structure.")
+    : (japanese ? "既存サイトの改善ポイントを反映した差し替え案です。" : "Replacement proposal reflecting improvement points from your current site.")
   const escapedName = escapeHtml(name)
   const brandMark = escapeHtml(initials(name) || name.slice(0, 1))
   const industry = labelForIndustry(company.industry, locale)
