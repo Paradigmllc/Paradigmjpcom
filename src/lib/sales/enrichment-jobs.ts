@@ -4,6 +4,7 @@ import { findCompanyById, upsertCompanyByDomain } from "./companies"
 import { runDifyDiagnosis } from "./dify-diagnosis"
 import { fetchDiagnosticReport } from "./diagnostic"
 import { generateReplacementDemo } from "./demo-generator"
+import { generateDiagnosticVideo } from "./video-generator"
 import { computeSourceCoverage, saveSourceCoverageRows } from "./source-coverage"
 import { saveTechStackDetections } from "./source-acquisition"
 import { syncCompanyKarteToTwenty } from "./twenty-sync"
@@ -409,6 +410,8 @@ async function processJob(sb: ServiceSupabase, job: SalesEnrichmentJob): Promise
     templateVariant: save.company.template_variant ?? undefined,
   })
   const demo = report ? await generateReplacementDemo(save.company, report) : { ok: false, demoUrl: null }
+  // Fire-and-forget: generate video in background (don't block enrichment)
+  const videoPromise = report ? generateDiagnosticVideo(save.company.id, save.company.report_locale).catch(() => null) : Promise.resolve(null)
   const finalMeta = demo.ok && demo.demoUrl
     ? {
         ...(save.company.meta ?? {}),
