@@ -28,9 +28,8 @@ import {
 } from "./ReportCharts"
 import { getVariantLayout } from "./report-section-config"
 import { VariantSection } from "./report-variant-sections"
-import { AnimatedBackground } from "./report-visual-effects"
-import { ReadingProgress, BackToTop, ShareReport } from "./report-ui-enhancements"
 import { AnimatedBackground, GlassCard, ParallaxSection, PulseGlow } from "./report-visual-effects"
+import { ReadingProgress, BackToTop, ShareReport } from "./report-ui-enhancements"
 
 // ─── Constants ──────────────────────────────────────────────────
 
