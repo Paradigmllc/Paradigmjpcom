@@ -186,12 +186,12 @@ export default async function LocaleLayout({ children, params }: Props) {
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* P18 follow-up (2026-04-30): site-wide single sans family per ユーザ指示
-              「サイト全体のフォントは Noto Sans（Arial）で」.
-            Noto Sans (Latin) + Noto Sans JP (CJK) を 1 bundle ロード。
-            Cormorant Garamond / Inter / JetBrains Mono / Noto Serif JP は撤去。 */}
+        {/* Noto Sans (body) + Noto Sans JP (CJK) + Outfit (display headings)
+             Aurora redesign 2026-06-09: display font changed from Noto Sans 300 weight
+             to Outfit — modern geometric sans for bold, distinctive headings.
+             Body remains Noto Sans for readability across 12 locales. */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
         {isRtl && (

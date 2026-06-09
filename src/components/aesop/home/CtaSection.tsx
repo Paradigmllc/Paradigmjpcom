@@ -33,7 +33,7 @@ export default function CtaSection() {
 
         <h2 className="font-display text-[34px] md:text-[56px] leading-[1.05] tracking-[-0.03em] text-paradigm-paper mb-6">
           {t("ctaHeading")}
-          <span className="block bg-gradient-to-r from-pink-300 via-paradigm-glow via-paradigm-tech to-paradigm-glow bg-[length:300%_100%] bg-clip-text text-transparent animate-[gradientShift_6s_ease_infinite]">
+          <span className="block bg-gradient-to-r from-fuchsia-400 via-paradigm-glow via-paradigm-tech to-paradigm-glow bg-[length:300%_100%] bg-clip-text text-transparent animate-[gradientShift_6s_ease_infinite]">
             {t("ctaHeadingHighlight")}
           </span>
           <span className="text-paradigm-paper/95">{t("ctaHeadingSuffix")}</span>

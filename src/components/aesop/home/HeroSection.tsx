@@ -32,10 +32,10 @@ const HERO_VIDEO_URL =
   ?? "https://videos.pexels.com/video-files/3209663/3209663-uhd_2560_1440_25fps.mp4"
 
 const STAT_DEFS = [
-  { key: "support", to: 200, gradient: "from-pink-300 via-paradigm-glow to-paradigm-tech" },
-  { key: "retention", to: 98, gradient: "from-paradigm-tech via-paradigm-glow to-violet-300" },
-  { key: "growth", to: 3, gradient: "from-paradigm-glow via-violet-300 to-pink-300" },
-  { key: "consult", to: 15, gradient: "from-violet-300 via-pink-300 to-paradigm-tech" },
+  { key: "support", to: 200, gradient: "from-fuchsia-400 via-paradigm-glow to-paradigm-tech" },
+  { key: "retention", to: 98, gradient: "from-paradigm-tech via-paradigm-glow to-violet-400" },
+  { key: "growth", to: 3, gradient: "from-paradigm-glow via-violet-400 to-fuchsia-400" },
+  { key: "consult", to: 15, gradient: "from-violet-400 via-fuchsia-400 to-paradigm-tech" },
 ] as const
 
 export default function HeroSection() {
@@ -113,7 +113,7 @@ export default function HeroSection() {
           className="font-display leading-[1.05] tracking-[-0.025em] text-paradigm-paper mb-6"
         >
           <span className="block">
-            <span className="bg-gradient-to-r from-pink-300 via-paradigm-glow via-paradigm-tech to-paradigm-glow bg-clip-text text-transparent bg-[length:300%_100%] animate-[gradientShift_8s_ease_infinite]">
+              <span className="bg-gradient-to-r from-fuchsia-400 via-paradigm-glow via-paradigm-tech to-paradigm-glow bg-clip-text text-transparent bg-[length:300%_100%] animate-[gradientShift_8s_ease_infinite]">
               {typingText}
             </span>
             <span

@@ -7,35 +7,36 @@
 @source "../../node_modules/@paradigmllc/blocks";
 
 /* ────────────────────────────────────────────────────────────────────────
-   Paradigm "Modern Tech × Aesop" Design Tokens (P18-A — 2026-04-30)
+   Paradigm "Aurora" Design Tokens (2026-06-09 全面刷新)
    ────────────────────────────────────────────────────────────────────────
-   Single source of truth for both Tailwind v4 (`@theme` namespace) and raw
-   CSS (`var(--paradigm-*)`). Tokens are space-separated RGB triplets so
-   Tailwind's opacity modifiers (`text-paradigm-ink/80`) resolve correctly.
-   When using raw `var(--paradigm-*)` directly, wrap with `rgb()`.
-   Hex equivalents (kept as comments for designers):
-     LIGHT   paper #f8f8f6  paper-deep #eeeeea  paper-card #fcfcfa
-             ink #121419    ink-soft   #404650  ink-mute   #828a94
-             line #dcdee2   accent     #4f46e5  glow       #818cf8
-     DARK    paper #0c0e12  paper-deep #080a0d  paper-card #161920
-             ink #e8ebf0    ink-soft   #b4bcc8  ink-mute   #828a94
-             line #232830   accent     #818cf8  glow       #a5b4fc
-   Sericia とのブランド衝突回避: cooler neutral cream + 冷めの ink + indigo
-   refined accent。Sericia の warm beige (#f5f0e8 + olive) とは差別化済み。 */
+   旧 "Modern Tech × Aesop" (indigo/cyan/冷クリーム) → Aurora システムへ刷新:
+     - アクセント: violet → fuchsia → warm orange のオーロラグラデーション
+     - 紙色: より暖かみのあるクリーム (light) / 深い紫黒 (dark)
+     - 全体的にコントラスト高め・ビビッド寄り・Stripe 風のモダン路線
+   Hex equivalents:
+     LIGHT   paper #fafaf7  paper-deep #f2f0eb  paper-card #fefefc
+             ink #0f1115    ink-soft   #3d4148  ink-mute   #787c85
+             line #e5e3de   accent     #8b5cf6  glow       #ec4899
+             tech #f59e0b   surface    #ffffff
+     DARK    paper #0a0813  paper-deep #06040c  paper-card #13101f
+             ink #f0edf5    ink-soft   #c4bfd3  ink-mute   #7a7590
+             line #251f38   accent     #a78bfa  glow       #f472b6
+             tech #fbbf24   surface    #0f0c1a */
 
 :root,
 [data-theme="light"] {
-  --paradigm-paper: 248 248 246;
-  --paradigm-paper-deep: 238 238 234;
-  --paradigm-paper-card: 252 252 250;
-  --paradigm-ink: 18 20 25;
-  --paradigm-ink-soft: 64 70 80;
-  --paradigm-ink-mute: 130 138 148;
-  --paradigm-line: 220 222 226;
-  --paradigm-accent: 79 70 229;
-  --paradigm-accent-soft: 99 102 241;
-  --paradigm-glow: 129 140 248;
-  --paradigm-tech: 14 165 233;
+  --paradigm-paper: 250 250 247;
+  --paradigm-paper-deep: 242 240 235;
+  --paradigm-paper-card: 254 254 252;
+  --paradigm-surface: 255 255 255;
+  --paradigm-ink: 15 17 21;
+  --paradigm-ink-soft: 61 65 72;
+  --paradigm-ink-mute: 120 124 133;
+  --paradigm-line: 229 227 222;
+  --paradigm-accent: 139 92 246;
+  --paradigm-accent-soft: 167 139 250;
+  --paradigm-glow: 236 72 153;
+  --paradigm-tech: 245 158 11;
 
   --background: rgb(var(--paradigm-paper));
   --foreground: rgb(var(--paradigm-ink));
@@ -44,17 +45,18 @@
 }
 
 [data-theme="dark"] {
-  --paradigm-paper: 12 14 18;
-  --paradigm-paper-deep: 8 10 13;
-  --paradigm-paper-card: 22 25 32;
-  --paradigm-ink: 232 235 240;
-  --paradigm-ink-soft: 180 188 200;
-  --paradigm-ink-mute: 130 138 148;
-  --paradigm-line: 35 40 48;
-  --paradigm-accent: 129 140 248;
-  --paradigm-accent-soft: 165 180 252;
-  --paradigm-glow: 199 210 254;
-  --paradigm-tech: 56 189 248;
+  --paradigm-paper: 10 8 19;
+  --paradigm-paper-deep: 6 4 12;
+  --paradigm-paper-card: 19 16 31;
+  --paradigm-surface: 15 12 26;
+  --paradigm-ink: 240 237 245;
+  --paradigm-ink-soft: 196 191 211;
+  --paradigm-ink-mute: 122 117 144;
+  --paradigm-line: 37 31 56;
+  --paradigm-accent: 167 139 250;
+  --paradigm-accent-soft: 196 181 253;
+  --paradigm-glow: 244 114 182;
+  --paradigm-tech: 251 191 36;
 
   --background: rgb(var(--paradigm-paper));
   --foreground: rgb(var(--paradigm-ink));
@@ -74,6 +76,7 @@
   --color-paradigm-paper: rgb(var(--paradigm-paper));
   --color-paradigm-paper-deep: rgb(var(--paradigm-paper-deep));
   --color-paradigm-paper-card: rgb(var(--paradigm-paper-card));
+  --color-paradigm-surface: rgb(var(--paradigm-surface));
   --color-paradigm-ink: rgb(var(--paradigm-ink));
   --color-paradigm-ink-soft: rgb(var(--paradigm-ink-soft));
   --color-paradigm-ink-mute: rgb(var(--paradigm-ink-mute));
@@ -83,13 +86,9 @@
   --color-paradigm-glow: rgb(var(--paradigm-glow));
   --color-paradigm-tech: rgb(var(--paradigm-tech));
 
-  /* Site-wide single sans family: Noto Sans (Latin) + Noto Sans JP (CJK)
-     + Arial / system fallback. P18 follow-up rewrite (2026-04-30 ユーザ指示):
-     editorial serif (Cormorant Garamond / Noto Serif JP) を全廃して
-     Noto Sans 一本に統一。display は同 family の lighter weight (300) で
-     大型化することで quiet luxury feel を維持。 */
+  /* Typography — body uses Noto Sans (Google Fonts), display uses Outfit (geometric) */
   --font-sans: "Noto Sans", "Noto Sans JP", Arial, system-ui, "Helvetica Neue", sans-serif;
-  --font-display: "Noto Sans", "Noto Sans JP", Arial, system-ui, "Helvetica Neue", sans-serif;
+  --font-display: "Outfit", "Noto Sans", "Noto Sans JP", Arial, system-ui, sans-serif;
   --font-mono: "Noto Sans", "Noto Sans JP", Arial, sans-serif;
 }
 
@@ -123,10 +122,9 @@ body {
    Aesop-style typographic primitives
    ──────────────────────────────────────────────────────────────────────── */
 
-/* Display — large editorial headlines. After P18 follow-up the family is
-   the same as body sans (Noto Sans), so display weight is dropped to 300
-   and tracking tightened to keep the quiet-luxury hierarchy without serif. */
-.font-display { font-family: var(--font-display); font-weight: 300; letter-spacing: -0.02em; }
+/* Display — bold geometric headings (Aurora redesign: Outfit 600-800 weight).
+   Sharp, modern, high-impact. Letter-spacing tightened for large sizes. */
+.font-display { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.03em; }
 
 /* Eyebrow — Aesop's signature small caps with wide tracking, used above
    section headings to anchor hierarchy without competing for attention. */
@@ -244,30 +242,30 @@ body.no-grain::before { display: none; }
   inset: -10%;
   pointer-events: none;
   background:
-    radial-gradient(circle at 20% 20%, rgb(var(--paradigm-accent) / 0.12), transparent 45%),
-    radial-gradient(circle at 80% 30%, rgb(var(--paradigm-tech) / 0.10), transparent 45%),
-    radial-gradient(circle at 50% 80%, rgb(var(--paradigm-glow) / 0.10), transparent 45%);
+    radial-gradient(circle at 20% 20%, rgb(var(--paradigm-accent) / 0.10), transparent 45%),
+    radial-gradient(circle at 80% 30%, rgb(var(--paradigm-glow) / 0.08), transparent 45%),
+    radial-gradient(circle at 50% 80%, rgb(var(--paradigm-tech) / 0.08), transparent 45%);
   filter: blur(60px);
   animation: meshDrift 22s ease-in-out infinite;
 }
 [data-theme="dark"] .paradigm-mesh {
   background:
-    radial-gradient(circle at 20% 20%, rgb(var(--paradigm-accent) / 0.22), transparent 45%),
-    radial-gradient(circle at 80% 30%, rgb(var(--paradigm-tech) / 0.18), transparent 45%),
-    radial-gradient(circle at 50% 80%, rgb(var(--paradigm-glow) / 0.18), transparent 45%);
+    radial-gradient(circle at 20% 20%, rgb(var(--paradigm-accent) / 0.18), transparent 45%),
+    radial-gradient(circle at 80% 30%, rgb(var(--paradigm-glow) / 0.14), transparent 45%),
+    radial-gradient(circle at 50% 80%, rgb(var(--paradigm-tech) / 0.14), transparent 45%);
 }
 
-/* Vibrant rainbow mesh — for hero & CTA sections (5-stop drifting) */
+/* Vibrant aurora mesh — violet → fuchsia → amber の 5-stop グラデーション */
 .paradigm-mesh-vivid {
   position: absolute;
   inset: -10%;
   pointer-events: none;
   background:
-    radial-gradient(circle at 15% 15%, rgb(244 114 182 / 0.30), transparent 40%),
-    radial-gradient(circle at 85% 20%, rgb(99 102 241 / 0.30), transparent 40%),
-    radial-gradient(circle at 25% 85%, rgb(14 165 233 / 0.28), transparent 40%),
-    radial-gradient(circle at 75% 75%, rgb(165 180 252 / 0.28), transparent 40%),
-    radial-gradient(circle at 50% 50%, rgb(251 146 60 / 0.18), transparent 50%);
+    radial-gradient(circle at 15% 15%, rgb(139 92 246 / 0.28), transparent 40%),
+    radial-gradient(circle at 85% 20%, rgb(236 72 153 / 0.28), transparent 40%),
+    radial-gradient(circle at 25% 85%, rgb(245 158 11 / 0.24), transparent 40%),
+    radial-gradient(circle at 75% 75%, rgb(167 139 250 / 0.24), transparent 40%),
+    radial-gradient(circle at 50% 50%, rgb(244 114 182 / 0.16), transparent 50%);
   filter: blur(80px);
   animation: meshDrift 18s ease-in-out infinite;
 }
@@ -284,11 +282,11 @@ body.no-grain::before { display: none; }
   border-color: rgb(var(--paradigm-line) / 0.5);
 }
 
-/* Glow shadows for premium depth (4 levels: sm / md / lg / xl) */
-.paradigm-glow-sm { box-shadow: 0 4px 16px -4px rgb(99 102 241 / 0.20); }
-.paradigm-glow-md { box-shadow: 0 12px 36px -8px rgb(99 102 241 / 0.25); }
-.paradigm-glow-lg { box-shadow: 0 24px 60px -16px rgb(99 102 241 / 0.30), 0 8px 16px -4px rgb(14 165 233 / 0.15); }
-.paradigm-glow-xl { box-shadow: 0 36px 96px -24px rgb(99 102 241 / 0.35), 0 12px 24px -6px rgb(14 165 233 / 0.20), 0 4px 8px -2px rgb(244 114 182 / 0.10); }
+/* Glow shadows for premium depth — aurora palette */
+.paradigm-glow-sm { box-shadow: 0 4px 16px -4px rgb(139 92 246 / 0.18); }
+.paradigm-glow-md { box-shadow: 0 12px 36px -8px rgb(139 92 246 / 0.22); }
+.paradigm-glow-lg { box-shadow: 0 24px 60px -16px rgb(139 92 246 / 0.28), 0 8px 16px -4px rgb(236 72 153 / 0.14); }
+.paradigm-glow-xl { box-shadow: 0 36px 96px -24px rgb(139 92 246 / 0.32), 0 12px 24px -6px rgb(236 72 153 / 0.18), 0 4px 8px -2px rgb(245 158 11 / 0.10); }
 
 /* Gradient border (1px outer ring with rainbow) — used on CTAs */
 .paradigm-gradient-border {
