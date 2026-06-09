@@ -85,6 +85,7 @@ const DEFAULT_LAYOUT: VariantLayout = {
     { id: "source_coverage" },
     { id: "timeline" },
     { id: "evidence" },
+    { id: "solution_proposal", required: true },
     { id: "faq" },
     { id: "cta" },
   ],
@@ -95,6 +96,7 @@ const DEFAULT_LAYOUT: VariantLayout = {
     muted: "text-zinc-500",
     border: "border-zinc-200",
   },
+  hideGenericSections: [],
 }
 
 // ─── MEO layout ───

@@ -1057,7 +1057,7 @@ export default function DiagnosticReport({
         {(() => {
           const layout = getVariantLayout(data.template_variant)
           return layout.sections
-            .filter((s) => !["hero", "stats", "executive_summary", "dark_surface", "benchmark", "findings", "loss_chart", "screenshot", "pain_points", "source_coverage", "timeline", "evidence", "faq", "cta", "annotated_screenshot", "before_after", "mobile_comparison", "meo_map", "meo_reviews", "security_scorecard", "security_timeline", "security_vuln_matrix", "japan_market", "japan_checklist", "japan_roadmap"].includes(s.id))
+            .filter((s) => !["hero", "stats", "executive_summary", "dark_surface", "benchmark", "findings", "loss_chart", "screenshot", "pain_points", "source_coverage", "timeline", "evidence", "faq", "cta", "annotated_screenshot", "before_after", "mobile_comparison", "meo_map", "meo_reviews", "security_scorecard", "security_timeline", "security_vuln_matrix", "japan_market", "japan_checklist", "japan_roadmap", "solution_proposal"].includes(s.id))
             .map((s) => <VariantSection key={s.id} sectionId={s.id} data={data} lang={lang} />)
         })()}
 
