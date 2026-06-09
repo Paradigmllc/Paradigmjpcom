@@ -28,6 +28,7 @@ import {
 } from "./ReportCharts"
 import { getVariantLayout } from "./report-section-config"
 import { VariantSection } from "./report-variant-sections"
+import VideoModal from "./VideoModal"
 import { AnimatedBackground, GlassCard, ParallaxSection, PulseGlow } from "./report-visual-effects"
 import { ReadingProgress, BackToTop, ShareReport } from "./report-ui-enhancements"
 
@@ -1095,32 +1096,7 @@ export default function DiagnosticReport({
         {videoHref && (
           <section className="px-5 pb-10">
             <div className="mx-auto max-w-6xl">
-              <a
-                href={videoHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative block overflow-hidden rounded-2xl border border-zinc-200 shadow-lg bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 transition-shadow hover:shadow-xl"
-              >
-                {/* Thumbnail background with play button */}
-                <div className="aspect-video flex items-center justify-center">
-                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(124,92,255,0.15)_0%,transparent_70%)]" />
-                  <div className="relative z-10 flex flex-col items-center gap-4">
-                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm border border-white/20 transition-transform group-hover:scale-110 group-hover:bg-white/20">
-                      <svg width="32" height="36" viewBox="0 0 32 36" fill="white">
-                        <path d="M0 0v36l32-18z" />
-                      </svg>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-lg font-bold text-white">
-                        {lang === "ja" ? "60秒診断動画を見る" : "Watch 60-Second Diagnostic"}
-                      </p>
-                      <p className="mt-1 text-sm text-zinc-400">
-                        {lang === "ja" ? "クリックで全画面再生" : "Click for full-screen playback"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </a>
+              <VideoModal videoHref={videoHref} lang={lang} />
             </div>
           </section>
         )}

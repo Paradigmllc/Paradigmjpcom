@@ -1,271 +1,258 @@
 /**
- * HyperFrames video templates — professional-grade 60-second diagnostic reports.
- * Gamma AI / HeyGen quality: transitions, data viz, kinetic type, depth layers.
+ * YouTube-style motion graphics video — continuous motion, no slides.
+ * 4 principles: camera zoom, text stagger, micro-motion, flowing background.
  */
 import type { DiagnosticReportData } from "./diagnostic"
 
 function esc(s: string): string { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;") }
 
 interface Theme {
-  bg: string; accent: string; accentDark: string; accLight: string
-  text: string; muted: string; signal: string; surface: string
+  bg: string; bg2: string; accent: string; accLight: string
+  text: string; muted: string; signal: string; surface: string; warn: string
 }
 
-function themeFor(variant: string): Theme {
-  if (variant === "meo") return { bg: "#061408", accent: "#22c55e", accentDark: "#14532d", accLight: "#bbf7d0", text: "#f0fdf4", muted: "rgba(240,253,244,0.55)", signal: "#4ade80", surface: "rgba(255,255,255,0.04)" }
-  if (variant === "security") return { bg: "#0f0505", accent: "#ef4444", accentDark: "#450a0a", accLight: "#fecaca", text: "#fef2f2", muted: "rgba(254,242,242,0.55)", signal: "#f87171", surface: "rgba(255,255,255,0.04)" }
-  if (variant === "japan_entry") return { bg: "#050d1a", accent: "#3b82f6", accentDark: "#0c1e3d", accLight: "#bfdbfe", text: "#eff6ff", muted: "rgba(239,246,255,0.55)", signal: "#60a5fa", surface: "rgba(255,255,255,0.04)" }
-  if (variant === "video_subscription") return { bg: "#0a0518", accent: "#8b5cf6", accentDark: "#2e1065", accLight: "#ddd6fe", text: "#faf5ff", muted: "rgba(250,245,255,0.55)", signal: "#a78bfa", surface: "rgba(255,255,255,0.04)" }
-  if (variant === "subsidy") return { bg: "#051414", accent: "#14b8a6", accentDark: "#134e4a", accLight: "#99f6e4", text: "#f0fdfa", muted: "rgba(240,253,250,0.55)", signal: "#2dd4bf", surface: "rgba(255,255,255,0.04)" }
-  if (variant === "outreach") return { bg: "#0f0804", accent: "#f97316", accentDark: "#431407", accLight: "#fed7aa", text: "#fff7ed", muted: "rgba(255,247,237,0.55)", signal: "#fb923c", surface: "rgba(255,255,255,0.04)" }
-  return { bg: "#06060c", accent: "#8b5cf6", accentDark: "#1e1040", accLight: "#ddd6fe", text: "#ffffff", muted: "rgba(255,255,255,0.55)", signal: "#a78bfa", surface: "rgba(255,255,255,0.04)" }
+function th(variant: string): Theme {
+  if (variant === "meo") return { bg: "#051408", bg2: "#0c2414", accent: "#22c55e", accLight: "#bbf7d0", text: "#f0fdf4", muted: "rgba(240,253,244,0.55)", signal: "#4ade80", surface: "rgba(255,255,255,0.04)", warn: "#fbbf24" }
+  if (variant === "security") return { bg: "#0d0404", bg2: "#1a0808", accent: "#ef4444", accLight: "#fecaca", text: "#fef2f2", muted: "rgba(254,242,242,0.55)", signal: "#f87171", surface: "rgba(255,255,255,0.04)", warn: "#fbbf24" }
+  if (variant === "japan_entry") return { bg: "#040c18", bg2: "#08162a", accent: "#3b82f6", accLight: "#bfdbfe", text: "#eff6ff", muted: "rgba(239,246,255,0.55)", signal: "#60a5fa", surface: "rgba(255,255,255,0.04)", warn: "#fbbf24" }
+  if (variant === "video_subscription") return { bg: "#080418", bg2: "#100a28", accent: "#8b5cf6", accLight: "#ddd6fe", text: "#faf5ff", muted: "rgba(250,245,255,0.55)", signal: "#a78bfa", surface: "rgba(255,255,255,0.04)", warn: "#fbbf24" }
+  if (variant === "subsidy") return { bg: "#041414", bg2: "#081f1f", accent: "#14b8a6", accLight: "#99f6e4", text: "#f0fdfa", muted: "rgba(240,253,250,0.55)", signal: "#2dd4bf", surface: "rgba(255,255,255,0.04)", warn: "#fbbf24" }
+  if (variant === "outreach") return { bg: "#0e0704", bg2: "#1c0e06", accent: "#f97316", accLight: "#fed7aa", text: "#fff7ed", muted: "rgba(255,247,237,0.55)", signal: "#fb923c", surface: "rgba(255,255,255,0.04)", warn: "#fbbf24" }
+  return { bg: "#05050c", bg2: "#0c0c18", accent: "#8b5cf6", accLight: "#ddd6fe", text: "#ffffff", muted: "rgba(255,255,255,0.55)", signal: "#a78bfa", surface: "rgba(255,255,255,0.04)", warn: "#fbbf24" }
 }
 
-// Rich data visualization: animated bar chart
-function dataVizBars(metricLabel: string, metricValue: string, industryAvg: string, theme: Theme, id: string): string {
-  const pct = Math.min(parseFloat(metricValue) || 38, 100)
-  const threshold = 70
-  return `<div class="data-viz" id="${id}">
-  <div class="viz-title">${esc(metricLabel)}</div>
-  <div class="viz-bars">
-    <div class="bar-wrap"><div class="bar-label">Current</div><div class="bar-track"><div class="bar-fill bar-current" style="height:${pct}%;background:${pct < threshold ? theme.signal : theme.accent}"></div></div><div class="bar-val">${esc(metricValue)}</div></div>
-    <div class="bar-wrap"><div class="bar-label">Target</div><div class="bar-track"><div class="bar-fill bar-target" style="height:${threshold}%"></div></div><div class="bar-val">${esc(industryAvg)}</div></div>
-  </div>
-</div>`
-}
-
-// Animated score badge
-function scoreBadge(value: string, theme: Theme): string {
-  return `<div class="score-badge"><span class="score-num">${esc(value)}</span><div class="score-ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="5"/><circle cx="50" cy="50" r="42" fill="none" stroke="${theme.signal}" stroke-width="5" stroke-dasharray="264" stroke-dashoffset="264" stroke-linecap="round" transform="rotate(-90 50 50)"/></svg></div></div>`
-}
-
-function metricCard(label: string, value: string, theme: Theme): string {
-  return `<div class="metric-card"><div class="metric-label">${esc(label)}</div><div class="metric-val">${esc(value)}</div></div>`
+// Split text into individual character spans for stagger animation
+function charSpans(text: string, className: string): string {
+  return text.split("").map((ch, i) => `<span class="${className}" style="display:inline-block">${ch === " " ? "&nbsp;" : esc(ch)}</span>`).join("")
 }
 
 export function buildVariantVideoHtml(data: DiagnosticReportData, script: { hook: string; pain: string; fear: string; hope: string; cta: string }): string {
-  const theme = themeFor(data.template_variant)
+  const t = th(data.template_variant)
   const { hook, pain, fear, hope, cta } = script
-  const company = esc(data.company_name)
-  const totalLoss = esc(data.total_loss)
+  const co = esc(data.company_name)
+  const loss = esc(data.total_loss)
   const isJa = data.report_locale === "ja"
-  const label1 = isJa ? "公開データ分析" : "Public Evidence"
-  const label2 = isJa ? "機会損失" : "Hidden Cost"
-  const label3 = isJa ? "ソリューション" : "Solution"
-  const label4 = isJa ? "次のステップ" : "Next Step"
-  const industryAvg = "71"
-  const metricLabel = isJa ? "現在スコア" : "Current Score"
-  const metricValue = data.acts[0]?.metric_value || "38"
-  const checkItems = ["特商法", "APPI", "決済", "日本語"]
-  const checkGrid = checkItems.map(c => `<div class="check fail">${c}</div>`).join("")
-  const lossMetrics = isJa
-    ? `<div class="metrics-row">${metricCard("月間損失", totalLoss, theme)}${metricCard("年間換算", "×12 = " + (parseFloat(totalLoss.replace(/[^0-9.]/g,""))*12||"N/A"), theme)}</div>`
-    : `<div class="metrics-row">${metricCard("Monthly Loss", totalLoss, theme)}${metricCard("Annual", "×12", theme)}</div>`
+  const url = esc(data.report_url || "https://paradigmjp.com")
+  const mVal = data.acts[0]?.metric_value || "38"
+  const score = Math.min(parseFloat(mVal) || 38, 100)
+  const ringColor = score < 40 ? t.signal : score < 70 ? t.warn : t.accent
+  const industry = esc(data.industry || "Business")
 
-  const siteUrl = esc(data.report_url || "https://paradigmjp.com")
+  // Labels
+  const lb = (s: string) => `<span class="kicker">${esc(s)}</span>`
+  const k1 = lb(isJa ? "Paradigm 診断" : "Paradigm Diagnostic")
+  const k2 = lb(isJa ? "公開データ分析" : "Public Evidence")
+  const k3 = isJa ? '<span class="kicker" style="color:#f87171"><span></span>機会損失</span>' : '<span class="kicker" style="color:#f87171"><span></span>Hidden Cost</span>'
+  const k4 = lb(isJa ? "ソリューション" : "Solution")
+  const k5 = lb(isJa ? "次のアクション" : "Next Step")
 
   return `<!doctype html>
 <html lang="${esc(data.report_locale)}">
-<head><meta charset="utf-8"/>
-<meta name="viewport" content="width=1920"/>
-<title>${company} — Paradigm Diagnostic</title>
+<head><meta charset="utf-8"/><meta name="viewport" content="width=1920"/>
+<title>${co} — Paradigm Diagnostic</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  html,body{width:100%;height:100%;overflow:hidden;background:${theme.bg}}
-  body{font-family:"Inter","Noto Sans JP",system-ui,-apple-system,sans-serif;color:${theme.text};position:relative}
-  #canvas{width:100vw;height:100vh;max-width:1920px;max-height:1080px;margin:0 auto;position:relative;overflow:hidden}
+  html,body{width:100%;height:100%;overflow:hidden;background:${t.bg}}
+  body{font-family:"Inter","Noto Sans JP",system-ui,sans-serif;color:${t.text};-webkit-font-smoothing:antialiased}
+  #stage{width:1920px;height:1080px;position:relative;overflow:hidden;transform-origin:50% 50%}
 
-  /* --- BACKGROUND DEPTH --- */
-  .bg-base{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 30%,${theme.accent}18,transparent 70%),radial-gradient(ellipse 60% 50% at 80% 70%,${theme.accent}0a,transparent 60%),${theme.bg}}
-  .bg-grid{position:absolute;inset:0;background:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:96px 96px;opacity:.25}
-  .bg-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,.55) 100%);pointer-events:none;z-index:20}
-  .bg-aurora{position:absolute;width:800px;height:500px;border-radius:50%;filter:blur(120px);opacity:.18;z-index:1;background:${theme.accent};top:20%;left:50%;transform:translate(-50%,-50%)}
+  /* ═══ BACKGROUND LAYERS (continuous motion) ═══ */
+  .bg-flow{position:absolute;inset:0;background:linear-gradient(135deg,${t.bg} 0%,${t.bg2} 35%,${t.bg} 65%,${t.accent}0f 100%);background-size:350% 350%;z-index:0}
+  .bg-grid{position:absolute;inset:0;background:linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px);background-size:100px 100px;opacity:.22;z-index:1}
+  .bg-glow{position:absolute;border-radius:50%;filter:blur(150px);opacity:.10;z-index:1}
+  .bg-glow.g1{width:700px;height:400px;background:${t.accent};top:5%;left:-10%}
+  .bg-glow.g2{width:600px;height:350px;background:${t.signal};bottom:5%;right:-8%}
+  .bg-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,.55) 100%);pointer-events:none;z-index:18}
 
-  /* --- FLOATING ORBS --- */
-  .orb{position:absolute;border-radius:50%;filter:blur(60px);opacity:.07;z-index:0}
-  .orb-1{width:400px;height:400px;background:${theme.accent};top:10%;right:10%}
-  .orb-2{width:300px;height:300px;background:${theme.signal};bottom:15%;left:15%}
-  .orb-3{width:250px;height:250px;background:${theme.accent};top:50%;right:30%}
+  /* ═══ FLOATING PARTICLES ═══ */
+  .orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.05;z-index:2}
+  .orb-1{width:380px;height:380px;background:${t.accent};top:3%;right:12%}
+  .orb-2{width:280px;height:280px;background:${t.signal};bottom:8%;left:18%}
+  .orb-3{width:200px;height:200px;background:${t.accent};top:55%;right:35%}
+  .particle{position:absolute;width:2px;height:2px;background:${t.accent};border-radius:50%;opacity:.4;z-index:3}
 
-  /* --- SCENES --- */
-  .scene{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:80px 120px;opacity:0;z-index:10;pointer-events:none}
-  .scene.active{opacity:1;pointer-events:auto}
-  .scene-inner{max-width:1500px}
-  .scene-art{position:absolute;right:80px;top:50%;transform:translateY(-50%);z-index:5}
+  /* ═══ CONTENT ═══ */
+  #content{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:100px 140px;z-index:10}
+  .text-block{max-width:1480px}
+  .kicker{display:inline-flex;align-items:center;gap:10px;font-size:15px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:${t.signal};margin-bottom:22px}
+  .kicker::before{content:"";display:block;width:28px;height:2px;background:${t.signal};border-radius:1px}
 
-  /* --- KICKER LABEL --- */
-  .kicker{display:inline-flex;align-items:center;gap:10px;font-size:14px;font-weight:700;letter-spacing:.25em;text-transform:uppercase;color:${theme.signal};margin-bottom:24px}
-  .kicker::before{content:"";display:block;width:32px;height:2px;background:${theme.signal};border-radius:1px}
+  /* ═══ TYPOGRAPHY ═══ */
+  h1{font-size:60px;line-height:1.08;font-weight:800;margin-bottom:18px;letter-spacing:-0.005em;max-width:1400px}
+  h1 .c{display:inline-block}
+  p.lead{color:${t.muted};font-size:22px;line-height:1.5;max-width:1000px}
+  .big-num{font-size:108px;font-weight:900;line-height:1;background:linear-gradient(135deg,${t.text},${t.signal});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
 
-  /* --- TYPOGRAPHY --- */
-  h1{font-size:62px;line-height:1.08;font-weight:800;max-width:1300px;margin-bottom:20px;letter-spacing:-0.01em}
-  p.body-copy{color:${theme.muted};font-size:22px;line-height:1.55;max-width:900px}
-  .big-number{font-size:96px;font-weight:900;line-height:1;margin-bottom:8px;background:linear-gradient(135deg,${theme.text},${theme.signal});-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  /* ═══ DATA VIZ ═══ */
+  .viz-row{display:flex;gap:80px;align-items:flex-end;margin-top:16px}
+  .bar-group{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .bar-wrap{width:56px;height:200px;background:${t.surface};border-radius:10px;overflow:hidden;display:flex;flex-direction:column-reverse}
+  .bar-fill{width:100%;border-radius:10px;height:0%}
+  .bar-fill.cur{background:${ringColor}}
+  .bar-fill.tgt{border:2px dashed rgba(255,255,255,.12);background:transparent;height:71%}
+  .bar-label{font-size:12px;color:${t.muted};text-transform:uppercase;letter-spacing:.06em}
+  .bar-val{font-size:24px;font-weight:800}
 
-  /* --- DATA VIZ --- */
-  .data-viz{display:flex;flex-direction:column;gap:20px;margin-top:28px}
-  .viz-title{font-size:16px;font-weight:700;color:${theme.muted};text-transform:uppercase;letter-spacing:.1em}
-  .viz-bars{display:flex;gap:60px}
-  .bar-wrap{display:flex;flex-direction:column;align-items:center;gap:8px}
-  .bar-label{font-size:13px;color:${theme.muted};text-transform:uppercase}
-  .bar-track{width:48px;height:180px;background:${theme.surface};border-radius:8px;overflow:hidden;display:flex;flex-direction:column-reverse}
-  .bar-fill{width:100%;border-radius:8px;transition:height 1.2s cubic-bezier(.22,1,.36,1)}
-  .bar-target{border:2px dashed rgba(255,255,255,.2);background:transparent}
-  .bar-val{font-size:28px;font-weight:800}
+  /* ═══ TILES ═══ */
+  .tile-row{display:flex;gap:20px;margin-top:18px}
+  .tile{background:${t.surface};border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:22px 32px}
+  .tile .tlbl{font-size:11px;font-weight:700;color:${t.muted};text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
+  .tile .tval{font-size:34px;font-weight:800}
 
-  /* --- METRIC CARDS --- */
-  .metrics-row{display:flex;gap:24px;margin-top:24px}
-  .metric-card{background:${theme.surface};border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:24px 32px;min-width:180px}
-  .metric-label{font-size:12px;font-weight:700;color:${theme.muted};text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
-  .metric-val{font-size:36px;font-weight:800;line-height:1}
+  /* ═══ CHECK GRID ═══ */
+  .check-grid{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .check{background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.22);border-radius:10px;padding:12px 24px;font-size:15px;font-weight:700;color:#fca5a5}
 
-  /* --- SCORE BADGE (SVG ring) --- */
-  .score-badge{position:relative;display:inline-flex;align-items:center;justify-content:center;width:180px;height:180px;margin-top:20px}
-  .score-num{font-size:48px;font-weight:900;z-index:2}
-  .score-ring{position:absolute;inset:0}
-  .score-ring svg{width:100%;height:100%}
+  /* ═══ PROGRESS BAR ═══ */
+  .progress{position:absolute;top:0;left:0;right:0;height:3px;background:rgba(255,255,255,.06);z-index:20}
+  .progress-fill{height:100%;background:${t.signal};width:0}
+  .chapter-dots{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;gap:18px;z-index:20}
+  .chapter-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.12);transition:background .4s,transform .4s}
+  .chapter-dot.active{background:${t.signal};transform:scale(1.6)}
 
-  /* --- CHECK GRID (Japan Entry) --- */
-  .check-grid{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
-  .check{padding:14px 28px;border-radius:12px;font-size:16px;font-weight:700;border:1px solid rgba(220,38,38,.3);background:rgba(220,38,38,.1);color:#fca5a5}
+  /* ═══ FOOTER ═══ */
+  .footer{position:absolute;left:140px;right:140px;bottom:26px;display:flex;justify-content:space-between;color:rgba(255,255,255,.25);font-size:12px;z-index:19}
+  .footer .fl{font-weight:700;color:${t.signal}}
+  .footer .fu{font-family:monospace;font-size:10px;opacity:.45}
 
-  /* --- PROGRESS BAR --- */
-  .progress{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,.06);z-index:30}
-  .progress-fill{height:100%;background:${theme.signal};transition:width .3s}
-
-  /* --- FOOTER --- */
-  .footer{position:absolute;left:120px;right:120px;bottom:32px;display:flex;justify-content:space-between;align-items:center;color:rgba(255,255,255,.3);font-size:13px;z-index:25}
-  .footer-logo{font-weight:700;color:${theme.signal}}
-  .footer-url{font-family:monospace;font-size:12px;opacity:.6}
-
-  /* --- ANIMATION --- */
-  @keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-20px)}}
-  @keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(-20px,25px)}}
-  @keyframes float3{0%,100%{transform:translate(0,0)}50%{transform:translate(15px,15px)}}
-  @keyframes aurora{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-40%,-40%) scale(1.15)}}
-  .orb-1{animation:float1 12s ease-in-out infinite}
-  .orb-2{animation:float2 15s ease-in-out infinite}
-  .orb-3{animation:float3 10s ease-in-out infinite}
-  .bg-aurora{animation:aurora 8s ease-in-out infinite}
+  /* ═══ ANIMATIONS (continuous, never stop) ═══ */
+  @keyframes bgFlow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+  @keyframes orbFloat1{0%,100%{transform:translate(0,0)}50%{transform:translate(50px,-30px)}}
+  @keyframes orbFloat2{0%,100%{transform:translate(0,0)}50%{transform:translate(-35px,35px)}}
+  @keyframes orbFloat3{0%,100%{transform:translate(0,0)}50%{transform:translate(25px,20px)}}
+  @keyframes glowPulse1{0%,100%{transform:translate(0,0);opacity:.08}50%{transform:translate(35px,-25px);opacity:.15}}
+  @keyframes glowPulse2{0%,100%{transform:translate(0,0);opacity:.06}50%{transform:translate(-25px,20px);opacity:.13}}
+  .bg-flow{animation:bgFlow 18s ease-in-out infinite}
+  .orb-1{animation:orbFloat1 15s ease-in-out infinite}
+  .orb-2{animation:orbFloat2 17s ease-in-out infinite}
+  .orb-3{animation:orbFloat3 12s ease-in-out infinite}
+  .bg-glow.g1{animation:glowPulse1 11s ease-in-out infinite}
+  .bg-glow.g2{animation:glowPulse2 13s ease-in-out infinite}
 </style></head>
 <body>
-<div id="canvas">
-  <div class="bg-base"></div>
+<div id="stage">
+  <div class="bg-flow"></div>
   <div class="bg-grid"></div>
-  <div class="bg-aurora"></div>
+  <div class="bg-glow g1"></div>
+  <div class="bg-glow g2"></div>
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
   <div class="orb orb-3"></div>
+  <div class="particle" style="top:12%;left:8%"></div>
+  <div class="particle" style="top:18%;left:92%"></div>
+  <div class="particle" style="top:78%;left:5%"></div>
+  <div class="particle" style="top:85%;left:88%"></div>
+  <div class="particle" style="top:45%;left:50%"></div>
   <div class="bg-vignette"></div>
 
-  <!-- SCENE 1: Hook (0-8s) -->
-  <div class="scene" id="s1">
-    <div class="scene-inner">
-      <div class="kicker">Paradigm Diagnostic</div>
-      <h1>${esc(hook)}</h1>
-      <p class="body-copy">${company} &mdash; ${esc(data.industry || "Business")}</p>
-    </div>
-  </div>
+  <div id="content"></div>
 
-  <!-- SCENE 2: Pain + Data viz (8-22s) -->
-  <div class="scene" id="s2">
-    <div class="scene-inner">
-      <div class="kicker">${label1}</div>
-      <h1>${esc(pain)}</h1>
-      ${dataVizBars(metricLabel, metricValue, industryAvg, theme, "viz-main")}
-    </div>
-  </div>
-
-  <!-- SCENE 3: Fear + loss metric (22-36s) -->
-  <div class="scene" id="s3">
-    <div class="scene-inner">
-      <div class="kicker" style="color:#f87171">${label2}</div>
-      <h1>${esc(fear)}</h1>
-      <div class="big-number">${totalLoss}</div>
-      ${lossMetrics}
-    </div>
-  </div>
-
-  <!-- SCENE 4: Hope + CTA prep (36-50s) -->
-  <div class="scene" id="s4">
-    <div class="scene-inner">
-      <div class="kicker" style="color:${theme.signal}">${label3}</div>
-      <h1>${esc(hope)}</h1>
-      ${data.template_variant === "japan_entry" ? `<div class="check-grid">${checkGrid}</div>` : ""}
-    </div>
-  </div>
-
-  <!-- SCENE 5: Final CTA (50-60s) -->
-  <div class="scene" id="s5">
-    <div class="scene-inner">
-      <div class="kicker" style="color:${theme.signal}">${label4}</div>
-      <h1>${esc(cta)}</h1>
-      <p class="body-copy" style="margin-top:16px;font-size:18px;font-family:monospace;opacity:.7">${siteUrl}</p>
-    </div>
-  </div>
-
-  <!-- Progress bar -->
   <div class="progress"><div class="progress-fill" id="prog"></div></div>
+  <div class="chapter-dots">${[0,1,2,3,4].map(i=>`<div class="chapter-dot" id="dot${i}"></div>`).join("")}</div>
 
-  <!-- Footer -->
-  <div class="footer">
-    <span class="footer-logo">PARADIGM</span>
-    <span>${company}</span>
-    <span class="footer-url">${siteUrl}</span>
-  </div>
+  <div class="footer"><span class="fl">PARADIGM</span><span>${co}</span><span class="fu">${url}</span></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
 <script>
 (function(){
-  const tl = gsap.timeline({paused:true});
+  var c=document.getElementById("content"),tl=gsap.timeline({paused:true});
 
-  // Progress bar sync
-  tl.to("#prog", { width: "100%", duration: 60, ease: "none" }, 0);
+  // ═══ RULE 1: Camera zoom — ultra-slow scale 1.0→1.04 over 60s ═══
+  gsap.to("#stage",{scale:1.04,duration:60,ease:"none",transformOrigin:"50% 50%"});
 
-  // ─── SCENE 1: Hook (0→8s, hold 8→10) ───
-  tl.to("#s1", { opacity: 1, duration: 0.6, ease: "power3.out" }, 0.3);
-  tl.from("#s1 h1", { y: 50, opacity: 0, duration: 0.8, ease: "expo.out" }, 0.4);
-  tl.from("#s1 .body-copy", { y: 30, opacity: 0, duration: 0.6, ease: "power2.out" }, 0.7);
-  tl.from("#s1 .kicker", { x: -20, opacity: 0, duration: 0.5, ease: "power3.out" }, 0.2);
-  // Crossfade: s1 out, s2 in (9.5→10s)
-  tl.to("#s1", { opacity: 0, duration: 0.5, ease: "power2.in" }, 9.5);
+  // ═══ RULE 4: Progress bar — always running ═══
+  tl.to("#prog",{width:"100%",duration:60,ease:"none"},0);
 
-  // ─── SCENE 2: Evidence + Data Viz (10→24s) ───
-  tl.to("#s2", { opacity: 1, duration: 0.5, ease: "power2.out" }, 9.8);
-  tl.from("#s2 h1", { y: 40, opacity: 0, duration: 0.7, ease: "expo.out" }, 10.1);
-  tl.from("#s2 .kicker", { x: -20, opacity: 0, duration: 0.4, ease: "power3.out" }, 10);
-  tl.from("#s2 .data-viz", { y: 30, opacity: 0, duration: 0.7, ease: "back.out(1.2)" }, 10.4);
-  // Animate bar fill
-  tl.to("#s2 .bar-current", { height: "${parseFloat(metricValue)||38}%", duration: 1, ease: "power4.out" }, 10.6);
-  // Crossfade out
-  tl.to("#s2", { opacity: 0, duration: 0.5, ease: "power2.in" }, 23.5);
+  // Chapter dot activation
+  [0,1,2,3,4].forEach(function(i){
+    if(i===0)tl.set("#dot0",{background:"${t.signal}",scale:1.6},0);
+    else tl.to("#dot"+i,{background:"${t.signal}",scale:1.6,duration:.3},i*12);
+  });
 
-  // ─── SCENE 3: Fear + Loss (24→37s) ───
-  tl.to("#s3", { opacity: 1, duration: 0.5, ease: "power2.out" }, 23.8);
-  tl.from("#s3 h1", { y: 40, opacity: 0, duration: 0.7, ease: "expo.out" }, 24.1);
-  tl.from("#s3 .kicker", { x: -20, opacity: 0, duration: 0.4, ease: "power3.out" }, 24);
-  tl.from("#s3 .big-number", { scale: 0.6, opacity: 0, duration: 0.9, ease: "elastic.out(1,0.5)" }, 24.5);
-  tl.from("#s3 .metrics-row", { y: 30, opacity: 0, duration: 0.6, ease: "back.out(1.2)" }, 25);
-  tl.to("#s3", { opacity: 0, duration: 0.5, ease: "power2.in" }, 36.5);
+  // ═══ SCENE 1: Hook (0→11s) ═══
+  c.innerHTML='<div class="text-block">'+k1+'<h1>'+charSpans(hook,"c")+'</h1><p class="lead">'+co+' &mdash; '+industry+'</p></div>';
+  tl.from("#content",{opacity:1,duration:0},0);
+  tl.set("#content,.kicker",{opacity:0},0);
+  tl.to("#content",{opacity:1,duration:.6,ease:"power3.out"},.3);
+  tl.from("#content .kicker",{x:-30,opacity:0,duration:.45,ease:"expo.out"},.4);
+  // RULE 2: Character stagger on heading
+  tl.from("#content h1 .c",{y:50,opacity:0,rotationX:-90,duration:.55,ease:"back.out(1.4)",stagger:.025},.6);
+  tl.from("#content .lead",{y:25,opacity:0,duration:.5,ease:"power2.out"},1.2);
+  // RULE 3: Micro-motion — gentle float on title
+  tl.to("#content h1",{y:-4,duration:3,yoyo:true,repeat:-1,ease:"sine.inOut"},">-=.5");
+  tl.to("#content .lead",{y:-2,duration:3.5,yoyo:true,repeat:-1,ease:"sine.inOut"},">-=.5");
 
-  // ─── SCENE 4: Solution + Hope (37→50s) ───
-  tl.to("#s4", { opacity: 1, duration: 0.5, ease: "power2.out" }, 36.8);
-  tl.from("#s4 h1", { y: 40, opacity: 0, duration: 0.7, ease: "expo.out" }, 37.1);
-  tl.from("#s4 .kicker", { x: -20, opacity: 0, duration: 0.4, ease: "power3.out" }, 37);
-  tl.from("#s4 .check-grid", { y: 25, opacity: 0, duration: 0.6, ease: "back.out(1.2)", stagger: 0.08 }, 37.4);
-  tl.to("#s4", { opacity: 0, duration: 0.5, ease: "power2.in" }, 49.5);
+  tl.to("#content",{opacity:0,duration:.5,ease:"power2.in"},10.5);
 
-  // ─── SCENE 5: CTA + Final (50→60s) ───
-  tl.to("#s5", { opacity: 1, duration: 0.5, ease: "power2.out" }, 49.8);
-  tl.from("#s5 h1", { y: 40, opacity: 0, duration: 0.7, ease: "expo.out" }, 50.1);
-  tl.from("#s5 .kicker", { x: -20, opacity: 0, duration: 0.4, ease: "power3.out" }, 50);
-  tl.from("#s5 .body-copy", { y: 20, opacity: 0, duration: 0.5, ease: "power2.out" }, 50.5);
+  // ═══ SCENE 2: Evidence + Data Viz (11→26s) ═══
+  tl.call(function(){
+    c.innerHTML='<div class="text-block">'+k2+'<h1>'+charSpans(pain,"c")+'</h1><div class="viz-row"><div class="bar-group"><div class="bar-val">'+esc(mVal)+'</div><div class="bar-wrap"><div class="bar-fill cur"></div></div><div class="bar-label">'+esc(isJa?"現在":"Current")+'</div></div><div class="bar-group"><div class="bar-val">71</div><div class="bar-wrap"><div class="bar-fill tgt"></div></div><div class="bar-label">'+esc(isJa?"目標":"Target")+'</div></div></div></div>';
+  },null,11);
+
+  tl.add("s2",11);
+  tl.to("#content",{opacity:1,duration:.5,ease:"power2.out"},"s2");
+  tl.from("#content .kicker",{x:-25,opacity:0,duration:.4,ease:"power3.out"},"s2+=.05");
+  tl.from("#content h1 .c",{y:40,opacity:0,duration:.5,ease:"back.out(1.3)",stagger:.02},"s2+=.15");
+  tl.from("#content .viz-row",{y:35,opacity:0,duration:.65,ease:"back.out(1.2)"},"s2+=.35");
+  tl.to("#content .bar-fill.cur",{height:"${score}%",duration:1.1,ease:"power4.out"},"s2+=.5");
+  // Micro-motion
+  tl.to("#content h1",{y:-3,duration:3.2,yoyo:true,repeat:-1,ease:"sine.inOut"},">-=.5");
+  tl.to("#content .viz-row",{y:-2,duration:4,yoyo:true,repeat:-1,ease:"sine.inOut"},">-=.5");
+
+  tl.to("#content",{opacity:0,duration:.45,ease:"power2.in"},25.5);
+
+  // ═══ SCENE 3: Fear + Loss (26→38s) ═══
+  tl.call(function(){
+    c.innerHTML='<div class="text-block">'+k3+'<h1>'+charSpans(fear,"c")+'</h1><div class="big-num">'+loss+'</div><div class="tile-row"><div class="tile"><div class="tlbl">'+esc(isJa?"月間損失":"Monthly")+'</div><div class="tval">'+loss+'</div></div><div class="tile"><div class="tlbl">'+esc(isJa?"年間換算":"Annual")+'</div><div class="tval">'+esc(isJa?"×12倍":"×12")+'</div></div></div></div>';
+  },null,26);
+
+  tl.add("s3",26);
+  tl.to("#content",{opacity:1,duration:.5,ease:"power2.out"},"s3");
+  tl.from("#content .kicker",{x:-25,opacity:0,duration:.4,ease:"power3.out"},"s3+=.05");
+  tl.from("#content h1 .c",{y:35,opacity:0,duration:.5,ease:"back.out(1.3)",stagger:.02},"s3+=.15");
+  tl.from("#content .big-num",{scale:.4,opacity:0,duration:.9,ease:"elastic.out(1,.5)"},"s3+=.3");
+  tl.from("#content .tile-row .tile",{y:30,opacity:0,duration:.5,ease:"back.out(1.2)",stagger:.12},"s3+=.5");
+  // Micro-motion
+  tl.to("#content h1",{y:-3,duration:3,yoyo:true,repeat:-1,ease:"sine.inOut"},">-=.5");
+  tl.to("#content .big-num",{y:-2,duration:3.5,yoyo:true,repeat:-1,ease:"sine.inOut"},">-=.5");
+
+  tl.to("#content",{opacity:0,duration:.45,ease:"power2.in"},37.5);
+
+  // ═══ SCENE 4: Solution + Hope (38→50s) ═══
+  tl.call(function(){
+    var extra='';
+    if("${esc(data.template_variant)}"==="japan_entry") extra='<div class="check-grid">'+["特商法","APPI","決済","日本語"].map(function(x){return '<div class="check">'+x+'</div>'}).join("")+'</div>';
+    c.innerHTML='<div class="text-block">'+k4+'<h1>'+charSpans(hope,"c")+'</h1>'+extra+'<p class="lead" style="margin-top:16px">'+co+'</p></div>';
+  },null,38);
+
+  tl.add("s4",38);
+  tl.to("#content",{opacity:1,duration:.5,ease:"power2.out"},"s4");
+  tl.from("#content .kicker",{x:-25,opacity:0,duration:.4,ease:"power3.out"},"s4+=.05");
+  tl.from("#content h1 .c",{y:40,opacity:0,duration:.5,ease:"back.out(1.3)",stagger:.02},"s4+=.15");
+  tl.from("#content .check-grid,.check",{y:25,opacity:0,duration:.45,ease:"back.out(1.2)",stagger:.07},"s4+=.3");
+  tl.from("#content .lead",{y:20,opacity:0,duration:.5,ease:"power2.out"},"s4+=.4");
+  // Micro-motion
+  tl.to("#content h1",{y:-3,duration:3,yoyo:true,repeat:-1,ease:"sine.inOut"},">-=.5");
+
+  tl.to("#content",{opacity:0,duration:.45,ease:"power2.in"},49.5);
+
+  // ═══ SCENE 5: CTA + Outro (50→60s) ═══
+  tl.call(function(){
+    c.innerHTML='<div class="text-block">'+k5+'<h1>'+charSpans(cta,"c")+'</h1><p class="lead" style="font-family:monospace;font-size:17px;opacity:.6;margin-top:14px">'+url+'</p></div>';
+  },null,50);
+
+  tl.add("s5",50);
+  tl.to("#content",{opacity:1,duration:.5,ease:"power2.out"},"s5");
+  tl.from("#content .kicker",{x:-25,opacity:0,duration:.4,ease:"power3.out"},"s5+=.05");
+  tl.from("#content h1 .c",{y:40,opacity:0,duration:.5,ease:"back.out(1.3)",stagger:.02},"s5+=.15");
+  tl.from("#content .lead",{y:15,opacity:0,duration:.5,ease:"power2.out"},"s5+=.2");
+  // Micro-motion
+  tl.to("#content h1",{y:-3,duration:3,yoyo:true,repeat:-1,ease:"sine.inOut"},">-=.5");
 
   // Final fade to black
-  tl.to("#canvas", { opacity: 0, duration: 0.8, ease: "power2.in" }, 59.2);
+  tl.to("#stage",{opacity:0,duration:.8,ease:"power2.in"},59.2);
 
-  // Auto-play
   tl.play();
 })();
 </script>
