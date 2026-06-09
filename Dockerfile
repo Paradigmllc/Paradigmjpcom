@@ -2,7 +2,7 @@
 FROM node:24-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install --prefer-offline --no-audit
 
 # ─── Stage 2: Build ───
 FROM node:24-alpine AS builder
