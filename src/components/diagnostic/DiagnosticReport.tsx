@@ -870,11 +870,6 @@ export default function DiagnosticReport({
   }
   const chatwootHref = "https://chatwoot.paradigmjp.com"
 
-  // Toggle Dify chatbot widget
-  function openDifyChat() {
-    const widget = document.getElementById("dify-chatbot-bubble")
-    if (widget) (widget as HTMLElement).click()
-  }
   const [isDark, setIsDark] = useState(false)
   const [actionOpen, setActionOpen] = useState(false)
   const [requestOpen, setRequestOpen] = useState(false)
@@ -1422,20 +1417,6 @@ export default function DiagnosticReport({
         </section>
       </main>
       </div>
-
-      {/* ── Floating Dify AI Chat Button ── */}
-      <button
-        onClick={openDifyChat}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-violet-600 text-white shadow-xl hover:bg-violet-700 transition-all hover:scale-110 active:scale-95 animate-pulse"
-        title={lang === "ja" ? "AIに質問" : "Ask AI"}
-        aria-label={lang === "ja" ? "AIチャットを開く" : "Open AI chat"}
-      >
-        <MessageCircle className="h-6 w-6" />
-        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[9px] font-bold text-white">AI</span>
-      </button>
-
-      {/* ── Dify AI Chat Widget ── */}
-      <script src="https://api.dify.ai/v1/webapp/embed.js" data-app-id="app-O1hcIrjUNhgeuKbY1J768Hia" data-mode="fab-button" data-color="#7c5cff" async></script>
 
       <script dangerouslySetInnerHTML={{ __html: `
         // Track scroll depth

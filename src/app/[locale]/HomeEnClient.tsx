@@ -49,7 +49,7 @@ export default function HomeEnClient() {
       {/* ═══════════════════════════════════════════════════════════
           1. Hero — asymmetric cinematic
           ═══════════════════════════════════════════════════════════ */}
-      <section className="relative min-h-[95vh] flex items-center bg-paradigm-ink overflow-hidden">
+      <section className="relative min-h-[80vh] sm:min-h-[90vh] lg:min-h-[95vh] flex items-center bg-paradigm-ink overflow-hidden">
         <div className="paradigm-mesh-vivid opacity-90" />
         <div className="absolute inset-0 bg-gradient-to-br from-paradigm-ink/85 via-paradigm-ink/70 to-transparent" />
         <div className="absolute inset-0 section-dots opacity-[0.05]" />

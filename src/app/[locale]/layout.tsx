@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { notFound } from "next/navigation"
 import { NextIntlClientProvider, hasLocale } from "next-intl"
 import { getMessages, setRequestLocale } from "next-intl/server"
@@ -116,6 +116,16 @@ const LOCALE_TITLES: Record<Locale, { default: string; template: string; descrip
     ogSiteName: "Paradigm",
     ogLocale: "id_ID",
   },
+}
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafaf7" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0813" },
+  ],
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

@@ -57,7 +57,7 @@ export default function HeroSection() {
   return (
     <section
       ref={heroRef}
-      className="relative min-h-[88vh] flex items-center justify-center overflow-hidden bg-paradigm-ink"
+      className="relative min-h-[80vh] sm:min-h-[88vh] flex items-center justify-center overflow-hidden bg-paradigm-ink"
     >
       <motion.div style={{ y: heroParallaxY }} className="absolute inset-0 z-0">
         {/* gradient mesh poster (LCP-stable・video が読込中もこちらが見える) */}

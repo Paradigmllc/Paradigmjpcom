@@ -65,7 +65,7 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
     if (open) bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, open])
 
-  if (pathname.includes("/p/") || pathname.includes("/report/") || /^\/[a-z]{2}\/d\//.test(pathname)) return null
+  if (pathname.includes("/p/") || /^\/[a-z]{2}\/d\//.test(pathname)) return null
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return
