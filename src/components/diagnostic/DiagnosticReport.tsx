@@ -702,24 +702,13 @@ function SourceRow({
   const meaning = cleanText(reportEvidenceText(item.meaning, lang), copy.sourceMeaning)
   const nextStep = cleanText(reportEvidenceText(item.nextStep, lang), copy.sourceNext)
   return (
-    <div className="grid gap-3 border-t border-zinc-200 py-4 first:border-t-0 md:grid-cols-[180px_minmax(0,1fr)_120px]">
-      <div>
-        <div className="text-sm font-semibold text-zinc-950">{label}</div>
-        <div className="mt-1 text-xs text-zinc-500">{sourceCategoryLabel(item.category, lang)}</div>
-      </div>
-      <div>
-        <p className="text-xs leading-6 text-zinc-600">{detail}</p>
-        <p className="mt-2 text-xs leading-6 text-zinc-500">
-          <span className="font-semibold text-zinc-700">{copy.sourceMeaning}: </span>
-          {meaning}
-        </p>
-        <p className="mt-2 text-xs leading-6 text-zinc-500">
-          <span className="font-semibold text-zinc-700">{copy.sourceNext}: </span>
-          {nextStep}
-        </p>
-      </div>
-      <div className="md:text-right">
+    <div className="border-t border-zinc-100 p-4 first:border-t-0 hover:bg-zinc-50 transition-colors">
+      <div className="text-sm font-semibold text-zinc-950">{label}</div>
+      <div className="mt-0.5 text-[10px] text-zinc-400">{sourceCategoryLabel(item.category, lang)}</div>
+      <div className="mt-2 text-[11px] leading-relaxed text-zinc-500 line-clamp-2">{meaning}</div>
+      <div className="mt-2 flex items-center justify-between">
         <Pill tone={sourceTone(item.score)}>{sourceStatusLabel(item.status, lang)}</Pill>
+        <span className="text-[10px] text-zinc-400">{item.score}%</span>
       </div>
     </div>
   )
@@ -1316,7 +1305,7 @@ export default function DiagnosticReport({
                   <SignalCard key={signal.id} signal={signal} copy={copy} lang={lang} />
                 ))}
             </StaggeredFadeIn>
-            <div className="mt-8 rounded-lg border border-zinc-200 bg-white px-5 shadow-sm">
+            <div className="mt-8 grid gap-0 rounded-lg border border-zinc-200 bg-white shadow-sm md:grid-cols-2 lg:grid-cols-3">
               {visibleSources.map((item) => (
                 <SourceRow key={item.slug} item={item} copy={copy} lang={lang} />
               ))}
