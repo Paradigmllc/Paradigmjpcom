@@ -10,8 +10,8 @@
 import { spawnSync } from "node:child_process"
 
 const host = process.env.PARADIGM_DEPLOY_HOST || "paradigm-droplet"
-const pruneAt = Number.parseInt(process.env.PARADIGM_DISK_PRUNE_AT || "75", 10)
-const failAt = Number.parseInt(process.env.PARADIGM_DISK_FAIL_AT || "92", 10)
+const pruneAt = Number.parseInt(process.env.PARADIGM_DISK_PRUNE_AT || "70", 10)
+const failAt = Number.parseInt(process.env.PARADIGM_DISK_FAIL_AT || "88", 10)
 const timeoutSec = Number.parseInt(process.env.PARADIGM_SSH_CONNECT_TIMEOUT || "20", 10)
 const skip = process.argv.includes("--skip") || process.env.PARADIGM_SKIP_HOST_PREFLIGHT === "1"
 
@@ -45,11 +45,11 @@ function main() {
   console.log(`Host disk preflight: ${host} root disk ${before}% used`)
 
   if (before >= failAt) {
-    console.log(`Host disk preflight: usage >= ${failAt}%; pruning Docker build cache and unused images`)
-    ssh("docker builder prune -af >/dev/null 2>&1 || true; docker image prune -af >/dev/null 2>&1 || true")
+    console.log(`Host disk preflight: usage >= ${failAt}%; aggressive Docker prune`)
+    ssh("docker builder prune -af >/dev/null 2>&1 || true; docker image prune -af >/dev/null 2>&1 || true; docker container prune -f >/dev/null 2>&1 || true; docker system prune -f >/dev/null 2>&1 || true")
   } else if (before >= pruneAt) {
-    console.log(`Host disk preflight: usage >= ${pruneAt}%; pruning old build cache and unused images`)
-    ssh("docker builder prune -af --filter 'until=24h' >/dev/null 2>&1 || true; docker image prune -af --filter 'until=168h' >/dev/null 2>&1 || true")
+    console.log(`Host disk preflight: usage >= ${pruneAt}%; pruning build cache and unused images (7d)`)
+    ssh("docker builder prune -af --filter 'until=12h' >/dev/null 2>&1 || true; docker image prune -af --filter 'until=72h' >/dev/null 2>&1 || true; docker container prune -f >/dev/null 2>&1 || true")
   }
 
   const after = readUsedPercent()
