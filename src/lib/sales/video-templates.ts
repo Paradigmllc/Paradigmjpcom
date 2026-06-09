@@ -111,7 +111,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: { hook
   #viewport{width:100%;height:100%;position:relative;overflow:hidden}
 
   /* ── Universe: giant canvas, camera moves this ── */
-  #universe{position:absolute;width:400vw;height:500vh;left:50%;top:50%;transform-origin:0 0;will-change:transform}
+  #universe{position:absolute;width:400vw;height:400vh;left:calc(50vw - 200vw);top:calc(50vh - 200vh);transform-origin:0 0;will-change:transform}
 
   /* ── Continuous background (inside universe, travels with camera) ── */
   .space-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 60% at 50% 50%,${th.bg2} 0%,${th.bg} 60%);z-index:0}
