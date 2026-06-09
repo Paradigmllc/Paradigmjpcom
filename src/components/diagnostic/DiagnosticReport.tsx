@@ -1086,17 +1086,30 @@ export default function DiagnosticReport({
           </div>
         </section>
 
-        {/* ── Diagnostic video — auto-embed, autoplay ─────── */}
-        {videoHref && (
+        {/* ── Diagnostic video — MP4 priority, iframe fallback ─────── */}
+        {(videoHref || data.video_url) && (
           <section className="px-5 pb-10">
             <div className="mx-auto max-w-6xl">
               <div className="overflow-hidden rounded-2xl border border-zinc-200 shadow-lg bg-zinc-900">
-                <iframe
-                  src={videoHref}
-                  className="w-full aspect-video"
-                  title={lang === "ja" ? "60秒診断動画" : "60-second diagnostic video"}
-                  loading="lazy"
-                />
+                {data.video_url ? (
+                  <video
+                    src={data.video_url}
+                    className="w-full aspect-video"
+                    controls
+                    playsInline
+                    preload="metadata"
+                    poster={data.video_thumbnail ?? undefined}
+                  >
+                    <p>{lang === "ja" ? "お使いのブラウザは動画再生に対応していません。" : "Your browser does not support video playback."}</p>
+                  </video>
+                ) : (
+                  <iframe
+                    src={videoHref}
+                    className="w-full aspect-video"
+                    title={lang === "ja" ? "60秒診断動画" : "60-second diagnostic video"}
+                    loading="lazy"
+                  />
+                )}
               </div>
             </div>
           </section>
