@@ -41,6 +41,7 @@ import { discoverSubdomains } from "./sources/massdns"
 import { searchGitHubOrg } from "./sources/github-api"
 import { detectCartPlatform } from "./sources/cartleads"
 import { scrapeSimilarwebFree } from "./sources/similarweb-scraper"
+import { estimateTrafficViaSearx } from "./sources/searxng-traffic"
 import { lookupBuiltWithFree } from "./sources/builtwith-free"
 import { queryCommonCrawl } from "./sources/commoncrawl"
 import { checkAhrefsFree } from "./sources/ahrefs-free"
@@ -167,7 +168,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   // Step 2: 並列 30+ source enrich (Sprint 15: PSI + gBizInfo + Wappalyzer + SSL + Whois + Places)
   //         Hunter.io はメール検索 (フォーム経由で email 既知の場合のみ)
   const url = domain.startsWith("http") ? domain : `https://${domain}`
-  const [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback, houjin, tranco, emailrep, phishtank, opencorp, greenweb, storeleads, massdns, github, cartleads, simweb, builtwith, commoncrawl, ahrefs, spiderfoot, katana, maigret] = await Promise.all([
+  const [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback, houjin, tranco, emailrep, phishtank, opencorp, greenweb, storeleads, massdns, github, cartleads, simweb, builtwith, commoncrawl, ahrefs, spiderfoot, katana, maigret, searxng] = await Promise.all([
     scanDomain(domain).catch((e) => {
       console.error("[enrich] scanDomain failed:", e)
       return null
@@ -300,6 +301,10 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
       console.error("[enrich] maigret failed:", e)
       return null
     }),
+    estimateTrafficViaSearx(domain, companyName ?? undefined).catch((e) => {
+      console.error("[enrich] searxng-traffic failed:", e)
+      return null
+    }),
   ])
 
   // Step 3: 集約して最終 upsert (meta JSONB に 30+ source のデータを統合保存)
@@ -429,6 +434,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     spiderfoot: Array.isArray(spiderfoot) ? spiderfoot.filter((r: any) => r?.ok).map((r: any) => ({ source: r.source, data: r.data })) : null,
     katana: katana?.ok ? { crawled: katana.data?.crawled, urls: katana.data?.urls?.slice(0, 20) } : null,
     maigret: maigret?.ok ? { profiles_found: maigret.data?.profiles_found, sites: maigret.data?.sites?.slice(0, 10) } : null,
+    searxng_traffic: searxng?.ok ? searxng.data : null,
     market_data: industry ? (INDUSTRY_MARKET_DATA[industry as keyof typeof INDUSTRY_MARKET_DATA] ?? null) : null,
     // SMB signals: computed after parallel fetch using Wappalyzer + DNS data
     smb_signals: tech && dns?.ok
