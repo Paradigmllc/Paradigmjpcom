@@ -1095,16 +1095,13 @@ export default function DiagnosticReport({
         {videoHref && (
           <section className="px-5 pb-10">
             <div className="mx-auto max-w-6xl">
-              <div className="overflow-hidden rounded-2xl border border-zinc-200 shadow-lg">
-                <video
+              <div className="overflow-hidden rounded-2xl border border-zinc-200 shadow-lg bg-zinc-900">
+                <iframe
                   src={videoHref}
-                  controls
-                  poster={data.screenshot_url ?? undefined}
-                  className="w-full aspect-video bg-zinc-900"
-                  preload="metadata"
-                >
-                  <p>{lang === "ja" ? "お使いのブラウザは動画再生に対応していません。" : "Your browser does not support video playback."}</p>
-                </video>
+                  className="w-full aspect-video"
+                  allow="autoplay"
+                  title={lang === "ja" ? "60秒診断サマリー動画" : "60-second diagnostic summary video"}
+                />
               </div>
               <p className="mt-3 text-center text-xs text-zinc-400">
                 {lang === "ja" ? "60秒診断サマリー動画" : "60-second diagnostic summary video"}
@@ -1447,6 +1444,8 @@ export default function DiagnosticReport({
       </button>
 
       {/* ── Dify AI Chat Widget ── */}
+      <script src="https://api.dify.ai/v1/webapp/embed.js" data-app-id="app-O1hcIrjUNhgeuKbY1J768Hia" data-mode="fab-button" data-color="#7c5cff" async></script>
+
       <script dangerouslySetInnerHTML={{ __html: `
         // Track scroll depth
         let scrolled50 = false;
