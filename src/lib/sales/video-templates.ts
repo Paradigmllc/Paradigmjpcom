@@ -75,7 +75,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: { hook
   .bento-scene.grid-3{grid-template-columns:1fr 1fr;grid-template-rows:auto auto}
 
   /* ── Glassmorphism card ── */
-  .card{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border-radius:2vw;padding:3vw;display:flex;flex-direction:column;justify-content:center;overflow:hidden;position:relative}
+  .card{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border-radius:2vw;padding:3vw;display:flex;flex-direction:column;justify-content:center;overflow:hidden;position:relative;opacity:1}
   .card::after{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.04) 0%,transparent 50%);pointer-events:none;border-radius:2vw}
   .card.large{grid-row:span 2}
 
