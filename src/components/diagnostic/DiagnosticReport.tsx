@@ -856,7 +856,8 @@ export default function DiagnosticReport({
   const visibleSources = [...data.source_coverage.items]
     .sort((a, b) => b.score - a.score)
     .slice(0, 14)
-  const mailHref = `mailto:info@paradigmjp.com?subject=${encodeURIComponent(copy.emailSubject)}&body=${encodeURIComponent(data.report_url)}`
+  const calHref = `https://cal.com/paradigm-jp/15min?name=${encodeURIComponent(data.company_name)}`
+  const chatwootHref = "https://chatwoot.paradigmjp.com"
   const heroText = cleanText(reportEvidenceText(data.hook, lang), offerCopy.heroLead)
   const ctaText = cleanText(reportEvidenceText(data.cta_text, lang), offerCopy.finalBody)
   const qualityBar = cleanText(
@@ -1016,10 +1017,12 @@ export default function DiagnosticReport({
                 </a>
               )}
               <a
-                href={mailHref}
+                href={calHref}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex h-12 items-center gap-2 rounded-full border border-zinc-300 bg-white px-5 text-sm font-semibold text-zinc-950 shadow-sm transition-transform hover:scale-105"
               >
-                {copy.secondaryCta}
+                {lang === "ja" ? "15分無料相談を予約" : "Book Free 15min Call"}
                 <ExternalLink size={15} aria-hidden />
               </a>
             </motion.div>
@@ -1369,10 +1372,12 @@ export default function DiagnosticReport({
                   </a>
                 )}
                 <a
-                  href={mailHref}
+                  href={calHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex h-12 items-center justify-center rounded-full border border-white/20 px-5 text-sm font-semibold text-white transition-transform hover:scale-105"
                 >
-                  {copy.secondaryCta}
+                  {lang === "ja" ? "15分無料相談を予約" : "Book Free 15min Call"}
                 </a>
               </div>
             </div>
