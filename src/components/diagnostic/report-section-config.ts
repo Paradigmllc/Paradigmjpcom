@@ -61,14 +61,31 @@ const DEFAULT_LAYOUT: VariantLayout = {
   description: "速度・OGP・技術スタックを軸にしたデータドリブン改善提案",
   sections: [
     { id: "hero" },
-    { id: "annotated_screenshot", required: true },
-    { id: "five_second_audit", required: true },          // ★ 5秒診断
-    { id: "competitor_comparison", required: true },       // ★ 競合比較
-    { id: "before_after", required: true },
+    // Phase 1: 共感と問題可視化
+    { id: "five_second_audit", required: true },          // 訪問者が5秒で体験する問題
+    { id: "annotated_screenshot", required: true },        // 実サイト＋問題点マーカー
+    // Phase 2: 競合差（問題認識後だから効く）
+    { id: "competitor_comparison", required: true },       // 競合はもう対策済み
+    // Phase 3: 解決可視化
     { id: "stats" },
-    { id: "savior_positioning", required: true },          // ★ 救世主ポジション
-    { id: "mobile_comparison", required: true },
+    { id: "before_after", required: true },                // Before/After
+    { id: "mobile_comparison", required: true },            // モバイル比較
+    // Phase 4: 救世主
+    { id: "savior_positioning", required: true },          // 問題↔解決対比
+    // Phase 5: 詳細
     { id: "executive_summary" },
+    { id: "dark_surface" },
+    { id: "benchmark" },
+    { id: "findings" },
+    { id: "loss_chart" },
+    { id: "screenshot" },
+    { id: "pain_points" },
+    { id: "source_coverage" },
+    { id: "timeline" },
+    { id: "evidence" },
+    { id: "faq" },
+    { id: "cta" },
+  ],
     { id: "dark_surface" },
     { id: "benchmark" },
     { id: "findings" },
