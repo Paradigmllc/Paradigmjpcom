@@ -163,6 +163,27 @@ const SUBSIDY: OfferCopyByLanguage = {
   },
 }
 
+const DX_AI_PACKAGE: OfferCopyByLanguage = {
+  ja: {
+    reportLabel: "DX・AI導入診断レポート",
+    badge: "DX・AI導入診断",
+    heroLead: "御社の業務と公開情報から、AI/DXによる自動化余地とコスト削減効果を試算しました。ITが苦手でも今日から始められる具体策を提示します。",
+    primaryCta: "DX導入プランを見る",
+    finalHeading: "「ITは苦手」でも大丈夫。最初の一歩から伴走します。",
+    finalBody: "専門用語ではなく「御社の業務」を主語に、AI導入の優先順位と費用対効果を整理します。",
+    screenshotAlt: "DX・AI診断スクリーンショット",
+  },
+  en: {
+    reportLabel: "DX & AI Adoption Diagnostic Report",
+    badge: "DX & AI Assessment",
+    heroLead: "We analyzed your operations and public data to estimate AI/DX automation potential and cost savings — with concrete first steps for non-technical companies.",
+    primaryCta: "View DX Plan",
+    finalHeading: "We speak business, not jargon. Your first AI step starts here.",
+    finalBody: "Prioritizing AI adoption by your actual business operations, not technical specs — with clear ROI.",
+    screenshotAlt: "DX & AI diagnostic screenshot",
+  },
+}
+
 export const OFFER_COPY: Record<string, OfferCopyByLanguage> = {
   website_diagnostic: WEBSITE,
   meo: MEO,
@@ -171,6 +192,7 @@ export const OFFER_COPY: Record<string, OfferCopyByLanguage> = {
   japan_entry: JAPAN_ENTRY,
   video_subscription: VIDEO,
   outreach: OUTREACH,
+  dx_ai_package: DX_AI_PACKAGE,
 }
 
 export function getReportOfferCopy(lang: ReportLang, variant: TemplateVariant): ReportOfferCopy {

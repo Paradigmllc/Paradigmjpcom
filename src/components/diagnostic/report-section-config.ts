@@ -255,6 +255,33 @@ const OUTREACH_LAYOUT: VariantLayout = {
   hideGenericSections: ["dark_surface", "benchmark", "loss_chart", "screenshot", "source_coverage", "timeline"],
 }
 
+// ─── DX/AI Package layout ───
+const DX_AI_LAYOUT: VariantLayout = {
+  variant: "dx_ai_package",
+  label: "DX・AI導入診断",
+  description: "AI/DX導入の自動化余地・コスト削減・具体的な第一歩を提案",
+  sections: [
+    { id: "hero" },
+    { id: "stats" },
+    { id: "executive_summary" },
+    { id: "findings" },
+    { id: "benchmark" },
+    { id: "pain_points" },
+    { id: "source_coverage" },
+    { id: "evidence" },
+    { id: "faq" },
+    { id: "cta" },
+  ],
+  theme: {
+    primary: "#7c5cff",
+    surface: "#faf7fe",
+    text: "text-zinc-950",
+    muted: "text-zinc-500",
+    border: "border-violet-200",
+  },
+  hideGenericSections: ["dark_surface", "loss_chart", "screenshot", "timeline"],
+}
+
 // ─── Layout registry ───
 export const VARIANT_LAYOUTS: Record<string, VariantLayout> = {
   website_diagnostic: DEFAULT_LAYOUT,
@@ -264,6 +291,7 @@ export const VARIANT_LAYOUTS: Record<string, VariantLayout> = {
   video_subscription: VIDEO_LAYOUT,
   subsidy: SUBSIDY_LAYOUT,
   outreach: OUTREACH_LAYOUT,
+  dx_ai_package: DX_AI_LAYOUT,
 }
 
 export function getVariantLayout(variant: string): VariantLayout {

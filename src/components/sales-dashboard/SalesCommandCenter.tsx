@@ -64,10 +64,12 @@ const systemSubTabs: { id: SystemSubTab; label: string }[] = [
 ]
 
 const externalTools = [
+  { label: "Chatwoot", url: "https://chatwoot.paradigmjp.com" },
   { label: "Directus", url: "https://directus.paradigmjp.com/admin" },
   { label: "Keystatic", url: "https://keystatic.paradigmjp.com" },
   { label: "Supabase", url: "https://supabase.com/dashboard" },
   { label: "Metabase", url: "https://metabase.paradigmjp.com" },
+  { label: "HyperFrames", url: "https://hyperframes.paradigmjp.com" },
 ]
 
 const tabIds = new Set<SalesTab>(tabItems.map((tab) => tab.id))
@@ -167,6 +169,7 @@ function TemplateManagementPanel({ data }: { data: SalesDashboardData }) {
               { variant: "video_subscription", label: "動画診断", desc: "制作・配信・エンゲージメント" },
               { variant: "subsidy", label: "補助金診断", desc: "マッチング・申請計画" },
               { variant: "outreach", label: "アウトリーチ診断", desc: "フォーム・ファネル" },
+              { variant: "dx_ai_package", label: "DX・AI導入診断", desc: "自動化・コスト削減・DX" },
             ].map((v) => (
               <a key={v.variant} href={`/${previewLang}/report/demo/${v.variant}`} target="_blank" rel="noopener noreferrer"
                 className="rounded-lg border border-zinc-200 p-4 hover:border-zinc-400 hover:shadow-sm transition-all">
