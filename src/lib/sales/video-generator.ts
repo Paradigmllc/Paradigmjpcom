@@ -127,7 +127,11 @@ export async function generateNarrationScript(
   }
 }
 
+import { buildVariantVideoHtml } from "./video-templates"
+
 export function buildHyperFramesHtml(data: DiagnosticReportData, script: NarrationScript): string {
+  return buildVariantVideoHtml(data, script)
+}
   const theme = themeForIndustry(data.industry)
   const scenes = [
     { id: "hook", start: 0, duration: 8, label: "Executive brief", text: cleanText(script.hook, fallbackScript(data).hook), metric: data.total_loss },
