@@ -236,14 +236,85 @@ export function SecurityVulnMatrix({ data, lang }: { data: DiagnosticReportData;
 // ─── Japan Entry: Market Section ────────────────────────────
 export function JapanMarketSection({ data, lang }: { data: DiagnosticReportData; lang: string }) {
   const japanAudit = data.meta?.japan_market_audit as Record<string, unknown> | undefined
+  const simweb = data.meta?.similarweb_free as Record<string, unknown> | undefined
+  const radar = data.meta?.cloudflare_radar as Record<string, unknown> | undefined
+  const trends = data.meta?.google_trends as Record<string, unknown> | undefined
+  const marketData = data.meta?.market_data as Record<string, string> | undefined
+
+  // Estimate Japan traffic from Similarweb country data
+  const hasJapanTraffic = simweb?.countries && Array.isArray(simweb.countries) && (simweb.countries as string[]).includes("JP")
+  const totalVisits = simweb?.visits as number | undefined
+  
+  // Estimated monthly revenue leakage: assume 2% conversion, average order ¥15,000
+  const estimatedJapanVisitors = hasJapanTraffic && totalVisits
+    ? Math.round(totalVisits * 0.08) // ~8% of traffic from Japan if JP is in top countries
+    : null
+  const estimatedLostRevenue = estimatedJapanVisitors
+    ? Math.round(estimatedJapanVisitors * 0.02 * 15000) // 2% conversion × ¥15,000
+    : null
 
   return (
     <section className="px-5 py-14" style={{ background: "linear-gradient(135deg, #eff6ff, #dbeafe)" }}>
       <div className="mx-auto max-w-6xl">
         <div className="flex items-center gap-2 mb-6">
           <TrendingUp className="h-5 w-5 text-blue-600" />
-          <h2 className="text-xl font-bold text-zinc-900">{lang === "ja" ? "日本市場適合性" : "Japan Market Fit"}</h2>
+          <h2 className="text-xl font-bold text-zinc-900">{lang === "ja" ? "日本市場機会分析" : "Japan Market Opportunity"}</h2>
         </div>
+
+        {/* Market size context */}
+        {marketData && (
+          <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-5">
+            <div className="text-xs text-blue-600 font-bold uppercase mb-2">{lang === "ja" ? "市場データ（政府統計）" : "Market Data (Government Stats)"}</div>
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div><span className="text-blue-500">{lang === "ja" ? "市場規模: " : "Size: "}</span><span className="font-bold text-blue-900">{marketData.size}</span></div>
+              <div><span className="text-blue-500">{lang === "ja" ? "成長率: " : "Growth: "}</span><span className="font-bold text-blue-900">{marketData.growth}</span></div>
+              <div><span className="text-blue-500">{lang === "ja" ? "事業者数: " : "Players: "}</span><span className="font-bold text-blue-900">{marketData.players}</span></div>
+            </div>
+            <div className="mt-1 text-[10px] text-blue-400">{lang === "ja" ? "出典: " : "Source: "}{marketData.source}</div>
+          </div>
+        )}
+
+        {/* Japan traffic estimation */}
+        <div className="grid gap-4 sm:grid-cols-2 mb-6">
+          <div className={`rounded-xl border p-5 ${hasJapanTraffic ? "border-emerald-200 bg-emerald-50" : "border-zinc-200 bg-zinc-50"}`}>
+            <div className="text-xs font-bold uppercase text-zinc-500 mb-1">
+              {lang === "ja" ? "日本からの推定流入" : "Est. Japan Traffic"}
+            </div>
+            <div className="text-2xl font-bold text-zinc-900">
+              {hasJapanTraffic && totalVisits
+                ? `${lang === "ja" ? "約" : "~"}${estimatedJapanVisitors?.toLocaleString()} PV/月`
+                : lang === "ja" ? "データ収集中" : "Collecting data"}
+            </div>
+            {hasJapanTraffic && estimatedLostRevenue && (
+              <div className="mt-2 text-sm text-rose-600 font-bold">
+                {lang === "ja" ? `推定機会損失: ¥${estimatedLostRevenue.toLocaleString()}/月` : `Est. lost revenue: ¥${estimatedLostRevenue.toLocaleString()}/mo`}
+              </div>
+            )}
+            <div className="mt-1 text-[10px] text-zinc-400">
+              {hasJapanTraffic ? `Similarweb ${totalVisits?.toLocaleString()} total → 8% JP推定` : (lang === "ja" ? "Similarwebデータ不足" : "Similarweb data insufficient")}
+            </div>
+          </div>
+
+          <div className={`rounded-xl border p-5 ${radar?.rank_bucket ? "border-emerald-200 bg-emerald-50" : "border-zinc-200 bg-zinc-50"}`}>
+            <div className="text-xs font-bold uppercase text-zinc-500 mb-1">
+              {lang === "ja" ? "グローバルランク" : "Global Rank"}
+            </div>
+            <div className="text-2xl font-bold text-zinc-900">
+              {radar?.rank_bucket
+                ? (radar.rank_bucket as string)
+                : (simweb?.rank
+                  ? `#${(simweb.rank as number).toLocaleString()}`
+                  : lang === "ja" ? "データ収集中" : "Collecting")}
+            </div>
+            {radar?.categories && (
+              <div className="mt-2 text-xs text-zinc-500">
+                {(radar.categories as string[]).slice(0, 2).join(" / ")}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Regulatory checklist */}
         <div className="grid gap-4 sm:grid-cols-2">
           {[
             { labelJa: "特商法表示", labelEn: "Commercial Disclosure", ok: !japanAudit?.tokushoho_missing },
