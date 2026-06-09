@@ -849,7 +849,7 @@ export default function DiagnosticReport({
   const confidence = signalScore(intelligence.signals)
   const loss = numericValue(data.total_loss)
   const topPain = intelligence.painPoints[0]
-  const videoHref = trackingSlug
+  const videoHref = trackingSlug && !trackingSlug.startsWith("demo-")
     ? `/${activeLocale}/report/${trackingSlug}/video`
     : null
   const industryLabel = labelForIndustry(data.industry, lang)
