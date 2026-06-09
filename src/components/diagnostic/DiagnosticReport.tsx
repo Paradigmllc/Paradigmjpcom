@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { ArrowRight, Check, ChevronDown, ExternalLink, Gauge, LineChart, MessageCircle, Moon, ShieldCheck, Sparkles, Sun, X } from "lucide-react"
-import { useState, type ReactNode } from "react"
+import { useState, useRef, useEffect, type ReactNode } from "react"
 import type { DiagnosticAct, DiagnosticReportData } from "@/lib/sales/diagnostic"
 import { signalScore, type IntelligenceSignal, type PainPoint } from "@/lib/sales/company-intelligence"
 import type { SourceCoverageItem } from "@/lib/sales/source-coverage"
@@ -715,6 +715,14 @@ export default function DiagnosticReport({
   const [requestOpen, setRequestOpen] = useState(false)
   const [requestForm, setRequestForm] = useState({ company: "", name: "", email: "", interests: [] as string[] })
   const [requestSent, setRequestSent] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {
+        // Autoplay blocked — user will see controls, can click play
+      })
+    }
+  }, [data.video_url])
   const heroText = cleanText(reportEvidenceText(data.hook, lang), offerCopy.heroLead)
   const ctaText = cleanText(reportEvidenceText(data.cta_text, lang), offerCopy.finalBody)
   const qualityBar = cleanText(
@@ -934,6 +942,7 @@ export default function DiagnosticReport({
               <div className="overflow-hidden rounded-2xl border border-zinc-200 shadow-lg bg-zinc-900">
                 {data.video_url ? (
                   <video
+                    ref={videoRef}
                     src={data.video_url}
                     className="w-full aspect-video"
                     controls
