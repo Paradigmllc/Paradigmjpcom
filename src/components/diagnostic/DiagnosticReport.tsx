@@ -998,8 +998,12 @@ export default function DiagnosticReport({
                   </a>
                   <button onClick={() => { setActionOpen(false); setRequestOpen(true); }}
                     className={`flex items-center gap-2 px-3 py-2 text-xs w-full text-left hover:bg-zinc-50 ${isDark ? "text-zinc-200 hover:bg-zinc-700" : "text-zinc-700"}`}>
-                    📄 {lang === "ja" ? "資料請求" : "Request Info"}
-                  </button>
+                📄 {lang === "ja" ? "資料請求" : "Request Info"}
+              </button>
+              <button onClick={() => window.print()}
+                className={`flex items-center gap-2 px-3 py-2 text-xs w-full text-left hover:bg-zinc-50 ${isDark ? "text-zinc-200 hover:bg-zinc-700" : "text-zinc-700"}`}>
+                🖨️ {lang === "ja" ? "PDF印刷" : "Print PDF"}
+              </button>
                 </div>
               )}
             </div>
@@ -1457,7 +1461,22 @@ export default function DiagnosticReport({
             new Image().src = '/api/sales/track-view?slug=${encodeURIComponent(trackingSlug || "")}&event=cta';
           });
         });
+        // Track section visibility
+        const sectionObserver = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting && entry.target.id) {
+              new Image().src = '/api/sales/track-view?slug=${encodeURIComponent(trackingSlug || "")}&event=section&section=' + entry.target.id;
+            }
+          });
+        }, { threshold: 0.3 });
+        setTimeout(function() {
+          document.querySelectorAll('section[id], div[id]').forEach(function(el) {
+            if (el.id && el.id.length > 2) sectionObserver.observe(el);
+          });
+        }, 1000);
       `}} />
+      {/* A/B test tracking */}
+      <img src={`/api/sales/track-view?slug=${encodeURIComponent(trackingSlug || "")}&event=ab_test&variant=${encodeURIComponent(data.template_variant)}&industry=${encodeURIComponent(data.industry || "")}`} alt="" width={1} height={1} className="hidden" />
 
       {/* ── Footer ── */}
       <footer className={`border-t px-5 py-8 mt-10 ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"}`}>
@@ -1532,6 +1551,7 @@ export default function DiagnosticReport({
           </motion.div>
         </div>
       )}
+      <style>{`@media print{@page{margin:12mm}body{font-size:10pt;color:#000!important;background:#fff!important}.sticky,.fixed,canvas,.particles,.vignette,button:not(.print-keep),nav{display:none!important}section,div[class*=py-]{padding:5mm 0!important;page-break-inside:avoid}h1{font-size:16pt;color:#000!important}h2{font-size:13pt}h3{font-size:11pt}p,li,span{color:#333!important}a{color:#00e;text-decoration:underline}.rounded-xl,.rounded-2xl,.rounded-lg{border:1px solid #ddd!important;box-shadow:none!important;background:#fff!important}.bg-zinc-900,.bg-zinc-950{background:#f5f5f5!important;color:#000!important}.text-white{color:#000!important}}`}</style>
     </div>
   )
 }
