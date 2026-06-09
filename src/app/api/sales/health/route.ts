@@ -38,7 +38,7 @@ function serviceHealthToCheck(name: string, result: ServiceHealthResult, url?: s
         : result.balanceStatus === "not_configured"
           ? "not_configured"
           : "error",
-    detail: result.balanceLabel,
+    detail: result.balanceLabel ?? "",
     url,
   }
 }

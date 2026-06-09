@@ -2,7 +2,7 @@
  * Flowsint OSINT data source — enriches companies with WHOIS, subdomain, email breach data.
  * Requires Flowsint deployed on internal network (http://flowsint-api-prod:5001 or http://localhost:5001).
  */
-import { getServiceSalesSupabase } from "./companies"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 
 const FLOWSINT_BASE = process.env.FLOWSINT_API_URL || "http://127.0.0.1:5001"
 const FLOWSINT_TOKEN = process.env.FLOWSINT_API_TOKEN || ""

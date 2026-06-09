@@ -432,8 +432,8 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
       ? { dr: ahrefs.domainRating, backlinks: ahrefs.backlinks, ref_domains: ahrefs.referringDomains, traffic: ahrefs.trafficEstimate }
       : null,
     spiderfoot: Array.isArray(spiderfoot) ? spiderfoot.filter((r: any) => r?.ok).map((r: any) => ({ source: r.source, data: r.data })) : null,
-    katana: katana?.ok ? { crawled: katana.data?.crawled, urls: katana.data?.urls?.slice(0, 20) } : null,
-    maigret: maigret?.ok ? { profiles_found: maigret.data?.profiles_found, sites: maigret.data?.sites?.slice(0, 10) } : null,
+    katana: katana?.ok ? { crawled: (katana.data as any)?.crawled, urls: (katana.data as any)?.urls?.slice(0, 20) } : null,
+    maigret: maigret?.ok ? { profiles_found: (maigret.data as any)?.profiles_found, sites: (maigret.data as any)?.sites?.slice(0, 10) } : null,
     searxng_traffic: searxng?.ok ? searxng.data : null,
     market_data: industry ? (INDUSTRY_MARKET_DATA[industry as keyof typeof INDUSTRY_MARKET_DATA] ?? null) : null,
     // SMB signals: computed after parallel fetch using Wappalyzer + DNS data

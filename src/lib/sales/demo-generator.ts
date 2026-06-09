@@ -282,7 +282,7 @@ export async function generateReplacementDemo(
         ContentType: "text/html; charset=utf-8",
       }))
       demoUrl = `${r2Config.publicBaseUrl.replace(/\/+$/, "")}/${r2Key}`
-      console.log("[demo-generator] saved to R2:", r2Key)
+      console.warn("[demo-generator] saved to R2:", r2Key)
     } catch (r2Err) {
       console.error("[demo-generator] R2 upload failed, falling back to Supabase:", r2Err)
     }

@@ -13,6 +13,10 @@ export type ServiceBalanceStatus = "not_applicable" | "not_configured" | "manual
 export interface ServiceHealthResult {
   balanceStatus: ServiceBalanceStatus
   balanceLabel: string
+  ok?: boolean
+  name?: string
+  detail?: string
+  url?: string
 }
 
 interface FetchResult {
@@ -103,29 +107,29 @@ function liveKitJwt(apiKey: string, apiSecret: string): string {
 export async function checkSpiderfootHealth(): Promise<ServiceHealthResult> {
   try {
     const result = await checkSpiderFootHealth()
-    return { ok: result.ok, name: "SpiderFoot", detail: result.detail, url: process.env.SPIDERFOOT_API_URL || "http://127.0.0.1:5001" }
-  } catch (e) { return { ok: false, name: "SpiderFoot", detail: String(e) } }
+    return { balanceStatus: "ok", balanceLabel: "Connected", ok: result.ok, name: "SpiderFoot", detail: result.detail, url: process.env.SPIDERFOOT_API_URL || "http://127.0.0.1:5001" }
+  } catch (e) { return { balanceStatus: "error", balanceLabel: "Error", ok: false, name: "SpiderFoot", detail: String(e) } }
 }
 
 export async function checkKatanaServiceHealth(): Promise<ServiceHealthResult> {
   try {
     const result = await checkKatanaHealth()
-    return { ok: result.ok, name: "Katana", detail: result.detail, url: "docker://projectdiscovery/katana" }
-  } catch (e) { return { ok: false, name: "Katana", detail: String(e) } }
+    return { balanceStatus: "ok", balanceLabel: "Connected", ok: result.ok, name: "Katana", detail: result.detail, url: "docker://projectdiscovery/katana" }
+  } catch (e) { return { balanceStatus: "error", balanceLabel: "Error", ok: false, name: "Katana", detail: String(e) } }
 }
 
 export async function checkMaigretServiceHealth(): Promise<ServiceHealthResult> {
   try {
     const result = await checkMaigretHealth()
-    return { ok: result.ok, name: "Maigret", detail: result.detail, url: "docker://maigret" }
-  } catch (e) { return { ok: false, name: "Maigret", detail: String(e) } }
+    return { balanceStatus: "ok", balanceLabel: "Connected", ok: result.ok, name: "Maigret", detail: result.detail, url: "docker://maigret" }
+  } catch (e) { return { balanceStatus: "error", balanceLabel: "Error", ok: false, name: "Maigret", detail: String(e) } }
 }
 
 export async function checkFlareSolverrServiceHealth(): Promise<ServiceHealthResult> {
   try {
     const result = await checkFlareSolverrHealth()
-    return { ok: result.ok, name: "FlareSolverr", detail: result.detail, url: process.env.FLARESOLVERR_API_URL || "http://127.0.0.1:8191" }
-  } catch (e) { return { ok: false, name: "FlareSolverr", detail: String(e) } }
+    return { balanceStatus: "ok", balanceLabel: "Connected", ok: result.ok, name: "FlareSolverr", detail: result.detail, url: process.env.FLARESOLVERR_API_URL || "http://127.0.0.1:8191" }
+  } catch (e) { return { balanceStatus: "error", balanceLabel: "Error", ok: false, name: "FlareSolverr", detail: String(e) } }
 }
 
 export async function checkBrowserlessHealth(): Promise<ServiceHealthResult> {

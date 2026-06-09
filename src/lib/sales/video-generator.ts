@@ -237,7 +237,7 @@ async function renderLocallyAndUpload(
     console.error("[video-generator] local render failed:", error)
     return { ok: false, error: error instanceof Error ? error.message : String(error) }
   } finally {
-    try { fs.rmSync(tmpDir, { recursive: true, force: true }) } catch {}
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }) } catch (e) { console.error("[video-generator] cleanup failed:", e) }
   }
 }
 

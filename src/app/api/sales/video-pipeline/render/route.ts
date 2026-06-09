@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
       .filter(Boolean)
       .join(" ")
 
-    console.log(`[render-api] executing: ${cmd} in ${TEST_VIDEO_DIR}`)
+    console.warn(`[render-api] executing: ${cmd} in ${TEST_VIDEO_DIR}`)
     execSync(cmd, { cwd: TEST_VIDEO_DIR, stdio: "pipe", timeout: 240_000 }) // 4分タイムアウト
 
     // レンダリング結果を確認

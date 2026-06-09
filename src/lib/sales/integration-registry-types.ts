@@ -53,6 +53,10 @@ export type SalesIntegrationBalanceType =
   | "gbizinfo_health"
   | "searxng_health"
   | "apollo_health"
+  | "spiderfoot_health"
+  | "katana_health"
+  | "maigret_health"
+  | "flaresolverr_health"
 
 export interface SalesIntegrationDefinition {
   slug: string

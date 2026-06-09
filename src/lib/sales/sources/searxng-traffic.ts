@@ -8,7 +8,7 @@
  *
  * Formula: Estimated Monthly PV = (indexedPages × avgCTR × 0.015) × log10(citations) × industryCoeff
  */
-import { getServiceSalesSupabase } from "../companies"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 
 const SEARXNG_URL = process.env.SEARXNG_API_URL || "http://paradigm-searxng:8080"
 

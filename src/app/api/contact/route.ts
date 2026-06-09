@@ -204,7 +204,7 @@ export async function POST(req: NextRequest) {
             blocks,
           )
         } else if (enrich.skipped === "personal_domain") {
-          console.log("[contact] enrich skipped (personal_domain):", email)
+          console.warn("[contact] enrich skipped (personal_domain):", email)
         } else if (enrich.error) {
           console.error("[contact] enrich failed:", enrich.error)
         }

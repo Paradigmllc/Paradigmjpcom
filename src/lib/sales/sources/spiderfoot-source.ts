@@ -45,7 +45,7 @@ function runSpiderFootScan(target: string, modules: string[]): SfResult {
   } catch (error) {
     return { source: "spiderfoot", ok: false, error: String(error) }
   } finally {
-    try { fs.rmSync(tmpDir, { recursive: true, force: true }) } catch {}
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }) } catch (e) { console.error("[spiderfoot] cleanup failed:", e) }
   }
 }
 
