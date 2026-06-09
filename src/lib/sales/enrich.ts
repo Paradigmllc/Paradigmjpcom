@@ -43,6 +43,8 @@ import { detectCartPlatform } from "./sources/cartleads"
 import { scrapeSimilarwebFree } from "./sources/similarweb-scraper"
 import { lookupBuiltWithFree } from "./sources/builtwith-free"
 import { queryCommonCrawl } from "./sources/commoncrawl"
+import { checkAhrefsFree } from "./sources/ahrefs-free"
+import { queryEstat, INDUSTRY_MARKET_DATA } from "./sources/market-data"
 import { autoPersonalize } from "./personalize"
 import { saveTechStackDetections } from "./source-acquisition"
 import type { Industry, SalesCompany } from "./types"
@@ -161,7 +163,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   // Step 2: 並列 30+ source enrich (Sprint 15: PSI + gBizInfo + Wappalyzer + SSL + Whois + Places)
   //         Hunter.io はメール検索 (フォーム経由で email 既知の場合のみ)
   const url = domain.startsWith("http") ? domain : `https://${domain}`
-  const [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback, houjin, tranco, emailrep, phishtank, opencorp, greenweb, storeleads, massdns, github, cartleads, simweb, builtwith, commoncrawl] = await Promise.all([
+  const [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback, houjin, tranco, emailrep, phishtank, opencorp, greenweb, storeleads, massdns, github, cartleads, simweb, builtwith, commoncrawl, ahrefs] = await Promise.all([
     scanDomain(domain).catch((e) => {
       console.error("[enrich] scanDomain failed:", e)
       return null
@@ -276,6 +278,10 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     }),
     queryCommonCrawl(domain).catch((e) => {
       console.error("[enrich] commoncrawl failed:", e)
+      return null
+    }),
+    checkAhrefsFree(domain).catch((e) => {
+      console.error("[enrich] ahrefs-free failed:", e)
       return null
     }),
   ])
@@ -401,6 +407,10 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     commoncrawl: commoncrawl?.ok
       ? { pages: commoncrawl.pagesInIndex, last_crawled: commoncrawl.lastCrawled }
       : null,
+    ahrefs: ahrefs?.ok
+      ? { dr: ahrefs.domainRating, backlinks: ahrefs.backlinks, ref_domains: ahrefs.referringDomains, traffic: ahrefs.trafficEstimate }
+      : null,
+    market_data: guessIndustry ? INDUSTRY_MARKET_DATA[guessIndustry] ?? null : null,
     ...(gbizFirst ? toCompanyMeta(gbizFirst) : {}),
   }
 
