@@ -1,0 +1,51 @@
+---
+import type { DemoData } from "../keystatic/demo-data"
+
+interface Props {
+  data: DemoData
+}
+
+const { data } = Astro.props
+---
+
+<section id="booking-cta" class="py-20 px-6">
+  <div class="max-w-4xl mx-auto">
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand to-brand-dark p-10 sm:p-16 text-center">
+      <!-- Decorative elements -->
+      <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+      <div class="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2"></div>
+
+      <div class="relative z-10">
+        <!-- Icon -->
+        <div class="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 mb-6">
+          <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+          </svg>
+        </div>
+
+        <!-- Title -->
+        <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">
+          {data.ctaTitle || "まずは無料相談から"}
+        </h2>
+
+        <!-- Body -->
+        <p class="text-white/70 text-lg leading-relaxed max-w-xl mx-auto mb-8">
+          {data.ctaBody || "15分のオンライン診断で、改善の余地を可視化します。お気軽にご予約ください。"}
+        </p>
+
+        <!-- CTA button -->
+        <a
+          href={data.calBookingUrl || "https://cal.com/paradigm-jp/15min"}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-bold text-brand shadow-lg shadow-black/10 transition-all hover:scale-105 hover:shadow-xl"
+        >
+          無料相談を予約する
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>

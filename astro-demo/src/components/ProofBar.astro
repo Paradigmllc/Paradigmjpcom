@@ -1,0 +1,41 @@
+---
+import type { DemoData } from "../keystatic/demo-data"
+
+interface Props {
+  data: DemoData
+}
+
+const { data } = Astro.props
+const metrics = data.caseMetrics?.length
+  ? data.caseMetrics
+  : [
+      { label: "CVR改善", value: "2.4", suffix: "x" },
+      { label: "問合せ増加", value: "156", suffix: "%" },
+      { label: "表示速度", value: "92", suffix: "点" },
+    ]
+---
+
+<section id="proof-bar" class="py-20 px-6 border-y border-white/5">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl sm:text-4xl font-bold text-white">
+        {data.caseTitle || "導入実績"}
+      </h2>
+      <p class="mt-4 text-white/50 max-w-2xl mx-auto">
+        {data.caseDescription || "同業種での改善実績とKPIデータ"}
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {metrics.map((m) => (
+        <div class="glass-card glass-card-hover p-8 text-center group">
+          <p class="text-sm font-medium text-white/50 uppercase tracking-wider">{m.label}</p>
+          <p class="mt-4 text-5xl sm:text-6xl font-black text-brand group-hover:scale-110 transition-transform duration-300">
+            {m.value}
+            <span class="text-2xl text-brand-light">{m.suffix}</span>
+          </p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

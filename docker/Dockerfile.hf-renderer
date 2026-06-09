@@ -1,0 +1,35 @@
+# ─── HyperFrames MP4 Renderer ───
+# Chromium + FFmpeg + HyperFrames CLI for deterministic video rendering
+# Run: docker build -t paradigm-hf-renderer -f Dockerfile.hf-renderer .
+#      docker run --rm -v ./renders:/app/renders paradigm-hf-renderer npx hyperframes render --profile standard
+
+FROM mcr.microsoft.com/playwright:v1.60.0-noble
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV NODE_VERSION=24
+
+# Install Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - \
+  && apt-get install -y nodejs \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install FFmpeg for post-render encoding
+RUN apt-get update \
+  && apt-get install -y ffmpeg \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install HyperFrames CLI globally
+RUN npm install -g hyperframes@latest \
+  && npx playwright install-deps chromium
+
+# Copy rendering scripts
+COPY scripts/hf-render-entry.sh /usr/local/bin/hf-render
+RUN chmod +x /usr/local/bin/hf-render
+
+# Default: render all compositions in standard quality
+ENTRYPOINT ["hf-render"]
+CMD ["--profile", "standard", "--all"]

@@ -1,0 +1,47 @@
+---
+import type { DemoData } from "../keystatic/demo-data"
+
+const iconMap: Record<string, string> = {
+  Globe: `<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10A15.3 15.3 0 0112 2z"/></svg>`,
+  Search: `<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>`,
+  Play: `<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
+  Shield: `<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+  Zap: `<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+  BarChart: `<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+}
+
+interface Props {
+  data: DemoData
+}
+
+const { data } = Astro.props
+const services = data.services?.length
+  ? data.services
+  : [
+    { title: "Webサイト制作", description: "最新技術でコンバージョン最適化", icon: "Globe" },
+    { title: "SEO/MEO対策", description: "検索上位表示で新規顧客獲得", icon: "Search" },
+    { title: "動画マーケティング", description: "視覚的訴求でエンゲージメント向上", icon: "Play" },
+  ]
+---
+
+<section id="service-path" class="py-20 px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-14">
+      <h2 class="text-3xl sm:text-4xl font-bold text-white">
+        {data.serviceTitle || "提供サービス"}
+      </h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {services.map((svc, i) => (
+        <div class="glass-card glass-card-hover p-8 group">
+          <div class="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand/20 text-brand group-hover:bg-brand/30 transition-colors">
+            <Fragment set:html={iconMap[svc.icon] ?? iconMap.Globe} />
+          </div>
+          <h3 class="text-xl font-semibold text-white mb-3">{svc.title}</h3>
+          <p class="text-white/50 leading-relaxed">{svc.description}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

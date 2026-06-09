@@ -1,0 +1,70 @@
+---
+import type { DemoData } from "../keystatic/demo-data"
+
+interface Props {
+  data: DemoData
+}
+
+const { data } = Astro.props
+
+const demoImages: Record<string, string> = {
+  beauty_salon: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800&q=80",
+  dental: "https://images.unsplash.com/photo-1606811971618-4486d14f3f99?w=800&q=80",
+  restaurant: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80",
+  construction: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=800&q=80",
+  accounting: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&q=80",
+  retail: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80",
+  cleaning: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&q=80",
+  consulting: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&q=80",
+}
+---
+
+<section id="case-preview" class="py-20 px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <!-- Text side -->
+      <div>
+        <h2 class="text-3xl sm:text-4xl font-bold text-white mb-6">
+          {data.caseTitle || "導入実績"}
+        </h2>
+        <p class="text-white/60 leading-relaxed text-lg">
+          {data.caseDescription || "同業種での改善実績とKPIデータ。診断レポートに基づき、各企業に最適化された改善プランを提案します。"}
+        </p>
+
+        <div class="mt-10 grid grid-cols-2 gap-4">
+          {data.caseMetrics?.slice(0, 4)?.map((m) => (
+            <div class="glass-card p-5">
+              <p class="text-3xl font-bold text-brand">
+                {m.value}<span class="text-lg text-brand-light ml-1">{m.suffix}</span>
+              </p>
+              <p class="mt-1 text-sm text-white/50">{m.label}</p>
+            </div>
+          )) ?? (
+            <>
+              <div class="glass-card p-5">
+                <p class="text-3xl font-bold text-brand">2.4<span class="text-lg text-brand-light ml-1">x</span></p>
+                <p class="mt-1 text-sm text-white/50">CVR改善</p>
+              </div>
+              <div class="glass-card p-5">
+                <p class="text-3xl font-bold text-brand">156<span class="text-lg text-brand-light ml-1">%</span></p>
+                <p class="mt-1 text-sm text-white/50">問合せ増加</p>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      <!-- Image side -->
+      <div class="relative">
+        <div class="absolute -inset-1 bg-gradient-to-br from-brand to-brand-dark rounded-2xl blur-lg opacity-30"></div>
+        <img
+          src={demoImages[data.industry] ?? demoImages.consulting}
+          alt={`${data.customerName} demo preview`}
+          class="relative rounded-2xl border border-white/10 shadow-2xl w-full"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+    </div>
+  </div>
+</section>

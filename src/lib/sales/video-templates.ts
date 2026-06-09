@@ -52,7 +52,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: { hook
 
   return `<!doctype html>
 <html lang="${esc(data.report_locale)}">
-<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src * data:;"/>
 <title>${co} — Paradigm</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
@@ -184,7 +184,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: { hook
     </div>
 
     <!-- ═══ BENTO GRID 3: CTA ═══ -->
-    <div class="bento-scene" style="left:50%;top:calc(50% + 240vh);width:60vw;padding:3vw;text-align:center">
+    <div class="bento-scene" id="bento3" style="left:50%;top:calc(50% + 240vh);width:60vw;padding:3vw;text-align:center">
       <div class="card" style="align-items:center;padding:5vw">
         <div class="kicker">${T.action}</div>
         <h1 class="gradient-h1" style="text-align:center;font-size:3.8vw">${esc(cta)}</h1>
@@ -196,9 +196,9 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: { hook
 <div id="prog-wrap"><div id="prog-fill"></div></div>
 <div id="hud"><span class="hl">PARADIGM</span><span>${co}</span><span>${url}</span></div>
 
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.12.5/dist/gsap.min.js" crossorigin="anonymous"></script>
 <script>
-(function i(){if(typeof gsap==='undefined'){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js';s.onload=r;s.onerror=function(){};document.head.appendChild(s)}else r();
+(function i(){if(typeof gsap==='undefined'){var s=document.createElement('script');s.src='https://unpkg.com/gsap@3.12.5/dist/gsap.min.js';s.onload=r;s.onerror=function(){document.getElementById('viewport').innerHTML='<div style=display:flex;align-items:center;justify-content:center;height:100%;color:#fff;font-family:sans-serif;text-align:center;padding:2vw><div><p style=font-size:2vw;font-weight:700>Paradigm</p><p style=color:rgba(255,255,255,.5);font-size:1vw>${esc(co)}</p></div></div>'};document.head.appendChild(s)}else r();
 function r(){
 var tl=gsap.timeline({paused:true}),vc="#60a5fa";
 tl.to("#prog-fill",{width:"100%",duration:60,ease:"none"},0);

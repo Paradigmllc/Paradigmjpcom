@@ -3,6 +3,7 @@
 import { motion } from "framer-motion"
 import { X } from "lucide-react"
 import { useState } from "react"
+import { toast } from "sonner"
 import type { ReportLang } from "./report-copy"
 
 interface RequestFormData {
@@ -45,6 +46,7 @@ export default function ReportRequestModal({
       setSent(true)
     } catch (e) {
       console.error("[ReportRequestModal] submitRequest failed:", e)
+      toast.error(lang === "ja" ? "送信に失敗しました。後ほどお試しください。" : "Failed to send. Please try again later.")
     }
   }
 

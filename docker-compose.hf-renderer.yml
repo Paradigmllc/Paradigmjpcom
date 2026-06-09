@@ -1,0 +1,28 @@
+# HyperFrames MP4 Renderer — dedicated service
+# Build: docker compose -f docker-compose.hf-renderer.yml up -d
+# Render: POST http://localhost:3001/render
+
+services:
+  hf-renderer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.hf-renderer
+    image: paradigm-hf-renderer:latest
+    container_name: paradigm-hf-renderer
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      - hf-renders:/app/renders
+      - ./test-video:/app
+    environment:
+      - NODE_ENV=production
+      - HYPERFRAMES_MAX_CONCURRENCY=2
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  hf-renders:

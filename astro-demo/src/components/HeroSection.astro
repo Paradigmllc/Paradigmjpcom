@@ -1,0 +1,68 @@
+---
+import type { DemoData } from "../keystatic/demo-data"
+
+interface Props {
+  data: DemoData
+}
+
+const { data } = Astro.props
+const industryLabels: Record<string, string> = {
+  beauty_salon: "美容サロン",
+  dental: "歯科医院",
+  restaurant: "飲食店",
+  construction: "建設業",
+  accounting: "会計事務所",
+  retail: "小売業",
+  cleaning: "清掃業",
+  consulting: "コンサルティング",
+}
+---
+
+<section id="hero" class="relative min-h-screen flex items-center justify-center overflow-hidden px-6 py-24">
+  <!-- Ambient orbs -->
+  <div class="absolute top-1/3 -left-32 w-96 h-96 bg-brand/20 rounded-full blur-3xl animate-float"></div>
+  <div class="absolute bottom-1/4 -right-32 w-80 h-80 bg-brand/10 rounded-full blur-3xl animate-float-delayed"></div>
+
+  <div class="relative z-10 max-w-4xl mx-auto text-center">
+    <!-- Industry badge -->
+    <div class="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-white/5 backdrop-blur-sm px-4 py-2 text-sm font-medium text-brand-light">
+      <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse-glow"></span>
+      {industryLabels[data.industry] ?? data.industry} Demo
+      {data.domain && <span class="text-white/40">· {data.domain}</span>}
+    </div>
+
+    <!-- Hero headline -->
+    <h1 class="mt-8 text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight gradient-text">
+      {data.heroHeadline || "デジタルマーケティングを次のステージへ"}
+    </h1>
+
+    <!-- Subtitle -->
+    <p class="mt-6 text-lg sm:text-xl text-white/60 max-w-2xl mx-auto leading-relaxed">
+      {data.heroSubtitle || "診断データに基づくパーソナライズド・リニューアル提案"}
+    </p>
+
+    <!-- CTA buttons -->
+    <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+      <a
+        href="#contact"
+        class="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-brand to-brand-dark px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-brand/25 transition-all hover:scale-105 hover:shadow-xl hover:shadow-brand/40"
+      >
+        改善案を見る
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </a>
+      <a
+        href={data.calBookingUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 rounded-full border border-white/20 px-8 py-3.5 text-sm font-semibold text-white/80 backdrop-blur-sm transition-all hover:scale-105 hover:border-brand/50 hover:text-white"
+      >
+        無料相談を予約
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</section>

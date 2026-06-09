@@ -1,0 +1,70 @@
+---
+import DemoLayout from "../layouts/DemoLayout.astro"
+import HeroSection from "../components/HeroSection.astro"
+import ProofBar from "../components/ProofBar.astro"
+import ServicePath from "../components/ServicePath.astro"
+import CasePreview from "../components/CasePreview.astro"
+import BookingCta from "../components/BookingCta.astro"
+import { DEFAULT_DEMO, type DemoData } from "../keystatic/demo-data"
+
+let data: DemoData = DEFAULT_DEMO
+
+// Dynamic data via ?slug= param (for pipeline integration)
+if (Astro.url.searchParams.has("slug")) {
+  // In production, this would fetch from Keystatic/DB/R2
+  // For now, use defaults with overrides from query params
+  const slug = Astro.url.searchParams.get("slug") || "default-demo"
+  data = {
+    ...DEFAULT_DEMO,
+    title: slug,
+    customerName: Astro.url.searchParams.get("name") || DEFAULT_DEMO.customerName,
+    heroHeadline: Astro.url.searchParams.get("hook") || DEFAULT_DEMO.heroHeadline,
+    heroSubtitle: Astro.url.searchParams.get("subtitle") || DEFAULT_DEMO.heroSubtitle,
+    domain: Astro.url.searchParams.get("domain") || undefined,
+    calBookingUrl: Astro.url.searchParams.get("cal") || DEFAULT_DEMO.calBookingUrl,
+  }
+}
+---
+
+<DemoLayout title={`${data.customerName} — Demo Site`}>
+  <!-- Sticky nav -->
+  <nav class="sticky top-0 z-50 bg-black/60 backdrop-blur-xl border-b border-white/5">
+    <div class="max-w-6xl mx-auto flex items-center justify-between px-6 h-16">
+      <div class="flex items-center gap-3">
+        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-xs font-bold text-black">
+          P
+        </div>
+        <span class="text-sm font-medium text-white truncate max-w-[200px]">
+          {data.customerName}
+        </span>
+      </div>
+      <div class="hidden sm:flex items-center gap-6 text-sm text-white/60">
+        <a href="#service-path" class="hover:text-white transition-colors">Features</a>
+        <a href="#proof-bar" class="hover:text-white transition-colors">Results</a>
+        <a href="#booking-cta" class="hover:text-white transition-colors">Contact</a>
+      </div>
+      <a
+        href={data.calBookingUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="rounded-full bg-white px-4 py-2 text-sm font-semibold text-black transition-all hover:scale-105"
+      >
+        無料相談
+      </a>
+    </div>
+  </nav>
+
+  <!-- Demo sections -->
+  <main>
+    <HeroSection data={data} />
+    <ProofBar data={data} />
+    <ServicePath data={data} />
+    <CasePreview data={data} />
+    <BookingCta data={data} />
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/5 py-8 px-6 text-center text-white/30 text-sm">
+    <p>© {new Date().getFullYear()} Paradigm LLC. 診断データから自動生成されたデモサイトです。</p>
+  </footer>
+</DemoLayout>
