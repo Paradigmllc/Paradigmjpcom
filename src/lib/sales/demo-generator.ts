@@ -239,6 +239,7 @@ export function buildDemoHtml(company: SalesCompany, report: DiagnosticReportDat
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { matchContentTemplate } from "./content-templates"
 import { getR2StorageConfig, sanitizeR2ObjectName } from "./r2-storage"
+import { deployDemoToCfPages } from "./cf-pages-deploy"
 
 export async function generateReplacementDemo(
   company: SalesCompany,
@@ -318,6 +319,17 @@ export async function generateReplacementDemo(
     console.error("[demo-generator] upsert failed:", error.message)
     if (!demoUrl) return { ok: false, demoUrl: null, error: error.message }
   }
+
+  // Fire-and-forget: deploy to Cloudflare Pages (Astro demo pipeline)
+  deployDemoToCfPages(company, report).then((cfResult) => {
+    if (cfResult.ok) {
+      console.warn("[demo-generator] CF Pages deploy triggered:", cfResult.demoUrl)
+    } else {
+      console.error("[demo-generator] CF Pages deploy failed:", cfResult.error)
+    }
+  }).catch((err) => {
+    console.error("[demo-generator] CF Pages deploy error:", err)
+  })
 
   return { ok: true, demoUrl: demoUrl ?? null }
 }

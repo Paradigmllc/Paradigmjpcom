@@ -50,6 +50,7 @@ import { collectSmbSignals } from "./sources/smb-signals"
 import { enrichDomainWithSpiderFoot } from "./sources/spiderfoot-source"
 import { crawlWithKatana } from "./sources/katana-source"
 import { searchMaigretForDomain } from "./sources/maigret-source"
+import { extractSkyvernSiteData, discoverSkyvernForms } from "./sources/skyvern-source"
 import { autoPersonalize } from "./personalize"
 import { saveTechStackDetections } from "./source-acquisition"
 import type { Industry, SalesCompany } from "./types"
@@ -172,7 +173,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   // Step 2: 並列 30+ source enrich (Sprint 15: PSI + gBizInfo + Wappalyzer + SSL + Whois + Places)
   //         Hunter.io はメール検索 (フォーム経由で email 既知の場合のみ)
   const url = domain.startsWith("http") ? domain : `https://${domain}`
-  const [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback, houjin, tranco, emailrep, phishtank, opencorp, greenweb, storeleads, massdns, github, cartleads, simweb, builtwith, commoncrawl, ahrefs, spiderfoot, katana, maigret, searxng] = await Promise.all([
+  const [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback, houjin, tranco, emailrep, phishtank, opencorp, greenweb, storeleads, massdns, github, cartleads, simweb, builtwith, commoncrawl, ahrefs, spiderfoot, katana, maigret, skyvernSite, skyvernForms, searxng] = await Promise.all([
     scanDomain(domain).catch((e) => {
       console.error("[enrich] scanDomain failed:", e)
       return null
@@ -305,6 +306,14 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
       console.error("[enrich] maigret failed:", e)
       return null
     }),
+    extractSkyvernSiteData(url).catch((e) => {
+      console.error("[enrich] skyvern-site-data failed:", e)
+      return null
+    }),
+    discoverSkyvernForms(url).catch((e) => {
+      console.error("[enrich] skyvern-forms failed:", e)
+      return null
+    }),
     estimateTrafficViaSearx(domain, companyName ?? undefined).catch((e) => {
       console.error("[enrich] searxng-traffic failed:", e)
       return null
@@ -317,7 +326,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     sales_os: {
       last_enriched_at: new Date().toISOString(),
       enriched_via: input.source ?? "contact_form",
-      sources_collected: [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback, houjin, tranco, emailrep, phishtank, opencorp, greenweb, storeleads, massdns, github, cartleads, simweb, builtwith, commoncrawl]
+      sources_collected: [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback, houjin, tranco, emailrep, phishtank, opencorp, greenweb, storeleads, massdns, github, cartleads, simweb, builtwith, commoncrawl, ahrefs, spiderfoot, katana, maigret, skyvernSite, skyvernForms]
         .filter((s) => s != null && (Array.isArray(s) ? s.length > 0 : true)).length,
     },
     contact: {
@@ -439,6 +448,12 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     katana: katana?.ok ? { crawled: (katana.data as KatanaData)?.crawled, urls: (katana.data as KatanaData)?.urls?.slice(0, 20) } : null,
     maigret: maigret?.ok ? { profiles_found: (maigret.data as MaigretData)?.profiles_found, sites: (maigret.data as MaigretData)?.sites?.slice(0, 10) } : null,
     searxng_traffic: searxng?.ok ? searxng.data : null,
+    skyvern: skyvernSite?.ok || skyvernForms?.ok
+      ? {
+          site_data: skyvernSite?.ok ? skyvernSite.data : null,
+          forms: skyvernForms?.ok ? skyvernForms.data : null,
+        }
+      : null,
     market_data: industry ? (INDUSTRY_MARKET_DATA[industry as keyof typeof INDUSTRY_MARKET_DATA] ?? null) : null,
     // SMB signals: computed after parallel fetch using Wappalyzer + DNS data
     smb_signals: tech && dns?.ok

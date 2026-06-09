@@ -269,6 +269,7 @@ const SOURCES: SourceDefinition[] = [
   { slug: "ffcreator_editly_ffmpeg", label: "FFCreator / Editly / FFmpeg", category: "video", env: ["FFCREATOR_WORKER_URL", "EDITLY_WORKER_URL", "FFMPEG_BIN"], detect: (m) => !!m.ffcreator || !!m.editly || !!m.ffmpeg, detail: "Final assembly, transitions, encoding and packaging" },
   { slug: "whisperx", label: "WhisperX", category: "video", env: ["WHISPERX_WORKER_URL"], detect: (m) => !!m.whisperx, detail: "Word-level subtitle timing and diarization" },
   { slug: "r2_video_delivery", label: "Cloudflare R2 delivery", category: "video", env: ["CLOUDFLARE_R2_ACCOUNT_ID", "CLOUDFLARE_R2_ACCESS_KEY_ID", "CLOUDFLARE_R2_SECRET_ACCESS_KEY", "CLOUDFLARE_R2_BUCKET", "R2_BUCKET", "CLOUDFLARE_R2_PUBLIC_BASE_URL", "R2_PUBLIC_BASE_URL"], detect: (m) => !!m.r2_asset || !!m.video_asset, detail: "Authenticated asset delivery for video and reports" },
+  { slug: "skyvern", label: "Skyvern browser automation", category: "outreach", env: ["SKYVERN_BASE_URL"], detect: (m) => !!m.skyvern, detail: "AI browser agent for site screenshot, form discovery and structured data extraction" },
 ]
 
 function hasConfiguredEnv(names?: string[]): boolean {
