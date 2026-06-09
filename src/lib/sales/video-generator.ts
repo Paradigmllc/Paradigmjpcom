@@ -6,6 +6,7 @@ import { escapeHtml, themeForIndustry } from "./render-quality"
 import { normalizeReportLocale } from "./routing"
 import { localeToRegion } from "./types"
 import { getR2StorageConfig, sanitizeR2ObjectName } from "./r2-storage"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 import { execSync } from "node:child_process"
 import fs from "node:fs"
 import os from "node:os"
@@ -242,7 +243,6 @@ async function renderLocallyAndUpload(
 
 async function saveVideoUrlToDb(companyId: string, videoUrl: string, _script: unknown) {
   try {
-    const { getServiceSalesSupabase } = await import("./companies")
     const sb = getServiceSalesSupabase()
     if (!sb) return
     await sb.from("sales_companies").update({ meta: { video_url: videoUrl, video_generated_at: new Date().toISOString() } }).eq("id", companyId)
@@ -330,7 +330,7 @@ export async function generateDiagnosticVideo(
         if (mp4Url) {
           // Save to DB
           await saveVideoUrlToDb(company.id, mp4Url, script)
-          return { ok: true, video_url: mp4Url, duration_sec: 60, ...baseResult }
+          return { ok: true, video_url: mp4Url, ...baseResult }
         }
       }
       console.warn("[video-generator] HF API returned non-ok, falling back to local render")
@@ -343,7 +343,7 @@ export async function generateDiagnosticVideo(
   const localResult = await renderLocallyAndUpload(html, company, data.report_locale)
   if (localResult.ok && localResult.video_url) {
     await saveVideoUrlToDb(company.id, localResult.video_url, script)
-    return { ok: true, video_url: localResult.video_url, duration_sec: 60, ...baseResult }
+    return { ok: true, video_url: localResult.video_url, ...baseResult }
   }
 
   // Final fallback: HTML preview only

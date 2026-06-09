@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   }
 
   const config = getR2StorageConfig()
-  if (!config.ready) {
+  if (!config.ready || !config.bucket) {
     return NextResponse.json({ ok: false, error: "R2 is not configured" }, { status: 503 })
   }
 

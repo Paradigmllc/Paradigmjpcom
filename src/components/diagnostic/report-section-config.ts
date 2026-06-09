@@ -20,19 +20,27 @@ export type ReportSectionId =
   | "evidence"
   | "faq"
   | "cta"
-  | "meo_map"          // MEO variant only
-  | "meo_reviews"       // MEO variant only
-  | "security_scorecard" // Security variant only
-  | "security_timeline"  // Security variant only
-  | "security_vuln_matrix" // Security variant only
-  | "japan_market"       // japan_entry only
-  | "japan_checklist"    // japan_entry only
-  | "japan_roadmap"      // japan_entry only
-  | "video_sample"       // video variant only
-  | "video_flow"         // video variant only
-  | "subsidy_table"      // subsidy only
-  | "outreach_funnel"    // outreach only
-  | "outreach_test"      // outreach only
+  | "meo_map"
+  | "meo_reviews"
+  | "security_scorecard"
+  | "security_timeline"
+  | "security_vuln_matrix"
+  | "japan_market"
+  | "japan_checklist"
+  | "japan_roadmap"
+  | "video_sample"
+  | "video_flow"
+  | "subsidy_table"
+  | "outreach_funnel"
+  | "outreach_test"
+  | "five_second_audit"
+  | "annotated_screenshot"
+  | "competitor_comparison"
+  | "market_presence"
+  | "before_after"
+  | "mobile_comparison"
+  | "savior_positioning"
+  | "solution_proposal"
 
 export interface SectionConfig {
   id: ReportSectionId

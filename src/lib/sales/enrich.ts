@@ -411,7 +411,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     ahrefs: ahrefs?.ok
       ? { dr: ahrefs.domainRating, backlinks: ahrefs.backlinks, ref_domains: ahrefs.referringDomains, traffic: ahrefs.trafficEstimate }
       : null,
-    market_data: guessIndustry ? INDUSTRY_MARKET_DATA[guessIndustry] ?? null : null,
+    market_data: industry ? (INDUSTRY_MARKET_DATA[industry as keyof typeof INDUSTRY_MARKET_DATA] ?? null) : null,
     // SMB signals: computed after parallel fetch using Wappalyzer + DNS data
     smb_signals: tech && dns?.ok
       ? await collectSmbSignals(domain, tech.tech.map((t: { name: string }) => t.name), dns.mxRecords).catch(() => null)

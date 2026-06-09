@@ -6,15 +6,15 @@ import type { DiagnosticReportData } from "@/lib/sales/diagnostic"
 
 // ─── Market presence summary ────────────────────────────────
 export function MarketPresenceSummary({ data, lang }: { data: DiagnosticReportData; lang: string }) {
-  const meta = data.meta ?? {}
-  const radar = meta.cloudflare_radar as Record<string, unknown> | undefined
-  const tranco = meta.tranco as Record<string, unknown> | undefined
-  const simweb = meta.similarweb_free as Record<string, unknown> | undefined
-  const commoncrawl = meta.commoncrawl as Record<string, unknown> | undefined
-  const github = meta.github as Record<string, unknown> | undefined
-  const builtwith = meta.builtwith as Record<string, unknown> | undefined
-  const dns = meta.dns as Record<string, unknown> | undefined
-  const wayback = meta.wayback_machine as Record<string, unknown> | undefined
+  const meta = (data.meta ?? {}) as Record<string, unknown>
+  const radar = (meta.cloudflare_radar ?? {}) as Record<string, unknown>
+  const tranco = (meta.tranco ?? {}) as Record<string, unknown>
+  const simweb = (meta.similarweb_free ?? {}) as Record<string, unknown>
+  const commoncrawl = (meta.commoncrawl ?? {}) as Record<string, unknown>
+  const github = (meta.github ?? {}) as Record<string, unknown>
+  const builtwith = (meta.builtwith ?? {}) as Record<string, unknown>
+  const dns = (meta.dns ?? {}) as Record<string, unknown>
+  const wayback = (meta.wayback_machine ?? {}) as Record<string, unknown>
 
   const hasAnyMarketData = radar || tranco || simweb || commoncrawl || github || builtwith
   if (!hasAnyMarketData) return null
@@ -96,7 +96,7 @@ export function MarketPresenceSummary({ data, lang }: { data: DiagnosticReportDa
         </div>
 
         {/* GitHub detail if available */}
-        {github?.org && (
+        {!!github?.org && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -142,7 +142,7 @@ export function MarketPresenceSummary({ data, lang }: { data: DiagnosticReportDa
 function MarketCard({ icon, label, value, detail, tone }: {
   icon: React.ReactNode
   label: string
-  value: string
+  value: React.ReactNode
   detail?: string
   tone: string
 }) {

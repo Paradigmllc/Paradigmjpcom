@@ -1104,7 +1104,7 @@ export default function DiagnosticReport({
                   </video>
                 ) : (
                   <iframe
-                    src={videoHref}
+                    src={videoHref ?? undefined}
                     className="w-full aspect-video"
                     title={lang === "ja" ? "60秒診断動画" : "60-second diagnostic video"}
                     loading="lazy"
@@ -1254,6 +1254,7 @@ export default function DiagnosticReport({
                 <img
                   src={data.screenshot_url}
                   alt={`${data.company_name} ${offerCopy.screenshotAlt}`}
+                  loading="lazy"
                   className="max-h-[620px] w-full object-cover object-top"
                 />
               </div>

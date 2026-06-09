@@ -459,7 +459,7 @@ function SplitContentRender(b: AnyBlock) {
         </div>
         <div className={reverse ? "md:order-1" : ""}>
           {image?.url ? (
-            <img src={image.url} alt={image.alt ?? ""} className="rounded-2xl paradigm-glass w-full" />
+            <img src={image.url} alt={image.alt ?? ""} className="rounded-2xl paradigm-glass w-full" loading="lazy" />
           ) : (
             <div className="bg-paradigm-line/20 rounded-2xl aspect-square flex items-center justify-center paradigm-eyebrow text-paradigm-ink-mute">{imagePlaceholder}</div>
           )}

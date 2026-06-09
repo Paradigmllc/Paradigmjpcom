@@ -120,7 +120,7 @@ function DemosTab({ data }: { data: SalesDashboardData }) {
 
 function VideosTab({ data }: { data: SalesDashboardData }) {
   const videoJobs = data.videoPipeline?.jobs ?? []
-  const hyperframesReady = data.toolConnections.some(t => t.slug === "hyperframes_renderer" && t.status === "active")
+  const hyperframesReady = data.toolConnections.some(t => (t.slug as string) === "hyperframes_renderer" && t.status === "active")
 
   return (
     <div className="space-y-4">

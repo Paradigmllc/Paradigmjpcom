@@ -483,7 +483,7 @@ export async function generateReplacementDemo(
   let demoUrl: string | null = null
   const locale = company.report_locale ?? report.report_locale
 
-  if (r2Config.ready && r2Config.publicBaseUrl) {
+  if (r2Config.ready && r2Config.bucket && r2Config.publicBaseUrl) {
     try {
       const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3")
       const accountId = process.env.CLOUDFLARE_R2_ACCOUNT_ID!
