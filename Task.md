@@ -1,5 +1,27 @@
 # Task.md
 
+## CODEX UPDATE - 2026-06-09 壁打ち反映: EN ホームページ全面改善
+
+- **Section 5 PROOF 差し替え**: 旧「事例準備中」プレースホルダー → Marquee 信頼バッジ + 4 匿名メトリクスカード + 相談時参照可能の脚注に刷新
+- **セクション並び替え**: Pricing → Report CTA の順に変更（先に価格文脈を提示し、心理的納得感を向上）
+- **競合比較セクション追加**: Mechanism の後に "WHY PARADIGM" 比較 4 カード（vs. DIY翻訳 / 国内代理店 / フリーランス翻訳者 / 自社雇用）を新設
+- **FAQ 5→8 問に拡充**: Q6「Google翻訳では？」/ Q7「自社雇用との差別化」/ Q8「納品後どうなる？」を追加
+- **JA ヒーローにブランドストーリー追加**: Paradigm の社名由来タグラインを HeroSection に追加
+- **ビルドブロッカー修正**: video-generator.ts の orphaned コード削除 / DiagnosticReport.tsx の重複 import 統合
+- Deploy: Coolify `fonnrxujr8osa5l8hdf4k0gc` → status finished
+- 本番確認: `/en` で全 10 セクション（Comparison / Proof Marquee / 8FAQ）表示確認
+
+## ACTIVE HANDOFF
+
+- EN ホームページは壁打ち改善反映済み。全変更は本番稼働中。
+- 未完了: JA ヒーローの heroBrandStory は messages/ja.json にキー追加済みだが、実際の文言は日本語話者が微調整推奨。
+- 未完了: その他 10 locale (ko/zh/de/fr/es/pt/ru/ar/vi/id) の homeEn メッセージは en.json にフォールバックするため当面動作するが、翻訳未実施。
+
+## NEXT ACTIONS
+
+- (任意) JA ヒーローのブランドストーリー文言を日本語として自然な表現に調整
+- (任意) 10 locale の homeEn メッセージを各言語に翻訳（現在は英語フォールバックで動作）
+
 ## CODEX UPDATE - 2026-06-08 診断レポート品質全面改善
 
 ### Phase 1: テンプレートシステム刷新
