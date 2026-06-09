@@ -21,6 +21,7 @@ import { useTypingEffect } from "./useTypingEffect"
 import { NumberTicker } from "@/components/magicui/number-ticker"
 import { Sparkles } from "@/components/magicui/sparkles"
 import { Meteors } from "@/components/magicui/meteors"
+import { ParadigmButton } from "@/components/paradigm-ui"
 
 const EASE = [0.22, 1, 0.36, 1] as const
 // Hero video sources (priority order — Pexels CDN primary, mirror fallback).
@@ -147,22 +148,18 @@ export default function HeroSection() {
           transition={{ delay: 0.7, duration: 0.5 }}
           className="flex items-center justify-center gap-3 flex-wrap mb-14"
         >
-          <Link
-            href="/contact"
-            className="group relative inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-paradigm-paper text-paradigm-ink text-[12px] tracking-[0.14em] uppercase font-semibold paradigm-glow-md overflow-hidden hover:scale-[1.03] transition-transform"
-          >
-            <span
-              aria-hidden
-              className="absolute inset-0 bg-gradient-to-r from-pink-300/0 via-paradigm-glow/40 to-paradigm-tech/0 bg-[length:200%_100%] animate-[gradientShift_2.5s_linear_infinite] opacity-0 group-hover:opacity-100 transition-opacity"
-            />
-            <span className="relative z-10">{t("heroBookConsult")}</span>
-            <ArrowRight size={14} className="relative z-10 group-hover:translate-x-0.5 transition-transform" />
+          <Link href="/contact" legacyBehavior passHref>
+            <ParadigmButton variant="glow" size="lg" asChild>
+              <a>
+                {t("heroBookConsult")}
+                <ArrowRight size={14} />
+              </a>
+            </ParadigmButton>
           </Link>
-          <Link
-            href="/services"
-            className="inline-flex items-center gap-2 paradigm-glass text-paradigm-paper hover:bg-paradigm-paper/15 px-7 py-3.5 rounded-xl text-[12px] tracking-[0.14em] uppercase font-medium transition-colors"
-          >
-            {t("heroSeeServices")}
+          <Link href="/services" legacyBehavior passHref>
+            <ParadigmButton variant="secondary" size="lg" className="text-paradigm-paper border-paradigm-paper/20 hover:bg-paradigm-paper/10" asChild>
+              <a>{t("heroSeeServices")}</a>
+            </ParadigmButton>
           </Link>
         </motion.div>
 

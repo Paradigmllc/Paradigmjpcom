@@ -11,6 +11,7 @@ import { ArrowRight, Sparkles as SparkleIcon } from "lucide-react"
 import { Meteors } from "@/components/magicui/meteors"
 import { Sparkles } from "@/components/magicui/sparkles"
 import FadeIn from "@/components/aesop/FadeIn"
+import { ParadigmButton } from "@/components/paradigm-ui"
 
 const CTA_BULLET_KEYS = ["1", "2", "3"] as const
 
@@ -42,16 +43,13 @@ export default function CtaSection() {
           {t("ctaSubheading")}
         </p>
 
-        <Link
-          href="/contact"
-          className="group relative inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-paradigm-paper text-paradigm-ink text-[12px] tracking-[0.14em] uppercase font-semibold paradigm-glow-lg overflow-hidden hover:scale-[1.03] transition-transform"
-        >
-          <span
-            aria-hidden
-            className="absolute inset-0 bg-gradient-to-r from-pink-300/0 via-paradigm-glow/40 via-paradigm-tech/0 to-pink-300/0 bg-[length:200%_100%] animate-[gradientShift_2.5s_linear_infinite] opacity-0 group-hover:opacity-100 transition-opacity"
-          />
-          <span className="relative z-10">{t("ctaButton")}</span>
-          <ArrowRight size={14} className="relative z-10 group-hover:translate-x-0.5 transition-transform" />
+        <Link href="/contact" legacyBehavior passHref>
+          <ParadigmButton variant="glow" size="xl" asChild>
+            <a>
+              {t("ctaButton")}
+              <ArrowRight size={14} />
+            </a>
+          </ParadigmButton>
         </Link>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
