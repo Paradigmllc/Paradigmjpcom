@@ -1,0 +1,107 @@
+"use client"
+
+import { motion } from "framer-motion"
+import { ArrowRight, Check, ExternalLink, Sparkles } from "lucide-react"
+import type { ReactNode } from "react"
+import { Pill } from "./report-utils"
+
+export default function ReportHeroSection({
+  offerCopy,
+  reportTitleEl,
+  heroText,
+  demoUrl,
+  calHref,
+  lang,
+  industryLabel,
+  targetCountry,
+  prefecture,
+}: {
+  offerCopy: {
+    badge: string
+    reportLabel: string
+    primaryCta: string
+    screenshotAlt: string
+  }
+  reportTitleEl: ReactNode
+  heroText: string
+  demoUrl: string | null
+  calHref: string
+  lang: "ja" | "en" | string
+  industryLabel: string
+  targetCountry: string
+  prefecture: string | null
+}) {
+  return (
+    <section className="relative overflow-hidden px-5 py-16 sm:py-24">
+      <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(24,24,27,0.07)_1px,transparent_1px),linear-gradient(to_bottom,rgba(24,24,27,0.07)_1px,transparent_1px)] bg-[size:64px_64px]" />
+      <div className="absolute inset-x-0 bottom-0 -z-10 h-80 bg-gradient-to-b from-transparent to-[#fbfaf7]" />
+      <div className="mx-auto max-w-6xl text-center">
+        <motion.div
+          className="inline-flex items-center gap-2 rounded-full border border-violet-200 bg-white px-4 py-2 text-sm font-semibold text-violet-700 shadow-sm"
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Sparkles size={15} aria-hidden />
+          {offerCopy.badge}
+        </motion.div>
+        <motion.h1
+          className="mx-auto mt-8 max-w-5xl text-5xl font-semibold leading-[1.04] text-zinc-950 sm:text-7xl"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+        >
+          {reportTitleEl}
+        </motion.h1>
+        <motion.p
+          className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-zinc-600"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          {heroText}
+        </motion.p>
+        <motion.div
+          className="mt-8 flex flex-wrap items-center justify-center gap-3"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+        >
+          {demoUrl && (
+            <a
+              href={demoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-12 items-center gap-2 rounded-full bg-zinc-950 px-5 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-105"
+            >
+              {offerCopy.primaryCta}
+              <ArrowRight size={16} aria-hidden />
+            </a>
+          )}
+          <a
+            href={calHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-12 items-center gap-2 rounded-full border border-zinc-300 bg-white px-5 text-sm font-semibold text-zinc-950 shadow-sm transition-transform hover:scale-105"
+          >
+            {lang === "ja" ? "15分無料相談を予約" : "Book Free 15min Call"}
+            <ExternalLink size={15} aria-hidden />
+          </a>
+        </motion.div>
+        <motion.div
+          className="mt-10 flex flex-wrap justify-center gap-3"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          <Pill tone="good">
+            <Check size={14} aria-hidden /> {industryLabel}
+          </Pill>
+          <Pill>{targetCountry}</Pill>
+          {prefecture && <Pill>{prefecture}</Pill>}
+          <Pill>{offerCopy.reportLabel}</Pill>
+        </motion.div>
+      </div>
+    </section>
+  )
+}
