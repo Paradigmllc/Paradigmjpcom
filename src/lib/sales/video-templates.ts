@@ -1,101 +1,52 @@
 /**
- * Space-travel motion graphics — one giant canvas, camera moves through it.
- * Zero scene switches. The camera pans/zooms/rotates between pre-placed content.
+ * Bento Grid + Glassmorphism + Data Viz — professional video composition.
+ * Zero text-only scenes. Every frame has cards, charts, icons, and depth.
  */
 import type { DiagnosticReportData } from "./diagnostic"
 
 function esc(s: string): string { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;") }
 
-interface Theme { bg: string; bg2: string; accent: string; text: string; muted: string; signal: string; surface: string }
-function t(v: string): Theme {
-  if (v === "meo") return { bg: "#051408", bg2: "#0c2414", accent: "#22c55e", text: "#f0fdf4", muted: "rgba(240,253,244,0.55)", signal: "#4ade80", surface: "rgba(255,255,255,0.04)" }
-  if (v === "security") return { bg: "#0d0404", bg2: "#1a0808", accent: "#ef4444", text: "#fef2f2", muted: "rgba(254,242,242,0.55)", signal: "#f87171", surface: "rgba(255,255,255,0.04)" }
-  if (v === "japan_entry") return { bg: "#030a14", bg2: "#06142a", accent: "#3b82f6", text: "#eff6ff", muted: "rgba(239,246,255,0.55)", signal: "#60a5fa", surface: "rgba(255,255,255,0.04)" }
-  if (v === "video_subscription") return { bg: "#060318", bg2: "#0e0828", accent: "#8b5cf6", text: "#faf5ff", muted: "rgba(250,245,255,0.55)", signal: "#a78bfa", surface: "rgba(255,255,255,0.04)" }
-  if (v === "subsidy") return { bg: "#031414", bg2: "#061f1f", accent: "#14b8a6", text: "#f0fdfa", muted: "rgba(240,253,250,0.55)", signal: "#2dd4bf", surface: "rgba(255,255,255,0.04)" }
-  if (v === "outreach") return { bg: "#0c0603", bg2: "#180c06", accent: "#f97316", text: "#fff7ed", muted: "rgba(255,247,237,0.55)", signal: "#fb923c", surface: "rgba(255,255,255,0.04)" }
-  return { bg: "#04040a", bg2: "#0a0a18", accent: "#8b5cf6", text: "#ffffff", muted: "rgba(255,255,255,0.55)", signal: "#a78bfa", surface: "rgba(255,255,255,0.04)" }
+interface Theme { bg: string; orb1: string; orb2: string; accent: string; text: string; muted: string; signal: string; warn: string }
+function tv(v: string): Theme {
+  if (v === "meo") return { bg: "#040e07", orb1: "#166534", orb2: "#14532d", accent: "#22c55e", text: "#f0fdf4", muted: "rgba(240,253,244,0.55)", signal: "#4ade80", warn: "#fbbf24" }
+  if (v === "security") return { bg: "#0a0303", orb1: "#7f1d1d", orb2: "#450a0a", accent: "#ef4444", text: "#fef2f2", muted: "rgba(254,242,242,0.55)", signal: "#f87171", warn: "#fbbf24" }
+  if (v === "japan_entry") return { bg: "#030912", orb1: "#1e3a5f", orb2: "#172554", accent: "#3b82f6", text: "#eff6ff", muted: "rgba(239,246,255,0.55)", signal: "#60a5fa", warn: "#fbbf24" }
+  if (v === "video_subscription") return { bg: "#050210", orb1: "#4c1d95", orb2: "#2e1065", accent: "#8b5cf6", text: "#faf5ff", muted: "rgba(250,245,255,0.55)", signal: "#a78bfa", warn: "#fbbf24" }
+  if (v === "subsidy") return { bg: "#021010", orb1: "#115e59", orb2: "#134e4a", accent: "#14b8a6", text: "#f0fdfa", muted: "rgba(240,253,250,0.55)", signal: "#2dd4bf", warn: "#fbbf24" }
+  if (v === "outreach") return { bg: "#0a0402", orb1: "#7c2d12", orb2: "#431407", accent: "#f97316", text: "#fff7ed", muted: "rgba(255,247,237,0.55)", signal: "#fb923c", warn: "#fbbf24" }
+  return { bg: "#030308", orb1: "#3b1f8c", orb2: "#1e1040", accent: "#8b5cf6", text: "#ffffff", muted: "rgba(255,255,255,0.55)", signal: "#a78bfa", warn: "#fbbf24" }
 }
 
-function cardHtml(label: string, heading: string, body: string, extra: string, th: Theme): string {
-  return `<div class="card">
-    <div class="card-kicker">${esc(label)}</div>
-    <h1>${esc(heading)}</h1>
-    ${body ? `<p>${esc(body)}</p>` : ""}
-    ${extra}
-  </div>`
+// SVG icons inline
+const ICONS = {
+  chart: `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>`,
+  zap: `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,
+  shield: `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+  target: `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`,
 }
 
 export function buildVariantVideoHtml(data: DiagnosticReportData, script: { hook: string; pain: string; fear: string; hope: string; cta: string }): string {
-  const th = t(data.template_variant)
+  const th = tv(data.template_variant)
   const { hook, pain, fear, hope, cta } = script
   const co = esc(data.company_name)
   const loss = esc(data.total_loss)
   const isJa = data.report_locale === "ja"
   const url = esc(data.report_url || "https://paradigmjp.com")
-
-  // Build extra elements for each card
-  const extraHook = `<div class="co-name">${co}</div>`
-  const extraPain = `<div class="viz-row"><div class="bar"><div class="bar-val">${esc(data.acts[0]?.metric_value||"38")}</div><div class="bar-track"><div class="bar-fill" style="height:${Math.min(parseFloat(data.acts[0]?.metric_value||"38")||38,100)}%;background:${th.signal}"></div></div><div class="bar-label">${esc(isJa?"現在":"Now")}</div></div><div class="bar"><div class="bar-val">71</div><div class="bar-track"><div class="bar-fill-dash" style="height:71%"></div></div><div class="bar-label">${esc(isJa?"目標":"Target")}</div></div></div>`
-  const extraFear = `<div class="big-loss">${loss}</div><div class="loss-sub">${esc(isJa?"月間機会損失":"Monthly opportunity loss")}</div>`
-  const extraHope = data.template_variant === "japan_entry"
-    ? `<div class="check-row">${["特商法","個人情報保護法","国内決済","日本語サポート"].map(x=>`<span class="check-chip">${x}</span>`).join("")}</div>`
-    : `<div class="co-name">${co}</div>`
-  const extraCta = `<div class="cta-url">${url}</div>`
-
-  // 5 cards: Hook, Pain, Fear, Hope, CTA
-  const cards = [
-    cardHtml(isJa?"Paradigm 診断":"Paradigm Diagnostic", hook, "", extraHook, th),
-    cardHtml(isJa?"公開データ分析":"Public Evidence", pain, "", extraPain, th),
-    cardHtml(isJa?"機会損失":"Hidden Cost", fear, "", extraFear, th),
-    cardHtml(isJa?"ソリューション":"Solution", hope, "", extraHope, th),
-    cardHtml(isJa?"アクション":"Next Step", cta, "", extraCta, th),
-  ]
-
-  // Universe grid: cards placed in a cross pattern, plenty of space between them
-  // Viewport centers at universe (0,0). Camera travels between card positions.
-  // Card positions (in vw units relative to viewport):
-  // C0 (Hook):  center  (0vw, 0vh)
-  // C1 (Pain):  right-up  (100vw, -100vh)
-  // C2 (Fear):  down-right  (120vw, 120vh)
-  // C3 (Hope):  left-down  (-100vw, 140vh)
-  // C4 (CTA):   down-center  (0vw, 260vh)
-  const positions = [
-    { x: 0, y: 0 },           // Hook — start here
-    { x: 100, y: -100 },      // Pain — right and up
-    { x: 120, y: 120 },       // Fear — down-right  
-    { x: -100, y: 140 },      // Hope — left-down
-    { x: 0, y: 260 },         // CTA — way down
-  ]
-
-  // Camera path: travel between positions with dynamic scale
-  // format: [targetX, targetY, targetScale, duration]
-  // Negative x/y means move universe opposite direction (camera moves to card)
-  const camera = [
-    [0, 0, 1, 0],                    // Start at Hook
-    [0, 0, 1, 1.5],                  // Hold Hook
-    [-50, 40, 0.55, 1.8],            // Pull back & move toward Pain
-    [-100, 100, 1.0, 1.5],           // Dive into Pain
-    [-100, 100, 1, 3],               // Hold Pain
-    [-70, 30, 0.5, 1.3],             // Dramatic zoom out
-    [-120, -120, 1.05, 1.5],         // Sweep to Fear
-    [-120, -120, 1.05, 4],           // Hold Fear
-    [40, -60, 0.45, 1.5],            // Zoom way out, sweep left
-    [100, -140, 1.0, 1.5],           // Dive into Hope
-    [100, -140, 1, 4],               // Hold Hope
-    [0, -80, 0.35, 1.5],             // Extreme zoom out (bird's eye)
-    [0, -260, 1.15, 1.8],            // Zoom into CTA
-    [0, -260, 1.15, 4],              // Hold CTA
-    [0, -260, 1.15, 1.5],            // Final hold
-  ]
-
-  // Build camera keyframes as GSAP timeline entries
-  let cameraTweens = ""
-  let time = 0
-  for (let i = 1; i < camera.length; i++) {
-    const [x, y, s, dur] = camera[i]
-    time += camera[i-1][3] as number
-    cameraTweens += `  tl.to("#universe",{x:"${x}vw",y:"${y}vh",scale:${s},duration:${dur},ease:"${i%2===0?'power3.inOut':'expo.inOut'}"},${time.toFixed(1)});\n`
+  const mVal = data.acts[0]?.metric_value || "38"
+  const score = Math.min(parseFloat(mVal) || 38, 100)
+  const barColor = score < 40 ? th.signal : score < 70 ? th.warn : th.accent
+  const T = {
+    diag: esc(isJa ? "Paradigm 診断" : "Paradigm Diagnostic"),
+    evidence: esc(isJa ? "公開データ分析" : "Public Evidence"),
+    lossTitle: esc(isJa ? "機会損失" : "Hidden Cost"),
+    solution: esc(isJa ? "ソリューション" : "Solution"),
+    action: esc(isJa ? "次のアクション" : "Next Step"),
+    now: esc(isJa ? "現在" : "Now"),
+    target: esc(isJa ? "目標" : "Target"),
+    monthly: esc(isJa ? "月間損失" : "Monthly Loss"),
+    annual: esc(isJa ? "年間換算" : "Annual"),
+    x12: esc(isJa ? "×12倍" : "×12"),
+    coverage: esc(isJa ? "データカバレッジ" : "Data Coverage"),
   }
 
   return `<!doctype html>
@@ -107,68 +58,138 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: { hook
   html,body{width:100%;height:100%;overflow:hidden;background:${th.bg}}
   body{font-family:Inter,"Noto Sans JP",system-ui,sans-serif;color:${th.text};-webkit-font-smoothing:antialiased}
 
-  /* ── Viewport: the camera lens ── */
+  /* ── Viewport ── */
   #viewport{width:100%;height:100%;position:relative;overflow:hidden}
 
-  /* ── Universe: giant canvas, camera moves this ── */
-  #universe{position:absolute;width:400vw;height:400vh;left:calc(50vw - 200vw);top:calc(50vh - 200vh);transform-origin:0 0;will-change:transform}
+  /* ── Universe: giant canvas ── */
+  #universe{position:absolute;width:300vw;height:300vh;left:calc(50vw - 150vw);top:calc(50vh - 150vh);transform-origin:0 0;will-change:transform}
 
-  /* ── Continuous background (inside universe, travels with camera) ── */
-  .space-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 60% at 50% 50%,${th.bg2} 0%,${th.bg} 60%);z-index:0}
-  .space-grid{position:absolute;inset:0;background:linear-gradient(rgba(255,255,255,.008) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.008) 1px,transparent 1px);background-size:6vw 6vw;z-index:1}
-  .space-particle{position:absolute;width:2px;height:2px;background:${th.accent};border-radius:50%;opacity:.3;z-index:2}
-  .space-glow{position:absolute;border-radius:50%;filter:blur(120px);opacity:.07;z-index:1}
-  .space-glow.g1{width:50vw;height:30vw;background:${th.accent};top:10%;left:5%}
-  .space-glow.g2{width:40vw;height:25vw;background:${th.signal};top:60%;left:70%}
-  .space-glow.g3{width:35vw;height:20vw;background:${th.accent};top:30%;left:40%}
+  /* ── Animated background orbs (always moving) ── */
+  .orb{position:absolute;border-radius:50%;filter:blur(12vw);opacity:.55;z-index:0}
+  .orb-1{width:50vw;height:50vw;background:${th.orb1};top:5%;left:10%}
+  .orb-2{width:40vw;height:40vw;background:${th.orb2};bottom:10%;right:5%}
+  .orb-3{width:30vw;height:30vw;background:${th.accent};top:40%;left:50%;opacity:.25}
 
-  /* ── Cards: pre-placed content blocks ── */
-  .card{position:absolute;width:86vw;max-width:1400px;display:flex;flex-direction:column;justify-content:center;transform:translate(-50%,-50%);pointer-events:none}
-  .card-kicker{display:inline-flex;align-items:center;gap:0.4vw;font-size:0.85vw;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:${th.signal};margin-bottom:1vw}
-  .card-kicker::before{content:"";display:block;width:1.2vw;height:2px;background:${th.signal};border-radius:1px}
-  .card h1{font-size:3.4vw;line-height:1.06;font-weight:800;margin-bottom:0.6vw}
-  .card p{color:${th.muted};font-size:1.2vw;line-height:1.5;max-width:60vw}
-  .co-name{font-size:1vw;color:${th.muted};margin-top:0.8vw}
+  /* ── Bento Grid: 2 scenes placed at different universe coordinates ── */
+  .bento-scene{position:absolute;width:90vw;padding:4vw;display:grid;gap:2vw;transform:translate(-50%,-50%)}
+  .bento-scene.grid-3{grid-template-columns:1fr 1fr;grid-template-rows:auto auto}
 
-  /* ── Data viz (bars) ── */
-  .viz-row{display:flex;gap:4vw;margin-top:1.5vw}
-  .bar{display:flex;flex-direction:column;align-items:center;gap:0.4vw}
-  .bar-track{width:3vw;height:10vw;background:${th.surface};border-radius:0.5vw;overflow:hidden;display:flex;flex-direction:column-reverse}
-  .bar-fill{width:100%;border-radius:0.5vw}
-  .bar-fill-dash{border:2px dashed rgba(255,255,255,.12);border-radius:0.5vw}
-  .bar-val{font-size:1.3vw;font-weight:800}
+  /* ── Glassmorphism card ── */
+  .card{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border-radius:2vw;padding:3vw;display:flex;flex-direction:column;justify-content:center;overflow:hidden;position:relative}
+  .card::after{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.04) 0%,transparent 50%);pointer-events:none;border-radius:2vw}
+  .card.large{grid-row:span 2}
+
+  /* ── Typography ── */
+  .kicker{font-size:0.8vw;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:${th.signal};margin-bottom:0.8vw;display:flex;align-items:center;gap:0.4vw}
+  .kicker::before{content:"";display:block;width:1vw;height:2px;background:${th.signal};border-radius:1px}
+  .gradient-h1{font-size:3.2vw;font-weight:900;line-height:1.06;background:linear-gradient(135deg,${th.text} 0%,${th.signal} 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:1vw}
+  .sub{font-size:1.1vw;color:${th.muted};line-height:1.5}
+  .big-num{font-size:5vw;font-weight:900;line-height:1;margin-bottom:0.3vw}
+  .num-label{font-size:0.9vw;color:${th.muted};text-transform:uppercase;letter-spacing:.1em}
+
+  /* ── Icon box ── */
+  .icon-box{width:4vw;height:4vw;border-radius:1vw;display:flex;align-items:center;justify-content:center;margin-bottom:1.2vw;color:${th.signal};font-size:2vw;flex-shrink:0}
+  .icon-box.glass{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)}
+
+  /* ── Data viz bars ── */
+  .chart-row{display:flex;gap:3vw;align-items:flex-end;margin-top:1vw;height:10vw}
+  .bar-col{display:flex;flex-direction:column;align-items:center;gap:0.4vw;flex:1}
+  .bar-wrap{width:100%;height:8vw;background:rgba(255,255,255,.03);border-radius:0.4vw;overflow:hidden;display:flex;flex-direction:column-reverse}
+  .bar-fill{width:100%;border-radius:0.4vw;height:0}
+  .bar-fill.current{background:${barColor}}
+  .bar-fill.target{border:2px dashed rgba(255,255,255,.1);background:transparent;height:71%}
   .bar-label{font-size:0.6vw;color:${th.muted};text-transform:uppercase;letter-spacing:.05em}
+  .bar-value{font-size:1.1vw;font-weight:800}
 
-  /* ── Loss display ── */
-  .big-loss{font-size:7vw;font-weight:900;line-height:1;background:linear-gradient(135deg,#f87171,${th.signal});-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.3vw}
-  .loss-sub{font-size:1.1vw;color:#f87171;font-weight:600}
+  /* ── Metric pills ── */
+  .pill-row{display:flex;gap:1vw;flex-wrap:wrap;margin-top:1vw}
+  .pill{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:2vw;padding:0.6vw 1.4vw;font-size:0.75vw;font-weight:600;color:${th.signal}}
 
-  /* ── Check chips ── */
-  .check-row{display:flex;gap:0.6vw;flex-wrap:wrap;margin-top:1vw}
-  .check-chip{background:rgba(220,38,38,.12);border:1px solid rgba(220,38,38,.2);border-radius:0.5vw;padding:0.5vw 1.2vw;font-size:0.8vw;font-weight:700;color:#fca5a5}
+  /* ── Loss highlight ── */
+  .loss-highlight{font-size:4.5vw;font-weight:900;line-height:1;color:#f87171;margin-bottom:0.3vw}
 
-  /* ── CTA URL ── */
-  .cta-url{font-size:0.8vw;font-family:monospace;color:${th.muted};margin-top:0.8vw;opacity:.6}
-
-  /* ── Progress + HUD ── */
+  /* ── Progress bar (fixed) ── */
   #prog-wrap{position:fixed;top:0;left:0;right:0;height:3px;background:rgba(255,255,255,.06);z-index:100}
   #prog-fill{height:100%;background:${th.signal};width:0}
-  #hud{position:fixed;bottom:2vw;left:3vw;right:3vw;display:flex;justify-content:space-between;color:rgba(255,255,255,.15);font-size:0.6vw;z-index:100}
+  #hud{position:fixed;bottom:1.5vw;left:3vw;right:3vw;display:flex;justify-content:space-between;color:rgba(255,255,255,.12);font-size:0.55vw;z-index:100;pointer-events:none}
   #hud .hl{font-weight:700;color:${th.signal}}
+
+  /* ── Animations ── */
+  @keyframes orbFloat1{0%,100%{transform:translate(0,0)}50%{transform:translate(2vw,-2vw)}}
+  @keyframes orbFloat2{0%,100%{transform:translate(0,0)}50%{transform:translate(-1.5vw,1.5vw)}}
+  @keyframes orbFloat3{0%,100%{transform:translate(0,0)}50%{transform:translate(1vw,1vw)}}
+  .orb-1{animation:orbFloat1 12s ease-in-out infinite}
+  .orb-2{animation:orbFloat2 15s ease-in-out infinite}
+  .orb-3{animation:orbFloat3 10s ease-in-out infinite}
 </style></head>
 <body>
 <div id="viewport">
   <div id="universe">
-    <div class="space-bg"></div>
-    <div class="space-grid"></div>
-    <div class="space-glow g1"></div>
-    <div class="space-glow g2"></div>
-    <div class="space-glow g3"></div>
-    ${[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].map(i=>`<div class="space-particle" style="left:${Math.floor(i*17.3)%100}%;top:${Math.floor(i*23.7)%100}%"></div>`).join("")}
-    ${cards.map((card, i) => {
-      const p = positions[i]
-      return `<div class="card" style="left:calc(50% + ${p.x}vw);top:calc(50% + ${p.y}vh)">${card}</div>`
-    }).join("\n")}
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <!-- ═══ BENTO GRID 1: Hook + Evidence + Data Viz ═══ -->
+    <div class="bento-scene grid-3" id="bento1" style="left:50%;top:50%">
+      <!-- Large card: Hook -->
+      <div class="card large">
+        <div class="icon-box glass">${ICONS.target}</div>
+        <div class="kicker">${T.diag}</div>
+        <h1 class="gradient-h1">${esc(hook)}</h1>
+        <p class="sub">${co}</p>
+      </div>
+      <!-- Small card top-right: KPI -->
+      <div class="card">
+        <div class="icon-box glass">${ICONS.zap}</div>
+        <div class="big-num" id="kpi1">0</div>
+        <div class="num-label">${T.coverage}</div>
+      </div>
+      <!-- Small card bottom-right: Bar chart -->
+      <div class="card">
+        <div class="kicker">${T.evidence}</div>
+        <div class="chart-row">
+          <div class="bar-col"><div class="bar-value">${esc(mVal)}</div><div class="bar-wrap"><div class="bar-fill current"></div></div><div class="bar-label">${T.now}</div></div>
+          <div class="bar-col"><div class="bar-value">71</div><div class="bar-wrap"><div class="bar-fill target"></div></div><div class="bar-label">${T.target}</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ BENTO GRID 2: Fear + Loss + Solution ═══ -->
+    <div class="bento-scene grid-3" id="bento2" style="left:50%;top:calc(50% + 130vh)">
+      <!-- Large card: Fear/Loss -->
+      <div class="card large">
+        <div class="icon-box glass">${ICONS.shield}</div>
+        <div class="kicker" style="color:#f87171">${T.lossTitle}</div>
+        <h1 class="gradient-h1">${esc(fear)}</h1>
+        <div class="loss-highlight" id="loss-num">0</div>
+        <p class="sub" style="color:#fca5a5">${T.monthly}</p>
+      </div>
+      <!-- Small card: Annual estimate -->
+      <div class="card">
+        <div class="kicker">${T.annual}</div>
+        <div class="big-num" style="color:${th.warn}">${T.x12}</div>
+        <div class="pill-row">
+          <span class="pill">${T.now} ${loss}</span>
+          <span class="pill">12×</span>
+        </div>
+      </div>
+      <!-- Small card: Solution preview -->
+      <div class="card">
+        <div class="icon-box glass">${ICONS.chart}</div>
+        <div class="kicker">${T.solution}</div>
+        <h3 style="font-size:1.6vw;font-weight:800;margin-bottom:0.5vw">${esc(hope)}</h3>
+        <p class="sub" style="font-size:0.9vw">${co}</p>
+      </div>
+    </div>
+
+    <!-- ═══ BENTO GRID 3: CTA ═══ -->
+    <div class="bento-scene" style="left:50%;top:calc(50% + 240vh);width:60vw;padding:3vw;text-align:center">
+      <div class="card" style="align-items:center;padding:5vw">
+        <div class="kicker">${T.action}</div>
+        <h1 class="gradient-h1" style="text-align:center;font-size:3.8vw">${esc(cta)}</h1>
+        <p class="sub" style="font-size:0.85vw;font-family:monospace;opacity:.5;margin-top:1vw">${url}</p>
+      </div>
+    </div>
   </div>
 </div>
 <div id="prog-wrap"><div id="prog-fill"></div></div>
@@ -176,26 +197,48 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: { hook
 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
 <script>
-(function init(){
-  if(typeof gsap==='undefined'){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js';s.onload=run;s.onerror=function(){};document.head.appendChild(s)}else run();
-  function run(){
-    var tl=gsap.timeline({paused:true});
+(function i(){if(typeof gsap==='undefined'){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js';s.onload=r;s.onerror=function(){};document.head.appendChild(s)}else r();
+function r(){
+var tl=gsap.timeline({paused:true}),vc="#60a5fa";
+tl.to("#prog-fill",{width:"100%",duration:60,ease:"none"},0);
 
-    // Progress bar
-    tl.to("#prog-fill",{width:"100%",duration:60,ease:"none"},0);
+// ─── BENTO 1: Hook + Evidence (0→24s) ───
+// Cards animate in with stagger
+tl.from("#bento1 .card",{opacity:0,y:60,duration:.9,ease:"expo.out",stagger:.15},.3);
+// KPI count-up
+tl.to({v:0},{v:${data.source_coverage.score},duration:1.8,ease:"power2.out",onUpdate:function(){document.getElementById("kpi1").textContent=Math.floor(this.targets()[0].v)+"%"}},1);
+// Bar chart fill
+tl.to("#bento1 .bar-fill.current",{height:"${score}%",duration:1.2,ease:"elastic.out(1,.6)"},1.2);
+// Micro-motion on cards
+tl.to("#bento1 .card",{y:-4,duration:4,yoyo:true,repeat:-1,ease:"sine.inOut"},">-=.5");
+tl.to("#bento1 .gradient-h1",{y:-2,duration:3.5,yoyo:true,repeat:-1,ease:"sine.inOut"},">-=.3");
 
-    // CAMERA PATH — the universe moves, not individual elements
-    // Position: center card 0 (Hook) at viewport center
-    // Universe starts so that card at 50%+0vw, 50%+0vh is in viewport center
-    // Camera moves by sliding universe in opposite direction
-${cameraTweens}
-    // Fade to black at end
-    tl.to("#viewport",{opacity:0,duration:.8,ease:"power2.in"},59.2);
+// Camera transition to Bento 2 — zoom out, move down
+tl.to("#universe",{scale:.45,y:"-60vh",duration:2,ease:"power3.inOut"},22);
+tl.to("#universe",{scale:1,y:"-130vh",duration:1.8,ease:"expo.out"},24);
 
-    tl.play();
-    console.log("Paradigm space-travel video — camera active, "+tl.duration()+"s");
-  }
-})();
+// ─── BENTO 2: Fear + Loss + Solution (26→50s) ───
+tl.from("#bento2 .card",{opacity:0,y:50,duration:.8,ease:"expo.out",stagger:.15},26.2);
+// Loss count-up
+tl.to({v:0},{v:parseFloat("${loss.replace(/[^0-9.]/g,"0")}")||0,duration:1.5,ease:"power2.out",onUpdate:function(){var n=Math.floor(this.targets()[0].v);document.getElementById("loss-num").textContent=n>1e4?(n/1e4).toFixed(1)+"万":n.toLocaleString()}},26.8);
+// Micro-motion
+tl.to("#bento2 .card",{y:-3,duration:4,yoyo:true,repeat:-1,ease:"sine.inOut"},">-=.5");
+tl.to("#bento2 .loss-highlight",{scale:1.02,duration:3,yoyo:true,repeat:-1,ease:"sine.inOut"},">-=.3");
+
+// Camera transition to CTA — extreme zoom out
+tl.to("#universe",{scale:.35,duration:2,ease:"power2.inOut"},48);
+tl.to("#universe",{scale:1.05,y:"-240vh",duration:2,ease:"expo.out"},50);
+
+// ─── BENTO 3: CTA (52→60s) ───
+tl.from("#bento3 .card",{opacity:0,scale:.9,duration:.8,ease:"expo.out"},52.2);
+tl.from("#bento3 .gradient-h1",{y:40,opacity:0,duration:.7,ease:"back.out(1.3)"},52.5);
+tl.to("#bento3 .card",{y:-3,duration:3,yoyo:true,repeat:-1,ease:"sine.inOut"},">-=.4");
+
+// Fade to black
+tl.to("#viewport",{opacity:0,duration:.8,ease:"power2.in"},59);
+
+tl.play();
+}})();
 </script>
 </body></html>`
 }
