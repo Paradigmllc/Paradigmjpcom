@@ -154,14 +154,20 @@ function commonHtmlShell(data: DiagnosticReportData, script: { hook: string; pai
   });
 
   const tl=gsap.timeline({paused:true});
-  ${scenes.map((s,i) => {
-    const prevEnd = i > 0 ? scenes[i-1].start + scenes[i-1].duration : 0
-    const overlap = prevEnd - s.start > 0 ? prevEnd - s.start : 0
-    return `tl.to("#${s.id}",{opacity:1,duration:.6,ease:"power2.inOut"},${s.start})
-  .from("#${s.id} .scene-inner",{y:30,scale:.97,opacity:0,duration:.8,ease:"power3.out"},${s.start+.05})
-  .from("#${s.id} h1",{y:24,opacity:0,duration:.6,ease:"power2.out"},${s.start+.1})
-  .from("#${s.id} .metric-badge,#${s.id} .gauge-row,#${s.id} .security-grid,#${s.id} .check-grid,#${s.id} .map-card,#${s.id} .stars,#${s.id} .countdown",{y:20,opacity:0,duration:.5,ease:"back.out(1.4)"},${s.start+.25})` + (overlap > 0 ? `` : `.to("#${s.id}",{opacity:0,duration:.4},${s.start+s.duration-.4})`)
+  // Continuous flow: each scene fades in while previous fades out with slight overlap
+  ${scenes.map((s, i) => {
+    const nextStart = i < scenes.length - 1 ? scenes[i+1].start : s.start + s.duration
+    const fadeOut = nextStart - 0.8
+    return `
+  // Scene ${i}: ${s.id}
+  tl.to("#${s.id}",{opacity:1,duration:.8,ease:"power2.inOut"},${s.start})
+   .from("#${s.id} .scene-inner",{y:40,scale:.96,opacity:0,duration:1,ease:"power3.out"},${s.start+.1})
+   .from("#${s.id} h1",{y:30,opacity:0,duration:.7,ease:"expo.out"},${s.start+.15})
+   .from("#${s.id} .metric-badge,#${s.id} .gauge-row,#${s.id} .security-grid,#${s.id} .check-grid",{y:25,opacity:0,duration:.6,ease:"back.out(1.3)"},${s.start+.35})`
   }).join("\n")}
+  // Final: fade all out with a smooth ending
+  tl.to("#paradigm-video",{opacity:.95,duration:2},58)
+   .to("#paradigm-video",{opacity:0,duration:1},59.5);
   window.__timelines=window.__timelines||{};
   window.__timelines["paradigm-video"]=tl;
 })();
