@@ -62,6 +62,7 @@ export interface DiagnosticReportData {
     "title" | "purpose" | "quality_bar" | "dify_selection_rule" | "prompt_template" | "offer_code" | "appeal_angle"
   >
   report_url: string
+  video_url?: string | null
 }
 
 export const INDUSTRY_HOOK_JA: Record<Industry, string> = {

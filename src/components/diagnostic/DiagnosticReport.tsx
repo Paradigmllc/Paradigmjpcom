@@ -944,6 +944,28 @@ export default function DiagnosticReport({
           </div>
         </section>
 
+        {/* ── Auto-embedded diagnostic video ─────── */}
+        {videoHref && (
+          <section className="px-5 pb-10">
+            <div className="mx-auto max-w-6xl">
+              <div className="overflow-hidden rounded-2xl border border-zinc-200 shadow-lg">
+                <video
+                  src={videoHref}
+                  controls
+                  poster={data.screenshot_url ?? undefined}
+                  className="w-full aspect-video bg-zinc-900"
+                  preload="metadata"
+                >
+                  <p>{lang === "ja" ? "お使いのブラウザは動画再生に対応していません。" : "Your browser does not support video playback."}</p>
+                </video>
+              </div>
+              <p className="mt-3 text-center text-xs text-zinc-400">
+                {lang === "ja" ? "60秒診断サマリー動画" : "60-second diagnostic summary video"}
+              </p>
+            </div>
+          </section>
+        )}
+
         {/* ── Variant-specific sections ─────── */}
         {(() => {
           const layout = getVariantLayout(data.template_variant)

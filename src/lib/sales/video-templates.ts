@@ -102,41 +102,69 @@ function commonHtmlShell(data: DiagnosticReportData, script: { hook: string; pai
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{background:${theme.bg};color:${theme.text};font-family:Inter,system-ui,sans-serif;overflow:hidden;width:1920px;height:1080px}
-  [data-composition-id="paradigm-video"]{width:1920px;height:1080px;position:relative;background:linear-gradient(135deg,${theme.bg} 0%,${theme.accentDark} 50%,${theme.bg} 100%)}
-  .grid{position:absolute;inset:0;background:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:64px 64px;opacity:.22}
-  .scene{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:120px 140px;opacity:0}
-  .label{font-size:20px;font-weight:800;color:${theme.signal};text-transform:uppercase;letter-spacing:.15em;margin-bottom:24px}
-  .label.pulse{animation:pulse 2s ease-in-out infinite} .label.pulse-red{color:#f87171;animation:pulse 2s ease-in-out infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
-  h1{max-width:1300px;font-size:64px;line-height:1.08;font-weight:800;margin-bottom:16px}
-  .hero-text{font-size:56px}
-  p{color:${theme.muted};font-size:24px;line-height:1.5}
-  .gauge-row{display:flex;gap:32px;align-items:center;margin:24px 0}
-  .metric-badge{display:inline-block;background:${theme.accent};color:#fff;padding:12px 28px;border-radius:12px;font-size:36px;font-weight:800;margin-top:16px;box-shadow:0 0 40px ${theme.accent}44}
-  .cta-url{color:${theme.signal};font-size:22px;margin-top:16px;font-family:monospace}
-  .security-grid,.check-grid{display:flex;gap:12px;flex-wrap:wrap;margin:24px 0}
-  .sec-item,.check{padding:10px 20px;border-radius:8px;font-size:18px;font-weight:700}
-  .sec-item.fail,.check.fail{background:rgba(220,38,38,.2);color:#f87171;border:1px solid rgba(220,38,38,.3)}
-  .sec-item.pass,.check.pass{background:rgba(34,197,94,.2);color:#4ade80;border:1px solid rgba(34,197,94,.3)}
-  .map-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:40px;text-align:center;margin:24px 0;font-size:28px}
-  .pin{width:20px;height:20px;background:#4ade80;border-radius:50%;margin:0 auto 16px;box-shadow:0 0 20px #4ade80}
-  .stars{font-size:48px;color:#fbbf24;margin:24px 0;letter-spacing:8px}
-  .warn-icon{font-size:64px;margin:24px 0}
-  .countdown{font-size:48px;font-weight:800;color:#f87171;margin-top:16px}
-  .footer{position:absolute;left:140px;right:140px;bottom:48px;display:flex;justify-content:space-between;color:${theme.muted};font-size:18px}
+  #paradigm-video{width:1920px;height:1080px;position:relative;overflow:hidden}
+  /* Cinematic ambient background */
+  .bg-layer{position:absolute;inset:0;background:linear-gradient(135deg,${theme.bg} 0%,${theme.accentDark} 35%,${theme.bg} 70%,${theme.accentDark} 100%);background-size:400% 400%}
+  .particles{position:absolute;inset:0;opacity:.3}
+  .particle{position:absolute;width:2px;height:2px;background:${theme.signal};border-radius:50%}
+  .grid{position:absolute;inset:0;background:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:80px 80px;opacity:.18}
+  .vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,.5) 100%);pointer-events:none;z-index:10}
+  /* Continuous motion scene */
+  .scene{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:100px 120px;opacity:0;z-index:5}
+  .scene-inner{max-width:1400px}
+  .label{font-size:18px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;margin-bottom:20px;display:inline-block;padding:6px 16px;border-radius:4px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
+  .label.signal{color:${theme.signal};border-color:${theme.signal}33;background:${theme.signal}11}
+  .label.warn{color:#f87171;border-color:#f8717133;background:#f8717111}
+  h1{font-size:58px;line-height:1.06;font-weight:800;max-width:1300px;margin-bottom:12px}
+  p{color:${theme.muted};font-size:22px;line-height:1.5;max-width:1000px}
+  .metric-badge{display:inline-flex;align-items:center;gap:16px;background:${theme.accent};color:#fff;padding:16px 32px;border-radius:14px;font-size:42px;font-weight:800;margin-top:20px;box-shadow:0 0 60px ${theme.accent}33}
+  .gauge-row{display:flex;gap:40px;align-items:center;margin:20px 0}
+  .security-grid,.check-grid{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}
+  .sec-item,.check{padding:12px 24px;border-radius:10px;font-size:16px;font-weight:700}
+  .sec-item.fail,.check.fail{background:rgba(220,38,38,.15);color:#f87171;border:1px solid rgba(220,38,38,.25)}
+  .map-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:48px;text-align:center;margin:20px 0;font-size:30px}
+  .pin{width:24px;height:24px;background:#4ade80;border-radius:50%;margin:0 auto 20px;box-shadow:0 0 24px #4ade80aa}
+  .stars{font-size:52px;color:#fbbf24;margin:20px 0;letter-spacing:10px}
+  .countdown{font-size:56px;font-weight:800;color:#f87171;margin-top:16px;font-family:monospace}
+  .footer{position:absolute;left:120px;right:120px;bottom:40px;display:flex;justify-content:space-between;color:rgba(255,255,255,.35);font-size:15px;z-index:10}
+  .cta-url{color:${theme.signal};font-size:18px;margin-top:12px;font-family:monospace;opacity:.8}
 </style></head>
 <body>
-<div data-composition-id="paradigm-video" data-width="1920" data-height="1080" data-duration="60">
+<div id="paradigm-video">
+  <div class="bg-layer" id="bg"></div>
+  <div class="particles" id="particles"></div>
   <div class="grid"></div>
-  ${scenes.map(s => `<section id="${s.id}" class="scene" data-start="${s.start}" data-duration="${s.duration}">${s.content}</section>`).join("\n")}
+  <div class="vignette"></div>
+  ${scenes.map((s,i) => `<div id="${s.id}" class="scene"><div class="scene-inner">${s.content}</div></div>`).join("\n")}
   <div class="footer"><span>Paradigm Diagnostic Report</span><span>${esc(data.report_url)}</span></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
 <script>
-  window.__timelines = window.__timelines || {};
-  const tl = gsap.timeline({ paused: true });
-  ${scenes.map(s => `tl.to("#${s.id}",{opacity:1,duration:.4},${s.start}).from("#${s.id} h1",{y:40,opacity:0,duration:.7,ease:"power3.out"},${s.start+.06}).from("#${s.id} .metric-badge, #${s.id} .gauge-row, #${s.id} .security-grid, #${s.id} .check-grid, #${s.id} .map-card, #${s.id} .stars, #${s.id} .warn-icon, #${s.id} .countdown",{x:30,opacity:0,duration:.55,ease:"power2.out"},${s.start+.2}).to("#${s.id}",{opacity:0,duration:.3},${s.start+s.duration-.3});`).join("\n")}
-  window.__timelines["paradigm-video"] = tl;
+(function(){
+  // Ambient particle system
+  const pc=document.getElementById('particles');
+  for(let i=0;i<40;i++){const p=document.createElement('div');p.className='particle';p.style.left=Math.random()*100+'%';p.style.top=Math.random()*100+'%';p.style.width=(Math.random()*3+1)+'px';p.style.height=p.style.width;p.style.opacity=Math.random()*.4+.1;pc.appendChild(p)}
+  
+  // Continuous background motion (Ken Burns)
+  gsap.to('#bg',{backgroundPosition:'100% 100%',duration:60,ease:'none'});
+  
+  // Floating particles
+  document.querySelectorAll('.particle').forEach((p,i)=>{
+    gsap.to(p,{x:(Math.random()-0.5)*80,y:(Math.random()-0.5)*60,duration:8+Math.random()*12,repeat:-1,yoyo:true,ease:'sine.inOut',delay:Math.random()*5});
+  });
+
+  const tl=gsap.timeline({paused:true});
+  ${scenes.map((s,i) => {
+    const prevEnd = i > 0 ? scenes[i-1].start + scenes[i-1].duration : 0
+    const overlap = prevEnd - s.start > 0 ? prevEnd - s.start : 0
+    return `tl.to("#${s.id}",{opacity:1,duration:.6,ease:"power2.inOut"},${s.start})
+  .from("#${s.id} .scene-inner",{y:30,scale:.97,opacity:0,duration:.8,ease:"power3.out"},${s.start+.05})
+  .from("#${s.id} h1",{y:24,opacity:0,duration:.6,ease:"power2.out"},${s.start+.1})
+  .from("#${s.id} .metric-badge,#${s.id} .gauge-row,#${s.id} .security-grid,#${s.id} .check-grid,#${s.id} .map-card,#${s.id} .stars,#${s.id} .countdown",{y:20,opacity:0,duration:.5,ease:"back.out(1.4)"},${s.start+.25})` + (overlap > 0 ? `` : `.to("#${s.id}",{opacity:0,duration:.4},${s.start+s.duration-.4})`)
+  }).join("\n")}
+  window.__timelines=window.__timelines||{};
+  window.__timelines["paradigm-video"]=tl;
+})();
 </script>
 <script type="application/json" data-narration>${JSON.stringify(script)}</script>
 </body></html>`
