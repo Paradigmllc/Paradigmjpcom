@@ -1,25 +1,18 @@
 ﻿"use client"
 
-/**
- * StatsHeroicSection — full-band ink stats (P18-D-8 right-sized).
- * 128px → 56-72px / py-16 → py-10 / suffix 40px → 18-22px.
- */
-
 import { useTranslations } from "next-intl"
 import { motion } from "framer-motion"
 import { NumberTicker } from "@/components/magicui/number-ticker"
 import { Meteors } from "@/components/magicui/meteors"
 import { Sparkles } from "@/components/magicui/sparkles"
 import FadeIn from "@/components/aesop/FadeIn"
+import { SectionHeader } from "@/components/paradigm-ui"
 
-// 2026-05-20 壁打ち: 捏造実績 (200社/98%/3倍/15分) を全廃し、検証可能な事実のみに置換。
-//   support=対応言語(12 locale i18n) / retention=提供サービス領域(MEO/AI/Web/動画) /
-//   growth=AIチャット24h / consult=初回診断 ¥0。数値はすべて真実。
 const STAT_DEFS = [
   { key: "support", to: 12, gradient: "from-fuchsia-400 via-paradigm-accent to-paradigm-tech" },
   { key: "retention", to: 4, gradient: "from-paradigm-tech via-paradigm-glow to-fuchsia-400" },
   { key: "growth", to: 24, gradient: "from-paradigm-glow via-violet-400 to-paradigm-accent" },
-  { key: "consult", to: 0, gradient: "from-paradigm-accent via-fuchsia-400 to-orange-300" },
+  { key: "consult", to: 0, gradient: "from-paradigm-accent via-fuchsia-400 to-amber-400" },
 ] as const
 
 const EASE = [0.22, 1, 0.36, 1] as const
@@ -28,45 +21,40 @@ export default function StatsHeroicSection() {
   const t = useTranslations("home")
 
   return (
-    <section className="relative bg-paradigm-ink text-paradigm-paper paradigm-section overflow-hidden">
-      <div className="paradigm-mesh-vivid opacity-60" />
-      <Meteors number={16} color="rgba(165, 180, 252, 0.5)" />
-      <Sparkles count={10} color="rgba(244, 114, 182, 0.4)" duration={4} />
+    <section className="relative bg-paradigm-ink paradigm-section overflow-hidden">
+      <div className="paradigm-mesh-vivid opacity-55" />
+      <div className="section-dots absolute inset-0 opacity-[0.05]" />
+      <Meteors number={14} color="rgba(167, 139, 250, 0.4)" />
+      <Sparkles count={10} color="rgba(244, 114, 182, 0.35)" duration={4} />
 
-      <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-8">
-        <FadeIn className="mb-10 text-center max-w-2xl mx-auto">
-          <p className="paradigm-eyebrow text-paradigm-glow mb-3 inline-flex items-center gap-2">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-paradigm-glow animate-pulse" />
-            {t("statsEyebrow")}
-          </p>
-          <h2 className="font-display text-[26px] md:text-[40px] leading-[1.1] tracking-[-0.025em] text-paradigm-paper">
-            {t("statsHeading")}
-            <span className="bg-gradient-to-r from-fuchsia-300 via-paradigm-glow to-paradigm-tech bg-clip-text text-transparent">
-              {t("statsHeadingHighlight")}
-            </span>
-          </h2>
-        </FadeIn>
+      <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12">
+        <SectionHeader
+          eyebrow={t("statsEyebrow")}
+          heading={t("statsHeading") + t("statsHeadingHighlight")}
+          align="center"
+          eyebrowClassName="text-paradigm-glow"
+          headingClassName="text-paradigm-paper"
+        />
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
           {STAT_DEFS.map((s, i) => (
-            <motion.div
-              key={s.key}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
+            <motion.div key={s.key}
+              initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.6, delay: i * 0.1, ease: EASE }}
-              whileHover={{ scale: 1.03, y: -4 }}
-              className="paradigm-glass rounded-2xl px-5 py-7 md:py-9 text-center cursor-default paradigm-glow-md hover:paradigm-glow-lg transition-all duration-500"
-            >
-              <div className="font-display text-[40px] md:text-[64px] leading-[0.95] tracking-[-0.03em] mb-2">
+              whileHover={{ scale: 1.04, y: -6 }}
+              className="paradigm-glass rounded-2xl px-5 py-8 text-center cursor-default paradigm-glow-md hover:paradigm-glow-lg transition-all duration-500">
+              <div className="font-display text-[44px] md:text-[68px] leading-[0.9] tracking-[-0.04em] mb-2">
                 <span className={`bg-gradient-to-br ${s.gradient} bg-clip-text text-transparent inline-block`}>
                   <NumberTicker value={s.to} />
                 </span>
-                <span className="text-[16px] md:text-[20px] text-paradigm-paper/65 ml-0.5 align-top">
+                <span className="text-[14px] md:text-[18px] text-paradigm-paper/55 ml-1 align-top">
                   {t(`stats.${s.key}.suffix`)}
                 </span>
               </div>
-              <p className="paradigm-eyebrow text-paradigm-paper/55 text-[10px]">{t(`stats.${s.key}.label`)}</p>
+              <p className="text-[11px] md:text-[12px] text-paradigm-paper/50 font-medium tracking-[0.12em] uppercase">
+                {t(`stats.${s.key}.label`)}
+              </p>
             </motion.div>
           ))}
         </div>
