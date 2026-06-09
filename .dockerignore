@@ -1,48 +1,28 @@
-# ─── Node / Build artifacts ───
+# ─── Speed up Docker context transfer ───
 node_modules
 .next
 *.tsbuildinfo
 .turbo
 
-# ─── Worker (separate app, has own node_modules 185MB) ───
+# ─── Worker (has own node_modules 185MB — separate app) ───
 worker/node_modules
-worker/.next
 
 # ─── Test / Demo directories ───
 test-video
 test-render
 e2e
 
-# ─── Documentation ───
-docs
-*.md
-!README.md
-
-# ─── CI / Config ───
-.github
-.trigger
-.cursor
-.claude
-.claire
-.agents
-.windsurfrules
-.clinerules
-
-# ─── Misc ───
+# ─── Non-build assets ───
 .git
-.gitignore
-.gitattributes
+.github
 .githooks
 docker
 n8n-workflows
-supabase-secrets.json
-.env.example
+docs/refactor
+docs/knowledge
+
+# ─── Environment files (secrets) ───
 .env.local
 .env.supabase
 .supabase.keys
-keystatic.config.ts
-trigger.config.ts
-playwright.config.ts
-vitest.config.ts
-lighthouserc.json
-components.json
+supabase-secrets.json
