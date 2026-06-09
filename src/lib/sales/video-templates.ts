@@ -274,13 +274,20 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
   </style>
 </head>
 <body>
-  <div data-composition-id="diagnostic-report-video" data-width="1920" data-height="1080">
-    <div class="wash"></div>
-    <div class="grid-bg"></div>
-    <div class="frame"></div>
-    <div class="brand"><span><b>PARADIGM</b> DIAGNOSTIC</span><span>${esc(t.generated)}</span></div>
+  <div
+    data-composition-id="diagnostic-report-video"
+    data-start="0"
+    data-duration="60"
+    data-width="1920"
+    data-height="1080"
+    data-hf-frameworks="hyperframes-player gsap css catalog:data-chart catalog:shimmer-sweep catalog:caption-highlight catalog:flash-through-white catalog:transitions-blur"
+  >
+    <div class="clip wash" data-start="0" data-duration="60" data-track-index="0"></div>
+    <div class="clip grid-bg" data-start="0" data-duration="60" data-track-index="0"></div>
+    <div class="clip frame" data-start="0" data-duration="60" data-track-index="0"></div>
+    <div class="clip brand" data-start="0" data-duration="60" data-track-index="3"><span><b>PARADIGM</b> DIAGNOSTIC</span><span>${esc(t.generated)}</span></div>
 
-    <section class="scene scene-hero">
+    <section id="scene-hero" class="clip scene scene-hero" data-start="0" data-duration="11.5" data-track-index="1">
       <div>
         <div class="kicker">${esc(t.eyebrow)}</div>
         <h1>${esc(hook)}</h1>
@@ -301,7 +308,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       </div>
     </section>
 
-    <section class="scene scene-evidence">
+    <section id="scene-evidence" class="clip scene scene-evidence" data-start="11.5" data-duration="11.5" data-track-index="1">
       <div>
         <div class="kicker">${esc(t.evidence)}</div>
         <h1>${esc(cleanText(firstAct?.headline, pain, 88))}</h1>
@@ -313,7 +320,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       </div>
     </section>
 
-    <section class="scene scene-loss">
+    <section id="scene-loss" class="clip scene scene-loss" data-start="23" data-duration="11.5" data-track-index="1">
       <div>
         <div class="kicker">${esc(t.loss)}</div>
         <h1>${esc(cleanText(secondAct?.headline, fear, 88))}</h1>
@@ -329,7 +336,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       </div>
     </section>
 
-    <section class="scene scene-demo">
+    <section id="scene-demo" class="clip scene scene-demo" data-start="34.5" data-duration="11.5" data-track-index="1">
       <div>
         <div class="kicker">${esc(t.demo)}</div>
         <h1>${esc(hope)}</h1>
@@ -349,7 +356,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       </div>
     </section>
 
-    <section class="scene scene-cta full">
+    <section id="scene-cta" class="clip scene scene-cta full" data-start="46" data-duration="14" data-track-index="1">
       <div class="cta-box">
         <div class="kicker">${esc(t.cta)}</div>
         <h1>${esc(cta)}</h1>
@@ -362,7 +369,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       </div>
     </section>
 
-    <div class="footer"><div>${esc(company)}</div><div class="progress"><i></i></div><div>${esc(reportUrl)}</div></div>
+    <div class="clip footer" data-start="0" data-duration="60" data-track-index="3"><div>${esc(company)}</div><div class="progress"><i></i></div><div>${esc(reportUrl)}</div></div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script>
@@ -373,12 +380,18 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
     scenes.forEach((scene, index) => {
       const at = index * 11.5;
       tl.set(scene, { autoAlpha: 1 }, at);
-      tl.fromTo(scene + " .kicker", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: .55, ease: "power3.out" }, at + .16);
-      tl.fromTo(scene + " h1", { y: 34, opacity: 0 }, { y: 0, opacity: 1, duration: .75, ease: "power3.out" }, at + .28);
-      tl.fromTo(scene + " p", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: .65, ease: "power3.out" }, at + .46);
-      tl.fromTo(scene + " .panel, " + scene + " .cta-actions", { y: 34, opacity: 0, scale: .985 }, { y: 0, opacity: 1, scale: 1, duration: .8, ease: "power3.out" }, at + .34);
-      tl.to(scene + " .bar i", { height: function(_, el){ return el.style.getPropertyValue("--h") || "0%"; }, duration: .9, ease: "power2.out" }, at + .96);
-      tl.to(scene + " .meter i", { width: function(_, el){ return el.style.width || "0%"; }, duration: .75, ease: "power2.out", stagger: .07 }, at + .9);
+      tl.fromTo(scene + " .kicker", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: .55, ease: "power3.out" }, at);
+      tl.fromTo(scene + " h1", { y: 34, opacity: 0 }, { y: 0, opacity: 1, duration: .75, ease: "power3.out" }, at + .1);
+      tl.fromTo(scene + " p", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: .65, ease: "power3.out" }, at + .26);
+      tl.fromTo(scene + " .panel, " + scene + " .cta-actions", { y: 34, opacity: 0, scale: .985 }, { y: 0, opacity: 1, scale: 1, duration: .8, ease: "power3.out" }, at + .16);
+      const bars = gsap.utils.toArray(scene + " .bar i");
+      if (bars.length) {
+        tl.to(bars, { height: function(_, el){ return el.style.getPropertyValue("--h") || "0%"; }, duration: .9, ease: "power2.out" }, at + .96);
+      }
+      const meters = gsap.utils.toArray(scene + " .meter i");
+      if (meters.length) {
+        tl.to(meters, { width: function(_, el){ return el.style.width || "0%"; }, duration: .75, ease: "power2.out", stagger: .07 }, at + .9);
+      }
       tl.to(".progress i", { width: ((index + 1) / scenes.length * 100) + "%", duration: 10.5, ease: "none" }, at);
       if (index < scenes.length - 1) {
         tl.to(scene + " h1, " + scene + " p, " + scene + " .panel, " + scene + " .cta-actions, " + scene + " .kicker", { y: -18, opacity: 0, duration: .42, ease: "power2.in" }, at + 10.65);
@@ -386,7 +399,6 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       }
     });
     tl.to(".scene-cta", { opacity: 0, duration: .7, ease: "power2.in" }, 59.2);
-    tl.to({}, { duration: .1 }, 60);
     const countEl = document.querySelector(".count");
     if (countEl) {
       tl.to({ value: 0 }, {
@@ -397,7 +409,10 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       }, .9);
     }
     window.__timelines["diagnostic-report-video"] = tl;
-    if (!window.__HYPERFRAMES_PLAYER__) window.requestAnimationFrame(function(){ tl.play(0); });
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("autoplay") === "1" && !window.__HYPERFRAMES_PLAYER__) {
+      window.requestAnimationFrame(function(){ tl.play(0); });
+    }
   </script>
 </body>
 </html>`

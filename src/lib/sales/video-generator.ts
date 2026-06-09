@@ -231,12 +231,18 @@ async function renderLocallyAndUpload(
     // Write composition files
     fs.writeFileSync(path.join(tmpDir, "index.html"), html, "utf-8")
     fs.writeFileSync(path.join(tmpDir, "hyperframes.json"), JSON.stringify({
-      render: { defaults: { fps: 30, quality: "draft", format: "mp4" } }
+      registry: "https://raw.githubusercontent.com/heygen-com/hyperframes/main/registry",
+      paths: {
+        blocks: "compositions",
+        components: "compositions/components",
+        assets: "assets",
+      },
+      render: { defaults: { fps: 30, quality: "standard", format: "mp4" } }
     }))
 
     // Render MP4
     const outName = `diagnostic-${company.id.slice(0, 8)}-${Date.now()}`
-    execSync(`npx hyperframes render --quality draft --output "renders/${outName}.mp4"`, {
+    execSync(`npx hyperframes render --fps 30 --quality standard --output "renders/${outName}.mp4"`, {
       cwd: tmpDir, stdio: "pipe", timeout: 300_000,
     })
 

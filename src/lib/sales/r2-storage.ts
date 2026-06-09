@@ -1,5 +1,4 @@
-import { HeadBucketCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
+import type { S3Client as S3ClientType } from "@aws-sdk/client-s3"
 
 export interface R2StorageConfig {
   ready: boolean
@@ -36,7 +35,7 @@ export function getR2StorageConfig(): R2StorageConfig {
   return { ready: missing.length === 0, bucket, publicBaseUrl, missing }
 }
 
-function createR2Client(): S3Client {
+async function createR2Client(): Promise<S3ClientType> {
   const accountId = optionalEnv("CLOUDFLARE_R2_ACCOUNT_ID")
   const accessKeyId = optionalEnv("CLOUDFLARE_R2_ACCESS_KEY_ID")
   const secretAccessKey = optionalEnv("CLOUDFLARE_R2_SECRET_ACCESS_KEY")
@@ -48,6 +47,7 @@ function createR2Client(): S3Client {
   if (missing.length > 0) throw new Error(`R2 upload credentials are not configured: ${missing.join(", ")}`)
   if (!accountId || !accessKeyId || !secretAccessKey) throw new Error("R2 upload credentials are incomplete")
 
+  const { S3Client } = await import("@aws-sdk/client-s3")
   return new S3Client({
     region: "auto",
     endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
@@ -83,7 +83,9 @@ export async function createR2SignedUploads(requests: R2UploadRequest[]): Promis
     throw new Error(`R2 is not ready: ${config.missing.join(", ")}`)
   }
   const bucket = config.bucket
-  const client = createR2Client()
+  const client = await createR2Client()
+  const { PutObjectCommand } = await import("@aws-sdk/client-s3")
+  const { getSignedUrl } = await import("@aws-sdk/s3-request-presigner")
   return Promise.all(
     requests.map(async (request) => {
       const objectKey = sanitizeR2ObjectName(request.objectKey)
@@ -112,7 +114,8 @@ export async function uploadToR2(objectKey: string, body: Buffer | Uint8Array, c
     throw new Error(`R2 is not ready: ${config.missing.join(", ")}`)
   }
   const bucket = config.bucket
-  const client = createR2Client()
+  const client = await createR2Client()
+  const { PutObjectCommand } = await import("@aws-sdk/client-s3")
   const key = sanitizeR2ObjectName(objectKey)
   if (!key) throw new Error("R2 object key is empty")
   const command = new PutObjectCommand({
@@ -148,7 +151,8 @@ export async function checkR2StorageHealth(): Promise<{ ok: boolean; label: stri
   }
 
   try {
-    const client = createR2Client()
+    const client = await createR2Client()
+    const { HeadBucketCommand } = await import("@aws-sdk/client-s3")
     await client.send(new HeadBucketCommand({ Bucket: config.bucket }))
     return { ok: true, label: `bucket reachable: ${config.bucket}` }
   } catch (error) {

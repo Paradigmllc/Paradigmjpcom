@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
     writeFileSync(resolve(TEST_VIDEO_DIR, "index.html"), html, "utf-8")
 
     // レンダリング実行
-    const quality = body.quality ?? "draft"
+    const quality = body.quality ?? "standard"
     const fps = body.fps ?? (quality === "draft" ? 15 : quality === "high" ? 60 : 30)
     const outputFilename = `render-${body.jobId.slice(0, 8)}-${Date.now()}.mp4`
     const outputPath = resolve(RENDERS_DIR, outputFilename)

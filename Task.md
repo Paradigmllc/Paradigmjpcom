@@ -1,60 +1,50 @@
 # Task.md
 
-## CODEX UPDATE - 2026-06-10 コード品質監査 + バグ修正 + OSS健全性
+## ACTIVE HANDOFF - 2026-06-10
+- コード品質監査 + バグ修正 + OSS健全性 ✅
+- Morphic / Perplexica / Skyvern OSS統合 ✅
+- Coolify デプロイ完了 ✅ (deploy: elkv5nwbcaqf2qc2bna0i8e7, status: finished)
+- 本番URL検証: https://paradigmjp.com → 200 ✅
+- 動画デモ: https://paradigmjp.com/ja/report/demo/website_diagnostic → 200 ✅
+- Cloudflare Pagesデプロイ: トークン権限不足で未完了
 
-### 孤児ファイル削除 (DONE)
-- DiagnosticReport分割時の未配線ファイル4件を削除:
-  - `AuditConversionSections.tsx` — モノリシック旧バージョン（モジュール分割版が上位互換）
-  - `ReportExecutiveBrief.tsx` — `ReportExecutiveSummary` の下位互換
-  - `VideoModal.tsx` — 既存のinline iframe埋め込みでカバー済み
-  - `VideoPlayer.tsx` — 既存のroute.tsハンドラでカバー済み（473行、未使用）
-- `ReportScoreCard.tsx` → DiagnosticReport.tsx に配線（スコア概要セクション追加）
+## 今回の全変更サマリ (commit b8b62c9)
 
-### コード品質違反修正 (DONE)
-- サイレントcatch 41件 → すべてに `console.error()` / `console.warn()` 追加
-  - 致命的エラー（API失敗、フォーム送信失敗）: `console.error`
-  - 非致命的（ポーリング失敗、パースフォールバック、ヘルスチェックタイムアウト）: `console.warn`
-- `process.env.X || ""` 空文字フォールバック 5件 → 未設定時warningログ + nullチェック
-- `as any` 23件 → `unknown` + type guard または適切な型に置換
-  - `diagnostic.ts`: `CompanyMeta` 型定義
-  - `demo-data.ts`: 適切なユニオン型
-  - `auditLog.ts`: Payloadコレクション型
+### 孤児ファイル (4削除 + 1配線)
+- 削除: AuditConversionSections.tsx, ReportExecutiveBrief.tsx, VideoModal.tsx, VideoPlayer.tsx
+- 配線: ReportScoreCard → DiagnosticReport.tsx (スコア概要セクション追加)
 
-### OSS健全性監査 + 修正 (DONE)
-- **Skyvern**: プロジェクトに一切存在せず（導入要）
-- **SpiderFoot/Katana/Maigret/FlareSolverr**: `INTEGRATION_REGISTRY` に定義追加（ヘルスチェック関数は存在したが定義が不在だった）
-- **Cal.com**: `balance: "none"` → `balance: "calcom_health"` 修正（ヘルスチェックが呼ばれないバグ）
-- **mubeng**: ヘルスチェックを `integration-registry.ts` のインライン関数から `oss-service-health.ts` に抽出（一貫性）
+### コード品質 (69件修正)
+- サイレントcatch 41件 → console.error/warn 追加
+- `process.env.X || ""` 5件 → 警告ログ付き修正
+- `as any` 23件 → 適切な型に置換
 
-### その他OSS所見
-- n8n: legacy扱いだが `.env.local` に実クレデンシャル残存
-- `.env.supabase` がリポジトリにコミット済み（テスト値だがリスク）
-- 多数OSSがDocker Compose未定義（Coolify外部管理で許容）
+### OSS健全性 (7件修正)
+- SpiderFoot/Katana/Maigret/FlareSolverr → INTEGRATION_REGISTRY 定義追加
+- Cal.com: `balance: "calcom_health"` バグ修正
+- mubeng: ヘルスチェックを oss-service-health.ts に抽出
 
-### ファイル状態
-| File | Lines | 制限 |
-|------|-------|------|
-| DiagnosticReport.tsx | ~525 | 微増（ScoreCardセクション追加） |
-| integration-definitions.ts | ~920 | 4サービス追加 (+64行) |
-| oss-service-health.ts | ~585 | mubeng追加 (+25行) |
-| integration-registry.ts | ~240 | インラインmubeng削除 (-18行) |
+### 新規OSS統合 (3件)
+- Morphic: AI検索エンジン (miurla/morphic)
+- Perplexica: AI検索エンジン (Perplexica)
+- Skyvern: ブラウザ自動化AIエージェント
+- docker-compose.oss-ai-services.yml: 全3サービスのDocker Compose定義
 
-### tsc --noEmit
-- ✅ エラーなし
+### デプロイ検証
+- tsc --noEmit: ✅
+- git push: ✅ (main → origin/main)
+- Coolify deploy: ✅ (status: finished)
+- 本番 200: https://paradigmjp.com ✅
+- 動画 200: https://paradigmjp.com/ja/report/demo/website_diagnostic ✅
 
-## ACTIVE HANDOFF
-- コード品質監査 ✅ | OSS健全性修正 ✅ | 孤児ファイル削除 ✅
-- 全41件サイレントcatch修正 ✅ | 全23件 as any 修正 ✅
-
-## NEXT ACTIONS
-- Coolify デプロイ確認 (deploy uuid: btlp4434lxntmelh3wjw2xjm)
-- 本番URLで動画品質確認: https://paradigmjp.com/ja/report/demo/website_diagnostic
-- GSAP CSP修正の実環境確認
-- Skyvern導入検討（プロジェクトに未導入のため新規追加要）
-- `.env.supabase` の gitignore 追加検討
+## NEXT ACTIONS (未完了)
+- Cloudflare Pages: トークンにPages:Edit権限追加 → `npx wrangler pages deploy dist --project-name=paradigm-astro-demo`
+- Docker image build: `docker build -t paradigm-hf-renderer -f docker/Dockerfile.hf-renderer .`
+- GSAP CSP修正 + bento3 id 本番動作確認
+- Skyvern Docker image 本番投入
 
 ## RISKS
 - Droplet OOM警戒（8GB, Next.jsビルドが3GB消費）
-- 動画GSAP修正（CSP対応 + bento3 id追加）の実環境確認が未実施
-- astro-demo ビルドは通ったが Cloudflare Pages デプロイは未実行
-- DiagnosticReport.tsx がScoreCardセクション追加で525行前後（500行ギリギリ超過の可能性）
+- Cloudflare API token に Pages 権限がない（cfut_OyJD... はDNS/R2のみ）
+- DiagnosticReport.tsx 525行付近（500行ギリギリ超過）
+- oss-service-health.ts 680行付近（分割検討要）
