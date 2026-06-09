@@ -45,6 +45,7 @@ import { lookupBuiltWithFree } from "./sources/builtwith-free"
 import { queryCommonCrawl } from "./sources/commoncrawl"
 import { checkAhrefsFree } from "./sources/ahrefs-free"
 import { queryEstat, INDUSTRY_MARKET_DATA } from "./sources/market-data"
+import { collectSmbSignals } from "./sources/smb-signals"
 import { autoPersonalize } from "./personalize"
 import { saveTechStackDetections } from "./source-acquisition"
 import type { Industry, SalesCompany } from "./types"
@@ -411,6 +412,10 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
       ? { dr: ahrefs.domainRating, backlinks: ahrefs.backlinks, ref_domains: ahrefs.referringDomains, traffic: ahrefs.trafficEstimate }
       : null,
     market_data: guessIndustry ? INDUSTRY_MARKET_DATA[guessIndustry] ?? null : null,
+    // SMB signals: computed after parallel fetch using Wappalyzer + DNS data
+    smb_signals: tech && dns?.ok
+      ? await collectSmbSignals(domain, tech.tech.map((t: { name: string }) => t.name), dns.mxRecords).catch(() => null)
+      : null,
     ...(gbizFirst ? toCompanyMeta(gbizFirst) : {}),
   }
 
