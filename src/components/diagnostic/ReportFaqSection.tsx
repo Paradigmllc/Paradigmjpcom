@@ -10,9 +10,10 @@ interface Props {
   variant: string
   lang: string
   copy: ReportCopy
+  isDark: boolean
 }
 
-export function ReportFaqSection({ variant, lang, copy }: Props) {
+export function ReportFaqSection({ variant, lang, copy, isDark }: Props) {
   const faqLang = (lang === "ja" ? "ja" : "en") as "ja" | "en"
   const faqs = REPORT_FAQS[faqLang]?.[variant] || REPORT_FAQS[faqLang]?.website_diagnostic || []
   const [openIndex, setOpenIndex] = useState<number | null>(null)
@@ -23,7 +24,7 @@ export function ReportFaqSection({ variant, lang, copy }: Props) {
   const rightFaqs = faqs.filter((_, i) => i % 2 === 1)
 
   return (
-    <SlideInSection direction="up" className="bg-white px-5 py-14 border-t border-zinc-200">
+    <SlideInSection direction="up" className={`px-5 py-14 border-t ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"}`}>
       <div className="mx-auto max-w-6xl">
         <div className="text-center mb-10">
           <span className="inline-flex rounded-full bg-violet-50 px-3 py-1 text-xs font-bold text-violet-700 mb-3">
@@ -51,7 +52,7 @@ export function ReportFaqSection({ variant, lang, copy }: Props) {
                   className={`rounded-xl border transition-all duration-300 ${
                     openIndex === idx
                       ? "border-violet-300 bg-violet-50/30 shadow-md"
-                      : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-sm"
+                      : isDark ? "border-zinc-700 bg-zinc-800 hover:border-zinc-600 hover:shadow-sm" : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-sm"
                   }`}
                 >
                   <button
@@ -61,8 +62,8 @@ export function ReportFaqSection({ variant, lang, copy }: Props) {
                     <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold mt-0.5 transition-colors ${
                       openIndex === idx ? "bg-violet-600 text-white" : "bg-zinc-100 text-zinc-500"
                     }`}>Q</span>
-                    <span className={`text-sm font-semibold flex-1 ${openIndex === idx ? "text-violet-900" : "text-zinc-800"}`}>{faq.q}</span>
-                    <span className={`text-lg transition-transform duration-300 ${openIndex === idx ? "rotate-45 text-violet-500" : "text-zinc-400"}`}>+</span>
+                    <span className={`text-sm font-semibold flex-1 ${openIndex === idx ? "text-violet-900" : isDark ? "text-zinc-200" : "text-zinc-800"}`}>{faq.q}</span>
+                    <span className={`text-lg transition-transform duration-300 ${openIndex === idx ? "rotate-45 text-violet-500" : isDark ? "text-zinc-500" : "text-zinc-400"}`}>+</span>
                   </button>
                   {openIndex === idx && (
                     <motion.div
@@ -73,7 +74,7 @@ export function ReportFaqSection({ variant, lang, copy }: Props) {
                     >
                       <div className="flex gap-3">
                         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold mt-0.5">A</span>
-                        <p className="text-sm leading-7 text-zinc-600">{faq.a}</p>
+                        <p className={`text-sm leading-7 ${isDark ? "text-zinc-400" : "text-zinc-600"}`}>{faq.a}</p>
                       </div>
                     </motion.div>
                   )}
@@ -95,7 +96,7 @@ export function ReportFaqSection({ variant, lang, copy }: Props) {
                   className={`rounded-xl border transition-all duration-300 ${
                     openIndex === idx
                       ? "border-violet-300 bg-violet-50/30 shadow-md"
-                      : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-sm"
+                      : isDark ? "border-zinc-700 bg-zinc-800 hover:border-zinc-600 hover:shadow-sm" : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-sm"
                   }`}
                 >
                   <button
@@ -105,8 +106,8 @@ export function ReportFaqSection({ variant, lang, copy }: Props) {
                     <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold mt-0.5 transition-colors ${
                       openIndex === idx ? "bg-violet-600 text-white" : "bg-zinc-100 text-zinc-500"
                     }`}>Q</span>
-                    <span className={`text-sm font-semibold flex-1 ${openIndex === idx ? "text-violet-900" : "text-zinc-800"}`}>{faq.q}</span>
-                    <span className={`text-lg transition-transform duration-300 ${openIndex === idx ? "rotate-45 text-violet-500" : "text-zinc-400"}`}>+</span>
+                    <span className={`text-sm font-semibold flex-1 ${openIndex === idx ? "text-violet-900" : isDark ? "text-zinc-200" : "text-zinc-800"}`}>{faq.q}</span>
+                    <span className={`text-lg transition-transform duration-300 ${openIndex === idx ? "rotate-45 text-violet-500" : isDark ? "text-zinc-500" : "text-zinc-400"}`}>+</span>
                   </button>
                   {openIndex === idx && (
                     <motion.div
@@ -117,7 +118,7 @@ export function ReportFaqSection({ variant, lang, copy }: Props) {
                     >
                       <div className="flex gap-3">
                         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold mt-0.5">A</span>
-                        <p className="text-sm leading-7 text-zinc-600">{faq.a}</p>
+                        <p className={`text-sm leading-7 ${isDark ? "text-zinc-400" : "text-zinc-600"}`}>{faq.a}</p>
                       </div>
                     </motion.div>
                   )}

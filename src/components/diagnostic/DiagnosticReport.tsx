@@ -787,26 +787,7 @@ export default function DiagnosticReport({
   const isProjection = lang === "ja" ? "※改善しない場合の推定値" : "Projection if unaddressed"
 
   return (
-    <div data-theme={isDark ? "dark" : "light"} className={`min-h-screen relative ${isDark ? "bg-zinc-950 text-white" : "bg-[#fbfaf7] text-zinc-950"}`}>
-      <style dangerouslySetInnerHTML={{ __html: `
-        [data-theme="dark"] .bg-white { background-color: #18181b !important }
-        [data-theme="dark"] .bg-\\[\\#fbfaf7\\] { background-color: #09090b !important }
-        [data-theme="dark"] .border-zinc-200 { border-color: #3f3f46 !important }
-        [data-theme="dark"] .border-zinc-300 { border-color: #52525b !important }
-        [data-theme="dark"] .text-zinc-950 { color: #f4f4f5 !important }
-        [data-theme="dark"] .text-zinc-900 { color: #e4e4e7 !important }
-        [data-theme="dark"] .text-zinc-800 { color: #d4d4d8 !important }
-        [data-theme="dark"] .text-zinc-700 { color: #a1a1aa !important }
-        [data-theme="dark"] .text-zinc-600 { color: #a1a1aa !important }
-        [data-theme="dark"] .text-zinc-500 { color: #71717a !important }
-        [data-theme="dark"] .text-slate-800 { color: #d4d4d8 !important }
-        [data-theme="dark"] .text-slate-600 { color: #a1a1aa !important }
-        [data-theme="dark"] .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,.6) !important }
-        [data-theme="dark"] .border-t-zinc-200 { border-top-color: #3f3f46 !important }
-        [data-theme="dark"] .hover\\:bg-zinc-50:hover { background-color: #27272a !important }
-        [data-theme="dark"] a[class*="text-zinc"] { color: #a1a1aa !important }
-        [data-theme="dark"] a[class*="text-zinc"]:hover { color: #d4d4d8 !important }
-      `}} />
+    <div className={`min-h-screen relative ${isDark ? "bg-zinc-950 text-white" : "bg-[#fbfaf7] text-zinc-950"}`}>
       <ReadingProgress />
       <AnimatedBackground />
       <div className="relative z-10">
@@ -1126,7 +1107,7 @@ export default function DiagnosticReport({
         )}
 
         {/* ── Pain Points ───────────────────────────────────── */}
-        <section className="bg-white px-5 py-14">
+        <section className={`px-5 py-14 ${isDark ? "bg-zinc-900" : "bg-white"}`}>
           <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
             <SlideInSection direction="left">
               <div>
@@ -1244,6 +1225,7 @@ export default function DiagnosticReport({
           variant={data.template_variant}
           lang={lang === "ja" ? "ja" : "en"}
           copy={copy}
+          isDark={isDark}
         />
 
         {/* ── Final CTA ─────────────────────────────────────── */}
