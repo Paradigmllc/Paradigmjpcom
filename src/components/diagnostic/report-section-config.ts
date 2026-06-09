@@ -66,6 +66,8 @@ const DEFAULT_LAYOUT: VariantLayout = {
     { id: "annotated_screenshot", required: true },        // 実サイト＋問題点マーカー
     // Phase 2: 競合差（問題認識後だから効く）
     { id: "competitor_comparison", required: true },       // 競合はもう対策済み
+    // Phase 2.5: 市場データ
+    { id: "market_presence" },
     // Phase 3: 解決可視化
     { id: "stats" },
     { id: "before_after", required: true },                // Before/After
@@ -74,18 +76,6 @@ const DEFAULT_LAYOUT: VariantLayout = {
     { id: "savior_positioning", required: true },          // 問題↔解決対比
     // Phase 5: 詳細
     { id: "executive_summary" },
-    { id: "dark_surface" },
-    { id: "benchmark" },
-    { id: "findings" },
-    { id: "loss_chart" },
-    { id: "screenshot" },
-    { id: "pain_points" },
-    { id: "source_coverage" },
-    { id: "timeline" },
-    { id: "evidence" },
-    { id: "faq" },
-    { id: "cta" },
-  ],
     { id: "dark_surface" },
     { id: "benchmark" },
     { id: "findings" },

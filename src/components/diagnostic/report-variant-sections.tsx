@@ -6,6 +6,7 @@ import type { DiagnosticReportData } from "@/lib/sales/diagnostic"
 import type { ReportCopy } from "./report-copy"
 import { AnnotatedScreenshot, BeforeAfterComparison, MobileComparison } from "./report-website-sections"
 import { CompetitorComparison, FiveSecondAudit, SaviorPositioning } from "./report-pain-sections"
+import { MarketPresenceSummary } from "./report-market-sections"
 
 // ─── MEO: Map Section ──────────────────────────────────────
 export function MeoMapSection({ data, lang }: { data: DiagnosticReportData; lang: string }) {
@@ -341,6 +342,7 @@ export function VariantSection({ sectionId, data, lang }: { sectionId: string; d
     case "competitor_comparison": return <CompetitorComparison data={data} lang={lang} />
     case "five_second_audit": return <FiveSecondAudit data={data} lang={lang} />
     case "savior_positioning": return <SaviorPositioning data={data} lang={lang} />
+    case "market_presence": return <MarketPresenceSummary data={data} lang={lang} />
     default: return null
   }
 }
