@@ -25,6 +25,7 @@ import { SalesAutomationPanel } from "./SalesAutomationPanel"
 import { SalesOperationsAuditPanel } from "./SalesOperationsAuditPanel"
 import { SalesReportVideoStudioPanel } from "./SalesReportVideoStudioPanel"
 import { AiPromptsPanel } from "./AiPromptsPanel"
+import { AssetManagementPanel } from "./AssetManagementPanel"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 
 type SalesTab =
@@ -52,13 +53,14 @@ const tabItems: TabItem[] = [
   { id: "system", label: "システム管理", description: "統合監査・運用", icon: ShieldCheck },
 ]
 
-type SystemSubTab = "integrations" | "audit" | "templates" | "prompts"
+type SystemSubTab = "integrations" | "audit" | "templates" | "prompts" | "assets"
 
 const systemSubTabs: { id: SystemSubTab; label: string }[] = [
   { id: "integrations", label: "統合監査" },
   { id: "audit", label: "運用監査" },
   { id: "templates", label: "テンプレート管理" },
   { id: "prompts", label: "AIプロンプト" },
+  { id: "assets", label: "アセット管理" },
 ]
 
 const externalTools = [
@@ -93,6 +95,7 @@ function normalizeTab(value: string | null): SalesTab {
 function normalizeSystemSubTab(value: string | null): SystemSubTab {
   if (value === "templates") return "templates"
   if (value === "prompts") return "prompts"
+  if (value === "assets") return "assets"
   return value === "audit" ? "audit" : "integrations"
 }
 
@@ -286,6 +289,7 @@ function changeTab(tab: SalesTab) {
             {systemSubTab === "audit" && <SalesOperationsAuditPanel data={data} />}
             {systemSubTab === "templates" && <TemplateManagementPanel data={data} />}
             {systemSubTab === "prompts" && <AiPromptsPanel data={data} />}
+            {systemSubTab === "assets" && <AssetManagementPanel data={data} />}
           </div>
         )
       default:
