@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 import { CheckCircle2, MapPin, MessageSquare, Shield, Star, TrendingUp } from "lucide-react"
 import type { DiagnosticReportData } from "@/lib/sales/diagnostic"
 import type { ReportCopy } from "./report-copy"
+import { AnnotatedScreenshot, BeforeAfterComparison, MobileComparison } from "./report-website-sections"
 
 // ─── MEO: Map Section ──────────────────────────────────────
 export function MeoMapSection({ data, lang }: { data: DiagnosticReportData; lang: string }) {
@@ -333,6 +334,9 @@ export function VariantSection({ sectionId, data, lang }: { sectionId: string; d
     case "japan_market": return <JapanMarketSection data={data} lang={lang} />
     case "japan_checklist": return <JapanChecklistSection data={data} lang={lang} />
     case "japan_roadmap": return <JapanRoadmapSection data={data} lang={lang} />
+    case "annotated_screenshot": return <AnnotatedScreenshot data={data} lang={lang} />
+    case "before_after": return <BeforeAfterComparison data={data} lang={lang} />
+    case "mobile_comparison": return <MobileComparison data={data} lang={lang} />
     default: return null
   }
 }
