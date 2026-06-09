@@ -267,7 +267,7 @@ function buildDemoData(variant: string, lang: string): DiagnosticReportData {
     acts: data.acts,
     cta_text: isJa ? data.cta.ja : data.cta.en,
     video_thumbnail: null,
-    demo_url: "https://demo.paradigmjp.com",
+    demo_url: `/${lang}/report/demo/${variant}`,
     screenshot_url: null,
     source_coverage: sourceCoverage,
     intelligence,
