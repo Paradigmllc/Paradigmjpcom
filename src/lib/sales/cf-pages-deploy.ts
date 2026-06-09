@@ -13,6 +13,9 @@ import type { DiagnosticReportData } from "./diagnostic"
 import type { SalesCompany } from "./types"
 import { themeForIndustry } from "./render-quality"
 import { envValue } from "./oss-service-health"
+import { writeFileSync, mkdirSync, existsSync } from "node:fs"
+import { join } from "node:path"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 
 const CF_ACCOUNT_ID = "7ff83549f2bdc7bc62c1d64a698aabf1"
 const CF_PAGES_PROJECT = "paradigm-astro-demo"
@@ -164,16 +167,42 @@ export async function deployDemoToCfPages(
   }
 
   try {
-    // Save Keystatic content to a temp location that gets picked up by the build
+    // 1. Generate Keystatic content
     const frontmatter = buildDemoFrontmatter(company, report)
-    const contentPath = `content/keystatic/demo-sites/${slug}.mdoc`
 
-    // In production, this would write to the filesystem and trigger a git commit.
-    // For the initial integration, we save to Supabase and let the rebuild pick it up.
-    console.warn("[cf-pages-deploy] demo content generated for slug:", slug)
-    console.warn("[cf-pages-deploy] content size:", frontmatter.length, "bytes")
+    // 2. Write to content directory (picked up by next build + git commit)
+    try {
+      const contentDir = join(process.cwd(), "content", "keystatic", "demo-sites")
+      if (!existsSync(contentDir)) mkdirSync(contentDir, { recursive: true })
+      writeFileSync(join(contentDir, `${slug}.mdoc`), frontmatter, "utf8")
+      console.warn("[cf-pages-deploy] saved Keystatic content:", `${slug}.mdoc`)
+    } catch (fsErr) {
+      console.error("[cf-pages-deploy] failed to write content file:", fsErr)
+    }
 
-    // Trigger Pages rebuild (picks up new Keystatic content on next build)
+    // 3. Save to Supabase as backup
+    try {
+      const sb = getServiceSalesSupabase()
+      if (sb) {
+        await sb.from("web_demos").upsert({
+          slug,
+          name: `${company.company_name} Demo`,
+          html_content: frontmatter,
+          source: "sales_enrichment_cf_pages",
+          is_published: true,
+          meta: {
+            generator: "cf-pages-deploy",
+            company_id: company.id,
+            generated_at: new Date().toISOString(),
+          },
+        }, { onConflict: "slug" })
+        console.warn("[cf-pages-deploy] saved to Supabase:", slug)
+      }
+    } catch (dbErr) {
+      console.error("[cf-pages-deploy] Supabase save failed:", dbErr)
+    }
+
+    // 4. Trigger Cloudflare Pages rebuild
     const deploy = await triggerCfPagesDeploy()
     if (!deploy.ok) {
       console.error("[cf-pages-deploy] deploy trigger failed, demo URL may be stale:", deploy.error)

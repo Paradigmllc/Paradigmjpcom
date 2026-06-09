@@ -27,7 +27,7 @@ export const DEFAULT_DEMO: DemoData = {
   industry: "consulting",
   accentColor: "#7c3aed",
   accentColorDark: "#5b21b6",
-  status: "draft",
+  status: "ready",
   heroHeadline: "デジタルマーケティングを次のステージへ",
   heroSubtitle: "診断データに基づくパーソナライズド・リニューアル提案",
   serviceTitle: "提供サービス",
@@ -46,4 +46,15 @@ export const DEFAULT_DEMO: DemoData = {
   ctaTitle: "まずは無料相談から",
   ctaBody: "15分のオンライン診断で、改善の余地を可視化します。お気軽にご予約ください。",
   calBookingUrl: "https://cal.com/paradigm-jp/15min",
+}
+
+// Demo registry — populated at build time by scripts/build-demo-data.mjs
+// Fallback: always contains DEFAULT_DEMO for unknown slugs
+export const DEMO_REGISTRY: Record<string, DemoData> = {
+  "default-demo": DEFAULT_DEMO,
+  // AUTO-GENERATED: new demos inserted by build pipeline
+}
+
+export function getDemoData(slug: string): DemoData {
+  return DEMO_REGISTRY[slug] ?? DEFAULT_DEMO
 }
