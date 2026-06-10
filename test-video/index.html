@@ -2,462 +2,130 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=1920, height=1080" />
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Paradigm Japan - AI Sales Re:Definition</title>
     <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body {
-        margin: 0;
-        width: 1920px;
-        height: 1080px;
-        overflow: hidden;
-        background: #0a0a0f;
-        font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-        color: #ffffff;
-      }
-
-      /* ===== Scene containers ===== */
-      .scene {
-        position: absolute;
-        top: 0; left: 0;
-        width: 1920px;
-        height: 1080px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        padding: 120px 160px;
-        box-sizing: border-box;
-        overflow: hidden;
-      }
-
-      /* ===== Scene 1: Hero / Hook ===== */
-      #s1 {
-        background: radial-gradient(ellipse 80% 60% at 50% 40%, #1a1a2e 0%, #0a0a0f 70%);
-      }
-      #s1 .eyebrow {
-        font-size: 18px;
-        font-weight: 600;
-        letter-spacing: 4px;
-        text-transform: uppercase;
-        color: #6c63ff;
-        margin-bottom: 16px;
-      }
-      #s1 .headline {
-        font-size: 96px;
-        font-weight: 700;
-        line-height: 1.05;
-        letter-spacing: -2px;
-        max-width: 1400px;
-      }
-      #s1 .headline .accent {
-        background: linear-gradient(135deg, #6c63ff, #a78bfa);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-      }
-      #s1 .subhead {
-        font-size: 28px;
-        font-weight: 400;
-        color: #94a3b8;
-        margin-top: 24px;
-        max-width: 1100px;
-        line-height: 1.4;
-      }
-      #s1 .cta-line {
-        display: inline-block;
-        margin-top: 40px;
-        padding: 16px 40px;
-        border: 1px solid rgba(108, 99, 255, 0.4);
-        border-radius: 8px;
-        font-size: 20px;
-        font-weight: 500;
-        color: #c4b5fd;
-        letter-spacing: 1px;
-      }
-      /* Decorative glow */
-      #s1 .glow-orb {
-        position: absolute;
-        top: 15%;
-        right: 10%;
-        width: 400px;
-        height: 400px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(108,99,255,0.15) 0%, transparent 70%);
-        pointer-events: none;
-      }
-
-      /* ===== Scene 2: Problem / Pain ===== */
-      #s2 {
-        background: radial-gradient(ellipse 70% 50% at 30% 50%, #1a1a2e 0%, #0a0a0f 70%);
-      }
-      #s2 .label {
-        font-size: 16px;
-        font-weight: 600;
-        letter-spacing: 3px;
-        text-transform: uppercase;
-        color: #f59e0b;
-        margin-bottom: 12px;
-      }
-      #s2 .headline {
-        font-size: 72px;
-        font-weight: 700;
-        line-height: 1.1;
-        letter-spacing: -1px;
-        max-width: 1300px;
-      }
-      #s2 .stat-row {
-        display: flex;
-        gap: 60px;
-        margin-top: 48px;
-      }
-      #s2 .stat {
-        text-align: left;
-      }
-      #s2 .stat-number {
-        font-size: 64px;
-        font-weight: 800;
-        color: #f59e0b;
-        line-height: 1;
-        font-variant-numeric: tabular-nums;
-      }
-      #s2 .stat-label {
-        font-size: 20px;
-        color: #94a3b8;
-        margin-top: 8px;
-      }
-
-      /* ===== Scene 3: Solution ===== */
-      #s3 {
-        background: radial-gradient(ellipse 80% 60% at 60% 40%, #0f172a 0%, #0a0a0f 70%);
-      }
-      #s3 .label {
-        font-size: 16px;
-        font-weight: 600;
-        letter-spacing: 3px;
-        text-transform: uppercase;
-        color: #6c63ff;
-        margin-bottom: 12px;
-      }
-      #s3 .headline {
-        font-size: 72px;
-        font-weight: 700;
-        line-height: 1.1;
-        letter-spacing: -1px;
-        max-width: 1300px;
-      }
-      #s3 .feature-grid {
-        display: flex;
-        gap: 32px;
-        margin-top: 48px;
-      }
-      #s3 .feature-card {
-        flex: 1;
-        padding: 32px;
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.06);
-        border-radius: 12px;
-      }
-      #s3 .feature-icon {
-        font-size: 36px;
-        margin-bottom: 16px;
-      }
-      #s3 .feature-title {
-        font-size: 24px;
-        font-weight: 600;
-        margin-bottom: 8px;
-      }
-      #s3 .feature-desc {
-        font-size: 18px;
-        color: #94a3b8;
-        line-height: 1.5;
-      }
-
-      /* ===== Scene 4: Proof / Results ===== */
-      #s4 {
-        background: radial-gradient(ellipse 70% 50% at 50% 60%, #0f172a 0%, #0a0a0f 70%);
-      }
-      #s4 .label {
-        font-size: 16px;
-        font-weight: 600;
-        letter-spacing: 3px;
-        text-transform: uppercase;
-        color: #10b981;
-        margin-bottom: 12px;
-      }
-      #s4 .headline {
-        font-size: 72px;
-        font-weight: 700;
-        line-height: 1.1;
-        letter-spacing: -1px;
-        max-width: 1300px;
-      }
-      #s4 .result-row {
-        display: flex;
-        gap: 48px;
-        margin-top: 48px;
-      }
-      #s4 .result-item {
-        flex: 1;
-        padding: 32px;
-        background: rgba(16,185,129,0.05);
-        border: 1px solid rgba(16,185,129,0.15);
-        border-radius: 12px;
-        text-align: center;
-      }
-      #s4 .result-number {
-        font-size: 56px;
-        font-weight: 800;
-        color: #10b981;
-        font-variant-numeric: tabular-nums;
-      }
-      #s4 .result-label {
-        font-size: 18px;
-        color: #94a3b8;
-        margin-top: 8px;
-      }
-
-      /* ===== Scene 5: CTA / Close ===== */
-      #s5 {
-        background: radial-gradient(ellipse 80% 60% at 50% 40%, #1a1a2e 0%, #0a0a0f 70%);
-      }
-      #s5 .headline {
-        font-size: 80px;
-        font-weight: 700;
-        line-height: 1.1;
-        letter-spacing: -1px;
-        text-align: center;
-        max-width: 1400px;
-        margin: 0 auto;
-      }
-      #s5 .headline .accent {
-        background: linear-gradient(135deg, #6c63ff, #a78bfa);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-      }
-      #s5 .cta-button {
-        display: inline-block;
-        margin: 48px auto 0;
-        padding: 20px 56px;
-        background: linear-gradient(135deg, #6c63ff, #8b5cf6);
-        border-radius: 12px;
-        font-size: 24px;
-        font-weight: 600;
-        color: #fff;
-        text-align: center;
-        letter-spacing: 0.5px;
-        box-shadow: 0 8px 32px rgba(108,99,255,0.3);
-      }
-      #s5 .cta-sub {
-        font-size: 18px;
-        color: #64748b;
-        text-align: center;
-        margin-top: 20px;
-      }
-      #s5 .center-wrap {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-      }
-
-      /* ===== Transition overlay ===== */
-      .transition-overlay {
-        position: absolute;
-        top: 0; left: 0;
-        width: 1920px;
-        height: 1080px;
-        pointer-events: none;
-        z-index: 100;
-      }
+      *{box-sizing:border-box} html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#0a0a0f;font-family:Inter,"Noto Sans JP",system-ui,-apple-system,sans-serif;color:#fff}
+      [data-composition-id]{width:100%;height:100%;position:relative;overflow:hidden;background:#0a0a0f;transform:scale(var(--hf-scale,1));transform-origin:0 0;aspect-ratio:1920/1080}
+      .scene{position:absolute;inset:0;padding:120px 160px;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+      .s1{background:radial-gradient(ellipse 80% 60% at 50% 40%,#1a1a2e 0,#0a0a0f 70%)}
+      .s1 .eyebrow{font-size:18px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:#6c63ff;margin-bottom:16px}
+      .s1 .headline{font-size:96px;font-weight:700;line-height:1.05;letter-spacing:-2px;max-width:1400px}
+      .s1 .headline .accent{background:linear-gradient(135deg,#6c63ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+      .s1 .subhead{font-size:28px;font-weight:400;color:#94a3b8;margin-top:24px;max-width:1100px;line-height:1.4}
+      .s1 .cta-line{display:inline-block;margin-top:40px;padding:16px 40px;border:1px solid rgba(108,99,255,.4);border-radius:8px;font-size:20px;font-weight:500;color:#c4b5fd;letter-spacing:1px}
+      .s1 .glow-orb{position:absolute;top:15%;right:10%;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(108,99,255,.15) 0,transparent 70%);pointer-events:none}
+      .s2{background:radial-gradient(ellipse 70% 50% at 30% 50%,#1a1a2e 0,#0a0a0f 70%)}
+      .s2 .label{font-size:16px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#f59e0b;margin-bottom:12px}
+      .s2 .headline{font-size:72px;font-weight:700;line-height:1.1;letter-spacing:-1px;max-width:1300px}
+      .s2 .stat-row{display:flex;gap:60px;margin-top:48px}
+      .s2 .stat{text-align:left}
+      .s2 .stat-number{font-size:64px;font-weight:800;color:#f59e0b;line-height:1;font-variant-numeric:tabular-nums}
+      .s2 .stat-label{font-size:20px;color:#94a3b8;margin-top:8px}
+      .s3{background:radial-gradient(ellipse 80% 60% at 60% 40%,#0f172a 0,#0a0a0f 70%)}
+      .s3 .label{font-size:16px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#6c63ff;margin-bottom:12px}
+      .s3 .headline{font-size:72px;font-weight:700;line-height:1.1;letter-spacing:-1px;max-width:1300px}
+      .s3 .feature-grid{display:flex;gap:32px;margin-top:48px}
+      .s3 .feature-card{flex:1;padding:32px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px}
+      .s3 .feature-icon{font-size:36px;margin-bottom:16px}
+      .s3 .feature-title{font-size:24px;font-weight:600;margin-bottom:8px}
+      .s3 .feature-desc{font-size:18px;color:#94a3b8;line-height:1.5}
+      .s4{background:radial-gradient(ellipse 70% 50% at 50% 60%,#0f172a 0,#0a0a0f 70%)}
+      .s4 .label{font-size:16px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#10b981;margin-bottom:12px}
+      .s4 .headline{font-size:72px;font-weight:700;line-height:1.1;letter-spacing:-1px;max-width:1300px}
+      .s4 .result-row{display:flex;gap:48px;margin-top:48px}
+      .s4 .result-item{flex:1;padding:32px;background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.15);border-radius:12px;text-align:center}
+      .s4 .result-number{font-size:56px;font-weight:800;color:#10b981;font-variant-numeric:tabular-nums}
+      .s4 .result-label{font-size:18px;color:#94a3b8;margin-top:8px}
+      .s5{background:radial-gradient(ellipse 80% 60% at 50% 40%,#1a1a2e 0,#0a0a0f 70%)}
+      .s5 .headline{font-size:80px;font-weight:700;line-height:1.1;letter-spacing:-1px;text-align:center;max-width:1400px;margin:0 auto}
+      .s5 .headline .accent{background:linear-gradient(135deg,#6c63ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+      .s5 .cta-button{display:inline-block;margin:48px auto 0;padding:20px 56px;background:linear-gradient(135deg,#6c63ff,#8b5cf6);border-radius:12px;font-size:24px;font-weight:600;color:#fff;text-align:center;letter-spacing:.5px;box-shadow:0 8px 32px rgba(108,99,255,.3)}
+      .s5 .cta-sub{font-size:18px;color:#64748b;text-align:center;margin-top:20px}
+      .s5 .center-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%}
     </style>
   </head>
   <body>
-    <!-- ===== ROOT COMPOSITION ===== -->
-    <div
-      id="root"
-      data-composition-id="main"
-      data-start="0"
-      data-duration="30"
-      data-width="1920"
-      data-height="1080"
-    >
-      <!-- Scene 1: Hero -->
-      <div id="s1" class="scene clip" data-start="0" data-duration="6" data-track-index="1">
+    <div data-composition-id="main" data-start="0" data-duration="30" data-width="1920" data-height="1080">
+      <div id="s1" class="scene s1" data-start="0" data-duration="6" data-track-index="1">
         <div class="glow-orb"></div>
         <div class="eyebrow">Paradigm Japan</div>
-        <div class="headline">
-          日本のB2B営業を<br>
-          <span class="accent">AIで再定義する</span>
-        </div>
-        <div class="subhead">
-          データドリブンなリード獲得からクロージングまで。<br>
-          セールスAIエージェントが、あなたのチームの生産性を10倍に引き上げます。
-        </div>
+        <div class="headline">日本のB2B営業を<br><span class="accent">AIで再定義する</span></div>
+        <div class="subhead">データドリブンなリード獲得からクロージングまで。<br>セールスAIエージェントが、あなたのチームの生産性を10倍に引き上げます。</div>
         <div class="cta-line">▼ 今すぐデモを予約</div>
       </div>
-
-      <!-- Scene 2: Problem -->
-      <div id="s2" class="scene clip" data-start="6" data-duration="6" data-track-index="2">
+      <div id="s2" class="scene s2" data-start="6" data-duration="6" data-track-index="1">
         <div class="label">The Challenge</div>
-        <div class="headline">
-          日本のB2B企業が直面する<br>
-          営業の課題
-        </div>
+        <div class="headline">日本のB2B企業が直面する<br>営業の課題</div>
         <div class="stat-row">
-          <div class="stat">
-            <div class="stat-number">73%</div>
-            <div class="stat-label">のリードが適切にフォローアップされていない</div>
-          </div>
-          <div class="stat">
-            <div class="stat-number">42日</div>
-            <div class="stat-label">平均的な商談サイクル（長すぎる）</div>
-          </div>
-          <div class="stat">
-            <div class="stat-number">60%</div>
-            <div class="stat-label">の営業時間は管理業務に費やされている</div>
-          </div>
+          <div class="stat"><div class="stat-number">73%</div><div class="stat-label">のリードが適切にフォローアップされていない</div></div>
+          <div class="stat"><div class="stat-number">42日</div><div class="stat-label">平均的な商談サイクル（長すぎる）</div></div>
+          <div class="stat"><div class="stat-number">60%</div><div class="stat-label">の営業時間は管理業務に費やされている</div></div>
         </div>
       </div>
-
-      <!-- Scene 3: Solution -->
-      <div id="s3" class="scene clip" data-start="12" data-duration="6" data-track-index="3">
+      <div id="s3" class="scene s3" data-start="12" data-duration="6" data-track-index="1">
         <div class="label">Our Solution</div>
-        <div class="headline">
-          AIセールスエージェントが<br>
-          すべてを変える
-        </div>
+        <div class="headline">AIセールスエージェントが<br>すべてを変える</div>
         <div class="feature-grid">
-          <div class="feature-card">
-            <div class="feature-icon">🎯</div>
-            <div class="feature-title">インテリジェントリード獲得</div>
-            <div class="feature-desc">AIが最適な見込み客を自動特定し、パーソナライズドアプローチ</div>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">⚡</div>
-            <div class="feature-title">自動フォローアップ</div>
-            <div class="feature-desc">タイミング最適化されたメール・電話・SNSでエンゲージメント向上</div>
-          </div>
-          <div class="feature-card">
-            <div class="feature-icon">📊</div>
-            <div class="feature-title">リアルタイム分析</div>
-            <div class="feature-desc">ダッシュボードでパイプラインを可視化、次のアクションを提案</div>
-          </div>
+          <div class="feature-card"><div class="feature-icon">🎯</div><div class="feature-title">インテリジェントリード獲得</div><div class="feature-desc">AIが最適な見込み客を自動特定し、パーソナライズドアプローチ</div></div>
+          <div class="feature-card"><div class="feature-icon">⚡</div><div class="feature-title">自動フォローアップ</div><div class="feature-desc">タイミング最適化されたメール・電話・SNSでエンゲージメント向上</div></div>
+          <div class="feature-card"><div class="feature-icon">📊</div><div class="feature-title">リアルタイム分析</div><div class="feature-desc">ダッシュボードでパイプラインを可視化、次のアクションを提案</div></div>
         </div>
       </div>
-
-      <!-- Scene 4: Results -->
-      <div id="s4" class="scene clip" data-start="18" data-duration="6" data-track-index="4">
+      <div id="s4" class="scene s4" data-start="18" data-duration="6" data-track-index="1">
         <div class="label">Proven Results</div>
-        <div class="headline">
-          導入企業の実績
-        </div>
+        <div class="headline">導入企業の実績</div>
         <div class="result-row">
-          <div class="result-item">
-            <div class="result-number">3.2x</div>
-            <div class="result-label">リード転換率向上</div>
-          </div>
-          <div class="result-item">
-            <div class="result-number">67%</div>
-            <div class="result-label">営業工数削減</div>
-          </div>
-          <div class="result-item">
-            <div class="result-number">28日</div>
-            <div class="result-label">商談サイクル短縮</div>
-          </div>
+          <div class="result-item"><div class="result-number">3.2x</div><div class="result-label">リード転換率向上</div></div>
+          <div class="result-item"><div class="result-number">67%</div><div class="result-label">営業工数削減</div></div>
+          <div class="result-item"><div class="result-number">28日</div><div class="result-label">商談サイクル短縮</div></div>
         </div>
       </div>
-
-      <!-- Scene 5: CTA -->
-      <div id="s5" class="scene clip" data-start="24" data-duration="6" data-track-index="5">
+      <div id="s5" class="scene s5" data-start="24" data-duration="6" data-track-index="1">
         <div class="center-wrap">
-          <div class="headline">
-            今すぐ<span class="accent">未来の営業</span>を<br>
-            体験してください
-          </div>
+          <div class="headline">今すぐ<span class="accent">未来の営業</span>を<br>体験してください</div>
           <div class="cta-button">無料デモを予約する →</div>
           <div class="cta-sub">クレジットカード不要 • 30分で導入可能 • 日本企業対応</div>
         </div>
       </div>
-
-      <!-- Transition overlays -->
-      <div id="t1" class="transition-overlay clip" data-start="5.5" data-duration="1" data-track-index="10"></div>
-      <div id="t2" class="transition-overlay clip" data-start="11.5" data-duration="1" data-track-index="11"></div>
-      <div id="t3" class="transition-overlay clip" data-start="17.5" data-duration="1" data-track-index="12"></div>
-      <div id="t4" class="transition-overlay clip" data-start="23.5" data-duration="1" data-track-index="13"></div>
     </div>
-
-    <!-- ===== SHORT PORTRAIT (TikTok/Reels/Shorts) ===== -->
-    <div
-      data-composition-id="short-portrait"
-      data-composition-src="compositions/short-portrait.html"
-      data-start="0"
-      data-duration="16"
-      data-width="1080"
-      data-height="1920"
-    ></div>
-
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
     <script>
       window.__timelines = window.__timelines || {};
+      function fit() {
+        document.documentElement.style.setProperty("--hf-scale", String(Math.min(window.innerWidth / 1920, window.innerHeight / 1080)));
+      }
+      fit(); window.addEventListener("resize", fit);
       const tl = gsap.timeline({ paused: true });
-
-
-      // ===== Scene 1: Hero (0s - 6s) =====
-      tl.from("#s1 .eyebrow", { y: 30, opacity: 0, duration: 0.6, ease: "power3.out" }, 0.3);
-      tl.from("#s1 .headline", { y: 50, opacity: 0, duration: 0.8, ease: "expo.out" }, 0.5);
-      tl.from("#s1 .subhead", { y: 30, opacity: 0, duration: 0.6, ease: "power2.out" }, 0.9);
-      tl.from("#s1 .cta-line", { y: 20, opacity: 0, duration: 0.5, ease: "power2.out" }, 1.2);
-      tl.from("#s1 .glow-orb", { scale: 0, opacity: 0, duration: 1.2, ease: "expo.out" }, 0.2);
-
-      // ===== Transition 1: Crossfade S1→S2 (5.5s - 6.5s) =====
-      tl.to("#s1", { opacity: 0, duration: 0.8, ease: "power2.inOut" }, 5.5);
-      tl.from("#s2", { opacity: 0, duration: 0.8, ease: "power2.inOut" }, 5.7);
-
-      // ===== Scene 2: Problem (6s - 12s) =====
-      tl.from("#s2 .label", { y: 20, opacity: 0, duration: 0.5, ease: "power2.out" }, 6.3);
-      tl.from("#s2 .headline", { y: 40, opacity: 0, duration: 0.7, ease: "expo.out" }, 6.5);
-      tl.from("#s2 .stat-row", { y: 30, opacity: 0, duration: 0.6, ease: "power2.out" }, 7.0);
-      tl.from("#s2 .stat:nth-child(1)", { y: 20, opacity: 0, duration: 0.4, ease: "back.out(1.5)" }, 7.2);
-      tl.from("#s2 .stat:nth-child(2)", { y: 20, opacity: 0, duration: 0.4, ease: "back.out(1.5)" }, 7.5);
-      tl.from("#s2 .stat:nth-child(3)", { y: 20, opacity: 0, duration: 0.4, ease: "back.out(1.5)" }, 7.8);
-
-      // ===== Transition 2: Crossfade S2→S3 (11.5s - 12.5s) =====
-      tl.to("#s2", { opacity: 0, duration: 0.8, ease: "power2.inOut" }, 11.5);
-      tl.from("#s3", { opacity: 0, duration: 0.8, ease: "power2.inOut" }, 11.7);
-
-      // ===== Scene 3: Solution (12s - 18s) =====
-      tl.from("#s3 .label", { y: 20, opacity: 0, duration: 0.5, ease: "power2.out" }, 12.3);
-      tl.from("#s3 .headline", { y: 40, opacity: 0, duration: 0.7, ease: "expo.out" }, 12.5);
-      tl.from("#s3 .feature-grid", { y: 30, opacity: 0, duration: 0.6, ease: "power2.out" }, 13.0);
-      tl.from("#s3 .feature-card:nth-child(1)", { y: 20, opacity: 0, duration: 0.5, ease: "power3.out" }, 13.3);
-      tl.from("#s3 .feature-card:nth-child(2)", { y: 20, opacity: 0, duration: 0.5, ease: "power3.out" }, 13.6);
-      tl.from("#s3 .feature-card:nth-child(3)", { y: 20, opacity: 0, duration: 0.5, ease: "power3.out" }, 13.9);
-
-      // ===== Transition 3: Crossfade S3→S4 (17.5s - 18.5s) =====
-      tl.to("#s3", { opacity: 0, duration: 0.8, ease: "power2.inOut" }, 17.5);
-      tl.from("#s4", { opacity: 0, duration: 0.8, ease: "power2.inOut" }, 17.7);
-
-      // ===== Scene 4: Results (18s - 24s) =====
-      tl.from("#s4 .label", { y: 20, opacity: 0, duration: 0.5, ease: "power2.out" }, 18.3);
-      tl.from("#s4 .headline", { y: 40, opacity: 0, duration: 0.7, ease: "expo.out" }, 18.5);
-      tl.from("#s4 .result-row", { y: 30, opacity: 0, duration: 0.6, ease: "power2.out" }, 19.0);
-      tl.from("#s4 .result-item:nth-child(1)", { scale: 0.8, opacity: 0, duration: 0.5, ease: "back.out(1.7)" }, 19.3);
-      tl.from("#s4 .result-item:nth-child(2)", { scale: 0.8, opacity: 0, duration: 0.5, ease: "back.out(1.7)" }, 19.6);
-      tl.from("#s4 .result-item:nth-child(3)", { scale: 0.8, opacity: 0, duration: 0.5, ease: "back.out(1.7)" }, 19.9);
-
-      // ===== Transition 4: Crossfade S4→S5 (23.5s - 24.5s) =====
-      tl.to("#s4", { opacity: 0, duration: 0.8, ease: "power2.inOut" }, 23.5);
-      tl.from("#s5", { opacity: 0, duration: 0.8, ease: "power2.inOut" }, 23.7);
-
-      // ===== Scene 5: CTA (24s - 30s) =====
-      tl.from("#s5 .headline", { y: 50, opacity: 0, duration: 0.8, ease: "expo.out" }, 24.5);
-      tl.from("#s5 .cta-button", { y: 30, opacity: 0, duration: 0.6, ease: "back.out(1.5)" }, 25.2);
-      tl.from("#s5 .cta-sub", { y: 20, opacity: 0, duration: 0.5, ease: "power2.out" }, 25.6);
-
-      // ===== Final fade out (last 1s) =====
-      tl.to("#s5", { opacity: 0, duration: 0.8, ease: "power2.in" }, 29.0);
-
+      const scenes = ["#s1", "#s2", "#s3", "#s4", "#s5"];
+      gsap.set(scenes, { autoAlpha: 0 });
+      const txs = [
+        { at: 0, sc: "#s1" }, { at: 6, sc: "#s2" },
+        { at: 12, sc: "#s3" }, { at: 18, sc: "#s4" },
+        { at: 24, sc: "#s5" },
+      ];
+      txs.forEach(function (tx, idx) {
+        var next = txs[idx + 1];
+        var sc = tx.sc;
+        var at = tx.at;
+        tl.set(sc, { autoAlpha: 1 }, at);
+        tl.from(sc + " .eyebrow, " + sc + " .label", { y: 30, opacity: 0, duration: .6, ease: "power3.out" }, at + .2);
+        tl.from(sc + " .headline", { y: 50, opacity: 0, duration: .8, ease: "expo.out" }, at + .4);
+        tl.from(sc + " .subhead, " + sc + " .feature-grid, " + sc + " .stat-row, " + sc + " .result-row", { y: 30, opacity: 0, duration: .6, ease: "power2.out" }, at + .8);
+        tl.from(sc + " .cta-line", { y: 20, opacity: 0, duration: .5, ease: "power2.out" }, at + 1);
+        tl.from(sc + " .glow-orb", { scale: 0, opacity: 0, duration: 1.2, ease: "expo.out" }, at + .2);
+        var cards = (sc + " .stat, " + sc + " .feature-card, " + sc + " .result-item").split(", ");
+        cards.forEach(function (sel) {
+          tl.from(gsap.utils.toArray(document.querySelectorAll(sc + " " + sel.split(" ").pop())), { y: 20, opacity: 0, duration: .4, ease: "back.out(1.5)", stagger: .3 }, at + 1.1);
+        });
+        if (next) {
+          var ta = at + 5.5;
+          tl.to(sc, { opacity: 0, duration: .8, ease: "power2.inOut" }, ta);
+          tl.fromTo(next.sc, { opacity: 0 }, { opacity: 1, duration: .8, ease: "power2.inOut" }, ta + .2);
+          tl.set(sc, { autoAlpha: 0, opacity: 1 }, ta + 1);
+        }
+      });
+      tl.to("#s5", { opacity: 0, duration: .8, ease: "power2.in" }, 28.8);
       window.__timelines["main"] = tl;
     </script>
   </body>
