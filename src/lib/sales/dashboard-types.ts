@@ -11,6 +11,10 @@ import type { SearxngRunSummary } from "@/lib/sales/searxng-source"
 import type { JapanReadinessInsightSummary } from "@/lib/sales/japan-readiness"
 import type { DashboardSalesPipeline } from "@/lib/sales/sales-pipeline"
 
+export interface SalesDashboardInput {
+  reportLocale?: string | null
+}
+
 export type SalesDashboardStatus = "ready" | "degraded"
 
 export interface DashboardKpis {

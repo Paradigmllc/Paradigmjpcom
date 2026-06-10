@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Executive diagnostic video composition for report embeds and MP4 rendering.
  *
  * The report video must feel like a client-ready sales asset, not a toy demo:
@@ -27,7 +27,7 @@ interface VideoScript {
   cta: string
 }
 
-const CORRUPT_TEXT = /邵ｺ|郢|隴|髫|陞|鬮|陟|騾|闔|髯|陋|隲|陷|繝|縺|譛|蛻|蜈|蜍|谺|ﾂ|・/
+const CORRUPT_TEXT = /驍ｵ・ｺ|驛｢|髫ｴ|鬮ｫ|髯桍鬯ｮ|髯毫鬨ｾ|髣培鬮ｯ|髯弓髫ｲ|髯ｷ|郢掟邵ｺ|隴斈陋ｻ|陷・陷鋼隹ｺ|・・繝ｻ/
 
 const SVG = {
   arrow: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-5 5 5-5 5"/></svg>',
@@ -137,32 +137,31 @@ function labels(locale: string) {
   const ja = locale === "ja"
   return {
     eyebrow: ja ? "公開データ診断" : "Public evidence brief",
-    evidence: ja ? "確認できた根拠" : "Evidence found",
-    coverage: ja ? "データ取得率" : "Data coverage",
+    evidence: ja ? "見つかった根拠" : "Evidence found",
+    coverage: ja ? "取得データ率" : "Data coverage",
     current: ja ? "現在" : "Current",
     target: ja ? "改善目安" : "Target",
     loss: ja ? "推定機会損失" : "Estimated leakage",
     monthly: ja ? "月間目安" : "Monthly estimate",
     annual: ja ? "年間換算" : "Annualized",
     demo: ja ? "改善後の見え方" : "Replacement demo",
-    proof: ja ? "信頼材料" : "Proof",
+    proof: ja ? "判断材料" : "Proof",
     cta: ja ? "次の一手" : "Next action",
     generated: ja ? "診断レポートから自動生成" : "Generated from the diagnostic report",
-    report: ja ? "レポート" : "Report",
-    booking: ja ? "商談予約" : "Booking",
+    report: ja ? "詳細レポート" : "Report",
+    booking: ja ? "相談予約" : "Booking",
     play: ja ? "再生" : "Play",
     pause: ja ? "一時停止" : "Pause",
     replay: ja ? "最初から" : "Replay",
     timeline: ja ? "再生位置" : "Timeline",
-    scenes: ja ? ["導入", "根拠", "損失", "改善後", "次の一手"] : ["Intro", "Evidence", "Leakage", "Demo", "Next"],
-    defaultHook: ja ? "公開データから、改善優先度を60秒で整理します。" : "A 60-second view of what to fix first.",
-    defaultPain: ja ? "検索、SNS、フォーム、表示速度の公開シグナルから、顧客が迷う箇所を特定しました。" : "Search, social, form, and speed signals show where buyers may hesitate.",
+    scenes: ja ? ["異変", "根拠", "損失", "未来", "実行"] : ["Tension", "Evidence", "Leakage", "Future", "Action"],
+    defaultHook: ja ? "訪問者が離脱する前に、どこで迷い、何を直すべきかを短く見える化します。" : "A focused view of where visitors hesitate and what to fix first.",
+    defaultPain: ja ? "検索、SNS、フォーム、表示速度の公開シグナルから、予約や問い合わせの手前で摩擦が起きている箇所を特定しました。" : "Search, social, form, and speed signals show where buyers may hesitate.",
     defaultFear: ja ? "放置すると、小さな摩擦が毎月の機会損失として積み上がります。" : "Left alone, small points of friction compound into monthly leakage.",
-    defaultHope: ja ? "信頼材料、導線、表示体験を整えると、比較検討中の離脱を減らせます。" : "Clear proof, a shorter path, and a better first view can reduce drop-off.",
-    defaultCta: ja ? "詳細レポートと改善デモを見ながら、優先順位を確認しましょう。" : "Review the report and demo, then confirm the next priorities.",
+    defaultHope: ja ? "信頼材料、導線、初回表示体験を整えると、訪問者は迷わず次の行動へ進めます。" : "Clear proof, a shorter path, and a better first view can reduce drop-off.",
+    defaultCta: ja ? "詳細レポートと改善デモを見ながら、最初に直す優先順位を決めましょう。" : "Review the report and demo, then confirm the next priorities.",
   }
 }
-
 function actAt(data: DiagnosticReportData, index: number, fallback: string): DiagnosticAct | null {
   return data.acts[index] ?? data.acts.find((act) => !CORRUPT_TEXT.test(act.headline)) ?? null
 }
@@ -173,11 +172,11 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
   const company = cleanText(data.company_name, "Target company", 56)
   const hook = cleanText(script.hook || data.hook, t.defaultHook, 92)
   const summaryTitle = data.report_locale === "ja"
-    ? `${company}の改善優先度トップ3`
-    : `Top 3 priorities for ${company}`
+    ? `${company}の取りこぼしを、36秒で見える化`
+    : `The revenue leakage story for ${company}`
   const pain = cleanText(script.pain, t.defaultPain, 104)
   const fear = cleanText(script.fear, t.defaultFear, 104)
-  const hope = cleanText(script.hope, t.defaultHope, 104)
+  const futureBody = cleanText(script.hope, t.defaultHope, 104)
   const cta = cleanText(script.cta || data.cta_text, t.defaultCta, 104)
   const firstAct = actAt(data, 0, t.defaultPain)
   const secondAct = actAt(data, 1, t.defaultFear)
@@ -190,9 +189,15 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
   const annualLoss = monthlyLoss > 0 ? monthlyLoss * 12 : 0
   const annualLabel = annualLoss > 0
     ? data.report_locale === "ja"
-      ? `約${Math.round(annualLoss).toLocaleString("ja-JP")}`
+      ? `約${Math.round(annualLoss).toLocaleString("ja-JP")}円`
       : `$${Math.round(annualLoss / 150).toLocaleString("en-US")}`
     : data.report_locale === "ja" ? "要精査" : "To verify"
+  const lossHeadline = data.report_locale === "ja"
+    ? `${lossValue}の機会損失が、静かに積み上がっています`
+    : `${lossValue} in potential leakage is accumulating quietly`
+  const futureHeadline = data.report_locale === "ja"
+    ? "改善後は、訪問者が迷わず予約まで進める導線へ"
+    : "After the fix, visitors should move cleanly toward booking"
   const reportUrl = cleanText(data.report_url, "paradigmjp.com", 74)
   const demoUrl = data.demo_url ? cleanText(data.demo_url, "", 74) : ""
   const signals = data.source_coverage.items
@@ -206,9 +211,9 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
   const evidenceRows = signals.length > 0
     ? signals
     : [
-        { category: "SEO", label: data.report_locale === "ja" ? "検索導線" : "Search path", score: data.source_coverage.score || 42 },
-        { category: "UX", label: data.report_locale === "ja" ? "問い合わせ導線" : "Inquiry path", score: 54 },
-        { category: "Proof", label: data.report_locale === "ja" ? "信頼材料" : "Trust proof", score: 46 },
+        { category: "SEO", label: data.report_locale === "ja" ? "検索から予約までの導線" : "Search path", score: data.source_coverage.score || 42 },
+        { category: "UX", label: data.report_locale === "ja" ? "問い合わせ前の迷い" : "Inquiry path", score: 54 },
+        { category: "Proof", label: data.report_locale === "ja" ? "信頼判断の材料" : "Trust proof", score: 46 },
       ]
 
   const evidenceHtml = evidenceRows.map((row, index) => `
@@ -220,6 +225,17 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       <div class="meter"><i style="width:${row.score}%"></i></div>
       <b>${row.score}</b>
     </div>
+  `).join("")
+  const chapterLabels = data.report_locale === "ja"
+    ? ["異変", "根拠", "損失", "未来", "実行"]
+    : ["Tension", "Evidence", "Leakage", "Future", "Action"]
+  const chapterHtml = chapterLabels.map((label, index) => `
+    <span class="chapter-pill" data-chapter="${index}">
+      <i></i><b>${esc(label)}</b>
+    </span>
+  `).join("")
+  const nodeHtml = evidenceRows.map((row, index) => `
+    <span class="data-node" style="--x:${16 + index * 17}%;--y:${26 + (index % 3) * 18}%;--s:${Math.max(12, row.score / 4)}px"></span>
   `).join("")
 
   return `<!doctype html>
@@ -234,12 +250,23 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
     body{font-family:Inter,"Noto Sans JP",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:${theme.panel};}
     svg{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
     [data-composition-id]{width:100vw;height:100vh;position:relative;overflow:hidden;background:${theme.bg};}
-    .grid-bg{position:absolute;inset:0;background-image:linear-gradient(${theme.grid} 1px,transparent 1px),linear-gradient(90deg,${theme.grid} 1px,transparent 1px);background-size:72px 72px;mask-image:linear-gradient(90deg,transparent,black 18%,black 82%,transparent);opacity:.8}
+    #three-layer{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:.8;mix-blend-mode:screen}
+    .grid-bg{position:absolute;inset:0;background-image:linear-gradient(${theme.grid} 1px,transparent 1px),linear-gradient(90deg,${theme.grid} 1px,transparent 1px);background-size:72px 72px;mask-image:linear-gradient(90deg,transparent,black 18%,black 82%,transparent);opacity:.72;transform-origin:center}
     .wash{position:absolute;inset:-20%;background:radial-gradient(circle at 18% 18%,${theme.accentSoft}33 0,transparent 22%),radial-gradient(circle at 82% 72%,${theme.accent}30 0,transparent 25%),linear-gradient(135deg,rgba(255,255,255,.06),transparent 45%);filter:blur(3px)}
+    .scan-beam{position:absolute;inset:0;background:linear-gradient(100deg,transparent 0 38%,rgba(255,255,255,.18) 48%,transparent 58%);transform:translateX(-70%);mix-blend-mode:screen;opacity:.55}
+    .grain{position:absolute;inset:0;opacity:.16;background-image:radial-gradient(circle at 20% 30%,rgba(255,255,255,.22) 0 1px,transparent 1px),radial-gradient(circle at 70% 60%,rgba(255,255,255,.12) 0 1px,transparent 1px);background-size:18px 18px,23px 23px;mix-blend-mode:overlay}
+    .data-node{position:absolute;left:var(--x);top:var(--y);width:var(--s);height:var(--s);border:1px solid ${theme.accentSoft};border-radius:50%;box-shadow:0 0 28px ${theme.accentSoft};opacity:.42}
+    .data-node::after{content:"";position:absolute;inset:-18px;border:1px solid ${theme.rule};border-radius:50%}
+    .chapter-strip{position:absolute;top:78px;left:92px;right:92px;z-index:18;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+    .chapter-pill{min-width:0;display:flex;align-items:center;gap:9px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:rgba(255,255,255,.07);padding:9px 12px;color:rgba(255,255,255,.62);font-size:12px;font-weight:850;letter-spacing:.06em;text-transform:uppercase;backdrop-filter:blur(14px)}
+    .chapter-pill i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.28);box-shadow:0 0 0 rgba(255,255,255,0)}
+    .chapter-pill b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .chapter-pill.is-active{background:${theme.panel};border-color:transparent;color:${theme.ink};box-shadow:0 18px 54px rgba(0,0,0,.24)}
+    .chapter-pill.is-active i{background:${theme.accent};box-shadow:0 0 22px ${theme.accent}}
     .frame{position:absolute;inset:52px;border:1px solid ${theme.rule};border-radius:34px;overflow:hidden;background:linear-gradient(135deg,rgba(255,255,255,.06),rgba(255,255,255,.015));box-shadow:0 28px 90px rgba(0,0,0,.34)}
     .brand{position:absolute;top:34px;left:44px;right:44px;display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.58);z-index:20}
     .brand b{color:${theme.accentSoft}}
-    .scene{position:absolute;inset:0;padding:96px 92px 84px;display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,420px);gap:42px;align-items:center;opacity:0;visibility:hidden}
+    .scene{position:absolute;inset:0;padding:132px 92px 84px;display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,420px);gap:42px;align-items:center;opacity:0;visibility:hidden}
     .scene.full{grid-template-columns:1fr;text-align:center;place-items:center}
     .kicker{display:inline-flex;align-items:center;gap:10px;margin-bottom:22px;color:${theme.accentSoft};font-size:16px;font-weight:850;letter-spacing:.14em;text-transform:uppercase}
     .kicker::before{content:"";width:38px;height:2px;background:${theme.accentSoft};border-radius:999px}
@@ -248,6 +275,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
     p{margin:0;color:rgba(255,255,255,.7);font-size:18px;line-height:1.55;letter-spacing:0;text-wrap:pretty}
     .panel p{color:${theme.muted};font-size:16px;line-height:1.6}
     .lead{max-width:680px;margin-top:20px}
+    .caption-band{display:inline-flex;max-width:660px;margin-top:18px;border-left:3px solid ${theme.accentSoft};padding:10px 14px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.76);font-size:15px;font-weight:760;line-height:1.5;backdrop-filter:blur(12px)}
     .panel{max-width:100%;overflow:hidden;background:${theme.panel};color:${theme.ink};border-radius:24px;padding:28px;border:1px solid rgba(255,255,255,.72);box-shadow:0 32px 90px rgba(0,0,0,.26)}
     .panel.dark{background:rgba(255,255,255,.08);border-color:${theme.rule};backdrop-filter:blur(16px);color:white}
     .panel.dark p{color:rgba(255,255,255,.64)}
@@ -261,7 +289,9 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
     .bar.target i{background:repeating-linear-gradient(45deg,${theme.ink} 0 8px,${theme.accent} 8px 16px)}
     .bar label{position:absolute;left:14px;top:14px;color:${theme.muted};font-size:14px;font-weight:800}
     .evidence-list{display:grid;gap:12px;margin-top:20px}
-    .evidence-row{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(96px,.9fr) 36px;gap:14px;align-items:center;padding:14px 16px;border:1px solid rgba(13,24,36,.1);border-radius:16px;background:rgba(255,255,255,.58)}
+    .evidence-row{position:relative;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(96px,.9fr) 36px;gap:14px;align-items:center;padding:14px 16px;border:1px solid rgba(13,24,36,.1);border-radius:16px;background:rgba(255,255,255,.58);overflow:hidden}
+    .evidence-row::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.72),transparent);transform:translateX(-120%);opacity:.7}
+    .evidence-row.is-focus{border-color:${theme.accent};box-shadow:0 18px 48px rgba(0,0,0,.16);transform:translateX(-8px) scale(1.02)}
     .evidence-row span{display:block;color:${theme.accent};font-size:12px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
     .evidence-row strong{display:block;margin-top:4px;color:${theme.ink};font-size:17px;line-height:1.25}
     .meter{height:8px;background:${theme.panelSoft};border-radius:999px;overflow:hidden}.meter i{display:block;height:100%;background:${theme.accent};border-radius:999px;width:0}
@@ -273,7 +303,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
     .demo-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.demo-cards span{height:78px;border-radius:16px;background:${theme.panelSoft};border:1px solid rgba(13,24,36,.08)}
     .cta-box{max-width:920px}.cta-box h1{max-width:920px;font-size:48px}.cta-actions{display:flex;justify-content:center;gap:14px;margin-top:30px}.action{display:inline-flex;align-items:center;gap:10px;border:1px solid ${theme.rule};border-radius:999px;padding:13px 18px;background:rgba(255,255,255,.1);font-size:15px;font-weight:800;color:white}.action.primary{background:${theme.panel};color:${theme.ink};border-color:transparent}
     .footer{position:absolute;left:44px;right:44px;bottom:30px;z-index:20;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;color:rgba(255,255,255,.42);font-size:13px;font-weight:720;letter-spacing:.08em;text-transform:uppercase}.footer div:nth-child(3){text-align:right}.progress{height:4px;background:rgba(255,255,255,.12);border-radius:999px;overflow:hidden}.progress i{display:block;width:0;height:100%;background:${theme.accentSoft}}
-    @media (max-width:900px){.frame{inset:18px;border-radius:22px}.brand{top:18px;left:22px;right:22px;font-size:10px}.scene{padding:74px 28px 58px;grid-template-columns:1fr;gap:24px}h1{font-size:34px}h2{font-size:26px}p{font-size:16px}.score-card{min-height:340px}.score-main strong{font-size:52px}.loss-number{font-size:44px}.footer{left:22px;right:22px;bottom:18px;font-size:10px}.scene.full{padding:64px 26px}.cta-box h1{font-size:32px}.cta-actions{flex-wrap:wrap}.panel{border-radius:22px;padding:22px}.demo-cards{grid-template-columns:1fr 1fr}.evidence-row{grid-template-columns:1fr}.metric-stack{grid-template-columns:1fr}}
+    @media (max-width:900px){.frame{inset:18px;border-radius:22px}.brand{top:18px;left:22px;right:22px;font-size:10px}.chapter-strip{top:48px;left:22px;right:22px;gap:5px}.chapter-pill{padding:7px 8px;font-size:9px}.scene{padding:96px 28px 58px;grid-template-columns:1fr;gap:24px}h1{font-size:34px}h2{font-size:26px}p{font-size:16px}.score-card{min-height:340px}.score-main strong{font-size:52px}.loss-number{font-size:44px}.footer{left:22px;right:22px;bottom:18px;font-size:10px}.scene.full{padding:96px 26px 64px}.cta-box h1{font-size:32px}.cta-actions{flex-wrap:wrap}.panel{border-radius:22px;padding:22px}.demo-cards{grid-template-columns:1fr 1fr}.evidence-row{grid-template-columns:1fr}.metric-stack{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -286,15 +316,21 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
     data-hf-frameworks="hyperframes-player gsap css catalog:data-chart catalog:shimmer-sweep catalog:caption-highlight catalog:flash-through-white catalog:transitions-blur"
   >
     <div class="clip wash" data-start="0" data-duration="36" data-track-index="0"></div>
+    <canvas id="three-layer" class="clip" data-start="0" data-duration="36" data-track-index="0" aria-hidden="true"></canvas>
     <div class="clip grid-bg" data-start="0" data-duration="36" data-track-index="0"></div>
+    <div class="clip scan-beam" data-start="0" data-duration="36" data-track-index="0"></div>
+    <div class="clip grain" data-start="0" data-duration="36" data-track-index="0"></div>
+    <div class="clip node-field" data-start="0" data-duration="36" data-track-index="0" aria-hidden="true">${nodeHtml}</div>
     <div class="clip frame" data-start="0" data-duration="36" data-track-index="0"></div>
     <div class="clip brand" data-start="0" data-duration="36" data-track-index="3"><span><b>PARADIGM</b> DIAGNOSTIC</span><span>${esc(t.generated)}</span></div>
+    <div class="clip chapter-strip" data-start="0" data-duration="36" data-track-index="3">${chapterHtml}</div>
 
     <section id="scene-hero" class="clip scene scene-hero" data-start="0" data-duration="7" data-track-index="1">
       <div>
         <div class="kicker">${esc(t.eyebrow)}</div>
         <h1>${esc(summaryTitle)}</h1>
         <p class="lead">${esc(hook)}</p>
+        <span class="caption-band">${esc(metricLabel)}: ${esc(metricValue)}</span>
       </div>
       <div class="panel score-card">
         <div>
@@ -316,6 +352,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
         <div class="kicker">${esc(t.evidence)}</div>
         <h1>${esc(cleanText(firstAct?.headline, pain, 88))}</h1>
         <p class="lead">${esc(cleanText(firstAct?.body, pain, 150))}</p>
+        <span class="caption-band">${esc(evidenceRows[0]?.label ?? metricLabel)}</span>
       </div>
       <div class="panel">
         <h2>${esc(t.proof)}</h2>
@@ -326,8 +363,9 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
     <section id="scene-loss" class="clip scene scene-loss" data-start="14" data-duration="7" data-track-index="1">
       <div>
         <div class="kicker">${esc(t.loss)}</div>
-        <h1>${esc(cleanText(secondAct?.headline, fear, 88))}</h1>
+        <h1>${esc(lossHeadline)}</h1>
         <p class="lead">${esc(cleanText(secondAct?.body, fear, 150))}</p>
+        <span class="caption-band">${esc(t.monthly)} ${esc(lossValue)}</span>
       </div>
       <div class="panel">
         <h2>${esc(t.loss)}</h2>
@@ -342,8 +380,9 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
     <section id="scene-demo" class="clip scene scene-demo" data-start="21" data-duration="7" data-track-index="1">
       <div>
         <div class="kicker">${esc(t.demo)}</div>
-        <h1>${esc(hope)}</h1>
-        <p class="lead">${esc(demoUrl || reportUrl)}</p>
+        <h1>${esc(futureHeadline)}</h1>
+        <p class="lead">${esc(futureBody)}</p>
+        <span class="caption-band">${esc(demoUrl || reportUrl)}</span>
       </div>
       <div class="panel demo-window">
         <div class="browser-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
@@ -377,15 +416,36 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script>
     window.__timelines = window.__timelines || {};
-    const tl = gsap.timeline({ paused: true });
+    function updateChapter(time) {
+      const active = Math.max(0, Math.min(4, Math.floor(time / 7)));
+      document.querySelectorAll(".chapter-pill").forEach(function (pill, index) {
+        pill.classList.toggle("is-active", index === active);
+      });
+    }
+    function dispatchSeek(time) {
+      updateChapter(time);
+      window.__hfThreeTime = time;
+      window.dispatchEvent(new CustomEvent("hf-seek", { detail: { time: time } }));
+    }
+    const tl = gsap.timeline({
+      paused: true,
+      onUpdate: function () { dispatchSeek(tl.time()); },
+      onStart: function () { dispatchSeek(tl.time()); }
+    });
     const scenes = [".scene-hero", ".scene-evidence", ".scene-loss", ".scene-demo", ".scene-cta"];
     gsap.set(scenes, { autoAlpha: 0 });
+    document.querySelector(".chapter-pill")?.classList.add("is-active");
+    tl.to(".grid-bg", { scale: 1.08, x: -28, y: 16, duration: 36, ease: "none" }, 0);
+    tl.to(".wash", { xPercent: 8, yPercent: -5, scale: 1.06, duration: 36, ease: "sine.inOut" }, 0);
+    tl.fromTo(".data-node", { scale: .6, opacity: .12 }, { scale: 1.7, opacity: .55, duration: 2.4, ease: "power2.inOut", stagger: .28, yoyo: true, repeat: 10 }, 0);
     scenes.forEach((scene, index) => {
       const at = index * 7;
       tl.set(scene, { autoAlpha: 1 }, at);
+      tl.fromTo(".scan-beam", { xPercent: -120, opacity: .1 }, { xPercent: 120, opacity: .55, duration: 1.2, ease: "power2.inOut" }, at + .18);
       tl.fromTo(scene + " .kicker", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: .55, ease: "power3.out" }, at);
       tl.fromTo(scene + " h1", { y: 34, opacity: 0 }, { y: 0, opacity: 1, duration: .75, ease: "power3.out" }, at + .1);
       tl.fromTo(scene + " p", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: .65, ease: "power3.out" }, at + .26);
+      tl.fromTo(scene + " .caption-band", { clipPath: "inset(0 100% 0 0)", opacity: 0 }, { clipPath: "inset(0 0% 0 0)", opacity: 1, duration: .62, ease: "power3.out" }, at + .72);
       tl.fromTo(scene + " .panel, " + scene + " .cta-actions", { y: 34, opacity: 0, scale: .985 }, { y: 0, opacity: 1, scale: 1, duration: .8, ease: "power3.out" }, at + .16);
       const bars = gsap.utils.toArray(scene + " .bar i");
       if (bars.length) {
@@ -395,9 +455,14 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       if (meters.length) {
         tl.to(meters, { width: function(_, el){ return el.style.width || "0%"; }, duration: .75, ease: "power2.out", stagger: .07 }, at + .9);
       }
+      const evidenceRows = gsap.utils.toArray(scene + " .evidence-row");
+      evidenceRows.forEach(function(row, rowIndex) {
+        tl.to(row, { x: -8, scale: 1.02, duration: .35, ease: "power2.out", onStart: function(){ row.classList.add("is-focus"); } }, at + 1.1 + rowIndex * .72);
+        tl.to(row, { x: 0, scale: 1, duration: .35, ease: "power2.in", onComplete: function(){ row.classList.remove("is-focus"); } }, at + 1.55 + rowIndex * .72);
+      });
       tl.to(".progress i", { width: ((index + 1) / scenes.length * 100) + "%", duration: 6.6, ease: "none" }, at);
       if (index < scenes.length - 1) {
-        tl.to(scene + " h1, " + scene + " p, " + scene + " .panel, " + scene + " .cta-actions, " + scene + " .kicker", { y: -18, opacity: 0, duration: .35, ease: "power2.in" }, at + 6.35);
+        tl.to(scene + " h1, " + scene + " p, " + scene + " .panel, " + scene + " .cta-actions, " + scene + " .kicker, " + scene + " .caption-band", { y: -18, opacity: 0, duration: .35, ease: "power2.in" }, at + 6.35);
         tl.set(scene, { autoAlpha: 0 }, at + 6.85);
       }
     });
@@ -412,10 +477,70 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       }, .9);
     }
     window.__timelines["diagnostic-report-video"] = tl;
+    dispatchSeek(0);
+    window.addEventListener("message", function(event) {
+      const message = event.data || {};
+      if (message.source !== "diagnostic-report-player") return;
+      if (message.type === "seek" && Number.isFinite(message.time)) {
+        tl.time(Math.max(0, Math.min(36, Number(message.time))));
+        dispatchSeek(tl.time());
+      }
+      if (message.type === "toggle") {
+        if (tl.paused()) {
+          tl.play();
+        } else {
+          tl.pause();
+        }
+      }
+      if (message.type === "play") tl.play();
+      if (message.type === "pause") tl.pause();
+      if (message.type === "replay") tl.time(0).play();
+      if (message.type === "speed" && Number.isFinite(message.speed)) {
+        tl.timeScale(Math.max(.5, Math.min(2, Number(message.speed))));
+      }
+    });
     const params = new URLSearchParams(window.location.search);
     if (params.get("autoplay") === "1" && !window.__HYPERFRAMES_PLAYER__) {
       window.requestAnimationFrame(function(){ tl.play(0); });
     }
+  </script>
+  <script type="module">
+    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.181.2/+esm";
+    const canvas = document.getElementById("three-layer");
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+    renderer.setSize(1920, 1080, false);
+    renderer.setPixelRatio(1);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(34, 1920 / 1080, 0.1, 100);
+    camera.position.set(0, 0, 7.2);
+    const group = new THREE.Group();
+    scene.add(group);
+    const material = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: .16 });
+    const accent = new THREE.MeshBasicMaterial({ color: 0x7dd3fc, transparent: true, opacity: .22 });
+    for (let i = 0; i < 7; i += 1) {
+      const geo = i % 2 === 0 ? new THREE.IcosahedronGeometry(.5 + i * .06, 1) : new THREE.TorusGeometry(.42 + i * .04, .012, 8, 42);
+      const mesh = new THREE.Mesh(geo, i % 3 === 0 ? accent : material);
+      mesh.position.set((i - 3) * .86, Math.sin(i) * 1.1, -i * .18);
+      group.add(mesh);
+    }
+    const lineMaterial = new THREE.LineBasicMaterial({ color: 0x93c5fd, transparent: true, opacity: .18 });
+    for (let i = 0; i < 8; i += 1) {
+      const points = [new THREE.Vector3(-4 + i, -2.2, -1), new THREE.Vector3(-2.8 + i * .5, .4, -1.4), new THREE.Vector3(3.5 - i * .15, 2.1, -1.1)];
+      group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), lineMaterial));
+    }
+    function renderAt(time) {
+      group.rotation.y = time * .045;
+      group.rotation.x = Math.sin(time * .18) * .08;
+      group.children.forEach(function(child, index) {
+        child.rotation.x = time * (.08 + index * .012);
+        child.rotation.y = time * (.12 + index * .009);
+      });
+      camera.position.x = Math.sin(time * .11) * .28;
+      camera.position.y = Math.cos(time * .09) * .18;
+      renderer.render(scene, camera);
+    }
+    window.addEventListener("hf-seek", function(event) { renderAt(event.detail.time || 0); });
+    renderAt(window.__hfThreeTime || 0);
   </script>
 </body>
 </html>`

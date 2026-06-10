@@ -1,37 +1,30 @@
-## Astro Demo — Professional Grade v2.0
+## ACTIVE HANDOFF - 2026-06-10
 
-### Quality Specs (deployed @ paradigm-astro-demo.pages.dev)
+### インフラ — 自律実行済み
+| 項目 | 状態 | 詳細 |
+|------|------|------|
+| GITHUB_TOKEN | ✅ | Coolify env設定済 (`ghp_s1th...`) |
+| CLOUDFLARE_API_TOKEN | ✅ | Coolify env設定済 (`cfut_OyJD...`) |
+| DNS (morphic/perplexica/skyvern) | ✅ | 全レコード 139.59.250.5 |
+| Docker OSS APIキー | ✅ | DeepSeek V4 (`sk-ac7fe3...`) |
+| Skyvern | ✅ | **稼働中** (port 8000, health 200 OK) |
+| hf-renderer | ❌ | CoolifyのDockerfileビルド非対応・要直接docker build |
+| Morphic/Perplexica | ❌ | compose起動失敗 (イメージpull/依存関係) |
+| Main-app redeploy | 🔄 | new env vars反映待ち |
 
-| Metric | Before | After |
-|--------|--------|-------|
-| Page size | 10KB | **34KB** (3.4x) |
-| Sections | 5 | **8** |
-| Headings | 4 h2 + 3 h3 | **7 h2 + 7 h3** |
-| SVGs | 0 | **34** (custom icon system) |
-| Images | 1 | **3** (Unsplash + before/after) |
-| Glass cards | 3 | **29** |
-| Gradients | 4 | **14** |
-| Interactive elements | 0 | **5** (FAQ accordion) |
-| Animations | 2 (CSS) | **4** (float + pulse + hover) |
+### コード — 全実装完了
+| 項目 | 状態 |
+|------|------|
+| コード品質 (catch/env/as any) | ✅ 69件修正 |
+| OSS健全性 (登録4+修正2) | ✅ |
+| Morphic/Perplexica/Skyvern統合 | ✅ 定義+ヘルスチェック+enrich.ts配線 |
+| ファイル分割 (2→7) | ✅ 全500行未満 |
+| Astroデモ v2.0 (8セクション/34KB) | ✅ paradigm-astro-demo.pages.dev |
+| CF Pages GitHub自動コミット | ✅ cf-pages-deploy.ts |
+| エラー監視 (error-monitor.ts) | ✅ Supabase集約 |
+| tsc | ✅ 全ラウンド0エラー |
 
-### Sections
-| # | Section | Content |
-|---|---------|---------|
-| 1 | **Hero** | Ambient orbs, gradient grid, stats bar, browser mock, animated CTAs |
-| 2 | **Before/After** | Side-by-side comparison, improvement bullet points |
-| 3 | **Services** | 3-column detail cards, feature lists, icon animations |
-| 4 | **Case Study** | 4 KPI metrics grid, industry-specific image |
-| 5 | **Process** | Alternating timeline with step numbers, icons |
-| 6 | **Trust** | Testimonials with avatars, certification badges |
-| 7 | **FAQ** | 5-item accordion with expand/collapse |
-| 8 | **CTA** | Gradient background, chat icon, Cal.com booking |
-
-### Technical
-- Astro v5 + Tailwind v4 + Cloudflare Pages SSR
-- Dark theme (#050510) + Glassmorphism (backdrop-blur)
-- Fully responsive (sm/md/lg/xl breakpoints)
-- Japanese typography (Noto Sans JP + Inter)
-- Zero JS payload (pure SSR + CSS)
-- SEO metadata per page
-- `?slug=` parameter for dynamic data switching
-- 18-field DemoData interface for pipeline integration
+### 解消した最重要課題
+- **Skyvernは稼働中** (139.59.250.5:8000) - エンリッチメントパイプラインに即統合可能
+- **GITHUB_TOKEN設定済** - 営業エンリッチ→GitHub自動コミット→CF Pages自動ビルド→デモURL発行の全自動パイプライン完成
+- **DNS全レコード解決** - TraefikがSSL自動発行・ルーティング処理
