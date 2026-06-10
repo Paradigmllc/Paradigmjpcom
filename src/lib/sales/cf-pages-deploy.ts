@@ -288,6 +288,24 @@ export async function triggerCfPagesDeploy(): Promise<{
   }
 }
 
+/** Trigger a deployment on a specific CF Pages project by name */
+async function triggerCfPagesDeployForProject(projectName: string): Promise<{ ok: boolean; error?: string }> {
+  if (!isCfPagesConfigured()) return { ok: false, error: "CLOUDFLARE_API_TOKEN is not configured" }
+  try {
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/${encodeURIComponent(projectName)}/deployments`,
+      { method: "POST", headers: cfHeaders(), body: JSON.stringify({ branch: GITHUB_BRANCH }), signal: AbortSignal.timeout(30_000) }
+    )
+    const data = await res.json() as { success?: boolean; errors?: Array<{ message: string }> }
+    if (!res.ok || !data.success) {
+      return { ok: false, error: data.errors?.[0]?.message ?? `HTTP ${res.status}` }
+    }
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) }
+  }
+}
+
 /**
  * Generate demo content + trigger Cloudflare Pages deploy.
  * Returns the demo URL once the content has been saved to Keystatic.

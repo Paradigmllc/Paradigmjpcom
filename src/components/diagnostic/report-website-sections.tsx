@@ -188,11 +188,20 @@ export function BeforeAfterComparison({ data, lang }: { data: DiagnosticReportDa
               )}
               {!hasSteelScreenshot && hasDemo && (
                 <div className="rounded-lg border border-emerald-200 overflow-hidden mb-4">
-                  <div className="aspect-video bg-zinc-100 flex items-center justify-center">
-                    <a href={data.demo_url!} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2 text-emerald-600 hover:text-emerald-700 transition-colors">
-                      <Monitor className="h-10 w-10" />
-                      <span className="text-sm font-bold">{lang === "ja" ? "デモサイトを見る" : "View Demo Site"}</span>
-                      <ExternalLink className="h-4 w-4" />
+                  {/* 改善後デモサイトのiframeプレビュー */}
+                  <div className="relative" style={{ paddingBottom: "75%" }}>
+                    <iframe
+                      src={data.demo_url!}
+                      className="absolute inset-0 w-full h-full border-0"
+                      title={lang === "ja" ? "改善後デモサイト" : "Improved demo site"}
+                      loading="lazy"
+                      sandbox="allow-scripts allow-same-origin"
+                    />
+                  </div>
+                  <div className="px-4 py-2 bg-emerald-50 flex items-center justify-between">
+                    <span className="text-xs text-emerald-700 font-medium">{lang === "ja" ? "改善後デモサイト（スクロール可能）" : "Improved demo (scrollable)"}</span>
+                    <a href={data.demo_url!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-800 font-bold">
+                      <ExternalLink className="h-3 w-3" />{lang === "ja" ? "別タブで開く" : "Open in new tab"}
                     </a>
                   </div>
                 </div>
