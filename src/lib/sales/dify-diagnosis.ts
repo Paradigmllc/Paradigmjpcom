@@ -194,7 +194,6 @@ export async function runDifyDiagnosis(company: SalesCompany): Promise<DifyDiagn
       },
       body: JSON.stringify({
         inputs: {
-          ...payload,
           system_prompt: systemPrompt,
           user_payload: userPayload,
         },
