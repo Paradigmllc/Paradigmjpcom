@@ -193,3 +193,20 @@ export async function checkSkyvernHealth(): Promise<ServiceHealthResult> {
     return healthError("Skyvern", error)
   }
 }
+
+export async function checkSteelHealth(): Promise<ServiceHealthResult> {
+  const missing = missingEnv(["STEEL_BASE_URL"])
+  if (missing.length > 0) return notConfigured(missing)
+  try {
+    const base = normalizeHttpBase(envValue("STEEL_BASE_URL") as string)
+    const apiKey = envValue("STEEL_API_KEY")
+    const headers: Record<string, string> = {}
+    if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`
+    const url = new URL(base)
+    url.pathname = "/v1/health"
+    const res = await fetch(url.toString(), { headers, signal: AbortSignal.timeout(10_000) })
+    return { balanceStatus: res.ok ? "ok" : "error", balanceLabel: `HTTP ${res.status}` }
+  } catch (error) {
+    return healthError("Steel.dev", error)
+  }
+}

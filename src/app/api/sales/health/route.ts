@@ -8,6 +8,7 @@ import {
   checkDifyHealth,
   checkPlaywrightStealthHealth,
   checkStagehandHealth,
+  checkSteelHealth,
   type ServiceHealthResult,
 } from "@/lib/sales/oss-service-health"
 
@@ -214,7 +215,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
   }
 
-  const [supabase, searxng, dify, triggerDev, crawl4ai, browserless, stagehand, crawlee, worker] = await Promise.all([
+  const [supabase, searxng, dify, triggerDev, crawl4ai, browserless, stagehand, steel, crawlee, worker] = await Promise.all([
     checkSupabase(),
     checkSearxng(),
     checkDify(),
@@ -222,6 +223,7 @@ export async function GET(req: NextRequest) {
     checkCrawl4AiHealth().then((result) => serviceHealthToCheck("Crawl4AI", result, env("CRAWL4AI_BASE_URL"))),
     checkBrowserlessHealth().then((result) => serviceHealthToCheck("Browserless", result, env("BROWSERLESS_URL"))),
     checkStagehandHealth().then((result) => serviceHealthToCheck("Stagehand", result, env("STAGEHAND_URL"))),
+    checkSteelHealth().then((result) => serviceHealthToCheck("Steel.dev", result, env("STEEL_BASE_URL"))),
     checkCrawleeHealth().then((result) => serviceHealthToCheck("Crawlee worker", result, env("CRAWLEE_WORKER_URL"))),
     checkPlaywrightStealthHealth().then((result) => serviceHealthToCheck("Outreach worker", result, env("OUTREACH_WORKER_URL"))),
   ])
@@ -236,6 +238,7 @@ export async function GET(req: NextRequest) {
     crawl4ai,
     browserless,
     stagehand,
+    steel,
     crawlee,
     worker,
   ]

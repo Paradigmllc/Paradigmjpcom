@@ -1,10 +1,10 @@
 /**
  * lib/sales/enrich.ts — contact form → sales_companies 自動エンリッチ
  *
- * 23 無料 OSS ソースで企業データを収集:
+ * 25 無料 OSS ソースで企業データを収集:
  *   - 自社スキャン (PSI + HTML)
  *   - 公開API (SSL Labs, Whois, crt.sh, DNS, Tranco, CommonCrawl, etc.)
- *   - OSSツール (SpiderFoot, Katana, Maigret, Skyvern, SearXNG)
+ *   - OSSツール (SpiderFoot, Katana, Maigret, Stagehand, Steel.dev, SearXNG)
  *   - gBizInfo (日本のみ)
  *
  * 入力: enrichFromContact({ email, company?, message?, services? })
@@ -31,7 +31,8 @@ import { queryCommonCrawl } from "./sources/commoncrawl"
 import { enrichDomainWithSpiderFoot } from "./sources/spiderfoot-source"
 import { crawlWithKatana } from "./sources/katana-source"
 import { searchMaigretForDomain } from "./sources/maigret-source"
-import { extractSkyvernSiteData, discoverSkyvernForms } from "./sources/skyvern-source"
+import { extractSiteData, discoverForms } from "./sources/stagehand-enrich-source"
+import { scrapeWithSteel } from "./sources/steel-source"
 import { estimateTrafficViaSearx } from "./sources/searxng-traffic"
 import { INDUSTRY_MARKET_DATA } from "./sources/market-data"
 import { collectSmbSignals } from "./sources/smb-signals"
@@ -137,12 +138,13 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     () => enrichDomainWithSpiderFoot(domain).catch(e => { console.error("[enrich] spiderfoot failed:", e); return null }),
     () => crawlWithKatana(url).catch(e => { console.error("[enrich] katana failed:", e); return null }),
     () => searchMaigretForDomain(domain).catch(e => { console.error("[enrich] maigret failed:", e); return null }),
-    () => extractSkyvernSiteData(url).catch(e => { console.error("[enrich] skyvern-site failed:", e); return null }),
-    () => discoverSkyvernForms(url).catch(e => { console.error("[enrich] skyvern-forms failed:", e); return null }),
+    () => extractSiteData(url).catch(e => { console.error("[enrich] stagehand extract failed:", e); return null }),
+    () => discoverForms(url).catch(e => { console.error("[enrich] stagehand forms failed:", e); return null }),
+    () => scrapeWithSteel(url).catch(e => { console.error("[enrich] steel.dev scrape failed:", e); return null }),
     () => estimateTrafficViaSearx(domain, companyName ?? undefined).catch(e => { console.error("[enrich] searxng failed:", e); return null }),
   ]
 
-  const [scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts, wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana, maigret, skyvernSite, skyvernForms, searxng] = await batchAll(tasks) as any[]
+  const [scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts, wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana, maigret, stagehandSite, stagehandForms, steel, searxng] = await batchAll(tasks) as any[]
 
   // Step 3: 集約
   const gbizFirst = gbiz?.[0]
@@ -150,7 +152,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     sales_os: {
       last_enriched_at: new Date().toISOString(),
       enriched_via: input.source ?? "contact_form",
-      sources_collected: [scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts, wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana, maigret, skyvernSite, skyvernForms, searxng]
+      sources_collected: [scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts, wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana, maigret, stagehandSite, stagehandForms, steel, searxng]
         .filter(s => s != null && (Array.isArray(s) ? s.length > 0 : true)).length,
     },
     contact: { original_email: input.email, services: input.services ?? [], received_at: new Date().toISOString() },
@@ -180,7 +182,8 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     katana: katana?.ok ? { crawled: katana.data?.crawled, urls: katana.data?.urls?.slice(0, 20) } : null,
     maigret: maigret?.ok ? { profiles: maigret.data?.profiles_found, sites: maigret.data?.sites?.slice(0, 10) } : null,
     searxng_traffic: searxng?.ok ? searxng.data : null,
-    skyvern: skyvernSite?.ok || skyvernForms?.ok ? { site: skyvernSite?.ok ? skyvernSite.data : null, forms: skyvernForms?.ok ? skyvernForms.data : null } : null,
+    stagehand: stagehandSite?.ok || stagehandForms?.ok ? { site: stagehandSite?.ok ? stagehandSite.data : null, forms: stagehandForms?.ok ? stagehandForms.data : null } : null,
+    steel: steel?.ok ? { title: steel.data?.title, text: steel.data?.text?.slice(0, 2000), links_count: steel.data?.links?.length } : null,
     market_data: industry ? (INDUSTRY_MARKET_DATA[industry as keyof typeof INDUSTRY_MARKET_DATA] ?? null) : null,
     smb_signals: tech && dns?.ok ? await collectSmbSignals(domain, tech.tech.map((t: { name: string }) => t.name), dns.mxRecords).catch(() => null) : null,
     ...(gbizFirst ? toCompanyMeta(gbizFirst) : {}),

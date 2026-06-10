@@ -30,6 +30,7 @@ import {
   checkMorphicHealth,
   checkPerplexicaHealth,
   checkSkyvernHealth,
+  checkSteelHealth,
 } from "./oss-service-health"
 import {
   checkApolloHealth,
@@ -133,6 +134,7 @@ async function liveBalance(def: SalesIntegrationDefinition): Promise<Pick<SalesI
   if (def.balance === "dataforseo_user_data") return checkDataForSeoHealth()
   if (def.balance === "browserless_pressure") return checkBrowserlessServiceHealth()
   if (def.balance === "stagehand_health") return checkStagehandServiceHealth()
+  if (def.balance === "steel_health") return checkSteelHealth()
   if (def.balance === "mubeng_health") return checkMubengHealth()
   if (def.balance === "chatwoot_health") return checkChatwootHealth()
   if (def.balance === "directus_health") return checkDirectusHealth()
