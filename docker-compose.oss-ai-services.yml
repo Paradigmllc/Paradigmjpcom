@@ -1,7 +1,6 @@
 # Morphic + Perplexica + Skyvern — AI-powered OSS search & automation
 # LLM: DeepSeek V4 (OpenAI-compatible) via api.deepseek.com
 # Deploy: Coolify → Docker Compose Service
-# Traefik routing via coolify external network
 
 x-deepseek-env: &deepseek-env
   OPENAI_API_KEY: ${DEEPSEEK_API_KEY:-sk-placeholder-set-in-coolify}
@@ -12,6 +11,8 @@ services:
   morphic:
     image: ghcr.io/miurla/morphic:2.0.0
     restart: unless-stopped
+    ports:
+      - "3002:3000"
     environment:
       <<: *deepseek-env
       SEARCH_API_KEY: ${MORPHIC_SEARCH_API_KEY:-}
@@ -25,14 +26,7 @@ services:
           memory: 1g
           cpus: "1.0"
     networks:
-      - coolify
       - ai-services
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.morphic.entryPoints=https"
-      - "traefik.http.routers.morphic.rule=Host(`morphic.paradigmjp.com`)"
-      - "traefik.http.routers.morphic.tls=true"
-      - "traefik.http.services.morphic.loadbalancer.server.port=3000"
 
   # ─── Perplexica: AI-powered search ─────────────────────────
   perplexica-backend:
@@ -53,6 +47,8 @@ services:
         limits:
           memory: 1g
           cpus: "1.0"
+    ports:
+      - "3003:3001"
     networks:
       - ai-services
 
@@ -65,20 +61,15 @@ services:
       NEXT_PUBLIC_API_URL: http://perplexica-backend:3001
       NEXT_PUBLIC_WS_URL: ws://perplexica-backend:3001
       NEXT_PUBLIC_APP_URL: https://perplexica.paradigmjp.com
+    ports:
+      - "3004:3000"
     deploy:
       resources:
         limits:
           memory: 512m
           cpus: "0.5"
     networks:
-      - coolify
       - ai-services
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.perplexica.entryPoints=https"
-      - "traefik.http.routers.perplexica.rule=Host(`perplexica.paradigmjp.com`)"
-      - "traefik.http.routers.perplexica.tls=true"
-      - "traefik.http.services.perplexica.loadbalancer.server.port=3000"
 
   perplexica-searxng:
     image: searxng/searxng:2025.5.13-65197a4d9
@@ -93,6 +84,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    ports:
+      - "8081:8080"
     networks:
       - ai-services
 
@@ -109,6 +102,8 @@ services:
       BROWSER_TYPE: chromium-headless
       MAX_WORKERS: "4"
       LOG_LEVEL: INFO
+    ports:
+      - "8000:8000"
     deploy:
       resources:
         limits:
@@ -120,14 +115,7 @@ services:
       skyvern-redis:
         condition: service_started
     networks:
-      - coolify
       - ai-services
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.skyvern.entryPoints=https"
-      - "traefik.http.routers.skyvern.rule=Host(`skyvern.paradigmjp.com`)"
-      - "traefik.http.routers.skyvern.tls=true"
-      - "traefik.http.services.skyvern.loadbalancer.server.port=8000"
 
   skyvern-postgres:
     image: postgres:16-alpine
@@ -160,8 +148,6 @@ services:
 networks:
   ai-services:
     driver: bridge
-  coolify:
-    external: true
 
 volumes:
   perplexica-searxng-data:
