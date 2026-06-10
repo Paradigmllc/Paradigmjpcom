@@ -43,3 +43,4 @@ POST /api/admin/seed-services { confirm: true }
 ### 2026-06-10 Mobile Video Follow-up
 - Mobile diagnostic video iframe now requests portrait `?mobile=1`, permits picture-in-picture, and passes inline playback through the HyperFrames host. TypeScript pre-check and context audit pass before deploy.
 - Deploy retry exposed missing non-English i18n keys during static generation; `src/i18n/request.ts` now deep-merges English messages as the fallback. Local build reached 299/299 static pages; final Windows-only standalone mkdir path issue remains local-environment specific.
+- Production mobile smoke found a video console `Illegal return statement`; fixed the Three.js layer script by wrapping initialization in a function so the fallback early return is valid JavaScript.
