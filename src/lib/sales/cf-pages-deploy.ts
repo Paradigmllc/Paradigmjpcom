@@ -13,8 +13,6 @@ import type { DiagnosticReportData } from "./diagnostic"
 import type { SalesCompany } from "./types"
 import { themeForIndustry } from "./render-quality"
 import { envValue } from "./oss-service-health"
-import { writeFileSync, mkdirSync, existsSync } from "node:fs"
-import { join } from "node:path"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 
 const CF_ACCOUNT_ID = "7ff83549f2bdc7bc62c1d64a698aabf1"
@@ -247,16 +245,7 @@ export async function deployDemoToCfPages(
     const commitMsg = `demo: add ${company.company_name} Astro demo site [skip ci]`
     const committed = await commitToGitHub(contentPath, frontmatter, commitMsg)
 
-    // 3. Write to local disk (for dev mode / fallback)
-    try {
-      const contentDir = join(process.cwd(), "content", "keystatic", "demo-sites")
-      if (!existsSync(contentDir)) mkdirSync(contentDir, { recursive: true })
-      writeFileSync(join(contentDir, `${slug}.mdoc`), frontmatter, "utf8")
-    } catch (fsErr) {
-      console.error("[cf-pages-deploy] local write failed:", fsErr)
-    }
-
-    // 4. Save to Supabase as backup
+    // 3. Save to Supabase web_demos table as backup
     try {
       const sb = getServiceSalesSupabase()
       if (sb) {
@@ -276,6 +265,29 @@ export async function deployDemoToCfPages(
       }
     } catch (dbErr) {
       console.error("[cf-pages-deploy] Supabase save failed:", dbErr)
+    }
+
+    // 4. Write demo_site url back to sales_companies so reports show it
+    try {
+      const sb = getServiceSalesSupabase()
+      if (sb) {
+        const existing = await sb.from("sales_companies").select("meta").eq("id", company.id).maybeSingle()
+        const currentMeta = (existing?.data as { meta?: Record<string, unknown> } | null)?.meta ?? {}
+        await sb.from("sales_companies").update({
+          meta: {
+            ...(currentMeta as Record<string, unknown>),
+            demo_site: {
+              url: demoUrl,
+              type: "astro_cf_pages",
+              slug,
+              committed_to_github: committed,
+              generated_at: new Date().toISOString(),
+            },
+          },
+        }).eq("id", company.id)
+      }
+    } catch (metaErr) {
+      console.error("[cf-pages-deploy] meta update failed:", metaErr)
     }
 
     // 5. Trigger Cloudflare Pages rebuild (redundant if GitHub commit worked, but safe)

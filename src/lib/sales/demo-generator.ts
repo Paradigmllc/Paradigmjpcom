@@ -320,16 +320,33 @@ export async function generateReplacementDemo(
     if (!demoUrl) return { ok: false, demoUrl: null, error: error.message }
   }
 
-  // Fire-and-forget: deploy to Cloudflare Pages (Astro demo pipeline)
-  deployDemoToCfPages(company, report).then((cfResult) => {
-    if (cfResult.ok) {
-      console.warn("[demo-generator] CF Pages deploy triggered:", cfResult.demoUrl)
-    } else {
-      console.error("[demo-generator] CF Pages deploy failed:", cfResult.error)
-    }
-  }).catch((err) => {
+  // Deploy to Cloudflare Pages (Astro demo pipeline) — await so demo_url is saved
+  const cfResult = await deployDemoToCfPages(company, report).catch((err) => {
     console.error("[demo-generator] CF Pages deploy error:", err)
+    return { ok: false as const, demoUrl: undefined, error: String(err) }
   })
+  if (cfResult.ok && cfResult.demoUrl) {
+    console.warn("[demo-generator] CF Pages deploy triggered:", cfResult.demoUrl)
+    // Write demo_site url back to sales_companies.meta so diagnostic reports show it
+    try {
+      const existing = await sb.from("sales_companies").select("meta").eq("id", company.id).maybeSingle()
+      const currentMeta = (existing?.data as { meta?: Record<string, unknown> } | null)?.meta ?? {}
+      await sb.from("sales_companies").update({
+        meta: {
+          ...(currentMeta as Record<string, unknown>),
+          demo_site: {
+            url: cfResult.demoUrl,
+            type: "astro_cf_pages",
+            generated_at: new Date().toISOString(),
+          },
+        },
+      }).eq("id", company.id)
+    } catch (metaErr) {
+      console.error("[demo-generator] meta update failed:", metaErr)
+    }
+  } else {
+    console.error("[demo-generator] CF Pages deploy failed:", cfResult.error)
+  }
 
-  return { ok: true, demoUrl: demoUrl ?? null }
+  return { ok: true, demoUrl: demoUrl ?? cfResult.demoUrl ?? null }
 }
