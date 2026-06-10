@@ -13,7 +13,7 @@ import {
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
-export const maxDuration = 30
+export const maxDuration = 15
 
 type ServiceStatus = "ok" | "error" | "not_configured"
 
@@ -218,11 +218,12 @@ export async function GET(req: NextRequest) {
     checkSearxng(),
     checkDify(),
     checkTriggerDev(),
-    checkCrawl4AiHealth().then((result) => serviceHealthToCheck("Crawl4AI", result, env("CRAWL4AI_BASE_URL"))),
-    checkStagehandHealth().then((result) => serviceHealthToCheck("Stagehand", result, env("STAGEHAND_URL"))),
-    checkSteelHealth().then((result) => serviceHealthToCheck("Steel.dev", result, env("STEEL_BASE_URL"))),
-    checkCrawleeHealth().then((result) => serviceHealthToCheck("Crawlee worker", result, env("CRAWLEE_WORKER_URL"))),
-    checkPlaywrightStealthHealth().then((result) => serviceHealthToCheck("Outreach worker", result, env("OUTREACH_WORKER_URL"))),
+    // External services: timeout after 5s to avoid blocking the health check
+    checkCrawl4AiHealth().then(r => serviceHealthToCheck("Crawl4AI", r, env("CRAWL4AI_BASE_URL"))).catch(() => ({ name: "Crawl4AI", status: "error" as const, detail: "timeout" })),
+    checkStagehandHealth().then(r => serviceHealthToCheck("Stagehand", r, env("STAGEHAND_URL"))).catch(() => ({ name: "Stagehand", status: "error" as const, detail: "timeout" })),
+    checkSteelHealth().then(r => serviceHealthToCheck("Steel.dev", r, env("STEEL_BASE_URL"))).catch(() => ({ name: "Steel.dev", status: "not_configured" as const, detail: "timeout" })),
+    checkCrawleeHealth().then(r => serviceHealthToCheck("Crawlee worker", r, env("CRAWLEE_WORKER_URL"))).catch(() => ({ name: "Crawlee worker", status: "error" as const, detail: "timeout" })),
+    checkPlaywrightStealthHealth().then(r => serviceHealthToCheck("Outreach worker", r, env("OUTREACH_WORKER_URL"))).catch(() => ({ name: "Outreach worker", status: "error" as const, detail: "timeout" })),
   ])
 
   const checks: ServiceCheck[] = [

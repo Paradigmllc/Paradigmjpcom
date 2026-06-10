@@ -162,7 +162,7 @@ export function getCfPagesBaseUrl(): string {
 
 /** Build the full demo URL for a given slug */
 export function getCfPagesDemoUrl(slug: string): string {
-  return `${getCfPagesBaseUrl()}/?slug=${encodeURIComponent(slug)}`
+  return `${getCfPagesBaseUrl()}/${encodeURIComponent(slug)}`
 }
 
 /** Trigger a Cloudflare Pages deployment (rebuilds the entire project) */

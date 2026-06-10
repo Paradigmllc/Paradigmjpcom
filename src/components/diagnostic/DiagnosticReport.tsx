@@ -2,6 +2,7 @@
 
 import { LineChart } from "lucide-react"
 import { useState } from "react"
+import dynamic from "next/dynamic"
 import type { DiagnosticReportData } from "@/lib/sales/diagnostic"
 import { signalScore } from "@/lib/sales/company-intelligence"
 import { labelForIndustry } from "@/lib/sales/render-quality"
@@ -18,7 +19,6 @@ import { ReportFaqSection } from "./ReportFaqSection"
 import { ReportScoreOverview } from "./ReportScoreOverview"
 import { AnimatedBackground } from "./report-visual-effects"
 import { ReadingProgress, BackToTop } from "./report-ui-enhancements"
-import DifyChatbot from "@/components/DifyChatbot"
 import { localeContentVariant } from "@/lib/locale-map"
 import { ReportHeader } from "./ReportHeader"
 import ReportHeroSection from "./ReportHeroSection"
@@ -27,14 +27,17 @@ import ReportFindingCard from "./ReportFindingCard"
 import ReportPainCard from "./ReportPainCard"
 import ReportSignalCard from "./ReportSignalCard"
 import ReportSourceRow from "./ReportSourceRow"
-import ReportRoiCalculator from "./ReportRoiCalculator"
 import ReportFinalCta from "./ReportFinalCta"
 import ReportRequestModal from "./ReportRequestModal"
 import ReportFindingsSection from "./ReportFindingsSection"
-import ReportHyperFramesPlayer from "./ReportHyperFramesPlayer"
 import { ErrorBoundary } from "./ErrorBoundary"
-import ReportVisualEvidenceShowcase from "./ReportVisualEvidenceShowcase"
 import { TRACKING_SCRIPT, PRINT_CSS } from "./report-tracking"
+
+// Heavy components — code-split for faster initial load
+const ReportHyperFramesPlayer = dynamic(() => import("./ReportHyperFramesPlayer"), { ssr: false, loading: () => <div className="aspect-video bg-zinc-100 rounded-2xl animate-pulse" /> })
+const DifyChatbot = dynamic(() => import("@/components/DifyChatbot"), { ssr: false, loading: () => null })
+const ReportRoiCalculator = dynamic(() => import("./ReportRoiCalculator"), { ssr: false, loading: () => <div className="h-32 animate-pulse bg-zinc-100 rounded-2xl" /> })
+const ReportVisualEvidenceShowcase = dynamic(() => import("./ReportVisualEvidenceShowcase"), { ssr: false, loading: () => <div className="h-64 animate-pulse bg-zinc-100 rounded-2xl" /> })
 
 export default function DiagnosticReport({
   data,
