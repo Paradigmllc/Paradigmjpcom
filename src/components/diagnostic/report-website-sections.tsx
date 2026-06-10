@@ -112,6 +112,9 @@ export function AnnotatedScreenshot({ data, lang }: { data: DiagnosticReportData
 // ─── Before/After comparison ────────────────────────────────
 export function BeforeAfterComparison({ data, lang }: { data: DiagnosticReportData; lang: string }) {
   const hasScreenshot = !!data.screenshot_url
+  const steelScreenshot = (data.meta as Record<string, unknown> | null)?.steel as { screenshot?: string } | undefined
+  const steelTitle = (data.meta as Record<string, unknown> | null)?.steel as { title?: string } | undefined
+  const hasSteelScreenshot = !!steelScreenshot?.screenshot
   const hasDemo = !!data.demo_url
 
   if (!hasScreenshot && !hasDemo) return null
@@ -177,7 +180,13 @@ export function BeforeAfterComparison({ data, lang }: { data: DiagnosticReportDa
               <span className="text-xs font-bold text-emerald-700">{lang === "ja" ? "改善後（弊社デモ）" : "AFTER (Our Demo)"}</span>
             </div>
             <div className="p-5">
-              {hasDemo && (
+              {/* Steel.dev screenshot — real browser screenshot of the actual site */}
+              {hasSteelScreenshot && (
+                <div className="rounded-lg border border-emerald-200 overflow-hidden mb-4">
+                  <Image src={steelScreenshot!.screenshot!} alt={steelTitle?.title || "Steel screenshot"} width={1200} height={675} className="w-full" loading="lazy" />
+                </div>
+              )}
+              {!hasSteelScreenshot && hasDemo && (
                 <div className="rounded-lg border border-emerald-200 overflow-hidden mb-4">
                   <div className="aspect-video bg-zinc-100 flex items-center justify-center">
                     <a href={data.demo_url!} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2 text-emerald-600 hover:text-emerald-700 transition-colors">
@@ -185,6 +194,16 @@ export function BeforeAfterComparison({ data, lang }: { data: DiagnosticReportDa
                       <span className="text-sm font-bold">{lang === "ja" ? "デモサイトを見る" : "View Demo Site"}</span>
                       <ExternalLink className="h-4 w-4" />
                     </a>
+                  </div>
+                </div>
+              )}
+              {!hasSteelScreenshot && !hasDemo && (
+                <div className="rounded-lg border border-emerald-200 overflow-hidden mb-4">
+                  <div className="aspect-video bg-emerald-50 flex items-center justify-center">
+                    <div className="text-center text-emerald-600">
+                      <Smartphone className="h-10 w-10 mx-auto mb-2" />
+                      <span className="text-sm font-bold">{lang === "ja" ? "改善イメージ準備中" : "Preview coming soon"}</span>
+                    </div>
                   </div>
                 </div>
               )}

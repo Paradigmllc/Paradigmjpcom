@@ -9,12 +9,13 @@
 import { envValue } from "../oss-service-health"
 
 let _stagehandModule: any = null
+
 async function getStagehand() {
   if (_stagehandModule) return _stagehandModule
   try {
-    const { Stagehand } = await import("@browserbasehq/stagehand")
-    _stagehandModule = { Stagehand }
-    return _stagehandModule
+    const mod = await import("@browserbasehq/stagehand")
+    _stagehandModule = mod
+    return mod
   } catch {
     console.warn("[stagehand-enrich] @browserbasehq/stagehand not installed — using fallback")
     return null
