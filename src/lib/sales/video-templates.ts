@@ -52,14 +52,14 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
   const fear = cleanText(script.fear, t.defaultFear, 104)
   const futureBody = cleanText(script.hope, t.defaultHope, 104)
   const cta = cleanText(script.cta || data.cta_text, t.defaultCta, 104)
-  const firstAct = actAt(data, 0, t.defaultPain)
-  const secondAct = actAt(data, 1, t.defaultFear)
+  const firstAct = actAt(data, 0)
+  const secondAct = actAt(data, 1)
   const metricLabel = cleanText(firstAct?.metric_label, t.coverage, 34)
   const metricValue = cleanText(firstAct?.metric_value, `${data.source_coverage.score}`, 18)
-  const currentScore = percent(firstAct?.metric_value, data.source_coverage.score || 38)
+  const currentScore = pct(firstAct?.metric_value, data.source_coverage.score || 38)
   const targetScore = Math.max(72, currentScore + 18)
   const lossValue = cleanText(data.total_loss, data.report_locale === "ja" ? "要確認" : "TBD", 24)
-  const monthlyLoss = numberFrom(data.total_loss)
+  const monthlyLoss = nf(data.total_loss)
   const annualLoss = monthlyLoss > 0 ? monthlyLoss * 12 : 0
   const annualLabel = annualLoss > 0
     ? data.report_locale === "ja"

@@ -82,8 +82,10 @@ async function runSpiderFootScan(target: string, modules: string[]): Promise<SfR
     if (rdapRes.ok) {
       const rdapData = await rdapRes.json() as Record<string, unknown>
       results.rdap = {
-        registrar: (rdapData as Record<string, unknown>)?.entities?.[0]?.vcardArray?.[1]?.[0]?.[3],
-        created: ((rdapData as Record<string, unknown>)?.events as Array<{ eventAction?: string; eventDate?: string }> | undefined)?.find?.((e) => e.eventAction === "registration")?.eventDate,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        registrar: (rdapData as any)?.entities?.[0]?.vcardArray?.[1]?.[0]?.[3],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        created: (rdapData as any).events?.find?.((e: { eventAction?: string; eventDate?: string }) => e.eventAction === "registration")?.eventDate,
       }
     }
   } catch (e) {
