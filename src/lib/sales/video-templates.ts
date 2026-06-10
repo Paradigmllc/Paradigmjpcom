@@ -152,7 +152,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       <div class="panel site-panel">
         <div class="browser-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><b>${esc(t.current)}</b></div>
         <div class="site-shot-wrap">
-          <img class="site-shot" src="${esc(screenshotUrl)}" alt="${esc(company)} current website screenshot" loading="eager" />
+          <img class="site-shot" src="${esc(screenshotUrl)}" alt="${esc(company)} current website screenshot" loading="eager" crossorigin="anonymous" />
           ${annotationHtml}
           <div class="shot-callout"><span>${esc(metricLabel)}</span><strong>${esc(metricValue)}</strong></div>
         </div>
@@ -180,7 +180,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
           <h2>${esc(t.proof)}</h2>
           <div class="evidence-list">${evidenceHtml}</div>
         </div>
-        <div class="phone-shot"><img src="${esc(mobileScreenshotUrl)}" alt="${esc(company)} mobile website screenshot" loading="lazy" /></div>
+        <div class="phone-shot"><img src="${esc(mobileScreenshotUrl)}" alt="${esc(company)} mobile website screenshot" loading="lazy" crossorigin="anonymous" /></div>
       </div>
     `
     : `
@@ -200,7 +200,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
     *{box-sizing:border-box}     html{--hf-scale:0.001;width:100%;height:100%;overflow:hidden;background:${theme.bg};} body{width:100%;height:100%;margin:0;overflow:hidden;background:${theme.bg};}
     body{font-family:Inter,"Noto Sans JP",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:${theme.panel};}
     svg{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-    [data-composition-id]{width:100%;height:100%;position:relative;overflow:hidden;background:${theme.bg};transform:scale(var(--hf-scale));transform-origin:0 0;aspect-ratio:${format.width}/${format.height}}
+    [data-composition-id]{width:${format.width}px;height:${format.height}px;position:relative;overflow:hidden;background:${theme.bg};transform:scale(var(--hf-scale));transform-origin:0 0}
     #three-layer{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:.8;mix-blend-mode:screen}
     .grid-bg{position:absolute;inset:0;background-image:linear-gradient(${theme.grid} 1px,transparent 1px),linear-gradient(90deg,${theme.grid} 1px,transparent 1px);background-size:72px 72px;mask-image:linear-gradient(90deg,transparent,black 18%,black 82%,transparent);opacity:.72;transform-origin:center}
     .wash{position:absolute;inset:-20%;background:radial-gradient(circle at 18% 18%,${theme.accentSoft}33 0,transparent 22%),radial-gradient(circle at 82% 72%,${theme.accent}30 0,transparent 25%),linear-gradient(135deg,rgba(255,255,255,.06),transparent 45%);filter:blur(3px)}

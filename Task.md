@@ -1,4 +1,4 @@
-## ACTIVE HANDOFF — 2026-06-10 全面実運用監査 → 全修正完了
+## ACTIVE HANDOFF — 2026-06-11 診断レポート修正
 
 ### 監査サマリー — 全項目対応済み
 | 重大度 | 件数 | 状態 |
@@ -32,6 +32,9 @@
 | Keystatic | content/ standalone出力にコピー + RLS追加 |
 | 診断レポート | demo_url 書き戻し + cf-pages-deploy await化 |
 | React | import * as React→named imports 13コンポーネント |
+| Keystatic default-demo | titleフィールド形式修正 (string→{name,slug}) |
+| 動画プレイヤー | [data-composition-id] width/height:100%→固定px化 (scale空白修正) |
+| スクショ画像 | crossorigin="anonymous"追加 + コンテナbg-zinc-100追加 |
 | next/image | screenshot画像に導入 |
 | env設定 | NOTION/Supabase webhook secrets + HYPERFRAMES/STAGEHAND keys |
 

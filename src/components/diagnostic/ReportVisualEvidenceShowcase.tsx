@@ -79,6 +79,7 @@ export default function ReportVisualEvidenceShowcase({
                     src={screenshotUrl}
                     alt={screenshotAlt}
                     loading="lazy"
+                    crossOrigin="anonymous"
                     className="w-full object-cover object-top"
                     onError={() => setImgFailed(true)}
                   />

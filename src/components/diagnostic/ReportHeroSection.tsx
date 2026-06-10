@@ -121,12 +121,13 @@ export default function ReportHeroSection({
                 {lang === "ja" ? "取得済みサイト証拠" : "Captured Site Evidence"}
               </span>
             </div>
-            <div className="relative max-h-[520px] overflow-hidden">
+            <div className="relative max-h-[520px] overflow-hidden bg-zinc-100">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={screenshotUrl}
                 alt={offerCopy.screenshotAlt}
                 loading="eager"
+                crossOrigin="anonymous"
                 className="w-full object-cover object-top"
                 onError={(e) => {
                   const target = e.currentTarget
