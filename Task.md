@@ -90,3 +90,9 @@
 - Template preview now covers 8 variants x 2 languages x 8 industries = 128 base patterns, including DX/AI.
 - Renamed the website report label to `Web制作診断` and aligned English website labels to "Website production" across report offer copy, demo data, preview UI, dashboard cards, layout labels, and tests.
 - Verification: `npx tsc --noEmit` passed; `npx vitest run src/components/diagnostic/report-copy.test.ts` passed from `D:\dev\paradigmjpcom`; `git diff --check` passed; BOM check passed for edited UTF-8 files. Local smoke on `http://localhost:3034/{ja,en}/report/demo/{variant}` returned 200 for all 16 pages, with Hero pins and Visual Evidence present on every variant and no page errors.
+
+### 2026-06-10 Mobile Diagnostic Video Optimization
+- Added a mobile portrait video format for report video HTML: `?mobile=1` now renders a 1080x1920 composition with larger typography, one-column scenes, taller screenshot evidence, and mobile-safe proof/demo panels.
+- Updated the report video player to render a CSS-responsive mobile iframe (`sm:hidden`) from the initial HTML, so mobile does not depend on React hydration timing to switch from the desktop 16:9 video.
+- Added `migration_043_sales_dx_ai_template_variant.sql` to the no-login deploy migration path and aligned the `jp_dx_package` product seed to `dx_ai_package`.
+- Verification: `npx tsc --noEmit`, `git diff --check`, and `npx vitest run src/components/diagnostic/report-copy.test.ts` passed. Local Playwright mobile smoke on port 3035 confirmed direct video route `data-width=1080`, `data-height=1920`, `.is-portrait`, no page errors; embedded report video selected `/video?mobile=1&autoplay=1` with visible 348x619 iframe ratio 1.78 and no page errors.
