@@ -30,7 +30,7 @@ export const TOOL_ORDER: DashboardToolConnection["slug"][] = [
 ]
 
 const TOOL_ENV: Record<DashboardToolConnection["slug"], string | null> = {
-  supabase: "SALES_SUPABASE_URL",
+  supabase: "NEXT_PUBLIC_SUPABASE_URL",
   nocodb: "NOCODB_BASE_URL",
   appsmith: "APPSMITH_BASE_URL",
   twenty: "TWENTY_BASE_URL",
