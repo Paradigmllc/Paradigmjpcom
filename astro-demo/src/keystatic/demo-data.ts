@@ -52,7 +52,7 @@ const APPEAL_CONFIG: Record<AppealType, { labelJa: string; labelEn: string; icon
 /* ═══════════════ Industry-specific Copy ═══════════════ */
 function generateHero(industry: string, appeal: AppealType, lang: "ja" | "en"): { headline: string; subtitle: string } {
   const isJa = lang === "ja"
-  const base = {
+  const base: Record<string, { ja: { headline: string; subtitle: string }; en: { headline: string; subtitle: string } }> = {
     dental: { ja: { headline: "新患数が{val}倍に。データが証明する歯科医院のWeb集患", subtitle: "御院のWebサイトを診断。Googleマップと検索からの予約数を最大化します。" }, en: { headline: "New Patients Up {val}x. Data-Proven Dental Web Marketing", subtitle: "We diagnose your clinic's website and maximize bookings from Google Maps and search." } },
     restaurant: { ja: { headline: "予約率{val}%向上。データドリブンな飲食店Web戦略", subtitle: "メニュー表示、予約導線、Googleマップ最適化で売上を伸ばします。" }, en: { headline: "Reservations Up {val}%. Data-Driven Restaurant Web Strategy", subtitle: "Optimize your menu display, booking flow, and Google Maps presence." } },
     construction: { ja: { headline: "問合せ数{val}倍。建設業のためのWeb集客改善", subtitle: "施工事例の見せ方、問合せフォームの最適化、MEO対策で安定受注を実現します。" }, en: { headline: "Inquiries Up {val}x. Web Lead Gen for Construction", subtitle: "Optimize your portfolio showcase, inquiry forms, and local SEO for consistent project wins." } },
