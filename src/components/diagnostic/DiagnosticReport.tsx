@@ -32,6 +32,7 @@ import ReportFinalCta from "./ReportFinalCta"
 import ReportRequestModal from "./ReportRequestModal"
 import ReportFindingsSection from "./ReportFindingsSection"
 import ReportHyperFramesPlayer from "./ReportHyperFramesPlayer"
+import { ErrorBoundary } from "./ErrorBoundary"
 import ReportVisualEvidenceShowcase from "./ReportVisualEvidenceShowcase"
 import { TRACKING_SCRIPT, PRINT_CSS } from "./report-tracking"
 
@@ -52,15 +53,15 @@ export default function DiagnosticReport({
   const activeLocale = locale ?? data.report_locale
   const confidence = signalScore(intelligence.signals)
   const loss = numericValue(data.total_loss)
-  const topPain = intelligence.painPoints[0]
+  const topPain = intelligence.painPoints?.[0] ?? { label: lang === "ja" ? "改善ポイント" : "Improvement point" }
   const videoHref = trackingSlug
     ? `/${activeLocale}/report/${trackingSlug}/video`
     : null
   const industryLabel = labelForIndustry(data.industry, lang)
-  const visibleSources = [...data.source_coverage.items]
-    .sort((a, b) => b.score - a.score)
+  const visibleSources = (data.source_coverage?.items ?? [])
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
     .slice(0, 14)
-  const calHref = `https://cal.com/paradigm-jp/15min?name=${encodeURIComponent(data.company_name)}`
+  const calHref = `https://cal.com/paradigm-jp/15min?name=${encodeURIComponent(data.company_name ?? "Client")}`
   const displayScreenshotUrl = data.evidence_screenshot_url ?? data.screenshot_url ?? null
 
   const [isDark, setIsDark] = useState(false)
@@ -185,7 +186,14 @@ export default function DiagnosticReport({
         {videoHref && (
           <section className="px-5 pb-10">
             <div className="mx-auto max-w-6xl">
-              <ReportHyperFramesPlayer src={videoHref} lang={lang} />
+              <ErrorBoundary fallback={
+                <p className="text-center text-sm text-zinc-400 py-8">
+                  {lang === "ja" ? "動画を読み込めませんでした。" : "Failed to load video."}
+                  {data.video_url && <a href={data.video_url} className="ml-2 underline hover:text-zinc-600">{lang === "ja" ? "MP4をダウンロード" : "Download MP4"}</a>}
+                </p>
+              }>
+                <ReportHyperFramesPlayer src={videoHref} lang={lang} />
+              </ErrorBoundary>
               {data.video_url && (
                 <p className="mt-2 text-center text-xs text-zinc-400">
                   <a href={data.video_url} download className="hover:text-zinc-300 underline">

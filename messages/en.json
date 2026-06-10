@@ -310,12 +310,30 @@
     "faqEyebrow": "FAQ",
     "faqTitle": "Frequently asked pricing questions",
     "pricingFaqs": [
-      { "q": "Are prices tax-inclusive?", "a": "All displayed prices include tax. We also support Japan's qualified invoice system (インボイス制度)." },
-      { "q": "What payment methods do you accept?", "a": "Bank transfer, credit card (via Stripe), and invoice payment. Web projects: 50% upfront + 50% on delivery. Monthly services: billed end of month, due the following month." },
-      { "q": "Are there any additional costs?", "a": "No extra fees for items listed in your plan. Significant scope changes outside the original spec — such as additional photography, translations, or custom features — will be quoted separately." },
-      { "q": "What is PPP adjustment?", "a": "PPP (Purchasing Power Parity) adjustment automatically scales prices based on your region's cost of living. For example, visitors from Southeast Asia see lower prices than Japan's standard rates. Developed-market visitors see standard Japanese pricing." },
-      { "q": "How much does maintenance cost?", "a": "Post-launch web maintenance starts at ¥19,800/mo (SSL, monitoring, backups, minor fixes). AI maintenance starts at ¥29,800/mo (model updates, incident response, improvements). MEO/SEO monthly plans include maintenance." },
-      { "q": "Is there a minimum contract term?", "a": "Web and AI (lump-sum) projects have no minimum term. MEO/SEO monthly plans require a minimum 6-month commitment." }
+      {
+        "q": "Are prices tax-inclusive?",
+        "a": "All displayed prices include tax. We also support Japan's qualified invoice system (インボイス制度)."
+      },
+      {
+        "q": "What payment methods do you accept?",
+        "a": "Bank transfer, credit card (via Stripe), and invoice payment. Web projects: 50% upfront + 50% on delivery. Monthly services: billed end of month, due the following month."
+      },
+      {
+        "q": "Are there any additional costs?",
+        "a": "No extra fees for items listed in your plan. Significant scope changes outside the original spec — such as additional photography, translations, or custom features — will be quoted separately."
+      },
+      {
+        "q": "What is PPP adjustment?",
+        "a": "PPP (Purchasing Power Parity) adjustment automatically scales prices based on your region's cost of living. For example, visitors from Southeast Asia see lower prices than Japan's standard rates. Developed-market visitors see standard Japanese pricing."
+      },
+      {
+        "q": "How much does maintenance cost?",
+        "a": "Post-launch web maintenance starts at ¥19,800/mo (SSL, monitoring, backups, minor fixes). AI maintenance starts at ¥29,800/mo (model updates, incident response, improvements). MEO/SEO monthly plans include maintenance."
+      },
+      {
+        "q": "Is there a minimum contract term?",
+        "a": "Web and AI (lump-sum) projects have no minimum term. MEO/SEO monthly plans require a minimum 6-month commitment."
+      }
     ]
   },
   "contactPage": {
@@ -926,7 +944,66 @@
     "ctaTitle": "Start with a free audit",
     "ctaHighlight": "free audit",
     "ctaDesc": "We'll audit your Google Business Profile on us.",
-    "ctaButton": "Get a free audit"
+    "ctaButton": "Get a free audit",
+    "processEyebrow": "Process",
+    "processHeading": "MEO 対策の流れ",
+    "process": [
+      {
+        "step": "01",
+        "title": "無料診断",
+        "desc": "現在の Google ビジネスプロフィールを分析し、改善ポイントを洗い出します。"
+      },
+      {
+        "step": "02",
+        "title": "戦略設計",
+        "desc": "競合分析に基づき、最適なカテゴリ・キーワード・投稿戦略を設計します。"
+      },
+      {
+        "step": "03",
+        "title": "運用開始",
+        "desc": "プロフィール最適化・口コミ施策・投稿運用を開始し、継続的に改善します。"
+      }
+    ],
+    "plansTitle": "料金プラン",
+    "plans": [
+      {
+        "name": "エントリー",
+        "price": "29,800",
+        "period": "/月",
+        "desc": "まず始めてみたい方",
+        "features": [
+          "GBP初期最適化",
+          "月2回投稿代行",
+          "順位レポート（月次）"
+        ]
+      },
+      {
+        "name": "スタンダード",
+        "price": "49,800",
+        "period": "/月",
+        "desc": "本格的にMEOに取り組む方",
+        "features": [
+          "GBP完全最適化",
+          "月4回投稿代行",
+          "口コミ獲得施策",
+          "週次レポート",
+          "競合分析"
+        ]
+      },
+      {
+        "name": "プロ",
+        "price": "79,800",
+        "period": "/月",
+        "desc": "複数店舗・エリア制覇",
+        "features": [
+          "複数店舗対応",
+          "毎日投稿",
+          "口コミ管理ツール",
+          "SNS連携",
+          "専任担当者"
+        ]
+      }
+    ]
   },
   "lpSeo": {
     "metaTitle": "SEO / GEO free audit | Paradigm",
@@ -951,7 +1028,67 @@
     "ctaTitle": "Start your AI-era search strategy",
     "ctaHighlight": "AI-era search",
     "ctaDesc": "Free SEO / GEO audit report on request.",
-    "ctaButton": "Get a free audit"
+    "ctaButton": "Get a free audit",
+    "processEyebrow": "Process",
+    "processHeading": "SEO / GEO 対策の流れ",
+    "process": [
+      {
+        "step": "01",
+        "title": "無料サイト診断",
+        "desc": "御社サイトの SEO 状態をスキャンし、AI 検索での表示状況も含めて診断します。"
+      },
+      {
+        "step": "02",
+        "title": "戦略設計",
+        "desc": "診断結果に基づき、キーワード戦略・コンテンツ計画・GEO 最適化方針を策定します。"
+      },
+      {
+        "step": "03",
+        "title": "施策実行",
+        "desc": "記事作成・構造化データ実装・内部 SEO 改善を進め、月次レポートで効果を可視化します。"
+      }
+    ],
+    "plansTitle": "料金プラン",
+    "plans": [
+      {
+        "name": "SEOベーシック",
+        "price": "49,800",
+        "period": "/月",
+        "desc": "内部SEO+コンテンツ",
+        "features": [
+          "サイト診断・改善",
+          "月2本記事作成",
+          "キーワード調査",
+          "月次レポート"
+        ]
+      },
+      {
+        "name": "SEO+GEO",
+        "price": "79,800",
+        "period": "/月",
+        "desc": "SEO+AI検索対策",
+        "features": [
+          "SEOベーシック全機能",
+          "AI検索最適化（GEO）",
+          "構造化データ実装",
+          "月4本記事作成",
+          "競合分析"
+        ]
+      },
+      {
+        "name": "フルパッケージ",
+        "price": "148,000",
+        "period": "/月",
+        "desc": "SEO+GEO+コンテンツ戦略",
+        "features": [
+          "SEO+GEO全機能",
+          "コンテンツ戦略設計",
+          "月8本記事作成",
+          "被リンク施策",
+          "週次ミーティング"
+        ]
+      }
+    ]
   },
   "lpAi": {
     "metaTitle": "AI Integration free consultation | Paradigm",
@@ -1002,7 +1139,72 @@
     "ctaTitle": "Take the first step into AI",
     "ctaHighlight": "AI",
     "ctaDesc": "Free consultation to scope your AI roadmap.",
-    "ctaButton": "Book a free consultation"
+    "ctaButton": "Book a free consultation",
+    "processEyebrow": "Process",
+    "processHeading": "AI 導入の流れ",
+    "process": [
+      {
+        "step": "01",
+        "title": "無料相談・ヒアリング",
+        "desc": "御社の業務課題をヒアリングし、AI で自動化できる領域を特定します。"
+      },
+      {
+        "step": "02",
+        "title": "導入設計",
+        "desc": "最適な AI ツールを選定し、業務フローに合わせた導入プランを設計します。"
+      },
+      {
+        "step": "03",
+        "title": "構築・テスト",
+        "desc": "チャットボット / 自動化ワークフローを構築し、御社環境で動作確認を行います。"
+      },
+      {
+        "step": "04",
+        "title": "運用・改善",
+        "desc": "導入後も定期的に効果を測定し、AI モデルの更新と改善を継続します。"
+      }
+    ],
+    "plansTitle": "料金プラン",
+    "plans": [
+      {
+        "name": "AIスタート",
+        "price": "198,000",
+        "period": "〜",
+        "desc": "チャットボット1つ導入",
+        "features": [
+          "AIチャットボット構築",
+          "FAQ学習（100問）",
+          "サイト埋め込み",
+          "1ヶ月運用サポート"
+        ]
+      },
+      {
+        "name": "AI業務改革",
+        "price": "498,000",
+        "period": "〜",
+        "desc": "業務プロセスのAI化",
+        "features": [
+          "業務フロー分析",
+          "自動化ワークフロー3本",
+          "AIチャットボット",
+          "社内研修（2時間）",
+          "3ヶ月サポート"
+        ]
+      },
+      {
+        "name": "AIフル導入",
+        "price": "980,000",
+        "period": "〜",
+        "desc": "全社AI戦略+開発",
+        "features": [
+          "AI戦略コンサル",
+          "カスタムAI開発",
+          "自動化ワークフロー無制限",
+          "データ分析基盤",
+          "6ヶ月サポート"
+        ]
+      }
+    ]
   },
   "loadingPage": {
     "eyebrow": "Loading",
@@ -1151,7 +1353,108 @@
     "comparisonTitle": "外注の限界 vs WL の構造優位",
     "faqEyebrow": "FAQ",
     "faqTitle": "よくある質問",
-    "recommendedLabel": "Recommended"
+    "recommendedLabel": "Recommended",
+    "steps": [
+      {
+        "step": "01",
+        "title": "Client orders from you",
+        "desc": "Your client only sees your brand. Paradigm is invisible behind the scenes."
+      },
+      {
+        "step": "02",
+        "title": "You submit request via Notion",
+        "desc": "Drop title + assets into a Notion DB. n8n handles the rest automatically."
+      },
+      {
+        "step": "03",
+        "title": "Deliver under your brand",
+        "desc": "MP4 ready in 24-48h. Delivered with your logo, from your domain."
+      }
+    ],
+    "plans": [
+      {
+        "name": "Agency",
+        "price": "$8,000",
+        "period": "/mo",
+        "videos": "Up to 100 videos/mo",
+        "desc": "Mid-size agencies · unlimited clients",
+        "features": [
+          "White-label delivery (zero Paradigm branding)",
+          "Per-client Notion database",
+          "n8n automated request handling",
+          "Slack / Webhook integration",
+          "Monthly check-in (optional)"
+        ]
+      },
+      {
+        "name": "White",
+        "price": "$15,000",
+        "period": "/mo",
+        "videos": "Up to 300 videos/mo",
+        "desc": "Large agencies · custom-branded dashboard",
+        "features": [
+          "Custom-branded dashboard (your domain)",
+          "Per-client delivery reports (WL)",
+          "AI avatar video (Wan2.2 + MuseTalk)",
+          "Dedicated Slack channel + 1 engineer",
+          "Annual billing 25% OFF"
+        ]
+      }
+    ],
+    "comparison": [
+      {
+        "item": "Cost per video (COGS)",
+        "paradigm": "$80",
+        "outsourcing": "$300-800"
+      },
+      {
+        "item": "Bill to client",
+        "paradigm": "$150-400",
+        "outsourcing": "$500-1,500"
+      },
+      {
+        "item": "Gross margin",
+        "paradigm": "85%+",
+        "outsourcing": "30-50%"
+      },
+      {
+        "item": "Turnaround",
+        "paradigm": "24-48 hr",
+        "outsourcing": "1-3 weeks"
+      },
+      {
+        "item": "Scale",
+        "paradigm": "300+/mo flat fee",
+        "outsourcing": "Per-project negotiation"
+      },
+      {
+        "item": "Risk",
+        "paradigm": "Paradigm guarantees quality",
+        "outsourcing": "Freelancer ghosting / burnout"
+      }
+    ],
+    "faqs": [
+      {
+        "q": "Will Paradigm's name ever appear to my clients?",
+        "a": "Never. Deliverables, emails, and invoices all carry your brand. DNS, email sender, and video filenames are all configured under your identity."
+      },
+      {
+        "q": "Is there a client limit?",
+        "a": "Both Agency and White plans have unlimited clients. Monthly billing is based on total video volume (100 or 300), not client count."
+      },
+      {
+        "q": "We already have designers. Won't this overlap?",
+        "a": "It's complementary. Your designers handle creative direction (color, composition). Paradigm handles volume production (template rendering, captions, voice synthesis). This split maximises your margin."
+      },
+      {
+        "q": "Can I cancel anytime?",
+        "a": "Monthly plans cancel any month. Annual billing (25% OFF) requires a 12-month commitment."
+      }
+    ],
+    "ctaEyebrow": "Partnership",
+    "ctaTitle": "Let's audit your video pipeline — 15 minutes",
+    "ctaDesc": "Map your current video workflow, lost deals, and gross margin in 15 minutes. We'll size how much annual revenue the WL model recovers for you.",
+    "ctaButton": "Book a free diagnosis"
   },
   "diagnosticReport": {
     "diagnosticBadge": "診断対象",

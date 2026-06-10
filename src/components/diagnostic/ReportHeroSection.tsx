@@ -128,6 +128,17 @@ export default function ReportHeroSection({
                 alt={offerCopy.screenshotAlt}
                 loading="eager"
                 className="w-full object-cover object-top"
+                onError={(e) => {
+                  const target = e.currentTarget
+                  target.style.display = "none"
+                  const fallback = target.parentElement
+                  if (fallback && !fallback.querySelector(".screenshot-fallback")) {
+                    const div = document.createElement("div")
+                    div.className = "screenshot-fallback flex items-center justify-center h-64 bg-zinc-100 text-zinc-400 text-sm"
+                    div.textContent = lang === "ja" ? "スクリーンショット取得中..." : "Screenshot loading..."
+                    fallback.appendChild(div)
+                  }
+                }}
               />
               <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(244,63,94,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(244,63,94,0.1)_1px,transparent_1px)] bg-[size:56px_56px]" />
               {annotations.slice(0, 2).map((annotation, index) => (
