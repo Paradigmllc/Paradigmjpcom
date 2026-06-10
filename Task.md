@@ -39,3 +39,6 @@ POST /api/admin/seed-posts    { confirm: true }
 POST /api/admin/seed-blog     { confirm: true }
 POST /api/admin/seed-services { confirm: true }
 ```
+
+### 2026-06-10 Mobile Video Follow-up
+- Mobile diagnostic video iframe now requests portrait `?mobile=1`, permits picture-in-picture, and passes inline playback through the HyperFrames host. TypeScript pre-check and context audit pass before deploy.

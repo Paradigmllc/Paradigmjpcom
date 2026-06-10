@@ -25,6 +25,10 @@ type GsapTimeline = {
   timeScale: (value?: number) => number | GsapTimeline
 }
 
+type HyperframesPlayerModule = {
+  defineCustomElement?: () => void
+}
+
 const SPEEDS = [1, 1.25, 1.5, 2] as const
 const CHAPTERS = [
   { start: 0, key: "brief", ja: "要点", en: "Brief" },
@@ -86,7 +90,7 @@ export default function ReportHyperFramesPlayer({ src, lang }: { src: string; la
     async function loadRuntime() {
       try {
         if (!customElements.get("hyperframes-player")) {
-          const mod = await import("@hyperframes/player")
+          const mod = await import("@hyperframes/player") as HyperframesPlayerModule
           if (typeof mod?.defineCustomElement === "function") {
             mod.defineCustomElement()
           }
@@ -239,7 +243,7 @@ export default function ReportHyperFramesPlayer({ src, lang }: { src: string; la
 
   return (
     <div ref={frameRef} data-diagnostic-hf-root data-hf-speed={speed} data-mobile-video="responsive" className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-950 shadow-lg">
-      <iframe ref={mobileIframeRef} src={mobileSrc} className="mx-auto block aspect-[9/16] max-h-[78vh] w-full max-w-[430px] bg-zinc-950 sm:hidden" title={lang === "ja" ? "診断動画" : "Diagnostic video"} allow="autoplay; fullscreen" />
+      <iframe ref={mobileIframeRef} src={mobileSrc} className="mx-auto block aspect-[9/16] max-h-[78vh] w-full max-w-[430px] bg-zinc-950 sm:hidden" title={lang === "ja" ? "診断動画" : "Diagnostic video"} allow="autoplay; fullscreen; picture-in-picture" />
       <div className="hidden sm:block">
       {runtimeReady && playerPresent && !runtimeFailed ? createElement("hyperframes-player", {
         ref: playerRef,
@@ -247,6 +251,7 @@ export default function ReportHyperFramesPlayer({ src, lang }: { src: string; la
         controls: "",
         autoplay: "",
         muted: "",
+        playsinline: "",
         width: "1920",
         height: "1080",
         "playback-rate": String(speed),
@@ -254,7 +259,7 @@ export default function ReportHyperFramesPlayer({ src, lang }: { src: string; la
         className: "block w-full aspect-video bg-zinc-950",
         style: { width: "100%", aspectRatio: "16 / 9", display: "block" },
       } as Record<string, unknown>) : (
-        <iframe ref={iframeRef} src={desktopAutoplaySrc} className="block w-full aspect-video bg-zinc-950" title={lang === "ja" ? "診断動画" : "Diagnostic video"} allow="autoplay; fullscreen" />
+        <iframe ref={iframeRef} src={desktopAutoplaySrc} className="block w-full aspect-video bg-zinc-950" title={lang === "ja" ? "診断動画" : "Diagnostic video"} allow="autoplay; fullscreen; picture-in-picture" />
       )}
       </div>
 

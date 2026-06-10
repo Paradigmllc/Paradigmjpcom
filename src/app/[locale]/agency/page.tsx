@@ -8,6 +8,7 @@
 import type { Metadata } from "next"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
+import { buildServiceSchema } from "@/lib/seo/schemas"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
