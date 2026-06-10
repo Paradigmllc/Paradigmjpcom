@@ -2,7 +2,11 @@ export function buildThreeLayerScript(): string {
   return String.raw`<script type="module">
     import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js";
 
-    const canvas = document.querySelector("[data-three-layer]");
+    const canvas = document.querySelector("#three-layer") || document.querySelector("[data-three-layer]");
+    if (!canvas) {
+      console.warn("[video-three] canvas not found; skipping background layer");
+      throw new Error("three layer canvas missing");
+    }
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(38, 16 / 9, 0.1, 100);
     camera.position.set(0, 0, 8);

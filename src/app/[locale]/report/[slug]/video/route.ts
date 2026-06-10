@@ -31,13 +31,14 @@ export async function GET(
 ) {
   const { locale, slug } = await params
   const region = localeToRegion(locale)
+  const format = _request.nextUrl.searchParams.get("mobile") === "1" ? "portrait" : "landscape"
 
   // Demo slugs: use local demo data without DB
   if (slug.startsWith("demo-")) {
     const variant = slug.replace("demo-", "")
     const data = buildDemoData(variant, locale)
     const script = reportVideoScript(data)
-    const html = buildVariantVideoHtml(data, script)
+    const html = buildVariantVideoHtml(data, script, { format })
     return new Response(html, {
       headers: {
         "Content-Type": "text/html; charset=utf-8",
@@ -52,7 +53,7 @@ export async function GET(
   }
 
   const script = reportVideoScript(data)
-  const html = buildVariantVideoHtml(data, script)
+  const html = buildVariantVideoHtml(data, script, { format })
   return new Response(html, {
     headers: {
       "Content-Type": "text/html; charset=utf-8",

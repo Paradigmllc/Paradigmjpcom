@@ -65,7 +65,7 @@ export interface VariantLayout {
 // ─── Default layout (website_diagnostic) ───
 const DEFAULT_LAYOUT: VariantLayout = {
   variant: "website_diagnostic",
-  label: "Web成長診断",
+  label: "Web制作診断",
   description: "速度・OGP・技術スタックを軸にしたデータドリブン改善提案",
   sections: [
     { id: "hero" },

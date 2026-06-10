@@ -3,6 +3,7 @@
 import { motion } from "framer-motion"
 import { ArrowRight, Check, ExternalLink, Sparkles } from "lucide-react"
 import type { ReactNode } from "react"
+import type { VisualEvidenceAnnotation } from "@/lib/sales/diagnostic"
 import { Pill } from "./report-utils"
 
 export default function ReportHeroSection({
@@ -15,6 +16,8 @@ export default function ReportHeroSection({
   industryLabel,
   targetCountry,
   prefecture,
+  screenshotUrl,
+  annotations = [],
 }: {
   offerCopy: {
     badge: string
@@ -30,6 +33,8 @@ export default function ReportHeroSection({
   industryLabel: string
   targetCountry: string
   prefecture: string | null
+  screenshotUrl?: string | null
+  annotations?: VisualEvidenceAnnotation[]
 }) {
   return (
     <section className="relative overflow-hidden px-5 py-16 sm:py-24">
@@ -101,6 +106,47 @@ export default function ReportHeroSection({
           {prefecture && <Pill>{prefecture}</Pill>}
           <Pill>{offerCopy.reportLabel}</Pill>
         </motion.div>
+        {screenshotUrl && (
+          <motion.div
+            className="mx-auto mt-12 max-w-5xl overflow-hidden rounded-lg border border-zinc-200 bg-white text-left shadow-xl shadow-zinc-200/60"
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+          >
+            <div className="flex h-10 items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-4">
+              <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+              <span className="ml-auto text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
+                {lang === "ja" ? "取得済みサイト証拠" : "Captured Site Evidence"}
+              </span>
+            </div>
+            <div className="relative max-h-[520px] overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={screenshotUrl}
+                alt={offerCopy.screenshotAlt}
+                loading="eager"
+                className="w-full object-cover object-top"
+              />
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(244,63,94,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(244,63,94,0.1)_1px,transparent_1px)] bg-[size:56px_56px]" />
+              {annotations.slice(0, 2).map((annotation, index) => (
+                <div
+                  key={annotation.id}
+                  className="absolute"
+                  style={{ left: `${annotation.x}%`, top: `${annotation.y}%`, transform: "translate(-50%, -50%)" }}
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-rose-600 text-xs font-bold text-white shadow-lg shadow-rose-950/30">
+                    {index + 1}
+                  </span>
+                  <span className="mt-2 hidden max-w-52 rounded-lg border border-rose-200 bg-white/95 px-3 py-2 text-xs font-semibold leading-5 text-rose-700 shadow-lg backdrop-blur sm:block">
+                    {annotation.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </div>
     </section>
   )

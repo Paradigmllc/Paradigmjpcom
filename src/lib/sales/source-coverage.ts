@@ -3,6 +3,10 @@ import type { SalesCompany } from "./types"
 
 type JsonRecord = Record<string, unknown>
 
+function asRecord(value: unknown): JsonRecord {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : {}
+}
+
 export type SourceCoverageStatus =
   | "collected"
   | "configured"
@@ -180,7 +184,10 @@ const SOURCES: SourceDefinition[] = [
     label: "Website Screenshot",
     category: "analysis",
     env: ["BROWSERLESS_URL"],
-    detect: (m) => !!m.screenshot_url,
+    detect: (m) => {
+      const screenshots = asRecord(asRecord(m.visual_evidence).screenshots)
+      return !!m.screenshot_url || ["desktop", "mobile", "variant", "social", "map", "form"].some((slot) => !!asRecord(screenshots[slot]).url)
+    },
     detail: "High-resolution target website screenshot stored in R2"
   },
   { slug: "camoufox", label: "Camoufox", category: "outreach", env: ["CAMOUFOX_WS_URL"], detect: (m) => !!m.camoufox, detail: "Fingerprint-hardened browser escalation" },

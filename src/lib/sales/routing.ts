@@ -28,6 +28,7 @@ export const TEMPLATE_VARIANTS = [
   "video_subscription",
   "subsidy",
   "outreach",
+  "dx_ai_package",
 ] as const
 
 export type TemplateVariant = (typeof TEMPLATE_VARIANTS)[number]

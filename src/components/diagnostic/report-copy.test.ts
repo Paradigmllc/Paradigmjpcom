@@ -23,7 +23,7 @@ describe("diagnostic report customer-facing copy", () => {
   it("switches report offer copy by template variant", () => {
     expect(getReportOfferCopy("en", "japan_entry").reportLabel).toContain("Japan entry")
     expect(getReportOfferCopy("ja", "video_subscription").primaryCta).toContain("動画")
-    expect(getReportOfferCopy("ja", "website_diagnostic").badge).toBe("Web成長診断")
+    expect(getReportOfferCopy("ja", "website_diagnostic").badge).toBe("Web制作診断")
     expect(getReportOfferCopy("en", "website_diagnostic").primaryCta).toContain("demo")
   })
 

@@ -7,7 +7,7 @@ import { INDUSTRY_HOOK_JA, INDUSTRY_HOOK_EN } from "@/lib/sales/diagnostic"
 
 export default function TemplatePreviewPage() {
   const VARIABLES = {
-    variants: ["website_diagnostic", "meo", "security", "japan_entry", "video_subscription", "subsidy", "outreach"] as const,
+    variants: ["website_diagnostic", "meo", "security", "japan_entry", "video_subscription", "subsidy", "outreach", "dx_ai_package"] as const,
     langs: ["ja", "en"] as const,
     industries: ["beauty_salon", "dental", "restaurant", "construction", "accounting", "retail", "cleaning", "consulting"] as const,
   }
@@ -17,7 +17,7 @@ export default function TemplatePreviewPage() {
   const INDUSTRIES = VARIABLES.industries
 
   const variantDescriptions: Record<string, string> = {
-    website_diagnostic: "Web成長診断",
+    website_diagnostic: "Web制作診断",
     meo: "MEO診断",
     security: "セキュリティ診断",
     japan_entry: "日本参入診断",
@@ -43,7 +43,7 @@ export default function TemplatePreviewPage() {
     if (lang === "ja") return (INDUSTRY_HOOK_JA as Record<string, string>)[industry] ?? "—"
     return (INDUSTRY_HOOK_EN as Record<string, string>)[industry] ?? "—"
   }
-  // Total patterns: 7 variants × 2 full langs × 8 industries = 112 basic combinations
+  // Total patterns: 8 variants × 2 full langs × 8 industries = 128 basic combinations
   // Plus issue combos, making it effectively ~500 unique report patterns
 
   return (
@@ -52,7 +52,7 @@ export default function TemplatePreviewPage() {
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-zinc-900">診断レポート テンプレートプレビュー</h1>
           <p className="mt-2 text-sm text-zinc-500">
-            7 variants × 2 languages × 8 industries = <strong>112 base patterns</strong> × issue combinations = ~500 unique reports
+            8 variants × 2 languages × 8 industries = <strong>128 base patterns</strong> × issue combinations = ~500 unique reports
           </p>
         </div>
 
@@ -101,7 +101,7 @@ export default function TemplatePreviewPage() {
             <CountCard label="言語（ENフォールバック）" value={10} sub="ko, zh, de, fr, es, pt, ru, ar, vi, id" />
             <CountCard label="業種" value={INDUSTRIES.length} sub="美容室, 歯科, 飲食, 建設, 会計, 小売, 清掃, コンサル" />
             <CountCard label="課題コード" value={7} sub="speed, ssl, wp, ogp, sns, copyright, ua残存" />
-            <CountCard label="ベースパターン" value={7 * 2 * 8} sub="variant × lang × industry" highlight />
+            <CountCard label="ベースパターン" value={8 * 2 * 8} sub="variant × lang × industry" highlight />
             <CountCard label="推定固有パターン" value="~500" sub="課題組み合わせ + パーソナライズ" highlight />
           </div>
         </div>

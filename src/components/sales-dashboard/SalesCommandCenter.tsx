@@ -162,7 +162,7 @@ function TemplateManagementPanel({ data }: { data: SalesDashboardData }) {
         <div className="p-4">
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              { variant: "website_diagnostic", label: "Web成長診断", desc: "速度・OGP・技術スタック" },
+              { variant: "website_diagnostic", label: "Web制作診断", desc: "速度・OGP・技術スタック" },
               { variant: "meo", label: "MEO診断", desc: "Googleマップ・口コミ" },
               { variant: "security", label: "セキュリティ診断", desc: "SSL・脆弱性・証明書" },
               { variant: "japan_entry", label: "日本参入診断", desc: "法規制・決済・ロードマップ" },

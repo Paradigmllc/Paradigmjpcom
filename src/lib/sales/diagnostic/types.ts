@@ -15,6 +15,29 @@ export interface DiagnosticAct {
   severity: Severity
 }
 
+export interface VisualEvidenceAnnotation {
+  id: string
+  label: string
+  body: string
+  severity: Severity
+  x: number
+  y: number
+}
+
+export interface ImprovementPreview {
+  headline: string
+  before: string
+  after: string
+  ctaLabel: string
+}
+
+export interface VisitorJourneyStep {
+  id: string
+  label: string
+  detail: string
+  status: "blocked" | "weak" | "ready"
+}
+
 export interface DiagnosticReportData {
   company_name: string
   report_locale: ReportLocale
@@ -30,6 +53,12 @@ export interface DiagnosticReportData {
   video_thumbnail: string | null
   demo_url: string | null
   screenshot_url?: string | null
+  screenshot_mobile_url?: string | null
+  evidence_screenshot_url?: string | null
+  evidence_screenshot_kind?: string | null
+  visual_annotations?: VisualEvidenceAnnotation[]
+  improvement_preview?: ImprovementPreview
+  visitor_journey?: VisitorJourneyStep[]
   source_coverage: SourceCoverageSnapshot
   intelligence: CompanyIntelligence
   meta?: Record<string, unknown>

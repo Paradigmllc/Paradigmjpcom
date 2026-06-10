@@ -41,7 +41,7 @@ const PRODUCTS = [
     code: "jp_dx_package",
     display_name: "DXパッケージ",
     market_scope: "jp",
-    template_variant: "outreach",
+    template_variant: "dx_ai_package",
     default_currency: "JPY",
     default_amount_yen: 650000,
     is_subscription: false,
@@ -304,6 +304,10 @@ async function applySalesVideoTriggerColumnsMigration(envs) {
   return applySqlMigration(envs, "migration_041_sales_video_trigger_columns.sql", "Sales video Trigger.dev columns migration")
 }
 
+async function applySalesDxAiTemplateVariantMigration(envs) {
+  return applySqlMigration(envs, "migration_043_sales_dx_ai_template_variant.sql", "Sales DX/AI template variant migration")
+}
+
 function applyContentTemplates(envs) {
   const { url, key } = salesSupabase(envs)
   const result = spawnSync(process.execPath, ["scripts/seed-sales-content-templates.mjs"], {
@@ -401,6 +405,7 @@ async function main() {
     console.log(await applySalesAiPromptsRepairMigration(envs))
     console.log(await applySalesTriggerDevToolSlugMigration(envs))
     console.log(await applySalesVideoTriggerColumnsMigration(envs))
+    console.log(await applySalesDxAiTemplateVariantMigration(envs))
     console.log(applyContentTemplates(envs))
   } else {
     console.log("Dry run: skipped Supabase product upsert")

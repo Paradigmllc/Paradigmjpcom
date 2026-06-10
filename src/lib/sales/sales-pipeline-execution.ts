@@ -14,6 +14,7 @@ import { getR2StorageConfig, sanitizeR2ObjectName } from "./r2-storage"
 import { generateSalesAsset } from "./sales-assets"
 import { syncCompanyKarteToTwenty } from "./twenty-sync"
 import { createVideoJob, runVideoJobAction } from "./video-pipeline"
+import { ensureCompanyVisualEvidence } from "./visual-evidence"
 
 import type {
   JsonRecord,
@@ -200,6 +201,12 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
   }
 
   if (step.step_key === "report_generate") {
+    const visualEvidence = await ensureCompanyVisualEvidence({
+      sb,
+      companyId: run.company_id,
+      viewports: ["desktop", "mobile"],
+      maxAgeDays: 14,
+    })
     const reportAsset = await generateSalesAsset({
       companyIdOrSlugOrDomain: run.company_id,
       assetType: "diagnostic_report",
@@ -211,6 +218,15 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
         asset_type: reportAsset.asset_type,
         delivery_id: reportAsset.delivery_id ?? null,
         template_title: reportAsset.content_template?.title ?? null,
+        visual_evidence_ready: visualEvidence.ok,
+        visual_evidence_screenshots: visualEvidence.screenshots.map((shot) => ({
+          viewport: shot.viewport,
+          provider: shot.provider,
+          url: shot.url,
+        })),
+        visual_evidence_skipped: visualEvidence.skipped,
+        visual_evidence_errors: visualEvidence.errors,
+        visual_evidence_variant_target: visualEvidence.variantTarget,
       },
     })
     return

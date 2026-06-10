@@ -47,9 +47,19 @@ function chapterIndex(time: number): number {
   return active
 }
 
+function withVideoParams(src: string, params: Record<string, string>): string {
+  const [withoutHash, hash = ""] = src.split("#")
+  const [path, query = ""] = withoutHash.split("?")
+  const search = new URLSearchParams(query)
+  Object.entries(params).forEach(([key, value]) => search.set(key, value))
+  const suffix = search.toString()
+  return `${path}${suffix ? `?${suffix}` : ""}${hash ? `#${hash}` : ""}`
+}
+
 export default function ReportHyperFramesPlayer({ src, lang }: { src: string; lang: ReportLang }) {
   const playerRef = useRef<HyperframesPlayerElement | null>(null)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
+  const mobileIframeRef = useRef<HTMLIFrameElement | null>(null)
   const frameRef = useRef<HTMLDivElement | null>(null)
   const [runtimeReady, setRuntimeReady] = useState(false)
   const [runtimeFailed, setRuntimeFailed] = useState(false)
@@ -91,6 +101,7 @@ export default function ReportHyperFramesPlayer({ src, lang }: { src: string; la
   }, [copy.loadError])
 
   function targetIframe(): HTMLIFrameElement | null {
+    if (window.matchMedia("(max-width: 640px)").matches) return mobileIframeRef.current ?? playerRef.current?.iframeElement ?? iframeRef.current
     return playerRef.current?.iframeElement ?? iframeRef.current
   }
 
@@ -213,9 +224,13 @@ export default function ReportHyperFramesPlayer({ src, lang }: { src: string; la
   }
 
   const activeChapter = chapterIndex(currentTime)
+  const mobileSrc = withVideoParams(src, { mobile: "1", autoplay: "1" })
+  const desktopAutoplaySrc = withVideoParams(src, { autoplay: "1" })
 
   return (
-    <div ref={frameRef} data-diagnostic-hf-root data-hf-speed={speed} className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-950 shadow-lg">
+    <div ref={frameRef} data-diagnostic-hf-root data-hf-speed={speed} data-mobile-video="responsive" className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-950 shadow-lg">
+      <iframe ref={mobileIframeRef} src={mobileSrc} className="mx-auto block aspect-[9/16] max-h-[78vh] w-full max-w-[430px] bg-zinc-950 sm:hidden" title={lang === "ja" ? "診断動画" : "Diagnostic video"} allow="autoplay; fullscreen" />
+      <div className="hidden sm:block">
       {runtimeReady && !runtimeFailed ? createElement("hyperframes-player", {
         ref: playerRef,
         src,
@@ -229,8 +244,9 @@ export default function ReportHyperFramesPlayer({ src, lang }: { src: string; la
         className: "block w-full aspect-video bg-zinc-950",
         style: { width: "100%", aspectRatio: "16 / 9", display: "block" },
       } as Record<string, unknown>) : (
-        <iframe ref={iframeRef} src={`${src}?autoplay=1`} className="block w-full aspect-video bg-zinc-950" title={lang === "ja" ? "診断動画" : "Diagnostic video"} allow="autoplay; fullscreen" />
+        <iframe ref={iframeRef} src={desktopAutoplaySrc} className="block w-full aspect-video bg-zinc-950" title={lang === "ja" ? "診断動画" : "Diagnostic video"} allow="autoplay; fullscreen" />
       )}
+      </div>
 
       <div className="relative z-20 rounded-xl border border-white/15 bg-zinc-950 px-2 py-2 text-white shadow-2xl sm:absolute sm:inset-x-3 sm:top-3 sm:rounded-2xl sm:bg-zinc-950/78 sm:px-4 sm:py-3 sm:backdrop-blur">
         <div className="mb-1.5 flex items-center justify-between gap-3 text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-300 sm:mb-2 sm:text-[11px] sm:tracking-[0.18em]">

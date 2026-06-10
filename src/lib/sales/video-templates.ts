@@ -6,20 +6,9 @@
  */
 import type { DiagnosticAct, DiagnosticReportData } from "./diagnostic"
 import { videoLabels } from "./video-template-labels"
+import { videoTemplateFormat, type VideoTemplateFormat } from "./video-template-format"
 import { buildThreeLayerScript } from "./video-template-three"
-
-interface VideoTheme {
-  bg: string
-  panel: string
-  panelSoft: string
-  ink: string
-  muted: string
-  accent: string
-  accentSoft: string
-  danger: string
-  rule: string
-  grid: string
-}
+import { SVG, themeForVariant } from "./video-template-theme"
 
 interface VideoScript {
   hook: string
@@ -29,12 +18,11 @@ interface VideoScript {
   cta: string
 }
 
-const CORRUPT_TEXT = /驍ｵ・ｺ|驛｢|髫ｴ|鬮ｫ|髯桍鬯ｮ|髯毫鬨ｾ|髣培鬮ｯ|髯弓髫ｲ|髯ｷ|郢掟邵ｺ|隴斈陋ｻ|陷・陷鋼隹ｺ|・・繝ｻ/
-
-const SVG = {
-  arrow: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-5 5 5-5 5"/></svg>', chart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h16M8 16v-4m5 4V8m5 8v-7"/></svg>',
-  check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg>', radar: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 21 8v8l-9 5-9-5V8l9-5Zm0 4v10m-5-7 10 6m0-6L7 16"/></svg>',
+interface VideoTemplateOptions {
+  format?: VideoTemplateFormat
 }
+
+const CORRUPT_TEXT = /驍ｵ・ｺ|驛｢|髫ｴ|鬮ｫ|髯桍鬯ｮ|髯毫鬨ｾ|髣培鬮ｯ|髯弓髫ｲ|髯ｷ|郢掟邵ｺ|隴斈陋ｻ|陷・陷鋼隹ｺ|・・繝ｻ/
 
 function esc(value: string | null | undefined): string {
   return String(value ?? "")
@@ -62,82 +50,12 @@ function percent(value: string | null | undefined, fallback: number): number {
   return Math.max(8, Math.min(100, n || fallback))
 }
 
-function themeForVariant(variant: string): VideoTheme {
-  if (variant === "meo") {
-    return {
-      bg: "#07130d",
-      panel: "#f4fbf6",
-      panelSoft: "#e6f4ea",
-      ink: "#102016",
-      muted: "#5d7567",
-      accent: "#15803d",
-      accentSoft: "#bbf7d0",
-      danger: "#b42318",
-      rule: "rgba(21,128,61,.24)",
-      grid: "rgba(187,247,208,.12)",
-    }
-  }
-  if (variant === "security") {
-    return {
-      bg: "#140707",
-      panel: "#fff7f4",
-      panelSoft: "#fee4dc",
-      ink: "#26100d",
-      muted: "#82655f",
-      accent: "#dc2626",
-      accentSoft: "#fecaca",
-      danger: "#991b1b",
-      rule: "rgba(220,38,38,.24)",
-      grid: "rgba(254,202,202,.13)",
-    }
-  }
-  if (variant === "japan_entry") {
-    return {
-      bg: "#07111e",
-      panel: "#f4f8ff",
-      panelSoft: "#dbeafe",
-      ink: "#0b1b33",
-      muted: "#53677f",
-      accent: "#2563eb",
-      accentSoft: "#bfdbfe",
-      danger: "#c2410c",
-      rule: "rgba(37,99,235,.24)",
-      grid: "rgba(191,219,254,.13)",
-    }
-  }
-  if (variant === "video_subscription") {
-    return {
-      bg: "#100b16",
-      panel: "#fbf7ff",
-      panelSoft: "#ede9fe",
-      ink: "#1d1427",
-      muted: "#6f607c",
-      accent: "#7c3aed",
-      accentSoft: "#ddd6fe",
-      danger: "#be123c",
-      rule: "rgba(124,58,237,.24)",
-      grid: "rgba(221,214,254,.13)",
-    }
-  }
-  return {
-    bg: "#081018",
-    panel: "#f8fafc",
-    panelSoft: "#e0f2fe",
-    ink: "#0d1824",
-    muted: "#587084",
-    accent: "#0ea5e9",
-    accentSoft: "#bae6fd",
-    danger: "#d04f1f",
-    rule: "rgba(14,165,233,.24)",
-    grid: "rgba(186,230,253,.12)",
-  }
-}
-
 function actAt(data: DiagnosticReportData, index: number, fallback: string): DiagnosticAct | null {
   return data.acts[index] ?? data.acts.find((act) => !CORRUPT_TEXT.test(act.headline)) ?? null
 }
-export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoScript): string {
+export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoScript, options: VideoTemplateOptions = {}): string {
   const theme = themeForVariant(data.template_variant)
+  const format = videoTemplateFormat(options.format, theme)
   const t = videoLabels(data.report_locale)
   const company = cleanText(data.company_name, "Target company", 56)
   const hook = cleanText(script.hook || data.hook, t.defaultHook, 92)
@@ -170,6 +88,9 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
     : "After the fix, visitors should move cleanly toward booking"
   const reportUrl = cleanText(data.report_url, "paradigmjp.com", 74)
   const demoUrl = data.demo_url ? cleanText(data.demo_url, "", 74) : ""
+  const primaryScreenshotUrl = data.evidence_screenshot_url ?? data.screenshot_url
+  const screenshotUrl = primaryScreenshotUrl ? cleanText(primaryScreenshotUrl, "", 240) : ""
+  const mobileScreenshotUrl = data.screenshot_mobile_url ? cleanText(data.screenshot_mobile_url, "", 240) : ""
   const signals = data.source_coverage.items
     .filter((item) => item.score > 0)
     .slice(0, 4)
@@ -185,6 +106,42 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
         { category: "UX", label: data.report_locale === "ja" ? "問い合わせ前の迷い" : "Inquiry path", score: 54 },
         { category: "Proof", label: data.report_locale === "ja" ? "信頼判断の材料" : "Trust proof", score: 46 },
       ]
+  const annotations = (data.visual_annotations ?? []).slice(0, 3)
+  const annotationHtml = annotations.map((annotation, index) => `
+    <div class="audit-pin severity-${esc(annotation.severity)}" style="left:${annotation.x}%;top:${annotation.y}%">
+      <b>${index + 1}</b>
+      <span><strong>${esc(cleanText(annotation.label, "Finding", 42))}</strong><em>${esc(cleanText(annotation.body, "Visible conversion friction", 72))}</em></span>
+    </div>
+  `).join("")
+  const preview = data.improvement_preview
+  const journey = (data.visitor_journey ?? []).slice(0, 4)
+  const journeyHtml = journey.map((step, index) => `
+    <div class="route-step status-${esc(step.status)}">
+      <b>${index + 1}</b>
+      <span><strong>${esc(cleanText(step.label, "Step", 28))}</strong><em>${esc(cleanText(step.detail, "Decision path", 64))}</em></span>
+    </div>
+  `).join("")
+  const previewHtml = preview
+    ? `
+      <div class="after-preview">
+        <div class="before-pane">
+          <span>Before</span>
+          <p>${esc(cleanText(preview.before, "Value, proof, and action are disconnected.", 96))}</p>
+        </div>
+        <div class="after-pane">
+          <span>After</span>
+          <strong>${esc(cleanText(preview.headline, "Clear path to action", 58))}</strong>
+          <p>${esc(cleanText(preview.after, "Make the next action obvious.", 96))}</p>
+          <b>${esc(cleanText(preview.ctaLabel, "Visit -> consult", 32))}</b>
+        </div>
+      </div>
+    `
+    : `
+      <div class="demo-body">
+        <div class="demo-hero"><b></b><i></i></div>
+        <div class="demo-cards"><span></span><span></span><span></span></div>
+      </div>
+    `
 
   const evidenceHtml = evidenceRows.map((row, index) => `
     <div class="evidence-row" style="--delay:${index * 0.08}s">
@@ -207,6 +164,48 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
   const nodeHtml = evidenceRows.map((row, index) => `
     <span class="data-node" style="--x:${16 + index * 17}%;--y:${26 + (index % 3) * 18}%;--s:${Math.max(12, row.score / 4)}px"></span>
   `).join("")
+  const heroPanelHtml = screenshotUrl
+    ? `
+      <div class="panel site-panel">
+        <div class="browser-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><b>${esc(t.current)}</b></div>
+        <div class="site-shot-wrap">
+          <img class="site-shot" src="${esc(screenshotUrl)}" alt="${esc(company)} current website screenshot" />
+          ${annotationHtml}
+          <div class="shot-callout"><span>${esc(metricLabel)}</span><strong>${esc(metricValue)}</strong></div>
+        </div>
+      </div>
+    `
+    : `
+      <div class="panel score-card">
+        <div>
+          <h2>${esc(metricLabel)}</h2>
+          <p>${esc(pain)}</p>
+        </div>
+        <div>
+          <div class="score-main"><span>${esc(t.coverage)}</span><strong class="count" data-count="${data.source_coverage.score}">0</strong></div>
+          <div class="bar-duo">
+            <div><div class="bar current"><label>${esc(t.current)}</label><i style="--h:${currentScore}%"></i></div></div>
+            <div><div class="bar target"><label>${esc(t.target)}</label><i style="--h:${targetScore}%"></i></div></div>
+          </div>
+        </div>
+      </div>
+    `
+  const proofPanelHtml = mobileScreenshotUrl
+    ? `
+      <div class="panel proof-grid">
+        <div>
+          <h2>${esc(t.proof)}</h2>
+          <div class="evidence-list">${evidenceHtml}</div>
+        </div>
+        <div class="phone-shot"><img src="${esc(mobileScreenshotUrl)}" alt="${esc(company)} mobile website screenshot" /></div>
+      </div>
+    `
+    : `
+      <div class="panel">
+        <h2>${esc(t.proof)}</h2>
+        <div class="evidence-list">${evidenceHtml}</div>
+      </div>
+    `
 
   return `<!doctype html>
 <html lang="${esc(data.report_locale)}">
@@ -219,7 +218,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
     *{box-sizing:border-box} html{--hf-scale:1;width:100%;height:100%;overflow:hidden;background:${theme.bg};} body{width:100%;height:100%;margin:0;overflow:hidden;background:${theme.bg};}
     body{font-family:Inter,"Noto Sans JP",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:${theme.panel};}
     svg{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-    [data-composition-id]{width:1920px;height:1080px;position:relative;overflow:hidden;background:${theme.bg};transform:scale(var(--hf-scale));transform-origin:0 0;}
+    [data-composition-id]{width:${format.width}px;height:${format.height}px;position:relative;overflow:hidden;background:${theme.bg};transform:scale(var(--hf-scale));transform-origin:0 0;}
     #three-layer{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:.8;mix-blend-mode:screen}
     .grid-bg{position:absolute;inset:0;background-image:linear-gradient(${theme.grid} 1px,transparent 1px),linear-gradient(90deg,${theme.grid} 1px,transparent 1px);background-size:72px 72px;mask-image:linear-gradient(90deg,transparent,black 18%,black 82%,transparent);opacity:.72;transform-origin:center}
     .wash{position:absolute;inset:-20%;background:radial-gradient(circle at 18% 18%,${theme.accentSoft}33 0,transparent 22%),radial-gradient(circle at 82% 72%,${theme.accent}30 0,transparent 25%),linear-gradient(135deg,rgba(255,255,255,.06),transparent 45%);filter:blur(3px)}
@@ -269,19 +268,26 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
     .metric{padding:18px;border-radius:18px;background:${theme.panelSoft};min-height:104px}.metric span{display:block;color:${theme.muted};font-size:13px;font-weight:800;text-transform:uppercase}.metric strong{display:block;margin-top:12px;font-size:34px;line-height:1.08;color:${theme.ink};overflow-wrap:anywhere}
     .loss-number{font-size:58px;line-height:.98;color:${theme.danger};font-weight:850;letter-spacing:0;margin-top:22px;overflow-wrap:anywhere}
     .demo-window{overflow:hidden;padding:0}.browser-bar{height:48px;background:${theme.panelSoft};display:flex;align-items:center;gap:9px;padding:0 18px}.dot{width:12px;height:12px;border-radius:50%;background:${theme.accent}}.dot:nth-child(2){opacity:.55}.dot:nth-child(3){opacity:.3}
+    .browser-bar b{margin-left:auto;color:${theme.muted};font-size:12px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
+    .site-panel{overflow:hidden;padding:0}.site-shot-wrap{position:relative;height:344px;background:${theme.panelSoft};overflow:hidden}.site-shot{width:100%;height:100%;object-fit:cover;object-position:top;display:block;filter:saturate(.92) contrast(1.02)}.site-shot-wrap::after{content:"";position:absolute;inset:0;border:2px solid ${theme.accent};opacity:.18;pointer-events:none}.shot-callout{position:absolute;right:20px;bottom:20px;max-width:220px;border-radius:18px;background:${theme.panel};padding:15px 18px;box-shadow:0 22px 58px rgba(0,0,0,.26)}.shot-callout span{display:block;color:${theme.muted};font-size:12px;font-weight:850;text-transform:uppercase}.shot-callout strong{display:block;margin-top:8px;color:${theme.accent};font-size:34px;line-height:1}
+    .audit-pin{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:10px;max-width:250px}.audit-pin b{display:grid;place-items:center;width:34px;height:34px;border:3px solid white;border-radius:50%;background:${theme.danger};color:white;font-size:14px;box-shadow:0 18px 42px rgba(0,0,0,.35)}.audit-pin span{display:block;border:1px solid rgba(255,255,255,.65);border-radius:14px;background:rgba(255,255,255,.94);padding:10px 12px;color:${theme.ink};box-shadow:0 18px 42px rgba(0,0,0,.24)}.audit-pin strong{display:block;font-size:12px;line-height:1.2}.audit-pin em{display:block;margin-top:4px;color:${theme.muted};font-size:10px;line-height:1.35;font-style:normal}
+    .proof-grid{display:grid;grid-template-columns:minmax(0,1fr) 132px;gap:18px;align-items:stretch}.phone-shot{border:8px solid ${theme.ink};border-radius:28px;background:${theme.ink};overflow:hidden;min-height:300px;box-shadow:0 24px 64px rgba(0,0,0,.22)}.phone-shot img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
     .demo-body{padding:28px;display:grid;gap:18px}.demo-hero{height:108px;border-radius:20px;background:linear-gradient(135deg,${theme.ink},${theme.accent});padding:22px;color:white}.demo-hero b{display:block;width:70%;height:16px;background:white;border-radius:999px;opacity:.92}.demo-hero i{display:block;width:48%;height:10px;background:white;border-radius:999px;opacity:.42;margin-top:16px}
     .demo-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.demo-cards span{height:78px;border-radius:16px;background:${theme.panelSoft};border:1px solid rgba(13,24,36,.08)}
+    .after-preview{display:grid;grid-template-columns:.8fr 1fr;gap:12px;padding:18px}.before-pane,.after-pane{min-height:170px;border-radius:18px;padding:16px}.before-pane{background:#fff1f2;border:1px solid #fecdd3;color:#9f1239}.after-pane{background:${theme.panelSoft};border:1px solid ${theme.rule};color:${theme.ink}}.before-pane span,.after-pane span{display:block;font-size:11px;font-weight:850;letter-spacing:.12em;text-transform:uppercase}.before-pane p,.after-pane p{margin-top:10px;color:inherit;font-size:13px;line-height:1.45}.after-pane strong{display:block;margin-top:8px;font-size:20px;line-height:1.14}.after-pane b{display:inline-flex;margin-top:12px;border-radius:999px;background:${theme.accent};padding:8px 11px;color:white;font-size:12px}.route-replay{display:grid;gap:10px;padding:0 18px 18px}.route-step{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start;border:1px solid rgba(13,24,36,.09);border-radius:14px;background:white;padding:10px 12px}.route-step>b{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:${theme.ink};color:white;font-size:11px}.route-step strong{display:block;color:${theme.ink};font-size:13px}.route-step em{display:block;margin-top:3px;color:${theme.muted};font-size:11px;line-height:1.3;font-style:normal}
     .cta-box{max-width:920px}.cta-box h1{max-width:920px;font-size:48px}.cta-actions{display:flex;justify-content:center;gap:14px;margin-top:30px}.action{display:inline-flex;align-items:center;gap:10px;border:1px solid ${theme.rule};border-radius:999px;padding:13px 18px;background:rgba(255,255,255,.1);font-size:15px;font-weight:800;color:white}.action.primary{background:${theme.panel};color:${theme.ink};border-color:transparent}
     .footer{position:absolute;left:44px;right:44px;bottom:30px;z-index:20;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;color:rgba(255,255,255,.42);font-size:13px;font-weight:720;letter-spacing:.08em;text-transform:uppercase}.footer div:nth-child(3){text-align:right}.progress{height:4px;background:rgba(255,255,255,.12);border-radius:999px;overflow:hidden}.progress i{display:block;width:0;height:100%;background:${theme.accentSoft}}
+    ${format.extraCss}
   </style>
 </head>
 <body>
   <div
     data-composition-id="diagnostic-report-video"
+    class="${format.className}"
     data-start="0"
     data-duration="36"
-    data-width="1920"
-    data-height="1080"
+    data-width="${format.width}"
+    data-height="${format.height}"
     data-hf-frameworks="hyperframes-player gsap css catalog:data-chart catalog:shimmer-sweep catalog:caption-highlight catalog:flash-through-white catalog:transitions-blur"
   >
     <div class="clip wash" data-start="0" data-duration="36" data-track-index="0"></div>
@@ -301,19 +307,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
         <p class="lead">${esc(hook)}</p>
         <span class="caption-band">${esc(metricLabel)}: ${esc(metricValue)}</span>
       </div>
-      <div class="panel score-card">
-        <div>
-          <h2>${esc(metricLabel)}</h2>
-          <p>${esc(pain)}</p>
-        </div>
-        <div>
-          <div class="score-main"><span>${esc(t.coverage)}</span><strong class="count" data-count="${data.source_coverage.score}">0</strong></div>
-          <div class="bar-duo">
-            <div><div class="bar current"><label>${esc(t.current)}</label><i style="--h:${currentScore}%"></i></div></div>
-            <div><div class="bar target"><label>${esc(t.target)}</label><i style="--h:${targetScore}%"></i></div></div>
-          </div>
-        </div>
-      </div>
+      ${heroPanelHtml}
     </section>
 
     <section id="scene-evidence" class="clip scene scene-evidence" data-start="7" data-duration="7" data-track-index="1">
@@ -323,10 +317,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
         <p class="lead">${esc(cleanText(firstAct?.body, pain, 150))}</p>
         <span class="caption-band">${esc(evidenceRows[0]?.label ?? metricLabel)}</span>
       </div>
-      <div class="panel">
-        <h2>${esc(t.proof)}</h2>
-        <div class="evidence-list">${evidenceHtml}</div>
-      </div>
+      ${proofPanelHtml}
     </section>
 
     <section id="scene-loss" class="clip scene scene-loss" data-start="14" data-duration="7" data-track-index="1">
@@ -355,9 +346,9 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       </div>
       <div class="panel demo-window">
         <div class="browser-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
-        <div class="demo-body">
-          <div class="demo-hero"><b></b><i></i></div>
-          <div class="demo-cards"><span></span><span></span><span></span></div>
+        ${previewHtml}
+        <div class="route-replay">
+          ${journeyHtml}
           <div class="evidence-row">
             <div><span>${esc(t.cta)}</span><strong>${esc(cta)}</strong></div>
             <div class="meter"><i style="width:86%"></i></div>
@@ -385,7 +376,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script>
     function fitComposition() {
-      document.documentElement.style.setProperty("--hf-scale", String(Math.min(window.innerWidth / 1920, window.innerHeight / 1080)));
+      document.documentElement.style.setProperty("--hf-scale", String(Math.min(window.innerWidth / ${format.width}, window.innerHeight / ${format.height})));
     }
     fitComposition();
     window.addEventListener("resize", fitComposition);
@@ -428,6 +419,14 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       const meters = gsap.utils.toArray(scene + " .meter i");
       if (meters.length) {
         tl.to(meters, { width: function(_, el){ return el.style.width || "0%"; }, duration: .75, ease: "power2.out", stagger: .07 }, at + .9);
+      }
+      const auditPins = gsap.utils.toArray(scene + " .audit-pin");
+      if (auditPins.length) {
+        tl.fromTo(auditPins, { scale: .74, opacity: 0, y: 12 }, { scale: 1, opacity: 1, y: 0, duration: .42, ease: "back.out(1.7)", stagger: .42 }, at + 1.05);
+      }
+      const routeSteps = gsap.utils.toArray(scene + " .route-step");
+      if (routeSteps.length) {
+        tl.fromTo(routeSteps, { x: 28, opacity: 0 }, { x: 0, opacity: 1, duration: .44, ease: "power3.out", stagger: .18 }, at + 1);
       }
       const evidenceRows = gsap.utils.toArray(scene + " .evidence-row");
       evidenceRows.forEach(function(row, rowIndex) {

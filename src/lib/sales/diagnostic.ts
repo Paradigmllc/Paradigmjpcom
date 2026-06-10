@@ -36,9 +36,18 @@ import {
   isJa,
   metricValueFor,
 } from "./diagnostic/checks"
+import { buildVisualEvidenceStory } from "./diagnostic/visual-story"
 import type { DiagnosticReportData } from "./diagnostic/types"
 
-export type { DiagnosticAct, DiagnosticReportData, CompanyMeta, PersonalizedCopy } from "./diagnostic/types"
+export type {
+  DiagnosticAct,
+  DiagnosticReportData,
+  CompanyMeta,
+  ImprovementPreview,
+  PersonalizedCopy,
+  VisitorJourneyStep,
+  VisualEvidenceAnnotation,
+} from "./diagnostic/types"
 export {
   INDUSTRY_HOOK_EN,
   INDUSTRY_HOOK_JA,
@@ -106,6 +115,41 @@ export async function fetchDiagnosticReport(opts: {
   const totalLossYen = templates.reduce((sum, template) => sum + parseLossYen(template.loss), 0)
   const demoSite = asRecord(company.meta.demo_site)
   const demoUrl = typeof demoSite?.url === "string" ? demoSite.url : null
+  const visualEvidence = asRecord(company.meta.visual_evidence)
+  const visualScreenshots = asRecord(visualEvidence?.screenshots)
+  const desktopScreenshot = asRecord(visualScreenshots?.desktop)
+  const mobileScreenshot = asRecord(visualScreenshots?.mobile)
+  const socialScreenshot = asRecord(visualScreenshots?.social)
+  const mapScreenshot = asRecord(visualScreenshots?.map)
+  const formScreenshot = asRecord(visualScreenshots?.form)
+  const variantScreenshot = asRecord(visualScreenshots?.variant)
+  const screenshotUrl =
+    typeof desktopScreenshot?.url === "string"
+      ? desktopScreenshot.url
+      : typeof company.meta?.screenshot_url === "string"
+        ? company.meta.screenshot_url
+        : null
+  const screenshotMobileUrl = typeof mobileScreenshot?.url === "string" ? mobileScreenshot.url : null
+  const evidenceShotCandidates = [
+    templateVariant === "video_subscription" ? socialScreenshot : null,
+    templateVariant === "meo" ? mapScreenshot : null,
+    templateVariant === "outreach" ? formScreenshot : null,
+    variantScreenshot,
+    socialScreenshot,
+    mapScreenshot,
+    formScreenshot,
+  ]
+  const evidenceScreenshot = evidenceShotCandidates.find((shot) => shot && typeof shot.url === "string") ?? null
+  const evidenceScreenshotUrl = typeof evidenceScreenshot?.url === "string" ? evidenceScreenshot.url : screenshotUrl
+  const evidenceScreenshotKind =
+    typeof evidenceScreenshot?.viewport === "string" ? evidenceScreenshot.viewport : evidenceScreenshotUrl ? "desktop" : null
+  const visualStory = buildVisualEvidenceStory({
+    meta: (company.meta ?? {}) as Record<string, unknown>,
+    acts,
+    sourceCoverage,
+    templateVariant,
+    reportLocale,
+  })
 
   return {
     company_name: company.company_name,
@@ -121,7 +165,13 @@ export async function fetchDiagnosticReport(opts: {
     cta_text: personalizedCopy?.personalized_cta ?? templates[0]?.cta_text ?? (isJa(reportLocale) ? "診断結果をもとに、売上機会、信頼低下、問い合わせ導線、運用負荷のどこから直すべきかを30分で整理します。" : "Use the assessment evidence to decide the first business fix, required scope, and fastest implementation path."),
     video_thumbnail: null,
     demo_url: demoUrl,
-    screenshot_url: (company.meta?.screenshot_url as string) ?? null,
+    screenshot_url: screenshotUrl,
+    screenshot_mobile_url: screenshotMobileUrl,
+    evidence_screenshot_url: evidenceScreenshotUrl,
+    evidence_screenshot_kind: evidenceScreenshotKind,
+    visual_annotations: visualStory.visualAnnotations,
+    improvement_preview: visualStory.improvementPreview,
+    visitor_journey: visualStory.visitorJourney,
     source_coverage: sourceCoverage,
     intelligence: buildCompanyIntelligence(company, sourceCoverage.items),
     meta: (company.meta ?? {}) as Record<string, unknown>,

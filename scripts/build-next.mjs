@@ -9,6 +9,7 @@
 
 import { spawn, spawnSync } from "node:child_process"
 import path from "node:path"
+import fs from "node:fs"
 
 const binExt = process.platform === "win32" ? ".cmd" : ""
 
@@ -83,3 +84,12 @@ const nextStatus = await runWithHeartbeat(localBin("next"), ["build", ...buildMo
   },
 })
 if (nextStatus !== 0) process.exit(nextStatus)
+
+// Copy content/ into standalone output for Keystatic local storage
+const standaloneDir = path.join(process.cwd(), ".next", "standalone")
+const contentSrc = path.join(process.cwd(), "content")
+const contentDst = path.join(standaloneDir, "content")
+if (fs.existsSync(contentSrc)) {
+  fs.cpSync(contentSrc, contentDst, { recursive: true })
+  console.log("[build] content/ copied to standalone output")
+}

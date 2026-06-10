@@ -32,6 +32,7 @@ import ReportFinalCta from "./ReportFinalCta"
 import ReportRequestModal from "./ReportRequestModal"
 import ReportFindingsSection from "./ReportFindingsSection"
 import ReportHyperFramesPlayer from "./ReportHyperFramesPlayer"
+import ReportVisualEvidenceShowcase from "./ReportVisualEvidenceShowcase"
 import { TRACKING_SCRIPT, PRINT_CSS } from "./report-tracking"
 
 export default function DiagnosticReport({
@@ -60,6 +61,7 @@ export default function DiagnosticReport({
     .sort((a, b) => b.score - a.score)
     .slice(0, 14)
   const calHref = `https://cal.com/paradigm-jp/15min?name=${encodeURIComponent(data.company_name)}`
+  const displayScreenshotUrl = data.evidence_screenshot_url ?? data.screenshot_url ?? null
 
   const [isDark, setIsDark] = useState(false)
   const [actionOpen, setActionOpen] = useState(false)
@@ -175,6 +177,8 @@ export default function DiagnosticReport({
           industryLabel={industryLabel}
           targetCountry={data.target_country}
           prefecture={data.prefecture ?? null}
+          screenshotUrl={displayScreenshotUrl}
+          annotations={data.visual_annotations ?? []}
         />
 
         {/* ── Diagnostic video ─────── */}
@@ -294,27 +298,16 @@ export default function DiagnosticReport({
           </SlideInSection>
         )}
 
-        {/* ── Screenshot ────────────────────────────────────── */}
-        {data.screenshot_url && (
-          <SlideInSection direction="right" className="px-5 pb-14">
-            <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[360px_minmax(0,1fr)]">
-              <div>
-                <Pill tone="neutral">{copy.diagnosticSurface}</Pill>
-                <h2 className="mt-5 text-3xl font-semibold leading-tight text-zinc-950">
-                  {copy.currentState}
-                </h2>
-                <p className="mt-4 text-sm leading-7 text-zinc-600">{heroText}</p>
-              </div>
-              <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={data.screenshot_url}
-                  alt={`${data.company_name} ${offerCopy.screenshotAlt}`}
-                  loading="lazy"
-                  className="max-h-[620px] w-full object-cover object-top"
-                />
-              </div>
-            </div>
+        {/* ── Visual Evidence ───────────────────────────────── */}
+        {displayScreenshotUrl && (
+          <SlideInSection direction="right">
+            <ReportVisualEvidenceShowcase
+              data={data}
+              screenshotUrl={displayScreenshotUrl}
+              lang={lang}
+              screenshotAlt={`${data.company_name} ${offerCopy.screenshotAlt}`}
+              heroText={heroText}
+            />
           </SlideInSection>
         )}
 

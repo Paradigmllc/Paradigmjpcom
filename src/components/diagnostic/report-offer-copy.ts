@@ -18,8 +18,8 @@ export type OfferCopyByLanguage = {
 
 const WEBSITE: OfferCopyByLanguage = {
   ja: {
-    reportLabel: "Web成長診断レポート",
-    badge: "Web成長診断",
+    reportLabel: "Web制作診断レポート",
+    badge: "Web制作診断",
     heroLead: "公開データ、取得済みシグナル、改善デモをもとに、売上・信頼・問い合わせ導線のどこから直すべきかを整理しました。",
     primaryCta: "改善デモを見る",
     finalHeading: "30分で、最初に直すべき一点を決める",
@@ -27,8 +27,8 @@ const WEBSITE: OfferCopyByLanguage = {
     screenshotAlt: "Webサイト診断スクリーンショット",
   },
   en: {
-    reportLabel: "Website growth diagnostic report",
-    badge: "Website growth assessment",
+    reportLabel: "Website production diagnostic report",
+    badge: "Website production assessment",
     heroLead: "We translated public evidence, collected signals, and the improvement demo into a clear first move across revenue, trust, and inquiry flow.",
     primaryCta: "View improvement demo",
     finalHeading: "Use 30 minutes to choose the first fix",

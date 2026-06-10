@@ -3,6 +3,7 @@ import type { SourceCoverageSnapshot } from "@/lib/sales/source-coverage"
 import type { CompanyIntelligence } from "@/lib/sales/company-intelligence"
 import type { ReportLocale, TemplateVariant } from "@/lib/sales/routing"
 import type { Industry } from "@/lib/sales/types"
+import { buildVisualEvidenceStory } from "@/lib/sales/diagnostic/visual-story"
 
 interface VariantDemoData {
   companyName: { ja: string; en: string }
@@ -243,6 +244,31 @@ export function buildDemoData(variant: string, lang: string): DiagnosticReportDa
     ],
   }
 
+  const meta = {
+    scan: { mobile_score: 38, desktop_score: 52, is_wordpress: true, hasHsts: false, hasCsp: false, copyrightYear: 2022 },
+    tech: { stack: ["WordPress", "Stripe", "Google Analytics", "Cloudflare"] },
+    ssl: { grade: "B", daysUntilExpiry: 45 },
+    dns: { email_security_ok: false, hasDnssec: true, dkim_selectors: ["google"] },
+    crtsh: { total_certs: 3, latest_cert: { issuer: "Let's Encrypt" } },
+    place: { name: "サンプル美容室", rating: 4.2, address: "東京都渋谷区", reviewCount: 28 },
+    mozilla_observatory: { score: 65, grade: "C+" },
+    w3c_validation: { errors: 12, warnings: 5, is_clean: false },
+    cloudflare_radar: { rank: 450000, rank_bucket: "top-500k" },
+    wayback_machine: { total_snapshots: 48, first_snapshot: "2019-03", last_snapshot: "2024-11", years_active: 5 },
+    email_reputation: { reputation: "good", suspicious: false },
+    japan_market_audit: { tokushoho_missing: false, appi_missing: true, local_payments_missing: false },
+    contact_form_url: "https://example.com/contact",
+  }
+  const visualStory = buildVisualEvidenceStory({
+    meta,
+    acts,
+    sourceCoverage,
+    templateVariant: variant as TemplateVariant,
+    reportLocale: lang,
+  })
+  const demoScreenshotUrl = "https://s.wordpress.com/mshots/v1/https%3A%2F%2Fparadigmjp.com?w=1280"
+  const demoMobileScreenshotUrl = "https://s.wordpress.com/mshots/v1/https%3A%2F%2Fparadigmjp.com?w=430"
+
   return {
     company_name: companyName,
     report_locale: lang as ReportLocale,
@@ -257,30 +283,22 @@ export function buildDemoData(variant: string, lang: string): DiagnosticReportDa
     cta_text: localeStr(data.cta, lang),
     video_thumbnail: null,
     demo_url: `/${lang}/report/demo/${variant}`,
-    screenshot_url: null,
-    source_coverage: sourceCoverage,
+     screenshot_url: demoScreenshotUrl,
+     screenshot_mobile_url: demoMobileScreenshotUrl,
+      evidence_screenshot_url: demoScreenshotUrl,
+      evidence_screenshot_kind: "desktop",
+      visual_annotations: visualStory.visualAnnotations,
+      improvement_preview: visualStory.improvementPreview,
+      visitor_journey: visualStory.visitorJourney,
+      source_coverage: sourceCoverage,
     intelligence,
     video_url: variant === "japan_entry"
       ? `https://pub-ac30eb86a32747f1a27e304aa9c6f95a.r2.dev/videos/demo/${variant}/${lang}/diagnostic-${variant}.mp4`
       : null,
-    meta: {
-      scan: { mobile_score: 38, desktop_score: 52, is_wordpress: true, hasHsts: false, hasCsp: false, copyrightYear: 2022 },
-      tech: { stack: ["WordPress", "Stripe", "Google Analytics", "Cloudflare"] },
-      ssl: { grade: "B", daysUntilExpiry: 45 },
-      dns: { email_security_ok: false, hasDnssec: true, dkim_selectors: ["google"] },
-      crtsh: { total_certs: 3, latest_cert: { issuer: "Let's Encrypt" } },
-      place: { name: "サンプル美容室", rating: 4.2, address: "東京都渋谷区", reviewCount: 28 },
-      mozilla_observatory: { score: 65, grade: "C+" },
-      w3c_validation: { errors: 12, warnings: 5, is_clean: false },
-      cloudflare_radar: { rank: 450000, rank_bucket: "top-500k" },
-      wayback_machine: { total_snapshots: 48, first_snapshot: "2019-03", last_snapshot: "2024-11", years_active: 5 },
-      email_reputation: { reputation: "good", suspicious: false },
-      japan_market_audit: { tokushoho_missing: false, appi_missing: true, local_payments_missing: false },
-      contact_form_url: "https://example.com/contact",
-    },
+    meta,
     contactFormUrl: "https://example.com/contact",
     content_template: {
-      title: isJa ? "Web成長診断テンプレート" : "Web Growth Diagnostic",
+      title: isJa ? "Web制作診断テンプレート" : "Website Production Diagnostic",
       purpose: isJa ? "Web集客改善の優先順位を明確にする" : "Clarify web marketing priorities",
       quality_bar: isJa ? "すべての数値は実測データに基づくこと。推測や一般論は禁止。" : "All numbers must be based on measured data. No speculation.",
       dify_selection_rule: `industry=beauty_salon&variant=${variant}`,

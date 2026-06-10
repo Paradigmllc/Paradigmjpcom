@@ -137,13 +137,14 @@ export const CONTENT_TEMPLATE_VARIANT_LABELS: Record<TemplateVariant, string> = 
   video_subscription: "動画サブスク",
   subsidy: "補助金",
   outreach: "アウトリーチ",
+  dx_ai_package: "DX・AI",
 }
 
 const OFFER_BY_ANGLE: Record<ContentAppealAngle, { code: string; variant: TemplateVariant }> = {
   revenue_recovery: { code: "jp_web_production", variant: "website_diagnostic" },
   trust_authority: { code: "jp_web_production", variant: "website_diagnostic" },
   speed_conversion: { code: "jp_web_production", variant: "website_diagnostic" },
-  automation_dx: { code: "jp_dx_package", variant: "outreach" },
+  automation_dx: { code: "jp_dx_package", variant: "dx_ai_package" },
   japan_entry: { code: "global_jaas", variant: "japan_entry" },
   video_retention: { code: "global_video_subscription", variant: "video_subscription" },
 }
