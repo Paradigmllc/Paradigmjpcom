@@ -33,13 +33,54 @@ type Stat = { num: string; label: string; desc: string; gradient: string }
 type ProcessStep = { step: string; title: string; desc: string }
 type Plan = { name: string; price: string; period: string; desc: string; features: string[] }
 
+const EMPTY_STATS: Stat[] = []
+const EMPTY_TARGETS: string[] = []
+const EMPTY_STEPS: ProcessStep[] = []
+const EMPTY_PLANS: Plan[] = []
+
+async function lpMeoCopy(locale: string) {
+  const primary = await getTranslations({ locale, namespace: "lpMeo" })
+  const fallback = locale === "en" ? primary : await getTranslations({ locale: "en", namespace: "lpMeo" })
+
+  const text = (key: string): string => {
+    try {
+      return primary(key)
+    } catch (error) {
+      console.warn(`[lp-meo] missing message ${locale}.lpMeo.${key}; falling back to en`, error)
+      return fallback(key)
+    }
+  }
+
+  const rawArray = <T,>(key: string, empty: T[]): T[] => {
+    try {
+      const value: unknown = primary.raw(key)
+      if (Array.isArray(value)) return value as T[]
+      console.warn(`[lp-meo] message ${locale}.lpMeo.${key} is not an array; falling back to en`)
+    } catch (error) {
+      console.warn(`[lp-meo] missing raw message ${locale}.lpMeo.${key}; falling back to en`, error)
+    }
+
+    try {
+      const value: unknown = fallback.raw(key)
+      if (Array.isArray(value)) return value as T[]
+      console.warn(`[lp-meo] fallback message en.lpMeo.${key} is not an array`)
+    } catch (error) {
+      console.warn(`[lp-meo] missing fallback raw message en.lpMeo.${key}`, error)
+    }
+    return empty
+  }
+
+  return { text, rawArray }
+}
+
 export default async function MeoLP({ params }: Props) {
   const { locale } = await params
-  const t = await getTranslations({ locale, namespace: "lpMeo" })
-  const stats = t.raw("stats") as Stat[]
-  const targets = t.raw("targets") as string[]
-  const STEPS = t.raw("process") as ProcessStep[]
-  const PLANS = t.raw("plans") as Plan[]
+  const copy = await lpMeoCopy(locale)
+  const t = copy.text
+  const stats = copy.rawArray<Stat>("stats", EMPTY_STATS)
+  const targets = copy.rawArray<string>("targets", EMPTY_TARGETS)
+  const STEPS = copy.rawArray<ProcessStep>("process", EMPTY_STEPS)
+  const PLANS = copy.rawArray<Plan>("plans", EMPTY_PLANS)
 
   return (
     <>
