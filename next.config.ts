@@ -53,6 +53,17 @@ const nextConfig: NextConfig = {
       },
     ]
   },
+  async rewrites() {
+    return [
+      // /report/demo/:variant/video → /report/demo-:variant/video
+      // demo pages use /demo/:variant but [slug]/video expects single-segment slugs;
+      // this rewrite bridges the gap so the existing route handler can serve demo videos.
+      {
+        source: "/:locale(ja|en|ko|zh|de|fr|es|pt|ru|ar|vi|id)/report/demo/:variant/video",
+        destination: "/:locale/report/demo-:variant/video",
+      },
+    ]
+  },
 }
 
 export default withPayload(withNextIntl(nextConfig))
