@@ -86,7 +86,10 @@ export async function translateValues(values: Record<string, string>, targetLang
   try {
     const parsed = JSON.parse(res.text)
     return typeof parsed === "object" && parsed ? (parsed as Record<string, string>) : null
-  } catch { return null }
+  } catch (e) {
+    console.warn("[autoTranslate] JSON parse failed:", e instanceof Error ? e.message : String(e))
+    return null
+  }
 }
 
 export interface AutoTranslateOpts {

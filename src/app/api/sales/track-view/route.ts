@@ -86,7 +86,7 @@ export async function GET(req: NextRequest) {
           report_views: newCount,
           diagnostic_url: reportUrl,
           video_url: videoUrl,
-        }).catch(() => {})
+        }).catch((e) => console.error("[track-view] hot-lead Slack notification failed:", e))
       }
 
       // Mark last activity

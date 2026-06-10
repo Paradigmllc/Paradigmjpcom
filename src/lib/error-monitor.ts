@@ -77,8 +77,9 @@ export async function captureException(
       body: JSON.stringify({ text: slackText }),
       signal: AbortSignal.timeout(3_000),
     })
-  } catch {
+  } catch (e) {
     // Best-effort — never throw from monitor itself.
+    process.stderr.write(`[error-monitor] Slack webhook failed: ${e instanceof Error ? e.message : String(e)}\n`)
   }
 
   // Future: forward to Sentry if SENTRY_DSN set + @sentry/nextjs installed.

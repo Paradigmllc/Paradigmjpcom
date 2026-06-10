@@ -13,6 +13,7 @@ import type { Metadata } from "next"
 import { Mail, Clock, Calendar } from "lucide-react"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
+import { buildArticleSchema } from "@/lib/seo/schemas"
 import PageHero from "@/components/PageHero"
 import { ContactForm } from "./ContactForm"
 import { calendarUrlFor, getSiteSettings } from "@/lib/settings"
@@ -111,6 +112,19 @@ export default async function ContactPage({ params }: Props) {
           </aside>
         </div>
       </section>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            buildArticleSchema({
+              title: t("heroTitle"),
+              description: t("heroDesc"),
+              url: `https://paradigmjp.com/${locale}/contact`,
+              locale,
+            })
+          ),
+        }}
+      />
     </>
   )
 }

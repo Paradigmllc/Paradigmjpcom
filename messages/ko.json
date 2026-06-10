@@ -564,7 +564,26 @@
     "ctaTitle": "Let's build your next case study together",
     "ctaHighlight": "together",
     "ctaDesc": "Book a free consultation to scope your Japan entry.",
-    "ctaButton": "Book a free consultation"
+    "ctaButton": "Book a free consultation",
+    "processEyebrow": "How We Work",
+    "processTitle": "How we deliver projects",
+    "process": [
+      {
+        "step": "01",
+        "title": "Discovery",
+        "desc": "We listen to your challenges, goals, and budget, then propose the optimal plan and timeline."
+      },
+      {
+        "step": "02",
+        "title": "Design & Build",
+        "desc": "From design to coding and AI integration, a dedicated team manages quality throughout."
+      },
+      {
+        "step": "03",
+        "title": "Launch & Support",
+        "desc": "After final QA, we go live. Post-launch maintenance and improvements continue."
+      }
+    ]
   },
   "blogPage": {
     "metaTitle": "Blog",
@@ -813,7 +832,8 @@
     "ctaHighlight": "Talk",
     "ctaDesc": "We will tailor a concrete proposal for your business.",
     "ctaButton": "Book a free consultation",
-    "notFound": "Article not found"
+    "notFound": "Article not found",
+    "emptyContent": "The full article content is being prepared. Please check back soon."
   },
   "lpWeb": {
     "metaTitle": "Web development free consultation | Paradigm",
@@ -944,7 +964,66 @@
     "ctaTitle": "Start with a free audit",
     "ctaHighlight": "free audit",
     "ctaDesc": "We'll audit your Google Business Profile on us.",
-    "ctaButton": "Get a free audit"
+    "ctaButton": "Get a free audit",
+    "processEyebrow": "Process",
+    "processHeading": "How MEO works",
+    "process": [
+      {
+        "step": "01",
+        "title": "Free audit",
+        "desc": "We analyse your Google Business Profile and identify improvement points."
+      },
+      {
+        "step": "02",
+        "title": "Strategy design",
+        "desc": "Competitor analysis guides optimal categories, keywords, and posting strategy."
+      },
+      {
+        "step": "03",
+        "title": "Operations start",
+        "desc": "Profile optimisation, review playbook, and regular posts begin with continuous improvement."
+      }
+    ],
+    "plansTitle": "Pricing plans",
+    "plans": [
+      {
+        "name": "Entry",
+        "price": "29,800",
+        "period": "/mo",
+        "desc": "Getting started",
+        "features": [
+          "GBP setup",
+          "2 posts/mo",
+          "Monthly rank report"
+        ]
+      },
+      {
+        "name": "Standard",
+        "price": "49,800",
+        "period": "/mo",
+        "desc": "Serious about MEO",
+        "features": [
+          "Full GBP optimisation",
+          "4 posts/mo",
+          "Review playbook",
+          "Weekly reports",
+          "Competitor analysis"
+        ]
+      },
+      {
+        "name": "Pro",
+        "price": "79,800",
+        "period": "/mo",
+        "desc": "Multi-store / regional",
+        "features": [
+          "Multi-store support",
+          "Daily posts",
+          "Review management tool",
+          "Social sync",
+          "Dedicated PM"
+        ]
+      }
+    ]
   },
   "lpSeo": {
     "metaTitle": "SEO / GEO free audit | Paradigm",
@@ -969,7 +1048,67 @@
     "ctaTitle": "Start your AI-era search strategy",
     "ctaHighlight": "AI-era search",
     "ctaDesc": "Free SEO / GEO audit report on request.",
-    "ctaButton": "Get a free audit"
+    "ctaButton": "Get a free audit",
+    "processEyebrow": "Process",
+    "processHeading": "How SEO / GEO works",
+    "process": [
+      {
+        "step": "01",
+        "title": "Free site audit",
+        "desc": "We scan your site SEO state including AI search visibility."
+      },
+      {
+        "step": "02",
+        "title": "Strategy design",
+        "desc": "Keyword strategy, content plan, and GEO optimisation roadmap based on audit results."
+      },
+      {
+        "step": "03",
+        "title": "Execution",
+        "desc": "Article creation, structured data implementation, and on-page SEO with monthly reporting."
+      }
+    ],
+    "plansTitle": "Pricing plans",
+    "plans": [
+      {
+        "name": "SEO Basic",
+        "price": "49,800",
+        "period": "/mo",
+        "desc": "On-page + content",
+        "features": [
+          "Site audit & fixes",
+          "2 articles/mo",
+          "Keyword research",
+          "Monthly report"
+        ]
+      },
+      {
+        "name": "SEO + GEO",
+        "price": "79,800",
+        "period": "/mo",
+        "desc": "SEO + AI-search",
+        "features": [
+          "All SEO Basic",
+          "AI-search (GEO)",
+          "Structured data",
+          "4 articles/mo",
+          "Competitor analysis"
+        ]
+      },
+      {
+        "name": "Full Package",
+        "price": "148,000",
+        "period": "/mo",
+        "desc": "SEO + GEO + strategy",
+        "features": [
+          "All SEO+GEO",
+          "Content strategy",
+          "8 articles/mo",
+          "Backlink campaigns",
+          "Weekly meeting"
+        ]
+      }
+    ]
   },
   "lpAi": {
     "metaTitle": "AI Integration free consultation | Paradigm",
@@ -1020,7 +1159,72 @@
     "ctaTitle": "Take the first step into AI",
     "ctaHighlight": "AI",
     "ctaDesc": "Free consultation to scope your AI roadmap.",
-    "ctaButton": "Book a free consultation"
+    "ctaButton": "Book a free consultation",
+    "processEyebrow": "Process",
+    "processHeading": "How AI integration works",
+    "process": [
+      {
+        "step": "01",
+        "title": "Free consultation",
+        "desc": "We assess your business challenges and identify areas where AI can automate."
+      },
+      {
+        "step": "02",
+        "title": "Solution design",
+        "desc": "Select optimal AI tools and design an integration plan tailored to your workflows."
+      },
+      {
+        "step": "03",
+        "title": "Build & test",
+        "desc": "Chatbot / automation workflows are built and tested in your environment."
+      },
+      {
+        "step": "04",
+        "title": "Operate & improve",
+        "desc": "Post-launch measurement and continuous AI model updates and improvements."
+      }
+    ],
+    "plansTitle": "Pricing plans",
+    "plans": [
+      {
+        "name": "AI Start",
+        "price": "198,000",
+        "period": "+",
+        "desc": "1 chatbot deployment",
+        "features": [
+          "AI chatbot build",
+          "FAQ training (100 Qs)",
+          "Site embed",
+          "1 month support"
+        ]
+      },
+      {
+        "name": "AI Transform",
+        "price": "498,000",
+        "period": "+",
+        "desc": "Operations transformation",
+        "features": [
+          "Workflow analysis",
+          "3 automation flows",
+          "AI chatbot",
+          "2-hour training",
+          "3 month support"
+        ]
+      },
+      {
+        "name": "AI Full",
+        "price": "980,000",
+        "period": "+",
+        "desc": "Org-wide AI strategy",
+        "features": [
+          "AI strategy consulting",
+          "Custom AI dev",
+          "Unlimited flows",
+          "Analytics platform",
+          "6 month support"
+        ]
+      }
+    ]
   },
   "loadingPage": {
     "eyebrow": "Loading",

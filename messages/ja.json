@@ -167,7 +167,26 @@
     "ctaTitle": "御社の事例を一緒に作りましょう",
     "ctaHighlight": "一緒に",
     "ctaDesc": "無料相談で最適なプランをご提案します。",
-    "ctaButton": "無料相談を予約する"
+    "ctaButton": "無料相談を予約する",
+    "processEyebrow": "How We Work",
+    "processTitle": "プロジェクト成功までの流れ",
+    "process": [
+      {
+        "step": "01",
+        "title": "ヒアリング",
+        "desc": "課題・目標・予算をヒアリングし、最適なプランとスケジュールをご提案します。"
+      },
+      {
+        "step": "02",
+        "title": "設計・制作",
+        "desc": "デザインからコーディング・AI 実装まで、専任チームが品質管理しながら進行します。"
+      },
+      {
+        "step": "03",
+        "title": "納品・公開",
+        "desc": "最終チェック後、本番環境に公開。公開後も保守・改善で継続サポートします。"
+      }
+    ]
   },
   "legalPage": {
     "metaTitle": "特定商取引法に基づく表記",
@@ -796,7 +815,8 @@
     "ctaHighlight": "ご相談",
     "ctaDesc": "御社に合った具体的な提案をいたします。",
     "ctaButton": "無料相談を予約する",
-    "notFound": "記事が見つかりません"
+    "notFound": "記事が見つかりません",
+    "emptyContent": "現在、この記事の本文は準備中です。しばらくお待ちください。"
   },
   "lpWeb": {
     "metaTitle": "【無料相談】Web制作 | Paradigm合同会社",

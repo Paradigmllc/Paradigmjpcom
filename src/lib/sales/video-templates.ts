@@ -1,14 +1,23 @@
 ﻿/**
  * Executive diagnostic video composition for report embeds and MP4 rendering.
  *
- * The report video must feel like a client-ready sales asset, not a toy demo:
- * one message per scene, sourced evidence, restrained motion, and readable type.
+ * Generates a self-contained HyperFrames composition HTML document with:
+ * - 5 scenes (hero / evidence / loss / demo / cta) with crossfade transitions
+ * - GSAP timeline registered on window.__timelines
+ * - Three.js background layer
+ * - Data-driven evidence bars, audit pins, and chapter navigation
+ *
+ * HyperFrames rules enforced:
+ * - No exit animations except on final scene
+ * - Crossfade transitions between ALL scenes
+ * - Unique data-track-index per overlapping element
+ * - width:100%/height:100% + --hf-scale responsive sizing
  */
 import type { DiagnosticAct, DiagnosticReportData } from "./diagnostic"
 import { videoLabels } from "./video-template-labels"
 import { videoTemplateFormat, type VideoTemplateFormat } from "./video-template-format"
 import { buildThreeLayerScript } from "./video-template-three"
-import { SVG, themeForVariant } from "./video-template-theme"
+import { themeForVariant } from "./video-template-theme"
 
 interface VideoScript {
   hook: string
@@ -24,35 +33,12 @@ interface VideoTemplateOptions {
 
 const CORRUPT_TEXT = /驍ｵ・ｺ|驛｢|髫ｴ|鬮ｫ|髯桍鬯ｮ|髯毫鬨ｾ|髣培鬮ｯ|髯弓髫ｲ|髯ｷ|郢掟邵ｺ|隴斈陋ｻ|陷・陷鋼隹ｺ|・・繝ｻ/
 
-function esc(value: string | null | undefined): string {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-}
+function esc(v: string | null | undefined): string { return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;") }
+function cleanText(v: string | null | undefined, fallback: string, max = 118): string { const t = String(v ?? "").replace(/\s+/g, " ").trim(); return !t || CORRUPT_TEXT.test(t) ? fallback : t.length > max ? `${t.slice(0, max - 1)}...` : t }
+function nf(value: string | null | undefined): number { const t = String(value ?? ""); const m = t.match(/[\d,.]+/); return m ? (Number.parseFloat(m[0].replace(/,/g, "")) || 0) : 0 }
+function pct(value: string | null | undefined, f: number): number { const n = nf(value); return Math.max(8, Math.min(100, n || f)) }
+function actAt(data: DiagnosticReportData, i: number): DiagnosticAct | null { return data.acts[i] ?? data.acts.find((a) => !CORRUPT_TEXT.test(a.headline)) ?? null }
 
-function cleanText(value: string | null | undefined, fallback: string, max = 118): string {
-  const text = String(value ?? "").replace(/\s+/g, " ").trim()
-  if (!text || CORRUPT_TEXT.test(text)) return fallback
-  return text.length > max ? `${text.slice(0, max - 1)}...` : text
-}
-
-function numberFrom(value: string | null | undefined): number {
-  const text = String(value ?? "")
-  const match = text.match(/[\d,.]+/)
-  if (!match) return 0
-  return Number.parseFloat(match[0].replace(/,/g, "")) || 0
-}
-
-function percent(value: string | null | undefined, fallback: number): number {
-  const n = numberFrom(value)
-  return Math.max(8, Math.min(100, n || fallback))
-}
-
-function actAt(data: DiagnosticReportData, index: number, fallback: string): DiagnosticAct | null {
-  return data.acts[index] ?? data.acts.find((act) => !CORRUPT_TEXT.test(act.headline)) ?? null
-}
 export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoScript, options: VideoTemplateOptions = {}): string {
   const theme = themeForVariant(data.template_variant)
   const format = videoTemplateFormat(options.format, theme)
@@ -142,7 +128,6 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
         <div class="demo-cards"><span></span><span></span><span></span></div>
       </div>
     `
-
   const evidenceHtml = evidenceRows.map((row, index) => `
     <div class="evidence-row" style="--delay:${index * 0.08}s">
       <div>
@@ -153,9 +138,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       <b>${row.score}</b>
     </div>
   `).join("")
-  const chapterLabels = data.report_locale === "ja"
-    ? ["異変", "根拠", "損失", "未来", "実行"]
-    : ["Tension", "Evidence", "Leakage", "Future", "Action"]
+  const chapterLabels = t.scenes
   const chapterHtml = chapterLabels.map((label, index) => `
     <span class="chapter-pill" data-chapter="${index}">
       <i></i><b>${esc(label)}</b>
@@ -169,7 +152,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       <div class="panel site-panel">
         <div class="browser-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><b>${esc(t.current)}</b></div>
         <div class="site-shot-wrap">
-          <img class="site-shot" src="${esc(screenshotUrl)}" alt="${esc(company)} current website screenshot" />
+          <img class="site-shot" src="${esc(screenshotUrl)}" alt="${esc(company)} current website screenshot" loading="eager" />
           ${annotationHtml}
           <div class="shot-callout"><span>${esc(metricLabel)}</span><strong>${esc(metricValue)}</strong></div>
         </div>
@@ -197,7 +180,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
           <h2>${esc(t.proof)}</h2>
           <div class="evidence-list">${evidenceHtml}</div>
         </div>
-        <div class="phone-shot"><img src="${esc(mobileScreenshotUrl)}" alt="${esc(company)} mobile website screenshot" /></div>
+        <div class="phone-shot"><img src="${esc(mobileScreenshotUrl)}" alt="${esc(company)} mobile website screenshot" loading="lazy" /></div>
       </div>
     `
     : `
@@ -212,13 +195,12 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src * data:; font-src * data:;" />
   <title>${esc(company)} - Paradigm Diagnostic Film</title>
   <style>
     *{box-sizing:border-box} html{--hf-scale:1;width:100%;height:100%;overflow:hidden;background:${theme.bg};} body{width:100%;height:100%;margin:0;overflow:hidden;background:${theme.bg};}
     body{font-family:Inter,"Noto Sans JP",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:${theme.panel};}
     svg{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-    [data-composition-id]{width:${format.width}px;height:${format.height}px;position:relative;overflow:hidden;background:${theme.bg};transform:scale(var(--hf-scale));transform-origin:0 0;}
+    [data-composition-id]{width:100%;height:100%;position:relative;overflow:hidden;background:${theme.bg};transform:scale(var(--hf-scale));transform-origin:0 0;aspect-ratio:${format.width}/${format.height}}
     #three-layer{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:.8;mix-blend-mode:screen}
     .grid-bg{position:absolute;inset:0;background-image:linear-gradient(${theme.grid} 1px,transparent 1px),linear-gradient(90deg,${theme.grid} 1px,transparent 1px);background-size:72px 72px;mask-image:linear-gradient(90deg,transparent,black 18%,black 82%,transparent);opacity:.72;transform-origin:center}
     .wash{position:absolute;inset:-20%;background:radial-gradient(circle at 18% 18%,${theme.accentSoft}33 0,transparent 22%),radial-gradient(circle at 82% 72%,${theme.accent}30 0,transparent 25%),linear-gradient(135deg,rgba(255,255,255,.06),transparent 45%);filter:blur(3px)}
@@ -267,7 +249,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
     .metric-stack{display:grid;grid-template-columns:1fr;gap:12px;margin-top:22px}
     .metric{padding:18px;border-radius:18px;background:${theme.panelSoft};min-height:104px}.metric span{display:block;color:${theme.muted};font-size:13px;font-weight:800;text-transform:uppercase}.metric strong{display:block;margin-top:12px;font-size:34px;line-height:1.08;color:${theme.ink};overflow-wrap:anywhere}
     .loss-number{font-size:58px;line-height:.98;color:${theme.danger};font-weight:850;letter-spacing:0;margin-top:22px;overflow-wrap:anywhere}
-    .demo-window{overflow:hidden;padding:0}.browser-bar{height:48px;background:${theme.panelSoft};display:flex;align-items:center;gap:9px;padding:0 18px}.dot{width:12px;height:12px;border-radius:50%;background:${theme.accent}}.dot:nth-child(2){opacity:.55}.dot:nth-child(3){opacity:.3}
+    .browser-bar{height:48px;background:${theme.panelSoft};display:flex;align-items:center;gap:9px;padding:0 18px}.dot{width:12px;height:12px;border-radius:50%;background:${theme.accent}}.dot:nth-child(2){opacity:.55}.dot:nth-child(3){opacity:.3}
     .browser-bar b{margin-left:auto;color:${theme.muted};font-size:12px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
     .site-panel{overflow:hidden;padding:0}.site-shot-wrap{position:relative;height:344px;background:${theme.panelSoft};overflow:hidden}.site-shot{width:100%;height:100%;object-fit:cover;object-position:top;display:block;filter:saturate(.92) contrast(1.02)}.site-shot-wrap::after{content:"";position:absolute;inset:0;border:2px solid ${theme.accent};opacity:.18;pointer-events:none}.shot-callout{position:absolute;right:20px;bottom:20px;max-width:220px;border-radius:18px;background:${theme.panel};padding:15px 18px;box-shadow:0 22px 58px rgba(0,0,0,.26)}.shot-callout span{display:block;color:${theme.muted};font-size:12px;font-weight:850;text-transform:uppercase}.shot-callout strong{display:block;margin-top:8px;color:${theme.accent};font-size:34px;line-height:1}
     .audit-pin{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:10px;max-width:250px}.audit-pin b{display:grid;place-items:center;width:34px;height:34px;border:3px solid white;border-radius:50%;background:${theme.danger};color:white;font-size:14px;box-shadow:0 18px 42px rgba(0,0,0,.35)}.audit-pin span{display:block;border:1px solid rgba(255,255,255,.65);border-radius:14px;background:rgba(255,255,255,.94);padding:10px 12px;color:${theme.ink};box-shadow:0 18px 42px rgba(0,0,0,.24)}.audit-pin strong{display:block;font-size:12px;line-height:1.2}.audit-pin em{display:block;margin-top:4px;color:${theme.muted};font-size:10px;line-height:1.35;font-style:normal}
@@ -288,15 +270,14 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
     data-duration="36"
     data-width="${format.width}"
     data-height="${format.height}"
-    data-hf-frameworks="hyperframes-player gsap css catalog:data-chart catalog:shimmer-sweep catalog:caption-highlight catalog:flash-through-white catalog:transitions-blur"
   >
     <div class="clip wash" data-start="0" data-duration="36" data-track-index="0"></div>
-    <canvas id="three-layer" class="clip" data-start="0" data-duration="36" data-track-index="0" aria-hidden="true"></canvas>
-    <div class="clip grid-bg" data-start="0" data-duration="36" data-track-index="0"></div>
-    <div class="clip scan-beam" data-start="0" data-duration="36" data-track-index="0"></div>
-    <div class="clip grain" data-start="0" data-duration="36" data-track-index="0"></div>
-    <div class="clip node-field" data-start="0" data-duration="36" data-track-index="0" aria-hidden="true">${nodeHtml}</div>
-    <div class="clip frame" data-start="0" data-duration="36" data-track-index="0"></div>
+    <canvas id="three-layer" class="clip" data-start="0" data-duration="36" data-track-index="2" aria-hidden="true"></canvas>
+    <div class="clip grid-bg" data-start="0" data-duration="36" data-track-index="4"></div>
+    <div class="clip scan-beam" data-start="0" data-duration="36" data-track-index="5"></div>
+    <div class="clip grain" data-start="0" data-duration="36" data-track-index="6"></div>
+    <div class="clip node-field" data-start="0" data-duration="36" data-track-index="7" aria-hidden="true">${nodeHtml}</div>
+    <div class="clip frame" data-start="0" data-duration="36" data-track-index="8"></div>
     <div class="clip brand" data-start="0" data-duration="36" data-track-index="3"><span><b>PARADIGM</b> DIAGNOSTIC</span><span>${esc(t.generated)}</span></div>
     <div class="clip chapter-strip" data-start="0" data-duration="36" data-track-index="3">${chapterHtml}</div>
 
@@ -352,7 +333,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
           <div class="evidence-row">
             <div><span>${esc(t.cta)}</span><strong>${esc(cta)}</strong></div>
             <div class="meter"><i style="width:86%"></i></div>
-            <b>${SVG.arrow}</b>
+            <b><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-5 5 5-5 5"/></svg></b>
           </div>
         </div>
       </div>
@@ -364,9 +345,9 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
         <h1>${esc(cta)}</h1>
         <p class="lead">${esc(reportUrl)}</p>
         <div class="cta-actions">
-          <span class="action primary">${SVG.chart}${esc(t.report)}</span>
-          <span class="action">${SVG.check}${esc(t.booking)}</span>
-          <span class="action">${SVG.radar}HyperFrames</span>
+          <span class="action primary"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h16M8 16v-4m5 4V8m5 8v-7"/></svg>${esc(t.report)}</span>
+          <span class="action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg>${esc(t.booking)}</span>
+          <span class="action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 21 8v8l-9 5-9-5V8l9-5Zm0 4v10m-5-7 10 6m0-6L7 16"/></svg>HyperFrames</span>
         </div>
       </div>
     </section>
@@ -381,8 +362,12 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
     fitComposition();
     window.addEventListener("resize", fitComposition);
     window.__timelines = window.__timelines || {};
+    const DURATION = 36;
+    const SCENE_LEN = 7;
+    const SCENE_IDS = ["#scene-hero", "#scene-evidence", "#scene-loss", "#scene-demo", "#scene-cta"];
+
     function updateChapter(time) {
-      const active = Math.max(0, Math.min(4, Math.floor(time / 7)));
+      const active = Math.max(0, Math.min(4, Math.floor(time / SCENE_LEN)));
       document.querySelectorAll(".chapter-pill").forEach(function (pill, index) {
         pill.classList.toggle("is-active", index === active);
       });
@@ -392,55 +377,72 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       window.__hfThreeTime = time;
       window.dispatchEvent(new CustomEvent("hf-seek", { detail: { time: time } }));
     }
-    const tl = gsap.timeline({
+
+    var tl = gsap.timeline({
       paused: true,
       onUpdate: function () { dispatchSeek(tl.time()); },
       onStart: function () { dispatchSeek(tl.time()); }
     });
-    const scenes = [".scene-hero", ".scene-evidence", ".scene-loss", ".scene-demo", ".scene-cta"];
-    gsap.set(scenes, { autoAlpha: 0 });
-    document.querySelector(".chapter-pill")?.classList.add("is-active");
-    tl.to(".grid-bg", { scale: 1.08, x: -28, y: 16, duration: 36, ease: "none" }, 0);
-    tl.to(".wash", { xPercent: 8, yPercent: -5, scale: 1.06, duration: 36, ease: "sine.inOut" }, 0);
+
+    gsap.set(SCENE_IDS, { autoAlpha: 0 });
+
+    tl.to(".grid-bg", { scale: 1.08, x: -28, y: 16, duration: DURATION, ease: "none" }, 0);
+    tl.to(".wash", { xPercent: 8, yPercent: -5, scale: 1.06, duration: DURATION, ease: "sine.inOut" }, 0);
     tl.fromTo(".data-node", { scale: .6, opacity: .12 }, { scale: 1.7, opacity: .55, duration: 2.4, ease: "power2.inOut", stagger: .28, yoyo: true, repeat: 10 }, 0);
-    scenes.forEach((scene, index) => {
-      const at = index * 7;
-      tl.set(scene, { autoAlpha: 1 }, at);
-      tl.fromTo(".scan-beam", { xPercent: -120, opacity: .1 }, { xPercent: 120, opacity: .55, duration: 1.2, ease: "power2.inOut" }, at + .18);
-      tl.fromTo(scene + " .kicker", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: .55, ease: "power3.out" }, at);
-      tl.fromTo(scene + " h1", { y: 34, opacity: 0 }, { y: 0, opacity: 1, duration: .75, ease: "power3.out" }, at + .1);
-      tl.fromTo(scene + " p", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: .65, ease: "power3.out" }, at + .26);
-      tl.fromTo(scene + " .caption-band", { clipPath: "inset(0 100% 0 0)", opacity: 0 }, { clipPath: "inset(0 0% 0 0)", opacity: 1, duration: .62, ease: "power3.out" }, at + .72);
-      tl.fromTo(scene + " .panel, " + scene + " .cta-actions", { y: 34, opacity: 0, scale: .985 }, { y: 0, opacity: 1, scale: 1, duration: .8, ease: "power3.out" }, at + .16);
-      const bars = gsap.utils.toArray(scene + " .bar i");
-      if (bars.length) {
-        tl.to(bars, { height: function(_, el){ return el.style.getPropertyValue("--h") || "0%"; }, duration: .9, ease: "power2.out" }, at + .96);
-      }
-      const meters = gsap.utils.toArray(scene + " .meter i");
-      if (meters.length) {
-        tl.to(meters, { width: function(_, el){ return el.style.width || "0%"; }, duration: .75, ease: "power2.out", stagger: .07 }, at + .9);
-      }
-      const auditPins = gsap.utils.toArray(scene + " .audit-pin");
-      if (auditPins.length) {
-        tl.fromTo(auditPins, { scale: .74, opacity: 0, y: 12 }, { scale: 1, opacity: 1, y: 0, duration: .42, ease: "back.out(1.7)", stagger: .42 }, at + 1.05);
-      }
-      const routeSteps = gsap.utils.toArray(scene + " .route-step");
-      if (routeSteps.length) {
-        tl.fromTo(routeSteps, { x: 28, opacity: 0 }, { x: 0, opacity: 1, duration: .44, ease: "power3.out", stagger: .18 }, at + 1);
-      }
-      const evidenceRows = gsap.utils.toArray(scene + " .evidence-row");
+
+    document.querySelector(".chapter-pill")?.classList.add("is-active");
+
+    SCENE_IDS.forEach(function (sceneId, index) {
+      var at = index * SCENE_LEN;
+      var sceneEl = document.querySelector(sceneId);
+      if (!sceneEl) return;
+
+      tl.set(sceneEl, { autoAlpha: 1, opacity: 1 }, at);
+
+      var kickerEl = sceneEl.querySelector(".kicker");
+      var h1El = sceneEl.querySelector("h1");
+      var pEl = sceneEl.querySelector("p");
+      var captionEl = sceneEl.querySelector(".caption-band");
+      var panelEl = sceneEl.querySelector(".panel, .cta-actions");
+
+      if (kickerEl) tl.from(kickerEl, { y: 18, opacity: 0, duration: .55, ease: "power3.out" }, at + .05);
+      if (h1El) tl.from(h1El, { y: 34, opacity: 0, duration: .75, ease: "power3.out" }, at + .15);
+      if (pEl) tl.from(pEl, { y: 24, opacity: 0, duration: .65, ease: "power3.out" }, at + .3);
+      if (captionEl) tl.from(captionEl, { clipPath: "inset(0 100% 0 0)", opacity: 0 }, { clipPath: "inset(0 0% 0 0)", opacity: 1, duration: .62, ease: "power3.out" }, at + .75);
+      if (panelEl) tl.from(panelEl, { y: 34, opacity: 0, scale: .985, duration: .8, ease: "power3.out" }, at + .2);
+
+      var bars = gsap.utils.toArray(sceneEl.querySelectorAll(".bar i"));
+      if (bars.length) tl.to(bars, { height: function(_, el){ return el.style.getPropertyValue("--h") || "0%"; }, duration: .9, ease: "power2.out" }, at + 1);
+
+      var meters = gsap.utils.toArray(sceneEl.querySelectorAll(".meter i"));
+      if (meters.length) tl.to(meters, { width: function(_, el){ return el.style.width || "0%"; }, duration: .75, ease: "power2.out", stagger: .07 }, at + .95);
+
+      var auditPins = gsap.utils.toArray(sceneEl.querySelectorAll(".audit-pin"));
+      if (auditPins.length) tl.fromTo(auditPins, { scale: .74, opacity: 0, y: 12 }, { scale: 1, opacity: 1, y: 0, duration: .42, ease: "back.out(1.7)", stagger: .42 }, at + 1.1);
+
+      var routeSteps = gsap.utils.toArray(sceneEl.querySelectorAll(".route-step"));
+      if (routeSteps.length) tl.fromTo(routeSteps, { x: 28, opacity: 0 }, { x: 0, opacity: 1, duration: .44, ease: "power3.out", stagger: .18 }, at + 1.05);
+
+      var evidenceRows = gsap.utils.toArray(sceneEl.querySelectorAll(".evidence-row"));
       evidenceRows.forEach(function(row, rowIndex) {
-        tl.to(row, { x: -8, scale: 1.02, duration: .35, ease: "power2.out", onStart: function(){ row.classList.add("is-focus"); } }, at + 1.1 + rowIndex * .72);
-        tl.to(row, { x: 0, scale: 1, duration: .35, ease: "power2.in", onComplete: function(){ row.classList.remove("is-focus"); } }, at + 1.55 + rowIndex * .72);
+        tl.to(row, { x: -8, scale: 1.02, duration: .35, ease: "power2.out", onStart: function(){ row.classList.add("is-focus"); } }, at + 1.15 + rowIndex * .72);
+        tl.to(row, { x: 0, scale: 1, duration: .35, ease: "power2.in", onComplete: function(){ row.classList.remove("is-focus"); } }, at + 1.6 + rowIndex * .72);
       });
-      tl.to(".progress i", { width: ((index + 1) / scenes.length * 100) + "%", duration: 6.6, ease: "none" }, at);
-      if (index < scenes.length - 1) {
-        tl.to(scene + " h1, " + scene + " p, " + scene + " .panel, " + scene + " .cta-actions, " + scene + " .kicker, " + scene + " .caption-band", { y: -18, opacity: 0, duration: .35, ease: "power2.in" }, at + 6.35);
-        tl.set(scene, { autoAlpha: 0 }, at + 6.85);
+
+      tl.to(".progress i", { width: ((index + 1) / SCENE_IDS.length * 100) + "%", duration: (SCENE_LEN - .4), ease: "none" }, at);
+
+      if (index < SCENE_IDS.length - 1) {
+        var nextId = SCENE_IDS[index + 1];
+        var transAt = at + SCENE_LEN - .3;
+        tl.to(sceneId, { opacity: 0, duration: .4, ease: "power2.inOut" }, transAt);
+        tl.fromTo(nextId, { opacity: 0 }, { opacity: 1, duration: .4, ease: "power2.inOut" }, transAt);
+        tl.set(sceneId, { autoAlpha: 0, opacity: 1 }, transAt + .41);
       }
     });
-    tl.to(".scene-cta", { opacity: 0, duration: .5, ease: "power2.in" }, 35.4);
-    const countEl = document.querySelector(".count");
+
+    tl.to("#scene-cta", { opacity: 0, duration: .5, ease: "power2.in" }, DURATION - .6);
+
+    var countEl = document.querySelector(".count");
     if (countEl) {
       tl.to({ value: 0 }, {
         value: Number(countEl.dataset.count || "0"),
@@ -449,22 +451,18 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
         onUpdate: function () { countEl.textContent = Math.round(this.targets()[0].value) + "%"; }
       }, .9);
     }
+
     window.__timelines["diagnostic-report-video"] = tl;
     dispatchSeek(0);
+
     window.addEventListener("message", function(event) {
-      const message = event.data || {};
+      var message = event.data || {};
       if (message.source !== "diagnostic-report-player") return;
       if (message.type === "seek" && Number.isFinite(message.time)) {
-        tl.time(Math.max(0, Math.min(36, Number(message.time))));
+        tl.time(Math.max(0, Math.min(DURATION, Number(message.time))));
         dispatchSeek(tl.time());
       }
-      if (message.type === "toggle") {
-        if (tl.paused()) {
-          tl.play();
-        } else {
-          tl.pause();
-        }
-      }
+      if (message.type === "toggle") { tl.paused() ? tl.play() : tl.pause(); }
       if (message.type === "play") tl.play();
       if (message.type === "pause") tl.pause();
       if (message.type === "replay") tl.time(0).play();
@@ -472,7 +470,8 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
         tl.timeScale(Math.max(.5, Math.min(2, Number(message.speed))));
       }
     });
-    const params = new URLSearchParams(window.location.search);
+
+    var params = new URLSearchParams(window.location.search);
     if (params.get("autoplay") === "1" && !window.__HYPERFRAMES_PLAYER__) {
       window.requestAnimationFrame(function(){ tl.play(0); });
     }

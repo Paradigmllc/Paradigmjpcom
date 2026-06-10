@@ -67,6 +67,7 @@ export default function ReportHyperFramesPlayer({ src, lang }: { src: string; la
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(36)
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(1)
+  const [playerPresent, setPlayerPresent] = useState(false)
 
   const copy = {
     play: lang === "ja" ? "再生" : "Play",
@@ -84,8 +85,17 @@ export default function ReportHyperFramesPlayer({ src, lang }: { src: string; la
     let active = true
     async function loadRuntime() {
       try {
-        if (!customElements.get("hyperframes-player")) await import("@hyperframes/player")
-        if (active) setRuntimeReady(Boolean(customElements.get("hyperframes-player")))
+        if (!customElements.get("hyperframes-player")) {
+          const mod = await import("@hyperframes/player")
+          if (typeof mod?.defineCustomElement === "function") {
+            mod.defineCustomElement()
+          }
+        }
+        const el = customElements.get("hyperframes-player")
+        if (active) {
+          setRuntimeReady(Boolean(el))
+          setPlayerPresent(Boolean(el))
+        }
       } catch (error) {
         console.error("[diagnostic-report] HyperFrames player failed to load:", error)
         if (active) {
@@ -231,7 +241,7 @@ export default function ReportHyperFramesPlayer({ src, lang }: { src: string; la
     <div ref={frameRef} data-diagnostic-hf-root data-hf-speed={speed} data-mobile-video="responsive" className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-950 shadow-lg">
       <iframe ref={mobileIframeRef} src={mobileSrc} className="mx-auto block aspect-[9/16] max-h-[78vh] w-full max-w-[430px] bg-zinc-950 sm:hidden" title={lang === "ja" ? "診断動画" : "Diagnostic video"} allow="autoplay; fullscreen" />
       <div className="hidden sm:block">
-      {runtimeReady && !runtimeFailed ? createElement("hyperframes-player", {
+      {runtimeReady && playerPresent && !runtimeFailed ? createElement("hyperframes-player", {
         ref: playerRef,
         src,
         controls: "",

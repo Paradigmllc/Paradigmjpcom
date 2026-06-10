@@ -75,24 +75,45 @@
 - Diagnostic report data now exposes `evidence_screenshot_url` / `evidence_screenshot_kind`; report Hero, screenshot section, asset JSON, and HyperFrames video prefer that variant evidence image when present.
 - Verification: `npx tsc --noEmit` passed; `git diff --check` passed; `npm run context:audit` passed. Remaining risk: variant screenshots depend on usable external URLs in company meta, and some social/map pages may block remote browsers.
 
-### 2026-06-10 コンテンツ充実化作業
-- seed-pricing API ルート新規作成: `src/app/api/admin/seed-pricing/route.ts` — Payload `pricing` collection に web/meo/seo/ai 各3プラン（計12件）を JA+EN でシード
-- seed-faqs API ルート新規作成: `src/app/api/admin/seed-faqs/route.ts` — Payload `faqs` collection に JA+EN 各18問をシード（Lexical richText 形式）
-- seed-posts API ルート新規作成: `src/app/api/admin/seed-posts/route.ts` — Payload `posts` collection に追加5記事を JA+EN でシード（既存4件と合わせて9件）
-- Webサービス詳細ページ (`/services/web`) に ProcessBand (4step) 追加、i18n 完全対応（`serviceDetail.web.process` に移動 + `ctaHighlight/ctaDesc/ctaLabel` 追加）
-- 価格ページ (`/pricing`) に料金FAQセクション（6問アコーディオン）追加
-- 12ロケールすべてに新規 i18n キー反映（`scripts/patch-locale-messages.mjs` で一括パッチ）
-- Verification: `npx tsc --noEmit` 0エラー, `git diff --check` 警告のみ（CRLF）
+### 2026-06-10 コンテンツ充実化作業 (Round 1)
+- **seed-pricing** API ルート新規作成 — Payload `pricing` collection に web/meo/seo/ai 各3プラン（計12件）を JA+EN でシード
+- **seed-faqs** API ルート新規作成 — Payload `faqs` に JA+EN 各18問をシード（Lexical richText 形式）
+- **seed-posts** API ルート新規作成 — Payload `posts` に追加5記事を JA+EN でシード（既存4件と合わせて9件）
+- **Webサービス詳細** (`/services/web`) に ProcessBand (4step) 追加、i18n 完全対応
+- **価格ページ** (`/pricing`) に料金FAQセクション（6問アコーディオン）追加
+- 12ロケールすべてに新規 i18n キー反映（`scripts/patch-locale-messages.mjs`）
 
-### シード実行方法
-各シードは ADMIN_SCRIPT_SECRET 環境変数設定後に以下で実行:
-```
-POST /api/admin/seed-pricing  { confirm: true }
-POST /api/admin/seed-faqs     { confirm: true }
-POST /api/admin/seed-posts    { confirm: true }
-POST /api/admin/seed-blog     { confirm: true }  # 既存・レガシー4記事
-POST /api/admin/seed-services { confirm: true }  # 既存・5サービス
-```
+### 2026-06-10 コンテンツ充実化作業 (Round 3 — サイトマップ + SEOスキーマ + ブログフォールバック)
+- **サイトマップ**: `/video`, `/works`, `/agency`, `/pricing` を STATIC_ROUTES に追加
+- **JSON-LD 構造化データ**: 10ページに追加
+  - `/pricing`: Service schema
+  - `/blog`: Article schema
+  - `/works`: Article schema
+  - `/about`: Article schema
+  - `/contact`: Article schema
+  - `/video`: Service schema
+  - `/agency`: Service schema
+  - `/lp/web`, `/lp/meo`, `/lp/seo`, `/lp/ai`: Service schema
+- **/blog/[slug]**: 空コンテンツ時に `emptyContent` フォールバックメッセージ表示
+- **10ロケール**: lpMeo/lpSeo/lpAi process+plans キー、worksPage.process キー、blogPostPage.emptyContent キーを全追加
+
+### Verification
+- `npx tsc --noEmit`: 既存エラー2件（autoTranslate.ts, error-monitor.ts — 当作業範囲外）
+- 修正ファイル累計: 40+（page 15, i18n 22, API route 3, sitemap 1）
+- 新規ファイル累計: 6（seed 3, patch script 1, schema script 2）
+- **/agency ページ**: JP ハードコード → i18n 完全移行 (`getTranslations("agencyPage")`)。プラン・比較表・FAQ・CTAすべて messages 経由に
+- **LP 3ページ充実化**:
+  - `/lp/seo`: プロセス (3step) + 料金プラン (3ティア) セクション追加
+  - `/lp/meo`: プロセス (3step) + 料金プラン (3ティア) セクション追加
+  - `/lp/ai`: プロセス (4step) + 料金プラン (3ティア) セクション追加
+- **/works ページ**: プロジェクト進行フロー (3step) セクション追加
+- **data.ts 12言語化**: 見送り（現行 Plan B 設計通り、非JA/ENは ja fallback で動作）
+
+### Verification
+- `npx tsc --noEmit`: 0エラー（Round 1, 2 ともに）
+- `git diff --check`: CRLF警告のみ（Windows環境のため想定内）
+- 修正ファイル: 20+ (messages 12ロケール + page 5ファイル + API route 3ファイル)
+- 新規ファイル: 4 (seed-pricing, seed-faqs, seed-posts, patch-locale-messages.mjs)
 - Added diagnostic visual story payload fields: `visual_annotations`, `improvement_preview`, and `visitor_journey`.
 - Added `src/lib/sales/diagnostic/visual-story.ts` to derive red-line annotations, before/after preview copy, and a 30-second visitor path from report acts, source coverage, template variant, and optional stored `meta.visual_evidence.annotations`.
 - Report Hero now overlays red audit pins on the captured evidence image; `ReportVisualEvidenceShowcase` adds a full evidence section with annotated screenshot, before/after preview, and visitor path replay.

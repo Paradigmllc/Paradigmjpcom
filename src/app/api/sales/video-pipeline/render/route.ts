@@ -1,14 +1,12 @@
 /**
- * /api/sales/video-pipeline/render — 動画レンダリング実行API
+ * /api/sales/video-pipeline/render — Video render execution API
  *
- * GUIから「今すぐレンダリング」ボタンで呼び出される。
- * 1. ジョブのナレーションスクリプトを生成（DeepSeek）
- * 2. HyperFrames HTML をビルド
- * 3. test-video/ に書き出してレンダリング実行
- * 4. 完了後 R2 にアップロード
- * 5. ジョブのステータスを更新
+ * 1. Fetches job + company + diagnostic data
+ * 2. Generates narration via DeepSeek
+ * 3. Builds HyperFrames HTML composition
+ * 4. Renders to MP4 via HyperFrames CLI
+ * 5. Completes job in Supabase
  */
-
 import { NextRequest, NextResponse } from "next/server"
 import { execSync } from "child_process"
 import { existsSync, mkdirSync, writeFileSync } from "fs"
@@ -22,7 +20,7 @@ import { runVideoJobAction } from "@/lib/sales/video-pipeline"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
-export const maxDuration = 300 // 5分
+export const maxDuration = 300
 
 const TEST_VIDEO_DIR = resolve(process.cwd(), "test-video")
 const RENDERS_DIR = resolve(TEST_VIDEO_DIR, "renders")
@@ -33,7 +31,6 @@ interface RenderRequest {
   fps?: number
 }
 
-/** 診断レポートがない場合のフォールバックデータ */
 function buildFallbackReportData(opts: {
   companyName: string
   industry: string | null
@@ -76,7 +73,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "Supabase is not configured" }, { status: 500 })
     }
 
-    // ジョブを取得
     const { data: job, error: jobError } = await sb
       .from("sales_video_jobs")
       .select("*, sales_companies!inner(company_name, domain, slug)")
@@ -88,15 +84,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "Job not found" }, { status: 404 })
     }
 
-    // ステータスを rendering に更新
     await runVideoJobAction({ jobId: body.jobId, action: "approve_render" })
 
-    // 企業情報を取得
     const companyId = job.company_id
     const company = companyId ? await findCompanyById(companyId) : null
     const companyName = company?.company_name ?? job.sales_companies?.company_name ?? "Unknown"
 
-    // 診断レポートを取得
     const slug = company?.slug ?? job.sales_companies?.slug
     const locale = job.locale || "ja"
     let reportData: DiagnosticReportData | null = null
@@ -108,14 +101,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // レポートデータを確定（なければフォールバック）
     const resolvedReport: DiagnosticReportData = reportData ?? buildFallbackReportData({
       companyName,
       industry: company?.industry ?? null,
       locale,
     })
 
-    // ナレーションスクリプトを生成
     const narrationResult = await generateNarrationScript(resolvedReport)
     const narrationScript = narrationResult.script ?? {
       hook: `${companyName}の公開データから、改善できる機会損失を可視化します。`,
@@ -125,47 +116,37 @@ export async function POST(req: NextRequest) {
       cta: `${companyName}向けの診断レポートと改善デモを30分で確認しましょう。`,
     }
 
-    // HyperFrames HTML をビルド
     const html = buildHyperFramesHtml(resolvedReport, narrationScript)
 
-    // test-video/index.html を上書き
     if (!existsSync(RENDERS_DIR)) {
       mkdirSync(RENDERS_DIR, { recursive: true })
     }
     writeFileSync(resolve(TEST_VIDEO_DIR, "index.html"), html, "utf-8")
 
-    // レンダリング実行
     const quality = body.quality ?? "standard"
     const fps = body.fps ?? (quality === "draft" ? 15 : quality === "high" ? 60 : 30)
     const outputFilename = `render-${body.jobId.slice(0, 8)}-${Date.now()}.mp4`
     const outputPath = resolve(RENDERS_DIR, outputFilename)
 
-    const cmd = [
+    const renderArgs = [
       "npx hyperframes render",
       `--fps ${fps}`,
       `--quality ${quality}`,
-      quality === "high" ? "--video-bitrate 20M" : "",
+      quality === "high" ? `--video-bitrate 20M` : "",
       `--output "${outputPath}"`,
-    ]
-      .filter(Boolean)
-      .join(" ")
+    ].filter(Boolean).join(" ")
 
-    console.warn(`[render-api] executing: ${cmd} in ${TEST_VIDEO_DIR}`)
-    execSync(cmd, { cwd: TEST_VIDEO_DIR, stdio: "pipe", timeout: 240_000 }) // 4分タイムアウト
+    console.warn(`[render-api] executing: ${renderArgs} in ${TEST_VIDEO_DIR}`)
+    execSync(renderArgs, { cwd: TEST_VIDEO_DIR, stdio: "pipe", timeout: 240_000 })
 
-    // レンダリング結果を確認
     if (!existsSync(outputPath)) {
       throw new Error("Render completed but output file not found")
     }
 
-    // ファイルサイズを取得
     const stats = await import("fs/promises").then((fs) => fs.stat(outputPath))
     const fileSizeBytes = stats.size
-
-    // プレビューURL（ローカルファイルの絶対パス）
     const previewUrl = `file://${outputPath}`
 
-    // ジョブを完了状態に更新
     await runVideoJobAction({
       jobId: body.jobId,
       action: "complete",
@@ -179,7 +160,7 @@ export async function POST(req: NextRequest) {
       filename: outputFilename,
       fileSizeBytes,
       previewUrl,
-      message: "動画のレンダリングが完了しました",
+      message: "Video render completed",
     })
   } catch (error) {
     console.error("[render-api] render failed:", error)

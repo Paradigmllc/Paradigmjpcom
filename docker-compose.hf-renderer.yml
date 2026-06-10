@@ -3,7 +3,7 @@
 
 services:
   hf-renderer:
-    image: paradigm-hf-renderer:0.6.87
+    image: paradigm-hf-renderer:0.6.88
     container_name: paradigm-hf-renderer
     restart: unless-stopped
     volumes:

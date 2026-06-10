@@ -19,3 +19,12 @@ CREATE INDEX IF NOT EXISTS idx_sales_error_log_source ON sales_error_log (source
 
 -- Auto-cleanup: keep last 90 days
 COMMENT ON TABLE sales_error_log IS 'Sales OS batched error log. Auto-purged after 90 days.';
+
+-- RLS: service_role のみ書き込み、認証ユーザーは読み取りのみ
+ALTER TABLE sales_error_log ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Service role can manage error logs" ON sales_error_log
+  FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Authenticated users can read error logs" ON sales_error_log
+  FOR SELECT USING (auth.role() = 'authenticated');

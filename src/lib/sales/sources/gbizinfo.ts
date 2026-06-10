@@ -48,7 +48,8 @@ export async function getCompanyByCorporateNumber(
     if (!res.ok) return null
     const data = (await res.json()) as { 'hojin-infos'?: GBizCompany[] }
     return data['hojin-infos']?.[0] ?? null
-  } catch {
+  } catch (e) {
+    console.warn("[gbizinfo] company lookup failed:", e instanceof Error ? e.message : String(e))
     return null
   }
 }
@@ -72,7 +73,8 @@ export async function searchByName(
     if (!res.ok) return []
     const data = (await res.json()) as { 'hojin-infos'?: GBizCompany[] }
     return data['hojin-infos'] ?? []
-  } catch {
+  } catch (e) {
+    console.warn("[gbizinfo] name search failed:", e instanceof Error ? e.message : String(e))
     return []
   }
 }

@@ -12,6 +12,7 @@ import { getPayload } from "payload"
 import config from "@payload-config"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
+import { buildArticleSchema } from "@/lib/seo/schemas"
 import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import FadeIn from "@/components/aesop/FadeIn"
@@ -153,6 +154,19 @@ export default async function BlogPage({ params }: Props) {
           )}
         </div>
       </section>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            buildArticleSchema({
+              title: t("heroTitle"),
+              description: t("heroDesc"),
+              url: `https://paradigmjp.com/${locale}/blog`,
+              locale,
+            })
+          ),
+        }}
+      />
     </>
   )
 }

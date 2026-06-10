@@ -25,7 +25,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^5.2.2",
-    "@hyperframes/player": "^0.6.87",
+    "@hyperframes/player": "^0.6.88",
     "@keystatic/core": "^0.5.50",
     "@keystatic/next": "^5.0.4",
     "@markdoc/markdoc": "^0.5.7",

@@ -12,6 +12,7 @@ import { getPayload } from "payload"
 import config from "@payload-config"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
+import { buildArticleSchema } from "@/lib/seo/schemas"
 import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
@@ -42,6 +43,8 @@ type WorkDoc = {
   tags?: Array<{ tag?: string }>
 }
 
+type ProcessStep = { step: string; title: string; desc: string }
+
 const TILE_GRADIENTS = [
   "from-pink-400 via-paradigm-accent to-paradigm-tech",
   "from-paradigm-tech via-paradigm-glow to-violet-400",
@@ -53,6 +56,7 @@ export default async function WorksPage({ params }: Props) {
   const { locale: rawLocale } = await params
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
   const t = await getTranslations({ locale, namespace: "worksPage" })
+  const STEPS = t.raw("process") as ProcessStep[]
 
   let works: WorkDoc[] = []
   if (!shouldSkipPayloadReads()) {
@@ -137,12 +141,53 @@ export default async function WorksPage({ params }: Props) {
         </div>
       </section>
 
+      {/* Process */}
+      <section className="relative bg-paradigm-paper-deep paradigm-section overflow-hidden">
+        <div className="paradigm-mesh opacity-40" />
+        <div className="relative z-10 max-w-4xl mx-auto px-6 md:px-8">
+          <FadeIn className="mb-8 max-w-2xl">
+            <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("processEyebrow")}</p>
+            <h2 className="font-display text-[24px] md:text-[36px] leading-[1.15] tracking-[-0.02em] text-paradigm-ink">
+              <span className="bg-gradient-to-br from-paradigm-ink via-paradigm-accent to-paradigm-tech bg-clip-text text-transparent">
+                {t("processTitle")}
+              </span>
+            </h2>
+          </FadeIn>
+          <ol className="space-y-3">
+            {STEPS.map((s, i) => (
+              <FadeIn key={s.step} delay={i * 0.08}>
+                <li className="paradigm-glass rounded-xl p-5 grid grid-cols-1 md:grid-cols-[60px_1fr] gap-3 paradigm-glow-sm hover:paradigm-glow-md hover:-translate-y-0.5 transition-all duration-500">
+                  <span className="font-display text-[24px] md:text-[28px] leading-none bg-gradient-to-br from-paradigm-accent to-paradigm-tech bg-clip-text text-transparent">{s.step}</span>
+                  <div>
+                    <h3 className="font-display text-[16px] md:text-[18px] leading-[1.2] text-paradigm-ink mb-1 tracking-[-0.01em]">{s.title}</h3>
+                    <p className="text-[12px] md:text-[13px] text-paradigm-ink-soft leading-[1.7]">{s.desc}</p>
+                  </div>
+                </li>
+              </FadeIn>
+            ))}
+          </ol>
+        </div>
+      </section>
+
       <RichCtaBand
         eyebrow={t("ctaEyebrow")}
         title={t("ctaTitle")}
         highlight={t("ctaHighlight")}
         desc={t("ctaDesc")}
         buttonLabel={t("ctaButton")}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            buildArticleSchema({
+              title: t("heroTitle"),
+              description: t("heroDesc"),
+              url: `https://paradigmjp.com/${locale}/works`,
+              locale,
+            })
+          ),
+        }}
       />
     </>
   )

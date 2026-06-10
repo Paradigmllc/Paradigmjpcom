@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       `*レポート*: ${body.reportName || "不明"}\n` +
       `*レポートURL*: ${body.reportUrl || "N/A"}\n` +
       `*知りたいこと*:\n${interestsText}`
-    ).catch(() => {})
+    ).catch((e) => console.error("[request-info] Slack notification failed:", e))
 
     return NextResponse.json({ ok: true })
   } catch (e) {

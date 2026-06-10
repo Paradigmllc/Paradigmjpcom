@@ -2,18 +2,23 @@ export function buildThreeLayerScript(): string {
   return String.raw`<script type="module">
     import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js";
 
-    const canvas = document.querySelector("#three-layer") || document.querySelector("[data-three-layer]");
+    const canvas = document.getElementById("three-layer");
     if (!canvas) {
-      console.warn("[video-three] canvas not found; skipping background layer");
-      throw new Error("three layer canvas missing");
+      console.warn("[video-three] canvas #three-layer not found; skipping background layer");
+      return;
     }
+
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width || 1920;
+    const height = rect.height || 1080;
+
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(38, 16 / 9, 0.1, 100);
+    const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
     camera.position.set(0, 0, 8);
 
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setSize(1920, 1080, false);
+    renderer.setSize(width, height, false);
 
     const group = new THREE.Group();
     scene.add(group);
@@ -40,5 +45,12 @@ export function buildThreeLayerScript(): string {
 
     window.addEventListener("hf-seek", function(event) { renderAt(event.detail.time || 0); });
     renderAt(0);
+
+    window.addEventListener("resize", function() {
+      const r = canvas.getBoundingClientRect();
+      renderer.setSize(r.width || 1920, r.height || 1080, false);
+      camera.aspect = (r.width || 1920) / (r.height || 1080);
+      camera.updateProjectionMatrix();
+    });
   </script>`;
 }

@@ -48,7 +48,8 @@ export async function checkSslGrade(domain: string): Promise<SslLabsResult> {
       isExpired: daysUntilExpiry !== null && daysUntilExpiry < 0,
       daysUntilExpiry,
     }
-  } catch {
+  } catch (e) {
+    console.warn("[ssllabs] SSL check failed:", e instanceof Error ? e.message : String(e))
     return { grade: null, hasWarnings: false, isExpired: false, daysUntilExpiry: null }
   }
 }

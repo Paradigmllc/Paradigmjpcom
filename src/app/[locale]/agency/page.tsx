@@ -221,6 +221,7 @@ export default async function AgencyPage({ params }: Props) {
         buttonLabel={t("ctaButton")}
         buttonHref="/contact"
       />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(buildServiceSchema({ name: t("metaTitle"), description: t("metaDescription"), url: `https://paradigmjp.com/${locale}/agency`, locale, serviceType: "Agency White-Label" })) }} />
     </>
   )
 }

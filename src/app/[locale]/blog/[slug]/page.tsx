@@ -139,7 +139,13 @@ export default async function BlogPostPage({
       <article className="relative bg-paradigm-paper paradigm-section overflow-hidden">
         <div className="paradigm-mesh opacity-20" />
         <FadeIn className="relative z-10 max-w-3xl mx-auto px-6 md:px-8">
-          <div className="paradigm-glass rounded-2xl p-7 md:p-9 paradigm-glow-md" dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }} />
+          {post.content ? (
+            <div className="paradigm-glass rounded-2xl p-7 md:p-9 paradigm-glow-md" dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }} />
+          ) : (
+            <div className="paradigm-glass rounded-2xl p-7 md:p-9 paradigm-glow-md text-center">
+              <p className="text-[14px] text-paradigm-ink-soft leading-[1.85]">{t("emptyContent")}</p>
+            </div>
+          )}
         </FadeIn>
       </article>
 

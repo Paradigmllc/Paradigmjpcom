@@ -1,21 +1,14 @@
 /**
- * HyperFrames 動画レンダリングスクリプト
+ * HyperFrames video render script
  *
- * 使い方:
- *   node scripts/render-video-hyperframes.mjs [--profile draft|standard|high] [--composition compositions/xxx.html]
+ * Usage:
+ *   node scripts/render-video-hyperframes.mjs [--profile draft|standard|high]
  *
- * 説明:
- *   test-video/ プロジェクト内の index.html を HyperFrames CLI で MP4 にレンダリングする。
- *   --profile で品質プロファイルを指定可能。
- *   --composition で特定のコンポジションファイルを指定可能。
- *
- * パイプライン統合:
- *   n8n からこのスクリプトを呼び出すことで、動画生成パイプラインの一部として使用できる。
- *   例: node scripts/render-video-hyperframes.mjs --profile standard
+ * Renders test-video/index.html to MP4 via HyperFrames CLI.
+ * Pipeline integration: callable from n8n or trigger.dev workers.
  */
-
 import { execSync } from "child_process"
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from "fs"
+import { existsSync, mkdirSync } from "fs"
 import { resolve, dirname } from "path"
 import { fileURLToPath } from "url"
 
@@ -23,20 +16,22 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const PROJECT_DIR = resolve(__dirname, "..", "test-video")
 const RENDERS_DIR = resolve(PROJECT_DIR, "renders")
 
-// プロファイル設定
-const PROFILES = {
-  draft: { fps: 15, quality: "draft", desc: "クイックプレビュー" },
-  standard: { fps: 30, quality: "standard", desc: "標準品質" },
-  high: { fps: 60, quality: "high", extra: "--video-bitrate 20M", desc: "高品質納品用" },
-  "social-portrait": { fps: 30, quality: "standard", extra: "--resolution portrait", desc: "TikTok/Reels/Shorts 縦型" },
-  "social-square": { fps: 30, quality: "standard", extra: "--resolution square", desc: "Instagram スクエア" },
+const PROFILES: Record<string, { fps: number; quality: string; extra?: string; desc: string }> = {
+  draft: { fps: 15, quality: "draft", desc: "Quick preview" },
+  standard: { fps: 30, quality: "standard", desc: "Standard quality" },
+  high: { fps: 60, quality: "high", extra: "--video-bitrate 20M", desc: "High quality delivery" },
+  "social-portrait": { fps: 30, quality: "standard", extra: "--resolution portrait", desc: "TikTok/Reels/Shorts" },
+  "social-square": { fps: 30, quality: "standard", extra: "--resolution square", desc: "Instagram square" },
 }
 
 function parseArgs() {
   const args = process.argv.slice(2)
-  const profile = args.includes("--profile") ? args[args.indexOf("--profile") + 1] || "standard" : "standard"
-  const composition = args.includes("--composition") ? args[args.indexOf("--composition") + 1] : null
-  const output = args.includes("--output") ? args[args.indexOf("--output") + 1] : null
+  const profileIdx = args.indexOf("--profile")
+  const profile = profileIdx >= 0 ? (args[profileIdx + 1] || "standard") : "standard"
+  const compIdx = args.indexOf("--composition")
+  const composition = compIdx >= 0 ? args[compIdx + 1] : null
+  const outIdx = args.indexOf("--output")
+  const output = outIdx >= 0 ? args[outIdx + 1] : null
   return { profile, composition, output }
 }
 
@@ -44,29 +39,26 @@ function main() {
   const { profile, composition, output } = parseArgs()
 
   if (!PROFILES[profile]) {
-    console.error(`✗ 不明なプロファイル: ${profile}`)
-    console.error(`  使用可能: ${Object.keys(PROFILES).join(", ")}`)
+    console.error(`Unknown profile: ${profile}`)
+    console.error(`Available: ${Object.keys(PROFILES).join(", ")}`)
     process.exit(1)
   }
 
   const config = PROFILES[profile]
-  console.log(`\n🎬 HyperFrames レンダリング開始`)
-  console.log(`   プロファイル: ${profile} (${config.desc})`)
-  console.log(`   プロジェクト: ${PROJECT_DIR}`)
+  console.log(`\nHyperFrames render start`)
+  console.log(`  Profile: ${profile} (${config.desc})`)
+  console.log(`  Project: ${PROJECT_DIR}`)
 
-  // プロジェクトの存在確認
   if (!existsSync(resolve(PROJECT_DIR, "index.html"))) {
-    console.error(`✗ ${PROJECT_DIR}/index.html が見つかりません`)
+    console.error(`${PROJECT_DIR}/index.html not found`)
     process.exit(1)
   }
 
-  // renders ディレクトリ作成
   if (!existsSync(RENDERS_DIR)) {
     mkdirSync(RENDERS_DIR, { recursive: true })
   }
 
-  // コマンド構築
-  const cmdParts = [
+  const renderArgs = [
     `cd /d "${PROJECT_DIR}"`,
     "&&",
     "npx hyperframes render",
@@ -75,46 +67,36 @@ function main() {
     config.extra || "",
     composition ? `--composition "${composition}"` : "",
     output ? `--output "${output}"` : "",
-  ]
-    .filter(Boolean)
-    .join(" ")
+  ].filter(Boolean).join(" ")
 
-  const cmd = `cmd /c "${cmdParts}"`
-
-  console.log(`   コマンド: ${cmd}`)
-  console.log("")
+  const cmd = `cmd /c "${renderArgs}"`
+  console.log(`  Command: ${cmd}\n`)
 
   try {
     const startTime = Date.now()
-    execSync(cmd, { stdio: "inherit", cwd: PROJECT_DIR, timeout: 600_000 }) // 10分タイムアウト
+    execSync(cmd, { stdio: "inherit", cwd: PROJECT_DIR, timeout: 600_000 })
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1)
 
-    // 最新のレンダリング結果を探す
     const renders = execSync(
       `cmd /c "dir /b /o-d "${RENDERS_DIR}"\\*.mp4 2>nul"`,
       { encoding: "utf-8", cwd: PROJECT_DIR },
-    )
-      .trim()
-      .split("\n")
-      .filter(Boolean)
+    ).trim().split("\n").filter(Boolean)
 
     if (renders.length > 0) {
       const latest = renders[0].trim()
       const filePath = resolve(RENDERS_DIR, latest)
-      const stats = existsSync(filePath) ? execSync(
-        `cmd /c "for %I in ("${filePath}") do @echo %~zI"`,
-        { encoding: "utf-8" },
-      ).trim() : "?"
-
-      console.log(`\n✅ レンダリング完了！`)
-      console.log(`   ファイル: ${filePath}`)
-      console.log(`   サイズ: ${(parseInt(stats) / 1024 / 1024).toFixed(1)} MB`)
-      console.log(`   所要時間: ${elapsed}秒`)
+      const stats = existsSync(filePath)
+        ? execSync(`cmd /c "for %I in ("${filePath}") do @echo %~zI"`, { encoding: "utf-8" }).trim()
+        : "?"
+      console.log(`\nRender complete!`)
+      console.log(`  File: ${filePath}`)
+      console.log(`  Size: ${(parseInt(stats, 10) / 1024 / 1024).toFixed(1)} MB`)
+      console.log(`  Time: ${elapsed}s`)
     } else {
-      console.log(`\n✅ レンダリング完了（出力ファイル確認不可）`)
+      console.log(`\nRender complete (output file check unavailable)`)
     }
   } catch (error) {
-    console.error(`\n✗ レンダリング失敗: ${error.message}`)
+    console.error(`\nRender failed: ${(error as Error).message}`)
     process.exit(1)
   }
 }

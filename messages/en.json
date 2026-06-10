@@ -167,7 +167,26 @@
     "ctaTitle": "Let's build your next case study together",
     "ctaHighlight": "together",
     "ctaDesc": "Book a free consultation to scope your Japan entry.",
-    "ctaButton": "Book a free consultation"
+    "ctaButton": "Book a free consultation",
+    "processEyebrow": "How We Work",
+    "processTitle": "How we deliver projects",
+    "process": [
+      {
+        "step": "01",
+        "title": "Discovery",
+        "desc": "We listen to your challenges, goals, and budget, then propose the optimal plan and timeline."
+      },
+      {
+        "step": "02",
+        "title": "Design & Build",
+        "desc": "From design to coding and AI integration, a dedicated team manages quality throughout."
+      },
+      {
+        "step": "03",
+        "title": "Launch & Support",
+        "desc": "After final QA, we go live. Post-launch maintenance and improvements continue."
+      }
+    ]
   },
   "legalPage": {
     "metaTitle": "Specified Commercial Transactions Act notice",
@@ -813,7 +832,8 @@
     "ctaHighlight": "Talk",
     "ctaDesc": "We will tailor a concrete proposal for your business.",
     "ctaButton": "Book a free consultation",
-    "notFound": "Article not found"
+    "notFound": "Article not found",
+    "emptyContent": "The full article content is being prepared. Please check back soon."
   },
   "lpWeb": {
     "metaTitle": "Web development free consultation | Paradigm",

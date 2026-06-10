@@ -1,81 +1,12 @@
 /**
- * paradigmjp.com /d/[slug] — 顧客向けデモページ (canonical)
+ * paradigmjp.com /d/[slug] → Astro demo redirect
  *
- * H-2-6 (2026-05-01): /d/[slug] デモを Paradigm-HP 単一所有化
- *   - 旧: appexx.me/d/[slug] → ユーザ制約 "appexx.me 顧客表示禁止" 違反
- *   - 新: paradigmjp.com/d/[slug] (Server Component で web_demos 直読・appexx.me 通信ゼロ)
- *
- * 2-layer 構成:
- *   - 本ファイル (Server Component): Supabase から html_content + name を server-side fetch
- *   - DemoClient (Client Component): iframe 描画 + ?name パーソナライズ + 滞在トラッキング
+ * All demo links now redirect to the professional Astro demo at
+ * paradigm-astro-demo.pages.dev. The legacy iframe-based demo is retired.
  */
-
-import { notFound } from "next/navigation"
-import type { Metadata } from "next"
-import { findCompanyById } from "@/lib/sales/companies"
-import { generateReplacementDemo } from "@/lib/sales/demo-generator"
-import { fetchDiagnosticReport } from "@/lib/sales/diagnostic"
-import { getServiceSalesSupabase } from "@/lib/supabase"
-import DemoClient from "./DemoClient"
+import { redirect } from "next/navigation"
 
 export const dynamic = "force-dynamic"
-export const revalidate = 60 // SWR 60s — デモ更新後 1 分以内に反映
-
-interface Demo {
-  id: string
-  slug: string
-  company_id: string | null
-  name: string
-  html_content: string | null
-  html: string | null
-  is_published: boolean
-  meta: Record<string, unknown> | null
-}
-
-async function getDemo(slug: string): Promise<Demo | null> {
-  const sb = getServiceSalesSupabase()
-  if (!sb) return null
-  const { data } = await sb
-    .from("web_demos")
-    .select("id, slug, company_id, name, html_content, html, is_published, meta")
-    .eq("slug", slug)
-    .eq("is_published", true)
-    .maybeSingle()
-  return data as Demo | null
-}
-
-async function refreshOutdatedDemo(demo: Demo): Promise<Demo> {
-  const rendererVersion = typeof demo.meta?.renderer_version === "string" ? demo.meta.renderer_version : ""
-  if (rendererVersion === "professional-v3-independent-site") return demo
-  if (!demo.company_id) return demo
-
-  const company = await findCompanyById(demo.company_id)
-  if (!company) return demo
-  const report = await fetchDiagnosticReport({
-    companyId: company.id,
-    reportLocale: company.report_locale ?? undefined,
-  })
-  if (!report) return demo
-
-  const result = await generateReplacementDemo(company, report)
-  if (!result.ok) return demo
-  return (await getDemo(demo.slug)) ?? demo
-}
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>
-}): Promise<Metadata> {
-  const { slug } = await params
-  const demo = await getDemo(slug)
-  const title = demo?.name ? `${demo.name} | 改善デモサイト` : "改善デモサイト"
-  return {
-    title,
-    description: "診断データから生成した、顧客専用のAstro実装前提デモサイトです。",
-    robots: { index: false, follow: false },
-  }
-}
 
 export default async function PublicDemoPage({
   params,
@@ -83,19 +14,5 @@ export default async function PublicDemoPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const initialDemo = await getDemo(slug)
-  const demo = initialDemo ? await refreshOutdatedDemo(initialDemo) : null
-  if (!demo) notFound()
-
-  const html = demo.html_content || demo.html || ""
-  if (!html) notFound()
-
-  return (
-    <DemoClient
-      demoId={demo.id}
-      slug={demo.slug}
-      name={demo.name || "Demo"}
-      html={html}
-    />
-  )
+  redirect(`https://paradigm-astro-demo.pages.dev/?slug=${encodeURIComponent(slug)}`)
 }

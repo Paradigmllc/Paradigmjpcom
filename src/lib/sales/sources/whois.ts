@@ -51,7 +51,8 @@ export async function getWhois(domain: string): Promise<WhoisResult> {
       expiresDate,
       yearsOld,
     }
-  } catch {
+  } catch (e) {
+    console.warn("[whois] WHOIS lookup failed:", e instanceof Error ? e.message : String(e))
     return { registrar: null, createdDate: null, updatedDate: null, expiresDate: null, yearsOld: null }
   }
 }

@@ -11,6 +11,7 @@
 import type { Metadata } from "next"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
+import { buildServiceSchema } from "@/lib/seo/schemas"
 import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
@@ -164,6 +165,7 @@ export default async function MeoLP({ params }: Props) {
         desc={t("ctaDesc")}
         buttonLabel={t("ctaButton")}
       />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(buildServiceSchema({ name: t("metaTitle"), description: t("metaDescription"), url: `https://paradigmjp.com/${locale}/lp/meo`, locale, serviceType: "Local SEO" })) }} />
     </>
   )
 }

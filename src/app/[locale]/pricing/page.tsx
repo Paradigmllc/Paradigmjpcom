@@ -15,6 +15,7 @@ import { getPayload } from "payload"
 import config from "@payload-config"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
+import { buildServiceSchema } from "@/lib/seo/schemas"
 import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
@@ -260,6 +261,20 @@ export default async function PricingPage({ params, searchParams }: Props) {
         highlight={t("ctaHighlight")}
         desc={t("ctaDesc")}
         buttonLabel={t("ctaButton")}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            buildServiceSchema({
+              name: t("heroTitle"),
+              description: t("heroDesc"),
+              url: `https://paradigmjp.com/${locale}/pricing`,
+              locale,
+              serviceType: "Pricing Plans",
+            })
+          ),
+        }}
       />
     </>
   )

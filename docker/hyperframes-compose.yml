@@ -1,6 +1,6 @@
 services:
   hyperframes:
-    image: paradigm-hyperframes:0.6.87
+    image: paradigm-hyperframes:0.6.88
     container_name: paradigm-hyperframes
     restart: unless-stopped
     environment:
