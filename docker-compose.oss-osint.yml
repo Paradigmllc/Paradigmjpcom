@@ -1,169 +1,96 @@
-# OSINT Microservices — Production Compose (optimized for Coolify)
-# Uses small images, minimal startup, no build steps
-# Deploy: docker compose -f docker-compose.oss-osint.yml up -d
-# Or via Coolify web UI → Services → New → Docker Compose
+# OSINT Microservices — Production Compose (Coolify compatible)
+# Python API servers in docker/osint/ mounted as volumes
+# Deploy: Coolify → Docker Compose Service
 
 services:
-  # ─── SpiderFoot API (Python + SpiderFoot) ────────────────────
+  # ─── SpiderFoot API ────────────────────────────────────────
   spiderfoot:
     image: python:3.13-alpine
     restart: unless-stopped
-    ports:
-      - "5001:5001"
     command: >
-      sh -c "
-      pip install -q spiderfoot flask &&
-      python3 -c \"
-from flask import Flask, request, jsonify
-import subprocess, json, shutil, tempfile
-app = Flask(__name__)
-
-@app.route('/health')
-def health():
-    return jsonify({'status':'ok','service':'spiderfoot'})
-
-@app.route('/scan', methods=['POST'])
-def scan():
-    target = request.json.get('target','')
-    modules = request.json.get('modules',['sfp_dns','sfp_whois','sfp_sslcert','sfp_email','sfp_webserver'])
-    if not target: return jsonify({'ok':False,'error':'missing target'}), 400
-    tmp = tempfile.mkdtemp()
-    try:
-        r = subprocess.run(['python3','-m','sf','-s',target,'-m',','.join(modules),'-o','json','-q'],
-            capture_output=True, text=True, timeout=120, cwd=tmp)
-        lines = [l for l in r.stdout.strip().split(chr(10)) if l]
-        data = []
-        for l in lines:
-            try: data.append(json.loads(l))
-            except: pass
-        return jsonify({'ok':True,'data':{'results':data,'count':len(data)}})
-    except Exception as e:
-        return jsonify({'ok':False,'error':str(e)})
-    finally:
-        shutil.rmtree(tmp, ignore_errors=True)
-
-app.run(host='0.0.0.0', port=5001)
-\"
-      "
+      sh -c "pip install -q spiderfoot flask && python3 /app/server.py"
+    volumes:
+      - ./docker/osint/spiderfoot-server.py:/app/server.py:ro
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:5001/health"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
     networks:
       - osint-net
 
-  # ─── Katana API (Go binary, pre-built image) ─────────────────
+  # ─── Katana API ────────────────────────────────────────────
   katana:
     image: projectdiscovery/katana:1.2.3
     restart: unless-stopped
-    ports:
-      - "5002:5002"
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
         apk add --no-cache python3 py3-flask curl &&
-        python3 -c "
-from flask import Flask, request, jsonify
-import subprocess, json
-app = Flask(__name__)
-
-@app.route('/health')
-def health():
-    return jsonify({'status':'ok','service':'katana'})
-
-@app.route('/crawl', methods=['POST'])
-def crawl():
-    url = request.json.get('url','')
-    if not url: return jsonify({'ok':False,'error':'missing url'}), 400
-    try:
-        r = subprocess.run(['katana','-u',url,'-headless','-silent','-jc','-system-chrome','-timeout','30','-depth','2'],
-            capture_output=True, text=True, timeout=90)
-        lines = [l for l in r.stdout.strip().split(chr(10)) if l]
-        data = []
-        for l in lines:
-            try: data.append(json.loads(l))
-            except: data.append(l)
-        return jsonify({'ok':True,'data':{'crawled':len(data),'urls':data[:200]}})
-    except Exception as e:
-        return jsonify({'ok':False,'error':str(e)})
-
-app.run(host='0.0.0.0', port=5002)
-"
+        python3 /app/server.py
+    volumes:
+      - ./docker/osint/katana-server.py:/app/server.py:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: "1.0"
     networks:
       - osint-net
 
-  # ─── Maigret API (Python + maigret) ──────────────────────────
+  # ─── Maigret API ───────────────────────────────────────────
   maigret:
     image: python:3.13-alpine
     restart: unless-stopped
-    ports:
-      - "5003:5003"
     command: >
-      sh -c "
-      pip install -q maigret flask &&
-      python3 -c \"
-from flask import Flask, request, jsonify
-import subprocess, json
-app = Flask(__name__)
-
-@app.route('/health')
-def health():
-    return jsonify({'status':'ok','service':'maigret'})
-
-@app.route('/search', methods=['POST'])
-def search():
-    username = request.json.get('username','')
-    if not username: return jsonify({'ok':False,'error':'missing username'}), 400
-    try:
-        r = subprocess.run(['maigret',username,'--json','simple','--timeout','30','--no-recursive'],
-            capture_output=True, text=True, timeout=90)
-        lines = [l for l in r.stdout.strip().split(chr(10)) if l]
-        sites = []
-        for l in lines:
-            try:
-                d = json.loads(l)
-                if isinstance(d, dict): sites.append(d)
-            except: pass
-        return jsonify({'ok':True,'data':{'profiles_found':len(sites),'sites':sites[:30]}})
-    except Exception as e:
-        return jsonify({'ok':False,'error':str(e)})
-
-app.run(host='0.0.0.0', port=5003)
-\"
-      "
+      sh -c "pip install -q maigret flask && python3 /app/server.py"
+    volumes:
+      - ./docker/osint/maigret-server.py:/app/server.py:ro
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:5003/health"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
     networks:
       - osint-net
 
-  # ─── SearXNG ─────────────────────────────────────────────────
+  # ─── SearXNG ───────────────────────────────────────────────
   searxng:
     image: searxng/searxng:2025.5.13-65197a4d9
     restart: unless-stopped
-    ports:
-      - "8080:8080"
     volumes:
       - searxng-data:/etc/searxng
     environment:
       - SEARXNG_BASE_URL=http://localhost:8080/
-      - SEARXNG_SECRET=${OSINT_SEARXNG_SECRET:?OSINT_SEARXNG_SECRET is required}
+      - SEARXNG_SECRET=${OSINT_SEARXNG_SECRET:-paradigm-osint-searxng-key}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
     networks:
       - osint-net
 

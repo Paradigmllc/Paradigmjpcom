@@ -1,9 +1,10 @@
 # Morphic + Perplexica + Skyvern — AI-powered OSS search & automation
 # LLM: DeepSeek V4 (OpenAI-compatible) via api.deepseek.com
-# Deploy: Coolify → paradigmjp.com subdomains
+# Deploy: Coolify → Docker Compose Service
+# Traefik routing via coolify external network
 
 x-deepseek-env: &deepseek-env
-  OPENAI_API_KEY: ${DEEPSEEK_API_KEY:?DEEPSEEK_API_KEY is required}
+  OPENAI_API_KEY: ${DEEPSEEK_API_KEY:-sk-placeholder-set-in-coolify}
   OPENAI_API_BASE: ${DEEPSEEK_API_BASE:-https://api.deepseek.com/v1}
 
 services:
@@ -23,10 +24,15 @@ services:
         limits:
           memory: 1g
           cpus: "1.0"
-    ports:
-      - "3002:3000"
     networks:
+      - coolify
       - ai-services
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.morphic.entryPoints=https"
+      - "traefik.http.routers.morphic.rule=Host(`morphic.paradigmjp.com`)"
+      - "traefik.http.routers.morphic.tls=true"
+      - "traefik.http.services.morphic.loadbalancer.server.port=3000"
 
   # ─── Perplexica: AI-powered search ─────────────────────────
   perplexica-backend:
@@ -47,8 +53,6 @@ services:
         limits:
           memory: 1g
           cpus: "1.0"
-    ports:
-      - "3003:3001"
     networks:
       - ai-services
 
@@ -66,10 +70,15 @@ services:
         limits:
           memory: 512m
           cpus: "0.5"
-    ports:
-      - "3004:3000"
     networks:
+      - coolify
       - ai-services
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.perplexica.entryPoints=https"
+      - "traefik.http.routers.perplexica.rule=Host(`perplexica.paradigmjp.com`)"
+      - "traefik.http.routers.perplexica.tls=true"
+      - "traefik.http.services.perplexica.loadbalancer.server.port=3000"
 
   perplexica-searxng:
     image: searxng/searxng:2025.5.13-65197a4d9
@@ -78,14 +87,12 @@ services:
       - perplexica-searxng-data:/etc/searxng
     environment:
       SEARXNG_BASE_URL: http://localhost:8080/
-      SEARXNG_SECRET: ${PERPLEXICA_SEARXNG_SECRET:?PERPLEXICA_SEARXNG_SECRET is required}
+      SEARXNG_SECRET: ${PERPLEXICA_SEARXNG_SECRET:-paradigm-searxng-perplexica-key}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-    ports:
-      - "8081:8080"
     networks:
       - ai-services
 
@@ -96,7 +103,7 @@ services:
     environment:
       <<: *deepseek-env
       SKYVERN_BASE_URL: https://skyvern.paradigmjp.com
-      DATABASE_STRING: postgresql+asyncpg://skyvern:skyvern@skyvern-postgres:5432/skyvern
+      DATABASE_STRING: postgresql+asyncpg://${SKYVERN_POSTGRES_USER:-skyvern}:${SKYVERN_POSTGRES_PASSWORD:-skyvern}@skyvern-postgres:5432/${SKYVERN_POSTGRES_DB:-skyvern}
       REDIS_HOST: skyvern-redis
       REDIS_PORT: "6379"
       BROWSER_TYPE: chromium-headless
@@ -107,22 +114,27 @@ services:
         limits:
           memory: 3g
           cpus: "2.0"
-    ports:
-      - "8000:8000"
     depends_on:
       skyvern-postgres:
         condition: service_healthy
       skyvern-redis:
         condition: service_started
     networks:
+      - coolify
       - ai-services
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.skyvern.entryPoints=https"
+      - "traefik.http.routers.skyvern.rule=Host(`skyvern.paradigmjp.com`)"
+      - "traefik.http.routers.skyvern.tls=true"
+      - "traefik.http.services.skyvern.loadbalancer.server.port=8000"
 
   skyvern-postgres:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${SKYVERN_POSTGRES_USER:?SKYVERN_POSTGRES_USER is required}
-      POSTGRES_PASSWORD: ${SKYVERN_POSTGRES_PASSWORD:?SKYVERN_POSTGRES_PASSWORD is required}
+      POSTGRES_USER: ${SKYVERN_POSTGRES_USER:-skyvern}
+      POSTGRES_PASSWORD: ${SKYVERN_POSTGRES_PASSWORD:-skyvern}
       POSTGRES_DB: ${SKYVERN_POSTGRES_DB:-skyvern}
     deploy:
       resources:
@@ -132,7 +144,7 @@ services:
     volumes:
       - skyvern-pg-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U skyvern"]
+      test: ["CMD-SHELL", "pg_isready -U ${SKYVERN_POSTGRES_USER:-skyvern}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -148,6 +160,8 @@ services:
 networks:
   ai-services:
     driver: bridge
+  coolify:
+    external: true
 
 volumes:
   perplexica-searxng-data:

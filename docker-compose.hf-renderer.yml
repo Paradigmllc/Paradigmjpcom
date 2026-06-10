@@ -1,24 +1,20 @@
 # HyperFrames MP4 Renderer — production service
-# Uses pre-built Chromium + FFmpeg image with HyperFrames CLI
-# Build separately: docker build -t paradigm-hf-renderer -f docker/Dockerfile.hf-renderer .
+# Build: docker build -t paradigm-hf-renderer -f docker/Dockerfile.hf-renderer .
 
 services:
   hf-renderer:
-    image: mcr.microsoft.com/playwright:v1.60.0-noble
+    image: paradigm-hf-renderer:0.6.87
     container_name: paradigm-hf-renderer
     restart: unless-stopped
-    ports:
-      - "3001:3001"
     volumes:
       - hf-renders:/app/renders
     environment:
       - NODE_ENV=production
+      - HYPERFRAMES_API_KEY=${HYPERFRAMES_API_KEY:-hf-oss-20260609-key}
       - HYPERFRAMES_MAX_CONCURRENCY=2
       - PORT=3001
     command: >
-      sh -c "
-      hyperframes serve --port 3001
-      "
+      sh -c "hyperframes serve --port 3001"
     deploy:
       resources:
         limits:
@@ -30,6 +26,18 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    networks:
+      - coolify
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hyperframes.entryPoints=https"
+      - "traefik.http.routers.hyperframes.rule=Host(`hyperframes.paradigmjp.com`)"
+      - "traefik.http.routers.hyperframes.tls=true"
+      - "traefik.http.services.hyperframes.loadbalancer.server.port=3001"
+
+networks:
+  coolify:
+    external: true
 
 volumes:
   hf-renders:
