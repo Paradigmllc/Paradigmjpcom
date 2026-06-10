@@ -3,9 +3,12 @@ import "../styles/global.css"
 
 interface Props {
   title?: string
+  accentColor?: string
+  accentColorDark?: string
+  accentColorLight?: string
 }
 
-const { title = "Demo Site" } = Astro.props
+const { title = "Demo Site", accentColor = "#7c3aed", accentColorDark = "#5b21b6", accentColorLight = "#a78bfa" } = Astro.props
 ---
 
 <!doctype html>
@@ -14,21 +17,33 @@ const { title = "Demo Site" } = Astro.props
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
-    <meta name="description" content="Diagnostic-based personalized demo site" />
+    <meta name="description" content="データ診断に基づくパーソナライズド改善デモサイト" />
     <meta property="og:title" content={title} />
     <meta property="og:type" content="website" />
+    <meta property="og:image" content="/og-image.png" />
     <title>{title}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
   </head>
-  <body class="bg-[#050510] text-white font-sans">
+  <body class="min-h-screen font-sans antialiased" style="background-color:var(--bg);color:var(--text);--brand:${Astro.props.accentColor || '#7c3aed'};--brand-dark:${Astro.props.accentColorDark || '#5b21b6'};--brand-light:${Astro.props.accentColorLight || '#a78bfa'}">
     <slot />
   </body>
 </html>
 
-<style>
+<style is:global>
   :root {
-    font-family: 'Inter', 'Noto Sans JP', sans-serif;
+    --brand: #7c3aed;
+    --brand-dark: #5b21b6;
+    --brand-light: #a78bfa;
+    --bg: #050510;
+    --text: #ffffff;
+    --text-muted: rgb(255 255 255 / 0.45);
+    --border: rgb(255 255 255 / 0.06);
+    --card-bg: rgb(255 255 255 / 0.04);
+    --font-sans: 'Inter', 'Noto Sans JP', system-ui, sans-serif;
   }
+  html { scroll-behavior: smooth; }
+  ::selection { background: var(--brand); color: white; }
 </style>
