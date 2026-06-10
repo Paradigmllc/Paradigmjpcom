@@ -1,0 +1,31 @@
+---
+import DemoLayout from "../layouts/DemoLayout.astro"
+import { getDemoData, JA_INDUSTRY } from "../keystatic/demo-data"
+
+const slug = Astro.url.searchParams.get("slug") || "default-demo"
+const data = await getDemoData(slug)
+---
+
+<DemoLayout title={`${data.customerName} — 実績`} accentColor={data.accentColor} accentColorDark={data.accentColorDark} accentColorLight={data.accentColorLight} lang="ja">
+  <section class="section-padding">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16"><div class="badge mb-4"><span class="badge-dot"></span>Results</div><h1 class="text-4xl md:text-6xl font-black gradient-text mb-4">{data.caseTitle}</h1><p class="text-white/40 max-w-2xl mx-auto">{data.caseDescription}</p></div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16 stagger" data-animate>
+        {data.caseMetrics.map(m => (
+          <div class="glass-card glass-hover p-8 text-center">
+            <div class="text-4xl md:text-5xl font-black gradient-text mb-3">{m.value}<span class="text-xl ml-1">{m.suffix}</span></div>
+            <div class="text-sm font-semibold text-white/60 mb-1">{m.label}</div>
+            {m.detail && <div class="text-xs text-white/30 leading-relaxed">{m.detail}</div>}
+          </div>
+        ))}
+      </div>
+      {data.testimonials && (
+        <div class="grid md:grid-cols-2 gap-6">
+          {data.testimonials.map(t => (
+            <div class="glass-card p-8 relative"><div class="text-6xl absolute top-4 left-6 opacity-[.08] select-none" style="color:var(--brand)">&ldquo;</div><p class="text-white/60 leading-relaxed mb-6 relative z-10">『{t.quote}』</p><div class="flex items-center gap-3"><div class="flex h-10 w-10 items-center justify-center rounded-full bg-brand/20 text-brand-light text-sm font-bold">{t.author.charAt(0)}</div><div><div class="text-sm font-semibold text-white">{t.author}</div><div class="text-xs text-white/30">{t.role} · {t.company}</div></div></div></div>
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+</DemoLayout>

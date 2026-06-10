@@ -1,28 +1,46 @@
 ---
 import "../styles/global.css"
 
-interface Props {
+export interface Props {
   title?: string
+  description?: string
   accentColor?: string
   accentColorDark?: string
   accentColorLight?: string
+  lang?: "ja" | "en"
 }
 
 const {
   title = "Demo Site",
+  description = "",
   accentColor = "#7c3aed",
   accentColorDark = "#5b21b6",
   accentColorLight = "#a78bfa",
+  lang = "ja",
 } = Astro.props
+
+const t = {
+  nav: { home: lang==="ja"?"ホーム":"Home", about: lang==="ja"?"会社概要":"About", services: lang==="ja"?"サービス":"Services", cases: lang==="ja"?"実績":"Cases", contact: lang==="ja"?"お問い合わせ":"Contact", faq: "FAQ", cta: lang==="ja"?"無料相談":"Free Consult" },
+}
+
+const navItems = [
+  { href: "/", label: t.nav.home },
+  { href: "/about", label: t.nav.about },
+  { href: "/services", label: t.nav.services },
+  { href: "/cases", label: t.nav.cases },
+  { href: "/contact", label: t.nav.contact },
+  { href: "/faq", label: t.nav.faq },
+]
+const currentPath = Astro.url.pathname
 ---
 
 <!doctype html>
-<html lang="ja">
+<html lang={lang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
-    <meta name="description" content="データ診断に基づくパーソナライズド改善デモサイト" />
+    <meta name="description" content={description || title} />
     <meta property="og:title" content={title} />
     <meta property="og:type" content="website" />
     <title>{title}</title>
@@ -30,14 +48,68 @@ const {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
     <style is:inline>
-      :root {
-        --brand: {accentColor};
-        --brand-dark: {accentColorDark};
-        --brand-light: {accentColorLight};
-      }
+      :root { --brand: {accentColor}; --brand-dark: {accentColorDark}; --brand-light: {accentColorLight}; }
     </style>
+    <script is:inline>
+      // Scroll-triggered fade animations
+      document.addEventListener('DOMContentLoaded', () => {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('animate-fade-up') })
+        }, { threshold: 0.1 })
+        document.querySelectorAll('[data-animate]').forEach(el => observer.observe(el))
+      })
+    </script>
   </head>
-  <body class="min-h-screen font-sans" style="font-family:'Inter','Noto Sans JP',system-ui,sans-serif">
-    <slot />
+  <body class="min-h-screen">
+    <!-- NAV -->
+    <nav class="fixed top-0 inset-x-0 z-50 bg-[#050510]/70 backdrop-blur-2xl border-b border-white/5">
+      <div class="max-w-7xl mx-auto flex items-center justify-between px-6 h-16">
+        <a href="/" class="flex items-center gap-3 group">
+          <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-dark text-white text-[10px] font-black shadow-lg shadow-brand/25 group-hover:scale-110 transition-transform">P</div>
+          <span class="hidden sm:block text-sm font-bold text-white">Paradigm</span>
+        </a>
+        <div class="hidden lg:flex items-center gap-1">
+          {navItems.map(item => (
+            <a href={item.href} class={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${currentPath === item.href ? 'text-brand-light bg-brand/10' : 'nav-link'}`}>{item.label}</a>
+          ))}
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="flex rounded-lg border border-white/10 overflow-hidden text-xs">
+            <a href={currentPath} class={`px-2.5 py-1.5 font-medium transition-colors ${lang==='ja'?'bg-white/10 text-white':'text-white/30 hover:text-white'}`}>JA</a>
+            <a href={currentPath.replace(/^\/ja/, '/en')} class={`px-2.5 py-1.5 font-medium transition-colors ${lang==='en'?'bg-white/10 text-white':'text-white/30 hover:text-white'}`}>EN</a>
+          </div>
+          <a href="/contact" class="btn-primary text-xs !py-2 !px-4">{t.nav.cta}</a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="pt-16">
+      <slot />
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-white/5 py-16 px-6">
+      <div class="max-w-7xl mx-auto">
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+          <div>
+            <div class="flex items-center gap-2 mb-4">
+              <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-dark text-white text-[10px] font-black">P</div>
+              <span class="text-sm font-bold text-white">Paradigm</span>
+            </div>
+            <p class="text-xs text-white/30 leading-relaxed max-w-[200px]">{lang==="ja"?"データ診断に基づくWeb改善提案。貴社のデジタルプレゼンスを次のステージへ。":"Data-driven web improvement proposals. Take your digital presence to the next level."}</p>
+          </div>
+          {[{title:lang==="ja"?"サービス":"Services",links:[{label:lang==="ja"?"Web制作":"Web Dev",href:"/services"},{label:lang==="ja"?"SEO/MEO":"SEO/MEO",href:"/services"},{label:lang==="ja"?"AI活用":"AI Solutions",href:"/services"},{label:lang==="ja"?"運用保守":"Maintenance",href:"/services"}]},{title:lang==="ja"?"会社":"Company",links:[{label:lang==="ja"?"会社概要":"About",href:"/about"},{label:"FAQ",href:"/faq"},{label:lang==="ja"?"お問い合わせ":"Contact",href:"/contact"}]},{title:lang==="ja"?"法的":"Legal",links:[{label:lang==="ja"?"プライバシー":"Privacy",href:"#"},{label:lang==="ja"?"利用規約":"Terms",href:"#"},{label:lang==="ja"?"特商法":"Commercial Law",href:"#"}]}].map(col => (
+            <div>
+              <h4 class="text-xs font-bold text-white/60 uppercase tracking-wider mb-4">{col.title}</h4>
+              <ul class="space-y-2.5">{col.links.map(l => <li><a href={l.href} class="text-xs text-white/30 hover:text-white/60 transition-colors">{l.label}</a></li>)}</ul>
+            </div>
+          ))}
+        </div>
+        <div class="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/20">
+          <span>&copy; {new Date().getFullYear()} Paradigm LLC.</span>
+          <span>{lang==="ja"?"診断データから自動生成されたパーソナライズドデモサイト":"Auto-generated personalized demo from diagnostic data"}</span>
+        </div>
+      </div>
+    </footer>
   </body>
 </html>
