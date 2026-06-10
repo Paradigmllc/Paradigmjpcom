@@ -9,7 +9,7 @@ x-deepseek-env: &deepseek-env
 services:
   # ─── Morphic: AI-powered search engine ──────────────────────
   morphic:
-    image: ghcr.io/miurla/morphic:2.0.0
+    image: ghcr.io/miurla/morphic:latest
     restart: unless-stopped
     ports:
       - "3002:3000"
@@ -30,7 +30,7 @@ services:
 
   # ─── Perplexica: AI-powered search ─────────────────────────
   perplexica-backend:
-    image: ghcr.io/itzcrazykns/perplexica-backend:2.7.3
+    image: ghcr.io/itzcrazykns/perplexica-backend:latest
     restart: unless-stopped
     depends_on:
       perplexica-searxng:
@@ -53,7 +53,7 @@ services:
       - ai-services
 
   perplexica-frontend:
-    image: ghcr.io/itzcrazykns/perplexica-frontend:2.7.3
+    image: ghcr.io/itzcrazykns/perplexica-frontend:latest
     restart: unless-stopped
     depends_on:
       - perplexica-backend
@@ -72,7 +72,7 @@ services:
       - ai-services
 
   perplexica-searxng:
-    image: searxng/searxng:2025.5.13-65197a4d9
+    image: searxng/searxng:latest
     restart: unless-stopped
     volumes:
       - perplexica-searxng-data:/etc/searxng
@@ -91,7 +91,7 @@ services:
 
   # ─── Skyvern: Browser automation with AI agents ─────────────
   skyvern:
-    image: ghcr.io/skyvern-ai/skyvern:1.1.0
+    image: ghcr.io/skyvern-ai/skyvern:latest
     restart: unless-stopped
     environment:
       <<: *deepseek-env
