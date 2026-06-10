@@ -186,5 +186,6 @@ export async function fetchDiagnosticReport(opts: {
       appeal_angle: contentTemplate.appeal_angle,
     },
     report_url: reportUrlFor(company, reportLocale),
+    video_url: typeof company.meta?.video_url === "string" ? company.meta.video_url : null,
   }
 }

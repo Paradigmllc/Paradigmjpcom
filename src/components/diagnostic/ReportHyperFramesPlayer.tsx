@@ -72,6 +72,15 @@ export default function ReportHyperFramesPlayer({ src, lang }: { src: string; la
   const [duration, setDuration] = useState(36)
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(1)
   const [playerPresent, setPlayerPresent] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 640px)")
+    setIsMobile(mql.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mql.addEventListener("change", handler)
+    return () => mql.removeEventListener("change", handler)
+  }, [])
 
   const copy = {
     play: lang === "ja" ? "再生" : "Play",
@@ -115,7 +124,7 @@ export default function ReportHyperFramesPlayer({ src, lang }: { src: string; la
   }, [copy.loadError])
 
   function targetIframe(): HTMLIFrameElement | null {
-    if (window.matchMedia("(max-width: 640px)").matches) return mobileIframeRef.current ?? playerRef.current?.iframeElement ?? iframeRef.current
+    if (isMobile) return mobileIframeRef.current ?? playerRef.current?.iframeElement ?? iframeRef.current
     return playerRef.current?.iframeElement ?? iframeRef.current
   }
 

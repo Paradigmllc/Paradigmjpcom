@@ -75,8 +75,8 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
   const reportUrl = cleanText(data.report_url, "paradigmjp.com", 74)
   const demoUrl = data.demo_url ? cleanText(data.demo_url, "", 74) : ""
   const primaryScreenshotUrl = data.evidence_screenshot_url ?? data.screenshot_url
-  const screenshotUrl = primaryScreenshotUrl ? cleanText(primaryScreenshotUrl, "", 240) : ""
-  const mobileScreenshotUrl = data.screenshot_mobile_url ? cleanText(data.screenshot_mobile_url, "", 240) : ""
+  const screenshotUrl = primaryScreenshotUrl ? esc(primaryScreenshotUrl) : ""
+  const mobileScreenshotUrl = data.screenshot_mobile_url ? esc(data.screenshot_mobile_url) : ""
   const signals = data.source_coverage.items
     .filter((item) => item.score > 0)
     .slice(0, 4)
@@ -197,7 +197,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>${esc(company)} - Paradigm Diagnostic Film</title>
   <style>
-    *{box-sizing:border-box} html{--hf-scale:1;width:100%;height:100%;overflow:hidden;background:${theme.bg};} body{width:100%;height:100%;margin:0;overflow:hidden;background:${theme.bg};}
+    *{box-sizing:border-box}     html{--hf-scale:0.001;width:100%;height:100%;overflow:hidden;background:${theme.bg};} body{width:100%;height:100%;margin:0;overflow:hidden;background:${theme.bg};}
     body{font-family:Inter,"Noto Sans JP",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:${theme.panel};}
     svg{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
     [data-composition-id]{width:100%;height:100%;position:relative;overflow:hidden;background:${theme.bg};transform:scale(var(--hf-scale));transform-origin:0 0;aspect-ratio:${format.width}/${format.height}}

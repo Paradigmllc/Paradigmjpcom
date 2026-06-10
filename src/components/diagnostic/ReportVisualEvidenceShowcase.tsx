@@ -1,6 +1,7 @@
 "use client"
 
 import { AlertTriangle, CheckCircle2, MousePointerClick, Route } from "lucide-react"
+import { useState } from "react"
 import type { DiagnosticReportData, VisualEvidenceAnnotation } from "@/lib/sales/diagnostic"
 import type { ReportLang } from "./report-copy"
 import { Pill } from "./report-utils"
@@ -40,6 +41,7 @@ export default function ReportVisualEvidenceShowcase({
   const annotations = (data.visual_annotations ?? []).slice(0, 4)
   const preview = data.improvement_preview
   const journey = data.visitor_journey ?? []
+  const [imgFailed, setImgFailed] = useState(false)
 
   return (
     <section className="px-5 pb-14">
@@ -66,13 +68,20 @@ export default function ReportVisualEvidenceShowcase({
               </span>
             </div>
             <div className="relative max-h-[620px] overflow-hidden bg-zinc-100">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={screenshotUrl}
-                alt={screenshotAlt}
-                loading="lazy"
-                className="w-full object-cover object-top"
-              />
+              {imgFailed ? (
+                <div className="flex items-center justify-center py-24 text-sm text-zinc-400">
+                  {lang === "ja" ? "スクリーンショットを読み込めませんでした" : "Screenshot failed to load"}
+                </div>
+              ) : (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={screenshotUrl}
+                    alt={screenshotAlt}
+                    loading="lazy"
+                    className="w-full object-cover object-top"
+                    onError={() => setImgFailed(true)}
+                  />
               <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(244,63,94,0.12)_1px,transparent_1px),linear-gradient(to_bottom,rgba(244,63,94,0.12)_1px,transparent_1px)] bg-[size:48px_48px] opacity-50" />
               {annotations.map((annotation, index) => (
                 <div
@@ -89,6 +98,8 @@ export default function ReportVisualEvidenceShowcase({
                   </div>
                 </div>
               ))}
+                </>
+              )}
             </div>
           </div>
         </div>
