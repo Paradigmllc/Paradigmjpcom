@@ -155,14 +155,88 @@ async function commitToGitHub(
   }
 }
 
-/** Get the base URL for the Cloudflare Pages project */
-export function getCfPagesBaseUrl(): string {
-  return `https://${CF_PAGES_PROJECT}.pages.dev`
+/** Get the base URL for a company-specific Cloudflare Pages project */
+function getCfPagesBaseUrlForSlug(slug: string): string {
+  return `https://${slug}.pages.dev`
 }
 
-/** Build the full demo URL for a given slug */
+/** Build the full demo URL for a given slug — clean companyname.pages.dev */
 export function getCfPagesDemoUrl(slug: string): string {
-  return `${getCfPagesBaseUrl()}/${encodeURIComponent(slug)}`
+  return getCfPagesBaseUrlForSlug(slug)
+}
+
+/** Create a dedicated CF Pages project for a company (idempotent — returns existing if present) */
+async function ensureCfPagesProject(slug: string, githubRepo: string, githubBranch: string): Promise<{ ok: boolean; projectName: string; error?: string }> {
+  const token = cfToken()
+  if (!token) return { ok: false, projectName: slug, error: "CLOUDFLARE_API_TOKEN not configured" }
+
+  const projectName = slug.replace(/[^a-zA-Z0-9-]+/g, "-").replace(/^-|-$/g, "").toLowerCase()
+
+  try {
+    // Check if project already exists
+    const getRes = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/${encodeURIComponent(projectName)}`,
+      { headers: cfHeaders(), signal: AbortSignal.timeout(10_000) }
+    )
+    if (getRes.ok) {
+      const getData = await getRes.json() as { success?: boolean; result?: { name: string } }
+      if (getData.success && getData.result) {
+        console.warn("[cf-pages-deploy] project exists:", projectName)
+        return { ok: true, projectName }
+      }
+    }
+
+    // Create new project
+    const createRes = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects`,
+      {
+        method: "POST",
+        headers: cfHeaders(),
+        body: JSON.stringify({
+          name: projectName,
+          production_branch: githubBranch,
+        }),
+        signal: AbortSignal.timeout(15_000),
+      }
+    )
+    const createData = await createRes.json() as { success?: boolean; result?: { name: string }; errors?: Array<{ message: string }> }
+
+    if (!createRes.ok || !createData.success) {
+      const errMsg = createData.errors?.[0]?.message ?? `HTTP ${createRes.status}`
+      console.error("[cf-pages-deploy] project create failed:", errMsg)
+      return { ok: false, projectName, error: errMsg }
+    }
+
+    // Set up GitHub integration for auto-deploy
+    try {
+      await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/${encodeURIComponent(projectName)}`,
+        {
+          method: "PATCH",
+          headers: cfHeaders(),
+          body: JSON.stringify({
+            deployment_configs: {
+              production: {
+                env_vars: {
+                  SUPABASE_URL: { value: process.env.NEXT_PUBLIC_SUPABASE_URL || "" },
+                  SUPABASE_ANON_KEY: { value: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "" },
+                },
+              },
+            },
+          }),
+          signal: AbortSignal.timeout(10_000),
+        }
+      )
+    } catch (e) {
+      console.warn("[cf-pages-deploy] env vars setup failed (non-fatal):", e)
+    }
+
+    console.warn("[cf-pages-deploy] created new project:", projectName)
+    return { ok: true, projectName }
+  } catch (e) {
+    console.error("[cf-pages-deploy] ensureProject failed:", e)
+    return { ok: false, projectName, error: e instanceof Error ? e.message : String(e) }
+  }
 }
 
 /** Trigger a Cloudflare Pages deployment (rebuilds the entire project) */
@@ -229,7 +303,15 @@ export async function deployDemoToCfPages(
   demoUrl?: string
   error?: string
 }> {
-  const slug = `${company.slug ?? company.id}-demo`
+  // Clean slug from domain: "tokyo-sushi.example.com" → "tokyo-sushi"
+  const rawSlug = (company.domain || company.slug || company.id)
+    .replace(/^https?:\/\//, "")
+    .replace(/\.[^.]+$/, "")  // remove TLD
+    .replace(/[^a-zA-Z0-9-]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase()
+    .slice(0, 50)
+  const slug = rawSlug || `company-${company.id?.slice(0, 8)}`
   const demoUrl = getCfPagesDemoUrl(slug)
 
   if (!isCfPagesConfigured()) {
@@ -240,10 +322,24 @@ export async function deployDemoToCfPages(
     // 1. Generate Keystatic content
     const frontmatter = buildDemoFrontmatter(company, report)
 
-    // 2. Commit to GitHub (auto-triggers Cloudflare Pages rebuild)
+    // 2. Commit to GitHub (stores .mdoc content in repo)
     const contentPath = `content/keystatic/demo-sites/${slug}.mdoc`
-    const commitMsg = `demo: add ${company.company_name} Astro demo site [skip ci]`
+    const commitMsg = `demo: add ${company.company_name} Astro demo [skip ci]`
     const committed = await commitToGitHub(contentPath, frontmatter, commitMsg)
+
+    // 3. Ensure CF Pages project exists (companyname.pages.dev)
+    const project = await ensureCfPagesProject(slug, GITHUB_REPO, GITHUB_BRANCH)
+    if (!project.ok) {
+      console.error("[cf-pages-deploy] project ensure failed:", project.error)
+    } else {
+      // Trigger deploy on the dedicated project
+      const deploy = await triggerCfPagesDeployForProject(project.projectName)
+      if (!deploy.ok) {
+        console.error("[cf-pages-deploy] deploy trigger failed:", deploy.error)
+      } else {
+        console.warn("[cf-pages-deploy] demo deploying to:", demoUrl)
+      }
+    }
 
     // 3. Save to Supabase web_demos table as backup
     try {

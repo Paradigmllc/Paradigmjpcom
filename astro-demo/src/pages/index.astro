@@ -1,71 +1,283 @@
 ---
 import DemoLayout from "../layouts/DemoLayout.astro"
-import HeroSection from "../components/HeroSection.astro"
-import BeforeAfter from "../components/BeforeAfter.astro"
-import ServicePath from "../components/ServicePath.astro"
-import CasePreview from "../components/CasePreview.astro"
-import ProcessSection from "../components/ProcessSection.astro"
-import TrustSection from "../components/TrustSection.astro"
-import FaqSection from "../components/FaqSection.astro"
-import BookingCta from "../components/BookingCta.astro"
 import { getDemoData, JA_INDUSTRY } from "../keystatic/demo-data"
 
-const slug = Astro.url.searchParams.get("slug") || "default-demo"
+const slug = Astro.params.slug || Astro.url.searchParams.get("slug") || "default-demo"
 const data = await getDemoData(slug)
 const industryLabel = JA_INDUSTRY[data.industry] || data.industry
+const theme = data.accentColor
+const navItems = [
+  { href: "#hero", label: "概要" },
+  { href: "#before-after", label: "診断" },
+  { href: "#services", label: "サービス" },
+  { href: "#cases", label: "実績" },
+  { href: "#process", label: "流れ" },
+  { href: "#faq", label: "FAQ" },
+]
 ---
 
-<DemoLayout title={`${data.customerName} — Demo Site`} accentColor={data.accentColor} accentColorDark={data.accentColorDark} accentColorLight={data.accentColorLight}>
+<DemoLayout title={`${data.customerName} — 改善デモサイト`} accentColor={data.accentColor} accentColorDark={data.accentColorDark} accentColorLight={data.accentColorLight}>
 
-  <!-- Sticky nav -->
-  <nav class="sticky top-0 z-50 bg-black/70 backdrop-blur-2xl border-b border-white/5">
+  <!-- ═══ NAV ═══ -->
+  <nav class="fixed top-0 inset-x-0 z-50 bg-black/60 backdrop-blur-2xl border-b border-white/5" id="nav">
     <div class="max-w-7xl mx-auto flex items-center justify-between px-6 h-16">
       <div class="flex items-center gap-3">
-        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-dark text-white text-xs font-black shadow-lg shadow-brand/20">
-          {data.customerName.charAt(0)}
-        </div>
-        <div class="flex flex-col">
-          <span class="text-sm font-semibold text-white truncate max-w-[200px]">{data.customerName}</span>
-          <span class="text-[10px] text-white/30">{industryLabel} 特化型デモ</span>
+        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-dark text-white text-xs font-black shadow-lg shadow-brand/25">{data.customerName.charAt(0)}</div>
+        <div class="hidden sm:block">
+          <div class="text-sm font-semibold text-white truncate max-w-[180px]">{data.customerName}</div>
+          <div class="text-[10px] text-white/30">{industryLabel} 特化型デモ</div>
         </div>
       </div>
-      <div class="hidden lg:flex items-center gap-6 text-sm text-white/50">
-        <a href="#hero" class="hover:text-brand-light transition-colors">概要</a>
-        <a href="#service-path" class="hover:text-brand-light transition-colors">サービス</a>
-        <a href="#case-study" class="hover:text-brand-light transition-colors">実績</a>
-        <a href="#process" class="hover:text-brand-light transition-colors">流れ</a>
-        <a href="#faq" class="hover:text-brand-light transition-colors">FAQ</a>
+      <div class="hidden lg:flex items-center gap-6 text-xs font-medium text-white/50 uppercase tracking-wider">
+        {navItems.map(item => <a href={item.href} class="hover:text-brand-light transition-colors">{item.label}</a>)}
       </div>
-      <a href={data.calBookingUrl} target="_blank" rel="noopener noreferrer"
-         class="rounded-full bg-white px-5 py-2.5 text-sm font-bold text-black transition-all hover:scale-105 hover:shadow-lg hover:shadow-white/20">
-        無料相談
-      </a>
+      <a href={data.calBookingUrl} target="_blank" rel="noopener noreferrer" class="rounded-full bg-white px-5 py-2.5 text-xs font-bold text-black transition-all hover:scale-105 hover:shadow-lg hover:shadow-white/20">無料相談</a>
     </div>
   </nav>
 
-  <main>
-    <HeroSection data={data} />
-    <BeforeAfter data={data} />
-    <ServicePath data={data} />
-    <CasePreview data={data} />
-    <ProcessSection data={data} />
-    <TrustSection data={data} />
-    <FaqSection data={data} />
-    <BookingCta data={data} />
-  </main>
+  <!-- ═══ HERO ═══ -->
+  <section id="hero" class="relative min-h-screen flex items-center overflow-hidden pt-16">
+    <div class="absolute inset-0">
+      <div class="absolute top-0 -left-40 w-[700px] h-[700px] rounded-full blur-[150px] opacity-60 animate-float-slow" style={`background:${theme}30`}></div>
+      <div class="absolute top-1/3 -right-40 w-[500px] h-[500px] rounded-full blur-[120px] opacity-40 animate-float" style={`background:${theme}20`}></div>
+      <div class="absolute bottom-0 left-1/3 w-[400px] h-[400px] rounded-full blur-[100px] opacity-30 animate-float-delayed" style={`background:${theme}15`}></div>
+      <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMiI+PHBhdGggZD0iTTM2IDYwVjBIMjR2NjB6TTYwIDI0VjM2SDBWMjR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-20"></div>
+    </div>
 
-  <!-- Footer -->
-  <footer class="border-t border-white/5 py-10 px-6">
-    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-white/20">
-      <div class="flex items-center gap-3">
-        <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-white/50 text-xs font-bold">P</div>
-        <span>Paradigm LLC</span>
-      </div>
-      <p>診断データから自動生成されたパーソナライズドデモサイト · © {new Date().getFullYear()}</p>
-      <div class="flex gap-4">
-        <a href="#" class="hover:text-white/40 transition-colors">プライバシー</a>
-        <a href="#" class="hover:text-white/40 transition-colors">利用規約</a>
+    <div class="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-8 py-20 md:py-32">
+      <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+        <div class="space-y-8 animate-slide-up">
+          <div class="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-white/5 backdrop-blur-md px-4 py-2 text-xs font-medium text-brand-light">
+            <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span></span>
+            {industryLabel} 特化 · データ診断済み
+          </div>
+          <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[1.06] tracking-tight">
+            <span class="gradient-text">{data.heroHeadline}</span>
+          </h1>
+          <p class="text-lg text-white/40 leading-relaxed max-w-xl">{data.heroSubtitle}</p>
+          <div class="flex flex-col sm:flex-row gap-3 pt-2">
+            <a href={data.calBookingUrl} target="_blank" rel="noopener noreferrer" class="group inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-brand to-brand-dark px-8 py-4 text-sm font-bold text-white shadow-2xl shadow-brand/25 transition-all hover:scale-[1.03] hover:shadow-brand/40">無料診断を申し込む <svg class="h-4 w-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></a>
+            <a href="#before-after" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md px-8 py-4 text-sm font-semibold text-white/70 hover:text-white hover:border-brand/30 transition-all">改善内容を見る <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></a>
+          </div>
+          {data.heroStats && data.heroStats.length > 0 && (
+            <div class="flex flex-wrap gap-8 pt-8 border-t border-white/6">
+              {data.heroStats.map(s => (
+                <div class="animate-count-up">
+                  <div class="text-3xl font-black text-white tabular-nums">{s.value}<span class="text-lg text-brand-light ml-1">{s.suffix}</span></div>
+                  <div class="mt-1 text-xs text-white/30">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div class="hidden lg:block relative animate-scale-in">
+          <div class="absolute -inset-4 rounded-3xl blur-2xl opacity-40" style={`background:linear-gradient(135deg,${theme}40,${theme}10)`}></div>
+          <div class="relative glass p-1 rounded-2xl shadow-2xl">
+            <div class="aspect-[4/3] rounded-xl bg-gradient-to-br from-[#0a0a1a] to-[#0d0d2b] border border-white/5 overflow-hidden">
+              <div class="flex items-center gap-2 px-4 py-3 border-b border-white/5">
+                <span class="h-2.5 w-2.5 rounded-full bg-rose-500/80"></span><span class="h-2.5 w-2.5 rounded-full bg-amber-500/80"></span><span class="h-2.5 w-2.5 rounded-full bg-emerald-500/80"></span>
+                <span class="ml-3 h-3 w-40 rounded bg-white/5"></span>
+              </div>
+              <div class="p-6 space-y-3">
+                <div class="h-3 w-3/4 rounded bg-white/10 animate-shimmer"></div>
+                <div class="h-3 w-1/2 rounded bg-white/5"></div>
+                <div class="mt-4 grid grid-cols-3 gap-3">
+                  <div class="h-16 rounded-lg bg-white/5"></div>
+                  <div class="h-16 rounded-lg bg-brand/20 animate-pulse-glow"></div>
+                  <div class="h-16 rounded-lg bg-white/5"></div>
+                </div>
+                <div class="mt-3 h-24 rounded-lg bg-white/5"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+  </section>
+
+  <!-- ═══ BEFORE/AFTER ═══ -->
+  <section id="before-after" class="py-20 md:py-28 px-6" style={`background:linear-gradient(180deg,transparent,${theme}08,transparent)`}>
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16">
+        <span class="text-xs font-bold text-brand-light uppercase tracking-[.2em]">Diagnostic</span>
+        <h2 class="mt-3 text-3xl md:text-4xl font-black gradient-text">診断結果と改善イメージ</h2>
+        <p class="mt-4 text-white/40 max-w-2xl mx-auto">データに基づく現状分析と、改善後の具体的なビジョン</p>
+      </div>
+      <div class="grid md:grid-cols-2 gap-8">
+        <!-- BEFORE -->
+        <div class="glass p-0 overflow-hidden">
+          <div class="px-6 py-3 border-b border-rose-500/20 bg-rose-500/5"><span class="text-xs font-bold text-rose-400 uppercase tracking-wider">現状</span></div>
+          <div class="p-6 space-y-4">
+            {data.screenshotUrl ? <img src={data.screenshotUrl} alt="Current site" class="w-full rounded-lg border border-white/5 opacity-50 grayscale" loading="lazy" /> : <div class="aspect-video bg-white/5 rounded-lg flex items-center justify-center text-white/20 text-sm">スクリーンショット準備中</div>}
+            <div class="space-y-2">
+              {data.improvementPoints?.slice(0,4).map((point,i) => (
+                <div class="flex items-center gap-3 text-sm"><span class="flex-shrink-0 h-5 w-5 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center text-[10px] font-bold">{i+1}</span><span class="text-white/50">{point}</span></div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <!-- AFTER -->
+        <div class="glass p-0 overflow-hidden">
+          <div class="px-6 py-3 border-b border-emerald-500/20 bg-emerald-500/5"><span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">改善後</span></div>
+          <div class="p-6 space-y-4">
+            {data.afterImage ? <img src={data.afterImage} alt="Improved site" class="w-full rounded-lg border border-white/5" loading="lazy" /> : <div class="aspect-video rounded-lg flex items-center justify-center" style={`background:linear-gradient(135deg,${theme}20,${theme}05)`}><div class="text-center"><div class="text-3xl font-black gradient-text mb-1">+{data.caseMetrics[0]?.value || "2.4x"}</div><div class="text-xs text-white/40">{data.caseMetrics[0]?.label || "CVR改善"}</div></div></div>}
+            <div class="space-y-2">
+              {data.caseMetrics?.slice(0,4).map((m,i) => (
+                <div class="flex items-center justify-between text-sm"><span class="text-white/50">{m.label}</span><span class="font-bold text-emerald-400">{m.value}<span class="text-xs ml-1">{m.suffix}</span></span></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ SERVICES ═══ -->
+  <section id="services" class="py-20 md:py-28 px-6">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16">
+        <span class="text-xs font-bold text-brand-light uppercase tracking-[.2em]">Services</span>
+        <h2 class="mt-3 text-3xl md:text-4xl font-black gradient-text">{data.serviceTitle}</h2>
+        <p class="mt-4 text-white/40 max-w-2xl mx-auto">{data.serviceSubtitle || "データ診断に基づき、最も効果の高い領域から着手します"}</p>
+      </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {data.services.map((svc, i) => (
+          <div class="glass glass-hover p-6 md:p-8 group" style={`animation-delay:${i*0.1}s`}>
+            <div class="flex items-center gap-4 mb-5">
+              <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-dark text-white text-lg shadow-lg shadow-brand/20 group-hover:scale-110 transition-transform">
+                {svc.icon === "Globe" ? "🌐" : svc.icon === "Search" ? "🔍" : svc.icon === "Zap" ? "⚡" : svc.icon === "Shield" ? "🛡️" : "📊"}
+              </div>
+              <h3 class="text-lg font-bold text-white">{svc.title}</h3>
+            </div>
+            <p class="text-sm text-white/40 leading-relaxed mb-4">{svc.description}</p>
+            {svc.features && svc.features.length > 0 && (
+              <div class="flex flex-wrap gap-2">
+                {svc.features.map(f => <span class="text-[10px] font-medium px-2.5 py-1 rounded-full bg-white/5 text-white/40 border border-white/5">{f}</span>)}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CASE STUDY ═══ -->
+  <section id="cases" class="py-20 md:py-28 px-6" style={`background:linear-gradient(180deg,${theme}05,transparent,${theme}05)`}>
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16">
+        <span class="text-xs font-bold text-brand-light uppercase tracking-[.2em]">Results</span>
+        <h2 class="mt-3 text-3xl md:text-4xl font-black gradient-text">{data.caseTitle}</h2>
+        <p class="mt-4 text-white/40 max-w-2xl mx-auto">{data.caseDescription}</p>
+      </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {data.caseMetrics.map((m,i) => (
+          <div class="glass glass-hover p-6 text-center group" style={`animation-delay:${i*0.15}s`}>
+            <div class="text-4xl md:text-5xl font-black gradient-text mb-2 group-hover:scale-110 transition-transform">{m.value}<span class="text-xl ml-1">{m.suffix}</span></div>
+            <div class="text-sm font-semibold text-white/60 mb-1">{m.label}</div>
+            {m.detail && <div class="text-[11px] text-white/30 leading-relaxed">{m.detail}</div>}
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ PROCESS ═══ -->
+  <section id="process" class="py-20 md:py-28 px-6">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16">
+        <span class="text-xs font-bold text-brand-light uppercase tracking-[.2em]">Process</span>
+        <h2 class="mt-3 text-3xl md:text-4xl font-black gradient-text">{data.processTitle || "プロジェクトの流れ"}</h2>
+      </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {data.processSteps?.map((step, i) => (
+          <div class="relative glass glass-hover p-6 text-center group">
+            <div class="absolute -top-3 -right-3 text-[80px] font-black opacity-5 select-none">{i+1}</div>
+            <div class="flex h-14 w-14 mx-auto items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-dark text-white text-xl shadow-lg shadow-brand/20 mb-4 group-hover:scale-110 transition-transform">{step.icon === "Search" ? "🔍" : step.icon === "Zap" ? "⚡" : step.icon === "BarChart" ? "📊" : step.icon === "Shield" ? "🛡️" : "✅"}</div>
+            <div class="text-xs font-bold text-brand-light mb-1">{step.step}</div>
+            <h3 class="text-base font-bold text-white mb-2">{step.title}</h3>
+            <p class="text-xs text-white/40 leading-relaxed">{step.description}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ TRUST ═══ -->
+  {data.testimonials && data.testimonials.length > 0 && (
+    <section class="py-20 md:py-28 px-6">
+      <div class="max-w-7xl mx-auto">
+        <div class="text-center mb-16">
+          <span class="text-xs font-bold text-brand-light uppercase tracking-[.2em]">Trust</span>
+          <h2 class="mt-3 text-3xl md:text-4xl font-black gradient-text">{data.trustTitle || "信頼の実績"}</h2>
+        </div>
+        <div class="grid md:grid-cols-2 gap-6">
+          {data.testimonials.map((t,i) => (
+            <div class="glass p-8 relative">
+              <div class="text-6xl absolute top-4 left-6 text-brand/20 select-none">"</div>
+              <p class="text-white/60 leading-relaxed mb-6 relative z-10">『{t.quote}』</p>
+              <div class="flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-brand/20 text-brand-light text-sm font-bold">{t.author.charAt(0)}</div>
+                <div><div class="text-sm font-semibold text-white">{t.author}</div><div class="text-xs text-white/30">{t.role} · {t.company}</div></div>
+              </div>
+            </div>
+          ))}
+        </div>
+        {data.certifications && data.certifications.length > 0 && (
+          <div class="flex flex-wrap justify-center gap-4 mt-10">
+            {data.certifications.map(c => <span class="text-xs font-medium px-4 py-2 rounded-full glass text-white/50">{c}</span>)}
+          </div>
+        )}
+      </div>
+    </section>
+  )}
+
+  <!-- ═══ FAQ ═══ -->
+  <section id="faq" class="py-20 md:py-28 px-6" style={`background:linear-gradient(180deg,transparent,${theme}05)`}>
+    <div class="max-w-3xl mx-auto">
+      <div class="text-center mb-16">
+        <span class="text-xs font-bold text-brand-light uppercase tracking-[.2em]">FAQ</span>
+        <h2 class="mt-3 text-3xl md:text-4xl font-black gradient-text">{data.faqTitle || "よくあるご質問"}</h2>
+      </div>
+      <div class="space-y-3">
+        {data.faqItems?.map((faq, i) => (
+          <details class="glass group cursor-pointer" open={i === 0}>
+            <summary class="flex items-center justify-between p-5 font-semibold text-white/80 group-open:text-white list-none">
+              <span class="flex items-center gap-3"><span class="text-brand-light text-xs font-bold">Q{i+1}</span>{faq.question}</span>
+              <svg class="h-4 w-4 text-white/30 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </summary>
+            <div class="px-5 pb-5 text-sm text-white/40 leading-relaxed">{faq.answer}</div>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CTA ═══ -->
+  <section class="py-20 md:py-28 px-6">
+    <div class="max-w-3xl mx-auto text-center">
+      <div class="glass glow p-10 md:p-16 relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10" style={`background:radial-gradient(circle at 50% 50%,${theme},transparent 70%)`}></div>
+        <div class="relative z-10">
+          <h2 class="text-3xl md:text-4xl font-black gradient-text mb-4">{data.ctaTitle}</h2>
+          <p class="text-white/40 mb-8 max-w-xl mx-auto">{data.ctaBody}</p>
+          <a href={data.calBookingUrl} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-brand to-brand-dark px-10 py-5 text-base font-bold text-white shadow-2xl shadow-brand/30 transition-all hover:scale-[1.05] hover:shadow-brand/50">
+            無料診断を申し込む <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer class="border-t border-white/5 py-10 px-6">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-white/20">
+      <div class="flex items-center gap-2">
+        <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-white/5 text-white/30 font-bold">P</div>
+        <span>Paradigm LLC</span>
+      </div>
+      <p>データ診断に基づくパーソナライズドデモサイト · © {new Date().getFullYear()}</p>
+      <div class="flex gap-4"><a href="#" class="hover:text-white/40 transition-colors">プライバシー</a><a href="#" class="hover:text-white/40 transition-colors">利用規約</a></div>
+    </div>
   </footer>
+
 </DemoLayout>
