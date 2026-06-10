@@ -79,6 +79,9 @@ export function mapCompany(row: SalesCompanyRow): DashboardCompany {
       extractString(row.meta, ["personalized_copy", "personalized_hook"]) ??
       extractString(row.meta, ["pain_diagnosis", "primaryPain"]) ??
       extractString(row.meta, ["personalized_copy", "opening"]),
+    formMessage: extractString(row.meta, ["form_message"]),
+    formMessageEngine: extractString(row.meta, ["form_message_engine"]),
+    formMessageGeneratedAt: extractString(row.meta, ["form_message_generated_at"]),
   }
 }
 

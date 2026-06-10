@@ -25,6 +25,7 @@ import { getAiPrompt } from "@/lib/sales/ai-prompts"
 import { findCompanyById } from "./companies"
 import { normalizeDifyCloudApiUrl, normalizeDifyCloudBaseUrl } from "./dify-cloud"
 import { matchTemplate } from "./templates"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 import type { Industry, IssueCode, SalesCompany } from "./types"
 
 type JsonRecord = Record<string, unknown>
@@ -192,6 +193,7 @@ export async function generateFormMessage(
     ...templateContext,
   })
   if (dify.ok) {
+    await saveFormMessageToCompany(company.id, dify.message, "dify")
     return {
       ok: true,
       message: dify.message,
@@ -200,13 +202,11 @@ export async function generateFormMessage(
     }
   }
 
-  // Difyが設定されているのに失敗した場合は、フォールバックせずにエラーとする（Difyの出力を重視するため）
   if (dify.configured) {
     console.error("[sales-form-message] Dify failed. DeepSeek fallback is disabled for strict enforcement.", dify.error)
     return { ok: false, error: dify.error ?? "Dify workflow failed" }
   }
 
-  // 以下、Difyが未設定（ローカル開発など）の場合のみのフォールバック
   console.warn("[sales-form-message] Dify is not configured. Falling back to DeepSeek V3.")
 
   const systemPrompt = await getAiPrompt("sales_form_message_system")
@@ -222,12 +222,38 @@ export async function generateFormMessage(
     return { ok: false, error: res.error ?? "DeepSeek empty response" }
   }
 
+  const message = res.text.trim()
+  await saveFormMessageToCompany(company.id, message, "deepseek_fallback")
   return {
     ok: true,
-    message: res.text.trim(),
+    message,
     engine: "deepseek_fallback",
     used_template_id: template?.id ?? null,
     usage: res.usage,
+  }
+}
+
+async function saveFormMessageToCompany(companyId: string, message: string, engine: string): Promise<void> {
+  try {
+    const sb = getServiceSalesSupabase()
+    if (!sb) return
+    const { data: current } = await sb.from("sales_companies").select("meta").eq("id", companyId).single()
+    const prevMeta = (current?.meta as Record<string, unknown>) ?? {}
+    const history = Array.isArray(prevMeta.form_message_history) ? prevMeta.form_message_history as Array<unknown> : []
+    await sb.from("sales_companies").update({
+      meta: {
+        ...prevMeta,
+        form_message: message,
+        form_message_engine: engine,
+        form_message_generated_at: new Date().toISOString(),
+        form_message_history: [
+          { message, engine, generated_at: new Date().toISOString() },
+          ...history.slice(0, 9),
+        ],
+      },
+    }).eq("id", companyId)
+  } catch (e) {
+    console.error("[sales-form-message] failed to persist message:", e)
   }
 }
 

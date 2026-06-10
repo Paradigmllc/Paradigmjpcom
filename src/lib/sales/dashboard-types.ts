@@ -60,6 +60,9 @@ export interface DashboardCompany {
   leadScoreTier: string | null
   contactFormUrl: string | null
   personalizedCopy: string | null
+  formMessage: string | null
+  formMessageEngine: string | null
+  formMessageGeneratedAt: string | null
 }
 
 export interface DashboardActivity {
