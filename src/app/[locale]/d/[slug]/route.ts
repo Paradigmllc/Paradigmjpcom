@@ -1,13 +1,10 @@
-/**
- * paradigmjp.com /d/[slug] → Astro demo redirect
- */
 import { NextResponse } from "next/server"
 
 export const dynamic = "force-dynamic"
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ slug: string }> },
+  { params }: { params: Promise<{ locale: string; slug: string }> },
 ) {
   const { slug } = await params
   return NextResponse.redirect(
