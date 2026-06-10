@@ -1,7 +1,7 @@
 import { getProxyFetchOptions } from "../proxy-agent"
 import type { Region } from "../types"
 
-export type ExternalDiscoverySource = "crawl4ai" | "crawlee" | "browserless" | "stagehand"
+export type ExternalDiscoverySource = "crawl4ai" | "crawlee" | "stagehand"
 
 export interface ExternalFormDiscoveryHit {
   formUrl: string | null
@@ -145,7 +145,7 @@ function hitFromPayload(
   return {
     formUrl: best,
     candidates: all,
-    confidence: source === "crawl4ai" ? 84 : source === "browserless" ? 78 : 70,
+    confidence: source === "crawl4ai" ? 84 : source === "stagehand" ? 78 : 70,
     source,
     detail: fallbackDetail,
   }
@@ -232,63 +232,3 @@ export async function discoverWithCrawleeWorker(input: {
   }
 }
 
-async function fetchBrowserlessContent(targetUrl: string, timeoutMs: number): Promise<string | null> {
-  const rawBase = optionalEnv("BROWSERLESS_URL")
-  if (!rawBase) return null
-  const base = normalizeHttpBase(rawBase)
-  if (!base) return null
-  const token = optionalEnv("BROWSERLESS_TOKEN") ?? new URL(rawBase).searchParams.get("token")
-  if (!token) return null
-
-  const url = withPath(base, "/content")
-  url.searchParams.set("token", token)
-  try {
-    const res = await fetch(url.toString(), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        url: targetUrl,
-        gotoOptions: { waitUntil: "networkidle2", timeout: timeoutMs },
-      }),
-      signal: AbortSignal.timeout(timeoutMs + 5_000),
-    })
-    if (!res.ok) return null
-    return await res.text()
-  } catch (error) {
-    console.warn("[external-form-discovery] Browserless content fetch failed:", error)
-    return null
-  }
-}
-
-export async function discoverWithBrowserlessContent(input: {
-  origin: string
-  timeoutMs: number
-}): Promise<ExternalFormDiscoveryHit | null> {
-  const homepage = await fetchBrowserlessContent(input.origin, input.timeoutMs)
-  if (!homepage) return null
-  if (FORM_SIGNATURE_RE.test(homepage)) {
-    return {
-      formUrl: input.origin,
-      candidates: [input.origin],
-      confidence: 76,
-      source: "browserless",
-      detail: "Browserless rendered homepage contains a form",
-    }
-  }
-
-  const candidates = new Set<string>()
-  collectTextUrls(homepage, input.origin, candidates)
-  for (const candidate of uniqueUrls(candidates).slice(0, 6)) {
-    const html = await fetchBrowserlessContent(candidate, Math.min(input.timeoutMs, 12_000))
-    if (html && FORM_SIGNATURE_RE.test(html)) {
-      return {
-        formUrl: candidate,
-        candidates: uniqueUrls(candidates),
-        confidence: 82,
-        source: "browserless",
-        detail: "Browserless rendered contact candidate contains a form",
-      }
-    }
-  }
-  return null
-}

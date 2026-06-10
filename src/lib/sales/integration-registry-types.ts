@@ -24,7 +24,6 @@ export type SalesIntegrationBalanceType =
   | "none"
   | "manual"
   | "dataforseo_user_data"
-  | "browserless_pressure"
   | "stagehand_health"
   | "steel_health"
   | "mubeng_health"

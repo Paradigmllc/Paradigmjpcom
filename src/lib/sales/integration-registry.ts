@@ -1,6 +1,5 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import {
-  checkBrowserlessHealth as checkBrowserlessServiceHealth,
   checkChatwootHealth,
   checkComfyUiHealth,
   checkDirectusHealth,
@@ -132,7 +131,6 @@ async function checkStagehandHealth(): Promise<Pick<SalesIntegrationStatus, "bal
 
 async function liveBalance(def: SalesIntegrationDefinition): Promise<Pick<SalesIntegrationStatus, "balanceStatus" | "balanceLabel"> | null> {
   if (def.balance === "dataforseo_user_data") return checkDataForSeoHealth()
-  if (def.balance === "browserless_pressure") return checkBrowserlessServiceHealth()
   if (def.balance === "stagehand_health") return checkStagehandServiceHealth()
   if (def.balance === "steel_health") return checkSteelHealth()
   if (def.balance === "mubeng_health") return checkMubengHealth()

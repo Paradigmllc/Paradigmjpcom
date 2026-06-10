@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import {
-  checkBrowserlessHealth,
   checkCrawl4AiHealth,
   checkCrawleeHealth,
   checkDifyHealth,
@@ -140,10 +139,9 @@ function checkOutreachEnvSummary(): ServiceCheck {
   const provider = env("OUTREACH_BROWSER_PROVIDER") ?? "auto"
   const remoteReady = !!env("OUTREACH_WORKER_URL") && !!env("OUTREACH_WORKER_SECRET")
   const crawleeReady = !!env("CRAWLEE_WORKER_URL") && !!(env("CRAWLEE_WORKER_SECRET") ?? env("OUTREACH_WORKER_SECRET"))
-  const browserlessReady = !!env("BROWSERLESS_URL") && !!env("BROWSERLESS_TOKEN")
   const stagehandReady = !!env("STAGEHAND_URL") && !!env("STAGEHAND_API_KEY")
   const crawl4AiReady = !!env("CRAWL4AI_BASE_URL")
-  const externalReady = remoteReady || crawleeReady || browserlessReady || stagehandReady || crawl4AiReady
+  const externalReady = remoteReady || crawleeReady || stagehandReady || crawl4AiReady
 
   if (provider === "auto" && externalReady) {
     return {
@@ -215,13 +213,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
   }
 
-  const [supabase, searxng, dify, triggerDev, crawl4ai, browserless, stagehand, steel, crawlee, worker] = await Promise.all([
+  const [supabase, searxng, dify, triggerDev, crawl4ai, stagehand, steel, crawlee, worker] = await Promise.all([
     checkSupabase(),
     checkSearxng(),
     checkDify(),
     checkTriggerDev(),
     checkCrawl4AiHealth().then((result) => serviceHealthToCheck("Crawl4AI", result, env("CRAWL4AI_BASE_URL"))),
-    checkBrowserlessHealth().then((result) => serviceHealthToCheck("Browserless", result, env("BROWSERLESS_URL"))),
     checkStagehandHealth().then((result) => serviceHealthToCheck("Stagehand", result, env("STAGEHAND_URL"))),
     checkSteelHealth().then((result) => serviceHealthToCheck("Steel.dev", result, env("STEEL_BASE_URL"))),
     checkCrawleeHealth().then((result) => serviceHealthToCheck("Crawlee worker", result, env("CRAWLEE_WORKER_URL"))),
@@ -236,7 +233,6 @@ export async function GET(req: NextRequest) {
     dify,
     triggerDev,
     crawl4ai,
-    browserless,
     stagehand,
     steel,
     crawlee,

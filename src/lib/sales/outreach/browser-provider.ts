@@ -1,7 +1,6 @@
 import type { SubmitFormInput, SubmitFormResult } from "./types"
 import { HttpFormProvider } from "./http-form-provider"
 import {
-  discoverWithBrowserlessContent,
   discoverWithCrawleeWorker,
 } from "../sources/external-form-discovery"
 
@@ -212,9 +211,6 @@ export class AutoBrowserProvider implements BrowserProvider {
 
     const crawlee = await discoverWithCrawleeWorker({ origin: homeUrl, timeoutMs: 60_000 })
     if (crawlee?.formUrl) return crawlee.formUrl
-
-    const browserless = await discoverWithBrowserlessContent({ origin: homeUrl, timeoutMs: 30_000 })
-    if (browserless?.formUrl) return browserless.formUrl
 
     if (this.stagehand?.discoverSpaForm) return await this.stagehand.discoverSpaForm(homeUrl)
     return null

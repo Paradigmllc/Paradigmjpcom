@@ -20,7 +20,7 @@ export interface VisualEvidenceCompany {
 export interface ScreenshotEvidence {
   url: string
   objectKey: string
-  provider: "browserless" | "playwright"
+  provider: "playwright"
   viewport: VisualEvidenceSlot
   width: number
   height: number
@@ -75,56 +75,6 @@ function browserCleanupCss(): string {
   `
 }
 
-async function captureWithBrowserless(input: {
-  targetUrl: string
-  width: number
-  height: number
-  viewport: VisualEvidenceSlot
-}): Promise<ScreenshotCapture | null> {
-  const browserlessUrl = optionalEnv("BROWSERLESS_URL")
-  if (!browserlessUrl) return null
-
-  let endpoint: URL
-  try {
-    endpoint = new URL(browserlessUrl)
-  } catch (error) {
-    console.warn("[visual-evidence] BROWSERLESS_URL was not a direct URL; trying ws/http normalization:", error)
-    endpoint = new URL(browserlessUrl.replace(/^ws/i, "http"))
-  }
-
-  const token = optionalEnv("BROWSERLESS_TOKEN") ?? endpoint.searchParams.get("token")
-  if (!token) return null
-  endpoint.pathname = "/screenshot"
-  endpoint.searchParams.set("token", token)
-
-  const screenshotOpts: Record<string, unknown> = {
-    url: input.targetUrl,
-    options: { type: "png", fullPage: false },
-    viewport: {
-      width: input.width,
-      height: input.height,
-      isMobile: viewportIsMobile(input.viewport),
-      hasTouch: viewportIsMobile(input.viewport),
-    },
-    addStyleTag: [{ content: browserCleanupCss() }],
-    gotoOptions: { waitUntil: "networkidle2", timeout: 30_000 },
-  }
-  const proxy = getMubengProxyUrl()
-  if (proxy) screenshotOpts.proxy = proxy
-
-  const res = await fetch(endpoint.toString(), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(screenshotOpts),
-    signal: AbortSignal.timeout(45_000),
-  })
-  if (!res.ok) {
-    const detail = await res.text().catch(() => "")
-    throw new Error(`Browserless HTTP ${res.status}: ${detail.slice(0, 200)}`)
-  }
-  return { buffer: Buffer.from(await res.arrayBuffer()), provider: "browserless" }
-}
-
 async function captureWithPlaywright(input: {
   targetUrl: string
   width: number
@@ -165,13 +115,7 @@ export async function captureWebsiteScreenshot(
   const objectKey = `screenshots/${dateStr}/${fileSlug}-${size.viewport}.png`
 
   try {
-    let capture: ScreenshotCapture | null = null
-    try {
-      capture = await captureWithBrowserless({ targetUrl, ...size })
-    } catch (error) {
-      console.warn("[visual-evidence] Browserless screenshot failed; trying Playwright:", error)
-    }
-    capture = capture ?? await captureWithPlaywright({ targetUrl, ...size })
+    const capture = await captureWithPlaywright({ targetUrl, ...size })
     if (!capture) return { ok: false, error: "No screenshot provider available" }
 
     const publicUrl = await uploadToR2(objectKey, capture.buffer, "image/png")

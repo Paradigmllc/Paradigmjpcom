@@ -162,7 +162,6 @@ const SOURCES: SourceDefinition[] = [
     missingConsequence: "未取得だと、診断レポートを見てもらう前の送信経路が不安定になります。",
     nextStep: "Crawl4AIで候補URLを抽出し、フォーム分類とpreflightへ渡します。",
   },
-  { slug: "browserless", label: "Browserless", category: "outreach", env: ["BROWSERLESS_URL", "BROWSERLESS_TOKEN"], detect: (m) => !!m.browserless || !!m.browser_worker, detail: "Remote browser execution for SPA forms" },
   {
     slug: "stagehand",
     label: "Stagehand AI Agent",
