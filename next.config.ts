@@ -8,6 +8,7 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts")
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  staticPageGenerationTimeout: 180,
   // Pin Turbopack workspace root to this directory so worktree node_modules
   // resolves correctly. Without this, Next.js auto-detects the parent
   // D:\dev\paradigmjpcom\package-lock.json as root, then Turbopack ignores
@@ -50,17 +51,6 @@ const nextConfig: NextConfig = {
         source: "/p/:slug",
         destination: "/ja/report/:slug",
         permanent: true,
-      },
-    ]
-  },
-  async rewrites() {
-    return [
-      // /report/demo/:variant/video → /report/demo-:variant/video
-      // demo pages use /demo/:variant but [slug]/video expects single-segment slugs;
-      // this rewrite bridges the gap so the existing route handler can serve demo videos.
-      {
-        source: "/:locale(ja|en|ko|zh|de|fr|es|pt|ru|ar|vi|id)/report/demo/:variant/video",
-        destination: "/:locale/report/demo-:variant/video",
       },
     ]
   },
