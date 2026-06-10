@@ -65,6 +65,7 @@ export default async function PricingPage({ params, searchParams }: Props) {
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
   const contentLocale = coerceLocale(rawLocale)     // ja/en（通貨フォーマット判定専用: formatPricePPP）
   const t = await getTranslations({ locale, namespace: "pricingPage" })
+  const faqPairs = (t.raw("pricingFaqs") as Array<{ q: string; a: string }>) ?? []
 
   // Billing cycle ラベルは namespace 経由で locale 別取得 (旧 BILLING_LABEL hardcode 廃止)
   const billingLabelFor = (cycle: string | undefined): string => {
@@ -214,6 +215,44 @@ export default async function PricingPage({ params, searchParams }: Props) {
           )}
         </div>
       </section>
+
+      {faqPairs.length > 0 && (
+        <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
+          <div className="paradigm-mesh opacity-30" />
+          <div className="relative z-10 max-w-3xl mx-auto px-6 md:px-8">
+            <FadeIn className="mb-8 max-w-2xl">
+              <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("faqEyebrow")}</p>
+              <h2 className="font-display text-[24px] md:text-[36px] leading-[1.15] tracking-[-0.02em] text-paradigm-ink">
+                <span className="bg-gradient-to-br from-paradigm-ink via-paradigm-tech to-paradigm-glow bg-clip-text text-transparent">
+                  {t("faqTitle")}
+                </span>
+              </h2>
+            </FadeIn>
+            <ul className="space-y-3">
+              {faqPairs.map((faq, i) => (
+                <FadeIn key={i} delay={i * 0.04}>
+                  <li className="paradigm-glass rounded-2xl paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500 overflow-hidden">
+                    <details className="group">
+                      <summary className="cursor-pointer flex items-start gap-4 p-5 list-none [&::-webkit-details-marker]:hidden">
+                        <span className="font-display text-[18px] leading-none text-paradigm-accent mt-1 flex-shrink-0">
+                          Q.
+                        </span>
+                        <span className="font-display text-[15px] md:text-[18px] leading-[1.4] text-paradigm-ink flex-1 pr-4 tracking-[-0.005em]">
+                          {faq.q}
+                        </span>
+                        <span aria-hidden className="shrink-0 text-paradigm-ink-mute mt-1 group-open:rotate-45 transition-transform text-[20px] leading-none">+</span>
+                      </summary>
+                      <div className="px-5 pb-5 pl-12 -mt-1">
+                        <p className="text-[13px] md:text-[14px] text-paradigm-ink-soft leading-[1.85] whitespace-pre-line">{faq.a}</p>
+                      </div>
+                    </details>
+                  </li>
+                </FadeIn>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
 
       <RichCtaBand
         eyebrow={t("ctaEyebrow")}

@@ -266,8 +266,8 @@ export function buildDemoData(variant: string, lang: string): DiagnosticReportDa
     templateVariant: variant as TemplateVariant,
     reportLocale: lang,
   })
-  const demoScreenshotUrl = "https://s.wordpress.com/mshots/v1/https%3A%2F%2Fparadigmjp.com?w=1280"
-  const demoMobileScreenshotUrl = "https://s.wordpress.com/mshots/v1/https%3A%2F%2Fparadigmjp.com?w=430"
+  const demoScreenshotUrl = "https://image.thum.io/get/width/1200/crop/800/https://paradigmjp.com"
+  const demoMobileScreenshotUrl = "https://image.thum.io/get/width/400/crop/900/https://paradigmjp.com"
 
   return {
     company_name: companyName,
@@ -282,7 +282,7 @@ export function buildDemoData(variant: string, lang: string): DiagnosticReportDa
     acts,
     cta_text: localeStr(data.cta, lang),
     video_thumbnail: null,
-    demo_url: `/${lang}/report/demo/${variant}`,
+    demo_url: `https://paradigm-astro-demo.pages.dev/?slug=${variant}-demo`,
      screenshot_url: demoScreenshotUrl,
      screenshot_mobile_url: demoMobileScreenshotUrl,
       evidence_screenshot_url: demoScreenshotUrl,

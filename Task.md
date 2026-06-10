@@ -75,7 +75,24 @@
 - Diagnostic report data now exposes `evidence_screenshot_url` / `evidence_screenshot_kind`; report Hero, screenshot section, asset JSON, and HyperFrames video prefer that variant evidence image when present.
 - Verification: `npx tsc --noEmit` passed; `git diff --check` passed; `npm run context:audit` passed. Remaining risk: variant screenshots depend on usable external URLs in company meta, and some social/map pages may block remote browsers.
 
-### 2026-06-10 Visual Evidence Experience Upgrade
+### 2026-06-10 コンテンツ充実化作業
+- seed-pricing API ルート新規作成: `src/app/api/admin/seed-pricing/route.ts` — Payload `pricing` collection に web/meo/seo/ai 各3プラン（計12件）を JA+EN でシード
+- seed-faqs API ルート新規作成: `src/app/api/admin/seed-faqs/route.ts` — Payload `faqs` collection に JA+EN 各18問をシード（Lexical richText 形式）
+- seed-posts API ルート新規作成: `src/app/api/admin/seed-posts/route.ts` — Payload `posts` collection に追加5記事を JA+EN でシード（既存4件と合わせて9件）
+- Webサービス詳細ページ (`/services/web`) に ProcessBand (4step) 追加、i18n 完全対応（`serviceDetail.web.process` に移動 + `ctaHighlight/ctaDesc/ctaLabel` 追加）
+- 価格ページ (`/pricing`) に料金FAQセクション（6問アコーディオン）追加
+- 12ロケールすべてに新規 i18n キー反映（`scripts/patch-locale-messages.mjs` で一括パッチ）
+- Verification: `npx tsc --noEmit` 0エラー, `git diff --check` 警告のみ（CRLF）
+
+### シード実行方法
+各シードは ADMIN_SCRIPT_SECRET 環境変数設定後に以下で実行:
+```
+POST /api/admin/seed-pricing  { confirm: true }
+POST /api/admin/seed-faqs     { confirm: true }
+POST /api/admin/seed-posts    { confirm: true }
+POST /api/admin/seed-blog     { confirm: true }  # 既存・レガシー4記事
+POST /api/admin/seed-services { confirm: true }  # 既存・5サービス
+```
 - Added diagnostic visual story payload fields: `visual_annotations`, `improvement_preview`, and `visitor_journey`.
 - Added `src/lib/sales/diagnostic/visual-story.ts` to derive red-line annotations, before/after preview copy, and a 30-second visitor path from report acts, source coverage, template variant, and optional stored `meta.visual_evidence.annotations`.
 - Report Hero now overlays red audit pins on the captured evidence image; `ReportVisualEvidenceShowcase` adds a full evidence section with annotated screenshot, before/after preview, and visitor path replay.

@@ -14,6 +14,7 @@ import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
 import PageHero from "@/components/PageHero"
 import ServiceDetailLayout from "@/components/aesop/ServiceDetailLayout"
+import FadeIn from "@/components/aesop/FadeIn"
 import { getServiceByKey, getPricingFor } from "@/lib/data"
 import { buildServiceSchema, buildBreadcrumbSchema } from "@/lib/seo/schemas"
 
@@ -27,6 +28,41 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: t("web.metaDescription"),
     alternates: pageAlternates(locale, "/services/web"),
   }
+}
+
+interface ProcessStep { step: string; title: string; desc: string }
+
+async function ProcessBand({ locale }: { locale: string }) {
+  const t = await getTranslations({ locale, namespace: "serviceDetail" })
+  const STEPS = t.raw("web.process") as ProcessStep[]
+  return (
+    <section className="relative bg-paradigm-paper-deep paradigm-section overflow-hidden">
+      <div className="paradigm-mesh opacity-40" />
+      <div className="relative z-10 max-w-4xl mx-auto px-6 md:px-8">
+        <FadeIn className="mb-8 max-w-2xl">
+          <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("web.processEyebrow")}</p>
+          <h2 className="font-display text-[24px] md:text-[36px] leading-[1.15] tracking-[-0.02em] text-paradigm-ink">
+            <span className="bg-gradient-to-br from-paradigm-ink via-paradigm-accent to-pink-400 bg-clip-text text-transparent">
+              {t("web.processTitle")}
+            </span>
+          </h2>
+        </FadeIn>
+        <ol className="space-y-3">
+          {STEPS.map((s, i) => (
+            <FadeIn key={s.step} delay={i * 0.08}>
+              <li className="paradigm-glass rounded-xl p-5 grid grid-cols-1 md:grid-cols-[60px_1fr] gap-3 paradigm-glow-sm hover:paradigm-glow-md hover:-translate-y-0.5 transition-all duration-500">
+                <span className="font-display text-[24px] md:text-[28px] leading-none bg-gradient-to-br from-pink-400 to-paradigm-accent bg-clip-text text-transparent">{s.step}</span>
+                <div>
+                  <h3 className="font-display text-[16px] md:text-[18px] leading-[1.2] text-paradigm-ink mb-1 tracking-[-0.01em]">{s.title}</h3>
+                  <p className="text-[12px] md:text-[13px] text-paradigm-ink-soft leading-[1.7]">{s.desc}</p>
+                </div>
+              </li>
+            </FadeIn>
+          ))}
+        </ol>
+      </div>
+    </section>
+  )
 }
 
 export default async function WebServicePage({ params }: Props) {
@@ -56,7 +92,7 @@ export default async function WebServicePage({ params }: Props) {
         desc={service.tagline}
       />
       <ServiceDetailLayout
-        badge={t("web.heroBadge")}
+        badge={t("web.heroBadgeShort")}
         title={service.title}
         desc={service.desc}
         features={service.features}
@@ -66,10 +102,11 @@ export default async function WebServicePage({ params }: Props) {
         iconBg="from-pink-400 via-paradigm-accent to-paradigm-tech"
         beamFrom="rgb(244 114 182)"
         beamTo="rgb(14 165 233)"
+        middleBand={<ProcessBand locale={locale} />}
         ctaTitle={t("web.ctaTitle")}
-        ctaHighlight={t("ctaHighlight")}
-        ctaDesc={t("ctaDesc")}
-        ctaLabel={t("ctaLabel")}
+        ctaHighlight={t("web.ctaHighlight")}
+        ctaDesc={t("web.ctaDesc")}
+        ctaLabel={t("web.ctaLabel")}
       />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />

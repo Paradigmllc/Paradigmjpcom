@@ -9,7 +9,35 @@
       "metaTitle": "Web Development",
       "metaDescription": "High-performance, SEO-optimised Next.js / WordPress sites — design through post-launch operations.",
       "heroBadge": "Web Development",
-      "ctaTitle": "Talk to us about web development"
+      "heroBadgeShort": "Web Dev",
+      "ctaTitle": "Talk to us about web development",
+      "ctaHighlight": "Web Dev",
+      "ctaDesc": "Conversion-focused websites. Free consultation to find your best plan.",
+      "ctaLabel": "Book a free consultation",
+      "processEyebrow": "Process",
+      "processTitle": "How we build",
+      "process": [
+        {
+          "step": "01",
+          "title": "Discovery & Scope",
+          "desc": "We dig into your business goals, audience, and requirements to define a clear project direction."
+        },
+        {
+          "step": "02",
+          "title": "Design & Architecture",
+          "desc": "Wireframes → high-fidelity mockups. UI/UX optimisation and content strategy defined."
+        },
+        {
+          "step": "03",
+          "title": "Build & Implement",
+          "desc": "Fast, SEO-optimised site built in Next.js or WordPress. CMS integration for easy self-updates."
+        },
+        {
+          "step": "04",
+          "title": "Launch & Grow",
+          "desc": "Post-launch analytics, SEO iteration, and ongoing maintenance to maximise long-term results."
+        }
+      ]
     },
     "meo": {
       "metaTitle": "MEO (Local SEO)",
@@ -278,7 +306,17 @@
     "ctaTitle": "Need a custom scope?",
     "ctaHighlight": "custom",
     "ctaDesc": "Enterprise / retainers / white-label — let's talk.",
-    "ctaButton": "Book a free consultation"
+    "ctaButton": "Book a free consultation",
+    "faqEyebrow": "FAQ",
+    "faqTitle": "Frequently asked pricing questions",
+    "pricingFaqs": [
+      { "q": "Are prices tax-inclusive?", "a": "All displayed prices include tax. We also support Japan's qualified invoice system (インボイス制度)." },
+      { "q": "What payment methods do you accept?", "a": "Bank transfer, credit card (via Stripe), and invoice payment. Web projects: 50% upfront + 50% on delivery. Monthly services: billed end of month, due the following month." },
+      { "q": "Are there any additional costs?", "a": "No extra fees for items listed in your plan. Significant scope changes outside the original spec — such as additional photography, translations, or custom features — will be quoted separately." },
+      { "q": "What is PPP adjustment?", "a": "PPP (Purchasing Power Parity) adjustment automatically scales prices based on your region's cost of living. For example, visitors from Southeast Asia see lower prices than Japan's standard rates. Developed-market visitors see standard Japanese pricing." },
+      { "q": "How much does maintenance cost?", "a": "Post-launch web maintenance starts at ¥19,800/mo (SSL, monitoring, backups, minor fixes). AI maintenance starts at ¥29,800/mo (model updates, incident response, improvements). MEO/SEO monthly plans include maintenance." },
+      { "q": "Is there a minimum contract term?", "a": "Web and AI (lump-sum) projects have no minimum term. MEO/SEO monthly plans require a minimum 6-month commitment." }
+    ]
   },
   "contactPage": {
     "metaTitle": "Contact",
