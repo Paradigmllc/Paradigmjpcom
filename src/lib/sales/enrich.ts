@@ -30,7 +30,7 @@ import { queryDnsRecords } from "./sources/dns-doh"
 import { validateHtml } from "./sources/w3c-validator"
 import { checkHstsPreload } from "./sources/hsts-preload"
 import { queryWaybackMachine } from "./sources/wayback-machine"
-import { lookupByCorporateNumber, searchByName as searchHoujinByName } from "./sources/houjin-bangou"
+import { searchByName as searchHoujinByName } from "./sources/houjin-bangou"
 import { queryTrancoRank } from "./sources/tranco"
 import { checkEmailReputation } from "./sources/emailrep"
 import { checkPhishTank } from "./sources/phishtank"
@@ -45,7 +45,7 @@ import { estimateTrafficViaSearx } from "./sources/searxng-traffic"
 import { lookupBuiltWithFree } from "./sources/builtwith-free"
 import { queryCommonCrawl } from "./sources/commoncrawl"
 import { checkAhrefsFree } from "./sources/ahrefs-free"
-import { queryEstat, INDUSTRY_MARKET_DATA } from "./sources/market-data"
+import { INDUSTRY_MARKET_DATA } from "./sources/market-data"
 import { collectSmbSignals } from "./sources/smb-signals"
 import { enrichDomainWithSpiderFoot } from "./sources/spiderfoot-source"
 import { crawlWithKatana } from "./sources/katana-source"
@@ -170,7 +170,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     })
   }
 
-  // Step 2: 並列 30+ source enrich (Sprint 15: PSI + gBizInfo + Wappalyzer + SSL + Whois + Places)
+  // Step 2: 並列 36-source parallel enrich
   //         Hunter.io はメール検索 (フォーム経由で email 既知の場合のみ)
   const url = domain.startsWith("http") ? domain : `https://${domain}`
   const [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback, houjin, tranco, emailrep, phishtank, opencorp, greenweb, storeleads, massdns, github, cartleads, simweb, builtwith, commoncrawl, ahrefs, spiderfoot, katana, maigret, skyvernSite, skyvernForms, searxng] = await Promise.all([
@@ -320,7 +320,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     }),
   ])
 
-  // Step 3: 集約して最終 upsert (meta JSONB に 30+ source のデータを統合保存)
+  // Step 3: 集約して最終 upsert (meta JSONB に 36-source のデータを統合保存)
   const gbizFirst = gbiz?.[0]
   const meta: Record<string, unknown> = {
     sales_os: {

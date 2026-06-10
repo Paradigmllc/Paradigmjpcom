@@ -18,7 +18,7 @@ export async function checkSpiderfootHealth(): Promise<ServiceHealthResult> {
 export async function checkKatanaServiceHealth(): Promise<ServiceHealthResult> {
   try {
     const result = await checkKatanaHealth()
-    return { balanceStatus: "ok", balanceLabel: "Connected", ok: result.ok, name: "Katana", detail: result.detail, url: "docker://projectdiscovery/katana" }
+    return { balanceStatus: "ok", balanceLabel: "Connected", ok: result.ok, name: "Katana", detail: result.detail, url: "http://localhost:5002" }
   } catch (e) {
     console.error("[oss-service-health] Katana check failed:", e)
     return { balanceStatus: "error", balanceLabel: "Error", ok: false, name: "Katana", detail: String(e) }
@@ -28,7 +28,7 @@ export async function checkKatanaServiceHealth(): Promise<ServiceHealthResult> {
 export async function checkMaigretServiceHealth(): Promise<ServiceHealthResult> {
   try {
     const result = await checkMaigretHealth()
-    return { balanceStatus: "ok", balanceLabel: "Connected", ok: result.ok, name: "Maigret", detail: result.detail, url: "docker://maigret" }
+    return { balanceStatus: "ok", balanceLabel: "Connected", ok: result.ok, name: "Maigret", detail: result.detail, url: "http://localhost:5003" }
   } catch (e) {
     console.error("[oss-service-health] Maigret check failed:", e)
     return { balanceStatus: "error", balanceLabel: "Error", ok: false, name: "Maigret", detail: String(e) }

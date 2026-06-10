@@ -10,7 +10,7 @@
  */
 import { getServiceSalesSupabase } from "@/lib/supabase"
 
-const SEARXNG_URL = process.env.SEARXNG_API_URL || "http://paradigm-searxng:8080"
+const SEARXNG_URL = process.env.SEARXNG_BASE_URL || process.env.SEARXNG_API_URL || "http://localhost:8080"
 
 const INDUSTRY_COEFFICIENTS: Record<string, number> = {
   ecommerce: 1.8,
