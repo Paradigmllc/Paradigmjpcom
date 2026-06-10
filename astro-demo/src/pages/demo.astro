@@ -1,0 +1,94 @@
+---
+import DemoLayout from "../layouts/DemoLayout.astro"
+import { generateDemo, getIndustryLabel, getAppealLabel } from "../keystatic/demo-data"
+
+const lang = (Astro.url.searchParams.get("lang") || "ja") as "ja" | "en"
+const industry = Astro.url.searchParams.get("industry") || "consulting"
+const appeal = Astro.url.searchParams.get("appeal") || "diagnostic"
+
+const data = generateDemo(industry, appeal as "diagnostic" | "sales" | "brand" | "tech", lang)
+const isJa = lang === "ja"
+---
+
+<DemoLayout title={`${data.customerName} — ${isJa?"改善デモ":"Demo"}`} accentColor={data.accentColor} accentColorDark={data.accentColorDark} accentColorLight={data.accentColorLight} lang={lang}>
+  <section class="relative min-h-[90vh] flex items-center overflow-hidden">
+    <div class="orb orb-primary w-[600px] h-[600px] top-[-10%] left-[-10%] animate-float"></div>
+    <div class="orb orb-secondary w-[400px] h-[400px] top-[40%] right-[-5%] animate-float-slow"></div>
+    <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMiI+PHBhdGggZD0iTTM2IDYwVjBIMjR2NjB6TTYwIDI0VjM2SDBWMjR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-15"></div>
+    <div class="relative z-10 w-full max-w-7xl mx-auto section-padding">
+      <div class="max-w-3xl">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="badge"><span class="badge-dot badge-dot-pulse"></span>{getIndustryLabel(industry, lang)}</div>
+          <div class="badge">{getAppealLabel(appeal, lang)}</div>
+        </div>
+        <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[1.05] tracking-tight mb-6"><span class="gradient-text">{data.heroHeadline}</span></h1>
+        <p class="text-lg md:text-xl leading-relaxed mb-8" style="color:var(--text-secondary)">{data.heroSubtitle}</p>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <a href={data.calBookingUrl} target="_blank" rel="noopener noreferrer" class="btn-primary">{data.heroCta} <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></a>
+          <a href="#services" class="btn-secondary">{isJa?"改善内容を見る":"See Improvements"} <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></a>
+        </div>
+        {data.heroStats && (
+          <div class="flex flex-wrap gap-8 pt-8 mt-8 border-t border-white/6">
+            {data.heroStats.map(s => <div><div class="text-3xl font-black text-white tabular-nums">{s.value}<span class="text-lg gradient-text-brand ml-1">{s.suffix}</span></div><div class="mt-1 text-xs text-white/30">{s.label}</div></div>)}
+          </div>
+        )}
+      </div>
+    </div>
+  </section>
+
+  <section id="services" class="section-padding">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16"><div class="badge mb-4"><span class="badge-dot"></span>Services</div><h2 class="text-3xl md:text-5xl font-black gradient-text mb-4">{data.serviceTitle}</h2><p class="text-white/40 max-w-2xl mx-auto">{data.serviceSubtitle}</p></div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {data.services.map(svc => (
+          <div class="glass-card glass-hover p-8 group">
+            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-dark text-white text-xl shadow-lg shadow-brand/20 mb-5 group-hover:scale-110 transition-transform">{svc.icon==="Globe"?"🌐":svc.icon==="Search"?"🔍":"⚡"}</div>
+            <h3 class="text-lg font-bold text-white mb-2">{svc.title}</h3>
+            <p class="text-sm text-white/40 leading-relaxed mb-4">{svc.description}</p>
+            {svc.features && <div class="flex flex-wrap gap-2">{svc.features.map(f => <span class="text-[10px] font-medium px-2 py-.5 rounded-full bg-white/5 text-white/40 border border-white/5">{f}</span>)}</div>}
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section-padding" style="background:linear-gradient(180deg,transparent,rgba(124,58,237,.03),transparent)">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16"><div class="badge mb-4"><span class="badge-dot"></span>Results</div><h2 class="text-3xl md:text-5xl font-black gradient-text mb-4">{data.caseTitle}</h2><p class="text-white/40 max-w-2xl mx-auto">{data.caseDescription}</p></div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 stagger" data-animate>
+        {data.caseMetrics.map(m => <div class="glass-card glass-hover p-8 text-center"><div class="text-4xl md:text-5xl font-black gradient-text mb-3">{m.value}<span class="text-xl ml-1">{m.suffix}</span></div><div class="text-sm font-semibold text-white/60 mb-1">{m.label}</div>{m.detail && <div class="text-xs text-white/30 leading-relaxed">{m.detail}</div>}</div>)}
+      </div>
+    </div>
+  </section>
+
+  <section class="section-padding">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16"><div class="badge mb-4"><span class="badge-dot"></span>Process</div><h2 class="text-3xl md:text-5xl font-black gradient-text mb-4">{data.processTitle}</h2></div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {data.processSteps?.map((step,i) => (
+          <div class="relative glass-card glass-hover p-8 text-center group">
+            <div class="absolute top-3 right-4 text-[72px] font-black opacity-[.03] select-none leading-none">{i+1}</div>
+            <div class="flex h-14 w-14 mx-auto items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-dark text-white text-xl shadow-lg shadow-brand/20 mb-5 group-hover:scale-110 transition-transform">{step.icon==="Search"?"🔍":step.icon==="Zap"?"⚡":step.icon==="BarChart"?"📊":"🛡️"}</div>
+            <div class="text-xs font-bold text-brand-light mb-2">{step.step}</div><h3 class="text-base font-bold text-white mb-2">{step.title}</h3><p class="text-xs text-white/40 leading-relaxed">{step.description}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section-padding">
+    <div class="max-w-3xl mx-auto">
+      <div class="text-center mb-16"><div class="badge mb-4"><span class="badge-dot"></span>FAQ</div><h2 class="text-3xl md:text-5xl font-black gradient-text mb-4">{data.faqTitle}</h2></div>
+      <div class="space-y-3">{data.faqItems?.map((faq,i) => (<details class="glass cursor-pointer group" open={i===0}><summary class="flex items-center justify-between p-5 font-semibold text-white/70 group-open:text-white list-none"><span class="flex items-center gap-3"><span class="text-brand-light text-sm font-bold">Q{i+1}</span>{faq.question}</span><svg class="h-4 w-4 text-white/20 group-open:rotate-180 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-5 pb-5 pt-1 text-sm text-white/40 leading-relaxed">{faq.answer}</div></details>))}</div>
+    </div>
+  </section>
+
+  <section class="section-padding">
+    <div class="max-w-3xl mx-auto text-center">
+      <div class="glass glow-lg p-12 md:p-20 relative overflow-hidden">
+        <div class="absolute inset-0 opacity-[.07]" style="background:radial-gradient(circle at 50% 50%,var(--brand),transparent 70%)"></div>
+        <div class="relative z-10"><h2 class="text-3xl md:text-5xl font-black gradient-text mb-6">{data.ctaTitle}</h2><p class="text-white/40 mb-10 max-w-xl mx-auto">{data.ctaBody}</p><a href={data.calBookingUrl} target="_blank" rel="noopener noreferrer" class="btn-primary text-lg !px-10 !py-5">{data.heroCta} <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></a></div>
+      </div>
+    </div>
+  </section>
+</DemoLayout>

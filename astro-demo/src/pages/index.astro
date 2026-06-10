@@ -1,147 +1,58 @@
 ---
 import DemoLayout from "../layouts/DemoLayout.astro"
-import HeroSection from "../components/HeroSection.astro"
-import { getDemoData, JA_INDUSTRY } from "../keystatic/demo-data"
+import { allIndustries, allAppeals, allLocales, getIndustryLabel, getAppealLabel, getAppealIcon } from "../keystatic/demo-data"
 
-const slug = Astro.params.slug || Astro.url.searchParams.get("slug") || "default-demo"
-const data = await getDemoData(slug)
-const industry = JA_INDUSTRY[data.industry] || data.industry
-const lang: "ja" = "ja"
+const selectedLang = (Astro.url.searchParams.get("lang") || "ja") as "ja" | "en"
 ---
 
-<DemoLayout title={`${data.customerName} — ${lang==="ja"?"改善デモサイト":"Demo Site"}`} accentColor={data.accentColor} accentColorDark={data.accentColorDark} accentColorLight={data.accentColorLight} lang="ja">
-
-  <!-- ═══ HERO ═══ -->
-  <HeroSection lang="ja">
-    <span slot="headline" class="gradient-text">{data.heroHeadline}</span>
-    <span slot="subtitle">{data.heroSubtitle}</span>
-    <fragment slot="actions">
-      <a href={data.calBookingUrl} target="_blank" rel="noopener noreferrer" class="btn-primary">無料診断を申し込む <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></a>
-      <a href="#services" class="btn-secondary">改善内容を見る <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></a>
-    </fragment>
-  </HeroSection>
-
-  <!-- ═══ LOGO WALL ═══ -->
-  <section class="py-12 border-y border-white/5">
-    <div class="max-w-7xl mx-auto px-6">
-      <p class="text-center text-xs text-white/20 uppercase tracking-[.2em] mb-6">信頼される技術パートナー</p>
-      <div class="logo-wall flex flex-wrap items-center justify-center gap-8 md:gap-12">
-        {["Google","AWS","Stripe","Vercel","Supabase","Cloudflare","Next.js","TypeScript"].map(l => <span class="text-sm font-bold text-white/15 hover:text-white/60 transition-colors">{l}</span>)}
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══ SERVICES ═══ -->
-  <section id="services" class="section-padding">
-    <div class="max-w-7xl mx-auto">
-      <div class="text-center mb-16 stagger">
-        <div class="badge mb-4"><span class="badge-dot"></span>Services</div>
-        <h2 class="text-3xl md:text-5xl font-black gradient-text mb-4">{data.serviceTitle}</h2>
-        <p class="text-white/40 max-w-2xl mx-auto">{data.serviceSubtitle || "データ診断に基づき、最も効果の高い領域から着手します"}</p>
-      </div>
-      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 stagger" data-animate>
-        {data.services.map((svc, i) => (
-          <a href="/services" class="glass-card glass-hover p-8 group block">
-            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-dark text-white text-xl shadow-lg shadow-brand/20 mb-5 group-hover:scale-110 transition-transform">{svc.icon === "Globe" ? "🌐" : svc.icon === "Search" ? "🔍" : svc.icon === "Zap" ? "⚡" : svc.icon === "Shield" ? "🛡️" : "📊"}</div>
-            <h3 class="text-lg font-bold text-white mb-2">{svc.title}</h3>
-            <p class="text-sm text-white/40 leading-relaxed mb-4">{svc.description}</p>
-            {svc.features && <div class="flex flex-wrap gap-2">{svc.features.map(f => <span class="text-[10px] font-medium px-2 py-.5 rounded-full bg-white/5 text-white/40 border border-white/5">{f}</span>)}</div>}
-          </a>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══ BEFORE/AFTER ═══ -->
-  <section id="before-after" class="section-padding" style="background:linear-gradient(180deg,transparent,rgba(124,58,237,.03),transparent)">
-    <div class="max-w-7xl mx-auto">
-      <div class="text-center mb-16">
-        <div class="badge mb-4"><span class="badge-dot badge-dot-pulse"></span>改善プレビュー</div>
-        <h2 class="text-3xl md:text-5xl font-black gradient-text mb-4">診断結果と改善イメージ</h2>
-        <p class="text-white/40 max-w-2xl mx-auto">データに基づく現状分析と、改善後の具体的なビジョン</p>
-      </div>
-      <div class="grid md:grid-cols-2 gap-8">
-        <div class="glass-card p-0">
-          <div class="px-6 py-3 border-b border-rose-500/10 bg-rose-500/5 flex items-center justify-between">
-            <span class="text-xs font-bold text-rose-400 uppercase tracking-wider">現状</span>
-            {data.pagespeedMobile && <span class="text-[10px] text-rose-400/60">PageSpeed: {data.pagespeedMobile}点</span>}
-          </div>
-          <div class="p-6 space-y-4">
-            {data.screenshotUrl ? <img src={data.screenshotUrl} alt="現状サイト" class="w-full rounded-lg border border-white/5 opacity-50 grayscale" loading="lazy" /> : <div class="aspect-video bg-white/3 rounded-lg flex items-center justify-center text-white/10 text-sm">スクリーンショット準備中</div>}
-            <div class="space-y-2">{data.improvementPoints?.slice(0,4).map((p,i) => <div class="flex items-center gap-3 text-sm"><span class="flex-shrink-0 h-5 w-5 rounded-full bg-rose-500/15 text-rose-400 flex items-center justify-center text-[10px] font-bold">{i+1}</span><span class="text-white/40">{p}</span></div>)}</div>
-          </div>
-        </div>
-        <div class="glass-card p-0">
-          <div class="px-6 py-3 border-b border-emerald-500/10 bg-emerald-500/5 flex items-center justify-between">
-            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">改善後</span>
-            <span class="text-[10px] text-emerald-400/60">目標: 90+点</span>
-          </div>
-          <div class="p-6 space-y-4">
-            <div class="aspect-video rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,rgba(124,58,237,.2),rgba(124,58,237,.05))"><div class="text-center"><div class="text-4xl font-black gradient-text mb-2">+{data.caseMetrics[0]?.value || "2.4x"}</div><div class="text-sm text-white/40">{data.caseMetrics[0]?.label || "改善インパクト"}</div></div></div>
-            <div class="space-y-2">{data.caseMetrics?.slice(0,4).map(m => <div class="flex items-center justify-between text-sm"><span class="text-white/40">{m.label}</span><span class="font-bold text-emerald-400">{m.value}<span class="text-xs ml-1">{m.suffix}</span></span></div>)}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══ PROCESS ═══ -->
+<DemoLayout title="テンプレートギャラリー — Paradigm Demo" lang={selectedLang}>
   <section class="section-padding">
     <div class="max-w-7xl mx-auto">
-      <div class="text-center mb-16"><div class="badge mb-4"><span class="badge-dot"></span>Process</div><h2 class="text-3xl md:text-5xl font-black gradient-text mb-4">{data.processTitle || "プロジェクトの流れ"}</h2></div>
-      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {data.processSteps?.map((step, i) => (
-          <div class="relative glass-card glass-hover p-8 text-center group">
-            <div class="absolute top-3 right-4 text-[72px] font-black opacity-[.03] select-none leading-none">{i+1}</div>
-            <div class="flex h-14 w-14 mx-auto items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-dark text-white text-xl shadow-lg shadow-brand/20 mb-5 group-hover:scale-110 transition-transform">{step.icon==="Search"?"🔍":step.icon==="Zap"?"⚡":step.icon==="BarChart"?"📊":step.icon==="Shield"?"🛡️":"✅"}</div>
-            <div class="text-xs font-bold text-brand-light mb-2">{step.step}</div>
-            <h3 class="text-base font-bold text-white mb-2">{step.title}</h3>
-            <p class="text-xs text-white/40 leading-relaxed">{step.description}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══ TESTIMONIALS ═══ -->
-  {data.testimonials && data.testimonials.length > 0 && (
-    <section class="section-padding" style="background:linear-gradient(180deg,transparent,rgba(124,58,237,.03),transparent)">
-      <div class="max-w-7xl mx-auto">
-        <div class="text-center mb-16"><div class="badge mb-4"><span class="badge-dot"></span>Trust</div><h2 class="text-3xl md:text-5xl font-black gradient-text mb-4">{data.trustTitle || "お客様の声"}</h2></div>
-        <div class="grid md:grid-cols-2 gap-6">
-          {data.testimonials.map(t => (
-            <div class="glass-card p-8 relative">
-              <div class="text-6xl absolute top-4 left-6 opacity-[.08] select-none" style="color:var(--brand)">&ldquo;</div>
-              <p class="text-white/60 leading-relaxed mb-6 relative z-10">『{t.quote}』</p>
-              <div class="flex items-center gap-3"><div class="flex h-10 w-10 items-center justify-center rounded-full bg-brand/20 text-brand-light text-sm font-bold">{t.author.charAt(0)}</div><div><div class="text-sm font-semibold text-white">{t.author}</div><div class="text-xs text-white/30">{t.role} · {t.company}</div></div></div>
-            </div>
+      <div class="text-center mb-12">
+        <div class="badge mb-4"><span class="badge-dot badge-dot-pulse"></span>{selectedLang==="ja"?"全48パターン":"48 Patterns"}</div>
+        <h1 class="text-4xl md:text-6xl font-black gradient-text mb-4">{selectedLang==="ja"?"改善デモサイトテンプレート":"Demo Site Templates"}</h1>
+        <p class="text-white/40 max-w-2xl mx-auto mb-8">{selectedLang==="ja"?"業界 × 訴求タイプ × 言語の全組み合わせから選択してください":"Choose from all industry × appeal × language combinations"}</p>
+        <div class="flex items-center justify-center gap-3">
+          {(["ja","en"] as const).map(l => (
+            <a href={`?lang=${l}`} class={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${selectedLang===l?'bg-brand text-white':'glass text-white/40 hover:text-white'}`}>{l==="ja"?"🇯🇵 日本語":"🇺🇸 English"}</a>
           ))}
         </div>
-        {data.certifications && <div class="flex flex-wrap justify-center gap-3 mt-10">{data.certifications.map(c => <span class="text-xs font-medium px-4 py-2 rounded-full glass text-white/40">{c}</span>)}</div>}
       </div>
-    </section>
-  )}
 
-  <!-- ═══ FAQ ═══ -->
-  <section class="section-padding">
-    <div class="max-w-3xl mx-auto">
-      <div class="text-center mb-16"><div class="badge mb-4"><span class="badge-dot"></span>FAQ</div><h2 class="text-3xl md:text-5xl font-black gradient-text mb-4">{data.faqTitle || "よくあるご質問"}</h2></div>
-      <div class="space-y-3">{data.faqItems?.map((faq,i) => (<details class="glass cursor-pointer group" open={i===0}><summary class="flex items-center justify-between p-5 font-semibold text-white/70 group-open:text-white list-none"><span class="flex items-center gap-3"><span class="text-brand-light text-xs font-bold">Q{i+1}</span>{faq.question}</span><svg class="h-4 w-4 text-white/20 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></summary><div class="px-5 pb-5 pt-1 text-sm text-white/40 leading-relaxed">{faq.answer}</div></details>))}</div>
+      <div class="space-y-16">
+        {allIndustries().map(industry => {
+          const label = getIndustryLabel(industry, selectedLang)
+          const theme = { dental:"#06b6d4", restaurant:"#f59e0b", construction:"#f97316", consulting:"#7c3aed", retail:"#10b981", beauty_salon:"#ec4899", accounting:"#6366f1", cleaning:"#3b82f6" }[industry] || "#7c3aed"
+          return (
+            <div>
+              <div class="flex items-center gap-3 mb-6">
+                <div class="h-3 w-3 rounded-full" style={`background:${theme}`}></div>
+                <h2 class="text-xl font-bold text-white">{label}</h2>
+                <span class="text-xs text-white/20">{selectedLang==="ja"?"4パターン":"4 patterns"}</span>
+              </div>
+              <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {allAppeals().map(appeal => {
+                  const appealLabel = getAppealLabel(appeal, selectedLang)
+                  const icon = getAppealIcon(appeal)
+                  const href = `/${selectedLang}/${industry}/${appeal}`
+                  return (
+                    <a href={href} class="glass-card glass-hover p-6 group block relative overflow-hidden">
+                      <div class="absolute top-0 left-0 right-0 h-1" style={`background:${theme}`}></div>
+                      <div class="text-2xl mb-3">{icon}</div>
+                      <div class="text-xs font-bold text-white/40 uppercase tracking-wider mb-1">{appealLabel}</div>
+                      <div class="text-sm font-bold text-white mb-3">{label} {selectedLang==="ja"?"向け":"for"} {appealLabel}</div>
+                      <div class="flex items-center gap-2 text-xs text-white/20 group-hover:text-brand-light transition-colors">
+                        {selectedLang==="ja"?"プレビューを見る":"View Preview"}
+                        <svg class="h-3 w-3 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                      </div>
+                    </a>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   </section>
-
-  <!-- ═══ CTA ═══ -->
-  <section class="section-padding">
-    <div class="max-w-3xl mx-auto text-center">
-      <div class="glass glow-lg p-12 md:p-20 relative overflow-hidden">
-        <div class="absolute inset-0 opacity-[.07]" style="background:radial-gradient(circle at 50% 50%,var(--brand),transparent 70%)"></div>
-        <div class="relative z-10">
-          <h2 class="text-3xl md:text-5xl font-black gradient-text mb-6">{data.ctaTitle}</h2>
-          <p class="text-white/40 mb-10 max-w-xl mx-auto">{data.ctaBody}</p>
-          <a href={data.calBookingUrl} target="_blank" rel="noopener noreferrer" class="btn-primary text-lg !px-10 !py-5">無料診断を申し込む <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></a>
-        </div>
-      </div>
-    </div>
-  </section>
-
 </DemoLayout>
