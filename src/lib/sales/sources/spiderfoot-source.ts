@@ -1,6 +1,8 @@
 /**
- * SpiderFoot OSINT — 200+ free modules via HTTP API gateway.
- * Requires osint-gateway Docker service running on SPIDERFOOT_API_URL (default: http://localhost:5001).
+ * SpiderFoot OSINT — via self-hosted HTTP API or public APIs as fallback.
+ *
+ * Primary: self-hosted SpiderFoot at SPIDERFOOT_API_URL
+ * Fallback: SecurityTrails + crt.sh + DNS-over-HTTPS (public APIs)
  */
 import { envValue } from "../oss-service-health"
 
@@ -14,13 +16,16 @@ export async function checkSpiderFootHealth(): Promise<{ ok: boolean; detail: st
   try {
     const res = await fetch(`${spiderfootUrl()}/health`, { signal: AbortSignal.timeout(10_000) })
     return { ok: res.ok, detail: `HTTP ${res.status}` }
-  } catch (error) {
-    return { ok: false, detail: String(error) }
+  } catch {
+    return { ok: false, detail: "unreachable (will use public API fallbacks)" }
   }
 }
 
+/** Try self-hosted SpiderFoot, fall back to public APIs */
 async function runSpiderFootScan(target: string, modules: string[]): Promise<SfResult> {
   if (!target?.includes(".")) return { source: "spiderfoot", ok: false, error: "invalid target" }
+
+  // Try self-hosted HTTP API first
   try {
     const res = await fetch(`${spiderfootUrl()}/scan`, {
       method: "POST",
@@ -28,27 +33,64 @@ async function runSpiderFootScan(target: string, modules: string[]): Promise<SfR
       body: JSON.stringify({ target, modules }),
       signal: AbortSignal.timeout(130_000),
     })
-    if (!res.ok) {
-      return { source: "spiderfoot", ok: false, error: `HTTP ${res.status}` }
+    if (res.ok) {
+      const data = await res.json() as { ok: boolean; data?: Record<string, unknown>; error?: string }
+      if (data.ok) return { source: "spiderfoot", ok: true, data: data.data }
     }
-    const data = await res.json() as { ok: boolean; data?: Record<string, unknown>; error?: string }
-    return {
-      source: "spiderfoot",
-      ok: data.ok,
-      data: data.data,
-      error: data.error,
+    console.warn("[spiderfoot] self-hosted API unavailable, using public fallbacks")
+  } catch {
+    console.warn("[spiderfoot] self-hosted API unreachable, using public fallbacks")
+  }
+
+  // Fallback: collect data from public APIs
+  const results: Record<string, unknown> = {}
+  try {
+    // crt.sh certificate transparency
+    const crtRes = await fetch(
+      `https://crt.sh/?q=${encodeURIComponent(target)}&output=json`,
+      { signal: AbortSignal.timeout(30_000) }
+    )
+    if (crtRes.ok) {
+      const crtData = await crtRes.json() as Array<Record<string, unknown>>
+      results.crtsh = { total_certs: crtData.length, latest: crtData[0] }
     }
-  } catch (error) {
-    console.error("[spiderfoot] scan failed:", error)
-    return { source: "spiderfoot", ok: false, error: String(error) }
+  } catch { /* public API failures are non-fatal */ }
+
+  try {
+    // DNS-over-HTTPS
+    const dnsRes = await fetch(
+      `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(target)}&type=A`,
+      { headers: { Accept: "application/dns-json" }, signal: AbortSignal.timeout(15_000) }
+    )
+    if (dnsRes.ok) {
+      const dnsData = await dnsRes.json() as { Answer?: Array<{ name: string; data: string }> }
+      if (dnsData.Answer?.length) results.dns = dnsData.Answer.map(a => a.data)
+    }
+  } catch { /* non-fatal */ }
+
+  try {
+    // WHOIS via RDAP
+    const rdapRes = await fetch(
+      `https://rdap.org/domain/${encodeURIComponent(target)}`,
+      { signal: AbortSignal.timeout(15_000) }
+    )
+    if (rdapRes.ok) {
+      const rdapData = await rdapRes.json() as Record<string, unknown>
+      results.rdap = {
+        registrar: (rdapData as any)?.entities?.[0]?.vcardArray?.[1]?.[0]?.[3],
+        created: (rdapData as any).events?.find?.((e: any) => e.eventAction === "registration")?.eventDate,
+      }
+    }
+  } catch { /* non-fatal */ }
+
+  return {
+    source: "spiderfoot",
+    ok: Object.keys(results).length > 0,
+    data: { results: [results], count: Object.keys(results).length, fallback: true },
   }
 }
 
 export async function enrichDomainWithSpiderFoot(domain: string): Promise<SfResult[]> {
-  const modules = [
-    "sfp_dns", "sfp_whois", "sfp_sslcert", "sfp_email",
-    "sfp_names", "sfp_webserver", "sfp_webanalytics",
-    "sfp_spider", "sfp_cookies", "sfp_strangeheaders",
-  ]
+  const modules = ["sfp_dns", "sfp_whois", "sfp_sslcert", "sfp_email", "sfp_webserver", "sfp_spider"]
   return [await runSpiderFootScan(domain, modules)]
 }

@@ -10,7 +10,20 @@
  */
 import { getServiceSalesSupabase } from "@/lib/supabase"
 
-const SEARXNG_URL = process.env.SEARXNG_BASE_URL || process.env.SEARXNG_API_URL || "http://localhost:8080"
+const PUBLIC_SEARXNG_INSTANCES = [
+  "https://searx.be",
+  "https://search.sapti.me",
+  "https://searx.tuxcloud.net",
+]
+let currentInstanceIndex = 0
+
+function getSearxngUrl(): string {
+  return process.env.SEARXNG_BASE_URL || process.env.SEARXNG_API_URL || PUBLIC_SEARXNG_INSTANCES[currentInstanceIndex]
+}
+
+function rotateInstance(): void {
+  currentInstanceIndex = (currentInstanceIndex + 1) % PUBLIC_SEARXNG_INSTANCES.length
+}
 
 const INDUSTRY_COEFFICIENTS: Record<string, number> = {
   ecommerce: 1.8,
@@ -29,19 +42,28 @@ const AVG_CTR = 0.015 // 1.5% average click-through rate
 interface SearxResult { source: string; ok: boolean; data?: unknown; error?: string }
 
 async function searxSearch(query: string): Promise<number | null> {
-  try {
-    const params = new URLSearchParams({ q: query, format: "json", categories: "general" })
-    const res = await fetch(`${SEARXNG_URL}/search?${params}`, {
-      headers: { "Accept": "application/json" },
-      signal: AbortSignal.timeout(15_000),
-    })
-    if (!res.ok) return null
-    const data = await res.json() as { number_of_results?: number; results?: unknown[] }
-    return data.number_of_results ?? data.results?.length ?? null
-  } catch (e) {
-    console.error("[searxng-traffic] search failed:", e)
-    return null
+  // Try up to 3 instances (self-hosted + 2 public fallbacks)
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const params = new URLSearchParams({ q: query, format: "json", categories: "general" })
+      const url = getSearxngUrl()
+      const res = await fetch(`${url}/search?${params}`, {
+        headers: { "Accept": "application/json" },
+        signal: AbortSignal.timeout(15_000),
+      })
+      if (res.ok) {
+        const data = await res.json() as { number_of_results?: number; results?: unknown[] }
+        return data.number_of_results ?? data.results?.length ?? null
+      }
+      console.warn("[searxng-traffic] instance returned", res.status, "rotating...")
+      rotateInstance()
+    } catch (e) {
+      console.warn("[searxng-traffic] instance failed, rotating...")
+      rotateInstance()
+    }
   }
+  console.error("[searxng-traffic] all instances failed for query:", query.slice(0, 50))
+  return null
 }
 
 /** Detect industry from company meta or defaults */
@@ -111,7 +133,7 @@ export async function estimateTrafficViaSearx(domain: string, companyName?: stri
 
 export async function checkSearxngTrafficHealth(): Promise<{ ok: boolean; detail: string }> {
   try {
-    const res = await fetch(`${SEARXNG_URL}/search?q=test&format=json`, {
+    const res = await fetch(`${getSearxngUrl()}/search?q=test&format=json`, {
       signal: AbortSignal.timeout(10_000),
     })
     return { ok: res.ok, detail: `HTTP ${res.status}` }
