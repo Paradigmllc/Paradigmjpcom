@@ -383,6 +383,7 @@ async function main() {
   console.log("Coolify API: connected")
 
   if (!DRY) {
+    console.log(await applySalesDxAiTemplateVariantMigration(envs))
     const count = await applySalesProducts(envs)
     console.log(`Sales products: verified ${count}`)
     console.log(await applyContentTemplateMigration(envs))
@@ -405,7 +406,6 @@ async function main() {
     console.log(await applySalesAiPromptsRepairMigration(envs))
     console.log(await applySalesTriggerDevToolSlugMigration(envs))
     console.log(await applySalesVideoTriggerColumnsMigration(envs))
-    console.log(await applySalesDxAiTemplateVariantMigration(envs))
     console.log(applyContentTemplates(envs))
   } else {
     console.log("Dry run: skipped Supabase product upsert")
