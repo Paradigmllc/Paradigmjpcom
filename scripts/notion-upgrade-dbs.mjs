@@ -1,17 +1,21 @@
 #!/usr/bin/env node
 /**
- * scripts/notion-upgrade-dbs.mjs — Sprint 14 Notion 4 DB クオリティアップ
+ * scripts/notion-upgrade-dbs.mjs  ESprint 14 Notion 4 DB クオリチE��アチE�E
  *
- * 役割: 4 DB (リード/顧客/納品/テンプレ) に icon + cover + description + rich props 追加.
- *       Notion 公式テンプレ並みに整備. Views 追加は API 制限のため別途 user 手動 (UI).
+ * 役割: 4 DB (リーチE顧客/納品/チE��プレ) に icon + cover + description + rich props 追加.
+ *       Notion 公式テンプレ並みに整傁E Views 追加は API 制限�Eため別送Euser 手動 (UI).
  *
- * 入力: NOTION_API_KEY env (or hardcode)
- * 出力: stdout に upgrade 結果
+ * 入劁E NOTION_API_KEY env (or hardcode)
+ * 出劁E stdout に upgrade 結果
  *
  * AE-PHP-4 準拠.
  */
 
-const NOTION_API_KEY = process.env.NOTION_API_KEY ?? "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"
+const NOTION_API_KEY = process.env.NOTION_API_KEY
+if (!NOTION_API_KEY) {
+  console.error('NOTION_API_KEY env var must be set')
+  process.exit(1)
+}
 
 const DB = {
   leads: "8cbab1f501144f83872c1738ce3e79c4",
@@ -22,10 +26,10 @@ const DB = {
 
 /* Unsplash gradient cover URLs (高品質・無料商用利用 OK) */
 const COVERS = {
-  leads: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=1500&q=80",        // 営業チーム
+  leads: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=1500&q=80",        // 営業チ�Eム
   customers: "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=1500&q=80",   // ハンドシェイク
-  deliveries: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1500&q=80", // 納品/配送
-  templates: "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1500&q=80",  // ライティング
+  deliveries: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=1500&q=80", // 納品/配送E
+  templates: "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1500&q=80",  // ライチE��ング
 }
 
 async function patchDb(id, body) {
@@ -40,15 +44,15 @@ async function patchDb(id, body) {
   })
   const data = await res.json()
   if (!res.ok) {
-    console.error(`  ❌ PATCH ${id} failed:`, data.message || JSON.stringify(data).slice(0, 200))
+    console.error(`  ❁EPATCH ${id} failed:`, data.message || JSON.stringify(data).slice(0, 200))
     return false
   }
   return true
 }
 
-/* ───── 🎯 リード DB ───── */
+/* ───── 🎯 リーチEDB ───── */
 async function upgradeLeads() {
-  console.log("🎯 リード DB upgrading...")
+  console.log("🎯 リーチEDB upgrading...")
   const ok = await patchDb(DB.leads, {
     icon: { type: "emoji", emoji: "🎯" },
     cover: { type: "external", external: { url: COVERS.leads } },
@@ -57,12 +61,12 @@ async function upgradeLeads() {
         type: "text",
         text: {
           content:
-            "営業 OS の中心 DB。paradigmjp.com/contact 経由でフォーム送信された SMB 法人ドメインを自動エンリッチ (PSI + gBizInfo + scanDomain) して蓄積。HOT lead 自動判定 (3+ views)。詳細レポート + 60s 動画レポートは slug ベース URL で配信。",
+            "営業 OS の中忁EDB。paradigmjp.com/contact 経由でフォーム送信されぁESMB 法人ドメインを�E動エンリチE�� (PSI + gBizInfo + scanDomain) して蓁E��、EOT lead 自動判宁E(3+ views)。詳細レポ�EチE+ 60s 動画レポ�Eト�E slug ベ�Eス URL で配信、E,
         },
       },
     ],
     properties: {
-      // Sprint 13: URL-safe 事業者名 slug
+      // Sprint 13: URL-safe 事業老E�� slug
       "slug (URL)": { rich_text: {} },
       "対象国": {
         select: {
@@ -81,7 +85,7 @@ async function upgradeLeads() {
           ],
         },
       },
-      "表示言語": {
+      "表示言誁E: {
         select: {
           options: [
             { name: "ja", color: "red" },
@@ -99,7 +103,7 @@ async function upgradeLeads() {
           ],
         },
       },
-      "テンプレ種別": {
+      "チE��プレ種別": {
         select: {
           options: [
             { name: "website_diagnostic", color: "blue" },
@@ -112,13 +116,13 @@ async function upgradeLeads() {
           ],
         },
       },
-      // Sprint 13: 自動 URL (computed via formula)
-      "📋 診断レポート": {
+      // Sprint 13: 自勁EURL (computed via formula)
+      "📋 診断レポ�EチE: {
         formula: {
-          expression: `if(empty(prop("slug (URL)")), "", "https://paradigmjp.com/" + if(empty(prop("表示言語")), "ja", format(prop("表示言語"))) + "/report/" + prop("slug (URL)"))`,
+          expression: `if(empty(prop("slug (URL)")), "", "https://paradigmjp.com/" + if(empty(prop("表示言誁E)), "ja", format(prop("表示言誁E))) + "/report/" + prop("slug (URL)"))`,
         },
       },
-      "🎬 動画レポート": {
+      "🎬 動画レポ�EチE: {
         formula: {
           expression: `if(empty(prop("slug (URL)")), "", "https://paradigmjp.com/ja/report/" + prop("slug (URL)") + "/video")`,
         },
@@ -126,17 +130,17 @@ async function upgradeLeads() {
       // gBizInfo enrichment
       "法人番号 (gBiz)": { rich_text: {} },
       "従業員数 (gBiz)": { number: { format: "number_with_commas" } },
-      "資本金 (gBiz・円)": { number: { format: "yen" } },
+      "賁E��釁E(gBiz・冁E": { number: { format: "yen" } },
       "設立年 (gBiz)": { rich_text: {} },
       // Last touched
-      "同期状態": {
+      "同期状慁E: {
         formula: {
-          expression: `if(empty(prop("ドメイン")), "URL不足", if(empty(prop("slug (URL)")), "slug生成待ち", "公開URLあり"))`,
+          expression: `if(empty(prop("ドメイン")), "URL不足", if(empty(prop("slug (URL)")), "slug生�E征E��", "公開URLあり"))`,
         },
       },
       "次アクション": {
         formula: {
-          expression: `if(format(prop("パイプライン")) == "pending", "企業URLを確認", if(format(prop("パイプライン")) == "scanning", "自動診断待ち", if(format(prop("パイプライン")) == "report_ready", "レポート送付", if(format(prop("パイプライン")) == "manual_queue", "手動確認", "フォロー"))))`,
+          expression: `if(format(prop("パイプライン")) == "pending", "企業URLを確誁E, if(format(prop("パイプライン")) == "scanning", "自動診断征E��", if(format(prop("パイプライン")) == "report_ready", "レポ�Eト送仁E, if(format(prop("パイプライン")) == "manual_queue", "手動確誁E, "フォロー"))))`,
         },
       },
       "最終更新": { last_edited_time: {} },
@@ -156,26 +160,26 @@ async function upgradeCustomers() {
         type: "text",
         text: {
           content:
-            "Paradigm の有料顧客 dashboard。MRR (月次経常収益) + 健全度 + WL (white-label) 代理店契約を一元管理。Stripe Webhook から自動同期、月次請求は契約開始日ベースで計算。",
+            "Paradigm の有料顧客 dashboard、ERR (月次経常収益) + 健全度 + WL (white-label) 代琁E��契紁E��一允E��琁E��Stripe Webhook から自動同期、月次請求�E契紁E��始日ベ�Eスで計算、E,
         },
       },
     ],
     properties: {
-      "紐づくリード": {
+      "紐づくリーチE: {
         relation: {
           database_id: DB.leads,
           single_property: {},
         },
       },
       "紹介経由": { rich_text: {} },
-      "LTV (試算)": {
+      "LTV (試箁E": {
         formula: {
-          expression: `if(empty(prop("月額")) or empty(prop("契約開始日")), 0, prop("月額") * (dateBetween(now(), prop("契約開始日"), "months") + 1))`,
+          expression: `if(empty(prop("月顁E)) or empty(prop("契紁E��始日")), 0, prop("月顁E) * (dateBetween(now(), prop("契紁E��始日"), "months") + 1))`,
         },
       },
-      "契約継続月数": {
+      "契紁E��続月数": {
         formula: {
-          expression: `if(empty(prop("契約開始日")), 0, dateBetween(now(), prop("契約開始日"), "months"))`,
+          expression: `if(empty(prop("契紁E��始日")), 0, dateBetween(now(), prop("契紁E��始日"), "months"))`,
         },
       },
       "最終更新": { last_edited_time: {} },
@@ -195,7 +199,7 @@ async function upgradeDeliveries() {
         type: "text",
         text: {
           content:
-            "顧客への納品物 (60s 診断動画 / Web 制作 / MEO レポート / 提案資料 / 動画サブスク) tracking。Cloudflare R2 にアップロード後 URL を記録、状態遷移 (制作中 → レビュー待ち → 納品済) を可視化。",
+            "顧客への納品物 (60s 診断動画 / Web 制佁E/ MEO レポ�EチE/ 提案賁E�� / 動画サブスク) tracking、Eloudflare R2 にアチE�Eロード征EURL を記録、状態�E移 (制作中 ↁEレビュー征E�� ↁE納品渁E を可視化、E,
         },
       },
     ],
@@ -206,17 +210,17 @@ async function upgradeDeliveries() {
           single_property: {},
         },
       },
-      "公開": { checkbox: {} },
+      "公閁E: { checkbox: {} },
       "レビュー Slack URL": { url: {} },
-      "進捗 %": { number: { format: "percent" } },
+      "進捁E%": { number: { format: "percent" } },
     },
   })
   return ok
 }
 
-/* ───── 📝 テンプレ DB ───── */
+/* ───── 📝 チE��プレ DB ───── */
 async function upgradeTemplates() {
-  console.log("📝 テンプレ DB upgrading...")
+  console.log("📝 チE��プレ DB upgrading...")
   const ok = await patchDb(DB.templates, {
     icon: { type: "emoji", emoji: "📝" },
     cover: { type: "external", external: { url: COVERS.templates } },
@@ -225,14 +229,14 @@ async function upgradeTemplates() {
         type: "text",
         text: {
           content:
-            "業種 × 課題コード = 56 パターンの営業文面テンプレ。「絶望→希望」5 段階フレーム (headline / pain / fear / loss / cta) を encode。Supabase sales_templates と双方向 sync。新規追加・編集は Notion 側で行い、Coolify が n8n 経由で自動反映。",
+            "業種 ÁE課題コーチE= 56 パターンの営業斁E��チE��プレ。「絶望�E希望、E 段階フレーム (headline / pain / fear / loss / cta) めEencode。Supabase sales_templates と双方吁Esync。新規追加・編雁E�E Notion 側で行い、Coolify ぁEn8n 経由で自動反映、E,
         },
       },
     ],
     properties: {
       "使用回数": { number: { format: "number" } },
-      "平均 CVR (%)": { number: { format: "percent" } },
-      "テンプレ種別": {
+      "平坁ECVR (%)": { number: { format: "percent" } },
+      "チE��プレ種別": {
         select: {
           options: [
             { name: "website_diagnostic", color: "blue" },
@@ -262,7 +266,7 @@ async function upgradeTemplates() {
           ],
         },
       },
-      "表示言語": {
+      "表示言誁E: {
         select: {
           options: [
             { name: "ja", color: "red" },
@@ -282,11 +286,11 @@ async function upgradeTemplates() {
       },
       "自動適用キー": {
         formula: {
-          expression: `format(prop("テンプレ種別")) + " / " + format(prop("対象国")) + " / " + format(prop("表示言語")) + " / " + format(prop("業種")) + " / " + format(prop("課題コード"))`,
+          expression: `format(prop("チE��プレ種別")) + " / " + format(prop("対象国")) + " / " + format(prop("表示言誁E)) + " / " + format(prop("業種")) + " / " + format(prop("課題コーチE))`,
         },
       },
       "最終使用日": { date: {} },
-      "備考": { rich_text: {} },
+      "備老E: { rich_text: {} },
     },
   })
   return ok
@@ -294,7 +298,7 @@ async function upgradeTemplates() {
 
 /* ───── Run ───── */
 async function main() {
-  console.log("🚀 Notion 4 DB を Notion 公式テンプレ並みにアップグレード開始\n")
+  console.log("🚀 Notion 4 DB めENotion 公式テンプレ並みにアチE�Eグレード開始\n")
   const results = await Promise.all([
     upgradeLeads(),
     upgradeCustomers(),
@@ -302,14 +306,14 @@ async function main() {
     upgradeTemplates(),
   ])
   const passed = results.filter(Boolean).length
-  console.log(`\n✅ ${passed}/4 DB upgraded`)
+  console.log(`\n✁E${passed}/4 DB upgraded`)
   console.log(`
   Next steps (Notion UI で手動):
-  - 各 DB に view 追加 (Board/Calendar/Gallery)
-  - リード DB: 🔥 HOT leads / 📊 ステージ別 / 🗾 都道府県別 / 📅 フォローアップ予定
-  - 顧客 DB: 💰 MRR 一覧 / 🏥 health モニター / 📅 請求カレンダー / 🤝 WL のみ
-  - 納品 DB: 🚧 進行中 / 📅 締切カレンダー / 🎬 動画納品のみ / ✅ 完了済
-  - テンプレ DB: 🎯 業種別 / 🚨 critical のみ / ⭕ 有効テンプレ
+  - 吁EDB に view 追加 (Board/Calendar/Gallery)
+  - リーチEDB: 🔥 HOT leads / 📊 スチE�Eジ別 / 🗾 都道府県別 / 📅 フォローアチE�E予宁E
+  - 顧客 DB: 💰 MRR 一覧 / 🏥 health モニター / 📅 請求カレンダー / 🤁EWL のみ
+  - 納品 DB: 🚧 進行中 / 📅 締刁E��レンダー / 🎬 動画納品のみ / ✁E完亁E��E
+  - チE��プレ DB: 🎯 業種別 / 🚨 critical のみ / ⭁E有効チE��プレ
   `)
   process.exit(passed === 4 ? 0 : 1)
 }

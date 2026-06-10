@@ -16,7 +16,8 @@ export async function checkMaigretHealth(): Promise<{ ok: boolean; detail: strin
   try {
     const res = await fetch(`${maigretUrl()}/health`, { signal: AbortSignal.timeout(10_000) })
     return { ok: res.ok, detail: `HTTP ${res.status}` }
-  } catch {
+  } catch (e) {
+    console.warn("[maigret] health check failed:", e instanceof Error ? e.message : String(e))
     return { ok: false, detail: "unreachable (will use public API fallbacks)" }
   }
 }
@@ -38,8 +39,8 @@ export async function searchMaigretForDomain(domain: string): Promise<MaigretRes
       if (data.ok) return { source: "maigret", ok: true, data: data.data }
     }
     console.warn("[maigret] self-hosted API unavailable, using public fallbacks")
-  } catch {
-    console.warn("[maigret] self-hosted API unreachable, using public fallbacks")
+  } catch (e) {
+    console.warn("[maigret] self-hosted API unreachable, using public fallbacks:", e instanceof Error ? e.message : String(e))
   }
 
   // Fallback: check public APIs for username presence
@@ -62,7 +63,9 @@ export async function searchMaigretForDomain(domain: string): Promise<MaigretRes
         username: ghData.login,
       })
     }
-  } catch { /* non-fatal */ }
+  } catch (e) {
+    console.warn("[maigret] GitHub user search failed:", e instanceof Error ? e.message : String(e))
+  }
 
   try {
     // Twitter/X check (via public API)
@@ -77,7 +80,9 @@ export async function searchMaigretForDomain(domain: string): Promise<MaigretRes
         status: { exists: true },
       })
     }
-  } catch { /* non-fatal */ }
+  } catch (e) {
+    console.warn("[maigret] Twitter/X check failed:", e instanceof Error ? e.message : String(e))
+  }
 
   try {
     // Reddit user check
@@ -95,7 +100,9 @@ export async function searchMaigretForDomain(domain: string): Promise<MaigretRes
         })
       }
     }
-  } catch { /* non-fatal */ }
+  } catch (e) {
+    console.warn("[maigret] Reddit user check failed:", e instanceof Error ? e.message : String(e))
+  }
 
   return {
     source: "maigret",

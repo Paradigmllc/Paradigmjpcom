@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
-import { upsertCompanyByDomain, findExistingCompany } from "@/lib/sales/companies"
+import { upsertCompanyByDomain, batchFindExistingByDomains } from "@/lib/sales/companies"
 import { normalizeCompanyName } from "@/lib/sales/dedup"
 import { enqueueCompanyEnrichment, triggerEnrichmentRunner } from "@/lib/sales/enrichment-jobs"
 import { getServiceSalesSupabase } from "@/lib/supabase"
@@ -71,12 +71,14 @@ export async function POST(req: NextRequest) {
     let jobsEnqueued = 0
     const failures: Array<{ domain: string; reason: string }> = []
 
+    // Batch preload existing companies (N+1 prevention)
+    const candidateDomains = result.candidates
+      .map((c) => c.domain?.trim().toLowerCase())
+      .filter((d): d is string => d !== null && d !== undefined && d.length > 0)
+    const existingMap = await batchFindExistingByDomains(candidateDomains)
+
     for (const candidate of result.candidates) {
-      const existing = await findExistingCompany({
-        domain: candidate.domain,
-        nameKey: normalizeCompanyName(candidate.companyName),
-        region: scope.region,
-      })
+      const existing = existingMap.get(candidate.domain?.trim().toLowerCase() ?? "")
       if (existing) {
         skipped++
         continue

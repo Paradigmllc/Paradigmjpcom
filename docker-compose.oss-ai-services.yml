@@ -3,21 +3,26 @@
 # Deploy: Coolify → paradigmjp.com subdomains
 
 x-deepseek-env: &deepseek-env
-  OPENAI_API_KEY: sk-ac7fe3ae987c478c9d430bc2e71465ad
-  OPENAI_API_BASE: https://api.deepseek.com/v1
+  OPENAI_API_KEY: ${DEEPSEEK_API_KEY:?DEEPSEEK_API_KEY is required}
+  OPENAI_API_BASE: ${DEEPSEEK_API_BASE:-https://api.deepseek.com/v1}
 
 services:
   # ─── Morphic: AI-powered search engine ──────────────────────
   morphic:
-    image: ghcr.io/miurla/morphic:latest
+    image: ghcr.io/miurla/morphic:2.0.0
     restart: unless-stopped
     environment:
       <<: *deepseek-env
       SEARCH_API_KEY: ${MORPHIC_SEARCH_API_KEY:-}
-      SEARCH_API_BASE: ${MORPHIC_SEARCH_API_BASE:-https://api.deepseek.com/v1}
+      SEARCH_API_BASE: ${MORPHIC_SEARCH_API_BASE:-http://perplexica-searxng:8080}
       UPSTASH_REDIS_REST_URL: ${MORPHIC_REDIS_URL:-}
       UPSTASH_REDIS_REST_TOKEN: ${MORPHIC_REDIS_TOKEN:-}
       NEXT_PUBLIC_APP_URL: https://morphic.paradigmjp.com
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: "1.0"
     ports:
       - "3002:3000"
     networks:
@@ -25,7 +30,7 @@ services:
 
   # ─── Perplexica: AI-powered search ─────────────────────────
   perplexica-backend:
-    image: ghcr.io/itzcrazykns/perplexica-backend:latest
+    image: ghcr.io/itzcrazykns/perplexica-backend:2.7.3
     restart: unless-stopped
     depends_on:
       perplexica-searxng:
@@ -37,13 +42,18 @@ services:
       GROQ_API_KEY: ${PERPLEXICA_GROQ_API_KEY:-}
       ANTHROPIC_API_KEY: ${PERPLEXICA_ANTHROPIC_API_KEY:-}
       PORT: "3001"
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: "1.0"
     ports:
       - "3003:3001"
     networks:
       - ai-services
 
   perplexica-frontend:
-    image: ghcr.io/itzcrazykns/perplexica-frontend:latest
+    image: ghcr.io/itzcrazykns/perplexica-frontend:2.7.3
     restart: unless-stopped
     depends_on:
       - perplexica-backend
@@ -51,19 +61,24 @@ services:
       NEXT_PUBLIC_API_URL: http://perplexica-backend:3001
       NEXT_PUBLIC_WS_URL: ws://perplexica-backend:3001
       NEXT_PUBLIC_APP_URL: https://perplexica.paradigmjp.com
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
     ports:
       - "3004:3000"
     networks:
       - ai-services
 
   perplexica-searxng:
-    image: searxng/searxng:latest
+    image: searxng/searxng:2025.5.13-65197a4d9
     restart: unless-stopped
     volumes:
       - perplexica-searxng-data:/etc/searxng
     environment:
       SEARXNG_BASE_URL: http://localhost:8080/
-      SEARXNG_SECRET: paradigm-searxng-perplexica-key
+      SEARXNG_SECRET: ${PERPLEXICA_SEARXNG_SECRET:?PERPLEXICA_SEARXNG_SECRET is required}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -76,7 +91,7 @@ services:
 
   # ─── Skyvern: Browser automation with AI agents ─────────────
   skyvern:
-    image: ghcr.io/skyvern-ai/skyvern:latest
+    image: ghcr.io/skyvern-ai/skyvern:1.1.0
     restart: unless-stopped
     environment:
       <<: *deepseek-env
@@ -87,6 +102,11 @@ services:
       BROWSER_TYPE: chromium-headless
       MAX_WORKERS: "4"
       LOG_LEVEL: INFO
+    deploy:
+      resources:
+        limits:
+          memory: 3g
+          cpus: "2.0"
     ports:
       - "8000:8000"
     depends_on:
@@ -101,9 +121,14 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: skyvern
-      POSTGRES_PASSWORD: skyvern
-      POSTGRES_DB: skyvern
+      POSTGRES_USER: ${SKYVERN_POSTGRES_USER:?SKYVERN_POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${SKYVERN_POSTGRES_PASSWORD:?SKYVERN_POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${SKYVERN_POSTGRES_DB:-skyvern}
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
     volumes:
       - skyvern-pg-data:/var/lib/postgresql/data
     healthcheck:

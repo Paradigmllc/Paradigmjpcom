@@ -4,21 +4,22 @@
 # Stage 3 (runner): minimal production image
 # ─── Requires next.config.ts: output: "standalone" ───
 
-FROM node:24-alpine AS deps
+FROM node:22.12.0-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm install --no-audit --no-fund
+RUN npm ci --no-audit --no-fund
 
-FROM node:24-alpine AS builder
+FROM node:22.12.0-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV PAYLOAD_READS_DISABLED_DURING_BUILD=1
+ENV PAYLOAD_CONFIG_PATH=/app/payload.config.ts
+ENV PAYLOAD_DISABLE_DATABASE_DURING_BUILD=1
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN npm run build
 
-FROM node:24-alpine AS runner
+FROM node:22.12.0-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1

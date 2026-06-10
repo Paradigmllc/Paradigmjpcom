@@ -2,8 +2,8 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 
-const DEFAULT_COOLIFY_URL = "https://coolify.appexx.me"
-const DEFAULT_APP_UUID = "i12am4vvcbggefnqdizhnv9a"
+const DEFAULT_COOLIFY_URL = process.env.COOLIFY_URL || "https://coolify.appexx.me"
+const DEFAULT_APP_UUID = process.env.PARADIGM_APP_UUID || "i12am4vvcbggefnqdizhnv9a"
 const CLAUDE_PROJECT_MEMORY_DIR = path.join(os.homedir(), ".claude", "projects")
 
 function envValue(name, fallback = null) {

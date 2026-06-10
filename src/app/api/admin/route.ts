@@ -2,9 +2,20 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServiceSupabase } from "@/lib/supabase"
 
 // 認証チェック
+function getAdminPassword(): string | null {
+  const pw = process.env.ADMIN_PASSWORD
+  if (!pw) {
+    console.error("[admin] ADMIN_PASSWORD env var is not set — authentication disabled for safety")
+    return null
+  }
+  return pw
+}
+
 function isAuthenticated(req: NextRequest): boolean {
+  const password = getAdminPassword()
+  if (!password) return false
   const token = req.cookies.get("paradigm_admin_token")?.value
-  return token === (process.env.ADMIN_PASSWORD || "paradigm-admin-2025")
+  return token === password
 }
 
 // 認証ミドルウェア
@@ -20,7 +31,10 @@ export async function POST(req: NextRequest) {
 
     // ─── 認証不要アクション（login / logout）───
     if (action === "login") {
-      const password = process.env.ADMIN_PASSWORD || "paradigm-admin-2025"
+      const password = getAdminPassword()
+      if (!password) {
+        return NextResponse.json({ error: "管理者認証が設定されていません" }, { status: 500 })
+      }
       if (params.password !== password) {
         return NextResponse.json({ error: "パスワードが違います" }, { status: 401 })
       }
@@ -67,7 +81,7 @@ export async function POST(req: NextRequest) {
 
       // ═══ ブログ記事 ═══
       case "list_posts": {
-        const { data, error } = await db.from("cms_posts").select("*").order("created_at", { ascending: false })
+        const { data, error } = await db.from("cms_posts").select("*").order("created_at", { ascending: false }).limit(500)
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
         return NextResponse.json({ posts: data || [] })
       }
@@ -110,7 +124,7 @@ export async function POST(req: NextRequest) {
 
       // ═══ サービス ═══
       case "list_services": {
-        const { data } = await db.from("cms_services").select("*").order("sort_order")
+        const { data } = await db.from("cms_services").select("*").order("sort_order").limit(500)
         return NextResponse.json({ services: data || [] })
       }
       case "update_service": {
@@ -123,7 +137,7 @@ export async function POST(req: NextRequest) {
 
       // ═══ 料金 ═══
       case "list_pricing": {
-        const { data } = await db.from("cms_pricing").select("*").order("service_id").order("sort_order")
+        const { data } = await db.from("cms_pricing").select("*").order("service_id").order("sort_order").limit(500)
         return NextResponse.json({ pricing: data || [] })
       }
       case "update_pricing": {
@@ -136,7 +150,7 @@ export async function POST(req: NextRequest) {
 
       // ═══ FAQ ═══
       case "list_faqs": {
-        const { data } = await db.from("cms_faqs").select("*").order("sort_order")
+        const { data } = await db.from("cms_faqs").select("*").order("sort_order").limit(500)
         return NextResponse.json({ faqs: data || [] })
       }
       case "create_faq": {
@@ -162,15 +176,19 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true })
       }
       case "reorder_faqs": {
-        for (let i = 0; i < params.ids.length; i++) {
-          await db.from("cms_faqs").update({ sort_order: i + 1 }).eq("id", params.ids[i])
-        }
+        const updates = params.ids.map((id: string, idx: number) => ({
+          id,
+          sort_order: idx + 1,
+          updated_at: new Date().toISOString(),
+        }))
+        const { error } = await db.from("cms_faqs").upsert(updates)
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
         return NextResponse.json({ success: true })
       }
 
       // ═══ 実績 ═══
       case "list_works": {
-        const { data } = await db.from("cms_works").select("*").order("sort_order")
+        const { data } = await db.from("cms_works").select("*").order("sort_order").limit(500)
         return NextResponse.json({ works: data || [] })
       }
       case "create_work": {
@@ -216,7 +234,7 @@ export async function POST(req: NextRequest) {
 
       // ═══ 設定 ═══
       case "get_settings": {
-        const { data } = await db.from("cms_settings").select("*")
+        const { data } = await db.from("cms_settings").select("*").limit(500)
         const settings: Record<string, unknown> = {}
         data?.forEach(row => { settings[row.key] = row.value })
         return NextResponse.json({ settings })
@@ -247,7 +265,10 @@ export async function GET(req: NextRequest) {
   // ログイン用パスワード認証
   const pw = req.nextUrl.searchParams.get("password")
   if (pw) {
-    const password = process.env.ADMIN_PASSWORD || "paradigm-admin-2025"
+    const password = getAdminPassword()
+    if (!password) {
+      return NextResponse.json({ error: "管理者認証が設定されていません" }, { status: 500 })
+    }
     if (pw === password) {
       const res = NextResponse.json({ authenticated: true })
       res.cookies.set("paradigm_admin_token", password, {

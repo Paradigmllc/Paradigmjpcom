@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 /**
- * scripts/notion-create-3-dbs-no-relations.mjs — Sprint 17 3 新 DB (relation 抜き)
+ * scripts/notion-create-3-dbs-no-relations.mjs  ESprint 17 3 新 DB (relation 抜き)
  *
- * 役割: Activities / Calendar / Contracts を relation property 抜きで作成.
+ * 役割: Activities / Calendar / Contracts めErelation property 抜きで作�E.
  *       relation は Notion UI で後から手動で追加 (API の新 data_source 仕様回避).
  */
 
-const NOTION_API_KEY = process.env.NOTION_API_KEY ?? "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"
+const NOTION_API_KEY = process.env.NOTION_API_KEY
+if (!NOTION_API_KEY) {
+  console.error('NOTION_API_KEY env var must be set')
+  process.exit(1)
+}
 const PARENT_PAGE_ID = "35fa2b78-f3fc-8129-9d91-e457889ee393"
 
 let lastCall = 0
@@ -35,18 +39,18 @@ async function createActivities() {
     parent: { type: "page_id", page_id: PARENT_PAGE_ID },
     icon: { type: "emoji", emoji: "📞" },
     cover: { type: "external", external: { url: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=1500&q=80" } },
-    title: [{ type: "text", text: { content: "📞 アクティビティログ" } }],
+    title: [{ type: "text", text: { content: "📞 アクチE��ビティログ" } }],
     description: [
       {
         type: "text",
         text: {
           content:
-            "Salesforce Activity Timeline 相当。全営業活動 (メール送信/架電/会議/メモ/SMS/LinkedIn/デモ/フォローアップ) を時系列ログ。Supabase sales_activity_log と双方向 sync。relation (リード/顧客) は Notion UI で後追加可。",
+            "Salesforce Activity Timeline 相当。�E営業活勁E(メール送信/架電/会議/メモ/SMS/LinkedIn/チE��/フォローアチE�E) を時系列ログ。Supabase sales_activity_log と双方吁Esync。relation (リーチE顧客) は Notion UI で後追加可、E,
         },
       },
     ],
     properties: {
-      件名: { title: {} },
+      件吁E { title: {} },
       種別: {
         select: {
           options: [
@@ -61,7 +65,7 @@ async function createActivities() {
           ],
         },
       },
-      地域: {
+      地埁E {
         select: {
           options: [
             { name: "jp", color: "red" },
@@ -70,7 +74,7 @@ async function createActivities() {
         },
       },
       会社ドメイン: { url: {} },
-      顧客名: { rich_text: {} },
+      顧客吁E { rich_text: {} },
       結果: {
         select: {
           options: [
@@ -82,18 +86,18 @@ async function createActivities() {
           ],
         },
       },
-      発生日時: { date: {} },
-      "所要時間 (分)": { number: {} },
-      内容: { rich_text: {} },
-      担当者: { people: {} },
+      発生日晁E { date: {} },
+      "所要時閁E(刁E": { number: {} },
+      冁E��: { rich_text: {} },
+      拁E��老E { people: {} },
       最終更新: { last_edited_time: {} },
     },
   })
   if (r.ok) {
-    console.log("  ✅", r.data.id)
+    console.log("  ✁E, r.data.id)
     return r.data.id
   }
-  console.error("  ❌", r.error?.slice(0, 200))
+  console.error("  ❁E, r.error?.slice(0, 200))
   return null
 }
 
@@ -103,13 +107,13 @@ async function createCalendar() {
     parent: { type: "page_id", page_id: PARENT_PAGE_ID },
     icon: { type: "emoji", emoji: "📅" },
     cover: { type: "external", external: { url: "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=1500&q=80" } },
-    title: [{ type: "text", text: { content: "📅 商談カレンダー" } }],
+    title: [{ type: "text", text: { content: "📅 啁E��E��レンダー" } }],
     description: [
       {
         type: "text",
         text: {
           content:
-            "cal.com 統合の商談予約 DB。Discovery / Demo / Proposal / Closing の各フェーズ商談を管理。Supabase sales_calendar_events と双方向 sync。",
+            "cal.com 統合�E啁E��E��紁EDB、Eiscovery / Demo / Proposal / Closing の吁E��ェーズ啁E��E��管琁E��Supabase sales_calendar_events と双方吁Esync、E,
         },
       },
     ],
@@ -128,7 +132,7 @@ async function createCalendar() {
           ],
         },
       },
-      地域: {
+      地埁E {
         select: {
           options: [
             { name: "jp", color: "red" },
@@ -137,11 +141,11 @@ async function createCalendar() {
         },
       },
       会社ドメイン: { url: {} },
-      顧客名: { rich_text: {} },
-      開始日時: { date: {} },
-      "cal.com 予約 URL": { url: {} },
+      顧客吁E { rich_text: {} },
+      開始日晁E { date: {} },
+      "cal.com 予紁EURL": { url: {} },
       "会議 URL": { url: {} },
-      状態: {
+      状慁E {
         select: {
           options: [
             { name: "scheduled", color: "yellow" },
@@ -153,17 +157,17 @@ async function createCalendar() {
           ],
         },
       },
-      参加者: { rich_text: {} },
+      参加老E { rich_text: {} },
       結果メモ: { rich_text: {} },
-      担当者: { people: {} },
+      拁E��老E { people: {} },
       最終更新: { last_edited_time: {} },
     },
   })
   if (r.ok) {
-    console.log("  ✅", r.data.id)
+    console.log("  ✁E, r.data.id)
     return r.data.id
   }
-  console.error("  ❌", r.error?.slice(0, 200))
+  console.error("  ❁E, r.error?.slice(0, 200))
   return null
 }
 
@@ -173,19 +177,19 @@ async function createContracts() {
     parent: { type: "page_id", page_id: PARENT_PAGE_ID },
     icon: { type: "emoji", emoji: "📄" },
     cover: { type: "external", external: { url: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=1500&q=80" } },
-    title: [{ type: "text", text: { content: "📄 契約書 DB" } }],
+    title: [{ type: "text", text: { content: "📄 契紁E�� DB" } }],
     description: [
       {
         type: "text",
         text: {
           content:
-            "Salesforce Contracts + DocuSign 相当。PDF は Cloudflare R2 に保存・Notion は URL リンクのみ。Supabase sales_contracts と双方向 sync。",
+            "Salesforce Contracts + DocuSign 相当。PDF は Cloudflare R2 に保存�ENotion は URL リンクのみ。Supabase sales_contracts と双方吁Esync、E,
         },
       },
     ],
     properties: {
-      契約書名: { title: {} },
-      契約種別: {
+      契紁E��吁E { title: {} },
+      契紁E��別: {
         select: {
           options: [
             { name: "web_build", color: "blue" },
@@ -199,7 +203,7 @@ async function createContracts() {
           ],
         },
       },
-      地域: {
+      地埁E {
         select: {
           options: [
             { name: "jp", color: "red" },
@@ -207,9 +211,9 @@ async function createContracts() {
           ],
         },
       },
-      顧客名: { rich_text: {} },
-      "金額 (JPY)": { number: { format: "yen" } },
-      "金額 (USD)": { number: { format: "dollar" } },
+      顧客吁E { rich_text: {} },
+      "金顁E(JPY)": { number: { format: "yen" } },
+      "金顁E(USD)": { number: { format: "dollar" } },
       通貨: {
         select: {
           options: [
@@ -224,11 +228,11 @@ async function createContracts() {
         },
       },
       開始日: { date: {} },
-      終了日: { date: {} },
+      終亁E��: { date: {} },
       自動更新: { checkbox: {} },
       "PDF (R2)": { url: {} },
       "DocuSign Envelope": { rich_text: {} },
-      状態: {
+      状慁E {
         select: {
           options: [
             { name: "draft", color: "gray" },
@@ -242,17 +246,17 @@ async function createContracts() {
           ],
         },
       },
-      署名者名: { rich_text: {} },
-      署名者メール: { email: {} },
+      署名老E��: { rich_text: {} },
+      署名老E��ール: { email: {} },
       署名日: { date: {} },
       最終更新: { last_edited_time: {} },
     },
   })
   if (r.ok) {
-    console.log("  ✅", r.data.id)
+    console.log("  ✁E, r.data.id)
     return r.data.id
   }
-  console.error("  ❌", r.error?.slice(0, 200))
+  console.error("  ❁E, r.error?.slice(0, 200))
   return null
 }
 
@@ -262,16 +266,16 @@ async function main() {
   const contractsId = await createContracts()
 
   console.log(`
-✅ 3 new DBs created:
+✁E3 new DBs created:
   NOTION_DB_ACTIVITIES=${activitiesId ?? "(failed)"}
   NOTION_DB_CALENDAR=${calendarId ?? "(failed)"}
   NOTION_DB_CONTRACTS=${contractsId ?? "(failed)"}
 
-ℹ️ relation プロパティは Notion UI で後追加 (API の data_source 仕様回避):
-  📞 アクティビティログ → 紐づくリード (relation→🎯 リード DB)
-  📞 アクティビティログ → 紐づく顧客 (relation→🏢 顧客 DB)
-  📅 商談カレンダー → 同上
-  📄 契約書 DB → 紐づく顧客 (relation→🏢 顧客 DB)
+ℹ�E�Erelation プロパティは Notion UI で後追加 (API の data_source 仕様回避):
+  📞 アクチE��ビティログ ↁE紐づくリーチE(relation→🎯 リーチEDB)
+  📞 アクチE��ビティログ ↁE紐づく顧客 (relation→🏢 顧客 DB)
+  📅 啁E��E��レンダー ↁE同丁E
+  📄 契紁E�� DB ↁE紐づく顧客 (relation→🏢 顧客 DB)
 `)
 }
 

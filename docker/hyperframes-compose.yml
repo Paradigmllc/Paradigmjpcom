@@ -1,10 +1,10 @@
 services:
   hyperframes:
-    image: paradigm-hyperframes:latest
+    image: paradigm-hyperframes:0.6.87
     container_name: paradigm-hyperframes
     restart: unless-stopped
     environment:
-      - HYPERFRAMES_API_KEY=hf-oss-20260609-key
+      - HYPERFRAMES_API_KEY=${HYPERFRAMES_API_KEY:?HYPERFRAMES_API_KEY is required}
       - PORT=3035
     volumes:
       - /data/hyperframes-work:/tmp/hyperframes-work

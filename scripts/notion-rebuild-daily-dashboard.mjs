@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 /**
- * scripts/notion-rebuild-daily-dashboard.mjs — Daily Dashboard 再ビルド (URL 修正版)
+ * scripts/notion-rebuild-daily-dashboard.mjs  EDaily Dashboard 再ビルチE(URL 修正牁E
  *
- * 役割: 既存の Sprint 18 daily dashboard で URL anchor が無効だったので
- *       実 page URL で再生成. 他の 3 dashboards は既に成功済.
+ * 役割: 既存�E Sprint 18 daily dashboard で URL anchor が無効だった�Eで
+ *       宁Epage URL で再生戁E 他�E 3 dashboards は既に成功渁E
  */
 
-const NOTION_API_KEY = process.env.NOTION_API_KEY ?? "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"
+const NOTION_API_KEY = process.env.NOTION_API_KEY
+if (!NOTION_API_KEY) {
+  console.error('NOTION_API_KEY env var must be set')
+  process.exit(1)
+}
 const DASHBOARD_ID = "35fa2b78-f3fc-81d0-b842-c0ed182103dc"
 
 const DB = {
@@ -120,7 +124,7 @@ async function smartClear(pageId) {
     cursor = r.data.has_more ? r.data.next_cursor : undefined
   } while (cursor)
   for (const id of toDelete) await n("DELETE", `/blocks/${id}`)
-  console.log(`  ✅ ${toDelete.length} blocks deleted`)
+  console.log(`  ✁E${toDelete.length} blocks deleted`)
 }
 
 async function queryCounts() {
@@ -128,7 +132,7 @@ async function queryCounts() {
   const all = await n("POST", `/databases/${DB.leadsJp}/query`, { page_size: 100 })
   counts.leadsJp = all.ok ? all.data.results?.length ?? 0 : 0
   const hot = await n("POST", `/databases/${DB.leadsJp}/query`, {
-    filter: { property: "HOTリード", checkbox: { equals: true } },
+    filter: { property: "HOTリーチE, checkbox: { equals: true } },
     page_size: 100,
   })
   counts.leadsJpHot = hot.ok ? hot.data.results?.length ?? 0 : 0
@@ -142,40 +146,40 @@ async function queryCounts() {
 }
 
 async function main() {
-  console.log("🚀 Daily Dashboard 再ビルド (URL 修正版)\n")
+  console.log("🚀 Daily Dashboard 再ビルチE(URL 修正牁E\n")
   await smartClear(DASHBOARD_ID)
   const counts = await queryCounts()
 
   const blocks = [
     blk.callout(
       [
-        T("朝一に開く画面。", { bold: true }),
-        T(" 今日アクションすべきリード・商談・タスクを 1 画面に集約。"),
+        T("朝一に開く画面、E, { bold: true }),
+        T(" 今日アクションすべきリード�E啁E��E�EタスクめE1 画面に雁E��E��E),
       ],
-      "☀️",
+      "☀�E�E,
       "yellow_background",
     ),
     blk.p(""),
 
     blk.h2("📊 今日の KPI"),
     blk.columns(
-      [blk.kpiCard("総リード", String(counts.leadsJp), "🎯", "blue")],
+      [blk.kpiCard("総リーチE, String(counts.leadsJp), "🎯", "blue")],
       [blk.kpiCard("🔥 HOT", String(counts.leadsJpHot), "🔥", "red")],
-      [blk.kpiCard("アクティブ顧客", String(counts.customersJp), "🏢", "green")],
-      [blk.kpiCard("テンプレ計", String(counts.templatesJp + counts.templatesGl), "📝", "purple")],
+      [blk.kpiCard("アクチE��ブ顧客", String(counts.customersJp), "🏢", "green")],
+      [blk.kpiCard("チE��プレ訁E, String(counts.templatesJp + counts.templatesGl), "📝", "purple")],
     ),
     blk.p(""),
 
     blk.h2("🎯 今日の動き"),
     blk.columns(
       [
-        blk.h3("🎯 商談パイプライン", "blue"),
-        blk.callout("Notion UI で「ボード」view → グループ化「商談ステージ」設定で Kanban 化推奨", "💡", "gray_background"),
+        blk.h3("🎯 啁E��E��イプライン", "blue"),
+        blk.callout("Notion UI で「�Eード」view ↁEグループ化「商諁E��チE�Eジ」設定で Kanban 化推奨", "💡", "gray_background"),
         blk.linkedDb(DB.leadsJp),
       ],
       [
-        blk.h3("📞 最近のアクティビティ", "green"),
-        blk.callout("最新 20 件 sort: 発生日時 ↓ 降順", "💡", "gray_background"),
+        blk.h3("📞 最近�EアクチE��ビティ", "green"),
+        blk.callout("最新 20 件 sort: 発生日晁EↁE降頁E, "💡", "gray_background"),
         blk.linkedDb(DB.activities),
       ],
     ),
@@ -184,63 +188,63 @@ async function main() {
     blk.h2("📅 今日と今週"),
     blk.columns(
       [
-        blk.h3("📅 今日の商談", "orange"),
-        blk.callout("Notion UI で「カレンダー」view → 期間プロパティ「開始日時」", "💡", "gray_background"),
+        blk.h3("📅 今日の啁E��E, "orange"),
+        blk.callout("Notion UI で「カレンダー」view ↁE期間プロパティ「開始日時、E, "💡", "gray_background"),
         blk.linkedDb(DB.calendar),
       ],
       [
-        blk.h3("📋 今週フォローアップ", "red"),
-        blk.callout("Notion UI で filter: フォローアップ日 内 → 過去/未来 7 日", "💡", "gray_background"),
+        blk.h3("📋 今週フォローアチE�E", "red"),
+        blk.callout("Notion UI で filter: フォローアチE�E日 冁EↁE過去/未来 7 日", "💡", "gray_background"),
         blk.linkedDb(DB.leadsJp),
       ],
     ),
     blk.p(""),
 
-    blk.h2("⚡ クイックアクション"),
+    blk.h2("⚡ クイチE��アクション"),
     blk.columns(
       [blk.action("+ 新規リード追加", `https://www.notion.so/${DB.leadsJp.replace(/-/g, "")}`, "🎯", "blue")],
       [blk.action("+ 活動ログ追加", `https://www.notion.so/${DB.activities.replace(/-/g, "")}`, "📞", "green")],
-      [blk.action("+ 商談予約追加", `https://www.notion.so/${DB.calendar.replace(/-/g, "")}`, "📅", "orange")],
-      [blk.action("+ 契約書作成", `https://www.notion.so/${DB.contracts.replace(/-/g, "")}`, "📄", "purple")],
+      [blk.action("+ 啁E��E��紁E��加", `https://www.notion.so/${DB.calendar.replace(/-/g, "")}`, "📅", "orange")],
+      [blk.action("+ 契紁E��作�E", `https://www.notion.so/${DB.contracts.replace(/-/g, "")}`, "📄", "purple")],
     ),
     blk.p(""),
 
     blk.divider(),
-    blk.h2("🏆 直近の成果"),
+    blk.h2("🏆 直近�E成果"),
     blk.columns(
       [
-        blk.h3("✅ 成約済リード", "green"),
-        blk.callout("filter: 商談ステージ=成約・期間=過去 30 日", "💡", "gray_background"),
+        blk.h3("✁E成紁E��リーチE, "green"),
+        blk.callout("filter: 啁E��E��チE�Eジ=成紁E�E期間=過去 30 日", "💡", "gray_background"),
         blk.linkedDb(DB.leadsJp),
       ],
       [
         blk.h3("🔥 ホットテンプレ", "red"),
-        blk.callout("sort: 使用回数 ↓ 降順", "💡", "gray_background"),
+        blk.callout("sort: 使用回数 ↁE降頁E, "💡", "gray_background"),
         blk.linkedDb(DB.templatesJp),
       ],
     ),
     blk.p(""),
 
     blk.divider(),
-    blk.h2("🔗 他のダッシュボードへ"),
+    blk.h2("🔗 他�EダチE��ュボ�Eドへ"),
     blk.columns(
       [
         blk.callout(
-          [linkT("🎯 Pipeline Manager", `https://www.notion.so/${PAGES.pipeline.replace(/-/g, "")}`), T("\n商談ステージ別 Kanban", { color: "gray" })],
+          [linkT("🎯 Pipeline Manager", `https://www.notion.so/${PAGES.pipeline.replace(/-/g, "")}`), T("\n啁E��E��チE�Eジ別 Kanban", { color: "gray" })],
           "🎯",
           "purple_background",
         ),
       ],
       [
         blk.callout(
-          [linkT("💰 Revenue Dashboard", `https://www.notion.so/${PAGES.revenue.replace(/-/g, "")}`), T("\nMRR/LTV/契約集計", { color: "gray" })],
+          [linkT("💰 Revenue Dashboard", `https://www.notion.so/${PAGES.revenue.replace(/-/g, "")}`), T("\nMRR/LTV/契紁E��訁E, { color: "gray" })],
           "💰",
           "green_background",
         ),
       ],
       [
         blk.callout(
-          [linkT("📞 Activity Hub", `https://www.notion.so/${PAGES.activity.replace(/-/g, "")}`), T("\n全活動 feed", { color: "gray" })],
+          [linkT("📞 Activity Hub", `https://www.notion.so/${PAGES.activity.replace(/-/g, "")}`), T("\n全活勁Efeed", { color: "gray" })],
           "📞",
           "orange_background",
         ),
@@ -253,11 +257,11 @@ async function main() {
     const chunk = blocks.slice(i, i + 90)
     const r = await n("PATCH", `/blocks/${DASHBOARD_ID}/children`, { children: chunk })
     if (!r.ok) {
-      console.error("❌", JSON.stringify(r.data).slice(0, 400))
+      console.error("❁E, JSON.stringify(r.data).slice(0, 400))
       process.exit(1)
     }
   }
-  console.log(`\n✅ Daily Dashboard 再ビルド完了:
+  console.log(`\n✁EDaily Dashboard 再ビルド完亁E
   KPI: leads ${counts.leadsJp} / HOT ${counts.leadsJpHot} / customers ${counts.customersJp} / templates ${counts.templatesJp + counts.templatesGl}
   📍 https://www.notion.so/${DASHBOARD_ID.replace(/-/g, "")}`)
 }

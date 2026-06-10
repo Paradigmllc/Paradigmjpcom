@@ -16,7 +16,8 @@ export async function checkKatanaHealth(): Promise<{ ok: boolean; detail: string
   try {
     const res = await fetch(`${katanaUrl()}/health`, { signal: AbortSignal.timeout(10_000) })
     return { ok: res.ok, detail: `HTTP ${res.status}` }
-  } catch {
+  } catch (e) {
+    console.warn("[katana] health check failed:", e instanceof Error ? e.message : String(e))
     return { ok: false, detail: "unreachable (will use public API fallbacks)" }
   }
 }
@@ -37,8 +38,8 @@ export async function crawlWithKatana(url: string): Promise<KatanaResult> {
       if (data.ok) return { source: "katana", ok: true, data: data.data }
     }
     console.warn("[katana] self-hosted API unavailable, using public fallbacks")
-  } catch {
-    console.warn("[katana] self-hosted API unreachable, using public fallbacks")
+  } catch (e) {
+    console.warn("[katana] self-hosted API unreachable, using public fallbacks:", e instanceof Error ? e.message : String(e))
   }
 
   // Fallback: collect URLs from public sources
@@ -58,7 +59,9 @@ export async function crawlWithKatana(url: string): Promise<KatanaResult> {
         }
       }
     }
-  } catch { /* non-fatal */ }
+  } catch (e) {
+    console.warn("[katana] URLscan.io fallback failed:", e instanceof Error ? e.message : String(e))
+  }
 
   try {
     // CommonCrawl index
@@ -74,10 +77,14 @@ export async function crawlWithKatana(url: string): Promise<KatanaResult> {
         try {
           const entry = JSON.parse(line)
           if (entry.url && !urls.includes(entry.url)) urls.push(entry.url)
-        } catch { /* skip non-JSON */ }
+        } catch (e) {
+          console.warn("[katana] CommonCrawl JSON parse failed:", e instanceof Error ? e.message : String(e))
+        }
       }
     }
-  } catch { /* non-fatal */ }
+  } catch (e) {
+    console.warn("[katana] CommonCrawl fetch failed:", e instanceof Error ? e.message : String(e))
+  }
 
   return {
     source: "katana",

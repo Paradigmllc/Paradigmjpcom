@@ -3,7 +3,11 @@
 
 import { readCoolifyApplicationEnvs } from "./lib/coolify-env.mjs";
 
-const ZONE_ID = "f191afabddabaf1658ebfe79a9a9b723";
+const ZONE_ID = process.env.CLOUDFLARE_ZONE_ID
+if (!ZONE_ID) {
+  console.error("CLOUDFLARE_ZONE_ID env var must be set")
+  process.exit(1)
+}
 
 async function main() {
   const envs = await readCoolifyApplicationEnvs();

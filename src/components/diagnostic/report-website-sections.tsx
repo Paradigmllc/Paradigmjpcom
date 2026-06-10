@@ -1,5 +1,6 @@
 ﻿"use client"
 
+import Image from "next/image"
 import { motion } from "framer-motion"
 import { ArrowRight, ExternalLink, Monitor, Smartphone, ZoomIn } from "lucide-react"
 import type { DiagnosticReportData } from "@/lib/sales/diagnostic"
@@ -23,7 +24,7 @@ export function AnnotatedScreenshot({ data, lang }: { data: DiagnosticReportData
           <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
             {/* Screenshot with overlays */}
             <div className="relative rounded-xl border border-zinc-200 overflow-hidden bg-zinc-100">
-              <img src={screenshotUrl} alt={data.company_name} className="w-full" loading="lazy" />
+              <Image src={screenshotUrl} alt={data.company_name} width={1200} height={675} className="w-full" loading="lazy" />
               {/* Issue markers */}
               {issues.map((issue, i) => (
                 <motion.div
@@ -151,7 +152,7 @@ export function BeforeAfterComparison({ data, lang }: { data: DiagnosticReportDa
             <div className="p-5">
               {hasScreenshot && (
                 <div className="rounded-lg border border-zinc-200 overflow-hidden mb-4 opacity-70">
-                  <img src={data.screenshot_url!} alt="Current site" className="w-full grayscale" loading="lazy" />
+                  <Image src={data.screenshot_url!} alt="Current site" width={1200} height={675} className="w-full grayscale" loading="lazy" />
                 </div>
               )}
               <div className="space-y-2">

@@ -48,6 +48,22 @@ import { checkAhrefsFree } from "./sources/ahrefs-free"
 import { INDUSTRY_MARKET_DATA } from "./sources/market-data"
 import { collectSmbSignals } from "./sources/smb-signals"
 import { enrichDomainWithSpiderFoot } from "./sources/spiderfoot-source"
+
+/**
+ * Run promises in batches of concurrency limit to avoid overwhelming APIs.
+ * Keeps max `limit` in-flight at a time, starting next batch only when previous completes.
+ */
+async function batchAll(tasks: (() => Promise<unknown>)[], limit = 8): Promise<unknown[]> {
+  const results: unknown[] = new Array(tasks.length)
+  for (let i = 0; i < tasks.length; i += limit) {
+    const batch = tasks.slice(i, i + limit)
+    const batchResults = await Promise.all(batch.map((t) => t()))
+    for (let j = 0; j < batchResults.length; j++) {
+      results[i + j] = batchResults[j]
+    }
+  }
+  return results
+}
 import { crawlWithKatana } from "./sources/katana-source"
 import { searchMaigretForDomain } from "./sources/maigret-source"
 import { extractSkyvernSiteData, discoverSkyvernForms } from "./sources/skyvern-source"
@@ -170,155 +186,159 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     })
   }
 
-  // Step 2: 並列 36-source parallel enrich
-  //         Hunter.io はメール検索 (フォーム経由で email 既知の場合のみ)
+  // Step 2: 並列 36-source enrich with concurrency limit (8 at a time)
   const url = domain.startsWith("http") ? domain : `https://${domain}`
-  const [scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback, houjin, tranco, emailrep, phishtank, opencorp, greenweb, storeleads, massdns, github, cartleads, simweb, builtwith, commoncrawl, ahrefs, spiderfoot, katana, maigret, skyvernSite, skyvernForms, searxng] = await Promise.all([
-    scanDomain(domain).catch((e) => {
+  const tasks = [
+    () => scanDomain(domain).catch((e) => {
       console.error("[enrich] scanDomain failed:", e)
       return null
     }),
-    searchByName(companyName, 1).catch((e) => {
+    () => searchByName(companyName, 1).catch((e) => {
       console.error("[enrich] gBizInfo failed:", e)
       return []
     }),
-    detectTechStack(url).catch((e) => {
+    () => detectTechStack(url).catch((e) => {
       console.error("[enrich] wappalyzer failed:", e)
       return { tech: [], server: null }
     }),
-    checkSslGrade(domain).catch((e) => {
+    () => checkSslGrade(domain).catch((e) => {
       console.error("[enrich] ssllabs failed:", e)
       return null
     }),
-    getWhois(domain).catch((e) => {
+    () => getWhois(domain).catch((e) => {
       console.error("[enrich] whois failed:", e)
       return null
     }),
-    findPlace(companyName, null).catch((e) => {
+    () => findPlace(companyName, null).catch((e) => {
       console.error("[enrich] places failed:", e)
       return null
     }),
-    findEmailsByDomain(domain, 5).catch((e) => {
+    () => findEmailsByDomain(domain, 5).catch((e) => {
       console.error("[enrich] hunter failed:", e)
       return { ok: false, emails: [] }
     }),
-    discoverFormUrl({ homeUrl: domain }).catch((e) => {
+    () => discoverFormUrl({ homeUrl: domain }).catch((e) => {
       console.error("[enrich] form-discovery failed:", e)
       return null
     }),
-    searchCrtsh(domain).catch((e) => {
+    () => searchCrtsh(domain).catch((e) => {
       console.error("[enrich] crt.sh failed:", e)
       return null
     }),
-    queryCloudflareRadar(domain).catch((e) => {
+    () => queryCloudflareRadar(domain).catch((e) => {
       console.error("[enrich] cloudflare-radar failed:", e)
       return null
     }),
-    scanMozillaObservatory(domain).catch((e) => {
+    () => scanMozillaObservatory(domain).catch((e) => {
       console.error("[enrich] mozilla-observatory failed:", e)
       return null
     }),
-    fetchGoogleTrendsInterest(domain).catch((e) => {
+    () => fetchGoogleTrendsInterest(domain).catch((e) => {
       console.error("[enrich] pytrends failed:", e)
       return null
     }),
-    queryDnsRecords(domain).catch((e) => {
+    () => queryDnsRecords(domain).catch((e) => {
       console.error("[enrich] dns-doh failed:", e)
       return null
     }),
-    validateHtml(url).catch((e) => {
+    () => validateHtml(url).catch((e) => {
       console.error("[enrich] w3c-validator failed:", e)
       return null
     }),
-    checkHstsPreload(domain).catch((e) => {
+    () => checkHstsPreload(domain).catch((e) => {
       console.error("[enrich] hsts-preload failed:", e)
       return null
     }),
-    queryWaybackMachine(domain).catch((e) => {
+    () => queryWaybackMachine(domain).catch((e) => {
       console.error("[enrich] wayback-machine failed:", e)
       return null
     }),
-    searchHoujinByName(companyName).catch((e) => {
+    () => searchHoujinByName(companyName).catch((e) => {
       console.error("[enrich] houjin-bangou failed:", e)
       return []
     }),
-    queryTrancoRank(domain).catch((e) => {
+    () => queryTrancoRank(domain).catch((e) => {
       console.error("[enrich] tranco failed:", e)
       return null
     }),
-    checkEmailReputation(domain).catch((e) => {
+    () => checkEmailReputation(domain).catch((e) => {
       console.error("[enrich] emailrep failed:", e)
       return null
     }),
-    checkPhishTank(domain).catch((e) => {
+    () => checkPhishTank(domain).catch((e) => {
       console.error("[enrich] phishtank failed:", e)
       return null
     }),
-    searchOpenCorporates(domain).catch((e) => {
+    () => searchOpenCorporates(domain).catch((e) => {
       console.error("[enrich] opencorporates failed:", e)
       return null
     }),
-    checkGreenHosting(domain).catch((e) => {
+    () => checkGreenHosting(domain).catch((e) => {
       console.error("[enrich] green-web failed:", e)
       return null
     }),
-    detectEcStore(domain).catch((e) => {
+    () => detectEcStore(domain).catch((e) => {
       console.error("[enrich] storeleads failed:", e)
       return null
     }),
-    discoverSubdomains(domain).catch((e) => {
+    () => discoverSubdomains(domain).catch((e) => {
       console.error("[enrich] massdns failed:", e)
       return null
     }),
-    searchGitHubOrg(domain).catch((e) => {
+    () => searchGitHubOrg(domain).catch((e) => {
       console.error("[enrich] github-api failed:", e)
       return null
     }),
-    detectCartPlatform(domain).catch((e) => {
+    () => detectCartPlatform(domain).catch((e) => {
       console.error("[enrich] cartleads failed:", e)
       return null
     }),
-    scrapeSimilarwebFree(domain).catch((e) => {
+    () => scrapeSimilarwebFree(domain).catch((e) => {
       console.error("[enrich] similarweb-scraper failed:", e)
       return null
     }),
-    lookupBuiltWithFree(domain).catch((e) => {
+    () => lookupBuiltWithFree(domain).catch((e) => {
       console.error("[enrich] builtwith-free failed:", e)
       return null
     }),
-    queryCommonCrawl(domain).catch((e) => {
+    () => queryCommonCrawl(domain).catch((e) => {
       console.error("[enrich] commoncrawl failed:", e)
       return null
     }),
-    checkAhrefsFree(domain).catch((e) => {
+    () => checkAhrefsFree(domain).catch((e) => {
       console.error("[enrich] ahrefs-free failed:", e)
       return null
     }),
-    enrichDomainWithSpiderFoot(domain).catch((e) => {
+    () => enrichDomainWithSpiderFoot(domain).catch((e) => {
       console.error("[enrich] spiderfoot failed:", e)
       return null
     }),
-    crawlWithKatana(url).catch((e) => {
+    () => crawlWithKatana(url).catch((e) => {
       console.error("[enrich] katana failed:", e)
       return null
     }),
-    searchMaigretForDomain(domain).catch((e) => {
+    () => searchMaigretForDomain(domain).catch((e) => {
       console.error("[enrich] maigret failed:", e)
       return null
     }),
-    extractSkyvernSiteData(url).catch((e) => {
+    () => extractSkyvernSiteData(url).catch((e) => {
       console.error("[enrich] skyvern-site-data failed:", e)
       return null
     }),
-    discoverSkyvernForms(url).catch((e) => {
+    () => discoverSkyvernForms(url).catch((e) => {
       console.error("[enrich] skyvern-forms failed:", e)
       return null
     }),
-    estimateTrafficViaSearx(domain, companyName ?? undefined).catch((e) => {
+    () => estimateTrafficViaSearx(domain, companyName ?? undefined).catch((e) => {
       console.error("[enrich] searxng-traffic failed:", e)
       return null
     }),
-  ])
+  ]
+  // batchAll returns unknown[] — cast is safe because destructuring matches array order exactly
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [
+    scan, gbiz, tech, ssl, whois, place, hunter, form, crtsh, radar, observatory, trends, dns, w3c, hsts, wayback, houjin, tranco, emailrep, phishtank, opencorp, greenweb, storeleads, massdns, github, cartleads, simweb, builtwith, commoncrawl, ahrefs, spiderfoot, katana, maigret, skyvernSite, skyvernForms, searxng,
+  ] = await batchAll(tasks) as any[]
 
   // Step 3: 集約して最終 upsert (meta JSONB に 36-source のデータを統合保存)
   const gbizFirst = gbiz?.[0]
@@ -424,7 +444,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
       ? { is_ec_site: storeleads.isEcSite, platform: storeleads.platform, product_count: storeleads.productCount }
       : null,
     subdomains: massdns?.ok
-      ? { discovered: massdns.subdomains.map(s => ({ name: s.name, ips: s.ips })), total: massdns.totalResolved }
+      ? { discovered: massdns.subdomains.map((s: { name: string; ips: string[] }) => ({ name: s.name, ips: s.ips })), total: massdns.totalResolved }
       : null,
     github: github?.ok
       ? { org: github.orgName, repos: github.publicRepos, languages: github.topLanguages, stars: github.stars, active: github.recentActivity }

@@ -56,7 +56,7 @@ app.run(host='0.0.0.0', port=5001)
 
   # ─── Katana API (Go binary, pre-built image) ─────────────────
   katana:
-    image: projectdiscovery/katana:latest
+    image: projectdiscovery/katana:1.2.3
     restart: unless-stopped
     ports:
       - "5002:5002"
@@ -150,7 +150,7 @@ app.run(host='0.0.0.0', port=5003)
 
   # ─── SearXNG ─────────────────────────────────────────────────
   searxng:
-    image: searxng/searxng:latest
+    image: searxng/searxng:2025.5.13-65197a4d9
     restart: unless-stopped
     ports:
       - "8080:8080"
@@ -158,7 +158,7 @@ app.run(host='0.0.0.0', port=5003)
       - searxng-data:/etc/searxng
     environment:
       - SEARXNG_BASE_URL=http://localhost:8080/
-      - SEARXNG_SECRET=paradigm-osint-searxng-key
+      - SEARXNG_SECRET=${OSINT_SEARXNG_SECRET:?OSINT_SEARXNG_SECRET is required}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s

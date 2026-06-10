@@ -1,35 +1,39 @@
 #!/usr/bin/env node
 /**
- * scripts/notion-audit.mjs — Sprint 19 抜本実装の現状監査スクリプト
+ * scripts/notion-audit.mjs  ESprint 19 抜本実裁E�E現状監査スクリプト
  *
- * 役割: 全 11 sub pages の block 構造を再帰 fetch し、設計 rule 違反を機械検出.
- *       監査結果は stdout に整形出力・exit code = 違反件数.
+ * 役割: 全 11 sub pages の block 構造を�E帰 fetch し、設訁Erule 違反を機械検�E.
+ *       監査結果は stdout に整形出力�Eexit code = 違反件数.
  *
- * 設計 Rule (8 condition):
- *   R1 - column_list 内の column 数 > 2 (mobile では縦並び・3+ は冗長)
- *   R2 - 同一 emoji が連続 3 block で 2 回以上 (emoji 重複)
- *   R3 - heading + 直下 linked_db で同一 emoji (Section 名と DB icon 重複)
- *   R4 - h1 が 1 page に 3 つ以上 (見出し氾濫)
- *   R5 - 同一 page で callout が 30 を超える (callout noise)
+ * 設訁ERule (8 condition):
+ *   R1 - column_list 冁E�E column 数 > 2 (mobile では縦並び・3+ は冗長)
+ *   R2 - 同一 emoji が連綁E3 block で 2 回以丁E(emoji 重褁E
+ *   R3 - heading + 直丁Elinked_db で同一 emoji (Section 名と DB icon 重褁E
+ *   R4 - h1 ぁE1 page に 3 つ以丁E(見�Eし氾濫)
+ *   R5 - 同一 page で callout ぁE30 を趁E��めE(callout noise)
  *   R6 - "Notion UI で" を含む callout (UI hint 撤去対象)
- *   R7 - heading が "🎯 リード DB" 形式で linked DB を直接命名 (action-oriented でない)
- *   R8 - block 数が 60 超 (1 page bloat)
+ *   R7 - heading ぁE"🎯 リーチEDB" 形式で linked DB を直接命吁E(action-oriented でなぁE
+ *   R8 - block 数ぁE60 趁E(1 page bloat)
  */
 
-const NOTION_API_KEY = process.env.NOTION_API_KEY ?? "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"
+const NOTION_API_KEY = process.env.NOTION_API_KEY
+if (!NOTION_API_KEY) {
+  console.error('NOTION_API_KEY env var must be set')
+  process.exit(1)
+}
 
 const PAGES = {
   parent: { id: "35fa2b78-f3fc-8129-9d91-e457889ee393", name: "Paradigm 営業 OS (Parent Hub)" },
-  dashboard: { id: "35fa2b78-f3fc-81d0-b842-c0ed182103dc", name: "📊 営業ダッシュボード" },
+  dashboard: { id: "35fa2b78-f3fc-81d0-b842-c0ed182103dc", name: "📊 営業ダチE��ュボ�EチE },
   pipeline: { id: "35fa2b78-f3fc-81c0-a376-d292a748d066", name: "🎯 Pipeline Manager" },
   revenue: { id: "35fa2b78-f3fc-8125-a0b4-cea00429681d", name: "💰 Revenue Dashboard" },
   activity: { id: "35fa2b78-f3fc-817c-9cf4-f2f5fd17ae71", name: "📞 Activity Hub" },
-  usage: { id: "35fa2b78-f3fc-81c3-b26a-f80a3770208d", name: "📖 使い方ガイド" },
+  usage: { id: "35fa2b78-f3fc-81c3-b26a-f80a3770208d", name: "📖 使ぁE��ガイチE },
   strategy: { id: "35fa2b78-f3fc-819c-b5d6-e2f95e677265", name: "🎓 業種別営業戦略" },
   setup: { id: "35fa2b78-f3fc-81dd-8dda-e455d1f20d09", name: "🔧 Setup & Environment" },
-  r2: { id: "35fa2b78-f3fc-8163-8e90-c55cc0218ad5", name: "🗄️ R2 Storage Spec" },
+  r2: { id: "35fa2b78-f3fc-8163-8e90-c55cc0218ad5", name: "🗄�E�ER2 Storage Spec" },
   syncFlow: { id: "35fa2b78-f3fc-81ed-be7c-c636fadea0c8", name: "📚 Architecture & Sync Flow" },
-  faq: { id: "35fa2b78-f3fc-81b2-abb1-dd0e837c6521", name: "❓ FAQ" },
+  faq: { id: "35fa2b78-f3fc-81b2-abb1-dd0e837c6521", name: "❁EFAQ" },
 }
 
 let lastCall = 0
@@ -79,16 +83,16 @@ function blockText(b) {
   return arr.map((rt) => rt.plain_text || rt.text?.content || "").join("")
 }
 
-/* block から先頭の emoji を抽出 (見出し or callout) */
+/* block から先頭の emoji を抽出 (見�EぁEor callout) */
 function blockEmoji(b) {
   if (b.type === "callout") return b.callout?.icon?.emoji ?? null
   const text = blockText(b)
-  // 簡易 emoji 検出 (1 文字目が surrogate pair or special char)
-  const match = text.match(/^([\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}🇯🇵🌍])/u)
+  // 簡昁Eemoji 検�E (1 斁E��目ぁEsurrogate pair or special char)
+  const match = text.match(/^([\u{1F000}-\u{1FFFF}\u{2600}-\u{27FF}�E�E🌍])/u)
   return match ? match[1] : null
 }
 
-/* Rule violation 検出 */
+/* Rule violation 検�E */
 function auditPage(name, blocks) {
   const violations = []
   let h1Count = 0
@@ -119,10 +123,10 @@ function auditPage(name, blocks) {
       }
     }
 
-    // R7: heading that is just DB name like "🎯 リード DB"
+    // R7: heading that is just DB name like "🎯 リーチEDB"
     if (b.type.startsWith("heading_")) {
       const text = blockText(b)
-      const dbNamePattern = /^[\u{1F000}-\u{1FFFF}\s]+(リード|顧客|納品|テンプレ|Leads|Customers|Deliveries|Templates|アクティビティ|商談カレンダー|契約書)\s*(DB)?$/u
+      const dbNamePattern = /^[\u{1F000}-\u{1FFFF}\s]+(リード|顧客|納品|チE��プレ|Leads|Customers|Deliveries|Templates|アクチE��ビティ|啁E��E��レンダー|契紁E��)\s*(DB)?$/u
       if (dbNamePattern.test(text.trim())) {
         violations.push({ rule: "R7", block: i, msg: `DB-name heading: "${text}"` })
       }
@@ -164,14 +168,14 @@ function auditPage(name, blocks) {
     }
   })
 
-  // R2: consecutive same emoji within 3 block window (column siblings は除外)
+  // R2: consecutive same emoji within 3 block window (column siblings は除夁E
   for (let i = 0; i < emojiPositions.length - 1; i++) {
     const a = emojiPositions[i]
     const blockA = blocks[a.index]
     for (let j = i + 1; j < emojiPositions.length && emojiPositions[j].index - a.index <= 3; j++) {
       if (emojiPositions[j].emoji === a.emoji) {
         const blockB = blocks[emojiPositions[j].index]
-        // column 兄弟 (両方が column 配下) は mobile reflow で離れて表示されるため除外
+        // column 允E��E(両方ぁEcolumn 配丁E は mobile reflow で離れて表示されるためE��夁E
         if (blockA?._parent === "column" && blockB?._parent === "column") continue
         violations.push({
           rule: "R2",
@@ -233,10 +237,10 @@ async function main() {
   console.log(`${C.bold("結果")}: ${totalViolations === 0 ? C.pass : C.fail} ${totalViolations} violations across ${summaries.length} pages`)
 
   if (totalViolations > 0) {
-    console.log(`\n${C.bold("⚠️ Rule 違反あり — 抜本 rebuild が必要")}`)
+    console.log(`\n${C.bold("⚠�E�ERule 違反あり  E抜本 rebuild が忁E��E)}`)
     process.exit(1)
   } else {
-    console.log(`\n${C.bold("✅ 全 page クリーン — 抜本 rebuild 不要")}`)
+    console.log(`\n${C.bold("✁E全 page クリーン  E抜本 rebuild 不要E)}`)
     process.exit(0)
   }
 }

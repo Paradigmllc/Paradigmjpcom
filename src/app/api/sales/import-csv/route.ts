@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
-import { upsertCompanyByDomain, findExistingCompany } from "@/lib/sales/companies"
+import { upsertCompanyByDomain, batchFindExistingByDomains } from "@/lib/sales/companies"
 import { enqueueCompanyEnrichment, triggerEnrichmentRunner } from "@/lib/sales/enrichment-jobs"
 import { normalizeDomain, normalizeCompanyName } from "@/lib/sales/dedup"
 import { salesScopeFromCountry } from "@/lib/sales/locale-scope"
@@ -80,6 +80,12 @@ export async function POST(req: NextRequest) {
   let jobsEnqueued = 0
   const failures: { row: number; reason: string }[] = []
 
+  // Batch preload all existing companies by domain (N+1 prevention)
+  const allDomains = dedupedRows
+    .map((r) => normalizeDomain(r.domain))
+    .filter((d): d is string => d !== null && d.length > 0)
+  const existingMap = await batchFindExistingByDomains(allDomains)
+
   for (let i = 0; i < dedupedRows.length; i++) {
     const row = dedupedRows[i]
     if (!row.company_name || !row.domain) {
@@ -97,11 +103,7 @@ export async function POST(req: NextRequest) {
       reportLocale: row.report_locale,
       targetCountry: row.target_country ?? row.country,
     })
-    const existing = await findExistingCompany({
-      domain: cleanDomain,
-      nameKey: normalizeCompanyName(row.company_name),
-      region: scope.region,
-    })
+    const existing = existingMap.get(cleanDomain)
     if (existing) {
       skipped++
       if (shouldEnrich && existing.pipeline_status !== "report_ready") {

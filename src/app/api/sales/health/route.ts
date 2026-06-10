@@ -103,7 +103,14 @@ async function checkDify(): Promise<ServiceCheck> {
 
 async function checkTriggerDev(): Promise<ServiceCheck> {
   const secretKey = env("TRIGGER_SECRET_KEY") ?? env("TRIGGER_ACCESS_TOKEN") ?? env("TRIGGER_DEV_API_KEY")
-  const base = env("TRIGGER_API_URL") ?? "http://localhost:8030"
+  const base = env("TRIGGER_API_URL")
+  if (!base) {
+    return {
+      name: "Trigger.dev",
+      status: "not_configured",
+      detail: "TRIGGER_API_URL が未設定です",
+    }
+  }
   if (!secretKey) {
     return {
       name: "Trigger.dev",

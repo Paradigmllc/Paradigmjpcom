@@ -1,31 +1,35 @@
 #!/usr/bin/env node
 /**
- * scripts/notion-premium-template.mjs — Sprint 14 有料 Notion テンプレ級アップグレード
+ * scripts/notion-premium-template.mjs  ESprint 14 有料 Notion チE��プレ級アチE�EグレーチE
  *
- * 役割: 親ページ "Paradigm 営業 OS" を Notion Marketplace の有料テンプレ ($50-$200) と
- *       同等のクオリティに引き上げる. アイコン/カバー以外の本質的な改善を全部実施.
+ * 役割: 親ペ�Eジ "Paradigm 営業 OS" めENotion Marketplace の有料チE��プレ ($50-$200) と
+ *       同等�EクオリチE��に引き上げめE アイコン/カバ�E以外�E本質皁E��改喁E��全部実施.
  *
- * 実装:
- *   1. 親ページ既存 blocks を archive (clean slate)
- *   2. 親ページに Hub content 構築:
+ * 実裁E
+ *   1. 親ペ�Eジ既孁Eblocks めEarchive (clean slate)
+ *   2. 親ペ�Eジに Hub content 構篁E
  *      - Hero callout (Quick start 5 steps)
  *      - Table of contents
  *      - 4 DB linked references with descriptions
  *      - 5 段階フレーム解説 (toggle)
  *      - 業種別戦略 8 cards (callout)
- *      - セットアップガイド (toggle)
+ *      - セチE��アチE�EガイチE(toggle)
  *      - FAQ (toggle)
- *   3. 3 sub pages 作成:
- *      - 📊 営業ダッシュボード (linked DB views)
- *      - 📖 使い方ガイド (Quickstart + 詳細フロー)
+ *   3. 3 sub pages 作�E:
+ *      - 📊 営業ダチE��ュボ�EチE(linked DB views)
+ *      - 📖 使ぁE��ガイチE(Quickstart + 詳細フロー)
  *      - 🎓 業種別戦略 (8 業種詳細)
- *   4. 4 DB に Rollup プロパティ追加 (relation 越し集計)
+ *   4. 4 DB に Rollup プロパティ追加 (relation 越し雁E��E
  *
- * 入力: NOTION_API_KEY
- * 出力: stdout に進捗
+ * 入劁E NOTION_API_KEY
+ * 出劁E stdout に進捁E
  */
 
-const NOTION_API_KEY = process.env.NOTION_API_KEY ?? "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"
+const NOTION_API_KEY = process.env.NOTION_API_KEY
+if (!NOTION_API_KEY) {
+  console.error('NOTION_API_KEY env var must be set')
+  process.exit(1)
+}
 const PARENT_PAGE_ID = "35fa2b78-f3fc-8129-9d91-e457889ee393"
 const DB = {
   leads: "8cbab1f501144f83872c1738ce3e79c4",
@@ -112,15 +116,15 @@ const block = {
   todo: (text, checked = false) => ({ object: "block", type: "to_do", to_do: { rich_text: [T(text)], checked } }),
 }
 
-/* ───── Step 1: 親ページ既存 blocks 削除 ───── */
+/* ───── Step 1: 親ペ�Eジ既孁Eblocks 削除 ───── */
 async function archiveExistingBlocks() {
-  console.log("🧹 親ページ既存 blocks 削除中...")
+  console.log("🧹 親ペ�Eジ既孁Eblocks 削除中...")
   let cursor = undefined
   const allIds = []
   do {
     const r = await n("GET", `/blocks/${PARENT_PAGE_ID}/children?page_size=100${cursor ? `&start_cursor=${cursor}` : ""}`)
     if (!r.ok) {
-      console.error("  ❌ 取得失敗:", r.error)
+      console.error("  ❁E取得失敁E", r.error)
       break
     }
     allIds.push(...r.data.results.map((b) => b.id))
@@ -130,12 +134,12 @@ async function archiveExistingBlocks() {
   for (const id of allIds) {
     await n("DELETE", `/blocks/${id}`)
   }
-  console.log(`  ✅ ${allIds.length} blocks archived`)
+  console.log(`  ✁E${allIds.length} blocks archived`)
 }
 
-/* ───── Step 2: 親ページに Hub コンテンツ追加 ───── */
+/* ───── Step 2: 親ペ�Eジに Hub コンチE��チE��加 ───── */
 async function buildHubContent() {
-  console.log("🏛️ 親ページに Hub content 構築中...")
+  console.log("🏛�E�E親ペ�Eジに Hub content 構築中...")
 
   // Notion API は children 一括追加で最大 100 blocks/req
   const blocks = []
@@ -144,9 +148,9 @@ async function buildHubContent() {
   blocks.push(
     block.calloutRich(
       [
-        T("Paradigm 営業 OS へようこそ。", { bold: true }),
+        T("Paradigm 営業 OS へようこそ、E, { bold: true }),
         T(" "),
-        T("Bootstrap 経営の中心ハブとして、リード獲得 → 診断レポート送付 → 契約 → 納品までを 1 つの Notion ワークスペースに集約しています。Supabase との双方向 sync で paradigmjp.com の本番データとリアルタイム連携。"),
+        T("Bootstrap 経営の中忁E��ブとして、リード獲征EↁE診断レポ�Eト送仁EↁE契紁EↁE納品までめE1 つの Notion ワークスペ�Eスに雁E��E��てぁE��す。Supabase との双方吁Esync で paradigmjp.com の本番チE�Eタとリアルタイム連携、E),
       ],
       "🎯",
       "blue_background",
@@ -160,32 +164,32 @@ async function buildHubContent() {
   blocks.push(block.paragraph(""))
 
   // ── Quick Start ──
-  blocks.push(block.heading_2("🚀 5 分で使い始める"))
+  blocks.push(block.heading_2("🚀 5 刁E��使ぁE��めめE))
   blocks.push(
     block.calloutRich(
       [
         T("初めての方へ:", { bold: true }),
-        T(" 下記 5 ステップで営業 OS の全体像が分かります。各 DB の詳細は配下サブページを参照。"),
+        T(" 下訁E5 スチE��プで営業 OS の全体像が�Eかります。各 DB の詳細は配下サブ�Eージを参照、E),
       ],
       "💡",
       "gray_background",
     ),
   )
   blocks.push(
-    block.number("リード DB を開いて HOT view を確認 (報告 3+ 閲覧の見込み客を即座に把握)"),
-    block.number("対象リードのドメインを開き、診断レポート URL (📋) で内容確認 → メール送付"),
-    block.number("反応があった顧客は「商談ステージ」を架電済 → 商談中 → 成約 に更新"),
-    block.number("成約したら顧客 DB に新規レコード作成 → 紐づくリードに relation"),
-    block.number("納品物 (動画/Web/MEO レポート) は納品 DB に紐づけて R2 URL 記録"),
+    block.number("リーチEDB を開ぁE�� HOT view を確誁E(報呁E3+ 閲覧の見込み客を即座に把握)"),
+    block.number("対象リード�Eドメインを開き、診断レポ�EチEURL (📋) で冁E��確誁EↁEメール送仁E),
+    block.number("反応があった顧客は「商諁E��チE�Eジ」を架電渁EↁE啁E��E�� ↁE成紁Eに更新"),
+    block.number("成紁E��たら顧客 DB に新規レコード作�E ↁE紐づくリードに relation"),
+    block.number("納品物 (動画/Web/MEO レポ�EチE は納品 DB に紐づけて R2 URL 記録"),
   )
   blocks.push(block.paragraph(""))
 
-  // ── Sub pages ── (placeholders・ID は後で実 child_page 作成後に linked)
-  blocks.push(block.heading_2("📂 サブページ"))
+  // ── Sub pages ── (placeholders・ID は後で宁Echild_page 作�E後に linked)
+  blocks.push(block.heading_2("📂 サブ�Eージ"))
   blocks.push(
     block.calloutRich(
-      [T("配下に 3 つの専用ページを配置 (下記から開く)。各ページは「使う時に最も視認性が高い」よう設計。")],
-      "🗂️",
+      [T("配下に 3 つの専用ペ�Eジを�E置 (下記から開ぁE。各ペ�Eジは「使ぁE��に最も視認性が高い」よぁE��計、E)],
+      "🗂�E�E,
       "purple_background",
     ),
   )
@@ -193,27 +197,27 @@ async function buildHubContent() {
   blocks.push(block.divider())
 
   // ── 4 DB section ──
-  blocks.push(block.heading_2("🗄️ 4 大データベース"))
+  blocks.push(block.heading_2("🗄�E�E4 大チE�Eタベ�Eス"))
   blocks.push(
     block.calloutRich(
       [
-        T("Supabase との双方向 sync 対象。", { bold: true }),
-        T(" Notion 側で変更すれば 5 分以内に Supabase に反映、本番サイト (paradigmjp.com/ja/report/[slug]) が即時更新される。"),
+        T("Supabase との双方吁Esync 対象、E, { bold: true }),
+        T(" Notion 側で変更すれば 5 刁E��冁E�� Supabase に反映、本番サイチE(paradigmjp.com/ja/report/[slug]) が即時更新される、E),
       ],
       "🔄",
       "default",
     ),
   )
 
-  blocks.push(block.heading_3("🎯 リード DB"))
+  blocks.push(block.heading_3("🎯 リーチEDB"))
   blocks.push(block.linkedDb(DB.leads))
   blocks.push(
     block.calloutRich(
       [
-        T("用途: ", { bold: true }),
-        T("paradigmjp.com/contact の自動エンリッチ結果。PSI + gBizInfo + Wappalyzer で属性収集済。"),
+        T("用送E ", { bold: true }),
+        T("paradigmjp.com/contact の自動エンリチE��結果。PSI + gBizInfo + Wappalyzer で属性収集済、E),
         T("\n📋 view 推奨: ", { bold: true }),
-        T("🔥 HOT leads / 📊 ステージ別 / 🗾 都道府県別 / 📅 フォローアップ予定 / 🆕 今週の新規"),
+        T("🔥 HOT leads / 📊 スチE�Eジ別 / 🗾 都道府県別 / 📅 フォローアチE�E予宁E/ �E 今週の新要E),
       ],
       "🎯",
       "gray_background",
@@ -225,10 +229,10 @@ async function buildHubContent() {
   blocks.push(
     block.calloutRich(
       [
-        T("用途: ", { bold: true }),
-        T("有料顧客の MRR + health 一元管理。LTV 試算は契約継続月数 × 月額で formula 自動計算。"),
+        T("用送E ", { bold: true }),
+        T("有料顧客の MRR + health 一允E��琁E��ETV 試算�E契紁E��続月数 ÁE月額で formula 自動計算、E),
         T("\n📋 view 推奨: ", { bold: true }),
-        T("💰 MRR 一覧 / 🏥 health モニター / 📅 請求カレンダー / 🤝 WL 顧客のみ / 🎁 補助金申請中"),
+        T("💰 MRR 一覧 / 🏥 health モニター / 📅 請求カレンダー / 🤁EWL 顧客のみ / 🎁 補助金申請中"),
       ],
       "🏢",
       "gray_background",
@@ -240,25 +244,25 @@ async function buildHubContent() {
   blocks.push(
     block.calloutRich(
       [
-        T("用途: ", { bold: true }),
-        T("60s 診断動画 / Web 制作 / MEO レポート の納品 tracking。Cloudflare R2 上の URL 記録。"),
+        T("用送E ", { bold: true }),
+        T("60s 診断動画 / Web 制佁E/ MEO レポ�EチEの納品 tracking、Eloudflare R2 上�E URL 記録、E),
         T("\n📋 view 推奨: ", { bold: true }),
-        T("🚧 進行中 / 📅 締切カレンダー / 🎬 動画ギャラリー / ✅ 完了済"),
+        T("🚧 進行中 / 📅 締刁E��レンダー / 🎬 動画ギャラリー / ✁E完亁E��E),
       ],
       "📦",
       "gray_background",
     ),
   )
 
-  blocks.push(block.heading_3("📝 テンプレ DB"))
+  blocks.push(block.heading_3("📝 チE��プレ DB"))
   blocks.push(block.linkedDb(DB.templates))
   blocks.push(
     block.calloutRich(
       [
-        T("用途: ", { bold: true }),
-        T("業種 (8) × 課題コード (7) = 56 パターンの営業文面。絶望→希望 5 段階フレームを encode。"),
+        T("用送E ", { bold: true }),
+        T("業種 (8) ÁE課題コーチE(7) = 56 パターンの営業斁E��。絶望�E希望 5 段階フレームめEencode、E),
         T("\n📋 view 推奨: ", { bold: true }),
-        T("🎯 業種別 / 🚨 critical のみ / ⭕ 有効テンプレ / 📊 課題コード別 / 🔥 ホットテンプレ"),
+        T("🎯 業種別 / 🚨 critical のみ / ⭁E有効チE��プレ / 📊 課題コード別 / 🔥 ホットテンプレ"),
       ],
       "📝",
       "gray_background",
@@ -268,22 +272,22 @@ async function buildHubContent() {
   blocks.push(block.divider())
 
   // ── 5 段階フレーム ──
-  blocks.push(block.heading_2("📖 絶望→希望 5 段階フレーム (CVR 4-8% 実証)"))
+  blocks.push(block.heading_2("📖 絶望�E希望 5 段階フレーム (CVR 4-8% 実証)"))
   blocks.push(
     block.calloutRich(
       [
-        T("テンプレ DB の各レコードは下記 5 段階の心理フローを encode:", { bold: true }),
+        T("チE��プレ DB の吁E��コード�E下訁E5 段階�E忁E��フローめEencode:", { bold: true }),
       ],
       "🎬",
       "yellow_background",
     ),
   )
   blocks.push(
-    block.bulletRich([T("1. 絶望 (headline): ", { bold: true }), T("衝撃の現実認識「今この瞬間、御社サイトを訪れた 10 人のうち 6 人は内容を見る前に帰っています」")]),
-    block.bulletRich([T("2. 警告 (pain): ", { bold: true }), T("ビジネス痛点「モバイル PageSpeed が 50 点未満。競合は 80 点以上が標準」")]),
-    block.bulletRich([T("3. 注意 (fear): ", { bold: true }), T("未来のリスク「Google は 2024 年から Core Web Vitals を順位の正式要素に。3 ヶ月後には集客チャネル消滅」")]),
-    block.bulletRich([T("4. 通知 (loss): ", { bold: true }), T("数値による損失試算「離脱率 60% × 訪問者 1,200 名 × 客単価 ¥8,000 × CVR 2% = 月間 ¥1,152,000 機会損失」")]),
-    block.bulletRich([T("5. 希望 (cta_text): ", { bold: true }), T("解決アクション「Paradigm が 14 日以内に PageSpeed 80+ まで改善。費用 ¥80,000~」")]),
+    block.bulletRich([T("1. 絶朁E(headline): ", { bold: true }), T("衝撃の現実認識「今この瞬間、御社サイトを訪れた 10 人のぁE�� 6 人は冁E��を見る前に帰ってぁE��す、E)]),
+    block.bulletRich([T("2. 警呁E(pain): ", { bold: true }), T("ビジネス痛点「モバイル PageSpeed ぁE50 点未満。競合�E 80 点以上が標準、E)]),
+    block.bulletRich([T("3. 注愁E(fear): ", { bold: true }), T("未来のリスク「Google は 2024 年から Core Web Vitals を頁E���E正式要素に、E ヶ月後には雁E��チャネル消滁E��E)]),
+    block.bulletRich([T("4. 通知 (loss): ", { bold: true }), T("数値による損失試算「離脱玁E60% ÁE訪問老E1,200 吁EÁE客単価 ¥8,000 ÁECVR 2% = 月間 ¥1,152,000 機会損失、E)]),
+    block.bulletRich([T("5. 希望 (cta_text): ", { bold: true }), T("解決アクション「Paradigm ぁE14 日以冁E�� PageSpeed 80+ まで改喁E��費用 ¥80,000~、E)]),
   )
   blocks.push(block.paragraph(""))
 
@@ -293,21 +297,21 @@ async function buildHubContent() {
   blocks.push(block.heading_2("🎓 業種別アプローチ戦略"))
   blocks.push(
     block.callout(
-      "8 業種 × 7 課題コードの 56 パターンが既に投入済。下記は業種別の営業ストーリー指針。",
+      "8 業種 ÁE7 課題コード�E 56 パターンが既に投�E済。下記�E業種別の営業スト�Eリー持E�E、E,
       "💼",
       "default",
     ),
   )
 
   const industries = [
-    { icon: "💇", name: "美容室", hook: "Instagram 予約導線・お店探し検索流入" },
-    { icon: "🦷", name: "歯科医院", hook: "EPARK / Web 予約導線・近隣患者の比較検討" },
-    { icon: "🍶", name: "飲食店", hook: "食べログ / Google Map 検索流入・ランチタイム" },
-    { icon: "🏗", name: "建設業", hook: "施工事例 SEO・元請紹介・Web 見積依頼" },
-    { icon: "📊", name: "会計事務所", hook: "決算前比較検討・顧問契約検討中" },
-    { icon: "🛍", name: "小売店", hook: "Google Map / Instagram 検索・EC モール対抗" },
-    { icon: "🧹", name: "清掃業", hook: "くらしのマーケット / Web 見積依頼" },
-    { icon: "💼", name: "コンサル業", hook: "LinkedIn / Web 問い合わせ・専門性訴求" },
+    { icon: "💇", name: "美容室", hook: "Instagram 予紁E��線�Eお店探し検索流�E" },
+    { icon: "🦷", name: "歯科医院", hook: "EPARK / Web 予紁E��線�E近隣患老E�E比輁E��訁E },
+    { icon: "🍶", name: "飲食庁E, hook: "食べログ / Google Map 検索流�E・ランチタイム" },
+    { icon: "🏗", name: "建設業", hook: "施工事侁ESEO・允E��紹介�EWeb 見積依頼" },
+    { icon: "📊", name: "会計事務所", hook: "決算前比輁E��討�E顧問契紁E��討中" },
+    { icon: "🛍", name: "小売庁E, hook: "Google Map / Instagram 検索・EC モール対抁E },
+    { icon: "🧹", name: "渁E��業", hook: "くらし�Eマ�EケチE�� / Web 見積依頼" },
+    { icon: "💼", name: "コンサル業", hook: "LinkedIn / Web 問い合わせ�E専門性訴汁E },
   ]
   for (const i of industries) {
     blocks.push(
@@ -322,59 +326,59 @@ async function buildHubContent() {
 
   blocks.push(block.divider())
 
-  // ── セットアップガイド (toggle) ──
-  blocks.push(block.heading_2("🔧 セットアップ"))
+  // ── セチE��アチE�EガイチE(toggle) ──
+  blocks.push(block.heading_2("🔧 セチE��アチE�E"))
   blocks.push(
-    block.toggle("Coolify 環境変数 (本番)", [
-      block.bullet("NOTION_API_KEY ✅ 投入済"),
-      block.bullet("N8N_WEBHOOK_SECRET ✅ 投入済 (64 hex)"),
-      block.bullet("SLACK_BOT_TOKEN ✅ 投入済"),
-      block.bullet("SLACK_CHANNEL_ID ✅ 投入済 (#all-paradigm)"),
-      block.bullet("SUPABASE_SERVICE_ROLE_KEY ✅ 投入済"),
-      block.bullet("DEEPSEEK_API_KEY ✅ 投入済 (V4 PRO)"),
-      block.bullet("HYPERFRAMES_API_URL ⏳ 未設定 (HTML preview で代替・MP4 化は別 service 構築後)"),
-      block.bullet("STRIPE_SECRET_KEY ⏳ 未設定 (収益化開始時)"),
-      block.bullet("GOOGLE_PSI_API_KEY ⏳ 未設定 (PSI rate-limit 緩和したい時)"),
-      block.bullet("GBIZ_API_TOKEN ⏳ 未設定 (gBizInfo 企業属性 enrichment)"),
+    block.toggle("Coolify 環墁E��数 (本番)", [
+      block.bullet("NOTION_API_KEY ✁E投�E渁E),
+      block.bullet("N8N_WEBHOOK_SECRET ✁E投�E渁E(64 hex)"),
+      block.bullet("SLACK_BOT_TOKEN ✁E投�E渁E),
+      block.bullet("SLACK_CHANNEL_ID ✁E投�E渁E(#all-paradigm)"),
+      block.bullet("SUPABASE_SERVICE_ROLE_KEY ✁E投�E渁E),
+      block.bullet("DEEPSEEK_API_KEY ✁E投�E渁E(V4 PRO)"),
+      block.bullet("HYPERFRAMES_API_URL ⏳ 未設宁E(HTML preview で代替・MP4 化�E別 service 構築征E"),
+      block.bullet("STRIPE_SECRET_KEY ⏳ 未設宁E(収益化開始時)"),
+      block.bullet("GOOGLE_PSI_API_KEY ⏳ 未設宁E(PSI rate-limit 緩和したい晁E"),
+      block.bullet("GBIZ_API_TOKEN ⏳ 未設宁E(gBizInfo 企業属性 enrichment)"),
     ]),
-    block.toggle("Supabase ↔ Notion 双方向 sync", [
-      block.paragraph("方式 (Sprint 8 で設計済):"),
-      block.bullet("Supabase → Notion: webhook trigger で自動 (リアルタイム)"),
-      block.bullet("Notion → Supabase: n8n cron 5min ごと (deal_stage / memo / follow_up_date / assigned_to のみ反映)"),
-      block.bullet("全 sync 操作は sales_sync_logs に audit (Supabase) と sales_sync_logs から Notion DB に逆流"),
+    block.toggle("Supabase ↁENotion 双方吁Esync", [
+      block.paragraph("方弁E(Sprint 8 で設計渁E:"),
+      block.bullet("Supabase ↁENotion: webhook trigger で自勁E(リアルタイム)"),
+      block.bullet("Notion ↁESupabase: n8n cron 5min ごと (deal_stage / memo / follow_up_date / assigned_to のみ反映)"),
+      block.bullet("全 sync 操作�E sales_sync_logs に audit (Supabase) と sales_sync_logs から Notion DB に送E��E),
     ]),
     block.toggle("Slack 通知 (#all-paradigm)", [
-      block.bullet("🌱 新規リード検出時 (corporate domain 自動エンリッチ完了): リード DB / 診断レポート / 動画レポート ボタン"),
-      block.bullet("🔥 HOT lead 検出時 (3+ views): 同上 + 緊急アクションプロンプト"),
-      block.bullet("📊 週次ダイジェスト (毎週月曜 09:00 JST cron): HOT top 5 / ステージ別 / 課題別 / 都道府県別 サマリ"),
+      block.bullet("🌱 新規リード検�E晁E(corporate domain 自動エンリチE��完亁E: リーチEDB / 診断レポ�EチE/ 動画レポ�EチEボタン"),
+      block.bullet("🔥 HOT lead 検�E晁E(3+ views): 同丁E+ 緊急アクションプロンプト"),
+      block.bullet("📊 週次ダイジェスチE(毎週月曜 09:00 JST cron): HOT top 5 / スチE�Eジ別 / 課題別 / 都道府県別 サマリ"),
     ]),
-    block.toggle("n8n ワークフロー (社内 dify.appexx.me)", [
-      block.bullet("01-supabase-to-notion-sync: Webhook trigger → リード DB 新規ページ作成"),
-      block.bullet("02-notion-to-supabase-reverse: Cron 5min → recently edited で逆流"),
-      block.bullet("03-notion-template-sync: Notion テンプレ DB 編集 → Supabase sales_templates upsert"),
+    block.toggle("n8n ワークフロー (社冁Edify.appexx.me)", [
+      block.bullet("01-supabase-to-notion-sync: Webhook trigger ↁEリーチEDB 新規�Eージ作�E"),
+      block.bullet("02-notion-to-supabase-reverse: Cron 5min ↁErecently edited で送E��E),
+      block.bullet("03-notion-template-sync: Notion チE��プレ DB 編雁EↁESupabase sales_templates upsert"),
     ]),
   )
   blocks.push(block.paragraph(""))
 
   // ── FAQ (toggle) ──
-  blocks.push(block.heading_2("❓ FAQ"))
+  blocks.push(block.heading_2("❁EFAQ"))
   blocks.push(
-    block.toggle("Q: 新しい業種 / 課題コードを追加したい", [
-      block.paragraph("A: 2 箇所に同時に追加が必要 (型安全のため):"),
-      block.bullet("1. Supabase: ALTER TABLE sales_companies の CHECK 制約に新 enum 値を追加"),
+    block.toggle("Q: 新しい業種 / 課題コードを追加したぁE, [
+      block.paragraph("A: 2 箁E��に同時に追加が忁E��E(型安�Eのため):"),
+      block.bullet("1. Supabase: ALTER TABLE sales_companies の CHECK 制紁E��新 enum 値を追加"),
       block.bullet("2. TypeScript: src/lib/sales/types.ts の INDUSTRIES / ISSUE_CODES に追加"),
-      block.bullet("3. 56 templates → 64 / 72 にスケール: scripts/seed-sales-templates.mjs を更新して再投入"),
+      block.bullet("3. 56 templates ↁE64 / 72 にスケール: scripts/seed-sales-templates.mjs を更新して再投入"),
     ]),
-    block.toggle("Q: 顧客ページに動画レポートを embed したい", [
-      block.paragraph("A: 顧客 DB ページの body に下記を追加:"),
+    block.toggle("Q: 顧客ペ�Eジに動画レポ�Eトを embed したぁE, [
+      block.paragraph("A: 顧客 DB ペ�Eジの body に下記を追加:"),
       block.bulletRich([T("`/embed `"), T(" で URL embed: ", {}), T("paradigmjp.com/ja/report/[slug]/video")]),
-      block.paragraph("動画 + メトリクスがインライン表示される。"),
+      block.paragraph("動画 + メトリクスがインライン表示される、E),
     ]),
-    block.toggle("Q: テンプレを A/B テストしたい", [
-      block.paragraph("A: テンプレ DB に「使用回数」「平均 CVR」プロパティ追加済。テンプレ複製してフレーズを微修正、使用後に CVR を記録。月次で勝者判定。"),
+    block.toggle("Q: チE��プレめEA/B チE��トしたい", [
+      block.paragraph("A: チE��プレ DB に「使用回数」「平坁ECVR」�Eロパティ追加済。テンプレ褁E��してフレーズを微修正、使用後に CVR を記録。月次で勝老E��定、E),
     ]),
-    block.toggle("Q: 既存リードを CSV エクスポートしたい", [
-      block.paragraph("A: リード DB 右上 ⋮ → 「エクスポート」→ CSV 形式選択。Supabase からも psql 経由で取得可能 (lib/supabase.ts 使用)。"),
+    block.toggle("Q: 既存リードを CSV エクスポ�Eトしたい", [
+      block.paragraph("A: リーチEDB 右丁E⋮ ↁE「エクスポ�Eト」�E CSV 形式選択。Supabase からめEpsql 経由で取得可能 (lib/supabase.ts 使用)、E),
     ]),
   )
   blocks.push(block.paragraph(""))
@@ -385,13 +389,13 @@ async function buildHubContent() {
   blocks.push(
     block.calloutRich(
       [
-        T("📚 関連ドキュメント (paradigmjp.com リポジトリ):", { bold: true }),
+        T("📚 関連ドキュメンチE(paradigmjp.com リポジトリ):", { bold: true }),
         T("\n• "),
         linkText("docs/sales-os-setup-runbook.md", "https://github.com/Paradigmllc/Paradigmjpcom/blob/main/docs/sales-os-setup-runbook.md"),
-        T(" - 本番セットアップ手順"),
+        T(" - 本番セチE��アチE�E手頁E),
         T("\n• "),
         linkText("docs/notion-views-setup.md", "https://github.com/Paradigmllc/Paradigmjpcom/blob/main/docs/notion-views-setup.md"),
-        T(" - 4 DB Views 設定ガイド"),
+        T(" - 4 DB Views 設定ガイチE),
         T("\n• "),
         linkText("scripts/audit-sales-os.mjs", "https://github.com/Paradigmllc/Paradigmjpcom/blob/main/scripts/audit-sales-os.mjs"),
         T(" - E2E 動作確認スクリプト"),
@@ -407,36 +411,36 @@ async function buildHubContent() {
     const chunk = blocks.slice(i, i + 90)
     const r = await n("PATCH", `/blocks/${PARENT_PAGE_ID}/children`, { children: chunk })
     if (!r.ok) {
-      console.error(`  ❌ Chunk ${i / 90 + 1} failed:`, r.error?.slice(0, 200))
+      console.error(`  ❁EChunk ${i / 90 + 1} failed:`, r.error?.slice(0, 200))
       return false
     }
   }
-  console.log(`  ✅ ${blocks.length} blocks added to parent page`)
+  console.log(`  ✁E${blocks.length} blocks added to parent page`)
   return true
 }
 
 /* ───── Step 3: 4 DB に Rollup プロパティ追加 ───── */
 async function addRollups() {
   console.log("📊 4 DB に Rollup プロパティ追加中...")
-  // リード DB に「成約済?」rollup (顧客 DB → 紐づくリード)
-  // 顧客 DB に「納品数」rollup (納品 DB → 紐づく顧客)
-  // 顧客 DB に「未完了納品」rollup
-  // 納品 DB に「顧客健全度」rollup (紐づく顧客 → 健全度)
+  // リーチEDB に「�E紁E��E」rollup (顧客 DB ↁE紐づくリーチE
+  // 顧客 DB に「納品数」rollup (納品 DB ↁE紐づく顧客)
+  // 顧客 DB に「未完亁E��品」rollup
+  // 納品 DB に「顧客健全度」rollup (紐づく顧客 ↁE健全度)
 
   // 顧客 DB に納品 DB から rollup を追加
-  // 先に納品 DB の「紐づく顧客」relation の synced_property を確認
+  // 先に納品 DB の「紐づく顧客」relation の synced_property を確誁E
   const customers = await n("GET", `/databases/${DB.customers}`)
   if (!customers.ok) return false
 
   const customerProps = customers.data.properties || {}
-  // 顧客側に既に「紐づく納品」が auto-relation で存在するはず (双方向 sync ON が前提)
-  // 自動逆方向プロパティ名は通常 "Related to [DB name]" のような形
+  // 顧客側に既に「紐づく納品」が auto-relation で存在するはぁE(双方吁Esync ON が前揁E
+  // 自動送E��向�Eロパティ名�E通常 "Related to [DB name]" のような形
 
-  // 安全策として、顧客 DB と納品 DB に rollup を追加するため、まず両側 relation を確認
+  // 安�E策として、E��客 DB と納品 DB に rollup を追加するため、まず両側 relation を確誁E
   const deliveries = await n("GET", `/databases/${DB.deliveries}`)
   if (!deliveries.ok) return false
 
-  // 納品 DB の「紐づく顧客」relation を探す
+  // 納品 DB の「紐づく顧客」relation を探ぁE
   const delRelProp = Object.entries(deliveries.data.properties).find(
     ([_, v]) => v.type === "relation" && v.relation?.database_id === DB.customers,
   )
@@ -450,20 +454,20 @@ async function addRollups() {
           "納品数": {
             rollup: {
               relation_property_name: syncedPropName,
-              rollup_property_name: "納品物名",
+              rollup_property_name: "納品物吁E,
               function: "count",
             },
           },
         },
       })
-      if (r.ok) console.log(`  ✅ 顧客 DB: 納品数 rollup 追加`)
-      else console.error(`  ⚠️ 顧客 DB rollup:`, r.error?.slice(0, 100))
+      if (r.ok) console.log(`  ✁E顧客 DB: 納品数 rollup 追加`)
+      else console.error(`  ⚠�E�E顧客 DB rollup:`, r.error?.slice(0, 100))
     } else {
-      console.log(`  ℹ️ 納品 DB → 顧客 DB の双方向 relation が UI で未確立 (要手動 ON in Notion UI)`)
+      console.log(`  ℹ�E�E納品 DB ↁE顧客 DB の双方吁Erelation ぁEUI で未確竁E(要手勁EON in Notion UI)`)
     }
   }
 
-  // リード DB に「成約済?」rollup (顧客 DB の「紐づくリード」経由)
+  // リーチEDB に「�E紁E��E」rollup (顧客 DB の「紐づくリード」経由)
   const customerLeadRel = Object.entries(customers.data.properties).find(
     ([_, v]) => v.type === "relation" && v.relation?.database_id === DB.leads,
   )
@@ -473,40 +477,40 @@ async function addRollups() {
     if (syncedPropName) {
       const r = await n("PATCH", `/databases/${DB.leads}`, {
         properties: {
-          "成約済?": {
+          "成紁E��E": {
             rollup: {
               relation_property_name: syncedPropName,
-              rollup_property_name: "顧客名",
+              rollup_property_name: "顧客吁E,
               function: "count_values",
             },
           },
         },
       })
-      if (r.ok) console.log(`  ✅ リード DB: 成約済? rollup 追加`)
-      else console.error(`  ⚠️ リード DB rollup:`, r.error?.slice(0, 100))
+      if (r.ok) console.log(`  ✁EリーチEDB: 成紁E��E rollup 追加`)
+      else console.error(`  ⚠�E�EリーチEDB rollup:`, r.error?.slice(0, 100))
     } else {
-      console.log(`  ℹ️ 顧客 DB → リード DB の双方向 relation が UI で未確立 (要手動 ON in Notion UI)`)
+      console.log(`  ℹ�E�E顧客 DB ↁEリーチEDB の双方吁Erelation ぁEUI で未確竁E(要手勁EON in Notion UI)`)
     }
   }
 
   return true
 }
 
-/* ───── Step 4: 3 sub pages 作成 ───── */
+/* ───── Step 4: 3 sub pages 作�E ───── */
 async function createSubPages() {
-  console.log("📂 3 sub pages 作成中...")
+  console.log("📂 3 sub pages 作�E中...")
 
-  // ── 📊 営業ダッシュボード ──
+  // ── 📊 営業ダチE��ュボ�EチE──
   const dashboard = await n("POST", "/pages", {
     parent: { page_id: PARENT_PAGE_ID },
     icon: { type: "emoji", emoji: "📊" },
     cover: { type: "external", external: { url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1500&q=80" } },
     properties: {
-      title: { title: [{ text: { content: "📊 営業ダッシュボード" } }] },
+      title: { title: [{ text: { content: "📊 営業ダチE��ュボ�EチE } }] },
     },
     children: [
       block.callout(
-        "全 4 DB の主要 view を 1 画面に集約。営業マネージャーが朝一で開く想定。下記 view は Notion UI で filter 設定後、各 DB を Linked DB として埋め込み。",
+        "全 4 DB の主要Eview めE1 画面に雁E��E��営業マネージャーが朝一で開く想定。下訁Eview は Notion UI で filter 設定後、各 DB めELinked DB として埋め込み、E,
         "🎯",
         "blue_background",
       ),
@@ -520,91 +524,91 @@ async function createSubPages() {
       block.heading_1("🚧 進行中の納品"),
       block.linkedDb(DB.deliveries),
       block.paragraph(""),
-      block.heading_1("📝 アクティブテンプレ"),
+      block.heading_1("📝 アクチE��ブテンプレ"),
       block.linkedDb(DB.templates),
       block.paragraph(""),
       block.calloutRich(
         [
-          T("⚙️ 設定方法: ", { bold: true }),
-          T("各 DB を embed したあと UI で view を切替・追加してください。詳細は "),
+          T("⚙︁E設定方況E ", { bold: true }),
+          T("吁EDB めEembed したあと UI で view を�E替・追加してください。詳細は "),
           linkText("notion-views-setup.md", "https://github.com/Paradigmllc/Paradigmjpcom/blob/main/docs/notion-views-setup.md"),
-          T(" 参照。"),
+          T(" 参�E、E),
         ],
         "📖",
         "gray_background",
       ),
     ],
   })
-  if (dashboard.ok) console.log(`  ✅ 📊 営業ダッシュボード: ${dashboard.data.id}`)
+  if (dashboard.ok) console.log(`  ✁E📊 営業ダチE��ュボ�EチE ${dashboard.data.id}`)
   else console.error(`  ❌`, dashboard.error?.slice(0, 200))
 
-  // ── 📖 使い方ガイド ──
+  // ── 📖 使ぁE��ガイチE──
   const guide = await n("POST", "/pages", {
     parent: { page_id: PARENT_PAGE_ID },
     icon: { type: "emoji", emoji: "📖" },
     cover: { type: "external", external: { url: "https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=1500&q=80" } },
     properties: {
-      title: { title: [{ text: { content: "📖 使い方ガイド" } }] },
+      title: { title: [{ text: { content: "📖 使ぁE��ガイチE } }] },
     },
     children: [
-      block.callout("初日に必ず読むページ。営業フロー 5 ステップを順番に押さえれば独り立ち可能。", "🎓", "purple_background"),
+      block.callout("初日に忁E��読むペ�Eジ。営業フロー 5 スチE��プを頁E��に押さえれ�E独り立ち可能、E, "🎓", "purple_background"),
       block.paragraph(""),
       block.toc(),
       block.paragraph(""),
 
-      block.heading_1("Step 1: リード獲得 (自動)"),
-      block.paragraph("顧客が paradigmjp.com/contact からフォーム送信すると、以下の処理が自動で動きます (Sprint 12 enrich pipeline):"),
-      block.bullet("法人ドメイン検出 (自由メール 28 ドメインは skip)"),
-      block.bullet("PageSpeed Insights mobile/desktop スコア取得"),
-      block.bullet("HTML inspect: OGP / WordPress / 著作年 / SSL 検出"),
-      block.bullet("gBizInfo: 法人番号 / 従業員数 / 資本金 / 設立年"),
+      block.heading_1("Step 1: リード獲征E(自勁E"),
+      block.paragraph("顧客ぁEparadigmjp.com/contact からフォーム送信すると、以下�E処琁E��自動で動きまぁE(Sprint 12 enrich pipeline):"),
+      block.bullet("法人ドメイン検�E (自由メール 28 ドメインは skip)"),
+      block.bullet("PageSpeed Insights mobile/desktop スコア取征E),
+      block.bullet("HTML inspect: OGP / WordPress / 著作年 / SSL 検�E"),
+      block.bullet("gBizInfo: 法人番号 / 従業員数 / 賁E��釁E/ 設立年"),
       block.bullet("Supabase sales_companies に UPSERT"),
-      block.bullet("Notion リード DB に新規ページ作成 (n8n W01 経由)"),
+      block.bullet("Notion リーチEDB に新規�Eージ作�E (n8n W01 経由)"),
       block.bullet("Slack #all-paradigm に 🌱 新規リード通知"),
       block.paragraph(""),
 
-      block.heading_1("Step 2: 診断レポート確認"),
-      block.paragraph("リード DB から HOT view を開き、上位リードのドメインをクリック:"),
-      block.bullet("📋 診断レポート (リッチ HTML LP・3-Act 構造): /ja/report/[slug]"),
-      block.bullet("🎬 動画レポート (60s HTML 自動再生): /ja/report/[slug]/video"),
-      block.bullet("OG image (Slack/LINE シェアで自動展開・1200×630 PNG)"),
+      block.heading_1("Step 2: 診断レポ�Eト確誁E),
+      block.paragraph("リーチEDB から HOT view を開き、上位リード�EドメインをクリチE��:"),
+      block.bullet("📋 診断レポ�EチE(リチE�� HTML LP・3-Act 構造): /ja/report/[slug]"),
+      block.bullet("🎬 動画レポ�EチE(60s HTML 自動�E甁E: /ja/report/[slug]/video"),
+      block.bullet("OG image (Slack/LINE シェアで自動展開・1200ÁE30 PNG)"),
       block.paragraph(""),
 
       block.heading_1("Step 3: 営業アクション"),
-      block.paragraph("対象リードの diagnostic_url をメール送信 → 反応待ち。"),
-      block.bullet("3+ views で is_hot_lead 自動 true → Slack 通知"),
-      block.bullet("商談ステージを「未対応 → 架電済 → 商談中 → 提案済」と更新"),
-      block.bullet("メモ欄に顧客との会話内容を逐次記録"),
-      block.bullet("フォローアップ日を設定 → 📅 カレンダー view で漏れなし"),
+      block.paragraph("対象リード�E diagnostic_url をメール送信 ↁE反応征E��、E),
+      block.bullet("3+ views で is_hot_lead 自勁Etrue ↁESlack 通知"),
+      block.bullet("啁E��E��チE�Eジを「未対忁EↁE架電渁EↁE啁E��E�� ↁE提案済」と更新"),
+      block.bullet("メモ欁E��顧客との会話冁E��を逐次記録"),
+      block.bullet("フォローアチE�E日を設宁EↁE📅 カレンダー view で漏れなぁE),
       block.paragraph(""),
 
-      block.heading_1("Step 4: 成約"),
-      block.paragraph("成約したら:"),
-      block.bullet("リード DB の商談ステージ = 成約"),
+      block.heading_1("Step 4: 成紁E),
+      block.paragraph("成紁E��たら:"),
+      block.bullet("リーチEDB の啁E��E��チE�Eジ = 成紁E),
       block.bullet("顧客 DB に新規レコード追加"),
-      block.bullet("「紐づくリード」relation で リード ↔ 顧客 を紐づけ"),
-      block.bullet("月額・契約商材・契約開始日・健全度を入力"),
-      block.bullet("LTV / 契約継続月数 は formula で自動計算"),
+      block.bullet("「紐づくリード」relation で リーチEↁE顧客 を紐づぁE),
+      block.bullet("月額�E契紁E��材�E契紁E��始日・健全度を�E劁E),
+      block.bullet("LTV / 契紁E��続月数 は formula で自動計箁E),
       block.paragraph(""),
 
       block.heading_1("Step 5: 納品"),
-      block.paragraph("契約商材ごとに納品 DB にレコード追加:"),
-      block.bullet("動画(HyperFrames): 60s 診断動画 → R2 にアップ → URL 記録"),
-      block.bullet("Web 制作: 完成サイト URL"),
-      block.bullet("MEO レポート: 月次レポート PDF"),
-      block.bullet("ステータス: 制作中 → レビュー待ち → 納品済"),
+      block.paragraph("契紁E��材ごとに納品 DB にレコード追加:"),
+      block.bullet("動画(HyperFrames): 60s 診断動画 ↁER2 にアチE�E ↁEURL 記録"),
+      block.bullet("Web 制佁E 完�EサイチEURL"),
+      block.bullet("MEO レポ�EチE 月次レポ�EチEPDF"),
+      block.bullet("スチE�Eタス: 制作中 ↁEレビュー征E�� ↁE納品渁E),
       block.bullet("「紐づく顧客」relation で顧客とリンク"),
       block.paragraph(""),
 
       block.divider(),
       block.calloutRich(
-        [T("🆘 困ったら: ", { bold: true }), T("Slack #all-paradigm で `@Paradigm` メンション。FAQ も親ページ末尾に記載。")],
+        [T("�E 困ったら: ", { bold: true }), T("Slack #all-paradigm で `@Paradigm` メンション、EAQ も親ペ�Eジ末尾に記載、E)],
         "💬",
         "yellow_background",
       ),
     ],
   })
-  if (guide.ok) console.log(`  ✅ 📖 使い方ガイド: ${guide.data.id}`)
+  if (guide.ok) console.log(`  ✁E📖 使ぁE��ガイチE ${guide.data.id}`)
   else console.error(`  ❌`, guide.error?.slice(0, 200))
 
   // ── 🎓 業種別戦略 ──
@@ -617,7 +621,7 @@ async function createSubPages() {
     },
     children: [
       block.callout(
-        "業種ごとに「集客動線」「客単価」「主要課題」「Hook フレーズ」が異なる。アウトリーチ前に必ず該当業種のセクションを読む。",
+        "業種ごとに「集客動線」「客単価」「主要課題」「Hook フレーズ」が異なる。アウトリーチ前に忁E��該当業種のセクションを読む、E,
         "📚",
         "purple_background",
       ),
@@ -628,76 +632,76 @@ async function createSubPages() {
       ...industriesStrategy(),
     ],
   })
-  if (strategy.ok) console.log(`  ✅ 🎓 業種別戦略: ${strategy.data.id}`)
+  if (strategy.ok) console.log(`  ✁E🎓 業種別戦略: ${strategy.data.id}`)
   else console.error(`  ❌`, strategy.error?.slice(0, 200))
 }
 
-/* 8 業種戦略コンテンツ */
+/* 8 業種戦略コンチE��チE*/
 function industriesStrategy() {
   const data = [
     {
       icon: "💇",
       name: "美容室",
-      booking: "Instagram (DM 予約) / Hot Pepper Beauty",
+      booking: "Instagram (DM 予紁E / Hot Pepper Beauty",
       avg: "¥8,000",
-      issues: ["速度遅い (スマホ予約離脱)", "SNS 導線なし (Instagram 連携)", "OGP 未設定 (シェアで画像出ない)"],
-      hook: "今この瞬間、御社サイトを訪れた 10 人のうち 6 人は内容を見る前に帰っています",
+      issues: ["速度遁E�� (スマ�E予紁E��脱)", "SNS 導線なぁE(Instagram 連携)", "OGP 未設宁E(シェアで画像�EなぁE"],
+      hook: "今この瞬間、御社サイトを訪れた 10 人のぁE�� 6 人は冁E��を見る前に帰ってぁE��ぁE,
     },
     {
       icon: "🦷",
       name: "歯科医院",
-      booking: "EPARK / Google ビジネスプロフィール / Web 予約",
+      booking: "EPARK / Google ビジネスプロフィール / Web 予紁E,
       avg: "¥12,000",
-      issues: ["SSL 期限切れ (信用低下)", "速度遅い", "ua_残存 (GA4 移行漏れ)"],
-      hook: "近隣の歯科医院を探している患者の 70% が御社のサイトに辿り着けていません",
+      issues: ["SSL 期限刁E�� (信用低丁E", "速度遁E��", "ua_残孁E(GA4 移行漏れ)"],
+      hook: "近隣の歯科医院を探してぁE��患老E�E 70% が御社のサイトに辿り着けてぁE��せん",
     },
     {
       icon: "🍶",
-      name: "飲食店",
+      name: "飲食庁E,
       booking: "食べログ / Google Map / Instagram",
       avg: "¥4,500",
-      issues: ["OGP なし (Map シェア時に画像欠落)", "SNS 連携なし", "速度遅い (ランチ時間アクセス急増)"],
-      hook: "ランチ時間の検索流入が月間推定 4,200 件、漏れています",
+      issues: ["OGP なぁE(Map シェア時に画像欠落)", "SNS 連携なぁE, "速度遁E�� (ランチ時間アクセス急墁E"],
+      hook: "ランチ時間�E検索流�Eが月間推宁E4,200 件、漏れてぁE��ぁE,
     },
     {
       icon: "🏗",
-      name: "工務店 / 建設業",
-      booking: "Web 見積依頼 / 元請紹介 / 自治体登録",
+      name: "工務庁E/ 建設業",
+      booking: "Web 見積依頼 / 允E��紹仁E/ 自治体登録",
       avg: "¥800,000",
-      issues: ["WordPress 旧版 (改ざんリスク)", "施工事例ページの SEO 不足", "問い合わせフォーム機能不全"],
-      hook: "施工事例を探す施主の 80% が御社のサイトを 5 秒で閉じています",
+      issues: ["WordPress 旧牁E(改ざんリスク)", "施工事例�Eージの SEO 不足", "問い合わせフォーム機�E不�E"],
+      hook: "施工事例を探す施主の 80% が御社のサイトを 5 秒で閉じてぁE��ぁE,
     },
     {
       icon: "📊",
       name: "会計事務所",
-      booking: "Web 相談予約 / 紹介",
+      booking: "Web 相諁E��紁E/ 紹仁E,
       avg: "¥360,000",
-      issues: ["コピーライト年が 3+ 年前 (廃業疑惑)", "GA4 未移行", "SNS 連携なし"],
-      hook: "決算前の顧問先候補が御社を比較検討した結果、7 割が他事務所に流れています",
+      issues: ["コピ�Eライト年ぁE3+ 年剁E(廁E��疑惑)", "GA4 未移衁E, "SNS 連携なぁE],
+      hook: "決算前の顧問�E候補が御社を比輁E��討した結果、E 割が他事務所に流れてぁE��ぁE,
     },
     {
       icon: "🛍",
-      name: "小売店",
+      name: "小売庁E,
       booking: "Google Map / Instagram / EC モール",
       avg: "¥6,000",
-      issues: ["速度遅い", "OGP なし", "SNS 連携なし"],
-      hook: "オンライン購買意欲のある顧客の 60% が御社のサイトを完了せずに離脱しています",
+      issues: ["速度遁E��", "OGP なぁE, "SNS 連携なぁE],
+      hook: "オンライン購買意欲のある顧客の 60% が御社のサイトを完亁E��ずに離脱してぁE��ぁE,
     },
     {
       icon: "🧹",
-      name: "清掃業者",
-      booking: "くらしのマーケット / Web 見積",
+      name: "渁E��業老E,
+      booking: "くらし�Eマ�EケチE�� / Web 見穁E,
       avg: "¥28,000",
-      issues: ["フォーム機能不全 (見積依頼到達せず)", "速度遅い", "SSL 期限"],
-      hook: "見積もり依頼の問い合わせフォームに 50% 以上が到達せず離脱しています",
+      issues: ["フォーム機�E不�E (見積依頼到達せぁE", "速度遁E��", "SSL 期限"],
+      hook: "見積もり依頼の問い合わせフォームに 50% 以上が到達せず離脱してぁE��ぁE,
     },
     {
       icon: "💼",
       name: "コンサル会社",
-      booking: "LinkedIn / Web 問い合わせ / 紹介",
+      booking: "LinkedIn / Web 問い合わぁE/ 紹仁E,
       avg: "¥1,200,000",
-      issues: ["WordPress 旧版", "事例ページ無し", "OGP / Twitter Card なし"],
-      hook: "新規問い合わせの大半が、御社の専門性に気付かないまま競合へ流れています",
+      issues: ["WordPress 旧牁E, "事例�Eージ無ぁE, "OGP / Twitter Card なぁE],
+      hook: "新規問ぁE��わせの大半が、御社の専門性に気付かなぁE��ま競合へ流れてぁE��ぁE,
     },
   ]
 
@@ -706,15 +710,15 @@ function industriesStrategy() {
     blocks.push(block.heading_1(`${i.icon} ${i.name}`))
     blocks.push(
       block.calloutRich(
-        [T(`Hook フレーズ: 「${i.hook}」`, { bold: true })],
+        [T(`Hook フレーズ: 、E{i.hook}」`, { bold: true })],
         "🎯",
         "yellow_background",
       ),
     )
     blocks.push(
-      block.bulletRich([T("集客動線: ", { bold: true }), T(i.booking)]),
-      block.bulletRich([T("客単価平均: ", { bold: true }), T(i.avg)]),
-      block.bulletRich([T("主要課題 (上位 3): ", { bold: true })]),
+      block.bulletRich([T("雁E��動緁E ", { bold: true }), T(i.booking)]),
+      block.bulletRich([T("客単価平坁E ", { bold: true }), T(i.avg)]),
+      block.bulletRich([T("主要課顁E(上佁E3): ", { bold: true })]),
     )
     for (const iss of i.issues) {
       blocks.push(block.bullet(`  - ${iss}`))
@@ -727,16 +731,16 @@ function industriesStrategy() {
 
 /* ───── Run ───── */
 async function main() {
-  console.log("🚀 Notion 親ページを 有料テンプレ級にアップグレード開始\n")
+  console.log("🚀 Notion 親ペ�EジめE有料チE��プレ級にアチE�Eグレード開始\n")
   await archiveExistingBlocks()
   const hubOk = await buildHubContent()
   if (!hubOk) {
-    console.error("⚠️ Hub content 構築失敗 → exit")
+    console.error("⚠�E�EHub content 構築失敁EↁEexit")
     process.exit(1)
   }
   await createSubPages()
   await addRollups()
-  console.log(`\n✅ 親ページ "Paradigm 営業 OS" 有料テンプレ級アップグレード完了`)
+  console.log(`\n✁E親ペ�Eジ "Paradigm 営業 OS" 有料チE��プレ級アチE�Eグレード完亁E)
   console.log(`   https://www.notion.so/35fa2b78f3fc81299d91e457889ee393`)
 }
 

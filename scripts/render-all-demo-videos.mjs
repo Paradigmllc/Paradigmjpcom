@@ -13,13 +13,17 @@ fs.mkdirSync(BASE, { recursive: true })
 const VARIANTS = ["website_diagnostic", "meo", "security", "japan_entry", "video_subscription", "subsidy", "outreach"]
 const LOCALES = ["ja", "en"]
 
-// R2 config
+// R2 config — use env vars, refuse to run without them
 const R2 = {
-  accountId: "7ff83549f2bdc7bc62c1d64a698aabf1",
-  bucket: "appexx-diagnostic-videos",
-  accessKeyId: "a0058f1b8be6ec8675a9aa03e33958ff",
-  secretAccessKey: "34489b8948fd0594e2585d0f815629dc79377ac0d7ff803b7f4c4bcaa1c61377",
-  publicBase: "https://pub-ac30eb86a32747f1a27e304aa9c6f95a.r2.dev"
+  accountId: process.env.CLOUDFLARE_R2_ACCOUNT_ID,
+  bucket: process.env.CLOUDFLARE_R2_BUCKET || "appexx-diagnostic-videos",
+  accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
+  secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+  publicBase: process.env.CLOUDFLARE_R2_PUBLIC_BASE_URL || "https://pub-ac30eb86a32747f1a27e304aa9c6f95a.r2.dev"
+}
+if (!R2.accountId || !R2.accessKeyId || !R2.secretAccessKey) {
+  console.error("CLOUDFLARE_R2_ACCOUNT_ID, CLOUDFLARE_R2_ACCESS_KEY_ID, CLOUDFLARE_R2_SECRET_ACCESS_KEY must be set")
+  process.exit(1)
 }
 
 async function main() {

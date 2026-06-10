@@ -315,3 +315,34 @@ export async function listRecentlyUpdatedCompanies(
     .limit(limit)
   return (data as SalesCompany[]) ?? []
 }
+
+/**
+ * 複数 domain の既存在否を一括チェック (N+1 防止)。
+ * 最大 1000 件までバッチ可。domain → SalesCompany の Map を返す。
+ */
+export async function batchFindExistingByDomains(
+  domains: string[],
+): Promise<Map<string, SalesCompany>> {
+  const map = new Map<string, SalesCompany>()
+  if (domains.length === 0) return map
+  const sb = getServiceSalesSupabase()
+  if (!sb) return map
+
+  // Supabase `.in()` 上限に配慮して 300 件ずつ分割
+  const chunkSize = 300
+  for (let i = 0; i < domains.length; i += chunkSize) {
+    const chunk = domains.slice(i, i + chunkSize)
+    const { data, error } = await sb
+      .from("sales_companies")
+      .select("*")
+      .in("domain", chunk)
+    if (error) {
+      console.error("[companies] batchFindExistingByDomains chunk failed:", error.message)
+      continue
+    }
+    for (const row of (data as SalesCompany[]) ?? []) {
+      if (row.domain) map.set(row.domain, row)
+    }
+  }
+  return map
+}

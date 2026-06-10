@@ -1,16 +1,20 @@
 #!/usr/bin/env node
 /**
- * scripts/notion-clean-rebuild-hub.mjs — Sprint 17 親ハブ smart 再構築
+ * scripts/notion-clean-rebuild-hub.mjs  ESprint 17 親ハブ smart 再構篁E
  *
- * 役割: DBs (child_database) と sub pages (child_page) は **絶対に触らず**、
- *       テキスト系ブロック (paragraph/heading/callout/bullet/toggle/divider/link_to_page/toc) のみ削除して
- *       クリーンなハブ構造を再構築. 過去のミス再発防止.
+ * 役割: DBs (child_database) と sub pages (child_page) は **絶対に触らず**、E
+ *       チE��スト系ブロチE�� (paragraph/heading/callout/bullet/toggle/divider/link_to_page/toc) のみ削除して
+ *       クリーンなハブ構造を�E構篁E 過去のミス再発防止.
  */
 
-const NOTION_API_KEY = process.env.NOTION_API_KEY ?? "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"
+const NOTION_API_KEY = process.env.NOTION_API_KEY
+if (!NOTION_API_KEY) {
+  console.error('NOTION_API_KEY env var must be set')
+  process.exit(1)
+}
 const PARENT_PAGE_ID = "35fa2b78-f3fc-8129-9d91-e457889ee393"
 
-// 削除する block type (DBs と sub pages は除外)
+// 削除する block type (DBs と sub pages は除夁E
 const SAFE_TO_DELETE = new Set([
   "paragraph",
   "heading_1",
@@ -87,12 +91,12 @@ const SUB_PAGE_LINK = (id, title, desc, emoji) =>
     "gray_background",
   )
 
-/* Step 1: smart clear (DBs/sub pages 除外) */
+/* Step 1: smart clear (DBs/sub pages 除夁E */
 async function smartClear() {
   console.log("🧹 Smart clear (DBs/sub pages を保護)...")
   const r = await n("GET", `/blocks/${PARENT_PAGE_ID}/children?page_size=100`)
   if (!r.ok) {
-    console.error("  ❌ Get children failed")
+    console.error("  ❁EGet children failed")
     return
   }
   const blocks = r.data.results || []
@@ -105,16 +109,16 @@ async function smartClear() {
   for (const block of toDelete) {
     await n("DELETE", `/blocks/${block.id}`)
   }
-  console.log(`  ✅ ${toDelete.length} text blocks deleted・DBs と sub pages は完全保護`)
+  console.log(`  ✁E${toDelete.length} text blocks deleted・DBs と sub pages は完�E保護`)
 }
 
-/* Step 2: clean hub 構築 */
+/* Step 2: clean hub 構篁E*/
 async function buildHub() {
-  console.log("🏛️ Clean hub 構築中...")
+  console.log("🏛�E�EClean hub 構築中...")
 
   // Sub page IDs (Sprint 14 + Sprint 17)
   const SUB = {
-    quickStart: null, // 旧 Sprint 14 で作成・ID 不明・skip
+    quickStart: null, // 旧 Sprint 14 で作�E・ID 不�E・skip
     dashboard: "35fa2b78-f3fc-81d0-b842-c0ed182103dc",
     usage: "35fa2b78-f3fc-81c3-b26a-f80a3770208d",
     strategy: "35fa2b78-f3fc-819c-b5d6-e2f95e677265",
@@ -128,14 +132,14 @@ async function buildHub() {
     // ── Hero ──
     b.calloutR(
       [
-        T("Paradigm 営業 OS — Salesforce × Apollo × DocuSign × cal.com 統合", { bold: true }),
-        T("\n3 層分業設計: ", { color: "gray" }),
+        T("Paradigm 営業 OS  ESalesforce ÁEApollo ÁEDocuSign ÁEcal.com 統吁E, { bold: true }),
+        T("\n3 層刁E��設訁E ", { color: "gray" }),
         T("Supabase = SSOT", { bold: true }),
         T(" (機械可読・整合性) / "),
         T("Notion = GUI", { bold: true }),
-        T(" (人間操作 UI) / "),
+        T(" (人間操佁EUI) / "),
         T("Cloudflare R2 = 大ファイル", { bold: true }),
-        T(" (動画/PDF). 5min cron で完全双方向 sync."),
+        T(" (動画/PDF). 5min cron で完�E双方吁Esync."),
       ],
       "🎯",
       "blue_background",
@@ -148,66 +152,66 @@ async function buildHub() {
 
     // ── ナビゲーション (sub pages) ──
     b.h1("📂 ナビゲーション"),
-    b.p("配下サブページから目的に応じて開いてください。本ページは「全 DB を一覧する hub」です。"),
+    b.p("配下サブ�Eージから目皁E��応じて開いてください。本ペ�Eジは「�E DB を一覧する hub」です、E),
     b.p(""),
 
-    b.h2("🎓 学習・運用"),
-    SUB_PAGE_LINK(SUB.usage, "📖 使い方ガイド", "営業フロー 5 ステップ (リード獲得→診断→営業→成約→納品)", "📖"),
-    SUB_PAGE_LINK(SUB.strategy, "🎓 業種別営業戦略", "8 業種 (美容/歯科/飲食/建設/会計/小売/清掃/コンサル) × Hook 知識", "🎓"),
-    SUB_PAGE_LINK(SUB.dashboard, "📊 営業ダッシュボード", "朝一画面・4 DB 主要 view を 1 画面集約", "📊"),
-    SUB_PAGE_LINK(SUB.faq, "❓ FAQ", "7 質問: 業種追加 / A/B テスト / MP4 化 / cal.com / DocuSign 等", "❓"),
+    b.h2("🎓 学習�E運用"),
+    SUB_PAGE_LINK(SUB.usage, "📖 使ぁE��ガイチE, "営業フロー 5 スチE��チE(リード獲得�E診断→営業→�E紁E�E納品)", "📖"),
+    SUB_PAGE_LINK(SUB.strategy, "🎓 業種別営業戦略", "8 業種 (美容/歯私E飲飁E建設/会訁E小売/渁E��/コンサル) ÁEHook 知譁E, "🎓"),
+    SUB_PAGE_LINK(SUB.dashboard, "📊 営業ダチE��ュボ�EチE, "朝一画面・4 DB 主要Eview めE1 画面雁E��E, "📊"),
+    SUB_PAGE_LINK(SUB.faq, "❁EFAQ", "7 質啁E 業種追加 / A/B チE��チE/ MP4 匁E/ cal.com / DocuSign 筁E, "❁E),
     b.p(""),
 
-    b.h2("🛠️ システム仕様"),
-    SUB_PAGE_LINK(SUB.setup, "🔧 Setup & Environment", "Coolify env (15 vars) + 6 cron + Slack 設定の完全リファレンス", "🔧"),
-    SUB_PAGE_LINK(SUB.r2, "🗄️ R2 Storage Spec", "動画/PDF/提案資料の保存先仕様 + R2 セットアップ + コスト試算", "🗄️"),
-    SUB_PAGE_LINK(SUB.syncFlow, "📚 Architecture & Sync Flow", "Supabase ↔ Notion 双方向 sync 仕様 + 編集可能フィールド + Conflict 解決", "📚"),
+    b.h2("🛠�E�EシスチE��仕槁E),
+    SUB_PAGE_LINK(SUB.setup, "🔧 Setup & Environment", "Coolify env (15 vars) + 6 cron + Slack 設定�E完�Eリファレンス", "🔧"),
+    SUB_PAGE_LINK(SUB.r2, "🗄�E�ER2 Storage Spec", "動画/PDF/提案賁E��の保存�E仕槁E+ R2 セチE��アチE�E + コスト試箁E, "🗄�E�E),
+    SUB_PAGE_LINK(SUB.syncFlow, "📚 Architecture & Sync Flow", "Supabase ↁENotion 双方吁Esync 仕槁E+ 編雁E��能フィールチE+ Conflict 解決", "📚"),
     b.p(""),
 
     b.divider(),
 
-    // ── 8 main DBs section header (DBs 自体は既に child_database として下に表示される) ──
-    b.h1("🗄️ メインデータベース"),
+    // ── 8 main DBs section header (DBs 自体�E既に child_database として下に表示されめE ──
+    b.h1("🗄�E�EメインチE�Eタベ�Eス"),
     b.calloutR(
       [
-        T("8 main DBs (Supabase 双方向 sync 対象)", { bold: true }),
+        T("8 main DBs (Supabase 双方吁Esync 対象)", { bold: true }),
         T(" + Sprint 17 で 3 新 DB 追加 (Activities / Calendar / Contracts)."),
-        T("\n下記に Notion DBs が自動表示されます (child_database)。各 DB をクリックして詳細 view に入る。"),
+        T("\n下記に Notion DBs が�E動表示されまぁE(child_database)。各 DB をクリチE��して詳細 view に入る、E),
       ],
       "📊",
       "yellow_background",
     ),
     b.p(""),
 
-    b.h3("🇯🇵 日本市場 (region='jp')"),
-    b.bullet("🎯 リード DB — Paradigm 営業の中心 / 7 leads + 30+ API 自動エンリッチ"),
-    b.bullet("🏢 顧客 DB — MRR + 健全度 + WL 一元管理 / LTV/契約継続月 自動計算"),
-    b.bullet("📦 納品 DB — 60s 動画 / Web 制作 / MEO レポート tracking"),
-    b.bullet("📝 テンプレ DB — 8 業種 × 7 課題 = 56 templates / 編集 → 5min で本番反映"),
+    b.h3("�E�E 日本市場 (region='jp')"),
+    b.bullet("🎯 リーチEDB  EParadigm 営業の中忁E/ 7 leads + 30+ API 自動エンリチE��"),
+    b.bullet("🏢 顧客 DB  EMRR + 健全度 + WL 一允E��琁E/ LTV/契紁E��続月 自動計箁E),
+    b.bullet("📦 納品 DB  E60s 動画 / Web 制佁E/ MEO レポ�EチEtracking"),
+    b.bullet("📝 チE��プレ DB  E8 業種 ÁE7 課顁E= 56 templates / 編雁EↁE5min で本番反映"),
     b.p(""),
 
-    b.h3("🌍 海外市場 (region='global'・11 locale 共通)"),
-    b.bullet("🌍 Leads — 11 locale 対応 / 同じく 30+ API auto-enrich"),
-    b.bullet("🌍 Customers — USD 月額 / 5 商品 multi-select / WL 海外代理店"),
-    b.bullet("🌍 Deliveries — 同上・en 表示"),
-    b.bullet("🌍 Templates — 56 en templates (5 段階フレーム encode 済)"),
+    b.h3("🌍 海外市場 (region='global'・11 locale 共送E"),
+    b.bullet("🌍 Leads  E11 locale 対忁E/ 同じぁE30+ API auto-enrich"),
+    b.bullet("🌍 Customers  EUSD 月顁E/ 5 啁E�� multi-select / WL 海外代琁E��E),
+    b.bullet("🌍 Deliveries  E同上�Een 表示"),
+    b.bullet("🌍 Templates  E56 en templates (5 段階フレーム encode 渁E"),
     b.p(""),
 
-    b.h3("🆕 Salesforce × Apollo 級装備 (Sprint 17)"),
-    b.bullet("📞 アクティビティログ — 全営業活動を時系列ログ (Salesforce Activity Timeline 相当)"),
-    b.bullet("📅 商談カレンダー — cal.com 統合・Discovery/Demo/Proposal/Closing 一元管理"),
-    b.bullet("📄 契約書 DB — DocuSign 統合・PDF (R2) + 7 通貨 + 9 状態管理"),
+    b.h3("�E Salesforce ÁEApollo 級裁E�� (Sprint 17)"),
+    b.bullet("📞 アクチE��ビティログ  E全営業活動を時系列ログ (Salesforce Activity Timeline 相彁E"),
+    b.bullet("📅 啁E��E��レンダー  Ecal.com 統合�EDiscovery/Demo/Proposal/Closing 一允E��琁E),
+    b.bullet("📄 契紁E�� DB  EDocuSign 統合�EPDF (R2) + 7 通貨 + 9 状態管琁E),
     b.p(""),
 
     b.divider(),
 
-    // ── Sync 統計 ──
-    b.h1("📊 現状データ集計"),
+    // ── Sync 統訁E──
+    b.h1("📊 現状チE�Eタ雁E��E),
     b.bulletR([T("Templates: ", { bold: true }), T("112 件 (jp 56 + global 56)")]),
     b.bulletR([T("Companies: ", { bold: true }), T("7 leads (seed) + Apollo CSV import で随時拡張")]),
-    b.bulletR([T("Notion DBs: ", { bold: true }), T("11 個 (jp 4 + global 4 + Sprint 17 新 3)")]),
-    b.bulletR([T("Sub pages: ", { bold: true }), T("7 個 (Dashboard / 使い方 / 戦略 / Setup / R2 / SyncFlow / FAQ)")]),
-    b.bulletR([T("Source plugins (30+ API): ", { bold: true }), T("8 source 実装済 (PSI + gBizInfo + HTML + Wappalyzer + Hunter + SSL + Whois + Places)")]),
+    b.bulletR([T("Notion DBs: ", { bold: true }), T("11 倁E(jp 4 + global 4 + Sprint 17 新 3)")]),
+    b.bulletR([T("Sub pages: ", { bold: true }), T("7 倁E(Dashboard / 使ぁE�� / 戦略 / Setup / R2 / SyncFlow / FAQ)")]),
+    b.bulletR([T("Source plugins (30+ API): ", { bold: true }), T("8 source 実裁E��E(PSI + gBizInfo + HTML + Wappalyzer + Hunter + SSL + Whois + Places)")]),
     b.p(""),
 
     b.divider(),
@@ -219,7 +223,7 @@ async function buildHub() {
         linkT("Paradigmllc/Paradigmjpcom", "https://github.com/Paradigmllc/Paradigmjpcom"),
         T(" · Production: "),
         linkT("paradigmjp.com", "https://paradigmjp.com"),
-        T(" · Sprint 17 完了 2026-05-13"),
+        T(" · Sprint 17 完亁E2026-05-13"),
       ],
       "🚀",
       "default",
@@ -232,23 +236,23 @@ async function buildHub() {
     const chunk = blocks.slice(i, i + 90)
     const r = await n("PATCH", `/blocks/${PARENT_PAGE_ID}/children`, { children: chunk })
     if (!r.ok) {
-      console.error(`  ❌ chunk:`, JSON.stringify(r.data).slice(0, 200))
+      console.error(`  ❁Echunk:`, JSON.stringify(r.data).slice(0, 200))
       return false
     }
   }
-  console.log(`  ✅ ${blocks.length} blocks added`)
+  console.log(`  ✁E${blocks.length} blocks added`)
   return true
 }
 
 async function main() {
-  console.log("🚀 Sprint 17 親ハブ smart 再構築開始 (DBs/sub pages 保護)\n")
+  console.log("🚀 Sprint 17 親ハブ smart 再構築開姁E(DBs/sub pages 保護)\n")
   await smartClear()
   await buildHub()
   console.log(`
-✅ 完了:
-  - DBs: 全 11 個保護 (削除されない)
+✁E完亁E
+  - DBs: 全 11 個保護 (削除されなぁE
   - Sub pages: 全 7 個保護
-  - 親ハブ: クリーンな構造 (Hero + TOC + Sub pages nav + DB 概観 + 集計)
+  - 親ハブ: クリーンな構造 (Hero + TOC + Sub pages nav + DB 概観 + 雁E��E
 
   親ハブ: https://www.notion.so/35fa2b78f3fc81299d91e457889ee393
 `)

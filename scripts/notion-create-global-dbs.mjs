@@ -1,21 +1,25 @@
 #!/usr/bin/env node
 /**
- * scripts/notion-create-global-dbs.mjs — Sprint 16 グローバル版 4 DB 作成
+ * scripts/notion-create-global-dbs.mjs  ESprint 16 グローバル牁E4 DB 作�E
  *
- * 役割: 親ページ "Paradigm 営業 OS" 配下に英語版/グローバル版の 4 DB を新規作成.
- *       既存 jp 版 4 DB と並列・region='global' で完全分離.
+ * 役割: 親ペ�Eジ "Paradigm 営業 OS" 配下に英語版/グローバル版�E 4 DB を新規作�E.
+ *       既孁Ejp 牁E4 DB と並列�Eregion='global' で完�E刁E��.
  *
- * 作成する 4 DB:
+ * 作�Eする 4 DB:
  *   1. 🌍 Leads (Global)
  *   2. 🌍 Customers (Global)
  *   3. 🌍 Deliveries (Global)
  *   4. 🌍 Templates (Global)
  *
- * 入力: NOTION_API_KEY env
- * 出力: 4 DB の Notion ID (env に投入する用)
+ * 入劁E NOTION_API_KEY env
+ * 出劁E 4 DB の Notion ID (env に投�Eする用)
  */
 
-const NOTION_API_KEY = process.env.NOTION_API_KEY ?? "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"
+const NOTION_API_KEY = process.env.NOTION_API_KEY
+if (!NOTION_API_KEY) {
+  console.error('NOTION_API_KEY env var must be set')
+  process.exit(1)
+}
 const PARENT_PAGE_ID = "35fa2b78-f3fc-8129-9d91-e457889ee393"
 
 let lastCall = 0
@@ -111,11 +115,11 @@ async function createLeads() {
       "Deal Stage": {
         select: {
           options: [
-            { name: "未対応", color: "default" },
-            { name: "架電済", color: "yellow" },
-            { name: "商談中", color: "orange" },
-            { name: "提案済", color: "blue" },
-            { name: "成約", color: "green" },
+            { name: "未対忁E, color: "default" },
+            { name: "架電渁E, color: "yellow" },
+            { name: "啁E��E��", color: "orange" },
+            { name: "提案渁E, color: "blue" },
+            { name: "成紁E, color: "green" },
             { name: "失注", color: "red" },
           ],
         },
@@ -126,7 +130,7 @@ async function createLeads() {
         multi_select: {
           options: [
             { name: "speed_critical", color: "red" },
-            { name: "ua_残存", color: "red" },
+            { name: "ua_残孁E, color: "red" },
             { name: "ssl_expired", color: "red" },
             { name: "wp_outdated", color: "orange" },
             { name: "no_ogp", color: "yellow" },
@@ -155,8 +159,8 @@ async function createLeads() {
       "Updated": { last_edited_time: {} },
     },
   })
-  if (r.ok) console.log("  ✅ Leads (Global):", r.data.id)
-  else console.error("  ❌", r.error?.slice(0, 200))
+  if (r.ok) console.log("  ✁ELeads (Global):", r.data.id)
+  else console.error("  ❁E, r.error?.slice(0, 200))
   return r.ok ? r.data.id : null
 }
 
@@ -235,8 +239,8 @@ async function createCustomers() {
       "Updated": { last_edited_time: {} },
     },
   })
-  if (r.ok) console.log("  ✅ Customers (Global):", r.data.id)
-  else console.error("  ❌", r.error?.slice(0, 200))
+  if (r.ok) console.log("  ✁ECustomers (Global):", r.data.id)
+  else console.error("  ❁E, r.error?.slice(0, 200))
   return r.ok ? r.data.id : null
 }
 
@@ -285,8 +289,8 @@ async function createDeliveries() {
       "Updated": { last_edited_time: {} },
     },
   })
-  if (r.ok) console.log("  ✅ Deliveries (Global):", r.data.id)
-  else console.error("  ❌", r.error?.slice(0, 200))
+  if (r.ok) console.log("  ✁EDeliveries (Global):", r.data.id)
+  else console.error("  ❁E, r.error?.slice(0, 200))
   return r.ok ? r.data.id : null
 }
 
@@ -302,12 +306,12 @@ async function createTemplates() {
         type: "text",
         text: {
           content:
-            "Global market sales copy templates (8 industries × 7 issues = 56). Despair→Hope 5-stage frame encoded. Edits sync to Supabase via 5min cron → /report/[slug] reflects in 6 min.",
+            "Global market sales copy templates (8 industries ÁE7 issues = 56). Despair→Hope 5-stage frame encoded. Edits sync to Supabase via 5min cron ↁE/report/[slug] reflects in 6 min.",
         },
       },
     ],
     properties: {
-      "テンプレ名": { title: {} },
+      "チE��プレ吁E: { title: {} },
       "業種": {
         select: {
           options: [
@@ -322,11 +326,11 @@ async function createTemplates() {
           ],
         },
       },
-      "課題コード": {
+      "課題コーチE: {
         select: {
           options: [
             { name: "speed_critical", color: "red" },
-            { name: "ua_残存", color: "red" },
+            { name: "ua_残孁E, color: "red" },
             { name: "ssl_expired", color: "red" },
             { name: "wp_outdated", color: "orange" },
             { name: "no_ogp", color: "yellow" },
@@ -351,41 +355,41 @@ async function createTemplates() {
       "cta_text": { rich_text: {} },
       "有効": { checkbox: {} },
       "使用回数": { number: {} },
-      "平均 CVR (%)": { number: { format: "percent" } },
+      "平坁ECVR (%)": { number: { format: "percent" } },
       "最終使用日": { date: {} },
-      "備考": { rich_text: {} },
+      "備老E: { rich_text: {} },
       "最終更新": { last_edited_time: {} },
     },
   })
-  if (r.ok) console.log("  ✅ Templates (Global):", r.data.id)
-  else console.error("  ❌", r.error?.slice(0, 200))
+  if (r.ok) console.log("  ✁ETemplates (Global):", r.data.id)
+  else console.error("  ❁E, r.error?.slice(0, 200))
   return r.ok ? r.data.id : null
 }
 
 async function main() {
-  console.log("🌍 Sprint 16: Global Notion DBs 作成開始\n")
+  console.log("🌍 Sprint 16: Global Notion DBs 作�E開始\n")
   const leadsId = await createLeads()
   const customersId = await createCustomers()
   const deliveriesId = await createDeliveries()
   const templatesId = await createTemplates()
 
   console.log(`
-✅ Global Notion DBs created:
+✁EGlobal Notion DBs created:
 
-Coolify env 投入 (paradigm-hp i12am4vvcbggefnqdizhnv9a):
+Coolify env 投�E (paradigm-hp i12am4vvcbggefnqdizhnv9a):
   NOTION_DB_COMPANIES_GLOBAL=${leadsId ?? "(failed)"}
   NOTION_DB_CUSTOMERS_GLOBAL=${customersId ?? "(failed)"}
   NOTION_DB_DELIVERIES_GLOBAL=${deliveriesId ?? "(failed)"}
   NOTION_DB_TEMPLATES_GLOBAL=${templatesId ?? "(failed)"}
 
-参考: 既存 jp 版 (Sprint 8-14 で作成済)
+参老E 既孁Ejp 牁E(Sprint 8-14 で作�E渁E
   NOTION_DB_COMPANIES_JP=8cbab1f501144f83872c1738ce3e79c4
   NOTION_DB_CUSTOMERS_JP=86b1d93e3b854862ae7b2750d2585677
   NOTION_DB_DELIVERIES_JP=b3cbef9dd96f4e5bbbecc404c703a298
   NOTION_DB_TEMPLATES_JP=115e2b0e79424bb0813fc05402096f95
 
-次のステップ:
-  node scripts/seed-global-templates.mjs       # 56 en templates 投入
+次のスチE��チE
+  node scripts/seed-global-templates.mjs       # 56 en templates 投�E
   curl -X POST -H "X-Webhook-Secret: \$SECRET" \\
     -d '{"region":"global"}' \\
     https://paradigmjp.com/api/sales/sync-templates-from-notion

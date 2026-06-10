@@ -308,7 +308,12 @@ export function injectComfyuiWorkflowPrompt(
     .replace(/\{\{SEED\}\}/g, String(seed))
     .replace(/\{\{TIMESTAMP\}\}/g, String(timestamp))
 
-  return JSON.parse(injected) as Record<string, unknown>
+  try {
+    return JSON.parse(injected) as Record<string, unknown>
+  } catch (e) {
+    console.error("[comfyui-workflows] JSON parse failed:", e instanceof Error ? e.message : String(e))
+    return {}
+  }
 }
 
 /**

@@ -2,7 +2,11 @@
  * End-to-end Revenue OS pipeline verification.
  */
 const BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://paradigmjp.com"
-const SECRET = process.env.SALES_API_KEY || "5c87f8da90d66ee83385956b4c6e08e0df519a8a0685dbf9f0ffaa73bbdf8633"
+const SECRET = process.env.SALES_API_KEY
+if (!SECRET) {
+  console.error("SALES_API_KEY env var must be set")
+  process.exit(1)
+}
 const H = { "x-webhook-secret": SECRET }
 
 async function check(name, fn) {

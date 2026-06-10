@@ -58,7 +58,9 @@ async function collectDigest(scope: SalesLocaleScope): Promise<DigestData | { er
     sb
       .from("sales_companies")
       .select("deal_stage, prefecture, detected_issues, created_at")
-      .eq("report_locale", scope.reportLocale),
+      .eq("report_locale", scope.reportLocale)
+      .order("created_at", { ascending: false })
+      .limit(5000),
     sb
       .from("sales_companies")
       .select("id", { count: "exact", head: true })

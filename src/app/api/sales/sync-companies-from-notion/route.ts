@@ -17,7 +17,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { verifyWebhookSecret } from "@/lib/sales/auth"
 import { notionQueryDatabase, extractProperty } from "@/lib/notion"
 import { getServiceSalesSupabase } from "@/lib/supabase"
-import { upsertCompanyByDomain, setNotionPageId, findExistingCompany } from "@/lib/sales/companies"
+import { upsertCompanyByDomain, setNotionPageId, batchFindExistingByDomains } from "@/lib/sales/companies"
 import { enrichFromContact } from "@/lib/sales/enrich"
 import { normalizeDomain, normalizeCompanyName } from "@/lib/sales/dedup"
 import {
@@ -73,6 +73,16 @@ export async function POST(req: NextRequest) {
   let skipped = 0
   const errors: { notion_page_id: string; reason: string }[] = []
 
+  // Batch preload existing companies by domain (N+1 prevention)
+  const candidateDomains = rows
+    .map((r) => {
+      const props = r.properties
+      const raw = extractProperty(props, "ドメイン") || extractProperty(props, "Website") || extractProperty(props, "Domain") || extractProperty(props, "URL")
+      return normalizeDomain(typeof raw === "string" ? raw : null)
+    })
+    .filter((d): d is string => d !== null && d !== undefined && d.length > 0)
+  const existingMap = await batchFindExistingByDomains(candidateDomains)
+
   for (const row of rows) {
     const props = row.properties
 
@@ -108,9 +118,9 @@ export async function POST(req: NextRequest) {
     const industry: Industry | null =
       typeof industryRaw === "string" && isValidIndustry(industryRaw) ? industryRaw : null
 
-    // 既存判定: notion_page_id → canonical domain → name_key (重複作成防止)
+    // 既存判定: domain Map (batch preload) → name_key fallback
     const nameKey = normalizeCompanyName(typeof name === "string" ? name : null)
-    const existing = await findExistingCompany({ notionPageId: row.id, domain, nameKey, region })
+    const existing = domain ? (existingMap.get(domain) ?? null) : null
 
     if (existing) {
       // ── 既存: 編集可フィールドのみ反映 ──

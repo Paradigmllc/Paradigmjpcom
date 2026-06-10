@@ -16,7 +16,8 @@ export async function checkSpiderFootHealth(): Promise<{ ok: boolean; detail: st
   try {
     const res = await fetch(`${spiderfootUrl()}/health`, { signal: AbortSignal.timeout(10_000) })
     return { ok: res.ok, detail: `HTTP ${res.status}` }
-  } catch {
+  } catch (e) {
+    console.warn("[spiderfoot] health check failed:", e instanceof Error ? e.message : String(e))
     return { ok: false, detail: "unreachable (will use public API fallbacks)" }
   }
 }
@@ -38,8 +39,8 @@ async function runSpiderFootScan(target: string, modules: string[]): Promise<SfR
       if (data.ok) return { source: "spiderfoot", ok: true, data: data.data }
     }
     console.warn("[spiderfoot] self-hosted API unavailable, using public fallbacks")
-  } catch {
-    console.warn("[spiderfoot] self-hosted API unreachable, using public fallbacks")
+  } catch (e) {
+    console.warn("[spiderfoot] self-hosted API unreachable, using public fallbacks:", e instanceof Error ? e.message : String(e))
   }
 
   // Fallback: collect data from public APIs
@@ -54,7 +55,9 @@ async function runSpiderFootScan(target: string, modules: string[]): Promise<SfR
       const crtData = await crtRes.json() as Array<Record<string, unknown>>
       results.crtsh = { total_certs: crtData.length, latest: crtData[0] }
     }
-  } catch { /* public API failures are non-fatal */ }
+  } catch (e) {
+    console.warn("[spiderfoot] crt.sh fallback fetch failed:", e instanceof Error ? e.message : String(e))
+  }
 
   try {
     // DNS-over-HTTPS
@@ -66,7 +69,9 @@ async function runSpiderFootScan(target: string, modules: string[]): Promise<SfR
       const dnsData = await dnsRes.json() as { Answer?: Array<{ name: string; data: string }> }
       if (dnsData.Answer?.length) results.dns = dnsData.Answer.map(a => a.data)
     }
-  } catch { /* non-fatal */ }
+  } catch (e) {
+    console.warn("[spiderfoot] DNS-over-HTTPS fallback fetch failed:", e instanceof Error ? e.message : String(e))
+  }
 
   try {
     // WHOIS via RDAP
@@ -81,7 +86,9 @@ async function runSpiderFootScan(target: string, modules: string[]): Promise<SfR
         created: (rdapData as any).events?.find?.((e: any) => e.eventAction === "registration")?.eventDate,
       }
     }
-  } catch { /* non-fatal */ }
+  } catch (e) {
+    console.warn("[spiderfoot] RDAP WHOIS fallback fetch failed:", e instanceof Error ? e.message : String(e))
+  }
 
   return {
     source: "spiderfoot",

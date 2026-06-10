@@ -143,7 +143,14 @@ export default buildConfig({
       HorizontalRuleFeature(),
     ],
   }),
-  secret: process.env.PAYLOAD_SECRET || "fallback-secret-change-in-production",
+  secret: (() => {
+    const s = process.env.PAYLOAD_SECRET
+    if (!s) {
+      console.error("[payload] PAYLOAD_SECRET is not set — refusing to start")
+      process.exit(1)
+    }
+    return s
+  })(),
   typescript: {
     outputFile: path.resolve(dirname, "src/payload-types.ts"),
   },

@@ -96,7 +96,14 @@ async function twentyMetadataRequest<T>(path: string, init: RequestInit = {}): P
   })
   const text = await res.text()
   if (!res.ok) throw new Error(`Twenty metadata API HTTP ${res.status}: ${text.slice(0, 180)}`)
-  return (text ? JSON.parse(text) : null) as T
+  let parsed: unknown = null
+  try {
+    parsed = text ? JSON.parse(text) : null
+  } catch (e) {
+    console.error("[twenty-crm-metadata] JSON parse failed:", e instanceof Error ? e.message : String(e))
+    throw new Error(`Twenty metadata API HTTP ${res.status}: invalid JSON response`)
+  }
+  return parsed as T
 }
 
 async function applyTwentyCrmMetadataViaApi(input: {

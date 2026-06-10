@@ -17,19 +17,19 @@ services:
       - PORT=3001
     command: >
       sh -c "
-      apt-get update -qq && apt-get install -y -qq ffmpeg curl &&
-      curl -fsSL https://deb.nodesource.com/setup_24.x | bash - &&
-      apt-get install -y nodejs &&
-      npm install -g hyperframes@latest &&
-      mkdir -p /app/renders &&
-      echo 'HyperFrames renderer ready' &&
-      tail -f /dev/null
+      hyperframes serve --port 3001
       "
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+          cpus: "2.0"
     healthcheck:
-      test: ["CMD", "node", "-e", "process.exit(0)"]
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 30s
 
 volumes:
   hf-renders:

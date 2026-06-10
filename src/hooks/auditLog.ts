@@ -9,7 +9,8 @@ const safeDiff = (current: unknown, previous: unknown): string => {
       before: previous ?? null,
     }
     return JSON.stringify(diff).slice(0, 8000)
-  } catch {
+  } catch (e) {
+    console.warn("[auditLog] safeDiff JSON stringify failed:", e instanceof Error ? e.message : String(e))
     return ""
   }
 }

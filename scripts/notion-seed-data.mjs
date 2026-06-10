@@ -1,23 +1,27 @@
 #!/usr/bin/env node
 /**
- * scripts/notion-seed-data.mjs — Sprint 14 Notion 4 DB に initial データ投入
+ * scripts/notion-seed-data.mjs  ESprint 14 Notion 4 DB に initial チE�Eタ投�E
  *
- * 役割: Supabase の seed 6 companies + 56 templates を Notion 4 DB に reflect.
- *       ユーザーが Notion を開いた瞬間「使える状態」が出来ている.
+ * 役割: Supabase の seed 6 companies + 56 templates めENotion 4 DB に reflect.
+ *       ユーザーぁENotion を開ぁE��瞬間「使える状態」が出来てぁE��.
  *
- * 入力: NOTION_API_KEY + SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY
- * 出力: stdout に reflect 件数
+ * 入劁E NOTION_API_KEY + SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY
+ * 出劁E stdout に reflect 件数
  *
  * 流れ:
- *   1. Supabase から seed 6 companies + 56 templates 取得
- *   2. Notion リード DB に 6 ページ作成 (重複は domain でスキップ)
- *   3. Notion テンプレ DB に 56 ページ作成 (重複は template_name でスキップ)
- *   4. sample customer 1 件 + sample delivery 1 件追加 (Notion UI で「使い方が分かる」状態)
+ *   1. Supabase から seed 6 companies + 56 templates 取征E
+ *   2. Notion リーチEDB に 6 ペ�Eジ作�E (重褁E�E domain でスキチE�E)
+ *   3. Notion チE��プレ DB に 56 ペ�Eジ作�E (重褁E�E template_name でスキチE�E)
+ *   4. sample customer 1 件 + sample delivery 1 件追加 (Notion UI で「使ぁE��が�Eかる」状慁E
  */
 
 import { createClient } from "@supabase/supabase-js"
 
-const NOTION_API_KEY = process.env.NOTION_API_KEY ?? "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"
+const NOTION_API_KEY = process.env.NOTION_API_KEY
+if (!NOTION_API_KEY) {
+  console.error('NOTION_API_KEY env var must be set')
+  process.exit(1)
+}
 const SUPABASE_URL = process.env.SUPABASE_URL ?? "https://yihdmgtxiqfdgdueolub.supabase.co"
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
 
@@ -61,24 +65,24 @@ async function notionPost(path, body) {
   return { ok: true, data }
 }
 
-/** Industry コード → 日本語 select 値 */
+/** Industry コーチEↁE日本誁Eselect 値 */
 const INDUSTRY_LABEL = {
   beauty_salon: "美容室",
   dental: "歯科医院",
-  restaurant: "飲食店",
+  restaurant: "飲食庁E,
   construction: "建設業",
   accounting: "会計事務所",
-  retail: "小売店",
-  cleaning: "清掃業",
+  retail: "小売庁E,
+  cleaning: "渁E��業",
   consulting: "コンサル業",
 }
 
 const STAGE_LABEL = {
-  未対応: "未対応",
-  架電済: "架電済",
-  商談中: "商談中",
-  提案済: "提案済",
-  成約: "成約",
+  未対忁E "未対忁E,
+  架電渁E "架電渁E,
+  啁E��E��: "啁E��E��",
+  提案渁E "提案渁E,
+  成紁E "成紁E,
   失注: "失注",
 }
 
@@ -90,7 +94,7 @@ const PIPELINE_LABEL = {
   manual_queue: "manual_queue",
 }
 
-/* ───── リード DB: 6 companies sync ───── */
+/* ───── リーチEDB: 6 companies sync ───── */
 async function syncLeads() {
   const { data: companies, error } = await sb
     .from("sales_companies")
@@ -103,7 +107,7 @@ async function syncLeads() {
   }
   console.log(`Found ${companies.length} companies in Supabase`)
 
-  // 既存 Notion ページを domain で取得 (重複防止)
+  // 既孁ENotion ペ�EジめEdomain で取征E(重褁E��止)
   const existingByDomain = new Set()
   let cursor = undefined
   do {
@@ -128,7 +132,7 @@ async function syncLeads() {
       continue
     }
     const props = {
-      "企業名": { title: [{ text: { content: c.company_name } }] },
+      "企業吁E: { title: [{ text: { content: c.company_name } }] },
       "ドメイン": { url: c.domain.startsWith("http") ? c.domain : `https://${c.domain}` },
       "slug (URL)": c.slug ? { rich_text: [{ text: { content: c.slug } }] } : { rich_text: [] },
       "業種": c.industry
@@ -136,32 +140,32 @@ async function syncLeads() {
         : { select: null },
       "都道府県": c.prefecture ? { select: { name: c.prefecture } } : { select: null },
       "パイプライン": { select: { name: PIPELINE_LABEL[c.pipeline_status] ?? c.pipeline_status } },
-      "商談ステージ": { select: { name: STAGE_LABEL[c.deal_stage] ?? c.deal_stage } },
+      "啁E��E��チE�Eジ": { select: { name: STAGE_LABEL[c.deal_stage] ?? c.deal_stage } },
       "モバイルスコア": c.pagespeed_mobile !== null ? { number: c.pagespeed_mobile } : { number: null },
       "PCスコア": c.pagespeed_desktop !== null ? { number: c.pagespeed_desktop } : { number: null },
-      "検出課題":
+      "検�E課顁E:
         c.detected_issues && c.detected_issues.length
           ? { multi_select: c.detected_issues.map((i) => ({ name: i })) }
           : { multi_select: [] },
-      "レポート閲覧数": { number: c.report_views ?? 0 },
-      "HOTリード": { checkbox: !!c.is_hot_lead },
+      "レポ�Eト閲覧数": { number: c.report_views ?? 0 },
+      "HOTリーチE: { checkbox: !!c.is_hot_lead },
       "ソース": c.source ? { select: { name: c.source } } : { select: null },
       "メモ": c.memo ? { rich_text: [{ text: { content: c.memo } }] } : { rich_text: [] },
     }
     const r = await notionPost("/pages", { parent: { database_id: DB.leads }, properties: props })
     if (r.ok) {
       created++
-      // 作成後 sales_companies に notion_page_id を書込 (双方向 sync 準備)
+      // 作�E征Esales_companies に notion_page_id を書込 (双方吁Esync 準備)
       await sb.from("sales_companies").update({ notion_page_id: r.data.id }).eq("id", c.id)
     } else {
-      console.error(`  ❌ ${c.company_name}:`, r.error.slice(0, 150))
+      console.error(`  ❁E${c.company_name}:`, r.error.slice(0, 150))
     }
   }
-  console.log(`✅ Leads: ${created} created / ${skipped} skipped (already exists)`)
+  console.log(`✁ELeads: ${created} created / ${skipped} skipped (already exists)`)
   return created
 }
 
-/* ───── テンプレ DB: 56 templates sync ───── */
+/* ───── チE��プレ DB: 56 templates sync ───── */
 async function syncTemplates() {
   const { data: templates, error } = await sb
     .from("sales_templates")
@@ -174,7 +178,7 @@ async function syncTemplates() {
   }
   console.log(`Found ${templates.length} templates in Supabase`)
 
-  // 既存 Notion テンプレを template_name で取得
+  // 既孁ENotion チE��プレめEtemplate_name で取征E
   const existingByName = new Set()
   let cursor = undefined
   do {
@@ -184,7 +188,7 @@ async function syncTemplates() {
     })
     if (!q.ok) break
     for (const r of q.data.results) {
-      const title = r.properties?.["テンプレ名"]?.title?.[0]?.plain_text
+      const title = r.properties?.["チE��プレ吁E]?.title?.[0]?.plain_text
       if (title) existingByName.add(title)
     }
     cursor = q.data.has_more ? q.data.next_cursor : undefined
@@ -199,9 +203,9 @@ async function syncTemplates() {
       continue
     }
     const props = {
-      "テンプレ名": { title: [{ text: { content: t.template_name } }] },
+      "チE��プレ吁E: { title: [{ text: { content: t.template_name } }] },
       "業種": { select: { name: INDUSTRY_LABEL[t.industry] ?? t.industry } },
-      "課題コード": { select: { name: t.issue_code } },
+      "課題コーチE: { select: { name: t.issue_code } },
       "重要度": { select: { name: t.severity } },
       "headline": t.headline ? { rich_text: [{ text: { content: t.headline.slice(0, 2000) } }] } : { rich_text: [] },
       "pain": t.pain ? { rich_text: [{ text: { content: t.pain.slice(0, 2000) } }] } : { rich_text: [] },
@@ -215,40 +219,40 @@ async function syncTemplates() {
       created++
       await sb.from("sales_templates").update({ notion_page_id: r.data.id }).eq("id", t.id)
     } else {
-      console.error(`  ❌ ${t.template_name}:`, r.error.slice(0, 150))
+      console.error(`  ❁E${t.template_name}:`, r.error.slice(0, 150))
     }
   }
-  console.log(`✅ Templates: ${created} created / ${skipped} skipped`)
+  console.log(`✁ETemplates: ${created} created / ${skipped} skipped`)
   return created
 }
 
-/* ───── 顧客 DB: sample 1 件 (使い方が分かるよう) ───── */
+/* ───── 顧客 DB: sample 1 件 (使ぁE��が�Eかるよう) ───── */
 async function seedSampleCustomer() {
   console.log("👤 Creating sample customer...")
   const props = {
-    "顧客名": { title: [{ text: { content: "[サンプル] 居酒屋 縁 (HOT lead からの成約例)" } }] },
-    "契約商材": {
+    "顧客吁E: { title: [{ text: { content: "[サンプル] 屁E�E屁E縁E(HOT lead からの成紁E��E" } }] },
+    "契紁E��杁E: {
       multi_select: [
-        { name: "Web制作" },
-        { name: "MEO対策" },
+        { name: "Web制佁E },
+        { name: "MEO対筁E },
       ],
     },
-    "月額": { number: 50000 },
-    "契約開始日": { date: { start: "2026-05-01" } },
+    "月顁E: { number: 50000 },
+    "契紁E��始日": { date: { start: "2026-05-01" } },
     "次回請求日": { date: { start: "2026-06-01" } },
-    "契約ステータス": { select: { name: "継続中" } },
+    "契紁E��チE�Eタス": { select: { name: "継続中" } },
     "健全度": { select: { name: "🟢 良好" } },
-    "WL対応": { checkbox: false },
+    "WL対忁E: { checkbox: false },
     "WLクライアント数": { number: 0 },
-    "補助金申請状況": { select: { name: "申請中" } },
-    "紹介経由": { rich_text: [{ text: { content: "Web 経由・診断レポート閲覧 7 回後にコンタクト" } }] },
+    "補助金申請状況E: { select: { name: "申請中" } },
+    "紹介経由": { rich_text: [{ text: { content: "Web 経由・診断レポ�Eト閲覧 7 回後にコンタクチE } }] },
   }
   const r = await notionPost("/pages", { parent: { database_id: DB.customers }, properties: props })
   if (r.ok) {
-    console.log("✅ Sample customer created:", r.data.id)
+    console.log("✁ESample customer created:", r.data.id)
     return 1
   }
-  console.error("  ❌ Sample customer failed:", r.error?.slice(0, 200))
+  console.error("  ❁ESample customer failed:", r.error?.slice(0, 200))
   return 0
 }
 
@@ -256,21 +260,21 @@ async function seedSampleCustomer() {
 async function seedSampleDelivery() {
   console.log("📦 Creating sample delivery...")
   const props = {
-    "納品物名": { title: [{ text: { content: "[サンプル] 居酒屋 縁 60s 診断動画" } }] },
+    "納品物吁E: { title: [{ text: { content: "[サンプル] 屁E�E屁E縁E60s 診断動画" } }] },
     "種別": { select: { name: "動画(HyperFrames)" } },
-    "ステータス": { select: { name: "納品済" } },
+    "スチE�Eタス": { select: { name: "納品渁E } },
     "納品期限": { date: { start: "2026-05-10" } },
     "納品URL": { url: "https://paradigmjp.com/ja/report/izakaya-en/video" },
-    "Cloudflare R2 パス": { rich_text: [{ text: { content: "(HTML preview 配信中・MP4 化は HyperFrames 設定後)" } }] },
-    "進捗 %": { number: 1.0 },
-    "公開": { checkbox: true },
+    "Cloudflare R2 パス": { rich_text: [{ text: { content: "(HTML preview 配信中・MP4 化�E HyperFrames 設定征E" } }] },
+    "進捁E%": { number: 1.0 },
+    "公閁E: { checkbox: true },
   }
   const r = await notionPost("/pages", { parent: { database_id: DB.deliveries }, properties: props })
   if (r.ok) {
-    console.log("✅ Sample delivery created:", r.data.id)
+    console.log("✁ESample delivery created:", r.data.id)
     return 1
   }
-  console.error("  ❌ Sample delivery failed:", r.error?.slice(0, 200))
+  console.error("  ❁ESample delivery failed:", r.error?.slice(0, 200))
   return 0
 }
 
@@ -281,9 +285,9 @@ async function main() {
   const templateCount = await syncTemplates()
   const customerCount = await seedSampleCustomer()
   const deliveryCount = await seedSampleDelivery()
-  console.log(`\n✅ 完了:
-  🎯 リード: ${leadCount} 件新規
-  📝 テンプレ: ${templateCount} 件新規
+  console.log(`\n✁E完亁E
+  🎯 リーチE ${leadCount} 件新要E
+  📝 チE��プレ: ${templateCount} 件新要E
   🏢 顧客: ${customerCount} 件 (sample)
   📦 納品: ${deliveryCount} 件 (sample)`)
 }

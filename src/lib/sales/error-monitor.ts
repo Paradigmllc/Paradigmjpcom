@@ -45,9 +45,8 @@ async function ensureTable(): Promise<void> {
         })
       }
       tableReady = true
-    } catch {
-      // Table creation not possible in this environment
-      // Errors will still be logged to console.error
+    } catch (e) {
+      console.error("[error-monitor] ensureTable failed at both RPC and REST:", e instanceof Error ? e.message : String(e))
     }
   }
   tableReady = true // Don't retry in this session
@@ -138,7 +137,8 @@ async function flush(): Promise<void> {
     const { error } = await sb.from("sales_error_log").insert(rows)
     if (error) console.error("[error-monitor] flush failed:", error.message)
   } catch (e) {
-    // Last resort — don't infinitely recurse
+    // Last resort — log to stderr since we can't recurse into logError
+    process.stderr.write(`[error-monitor] flush failed: ${e instanceof Error ? e.message : String(e)}\n`)
   }
 }
 

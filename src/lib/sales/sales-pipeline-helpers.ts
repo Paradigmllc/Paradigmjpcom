@@ -64,7 +64,11 @@ export function getSalesPipelineTriggerConfig() {
     optionalEnv("TRIGGER_DEV_SALES_OS_PIPELINE_TASK_ID") ??
     "sales-os-pipeline"
   const secretKey = optionalEnv("TRIGGER_SECRET_KEY") ?? optionalEnv("TRIGGER_ACCESS_TOKEN") ?? optionalEnv("TRIGGER_DEV_API_KEY")
-  const apiUrl = (optionalEnv("TRIGGER_API_URL") ?? "http://localhost:8030").replace(/\/+$/, "")
+  const apiUrlRaw = optionalEnv("TRIGGER_API_URL")
+  if (!apiUrlRaw) {
+    console.error("[sales-pipeline-helpers] TRIGGER_API_URL is not configured")
+  }
+  const apiUrl = (apiUrlRaw ?? "").replace(/\/+$/, "")
   const dashboardUrl = optionalEnv("TRIGGER_DASHBOARD_URL") ?? optionalEnv("NEXT_PUBLIC_TRIGGER_DASHBOARD_URL")
   const endpoint = taskId ? `${apiUrl}/api/v1/tasks/${encodeURIComponent(taskId)}/trigger` : null
   return { taskId, secretKey, apiUrl, dashboardUrl, endpoint }

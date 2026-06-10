@@ -34,7 +34,8 @@ export async function checkTriggerDevHealth(): Promise<ServiceHealthResult> {
   const secretKey = envValue("TRIGGER_SECRET_KEY") ?? envValue("TRIGGER_ACCESS_TOKEN") ?? envValue("TRIGGER_DEV_API_KEY")
   if (!secretKey) return notConfigured(["TRIGGER_SECRET_KEY or TRIGGER_ACCESS_TOKEN or TRIGGER_DEV_API_KEY"])
   try {
-    const base = envValue("TRIGGER_API_URL") ?? "http://localhost:8030"
+    const base = envValue("TRIGGER_API_URL")
+    if (!base) return notConfigured(["TRIGGER_API_URL"])
     const url = new URL(base)
     url.pathname = `${url.pathname}/api/v1/runs`.replace(/\/+/g, "/")
     url.searchParams.set("limit", "1")

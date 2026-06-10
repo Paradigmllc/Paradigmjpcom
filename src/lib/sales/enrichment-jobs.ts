@@ -113,7 +113,12 @@ function enrichmentTriggerEndpoint(): string | null {
     optionalEnv("TRIGGER_DEV_SALES_ENRICHMENT_TASK_ID") ??
     "sales-enrichment-runner"
 
-  const apiUrl = (optionalEnv("TRIGGER_API_URL") ?? "http://localhost:8030").replace(/\/+$/, "")
+  const apiUrlRaw = optionalEnv("TRIGGER_API_URL")
+  if (!apiUrlRaw) {
+    console.error("[enrichment-jobs] TRIGGER_API_URL is not configured")
+    return null
+  }
+  const apiUrl = apiUrlRaw.replace(/\/+$/, "")
   return `${apiUrl}/api/v1/tasks/${encodeURIComponent(taskId)}/trigger`
 }
 
