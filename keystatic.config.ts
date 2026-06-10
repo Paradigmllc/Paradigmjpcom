@@ -37,6 +37,63 @@ export default config({
           label: "アクセントカラー（ダーク）",
           defaultValue: "#5b21b6",
         }),
+        // ── UIデザイン管理 ──
+        theme: fields.select({
+          label: "テーマ",
+          defaultValue: "dark",
+          options: [
+            { label: "ダーク (Framer風)", value: "dark" },
+            { label: "ライト (Chronicle風)", value: "light" },
+            { label: "グラスモーフィズム", value: "glass" },
+          ],
+        }),
+        heroLayout: fields.select({
+          label: "ヒーローレイアウト",
+          defaultValue: "split",
+          options: [
+            { label: "左右分割", value: "split" },
+            { label: "中央揃え", value: "centered" },
+            { label: "全画面", value: "fullscreen" },
+          ],
+        }),
+        cardStyle: fields.select({
+          label: "カードスタイル",
+          defaultValue: "glass",
+          options: [
+            { label: "グラス", value: "glass" },
+            { label: "ソリッド", value: "solid" },
+            { label: "ボーダー", value: "bordered" },
+            { label: "フラット", value: "flat" },
+          ],
+        }),
+        animationLevel: fields.select({
+          label: "アニメーション量",
+          defaultValue: "rich",
+          options: [
+            { label: "控えめ", value: "subtle" },
+            { label: "標準", value: "moderate" },
+            { label: "リッチ", value: "rich" },
+          ],
+        }),
+        fontPairing: fields.select({
+          label: "フォント",
+          defaultValue: "inter-noto",
+          options: [
+            { label: "Inter + Noto Sans JP", value: "inter-noto" },
+            { label: "Geist + Mono", value: "geist-mono" },
+            { label: "Playfair + Inter", value: "playfair-inter" },
+          ],
+        }),
+        appeal: fields.select({
+          label: "訴求タイプ",
+          defaultValue: "diagnostic",
+          options: [
+            { label: "診断重視", value: "diagnostic" },
+            { label: "営業提案", value: "sales" },
+            { label: "ブランド訴求", value: "brand" },
+            { label: "技術スタック", value: "tech" },
+          ],
+        }),
         status: fields.select({
           label: "状態",
           defaultValue: "draft",
