@@ -1,5 +1,5 @@
 /**
- * src/middleware.ts — locale routing + noindex header + demo video rewrite
+ * src/middleware.ts — locale routing + noindex header for archived report URLs
  */
 import { NextRequest, NextResponse } from "next/server"
 import createMiddleware from "next-intl/middleware"
@@ -34,22 +34,8 @@ function rewriteKeystaticSubdomain(request: NextRequest): NextResponse | null {
 
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-
   const keystaticRewrite = rewriteKeystaticSubdomain(request)
   if (keystaticRewrite) return keystaticRewrite
-
-  // Rewrite /report/demo/:variant/video → /report/demo-:variant/video
-  // Demo pages use /demo/:variant but [slug]/video expects single-segment slugs.
-  const demoVideoMatch = pathname.match(/^\/([a-z]{2})\/report\/demo\/([^/]+)\/video$/)
-  if (demoVideoMatch) {
-    const [, locale, variant] = demoVideoMatch
-    const dest = `/${locale}/report/demo-${variant}/video`
-    const url = request.nextUrl.clone()
-    url.pathname = dest
-    const res = NextResponse.rewrite(url)
-    if (NOINDEX_PATTERN.test(pathname)) res.headers.set("X-Robots-Tag", NOINDEX_VALUE)
-    return res
-  }
 
   const response = intlMiddleware(request)
 
