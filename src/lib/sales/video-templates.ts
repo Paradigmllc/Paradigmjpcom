@@ -5,6 +5,7 @@
  * one message per scene, sourced evidence, restrained motion, and readable type.
  */
 import type { DiagnosticAct, DiagnosticReportData } from "./diagnostic"
+import { videoLabels } from "./video-template-labels"
 
 interface VideoTheme {
   bg: string
@@ -30,10 +31,8 @@ interface VideoScript {
 const CORRUPT_TEXT = /驍ｵ・ｺ|驛｢|髫ｴ|鬮ｫ|髯桍鬯ｮ|髯毫鬨ｾ|髣培鬮ｯ|髯弓髫ｲ|髯ｷ|郢掟邵ｺ|隴斈陋ｻ|陷・陷鋼隹ｺ|・・繝ｻ/
 
 const SVG = {
-  arrow: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-5 5 5-5 5"/></svg>',
-  chart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h16M8 16v-4m5 4V8m5 8v-7"/></svg>',
-  check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg>',
-  radar: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 21 8v8l-9 5-9-5V8l9-5Zm0 4v10m-5-7 10 6m0-6L7 16"/></svg>',
+  arrow: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-5 5 5-5 5"/></svg>', chart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h16M8 16v-4m5 4V8m5 8v-7"/></svg>',
+  check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg>', radar: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 21 8v8l-9 5-9-5V8l9-5Zm0 4v10m-5-7 10 6m0-6L7 16"/></svg>',
 }
 
 function esc(value: string | null | undefined): string {
@@ -133,42 +132,13 @@ function themeForVariant(variant: string): VideoTheme {
   }
 }
 
-function labels(locale: string) {
-  const ja = locale === "ja"
-  return {
-    eyebrow: ja ? "公開データ診断" : "Public evidence brief",
-    evidence: ja ? "見つかった根拠" : "Evidence found",
-    coverage: ja ? "取得データ率" : "Data coverage",
-    current: ja ? "現在" : "Current",
-    target: ja ? "改善目安" : "Target",
-    loss: ja ? "推定機会損失" : "Estimated leakage",
-    monthly: ja ? "月間目安" : "Monthly estimate",
-    annual: ja ? "年間換算" : "Annualized",
-    demo: ja ? "改善後の見え方" : "Replacement demo",
-    proof: ja ? "判断材料" : "Proof",
-    cta: ja ? "次の一手" : "Next action",
-    generated: ja ? "診断レポートから自動生成" : "Generated from the diagnostic report",
-    report: ja ? "詳細レポート" : "Report",
-    booking: ja ? "相談予約" : "Booking",
-    play: ja ? "再生" : "Play",
-    pause: ja ? "一時停止" : "Pause",
-    replay: ja ? "最初から" : "Replay",
-    timeline: ja ? "再生位置" : "Timeline",
-    scenes: ja ? ["異変", "根拠", "損失", "未来", "実行"] : ["Tension", "Evidence", "Leakage", "Future", "Action"],
-    defaultHook: ja ? "訪問者が離脱する前に、どこで迷い、何を直すべきかを短く見える化します。" : "A focused view of where visitors hesitate and what to fix first.",
-    defaultPain: ja ? "検索、SNS、フォーム、表示速度の公開シグナルから、予約や問い合わせの手前で摩擦が起きている箇所を特定しました。" : "Search, social, form, and speed signals show where buyers may hesitate.",
-    defaultFear: ja ? "放置すると、小さな摩擦が毎月の機会損失として積み上がります。" : "Left alone, small points of friction compound into monthly leakage.",
-    defaultHope: ja ? "信頼材料、導線、初回表示体験を整えると、訪問者は迷わず次の行動へ進めます。" : "Clear proof, a shorter path, and a better first view can reduce drop-off.",
-    defaultCta: ja ? "詳細レポートと改善デモを見ながら、最初に直す優先順位を決めましょう。" : "Review the report and demo, then confirm the next priorities.",
-  }
-}
 function actAt(data: DiagnosticReportData, index: number, fallback: string): DiagnosticAct | null {
   return data.acts[index] ?? data.acts.find((act) => !CORRUPT_TEXT.test(act.headline)) ?? null
 }
 
 export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoScript): string {
   const theme = themeForVariant(data.template_variant)
-  const t = labels(data.report_locale)
+  const t = videoLabels(data.report_locale)
   const company = cleanText(data.company_name, "Target company", 56)
   const hook = cleanText(script.hook || data.hook, t.defaultHook, 92)
   const summaryTitle = data.report_locale === "ja"
@@ -508,8 +478,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
     import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.181.2/+esm";
     const canvas = document.getElementById("three-layer");
     const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
-    renderer.setSize(1920, 1080, false);
-    renderer.setPixelRatio(1);
+    renderer.setSize(1920, 1080, false); renderer.setPixelRatio(1);
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(34, 1920 / 1080, 0.1, 100);
     camera.position.set(0, 0, 7.2);
@@ -520,8 +489,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
     for (let i = 0; i < 7; i += 1) {
       const geo = i % 2 === 0 ? new THREE.IcosahedronGeometry(.5 + i * .06, 1) : new THREE.TorusGeometry(.42 + i * .04, .012, 8, 42);
       const mesh = new THREE.Mesh(geo, i % 3 === 0 ? accent : material);
-      mesh.position.set((i - 3) * .86, Math.sin(i) * 1.1, -i * .18);
-      group.add(mesh);
+      mesh.position.set((i - 3) * .86, Math.sin(i) * 1.1, -i * .18); group.add(mesh);
     }
     const lineMaterial = new THREE.LineBasicMaterial({ color: 0x93c5fd, transparent: true, opacity: .18 });
     for (let i = 0; i < 8; i += 1) {
@@ -529,14 +497,11 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
       group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), lineMaterial));
     }
     function renderAt(time) {
-      group.rotation.y = time * .045;
-      group.rotation.x = Math.sin(time * .18) * .08;
+      group.rotation.y = time * .045; group.rotation.x = Math.sin(time * .18) * .08;
       group.children.forEach(function(child, index) {
-        child.rotation.x = time * (.08 + index * .012);
-        child.rotation.y = time * (.12 + index * .009);
+        child.rotation.x = time * (.08 + index * .012); child.rotation.y = time * (.12 + index * .009);
       });
-      camera.position.x = Math.sin(time * .11) * .28;
-      camera.position.y = Math.cos(time * .09) * .18;
+      camera.position.x = Math.sin(time * .11) * .28; camera.position.y = Math.cos(time * .09) * .18;
       renderer.render(scene, camera);
     }
     window.addEventListener("hf-seek", function(event) { renderAt(event.detail.time || 0); });
