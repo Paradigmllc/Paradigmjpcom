@@ -1,31 +1,32 @@
 /**
- * stagehand-enrich-source.ts — Stagehand AI browser enrichment source
+ * stagehand-enrich-source.ts — Stagehand AI browser enrichment (SDK in-process)
  *
- * Uses Stagehand OSS for AI-powered site data extraction and form discovery.
- * Self-hosted at STAGEHAND_URL (default: https://stagehand.paradigmjp.com)
+ * Uses Stagehand OSS directly as an SDK within the Node.js process.
+ * No separate Docker service needed — runs headless Chromium in-app.
  *
- * Replaces Skyvern as the primary AI browser automation source for enrichment.
+ * Falls back gracefully if Playwright/Stagehand not installed.
  */
 import { envValue } from "../oss-service-health"
 
-function stagehandUrl(): string {
-  return (envValue("STAGEHAND_URL") ?? "http://localhost:3000").replace(/\/+$/, "")
-}
-
-function stagehandKey(): string | null {
-  return envValue("STAGEHAND_API_KEY") ?? null
+let _stagehandModule: any = null
+async function getStagehand() {
+  if (_stagehandModule) return _stagehandModule
+  try {
+    const { Stagehand } = await import("@browserbasehq/stagehand")
+    _stagehandModule = { Stagehand }
+    return _stagehandModule
+  } catch {
+    console.warn("[stagehand-enrich] @browserbasehq/stagehand not installed — using fallback")
+    return null
+  }
 }
 
 export async function checkStagehandEnrichHealth(): Promise<{ ok: boolean; detail: string }> {
   try {
-    const url = stagehandUrl()
-    const headers: Record<string, string> = {}
-    const key = stagehandKey()
-    if (key) headers["Authorization"] = `Bearer ${key}`
-    const res = await fetch(`${url}/`, { headers, signal: AbortSignal.timeout(10_000) })
-    return { ok: res.ok, detail: `HTTP ${res.status}` }
+    const mod = await getStagehand()
+    return { ok: !!mod, detail: mod ? "Stagehand SDK available" : "Stagehand SDK not installed" }
   } catch (e) {
-    return { ok: false, detail: `unreachable: ${e instanceof Error ? e.message : String(e)}` }
+    return { ok: false, detail: `SDK error: ${e instanceof Error ? e.message : String(e)}` }
   }
 }
 
@@ -36,47 +37,49 @@ interface StagehandExtractResult {
     description?: string
     bodyText?: string
     links?: string[]
-    images?: string[]
     forms?: Array<{ action?: string; method?: string; fields?: Array<{ name: string; type: string }> }>
-    techHints?: string[]
   }
   error?: string
 }
 
 export async function extractSiteData(url: string): Promise<StagehandExtractResult> {
   if (!url?.startsWith("http")) return { ok: false, error: "invalid url" }
-  const apiUrl = stagehandUrl()
-  const key = stagehandKey()
-  const headers: Record<string, string> = { "Content-Type": "application/json" }
-  if (key) headers["Authorization"] = `Bearer ${key}`
-
   try {
-    const res = await fetch(`${apiUrl}/extract`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ url, mode: "full_extraction" }),
-      signal: AbortSignal.timeout(120_000),
+    const mod = await getStagehand()
+    if (!mod) return { ok: false, error: "Stagehand SDK not available" }
+
+    const stagehand = new mod.Stagehand({
+      env: "LOCAL",
+      headless: true,
+      logger: () => {},
     })
-    if (!res.ok) {
-      return { ok: false, error: `Stagehand HTTP ${res.status}` }
-    }
-    const data = await res.json() as {
-      title?: string; description?: string; bodyText?: string;
-      links?: string[]; images?: string[];
-      forms?: Array<{ action?: string; method?: string; fields?: Array<{ name: string; type: string }> }>;
-      techHints?: string[];
-    }
+    await stagehand.init()
+    await stagehand.page.goto(url, { waitUntil: "networkidle", timeout: 30000 })
+
+    const title = await stagehand.page.title()
+    const bodyText = await stagehand.page.evaluate(() => document.body.innerText.slice(0, 10000))
+    const links = await stagehand.page.evaluate(() =>
+      Array.from(document.querySelectorAll("a[href]")).map(a => (a as HTMLAnchorElement).href).slice(0, 200)
+    )
+    const forms = await stagehand.page.evaluate(() =>
+      Array.from(document.querySelectorAll("form")).map(f => ({
+        action: (f as HTMLFormElement).action || "",
+        method: (f as HTMLFormElement).method || "GET",
+        fields: Array.from(f.querySelectorAll("input,textarea,select")).map(el => ({
+          name: (el as HTMLInputElement).name || "",
+          type: (el as HTMLInputElement).type || "text",
+        })),
+      })).slice(0, 10)
+    )
+    const description = await stagehand.page.evaluate(() =>
+      (document.querySelector('meta[name="description"]') as HTMLMetaElement)?.content || ""
+    )
+
+    await stagehand.close()
+
     return {
       ok: true,
-      data: {
-        title: data.title,
-        description: data.description,
-        bodyText: data.bodyText?.slice(0, 10000),
-        links: data.links?.slice(0, 200),
-        images: data.images?.slice(0, 50),
-        forms: data.forms?.slice(0, 10),
-        techHints: data.techHints,
-      },
+      data: { title, description, bodyText, links, forms },
     }
   } catch (e) {
     console.error("[stagehand-enrich] extract failed:", e)
@@ -86,38 +89,39 @@ export async function extractSiteData(url: string): Promise<StagehandExtractResu
 
 interface StagehandFormResult {
   ok: boolean
-  data?: {
-    forms: Array<{ url: string; method: string; fields: Array<{ name: string; type: string; required: boolean }> }>
-    totalForms: number
-  }
+  data?: { forms: Array<{ url: string; method: string; fields: Array<{ name: string; type: string; required: boolean }> }>; totalForms: number }
   error?: string
 }
 
 export async function discoverForms(url: string): Promise<StagehandFormResult> {
   if (!url?.startsWith("http")) return { ok: false, error: "invalid url" }
-  const apiUrl = stagehandUrl()
-  const key = stagehandKey()
-  const headers: Record<string, string> = { "Content-Type": "application/json" }
-  if (key) headers["Authorization"] = `Bearer ${key}`
-
   try {
-    const res = await fetch(`${apiUrl}/discover-form`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ url, mode: "contact_form_discovery" }),
-      signal: AbortSignal.timeout(90_000),
+    const mod = await getStagehand()
+    if (!mod) return { ok: false, error: "Stagehand SDK not available" }
+
+    const stagehand = new mod.Stagehand({
+      env: "LOCAL",
+      headless: true,
+      logger: () => {},
     })
-    if (!res.ok) {
-      return { ok: false, error: `Stagehand HTTP ${res.status}` }
-    }
-    const data = await res.json() as {
-      formUrl?: string; forms?: Array<{ url: string; method: string; fields: Array<{ name: string; type: string; required: boolean }> }>;
-    }
-    const forms = data.forms ?? (data.formUrl ? [{ url: data.formUrl, method: "POST", fields: [] }] : [])
-    return {
-      ok: true,
-      data: { forms, totalForms: forms.length },
-    }
+    await stagehand.init()
+    await stagehand.page.goto(url, { waitUntil: "networkidle", timeout: 30000 })
+
+    const forms = await stagehand.page.evaluate(() =>
+      Array.from(document.querySelectorAll("form")).map(f => ({
+        url: (f as HTMLFormElement).action || window.location.href,
+        method: (f as HTMLFormElement).method || "POST",
+        fields: Array.from(f.querySelectorAll("input,textarea,select")).map(el => ({
+          name: (el as HTMLInputElement).name || "",
+          type: (el as HTMLInputElement).type || "text",
+          required: (el as HTMLInputElement).required || false,
+        })),
+      })).slice(0, 10)
+    )
+
+    await stagehand.close()
+
+    return { ok: true, data: { forms, totalForms: forms.length } }
   } catch (e) {
     console.error("[stagehand-enrich] form discovery failed:", e)
     return { ok: false, error: e instanceof Error ? e.message : String(e) }
