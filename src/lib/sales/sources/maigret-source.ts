@@ -1,51 +1,46 @@
 /**
- * Maigret — social media username search across 2500+ sites.
- * Docker: python:3.11-slim + pip install maigret
- * Usage: docker run --rm maigret <username> --json simple --timeout 15
+ * Maigret social search — via HTTP API gateway.
+ * Requires osint-gateway Docker service running on MAIGRET_API_URL (default: http://localhost:5003).
  */
-import { execSync } from "node:child_process"
+import { envValue } from "../oss-service-health"
 
-interface MgResult { source: string; ok: boolean; data?: unknown; error?: string }
+interface MaigretResult { source: string; ok: boolean; data?: Record<string, unknown>; error?: string }
 
-function runMaigret(username: string, timeoutMs = 45_000): MgResult {
-  if (!username?.trim()) return { source: "maigret", ok: false, error: "empty username" }
-  try {
-    const output = execSync(
-      `docker run --rm --entrypoint maigret python:3.11-slim bash -c "pip install -q maigret 2>/dev/null && maigret '${username.replace(/'/g, "'\\''")}' --no-color --no-progressbar --json simple --timeout 10 --retries 1"`,
-      { timeout: timeoutMs + 60_000, encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] }
-    )
-    try {
-      const data = JSON.parse(output)
-      const sites = Array.isArray(data) ? data : (data?.sites || [])
-      const found = sites.filter((s: any) => s?.status?.exists).length
-      return { source: "maigret", ok: true, data: { profiles_found: found, total_sites: sites.length, sites: sites.slice(0, 30) } }
-    } catch (e) {
-      console.error("[maigret] JSON parse failed:", e)
-      // Try line-by-line JSON
-      const lines = output.trim().split("\n").filter(Boolean)
-      const profiles: unknown[] = []
-      for (const line of lines) { try { profiles.push(JSON.parse(line)) } catch (e) { console.warn("[maigret] per-line JSON parse failed:", e) } }
-      return { source: "maigret", ok: profiles.length > 0, data: { profiles_found: profiles.length, profiles } }
-    }
-  } catch (e: any) {
-    const err = e?.stderr || e?.stdout || String(e)
-    return { source: "maigret", ok: false, error: err.slice(0, 300) }
-  }
-}
-
-export async function searchMaigretForDomain(domain: string): Promise<MgResult> {
-  // Extract company name from domain (e.g., "paradigmjp.com" → "paradigmjp")
-  const companyName = domain.split(".")[0]?.replace(/[^a-zA-Z0-9_-]/g, "") || domain
-  return runMaigret(companyName, 60_000)
+function maigretUrl(): string {
+  return envValue("MAIGRET_API_URL") ?? "http://localhost:5003"
 }
 
 export async function checkMaigretHealth(): Promise<{ ok: boolean; detail: string }> {
   try {
-    const out = execSync("docker run --rm --entrypoint maigret python:3.11-slim bash -c 'pip install -q maigret 2>/dev/null && maigret --version'", {
-      timeout: 30_000, encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"]
+    const res = await fetch(`${maigretUrl()}/health`, { signal: AbortSignal.timeout(10_000) })
+    return { ok: res.ok, detail: `HTTP ${res.status}` }
+  } catch (error) {
+    return { ok: false, detail: String(error) }
+  }
+}
+
+export async function searchMaigretForDomain(domain: string): Promise<MaigretResult> {
+  const username = domain?.split(".")[0] ?? ""
+  if (!username) return { source: "maigret", ok: false, error: "could not extract username from domain" }
+  try {
+    const res = await fetch(`${maigretUrl()}/search`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username }),
+      signal: AbortSignal.timeout(100_000),
     })
-    return { ok: out.length > 0, detail: out.trim() || "installed" }
-  } catch (e: any) {
-    return { ok: false, detail: e?.stderr?.slice(0, 200) || String(e) }
+    if (!res.ok) {
+      return { source: "maigret", ok: false, error: `HTTP ${res.status}` }
+    }
+    const data = await res.json() as { ok: boolean; data?: Record<string, unknown>; error?: string }
+    return {
+      source: "maigret",
+      ok: data.ok,
+      data: data.data,
+      error: data.error,
+    }
+  } catch (error) {
+    console.error("[maigret] search failed:", error)
+    return { source: "maigret", ok: false, error: String(error) }
   }
 }

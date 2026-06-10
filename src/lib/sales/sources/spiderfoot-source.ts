@@ -1,79 +1,54 @@
 /**
- * SpiderFoot OSINT — 200+ free modules. Runs via Docker CLI for programmatic access.
+ * SpiderFoot OSINT — 200+ free modules via HTTP API gateway.
+ * Requires osint-gateway Docker service running on SPIDERFOOT_API_URL (default: http://localhost:5001).
  */
-import { execSync } from "node:child_process"
-import fs from "node:fs"
-import os from "node:os"
-import path from "node:path"
+import { envValue } from "../oss-service-health"
 
 interface SfResult { source: string; ok: boolean; data?: Record<string, unknown>; error?: string }
 
-function sfExec(command: string): string {
-  try {
-    return execSync(`docker exec spiderfoot ${command}`, {
-      timeout: 120_000,
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "pipe"],
-    })
-  } catch (e: any) {
-    // SpiderFoot CLI exits non-zero for some results — capture stdout anyway
-    return e?.stdout || e?.stderr || String(e)
-  }
-}
-
-/** Run SpiderFoot scan via CLI and return parsed JSON results */
-function runSpiderFootScan(target: string, modules: string[]): SfResult {
-  if (!target?.includes(".")) return { source: "spiderfoot", ok: false, error: "invalid target" }
-
-  const tmpDir = path.join(os.tmpdir(), `sf-${Date.now()}`)
-  try {
-    fs.mkdirSync(tmpDir, { recursive: true })
-
-    // Run SpiderFoot scan
-    const moduleList = modules.join(",")
-    const cmd = `python3 /home/spiderfoot/sf.py -s "${target}" -m "${moduleList}" -o json -q`
-    const output = sfExec(cmd)
-
-    // Parse JSON results
-    const lines = output.trim().split("\n").filter(Boolean)
-    const data: unknown[] = []
-    for (const line of lines) {
-      try { data.push(JSON.parse(line)) } catch (e) { console.warn("[spiderfoot] per-line JSON parse failed:", e) }
-    }
-
-    return { source: "spiderfoot", ok: data.length > 0, data: { results: data, count: data.length } }
-  } catch (error) {
-    return { source: "spiderfoot", ok: false, error: String(error) }
-  } finally {
-    try { fs.rmSync(tmpDir, { recursive: true, force: true }) } catch (e) { console.error("[spiderfoot] cleanup failed:", e) }
-  }
-}
-
-export async function enrichDomainWithSpiderFoot(domain: string): Promise<SfResult[]> {
-  // Core free modules for company intelligence
-  const modules = [
-    "sfp_dns",           // DNS records
-    "sfp_whois",         // WHOIS lookup
-    "sfp_sslcert",       // SSL certificate analysis
-    "sfp_email",         // Email extraction
-    "sfp_names",         // Human name extraction
-    "sfp_webserver",     // Web server info
-    "sfp_webanalytics",  // Google Analytics etc.
-    "sfp_spider",        // Page spider
-    "sfp_cookies",       // Cookie analysis
-    "sfp_strangeheaders",// Security headers
-  ]
-
-  return [runSpiderFootScan(domain, modules)]
+function spiderfootUrl(): string {
+  return envValue("SPIDERFOOT_API_URL") ?? "http://localhost:5001"
 }
 
 export async function checkSpiderFootHealth(): Promise<{ ok: boolean; detail: string }> {
   try {
-    const output = execSync("docker exec spiderfoot python3 /home/spiderfoot/sf.py -V", {
-      timeout: 10_000, encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"],
-    })
-    return { ok: output.includes("SpiderFoot"), detail: output.trim().split("\n")[0] || "running" }
-  } catch (e: any) {
-    return { ok: false, detail: e?.stderr || e?.stdout || String(e) }
+    const res = await fetch(`${spiderfootUrl()}/health`, { signal: AbortSignal.timeout(10_000) })
+    return { ok: res.ok, detail: `HTTP ${res.status}` }
+  } catch (error) {
+    return { ok: false, detail: String(error) }
   }
+}
+
+async function runSpiderFootScan(target: string, modules: string[]): Promise<SfResult> {
+  if (!target?.includes(".")) return { source: "spiderfoot", ok: false, error: "invalid target" }
+  try {
+    const res = await fetch(`${spiderfootUrl()}/scan`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target, modules }),
+      signal: AbortSignal.timeout(130_000),
+    })
+    if (!res.ok) {
+      return { source: "spiderfoot", ok: false, error: `HTTP ${res.status}` }
+    }
+    const data = await res.json() as { ok: boolean; data?: Record<string, unknown>; error?: string }
+    return {
+      source: "spiderfoot",
+      ok: data.ok,
+      data: data.data,
+      error: data.error,
+    }
+  } catch (error) {
+    console.error("[spiderfoot] scan failed:", error)
+    return { source: "spiderfoot", ok: false, error: String(error) }
+  }
+}
+
+export async function enrichDomainWithSpiderFoot(domain: string): Promise<SfResult[]> {
+  const modules = [
+    "sfp_dns", "sfp_whois", "sfp_sslcert", "sfp_email",
+    "sfp_names", "sfp_webserver", "sfp_webanalytics",
+    "sfp_spider", "sfp_cookies", "sfp_strangeheaders",
+  ]
+  return [await runSpiderFootScan(domain, modules)]
 }

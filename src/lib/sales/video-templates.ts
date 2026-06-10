@@ -136,7 +136,6 @@ function themeForVariant(variant: string): VideoTheme {
 function actAt(data: DiagnosticReportData, index: number, fallback: string): DiagnosticAct | null {
   return data.acts[index] ?? data.acts.find((act) => !CORRUPT_TEXT.test(act.headline)) ?? null
 }
-
 export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoScript): string {
   const theme = themeForVariant(data.template_variant)
   const t = videoLabels(data.report_locale)
@@ -217,10 +216,10 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src * data:; font-src * data:;" />
   <title>${esc(company)} - Paradigm Diagnostic Film</title>
   <style>
-    *{box-sizing:border-box} html,body{width:100%;height:100%;margin:0;overflow:hidden;background:${theme.bg};}
+    *{box-sizing:border-box} html{--hf-scale:1;width:100%;height:100%;overflow:hidden;background:${theme.bg};} body{width:100%;height:100%;margin:0;overflow:hidden;background:${theme.bg};}
     body{font-family:Inter,"Noto Sans JP",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:${theme.panel};}
     svg{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-    [data-composition-id]{width:100vw;height:100vh;position:relative;overflow:hidden;background:${theme.bg};}
+    [data-composition-id]{width:1920px;height:1080px;position:relative;overflow:hidden;background:${theme.bg};transform:scale(var(--hf-scale));transform-origin:0 0;}
     #three-layer{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:.8;mix-blend-mode:screen}
     .grid-bg{position:absolute;inset:0;background-image:linear-gradient(${theme.grid} 1px,transparent 1px),linear-gradient(90deg,${theme.grid} 1px,transparent 1px);background-size:72px 72px;mask-image:linear-gradient(90deg,transparent,black 18%,black 82%,transparent);opacity:.72;transform-origin:center}
     .wash{position:absolute;inset:-20%;background:radial-gradient(circle at 18% 18%,${theme.accentSoft}33 0,transparent 22%),radial-gradient(circle at 82% 72%,${theme.accent}30 0,transparent 25%),linear-gradient(135deg,rgba(255,255,255,.06),transparent 45%);filter:blur(3px)}
@@ -274,7 +273,6 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
     .demo-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.demo-cards span{height:78px;border-radius:16px;background:${theme.panelSoft};border:1px solid rgba(13,24,36,.08)}
     .cta-box{max-width:920px}.cta-box h1{max-width:920px;font-size:48px}.cta-actions{display:flex;justify-content:center;gap:14px;margin-top:30px}.action{display:inline-flex;align-items:center;gap:10px;border:1px solid ${theme.rule};border-radius:999px;padding:13px 18px;background:rgba(255,255,255,.1);font-size:15px;font-weight:800;color:white}.action.primary{background:${theme.panel};color:${theme.ink};border-color:transparent}
     .footer{position:absolute;left:44px;right:44px;bottom:30px;z-index:20;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;color:rgba(255,255,255,.42);font-size:13px;font-weight:720;letter-spacing:.08em;text-transform:uppercase}.footer div:nth-child(3){text-align:right}.progress{height:4px;background:rgba(255,255,255,.12);border-radius:999px;overflow:hidden}.progress i{display:block;width:0;height:100%;background:${theme.accentSoft}}
-    @media (max-width:900px){.frame{inset:18px;border-radius:22px}.brand{top:18px;left:22px;right:22px;font-size:10px}.chapter-strip{top:48px;left:22px;right:22px;gap:5px}.chapter-pill{padding:7px 8px;font-size:9px}.scene{padding:96px 28px 58px;grid-template-columns:1fr;gap:24px}h1{font-size:34px}h2{font-size:26px}p{font-size:16px}.score-card{min-height:340px}.score-main strong{font-size:52px}.loss-number{font-size:44px}.footer{left:22px;right:22px;bottom:18px;font-size:10px}.scene.full{padding:96px 26px 64px}.cta-box h1{font-size:32px}.cta-actions{flex-wrap:wrap}.panel{border-radius:22px;padding:22px}.demo-cards{grid-template-columns:1fr 1fr}.evidence-row{grid-template-columns:1fr}.metric-stack{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -386,6 +384,11 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
   </div>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script>
+    function fitComposition() {
+      document.documentElement.style.setProperty("--hf-scale", String(Math.min(window.innerWidth / 1920, window.innerHeight / 1080)));
+    }
+    fitComposition();
+    window.addEventListener("resize", fitComposition);
     window.__timelines = window.__timelines || {};
     function updateChapter(time) {
       const active = Math.max(0, Math.min(4, Math.floor(time / 7)));

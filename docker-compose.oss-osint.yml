@@ -1,0 +1,157 @@
+# OSINT Microservices — SpiderFoot + Katana + Maigret HTTP API wrappers
+# Converts Docker CLI calls into HTTP endpoints for the Sales OS enrichment pipeline.
+# Deploy via Coolify or docker compose up -d
+
+services:
+  # ─── SpiderFoot API Wrapper ──────────────────────────────────
+  spiderfoot:
+    image: python:3.11-slim
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    volumes:
+      - spiderfoot-data:/var/lib/spiderfoot
+    environment:
+      - SPIDERFOOT_PORT=5001
+    command: >
+      bash -c "
+      pip install -q flask spiderfoot &&
+      cat > /app.py << 'PYEOF'
+import subprocess, json, os, shutil, tempfile
+from flask import Flask, request, jsonify
+app = Flask(__name__)
+@app.route('/health')
+def health():
+    return jsonify({'status':'ok','service':'spiderfoot'})
+@app.route('/scan', methods=['POST'])
+def scan():
+    target = request.json.get('target','')
+    modules = request.json.get('modules',['sfp_dns','sfp_whois','sfp_sslcert','sfp_email','sfp_webserver','sfp_webanalytics','sfp_spider','sfp_cookies','sfp_strangeheaders'])
+    if not target: return jsonify({'ok':False,'error':'missing target'}), 400
+    tmp = tempfile.mkdtemp()
+    try:
+        cmd = ['python3','-m','sf','-s',target,'-m',','.join(modules),'-o','json','-q']
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=120, cwd=tmp)
+        lines = [l for l in r.stdout.strip().split(chr(10)) if l]
+        data = []
+        for l in lines:
+            try: data.append(json.loads(l))
+            except: pass
+        return jsonify({'ok':True,'data':{'results':data,'count':len(data)}})
+    except Exception as e:
+        return jsonify({'ok':False,'error':str(e)})
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5001)
+PYEOF
+      python3 /app.py
+      "
+    networks:
+      - osint-net
+
+  # ─── Katana API Wrapper ─────────────────────────────────────
+  katana:
+    image: projectdiscovery/katana:latest
+    restart: unless-stopped
+    ports:
+      - "5002:5002"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        apk add --no-cache python3 py3-flask &&
+        cat > /app.py << 'PYEOF'
+import subprocess, json
+from flask import Flask, request, jsonify
+app = Flask(__name__)
+@app.route('/health')
+def health():
+    return jsonify({'status':'ok','service':'katana'})
+@app.route('/crawl', methods=['POST'])
+def crawl():
+    url = request.json.get('url','')
+    if not url: return jsonify({'ok':False,'error':'missing url'}), 400
+    try:
+        r = subprocess.run(['katana','-u',url,'-headless','-silent','-jc','-system-chrome','-timeout','30','-depth','2'], capture_output=True, text=True, timeout=90)
+        lines = [l for l in r.stdout.strip().split(chr(10)) if l]
+        data = []
+        for l in lines:
+            try: data.append(json.loads(l))
+            except: data.append(l)
+        return jsonify({'ok':True,'data':{'crawled':len(data),'urls':data[:200]}})
+    except Exception as e:
+        return jsonify({'ok':False,'error':str(e)})
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5002)
+PYEOF
+        python3 /app.py
+
+    networks:
+      - osint-net
+
+  # ─── Maigret API Wrapper ────────────────────────────────────
+  maigret:
+    image: python:3.11-slim
+    restart: unless-stopped
+    ports:
+      - "5003:5003"
+    command: >
+      bash -c "
+      pip install -q flask maigret &&
+      cat > /app.py << 'PYEOF'
+import subprocess, json
+from flask import Flask, request, jsonify
+app = Flask(__name__)
+@app.route('/health')
+def health():
+    return jsonify({'status':'ok','service':'maigret'})
+@app.route('/search', methods=['POST'])
+def search():
+    username = request.json.get('username','')
+    if not username: return jsonify({'ok':False,'error':'missing username'}), 400
+    try:
+        r = subprocess.run(['maigret',username,'--json','simple','--timeout','30','--no-recursive'], capture_output=True, text=True, timeout=90)
+        lines = [l for l in r.stdout.strip().split(chr(10)) if l]
+        sites = []
+        for l in lines:
+            try:
+                d = json.loads(l)
+                if isinstance(d, dict): sites.append(d)
+            except: pass
+        return jsonify({'ok':True,'data':{'profiles_found':len(sites),'sites':sites[:30]}})
+    except Exception as e:
+        return jsonify({'ok':False,'error':str(e)})
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5003)
+PYEOF
+      python3 /app.py
+      "
+    networks:
+      - osint-net
+
+  # ─── SearXNG (dedicated for Sales OS) ────────────────────────
+  searxng:
+    image: searxng/searxng:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - searxng-data:/etc/searxng
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8080/
+      - SEARXNG_SECRET=paradigm-sales-os-searxng-key
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - osint-net
+
+networks:
+  osint-net:
+    driver: bridge
+
+volumes:
+  spiderfoot-data:
+  searxng-data:
