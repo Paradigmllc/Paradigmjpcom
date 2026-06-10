@@ -7,14 +7,13 @@ services:
     restart: unless-stopped
     volumes:
       - searxng-data:/etc/searxng
-      - ./docker/searxng-settings.yml:/etc/searxng/settings.yml:ro
     environment:
       SEARXNG_BASE_URL: http://localhost:8080/
       SEARXNG_SECRET: ${SEARXNG_SECRET:-paradigm-searxng-key}
     ports:
       - "8090:8080"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/search?q=test&format=json"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 5
