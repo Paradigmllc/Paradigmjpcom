@@ -9,7 +9,7 @@ import { envValue } from "../oss-service-health"
 interface SfResult { source: string; ok: boolean; data?: Record<string, unknown>; error?: string }
 
 function spiderfootUrl(): string {
-  return envValue("SPIDERFOOT_API_URL") ?? "http://localhost:5001"
+  return envValue("SPIDERFOOT_API_URL") ?? "http://spiderfoot-api:5001"
 }
 
 export async function checkSpiderFootHealth(): Promise<{ ok: boolean; detail: string }> {
