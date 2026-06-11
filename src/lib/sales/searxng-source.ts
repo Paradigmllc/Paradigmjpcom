@@ -313,7 +313,10 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
         })),
         { onConflict: "run_id,domain" },
       )
-      if (error) throw new Error(error.message)
+      if (error) {
+        console.error("[searxng-source] insert search results failed:", error.message)
+        throw new Error(error.message)
+      }
     }
     const completedAt = new Date().toISOString()
     await sb

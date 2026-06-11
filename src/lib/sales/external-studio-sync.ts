@@ -148,7 +148,10 @@ async function updateCompanyExternalMeta(
   patch: JsonRecord,
 ) {
   const { data, error } = await sb.from("sales_companies").select("meta").eq("id", companyId).maybeSingle()
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error("[external-studio-sync] updateCompanyExternalMeta select failed:", error.message)
+    throw new Error(error.message)
+  }
 
   const currentMeta = asRecord(data?.meta) ?? {}
   const currentStudios = asRecord(currentMeta.external_studios) ?? {}
@@ -170,7 +173,10 @@ async function updateCompanyExternalMeta(
   if (salesMaterialUrl) nextMeta.sales_material_url = salesMaterialUrl
 
   const { error: updateError } = await sb.from("sales_companies").update({ meta: nextMeta }).eq("id", companyId)
-  if (updateError) throw new Error(updateError.message)
+  if (updateError) {
+    console.error("[external-studio-sync] updateCompanyExternalMeta update failed:", updateError.message)
+    throw new Error(updateError.message)
+  }
 }
 
 async function directusFetch<T>(
@@ -479,10 +485,28 @@ export async function syncCompanyAcrossSalesTools(
   options: { pipelineRunId?: string | null } = {},
 ): Promise<ExternalStudioSyncResult> {
   const sb = getServiceSalesSupabase()
-  if (!sb) throw new Error("Supabase service_role is not configured")
+  if (!sb) {
+    console.error("[external-studio-sync] Supabase service_role is not configured")
+    return {
+      ok: false,
+      companyId,
+      companyName: "",
+      domain: "",
+      results: [{ target: "twenty", direction: "supabase->twenty", ok: false, configured: false, status: "error", message: "Supabase service_role is not configured" }],
+    }
+  }
 
   const karteResult = await fetchCompanyKarte(sb, companyId)
-  if (!karteResult.ok) throw new Error(karteResult.error)
+  if (!karteResult.ok) {
+    console.error("[external-studio-sync] fetchCompanyKarte failed:", karteResult.error)
+    return {
+      ok: false,
+      companyId,
+      companyName: "",
+      domain: "",
+      results: [{ target: "twenty", direction: "supabase->twenty", ok: false, configured: false, status: "error", message: karteResult.error ?? "karte fetch failed" }],
+    }
+  }
   const karte = karteResult.karte
   const requestedTargets = normalizeTargets(targets)
   const results: ExternalStudioTargetResult[] = []

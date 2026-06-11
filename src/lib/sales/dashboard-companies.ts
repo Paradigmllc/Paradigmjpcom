@@ -97,6 +97,10 @@ export async function fetchDashboardCompanies(sb: ServiceSupabase, scope: SalesL
     full.error &&
     /target_country|report_locale|template_variant|schema cache|column/i.test(full.error.message)
 
+  if (missingRoutingColumns) {
+    console.warn("[dashboard-companies] routing columns missing, falling back to legacy query:", full.error.message)
+  }
+
   if (!missingRoutingColumns) return full
 
   const legacy = await sb

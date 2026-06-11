@@ -405,26 +405,38 @@ export async function createVideoJob(input: {
 
 async function updateJob(jobId: string, patch: Record<string, unknown>) {
   const sb = getServiceSalesSupabase()
-  if (!sb) throw new Error("Supabase is not configured")
+  if (!sb) {
+    console.error("[video-pipeline] updateJob: Supabase is not configured")
+    throw new Error("Supabase is not configured")
+  }
   const { data, error } = await sb
     .from("sales_video_jobs")
     .update(patch)
     .eq("id", jobId)
     .select("*, sales_companies(company_name, domain, slug)")
     .single()
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error("[video-pipeline] updateJob query failed:", error.message)
+    throw new Error(error.message)
+  }
   return data as SalesVideoJob
 }
 
 async function fetchJob(jobId: string): Promise<SalesVideoJob> {
   const sb = getServiceSalesSupabase()
-  if (!sb) throw new Error("Supabase is not configured")
+  if (!sb) {
+    console.error("[video-pipeline] fetchJob: Supabase is not configured")
+    throw new Error("Supabase is not configured")
+  }
   const { data, error } = await sb
     .from("sales_video_jobs")
     .select("*, sales_companies(company_name, domain, slug)")
     .eq("id", jobId)
     .single()
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error("[video-pipeline] fetchJob query failed:", error.message)
+    throw new Error(error.message)
+  }
   return data as SalesVideoJob
 }
 

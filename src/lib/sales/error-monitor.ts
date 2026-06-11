@@ -4,52 +4,30 @@
  * Collects all console.error/warn calls from enrichment, pipeline,
  * and outreach flows. Stores to Supabase for dashboard visibility.
  *
- * Auto-creates the sales_error_log table on first use (self-healing migration).
+ * DB_TABLE: sales_error_log (created by supabase/migrations/migration_035_sales_error_log.sql)
+ * 注意: Supabase の exec_sql RPC はデフォルト無効。テーブルはマイグレーションで事前作成すること。
  */
 import { getServiceSalesSupabase } from "@/lib/supabase"
 
 let tableReady = false
+let tableCheckFailed = false
 
-/** Ensure the error log table exists (self-healing migration) */
 async function ensureTable(): Promise<void> {
-  if (tableReady) return
+  if (tableReady || tableCheckFailed) return
   const sb = getServiceSalesSupabase()
-  if (!sb) return
-
-  try {
-    // Create table if not exists via raw SQL
-    await sb.rpc("exec_sql", {
-      sql: `
-        CREATE TABLE IF NOT EXISTS sales_error_log (
-          id BIGSERIAL PRIMARY KEY,
-          source TEXT NOT NULL DEFAULT 'unknown',
-          message TEXT NOT NULL,
-          stack TEXT,
-          severity TEXT NOT NULL CHECK (severity IN ('error', 'warn')) DEFAULT 'error',
-          context JSONB DEFAULT '{}'::jsonb,
-          recorded_at TIMESTAMPTZ NOT NULL DEFAULT now()
-        )
-      `
-    }).maybeSingle()
-    tableReady = true
-  } catch {
-    // Fallback: try insert to detect if table exists
-    try {
-      const { error } = await sb.from("sales_error_log").select("id").limit(1)
-      if (!error || error.message.includes("does not exist")) {
-        // Create via REST insert if RPC unavailable
-        await sb.from("sales_error_log").insert({
-          source: "error-monitor",
-          message: "table_initialized",
-          severity: "warn",
-        })
-      }
-      tableReady = true
-    } catch (e) {
-      console.error("[error-monitor] ensureTable failed at both RPC and REST:", e instanceof Error ? e.message : String(e))
-    }
+  if (!sb) {
+    tableCheckFailed = true
+    console.error("[error-monitor] Supabase is not configured — error log unavailable")
+    return
   }
-  tableReady = true // Don't retry in this session
+
+  const { error } = await sb.from("sales_error_log").select("id").limit(1)
+  if (error) {
+    tableCheckFailed = true
+    console.error("[error-monitor] sales_error_log table not found:", error.message)
+    return
+  }
+  tableReady = true
 }
 
 interface ErrorRecord {
@@ -62,10 +40,9 @@ interface ErrorRecord {
 
 const buffer: ErrorRecord[] = []
 let flushTimer: ReturnType<typeof setTimeout> | null = null
-const FLUSH_INTERVAL_MS = 30_000 // 30 seconds
+const FLUSH_INTERVAL_MS = 30_000
 const MAX_BUFFER = 100
 
-/** Queue an error for batch persistence */
 export function logError(
   source: string,
   error: unknown,
@@ -89,7 +66,6 @@ export function logError(
   }
 }
 
-/** Queue a warning for batch persistence */
 export function logWarn(
   source: string,
   message: string,
@@ -109,7 +85,6 @@ export function logWarn(
   }
 }
 
-/** Persist buffered errors to Supabase */
 async function flush(): Promise<void> {
   if (flushTimer) {
     clearTimeout(flushTimer)
@@ -122,6 +97,7 @@ async function flush(): Promise<void> {
   if (!sb) return
 
   await ensureTable()
+  if (!tableReady) return
 
   const now = new Date().toISOString()
   const rows = batch.map((e) => ({
@@ -137,12 +113,10 @@ async function flush(): Promise<void> {
     const { error } = await sb.from("sales_error_log").insert(rows)
     if (error) console.error("[error-monitor] flush failed:", error.message)
   } catch (e) {
-    // Last resort — log to stderr since we can't recurse into logError
     process.stderr.write(`[error-monitor] flush failed: ${e instanceof Error ? e.message : String(e)}\n`)
   }
 }
 
-/** Flush on process exit */
 if (typeof process !== "undefined") {
   process.on("beforeExit", () => void flush())
   process.on("SIGTERM", () => void flush())

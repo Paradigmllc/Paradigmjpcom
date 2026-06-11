@@ -239,7 +239,7 @@ export async function saveSalesIntegrationStatus(rows: SalesIntegrationStatus[])
     })),
     { onConflict: "slug" },
   )
-  if (error && !/schema cache|relation .* does not exist/i.test(error.message)) {
-    console.error("[integration-registry] status snapshot upsert failed:", error.message)
+  if (error) {
+    console.error("[integration-registry] status snapshot upsert failed:", error.message, error.code ? `(code: ${error.code})` : "")
   }
 }

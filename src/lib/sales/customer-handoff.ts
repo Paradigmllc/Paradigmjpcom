@@ -137,7 +137,10 @@ async function fetchCompany(sb: ServiceSupabase, companyId: string): Promise<Com
     .eq("id", companyId)
     .maybeSingle()
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error("[customer-handoff] fetchCompany failed:", error.message)
+    throw new Error(error.message)
+  }
   return (data as CompanyRow | null) ?? null
 }
 
@@ -161,7 +164,10 @@ async function upsertCustomer(
     .eq("company_id", input.company.id)
     .maybeSingle()
 
-  if (existing.error) throw new Error(existing.error.message)
+  if (existing.error) {
+    console.error("[customer-handoff] upsertCustomer select failed:", existing.error.message)
+    throw new Error(existing.error.message)
+  }
 
   const meta = mergeMeta(existing.data?.meta as JsonRecord | null, {
     customer_success: {
@@ -190,7 +196,10 @@ async function upsertCustomer(
     ? await sb.from("sales_customers").update(payload).eq("id", existing.data.id).select("id, meta").single()
     : await sb.from("sales_customers").insert(payload).select("id, meta").single()
 
-  if (result.error) throw new Error(result.error.message)
+  if (result.error) {
+    console.error("[customer-handoff] upsertCustomer upsert failed:", result.error.message)
+    throw new Error(result.error.message)
+  }
   return { id: String(result.data.id), meta: (result.data.meta ?? {}) as JsonRecord }
 }
 
@@ -326,7 +335,10 @@ export async function runCustomerSuccessHandoff(
 
   try {
     const company = await fetchCompany(sb, input.companyId)
-    if (!company) throw new Error("sales_companies row not found")
+    if (!company) {
+      console.error("[customer-handoff] sales_companies row not found for companyId:", input.companyId)
+      throw new Error("sales_companies row not found")
+    }
 
     const amountYen = numberOrNull(input.contractAmountYen ?? input.monthlyAmountYen)
     const contractStatus = customerStatusLabel(input.contractStatus)

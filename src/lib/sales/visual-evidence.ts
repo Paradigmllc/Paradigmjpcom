@@ -243,7 +243,10 @@ export async function saveScreenshotEvidence(
   evidence: ScreenshotEvidence,
 ): Promise<void> {
   const latest = await sb.from("sales_companies").select("meta").eq("id", company.id).maybeSingle()
-  if (latest.error) throw new Error(latest.error.message)
+  if (latest.error) {
+    console.error("[visual-evidence] saveScreenshotEvidence select failed:", latest.error.message)
+    throw new Error(latest.error.message)
+  }
   const currentMeta = asRecord(latest.data?.meta ?? company.meta)
   const visual = asRecord(currentMeta.visual_evidence)
   const screenshots = asRecord(visual.screenshots)
@@ -272,7 +275,10 @@ export async function saveScreenshotEvidence(
     },
   }
   const { error } = await sb.from("sales_companies").update({ meta }).eq("id", company.id)
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error("[visual-evidence] saveScreenshotEvidence update failed:", error.message)
+    throw new Error(error.message)
+  }
 }
 
 export async function ensureCompanyVisualEvidence(input: {

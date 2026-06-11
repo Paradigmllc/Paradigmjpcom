@@ -471,6 +471,7 @@ async function applyTemplate(
     /template_variant|report_locale|target_country/.test(error.message) &&
     /column|schema cache/i.test(error.message)
   ) {
+    console.warn("[notion-apply] template routing columns missing, retrying with legacy fields:", error.message)
     const {
       template_variant: _templateVariant,
       report_locale: _reportLocale,

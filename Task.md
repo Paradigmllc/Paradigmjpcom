@@ -149,8 +149,27 @@
   - `SalesAutomationPanel.tsx` のサブタブUI削除、コンテンツを1画面に統合
   - `SalesBatchOpsPanel` はページ下部に常時表示
 
+### 修正内容 (追加 — 2次監査で発見)
+| ファイル | 変更 |
+|----------|------|
+| `dashboard-companies.ts:98` | カラム不在フォールバック時に console.warn 追加 |
+| `notion-apply.ts:472` | カラム不在フォールバック時に console.warn 追加 |
+| `templates.ts:139` | カラム不在フォールバック時に console.warn 追加 |
+| `external-studio-sync.ts:151,173` | updateCompanyExternalMeta の throw 前に console.error 追加 |
+| `sales-pipeline-execution.ts:45` | completeR2ManifestStep の throw 前に console.error 追加 |
+| `searxng-source.ts:316` | insert search results の throw 前に console.error 追加 |
+| `visual-evidence.ts:246,275` | saveScreenshotEvidence の throw 前に console.error 追加 |
+| `db-tables.ts` | AGENCY_REPORTS 修正 (誤: outreach/deals → 正: reports) |
+| `verify-db-tables.mjs` | 同上 |
+
+### 本番マイグレーション実行結果
+- `node scripts/exec-migrations.cjs` 実行完了
+- 新規作成テーブル: `agency_companies`, `agency_presentations`, `agency_videos`, `agency_demo_sites`, `agency_reports`, `sales_error_log`
+- 既存テーブル: すべて NOTICE (already exists, skipping) — 破壊なし
+
 ### 検証
 - `npx tsc --noEmit`: 変更ファイル 0 エラー
+- 本番DBテーブル実在確認: 全6テーブル psql SELECT で確認済み
 
 ---
 
@@ -322,3 +341,59 @@
 - Unresolved risk:
   - Existing generated rows in `web_demos` may still contain old thin LP HTML until each company is regenerated.
   - `cf-pages-deploy.ts` remains as legacy Keystatic/Cloudflare code but is no longer used by `generateReplacementDemo()`.
+
+---
+
+## PERMANENT RULES — DB 再発防止策 (2026-06-11 制定・永久保存)
+
+> 以下のルールは AGENTS.md の上位に位置する RevenueOS 固有のDB安全規約。
+> すべての AI エージェント・人間開発者はこのルールに例外なく従うこと。
+> 違反は即時リファクタ対象。
+
+### 1. テーブル名は中央レジストリ `src/lib/sales/db-tables.ts` から参照
+
+`.from("sales_companies")` のような生文字列リテラルは禁止。
+必ず `import { DB_TABLES } from "@/lib/sales/db-tables"` から定数を使用すること。
+新規テーブル追加時は必ず `db-tables.ts` に定数を追加してからコードに反映する。
+
+### 2. DBエラーは絶対に握りつぶさない
+
+- `if (error && !/does not exist/i.test(error.message))` のような条件付き抑制は禁止
+- テーブル不在、接続失敗、RLS 違反は必ず `console.error("[tag] message", error)` で出力
+- エクスポート関数内では `throw new Error(...)` を使わず `return { ok: false, error: "..." }` パターンに統一
+- 空の `catch {}` / `catch(e) {}` ブロックは絶対禁止（AGENTS.md 規則 #1）
+
+### 3. マイグレーションのライフサイクル
+
+新規マイグレーション追加時の必須手順:
+1. `supabase/migration_XXX_description.sql` を作成（`CREATE TABLE IF NOT EXISTS` を使用）
+2. `node scripts/generate-migration-script.cjs` を実行（`run-migrations.sh` を自動再生成）
+3. `node scripts/exec-migrations.cjs` で本番 DB に適用
+4. `node scripts/verify-db-tables.mjs` で全テーブルの実在を確認
+5. `db-tables.ts` に新テーブル名の定数を追加
+
+マイグレーションファイルは `supabase/` ルートに置く。
+サブディレクトリ `supabase/migrations/` は緊急避難用。新規追加は原則ルートに統一。
+サブディレクトリを使う場合は番号衝突に注意（`generate-migration-script.cjs` が `b` suffix で自動リネーム）。
+
+### 4. デプロイ前のDB健全性チェック
+
+`npm run deploy:prod` の前に以下を実行すること:
+```
+node scripts/verify-db-tables.mjs
+```
+不足テーブルがある場合はデプロイを中断し、マイグレーションを先に適用する。
+
+### 5. Supabase 二重インスタンスの管理
+
+- `NEXT_PUBLIC_SUPABASE_URL` = プライマリ Supabase (本番サイト・CMS用)
+- `SALES_SUPABASE_URL` = Sales OS SSOT 用（別インスタンスの場合のみ設定）
+- 両方が同一インスタンスの場合は `SALES_SUPABASE_URL` を設定しない（`getServiceSalesSupabase()` が自動フォールバック）
+- 新規サービス追加時は `getServiceSalesSupabase()` を使用し、RLS バイパスが必要な場合のみ `getServiceSupabase()` を直接使用
+
+### 6. 定期検証スクリプト
+
+毎週実行を推奨:
+- `node scripts/supabase-health-check.mjs` — 接続・プロジェクト状態チェック
+- `node scripts/verify-db-tables.mjs` — 全テーブル実在チェック
+- 結果は `docs/knowledge/db-health-log.md` に追記（存在しない場合は新規作成）

@@ -395,7 +395,10 @@ function filterTemplates(rows: SalesContentTemplate[], input: ContentTemplateLis
 
 export async function updateContentTemplate(input: ContentTemplateUpdateInput): Promise<SalesContentTemplate> {
   const sb = getServiceSalesSupabase()
-  if (!sb) throw new Error("Sales Supabase is not configured")
+  if (!sb) {
+    console.error("[content-templates] Sales Supabase is not configured")
+    throw new Error("Sales Supabase is not configured")
+  }
   const patch: Partial<SalesContentTemplate> = {}
   if (isReportLocale(input.report_locale)) {
     patch.report_locale = input.report_locale
@@ -413,7 +416,10 @@ export async function updateContentTemplate(input: ContentTemplateUpdateInput): 
   }
   if (typeof input.is_active === "boolean") patch.is_active = input.is_active
   const { data, error } = await sb.from("sales_content_templates").update(patch).eq("id", input.id).select("*").single()
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error("[content-templates] update failed:", error.message)
+    throw new Error(error.message)
+  }
   return data as SalesContentTemplate
 }
 

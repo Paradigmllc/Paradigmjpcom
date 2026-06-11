@@ -137,6 +137,9 @@ export async function upsertTemplateFromNotion(input: {
     const missingRoutingColumn =
       /template_variant|report_locale|target_country/.test(error.message) &&
       /column|schema cache/i.test(error.message)
+    if (missingRoutingColumn) {
+      console.warn("[templates] routing columns missing, retrying with legacy fields:", error.message)
+    }
     if (!missingRoutingColumn) return { ok: false, error: error.message }
     const {
       template_variant: _templateVariant,

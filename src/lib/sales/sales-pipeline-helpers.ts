@@ -76,7 +76,10 @@ export function getSalesPipelineTriggerConfig() {
 
 export async function updateRun(sb: ServiceSupabase, runId: string, patch: JsonRecord): Promise<void> {
   const { error } = await sb.from("sales_pipeline_runs").update(patch).eq("id", runId)
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error("[sales-pipeline-helpers] updateRun failed:", error.message)
+    throw new Error(error.message)
+  }
 }
 
 export async function updateStep(
@@ -93,7 +96,10 @@ export async function updateStep(
     next.completed_at = now
   }
   const { error } = await sb.from("sales_pipeline_steps").update(next).eq("id", step.id)
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error("[sales-pipeline-helpers] updateStep failed:", error.message)
+    throw new Error(error.message)
+  }
 }
 
 export async function insertArtifact(
@@ -123,7 +129,10 @@ export async function insertArtifact(
     status: input.status,
     metadata: input.metadata ?? {},
   })
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error("[sales-pipeline-helpers] insertArtifact failed:", error.message)
+    throw new Error(error.message)
+  }
 }
 
 export async function fetchRunWithSteps(sb: ServiceSupabase, runId: string): Promise<SalesPipelineRun> {
@@ -133,7 +142,10 @@ export async function fetchRunWithSteps(sb: ServiceSupabase, runId: string): Pro
     .eq("id", runId)
     .order("position", { referencedTable: "sales_pipeline_steps", ascending: true })
     .single()
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error("[sales-pipeline-helpers] fetchRunWithSteps failed:", error.message)
+    throw new Error(error.message)
+  }
   return data as SalesPipelineRun
 }
 
@@ -148,7 +160,10 @@ export async function updateStepByKey(
     .update(patch)
     .eq("run_id", runId)
     .eq("step_key", stepKey)
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error("[sales-pipeline-helpers] updateStepByKey failed:", error.message)
+    throw new Error(error.message)
+  }
 }
 
 /**

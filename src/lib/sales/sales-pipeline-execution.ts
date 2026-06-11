@@ -42,7 +42,10 @@ export function publicUrlFor(baseUrl: string | null, objectKey: string | null): 
 
 async function completeR2ManifestStep(sb: ServiceSupabase, run: SalesPipelineRun, step: SalesPipelineStep): Promise<JsonRecord> {
   const karteResult = await fetchCompanyKarte(sb, run.company_id)
-  if (!karteResult.ok) throw new Error(karteResult.error)
+  if (!karteResult.ok) {
+    console.error("[sales-pipeline-execution] completeR2ManifestStep karte fetch failed:", karteResult.error)
+    throw new Error(karteResult.error)
+  }
   const karte = karteResult.karte
   const r2 = getR2StorageConfig()
   const prefix = sanitizeR2ObjectName(`sales-os/${karte.reportLocale}/${karte.domain}/${run.id}`)
@@ -106,7 +109,10 @@ async function enqueuePipelineReviewTask(
     .select("region")
     .eq("id", run.company_id)
     .maybeSingle()
-  if (companyRes.error) throw new Error(companyRes.error.message)
+  if (companyRes.error) {
+    console.error("[sales-pipeline-execution] enqueuePipelineReviewTask company fetch failed:", companyRes.error.message)
+    throw new Error(companyRes.error.message)
+  }
   const { error } = await sb.from("sales_operator_queue_items").insert({
     region: typeof companyRes.data?.region === "string" ? companyRes.data.region : "jp",
     company_id: run.company_id,
@@ -122,7 +128,10 @@ async function enqueuePipelineReviewTask(
       ...asRecord(input.meta),
     },
   })
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error("[sales-pipeline-execution] enqueuePipelineReviewTask insert failed:", error.message)
+    throw new Error(error.message)
+  }
 }
 
 export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, step: SalesPipelineStep): Promise<void> {
@@ -132,7 +141,10 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
 
   if (step.step_key === "twenty_csv_intake") {
     const karteResult = await fetchCompanyKarte(sb, run.company_id)
-    if (!karteResult.ok) throw new Error(karteResult.error)
+    if (!karteResult.ok) {
+      console.error("[sales-pipeline-execution] twenty_csv_intake karte fetch failed:", karteResult.error)
+      throw new Error(karteResult.error)
+    }
     await updateStep(sb, step, {
       status: "completed",
       output_payload: { domain: karteResult.karte.domain, company_name: karteResult.karte.companyName, source: run.source },
@@ -142,9 +154,15 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
 
   if (step.step_key === "supabase_normalize") {
     const karteResult = await fetchCompanyKarte(sb, run.company_id)
-    if (!karteResult.ok) throw new Error(karteResult.error)
+    if (!karteResult.ok) {
+      console.error("[sales-pipeline-execution] supabase_normalize karte fetch failed:", karteResult.error)
+      throw new Error(karteResult.error)
+    }
     const companyRes = await sb.from("sales_companies").select("meta").eq("id", run.company_id).maybeSingle()
-    if (companyRes.error) throw new Error(companyRes.error.message)
+    if (companyRes.error) {
+      console.error("[sales-pipeline-execution] supabase_normalize company fetch failed:", companyRes.error.message)
+      throw new Error(companyRes.error.message)
+    }
     const currentMeta = asRecord(companyRes.data?.meta)
     const { error: updateError } = await sb
       .from("sales_companies")
@@ -160,7 +178,10 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
         },
       })
       .eq("id", run.company_id)
-    if (updateError) throw new Error(updateError.message)
+    if (updateError) {
+      console.error("[sales-pipeline-execution] supabase_normalize update failed:", updateError.message)
+      throw new Error(updateError.message)
+    }
     await updateStep(sb, step, { status: "completed", output_payload: { report_locale: karteResult.karte.reportLocale } })
     return
   }
@@ -173,7 +194,10 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
       priority: 75,
       payload: { pipeline_run_id: run.id },
     })
-    if (!enqueue.ok) throw new Error(enqueue.error ?? "enrichment enqueue failed")
+    if (!enqueue.ok) {
+      console.error("[sales-pipeline-execution] karte_generate enqueue failed:", enqueue.error)
+      throw new Error(enqueue.error ?? "enrichment enqueue failed")
+    }
     const isTriggerDev = run.trigger_provider === "trigger.dev"
     const trigger = isTriggerDev ? await triggerEnrichmentRunner(1) : { ok: false, error: "local_run_forced_inline" }
     const inlineRun = trigger.ok ? null : await runEnrichmentJobs(1)
@@ -183,7 +207,10 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
       .select("pipeline_status")
       .eq("id", run.company_id)
       .maybeSingle()
-    if (companyRes.error) throw new Error(companyRes.error.message)
+    if (companyRes.error) {
+      console.error("[sales-pipeline-execution] karte_generate company check failed:", companyRes.error.message)
+      throw new Error(companyRes.error.message)
+    }
     const reportReady = companyRes.data?.pipeline_status === "report_ready"
     await updateStep(sb, step, {
       status: reportReady ? "completed" : "waiting_external",
@@ -211,7 +238,10 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
       companyIdOrSlugOrDomain: run.company_id,
       assetType: "diagnostic_report",
     })
-    if (!reportAsset.ok) throw new Error(reportAsset.error ?? "diagnostic report generation failed")
+    if (!reportAsset.ok) {
+      console.error("[sales-pipeline-execution] report_generate failed:", reportAsset.error)
+      throw new Error(reportAsset.error ?? "diagnostic report generation failed")
+    }
     await updateStep(sb, step, {
       status: "completed",
       output_payload: {
@@ -246,7 +276,10 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
       priority: 75,
       requestedBy: run.requested_by,
     })
-    if (!video.ok || !video.job) throw new Error(video.error ?? "video job creation failed")
+    if (!video.ok || !video.job) {
+      console.error("[sales-pipeline-execution] video_generate failed:", video.error)
+      throw new Error(video.error ?? "video job creation failed")
+    }
     const dispatched = await runVideoJobAction({ jobId: video.job.id, action: "dispatch" })
     await updateStep(sb, step, {
       status: dispatched.job?.status === "review_required" ? "needs_review" : "waiting_external",

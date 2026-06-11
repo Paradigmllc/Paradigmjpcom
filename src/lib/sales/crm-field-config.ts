@@ -295,7 +295,10 @@ export async function saveSalesCrmFieldConfig(input: {
   options: SalesCrmSelectOption[]
 }): Promise<{ fields: SalesCrmViewField[]; options: SalesCrmSelectOption[] }> {
   const sb = getServiceSalesSupabase()
-  if (!sb) throw new Error("Supabase service_role is not configured.")
+  if (!sb) {
+    console.error("[crm-field-config] Supabase service_role is not configured")
+    throw new Error("Supabase service_role is not configured.")
+  }
 
   const fieldRows = normalizeCrmViewFields(input.fields).map((field) => ({
     field_key: field.fieldKey,
@@ -321,7 +324,10 @@ export async function saveSalesCrmFieldConfig(input: {
     .upsert(fieldRows, { onConflict: "field_key" })
     .select("*")
     .order("position", { ascending: true })
-  if (fieldsRes.error) throw new Error(fieldsRes.error.message)
+  if (fieldsRes.error) {
+    console.error("[crm-field-config] upsert fields failed:", fieldsRes.error.message)
+    throw new Error(fieldsRes.error.message)
+  }
 
   const optionsRes = await sb
     .from("sales_crm_select_options")
@@ -329,7 +335,10 @@ export async function saveSalesCrmFieldConfig(input: {
     .select("*")
     .order("field_key", { ascending: true })
     .order("position", { ascending: true })
-  if (optionsRes.error) throw new Error(optionsRes.error.message)
+  if (optionsRes.error) {
+    console.error("[crm-field-config] upsert options failed:", optionsRes.error.message)
+    throw new Error(optionsRes.error.message)
+  }
 
   return {
     fields: ((fieldsRes.data ?? []) as CrmViewFieldRow[]).map(mapField),
