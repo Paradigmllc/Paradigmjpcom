@@ -46,3 +46,10 @@
 - Chatwoot初回管理者作成 (https://chatwoot.paradigmjp.com/app/auth/signup)
 - Astroデモ高品質実装
 - コードスプリッティング (dynamic import)
+## ACTIVE HANDOFF - 2026-06-11 Coolify deploy healthcheck fix
+
+- Symptom: Coolify deploys for `paradigm-hp` repeatedly reached container start, then failed healthcheck and rolled back.
+- Server check: DigitalOcean droplet `appexx-prod-01` is active; root disk is 70% used with large reclaimable Docker image/build-cache usage. Load was elevated but not a hard outage.
+- Root cause found in Coolify logs: new Next.js standalone container reported ready, but Coolify healthcheck hit `http://localhost:3000/` and got connection refused. Earlier `curl` absence was fixed, but the runner still did not explicitly bind Next to all interfaces.
+- Change: Dockerfile runner now sets `HOSTNAME=0.0.0.0` and `PORT=3000` before `node server.js`, so Coolify's localhost healthcheck can pass.
+- Verification: `git diff --check` passed with only LF/CRLF warning. `npx tsc --noEmit --pretty false` is still blocked by pre-existing `astro-demo/src/keystatic/demo-data.ts` errors unrelated to this Dockerfile change.
