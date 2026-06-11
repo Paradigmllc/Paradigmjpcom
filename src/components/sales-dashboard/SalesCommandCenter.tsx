@@ -11,7 +11,6 @@ import {
   Menu,
   ShieldCheck,
   Sparkles,
-  UploadCloud,
   X,
 } from "lucide-react"
 import { Toaster } from "sonner"
@@ -20,16 +19,12 @@ import {
   CrmPanel,
   IntegrationsPanel,
 } from "./SalesCommandPanels"
-import { SalesAutomationPanel } from "./SalesAutomationPanel"
 import { SalesOperationsAuditPanel } from "./SalesOperationsAuditPanel"
 import { AiPromptsPanel } from "./AiPromptsPanel"
 import { AssetManagementPanel } from "./AssetManagementPanel"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 
-type SalesTab =
-  | "automation"
-  | "crm"
-  | "system"
+type SalesTab = "crm" | "system"
 
 type SalesCommandCenterProps = {
   data: SalesDashboardData
@@ -44,7 +39,6 @@ type TabItem = {
 }
 
 const tabItems: TabItem[] = [
-  { id: "automation", label: "投入・作業", description: "CSV / SearxNG / リスト", icon: UploadCloud },
   { id: "crm", label: "CRM", description: "Twenty連携", icon: BriefcaseBusiness },
   { id: "system", label: "システム管理", description: "統合監査・運用", icon: ShieldCheck },
 ]
@@ -86,8 +80,7 @@ const localeLabels: Record<string, { country: string; language: string }> = {
 }
 
 function normalizeTab(value: string | null): SalesTab {
-  if (value === "batches" || value === "workspace" || value === "operator") return "automation"
-  return value && tabIds.has(value as SalesTab) ? (value as SalesTab) : "automation"
+  return value && tabIds.has(value as SalesTab) ? (value as SalesTab) : "crm"
 }
 
 function normalizeSystemSubTab(value: string | null): SystemSubTab {
@@ -264,8 +257,6 @@ function changeTab(tab: SalesTab) {
 
   const renderTab = () => {
     switch (activeTab) {
-      case "automation":
-        return <SalesAutomationPanel data={data} />
       case "crm":
         return <CrmPanel data={data} />
       case "system":
@@ -287,7 +278,7 @@ function changeTab(tab: SalesTab) {
           </div>
         )
       default:
-        return <SalesAutomationPanel data={data} />
+        return <CrmPanel data={data} />
     }
   }
 

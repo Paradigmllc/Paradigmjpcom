@@ -10,7 +10,7 @@ import { salesScopeFromLocale } from "@/lib/sales/locale-scope"
 import { getSalesCrmFieldConfig } from "@/lib/sales/crm-field-config"
 import { emptySourceAcquisitionSummary, getSourceAcquisitionSummary } from "@/lib/sales/source-acquisition"
 import { listLeadBatches } from "@/lib/sales/monthly-batch"
-import { listSearxngRuns } from "@/lib/sales/searxng-source"
+import { listSearxngRuns, type SearxngRunSummary } from "@/lib/sales/searxng-source"
 import { listJapanReadinessInsights } from "@/lib/sales/japan-readiness"
 import { listSalesPipelineRuns } from "@/lib/sales/sales-pipeline"
 import { scoreLead } from "@/lib/sales/lead-scoring"
@@ -178,7 +178,7 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
     getDashboardAgentTeam(),
     getSalesIntegrationStatus(),
     listLeadBatches(scope, 8),
-    listSearxngRuns(scope, 8),
+    listSearxngRuns(scope, 8).catch(() => ({ ok: false as const, runs: [] as SearxngRunSummary[], error: "table missing" })),
     listJapanReadinessInsights(scope, 8),
     listSalesPipelineRuns(20),
     listVideoJobs(25, { locale: scope.reportLocale }),
