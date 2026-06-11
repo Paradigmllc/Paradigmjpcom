@@ -1,23 +1,29 @@
-# ─── Multi-stage Dockerfile with layer caching for fast deploys ───
-# Stage 1 (deps): cached unless package.json/packages-lock.json change
-# Stage 2 (build): cached unless source code changes
+# syntax = docker/dockerfile:1
+# ─── Multi-stage Dockerfile with BuildKit cache mounts for fast deploys ───
+# Stage 1 (deps): cached unless package.json/package-lock.json change
+# Stage 2 (build): cached unless source code changes (Next.js cache persisted)
 # Stage 3 (runner): minimal production image
 # ─── Requires next.config.ts: output: "standalone" ───
 
 FROM node:22.12.0-alpine AS deps
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm install --prefer-offline --no-audit --no-fund
+COPY package.json package-lock.json .npmrc ./
+RUN --mount=type=cache,target=/root/.npm npm install --prefer-offline --no-audit --no-fund
 
 FROM node:22.12.0-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY tsconfig.json next.config.ts postcss.config.mjs components.json ./
+COPY payload.config.ts keystatic.config.ts ./
+COPY src ./src
+COPY public ./public
+COPY content ./content
+COPY messages ./messages
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PAYLOAD_CONFIG_PATH=/app/payload.config.ts
 ENV PAYLOAD_DISABLE_DATABASE_DURING_BUILD=1
 ENV NODE_OPTIONS="--max-old-space-size=4096"
-RUN npm run build -- --turbo
+RUN --mount=type=cache,target=/app/.next/cache,id=paradigm-next-cache npm run build -- --turbo
 
 FROM node:22.12.0-alpine AS runner
 WORKDIR /app

@@ -1,11 +1,23 @@
 ﻿"use client"
 
-import { useEffect, useRef, type CSSProperties } from "react"
+import { useEffect, useRef, useState, type CSSProperties } from "react"
 import { motion, useScroll, useTransform, type TargetAndTransition } from "framer-motion"
+
+function useIsMobile() {
+  const [mobile, setMobile] = useState(true)
+  useEffect(() => {
+    const check = () => setMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener("resize", check)
+    return () => window.removeEventListener("resize", check)
+  }, [])
+  return mobile
+}
 
 // ─── Animated Particle/Gradient Background ──────────────────
 export function AnimatedBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -13,7 +25,11 @@ export function AnimatedBackground() {
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    if (prefersReducedMotion || isMobile) return
+
     let animId: number
+    const particleCount = isMobile ? 6 : 50
     const particles: Array<{ x: number; y: number; vx: number; vy: number; r: number; alpha: number }> = []
     
     const resize = () => {
@@ -23,8 +39,7 @@ export function AnimatedBackground() {
     resize()
     window.addEventListener("resize", resize)
 
-    // Create particles
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < particleCount; i++) {
       particles.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
@@ -49,18 +64,19 @@ export function AnimatedBackground() {
         ctx.fillStyle = `rgba(124, 92, 255, ${p.alpha})`
         ctx.fill()
       }
-      // Draw connecting lines
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x
-          const dy = particles[i].y - particles[j].y
-          const dist = Math.sqrt(dx * dx + dy * dy)
-          if (dist < 150) {
-            ctx.beginPath()
-            ctx.moveTo(particles[i].x, particles[i].y)
-            ctx.lineTo(particles[j].x, particles[j].y)
-            ctx.strokeStyle = `rgba(124, 92, 255, ${0.05 * (1 - dist / 150)})`
-            ctx.stroke()
+      if (!isMobile) {
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x
+            const dy = particles[i].y - particles[j].y
+            const dist = Math.sqrt(dx * dx + dy * dy)
+            if (dist < 150) {
+              ctx.beginPath()
+              ctx.moveTo(particles[i].x, particles[i].y)
+              ctx.lineTo(particles[j].x, particles[j].y)
+              ctx.strokeStyle = `rgba(124, 92, 255, ${0.05 * (1 - dist / 150)})`
+              ctx.stroke()
+            }
           }
         }
       }
@@ -69,7 +85,7 @@ export function AnimatedBackground() {
     animate()
 
     return () => { cancelAnimationFrame(animId); window.removeEventListener("resize", resize) }
-  }, [])
+  }, [isMobile])
 
   return (
     <canvas

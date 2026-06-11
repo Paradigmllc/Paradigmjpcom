@@ -20,10 +20,9 @@ export function ReadingProgress({ isDark }: { isDark?: boolean }) {
 
   return (
     <div className="fixed top-0 left-0 z-50 h-0.5 w-full">
-      <motion.div
-        className={`h-full ${isDark ? "bg-violet-400" : "bg-violet-600"}`}
+      <div
+        className={`h-full transition-[width] duration-100 ease-linear ${isDark ? "bg-violet-400" : "bg-violet-600"}`}
         style={{ width: `${progress}%` }}
-        transition={{ duration: 0.1 }}
       />
     </div>
   )

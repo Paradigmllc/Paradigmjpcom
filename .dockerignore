@@ -3,9 +3,12 @@ node_modules
 .next
 *.tsbuildinfo
 .turbo
+*.log
+.next-dev-*.log
 
-# ─── Worker (has own node_modules 185MB — separate app) ───
-worker/node_modules
+# ─── Worker (separate service with own Dockerfile) ───
+worker
+trigger
 
 # ─── Test / Demo directories ───
 test-video
@@ -20,9 +23,33 @@ docker
 n8n-workflows
 docs/refactor
 docs/knowledge
+docs/handoff-archive
+supabase
+scripts
+
+# ─── Agent config files (not used at runtime) ───
+.claude
+.claire
+.cursor
+.agents
+.clinerules
+.windsurfrules
+GEMINI.md
+AGENTS.md
+CLAUDE.md
+Task.md
+skills-lock.json
 
 # ─── Environment files (secrets) ───
 .env.local
 .env.supabase
 .supabase.keys
 supabase-secrets.json
+
+# ─── Astro demo (separate project, not part of Next.js build) ───
+astro-demo
+
+# ─── Trigger.dev (deployed separately) ───
+trigger.config.ts
+trigger-clickhouse-override.xml
+docker-compose.*.yml

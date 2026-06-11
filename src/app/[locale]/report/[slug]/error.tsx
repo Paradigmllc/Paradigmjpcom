@@ -2,7 +2,7 @@
 
 export default function ReportError({ error, reset }: { error: Error; reset: () => void }) {
   return (
-    <div className="min-h-screen bg-[#fbfaf7] flex items-center justify-center p-8">
+    <div className="min-h-dvh bg-[#fbfaf7] flex items-center justify-center p-8">
       <div className="max-w-md text-center">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-100">
           <span className="text-rose-600 text-lg font-bold">!</span>

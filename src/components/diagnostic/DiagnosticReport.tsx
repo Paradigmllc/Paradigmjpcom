@@ -141,7 +141,11 @@ export default function DiagnosticReport({
   const isProjection = lang === "ja" ? "※改善しない場合の推定値" : "Projection if unaddressed"
 
   return (
-    <div className={`min-h-screen relative ${isDark ? "bg-zinc-950 text-white" : "bg-[#fbfaf7] text-zinc-950"}`}>
+    <div className={[
+      "relative",
+      isDark ? "bg-zinc-950 text-white" : "bg-[#fbfaf7] text-zinc-950",
+      "min-h-dvh",
+    ].join(" ")}>
       <ReadingProgress />
       <AnimatedBackground />
       <div className="relative z-10">

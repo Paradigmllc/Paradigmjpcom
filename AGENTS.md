@@ -221,3 +221,36 @@ Claude / Codex / Cline / Cursor など複数 AI エージェントで作業す�
 8. 1 ファイル 500 行超え禁止
 9. エラーのサイレント握りつぶし禁止（`catch {}` は存在してはならない）
 10. `alert()` / `confirm()` / `prompt()` 禁止 — Sonner toast / shadcn Dialog で代替
+
+## 📱 モバイルSafari 恒久ルール（2026-06-11 追加）
+
+| # | ルール | 違反した場合 |
+|---|--------|------------|
+| 11 | `<canvas>` を `useEffect` で使う場合、`prefers-reduced-motion` または `window.innerWidth < 768` ガードを必ず付ける | モバイルSafariでGPU枯渇→ページクラッシュ |
+| 12 | `<video>` タグには `playsInline` + `preload="none"` + `disableRemotePlayback` を必ず付与 | iOS Safariで動画がインライン再生されない / メモリ浪費 |
+| 13 | 動画コンテナのアスペクト比は `pb-[56.25%]` (padding-bottom hack) を使用。CSS `aspect-ratio` 禁止 | Safari 16以前で高さ0px、動画非表示 |
+| 14 | `-webkit-overflow-scrolling: touch` 使用禁止（iOS 13+ で deprecated、クラッシュ要因） | モバイルSafariでスクロール不具合・クラッシュ |
+| 15 | チャットボット/重いWidgetは `/report/` `/p/` `/d/` ページでレンダリングしない（pathnameチェック必須） | 診断レポートのモバイル表示でDOM過多→クラッシュ |
+| 16 | 全画面ページは `min-h-dvh` 使用。`min-h-screen` (100vh) 禁止 | Safariアドレスバー折りたたみ時にviewport変動→UI崩れ |
+| 17 | framer-motion `useScroll` 使用時はモバイルガード必須（`useIsMobile` 等） | モバイルSafariでスクロールジャンク・クラッシュ |
+
+## ⚡ ビルド高速化 恒久ルール（2026-06-11 追加）
+
+| # | ルール | 違反した場合 |
+|---|--------|------------|
+| 18 | Dockerfile 1行目は `# syntax = docker/dockerfile:1` 必須 | BuildKit cache mount が無効→ビルドキャッシュ非永続化 |
+| 19 | Dockerfile builder stage で `COPY . .` 禁止。個別ファイル単位でCOPY | 1行のソース変更で全ビルドキャッシュ破棄 |
+| 20 | Dockerfile の `npm install` には `--mount=type=cache,target=/root/.npm` 必須 | npm キャッシュ非永続化→毎回フルインストール |
+| 21 | Dockerfile の `next build` には `--mount=type=cache,target=/app/.next/cache` 必須 | Turbopack コンパイルキャッシュ非永続化→毎回フルコンパイル |
+| 22 | `payload generate:importmap` は `PAYLOAD_READS_DISABLED_DURING_BUILD` 時スキップ | DB無効build時の無駄な実行+失敗リスク |
+| 23 | `.dockerignore` に `astro-demo/` `scripts/` `worker/` `trigger/` `supabase/` を含める | Docker context転送が不必要に肥大→転送時間増加 |
+
+## 🔒 デプロイ前チェック（2026-06-11 追加）
+
+**commit → deploy の前に必ず実行:**
+```bash
+npm run quality:guard    # 全ガードチェック（Safari + ビルド速度 + silent catch + ファイルサイズ）
+npm run deploy:guard     # Coolify ヘルスチェック + quality guard + キュー整理
+```
+
+両方パスしないと本番デプロイ不可。

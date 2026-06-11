@@ -130,7 +130,18 @@ function inspectHost() {
 
 async function main() {
   assertDockerfileRuntimeGuards()
-  if (preDeploy || inspectOnly) {
+
+  if (preDeploy) {
+    // Run quality guard before deploy
+    const qualityResult = spawnSync("node", ["scripts/paradigm-quality-guard.mjs", "--ci"], {
+      cwd: process.cwd(),
+      encoding: "utf8",
+      stdio: "inherit",
+      timeout: 30000,
+    })
+    if (qualityResult.status !== 0) {
+      throw new Error("Quality guard failed — fix errors before deploying")
+    }
     await cancelStaleDeployments()
     inspectHost()
   }

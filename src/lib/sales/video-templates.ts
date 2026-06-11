@@ -197,7 +197,7 @@ export function buildVariantVideoHtml(data: DiagnosticReportData, script: VideoS
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>${esc(company)} - Paradigm Diagnostic Film</title>
   <style>
-    *{box-sizing:border-box}     html{--hf-scale:0.001;width:100%;height:100%;overflow:hidden;background:${theme.bg};} body{width:100%;height:100%;margin:0;overflow:hidden;background:${theme.bg};-webkit-overflow-scrolling:touch;}
+    *{box-sizing:border-box}     html{--hf-scale:0.001;width:100%;height:100%;overflow:hidden;background:${theme.bg};} body{width:100%;height:100%;margin:0;overflow:hidden;background:${theme.bg};}
     body{font-family:Inter,"Noto Sans JP",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:${theme.panel};}
     svg{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
     [data-composition-id]{width:${format.width}px;height:${format.height}px;position:relative;overflow:hidden;background:${theme.bg};transform:scale(var(--hf-scale));-webkit-transform:scale(var(--hf-scale));transform-origin:0 0;-webkit-transform-origin:0 0;will-change:transform;contain:layout style paint}

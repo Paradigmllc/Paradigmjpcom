@@ -47,7 +47,7 @@ export default function TemplatePreviewPage() {
   // Plus issue combos, making it effectively ~500 unique report patterns
 
   return (
-    <main className="min-h-screen bg-zinc-50 p-4 sm:p-8 font-sans">
+    <main className="min-h-dvh bg-zinc-50 p-4 sm:p-8 font-sans">
       <div className="mx-auto max-w-6xl">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-zinc-900">診断レポート テンプレートプレビュー</h1>

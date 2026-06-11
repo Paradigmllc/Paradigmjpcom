@@ -18,6 +18,8 @@
     "lhci": "lhci autorun --config=lighthouserc.json",
     "deploy:guard": "node scripts/coolify-deploy-guard.mjs --inspect",
     "deploy:prod": "node scripts/sales-os-no-login-deploy.mjs",
+    "quality:guard": "node scripts/paradigm-quality-guard.mjs",
+    "quality:ci": "node scripts/paradigm-quality-guard.mjs --ci",
     "host:install-coolify-guard": "node scripts/install-coolify-host-guard.mjs",
     "context:audit": "powershell -ExecutionPolicy Bypass -File %USERPROFILE%\\\\.agents\\\\scripts\\\\context-audit.ps1"
   },

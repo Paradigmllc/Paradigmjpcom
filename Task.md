@@ -1,3 +1,144 @@
+## ACTIVE HANDOFF — 2026-06-11 恒久的再発防止策 完了
+
+### 自動ガードスクリプト `scripts/paradigm-quality-guard.mjs`
+デプロイ前に自動実行されるゼロ依存チェック:
+| カテゴリ | チェック数 | 違反時 |
+|---------|-----------|--------|
+| Safariクラッシュ | 8 (canvas無ガード, playsInline欠落, -webkit-overflow-scrolling, DifyChatbotガード欠落, 動画aspect-ratio, useScroll無ガード, min-h-screen, preload=auto) | 🔴 ERROR → デプロイ不可 |
+| ビルド高速化 | 7 (BuildKit syntax, COPY . ., npm cache mount, next cache mount, payload importmap skip, dockerignore, healthcheck) | 🔴 ERROR → デプロイ不可 |
+| silent catch | 1 | 🔴 ERROR |
+| ファイルサイズ | 1 (>500行) | 🔴 ERROR (migrations/payload-types除く) |
+
+### AGENTS.md 永久ルール追加 (Rule #11-23)
+- モバイルSafari 7ルール (#11-17)
+- ビルド高速化 6ルール (#18-23)
+- デプロイ前チェック手順
+
+### デプロイパイプライン統合
+- `deploy:guard` が quality guard を deploy 前に自動実行
+- `npm run quality:guard` / `npm run quality:ci` 単体実行可
+- 失敗時はデプロイブロック
+
+### 追加修正 (3ファイル)
+| ファイル | 変更 |
+|----------|------|
+| `report/[slug]/loading.tsx` | `min-h-screen` → `min-h-dvh` |
+| `report/[slug]/error.tsx` | `min-h-screen` → `min-h-dvh` |
+| `report/template-preview/page.tsx` | `min-h-screen` → `min-h-dvh` |
+
+### 検証
+- `npx tsc --noEmit`: 全変更ファイル 0 エラー
+- `npm run quality:guard`: 7 errors/51 warnings (全て既存、変更ファイル由来0件)
+- `npm run deploy:guard`: Docker runtime guard OK
+
+---
+
+## ACTIVE HANDOFF — 2026-06-11 ビルド⇒デプロイ 抜本的再発防止
+
+### 原因分析
+| # | 原因 | 影響 |
+|---|------|------|
+| 1 | Docker Builder stage 全 `COPY . .` → ソース1行変更で全layer cache破棄 | 🔴 |
+| 2 | npm / Next.js cache が Docker BuildKit で永続化されていない → 毎回全install+全compile | 🔴 |
+| 3 | 非ビルドファイル8MB+がDocker build contextに含まれる → context転送が無駄に長い | 🟠 |
+| 4 | `payload generate:importmap` がDB無効build時も常時実行 (無駄 + 失敗リスク) | 🟡 |
+
+### 修正 (3ファイル)
+| ファイル | 変更内容 |
+|----------|---------|
+| `Dockerfile` | `# syntax=docker/dockerfile:1` 追加。npm install に `--mount=type=cache,target=/root/.npm`。next build に `--mount=type=cache,target=/app/.next/cache,id=paradigm-next-cache` で Turbopack コンパイルキャッシュ永続化。`COPY . .` → 必要ファイルのみ個別COPYでlayer cache精度向上 |
+| `scripts/build-next.mjs` | `PAYLOAD_READS_DISABLED_DURING_BUILD` 時は `payload generate:importmap` スキップ |
+| `.dockerignore` | 非ビルドファイル大幅追加排除: `worker/`, `trigger/`, `astro-demo/`, `scripts/`, `supabase/`, agent config, dev logs, `docker-compose.*.yml`, `docs/handoff-archive` |
+
+### 期待される効果
+- 同一コミット再ビルド: BuildKit cache hit → **数分→数十秒**
+- ソース変更ビルド: npm install skip + Next.js cache partial hit → **50-70%短縮**
+- Docker context転送量: 8MB+削減
+- 初回ビルドも context 転送高速化 + importmap skip で若干短縮
+
+### 検証
+- `npx tsc --noEmit`: 全変更ファイル 0 エラー
+- `git diff --check Dockerfile`: LF/CRLF warning only
+- Deploy guard checks (HOSTNAME/PORT/curl/HEALTHCHECK) 全パス
+
+### 残存リスク
+- Coolify が BuildKit 非対応の場合 `--mount=type=cache` は無視される (通常の `npm install` + `npm run build` にフォールバック)
+- Next.js cache の初回populateは遅いが2回目以降で効果発揮
+- `tsconfig.json` 変更時は全キャッシュ無効化 (避けられない)
+
+---
+
+## ACTIVE HANDOFF — 2026-06-11 診断レポート モバイルSafari クラッシュ修正
+
+### 原因
+| # | 原因 | 影響 |
+|---|------|------|
+| 1 | `AnimatedBackground` canvas 50粒子 × O(n²) line描画 / frame = モバイルSafariでGPU枯渇→クラッシュ | 🔴 致命的 |
+| 2 | DifyChatbotが `/report/` ページでもロード → 重いDOM+アニメーション追加 | 🔴 |
+| 3 | `min-h-screen` (100vh) → Safariアドレスバー折りたたみ時にviewport変動→UI崩れ | 🟠 |
+| 4 | 動画プレイヤー `aspect-ratio:16/9` → 一部Safariで高さ0pxに | 🟠 |
+| 5 | `-webkit-overflow-scrolling:touch` (deprecated) 残留 | 🟡 |
+| 6 | `ReadingProgress` が全scrollでframer-motion再計算 | 🟡 |
+
+### 修正 (5ファイル)
+| ファイル | 変更内容 |
+|----------|---------|
+| `report-visual-effects.tsx` | `useIsMobile()` hook追加。モバイル/`prefers-reduced-motion` 時はcanvas particle animation完全停止。初回renderは`true`デフォルトで安全側 |
+| `DiagnosticReport.tsx` | `min-h-screen` → `min-h-dvh` (dynamic viewport height, Safari対応) |
+| `DifyChatbot.tsx` | `/report/` pathname検出でレポートページではレンダリングしない |
+| `ReportHyperFramesPlayer.tsx` | `aspect-ratio:16/9` → `pb-[56.25%]` (Safari互換)。`webkit-playsinline` + `x-webkit-airplay=deny` + `disableRemotePlayback` 追加。`preload="none"` でメモリ節約。iframe側pb wrapper div閉じ修正 |
+| `video-templates.ts` | `-webkit-overflow-scrolling:touch` 除去 (deprecated, Safariクラッシュ要因) |
+| `report-ui-enhancements.tsx` | `ReadingProgress` bar を framer-motion → CSS transition に簡略化 (scroll毎のmotion再計算回避) |
+
+### 検証
+- `npx tsc --noEmit`: 変更ファイル 0 エラー
+
+### 残存リスク
+- 本番Safari実機でのクラッシュ再現確認は未
+- 古いiOS (<15.4) では `dvh` 非対応 → `min-h-screen` フォールバック (CSS未定義のため、古いiOSでも実質100vhで動作)
+
+---
+
+## ACTIVE HANDOFF — 2026-06-11 RevenueOS DB全面監査 + 恒久再発防止
+
+### 監査で発見された 5 つの重大問題
+| # | 重大度 | 問題 | 対象 |
+|---|--------|------|------|
+| 1 | 🔴 即時 | エラー握りつぶし: `relation ... does not exist` をサイレント抑制、テーブル不在が不可視化 | `integration-registry.ts:242`, `error-monitor.ts:39` |
+| 2 | 🔴 即時 | マイグレーション番号衝突: 034/035 がルートとサブディレクトリに二重定義。サブディレクトリ版は一度も実行されず | `supabase/migration_034` / `supabase/migrations/migration_034` |
+| 3 | 🔴 即時 | `run-migrations.sh` に migration_042, 043 未追加 + サブディレクトリスキャン漏れ | `run-migrations.sh`, `generate-migration-script.cjs` |
+| 4 | 🔴 即時 | `error-monitor.ts` の RPC `exec_sql` 自己修復が Supabase でデフォルト無効のため常に失敗 | `error-monitor.ts:21` |
+| 5 | 🔴 即時 | エクスポート関数内の `throw new Error()` が 85 箇所。Trigger.dev タスク内で未処理 reject → リトライ課金 | `external-studio-sync.ts`, `crm-field-config.ts`, `content-templates.ts`, `video-pipeline.ts`, `customer-handoff.ts`, `sales-pipeline-helpers.ts` |
+
+### 修正内容 (全ファイル)
+| ファイル | 変更 |
+|----------|------|
+| `error-monitor.ts` | RPC自己修復削除、tableReadyバグ修正、テーブル不在時はconsole.error出力 |
+| `integration-registry.ts:242` | サイレント抑制→console.error + エラーメッセージ完全出力 |
+| `external-studio-sync.ts:482,485` | throw→return + console.error |
+| `crm-field-config.ts:298,324,332` | throw→return + console.error |
+| `content-templates.ts:398,416` | throw→return + console.error |
+| `video-pipeline.ts:408,415,421,427` | throw→return + console.error |
+| `customer-handoff.ts:140,164,193,329` | throw→return + console.error |
+| `sales-pipeline-helpers.ts:79,96,126,136,151` | console.error 追加 (caller try/catch 内のため throw 維持) |
+| `sales-pipeline-execution.ts:45,109,125,135,145,147,163,176,186,214,249` | console.error 追加 |
+| `run-migrations.sh` | migration_042, 043 + サブディレクトリ 2 ファイル追加 |
+| `generate-migration-script.cjs` | サブディレクトリもスキャン対象に |
+| `src/lib/sales/db-tables.ts` (新規) | 全テーブル名の中央レジストリ |
+| `scripts/verify-db-tables.mjs` (新規) | 全テーブル実在チェック + 不足テーブルレポート |
+
+### 恒久ルール (Task.md 末尾に追記)
+- テーブル名は `db-tables.ts` の定数のみ使用。生文字列 `.from("...")` 禁止
+- `.from()` 呼び出し前後でテーブル不在エラーを握りつぶさない。必ず `console.error` + 呼び出し元に伝播
+- 新規マイグレーション追加時は `generate-migration-script.cjs` → `run-migrations.sh` → `exec-migrations.cjs` の順で必ず本番適用
+- エクスポート関数では `throw new Error()` 禁止 → `return { ok: false, error: "..." }` パターンに統一
+- `catch {}` の空ブロック禁止 (既存ルール #1 の再確認)
+
+### 検証
+- `npx tsc --noEmit`: 変更ファイル 0 エラー
+
+---
+
 ## ACTIVE HANDOFF — 2026-06-11 RevenueOS ブラックボックスUI削除
 
 ### 削除/簡略化
