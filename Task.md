@@ -1,4 +1,4 @@
-## ACTIVE HANDOFF — 2026-06-11 診断レポート修正
+## ACTIVE HANDOFF — 2026-06-11 診断レポート修正 + デプロイ基盤修復
 
 ### 監査サマリー — 全項目対応済み
 | 重大度 | 件数 | 状態 |
@@ -35,6 +35,8 @@
 | Keystatic default-demo | titleフィールド形式修正 (string→{name,slug}) |
 | 動画プレイヤー | [data-composition-id] width/height:100%→固定px化 (scale空白修正) |
 | スクショ画像 | crossorigin="anonymous"追加 + コンテナbg-zinc-100追加 |
+| デプロイタイムアウト | dynamic_timeout: 300→1800s (DO SSH経由) + overlayfs Docker prune |
+| Dockerfile | npm ci→npm install + --turbo build |
 | next/image | screenshot画像に導入 |
 | env設定 | NOTION/Supabase webhook secrets + HYPERFRAMES/STAGEHAND keys |
 
