@@ -192,18 +192,10 @@ export default function DiagnosticReport({
               <ErrorBoundary fallback={
                 <p className="text-center text-sm text-zinc-400 py-8">
                   {lang === "ja" ? "動画を読み込めませんでした。" : "Failed to load video."}
-                  {data.video_url && <a href={data.video_url} className="ml-2 underline hover:text-zinc-600">{lang === "ja" ? "MP4をダウンロード" : "Download MP4"}</a>}
                 </p>
               }>
-                <ReportHyperFramesPlayer src={videoHref} lang={lang} />
+                <ReportHyperFramesPlayer src={videoHref} lang={lang} mp4Url={data.video_url} />
               </ErrorBoundary>
-              {data.video_url && (
-                <p className="mt-2 text-center text-xs text-zinc-400">
-                  <a href={data.video_url} download className="hover:text-zinc-300 underline">
-                    {lang === "ja" ? "MP4をダウンロード" : "Download MP4"}
-                  </a>
-                </p>
-              )}
             </div>
           </section>
         )}

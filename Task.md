@@ -1,3 +1,25 @@
+## ACTIVE HANDOFF — 2026-06-11 モバイル Safari 動画プレイヤー根本修正
+
+### 問題
+モバイル Safari で診断レポート動画が表示崩れ・位置ズレ（iframe 内固定キャンバス + CSS transform scale + 二重 UI）
+
+### 修正 (3ファイル)
+| ファイル | 変更内容 |
+|----------|---------|
+| `ReportHyperFramesPlayer.tsx` | 完全書き直し。MP4 ある場合ネイティブ `<video>` 要素で再生 (YouTube Embed 方式)。`playsInline`/`preload="metadata"` で iOS Safari 対応。全コントロールを `sm:` レスポンシブ化。MP4 なければ iframe フォールバック。 |
+| `DiagnosticReport.tsx` | `mp4Url={data.video_url}` をプレイヤーに渡す。冗長な MP4 ダウンロードリンク除去。 |
+| `video-templates.ts` | `-webkit-backdrop-filter`/`-webkit-transform` 追加。`will-change:transform`+`contain` で GPU 高速化。`mix-blend-mode` に `isolation:isolate`。`?embedded=1` 検出で iframe 内二重 UI (chapter-strip/footer) を非表示。 |
+
+### 検証
+- `npx tsc --noEmit`: 変更ファイル 0 エラー
+- Pre-existing TS errors: `astro-demo/src/keystatic/demo-data.ts` (無関係)
+
+### 残存リスク
+- iframe フォールバック時も二重 UI は除去済みだが、Safari の `backdrop-filter`/`mix-blend-mode` 制約は完全には回避不可 (ネイティブ動画モード推奨)
+- MP4 が未生成の古いレポートは iframe フォールバックになる
+
+---
+
 ## ACTIVE HANDOFF — 2026-06-11 診断レポート修正 + デプロイ基盤修復
 
 ### 監査サマリー — 全項目対応済み
@@ -64,3 +86,26 @@
 - Runbook: `docs/knowledge/coolify-deploy-guard.md`.
 - Production deploy: commit `f9ba77b` deployed through Coolify deployment `emzbnvxdtlpeej3ehgc4ylst`; new container `i12am4vvcbggefnqdizhnv9a-021310856779` is healthy on image `i12am4vvcbggefnqdizhnv9a:f9ba77bf53f5313dec6178033d24123d6d9886e0`.
 - Verification: script syntax checks passed; `npm run deploy:guard` passed; host guard executed successfully; `https://paradigmjp.com/`, `https://www.paradigmjp.com/`, and `https://keystatic.paradigmjp.com/` returned HTTP 200. Existing TypeScript blocker remains `astro-demo/src/keystatic/demo-data.ts` and is unrelated.
+
+## ACTIVE HANDOFF - 2026-06-11 RevenueOS full-site demo factory
+
+- Changed the demo strategy from thin LP / external `paradigm-astro-demo.pages.dev` redirects to RevenueOS-owned full website demos.
+- Added `src/lib/sales/fullsite-demo-templates.ts` with 5 full-site template packs:
+  - Premium Corporate HP
+  - Local Service Booking
+  - Commerce Storefront
+  - Japan Entry Commerce
+  - DX / AI Business System
+- Each pack carries page map, feature pack, compliance pack, and design intent so generated demos behave like HP/EC/booking/DX sites, not one-page LPs.
+- `generateReplacementDemo()` now writes `fullsite_demo_factory` metadata to `web_demos`, saves the canonical URL as `/{locale}/d/{slug}`, and stores `revenueos_fullsite_demo` in `sales_companies.meta.demo_site`.
+- `/[locale]/d/[slug]` now reads `web_demos` from Supabase SSOT and serves stored HTML/R2 HTML directly instead of redirecting to the old external demo Pages project.
+- Demo sample URLs now point to `/{locale}/d/{variant}-demo`, and the demo route can render built-in full-site fallback samples when SSOT has no generated row yet.
+- RevenueOS Asset Management now shows the full-site template catalog, feature packs, compliance packs, and the SSOT/R2 demo model.
+- Added Keystatic catalog entry: `content/keystatic/demo-sites/fullsite-template-catalog.mdoc`.
+- Verification:
+  - `git diff --check` passed for touched files, with LF/CRLF warnings only.
+  - `npx tsc --noEmit --pretty false` is still blocked by pre-existing `astro-demo/src/keystatic/demo-data.ts` errors: missing `description` mapping and missing `./demo-data-legacy`.
+  - Targeted forbidden-pattern search found no new `alert`, `confirm`, `prompt`, or `as any` in touched implementation files.
+- Unresolved risk:
+  - Existing generated rows in `web_demos` may still contain old thin LP HTML until each company is regenerated.
+  - `cf-pages-deploy.ts` remains as legacy Keystatic/Cloudflare code but is no longer used by `generateReplacementDemo()`.
