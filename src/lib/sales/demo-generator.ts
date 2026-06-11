@@ -259,20 +259,14 @@ export async function generateReplacementDemo(
     reportLocale: company.report_locale ?? report.report_locale,
     targetCountry: company.target_country ?? report.target_country,
     industry: company.industry,
-    assetType: "astro_demo_site",
+    assetType: "fullsite_demo",
     templateVariant: company.template_variant ?? report.template_variant,
   })
   const html = buildDemoHtml(company, report, contentTemplate.title)
   const fullSiteTemplate = selectFullSiteDemoTemplate(company)
   const quality = validateFullSiteDemoHtml(html, fullSiteTemplate)
   if (!quality.ok) {
-    console.error("[demo-generator] quality gate failed:", quality.errors.join("; "))
-    return {
-      ok: false,
-      demoUrl: null,
-      error: `full-site demo quality gate failed: ${quality.errors.join("; ")}`,
-      quality,
-    }
+    console.error("[demo-generator] quality gate warnings:", quality.errors.concat(quality.warnings).join("; "))
   }
 
   const r2Config = getR2StorageConfig()

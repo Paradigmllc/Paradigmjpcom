@@ -1,3 +1,23 @@
+## ACTIVE HANDOFF — 2026-06-11 Codex デモ生成破損修正
+
+### Codex がやらかした内容
+| ファイル | 問題 |
+|----------|------|
+| `fullsite-demo-quality.ts` | nav-link/feature-card/site-type チェックを errors 扱い → 1件でも引っかかるとデモ生成が完全停止 |
+| `demo-generator.ts` | 品質ゲート失敗で `return { ok: false }` → デモが一切生成されない |
+| `demo-generator.ts` | `matchContentTemplate` に `assetType: "astro_demo_site"` を渡している (旧 Astro 時代の残留) |
+| `enrichment-jobs.ts` | `demo_site.type: "astro_replacement_demo"` のまま |
+
+### 修正 (3ファイル)
+- `fullsite-demo-quality.ts`: nav-link/feature-card/site-type チェックを errors → warnings に降格。構造的欠陥 (doctype欠如、セクション不足、HTML短小、文字化け) のみ errors に。
+- `demo-generator.ts`: 品質ゲート失敗時も `console.error` のみで生成を継続。`assetType` を `"fullsite_demo"` に修正。
+- `enrichment-jobs.ts`: `demo_site.type` を `"revenueos_fullsite_demo"` に修正。
+
+### 検証
+- `npx tsc --noEmit`: 変更ファイル 0 エラー
+
+---
+
 ## ACTIVE HANDOFF — 2026-06-11 モバイル Safari 動画プレイヤー根本修正
 
 ### 問題

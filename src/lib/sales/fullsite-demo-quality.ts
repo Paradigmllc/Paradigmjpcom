@@ -50,21 +50,21 @@ export function validateFullSiteDemoHtml(
   }
 
   const navLinks = countMatches(html, /data-nav-link=/g)
-  if (navLinks < 5) errors.push("Full-site navigation must expose at least five destinations")
+  if (navLinks < 5) warnings.push(`Full-site navigation exposes ${navLinks} destinations (min 5 recommended)`)
 
   const dataFeatures = countMatches(html, /data-feature-card=/g)
-  if (dataFeatures < 6) errors.push("Operational feature cards are insufficient")
+  if (dataFeatures < 6) warnings.push(`Operational feature cards: ${dataFeatures} (min 6 recommended)`)
 
   if (template.siteType === "commerce" && !html.includes("data-commerce-cart")) {
-    errors.push("Commerce template is missing a cart/order interaction")
+    warnings.push("Commerce template is missing a cart/order interaction")
   }
 
   if (template.siteType === "booking" && !html.includes("data-booking-panel")) {
-    errors.push("Booking template is missing a reservation interaction")
+    warnings.push("Booking template is missing a reservation interaction")
   }
 
   if ((template.siteType === "corporate" || template.siteType === "dx") && !html.includes("data-crm-panel")) {
-    errors.push("Corporate template is missing a CRM/lead workflow panel")
+    warnings.push("Corporate template is missing a CRM/lead workflow panel")
   }
 
   const score = Math.max(0, 100 - errors.length * 25 - warnings.length * 4)

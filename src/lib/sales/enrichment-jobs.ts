@@ -422,7 +422,7 @@ async function processJob(sb: ServiceSupabase, job: SalesEnrichmentJob): Promise
         ...(save.company.meta ?? {}),
         demo_site: {
           url: demo.demoUrl,
-          type: "astro_replacement_demo",
+          type: "revenueos_fullsite_demo",
           generated_at: new Date().toISOString(),
         },
       }
