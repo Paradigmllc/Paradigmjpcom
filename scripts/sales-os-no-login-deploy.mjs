@@ -23,6 +23,7 @@ const DEFAULT_COOLIFY_URL = "https://coolify.appexx.me"
 const DRY = process.argv.includes("--dry")
 const SKIP_DEPLOY = process.argv.includes("--skip-deploy")
 const SKIP_HOST_PREFLIGHT = process.argv.includes("--skip-host-preflight")
+const SKIP_DEPLOY_GUARD = process.argv.includes("--skip-deploy-guard")
 
 const PRODUCTS = [
   {
@@ -272,6 +273,23 @@ async function applyJapanReadinessInsightsMigration(envs) {
   return applySqlMigration(envs, "migration_033_sales_japan_readiness_insights.sql", "Japan readiness insights migration")
 }
 
+function runDeployGuard() {
+  if (SKIP_DEPLOY_GUARD) {
+    console.log("Coolify deploy guard: skipped")
+    return
+  }
+  const result = spawnSync(process.execPath, ["scripts/coolify-deploy-guard.mjs", "--pre-deploy"], {
+    cwd: process.cwd(),
+    env: process.env,
+    encoding: "utf8",
+  })
+  const output = `${result.stdout || ""}${result.stderr || ""}`.trim()
+  if (output) console.log(output)
+  if (result.status !== 0) {
+    throw new Error("Coolify deploy guard failed; refusing deployment")
+  }
+}
+
 async function applyPostOutreachToolsMigration(envs) {
   return applySqlMigration(envs, "migration_034_sales_post_outreach_tools.sql", "Post-outreach OSS tools migration")
 }
@@ -335,6 +353,37 @@ async function triggerDeploy() {
   return uuid
 }
 
+async function cancelDeploy(uuid, reason) {
+  try {
+    await coolify(`/api/v1/deployments/${uuid}/cancel`, { method: "POST" })
+    console.warn(`Deployment cancelled: ${uuid} (${reason})`)
+  } catch (error) {
+    console.warn(`Deployment cancel failed for ${uuid}: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
+function printDeploymentHint(logText) {
+  if (!logText) return
+  if (/Healthcheck URL.*localhost:3000|connection refused|curl: not found|wget: can't connect/i.test(logText)) {
+    console.warn(
+      "Deployment hint: Coolify healthcheck failed inside the new container. Verify Dockerfile keeps curl, HOSTNAME=0.0.0.0, PORT=3000, and the localhost HEALTHCHECK.",
+    )
+  }
+  if (/no space left on device|ENOSPC/i.test(logText)) {
+    console.warn("Deployment hint: host disk pressure detected. Run the host disk preflight and prune only Docker cache/images, not volumes.")
+  }
+}
+
+async function readDeploymentLogTail(uuid) {
+  try {
+    const status = await coolify(`/api/v1/deployments/${uuid}`)
+    const logs = typeof status?.logs === "string" ? status.logs : ""
+    return logs.slice(-4000)
+  } catch {
+    return ""
+  }
+}
+
 async function waitDeploy(uuid) {
   for (let i = 1; i <= 80; i++) {
     await new Promise((resolve) => setTimeout(resolve, 15_000))
@@ -343,9 +392,11 @@ async function waitDeploy(uuid) {
     console.log(`[deploy ${i}/80] ${state}`)
     if (state === "finished" || state === "running:healthy") return state
     if (state === "failed" || state === "error" || state === "cancelled") {
+      printDeploymentHint(await readDeploymentLogTail(uuid))
       throw new Error(`Coolify deployment failed: ${state}`)
     }
   }
+  await cancelDeploy(uuid, "poll timeout")
   throw new Error("Coolify deployment timed out")
 }
 
@@ -378,7 +429,10 @@ async function refreshIntegrationStatus(envs) {
 
 async function main() {
   console.log("Sales OS no-login deploy")
-  if (!DRY && !SKIP_DEPLOY) runHostDiskPreflight()
+  if (!DRY && !SKIP_DEPLOY) {
+    runHostDiskPreflight()
+    runDeployGuard()
+  }
   const envs = await readProductionEnv()
   console.log("Coolify API: connected")
 

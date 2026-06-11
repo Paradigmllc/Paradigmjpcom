@@ -53,3 +53,13 @@
 - Root cause found in Coolify logs: new Next.js standalone container reported ready, but Coolify healthcheck hit `http://localhost:3000/` and got connection refused. Earlier `curl` absence was fixed, but the runner still did not explicitly bind Next to all interfaces.
 - Change: Dockerfile runner now sets `HOSTNAME=0.0.0.0` and `PORT=3000` before `node server.js`, so Coolify's localhost healthcheck can pass.
 - Verification: `git diff --check` passed with only LF/CRLF warning. `npx tsc --noEmit --pretty false` is still blocked by pre-existing `astro-demo/src/keystatic/demo-data.ts` errors unrelated to this Dockerfile change.
+## ACTIVE HANDOFF - 2026-06-11 Coolify deploy recurrence prevention
+
+- Permanent guards added:
+  - Docker image now has an explicit localhost `HEALTHCHECK` in addition to `HOSTNAME=0.0.0.0` and `PORT=3000`.
+  - `scripts/coolify-deploy-guard.mjs` verifies Dockerfile healthcheck requirements, cancels stale `paradigm-hp` queued/in-progress deployments through Coolify API, and prints host/deploy state.
+  - Both deploy entrypoints (`scripts/deploy.mjs` and `scripts/sales-os-no-login-deploy.mjs`) now run the deploy guard before triggering Coolify and cancel their own deploy on poll timeout.
+  - `scripts/install-coolify-host-guard.mjs` installs a host cron guard that safely prunes Docker cache/images when disk usage is high and removes only inactive Coolify helper containers. It never prunes volumes.
+- Production host cron installed at `/etc/cron.d/paradigm-coolify-host-guard`, running `/usr/local/sbin/paradigm-coolify-host-guard.sh` every 15 minutes. Latest run showed disk 45%, helpers 0, no action needed.
+- Runbook: `docs/knowledge/coolify-deploy-guard.md`.
+- Verification: script syntax checks passed; `npm run deploy:guard` passed; host guard executed successfully. Existing TypeScript blocker remains `astro-demo/src/keystatic/demo-data.ts` and is unrelated.

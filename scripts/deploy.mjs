@@ -7,6 +7,7 @@
  *   node scripts/deploy.mjs --dry
  *   node scripts/deploy.mjs --no-wait
  *   node scripts/deploy.mjs --skip-host-preflight
+ *   node scripts/deploy.mjs --skip-deploy-guard
  */
 
 import { spawnSync } from "node:child_process"
@@ -15,6 +16,7 @@ import { getCoolifyAuth } from "./lib/coolify-env.mjs"
 const DRY = process.argv.includes("--dry")
 const NO_WAIT = process.argv.includes("--no-wait")
 const SKIP_HOST_PREFLIGHT = process.argv.includes("--skip-host-preflight")
+const SKIP_DEPLOY_GUARD = process.argv.includes("--skip-deploy-guard")
 
 const AUTH = getCoolifyAuth()
 if (!AUTH) {
@@ -64,9 +66,34 @@ function runHostDiskPreflight() {
   if (result.status !== 0) throw new Error("Host disk preflight failed; refusing deployment")
 }
 
+function runDeployGuard() {
+  if (SKIP_DEPLOY_GUARD || DRY) {
+    console.log("Coolify deploy guard: skipped")
+    return
+  }
+  const result = spawnSync(process.execPath, ["scripts/coolify-deploy-guard.mjs", "--pre-deploy"], {
+    cwd: process.cwd(),
+    env: process.env,
+    encoding: "utf8",
+  })
+  const output = `${result.stdout || ""}${result.stderr || ""}`.trim()
+  if (output) console.log(output)
+  if (result.status !== 0) throw new Error("Coolify deploy guard failed; refusing deployment")
+}
+
+async function cancelDeploy(uuid, reason) {
+  try {
+    await api(`/api/v1/deployments/${uuid}/cancel`, { method: "POST" })
+    console.warn(`Deployment cancelled: ${uuid} (${reason})`)
+  } catch (error) {
+    console.warn(`Deployment cancel failed for ${uuid}: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
 async function run() {
   console.log("paradigmjp.com deploy via Coolify API")
   runHostDiskPreflight()
+  runDeployGuard()
 
   console.log("Syncing git_repository to Coolify")
   try {
@@ -106,6 +133,7 @@ async function run() {
       throw new Error(`Deployment failed: ${state}`)
     }
   }
+  await cancelDeploy(deployUuid, "poll timeout")
   throw new Error("Deployment timed out")
 }
 

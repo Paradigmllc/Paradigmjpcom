@@ -16,6 +16,9 @@
     "e2e:headed": "playwright test --headed",
     "e2e:a11y": "playwright test e2e/a11y.spec.ts",
     "lhci": "lhci autorun --config=lighthouserc.json",
+    "deploy:guard": "node scripts/coolify-deploy-guard.mjs --inspect",
+    "deploy:prod": "node scripts/sales-os-no-login-deploy.mjs",
+    "host:install-coolify-guard": "node scripts/install-coolify-host-guard.mjs",
     "context:audit": "powershell -ExecutionPolicy Bypass -File %USERPROFILE%\\\\.agents\\\\scripts\\\\context-audit.ps1"
   },
   "dependencies": {
