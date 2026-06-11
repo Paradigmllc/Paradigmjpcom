@@ -99,6 +99,40 @@
 
 ---
 
+## ACTIVE HANDOFF — 2026-06-11 RevenueOS ゾンビUI全面監査 + 統廃合
+
+### 削除/移動
+| 区分 | 件数 | 内容 |
+|------|------|------|
+| ゾンビパネル移動 | 18ファイル | `_archive_zombie/` に移動（深層ゾンビ 14 + 死んだバレル輸出 4） |
+| 死んだページ削除 | 1ディレクトリ | `_archive_sales/page.tsx` (266行, 旧Sprint 11版, 別認証方式) |
+| ハードコードシークレット除去 | 1ファイル | `FormMessageCell.tsx` の webhook secret (セキュリティリスク、完全未参照) |
+
+### 統合/改善
+| ファイル | 変更内容 |
+|----------|---------|
+| `SalesCommandPanels.tsx` | 不使用エクスポート 5件削除 (OverviewPanel, WorkspacePanel, OperatorPanel, AnalyticsPanel, MigrationPanel)。CrmPanel + IntegrationsPanel のみに |
+| `TemplateManagementPanel.tsx` | **新規作成**: SalesCommandCenter.tsx の 75行インライン関数を独立ファイルに分離 |
+| `SalesCommandCenter.tsx` | インライン TemplateManagementPanel 削除、import に置換。-75行 |
+| `SalesCommandCenter.tsx` | 「分析」サブタブ追加。`AnalyticsPanel` (パイプライン/業種/課題/ソース BarList) を再配線。-13行の死んだパネルが息を吹き返した |
+| `FormMessageCell.tsx` | `_archive_zombie/` に移動（ハードコード webhook secret 除去済み） |
+
+### 生き残ったアクティブUI (ファイル数)
+| カテゴリ | 前 | 後 |
+|----------|-----|-----|
+| sales-dashboard/ 直下 | 35 | **17** (-18 zombie) |
+| アクティブにレンダリングされるパネル | 10 | **11** (+1 AnalyticsPanel 復活) |
+| インライン定義 | 1 | **0** (TemplateManagementPanel 分離) |
+| ハードコードシークレット | 1 | **0** |
+| システムサブタブ | 5 | **6** (+分析) |
+| 死んだページ | 1ディレクトリ | **0** |
+
+### 検証
+- `npx tsc --noEmit`: 変更ファイル 0 エラー
+- `_archive_zombie/` は tsconfig exclude パターン `**/_archive_*` により型チェック除外
+
+---
+
 ## ACTIVE HANDOFF — 2026-06-11 RevenueOS DB全面監査 + 恒久再発防止
 
 ### 監査で発見された 5 つの重大問題
