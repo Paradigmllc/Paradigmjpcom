@@ -1,3 +1,29 @@
+## ACTIVE HANDOFF — 2026-06-11 Codex フルサイトデモシステム全削除 + 旧方式復元
+
+### 削除したもの
+| ファイル | 内容 |
+|----------|------|
+| `fullsite-demo-templates.ts` | 業種別フルサイトHTMLテンプレート (339行) |
+| `fullsite-demo-quality.ts` | 品質ゲート検査 |
+| `fullsite-template-catalog.mdoc` | Keystatic テンプレートカタログ |
+| `d/[slug]/page.tsx` + `DemoClient.tsx` | 企業別デモ表示ページ |
+| `d/[slug]/[...path]/` | キャッチオールルート |
+
+### 復元したもの
+| ファイル | 内容 |
+|----------|------|
+| `d/[slug]/route.ts` | CF Pages リダイレクト (307) |
+| `demo-generator.ts` | 旧 Astro デモ生成 + CF Pages デプロイ |
+| `demo-data.ts` | `demo_url` → `paradigm-astro-demo.pages.dev` |
+| `enrichment-jobs.ts` | `type: "astro_replacement_demo"` |
+| `AssetManagementPanel.tsx` | フルサイトテンプレート参照除去 |
+| `astro-demo/demo-data.ts` | 旧 `as any` キャスト復元 |
+
+### 検証
+- `npx tsc --noEmit`: 変更に関連するエラー 0 (既存 astro-demo エラーは無関係)
+
+---
+
 ## ACTIVE HANDOFF — 2026-06-11 Codex デモ生成破損修正
 
 ### Codex がやらかした内容

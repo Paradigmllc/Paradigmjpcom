@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     const result = await generateReplacementDemo(company, report)
     if (!result.ok) {
       return NextResponse.json(
-        { ok: false, error: result.error ?? "demo generation failed", quality: result.quality ?? null },
+        { ok: false, error: result.error ?? "demo generation failed" },
         { status: 422 },
       )
     }
@@ -54,7 +54,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       demoUrl: result.demoUrl,
-      quality: result.quality,
       companyId: company.id,
       slug: company.slug,
     })

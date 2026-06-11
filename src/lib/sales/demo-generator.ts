@@ -5,8 +5,6 @@
 import type { DiagnosticAct, DiagnosticReportData } from "./diagnostic"
 import type { SalesCompany } from "./types"
 import { compactText, escapeHtml, labelForIndustry, themeForIndustry } from "./render-quality"
-import { buildFullSiteDemoHtml, selectFullSiteDemoTemplate } from "./fullsite-demo-templates"
-import { validateFullSiteDemoHtml, type FullSiteDemoQualityResult } from "./fullsite-demo-quality"
 
 const CORRUPT = /縺|繝|譁|蜑|荳|譛|谿|險|螟|豕|邨|髻|蠕|蝠|逕|莠|陦|蛻|諡|蜷|繧|�/
 
@@ -75,10 +73,6 @@ function metricCards(acts: DiagnosticAct[]): string {
 }
 
 export function buildDemoHtml(company: SalesCompany, report: DiagnosticReportData, templateTitle: string): string {
-  return buildFullSiteDemoHtml(company, report, templateTitle)
-}
-
-function buildLegacyDemoHtml(company: SalesCompany, report: DiagnosticReportData, templateTitle: string): string {
   const theme = themeForIndustry(company.industry)
   const loc = company.report_locale ?? report.report_locale
   const ja = loc === "ja"
@@ -245,11 +239,12 @@ function buildLegacyDemoHtml(company: SalesCompany, report: DiagnosticReportData
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { matchContentTemplate } from "./content-templates"
 import { getR2StorageConfig, sanitizeR2ObjectName } from "./r2-storage"
+import { deployDemoToCfPages } from "./cf-pages-deploy"
 
 export async function generateReplacementDemo(
   company: SalesCompany,
   report: DiagnosticReportData,
-): Promise<{ ok: boolean; demoUrl: string | null; error?: string; quality?: FullSiteDemoQualityResult }> {
+): Promise<{ ok: boolean; demoUrl: string | null; error?: string }> {
   const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, demoUrl: null, error: "Supabase service_role not configured" }
   if (!company.slug) return { ok: false, demoUrl: null, error: "company slug is missing" }
@@ -259,20 +254,14 @@ export async function generateReplacementDemo(
     reportLocale: company.report_locale ?? report.report_locale,
     targetCountry: company.target_country ?? report.target_country,
     industry: company.industry,
-    assetType: "fullsite_demo",
+    assetType: "astro_demo_site",
     templateVariant: company.template_variant ?? report.template_variant,
   })
   const html = buildDemoHtml(company, report, contentTemplate.title)
-  const fullSiteTemplate = selectFullSiteDemoTemplate(company)
-  const quality = validateFullSiteDemoHtml(html, fullSiteTemplate)
-  if (!quality.ok) {
-    console.error("[demo-generator] quality gate warnings:", quality.errors.concat(quality.warnings).join("; "))
-  }
 
   const r2Config = getR2StorageConfig()
   let demoUrl: string | null = null
   const locale = company.report_locale ?? report.report_locale
-  const publicDemoUrl = `/${locale}/d/${slug}`
 
   if (r2Config.ready && r2Config.bucket && r2Config.publicBaseUrl) {
     try {
@@ -301,26 +290,15 @@ export async function generateReplacementDemo(
   }
 
   const meta: Record<string, unknown> = {
-    generator: "fullsite_demo_factory",
-    renderer_version: "fullsite-v1-revenueos",
-    site_type: fullSiteTemplate.siteType,
-    demo_template: {
-      id: fullSiteTemplate.id,
-      label: fullSiteTemplate.label,
-      feature_pack: fullSiteTemplate.featurePack,
-      compliance_pack: fullSiteTemplate.compliancePack,
-      page_map: fullSiteTemplate.pageMap,
-      design_intent: fullSiteTemplate.designIntent,
-    },
+    generator: "astro_replacement_demo",
+    renderer_version: "professional-v4-tailwind-glassmorphism",
     content_template: {
       title: contentTemplate.title,
       quality_bar: contentTemplate.quality_bar,
       dify_selection_rule: contentTemplate.dify_selection_rule,
     },
     report_url: report.report_url,
-    quality,
     r2_url: demoUrl,
-    public_url: publicDemoUrl,
     generated_at: new Date().toISOString(),
   }
 
@@ -331,7 +309,7 @@ export async function generateReplacementDemo(
       name: `${company.company_name} Demo`,
       html_content: demoUrl ?? html,
       html: demoUrl ?? html,
-      source: "sales_enrichment_fullsite",
+      source: "sales_enrichment",
       is_published: true,
       meta,
     },
@@ -342,26 +320,33 @@ export async function generateReplacementDemo(
     if (!demoUrl) return { ok: false, demoUrl: null, error: error.message }
   }
 
-  // Persist the canonical RevenueOS demo URL for reports, Twenty, and Keystatic sync.
-  try {
-    const existing = await sb.from("sales_companies").select("meta").eq("id", company.id).maybeSingle()
-    const currentMeta = (existing?.data as { meta?: Record<string, unknown> } | null)?.meta ?? {}
-    await sb.from("sales_companies").update({
-      meta: {
-        ...(currentMeta as Record<string, unknown>),
-        demo_site: {
-          url: publicDemoUrl,
-          r2_url: demoUrl,
-          type: "revenueos_fullsite_demo",
-          slug,
-          template_id: fullSiteTemplate.id,
-          generated_at: new Date().toISOString(),
+  // Deploy to Cloudflare Pages (Astro demo pipeline) — await so demo_url is saved
+  const cfResult = await deployDemoToCfPages(company, report).catch((err) => {
+    console.error("[demo-generator] CF Pages deploy error:", err)
+    return { ok: false as const, demoUrl: undefined, error: String(err) }
+  })
+  if (cfResult.ok && cfResult.demoUrl) {
+    console.warn("[demo-generator] CF Pages deploy triggered:", cfResult.demoUrl)
+    // Write demo_site url back to sales_companies.meta so diagnostic reports show it
+    try {
+      const existing = await sb.from("sales_companies").select("meta").eq("id", company.id).maybeSingle()
+      const currentMeta = (existing?.data as { meta?: Record<string, unknown> } | null)?.meta ?? {}
+      await sb.from("sales_companies").update({
+        meta: {
+          ...(currentMeta as Record<string, unknown>),
+          demo_site: {
+            url: cfResult.demoUrl,
+            type: "astro_cf_pages",
+            generated_at: new Date().toISOString(),
+          },
         },
-      },
-    }).eq("id", company.id)
-  } catch (metaErr) {
-    console.error("[demo-generator] meta update failed:", metaErr)
+      }).eq("id", company.id)
+    } catch (metaErr) {
+      console.error("[demo-generator] meta update failed:", metaErr)
+    }
+  } else {
+    console.error("[demo-generator] CF Pages deploy failed:", cfResult.error)
   }
 
-  return { ok: true, demoUrl: publicDemoUrl, quality }
+  return { ok: true, demoUrl: demoUrl ?? cfResult.demoUrl ?? null }
 }
