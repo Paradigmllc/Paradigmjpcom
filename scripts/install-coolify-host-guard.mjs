@@ -21,6 +21,7 @@ set -uo pipefail
 
 LOG_FILE="/var/log/paradigm-coolify-host-guard.log"
 PRUNE_AT="__DOLLAR__{PARADIGM_DISK_PRUNE_AT:-70}"
+CRITICAL_DISK="__DOLLAR__{PARADIGM_CRITICAL_DISK:-85}"
 MAX_LOG_BYTES="__DOLLAR__{PARADIGM_GUARD_MAX_LOG_BYTES:-5242880}"
 
 mkdir -p "$(dirname "$LOG_FILE")"
@@ -42,10 +43,16 @@ disk_used="$(df -P / | awk 'NR==2 {gsub(/%/,"",$5); print $5}')"
 echo "root disk used=__DOLLAR__{disk_used}%"
 
 if [ -n "$disk_used" ] && [ "$disk_used" -ge "$PRUNE_AT" ]; then
-  echo "disk >= __DOLLAR__{PRUNE_AT}%; pruning Docker cache/images/containers without volumes"
+  echo "disk >= __DOLLAR__{PRUNE_AT}%; cleaning Docker containers and old images"
   docker container prune -f || true
-  docker builder prune -af --filter "until=6h" || true
-  docker image prune -af --filter "until=24h" || true
+  docker image prune -af --filter "until=48h" || true
+fi
+
+if [ -n "$disk_used" ] && [ "$disk_used" -ge "$CRITICAL_DISK" ]; then
+  echo "disk >= __DOLLAR__{CRITICAL_DISK}% CRITICAL; pruning build cache too (7d retention)"
+  docker builder prune -af --filter "until=168h" || true
+else
+  echo "disk < __DOLLAR__{CRITICAL_DISK}%; build cache preserved for fast deploys"
 fi
 
 if docker ps --format '{{.Names}}' | grep -qx 'coolify-db'; then

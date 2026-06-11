@@ -45,11 +45,11 @@ function main() {
   console.log(`Host disk preflight: ${host} root disk ${before}% used`)
 
   if (before >= failAt) {
-    console.log(`Host disk preflight: usage >= ${failAt}%; aggressive Docker prune`)
-    ssh("docker builder prune -af >/dev/null 2>&1 || true; docker image prune -af >/dev/null 2>&1 || true; docker container prune -f >/dev/null 2>&1 || true; docker system prune -f >/dev/null 2>&1 || true")
+    console.log(`Host disk preflight: usage >= ${failAt}%; aggressive Docker prune (builder cache 7d retention)`)
+    ssh("docker builder prune -af --filter 'until=168h' >/dev/null 2>&1 || true; docker image prune -af >/dev/null 2>&1 || true; docker container prune -f >/dev/null 2>&1 || true; docker system prune -f >/dev/null 2>&1 || true")
   } else if (before >= pruneAt) {
-    console.log(`Host disk preflight: usage >= ${pruneAt}%; pruning build cache and unused images (7d)`)
-    ssh("docker builder prune -af --filter 'until=12h' >/dev/null 2>&1 || true; docker image prune -af --filter 'until=72h' >/dev/null 2>&1 || true; docker container prune -f >/dev/null 2>&1 || true")
+    console.log(`Host disk preflight: usage >= ${pruneAt}%; pruning old images only (preserving build cache)`)
+    ssh("docker image prune -af --filter 'until=72h' >/dev/null 2>&1 || true; docker container prune -f >/dev/null 2>&1 || true")
   }
 
   const after = readUsedPercent()
