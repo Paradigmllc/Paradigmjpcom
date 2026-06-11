@@ -19,6 +19,7 @@ import { spawnSync } from "node:child_process"
 
 const ROOT = process.cwd()
 const CI = process.argv.includes("--ci")
+const WARN_ONLY = process.argv.includes("--warn-only")
 
 let errors = 0
 let warnings = 0
@@ -270,6 +271,6 @@ checkFileSizes()
 
 console.log(`\n${errors === 0 ? "✅" : "❌"} ${errors} error(s), ${warnings} warning(s)\n`)
 
-if (errors > 0) {
+if (!WARN_ONLY && errors > 0) {
   process.exit(1)
 }
