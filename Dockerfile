@@ -19,6 +19,7 @@ COPY src ./src
 COPY public ./public
 COPY content ./content
 COPY messages ./messages
+COPY scripts ./scripts
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PAYLOAD_CONFIG_PATH=/app/payload.config.ts
 ENV PAYLOAD_DISABLE_DATABASE_DURING_BUILD=1

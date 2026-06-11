@@ -25,7 +25,9 @@ docs/refactor
 docs/knowledge
 docs/handoff-archive
 supabase
-scripts
+# ─── Scripts: exclude dev/deploy scripts, keep build script only ───
+scripts/*
+!scripts/build-next.mjs
 
 # ─── Agent config files (not used at runtime) ───
 .claude

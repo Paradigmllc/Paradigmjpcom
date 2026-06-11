@@ -189,7 +189,7 @@ function checkBuildSpeedGuards() {
   // 🟡 .dockerignore allows heavy directories into build context
   const dockerignore = readFile(".dockerignore")
   if (dockerignore) {
-    const requiredIgnores = ["astro-demo", "scripts/", "worker", "trigger", "supabase"]
+    const requiredIgnores = ["astro-demo", "worker", "trigger", "supabase"]
     for (const entry of requiredIgnores) {
       if (!dockerignore.includes(entry)) {
         warn(`.dockerignore: "${entry}" not excluded from Docker build context — adds unnecessary transfer time`)
