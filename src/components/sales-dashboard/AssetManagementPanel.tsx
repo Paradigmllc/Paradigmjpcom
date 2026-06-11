@@ -144,17 +144,6 @@ function VideosTab({ data }: { data: SalesDashboardData }) {
           </div>
           <ExternalLink className="ml-auto h-3 w-3 text-zinc-400" />
         </a>
-        <a href="/ja/admin/sales?tab=reportVideoStudio" target="_blank" rel="noopener noreferrer"
-          className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-white p-4 hover:border-zinc-400 transition-colors">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
-            <FileVideo className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="text-xs font-bold text-zinc-900">動画生成スタジオ</div>
-            <div className="text-[10px] text-zinc-500">診断レポート動画を生成・管理</div>
-          </div>
-          <ExternalLink className="ml-auto h-3 w-3 text-zinc-400" />
-        </a>
       </div>
 
       {/* Recent video jobs */}

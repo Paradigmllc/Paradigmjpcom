@@ -100,7 +100,6 @@ export function SalesAutomationPanel({ data }: { data: SalesDashboardData }) {
   const [outreachBusy, setOutreachBusy] = useState(false)
   const [lastResult, setLastResult] = useState<string | null>(null)
   const [lastOutreachResult, setLastOutreachResult] = useState<string | null>(null)
-  const [subTab, setSubTab] = useState<"individual" | "batch">("individual")
   const parsedRows = useMemo(() => mapCsvRows(parseCsv(csvText)), [csvText])
   const validRows = parsedRows
     .filter((row) => row.company_name && row.domain)
@@ -208,158 +207,126 @@ export function SalesAutomationPanel({ data }: { data: SalesDashboardData }) {
 
   return (
     <div className="flex flex-col min-h-0 bg-white">
-      {/* Sub-tab switcher */}
-      <div className="flex border-b border-zinc-200/80 bg-zinc-50/50 p-1.5 gap-1.5">
-        <button
-          type="button"
-          onClick={() => setSubTab("individual")}
-          className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
-            subTab === "individual"
-              ? "bg-white text-zinc-900 shadow-sm border border-zinc-200/60"
-              : "text-zinc-500 hover:text-zinc-800 hover:bg-white/40 border border-transparent"
-          }`}
-          aria-pressed={subTab === "individual"}
-        >
-          個別登録・調査ジョブ (Individual Enrichment)
-        </button>
-        <button
-          type="button"
-          onClick={() => setSubTab("batch")}
-          className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all duration-200 ${
-            subTab === "batch"
-              ? "bg-white text-zinc-900 shadow-sm border border-zinc-200/60"
-              : "text-zinc-500 hover:text-zinc-800 hover:bg-white/40 border border-transparent"
-          }`}
-          aria-pressed={subTab === "batch"}
-        >
-          バッチ・一括処理ライン (Batch Ops / SearxNG)
-        </button>
-      </div>
-
       <div className="flex-1 overflow-y-auto">
-        {subTab === "individual" ? (
-          <div className="space-y-4 p-4 sm:p-6">
-            <SalesLeadDiscoveryPanel data={data} />
-            <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-              <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-4 p-4 sm:p-6">
+          <SalesLeadDiscoveryPanel data={data} />
+          <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+            <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 className="text-base font-semibold text-zinc-950">CSV投入 / 企業調査</h2>
+                  <p className="mt-1 text-sm leading-relaxed text-zinc-500">
+                    Apollo、Fumadata、BIZMapなどのCSVを貼り付けると、Supabase SSOTへ保存し、企業カルテ生成ジョブを即時キューに入れます。
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={importCsv}
+                    disabled={busy}
+                    className="inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                    aria-label="CSVを投入してカルテ生成を開始"
+                  >
+                    <UploadCloud size={16} aria-hidden />
+                    投入
+                  </button>
+                  <button
+                    type="button"
+                    onClick={runJobs}
+                    disabled={busy}
+                    className="inline-flex h-10 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    aria-label="待機中の企業カルテ生成ジョブを実行"
+                  >
+                    {busy ? <RotateCw size={16} className="animate-spin" aria-hidden /> : <Play size={16} aria-hidden />}
+                    実行
+                  </button>
+                </div>
+              </div>
+              <textarea
+                value={csvText}
+                onChange={(event) => setCsvText(event.target.value)}
+                className="mt-4 min-h-[260px] w-full resize-y rounded-lg border border-zinc-200 bg-zinc-50 p-3 font-mono text-xs leading-relaxed text-zinc-800 outline-none focus:border-zinc-500"
+                placeholder="Company,Website,Industry,Email&#10;Example Inc,https://example.com,consulting,info@example.com"
+                aria-label="営業リストCSV"
+              />
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+                <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-1">
+                  <FileUp size={12} aria-hidden />
+                  読込 {parsedRows.length}件
+                </span>
+                <span className="rounded-full bg-emerald-50 px-2 py-1 text-emerald-700">有効 {validRows.length}件</span>
+                {lastResult && <span className="rounded-full bg-amber-50 px-2 py-1 text-amber-700">{lastResult}</span>}
+              </div>
+            </section>
+
+            <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+              <h2 className="text-base font-semibold text-zinc-950">カルテ生成ジョブ</h2>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {["queued", "running", "completed"].map((status) => (
+                  <div key={status} className="rounded-lg border border-zinc-200 p-3">
+                    <div className="text-xs text-zinc-500">{status}</div>
+                    <div className="mt-1 text-xl font-semibold tabular-nums">{statusCounts[status] ?? 0}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 divide-y divide-zinc-100">
+                {data.enrichmentJobs.length === 0 ? (
+                  <p className="py-8 text-sm text-zinc-500">まだジョブがありません。</p>
+                ) : (
+                  data.enrichmentJobs.slice(0, 12).map((job) => (
+                    <div key={job.id} className="py-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-semibold text-zinc-950">
+                            {job.companyName ?? job.domain ?? job.companyId}
+                          </div>
+                          <div className="mt-1 text-xs text-zinc-500">
+                            {job.source ?? "-"} / {formatDate(job.updatedAt)}
+                          </div>
+                        </div>
+                        <span className={`shrink-0 rounded-full px-2 py-1 text-xs ${statusTone(job.status)}`}>
+                          {job.status}
+                        </span>
+                      </div>
+                      {job.errorMessage && (
+                        <div className="mt-2 rounded-md bg-rose-50 px-2 py-1 text-xs text-rose-700">
+                          {job.errorMessage}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <h2 className="text-base font-semibold text-zinc-950">CSV投入</h2>
-                    <p className="mt-1 text-sm leading-relaxed text-zinc-500">
-                      Apollo、Fumadata、BIZMapなどのCSVを貼り付けると、Supabase SSOTへ保存し、企業カルテ生成ジョブを即時キューに入れます。
+                    <h3 className="text-sm font-semibold text-zinc-950">フォーム営業 dry-run</h3>
+                    <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                      実送信せずにフォームURL探索、分類、robots/preflight、文面差し込みまで確認します。本送信は初回承認キューを通します。
                     </p>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={importCsv}
-                      disabled={busy}
-                      className="inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-                      aria-label="CSVを投入してカルテ生成を開始"
-                    >
-                      <UploadCloud size={16} aria-hidden />
-                      投入
-                    </button>
-                    <button
-                      type="button"
-                      onClick={runJobs}
-                      disabled={busy}
-                      className="inline-flex h-10 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
-                      aria-label="待機中の企業カルテ生成ジョブを実行"
-                    >
-                      {busy ? <RotateCw size={16} className="animate-spin" aria-hidden /> : <Play size={16} aria-hidden />}
-                      実行
-                    </button>
+                  <button
+                    type="button"
+                    onClick={runOutreachDryRun}
+                    disabled={outreachBusy}
+                    className="inline-flex h-10 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    aria-label="フォーム営業dry-runを実行"
+                  >
+                    {outreachBusy ? <RotateCw size={16} className="animate-spin" aria-hidden /> : <Send size={16} aria-hidden />}
+                    dry-run
+                  </button>
+                </div>
+                {lastOutreachResult && (
+                  <div className="mt-3 rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700">
+                    {lastOutreachResult}
                   </div>
-                </div>
-                <textarea
-                  value={csvText}
-                  onChange={(event) => setCsvText(event.target.value)}
-                  className="mt-4 min-h-[260px] w-full resize-y rounded-lg border border-zinc-200 bg-zinc-50 p-3 font-mono text-xs leading-relaxed text-zinc-800 outline-none focus:border-zinc-500"
-                  placeholder="Company,Website,Industry,Email&#10;Example Inc,https://example.com,consulting,info@example.com"
-                  aria-label="営業リストCSV"
-                />
-                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-1">
-                    <FileUp size={12} aria-hidden />
-                    読込 {parsedRows.length}件
-                  </span>
-                  <span className="rounded-full bg-emerald-50 px-2 py-1 text-emerald-700">有効 {validRows.length}件</span>
-                  {lastResult && <span className="rounded-full bg-amber-50 px-2 py-1 text-amber-700">{lastResult}</span>}
-                </div>
-              </section>
+                )}
+              </div>
+            </section>
+          </div>
 
-              <section className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
-                <h2 className="text-base font-semibold text-zinc-950">カルテ生成ジョブ</h2>
-                <div className="mt-3 grid grid-cols-3 gap-2">
-                  {["queued", "running", "completed"].map((status) => (
-                    <div key={status} className="rounded-lg border border-zinc-200 p-3">
-                      <div className="text-xs text-zinc-500">{status}</div>
-                      <div className="mt-1 text-xl font-semibold tabular-nums">{statusCounts[status] ?? 0}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 divide-y divide-zinc-100">
-                  {data.enrichmentJobs.length === 0 ? (
-                    <p className="py-8 text-sm text-zinc-500">まだジョブがありません。</p>
-                  ) : (
-                    data.enrichmentJobs.slice(0, 12).map((job) => (
-                      <div key={job.id} className="py-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="truncate text-sm font-semibold text-zinc-950">
-                              {job.companyName ?? job.domain ?? job.companyId}
-                            </div>
-                            <div className="mt-1 text-xs text-zinc-500">
-                              {job.source ?? "-"} / {formatDate(job.updatedAt)}
-                            </div>
-                          </div>
-                          <span className={`shrink-0 rounded-full px-2 py-1 text-xs ${statusTone(job.status)}`}>
-                            {job.status}
-                          </span>
-                        </div>
-                        {job.errorMessage && (
-                          <div className="mt-2 rounded-md bg-rose-50 px-2 py-1 text-xs text-rose-700">
-                            {job.errorMessage}
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-                <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <h3 className="text-sm font-semibold text-zinc-950">フォーム営業 dry-run</h3>
-                      <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-                        実送信せずにフォームURL探索、分類、robots/preflight、文面差し込みまで確認します。本送信は初回承認キューを通します。
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={runOutreachDryRun}
-                      disabled={outreachBusy}
-                      className="inline-flex h-10 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
-                      aria-label="フォーム営業dry-runを実行"
-                    >
-                      {outreachBusy ? <RotateCw size={16} className="animate-spin" aria-hidden /> : <Send size={16} aria-hidden />}
-                      dry-run
-                    </button>
-                  </div>
-                  {lastOutreachResult && (
-                    <div className="mt-3 rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700">
-                      {lastOutreachResult}
-                    </div>
-                  )}
-                </div>
-              </section>
-            </div>
-          </div>
-        ) : (
-          <div className="p-4 sm:p-6">
-            <SalesBatchOpsPanel data={data} />
-          </div>
-        )}
+          <SalesBatchOpsPanel data={data} />
+        </div>
       </div>
     </div>
   )

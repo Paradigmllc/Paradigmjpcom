@@ -12,7 +12,6 @@ import {
   ShieldCheck,
   Sparkles,
   UploadCloud,
-  Video,
   X,
 } from "lucide-react"
 import { Toaster } from "sonner"
@@ -23,14 +22,12 @@ import {
 } from "./SalesCommandPanels"
 import { SalesAutomationPanel } from "./SalesAutomationPanel"
 import { SalesOperationsAuditPanel } from "./SalesOperationsAuditPanel"
-import { SalesReportVideoStudioPanel } from "./SalesReportVideoStudioPanel"
 import { AiPromptsPanel } from "./AiPromptsPanel"
 import { AssetManagementPanel } from "./AssetManagementPanel"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 
 type SalesTab =
   | "automation"
-  | "reportVideoStudio"
   | "crm"
   | "system"
 
@@ -48,7 +45,6 @@ type TabItem = {
 
 const tabItems: TabItem[] = [
   { id: "automation", label: "投入・作業", description: "CSV / SearxNG / リスト", icon: UploadCloud },
-  { id: "reportVideoStudio", label: "動画生成", description: "HyperFrames", icon: Video },
   { id: "crm", label: "CRM", description: "Twenty連携", icon: BriefcaseBusiness },
   { id: "system", label: "システム管理", description: "統合監査・運用", icon: ShieldCheck },
 ]
@@ -90,7 +86,7 @@ const localeLabels: Record<string, { country: string; language: string }> = {
 }
 
 function normalizeTab(value: string | null): SalesTab {
-  if (value === "batches" || value === "workspace" || value === "operator" || value === "proVideoStudio" || value === "videoPipeline") return "automation"
+  if (value === "batches" || value === "workspace" || value === "operator") return "automation"
   return value && tabIds.has(value as SalesTab) ? (value as SalesTab) : "automation"
 }
 
@@ -270,8 +266,6 @@ function changeTab(tab: SalesTab) {
     switch (activeTab) {
       case "automation":
         return <SalesAutomationPanel data={data} />
-      case "reportVideoStudio":
-        return <SalesReportVideoStudioPanel data={data} />
       case "crm":
         return <CrmPanel data={data} />
       case "system":

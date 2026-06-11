@@ -1,3 +1,18 @@
+## ACTIVE HANDOFF — 2026-06-11 RevenueOS ブラックボックスUI削除
+
+### 削除/簡略化
+- 「動画生成」タブ (`reportVideoStudio`) ごと削除
+  - `SalesCommandCenter.tsx` から tab, import, renderTab case 除去
+  - `AssetManagementPanel.tsx` から動画生成スタジオリンク除去
+- 「投入・作業」サブタブ "個別登録・調査ジョブ / バッチ・一括処理ライン" 除去
+  - `SalesAutomationPanel.tsx` のサブタブUI削除、コンテンツを1画面に統合
+  - `SalesBatchOpsPanel` はページ下部に常時表示
+
+### 検証
+- `npx tsc --noEmit`: 変更ファイル 0 エラー
+
+---
+
 ## ACTIVE HANDOFF — 2026-06-11 Codex フルサイトデモシステム全削除 + 旧方式復元
 
 ### 削除したもの
