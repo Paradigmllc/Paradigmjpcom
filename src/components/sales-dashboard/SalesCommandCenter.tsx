@@ -4,11 +4,16 @@ import { useEffect, useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import {
+  BarChart3,
   BriefcaseBusiness,
+  Database,
   ExternalLink,
+  FileText,
   Globe2,
   Menu,
+  Plug,
   ShieldCheck,
+  Sparkles,
   X,
 } from "lucide-react"
 import { Toaster } from "sonner"
@@ -21,7 +26,7 @@ import { TemplateManagementPanel } from "./TemplateManagementPanel"
 import { AnalyticsPanel } from "./SalesAnalyticsPanel"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 
-type SalesTab = "crm" | "system"
+type SalesTab = "crm" | "integrations" | "audit" | "templates" | "prompts" | "assets" | "analytics"
 
 type SalesCommandCenterProps = {
   data: SalesDashboardData
@@ -36,19 +41,13 @@ type TabItem = {
 }
 
 const tabItems: TabItem[] = [
-  { id: "crm", label: "CRM", description: "Twenty連携", icon: BriefcaseBusiness },
-  { id: "system", label: "システム管理", description: "統合監査・運用", icon: ShieldCheck },
-]
-
-type SystemSubTab = "integrations" | "audit" | "templates" | "prompts" | "assets" | "analytics"
-
-const systemSubTabs: { id: SystemSubTab; label: string }[] = [
-  { id: "integrations", label: "統合監査" },
-  { id: "audit", label: "運用監査" },
-  { id: "templates", label: "テンプレート管理" },
-  { id: "prompts", label: "AIプロンプト" },
-  { id: "assets", label: "アセット管理" },
-  { id: "analytics", label: "分析" },
+  { id: "crm", label: "CRM", description: "Twenty連携・商談管理", icon: BriefcaseBusiness },
+  { id: "integrations", label: "統合監査", description: "API/OSS接続状況", icon: Plug },
+  { id: "audit", label: "運用監査", description: "パイプライン監視", icon: ShieldCheck },
+  { id: "templates", label: "テンプレート", description: "レポートテンプレート管理", icon: FileText },
+  { id: "prompts", label: "AIプロンプト", description: "Dify/DeepSeek管理", icon: Sparkles },
+  { id: "assets", label: "アセット", description: "動画・デモ管理", icon: Database },
+  { id: "analytics", label: "分析", description: "パイプライン分析", icon: BarChart3 },
 ]
 
 const externalTools = [
@@ -79,14 +78,6 @@ const localeLabels: Record<string, { country: string; language: string }> = {
 
 function normalizeTab(value: string | null): SalesTab {
   return value && tabIds.has(value as SalesTab) ? (value as SalesTab) : "crm"
-}
-
-function normalizeSystemSubTab(value: string | null): SystemSubTab {
-  if (value === "templates") return "templates"
-  if (value === "prompts") return "prompts"
-  if (value === "assets") return "assets"
-  if (value === "analytics") return "analytics"
-  return value === "audit" ? "audit" : "integrations"
 }
 
 function formatGeneratedAt(value: string): string {
@@ -127,7 +118,6 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<SalesTab>(() => normalizeTab(searchParams.get("tab")))
-  const [systemSubTab, setSystemSubTab] = useState<SystemSubTab>(() => normalizeSystemSubTab(searchParams.get("sub")))
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
@@ -135,13 +125,14 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
     setActiveTab((current) => (current === nextTab ? current : nextTab))
   }, [searchParams])
 
-function changeTab(tab: SalesTab) {
-  setActiveTab(tab)
-  const params = new URLSearchParams(searchParams.toString())
-  params.set("tab", tab)
-  const query = params.toString()
-  router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-}
+  function changeTab(tab: SalesTab) {
+    setActiveTab(tab)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("tab", tab)
+    params.delete("sub")
+    const query = params.toString()
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+  }
 
   function handleLocaleChange(newLocale: string) {
     const segments = pathname.split("/")
@@ -179,36 +170,21 @@ function changeTab(tab: SalesTab) {
 
   const renderTab = () => {
     switch (activeTab) {
-      case "crm":
-        return <CrmPanel data={data} />
-      case "system":
-        return (
-          <div className="space-y-4">
-            <div className="flex items-center gap-1 border-b border-zinc-200 px-4 pt-4 overflow-x-auto">
-              {systemSubTabs.map((st) => (
-                <button key={st.id} onClick={() => setSystemSubTab(st.id)}
-                  className={`whitespace-nowrap px-3 py-2 text-xs font-semibold border-b-2 transition-colors ${systemSubTab === st.id ? "border-zinc-900 text-zinc-900" : "border-transparent text-zinc-500 hover:text-zinc-700"}`}>
-                  {st.label}
-                </button>
-              ))}
-            </div>
-            {systemSubTab === "integrations" && <IntegrationsPanel data={data} />}
-            {systemSubTab === "audit" && <SalesOperationsAuditPanel data={data} />}
-            {systemSubTab === "templates" && <TemplateManagementPanel data={data} />}
-            {systemSubTab === "prompts" && <AiPromptsPanel data={data} />}
-            {systemSubTab === "assets" && <AssetManagementPanel data={data} />}
-            {systemSubTab === "analytics" && <AnalyticsPanel data={data} />}
-          </div>
-        )
-      default:
-        return <CrmPanel data={data} />
+      case "crm":          return <CrmPanel data={data} />
+      case "integrations": return <IntegrationsPanel data={data} />
+      case "audit":        return <SalesOperationsAuditPanel data={data} />
+      case "templates":    return <TemplateManagementPanel data={data} />
+      case "prompts":      return <AiPromptsPanel data={data} />
+      case "assets":       return <AssetManagementPanel data={data} />
+      case "analytics":    return <AnalyticsPanel data={data} />
+      default:             return <CrmPanel data={data} />
     }
   }
 
   return (
     <main className="min-h-screen bg-[#fafafa] font-sans text-zinc-950 selection:bg-violet-100">
       <Toaster richColors position="top-center" />
-      
+
       <div className="sticky top-0 z-50 flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-2.5 lg:hidden">
         <button onClick={() => setMobileMenuOpen(true)} className="rounded-md p-1.5 text-zinc-600 hover:bg-zinc-100" aria-label="メニューを開く">
           <Menu className="h-5 w-5" />
@@ -238,6 +214,7 @@ function changeTab(tab: SalesTab) {
                     className={`flex w-full items-center gap-2.5 px-5 py-2.5 text-left text-sm ${isActive ? "bg-zinc-100 font-bold text-zinc-900" : "font-medium text-zinc-600 hover:bg-zinc-50"}`}>
                     <Icon className="h-4 w-4 shrink-0 text-zinc-500" />
                     <span className="min-w-0 flex-1 truncate">{tab.label}</span>
+                    <span className="text-[10px] text-zinc-400">{tab.description}</span>
                   </button>
                 )
               })}
