@@ -6,6 +6,14 @@ import { toast } from "sonner"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 import { FULLSITE_DEMO_TEMPLATES } from "@/lib/sales/fullsite-demo-templates"
 
+const DEMO_TEMPLATE_PREVIEW_URLS: Record<string, string> = {
+  premium_corporate_hp: "/ja/d/premium_corporate_hp-demo",
+  local_booking_site: "/ja/d/local_booking_site-demo",
+  commerce_storefront: "/ja/d/commerce_storefront-demo",
+  japan_entry_commerce: "/ja/d/japan_entry_commerce-demo",
+  dx_ai_business_site: "/ja/d/dx_ai_business_site-demo",
+}
+
 export function AssetManagementPanel({ data }: { data: SalesDashboardData }) {
   const [activeTab, setActiveTab] = useState<"demos" | "videos" | "storage">("demos")
 
@@ -109,30 +117,45 @@ function DemosTab({ data }: { data: SalesDashboardData }) {
           <p className="mt-1 text-xs text-zinc-500">LPではなく、HP/EC/予約/DXサイトとしてページ・機能・法務パックまで生成するテンプレートです。</p>
         </div>
         <div className="grid gap-3 p-4 lg:grid-cols-2">
-          {FULLSITE_DEMO_TEMPLATES.map((template) => (
-            <article key={template.id} className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">{template.siteType}</div>
-                  <h3 className="mt-1 text-sm font-semibold text-zinc-950">{template.label}</h3>
+          {FULLSITE_DEMO_TEMPLATES.map((template) => {
+            const previewUrl = DEMO_TEMPLATE_PREVIEW_URLS[template.id]
+            return (
+              <article key={template.id} className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">{template.siteType}</div>
+                    <h3 className="mt-1 text-sm font-semibold text-zinc-950">{template.label}</h3>
+                  </div>
+                  <span className="rounded bg-white px-2 py-1 text-[10px] font-bold text-zinc-600 ring-1 ring-zinc-200">
+                    {template.pageMap.length} pages
+                  </span>
                 </div>
-                <span className="rounded bg-white px-2 py-1 text-[10px] font-bold text-zinc-600 ring-1 ring-zinc-200">
-                  {template.pageMap.length} pages
-                </span>
-              </div>
-              <p className="mt-3 text-xs leading-6 text-zinc-600">{template.designIntent}</p>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {template.featurePack.slice(0, 5).map((feature) => (
-                  <span key={feature} className="rounded bg-white px-2 py-1 text-[10px] font-semibold text-zinc-700 ring-1 ring-zinc-200">{feature}</span>
-                ))}
-              </div>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {template.compliancePack.map((pack) => (
-                  <span key={pack} className="rounded bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-100">{pack}</span>
-                ))}
-              </div>
-            </article>
-          ))}
+                <p className="mt-3 text-xs leading-6 text-zinc-600">{template.designIntent}</p>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {template.featurePack.slice(0, 5).map((feature) => (
+                    <span key={feature} className="rounded bg-white px-2 py-1 text-[10px] font-semibold text-zinc-700 ring-1 ring-zinc-200">{feature}</span>
+                  ))}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {template.compliancePack.map((pack) => (
+                    <span key={pack} className="rounded bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-100">{pack}</span>
+                  ))}
+                </div>
+                <div className="mt-4 flex justify-end">
+                  <a
+                    href={previewUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-md bg-zinc-950 px-3 py-2 text-[11px] font-bold text-white hover:bg-zinc-800"
+                    aria-label={`${template.label}のデモプレビューを新規タブで開く`}
+                  >
+                    新規タブでプレビュー
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              </article>
+            )
+          })}
         </div>
       </div>
 
@@ -184,6 +207,18 @@ function DemosTab({ data }: { data: SalesDashboardData }) {
                         <RefreshCw className={`h-3 w-3 ${regeneratingId === c.id ? "animate-spin" : ""}`} />
                         再生成
                       </button>
+                      {demoUrl && (
+                        <a
+                          href={demoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ml-2 inline-flex items-center gap-1 rounded-md bg-zinc-950 px-2 py-1 text-[10px] font-bold text-white hover:bg-zinc-800"
+                          aria-label={`${c.companyName}のデモサイトを新規タブで開く`}
+                        >
+                          開く
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
                     </td>
                   </tr>
                 )

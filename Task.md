@@ -112,6 +112,11 @@
   - Commit `312c9d6` pushed to `origin/main`.
   - `npm run deploy:prod` finished Coolify deployment `s128ytb063wj7moon258cwo3`; smoke checks for `/ja/admin/sales`, `/ja`, and Twenty returned HTTP 200.
   - Production `https://paradigmjp.com/ja/d/website_diagnostic-demo` returned HTTP 200, includes a visible iframe with 7 `data-section` markers in `srcdoc`, and does not reference the legacy demo host.
+- Follow-up fix:
+  - Asset Management template cards now expose explicit `新規タブでプレビュー` links for all 5 demo templates.
+  - Company rows now include a clear `開く` button next to `再生成`.
+  - Added fallback sample routes for template-specific preview slugs: `premium_corporate_hp-demo`, `local_booking_site-demo`, `commerce_storefront-demo`, `japan_entry_commerce-demo`, and `dx_ai_business_site-demo`.
+  - Local `npx tsc --noEmit --pretty false` passed; all 5 local preview URLs returned HTTP 200 after dev compilation.
 - Unresolved risk:
   - Existing generated rows in `web_demos` may still contain old thin LP HTML until each company is regenerated.
   - `cf-pages-deploy.ts` remains as legacy Keystatic/Cloudflare code but is no longer used by `generateReplacementDemo()`.
