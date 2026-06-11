@@ -282,7 +282,7 @@ export function buildDemoData(variant: string, lang: string): DiagnosticReportDa
     acts,
     cta_text: localeStr(data.cta, lang),
     video_thumbnail: null,
-    demo_url: `https://paradigm-astro-demo.pages.dev/?slug=${variant}-demo`,
+    demo_url: `/${lang}/d/${variant}-demo`,
      screenshot_url: demoScreenshotUrl,
      screenshot_mobile_url: demoMobileScreenshotUrl,
       evidence_screenshot_url: demoScreenshotUrl,

@@ -1,8 +1,10 @@
 ﻿"use client"
 
 import { useState } from "react"
-import { ExternalLink, FileVideo, Globe, Layers, Monitor, Play } from "lucide-react"
+import { ExternalLink, FileVideo, Globe, Layers, Monitor, Play, RefreshCw } from "lucide-react"
+import { toast } from "sonner"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
+import { FULLSITE_DEMO_TEMPLATES } from "@/lib/sales/fullsite-demo-templates"
 
 export function AssetManagementPanel({ data }: { data: SalesDashboardData }) {
   const [activeTab, setActiveTab] = useState<"demos" | "videos" | "storage">("demos")
@@ -32,6 +34,35 @@ export function AssetManagementPanel({ data }: { data: SalesDashboardData }) {
 
 function DemosTab({ data }: { data: SalesDashboardData }) {
   const companiesWithDemo = data.companies.filter(c => c.reportUrl || c.pipelineStatus === "report_ready").slice(0, 20)
+  const [regeneratingId, setRegeneratingId] = useState<string | null>(null)
+  const [results, setResults] = useState<Record<string, string>>({})
+
+  async function regenerateDemo(companyId: string) {
+    setRegeneratingId(companyId)
+    try {
+      const response = await fetch("/api/sales/demo-site/regenerate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ companyId }),
+      })
+      const payload = await response.json() as { ok?: boolean; demoUrl?: string | null; error?: string; quality?: { score?: number } | null }
+      if (!response.ok || !payload.ok) {
+        const message = payload.error ?? "デモ再生成に失敗しました"
+        toast.error(message)
+        setResults((current) => ({ ...current, [companyId]: message }))
+        return
+      }
+      const score = typeof payload.quality?.score === "number" ? ` / 品質${payload.quality.score}` : ""
+      toast.success(`フルサイトデモを再生成しました${score}`)
+      setResults((current) => ({ ...current, [companyId]: payload.demoUrl ?? "生成済み" }))
+    } catch (error) {
+      console.error("[AssetManagementPanel] demo regeneration failed:", error)
+      toast.error("デモ再生成に失敗しました")
+      setResults((current) => ({ ...current, [companyId]: "デモ再生成に失敗しました" }))
+    } finally {
+      setRegeneratingId(null)
+    }
+  }
   
   return (
     <div className="space-y-4">
@@ -44,7 +75,7 @@ function DemosTab({ data }: { data: SalesDashboardData }) {
           </div>
           <div>
             <div className="text-xs font-bold text-zinc-900">Keystatic CMS</div>
-            <div className="text-[10px] text-zinc-500">手動デモサイト編集</div>
+            <div className="text-[10px] text-zinc-500">フルサイト文言・実績管理</div>
           </div>
           <ExternalLink className="ml-auto h-3 w-3 text-zinc-400" />
         </a>
@@ -66,17 +97,50 @@ function DemosTab({ data }: { data: SalesDashboardData }) {
           </div>
           <div>
             <div className="text-xs font-bold text-zinc-900">Supabase web_demos</div>
-            <div className="text-[10px] text-zinc-500">自動生成デモ管理</div>
+            <div className="text-[10px] text-zinc-500">SSOT生成HTML・R2 URL</div>
           </div>
           <ExternalLink className="ml-auto h-3 w-3 text-zinc-400" />
         </a>
+      </div>
+
+      <div className="rounded-lg border border-zinc-200 bg-white">
+        <div className="border-b border-zinc-100 px-4 py-3">
+          <h2 className="text-sm font-semibold text-zinc-950">フルスペックデモテンプレート</h2>
+          <p className="mt-1 text-xs text-zinc-500">LPではなく、HP/EC/予約/DXサイトとしてページ・機能・法務パックまで生成するテンプレートです。</p>
+        </div>
+        <div className="grid gap-3 p-4 lg:grid-cols-2">
+          {FULLSITE_DEMO_TEMPLATES.map((template) => (
+            <article key={template.id} className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">{template.siteType}</div>
+                  <h3 className="mt-1 text-sm font-semibold text-zinc-950">{template.label}</h3>
+                </div>
+                <span className="rounded bg-white px-2 py-1 text-[10px] font-bold text-zinc-600 ring-1 ring-zinc-200">
+                  {template.pageMap.length} pages
+                </span>
+              </div>
+              <p className="mt-3 text-xs leading-6 text-zinc-600">{template.designIntent}</p>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {template.featurePack.slice(0, 5).map((feature) => (
+                  <span key={feature} className="rounded bg-white px-2 py-1 text-[10px] font-semibold text-zinc-700 ring-1 ring-zinc-200">{feature}</span>
+                ))}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {template.compliancePack.map((pack) => (
+                  <span key={pack} className="rounded bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-100">{pack}</span>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
       </div>
 
       {/* Demo URLs per company */}
       <div className="rounded-lg border border-zinc-200 bg-white">
         <div className="border-b border-zinc-100 px-4 py-3">
           <h2 className="text-sm font-semibold text-zinc-950">企業別デモサイト</h2>
-          <p className="mt-1 text-xs text-zinc-500">自動生成デモのURL一覧（Astroデモ /d/{'{slug}'}-demo）</p>
+          <p className="mt-1 text-xs text-zinc-500">RevenueOSフルサイトデモのURL一覧（SSOT web_demos / R2 HTMLを /d/{'{slug}'} で表示）</p>
         </div>
         <div className="max-h-[500px] overflow-y-auto">
           <table className="w-full text-left text-xs">
@@ -85,6 +149,7 @@ function DemosTab({ data }: { data: SalesDashboardData }) {
                 <th className="px-4 py-2 font-medium">企業</th>
                 <th className="px-4 py-2 font-medium">デモURL</th>
                 <th className="px-4 py-2 font-medium">ステータス</th>
+                <th className="px-4 py-2 font-medium">操作</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
@@ -106,6 +171,19 @@ function DemosTab({ data }: { data: SalesDashboardData }) {
                       <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-bold ${c.pipelineStatus === "report_ready" ? "bg-emerald-50 text-emerald-700" : "bg-zinc-100 text-zinc-500"}`}>
                         {c.pipelineStatus === "report_ready" ? "生成済み" : "準備中"}
                       </span>
+                      {results[c.id] && <div className="mt-1 max-w-[220px] truncate text-[10px] text-zinc-500">{results[c.id]}</div>}
+                    </td>
+                    <td className="px-4 py-2">
+                      <button
+                        type="button"
+                        onClick={() => regenerateDemo(c.id)}
+                        disabled={regeneratingId === c.id}
+                        className="inline-flex items-center gap-1 rounded-md border border-zinc-200 bg-white px-2 py-1 text-[10px] font-bold text-zinc-700 hover:border-zinc-400 disabled:cursor-wait disabled:opacity-60"
+                        aria-label={`${c.companyName}のフルサイトデモを再生成`}
+                      >
+                        <RefreshCw className={`h-3 w-3 ${regeneratingId === c.id ? "animate-spin" : ""}`} />
+                        再生成
+                      </button>
                     </td>
                   </tr>
                 )
@@ -174,7 +252,7 @@ function VideosTab({ data }: { data: SalesDashboardData }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
-                {videoJobs.slice(0, 15).map((job: any) => (
+                {videoJobs.slice(0, 15).map((job: SalesDashboardData["videoPipeline"]["jobs"][number]) => (
                   <tr key={job.id} className="hover:bg-zinc-50">
                     <td className="px-4 py-2 font-medium text-zinc-900">{job.sales_companies?.company_name ?? job.company_id?.slice(0,8) ?? "-"}</td>
                     <td className="px-4 py-2">

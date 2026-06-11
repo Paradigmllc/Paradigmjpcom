@@ -89,23 +89,26 @@
 
 ## ACTIVE HANDOFF - 2026-06-11 RevenueOS full-site demo factory
 
-- Changed the demo strategy from thin LP / external `paradigm-astro-demo.pages.dev` redirects to RevenueOS-owned full website demos.
-- Added `src/lib/sales/fullsite-demo-templates.ts` with 5 full-site template packs:
+- Changed demo delivery from thin LP / external `paradigm-astro-demo.pages.dev` redirects to RevenueOS-owned full website demos.
+- Added `src/lib/sales/fullsite-demo-templates.ts` with 5 managed template packs:
   - Premium Corporate HP
   - Local Service Booking
   - Commerce Storefront
   - Japan Entry Commerce
   - DX / AI Business System
 - Each pack carries page map, feature pack, compliance pack, and design intent so generated demos behave like HP/EC/booking/DX sites, not one-page LPs.
-- `generateReplacementDemo()` now writes `fullsite_demo_factory` metadata to `web_demos`, saves the canonical URL as `/{locale}/d/{slug}`, and stores `revenueos_fullsite_demo` in `sales_companies.meta.demo_site`.
-- `/[locale]/d/[slug]` now reads `web_demos` from Supabase SSOT and serves stored HTML/R2 HTML directly instead of redirecting to the old external demo Pages project.
-- Demo sample URLs now point to `/{locale}/d/{variant}-demo`, and the demo route can render built-in full-site fallback samples when SSOT has no generated row yet.
-- RevenueOS Asset Management now shows the full-site template catalog, feature packs, compliance packs, and the SSOT/R2 demo model.
+- Added `src/lib/sales/fullsite-demo-quality.ts`; `generateReplacementDemo()` now blocks thin/legacy/corrupt demos before writing `web_demos`.
+- `/[locale]/d/[slug]` is a noindex page route that reads `web_demos` from Supabase SSOT and renders stored HTML/R2 HTML through the existing `DemoClient` iframe shell.
+- RevenueOS Asset Management shows the template catalog and has a per-company "再生成" action hitting `/api/sales/demo-site/regenerate`.
+- Canonical sample URLs now point to `/{locale}/d/{variant}-demo`, with built-in full-site fallback samples when SSOT has no generated row yet.
 - Added Keystatic catalog entry: `content/keystatic/demo-sites/fullsite-template-catalog.mdoc`.
+- Fixed `astro-demo/src/keystatic/demo-data.ts` legacy TS blockers (`desc` -> `description`, removed missing `demo-data-legacy` import).
 - Verification:
-  - `git diff --check` passed for touched files, with LF/CRLF warnings only.
-  - `npx tsc --noEmit --pretty false` is still blocked by pre-existing `astro-demo/src/keystatic/demo-data.ts` errors: missing `description` mapping and missing `./demo-data-legacy`.
-  - Targeted forbidden-pattern search found no new `alert`, `confirm`, `prompt`, or `as any` in touched implementation files.
+  - `npx tsc --noEmit --pretty false` passed.
+  - `git diff --check` passed with LF/CRLF warnings only.
+  - `npm run context:audit` passed; Task.md remains under the budget.
+  - Local dev `http://localhost:3010/ja/d/website_diagnostic-demo` returned HTTP 200, 7 full-site sections, no legacy demo host, visible feature/compliance chips, and a nonblank browser screenshot.
+  - `npm run build` reached static generation 300/300 and trace collection, then failed only on Windows-local `EBUSY` while copying `.next/server/edge-chunks/asset_Geist-Regular...ttf` into standalone output. Treat as local file-lock risk; Coolify/Linux build still needs deploy verification.
 - Unresolved risk:
   - Existing generated rows in `web_demos` may still contain old thin LP HTML until each company is regenerated.
   - `cf-pages-deploy.ts` remains as legacy Keystatic/Cloudflare code but is no longer used by `generateReplacementDemo()`.
