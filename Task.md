@@ -62,4 +62,5 @@
   - `scripts/install-coolify-host-guard.mjs` installs a host cron guard that safely prunes Docker cache/images when disk usage is high and removes only inactive Coolify helper containers. It never prunes volumes.
 - Production host cron installed at `/etc/cron.d/paradigm-coolify-host-guard`, running `/usr/local/sbin/paradigm-coolify-host-guard.sh` every 15 minutes. Latest run showed disk 45%, helpers 0, no action needed.
 - Runbook: `docs/knowledge/coolify-deploy-guard.md`.
-- Verification: script syntax checks passed; `npm run deploy:guard` passed; host guard executed successfully. Existing TypeScript blocker remains `astro-demo/src/keystatic/demo-data.ts` and is unrelated.
+- Production deploy: commit `f9ba77b` deployed through Coolify deployment `emzbnvxdtlpeej3ehgc4ylst`; new container `i12am4vvcbggefnqdizhnv9a-021310856779` is healthy on image `i12am4vvcbggefnqdizhnv9a:f9ba77bf53f5313dec6178033d24123d6d9886e0`.
+- Verification: script syntax checks passed; `npm run deploy:guard` passed; host guard executed successfully; `https://paradigmjp.com/`, `https://www.paradigmjp.com/`, and `https://keystatic.paradigmjp.com/` returned HTTP 200. Existing TypeScript blocker remains `astro-demo/src/keystatic/demo-data.ts` and is unrelated.
