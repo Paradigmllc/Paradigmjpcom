@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -28,7 +29,7 @@ export async function GET(req: NextRequest) {
     const industry = req.nextUrl.searchParams.get("industry")
 
     // Fetch companies with enough data for analysis
-    let query = sb.from("sales_companies").select("id, company_name, industry, pagespeed_mobile, pagespeed_desktop, detected_issues, pipeline_status, meta")
+    let query = sb.from(DB_TABLES.SALES_COMPANIES).select("id, company_name, industry, pagespeed_mobile, pagespeed_desktop, detected_issues, pipeline_status, meta")
     if (industry) query = query.eq("industry", industry)
     const { data: companies, error } = await query.limit(500)
 

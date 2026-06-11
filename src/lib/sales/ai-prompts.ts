@@ -1,4 +1,5 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export interface SalesAiPrompt {
   id: string
@@ -67,7 +68,7 @@ export async function getAiPrompt(id: string): Promise<string> {
   const sb = getServiceSalesSupabase()
   if (!sb) return fallback
 
-  const { data, error } = await sb.from("sales_ai_prompts").select("prompt_text").eq("id", id).single()
+  const { data, error } = await sb.from(DB_TABLES.SALES_AI_PROMPTS).select("prompt_text").eq("id", id).single()
   if (error || !data) {
     if (error && error.code !== "PGRST116" && error.code !== "42P01" && error.code !== "PGRST205") {
       console.warn(`[sales-ai-prompts] failed to fetch prompt '${id}':`, error.message)

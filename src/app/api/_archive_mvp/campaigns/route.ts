@@ -16,6 +16,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getMvpSupabase } from "@/lib/mvp/supabase";
 import { requireMvpSecret } from "@/lib/mvp/auth";
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -53,7 +54,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const region = url.searchParams.get("region");
   const status = url.searchParams.get("status");
-  let q = sb.from("mvp_campaigns").select("*").order("created_at", { ascending: false }).limit(200);
+  let q = sb.from(DB_TABLES.MVP_CAMPAIGNS).select("*").order("created_at", { ascending: false }).limit(200);
   if (region) q = q.eq("region", region);
   if (status) q = q.eq("status", status);
   const { data, error } = await q;
@@ -75,7 +76,7 @@ export async function POST(req: Request) {
   let targetLeadIds: string[] = body.filter.lead_ids ?? [];
   if (targetLeadIds.length === 0 && body.filter.conditions) {
     const c = body.filter.conditions;
-    let q = sb.from("leads").select("id").eq("region", body.region);
+    let q = sb.from(DB_TABLES.LEADS).select("id").eq("region", body.region);
     if (c.language) q = q.eq("language", c.language);
     if (c.industry) q = q.eq("meta->>industry_slug", c.industry);
     if (c.has_form_url !== false) q = q.not("contact_form_url", "is", null);
@@ -90,7 +91,7 @@ export async function POST(req: Request) {
   }
 
   // 2. Create campaign row
-  const { data: campaign, error: cErr } = await sb.from("mvp_campaigns").insert({
+  const { data: campaign, error: cErr } = await sb.from(DB_TABLES.MVP_CAMPAIGNS).insert({
     name: body.name,
     region: body.region,
     industry_slug: body.industry_slug ?? null,
@@ -126,7 +127,7 @@ export async function POST(req: Request) {
   // chunk insert (Supabase row limit ~ 1000 per request safely)
   for (let i = 0; i < rows.length; i += 500) {
     const chunk = rows.slice(i, i + 500);
-    const { error } = await sb.from("mvp_outreach_runs").insert(chunk);
+    const { error } = await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).insert(chunk);
     if (error) {
       // 部分失敗は無視 (active 制約 hit が多い)
       continue;
@@ -134,7 +135,7 @@ export async function POST(req: Request) {
     enqueued += chunk.length;
   }
 
-  await sb.from("mvp_campaigns").update({ enqueued_count: enqueued }).eq("id", campaign.id);
+  await sb.from(DB_TABLES.MVP_CAMPAIGNS).update({ enqueued_count: enqueued }).eq("id", campaign.id);
 
   return NextResponse.json({
     ok: true,

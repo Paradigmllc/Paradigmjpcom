@@ -4,6 +4,7 @@ import { buildReportUrl, REPORT_LOCALES, type ReportLocale } from "@/lib/sales/r
 import { computeSourceCoverage, type SourceCoverageItem } from "@/lib/sales/source-coverage"
 import type { CompanyProductRecommendation } from "@/lib/sales/products"
 import type { SalesCompany } from "@/lib/sales/types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
@@ -248,12 +249,12 @@ export async function fetchCompanyKarte(
   sb: ServiceSupabase,
   companyId: string,
 ): Promise<{ ok: true; karte: CompanyKarteSnapshot } | { ok: false; error: string }> {
-  const companyRes = await sb.from("sales_companies").select("*").eq("id", companyId).maybeSingle()
+  const companyRes = await sb.from(DB_TABLES.SALES_COMPANIES).select("*").eq("id", companyId).maybeSingle()
   if (companyRes.error) return { ok: false, error: companyRes.error.message }
   if (!companyRes.data) return { ok: false, error: "company not found" }
 
   const sourceRes = await sb
-    .from("sales_source_runs")
+    .from(DB_TABLES.SALES_SOURCE_RUNS)
     .select("source_slug, category, status, score, details, measured_at")
     .eq("company_id", companyId)
     .order("category", { ascending: true })

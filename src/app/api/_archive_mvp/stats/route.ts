@@ -13,6 +13,7 @@
 import { NextResponse } from "next/server";
 import { getMvpSupabase } from "@/lib/mvp/supabase";
 import { requireMvpUiAuth } from "@/lib/mvp/auth";
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -28,14 +29,14 @@ export async function GET(req: Request) {
   const since = new Date(Date.now() - days * 86400_000).toISOString();
 
   // 1. Aggregate by region + status
-  let q1 = sb.from("mvp_outreach_runs").select("region, status, lead_id, entity_id").gte("created_at", since);
+  let q1 = sb.from(DB_TABLES.MVP_OUTREACH_RUNS).select("region, status, lead_id, entity_id").gte("created_at", since);
   if (region) q1 = q1.eq("region", region);
   const { data: runs } = await q1;
   const byRegion = aggregateBy(runs ?? [], "region");
   const byStatus = aggregateBy(runs ?? [], "status");
 
   // 2. CTA click rate (per region: distinct lead with cta_click / total sent)
-  const { data: clicks } = await sb.from("mvp_click_events")
+  const { data: clicks } = await sb.from(DB_TABLES.MVP_CLICK_EVENTS)
     .select("lead_id, click_type, run_id, occurred_at")
     .eq("click_type", "cta")
     .gte("occurred_at", since);
@@ -46,7 +47,7 @@ export async function GET(req: Request) {
   // 3. Cost (today + month)
   const today = new Date().toISOString().slice(0, 10);
   const month = new Date().toISOString().slice(0, 7);
-  const { data: quotas } = await sb.from("mvp_send_quotas")
+  const { data: quotas } = await sb.from(DB_TABLES.MVP_SEND_QUOTAS)
     .select("scope, scope_key, period, period_key, metric, count_used, limit_value, paused_at")
     .or(`period_key.eq.${today},period_key.eq.${month}`);
 
@@ -64,13 +65,13 @@ export async function GET(req: Request) {
     .map(([date, counts]) => ({ date, ...counts }));
 
   // 5. Active campaigns
-  const { data: activeCampaigns } = await sb.from("mvp_campaigns")
+  const { data: activeCampaigns } = await sb.from(DB_TABLES.MVP_CAMPAIGNS)
     .select("id, name, region, status, leads_count, sent_count, failed_count, replied_count")
     .in("status", ["running", "paused", "scheduled"])
     .order("created_at", { ascending: false }).limit(20);
 
   // 6. Blocklist size
-  const { count: blocklistCount } = await sb.from("mvp_blocklist")
+  const { count: blocklistCount } = await sb.from(DB_TABLES.MVP_BLOCKLIST)
     .select("*", { count: "exact", head: true });
 
   return NextResponse.json({

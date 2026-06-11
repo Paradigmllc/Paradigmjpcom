@@ -1,4 +1,5 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 
@@ -191,7 +192,7 @@ export async function fetchCompanyProductRecommendations(
   companyId: string,
 ): Promise<CompanyProductRecommendation[]> {
   const { data, error } = await sb
-    .from("sales_company_product_recommendations")
+    .from(DB_TABLES.SALES_COMPANY_PRODUCT_RECOMMENDATIONS)
     .select("id, product_id, priority, fit_score, reason, status, twenty_opportunity_id, sales_products(id, code, display_name, market_scope, template_variant, default_currency, default_amount_yen, is_subscription, description, sort_order, meta)")
     .eq("company_id", companyId)
     .neq("status", "dismissed")
@@ -213,7 +214,7 @@ export async function ensureCompanyProductRecommendations(
 ): Promise<CompanyProductRecommendation[]> {
   const inferred = inferCompanyProductRecommendations(input)
   const codes = inferred.map((item) => item.code)
-  const productsRes = await sb.from("sales_products").select("*").in("code", codes)
+  const productsRes = await sb.from(DB_TABLES.SALES_PRODUCTS).select("*").in("code", codes)
   if (productsRes.error) {
     console.error("[sales-products] product master fetch failed:", productsRes.error.message)
     return inferred.map((item) => {
@@ -241,7 +242,7 @@ export async function ensureCompanyProductRecommendations(
   if (productIds.length === 0) return []
 
   const existingRes = await sb
-    .from("sales_company_product_recommendations")
+    .from(DB_TABLES.SALES_COMPANY_PRODUCT_RECOMMENDATIONS)
     .select("id, product_id, status, twenty_opportunity_id")
     .eq("company_id", input.companyId)
     .in("product_id", productIds)
@@ -269,8 +270,8 @@ export async function ensureCompanyProductRecommendations(
     }
 
     const result = existing
-      ? await sb.from("sales_company_product_recommendations").update(payload).eq("id", existing.id)
-      : await sb.from("sales_company_product_recommendations").insert({
+      ? await sb.from(DB_TABLES.SALES_COMPANY_PRODUCT_RECOMMENDATIONS).update(payload).eq("id", existing.id)
+      : await sb.from(DB_TABLES.SALES_COMPANY_PRODUCT_RECOMMENDATIONS).insert({
           company_id: input.companyId,
           product_id: product.id,
           status: "recommended",
@@ -290,7 +291,7 @@ export async function markRecommendationOpportunityCreated(
 ): Promise<void> {
   if (!recommendationId) return
   const { error } = await sb
-    .from("sales_company_product_recommendations")
+    .from(DB_TABLES.SALES_COMPANY_PRODUCT_RECOMMENDATIONS)
     .update({
       status: "opportunity_created",
       twenty_opportunity_id: twentyOpportunityId,

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
 
       // Initial snapshot
       const { data: runs } = await sb
-        .from("sales_pipeline_runs")
+        .from(DB_TABLES.SALES_PIPELINE_RUNS)
         .select("id, status, current_step, company_id, error_message, updated_at, sales_companies(company_name)")
         .in("status", ["queued", "running", "waiting_external"])
         .order("updated_at", { ascending: false })
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
         if (closed) { clearInterval(interval); return }
         try {
           const { data: fresh } = await sb
-            .from("sales_pipeline_runs")
+            .from(DB_TABLES.SALES_PIPELINE_RUNS)
             .select("id, status, current_step, company_id, error_message, updated_at, sales_companies(company_name)")
             .in("status", ["queued", "running", "waiting_external", "completed", "failed", "needs_review"])
             .gte("updated_at", new Date(Date.now() - 300_000).toISOString())

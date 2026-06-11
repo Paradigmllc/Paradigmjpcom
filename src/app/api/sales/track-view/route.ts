@@ -21,6 +21,7 @@ import { localeToRegion } from "@/lib/sales/types"
 import { getRoutingMeta } from "@/lib/sales/routing"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { notifyHotLead } from "@/lib/notify"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -98,10 +99,10 @@ export async function GET(req: NextRequest) {
         patch.cta_clicked_at = now
       }
 
-      await sb.from("sales_companies").update(patch).eq("id", company.id)
+      await sb.from(DB_TABLES.SALES_COMPANIES).update(patch).eq("id", company.id)
 
       // Log tracking event
-      await sb.from("sales_activities").insert({
+      await sb.from(DB_TABLES.SALES_ACTIVITIES).insert({
         company_id: company.id,
         activity_type: event === "load" ? "report_viewed" : event === "scroll" ? "report_scrolled" : event === "cta" ? "cta_clicked" : "report_engaged",
         subject: event === "load" ? "レポート閲覧" : event === "scroll" ? "50%スクロール到達" : event === "cta" ? "CTAクリック" : "30秒滞在",

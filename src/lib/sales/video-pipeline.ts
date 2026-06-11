@@ -7,6 +7,7 @@ import { getR2StorageConfig } from "./r2-storage"
 import { normalizeReportLocale } from "./routing"
 import { INDUSTRIES, localeToRegion, type Industry } from "./types"
 import { dispatchVideoJobToTriggerDev, getTriggerVideoPipelineConfig } from "./video-trigger"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 import {
   buildProfessionalProductionPlan,
   buildProfessionalStoryboard,
@@ -224,7 +225,7 @@ export async function listVideoJobs(
   if (!sb) return { ok: false, error: "Supabase is not configured", jobs: [], config }
 
   let query = sb
-    .from("sales_video_jobs")
+    .from(DB_TABLES.SALES_VIDEO_JOBS)
     .select("*, sales_companies(company_name, domain, slug)")
     .order("created_at", { ascending: false })
     .limit(limit)
@@ -340,7 +341,7 @@ export async function createVideoJob(input: {
   })
   const trigger = getTriggerVideoPipelineConfig()
   const { data, error } = await sb
-    .from("sales_video_jobs")
+    .from(DB_TABLES.SALES_VIDEO_JOBS)
     .insert({
       company_id: company.id,
       pipeline_run_id: input.pipelineRunId ?? null,
@@ -410,7 +411,7 @@ async function updateJob(jobId: string, patch: Record<string, unknown>) {
     throw new Error("Supabase is not configured")
   }
   const { data, error } = await sb
-    .from("sales_video_jobs")
+    .from(DB_TABLES.SALES_VIDEO_JOBS)
     .update(patch)
     .eq("id", jobId)
     .select("*, sales_companies(company_name, domain, slug)")
@@ -429,7 +430,7 @@ async function fetchJob(jobId: string): Promise<SalesVideoJob> {
     throw new Error("Supabase is not configured")
   }
   const { data, error } = await sb
-    .from("sales_video_jobs")
+    .from(DB_TABLES.SALES_VIDEO_JOBS)
     .select("*, sales_companies(company_name, domain, slug)")
     .eq("id", jobId)
     .single()
@@ -455,7 +456,7 @@ async function updateLinkedPipelineVideoStep(job: SalesVideoJob, status: VideoJo
           : "waiting_external"
 
   const step = await sb
-    .from("sales_pipeline_steps")
+    .from(DB_TABLES.SALES_PIPELINE_STEPS)
     .update({
       status: stepStatus,
       completed_at: ["completed", "failed", "needs_review"].includes(stepStatus) ? now : null,
@@ -473,7 +474,7 @@ async function updateLinkedPipelineVideoStep(job: SalesVideoJob, status: VideoJo
 
   const runStatus = stepStatus === "failed" ? "failed" : stepStatus === "needs_review" ? "needs_review" : stepStatus === "completed" ? "running" : "waiting_external"
   const run = await sb
-    .from("sales_pipeline_runs")
+    .from(DB_TABLES.SALES_PIPELINE_RUNS)
     .update({
       status: runStatus,
       current_step: stepStatus === "completed" ? "r2_manifest" : "video_generate",

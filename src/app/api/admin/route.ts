@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServiceSupabase } from "@/lib/supabase"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 // 認証チェック
 function getAdminPassword(): string | null {
@@ -66,10 +67,10 @@ export async function POST(req: NextRequest) {
       // ═══ ダッシュボード統計 ═══
       case "dashboard_stats": {
         const [posts, services, faqs, leads] = await Promise.all([
-          db.from("cms_posts").select("id", { count: "exact", head: true }),
-          db.from("cms_services").select("id", { count: "exact", head: true }),
-          db.from("cms_faqs").select("id", { count: "exact", head: true }),
-          db.from("leads").select("id", { count: "exact", head: true }).eq("source", "paradigmjp.com"),
+          db.from(DB_TABLES.CMS_POSTS).select("id", { count: "exact", head: true }),
+          db.from(DB_TABLES.CMS_SERVICES).select("id", { count: "exact", head: true }),
+          db.from(DB_TABLES.CMS_FAQS).select("id", { count: "exact", head: true }),
+          db.from(DB_TABLES.LEADS).select("id", { count: "exact", head: true }).eq("source", "paradigmjp.com"),
         ])
         return NextResponse.json({
           posts: posts.count || 0,
@@ -81,17 +82,17 @@ export async function POST(req: NextRequest) {
 
       // ═══ ブログ記事 ═══
       case "list_posts": {
-        const { data, error } = await db.from("cms_posts").select("*").order("created_at", { ascending: false }).limit(500)
+        const { data, error } = await db.from(DB_TABLES.CMS_POSTS).select("*").order("created_at", { ascending: false }).limit(500)
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
         return NextResponse.json({ posts: data || [] })
       }
       case "get_post": {
-        const { data, error } = await db.from("cms_posts").select("*").eq("id", params.id).single()
+        const { data, error } = await db.from(DB_TABLES.CMS_POSTS).select("*").eq("id", params.id).single()
         if (error) return NextResponse.json({ error: error.message }, { status: 404 })
         return NextResponse.json({ post: data })
       }
       case "create_post": {
-        const { data, error } = await db.from("cms_posts").insert({
+        const { data, error } = await db.from(DB_TABLES.CMS_POSTS).insert({
           slug: params.slug,
           title: params.title,
           excerpt: params.excerpt || "",
@@ -112,50 +113,50 @@ export async function POST(req: NextRequest) {
         if (updates.status === "published" && !params.published_at) {
           updates.published_at = new Date().toISOString()
         }
-        const { data, error } = await db.from("cms_posts").update(updates).eq("id", params.id).select().single()
+        const { data, error } = await db.from(DB_TABLES.CMS_POSTS).update(updates).eq("id", params.id).select().single()
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
         return NextResponse.json({ post: data })
       }
       case "delete_post": {
-        const { error } = await db.from("cms_posts").delete().eq("id", params.id)
+        const { error } = await db.from(DB_TABLES.CMS_POSTS).delete().eq("id", params.id)
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
         return NextResponse.json({ success: true })
       }
 
       // ═══ サービス ═══
       case "list_services": {
-        const { data } = await db.from("cms_services").select("*").order("sort_order").limit(500)
+        const { data } = await db.from(DB_TABLES.CMS_SERVICES).select("*").order("sort_order").limit(500)
         return NextResponse.json({ services: data || [] })
       }
       case "update_service": {
         const updates: Record<string, unknown> = { ...params, updated_at: new Date().toISOString() }
         delete updates.id; delete updates.action
-        const { data, error } = await db.from("cms_services").update(updates).eq("id", params.id).select().single()
+        const { data, error } = await db.from(DB_TABLES.CMS_SERVICES).update(updates).eq("id", params.id).select().single()
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
         return NextResponse.json({ service: data })
       }
 
       // ═══ 料金 ═══
       case "list_pricing": {
-        const { data } = await db.from("cms_pricing").select("*").order("service_id").order("sort_order").limit(500)
+        const { data } = await db.from(DB_TABLES.CMS_PRICING).select("*").order("service_id").order("sort_order").limit(500)
         return NextResponse.json({ pricing: data || [] })
       }
       case "update_pricing": {
         const updates: Record<string, unknown> = { ...params, updated_at: new Date().toISOString() }
         delete updates.id; delete updates.action
-        const { data, error } = await db.from("cms_pricing").update(updates).eq("id", params.id).select().single()
+        const { data, error } = await db.from(DB_TABLES.CMS_PRICING).update(updates).eq("id", params.id).select().single()
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
         return NextResponse.json({ plan: data })
       }
 
       // ═══ FAQ ═══
       case "list_faqs": {
-        const { data } = await db.from("cms_faqs").select("*").order("sort_order").limit(500)
+        const { data } = await db.from(DB_TABLES.CMS_FAQS).select("*").order("sort_order").limit(500)
         return NextResponse.json({ faqs: data || [] })
       }
       case "create_faq": {
-        const { count } = await db.from("cms_faqs").select("id", { count: "exact", head: true })
-        const { data, error } = await db.from("cms_faqs").insert({
+        const { count } = await db.from(DB_TABLES.CMS_FAQS).select("id", { count: "exact", head: true })
+        const { data, error } = await db.from(DB_TABLES.CMS_FAQS).insert({
           question: params.question,
           answer: params.answer,
           sort_order: (count || 0) + 1,
@@ -166,12 +167,12 @@ export async function POST(req: NextRequest) {
       case "update_faq": {
         const updates: Record<string, unknown> = { ...params, updated_at: new Date().toISOString() }
         delete updates.id; delete updates.action
-        const { error } = await db.from("cms_faqs").update(updates).eq("id", params.id)
+        const { error } = await db.from(DB_TABLES.CMS_FAQS).update(updates).eq("id", params.id)
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
         return NextResponse.json({ success: true })
       }
       case "delete_faq": {
-        const { error } = await db.from("cms_faqs").delete().eq("id", params.id)
+        const { error } = await db.from(DB_TABLES.CMS_FAQS).delete().eq("id", params.id)
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
         return NextResponse.json({ success: true })
       }
@@ -181,19 +182,19 @@ export async function POST(req: NextRequest) {
           sort_order: idx + 1,
           updated_at: new Date().toISOString(),
         }))
-        const { error } = await db.from("cms_faqs").upsert(updates)
+        const { error } = await db.from(DB_TABLES.CMS_FAQS).upsert(updates)
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
         return NextResponse.json({ success: true })
       }
 
       // ═══ 実績 ═══
       case "list_works": {
-        const { data } = await db.from("cms_works").select("*").order("sort_order").limit(500)
+        const { data } = await db.from(DB_TABLES.CMS_WORKS).select("*").order("sort_order").limit(500)
         return NextResponse.json({ works: data || [] })
       }
       case "create_work": {
-        const { count } = await db.from("cms_works").select("id", { count: "exact", head: true })
-        const { data, error } = await db.from("cms_works").insert({
+        const { count } = await db.from(DB_TABLES.CMS_WORKS).select("id", { count: "exact", head: true })
+        const { data, error } = await db.from(DB_TABLES.CMS_WORKS).insert({
           title: params.title,
           industry: params.industry,
           description: params.description,
@@ -208,39 +209,39 @@ export async function POST(req: NextRequest) {
       case "update_work": {
         const updates: Record<string, unknown> = { ...params, updated_at: new Date().toISOString() }
         delete updates.id; delete updates.action
-        const { error } = await db.from("cms_works").update(updates).eq("id", params.id)
+        const { error } = await db.from(DB_TABLES.CMS_WORKS).update(updates).eq("id", params.id)
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
         return NextResponse.json({ success: true })
       }
       case "delete_work": {
-        const { error } = await db.from("cms_works").delete().eq("id", params.id)
+        const { error } = await db.from(DB_TABLES.CMS_WORKS).delete().eq("id", params.id)
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
         return NextResponse.json({ success: true })
       }
 
       // ═══ リード（問い合わせ） ═══
       case "list_leads": {
-        const { data } = await db.from("leads").select("*")
+        const { data } = await db.from(DB_TABLES.LEADS).select("*")
           .eq("source", "paradigmjp.com")
           .order("created_at", { ascending: false })
           .limit(100)
         return NextResponse.json({ leads: data || [] })
       }
       case "update_lead_status": {
-        const { error } = await db.from("leads").update({ pipeline_stage: params.status }).eq("id", params.id)
+        const { error } = await db.from(DB_TABLES.LEADS).update({ pipeline_stage: params.status }).eq("id", params.id)
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
         return NextResponse.json({ success: true })
       }
 
       // ═══ 設定 ═══
       case "get_settings": {
-        const { data } = await db.from("cms_settings").select("*").limit(500)
+        const { data } = await db.from(DB_TABLES.CMS_SETTINGS).select("*").limit(500)
         const settings: Record<string, unknown> = {}
         data?.forEach(row => { settings[row.key] = row.value })
         return NextResponse.json({ settings })
       }
       case "save_setting": {
-        const { error } = await db.from("cms_settings").upsert(
+        const { error } = await db.from(DB_TABLES.CMS_SETTINGS).upsert(
           { key: params.key, value: params.value, updated_at: new Date().toISOString() },
           { onConflict: "key" }
         )

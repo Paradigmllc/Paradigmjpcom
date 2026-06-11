@@ -14,6 +14,7 @@ import { getServiceSupabase } from "@/lib/supabase"
 import { calculateMrr } from "@/lib/sales/customers"
 import { listRecentlyUpdatedCompanies } from "@/lib/sales/companies"
 import { listAllTemplates } from "@/lib/sales/templates"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -39,11 +40,11 @@ async function getKpis() {
   const sb = getServiceSupabase()
   if (!sb) return { totalLeads: 0, hotLeads: 0, pendingScans: 0, readyToSend: 0, sent: 0 }
   const [total, hot, pending, ready, sent] = await Promise.all([
-    sb.from("sales_companies").select("id", { count: "exact", head: true }),
-    sb.from("sales_companies").select("id", { count: "exact", head: true }).eq("is_hot_lead", true),
-    sb.from("sales_companies").select("id", { count: "exact", head: true }).eq("pipeline_status", "pending"),
-    sb.from("sales_companies").select("id", { count: "exact", head: true }).eq("pipeline_status", "report_ready"),
-    sb.from("sales_companies").select("id", { count: "exact", head: true }).eq("pipeline_status", "sent"),
+    sb.from(DB_TABLES.SALES_COMPANIES).select("id", { count: "exact", head: true }),
+    sb.from(DB_TABLES.SALES_COMPANIES).select("id", { count: "exact", head: true }).eq("is_hot_lead", true),
+    sb.from(DB_TABLES.SALES_COMPANIES).select("id", { count: "exact", head: true }).eq("pipeline_status", "pending"),
+    sb.from(DB_TABLES.SALES_COMPANIES).select("id", { count: "exact", head: true }).eq("pipeline_status", "report_ready"),
+    sb.from(DB_TABLES.SALES_COMPANIES).select("id", { count: "exact", head: true }).eq("pipeline_status", "sent"),
   ])
   return {
     totalLeads: total.count ?? 0,

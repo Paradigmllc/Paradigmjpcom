@@ -3,6 +3,7 @@ import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { enqueueCompanyEnrichment } from "@/lib/sales/enrichment-jobs"
 import { z } from "zod"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
     case "change_status": {
       if (!body.status) return NextResponse.json({ ok: false, error: "status is required for change_status" }, { status: 400 })
       const { error } = await sb
-        .from("sales_companies")
+        .from(DB_TABLES.SALES_COMPANIES)
         .update({ pipeline_status: body.status })
         .in("id", body.companyIds)
       if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
     case "assign": {
       if (!body.assignedTo) return NextResponse.json({ ok: false, error: "assignedTo is required for assign" }, { status: 400 })
       const { error } = await sb
-        .from("sales_companies")
+        .from(DB_TABLES.SALES_COMPANIES)
         .update({ assigned_to: body.assignedTo })
         .in("id", body.companyIds)
       if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
 
     case "delete": {
       const { error } = await sb
-        .from("sales_companies")
+        .from(DB_TABLES.SALES_COMPANIES)
         .delete()
         .in("id", body.companyIds)
       if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })

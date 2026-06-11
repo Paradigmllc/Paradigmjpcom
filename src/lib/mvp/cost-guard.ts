@@ -6,6 +6,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export type QuotaPeriod = "daily" | "monthly";
 export type QuotaMetric = "send_count" | "llm_cost_jpy" | "playwright_dispatch";
@@ -67,7 +68,7 @@ export async function isPaused(
   scopeKey: string
 ): Promise<{ paused: boolean; reason?: string }> {
   const { data } = await sb
-    .from("mvp_send_quotas")
+    .from(DB_TABLES.MVP_SEND_QUOTAS)
     .select("paused_reason")
     .eq("scope", scope)
     .eq("scope_key", scopeKey)

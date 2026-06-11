@@ -3,6 +3,7 @@ import { authorizePayloadAdminRequest } from "@/lib/admin-auth";
 import { getServiceSalesSupabase } from "@/lib/supabase";
 import { isValidPipelineStatus, PIPELINE_STATUSES } from "@/lib/sales/types";
 import { syncCompanyKarteToTwenty } from "@/lib/sales/twenty-sync";
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export async function POST(
   req: Request,
@@ -29,7 +30,7 @@ export async function POST(
     if (!supabase) throw new Error("Supabase is not configured");
 
     const { data: company, error } = await supabase
-      .from("sales_companies")
+      .from(DB_TABLES.SALES_COMPANIES)
       .update({ pipeline_status: status })
       .eq("id", companyId)
       .select("*")

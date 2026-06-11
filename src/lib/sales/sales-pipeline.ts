@@ -9,6 +9,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import type { DashboardSalesPipeline, JsonRecord, SalesPipelineRun, SalesPipelineSource } from "./sales-pipeline-types"
 
 import { runSalesPipelineLocally } from "./sales-pipeline-execution"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 import {
   buildSalesPipelinePlan,
   fetchRunWithSteps,
@@ -40,7 +41,7 @@ export async function createSalesPipelineRun(input: {
   })
 
   const { data: run, error } = await sb
-    .from("sales_pipeline_runs")
+    .from(DB_TABLES.SALES_PIPELINE_RUNS)
     .insert({
       company_id: input.companyId,
       source: input.source ?? "sales_os",
@@ -70,7 +71,7 @@ export async function createSalesPipelineRun(input: {
     owner_tool: step.ownerTool,
     input_payload: {},
   }))
-  const { error: stepsError } = await sb.from("sales_pipeline_steps").insert(steps)
+  const { error: stepsError } = await sb.from(DB_TABLES.SALES_PIPELINE_STEPS).insert(steps)
   if (stepsError) {
     console.error("[sales-pipeline] step insert failed:", stepsError.message)
     return { ok: false, error: stepsError.message }
@@ -84,7 +85,7 @@ export async function listSalesPipelineRuns(limit = 20): Promise<DashboardSalesP
   if (!sb) return { runs: [], error: "Supabase service_role is not configured" }
 
   const { data, error } = await sb
-    .from("sales_pipeline_runs")
+    .from(DB_TABLES.SALES_PIPELINE_RUNS)
     .select("*, sales_companies(company_name, domain), steps:sales_pipeline_steps(*)")
     .order("created_at", { ascending: false })
     .order("position", { referencedTable: "sales_pipeline_steps", ascending: true })

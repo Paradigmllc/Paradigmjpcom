@@ -10,6 +10,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 const VALID_LANGUAGES = [
   "ja", "en", "ko", "zh", "es", "pt", "ru", "ar", "vi", "id", "de", "fr",
@@ -88,7 +89,7 @@ export async function pickFormMessageTemplate(
 
   for (const phase of phases) {
     const q = sb
-      .from("form_message_templates")
+      .from(DB_TABLES.FORM_MESSAGE_TEMPLATES)
       .select("*")
       .eq("region", region)
       .eq("language", language)

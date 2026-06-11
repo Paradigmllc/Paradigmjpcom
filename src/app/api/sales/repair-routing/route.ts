@@ -17,6 +17,7 @@ import {
   normalizeTargetCountry,
 } from "@/lib/sales/routing"
 import type { SalesCompany } from "@/lib/sales/types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
 
   const limit = Math.min(Math.max(body.limit ?? 100, 1), 500)
   let query = sb
-    .from("sales_companies")
+    .from(DB_TABLES.SALES_COMPANIES)
     .select("*")
     .order("updated_at", { ascending: true })
     .limit(limit)

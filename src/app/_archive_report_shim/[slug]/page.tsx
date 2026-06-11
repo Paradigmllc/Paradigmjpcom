@@ -20,6 +20,7 @@
 import { permanentRedirect } from "next/navigation"
 import { regionToLocale } from "@paradigmllc/blocks"
 import { getServiceSupabase } from "@/lib/supabase"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const dynamic = "force-dynamic"
 
@@ -38,7 +39,7 @@ export default async function LegacyReportRedirect({
     const sb = getServiceSupabase()
     if (sb) {
       const { data } = await sb
-        .from("cms_content_blocks")
+        .from(DB_TABLES.CMS_CONTENT_BLOCKS)
         .select("region")
         .eq("slug", slug)
         .maybeSingle()

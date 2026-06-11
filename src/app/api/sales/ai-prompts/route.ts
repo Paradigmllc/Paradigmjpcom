@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { authorizePayloadAdminRequest } from "@/lib/admin-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DEFAULT_AI_PROMPT_IDS, getFallbackAiPromptRows, type SalesAiPrompt } from "@/lib/sales/ai-prompts"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -64,7 +65,7 @@ export async function GET(req: NextRequest) {
     }
 
     const { data, error } = await sb
-      .from("sales_ai_prompts")
+      .from(DB_TABLES.SALES_AI_PROMPTS)
       .select("id,prompt_text,description,updated_at")
       .order("updated_at", { ascending: false })
 
@@ -104,7 +105,7 @@ export async function PUT(req: NextRequest) {
     }
 
     const { data, error } = await sb
-      .from("sales_ai_prompts")
+      .from(DB_TABLES.SALES_AI_PROMPTS)
       .upsert(
         {
           id: body.id,

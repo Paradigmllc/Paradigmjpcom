@@ -2,6 +2,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { fetchCompanyKarte, type CompanyKarteSnapshot } from "@/lib/sales/company-karte"
 import { pullTwentyCompaniesToSupabase } from "@/lib/sales/twenty-pull"
 import { syncCompanyKarteToTwenty } from "@/lib/sales/twenty-sync"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 type JsonRecord = Record<string, unknown>
@@ -128,7 +129,7 @@ async function logSync(sb: ServiceSupabase, row: {
   errorMessage?: string | null
   payload?: JsonRecord
 }) {
-  const { error } = await sb.from("sales_sync_logs").insert({
+  const { error } = await sb.from(DB_TABLES.SALES_SYNC_LOGS).insert({
     direction: row.direction,
     entity_type: "company",
     entity_id: row.entityId,
@@ -147,7 +148,7 @@ async function updateCompanyExternalMeta(
   target: ExternalStudioTarget,
   patch: JsonRecord,
 ) {
-  const { data, error } = await sb.from("sales_companies").select("meta").eq("id", companyId).maybeSingle()
+  const { data, error } = await sb.from(DB_TABLES.SALES_COMPANIES).select("meta").eq("id", companyId).maybeSingle()
   if (error) {
     console.error("[external-studio-sync] updateCompanyExternalMeta select failed:", error.message)
     throw new Error(error.message)
@@ -172,7 +173,7 @@ async function updateCompanyExternalMeta(
   const salesMaterialUrl = stringFrom(patch.sales_material_url)
   if (salesMaterialUrl) nextMeta.sales_material_url = salesMaterialUrl
 
-  const { error: updateError } = await sb.from("sales_companies").update({ meta: nextMeta }).eq("id", companyId)
+  const { error: updateError } = await sb.from(DB_TABLES.SALES_COMPANIES).update({ meta: nextMeta }).eq("id", companyId)
   if (updateError) {
     console.error("[external-studio-sync] updateCompanyExternalMeta update failed:", updateError.message)
     throw new Error(updateError.message)

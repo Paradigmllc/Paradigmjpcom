@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { authorizeWebhookRequest } from "@/lib/admin-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { captureException } from "@/lib/error-monitor"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
         for (const key of keys) {
           // If key is the UUID of presentation
           const { error } = await sb
-            .from("agency_presentations")
+            .from(DB_TABLES.AGENCY_PRESENTATIONS)
             .update({ status: "published", updated_at: new Date().toISOString() })
             .eq("id", key)
           
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest) {
       const isKeystatic = body.type === "keystatic_update" || body.ref === "refs/heads/main"
       if (isKeystatic && body.company_id) {
          const { error } = await sb
-            .from("agency_demo_sites")
+            .from(DB_TABLES.AGENCY_DEMO_SITES)
             .update({ status: "deployed", updated_at: new Date().toISOString() })
             .eq("company_id", body.company_id)
             

@@ -4,6 +4,7 @@ import { enqueueCompanyEnrichment, triggerEnrichmentRunner } from "./enrichment-
 import { salesScopeFromCountry, type SalesLocaleScope } from "./locale-scope"
 import { findExistingCompany, upsertCompanyByDomain } from "./companies"
 import type { Industry, Region } from "./types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
@@ -190,7 +191,7 @@ export async function listLeadBatches(scope: SalesLocaleScope, limit = 8): Promi
   if (!sb) return { ok: false, batches: [], error: "Supabase service_role not configured" }
 
   const { data, error } = await sb
-    .from("sales_lead_batches")
+    .from(DB_TABLES.SALES_LEAD_BATCHES)
     .select("*")
     .eq("region", scope.region)
     .eq("report_locale", scope.reportLocale)
@@ -202,7 +203,7 @@ export async function listLeadBatches(scope: SalesLocaleScope, limit = 8): Promi
   const ids = batches.map((batch) => batch.id)
   const itemRes = ids.length > 0
     ? await sb
-        .from("sales_lead_batch_items")
+        .from(DB_TABLES.SALES_LEAD_BATCH_ITEMS)
         .select("batch_id, status, rejection_reason")
         .in("batch_id", ids)
     : { data: [], error: null }
@@ -231,7 +232,7 @@ export async function createLeadBatch(input: {
   const source = input.source?.trim() || "monthly_csv"
   const scope = salesScopeFromCountry({ reportLocale: input.reportLocale, targetCountry: input.targetCountry })
   const batchInsert = await sb
-    .from("sales_lead_batches")
+    .from(DB_TABLES.SALES_LEAD_BATCHES)
     .insert({
       name: input.name?.trim() || defaultBatchName(scope, source),
       region: scope.region,
@@ -273,7 +274,7 @@ export async function createLeadBatch(input: {
     if (!row.company_name || !cleanDomain) {
       rejected++
       failures.push({ row: i, reason: "company_name and valid domain are required" })
-      await sb.from("sales_lead_batch_items").insert({
+      await sb.from(DB_TABLES.SALES_LEAD_BATCH_ITEMS).insert({
         ...baseItem,
         status: "rejected",
         rejection_reason: "missing_company_or_domain",
@@ -282,7 +283,7 @@ export async function createLeadBatch(input: {
     }
     if (dedupeKey && seen.has(dedupeKey)) {
       duplicates++
-      await sb.from("sales_lead_batch_items").insert({
+      await sb.from(DB_TABLES.SALES_LEAD_BATCH_ITEMS).insert({
         ...baseItem,
         status: "duplicate",
         rejection_reason: "duplicate_in_batch",
@@ -321,7 +322,7 @@ export async function createLeadBatch(input: {
     if (!saved.ok || !saved.company) {
       rejected++
       failures.push({ row: i, reason: saved.error ?? "company upsert failed" })
-      await sb.from("sales_lead_batch_items").insert({
+      await sb.from(DB_TABLES.SALES_LEAD_BATCH_ITEMS).insert({
         ...baseItem,
         status: "error",
         rejection_reason: saved.error ?? "company_upsert_failed",
@@ -346,7 +347,7 @@ export async function createLeadBatch(input: {
         failures.push({ row: i, reason: queued.error ?? "enrichment enqueue failed" })
       }
     }
-    await sb.from("sales_lead_batch_items").insert({
+    await sb.from(DB_TABLES.SALES_LEAD_BATCH_ITEMS).insert({
       ...baseItem,
       company_id: saved.company.id,
       status,
@@ -354,7 +355,7 @@ export async function createLeadBatch(input: {
   }
 
   await sb
-    .from("sales_lead_batches")
+    .from(DB_TABLES.SALES_LEAD_BATCHES)
     .update({
       status: jobs > 0 ? "enriching" : "qualifying",
       imported_count: imported,

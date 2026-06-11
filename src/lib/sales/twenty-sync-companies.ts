@@ -1,5 +1,6 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { fetchCompanyKarte, type CompanyKarteSnapshot } from "@/lib/sales/company-karte"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 import {
   ensureCompanyProductRecommendations,
   markRecommendationOpportunityCreated,
@@ -309,7 +310,7 @@ export async function syncCompanyKarteToTwenty(
     await syncTwentyCompanyHomeFields(karte, twentyCompany.id)
     const opportunityIds = await syncTwentyOpportunities(sb, karte, twentyCompany.id)
 
-    await sb.from("sales_sync_logs").insert([
+    await sb.from(DB_TABLES.SALES_SYNC_LOGS).insert([
       {
         direction: "supabase->twenty",
         entity_type: "company",
@@ -350,7 +351,7 @@ export async function syncCompanyKarteToTwenty(
   } catch (error) {
     const message = error instanceof Error ? error.message : "Twenty sync failed"
     console.error("[twenty-sync] failed:", error)
-    await sb.from("sales_sync_logs").insert({
+    await sb.from(DB_TABLES.SALES_SYNC_LOGS).insert({
       direction: "supabase->twenty",
       entity_type: "company",
       entity_id: companyId,

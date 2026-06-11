@@ -23,6 +23,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { notifySlack } from "@/lib/notify"
 import { salesScopeFromLocale, type SalesLocaleScope } from "@/lib/sales/locale-scope"
 import { buildReportUrl } from "@/lib/sales/routing"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -56,18 +57,18 @@ async function collectDigest(scope: SalesLocaleScope): Promise<DigestData | { er
   // 並列クエリ
   const [allRes, newRes, hotRes] = await Promise.all([
     sb
-      .from("sales_companies")
+      .from(DB_TABLES.SALES_COMPANIES)
       .select("deal_stage, prefecture, detected_issues, created_at")
       .eq("report_locale", scope.reportLocale)
       .order("created_at", { ascending: false })
       .limit(5000),
     sb
-      .from("sales_companies")
+      .from(DB_TABLES.SALES_COMPANIES)
       .select("id", { count: "exact", head: true })
       .eq("report_locale", scope.reportLocale)
       .gte("created_at", weekStart),
     sb
-      .from("sales_companies")
+      .from(DB_TABLES.SALES_COMPANIES)
       .select("id, slug, company_name, domain, report_views")
       .eq("report_locale", scope.reportLocale)
       .eq("is_hot_lead", true)

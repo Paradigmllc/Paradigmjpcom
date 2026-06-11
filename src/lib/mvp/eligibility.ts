@@ -14,6 +14,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getEntityId, normalizeDomain, type LeadCore } from "./entity-id";
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export type EligibilityVerdict = "pass" | "block";
 export type BlockReason =
@@ -88,7 +89,7 @@ export async function checkEligibility(
 
   // ── 1. blocklist (entity_id or domain match) ──
   const { data: blocklist } = await sb
-    .from("mvp_blocklist")
+    .from(DB_TABLES.MVP_BLOCKLIST)
     .select("reason, reason_detail, expires_at")
     .or(`entity_id.eq.${entity_id},domain.eq.${domain}`)
     .or("expires_at.is.null,expires_at.gt.now()")
@@ -99,7 +100,7 @@ export async function checkEligibility(
   // ── 2. duplicate window (same entity_id within COOLING_DAYS) ──
   const cooling = new Date(Date.now() - COOLING_DAYS * 86400_000).toISOString();
   const { data: recent } = await sb
-    .from("mvp_outreach_runs")
+    .from(DB_TABLES.MVP_OUTREACH_RUNS)
     .select("id, completed_at, status")
     .eq("entity_id", entity_id)
     .in("status", ["sent", "replied"])
@@ -126,7 +127,7 @@ export async function checkEligibility(
   if (!opts.skipQuota && !opts.isDryRun) {
     const region = lead.region ?? "ja";
     const { data: quotas } = await sb
-      .from("mvp_send_quotas")
+      .from(DB_TABLES.MVP_SEND_QUOTAS)
       .select("scope, scope_key, paused_at, paused_reason")
       .or(`scope.eq.global,and(scope.eq.region,scope_key.eq.${region})`)
       .not("paused_at", "is", null)

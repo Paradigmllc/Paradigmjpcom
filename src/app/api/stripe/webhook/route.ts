@@ -20,6 +20,7 @@ import { verifyStripeWebhook } from "@/lib/stripe"
 import { createCustomer } from "@/lib/sales/customers"
 import { getServiceSupabase } from "@/lib/supabase"
 import type { ContractStatus, ContractProduct } from "@/lib/sales/types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -116,7 +117,7 @@ export async function POST(req: NextRequest) {
         else if (obj.status === "past_due") status = "解約予告"
         else if (obj.status === "trialing") status = "トライアル"
         await sb
-          .from("sales_customers")
+          .from(DB_TABLES.SALES_CUSTOMERS)
           .update({
             contract_status: status,
             next_invoice_date: nextInvoiceDate,
@@ -128,7 +129,7 @@ export async function POST(req: NextRequest) {
         const sb = getServiceSupabase()
         if (!sb) break
         await sb
-          .from("sales_customers")
+          .from(DB_TABLES.SALES_CUSTOMERS)
           .update({ contract_status: "解約済" })
           .eq("meta->>stripe_subscription_id", obj.subscription ?? obj.id)
         break

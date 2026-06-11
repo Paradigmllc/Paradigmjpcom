@@ -23,6 +23,7 @@ import { getMvpSupabase } from "@/lib/mvp/supabase";
 import { postToSlack, buildAlertBlocks } from "@/lib/mvp/slack";
 import { requireMvpSecret } from "@/lib/mvp/auth";
 import { randomBytes } from "node:crypto";
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -58,7 +59,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "entity_id or domain or lead_id required" }, { status: 400 });
     }
     // 1. blocklist 追加 (将来送信完全禁止)
-    await sb.from("mvp_blocklist").insert({
+    await sb.from(DB_TABLES.MVP_BLOCKLIST).insert({
       entity_id: body.entity_id ?? null,
       domain: body.domain ?? null,
       reason: "manual",
@@ -67,7 +68,7 @@ export async function POST(req: Request) {
     });
     // 2. 既存 optout_tokens 全 mark
     if (body.lead_id) {
-      await sb.from("mvp_optout_tokens").update({
+      await sb.from(DB_TABLES.MVP_OPTOUT_TOKENS).update({
         optout_at: new Date().toISOString(),
         optout_user_agent: "RTBF",
       }).eq("lead_id", body.lead_id).is("optout_at", null);
@@ -112,14 +113,14 @@ export async function POST(req: Request) {
   //   旧 .eq("meta->>entity_id", ...) と .eq("domain", ...) は silently zero match → GDPR 違反リスク.
   const targetLeadIds: string[] = [];
   if (body.entity_id) {
-    const { data } = await sb.from("leads").select("id").eq("entity_id", body.entity_id);
+    const { data } = await sb.from(DB_TABLES.LEADS).select("id").eq("entity_id", body.entity_id);
     (data ?? []).forEach((r) => targetLeadIds.push(r.id));
   }
   if (body.domain) {
     // domain 入力 (例: "cybozu.co.jp") に対し ① website_url ilike (https://www.cybozu.co.jp/ 等) ② meta->>'domain' 互換
-    const { data: byUrl } = await sb.from("leads").select("id").ilike("website_url", `%${body.domain}%`);
+    const { data: byUrl } = await sb.from(DB_TABLES.LEADS).select("id").ilike("website_url", `%${body.domain}%`);
     (byUrl ?? []).forEach((r) => targetLeadIds.push(r.id));
-    const { data: byMeta } = await sb.from("leads").select("id").eq("meta->>domain", body.domain);
+    const { data: byMeta } = await sb.from(DB_TABLES.LEADS).select("id").eq("meta->>domain", body.domain);
     (byMeta ?? []).forEach((r) => targetLeadIds.push(r.id));
   }
   const uniqueLeadIds = Array.from(new Set(targetLeadIds));
@@ -129,20 +130,20 @@ export async function POST(req: Request) {
 
   // Hard delete (cascade not configured・順序で削除)
   // 1. cms_content_blocks は generated_by_run_id 経由で lead に紐付く → 先に run_ids 取得
-  const { data: runs } = await sb.from("mvp_outreach_runs").select("id").in("lead_id", uniqueLeadIds);
+  const { data: runs } = await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).select("id").in("lead_id", uniqueLeadIds);
   const runIds = (runs ?? []).map((r) => r.id);
   if (runIds.length > 0) {
-    await sb.from("cms_content_blocks").delete().in("generated_by_run_id", runIds);
+    await sb.from(DB_TABLES.CMS_CONTENT_BLOCKS).delete().in("generated_by_run_id", runIds);
   }
   // 2. lead 関連 row 削除
   for (const tbl of ["mvp_click_events", "mvp_optout_tokens", "mvp_outreach_runs"]) {
     await sb.from(tbl).delete().in("lead_id", uniqueLeadIds);
   }
   // 3. lead 本体削除 (最後)
-  await sb.from("leads").delete().in("id", uniqueLeadIds);
+  await sb.from(DB_TABLES.LEADS).delete().in("id", uniqueLeadIds);
 
   // blocklist に永久 record を残す (再 crawl で再収集されないように)
-  await sb.from("mvp_blocklist").insert({
+  await sb.from(DB_TABLES.MVP_BLOCKLIST).insert({
     entity_id: body.entity_id ?? null,
     domain: body.domain ?? null,
     reason: "manual",

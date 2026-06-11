@@ -12,6 +12,7 @@
 
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { normalizeDomain, normalizeCompanyName } from "./dedup"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 import {
   buildCompanySlug,
   buildReportUrl,
@@ -60,7 +61,7 @@ export async function upsertCompanyByDomain(
   // canonical domain (www/proto 除去) で「同一企業 = 同一 domain 行」を物理担保
   const domain = normalizeDomain(input.domain) ?? input.domain.trim().toLowerCase()
   const { data: existing } = await sb
-    .from("sales_companies")
+    .from(DB_TABLES.SALES_COMPANIES)
     .select("*")
     .eq("domain", domain)
     .maybeSingle()
@@ -125,7 +126,7 @@ export async function upsertCompanyByDomain(
   if (dealStage) payload.deal_stage = dealStage
 
   const { data, error } = await sb
-    .from("sales_companies")
+    .from(DB_TABLES.SALES_COMPANIES)
     .upsert(payload, { onConflict: "domain", ignoreDuplicates: false })
     .select()
     .single()
@@ -140,7 +141,7 @@ export async function findCompanyByDomain(
   const sb = getServiceSalesSupabase()
   if (!sb) return null
   const { data } = await sb
-    .from("sales_companies")
+    .from(DB_TABLES.SALES_COMPANIES)
     .select("*")
     .eq("domain", domain)
     .maybeSingle()
@@ -155,7 +156,7 @@ export async function findCompanyBySlug(
   const sb = getServiceSalesSupabase()
   if (!sb) return null
   const { data, error } = await sb
-    .from("sales_companies")
+    .from(DB_TABLES.SALES_COMPANIES)
     .select("*")
     .eq("slug", slug)
     .eq("region", region)
@@ -164,7 +165,7 @@ export async function findCompanyBySlug(
   if (data) return data as SalesCompany
 
   const fallback = await sb
-    .from("sales_companies")
+    .from(DB_TABLES.SALES_COMPANIES)
     .select("*")
     .eq("slug", slug)
     .order("updated_at", { ascending: false })
@@ -179,7 +180,7 @@ export async function findCompanyById(id: string): Promise<SalesCompany | null> 
   const sb = getServiceSalesSupabase()
   if (!sb) return null
   const { data } = await sb
-    .from("sales_companies")
+    .from(DB_TABLES.SALES_COMPANIES)
     .select("*")
     .eq("id", id)
     .maybeSingle()
@@ -194,7 +195,7 @@ export async function setNotionPageId(
   const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
   const { error } = await sb
-    .from("sales_companies")
+    .from(DB_TABLES.SALES_COMPANIES)
     .update({ notion_page_id: notionPageId })
     .eq("id", companyId)
   if (error) return { ok: false, error: error.message }
@@ -225,7 +226,7 @@ export async function updateCompanyFromNotion(
     return { ok: true } // 変更なし
   }
   const { error } = await sb
-    .from("sales_companies")
+    .from(DB_TABLES.SALES_COMPANIES)
     .update(safePayload)
     .eq("notion_page_id", notionPageId)
   if (error) return { ok: false, error: error.message }
@@ -240,7 +241,7 @@ export async function markHotLead(
   const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
   const { error } = await sb
-    .from("sales_companies")
+    .from(DB_TABLES.SALES_COMPANIES)
     .update({ is_hot_lead: isHot })
     .eq("id", companyId)
   if (error) return { ok: false, error: error.message }
@@ -255,7 +256,7 @@ export async function setPipelineStatus(
   const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
   const { error } = await sb
-    .from("sales_companies")
+    .from(DB_TABLES.SALES_COMPANIES)
     .update({ pipeline_status: status })
     .eq("id", companyId)
   if (error) return { ok: false, error: error.message }
@@ -278,7 +279,7 @@ export async function findExistingCompany(input: {
   const region = input.region ?? "jp"
   if (input.notionPageId) {
     const { data } = await sb
-      .from("sales_companies")
+      .from(DB_TABLES.SALES_COMPANIES)
       .select("*")
       .eq("notion_page_id", input.notionPageId)
       .maybeSingle()
@@ -286,12 +287,12 @@ export async function findExistingCompany(input: {
   }
   const domain = normalizeDomain(input.domain)
   if (domain) {
-    const { data } = await sb.from("sales_companies").select("*").eq("domain", domain).maybeSingle()
+    const { data } = await sb.from(DB_TABLES.SALES_COMPANIES).select("*").eq("domain", domain).maybeSingle()
     if (data) return data as SalesCompany
   }
   if (input.nameKey) {
     const { data } = await sb
-      .from("sales_companies")
+      .from(DB_TABLES.SALES_COMPANIES)
       .select("*")
       .eq("region", region)
       .eq("name_key", input.nameKey)
@@ -309,7 +310,7 @@ export async function listRecentlyUpdatedCompanies(
   const sb = getServiceSalesSupabase()
   if (!sb) return []
   const { data } = await sb
-    .from("sales_companies")
+    .from(DB_TABLES.SALES_COMPANIES)
     .select("*")
     .order("updated_at", { ascending: false })
     .limit(limit)
@@ -333,7 +334,7 @@ export async function batchFindExistingByDomains(
   for (let i = 0; i < domains.length; i += chunkSize) {
     const chunk = domains.slice(i, i + chunkSize)
     const { data, error } = await sb
-      .from("sales_companies")
+      .from(DB_TABLES.SALES_COMPANIES)
       .select("*")
       .in("domain", chunk)
     if (error) {

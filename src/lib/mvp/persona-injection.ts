@@ -13,6 +13,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 // ローカル LRU (60s TTL).
 const cache = new Map<string, { payload: string; expires: number }>();
@@ -52,7 +53,7 @@ export async function getPersonaInjection(
   if (hit && hit.expires > Date.now()) return hit.payload;
 
   const { data, error } = await sb
-    .from("paradigm_personas")
+    .from(DB_TABLES.PARADIGM_PERSONAS)
     .select("*")
     .eq("slug", slug)
     .eq("is_active", true)

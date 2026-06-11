@@ -10,6 +10,7 @@
  */
 
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export interface KpiSnapshot {
   date: string
@@ -68,7 +69,7 @@ export async function computeKpiForDate(dateIso?: string): Promise<KpiSnapshot> 
   const new_leads = await countIn("sales_companies", "created_at", start, end)
   // outreach_sent: その日の form_outreach 活動 (activity_log)
   const { data: acts } = await sb
-    .from("sales_activity_log")
+    .from(DB_TABLES.SALES_ACTIVITY_LOG)
     .select("meta, result")
     .gte("occurred_at", start)
     .lte("occurred_at", end)
@@ -84,7 +85,7 @@ export async function computeKpiForDate(dateIso?: string): Promise<KpiSnapshot> 
   const proposals_sent = await countIn("sales_companies", "sent_at", start, end)
   // deals_closed / lost: その日更新で deal_stage 成約/失注
   const { data: deals } = await sb
-    .from("sales_companies")
+    .from(DB_TABLES.SALES_COMPANIES)
     .select("deal_stage")
     .gte("updated_at", start)
     .lte("updated_at", end)
@@ -94,7 +95,7 @@ export async function computeKpiForDate(dateIso?: string): Promise<KpiSnapshot> 
   const deals_lost = (deals ?? []).filter((d) => d.deal_stage === "失注").length
   // revenue: その日 signed の契約合計 (amount_yen)
   const { data: contracts } = await sb
-    .from("sales_contracts")
+    .from(DB_TABLES.SALES_CONTRACTS)
     .select("amount_yen")
     .gte("signed_at", start)
     .lte("signed_at", end)
@@ -126,16 +127,16 @@ export async function snapshotKpi(
   const snapshot = await computeKpiForDate(dateIso)
 
   const { data: existing } = await sb
-    .from("sales_kpi")
+    .from(DB_TABLES.SALES_KPI)
     .select("id")
     .eq("date", snapshot.date)
     .maybeSingle()
 
   if (existing?.id) {
-    const { error } = await sb.from("sales_kpi").update(snapshot).eq("id", existing.id)
+    const { error } = await sb.from(DB_TABLES.SALES_KPI).update(snapshot).eq("id", existing.id)
     if (error) return { ok: false, error: error.message }
   } else {
-    const { error } = await sb.from("sales_kpi").insert(snapshot)
+    const { error } = await sb.from(DB_TABLES.SALES_KPI).insert(snapshot)
     if (error) return { ok: false, error: error.message }
   }
   return { ok: true, snapshot }

@@ -6,6 +6,7 @@
 import { NextResponse } from "next/server";
 import { getMvpSupabase } from "@/lib/mvp/supabase";
 import { requireMvpUiAuth } from "@/lib/mvp/auth";
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -20,7 +21,7 @@ export async function GET(req: Request) {
   const limit = Math.min(Number(url.searchParams.get("limit") ?? "50"), 200);
 
   let q = sb
-    .from("mvp_outreach_runs")
+    .from(DB_TABLES.MVP_OUTREACH_RUNS)
     .select("id, lead_id, region, language, status, step, template_id, report_canonical_url, report_http_status, retry_count, created_at, updated_at, completed_at")
     .order("updated_at", { ascending: false })
     .limit(limit);

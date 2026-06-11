@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { authorizeWebhookRequest } from "@/lib/admin-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { runCustomerSuccessHandoff } from "@/lib/sales/customer-handoff"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -104,7 +105,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { error } = await sb
-    .from("sales_contracts")
+    .from(DB_TABLES.SALES_CONTRACTS)
     .upsert(row, { onConflict: "docusign_envelope_id" })
 
   if (error) {

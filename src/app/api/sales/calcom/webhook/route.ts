@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { authorizeWebhookRequest } from "@/lib/admin-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { captureException } from "@/lib/error-monitor"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -109,7 +110,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { error } = await sb
-    .from("sales_calendar_events")
+    .from(DB_TABLES.SALES_CALENDAR_EVENTS)
     .upsert(row, { onConflict: "cal_event_id" })
 
   if (error) {

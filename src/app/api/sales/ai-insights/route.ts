@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { callDeepSeek } from "@/lib/deepseek"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
 
     if (body.companyId) {
       const { data } = await sb
-        .from("sales_companies")
+        .from(DB_TABLES.SALES_COMPANIES)
         .select("id, company_name, industry, pagespeed_mobile, detected_issues, meta")
         .eq("id", body.companyId)
         .single()
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
     } else {
       // Pick companies that are report_ready but haven't been enriched with insights yet
       const { data } = await sb
-        .from("sales_companies")
+        .from(DB_TABLES.SALES_COMPANIES)
         .select("id, company_name, industry, pagespeed_mobile, detected_issues, meta")
         .eq("pipeline_status", "report_ready")
         .order("updated_at", { ascending: false })
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
 
       // Save to meta
       if (insight) {
-        await sb.from("sales_companies").update({
+        await sb.from(DB_TABLES.SALES_COMPANIES).update({
           meta: { ...(c.meta as Record<string, unknown> ?? {}), sales_os: { ...((c.meta as Record<string, unknown>)?.sales_os as Record<string, unknown> ?? {}), ai_insight: insight, ai_insight_at: new Date().toISOString() } }
         }).eq("id", c.id).then(() => {}, () => {})
       }

@@ -5,6 +5,7 @@ import { fetchDiagnosticReport, type DiagnosticReportData } from "./diagnostic"
 import { labelForIndustry, themeForIndustry } from "./render-quality"
 import { normalizeReportLocale, type ReportLocale } from "./routing"
 import { localeToRegion, type Region } from "./types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export interface SalesAssetResult {
   ok: boolean
@@ -294,7 +295,7 @@ async function saveDelivery(input: {
   if (!sb) return undefined
 
   const { data, error } = await sb
-    .from("sales_deliveries")
+    .from(DB_TABLES.SALES_DELIVERIES)
     .insert({
       region: input.region,
       delivery_name: `${input.companyName} ${input.templateTitle}`,

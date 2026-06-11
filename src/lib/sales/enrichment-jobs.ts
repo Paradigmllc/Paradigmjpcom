@@ -11,6 +11,7 @@ import { syncCompanyKarteToTwenty } from "./twenty-sync"
 import { buildReportUrl, normalizeReportLocale } from "./routing"
 import { auditJapanMarketReadiness } from "./sources/japan-market-audit"
 import type { SalesCompany } from "./types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
@@ -129,7 +130,7 @@ export async function enqueueCompanyEnrichment(
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
 
   const { data, error } = await sb
-    .from("sales_enrichment_jobs")
+    .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
     .insert({
       company_id: input.companyId,
       job_type: "company_karte",
@@ -146,7 +147,7 @@ export async function enqueueCompanyEnrichment(
 
   if (error.code === "23505") {
     const existing = await sb
-      .from("sales_enrichment_jobs")
+      .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
       .select("*")
       .eq("company_id", input.companyId)
       .eq("job_type", "company_karte")
@@ -212,7 +213,7 @@ async function logDiagnosisEvent(
     payload?: JsonRecord
   },
 ): Promise<void> {
-  const { error } = await sb.from("sales_diagnosis_events").insert({
+  const { error } = await sb.from(DB_TABLES.SALES_DIAGNOSIS_EVENTS).insert({
     company_id: input.companyId,
     job_id: input.jobId,
     event_type: input.eventType,
@@ -226,7 +227,7 @@ async function logDiagnosisEvent(
 
 async function fetchQueuedJobs(sb: ServiceSupabase, limit: number): Promise<SalesEnrichmentJob[]> {
   const { data, error } = await sb
-    .from("sales_enrichment_jobs")
+    .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
     .select("*")
     .eq("status", "queued")
     .lte("next_run_at", new Date().toISOString())
@@ -251,7 +252,7 @@ async function markJobFailure(
   const terminal = nextAttempts >= job.max_attempts
   const delayMs = Math.min(30 * 60_000, 2 ** nextAttempts * 60_000)
   const { error } = await sb
-    .from("sales_enrichment_jobs")
+    .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
     .update({
       status: terminal ? "failed" : "queued",
       attempts: nextAttempts,
@@ -268,7 +269,7 @@ async function markJobFailure(
 
 async function claimJob(sb: ServiceSupabase, job: SalesEnrichmentJob, runnerId: string): Promise<boolean> {
   const { data, error } = await sb
-    .from("sales_enrichment_jobs")
+    .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
     .update({
       status: "running",
       started_at: new Date().toISOString(),
@@ -301,7 +302,7 @@ async function completeJob(
   resultPayload: JsonRecord,
 ): Promise<void> {
   const { error } = await sb
-    .from("sales_enrichment_jobs")
+    .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
     .update({
       status: "completed",
       completed_at: new Date().toISOString(),
@@ -429,7 +430,7 @@ async function processJob(sb: ServiceSupabase, job: SalesEnrichmentJob): Promise
     : (save.company.meta ?? {})
   const finalCompany = { ...save.company, meta: finalMeta }
   if (demo.ok && demo.demoUrl) {
-    const { error } = await sb.from("sales_companies").update({ meta: finalMeta }).eq("id", save.company.id)
+    const { error } = await sb.from(DB_TABLES.SALES_COMPANIES).update({ meta: finalMeta }).eq("id", save.company.id)
     if (error) console.error("[sales-enrichment] demo meta update failed:", error.message)
   }
   await saveSourceCoverageRows(finalCompany)
@@ -501,7 +502,7 @@ export async function fetchRecentEnrichmentJobs(limit = 30): Promise<DashboardEn
   if (!sb) return []
 
   const { data, error } = await sb
-    .from("sales_enrichment_jobs")
+    .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
     .select("id, company_id, job_type, status, priority, attempts, max_attempts, source, triggered_by, error_message, created_at, updated_at, sales_companies(company_name, domain)")
     .order("created_at", { ascending: false })
     .limit(limit)

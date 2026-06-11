@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 function getDB() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -21,14 +22,14 @@ export async function POST(request: Request) {
     if (!db) return NextResponse.json({ ok: false })
 
     // prospect_viewsに記録
-    await db.from("prospect_views").insert({
+    await db.from(DB_TABLES.PROSPECT_VIEWS).insert({
       prospect_id, slug, duration_sec: duration_sec || 0,
       pattern_id: pattern_id || null,
     })
 
     // 30秒以上 → 閲覧通知
     if (duration_sec >= 30) {
-      const { data: prospect } = await db.from("prospects")
+      const { data: prospect } = await db.from(DB_TABLES.PROSPECTS)
         .select("id, business_name, slug, view_count, lead_id")
         .eq(slug ? "slug" : "id", slug || prospect_id)
         .single()
@@ -37,9 +38,9 @@ export async function POST(request: Request) {
         // 3回以上閲覧 or 30秒以上滞在 → HOT LEAD化
         const isHot = (prospect.view_count || 0) >= 3 || duration_sec >= 30
         if (isHot) {
-          await db.from("prospects").update({ status: "hot_lead", updated_at: new Date().toISOString() }).eq("id", prospect.id)
+          await db.from(DB_TABLES.PROSPECTS).update({ status: "hot_lead", updated_at: new Date().toISOString() }).eq("id", prospect.id)
 
-          await db.from("notifications").insert({
+          await db.from(DB_TABLES.NOTIFICATIONS).insert({
             type: "engagement",
             title: `👀 長時間閲覧: ${prospect.business_name}`,
             message: `提案ページを${duration_sec}秒閲覧${pattern_name ? `（パターン: ${pattern_name}）` : ""}`,

@@ -17,6 +17,7 @@ import { findCompanyById } from "@/lib/sales/companies"
 import { fetchDiagnosticReport, type DiagnosticReportData } from "@/lib/sales/diagnostic"
 import { generateNarrationScript, buildHyperFramesHtml } from "@/lib/sales/video-generator"
 import { runVideoJobAction } from "@/lib/sales/video-pipeline"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { data: job, error: jobError } = await sb
-      .from("sales_video_jobs")
+      .from(DB_TABLES.SALES_VIDEO_JOBS)
       .select("*, sales_companies!inner(company_name, domain, slug)")
       .eq("id", body.jobId)
       .single()

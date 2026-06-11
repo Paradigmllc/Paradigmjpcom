@@ -8,6 +8,7 @@
  * 注意: Supabase の exec_sql RPC はデフォルト無効。テーブルはマイグレーションで事前作成すること。
  */
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 let tableReady = false
 let tableCheckFailed = false
@@ -21,7 +22,7 @@ async function ensureTable(): Promise<void> {
     return
   }
 
-  const { error } = await sb.from("sales_error_log").select("id").limit(1)
+  const { error } = await sb.from(DB_TABLES.SALES_ERROR_LOG).select("id").limit(1)
   if (error) {
     tableCheckFailed = true
     console.error("[error-monitor] sales_error_log table not found:", error.message)
@@ -110,7 +111,7 @@ async function flush(): Promise<void> {
   }))
 
   try {
-    const { error } = await sb.from("sales_error_log").insert(rows)
+    const { error } = await sb.from(DB_TABLES.SALES_ERROR_LOG).insert(rows)
     if (error) console.error("[error-monitor] flush failed:", error.message)
   } catch (e) {
     process.stderr.write(`[error-monitor] flush failed: ${e instanceof Error ? e.message : String(e)}\n`)

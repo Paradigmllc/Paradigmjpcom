@@ -35,6 +35,7 @@ import {
   type Region,
 } from "@/lib/sales/types"
 import { isNotionLegacySyncEnabled, notionLegacyDisabledResponse } from "@/lib/sales/notion-legacy-guard"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -151,7 +152,7 @@ export async function POST(req: NextRequest) {
         },
       }
       if (!existing.notion_page_id) update.notion_page_id = row.id // domain 一致なら紐付け
-      const { error } = await sb.from("sales_companies").update(update).eq("id", existing.id)
+      const { error } = await sb.from(DB_TABLES.SALES_COMPANIES).update(update).eq("id", existing.id)
       if (error) errors.push({ notion_page_id: row.id, reason: error.message })
       else updated++
       continue

@@ -3,6 +3,7 @@
  * Requires Flowsint deployed on internal network (http://flowsint-api-prod:5001 or http://localhost:5001).
  */
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 const FLOWSINT_BASE = process.env.FLOWSINT_API_URL || "http://127.0.0.1:5001"
 const FLOWSINT_TOKEN = process.env.FLOWSINT_API_TOKEN
@@ -101,7 +102,7 @@ export async function enrichDomainWithFlowsint(domain: string): Promise<Flowsint
     const sb = getServiceSalesSupabase()
     if (sb) {
       const { data: contacts } = await sb
-        .from("sales_companies")
+        .from(DB_TABLES.SALES_COMPANIES)
         .select("contact_email, contact_name")
         .eq("domain", domain)
         .maybeSingle()

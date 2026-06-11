@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { notifySlack } from "@/lib/notify"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -22,38 +23,38 @@ export async function POST(req: NextRequest) {
 
     // New companies in last 24h
     const { count: newToday } = await sb
-      .from("sales_companies")
+      .from(DB_TABLES.SALES_COMPANIES)
       .select("*", { count: "exact", head: true })
       .gte("created_at", dayAgo)
 
     // Companies enriched in last 24h
     const { count: enrichedToday } = await sb
-      .from("sales_companies")
+      .from(DB_TABLES.SALES_COMPANIES)
       .select("*", { count: "exact", head: true })
       .gte("updated_at", dayAgo)
       .eq("pipeline_status", "report_ready")
 
     // Companies with report_ready status
     const { count: reportReady } = await sb
-      .from("sales_companies")
+      .from(DB_TABLES.SALES_COMPANIES)
       .select("*", { count: "exact", head: true })
       .eq("pipeline_status", "report_ready")
 
     // Pipeline runs in last 24h
     const { count: pipelineToday } = await sb
-      .from("sales_pipeline_runs")
+      .from(DB_TABLES.SALES_PIPELINE_RUNS)
       .select("*", { count: "exact", head: true })
       .gte("created_at", dayAgo)
 
     // Enrichment jobs queued
     const { count: jobsQueued } = await sb
-      .from("sales_enrichment_jobs")
+      .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
       .select("*", { count: "exact", head: true })
       .eq("status", "queued")
 
     // Lead batches this week
     const { data: batches } = await sb
-      .from("sales_lead_batches")
+      .from(DB_TABLES.SALES_LEAD_BATCHES)
       .select("name, item_count, status")
       .gte("created_at", weekAgo)
       .order("created_at", { ascending: false })

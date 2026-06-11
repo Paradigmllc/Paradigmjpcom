@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 function getDB() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
     if (!db) return NextResponse.json({ error: "DB未設定" }, { status: 500 })
 
     // prospect更新
-    const { data: prospect } = await db.from("prospects")
+    const { data: prospect } = await db.from(DB_TABLES.PROSPECTS)
       .update({ status: "hot_lead", cta_clicked_at: new Date().toISOString(), updated_at: new Date().toISOString() })
       .eq(slug ? "slug" : "id", slug || prospect_id)
       .select("id, business_name, slug, lead_id")
@@ -35,14 +36,14 @@ export async function POST(request: Request) {
     const actionLabel = actionLabels[action] || "CTAクリック"
 
     // prospect_viewsに記録
-    await db.from("prospect_views").insert({
+    await db.from(DB_TABLES.PROSPECT_VIEWS).insert({
       prospect_id: prospect.id, slug: prospect.slug, cta_clicked: true,
     })
 
     // leads更新
     if (contact?.email && prospect.lead_id) {
       try {
-        await db.from("leads").update({
+        await db.from(DB_TABLES.LEADS).update({
           email: contact.email,
           phone: contact.phone || undefined,
           pipeline_stage: "hot",
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
 
     // DB通知
     const contactInfo = contact?.name ? ` (${contact.name}${contact.email ? ` / ${contact.email}` : ""})` : ""
-    await db.from("notifications").insert({
+    await db.from(DB_TABLES.NOTIFICATIONS).insert({
       type: "hot_lead",
       title: `🔥 ${actionLabel}: ${prospect.business_name}`,
       message: `提案ページで「${actionLabel}」がクリックされました${contactInfo}。即座にフォローアップしてください。`,
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
     // 営業活動ログ
     if (prospect.lead_id) {
       try {
-        await db.from("sales_activities").insert({
+        await db.from(DB_TABLES.SALES_ACTIVITIES).insert({
           lead_id: prospect.lead_id,
           type: "cta_click",
           subject: actionLabel,

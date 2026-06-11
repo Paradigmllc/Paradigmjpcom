@@ -16,6 +16,7 @@ import { NextResponse } from "next/server";
 import { getMvpSupabase } from "@/lib/mvp/supabase";
 import { parseTrackToken, hashIp } from "@/lib/mvp/tracking";
 import { postToSlack, buildAlertBlocks } from "@/lib/mvp/slack";
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -35,17 +36,17 @@ export async function GET(req: Request, ctx: { params: Promise<{ kind: string; t
 
   if (kind === "optout") {
     // opt-out: random opaque token (mvp_optout_tokens)
-    const { data: ot } = await sb.from("mvp_optout_tokens").select("entity_id, lead_id, domain").eq("token", token).maybeSingle();
+    const { data: ot } = await sb.from(DB_TABLES.MVP_OPTOUT_TOKENS).select("entity_id, lead_id, domain").eq("token", token).maybeSingle();
     if (!ot) return NextResponse.redirect(new URL(`/ja/optout?status=invalid`, PARADIGMJP_BASE));
-    await sb.from("mvp_optout_tokens").update({
+    await sb.from(DB_TABLES.MVP_OPTOUT_TOKENS).update({
       optout_at: new Date().toISOString(), optout_ip_hash: ipHash, optout_user_agent: userAgent,
     }).eq("token", token);
     // blocklist 追加
-    await sb.from("mvp_blocklist").insert({
+    await sb.from(DB_TABLES.MVP_BLOCKLIST).insert({
       entity_id: ot.entity_id, domain: ot.domain,
       reason: "opt_out", reason_detail: `optout via token=${token.slice(0, 8)}`,
     });
-    await sb.from("mvp_click_events").insert({
+    await sb.from(DB_TABLES.MVP_CLICK_EVENTS).insert({
       lead_id: ot.lead_id, click_token: token, click_type: "optout",
       ip_hash: ipHash, user_agent: userAgent, referer,
     });
@@ -62,7 +63,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ kind: string; t
   }
 
   // Always record click event
-  await sb.from("mvp_click_events").insert({
+  await sb.from(DB_TABLES.MVP_CLICK_EVENTS).insert({
     run_id: payload.run_id, lead_id: payload.lead_id,
     click_token: token, click_type: payload.kind,
     cta_destination: payload.destination ?? null,
@@ -74,7 +75,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ kind: string; t
   if (payload.kind === "cta") {
     const since24h = new Date(Date.now() - 86400_000).toISOString();
     const { count } = await sb
-      .from("mvp_click_events")
+      .from(DB_TABLES.MVP_CLICK_EVENTS)
       .select("id", { count: "exact", head: true })
       .eq("lead_id", payload.lead_id)
       .eq("click_type", "cta")
@@ -83,9 +84,9 @@ export async function GET(req: Request, ctx: { params: Promise<{ kind: string; t
     if (isFirstCtaIn24h) {
       // lead.meta.cta_clicked_at atomic update
       // Note: leads schema = business_name / website_url (NOT company_name / domain)
-      const { data: cur } = await sb.from("leads").select("business_name, website_url, region, meta").eq("id", payload.lead_id).maybeSingle();
+      const { data: cur } = await sb.from(DB_TABLES.LEADS).select("business_name, website_url, region, meta").eq("id", payload.lead_id).maybeSingle();
       const newMeta = { ...((cur?.meta as Record<string, unknown> | undefined) ?? {}), cta_clicked_at: new Date().toISOString(), cta_clicked_run_id: payload.run_id };
-      await sb.from("leads").update({ meta: newMeta }).eq("id", payload.lead_id);
+      await sb.from(DB_TABLES.LEADS).update({ meta: newMeta }).eq("id", payload.lead_id);
 
       const region = (cur as { region?: string } | undefined)?.region ?? "ja";
       const company = (cur as { business_name?: string } | undefined)?.business_name ?? payload.lead_id;

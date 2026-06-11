@@ -25,6 +25,7 @@ import { incrementQuota } from "@/lib/mvp/cost-guard";
 import { makeOptoutToken, buildTrackedUrl } from "@/lib/mvp/tracking";
 import { LEAD_SELECT_COLUMNS, normalizeLead } from "@/lib/mvp/lead-adapter";
 import { fetchFormTos } from "@/lib/mvp/form-tos-fetch";
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -48,12 +49,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "invalid body" }, { status: 400 });
   }
 
-  const { data: run, error: runErr } = await sb.from("mvp_outreach_runs").select("*").eq("id", body.run_id).maybeSingle();
+  const { data: run, error: runErr } = await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).select("*").eq("id", body.run_id).maybeSingle();
   if (runErr || !run) return NextResponse.json({ ok: false, error: `run not found: ${body.run_id}` }, { status: 404 });
   if (run.status !== "report_ready") return NextResponse.json({ ok: false, error: `run status invalid: ${run.status}` }, { status: 409 });
   if (!run.report_canonical_url) return NextResponse.json({ ok: false, error: "report_canonical_url missing" }, { status: 400 });
 
-  const { data: leadRaw, error: leadErr } = await sb.from("leads")
+  const { data: leadRaw, error: leadErr } = await sb.from(DB_TABLES.LEADS)
     .select(LEAD_SELECT_COLUMNS)
     .eq("id", run.lead_id).maybeSingle();
   const lead = normalizeLead(leadRaw);
@@ -79,7 +80,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "invalid region/language" }, { status: 400 });
   }
 
-  await sb.from("mvp_outreach_runs").update({
+  await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).update({
     status: "form_message_generating", step: "pick_template",
     step_started_at: new Date().toISOString(), form_url: lead.contact_form_url,
   }).eq("id", run.id);
@@ -106,7 +107,7 @@ export async function POST(req: Request) {
 
   // ─── B-fix: deterministic placeholder substitution (mustache) ───
   const optoutToken = makeOptoutToken();
-  await sb.from("mvp_optout_tokens").insert({
+  await sb.from(DB_TABLES.MVP_OPTOUT_TOKENS).insert({
     token: optoutToken,
     entity_id: run.entity_id,
     lead_id: lead.id,
@@ -156,7 +157,7 @@ export async function POST(req: Request) {
     language,
   });
 
-  await sb.from("mvp_outreach_runs").update({
+  await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).update({
     form_message_body: messageBody, status: "form_violation_check", step: "violation_detect",
   }).eq("id", run.id);
 
@@ -198,7 +199,7 @@ export async function POST(req: Request) {
         violationReason: `${reason}${tosForceNg ? ` ⚠️ ToS keywords detected: ${tos.keywords_found.join(",")} ("${tos.excerpt}")` : ""} (categories: ${categories.join(",")} / conf=${confidence})`,
       }),
     });
-    await sb.from("mvp_outreach_runs").update({
+    await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).update({
       status: "form_pending_approval", step: "awaiting_slack_approval",
       form_violation_verdict: "ng", form_violation_reason: reason,
       violation_confidence: confidence, violation_categories: categories,
@@ -208,7 +209,7 @@ export async function POST(req: Request) {
   }
 
   // OK or low-confidence ng → submit
-  await sb.from("mvp_outreach_runs").update({
+  await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).update({
     status: "form_submitting", step: "playwright_dispatch",
     form_violation_verdict: "ok", violation_confidence: confidence, violation_categories: categories,
     form_submit_started_at: new Date().toISOString(),
@@ -219,7 +220,7 @@ export async function POST(req: Request) {
     await postToSlack({
       text: `📝 [DRY-RUN] ${run.dry_run_recipient ?? "no-recipient"} 宛 prepared body (lead=${lead.company_name})\n\`\`\`${messageBody.slice(0, 2500)}\`\`\``,
     });
-    await sb.from("mvp_outreach_runs").update({
+    await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).update({
       status: "sent", step: "dry_run_complete",
       form_submit_completed_at: new Date().toISOString(),
       completed_at: new Date().toISOString(),
@@ -257,19 +258,19 @@ export async function POST(req: Request) {
 
 async function markFailed(runId: string, status: string, errorMessage: string): Promise<void> {
   const sb = getMvpSupabase();
-  const { data: cur } = await sb.from("mvp_outreach_runs").select("error_log").eq("id", runId).maybeSingle();
+  const { data: cur } = await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).select("error_log").eq("id", runId).maybeSingle();
   const errLog = Array.isArray(cur?.error_log) ? cur.error_log : [];
   errLog.push({ step: status, error: errorMessage, ts: new Date().toISOString() });
-  await sb.from("mvp_outreach_runs").update({
+  await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).update({
     status, error_log: errLog, step_completed_at: new Date().toISOString(), pickup_locked_at: null,
   }).eq("id", runId);
 }
 async function markSkipped(runId: string, step: string, reason: string): Promise<void> {
   const sb = getMvpSupabase();
-  const { data: cur } = await sb.from("mvp_outreach_runs").select("error_log").eq("id", runId).maybeSingle();
+  const { data: cur } = await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).select("error_log").eq("id", runId).maybeSingle();
   const errLog = Array.isArray(cur?.error_log) ? cur.error_log : [];
   errLog.push({ step, error: reason, ts: new Date().toISOString() });
-  await sb.from("mvp_outreach_runs").update({
+  await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).update({
     status: "skipped", step, error_log: errLog,
     completed_at: new Date().toISOString(), pickup_locked_at: null,
   }).eq("id", runId);

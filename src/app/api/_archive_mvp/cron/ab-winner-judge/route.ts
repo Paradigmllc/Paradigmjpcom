@@ -19,6 +19,7 @@ import { NextResponse } from "next/server";
 import { getMvpSupabase } from "@/lib/mvp/supabase";
 import { requireMvpSecret } from "@/lib/mvp/auth";
 import { postToSlack, buildAlertBlocks } from "@/lib/mvp/slack";
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -46,7 +47,7 @@ export async function GET(req: Request) {
   const since = new Date(Date.now() - days * 86400_000).toISOString();
 
   // 1. Get all active variants
-  let q = sb.from("form_message_templates")
+  let q = sb.from(DB_TABLES.FORM_MESSAGE_TEMPLATES)
     .select("id, region, language, industry_slug, variant")
     .eq("is_active", true);
   if (region) q = q.eq("region", region);
@@ -61,7 +62,7 @@ export async function GET(req: Request) {
   // from form_message_templates if maintained, OR aggregate from mvp_outreach_runs by
   // matching the run's region+language+meta.industry_slug to the template.
   // For Phase 5 simplicity: use replied/sent ratio from runs grouped by region+language.
-  const { data: runs } = await sb.from("mvp_outreach_runs")
+  const { data: runs } = await sb.from(DB_TABLES.MVP_OUTREACH_RUNS)
     .select("region, language, status, lead_id")
     .gte("created_at", since)
     .in("status", ["sent", "replied"]);
@@ -109,7 +110,7 @@ export async function GET(req: Request) {
     // Deactivate losers
     const loserIds = losers.map((l) => l.template_id);
     if (loserIds.length > 0) {
-      await sb.from("form_message_templates")
+      await sb.from(DB_TABLES.FORM_MESSAGE_TEMPLATES)
         .update({ is_active: false, notes: `auto-deactivated by ab-winner-judge ${new Date().toISOString()}` })
         .in("id", loserIds);
     }

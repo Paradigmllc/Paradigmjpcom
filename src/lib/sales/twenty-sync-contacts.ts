@@ -2,6 +2,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { enqueueCompanyEnrichment } from "./enrichment-jobs"
 import { upsertCompanyByDomain } from "./companies"
 import { createSalesPipelineRun } from "./sales-pipeline"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 import {
   env,
   twentyBaseUrl,
@@ -77,7 +78,7 @@ export async function pullTwentyCompaniesToSupabase(
     }
 
     const { data: company, error: findError } = await sb
-      .from("sales_companies")
+      .from(DB_TABLES.SALES_COMPANIES)
       .select("id, meta")
       .eq("domain", domain)
       .maybeSingle()
@@ -146,7 +147,7 @@ export async function pullTwentyCompaniesToSupabase(
         console.error("[twenty-sync] pipeline run creation failed:", pipelineResult.error)
       }
 
-      await sb.from("sales_sync_logs").insert({
+      await sb.from(DB_TABLES.SALES_SYNC_LOGS).insert({
         direction: "twenty->supabase",
         entity_type: "company",
         entity_id: newCompany.id,
@@ -196,7 +197,7 @@ export async function pullTwentyCompaniesToSupabase(
     }
 
     const { error: updateError } = await sb
-      .from("sales_companies")
+      .from(DB_TABLES.SALES_COMPANIES)
       .update(patch)
       .eq("id", company.id)
 
@@ -206,7 +207,7 @@ export async function pullTwentyCompaniesToSupabase(
       continue
     }
 
-    await sb.from("sales_sync_logs").insert({
+    await sb.from(DB_TABLES.SALES_SYNC_LOGS).insert({
       direction: "twenty->supabase",
       entity_type: "company",
       entity_id: company.id,

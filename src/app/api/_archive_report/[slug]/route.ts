@@ -11,6 +11,7 @@
 
 import { NextResponse } from "next/server"
 import { getServiceSupabase } from "@/lib/supabase"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export async function GET(
   request: Request,
@@ -24,7 +25,7 @@ export async function GET(
     }
 
     const { data: report, error } = await db
-      .from("diagnostic_reports")
+      .from(DB_TABLES.DIAGNOSTIC_REPORTS)
       .select("*")
       .eq("token", slug)
       .eq("status", "active")
@@ -48,7 +49,7 @@ export async function GET(
     const justBecameHot = nextViewCount >= 3 && !report.is_hot
 
     await db
-      .from("diagnostic_reports")
+      .from(DB_TABLES.DIAGNOSTIC_REPORTS)
       .update({
         view_count: nextViewCount,
         unique_views: isNewViewer ? (report.unique_views || 0) + 1 : report.unique_views,
@@ -63,7 +64,7 @@ export async function GET(
 
     if (justBecameHot) {
       try {
-        await db.from("notifications").insert({
+        await db.from(DB_TABLES.NOTIFICATIONS).insert({
           type: "hot_lead",
           title: `🔥 HOT LEAD (paradigmjp.com): ${report.business_name}`,
           message: `診断レポートが paradigmjp.com 側で3回閲覧されました。`,
@@ -128,7 +129,7 @@ export async function POST(
 
     if (typeof duration === "number" && duration > 0) {
       const { data: report } = await db
-        .from("diagnostic_reports")
+        .from(DB_TABLES.DIAGNOSTIC_REPORTS)
         .select("id, avg_duration_seconds, view_count, is_hot, lead_id, business_name")
         .eq("token", slug)
         .single()
@@ -142,7 +143,7 @@ export async function POST(
         const becameHot = !report.is_hot && duration >= 30
 
         await db
-          .from("diagnostic_reports")
+          .from(DB_TABLES.DIAGNOSTIC_REPORTS)
           .update({
             avg_duration_seconds: newAvg,
             is_hot: becameHot ? true : report.is_hot,
@@ -154,7 +155,7 @@ export async function POST(
 
         if (becameHot) {
           try {
-            await db.from("notifications").insert({
+            await db.from(DB_TABLES.NOTIFICATIONS).insert({
               type: "hot_lead",
               title: `🔥 HOT (paradigmjp.com): ${report.business_name} ${duration}秒閲覧`,
               message: `診断レポートに ${duration} 秒滞在しました。`,

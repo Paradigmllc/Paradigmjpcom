@@ -19,6 +19,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { getServiceSupabase } from "@/lib/supabase"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const dynamic = "force-dynamic"
 
@@ -34,7 +35,7 @@ export async function GET(
     const sb = getServiceSupabase()
     if (!sb) return NextResponse.json({ error: "supabase service role key not configured" }, { status: 500 })
     const { data, error } = await sb
-      .from("cms_content_blocks")
+      .from(DB_TABLES.CMS_CONTENT_BLOCKS)
       .select("*")
       .eq("slug", slug)
       .eq("is_active", true)
@@ -52,7 +53,7 @@ export async function GET(
       if (possibleRunIdMatch) {
         const idPrefix = possibleRunIdMatch[1]
         const { data: run } = await sb
-          .from('diagnostic_runs')
+          .from(DB_TABLES.DIAGNOSTIC_RUNS)
           .select('id,company_name,target_url,overall_score,total_annual_loss_jpy,started_at,status')
           .like('id', `${slug}%`)
           .limit(1)
@@ -117,7 +118,7 @@ export async function PATCH(
       return NextResponse.json({ error: "no fields to update" }, { status: 400 })
     }
     const { data, error } = await sb
-      .from("cms_content_blocks")
+      .from(DB_TABLES.CMS_CONTENT_BLOCKS)
       .update(updates)
       .eq("slug", slug)
       .select()

@@ -1,3 +1,4 @@
+import { DB_TABLES } from "@/lib/sales/db-tables"
 const SLACK_API = "https://slack.com/api"
 
 interface HotLeadPayload {
@@ -116,7 +117,7 @@ export async function notifyBothChannels(text: string, options: NotifyBothOption
       return
     }
 
-    const { error } = await sb.from("sales_operator_queue_items").insert({
+    const { error } = await sb.from(DB_TABLES.SALES_OPERATOR_QUEUE_ITEMS).insert({
       region: options.region ?? "jp",
       queue_type: "analysis",
       priority: options.priority ?? 80,

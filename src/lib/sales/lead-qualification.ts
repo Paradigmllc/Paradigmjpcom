@@ -2,6 +2,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { computeSourceCoverage } from "./source-coverage"
 import type { LeadBatchItemStatus, LeadBatchStatus } from "./monthly-batch"
 import type { SalesCompany } from "./types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
@@ -25,7 +26,7 @@ function getSb(): ServiceSupabase | null {
 
 async function refreshLeadBatchCounters(sb: ServiceSupabase, batchId: string): Promise<void> {
   const { data, error } = await sb
-    .from("sales_lead_batch_items")
+    .from(DB_TABLES.SALES_LEAD_BATCH_ITEMS)
     .select("status")
     .eq("batch_id", batchId)
   if (error) {
@@ -41,7 +42,7 @@ async function refreshLeadBatchCounters(sb: ServiceSupabase, batchId: string): P
   const nextStatus: LeadBatchStatus = outreachReady > 0 || manualReview > 0 ? "outreach_ready" : "completed"
 
   await sb
-    .from("sales_lead_batches")
+    .from(DB_TABLES.SALES_LEAD_BATCHES)
     .update({
       status: nextStatus,
       duplicate_count: count("duplicate"),
@@ -119,14 +120,14 @@ export async function qualifyLeadBatch(batchId: string, limit = 500): Promise<{
   const sb = getSb()
   if (!sb) return { ok: false, processed: 0, outreachReady: 0, manualReview: 0, rejected: 0, error: "Supabase service_role not configured" }
 
-  const batchRes = await sb.from("sales_lead_batches").select("id, min_outreach_score, max_outreach_ready").eq("id", batchId).maybeSingle()
+  const batchRes = await sb.from(DB_TABLES.SALES_LEAD_BATCHES).select("id, min_outreach_score, max_outreach_ready").eq("id", batchId).maybeSingle()
   if (batchRes.error) return { ok: false, processed: 0, outreachReady: 0, manualReview: 0, rejected: 0, error: batchRes.error.message }
   const batch = batchRes.data as BatchRow | null
   if (!batch) return { ok: false, processed: 0, outreachReady: 0, manualReview: 0, rejected: 0, error: "batch not found" }
 
-  await sb.from("sales_lead_batches").update({ status: "qualifying" }).eq("id", batchId)
+  await sb.from(DB_TABLES.SALES_LEAD_BATCHES).update({ status: "qualifying" }).eq("id", batchId)
   const itemRes = await sb
-    .from("sales_lead_batch_items")
+    .from(DB_TABLES.SALES_LEAD_BATCH_ITEMS)
     .select("id, company_id")
     .eq("batch_id", batchId)
     .not("company_id", "is", null)
@@ -140,7 +141,7 @@ export async function qualifyLeadBatch(batchId: string, limit = 500): Promise<{
   let manualReview = 0
   let rejected = 0
   const existingReady = await sb
-    .from("sales_lead_batch_items")
+    .from(DB_TABLES.SALES_LEAD_BATCH_ITEMS)
     .select("id", { count: "exact", head: true })
     .eq("batch_id", batchId)
     .eq("status", "outreach_ready")
@@ -148,13 +149,13 @@ export async function qualifyLeadBatch(batchId: string, limit = 500): Promise<{
 
   for (const item of (itemRes.data ?? []) as BatchItemRow[]) {
     if (!item.company_id) continue
-    const companyRes = await sb.from("sales_companies").select("*").eq("id", item.company_id).maybeSingle()
+    const companyRes = await sb.from(DB_TABLES.SALES_COMPANIES).select("*").eq("id", item.company_id).maybeSingle()
     if (companyRes.error || !companyRes.data) continue
     const result = qualityForCompany(companyRes.data as SalesCompany, batch.min_outreach_score)
     const finalStatus = result.status === "outreach_ready" && readySlots <= 0 ? "manual_review" : result.status
     if (finalStatus === "outreach_ready") readySlots--
     await sb
-      .from("sales_lead_batch_items")
+      .from(DB_TABLES.SALES_LEAD_BATCH_ITEMS)
       .update({
         status: finalStatus,
         qualification_score: result.score,

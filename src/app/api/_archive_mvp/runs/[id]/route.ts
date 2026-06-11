@@ -7,6 +7,7 @@ import { NextResponse } from "next/server";
 import { getMvpSupabase } from "@/lib/mvp/supabase";
 import { requireMvpUiAuth } from "@/lib/mvp/auth";
 import { LEAD_SELECT_COLUMNS, normalizeLead } from "@/lib/mvp/lead-adapter";
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -21,7 +22,7 @@ export async function GET(
   const { id } = await ctx.params;
 
   const { data: run, error } = await sb
-    .from("mvp_outreach_runs")
+    .from(DB_TABLES.MVP_OUTREACH_RUNS)
     .select("*")
     .eq("id", id)
     .maybeSingle();
@@ -29,7 +30,7 @@ export async function GET(
   if (!run) return NextResponse.json({ ok: false, error: "not found" }, { status: 404 });
 
   const { data: leadRaw } = await sb
-    .from("leads")
+    .from(DB_TABLES.LEADS)
     .select(LEAD_SELECT_COLUMNS)
     .eq("id", run.lead_id)
     .maybeSingle();
@@ -38,7 +39,7 @@ export async function GET(
   let cmsBlock: unknown = null;
   if (run.cms_content_block_id) {
     const r = await sb
-      .from("cms_content_blocks")
+      .from(DB_TABLES.CMS_CONTENT_BLOCKS)
       .select("id, slug, title, schema_version, canonical_url, created_at")
       .eq("id", run.cms_content_block_id)
       .maybeSingle();

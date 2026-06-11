@@ -14,6 +14,7 @@ import type { SalesCompany } from "./types"
 import { themeForIndustry } from "./render-quality"
 import { envValue } from "./oss-service-health"
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 const CF_ACCOUNT_ID = "7ff83549f2bdc7bc62c1d64a698aabf1"
 const CF_PAGES_PROJECT = "paradigm-astro-demo"
@@ -363,7 +364,7 @@ export async function deployDemoToCfPages(
     try {
       const sb = getServiceSalesSupabase()
       if (sb) {
-        await sb.from("web_demos").upsert({
+        await sb.from(DB_TABLES.WEB_DEMOS).upsert({
           slug,
           name: `${company.company_name} Demo`,
           html_content: frontmatter,
@@ -385,9 +386,9 @@ export async function deployDemoToCfPages(
     try {
       const sb = getServiceSalesSupabase()
       if (sb) {
-        const existing = await sb.from("sales_companies").select("meta").eq("id", company.id).maybeSingle()
+        const existing = await sb.from(DB_TABLES.SALES_COMPANIES).select("meta").eq("id", company.id).maybeSingle()
         const currentMeta = (existing?.data as { meta?: Record<string, unknown> } | null)?.meta ?? {}
-        await sb.from("sales_companies").update({
+        await sb.from(DB_TABLES.SALES_COMPANIES).update({
           meta: {
             ...(currentMeta as Record<string, unknown>),
             demo_site: {

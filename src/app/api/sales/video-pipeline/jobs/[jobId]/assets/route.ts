@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { createR2SignedUploads, getR2StorageConfig, sanitizeR2ObjectName } from "@/lib/sales/r2-storage"
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -36,7 +37,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
   const sb = getServiceSalesSupabase()
   if (!sb) return NextResponse.json({ ok: false, error: "Supabase is not configured" }, { status: 500 })
   const { data, error } = await sb
-    .from("sales_video_jobs")
+    .from(DB_TABLES.SALES_VIDEO_JOBS)
     .select("id, r2_bucket, r2_asset_prefix, asset_manifest, delivery_formats, r2_output_url")
     .eq("id", jobId)
     .single()
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
     if (files.length === 0) return NextResponse.json({ ok: false, error: "files are required" }, { status: 400 })
 
     const { data: job, error: readError } = await sb
-      .from("sales_video_jobs")
+      .from(DB_TABLES.SALES_VIDEO_JOBS)
       .select("id, r2_asset_prefix, asset_manifest")
       .eq("id", jobId)
       .single()
@@ -92,7 +93,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
     }
 
     const { error: updateError } = await sb
-      .from("sales_video_jobs")
+      .from(DB_TABLES.SALES_VIDEO_JOBS)
       .update({ asset_manifest: nextManifest, orchestration_stage: "r2_upload_urls_issued" })
       .eq("id", jobId)
     if (updateError) {

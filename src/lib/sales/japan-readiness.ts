@@ -16,6 +16,7 @@ import { buildJapanReadinessUserPayload, JAPAN_READINESS_OUTPUT_SCHEMA, JAPAN_RE
 import { salesScopeFromCountry, type SalesLocaleScope } from "./locale-scope"
 import { auditJapanMarketReadiness, type JapanMarketAudit } from "./sources/japan-market-audit"
 import type { SalesCompany } from "./types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 
@@ -361,7 +362,7 @@ export async function listJapanReadinessInsights(scope: SalesLocaleScope, limit 
   const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, insights: [], error: "Supabase service_role not configured" }
   const { data, error } = await sb
-    .from("sales_japan_readiness_insights")
+    .from(DB_TABLES.SALES_JAPAN_READINESS_INSIGHTS)
     .select("*, sales_companies(company_name, domain)")
     .eq("region", scope.region)
     .eq("report_locale", scope.reportLocale)
@@ -376,7 +377,7 @@ export async function getJapanReadinessInsight(companyId: string): Promise<{ ok:
   const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, insight: null, error: "Supabase service_role not configured" }
   const { data, error } = await sb
-    .from("sales_japan_readiness_insights")
+    .from(DB_TABLES.SALES_JAPAN_READINESS_INSIGHTS)
     .select("*, sales_companies(company_name, domain)")
     .eq("company_id", companyId)
     .maybeSingle()
@@ -444,7 +445,7 @@ async function persistInsight(
     generated_at: new Date().toISOString(),
   }
   const { data, error } = await sb
-    .from("sales_japan_readiness_insights")
+    .from(DB_TABLES.SALES_JAPAN_READINESS_INSIGHTS)
     .upsert(payload, { onConflict: "company_id", ignoreDuplicates: false })
     .select("*, sales_companies(company_name, domain)")
     .single()
@@ -472,13 +473,13 @@ async function updateCompanyMeta(sb: ServiceSupabase, company: SalesCompany, ins
   }
   if (audit) nextMeta.japan_market_audit = audit
   if (shopify) nextMeta.shopify_products_probe = shopify
-  const { error } = await sb.from("sales_companies").update({ meta: nextMeta }).eq("id", company.id)
+  const { error } = await sb.from(DB_TABLES.SALES_COMPANIES).update({ meta: nextMeta }).eq("id", company.id)
   if (error) console.error("[japan-readiness] company meta update failed:", error)
 }
 
 async function upsertSourceRun(sb: ServiceSupabase, companyId: string, insight: JapanReadinessInsightSummary) {
   const { error } = await sb
-    .from("sales_source_runs")
+    .from(DB_TABLES.SALES_SOURCE_RUNS)
     .upsert({
       company_id: companyId,
       source_slug: "japan_readiness_insight",

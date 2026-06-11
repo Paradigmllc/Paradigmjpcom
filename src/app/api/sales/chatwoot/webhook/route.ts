@@ -14,6 +14,7 @@ import {
   type JsonRecord,
 } from "@/lib/sales/post-outreach-webhooks"
 import { syncCompanyKarteToTwenty } from "@/lib/sales/twenty-sync"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -93,7 +94,7 @@ export async function POST(req: NextRequest) {
           if (matchedCompany) {
             companyId = matchedCompany.id
             const { data: runs, error: runError } = await sb
-              .from("sales_pipeline_runs")
+              .from(DB_TABLES.SALES_PIPELINE_RUNS)
               .select("id")
               .eq("company_id", companyId)
               .eq("status", "waiting_external")

@@ -11,6 +11,7 @@ import {
   type LeadDiscoverySource,
 } from "@/lib/sales/sources/lead-discovery"
 import type { Industry } from "@/lib/sales/types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -137,7 +138,7 @@ export async function POST(req: NextRequest) {
     // Log search history for dashboard visibility
     const sb = getServiceSalesSupabase()
     if (sb) {
-      await sb.from("sales_sync_logs").insert({
+      await sb.from(DB_TABLES.SALES_SYNC_LOGS).insert({
         direction: "lead_discovery",
         entity_type: "search",
         action: source,

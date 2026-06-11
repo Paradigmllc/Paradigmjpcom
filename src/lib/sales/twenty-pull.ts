@@ -2,6 +2,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { upsertCompanyByDomain } from "@/lib/sales/companies"
 import { salesScopeFromCountry } from "@/lib/sales/locale-scope"
 import { ensureTwentyPipelineRun } from "./twenty-pipeline-intake"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 interface TwentyLinkField {
   primaryLinkUrl?: string | null
@@ -227,7 +228,7 @@ export async function pullTwentyCompaniesToSupabase(
     }
 
     const { data: company, error: findError } = await sb
-      .from("sales_companies")
+      .from(DB_TABLES.SALES_COMPANIES)
       .select("id, meta, pipeline_status, report_url")
       .eq("domain", domain)
       .maybeSingle()
@@ -315,7 +316,7 @@ export async function pullTwentyCompaniesToSupabase(
       if (isDryRun) {
         updated += 1
       } else {
-        const { error: updateError } = await sb.from("sales_companies").update(patch).eq("id", companyId)
+        const { error: updateError } = await sb.from(DB_TABLES.SALES_COMPANIES).update(patch).eq("id", companyId)
         if (updateError) {
           console.error("[twenty-pull] Supabase company update failed:", updateError.message)
           skipped += 1
@@ -334,7 +335,7 @@ export async function pullTwentyCompaniesToSupabase(
       continue
     }
 
-    await sb.from("sales_sync_logs").insert({
+    await sb.from(DB_TABLES.SALES_SYNC_LOGS).insert({
       direction: "twenty->supabase",
       entity_type: "company",
       entity_id: companyId,

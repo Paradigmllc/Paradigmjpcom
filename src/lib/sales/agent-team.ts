@@ -4,6 +4,7 @@ import { runEnrichmentJobs } from "@/lib/sales/enrichment-jobs"
 import { runOutreachBatch } from "@/lib/sales/outreach/orchestrator"
 import { pullTwentyCompaniesToSupabase } from "@/lib/sales/twenty-pull"
 import { isValidRegion, type Region } from "@/lib/sales/types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
@@ -197,7 +198,7 @@ async function insertCommand(
 ): Promise<string | null> {
   if (!sb) return null
   const { data, error } = await sb
-    .from("sales_agent_commands")
+    .from(DB_TABLES.SALES_AGENT_COMMANDS)
     .insert({
       source: input.source,
       chat_id: input.chatId,
@@ -229,7 +230,7 @@ async function updateCommand(
 ): Promise<void> {
   if (!sb || !commandId) return
   const { error } = await sb
-    .from("sales_agent_commands")
+    .from(DB_TABLES.SALES_AGENT_COMMANDS)
     .update({
       status: patch.status,
       run_summary: patch.runSummary,
@@ -254,7 +255,7 @@ async function logAgentEvent(
   },
 ): Promise<void> {
   if (!sb || !input.commandId) return
-  const { error } = await sb.from("sales_agent_events").insert({
+  const { error } = await sb.from(DB_TABLES.SALES_AGENT_EVENTS).insert({
     command_id: input.commandId,
     agent_role: input.agentRole,
     event_type: input.eventType,
@@ -300,7 +301,7 @@ async function enqueueManualReview(
   input: { reason: string; commandText: string; intent: SalesAgentIntent; region: Region; priority?: number },
 ): Promise<{ queued: boolean; error?: string }> {
   if (!sb) return { queued: false, error: "Supabase service_role not configured" }
-  const { error } = await sb.from("sales_operator_queue_items").insert({
+  const { error } = await sb.from(DB_TABLES.SALES_OPERATOR_QUEUE_ITEMS).insert({
     region: input.region,
     queue_type: "analysis",
     priority: input.priority ?? 80,
@@ -472,7 +473,7 @@ export async function fetchRecentAgentCommands(limit = 12): Promise<{
   if (!sb) return { commands: [], storageStatus: "unconfigured" }
 
   const { data, error } = await sb
-    .from("sales_agent_commands")
+    .from(DB_TABLES.SALES_AGENT_COMMANDS)
     .select("id, source, telegram_user, command_text, intent, autonomy_level, status, approval_required, run_summary, created_at, completed_at")
     .order("created_at", { ascending: false })
     .limit(limit)

@@ -49,6 +49,7 @@ import type {
 } from "./integration-registry-types"
 
 import { INTEGRATION_REGISTRY as REGISTRY } from "./integration-definitions"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export * from "./integration-registry-types"
 
@@ -219,7 +220,7 @@ export async function getSalesIntegrationStatus(
 export async function saveSalesIntegrationStatus(rows: SalesIntegrationStatus[]): Promise<void> {
   const sb = getServiceSalesSupabase()
   if (!sb || rows.length === 0) return
-  const { error } = await sb.from("sales_integration_status").upsert(
+  const { error } = await sb.from(DB_TABLES.SALES_INTEGRATION_STATUS).upsert(
     rows.map((row) => ({
       slug: row.slug,
       display_name: row.displayName,

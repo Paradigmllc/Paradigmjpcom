@@ -24,6 +24,7 @@ const DRY = process.argv.includes("--dry")
 const SKIP_DEPLOY = process.argv.includes("--skip-deploy")
 const SKIP_HOST_PREFLIGHT = process.argv.includes("--skip-host-preflight")
 const SKIP_DEPLOY_GUARD = process.argv.includes("--skip-deploy-guard")
+const SKIP_DB_VERIFY = process.argv.includes("--skip-db-verify")
 
 const PRODUCTS = [
   {
@@ -290,6 +291,26 @@ function runDeployGuard() {
   }
 }
 
+function runDbTableVerification() {
+  if (SKIP_DB_VERIFY) {
+    console.log("DB table verification: skipped")
+    return
+  }
+  console.log("DB table verification: running...")
+  const result = spawnSync(process.execPath, ["scripts/verify-db-tables.mjs"], {
+    cwd: process.cwd(),
+    env: process.env,
+    encoding: "utf8",
+  })
+  const output = `${result.stdout || ""}${result.stderr || ""}`.trim()
+  if (output) console.log(output)
+  if (result.status !== 0) {
+    console.error("DB table verification failed — some tables are missing. Run: node scripts/exec-migrations.cjs")
+  } else {
+    console.log("DB table verification: all tables present")
+  }
+}
+
 async function applyPostOutreachToolsMigration(envs) {
   return applySqlMigration(envs, "migration_034_sales_post_outreach_tools.sql", "Post-outreach OSS tools migration")
 }
@@ -432,6 +453,7 @@ async function main() {
   if (!DRY && !SKIP_DEPLOY) {
     runHostDiskPreflight()
     runDeployGuard()
+    runDbTableVerification()
   }
   const envs = await readProductionEnv()
   console.log("Coolify API: connected")

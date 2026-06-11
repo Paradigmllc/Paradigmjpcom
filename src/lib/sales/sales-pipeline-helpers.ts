@@ -15,6 +15,7 @@ import type {
   SalesPipelineStatus,
 } from "./sales-pipeline-types"
 import { SALES_PIPELINE_STEPS } from "./sales-pipeline-types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 
@@ -75,7 +76,7 @@ export function getSalesPipelineTriggerConfig() {
 }
 
 export async function updateRun(sb: ServiceSupabase, runId: string, patch: JsonRecord): Promise<void> {
-  const { error } = await sb.from("sales_pipeline_runs").update(patch).eq("id", runId)
+  const { error } = await sb.from(DB_TABLES.SALES_PIPELINE_RUNS).update(patch).eq("id", runId)
   if (error) {
     console.error("[sales-pipeline-helpers] updateRun failed:", error.message)
     throw new Error(error.message)
@@ -95,7 +96,7 @@ export async function updateStep(
   if (patch.status === "completed" || patch.status === "failed" || patch.status === "skipped" || patch.status === "needs_review") {
     next.completed_at = now
   }
-  const { error } = await sb.from("sales_pipeline_steps").update(next).eq("id", step.id)
+  const { error } = await sb.from(DB_TABLES.SALES_PIPELINE_STEPS).update(next).eq("id", step.id)
   if (error) {
     console.error("[sales-pipeline-helpers] updateStep failed:", error.message)
     throw new Error(error.message)
@@ -117,7 +118,7 @@ export async function insertArtifact(
     metadata?: JsonRecord
   },
 ): Promise<void> {
-  const { error } = await sb.from("sales_artifact_manifest").insert({
+  const { error } = await sb.from(DB_TABLES.SALES_ARTIFACT_MANIFEST).insert({
     run_id: input.runId,
     company_id: input.companyId,
     artifact_type: input.artifactType,
@@ -137,7 +138,7 @@ export async function insertArtifact(
 
 export async function fetchRunWithSteps(sb: ServiceSupabase, runId: string): Promise<SalesPipelineRun> {
   const { data, error } = await sb
-    .from("sales_pipeline_runs")
+    .from(DB_TABLES.SALES_PIPELINE_RUNS)
     .select("*, sales_companies(company_name, domain), steps:sales_pipeline_steps(*)")
     .eq("id", runId)
     .order("position", { referencedTable: "sales_pipeline_steps", ascending: true })
@@ -156,7 +157,7 @@ export async function updateStepByKey(
   patch: JsonRecord,
 ): Promise<void> {
   const { error } = await sb
-    .from("sales_pipeline_steps")
+    .from(DB_TABLES.SALES_PIPELINE_STEPS)
     .update(patch)
     .eq("run_id", runId)
     .eq("step_key", stepKey)
@@ -176,7 +177,7 @@ export async function recoverStuckPipelineRuns(sb: ServiceSupabase, maxStuckMinu
   let recovered = 0
 
   const { data: runs, error } = await sb
-    .from("sales_pipeline_runs")
+    .from(DB_TABLES.SALES_PIPELINE_RUNS)
     .select("id, updated_at")
     .eq("status", "waiting_external")
     .lte("updated_at", cutoff)
@@ -189,18 +190,18 @@ export async function recoverStuckPipelineRuns(sb: ServiceSupabase, maxStuckMinu
 
   for (const run of runs ?? []) {
     const { data: stuckStep } = await sb
-      .from("sales_pipeline_steps")
+      .from(DB_TABLES.SALES_PIPELINE_STEPS)
       .select("id, step_key")
       .eq("run_id", run.id)
       .eq("status", "waiting_external")
       .maybeSingle()
 
     if (stuckStep) {
-      await sb.from("sales_pipeline_steps").update({ status: "pending", error_message: "auto-retry: timed out", completed_at: null }).eq("id", stuckStep.id)
+      await sb.from(DB_TABLES.SALES_PIPELINE_STEPS).update({ status: "pending", error_message: "auto-retry: timed out", completed_at: null }).eq("id", stuckStep.id)
     }
 
     const { error: resetError } = await sb
-      .from("sales_pipeline_runs")
+      .from(DB_TABLES.SALES_PIPELINE_RUNS)
       .update({ status: "queued", error_message: "auto-recovered from waiting_external timeout" })
       .eq("id", run.id)
 

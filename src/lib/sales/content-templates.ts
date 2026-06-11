@@ -3,6 +3,7 @@ import localeData from "./content-template-locales.json"
 import { countryForLocale } from "./routing"
 import type { Industry, Region, ReportLocale, TemplateVariant } from "./types"
 import { INDUSTRIES } from "./types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const CONTENT_ASSET_TYPES = ["diagnostic_report", "astro_demo_site", "sales_deck", "sales_video"] as const
 export type ContentAssetType = (typeof CONTENT_ASSET_TYPES)[number]
@@ -336,7 +337,7 @@ async function listRelaxedContentTemplates(input: ContentTemplateListInput): Pro
   const sb = getServiceSalesSupabase()
   if (!sb) return []
 
-  let query = sb.from("sales_content_templates").select("*").order("updated_at", { ascending: false }).limit(600)
+  let query = sb.from(DB_TABLES.SALES_CONTENT_TEMPLATES).select("*").order("updated_at", { ascending: false }).limit(600)
   if (isReportLocale(input.reportLocale)) query = query.eq("report_locale", input.reportLocale)
   if (isAssetType(input.assetType)) query = query.eq("asset_type", input.assetType)
 
@@ -363,7 +364,7 @@ export async function listContentTemplates(input: ContentTemplateListInput = {})
   const sb = getServiceSalesSupabase()
   if (!sb) return { rows: limitRows(filterTemplates(rankContentTemplates(input, fallback), input), input.limit), fallbackUsed: true }
 
-  let query = sb.from("sales_content_templates").select("*").order("updated_at", { ascending: false }).limit(input.limit ?? 300)
+  let query = sb.from(DB_TABLES.SALES_CONTENT_TEMPLATES).select("*").order("updated_at", { ascending: false }).limit(input.limit ?? 300)
   if (isReportLocale(input.reportLocale)) query = query.eq("report_locale", input.reportLocale)
   if (isIndustry(input.industry)) query = query.eq("industry", input.industry)
   if (isAssetType(input.assetType)) query = query.eq("asset_type", input.assetType)
@@ -415,7 +416,7 @@ export async function updateContentTemplate(input: ContentTemplateUpdateInput): 
     if (typeof value === "string") patch[key] = value
   }
   if (typeof input.is_active === "boolean") patch.is_active = input.is_active
-  const { data, error } = await sb.from("sales_content_templates").update(patch).eq("id", input.id).select("*").single()
+  const { data, error } = await sb.from(DB_TABLES.SALES_CONTENT_TEMPLATES).update(patch).eq("id", input.id).select("*").single()
   if (error) {
     console.error("[content-templates] update failed:", error.message)
     throw new Error(error.message)

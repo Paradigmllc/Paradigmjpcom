@@ -4,6 +4,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { resolveNotionDbId } from "@/lib/sales/notion-apply"
 import { syncCustomerHandoffToTwenty } from "@/lib/sales/twenty-sync"
 import type { Region } from "@/lib/sales/types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
@@ -132,7 +133,7 @@ function readUrl(value: string | null | undefined): string | null {
 
 async function fetchCompany(sb: ServiceSupabase, companyId: string): Promise<CompanyRow | null> {
   const { data, error } = await sb
-    .from("sales_companies")
+    .from(DB_TABLES.SALES_COMPANIES)
     .select("id, region, company_name, domain, report_url, assigned_to, meta")
     .eq("id", companyId)
     .maybeSingle()
@@ -159,7 +160,7 @@ async function upsertCustomer(
   },
 ): Promise<{ id: string; meta: JsonRecord }> {
   const existing = await sb
-    .from("sales_customers")
+    .from(DB_TABLES.SALES_CUSTOMERS)
     .select("id, meta")
     .eq("company_id", input.company.id)
     .maybeSingle()
@@ -193,8 +194,8 @@ async function upsertCustomer(
   }
 
   const result = existing.data?.id
-    ? await sb.from("sales_customers").update(payload).eq("id", existing.data.id).select("id, meta").single()
-    : await sb.from("sales_customers").insert(payload).select("id, meta").single()
+    ? await sb.from(DB_TABLES.SALES_CUSTOMERS).update(payload).eq("id", existing.data.id).select("id, meta").single()
+    : await sb.from(DB_TABLES.SALES_CUSTOMERS).insert(payload).select("id, meta").single()
 
   if (result.error) {
     console.error("[customer-handoff] upsertCustomer upsert failed:", result.error.message)
@@ -246,8 +247,8 @@ async function upsertContract(
   }
 
   const result = input.docusealSubmissionId
-    ? await sb.from("sales_contracts").upsert(row, { onConflict: "docusign_envelope_id" }).select("id").single()
-    : await sb.from("sales_contracts").insert(row).select("id").single()
+    ? await sb.from(DB_TABLES.SALES_CONTRACTS).upsert(row, { onConflict: "docusign_envelope_id" }).select("id").single()
+    : await sb.from(DB_TABLES.SALES_CONTRACTS).insert(row).select("id").single()
 
   if (result.error) {
     console.error("[customer-handoff] contract upsert failed:", result.error.message)
@@ -297,7 +298,7 @@ async function logHandoff(
   sb: ServiceSupabase,
   input: CustomerSuccessHandoffResult & { payload: JsonRecord },
 ): Promise<void> {
-  await sb.from("sales_sync_logs").insert({
+  await sb.from(DB_TABLES.SALES_SYNC_LOGS).insert({
     direction: "supabase->twenty",
     entity_type: "customer",
     entity_id: input.customerId,
@@ -379,7 +380,7 @@ export async function runCustomerSuccessHandoff(
 
       if (notionPageId || notionUrl) {
         await sb
-          .from("sales_customers")
+          .from(DB_TABLES.SALES_CUSTOMERS)
           .update({
             notion_page_id: notionPageId,
             meta: mergeMeta(customer.meta, {
@@ -408,7 +409,7 @@ export async function runCustomerSuccessHandoff(
     })
 
     await sb
-      .from("sales_companies")
+      .from(DB_TABLES.SALES_COMPANIES)
       .update({
         deal_stage: "成約",
         meta: mergeMeta(company.meta, {
@@ -438,7 +439,7 @@ export async function runCustomerSuccessHandoff(
       warnings.push("Twenty customer portal custom field was unavailable; URL was written into HOME summary instead")
     }
 
-    await sb.from("sales_activity_log").insert({
+    await sb.from(DB_TABLES.SALES_ACTIVITY_LOG).insert({
       region: company.region,
       company_id: company.id,
       customer_id: customer.id,

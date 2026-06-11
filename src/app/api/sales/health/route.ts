@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 import {
   checkCrawl4AiHealth,
   checkCrawleeHealth,
@@ -61,7 +62,7 @@ async function checkSupabase(): Promise<ServiceCheck> {
   }
 
   try {
-    const { error } = await sb.from("sales_companies").select("id", { count: "exact", head: true }).limit(1)
+    const { error } = await sb.from(DB_TABLES.SALES_COMPANIES).select("id", { count: "exact", head: true }).limit(1)
     if (error) return { name: "Supabase", status: "error", detail: error.message, url }
     return { name: "Supabase", status: "ok", detail: "sales_companies テーブルに接続できました", url }
   } catch (error) {

@@ -2,6 +2,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { getMubengProxyUrl } from "./proxy-agent"
 import { uploadToR2 } from "./r2-storage"
 import type { TemplateVariant } from "./types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 
@@ -242,7 +243,7 @@ export async function saveScreenshotEvidence(
   company: VisualEvidenceCompany,
   evidence: ScreenshotEvidence,
 ): Promise<void> {
-  const latest = await sb.from("sales_companies").select("meta").eq("id", company.id).maybeSingle()
+  const latest = await sb.from(DB_TABLES.SALES_COMPANIES).select("meta").eq("id", company.id).maybeSingle()
   if (latest.error) {
     console.error("[visual-evidence] saveScreenshotEvidence select failed:", latest.error.message)
     throw new Error(latest.error.message)
@@ -274,7 +275,7 @@ export async function saveScreenshotEvidence(
       },
     },
   }
-  const { error } = await sb.from("sales_companies").update({ meta }).eq("id", company.id)
+  const { error } = await sb.from(DB_TABLES.SALES_COMPANIES).update({ meta }).eq("id", company.id)
   if (error) {
     console.error("[visual-evidence] saveScreenshotEvidence update failed:", error.message)
     throw new Error(error.message)
@@ -295,7 +296,7 @@ export async function ensureCompanyVisualEvidence(input: {
   variantTarget: ReturnType<typeof variantEvidenceTarget>
 }> {
   const { data, error } = await input.sb
-    .from("sales_companies")
+    .from(DB_TABLES.SALES_COMPANIES)
     .select("id, domain, company_name, template_variant, prefecture, meta")
     .eq("id", input.companyId)
     .maybeSingle()

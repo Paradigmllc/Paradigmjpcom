@@ -19,6 +19,7 @@ import type { SalesDashboardData, SalesDashboardInput, DashboardKpis } from "@/l
 import { mapCompany, fetchDashboardCompanies, type SalesCompanyRow } from "@/lib/sales/dashboard-companies"
 import { mapTool, mergeFallbackTools, type ToolConnectionRow } from "@/lib/sales/dashboard-tools"
 import { buildOperationalAudit, emptyKpis, emptyOperationalAudit, increment, type SourceRunRow } from "@/lib/sales/dashboard-audit"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 
@@ -134,21 +135,21 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
   ] = await Promise.all([
     fetchDashboardCompanies(sb, scope),
     sb
-      .from("sales_activity_log")
+      .from(DB_TABLES.SALES_ACTIVITY_LOG)
       .select("id, company_id, activity_type, subject, result, assigned_to, occurred_at")
       .eq("region", scope.region)
       .order("occurred_at", { ascending: false })
       .limit(30),
     sb
-      .from("sales_sync_logs")
+      .from(DB_TABLES.SALES_SYNC_LOGS)
       .select("id, direction, entity_type, action, status, error_message, created_at")
       .order("created_at", { ascending: false })
       .limit(30),
     sb
-      .from("sales_tool_connections")
+      .from(DB_TABLES.SALES_TOOL_CONNECTIONS)
       .select("slug, display_name, role, interface_type, deployment_type, status, base_url, health_url, owner, last_checked_at"),
     sb
-      .from("sales_operator_queue_items")
+      .from(DB_TABLES.SALES_OPERATOR_QUEUE_ITEMS)
       .select("id, company_id, queue_type, priority, status, assigned_to, source_tool, target_tool, due_at, created_at, sales_companies(company_name)")
       .eq("region", scope.region)
       .in("status", ["open", "in_progress", "blocked"])
@@ -156,17 +157,17 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
       .order("created_at", { ascending: false })
       .limit(30),
     sb
-      .from("sales_source_runs")
+      .from(DB_TABLES.SALES_SOURCE_RUNS)
       .select("company_id, status, score, measured_at")
       .order("measured_at", { ascending: false })
       .limit(2000),
     sb
-      .from("sales_calendar_events")
+      .from(DB_TABLES.SALES_CALENDAR_EVENTS)
       .select("id", { count: "exact", head: true })
       .eq("region", scope.region)
       .gte("start_at", sevenDaysAgo),
     sb
-      .from("sales_contracts")
+      .from(DB_TABLES.SALES_CONTRACTS)
       .select("amount_yen")
       .eq("region", scope.region)
       .gte("signed_at", thirtyDaysAgo),

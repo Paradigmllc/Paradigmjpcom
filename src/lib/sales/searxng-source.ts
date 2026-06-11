@@ -11,6 +11,7 @@ import {
   type SearxngTimeRange,
 } from "./searxng-normalize"
 import { getProxyDispatcher } from "./proxy-agent"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 
@@ -211,7 +212,7 @@ export async function listSearxngRuns(scope: SalesLocaleScope, limit = 8): Promi
   const sb = getSb()
   if (!sb) return { ok: false, runs: [], error: "Supabase service_role not configured" }
   const runRes = await sb
-    .from("sales_searxng_search_runs")
+    .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
     .select("*")
     .eq("region", scope.region)
     .eq("report_locale", scope.reportLocale)
@@ -223,7 +224,7 @@ export async function listSearxngRuns(scope: SalesLocaleScope, limit = 8): Promi
   const ids = runs.map((run) => run.id)
   const resultRes = ids.length > 0
     ? await sb
-        .from("sales_searxng_search_results")
+        .from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS)
         .select("id, run_id, result_index, url, domain, title, snippet, engine, category, score, status, rejection_reason, raw")
         .in("run_id", ids)
         .order("score", { ascending: false })
@@ -251,7 +252,7 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
   const pages = Math.max(1, Math.min(5, Math.round(input.pages ?? 1)))
 
   const inserted = await sb
-    .from("sales_searxng_search_runs")
+    .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
     .insert({
       query,
       region: scope.region,
@@ -296,7 +297,7 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
     }
     const candidates = normalizeSearxngResults(rawRows, query)
     if (candidates.length > 0) {
-      const { error } = await sb.from("sales_searxng_search_results").upsert(
+      const { error } = await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).upsert(
         candidates.map((candidate, index) => ({
           run_id: run.id,
           result_index: index,
@@ -320,7 +321,7 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
     }
     const completedAt = new Date().toISOString()
     await sb
-      .from("sales_searxng_search_runs")
+      .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
       .update({
         status: "completed",
         total_results: rawRows.length,
@@ -332,7 +333,7 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
   } catch (error) {
     console.error("[searxng-source] search run failed:", error)
     await sb
-      .from("sales_searxng_search_runs")
+      .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
       .update({
         status: "failed",
         error_message: error instanceof Error ? error.message : "SearxNG search failed",
@@ -361,13 +362,13 @@ export async function importSearxngRunToLeadBatch(input: {
 }): Promise<{ ok: boolean; batch?: SalesLeadBatchSummary; imported: number; error?: string }> {
   const sb = getSb()
   if (!sb) return { ok: false, imported: 0, error: "Supabase service_role not configured" }
-  const runRes = await sb.from("sales_searxng_search_runs").select("*").eq("id", input.runId).single()
+  const runRes = await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS).select("*").eq("id", input.runId).single()
   if (runRes.error) return { ok: false, imported: 0, error: runRes.error.message }
   const run = runRes.data as SearxngRunRow
   const minScore = Math.max(0, Math.min(100, Math.round(input.minScore ?? 58)))
   const limit = Math.max(1, Math.min(1000, Math.round(input.limit ?? 100)))
   const resultRes = await sb
-    .from("sales_searxng_search_results")
+    .from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS)
     .select("id, run_id, result_index, url, domain, title, snippet, engine, category, score, status, rejection_reason, raw")
     .eq("run_id", run.id)
     .eq("status", "ready")
@@ -395,19 +396,19 @@ export async function importSearxngRunToLeadBatch(input: {
           if (decision === true || String(decision).toLowerCase() === "true") {
             validResults.push(r)
           } else {
-             await sb.from("sales_searxng_search_results").update({ status: "rejected", rejection_reason: "llm_filtered" }).eq("id", r.id)
+             await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "rejected", rejection_reason: "llm_filtered" }).eq("id", r.id)
           }
         }
       } else {
         // LLM unavailable: mark as "pending_review" instead of accepting blindly
         for (const r of chunk) {
-          await sb.from("sales_searxng_search_results").update({ status: "rejected", rejection_reason: "llm_unavailable_fallback" }).eq("id", r.id)
+          await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "rejected", rejection_reason: "llm_unavailable_fallback" }).eq("id", r.id)
         }
       }
     } catch (e) {
       console.warn("[searxng-import] LLM pre-filter failed for chunk, rejecting as safety measure:", e)
       for (const r of chunk) {
-        sb.from("sales_searxng_search_results").update({ status: "rejected", rejection_reason: "llm_error_fallback" }).eq("id", r.id).then(() => {}, () => {})
+        sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "rejected", rejection_reason: "llm_error_fallback" }).eq("id", r.id).then(() => {}, () => {})
       }
     }
   }
@@ -441,11 +442,11 @@ export async function importSearxngRunToLeadBatch(input: {
   if (!created.ok || !created.batch) return { ok: false, imported: 0, error: created.error ?? "batch import failed" }
 
   await sb
-    .from("sales_searxng_search_results")
+    .from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS)
     .update({ status: "imported" })
     .in("id", validResults.map((result) => result.id))
   await sb
-    .from("sales_searxng_search_runs")
+    .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
     .update({
       status: "imported",
       imported_count: validResults.length,

@@ -7,6 +7,7 @@
 import { NextResponse } from "next/server";
 import { getMvpSupabase } from "@/lib/mvp/supabase";
 import { requireMvpUiAuth } from "@/lib/mvp/auth";
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -17,7 +18,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const sb = getMvpSupabase();
   const { id } = await ctx.params;
 
-  const { data: run, error } = await sb.from("mvp_outreach_runs").select("status, retry_count, max_retry").eq("id", id).maybeSingle();
+  const { data: run, error } = await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).select("status, retry_count, max_retry").eq("id", id).maybeSingle();
   if (error || !run) return NextResponse.json({ ok: false, error: "not found" }, { status: 404 });
 
   const allowedFromStatuses = ["dead_letter","failed_report","failed_form_url","failed_violation","failed_submit","skipped"];
@@ -25,7 +26,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     return NextResponse.json({ ok: false, error: `cannot retry from status=${run.status}` }, { status: 409 });
   }
 
-  await sb.from("mvp_outreach_runs").update({
+  await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).update({
     status: "queued",
     step: "retry_enqueue",
     next_retry_at: null,

@@ -40,6 +40,7 @@ import {
   isValidIssueCode,
   type Region,
 } from "./types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 /* ───── 親 DB id → (entity, region) 振り分けマップ ───── */
 
@@ -93,7 +94,7 @@ async function recordSyncLog(entry: {
 }): Promise<void> {
   const sb = getServiceSalesSupabase()
   if (!sb) return
-  await sb.from("sales_sync_logs").insert({
+  await sb.from(DB_TABLES.SALES_SYNC_LOGS).insert({
     direction: "notion->supabase",
     entity_type: entry.entity_type,
     entity_id: null,
@@ -226,7 +227,7 @@ async function applyCompany(
         report_url: finalSlug ? buildReportUrl(reportLocale, finalSlug) : existing.report_url,
       },
     }
-    const { error } = await sb.from("sales_companies").update(update).eq("id", existing.id)
+    const { error } = await sb.from(DB_TABLES.SALES_COMPANIES).update(update).eq("id", existing.id)
     await recordSyncLog({
       entity_type: "company",
       notion_page_id: pageId,
@@ -335,7 +336,7 @@ async function applyCustomer(
     return { ok: true, entity: "customer", action: "skipped" }
   }
   const { error } = await sb
-    .from("sales_customers")
+    .from(DB_TABLES.SALES_CUSTOMERS)
     .update({ ...update, updated_at: new Date().toISOString() })
     .eq("notion_page_id", pageId)
     .eq("region", region)
@@ -391,7 +392,7 @@ async function applyDelivery(
 
   if (Object.keys(metaUpdates).length > 0) {
     const { data: existing } = await sb
-      .from("sales_deliveries")
+      .from(DB_TABLES.SALES_DELIVERIES)
       .select("meta")
       .eq("notion_page_id", pageId)
       .maybeSingle()
@@ -402,7 +403,7 @@ async function applyDelivery(
     return { ok: true, entity: "delivery", action: "skipped" }
   }
   const { error } = await sb
-    .from("sales_deliveries")
+    .from(DB_TABLES.SALES_DELIVERIES)
     .update({ ...update, updated_at: new Date().toISOString() })
     .eq("notion_page_id", pageId)
     .eq("region", region)
@@ -462,7 +463,7 @@ async function applyTemplate(
     return { ok: true, entity: "template", action: "skipped" }
   }
   let { error } = await sb
-    .from("sales_templates")
+    .from(DB_TABLES.SALES_TEMPLATES)
     .update({ ...update, updated_at: new Date().toISOString() })
     .eq("notion_page_id", pageId)
     .eq("region", region)
@@ -479,7 +480,7 @@ async function applyTemplate(
       ...legacyUpdate
     } = update
     const retry = await sb
-      .from("sales_templates")
+      .from(DB_TABLES.SALES_TEMPLATES)
       .update({ ...legacyUpdate, updated_at: new Date().toISOString() })
       .eq("notion_page_id", pageId)
       .eq("region", region)

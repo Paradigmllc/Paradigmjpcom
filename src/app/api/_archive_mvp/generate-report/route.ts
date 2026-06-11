@@ -30,6 +30,7 @@ import { buildTrackedUrl, makeOptoutToken } from "@/lib/mvp/tracking";
 import { LEAD_SELECT_COLUMNS, normalizeLead } from "@/lib/mvp/lead-adapter";
 import { sanitizeBlocks } from "@/lib/mvp/hallucination-guard";
 import { derivePainSummary, parseDifyUsage } from "@/lib/mvp/personalization";
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -68,7 +69,7 @@ export async function POST(req: Request) {
 
   // ── 1. lead 取得 (schema adapter 経由・leads 実 schema は business_name/website_url/country) ──
   const { data: leadRaw, error: leadErr } = await sb
-    .from("leads")
+    .from(DB_TABLES.LEADS)
     .select(LEAD_SELECT_COLUMNS)
     .eq("id", body.lead_id)
     .maybeSingle();
@@ -105,7 +106,7 @@ export async function POST(req: Request) {
   let runIdMut: string | undefined = body.run_id;
   if (!runIdMut) {
     const { data: ins, error: insErr } = await sb
-      .from("mvp_outreach_runs")
+      .from(DB_TABLES.MVP_OUTREACH_RUNS)
       .insert({
         lead_id: lead.id,
         region,
@@ -127,7 +128,7 @@ export async function POST(req: Request) {
     }
     runIdMut = ins.id as string;
   } else {
-    await sb.from("mvp_outreach_runs")
+    await sb.from(DB_TABLES.MVP_OUTREACH_RUNS)
       .update({ status: "report_generating", step: "init", step_started_at: new Date().toISOString(), pickup_locked_at: null })
       .eq("id", runIdMut);
   }
@@ -155,7 +156,7 @@ export async function POST(req: Request) {
     await markFailed(runId, "failed_report", "report_generating", `no report_template for language=${language}`);
     return NextResponse.json({ ok: false, run_id: runId, error: "no template" }, { status: 500 });
   }
-  await sb.from("mvp_outreach_runs").update({ template_id: templateId, step: "dify_karte_to_report" }).eq("id", runId);
+  await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).update({ template_id: templateId, step: "dify_karte_to_report" }).eq("id", runId);
 
   // ── 5. Dify karteToReport ──
   // Phase 6: server-side で top_pain_summary 派生 (LLM 推測ゼロ・cache hit 率向上)
@@ -215,7 +216,7 @@ export async function POST(req: Request) {
 
   // Tracking metadata for in-page pixel + CTA + opt-out (P3)
   const optoutToken = makeOptoutToken();
-  await sb.from("mvp_optout_tokens").insert({
+  await sb.from(DB_TABLES.MVP_OPTOUT_TOKENS).insert({
     token: optoutToken,
     entity_id: entityId,
     lead_id: lead.id,
@@ -236,7 +237,7 @@ export async function POST(req: Request) {
   // Note: cms_content_blocks does NOT have a `language` column — language は meta に格納
   const cmsMeta = { ...trackingMeta, language };
   const { data: cmsRow, error: cmsErr } = await sb
-    .from("cms_content_blocks")
+    .from(DB_TABLES.CMS_CONTENT_BLOCKS)
     .insert({
       slug,
       page_type: "report",
@@ -256,7 +257,7 @@ export async function POST(req: Request) {
     await markFailed(runId, "failed_report", "cms_insert", cmsErr?.message ?? "cms insert failed");
     return NextResponse.json({ ok: false, run_id: runId, error: cmsErr?.message }, { status: 500 });
   }
-  await sb.from("mvp_outreach_runs").update({
+  await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).update({
     cms_content_block_id: cmsRow.id,
     report_canonical_url: canonicalUrl,
     status: "report_url_verifying",
@@ -266,7 +267,7 @@ export async function POST(req: Request) {
 
   // ── 7. verify URL ──
   const verify = await verifyReportUrl(canonicalUrl, { initialWaitMs: VERIFY_INITIAL_WAIT, maxAttempts: 4 });
-  await sb.from("mvp_outreach_runs").update({
+  await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).update({
     report_http_status: verify.status,
     report_verify_attempts: verify.attempts,
     report_url_verified_at: verify.ok ? new Date().toISOString() : null,
@@ -288,18 +289,18 @@ export async function POST(req: Request) {
   }
 
   // ── 8. lead.meta atomic update (race を避けて jsonb_set 経由) ──
-  const { data: cur } = await sb.from("leads").select("meta").eq("id", lead.id).maybeSingle();
+  const { data: cur } = await sb.from(DB_TABLES.LEADS).select("meta").eq("id", lead.id).maybeSingle();
   const newMeta = {
     ...(cur?.meta ?? {}),
     report_canonical_url: canonicalUrl,
     last_outreach_run_id: runId,
     last_outreach_at: new Date().toISOString(),
   };
-  await sb.from("leads").update({ meta: newMeta }).eq("id", lead.id);
+  await sb.from(DB_TABLES.LEADS).update({ meta: newMeta }).eq("id", lead.id);
 
   // ── 9. cost increment (Phase 6: Dify response から actual cost + cache_hit_rate を採用) ──
   const llmCostJpy = body.is_dry_run ? 0 : (telemetry?.cost_jpy ?? 0.05);
-  await sb.from("mvp_outreach_runs").update({
+  await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).update({
     cost_jpy: llmCostJpy,
     cache_hit_rate: telemetry?.cache_hit_rate ?? null,
     total_tokens: telemetry?.total_tokens ?? null,
@@ -352,10 +353,10 @@ async function getOrComputeEntityId(sb: ReturnType<typeof getMvpSupabase>, lead:
 }
 async function markFailed(runId: string, status: string, step: string, errorMessage: string): Promise<void> {
   const sb = getMvpSupabase();
-  const { data: cur } = await sb.from("mvp_outreach_runs").select("error_log").eq("id", runId).maybeSingle();
+  const { data: cur } = await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).select("error_log").eq("id", runId).maybeSingle();
   const errLog = Array.isArray(cur?.error_log) ? cur.error_log : [];
   errLog.push({ step, error: errorMessage, ts: new Date().toISOString() });
-  await sb.from("mvp_outreach_runs").update({
+  await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).update({
     status, step, error_log: errLog, step_completed_at: new Date().toISOString(), pickup_locked_at: null,
   }).eq("id", runId);
 }

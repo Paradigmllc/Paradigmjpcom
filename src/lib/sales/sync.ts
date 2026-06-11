@@ -35,6 +35,7 @@ import type {
   SalesSyncLog,
 } from "./types"
 import { isValidDealStage } from "./types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 /* ───── audit log helper ───── */
 
@@ -43,7 +44,7 @@ async function recordSyncLog(
 ): Promise<void> {
   const sb = getServiceSalesSupabase()
   if (!sb) return
-  await sb.from("sales_sync_logs").insert(entry)
+  await sb.from(DB_TABLES.SALES_SYNC_LOGS).insert(entry)
 }
 
 /* ───── Supabase → Notion ───── */
@@ -219,7 +220,7 @@ export async function rehydrateCompanyByDomain(
   const sb = getServiceSalesSupabase()
   if (sb) {
     await sb
-      .from("sales_companies")
+      .from(DB_TABLES.SALES_COMPANIES)
       .update({ notion_page_id: null })
       .eq("id", company.id)
   }

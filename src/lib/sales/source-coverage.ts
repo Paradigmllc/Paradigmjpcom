@@ -1,5 +1,6 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import type { SalesCompany } from "./types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type JsonRecord = Record<string, unknown>
 
@@ -377,7 +378,7 @@ export async function saveSourceCoverageRows(company: SalesCompany): Promise<voi
   }))
 
   const { error } = await sb
-    .from("sales_source_runs")
+    .from(DB_TABLES.SALES_SOURCE_RUNS)
     .upsert(rows, { onConflict: "company_id,source_slug" })
   if (error) console.error("[source-coverage] upsert failed:", error.message)
 }

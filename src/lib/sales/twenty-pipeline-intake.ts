@@ -1,6 +1,7 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { buildSalesPipelinePlan, getSalesPipelineTriggerConfig, updateRun } from "./sales-pipeline-helpers"
 import type { TwentyPullOptions } from "./twenty-pull"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 
@@ -17,7 +18,7 @@ export interface TwentyPipelineEnsureResult {
 
 async function activePipelineRunId(sb: ServiceSupabase, companyId: string): Promise<string | null> {
   const { data, error } = await sb
-    .from("sales_pipeline_runs")
+    .from(DB_TABLES.SALES_PIPELINE_RUNS)
     .select("id")
     .eq("company_id", companyId)
     .in("status", ["queued", "running", "waiting_external"])
@@ -47,7 +48,7 @@ async function createPipelineRun(
     autoSyncExternalStudios: input.options.autoSyncExternalStudios,
   })
   const { data: run, error } = await sb
-    .from("sales_pipeline_runs")
+    .from(DB_TABLES.SALES_PIPELINE_RUNS)
     .insert({
       company_id: input.companyId,
       source: "twenty",
@@ -80,7 +81,7 @@ async function createPipelineRun(
     owner_tool: step.ownerTool,
     input_payload: {},
   }))
-  const { error: stepsError } = await sb.from("sales_pipeline_steps").insert(steps)
+  const { error: stepsError } = await sb.from(DB_TABLES.SALES_PIPELINE_STEPS).insert(steps)
   if (stepsError) return { ok: false, error: stepsError.message }
 
   return { ok: true, runId: run.id as string }

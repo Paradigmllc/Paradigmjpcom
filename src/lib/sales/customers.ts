@@ -12,6 +12,7 @@ import type {
   HealthLevel,
   ContractProduct,
 } from "./types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export interface CreateCustomerInput {
   company_id?: string | null
@@ -34,7 +35,7 @@ export async function createCustomer(
   const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
   const { data, error } = await sb
-    .from("sales_customers")
+    .from(DB_TABLES.SALES_CUSTOMERS)
     .insert({
       company_id: input.company_id ?? null,
       customer_name: input.customer_name,
@@ -64,7 +65,7 @@ export async function calculateMrr(): Promise<{
   const sb = getServiceSalesSupabase()
   if (!sb) return { total: 0, active_count: 0, wl_count: 0, wl_revenue: 0 }
   const { data } = await sb
-    .from("sales_customers")
+    .from(DB_TABLES.SALES_CUSTOMERS)
     .select("monthly_amount, is_white_label, wl_client_count")
     .in("contract_status", ["継続中", "トライアル"])
   if (!data) return { total: 0, active_count: 0, wl_count: 0, wl_revenue: 0 }
@@ -94,7 +95,7 @@ export async function findCustomerByNotionId(
   const sb = getServiceSalesSupabase()
   if (!sb) return null
   const { data } = await sb
-    .from("sales_customers")
+    .from(DB_TABLES.SALES_CUSTOMERS)
     .select("*")
     .eq("notion_page_id", notionPageId)
     .maybeSingle()
@@ -109,7 +110,7 @@ export async function updateCustomerHealth(
   const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
   const { error } = await sb
-    .from("sales_customers")
+    .from(DB_TABLES.SALES_CUSTOMERS)
     .update({ health })
     .eq("id", customerId)
   if (error) return { ok: false, error: error.message }

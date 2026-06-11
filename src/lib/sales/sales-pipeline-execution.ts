@@ -32,6 +32,7 @@ import {
   fetchRunWithSteps,
   summarizeSalesPipelineStatus,
 } from "./sales-pipeline-helpers"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 
@@ -105,7 +106,7 @@ async function enqueuePipelineReviewTask(
   input: { reason: string; queueType?: string; priority?: number; meta?: JsonRecord },
 ): Promise<void> {
   const companyRes = await sb
-    .from("sales_companies")
+    .from(DB_TABLES.SALES_COMPANIES)
     .select("region")
     .eq("id", run.company_id)
     .maybeSingle()
@@ -113,7 +114,7 @@ async function enqueuePipelineReviewTask(
     console.error("[sales-pipeline-execution] enqueuePipelineReviewTask company fetch failed:", companyRes.error.message)
     throw new Error(companyRes.error.message)
   }
-  const { error } = await sb.from("sales_operator_queue_items").insert({
+  const { error } = await sb.from(DB_TABLES.SALES_OPERATOR_QUEUE_ITEMS).insert({
     region: typeof companyRes.data?.region === "string" ? companyRes.data.region : "jp",
     company_id: run.company_id,
     pipeline_run_id: run.id,
@@ -158,14 +159,14 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
       console.error("[sales-pipeline-execution] supabase_normalize karte fetch failed:", karteResult.error)
       throw new Error(karteResult.error)
     }
-    const companyRes = await sb.from("sales_companies").select("meta").eq("id", run.company_id).maybeSingle()
+    const companyRes = await sb.from(DB_TABLES.SALES_COMPANIES).select("meta").eq("id", run.company_id).maybeSingle()
     if (companyRes.error) {
       console.error("[sales-pipeline-execution] supabase_normalize company fetch failed:", companyRes.error.message)
       throw new Error(companyRes.error.message)
     }
     const currentMeta = asRecord(companyRes.data?.meta)
     const { error: updateError } = await sb
-      .from("sales_companies")
+      .from(DB_TABLES.SALES_COMPANIES)
       .update({
         pipeline_status: "scanning",
         meta: {
@@ -203,7 +204,7 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
     const inlineRun = trigger.ok ? null : await runEnrichmentJobs(1)
     const karteResult = await fetchCompanyKarte(sb, run.company_id)
     const companyRes = await sb
-      .from("sales_companies")
+      .from(DB_TABLES.SALES_COMPANIES)
       .select("pipeline_status")
       .eq("id", run.company_id)
       .maybeSingle()

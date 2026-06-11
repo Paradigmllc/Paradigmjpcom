@@ -240,6 +240,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { matchContentTemplate } from "./content-templates"
 import { getR2StorageConfig, sanitizeR2ObjectName } from "./r2-storage"
 import { deployDemoToCfPages } from "./cf-pages-deploy"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export async function generateReplacementDemo(
   company: SalesCompany,
@@ -302,7 +303,7 @@ export async function generateReplacementDemo(
     generated_at: new Date().toISOString(),
   }
 
-  const { error } = await sb.from("web_demos").upsert(
+  const { error } = await sb.from(DB_TABLES.WEB_DEMOS).upsert(
     {
       company_id: company.id,
       slug,
@@ -329,9 +330,9 @@ export async function generateReplacementDemo(
     console.warn("[demo-generator] CF Pages deploy triggered:", cfResult.demoUrl)
     // Write demo_site url back to sales_companies.meta so diagnostic reports show it
     try {
-      const existing = await sb.from("sales_companies").select("meta").eq("id", company.id).maybeSingle()
+      const existing = await sb.from(DB_TABLES.SALES_COMPANIES).select("meta").eq("id", company.id).maybeSingle()
       const currentMeta = (existing?.data as { meta?: Record<string, unknown> } | null)?.meta ?? {}
-      await sb.from("sales_companies").update({
+      await sb.from(DB_TABLES.SALES_COMPANIES).update({
         meta: {
           ...(currentMeta as Record<string, unknown>),
           demo_site: {

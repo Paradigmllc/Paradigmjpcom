@@ -1,3 +1,4 @@
+import { DB_TABLES } from "@/lib/sales/db-tables"
 type SalesSupabaseLike = {
   from: (table: string) => {
     select: (columns: string) => {
@@ -142,7 +143,7 @@ export async function getInfrastructureMigrationData(
 
   if (sb) {
     const { data, error } = await sb
-      .from("sales_infrastructure_migration")
+      .from(DB_TABLES.SALES_INFRASTRUCTURE_MIGRATION)
       .select("slug, title, provider, role, status, monthly_cost_yen, cpu_label, memory_label, disk_label, public_url, notes, updated_at")
       .order("sort_order", { ascending: true })
 

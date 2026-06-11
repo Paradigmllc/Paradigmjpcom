@@ -27,6 +27,7 @@ import { normalizeDifyCloudApiUrl, normalizeDifyCloudBaseUrl } from "./dify-clou
 import { matchTemplate } from "./templates"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import type { Industry, IssueCode, SalesCompany } from "./types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type JsonRecord = Record<string, unknown>
 
@@ -237,10 +238,10 @@ async function saveFormMessageToCompany(companyId: string, message: string, engi
   try {
     const sb = getServiceSalesSupabase()
     if (!sb) return
-    const { data: current } = await sb.from("sales_companies").select("meta").eq("id", companyId).single()
+    const { data: current } = await sb.from(DB_TABLES.SALES_COMPANIES).select("meta").eq("id", companyId).single()
     const prevMeta = (current?.meta as Record<string, unknown>) ?? {}
     const history = Array.isArray(prevMeta.form_message_history) ? prevMeta.form_message_history as Array<unknown> : []
-    await sb.from("sales_companies").update({
+    await sb.from(DB_TABLES.SALES_COMPANIES).update({
       meta: {
         ...prevMeta,
         form_message: message,

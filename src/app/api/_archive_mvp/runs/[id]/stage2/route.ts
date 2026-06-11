@@ -18,6 +18,7 @@ import { postToSlack } from "@/lib/mvp/slack";
 import { requireMvpUiAuth } from "@/lib/mvp/auth";
 import { LEAD_SELECT_COLUMNS, normalizeLead } from "@/lib/mvp/lead-adapter";
 import { withPersonaPrefix } from "@/lib/mvp/persona-injection";
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -93,10 +94,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const { id: runId } = await ctx.params;
   const body = BodySchema.parse(await req.json().catch(() => ({})));
 
-  const { data: run } = await sb.from("mvp_outreach_runs").select("*").eq("id", runId).maybeSingle();
+  const { data: run } = await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).select("*").eq("id", runId).maybeSingle();
   if (!run) return NextResponse.json({ ok: false, error: "run not found" }, { status: 404 });
 
-  const { data: leadRaw } = await sb.from("leads").select(LEAD_SELECT_COLUMNS).eq("id", run.lead_id).maybeSingle();
+  const { data: leadRaw } = await sb.from(DB_TABLES.LEADS).select(LEAD_SELECT_COLUMNS).eq("id", run.lead_id).maybeSingle();
   const lead = normalizeLead(leadRaw);
   if (!lead) return NextResponse.json({ ok: false, error: "lead not found" }, { status: 404 });
 
@@ -184,7 +185,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     stage2_next_action_hint: next_action_hint ?? null,
     stage2_slack_thread_ts: slackRes.threadTs,
   };
-  await sb.from("leads").update({ meta: newMeta }).eq("id", lead.id);
+  await sb.from(DB_TABLES.LEADS).update({ meta: newMeta }).eq("id", lead.id);
 
   return NextResponse.json({
     ok: true,

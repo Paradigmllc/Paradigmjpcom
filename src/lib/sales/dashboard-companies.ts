@@ -1,6 +1,7 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import type { DashboardCompany } from "@/lib/sales/dashboard-types"
 import type { SalesLocaleScope } from "@/lib/sales/locale-scope"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
@@ -87,7 +88,7 @@ export function mapCompany(row: SalesCompanyRow): DashboardCompany {
 
 export async function fetchDashboardCompanies(sb: ServiceSupabase, scope: SalesLocaleScope) {
   const full = await sb
-    .from("sales_companies")
+    .from(DB_TABLES.SALES_COMPANIES)
     .select(COMPANY_SELECT_FULL)
     .eq("report_locale", scope.reportLocale)
     .order("updated_at", { ascending: false })
@@ -104,7 +105,7 @@ export async function fetchDashboardCompanies(sb: ServiceSupabase, scope: SalesL
   if (!missingRoutingColumns) return full
 
   const legacy = await sb
-    .from("sales_companies")
+    .from(DB_TABLES.SALES_COMPANIES)
     .select(COMPANY_SELECT_LEGACY)
     .eq("region", scope.region)
     .order("updated_at", { ascending: false })

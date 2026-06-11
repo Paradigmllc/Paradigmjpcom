@@ -28,6 +28,7 @@
 
 import { NextResponse } from "next/server";
 import { getMvpSupabase } from "@/lib/mvp/supabase";
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -54,7 +55,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ slug: string }
 
   const sb = getMvpSupabase();
   const { data, error } = await sb
-    .from("paradigm_personas")
+    .from(DB_TABLES.PARADIGM_PERSONAS)
     .select("*")
     .eq("slug", slug)
     .eq("is_active", true)

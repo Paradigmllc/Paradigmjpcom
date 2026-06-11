@@ -1,6 +1,7 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import type { TechItem } from "@/lib/sales/sources/wappalyzer"
 import type { SalesCompany } from "@/lib/sales/types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
@@ -330,7 +331,7 @@ export async function saveTechStackDetections(company: SalesCompany): Promise<{ 
   }))
 
   const { error } = await sb
-    .from("sales_tech_stack_detections")
+    .from(DB_TABLES.SALES_TECH_STACK_DETECTIONS)
     .upsert(rows, { onConflict: "company_id,technology_slug,category,source_slug" })
 
   if (error) {
@@ -349,12 +350,12 @@ export async function getSourceAcquisitionSummary(
 
   const [sourceRes, techRes] = await Promise.all([
     sb
-      .from("sales_source_runs")
+      .from(DB_TABLES.SALES_SOURCE_RUNS)
       .select("company_id, source_slug, category, status, score, measured_at, details")
       .order("measured_at", { ascending: false })
       .limit(5000),
     sb
-      .from("sales_tech_stack_detections")
+      .from(DB_TABLES.SALES_TECH_STACK_DETECTIONS)
       .select("company_id, technology_name, technology_slug, category, confidence, detected_at")
       .order("detected_at", { ascending: false })
       .limit(5000),
@@ -371,7 +372,7 @@ export async function getSourceAcquisitionSummary(
   if (techRes.error) {
     errors.push(`sales_tech_stack_detections: ${techRes.error.message}; falling back to sales_companies.meta.tech.stack`)
     const fallback = await sb
-      .from("sales_companies")
+      .from(DB_TABLES.SALES_COMPANIES)
       .select("id, meta, updated_at")
       .order("updated_at", { ascending: false })
       .limit(5000)

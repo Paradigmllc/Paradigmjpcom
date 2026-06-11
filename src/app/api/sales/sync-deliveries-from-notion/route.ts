@@ -17,6 +17,7 @@ import { notionQueryDatabase, extractProperty } from "@/lib/notion"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { isValidRegion, type Region } from "@/lib/sales/types"
 import { isNotionLegacySyncEnabled, notionLegacyDisabledResponse } from "@/lib/sales/notion-legacy-guard"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -91,7 +92,7 @@ export async function POST(req: NextRequest) {
     if (Object.keys(metaUpdates).length > 0) {
       // meta JSONB merge を SQL レベルで
       const { data: existing } = await sb
-        .from("sales_deliveries")
+        .from(DB_TABLES.SALES_DELIVERIES)
         .select("meta")
         .eq("notion_page_id", row.id)
         .maybeSingle()
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
     if (Object.keys(update).length === 0) continue
 
     const { error } = await sb
-      .from("sales_deliveries")
+      .from(DB_TABLES.SALES_DELIVERIES)
       .update({ ...update, updated_at: new Date().toISOString() })
       .eq("notion_page_id", row.id)
       .eq("region", region)

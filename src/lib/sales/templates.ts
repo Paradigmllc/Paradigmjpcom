@@ -19,6 +19,7 @@ import {
   type TemplateVariant,
 } from "./routing"
 import type { SalesTemplate, Industry, IssueCode, Region } from "./types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export interface TemplateScope {
   templateVariant?: TemplateVariant | string | null
@@ -70,7 +71,7 @@ export async function getTemplatesByIndustry(
   const sb = getServiceSalesSupabase()
   if (!sb) return []
   let q = sb
-    .from("sales_templates")
+    .from(DB_TABLES.SALES_TEMPLATES)
     .select("*")
     .eq("region", region)
     .eq("industry", industry)
@@ -129,7 +130,7 @@ export async function upsertTemplateFromNotion(input: {
       is_active: input.is_active ?? true,
       last_synced: new Date().toISOString(),
     }
-  const { error } = await sb.from("sales_templates").upsert(
+  const { error } = await sb.from(DB_TABLES.SALES_TEMPLATES).upsert(
     payload,
     { onConflict: "notion_page_id", ignoreDuplicates: false },
   )
@@ -147,7 +148,7 @@ export async function upsertTemplateFromNotion(input: {
       target_country: _targetCountry,
       ...legacyPayload
     } = payload
-    const legacy = await sb.from("sales_templates").upsert(
+    const legacy = await sb.from(DB_TABLES.SALES_TEMPLATES).upsert(
       legacyPayload,
       { onConflict: "notion_page_id", ignoreDuplicates: false },
     )
@@ -161,7 +162,7 @@ export async function listAllTemplates(region?: Region): Promise<SalesTemplate[]
   const sb = getServiceSalesSupabase()
   if (!sb) return []
   let q = sb
-    .from("sales_templates")
+    .from(DB_TABLES.SALES_TEMPLATES)
     .select("*")
     .order("industry", { ascending: true })
     .order("issue_code", { ascending: true })

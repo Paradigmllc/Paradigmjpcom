@@ -11,6 +11,7 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import type { Region } from "../types"
 import type { OutreachStage } from "./types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 /** activity_log.result CHECK = success|no_answer|follow_up|declined|completed */
 export type ActivityResult = "success" | "no_answer" | "follow_up" | "declined" | "completed"
@@ -32,7 +33,7 @@ export async function logOutreachActivity(
 ): Promise<{ ok: boolean; error?: string }> {
   const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
-  const { error } = await sb.from("sales_activity_log").insert({
+  const { error } = await sb.from(DB_TABLES.SALES_ACTIVITY_LOG).insert({
     region: input.region,
     company_id: input.companyId,
     pipeline_run_id: input.pipelineRunId ?? null,
@@ -58,7 +59,7 @@ export async function recentlyContacted(
   if (!sb) return false
   const since = new Date(Date.now() - withinDays * 86_400_000).toISOString()
   const { data } = await sb
-    .from("sales_activity_log")
+    .from(DB_TABLES.SALES_ACTIVITY_LOG)
     .select("id, result, meta")
     .eq("company_id", companyId)
     .gte("occurred_at", since)

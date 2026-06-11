@@ -1,4 +1,5 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 
@@ -273,8 +274,8 @@ export async function getSalesCrmFieldConfig(sb: ServiceSupabase | null = getSer
   }
 
   const [fieldsRes, optionsRes] = await Promise.all([
-    sb.from("sales_crm_view_fields").select("*").order("position", { ascending: true }),
-    sb.from("sales_crm_select_options").select("*").order("field_key", { ascending: true }).order("position", { ascending: true }),
+    sb.from(DB_TABLES.SALES_CRM_VIEW_FIELDS).select("*").order("position", { ascending: true }),
+    sb.from(DB_TABLES.SALES_CRM_SELECT_OPTIONS).select("*").order("field_key", { ascending: true }).order("position", { ascending: true }),
   ])
 
   const error = fieldsRes.error?.message ?? optionsRes.error?.message ?? null
@@ -320,7 +321,7 @@ export async function saveSalesCrmFieldConfig(input: {
   }))
 
   const fieldsRes = await sb
-    .from("sales_crm_view_fields")
+    .from(DB_TABLES.SALES_CRM_VIEW_FIELDS)
     .upsert(fieldRows, { onConflict: "field_key" })
     .select("*")
     .order("position", { ascending: true })
@@ -330,7 +331,7 @@ export async function saveSalesCrmFieldConfig(input: {
   }
 
   const optionsRes = await sb
-    .from("sales_crm_select_options")
+    .from(DB_TABLES.SALES_CRM_SELECT_OPTIONS)
     .upsert(optionRows, { onConflict: "field_key,value" })
     .select("*")
     .order("field_key", { ascending: true })

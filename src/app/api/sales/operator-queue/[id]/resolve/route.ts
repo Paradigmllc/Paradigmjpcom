@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authorizePayloadAdminRequest } from "@/lib/admin-auth";
 import { getServiceSalesSupabase } from "@/lib/supabase";
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export async function POST(
   req: Request,
@@ -29,7 +30,7 @@ export async function POST(
     const status = action === "approve" ? "resolved" : "dismissed";
     
     const { data: item, error } = await supabase
-      .from("sales_operator_queue_items")
+      .from(DB_TABLES.SALES_OPERATOR_QUEUE_ITEMS)
       .update({ status, updated_at: new Date().toISOString() })
       .eq("id", id)
       .select("*")
@@ -47,7 +48,7 @@ export async function POST(
     // we might want to automatically change the pipeline_status if approved.
     if (action === "approve" && item.company_id && item.queue_type === "outreach_review") {
       await supabase
-        .from("sales_companies")
+        .from(DB_TABLES.SALES_COMPANIES)
         .update({ pipeline_status: "report_ready" })
         .eq("id", item.company_id)
         .eq("pipeline_status", "manual_queue"); // only if it was manual_queue

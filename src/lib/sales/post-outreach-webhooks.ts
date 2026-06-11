@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto"
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export type JsonRecord = Record<string, unknown>
 export type SalesPostOutreachRegion = "jp" | "global"
@@ -162,7 +163,7 @@ async function updatePipelineReplySteps(input: {
   if (!sb) return
   const now = new Date().toISOString()
   const reply = await sb
-    .from("sales_pipeline_steps")
+    .from(DB_TABLES.SALES_PIPELINE_STEPS)
     .update({
       status: "completed",
       completed_at: now,
@@ -173,7 +174,7 @@ async function updatePipelineReplySteps(input: {
   if (reply.error) console.error("[post-outreach-webhook] reply pipeline step update failed:", reply.error.message)
 
   const followUp = await sb
-    .from("sales_pipeline_steps")
+    .from(DB_TABLES.SALES_PIPELINE_STEPS)
     .update({
       status: input.queuedForFollowUp ? "needs_review" : "completed",
       completed_at: now,
@@ -184,7 +185,7 @@ async function updatePipelineReplySteps(input: {
   if (followUp.error) console.error("[post-outreach-webhook] follow-up pipeline step update failed:", followUp.error.message)
 
   const run = await sb
-    .from("sales_pipeline_runs")
+    .from(DB_TABLES.SALES_PIPELINE_RUNS)
     .update({
       status: input.queuedForFollowUp ? "needs_review" : "completed",
       current_step: input.queuedForFollowUp ? "follow_up_queue" : null,
@@ -201,7 +202,7 @@ export async function persistPostOutreachEvent(input: PersistPostOutreachEventIn
   if (!sb) return { ok: false, error: "Supabase service role not configured" }
 
   const now = new Date().toISOString()
-  const { error: activityError } = await sb.from("sales_activity_log").insert({
+  const { error: activityError } = await sb.from(DB_TABLES.SALES_ACTIVITY_LOG).insert({
     region: input.region,
     company_id: input.companyId,
     pipeline_run_id: input.pipelineRunId ?? null,
@@ -233,7 +234,7 @@ export async function persistPostOutreachEvent(input: PersistPostOutreachEventIn
 
   if (!input.queueType) return { ok: true, error: null }
 
-  const { error: queueError } = await sb.from("sales_operator_queue_items").insert({
+  const { error: queueError } = await sb.from(DB_TABLES.SALES_OPERATOR_QUEUE_ITEMS).insert({
     region: input.region,
     company_id: input.companyId,
     pipeline_run_id: input.pipelineRunId ?? null,

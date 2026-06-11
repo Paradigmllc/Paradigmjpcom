@@ -11,6 +11,7 @@ import { getBrowserProvider } from "./browser-provider"
 import { logOutreachActivity, recentlyContacted, type ActivityResult } from "./activity"
 import { getProxyFetchOptions } from "../proxy-agent"
 import { stageToPipelineStatus } from "./state-machine"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 import type {
   OutreachBatchResult,
   OutreachItemResult,
@@ -76,7 +77,7 @@ async function fetchCandidates(region: Region, limit: number, companyId?: string
   if (!sb) return []
   if (companyId) {
     const { data, error } = await sb
-      .from("sales_companies")
+      .from(DB_TABLES.SALES_COMPANIES)
       .select("*")
       .eq("id", companyId)
       .maybeSingle()
@@ -88,7 +89,7 @@ async function fetchCandidates(region: Region, limit: number, companyId?: string
   }
 
   const { data, error } = await sb
-    .from("sales_companies")
+    .from(DB_TABLES.SALES_COMPANIES)
     .select("*")
     .eq("region", region)
     .eq("pipeline_status", "report_ready")
@@ -114,7 +115,7 @@ async function applyOutcome(company: SalesCompany, stage: OutreachStage, sendRes
     report_url: reportUrlFor(company),
   }
   if (stage === "submitted") patch.sent_at = new Date().toISOString()
-  const { error } = await sb.from("sales_companies").update(patch).eq("id", company.id)
+  const { error } = await sb.from(DB_TABLES.SALES_COMPANIES).update(patch).eq("id", company.id)
   if (error) console.error("[sales-outreach] outcome update failed:", error.message)
 }
 
@@ -150,7 +151,7 @@ async function persistDiscoveredFormUrl(
   if (currentUrl === input.formUrl) return
 
   const { error } = await sb
-    .from("sales_companies")
+    .from(DB_TABLES.SALES_COMPANIES)
     .update({
       meta: {
         ...currentMeta,
@@ -181,7 +182,7 @@ async function enqueueOperatorTask(
 ): Promise<void> {
   const sb = getServiceSalesSupabase()
   if (!sb) return
-  const { error } = await sb.from("sales_operator_queue_items").insert({
+  const { error } = await sb.from(DB_TABLES.SALES_OPERATOR_QUEUE_ITEMS).insert({
     region: company.region,
     company_id: company.id,
     queue_type: "form_send",

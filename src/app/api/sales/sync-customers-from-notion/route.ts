@@ -19,6 +19,7 @@ import { notionQueryDatabase, extractProperty } from "@/lib/notion"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { isValidRegion, type Region } from "@/lib/sales/types"
 import { isNotionLegacySyncEnabled, notionLegacyDisabledResponse } from "@/lib/sales/notion-legacy-guard"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
     if (Object.keys(update).length === 0) continue
 
     const { error } = await sb
-      .from("sales_customers")
+      .from(DB_TABLES.SALES_CUSTOMERS)
       .update({ ...update, updated_at: new Date().toISOString() })
       .eq("notion_page_id", row.id)
       .eq("region", region)

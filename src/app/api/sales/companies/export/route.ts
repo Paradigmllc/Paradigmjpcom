@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { z } from "zod"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Invalid parameters", details: parsed.error.flatten() }, { status: 400 })
   }
 
-  let query = sb.from("sales_companies").select("company_name, domain, industry, prefecture, pipeline_status, deal_stage, pagespeed_mobile, report_url, assigned_to, source, updated_at, created_at")
+  let query = sb.from(DB_TABLES.SALES_COMPANIES).select("company_name, domain, industry, prefecture, pipeline_status, deal_stage, pagespeed_mobile, report_url, assigned_to, source, updated_at, created_at")
   if (parsed.data.status) query = query.eq("pipeline_status", parsed.data.status)
   if (parsed.data.industry) query = query.eq("industry", parsed.data.industry)
   if (parsed.data.search) query = query.or(`company_name.ilike.%${parsed.data.search}%,domain.ilike.%${parsed.data.search}%`)

@@ -29,6 +29,7 @@ import { enqueueCompanyEnrichment, triggerEnrichmentRunner } from "@/lib/sales/e
 import { resolveNotionDbId } from "@/lib/sales/notion-apply"
 import { runCustomerSuccessHandoff } from "@/lib/sales/customer-handoff"
 import type { SalesCompany, SalesCustomer, SalesDelivery, Region } from "@/lib/sales/types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -66,7 +67,7 @@ async function isNotionSourced(notionPageId: string): Promise<boolean> {
   if (!sb) return false
   const since = new Date(Date.now() - ECHO_WINDOW_MS).toISOString()
   const { data } = await sb
-    .from("sales_sync_logs")
+    .from(DB_TABLES.SALES_SYNC_LOGS)
     .select("id")
     .eq("direction", "notion->supabase")
     .eq("notion_page_id", notionPageId)

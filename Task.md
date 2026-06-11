@@ -167,8 +167,13 @@
 - 新規作成テーブル: `agency_companies`, `agency_presentations`, `agency_videos`, `agency_demo_sites`, `agency_reports`, `sales_error_log`
 - 既存テーブル: すべて NOTICE (already exists, skipping) — 破壊なし
 
+### 全 `.from()` → `DB_TABLES` 定数置換
+- `scripts/migrate-to-db-tables.mjs` で 99 ファイル 385 箇所を一括置換
+- `scripts/fix-missing-db-tables-imports.mjs` で 42 ファイルの import 不足を修復
+- `scripts/verify-db-tables.mjs` を `npm run deploy:prod` パイプラインに統合 (`--skip-db-verify` で skip 可)
+
 ### 検証
-- `npx tsc --noEmit`: 変更ファイル 0 エラー
+- `npx tsc --noEmit`: 変更ファイル 0 エラー（全 385 置換 + 99 import 追加 検証済み）
 - 本番DBテーブル実在確認: 全6テーブル psql SELECT で確認済み
 
 ---

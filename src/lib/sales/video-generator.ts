@@ -173,6 +173,7 @@ export async function generateNarrationScript(
 
 import { buildVariantVideoHtml } from "./video-templates"
 
+import { DB_TABLES } from "@/lib/sales/db-tables"
 export function buildHyperFramesHtml(data: DiagnosticReportData, script: NarrationScript): string {
   return buildVariantVideoHtml(data, script)
 }
@@ -265,7 +266,7 @@ async function saveVideoUrlToDb(companyId: string, videoUrl: string, _script: un
   try {
     const sb = getServiceSalesSupabase()
     if (!sb) return
-    await sb.from("sales_companies").update({ meta: { video_url: videoUrl, video_generated_at: new Date().toISOString() } }).eq("id", companyId)
+    await sb.from(DB_TABLES.SALES_COMPANIES).update({ meta: { video_url: videoUrl, video_generated_at: new Date().toISOString() } }).eq("id", companyId)
   } catch (error) {
     console.error("[video-generator] failed to save video_url to DB:", error)
   }

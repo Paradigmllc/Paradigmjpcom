@@ -12,6 +12,7 @@ import { getMvpSupabase } from "@/lib/mvp/supabase";
 import { requireMvpSecret } from "@/lib/mvp/auth";
 import { isPaused } from "@/lib/mvp/cost-guard";
 import { regionToPrimaryLanguage, isValidRegion, type SalesRegion } from "@/lib/mvp/pick-template";
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -48,7 +49,7 @@ async function pickupForReport(sb: ReturnType<typeof getMvpSupabase>, region: st
   // ① enrichment 完了で MVP run 未生成の lead を新規 pickup → INSERT (status=queued)
   // 注意: leads schema は language 列なし → meta.language or region から派生
   let q = sb
-    .from("leads")
+    .from(DB_TABLES.LEADS)
     .select("id, region, meta")
     .eq("meta->>enrichment_complete", "true")
     .not("contact_form_url", "is", null);
@@ -70,7 +71,7 @@ async function pickupForReport(sb: ReturnType<typeof getMvpSupabase>, region: st
     const metaLang = meta.language as string | undefined;
     const language = metaLang
       ?? (isValidRegion(region) ? regionToPrimaryLanguage(region as SalesRegion) : "ja");
-    const { error: insErr } = await sb.from("mvp_outreach_runs").insert({
+    const { error: insErr } = await sb.from(DB_TABLES.MVP_OUTREACH_RUNS).insert({
       lead_id: lead.id,
       region, language,
       status: "queued",
@@ -104,7 +105,7 @@ async function pickupForForm(sb: ReturnType<typeof getMvpSupabase>, workerId: st
 async function filterAlreadyHasActiveRun(sb: ReturnType<typeof getMvpSupabase>, leadIds: string[]): Promise<string[]> {
   if (leadIds.length === 0) return [];
   const { data: existing } = await sb
-    .from("mvp_outreach_runs")
+    .from(DB_TABLES.MVP_OUTREACH_RUNS)
     .select("lead_id")
     .in("lead_id", leadIds)
     .not("status", "in", "(sent,replied,dead_letter,skipped)");

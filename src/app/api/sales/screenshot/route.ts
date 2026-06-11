@@ -3,6 +3,7 @@ import { verifyWebhookSecret } from "@/lib/sales/auth"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { captureWebsiteScreenshot, saveScreenshotEvidence, type ScreenshotViewport } from "@/lib/sales/visual-evidence"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -41,10 +42,10 @@ export async function POST(req: NextRequest) {
 
   let company: { id: string; domain: string; company_name: string; meta: Record<string, unknown> } | null = null
   if (companyId) {
-    const res = await sb.from("sales_companies").select("id, domain, company_name, meta").eq("id", companyId).single()
+    const res = await sb.from(DB_TABLES.SALES_COMPANIES).select("id, domain, company_name, meta").eq("id", companyId).single()
     if (res.data) company = res.data
   } else if (inputDomain) {
-    const res = await sb.from("sales_companies").select("id, domain, company_name, meta").eq("domain", inputDomain).single()
+    const res = await sb.from(DB_TABLES.SALES_COMPANIES).select("id, domain, company_name, meta").eq("domain", inputDomain).single()
     if (res.data) company = res.data
   }
 

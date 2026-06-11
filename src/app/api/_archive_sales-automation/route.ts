@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 const APPEXX_API = "https://appexx.me/api/sales-automation"
 
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
     // ① ローカルDB試行
     const db = getDB()
     if (db) {
-      let query = db.from("prospects").select("*")
+      let query = db.from(DB_TABLES.PROSPECTS).select("*")
       if (slug) query = query.eq("slug", slug)
       else if (id) query = query.eq("id", id)
       else return NextResponse.json({ error: "slug or id required" }, { status: 400 })
@@ -53,26 +54,26 @@ export async function POST(request: Request) {
         // テンプレート取得
         let template = {}
         if (prospect.template_id) {
-          const { data: tpl } = await db.from("proposal_templates").select("*").eq("id", prospect.template_id).single()
+          const { data: tpl } = await db.from(DB_TABLES.PROPOSAL_TEMPLATES).select("*").eq("id", prospect.template_id).single()
           if (tpl) template = tpl
         }
 
         // デモHTML取得
         let demo_html = ""
         if (prospect.demo_data?.demo_id) {
-          const { data: demo } = await db.from("web_demos").select("html_content").eq("id", prospect.demo_data.demo_id).single()
+          const { data: demo } = await db.from(DB_TABLES.WEB_DEMOS).select("html_content").eq("id", prospect.demo_data.demo_id).single()
           if (demo?.html_content) demo_html = demo.html_content
         }
 
         // パターンマッチング
         let matched_pattern = null
         if (prospect.pattern_id) {
-          const { data: pat } = await db.from("prospect_patterns").select("*").eq("id", prospect.pattern_id).single()
+          const { data: pat } = await db.from(DB_TABLES.PROSPECT_PATTERNS).select("*").eq("id", prospect.pattern_id).single()
           if (pat) matched_pattern = pat
         }
 
         // 閲覧カウントUP
-        await db.from("prospects").update({
+        await db.from(DB_TABLES.PROSPECTS).update({
           view_count: (prospect.view_count || 0) + 1,
           last_viewed_at: new Date().toISOString(),
         }).eq("id", prospect.id)

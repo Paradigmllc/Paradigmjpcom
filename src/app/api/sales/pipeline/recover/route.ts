@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { recoverStuckPipelineRuns, getSalesPipelineTriggerConfig } from "@/lib/sales/sales-pipeline-helpers"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
     let dispatched = 0
     if (trigger.endpoint && trigger.secretKey && result.recovered > 0) {
       const { data: runs } = await sb
-        .from("sales_pipeline_runs")
+        .from(DB_TABLES.SALES_PIPELINE_RUNS)
         .select("id, company_id")
         .eq("status", "queued")
         .order("created_at", { ascending: true })
