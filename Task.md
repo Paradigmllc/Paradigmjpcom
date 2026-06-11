@@ -109,6 +109,9 @@
   - `npm run context:audit` passed; Task.md remains under the budget.
   - Local dev `http://localhost:3010/ja/d/website_diagnostic-demo` returned HTTP 200, 7 full-site sections, no legacy demo host, visible feature/compliance chips, and a nonblank browser screenshot.
   - `npm run build` reached static generation 300/300 and trace collection, then failed only on Windows-local `EBUSY` while copying `.next/server/edge-chunks/asset_Geist-Regular...ttf` into standalone output. Treat as local file-lock risk; Coolify/Linux build still needs deploy verification.
+  - Commit `312c9d6` pushed to `origin/main`.
+  - `npm run deploy:prod` finished Coolify deployment `s128ytb063wj7moon258cwo3`; smoke checks for `/ja/admin/sales`, `/ja`, and Twenty returned HTTP 200.
+  - Production `https://paradigmjp.com/ja/d/website_diagnostic-demo` returned HTTP 200, includes a visible iframe with 7 `data-section` markers in `srcdoc`, and does not reference the legacy demo host.
 - Unresolved risk:
   - Existing generated rows in `web_demos` may still contain old thin LP HTML until each company is regenerated.
   - `cf-pages-deploy.ts` remains as legacy Keystatic/Cloudflare code but is no longer used by `generateReplacementDemo()`.
