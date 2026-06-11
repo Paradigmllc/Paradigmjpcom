@@ -7,7 +7,7 @@
 FROM node:22.12.0-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm install --prefer-offline --no-audit --no-fund
+RUN npm ci --no-audit --no-fund
 
 FROM node:22.12.0-alpine AS builder
 WORKDIR /app
