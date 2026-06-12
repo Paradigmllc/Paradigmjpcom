@@ -26,10 +26,8 @@ function getDirectPool(): Pool | null {
   if (directPool) return directPool
   const uri = process.env.DATABASE_URI
   if (!uri) return null
-  // Parse URI and replace host with direct db connection (bypass Pgbouncer)
   try {
     const u = new URL(uri)
-    // Use direct database host for NOTIFY delivery
     const ref = u.username?.split(".")[1] || "yihdmgtxiqfdgdueolub"
     directPool = new Pool({
       host: `db.${ref}.supabase.co`,
@@ -38,6 +36,7 @@ function getDirectPool(): Pool | null {
       user: u.username,
       password: u.password,
       ssl: { rejectUnauthorized: false },
+      family: 4, // Force IPv4 — IPv6 may not be available
       max: 1,
       idleTimeoutMillis: 10000,
       connectionTimeoutMillis: 10000,
@@ -73,7 +72,6 @@ export async function POST(req: NextRequest) {
 
     const results: string[] = []
 
-    // Step 0: Check current state
     const { data: before, error: beforeErr } = await sb
       .from("sales_companies")
       .select("id, report_locale")
@@ -85,7 +83,7 @@ export async function POST(req: NextRequest) {
       results.push(`BEFORE: OK - ${JSON.stringify(before?.[0] || {})}`)
     }
 
-    // Step 1: Add missing columns (via pooler — DDL is fine)
+    // Add columns
     const alterResults = await Promise.all([
       executeSql(`ALTER TABLE IF EXISTS sales_companies ADD COLUMN IF NOT EXISTS report_locale text NOT NULL DEFAULT 'ja'`),
       executeSql(`ALTER TABLE IF EXISTS sales_companies ADD COLUMN IF NOT EXISTS target_country text NOT NULL DEFAULT 'JP'`),
@@ -96,7 +94,7 @@ export async function POST(req: NextRequest) {
       results.push(`${colNames[i]} column: ${r.ok ? "ensured" : r.error?.slice(0, 100)}`)
     })
 
-    // Step 2: Create reload_schema function
+    // Create reload_schema function
     const funcRes = await executeSql(`
       CREATE OR REPLACE FUNCTION public.reload_schema()
       RETURNS void LANGUAGE plpgsql SECURITY DEFINER
@@ -104,25 +102,13 @@ export async function POST(req: NextRequest) {
     `)
     results.push(`reload_schema func: ${funcRes.ok ? "created" : funcRes.error?.slice(0, 100)}`)
 
-    // Step 3: Send NOTIFY via direct connection (bypass Pgbouncer)
+    // Send NOTIFY via direct connection (IPv4 forced)
     const notifyRes = await executeSql(`NOTIFY pgrst, 'reload schema'`, true)
-    results.push(`NOTIFY (direct): ${notifyRes.ok ? "sent" : notifyRes.error?.slice(0, 100)}`)
+    results.push(`NOTIFY (direct IPv4): ${notifyRes.ok ? "sent" : notifyRes.error?.slice(0, 100)}`)
 
-    // Also try via pooler
-    const notify2Res = await executeSql(`NOTIFY pgrst, 'reload schema'`)
-    results.push(`NOTIFY (pooler): ${notify2Res.ok ? "sent" : notify2Res.error?.slice(0, 100)}`)
-
-    // Step 4: Try RPC call to reload_schema
-    try {
-      const { error: rpcErr } = await sb.rpc("reload_schema", {})
-      results.push(`reload_schema RPC: ${rpcErr ? rpcErr.message : "SUCCESS"}`)
-    } catch (e) {
-      results.push(`reload_schema RPC: ${e instanceof Error ? e.message : String(e)}`)
-    }
-
-    // Step 5: Verify after fix
     await new Promise((r) => setTimeout(r, 3000))
 
+    // Verify
     const { data: after, error: afterErr } = await sb
       .from("sales_companies")
       .select("id, report_locale, target_country, template_variant")
