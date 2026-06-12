@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     const results: string[] = []
 
-    // Check current state
+    // Step 0: Check current state
     const { data: before, error: beforeErr } = await sb
       .from("sales_companies")
       .select("id, report_locale")
@@ -31,22 +31,46 @@ export async function POST(req: NextRequest) {
       results.push(`BEFORE: OK - ${JSON.stringify(before?.[0] || {})}`)
     }
 
-    // Try NOTIFY pgrst via RPC
+    // Step 1: Add missing columns via raw SQL (Supabase JS v2.39+ .sql template tag)
     try {
-      const { error: notifyErr } = await sb.rpc("reload_schema", {})
-      if (notifyErr) {
-        results.push(`reload_schema RPC: ${notifyErr.message}`)
-      } else {
-        results.push("reload_schema RPC: SUCCESS")
-      }
+      const { error: e1 } = await sb.sql`ALTER TABLE IF EXISTS sales_companies ADD COLUMN IF NOT EXISTS report_locale text NOT NULL DEFAULT 'ja'`
+      results.push(`report_locale column: ${e1 ? String(e1.message) : "ensured"}`)
     } catch (e) {
-      results.push(`reload_schema RPC catch: ${e instanceof Error ? e.message : String(e)}`)
+      results.push(`report_locale column ERROR: ${e instanceof Error ? e.message : String(e)}`)
     }
 
-    // Check after
+    try {
+      const { error: e2 } = await sb.sql`ALTER TABLE IF EXISTS sales_companies ADD COLUMN IF NOT EXISTS target_country text NOT NULL DEFAULT 'JP'`
+      results.push(`target_country column: ${e2 ? String(e2.message) : "ensured"}`)
+    } catch (e) {
+      results.push(`target_country column ERROR: ${e instanceof Error ? e.message : String(e)}`)
+    }
+
+    try {
+      const { error: e3 } = await sb.sql`ALTER TABLE IF EXISTS sales_companies ADD COLUMN IF NOT EXISTS template_variant text NOT NULL DEFAULT 'website_diagnostic'`
+      results.push(`template_variant column: ${e3 ? String(e3.message) : "ensured"}`)
+    } catch (e) {
+      results.push(`template_variant column ERROR: ${e instanceof Error ? e.message : String(e)}`)
+    }
+
+    // Step 2: Reload PostgREST schema cache
+    try {
+      const { error: notifyErr } = await sb.sql`NOTIFY pgrst, 'reload schema'`
+      if (notifyErr) {
+        results.push(`NOTIFY pgrst: ${notifyErr.message}`)
+      } else {
+        results.push("NOTIFY pgrst: sent")
+      }
+    } catch (e) {
+      results.push(`NOTIFY pgrst: ${e instanceof Error ? e.message : String(e)}`)
+    }
+
+    // Step 3: Verify after fix (with small delay for PostgREST refresh)
+    await new Promise((r) => setTimeout(r, 3000))
+
     const { data: after, error: afterErr } = await sb
       .from("sales_companies")
-      .select("id, report_locale")
+      .select("id, report_locale, target_country, template_variant")
       .limit(1)
 
     if (afterErr) {
