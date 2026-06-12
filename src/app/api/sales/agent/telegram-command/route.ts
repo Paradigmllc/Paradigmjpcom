@@ -38,7 +38,6 @@ const DirectCommandSchema = z.object({
   text: z.string().optional(),
   message: z.string().optional(),
   chat_id: z.union([z.string(), z.number()]).optional(),
-  user_id: z.union([z.string(), z.number()]).optional(),
   username: z.string().optional(),
   source: z.string().optional(),
   autonomy_level: z.string().optional(),
@@ -51,65 +50,10 @@ const TelegramUpdateSchema = z.object({
     .object({
       text: z.string().optional(),
       chat: z.object({ id: z.union([z.string(), z.number()]).optional() }).optional(),
-      from: z
-        .object({
-          id: z.union([z.string(), z.number()]).optional(),
-          username: z.string().optional(),
-          first_name: z.string().optional(),
-        })
-        .optional(),
+      from: z.object({ username: z.string().optional(), first_name: z.string().optional() }).optional(),
     })
     .optional(),
 })
-
-async function sendTelegramReply(chatId: string | null, text: string): Promise<{ ok: boolean; error?: string }> {
-  if (!chatId) return { ok: false, error: "Telegram chat id missing" }
-
-  const token = process.env.TELEGRAM_BOT_TOKEN
-  if (!token) {
-    console.error("[sales-agent-telegram] TELEGRAM_BOT_TOKEN not configured; reply skipped")
-    return { ok: false, error: "TELEGRAM_BOT_TOKEN not configured" }
-  }
-
-  const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text: text.slice(0, 3900),
-      disable_web_page_preview: true,
-    }),
-  })
-
-  const payload = (await response.json().catch((error: unknown) => {
-    console.error("[sales-agent-telegram] failed to parse Telegram sendMessage response:", error)
-    return null
-  })) as { ok?: boolean; description?: string } | null
-
-  if (!response.ok || payload?.ok !== true) {
-    const error = payload?.description ?? `Telegram sendMessage HTTP ${response.status}`
-    console.error("[sales-agent-telegram] sendMessage failed:", error)
-    return { ok: false, error }
-  }
-
-  return { ok: true }
-}
-
-function verifyAllowedTelegramUser(userId: string | null): NextResponse | null {
-  const allowed = process.env.TELEGRAM_ALLOWED_USER_ID
-  if (!allowed) return null
-
-  const allowedIds = allowed
-    .split(",")
-    .map((id) => id.trim())
-    .filter(Boolean)
-
-  if (allowedIds.length === 0) return null
-  if (userId && allowedIds.includes(userId)) return null
-
-  console.error("[sales-agent-telegram] blocked Telegram user:", userId ?? "unknown")
-  return NextResponse.json({ ok: false, error: "Telegram user is not allowed" }, { status: 403 })
-}
 
 function extractCommand(body: unknown): {
   text: string
@@ -119,7 +63,6 @@ function extractCommand(body: unknown): {
   autonomyLevel: string | null
   region: string | null
   limit: number | null
-  telegramUserId: string | null
 } {
   const direct = DirectCommandSchema.safeParse(body)
   if (direct.success) {
@@ -132,7 +75,6 @@ function extractCommand(body: unknown): {
       autonomyLevel: direct.data.autonomy_level ?? null,
       region: direct.data.region ?? null,
       limit: direct.data.limit ?? null,
-      telegramUserId: direct.data.user_id === undefined ? null : String(direct.data.user_id),
     }
   }
 
@@ -147,20 +89,10 @@ function extractCommand(body: unknown): {
       autonomyLevel: null,
       region: null,
       limit: null,
-      telegramUserId: from?.id === undefined ? null : String(from.id),
     }
   }
 
-  return {
-    text: "",
-    chatId: null,
-    username: null,
-    source: "telegram",
-    autonomyLevel: null,
-    region: null,
-    limit: null,
-    telegramUserId: null,
-  }
+  return { text: "", chatId: null, username: null, source: "telegram", autonomyLevel: null, region: null, limit: null }
 }
 
 export async function POST(req: NextRequest) {
@@ -182,10 +114,6 @@ export async function POST(req: NextRequest) {
   if (!command.text.trim()) {
     return NextResponse.json({ ok: false, error: "Command text is required" }, { status: 400 })
   }
-  if (telegramToken != null) {
-    const allowedErr = verifyAllowedTelegramUser(command.telegramUserId)
-    if (allowedErr) return allowedErr
-  }
 
   const result = await handleAgentCommand({
     text: command.text,
@@ -196,11 +124,6 @@ export async function POST(req: NextRequest) {
     region: command.region,
     limit: command.limit,
   })
-
-  if (telegramToken != null) {
-    const reply = await sendTelegramReply(command.chatId, result.reply)
-    return NextResponse.json({ ...result, telegramReply: reply }, { status: result.ok ? 200 : 207 })
-  }
 
   return NextResponse.json(result, { status: result.ok ? 200 : 207 })
 }
