@@ -249,7 +249,8 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
   const categories = cleanTokenList(input.categories, DEFAULT_CATEGORIES)
   const language = (input.language?.trim() || scope.reportLocale || "en").slice(0, 12)
   const safesearch = Math.max(0, Math.min(2, Math.round(input.safesearch ?? 1)))
-  const pages = Math.max(1, Math.min(5, Math.round(input.pages ?? 1)))
+  // Max 50 pages ≈ 1000 results (SearXNG defaults ~20 results/page)
+  const pages = Math.max(1, Math.min(50, Math.round(input.pages ?? 5)))
 
   const inserted = await sb
     .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
