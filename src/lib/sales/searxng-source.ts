@@ -297,8 +297,14 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
     }
     const candidates = normalizeSearxngResults(rawRows, query)
     if (candidates.length > 0) {
+      const seen = new Set<string>()
+      const deduped = candidates.filter((c) => {
+        if (seen.has(c.domain)) return false
+        seen.add(c.domain)
+        return true
+      })
       const { error } = await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).upsert(
-        candidates.map((candidate, index) => ({
+        deduped.map((candidate, index) => ({
           run_id: run.id,
           result_index: index,
           url: candidate.url,
