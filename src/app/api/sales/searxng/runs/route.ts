@@ -62,10 +62,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "invalid json body" }, { status: 400 })
     }
 
+    // Normalize camelCase → snake_case (frontend sends camelCase JSON)
+    const raw = body as Record<string, unknown>
+    const reportLocale = (raw.reportLocale ?? raw.report_locale ?? null) as string | null | undefined
+    const targetCountry = (raw.targetCountry ?? raw.target_country ?? null) as string | null | undefined
+    const timeRange = (raw.timeRange ?? raw.time_range ?? null) as SearxngTimeRange | null | undefined
+
     const query = body.query?.trim()
     if (!query) return NextResponse.json({ ok: false, error: "query is required" }, { status: 400 })
     if (query.length > 400) return NextResponse.json({ ok: false, error: "query must be 400 characters or less" }, { status: 400 })
-    const scope = salesScopeFromCountry({ reportLocale: body.report_locale, targetCountry: body.target_country })
+    const scope = salesScopeFromCountry({ reportLocale, targetCountry })
     const result = await runSearxngSearch({
       query,
       reportLocale: scope.reportLocale,
@@ -74,7 +80,7 @@ export async function POST(req: NextRequest) {
       categories: tokenList(body.categories),
       language: body.language,
       safesearch: body.safesearch,
-      timeRange: isTimeRange(body.time_range) ? body.time_range : null,
+      timeRange: isTimeRange(timeRange) ? timeRange : null,
       pages: body.pages,
     })
     return NextResponse.json(result, { status: result.ok ? 200 : 503 })
