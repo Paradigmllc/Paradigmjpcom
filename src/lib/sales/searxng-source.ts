@@ -15,7 +15,7 @@ import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 
-export type SearxngRunStatus = "running" | "completed" | "failed" | "imported"
+export type SearxngRunStatus = "running" | "completed" | "completed_partial" | "failed" | "imported"
 export type { SearxngResultStatus, SearxngTimeRange } from "./searxng-normalize"
 
 export interface SearxngSearchInput {
@@ -113,6 +113,8 @@ interface SearxngResultRow {
 
 const DEFAULT_CATEGORIES = ["general"]
 const SEARCH_TIMEOUT_MS = 18_000
+const SEARCH_RETRY_DELAY_MS = 2_000 // exponential backoff base
+const SEARCH_MAX_RETRIES = 2
 const USER_AGENT = "Paradigm Sales OS SearxNG/1.0 (+https://paradigmjp.com)"
 
 interface FetchOptions extends RequestInit {
@@ -156,6 +158,42 @@ async function fetchSearxngPage(url: string): Promise<JsonRecord> {
     console.error("[searxng-source] JSON parse failed:", error)
     throw new Error("SearxNG did not return valid JSON. Check settings.yml search.formats includes json.")
   }
+}
+
+// ── Fix 5: Retry SearXNG page fetch with exponential backoff ──
+async function fetchSearxngPageWithRetry(url: string, maxRetries: number = SEARCH_MAX_RETRIES): Promise<JsonRecord> {
+  let lastError: Error | null = null
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fetchSearxngPage(url)
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err))
+      if (attempt < maxRetries) {
+        const delay = SEARCH_RETRY_DELAY_MS * Math.pow(2, attempt)
+        console.warn(`[searxng-source] page fetch attempt ${attempt + 1}/${maxRetries + 1} failed, retrying in ${delay}ms:`, lastError.message)
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+    }
+  }
+  throw lastError!
+}
+
+// ── Fix 2: LLM call with retry ──
+async function callLLMWithRetry(prompt: string, maxRetries: number = 3): Promise<{ ok: boolean; text?: string }> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const res = await callDeepSeek([{ role: "user", content: prompt }], { responseFormat: "json_object", maxTokens: 2000 })
+      if (res.ok && res.text) return res
+    } catch {
+      // retry
+    }
+    if (attempt < maxRetries - 1) {
+      const delay = 500 * Math.pow(2, attempt) // 500ms, 1s, 2s
+      console.warn(`[searxng-import] LLM attempt ${attempt + 1}/${maxRetries} failed, retrying in ${delay}ms`)
+      await new Promise(resolve => setTimeout(resolve, delay))
+    }
+  }
+  return { ok: false }
 }
 
 function mapResult(row: SearxngResultRow): SearxngResultSummary {
@@ -273,81 +311,108 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
   if (inserted.error) return { ok: false, error: inserted.error.message }
   const run = inserted.data as SearxngRunRow
 
-  try {
-    const rawRows: JsonRecord[] = []
-    const pageMeta: JsonRecord[] = []
-    for (let page = 1; page <= pages; page++) {
-      const url = buildSearxngSearchUrl(baseUrl, {
-        query,
-        engines,
-        categories,
-        language,
-        safesearch,
-        page,
-        timeRange: input.timeRange ?? null,
-      })
-      const payload = await fetchSearxngPage(url)
+  // ── Fix 1 + Fix 5: Page-by-page incremental save with retry ──
+  const pageMeta: JsonRecord[] = []
+  const seenDomains = new Set<string>()
+  let totalRawResults = 0
+  let lastError: Error | null = null
+  let lastSavedPage = 0
+
+  for (let page = 1; page <= pages; page++) {
+    const url = buildSearxngSearchUrl(baseUrl, {
+      query,
+      engines,
+      categories,
+      language,
+      safesearch,
+      page,
+      timeRange: input.timeRange ?? null,
+    })
+
+    try {
+      // Fix 5: retry with exponential backoff
+      const payload = await fetchSearxngPageWithRetry(url, SEARCH_MAX_RETRIES)
       const pageResults = Array.isArray(payload.results) ? (payload.results as JsonRecord[]) : []
-      rawRows.push(...pageResults)
+      totalRawResults += pageResults.length
       pageMeta.push({
         page,
         result_count: pageResults.length,
         unresponsive_engines: payload.unresponsive_engines ?? [],
         suggestions: payload.suggestions ?? [],
       })
-    }
-    const candidates = normalizeSearxngResults(rawRows, query)
-    if (candidates.length > 0) {
-      const seen = new Set<string>()
-      const deduped = candidates.filter((c) => {
-        if (seen.has(c.domain)) return false
-        seen.add(c.domain)
-        return true
-      })
-      const { error } = await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).upsert(
-        deduped.map((candidate, index) => ({
-          run_id: run.id,
-          result_index: index,
-          url: candidate.url,
-          domain: candidate.domain,
-          title: candidate.title,
-          snippet: candidate.snippet,
-          engine: candidate.engine,
-          category: candidate.category,
-          score: candidate.score,
-          status: candidate.status,
-          rejection_reason: candidate.rejectionReason,
-          raw: candidate.raw,
-        })),
-        { onConflict: "run_id,domain" },
-      )
-      if (error) {
-        console.error("[searxng-source] insert search results failed:", error.message)
-        throw new Error(error.message)
+
+      // Fix 1: Save this page's results immediately (incremental persist)
+      if (pageResults.length > 0) {
+        const candidates = normalizeSearxngResults(pageResults, query)
+        const newDomains = candidates.filter((c) => !seenDomains.has(c.domain))
+        for (const c of newDomains) seenDomains.add(c.domain)
+
+        if (newDomains.length > 0) {
+          const { error: upsertError } = await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).upsert(
+            newDomains.map((candidate, index) => ({
+              run_id: run.id,
+              result_index: (page - 1) * 100 + index, // page-relative index
+              url: candidate.url,
+              domain: candidate.domain,
+              title: candidate.title,
+              snippet: candidate.snippet,
+              engine: candidate.engine,
+              category: candidate.category,
+              score: candidate.score,
+              status: candidate.status,
+              rejection_reason: candidate.rejectionReason,
+              raw: candidate.raw,
+            })),
+            { onConflict: "run_id,domain" },
+          )
+          if (upsertError) {
+            console.error(`[searxng-source] page ${page} upsert failed:`, upsertError.message)
+          }
+        }
       }
+
+      // Update run progress after each completed page
+      lastSavedPage = page
+      await sb
+        .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
+        .update({
+          total_results: totalRawResults,
+          unique_domains: seenDomains.size,
+          meta: { source: "searxng", pages: pageMeta, last_page_saved: page },
+        })
+        .eq("id", run.id)
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err))
+      console.error(`[searxng-source] page ${page}/${pages} failed:`, lastError.message)
+      // Save partial progress before breaking
+      await sb
+        .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
+        .update({
+          status: seenDomains.size > 0 ? "completed_partial" : "failed",
+          total_results: totalRawResults,
+          unique_domains: seenDomains.size,
+          completed_at: new Date().toISOString(),
+          error_message: `Search stopped at page ${page}/${pages}: ${lastError.message.slice(0, 200)}`,
+          meta: { source: "searxng", pages: pageMeta, partial: true, failed_at_page: page },
+        })
+        .eq("id", run.id)
+      break
     }
+  }
+
+  // Final completion update (if no errors broke the loop)
+  if (!lastError) {
     const completedAt = new Date().toISOString()
     await sb
       .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
       .update({
         status: "completed",
-        total_results: rawRows.length,
-        unique_domains: new Set(candidates.map((candidate) => candidate.domain)).size,
+        total_results: totalRawResults,
+        unique_domains: seenDomains.size,
         completed_at: completedAt,
         meta: { source: "searxng", pages: pageMeta },
       })
       .eq("id", run.id)
-  } catch (error) {
-    console.error("[searxng-source] search run failed:", error)
-    await sb
-      .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
-      .update({
-        status: "failed",
-        error_message: error instanceof Error ? error.message : "SearxNG search failed",
-        completed_at: new Date().toISOString(),
-      })
-      .eq("id", run.id)
-    return { ok: false, error: error instanceof Error ? error.message : "SearxNG search failed" }
   }
 
   const listed = await listSearxngRuns(scope, 1)
@@ -372,6 +437,17 @@ export async function importSearxngRunToLeadBatch(input: {
   const runRes = await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS).select("*").eq("id", input.runId).single()
   if (runRes.error) return { ok: false, imported: 0, error: runRes.error.message }
   const run = runRes.data as SearxngRunRow
+
+  // ── Fix 6: Idempotency check — don't re-import already imported runs ──
+  if (run.status === "imported" && run.batch_id) {
+    const scope = salesScopeFromCountry({ reportLocale: run.report_locale, targetCountry: run.target_country })
+    const { listLeadBatches } = await import("./monthly-batch")
+    const existing = await listLeadBatches(scope, 1)
+    if (existing.ok && existing.batches.length > 0) {
+      return { ok: true, batch: existing.batches[0], imported: run.imported_count }
+    }
+  }
+
   const minScore = Math.max(0, Math.min(100, Math.round(input.minScore ?? 58)))
   const limit = Math.max(1, Math.min(1000, Math.round(input.limit ?? 100)))
   const resultRes = await sb
@@ -386,16 +462,17 @@ export async function importSearxngRunToLeadBatch(input: {
   const results = (resultRes.data ?? []) as SearxngResultRow[]
   if (results.length === 0) return { ok: false, imported: 0, error: "No ready SearxNG results match the import gate" }
 
-  // --- LLM Pre-filtering ---
+  // ── LLM Pre-filtering with Fix 2 (retry + pending_review fallback) + Fix 4 (no fire-and-forget) ──
   const validResults: SearxngResultRow[] = []
   const CHUNK_SIZE = 50
   for (let i = 0; i < results.length; i += CHUNK_SIZE) {
     const chunk = results.slice(i, i + CHUNK_SIZE)
     const promptData = chunk.map(r => ({ id: r.id, domain: r.domain, title: r.title, snippet: r.snippet }))
     const prompt = `Evaluate the following list of search results. Return a JSON object with keys as 'id' and value boolean true/false. True if it appears to be a legitimate B2B/B2C business or corporate site. False if it is a directory site, blog, news, aggregator, social media, or irrelevant garbage.\n\n${JSON.stringify(promptData, null, 2)}`
-    
+
     try {
-      const llmRes = await callDeepSeek([{ role: "user", content: prompt }], { responseFormat: "json_object", maxTokens: 2000 })
+      // Fix 2: Retry LLM call up to 3 times
+      const llmRes = await callLLMWithRetry(prompt, 3)
       if (llmRes.ok && llmRes.text) {
         const decisionMap = JSON.parse(llmRes.text) as Record<string, boolean>
         for (const r of chunk) {
@@ -403,24 +480,30 @@ export async function importSearxngRunToLeadBatch(input: {
           if (decision === true || String(decision).toLowerCase() === "true") {
             validResults.push(r)
           } else {
-             await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "rejected", rejection_reason: "llm_filtered" }).eq("id", r.id)
+            await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "rejected", rejection_reason: "llm_filtered" }).eq("id", r.id)
           }
         }
       } else {
-        // LLM unavailable: mark as "pending_review" instead of accepting blindly
+        // Fix 2: LLM unavailable → mark as pending_review (NOT rejected)
+        console.warn(`[searxng-import] LLM unavailable for chunk after ${3} retries, marking as pending_review`)
         for (const r of chunk) {
-          await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "rejected", rejection_reason: "llm_unavailable_fallback" }).eq("id", r.id)
+          await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "pending_review", rejection_reason: "llm_unavailable" }).eq("id", r.id)
         }
       }
     } catch (e) {
-      console.warn("[searxng-import] LLM pre-filter failed for chunk, rejecting as safety measure:", e)
+      // Fix 4: Proper error handling — no fire-and-forget
+      console.error("[searxng-import] LLM pre-filter error for chunk:", e)
       for (const r of chunk) {
-        sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "rejected", rejection_reason: "llm_error_fallback" }).eq("id", r.id).then(() => {}, () => {})
+        try {
+          await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "pending_review", rejection_reason: "llm_error_fallback" }).eq("id", r.id)
+        } catch (updateErr) {
+          console.error(`[searxng-import] failed to update status for result ${r.id}:`, updateErr)
+        }
       }
     }
   }
 
-  if (validResults.length === 0) return { ok: false, imported: 0, error: "All results filtered out by LLM" }
+  if (validResults.length === 0) return { ok: false, imported: 0, error: "All results filtered out by LLM (check pending_review items in DB)" }
 
   const rows: LeadBatchCsvRow[] = validResults.map((result) => ({
     company_name: companyNameFromResult(result),

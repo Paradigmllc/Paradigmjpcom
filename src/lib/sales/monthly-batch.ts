@@ -257,7 +257,10 @@ export async function createLeadBatch(input: {
   let duplicates = 0
   let rejected = 0
   let jobs = 0
+  let fatalError: string | null = null
 
+  // ── Fix 3: Wrap entire processing in try/catch for mid-batch crash resilience ──
+  try {
   for (let i = 0; i < input.rows.length; i++) {
     const row = input.rows[i]
     const cleanDomain = normalizeDomain(row.domain)
@@ -353,18 +356,35 @@ export async function createLeadBatch(input: {
       status,
     })
   }
+  } catch (err) {
+    // Fix 3: Save partial progress on catastrophic failure
+    fatalError = err instanceof Error ? err.message : String(err)
+    console.error("[monthly-batch] batch processing crashed mid-way:", err)
+    // Don't rethrow — we save partial progress below
+  }
+
+  // Determine batch status based on whether we completed or crashed
+  const finalStatus = fatalError
+    ? (imported > 0 ? "importing" : "failed") // "importing" = partial, can be retried
+    : (jobs > 0 ? "enriching" : "qualifying")
 
   await sb
     .from(DB_TABLES.SALES_LEAD_BATCHES)
     .update({
-      status: jobs > 0 ? "enriching" : "qualifying",
+      status: finalStatus,
       imported_count: imported,
       duplicate_count: duplicates,
       rejected_count: rejected,
       enrichment_queued_count: jobs,
-      error_message: failures.length > 0 ? `${failures.length} rows need review` : null,
+      error_message: fatalError ?? (failures.length > 0 ? `${failures.length} rows need review` : null),
+      completed_at: fatalError ? new Date().toISOString() : null,
     })
     .eq("id", batch.id)
+
+  if (fatalError) {
+    return { ok: false, error: fatalError, failures: failures.slice(0, 20) }
+  }
+
   if (jobs > 0) {
     const triggered = await triggerEnrichmentRunner(Math.min(jobs, 5))
     if (!triggered.ok) {
