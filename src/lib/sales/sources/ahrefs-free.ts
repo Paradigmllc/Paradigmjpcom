@@ -1,3 +1,5 @@
+import { cleanDomain as canonicalDomain } from "@/lib/sales/japan-readiness-utils"
+
 /**
  * Ahrefs Domain Rating (DR) checker — scrapes the free Ahrefs backlink checker
  * https://ahrefs.com/backlink-checker
@@ -17,7 +19,7 @@ export interface AhrefsFreeResult {
 
 export async function checkAhrefsFree(domain: string): Promise<AhrefsFreeResult> {
   try {
-    const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "")
+    const cleanDomain = canonicalDomain(domain)
     const url = `https://ahrefs.com/backlink-checker/?target=${encodeURIComponent(cleanDomain)}&mode=subdomains`
     const res = await fetch(url, {
       headers: {

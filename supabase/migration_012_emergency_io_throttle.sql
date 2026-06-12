@@ -22,8 +22,8 @@ END $$;
 -- STEP 2: 読み取り負荷軽減のためのインデックス追加
 -- (BeforeDashboard / dashboard の集計クエリ用)
 -- ============================================================
-CREATE INDEX IF NOT EXISTS idx_sales_companies_stage
-  ON sales_companies (stage) WHERE stage IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_sales_companies_pipeline_status
+  ON sales_companies (pipeline_status) WHERE pipeline_status IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_sales_companies_created_at
   ON sales_companies (created_at DESC);

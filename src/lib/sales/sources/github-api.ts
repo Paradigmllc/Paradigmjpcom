@@ -1,3 +1,5 @@
+import { cleanDomain as canonicalDomain } from "@/lib/sales/japan-readiness-utils"
+
 /**
  * GitHub REST API — free company/tech intelligence
  * https://api.github.com
@@ -19,7 +21,7 @@ export interface GitHubResult {
 
 export async function searchGitHubOrg(domain: string): Promise<GitHubResult> {
   try {
-    const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "")
+    const cleanDomain = canonicalDomain(domain)
     const orgName = cleanDomain.split(".")[0] || cleanDomain
     const token = process.env.GITHUB_TOKEN?.trim()
     const headers: Record<string, string> = {

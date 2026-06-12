@@ -150,6 +150,5 @@ export function makeStep(name: string, ok: boolean, start: number, extra?: Parti
   }
 }
 
-export function isUuid(s: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)
-}
+import { isUuid } from "./japan-readiness-utils"
+export { isUuid }

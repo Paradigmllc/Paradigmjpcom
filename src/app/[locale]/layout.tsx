@@ -324,7 +324,7 @@ export default async function LocaleLayout({ children, params }: Props) {
           <style id="theme-overrides" dangerouslySetInnerHTML={{ __html: themeOverrideCss }} />
         )}
       </head>
-      <body className="min-h-screen bg-paradigm-paper text-paradigm-ink antialiased">
+      <body className="min-h-dvh bg-paradigm-paper text-paradigm-ink antialiased">
         {/* GTM noscript fallback (JS 無効環境用)。gtmId 未設定なら出力しない。 */}
         {tracking.gtmId && (
           <noscript>

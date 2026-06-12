@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 function getDB() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -15,6 +16,10 @@ function getDB() {
 // POST /api/cta-click — CTAボタンクリック → HOT LEAD化 + 通知
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown"
+    const rl = checkRateLimit({ ip, key: "api:cta-click", max: 30, windowMs: 60_000 })
+    if (!rl.ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+
     const { prospect_id, slug, action, contact } = await request.json()
     const db = getDB()
     if (!db) return NextResponse.json({ error: "DB未設定" }, { status: 500 })

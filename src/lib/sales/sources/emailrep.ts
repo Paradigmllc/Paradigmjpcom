@@ -1,3 +1,5 @@
+import { cleanDomain as canonicalDomain } from "@/lib/sales/japan-readiness-utils"
+
 /**
  * EmailRep.io — free email domain reputation API
  * https://emailrep.io
@@ -21,7 +23,7 @@ export interface EmailRepResult {
 
 export async function checkEmailReputation(domain: string): Promise<EmailRepResult> {
   try {
-    const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "")
+    const cleanDomain = canonicalDomain(domain)
     const res = await fetch(`https://emailrep.io/${encodeURIComponent(cleanDomain)}`, {
       headers: { Accept: "application/json", "User-Agent": "RevenueOS/1.0" },
       signal: AbortSignal.timeout(8_000),

@@ -29,6 +29,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "@payload-config": path.resolve(__dirname, "./payload.config.ts"),
+      "@browserbasehq/stagehand": path.resolve(__dirname, "./src/lib/sales/__mocks__/stagehand-stub.ts"),
     },
   },
 })

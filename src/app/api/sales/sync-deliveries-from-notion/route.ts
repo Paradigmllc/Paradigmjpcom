@@ -23,7 +23,7 @@ export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
 
-const DB_JP = "b3cbef9dd96f4e5bbbecc404c703a298"
+const DB_JP = process.env.NOTION_DELIVERIES_DB_ID ?? "b3cbef9dd96f4e5bbbecc404c703a298"
 const DB_GLOBAL = "35fa2b78-f3fc-81e2-a5c3-d7b9b9d7f5a9"
 
 export async function POST(req: NextRequest) {

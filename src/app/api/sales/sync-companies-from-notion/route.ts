@@ -41,8 +41,8 @@ export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
 
-const DB_JP = "8cbab1f501144f83872c1738ce3e79c4"
-const DB_GLOBAL = "35fa2b78-f3fc-8107-aa0b-f28694e1009c"
+const DB_JP = process.env.NOTION_COMPANIES_DB_ID ?? "8cbab1f501144f83872c1738ce3e79c4"
+const DB_GLOBAL = process.env.NOTION_COMPANIES_DB_VIEW_ID ?? "35fa2b78-f3fc-8107-aa0b-f28694e1009c"
 
 export async function POST(req: NextRequest) {
   if (!isNotionLegacySyncEnabled()) return notionLegacyDisabledResponse()

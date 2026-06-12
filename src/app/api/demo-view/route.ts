@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 function getDB() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -15,6 +16,10 @@ function getDB() {
 // POST /api/demo-view — 閲覧ビーコン（sendBeacon対応）
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown"
+    const rl = checkRateLimit({ ip, key: "api:demo-view", max: 60, windowMs: 60_000 })
+    if (!rl.ok) return NextResponse.json({ ok: false })
+
     const body = await request.json()
     const { prospect_id, slug, duration_sec, pattern_id, pattern_name } = body
 

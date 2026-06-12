@@ -8,14 +8,26 @@
  */
 import { envValue } from "../oss-service-health"
 
-let _stagehandModule: any = null
+interface StagehandSdk {
+  Stagehand: new (config: Record<string, unknown>) => {
+    init(): Promise<void>
+    page: {
+      goto(url: string, opts?: Record<string, unknown>): Promise<void>
+      title(): Promise<string>
+      evaluate<T>(fn: () => T): Promise<T>
+    }
+    close(): Promise<void>
+  }
+}
 
-async function getStagehand() {
-  if (_stagehandModule) return _stagehandModule
+let _stagehandModule: unknown = null
+
+async function getStagehand(): Promise<StagehandSdk | null> {
+  if (_stagehandModule) return _stagehandModule as StagehandSdk
   try {
     const mod = await import("@browserbasehq/stagehand")
     _stagehandModule = mod
-    return mod
+    return mod as unknown as StagehandSdk
   } catch {
     console.warn("[stagehand-enrich] @browserbasehq/stagehand not installed — using fallback")
     return null

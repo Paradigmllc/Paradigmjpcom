@@ -20,10 +20,7 @@ const FORM_SIGNATURE_RE =
 const TRUSTED_EXTERNAL_FORM_HOST_RE =
   /(^|\.)((docs\.)?google\.com|forms\.office\.com|formrun\.com|form\.run|typeform\.com|hsforms\.com|hubspot\.com|marketo\.com|pardot\.com|kintoneapp\.com|jotform\.com)$/i
 
-function optionalEnv(name: string): string | null {
-  const value = process.env[name]
-  return value && value.trim().length > 0 ? value.trim() : null
-}
+import { optionalEnv } from "../japan-readiness-utils"
 
 function normalizeHttpBase(raw: string): URL | null {
   try {

@@ -1,3 +1,5 @@
+import { cleanDomain as canonicalDomain } from "@/lib/sales/japan-readiness-utils"
+
 /**
  * The Green Web Foundation — green hosting check
  * https://www.thegreenwebfoundation.org
@@ -15,7 +17,7 @@ export interface GreenWebResult {
 
 export async function checkGreenHosting(domain: string): Promise<GreenWebResult> {
   try {
-    const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "")
+    const cleanDomain = canonicalDomain(domain)
     const url = `https://api.thegreenwebfoundation.org/greencheck/${encodeURIComponent(cleanDomain)}`
     const res = await fetch(url, {
       headers: { Accept: "application/json" },

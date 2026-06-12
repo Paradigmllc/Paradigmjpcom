@@ -34,8 +34,7 @@ const TRANSPARENT_GIF = Buffer.from(
   "base64",
 )
 
-const isUuid = (s: string): boolean =>
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)
+import { isUuid } from "@/lib/sales/japan-readiness-utils"
 const isDomain = (s: string): boolean => /\./.test(s)
 
 export async function GET(req: NextRequest) {

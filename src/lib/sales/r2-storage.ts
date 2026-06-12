@@ -21,10 +21,7 @@ export interface R2SignedUpload {
   expiresInSeconds: number
 }
 
-function optionalEnv(name: string): string | null {
-  const value = process.env[name]
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null
-}
+import { optionalEnv } from "./japan-readiness-utils"
 
 export function getR2StorageConfig(): R2StorageConfig {
   const bucket = optionalEnv("CLOUDFLARE_R2_BUCKET") ?? optionalEnv("R2_BUCKET")

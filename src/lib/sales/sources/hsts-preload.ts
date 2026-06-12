@@ -1,3 +1,5 @@
+import { cleanDomain as canonicalDomain } from "@/lib/sales/japan-readiness-utils"
+
 /**
  * HSTS Preload status check — Chrome HSTS preload list
  * Free, no API key. Checks if domain is in browser preload lists.
@@ -14,7 +16,7 @@ export interface HstsPreloadResult {
 
 export async function checkHstsPreload(domain: string): Promise<HstsPreloadResult> {
   try {
-    const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "")
+    const cleanDomain = canonicalDomain(domain)
     const res = await fetch(`https://hstspreload.org/api/v2/status/${encodeURIComponent(cleanDomain)}`, {
       headers: { Accept: "application/json" },
       signal: AbortSignal.timeout(8_000),

@@ -1,3 +1,5 @@
+import { cleanDomain as canonicalDomain } from "@/lib/sales/japan-readiness-utils"
+
 /**
  * Wayback Machine CDX API — Internet Archive historical snapshots
  * Free, no API key. Reveals site age, redesign frequency, historical issues.
@@ -17,7 +19,7 @@ export interface WaybackResult {
 
 export async function queryWaybackMachine(domain: string): Promise<WaybackResult> {
   try {
-    const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "")
+    const cleanDomain = canonicalDomain(domain)
     const url = `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(cleanDomain)}/*&output=json&fl=timestamp&limit=5000&collapse=timestamp:6&filter=!statuscode:404`
     const res = await fetch(url, {
       headers: { "User-Agent": "RevenueOS/1.0" },

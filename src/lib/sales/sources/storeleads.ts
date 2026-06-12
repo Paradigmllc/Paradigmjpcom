@@ -1,3 +1,5 @@
+import { cleanDomain as canonicalDomain } from "@/lib/sales/japan-readiness-utils"
+
 /**
  * Storeleads — free EC store discovery
  * https://storeleads.app
@@ -17,7 +19,7 @@ export interface StoreleadsResult {
 
 export async function detectEcStore(domain: string): Promise<StoreleadsResult> {
   try {
-    const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "")
+    const cleanDomain = canonicalDomain(domain)
     
     // Detect platform by fetching homepage
     const res = await fetch(`https://${cleanDomain}`, {

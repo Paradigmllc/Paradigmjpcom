@@ -1,3 +1,5 @@
+import { cleanDomain as canonicalDomain } from "@/lib/sales/japan-readiness-utils"
+
 /**
  * CartLeads — EC cart platform detection (complement to Storeleads)
  * Detects Shopify cart, WooCommerce cart, BigCommerce, Magento checkout.
@@ -16,7 +18,7 @@ export interface CartLeadsResult {
 
 export async function detectCartPlatform(domain: string): Promise<CartLeadsResult> {
   try {
-    const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "")
+    const cleanDomain = canonicalDomain(domain)
     
     // Check common cart paths
     const cartPaths = ["/cart", "/checkout", "/cart.php", "/basket", "/order", "/shop/checkout"]

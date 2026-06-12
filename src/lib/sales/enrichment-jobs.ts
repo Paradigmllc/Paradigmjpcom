@@ -88,10 +88,7 @@ function getSb(): ServiceSupabase | null {
   return getServiceSalesSupabase()
 }
 
-function optionalEnv(name: string): string | null {
-  const value = process.env[name]
-  return value && value.trim().length > 0 ? value.trim() : null
-}
+import { optionalEnv } from "./japan-readiness-utils"
 
 function triggerSecretKey(): string | null {
   return optionalEnv("TRIGGER_SECRET_KEY") ?? optionalEnv("TRIGGER_ACCESS_TOKEN") ?? optionalEnv("TRIGGER_DEV_API_KEY")

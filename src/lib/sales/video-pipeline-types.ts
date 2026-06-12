@@ -100,13 +100,8 @@ export interface VideoPipelineConfig {
   stages: Array<{ id: string; label: string; owner: string; gate: string }>
 }
 
-export const isUuid = (value: string): boolean =>
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
-
-export function optionalEnv(name: string): string | null {
-  const value = process.env[name]
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null
-}
+import { optionalEnv, isUuid } from "./japan-readiness-utils"
+export { optionalEnv, isUuid }
 
 export function envReady(...names: string[]): boolean {
   return names.some((name) => optionalEnv(name) !== null)

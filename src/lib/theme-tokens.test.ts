@@ -18,7 +18,7 @@ describe("toRgbTriplet", () => {
   it("parses #RRGGBB hex", () => {
     expect(toRgbTriplet("#FAFAF7")).toBe("250 250 247")
     expect(toRgbTriplet("#1C1C2E")).toBe("28 28 46")
-    expect(toRgbTriplet("#8b5cf6")).toBe("99 102 241")
+    expect(toRgbTriplet("#8b5cf6")).toBe("139 92 246")
     // hex without #
     expect(toRgbTriplet("FAFAF7")).toBe("250 250 247")
     // lowercase
@@ -67,7 +67,7 @@ describe("themeTokensToCss", () => {
     })
     expect(css).toContain(":root {")
     expect(css).toContain("--paradigm-paper: 250 250 247;")
-    expect(css).toContain("--paradigm-accent: 99 102 241;")
+    expect(css).toContain("--paradigm-accent: 139 92 246;")
   })
 
   it("skips invalid color values gracefully", () => {

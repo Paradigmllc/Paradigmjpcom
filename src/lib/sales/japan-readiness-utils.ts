@@ -57,3 +57,7 @@ export function optionalEnv(name: string): string | null {
   const value = process.env[name]
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null
 }
+
+export function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+}

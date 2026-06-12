@@ -34,7 +34,7 @@ interface Props {
 
 function UnauthorizedView() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-zinc-50 p-4 sm:p-6">
+    <main className="flex min-h-dvh items-center justify-center bg-zinc-50 p-4 sm:p-6">
       <section className="w-full max-w-md rounded-lg border border-zinc-200 bg-white p-6 text-center shadow-sm sm:p-8">
         <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-md bg-zinc-950 text-white">
           <span className="text-sm font-semibold">P</span>

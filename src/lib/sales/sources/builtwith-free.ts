@@ -1,3 +1,5 @@
+import { cleanDomain as canonicalDomain } from "@/lib/sales/japan-readiness-utils"
+
 /**
  * BuiltWith free technology & traffic lookup
  * https://builtwith.com
@@ -16,7 +18,7 @@ export interface BuiltWithFreeResult {
 
 export async function lookupBuiltWithFree(domain: string): Promise<BuiltWithFreeResult> {
   try {
-    const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "")
+    const cleanDomain = canonicalDomain(domain)
     const url = `https://builtwith.com/${encodeURIComponent(cleanDomain)}`
     const res = await fetch(url, {
       headers: {

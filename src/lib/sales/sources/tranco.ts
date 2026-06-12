@@ -1,3 +1,5 @@
+import { cleanDomain as canonicalDomain } from "@/lib/sales/japan-readiness-utils"
+
 /**
  * Tranco list — free domain popularity ranking (no API key)
  * https://tranco-list.eu/
@@ -14,7 +16,7 @@ export interface TrancoResult {
 
 export async function queryTrancoRank(domain: string): Promise<TrancoResult> {
   try {
-    const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, "")
+    const cleanDomain = canonicalDomain(domain)
     const url = `https://tranco-list.eu/api/ranks/domain/${encodeURIComponent(cleanDomain)}`
     const res = await fetch(url, {
       headers: { Accept: "application/json" },

@@ -54,6 +54,14 @@ export interface JapanReadinessInsightSummary {
   updatedAt: string
 }
 
+export interface ShopifyProbe {
+  ok: boolean
+  productCount: number
+  averagePrice: number | null
+  sampledAt: string
+  error?: string
+}
+
 export interface JapanReadinessRow {
   id: string
   company_id: string

@@ -9,6 +9,7 @@
  * Formula: Estimated Monthly PV = (indexedPages × avgCTR × 0.015) × log10(citations) × industryCoeff
  */
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { cleanDomain as canonicalDomain } from "@/lib/sales/japan-readiness-utils"
 
 const PUBLIC_SEARXNG_INSTANCES = [
   "https://searx.be",
@@ -89,7 +90,7 @@ export async function estimateTrafficViaSearx(domain: string, companyName?: stri
   if (!domain?.includes(".")) return { source: "searxng_traffic", ok: false, error: "invalid domain" }
 
   try {
-    const cleanDomain = domain.replace(/^www\./, "")
+    const cleanDomain = canonicalDomain(domain)
     const brand = companyName || cleanDomain.split(".")[0]
 
     // 1. Index saturation: site:domain

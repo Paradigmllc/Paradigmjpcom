@@ -1,3 +1,5 @@
+import { cleanDomain as canonicalDomain } from "@/lib/sales/japan-readiness-utils"
+
 /**
  * PhishTank — domain phishing reputation check
  * https://phishtank.org
@@ -14,7 +16,7 @@ export interface PhishTankResult {
 
 export async function checkPhishTank(domain: string): Promise<PhishTankResult> {
   try {
-    const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "")
+    const cleanDomain = canonicalDomain(domain)
     // PhishTank API: search by URL
     const url = `https://checkurl.phishtank.com/checkurl/?url=${encodeURIComponent(cleanDomain)}&format=json`
     const res = await fetch(url, {

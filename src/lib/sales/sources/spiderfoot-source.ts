@@ -6,6 +6,19 @@
  */
 import { envValue } from "../oss-service-health"
 
+interface RdapDomainResponse {
+  entities?: Array<{
+    vcardArray?: [
+      string,
+      Array<Array<unknown>>,
+    ]
+  }>
+  events?: Array<{
+    eventAction?: string
+    eventDate?: string
+  }>
+}
+
 interface SfResult { source: string; ok: boolean; data?: Record<string, unknown>; error?: string }
 
 function spiderfootUrl(): string {
@@ -80,12 +93,10 @@ async function runSpiderFootScan(target: string, modules: string[]): Promise<SfR
       { signal: AbortSignal.timeout(15_000) }
     )
     if (rdapRes.ok) {
-      const rdapData = await rdapRes.json() as Record<string, unknown>
+      const rdapData = await rdapRes.json() as RdapDomainResponse
       results.rdap = {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        registrar: (rdapData as any)?.entities?.[0]?.vcardArray?.[1]?.[0]?.[3],
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        created: (rdapData as any).events?.find?.((e: { eventAction?: string; eventDate?: string }) => e.eventAction === "registration")?.eventDate,
+        registrar: rdapData.entities?.[0]?.vcardArray?.[1]?.[0]?.[3],
+        created: rdapData.events?.find?.((e) => e.eventAction === "registration")?.eventDate,
       }
     }
   } catch (e) {

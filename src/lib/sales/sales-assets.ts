@@ -21,8 +21,7 @@ export interface SalesAssetResult {
   error?: string
 }
 
-const isUuid = (value: string): boolean =>
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+import { isUuid } from "./japan-readiness-utils"
 
 function deliveryTypeFor(assetType: ContentAssetType): string {
   if (assetType === "sales_video") return "動画ブリーフ"

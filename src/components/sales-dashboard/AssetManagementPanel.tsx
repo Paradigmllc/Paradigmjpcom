@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { ExternalLink, FileVideo, Globe, Layers, Monitor, Play } from "lucide-react"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
+import type { SalesVideoJob } from "@/lib/sales/video-pipeline-types"
 
 export function AssetManagementPanel({ data }: { data: SalesDashboardData }) {
   const [activeTab, setActiveTab] = useState<"demos" | "videos" | "storage">("demos")
@@ -163,7 +164,7 @@ function VideosTab({ data }: { data: SalesDashboardData }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
-                {videoJobs.slice(0, 15).map((job: any) => (
+                {videoJobs.slice(0, 15).map((job: SalesVideoJob) => (
                   <tr key={job.id} className="hover:bg-zinc-50">
                     <td className="px-4 py-2 font-medium text-zinc-900">{job.sales_companies?.company_name ?? job.company_id?.slice(0,8) ?? "-"}</td>
                     <td className="px-4 py-2">

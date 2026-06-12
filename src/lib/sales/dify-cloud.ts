@@ -55,10 +55,7 @@ export const DIFY_RUNTIME_URL_ENV_NAMES = [
   "DIFY_VIDEO_WORKFLOW_API_URL",
 ] as const
 
-function optionalEnv(name: string): string | null {
-  const value = process.env[name]
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null
-}
+import { optionalEnv } from "./japan-readiness-utils"
 
 function isDifyCloudUrl(value: string): boolean {
   try {

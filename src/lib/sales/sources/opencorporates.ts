@@ -1,3 +1,5 @@
+import { cleanDomain as canonicalDomain } from "@/lib/sales/japan-readiness-utils"
+
 /**
  * OpenCorporates — free international company registry API
  * https://api.opencorporates.com
@@ -20,7 +22,7 @@ export interface OpenCorporatesResult {
 
 export async function searchOpenCorporates(domain: string): Promise<OpenCorporatesResult> {
   try {
-    const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "")
+    const cleanDomain = canonicalDomain(domain)
     const name = cleanDomain.replace(/\.[^.]+$/, "") // Use domain root as company name search
     const url = `https://api.opencorporates.com/v0.4/companies/search?q=${encodeURIComponent(name)}&per_page=3`
     const res = await fetch(url, {

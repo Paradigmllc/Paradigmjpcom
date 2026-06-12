@@ -1,3 +1,5 @@
+import { cleanDomain as canonicalDomain } from "@/lib/sales/japan-readiness-utils"
+
 /**
  * Common Crawl Index — estimate site size & content volume from crawl data
  * https://commoncrawl.org
@@ -14,7 +16,7 @@ export interface CommonCrawlResult {
 
 export async function queryCommonCrawl(domain: string): Promise<CommonCrawlResult> {
   try {
-    const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "")
+    const cleanDomain = canonicalDomain(domain)
     const url = `https://index.commoncrawl.org/CC-MAIN-2024-10-index?url=${encodeURIComponent(cleanDomain)}/*&output=json&limit=100`
     const res = await fetch(url, {
       headers: { "User-Agent": "RevenueOS/1.0" },

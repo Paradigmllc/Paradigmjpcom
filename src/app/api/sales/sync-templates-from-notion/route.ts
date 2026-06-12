@@ -41,7 +41,7 @@ export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
 
-const DEFAULT_DB_JP = "115e2b0e79424bb0813fc05402096f95" // 既存テンプレ DB (ja)
+const DEFAULT_DB_JP = process.env.NOTION_TEMPLATES_DB_ID ?? "115e2b0e79424bb0813fc05402096f95" // 既存テンプレ DB (ja)
 // グローバル版 DB はあとで作成・env から取得
 
 export async function POST(req: NextRequest) {

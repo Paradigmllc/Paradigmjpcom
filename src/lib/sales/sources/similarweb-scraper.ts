@@ -1,3 +1,5 @@
+import { cleanDomain as canonicalDomain } from "@/lib/sales/japan-readiness-utils"
+
 /**
  * Similarweb Free scraper — public page traffic estimates
  * Scrapes the free Similarweb overview page for estimated monthly visits.
@@ -16,7 +18,7 @@ export interface SimilarwebFreeResult {
 
 export async function scrapeSimilarwebFree(domain: string): Promise<SimilarwebFreeResult> {
   try {
-    const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, "")
+    const cleanDomain = canonicalDomain(domain)
     const url = `https://www.similarweb.com/website/${encodeURIComponent(cleanDomain)}/`
     const res = await fetch(url, {
       headers: {

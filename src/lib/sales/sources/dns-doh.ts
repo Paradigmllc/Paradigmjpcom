@@ -1,3 +1,5 @@
+import { cleanDomain as canonicalDomain } from "@/lib/sales/japan-readiness-utils"
+
 /**
  * DNS-over-HTTPS — Cloudflare DoH (free, no API key)
  * Fetches MX, TXT (SPF/DKIM/DMARC), A, AAAA, CNAME records.
@@ -44,7 +46,7 @@ function detectEmailProvider(mx: string[]): string | null {
 
 export async function queryDnsRecords(domain: string): Promise<DnsResult> {
   try {
-    const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "")
+    const cleanDomain = canonicalDomain(domain)
     const types = ["A", "AAAA", "MX", "TXT", "CNAME", "CAA", "DNSKEY"]
     const records: Record<string, DnsRecord[]> = {}
 

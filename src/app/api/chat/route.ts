@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { normalizeDifyCloudBaseUrl } from "@/lib/sales/dify-cloud"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 /**
  * /api/chat — locale-aware Dify → Gemini fallback
@@ -118,10 +119,10 @@ async function callGemini(message: string, locale: Locale): Promise<string> {
   try {
     const systemPrompt = locale === "en" ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT_JA
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY },
         body: JSON.stringify({
           system_instruction: { parts: [{ text: systemPrompt }] },
           contents: [{ role: "user", parts: [{ text: message }] }],
@@ -140,6 +141,10 @@ async function callGemini(message: string, locale: Locale): Promise<string> {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown"
+  const rl = checkRateLimit({ ip, key: "api:chat", max: 20, windowMs: 60_000 })
+  if (!rl.ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 })
+
   const { message, conversationId, locale: rawLocale } = await req.json()
   const locale: Locale = rawLocale === "en" ? "en" : "ja"
   if (!message?.trim()) return NextResponse.json({ error: "message required" }, { status: 400 })

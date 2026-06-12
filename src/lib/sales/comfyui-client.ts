@@ -79,10 +79,7 @@ export interface ComfyuiGenerateResult {
 
 /* ───── 設定 ───── */
 
-function optionalEnv(name: string): string | null {
-  const value = process.env[name]
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null
-}
+import { optionalEnv } from "./japan-readiness-utils"
 
 let dynamicBaseUrl: string | null = null;
 

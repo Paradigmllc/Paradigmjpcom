@@ -139,10 +139,7 @@ export class StagehandProvider implements BrowserProvider {
   }
 }
 
-function optionalEnv(name: string): string | null {
-  const value = process.env[name]
-  return value && value.trim().length > 0 ? value.trim() : null
-}
+import { optionalEnv } from "@/lib/sales/japan-readiness-utils"
 
 function providerUrl(endpoint: string, path: string): string {
   return `${endpoint.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`

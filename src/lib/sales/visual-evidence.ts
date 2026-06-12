@@ -46,10 +46,7 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {}
 }
 
-function optionalEnv(name: string): string | null {
-  const value = process.env[name]
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null
-}
+import { optionalEnv } from "./japan-readiness-utils"
 
 export function targetUrlForDomain(domain: string): string {
   const trimmed = domain.trim()

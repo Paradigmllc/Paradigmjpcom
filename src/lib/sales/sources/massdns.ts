@@ -1,3 +1,5 @@
+import { cleanDomain as canonicalDomain } from "@/lib/sales/japan-readiness-utils"
+
 /**
  * MassDNS — bulk DNS resolver (free OSS)
  * Resolves A/AAAA records for a list of subdomains.
@@ -25,7 +27,7 @@ const COMMON_SUBDOMAINS = [
 
 export async function discoverSubdomains(domain: string): Promise<MassDnsResult> {
   try {
-    const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "")
+    const cleanDomain = canonicalDomain(domain)
     const subdomains: MassDnsResult["subdomains"] = []
     let totalResolved = 0
 

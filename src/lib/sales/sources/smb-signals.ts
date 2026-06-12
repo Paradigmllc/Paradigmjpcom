@@ -1,3 +1,5 @@
+import { cleanDomain as canonicalDomain } from "@/lib/sales/japan-readiness-utils"
+
 /**
  * SMB market signals — free proxies for traffic/revenue estimation.
  * Unlike Similarweb (enterprise-focused), these work for ANY domain.
@@ -25,7 +27,7 @@ export interface SmbSignalsResult {
 
 export async function collectSmbSignals(domain: string, wappalyzerTech: string[], dnsMxRecords: Array<{ exchange: string }>): Promise<SmbSignalsResult> {
   try {
-    const cleanDomain = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "")
+    const cleanDomain = canonicalDomain(domain)
     
     const [googleCount, social, techTier, emailProvider] = await Promise.all([
       checkGoogleIndex(cleanDomain),
