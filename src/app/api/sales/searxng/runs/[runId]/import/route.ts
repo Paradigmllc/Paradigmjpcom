@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { importSearxngRunToLeadBatch } from "@/lib/sales/searxng-source"
+import { getServiceSalesSupabase } from "@/lib/supabase"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -11,10 +13,6 @@ interface Body {
   min_score?: number | null
   enrich?: boolean
   max_outreach_ready?: number | null
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "SearxNG import failed"
 }
 
 export async function POST(
@@ -30,20 +28,66 @@ export async function POST(
     let body: Body = {}
     try {
       body = (await req.json()) as Body
-    } catch (error) {
-      console.warn("[sales-searxng-import] empty or invalid JSON body:", error)
+    } catch {
+      // empty body is fine — use defaults
     }
 
-    const result = await importSearxngRunToLeadBatch({
+    // ── Async import: guard against double-fire, set status, return 202 ──
+    const sb = getServiceSalesSupabase()
+
+    // Check current status to avoid double-import
+    if (sb) {
+      const { data: currentRun } = await sb
+        .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
+        .select("status")
+        .eq("id", runId)
+        .single()
+
+      const currentStatus = (currentRun as { status?: string } | null)?.status
+      if (currentStatus === "importing" || currentStatus === "imported") {
+        return NextResponse.json(
+          { ok: true, status: currentStatus, runId, message: `Import already ${currentStatus}` },
+          { status: 200 },
+        )
+      }
+
+      await sb
+        .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
+        .update({ status: "importing" })
+        .eq("id", runId)
+    }
+
+    // Fire background import (NOT awaited — runs after response is sent)
+    importSearxngRunToLeadBatch({
       runId,
       limit: body.limit,
       minScore: body.min_score,
       enrich: body.enrich,
       maxOutreachReady: body.max_outreach_ready,
     })
-    return NextResponse.json(result, { status: result.ok ? 200 : 503 })
+      .then((result) => {
+        if (result.ok) {
+          console.log(`[sales-searxng-import] run ${runId.slice(0, 12)}... imported ${result.imported} companies`)
+        } else {
+          console.error(`[sales-searxng-import] run ${runId.slice(0, 12)}... failed:`, result.error)
+        }
+      })
+      .catch((err) => {
+        console.error(`[sales-searxng-import] run ${runId.slice(0, 12)}... crashed:`, err)
+      })
+
+    return NextResponse.json(
+      {
+        ok: true,
+        status: "importing",
+        runId,
+        message: "Import started in background. Poll GET /api/sales/searxng/runs for status.",
+      },
+      { status: 202 },
+    )
   } catch (error) {
+    const message = error instanceof Error ? error.message : "SearxNG import failed"
     console.error("[sales-searxng-import] POST failed:", error)
-    return NextResponse.json({ ok: false, error: errorMessage(error) }, { status: 500 })
+    return NextResponse.json({ ok: false, error: message }, { status: 500 })
   }
 }
