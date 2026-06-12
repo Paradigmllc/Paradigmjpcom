@@ -5,6 +5,36 @@ import { getServiceSupabase } from "@/lib/supabase"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
+async function executeSql(sql: string): Promise<{ ok: boolean; error?: string }> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!url || !key) {
+    return { ok: false, error: "SUPABASE_URL or SERVICE_ROLE_KEY not configured" }
+  }
+
+  try {
+    const res = await fetch(`${url}/rest/v1/sql`, {
+      method: "POST",
+      headers: {
+        "apikey": key,
+        "Authorization": `Bearer ${key}`,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({ query: sql }),
+    })
+
+    const body = await res.text()
+    if (!res.ok) {
+      return { ok: false, error: `HTTP ${res.status}: ${body.slice(0, 300)}` }
+    }
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) }
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const auth = authorizeWebhookRequest(req.headers)
@@ -31,41 +61,23 @@ export async function POST(req: NextRequest) {
       results.push(`BEFORE: OK - ${JSON.stringify(before?.[0] || {})}`)
     }
 
-    // Step 1: Add missing columns via raw SQL (Supabase JS v2.39+ .sql template tag)
-    try {
-      const { error: e1 } = await sb.sql`ALTER TABLE IF EXISTS sales_companies ADD COLUMN IF NOT EXISTS report_locale text NOT NULL DEFAULT 'ja'`
-      results.push(`report_locale column: ${e1 ? String(e1.message) : "ensured"}`)
-    } catch (e) {
-      results.push(`report_locale column ERROR: ${e instanceof Error ? e.message : String(e)}`)
-    }
+    // Step 1: Add missing columns via REST API SQL endpoint
+    const alterResults = await Promise.all([
+      executeSql(`ALTER TABLE IF EXISTS sales_companies ADD COLUMN IF NOT EXISTS report_locale text NOT NULL DEFAULT 'ja'`),
+      executeSql(`ALTER TABLE IF EXISTS sales_companies ADD COLUMN IF NOT EXISTS target_country text NOT NULL DEFAULT 'JP'`),
+      executeSql(`ALTER TABLE IF EXISTS sales_companies ADD COLUMN IF NOT EXISTS template_variant text NOT NULL DEFAULT 'website_diagnostic'`),
+    ])
 
-    try {
-      const { error: e2 } = await sb.sql`ALTER TABLE IF EXISTS sales_companies ADD COLUMN IF NOT EXISTS target_country text NOT NULL DEFAULT 'JP'`
-      results.push(`target_country column: ${e2 ? String(e2.message) : "ensured"}`)
-    } catch (e) {
-      results.push(`target_country column ERROR: ${e instanceof Error ? e.message : String(e)}`)
-    }
-
-    try {
-      const { error: e3 } = await sb.sql`ALTER TABLE IF EXISTS sales_companies ADD COLUMN IF NOT EXISTS template_variant text NOT NULL DEFAULT 'website_diagnostic'`
-      results.push(`template_variant column: ${e3 ? String(e3.message) : "ensured"}`)
-    } catch (e) {
-      results.push(`template_variant column ERROR: ${e instanceof Error ? e.message : String(e)}`)
-    }
+    const colNames = ["report_locale", "target_country", "template_variant"]
+    alterResults.forEach((r, i) => {
+      results.push(`${colNames[i]} column: ${r.ok ? "ensured" : `FAILED: ${r.error}`}`)
+    })
 
     // Step 2: Reload PostgREST schema cache
-    try {
-      const { error: notifyErr } = await sb.sql`NOTIFY pgrst, 'reload schema'`
-      if (notifyErr) {
-        results.push(`NOTIFY pgrst: ${notifyErr.message}`)
-      } else {
-        results.push("NOTIFY pgrst: sent")
-      }
-    } catch (e) {
-      results.push(`NOTIFY pgrst: ${e instanceof Error ? e.message : String(e)}`)
-    }
+    const notifyRes = await executeSql(`NOTIFY pgrst, 'reload schema'`)
+    results.push(`NOTIFY pgrst: ${notifyRes.ok ? "sent" : notifyRes.error}`)
 
-    // Step 3: Verify after fix (with small delay for PostgREST refresh)
+    // Step 3: Verify after fix (with delay for PostgREST refresh)
     await new Promise((r) => setTimeout(r, 3000))
 
     const { data: after, error: afterErr } = await sb
