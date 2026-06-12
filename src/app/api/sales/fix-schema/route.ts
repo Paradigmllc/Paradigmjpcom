@@ -1,34 +1,32 @@
 import { NextRequest, NextResponse } from "next/server"
 import { authorizeWebhookRequest } from "@/lib/admin-auth"
 import { getServiceSupabase } from "@/lib/supabase"
+import { Pool } from "pg"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-async function executeSql(sql: string): Promise<{ ok: boolean; error?: string }> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+let pool: Pool | null = null
 
-  if (!url || !key) {
-    return { ok: false, error: "SUPABASE_URL or SERVICE_ROLE_KEY not configured" }
-  }
+function getPool(): Pool | null {
+  if (pool) return pool
+  const uri = process.env.DATABASE_URI
+  if (!uri) return null
+  pool = new Pool({
+    connectionString: uri,
+    max: 2,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+  })
+  return pool
+}
+
+async function executeSql(sql: string): Promise<{ ok: boolean; error?: string }> {
+  const p = getPool()
+  if (!p) return { ok: false, error: "DATABASE_URI not configured" }
 
   try {
-    const res = await fetch(`${url}/rest/v1/sql`, {
-      method: "POST",
-      headers: {
-        "apikey": key,
-        "Authorization": `Bearer ${key}`,
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      },
-      body: JSON.stringify({ query: sql }),
-    })
-
-    const body = await res.text()
-    if (!res.ok) {
-      return { ok: false, error: `HTTP ${res.status}: ${body.slice(0, 300)}` }
-    }
+    await p.query(sql)
     return { ok: true }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) }
@@ -61,7 +59,7 @@ export async function POST(req: NextRequest) {
       results.push(`BEFORE: OK - ${JSON.stringify(before?.[0] || {})}`)
     }
 
-    // Step 1: Add missing columns via REST API SQL endpoint
+    // Step 1: Add missing columns via direct PostgreSQL connection
     const alterResults = await Promise.all([
       executeSql(`ALTER TABLE IF EXISTS sales_companies ADD COLUMN IF NOT EXISTS report_locale text NOT NULL DEFAULT 'ja'`),
       executeSql(`ALTER TABLE IF EXISTS sales_companies ADD COLUMN IF NOT EXISTS target_country text NOT NULL DEFAULT 'JP'`),
