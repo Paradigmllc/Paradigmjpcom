@@ -1,12 +1,33 @@
 "use client"
 
-import { useState } from "react"
-import { Loader2, Play, Search, Download, ExternalLink, ChevronDown, ChevronRight } from "lucide-react"
+import { useCallback, useState } from "react"
+import { CheckCircle2, ChevronDown, ChevronRight, ExternalLink, Loader2, Search, XCircle } from "lucide-react"
 import { toast } from "sonner"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 import type { SearxngRunSummary, SearxngTimeRange } from "@/lib/sales/searxng-source"
 
 const ENGINES = ["google", "bing", "duckduckgo", "brave", "yahoo", "qwant", "startpage"]
+
+const INDUSTRIES: { label: string; keywords: string }[] = [
+  { label: "製造業", keywords: "製造業 工場 メーカー" },
+  { label: "建設業", keywords: "建設 工務店 リフォーム" },
+  { label: "小売・EC", keywords: "EC 通販 ネットショップ" },
+  { label: "美容・サロン", keywords: "美容室 サロン エステ" },
+  { label: "飲食店", keywords: "飲食店 レストラン カフェ" },
+  { label: "歯科・医療", keywords: "歯科 クリニック 医院" },
+  { label: "会計・税理士", keywords: "税理士 会計事務所" },
+  { label: "清掃業", keywords: "清掃 ハウスクリーニング" },
+  { label: "IT・DX", keywords: "IT DX システム開発" },
+  { label: "コンサル", keywords: "コンサルティング 経営相談" },
+  { label: "カスタム", keywords: "" },
+]
+
+const TECH_STACKS = [
+  "WordPress", "Shopify", "Wix", "EC-CUBE", "MakeShop", "BASE",
+  "Next.js", "React", "Vue.js", "Laravel", "Django", "Ruby on Rails",
+  "Google Analytics", "GTM", "HubSpot", "Klaviyo", "Stripe",
+]
+
 const TIME_RANGES: { label: string; value: SearxngTimeRange | "" }[] = [
   { label: "指定なし", value: "" },
   { label: "24時間", value: "day" },
@@ -14,72 +35,133 @@ const TIME_RANGES: { label: string; value: SearxngTimeRange | "" }[] = [
   { label: "1年", value: "year" },
 ]
 
+const COUNTRIES = ["JP", "US", "GB", "DE", "FR", "KR", "CN", "TW", "VN", "TH", "ID", "SG", "AU"]
+
+type Step = "idle" | "searching" | "importing" | "done" | "error"
+
 export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
-  const [query, setQuery] = useState("")
+  const [industry, setIndustry] = useState("")
+  const [customQuery, setCustomQuery] = useState("")
+  const [techStacks, setTechStacks] = useState<string[]>([])
   const [engines, setEngines] = useState<string[]>(["google"])
-  const [pages, setPages] = useState(1)
+  const [targetCount, setTargetCount] = useState(10)
   const [timeRange, setTimeRange] = useState<SearxngTimeRange | "">("")
-  const [running, setRunning] = useState(false)
-  const [importing, setImporting] = useState<string | null>(null)
+  const [targetCountry, setTargetCountry] = useState(data.scope.targetCountry ?? "JP")
+  const [step, setStep] = useState<Step>("idle")
+  const [stepError, setStepError] = useState("")
+  const [lastRun, setLastRun] = useState<SearxngRunSummary | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+
+  const buildQuery = useCallback(() => {
+    const parts: string[] = []
+    if (industry && industry !== "カスタム") {
+      const found = INDUSTRIES.find((i) => i.label === industry)
+      if (found?.keywords) parts.push(found.keywords)
+    }
+    if (customQuery.trim()) parts.push(customQuery.trim())
+    if (techStacks.length > 0) parts.push(techStacks.join(" "))
+    return parts.join(" ") || industry
+  }, [industry, customQuery, techStacks])
+
+  const pages = Math.max(1, Math.min(5, Math.ceil(targetCount / 10)))
 
   const toggleEngine = (engine: string) => {
     setEngines((prev) => prev.includes(engine) ? prev.filter((e) => e !== engine) : [...prev, engine])
   }
 
-  const runSearch = async () => {
-    if (!query.trim()) {
-      toast.error("検索クエリを入力してください")
+  const toggleTech = (tech: string) => {
+    setTechStacks((prev) => prev.includes(tech) ? prev.filter((t) => t !== tech) : [...prev, tech])
+  }
+
+  const runPipeline = async () => {
+    const query = buildQuery()
+    if (!query) {
+      toast.error("業種または検索キーワードを指定してください")
       return
     }
-    setRunning(true)
+
+    setStep("searching")
+    setStepError("")
+    setLastRun(null)
+
     try {
-      const res = await fetch("/api/sales/searxng/runs", {
+      // Step 1: Search
+      const searchRes = await fetch("/api/sales/searxng/runs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          query: query.trim(),
+          query,
           engines: engines.length > 0 ? engines : null,
           pages,
           time_range: timeRange || null,
-          target_country: data.scope.targetCountry,
+          language: targetCountry === "JP" ? "ja" : "en",
+          target_country: targetCountry,
           report_locale: data.scope.reportLocale,
         }),
       })
-      const result = await res.json() as { ok: boolean; run?: SearxngRunSummary; error?: string }
-      if (result.ok && result.run) {
-        toast.success(`検索完了: ${result.run.totalResults}件 / ${result.run.uniqueDomains}ドメイン`)
-        setQuery("")
-        window.location.reload()
-      } else {
-        toast.error(result.error ?? "検索に失敗しました")
+      const searchResult = await searchRes.json() as { ok: boolean; run?: SearxngRunSummary; error?: string }
+      if (!searchResult.ok || !searchResult.run) {
+        setStep("error")
+        setStepError(searchResult.error ?? "検索に失敗しました")
+        toast.error(searchResult.error ?? "検索に失敗しました")
+        return
       }
+      const run = searchResult.run
+      if (run.readyCount === 0) {
+        setStep("error")
+        setStepError("有効な検索結果が0件です。キーワードを変えて再試行してください。")
+        toast.error("有効な結果が0件です")
+        return
+      }
+
+      // Step 2: Import
+      setStep("importing")
+      const importRes = await fetch(`/api/sales/searxng/runs/${run.id}/import`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: targetCount, min_score: 50, enrich: true }),
+      })
+      const importResult = await importRes.json() as { ok: boolean; imported: number; error?: string }
+      if (!importResult.ok) {
+        setStep("error")
+        setStepError(importResult.error ?? "インポートに失敗しました")
+        toast.error(importResult.error ?? "インポート失敗")
+        return
+      }
+
+      setStep("done")
+      setLastRun(run)
+      toast.success(`${importResult.imported}件を収集・インポートしました`)
+      window.location.reload()
     } catch (e) {
-      toast.error("ネットワークエラー")
-    } finally {
-      setRunning(false)
+      setStep("error")
+      const msg = e instanceof Error ? e.message : "ネットワークエラー"
+      setStepError(msg)
+      toast.error(msg)
     }
   }
 
-  const importRun = async (runId: string) => {
-    setImporting(runId)
+  const importExisting = async (runId: string) => {
+    setStep("importing")
+    setStepError("")
     try {
       const res = await fetch(`/api/sales/searxng/runs/${runId}/import`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ limit: 50, min_score: 58, enrich: true }),
+        body: JSON.stringify({ limit: targetCount, min_score: 50, enrich: true }),
       })
       const result = await res.json() as { ok: boolean; imported: number; error?: string }
       if (result.ok) {
-        toast.success(`${result.imported}件をリードバッチにインポートしました`)
+        toast.success(`${result.imported}件をインポートしました`)
+        setStep("idle")
         window.location.reload()
       } else {
         toast.error(result.error ?? "インポートに失敗しました")
+        setStep("idle")
       }
     } catch (e) {
       toast.error("ネットワークエラー")
-    } finally {
-      setImporting(null)
+      setStep("idle")
     }
   }
 
@@ -102,93 +184,206 @@ export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
       failed: "bg-rose-100 text-rose-700",
       imported: "bg-violet-100 text-violet-700",
     }
-    const labels: Record<string, string> = {
-      running: "実行中",
-      completed: "完了",
-      failed: "失敗",
-      imported: "取込済",
-    }
+    const labels: Record<string, string> = { running: "実行中", completed: "完了", failed: "失敗", imported: "取込済" }
     return <span className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${map[status] ?? "bg-zinc-100 text-zinc-600"}`}>{labels[status] ?? status}</span>
   }
 
+  const isRunning = step === "searching" || step === "importing"
+  const queryPreview = buildQuery()
+
   return (
     <div className="p-6">
-      <div className="mb-6 rounded-xl border border-zinc-200 bg-zinc-50/50 p-5">
-        <h3 className="mb-4 text-sm font-bold text-zinc-800">SearXNG 検索実行</h3>
-        <div className="space-y-3">
-          <div>
-            <label className="mb-1 block text-xs font-semibold text-zinc-600">検索クエリ</label>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value.slice(0, 400))}
-              placeholder="例: 製造業 DX 導入 事例"
-              className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
-              onKeyDown={(e) => { if (e.key === "Enter") runSearch() }}
-            />
-            <p className="mt-1 text-[10px] text-zinc-400">{query.length}/400</p>
+      {/* Search Form */}
+      <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <h3 className="mb-1 text-sm font-bold text-zinc-800">リードリスト収集</h3>
+        <p className="mb-4 text-xs text-zinc-500">SearXNGメタ検索で条件に合う企業ドメインを収集し、自動エンリッチ→Twenty連携まで一括実行</p>
+
+        {/* Step Indicator */}
+        {step !== "idle" && (
+          <div className="mb-4 rounded-lg border p-3">
+            {step === "searching" && (
+              <div className="flex items-center gap-3">
+                <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                <div>
+                  <p className="text-sm font-bold text-blue-700">SearXNG 検索実行中...</p>
+                  <p className="text-xs text-blue-500">{queryPreview}</p>
+                </div>
+              </div>
+            )}
+            {step === "importing" && (
+              <div className="flex items-center gap-3">
+                <Loader2 className="h-5 w-5 animate-spin text-violet-500" />
+                <div>
+                  <p className="text-sm font-bold text-violet-700">LLMフィルタ＋リードバッチにインポート中...</p>
+                  <p className="text-xs text-violet-500">DeepSeekで品質チェック後、エンリッチを予約します</p>
+                </div>
+              </div>
+            )}
+            {step === "done" && (
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                <div>
+                  <p className="text-sm font-bold text-emerald-700">収集完了</p>
+                  <p className="text-xs text-emerald-600">{lastRun ? `${lastRun.uniqueDomains}ドメインをインポートしました` : ""}</p>
+                </div>
+              </div>
+            )}
+            {step === "error" && (
+              <div className="flex items-start gap-3">
+                <XCircle className="h-5 w-5 shrink-0 text-rose-500 mt-0.5" />
+                <div>
+                  <p className="text-sm font-bold text-rose-700">エラー</p>
+                  <p className="text-xs text-rose-600">{stepError}</p>
+                  <button type="button" onClick={() => setStep("idle")} className="mt-2 text-xs font-bold text-rose-600 underline">閉じる</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="space-y-4">
+          {/* Row 1: Industry + Country + Target Count */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-zinc-600">業種</label>
+              <select
+                value={industry}
+                onChange={(e) => { setIndustry(e.target.value); if (e.target.value && e.target.value !== "カスタム") setCustomQuery("") }}
+                className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+                disabled={isRunning}
+              >
+                <option value="">選択してください</option>
+                {INDUSTRIES.map((ind) => <option key={ind.label} value={ind.label}>{ind.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-zinc-600">対象国</label>
+              <select
+                value={targetCountry}
+                onChange={(e) => setTargetCountry(e.target.value)}
+                className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+                disabled={isRunning}
+              >
+                {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-zinc-600">目標収集件数</label>
+              <select
+                value={targetCount}
+                onChange={(e) => setTargetCount(Number(e.target.value))}
+                className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+                disabled={isRunning}
+              >
+                {[5, 10, 20, 30, 50].map((n) => <option key={n} value={n}>{n}件</option>)}
+              </select>
+            </div>
           </div>
 
+          {/* Row 2: Custom Keywords */}
+          {(!industry || industry === "カスタム") && (
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-zinc-600">検索キーワード（業種未選択時は必須）</label>
+              <input
+                type="text"
+                value={customQuery}
+                onChange={(e) => setCustomQuery(e.target.value.slice(0, 200))}
+                placeholder="例: 製造業 DX 工場 IoT"
+                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
+                disabled={isRunning}
+              />
+              <p className="mt-1 text-[10px] text-zinc-400">{customQuery.length}/200</p>
+            </div>
+          )}
+
+          {/* Row 3: Tech Stack */}
           <div>
-            <label className="mb-1 block text-xs font-semibold text-zinc-600">検索エンジン</label>
+            <label className="mb-1 block text-xs font-semibold text-zinc-600">技術スタック（指定すると検索キーワードに追加）</label>
             <div className="flex flex-wrap gap-1.5">
-              {ENGINES.map((engine) => (
+              {TECH_STACKS.map((tech) => (
                 <button
-                  key={engine}
+                  key={tech}
                   type="button"
-                  onClick={() => toggleEngine(engine)}
-                  className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                    engines.includes(engine)
+                  disabled={isRunning}
+                  onClick={() => toggleTech(tech)}
+                  className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors disabled:opacity-50 ${
+                    techStacks.includes(tech)
                       ? "bg-violet-100 text-violet-700 border border-violet-200"
                       : "bg-white text-zinc-500 border border-zinc-200 hover:bg-zinc-50"
                   }`}
                 >
-                  {engine}
+                  {tech}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="flex gap-4">
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-zinc-600">ページ数</label>
-              <select
-                value={pages}
-                onChange={(e) => setPages(Number(e.target.value))}
-                className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-violet-500"
-              >
-                {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}ページ</option>)}
-              </select>
+          {/* Row 4: Advanced */}
+          <details className="group">
+            <summary className="cursor-pointer text-xs font-semibold text-zinc-500 hover:text-zinc-700 select-none">詳細設定</summary>
+            <div className="mt-3 space-y-3 pl-1">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-zinc-600">検索エンジン</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {ENGINES.map((engine) => (
+                    <button key={engine} type="button" disabled={isRunning} onClick={() => toggleEngine(engine)}
+                      className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors disabled:opacity-50 ${
+                        engines.includes(engine) ? "bg-zinc-200 text-zinc-800 border border-zinc-300" : "bg-white text-zinc-500 border border-zinc-200 hover:bg-zinc-50"
+                      }`}>
+                      {engine}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-zinc-600">検索ページ数</label>
+                  <select value={pages} onChange={(e) => setTargetCount(Number(e.target.value) * 10)}
+                    className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-violet-500" disabled={isRunning}>
+                    {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}ページ（約{n * 10}件）</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-zinc-600">期間</label>
+                  <select value={timeRange} onChange={(e) => setTimeRange(e.target.value as SearxngTimeRange | "")}
+                    className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-violet-500" disabled={isRunning}>
+                    {TIME_RANGES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-zinc-600">期間</label>
-              <select
-                value={timeRange}
-                onChange={(e) => setTimeRange(e.target.value as SearxngTimeRange | "")}
-                className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-violet-500"
-              >
-                {TIME_RANGES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
-            </div>
-          </div>
+          </details>
 
+          {/* Preview */}
+          {queryPreview && (
+            <div className="rounded-lg bg-zinc-50 px-3 py-2">
+              <p className="text-[10px] font-semibold text-zinc-400 uppercase">検索クエリプレビュー</p>
+              <p className="text-sm font-medium text-zinc-700">{queryPreview}</p>
+            </div>
+          )}
+
+          {/* Action Button */}
           <button
             type="button"
-            disabled={running || !query.trim()}
-            onClick={runSearch}
-            className="flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            disabled={isRunning || !queryPreview}
+            onClick={runPipeline}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-            検索実行
+            {isRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+            {isRunning ? "処理中..." : "収集を開始（検索 → インポート → エンリッチ予約）"}
           </button>
         </div>
       </div>
 
+      {/* Past Runs */}
       <div>
-        <h3 className="mb-3 text-sm font-bold text-zinc-800">過去の検索実行 ({data.searxngRuns.length})</h3>
+        <h3 className="mb-3 text-sm font-bold text-zinc-800">
+          過去の検索実行
+          {data.searxngRuns.length > 0 && <span className="ml-1 font-normal text-zinc-400">({data.searxngRuns.length})</span>}
+        </h3>
         {data.searxngRuns.length === 0 ? (
           <p className="rounded-lg border border-dashed border-zinc-200 bg-zinc-50/50 p-8 text-center text-sm text-zinc-400">
-            まだ検索実行がありません。上のフォームから検索を開始してください。
+            まだ検索実行がありません。上のフォームから収集を開始してください。
           </p>
         ) : (
           <div className="space-y-2">
@@ -196,11 +391,8 @@ export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
               const isExpanded = expanded.has(run.id)
               return (
                 <div key={run.id} className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
-                  <button
-                    type="button"
-                    onClick={() => toggleExpand(run.id)}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-zinc-50 transition-colors"
-                  >
+                  <button type="button" onClick={() => toggleExpand(run.id)}
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-zinc-50 transition-colors">
                     {isExpanded ? <ChevronDown className="h-4 w-4 shrink-0 text-zinc-400" /> : <ChevronRight className="h-4 w-4 shrink-0 text-zinc-400" />}
                     <span className="min-w-0 flex-1 truncate text-sm font-semibold text-zinc-800">{run.query}</span>
                     <span className="shrink-0 text-xs text-zinc-500">{run.targetCountry}</span>
@@ -213,7 +405,7 @@ export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
                       <div className="mb-3 grid grid-cols-4 gap-2 text-xs">
                         <div><span className="text-zinc-400">総結果</span><p className="font-bold">{run.totalResults}</p></div>
                         <div><span className="text-zinc-400">ユニーク</span><p className="font-bold">{run.uniqueDomains}</p></div>
-                        <div><span className="text-zinc-400">Ready</span><p className="font-bold text-emerald-600">{run.readyCount}</p></div>
+                        <div><span className="text-zinc-400">有効</span><p className="font-bold text-emerald-600">{run.readyCount}</p></div>
                         <div><span className="text-zinc-400">重複/除外</span><p className="font-bold text-zinc-500">{run.duplicateCount}/{run.rejectedCount}</p></div>
                       </div>
 
@@ -224,8 +416,8 @@ export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
                               <tr className="text-left text-zinc-500">
                                 <th className="px-3 py-2 font-semibold">ドメイン</th>
                                 <th className="px-3 py-2 font-semibold">タイトル</th>
-                                <th className="px-3 py-2 font-semibold">スコア</th>
-                                <th className="px-3 py-2 font-semibold">ステータス</th>
+                                <th className="px-3 py-2 font-semibold w-16">スコア</th>
+                                <th className="px-3 py-2 font-semibold w-20">状態</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -233,7 +425,7 @@ export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
                                 <tr key={r.id} className="border-t border-zinc-50 hover:bg-zinc-50/50">
                                   <td className="px-3 py-2 font-medium">
                                     <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-violet-600 hover:underline flex items-center gap-1">
-                                      {r.domain} <ExternalLink className="h-3 w-3" />
+                                      {r.domain} <ExternalLink className="h-3 w-3 shrink-0" />
                                     </a>
                                   </td>
                                   <td className="px-3 py-2 text-zinc-600 max-w-[300px] truncate">{r.title}</td>
@@ -252,15 +444,12 @@ export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
                         </div>
                       )}
 
-                      {(run.status === "completed") && (
-                        <button
-                          type="button"
-                          disabled={importing === run.id}
-                          onClick={() => importRun(run.id)}
-                          className="flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                        >
-                          {importing === run.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                          リードバッチにインポート
+                      {run.status === "completed" && (
+                        <button type="button" disabled={step === "importing"}
+                          onClick={() => importExisting(run.id)}
+                          className="flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-700 disabled:opacity-40 transition-colors">
+                          {step === "importing" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                          この結果をインポート
                         </button>
                       )}
                       {run.status === "imported" && run.batchId && (

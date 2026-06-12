@@ -203,6 +203,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   const sourceMap = Object.fromEntries(taskDefs.map((def, i) => [def.name, sources[i]]))
   const skippedStagehand = !stagehandEnabled
 
+  type SourceDatum = { [key: string]: SourceDatum }
   const [
     scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts,
     wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana,
@@ -224,13 +225,17 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
       },
     },
     contact: { original_email: input.email, services: input.services ?? [], received_at: new Date().toISOString() },
-    scan: scan ? {
-      mobile_score: scan.mobile.performance, desktop_score: scan.desktop.performance,
-      html_title: scan.html.title, html_description: scan.html.description,
-      is_wordpress: scan.html.isWordPress, form_count: scan.html.formCount,
-      automation_guard: { recaptcha: scan.html.hasRecaptcha, turnstile: scan.html.hasTurnstile, human_review_required: scan.html.hasRecaptcha || scan.html.hasTurnstile },
-    } : null,
-    tech: { stack: tech.tech, server: tech.server, count: tech.tech.length },
+    scan: (() => {
+      if (!scan) return null
+      const s = scan as Record<string, Record<string, unknown>>
+      return {
+        mobile_score: s.mobile.performance, desktop_score: s.desktop.performance,
+        html_title: s.html.title, html_description: s.html.description,
+        is_wordpress: s.html.isWordPress, form_count: s.html.formCount,
+        automation_guard: { recaptcha: s.html.hasRecaptcha, turnstile: s.html.hasTurnstile, human_review_required: (s.html.hasRecaptcha || s.html.hasTurnstile) as boolean },
+      }
+    })(),
+    tech: tech ? { stack: (tech as Record<string, unknown>).tech, server: (tech as Record<string, unknown>).server, count: ((tech as Record<string, unknown>).tech as unknown[]).length } : null,
     ssl: ssl ?? null,
     whois: whois ?? null,
     contact_form_url: form?.formUrl && form.method !== "fallback" ? form.formUrl : null,
@@ -253,7 +258,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     stagehand: !skippedStagehand && (stagehandSite?.ok || stagehandForms?.ok) ? { site: stagehandSite?.ok ? stagehandSite.data : null, forms: stagehandForms?.ok ? stagehandForms.data : null } : null,
     steel: steel?.ok ? { title: steel.data?.title, text: steel.data?.text?.slice(0, 2000), links_count: steel.data?.links?.length } : null,
     market_data: industry ? (INDUSTRY_MARKET_DATA[industry as keyof typeof INDUSTRY_MARKET_DATA] ?? null) : null,
-    smb_signals: tech && dns?.ok ? await collectSmbSignals(domain, tech.tech.map((t: { name: string }) => t.name), dns.mxRecords).catch(() => null) : null,
+    smb_signals: tech && dns?.ok ? await collectSmbSignals(domain, (tech.tech as Array<{ name: string }>).map((t: { name: string }) => t.name), dns.mxRecords as { exchange: string }[]).catch(() => null) : null,
     ...(gbizFirst ? toCompanyMeta(gbizFirst) : {}),
   }
 
