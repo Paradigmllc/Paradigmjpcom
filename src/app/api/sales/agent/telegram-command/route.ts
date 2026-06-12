@@ -43,7 +43,7 @@ const DirectCommandSchema = z.object({
   autonomy_level: z.string().optional(),
   region: z.string().optional(),
   limit: z.number().int().optional(),
-})
+}).refine((data) => data.text !== undefined || data.message !== undefined || data.source !== undefined)
 
 const TelegramUpdateSchema = z.object({
   message: z
@@ -53,7 +53,70 @@ const TelegramUpdateSchema = z.object({
       from: z.object({ username: z.string().optional(), first_name: z.string().optional() }).optional(),
     })
     .optional(),
+  callback_query: z
+    .object({
+      id: z.string().optional(),
+      data: z.string().optional(),
+      message: z
+        .object({
+          chat: z.object({ id: z.union([z.string(), z.number()]).optional() }).optional(),
+        })
+        .optional(),
+      from: z.object({ username: z.string().optional(), first_name: z.string().optional() }).optional(),
+    })
+    .optional(),
 })
+
+function inferSourceFromText(text: string, fallback = "telegram"): string {
+  if (/(^|[:_\s/-])hermes($|[:_\s/-])|ceo_?hermes|hermes_agent|Hermes Agent/i.test(text)) return "hermes_agent"
+  if (/(^|[:_\s/-])opencode($|[:_\s/-])|open\s*code|OpenCode/i.test(text)) return "opencode"
+  if (/(^|[:_\s/-])openclaw($|[:_\s/-])|OpenClaw/i.test(text)) return "openclaw"
+  if (/(^|[:_\s/-])paperclip($|[:_\s/-])|Paperclip/i.test(text)) return "paperclip"
+  return fallback
+}
+
+async function sendTelegramReply(chatId: string | null, text: string): Promise<{ ok: boolean; error?: string }> {
+  if (!chatId) return { ok: false, error: "Telegram chat id missing" }
+  const token = process.env.TELEGRAM_BOT_TOKEN
+  if (!token) {
+    console.error("[sales-agent-telegram] TELEGRAM_BOT_TOKEN not configured; reply skipped")
+    return { ok: false, error: "TELEGRAM_BOT_TOKEN not configured" }
+  }
+
+  const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: text.slice(0, 3900),
+      disable_web_page_preview: true,
+    }),
+  })
+  const payload = await res.json().catch((error: unknown) => {
+    console.error("[sales-agent-telegram] failed to parse sendMessage response:", error)
+    return null
+  }) as { ok?: boolean; description?: string } | null
+
+  if (!res.ok || payload?.ok !== true) {
+    const error = payload?.description ?? `Telegram sendMessage HTTP ${res.status}`
+    console.error("[sales-agent-telegram] sendMessage failed:", error)
+    return { ok: false, error }
+  }
+
+  return { ok: true }
+}
+
+async function answerTelegramCallback(callbackId: string | null): Promise<void> {
+  if (!callbackId) return
+  const token = process.env.TELEGRAM_BOT_TOKEN
+  if (!token) return
+  const res = await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ callback_query_id: callbackId }),
+  })
+  if (!res.ok) console.error("[sales-agent-telegram] answerCallbackQuery failed:", res.status)
+}
 
 function extractCommand(body: unknown): {
   text: string
@@ -67,11 +130,12 @@ function extractCommand(body: unknown): {
   const direct = DirectCommandSchema.safeParse(body)
   if (direct.success) {
     const text = direct.data.text ?? direct.data.message ?? ""
+    const source = direct.data.source ?? inferSourceFromText(text)
     return {
       text,
       chatId: direct.data.chat_id === undefined ? null : String(direct.data.chat_id),
       username: direct.data.username ?? null,
-      source: direct.data.source ?? "telegram",
+      source,
       autonomyLevel: direct.data.autonomy_level ?? null,
       region: direct.data.region ?? null,
       limit: direct.data.limit ?? null,
@@ -80,12 +144,28 @@ function extractCommand(body: unknown): {
 
   const update = TelegramUpdateSchema.safeParse(body)
   if (update.success) {
+    const callback = update.data.callback_query
+    if (callback) {
+      const text = callback.data ?? ""
+      const from = callback.from
+      return {
+        text,
+        chatId: callback.message?.chat?.id === undefined ? null : String(callback.message.chat.id),
+        username: from?.username ?? from?.first_name ?? null,
+        source: inferSourceFromText(text),
+        autonomyLevel: null,
+        region: null,
+        limit: null,
+      }
+    }
+
     const from = update.data.message?.from
+    const text = update.data.message?.text ?? ""
     return {
-      text: update.data.message?.text ?? "",
+      text,
       chatId: update.data.message?.chat?.id === undefined ? null : String(update.data.message.chat.id),
       username: from?.username ?? from?.first_name ?? null,
-      source: "telegram",
+      source: inferSourceFromText(text),
       autonomyLevel: null,
       region: null,
       limit: null,
@@ -109,6 +189,7 @@ export async function POST(req: NextRequest) {
     console.error("[sales-agent-telegram] invalid JSON body:", error)
     return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 })
   }
+  const callbackId = TelegramUpdateSchema.safeParse(body).data?.callback_query?.id ?? null
 
   const command = extractCommand(body)
   if (!command.text.trim()) {
@@ -124,6 +205,12 @@ export async function POST(req: NextRequest) {
     region: command.region,
     limit: command.limit,
   })
+
+  if (telegramToken != null) {
+    await answerTelegramCallback(callbackId)
+    const telegramReply = await sendTelegramReply(command.chatId, result.reply)
+    return NextResponse.json({ ...result, telegramReply }, { status: result.ok ? 200 : 207 })
+  }
 
   return NextResponse.json(result, { status: result.ok ? 200 : 207 })
 }

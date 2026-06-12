@@ -568,3 +568,9 @@ node scripts/verify-db-tables.mjs
 - `node scripts/supabase-health-check.mjs` — 接続・プロジェクト状態チェック
 - `node scripts/verify-db-tables.mjs` — 全テーブル実在チェック
 - 結果は `docs/knowledge/db-health-log.md` に追記（存在しない場合は新規作成）
+## ACTIVE HANDOFF - 2026-06-12 Telegram agent menu repair
+
+- Issue: Telegram menu selections such as OpenCode / Hermes Agent were not usable because the webhook only handled `message.text`; Telegram menu taps arrive as `callback_query.data`, and source-specific agent selection was not handled as a completed action.
+- Fix in progress: `src/app/api/sales/agent/telegram-command/route.ts` now extracts `callback_query`, infers `source` from callback/text values such as `agent:opencode` and `agent:hermes`, answers callback queries, and sends a Telegram reply. `src/lib/sales/agent-team.ts` now records OpenCode/Hermes/OpenClaw/Paperclip menu selections as concrete selected-agent results instead of a dead menu tap.
+- Verification: `npm test -- --run src/lib/sales/agent-team.test.ts` passed. `npx tsc --noEmit --pretty false` still fails only on existing `astro-demo/src/keystatic/demo-data.ts` issues (`description` missing and `demo-data-legacy` missing).
+- Memory/global sync: add Codex memory note that `@aiparadigmbot` menu callbacks must stay wired to Sales OS `source` routing and OpenCode legacy bridge.

@@ -14,6 +14,7 @@ import {
   type SalesAgentSource,
   type SalesAgentCommandInput,
   type SalesAgentCommandResult,
+  type SalesAgentRole,
   type DashboardAgentCommand,
   type DashboardAgentTeam,
   AGENT_ROLES,
@@ -74,6 +75,64 @@ export function classifyAgentCommand(text: string): SalesAgentIntent {
 
 function wantsLiveOutreach(text: string): boolean {
   return /(実送信|本送信|live\s*send|dry\s*run\s*false|dryrun\s*false|承認なし|大量送信)/i.test(text)
+}
+
+function agentRoleForSource(source: SalesAgentSource): SalesAgentRole["id"] {
+  if (source === "hermes_agent") return "ceo_hermes"
+  if (source === "opencode") return "opencode_engineer"
+  if (source === "openclaw") return "openclaw_researcher"
+  if (source === "paperclip") return "paperclip_operator"
+  return "ceo_hermes"
+}
+
+function isAgentMenuSelection(text: string, source: SalesAgentSource): boolean {
+  if (source === "telegram" || source === "dashboard" || source === "trigger_dev") return false
+  const normalized = text.toLowerCase().replace(/[^a-z0-9]+/g, "")
+  return [
+    "hermes",
+    "agenthermes",
+    "hermesagent",
+    "agenthermesagent",
+    "ceohermes",
+    "agentceohermes",
+    "opencode",
+    "agentopencode",
+    "opencodeengineer",
+    "agentopencodeengineer",
+    "openclaw",
+    "agentopenclaw",
+    "openclawresearcher",
+    "agentopenclawresearcher",
+    "paperclip",
+    "agentpaperclip",
+    "paperclipoperator",
+    "agentpaperclipoperator",
+  ].includes(normalized)
+}
+
+function agentMenuSummary(source: SalesAgentSource): { summary: string; result: JsonRecord } {
+  if (source === "opencode") {
+    return {
+      summary: "OpenCode Engineerを選択しました。コード修正、テスト、デプロイ準備、原因調査の指示をそのまま送ってください。",
+      result: { selectedAgent: "opencode_engineer", accepts: ["code_fix", "tests", "deploy_preparation", "debugging"] },
+    }
+  }
+  if (source === "hermes_agent") {
+    return {
+      summary: "CEO Hermes Agentを選択しました。営業方針、優先度、承認要否、次アクション整理の指示をそのまま送ってください。",
+      result: { selectedAgent: "ceo_hermes", accepts: ["strategy", "prioritization", "approval_review", "next_actions"] },
+    }
+  }
+  if (source === "openclaw") {
+    return {
+      summary: "OpenClaw Researcherを選択しました。企業調査、証拠収集、ソース確認の指示をそのまま送ってください。",
+      result: { selectedAgent: "openclaw_researcher", accepts: ["research", "evidence", "source_verification"] },
+    }
+  }
+  return {
+    summary: "Paperclip Operatorを選択しました。ジョブ管理、通知、手動キュー整理の指示をそのまま送ってください。",
+    result: { selectedAgent: "paperclip_operator", accepts: ["job_ops", "notifications", "manual_queue"] },
+  }
 }
 
 async function insertCommand(
@@ -246,6 +305,33 @@ export async function handleAgentCommand(input: SalesAgentCommandInput): Promise
   })
 
   try {
+    if (isAgentMenuSelection(commandText, source)) {
+      const selected = agentMenuSummary(source)
+      await logAgentEvent(sb, {
+        commandId,
+        agentRole: agentRoleForSource(source),
+        eventType: "agent_selected",
+        status: "success",
+        title: selected.summary,
+        payload: selected.result,
+      })
+      await updateCommand(sb, commandId, {
+        status: "completed",
+        runSummary: selected.summary,
+        resultPayload: selected.result,
+      })
+      return {
+        ok: true,
+        commandId,
+        intent,
+        status: "completed",
+        approvalRequired: false,
+        summary: selected.summary,
+        reply: replyFor({ intent, summary: selected.summary, approvalRequired: false, status: "completed" }),
+        result: selected.result,
+      }
+    }
+
     if (liveBlocked) {
       const queue = await enqueueManualReview(sb, {
         reason: "Telegramからライブ送信/大量送信の指示が来たため承認待ちにしました。",
