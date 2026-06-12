@@ -3,13 +3,24 @@
 import { Link } from "@/i18n/routing"
 import { useTranslations } from "next-intl"
 import { motion, useScroll, useTransform } from "framer-motion"
-import { useRef } from "react"
+import { useRef, useEffect, useState } from "react"
 import { ArrowRight } from "lucide-react"
 import { useTypingEffect } from "./useTypingEffect"
 import { NumberTicker } from "@/components/magicui/number-ticker"
 import { Sparkles } from "@/components/magicui/sparkles"
 import { Meteors } from "@/components/magicui/meteors"
 import { ParadigmButton } from "@/components/paradigm-ui"
+
+function useIsMobile() {
+  const [mobile, setMobile] = useState(true)
+  useEffect(() => {
+    const check = () => setMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener("resize", check)
+    return () => window.removeEventListener("resize", check)
+  }, [])
+  return mobile
+}
 
 const EASE = [0.22, 1, 0.36, 1] as const
 
@@ -23,9 +34,12 @@ const STAT_DEFS = [
 export default function HeroSection() {
   const t = useTranslations("home")
   const heroRef = useRef<HTMLDivElement>(null)
+  const isMobile = useIsMobile()
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] })
   const heroParallaxY = useTransform(scrollYProgress, [0, 1], [0, 120])
   const heroOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0])
+  const parallaxY = isMobile ? 0 : heroParallaxY
+  const opacity = isMobile ? 1 : heroOpacity
 
   const typingWords = (t.raw("heroTypingWords") as string[]) ?? []
   const typingText = useTypingEffect(typingWords, 90, 1800)
@@ -35,7 +49,7 @@ export default function HeroSection() {
       ref={heroRef}
       className="relative min-h-[80vh] sm:min-h-[90vh] flex items-center bg-paradigm-ink overflow-hidden"
     >
-      <motion.div style={{ y: heroParallaxY }} className="absolute inset-0 z-0">
+      <motion.div style={{ y: parallaxY }} className="absolute inset-0 z-0">
         <div className="absolute inset-0 paradigm-mesh-vivid opacity-90" />
         {/* Animated gradient orbs — cinematic without video dependency */}
         <div className="absolute top-[15%] left-[10%] w-[50vw] h-[50vw] max-w-[800px] max-h-[800px] rounded-full bg-gradient-to-br from-violet-500/20 via-fuchsia-500/15 to-transparent blur-[100px] animate-[blobFloat_18s_ease-in-out_infinite]" />
@@ -50,7 +64,7 @@ export default function HeroSection() {
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-12 pt-32 pb-20">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
-          <motion.div style={{ opacity: heroOpacity }}
+          <motion.div style={{ opacity }}
             initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.9, ease: EASE }}>
 

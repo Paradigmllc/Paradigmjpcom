@@ -19,7 +19,7 @@ export default async function MaintenanceScreen({ locale, message }: Props) {
   const t = await getTranslations({ locale, namespace: "maintenancePage" })
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-paradigm-paper">
+    <div className="min-h-dvh flex items-center justify-center bg-paradigm-paper">
       <div className="paradigm-mesh opacity-30 absolute inset-0" />
       <div className="relative z-10 max-w-xl mx-auto px-6 md:px-8 text-center">
         <p className="paradigm-eyebrow text-paradigm-accent mb-4">{t("eyebrow")}</p>

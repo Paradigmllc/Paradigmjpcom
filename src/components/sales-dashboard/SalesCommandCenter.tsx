@@ -182,7 +182,7 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
   }
 
   return (
-    <main className="min-h-screen bg-[#fafafa] font-sans text-zinc-950 selection:bg-violet-100">
+    <main className="min-h-dvh bg-[#fafafa] font-sans text-zinc-950 selection:bg-violet-100">
       <Toaster richColors position="top-center" />
 
       <div className="sticky top-0 z-50 flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-2.5 lg:hidden">
@@ -232,8 +232,8 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
         </div>
       )}
 
-      <div className="mx-auto grid min-h-screen w-full max-w-[1720px] gap-0 border-x border-zinc-100 bg-white shadow-[0_0_40px_rgba(0,0,0,0.03)] lg:grid-cols-[280px_minmax(0,1fr)]">
-        <aside className="relative z-20 hidden min-h-screen border-r border-zinc-100 bg-white/80 backdrop-blur-xl lg:block">
+      <div className="mx-auto grid min-h-dvh w-full max-w-[1720px] gap-0 border-x border-zinc-100 bg-white shadow-[0_0_40px_rgba(0,0,0,0.03)] lg:grid-cols-[280px_minmax(0,1fr)]">
+        <aside className="relative z-20 hidden min-h-dvh border-r border-zinc-100 bg-white/80 backdrop-blur-xl lg:block">
           <div className="sticky top-0 flex h-screen flex-col">
             <div className="relative px-6 py-8">
               <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-zinc-200 to-transparent" />

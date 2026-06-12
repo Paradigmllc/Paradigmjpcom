@@ -1,8 +1,6 @@
-import { callDeepSeek } from "@/lib/deepseek"
 import { findCompanyByDomain, findCompanyById, findCompanyBySlug } from "./companies"
 import { matchContentTemplate } from "./content-templates"
 import { fetchDiagnosticReport, type DiagnosticReportData } from "./diagnostic"
-import { escapeHtml, themeForIndustry } from "./render-quality"
 import { normalizeReportLocale } from "./routing"
 import { localeToRegion } from "./types"
 import { getR2StorageConfig, sanitizeR2ObjectName } from "./r2-storage"
@@ -13,167 +11,30 @@ import os from "node:os"
 import path from "node:path"
 import crypto from "node:crypto"
 
-const CORRUPT_TEXT = /縺|繝|譁|蜑|荳|譛|谿|險|螟|豕|邨|髻|蠕|蝠|逕|莠|陦|蛻|諡|蜷|繧|�/
-
-const NARRATION_SYSTEM_PROMPT = `You are Paradigm's executive sales video director.
-
-Create a concise 60-second diagnostic sales video narration.
-Rules:
-- Use only provided report evidence. Never invent unavailable data.
-- Tone is calm, executive, specific, and helpful.
-- Structure: hook, pain, fear, hope, cta.
-- Each field must be one sentence.
-- Return JSON only:
-{
-  "hook": "...",
-  "pain": "...",
-  "fear": "...",
-  "hope": "...",
-  "cta": "..."
-}`
-
-export interface NarrationScript {
-  hook: string
-  pain: string
-  fear: string
-  hope: string
-  cta: string
-}
-
-function cleanText(value: string | null | undefined, fallback: string, max = 150): string {
-  const text = (value ?? "").replace(/\s+/g, " ").trim()
-  if (!text || CORRUPT_TEXT.test(text)) return fallback
-  return text.length > max ? `${text.slice(0, max - 1)}...` : text
-}
-
-export function fallbackScript(data: DiagnosticReportData): NarrationScript {
-  const isJa = data.report_locale === "ja"
-  const safeCompanyName = cleanText(data.company_name, isJa ? "対象企業" : "the target company", 60)
-  if (isJa) {
-    return {
-      hook: cleanText(
-        data.hook,
-        `${safeCompanyName}の公開データから、改善優先度と機会損失の仮説を60秒で整理します。`,
-      ),
-      pain: cleanText(
-        data.acts[0]?.body,
-        "検索、SNS、フォーム、表示速度などの公開シグナルから、比較検討中の顧客が迷いやすい箇所を特定しました。",
-      ),
-      fear: cleanText(
-        data.acts[1]?.body,
-        "このまま放置すると、小さな摩擦が毎月の機会損失として見えないまま積み上がります。",
-      ),
-      hope: `推定機会損失 ${data.total_loss} の一部は、信頼材料と問い合わせ導線を整えることで回収できる可能性があります。`,
-      cta: `${safeCompanyName}向けの診断レポートと改善デモを見ながら、次に直すべき優先順位を確認しましょう。`,
-    }
-  }
-
-  return {
-    hook: cleanText(
-      data.hook,
-      `This brief turns public data for ${safeCompanyName} into a practical opportunity-loss view.`,
-    ),
-    pain: cleanText(
-      data.acts[0]?.body,
-      "Search, social, form, and stack signals show where comparison-stage buyers may hesitate.",
-    ),
-    fear: cleanText(
-      data.acts[1]?.body,
-      "If this remains unchanged, the opportunity loss keeps compounding quietly.",
-    ),
-    hope: `Part of the estimated ${data.total_loss} opportunity loss may be recoverable through clearer proof and a shorter CTA path.`,
-    cta: "Review the diagnostic report and replacement demo to decide the next priorities in a short call.",
-  }
-
-  return {
-    hook: cleanText(
-      data.hook,
-      isJa
-        ? `${data.company_name}の公開データから、問い合わせ前に改善できる機会損失を可視化します。`
-        : `This brief turns public data for ${data.company_name} into a practical opportunity-loss view.`,
-    ),
-    pain: cleanText(
-      data.acts[0]?.body,
-      isJa
-        ? "検索、SNS、フォーム導線、技術スタックのシグナルから、比較中の顧客が迷うポイントを特定しました。"
-        : "Search, social, form, and stack signals show where comparison-stage buyers may hesitate.",
-    ),
-    fear: cleanText(
-      data.acts[1]?.body,
-      isJa
-        ? "このまま放置すると、毎月の機会損失が見えないまま積み上がります。"
-        : "If this remains unchanged, the opportunity loss keeps compounding quietly.",
-    ),
-    hope: isJa
-      ? `推定機会損失 ${data.total_loss} の一部は、信頼材料と問い合わせ導線の改善で回収できる可能性があります。`
-      : `Part of the estimated ${data.total_loss} opportunity loss may be recoverable through clearer proof and a shorter CTA path.`,
-    cta: isJa
-      ? `${data.company_name}向けの診断レポートと改善デモを見ながら、優先順位を30分で確認しましょう。`
-      : `Review the diagnostic report and replacement demo to decide the next priorities in a short call.`,
-  }
-}
-
-function isNarrationScript(value: unknown): value is NarrationScript {
-  if (!value || typeof value !== "object") return false
-  const record = value as Record<string, unknown>
-  return ["hook", "pain", "fear", "hope", "cta"].every((key) => typeof record[key] === "string")
-}
-
-export async function generateNarrationScript(
-  data: DiagnosticReportData,
-): Promise<{ ok: boolean; script?: NarrationScript; error?: string }> {
-  const userPrompt = JSON.stringify(
-    {
-      company: data.company_name,
-      locale: data.report_locale,
-      industry: data.industry,
-      hook: data.hook,
-      total_loss: data.total_loss,
-      report_url: data.report_url,
-      demo_url: data.demo_url,
-      source_coverage: data.source_coverage.score,
-      acts: data.acts.map((act) => ({
-        headline: act.headline,
-        body: act.body,
-        metric: `${act.metric_label}: ${act.metric_value}${act.metric_unit}`,
-        benchmark: act.metric_bench,
-        severity: act.severity,
-      })),
-    },
-    null,
-    2,
-  )
-
-  const res = await callDeepSeek(
-    [
-      { role: "system", content: NARRATION_SYSTEM_PROMPT },
-      { role: "user", content: userPrompt },
-    ],
-    { temperature: 0.35, maxTokens: 900, responseFormat: "json_object" },
-  )
-
-  if (!res.ok || !res.text) {
-    return { ok: true, script: fallbackScript(data), error: res.error ?? "DeepSeek empty response; fallback used" }
-  }
-
-  try {
-    const parsed = JSON.parse(res.text) as unknown
-    if (!isNarrationScript(parsed)) {
-      return { ok: true, script: fallbackScript(data), error: "Incomplete narration JSON shape; fallback used" }
-    }
-    return { ok: true, script: parsed }
-  } catch (error) {
-    return {
-      ok: true,
-      script: fallbackScript(data),
-      error: `JSON parse failed; fallback used: ${error instanceof Error ? error.message : String(error)}`,
-    }
-  }
-}
-
 import { buildVariantVideoHtml } from "./video-templates"
-
 import { DB_TABLES } from "@/lib/sales/db-tables"
+
+import { type NarrationScript, generateNarrationScript, fallbackScript } from "./video-narration"
+
+// Re-export narration for backwards compat
+export type { NarrationScript } from "./video-narration"
+export { generateNarrationScript, fallbackScript } from "./video-narration"
+
+// Re-export ComfyUI types and functions for backwards compat
+export type {
+  ComfyuiGenerationResult,
+  ProfessionalVideoResult,
+  ProfessionalVideoOptions,
+} from "./video-comfyui"
+export {
+  generateComfyUIBackground,
+  generateComfyUIAvatar,
+  generateComfyUIBroll,
+  generateComfyUIThumbnail,
+  generateComfyUIVideo,
+  generateProfessionalVideo,
+} from "./video-comfyui"
+
 export function buildHyperFramesHtml(data: DiagnosticReportData, script: NarrationScript): string {
   return buildVariantVideoHtml(data, script)
 }
@@ -373,148 +234,5 @@ export async function generateDiagnosticVideo(
     video_url: previewUrl ?? undefined,
     ...baseResult,
     error: localResult.error ?? "Video render unavailable; HTML preview returned",
-  }
-}
-
-// ───── ComfyUI & Professional Video helper types and functions ─────
-
-import {
-  generateComfyuiPrompt,
-  getComfyuiClientConfig,
-  runComfyuiGeneration,
-  type ComfyuiWorkflowType,
-} from "./comfyui-client"
-import {
-  estimateWorkflowDuration,
-  getComfyuiWorkflowTemplate,
-  injectComfyuiWorkflowPrompt,
-} from "./comfyui-workflows"
-
-export interface ComfyuiGenerationResult {
-  ok: boolean
-  outputs: Array<{ filename: string; url: string; type: string }>
-  prompt?: string
-  negativePrompt?: string
-  promptId?: string
-  durationMs?: number
-  error?: string
-}
-
-export interface ProfessionalVideoResult {
-  ok: boolean
-  comfyui: {
-    background?: ComfyuiGenerationResult
-    avatar?: ComfyuiGenerationResult
-    broll?: ComfyuiGenerationResult
-    thumbnail?: ComfyuiGenerationResult
-    video?: ComfyuiGenerationResult
-  }
-  diagnostic?: VideoGenerationResult
-  error?: string
-}
-
-export interface ProfessionalVideoOptions {
-  companyIdOrSlugOrDomain: string
-  locale?: string
-  generateBackground?: boolean
-  generateAvatar?: boolean
-  generateBroll?: boolean
-  generateThumbnail?: boolean
-  generateVideo?: boolean
-}
-
-type ComfyGenerationParams = {
-  companyName: string
-  industry: string
-  locale: string
-  description: string
-  promptOverride?: string | null
-  negativePromptOverride?: string | null
-}
-
-async function runComfyAssetGeneration(
-  workflowType: ComfyuiWorkflowType,
-  params: ComfyGenerationParams,
-): Promise<ComfyuiGenerationResult> {
-  const config = getComfyuiClientConfig()
-  if (!config.ready) {
-    return { ok: false, error: "ComfyUI is not configured", outputs: [] }
-  }
-
-  const template = getComfyuiWorkflowTemplate(workflowType)
-  if (!template) {
-    return { ok: false, error: `ComfyUI workflow template not found: ${workflowType}`, outputs: [] }
-  }
-
-  const promptResult = params.promptOverride
-    ? { ok: true, prompt: params.promptOverride, negativePrompt: params.negativePromptOverride ?? undefined }
-    : await generateComfyuiPrompt({
-        workflowType,
-        companyName: params.companyName,
-        industry: params.industry,
-        locale: params.locale,
-        description: params.description,
-      })
-
-  if (!promptResult.ok || !promptResult.prompt) {
-    return { ok: false, error: promptResult.error ?? "ComfyUI prompt generation failed", outputs: [] }
-  }
-
-  const workflowJson = injectComfyuiWorkflowPrompt(template, {
-    prompt: promptResult.prompt,
-    negativePrompt: promptResult.negativePrompt ?? params.negativePromptOverride ?? undefined,
-  })
-  const result = await runComfyuiGeneration({
-    workflowType,
-    workflowJson,
-    prompt: {
-      company_name: params.companyName,
-      industry: params.industry,
-      locale: params.locale,
-      description: params.description,
-      positive_prompt: promptResult.prompt,
-      negative_prompt: promptResult.negativePrompt ?? null,
-    },
-    pollIntervalMs: 3_000,
-    maxPollTimeMs: Math.max(90_000, (estimateWorkflowDuration(workflowType) + 90) * 1000),
-  })
-
-  return {
-    ok: result.ok,
-    outputs: result.outputs,
-    prompt: promptResult.prompt,
-    negativePrompt: promptResult.negativePrompt,
-    promptId: result.promptId,
-    durationMs: result.durationMs,
-    error: result.error,
-  }
-}
-
-export async function generateComfyUIBackground(params: ComfyGenerationParams): Promise<ComfyuiGenerationResult> {
-  return runComfyAssetGeneration("background_generation", params)
-}
-
-export async function generateComfyUIAvatar(params: ComfyGenerationParams): Promise<ComfyuiGenerationResult> {
-  return runComfyAssetGeneration("avatar_generation", params)
-}
-
-export async function generateComfyUIBroll(params: ComfyGenerationParams): Promise<ComfyuiGenerationResult> {
-  return runComfyAssetGeneration("broll_generation", params)
-}
-
-export async function generateComfyUIThumbnail(params: ComfyGenerationParams): Promise<ComfyuiGenerationResult> {
-  return runComfyAssetGeneration("thumbnail_generation", params)
-}
-
-export async function generateComfyUIVideo(params: ComfyGenerationParams): Promise<ComfyuiGenerationResult> {
-  return runComfyAssetGeneration("video_generation", params)
-}
-
-export async function generateProfessionalVideo(
-  options: ProfessionalVideoOptions
-): Promise<ProfessionalVideoResult> {
-  return {
-    ok: true,
-    comfyui: {}
   }
 }

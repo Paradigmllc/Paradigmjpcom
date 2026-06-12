@@ -123,7 +123,7 @@ export function buildDemoHtml(company: SalesCompany, report: DiagnosticReportDat
 </style>
 </head>
 <body class="bg-[#050510] text-white antialiased">
-<div class="relative min-h-screen overflow-hidden">
+<div class="relative min-h-dvh overflow-hidden">
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
 

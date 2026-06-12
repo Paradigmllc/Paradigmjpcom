@@ -1,4 +1,49 @@
-## ACTIVE HANDOFF — 2026-06-11 恒久的再発防止策 完了
+## ACTIVE HANDOFF — 2026-06-12 500行超過 + Safariガード全修正 完了
+
+### 修正サマリー: 品質ガード 7ERROR → 0ERROR
+
+### 🔴 即時修正 — 7ファイル500行超過 (Rule #7 違反、デプロイ不可)
+
+| ファイル | Before | After | 分割方法 |
+|----------|--------|-------|---------|
+| `agent-team.ts` | 517行 | 409行 | → `agent-team-types.ts` (型定義/定数 155行) |
+| `enrichment-jobs.ts` | 535行 | 226行 | → `enrichment-jobs-runner.ts` (実行エンジン) |
+| `external-studio-sync.ts` | 564行 | 105行 | → `core.ts` (183行) + `directus.ts` (162行) + `keystatic.ts` (94行) |
+| `video-generator.ts` | 521行 | 214行 | → `video-narration.ts` (121行) + `video-comfyui.ts` (125行) |
+| `video-orchestrator.ts` | 506行 | 276行 | → `video-orchestrator-types.ts` (165行) |
+| `video-pipeline.ts` | 541行 | 340行 | → `video-pipeline-types.ts` (196行) |
+| `video-templates.ts` | 506行 | 300行 | → `video-template-css.ts` (70行) + `video-template-script.ts` (109行) |
+
+### 🟠 モバイルSafariガード修正 (3ファイル)
+
+| ファイル | 変更 |
+|----------|------|
+| `MaintenanceScreen.tsx` | `min-h-screen` → `min-h-dvh` (Rule #16) |
+| `SalesCommandCenter.tsx` | `min-h-screen` → `min-h-dvh` ×3箇所 (Rule #16) |
+| `demo-generator.ts` | テンプレートHTML内 `min-h-screen` → `min-h-dvh` (Rule #16) |
+| `HeroSection.tsx` | `useScroll` + `useTransform` に `useIsMobile()` ガード追加 (Rule #17)。モバイル時は static values (y=0, opacity=1) |
+
+### 🔧 偽陽性確認
+
+- `DifyChatbot.tsx` `/d/` 除外: 既存コードで正しく `/^\/[a-z]{2}\/d\//` パス名チェック済み。品質ガードの単純文字列マッチ `/\/d\//source` が regex-escapedな `\/d\/`を検出できず偽陽性。
+- `layout.tsx` / `admin/sales/page.tsx` の `min-h-screen`: いずれも該当文字列なし（品質ガード偽陽性）
+
+### 新規ファイル (11件)
+
+`agent-team-types.ts`, `enrichment-jobs-runner.ts`, `external-studio-{core,directus,keystatic}.ts`, `video-{narration,comfyui,orchestrator-types,pipeline-types,template-css,template-script}.ts`
+
+### `video-trigger.ts` import 修正
+
+`SalesVideoJob` を `./video-pipeline` → `./video-pipeline-types` に変更（循環依存防止）
+
+### 検証
+
+- `npx tsc --noEmit`: 変更由来 0 エラー (既存 astro-demo 2件のみ)
+- `node scripts/paradigm-quality-guard.mjs`: **0 errors / 49 warnings**（↓ from 7 errors）
+- `git status --short`: untracked 新規ファイル 11件は意図的な分割ファイル
+- `npm run quality:guard` pass
+
+---
 
 ### 自動ガードスクリプト `scripts/paradigm-quality-guard.mjs`
 デプロイ前に自動実行されるゼロ依存チェック:

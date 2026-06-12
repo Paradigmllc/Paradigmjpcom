@@ -1,5 +1,5 @@
 import { getDifyCloudRuntimeConfig } from "./dify-cloud"
-import type { SalesVideoJob } from "./video-pipeline"
+import type { SalesVideoJob } from "./video-pipeline-types"
 
 function optionalEnv(name: string): string | null {
   const value = process.env[name]
