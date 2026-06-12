@@ -7,6 +7,33 @@ export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 export const maxDuration = 300
 
+function safeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let diff = 0
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  }
+  return diff === 0
+}
+
+function verifyTelegramWebhook(req: NextRequest): NextResponse | null {
+  const secret = process.env.TELEGRAM_WEBHOOK_SECRET
+  if (!secret) {
+    return NextResponse.json(
+      { ok: false, error: "TELEGRAM_WEBHOOK_SECRET not configured" },
+      { status: 503 },
+    )
+  }
+  const received = req.headers.get("x-telegram-bot-api-secret-token") ?? ""
+  if (!safeCompare(received, secret)) {
+    return NextResponse.json(
+      { ok: false, error: "Invalid Telegram webhook secret" },
+      { status: 401 },
+    )
+  }
+  return null
+}
+
 const DirectCommandSchema = z.object({
   text: z.string().optional(),
   message: z.string().optional(),
@@ -69,7 +96,10 @@ function extractCommand(body: unknown): {
 }
 
 export async function POST(req: NextRequest) {
-  const authErr = verifyWebhookSecret(req)
+  const telegramToken = req.headers.get("x-telegram-bot-api-secret-token")
+  const authErr = telegramToken != null
+    ? verifyTelegramWebhook(req)
+    : verifyWebhookSecret(req)
   if (authErr) return authErr
 
   let body: unknown
