@@ -24,7 +24,6 @@ function getPool(): Pool | null {
 async function executeSql(sql: string): Promise<{ ok: boolean; error?: string }> {
   const p = getPool()
   if (!p) return { ok: false, error: "DATABASE_URI not configured" }
-
   try {
     await p.query(sql)
     return { ok: true }
@@ -71,11 +70,30 @@ export async function POST(req: NextRequest) {
       results.push(`${colNames[i]} column: ${r.ok ? "ensured" : `FAILED: ${r.error}`}`)
     })
 
-    // Step 2: Reload PostgREST schema cache
-    const notifyRes = await executeSql(`NOTIFY pgrst, 'reload schema'`)
-    results.push(`NOTIFY pgrst: ${notifyRes.ok ? "sent" : notifyRes.error}`)
+    // Step 2: Create reload_schema function if not exists
+    const createFuncSql = `
+      CREATE OR REPLACE FUNCTION public.reload_schema()
+      RETURNS void
+      LANGUAGE plpgsql
+      SECURITY DEFINER
+      AS $$
+      BEGIN
+        NOTIFY pgrst, 'reload schema';
+      END;
+      $$;
+    `
+    const funcRes = await executeSql(createFuncSql)
+    results.push(`reload_schema function: ${funcRes.ok ? "created" : funcRes.error}`)
 
-    // Step 3: Verify after fix (with delay for PostgREST refresh)
+    // Step 3: Call reload_schema via RPC to refresh PostgREST cache
+    try {
+      const { error: rpcErr } = await sb.rpc("reload_schema", {})
+      results.push(`reload_schema RPC: ${rpcErr ? rpcErr.message : "SUCCESS"}`)
+    } catch (e) {
+      results.push(`reload_schema RPC error: ${e instanceof Error ? e.message : String(e)}`)
+    }
+
+    // Step 4: Verify after fix (with delay for PostgREST refresh)
     await new Promise((r) => setTimeout(r, 3000))
 
     const { data: after, error: afterErr } = await sb
