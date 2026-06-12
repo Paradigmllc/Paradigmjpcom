@@ -1,3 +1,40 @@
+## ACTIVE HANDOFF — 2026-06-12 壁打ち診断: データパイプライン全修正
+
+### 修正概要 (9ファイル)
+
+| # | ファイル | 変更内容 |
+|---|---------|---------|
+| 1 | `dify-diagnosis.ts:189` | **バグ修正**: Dify Cloud API URLに `/v1` 欠落 → `workflows/run` → `v1/workflows/run` |
+| 2 | `enrichment-jobs-runner.ts:230-239` | デモサイト・動画生成を `template_variant === "website_diagnostic"` のみに限定。他バリアント(outreach/japan_entry等)ではスキップ |
+| 3 | `monthly-batch.ts:368` | Trigger.dev不在時のインラインフォールバック追加。`triggerEnrichmentRunner` 失敗時に `runEnrichmentJobs(1)` を直接実行 |
+| 4 | `enrich.ts:118-190` | **エンリッチエンジン刷新**: (a) `timedTask()` でソース別タイムアウト制御追加 (b) 成功/失敗/タイムアウト/スキップのメトリクス収集 (c) Stagehand(Chromium実ブラウザ)を `STAGEHAND_ENABLED=true` 時のみ有効化 (d) `meta.sales_os.source_quality` に品質メトリクス保存 |
+| 5 | `company-karte.ts:33-63,+2fields` | `CompanyKarteSnapshot` に `personalizedHook` / `personalizedCTA` フィールド追加 |
+| 6 | `twenty-sync-companies.ts:36-55` | TwentyカルテサマリーにパーソナライズHook/CTAを追加。`syncCustomerHandoffToTwenty` の疑似カルテにも新フィールド追加 |
+| 7 | `SearxngSearchPanel.tsx` | **新規作成**: SearXNG 検索GUIパネル。検索フォーム(クエリ/エンジン選択/ページ数/期間) + 過去実行一覧(アコーディオン) + インポートボタン |
+| 8 | `SalesCommandCenter.tsx` | SearxngSearchPanel を「リスト収集」タブとして追加。Search アイコン追加 |
+
+### 効果
+
+| 項目 | Before | After |
+|------|--------|-------|
+| Dify診断 | URLバグで常時HTTPエラー → ジョブ失敗 | `/v1/workflows/run` で正常稼働 |
+| デモ生成 | 全variantで無駄に生成 | website_diagnosticのみ |
+| Trigger.dev不在 | エンリッチジョブがqueueに滞留 | 先頭1件をインライン実行 |
+| Stagehand | 常時Chromium起動(1件30秒+メモリ) | デフォルト無効、envフラグで制御 |
+| エンリッチ品質 | 可視化なし | ソース別 success/fail/timeout/skip 集計 |
+| パーソナライズ文面 | Twenty未連携 | Hook+CTAをTwentyカルテに同期 |
+| SearXNG操作 | API直叩きのみ | GUIパネルで検索〜インポート完結 |
+
+### 検証
+- `npx tsc --noEmit`: 変更ファイル 0 エラー (astro-demo既存2件のみ)
+
+### 残存リスク
+- Stagehand は `STAGEHAND_ENABLED=true` で明示的に有効化が必要。本番では env に設定すること
+- インラインフォールバックは1件のみ処理。大量ジョブ滞留時はTrigger.dev起動が必要
+- Dify Cloud APIキーは `DIFY_API_KEY` のみ設定済み。専用キー(`DIFY_DIAGNOSIS_API_KEY`等)は未設定だがフォールバックチェーンで動作
+
+---
+
 ## ACTIVE HANDOFF — 2026-06-12 500行超過 + Safariガード全修正 完了
 
 ### 修正サマリー: 品質ガード 7ERROR → 0ERROR

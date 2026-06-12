@@ -59,6 +59,8 @@ export interface CompanyKarteSnapshot {
   recommendedProducts: CompanyProductRecommendation[]
   diagnosisSummary: string | null
   recommendedOffer: string | null
+  personalizedHook: string | null
+  personalizedCTA: string | null
   generatedAt: string
 }
 
@@ -198,6 +200,7 @@ export function buildCompanyKarte(
   const counts = coverageCounts(sourceItems)
   const formUrl = firstString(meta, [["contact_form_url"], ["form_discovery", "form_url"], ["discovery", "contact_form_url"]])
   const diagnosis = asRecord(meta.pain_diagnosis)
+  const personalizedCopy = asRecord(meta.personalized_copy)
 
   return {
     companyId: company.id,
@@ -240,6 +243,8 @@ export function buildCompanyKarte(
     recommendedProducts,
     diagnosisSummary: typeof diagnosis?.primaryPain === "string" ? diagnosis.primaryPain : null,
     recommendedOffer: typeof diagnosis?.recommendedOffer === "string" ? diagnosis.recommendedOffer : null,
+    personalizedHook: typeof personalizedCopy?.personalized_hook === "string" ? personalizedCopy.personalized_hook : null,
+    personalizedCTA: typeof personalizedCopy?.personalized_cta === "string" ? personalizedCopy.personalized_cta : null,
     generatedAt: new Date().toISOString(),
     ...counts,
   }

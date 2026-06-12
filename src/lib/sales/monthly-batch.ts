@@ -365,7 +365,18 @@ export async function createLeadBatch(input: {
       error_message: failures.length > 0 ? `${failures.length} rows need review` : null,
     })
     .eq("id", batch.id)
-  if (jobs > 0) await triggerEnrichmentRunner(Math.min(jobs, 5))
+  if (jobs > 0) {
+    const triggered = await triggerEnrichmentRunner(Math.min(jobs, 5))
+    if (!triggered.ok) {
+      console.warn("[monthly-batch] Trigger.dev unavailable, running first enrichment job inline")
+      try {
+        const { runEnrichmentJobs } = await import("./enrichment-jobs-runner")
+        await runEnrichmentJobs(1)
+      } catch (e) {
+        console.error("[monthly-batch] inline enrichment fallback failed:", e)
+      }
+    }
+  }
 
   const listed = await listLeadBatches(scope, 1)
   return { ok: true, batch: listed.batches[0], failures: failures.slice(0, 20) }

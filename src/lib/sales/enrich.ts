@@ -40,6 +40,18 @@ import { autoPersonalize } from "./personalize"
 import { saveTechStackDetections } from "./source-acquisition"
 import type { Industry, SalesCompany } from "./types"
 
+function envFlag(name: string): boolean {
+  const value = process.env[name]
+  return value === "true" || value === "1"
+}
+
+interface SourceMetrics {
+  success: number
+  failed: number
+  timeout: number
+  skipped: number
+}
+
 async function batchAll(tasks: (() => Promise<unknown>)[], limit = 6): Promise<unknown[]> {
   const results: unknown[] = new Array(tasks.length)
   for (let i = 0; i < tasks.length; i += limit) {
@@ -48,6 +60,34 @@ async function batchAll(tasks: (() => Promise<unknown>)[], limit = 6): Promise<u
     for (let j = 0; j < batchResults.length; j++) results[i + j] = batchResults[j]
   }
   return results
+}
+
+async function timedTask<R>(
+  name: string,
+  fn: () => Promise<R>,
+  timeoutMs: number,
+  fallback: R,
+  metrics: Record<string, SourceMetrics>,
+): Promise<R> {
+  if (!metrics[name]) metrics[name] = { success: 0, failed: 0, timeout: 0, skipped: 0 }
+  try {
+    const result = await Promise.race([
+      fn(),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("TIMEOUT")), timeoutMs)),
+    ])
+    metrics[name].success++
+    return result
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    if (msg === "TIMEOUT") {
+      metrics[name].timeout++
+      console.warn(`[enrich] ${name} timed out after ${timeoutMs}ms`)
+    } else {
+      metrics[name].failed++
+      console.error(`[enrich] ${name} failed:`, msg)
+    }
+    return fallback
+  }
 }
 
 const PERSONAL_DOMAINS = new Set([
@@ -115,45 +155,73 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     })
   }
 
-  // Step 2: 23-source parallel enrich with concurrency limit (6 at a time)
+  // Step 2: enrich with concurrency limit (6 at a time)
+  // Stagehand (in-process Chromium) is heavy — only enable via STAGEHAND_ENABLED=true
   const url = domain.startsWith("http") ? domain : `https://${domain}`
-  const tasks = [
-    () => scanDomain(domain).catch(e => { console.error("[enrich] scan failed:", e); return null }),
-    () => searchByName(companyName, 1).catch(e => { console.error("[enrich] gBizInfo failed:", e); return [] }),
-    () => detectTechStack(url).catch(e => { console.error("[enrich] wappalyzer failed:", e); return { tech: [], server: null } }),
-    () => checkSslGrade(domain).catch(e => { console.error("[enrich] ssllabs failed:", e); return null }),
-    () => getWhois(domain).catch(e => { console.error("[enrich] whois failed:", e); return null }),
-    () => discoverFormUrl({ homeUrl: domain }).catch(e => { console.error("[enrich] form-discovery failed:", e); return null }),
-    () => searchCrtsh(domain).catch(e => { console.error("[enrich] crt.sh failed:", e); return null }),
-    () => queryCloudflareRadar(domain).catch(e => { console.error("[enrich] cloudflare-radar failed:", e); return null }),
-    () => scanMozillaObservatory(domain).catch(e => { console.error("[enrich] observatory failed:", e); return null }),
-    () => queryDnsRecords(domain).catch(e => { console.error("[enrich] dns failed:", e); return null }),
-    () => checkHstsPreload(domain).catch(e => { console.error("[enrich] hsts failed:", e); return null }),
-    () => queryWaybackMachine(domain).catch(e => { console.error("[enrich] wayback failed:", e); return null }),
-    () => queryTrancoRank(domain).catch(e => { console.error("[enrich] tranco failed:", e); return null }),
-    () => checkEmailReputation(domain).catch(e => { console.error("[enrich] emailrep failed:", e); return null }),
-    () => searchOpenCorporates(domain).catch(e => { console.error("[enrich] opencorp failed:", e); return null }),
-    () => searchGitHubOrg(domain).catch(e => { console.error("[enrich] github failed:", e); return null }),
-    () => queryCommonCrawl(domain).catch(e => { console.error("[enrich] commoncrawl failed:", e); return null }),
-    () => enrichDomainWithSpiderFoot(domain).catch(e => { console.error("[enrich] spiderfoot failed:", e); return null }),
-    () => crawlWithKatana(url).catch(e => { console.error("[enrich] katana failed:", e); return null }),
-    () => searchMaigretForDomain(domain).catch(e => { console.error("[enrich] maigret failed:", e); return null }),
-    () => extractSiteData(url).catch(e => { console.error("[enrich] stagehand extract failed:", e); return null }),
-    () => discoverForms(url).catch(e => { console.error("[enrich] stagehand forms failed:", e); return null }),
-    () => scrapeWithSteel(url).catch(e => { console.error("[enrich] steel.dev scrape failed:", e); return null }),
-    () => estimateTrafficViaSearx(domain, companyName ?? undefined).catch(e => { console.error("[enrich] searxng failed:", e); return null }),
+  const metrics: Record<string, SourceMetrics> = {}
+  const stagehandEnabled = envFlag("STAGEHAND_ENABLED")
+  const DEFAULT_TIMEOUT = 25_000
+
+  type TaskEntry = { name: string; fn: () => Promise<unknown> }
+  const taskDefs: TaskEntry[] = [
+    { name: "scan", fn: () => scanDomain(domain) },
+    { name: "gbizinfo", fn: () => searchByName(companyName, 1) },
+    { name: "wappalyzer", fn: () => detectTechStack(url) },
+    { name: "ssllabs", fn: () => checkSslGrade(domain) },
+    { name: "whois", fn: () => getWhois(domain) },
+    { name: "form_discovery", fn: () => discoverFormUrl({ homeUrl: domain }) },
+    { name: "crtsh", fn: () => searchCrtsh(domain) },
+    { name: "cloudflare_radar", fn: () => queryCloudflareRadar(domain) },
+    { name: "mozilla_observatory", fn: () => scanMozillaObservatory(domain) },
+    { name: "dns", fn: () => queryDnsRecords(domain) },
+    { name: "hsts", fn: () => checkHstsPreload(domain) },
+    { name: "wayback", fn: () => queryWaybackMachine(domain) },
+    { name: "tranco", fn: () => queryTrancoRank(domain) },
+    { name: "emailrep", fn: () => checkEmailReputation(domain) },
+    { name: "opencorp", fn: () => searchOpenCorporates(domain) },
+    { name: "github", fn: () => searchGitHubOrg(domain) },
+    { name: "commoncrawl", fn: () => queryCommonCrawl(domain) },
+    { name: "spiderfoot", fn: () => enrichDomainWithSpiderFoot(domain) },
+    { name: "katana", fn: () => crawlWithKatana(url) },
+    { name: "maigret", fn: () => searchMaigretForDomain(domain) },
+    { name: "searxng_traffic", fn: () => estimateTrafficViaSearx(domain, companyName ?? undefined) },
+    ...(stagehandEnabled ? [
+      { name: "stagehand_extract", fn: () => extractSiteData(url) },
+      { name: "stagehand_forms", fn: () => discoverForms(url) },
+    ] : [
+      { name: "stagehand_extract", fn: () => Promise.resolve(null) },
+      { name: "stagehand_forms", fn: () => Promise.resolve(null) },
+    ]),
+    { name: "steel", fn: () => scrapeWithSteel(url) },
   ]
 
-  const [scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts, wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana, maigret, stagehandSite, stagehandForms, steel, searxng] = await batchAll(tasks) as any[]
+  const sources = await batchAll(
+    taskDefs.map((def) => () =>
+      timedTask(def.name, def.fn, DEFAULT_TIMEOUT, null, metrics).catch(() => null)
+    ),
+  )
+  const sourceMap = Object.fromEntries(taskDefs.map((def, i) => [def.name, sources[i]]))
+  const skippedStagehand = !stagehandEnabled
+
+  const [
+    scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts,
+    wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana,
+    maigret, searxng,
+    stagehandSite, stagehandForms, steel,
+  ] = sources as any[]
 
   // Step 3: 集約
   const gbizFirst = gbiz?.[0]
+  const allSourceResults = [scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts, wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana, maigret, searxng, steel, ...(stagehandEnabled ? [stagehandSite, stagehandForms] : [])]
   const meta: Record<string, unknown> = {
     sales_os: {
       last_enriched_at: new Date().toISOString(),
       enriched_via: input.source ?? "contact_form",
-      sources_collected: [scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts, wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana, maigret, stagehandSite, stagehandForms, steel, searxng]
-        .filter(s => s != null && (Array.isArray(s) ? s.length > 0 : true)).length,
+      sources_collected: allSourceResults.filter(s => s != null && (Array.isArray(s) ? s.length > 0 : true)).length,
+      source_quality: {
+        ...metrics,
+        stagehand_skipped: skippedStagehand,
+      },
     },
     contact: { original_email: input.email, services: input.services ?? [], received_at: new Date().toISOString() },
     scan: scan ? {
@@ -182,7 +250,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     katana: katana?.ok ? { crawled: katana.data?.crawled, urls: katana.data?.urls?.slice(0, 20) } : null,
     maigret: maigret?.ok ? { profiles: maigret.data?.profiles_found, sites: maigret.data?.sites?.slice(0, 10) } : null,
     searxng_traffic: searxng?.ok ? searxng.data : null,
-    stagehand: stagehandSite?.ok || stagehandForms?.ok ? { site: stagehandSite?.ok ? stagehandSite.data : null, forms: stagehandForms?.ok ? stagehandForms.data : null } : null,
+    stagehand: !skippedStagehand && (stagehandSite?.ok || stagehandForms?.ok) ? { site: stagehandSite?.ok ? stagehandSite.data : null, forms: stagehandForms?.ok ? stagehandForms.data : null } : null,
     steel: steel?.ok ? { title: steel.data?.title, text: steel.data?.text?.slice(0, 2000), links_count: steel.data?.links?.length } : null,
     market_data: industry ? (INDUSTRY_MARKET_DATA[industry as keyof typeof INDUSTRY_MARKET_DATA] ?? null) : null,
     smb_signals: tech && dns?.ok ? await collectSmbSignals(domain, tech.tech.map((t: { name: string }) => t.name), dns.mxRecords).catch(() => null) : null,

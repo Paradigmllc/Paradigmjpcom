@@ -227,6 +227,7 @@ export async function processJob(sb: ServiceSupabase, job: SalesEnrichmentJob): 
 
   if (!save.ok || !save.company) return { ok: false, error: save.error ?? "company save failed" }
 
+  const isWebProduction = save.company.template_variant === "website_diagnostic"
   const report = await fetchDiagnosticReport({
     companyId: save.company.id,
     region: save.company.region,
@@ -234,9 +235,8 @@ export async function processJob(sb: ServiceSupabase, job: SalesEnrichmentJob): 
     targetCountry: save.company.target_country ?? undefined,
     templateVariant: save.company.template_variant ?? undefined,
   })
-  const demo = report ? await generateReplacementDemo(save.company, report) : { ok: false, demoUrl: null }
-  // Fire-and-forget: generate video in background (don't block enrichment)
-  const videoPromise = report ? generateDiagnosticVideo(save.company.id, save.company.report_locale).catch(() => null) : Promise.resolve(null)
+  const demo = (report && isWebProduction) ? await generateReplacementDemo(save.company, report) : { ok: false, demoUrl: null }
+  const videoPromise = (report && isWebProduction) ? generateDiagnosticVideo(save.company.id, save.company.report_locale).catch(() => null) : Promise.resolve(null)
   const finalMeta = demo.ok && demo.demoUrl
     ? {
         ...(save.company.meta ?? {}),

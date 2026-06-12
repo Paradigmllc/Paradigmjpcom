@@ -186,7 +186,7 @@ export async function runDifyDiagnosis(company: SalesCompany): Promise<DifyDiagn
 
   try {
     const systemPrompt = await getAiPrompt("dify_diagnosis_system")
-    const res = await fetch(`${credential.baseUrl}/workflows/run`, {
+    const res = await fetch(`${credential.baseUrl}/v1/workflows/run`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${credential.apiKey}`,

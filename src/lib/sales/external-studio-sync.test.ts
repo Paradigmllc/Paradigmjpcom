@@ -49,6 +49,8 @@ describe("buildExternalStudioPayload", () => {
       ],
       diagnosisSummary: "Japan entry readiness is incomplete.",
       recommendedOffer: "Japan Entry Package",
+      personalizedHook: null,
+      personalizedCTA: null,
       generatedAt: "2026-06-05T00:00:00.000Z",
     }
 

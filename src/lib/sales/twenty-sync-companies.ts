@@ -45,7 +45,9 @@ function karteHomeSummary(karte: CompanyKarteSnapshot): string {
     `主な痛み: ${karte.diagnosisSummary ?? "Dify診断待ち"}`,
     `推奨提案: ${karte.recommendedOffer ?? (products || "商材判定待ち")}`,
     `推奨商材: ${products || "未判定"}`,
-  ].join("\n")
+    karte.personalizedHook ? `パーソナライズHook: ${karte.personalizedHook}` : null,
+    karte.personalizedCTA ? `CTA: ${karte.personalizedCTA}` : null,
+  ].filter(Boolean).join("\n")
 }
 
 function customerHandoffSummary(input: TwentyCustomerHandoffInput): string {
@@ -164,6 +166,8 @@ export async function syncCustomerHandoffToTwenty(
     },
     diagnosisSummary: null,
     recommendedOffer: null,
+    personalizedHook: null,
+    personalizedCTA: null,
     recommendedProducts: [],
     generatedAt: new Date().toISOString(),
   }
