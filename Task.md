@@ -568,3 +568,10 @@ node scripts/verify-db-tables.mjs
 - `node scripts/supabase-health-check.mjs` — 接続・プロジェクト状態チェック
 - `node scripts/verify-db-tables.mjs` — 全テーブル実在チェック
 - 結果は `docs/knowledge/db-health-log.md` に追記（存在しない場合は新規作成）
+## ACTIVE HANDOFF - 2026-06-12 Telegram bot recovery
+
+- Issue: `@aiparadigmbot` webhook was reachable, but the route only returned JSON to Telegram and did not call `sendMessage`, so Telegram users saw no bot reply.
+- Fix: `src/app/api/sales/agent/telegram-command/route.ts` now sends `result.reply` back to the Telegram `chat.id` for real Telegram webhook calls, logs send failures, and supports optional `TELEGRAM_ALLOWED_USER_ID`.
+- Env: Coolify `paradigm-hp` already had `TELEGRAM_BOT_TOKEN` and `TELEGRAM_WEBHOOK_SECRET`; added `TELEGRAM_ALLOWED_USER_ID` for TOMOHIRO.
+- Verification before deploy: `npm test -- --run src/lib/sales/agent-team.test.ts` passed; `npm run quality:guard` passed with 0 errors / existing warnings; `npm run deploy:guard` passed.
+- Known unrelated risk: `npx tsc --noEmit --pretty false` still fails on existing `astro-demo/src/keystatic/demo-data.ts` issues (`description` missing and `demo-data-legacy` missing), not from this change.
