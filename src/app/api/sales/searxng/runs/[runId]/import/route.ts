@@ -32,6 +32,13 @@ export async function POST(
       // empty body is fine — use defaults
     }
 
+    // Normalize camelCase → snake_case (frontend sends camelCase JSON)
+    const raw = body as Record<string, unknown>
+    const limit = (raw.limit ?? null) as number | null | undefined
+    const minScore = (raw.minScore ?? raw.min_score ?? null) as number | null | undefined
+    const enrich = (raw.enrich ?? true) as boolean
+    const maxOutreachReady = (raw.maxOutreachReady ?? raw.max_outreach_ready ?? null) as number | null | undefined
+
     // ── Async import: guard against double-fire, set status, return 202 ──
     const sb = getServiceSalesSupabase()
 
@@ -60,10 +67,10 @@ export async function POST(
     // Fire background import (NOT awaited — runs after response is sent)
     importSearxngRunToLeadBatch({
       runId,
-      limit: body.limit,
-      minScore: body.min_score,
-      enrich: body.enrich,
-      maxOutreachReady: body.max_outreach_ready,
+      limit,
+      minScore,
+      enrich,
+      maxOutreachReady,
     })
       .then((result) => {
         if (result.ok) {
