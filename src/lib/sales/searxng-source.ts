@@ -118,7 +118,15 @@ const DEFAULT_CATEGORIES = ["general"]
 const SEARCH_TIMEOUT_MS = 18_000
 const SEARCH_RETRY_DELAY_MS = 2_000 // exponential backoff base
 const SEARCH_MAX_RETRIES = 2
+const PAGE_DELAY_MS = 800 // delay between pages to avoid CAPTCHA
 const USER_AGENT = "Paradigm Sales OS SearxNG/1.0 (+https://paradigmjp.com)"
+
+// Fallback public SearXNG instances when self-hosted is rate-limited
+const SEARXNG_FALLBACK_URLS = [
+  "https://search.sapti.me",
+  "https://searx.be",
+  "https://search.bus-hit.me",
+]
 
 const COUNTRY_TLD_MAP: Record<string, string> = {
   IN: "site:.in OR site:.co.in OR site:.org.in OR site:.net.in",
@@ -158,9 +166,10 @@ function requiredEnv(name: string): string {
   throw new Error(`${name} is not configured`)
 }
 
-async function fetchSearxngPage(url: string): Promise<JsonRecord> {
+async function fetchSearxngPage(url: string, baseUrlOverride?: string): Promise<JsonRecord> {
   const dispatcher = getProxyDispatcher()
-  const res = await fetch(url, {
+  const actualUrl = baseUrlOverride ? url.replace(getSearxngOrigin(requiredEnv("SEARXNG_BASE_URL")), baseUrlOverride) : url
+  const res = await fetch(actualUrl, {
     headers: {
       Accept: "application/json",
       "User-Agent": USER_AGENT,
@@ -318,8 +327,8 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
   const categories = cleanTokenList(input.categories, DEFAULT_CATEGORIES)
   const language = (input.language?.trim() || scope.reportLocale || "en").slice(0, 12)
   const safesearch = Math.max(0, Math.min(2, Math.round(input.safesearch ?? 1)))
-  // Max 50 pages ≁E1000 results (SearXNG defaults ~20 results/page)
-  const pages = Math.max(1, Math.min(50, Math.round(input.pages ?? 5)))
+  // Max 10 pages per request with delay to avoid CAPTCHA
+  const pages = Math.max(1, Math.min(10, Math.round(input.pages ?? 3)))
 
   const inserted = await sb
     .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
