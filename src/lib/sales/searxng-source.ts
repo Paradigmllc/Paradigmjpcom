@@ -12,6 +12,7 @@ import {
 } from "./searxng-normalize"
 import { getProxyDispatcher } from "./proxy-agent"
 import { validateSearchQuery, isRejectedDomain } from "./data-quality-guard"
+import { buildFootprintSearchQuery } from "./sources/cms-footprint-search"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
@@ -29,6 +30,7 @@ export interface SearxngSearchInput {
   safesearch?: number | null
   timeRange?: SearxngTimeRange | null
   pages?: number | null
+  techStacks?: string[] | null
 }
 
 export interface SearxngResultSummary {
@@ -302,9 +304,13 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
   if (!query) return { ok: false, error: "query is required" }
   const scope = salesScopeFromCountry({ reportLocale: input.reportLocale, targetCountry: input.targetCountry })
   // Append country TLD filter to restrict results geographically
-  // SearXNG engines don't reliably geo-filter by language/country params alone
-  const countryTld = COUNTRY_TLD_MAP[scope.targetCountry]
-  const geoQuery = countryTld ? `${query} ${countryTld}` : query
+  // If tech stacks are specified, use CMS footprint queries for precision
+  const techStacks = input.techStacks?.filter(t => t.length > 0) ?? []
+  const countryTld = COUNTRY_TLD_MAP[scope.targetCountry] ?? ""
+  const footprintQuery = techStacks.length > 0 ? buildFootprintSearchQuery(scope.targetCountry, techStacks, 3) : null
+  const enhancedQuery = footprintQuery 
+    ? `${query} (${footprintQuery})`
+    : countryTld ? `${query} ${countryTld}` : query
   const baseUrl = requiredEnv("SEARXNG_BASE_URL")
   const engines = cleanTokenList(input.engines)
   const categories = cleanTokenList(input.categories, DEFAULT_CATEGORIES)
@@ -343,7 +349,7 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
 
   for (let page = 1; page <= pages; page++) {
     const url = buildSearxngSearchUrl(baseUrl, {
-      query: geoQuery,
+      query: enhancedQuery,
       engines,
       categories,
       language,

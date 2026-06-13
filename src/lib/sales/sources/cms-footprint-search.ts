@@ -1,0 +1,138 @@
+/**
+ * CMS footprint search query builder.
+ * Uses CMS-specific HTML fingerprints + city names for precise SMB discovery.
+ * "Powered by Shopify" Mumbai → finds actual Shopify stores, not Shopify docs.
+ */
+
+const CMS_FOOTPRINTS: Record<string, string[]> = {
+  Shopify: [
+    '"Powered by Shopify"',
+    '"Shopify theme"',
+    'myshopify.com',
+  ],
+  WordPress: [
+    '"Powered by WordPress"',
+    '"wp-content"',
+    '"Proudly powered by WordPress"',
+  ],
+  Wix: [
+    '"Made with Wix"',
+    '"Built with Wix"',
+    'wixstatic.com',
+    '"Wix.com"',
+  ],
+  Webflow: [
+    '"Made in Webflow"',
+    '"Powered by Webflow"',
+    'webflow.io',
+  ],
+  WooCommerce: [
+    '"WooCommerce"',
+    '"woocommerce"',
+  ],
+  Magento: [
+    '"Magento"',
+    '"Powered by Magento"',
+  ],
+  Squarespace: [
+    '"Powered by Squarespace"',
+    '"Squarespace"',
+  ],
+  "Google Analytics": [],
+}
+
+const CITY_MAP: Record<string, string[]> = {
+  IN: [
+    "Mumbai", "Delhi", "Bangalore", "Chennai", "Hyderabad",
+    "Kolkata", "Pune", "Ahmedabad", "Jaipur", "Surat",
+    "Lucknow", "Nagpur", "Indore", "Thane", "Bhopal",
+    "Visakhapatnam", "Chandigarh", "Coimbatore", "Kochi", "Vadodara",
+  ],
+  VN: ["Hanoi", "Ho Chi Minh", "Da Nang", "Hai Phong", "Nha Trang"],
+  JP: ["Tokyo", "Osaka", "Nagoya", "Fukuoka", "Sapporo", "Kyoto", "Yokohama", "Kobe", "Sendai", "Hiroshima"],
+  US: [
+    "New York", "Los Angeles", "Chicago", "Houston", "Phoenix",
+    "San Francisco", "Seattle", "Miami", "Atlanta", "Boston",
+    "Dallas", "Denver", "Portland", "Austin", "San Diego",
+  ],
+  GB: ["London", "Manchester", "Birmingham", "Leeds", "Glasgow", "Liverpool", "Bristol", "Edinburgh"],
+  DE: ["Berlin", "Munich", "Hamburg", "Frankfurt", "Cologne", "Stuttgart", "Dusseldorf"],
+  FR: ["Paris", "Marseille", "Lyon", "Toulouse", "Nice", "Bordeaux", "Lille"],
+  KR: ["Seoul", "Busan", "Incheon", "Daegu", "Daejeon", "Gwangju"],
+  TW: ["Taipei", "Taichung", "Kaohsiung", "Tainan", "Hsinchu"],
+  TH: ["Bangkok", "Chiang Mai", "Phuket", "Pattaya", "Khon Kaen"],
+  ID: ["Jakarta", "Surabaya", "Bandung", "Medan", "Semarang", "Yogyakarta"],
+  SG: ["Singapore"],
+  AU: ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide", "Gold Coast"],
+}
+
+function pickCities(countryCode: string, count: number): string[] {
+  const cities = CITY_MAP[countryCode] ?? []
+  if (cities.length === 0) return []
+  // Pick evenly distributed cities
+  const step = Math.max(1, Math.floor(cities.length / count))
+  const picked: string[] = []
+  for (let i = 0; i < cities.length && picked.length < count; i += step) {
+    picked.push(cities[i])
+  }
+  return picked
+}
+
+export interface FootprintQuery {
+  query: string
+  cms: string
+  city: string
+}
+
+export function buildFootprintQueries(
+  countryCode: string,
+  techStacks: string[],
+  citiesPerTech = 5,
+): FootprintQuery[] {
+  const cities = pickCities(countryCode, citiesPerTech)
+  if (cities.length === 0) return []
+
+  const queries: FootprintQuery[] = []
+
+  for (const tech of techStacks) {
+    const footprints = CMS_FOOTPRINTS[tech]
+    if (!footprints || footprints.length === 0) {
+      // No specific footprint - use city + generic business signal
+      for (const city of cities) {
+        queries.push({
+          query: `${city} ${tech} business contact`,
+          cms: tech,
+          city,
+        })
+      }
+      continue
+    }
+
+    const fp = footprints[0] // Use primary footprint
+    for (const city of cities) {
+      queries.push({
+        query: `${fp} ${city}`,
+        cms: tech,
+        city,
+      })
+    }
+  }
+
+  return queries
+}
+
+/**
+ * Build a bulk search query string for SearXNG.
+ * Combines multiple footprint+city pairs into one query using OR.
+ */
+export function buildFootprintSearchQuery(
+  countryCode: string,
+  techStacks: string[],
+  maxQueries = 3,
+): string | null {
+  const all = buildFootprintQueries(countryCode, techStacks, 2)
+  if (all.length === 0) return null
+
+  // Take first N and OR them together
+  return all.slice(0, maxQueries).map(q => q.query).join(" OR ")
+}

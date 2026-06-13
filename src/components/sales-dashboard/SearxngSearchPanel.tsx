@@ -99,6 +99,7 @@ export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
           language: targetCountry === "JP" ? "ja" : "en",
           target_country: targetCountry,
           report_locale: data.scope.reportLocale,
+          tech_stacks: techStacks.length > 0 ? techStacks : null,
         }),
       })
       const searchResult = await searchRes.json() as { ok: boolean; run?: SearxngRunSummary; error?: string }
@@ -337,7 +338,7 @@ export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
 
           {/* Row 3: Tech Stack */}
           <div>
-            <label className="mb-1 block text-xs font-semibold text-zinc-600">技術スタック（指定すると検索キーワードに追加）</label>
+            <label className="mb-1 block text-xs font-semibold text-zinc-600">技術スタック（CMS痕跡で高精度検索。選択すると検索クエリにCMS固有フットプリントを追加）</label>
             <div className="flex flex-wrap gap-1.5">
               {TECH_STACKS.map((tech) => (
                 <button

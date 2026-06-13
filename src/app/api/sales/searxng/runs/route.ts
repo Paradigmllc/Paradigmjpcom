@@ -17,6 +17,7 @@ interface CreateBody {
   safesearch?: number | null
   time_range?: SearxngTimeRange | null
   pages?: number | null
+  tech_stacks?: string[] | string | null
 }
 
 function tokenList(value: string[] | string | null | undefined): string[] | null {
@@ -80,8 +81,9 @@ export async function POST(req: NextRequest) {
       categories: tokenList(body.categories),
       language: body.language,
       safesearch: body.safesearch,
-      timeRange: isTimeRange(timeRange) ? timeRange : null,
+      timeRange: isTimeRange(body.time_range) ? body.time_range : null,
       pages: body.pages,
+      techStacks: tokenList(body.tech_stacks),
     })
     return NextResponse.json(result, { status: result.ok ? 200 : 503 })
   } catch (error) {
