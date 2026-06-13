@@ -23,6 +23,7 @@ export type LeadBatchItemStatus =
   | "duplicate"
   | "enrichment_queued"
   | "enriched"
+  | "enriched_inline"
   | "qualified"
   | "rejected"
   | "outreach_ready"
@@ -347,7 +348,27 @@ export async function createLeadBatch(input: {
         jobs++
         status = "enrichment_queued"
       } else {
-        failures.push({ row: i, reason: queued.error ?? "enrichment enqueue failed" })
+        // Enrichment queue failed — run lightweight enrichment inline
+        try {
+          const { detectTechStack } = await import("./sources/wappalyzer")
+          const url = cleanDomain.startsWith("http") ? cleanDomain : `https://${cleanDomain}`
+          const techResult = await detectTechStack(url).catch(() => ({ tech: [], server: null }))
+          const { isEnterpriseTechStack } = await import("./sources/enterprise-filter")
+          const enterpriseCheck = isEnterpriseTechStack(techResult.tech.map((t: { name: string }) => t.name))
+          await sb.from(DB_TABLES.SALES_COMPANIES).update({
+            pipeline_status: enterpriseCheck.isEnterprise ? "pending" : "report_ready",
+            meta: {
+              tech: { stack: techResult.tech, server: techResult.server, count: techResult.tech.length },
+              sales_os: { last_enriched_at: new Date().toISOString(), enriched_via: "inline_import" },
+              enterprise_filter: enterpriseCheck.isEnterprise ? { excluded: true, matched_tech: enterpriseCheck.matched } : null,
+              ...(saved.company.meta as Record<string, unknown> || {}),
+            },
+          }).eq("id", saved.company.id)
+          status = "enriched_inline"
+          console.log(`[monthly-batch] inline enrichment completed for ${cleanDomain}`)
+        } catch (inlineErr) {
+          console.error(`[monthly-batch] inline enrichment failed for ${cleanDomain}:`, inlineErr)
+        }
       }
     }
     await sb.from(DB_TABLES.SALES_LEAD_BATCH_ITEMS).insert({
