@@ -175,11 +175,7 @@ function resultFromRow(row: JsonRecord, query: string, seen: Set<string>): Norma
 
 export function normalizeSearxngResults(rows: JsonRecord[], query: string): NormalizedSearxngCandidate[] {
   const seen = new Set<string>()
-  const results = rows
+  return rows
     .map((row) => resultFromRow(row, query, seen))
     .filter((item): item is NormalizedSearxngCandidate => item !== null)
-  if (rows.length > 0 && results.length === 0) {
-    console.error("[searxng-normalize] All results filtered out!", { total: rows.length, firstUrl: String(rows[0]?.url ?? "MISSING"), firstKeys: Object.keys(rows[0] || {}).join(",") })
-  }
-  return results
 }

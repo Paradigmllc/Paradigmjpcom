@@ -5,7 +5,7 @@ import { listSearxngRuns, runSearxngSearch, type SearxngTimeRange } from "@/lib/
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
-export const maxDuration = 120
+export const maxDuration = 300
 
 interface CreateBody {
   query?: string

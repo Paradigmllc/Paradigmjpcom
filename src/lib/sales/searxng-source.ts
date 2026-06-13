@@ -349,8 +349,11 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
       // Fix 1: Save this page's results immediately (incremental persist)
       if (pageResults.length > 0) {
         const candidates = normalizeSearxngResults(pageResults, query)
-        const newDomains = candidates.filter((c) => !seenDomains.has(c.domain))
-        for (const c of newDomains) seenDomains.add(c.domain)
+        const newDomains = candidates.filter((c) => {
+          if (seenDomains.has(c.domain)) return false
+          seenDomains.add(c.domain)
+          return true
+        })
 
         if (newDomains.length > 0) {
           const { error: upsertError } = await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).upsert(
