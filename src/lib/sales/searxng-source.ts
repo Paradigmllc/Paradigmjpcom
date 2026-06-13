@@ -11,6 +11,7 @@ import {
   type SearxngTimeRange,
 } from "./searxng-normalize"
 import { getProxyDispatcher } from "./proxy-agent"
+import { validateSearchQuery, isRejectedDomain } from "./data-quality-guard"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
