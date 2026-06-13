@@ -1,7 +1,8 @@
 /**
- * CMS footprint search query builder.
- * Uses CMS-specific HTML fingerprints + city names for precise SMB discovery.
- * "Powered by Shopify" Mumbai → finds actual Shopify stores, not Shopify docs.
+ * CMS footprint + JS signature search query builder.
+ * Uses CMS-specific HTML fingerprints + JS code signatures + city names.
+ * "Powered by Shopify" Mumbai → actual Shopify stores, not Shopify docs.
+ * "js.stripe.com" Bangalore → Stripe-using businesses, not Stripe docs.
  */
 
 const CMS_FOOTPRINTS: Record<string, string[]> = {
@@ -25,6 +26,26 @@ const CMS_FOOTPRINTS: Record<string, string[]> = {
   "STORES.jp": ['"stores.jp"'],
   ColorMe: ['"shop-pro.jp"', '"カラーミーショップ"'],
   Welcart: ['"Welcart"', '"usces_item"'],
+}
+
+// JS code signatures — detect payment/analytics/marketing tools via their JS URLs
+// These find businesses USING the tool, not the tool's own documentation
+const JS_SIGNATURES: Record<string, string[]> = {
+  Stripe: ['"js.stripe.com"', '"stripe.com/v3"', '"billing.stripe.com"'],
+  Klarna: ['"klarna-core.js"', '"async-klarna"', '"klarnacdn.net"'],
+  PayPal: ['"paypal.com/sdk/js"', '"smart-payment-buttons"', '"paypalobjects.com"'],
+  GooglePay: ['"pay.google.com/gp/p/js/pay.js"'],
+  Shopify: ['"cdn.shopify.com"', '"shopify-payment-button"'],
+  "Google Analytics": ['"googletagmanager.com/gtag"', '"google-analytics.com/analytics.js"'],
+  GTM: ['"googletagmanager.com/gtm.js"'],
+  Klaviyo: ['"klaviyo.com/onsite"', '"a.klaviyo.com"'],
+  Hotjar: ['"hotjar.com"', '"static.hotjar.com"'],
+  Intercom: ['"intercom.io"', '"js.intercomcdn.com"'],
+  HubSpot: ['"js.hs-scripts.com"', '"js.hubspot.com"'],
+  Mailchimp: ['"mailchimp.com"', '"mc.us17.list-manage.com"'],
+  Calendly: ['"calendly.com/assets"'],
+  Typeform: ['"typeform.com"', '"embed.typeform.com"'],
+  Zendesk: ['"zendesk.com"', '"static.zdassets.com"'],
 }
 
 const CITY_MAP: Record<string, string[]> = {
@@ -81,9 +102,9 @@ export function buildFootprintQueries(
   const queries: FootprintQuery[] = []
 
   for (const tech of techStacks) {
-    const footprints = CMS_FOOTPRINTS[tech]
+    const footprints = CMS_FOOTPRINTS[tech] ?? JS_SIGNATURES[tech]
     if (!footprints || footprints.length === 0) {
-      // No specific footprint - use city + generic business signal
+      // No specific footprint — use city + generic business signal
       for (const city of cities) {
         queries.push({
           query: `${city} ${tech} business contact`,
@@ -94,7 +115,7 @@ export function buildFootprintQueries(
       continue
     }
 
-    const fp = footprints[0] // Use primary footprint
+    const fp = footprints[0]
     for (const city of cities) {
       queries.push({
         query: `${fp} ${city}`,
