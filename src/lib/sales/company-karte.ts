@@ -260,7 +260,7 @@ export async function fetchCompanyKarte(
 
   const sourceRes = await sb
     .from(DB_TABLES.SALES_SOURCE_RUNS)
-    .select("source_slug, category, status, score, details, measured_at")
+    .select("source_slug, category, status, score, details")
     .eq("company_id", companyId)
     .order("category", { ascending: true })
     .order("source_slug", { ascending: true })
