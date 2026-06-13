@@ -77,7 +77,6 @@ async function steelScrape(url: string): Promise<string | null> {
   }
 }
 
-const DOMAIN_RE = /https?:\/\/([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}/gi
 const BLOCKED_DOMAINS = new Set([
   "google.com", "youtube.com", "facebook.com", "instagram.com", "twitter.com", "x.com",
   "linkedin.com", "reddit.com", "wikipedia.org", "tiktok.com", "pinterest.com",
@@ -90,13 +89,15 @@ const BLOCKED_DOMAINS = new Set([
 
 function extractDomains(html: string): string[] {
   const domains = new Set<string>()
+  const re = /https?:\/\/([a-z0-9][-a-z0-9]*\.)+[a-z]{2,}/gi
   let match
-  DOMAIN_RE.lastIndex = 0
-  while ((match = DOMAIN_RE.exec(html)) !== null) {
-    const domain = match[1] ? `${match[1]}.${match[2]}` : match[0].replace(/^https?:\/\//, "").split("/")[0].toLowerCase()
-    if (domain && !BLOCKED_DOMAINS.has(domain) && !domain.includes("google") && domain.includes(".")) {
-      domains.add(domain)
-    }
+  while ((match = re.exec(html)) !== null) {
+    const raw = match[0].replace(/^https?:\/\//, "").split("/")[0].toLowerCase()
+    // Validate: no double dots, no Google properties
+    if (!raw || raw.includes("..") || /^(www\.)?google\./.test(raw) || raw.length < 5) continue
+    if (BLOCKED_DOMAINS.has(raw.replace(/^www\./, ""))) continue
+    if (raw.includes("google") || raw.includes("gstatic") || raw.includes("youtube")) continue
+    domains.add(raw.replace(/^www\./, ""))
   }
   return [...domains]
 }
