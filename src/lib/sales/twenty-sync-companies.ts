@@ -108,7 +108,7 @@ async function syncTwentyCompanyHomeFields(
       paradigmSalesMaterialUrl: linkField("営業資料URL", karte.salesMaterialUrl),
       paradigmDemoUrl: linkField("デモURL", karte.demoUrl),
       paradigmCustomerPortalUrl: linkField("顧客用Notion URL", karte.customerPortalUrl),
-      paradigmCountryName: countryLabel(karte.targetCountry),
+      paradigmCountryName: karte.targetCountry,
       paradigmRegionName: karte.regionName ?? "",
       paradigmIndustryName: industryLabel(karte.industry),
       paradigmSourceName: karte.sourceName ?? "",
