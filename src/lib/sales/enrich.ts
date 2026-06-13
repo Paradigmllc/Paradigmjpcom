@@ -278,7 +278,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     maigret: maigret?.ok ? { profiles: maigret.data?.profiles_found, sites: maigret.data?.sites?.slice(0, 10) } : null,
     searxng_traffic: searxng?.ok ? searxng.data : null,
     stagehand: !skippedStagehand && (stagehandSite?.ok || stagehandForms?.ok) ? { site: stagehandSite?.ok ? stagehandSite.data : null, forms: stagehandForms?.ok ? stagehandForms.data : null } : null,
-    steel: steel?.ok ? { title: steel.data?.title, text: steel.data?.text?.slice(0, 2000), links_count: steel.data?.links?.length } : null,
+    steel: steel?.ok ? { title: steel.data?.title, text: steel.data?.text?.slice(0, 2000), links_count: steel.data?.links?.length, screenshot: steel.data?.screenshot } : null,
     schema_org: schemaOrg?.ok && schemaOrg.data ? schemaOrg.data : null,
     sitemap: sitemap?.ok && sitemap.data ? sitemap.data : null,
     safe_browsing: safeBrowsing?.configured ? { safe: safeBrowsing.safe, threats: safeBrowsing.threats } : null,
