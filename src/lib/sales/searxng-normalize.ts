@@ -28,67 +28,17 @@ interface SearchUrlInput {
 }
 
 const BLOCKED_HOST_PARTS = [
-  // Search result pages (not the sites themselves)
-  "www.google.",
-  "www.bing.",
-  "search.yahoo.",
-  // Social media
-  "facebook.",
-  "instagram.",
-  "linkedin.",
-  "x.com",
-  "twitter.",
-  "tiktok.",
-  "snapchat.",
-  "pinterest.",
-  "reddit.",
-  "tumblr.",
-  "threads.",
-  // Video platforms
-  "youtube.",
-  "vimeo.",
-  "dailymotion.",
-  "twitch.",
-  "nicovideo.",
-  // Wikipedia / directories
-  "wikipedia.",
-  "wikimedia.",
-  "yelp.",
-  "tabelog.",
-  "hotpepper.",
-  "gurunavi.",
-  // Japanese blog / note platforms
-  "note.",
-  "ameblo.",
-  "ameba.",
-  "hatenablog.",
-  "hatena.ne.jp",
-  "fc2.",
-  "livedoor.",
-  "goo.ne.jp",
-  "blog.jp",
-  "blog.fc2",
-  // E-commerce marketplaces (not individual stores)
-  "amazon.",
-  "rakuten.co.jp",
-  "mercari.",
-  "paypaymall.",
-  // Job boards
-  "indeed.",
-  "linkedin.com/jobs",
-  "recruit.co.jp",
-  "en-japan.",
-  "baitoru.",
-  // News aggregators
-  "news.yahoo.",
-  "news.google.",
-  "prtimes.",
-  "valuepress.",
-  // Government / edu
-  ".gov.",
-  ".edu.",
-  ".ac.jp",
-  ".go.jp",
+  "www.google.", "www.bing.", "search.yahoo.",
+  "facebook.", "instagram.", "linkedin.", "x.com", "twitter.", "tiktok.", "snapchat.", "pinterest.", "reddit.", "tumblr.", "threads.",
+  "youtube.", "vimeo.", "dailymotion.", "twitch.", "nicovideo.",
+  "wikipedia.", "wikimedia.", "yelp.", "tabelog.", "hotpepper.", "gurunavi.",
+  "amazon.", "rakuten.co.jp", "mercari.", "paypaymall.", "ebay.", "alibaba.", "aliexpress.", "flipkart.", "shopee.", "lazada.",
+  "indeed.", "linkedin.com/jobs", "recruit.co.jp", "en-japan.", "baitoru.",
+  "news.yahoo.", "news.google.", "prtimes.", "valuepress.",
+  ".gov.", ".edu.", ".ac.jp", ".go.jp", ".nic.in", ".gov.in",
+  "note.", "ameblo.", "ameba.", "hatenablog.", "hatena.ne.jp", "fc2.", "livedoor.", "goo.ne.jp", "blog.jp", "blog.fc2",
+  "medium.com", "quora.com", "stackoverflow.", "stackexchange.", "github.com/", "gitlab.com/",
+  "justdial.com", "indiacom.com", "sulekha.com", "tradeindia.com", "indiamart.com", "exportersindia.com",
 ]
 
 function normalizeBaseUrl(raw: string): URL {
