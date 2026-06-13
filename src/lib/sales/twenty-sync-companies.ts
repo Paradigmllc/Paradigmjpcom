@@ -102,6 +102,7 @@ async function syncTwentyCompanyHomeFields(
   const result = await twentyFetch<any>(`/rest/companies/${twentyCompanyId}`, {
     method: "PATCH",
     body: JSON.stringify({
+      name: karte.companyName,
       paradigmReportUrl: linkField("診断レポートURL", karte.reportUrl),
       paradigmFormUrl: linkField("フォームURL", karte.formUrl),
       paradigmDemoUrl: linkField("デモURL", karte.demoUrl),
