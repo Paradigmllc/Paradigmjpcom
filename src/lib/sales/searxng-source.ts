@@ -131,6 +131,8 @@ const COUNTRY_TLD_MAP: Record<string, string> = {
   TW: "site:.tw OR site:.com.tw", TH: "site:.th OR site:.co.th",
   ID: "site:.id OR site:.co.id", SG: "site:.sg OR site:.com.sg",
   AU: "site:.au OR site:.com.au",
+  CH: "site:.ch",
+  IL: "site:.il OR site:.co.il",
 }
 
 interface FetchOptions extends RequestInit {
@@ -303,11 +305,11 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
   const query = input.query.trim()
   if (!query) return { ok: false, error: "query is required" }
   const scope = salesScopeFromCountry({ reportLocale: input.reportLocale, targetCountry: input.targetCountry })
-  // Append country TLD filter to restrict results geographically
-  // If tech stacks are specified, use CMS footprint queries for precision
+  // Use raw target_country for TLD/footprint queries (preserve user-specified country)
+  const rawCountry = (input.targetCountry?.trim().toUpperCase() || scope.targetCountry)
   const techStacks = input.techStacks?.filter(t => t.length > 0) ?? []
-  const countryTld = COUNTRY_TLD_MAP[scope.targetCountry] ?? ""
-  const footprintQuery = techStacks.length > 0 ? buildFootprintSearchQuery(scope.targetCountry, techStacks, 3) : null
+  const countryTld = COUNTRY_TLD_MAP[rawCountry] ?? ""
+  const footprintQuery = techStacks.length > 0 ? buildFootprintSearchQuery(rawCountry, techStacks, 3) : null
   const enhancedQuery = footprintQuery 
     ? `${query} (${footprintQuery})`
     : countryTld ? `${query} ${countryTld}` : query
@@ -316,7 +318,7 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
   const categories = cleanTokenList(input.categories, DEFAULT_CATEGORIES)
   const language = (input.language?.trim() || scope.reportLocale || "en").slice(0, 12)
   const safesearch = Math.max(0, Math.min(2, Math.round(input.safesearch ?? 1)))
-  // Max 50 pages ≈ 1000 results (SearXNG defaults ~20 results/page)
+  // Max 50 pages ≁E1000 results (SearXNG defaults ~20 results/page)
   const pages = Math.max(1, Math.min(50, Math.round(input.pages ?? 5)))
 
   const inserted = await sb
@@ -470,7 +472,7 @@ export async function importSearxngRunToLeadBatch(input: {
   if (runRes.error) return { ok: false, imported: 0, error: runRes.error.message }
   const run = runRes.data as SearxngRunRow
 
-  // ── Fix 6: Idempotency check — don't re-import already imported runs ──
+  // ── Fix 6: Idempotency check  Edon't re-import already imported runs ──
   if (run.status === "imported" && run.batch_id) {
     const scope = salesScopeFromCountry({ reportLocale: run.report_locale, targetCountry: run.target_country })
     const { listLeadBatches } = await import("./monthly-batch")
@@ -527,14 +529,14 @@ ${JSON.stringify(promptData, null, 2)}`
           }
         }
       } else {
-        // Fix 2: LLM unavailable → mark as pending_review (NOT rejected)
+        // Fix 2: LLM unavailable ↁEmark as pending_review (NOT rejected)
         console.warn(`[searxng-import] LLM unavailable for chunk after ${3} retries, marking as pending_review`)
         for (const r of chunk) {
           await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "pending_review", rejection_reason: "llm_unavailable" }).eq("id", r.id)
         }
       }
     } catch (e) {
-      // Fix 4: Proper error handling — no fire-and-forget
+      // Fix 4: Proper error handling  Eno fire-and-forget
       console.error("[searxng-import] LLM pre-filter error for chunk:", e)
       for (const r of chunk) {
         try {

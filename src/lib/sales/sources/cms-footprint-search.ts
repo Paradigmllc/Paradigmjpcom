@@ -1,12 +1,11 @@
 /**
  * CMS footprint + JS signature search query builder.
  * Uses CMS-specific HTML fingerprints + JS code signatures + city names.
- * "Powered by Shopify" Mumbai → actual Shopify stores, not Shopify docs.
- * "js.stripe.com" Bangalore → Stripe-using businesses, not Stripe docs.
+ * "Powered by Shopify" Mumbai ↁEactual Shopify stores, not Shopify docs.
+ * "js.stripe.com" Bangalore ↁEStripe-using businesses, not Stripe docs.
  */
 
 const CMS_FOOTPRINTS: Record<string, string[]> = {
-  Shopify: ['"Powered by Shopify"', '"Shopify theme"', "myshopify.com"],
   WordPress: ['"Powered by WordPress"', '"Proudly powered by WordPress"', "wp-content"],
   Wix: ['"Made with Wix"', '"Built with Wix"', "wixstatic.com"],
   Webflow: ['"Made in Webflow"', '"Powered by Webflow"', "webflow.io"],
@@ -24,18 +23,17 @@ const CMS_FOOTPRINTS: Record<string, string[]> = {
   MakeShop: ['"makeshop.jp"', '"MakeShop"'],
   "BASE (EC)": ['"thebase.in"', '"BASE株式会社"'],
   "STORES.jp": ['"stores.jp"'],
-  ColorMe: ['"shop-pro.jp"', '"カラーミーショップ"'],
+  ColorMe: ['"shop-pro.jp"', '"カラーミ�EショチE�E"'],
   Welcart: ['"Welcart"', '"usces_item"'],
 }
 
-// JS code signatures — detect payment/analytics/marketing tools via their JS URLs
+// JS code signatures  Edetect payment/analytics/marketing tools via their JS URLs
 // These find businesses USING the tool, not the tool's own documentation
 const JS_SIGNATURES: Record<string, string[]> = {
   Stripe: ['"js.stripe.com"', '"stripe.com/v3"', '"billing.stripe.com"'],
   Klarna: ['"klarna-core.js"', '"async-klarna"', '"klarnacdn.net"'],
   PayPal: ['"paypal.com/sdk/js"', '"smart-payment-buttons"', '"paypalobjects.com"'],
   GooglePay: ['"pay.google.com/gp/p/js/pay.js"'],
-  Shopify: ['"cdn.shopify.com"', '"shopify-payment-button"'],
   "Google Analytics": ['"googletagmanager.com/gtag"', '"google-analytics.com/analytics.js"'],
   GTM: ['"googletagmanager.com/gtm.js"'],
   Klaviyo: ['"klaviyo.com/onsite"', '"a.klaviyo.com"'],
@@ -67,10 +65,12 @@ const CITY_MAP: Record<string, string[]> = {
   FR: ["Paris", "Marseille", "Lyon", "Toulouse", "Nice", "Bordeaux", "Lille"],
   KR: ["Seoul", "Busan", "Incheon", "Daegu", "Daejeon", "Gwangju"],
   TW: ["Taipei", "Taichung", "Kaohsiung", "Tainan", "Hsinchu"],
-  TH: ["Bangkok", "Chiang Mai", "Phuket", "Pattaya", "Khon Kaen"],
+  TH: ["Bangkok", "Chiang Mai", "Phuket", "Pattaya", "Khon Kaen", "Krabi", "Hua Hin"],
   ID: ["Jakarta", "Surabaya", "Bandung", "Medan", "Semarang", "Yogyakarta"],
   SG: ["Singapore"],
   AU: ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide", "Gold Coast"],
+  CH: ["Zurich", "Geneva", "Basel", "Bern", "Lausanne", "Lucerne", "Winterthur"],
+  IL: ["Tel Aviv", "Jerusalem", "Haifa", "Petah Tikva", "Netanya", "Eilat", "Herzliya"],
 }
 
 function pickCities(countryCode: string, count: number): string[] {
@@ -104,7 +104,7 @@ export function buildFootprintQueries(
   for (const tech of techStacks) {
     const footprints = CMS_FOOTPRINTS[tech] ?? JS_SIGNATURES[tech]
     if (!footprints || footprints.length === 0) {
-      // No specific footprint — use city + generic business signal
+      // No specific footprint  Euse city + generic business signal
       for (const city of cities) {
         queries.push({
           query: `${city} ${tech} business contact`,
