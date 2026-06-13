@@ -236,6 +236,18 @@ Claude / Codex / Cline / Cursor など複数 AI エージェントで作業す�
 - データベース操作は PostgreSQL 直接接続（pooler）または REST API で実行する
 - デプロイは `npm run deploy:prod` で自動化
 - スキーマ変更が必要な場合はコードにマイグレーションとして組み込み、デプロイで自動適用する
+
+---
+
+## 🔴 永久保存ルール：プロキシ・Torを使わないSearXNG運用（Rule #25）
+
+> SearXNGの全エンジンはレート制限でブロックされる。TorはGoogleが出口ノードをブロックするため使えない。
+
+- **プロキシ・Tor・mubengは一切使用禁止**（全ての検索エンジンが阻止する）
+- **FlareSolverr + Steelブラウザを主力検索手段とする**（実ブラウザ＝CAPTCHA不可避）
+- SearXNGはWikipediaエンジン等の補完的役割に降格
+- `sources/browser-search.ts` がFlareSolverr経由のGoogle検索を担当
+- `sources/search-orchestrator.ts` がCMSフットプリント×都市×業種のクエリ生成＋バルク実行
 7. TypeScript `any` 多用禁止（3 箇所以上で即リファクタ）
 8. 1 ファイル 500 行超え禁止
 9. エラーのサイレント握りつぶし禁止（`catch {}` は存在してはならない）
