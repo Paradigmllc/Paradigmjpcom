@@ -463,9 +463,13 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
 }
 
 function companyNameFromResult(result: SearxngResultRow): string {
-  const title = result.title.replace(/\s+[|-].*$/, "").trim()
-  if (title.length >= 2) return title.slice(0, 120)
-  return result.domain.replace(/\.[^.]+$/, "")
+  // Use domain as company name — titles are often SEO spam
+  // Strip TLD and capitalize for a reasonable business name
+  const domain = result.domain.replace(/\.[^.]+$/, "") // remove TLD
+  const parts = domain.split(".")
+  const base = parts[parts.length - 1] // use the core domain part
+  if (base.length >= 2) return base.charAt(0).toUpperCase() + base.slice(1).replace(/[-_]/g, " ")
+  return result.domain
 }
 
 export async function importSearxngRunToLeadBatch(input: {

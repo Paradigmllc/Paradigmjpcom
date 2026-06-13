@@ -76,7 +76,7 @@ export async function runBrowserBulkSearch(input: BulkSearchInput): Promise<{
     try {
       const { error } = await sb.from(DB_TABLES.SALES_COMPANIES).upsert({
         domain: normalized,
-        company_name: normalized.replace(/\.[^.]+$/, ""),
+        company_name: normalized.replace(/\.[^.]+$/, "").split(".").pop()?.replace(/[-_]/g, " ") || normalized.replace(/\.[^.]+$/, ""),
         region: "global",
         report_locale: "en",
         target_country: input.countryCode,
