@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { verifyWebhookSecret } from "@/lib/sales/auth"
-import { handleAgentCommand } from "@/lib/sales/agent-team"
+import { handleAgentCommand, buildMainMenuKeyboard, type TelegramKeyboard } from "@/lib/sales/agent-team"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -75,7 +75,7 @@ function inferSourceFromText(text: string, fallback = "telegram"): string {
   return fallback
 }
 
-async function sendTelegramReply(chatId: string | null, text: string): Promise<{ ok: boolean; error?: string }> {
+async function sendTelegramReply(chatId: string | null, text: string, keyboard?: TelegramKeyboard): Promise<{ ok: boolean; error?: string }> {
   if (!chatId) return { ok: false, error: "Telegram chat id missing" }
   const token = process.env.TELEGRAM_BOT_TOKEN
   if (!token) {
@@ -83,14 +83,20 @@ async function sendTelegramReply(chatId: string | null, text: string): Promise<{
     return { ok: false, error: "TELEGRAM_BOT_TOKEN not configured" }
   }
 
+  const body: Record<string, unknown> = {
+    chat_id: chatId,
+    text: text.slice(0, 3900),
+    disable_web_page_preview: true,
+    parse_mode: "HTML",
+  }
+  if (keyboard) {
+    body.reply_markup = keyboard
+  }
+
   const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text: text.slice(0, 3900),
-      disable_web_page_preview: true,
-    }),
+    body: JSON.stringify(body),
   })
   const payload = await res.json().catch((error: unknown) => {
     console.error("[sales-agent-telegram] failed to parse sendMessage response:", error)
@@ -192,6 +198,13 @@ export async function POST(req: NextRequest) {
   const callbackId = TelegramUpdateSchema.safeParse(body).data?.callback_query?.id ?? null
 
   const command = extractCommand(body)
+  const isTelegram = telegramToken != null
+
+  if (!command.text.trim() && isTelegram) {
+    const keyboard = buildMainMenuKeyboard()
+    const reply = await sendTelegramReply(command.chatId, "📋 RevenueOS 営業指令メニュー\n操作したい内容をボタンまたはコマンドで選択してください。", keyboard)
+    return NextResponse.json({ ok: true, menu: true, telegramReply: reply })
+  }
   if (!command.text.trim()) {
     return NextResponse.json({ ok: false, error: "Command text is required" }, { status: 400 })
   }
@@ -206,9 +219,10 @@ export async function POST(req: NextRequest) {
     limit: command.limit,
   })
 
-  if (telegramToken != null) {
+  if (isTelegram) {
     await answerTelegramCallback(callbackId)
-    const telegramReply = await sendTelegramReply(command.chatId, result.reply)
+    const keyboard = (result.result as { keyboard?: TelegramKeyboard })?.keyboard ?? null
+    const telegramReply = await sendTelegramReply(command.chatId, result.reply, keyboard ?? undefined)
     return NextResponse.json({ ...result, telegramReply }, { status: result.ok ? 200 : 207 })
   }
 

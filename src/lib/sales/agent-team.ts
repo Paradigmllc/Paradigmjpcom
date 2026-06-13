@@ -17,6 +17,7 @@ import {
   type SalesAgentRole,
   type DashboardAgentCommand,
   type DashboardAgentTeam,
+  type TelegramKeyboard,
   AGENT_ROLES,
   AUTONOMY_LEVELS,
   GUARDRAILS,
@@ -34,6 +35,7 @@ export {
   type SalesAgentRole,
   type DashboardAgentCommand,
   type DashboardAgentTeam,
+  type TelegramKeyboard,
 } from "@/lib/sales/agent-team-types"
 
 type JsonRecord = Record<string, unknown>
@@ -69,6 +71,13 @@ export function classifyAgentCommand(text: string): SalesAgentIntent {
     return "prepare_assets"
   }
   if (/(twenty|crm|同期|sync|pull)/i.test(text)) return "sync_twenty"
+  if (/(メニュー|menu|start|開始|使い方|help)/i.test(text)) return "show_menu"
+  if (/(検索|search|探して|find|lookup)/i.test(text)) return "search_company"
+  if (/(詳細|details|carte|カルテ表示|view)/i.test(text)) return "view_company"
+  if (/(診断実行|diagnose|diagnostic|検査)/i.test(text)) return "run_diagnostic"
+  if (/(ジョブ|jobs|キュー一覧|queue.*list)/i.test(text)) return "list_jobs"
+  if (/(承認待ち|キュー|queue|operator.*queue|オペレータ)/i.test(text)) return "list_queue"
+  if (/(承認|approve|実行|exec)/i.test(text)) return "approve_queue"
   if (value.trim().length === 0) return "unknown"
   return "manual_review"
 }
@@ -420,27 +429,263 @@ export async function handleAgentCommand(input: SalesAgentCommandInput): Promise
       return { ok: queue.queued, commandId, intent, status: queue.queued ? "completed" : "blocked", approvalRequired: true, summary, reply: replyFor({ intent, summary, approvalRequired: true, status: queue.queued ? "completed" : "blocked" }), result }
     }
 
-    const queue = await enqueueManualReview(sb, {
+    if (intent === "show_menu") {
+      const keyboard = buildMainMenuKeyboard()
+      const summary = "📋 RevenueOS 営業指令メニュー\n\nボタンまたはコマンドを入力してください:\n/status - 状況確認\n/search [企業名/ドメイン] - 企業検索\n/enrich - カルテ生成\n/jobs - ジョブ一覧\n/queue - 承認待ち\n/sync - Twenty同期\n/help - 使い方"
+      const result = { menu: true, keyboard }
+      await updateCommand(sb, commandId, { status: "completed", runSummary: summary, resultPayload: result })
+      return { ok: true, commandId, intent, status: "completed", approvalRequired: false, summary, reply: summary, result }
+    }
+
+    if (intent === "search_company") {
+      const searchResult = await searchCompanies(sb, commandText)
+      const keyboard = searchResult.companies.length > 0
+        ? { inline_keyboard: searchResult.companies.map((c) => [{ text: `${c.company_name} (${c.domain})`, callback_data: `/view ${c.id}` }]).concat([[{ text: "◀️ メニュー", callback_data: "/menu" }]]) }
+        : buildMainMenuKeyboard()
+      const summary = searchResult.companies.length === 0
+        ? `「${commandText.replace(/^\/search\s*/i, "")}」に一致する企業が見つかりませんでした。`
+        : `${searchResult.companies.length}件見つかりました${searchResult.truncated ? "（上位10件）" : ""}:\n${searchResult.companies.map((c, i) => `${i + 1}. ${c.company_name} - ${c.domain}`).join("\n")}`
+      const result = { search: searchResult, keyboard }
+      await updateCommand(sb, commandId, { status: "completed", runSummary: summary, resultPayload: result })
+      return { ok: true, commandId, intent, status: "completed", approvalRequired: false, summary, reply: summary, result }
+    }
+
+    if (intent === "view_company") {
+      const card = await getCompanyCard(sb, commandText)
+      const summary = card.found && card.company
+        ? `🏢 ${card.company.company_name ?? card.company.domain}\nドメイン: ${card.company.domain}\n業界: ${card.company.industry ?? "不明"}\n国: ${card.company.country ?? "不明"}\nステータス: ${card.company.pipeline_status ?? "未設定"}\nスコア: ${card.company.lead_score ?? "N/A"}\nID: ${card.company.id}`
+        : `企業IDまたはドメイン「${commandText.replace(/^\/(company|view)\s*/i, "")}」が見つかりませんでした。`
+      const keyboard = card.found && card.company
+        ? { inline_keyboard: [[{ text: "🩺 診断実行", callback_data: `/diagnose ${card.company.domain}` }], [{ text: "◀️ メニュー", callback_data: "/menu" }]] }
+        : buildMainMenuKeyboard()
+      const result = { company: card.company ?? null, keyboard }
+      await updateCommand(sb, commandId, { status: "completed", runSummary: summary, resultPayload: result })
+      return { ok: card.found, commandId, intent, status: "completed", approvalRequired: false, summary, reply: summary, result }
+    }
+
+    if (intent === "run_diagnostic") {
+      const diag = await runDiagnosticForCompany(sb, commandText)
+      const summary = diag.triggered
+        ? `🩺 診断ジョブをキューに投入しました（ドメイン: ${commandText.replace(/^\/diagnose\s*/i, "")}）。処理完了まで数分お待ちください。`
+        : `診断ジョブの投入に失敗しました: ${diag.error ?? "不明なエラー"}`
+      const result = { diagnostic: diag, keyboard: buildMainMenuKeyboard() }
+      await updateCommand(sb, commandId, { status: diag.triggered ? "completed" : "failed", runSummary: summary, resultPayload: result })
+      return { ok: diag.triggered, commandId, intent, status: diag.triggered ? "completed" : "failed", approvalRequired: false, summary, reply: summary, result }
+    }
+
+    if (intent === "list_jobs") {
+      const jobs = await listEnrichmentJobs(sb)
+      const summary = jobs.jobs.length === 0
+        ? "📋 エンリッチジョブはありません。"
+        : `📋 最近のジョブ (${jobs.jobs.length}件):\n${jobs.jobs.map((j, i) => `${i + 1}. ${j.domain} [${j.status}] ${j.created_at.slice(0, 16)}`).join("\n")}`
+      const result = { jobs: jobs.jobs, keyboard: buildMainMenuKeyboard() }
+      await updateCommand(sb, commandId, { status: "completed", runSummary: summary, resultPayload: result })
+      return { ok: true, commandId, intent, status: "completed", approvalRequired: false, summary, reply: summary, result }
+    }
+
+    if (intent === "list_queue") {
+      const queue = await listOperatorQueueItems(sb)
+      const summary = queue.items.length === 0
+        ? "📝 承認待ちアイテムはありません。"
+        : `📝 承認待ちキュー (${queue.items.length}件):\n${queue.items.map((q, i) => `${i + 1}. [${q.queue_type}] ${q.status} (優先度${q.priority}) ID:${q.id.slice(0, 8)}`).join("\n")}`
+      const keyboard = queue.items.length > 0
+        ? { inline_keyboard: queue.items.map((q) => [{ text: `✅ 承認: ${q.id.slice(0, 8)}...`, callback_data: `/approve ${q.id}` }]).concat([[{ text: "◀️ メニュー", callback_data: "/menu" }]]) }
+        : buildMainMenuKeyboard()
+      const result = { queue: queue.items, keyboard }
+      await updateCommand(sb, commandId, { status: "completed", runSummary: summary, resultPayload: result })
+      return { ok: true, commandId, intent, status: "completed", approvalRequired: false, summary, reply: summary, result }
+    }
+
+    if (intent === "approve_queue") {
+      const itemId = commandText.replace(/^\/approve\s*/i, "").trim()
+      const approved = await approveQueueItem(sb, itemId)
+      const summary = approved.approved
+        ? `✅ キューアイテム ${itemId.slice(0, 12)}... を承認し、処理を開始しました。`
+        : `承認に失敗しました: ${approved.error ?? "不明なエラー"}`
+      const result = { approved: approved.approved, keyboard: buildMainMenuKeyboard() }
+      await updateCommand(sb, commandId, { status: approved.approved ? "completed" : "failed", runSummary: summary, resultPayload: result })
+      return { ok: approved.approved, commandId, intent, status: approved.approved ? "completed" : "failed", approvalRequired: false, summary, reply: summary, result }
+    }
+
+    const fallbackQueue = await enqueueManualReview(sb, {
       reason: "Telegram指示の意図が自動実行ルールに一致しないため、CEO Hermes Agentの確認待ちにしました。",
       commandText,
       intent,
       region,
       priority: 70,
     })
-    const result = { queue }
+    const result = { queue: fallbackQueue }
     const summary = "指示を手動レビューに回しました。必要なら具体的に『カルテ生成』『フォーム営業dry-run』『Twenty同期』などで再指示してください。"
-    await logAgentEvent(sb, { commandId, agentRole: "ceo_hermes", eventType: "manual_review", status: queue.queued ? "success" : "warning", title: "手動レビューへ回しました", payload: result })
+    await logAgentEvent(sb, { commandId, agentRole: "ceo_hermes", eventType: "manual_review", status: fallbackQueue.queued ? "success" : "warning", title: "手動レビューへ回しました", payload: result })
     await notifyHumanReview({ intent, summary, commandText })
-    await updateCommand(sb, commandId, { status: queue.queued ? "blocked" : "failed", runSummary: summary, resultPayload: result })
-    return { ok: queue.queued, commandId, intent, status: queue.queued ? "blocked" : "failed", approvalRequired: true, summary, reply: replyFor({ intent, summary, approvalRequired: true, status: queue.queued ? "blocked" : "failed" }), result }
+    await updateCommand(sb, commandId, { status: fallbackQueue.queued ? "blocked" : "failed", runSummary: summary, resultPayload: result })
+    return { ok: fallbackQueue.queued, commandId, intent, status: fallbackQueue.queued ? "blocked" : "failed", approvalRequired: true, summary, reply: replyFor({ intent, summary, approvalRequired: true, status: fallbackQueue.queued ? "blocked" : "failed" }), result }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Agent command failed"
     console.error("[sales-agent-team] command failed:", error)
-    const result = { error: message }
-    await logAgentEvent(sb, { commandId, agentRole: "system", eventType: "exception", status: "error", title: "AIチーム実行に失敗しました", message, payload: result })
-    await updateCommand(sb, commandId, { status: "failed", runSummary: message, resultPayload: result })
-    return { ok: false, commandId, intent, status: "failed", approvalRequired, summary: message, reply: replyFor({ intent, summary: message, approvalRequired, status: "failed" }), result }
+    const errorResult = { error: message }
+    await logAgentEvent(sb, { commandId, agentRole: "system", eventType: "exception", status: "error", title: "AIチーム実行に失敗しました", message, payload: errorResult })
+    await updateCommand(sb, commandId, { status: "failed", runSummary: message, resultPayload: errorResult })
+    return { ok: false, commandId, intent, status: "failed", approvalRequired, summary: message, reply: replyFor({ intent, summary: message, approvalRequired, status: "failed" }), result: errorResult }
   }
+}
+
+export function buildMainMenuKeyboard(): TelegramKeyboard {
+  return {
+    inline_keyboard: [
+      [{ text: "📊 状況確認", callback_data: "/status" }],
+      [{ text: "🔍 企業検索", callback_data: "/search " }, { text: "🩺 カルテ生成", callback_data: "/enrich" }],
+      [{ text: "📋 ジョブ一覧", callback_data: "/jobs" }, { text: "📝 承認待ち", callback_data: "/queue" }],
+      [{ text: "📤 Twenty同期", callback_data: "/sync" }, { text: "📦 資料生成", callback_data: "/assets" }],
+      [{ text: "❓ ヘルプ", callback_data: "/help" }, { text: "🔄 更新", callback_data: "/menu" }],
+    ],
+  }
+}
+
+async function searchCompanies(
+  sb: ServiceSupabase | null,
+  query: string,
+): Promise<{ companies: Array<{ id: string; company_name: string; domain: string }>; truncated: boolean }> {
+  if (!sb) return { companies: [], truncated: false }
+  const search = query.trim().replace(/^\/search\s*/i, "")
+  if (!search) return { companies: [], truncated: false }
+
+  const { data, error } = await sb
+    .from(DB_TABLES.SALES_COMPANIES)
+    .select("id, company_name, domain")
+    .or(`domain.ilike.%${search}%,company_name.ilike.%${search}%`)
+    .order("created_at", { ascending: false })
+    .limit(11)
+
+  if (error) {
+    console.error("[sales-agent-team] company search failed:", error.message)
+    return { companies: [], truncated: false }
+  }
+
+  const companies = ((data ?? []) as Array<Record<string, unknown>>).map((r) => ({
+    id: String(r.id),
+    company_name: String(r.company_name ?? r.domain ?? "unknown"),
+    domain: String(r.domain ?? ""),
+  }))
+
+  return { companies: companies.slice(0, 10), truncated: companies.length > 10 }
+}
+
+async function getCompanyCard(
+  sb: ServiceSupabase | null,
+  identifier: string,
+): Promise<{ found: boolean; company?: Record<string, unknown> }> {
+  if (!sb) return { found: false }
+  const id = identifier.trim().replace(/^\/(company|view)\s*/i, "")
+  const { data, error } = await sb
+    .from(DB_TABLES.SALES_COMPANIES)
+    .select("*")
+    .or(`id.eq.${id},domain.ilike.${id}`)
+    .limit(1)
+    .single()
+
+  if (error || !data) return { found: false }
+  return { found: true, company: data as unknown as Record<string, unknown> }
+}
+
+async function runDiagnosticForCompany(
+  sb: ServiceSupabase | null,
+  domain: string,
+): Promise<{ triggered: boolean; error?: string; jobId?: string }> {
+  if (!sb) return { triggered: false, error: "Supabase not configured" }
+  const cleanDomain = domain.trim()
+    .replace(/^\/diagnose\s*/i, "")
+    .replace(/^https?:\/\//, "")
+    .replace(/\/.*/, "")
+    .toLowerCase()
+
+  const { data: existing } = await sb
+    .from(DB_TABLES.SALES_COMPANIES)
+    .select("id")
+    .or(`domain.ilike.%${cleanDomain}%,company_name.ilike.%${cleanDomain}%`)
+    .limit(1)
+    .single()
+
+  try {
+    const { data: job, error } = await sb.from(DB_TABLES.SALES_ENRICHMENT_JOBS).insert({
+      domain: cleanDomain,
+      status: "queued",
+      template_variant: "website_diagnostic",
+      region: "jp",
+      priority: 95,
+      meta: { requested_by: "telegram_agent", created_via: "agent-team" },
+    }).select("id").single()
+
+    if (error) {
+      console.error("[sales-agent-team] diagnostic insert failed:", error.message)
+      return { triggered: false, error: error.message }
+    }
+    return { triggered: true, jobId: typeof job?.id === "string" ? job.id : undefined }
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Failed to queue diagnostic"
+    console.error("[sales-agent-team] diagnostic failed:", message)
+    return { triggered: false, error: message }
+  }
+}
+
+async function listEnrichmentJobs(
+  sb: ServiceSupabase | null,
+): Promise<{ jobs: Array<{ id: string; domain: string; status: string; created_at: string }> }> {
+  if (!sb) return { jobs: [] }
+  const { data, error } = await sb
+    .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
+    .select("id, domain, status, created_at")
+    .order("created_at", { ascending: false })
+    .limit(15)
+
+  if (error) {
+    console.error("[sales-agent-team] list jobs failed:", error.message)
+    return { jobs: [] }
+  }
+  return {
+    jobs: ((data ?? []) as Array<Record<string, unknown>>).map((r) => ({
+      id: String(r.id),
+      domain: String(r.domain),
+      status: String(r.status),
+      created_at: String(r.created_at),
+    })),
+  }
+}
+
+async function listOperatorQueueItems(
+  sb: ServiceSupabase | null,
+): Promise<{ items: Array<{ id: string; queue_type: string; status: string; priority: number; meta: unknown }> }> {
+  if (!sb) return { items: [] }
+  const { data, error } = await sb
+    .from(DB_TABLES.SALES_OPERATOR_QUEUE_ITEMS)
+    .select("id, queue_type, status, priority, meta")
+    .in("status", ["open", "in_progress"])
+    .order("priority", { ascending: false })
+    .limit(10)
+
+  if (error) {
+    console.error("[sales-agent-team] list queue failed:", error.message)
+    return { items: [] }
+  }
+  return { items: (data ?? []) as Array<{ id: string; queue_type: string; status: string; priority: number; meta: unknown }> }
+}
+
+async function approveQueueItem(
+  sb: ServiceSupabase | null,
+  itemId: string,
+): Promise<{ approved: boolean; error?: string }> {
+  if (!sb) return { approved: false, error: "Supabase not configured" }
+  const { error } = await sb
+    .from(DB_TABLES.SALES_OPERATOR_QUEUE_ITEMS)
+    .update({ status: "in_progress", updated_at: new Date().toISOString() })
+    .eq("id", itemId)
+    .eq("status", "open")
+
+  if (error) {
+    console.error("[sales-agent-team] approve queue failed:", error.message)
+    return { approved: false, error: error.message }
+  }
+  return { approved: true }
 }
 
 export async function fetchRecentAgentCommands(limit = 12): Promise<{
