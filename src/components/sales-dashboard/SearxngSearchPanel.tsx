@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useState } from "react"
-import { CheckCircle2, ChevronDown, ChevronRight, ExternalLink, Loader2, Search, XCircle } from "lucide-react"
+import { CheckCircle2, ChevronDown, ChevronRight, ExternalLink, Loader2, Play, Search, XCircle } from "lucide-react"
 import { toast } from "sonner"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 import type { SearxngRunSummary, SearxngTimeRange } from "@/lib/sales/searxng-source"
@@ -51,6 +51,7 @@ export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
   const [stepError, setStepError] = useState("")
   const [lastRun, setLastRun] = useState<SearxngRunSummary | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [enriching, setEnriching] = useState(false)
 
   const buildQuery = useCallback(() => {
     const parts: string[] = []
@@ -114,14 +115,14 @@ export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
         return
       }
 
-      // Step 2: Import
+      // Step 2: Import (async - poll for completion)
       setStep("importing")
       const importRes = await fetch(`/api/sales/searxng/runs/${run.id}/import`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ limit: targetCount, min_score: 50, enrich: true }),
       })
-      const importResult = await importRes.json() as { ok: boolean; imported: number; error?: string }
+      const importResult = await importRes.json() as { ok: boolean; status?: string; imported?: number; error?: string }
       if (!importResult.ok) {
         setStep("error")
         setStepError(importResult.error ?? "インポートに失敗しました")
@@ -129,9 +130,24 @@ export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
         return
       }
 
+      // Poll for completion
+      let importedCount = 0
+      for (let attempt = 0; attempt < 15; attempt++) {
+        await new Promise(r => setTimeout(r, 2000))
+        try {
+          const pollRes = await fetch(`/api/sales/searxng/runs?limit=1`)
+          const pollData = await pollRes.json()
+          const updatedRun = pollData.runs?.find((r: { id: string }) => r.id === run.id)
+          if (updatedRun?.status === "imported") {
+            importedCount = updatedRun.importedCount
+            break
+          }
+        } catch { /* continue polling */ }
+      }
+
       setStep("done")
       setLastRun(run)
-      toast.success(`${importResult.imported}件を収集・インポートしました`)
+      toast.success(`${importedCount || "?"}件を収集・インポートしました`)
       window.location.reload()
     } catch (e) {
       setStep("error")
@@ -162,6 +178,28 @@ export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
     } catch (e) {
       toast.error("ネットワークエラー")
       setStep("idle")
+    }
+  }
+
+  const runEnrichment = async () => {
+    setEnriching(true)
+    try {
+      const res = await fetch("/api/sales/enrichment/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: 3 }),
+      })
+      const result = await res.json() as { ok: boolean; processed: number; completed: number; failed: number; errors: string[] }
+      if (result.ok) {
+        toast.success(`エンリッチ完了: ${result.completed}件処理`)
+        window.location.reload()
+      } else {
+        toast.error(result.errors?.[0] ?? "エンリッチ失敗")
+      }
+    } catch (e) {
+      toast.error("ネットワークエラー")
+    } finally {
+      setEnriching(false)
     }
   }
 
@@ -373,6 +411,21 @@ export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
             {isRunning ? "処理中..." : "収集を開始（検索 → インポート → エンリッチ予約）"}
           </button>
         </div>
+      </div>
+
+      {/* Enrichment Runner */}
+      <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <h3 className="mb-1 text-sm font-bold text-zinc-800">エンリッチ実行</h3>
+        <p className="mb-3 text-xs text-zinc-500">キューに溜まったエンリッチジョブを手動実行（Trigger.dev代替）</p>
+        <button
+          type="button"
+          disabled={enriching}
+          onClick={runEnrichment}
+          className="flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-violet-700 disabled:opacity-40 transition-colors"
+        >
+          {enriching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+          エンリッチを実行（最大3件）
+        </button>
       </div>
 
       {/* Past Runs */}
