@@ -1,6 +1,9 @@
 import type { Metadata } from "next"
+import { redirect } from "next/navigation"
+import { cookies, headers } from "next/headers"
 import { SalesDashboardShell } from "@/components/sales-dashboard/SalesDashboardShell"
 import { getSalesDashboardData } from "@/lib/sales/dashboard"
+import { authorizePayloadAdminRequest } from "@/lib/admin-auth"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -12,10 +15,34 @@ export const metadata: Metadata = {
 
 interface Props {
   params: Promise<{ locale: string }>
+  searchParams: Promise<{ token?: string }>
 }
 
-export default async function SalesPage({ params }: Props) {
+async function checkAuth(searchParams: { token?: string }): Promise<boolean> {
+  // Method 1: PayloadCMS admin cookie (if logged into /admin)
+  const cookieStore = await cookies()
+  const requestHeaders = await headers()
+  const payloadAuth = await authorizePayloadAdminRequest({
+    headers: new Headers(requestHeaders),
+    legacyToken: cookieStore.get("paradigm_admin_token")?.value,
+  })
+  if (payloadAuth.ok) return true
+
+  // Method 2: Token from URL query param or TRIGGER_WEBHOOK_SECRET
+  const expectedToken = process.env.TRIGGER_WEBHOOK_SECRET ?? process.env.N8N_WEBHOOK_SECRET
+  if (expectedToken && searchParams.token === expectedToken) return true
+
+  return false
+}
+
+export default async function SalesPage({ params, searchParams }: Props) {
   const { locale } = await params
+  const sp = await searchParams
+
+  if (!(await checkAuth(sp))) {
+    redirect(`/${locale}/admin`)
+  }
+
   const dashboard = await getSalesDashboardData({ reportLocale: locale })
   return <SalesDashboardShell initialData={dashboard} locale={locale} />
 }
