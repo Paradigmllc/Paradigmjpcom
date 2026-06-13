@@ -60,7 +60,8 @@ export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
       if (found?.keywords) parts.push(found.keywords)
     }
     if (customQuery.trim()) parts.push(customQuery.trim())
-    if (techStacks.length > 0) parts.push(techStacks.join(" "))
+    // Tech stacks are detected by Wappalyzer AFTER search, NOT used as search keywords
+    // Adding them to search keywords returns garbage (pages about the tech, not businesses using it)
     return parts.join(" ") || industry
   }, [industry, customQuery, techStacks])
 
