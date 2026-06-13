@@ -39,6 +39,9 @@ import { analyzeSitemap } from "./sources/sitemap"
 import { checkSafeBrowsing } from "./sources/safe-browsing"
 import { checkGreenHosting } from "./sources/green-web"
 import { lookupBuiltWithFree } from "./sources/builtwith-free"
+import { readWithJina } from "./sources/jina-reader"
+import { discoverSubdomains } from "./sources/subfinder"
+import { scanPublicRepos } from "./sources/trufflehog"
 import { INDUSTRY_MARKET_DATA } from "./sources/market-data"
 import { collectSmbSignals } from "./sources/smb-signals"
 import { autoPersonalize } from "./personalize"
@@ -203,6 +206,10 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     { name: "safe_browsing", fn: () => checkSafeBrowsing(domain) },
     { name: "green_web", fn: () => checkGreenHosting(domain) },
     { name: "builtwith", fn: () => lookupBuiltWithFree(domain) },
+    { name: "jina_reader", fn: () => readWithJina(url) },
+    { name: "clearbit_logo", fn: () => Promise.resolve(`https://logo.clearbit.com/${domain}`) },
+    { name: "subfinder", fn: () => discoverSubdomains(domain) },
+    { name: "trufflehog", fn: () => scanPublicRepos(domain) },
   ]
 
   const sources = await batchAll(
@@ -220,11 +227,12 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     maigret, searxng,
     stagehandSite, stagehandForms, steel,
     schemaOrg, sitemap, safeBrowsing, greenWeb, builtwith,
+    jinaReader, clearbitLogo, subfinder, trufflehog,
   ] = sources as any[]
 
   // Step 3: 集約
   const gbizFirst = gbiz?.[0]
-  const allSourceResults = [scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts, wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana, maigret, searxng, steel, schemaOrg, sitemap, safeBrowsing, greenWeb, builtwith, ...(stagehandEnabled ? [stagehandSite, stagehandForms] : [])]
+  const allSourceResults = [scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts, wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana, maigret, searxng, steel, schemaOrg, sitemap, safeBrowsing, greenWeb, builtwith, jinaReader, clearbitLogo, subfinder, trufflehog, ...(stagehandEnabled ? [stagehandSite, stagehandForms] : [])]
   const meta: Record<string, unknown> = {
     sales_os: {
       last_enriched_at: new Date().toISOString(),
@@ -273,6 +281,10 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     safe_browsing: safeBrowsing?.configured ? { safe: safeBrowsing.safe, threats: safeBrowsing.threats } : null,
     green_web: greenWeb?.ok ? { is_green: greenWeb.isGreen, provider: greenWeb.provider } : null,
     builtwith: builtwith?.ok ? { technologies: builtwith.technologies, traffic_tier: builtwith.trafficTier } : null,
+    jina_reader: jinaReader?.ok && jinaReader.data ? { title: jinaReader.data.title, markdown: jinaReader.data.markdown?.slice(0, 2000), tokens: jinaReader.data.usage?.tokens } : null,
+    clearbit_logo_url: typeof clearbitLogo === "string" ? clearbitLogo : null,
+    subfinder: subfinder?.ok ? { subdomains: subfinder.subdomains, total: subfinder.total, sources: subfinder.sources } : null,
+    trufflehog: trufflehog?.ok ? { findings: trufflehog.findings, total: trufflehog.total } : null,
     market_data: industry ? (INDUSTRY_MARKET_DATA[industry as keyof typeof INDUSTRY_MARKET_DATA] ?? null) : null,
     smb_signals: tech && dns?.ok ? await collectSmbSignals(domain, ((tech as any).tech as Array<{ name: string }>).map((t: { name: string }) => t.name), dns.mxRecords as { exchange: string }[]).catch(() => null) : null,
     ...(gbizFirst ? toCompanyMeta(gbizFirst) : {}),
