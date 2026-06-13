@@ -26,7 +26,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PAYLOAD_CONFIG_PATH=/app/payload.config.ts
 ENV PAYLOAD_DISABLE_DATABASE_DURING_BUILD=1
 ENV NODE_OPTIONS="--max-old-space-size=4096"
-RUN --mount=type=cache,target=/app/.next/cache,id=paradigm-next-cache npm run build -- --turbo
+ARG CACHEBUST=2
+RUN npm run build -- --turbo
 
 FROM node:22.12.0-alpine AS runner
 WORKDIR /app
