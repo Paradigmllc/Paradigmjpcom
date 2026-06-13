@@ -1,5 +1,6 @@
 # syntax = docker/dockerfile:1
 # ─── Multi-stage Dockerfile with BuildKit cache mounts for fast deploys ───
+# build-id: telegram-revenueos-v2
 # Stage 1 (deps): cached unless package.json/package-lock.json change
 # Stage 2 (build): cached unless source code changes (Next.js cache persisted)
 # Stage 3 (runner): minimal production image
