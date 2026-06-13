@@ -42,6 +42,7 @@ import { lookupBuiltWithFree } from "./sources/builtwith-free"
 import { readWithJina } from "./sources/jina-reader"
 import { discoverSubdomains } from "./sources/subfinder"
 import { scanPublicRepos } from "./sources/trufflehog"
+import { isEnterpriseTechStack } from "./sources/enterprise-filter"
 import { INDUSTRY_MARKET_DATA } from "./sources/market-data"
 import { collectSmbSignals } from "./sources/smb-signals"
 import { autoPersonalize } from "./personalize"
@@ -232,6 +233,8 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
 
   // Step 3: 集約
   const gbizFirst = gbiz?.[0]
+  const techResult = tech ? (tech as { tech: Array<{ name: string; category: string }> }) : null
+  const enterpriseCheck = techResult?.tech ? isEnterpriseTechStack(techResult.tech.map(t => t.name)) : { isEnterprise: false, matched: [] }
   const allSourceResults = [scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts, wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana, maigret, searxng, steel, schemaOrg, sitemap, safeBrowsing, greenWeb, builtwith, jinaReader, clearbitLogo, subfinder, trufflehog, ...(stagehandEnabled ? [stagehandSite, stagehandForms] : [])]
   const meta: Record<string, unknown> = {
     sales_os: {
@@ -285,10 +288,13 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     clearbit_logo_url: typeof clearbitLogo === "string" ? clearbitLogo : null,
     subfinder: subfinder?.ok ? { subdomains: subfinder.subdomains, total: subfinder.total, sources: subfinder.sources } : null,
     trufflehog: trufflehog?.ok ? { findings: trufflehog.findings, total: trufflehog.total } : null,
+    enterprise_filter: enterpriseCheck.isEnterprise ? { excluded: true, matched_tech: enterpriseCheck.matched } : null,
     market_data: industry ? (INDUSTRY_MARKET_DATA[industry as keyof typeof INDUSTRY_MARKET_DATA] ?? null) : null,
     smb_signals: tech && dns?.ok ? await collectSmbSignals(domain, ((tech as any).tech as Array<{ name: string }>).map((t: { name: string }) => t.name), dns.mxRecords as { exchange: string }[]).catch(() => null) : null,
     ...(gbizFirst ? toCompanyMeta(gbizFirst) : {}),
   }
+
+  const pipelineStatus = scan ? (enterpriseCheck.isEnterprise ? "pending" : "report_ready") : "pending"
 
   const result = await upsertCompanyByDomain({
     domain, company_name: gbizFirst?.name ?? scan?.html.title ?? companyName,
@@ -297,7 +303,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     pagespeed_mobile: scan?.mobile.performance ?? null,
     pagespeed_desktop: scan?.desktop.performance ?? null,
     detected_issues: scan?.issues ?? [],
-    pipeline_status: scan ? "report_ready" : "pending",
+    pipeline_status: pipelineStatus,
     source: input.source ?? "contact_form",
     meta,
   })
