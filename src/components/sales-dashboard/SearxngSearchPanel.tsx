@@ -313,7 +313,7 @@ export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
                 className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500"
                 disabled={isRunning}
               >
-                {[5, 10, 20, 30, 50].map((n) => <option key={n} value={n}>{n}件</option>)}
+                {[10, 20, 50, 100, 200, 500].map((n) => <option key={n} value={n}>{n}件</option>)}
               </select>
             </div>
           </div>
