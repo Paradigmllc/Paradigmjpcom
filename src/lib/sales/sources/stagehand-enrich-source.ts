@@ -57,11 +57,12 @@ interface StagehandExtractResult {
 
 export async function extractSiteData(url: string): Promise<StagehandExtractResult> {
   if (!url?.startsWith("http")) return { ok: false, error: "invalid url" }
+  let stagehand: InstanceType<StagehandSdk["Stagehand"]> | null = null
   try {
     const mod = await getStagehand()
     if (!mod) return { ok: false, error: "Stagehand SDK not available" }
 
-    const stagehand = new mod.Stagehand({
+    stagehand = new mod.Stagehand({
       env: "LOCAL",
       headless: true,
       logger: () => {},
@@ -88,8 +89,6 @@ export async function extractSiteData(url: string): Promise<StagehandExtractResu
       (document.querySelector('meta[name="description"]') as HTMLMetaElement)?.content || ""
     )
 
-    await stagehand.close()
-
     return {
       ok: true,
       data: { title, description, bodyText, links, forms },
@@ -97,6 +96,10 @@ export async function extractSiteData(url: string): Promise<StagehandExtractResu
   } catch (e) {
     console.error("[stagehand-enrich] extract failed:", e)
     return { ok: false, error: e instanceof Error ? e.message : String(e) }
+  } finally {
+    if (stagehand) {
+      try { await stagehand.close() } catch { /* ignore close errors */ }
+    }
   }
 }
 
@@ -108,11 +111,12 @@ interface StagehandFormResult {
 
 export async function discoverForms(url: string): Promise<StagehandFormResult> {
   if (!url?.startsWith("http")) return { ok: false, error: "invalid url" }
+  let stagehand: InstanceType<StagehandSdk["Stagehand"]> | null = null
   try {
     const mod = await getStagehand()
     if (!mod) return { ok: false, error: "Stagehand SDK not available" }
 
-    const stagehand = new mod.Stagehand({
+    stagehand = new mod.Stagehand({
       env: "LOCAL",
       headless: true,
       logger: () => {},
@@ -132,11 +136,13 @@ export async function discoverForms(url: string): Promise<StagehandFormResult> {
       })).slice(0, 10)
     )
 
-    await stagehand.close()
-
     return { ok: true, data: { forms, totalForms: forms.length } }
   } catch (e) {
     console.error("[stagehand-enrich] form discovery failed:", e)
     return { ok: false, error: e instanceof Error ? e.message : String(e) }
+  } finally {
+    if (stagehand) {
+      try { await stagehand.close() } catch { /* ignore close errors */ }
+    }
   }
 }

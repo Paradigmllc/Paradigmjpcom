@@ -35,9 +35,55 @@
 
 ---
 
-## ACTIVE HANDOFF — 2026-06-12 RevenueOS全面監査 + 恒久修正 完了
+## ACTIVE HANDOFF — 2026-06-12 ブラウザ自動化4ツール 実務運用監査 + 全修正 完了
 
-### 修正サマリー: 全面監査 4層 (P0〜P2) 全修正
+### 修正サマリー: ブラウザ自動化 4ツール (Stagehand/Steel/Crawlee/Crawl4AI) 本番稼働可能化
+
+### 監査前の状態
+- **Steel**: コード整備済みだが `enrich.ts` で screenshot が破棄されるバグ
+- **Stagehand**: `STAGEHAND_ENABLED=false` デフォルト + ブラウザリークバグ
+- **Crawlee**: `enrich.ts` から一切呼ばれず未配線。Worker未デプロイ。DNS未設定。
+- **Crawl4AI**: コード整備済みだが `CRAWL4AI_BASE_URL` 未設定。Crawleeとのsource-coverage帰属バグ。
+
+### 🔴 CRITICAL 修正 (4件)
+
+| # | 問題 | 修正 |
+|---|------|------|
+| 1 | **Steel screenshot 破棄** — `enrich.ts:281` で `screenshot` フィールド欠落 | `screenshot: steel.data?.screenshot` 追加 |
+| 2 | **Crawlee 未配線** — `enrich.ts` から未呼出 | `crawlee-source.ts` 新規作成 + `enrich.ts` に task/pipeline/meta 追加 |
+| 3 | **Stagehand ブラウザリーク** — `close()` が try ブロック内 | finally ブロックに移行、`extractSiteData` + `discoverForms` 両方修正 |
+| 4 | **Crawlee/Crawl4AI 帰属バグ** — `source-coverage.ts` 両方の detect が `m.form_discovery` にマッチ | Crawlee detect から `\|\| m.form_discovery` 除去 |
+
+### 🟠 HIGH 修正 (2件)
+
+| # | 問題 | 修正 |
+|---|------|------|
+| 5 | **デッドコード** — `integration-registry.ts:93-131` の `checkBrowserlessPressure()` + 重複 `checkStagehandHealth()` | 両関数削除（Browserless全廃済み + oss-health-core版をimport済み） |
+| 6 | **env テンプレート不足** — 4ツールの env var が未記載/不完全 | `.env.example` に全ツールの設定キーを追加（STAGEHAND_ENABLED/URL/KEY, STEEL_BASE_URL/KEY, CRAWLEE_WORKER_URL/SECRET, CRAWL4AI_BASE_URL/KEY/PATH） |
+
+### 新規ファイル
+
+`src/lib/sales/sources/crawlee-source.ts` — `scrapeWithCrawlee()` + `checkCrawleeSourceHealth()`
+
+### 修正後パイプライン完全性
+
+| ツール | Acquire | Process | Store | Display | Health | 実運用 |
+|--------|---------|---------|-------|---------|--------|--------|
+| Stagehand | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ 要 `STAGEHAND_ENABLED=true` |
+| Steel.dev | ✅ | ✅ | ✅ (screenshot含む) | ✅ | ✅ | ⚠️ 要 `STEEL_BASE_URL` |
+| Crawlee | ✅ (新規配線) | ✅ | ✅ | ✅ | ✅ | ⚠️ 要 Worker デプロイ + DNS |
+| Crawl4AI | ✅ | ✅ | ✅ (帰属修正済) | ✅ | ✅ | ⚠️ 要 `CRAWL4AI_BASE_URL` |
+
+### 実務上必要な後続作業
+1. **env 設定**: Coolify / .env.local に各ツールの URL + API key を設定
+2. **Crawlee Worker**: `worker/` Dockerfile を Coolify にデプロイ + DNS `crawlee.paradigmjp.com` 設定
+3. **Crawl4AI Service**: 稼働中の Coolify サービスの URL を `CRAWL4AI_BASE_URL` に設定
+4. **Steel.dev**: OSSインスタンスの URL を `STEEL_BASE_URL` に設定
+5. **Stagehand**: 本番で有効化する場合は `STAGEHAND_ENABLED=true` + `@browserbasehq/stagehand` を package.json に追加
+
+### 検証
+- `tsc --noEmit`: 変更由来 0 エラー（既存 astro-demo + fix-schema 3件のみ）
+- `vitest run`: 41 suites / 178 tests 全通過
 
 ### 🔴 P0 — CRITICAL (4件)
 

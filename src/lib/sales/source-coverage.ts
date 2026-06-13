@@ -146,7 +146,7 @@ const SOURCES: SourceDefinition[] = [
     label: "Crawlee",
     category: "outreach",
     env: ["CRAWLEE_WORKER_URL"],
-    detect: (m) => !!m.crawlee || !!m.form_discovery,
+    detect: (m) => !!m.crawlee,
     detail: "Contact path crawl and anchor scoring",
     meaning: "問い合わせ導線が機械的に見つかるかは、ユーザーにも営業自動化にも同じくらい重要です。",
     missingConsequence: "未取得だと、フォーム営業の可否だけでなく、実ユーザーが迷う導線かどうかも判断できません。",

@@ -90,46 +90,6 @@ function defaultBalance(def: SalesIntegrationDefinition, status: SalesIntegratio
   return { balanceStatus: "checkable", balanceLabel: "liveチェック可能" }
 }
 
-async function checkBrowserlessPressure(): Promise<Pick<SalesIntegrationStatus, "balanceStatus" | "balanceLabel">> {
-  const rawUrl = envValue("BROWSERLESS_URL")
-  if (!rawUrl) return { balanceStatus: "not_configured", balanceLabel: "BROWSERLESS_URL未設定" }
-  try {
-    const url = new URL(rawUrl)
-    const token = envValue("BROWSERLESS_TOKEN") ?? url.searchParams.get("token")
-    url.pathname = "/pressure"
-    if (token) url.searchParams.set("token", token)
-    const res = await fetch(url.toString(), { signal: AbortSignal.timeout(8_000) })
-    const body = (await res.json()) as { isAvailable?: boolean; running?: number; maxConcurrent?: number; queued?: number; reason?: string }
-    if (!res.ok) return { balanceStatus: "error", balanceLabel: `HTTP ${res.status}` }
-    return {
-      balanceStatus: body.isAvailable === false ? "error" : "ok",
-      balanceLabel: `running ${body.running ?? "-"} / ${body.maxConcurrent ?? "-"}, queued ${body.queued ?? 0}${body.reason ? `, ${body.reason}` : ""}`,
-    }
-  } catch (error) {
-    console.error("[integration-registry] Browserless pressure check failed:", error)
-    return { balanceStatus: "error", balanceLabel: error instanceof Error ? error.message : "Browserless check failed" }
-  }
-}
-
-async function checkStagehandHealth(): Promise<Pick<SalesIntegrationStatus, "balanceStatus" | "balanceLabel">> {
-  const urlStr = envValue("STAGEHAND_URL")
-  if (!urlStr) return { balanceStatus: "not_configured", balanceLabel: "STAGEHAND_URL未設定" }
-  try {
-    const url = new URL(urlStr)
-    url.pathname = "/health"
-    const res = await fetch(url.toString(), { signal: AbortSignal.timeout(5_000) })
-    if (!res.ok) return { balanceStatus: "error", balanceLabel: `HTTP ${res.status}` }
-    const body = await res.json().catch(() => ({})) as { status?: string; ok?: boolean }
-    return {
-      balanceStatus: "ok",
-      balanceLabel: body.status === "healthy" || body.ok === true ? "正常 (healthy)" : "応答あり",
-    }
-  } catch (error) {
-    console.error("[integration-registry] Stagehand health check failed:", error)
-    return { balanceStatus: "error", balanceLabel: error instanceof Error ? error.message : "接続不可" }
-  }
-}
-
 async function liveBalance(def: SalesIntegrationDefinition): Promise<Pick<SalesIntegrationStatus, "balanceStatus" | "balanceLabel"> | null> {
   if (def.balance === "dataforseo_user_data") return checkDataForSeoHealth()
   if (def.balance === "stagehand_health") return checkStagehandServiceHealth()

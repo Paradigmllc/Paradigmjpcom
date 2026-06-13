@@ -33,6 +33,7 @@ import { crawlWithKatana } from "./sources/katana-source"
 import { searchMaigretForDomain } from "./sources/maigret-source"
 import { extractSiteData, discoverForms } from "./sources/stagehand-enrich-source"
 import { scrapeWithSteel } from "./sources/steel-source"
+import { scrapeWithCrawlee } from "./sources/crawlee-source"
 import { estimateTrafficViaSearx } from "./sources/searxng-traffic"
 import { extractSchemaOrg } from "./sources/schema-org"
 import { analyzeSitemap } from "./sources/sitemap"
@@ -202,6 +203,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
       { name: "stagehand_forms", fn: () => Promise.resolve(null) },
     ]),
     { name: "steel", fn: () => scrapeWithSteel(url) },
+    { name: "crawlee", fn: () => scrapeWithCrawlee(url) },
     { name: "schema_org", fn: () => extractSchemaOrg(url) },
     { name: "sitemap", fn: () => analyzeSitemap(domain) },
     { name: "safe_browsing", fn: () => checkSafeBrowsing(domain) },
@@ -226,7 +228,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts,
     wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana,
     maigret, searxng,
-    stagehandSite, stagehandForms, steel,
+    stagehandSite, stagehandForms, steel, crawlee,
     schemaOrg, sitemap, safeBrowsing, greenWeb, builtwith,
     jinaReader, clearbitLogo, subfinder, trufflehog,
   ] = sources as any[]
@@ -235,7 +237,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   const gbizFirst = gbiz?.[0]
   const techResult = tech ? (tech as { tech: Array<{ name: string; category: string }> }) : null
   const enterpriseCheck = techResult?.tech ? isEnterpriseTechStack(techResult.tech.map(t => t.name)) : { isEnterprise: false, matched: [] }
-  const allSourceResults = [scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts, wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana, maigret, searxng, steel, schemaOrg, sitemap, safeBrowsing, greenWeb, builtwith, jinaReader, clearbitLogo, subfinder, trufflehog, ...(stagehandEnabled ? [stagehandSite, stagehandForms] : [])]
+  const allSourceResults = [scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts, wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana, maigret, searxng, steel, crawlee, schemaOrg, sitemap, safeBrowsing, greenWeb, builtwith, jinaReader, clearbitLogo, subfinder, trufflehog, ...(stagehandEnabled ? [stagehandSite, stagehandForms] : [])]
   const meta: Record<string, unknown> = {
     sales_os: {
       last_enriched_at: new Date().toISOString(),
@@ -279,6 +281,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     searxng_traffic: searxng?.ok ? searxng.data : null,
     stagehand: !skippedStagehand && (stagehandSite?.ok || stagehandForms?.ok) ? { site: stagehandSite?.ok ? stagehandSite.data : null, forms: stagehandForms?.ok ? stagehandForms.data : null } : null,
     steel: steel?.ok ? { title: steel.data?.title, text: steel.data?.text?.slice(0, 2000), links_count: steel.data?.links?.length, screenshot: steel.data?.screenshot } : null,
+    crawlee: crawlee?.ok ? { title: crawlee.data?.title, bodyText: crawlee.data?.bodyText?.slice(0, 2000), links_count: crawlee.data?.links?.length, forms_count: crawlee.data?.formsCount } : null,
     schema_org: schemaOrg?.ok && schemaOrg.data ? schemaOrg.data : null,
     sitemap: sitemap?.ok && sitemap.data ? sitemap.data : null,
     safe_browsing: safeBrowsing?.configured ? { safe: safeBrowsing.safe, threats: safeBrowsing.threats } : null,
