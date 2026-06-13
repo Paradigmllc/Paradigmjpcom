@@ -5,40 +5,26 @@
  */
 
 const CMS_FOOTPRINTS: Record<string, string[]> = {
-  Shopify: [
-    '"Powered by Shopify"',
-    '"Shopify theme"',
-    'myshopify.com',
-  ],
-  WordPress: [
-    '"Powered by WordPress"',
-    '"wp-content"',
-    '"Proudly powered by WordPress"',
-  ],
-  Wix: [
-    '"Made with Wix"',
-    '"Built with Wix"',
-    'wixstatic.com',
-    '"Wix.com"',
-  ],
-  Webflow: [
-    '"Made in Webflow"',
-    '"Powered by Webflow"',
-    'webflow.io',
-  ],
-  WooCommerce: [
-    '"WooCommerce"',
-    '"woocommerce"',
-  ],
-  Magento: [
-    '"Magento"',
-    '"Powered by Magento"',
-  ],
-  Squarespace: [
-    '"Powered by Squarespace"',
-    '"Squarespace"',
-  ],
-  "Google Analytics": [],
+  Shopify: ['"Powered by Shopify"', '"Shopify theme"', "myshopify.com"],
+  WordPress: ['"Powered by WordPress"', '"Proudly powered by WordPress"', "wp-content"],
+  Wix: ['"Made with Wix"', '"Built with Wix"', "wixstatic.com"],
+  Webflow: ['"Made in Webflow"', '"Powered by Webflow"', "webflow.io"],
+  WooCommerce: ['"WooCommerce"', '"Powered by WooCommerce"'],
+  Magento: ['"Powered by Magento"', '"Magento Commerce"'],
+  PrestaShop: ['"Powered by PrestaShop"', "PrestaShop"],
+  Squarespace: ['"Powered by Squarespace"', "Squarespace"],
+  Drupal: ['"Powered by Drupal"', "Drupal"],
+  Joomla: ['"Powered by Joomla"', "Joomla!"],
+  Ghost: ['"Proudly published with Ghost"', "Ghost CMS"],
+  Jimdo: ['"Jimdo"', "jimdo.com"],
+  TYPO3: ['"TYPO3"', '"TYPO3 CMS"'],
+  "HubSpot CMS": ['"hs-scripts.com"', '"Powered by HubSpot"'],
+  "EC-CUBE": ['"EC-CUBE"'],
+  MakeShop: ['"makeshop.jp"', '"MakeShop"'],
+  "BASE (EC)": ['"thebase.in"', '"BASE株式会社"'],
+  "STORES.jp": ['"stores.jp"'],
+  ColorMe: ['"shop-pro.jp"', '"カラーミーショップ"'],
+  Welcart: ['"Welcart"', '"usces_item"'],
 }
 
 const CITY_MAP: Record<string, string[]> = {

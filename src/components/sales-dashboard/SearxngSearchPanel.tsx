@@ -23,9 +23,12 @@ const INDUSTRIES: { label: string; keywords: string }[] = [
 ]
 
 const TECH_STACKS = [
-  "WordPress", "Shopify", "Wix", "EC-CUBE", "MakeShop", "BASE",
-  "Next.js", "React", "Vue.js", "Laravel", "Django", "Ruby on Rails",
-  "Google Analytics", "GTM", "HubSpot", "Klaviyo", "Stripe",
+  "Shopify", "WordPress", "Wix", "Webflow", "WooCommerce", "Magento",
+  "PrestaShop", "Squarespace", "Drupal", "Joomla", "Ghost", "Jimdo",
+  "TYPO3", "HubSpot CMS",
+  "Next.js", "React", "Vue.js", "Laravel", "Django",
+  "EC-CUBE", "MakeShop", "BASE (EC)", "STORES.jp",
+  "Google Analytics", "GTM", "Klaviyo", "Stripe",
 ]
 
 const TIME_RANGES: { label: string; value: SearxngTimeRange | "" }[] = [
