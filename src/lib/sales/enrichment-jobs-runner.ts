@@ -76,10 +76,7 @@ async function markJobFailure(
       status: terminal ? "failed" : "queued",
       attempts: nextAttempts,
       error_message: message,
-      locked_at: null,
-      lock_owner: null,
       next_run_at: new Date(Date.now() + delayMs).toISOString(),
-      completed_at: terminal ? new Date().toISOString() : null,
     })
     .eq("id", job.id)
 
@@ -91,9 +88,6 @@ async function claimJob(sb: ServiceSupabase, job: SalesEnrichmentJob, runnerId: 
     .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
     .update({
       status: "running",
-      started_at: new Date().toISOString(),
-      locked_at: new Date().toISOString(),
-      lock_owner: runnerId,
       error_message: null,
     })
     .eq("id", job.id)
@@ -124,9 +118,6 @@ async function completeJob(
     .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
     .update({
       status: "completed",
-      completed_at: new Date().toISOString(),
-      locked_at: null,
-      lock_owner: null,
       result_payload: resultPayload,
     })
     .eq("id", job.id)
