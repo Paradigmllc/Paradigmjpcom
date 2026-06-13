@@ -104,14 +104,7 @@ async function syncTwentyCompanyHomeFields(
     body: JSON.stringify({
       paradigmReportUrl: linkField("診断レポートURL", karte.reportUrl),
       paradigmFormUrl: linkField("フォームURL", karte.formUrl),
-      paradigmSalesMaterialUrl: linkField("営業資料URL", karte.salesMaterialUrl),
       paradigmDemoUrl: linkField("デモURL", karte.demoUrl),
-      paradigmCustomerPortalUrl: linkField("顧客用Notion URL", karte.customerPortalUrl),
-      paradigmRegionName: karte.regionName ?? "",
-      paradigmIndustryName: industryLabel(karte.industry),
-      paradigmSourceName: karte.sourceName ?? "",
-      paradigmSalesStatus: salesStatusLabel(karte),
-      paradigmRecommendedProducts: karte.recommendedProducts.map((product) => productOptionValue(product.code)),
       paradigmKarteScore: karteScore(karte),
       paradigmSourceCoverage: karte.sourceScore,
       paradigmKarteSummary: {
