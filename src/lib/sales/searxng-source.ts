@@ -153,10 +153,15 @@ async function fetchSearxngPage(url: string): Promise<JsonRecord> {
   const textBody = await res.text()
   if (!res.ok) throw new Error(`SearxNG HTTP ${res.status}: ${textBody.slice(0, 180)}`)
   try {
-    return JSON.parse(textBody) as JsonRecord
+    const parsed = JSON.parse(textBody) as JsonRecord
+    if (!Array.isArray(parsed.results)) {
+      console.error("[searxng-source] SearXNG returned no results array. Keys:", Object.keys(parsed).join(", "))
+      return { results: [] }
+    }
+    return parsed
   } catch (error) {
-    console.error("[searxng-source] JSON parse failed:", error)
-    throw new Error("SearxNG did not return valid JSON. Check settings.yml search.formats includes json.")
+    console.error("[searxng-source] JSON parse failed:", error, "First 200 chars:", textBody.slice(0, 200))
+    throw new Error("SearXNG did not return valid JSON. Check settings.yml search.formats includes json.")
   }
 }
 
