@@ -118,6 +118,19 @@ const SEARCH_RETRY_DELAY_MS = 2_000 // exponential backoff base
 const SEARCH_MAX_RETRIES = 2
 const USER_AGENT = "Paradigm Sales OS SearxNG/1.0 (+https://paradigmjp.com)"
 
+const COUNTRY_TLD_MAP: Record<string, string> = {
+  IN: "site:.in OR site:.co.in OR site:.org.in OR site:.net.in",
+  VN: "site:.vn OR site:.com.vn",
+  JP: "site:.jp OR site:.co.jp OR site:.or.jp",
+  US: "site:.us",
+  GB: "site:.uk OR site:.co.uk OR site:.org.uk",
+  DE: "site:.de", FR: "site:.fr",
+  KR: "site:.kr OR site:.co.kr", CN: "site:.cn OR site:.com.cn",
+  TW: "site:.tw OR site:.com.tw", TH: "site:.th OR site:.co.th",
+  ID: "site:.id OR site:.co.id", SG: "site:.sg OR site:.com.sg",
+  AU: "site:.au OR site:.com.au",
+}
+
 interface FetchOptions extends RequestInit {
   dispatcher?: unknown
 }
@@ -288,6 +301,10 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
   const query = input.query.trim()
   if (!query) return { ok: false, error: "query is required" }
   const scope = salesScopeFromCountry({ reportLocale: input.reportLocale, targetCountry: input.targetCountry })
+  // Append country TLD filter to restrict results geographically
+  // SearXNG engines don't reliably geo-filter by language/country params alone
+  const countryTld = COUNTRY_TLD_MAP[scope.targetCountry]
+  const geoQuery = countryTld ? `${query} ${countryTld}` : query
   const baseUrl = requiredEnv("SEARXNG_BASE_URL")
   const engines = cleanTokenList(input.engines)
   const categories = cleanTokenList(input.categories, DEFAULT_CATEGORIES)
@@ -326,7 +343,7 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
 
   for (let page = 1; page <= pages; page++) {
     const url = buildSearxngSearchUrl(baseUrl, {
-      query,
+      query: geoQuery,
       engines,
       categories,
       language,
