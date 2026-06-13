@@ -476,7 +476,18 @@ export async function importSearxngRunToLeadBatch(input: {
   for (let i = 0; i < results.length; i += CHUNK_SIZE) {
     const chunk = results.slice(i, i + CHUNK_SIZE)
     const promptData = chunk.map(r => ({ id: r.id, domain: r.domain, title: r.title, snippet: r.snippet }))
-    const prompt = `Evaluate the following list of search results. Return a JSON object with keys as 'id' and value boolean true/false. True if it appears to be a legitimate B2B/B2C business or corporate site. False if it is a directory site, blog, news, aggregator, social media, or irrelevant garbage.\n\n${JSON.stringify(promptData, null, 2)}`
+    const prompt = `Evaluate each search result below. Return a JSON object with keys as 'id' and value true/false.
+
+Mark TRUE only if it is a genuine SMB (small/medium business) company site that an agency could sell services to. Criteria:
+- Independent business, local store, e-commerce brand, service provider
+- NOT a Fortune 500, multinational, or enterprise (EY, Uniqlo, Amazon, Shopify itself)
+- NOT a directory, blog, news, aggregator, social media, app store, job board
+- NOT government, education, or non-profit
+- Has a real product/service and an actual website (not just a listing)
+
+Mark FALSE for anything that fails these criteria, especially large corporations, platforms, and aggregators.
+
+${JSON.stringify(promptData, null, 2)}`
 
     try {
       // Fix 2: Retry LLM call up to 3 times
