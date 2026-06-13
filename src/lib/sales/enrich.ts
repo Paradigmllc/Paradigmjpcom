@@ -34,6 +34,11 @@ import { searchMaigretForDomain } from "./sources/maigret-source"
 import { extractSiteData, discoverForms } from "./sources/stagehand-enrich-source"
 import { scrapeWithSteel } from "./sources/steel-source"
 import { estimateTrafficViaSearx } from "./sources/searxng-traffic"
+import { extractSchemaOrg } from "./sources/schema-org"
+import { analyzeSitemap } from "./sources/sitemap"
+import { checkSafeBrowsing } from "./sources/safe-browsing"
+import { checkGreenHosting } from "./sources/green-web"
+import { lookupBuiltWithFree } from "./sources/builtwith-free"
 import { INDUSTRY_MARKET_DATA } from "./sources/market-data"
 import { collectSmbSignals } from "./sources/smb-signals"
 import { autoPersonalize } from "./personalize"
@@ -193,6 +198,11 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
       { name: "stagehand_forms", fn: () => Promise.resolve(null) },
     ]),
     { name: "steel", fn: () => scrapeWithSteel(url) },
+    { name: "schema_org", fn: () => extractSchemaOrg(url) },
+    { name: "sitemap", fn: () => analyzeSitemap(domain) },
+    { name: "safe_browsing", fn: () => checkSafeBrowsing(domain) },
+    { name: "green_web", fn: () => checkGreenHosting(domain) },
+    { name: "builtwith", fn: () => lookupBuiltWithFree(domain) },
   ]
 
   const sources = await batchAll(
@@ -209,11 +219,12 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana,
     maigret, searxng,
     stagehandSite, stagehandForms, steel,
+    schemaOrg, sitemap, safeBrowsing, greenWeb, builtwith,
   ] = sources as any[]
 
   // Step 3: 集約
   const gbizFirst = gbiz?.[0]
-  const allSourceResults = [scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts, wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana, maigret, searxng, steel, ...(stagehandEnabled ? [stagehandSite, stagehandForms] : [])]
+  const allSourceResults = [scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts, wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana, maigret, searxng, steel, schemaOrg, sitemap, safeBrowsing, greenWeb, builtwith, ...(stagehandEnabled ? [stagehandSite, stagehandForms] : [])]
   const meta: Record<string, unknown> = {
     sales_os: {
       last_enriched_at: new Date().toISOString(),
@@ -257,8 +268,13 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     searxng_traffic: searxng?.ok ? searxng.data : null,
     stagehand: !skippedStagehand && (stagehandSite?.ok || stagehandForms?.ok) ? { site: stagehandSite?.ok ? stagehandSite.data : null, forms: stagehandForms?.ok ? stagehandForms.data : null } : null,
     steel: steel?.ok ? { title: steel.data?.title, text: steel.data?.text?.slice(0, 2000), links_count: steel.data?.links?.length } : null,
+    schema_org: schemaOrg?.ok && schemaOrg.data ? schemaOrg.data : null,
+    sitemap: sitemap?.ok && sitemap.data ? sitemap.data : null,
+    safe_browsing: safeBrowsing?.configured ? { safe: safeBrowsing.safe, threats: safeBrowsing.threats } : null,
+    green_web: greenWeb?.ok ? { is_green: greenWeb.isGreen, provider: greenWeb.provider } : null,
+    builtwith: builtwith?.ok ? { technologies: builtwith.technologies, traffic_tier: builtwith.trafficTier } : null,
     market_data: industry ? (INDUSTRY_MARKET_DATA[industry as keyof typeof INDUSTRY_MARKET_DATA] ?? null) : null,
-    smb_signals: tech && dns?.ok ? await collectSmbSignals(domain, (tech.tech as Array<{ name: string }>).map((t: { name: string }) => t.name), dns.mxRecords as { exchange: string }[]).catch(() => null) : null,
+    smb_signals: tech && dns?.ok ? await collectSmbSignals(domain, ((tech as any).tech as Array<{ name: string }>).map((t: { name: string }) => t.name), dns.mxRecords as { exchange: string }[]).catch(() => null) : null,
     ...(gbizFirst ? toCompanyMeta(gbizFirst) : {}),
   }
 
