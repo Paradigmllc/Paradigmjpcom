@@ -365,7 +365,9 @@ export async function createLeadBatch(input: {
             },
           }).eq("id", saved.company.id)
           status = "enriched_inline"
-          console.log(`[monthly-batch] inline enrichment completed for ${cleanDomain}`)
+          // Auto-sync to Twenty
+          try { const { syncCompanyKarteToTwenty } = await import("./twenty-sync-companies"); void syncCompanyKarteToTwenty(saved.company.id).catch(() => {}) } catch {}
+          console.log(`[monthly-batch] inline enrichment + Twenty sync completed for ${cleanDomain}`)
         } catch (inlineErr) {
           console.error(`[monthly-batch] inline enrichment failed for ${cleanDomain}:`, inlineErr)
         }

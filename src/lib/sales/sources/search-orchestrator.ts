@@ -68,13 +68,14 @@ export async function runBrowserBulkSearch(input: BulkSearchInput): Promise<{
   // Store domains as companies in Supabase
   let created = 0
   const now = new Date().toISOString()
+  const companyIds: string[] = []
 
   for (const domain of result.domains.slice(0, targetCount)) {
     const normalized = normalizeDomain(domain)
     if (!normalized) continue
 
     try {
-      const { error } = await sb.from(DB_TABLES.SALES_COMPANIES).upsert({
+      const { data: inserted, error } = await sb.from(DB_TABLES.SALES_COMPANIES).upsert({
         domain: normalized,
         company_name: normalized.replace(/\.[^.]+$/, "").split(".").pop()?.replace(/[-_]/g, " ") || normalized.replace(/\.[^.]+$/, ""),
         region: "global",
@@ -83,15 +84,48 @@ export async function runBrowserBulkSearch(input: BulkSearchInput): Promise<{
         pipeline_status: "scanning",
         source: "browser_search",
         meta: { source: "browser_search", discovered_at: now },
-      }, { onConflict: "domain", ignoreDuplicates: true })
+      }, { onConflict: "domain", ignoreDuplicates: true }).select("id").single()
 
-      if (!error) created++
-    } catch (e) {
-      // Skip failures
-    }
+      if (!error && inserted) {
+        created++
+        companyIds.push(inserted.id)
+      }
+    } catch (e) { /* skip */ }
   }
 
-  console.log(`[search-orchestrator] Done: ${created} companies created from ${result.domains.length} domains`)
+  console.log(`[search-orchestrator] Created ${created} companies`)
+
+  // Auto-enrich in background: Wappalyzer + report_ready + Twenty sync
+  if (companyIds.length > 0) {
+    import("./wappalyzer").then(async ({ detectTechStack }) => {
+      const { isEnterpriseTechStack } = await import("./enterprise-filter")
+      let enriched = 0
+      for (const companyId of companyIds.slice(0, 20)) {
+        try {
+          const { data: co } = await sb.from(DB_TABLES.SALES_COMPANIES).select("domain").eq("id", companyId).single()
+          if (!co) continue
+          const url = co.domain.startsWith("http") ? co.domain : `https://${co.domain}`
+          const techResult = await detectTechStack(url).catch(() => ({ tech: [], server: null }))
+          const enterpriseCheck = isEnterpriseTechStack(techResult.tech.map((t: { name: string }) => t.name))
+          await sb.from(DB_TABLES.SALES_COMPANIES).update({
+            pipeline_status: enterpriseCheck.isEnterprise ? "pending" : "report_ready",
+            meta: {
+              tech: { stack: techResult.tech, server: techResult.server, count: techResult.tech.length },
+              sales_os: { last_enriched_at: new Date().toISOString(), enriched_via: "browser_search_auto" },
+              enterprise_filter: enterpriseCheck.isEnterprise ? { excluded: true, matched_tech: enterpriseCheck.matched } : null,
+            },
+          }).eq("id", companyId)
+          enriched++
+          // Auto-sync to Twenty
+          try {
+            const { syncCompanyKarteToTwenty } = await import("../twenty-sync-companies")
+            await syncCompanyKarteToTwenty(companyId)
+          } catch { /* Twenty sync is best-effort */ }
+        } catch (e) { /* skip enrichment failures */ }
+      }
+      console.log(`[search-orchestrator] Auto-enriched ${enriched}/${companyIds.slice(0, 20).length} companies`)
+    }).catch(e => console.error("[search-orchestrator] auto-enrich failed:", e))
+  }
 
   return {
     ok: true,
