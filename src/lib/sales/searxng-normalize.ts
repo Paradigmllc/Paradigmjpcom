@@ -28,18 +28,10 @@ interface SearchUrlInput {
 }
 
 const BLOCKED_HOST_PARTS = [
-  // Global search engines
-  "google.",
-  "bing.",
-  "duckduckgo.",
-  "yahoo.",
-  "baidu.",
-  "yandex.",
-  "naver.",
-  "seznam.",
-  "ecosia.",
-  "ask.",
-  "aol.",
+  // Search result pages (not the sites themselves)
+  "www.google.",
+  "www.bing.",
+  "search.yahoo.",
   // Social media
   "facebook.",
   "instagram.",
@@ -52,7 +44,7 @@ const BLOCKED_HOST_PARTS = [
   "reddit.",
   "tumblr.",
   "threads.",
-  // Video
+  // Video platforms
   "youtube.",
   "vimeo.",
   "dailymotion.",
