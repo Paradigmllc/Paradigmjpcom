@@ -782,3 +782,29 @@ node scripts/verify-db-tables.mjs
 - `node scripts/run-vitest.mjs src/lib/sales/sources/browser-search.test.ts src/lib/sales/searxng-normalize.test.ts src/lib/sales/sources/lead-discovery.test.ts`: 3 files / 8 tests passed.
 - `npm run quality:guard`: 0 errors / 46 warnings.
 - `git diff --check`: OK, CRLF warnings only.
+## ACTIVE HANDOFF - 2026-06-14 final production verification
+
+### Production result
+- Deployed commit `c2a14b0` with `npm run deploy:prod`.
+- Production container confirmed healthy: image `i12am4vvcbggefnqdizhnv9a:c2a14b08f46edc62cf7aa3facf0cde129be7e08a`.
+- Production smoke:
+  - `https://paradigmjp.com/ja/admin/sales`: HTTP 200
+  - `https://paradigmjp.com/ja`: HTTP 200
+  - `https://twenty.paradigmjp.com`: HTTP 200
+- Browser-search run `050d6db2-934f-4565-8e91-29b43b3b9a37` completed through `engines=["flaresolverr"]`, `categories=["browser_search"]`, 18 domains, 14 ready.
+- Provider/search domains were not import-ready: only `google.com.sg` appeared and it was `rejected`.
+- Ready scores are now 64 instead of the previous inflated 94 because candidate snippets no longer echo the search query.
+- Imported 2 records from the final run into batch `fd4ab63c-f659-4efb-9839-675567ef1aac`; batch has `source=browser_search`, `imported_count=2`, `error_message=null`.
+- Supabase companies created/updated:
+  - `flagship.cc` with report URL `https://paradigmjp.com/ja/report/flagship-10dq19`
+  - `eastsideco.com` with report URL `https://paradigmjp.com/ja/report/eastsideco-79mq5y`
+- Twenty REST verification:
+  - `flagship.cc`: found 1 Twenty company, report URL present.
+  - `eastsideco.com`: found 1 Twenty company, report URL present.
+- Cleanup completed for intermediate non-import smoke runs and the earlier `brave.com` test artifact.
+
+### Remaining known issues
+- Steel is still not provisioned: `steel.paradigmjp.com` does not resolve. Code will use Steel only after `STEEL_BASE_URL` is configured.
+- Browserless remains unavailable (`503 no available server`) and is not used in this path.
+- `npm run deploy:prod` still prints DB verification warnings because local deploy-time env lacks direct Supabase service env / `exec_sql`; production runtime env is present and was verified via container/API.
+- `npx tsc --noEmit --pretty false` still fails on unrelated existing errors in `astro-demo` and `src/app/api/sales/fix-schema/route.ts`.
