@@ -53,16 +53,17 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
 }> {
   const sb = getSb()
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
-  const query = input.query.trim()
-  if (!query) return { ok: false, error: "query is required" }
+  const baseQuery = input.query.trim()
   const scope = salesScopeFromCountry({ reportLocale: input.reportLocale, targetCountry: input.targetCountry })
   const rawCountry = (input.targetCountry?.trim().toUpperCase() || scope.targetCountry)
   const techStacks = input.techStacks?.filter(t => t.length > 0) ?? []
   const countryTld = COUNTRY_TLD_MAP[rawCountry] ?? ""
   const footprintQuery = techStacks.length > 0 ? buildFootprintSearchQuery(rawCountry, techStacks, 3) : null
-  const enhancedQuery = footprintQuery 
-    ? `${query} (${footprintQuery})`
-    : countryTld ? `${query} ${countryTld}` : query
+  const query = baseQuery || footprintQuery || ""
+  if (!query) return { ok: false, error: "query or techStacks is required" }
+  const enhancedQuery = footprintQuery
+    ? baseQuery ? `${baseQuery} (${footprintQuery})` : footprintQuery
+    : countryTld ? `${baseQuery} ${countryTld}` : baseQuery
   const baseUrl = requiredEnv("SEARXNG_BASE_URL")
   const engines = cleanTokenList(input.engines)
   const categories = cleanTokenList(input.categories, DEFAULT_CATEGORIES)
@@ -84,7 +85,7 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
       safesearch,
       time_range: input.timeRange ?? null,
       pages_requested: pages,
-      meta: { source: "searxng", base_url_origin: getSearxngOrigin(baseUrl) },
+      meta: { source: "searxng", base_url_origin: getSearxngOrigin(baseUrl), enhanced_query: enhancedQuery, tech_stacks: techStacks },
     })
     .select("*")
     .single()

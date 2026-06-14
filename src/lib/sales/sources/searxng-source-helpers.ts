@@ -52,7 +52,7 @@ export interface SearxngResultRow {
   raw: JsonRecord
 }
 
-export type SearxngRunStatus = "running" | "completed" | "completed_partial" | "failed" | "imported"
+export type SearxngRunStatus = "running" | "completed" | "completed_partial" | "importing" | "failed" | "imported"
 
 export interface SearxngResultSummary {
   id: string
@@ -191,8 +191,8 @@ export async function callLLMWithRetry(prompt: string, maxRetries: number = 3): 
     try {
       const res = await callDeepSeek([{ role: "user", content: prompt }], { responseFormat: "json_object", maxTokens: 2000 })
       if (res.ok && res.text) return res
-    } catch {
-      // retry
+    } catch (error) {
+      console.warn("[searxng-import] LLM attempt threw:", error instanceof Error ? error.message : String(error))
     }
     if (attempt < maxRetries - 1) {
       const delay = 500 * Math.pow(2, attempt)

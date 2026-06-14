@@ -39,7 +39,11 @@ export async function GET(req: NextRequest) {
     if (!(await isSalesApiAuthorized(req))) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
     }
-    const scope = salesScopeFromLocale(req.nextUrl.searchParams.get("locale") ?? "en")
+    const reportLocale = req.nextUrl.searchParams.get("report_locale") ?? req.nextUrl.searchParams.get("reportLocale")
+    const targetCountry = req.nextUrl.searchParams.get("target_country") ?? req.nextUrl.searchParams.get("targetCountry")
+    const scope = reportLocale || targetCountry
+      ? salesScopeFromCountry({ reportLocale, targetCountry })
+      : salesScopeFromLocale(req.nextUrl.searchParams.get("locale") ?? "en")
     const limit = Math.max(1, Math.min(Number(req.nextUrl.searchParams.get("limit") ?? 8), 20))
     const result = await listSearxngRuns(scope, limit)
     return NextResponse.json(result, { status: result.ok ? 200 : 503 })
@@ -69,8 +73,11 @@ export async function POST(req: NextRequest) {
     const targetCountry = (raw.targetCountry ?? raw.target_country ?? null) as string | null | undefined
     const timeRange = (raw.timeRange ?? raw.time_range ?? null) as SearxngTimeRange | null | undefined
 
-    const query = body.query?.trim()
-    if (!query) return NextResponse.json({ ok: false, error: "query is required" }, { status: 400 })
+    const query = body.query?.trim() ?? ""
+    const techStacks = tokenList(body.tech_stacks)
+    if (!query && (!techStacks || techStacks.length === 0)) {
+      return NextResponse.json({ ok: false, error: "query or tech_stacks is required" }, { status: 400 })
+    }
     if (query.length > 400) return NextResponse.json({ ok: false, error: "query must be 400 characters or less" }, { status: 400 })
     const scope = salesScopeFromCountry({ reportLocale, targetCountry })
     const result = await runSearxngSearch({
@@ -83,7 +90,7 @@ export async function POST(req: NextRequest) {
       safesearch: body.safesearch,
       timeRange: isTimeRange(body.time_range) ? body.time_range : null,
       pages: body.pages,
-      techStacks: tokenList(body.tech_stacks),
+      techStacks,
     })
     return NextResponse.json(result, { status: result.ok ? 200 : 503 })
   } catch (error) {

@@ -39,6 +39,7 @@ export function SearxngSearchPanelResults({ data, targetCount }: { data: SalesDa
         setImportingRun(null)
       }
     } catch (e) {
+      console.error("[SearxngSearchPanelResults] import failed:", e)
       toast.error("ネットワークエラー")
       setImportingRun(null)
     }
@@ -60,6 +61,7 @@ export function SearxngSearchPanelResults({ data, targetCount }: { data: SalesDa
         toast.error(result.errors?.[0] ?? "エンリッチ失敗")
       }
     } catch (e) {
+      console.error("[SearxngSearchPanelResults] enrichment failed:", e)
       toast.error("ネットワークエラー")
     } finally {
       setEnriching(false)
@@ -69,11 +71,12 @@ export function SearxngSearchPanelResults({ data, targetCount }: { data: SalesDa
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
       running: "bg-blue-100 text-blue-700",
+      importing: "bg-violet-100 text-violet-700",
       completed: "bg-emerald-100 text-emerald-700",
       failed: "bg-rose-100 text-rose-700",
       imported: "bg-violet-100 text-violet-700",
     }
-    const labels: Record<string, string> = { running: "実行中", completed: "完了", failed: "失敗", imported: "取込済" }
+    const labels: Record<string, string> = { running: "実行中", importing: "取込中", completed: "完了", failed: "失敗", imported: "取込済" }
     return <span className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${map[status] ?? "bg-zinc-100 text-zinc-600"}`}>{labels[status] ?? status}</span>
   }
 

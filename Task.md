@@ -1,3 +1,36 @@
+## ACTIVE HANDOFF — 2026-06-14 リスト収集バグ修正
+
+### 修正サマリー
+
+SearXNG リスト収集で「検索後のインポートが stuck する」「JP の実行をポーリングできず件数が `?` になる」「技術スタックだけを選ぶと query 必須で開始できない」問題を修正。
+
+| ファイル | 変更内容 |
+|----------|----------|
+| `src/app/api/sales/searxng/runs/[runId]/import/route.ts` | バックグラウンド import 失敗時に run を `failed` へ更新し、`error_message` と `completed_at` を保存。`importing` 固着を防止 |
+| `src/app/api/sales/searxng/runs/route.ts` | GET が `report_locale` / `target_country` を受け取り、JP scope の直近 run を正しく返すよう修正。POST は `tech_stacks` のみでも実行可能に変更 |
+| `src/lib/sales/searxng-source.ts` | tech stack footprint query のみで検索できるようにし、実検索クエリと tech stack を `meta` に保存 |
+| `src/lib/sales/sources/searxng-source-helpers.ts` | run status に `importing` を追加。LLM retry の例外を警告ログ化 |
+| `src/components/sales-dashboard/SearxngSearchPanel.tsx` | tech stack だけ選択された場合のベースクエリを補完。polling に scope params を付与。catch に console 出力追加 |
+| `src/components/sales-dashboard/SearxngSearchPanelResults.tsx` | `importing` バッジ表示追加。catch に console 出力追加 |
+| `src/lib/sales/sources/search-orchestrator.ts` | DB upsert / auto-enrich / Twenty sync のサイレント失敗をログと `errors` に出すよう修正 |
+
+### 検証
+
+- `npm run quality:guard`: 0 errors / 45 warnings
+- `node scripts/run-vitest.mjs src/lib/sales/searxng-normalize.test.ts src/lib/sales/sources/lead-discovery.test.ts`: 2 files / 4 tests passed
+- `git diff --check`: OK (CRLF warningのみ)
+- `npx tsc --noEmit --pretty false`: 既存3件で失敗
+  - `astro-demo/src/keystatic/demo-data.ts`: `description` 欠落
+  - `astro-demo/src/keystatic/demo-data.ts`: `./demo-data-legacy` 不在
+  - `src/app/api/sales/fix-schema/route.ts`: `PoolConfig.family` 型不一致
+
+### 残存リスク
+
+- 実際の収集品質は `SEARXNG_BASE_URL` と LLM pre-filter の稼働状態に依存。
+- 既存の未追跡 credential ファイル `scripts/_fix-twenty.cjs` は repo 外の `~/.claude/projects/D--dev-paradigmjpcom/memory/private/2026-06-14-_fix-twenty.cjs` に退避済み。
+
+---
+
 ## ACTIVE HANDOFF — 2026-06-12 壁打ち診断: データパイプライン全修正
 
 ### 修正概要 (9ファイル)

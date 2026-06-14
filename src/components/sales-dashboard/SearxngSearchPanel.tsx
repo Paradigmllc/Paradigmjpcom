@@ -63,10 +63,11 @@ export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
       if (found?.keywords) parts.push(found.keywords)
     }
     if (customQuery.trim()) parts.push(customQuery.trim())
-    // Tech stacks are detected by Wappalyzer AFTER search, NOT used as search keywords
-    // Adding them to search keywords returns garbage (pages about the tech, not businesses using it)
+    if (parts.length === 0 && techStacks.length > 0) {
+      parts.push(targetCountry === "JP" ? "企業 問い合わせ" : "business contact")
+    }
     return parts.join(" ") || industry
-  }, [industry, customQuery, techStacks])
+  }, [industry, customQuery, techStacks, targetCountry])
 
   const pages = Math.max(1, Math.min(5, Math.ceil(targetCount / 10)))
 
@@ -140,14 +141,21 @@ export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
       for (let attempt = 0; attempt < 15; attempt++) {
         await new Promise(r => setTimeout(r, 2000))
         try {
-          const pollRes = await fetch(`/api/sales/searxng/runs?limit=1`)
+          const params = new URLSearchParams({
+            limit: "3",
+            report_locale: data.scope.reportLocale,
+            target_country: targetCountry,
+          })
+          const pollRes = await fetch(`/api/sales/searxng/runs?${params.toString()}`)
           const pollData = await pollRes.json()
           const updatedRun = pollData.runs?.find((r: { id: string }) => r.id === run.id)
           if (updatedRun?.status === "imported") {
             importedCount = updatedRun.importedCount
             break
           }
-        } catch { /* continue polling */ }
+        } catch (e) {
+          console.warn("[SearxngSearchPanel] poll failed:", e)
+        }
       }
 
       setStep("done")
@@ -157,6 +165,7 @@ export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
     } catch (e) {
       setStep("error")
       const msg = e instanceof Error ? e.message : "ネットワークエラー"
+      console.error("[SearxngSearchPanel] pipeline failed:", e)
       setStepError(msg)
       toast.error(msg)
     }

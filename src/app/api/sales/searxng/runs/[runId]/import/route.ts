@@ -15,6 +15,21 @@ interface Body {
   max_outreach_ready?: number | null
 }
 
+async function markImportFailed(runId: string, error: unknown): Promise<void> {
+  const sb = getServiceSalesSupabase()
+  if (!sb) return
+  const message = error instanceof Error ? error.message : String(error)
+  const { error: updateError } = await sb
+    .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
+    .update({
+      status: "failed",
+      error_message: message.slice(0, 500),
+      completed_at: new Date().toISOString(),
+    })
+    .eq("id", runId)
+  if (updateError) console.error("[sales-searxng-import] failed to mark run failed:", updateError.message)
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ runId: string }> },
@@ -28,8 +43,8 @@ export async function POST(
     let body: Body = {}
     try {
       body = (await req.json()) as Body
-    } catch {
-      // empty body is fine — use defaults
+    } catch (error) {
+      console.warn("[sales-searxng-import] empty or invalid JSON body; using defaults:", error)
     }
 
     // Normalize camelCase → snake_case (frontend sends camelCase JSON)
@@ -77,10 +92,12 @@ export async function POST(
           console.log(`[sales-searxng-import] run ${runId.slice(0, 12)}... imported ${result.imported} companies`)
         } else {
           console.error(`[sales-searxng-import] run ${runId.slice(0, 12)}... failed:`, result.error)
+          void markImportFailed(runId, new Error(result.error ?? "SearxNG import failed"))
         }
       })
       .catch((err) => {
         console.error(`[sales-searxng-import] run ${runId.slice(0, 12)}... crashed:`, err)
+        void markImportFailed(runId, err)
       })
 
     return NextResponse.json(

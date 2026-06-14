@@ -69,6 +69,7 @@ export async function runBrowserBulkSearch(input: BulkSearchInput): Promise<{
   let created = 0
   const now = new Date().toISOString()
   const companyIds: string[] = []
+  const errors = [...result.errors]
 
   for (const domain of result.domains.slice(0, targetCount)) {
     const normalized = normalizeDomain(domain)
@@ -89,8 +90,14 @@ export async function runBrowserBulkSearch(input: BulkSearchInput): Promise<{
       if (!error && inserted) {
         created++
         companyIds.push(inserted.id)
+      } else if (error) {
+        console.error("[search-orchestrator] company upsert failed:", error.message)
+        errors.push(`${normalized}: ${error.message}`)
       }
-    } catch (e) { /* skip */ }
+    } catch (error) {
+      console.error("[search-orchestrator] company upsert crashed:", error)
+      errors.push(`${normalized}: ${error instanceof Error ? error.message : String(error)}`)
+    }
   }
 
   console.log(`[search-orchestrator] Created ${created} companies`)
@@ -120,8 +127,12 @@ export async function runBrowserBulkSearch(input: BulkSearchInput): Promise<{
           try {
             const { syncCompanyKarteToTwenty } = await import("../twenty-sync-companies")
             await syncCompanyKarteToTwenty(companyId)
-          } catch { /* Twenty sync is best-effort */ }
-        } catch (e) { /* skip enrichment failures */ }
+          } catch (error) {
+            console.error("[search-orchestrator] Twenty sync failed:", error)
+          }
+        } catch (e) {
+          console.error("[search-orchestrator] auto-enrich company failed:", e)
+        }
       }
       console.log(`[search-orchestrator] Auto-enriched ${enriched}/${companyIds.slice(0, 20).length} companies`)
     }).catch(e => console.error("[search-orchestrator] auto-enrich failed:", e))
@@ -132,6 +143,6 @@ export async function runBrowserBulkSearch(input: BulkSearchInput): Promise<{
     domainsFound: result.domains.length,
     companiesCreated: created,
     queries: uniqueQueries.length,
-    errors: result.errors,
+    errors,
   }
 }
