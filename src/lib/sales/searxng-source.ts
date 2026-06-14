@@ -10,6 +10,7 @@ import {
 } from "./searxng-normalize"
 import { buildFootprintSearchQuery } from "./sources/cms-footprint-search"
 import { searchWithBrowser } from "./sources/browser-search"
+import { runBrowserSearchRun } from "./sources/browser-search-run"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import {
   callLLMWithRetry,
@@ -65,12 +66,28 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
   const enhancedQuery = footprintQuery
     ? baseQuery ? `${baseQuery} (${footprintQuery})` : footprintQuery
     : countryTld ? `${baseQuery} ${countryTld}` : baseQuery
-  const baseUrl = requiredEnv("SEARXNG_BASE_URL")
-  const engines = cleanTokenList(input.engines)
-  const categories = cleanTokenList(input.categories, DEFAULT_CATEGORIES)
   const language = (input.language?.trim() || scope.reportLocale || "en").slice(0, 12)
   const safesearch = Math.max(0, Math.min(2, Math.round(input.safesearch ?? 1)))
   const pages = Math.max(1, Math.min(10, Math.round(input.pages ?? 3)))
+  const provider = (process.env.SALES_LIST_COLLECTION_PROVIDER ?? "browser_search").trim().toLowerCase()
+  if (provider !== "searxng") {
+    return runBrowserSearchRun({
+      sb,
+      query,
+      enhancedQuery,
+      scope,
+      rawCountry,
+      pages,
+      techStacks,
+      language,
+      safesearch,
+      timeRange: input.timeRange ?? null,
+    })
+  }
+
+  const baseUrl = requiredEnv("SEARXNG_BASE_URL")
+  const engines = cleanTokenList(input.engines)
+  const categories = cleanTokenList(input.categories, DEFAULT_CATEGORIES)
 
   const inserted = await sb
     .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
@@ -386,7 +403,7 @@ ${JSON.stringify(promptData, null, 2)}`
     domain: result.domain,
     report_locale: run.report_locale,
     target_country: run.target_country,
-    source: "searxng",
+    source: result.engine?.includes("browser") || result.category === "browser_search" ? "browser_search" : "searxng",
     search_url: result.url,
     search_title: result.title,
     search_snippet: result.snippet,
@@ -394,12 +411,13 @@ ${JSON.stringify(promptData, null, 2)}`
     searxng_run_id: run.id,
     searxng_result_id: result.id,
   }))
+  const batchSource = rows.some((row) => row.source === "browser_search") ? "browser_search" : "searxng"
   const created = await createLeadBatch({
-    name: `SearxNG ${run.target_country} ${new Date().toISOString().slice(0, 10)}`,
+    name: `${batchSource === "browser_search" ? "Browser Search" : "SearxNG"} ${run.target_country} ${new Date().toISOString().slice(0, 10)}`,
     rows,
     reportLocale: run.report_locale,
     targetCountry: run.target_country,
-    source: "searxng",
+    source: batchSource,
     enrich: input.enrich ?? true,
     minOutreachScore: minScore,
     maxOutreachReady: input.maxOutreachReady ?? 300,

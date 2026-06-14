@@ -713,3 +713,22 @@ node scripts/verify-db-tables.mjs
 - Fix in progress: `src/app/api/sales/agent/telegram-command/route.ts` now extracts `callback_query`, infers `source` from callback/text values such as `agent:opencode` and `agent:hermes`, answers callback queries, and sends a Telegram reply. `src/lib/sales/agent-team.ts` now records OpenCode/Hermes/OpenClaw/Paperclip menu selections as concrete selected-agent results instead of a dead menu tap.
 - Verification: `npm test -- --run src/lib/sales/agent-team.test.ts` passed. `npx tsc --noEmit --pretty false` still fails only on existing `astro-demo/src/keystatic/demo-data.ts` issues (`description` missing and `demo-data-legacy` missing).
 - Memory/global sync: add Codex memory note that `@aiparadigmbot` menu callbacks must stay wired to Sales OS `source` routing and OpenCode legacy bridge.
+## ACTIVE HANDOFF - 2026-06-14 Steel/FlareSolverr list collection switch
+
+### Implemented
+- Default list collection path now uses browser search (`FlareSolverr` first, `Steel` when configured) instead of SearXNG-first logic.
+- `FLARESOLVERR_API_URL=http://flaresolverr:8191` is normalized to `/v1`, matching the currently running host container.
+- Missing browser backend now fails closed with a clear error instead of falling back to localhost.
+- `/api/sales/browser-search` now waits for execution and returns actual counts instead of fire-and-forget.
+- Browser search run creation was split into `src/lib/sales/sources/browser-search-run.ts` to keep `searxng-source.ts` under the 500-line guard.
+- Steel helpers now report `STEEL_BASE_URL is not configured` instead of trying `localhost`.
+
+### Verification
+- Host check: app container can resolve `flaresolverr` and `searxng`; `http://flaresolverr:8191/` returns ready, `http://searxng:8080/search?...` returns JSON.
+- `npm run quality:guard`: 0 errors / 46 warnings.
+- `node scripts/run-vitest.mjs src/lib/sales/sources/browser-search.test.ts src/lib/sales/searxng-normalize.test.ts src/lib/sales/sources/lead-discovery.test.ts`: 3 files / 7 tests passed.
+- `npx tsc --noEmit --pretty false`: still blocked by existing unrelated errors in `astro-demo/src/keystatic/demo-data.ts` and `src/app/api/sales/fix-schema/route.ts`.
+
+### Remaining Risk
+- Steel service itself is still not provisioned; `steel.paradigmjp.com` does not resolve. Current usable primary is FlareSolverr, with Steel ready as a configured provider once DNS/service exists.
+- Browserless env exists but `https://browserless.paradigmjp.com` currently returns `503 no available server`; it is not used for this fix.

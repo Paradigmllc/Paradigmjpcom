@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
       categories: tokenList(body.categories),
       language: body.language,
       safesearch: body.safesearch,
-      timeRange: isTimeRange(body.time_range) ? body.time_range : null,
+      timeRange: isTimeRange(timeRange) ? timeRange : null,
       pages: body.pages,
       techStacks,
     })

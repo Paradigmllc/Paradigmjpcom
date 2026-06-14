@@ -12,7 +12,9 @@
 import { envValue } from "../oss-service-health"
 
 function steelUrl(): string {
-  return (envValue("STEEL_BASE_URL") ?? "http://localhost:3100").replace(/\/+$/, "")
+  const configured = envValue("STEEL_BASE_URL")
+  if (!configured) throw new Error("STEEL_BASE_URL is not configured")
+  return configured.replace(/\/+$/, "")
 }
 
 function steelApiKey(): string | null {
@@ -42,6 +44,7 @@ interface SteelScrapeResult {
 
 export async function scrapeWithSteel(url: string): Promise<SteelScrapeResult> {
   if (!url?.startsWith("http")) return { ok: false, error: "invalid url" }
+  if (!envValue("STEEL_BASE_URL")) return { ok: false, error: "STEEL_BASE_URL is not configured" }
   const apiKey = steelApiKey()
   const headers: Record<string, string> = { "Content-Type": "application/json" }
   if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`
@@ -84,6 +87,7 @@ interface SteelScreenshotResult {
 
 export async function screenshotWithSteel(url: string): Promise<SteelScreenshotResult> {
   if (!url?.startsWith("http")) return { ok: false, error: "invalid url" }
+  if (!envValue("STEEL_BASE_URL")) return { ok: false, error: "STEEL_BASE_URL is not configured" }
   const apiKey = steelApiKey()
   const headers: Record<string, string> = { "Content-Type": "application/json" }
   if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`

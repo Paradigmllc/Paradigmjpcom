@@ -14,6 +14,7 @@ export interface BrowserSearchResult {
   engine: string
   total: number
   error?: string
+  providersTried?: string[]
 }
 
 // Realistic Chrome headers
@@ -23,8 +24,51 @@ const BROWSER_HEADERS = {
   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
 }
 
+function optionalEnv(name: string): string | null {
+  const value = process.env[name]
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null
+}
+
+function flareSolverrEndpoint(): string | null {
+  const raw = optionalEnv("FLARESOLVERR_URL") ?? optionalEnv("FLARESOLVERR_API_URL")
+  if (!raw) return null
+  try {
+    const url = new URL(raw)
+    if (!/\/v1\/?$/.test(url.pathname)) {
+      url.pathname = `${url.pathname.replace(/\/+$/, "")}/v1`
+    }
+    return url.toString()
+  } catch (error) {
+    console.error("[browser-search] invalid FlareSolverr URL:", error)
+    return null
+  }
+}
+
+export function getBrowserSearchBackendStatus(): {
+  configured: boolean
+  flaresolverrUrl: string | null
+  steelBaseUrl: string | null
+  providers: string[]
+  error?: string
+} {
+  const flaresolverrUrl = flareSolverrEndpoint()
+  const steelBaseUrl = optionalEnv("STEEL_BASE_URL")
+  const providers = [
+    ...(flaresolverrUrl ? ["flaresolverr"] : []),
+    ...(steelBaseUrl ? ["steel"] : []),
+  ]
+  return {
+    configured: providers.length > 0,
+    flaresolverrUrl,
+    steelBaseUrl,
+    providers,
+    error: providers.length > 0 ? undefined : "FLARESOLVERR_URL or STEEL_BASE_URL is required for browser search",
+  }
+}
+
 async function fsRequest(url: string): Promise<string | null> {
-  const fsUrl = process.env.FLARESOLVERR_URL ?? "http://flaresolverr:8191/v1"
+  const fsUrl = flareSolverrEndpoint()
+  if (!fsUrl) return null
   try {
     const res = await fetch(fsUrl, {
       method: "POST",
@@ -56,8 +100,10 @@ async function fsRequest(url: string): Promise<string | null> {
 }
 
 async function steelScrape(url: string): Promise<string | null> {
-  const steelUrl = (process.env.STEEL_BASE_URL ?? "http://localhost:3100").replace(/\/+$/, "")
-  const apiKey = process.env.STEEL_API_KEY
+  const configuredSteelUrl = optionalEnv("STEEL_BASE_URL")
+  if (!configuredSteelUrl) return null
+  const steelUrl = configuredSteelUrl.replace(/\/+$/, "")
+  const apiKey = optionalEnv("STEEL_API_KEY")
   const headers: Record<string, string> = { "Content-Type": "application/json" }
   if (apiKey) headers.Authorization = `Bearer ${apiKey}`
 
@@ -121,22 +167,36 @@ export async function searchWithBrowser(
   engine: keyof typeof SEARCH_ENGINES = "google",
 ): Promise<BrowserSearchResult> {
   const url = SEARCH_ENGINES[engine](query)
+  const backend = getBrowserSearchBackendStatus()
+  const providersTried = backend.providers
 
-  // Try FlareSolverr first
+  if (!backend.configured) {
+    console.error("[browser-search] backend not configured:", backend.error)
+    return {
+      ok: false,
+      domains: [],
+      engine,
+      total: 0,
+      error: backend.error,
+      providersTried,
+    }
+  }
+
+  // Try FlareSolverr first when configured.
   const fsHtml = await fsRequest(url)
   if (fsHtml) {
     const domains = extractDomains(fsHtml)
-    return { ok: true, domains, engine, total: domains.length }
+    return { ok: true, domains, engine, total: domains.length, providersTried }
   }
 
-  // Fallback to Steel
+  // Fallback to Steel when configured.
   const steelHtml = await steelScrape(url)
   if (steelHtml) {
     const domains = extractDomains(steelHtml)
-    return { ok: true, domains, engine, total: domains.length }
+    return { ok: true, domains, engine, total: domains.length, providersTried }
   }
 
-  return { ok: false, domains: [], engine, total: 0, error: "All browser backends failed" }
+  return { ok: false, domains: [], engine, total: 0, error: "All configured browser backends failed", providersTried }
 }
 
 /**
