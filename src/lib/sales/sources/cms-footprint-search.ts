@@ -71,6 +71,7 @@ const CITY_MAP: Record<string, string[]> = {
   AU: ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide", "Gold Coast"],
   CH: ["Zurich", "Geneva", "Basel", "Bern", "Lausanne", "Lucerne", "Winterthur"],
   IL: ["Tel Aviv", "Jerusalem", "Haifa", "Petah Tikva", "Netanya", "Eilat", "Herzliya"],
+  ZA: ["Johannesburg", "Cape Town", "Durban", "Pretoria", "Port Elizabeth", "Bloemfontein"],
 }
 
 function pickCities(countryCode: string, count: number): string[] {

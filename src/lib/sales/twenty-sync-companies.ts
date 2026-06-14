@@ -103,14 +103,19 @@ async function syncTwentyCompanyHomeFields(
     method: "PATCH",
     body: JSON.stringify({
       name: karte.companyName,
+      // Standard visible fields (show immediately in Twenty UI)
+      xLink: linkField("診断レポート", karte.reportUrl),
+      linkedinLink: linkField("お問い合わせ", karte.formUrl),
+      employees: karteScore(karte),
+      annualRecurringRevenue: { amountMicros: karte.sourceScore * 1000000, currencyCode: "USD" },
+      address: { addressCity: karteHomeSummary(karte).split("\n")[0]?.slice(0, 50) ?? "" },
+      // Custom paradigm fields (show after layout config)
       paradigmReportUrl: linkField("診断レポートURL", karte.reportUrl),
       paradigmFormUrl: linkField("フォームURL", karte.formUrl),
       paradigmDemoUrl: linkField("デモURL", karte.demoUrl),
       paradigmKarteScore: karteScore(karte),
       paradigmSourceCoverage: karte.sourceScore,
-      paradigmKarteSummary: {
-        markdown: karteHomeSummary(karte),
-      },
+      paradigmKarteSummary: { markdown: karteHomeSummary(karte) },
     }),
   })
 

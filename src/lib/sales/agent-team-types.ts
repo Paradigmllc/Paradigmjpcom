@@ -7,6 +7,7 @@ export const SALES_AGENT_INTENTS = [
   "run_enrichment",
   "run_outreach_dry_run",
   "prepare_assets",
+  "collect_list",
   "sync_twenty",
   "manual_review",
   "unknown",

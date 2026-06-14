@@ -1,8 +1,8 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
-import { notifySlack } from "@/lib/notify"
 import { runEnrichmentJobs } from "@/lib/sales/enrichment-jobs"
 import { runOutreachBatch } from "@/lib/sales/outreach/orchestrator"
 import { pullTwentyCompaniesToSupabase } from "@/lib/sales/twenty-pull"
+import { collectCompanyList, formatCollectListReply } from "./agent-team-collector"
 import { isValidRegion, type Region } from "@/lib/sales/types"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import {
@@ -17,11 +17,26 @@ import {
   type SalesAgentRole,
   type DashboardAgentCommand,
   type DashboardAgentTeam,
-  type TelegramKeyboard,
   AGENT_ROLES,
   AUTONOMY_LEVELS,
   GUARDRAILS,
 } from "@/lib/sales/agent-team-types"
+import {
+  agentMenuSummary,
+  approveQueueItem,
+  buildMainMenuKeyboard,
+  enqueueManualReview,
+  getCompanyCard,
+  isAgentMenuSelection,
+  listEnrichmentJobs,
+  listOperatorQueueItems,
+  notifyHumanReview,
+  replyFor,
+  runDiagnosticForCompany,
+  searchCompanies,
+  statusReport,
+} from "./agent-team-telegram"
+export { buildMainMenuKeyboard }
 
 export {
   SALES_AGENT_INTENTS,
@@ -70,6 +85,7 @@ export function classifyAgentCommand(text: string): SalesAgentIntent {
   if (/(資料|スライド|動画|デモ|asset|deck|slidev|gotenberg|hyperframes|remotion|astro)/i.test(text)) {
     return "prepare_assets"
   }
+  if (/(リスト収集|リスト作成|収集して|集めて|一覧|list\s*collect|collect\s*list|まとめて)/i.test(text)) return "collect_list"
   if (/(twenty|crm|同期|sync|pull)/i.test(text)) return "sync_twenty"
   if (/(メニュー|menu|start|開始|使い方|help)/i.test(text)) return "show_menu"
   if (/(検索|search|探して|find|lookup)/i.test(text)) return "search_company"
@@ -92,56 +108,6 @@ function agentRoleForSource(source: SalesAgentSource): SalesAgentRole["id"] {
   if (source === "openclaw") return "openclaw_researcher"
   if (source === "paperclip") return "paperclip_operator"
   return "ceo_hermes"
-}
-
-function isAgentMenuSelection(text: string, source: SalesAgentSource): boolean {
-  if (source === "telegram" || source === "dashboard" || source === "trigger_dev") return false
-  const normalized = text.toLowerCase().replace(/[^a-z0-9]+/g, "")
-  return [
-    "hermes",
-    "agenthermes",
-    "hermesagent",
-    "agenthermesagent",
-    "ceohermes",
-    "agentceohermes",
-    "opencode",
-    "agentopencode",
-    "opencodeengineer",
-    "agentopencodeengineer",
-    "openclaw",
-    "agentopenclaw",
-    "openclawresearcher",
-    "agentopenclawresearcher",
-    "paperclip",
-    "agentpaperclip",
-    "paperclipoperator",
-    "agentpaperclipoperator",
-  ].includes(normalized)
-}
-
-function agentMenuSummary(source: SalesAgentSource): { summary: string; result: JsonRecord } {
-  if (source === "opencode") {
-    return {
-      summary: "OpenCode Engineerを選択しました。コード修正、テスト、デプロイ準備、原因調査の指示をそのまま送ってください。",
-      result: { selectedAgent: "opencode_engineer", accepts: ["code_fix", "tests", "deploy_preparation", "debugging"] },
-    }
-  }
-  if (source === "hermes_agent") {
-    return {
-      summary: "CEO Hermes Agentを選択しました。営業方針、優先度、承認要否、次アクション整理の指示をそのまま送ってください。",
-      result: { selectedAgent: "ceo_hermes", accepts: ["strategy", "prioritization", "approval_review", "next_actions"] },
-    }
-  }
-  if (source === "openclaw") {
-    return {
-      summary: "OpenClaw Researcherを選択しました。企業調査、証拠収集、ソース確認の指示をそのまま送ってください。",
-      result: { selectedAgent: "openclaw_researcher", accepts: ["research", "evidence", "source_verification"] },
-    }
-  }
-  return {
-    summary: "Paperclip Operatorを選択しました。ジョブ管理、通知、手動キュー整理の指示をそのまま送ってください。",
-    result: { selectedAgent: "paperclip_operator", accepts: ["job_ops", "notifications", "manual_queue"] },
-  }
 }
 
 async function insertCommand(
@@ -225,73 +191,6 @@ async function logAgentEvent(
     payload: input.payload ?? {},
   })
   if (error) console.error("[sales-agent-team] event insert failed:", error.message)
-}
-
-async function countRows(sb: ServiceSupabase, table: string): Promise<number> {
-  const { count, error } = await sb.from(table).select("id", { count: "exact", head: true })
-  if (error) {
-    console.error(`[sales-agent-team] count ${table} failed:`, error.message)
-    return 0
-  }
-  return count ?? 0
-}
-
-async function countRowsByStatus(sb: ServiceSupabase, table: string, statuses: string[]): Promise<number> {
-  const { count, error } = await sb.from(table).select("id", { count: "exact", head: true }).in("status", statuses)
-  if (error) {
-    console.error(`[sales-agent-team] count ${table} by status failed:`, error.message)
-    return 0
-  }
-  return count ?? 0
-}
-
-async function statusReport(sb: ServiceSupabase | null): Promise<JsonRecord> {
-  if (!sb) return { configured: false }
-  const [companies, queuedJobs, openQueue, recentCommands] = await Promise.all([
-    countRows(sb, "sales_companies"),
-    countRowsByStatus(sb, "sales_enrichment_jobs", ["queued", "running"]),
-    countRowsByStatus(sb, "sales_operator_queue_items", ["open", "in_progress", "blocked"]),
-    countRows(sb, "sales_agent_commands"),
-  ])
-  return { configured: true, companies, queuedJobs, openQueue, recentCommands }
-}
-
-async function enqueueManualReview(
-  sb: ServiceSupabase | null,
-  input: { reason: string; commandText: string; intent: SalesAgentIntent; region: Region; priority?: number },
-): Promise<{ queued: boolean; error?: string }> {
-  if (!sb) return { queued: false, error: "Supabase service_role not configured" }
-  const { error } = await sb.from(DB_TABLES.SALES_OPERATOR_QUEUE_ITEMS).insert({
-    region: input.region,
-    queue_type: "analysis",
-    priority: input.priority ?? 80,
-    status: "open",
-    source_tool: "trigger_dev",
-    target_tool: "appsmith",
-    meta: {
-      reason: input.reason,
-      command_text: input.commandText,
-      intent: input.intent,
-      created_by: "sales_agent_team",
-      approval_required: true,
-    },
-  })
-  if (error) {
-    console.error("[sales-agent-team] manual queue insert failed:", error.message)
-    return { queued: false, error: error.message }
-  }
-  return { queued: true }
-}
-
-function replyFor(input: { intent: SalesAgentIntent; summary: string; approvalRequired: boolean; status: string }): string {
-  const approval = input.approvalRequired ? "\n承認: 必要です。Appsmith/Slack側の確認キューを見てください。" : ""
-  return `Paradigm AI営業チーム: ${input.summary}\nIntent: ${input.intent}\nStatus: ${input.status}${approval}`
-}
-
-async function notifyHumanReview(input: { intent: SalesAgentIntent; summary: string; commandText: string }): Promise<void> {
-  await notifySlack(
-    `Paradigm AI Bot approval required\nIntent: ${input.intent}\nSummary: ${input.summary}\nCommand: ${input.commandText}`,
-  )
 }
 
 export async function handleAgentCommand(input: SalesAgentCommandInput): Promise<SalesAgentCommandResult> {
@@ -429,6 +328,14 @@ export async function handleAgentCommand(input: SalesAgentCommandInput): Promise
       return { ok: queue.queued, commandId, intent, status: queue.queued ? "completed" : "blocked", approvalRequired: true, summary, reply: replyFor({ intent, summary, approvalRequired: true, status: queue.queued ? "completed" : "blocked" }), result }
     }
 
+    if (intent === "collect_list") {
+      const listResult = await collectCompanyList(commandText, { region: input.region, limit: input.limit })
+      const reply = formatCollectListReply(listResult)
+      await logAgentEvent(sb, { commandId, agentRole: "openclaw_researcher", eventType: "collect_list", status: listResult.ok ? "success" : "warning", title: "企業リスト収集", payload: listResult as unknown as JsonRecord })
+      await updateCommand(sb, commandId, { status: listResult.ok ? "completed" : "failed", runSummary: reply, resultPayload: listResult as unknown as JsonRecord })
+      return { ok: listResult.ok, commandId, intent, status: listResult.ok ? "completed" : "failed", approvalRequired: false, summary: reply, reply, result: listResult as unknown as JsonRecord }
+    }
+
     if (intent === "show_menu") {
       const keyboard = buildMainMenuKeyboard()
       const summary = "📋 RevenueOS 営業指令メニュー\n\nボタンまたはコマンドを入力してください:\n/status - 状況確認\n/search [企業名/ドメイン] - 企業検索\n/enrich - カルテ生成\n/jobs - ジョブ一覧\n/queue - 承認待ち\n/sync - Twenty同期\n/help - 使い方"
@@ -528,164 +435,6 @@ export async function handleAgentCommand(input: SalesAgentCommandInput): Promise
     await updateCommand(sb, commandId, { status: "failed", runSummary: message, resultPayload: errorResult })
     return { ok: false, commandId, intent, status: "failed", approvalRequired, summary: message, reply: replyFor({ intent, summary: message, approvalRequired, status: "failed" }), result: errorResult }
   }
-}
-
-export function buildMainMenuKeyboard(): TelegramKeyboard {
-  return {
-    inline_keyboard: [
-      [{ text: "📊 状況確認", callback_data: "/status" }],
-      [{ text: "🔍 企業検索", callback_data: "/search " }, { text: "🩺 カルテ生成", callback_data: "/enrich" }],
-      [{ text: "📋 ジョブ一覧", callback_data: "/jobs" }, { text: "📝 承認待ち", callback_data: "/queue" }],
-      [{ text: "📤 Twenty同期", callback_data: "/sync" }, { text: "📦 資料生成", callback_data: "/assets" }],
-      [{ text: "❓ ヘルプ", callback_data: "/help" }, { text: "🔄 更新", callback_data: "/menu" }],
-    ],
-  }
-}
-
-async function searchCompanies(
-  sb: ServiceSupabase | null,
-  query: string,
-): Promise<{ companies: Array<{ id: string; company_name: string; domain: string }>; truncated: boolean }> {
-  if (!sb) return { companies: [], truncated: false }
-  const search = query.trim().replace(/^\/search\s*/i, "")
-  if (!search) return { companies: [], truncated: false }
-
-  const { data, error } = await sb
-    .from(DB_TABLES.SALES_COMPANIES)
-    .select("id, company_name, domain")
-    .or(`domain.ilike.%${search}%,company_name.ilike.%${search}%`)
-    .order("created_at", { ascending: false })
-    .limit(11)
-
-  if (error) {
-    console.error("[sales-agent-team] company search failed:", error.message)
-    return { companies: [], truncated: false }
-  }
-
-  const companies = ((data ?? []) as Array<Record<string, unknown>>).map((r) => ({
-    id: String(r.id),
-    company_name: String(r.company_name ?? r.domain ?? "unknown"),
-    domain: String(r.domain ?? ""),
-  }))
-
-  return { companies: companies.slice(0, 10), truncated: companies.length > 10 }
-}
-
-async function getCompanyCard(
-  sb: ServiceSupabase | null,
-  identifier: string,
-): Promise<{ found: boolean; company?: Record<string, unknown> }> {
-  if (!sb) return { found: false }
-  const id = identifier.trim().replace(/^\/(company|view)\s*/i, "")
-  const { data, error } = await sb
-    .from(DB_TABLES.SALES_COMPANIES)
-    .select("*")
-    .or(`id.eq.${id},domain.ilike.${id}`)
-    .limit(1)
-    .single()
-
-  if (error || !data) return { found: false }
-  return { found: true, company: data as unknown as Record<string, unknown> }
-}
-
-async function runDiagnosticForCompany(
-  sb: ServiceSupabase | null,
-  domain: string,
-): Promise<{ triggered: boolean; error?: string; jobId?: string }> {
-  if (!sb) return { triggered: false, error: "Supabase not configured" }
-  const cleanDomain = domain.trim()
-    .replace(/^\/diagnose\s*/i, "")
-    .replace(/^https?:\/\//, "")
-    .replace(/\/.*/, "")
-    .toLowerCase()
-
-  const { data: existing } = await sb
-    .from(DB_TABLES.SALES_COMPANIES)
-    .select("id")
-    .or(`domain.ilike.%${cleanDomain}%,company_name.ilike.%${cleanDomain}%`)
-    .limit(1)
-    .single()
-
-  try {
-    const { data: job, error } = await sb.from(DB_TABLES.SALES_ENRICHMENT_JOBS).insert({
-      domain: cleanDomain,
-      status: "queued",
-      template_variant: "website_diagnostic",
-      region: "jp",
-      priority: 95,
-      meta: { requested_by: "telegram_agent", created_via: "agent-team" },
-    }).select("id").single()
-
-    if (error) {
-      console.error("[sales-agent-team] diagnostic insert failed:", error.message)
-      return { triggered: false, error: error.message }
-    }
-    return { triggered: true, jobId: typeof job?.id === "string" ? job.id : undefined }
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "Failed to queue diagnostic"
-    console.error("[sales-agent-team] diagnostic failed:", message)
-    return { triggered: false, error: message }
-  }
-}
-
-async function listEnrichmentJobs(
-  sb: ServiceSupabase | null,
-): Promise<{ jobs: Array<{ id: string; domain: string; status: string; created_at: string }> }> {
-  if (!sb) return { jobs: [] }
-  const { data, error } = await sb
-    .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
-    .select("id, domain, status, created_at")
-    .order("created_at", { ascending: false })
-    .limit(15)
-
-  if (error) {
-    console.error("[sales-agent-team] list jobs failed:", error.message)
-    return { jobs: [] }
-  }
-  return {
-    jobs: ((data ?? []) as Array<Record<string, unknown>>).map((r) => ({
-      id: String(r.id),
-      domain: String(r.domain),
-      status: String(r.status),
-      created_at: String(r.created_at),
-    })),
-  }
-}
-
-async function listOperatorQueueItems(
-  sb: ServiceSupabase | null,
-): Promise<{ items: Array<{ id: string; queue_type: string; status: string; priority: number; meta: unknown }> }> {
-  if (!sb) return { items: [] }
-  const { data, error } = await sb
-    .from(DB_TABLES.SALES_OPERATOR_QUEUE_ITEMS)
-    .select("id, queue_type, status, priority, meta")
-    .in("status", ["open", "in_progress"])
-    .order("priority", { ascending: false })
-    .limit(10)
-
-  if (error) {
-    console.error("[sales-agent-team] list queue failed:", error.message)
-    return { items: [] }
-  }
-  return { items: (data ?? []) as Array<{ id: string; queue_type: string; status: string; priority: number; meta: unknown }> }
-}
-
-async function approveQueueItem(
-  sb: ServiceSupabase | null,
-  itemId: string,
-): Promise<{ approved: boolean; error?: string }> {
-  if (!sb) return { approved: false, error: "Supabase not configured" }
-  const { error } = await sb
-    .from(DB_TABLES.SALES_OPERATOR_QUEUE_ITEMS)
-    .update({ status: "in_progress", updated_at: new Date().toISOString() })
-    .eq("id", itemId)
-    .eq("status", "open")
-
-  if (error) {
-    console.error("[sales-agent-team] approve queue failed:", error.message)
-    return { approved: false, error: error.message }
-  }
-  return { approved: true }
 }
 
 export async function fetchRecentAgentCommands(limit = 12): Promise<{

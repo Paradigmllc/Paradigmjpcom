@@ -35,7 +35,46 @@
 
 ---
 
-## ACTIVE HANDOFF — 2026-06-12 ブラウザ自動化4ツール 実務運用監査 + 全修正 完了
+## ACTIVE HANDOFF — 2026-06-13 残タスク完遂 + Telegramリスト収集機能 完了
+
+### 修正サマリー
+
+### 🔴 500行超過修正 (3ファイル、中間コミット由来)
+
+| ファイル | Before | After | 新規ファイル |
+|----------|--------|-------|-------------|
+| `agent-team.ts` | 739行 | 452行 | `agent-team-telegram.ts` (260行) — Telegram UI/検索/診断/キュー/承認関数 |
+| `SearxngSearchPanel.tsx` | 530行 | 327行 | `SearxngSearchPanelResults.tsx` (174行) — 検索結果レンダリング |
+| `searxng-source.ts` | 608行 | 301行 | `sources/searxng-source-helpers.ts` (267行) — HTTP/URL/パースhelper |
+
+### 🆕 Telegram リスト収集機能
+
+Telegramボットから「美容院を東京でリスト収集して」「大阪府の飲食店を収集」のような自然文コマンドで:
+1. **条件パース**: 業種 (美容院/歯科/飲食店/建設/会計/小売/クリーニング/コンサル) + 都道府県 (東京/大阪/愛知/福岡/北海道/神奈川) + 地域 (jp/global)
+2. **Supabase 検索**: `sales_companies` から条件一致企業を取得
+3. **Twenty CRM 同期**: `pullTwentyCompaniesToSupabase()` → `syncCompanyKarteToTwenty()` で各企業をリアルタイム同期
+4. **Telegram 返信**: 整形済みリスト + Twenty同期結果を返信
+
+### 新規ファイル
+
+| ファイル | 役割 |
+|----------|------|
+| `agent-team-telegram.ts` | Telegram UI (キーボード/検索/カード/診断/ジョブ/キュー/承認) |
+| `agent-team-collector.ts` | 条件付きリスト収集 (パース/DB検索/Twenty同期/整形) |
+| `SearxngSearchPanelResults.tsx` | SearXNG検索結果UI |
+| `sources/searxng-source-helpers.ts` | SearXNG HTTP/URL/パースhelper |
+
+### 修正後パイプライン完全性
+
+| 項目 | Before | After |
+|------|--------|-------|
+| tsc errors (新規) | — | **0** (既存3件のみ) |
+| quality guard errors | 3 | **0** |
+| tests | 178/178 | 178/178 |
+| 500行超過 | 3 files | **0 files** |
+| Telegramコマンド | 状況確認/検索/カルテ/営業/同期/資料/承認 | + **リスト収集 (Twenty同期付き)** |
+
+---
 
 ### 修正サマリー: ブラウザ自動化 4ツール (Stagehand/Steel/Crawlee/Crawl4AI) 本番稼働可能化
 
