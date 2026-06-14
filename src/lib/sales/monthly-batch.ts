@@ -259,6 +259,7 @@ export async function createLeadBatch(input: {
   let rejected = 0
   let jobs = 0
   let fatalError: string | null = null
+  const companyIdsForTwentySync: string[] = []
 
   // ── Fix 3: Wrap entire processing in try/catch for mid-batch crash resilience ──
   try {
@@ -335,6 +336,7 @@ export async function createLeadBatch(input: {
     }
 
     imported++
+    companyIdsForTwentySync.push(saved.company.id)
     let status: LeadBatchItemStatus = "imported"
     if (input.enrich !== false && saved.company.pipeline_status !== "report_ready") {
       const queued = await enqueueCompanyEnrichment({
@@ -366,7 +368,15 @@ export async function createLeadBatch(input: {
           }).eq("id", saved.company.id)
           status = "enriched_inline"
           // Auto-sync to Twenty
-          try { const { syncCompanyKarteToTwenty } = await import("./twenty-sync-companies"); void syncCompanyKarteToTwenty(saved.company.id).catch(() => {}) } catch {}
+          try {
+            const { syncCompanyKarteToTwenty } = await import("./twenty-sync-companies")
+            const syncResult = await syncCompanyKarteToTwenty(saved.company.id)
+            if (!syncResult.ok && syncResult.configured) {
+              console.error("[monthly-batch] inline Twenty sync failed:", syncResult.error)
+            }
+          } catch (syncError) {
+            console.error("[monthly-batch] inline Twenty sync crashed:", syncError)
+          }
           console.log(`[monthly-batch] inline enrichment + Twenty sync completed for ${cleanDomain}`)
         } catch (inlineErr) {
           console.error(`[monthly-batch] inline enrichment failed for ${cleanDomain}:`, inlineErr)
@@ -386,6 +396,27 @@ export async function createLeadBatch(input: {
     // Don't rethrow — we save partial progress below
   }
 
+  let twentySynced = 0
+  let twentyFailed = 0
+  const uniqueCompanyIdsForTwenty = [...new Set(companyIdsForTwentySync)].slice(0, 50)
+  if (uniqueCompanyIdsForTwenty.length > 0) {
+    try {
+      const { syncCompanyKarteToTwenty } = await import("./twenty-sync-companies")
+      for (const companyId of uniqueCompanyIdsForTwenty) {
+        const syncResult = await syncCompanyKarteToTwenty(companyId)
+        if (syncResult.ok) {
+          twentySynced++
+        } else if (syncResult.configured) {
+          twentyFailed++
+          console.error("[monthly-batch] Twenty sync failed:", syncResult.error)
+        }
+      }
+    } catch (syncError) {
+      twentyFailed = uniqueCompanyIdsForTwenty.length
+      console.error("[monthly-batch] Twenty sync batch crashed:", syncError)
+    }
+  }
+
   // Determine batch status based on whether we completed or crashed
   const finalStatus = fatalError
     ? (imported > 0 ? "importing" : "failed") // "importing" = partial, can be retried
@@ -399,7 +430,7 @@ export async function createLeadBatch(input: {
       duplicate_count: duplicates,
       rejected_count: rejected,
       enrichment_queued_count: jobs,
-      error_message: fatalError ?? (failures.length > 0 ? `${failures.length} rows need review` : null),
+      error_message: fatalError ?? (twentyFailed > 0 ? `Twenty sync failed for ${twentyFailed}/${uniqueCompanyIdsForTwenty.length} imported companies` : failures.length > 0 ? `${failures.length} rows need review` : null),
       completed_at: fatalError ? new Date().toISOString() : null,
     })
     .eq("id", batch.id)
@@ -440,5 +471,12 @@ export async function createLeadBatch(input: {
   }
 
   const listed = await listLeadBatches(scope, 1)
-  return { ok: true, batch: listed.batches[0], failures: failures.slice(0, 20) }
+  return {
+    ok: true,
+    batch: listed.batches[0],
+    failures: [
+      ...failures.slice(0, 20),
+      ...(twentyFailed > 0 ? [{ row: -1, reason: `Twenty sync failed for ${twentyFailed}/${uniqueCompanyIdsForTwenty.length} companies (synced ${twentySynced})` }] : []),
+    ],
+  }
 }

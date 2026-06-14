@@ -137,8 +137,8 @@ export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
       }
 
       // Poll for completion
-      let importedCount = 0
-      for (let attempt = 0; attempt < 15; attempt++) {
+      let importedCount = importResult.imported ?? 0
+      for (let attempt = 0; importedCount === 0 && attempt < 15; attempt++) {
         await new Promise(r => setTimeout(r, 2000))
         try {
           const params = new URLSearchParams({

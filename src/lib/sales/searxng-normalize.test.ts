@@ -51,6 +51,36 @@ describe("SearxNG lead source normalization", () => {
     expect(rows[2].status).toBe("rejected")
   })
 
+  it("rejects tool vendor and search-result pages before import", () => {
+    const rows = normalizeSearxngResults(
+      [
+        {
+          url: "https://shopify.com/blog/contact-page",
+          title: "How to build a contact page",
+          content: "Shopify guide for store owners.",
+          engine: "duckduckgo",
+        },
+        {
+          url: "https://www.google.com/search?q=wordpress+tokyo",
+          title: "Search results",
+          content: "Search results page.",
+          engine: "duckduckgo",
+        },
+        {
+          url: "https://salon-example.jp/contact",
+          title: "Salon Example - Contact",
+          content: "Official salon website. Contact us for reservations and services.",
+          engine: "duckduckgo",
+        },
+      ],
+      "salon contact wordpress tokyo",
+    )
+
+    expect(rows[0].status).toBe("rejected")
+    expect(rows[1].status).toBe("rejected")
+    expect(rows[2].status).toBe("ready")
+  })
+
   it("scores ecommerce and contact evidence above generic snippets", () => {
     const strong = scoreSearxngCandidate(
       {

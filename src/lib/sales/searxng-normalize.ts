@@ -2,7 +2,7 @@ import { normalizeDomain } from "./dedup"
 
 export type JsonRecord = Record<string, unknown>
 export type SearxngTimeRange = "day" | "month" | "year"
-export type SearxngResultStatus = "ready" | "duplicate" | "rejected" | "imported"
+export type SearxngResultStatus = "ready" | "duplicate" | "rejected" | "pending_review" | "imported"
 
 export interface NormalizedSearxngCandidate {
   url: string
@@ -28,17 +28,31 @@ interface SearchUrlInput {
 }
 
 const BLOCKED_HOST_PARTS = [
-  "www.google.", "www.bing.", "search.yahoo.",
+  "google.", "bing.", "duckduckgo.", "search.yahoo.", "yahoo.co.jp", "search.brave.",
   "facebook.", "instagram.", "linkedin.", "x.com", "twitter.", "tiktok.", "snapchat.", "pinterest.", "reddit.", "tumblr.", "threads.",
   "youtube.", "vimeo.", "dailymotion.", "twitch.", "nicovideo.",
   "wikipedia.", "wikimedia.", "yelp.", "tabelog.", "hotpepper.", "gurunavi.",
   "amazon.", "rakuten.co.jp", "mercari.", "paypaymall.", "ebay.", "alibaba.", "aliexpress.", "flipkart.", "shopee.", "lazada.",
+  "shopify.com", "apps.shopify.com", "themes.shopify.com", "wordpress.com", "wordpress.org", "wix.com", "webflow.com", "squarespace.com",
+  "stripe.com", "paypal.com", "klarna.com", "hubspot.com", "mailchimp.com", "zendesk.com", "typeform.com", "calendly.com",
   "indeed.", "linkedin.com/jobs", "recruit.co.jp", "en-japan.", "baitoru.",
   "news.yahoo.", "news.google.", "prtimes.", "valuepress.",
   ".gov.", ".edu.", ".ac.jp", ".go.jp", ".nic.in", ".gov.in",
   "note.", "ameblo.", "ameba.", "hatenablog.", "hatena.ne.jp", "fc2.", "livedoor.", "goo.ne.jp", "blog.jp", "blog.fc2",
   "medium.com", "quora.com", "stackoverflow.", "stackexchange.", "github.com/", "gitlab.com/",
   "justdial.com", "indiacom.com", "sulekha.com", "tradeindia.com", "indiamart.com", "exportersindia.com",
+]
+
+const LOW_QUALITY_TITLE_PARTS = [
+  "search results",
+  "検索結果",
+  "directory",
+  "directories",
+  "求人",
+  "採用",
+  "wiki",
+  "login",
+  "sign in",
 ]
 
 function normalizeBaseUrl(raw: string): URL {
@@ -62,6 +76,18 @@ function parseUrl(raw: string): URL | null {
 
 function text(value: unknown, fallback = ""): string {
   return typeof value === "string" ? value.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim() : fallback
+}
+
+function isBlockedDomain(domain: string): boolean {
+  return BLOCKED_HOST_PARTS.some((part) => domain.includes(part))
+}
+
+function lowQualityReason(domain: string, title: string, snippet: string): string | null {
+  if (isBlockedDomain(domain)) return "blocked_directory_or_platform"
+  const combined = `${title} ${snippet}`.toLowerCase()
+  if (LOW_QUALITY_TITLE_PARTS.some((part) => combined.includes(part))) return "low_quality_search_or_directory"
+  if (!domain.includes(".") || domain.length < 5) return "invalid_domain"
+  return null
 }
 
 export function getSearxngOrigin(baseUrl: string): string {
@@ -105,10 +131,10 @@ function resultFromRow(row: JsonRecord, query: string, seen: Set<string>): Norma
   if (!domain) return null
   const title = text(row.title, domain).slice(0, 180)
   const snippet = text(row.content ?? row.snippet ?? "").slice(0, 800)
-  const blocked = BLOCKED_HOST_PARTS.some((part) => domain.includes(part))
+  const rejectionReason = lowQualityReason(domain, title, snippet)
   const duplicate = seen.has(domain)
   seen.add(domain)
-  const status: SearxngResultStatus = blocked ? "rejected" : duplicate ? "duplicate" : "ready"
+  const status: SearxngResultStatus = rejectionReason ? "rejected" : duplicate ? "duplicate" : "ready"
   return {
     url: parsed.toString(),
     domain,
@@ -116,9 +142,9 @@ function resultFromRow(row: JsonRecord, query: string, seen: Set<string>): Norma
     snippet,
     engine: text(row.engine) || null,
     category: text(row.category) || null,
-    score: blocked ? 0 : scoreSearxngCandidate({ domain, title, snippet }, query),
+    score: rejectionReason ? 0 : scoreSearxngCandidate({ domain, title, snippet }, query),
     status,
-    rejectionReason: blocked ? "blocked_directory_or_platform" : duplicate ? "duplicate_domain" : null,
+    rejectionReason: rejectionReason ?? (duplicate ? "duplicate_domain" : null),
     raw: row,
   }
 }

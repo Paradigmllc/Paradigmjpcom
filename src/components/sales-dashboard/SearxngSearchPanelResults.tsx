@@ -30,9 +30,9 @@ export function SearxngSearchPanelResults({ data, targetCount }: { data: SalesDa
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ limit: targetCount, min_score: 50, enrich: true }),
       })
-      const result = await res.json() as { ok: boolean; imported: number; error?: string }
+      const result = await res.json() as { ok: boolean; imported?: number; error?: string }
       if (result.ok) {
-        toast.success(`${result.imported}件をインポートしました`)
+        toast.success(`${result.imported ?? 0}件をインポートしました`)
         window.location.reload()
       } else {
         toast.error(result.error ?? "インポートに失敗しました")

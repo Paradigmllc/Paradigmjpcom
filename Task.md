@@ -1,5 +1,26 @@
 ## ACTIVE HANDOFF — 2026-06-14 リスト収集バグ修正
 
+### 追加修正 — 2026-06-14 本番停止/ゴミデータ/Twenty未更新対策
+
+ユーザー報告: 「リスト収集しても途中で止まる、ゴミデータ多し、データ収集されない、Twenty更新されない」。
+
+実データ確認で、本番 `SEARXNG_BASE_URL` が `SearxNG HTTP 503: no available server` を返し、検索 run が `failed` で止まっていた。これに対して以下を追加修正。
+
+| ファイル | 変更内容 |
+|----------|----------|
+| `src/lib/sales/searxng-source.ts` | SearXNG 1ページ目が失敗/0件の場合、FlareSolverr/Steel 系 `browser-search` にフォールバックして同じ run/results テーブルへ保存 |
+| `src/lib/sales/searxng-normalize.ts` | Shopify/Wix/Webflow/WordPress/Stripe/Google検索等のベンダー・検索・ディレクトリ系ドメインを import 前に reject |
+| `src/app/api/sales/searxng/runs/[runId]/import/route.ts` | fire-and-forget import を廃止し、同期的に import 完了/失敗を返す。stale `importing` は10分後に再実行可能 |
+| `src/components/sales-dashboard/SearxngSearchPanel.tsx` | 同期 import の `imported` 件数を即時反映し、必要時のみ polling |
+| `src/lib/sales/monthly-batch.ts` | batch import で作成/取得した会社を最大50件まで Twenty に即時 best-effort 同期 |
+| `src/lib/sales/searxng-normalize.test.ts` | vendor/search result が `ready` にならない回帰テストを追加 |
+
+### 追加検証
+
+- `npm run quality:guard`: 0 errors / 46 warnings
+- `node scripts/run-vitest.mjs src/lib/sales/searxng-normalize.test.ts src/lib/sales/sources/lead-discovery.test.ts`: 2 files / 5 tests passed
+- `npx tsc --noEmit --pretty false`: 既存3件で失敗 (astro-demo 2件 + fix-schema 1件)
+
 ### 修正サマリー
 
 SearXNG リスト収集で「検索後のインポートが stuck する」「JP の実行をポーリングできず件数が `?` になる」「技術スタックだけを選ぶと query 必須で開始できない」問題を修正。

@@ -9,6 +9,7 @@ import {
   type SearxngTimeRange,
 } from "./searxng-normalize"
 import { buildFootprintSearchQuery } from "./sources/cms-footprint-search"
+import { searchWithBrowser } from "./sources/browser-search"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import {
   callLLMWithRetry,
@@ -98,6 +99,72 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
   let lastError: Error | null = null
   let lastSavedPage = 0
 
+  const saveBrowserFallback = async (page: number, reason: string): Promise<boolean> => {
+    const fallback = await searchWithBrowser(enhancedQuery, "duckduckgo")
+    if (!fallback.ok || fallback.domains.length === 0) {
+      pageMeta.push({ page, result_count: 0, fallback: "browser_search", error: fallback.error ?? reason })
+      return false
+    }
+
+    const candidates = normalizeSearxngResults(
+      fallback.domains.map((domain) => ({
+        url: `https://${domain}`,
+        title: domain,
+        content: `Official business website candidate discovered by browser search fallback for ${query}. Contact and service page candidate.`,
+        engine: `browser_${fallback.engine}`,
+        category: "general",
+      })),
+      query,
+    )
+    const newDomains = candidates.filter((candidate) => {
+      if (seenDomains.has(candidate.domain)) return false
+      seenDomains.add(candidate.domain)
+      return true
+    })
+    totalRawResults += fallback.domains.length
+    pageMeta.push({
+      page,
+      result_count: fallback.domains.length,
+      normalized_count: candidates.length,
+      fallback: "browser_search",
+      reason,
+    })
+
+    if (newDomains.length > 0) {
+      const { error: upsertError } = await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).upsert(
+        newDomains.map((candidate, index) => ({
+          run_id: run.id,
+          result_index: (page - 1) * 100 + index,
+          url: candidate.url,
+          domain: candidate.domain,
+          title: candidate.title,
+          snippet: candidate.snippet,
+          engine: candidate.engine,
+          category: candidate.category,
+          score: Math.max(candidate.score, candidate.status === "ready" ? 62 : candidate.score),
+          status: candidate.status,
+          rejection_reason: candidate.rejectionReason,
+          raw: { ...candidate.raw, fallback: "browser_search" },
+        })),
+        { onConflict: "run_id,domain" },
+      )
+      if (upsertError) {
+        console.error("[searxng-source] browser fallback upsert failed:", upsertError.message)
+        return false
+      }
+    }
+
+    await sb
+      .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
+      .update({
+        total_results: totalRawResults,
+        unique_domains: seenDomains.size,
+        meta: { source: "searxng", pages: pageMeta, fallback: "browser_search", enhanced_query: enhancedQuery, tech_stacks: techStacks },
+      })
+      .eq("id", run.id)
+    return seenDomains.size > 0
+  }
+
   for (let page = 1; page <= pages; page++) {
     const url = buildSearxngSearchUrl(baseUrl, {
       query: enhancedQuery,
@@ -164,6 +231,14 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err))
       console.error(`[searxng-source] page ${page}/${pages} failed:`, lastError.message)
+      if (page === 1 && seenDomains.size === 0) {
+        const recovered = await saveBrowserFallback(page, lastError.message)
+        if (recovered) {
+          lastError = null
+          lastSavedPage = page
+          continue
+        }
+      }
       await sb
         .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
         .update({

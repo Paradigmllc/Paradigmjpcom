@@ -6,7 +6,7 @@ import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
-export const maxDuration = 120
+export const maxDuration = 300
 
 interface Body {
   limit?: number | null
@@ -61,12 +61,14 @@ export async function POST(
     if (sb) {
       const { data: currentRun } = await sb
         .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
-        .select("status")
+        .select("status, updated_at")
         .eq("id", runId)
         .single()
 
       const currentStatus = (currentRun as { status?: string } | null)?.status
-      if (currentStatus === "importing" || currentStatus === "imported") {
+      const updatedAt = (currentRun as { updated_at?: string } | null)?.updated_at
+      const importingAgeMs = updatedAt ? Date.now() - new Date(updatedAt).getTime() : 0
+      if (currentStatus === "imported" || (currentStatus === "importing" && importingAgeMs < 10 * 60 * 1000)) {
         return NextResponse.json(
           { ok: true, status: currentStatus, runId, message: `Import already ${currentStatus}` },
           { status: 200 },
@@ -79,35 +81,30 @@ export async function POST(
         .eq("id", runId)
     }
 
-    // Fire background import (NOT awaited — runs after response is sent)
-    importSearxngRunToLeadBatch({
+    const result = await importSearxngRunToLeadBatch({
       runId,
       limit,
       minScore,
       enrich,
       maxOutreachReady,
     })
-      .then((result) => {
-        if (result.ok) {
-          console.log(`[sales-searxng-import] run ${runId.slice(0, 12)}... imported ${result.imported} companies`)
-        } else {
-          console.error(`[sales-searxng-import] run ${runId.slice(0, 12)}... failed:`, result.error)
-          void markImportFailed(runId, new Error(result.error ?? "SearxNG import failed"))
-        }
-      })
-      .catch((err) => {
-        console.error(`[sales-searxng-import] run ${runId.slice(0, 12)}... crashed:`, err)
-        void markImportFailed(runId, err)
-      })
+    if (!result.ok) {
+      console.error(`[sales-searxng-import] run ${runId.slice(0, 12)}... failed:`, result.error)
+      await markImportFailed(runId, new Error(result.error ?? "SearXNG import failed"))
+      return NextResponse.json({ ok: false, status: "failed", runId, error: result.error ?? "SearXNG import failed" }, { status: 502 })
+    }
+    console.log(`[sales-searxng-import] run ${runId.slice(0, 12)}... imported ${result.imported} companies`)
 
     return NextResponse.json(
       {
         ok: true,
-        status: "importing",
+        status: "imported",
         runId,
-        message: "Import started in background. Poll GET /api/sales/searxng/runs for status.",
+        imported: result.imported,
+        batch: result.batch ?? null,
+        message: "Import completed.",
       },
-      { status: 202 },
+      { status: 200 },
     )
   } catch (error) {
     const message = error instanceof Error ? error.message : "SearxNG import failed"
