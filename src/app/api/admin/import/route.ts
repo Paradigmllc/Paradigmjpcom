@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getPayload } from "payload"
-import config from "@payload-config"
 import { headers as nextHeaders } from "next/headers"
 
 export const runtime = "nodejs"
@@ -70,6 +68,10 @@ function csvToRows(csv: string): Array<Record<string, unknown>> {
 
 export async function POST(req: NextRequest) {
   try {
+    const [{ getPayload }, { default: config }] = await Promise.all([
+      import("payload"),
+      import("@payload-config"),
+    ])
     const payload = await getPayload({ config })
     const headers = await nextHeaders()
     const { user } = await payload.auth({ headers })

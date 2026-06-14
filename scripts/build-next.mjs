@@ -79,7 +79,10 @@ function runWithHeartbeat(command, args, options = {}) {
 if (!process.env.PAYLOAD_READS_DISABLED_DURING_BUILD && !process.env.PAYLOAD_DISABLE_DATABASE_DURING_BUILD) {
   run(localBin("payload"), ["generate:importmap"])
 }
-const buildMode = process.argv.includes("--turbo") ? [] : ["--webpack"]
+if (process.argv.includes("--turbo")) {
+  console.warn("[build] --turbo requested but disabled for production: Payload/Turbopack pino externalization is unstable in Next 16")
+}
+const buildMode = ["--webpack"]
 const nextStatus = await runWithHeartbeat(localBin("next"), ["build", ...buildMode], {
   env: {
     PAYLOAD_READS_DISABLED_DURING_BUILD: "1",

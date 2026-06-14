@@ -18,8 +18,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { getPayload } from "payload"
-import config from "@payload-config"
+import type { getPayload as getPayloadType } from "payload"
 import { BLOG_POSTS } from "@/lib/blog"
 
 export const runtime = "nodejs"
@@ -51,8 +50,12 @@ export async function POST(req: NextRequest) {
   const results: Array<{ slug: string; action: "create" | "update" | "skip" | "error"; error?: string }> = []
 
   try {
+    const [{ getPayload }, { default: config }] = await Promise.all([
+      import("payload"),
+      import("@payload-config"),
+    ])
     const payload = await getPayload({
-      config: config as Parameters<typeof getPayload>[0]["config"],
+      config: config as Parameters<typeof getPayloadType>[0]["config"],
     })
 
     for (const post of BLOG_POSTS) {

@@ -15,8 +15,6 @@
  */
 
 import { NextResponse } from "next/server"
-import { getPayload } from "payload"
-import config from "@payload-config"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
@@ -133,6 +131,10 @@ export async function POST(req: Request) {
   }
 
   // ─── 実行 ─────────────────────────────────────────
+  const [{ getPayload }, { default: config }] = await Promise.all([
+    import("payload"),
+    import("@payload-config"),
+  ])
   const payload = await getPayload({ config })
   const results: Array<{ slug: string; action: "created" | "updated" | "error"; error?: string }> = []
 

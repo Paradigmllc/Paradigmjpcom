@@ -728,6 +728,7 @@ node scripts/verify-db-tables.mjs
 - `npm run quality:guard`: 0 errors / 46 warnings.
 - `node scripts/run-vitest.mjs src/lib/sales/sources/browser-search.test.ts src/lib/sales/searxng-normalize.test.ts src/lib/sales/sources/lead-discovery.test.ts`: 3 files / 7 tests passed.
 - `npx tsc --noEmit --pretty false`: still blocked by existing unrelated errors in `astro-demo/src/keystatic/demo-data.ts` and `src/app/api/sales/fix-schema/route.ts`.
+- First Coolify deploy `zxrdfqksz1h9lqp724t8rwro` failed during Turbopack build because Payload routes hit the Next 16 `pino-*` externalization issue. Payload admin seed/import routes were changed to lazy import Payload, and production build wrapper now forces webpack even if `--turbo` is passed.
 
 ### Remaining Risk
 - Steel service itself is still not provisioned; `steel.paradigmjp.com` does not resolve. Current usable primary is FlareSolverr, with Steel ready as a configured provider once DNS/service exists.
