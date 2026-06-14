@@ -733,3 +733,29 @@ node scripts/verify-db-tables.mjs
 ### Remaining Risk
 - Steel service itself is still not provisioned; `steel.paradigmjp.com` does not resolve. Current usable primary is FlareSolverr, with Steel ready as a configured provider once DNS/service exists.
 - Browserless env exists but `https://browserless.paradigmjp.com` currently returns `503 no available server`; it is not used for this fix.
+## ACTIVE HANDOFF - 2026-06-14 list collection browser-search hardening
+
+### Implemented
+- Default list collection path now uses `browser_search` (`FlareSolverr` first, Steel only when `STEEL_BASE_URL` exists). SearXNG is no longer the default unless `SALES_LIST_COLLECTION_PROVIDER=searxng`.
+- Production build now forces webpack in `scripts/build-next.mjs` because Next 16 + Payload + Turbopack externalizes `pino-*` modules incorrectly during route data collection.
+- Admin seed/import routes lazy-load Payload config so production page-data collection does not initialize Payload/pino for unused admin APIs.
+- Browser search extraction now reads result hrefs and decoded redirect params first, blocks provider/platform domains by suffix, and rejects Brave/search-provider self-links before DB save/import.
+- `searxng-normalize.ts` also rejects Brave/DuckDuckGo/Bing/Yahoo/provider account domains at the import gate.
+- Test artifact from production smoke (`brave.com` batch/run/company/enrichment job) was deleted with ID/domain/source/report guard.
+
+### Production verification
+- Deployed commit `4509ce8` successfully first; production container image confirmed healthy.
+- Production smoke before hardening proved the old endpoint now runs through browser search: run completed via `engines=["flaresolverr"]`, 40 domains, 31 ready.
+- That smoke exposed remaining garbage-domain issue (`brave.com`), so hardening was implemented after the first deploy.
+
+### Local verification after hardening
+- `node scripts/run-vitest.mjs src/lib/sales/sources/browser-search.test.ts src/lib/sales/searxng-normalize.test.ts`: 2 files / 7 tests passed.
+- `npm run quality:guard`: 0 errors / 46 warnings.
+- `git diff --check`: OK, CRLF warnings only.
+- `npx tsc --noEmit --pretty false`: still fails on pre-existing unrelated issues:
+  - `astro-demo/src/keystatic/demo-data.ts(97,3)` missing `description`
+  - `astro-demo/src/keystatic/demo-data.ts(205,46)` missing `./demo-data-legacy`
+  - `src/app/api/sales/fix-schema/route.ts(39,7)` `PoolConfig.family` type mismatch
+
+### Remaining deployment step
+- Commit/push the hardening change, run `npm run deploy:prod` again, then rerun the production smoke. Expected smoke should produce a `browser_search` run without Brave/search-provider domains before import.

@@ -28,12 +28,13 @@ interface SearchUrlInput {
 }
 
 const BLOCKED_HOST_PARTS = [
-  "google.", "bing.", "duckduckgo.", "search.yahoo.", "yahoo.co.jp", "search.brave.",
+  "google.", "bing.", "duckduckgo.", "duck.com", "search.yahoo.", "yahoo.com", "yahoo.co.jp", "search.brave.", "brave.com",
   "facebook.", "instagram.", "linkedin.", "x.com", "twitter.", "tiktok.", "snapchat.", "pinterest.", "reddit.", "tumblr.", "threads.",
   "youtube.", "vimeo.", "dailymotion.", "twitch.", "nicovideo.",
   "wikipedia.", "wikimedia.", "yelp.", "tabelog.", "hotpepper.", "gurunavi.",
   "amazon.", "rakuten.co.jp", "mercari.", "paypaymall.", "ebay.", "alibaba.", "aliexpress.", "flipkart.", "shopee.", "lazada.",
   "shopify.com", "apps.shopify.com", "themes.shopify.com", "wordpress.com", "wordpress.org", "wix.com", "webflow.com", "squarespace.com",
+  "mozilla.org", "apple.com", "microsoft.com",
   "stripe.com", "paypal.com", "klarna.com", "hubspot.com", "mailchimp.com", "zendesk.com", "typeform.com", "calendly.com",
   "indeed.", "linkedin.com/jobs", "recruit.co.jp", "en-japan.", "baitoru.",
   "news.yahoo.", "news.google.", "prtimes.", "valuepress.",

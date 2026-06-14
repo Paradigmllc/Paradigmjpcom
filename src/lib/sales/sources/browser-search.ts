@@ -123,27 +123,64 @@ async function steelScrape(url: string): Promise<string | null> {
   }
 }
 
-const BLOCKED_DOMAINS = new Set([
+const BLOCKED_DOMAIN_SUFFIXES = [
   "google.com", "youtube.com", "facebook.com", "instagram.com", "twitter.com", "x.com",
   "linkedin.com", "reddit.com", "wikipedia.org", "tiktok.com", "pinterest.com",
   "amazon.com", "ebay.com", "etsy.com", "shopify.com", "alibaba.com",
   "apple.com", "microsoft.com", "github.com", "stackoverflow.com",
+  "brave.com", "duckduckgo.com", "duck.com", "bing.com", "yahoo.com", "mozilla.org",
   "gstatic.com", "googleusercontent.com", "ggpht.com", "googleapis.com",
   "googletagmanager.com", "googleadservices.com", "fonts.gstatic.com",
   "encrypted-tbn0.gstatic.com", "lh3.googleusercontent.com",
-])
+]
 
-function extractDomains(html: string): string[] {
+function normalizeSearchDomain(raw: string): string | null {
+  const domain = raw
+    .replace(/^https?:\/\//i, "")
+    .split("/")[0]
+    .replace(/:\d+$/, "")
+    .toLowerCase()
+    .replace(/^www\./, "")
+    .replace(/\.$/, "")
+  if (!domain || domain.includes("..") || domain.length < 5 || !domain.includes(".")) return null
+  if (!/^[a-z0-9.-]+$/.test(domain)) return null
+  return domain
+}
+
+export function isBlockedBrowserSearchDomain(domain: string): boolean {
+  const normalized = domain.replace(/^www\./, "").toLowerCase()
+  return BLOCKED_DOMAIN_SUFFIXES.some((blocked) => (
+    normalized === blocked || normalized.endsWith(`.${blocked}`)
+  ))
+}
+
+function domainFromCandidateUrl(raw: string): string | null {
+  if (!URL.canParse(raw, "https://search.local")) return null
+  const url = new URL(raw, "https://search.local")
+  if (url.hostname === "search.local" && !url.searchParams.has("q") && !url.searchParams.has("url") && !url.searchParams.has("uddg")) return null
+  const redirected = url.searchParams.get("q") || url.searchParams.get("url") || url.searchParams.get("uddg")
+  if (redirected && /^https?:\/\//i.test(redirected)) return domainFromCandidateUrl(redirected)
+  if (!/^https?:$/.test(url.protocol)) return null
+  const domain = normalizeSearchDomain(url.hostname)
+  if (!domain || isBlockedBrowserSearchDomain(domain)) return null
+  return domain
+}
+
+export function extractDomains(html: string): string[] {
   const domains = new Set<string>()
-  const re = /https?:\/\/([a-z0-9][-a-z0-9]*\.)+[a-z]{2,}/gi
-  let match
-  while ((match = re.exec(html)) !== null) {
-    const raw = match[0].replace(/^https?:\/\//, "").split("/")[0].toLowerCase()
-    // Validate: no double dots, no Google properties
-    if (!raw || raw.includes("..") || /^(www\.)?google\./.test(raw) || raw.length < 5) continue
-    if (BLOCKED_DOMAINS.has(raw.replace(/^www\./, ""))) continue
-    if (raw.includes("google") || raw.includes("gstatic") || raw.includes("youtube")) continue
-    domains.add(raw.replace(/^www\./, ""))
+  const hrefRe = /\bhref=(["'])(.*?)\1/gi
+  let hrefMatch
+  while ((hrefMatch = hrefRe.exec(html)) !== null) {
+    const href = hrefMatch[2].replace(/&amp;/g, "&")
+    const domain = domainFromCandidateUrl(href)
+    if (domain) domains.add(domain)
+  }
+
+  const absoluteUrlRe = /https?:\/\/[^\s"'<>]+/gi
+  let urlMatch
+  while ((urlMatch = absoluteUrlRe.exec(html)) !== null) {
+    const domain = domainFromCandidateUrl(urlMatch[0].replace(/&amp;/g, "&"))
+    if (domain) domains.add(domain)
   }
   return [...domains]
 }

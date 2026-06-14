@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { getBrowserSearchBackendStatus } from "./browser-search"
+import { extractDomains, getBrowserSearchBackendStatus } from "./browser-search"
 
 describe("browser search backend status", () => {
   afterEach(() => {
@@ -27,5 +27,16 @@ describe("browser search backend status", () => {
 
     expect(status.configured).toBe(false)
     expect(status.error).toContain("FLARESOLVERR_URL or STEEL_BASE_URL")
+  })
+
+  it("extracts result links but rejects browser search provider links", () => {
+    const html = `
+      <a href="/url?q=https%3A%2F%2Fexample-shop.jp%2Fcontact&sa=U">Example Shop</a>
+      <a href="https://account.brave.com/sign-in">Brave account</a>
+      <a href="https://search.brave.com/search?q=shopify">Brave search</a>
+      <a href="https://duckduckgo.com/l/?uddg=https%3A%2F%2Fsalon-example.jp%2Fabout">Salon</a>
+    `
+
+    expect(extractDomains(html)).toEqual(["example-shop.jp", "salon-example.jp"])
   })
 })

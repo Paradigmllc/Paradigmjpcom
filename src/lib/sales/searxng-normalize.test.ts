@@ -67,6 +67,12 @@ describe("SearxNG lead source normalization", () => {
           engine: "duckduckgo",
         },
         {
+          url: "https://account.brave.com/sign-in",
+          title: "Brave account",
+          content: "Search provider account page.",
+          engine: "brave",
+        },
+        {
           url: "https://salon-example.jp/contact",
           title: "Salon Example - Contact",
           content: "Official salon website. Contact us for reservations and services.",
@@ -78,7 +84,8 @@ describe("SearxNG lead source normalization", () => {
 
     expect(rows[0].status).toBe("rejected")
     expect(rows[1].status).toBe("rejected")
-    expect(rows[2].status).toBe("ready")
+    expect(rows[2].status).toBe("rejected")
+    expect(rows[3].status).toBe("ready")
   })
 
   it("scores ecommerce and contact evidence above generic snippets", () => {
