@@ -95,6 +95,7 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
 
   const pageMeta: JsonRecord[] = []
   const seenDomains = new Set<string>()
+  const readyDomains = new Set<string>()
   let totalRawResults = 0
   let lastError: Error | null = null
   let lastSavedPage = 0
@@ -119,6 +120,7 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
     const newDomains = candidates.filter((candidate) => {
       if (seenDomains.has(candidate.domain)) return false
       seenDomains.add(candidate.domain)
+      if (candidate.status === "ready") readyDomains.add(candidate.domain)
       return true
     })
     totalRawResults += fallback.domains.length
@@ -162,7 +164,7 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
         meta: { source: "searxng", pages: pageMeta, fallback: "browser_search", enhanced_query: enhancedQuery, tech_stacks: techStacks },
       })
       .eq("id", run.id)
-    return seenDomains.size > 0
+    return readyDomains.size > 0
   }
 
   for (let page = 1; page <= pages; page++) {
@@ -188,10 +190,11 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
       })
 
       if (pageResults.length > 0) {
-        const candidates = normalizeSearxngResults(pageResults, query)
+      const candidates = normalizeSearxngResults(pageResults, query)
         const newDomains = candidates.filter((c) => {
           if (seenDomains.has(c.domain)) return false
           seenDomains.add(c.domain)
+          if (c.status === "ready") readyDomains.add(c.domain)
           return true
         })
 
@@ -228,6 +231,10 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
           meta: { source: "searxng", pages: pageMeta, last_page_saved: page },
         })
         .eq("id", run.id)
+
+      if (page === 1 && readyDomains.size === 0) {
+        await saveBrowserFallback(page, "SearXNG returned no import-ready domains")
+      }
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err))
       console.error(`[searxng-source] page ${page}/${pages} failed:`, lastError.message)
@@ -259,11 +266,12 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
     await sb
       .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
       .update({
-        status: "completed",
+        status: readyDomains.size > 0 ? "completed" : "failed",
         total_results: totalRawResults,
         unique_domains: seenDomains.size,
         completed_at: completedAt,
-        meta: { source: "searxng", pages: pageMeta },
+        error_message: readyDomains.size > 0 ? null : "Search returned no import-ready domains after browser fallback",
+        meta: { source: "searxng", pages: pageMeta, enhanced_query: enhancedQuery, tech_stacks: techStacks },
       })
       .eq("id", run.id)
   }
