@@ -859,3 +859,10 @@ node scripts/verify-db-tables.mjs
 
 ### Remaining risks
 - Local `.env.local` currently has `SEARXNG_BASE_URL`, `TWENTY_BASE_URL`, `TWENTY_API_KEY`, and Trigger keys, but no FlareSolverr/Steel variable names, so local default list collection will report browser-search backend missing unless those envs are set or `SALES_LIST_COLLECTION_PROVIDER=searxng` is used.
+
+### Production deployment
+- Committed and pushed `7d04c5a` (`fix: align sales list browser search diagnostics`).
+- First `npm run deploy:prod` attempt queued deployment `th6wywito06rn3o0olc1xrzg` but timed out while `in_progress`; the script cancelled it automatically.
+- Second `npm run deploy:prod` attempt queued `imr82qra1lo5oe086rxnueov` and finished successfully; smoke checks returned HTTP 200 for `https://paradigmjp.com/ja/admin/sales`, `https://paradigmjp.com/ja`, and `https://twenty.paradigmjp.com`.
+- Authenticated production `/api/sales/health` confirms `ブラウザ検索 (FlareSolverr)` is `ok` / `Connected`. `SearXNG` still returns HTTP 503, which is acceptable because list collection defaults to `browser_search`.
+- Deploy still prints existing guard warnings: `src/lib/sales/enrichment-jobs-runner.ts` is 514 lines, deploy-time DB table verification cannot read local Supabase service env / `exec_sql`, and `npx tsc --noEmit --pretty false` remains blocked by the known unrelated `astro-demo` and `fix-schema` errors.
