@@ -6,7 +6,7 @@ import type { ServerFunctionClient } from 'payload'
 import { getPayload } from 'payload'
 import { handleServerFunctions, RootLayout } from '@payloadcms/next/layouts'
 import React from 'react'
-import { isPayloadInitCoolingDown, markPayloadInitFailure } from '@/lib/payload-availability'
+import { isPayloadInitCoolingDown, markPayloadInitFailure, resetPayloadCooldown, withPayloadRetry } from '@/lib/payload-availability'
 
 import { importMap } from './admin/importMap.js'
 import './custom.scss'
@@ -38,7 +38,8 @@ const Layout = async ({ children }: Args) => {
   }
 
   try {
-    await getPayload({ config })
+    await withPayloadRetry(() => getPayload({ config }))
+    resetPayloadCooldown()
   } catch (e) {
     console.error('[payload-admin-layout] Payload init failed:', e)
     markPayloadInitFailure(e)

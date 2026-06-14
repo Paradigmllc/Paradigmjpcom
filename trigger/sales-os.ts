@@ -93,8 +93,8 @@ export const salesOsPipelineTask = task({
 export const salesEnrichmentRunnerTask = task({
   id: "sales-enrichment-runner",
   description: "Drain queued Sales OS enrichment jobs.",
-  queue: { name: "sales-enrichment", concurrencyLimit: 1 },
-  maxDuration: 1200,
+  queue: { name: "sales-enrichment", concurrencyLimit: 3 },
+  maxDuration: 2400,
   retry: {
     maxAttempts: 2,
     minTimeoutInMs: 60_000,
@@ -190,5 +190,59 @@ export const twentySyncCron = schedules.task({
       pipelineRunsCreated: result.pipelineRunsCreated,
     })
     return { ok: true, scanned: result.scanned, created: result.created, updated: result.updated, pipelineRunsCreated: result.pipelineRunsCreated }
+  },
+})
+
+/**
+ * Scheduled task: regenerate diagnostic reports for companies whose data has changed.
+ * Runs every 5 minutes. Scans for companies with report_generated_at IS NULL
+ * (set by DB trigger when relevant fields change) and regenerates their reports.
+ */
+export const salesReportRegeneratorTask = schedules.task({
+  id: "sales-report-regenerator",
+  cron: "*/5 * * * *", // Every 5 minutes
+  maxDuration: 300,
+  run: async () => {
+    const { getServiceSalesSupabase } = await import("../src/lib/supabase")
+    const DB_TABLES = (await import("../src/lib/sales/db-tables")).DB_TABLES
+    const sb = getServiceSalesSupabase()
+    if (!sb) return { ok: false, error: "Supabase not configured" }
+
+    // Find companies needing regeneration (report_generated_at is NULL, not pending)
+    const { data: staleCompanies, error } = await sb
+      .from(DB_TABLES.SALES_COMPANIES)
+      .select("id, domain, company_name")
+      .is("report_generated_at", null)
+      .eq("pipeline_status", "report_ready")
+      .limit(10)
+
+    if (error) {
+      logger.error("Report regenerator: fetch stale companies failed", { error: error.message })
+      return { ok: false, error: error.message }
+    }
+
+    if (!staleCompanies || staleCompanies.length === 0) {
+      return { ok: true, regenerated: 0 }
+    }
+
+    const { fetchDiagnosticReport, markReportGenerated } = await import("../src/lib/sales/diagnostic")
+    let regenerated = 0
+    let failed = 0
+
+    for (const co of staleCompanies) {
+      try {
+        const report = await fetchDiagnosticReport({ companyId: co.id, forceRegenerate: true })
+        if (report) {
+          await markReportGenerated(co.id)
+          regenerated++
+        }
+      } catch (e) {
+        failed++
+        logger.error("Report regenerator: failed", { companyId: co.id, domain: co.domain, error: e instanceof Error ? e.message : String(e) })
+      }
+    }
+
+    logger.info("Report regenerator completed", { regenerated, failed })
+    return { ok: true, regenerated, failed }
   },
 })

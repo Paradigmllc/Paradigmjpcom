@@ -157,8 +157,12 @@ export default buildConfig({
   db: postgresAdapter({
     pool: {
       connectionString: process.env.DATABASE_URI || "",
-      // 2026-04-30 Supabase Supavisor pooler の self-signed cert chain を許可
       ssl: false,
+      // 2026-06-14: 接続プール調整。
+      // Supavisor pooler / ローカル postgres 共通で過剰なコネクションを防ぐ。
+      max: 5,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 15000,
     },
     // 2026-05-20: 専用 schema "paradigm" に分離。旧 "payload" は別アプリ
     // (articles/guides/tools/homepage 等・owner=postgres) に占有され、paradigm の

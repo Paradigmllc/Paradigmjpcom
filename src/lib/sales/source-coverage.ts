@@ -42,6 +42,7 @@ interface SourceDefinition {
   label: string
   category: string
   env?: string[]
+  maxAgeDays?: number // migration_046: freshness threshold
   detect: (meta: JsonRecord, company: SalesCompany) => boolean
   detail: string
   meaning?: string
@@ -54,6 +55,7 @@ const SOURCES: SourceDefinition[] = [
     slug: "pagespeed",
     label: "PageSpeed Insights",
     category: "analysis",
+    maxAgeDays: 7,
     env: ["GOOGLE_PSI_API_KEY"],
     detect: (_meta, c) => c.pagespeed_mobile !== null || c.pagespeed_desktop !== null,
     detail: "Core Web Vitals and speed risk",
@@ -97,7 +99,8 @@ const SOURCES: SourceDefinition[] = [
     slug: "wappalyzer",
     label: "Wappalyzer CLI",
     category: "analysis",
-    detect: (m) => Array.isArray((m.tech as JsonRecord | undefined)?.stack),
+    maxAgeDays: 30,
+    detect: (_m, c) => !!c.tech_stack || Array.isArray((_m.tech as JsonRecord | undefined)?.stack),
     detail: "CMS/framework/analytics stack",
     meaning: "CMS・計測・フレームワークは、改修難度、表示速度、セキュリティ負債、既存投資の見込みを読む材料です。",
     missingConsequence: "未取得だと、なぜAstro/Next.js差し替えが効くのか、既存環境に合わせた説明が薄くなります。",
@@ -111,8 +114,9 @@ const SOURCES: SourceDefinition[] = [
     slug: "japan_market_audit",
     label: "Japan legal/payment readiness",
     category: "analysis",
+    maxAgeDays: 30,
     env: ["DIFY_JAPAN_MARKET_AUDITOR_API_KEY", "DIFY_API_KEY", "CRAWL4AI_BASE_URL"],
-    detect: (m) => !!m.japan_market_audit,
+    detect: (_m, c) => !!c.japan_market_audit || !!_m.japan_market_audit,
     detail: "Tokushoho, APPI/privacy, and Japan-local payment readiness",
     meaning: "Japan-entry prospects need a buyer-ready trust path: commercial disclosure, privacy handling, and local payment familiarity. This signal turns public-page gaps into a human-reviewed sales hypothesis.",
     missingConsequence: "Without this audit, Japan-entry reports can miss the concrete friction that makes overseas SMBs hesitate or fail to convert Japanese buyers.",
@@ -133,8 +137,9 @@ const SOURCES: SourceDefinition[] = [
     slug: "google_places",
     label: "Google Places",
     category: "list",
+    maxAgeDays: 90,
     env: ["GOOGLE_PLACES_API_KEY"],
-    detect: (m) => !!m.place,
+    detect: (m, _c) => !!m.place,
     detail: "Local presence and MEO facts",
     meaning: "店舗・地域ビジネスでは、口コミ、営業時間、写真、地図上の見え方が予約前の比較を決めます。",
     missingConsequence: "未取得だと、競合比較や評判ギャップを本人が納得できる形で示せません。",
@@ -183,10 +188,13 @@ const SOURCES: SourceDefinition[] = [
     slug: "browser_screenshot",
     label: "Website Screenshot",
     category: "analysis",
+    maxAgeDays: 14,
     env: ["BROWSERLESS_URL"],
-    detect: (m) => {
-      const screenshots = asRecord(asRecord(m.visual_evidence).screenshots)
-      return !!m.screenshot_url || ["desktop", "mobile", "variant", "social", "map", "form"].some((slot) => !!asRecord(screenshots[slot]).url)
+    detect: (_m, c) => {
+      return !!c.visual_evidence || !!_m.screenshot_url || (() => {
+        const screenshots = asRecord(asRecord(_m.visual_evidence).screenshots)
+        return ["desktop", "mobile", "variant", "social", "map", "form"].some((slot) => !!asRecord(screenshots[slot]).url)
+      })()
     },
     detail: "High-resolution target website screenshot stored in R2"
   },
@@ -333,12 +341,23 @@ export function computeSourceCoverage(company: SalesCompany): SourceCoverageSnap
     const collected = source.detect(meta, company)
     const configured = hasConfiguredEnv(source.env)
     const status: SourceCoverageStatus = collected ? "collected" : configured ? "configured" : "missing"
+    // ── Freshness scoring (migration_046): degrade score for stale data ──
+    const maxAgeDays = source.maxAgeDays ?? null
+    let freshnessScore = scoreFor(status)
+    if (status === "collected" && maxAgeDays) {
+      const measuredAt = getSourceMeasuredAt(company, source.slug)
+      if (measuredAt) {
+        const ageDays = (Date.now() - new Date(measuredAt).getTime()) / (1000 * 60 * 60 * 24)
+        if (ageDays > maxAgeDays * 2) freshnessScore = 25
+        else if (ageDays > maxAgeDays) freshnessScore = 50
+      }
+    }
     return {
       slug: source.slug,
       label: source.label,
       category: source.category,
       status,
-      score: scoreFor(status),
+      score: freshnessScore,
       detail: source.detail,
       meaning: source.meaning ?? genericMeaning(source),
       missingConsequence: source.missingConsequence ?? genericMissingConsequence(source),
@@ -353,6 +372,25 @@ export function computeSourceCoverage(company: SalesCompany): SourceCoverageSnap
     configured: items.filter((item) => item.status === "configured").length,
     missing: items.filter((item) => item.status === "missing").length,
     items,
+  }
+}
+
+function getSourceMeasuredAt(company: SalesCompany, slug: string): string | null {
+  switch (slug) {
+    case "pagespeed":
+    case "lighthouse_api":
+      return company.report_generated_at
+    case "wappalyzer":
+    case "whatweb":
+      return company.tech_stack ? company.report_generated_at : null
+    case "google_places":
+      return typeof company.meta?.place === "object" && company.meta.place ? company.report_generated_at : null
+    case "browser_screenshot":
+      return company.visual_evidence ? company.report_generated_at : null
+    case "japan_market_audit":
+      return company.japan_market_audit ? company.report_generated_at : null
+    default:
+      return null
   }
 }
 

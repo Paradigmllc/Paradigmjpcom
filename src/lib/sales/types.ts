@@ -171,6 +171,14 @@ export interface SalesCompany {
   assigned_to: string | null
   notion_page_id: string | null
   source: string | null
+  // ── migration_046: normalized from meta JSONB ──
+  tech_stack: Record<string, unknown> | null
+  pain_diagnosis: Record<string, unknown> | null
+  dify_result: Record<string, unknown> | null
+  japan_market_audit: Record<string, unknown> | null
+  demo_site: Record<string, unknown> | null
+  visual_evidence: Record<string, unknown> | null
+  report_generated_at: string | null
   meta: Record<string, unknown>
   created_at: string
   updated_at: string

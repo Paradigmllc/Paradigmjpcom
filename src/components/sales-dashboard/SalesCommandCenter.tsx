@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import {
   BarChart3,
   BriefcaseBusiness,
+  CircleAlert,
   Database,
   ExternalLink,
   FileText,
@@ -26,9 +27,10 @@ import { AssetManagementPanel } from "./AssetManagementPanel"
 import { TemplateManagementPanel } from "./TemplateManagementPanel"
 import { AnalyticsPanel } from "./SalesAnalyticsPanel"
 import { SearxngSearchPanel } from "./SearxngSearchPanel"
+import { SalesFailedJobsPanel } from "./SalesFailedJobsPanel"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 
-type SalesTab = "crm" | "integrations" | "audit" | "templates" | "prompts" | "assets" | "analytics" | "searxng"
+type SalesTab = "crm" | "integrations" | "audit" | "templates" | "prompts" | "assets" | "analytics" | "searxng" | "failedJobs"
 
 type SalesCommandCenterProps = {
   data: SalesDashboardData
@@ -51,6 +53,7 @@ const tabItems: TabItem[] = [
   { id: "searxng", label: "リスト収集", description: "SearXNG検索・リード生成", icon: Search },
   { id: "assets", label: "アセット", description: "動画・デモ管理", icon: Database },
   { id: "analytics", label: "分析", description: "パイプライン分析", icon: BarChart3 },
+  { id: "failedJobs", label: "失敗ジョブ", description: "エンリッチメント失敗監視", icon: CircleAlert },
 ]
 
 const externalTools = [
@@ -181,6 +184,7 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
       case "searxng":      return <SearxngSearchPanel data={data} />
       case "assets":       return <AssetManagementPanel data={data} />
       case "analytics":    return <AnalyticsPanel data={data} />
+      case "failedJobs":   return <SalesFailedJobsPanel />
       default:             return <CrmPanel data={data} />
     }
   }

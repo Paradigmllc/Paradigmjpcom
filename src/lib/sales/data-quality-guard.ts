@@ -5,10 +5,12 @@
 
 const TECH_KEYWORDS = [
   "shopify", "wordpress", "wix", "webflow", "magento", "woocommerce",
+  "prestashop", "squarespace", "drupal", "joomla", "ghost cms",
   "google analytics", "gtm", "hubspot", "klaviyo", "stripe", "paypal",
   "aws", "azure", "gcp", "cloudflare", "nginx", "apache",
   "react", "vue", "angular", "next.js", "nuxt", "laravel", "django",
-  "zendesk", "salesforce", "zoho",
+  "zendesk", "salesforce", "zoho", "mailchimp", "intercom", "hotjar",
+  "calendly", "typeform", "klarna", "google pay",
 ]
 
 const ENTERPRISE_INDICATORS = [
@@ -19,6 +21,7 @@ const ENTERPRISE_INDICATORS = [
 
 // Reject: domains that are clearly not SMBs
 const REJECT_DOMAINS = new Set([
+  // Big tech
   "shopify.com", "apps.shopify.com", "help.shopify.com",
   "wordpress.com", "wordpress.org",
   "google.com", "microsoft.com", "apple.com", "amazon.com",
@@ -26,7 +29,27 @@ const REJECT_DOMAINS = new Set([
   "linkedin.com", "twitter.com", "reddit.com",
   "wikipedia.org", "wikimedia.org",
   "github.com", "gitlab.com", "bitbucket.org",
+  // URL shorteners / redirects
+  "goo.gl", "bit.ly", "t.co", "ow.ly", "buff.ly", "tinyurl.com", "is.gd", "cli.gs",
+  // Hosting / platforms (not actual businesses)
+  "shopify.jp", "wixsite.com", "web.app", "netlify.app", "vercel.app", "herokuapp.com",
+  "github.io", "pages.dev", "workers.dev",
+  // Search engines
+  "search.yahoo.co.jp", "goo.ne.jp", "excite.co.jp",
+  // Government / public
+  "go.jp", "lg.jp", "meti.go.jp", "mhlw.go.jp", "moj.go.jp",
+  // Common parked domain hosts
+  "domainmarket.com", "hugedomains.com", "buydomains.com",
 ])
+
+const GARBAGE_PATTERNS = [
+  /captcha/i, /blocked/i, /access denied/i, /rate limit/i, /too many requests/i, /403/i,
+]
+
+const SAMPLE_KEYWORDS = [
+  "test", "example", "sample", "demo", "サンプル", "テスト", "テスト用",
+  "placeholder", "dummy", "test123", "test1234", "example.com",
+]
 
 export function validateSearchQuery(query: string): { ok: boolean; warning?: string } {
   const lower = query.toLowerCase()
@@ -49,6 +72,22 @@ export function validateSearchQuery(query: string): { ok: boolean; warning?: str
 export function isRejectedDomain(domain: string): boolean {
   const lower = domain.toLowerCase()
   return REJECT_DOMAINS.has(lower)
+}
+
+export function isGarbageSearchResult(html: string): boolean {
+  return GARBAGE_PATTERNS.some((pattern) => pattern.test(html))
+}
+
+export function validateCompanyName(name: string): { ok: boolean; reason?: string } {
+  const lower = name.toLowerCase()
+  for (const keyword of SAMPLE_KEYWORDS) {
+    if (lower.includes(keyword)) {
+      return { ok: false, reason: `Company name contains sample/test keyword: "${keyword}"` }
+    }
+  }
+  if (name.length < 2) return { ok: false, reason: "Company name too short" }
+  // IDN/Punycode domains are handled by normalizeDomain in dedicated module
+  return { ok: true }
 }
 
 export function validateSearchResultsCount(count: number, pagesRequested: number): { ok: boolean; warning?: string } {

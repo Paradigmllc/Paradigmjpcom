@@ -29,6 +29,13 @@ const fixtureCompany: SalesCompany = {
   assigned_to: null,
   notion_page_id: null,
   source: "test",
+  tech_stack: null,
+  pain_diagnosis: null,
+  dify_result: null,
+  japan_market_audit: null,
+  demo_site: null,
+  visual_evidence: null,
+  report_generated_at: null,
   meta: {
     contact_form_url: "https://acme.example/contact",
     pain_diagnosis: {

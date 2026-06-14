@@ -50,6 +50,14 @@ export interface UpsertCompanyInput {
   detected_issues?: IssueCode[]
   source?: string | null
   meta?: Record<string, unknown>
+  // ── migration_046: normalized meta columns ──
+  tech_stack?: Record<string, unknown> | null
+  pain_diagnosis?: Record<string, unknown> | null
+  dify_result?: Record<string, unknown> | null
+  japan_market_audit?: Record<string, unknown> | null
+  demo_site?: Record<string, unknown> | null
+  visual_evidence?: Record<string, unknown> | null
+  report_generated_at?: string | null
 }
 
 /** domain で既存リードを upsert (重複作成防止・region 必須 default 'jp') */
@@ -120,6 +128,14 @@ export async function upsertCompanyByDomain(
     detected_issues: input.detected_issues ?? current?.detected_issues ?? [],
     source: input.source ?? current?.source ?? null,
     meta: metaWithRouting,
+    // ── migration_046: normalized columns ──
+    tech_stack: input.tech_stack ?? current?.tech_stack ?? null,
+    pain_diagnosis: input.pain_diagnosis ?? current?.pain_diagnosis ?? null,
+    dify_result: input.dify_result ?? current?.dify_result ?? null,
+    japan_market_audit: input.japan_market_audit ?? current?.japan_market_audit ?? null,
+    demo_site: input.demo_site ?? current?.demo_site ?? null,
+    visual_evidence: input.visual_evidence ?? current?.visual_evidence ?? null,
+    report_generated_at: input.report_generated_at ?? current?.report_generated_at ?? null,
   }
   const dealStage = input.deal_stage ?? current?.deal_stage
   if (dealStage) payload.deal_stage = dealStage

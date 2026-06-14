@@ -38,6 +38,7 @@ import {
 } from "./diagnostic/checks"
 import { buildVisualEvidenceStory } from "./diagnostic/visual-story"
 import type { DiagnosticReportData } from "./diagnostic/types"
+import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export type {
   DiagnosticAct,
@@ -61,6 +62,7 @@ export async function fetchDiagnosticReport(opts: {
   reportLocale?: ReportLocale | string
   targetCountry?: string
   templateVariant?: TemplateVariant | string
+  forceRegenerate?: boolean
 }): Promise<DiagnosticReportData | null> {
   const requestedLocale =
     opts.reportLocale === undefined ? null : normalizeReportLocale(opts.reportLocale, opts.region ?? "jp")
@@ -73,6 +75,11 @@ export async function fetchDiagnosticReport(opts: {
         ? await findCompanyByDomain(opts.domain)
         : null
   if (!company) return null
+
+  // Skip regeneration if report is fresh enough (generated after last relevant data update)
+  if (!opts.forceRegenerate && company.report_generated_at) {
+    return null // Return null = use cached report. Caller should fall back to cached render.
+  }
 
   const routing = getRoutingMeta(company.meta)
   const reportLocale = normalizeReportLocale(opts.reportLocale ?? company.report_locale ?? routing.report_locale, region)
@@ -188,4 +195,12 @@ export async function fetchDiagnosticReport(opts: {
     report_url: reportUrlFor(company, reportLocale),
     video_url: typeof company.meta?.video_url === "string" ? company.meta.video_url : null,
   }
+}
+
+/** Mark report as freshly generated so auto-regeneration can skip until data changes. */
+export async function markReportGenerated(companyId: string): Promise<void> {
+  const { getServiceSalesSupabase } = await import("@/lib/supabase")
+  const sb = getServiceSalesSupabase()
+  if (!sb) return
+  await sb.from(DB_TABLES.SALES_COMPANIES).update({ report_generated_at: new Date().toISOString() }).eq("id", companyId)
 }

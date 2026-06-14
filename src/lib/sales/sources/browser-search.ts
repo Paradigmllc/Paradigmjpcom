@@ -6,6 +6,7 @@
  * Architecture:
  *   FlareSolverr (primary) — lightweight, fast, already running
  *   Steel Browser (fallback) — heavier but more stealthy
+ *   Retry: exponential backoff across engines (3 max retries)
  */
 
 export interface BrowserSearchResult {
@@ -15,7 +16,10 @@ export interface BrowserSearchResult {
   total: number
   error?: string
   providersTried?: string[]
+  retryCount?: number
 }
+
+import { isGarbageSearchResult, validateCompanyName } from "../data-quality-guard"
 
 // Realistic Chrome headers
 const BROWSER_HEADERS = {
@@ -187,16 +191,34 @@ const SEARCH_ENGINES: Record<string, (query: string) => string> = {
   duckduckgo: (q) => `https://html.duckduckgo.com/html/?q=${encodeURIComponent(q)}`,
 }
 
-// Random delay between 2-5 seconds
+const ENGINE_KEYS = Object.keys(SEARCH_ENGINES) as (keyof typeof SEARCH_ENGINES)[]
+
+// Adaptive delay: longer for Google (strictest rate limiting), shorter for others
+function engineDelay(engine: keyof typeof SEARCH_ENGINES): number {
+  switch (engine) {
+    case "google": return 4000 + Math.random() * 6000
+    case "brave": return 2000 + Math.random() * 3000
+    case "duckduckgo": return 1500 + Math.random() * 2000
+    default: return 2000 + Math.random() * 3000
+  }
+}
+
+// Generic delay between queries
 const delay = () => new Promise(r => setTimeout(r, 2000 + Math.random() * 3000))
+
+// Exponential backoff: 2s → 4s → 8s
+async function retryBackoff(attempt: number): Promise<void> {
+  return new Promise(r => setTimeout(r, 2 ** attempt * 1000))
+}
 
 /**
  * Search via FlareSolverr (primary) or Steel (fallback).
- * Returns unique domains from search results.
+ * Retries up to 3 times with exponential backoff and engine rotation.
  */
 export async function searchWithBrowser(
   query: string,
   engine: keyof typeof SEARCH_ENGINES = "google",
+  skipEngines: Set<string> = new Set(),
 ): Promise<BrowserSearchResult> {
   const url = SEARCH_ENGINES[engine](query)
   const backend = getBrowserSearchBackendStatus()
@@ -216,14 +238,14 @@ export async function searchWithBrowser(
 
   // Try FlareSolverr first when configured.
   const fsHtml = await fsRequest(url)
-  if (fsHtml) {
+  if (fsHtml && !isGarbageSearchResult(fsHtml)) {
     const domains = extractDomains(fsHtml)
     return { ok: true, domains, engine, total: domains.length, providersTried }
   }
 
   // Fallback to Steel when configured.
   const steelHtml = await steelScrape(url)
-  if (steelHtml) {
+  if (steelHtml && !isGarbageSearchResult(steelHtml)) {
     const domains = extractDomains(steelHtml)
     return { ok: true, domains, engine, total: domains.length, providersTried }
   }
@@ -232,8 +254,39 @@ export async function searchWithBrowser(
 }
 
 /**
+ * Retry-enabled search: attempts up to maxRetries with engine rotation and exponential backoff.
+ * When an engine fails, rotates to next engine for retry.
+ */
+async function searchWithRetry(
+  query: string,
+  engine: keyof typeof SEARCH_ENGINES,
+  skipEngines: Set<string>,
+  maxRetries = 3,
+): Promise<BrowserSearchResult> {
+  let lastResult: BrowserSearchResult | null = null
+  let currentEngine = engine
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    if (attempt > 0) {
+      // Rotate engine on retry
+      const available = ENGINE_KEYS.filter(e => e !== currentEngine && !skipEngines.has(e))
+      currentEngine = available.length > 0 ? available[attempt % available.length] : currentEngine
+      await retryBackoff(attempt)
+      console.log(`[browser-search] retry ${attempt}/${maxRetries} for "${query.slice(0, 40)}" via ${currentEngine}`)
+    }
+
+    const result = await searchWithBrowser(query, currentEngine, skipEngines)
+    lastResult = result
+
+    if (result.ok) return { ...result, retryCount: attempt }
+  }
+
+  return { ...lastResult!, retryCount: maxRetries }
+}
+
+/**
  * Batch search: runs multiple queries across rotating engines with rate limiting.
- * Returns deduplicated domains.
+ * Tracks engine failures and temporarily skips engines with 3+ consecutive failures.
  */
 export async function batchSearchWithBrowser(
   queries: string[],
@@ -241,24 +294,43 @@ export async function batchSearchWithBrowser(
 ): Promise<{ ok: boolean; domains: string[]; total: number; errors: string[] }> {
   const allDomains = new Set<string>()
   const errors: string[] = []
-  const engines = Object.keys(SEARCH_ENGINES) as (keyof typeof SEARCH_ENGINES)[]
   let engineIdx = 0
+  const engineFailStreak: Record<string, number> = { google: 0, brave: 0, duckduckgo: 0 }
+  const skipEngines = new Set<string>()
 
   for (let i = 0; i < queries.length; i++) {
-    const engine = engines[engineIdx % engines.length]
-    engineIdx++
+    // Pick engine, skipping temporarily-dead ones
+    let engine: keyof typeof SEARCH_ENGINES = ENGINE_KEYS[engineIdx % ENGINE_KEYS.length]
+    while (skipEngines.has(engine)) {
+      engineIdx++
+      engine = ENGINE_KEYS[engineIdx % ENGINE_KEYS.length]
+    }
 
-    const result = await searchWithBrowser(queries[i], engine)
+    const result = await searchWithRetry(queries[i], engine, skipEngines)
+    engineIdx++
 
     if (result.ok) {
       for (const d of result.domains) allDomains.add(d)
+      engineFailStreak[engine] = 0
     } else if (result.error) {
-      errors.push(`${queries[i].slice(0, 30)} [${engine}]: ${result.error}`)
+      errors.push(`${queries[i].slice(0, 40)} [${result.engine} retry=${result.retryCount ?? 0}]: ${result.error}`)
+      engineFailStreak[engine] = (engineFailStreak[engine] ?? 0) + 1
+
+      // Temporarily skip engine after 3 consecutive failures (re-enables after 10 queries)
+      if (engineFailStreak[engine] >= 3) {
+        console.warn(`[browser-search] engine ${engine} marked as failing (${engineFailStreak[engine]} consecutive), skipping temporarily`)
+        skipEngines.add(engine)
+        setTimeout(() => {
+          skipEngines.delete(engine)
+          engineFailStreak[engine] = 0
+          console.log(`[browser-search] engine ${engine} re-enabled`)
+        }, 300_000) // 5 minute cooldown
+      }
     }
 
     if (onProgress) onProgress(i + 1, queries.length, allDomains.size)
 
-    // Rate limiting delay between queries
+    // Adaptive rate limiting based on engine
     if (i < queries.length - 1) await delay()
   }
 

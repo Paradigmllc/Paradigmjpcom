@@ -5,9 +5,12 @@ import config from "@payload-config"
 import { headers } from "next/headers"
 import {
   getPayloadInitFailureMessage,
+  getConsecutiveFailures,
   isPayloadInitCoolingDown,
   markPayloadInitFailure,
   payloadInitCooldownRemainingMs,
+  resetPayloadCooldown,
+  withPayloadRetry,
 } from "@/lib/payload-availability"
 
 type Args = {
@@ -42,6 +45,7 @@ export const generateMetadata = async ({ params, searchParams }: Args): Promise<
 function PayloadAdminUnavailable({ locale }: { locale: string }) {
   const remainingSeconds = Math.ceil(payloadInitCooldownRemainingMs() / 1000)
   const message = getPayloadInitFailureMessage()
+  const failures = getConsecutiveFailures()
   const salesDashboardPath = `/${locale}/admin/sales`
   return (
     <main style={{ minHeight: "100vh", background: "#f7f7f4", color: "#18181b", padding: 24 }}>
@@ -78,10 +82,16 @@ function PayloadAdminUnavailable({ locale }: { locale: string }) {
               overflowX: "auto",
               padding: 12,
               whiteSpace: "pre-wrap",
+              maxHeight: 200,
             }}
           >
             {message}
           </pre>
+        ) : null}
+        {failures > 1 ? (
+          <p style={{ color: "#a16207", background: "#fef9c3", borderRadius: 6, fontSize: 13, marginTop: 14, padding: "10px 14px" }}>
+            連続 {failures} 回の接続失敗を検出しました。Supabase Pooler の状態を確認してください。
+          </p>
         ) : null}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 22 }}>
           <a
@@ -117,9 +127,13 @@ function PayloadAdminUnavailable({ locale }: { locale: string }) {
         </div>
         {remainingSeconds > 0 ? (
           <p style={{ color: "#71717a", fontSize: 12, margin: "16px 0 0" }}>
-            過剰な再接続を避けるため、約 {remainingSeconds} 秒間は保護表示を優先します。
+            過剰な再接続を避けるため、約 {remainingSeconds === 1 ? "1 秒" : `${remainingSeconds} 秒`}間は保護表示を優先します。
           </p>
-        ) : null}
+        ) : (
+          <p style={{ color: "#059669", fontSize: 12, margin: "16px 0 0" }}>
+            クールダウンが終了しました。「再試行」をクリックすると再接続されます。
+          </p>
+        )}
       </section>
     </main>
   )
@@ -134,7 +148,9 @@ const Page = async ({ params, searchParams }: Args) => {
   }
 
   try {
-    return await RootPage({ config, importMap, params, searchParams })
+    const result = await withPayloadRetry(() => RootPage({ config, importMap, params, searchParams }))
+    resetPayloadCooldown()
+    return result
   } catch (e) {
     if (isNextControlFlowError(e)) throw e
     console.error("[payload-admin] RootPage failed:", e)

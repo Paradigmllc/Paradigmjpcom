@@ -1,4 +1,39 @@
-## ACTIVE HANDOFF — 2026-06-14 リスト収集バグ修正
+## ACTIVE HANDOFF — 2026-06-14 パイプライン全面改善 (10項目実装完了)
+
+### 実装サマリー
+
+リスト収集→データ取得→診断レポート生成の一連フローにおける10項目の実務改善を実装。
+
+| # | 改善項目 | ファイル |
+|---|---------|---------|
+| 1 | 自動エンリッチ全件対象化 + Trigger.devジョブ化 | `search-orchestrator.ts` |
+| 2 | processJob を5フェーズに分割 | `enrichment-jobs-runner.ts` |
+| 3 | enrichmentジョブ並列実行 (concurrency 1→3) | `trigger/sales-os.ts`, `enrichment-jobs-runner.ts` |
+| 4 | source-coverage 鮮度スコア導入 | `source-coverage.ts` |
+| 5 | meta JSONB 部分正規化 (7カラム追加) | `migration_046_*.sql`, `types.ts`, `companies.ts`, `enrichment-jobs-runner.ts` |
+| 6 | browser-search 指数バックオフリトライ | `browser-search.ts` |
+| 7 | レポート自動再生成 (DB trigger + 5分間隔cron) | `migration_046_*.sql`, `diagnostic.ts`, `trigger/sales-os.ts` |
+| 8 | データ品質ガード拡充 (シグネチャ55+, ゴミHTML検出) | `data-quality-guard.ts`, `browser-search.ts`, `search-orchestrator.ts` |
+| 9 | 失敗ジョブ可視化ダッシュボード + 再実行API | `SalesFailedJobsPanel.tsx` (新規), `api/sales/enrichment/retry/route.ts` (新規) |
+| 10 | エンリッチメントコスト制御 (coverage score gating) | `enrichment-jobs-runner.ts` |
+
+### インフラ適用済み
+
+- DB migration `migration_046` → 本番 Supabase に適用済み (ALTER TABLE + UPDATE + 3 index + trigger)
+- `COST_GUARD_VIDEO_ENABLED` / `COST_GUARD_DEMO_ENABLED` → Coolify 環境変数に設定済み
+- 失敗ジョブパネル → Revenue OS ダッシュボードにタブ登録済み
+
+### 要確認 (デプロイ後)
+
+- [ ] Trigger.dev に `sales-report-regenerator` タスクが登録されたことを確認
+- [ ] migration_046: `sales_companies` 新カラムに本番データがコピーされていることを確認
+- [ ] ダッシュボード `/admin/sales?tab=failedJobs` で失敗ジョブ表示確認
+- [ ] `trigger/sales-os.ts` の `concurrencyLimit: 3` が有効か確認 (Trigger.dev ダッシュボード)
+
+### 検証
+
+- `npx tsc --noEmit`: 既存3件のみ (astro-demo 2件 + fix-schema 1件、変更前から存在)
+- 変更ファイル: 16件 (新規4件 + 修正12件 + migration 1件 + test 3件)
 
 ### 追加修正 — 2026-06-14 本番停止/ゴミデータ/Twenty未更新対策
 
