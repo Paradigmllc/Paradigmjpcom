@@ -129,6 +129,8 @@ const BLOCKED_DOMAIN_SUFFIXES = [
   "amazon.com", "ebay.com", "etsy.com", "shopify.com", "alibaba.com",
   "apple.com", "microsoft.com", "github.com", "stackoverflow.com",
   "brave.com", "brave.app", "duckduckgo.com", "duck.com", "bing.com", "yahoo.com", "mozilla.org",
+  "storeleads.app", "techbehemoths.com", "clutch.co", "similarweb.com", "builtwith.com",
+  "yamato-hd.co.jp", "kuronekoyamato.co.jp", "mitsui.com", "komoju.com",
   "gstatic.com", "googleusercontent.com", "ggpht.com", "googleapis.com",
   "googletagmanager.com", "googleadservices.com", "fonts.gstatic.com",
   "encrypted-tbn0.gstatic.com", "lh3.googleusercontent.com",

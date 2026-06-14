@@ -772,3 +772,13 @@ node scripts/verify-db-tables.mjs
 - `npm run quality:guard`: 0 errors / 46 warnings.
 - `git diff --check`: OK, CRLF warnings only.
 - `npx tsc --noEmit --pretty false`: still fails only on pre-existing unrelated issues listed above.
+## ACTIVE HANDOFF - 2026-06-14 score and directory hardening
+
+### Additional fixes
+- Browser-search candidate snippets no longer echo the user query, preventing all domains from receiving inflated relevance scores.
+- Added observed directory/enterprise/vendor domains (`storeleads.app`, `techbehemoths.com`, `yamato-hd.co.jp`, `mitsui.com`, `komoju.com`, etc.) to the block gates.
+
+### Verification
+- `node scripts/run-vitest.mjs src/lib/sales/sources/browser-search.test.ts src/lib/sales/searxng-normalize.test.ts src/lib/sales/sources/lead-discovery.test.ts`: 3 files / 8 tests passed.
+- `npm run quality:guard`: 0 errors / 46 warnings.
+- `git diff --check`: OK, CRLF warnings only.

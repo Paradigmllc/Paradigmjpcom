@@ -35,6 +35,8 @@ const BLOCKED_HOST_PARTS = [
   "amazon.", "rakuten.co.jp", "mercari.", "paypaymall.", "ebay.", "alibaba.", "aliexpress.", "flipkart.", "shopee.", "lazada.",
   "shopify.com", "apps.shopify.com", "themes.shopify.com", "wordpress.com", "wordpress.org", "wix.com", "webflow.com", "squarespace.com",
   "mozilla.org", "apple.com", "microsoft.com", "w3.org", "dnb.com", "hackerone.com",
+  "storeleads.app", "techbehemoths.com", "clutch.co", "similarweb.com", "builtwith.com",
+  "yamato-hd.co.jp", "kuronekoyamato.co.jp", "mitsui.com", "komoju.com",
   "stripe.com", "paypal.com", "klarna.com", "hubspot.com", "mailchimp.com", "zendesk.com", "typeform.com", "calendly.com",
   "indeed.", "linkedin.com/jobs", "recruit.co.jp", "en-japan.", "baitoru.",
   "news.yahoo.", "news.google.", "prtimes.", "valuepress.",

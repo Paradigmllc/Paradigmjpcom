@@ -77,7 +77,7 @@ export async function runBrowserSearchRun(input: {
     batch.domains.map((domain) => ({
       url: `https://${domain}`,
       title: domain,
-      content: `Official business website candidate discovered via ${backend.providers.join(" + ")} browser search for ${query}.`,
+      content: `Candidate domain discovered via ${backend.providers.join(" + ")} browser search.`,
       engine: backend.providers.join("+") || "browser_search",
       category: "browser_search",
     })),
