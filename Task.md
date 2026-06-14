@@ -759,3 +759,16 @@ node scripts/verify-db-tables.mjs
 
 ### Remaining deployment step
 - Commit/push the hardening change, run `npm run deploy:prod` again, then rerun the production smoke. Expected smoke should produce a `browser_search` run without Brave/search-provider domains before import.
+## ACTIVE HANDOFF - 2026-06-14 additional garbage-data hardening
+
+### Additional fixes
+- Removed broad absolute-URL scraping from browser-search extraction; only href/redirect result URLs are now considered.
+- Added `brave.app` and common non-lead provider/vendor domains to the browser-search and SearXNG normalization block gates.
+- Tightened `importSearxngRunToLeadBatch`: if the LLM quality filter explicitly rejects every candidate, high-score fallback no longer resurrects those rejected rows. Score fallback is now only for LLM unavailable/parse/error cases.
+- Deleted the second production smoke run (`cae0fdc7-de1c-4f76-b19b-ff4260339955`) after it exposed `status.brave.app`; no company/import was created from that run.
+
+### Verification
+- `node scripts/run-vitest.mjs src/lib/sales/sources/browser-search.test.ts src/lib/sales/searxng-normalize.test.ts src/lib/sales/sources/lead-discovery.test.ts`: 3 files / 8 tests passed.
+- `npm run quality:guard`: 0 errors / 46 warnings.
+- `git diff --check`: OK, CRLF warnings only.
+- `npx tsc --noEmit --pretty false`: still fails only on pre-existing unrelated issues listed above.

@@ -128,7 +128,7 @@ const BLOCKED_DOMAIN_SUFFIXES = [
   "linkedin.com", "reddit.com", "wikipedia.org", "tiktok.com", "pinterest.com",
   "amazon.com", "ebay.com", "etsy.com", "shopify.com", "alibaba.com",
   "apple.com", "microsoft.com", "github.com", "stackoverflow.com",
-  "brave.com", "duckduckgo.com", "duck.com", "bing.com", "yahoo.com", "mozilla.org",
+  "brave.com", "brave.app", "duckduckgo.com", "duck.com", "bing.com", "yahoo.com", "mozilla.org",
   "gstatic.com", "googleusercontent.com", "ggpht.com", "googleapis.com",
   "googletagmanager.com", "googleadservices.com", "fonts.gstatic.com",
   "encrypted-tbn0.gstatic.com", "lh3.googleusercontent.com",
@@ -173,13 +173,6 @@ export function extractDomains(html: string): string[] {
   while ((hrefMatch = hrefRe.exec(html)) !== null) {
     const href = hrefMatch[2].replace(/&amp;/g, "&")
     const domain = domainFromCandidateUrl(href)
-    if (domain) domains.add(domain)
-  }
-
-  const absoluteUrlRe = /https?:\/\/[^\s"'<>]+/gi
-  let urlMatch
-  while ((urlMatch = absoluteUrlRe.exec(html)) !== null) {
-    const domain = domainFromCandidateUrl(urlMatch[0].replace(/&amp;/g, "&"))
     if (domain) domains.add(domain)
   }
   return [...domains]

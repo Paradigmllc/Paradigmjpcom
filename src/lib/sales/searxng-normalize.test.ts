@@ -73,6 +73,12 @@ describe("SearxNG lead source normalization", () => {
           engine: "brave",
         },
         {
+          url: "https://status.brave.app/history",
+          title: "Brave status",
+          content: "Search provider status page.",
+          engine: "brave",
+        },
+        {
           url: "https://salon-example.jp/contact",
           title: "Salon Example - Contact",
           content: "Official salon website. Contact us for reservations and services.",
@@ -85,7 +91,8 @@ describe("SearxNG lead source normalization", () => {
     expect(rows[0].status).toBe("rejected")
     expect(rows[1].status).toBe("rejected")
     expect(rows[2].status).toBe("rejected")
-    expect(rows[3].status).toBe("ready")
+    expect(rows[3].status).toBe("rejected")
+    expect(rows[4].status).toBe("ready")
   })
 
   it("scores ecommerce and contact evidence above generic snippets", () => {

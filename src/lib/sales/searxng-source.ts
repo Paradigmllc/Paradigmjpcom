@@ -336,6 +336,7 @@ export async function importSearxngRunToLeadBatch(input: {
   const validResults: SearxngResultRow[] = []
   const CHUNK_SIZE = 50
   const fallbackMinScore = Math.max(minScore, 62)
+  let usedQualityFallback = false
   for (let i = 0; i < results.length; i += CHUNK_SIZE) {
     const chunk = results.slice(i, i + CHUNK_SIZE)
     const promptData = chunk.map(r => ({ id: r.id, domain: r.domain, title: r.title, snippet: r.snippet }))
@@ -367,6 +368,7 @@ ${JSON.stringify(promptData, null, 2)}`
           }
         } catch (parseError) {
           console.error("[searxng-import] LLM JSON parse error, using score fallback:", parseError)
+          usedQualityFallback = true
           validResults.push(...chunk.filter((r) => r.score >= fallbackMinScore))
           for (const r of chunk.filter((item) => item.score < fallbackMinScore)) {
             await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "pending_review", rejection_reason: "llm_parse_error_low_score" }).eq("id", r.id)
@@ -374,6 +376,7 @@ ${JSON.stringify(promptData, null, 2)}`
         }
       } else {
         console.warn(`[searxng-import] LLM unavailable for chunk after ${3} retries, using score fallback`)
+        usedQualityFallback = true
         validResults.push(...chunk.filter((r) => r.score >= fallbackMinScore))
         for (const r of chunk.filter((item) => item.score < fallbackMinScore)) {
           await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "pending_review", rejection_reason: "llm_unavailable_low_score" }).eq("id", r.id)
@@ -381,6 +384,7 @@ ${JSON.stringify(promptData, null, 2)}`
       }
     } catch (e) {
       console.error("[searxng-import] LLM pre-filter error for chunk, using score fallback:", e)
+      usedQualityFallback = true
       validResults.push(...chunk.filter((r) => r.score >= fallbackMinScore))
       for (const r of chunk.filter((item) => item.score < fallbackMinScore)) {
         const { error: updateErr } = await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "pending_review", rejection_reason: "llm_error_low_score" }).eq("id", r.id)
@@ -389,7 +393,7 @@ ${JSON.stringify(promptData, null, 2)}`
     }
   }
 
-  if (validResults.length === 0) {
+  if (validResults.length === 0 && usedQualityFallback) {
     const fallbackResults = results.filter((result) => result.score >= fallbackMinScore)
     if (fallbackResults.length > 0) {
       validResults.push(...fallbackResults)
