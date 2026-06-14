@@ -310,6 +310,7 @@ export async function importSearxngRunToLeadBatch(input: {
 
   const validResults: SearxngResultRow[] = []
   const CHUNK_SIZE = 50
+  const fallbackMinScore = Math.max(minScore, 62)
   for (let i = 0; i < results.length; i += CHUNK_SIZE) {
     const chunk = results.slice(i, i + CHUNK_SIZE)
     const promptData = chunk.map(r => ({ id: r.id, domain: r.domain, title: r.title, snippet: r.snippet }))
@@ -329,34 +330,48 @@ ${JSON.stringify(promptData, null, 2)}`
     try {
       const llmRes = await callLLMWithRetry(prompt, 3)
       if (llmRes.ok && llmRes.text) {
-        const decisionMap = JSON.parse(llmRes.text) as Record<string, boolean>
-        for (const r of chunk) {
-          const decision = decisionMap[r.id]
-          if (decision === true || String(decision).toLowerCase() === "true") {
-            validResults.push(r)
-          } else {
-            await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "rejected", rejection_reason: "llm_filtered" }).eq("id", r.id)
+        try {
+          const decisionMap = JSON.parse(llmRes.text) as Record<string, boolean>
+          for (const r of chunk) {
+            const decision = decisionMap[r.id]
+            if (decision === true || String(decision).toLowerCase() === "true") {
+              validResults.push(r)
+            } else {
+              await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "rejected", rejection_reason: "llm_filtered" }).eq("id", r.id)
+            }
+          }
+        } catch (parseError) {
+          console.error("[searxng-import] LLM JSON parse error, using score fallback:", parseError)
+          validResults.push(...chunk.filter((r) => r.score >= fallbackMinScore))
+          for (const r of chunk.filter((item) => item.score < fallbackMinScore)) {
+            await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "pending_review", rejection_reason: "llm_parse_error_low_score" }).eq("id", r.id)
           }
         }
       } else {
-        console.warn(`[searxng-import] LLM unavailable for chunk after ${3} retries, marking as pending_review`)
-        for (const r of chunk) {
-          await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "pending_review", rejection_reason: "llm_unavailable" }).eq("id", r.id)
+        console.warn(`[searxng-import] LLM unavailable for chunk after ${3} retries, using score fallback`)
+        validResults.push(...chunk.filter((r) => r.score >= fallbackMinScore))
+        for (const r of chunk.filter((item) => item.score < fallbackMinScore)) {
+          await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "pending_review", rejection_reason: "llm_unavailable_low_score" }).eq("id", r.id)
         }
       }
     } catch (e) {
-      console.error("[searxng-import] LLM pre-filter error for chunk:", e)
-      for (const r of chunk) {
-        try {
-          await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "pending_review", rejection_reason: "llm_error_fallback" }).eq("id", r.id)
-        } catch (updateErr) {
-          console.error(`[searxng-import] failed to update status for result ${r.id}:`, updateErr)
-        }
+      console.error("[searxng-import] LLM pre-filter error for chunk, using score fallback:", e)
+      validResults.push(...chunk.filter((r) => r.score >= fallbackMinScore))
+      for (const r of chunk.filter((item) => item.score < fallbackMinScore)) {
+        const { error: updateErr } = await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "pending_review", rejection_reason: "llm_error_low_score" }).eq("id", r.id)
+        if (updateErr) console.error(`[searxng-import] failed to update status for result ${r.id}:`, updateErr.message)
       }
     }
   }
 
-  if (validResults.length === 0) return { ok: false, imported: 0, error: "All results filtered out by LLM (check pending_review items in DB)" }
+  if (validResults.length === 0) {
+    const fallbackResults = results.filter((result) => result.score >= fallbackMinScore)
+    if (fallbackResults.length > 0) {
+      validResults.push(...fallbackResults)
+    }
+  }
+
+  if (validResults.length === 0) return { ok: false, imported: 0, error: "No results passed the deterministic quality gate" }
 
   const rows: LeadBatchCsvRow[] = validResults.map((result) => ({
     company_name: companyNameFromResult(result),
