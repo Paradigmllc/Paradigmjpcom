@@ -179,7 +179,7 @@ export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
       {/* Search Form */}
       <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
         <h3 className="mb-1 text-sm font-bold text-zinc-800">リードリスト収集</h3>
-        <p className="mb-4 text-xs text-zinc-500">SearXNGメタ検索で条件に合う企業ドメインを収集し、自動エンリッチ→Twenty連携まで一括実行</p>
+        <p className="mb-4 text-xs text-zinc-500">FlareSolverr/Steelブラウザ検索で企業ドメインを収集し、自動エンリッチ→Twenty連携まで一括実行</p>
 
         {/* Step Indicator */}
         {step !== "idle" && (
@@ -188,7 +188,7 @@ export function SearxngSearchPanel({ data }: { data: SalesDashboardData }) {
               <div className="flex items-center gap-3">
                 <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
                 <div>
-                  <p className="text-sm font-bold text-blue-700">SearXNG 検索実行中...</p>
+                  <p className="text-sm font-bold text-blue-700">ブラウザ検索を実行中...</p>
                   <p className="text-xs text-blue-500">{queryPreview}</p>
                 </div>
               </div>

@@ -3,13 +3,25 @@
  * Routes Stagehand traffic through this to avoid bot detection.
  * Docker: ghcr.io/flaresolverr/flaresolverr:latest (port 8191)
  */
-const FLARESOLVERR_URL = process.env.FLARESOLVERR_API_URL || "http://127.0.0.1:8191"
+function flaresolverrEndpoint(): string {
+  const raw = process.env.FLARESOLVERR_URL || process.env.FLARESOLVERR_API_URL || "http://127.0.0.1:8191"
+  try {
+    const url = new URL(raw)
+    if (!/\/v1\/?$/.test(url.pathname)) {
+      url.pathname = `${url.pathname.replace(/\/+$/, "")}/v1`
+    }
+    return url.toString()
+  } catch (error) {
+    console.error("[flaresolverr] invalid URL:", error)
+    return "http://127.0.0.1:8191/v1"
+  }
+}
 
 interface FsResult { source: string; ok: boolean; data?: unknown; error?: string }
 
 async function fsRequest(cmd: string, url: string, maxTimeout = 30_000): Promise<FsResult> {
   try {
-    const res = await fetch(`${FLARESOLVERR_URL}/v1`, {
+    const res = await fetch(flaresolverrEndpoint(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cmd, url, maxTimeout }),
@@ -44,7 +56,7 @@ export async function fetchViaFlareSolverr(url: string): Promise<FsResult> {
 
 export async function checkFlareSolverrHealth(): Promise<{ ok: boolean; detail: string }> {
   try {
-    const res = await fetch(`${FLARESOLVERR_URL}/v1`, {
+    const res = await fetch(flaresolverrEndpoint(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cmd: "request.get", url: "http://www.google.com", maxTimeout: 5000 }),

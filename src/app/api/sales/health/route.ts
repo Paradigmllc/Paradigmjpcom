@@ -7,10 +7,12 @@ import {
   checkCrawleeHealth,
   checkDifyHealth,
   checkPlaywrightStealthHealth,
+  checkFlareSolverrServiceHealth,
   checkStagehandHealth,
   checkSteelHealth,
   type ServiceHealthResult,
 } from "@/lib/sales/oss-service-health"
+import { getBrowserSearchBackendStatus } from "@/lib/sales/sources/browser-search"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -93,6 +95,29 @@ async function checkSearxng(): Promise<ServiceCheck> {
   }
 }
 
+async function checkBrowserSearch(): Promise<ServiceCheck> {
+  const backend = getBrowserSearchBackendStatus()
+  if (!backend.configured) {
+    return {
+      name: "ブラウザ検索",
+      status: "not_configured",
+      detail: backend.error ?? "FLARESOLVERR_API_URL / FLARESOLVERR_URL / STEEL_BASE_URL が未設定です",
+    }
+  }
+
+  if (backend.flaresolverrUrl) {
+    const result = await checkFlareSolverrServiceHealth()
+    return serviceHealthToCheck("ブラウザ検索 (FlareSolverr)", result, backend.flaresolverrUrl)
+  }
+
+  return {
+    name: "ブラウザ検索 (Steel)",
+    status: "ok",
+    detail: "Steel.dev をブラウザ検索バックエンドとして使用します",
+    url: backend.steelBaseUrl,
+  }
+}
+
 async function checkDify(): Promise<ServiceCheck> {
   const result = await checkDifyHealth()
   return serviceHealthToCheck(
@@ -172,6 +197,8 @@ function checkEnvSummary(): ServiceCheck {
   const requiredAny = [["TRIGGER_SECRET_KEY", "TRIGGER_ACCESS_TOKEN", "TRIGGER_DEV_API_KEY"]]
   const optional = [
     "SEARXNG_BASE_URL",
+    "FLARESOLVERR_API_URL",
+    "STEEL_BASE_URL",
     "DIFY_API_KEY",
     "TWENTY_BASE_URL",
     "TWENTY_API_KEY",
@@ -214,8 +241,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
   }
 
-  const [supabase, searxng, dify, triggerDev, crawl4ai, stagehand, steel, crawlee, worker] = await Promise.all([
+  const [supabase, browserSearch, searxng, dify, triggerDev, crawl4ai, stagehand, steel, crawlee, worker] = await Promise.all([
     checkSupabase(),
+    checkBrowserSearch(),
     checkSearxng(),
     checkDify(),
     checkTriggerDev(),
@@ -231,6 +259,7 @@ export async function GET(req: NextRequest) {
     checkEnvSummary(),
     checkOutreachEnvSummary(),
     supabase,
+    browserSearch,
     searxng,
     dify,
     triggerDev,

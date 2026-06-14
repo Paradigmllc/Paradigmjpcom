@@ -50,7 +50,7 @@ const tabItems: TabItem[] = [
   { id: "audit", label: "運用監査", description: "パイプライン監視", icon: ShieldCheck },
   { id: "templates", label: "テンプレート", description: "レポートテンプレート管理", icon: FileText },
   { id: "prompts", label: "AIプロンプト", description: "Dify/DeepSeek管理", icon: Sparkles },
-  { id: "searxng", label: "リスト収集", description: "SearXNG検索・リード生成", icon: Search },
+  { id: "searxng", label: "リスト収集", description: "ブラウザ検索・リード生成", icon: Search },
   { id: "assets", label: "アセット", description: "動画・デモ管理", icon: Database },
   { id: "analytics", label: "分析", description: "パイプライン分析", icon: BarChart3 },
   { id: "failedJobs", label: "失敗ジョブ", description: "エンリッチメント失敗監視", icon: CircleAlert },

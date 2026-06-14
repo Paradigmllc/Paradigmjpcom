@@ -843,3 +843,19 @@ node scripts/verify-db-tables.mjs
 - Browserless remains unavailable (`503 no available server`) and is not used in this path.
 - `npm run deploy:prod` still prints DB verification warnings because local deploy-time env lacks direct Supabase service env / `exec_sql`; production runtime env is present and was verified via container/API.
 - `npx tsc --noEmit --pretty false` still fails on unrelated existing errors in `astro-demo` and `src/app/api/sales/fix-schema/route.ts`.
+
+## ACTIVE HANDOFF - 2026-06-14 list collection diagnostics alignment
+
+### Implemented
+- Aligned the list-collection UI copy with the current default engine: `browser_search` via FlareSolverr first, Steel when configured.
+- Added a browser-search health row to `/api/sales/health`, so the dashboard now reports whether FlareSolverr/Steel is configured and reachable instead of only showing SearXNG/Steel separately.
+- Normalized FlareSolverr health/fetch calls to accept either `FLARESOLVERR_URL` or `FLARESOLVERR_API_URL`, with `/v1` appended only once.
+- Documented `FLARESOLVERR_API_URL=http://flaresolverr:8191` in `.env.example`.
+
+### Verification
+- `node scripts/run-vitest.mjs src/lib/sales/sources/browser-search.test.ts src/lib/sales/searxng-normalize.test.ts src/lib/sales/sources/lead-discovery.test.ts`: 3 files / 8 tests passed.
+- `git diff --check`: OK, CRLF warnings only.
+- `npm run quality:guard`: still blocked by existing `src/lib/sales/enrichment-jobs-runner.ts` 514-line guard error; no silent-catch errors.
+
+### Remaining risks
+- Local `.env.local` currently has `SEARXNG_BASE_URL`, `TWENTY_BASE_URL`, `TWENTY_API_KEY`, and Trigger keys, but no FlareSolverr/Steel variable names, so local default list collection will report browser-search backend missing unless those envs are set or `SALES_LIST_COLLECTION_PROVIDER=searxng` is used.
