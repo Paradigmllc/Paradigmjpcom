@@ -17,12 +17,36 @@ export interface CommonCrawlResult {
 const CDX_API = "https://index.commoncrawl.org"
 
 // CommonCrawl index names — updated regularly
-const INDEXES = [
-  "CC-MAIN-2025-22",
-  "CC-MAIN-2025-18",
-  "CC-MAIN-2025-14",
-  "CC-MAIN-2025-10",
+const FALLBACK_INDEXES = [
+  "CC-MAIN-2026-21",
+  "CC-MAIN-2026-17",
+  "CC-MAIN-2026-12",
+  "CC-MAIN-2026-08",
 ]
+
+let cachedIndexes: string[] | null = null
+
+async function getRecentIndexes(limit = 4): Promise<string[]> {
+  if (cachedIndexes) return cachedIndexes.slice(0, limit)
+  try {
+    const res = await fetch(`${CDX_API}/collinfo.json`, {
+      headers: { "User-Agent": "RevenueOS-CommonCrawl/1.0" },
+      signal: AbortSignal.timeout(20_000),
+      ...getProxyFetchOptions(),
+    })
+    if (!res.ok) throw new Error(`collinfo HTTP ${res.status}`)
+    const rows = await res.json() as Array<{ id?: unknown }>
+    cachedIndexes = rows
+      .map((row) => (typeof row.id === "string" ? row.id : null))
+      .filter((id): id is string => id !== null && /^CC-MAIN-\d{4}-\d{2}$/.test(id))
+      .slice(0, 8)
+    if (cachedIndexes.length > 0) return cachedIndexes.slice(0, limit)
+  } catch (error) {
+    console.error("[commoncrawl] failed to fetch collinfo indexes:", error)
+  }
+  cachedIndexes = FALLBACK_INDEXES
+  return cachedIndexes.slice(0, limit)
+}
 
 /**
  * Fetch all unique domains matching a TLD/domain pattern from CommonCrawl.
@@ -90,8 +114,9 @@ export async function fetchCommonCrawlDomains(
   const allDomains = new Set<string>()
   const errors: string[] = []
 
-  for (const index of INDEXES) {
-    const domains = await queryCdxIndex(tldPattern, index, Math.ceil(limit / INDEXES.length))
+  const indexes = await getRecentIndexes()
+  for (const index of indexes) {
+    const domains = await queryCdxIndex(tldPattern, index, Math.ceil(limit / indexes.length))
     for (const d of domains) allDomains.add(d)
     if (domains.length === 0) {
       errors.push(`${index}: 0 results`)

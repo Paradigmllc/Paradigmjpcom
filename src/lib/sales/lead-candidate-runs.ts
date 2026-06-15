@@ -424,6 +424,9 @@ export async function ingestCommonCrawlCandidatesDurable(input: DurableCommonCra
   const fetched = await fetchDomains(normalized.countryCode, normalized.limit)
   const upserted = await upsertCandidates(run, fetched.domains)
   await updateRun(run.id, { fetched_count: fetched.domains.length, upserted_count: upserted, errors: fetched.failures })
+  if (normalized.verifyLimit === 0) {
+    await updateRun(run.id, { status: fetched.failures.length > 0 ? "partial" : "completed", completed_at: nowIso() })
+  }
   const inline = normalized.syncVerifyBatchSize > 0 ? await processLeadCandidateRun(run.id, { batchSize: normalized.syncVerifyBatchSize, maxBatches: 1 }) : { hasMore: normalized.verifyLimit > 0, failures: [] as Array<{ key: string; reason: string }> }
   const trigger = inline.hasMore ? await triggerLeadCandidateRunner(run.id) : { ok: false }
   const counts = await getSb().from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).select("status, verified_count, matched_technology_count, scored_count, promoted_count, jobs_enqueued_count, failure_count").eq("id", run.id).single()
