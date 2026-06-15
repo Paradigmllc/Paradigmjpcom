@@ -9,6 +9,7 @@ type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 const activePipelineFallbackRuns = new Set<string>()
 const STALE_PIPELINE_RUN_MS = 5 * 60_000
 const STALE_RUNNING_STEP_MS = 30 * 60_000
+const STALE_EXTERNAL_KARTE_STEP_MS = 5 * 60_000
 
 function nowIso(): string {
   return new Date().toISOString()
@@ -33,15 +34,23 @@ function hasActiveExternalStep(run: SalesPipelineRun): boolean {
   return (run.steps ?? []).some((step) => step.status === "running" || step.status === "waiting_external")
 }
 
-async function resetStaleRunningSteps(sb: ServiceSupabase, run: SalesPipelineRun): Promise<number> {
+function shouldResetStep(step: SalesPipelineStep): boolean {
+  if (step.status === "running") return stepAgeMs(step) >= STALE_RUNNING_STEP_MS
+  if (step.status === "waiting_external" && step.step_key === "karte_generate") {
+    return stepAgeMs(step) >= STALE_EXTERNAL_KARTE_STEP_MS
+  }
+  return false
+}
+
+async function resetRecoverableSteps(sb: ServiceSupabase, run: SalesPipelineRun): Promise<number> {
   let reset = 0
   for (const step of run.steps ?? []) {
-    if (step.status !== "running" || stepAgeMs(step) < STALE_RUNNING_STEP_MS) continue
+    if (!shouldResetStep(step)) continue
     const { error } = await sb
       .from(DB_TABLES.SALES_PIPELINE_STEPS)
       .update({
         status: "queued",
-        error_message: "auto-retry: stale running sales pipeline step recovered",
+        error_message: `auto-retry: stale ${step.status} sales pipeline step recovered`,
         started_at: null,
         completed_at: null,
       })
@@ -56,7 +65,7 @@ async function resetStaleRunningSteps(sb: ServiceSupabase, run: SalesPipelineRun
   if (reset > 0) {
     await updateRun(sb, run.id, {
       status: "queued",
-      error_message: "auto-retry: stale running sales pipeline step recovered",
+      error_message: "auto-retry: stale sales pipeline step recovered",
       completed_at: null,
     })
   }
@@ -66,7 +75,7 @@ async function resetStaleRunningSteps(sb: ServiceSupabase, run: SalesPipelineRun
 async function shouldRunFallback(sb: ServiceSupabase, runId: string): Promise<boolean> {
   const run = await fetchRunWithSteps(sb, runId)
   if (isTerminal(run)) return false
-  const reset = await resetStaleRunningSteps(sb, run)
+  const reset = await resetRecoverableSteps(sb, run)
   if (reset > 0) return true
   const refreshed = reset > 0 ? await fetchRunWithSteps(sb, runId) : run
   if (isTerminal(refreshed)) return false

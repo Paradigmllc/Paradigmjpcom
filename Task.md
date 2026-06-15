@@ -13,6 +13,7 @@
 - Production Node startup now registers a no-cost in-container watchdog via `src/instrumentation.ts`. It scans stale lead candidate runs and drains up to 3 queued enrichment jobs every minute, reducing reliance on Trigger.dev or manual recovery endpoints.
 - Enrichment job locks are now production-recoverable: claimed jobs write `started_at`/`locked_at`/`lock_owner`, completion/failure clears locks, processing exceptions are converted into normal retry/failure handling, and the watchdog requeues stale `running` enrichment jobs older than 30 minutes.
 - Sales pipeline runs are now production-recoverable too: Twenty intake and manual dispatch arm an app-side fallback, Trigger.dev failures queue local execution instead of `needs_review`, the watchdog restarts stale pipeline runs, and stale `running` pipeline steps reset to `queued` rather than an invalid `pending` status.
+- Sales Pipeline `karte_generate` is now covered by the same no-cost fallback rule: it always starts an app-side enrichment drain after queueing company karte generation, and stale `karte_generate` `waiting_external` steps older than 5 minutes are reset to `queued` for retry by the watchdog.
 - Telegram/OpenCode list collection now calls `ingestLeadCandidatesDurable`, so "collect all X in country Y" enters the same persisted multi-source runner.
 - Existing TypeScript red state was cleaned up in `astro-demo/src/keystatic/demo-data.ts` and `src/app/api/sales/fix-schema/route.ts`.
 - Lead candidate acquisition API no longer waits for Common Crawl + verification inside the request path.
@@ -44,6 +45,10 @@
 - `node scripts/run-vitest.mjs src/lib/sales/twenty-sync.test.ts src/lib/sales/source-registry.test.ts src/lib/sales/agent-team-collector.test.ts src/lib/sales/agent-team.test.ts src/lib/sales/lead-candidates.test.ts`: 5 files / 19 tests passed after Sales Pipeline fallback hardening.
 - `node scripts/paradigm-quality-guard.mjs`: 0 errors / 52 warnings after Sales Pipeline fallback hardening.
 - `git diff --check`: OK after Sales Pipeline fallback hardening; only existing LF-to-CRLF working-copy warnings.
+- `npx tsc --noEmit --pretty false --incremental false`: passed after Sales Pipeline `karte_generate` fallback hardening.
+- `node scripts/run-vitest.mjs src/lib/sales/twenty-sync.test.ts src/lib/sales/source-registry.test.ts src/lib/sales/agent-team-collector.test.ts src/lib/sales/agent-team.test.ts src/lib/sales/lead-candidates.test.ts`: 5 files / 19 tests passed after Sales Pipeline `karte_generate` fallback hardening.
+- `node scripts/paradigm-quality-guard.mjs`: 0 errors / 52 warnings after Sales Pipeline `karte_generate` fallback hardening.
+- `git diff --check`: OK after Sales Pipeline `karte_generate` fallback hardening; only existing LF-to-CRLF working-copy warnings.
 - Production smoke after `486103f` deploy:
   - `POST /api/sales/lead-candidates/multi-source` for `ZA / WooCommerce / limit=120 / verifyLimit=5` returned HTTP 200 in 1.997s.
   - Run `1f10a6e2-ffc3-486d-8ad2-1d5aa74e9da4`: completed with `fetched=120`, `upserted=120`, `verified=5`, `scored=5`, `promoted=0`.

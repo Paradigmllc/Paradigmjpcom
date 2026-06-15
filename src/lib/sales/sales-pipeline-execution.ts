@@ -8,6 +8,7 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { fetchCompanyKarte } from "./company-karte"
 import { enqueueCompanyEnrichment, runEnrichmentJobs, triggerEnrichmentRunner } from "./enrichment-jobs"
+import { startLeadCandidateEnrichmentFallback } from "./lead-candidate-enrichment-fallback"
 import { syncCompanyAcrossSalesTools } from "./external-studio-sync"
 import { runOutreachBatch } from "./outreach/orchestrator"
 import { getR2StorageConfig, sanitizeR2ObjectName } from "./r2-storage"
@@ -201,6 +202,7 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
     }
     const isTriggerDev = run.trigger_provider === "trigger.dev"
     const trigger = isTriggerDev ? await triggerEnrichmentRunner(1) : { ok: false, error: "local_run_forced_inline" }
+    startLeadCandidateEnrichmentFallback(1)
     const inlineRun = trigger.ok ? null : await runEnrichmentJobs(1)
     const karteResult = await fetchCompanyKarte(sb, run.company_id)
     const companyRes = await sb
