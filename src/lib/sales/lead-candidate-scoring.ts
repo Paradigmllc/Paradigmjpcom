@@ -23,7 +23,7 @@ export interface CandidateScore {
 }
 
 const COUNTRY_TLD_PATTERNS: Record<string, string[]> = {
-  ZA: ["*.za"],
+  ZA: ["*.co.za", "*.org.za", "*.net.za", "*.za"],
   CH: ["*.ch", "*.swiss"],
 }
 
