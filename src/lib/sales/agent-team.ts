@@ -79,6 +79,8 @@ function normalizeLimit(limit: number | null | undefined, max: number): number {
 
 export function classifyAgentCommand(text: string): SalesAgentIntent {
   const value = text.toLowerCase()
+  if (/(\u72b6\u6cc1|\u9032\u6357|\u4ef6\u6570|\u30b5\u30de\u30ea|status|kpi|summary)/i.test(text)) return "status_report"
+  if (/(\u30ea\u30b9\u30c8|\u53ce\u96c6|\u53d6\u96c6|\u96c6\u3081\u3066|\u62bd\u51fa|\u4e00\u89a7|list\s*collect|collect\s*list|collect|lead\s*list)/i.test(text)) return "collect_list"
   if (/(状況|進捗|status|kpi|件数|サマリ|summary)/i.test(text)) return "status_report"
   if (/(リスト|収集|集めて|抽出|一覧|list\s*collect|collect\s*list|collect|lead\s*list)/i.test(text)) return "collect_list"
   if (/(カルテ|診断|enrich|enrichment|解析|生成|report|レポート)/i.test(text)) return "run_enrichment"

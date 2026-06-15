@@ -12,8 +12,9 @@ describe("classifyAgentCommand", () => {
   })
 
   it("classifies natural language list acquisition as collect_list", () => {
-    expect(classifyAgentCommand("ZAのWooCommerceリスト1件収集して")).toBe("collect_list")
-    expect(classifyAgentCommand("スイスのHubSpotリスト全て集めて")).toBe("collect_list")
+    expect(classifyAgentCommand("ZA\u306eWooCommerce\u30ea\u30b9\u30c81\u4ef6\u53ce\u96c6\u3057\u3066")).toBe("collect_list")
+    expect(classifyAgentCommand("\u30b9\u30a4\u30b9\u306eHubSpot\u30ea\u30b9\u30c8\u5168\u3066\u96c6\u3081\u3066")).toBe("collect_list")
+    expect(classifyAgentCommand("\u5357\u30a2\u30d5\u30ea\u30ab\u306eShopify\u4e00\u89a7\u3092\u62bd\u51fa")).toBe("collect_list")
   })
 
   it("routes unclear instructions to manual review", () => {
