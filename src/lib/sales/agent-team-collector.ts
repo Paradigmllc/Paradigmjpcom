@@ -106,6 +106,7 @@ interface CandidateCollectInput {
   limit: number
   verifyLimit: number
   promote: boolean
+  minOpportunityScore: number
 }
 
 interface CollectListResult {
@@ -195,7 +196,8 @@ export function parseCandidateCollectCommand(
   const verifyLimit = Math.min(limit, wantsAll || limit > 1000 ? 5000 : 250)
   const candidateOnly = /(候補だけ|保存だけ|promote\s*false|no\s*promote|候補DBのみ)/i.test(text)
   const promote = !candidateOnly
-  return { countryCode, technology, limit, verifyLimit, promote }
+  const minOpportunityScore = wantsAll || limit > 1000 ? 0 : 50
+  return { countryCode, technology, limit, verifyLimit, promote, minOpportunityScore }
 }
 
 async function collectLeadCandidates(request: CandidateCollectInput): Promise<CollectListResult> {
@@ -205,7 +207,7 @@ async function collectLeadCandidates(request: CandidateCollectInput): Promise<Co
     limit: request.limit,
     verifyLimit: request.verifyLimit,
     promote: request.promote,
-    minOpportunityScore: 68,
+    minOpportunityScore: request.minOpportunityScore,
     syncVerifyBatchSize: Math.min(request.verifyLimit, 120),
   })
   const candidates = await listLeadCandidates({

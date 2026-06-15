@@ -16,6 +16,8 @@
 - Sales Pipeline `karte_generate` is now covered by the same no-cost fallback rule: it always starts an app-side enrichment drain after queueing company karte generation, and stale `karte_generate` `waiting_external` steps older than 5 minutes are reset to `queued` for retry by the watchdog.
 - Sales Pipeline `karte_generate` no longer depends only on `pipeline_status=report_ready`: existing `report_url` / company karte report URL now completes the step immediately, and local pipeline execution runs one enrichment job inline even when Trigger.dev accepted the task.
 - Telegram/OpenCode list collection now calls `ingestLeadCandidatesDurable`, so "collect all X in country Y" enters the same persisted multi-source runner.
+- Telegram/OpenCode "all" and large-batch list collection now passes `minOpportunityScore=0` into the durable runner, so matched candidates are not silently dropped before enrichment, Twenty sync, and report generation.
+- Proxy usage is now disabled in code and diagnostics: `MUBENG_PROXY_URL` is ignored by `getProxyDispatcher()`, mubeng health reports disabled-by-policy without touching the endpoint, and proxy pool/mubeng integrations are no longer recommended.
 - Existing TypeScript red state was cleaned up in `astro-demo/src/keystatic/demo-data.ts` and `src/app/api/sales/fix-schema/route.ts`.
 - Lead candidate acquisition API no longer waits for Common Crawl + verification inside the request path.
 - `POST /api/sales/lead-candidates/common-crawl` now creates a queued `sales_lead_candidate_runs` row and immediately dispatches processing.
@@ -54,6 +56,11 @@
 - `node scripts/run-vitest.mjs src/lib/sales/twenty-sync.test.ts src/lib/sales/source-registry.test.ts src/lib/sales/agent-team-collector.test.ts src/lib/sales/agent-team.test.ts src/lib/sales/lead-candidates.test.ts`: 5 files / 19 tests passed after `report_url`-based `karte_generate` completion hardening.
 - `node scripts/paradigm-quality-guard.mjs`: 0 errors / 52 warnings after `report_url`-based `karte_generate` completion hardening.
 - `git diff --check`: OK after `report_url`-based `karte_generate` completion hardening; only existing LF-to-CRLF working-copy warnings.
+- `npx tsc --noEmit --pretty false --incremental false`: passed after no-proxy/list-collection policy hardening.
+- `node scripts/run-vitest.mjs src/lib/sales/agent-team-collector.test.ts src/lib/sales/twenty-sync.test.ts src/lib/sales/source-registry.test.ts src/lib/sales/agent-team.test.ts src/lib/sales/lead-candidates.test.ts`: 5 files / 19 tests passed after no-proxy/list-collection policy hardening.
+- `node scripts/paradigm-quality-guard.mjs`: 0 errors / 52 warnings after no-proxy/list-collection policy hardening.
+- `git diff --check`: OK after no-proxy/list-collection policy hardening; only existing LF-to-CRLF working-copy warnings.
+- `npm run context:audit`: still fails on existing PowerShell wildcard parsing for `[locale]` in `C:\Users\apple\.agents\scripts\context-audit.ps1`.
 - Production smoke after `486103f` deploy:
   - `POST /api/sales/lead-candidates/multi-source` for `ZA / WooCommerce / limit=120 / verifyLimit=5` returned HTTP 200 in 1.997s.
   - Run `1f10a6e2-ffc3-486d-8ad2-1d5aa74e9da4`: completed with `fetched=120`, `upserted=120`, `verified=5`, `scored=5`, `promoted=0`.

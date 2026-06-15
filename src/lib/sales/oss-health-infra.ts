@@ -112,20 +112,12 @@ export async function checkFFCreatorHealth(): Promise<ServiceHealthResult> {
 }
 
 export async function checkMubengHealth(): Promise<ServiceHealthResult> {
-  const missing = missingEnv(["MUBENG_PROXY_URL"])
-  if (missing.length > 0) return notConfigured(missing)
-  try {
-    const url = normalizeHttpBase(envValue("MUBENG_PROXY_URL") as string)
-    const res = await fetch(url.toString(), { signal: AbortSignal.timeout(5_000) })
-    if (res.status === 401) {
-      return { balanceStatus: "ok", balanceLabel: "認証が必要 (応答あり)" }
-    }
-    return {
-      balanceStatus: res.ok ? "ok" : "error",
-      balanceLabel: res.ok ? "正常 (HTTP 200)" : `HTTP ${res.status}`,
-    }
-  } catch (error) {
-    return healthError("mubeng", error)
+  const configured = envValue("MUBENG_PROXY_URL")
+  return {
+    balanceStatus: "manual",
+    balanceLabel: configured
+      ? "Configured but ignored: proxy/mubeng usage is disabled by RevenueOS policy"
+      : "Disabled by RevenueOS policy",
   }
 }
 

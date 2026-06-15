@@ -1,14 +1,19 @@
-import { ProxyAgent } from "undici"
+import type { ProxyAgent } from "undici"
 
 type ProxyFetchOptions = RequestInit & { dispatcher?: ProxyAgent }
 
+let proxyDisabledWarningShown = false
+
 /**
- * Get configured mubeng ProxyAgent for Node.js fetch/undici dispatch.
- * Returns undefined if MUBENG_PROXY_URL is not configured.
+ * Keep legacy call sites compatible while enforcing the RevenueOS no-proxy policy.
  */
 export function getProxyDispatcher(): ProxyAgent | undefined {
   const proxyUrl = getMubengProxyUrl()
-  return proxyUrl ? new ProxyAgent(proxyUrl) : undefined
+  if (proxyUrl && !proxyDisabledWarningShown) {
+    proxyDisabledWarningShown = true
+    console.warn("[proxy-agent] MUBENG proxy env is configured but ignored because proxy usage is disabled by policy")
+  }
+  return undefined
 }
 
 export function getMubengProxyUrl(): string | undefined {
@@ -27,15 +32,9 @@ export function getMubengProxyUrl(): string | undefined {
 }
 
 /**
- * Builds fetch options with proxy dispatcher if mubeng is enabled.
+ * Builds fetch options without proxy dispatchers. Kept for call-site compatibility.
  */
 export function getProxyFetchOptions(options: RequestInit = {}): ProxyFetchOptions {
-  const dispatcher = getProxyDispatcher()
-  if (dispatcher) {
-    return {
-      ...options,
-      dispatcher,
-    }
-  }
+  getProxyDispatcher()
   return options
 }

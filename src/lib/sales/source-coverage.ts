@@ -178,11 +178,11 @@ const SOURCES: SourceDefinition[] = [
   },
   {
     slug: "mubeng",
-    label: "mubeng Proxy Rotator",
+    label: "mubeng Proxy Rotator (disabled)",
     category: "outreach",
     env: ["MUBENG_PROXY_URL"],
-    detect: (m) => !!m.proxy_used || !!m.mubeng,
-    detail: "Rotating proxy pool configuration for crawlers"
+    detect: () => false,
+    detail: "Disabled by RevenueOS policy: no proxy, Tor, or mubeng acquisition path is allowed"
   },
   {
     slug: "browser_screenshot",

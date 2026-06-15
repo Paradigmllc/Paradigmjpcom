@@ -11,6 +11,7 @@ describe("agent team collector command parser", () => {
       limit: 5000,
       verifyLimit: 5000,
       promote: true,
+      minOpportunityScore: 0,
     })
   })
 
@@ -22,6 +23,7 @@ describe("agent team collector command parser", () => {
     expect(parsed?.limit).toBe(100)
     expect(parsed?.verifyLimit).toBe(100)
     expect(parsed?.promote).toBe(true)
+    expect(parsed?.minOpportunityScore).toBe(50)
   })
 
   it("keeps explicit large batches instead of clipping at one thousand", () => {
@@ -32,6 +34,7 @@ describe("agent team collector command parser", () => {
     expect(parsed?.limit).toBe(5000)
     expect(parsed?.verifyLimit).toBe(5000)
     expect(parsed?.promote).toBe(true)
+    expect(parsed?.minOpportunityScore).toBe(0)
   })
 
   it("allows candidate-only collection when explicitly requested", () => {
@@ -40,6 +43,7 @@ describe("agent team collector command parser", () => {
     expect(parsed?.countryCode).toBe("CH")
     expect(parsed?.technology).toBe("HubSpot")
     expect(parsed?.promote).toBe(false)
+    expect(parsed?.minOpportunityScore).toBe(0)
   })
 
   it("ignores plain existing-list requests without country", () => {
