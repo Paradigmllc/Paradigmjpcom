@@ -2,11 +2,22 @@ import { NextRequest, NextResponse } from "next/server"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { startLeadCandidateRunFallback } from "@/lib/sales/lead-candidate-runner"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 const ITEM_STATUSES = ["discovered", "verified", "scored", "promoted", "failed", "skipped"] as const
+const STALE_RUN_MS = 5 * 60_000
+
+function shouldRestartRun(run: Record<string, unknown>): boolean {
+  const status = String(run.status ?? "")
+  if (!["queued", "running"].includes(status)) return false
+  const heartbeat = typeof run.heartbeat_at === "string" ? Date.parse(run.heartbeat_at) : 0
+  const started = typeof run.started_at === "string" ? Date.parse(run.started_at) : 0
+  const reference = Number.isFinite(heartbeat) && heartbeat > 0 ? heartbeat : started
+  return reference > 0 && Date.now() - reference > STALE_RUN_MS
+}
 
 export async function GET(req: NextRequest, context: { params: Promise<{ runId: string }> }) {
   try {
@@ -20,6 +31,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ runId: 
 
     const { data: run, error } = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).select("*").eq("id", runId).single()
     if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 404 })
+    const autoRecovery = shouldRestartRun(run as Record<string, unknown>) ? startLeadCandidateRunFallback(runId) : null
 
     const itemCounts: Record<string, number> = {}
     for (const status of ITEM_STATUSES) {
@@ -39,7 +51,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ runId: 
       .order("updated_at", { ascending: false })
       .limit(20)
 
-    return NextResponse.json({ ok: true, run, itemCounts, recentFailures: recentFailures ?? [] })
+    return NextResponse.json({ ok: true, run, itemCounts, recentFailures: recentFailures ?? [], autoRecovery })
   } catch (error) {
     console.error("[lead-candidates/runs] status request failed:", error)
     return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : "Run status request failed" }, { status: 500 })

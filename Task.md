@@ -8,6 +8,7 @@
 - New endpoint added: `POST /api/sales/lead-candidates/multi-source` while the old `/common-crawl` route remains for compatibility.
 - When promoted candidates enqueue enrichment jobs, the lead candidate runner now triggers Trigger.dev and also starts an app-side enrichment fallback so report generation + Twenty sync do not depend on Trigger.dev actually running.
 - Enrichment fallback now drains the queue in up to 5 short waves, so multiple promoted candidates do not leave sibling jobs stuck queued after only one background pass.
+- Run status API now auto-restarts stale `queued`/`running` lead candidate runs when `heartbeat_at` is older than 5 minutes, covering deploy/container replacement during in-process fallback work.
 - Telegram/OpenCode list collection now calls `ingestLeadCandidatesDurable`, so "collect all X in country Y" enters the same persisted multi-source runner.
 - Existing TypeScript red state was cleaned up in `astro-demo/src/keystatic/demo-data.ts` and `src/app/api/sales/fix-schema/route.ts`.
 - Lead candidate acquisition API no longer waits for Common Crawl + verification inside the request path.
@@ -40,6 +41,7 @@
   - Enrichment jobs for `auto-boss.co.za` and `auto-cad-training.co.za` both completed with generated report URLs and `twenty_sync=synced`.
   - Soak run `f808698b-7a2e-433d-a7f0-d9ddad6b936e` for `ZA / WooCommerce / limit=1000 / verifyLimit=20 / promote=false`: API returned HTTP 200 in 1.291s; after recovery from a deploy-time container replacement, completed with `fetched=622`, `upserted=622`, `verified=20`, `scored=20`, `failure=0`.
   - The soak run proved multi-source bulk contribution at larger size: `tranco_top_domains=614` raw source hits and `common_crawl_domains=222` raw source hits before dedupe; `crt.sh` was flaky with 502/timeouts.
+  - Follow-up hardening: status polling now starts fallback processing for stale runs automatically, so the same deploy-time interruption should self-heal without a manual `/process` call.
 - `node scripts/verify-trigger-sales-os.mjs`: task source definitions OK, Trigger.dev API/health dispatch still fails with `fetch failed`; fallback runner is therefore required for production continuity.
 - Production smoke before the final fallback-hardening patch:
   - `POST /api/sales/lead-candidates/common-crawl` returned HTTP 200 in 1.48s with run `243e6668-1aed-4875-bc88-37b9a93f3314`.
