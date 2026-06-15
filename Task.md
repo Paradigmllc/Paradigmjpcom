@@ -85,6 +85,12 @@
 - `node scripts/paradigm-quality-guard.mjs`: 0 errors / 53 warnings after passive endpoint fallback/configuration hardening.
 - `git diff --check`: OK after passive endpoint fallback/configuration hardening; only existing LF-to-CRLF working-copy warnings.
 - `npm run context:audit`: still fails on existing PowerShell wildcard parsing for `[locale]` in `C:\Users\apple\.agents\scripts\context-audit.ps1`.
+- Deploy `chrjw5lmoi6hl4irxsp7zbx9` for `e8758a0`: `finished`; container `i12am4vvcbggefnqdizhnv9a:e8758a0...` healthy; `https://paradigmjp.com/ja/admin/sales` returned HTTP 200.
+- Passive endpoint smoke after fallback hardening: `POST /api/sales/passive-inventory` for `EG / Shopify / limit=5` returned HTTP 200 with `ok=true`, `fallbackUsed=true`, explicit warning `Passive zone inputs are not configured in this runtime; free bulk fallback was used.`, passive domains `0`, fallback domains `5`.
+- OpenCode/Telegram smoke after fallback hardening:
+  - `OpenCode Egypt Shopify all 5 sites collect list`: run `3c630cb4-fb80-4a4e-8ec5-36b7ca0b5fdd` completed with `fetched=5`, `upserted=5`, `verified=5`, `matched=0`, `scored=5`, `promoted=0`, `failure=0`; no Twenty/report generated because Shopify match was zero.
+  - `OpenCode ZA all 5 sites collect list`: run `688c70ef-442b-411f-a2fa-460cf910a9ad` completed with `fetched=5`, `upserted=5`, `verified=5`, `matched=5`, `promoted=5`, `jobs_enqueued=5`, `failure=0`.
+  - The ZA run items were all `promoted`; corresponding company enrichment jobs completed with report URLs including `auto-boss-rql6dn`, `auto-ecu-vcbo4x`, `auto-covers-912w12`, `auto-cad-training-1ptn1i`, `auto-dna-8t61zb`; `twenty_sync=synced` for all checked company jobs.
 - Production smoke after `486103f` deploy:
   - `POST /api/sales/lead-candidates/multi-source` for `ZA / WooCommerce / limit=120 / verifyLimit=5` returned HTTP 200 in 1.997s.
   - Run `1f10a6e2-ffc3-486d-8ad2-1d5aa74e9da4`: completed with `fetched=120`, `upserted=120`, `verified=5`, `scored=5`, `promoted=0`.
