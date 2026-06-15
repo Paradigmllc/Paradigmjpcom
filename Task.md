@@ -41,6 +41,14 @@ POST /api/sales/lead-candidates/local-smb
   - `astro-demo/src/keystatic/demo-data.ts`: missing `description`
   - `astro-demo/src/keystatic/demo-data.ts`: missing `./demo-data-legacy`
   - `src/app/api/sales/fix-schema/route.ts`: `PoolConfig.family`
+- `node scripts/paradigm-quality-guard.mjs`: new files are under 500 lines and no silent catches; still fails on existing `src/lib/sales/enrichment-jobs-runner.ts` at 514 lines.
+- `npm run context:audit`: existing audit script fails on `[locale]` wildcard parsing in `C:\Users\apple\.agents\scripts\context-audit.ps1`.
+- Deployed to production through `npm run deploy:prod` on commit `16aa0ce`.
+  - Coolify deployment `cbrv5ysb8t5624b1vbcmugyj`: `finished`.
+  - Migration 047 applied through SSH `psql` fallback and PostgREST schema reload.
+  - Production DB check: all 5 `sales_lead_candidate_*` tables exist.
+  - Smoke OK: `https://paradigmjp.com/ja/admin/sales`, `https://paradigmjp.com/ja`, `https://twenty.paradigmjp.com`.
+  - New API fingerprints: `/api/sales/source-registry` and `/api/sales/lead-candidates` return HTTP 401 when unauthenticated, confirming routes are live.
 
 ## ACTIVE HANDOFF - 2026-06-15 RevenueOS lead acquisition direction
 
