@@ -103,6 +103,16 @@
 - `node scripts/paradigm-quality-guard.mjs`: 0 errors / 53 warnings after durable passive inventory segment runner implementation.
 - `git diff --check`: OK after durable passive inventory segment runner implementation; only existing LF-to-CRLF working-copy warnings.
 - `npm run context:audit`: still fails on existing PowerShell wildcard parsing for `[locale]` in `C:\Users\apple\.agents\scripts\context-audit.ps1`.
+- Deploy `vqufge1muiybxcqfba18naxr` for `595d1a9`: `finished`; container image `i12am4vvcbggefnqdizhnv9a:595d1a9...` healthy; `https://paradigmjp.com/ja/admin/sales` returned HTTP 200.
+- Durable passive inventory API smoke:
+  - `POST /api/sales/passive-inventory/runs` for `EG / Shopify / limit=20 / segmentLimit=10 / patterns=["*.eg"]` returned HTTP 200 and run `7a6e985f-808b-4707-9438-e6c83752449d`; runner was `triggered+fallback`; configuration correctly reported no CZDS/zone/massdns inputs.
+  - Run `7a6e985f-808b-4707-9438-e6c83752449d` processed segment `pattern:*.eg` with `fallback=true`, `input=10`, `checked=10`, `stack=0`, and completed without hard failure.
+  - `OpenCode Egypt Shopify all 5 sites collect list` returned both candidate run `3266e008-a74d-4c02-b124-c73248c299f9` and passive inventory run `45d0541e-ac75-4d95-835a-61bdd89fff44` with 9 segments.
+  - Passive run `45d0541e-ac75-4d95-835a-61bdd89fff44` advanced all 9 segments through free-bulk fallback and completed; no Shopify stack match was found in the smoke batch.
+- Follow-up hardening after smoke: passive inventory run counts now aggregate segment `input_count` / `checked_count` / stack / geo totals, so operational dashboards do not show `fetched=0` when no stack-matched domain was persisted.
+- `npx tsc --noEmit --pretty false --incremental false`: passed after passive inventory segment count aggregation fix.
+- `node scripts/run-vitest.mjs src/lib/sales/passive-inventory-utils.test.ts src/lib/sales/agent-team-collector.test.ts`: 2 files / 9 tests passed after passive inventory segment count aggregation fix.
+- `git diff --check`: OK after passive inventory segment count aggregation fix; only existing LF-to-CRLF working-copy warnings.
 - Production smoke after `486103f` deploy:
   - `POST /api/sales/lead-candidates/multi-source` for `ZA / WooCommerce / limit=120 / verifyLimit=5` returned HTTP 200 in 1.997s.
   - Run `1f10a6e2-ffc3-486d-8ad2-1d5aa74e9da4`: completed with `fetched=120`, `upserted=120`, `verified=5`, `scored=5`, `promoted=0`.

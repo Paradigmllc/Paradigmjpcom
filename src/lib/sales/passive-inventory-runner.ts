@@ -69,23 +69,45 @@ async function refreshRunCounts(runId: string): Promise<{ hasMore: boolean }> {
   const sb = getSb()
   const segmentStatuses = ["queued", "running", "completed", "partial", "failed"] as const
   const segmentCounts = new Map<string, number>()
-  for (const status of segmentStatuses) {
-    const res = await sb.from(DB_TABLES.SALES_PASSIVE_INVENTORY_SEGMENTS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("status", status)
-    segmentCounts.set(status, res.count ?? 0)
+  const segmentTotals = {
+    input: 0,
+    checked: 0,
+    stackMatched: 0,
+    geoMatched: 0,
+    persisted: 0,
+    failures: 0,
   }
-  const domains = await sb.from(DB_TABLES.SALES_PASSIVE_INVENTORY_DOMAINS).select("id", { count: "exact", head: true }).eq("run_id", runId)
-  const stack = await sb.from(DB_TABLES.SALES_PASSIVE_INVENTORY_DOMAINS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("stack_matched", true)
-  const geo = await sb.from(DB_TABLES.SALES_PASSIVE_INVENTORY_DOMAINS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("geo_matched", true)
+  const segmentRows = await sb
+    .from(DB_TABLES.SALES_PASSIVE_INVENTORY_SEGMENTS)
+    .select("status, input_count, checked_count, stack_matched_count, geo_matched_count, persisted_count, failure_count")
+    .eq("run_id", runId)
+  if (segmentRows.error) throw new Error(segmentRows.error.message)
+  for (const row of (segmentRows.data ?? []) as Array<Record<string, unknown>>) {
+    const status = typeof row.status === "string" ? row.status : "unknown"
+    segmentCounts.set(status, (segmentCounts.get(status) ?? 0) + 1)
+    segmentTotals.input += Number(row.input_count ?? 0)
+    segmentTotals.checked += Number(row.checked_count ?? 0)
+    segmentTotals.stackMatched += Number(row.stack_matched_count ?? 0)
+    segmentTotals.geoMatched += Number(row.geo_matched_count ?? 0)
+    segmentTotals.persisted += Number(row.persisted_count ?? 0)
+    segmentTotals.failures += Number(row.failure_count ?? 0)
+  }
+  for (const status of segmentStatuses) {
+    if (!segmentCounts.has(status)) segmentCounts.set(status, 0)
+  }
   const hasMore = (segmentCounts.get("queued") ?? 0) > 0 || (segmentCounts.get("running") ?? 0) > 0
   const failed = segmentCounts.get("failed") ?? 0
   await updateRun(runId, {
     status: hasMore ? "running" : failed > 0 ? "partial" : "completed",
-    fetched_domains_count: domains.count ?? 0,
-    stack_matched_count: stack.count ?? 0,
-    geo_matched_count: geo.count ?? 0,
+    fetched_domains_count: segmentTotals.input,
+    cname_checked_count: segmentTotals.checked,
+    stack_matched_count: segmentTotals.stackMatched,
+    geo_matched_count: segmentTotals.geoMatched,
+    errors: segmentTotals.failures > 0 ? [{ key: "passive_inventory_segments", reason: `${segmentTotals.failures} segment source or detection warnings` }] : [],
     completed_at: hasMore ? null : nowIso(),
     cursor: {
       segment_counts: Object.fromEntries(segmentCounts.entries()),
+      segment_totals: segmentTotals,
       configuration: getPassiveInventoryConfiguration(),
     },
   })
