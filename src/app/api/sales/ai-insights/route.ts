@@ -69,18 +69,20 @@ export async function POST(req: NextRequest) {
       companies = data ?? []
     }
 
-    const insights: Array<{ companyId: string; companyName: string; insight: string | null }> = []
-    for (const c of companies) {
-      const insight = await generateInsight(c)
-      insights.push({ companyId: c.id, companyName: c.company_name, insight })
+    const insights = await Promise.all(
+      companies.map(async (c) => {
+        const insight = await generateInsight(c)
 
-      // Save to meta
-      if (insight) {
-        await sb.from(DB_TABLES.SALES_COMPANIES).update({
-          meta: { ...(c.meta as Record<string, unknown> ?? {}), sales_os: { ...((c.meta as Record<string, unknown>)?.sales_os as Record<string, unknown> ?? {}), ai_insight: insight, ai_insight_at: new Date().toISOString() } }
-        }).eq("id", c.id).then(() => {}, () => {})
-      }
-    }
+        // Save to meta
+        if (insight) {
+          await sb.from(DB_TABLES.SALES_COMPANIES).update({
+            meta: { ...(c.meta as Record<string, unknown> ?? {}), sales_os: { ...((c.meta as Record<string, unknown>)?.sales_os as Record<string, unknown> ?? {}), ai_insight: insight, ai_insight_at: new Date().toISOString() } }
+          }).eq("id", c.id).then(() => {}, () => {})
+        }
+
+        return { companyId: c.id, companyName: c.company_name, insight }
+      }),
+    )
 
     return NextResponse.json({ ok: true, insights })
   } catch (e) {

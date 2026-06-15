@@ -83,12 +83,18 @@ export async function POST(req: NextRequest) {
       // ═══ ブログ記事 ═══
       case "list_posts": {
         const { data, error } = await db.from(DB_TABLES.CMS_POSTS).select("*").order("created_at", { ascending: false }).limit(500)
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) {
+          console.error("[admin] list_posts failed:", error.message)
+          return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+        }
         return NextResponse.json({ posts: data || [] })
       }
       case "get_post": {
         const { data, error } = await db.from(DB_TABLES.CMS_POSTS).select("*").eq("id", params.id).single()
-        if (error) return NextResponse.json({ error: error.message }, { status: 404 })
+        if (error) {
+          console.error("[admin] get_post failed:", error.message)
+          return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+        }
         return NextResponse.json({ post: data })
       }
       case "create_post": {
@@ -103,7 +109,10 @@ export async function POST(req: NextRequest) {
           status: params.status || "draft",
           published_at: params.status === "published" ? new Date().toISOString() : null,
         }).select().single()
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) {
+          console.error("[admin] create_post failed:", error.message)
+          return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+        }
         return NextResponse.json({ post: data })
       }
       case "update_post": {
@@ -114,12 +123,18 @@ export async function POST(req: NextRequest) {
           updates.published_at = new Date().toISOString()
         }
         const { data, error } = await db.from(DB_TABLES.CMS_POSTS).update(updates).eq("id", params.id).select().single()
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) {
+          console.error("[admin] update_post failed:", error.message)
+          return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+        }
         return NextResponse.json({ post: data })
       }
       case "delete_post": {
         const { error } = await db.from(DB_TABLES.CMS_POSTS).delete().eq("id", params.id)
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) {
+          console.error("[admin] delete_post failed:", error.message)
+          return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+        }
         return NextResponse.json({ success: true })
       }
 
@@ -132,7 +147,10 @@ export async function POST(req: NextRequest) {
         const updates: Record<string, unknown> = { ...params, updated_at: new Date().toISOString() }
         delete updates.id; delete updates.action
         const { data, error } = await db.from(DB_TABLES.CMS_SERVICES).update(updates).eq("id", params.id).select().single()
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) {
+          console.error("[admin] update_service failed:", error.message)
+          return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+        }
         return NextResponse.json({ service: data })
       }
 
@@ -145,7 +163,10 @@ export async function POST(req: NextRequest) {
         const updates: Record<string, unknown> = { ...params, updated_at: new Date().toISOString() }
         delete updates.id; delete updates.action
         const { data, error } = await db.from(DB_TABLES.CMS_PRICING).update(updates).eq("id", params.id).select().single()
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) {
+          console.error("[admin] update_pricing failed:", error.message)
+          return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+        }
         return NextResponse.json({ plan: data })
       }
 
@@ -161,19 +182,28 @@ export async function POST(req: NextRequest) {
           answer: params.answer,
           sort_order: (count || 0) + 1,
         }).select().single()
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) {
+          console.error("[admin] create_faq failed:", error.message)
+          return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+        }
         return NextResponse.json({ faq: data })
       }
       case "update_faq": {
         const updates: Record<string, unknown> = { ...params, updated_at: new Date().toISOString() }
         delete updates.id; delete updates.action
         const { error } = await db.from(DB_TABLES.CMS_FAQS).update(updates).eq("id", params.id)
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) {
+          console.error("[admin] update_faq failed:", error.message)
+          return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+        }
         return NextResponse.json({ success: true })
       }
       case "delete_faq": {
         const { error } = await db.from(DB_TABLES.CMS_FAQS).delete().eq("id", params.id)
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) {
+          console.error("[admin] delete_faq failed:", error.message)
+          return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+        }
         return NextResponse.json({ success: true })
       }
       case "reorder_faqs": {
@@ -183,7 +213,10 @@ export async function POST(req: NextRequest) {
           updated_at: new Date().toISOString(),
         }))
         const { error } = await db.from(DB_TABLES.CMS_FAQS).upsert(updates)
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) {
+          console.error("[admin] reorder_faqs failed:", error.message)
+          return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+        }
         return NextResponse.json({ success: true })
       }
 
@@ -203,19 +236,28 @@ export async function POST(req: NextRequest) {
           color: params.color || "indigo",
           sort_order: (count || 0) + 1,
         }).select().single()
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) {
+          console.error("[admin] create_work failed:", error.message)
+          return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+        }
         return NextResponse.json({ work: data })
       }
       case "update_work": {
         const updates: Record<string, unknown> = { ...params, updated_at: new Date().toISOString() }
         delete updates.id; delete updates.action
         const { error } = await db.from(DB_TABLES.CMS_WORKS).update(updates).eq("id", params.id)
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) {
+          console.error("[admin] update_work failed:", error.message)
+          return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+        }
         return NextResponse.json({ success: true })
       }
       case "delete_work": {
         const { error } = await db.from(DB_TABLES.CMS_WORKS).delete().eq("id", params.id)
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) {
+          console.error("[admin] delete_work failed:", error.message)
+          return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+        }
         return NextResponse.json({ success: true })
       }
 
@@ -229,7 +271,10 @@ export async function POST(req: NextRequest) {
       }
       case "update_lead_status": {
         const { error } = await db.from(DB_TABLES.LEADS).update({ pipeline_stage: params.status }).eq("id", params.id)
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) {
+          console.error("[admin] update_lead_status failed:", error.message)
+          return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+        }
         return NextResponse.json({ success: true })
       }
 
@@ -245,7 +290,10 @@ export async function POST(req: NextRequest) {
           { key: params.key, value: params.value, updated_at: new Date().toISOString() },
           { onConflict: "key" }
         )
-        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+        if (error) {
+          console.error("[admin] save_setting failed:", error.message)
+          return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+        }
         return NextResponse.json({ success: true })
       }
 
@@ -253,7 +301,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: `不明なアクション: ${action}` }, { status: 400 })
     }
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 })
+    console.error("[admin] POST error:", e)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
