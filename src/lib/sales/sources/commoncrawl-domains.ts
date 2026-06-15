@@ -26,12 +26,12 @@ const FALLBACK_INDEXES = [
 
 let cachedIndexes: string[] | null = null
 
-async function getRecentIndexes(limit = 4): Promise<string[]> {
+async function getRecentIndexes(limit = 3): Promise<string[]> {
   if (cachedIndexes) return cachedIndexes.slice(0, limit)
   try {
     const res = await fetch(`${CDX_API}/collinfo.json`, {
       headers: { "User-Agent": "RevenueOS-CommonCrawl/1.0" },
-      signal: AbortSignal.timeout(20_000),
+      signal: AbortSignal.timeout(12_000),
       ...getProxyFetchOptions(),
     })
     if (!res.ok) throw new Error(`collinfo HTTP ${res.status}`)
@@ -65,7 +65,7 @@ async function queryCdxIndex(
   async function readDomains(url: string): Promise<void> {
     const res = await fetch(url, {
       headers: { "User-Agent": "RevenueOS-CommonCrawl/1.0" },
-      signal: AbortSignal.timeout(60_000),
+      signal: AbortSignal.timeout(18_000),
       ...getProxyFetchOptions(),
     })
     if (!res.ok) return
@@ -100,7 +100,9 @@ async function queryCdxIndex(
     if (pageInfoRes.ok) {
       const pageInfo = await pageInfoRes.json().catch(() => null) as { pages?: unknown } | null
       const pages = typeof pageInfo?.pages === "number" ? Math.min(pageInfo.pages, 12) : 0
-      for (let page = 0; page < pages && domains.size < limit; page++) {
+      const pageOrder = [...Array.from({ length: Math.max(pages - 1, 0) }, (_value, index) => index + 1), 0]
+      for (const page of pageOrder) {
+        if (domains.size >= limit) break
         await readDomains(`${endpoint}?url=${encodeURIComponent(pattern)}&output=json&filter=status:200&page=${page}&pageSize=100`)
       }
       if (domains.size > 0) return [...domains]
@@ -127,7 +129,8 @@ export async function fetchCommonCrawlDomains(
 
   const indexes = await getRecentIndexes()
   for (const index of indexes) {
-    const domains = await queryCdxIndex(tldPattern, index, Math.ceil(limit / indexes.length))
+    if (allDomains.size >= limit) break
+    const domains = await queryCdxIndex(tldPattern, index, limit - allDomains.size)
     for (const d of domains) allDomains.add(d)
     if (domains.length === 0) {
       errors.push(`${index}: 0 results`)
