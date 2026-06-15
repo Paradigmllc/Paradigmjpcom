@@ -7,6 +7,7 @@ import { optionalEnv } from "./japan-readiness-utils"
 import { salesScopeFromCountry } from "./locale-scope"
 import { listLeadCandidates, type CandidateListItem } from "./lead-candidate-list"
 import { startLeadCandidateEnrichmentFallback } from "./lead-candidate-enrichment-fallback"
+import { ensureLeadCandidateRunDomainsFetched } from "./lead-candidate-acquisition"
 import {
   clampScore,
   inferCountrySignals,
@@ -16,7 +17,6 @@ import {
   type CandidateLane,
   type CandidateScore,
 } from "./lead-candidate-scoring"
-import { fetchLeadCandidateDomains } from "./lead-candidate-domain-sources"
 import { detectTechStack, type TechItem } from "./sources/wappalyzer"
 
 type JsonRecord = Record<string, unknown>
@@ -25,7 +25,6 @@ type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 const SOURCE = "multi_source_domains"
 const MAX_FETCH_LIMIT = 10_000
 const MAX_VERIFY_LIMIT = 5_000
-const UPSERT_CHUNK_SIZE = 500
 const DEFAULT_VERIFY_BATCH = 120
 const MAX_VERIFY_CONCURRENCY = 8
 
@@ -98,12 +97,6 @@ function nowIso(): string {
   return new Date().toISOString()
 }
 
-function chunk<T>(items: T[], size: number): T[][] {
-  const out: T[][] = []
-  for (let index = 0; index < items.length; index += size) out.push(items.slice(index, index + size))
-  return out
-}
-
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "lead candidate run failed"
 }
@@ -168,61 +161,6 @@ async function updateRun(runId: string, patch: JsonRecord): Promise<void> {
 
 export async function markLeadCandidateRunFailed(runId: string, error: unknown): Promise<void> {
   await updateRun(runId, { status: "failed", error_message: errorMessage(error), completed_at: nowIso() })
-}
-
-async function fetchDomains(countryCode: string, limit: number) {
-  return fetchLeadCandidateDomains(countryCode, limit)
-}
-
-async function upsertCandidates(run: RunRow, domains: string[], sourceByDomain: Record<string, string[]>): Promise<number> {
-  const sb = getSb()
-  let count = 0
-  for (const part of chunk(domains, UPSERT_CHUNK_SIZE)) {
-    const candidateRows = part.map((domain) => ({
-      domain,
-      root_url: `https://${domain}`,
-      lane: "tech_footprint",
-      source_slug: SOURCE,
-      source_run_id: run.id,
-      last_seen_at: nowIso(),
-      meta: { country_code: run.country_code, requested_technology: run.technology, run_id: run.id, acquisition_sources: sourceByDomain[domain] ?? [SOURCE] },
-    }))
-    const { data, error } = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_DOMAINS)
-      .upsert(candidateRows, { onConflict: "domain", ignoreDuplicates: false })
-      .select("id, domain, root_url")
-    if (error) throw new Error(error.message)
-    const byDomain = new Map(((data ?? []) as CandidateRow[]).map((row) => [row.domain, row]))
-    const itemRows = part.map((domain) => ({
-      run_id: run.id,
-      candidate_id: byDomain.get(domain)?.id ?? null,
-      domain,
-      root_url: `https://${domain}`,
-      status: "discovered",
-      meta: { country_code: run.country_code, requested_technology: run.technology, acquisition_sources: sourceByDomain[domain] ?? [SOURCE] },
-    }))
-    const itemResult = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS)
-      .upsert(itemRows, { onConflict: "run_id,domain", ignoreDuplicates: false })
-    if (itemResult.error) throw new Error(itemResult.error.message)
-    count += itemRows.length
-  }
-  return count
-}
-
-async function ensureRunDomainsFetched(run: RunRow): Promise<{ fetched: number; upserted: number; failures: Array<{ key: string; reason: string }> }> {
-  if (run.upserted_count > 0) return { fetched: run.fetched_count, upserted: run.upserted_count, failures: [] }
-  await updateRun(run.id, { status: "running", started_at: nowIso() })
-  const fetched = await fetchDomains(run.country_code, run.requested_limit)
-  const upserted = await upsertCandidates(run, fetched.domains, fetched.sourceByDomain)
-  await updateRun(run.id, {
-    fetched_count: fetched.domains.length,
-    upserted_count: upserted,
-    errors: fetched.failures,
-    cursor: { ...(run.cursor ?? {}), source_stats: fetched.sourceStats, source_count: fetched.sourceStats.length },
-  })
-  if (run.verify_limit === 0) {
-    await updateRun(run.id, { status: fetched.failures.length > 0 ? "partial" : "completed", completed_at: nowIso() })
-  }
-  return { fetched: fetched.domains.length, upserted, failures: fetched.failures }
 }
 
 async function saveEvidence(input: {
@@ -387,7 +325,7 @@ export async function processLeadCandidateRun(runId: string, options: { batchSiz
   const runRes = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).select("id, country_code, technology, requested_limit, verify_limit, promote, min_opportunity_score, fetched_count, upserted_count, cursor").eq("id", runId).single()
   if (runRes.error) throw new Error(runRes.error.message)
   const run = runRes.data as RunRow
-  const acquisition = await ensureRunDomainsFetched(run)
+  const acquisition = await ensureLeadCandidateRunDomainsFetched(run)
   if (acquisition.upserted === 0) {
     await updateRun(run.id, { status: "failed", failure_count: Math.max(acquisition.failures.length, 1), completed_at: nowIso() })
     return { ok: false, runId, processed: 0, jobsEnqueued: 0, hasMore: false, failures: acquisition.failures.length > 0 ? acquisition.failures : [{ key: run.country_code, reason: "No candidate domains were fetched" }] }

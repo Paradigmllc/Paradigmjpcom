@@ -9,6 +9,7 @@
 - When promoted candidates enqueue enrichment jobs, the lead candidate runner now triggers Trigger.dev and also starts an app-side enrichment fallback so report generation + Twenty sync do not depend on Trigger.dev actually running.
 - Enrichment fallback now drains the queue in up to 5 short waves, so multiple promoted candidates do not leave sibling jobs stuck queued after only one background pass.
 - Run status API now auto-restarts stale `queued`/`running` lead candidate runs when `heartbeat_at` is older than 5 minutes, covering deploy/container replacement during in-process fallback work.
+- Candidate acquisition now persists progress after each source/pattern fetch, instead of waiting for all sources to finish. This keeps `fetched_count`, `upserted_count`, `cursor.source_stats`, and `heartbeat_at` moving during large runs and makes deploy/container interruption resumable from Supabase state.
 - Telegram/OpenCode list collection now calls `ingestLeadCandidatesDurable`, so "collect all X in country Y" enters the same persisted multi-source runner.
 - Existing TypeScript red state was cleaned up in `astro-demo/src/keystatic/demo-data.ts` and `src/app/api/sales/fix-schema/route.ts`.
 - Lead candidate acquisition API no longer waits for Common Crawl + verification inside the request path.
@@ -27,6 +28,9 @@
 - `npx tsc --noEmit --pretty false --incremental false`: passed.
 - `npm run build -- --turbo`: compiled and generated static pages, but Windows local build failed during `.next/standalone` copy with `EBUSY`; final build verification must happen in Linux/Coolify.
 - `node --experimental-strip-types` direct smoke for `fetchTrancoTopDomains("*.co.za", 10)`: passed and returned live `.co.za` candidates.
+- `npx tsc --noEmit --pretty false --incremental false`: passed after progressive acquisition refactor.
+- `node scripts/run-vitest.mjs src/lib/sales/source-registry.test.ts src/lib/sales/agent-team-collector.test.ts src/lib/sales/agent-team.test.ts src/lib/sales/lead-candidates.test.ts`: 4 files / 15 tests passed after progressive acquisition refactor.
+- `node scripts/paradigm-quality-guard.mjs`: 0 errors / 52 warnings after progressive acquisition refactor; `lead-candidate-runs.ts` is back under the 500-line hard limit at 429 lines.
 - Production smoke after `486103f` deploy:
   - `POST /api/sales/lead-candidates/multi-source` for `ZA / WooCommerce / limit=120 / verifyLimit=5` returned HTTP 200 in 1.997s.
   - Run `1f10a6e2-ffc3-486d-8ad2-1d5aa74e9da4`: completed with `fetched=120`, `upserted=120`, `verified=5`, `scored=5`, `promoted=0`.
