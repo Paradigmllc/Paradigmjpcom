@@ -38,6 +38,8 @@
   - `POST /api/sales/lead-candidates/multi-source` for `ZA / limit=8 / verifyLimit=2 / promote=true / minOpportunityScore=0` returned HTTP 200 in 2.385s.
   - Run `1a4bb5da-f88c-4305-95f1-3a49c5ab63d7`: completed with `fetched=8`, `upserted=8`, `verified=2`, `matched=2`, `promoted=2`, `jobs_enqueued=2`, `failure=0`.
   - Enrichment jobs for `auto-boss.co.za` and `auto-cad-training.co.za` both completed with generated report URLs and `twenty_sync=synced`.
+  - Soak run `f808698b-7a2e-433d-a7f0-d9ddad6b936e` for `ZA / WooCommerce / limit=1000 / verifyLimit=20 / promote=false`: API returned HTTP 200 in 1.291s; after recovery from a deploy-time container replacement, completed with `fetched=622`, `upserted=622`, `verified=20`, `scored=20`, `failure=0`.
+  - The soak run proved multi-source bulk contribution at larger size: `tranco_top_domains=614` raw source hits and `common_crawl_domains=222` raw source hits before dedupe; `crt.sh` was flaky with 502/timeouts.
 - `node scripts/verify-trigger-sales-os.mjs`: task source definitions OK, Trigger.dev API/health dispatch still fails with `fetch failed`; fallback runner is therefore required for production continuity.
 - Production smoke before the final fallback-hardening patch:
   - `POST /api/sales/lead-candidates/common-crawl` returned HTTP 200 in 1.48s with run `243e6668-1aed-4875-bc88-37b9a93f3314`.
