@@ -81,6 +81,19 @@ function selectOptionsForField(field: SalesCrmViewField, options: SalesCrmSelect
     .map((option) => toTwentyOption(field.twentyFieldName, option))
 }
 
+function toTwentyFieldType(fieldType: SalesCrmViewField["fieldType"]): string {
+  switch (fieldType) {
+    case "select":
+      return "SELECT"
+    case "multi_select":
+      return "MULTI_SELECT"
+    case "url":
+      return "LINKS"
+    default:
+      return "TEXT"
+  }
+}
+
 async function twentyMetadataRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const baseUrl = twentyBaseUrl()
   const apiKey = env("TWENTY_API_KEY")
@@ -95,7 +108,10 @@ async function twentyMetadataRequest<T>(path: string, init: RequestInit = {}): P
     },
   })
   const text = await res.text()
-  if (!res.ok) throw new Error(`Twenty metadata API HTTP ${res.status}: ${text.slice(0, 180)}`)
+  if (!res.ok) {
+    console.error(`[twenty-crm-metadata] HTTP ${res.status} on ${init.method ?? "GET"} ${path}: ${text}`)
+    throw new Error(`Twenty metadata API HTTP ${res.status}: ${text}`)
+  }
   let parsed: unknown = null
   try {
     parsed = text ? JSON.parse(text) : null
@@ -132,7 +148,8 @@ async function applyTwentyCrmMetadataViaApi(input: {
     if (!twentyField) continue
 
     const options = selectOptionsForField(field, input.options)
-    const body: Record<string, unknown> = { label: field.label }
+    const twentyType = toTwentyFieldType(field.fieldType)
+    const body: Record<string, unknown> = { label: field.label, type: twentyType }
     if (field.fieldType === "select" && options.length > 0) {
       body.options = options
       selectFields += 1
@@ -300,7 +317,9 @@ export async function applyTwentyCrmMetadata(input: {
     try {
       return await applyTwentyCrmMetadataViaApi(input)
     } catch (error) {
-      console.error("[twenty-crm-metadata] API apply failed:", error)
+      console.error("[twenty-crm-metadata] API apply failed, falling back to DB:", error)
+      const dbResult = await fallbackApplyTwentyCrmMetadataViaDatabase(input)
+      if (dbResult) return dbResult
       return {
         configured: true,
         appliedFields: 0,
@@ -311,4 +330,21 @@ export async function applyTwentyCrmMetadata(input: {
   }
 
   return applyTwentyCrmMetadataViaDatabase(input)
+}
+
+async function fallbackApplyTwentyCrmMetadataViaDatabase(input: {
+  fields: SalesCrmViewField[]
+  options: SalesCrmSelectOption[]
+}): Promise<TwentyCrmMetadataApplyResult | null> {
+  const connectionString = env("TWENTY_DATABASE_URL") ?? env("TWENTY_METADATA_DATABASE_URL")
+  if (!connectionString) {
+    console.error("[twenty-crm-metadata] DB fallback unavailable: TWENTY_DATABASE_URL is not configured")
+    return null
+  }
+  try {
+    return await applyTwentyCrmMetadataViaDatabase(input)
+  } catch (dbError) {
+    console.error("[twenty-crm-metadata] DB fallback also failed:", dbError)
+    return null
+  }
 }
