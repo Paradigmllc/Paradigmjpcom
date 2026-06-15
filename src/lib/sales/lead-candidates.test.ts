@@ -46,6 +46,7 @@ describe("lead candidate acquisition", () => {
   })
 
   it("maps country codes to Common Crawl CDX patterns", () => {
+    expect(tldPatternsForCountry("ZA")).toContain("*.co.za")
     expect(tldPatternsForCountry("ZA")).toContain("*.za")
     expect(tldPatternsForCountry("CH")).toContain("*.swiss")
     expect(tldPatternsForCountry("BR")).toEqual(["*.br"])

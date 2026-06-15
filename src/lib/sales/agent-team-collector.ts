@@ -4,7 +4,7 @@ import {
   listLeadCandidates,
   type CandidateListItem,
 } from "@/lib/sales/lead-candidates"
-import { ingestCommonCrawlCandidatesDurable } from "@/lib/sales/lead-candidate-runs"
+import { ingestLeadCandidatesDurable } from "@/lib/sales/lead-candidate-runs"
 import { pullTwentyCompaniesToSupabase, syncCompanyKarteToTwenty } from "@/lib/sales/twenty-sync"
 import type { Region } from "@/lib/sales/types"
 
@@ -199,7 +199,7 @@ export function parseCandidateCollectCommand(
 }
 
 async function collectLeadCandidates(request: CandidateCollectInput): Promise<CollectListResult> {
-  const result = await ingestCommonCrawlCandidatesDurable({
+  const result = await ingestLeadCandidatesDurable({
     countryCode: request.countryCode,
     technology: request.technology,
     limit: request.limit,

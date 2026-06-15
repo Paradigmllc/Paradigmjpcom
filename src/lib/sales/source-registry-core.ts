@@ -6,6 +6,19 @@ function item(input: RevenueSourceRegistryItem): RevenueSourceRegistryItem {
 
 export const REVENUE_SOURCE_REGISTRY_CORE: RevenueSourceRegistryItem[] = [
   item({
+    slug: "multi_source_domains",
+    label: "Multi-source domain acquisition",
+    category: "list",
+    lane: "tech_footprint",
+    cost: "free",
+    implementationStatus: "live",
+    scaleTier: "bulk",
+    env: [],
+    primaryInput: "country code and TLD patterns",
+    primaryOutput: "deduplicated candidate domains with per-source provenance",
+    notes: "Production candidate runner combines Common Crawl CDX and crt.sh bulk acquisition, then stores source_stats and per-domain acquisition_sources.",
+  }),
+  item({
     slug: "common_crawl_domains",
     label: "Common Crawl domain acquisition",
     category: "list",

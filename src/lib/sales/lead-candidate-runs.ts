@@ -2,7 +2,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { normalizeDomain } from "./dedup"
 import { upsertCompanyByDomain } from "./companies"
-import { enqueueCompanyEnrichment, triggerEnrichmentRunner } from "./enrichment-jobs"
+import { enqueueCompanyEnrichment, runEnrichmentJobs, triggerEnrichmentRunner } from "./enrichment-jobs"
 import { optionalEnv } from "./japan-readiness-utils"
 import { salesScopeFromCountry } from "./locale-scope"
 import { listLeadCandidates, type CandidateListItem } from "./lead-candidate-list"
@@ -11,18 +11,17 @@ import {
   inferCountrySignals,
   scoreCandidate,
   technologySlug,
-  tldPatternsForCountry,
   type CandidateCountrySignal,
   type CandidateLane,
   type CandidateScore,
 } from "./lead-candidate-scoring"
-import { fetchCommonCrawlDomains } from "./sources/commoncrawl-domains"
+import { fetchLeadCandidateDomains } from "./lead-candidate-domain-sources"
 import { detectTechStack, type TechItem } from "./sources/wappalyzer"
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 
-const SOURCE = "common_crawl_domains"
+const SOURCE = "multi_source_domains"
 const MAX_FETCH_LIMIT = 10_000
 const MAX_VERIFY_LIMIT = 5_000
 const UPSERT_CHUNK_SIZE = 500
@@ -47,6 +46,7 @@ interface RunRow {
   min_opportunity_score: number
   fetched_count: number
   upserted_count: number
+  cursor?: JsonRecord
 }
 
 interface RunItemRow {
@@ -58,7 +58,7 @@ interface RunItemRow {
   attempts: number
 }
 
-export interface DurableCommonCrawlInput {
+export interface DurableCandidateIngestInput {
   countryCode: string
   technology?: string | null
   limit?: number
@@ -107,6 +107,14 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "lead candidate run failed"
 }
 
+function startEnrichmentFallback(limit: number): void {
+  setTimeout(() => {
+    runEnrichmentJobs(limit).catch((error) => {
+      console.error("[lead-candidate-runs] enrichment fallback failed:", error)
+    })
+  }, 0)
+}
+
 async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
   const results: R[] = []
   let cursor = 0
@@ -127,7 +135,7 @@ function guessedCompanyName(domain: string): string {
   return label.split(/[-_]/).filter(Boolean).map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ") || normalized
 }
 
-function normalizeInput(input: DurableCommonCrawlInput) {
+function normalizeInput(input: DurableCandidateIngestInput) {
   const countryCode = input.countryCode.trim().toUpperCase()
   const limit = Math.min(Math.max(input.limit ?? 1000, 1), MAX_FETCH_LIMIT)
   const verifyLimit = Math.min(Math.max(input.verifyLimit ?? Math.min(limit, DEFAULT_VERIFY_BATCH), 0), Math.min(limit, MAX_VERIFY_LIMIT))
@@ -169,20 +177,11 @@ export async function markLeadCandidateRunFailed(runId: string, error: unknown):
   await updateRun(runId, { status: "failed", error_message: errorMessage(error), completed_at: nowIso() })
 }
 
-async function fetchDomains(countryCode: string, limit: number): Promise<{ domains: string[]; failures: Array<{ key: string; reason: string }> }> {
-  const patterns = tldPatternsForCountry(countryCode)
-  const domains = new Set<string>()
-  const failures: Array<{ key: string; reason: string }> = []
-  for (const pattern of patterns) {
-    const result = await fetchCommonCrawlDomains(pattern, Math.ceil(limit / patterns.length))
-    if (!result.ok) failures.push({ key: pattern, reason: result.error ?? "Common Crawl returned no domains" })
-    for (const domain of result.domains) domains.add(domain)
-  }
-  if (domains.size === 0 && failures.length === 0) failures.push({ key: countryCode, reason: "Common Crawl returned zero candidate domains" })
-  return { domains: [...domains].slice(0, limit), failures }
+async function fetchDomains(countryCode: string, limit: number) {
+  return fetchLeadCandidateDomains(countryCode, limit)
 }
 
-async function upsertCandidates(run: RunRow, domains: string[]): Promise<number> {
+async function upsertCandidates(run: RunRow, domains: string[], sourceByDomain: Record<string, string[]>): Promise<number> {
   const sb = getSb()
   let count = 0
   for (const part of chunk(domains, UPSERT_CHUNK_SIZE)) {
@@ -193,7 +192,7 @@ async function upsertCandidates(run: RunRow, domains: string[]): Promise<number>
       source_slug: SOURCE,
       source_run_id: run.id,
       last_seen_at: nowIso(),
-      meta: { country_code: run.country_code, requested_technology: run.technology, run_id: run.id },
+      meta: { country_code: run.country_code, requested_technology: run.technology, run_id: run.id, acquisition_sources: sourceByDomain[domain] ?? [SOURCE] },
     }))
     const { data, error } = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_DOMAINS)
       .upsert(candidateRows, { onConflict: "domain", ignoreDuplicates: false })
@@ -206,7 +205,7 @@ async function upsertCandidates(run: RunRow, domains: string[]): Promise<number>
       domain,
       root_url: `https://${domain}`,
       status: "discovered",
-      meta: { country_code: run.country_code, requested_technology: run.technology },
+      meta: { country_code: run.country_code, requested_technology: run.technology, acquisition_sources: sourceByDomain[domain] ?? [SOURCE] },
     }))
     const itemResult = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS)
       .upsert(itemRows, { onConflict: "run_id,domain", ignoreDuplicates: false })
@@ -220,11 +219,12 @@ async function ensureRunDomainsFetched(run: RunRow): Promise<{ fetched: number; 
   if (run.upserted_count > 0) return { fetched: run.fetched_count, upserted: run.upserted_count, failures: [] }
   await updateRun(run.id, { status: "running", started_at: nowIso() })
   const fetched = await fetchDomains(run.country_code, run.requested_limit)
-  const upserted = await upsertCandidates(run, fetched.domains)
+  const upserted = await upsertCandidates(run, fetched.domains, fetched.sourceByDomain)
   await updateRun(run.id, {
     fetched_count: fetched.domains.length,
     upserted_count: upserted,
     errors: fetched.failures,
+    cursor: { ...(run.cursor ?? {}), source_stats: fetched.sourceStats, source_count: fetched.sourceStats.length },
   })
   if (run.verify_limit === 0) {
     await updateRun(run.id, { status: fetched.failures.length > 0 ? "partial" : "completed", completed_at: nowIso() })
@@ -391,7 +391,7 @@ async function processItem(run: RunRow, item: RunItemRow) {
 
 export async function processLeadCandidateRun(runId: string, options: { batchSize?: number; maxBatches?: number } = {}) {
   const sb = getSb()
-  const runRes = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).select("id, country_code, technology, requested_limit, verify_limit, promote, min_opportunity_score, fetched_count, upserted_count").eq("id", runId).single()
+  const runRes = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).select("id, country_code, technology, requested_limit, verify_limit, promote, min_opportunity_score, fetched_count, upserted_count, cursor").eq("id", runId).single()
   if (runRes.error) throw new Error(runRes.error.message)
   const run = runRes.data as RunRow
   const acquisition = await ensureRunDomainsFetched(run)
@@ -430,7 +430,11 @@ export async function processLeadCandidateRun(runId: string, options: { batchSiz
     jobsEnqueued += results.filter((item) => item.jobQueued).length
   }
   const refreshed = await refreshRunCounts(runId)
-  if (jobsEnqueued > 0) await triggerEnrichmentRunner(Math.min(jobsEnqueued, 10))
+  if (jobsEnqueued > 0) {
+    const limit = Math.min(jobsEnqueued, 10)
+    await triggerEnrichmentRunner(limit)
+    startEnrichmentFallback(limit)
+  }
   return { ok: true, runId, processed, jobsEnqueued, hasMore: refreshed.hasMore, failures: [...acquisition.failures, ...refreshed.failures].slice(0, 30) }
 }
 
@@ -463,7 +467,7 @@ async function startFallbackRunner(runId: string): Promise<{ started: boolean; a
   }
 }
 
-export async function ingestCommonCrawlCandidatesDurable(input: DurableCommonCrawlInput): Promise<DurableCandidateAcquisitionSummary> {
+export async function ingestLeadCandidatesDurable(input: DurableCandidateIngestInput): Promise<DurableCandidateAcquisitionSummary> {
   const normalized = normalizeInput(input)
   const run = await createRun(normalized)
   const trigger = await triggerLeadCandidateRunner(run.id)

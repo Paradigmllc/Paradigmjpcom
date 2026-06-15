@@ -18,25 +18,21 @@ const BodySchema = z.object({
 })
 
 function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Common Crawl candidate ingestion failed"
+  return error instanceof Error ? error.message : "Multi-source candidate ingestion failed"
 }
 
 export async function POST(req: NextRequest) {
   try {
-    if (!(await isSalesApiAuthorized(req))) {
-      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
-    }
-
+    if (!(await isSalesApiAuthorized(req))) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
     const parsed = BodySchema.safeParse(await req.json())
     if (!parsed.success) {
-      console.error("[lead-candidates/common-crawl] invalid body:", parsed.error)
+      console.error("[lead-candidates/multi-source] invalid body:", parsed.error)
       return NextResponse.json({ ok: false, error: "Invalid request body", details: parsed.error.flatten() }, { status: 400 })
     }
-
     const result = await ingestLeadCandidatesDurable(parsed.data)
     return NextResponse.json(result, { status: result.ok ? 200 : 502 })
   } catch (error) {
-    console.error("[lead-candidates/common-crawl] request failed:", error)
+    console.error("[lead-candidates/multi-source] request failed:", error)
     return NextResponse.json({ ok: false, error: errorMessage(error) }, { status: 500 })
   }
 }

@@ -109,6 +109,7 @@ export async function fetchCountryDomains(
 export const COUNTRY_TLD_PATTERNS: Record<string, string[]> = {
   IN: ["%.in", "%.co.in", "%.net.in", "%.org.in", "%.firm.in", "%.gen.in", "%.ind.in"],
   VN: ["%.vn", "%.com.vn", "%.net.vn", "%.org.vn"],
+  ZA: ["%.co.za", "%.org.za", "%.net.za", "%.za"],
   CH: ["%.ch", "%.swiss"],
   JP: ["%.jp", "%.co.jp", "%.or.jp", "%.ne.jp"],
   US: ["%.us", "%.com", "%.net", "%.org"],

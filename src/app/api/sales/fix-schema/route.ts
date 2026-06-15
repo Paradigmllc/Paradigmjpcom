@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import { authorizeWebhookRequest } from "@/lib/admin-auth"
 import { getServiceSupabase } from "@/lib/supabase"
 import { Pool } from "pg"
+import type { PoolConfig } from "pg"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 let pool: Pool | null = null
 let directPool: Pool | null = null
+
+type IPv4PoolConfig = PoolConfig & { family?: 4 }
 
 function getPool(): Pool | null {
   if (pool) return pool
@@ -29,7 +32,7 @@ function getDirectPool(): Pool | null {
   try {
     const u = new URL(uri)
     const ref = u.username?.split(".")[1] || "yihdmgtxiqfdgdueolub"
-    directPool = new Pool({
+    const config: IPv4PoolConfig = {
       host: `db.${ref}.supabase.co`,
       port: 5432,
       database: "postgres",
@@ -40,9 +43,11 @@ function getDirectPool(): Pool | null {
       max: 1,
       idleTimeoutMillis: 10000,
       connectionTimeoutMillis: 10000,
-    })
+    }
+    directPool = new Pool(config)
     return directPool
-  } catch {
+  } catch (error) {
+    console.error("[sales/fix-schema] direct pool initialization failed:", error)
     return null
   }
 }

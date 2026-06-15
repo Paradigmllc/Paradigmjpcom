@@ -94,7 +94,7 @@ function generateServices(industry: string, lang: "ja" | "en"): { title: string;
     },
   }
   const set = all[industry] || all.dental
-  return (set[lang] || set.ja).map(s => ({ ...s, icon: "Globe", features: s.features }))
+  return (set[lang] || set.ja).map(s => ({ title: s.title, description: s.desc, icon: "Globe", features: s.features }))
     .map((s, i) => ({ ...s, icon: ["Globe", "Search", "Zap"][i] || "Globe" }))
 }
 
@@ -202,16 +202,15 @@ export function getAppealIcon(appeal: string): string {
 }
 
 // Legacy support
-import type { DemoData as OldDemoData } from "./demo-data-legacy"
-export async function getDemoData(slug: string): Promise<OldDemoData> {
+export async function getDemoData(slug: string): Promise<DemoData> {
   // Parse slug: "ja_dental_diagnostic" or just "default-demo"
   const parts = slug.split("_")
   if (parts.length >= 3) {
     const [lang, industry, appeal] = parts as ["ja" | "en", string, AppealType]
     if (INDUSTRY_THEMES[industry] && APPEAL_CONFIG[appeal]) {
-      return generateDemo(industry, appeal, lang) as any
+      return generateDemo(industry, appeal, lang)
     }
   }
   // Fallback to Supabase or default
-  return generateDemo("consulting", "diagnostic", "ja") as any
+  return generateDemo("consulting", "diagnostic", "ja")
 }
