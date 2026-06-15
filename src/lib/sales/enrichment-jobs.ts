@@ -1,5 +1,5 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
-import { runEnrichmentJobs } from "./enrichment-jobs-runner"
+import { recoverStaleEnrichmentJobs, runEnrichmentJobs } from "./enrichment-jobs-runner"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export type JsonRecord = Record<string, unknown>
@@ -223,4 +223,4 @@ export async function fetchRecentEnrichmentJobs(limit = 30): Promise<DashboardEn
   })
 }
 
-export { runEnrichmentJobs }
+export { recoverStaleEnrichmentJobs, runEnrichmentJobs }

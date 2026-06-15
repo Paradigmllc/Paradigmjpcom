@@ -1,6 +1,6 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
-import { runEnrichmentJobs } from "./enrichment-jobs"
+import { recoverStaleEnrichmentJobs, runEnrichmentJobs } from "./enrichment-jobs"
 import { startLeadCandidateRunFallback } from "./lead-candidate-runner"
 
 const WATCHDOG_INTERVAL_MS = 60_000
@@ -55,10 +55,12 @@ async function restartStaleLeadRuns(): Promise<number> {
 
 async function tick(): Promise<void> {
   const restarted = await restartStaleLeadRuns()
+  const recoveredEnrichment = await recoverStaleEnrichmentJobs(10)
   const enrichment = await runEnrichmentJobs(3)
-  if (restarted > 0 || enrichment.processed > 0 || enrichment.failed > 0) {
+  if (restarted > 0 || recoveredEnrichment > 0 || enrichment.processed > 0 || enrichment.failed > 0) {
     console.warn("[sales-pipeline-watchdog] tick", {
       restartedLeadRuns: restarted,
+      recoveredEnrichmentJobs: recoveredEnrichment,
       enrichmentProcessed: enrichment.processed,
       enrichmentCompleted: enrichment.completed,
       enrichmentFailed: enrichment.failed,

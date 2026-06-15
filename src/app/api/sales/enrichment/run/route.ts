@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
+import type { SalesEnrichmentJob } from "@/lib/sales/enrichment-jobs"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -16,7 +17,9 @@ export async function POST(req: NextRequest) {
       if (body.limit && typeof body.limit === "number") {
         limit = Math.max(1, Math.min(5, Math.round(body.limit)))
       }
-    } catch { /* use default */ }
+    } catch (error) {
+      console.warn("[enrichment-run] request body parse failed; using default limit:", error)
+    }
 
     // Fire in background — enrichment is heavy (31 sources per company)
     const runEnrichment = async () => {
@@ -24,7 +27,7 @@ export async function POST(req: NextRequest) {
         const { runEnrichmentJobs } = await import("@/lib/sales/enrichment-jobs-runner")
         const jobResult = await runEnrichmentJobs(limit)
         if (jobResult.processed > 0) {
-          console.log("[enrichment-run] processed jobs:", jobResult.completed)
+          console.warn("[enrichment-run] processed jobs:", jobResult.completed)
           return
         }
 
@@ -41,23 +44,24 @@ export async function POST(req: NextRequest) {
           .limit(limit)
 
         if (!companies || companies.length === 0) {
-          console.log("[enrichment-run] no scanning/pending companies found")
+          console.warn("[enrichment-run] no scanning/pending companies found")
           return
         }
 
         const { processJob } = await import("@/lib/sales/enrichment-jobs-runner")
         for (const company of companies) {
           try {
-            const pseudoJob = {
+            const now = new Date().toISOString()
+            const pseudoJob: SalesEnrichmentJob = {
               id: `direct-${company.id.slice(0, 8)}`, company_id: company.id,
               job_type: "company_karte", status: "queued", priority: 50,
               attempts: 0, max_attempts: 1, source: company.source,
-              triggered_by: "direct_enrichment", next_run_at: new Date().toISOString(),
+              triggered_by: "direct_enrichment", next_run_at: now,
               started_at: null, completed_at: null, locked_at: null, lock_owner: null,
               error_message: null, input_payload: {}, result_payload: {},
-              created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+              created_at: now, updated_at: now,
             }
-            await processJob(sb, pseudoJob as any)
+            await processJob(sb, pseudoJob)
           } catch (e) {
             console.error("[enrichment-run] company enrichment failed:", company.domain, e)
           }

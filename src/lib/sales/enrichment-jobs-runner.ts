@@ -15,8 +15,23 @@ import {
 
 export type { EnrichmentRunResult }
 
+const STALE_RUNNING_JOB_MS = 30 * 60_000
+const STALE_SCAN_LIMIT = 50
+
 function getSb(): ServiceSupabase | null {
   return getServiceSalesSupabase()
+}
+
+function nowIso(): string {
+  return new Date().toISOString()
+}
+
+function newestTimestamp(row: Pick<SalesEnrichmentJob, "locked_at" | "updated_at" | "started_at" | "created_at">): number {
+  const timestamps = [row.locked_at, row.updated_at, row.started_at, row.created_at]
+    .map((value) => (value ? Date.parse(value) : 0))
+    .filter((value) => Number.isFinite(value) && value > 0)
+    .sort((a, b) => b - a)
+  return timestamps[0] ?? 0
 }
 
 async function fetchQueuedJobs(sb: ServiceSupabase, limit: number): Promise<SalesEnrichmentJob[]> {
@@ -37,6 +52,56 @@ async function fetchQueuedJobs(sb: ServiceSupabase, limit: number): Promise<Sale
   return (data ?? []) as SalesEnrichmentJob[]
 }
 
+export async function recoverStaleEnrichmentJobs(limit = 20): Promise<number> {
+  const sb = getSb()
+  if (!sb) return 0
+
+  const safeLimit = Math.max(1, Math.min(limit, STALE_SCAN_LIMIT))
+  const { data, error } = await sb
+    .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
+    .select("*")
+    .eq("status", "running")
+    .order("updated_at", { ascending: true })
+    .limit(STALE_SCAN_LIMIT)
+
+  if (error) {
+    console.error("[sales-enrichment] stale running job scan failed:", error.message)
+    return 0
+  }
+
+  const staleJobs = ((data ?? []) as SalesEnrichmentJob[])
+    .filter((job) => {
+      const reference = newestTimestamp(job)
+      return !!reference && Date.now() - reference > STALE_RUNNING_JOB_MS
+    })
+    .slice(0, safeLimit)
+
+  let recovered = 0
+  const recoveredAt = nowIso()
+  for (const job of staleJobs) {
+    const { error: updateError } = await sb
+      .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
+      .update({
+        status: "queued",
+        error_message: "auto-retry: stale running enrichment job recovered",
+        next_run_at: recoveredAt,
+        started_at: null,
+        locked_at: null,
+        lock_owner: null,
+      })
+      .eq("id", job.id)
+      .eq("status", "running")
+
+    if (updateError) {
+      console.error("[sales-enrichment] stale running job recovery failed:", updateError.message)
+    } else {
+      recovered += 1
+    }
+  }
+
+  return recovered
+}
+
 async function markJobFailure(
   sb: ServiceSupabase,
   job: SalesEnrichmentJob,
@@ -45,6 +110,7 @@ async function markJobFailure(
   const nextAttempts = job.attempts + 1
   const terminal = nextAttempts >= job.max_attempts
   const delayMs = Math.min(30 * 60_000, 2 ** nextAttempts * 60_000)
+  const retrying = !terminal
   const { error } = await sb
     .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
     .update({
@@ -52,6 +118,10 @@ async function markJobFailure(
       attempts: nextAttempts,
       error_message: message,
       next_run_at: new Date(Date.now() + delayMs).toISOString(),
+      completed_at: terminal ? nowIso() : null,
+      started_at: retrying ? null : job.started_at,
+      locked_at: null,
+      lock_owner: null,
     })
     .eq("id", job.id)
 
@@ -59,11 +129,15 @@ async function markJobFailure(
 }
 
 async function claimJob(sb: ServiceSupabase, job: SalesEnrichmentJob, runnerId: string): Promise<boolean> {
+  const claimedAt = nowIso()
   const { data, error } = await sb
     .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
     .update({
       status: "running",
       error_message: null,
+      started_at: claimedAt,
+      locked_at: claimedAt,
+      lock_owner: runnerId,
     })
     .eq("id", job.id)
     .eq("status", "queued")
@@ -88,6 +162,9 @@ async function completeJob(
     .update({
       status: "completed",
       result_payload: resultPayload,
+      completed_at: nowIso(),
+      locked_at: null,
+      lock_owner: null,
     })
     .eq("id", job.id)
   if (error) console.error("[sales-enrichment] complete job failed:", error.message)
@@ -179,6 +256,7 @@ export async function runEnrichmentJobs(limit = 3): Promise<EnrichmentRunResult>
 
   const safeLimit = Math.max(1, Math.min(limit, 10))
   const runnerId = `next-${process.pid}-${Date.now()}`
+  await recoverStaleEnrichmentJobs(safeLimit)
   const jobs = await fetchQueuedJobs(sb, safeLimit)
   const errors: string[] = []
   let completed = 0
@@ -194,7 +272,14 @@ export async function runEnrichmentJobs(limit = 3): Promise<EnrichmentRunResult>
   // Process claimed jobs in parallel with Promise.allSettled
   const results = await Promise.allSettled(
     claimedJobs.map(async (job) => {
-      const result = await processJob(sb, job)
+      let result: { ok: boolean; error?: string }
+      try {
+        result = await processJob(sb, job)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        console.error("[sales-enrichment] job processing exception:", job.id, message)
+        result = { ok: false, error: `exception: ${message}` }
+      }
       return { job, result }
     }),
   )

@@ -11,6 +11,7 @@
 - Run status API now auto-restarts stale `queued`/`running` lead candidate runs when `heartbeat_at` is older than 5 minutes, covering deploy/container replacement during in-process fallback work.
 - Candidate acquisition now persists progress after each source/pattern fetch, instead of waiting for all sources to finish. This keeps `fetched_count`, `upserted_count`, `cursor.source_stats`, and `heartbeat_at` moving during large runs and makes deploy/container interruption resumable from Supabase state.
 - Production Node startup now registers a no-cost in-container watchdog via `src/instrumentation.ts`. It scans stale lead candidate runs and drains up to 3 queued enrichment jobs every minute, reducing reliance on Trigger.dev or manual recovery endpoints.
+- Enrichment job locks are now production-recoverable: claimed jobs write `started_at`/`locked_at`/`lock_owner`, completion/failure clears locks, processing exceptions are converted into normal retry/failure handling, and the watchdog requeues stale `running` enrichment jobs older than 30 minutes.
 - Telegram/OpenCode list collection now calls `ingestLeadCandidatesDurable`, so "collect all X in country Y" enters the same persisted multi-source runner.
 - Existing TypeScript red state was cleaned up in `astro-demo/src/keystatic/demo-data.ts` and `src/app/api/sales/fix-schema/route.ts`.
 - Lead candidate acquisition API no longer waits for Common Crawl + verification inside the request path.
@@ -33,6 +34,11 @@
 - `node scripts/run-vitest.mjs src/lib/sales/source-registry.test.ts src/lib/sales/agent-team-collector.test.ts src/lib/sales/agent-team.test.ts src/lib/sales/lead-candidates.test.ts`: 4 files / 15 tests passed after progressive acquisition refactor.
 - `node scripts/paradigm-quality-guard.mjs`: 0 errors / 52 warnings after progressive acquisition refactor; `lead-candidate-runs.ts` is back under the 500-line hard limit at 429 lines.
 - `npx tsc --noEmit --pretty false --incremental false`, targeted Vitest, and quality guard all passed after adding the startup watchdog.
+- `npx tsc --noEmit --pretty false --incremental false`: passed after stale enrichment-job recovery hardening.
+- `node scripts/run-vitest.mjs src/lib/sales/source-registry.test.ts src/lib/sales/agent-team-collector.test.ts src/lib/sales/agent-team.test.ts src/lib/sales/lead-candidates.test.ts`: 4 files / 15 tests passed after stale enrichment-job recovery hardening.
+- `node scripts/paradigm-quality-guard.mjs`: 0 errors / 52 warnings after stale enrichment-job recovery hardening.
+- `git diff --check`: OK after stale enrichment-job recovery hardening; only existing LF-to-CRLF working-copy warnings.
+- `npm run context:audit`: still fails on existing PowerShell wildcard parsing for `[locale]` in `C:\Users\apple\.agents\scripts\context-audit.ps1`.
 - Production smoke after `486103f` deploy:
   - `POST /api/sales/lead-candidates/multi-source` for `ZA / WooCommerce / limit=120 / verifyLimit=5` returned HTTP 200 in 1.997s.
   - Run `1f10a6e2-ffc3-486d-8ad2-1d5aa74e9da4`: completed with `fetched=120`, `upserted=120`, `verified=5`, `scored=5`, `promoted=0`.
