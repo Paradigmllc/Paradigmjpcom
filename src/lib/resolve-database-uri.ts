@@ -5,14 +5,25 @@
  * 既存の Supabase 接続情報から自動構築するフォールバックチェーンを提供。
  *
  * 解決優先順:
- *   1. DATABASE_URI          — 明示設定（最優先）
+ *   0. SUPABASE_POSTGRES_PASSWORD → refferq@refferq-db 内部Docker DB（本番優先）
+ *   1. DATABASE_URI          — 明示設定（Supabase pooler 等）
  *   2. DATABASE_URL          — Coolify linked-service 標準変数
  *   3. PGHOST/PGPORT/PGUSER/PGPASSWORD/PGDATABASE — 個別変数
  *   4. SUPABASE_POSTGRES_*   — セルフホスト Supabase
- *   5. SUPABASE_POSTGRES_PASSWORD → refferq@refferq-db:5432/refferq
  */
 
 export function resolveDatabaseUri(): string {
+  // 0. SUPABASE_POSTGRES_PASSWORD present → prefer internal Docker DB (reliable)
+  //    This avoids Supabase pooler connection flakiness in production.
+  const supabasePass = process.env.SUPABASE_POSTGRES_PASSWORD
+  if (supabasePass) {
+    const supabaseUser = process.env.SUPABASE_POSTGRES_USER || "refferq"
+    const supabaseHost = process.env.SUPABASE_POSTGRES_HOST || "refferq-db"
+    const supabasePort = process.env.SUPABASE_POSTGRES_PORT || "5432"
+    const supabaseDb = process.env.SUPABASE_POSTGRES_DB || supabaseUser
+    return `postgresql://${encodeURIComponent(supabaseUser)}:${encodeURIComponent(supabasePass)}@${supabaseHost}:${supabasePort}/${supabaseDb}`
+  }
+
   // 1. DATABASE_URI (explicit)
   const explicit = process.env.DATABASE_URI
   if (explicit && explicit.trim()) return explicit.trim()
@@ -32,20 +43,14 @@ export function resolveDatabaseUri(): string {
     return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${db}`
   }
 
-  // 4. Self-hosted Supabase
-  const supabaseUser = process.env.SUPABASE_POSTGRES_USER
-  const supabasePass = process.env.SUPABASE_POSTGRES_PASSWORD
-  const supabaseDb = process.env.SUPABASE_POSTGRES_DB
-  if (supabaseUser && supabasePass) {
-    const db = supabaseDb || "postgres"
-    const supabaseHost = process.env.SUPABASE_POSTGRES_HOST || "db"
-    const supabasePort = process.env.SUPABASE_POSTGRES_PORT || "5432"
-    return `postgresql://${encodeURIComponent(supabaseUser)}:${encodeURIComponent(supabasePass)}@${supabaseHost}:${supabasePort}/${db}`
-  }
-
-  // 5. SUPABASE_POSTGRES_PASSWORD → refferq@refferq-db Coolify internal
-  if (supabasePass) {
-    return `postgresql://refferq:${encodeURIComponent(supabasePass)}@refferq-db:5432/refferq`
+  // 4. Self-hosted Supabase (requires both USER and PASSWORD; mostly dead now since tier 0 handles PASSWORD)
+  const supabaseUserFallback = process.env.SUPABASE_POSTGRES_USER
+  const supabasePassFallback = process.env.SUPABASE_POSTGRES_PASSWORD
+  if (supabaseUserFallback && supabasePassFallback) {
+    const supabaseHostFallback = process.env.SUPABASE_POSTGRES_HOST || "db"
+    const supabasePortFallback = process.env.SUPABASE_POSTGRES_PORT || "5432"
+    const supabaseDbFallback = process.env.SUPABASE_POSTGRES_DB || "postgres"
+    return `postgresql://${encodeURIComponent(supabaseUserFallback)}:${encodeURIComponent(supabasePassFallback)}@${supabaseHostFallback}:${supabasePortFallback}/${supabaseDbFallback}`
   }
 
   console.error("[resolve-database-uri] No database connection info found in environment")
