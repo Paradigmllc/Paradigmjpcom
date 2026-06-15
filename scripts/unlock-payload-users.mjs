@@ -12,16 +12,6 @@ import { Pool } from "pg"
 
 // ── Inlined resolveDatabaseUri (self-contained, no TS dependency) ──
 function resolveDatabaseUri() {
-  // 0. SUPABASE_POSTGRES_PASSWORD present → prefer internal Docker DB
-  const supabasePass = process.env.SUPABASE_POSTGRES_PASSWORD
-  if (supabasePass) {
-    const supabaseUser = process.env.SUPABASE_POSTGRES_USER || "refferq"
-    const supabaseHost = process.env.SUPABASE_POSTGRES_HOST || "refferq-db"
-    const supabasePort = process.env.SUPABASE_POSTGRES_PORT || "5432"
-    const supabaseDb = process.env.SUPABASE_POSTGRES_DB || supabaseUser
-    return `postgresql://${encodeURIComponent(supabaseUser)}:${encodeURIComponent(supabasePass)}@${supabaseHost}:${supabasePort}/${supabaseDb}`
-  }
-
   const explicit = process.env.DATABASE_URI
   if (explicit?.trim()) return explicit.trim()
 
@@ -38,12 +28,14 @@ function resolveDatabaseUri() {
     return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${db}`
   }
 
-  const supabaseUserFallback = process.env.SUPABASE_POSTGRES_USER
-  if (supabaseUserFallback) {
+  const supabaseUser = process.env.SUPABASE_POSTGRES_USER
+  const supabasePass = process.env.SUPABASE_POSTGRES_PASSWORD
+  const supabaseDb = process.env.SUPABASE_POSTGRES_DB
+  if (supabaseUser && supabasePass) {
+    const db = supabaseDb || "postgres"
     const supabaseHost = process.env.SUPABASE_POSTGRES_HOST || "db"
     const supabasePort = process.env.SUPABASE_POSTGRES_PORT || "5432"
-    const supabaseDb = process.env.SUPABASE_POSTGRES_DB || "postgres"
-    return `postgresql://${encodeURIComponent(supabaseUserFallback)}:${encodeURIComponent(supabasePass)}@${supabaseHost}:${supabasePort}/${supabaseDb}`
+    return `postgresql://${encodeURIComponent(supabaseUser)}:${encodeURIComponent(supabasePass)}@${supabaseHost}:${supabasePort}/${db}`
   }
 
   return ""

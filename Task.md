@@ -53,6 +53,25 @@
   - Final status: `completed`, `fetched=131`, `upserted=131`, `verified=10`, `scored=10`, `matchedTechnology=0`, `promoted=0`.
   - Conclusion: API no longer blocks, fallback runner progresses the run, and empty acquisition no longer appears as a false success. Next step is a 1k-5k soak run.
 
+## ACTIVE HANDOFF - 2026-06-15 PayloadCMS database connection hardening (deployed)
+
+### Fix
+
+- `src/lib/resolve-database-uri.ts`: `SUPABASE_POSTGRES_PASSWORD` present → prefer internal `refferq-db` Docker network (tier 0). Pooler `DATABASE_URI` now tier 1 fallback.
+- `payload.config.ts`: pool `max:5→8`, `connectionTimeoutMillis:15000→30000`, `idleTimeoutMillis:30000→60000`
+- Coolify env vars added via API: `SUPABASE_POSTGRES_PASSWORD`, `SUPABASE_POSTGRES_USER=refferq`, `SUPABASE_POSTGRES_HOST=refferq-db`
+- User `contact@paradigmjp.com` unlocked via `scripts/unlock-payload-users.mjs`
+
+### Deployment
+
+- Commit: `e90c772` `fix: prefer internal refferq-db over Supabase pooler for PayloadCMS, increase pool timeout, unlock script parity`
+- Deploy: `jz1tjm8y816j92kxbema9871`, status `finished`
+- Smoke: `paradigmjp.com/admin` 200, `/ja` 200, `/ja/admin/sales` 200
+
+### Resolution
+
+PayloadCMS admin now connects to internal `refferq-db` PostgreSQL (Docker network, no pooler latency/connection-limit). Pooler URI remains as tier 1 fallback.
+
 ## ACTIVE HANDOFF - 2026-06-15 Twenty CRM metadata API 400 fix (deployed)
 
 ### Fix
