@@ -37,6 +37,15 @@ describe("agent team collector command parser", () => {
     expect(parsed?.minOpportunityScore).toBe(0)
   })
 
+  it("routes Egypt Shopify passive inventory requests", () => {
+    const parsed = parseCandidateCollectCommand("OpenCode Egypt Shopify all 100 sites collect list", {})
+
+    expect(parsed?.countryCode).toBe("EG")
+    expect(parsed?.technology).toBe("Shopify")
+    expect(parsed?.limit).toBe(100)
+    expect(parsed?.minOpportunityScore).toBe(0)
+  })
+
   it("allows candidate-only collection when explicitly requested", () => {
     const parsed = parseCandidateCollectCommand("スイスのHubSpotリスト全て収集して候補だけ保存", {})
 

@@ -25,6 +25,7 @@ export interface CandidateScore {
 const COUNTRY_TLD_PATTERNS: Record<string, string[]> = {
   ZA: ["*.co.za", "*.org.za", "*.net.za", "*.za"],
   CH: ["*.ch", "*.swiss"],
+  EG: ["*.eg", "*.com.eg", "*.net.eg", "*.org.eg"],
 }
 
 const COUNTRY_SIGNAL_RULES: Record<string, Array<{ type: string; pattern: RegExp; confidence: number }>> = {
@@ -37,6 +38,11 @@ const COUNTRY_SIGNAL_RULES: Record<string, Array<{ type: string; pattern: RegExp
     { type: "phone", pattern: /\+41|0041/i, confidence: 92 },
     { type: "currency", pattern: /\bCHF\b|Fr\.\s?\d{2,}/i, confidence: 78 },
     { type: "address", pattern: /Switzerland|Schweiz|Suisse|Zurich|Zuerich|Geneva|Geneve|Basel|Bern/i, confidence: 84 },
+  ],
+  EG: [
+    { type: "phone", pattern: /\+20|0020/i, confidence: 92 },
+    { type: "currency", pattern: /\bEGP\b|Egyptian Pound|جنيه/i, confidence: 84 },
+    { type: "address", pattern: /Egypt|Cairo|Alexandria|Giza|القاهرة|مصر/i, confidence: 86 },
   ],
 }
 

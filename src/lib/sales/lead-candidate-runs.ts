@@ -56,6 +56,7 @@ interface RunItemRow {
   domain: string
   root_url: string | null
   attempts: number
+  meta?: JsonRecord | null
 }
 
 export interface DurableCandidateIngestInput {
@@ -290,12 +291,19 @@ async function processItem(run: RunRow, item: RunItemRow) {
   if (candidateRes.error) throw new Error(candidateRes.error.message)
   const candidate = candidateRes.data as CandidateRow
   const rootUrl = candidate.root_url ?? item.root_url ?? `https://${candidate.domain}`
-  const detection = await detectTechStack(rootUrl)
-  const countrySignals = inferCountrySignals({ domain: candidate.domain, targetCountry: run.country_code })
+  const passive = item.meta?.passive_evidence && typeof item.meta.passive_evidence === "object" && !Array.isArray(item.meta.passive_evidence)
+    ? item.meta.passive_evidence as JsonRecord
+    : null
+  const passiveTech = Array.isArray(passive?.technologies) ? passive.technologies as TechItem[] : []
+  const passiveSignals = Array.isArray(passive?.countrySignals) ? passive.countrySignals as CandidateCountrySignal[] : []
+  const detection = passive?.raw && (passive.raw as JsonRecord).skip_active_verification === true
+    ? { tech: passiveTech, server: null as string | null }
+    : await detectTechStack(rootUrl)
+  const countrySignals = passiveSignals.length > 0 ? passiveSignals : inferCountrySignals({ domain: candidate.domain, targetCountry: run.country_code })
   const requestedSlug = run.technology ? technologySlug(run.technology) : null
   const techMatched = requestedSlug ? detection.tech.some((tech) => technologySlug(tech.name) === requestedSlug) : detection.tech.length > 0
   const score = scoreCandidate({ requestedTechnology: run.technology, detections: detection.tech, countrySignals, lane: "tech_footprint", hasWebsite: true, hasContactSignal: false, source: SOURCE })
-  await saveEvidence({ candidate, runId: run.id, observedUrl: rootUrl, rawEvidence: { server: detection.server, country_code: run.country_code, requested_technology: run.technology }, signatureHits: detection.tech, countrySignals, score })
+  await saveEvidence({ candidate, runId: run.id, observedUrl: rootUrl, rawEvidence: { server: detection.server, country_code: run.country_code, requested_technology: run.technology, passive_evidence: passive }, signatureHits: detection.tech, countrySignals, score })
   let companyId: string | null = null
   let jobQueued = false
   let status = "scored"
@@ -342,7 +350,7 @@ export async function processLeadCandidateRun(runId: string, options: { batchSiz
     const alreadyVerified = verified.count ?? 0
     if (alreadyVerified >= run.verify_limit) break
     const remaining = Math.max(1, run.verify_limit - alreadyVerified)
-    const res = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id, run_id, candidate_id, domain, root_url, attempts").eq("run_id", runId).in("status", ["discovered", "failed"]).lt("attempts", 3).order("created_at", { ascending: true }).limit(Math.min(batchSize, remaining))
+    const res = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id, run_id, candidate_id, domain, root_url, attempts, meta").eq("run_id", runId).in("status", ["discovered", "failed"]).lt("attempts", 3).order("created_at", { ascending: true }).limit(Math.min(batchSize, remaining))
     if (res.error) throw new Error(res.error.message)
     const items = (res.data ?? []) as RunItemRow[]
     if (items.length === 0) break

@@ -49,6 +49,7 @@ describe("lead candidate acquisition", () => {
     expect(tldPatternsForCountry("ZA")).toContain("*.co.za")
     expect(tldPatternsForCountry("ZA")).toContain("*.za")
     expect(tldPatternsForCountry("CH")).toContain("*.swiss")
+    expect(tldPatternsForCountry("EG")).toContain("*.com.eg")
     expect(tldPatternsForCountry("BR")).toEqual(["*.br"])
   })
 })

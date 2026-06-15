@@ -68,6 +68,10 @@ const COUNTRY_ALIASES: Record<string, string> = {
   "united states": "US",
   usa: "US",
   us: "US",
+  "エジプト": "EG",
+  egypt: "EG",
+  cairo: "EG",
+  eg: "EG",
 }
 
 const TECHNOLOGY_ALIASES = [
@@ -167,7 +171,12 @@ function parseNumberLimit(text: string, fallback: number): number {
 function parseCountryCode(text: string): string | null {
   const lower = text.toLowerCase()
   for (const [alias, code] of Object.entries(COUNTRY_ALIASES)) {
-    if (lower.includes(alias.toLowerCase())) return code
+    const normalizedAlias = alias.toLowerCase()
+    if (normalizedAlias.length === 2) {
+      if (new RegExp(`\\b${normalizedAlias}\\b`, "i").test(text)) return code
+    } else if (lower.includes(normalizedAlias)) {
+      return code
+    }
   }
   const codeMatch = text.match(/\b([A-Z]{2})\b/)
   return codeMatch?.[1] ?? null

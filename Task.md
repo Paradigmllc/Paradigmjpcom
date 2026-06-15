@@ -18,6 +18,13 @@
 - Telegram/OpenCode list collection now calls `ingestLeadCandidatesDurable`, so "collect all X in country Y" enters the same persisted multi-source runner.
 - Telegram/OpenCode "all" and large-batch list collection now passes `minOpportunityScore=0` into the durable runner, so matched candidates are not silently dropped before enrichment, Twenty sync, and report generation.
 - Proxy usage is now disabled in code and diagnostics: `MUBENG_PROXY_URL` is ignored by `getProxyDispatcher()`, mubeng health reports disabled-by-policy without touching the endpoint, and proxy pool/mubeng integrations are no longer recommended.
+- BuiltWith-style passive inventory is now implemented as the top acquisition layer:
+  - New SSOT tables: `sales_passive_inventory_runs` and `sales_passive_inventory_domains`.
+  - New source: `passive_inventory` uses CZDS/local zone files, optional `massdns` CNAME batch scanning, DoH fallback, and Common Crawl WARC range reads for country evidence.
+  - Shopify/Webflow/Wix/Squarespace/HubSpot/Zendesk/Intercom/Klaviyo/Twilio CNAME signatures are detected without visiting target websites.
+  - Passive evidence is attached to lead-candidate run items; when `skip_active_verification=true`, the runner scores/promotes from passive CNAME/Common Crawl evidence instead of calling homepage HTTP tech detection.
+  - New protected endpoint: `POST /api/sales/passive-inventory`; OpenCode/Telegram list collection now uses passive inventory before Common Crawl/Tranco/crt.sh fallback.
+  - Egypt/EG country parsing and `.eg` / `.com.eg` / `.net.eg` / `.org.eg` patterns are wired for commands such as `Egypt Shopify all ... collect list`.
 - Existing TypeScript red state was cleaned up in `astro-demo/src/keystatic/demo-data.ts` and `src/app/api/sales/fix-schema/route.ts`.
 - Lead candidate acquisition API no longer waits for Common Crawl + verification inside the request path.
 - `POST /api/sales/lead-candidates/common-crawl` now creates a queued `sales_lead_candidate_runs` row and immediately dispatches processing.
@@ -61,6 +68,11 @@
 - `node scripts/paradigm-quality-guard.mjs`: 0 errors / 52 warnings after no-proxy/list-collection policy hardening.
 - `git diff --check`: OK after no-proxy/list-collection policy hardening; only existing LF-to-CRLF working-copy warnings.
 - `npm run context:audit`: still fails on existing PowerShell wildcard parsing for `[locale]` in `C:\Users\apple\.agents\scripts\context-audit.ps1`.
+- `npx tsc --noEmit --pretty false --incremental false`: passed after passive inventory implementation.
+- `node scripts/run-vitest.mjs src/lib/sales/passive-inventory-utils.test.ts src/lib/sales/agent-team-collector.test.ts src/lib/sales/twenty-sync.test.ts src/lib/sales/source-registry.test.ts src/lib/sales/agent-team.test.ts src/lib/sales/lead-candidates.test.ts`: 6 files / 23 tests passed after passive inventory implementation.
+- `node scripts/paradigm-quality-guard.mjs`: 0 errors / 53 warnings after passive inventory implementation.
+- `git diff --check`: OK after passive inventory implementation; only existing LF-to-CRLF working-copy warnings.
+- Production DB migration `migration_049_sales_passive_inventory.sql` applied through SSH `psql`; PostgREST schema reload sent; verified `sales_passive_inventory_domains` and `sales_passive_inventory_runs` exist.
 - Production smoke after `486103f` deploy:
   - `POST /api/sales/lead-candidates/multi-source` for `ZA / WooCommerce / limit=120 / verifyLimit=5` returned HTTP 200 in 1.997s.
   - Run `1f10a6e2-ffc3-486d-8ad2-1d5aa74e9da4`: completed with `fetched=120`, `upserted=120`, `verified=5`, `scored=5`, `promoted=0`.

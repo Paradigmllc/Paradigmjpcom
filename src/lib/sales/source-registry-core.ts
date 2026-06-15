@@ -6,6 +6,19 @@ function item(input: RevenueSourceRegistryItem): RevenueSourceRegistryItem {
 
 export const REVENUE_SOURCE_REGISTRY_CORE: RevenueSourceRegistryItem[] = [
   item({
+    slug: "passive_inventory",
+    label: "Passive internet inventory",
+    category: "list",
+    lane: "tech_footprint",
+    cost: "free",
+    implementationStatus: "live",
+    scaleTier: "bulk",
+    env: ["CZDS_ZONE_FILE_DIR", "CZDS_USERNAME", "CZDS_PASSWORD", "MASSDNS_BIN"],
+    primaryInput: "zone files, CNAME records, Common Crawl WARC evidence",
+    primaryOutput: "stack-matched and geo-matched candidate domains without visiting target websites",
+    notes: "BuiltWith-style passive source: CZDS/local zone files, massdns/DoH CNAME checks, and Common Crawl archive text evidence. No proxy or target-site scraping required.",
+  }),
+  item({
     slug: "multi_source_domains",
     label: "Multi-source domain acquisition",
     category: "list",

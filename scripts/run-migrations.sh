@@ -41,7 +41,9 @@ docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabas
 docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_041_sales_video_trigger_columns.sql
 docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_042_sales_template_seed.sql
 docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_043_sales_dx_ai_template_variant.sql
-docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_044_sales_ssot_hub.sql
-docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_045_sales_error_log.sql
-docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_046_sales_companies_meta_normalization.sql
-docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_047_sales_lead_candidate_acquisition.sql
+docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_044b_sales_ssot_hub.sql  # original: supabase/migrations/migration_044_sales_ssot_hub.sql
+docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_045b_sales_error_log.sql  # original: supabase/migrations/migration_045_sales_error_log.sql
+docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_046b_sales_companies_meta_normalization.sql  # original: supabase/migrations/migration_046_sales_companies_meta_normalization.sql
+docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_047b_sales_lead_candidate_acquisition.sql  # original: supabase/migrations/migration_047_sales_lead_candidate_acquisition.sql
+docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_048b_sales_lead_candidate_runs.sql  # original: supabase/migrations/migration_048_sales_lead_candidate_runs.sql
+docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_049b_sales_passive_inventory.sql  # original: supabase/migrations/migration_049_sales_passive_inventory.sql

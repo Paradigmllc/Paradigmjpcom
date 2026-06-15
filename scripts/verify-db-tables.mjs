@@ -46,6 +46,7 @@ const ALL_TABLES = [
   "sales_lead_candidate_domains", "sales_lead_candidate_observations",
   "sales_lead_candidate_country_signals", "sales_lead_candidate_tech_detections",
   "sales_lead_candidate_scores", "sales_lead_candidate_runs", "sales_lead_candidate_run_items",
+  "sales_passive_inventory_runs", "sales_passive_inventory_domains",
   // Pipeline
   "sales_pipeline_runs", "sales_pipeline_steps", "sales_artifact_manifest",
   // CRM Field Config

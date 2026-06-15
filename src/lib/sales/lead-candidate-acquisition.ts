@@ -61,7 +61,12 @@ async function updateRun(runId: string, patch: JsonRecord): Promise<void> {
   if (error) throw new Error(error.message)
 }
 
-async function upsertCandidates(run: LeadCandidateAcquisitionRun, domains: string[], sourceByDomain: Record<string, string[]>): Promise<void> {
+async function upsertCandidates(
+  run: LeadCandidateAcquisitionRun,
+  domains: string[],
+  sourceByDomain: Record<string, string[]>,
+  evidenceByDomain: Record<string, Record<string, unknown>> = {},
+): Promise<void> {
   const sb = getSb()
   for (const part of chunk(domains, UPSERT_CHUNK_SIZE)) {
     const candidateRows = part.map((domain) => ({
@@ -71,7 +76,13 @@ async function upsertCandidates(run: LeadCandidateAcquisitionRun, domains: strin
       source_slug: SOURCE,
       source_run_id: run.id,
       last_seen_at: nowIso(),
-      meta: { country_code: run.country_code, requested_technology: run.technology, run_id: run.id, acquisition_sources: sourceByDomain[domain] ?? [SOURCE] },
+      meta: {
+        country_code: run.country_code,
+        requested_technology: run.technology,
+        run_id: run.id,
+        acquisition_sources: sourceByDomain[domain] ?? [SOURCE],
+        passive_evidence: evidenceByDomain[domain] ?? null,
+      },
     }))
     const { data, error } = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_DOMAINS)
       .upsert(candidateRows, { onConflict: "domain", ignoreDuplicates: false })
@@ -85,7 +96,12 @@ async function upsertCandidates(run: LeadCandidateAcquisitionRun, domains: strin
       domain,
       root_url: `https://${domain}`,
       status: "discovered",
-      meta: { country_code: run.country_code, requested_technology: run.technology, acquisition_sources: sourceByDomain[domain] ?? [SOURCE] },
+      meta: {
+        country_code: run.country_code,
+        requested_technology: run.technology,
+        acquisition_sources: sourceByDomain[domain] ?? [SOURCE],
+        passive_evidence: evidenceByDomain[domain] ?? null,
+      },
     }))
     const itemResult = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS)
       .upsert(itemRows, { onConflict: "run_id,domain", ignoreDuplicates: false })
@@ -94,7 +110,7 @@ async function upsertCandidates(run: LeadCandidateAcquisitionRun, domains: strin
 }
 
 async function persistProgress(run: LeadCandidateAcquisitionRun, result: CandidateDomainFetchResult, completed: boolean): Promise<void> {
-  await upsertCandidates(run, result.domains, result.sourceByDomain)
+  await upsertCandidates(run, result.domains, result.sourceByDomain, result.evidenceByDomain)
   const upserted = await countRunItems(getSb(), run.id)
   await updateRun(run.id, {
     status: "running",
@@ -117,6 +133,7 @@ export async function ensureLeadCandidateRunDomainsFetched(
   await updateRun(run.id, { status: "running", started_at: nowIso() })
 
   const fetched = await fetchLeadCandidateDomains(run.country_code, run.requested_limit, {
+    technology: run.technology,
     onProgress: (progress) => persistProgress(run, progress, false),
   })
   await persistProgress(run, fetched, true)
