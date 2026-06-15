@@ -127,6 +127,7 @@ interface CollectListResult {
     jobsEnqueued: number
     hasMore?: boolean
     runnerTriggered?: boolean
+    fallbackRunnerStarted?: boolean
     candidates: CandidateListItem[]
     failures: Array<{ key: string; reason: string }>
   }
@@ -231,6 +232,7 @@ async function collectLeadCandidates(request: CandidateCollectInput): Promise<Co
       jobsEnqueued: result.jobsEnqueued,
       hasMore: result.hasMore,
       runnerTriggered: result.runnerTriggered,
+      fallbackRunnerStarted: result.fallbackRunnerStarted,
       candidates,
       failures: result.failures,
     },
@@ -321,9 +323,10 @@ export function formatCollectListReply(result: CollectListResult): string {
 }
 
 function formatCandidateCollectionReply(collection: NonNullable<CollectListResult["candidateCollection"]>): string {
+  const runnerState = collection.runnerTriggered ? "triggered" : collection.fallbackRunnerStarted ? "fallback" : "not-triggered"
   const lines = [
     `候補収集を実行しました: ${collection.countryCode}${collection.technology ? ` / ${collection.technology}` : ""}`,
-    collection.runId ? `Run: ${collection.runId} / status: ${collection.status ?? "running"} / runner: ${collection.runnerTriggered ? "triggered" : "not-triggered"}` : "",
+    collection.runId ? `Run: ${collection.runId} / status: ${collection.status ?? "running"} / runner: ${runnerState}` : "",
     `取得候補: ${collection.fetched}件 / 検証: ${collection.verified}件 / スタック一致: ${collection.matchedTechnology}件 / スコア保存: ${collection.scored}件`,
     collection.promoted > 0
       ? `営業DB昇格: ${collection.promoted}件 / エンリッチ予約: ${collection.jobsEnqueued}件`

@@ -45,6 +45,8 @@ interface RunRow {
   verify_limit: number
   promote: boolean
   min_opportunity_score: number
+  fetched_count: number
+  upserted_count: number
 }
 
 interface RunItemRow {
@@ -80,6 +82,7 @@ export interface DurableCandidateAcquisitionSummary {
   jobsEnqueued: number
   hasMore: boolean
   runnerTriggered: boolean
+  fallbackRunnerStarted: boolean
   failures: Array<{ key: string; reason: string }>
   candidates: CandidateListItem[]
 }
@@ -98,6 +101,10 @@ function chunk<T>(items: T[], size: number): T[][] {
   const out: T[][] = []
   for (let index = 0; index < items.length; index += size) out.push(items.slice(index, index + size))
   return out
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "lead candidate run failed"
 }
 
 async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
@@ -142,14 +149,13 @@ async function createRun(input: ReturnType<typeof normalizeInput>): Promise<RunR
     lane: "tech_footprint",
     country_code: input.countryCode,
     technology: input.technology,
-    status: "running",
+    status: "queued",
     requested_limit: input.limit,
     verify_limit: input.verifyLimit,
     promote: input.promote,
     min_opportunity_score: input.minOpportunityScore,
-    started_at: nowIso(),
     heartbeat_at: nowIso(),
-  }).select("id, country_code, technology, requested_limit, verify_limit, promote, min_opportunity_score").single()
+  }).select("id, country_code, technology, requested_limit, verify_limit, promote, min_opportunity_score, fetched_count, upserted_count").single()
   if (error) throw new Error(error.message)
   return data as RunRow
 }
@@ -157,6 +163,14 @@ async function createRun(input: ReturnType<typeof normalizeInput>): Promise<RunR
 async function updateRun(runId: string, patch: JsonRecord): Promise<void> {
   const { error } = await getSb().from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).update({ ...patch, heartbeat_at: nowIso() }).eq("id", runId)
   if (error) throw new Error(error.message)
+}
+
+export async function markLeadCandidateRunFailed(runId: string, error: unknown): Promise<void> {
+  await updateRun(runId, {
+    status: "failed",
+    error_message: errorMessage(error),
+    completed_at: nowIso(),
+  })
 }
 
 async function fetchDomains(countryCode: string, limit: number): Promise<{ domains: string[]; failures: Array<{ key: string; reason: string }> }> {
@@ -203,6 +217,25 @@ async function upsertCandidates(run: RunRow, domains: string[]): Promise<number>
     count += itemRows.length
   }
   return count
+}
+
+async function ensureRunDomainsFetched(run: RunRow): Promise<{ fetched: number; upserted: number; failures: Array<{ key: string; reason: string }> }> {
+  if (run.upserted_count > 0) return { fetched: run.fetched_count, upserted: run.upserted_count, failures: [] }
+  await updateRun(run.id, { status: "running", started_at: nowIso() })
+  const fetched = await fetchDomains(run.country_code, run.requested_limit)
+  const upserted = await upsertCandidates(run, fetched.domains)
+  await updateRun(run.id, {
+    fetched_count: fetched.domains.length,
+    upserted_count: upserted,
+    errors: fetched.failures,
+  })
+  if (run.verify_limit === 0) {
+    await updateRun(run.id, {
+      status: fetched.failures.length > 0 ? "partial" : "completed",
+      completed_at: nowIso(),
+    })
+  }
+  return { fetched: fetched.domains.length, upserted, failures: fetched.failures }
 }
 
 async function saveEvidence(input: {
@@ -364,9 +397,13 @@ async function processItem(run: RunRow, item: RunItemRow) {
 
 export async function processLeadCandidateRun(runId: string, options: { batchSize?: number; maxBatches?: number } = {}) {
   const sb = getSb()
-  const runRes = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).select("id, country_code, technology, requested_limit, verify_limit, promote, min_opportunity_score").eq("id", runId).single()
+  const runRes = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).select("id, country_code, technology, requested_limit, verify_limit, promote, min_opportunity_score, fetched_count, upserted_count").eq("id", runId).single()
   if (runRes.error) throw new Error(runRes.error.message)
   const run = runRes.data as RunRow
+  const acquisition = await ensureRunDomainsFetched(run)
+  if (run.verify_limit === 0) {
+    return { ok: true, runId, processed: 0, jobsEnqueued: 0, hasMore: false, failures: acquisition.failures }
+  }
   const batchSize = Math.min(Math.max(options.batchSize ?? DEFAULT_VERIFY_BATCH, 1), 250)
   const maxBatches = Math.min(Math.max(options.maxBatches ?? 1, 1), 20)
   let processed = 0
@@ -396,7 +433,7 @@ export async function processLeadCandidateRun(runId: string, options: { batchSiz
   }
   const refreshed = await refreshRunCounts(runId)
   if (jobsEnqueued > 0) await triggerEnrichmentRunner(Math.min(jobsEnqueued, 10))
-  return { ok: true, runId, processed, jobsEnqueued, hasMore: refreshed.hasMore, failures: refreshed.failures }
+  return { ok: true, runId, processed, jobsEnqueued, hasMore: refreshed.hasMore, failures: [...acquisition.failures, ...refreshed.failures].slice(0, 30) }
 }
 
 export async function triggerLeadCandidateRunner(runId: string): Promise<{ ok: boolean; error?: string }> {
@@ -418,35 +455,41 @@ export async function triggerLeadCandidateRunner(runId: string): Promise<{ ok: b
   return { ok: true }
 }
 
+async function startFallbackRunner(runId: string): Promise<{ started: boolean; alreadyRunning: boolean }> {
+  try {
+    const runner = await import("./lead-candidate-runner")
+    return runner.startLeadCandidateRunFallback(runId)
+  } catch (error) {
+    console.error("[lead-candidate-runs] fallback runner import failed:", runId, error)
+    return { started: false, alreadyRunning: false }
+  }
+}
+
 export async function ingestCommonCrawlCandidatesDurable(input: DurableCommonCrawlInput): Promise<DurableCandidateAcquisitionSummary> {
   const normalized = normalizeInput(input)
   const run = await createRun(normalized)
-  const fetched = await fetchDomains(normalized.countryCode, normalized.limit)
-  const upserted = await upsertCandidates(run, fetched.domains)
-  await updateRun(run.id, { fetched_count: fetched.domains.length, upserted_count: upserted, errors: fetched.failures })
-  if (normalized.verifyLimit === 0) {
-    await updateRun(run.id, { status: fetched.failures.length > 0 ? "partial" : "completed", completed_at: nowIso() })
-  }
-  const inline = normalized.syncVerifyBatchSize > 0 ? await processLeadCandidateRun(run.id, { batchSize: normalized.syncVerifyBatchSize, maxBatches: 1 }) : { hasMore: normalized.verifyLimit > 0, failures: [] as Array<{ key: string; reason: string }> }
-  const trigger = inline.hasMore ? await triggerLeadCandidateRunner(run.id) : { ok: false }
+  const trigger = await triggerLeadCandidateRunner(run.id)
+  const fallback = trigger.ok ? { started: false, alreadyRunning: false } : await startFallbackRunner(run.id)
   const counts = await getSb().from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).select("status, verified_count, matched_technology_count, scored_count, promoted_count, jobs_enqueued_count, failure_count").eq("id", run.id).single()
   const row = counts.data as Record<string, unknown> | null
   const candidates = await listLeadCandidates({ countryCode: normalized.countryCode, technology: normalized.technology, limit: 30 })
+  const runnerAvailable = trigger.ok || fallback.started || fallback.alreadyRunning
   return {
-    ok: fetched.failures.length === 0 || upserted > 0,
+    ok: runnerAvailable,
     source: SOURCE,
     runId: run.id,
-    status: String(row?.status ?? "running") as DurableCandidateAcquisitionSummary["status"],
-    fetched: fetched.domains.length,
-    upserted,
+    status: String(row?.status ?? "queued") as DurableCandidateAcquisitionSummary["status"],
+    fetched: 0,
+    upserted: 0,
     verified: Number(row?.verified_count ?? 0),
     matchedTechnology: Number(row?.matched_technology_count ?? 0),
     scored: Number(row?.scored_count ?? 0),
     promoted: Number(row?.promoted_count ?? 0),
     jobsEnqueued: Number(row?.jobs_enqueued_count ?? 0),
-    hasMore: inline.hasMore,
+    hasMore: true,
     runnerTriggered: trigger.ok,
-    failures: [...fetched.failures, ...inline.failures, ...(trigger.ok || !inline.hasMore ? [] : [{ key: "trigger_lead_candidate_runner", reason: trigger.error ?? "trigger failed" }])].slice(0, 30),
+    fallbackRunnerStarted: fallback.started || fallback.alreadyRunning,
+    failures: runnerAvailable ? [] : [{ key: "lead_candidate_runner", reason: trigger.error ?? "runner dispatch failed" }],
     candidates,
   }
 }

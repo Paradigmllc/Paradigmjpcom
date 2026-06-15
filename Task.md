@@ -1,3 +1,31 @@
+## ACTIVE HANDOFF - 2026-06-15 RevenueOS lead candidate production hardening
+
+### Current status
+
+- Lead candidate acquisition API no longer waits for Common Crawl + verification inside the request path.
+- `POST /api/sales/lead-candidates/common-crawl` now creates a queued `sales_lead_candidate_runs` row and immediately dispatches processing.
+- Primary dispatch remains Trigger.dev task `sales-lead-candidate-runner`.
+- Because Trigger.dev API verification still returns `fetch failed`, the app now starts an in-process fallback runner when Trigger dispatch is unavailable.
+- Run status can be inspected through `GET /api/sales/lead-candidates/runs/[runId]`.
+- A protected recovery endpoint was added: `POST /api/sales/lead-candidates/runs/[runId]/process`.
+- Trigger task failures now mark the Supabase run as `failed` instead of leaving it stuck.
+
+### Verification
+
+- `node scripts/run-vitest.mjs src/lib/sales/agent-team-collector.test.ts src/lib/sales/agent-team.test.ts src/lib/sales/lead-candidates.test.ts`: 3 files / 12 tests passed.
+- `node scripts/paradigm-quality-guard.mjs`: 0 errors / 51 warnings.
+- `git diff --check`: OK, only existing LF-to-CRLF warnings.
+- `npx tsc --noEmit --pretty false --incremental false`: still fails only on known unrelated existing errors:
+  - `astro-demo/src/keystatic/demo-data.ts`: missing `description`.
+  - `astro-demo/src/keystatic/demo-data.ts`: missing `./demo-data-legacy`.
+  - `src/app/api/sales/fix-schema/route.ts`: `PoolConfig.family`.
+- `node scripts/verify-trigger-sales-os.mjs`: task source definitions OK, Trigger.dev API/health dispatch still fails with `fetch failed`; fallback runner is therefore required for production continuity.
+
+### Remaining risks
+
+- The fallback runner is a production continuity layer inside the app container, not a replacement for a fully verified external durable queue. The run is persisted in Supabase and recoverable, but Trigger.dev API connectivity still needs separate recovery.
+- Next production smoke must prove: API returns quickly with `runId`, status endpoint shows fetch/upsert progress, and fallback or Trigger completes verification without manual intervention.
+
 ## ACTIVE HANDOFF - 2026-06-15 RevenueOS OpenCode/Telegram list acquisition smoke
 
 ### Current status

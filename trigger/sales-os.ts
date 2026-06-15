@@ -2,7 +2,7 @@ import { logger, task, schedules } from "@trigger.dev/sdk/v3"
 import { z } from "zod"
 
 import { runEnrichmentJobs } from "../src/lib/sales/enrichment-jobs"
-import { processLeadCandidateRun } from "../src/lib/sales/lead-candidate-runs"
+import { markLeadCandidateRunFailed, processLeadCandidateRun, triggerLeadCandidateRunner } from "../src/lib/sales/lead-candidate-runs"
 import { runSalesPipelineLocally } from "../src/lib/sales/sales-pipeline-execution"
 import { runVideoJobAction } from "../src/lib/sales/video-pipeline"
 import { pullTwentyCompaniesToSupabase } from "../src/lib/sales/twenty-pull"
@@ -137,14 +137,21 @@ export const salesLeadCandidateRunnerTask = task({
       batchSize: parsed.batch_size,
       maxBatches: parsed.max_batches,
     })
-    const result = await processLeadCandidateRun(parsed.run_id, {
-      batchSize: parsed.batch_size,
-      maxBatches: parsed.max_batches,
-    })
-    if (result.hasMore) {
-      logger.warn("Lead candidate run still has pending candidates", { runId: parsed.run_id, processed: result.processed })
+    try {
+      const result = await processLeadCandidateRun(parsed.run_id, {
+        batchSize: parsed.batch_size,
+        maxBatches: parsed.max_batches,
+      })
+      if (result.hasMore) {
+        logger.warn("Lead candidate run still has pending candidates", { runId: parsed.run_id, processed: result.processed })
+        await triggerLeadCandidateRunner(parsed.run_id)
+      }
+      return result
+    } catch (error) {
+      logger.error("Lead candidate run failed", { runId: parsed.run_id, error })
+      await markLeadCandidateRunFailed(parsed.run_id, error)
+      throw error
     }
-    return result
   },
 })
 
