@@ -80,12 +80,12 @@ function normalizeLimit(limit: number | null | undefined, max: number): number {
 export function classifyAgentCommand(text: string): SalesAgentIntent {
   const value = text.toLowerCase()
   if (/(状況|進捗|status|kpi|件数|サマリ|summary)/i.test(text)) return "status_report"
+  if (/(リスト|収集|集めて|抽出|一覧|list\s*collect|collect\s*list|collect|lead\s*list)/i.test(text)) return "collect_list"
   if (/(カルテ|診断|enrich|enrichment|解析|生成|report|レポート)/i.test(text)) return "run_enrichment"
   if (/(フォーム|送信|営業|outreach|dry.?run|preflight|文面)/i.test(text)) return "run_outreach_dry_run"
   if (/(資料|スライド|動画|デモ|asset|deck|slidev|gotenberg|hyperframes|remotion|astro)/i.test(text)) {
     return "prepare_assets"
   }
-  if (/(リスト収集|リスト作成|収集して|集めて|一覧|list\s*collect|collect\s*list|まとめて)/i.test(text)) return "collect_list"
   if (/(twenty|crm|同期|sync|pull)/i.test(text)) return "sync_twenty"
   if (/(メニュー|menu|start|開始|使い方|help)/i.test(text)) return "show_menu"
   if (/(検索|search|探して|find|lookup)/i.test(text)) return "search_company"

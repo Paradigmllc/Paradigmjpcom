@@ -11,6 +11,11 @@ describe("classifyAgentCommand", () => {
     expect(classifyAgentCommand("Web制作向けの資料と動画ブリーフを準備して")).toBe("prepare_assets")
   })
 
+  it("classifies natural language list acquisition as collect_list", () => {
+    expect(classifyAgentCommand("ZAのWooCommerceリスト1件収集して")).toBe("collect_list")
+    expect(classifyAgentCommand("スイスのHubSpotリスト全て集めて")).toBe("collect_list")
+  })
+
   it("routes unclear instructions to manual review", () => {
     expect(classifyAgentCommand("この会社をいい感じに進めて")).toBe("manual_review")
     expect(classifyAgentCommand("")).toBe("unknown")
