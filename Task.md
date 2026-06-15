@@ -33,6 +33,11 @@
   - Supabase run item meta confirmed `acquisition_sources=["tranco_top_domains"]` for Tranco-derived rows such as `amazon.co.za`, `autotrader.co.za`, and `betway.co.za`.
   - Promote smoke `18be4100-60f7-49d9-9a2f-0a0775c66a7a`: `fetched=20`, `upserted=20`, `verified=3`, `matched=3`, `promoted=3`, `jobs_enqueued=3`.
   - One promoted job completed with `report_url=https://paradigmjp.com/ja/report/betway-25m3tm` and `twenty_sync=synced`; two sibling jobs stayed queued, which is why enrichment fallback was changed to multi-wave drain.
+- Production smoke after `fa8dc9d` deploy:
+  - Container: `i12am4vvcbggefnqdizhnv9a:fa8dc9d...`, healthy.
+  - `POST /api/sales/lead-candidates/multi-source` for `ZA / limit=8 / verifyLimit=2 / promote=true / minOpportunityScore=0` returned HTTP 200 in 2.385s.
+  - Run `1a4bb5da-f88c-4305-95f1-3a49c5ab63d7`: completed with `fetched=8`, `upserted=8`, `verified=2`, `matched=2`, `promoted=2`, `jobs_enqueued=2`, `failure=0`.
+  - Enrichment jobs for `auto-boss.co.za` and `auto-cad-training.co.za` both completed with generated report URLs and `twenty_sync=synced`.
 - `node scripts/verify-trigger-sales-os.mjs`: task source definitions OK, Trigger.dev API/health dispatch still fails with `fetch failed`; fallback runner is therefore required for production continuity.
 - Production smoke before the final fallback-hardening patch:
   - `POST /api/sales/lead-candidates/common-crawl` returned HTTP 200 in 1.48s with run `243e6668-1aed-4875-bc88-37b9a93f3314`.
