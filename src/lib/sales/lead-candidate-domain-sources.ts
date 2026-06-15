@@ -25,6 +25,7 @@ const MAX_FAILURES = 40
 
 interface FetchLeadCandidateDomainsOptions {
   onProgress?: (result: CandidateDomainFetchResult) => Promise<void>
+  skipPassiveInventory?: boolean
 }
 
 function toCrtshPattern(pattern: string): string {
@@ -85,13 +86,15 @@ export async function fetchLeadCandidateDomains(countryCode: string, limit: numb
   const sourceStats: CandidateDomainSourceSummary[] = []
   const perPatternLimit = Math.max(20, Math.ceil(limit / Math.max(patterns.length, 1)))
 
-  const passive = await fetchPassiveInventoryDomains(countryCode, options?.technology ?? null, Math.min(limit, perPatternLimit))
-  sourceStats.push(...passive.sourceStats.map((stat) => ({ ...stat, source: stat.source === "czds_local_zone" || stat.source === "czds_api_zone" ? "passive_inventory" : stat.source })))
-  failures.push(...passive.failures)
-  addDomains({ sourceByDomain, source: "passive_inventory", domains: passive.domains, limit })
-  for (const [domain, evidence] of Object.entries(passive.evidenceByDomain)) evidenceByDomain.set(domain, evidence)
-  await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
-  if (sourceByDomain.size >= limit) return buildResult({ sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
+  if (!options?.skipPassiveInventory) {
+    const passive = await fetchPassiveInventoryDomains(countryCode, options?.technology ?? null, Math.min(limit, perPatternLimit))
+    sourceStats.push(...passive.sourceStats.map((stat) => ({ ...stat, source: stat.source === "czds_local_zone" || stat.source === "czds_api_zone" ? "passive_inventory" : stat.source })))
+    failures.push(...passive.failures)
+    addDomains({ sourceByDomain, source: "passive_inventory", domains: passive.domains, limit })
+    for (const [domain, evidence] of Object.entries(passive.evidenceByDomain)) evidenceByDomain.set(domain, evidence)
+    await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
+    if (sourceByDomain.size >= limit) return buildResult({ sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
+  }
 
   for (const pattern of patterns) {
     const cc = await fetchCommonCrawlDomains(pattern, perPatternLimit)

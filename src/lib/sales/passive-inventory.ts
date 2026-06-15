@@ -16,6 +16,15 @@ export interface PassiveInventoryResult {
   evidenceByDomain: Record<string, Record<string, unknown>>
   sourceStats: Array<{ source: string; pattern: string; fetched: number; total: number; ok: boolean; error?: string }>
   failures: Array<{ key: string; reason: string }>
+  configuration: PassiveInventoryConfiguration
+}
+
+export interface PassiveInventoryConfiguration {
+  zoneInputsConfigured: boolean
+  zoneInputModes: string[]
+  massdnsConfigured: boolean
+  resolverFileConfigured: boolean
+  passiveGlobalTldsConfigured: boolean
 }
 
 interface PassiveDomainRow {
@@ -58,6 +67,20 @@ function passivePatterns(countryCode: string, technology: string | null): string
     if (clean) patterns.push(`*.${clean}`)
   }
   return [...new Set(patterns)]
+}
+
+export function getPassiveInventoryConfiguration(): PassiveInventoryConfiguration {
+  const zoneInputModes: string[] = []
+  if (optionalEnv("CZDS_ZONE_FILE_DIR") || optionalEnv("PASSIVE_ZONE_FILE_DIR")) zoneInputModes.push("local_zone_dir")
+  if (optionalEnv("CZDS_ZONE_FILE_URLS")) zoneInputModes.push("zone_file_urls")
+  if (optionalEnv("CZDS_ACCESS_TOKEN") || optionalEnv("CZDS_USERNAME") || optionalEnv("ICANN_CZDS_USERNAME")) zoneInputModes.push("czds_api")
+  return {
+    zoneInputsConfigured: zoneInputModes.length > 0,
+    zoneInputModes,
+    massdnsConfigured: Boolean(optionalEnv("MASSDNS_BIN")),
+    resolverFileConfigured: Boolean(optionalEnv("MASSDNS_RESOLVERS_FILE")),
+    passiveGlobalTldsConfigured: Boolean(optionalEnv("PASSIVE_GLOBAL_TLDS")),
+  }
 }
 
 function domainTld(domain: string): string | null {
@@ -132,6 +155,7 @@ export async function fetchPassiveInventoryDomains(countryCodeRaw: string, techn
   const sourceByDomain = new Map<string, Set<string>>()
   const evidenceByDomain: Record<string, Record<string, unknown>> = {}
   const selectedRows: PassiveDomainRow[] = []
+  const configuration = getPassiveInventoryConfiguration()
 
   try {
     const zone = await fetchZoneDomains(patterns, Math.max(limit * 10, 200))
@@ -139,7 +163,7 @@ export async function fetchPassiveInventoryDomains(countryCodeRaw: string, techn
     await updateRun(runId, { fetched_domains_count: zone.domains.length, cursor: { zone_source_stats: zone.sourceStats } })
     if (zone.domains.length === 0) {
       await updateRun(runId, { status: "partial", errors: failures, completed_at: nowIso() })
-      return { ok: false, domains: [], sourceByDomain: {}, evidenceByDomain, sourceStats: zone.sourceStats, failures }
+      return { ok: false, domains: [], sourceByDomain: {}, evidenceByDomain, sourceStats: zone.sourceStats, failures, configuration }
     }
 
     const cname = await scanCnameRecords(zone.domains, { concurrency: 24 })
@@ -195,12 +219,13 @@ export async function fetchPassiveInventoryDomains(countryCodeRaw: string, techn
       evidenceByDomain,
       sourceStats: zone.sourceStats,
       failures,
+      configuration,
     }
   } catch (error) {
     const reason = error instanceof Error ? error.message : "Passive inventory failed"
     console.error("[passive-inventory] failed:", error)
     failures.push({ key: "passive_inventory", reason })
     await updateRun(runId, { status: "failed", errors: failures, completed_at: nowIso() })
-    return { ok: false, domains: [], sourceByDomain: {}, evidenceByDomain, sourceStats: [], failures }
+    return { ok: false, domains: [], sourceByDomain: {}, evidenceByDomain, sourceStats: [], failures, configuration }
   }
 }

@@ -25,6 +25,10 @@
   - Passive evidence is attached to lead-candidate run items; when `skip_active_verification=true`, the runner scores/promotes from passive CNAME/Common Crawl evidence instead of calling homepage HTTP tech detection.
   - New protected endpoint: `POST /api/sales/passive-inventory`; OpenCode/Telegram list collection now uses passive inventory before Common Crawl/Tranco/crt.sh fallback.
   - Egypt/EG country parsing and `.eg` / `.com.eg` / `.net.eg` / `.org.eg` patterns are wired for commands such as `Egypt Shopify all ... collect list`.
+- Passive inventory endpoint is now operationally explicit when CZDS/zone inputs are missing:
+  - Response includes zone/massdns configuration status without exposing secrets.
+  - If pure passive inventory returns zero domains, the endpoint falls back to the same free bulk acquisition lane used by OpenCode/Telegram (`common_crawl_domains`, `tranco_top_domains`, `crt.sh`) instead of returning an opaque empty result.
+  - The candidate-domain fetcher supports `skipPassiveInventory` so fallback does not recursively create duplicate passive runs.
 - Existing TypeScript red state was cleaned up in `astro-demo/src/keystatic/demo-data.ts` and `src/app/api/sales/fix-schema/route.ts`.
 - Lead candidate acquisition API no longer waits for Common Crawl + verification inside the request path.
 - `POST /api/sales/lead-candidates/common-crawl` now creates a queued `sales_lead_candidate_runs` row and immediately dispatches processing.
@@ -73,6 +77,14 @@
 - `node scripts/paradigm-quality-guard.mjs`: 0 errors / 53 warnings after passive inventory implementation.
 - `git diff --check`: OK after passive inventory implementation; only existing LF-to-CRLF working-copy warnings.
 - Production DB migration `migration_049_sales_passive_inventory.sql` applied through SSH `psql`; PostgREST schema reload sent; verified `sales_passive_inventory_domains` and `sales_passive_inventory_runs` exist.
+- Deploy `xp67dd79z33dqm3fdrdiy7v1` for `fee74c0`: `finished` after safe Docker build/image cleanup; container `i12am4vvcbggefnqdizhnv9a:fee74c0...` healthy.
+- Public smoke after `fee74c0`: `https://paradigmjp.com/ja/admin/sales`, `https://paradigmjp.com/ja`, and `https://twenty.paradigmjp.com` returned HTTP 200.
+- Passive endpoint smoke before fallback hardening: `POST /api/sales/passive-inventory` for `EG / Shopify / limit=5` returned HTTP 200 with `ok=false`, zero domains, and `czds_local_zone` fetched zero; this exposed that production currently has no CZDS/zone input configured.
+- `npx tsc --noEmit --pretty false --incremental false`: passed after passive endpoint fallback/configuration hardening.
+- `node scripts/run-vitest.mjs src/lib/sales/passive-inventory-utils.test.ts src/lib/sales/agent-team-collector.test.ts src/lib/sales/source-registry.test.ts src/lib/sales/lead-candidates.test.ts`: 4 files / 16 tests passed after passive endpoint fallback/configuration hardening.
+- `node scripts/paradigm-quality-guard.mjs`: 0 errors / 53 warnings after passive endpoint fallback/configuration hardening.
+- `git diff --check`: OK after passive endpoint fallback/configuration hardening; only existing LF-to-CRLF working-copy warnings.
+- `npm run context:audit`: still fails on existing PowerShell wildcard parsing for `[locale]` in `C:\Users\apple\.agents\scripts\context-audit.ps1`.
 - Production smoke after `486103f` deploy:
   - `POST /api/sales/lead-candidates/multi-source` for `ZA / WooCommerce / limit=120 / verifyLimit=5` returned HTTP 200 in 1.997s.
   - Run `1f10a6e2-ffc3-486d-8ad2-1d5aa74e9da4`: completed with `fetched=120`, `upserted=120`, `verified=5`, `scored=5`, `promoted=0`.

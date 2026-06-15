@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { verifyWebhookSecret } from "@/lib/sales/auth"
 import { fetchPassiveInventoryDomains } from "@/lib/sales/passive-inventory"
+import { fetchLeadCandidateDomains } from "@/lib/sales/lead-candidate-domain-sources"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -36,7 +37,21 @@ export async function POST(req: NextRequest) {
       parsed.data.technology ?? null,
       parsed.data.limit ?? 500,
     )
-    return NextResponse.json({ ok: result.ok, result })
+    if (result.ok || result.domains.length > 0) return NextResponse.json({ ok: true, result, fallbackUsed: false })
+
+    const fallback = await fetchLeadCandidateDomains(parsed.data.countryCode, parsed.data.limit ?? 500, {
+      technology: parsed.data.technology ?? null,
+      skipPassiveInventory: true,
+    })
+    return NextResponse.json({
+      ok: fallback.domains.length > 0,
+      result,
+      fallbackUsed: true,
+      fallback,
+      warning: result.configuration.zoneInputsConfigured
+        ? "Passive inventory returned no matching domains; free bulk fallback was used."
+        : "Passive zone inputs are not configured in this runtime; free bulk fallback was used.",
+    })
   } catch (error) {
     console.error("[api/sales/passive-inventory] run failed:", error)
     return NextResponse.json(
