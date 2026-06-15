@@ -84,6 +84,15 @@
   - Current-run enrichment jobs `3fc2edbe...` and `fa60f27f...` completed for `betway.co.za` and `amazon.co.za`.
   - Generated report URLs: `https://paradigmjp.com/ja/report/betway-25m3tm`, `https://paradigmjp.com/ja/report/amazon-1cmep0`.
   - Both current-run job payloads recorded `twenty_sync=synced`.
+- Production Sales Pipeline delivery smoke after `3fc5d97` deploy:
+  - Deploy `whzu5e7trj7rnjl7wznbfgvc`: `finished`.
+  - Container: `i12am4vvcbggefnqdizhnv9a:3fc5d97...`, healthy.
+  - Run `02007fce-6976-47cd-ae99-60a53d66edf2` for `betway.co.za` started through `/api/sales/pipeline-runs` with `mode=dispatch`; response was HTTP 200 and `Trigger.dev dispatch queued; app fallback armed`.
+  - App fallback advanced the run from `waiting_external` to delivery completion without manual infra action.
+  - Required delivery steps completed: `twenty_csv_intake`, `supabase_normalize`, `karte_generate`, `report_generate`, `r2_manifest`, `twenty_writeback`.
+  - `twenty_writeback` output: `configured=true`, `twenty_company_id=00f5c974-e3be-40da-ac2f-290e51de6637`, `recommendation_count=2`, two opportunity IDs.
+  - Final run status was `needs_review` at `outreach_preflight`, which is expected because live outreach requires approval and was not allowed in the smoke payload.
+  - Post-smoke stale checks: stale `sales_pipeline_runs` older than 5 minutes = 0; stale `sales_enrichment_jobs` running older than 30 minutes = 0.
 - `node scripts/verify-trigger-sales-os.mjs`: task source definitions OK, Trigger.dev API/health dispatch still fails with `fetch failed`; fallback runner is therefore required for production continuity.
 - Production smoke before the final fallback-hardening patch:
   - `POST /api/sales/lead-candidates/common-crawl` returned HTTP 200 in 1.48s with run `243e6668-1aed-4875-bc88-37b9a93f3314`.
