@@ -2,6 +2,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { recoverStaleEnrichmentJobs, runEnrichmentJobs } from "./enrichment-jobs"
 import { startLeadCandidateRunFallback } from "./lead-candidate-runner"
+import { restartStaleSalesPipelineRuns } from "./sales-pipeline-fallback"
 
 const WATCHDOG_INTERVAL_MS = 60_000
 const STALE_RUN_MS = 5 * 60_000
@@ -55,11 +56,13 @@ async function restartStaleLeadRuns(): Promise<number> {
 
 async function tick(): Promise<void> {
   const restarted = await restartStaleLeadRuns()
+  const restartedPipelines = await restartStaleSalesPipelineRuns(3)
   const recoveredEnrichment = await recoverStaleEnrichmentJobs(10)
   const enrichment = await runEnrichmentJobs(3)
-  if (restarted > 0 || recoveredEnrichment > 0 || enrichment.processed > 0 || enrichment.failed > 0) {
+  if (restarted > 0 || restartedPipelines > 0 || recoveredEnrichment > 0 || enrichment.processed > 0 || enrichment.failed > 0) {
     console.warn("[sales-pipeline-watchdog] tick", {
       restartedLeadRuns: restarted,
+      restartedPipelineRuns: restartedPipelines,
       recoveredEnrichmentJobs: recoveredEnrichment,
       enrichmentProcessed: enrichment.processed,
       enrichmentCompleted: enrichment.completed,

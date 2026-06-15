@@ -12,6 +12,7 @@
 - Candidate acquisition now persists progress after each source/pattern fetch, instead of waiting for all sources to finish. This keeps `fetched_count`, `upserted_count`, `cursor.source_stats`, and `heartbeat_at` moving during large runs and makes deploy/container interruption resumable from Supabase state.
 - Production Node startup now registers a no-cost in-container watchdog via `src/instrumentation.ts`. It scans stale lead candidate runs and drains up to 3 queued enrichment jobs every minute, reducing reliance on Trigger.dev or manual recovery endpoints.
 - Enrichment job locks are now production-recoverable: claimed jobs write `started_at`/`locked_at`/`lock_owner`, completion/failure clears locks, processing exceptions are converted into normal retry/failure handling, and the watchdog requeues stale `running` enrichment jobs older than 30 minutes.
+- Sales pipeline runs are now production-recoverable too: Twenty intake and manual dispatch arm an app-side fallback, Trigger.dev failures queue local execution instead of `needs_review`, the watchdog restarts stale pipeline runs, and stale `running` pipeline steps reset to `queued` rather than an invalid `pending` status.
 - Telegram/OpenCode list collection now calls `ingestLeadCandidatesDurable`, so "collect all X in country Y" enters the same persisted multi-source runner.
 - Existing TypeScript red state was cleaned up in `astro-demo/src/keystatic/demo-data.ts` and `src/app/api/sales/fix-schema/route.ts`.
 - Lead candidate acquisition API no longer waits for Common Crawl + verification inside the request path.
@@ -39,6 +40,10 @@
 - `node scripts/paradigm-quality-guard.mjs`: 0 errors / 52 warnings after stale enrichment-job recovery hardening.
 - `git diff --check`: OK after stale enrichment-job recovery hardening; only existing LF-to-CRLF working-copy warnings.
 - `npm run context:audit`: still fails on existing PowerShell wildcard parsing for `[locale]` in `C:\Users\apple\.agents\scripts\context-audit.ps1`.
+- `npx tsc --noEmit --pretty false --incremental false`: passed after Sales Pipeline fallback hardening.
+- `node scripts/run-vitest.mjs src/lib/sales/twenty-sync.test.ts src/lib/sales/source-registry.test.ts src/lib/sales/agent-team-collector.test.ts src/lib/sales/agent-team.test.ts src/lib/sales/lead-candidates.test.ts`: 5 files / 19 tests passed after Sales Pipeline fallback hardening.
+- `node scripts/paradigm-quality-guard.mjs`: 0 errors / 52 warnings after Sales Pipeline fallback hardening.
+- `git diff --check`: OK after Sales Pipeline fallback hardening; only existing LF-to-CRLF working-copy warnings.
 - Production smoke after `486103f` deploy:
   - `POST /api/sales/lead-candidates/multi-source` for `ZA / WooCommerce / limit=120 / verifyLimit=5` returned HTTP 200 in 1.997s.
   - Run `1f10a6e2-ffc3-486d-8ad2-1d5aa74e9da4`: completed with `fetched=120`, `upserted=120`, `verified=5`, `scored=5`, `promoted=0`.
@@ -80,8 +85,8 @@
 
 ### Remaining risks
 
-- The fallback runner is a production continuity layer inside the app container, not a replacement for a fully verified external durable queue. The run is persisted in Supabase and recoverable, but Trigger.dev API connectivity still needs separate recovery.
-- Next production smoke must prove after deploy: API returns quickly with `runId`, `fallbackRunnerStarted=true`, status endpoint shows fetch/upsert progress or explicit failure, and zero-domain runs are not marked completed.
+- Free/public discovery sources cannot guarantee mathematical 100% global coverage. The production guarantee is persisted multi-source acquisition, resumable processing, and explicit failure visibility without paid APIs, proxies, or server upgrades.
+- Trigger.dev API connectivity remains flaky, but lead-candidate runs, enrichment jobs, and Sales Pipeline runs now all have app-side fallback/watchdog recovery paths, so Trigger.dev is no longer a single point of failure for the core RevenueOS path.
 - Production smoke after `ab134dc` deploy:
   - Container: `i12am4vvcbggefnqdizhnv9a:ab134dc...`, healthy.
   - `POST /api/sales/lead-candidates/common-crawl` for `ZA / WooCommerce / limit=300 / verifyLimit=10` returned HTTP 200 in 1.79s.

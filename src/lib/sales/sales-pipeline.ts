@@ -10,6 +10,7 @@ import type { DashboardSalesPipeline, JsonRecord, SalesPipelineRun, SalesPipelin
 
 import { runSalesPipelineLocally } from "./sales-pipeline-execution"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { startSalesPipelineRunFallback } from "./sales-pipeline-fallback"
 import {
   buildSalesPipelinePlan,
   fetchRunWithSteps,
@@ -106,65 +107,79 @@ export async function dispatchSalesPipelineRun(runId: string): Promise<{ ok: boo
   const trigger = getSalesPipelineTriggerConfig()
   if (!trigger.endpoint || !trigger.secretKey) {
     await updateRun(sb, run.id, {
-      status: "needs_review",
-      trigger_provider: "manual",
-      error_message: "Trigger.dev Sales OS pipeline task is not configured",
+      status: "queued",
+      trigger_provider: "local",
+      error_message: "Trigger.dev Sales OS pipeline task is not configured; app fallback queued",
     })
+    startSalesPipelineRunFallback(run.id)
     return {
       ok: true,
       run: await fetchRunWithSteps(sb, run.id),
-      message: "Trigger.dev is not configured; run is ready for local/manual execution",
+      message: "Trigger.dev is not configured; app fallback queued",
     }
   }
 
-  const res = await fetch(trigger.endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${trigger.secretKey}` },
-    body: JSON.stringify({
-      payload: {
-        run_id: run.id,
-        company_id: run.company_id,
-        source: run.source,
-        require_video: run.require_video,
-        auto_sync_external_studios: run.auto_sync_external_studios,
-        steps: (run.steps ?? []).map((step) => ({
-          key: step.step_key,
-          required: step.required,
-          owner_tool: step.owner_tool,
-        })),
-      },
-      context: { source: "revenue-os", runId: run.id },
-      options: {
-        idempotencyKey: `sales-os-pipeline-${run.id}`,
-        concurrencyKey: `company-${run.company_id}`,
-        queue: { name: "sales-os-pipeline", concurrencyLimit: 2 },
-      },
-    }),
-  })
-
-  const text = await res.text()
-  if (!res.ok) throw new Error(`Trigger.dev dispatch failed: HTTP ${res.status} ${text.slice(0, 240)}`)
-  let parsed: JsonRecord = {}
   try {
-    parsed = text ? (JSON.parse(text) as JsonRecord) : {}
-  } catch (error) {
-    console.warn("[sales-pipeline] Trigger.dev returned non-json:", error)
-  }
-  const triggerRunId =
-    typeof parsed.id === "string"
-      ? parsed.id
-      : typeof parsed.runId === "string"
-        ? parsed.runId
-        : typeof parsed.run_id === "string"
-          ? parsed.run_id
-          : null
+    const res = await fetch(trigger.endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${trigger.secretKey}` },
+      body: JSON.stringify({
+        payload: {
+          run_id: run.id,
+          company_id: run.company_id,
+          source: run.source,
+          require_video: run.require_video,
+          auto_sync_external_studios: run.auto_sync_external_studios,
+          steps: (run.steps ?? []).map((step) => ({
+            key: step.step_key,
+            required: step.required,
+            owner_tool: step.owner_tool,
+          })),
+        },
+        context: { source: "revenue-os", runId: run.id },
+        options: {
+          idempotencyKey: `sales-os-pipeline-${run.id}`,
+          concurrencyKey: `company-${run.company_id}`,
+          queue: { name: "sales-os-pipeline", concurrencyLimit: 2 },
+        },
+      }),
+    })
 
-  await updateRun(sb, run.id, {
-    status: "waiting_external",
-    trigger_provider: "trigger.dev",
-    trigger_run_id: triggerRunId,
-    started_at: run.started_at ?? new Date().toISOString(),
-    error_message: null,
-  })
-  return { ok: true, run: await fetchRunWithSteps(sb, run.id), message: "Trigger.dev dispatch queued" }
+    const text = await res.text()
+    if (!res.ok) throw new Error(`Trigger.dev dispatch failed: HTTP ${res.status} ${text.slice(0, 240)}`)
+    let parsed: JsonRecord = {}
+    try {
+      parsed = text ? (JSON.parse(text) as JsonRecord) : {}
+    } catch (error) {
+      console.warn("[sales-pipeline] Trigger.dev returned non-json:", error)
+    }
+    const triggerRunId =
+      typeof parsed.id === "string"
+        ? parsed.id
+        : typeof parsed.runId === "string"
+          ? parsed.runId
+          : typeof parsed.run_id === "string"
+            ? parsed.run_id
+            : null
+
+    await updateRun(sb, run.id, {
+      status: "waiting_external",
+      trigger_provider: "trigger.dev",
+      trigger_run_id: triggerRunId,
+      started_at: run.started_at ?? new Date().toISOString(),
+      error_message: null,
+    })
+    startSalesPipelineRunFallback(run.id, { delayMs: 60_000 })
+    return { ok: true, run: await fetchRunWithSteps(sb, run.id), message: "Trigger.dev dispatch queued; app fallback armed" }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Trigger.dev dispatch failed"
+    console.error("[sales-pipeline] Trigger.dev dispatch failed:", error)
+    await updateRun(sb, run.id, {
+      status: "queued",
+      trigger_provider: "local",
+      error_message: `${message}; app fallback queued`,
+    })
+    startSalesPipelineRunFallback(run.id)
+    return { ok: true, run: await fetchRunWithSteps(sb, run.id), message: `${message}; app fallback queued` }
+  }
 }

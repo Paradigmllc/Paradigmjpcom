@@ -197,7 +197,14 @@ export async function recoverStuckPipelineRuns(sb: ServiceSupabase, maxStuckMinu
       .maybeSingle()
 
     if (stuckStep) {
-      await sb.from(DB_TABLES.SALES_PIPELINE_STEPS).update({ status: "pending", error_message: "auto-retry: timed out", completed_at: null }).eq("id", stuckStep.id)
+      const { error: stepResetError } = await sb
+        .from(DB_TABLES.SALES_PIPELINE_STEPS)
+        .update({ status: "queued", error_message: "auto-retry: timed out", completed_at: null })
+        .eq("id", stuckStep.id)
+      if (stepResetError) {
+        errors.push(`reset step ${String(stuckStep.id)} failed: ${stepResetError.message}`)
+        continue
+      }
     }
 
     const { error: resetError } = await sb

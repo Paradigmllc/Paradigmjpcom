@@ -2,6 +2,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { buildSalesPipelinePlan, getSalesPipelineTriggerConfig, updateRun } from "./sales-pipeline-helpers"
 import type { TwentyPullOptions } from "./twenty-pull"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { startSalesPipelineRunFallback } from "./sales-pipeline-fallback"
 
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 
@@ -94,11 +95,12 @@ async function dispatchPipelineRun(
   const trigger = getSalesPipelineTriggerConfig()
   if (!trigger.endpoint || !trigger.secretKey) {
     await updateRun(sb, input.runId, {
-      status: "needs_review",
-      trigger_provider: "manual",
-      error_message: "Trigger.dev Sales OS pipeline task is not configured",
+      status: "queued",
+      trigger_provider: "local",
+      error_message: "Trigger.dev Sales OS pipeline task is not configured; app fallback queued",
     })
-    return { ok: true, dispatched: false, error: "Trigger.dev is not configured" }
+    startSalesPipelineRunFallback(input.runId)
+    return { ok: true, dispatched: false, error: "Trigger.dev is not configured; app fallback queued" }
   }
 
   try {
@@ -144,15 +146,18 @@ async function dispatchPipelineRun(
       started_at: new Date().toISOString(),
       error_message: null,
     })
+    startSalesPipelineRunFallback(input.runId, { delayMs: 60_000 })
     return { ok: true, dispatched: true }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Trigger.dev dispatch failed"
     console.error("[twenty-pipeline-intake] pipeline dispatch failed:", error)
     await updateRun(sb, input.runId, {
-      status: "needs_review",
-      error_message: message,
+      status: "queued",
+      trigger_provider: "local",
+      error_message: `${message}; app fallback queued`,
     })
-    return { ok: false, dispatched: false, error: message }
+    startSalesPipelineRunFallback(input.runId)
+    return { ok: true, dispatched: false, error: `${message}; app fallback queued` }
   }
 }
 
