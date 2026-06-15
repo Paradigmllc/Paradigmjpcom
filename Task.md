@@ -1,3 +1,21 @@
+## ACTIVE HANDOFF - 2026-06-15 RevenueOS OpenCode/Telegram list acquisition smoke
+
+### Current status
+
+- OpenCode/Telegram direct command path now routes natural-language list requests to `collect_list`.
+- Production env was corrected so runtime containers receive `SALES_SUPABASE_URL` and `SALES_SUPABASE_SERVICE_ROLE_KEY`; before this, the app fell back to the default Supabase project and lead-candidate tables were invisible.
+- Latest production smoke passed:
+  - Command: `ZAのWooCommerceリスト1件収集して`
+  - Endpoint: `/api/sales/agent/telegram-command`
+  - Result: HTTP 200, `intent=collect_list`, `status=completed`
+  - Candidate layer: 1 candidate scored/saved; no WooCommerce match promoted in this tiny sample.
+
+### Remaining risks
+
+- The current "all" behavior is bounded Common Crawl batch acquisition, not a mathematically complete worldwide inventory.
+- Need a larger soak test by country x stack to prove retry/idempotency/concurrency under real batch size.
+- Existing deploy verification still prints legacy warnings around large files and local DB env verification; the latest deploy itself completed and smoke URLs returned HTTP 200.
+
 ## ACTIVE HANDOFF - 2026-06-15 RevenueOS lead candidate acquisition implementation
 
 ### Current status
