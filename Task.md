@@ -26,11 +26,38 @@
   - Recovery endpoint `POST /api/sales/lead-candidates/runs/243e6668-1aed-4875-bc88-37b9a93f3314/process` returned HTTP 202 and moved the run to `running`.
   - That CH run later ended with 0 fetched, exposing a second issue: zero-domain acquisition was being treated as success.
 - Follow-up fix in progress: always start the app fallback runner even when Trigger dispatch returns OK, and treat zero-domain Common Crawl acquisition as failed instead of completed.
+- ZA zero-result root cause found: CDX returns data for `*.co.za`, while the previous country pattern only queried `*.za`. `ZA` now queries `*.co.za`, `*.org.za`, `*.net.za`, then `*.za`.
 
 ### Remaining risks
 
 - The fallback runner is a production continuity layer inside the app container, not a replacement for a fully verified external durable queue. The run is persisted in Supabase and recoverable, but Trigger.dev API connectivity still needs separate recovery.
 - Next production smoke must prove after deploy: API returns quickly with `runId`, `fallbackRunnerStarted=true`, status endpoint shows fetch/upsert progress or explicit failure, and zero-domain runs are not marked completed.
+- Production smoke after `ab134dc` deploy:
+  - Container: `i12am4vvcbggefnqdizhnv9a:ab134dc...`, healthy.
+  - `POST /api/sales/lead-candidates/common-crawl` for `ZA / WooCommerce / limit=300 / verifyLimit=10` returned HTTP 200 in 1.79s.
+  - Run `6979f91d-f40e-4bd5-abb5-d9aefc26bc7b`: `runnerTriggered=true`, `fallbackRunnerStarted=true`.
+  - Final status: `completed`, `fetched=131`, `upserted=131`, `verified=10`, `scored=10`, `matchedTechnology=0`, `promoted=0`.
+  - Conclusion: API no longer blocks, fallback runner progresses the run, and empty acquisition no longer appears as a false success. Next step is a 1k-5k soak run.
+
+## ACTIVE HANDOFF - 2026-06-15 Twenty CRM metadata API 400 fix (deployed)
+
+### Fix
+
+- `src/lib/sales/twenty-crm-metadata.ts`: 3 changes:
+  1. PATCH body now includes `type` (e.g. `"SELECT"`, `"LINKS"`, `"TEXT"`) via `toTwentyFieldType()` — fixes TEXT→SELECT coercion (root cause: paradigm custom fields created as TEXT by `twenty-sales-companies-view.sql`)
+  2. Error truncation removed (`text.slice(0, 180)` → full body + `console.error`)
+  3. DB fallback: when REST API PATCH fails, tries direct PostgreSQL write via `applyTwentyCrmMetadataViaDatabase` (requires `TWENTY_DATABASE_URL`)
+
+### Deployment
+
+- Commit: `24163da` `fix: Twenty metadata API 400 — add field type to PATCH body, DB fallback, full error logging`
+- Deploy: `v9ur8o9jqmra5yylp3aoqed5`, status `finished`
+- Smoke: `paradigmjp.com/ja` 200, `/ja/admin/sales` 200, `/api/sales/crm-field-config` 401 (live)
+
+### Remaining
+
+- `TWENTY_DATABASE_URL` is in `.env.example` but not set in `.env.local` or production env vars; DB fallback is now wired but needs the env var to activate
+- Next PATCH to `/api/sales/crm-field-config` should succeed via REST API (type coercion fix), no user action needed
 
 ## ACTIVE HANDOFF - 2026-06-15 RevenueOS OpenCode/Telegram list acquisition smoke
 
