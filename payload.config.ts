@@ -1,5 +1,6 @@
 import { buildConfig } from "payload"
 import { postgresAdapter } from "@payloadcms/db-postgres"
+import { resolveDatabaseUriOrThrow, shouldUseSsl } from "./src/lib/resolve-database-uri"
 import {
   lexicalEditor,
   FixedToolbarFeature,
@@ -156,8 +157,12 @@ export default buildConfig({
   },
   db: postgresAdapter({
     pool: {
-      connectionString: process.env.DATABASE_URI || "",
-      ssl: false,
+      connectionString: (() => {
+        const uri = resolveDatabaseUriOrThrow()
+        if (!uri) console.error("[payload] DATABASE_URI could not be resolved from environment")
+        return uri
+      })(),
+      ssl: shouldUseSsl(resolveDatabaseUriOrThrow()),
       // 2026-06-14: 接続プール調整。
       // Supavisor pooler / ローカル postgres 共通で過剰なコネクションを防ぐ。
       max: 5,
