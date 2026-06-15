@@ -8,8 +8,8 @@ describe("agent team collector command parser", () => {
     expect(parsed).toEqual({
       countryCode: "ZA",
       technology: "WooCommerce",
-      limit: 1000,
-      verifyLimit: 120,
+      limit: 5000,
+      verifyLimit: 5000,
       promote: true,
     })
   })
@@ -20,7 +20,17 @@ describe("agent team collector command parser", () => {
     expect(parsed?.countryCode).toBe("CH")
     expect(parsed?.technology).toBe("HubSpot")
     expect(parsed?.limit).toBe(100)
-    expect(parsed?.verifyLimit).toBe(50)
+    expect(parsed?.verifyLimit).toBe(100)
+    expect(parsed?.promote).toBe(true)
+  })
+
+  it("keeps explicit large batches instead of clipping at one thousand", () => {
+    const parsed = parseCandidateCollectCommand("ZA\u306eWooCommerce\u30ea\u30b9\u30c85000\u4ef6\u53ce\u96c6\u3057\u3066", {})
+
+    expect(parsed?.countryCode).toBe("ZA")
+    expect(parsed?.technology).toBe("WooCommerce")
+    expect(parsed?.limit).toBe(5000)
+    expect(parsed?.verifyLimit).toBe(5000)
     expect(parsed?.promote).toBe(true)
   })
 

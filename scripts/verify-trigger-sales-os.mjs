@@ -13,6 +13,7 @@ const configSource = path.join(root, "trigger.config.ts")
 const expectedTasks = [
   "sales-os-pipeline",
   "sales-enrichment-runner",
+  "sales-lead-candidate-runner",
   "post-outreach-router",
   "chatwoot-reply-router",
   "livekit-discovery-router",
@@ -22,6 +23,7 @@ const expectedTasks = [
 const envTaskMap = {
   TRIGGER_SALES_OS_PIPELINE_TASK_ID: "sales-os-pipeline",
   TRIGGER_SALES_ENRICHMENT_TASK_ID: "sales-enrichment-runner",
+  TRIGGER_SALES_LEAD_CANDIDATE_TASK_ID: "sales-lead-candidate-runner",
   TRIGGER_POST_OUTREACH_TASK_ID: "post-outreach-router",
   TRIGGER_CHATWOOT_REPLY_TASK_ID: "chatwoot-reply-router",
   TRIGGER_LIVEKIT_DISCOVERY_TASK_ID: "livekit-discovery-router",

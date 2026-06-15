@@ -77,6 +77,8 @@ export const DB_TABLES = {
   SALES_LEAD_CANDIDATE_COUNTRY_SIGNALS: "sales_lead_candidate_country_signals",
   SALES_LEAD_CANDIDATE_TECH_DETECTIONS: "sales_lead_candidate_tech_detections",
   SALES_LEAD_CANDIDATE_SCORES: "sales_lead_candidate_scores",
+  SALES_LEAD_CANDIDATE_RUNS: "sales_lead_candidate_runs",
+  SALES_LEAD_CANDIDATE_RUN_ITEMS: "sales_lead_candidate_run_items",
 
   // ── Pipeline (migration_036) ──
   SALES_PIPELINE_RUNS: "sales_pipeline_runs",

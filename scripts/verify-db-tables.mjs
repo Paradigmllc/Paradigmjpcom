@@ -45,7 +45,7 @@ const ALL_TABLES = [
   // Lead Candidates
   "sales_lead_candidate_domains", "sales_lead_candidate_observations",
   "sales_lead_candidate_country_signals", "sales_lead_candidate_tech_detections",
-  "sales_lead_candidate_scores",
+  "sales_lead_candidate_scores", "sales_lead_candidate_runs", "sales_lead_candidate_run_items",
   // Pipeline
   "sales_pipeline_runs", "sales_pipeline_steps", "sales_artifact_manifest",
   // CRM Field Config
@@ -179,6 +179,8 @@ async function main() {
         "sales_lead_candidate_country_signals": "supabase/migrations/migration_047_sales_lead_candidate_acquisition.sql",
         "sales_lead_candidate_tech_detections": "supabase/migrations/migration_047_sales_lead_candidate_acquisition.sql",
         "sales_lead_candidate_scores": "supabase/migrations/migration_047_sales_lead_candidate_acquisition.sql",
+        "sales_lead_candidate_runs": "supabase/migrations/migration_048_sales_lead_candidate_runs.sql",
+        "sales_lead_candidate_run_items": "supabase/migrations/migration_048_sales_lead_candidate_runs.sql",
         "agency_companies": "supabase/migrations/migration_034_sales_ssot_hub.sql",
         "agency_presentations": "supabase/migrations/migration_034_sales_ssot_hub.sql",
         "agency_videos": "supabase/migrations/migration_034_sales_ssot_hub.sql",

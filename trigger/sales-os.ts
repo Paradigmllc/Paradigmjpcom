@@ -2,6 +2,7 @@ import { logger, task, schedules } from "@trigger.dev/sdk/v3"
 import { z } from "zod"
 
 import { runEnrichmentJobs } from "../src/lib/sales/enrichment-jobs"
+import { processLeadCandidateRun } from "../src/lib/sales/lead-candidate-runs"
 import { runSalesPipelineLocally } from "../src/lib/sales/sales-pipeline-execution"
 import { runVideoJobAction } from "../src/lib/sales/video-pipeline"
 import { pullTwentyCompaniesToSupabase } from "../src/lib/sales/twenty-pull"
@@ -16,6 +17,12 @@ const salesPipelinePayload = z.object({
 
 const enrichmentPayload = z.object({
   limit: z.coerce.number().int().min(1).max(10).default(3),
+})
+
+const leadCandidatePayload = z.object({
+  run_id: z.string().uuid(),
+  batch_size: z.coerce.number().int().min(1).max(250).default(120),
+  max_batches: z.coerce.number().int().min(1).max(20).default(10),
 })
 
 const postOutreachPayload = z.object({
@@ -107,6 +114,37 @@ export const salesEnrichmentRunnerTask = task({
     const parsed = enrichmentPayload.parse(payload ?? {})
     logger.info("Sales enrichment runner started", { limit: parsed.limit })
     return runEnrichmentJobs(parsed.limit)
+  },
+})
+
+export const salesLeadCandidateRunnerTask = task({
+  id: "sales-lead-candidate-runner",
+  description: "Drain large RevenueOS lead candidate acquisition runs.",
+  queue: { name: "sales-lead-candidates", concurrencyLimit: 2 },
+  maxDuration: 2400,
+  retry: {
+    maxAttempts: 2,
+    minTimeoutInMs: 60_000,
+    maxTimeoutInMs: 300_000,
+    factor: 2,
+    randomize: true,
+  },
+  run: async (payload: unknown) => {
+    if (isHealthCheckPayload(payload)) return healthCheckResult("sales-lead-candidate-runner")
+    const parsed = leadCandidatePayload.parse(payload ?? {})
+    logger.info("Lead candidate runner started", {
+      runId: parsed.run_id,
+      batchSize: parsed.batch_size,
+      maxBatches: parsed.max_batches,
+    })
+    const result = await processLeadCandidateRun(parsed.run_id, {
+      batchSize: parsed.batch_size,
+      maxBatches: parsed.max_batches,
+    })
+    if (result.hasMore) {
+      logger.warn("Lead candidate run still has pending candidates", { runId: parsed.run_id, processed: result.processed })
+    }
+    return result
   },
 })
 

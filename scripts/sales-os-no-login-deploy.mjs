@@ -400,6 +400,10 @@ async function applyLeadCandidateAcquisitionMigration(envs) {
   return applySqlMigration(envs, "migration_047_sales_lead_candidate_acquisition.sql", "Lead candidate acquisition migration")
 }
 
+async function applyLeadCandidateRunsMigration(envs) {
+  return applySqlMigration(envs, "migration_048_sales_lead_candidate_runs.sql", "Lead candidate run tracking migration")
+}
+
 function applyContentTemplates(envs) {
   const { url, key } = salesSupabase(envs)
   const result = spawnSync(process.execPath, ["scripts/seed-sales-content-templates.mjs"], {
@@ -513,31 +517,36 @@ async function main() {
   console.log("Coolify API: connected")
 
   if (!DRY) {
-    console.log(await applySalesDxAiTemplateVariantMigration(envs))
-    const count = await applySalesProducts(envs)
-    console.log(`Sales products: verified ${count}`)
-    console.log(await applyContentTemplateMigration(envs))
-    console.log(await applyAgentTeamMigration(envs))
-    console.log(await applyIntegrationStatusMigration(envs))
-    console.log(await applyRuntimeHardeningMigration(envs))
-    console.log(await applyVideoPipelineMigration(envs))
-    console.log(await applyVideoStrategyMigration(envs))
-    console.log(await applyVideoProductionMigration(envs))
-    console.log(await applyCrmFieldMasterMigration(envs))
-    console.log(await applySourceTechMetricsMigration(envs))
-    console.log(await applyMonthlyLeadBatchMigration(envs))
-    console.log(await applySearxngSearchRunsMigration(envs))
-    console.log(await applyJapanReadinessInsightsMigration(envs))
-    console.log(await applyPostOutreachToolsMigration(envs))
-    console.log(await applyExternalStudioSyncMigration(envs))
-    console.log(await applySalesOsPipelineMigration(envs))
-    console.log(await applySalesPipelineOutreachLinksMigration(envs))
-    console.log(await applySalesAiPromptsMigration(envs))
-    console.log(await applySalesAiPromptsRepairMigration(envs))
-    console.log(await applySalesTriggerDevToolSlugMigration(envs))
-    console.log(await applySalesVideoTriggerColumnsMigration(envs))
-    console.log(await applySalesCompaniesMetaMigration(envs))
+    const [dxai, products, ...migrations] = await Promise.all([
+      applySalesDxAiTemplateVariantMigration(envs),
+      applySalesProducts(envs),
+      applyContentTemplateMigration(envs),
+      applyAgentTeamMigration(envs),
+      applyIntegrationStatusMigration(envs),
+      applyRuntimeHardeningMigration(envs),
+      applyVideoPipelineMigration(envs),
+      applyVideoStrategyMigration(envs),
+      applyVideoProductionMigration(envs),
+      applyCrmFieldMasterMigration(envs),
+      applySourceTechMetricsMigration(envs),
+      applyMonthlyLeadBatchMigration(envs),
+      applySearxngSearchRunsMigration(envs),
+      applyJapanReadinessInsightsMigration(envs),
+      applyPostOutreachToolsMigration(envs),
+      applyExternalStudioSyncMigration(envs),
+      applySalesOsPipelineMigration(envs),
+      applySalesPipelineOutreachLinksMigration(envs),
+      applySalesAiPromptsMigration(envs),
+      applySalesAiPromptsRepairMigration(envs),
+      applySalesTriggerDevToolSlugMigration(envs),
+      applySalesVideoTriggerColumnsMigration(envs),
+      applySalesCompaniesMetaMigration(envs),
+    ])
+    console.log(dxai)
+    console.log(`Sales products: verified ${products}`)
+    migrations.forEach(m => console.log(m))
     console.log(await applyLeadCandidateAcquisitionMigration(envs))
+    console.log(await applyLeadCandidateRunsMigration(envs))
     console.log(applyContentTemplates(envs))
   } else {
     console.log("Dry run: skipped Supabase product upsert")

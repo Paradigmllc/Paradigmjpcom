@@ -1,10 +1,10 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import {
-  ingestCommonCrawlCandidates,
   listLeadCandidates,
   type CandidateListItem,
 } from "@/lib/sales/lead-candidates"
+import { ingestCommonCrawlCandidatesDurable } from "@/lib/sales/lead-candidate-runs"
 import { pullTwentyCompaniesToSupabase, syncCompanyKarteToTwenty } from "@/lib/sales/twenty-sync"
 import type { Region } from "@/lib/sales/types"
 
@@ -115,6 +115,8 @@ interface CollectListResult {
   twentySync: { attempted: boolean; synced: number; failed: number }
   candidateCollection?: {
     source: string
+    runId?: string
+    status?: string
     countryCode: string
     technology: string | null
     fetched: number
@@ -123,6 +125,8 @@ interface CollectListResult {
     scored: number
     promoted: number
     jobsEnqueued: number
+    hasMore?: boolean
+    runnerTriggered?: boolean
     candidates: CandidateListItem[]
     failures: Array<{ key: string; reason: string }>
   }
@@ -155,7 +159,7 @@ function parseExistingListCommand(text: string): ExistingListInput {
 function parseNumberLimit(text: string, fallback: number): number {
   const match = text.match(/(\d+)\s*(?:件|sites?|domains?|社)?/i)
   if (!match) return fallback
-  return Math.max(1, Math.min(Number.parseInt(match[1] ?? String(fallback), 10), 1000))
+  return Math.max(1, Math.min(Number.parseInt(match[1] ?? String(fallback), 10), 10000))
 }
 
 function parseCountryCode(text: string): string | null {
@@ -186,21 +190,22 @@ export function parseCandidateCollectCommand(
   if (!countryCode) return null
   const technology = parseTechnology(text)
   const wantsAll = /(全て|全部|すべて|all)/i.test(text)
-  const limit = input.limit ?? parseNumberLimit(text, wantsAll ? 1000 : 200)
-  const verifyLimit = Math.min(limit, wantsAll ? 120 : 50)
+  const limit = input.limit ?? parseNumberLimit(text, wantsAll ? 5000 : 200)
+  const verifyLimit = Math.min(limit, wantsAll || limit > 1000 ? 5000 : 250)
   const candidateOnly = /(候補だけ|保存だけ|promote\s*false|no\s*promote|候補DBのみ)/i.test(text)
   const promote = !candidateOnly
   return { countryCode, technology, limit, verifyLimit, promote }
 }
 
 async function collectLeadCandidates(request: CandidateCollectInput): Promise<CollectListResult> {
-  const result = await ingestCommonCrawlCandidates({
+  const result = await ingestCommonCrawlCandidatesDurable({
     countryCode: request.countryCode,
     technology: request.technology,
     limit: request.limit,
     verifyLimit: request.verifyLimit,
     promote: request.promote,
     minOpportunityScore: 68,
+    syncVerifyBatchSize: Math.min(request.verifyLimit, 120),
   })
   const candidates = await listLeadCandidates({
     countryCode: request.countryCode,
@@ -214,6 +219,8 @@ async function collectLeadCandidates(request: CandidateCollectInput): Promise<Co
     twentySync: { attempted: false, synced: 0, failed: 0 },
     candidateCollection: {
       source: result.source,
+      runId: result.runId,
+      status: result.status,
       countryCode: request.countryCode,
       technology: request.technology,
       fetched: result.fetched,
@@ -222,6 +229,8 @@ async function collectLeadCandidates(request: CandidateCollectInput): Promise<Co
       scored: result.scored,
       promoted: result.promoted,
       jobsEnqueued: result.jobsEnqueued,
+      hasMore: result.hasMore,
+      runnerTriggered: result.runnerTriggered,
       candidates,
       failures: result.failures,
     },
@@ -314,12 +323,14 @@ export function formatCollectListReply(result: CollectListResult): string {
 function formatCandidateCollectionReply(collection: NonNullable<CollectListResult["candidateCollection"]>): string {
   const lines = [
     `候補収集を実行しました: ${collection.countryCode}${collection.technology ? ` / ${collection.technology}` : ""}`,
+    collection.runId ? `Run: ${collection.runId} / status: ${collection.status ?? "running"} / runner: ${collection.runnerTriggered ? "triggered" : "not-triggered"}` : "",
     `取得候補: ${collection.fetched}件 / 検証: ${collection.verified}件 / スタック一致: ${collection.matchedTechnology}件 / スコア保存: ${collection.scored}件`,
     collection.promoted > 0
       ? `営業DB昇格: ${collection.promoted}件 / エンリッチ予約: ${collection.jobsEnqueued}件`
       : "営業DB昇格: なし（候補DBに保存）",
     "",
   ]
+  if (collection.hasMore) lines.push("残り候補は保存済みです。lead-candidate runner が分割処理を継続します。")
 
   for (const [index, candidate] of collection.candidates.slice(0, 10).entries()) {
     const score = candidate.score?.opportunityScore ?? "-"
