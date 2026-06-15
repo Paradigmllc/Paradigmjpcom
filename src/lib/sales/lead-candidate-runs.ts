@@ -2,10 +2,11 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { normalizeDomain } from "./dedup"
 import { upsertCompanyByDomain } from "./companies"
-import { enqueueCompanyEnrichment, runEnrichmentJobs, triggerEnrichmentRunner } from "./enrichment-jobs"
+import { enqueueCompanyEnrichment, triggerEnrichmentRunner } from "./enrichment-jobs"
 import { optionalEnv } from "./japan-readiness-utils"
 import { salesScopeFromCountry } from "./locale-scope"
 import { listLeadCandidates, type CandidateListItem } from "./lead-candidate-list"
+import { startLeadCandidateEnrichmentFallback } from "./lead-candidate-enrichment-fallback"
 import {
   clampScore,
   inferCountrySignals,
@@ -105,14 +106,6 @@ function chunk<T>(items: T[], size: number): T[][] {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "lead candidate run failed"
-}
-
-function startEnrichmentFallback(limit: number): void {
-  setTimeout(() => {
-    runEnrichmentJobs(limit).catch((error) => {
-      console.error("[lead-candidate-runs] enrichment fallback failed:", error)
-    })
-  }, 0)
 }
 
 async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
@@ -433,7 +426,7 @@ export async function processLeadCandidateRun(runId: string, options: { batchSiz
   if (jobsEnqueued > 0) {
     const limit = Math.min(jobsEnqueued, 10)
     await triggerEnrichmentRunner(limit)
-    startEnrichmentFallback(limit)
+    startLeadCandidateEnrichmentFallback(limit)
   }
   return { ok: true, runId, processed, jobsEnqueued, hasMore: refreshed.hasMore, failures: [...acquisition.failures, ...refreshed.failures].slice(0, 30) }
 }

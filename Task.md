@@ -7,6 +7,7 @@
 - Per-domain candidate meta stores `acquisition_sources`; run `cursor.source_stats` stores per-source/pattern fetched counts.
 - New endpoint added: `POST /api/sales/lead-candidates/multi-source` while the old `/common-crawl` route remains for compatibility.
 - When promoted candidates enqueue enrichment jobs, the lead candidate runner now triggers Trigger.dev and also starts an app-side enrichment fallback so report generation + Twenty sync do not depend on Trigger.dev actually running.
+- Enrichment fallback now drains the queue in up to 5 short waves, so multiple promoted candidates do not leave sibling jobs stuck queued after only one background pass.
 - Telegram/OpenCode list collection now calls `ingestLeadCandidatesDurable`, so "collect all X in country Y" enters the same persisted multi-source runner.
 - Existing TypeScript red state was cleaned up in `astro-demo/src/keystatic/demo-data.ts` and `src/app/api/sales/fix-schema/route.ts`.
 - Lead candidate acquisition API no longer waits for Common Crawl + verification inside the request path.
@@ -25,6 +26,13 @@
 - `npx tsc --noEmit --pretty false --incremental false`: passed.
 - `npm run build -- --turbo`: compiled and generated static pages, but Windows local build failed during `.next/standalone` copy with `EBUSY`; final build verification must happen in Linux/Coolify.
 - `node --experimental-strip-types` direct smoke for `fetchTrancoTopDomains("*.co.za", 10)`: passed and returned live `.co.za` candidates.
+- Production smoke after `486103f` deploy:
+  - `POST /api/sales/lead-candidates/multi-source` for `ZA / WooCommerce / limit=120 / verifyLimit=5` returned HTTP 200 in 1.997s.
+  - Run `1f10a6e2-ffc3-486d-8ad2-1d5aa74e9da4`: completed with `fetched=120`, `upserted=120`, `verified=5`, `scored=5`, `promoted=0`.
+  - `cursor.source_stats` proved non-Common-Crawl contribution: `tranco_top_domains` fetched 60 candidates; `common_crawl_domains` fetched 60; `crt.sh` returned 502 during this smoke.
+  - Supabase run item meta confirmed `acquisition_sources=["tranco_top_domains"]` for Tranco-derived rows such as `amazon.co.za`, `autotrader.co.za`, and `betway.co.za`.
+  - Promote smoke `18be4100-60f7-49d9-9a2f-0a0775c66a7a`: `fetched=20`, `upserted=20`, `verified=3`, `matched=3`, `promoted=3`, `jobs_enqueued=3`.
+  - One promoted job completed with `report_url=https://paradigmjp.com/ja/report/betway-25m3tm` and `twenty_sync=synced`; two sibling jobs stayed queued, which is why enrichment fallback was changed to multi-wave drain.
 - `node scripts/verify-trigger-sales-os.mjs`: task source definitions OK, Trigger.dev API/health dispatch still fails with `fetch failed`; fallback runner is therefore required for production continuity.
 - Production smoke before the final fallback-hardening patch:
   - `POST /api/sales/lead-candidates/common-crawl` returned HTTP 200 in 1.48s with run `243e6668-1aed-4875-bc88-37b9a93f3314`.
