@@ -189,6 +189,24 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
   }
 
   if (step.step_key === "karte_generate") {
+    const existingKarte = await fetchCompanyKarte(sb, run.company_id)
+    if (existingKarte.ok && existingKarte.karte.reportUrl) {
+      await updateStep(sb, step, {
+        status: "completed",
+        output_payload: {
+          enrichment_job_id: null,
+          runner_triggered: false,
+          runner_error: null,
+          inline_runner_completed: null,
+          inline_runner_failed: null,
+          report_ready: true,
+          report_url: existingKarte.karte.reportUrl,
+          source_score: existingKarte.karte.sourceScore,
+        },
+      })
+      return
+    }
+
     const enqueue = await enqueueCompanyEnrichment({
       companyId: run.company_id,
       source: "sales_pipeline",
@@ -203,18 +221,21 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
     const isTriggerDev = run.trigger_provider === "trigger.dev"
     const trigger = isTriggerDev ? await triggerEnrichmentRunner(1) : { ok: false, error: "local_run_forced_inline" }
     startLeadCandidateEnrichmentFallback(1)
-    const inlineRun = trigger.ok ? null : await runEnrichmentJobs(1)
+    const inlineRun = await runEnrichmentJobs(1)
     const karteResult = await fetchCompanyKarte(sb, run.company_id)
     const companyRes = await sb
       .from(DB_TABLES.SALES_COMPANIES)
-      .select("pipeline_status")
+      .select("pipeline_status, report_url")
       .eq("id", run.company_id)
       .maybeSingle()
     if (companyRes.error) {
       console.error("[sales-pipeline-execution] karte_generate company check failed:", companyRes.error.message)
       throw new Error(companyRes.error.message)
     }
-    const reportReady = companyRes.data?.pipeline_status === "report_ready"
+    const reportReady =
+      companyRes.data?.pipeline_status === "report_ready" ||
+      (typeof companyRes.data?.report_url === "string" && companyRes.data.report_url.length > 0) ||
+      (karteResult.ok && !!karteResult.karte.reportUrl)
     await updateStep(sb, step, {
       status: reportReady ? "completed" : "waiting_external",
       output_payload: {
@@ -224,6 +245,7 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
         inline_runner_completed: inlineRun?.completed ?? null,
         inline_runner_failed: inlineRun?.failed ?? null,
         report_ready: reportReady,
+        report_url: karteResult.ok ? karteResult.karte.reportUrl : companyRes.data?.report_url ?? null,
         source_score: karteResult.ok ? karteResult.karte.sourceScore : null,
       },
     })
