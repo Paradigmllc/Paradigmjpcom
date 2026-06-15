@@ -517,34 +517,30 @@ async function main() {
   console.log("Coolify API: connected")
 
   if (!DRY) {
-    const [dxai, products, ...migrations] = await Promise.all([
-      applySalesDxAiTemplateVariantMigration(envs),
-      applySalesProducts(envs),
-      applyContentTemplateMigration(envs),
-      applyAgentTeamMigration(envs),
-      applyIntegrationStatusMigration(envs),
-      applyRuntimeHardeningMigration(envs),
-      applyVideoPipelineMigration(envs),
-      applyVideoStrategyMigration(envs),
-      applyVideoProductionMigration(envs),
-      applyCrmFieldMasterMigration(envs),
-      applySourceTechMetricsMigration(envs),
-      applyMonthlyLeadBatchMigration(envs),
-      applySearxngSearchRunsMigration(envs),
-      applyJapanReadinessInsightsMigration(envs),
-      applyPostOutreachToolsMigration(envs),
-      applyExternalStudioSyncMigration(envs),
-      applySalesOsPipelineMigration(envs),
-      applySalesPipelineOutreachLinksMigration(envs),
-      applySalesAiPromptsMigration(envs),
-      applySalesAiPromptsRepairMigration(envs),
-      applySalesTriggerDevToolSlugMigration(envs),
-      applySalesVideoTriggerColumnsMigration(envs),
-      applySalesCompaniesMetaMigration(envs),
-    ])
-    console.log(dxai)
+    console.log(await applySalesDxAiTemplateVariantMigration(envs))
+    const products = await applySalesProducts(envs)
     console.log(`Sales products: verified ${products}`)
-    migrations.forEach(m => console.log(m))
+    console.log(await applyContentTemplateMigration(envs))
+    console.log(await applyAgentTeamMigration(envs))
+    console.log(await applyIntegrationStatusMigration(envs))
+    console.log(await applyRuntimeHardeningMigration(envs))
+    console.log(await applyVideoPipelineMigration(envs))
+    console.log(await applyVideoStrategyMigration(envs))
+    console.log(await applyVideoProductionMigration(envs))
+    console.log(await applyCrmFieldMasterMigration(envs))
+    console.log(await applySourceTechMetricsMigration(envs))
+    console.log(await applyMonthlyLeadBatchMigration(envs))
+    console.log(await applySearxngSearchRunsMigration(envs))
+    console.log(await applyJapanReadinessInsightsMigration(envs))
+    console.log(await applyPostOutreachToolsMigration(envs))
+    console.log(await applyExternalStudioSyncMigration(envs))
+    console.log(await applySalesOsPipelineMigration(envs))
+    console.log(await applySalesPipelineOutreachLinksMigration(envs))
+    console.log(await applySalesAiPromptsMigration(envs))
+    console.log(await applySalesAiPromptsRepairMigration(envs))
+    console.log(await applySalesTriggerDevToolSlugMigration(envs))
+    console.log(await applySalesVideoTriggerColumnsMigration(envs))
+    console.log(await applySalesCompaniesMetaMigration(envs))
     console.log(await applyLeadCandidateAcquisitionMigration(envs))
     console.log(await applyLeadCandidateRunsMigration(envs))
     console.log(applyContentTemplates(envs))
