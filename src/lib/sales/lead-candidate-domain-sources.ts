@@ -1,6 +1,7 @@
 import { tldPatternsForCountry } from "./lead-candidate-scoring"
 import { fetchCommonCrawlDomains } from "./sources/commoncrawl-domains"
 import { fetchCrtshDomains } from "./sources/crtsh-bulk"
+import { fetchTrancoTopDomains } from "./sources/tranco-top-domains"
 
 export interface CandidateDomainSourceSummary {
   source: string
@@ -54,6 +55,12 @@ export async function fetchLeadCandidateDomains(countryCode: string, limit: numb
     sourceStats.push({ source: "common_crawl_domains", pattern, fetched: cc.domains.length, total: cc.total, ok: cc.ok, error: cc.error })
     if (!cc.ok) failures.push({ key: `common_crawl_domains:${pattern}`, reason: cc.error ?? "Common Crawl returned no domains" })
     addDomains({ sourceByDomain, source: "common_crawl_domains", domains: cc.domains, limit })
+    if (sourceByDomain.size >= limit) break
+
+    const tranco = await fetchTrancoTopDomains(pattern, perPatternLimit)
+    sourceStats.push({ source: "tranco_top_domains", pattern, fetched: tranco.domains.length, total: tranco.total, ok: tranco.ok, error: tranco.error })
+    if (!tranco.ok) failures.push({ key: `tranco_top_domains:${pattern}`, reason: tranco.error ?? "Tranco top list returned no domains" })
+    addDomains({ sourceByDomain, source: "tranco_top_domains", domains: tranco.domains, limit })
     if (sourceByDomain.size >= limit) break
 
     const crtPattern = toCrtshPattern(pattern)

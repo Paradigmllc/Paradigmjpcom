@@ -16,7 +16,7 @@ export const REVENUE_SOURCE_REGISTRY_CORE: RevenueSourceRegistryItem[] = [
     env: [],
     primaryInput: "country code and TLD patterns",
     primaryOutput: "deduplicated candidate domains with per-source provenance",
-    notes: "Production candidate runner combines Common Crawl CDX and crt.sh bulk acquisition, then stores source_stats and per-domain acquisition_sources.",
+    notes: "Production candidate runner combines Common Crawl CDX, Tranco top-domain bulk, and crt.sh bulk acquisition, then stores source_stats and per-domain acquisition_sources.",
   }),
   item({
     slug: "common_crawl_domains",
@@ -212,6 +212,19 @@ export const REVENUE_SOURCE_REGISTRY_CORE: RevenueSourceRegistryItem[] = [
     primaryInput: "domain",
     primaryOutput: "rank signal",
     notes: "Called from enrich.ts.",
+  }),
+  item({
+    slug: "tranco_top_domains",
+    label: "Tranco top-domain bulk list",
+    category: "list",
+    lane: "tech_footprint",
+    cost: "free",
+    implementationStatus: "live",
+    scaleTier: "bulk",
+    env: [],
+    primaryInput: "country TLD pattern",
+    primaryOutput: "ranked candidate domains from the Tranco top 1M list",
+    notes: "Called from lead-candidate-domain-sources.ts as a non-search, non-Common-Crawl seed source.",
   }),
   item({
     slug: "open_corporates",
