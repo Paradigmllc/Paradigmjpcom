@@ -1,6 +1,7 @@
 import { gunzipSync } from "node:zlib"
 import { countrySignalsFromText } from "../passive-inventory-utils"
 import type { CandidateCountrySignal } from "../lead-candidate-scoring"
+import { detectTechFromEvidence, type TechItem } from "./wappalyzer"
 
 interface CdxRow {
   url?: string
@@ -15,6 +16,7 @@ export interface CommonCrawlPassiveEvidence {
   ok: boolean
   domain: string
   countrySignals: CandidateCountrySignal[]
+  technologies: TechItem[]
   textSample: string | null
   pagesChecked: number
   error?: string
@@ -72,7 +74,16 @@ function extractHttpBody(record: Buffer): string {
   const first = text.indexOf("\r\n\r\n")
   if (first < 0) return text
   const second = text.indexOf("\r\n\r\n", first + 4)
-  return (second >= 0 ? text.slice(second + 4) : text.slice(first + 4)).replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
+  return second >= 0 ? text.slice(second + 4) : text.slice(first + 4)
+}
+
+function visibleText(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
 }
 
 async function fetchArchivedText(row: CdxRow): Promise<string | null> {
@@ -90,20 +101,27 @@ async function fetchArchivedText(row: CdxRow): Promise<string | null> {
 
 export async function fetchCommonCrawlPassiveEvidence(domain: string, countryCode: string, limit = 3): Promise<CommonCrawlPassiveEvidence> {
   const signals: CandidateCountrySignal[] = []
+  const technologies = new Map<string, TechItem>()
   let textSample: string | null = null
   let pagesChecked = 0
   try {
     for (const row of await cdxRows(domain, limit)) {
-      const text = await fetchArchivedText(row)
-      if (!text) continue
+      const html = await fetchArchivedText(row)
+      if (!html) continue
       pagesChecked += 1
+      const text = visibleText(html)
       textSample ??= text.slice(0, 800)
       signals.push(...countrySignalsFromText(countryCode, text))
-      if (signals.length > 0) break
+      for (const tech of detectTechFromEvidence({ html })) {
+        const key = tech.name.toLowerCase()
+        const current = technologies.get(key)
+        if (!current || (tech.confidence ?? 0) > (current.confidence ?? 0)) technologies.set(key, tech)
+      }
+      if (signals.length > 0 && technologies.size > 0) break
     }
-    return { ok: pagesChecked > 0, domain, countrySignals: signals, textSample, pagesChecked }
+    return { ok: pagesChecked > 0, domain, countrySignals: signals, technologies: [...technologies.values()], textSample, pagesChecked }
   } catch (error) {
     console.error("[commoncrawl-passive] evidence failed:", domain, error)
-    return { ok: false, domain, countrySignals: signals, textSample, pagesChecked, error: error instanceof Error ? error.message : "Common Crawl passive evidence failed" }
+    return { ok: false, domain, countrySignals: signals, technologies: [...technologies.values()], textSample, pagesChecked, error: error instanceof Error ? error.message : "Common Crawl passive evidence failed" }
   }
 }

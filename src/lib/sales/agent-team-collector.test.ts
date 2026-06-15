@@ -9,6 +9,7 @@ describe("agent team collector command parser", () => {
       countryCode: "ZA",
       technology: "WooCommerce",
       limit: 5000,
+      inventoryLimit: 100000,
       verifyLimit: 5000,
       promote: true,
       minOpportunityScore: 0,
@@ -22,6 +23,7 @@ describe("agent team collector command parser", () => {
     expect(parsed?.countryCode).toBe("CH")
     expect(parsed?.technology).toBe("HubSpot")
     expect(parsed?.limit).toBe(100)
+    expect(parsed?.inventoryLimit).toBe(100)
     expect(parsed?.verifyLimit).toBe(100)
     expect(parsed?.promote).toBe(true)
     expect(parsed?.minOpportunityScore).toBe(50)
@@ -34,6 +36,7 @@ describe("agent team collector command parser", () => {
     expect(parsed?.countryCode).toBe("ZA")
     expect(parsed?.technology).toBe("WooCommerce")
     expect(parsed?.limit).toBe(5000)
+    expect(parsed?.inventoryLimit).toBe(5000)
     expect(parsed?.verifyLimit).toBe(5000)
     expect(parsed?.promote).toBe(true)
     expect(parsed?.minOpportunityScore).toBe(0)
@@ -46,6 +49,7 @@ describe("agent team collector command parser", () => {
     expect(parsed?.countryCode).toBe("EG")
     expect(parsed?.technology).toBe("Shopify")
     expect(parsed?.limit).toBe(100)
+    expect(parsed?.inventoryLimit).toBe(100000)
     expect(parsed?.minOpportunityScore).toBe(0)
     expect(parsed?.startPassiveInventory).toBe(true)
   })
@@ -56,6 +60,7 @@ describe("agent team collector command parser", () => {
     expect(parsed?.countryCode).toBe("CH")
     expect(parsed?.technology).toBe("HubSpot")
     expect(parsed?.promote).toBe(false)
+    expect(parsed?.inventoryLimit).toBe(100000)
     expect(parsed?.minOpportunityScore).toBe(0)
     expect(parsed?.startPassiveInventory).toBe(true)
   })

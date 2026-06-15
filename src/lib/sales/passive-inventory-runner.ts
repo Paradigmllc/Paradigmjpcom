@@ -5,6 +5,7 @@ import { fetchPassiveInventoryDomains, passivePatterns, processPassiveInventoryD
 import { fetchZoneDomains } from "./sources/czds-zone-files"
 import { fetchCommonCrawlDomains } from "./sources/commoncrawl-domains"
 import { fetchTrancoTopDomains } from "./sources/tranco-top-domains"
+import { fetchPassiveDomainFeeds } from "./sources/passive-domain-feeds"
 
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 type JsonRecord = Record<string, unknown>
@@ -119,10 +120,11 @@ export async function startPassiveInventoryRun(input: StartPassiveInventoryRunIn
   const countryCode = input.countryCode.trim().toUpperCase()
   const technology = input.technology?.trim() || null
   const limit = normalizeLimit(input.limit, 100_000, 10_000_000)
-  const segmentLimit = normalizeLimit(input.segmentLimit, DEFAULT_SEGMENT_LIMIT, MAX_SEGMENT_LIMIT)
   const patterns = input.patterns && input.patterns.length > 0
     ? [...new Set(input.patterns.map((pattern) => pattern.trim()).filter(Boolean))]
     : passivePatterns(countryCode, technology)
+  const defaultSegmentLimit = Math.max(DEFAULT_SEGMENT_LIMIT, Math.ceil(limit / Math.max(patterns.length, 1)))
+  const segmentLimit = normalizeLimit(input.segmentLimit, defaultSegmentLimit, MAX_SEGMENT_LIMIT)
 
   const run = await sb.from(DB_TABLES.SALES_PASSIVE_INVENTORY_RUNS).insert({
     source_slug: "passive_inventory",
@@ -195,6 +197,15 @@ async function fetchSegmentDomains(pattern: string, limit: number) {
   const sourceStats = [...zone.sourceStats]
   const failures = [...zone.failures]
   let fallbackUsed = false
+  let feedUsed = false
+
+  if (domains.size < limit) {
+    const feed = await fetchPassiveDomainFeeds(pattern, limit - domains.size)
+    feed.domains.forEach((domain) => domains.add(domain))
+    sourceStats.push(...feed.sourceStats)
+    failures.push(...feed.failures)
+    feedUsed = feed.domains.length > 0
+  }
 
   if (domains.size === 0) {
     fallbackUsed = true
@@ -211,14 +222,15 @@ async function fetchSegmentDomains(pattern: string, limit: number) {
     if (!tranco.ok && tranco.error) failures.push({ key: `tranco_top_domains:${pattern}`, reason: tranco.error })
   }
 
-  return { domains: [...domains].sort().slice(0, limit), sourceStats, failures, fallbackUsed }
+  const sourceLabel = fallbackUsed ? "free_bulk_fallback" : feedUsed && zone.domains.length > 0 ? "zone_and_domain_feed" : feedUsed ? "domain_feed" : "zone_file"
+  return { domains: [...domains].sort().slice(0, limit), sourceStats, failures, fallbackUsed, sourceLabel }
 }
 
 async function processSegment(run: PassiveRunRow, segment: PassiveSegmentRow) {
   const fetched = await fetchSegmentDomains(segment.pattern, segment.batch_limit)
   await getSb().from(DB_TABLES.SALES_PASSIVE_INVENTORY_SEGMENTS).update({
     input_count: fetched.domains.length,
-    cursor: { ...(segment.cursor ?? {}), source_stats: fetched.sourceStats, fallback_used: fetched.fallbackUsed },
+    cursor: { ...(segment.cursor ?? {}), source_stats: fetched.sourceStats, fallback_used: fetched.fallbackUsed, source_label: fetched.sourceLabel },
     errors: fetched.failures,
     heartbeat_at: nowIso(),
   }).eq("id", segment.id)
@@ -239,8 +251,20 @@ async function processSegment(run: PassiveRunRow, segment: PassiveSegmentRow) {
     countryCode: run.country_code,
     technology: run.technology,
     domains: fetched.domains,
-    sourceLabel: fetched.fallbackUsed ? "free_bulk_fallback" : "zone_file",
-    limit: Math.min(segment.batch_limit, run.requested_limit),
+    sourceLabel: fetched.sourceLabel,
+    limit: segment.batch_limit,
+    onProgress: async (progress) => {
+      await getSb().from(DB_TABLES.SALES_PASSIVE_INVENTORY_SEGMENTS).update({
+        heartbeat_at: nowIso(),
+        cursor: {
+          ...(segment.cursor ?? {}),
+          source_stats: fetched.sourceStats,
+          fallback_used: fetched.fallbackUsed,
+          source_label: fetched.sourceLabel,
+          progress,
+        },
+      }).eq("id", segment.id)
+    },
   })
   const failures = [...fetched.failures, ...batch.failures]
   await getSb().from(DB_TABLES.SALES_PASSIVE_INVENTORY_SEGMENTS).update({
@@ -253,7 +277,7 @@ async function processSegment(run: PassiveRunRow, segment: PassiveSegmentRow) {
     errors: failures,
     completed_at: nowIso(),
     heartbeat_at: nowIso(),
-    cursor: { ...(segment.cursor ?? {}), source_stats: fetched.sourceStats, fallback_used: fetched.fallbackUsed, sample_domains: batch.domains.slice(0, 20) },
+    cursor: { ...(segment.cursor ?? {}), source_stats: fetched.sourceStats, fallback_used: fetched.fallbackUsed, source_label: fetched.sourceLabel, sample_domains: batch.domains.slice(0, 20) },
   }).eq("id", segment.id)
   return { checked: batch.checked, stackMatched: batch.stackMatched, geoMatched: batch.geoMatched, persisted: batch.persisted, failures }
 }

@@ -58,6 +58,7 @@ const SIGNATURES: Signature[] = [
   { name: "BASE (EC)", category: "EC", confidence: 86, patterns: [/binc\.jp|thebase\.in|baseec-img/i] },
   { name: "STORES.jp", category: "EC", confidence: 86, patterns: [/stores\.jp|stores\.dev/i] },
   { name: "Shopify (JP detection)", category: "EC", confidence: 84, patterns: [/shopify-buy|shopify-payment-button/i] },
+  { name: "WooCommerce", category: "EC", confidence: 90, patterns: [/woocommerce|wc-cart-fragments|wc-blocks|\/wp-content\/plugins\/woocommerce\//i], cookiePatterns: [/woocommerce|wp_woocommerce_session/i] },
   { name: "Welcart", category: "EC", confidence: 80, patterns: [/welcart|usces_item|usces_cart/i] },
   { name: "CartWeb", category: "EC", confidence: 78, patterns: [/cartweb|cart\.cgi|shop\.cgi/i] },
   { name: "futureshop2", category: "EC", confidence: 84, patterns: [/futureshop2\.js|fs2-theme|fs2-sdk/i] },
@@ -280,6 +281,23 @@ function evidenceFor(sig: Signature, html: string, headers: string, cookies: str
   return [...new Set(evidence)]
 }
 
+export function detectTechFromEvidence(input: {
+  html: string
+  headers?: string | null
+  cookies?: string | null
+}): TechItem[] {
+  const headers = input.headers ?? ""
+  const cookies = input.cookies ?? ""
+  const metaStr = metaText(input.html)
+  return SIGNATURES
+    .map((sig): TechItem | null => {
+      const evidence = evidenceFor(sig, input.html, headers, cookies, metaStr)
+      if (evidence.length === 0) return null
+      return { name: sig.name, category: sig.category, confidence: sig.confidence, evidence }
+    })
+    .filter((item): item is TechItem => item !== null)
+}
+
 export async function detectTechStack(url: string): Promise<{ tech: TechItem[]; server: string | null }> {
   try {
     const res = await fetch(
@@ -293,15 +311,8 @@ export async function detectTechStack(url: string): Promise<{ tech: TechItem[]; 
     const html = await res.text()
     const headers = headerText(res.headers)
     const cookies = cookieText(res.headers)
-    const metaStr = metaText(html)
     const server = res.headers.get("server")
-    const tech = SIGNATURES
-      .map((sig): TechItem | null => {
-        const evidence = evidenceFor(sig, html, headers, cookies, metaStr)
-        if (evidence.length === 0) return null
-        return { name: sig.name, category: sig.category, confidence: sig.confidence, evidence }
-      })
-      .filter((item): item is TechItem => item !== null)
+    const tech = detectTechFromEvidence({ html, headers, cookies })
     return { tech, server }
   } catch (error) {
     console.warn("[wappalyzer] technology detection failed:", error)

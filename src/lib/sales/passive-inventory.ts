@@ -22,6 +22,8 @@ export interface PassiveInventoryResult {
 export interface PassiveInventoryConfiguration {
   zoneInputsConfigured: boolean
   zoneInputModes: string[]
+  domainFeedConfigured: boolean
+  archiveTechDetectionLimit: number
   massdnsConfigured: boolean
   resolverFileConfigured: boolean
   passiveGlobalTldsConfigured: boolean
@@ -59,6 +61,12 @@ function hasHostedCnameSignal(technology: string | null): boolean {
   return technology ? HOSTED_STACKS.has(technologySlug(technology)) : true
 }
 
+function archiveTechDetectionLimit(): number {
+  const raw = optionalEnv("PASSIVE_ARCHIVE_TECH_CHECK_LIMIT")
+  const parsed = raw ? Number.parseInt(raw, 10) : 5_000
+  return Number.isFinite(parsed) ? Math.max(0, Math.min(parsed, 100_000)) : 5_000
+}
+
 export function passivePatterns(countryCode: string, technology: string | null): string[] {
   const patterns = [...tldPatternsForCountry(countryCode)]
   const extra = optionalEnv("PASSIVE_GLOBAL_TLDS") ?? (hasHostedCnameSignal(technology) ? "com,net,org,shop,store" : "")
@@ -77,6 +85,8 @@ export function getPassiveInventoryConfiguration(): PassiveInventoryConfiguratio
   return {
     zoneInputsConfigured: zoneInputModes.length > 0,
     zoneInputModes,
+    domainFeedConfigured: Boolean(optionalEnv("PASSIVE_DOMAIN_FEED_DIR") || optionalEnv("PASSIVE_DOMAIN_FEED_URLS")),
+    archiveTechDetectionLimit: archiveTechDetectionLimit(),
     massdnsConfigured: Boolean(optionalEnv("MASSDNS_BIN")),
     resolverFileConfigured: Boolean(optionalEnv("MASSDNS_RESOLVERS_FILE")),
     passiveGlobalTldsConfigured: Boolean(optionalEnv("PASSIVE_GLOBAL_TLDS")),
@@ -129,10 +139,14 @@ async function updateRun(runId: string | null, patch: Record<string, unknown>): 
   if (error) console.error("[passive-inventory] run update failed:", error.message)
 }
 
-async function enrichGeo(domain: string, countryCode: string, tldMatched: boolean) {
+async function fetchArchiveEvidence(domain: string, countryCode: string) {
+  return fetchCommonCrawlPassiveEvidence(domain, countryCode, 3)
+}
+
+async function enrichGeo(domain: string, countryCode: string, tldMatched: boolean, archive?: Awaited<ReturnType<typeof fetchArchiveEvidence>>) {
   const baseSignals = inferCountrySignals({ domain, targetCountry: countryCode })
   if (tldMatched && maxConfidence(baseSignals) >= 60) return { signals: baseSignals, sample: null, checked: 0 }
-  const cc = await fetchCommonCrawlPassiveEvidence(domain, countryCode, 3)
+  const cc = archive ?? await fetchArchiveEvidence(domain, countryCode)
   return { signals: [...baseSignals.filter((signal) => signal.signalType !== "request_scope"), ...cc.countrySignals], sample: cc.textSample, checked: cc.pagesChecked }
 }
 
@@ -154,6 +168,7 @@ export async function processPassiveInventoryDomainBatch(input: {
   sourceLabel: string
   limit: number
   cnameConcurrency?: number
+  onProgress?: (progress: { processed: number; stackMatched: number; geoMatched: number; persisted: number }) => Promise<void>
 }): Promise<{
   checked: number
   stackMatched: number
@@ -171,21 +186,61 @@ export async function processPassiveInventoryDomainBatch(input: {
   const sourceByDomain = new Map<string, Set<string>>()
   const evidenceByDomain: Record<string, Record<string, unknown>> = {}
   const selectedRows: PassiveDomainRow[] = []
+  const archiveLimit = technology ? archiveTechDetectionLimit() : 0
+  let archiveChecks = 0
+  let stackMatchedCount = 0
+  let geoMatchedCount = 0
 
   const cname = await scanCnameRecords(uniqueDomains, { concurrency: input.cnameConcurrency ?? 24 })
   if (cname.error) failures.push({ key: "passive_cname_scan", reason: cname.error })
 
-  for (const domain of uniqueDomains) {
+  for (const [index, domain] of uniqueDomains.entries()) {
     if (selectedRows.length >= input.limit) break
+    const progress = async () => {
+      if (input.onProgress && (index + 1) % 25 === 0) {
+        await input.onProgress({ processed: index + 1, stackMatched: stackMatchedCount, geoMatched: geoMatchedCount, persisted: selectedRows.length })
+      }
+    }
     const cnameTarget = cname.records[domain] ?? null
-    const evidence = passiveEvidence({ sources: ["passive_inventory", input.sourceLabel, `passive_cname_${cname.engine}`], cnameTarget })
-    const stackMatched = techMatches(technology, evidence)
-    if (!stackMatched) continue
+    let evidence = passiveEvidence({ sources: ["passive_inventory", input.sourceLabel, `passive_cname_${cname.engine}`], cnameTarget })
+    let stackMatched = techMatches(technology, evidence)
+    let archive: Awaited<ReturnType<typeof fetchArchiveEvidence>> | null = null
+    if (!stackMatched && archiveChecks < archiveLimit) {
+      archiveChecks += 1
+      archive = await fetchArchiveEvidence(domain, countryCode)
+      if (archive.error) failures.push({ key: `common_crawl_archive:${domain}`, reason: archive.error })
+      if (archive.technologies.length > 0 || archive.countrySignals.length > 0) {
+        evidence = passiveEvidence({
+          ...evidence,
+          sources: [...evidence.sources, "common_crawl_archive_tech"],
+          technologies: [...evidence.technologies, ...archive.technologies],
+          countrySignals: archive.countrySignals,
+          raw: {
+            ...evidence.raw,
+            common_crawl_pages_checked: archive.pagesChecked,
+            common_crawl_text_sample: archive.textSample,
+          },
+        })
+        stackMatched = techMatches(technology, evidence)
+      }
+    }
+    if (!stackMatched) {
+      await progress()
+      continue
+    }
+    stackMatchedCount += 1
     const tldMatched = isCountryTld(domain, countryCode)
-    const geo = await enrichGeo(domain, countryCode, tldMatched)
+    const geo = await enrichGeo(domain, countryCode, tldMatched, archive ?? undefined)
     const geoConfidence = maxConfidence(geo.signals)
     const geoMatched = geoConfidence >= 60
-    const raw = { ...evidence.raw, common_crawl_text_sample: geo.sample, common_crawl_pages_checked: geo.checked, skip_active_verification: true }
+    if (geoMatched) geoMatchedCount += 1
+    const raw = {
+      ...evidence.raw,
+      common_crawl_text_sample: geo.sample ?? archive?.textSample ?? null,
+      common_crawl_pages_checked: Math.max(geo.checked, archive?.pagesChecked ?? 0),
+      archive_tech_checks: archiveChecks,
+      skip_active_verification: true,
+    }
     const finalEvidence = passiveEvidence({ ...evidence, countrySignals: geo.signals, raw })
     const row: PassiveDomainRow = {
       domain,
@@ -203,17 +258,21 @@ export async function processPassiveInventoryDomainBatch(input: {
       status: "candidate",
     }
     await persistRows(input.runId, [row])
-    if (!geoMatched) continue
+    if (!geoMatched) {
+      await progress()
+      continue
+    }
     selectedRows.push(row)
     sourceByDomain.set(domain, new Set(finalEvidence.sources))
     evidenceByDomain[domain] = finalEvidence as unknown as Record<string, unknown>
+    await progress()
   }
 
   await persistRows(input.runId, selectedRows)
   return {
     checked: cname.checked,
-    stackMatched: selectedRows.length,
-    geoMatched: selectedRows.length,
+    stackMatched: stackMatchedCount,
+    geoMatched: geoMatchedCount,
     persisted: selectedRows.length,
     domains: selectedRows.map((row) => row.domain),
     sourceByDomain: Object.fromEntries([...sourceByDomain.entries()].map(([domain, sources]) => [domain, [...sources].sort()])),

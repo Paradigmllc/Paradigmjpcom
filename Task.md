@@ -3,6 +3,9 @@
 ### Current status
 
 - Latest hardening in progress: candidate acquisition is no longer Common Crawl-only.
+- Current local hardening is intentionally not pushed yet per user instruction: passive inventory now separates command result limit from BuiltWith-style inventory scan budget, adds free local/remote passive domain feeds, detects non-CNAME stack evidence from Common Crawl archived HTML, and writes segment heartbeat progress during long archive scans.
+- OpenCode/Telegram `all + technology` commands now keep the requested candidate display/verification limit while starting the passive inventory run with `PASSIVE_INVENTORY_COMMAND_LIMIT` (default 100000), so `all 5 sites` no longer shrinks the inventory scan itself to 5.
+- Passive inventory source coverage now includes CZDS/local zone files, optional local/remote passive domain feeds, Common Crawl domains, Tranco, DNS/CNAME evidence, and Common Crawl archived HTML stack evidence for WooCommerce/CRM/SMS-style script footprints.
 - Bulk acquisition now uses `multi_source_domains`: Common Crawl CDX + Tranco top-domain bulk + `crt.sh` bulk certificate transparency.
 - Per-domain candidate meta stores `acquisition_sources`; run `cursor.source_stats` stores per-source/pattern fetched counts.
 - New endpoint added: `POST /api/sales/lead-candidates/multi-source` while the old `/common-crawl` route remains for compatibility.
@@ -113,6 +116,11 @@
 - `npx tsc --noEmit --pretty false --incremental false`: passed after passive inventory segment count aggregation fix.
 - `node scripts/run-vitest.mjs src/lib/sales/passive-inventory-utils.test.ts src/lib/sales/agent-team-collector.test.ts`: 2 files / 9 tests passed after passive inventory segment count aggregation fix.
 - `git diff --check`: OK after passive inventory segment count aggregation fix; only existing LF-to-CRLF working-copy warnings.
+- `npx tsc --noEmit --pretty false --incremental false`: passed after local no-push passive inventory hardening for scan-budget separation, passive domain feeds, archived HTML stack detection, and segment heartbeat progress.
+- `node scripts/run-vitest.mjs src/lib/sales/passive-inventory-utils.test.ts src/lib/sales/agent-team-collector.test.ts src/lib/sales/agent-team.test.ts src/lib/sales/source-registry.test.ts src/lib/sales/lead-candidates.test.ts`: 5 files / 21 tests passed after local no-push hardening.
+- `node scripts/paradigm-quality-guard.mjs`: 0 errors / 54 warnings after local no-push hardening.
+- `git diff --check`: OK after local no-push hardening; only existing LF-to-CRLF working-copy warnings.
+- `npm run context:audit`: still fails on the existing PowerShell wildcard parsing issue for `[locale]` in `C:\Users\apple\.agents\scripts\context-audit.ps1`.
 - Production smoke after `486103f` deploy:
   - `POST /api/sales/lead-candidates/multi-source` for `ZA / WooCommerce / limit=120 / verifyLimit=5` returned HTTP 200 in 1.997s.
   - Run `1f10a6e2-ffc3-486d-8ad2-1d5aa74e9da4`: completed with `fetched=120`, `upserted=120`, `verified=5`, `scored=5`, `promoted=0`.

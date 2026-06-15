@@ -8,6 +8,7 @@ import { ingestLeadCandidatesDurable } from "@/lib/sales/lead-candidate-runs"
 import { startPassiveInventoryRunAndDispatch } from "@/lib/sales/passive-inventory-runner"
 import { pullTwentyCompaniesToSupabase, syncCompanyKarteToTwenty } from "@/lib/sales/twenty-sync"
 import type { Region } from "@/lib/sales/types"
+import { optionalEnv } from "@/lib/sales/japan-readiness-utils"
 
 const INDUSTRY_MAP: Record<string, string> = {
   "美容院": "beauty_salon",
@@ -109,6 +110,7 @@ interface CandidateCollectInput {
   countryCode: string
   technology: string | null
   limit: number
+  inventoryLimit: number
   verifyLimit: number
   promote: boolean
   minOpportunityScore: number
@@ -177,6 +179,12 @@ function parseNumberLimit(text: string, fallback: number): number {
   return Math.max(1, Math.min(Number.parseInt(match[1] ?? String(fallback), 10), 10000))
 }
 
+function defaultPassiveInventoryCommandLimit(): number {
+  const raw = optionalEnv("PASSIVE_INVENTORY_COMMAND_LIMIT")
+  const parsed = raw ? Number.parseInt(raw, 10) : 100_000
+  return Number.isFinite(parsed) ? Math.max(1_000, Math.min(parsed, 10_000_000)) : 100_000
+}
+
 function parseCountryCode(text: string): string | null {
   const lower = text.toLowerCase()
   for (const [alias, code] of Object.entries(COUNTRY_ALIASES)) {
@@ -215,7 +223,9 @@ export function parseCandidateCollectCommand(
   const candidateOnly = /(候補だけ|保存だけ|promote\s*false|no\s*promote|候補DBのみ)/i.test(text)
   const promote = !candidateOnly
   const minOpportunityScore = wantsAll || limit > 1000 ? 0 : 50
-  return { countryCode, technology, limit, verifyLimit, promote, minOpportunityScore, startPassiveInventory: wantsAll && Boolean(technology) }
+  const startPassiveInventory = wantsAll && Boolean(technology)
+  const inventoryLimit = startPassiveInventory ? Math.max(defaultPassiveInventoryCommandLimit(), limit) : limit
+  return { countryCode, technology, limit, inventoryLimit, verifyLimit, promote, minOpportunityScore, startPassiveInventory }
 }
 
 async function collectLeadCandidates(request: CandidateCollectInput): Promise<CollectListResult> {
@@ -237,8 +247,7 @@ async function collectLeadCandidates(request: CandidateCollectInput): Promise<Co
     ? await startPassiveInventoryRunAndDispatch({
       countryCode: request.countryCode,
       technology: request.technology,
-      limit: request.limit,
-      segmentLimit: Math.min(Math.max(Math.ceil(request.limit / 5), 1000), 10000),
+      limit: request.inventoryLimit,
     }).catch((error) => {
       console.error("[agent-team-collector] passive inventory dispatch failed:", error)
       return null
