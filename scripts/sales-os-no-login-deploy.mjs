@@ -25,6 +25,7 @@ const SKIP_DEPLOY = process.argv.includes("--skip-deploy")
 const SKIP_HOST_PREFLIGHT = process.argv.includes("--skip-host-preflight")
 const SKIP_DEPLOY_GUARD = process.argv.includes("--skip-deploy-guard")
 const SKIP_DB_VERIFY = process.argv.includes("--skip-db-verify")
+const SKIP_DB_SSH_FALLBACK = process.argv.includes("--skip-db-ssh-fallback")
 
 const PRODUCTS = [
   {
@@ -205,8 +206,11 @@ async function applySalesProducts(envs) {
 
 async function applySqlMigration(envs, fileName, label) {
   const { url, key } = salesSupabase(envs)
-  const sqlPath = path.join(process.cwd(), "supabase", fileName)
-  if (!fs.existsSync(sqlPath)) return `${label}: local SQL file missing`
+  const sqlPath = [
+    path.join(process.cwd(), "supabase", fileName),
+    path.join(process.cwd(), "supabase", "migrations", fileName),
+  ].find((candidate) => fs.existsSync(candidate))
+  if (!sqlPath) return `${label}: local SQL file missing`
   const sql = fs.readFileSync(sqlPath, "utf8")
   const res = await fetch(`${url}/rest/v1/rpc/exec_sql`, {
     method: "POST",
@@ -220,10 +224,60 @@ async function applySqlMigration(envs, fileName, label) {
   if (res.ok) return `${label}: applied`
   const text = await res.text()
   if (res.status === 404 || /function.*exec_sql|schema cache/i.test(text)) {
-    return `${label}: exec_sql unavailable; apply SQL through the DB channel`
+    return applySqlMigrationThroughHost(sql, label)
   }
   if (/already exists|duplicate/i.test(text)) return `${label}: already applied`
   throw new Error(`${label} failed: HTTP ${res.status} ${text.slice(0, 180)}`)
+}
+
+function applySqlMigrationThroughHost(sql, label) {
+  if (SKIP_DB_SSH_FALLBACK) return `${label}: exec_sql unavailable; DB SSH fallback skipped`
+
+  const sshTarget = envValue("PARADIGM_SUPABASE_SSH_TARGET", "root@139.59.250.5")
+  const commonArgs = ["-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=accept-new", sshTarget]
+  const apply = spawnSync(
+    "ssh",
+    [
+      ...commonArgs,
+      "docker",
+      "exec",
+      "-i",
+      "paradigm-supabase-db",
+      "psql",
+      "-U",
+      "postgres",
+      "-d",
+      "postgres",
+    ],
+    { input: sql, encoding: "utf8", maxBuffer: 1024 * 1024 * 12 },
+  )
+  if (apply.status !== 0) {
+    const detail = `${apply.stderr || apply.stdout || ""}`.trim()
+    throw new Error(`${label} DB SSH fallback failed: ${detail.slice(0, 300)}`)
+  }
+
+  const reload = spawnSync(
+    "ssh",
+    [
+      ...commonArgs,
+      "docker",
+      "exec",
+      "paradigm-supabase-db",
+      "psql",
+      "-U",
+      "postgres",
+      "-d",
+      "postgres",
+      "-c",
+      "NOTIFY pgrst, 'reload schema';",
+    ],
+    { encoding: "utf8", maxBuffer: 1024 * 1024 },
+  )
+  if (reload.status !== 0) {
+    const detail = `${reload.stderr || reload.stdout || ""}`.trim()
+    throw new Error(`${label} schema reload failed: ${detail.slice(0, 300)}`)
+  }
+  return `${label}: applied through DB SSH channel`
 }
 
 async function applyContentTemplateMigration(envs) {
@@ -347,6 +401,14 @@ async function applySalesDxAiTemplateVariantMigration(envs) {
   return applySqlMigration(envs, "migration_043_sales_dx_ai_template_variant.sql", "Sales DX/AI template variant migration")
 }
 
+async function applySalesCompaniesMetaMigration(envs) {
+  return applySqlMigration(envs, "migration_046_sales_companies_meta_normalization.sql", "Sales companies meta normalization migration")
+}
+
+async function applyLeadCandidateAcquisitionMigration(envs) {
+  return applySqlMigration(envs, "migration_047_sales_lead_candidate_acquisition.sql", "Lead candidate acquisition migration")
+}
+
 function applyContentTemplates(envs) {
   const { url, key } = salesSupabase(envs)
   const result = spawnSync(process.execPath, ["scripts/seed-sales-content-templates.mjs"], {
@@ -400,7 +462,8 @@ async function readDeploymentLogTail(uuid) {
     const status = await coolify(`/api/v1/deployments/${uuid}`)
     const logs = typeof status?.logs === "string" ? status.logs : ""
     return logs.slice(-4000)
-  } catch {
+  } catch (error) {
+    console.warn(`Deployment log tail read failed: ${error instanceof Error ? error.message : String(error)}`)
     return ""
   }
 }
@@ -482,6 +545,8 @@ async function main() {
     console.log(await applySalesAiPromptsRepairMigration(envs))
     console.log(await applySalesTriggerDevToolSlugMigration(envs))
     console.log(await applySalesVideoTriggerColumnsMigration(envs))
+    console.log(await applySalesCompaniesMetaMigration(envs))
+    console.log(await applyLeadCandidateAcquisitionMigration(envs))
     console.log(applyContentTemplates(envs))
   } else {
     console.log("Dry run: skipped Supabase product upsert")

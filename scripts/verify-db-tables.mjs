@@ -42,6 +42,10 @@ const ALL_TABLES = [
   "sales_calendar_events",
   // Lead Batches
   "sales_lead_batches", "sales_lead_batch_items",
+  // Lead Candidates
+  "sales_lead_candidate_domains", "sales_lead_candidate_observations",
+  "sales_lead_candidate_country_signals", "sales_lead_candidate_tech_detections",
+  "sales_lead_candidate_scores",
   // Pipeline
   "sales_pipeline_runs", "sales_pipeline_steps", "sales_artifact_manifest",
   // CRM Field Config
@@ -88,8 +92,9 @@ async function createSupabaseClient() {
   try {
     const { createClient } = await import("@supabase/supabase-js");
     return { client: createClient(url, key, { auth: { persistSession: false } }), url };
-  } catch {
+  } catch (error) {
     console.error("ERROR: @supabase/supabase-js is not installed. Run: npm install @supabase/supabase-js");
+    console.error(error instanceof Error ? error.message : String(error));
     return null;
   }
 }
@@ -169,6 +174,11 @@ async function main() {
         "sales_campaigns": "migration_003_sales_hub.sql",
         "sales_contracts": "migration_017_sales_twenty_karte_sync.sql",
         "sales_error_log": "supabase/migrations/migration_035_sales_error_log.sql",
+        "sales_lead_candidate_domains": "supabase/migrations/migration_047_sales_lead_candidate_acquisition.sql",
+        "sales_lead_candidate_observations": "supabase/migrations/migration_047_sales_lead_candidate_acquisition.sql",
+        "sales_lead_candidate_country_signals": "supabase/migrations/migration_047_sales_lead_candidate_acquisition.sql",
+        "sales_lead_candidate_tech_detections": "supabase/migrations/migration_047_sales_lead_candidate_acquisition.sql",
+        "sales_lead_candidate_scores": "supabase/migrations/migration_047_sales_lead_candidate_acquisition.sql",
         "agency_companies": "supabase/migrations/migration_034_sales_ssot_hub.sql",
         "agency_presentations": "supabase/migrations/migration_034_sales_ssot_hub.sql",
         "agency_videos": "supabase/migrations/migration_034_sales_ssot_hub.sql",

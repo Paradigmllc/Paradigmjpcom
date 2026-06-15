@@ -1,3 +1,95 @@
+## ACTIVE HANDOFF - 2026-06-15 RevenueOS lead candidate acquisition implementation
+
+### Current status
+
+RevenueOS lead acquisition now has an operational candidate layer for the two agreed lanes:
+
+1. Tech-footprint lane
+   - Common Crawl CDX bulk domain intake is wired to `sales_lead_candidate_*` tables.
+   - Local Wappalyzer-style signatures verify technology matches on a bounded sample.
+   - Country confidence scoring starts with `ZA` and `CH`, plus generic ccTLD fallback.
+   - `promote: true` promotes scored candidates into `sales_companies` and enqueues `sales_enrichment_jobs`.
+
+2. No-website local SMB lane
+   - Directory/listing rows can be ingested through `POST /api/sales/lead-candidates/local-smb`.
+   - Candidates use a stable `.no-website.local` identity when no official website exists.
+   - `websiteAbsenceScore` is treated as confidence, not as a hard fact.
+
+### Implemented files
+
+- `supabase/migrations/migration_047_sales_lead_candidate_acquisition.sql`
+- `src/lib/sales/lead-candidates.ts`
+- `src/app/api/sales/lead-candidates/route.ts`
+- `src/app/api/sales/lead-candidates/common-crawl/route.ts`
+- `src/app/api/sales/lead-candidates/local-smb/route.ts`
+- `src/lib/sales/lead-candidates.test.ts`
+- `docs/knowledge/revenue-os-lead-acquisition-oss-builtwith.md`
+- Deploy path updated in `scripts/sales-os-no-login-deploy.mjs` to apply migrations from `supabase/migrations` and fall back to SSH `psql` when `exec_sql` is unavailable.
+
+### API examples
+
+```text
+GET /api/sales/lead-candidates?country_code=ZA&technology=WooCommerce&min_score=60
+POST /api/sales/lead-candidates/common-crawl
+POST /api/sales/lead-candidates/local-smb
+```
+
+### Verification
+
+- `node scripts/run-vitest.mjs src/lib/sales/source-registry.test.ts src/lib/sales/lead-candidates.test.ts`: 2 files / 7 tests passed.
+- `npx tsc --noEmit --pretty false`: still fails only on known unrelated existing errors:
+  - `astro-demo/src/keystatic/demo-data.ts`: missing `description`
+  - `astro-demo/src/keystatic/demo-data.ts`: missing `./demo-data-legacy`
+  - `src/app/api/sales/fix-schema/route.ts`: `PoolConfig.family`
+
+## ACTIVE HANDOFF - 2026-06-15 RevenueOS lead acquisition direction
+
+### Current decision
+
+リスト収集は次の2レーンで進める。
+
+1. HPあり / 技術痕跡ベース
+   - OSS版BuiltWith方向。
+   - Common Crawl / CT logs / HTTP Archive / sitemap / DNS / schema.org / local tech signatures を主力にする。
+   - Browser search / SearXNG / Steel / FlareSolverr は主力ではなく、確認・欠損補完・例外処理に降格する。
+
+2. HPなし / local SMBベース
+   - Directory / SNS / 予約サイト / 商工会 / 許認可 / 業界リストから事業者候補を作る。
+   - 「HPなし」と断定せず、`website_absence_confidence` で扱う。
+
+### Implemented in this handoff
+
+- Added `src/lib/sales/source-registry.ts`
+  - 既存の30+ API/OSSを `live` / `live_if_configured` / `partial` / `implemented_not_wired` / `catalog_only` / `disabled_by_policy` に分類。
+  - `bulk` / `per_domain_light` / `per_domain_deep` / `browser_expensive` / `manual` / `post_lead` のscale tierを追加。
+  - Google Places / Apollo / Hunter/Snov / SerpAPI/Tavily / StoreLeads/CartLeads / DataForSEO は無料方針上 `disabled_by_policy`。
+- Added `src/app/api/sales/source-registry/route.ts`
+  - Authenticated audit endpoint: `GET /api/sales/source-registry`
+- Added `docs/knowledge/revenue-os-lead-acquisition-oss-builtwith.md`
+  - OSS版BuiltWith + HPなしSMBレーンの設計メモ。
+
+### Next actions
+
+- Candidate tables migration:
+  - `lead_candidate_domains`
+  - `lead_candidate_observations`
+  - `lead_candidate_country_signals`
+  - `lead_candidate_tech_detections`
+  - `lead_candidate_scores`
+- Implement Common Crawl CDX bulk ingestion as the first non-search candidate source.
+- Add country confidence scoring for `ZA`, `CH`, then generalize.
+- Add stack query examples to GUI/API: country + technology + confidence threshold.
+- Align `source-coverage.ts` detect keys with actual `enrich.ts` meta keys.
+
+### Verification
+
+- `node scripts/run-vitest.mjs src/lib/sales/source-registry.test.ts`: 1 file / 3 tests passed.
+- `git diff --check`: OK. PowerShell reported the existing LF-to-CRLF warning for `Task.md`.
+- `npx tsc --noEmit --pretty false`: still fails only on known unrelated existing errors:
+  - `astro-demo/src/keystatic/demo-data.ts`: missing `description`
+  - `astro-demo/src/keystatic/demo-data.ts`: missing `./demo-data-legacy`
+  - `src/app/api/sales/fix-schema/route.ts`: `PoolConfig.family`
+
 ## ACTIVE HANDOFF — 2026-06-14 パイプライン全面改善 (10項目実装完了)
 
 ### 実装サマリー

@@ -43,3 +43,5 @@ docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabas
 docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_043_sales_dx_ai_template_variant.sql
 docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_044_sales_ssot_hub.sql
 docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_045_sales_error_log.sql
+docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_046_sales_companies_meta_normalization.sql
+docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_047_sales_lead_candidate_acquisition.sql

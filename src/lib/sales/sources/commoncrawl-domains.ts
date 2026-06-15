@@ -49,6 +49,7 @@ async function queryCdxIndex(
 
     const text = await res.text()
     const lines = text.trim().split("\n")
+    let malformedLines = 0
 
     for (const line of lines) {
       try {
@@ -60,9 +61,15 @@ async function queryCdxIndex(
         if (hostname.includes(".") && hostname.length > 4) {
           domains.add(hostname.replace(/^www\./, ""))
         }
-      } catch {
-        // Skip malformed lines
+      } catch (error) {
+        malformedLines++
+        if (malformedLines === 1) {
+          console.warn("[commoncrawl] skipped malformed CDX JSON line:", error)
+        }
       }
+    }
+    if (malformedLines > 1) {
+      console.warn(`[commoncrawl] skipped ${malformedLines} malformed CDX JSON lines for ${index}`)
     }
 
     return [...domains]

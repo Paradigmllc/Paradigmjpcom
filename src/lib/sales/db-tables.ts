@@ -72,6 +72,11 @@ export const DB_TABLES = {
   // ── Lead Batches (migration_031) ──
   SALES_LEAD_BATCHES: "sales_lead_batches",
   SALES_LEAD_BATCH_ITEMS: "sales_lead_batch_items",
+  SALES_LEAD_CANDIDATE_DOMAINS: "sales_lead_candidate_domains",
+  SALES_LEAD_CANDIDATE_OBSERVATIONS: "sales_lead_candidate_observations",
+  SALES_LEAD_CANDIDATE_COUNTRY_SIGNALS: "sales_lead_candidate_country_signals",
+  SALES_LEAD_CANDIDATE_TECH_DETECTIONS: "sales_lead_candidate_tech_detections",
+  SALES_LEAD_CANDIDATE_SCORES: "sales_lead_candidate_scores",
 
   // ── Pipeline (migration_036) ──
   SALES_PIPELINE_RUNS: "sales_pipeline_runs",
