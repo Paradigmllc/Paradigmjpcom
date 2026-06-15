@@ -100,6 +100,15 @@
   - `twenty_writeback` output: `configured=true`, `twenty_company_id=00f5c974-e3be-40da-ac2f-290e51de6637`, `recommendation_count=2`, two opportunity IDs.
   - Final run status was `needs_review` at `outreach_preflight`, which is expected because live outreach requires approval and was not allowed in the smoke payload.
   - Post-smoke stale checks: stale `sales_pipeline_runs` older than 5 minutes = 0; stale `sales_enrichment_jobs` running older than 30 minutes = 0.
+- Production OpenCode/Telegram command smoke after `edd5582` deploy:
+  - Deploy `tk1l1spwiru2k00r3f6u8rm2`: `finished`.
+  - Container: `i12am4vvcbggefnqdizhnv9a:edd5582...`, healthy.
+  - Public smoke URLs returned HTTP 200: `https://paradigmjp.com/ja/admin/sales`, `https://paradigmjp.com/ja`, and `https://twenty.paradigmjp.com`.
+  - Command endpoint: `POST /api/sales/agent/telegram-command` with `source=opencode`, text `OpenCode ZA all 10 sites collect list`.
+  - Result: HTTP 200, `intent=collect_list`, run `dc6df4d1-51c3-40ca-8889-1dbda8470437`, `runnerTriggered=true`, `fallbackRunnerStarted=true`.
+  - Run completed with `fetched=10`, `upserted=10`, `verified=10`, `matched=8`, `promoted=8`, `jobs_enqueued=8`, `failure=0`, `min_opportunity_score=0`.
+  - All 8 promoted companies reached `pipeline_status=report_ready`; all 8 enrichment jobs completed; all 8 job payloads recorded `twenty_sync=synced`.
+  - Generated reports included `https://paradigmjp.com/ja/report/asizwehs-18ph1x`, `https://paradigmjp.com/ja/report/asidlale-1an6dp`, and `https://paradigmjp.com/ja/report/asiproperty-1hgrd9`.
 - `node scripts/verify-trigger-sales-os.mjs`: task source definitions OK, Trigger.dev API/health dispatch still fails with `fetch failed`; fallback runner is therefore required for production continuity.
 - Production smoke before the final fallback-hardening patch:
   - `POST /api/sales/lead-candidates/common-crawl` returned HTTP 200 in 1.48s with run `243e6668-1aed-4875-bc88-37b9a93f3314`.
