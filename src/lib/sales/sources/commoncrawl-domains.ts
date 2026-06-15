@@ -60,42 +60,53 @@ async function queryCdxIndex(
   limit = 5000,
 ): Promise<string[]> {
   const domains = new Set<string>()
-  const url = `${CDX_API}/${index}-index?url=${encodeURIComponent(pattern)}&output=json&limit=${limit}&filter=status:200`
+  const endpoint = `${CDX_API}/${index}-index`
 
-  try {
+  async function readDomains(url: string): Promise<void> {
     const res = await fetch(url, {
       headers: { "User-Agent": "RevenueOS-CommonCrawl/1.0" },
       signal: AbortSignal.timeout(60_000),
       ...getProxyFetchOptions(),
     })
-
-    if (!res.ok) return []
-
+    if (!res.ok) return
     const text = await res.text()
     const lines = text.trim().split("\n")
     let malformedLines = 0
-
     for (const line of lines) {
+      if (domains.size >= limit) break
       try {
         const entry = JSON.parse(line)
         const entryUrl = entry.url
         if (!entryUrl) continue
-        // Extract domain
-        const hostname = new URL(entryUrl).hostname.toLowerCase()
-        if (hostname.includes(".") && hostname.length > 4) {
-          domains.add(hostname.replace(/^www\./, ""))
-        }
+        const parsed = new URL(entryUrl)
+        const hostname = parsed.hostname.toLowerCase().replace(/^www\./, "")
+        if (parsed.pathname === "/robots.txt") continue
+        if (hostname.includes(".") && hostname.length > 4) domains.add(hostname)
       } catch (error) {
         malformedLines++
-        if (malformedLines === 1) {
-          console.warn("[commoncrawl] skipped malformed CDX JSON line:", error)
-        }
+        if (malformedLines === 1) console.warn("[commoncrawl] skipped malformed CDX JSON line:", error)
       }
     }
-    if (malformedLines > 1) {
-      console.warn(`[commoncrawl] skipped ${malformedLines} malformed CDX JSON lines for ${index}`)
+    if (malformedLines > 1) console.warn(`[commoncrawl] skipped ${malformedLines} malformed CDX JSON lines for ${index}`)
+  }
+
+  try {
+    const pageInfoUrl = `${endpoint}?url=${encodeURIComponent(pattern)}&output=json&filter=status:200&showNumPages=true&pageSize=100`
+    const pageInfoRes = await fetch(pageInfoUrl, {
+      headers: { "User-Agent": "RevenueOS-CommonCrawl/1.0" },
+      signal: AbortSignal.timeout(30_000),
+      ...getProxyFetchOptions(),
+    })
+    if (pageInfoRes.ok) {
+      const pageInfo = await pageInfoRes.json().catch(() => null) as { pages?: unknown } | null
+      const pages = typeof pageInfo?.pages === "number" ? Math.min(pageInfo.pages, 12) : 0
+      for (let page = 0; page < pages && domains.size < limit; page++) {
+        await readDomains(`${endpoint}?url=${encodeURIComponent(pattern)}&output=json&filter=status:200&page=${page}&pageSize=100`)
+      }
+      if (domains.size > 0) return [...domains]
     }
 
+    await readDomains(`${endpoint}?url=${encodeURIComponent(pattern)}&output=json&limit=${limit}&filter=status:200`)
     return [...domains]
   } catch (e) {
     console.error(`[commoncrawl] query failed for ${index}:`, e)
