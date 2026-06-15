@@ -12,6 +12,7 @@ describe("agent team collector command parser", () => {
       verifyLimit: 5000,
       promote: true,
       minOpportunityScore: 0,
+      startPassiveInventory: true,
     })
   })
 
@@ -24,6 +25,7 @@ describe("agent team collector command parser", () => {
     expect(parsed?.verifyLimit).toBe(100)
     expect(parsed?.promote).toBe(true)
     expect(parsed?.minOpportunityScore).toBe(50)
+    expect(parsed?.startPassiveInventory).toBe(false)
   })
 
   it("keeps explicit large batches instead of clipping at one thousand", () => {
@@ -35,6 +37,7 @@ describe("agent team collector command parser", () => {
     expect(parsed?.verifyLimit).toBe(5000)
     expect(parsed?.promote).toBe(true)
     expect(parsed?.minOpportunityScore).toBe(0)
+    expect(parsed?.startPassiveInventory).toBe(false)
   })
 
   it("routes Egypt Shopify passive inventory requests", () => {
@@ -44,6 +47,7 @@ describe("agent team collector command parser", () => {
     expect(parsed?.technology).toBe("Shopify")
     expect(parsed?.limit).toBe(100)
     expect(parsed?.minOpportunityScore).toBe(0)
+    expect(parsed?.startPassiveInventory).toBe(true)
   })
 
   it("allows candidate-only collection when explicitly requested", () => {
@@ -53,6 +57,7 @@ describe("agent team collector command parser", () => {
     expect(parsed?.technology).toBe("HubSpot")
     expect(parsed?.promote).toBe(false)
     expect(parsed?.minOpportunityScore).toBe(0)
+    expect(parsed?.startPassiveInventory).toBe(true)
   })
 
   it("ignores plain existing-list requests without country", () => {

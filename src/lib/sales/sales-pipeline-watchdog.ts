@@ -2,6 +2,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { recoverStaleEnrichmentJobs, runEnrichmentJobs } from "./enrichment-jobs"
 import { startLeadCandidateRunFallback } from "./lead-candidate-runner"
+import { startPassiveInventoryFallback } from "./passive-inventory-runner"
 import { restartStaleSalesPipelineRuns } from "./sales-pipeline-fallback"
 
 const WATCHDOG_INTERVAL_MS = 60_000
@@ -54,14 +55,38 @@ async function restartStaleLeadRuns(): Promise<number> {
   return restarted
 }
 
+async function restartStalePassiveInventoryRuns(): Promise<number> {
+  const sb = getServiceSalesSupabase()
+  if (!sb) return 0
+  const { data, error } = await sb
+    .from(DB_TABLES.SALES_PASSIVE_INVENTORY_RUNS)
+    .select("id, status, heartbeat_at, created_at, updated_at")
+    .in("status", ["queued", "running"])
+    .order("updated_at", { ascending: true })
+    .limit(20)
+  if (error) {
+    console.error("[sales-pipeline-watchdog] stale passive inventory scan failed:", error.message)
+    return 0
+  }
+
+  let restarted = 0
+  for (const row of ((data ?? []) as CandidateRunRow[]).filter(isStale).slice(0, MAX_RESTARTS_PER_TICK)) {
+    const result = startPassiveInventoryFallback(row.id)
+    if (result.started || result.alreadyRunning) restarted += 1
+  }
+  return restarted
+}
+
 async function tick(): Promise<void> {
   const restarted = await restartStaleLeadRuns()
+  const restartedPassive = await restartStalePassiveInventoryRuns()
   const restartedPipelines = await restartStaleSalesPipelineRuns(3)
   const recoveredEnrichment = await recoverStaleEnrichmentJobs(10)
   const enrichment = await runEnrichmentJobs(3)
-  if (restarted > 0 || restartedPipelines > 0 || recoveredEnrichment > 0 || enrichment.processed > 0 || enrichment.failed > 0) {
+  if (restarted > 0 || restartedPassive > 0 || restartedPipelines > 0 || recoveredEnrichment > 0 || enrichment.processed > 0 || enrichment.failed > 0) {
     console.warn("[sales-pipeline-watchdog] tick", {
       restartedLeadRuns: restarted,
+      restartedPassiveInventoryRuns: restartedPassive,
       restartedPipelineRuns: restartedPipelines,
       recoveredEnrichmentJobs: recoveredEnrichment,
       enrichmentProcessed: enrichment.processed,

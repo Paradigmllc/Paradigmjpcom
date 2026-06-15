@@ -5,6 +5,7 @@ import {
   type CandidateListItem,
 } from "@/lib/sales/lead-candidates"
 import { ingestLeadCandidatesDurable } from "@/lib/sales/lead-candidate-runs"
+import { startPassiveInventoryRunAndDispatch } from "@/lib/sales/passive-inventory-runner"
 import { pullTwentyCompaniesToSupabase, syncCompanyKarteToTwenty } from "@/lib/sales/twenty-sync"
 import type { Region } from "@/lib/sales/types"
 
@@ -111,6 +112,7 @@ interface CandidateCollectInput {
   verifyLimit: number
   promote: boolean
   minOpportunityScore: number
+  startPassiveInventory: boolean
 }
 
 interface CollectListResult {
@@ -135,6 +137,13 @@ interface CollectListResult {
     fallbackRunnerStarted?: boolean
     candidates: CandidateListItem[]
     failures: Array<{ key: string; reason: string }>
+    passiveInventory?: {
+      runId: string
+      runnerTriggered: boolean
+      fallbackRunnerStarted: boolean
+      segments: number
+      configuration: Record<string, unknown>
+    }
   }
   error?: string
 }
@@ -206,7 +215,7 @@ export function parseCandidateCollectCommand(
   const candidateOnly = /(候補だけ|保存だけ|promote\s*false|no\s*promote|候補DBのみ)/i.test(text)
   const promote = !candidateOnly
   const minOpportunityScore = wantsAll || limit > 1000 ? 0 : 50
-  return { countryCode, technology, limit, verifyLimit, promote, minOpportunityScore }
+  return { countryCode, technology, limit, verifyLimit, promote, minOpportunityScore, startPassiveInventory: wantsAll && Boolean(technology) }
 }
 
 async function collectLeadCandidates(request: CandidateCollectInput): Promise<CollectListResult> {
@@ -224,6 +233,17 @@ async function collectLeadCandidates(request: CandidateCollectInput): Promise<Co
     technology: request.technology,
     limit: 20,
   })
+  const passiveInventory = request.startPassiveInventory && request.technology
+    ? await startPassiveInventoryRunAndDispatch({
+      countryCode: request.countryCode,
+      technology: request.technology,
+      limit: request.limit,
+      segmentLimit: Math.min(Math.max(Math.ceil(request.limit / 5), 1000), 10000),
+    }).catch((error) => {
+      console.error("[agent-team-collector] passive inventory dispatch failed:", error)
+      return null
+    })
+    : null
   return {
     ok: result.ok,
     total: candidates.length,
@@ -246,6 +266,15 @@ async function collectLeadCandidates(request: CandidateCollectInput): Promise<Co
       fallbackRunnerStarted: result.fallbackRunnerStarted,
       candidates,
       failures: result.failures,
+      passiveInventory: passiveInventory
+        ? {
+          runId: passiveInventory.runId,
+          runnerTriggered: passiveInventory.runnerTriggered,
+          fallbackRunnerStarted: passiveInventory.fallbackRunnerStarted,
+          segments: passiveInventory.segments,
+          configuration: passiveInventory.configuration as unknown as Record<string, unknown>,
+        }
+        : undefined,
     },
     error: result.ok ? undefined : result.failures[0]?.reason,
   }
@@ -345,6 +374,13 @@ function formatCandidateCollectionReply(collection: NonNullable<CollectListResul
     "",
   ]
   if (collection.hasMore) lines.push("残り候補は保存済みです。lead-candidate runner が分割処理を継続します。")
+
+  if (collection.passiveInventory) {
+    const passiveRunner = collection.passiveInventory.runnerTriggered && collection.passiveInventory.fallbackRunnerStarted
+      ? "triggered+fallback"
+      : collection.passiveInventory.runnerTriggered ? "triggered" : collection.passiveInventory.fallbackRunnerStarted ? "fallback" : "not-triggered"
+    lines.push(`Passive inventory run: ${collection.passiveInventory.runId} / segments: ${collection.passiveInventory.segments} / runner: ${passiveRunner}`)
+  }
 
   for (const [index, candidate] of collection.candidates.slice(0, 10).entries()) {
     const score = candidate.score?.opportunityScore ?? "-"

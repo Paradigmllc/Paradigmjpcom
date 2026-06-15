@@ -29,6 +29,12 @@
   - Response includes zone/massdns configuration status without exposing secrets.
   - If pure passive inventory returns zero domains, the endpoint falls back to the same free bulk acquisition lane used by OpenCode/Telegram (`common_crawl_domains`, `tranco_top_domains`, `crt.sh`) instead of returning an opaque empty result.
   - The candidate-domain fetcher supports `skipPassiveInventory` so fallback does not recursively create duplicate passive runs.
+- Passive inventory is now durable/segment-based for BuiltWith-style large runs:
+  - New table: `sales_passive_inventory_segments` stores per-pattern checkpoints, attempts, lock owner, heartbeat, counts, cursor, and errors.
+  - New runner: `sales-passive-inventory-runner` processes segments with zone/CZDS input first, then free non-proxy bulk fallback (`common_crawl_domains`, `tranco_top_domains`) when zone input is absent.
+  - New protected API: `POST /api/sales/passive-inventory/runs` creates a durable run and returns immediately; `GET/POST /api/sales/passive-inventory/runs/[runId]` inspects or resumes the run.
+  - Production watchdog restarts stale passive inventory runs, so Trigger.dev is not the only recovery path.
+  - OpenCode/Telegram `all + technology` collection now starts both the existing lead-candidate run and a passive inventory run, exposing the passive inventory run ID in the reply.
 - Existing TypeScript red state was cleaned up in `astro-demo/src/keystatic/demo-data.ts` and `src/app/api/sales/fix-schema/route.ts`.
 - Lead candidate acquisition API no longer waits for Common Crawl + verification inside the request path.
 - `POST /api/sales/lead-candidates/common-crawl` now creates a queued `sales_lead_candidate_runs` row and immediately dispatches processing.
@@ -91,6 +97,12 @@
   - `OpenCode Egypt Shopify all 5 sites collect list`: run `3c630cb4-fb80-4a4e-8ec5-36b7ca0b5fdd` completed with `fetched=5`, `upserted=5`, `verified=5`, `matched=0`, `scored=5`, `promoted=0`, `failure=0`; no Twenty/report generated because Shopify match was zero.
   - `OpenCode ZA all 5 sites collect list`: run `688c70ef-442b-411f-a2fa-460cf910a9ad` completed with `fetched=5`, `upserted=5`, `verified=5`, `matched=5`, `promoted=5`, `jobs_enqueued=5`, `failure=0`.
   - The ZA run items were all `promoted`; corresponding company enrichment jobs completed with report URLs including `auto-boss-rql6dn`, `auto-ecu-vcbo4x`, `auto-covers-912w12`, `auto-cad-training-1ptn1i`, `auto-dna-8t61zb`; `twenty_sync=synced` for all checked company jobs.
+- Production DB migration `migration_050_sales_passive_inventory_segments.sql` applied through SSH `psql`; PostgREST schema reload sent; verified `sales_passive_inventory_segments` exists alongside passive inventory runs/domains.
+- `npx tsc --noEmit --pretty false --incremental false`: passed after durable passive inventory segment runner implementation.
+- `node scripts/run-vitest.mjs src/lib/sales/passive-inventory-utils.test.ts src/lib/sales/agent-team-collector.test.ts src/lib/sales/agent-team.test.ts src/lib/sales/source-registry.test.ts src/lib/sales/lead-candidates.test.ts`: 5 files / 19 tests passed after durable passive inventory segment runner implementation.
+- `node scripts/paradigm-quality-guard.mjs`: 0 errors / 53 warnings after durable passive inventory segment runner implementation.
+- `git diff --check`: OK after durable passive inventory segment runner implementation; only existing LF-to-CRLF working-copy warnings.
+- `npm run context:audit`: still fails on existing PowerShell wildcard parsing for `[locale]` in `C:\Users\apple\.agents\scripts\context-audit.ps1`.
 - Production smoke after `486103f` deploy:
   - `POST /api/sales/lead-candidates/multi-source` for `ZA / WooCommerce / limit=120 / verifyLimit=5` returned HTTP 200 in 1.997s.
   - Run `1f10a6e2-ffc3-486d-8ad2-1d5aa74e9da4`: completed with `fetched=120`, `upserted=120`, `verified=5`, `scored=5`, `promoted=0`.

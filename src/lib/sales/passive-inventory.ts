@@ -59,7 +59,7 @@ function hasHostedCnameSignal(technology: string | null): boolean {
   return technology ? HOSTED_STACKS.has(technologySlug(technology)) : true
 }
 
-function passivePatterns(countryCode: string, technology: string | null): string[] {
+export function passivePatterns(countryCode: string, technology: string | null): string[] {
   const patterns = [...tldPatternsForCountry(countryCode)]
   const extra = optionalEnv("PASSIVE_GLOBAL_TLDS") ?? (hasHostedCnameSignal(technology) ? "com,net,org,shop,store" : "")
   for (const tld of extra.split(",")) {
@@ -146,6 +146,82 @@ async function persistRows(runId: string | null, rows: PassiveDomainRow[]): Prom
   }
 }
 
+export async function processPassiveInventoryDomainBatch(input: {
+  runId: string | null
+  countryCode: string
+  technology: string | null
+  domains: string[]
+  sourceLabel: string
+  limit: number
+  cnameConcurrency?: number
+}): Promise<{
+  checked: number
+  stackMatched: number
+  geoMatched: number
+  persisted: number
+  domains: string[]
+  sourceByDomain: Record<string, string[]>
+  evidenceByDomain: Record<string, Record<string, unknown>>
+  failures: Array<{ key: string; reason: string }>
+}> {
+  const countryCode = input.countryCode.trim().toUpperCase()
+  const technology = input.technology?.trim() || null
+  const uniqueDomains = [...new Set(input.domains.map((domain) => domain.trim().toLowerCase()).filter(Boolean))].slice(0, input.limit)
+  const failures: Array<{ key: string; reason: string }> = []
+  const sourceByDomain = new Map<string, Set<string>>()
+  const evidenceByDomain: Record<string, Record<string, unknown>> = {}
+  const selectedRows: PassiveDomainRow[] = []
+
+  const cname = await scanCnameRecords(uniqueDomains, { concurrency: input.cnameConcurrency ?? 24 })
+  if (cname.error) failures.push({ key: "passive_cname_scan", reason: cname.error })
+
+  for (const domain of uniqueDomains) {
+    if (selectedRows.length >= input.limit) break
+    const cnameTarget = cname.records[domain] ?? null
+    const evidence = passiveEvidence({ sources: ["passive_inventory", input.sourceLabel, `passive_cname_${cname.engine}`], cnameTarget })
+    const stackMatched = techMatches(technology, evidence)
+    if (!stackMatched) continue
+    const tldMatched = isCountryTld(domain, countryCode)
+    const geo = await enrichGeo(domain, countryCode, tldMatched)
+    const geoConfidence = maxConfidence(geo.signals)
+    const geoMatched = geoConfidence >= 60
+    const raw = { ...evidence.raw, common_crawl_text_sample: geo.sample, common_crawl_pages_checked: geo.checked, skip_active_verification: true }
+    const finalEvidence = passiveEvidence({ ...evidence, countrySignals: geo.signals, raw })
+    const row: PassiveDomainRow = {
+      domain,
+      root_url: `https://${domain}`,
+      source_slug: "passive_inventory",
+      zone_tld: domainTld(domain),
+      country_code: countryCode,
+      technology,
+      cname_target: cnameTarget,
+      stack_matched: stackMatched,
+      geo_matched: geoMatched,
+      geo_confidence: geoConfidence,
+      geo_signals: geo.signals,
+      passive_evidence: finalEvidence as unknown as Record<string, unknown>,
+      status: "candidate",
+    }
+    await persistRows(input.runId, [row])
+    if (!geoMatched) continue
+    selectedRows.push(row)
+    sourceByDomain.set(domain, new Set(finalEvidence.sources))
+    evidenceByDomain[domain] = finalEvidence as unknown as Record<string, unknown>
+  }
+
+  await persistRows(input.runId, selectedRows)
+  return {
+    checked: cname.checked,
+    stackMatched: selectedRows.length,
+    geoMatched: selectedRows.length,
+    persisted: selectedRows.length,
+    domains: selectedRows.map((row) => row.domain),
+    sourceByDomain: Object.fromEntries([...sourceByDomain.entries()].map(([domain, sources]) => [domain, [...sources].sort()])),
+    evidenceByDomain,
+    failures,
+  }
+}
+
 export async function fetchPassiveInventoryDomains(countryCodeRaw: string, technologyRaw: string | null, limit: number): Promise<PassiveInventoryResult> {
   const countryCode = countryCodeRaw.trim().toUpperCase()
   const technology = technologyRaw?.trim() || null
@@ -166,45 +242,26 @@ export async function fetchPassiveInventoryDomains(countryCodeRaw: string, techn
       return { ok: false, domains: [], sourceByDomain: {}, evidenceByDomain, sourceStats: zone.sourceStats, failures, configuration }
     }
 
-    const cname = await scanCnameRecords(zone.domains, { concurrency: 24 })
-    await updateRun(runId, { cname_checked_count: cname.checked, cursor: { zone_source_stats: zone.sourceStats, cname_engine: cname.engine, cname_error: cname.error ?? null } })
-    if (cname.error) failures.push({ key: "passive_cname_scan", reason: cname.error })
-
-    for (const domain of zone.domains) {
-      if (selectedRows.length >= limit) break
-      const cnameTarget = cname.records[domain] ?? null
-      const evidence = passiveEvidence({ sources: ["passive_inventory", `passive_cname_${cname.engine}`], cnameTarget })
-      const stackMatched = techMatches(technology, evidence)
-      if (!stackMatched) continue
-      const tldMatched = isCountryTld(domain, countryCode)
-      const geo = await enrichGeo(domain, countryCode, tldMatched)
-      const geoConfidence = maxConfidence(geo.signals)
-      const geoMatched = geoConfidence >= 60
-      const raw = { ...evidence.raw, common_crawl_text_sample: geo.sample, common_crawl_pages_checked: geo.checked, skip_active_verification: true }
-      const finalEvidence = passiveEvidence({ ...evidence, countrySignals: geo.signals, raw })
-      const row: PassiveDomainRow = {
-        domain,
-        root_url: `https://${domain}`,
-        source_slug: "passive_inventory",
-        zone_tld: domainTld(domain),
-        country_code: countryCode,
-        technology,
-        cname_target: cnameTarget,
-        stack_matched: stackMatched,
-        geo_matched: geoMatched,
-        geo_confidence: geoConfidence,
-        geo_signals: geo.signals,
-        passive_evidence: finalEvidence as unknown as Record<string, unknown>,
-        status: "candidate",
-      }
-      await persistRows(runId, [row])
-      if (!geoMatched) continue
-      selectedRows.push(row)
-      sourceByDomain.set(domain, new Set(finalEvidence.sources))
-      evidenceByDomain[domain] = finalEvidence as unknown as Record<string, unknown>
-    }
-
-    await persistRows(runId, selectedRows)
+    const batch = await processPassiveInventoryDomainBatch({ runId, countryCode, technology, domains: zone.domains, sourceLabel: "czds_zone", limit })
+    failures.push(...batch.failures)
+    await updateRun(runId, { cname_checked_count: batch.checked, cursor: { zone_source_stats: zone.sourceStats } })
+    selectedRows.push(...batch.domains.map((domain) => ({
+      domain,
+      root_url: `https://${domain}`,
+      source_slug: "passive_inventory",
+      zone_tld: domainTld(domain),
+      country_code: countryCode,
+      technology,
+      cname_target: null,
+      stack_matched: true,
+      geo_matched: true,
+      geo_confidence: 60,
+      geo_signals: [],
+      passive_evidence: batch.evidenceByDomain[domain] ?? {},
+      status: "candidate" as const,
+    })))
+    for (const [domain, sources] of Object.entries(batch.sourceByDomain)) sourceByDomain.set(domain, new Set(sources))
+    Object.assign(evidenceByDomain, batch.evidenceByDomain)
     await updateRun(runId, {
       status: selectedRows.length > 0 ? "completed" : "partial",
       stack_matched_count: selectedRows.length,

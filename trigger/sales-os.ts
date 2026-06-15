@@ -3,6 +3,7 @@ import { z } from "zod"
 
 import { runEnrichmentJobs } from "../src/lib/sales/enrichment-jobs"
 import { markLeadCandidateRunFailed, processLeadCandidateRun, triggerLeadCandidateRunner } from "../src/lib/sales/lead-candidate-runs"
+import { processPassiveInventoryRun, triggerPassiveInventoryRunner } from "../src/lib/sales/passive-inventory-runner"
 import { runSalesPipelineLocally } from "../src/lib/sales/sales-pipeline-execution"
 import { runVideoJobAction } from "../src/lib/sales/video-pipeline"
 import { pullTwentyCompaniesToSupabase } from "../src/lib/sales/twenty-pull"
@@ -23,6 +24,11 @@ const leadCandidatePayload = z.object({
   run_id: z.string().uuid(),
   batch_size: z.coerce.number().int().min(1).max(250).default(120),
   max_batches: z.coerce.number().int().min(1).max(20).default(10),
+})
+
+const passiveInventoryPayload = z.object({
+  run_id: z.string().uuid(),
+  max_segments: z.coerce.number().int().min(1).max(20).default(3),
 })
 
 const postOutreachPayload = z.object({
@@ -152,6 +158,31 @@ export const salesLeadCandidateRunnerTask = task({
       await markLeadCandidateRunFailed(parsed.run_id, error)
       throw error
     }
+  },
+})
+
+export const salesPassiveInventoryRunnerTask = task({
+  id: "sales-passive-inventory-runner",
+  description: "Drain durable BuiltWith-style passive inventory segments.",
+  queue: { name: "sales-passive-inventory", concurrencyLimit: 1 },
+  maxDuration: 2400,
+  retry: {
+    maxAttempts: 2,
+    minTimeoutInMs: 60_000,
+    maxTimeoutInMs: 300_000,
+    factor: 2,
+    randomize: true,
+  },
+  run: async (payload: unknown) => {
+    if (isHealthCheckPayload(payload)) return healthCheckResult("sales-passive-inventory-runner")
+    const parsed = passiveInventoryPayload.parse(payload ?? {})
+    logger.info("Passive inventory runner started", { runId: parsed.run_id, maxSegments: parsed.max_segments })
+    const result = await processPassiveInventoryRun(parsed.run_id, { maxSegments: parsed.max_segments })
+    if (result.hasMore) {
+      logger.warn("Passive inventory run still has queued segments", { runId: parsed.run_id, processedSegments: result.processedSegments })
+      await triggerPassiveInventoryRunner(parsed.run_id)
+    }
+    return result
   },
 })
 

@@ -81,6 +81,7 @@ export const DB_TABLES = {
   SALES_LEAD_CANDIDATE_RUN_ITEMS: "sales_lead_candidate_run_items",
   SALES_PASSIVE_INVENTORY_RUNS: "sales_passive_inventory_runs",
   SALES_PASSIVE_INVENTORY_DOMAINS: "sales_passive_inventory_domains",
+  SALES_PASSIVE_INVENTORY_SEGMENTS: "sales_passive_inventory_segments",
 
   // ── Pipeline (migration_036) ──
   SALES_PIPELINE_RUNS: "sales_pipeline_runs",
