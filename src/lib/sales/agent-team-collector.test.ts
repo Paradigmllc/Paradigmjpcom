@@ -10,7 +10,7 @@ describe("agent team collector command parser", () => {
       technology: "WooCommerce",
       limit: 1000,
       verifyLimit: 120,
-      promote: false,
+      promote: true,
     })
   })
 
@@ -22,6 +22,14 @@ describe("agent team collector command parser", () => {
     expect(parsed?.limit).toBe(100)
     expect(parsed?.verifyLimit).toBe(50)
     expect(parsed?.promote).toBe(true)
+  })
+
+  it("allows candidate-only collection when explicitly requested", () => {
+    const parsed = parseCandidateCollectCommand("スイスのHubSpotリスト全て収集して候補だけ保存", {})
+
+    expect(parsed?.countryCode).toBe("CH")
+    expect(parsed?.technology).toBe("HubSpot")
+    expect(parsed?.promote).toBe(false)
   })
 
   it("ignores plain existing-list requests without country", () => {

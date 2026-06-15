@@ -188,7 +188,8 @@ export function parseCandidateCollectCommand(
   const wantsAll = /(全て|全部|すべて|all)/i.test(text)
   const limit = input.limit ?? parseNumberLimit(text, wantsAll ? 1000 : 200)
   const verifyLimit = Math.min(limit, wantsAll ? 120 : 50)
-  const promote = /(昇格|営業DB|sales_companies|インポート|import|enrich|カルテ)/i.test(text)
+  const candidateOnly = /(候補だけ|保存だけ|promote\s*false|no\s*promote|候補DBのみ)/i.test(text)
+  const promote = !candidateOnly
   return { countryCode, technology, limit, verifyLimit, promote }
 }
 
