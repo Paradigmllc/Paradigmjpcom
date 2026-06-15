@@ -1,34 +1,111 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
-import { pullTwentyCompaniesToSupabase } from "@/lib/sales/twenty-sync"
-import { syncCompanyKarteToTwenty } from "@/lib/sales/twenty-sync"
+import {
+  ingestCommonCrawlCandidates,
+  listLeadCandidates,
+  type CandidateListItem,
+} from "@/lib/sales/lead-candidates"
+import { pullTwentyCompaniesToSupabase, syncCompanyKarteToTwenty } from "@/lib/sales/twenty-sync"
 import type { Region } from "@/lib/sales/types"
 
 const INDUSTRY_MAP: Record<string, string> = {
-  "美容院": "beauty_salon", "美容室": "beauty_salon", "ヘアサロン": "beauty_salon",
-  "歯科": "dental", "歯医者": "dental", "デンタル": "dental",
-  "飲食店": "restaurant", "レストラン": "restaurant", "居酒屋": "restaurant", "カフェ": "restaurant",
-  "建設": "construction", "工務店": "construction",
-  "会計": "accounting", "税理士": "accounting", "会計士": "accounting",
-  "小売": "retail", "販売": "retail", "ショップ": "retail",
-  "クリーニング": "cleaning", "清掃": "cleaning",
-  "コンサル": "consulting", "コンサルティング": "consulting",
+  "美容院": "beauty_salon",
+  "美容室": "beauty_salon",
+  "ヘアサロン": "beauty_salon",
+  "歯科": "dental",
+  "歯医者": "dental",
+  "デンタル": "dental",
+  "飲食店": "restaurant",
+  "レストラン": "restaurant",
+  "居酒屋": "restaurant",
+  "カフェ": "restaurant",
+  "建設": "construction",
+  "工務店": "construction",
+  "会計": "accounting",
+  "税理士": "accounting",
+  "小売": "retail",
+  "ショップ": "retail",
+  "クリーニング": "cleaning",
+  "コンサル": "consulting",
 }
 
 const PREFECTURE_MAP: Record<string, string> = {
-  "東京": "tokyo", "東京都": "tokyo",
-  "大阪": "osaka", "大阪府": "osaka",
-  "愛知": "aichi", "愛知県": "aichi",
-  "福岡": "fukuoka", "福岡県": "fukuoka",
+  "東京": "tokyo",
+  "東京都": "tokyo",
+  "大阪": "osaka",
+  "大阪府": "osaka",
+  "愛知": "aichi",
+  "福岡": "fukuoka",
   "北海道": "hokkaido",
-  "神奈川": "kanagawa", "神奈川県": "kanagawa",
+  "神奈川": "kanagawa",
 }
 
-interface CollectListInput {
+const COUNTRY_ALIASES: Record<string, string> = {
+  "南アフリカ共和国": "ZA",
+  "南アフリカ": "ZA",
+  "south africa": "ZA",
+  "south-africa": "ZA",
+  za: "ZA",
+  "スイス": "CH",
+  switzerland: "CH",
+  swiss: "CH",
+  ch: "CH",
+  "日本": "JP",
+  japan: "JP",
+  jp: "JP",
+  "ドイツ": "DE",
+  germany: "DE",
+  de: "DE",
+  "フランス": "FR",
+  france: "FR",
+  fr: "FR",
+  "英国": "GB",
+  "イギリス": "GB",
+  uk: "GB",
+  gb: "GB",
+  "アメリカ": "US",
+  "米国": "US",
+  "united states": "US",
+  usa: "US",
+  us: "US",
+}
+
+const TECHNOLOGY_ALIASES = [
+  "WooCommerce",
+  "Shopify",
+  "WordPress",
+  "Webflow",
+  "Wix",
+  "Squarespace",
+  "HubSpot",
+  "HubSpot CMS",
+  "Klaviyo",
+  "Zendesk",
+  "Intercom",
+  "Zoho",
+  "Salesforce",
+  "Twilio",
+  "Mailchimp",
+  "Magento",
+  "PrestaShop",
+  "Next.js",
+  "React",
+  "Vue.js",
+]
+
+interface ExistingListInput {
   industry?: string
   prefecture?: string
   region: Region
   limit: number
+}
+
+interface CandidateCollectInput {
+  countryCode: string
+  technology: string | null
+  limit: number
+  verifyLimit: number
+  promote: boolean
 }
 
 interface CollectListResult {
@@ -36,104 +113,223 @@ interface CollectListResult {
   total: number
   companies: Array<{ id: string; company_name: string; domain: string; industry: string | null }>
   twentySync: { attempted: boolean; synced: number; failed: number }
+  candidateCollection?: {
+    source: string
+    countryCode: string
+    technology: string | null
+    fetched: number
+    verified: number
+    matchedTechnology: number
+    scored: number
+    promoted: number
+    jobsEnqueued: number
+    candidates: CandidateListItem[]
+    failures: Array<{ key: string; reason: string }>
+  }
   error?: string
 }
 
-function parseCollectCommand(text: string): CollectListInput {
+function parseExistingListCommand(text: string): ExistingListInput {
   let industry: string | undefined
   for (const [jp, en] of Object.entries(INDUSTRY_MAP)) {
-    if (text.includes(jp)) { industry = en; break }
+    if (text.includes(jp)) {
+      industry = en
+      break
+    }
   }
 
   let prefecture: string | undefined
   for (const [jp, en] of Object.entries(PREFECTURE_MAP)) {
-    if (text.includes(jp)) { prefecture = en; break }
+    if (text.includes(jp)) {
+      prefecture = en
+      break
+    }
   }
 
   const region: Region = /(global|海外|世界|グローバル)/i.test(text) ? "global" : "jp"
-
-  const limitMatch = text.match(/(\d+)件/)
-  const limit = limitMatch ? Math.min(parseInt(limitMatch[1], 10), 50) : 20
-
+  const limitMatch = text.match(/(\d+)\s*件/)
+  const limit = limitMatch ? Math.min(Number.parseInt(limitMatch[1] ?? "20", 10), 50) : 20
   return { industry, prefecture, region, limit }
 }
 
-export async function collectCompanyList(text: string, input: { region?: string | null; limit?: number | null }): Promise<CollectListResult> {
-  const sb = getServiceSalesSupabase()
-  if (!sb) return { ok: false, total: 0, companies: [], twentySync: { attempted: false, synced: 0, failed: 0 }, error: "Supabase not configured" }
+function parseNumberLimit(text: string, fallback: number): number {
+  const match = text.match(/(\d+)\s*(?:件|sites?|domains?|社)?/i)
+  if (!match) return fallback
+  return Math.max(1, Math.min(Number.parseInt(match[1] ?? String(fallback), 10), 1000))
+}
 
-  const parsed = parseCollectCommand(text)
+function parseCountryCode(text: string): string | null {
+  const lower = text.toLowerCase()
+  for (const [alias, code] of Object.entries(COUNTRY_ALIASES)) {
+    if (lower.includes(alias.toLowerCase())) return code
+  }
+  const codeMatch = text.match(/\b([A-Z]{2})\b/)
+  return codeMatch?.[1] ?? null
+}
+
+function parseTechnology(text: string): string | null {
+  const lower = text.toLowerCase()
+  for (const technology of TECHNOLOGY_ALIASES) {
+    if (lower.includes(technology.toLowerCase())) return technology
+  }
+  const stackMatch = text.match(/(?:stack|tech|technology|技術|スタック)[:=\s]+([A-Za-z][A-Za-z0-9.+\-\s]{2,40})/i)
+  const value = stackMatch?.[1]?.trim()
+  return value && value.length <= 40 ? value : null
+}
+
+export function parseCandidateCollectCommand(
+  text: string,
+  input: { limit?: number | null },
+): CandidateCollectInput | null {
+  if (!/(リスト|収集|集めて|抽出|collect|list)/i.test(text)) return null
+  const countryCode = parseCountryCode(text)
+  if (!countryCode) return null
+  const technology = parseTechnology(text)
+  const wantsAll = /(全て|全部|すべて|all)/i.test(text)
+  const limit = input.limit ?? parseNumberLimit(text, wantsAll ? 1000 : 200)
+  const verifyLimit = Math.min(limit, wantsAll ? 120 : 50)
+  const promote = /(昇格|営業DB|sales_companies|インポート|import|enrich|カルテ)/i.test(text)
+  return { countryCode, technology, limit, verifyLimit, promote }
+}
+
+async function collectLeadCandidates(request: CandidateCollectInput): Promise<CollectListResult> {
+  const result = await ingestCommonCrawlCandidates({
+    countryCode: request.countryCode,
+    technology: request.technology,
+    limit: request.limit,
+    verifyLimit: request.verifyLimit,
+    promote: request.promote,
+    minOpportunityScore: 68,
+  })
+  const candidates = await listLeadCandidates({
+    countryCode: request.countryCode,
+    technology: request.technology,
+    limit: 20,
+  })
+  return {
+    ok: result.ok,
+    total: candidates.length,
+    companies: [],
+    twentySync: { attempted: false, synced: 0, failed: 0 },
+    candidateCollection: {
+      source: result.source,
+      countryCode: request.countryCode,
+      technology: request.technology,
+      fetched: result.fetched,
+      verified: result.verified,
+      matchedTechnology: result.matchedTechnology,
+      scored: result.scored,
+      promoted: result.promoted,
+      jobsEnqueued: result.jobsEnqueued,
+      candidates,
+      failures: result.failures,
+    },
+    error: result.ok ? undefined : result.failures[0]?.reason,
+  }
+}
+
+export async function collectCompanyList(
+  text: string,
+  input: { region?: string | null; limit?: number | null },
+): Promise<CollectListResult> {
+  const sb = getServiceSalesSupabase()
+  if (!sb) {
+    return { ok: false, total: 0, companies: [], twentySync: { attempted: false, synced: 0, failed: 0 }, error: "Supabase not configured" }
+  }
+
+  const candidateRequest = parseCandidateCollectCommand(text, input)
+  if (candidateRequest) return collectLeadCandidates(candidateRequest)
+
+  const parsed = parseExistingListCommand(text)
   const region = (input.region ?? parsed.region ?? "jp") as Region
   const limit = input.limit ?? parsed.limit
-
   let query = sb.from(DB_TABLES.SALES_COMPANIES).select("id, company_name, domain, industry, meta")
 
-  if (parsed.industry) {
-    query = query.eq("industry", parsed.industry)
-  }
-  if (parsed.prefecture) {
-    query = query.ilike("prefecture", `%${parsed.prefecture}%`)
-  }
-  query = query.eq("region", region)
-  query = query.order("created_at", { ascending: false }).limit(limit)
+  if (parsed.industry) query = query.eq("industry", parsed.industry)
+  if (parsed.prefecture) query = query.ilike("prefecture", `%${parsed.prefecture}%`)
+  query = query.eq("region", region).order("created_at", { ascending: false }).limit(limit)
 
   const { data, error } = await query
-
   if (error) {
     console.error("[agent-team-collector] query failed:", error.message)
     return { ok: false, total: 0, companies: [], twentySync: { attempted: false, synced: 0, failed: 0 }, error: error.message }
   }
 
-  const companies = ((data ?? []) as Array<Record<string, unknown>>).map((r) => ({
-    id: String(r.id),
-    company_name: String(r.company_name ?? r.domain ?? "unknown"),
-    domain: String(r.domain ?? ""),
-    industry: typeof r.industry === "string" ? r.industry : null,
+  const companies = ((data ?? []) as Array<Record<string, unknown>>).map((row) => ({
+    id: String(row.id),
+    company_name: String(row.company_name ?? row.domain ?? "unknown"),
+    domain: String(row.domain ?? ""),
+    industry: typeof row.industry === "string" ? row.industry : null,
   }))
 
-  let twentySync = { attempted: false, synced: 0, failed: 0 }
-  if (companies.length > 0) {
-    try {
-      await pullTwentyCompaniesToSupabase(limit, { pipelineRunId: "telegram_collect_list" })
-
-      let synced = 0
-      let failed = 0
-      for (const company of companies) {
-        try {
-          const syncResult = await syncCompanyKarteToTwenty(company.id)
-          if (syncResult.ok) synced++
-          else failed++
-        } catch {
-          failed++
-        }
-      }
-      twentySync = { attempted: true, synced, failed }
-    } catch (e) {
-      console.error("[agent-team-collector] Twenty sync failed:", e)
-    }
-  }
-
+  const twentySync = await syncCollectedCompanies(companies, limit)
   return { ok: true, total: companies.length, companies, twentySync }
 }
 
+async function syncCollectedCompanies(
+  companies: Array<{ id: string; company_name: string; domain: string; industry: string | null }>,
+  limit: number,
+): Promise<{ attempted: boolean; synced: number; failed: number }> {
+  if (companies.length === 0) return { attempted: false, synced: 0, failed: 0 }
+  try {
+    await pullTwentyCompaniesToSupabase(limit, { pipelineRunId: "telegram_collect_list" })
+    let synced = 0
+    let failed = 0
+    for (const company of companies) {
+      try {
+        const syncResult = await syncCompanyKarteToTwenty(company.id)
+        if (syncResult.ok) synced++
+        else failed++
+      } catch (error) {
+        console.error("[agent-team-collector] company Twenty sync failed:", error)
+        failed++
+      }
+    }
+    return { attempted: true, synced, failed }
+  } catch (error) {
+    console.error("[agent-team-collector] Twenty sync failed:", error)
+    return { attempted: true, synced: 0, failed: companies.length }
+  }
+}
+
 export function formatCollectListReply(result: CollectListResult): string {
-  if (!result.ok) return `❌ リスト収集に失敗しました: ${result.error ?? "不明なエラー"}`
-  if (result.total === 0) return "🔍 条件に一致する企業が見つかりませんでした。"
+  if (!result.ok) return `リスト収集に失敗しました: ${result.error ?? "unknown error"}`
+  if (result.candidateCollection) return formatCandidateCollectionReply(result.candidateCollection)
+  if (result.total === 0) return "条件に一致する既存企業は見つかりませんでした。"
 
-  const lines = [
-    `📋 条件に一致する企業を **${result.total}件** 収集しました。`,
-    "",
-  ]
-
-  result.companies.forEach((c, i) => {
-    lines.push(`${i + 1}. ${c.company_name}`)
-    if (c.domain) lines.push(`   🌐 ${c.domain}`)
+  const lines = [`条件に一致する既存企業を ${result.total} 件取得しました。`, ""]
+  result.companies.forEach((company, index) => {
+    lines.push(`${index + 1}. ${company.company_name}`)
+    if (company.domain) lines.push(`   ${company.domain}`)
     lines.push("")
   })
 
   if (result.twentySync.attempted) {
-    lines.push(`📤 Twenty同期: ${result.twentySync.synced}件成功 / ${result.twentySync.failed}件失敗`)
+    lines.push(`Twenty同期: ${result.twentySync.synced}件成功 / ${result.twentySync.failed}件失敗`)
   }
+  return lines.join("\n")
+}
 
+function formatCandidateCollectionReply(collection: NonNullable<CollectListResult["candidateCollection"]>): string {
+  const lines = [
+    `候補収集を実行しました: ${collection.countryCode}${collection.technology ? ` / ${collection.technology}` : ""}`,
+    `取得候補: ${collection.fetched}件 / 検証: ${collection.verified}件 / スタック一致: ${collection.matchedTechnology}件 / スコア保存: ${collection.scored}件`,
+    collection.promoted > 0
+      ? `営業DB昇格: ${collection.promoted}件 / エンリッチ予約: ${collection.jobsEnqueued}件`
+      : "営業DB昇格: なし（候補DBに保存）",
+    "",
+  ]
+
+  for (const [index, candidate] of collection.candidates.slice(0, 10).entries()) {
+    const score = candidate.score?.opportunityScore ?? "-"
+    const tech = candidate.technologies.map((item) => item.name).slice(0, 3).join(", ")
+    lines.push(`${index + 1}. ${candidate.domain} / score ${score}${tech ? ` / ${tech}` : ""}`)
+  }
+  if (collection.failures.length > 0) {
+    lines.push("")
+    lines.push(`警告: ${collection.failures.length}件（例: ${collection.failures[0]?.key}: ${collection.failures[0]?.reason}）`)
+  }
+  lines.push("")
+  lines.push("注: 「全て」はCommon Crawl上で観測できる候補のバッチ収集です。完全な世界全量ではなく、継続バッチで厚くします。")
   return lines.join("\n")
 }
