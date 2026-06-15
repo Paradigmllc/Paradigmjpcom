@@ -401,6 +401,6 @@ function formatCandidateCollectionReply(collection: NonNullable<CollectListResul
     lines.push(`警告: ${collection.failures.length}件（例: ${collection.failures[0]?.key}: ${collection.failures[0]?.reason}）`)
   }
   lines.push("")
-  lines.push("注: 「全て」はCommon Crawl上で観測できる候補のバッチ収集です。完全な世界全量ではなく、継続バッチで厚くします。")
+  lines.push("注: 「全て」は無料のパッシブ在庫スキャンと複数の公開バルクソースを継続処理します。検索スクレイピングや有料APIには依存しません。")
   return lines.join("\n")
 }
