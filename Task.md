@@ -10,6 +10,7 @@
 - Enrichment fallback now drains the queue in up to 5 short waves, so multiple promoted candidates do not leave sibling jobs stuck queued after only one background pass.
 - Run status API now auto-restarts stale `queued`/`running` lead candidate runs when `heartbeat_at` is older than 5 minutes, covering deploy/container replacement during in-process fallback work.
 - Candidate acquisition now persists progress after each source/pattern fetch, instead of waiting for all sources to finish. This keeps `fetched_count`, `upserted_count`, `cursor.source_stats`, and `heartbeat_at` moving during large runs and makes deploy/container interruption resumable from Supabase state.
+- Production Node startup now registers a no-cost in-container watchdog via `src/instrumentation.ts`. It scans stale lead candidate runs and drains up to 3 queued enrichment jobs every minute, reducing reliance on Trigger.dev or manual recovery endpoints.
 - Telegram/OpenCode list collection now calls `ingestLeadCandidatesDurable`, so "collect all X in country Y" enters the same persisted multi-source runner.
 - Existing TypeScript red state was cleaned up in `astro-demo/src/keystatic/demo-data.ts` and `src/app/api/sales/fix-schema/route.ts`.
 - Lead candidate acquisition API no longer waits for Common Crawl + verification inside the request path.
@@ -31,6 +32,7 @@
 - `npx tsc --noEmit --pretty false --incremental false`: passed after progressive acquisition refactor.
 - `node scripts/run-vitest.mjs src/lib/sales/source-registry.test.ts src/lib/sales/agent-team-collector.test.ts src/lib/sales/agent-team.test.ts src/lib/sales/lead-candidates.test.ts`: 4 files / 15 tests passed after progressive acquisition refactor.
 - `node scripts/paradigm-quality-guard.mjs`: 0 errors / 52 warnings after progressive acquisition refactor; `lead-candidate-runs.ts` is back under the 500-line hard limit at 429 lines.
+- `npx tsc --noEmit --pretty false --incremental false`, targeted Vitest, and quality guard all passed after adding the startup watchdog.
 - Production smoke after `486103f` deploy:
   - `POST /api/sales/lead-candidates/multi-source` for `ZA / WooCommerce / limit=120 / verifyLimit=5` returned HTTP 200 in 1.997s.
   - Run `1f10a6e2-ffc3-486d-8ad2-1d5aa74e9da4`: completed with `fetched=120`, `upserted=120`, `verified=5`, `scored=5`, `promoted=0`.
@@ -46,6 +48,10 @@
   - Soak run `f808698b-7a2e-433d-a7f0-d9ddad6b936e` for `ZA / WooCommerce / limit=1000 / verifyLimit=20 / promote=false`: API returned HTTP 200 in 1.291s; after recovery from a deploy-time container replacement, completed with `fetched=622`, `upserted=622`, `verified=20`, `scored=20`, `failure=0`.
   - The soak run proved multi-source bulk contribution at larger size: `tranco_top_domains=614` raw source hits and `common_crawl_domains=222` raw source hits before dedupe; `crt.sh` was flaky with 502/timeouts.
   - Follow-up hardening: status polling now starts fallback processing for stale runs automatically, so the same deploy-time interruption should self-heal without a manual `/process` call.
+- Production smoke after `e4b9490` deploy:
+  - Container: `i12am4vvcbggefnqdizhnv9a:e4b9490...`, healthy.
+  - Soak run `9034593f-c335-48ff-bd3a-1229899604b0` for `ZA / WooCommerce / limit=800 / verifyLimit=20 / promote=false`: API returned HTTP 200 in 1.733s and completed with `fetched=697`, `upserted=697`, `verified=20`, `scored=20`, `failure=0`.
+  - Progressive persistence verified live: `fetched_count` moved during acquisition (`0 -> 200 -> 400 -> 492 -> 660 -> 697`) and `cursor.source_count` reached 12 before verification completed.
 - `node scripts/verify-trigger-sales-os.mjs`: task source definitions OK, Trigger.dev API/health dispatch still fails with `fetch failed`; fallback runner is therefore required for production continuity.
 - Production smoke before the final fallback-hardening patch:
   - `POST /api/sales/lead-candidates/common-crawl` returned HTTP 200 in 1.48s with run `243e6668-1aed-4875-bc88-37b9a93f3314`.
