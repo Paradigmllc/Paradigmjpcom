@@ -62,6 +62,13 @@
   - Container: `i12am4vvcbggefnqdizhnv9a:796a8ea...`, healthy.
   - Run `b33f97b7-9293-496f-85db-e4c5137f0141` for `ZA / limit=10 / verifyLimit=2 / promote=true`: completed with `fetched=10`, `upserted=10`, `verified=2`, `matched=2`, `promoted=2`, `jobs_enqueued=2`, `failure=0`.
   - Enrichment jobs for `sunbet.co.za` and `amazon.co.za` completed with generated report URLs and `twenty_sync=synced`.
+- Production E2E smoke after `e50c76f` deploy:
+  - Deploy `v14hvbwnqlviqkpupnmgzz5a`: `finished`.
+  - Container: `i12am4vvcbggefnqdizhnv9a:e50c76f...`, healthy.
+  - Run `7a8149c8-8ecc-4d6f-a0d5-458f2ea5085a` for `ZA / limit=10 / verifyLimit=2 / promote=true`: API returned HTTP 200, `runnerTriggered=true`, `fallbackRunnerStarted=true`, then completed with `fetched=10`, `upserted=10`, `verified=2`, `promoted=2`, `jobs_enqueued=2`, `failure=0`.
+  - Current-run enrichment jobs `3fc2edbe...` and `fa60f27f...` completed for `betway.co.za` and `amazon.co.za`.
+  - Generated report URLs: `https://paradigmjp.com/ja/report/betway-25m3tm`, `https://paradigmjp.com/ja/report/amazon-1cmep0`.
+  - Both current-run job payloads recorded `twenty_sync=synced`.
 - `node scripts/verify-trigger-sales-os.mjs`: task source definitions OK, Trigger.dev API/health dispatch still fails with `fetch failed`; fallback runner is therefore required for production continuity.
 - Production smoke before the final fallback-hardening patch:
   - `POST /api/sales/lead-candidates/common-crawl` returned HTTP 200 in 1.48s with run `243e6668-1aed-4875-bc88-37b9a93f3314`.
