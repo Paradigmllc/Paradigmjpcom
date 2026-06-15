@@ -260,16 +260,7 @@ function applySqlMigrationThroughHost(sql, label) {
     "ssh",
     [
       ...commonArgs,
-      "docker",
-      "exec",
-      "paradigm-supabase-db",
-      "psql",
-      "-U",
-      "postgres",
-      "-d",
-      "postgres",
-      "-c",
-      "NOTIFY pgrst, 'reload schema';",
+      "docker exec paradigm-supabase-db psql -U postgres -d postgres -c \"NOTIFY pgrst, 'reload schema';\"",
     ],
     { encoding: "utf8", maxBuffer: 1024 * 1024 },
   )
