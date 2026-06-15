@@ -166,11 +166,7 @@ async function updateRun(runId: string, patch: JsonRecord): Promise<void> {
 }
 
 export async function markLeadCandidateRunFailed(runId: string, error: unknown): Promise<void> {
-  await updateRun(runId, {
-    status: "failed",
-    error_message: errorMessage(error),
-    completed_at: nowIso(),
-  })
+  await updateRun(runId, { status: "failed", error_message: errorMessage(error), completed_at: nowIso() })
 }
 
 async function fetchDomains(countryCode: string, limit: number): Promise<{ domains: string[]; failures: Array<{ key: string; reason: string }> }> {
@@ -182,6 +178,7 @@ async function fetchDomains(countryCode: string, limit: number): Promise<{ domai
     if (!result.ok) failures.push({ key: pattern, reason: result.error ?? "Common Crawl returned no domains" })
     for (const domain of result.domains) domains.add(domain)
   }
+  if (domains.size === 0 && failures.length === 0) failures.push({ key: countryCode, reason: "Common Crawl returned zero candidate domains" })
   return { domains: [...domains].slice(0, limit), failures }
 }
 
@@ -230,10 +227,7 @@ async function ensureRunDomainsFetched(run: RunRow): Promise<{ fetched: number; 
     errors: fetched.failures,
   })
   if (run.verify_limit === 0) {
-    await updateRun(run.id, {
-      status: fetched.failures.length > 0 ? "partial" : "completed",
-      completed_at: nowIso(),
-    })
+    await updateRun(run.id, { status: fetched.failures.length > 0 ? "partial" : "completed", completed_at: nowIso() })
   }
   return { fetched: fetched.domains.length, upserted, failures: fetched.failures }
 }
@@ -401,6 +395,10 @@ export async function processLeadCandidateRun(runId: string, options: { batchSiz
   if (runRes.error) throw new Error(runRes.error.message)
   const run = runRes.data as RunRow
   const acquisition = await ensureRunDomainsFetched(run)
+  if (acquisition.upserted === 0) {
+    await updateRun(run.id, { status: "failed", failure_count: Math.max(acquisition.failures.length, 1), completed_at: nowIso() })
+    return { ok: false, runId, processed: 0, jobsEnqueued: 0, hasMore: false, failures: acquisition.failures.length > 0 ? acquisition.failures : [{ key: run.country_code, reason: "No candidate domains were fetched" }] }
+  }
   if (run.verify_limit === 0) {
     return { ok: true, runId, processed: 0, jobsEnqueued: 0, hasMore: false, failures: acquisition.failures }
   }
@@ -469,7 +467,7 @@ export async function ingestCommonCrawlCandidatesDurable(input: DurableCommonCra
   const normalized = normalizeInput(input)
   const run = await createRun(normalized)
   const trigger = await triggerLeadCandidateRunner(run.id)
-  const fallback = trigger.ok ? { started: false, alreadyRunning: false } : await startFallbackRunner(run.id)
+  const fallback = await startFallbackRunner(run.id)
   const counts = await getSb().from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).select("status, verified_count, matched_technology_count, scored_count, promoted_count, jobs_enqueued_count, failure_count").eq("id", run.id).single()
   const row = counts.data as Record<string, unknown> | null
   const candidates = await listLeadCandidates({ countryCode: normalized.countryCode, technology: normalized.technology, limit: 30 })

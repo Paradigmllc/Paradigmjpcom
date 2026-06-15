@@ -323,7 +323,7 @@ export function formatCollectListReply(result: CollectListResult): string {
 }
 
 function formatCandidateCollectionReply(collection: NonNullable<CollectListResult["candidateCollection"]>): string {
-  const runnerState = collection.runnerTriggered ? "triggered" : collection.fallbackRunnerStarted ? "fallback" : "not-triggered"
+  const runnerState = collection.runnerTriggered && collection.fallbackRunnerStarted ? "triggered+fallback" : collection.runnerTriggered ? "triggered" : collection.fallbackRunnerStarted ? "fallback" : "not-triggered"
   const lines = [
     `候補収集を実行しました: ${collection.countryCode}${collection.technology ? ` / ${collection.technology}` : ""}`,
     collection.runId ? `Run: ${collection.runId} / status: ${collection.status ?? "running"} / runner: ${runnerState}` : "",

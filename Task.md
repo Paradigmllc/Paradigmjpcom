@@ -20,11 +20,17 @@
   - `astro-demo/src/keystatic/demo-data.ts`: missing `./demo-data-legacy`.
   - `src/app/api/sales/fix-schema/route.ts`: `PoolConfig.family`.
 - `node scripts/verify-trigger-sales-os.mjs`: task source definitions OK, Trigger.dev API/health dispatch still fails with `fetch failed`; fallback runner is therefore required for production continuity.
+- Production smoke before the final fallback-hardening patch:
+  - `POST /api/sales/lead-candidates/common-crawl` returned HTTP 200 in 1.48s with run `243e6668-1aed-4875-bc88-37b9a93f3314`.
+  - Response had `runnerTriggered=true`, but the run stayed `queued` with 0 fetched/upserted for 4 minutes.
+  - Recovery endpoint `POST /api/sales/lead-candidates/runs/243e6668-1aed-4875-bc88-37b9a93f3314/process` returned HTTP 202 and moved the run to `running`.
+  - That CH run later ended with 0 fetched, exposing a second issue: zero-domain acquisition was being treated as success.
+- Follow-up fix in progress: always start the app fallback runner even when Trigger dispatch returns OK, and treat zero-domain Common Crawl acquisition as failed instead of completed.
 
 ### Remaining risks
 
 - The fallback runner is a production continuity layer inside the app container, not a replacement for a fully verified external durable queue. The run is persisted in Supabase and recoverable, but Trigger.dev API connectivity still needs separate recovery.
-- Next production smoke must prove: API returns quickly with `runId`, status endpoint shows fetch/upsert progress, and fallback or Trigger completes verification without manual intervention.
+- Next production smoke must prove after deploy: API returns quickly with `runId`, `fallbackRunnerStarted=true`, status endpoint shows fetch/upsert progress or explicit failure, and zero-domain runs are not marked completed.
 
 ## ACTIVE HANDOFF - 2026-06-15 RevenueOS OpenCode/Telegram list acquisition smoke
 
