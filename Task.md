@@ -1,38 +1,35 @@
-## CURRENT STATUS - 2026-06-16 RevenueOS round 5 — リスト収集 実務運用可能化
+## CURRENT STATUS - 2026-06-16 PayloadCMS DB Pooler 根治 + RevenueOS Round 5 リスト収集
 
-### Round 5: 3 blockers resolved → list collection pipeline now production-ready
+### 2026-06-16: Pooler Session→Transaction モード切替 + DB 接続層全面硬化
 
-**Blocker 1: Pipeline status stall without Dify**
-- `enrichment-jobs-runner-phases.ts:112`: `pipeline_status` を条件付き `dify.ok ? "report_ready" : "scanning"` から常時 `"report_ready"` に変更
-- Dify未設定時でも Phase 2 通過後は `report_ready` になり、レポート生成ワーカーが動作する
-- `localDiagnosis()` のルールベース診断で十分なレポート品質を担保
+**問題**: PayloadCMS 管理画面で `ECHECKOUTTIMEOUT: unable to check out connection from the pool after 15000ms in Session mode` が連続18回発生。
 
-**Blocker 2: Browser search が SearXNG にフォールバック**
-- `browser-search.ts:227-240`: FlareSolverr/Steel 未設定時、SearXNG 公開インスタンスに自動フォールバック
-- `SEARXNG_BASE_URL` は `search.mdosch.de` に設定済み（`.env.local`）
-- 全検索エンジン + 全ブラウザバックエンドが使えなくても、最終的に SearXNG にフォールバック
+**根本原因**: Supabase Pooler が Session モード (port 5432) で稼働していた。Serverless Next.js の複数インスタンスが pool max=8 の接続を占有し、共有 Pooler の接続上限を枯渇。
 
-**Blocker 3: Dify未設定時の DeepSeek AI 診断フォールバック**
-- `dify-diagnosis.ts:178-188`: Dify ワークフローキー未設定時、`DEEPSEEK_API_KEY`（設定済）を使って DeepSeek API でAI診断を生成
-- DeepSeek 失敗時は従来の `localDiagnosis()` ルールベース診断にフォールバック
-- 3段階フォールバック: Dify → DeepSeek → localDiagnosis
+**実施内容 (全層硬化)**:
 
-### Prior fixes (Round 3 + 4)
+| # | 変更 | ファイル | 効果 |
+|---|------|---------|------|
+| 1 | DATABASE_URI port 5432→6543 (Coolify) | Coolify env (i12am4vv) | Session→Transaction モード切替 |
+| 2 | Pool config: 検索パス options, SSL rejectUnauthorized, timeout 30s→15s | payload.config.ts | Transaction モード互換 + 接続効率化 |
+| 3 | URI 診断: モード検出, 警告表示, masked URL | src/lib/resolve-database-uri.ts | 障害検知・表示改善 |
+| 4 | Circuit breaker: 5→3 retries, pool枯渇検出, metrics export | src/lib/payload-availability.ts | 再試行回数削減 (枯渇時は逆効果) |
+| 5 | 新規: Pool monitor + health check | src/lib/db/pool-monitor.ts | TCP接続 + モード検証 |
+| 6 | Health endpoint に PayloadCMS DB Pool 行追加 | src/app/api/sales/health/route.ts | ヘルスダッシュボード統合 |
+| 7 | Admin 保護画面: プール枯渇診断 + URI 情報表示 | src/app/(payload)/admin/.../page.tsx | 管理画面で即時診断可能 |
+| 8 | fix-schema ルート: pool error handler + application_name | src/app/api/sales/fix-schema/route.ts | プールエラー可視化 |
+| 9 | ヘルスチェック改善: 両ポート (5432/6543) TCP テスト | scripts/supabase-health-check.mjs | プーラーモード自動判定 |
+
+### Key config changes
+- Coolify `DATABASE_URI`: port 5432 → 6543 (Transaction mode)
+- `payload.config.ts` pool: `max: 4`, `idleTimeoutMillis: 30000`, `connectionTimeoutMillis: 15000`
+- Transaction mode PgBouncer options: `search_path=paradigm`, `idle_in_transaction_session_timeout=30000`, `statement_timeout=30000`
+- SSL: pooler 接続は `{ rejectUnauthorized: false }` (ホスト名不一致可能性対応)
+
+### Prior fixes (Round 3-5)
+- Round 5: 3 blockers resolved → list collection pipeline production-ready
 - Round 4: Twenty pull slug auto-set, report_url fallback, NULL slug auto-repair
 - Round 3: Diagnostic 404 fix, 15 API error handling fixes, 5 lib fixes, 5 UI fixes
-
-### リスト収集 実務運用状況
-
-| 経路 | 状態 | 備考 |
-|------|------|------|
-| CommonCrawl ドメイン取得 | ✅ | 外部API不要 |
-| マルチソース取得 (CDX+Tranco+crt.sh) | ✅ | 無料 |
-| SearXNG リード発見 | ✅ | `search.mdosch.de` |
-| ブラウザ検索 | ✅ | SearXNG フォールバック |
-| エンリッチメント（軽量） | ✅ | ローカル解析 + 無料API |
-| エンリッチメント（深層） | ⚠️ | ブラウザ系サービス全て未デプロイだがHTTPベースフォーム発見は動作 |
-| 診断レポート生成 | ✅ | Dify→DeepSeek→localDiagnosis 3段階 |
-| Twenty CRM 同期 | ✅ | Pull + slug自動設定 |
 
 ### Verified
 - `npx tsc --noEmit`: 0 errors
@@ -40,6 +37,5 @@
 
 ### Active handoff
 - Do not restore `SUPABASE_POSTGRES_*`, `MUBENG_*`, `SCRAPOXY_*`, or any Refferq reference.
-- `scripts/unlock-payload-users.sh` remains intentionally untracked.
 - Pipeline auto-runs on production: watchdog → Twenty pull → pipeline → enrichment → report generation.
 - Browser infra (FlareSolverr/Crawlee/Browserless) not deployed → SearXNG fallback active.

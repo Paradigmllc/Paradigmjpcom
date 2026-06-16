@@ -90,33 +90,60 @@ async function checkDataApi() {
   }
 }
 
-// 3. Pooler TCP 接続テスト
+// 3. Pooler TCP 接続テスト (Transaction mode port 6543)
 async function checkPoolerTcp() {
-  // Supabase pooler のホストを推測（DATABASE_URI から抽出可能だが簡易版）
   const poolerHost = `aws-0-ap-southeast-1.pooler.supabase.com`
-  const poolerPort = 6543
+  const poolerPortTx = 6543 // Transaction mode (recommended)
+  const poolerPortSession = 5432 // Session mode (deprecated for serverless)
+  const results = {}
   try {
     await new Promise((resolve, reject) => {
       const net = require("net")
-      const socket = net.createConnection({ host: poolerHost, port: poolerPort }, () => {
-        console.log(`  ✓ Pooler TCP: ${poolerHost}:${poolerPort} OK`)
+      const socket = net.createConnection({ host: poolerHost, port: poolerPortTx }, () => {
+        console.log(`  ✓ Pooler TCP (Transaction/port ${poolerPortTx}): ${poolerHost}:${poolerPortTx} OK`)
         socket.destroy()
         resolve()
       })
       socket.on("error", (e) => {
-        console.error(`  ❌ Pooler TCP FAIL: ${e.message}`)
+        console.warn(`  ⚠ Pooler TCP (Transaction/port ${poolerPortTx}): ${e.message}`)
         socket.destroy()
-        reject(e)
+        resolve() // Don't reject — session port may work
       })
       setTimeout(() => {
         socket.destroy()
-        reject(new Error("timeout"))
+        console.warn(`  ⚠ Pooler TCP (Transaction/port ${poolerPortTx}): timeout`)
+        resolve()
       }, 5000)
     })
-    return { ok: true }
+    results.tx = { ok: true, port: poolerPortTx }
   } catch (e) {
-    return { ok: false, reason: e.message }
+    results.tx = { ok: false, reason: e.message }
   }
+
+  try {
+    await new Promise((resolve, reject) => {
+      const net = require("net")
+      const socket = net.createConnection({ host: poolerHost, port: poolerPortSession }, () => {
+        console.log(`  ⚠ Pooler TCP (Session/port ${poolerPortSession}): reachable — recommend switching to port ${poolerPortTx}`)
+        socket.destroy()
+        resolve()
+      })
+      socket.on("error", (e) => {
+        console.log(`  - Pooler TCP (Session/port ${poolerPortSession}): ${e.message}`)
+        socket.destroy()
+        resolve()
+      })
+      setTimeout(() => {
+        socket.destroy()
+        resolve()
+      }, 5000)
+    })
+    results.session = { ok: true, port: poolerPortSession }
+  } catch (e) {
+    results.session = { ok: false, reason: e.message }
+  }
+
+  return results
 }
 
 // 4. SQL migration 実行
@@ -266,6 +293,20 @@ async function main() {
   let ok = 0
   let fail = 0
   for (const [name, result] of checks) {
+    if (name === "pooler" && result && typeof result === "object") {
+      const poolerResult = result
+      if (poolerResult.tx?.ok) {
+        ok++
+        console.log(`  ✓ pooler-tx (port 6543 Transaction mode)`)
+      } else {
+        fail++
+        console.log(`  ❌ pooler-tx: ${poolerResult.tx?.reason || "unreachable"}`)
+      }
+      if (poolerResult.session?.ok) {
+        console.log(`  ⚠ pooler-session (port 5432): reachable but NOT recommended for serverless`)
+      }
+      continue
+    }
     if (result && result.ok) {
       ok++
     } else {
@@ -289,6 +330,16 @@ async function main() {
     if (results.hasServiceRole === false) {
       console.log("  3. Coolify で SUPABASE_SERVICE_ROLE_KEY を確認")
       console.log(`      ${COOLIFY_API}/applications/${APP_UUID}`)
+    }
+    if (results.pooler && typeof results.pooler === "object") {
+      if (results.pooler.session?.ok && !results.pooler.tx?.ok) {
+        console.log("  4. Transaction mode pooler (port 6543) is unreachable")
+        console.log("      Supabase Dashboard → Settings → Database → enable Connection Pooling port 6543")
+      }
+      if (results.pooler.session?.ok) {
+        console.log("  5. DATABASE_URI is using Session mode (port 5432) — switch to port 6543")
+        console.log("      Coolify env DATABASE_URI: change port 5432 → 6543")
+      }
     }
   }
 

@@ -207,28 +207,40 @@ export default buildConfig({
     outputFile: path.resolve(dirname, "src/payload-types.ts"),
   },
   db: postgresAdapter({
-    pool: {
-      connectionString: (() => {
-        const uri = resolveDatabaseUriOrThrow()
-        if (!uri) {
-          console.error("[payload] DATABASE_URI could not be resolved from environment — PayloadCMS will fail to start")
-        } else {
-          const masked = uri.replace(/:([^:@]+)@/, ":****@")
-          console.log(`[payload] using database: ${masked}`)
-        }
-        return uri
-      })(),
-      ssl: shouldUseSsl(resolveDatabaseUriOrThrow()),
-      max: 8,
-      idleTimeoutMillis: 60000,
-      connectionTimeoutMillis: 30000,
-    },
+    pool: (() => {
+      const uri = resolveDatabaseUriOrThrow()
+      if (!uri) {
+        console.error("[payload] DATABASE_URI could not be resolved from environment — PayloadCMS will fail to start")
+      }
+      const masked = uri ? uri.replace(/:([^:@]+)@/, ":****@") : "(empty)"
+      const isPooler = uri.includes("pooler.supabase.com")
+      const isTransactionMode = uri.includes(":6543")
+      console.log(`[payload] database: ${masked} | pooler=${isPooler} | mode=${isTransactionMode ? "transaction" : "session/direct"}`)
+
+      const poolConfig: Record<string, unknown> = {
+        connectionString: uri,
+        max: 4,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 15000,
+        application_name: "paradigm_payload",
+      }
+
+      // SSL: pooler requires SSL; use rejectUnauthorized:false for pooler (hostname mismatch possible)
+      if (isPooler) {
+        poolConfig.ssl = { rejectUnauthorized: false }
+      } else {
+        poolConfig.ssl = shouldUseSsl(uri)
+      }
+
+      // Transaction mode PgBouncer: set search_path via options (session SET doesn't persist across transactions)
+      if (isTransactionMode) {
+        poolConfig.options = "-c search_path=paradigm -c idle_in_transaction_session_timeout=30000 -c statement_timeout=30000"
+      }
+
+      return poolConfig
+    })(),
     // 2026-05-20: 専用 schema "paradigm" に分離。旧 "payload" は別アプリ
-    // (articles/guides/tools/homepage 等・owner=postgres) に占有され、paradigm の
-    // posts/services/pricing/works/faqs/pages が作成できず動的コンテンツ未配信 +
-    // build 時 EMAXCONNSESSION の根本原因だった。"paradigm" スキーマ
-    // (owner=payload_user・migration_005 で作成済) に切替え push でテーブル生成。
-    // 問題時は "payload" に 1 行 revert 可。
+    // 2026-06-16: Pooler Transaction mode (port 6543) + pool hardening + search_path via options
     schemaName: "paradigm",
     push: true,
   }),

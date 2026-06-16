@@ -13,6 +13,8 @@ import {
 } from "@/lib/sales/oss-service-health"
 import { getBrowserSearchBackendStatus } from "@/lib/sales/sources/browser-search"
 import { getSalesSupabaseConfig, getServiceSalesSupabase } from "@/lib/supabase"
+import { checkPoolHealth, getPoolConfigSummary } from "@/lib/db/pool-monitor"
+import { getPayloadPoolMetrics, getConsecutiveFailures } from "@/lib/payload-availability"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -165,6 +167,26 @@ function checkEnvSummary(): ServiceCheck {
   return { name: "Environment", status: "ok", detail: "required and optional envs configured" }
 }
 
+async function checkPayloadPool(): Promise<ServiceCheck> {
+  try {
+    const poolHealth = await checkPoolHealth()
+    const summary = getPoolConfigSummary()
+    const metrics = getPayloadPoolMetrics()
+
+    const poolDetail = `${summary.host}:${summary.port} | ${poolHealth.poolerMode} | max=${summary.poolMax} | failures=${metrics.consecutiveFailures}`
+
+    if (poolHealth.status === "unavailable") {
+      return { name: "PayloadCMS DB Pool", status: "error", detail: poolDetail + " | " + poolHealth.warnings.join("; "), url: summary.uri as string }
+    }
+    if (poolHealth.status === "degraded") {
+      return { name: "PayloadCMS DB Pool", status: "ok", detail: poolDetail + " (degraded: " + poolHealth.warnings.join("; ") + ")", url: summary.uri as string }
+    }
+    return { name: "PayloadCMS DB Pool", status: "ok", detail: poolDetail, url: summary.uri as string }
+  } catch (error) {
+    return { name: "PayloadCMS DB Pool", status: "error", detail: error instanceof Error ? error.message : String(error) }
+  }
+}
+
 async function guardHealth(name: string, url: string | null, fn: () => Promise<ServiceHealthResult>): Promise<ServiceCheck> {
   try {
     return serviceHealthToCheck(name, await fn(), url)
@@ -183,6 +205,7 @@ export async function GET(req: NextRequest) {
     checkOutreachEnvSummary(),
     ...(await Promise.all([
       checkSupabase(),
+      checkPayloadPool(),
       checkBrowserSearch(),
       checkDify(),
       checkTriggerDev(),

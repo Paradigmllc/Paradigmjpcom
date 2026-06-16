@@ -22,6 +22,10 @@ function getPool(): Pool | null {
     max: 2,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
+    application_name: "fix_schema_pooler",
+  })
+  pool.on("error", (err) => {
+    console.error("[sales/fix-schema] pooler pool error:", err.message)
   })
   return pool
 }
@@ -38,14 +42,18 @@ function getDirectPool(): Pool | null {
       port: 5432,
       database: "postgres",
       user: u.username,
-      password: u.password,
+      password: u.password || "",
       ssl: { rejectUnauthorized: false },
-      family: 4, // Force IPv4 — IPv6 may not be available
+      family: 4,
       max: 1,
       idleTimeoutMillis: 10000,
       connectionTimeoutMillis: 10000,
+      application_name: "fix_schema_direct",
     }
     directPool = new Pool(config)
+    directPool.on("error", (err) => {
+      console.error("[sales/fix-schema] direct pool error:", err.message)
+    })
     return directPool
   } catch (error) {
     console.error("[sales/fix-schema] direct pool initialization failed:", error)
