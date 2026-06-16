@@ -1,14 +1,19 @@
-const DEFAULT_COOLDOWN_MS = 30_000
+const INITIAL_COOLDOWN_MS = 5_000
+const MAX_COOLDOWN_MS = 60_000
 
 let lastFailureAt = 0
 let lastFailureMessage = ""
 let consecutiveFailures = 0
 
 function cooldownMs(): number {
-  const raw = process.env.PAYLOAD_INIT_FAILURE_COOLDOWN_MS
-  if (!raw) return DEFAULT_COOLDOWN_MS
-  const parsed = Number(raw)
-  return Number.isFinite(parsed) && parsed >= 5_000 ? parsed : DEFAULT_COOLDOWN_MS
+  const override = process.env.PAYLOAD_INIT_FAILURE_COOLDOWN_MS
+  if (override) {
+    const parsed = Number(override)
+    if (Number.isFinite(parsed) && parsed >= 1_000) return parsed
+  }
+  // Exponential backoff: 5s → 10s → 20s → 40s → 60s cap
+  const backoff = Math.min(INITIAL_COOLDOWN_MS * Math.pow(2, Math.min(consecutiveFailures, 4)), MAX_COOLDOWN_MS)
+  return backoff
 }
 
 export function payloadInitCooldownRemainingMs(): number {
@@ -54,21 +59,20 @@ export function getConsecutiveFailures(): number {
 
 /**
  * Execute fn with automatic retry before marking failure.
- * Retries up to 2 times with 500ms/1000ms backoff before entering cooldown.
+ * Retries up to 5 times with exponential backoff (500ms → 1s → 2s → 4s → 8s).
  */
 export async function withPayloadRetry<T>(fn: () => Promise<T>): Promise<T> {
   let lastError: unknown
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 5; attempt++) {
     try {
       const result = await fn()
-      // Success clears the cooldown
       if (attempt > 0) resetPayloadCooldown()
       return result
     } catch (e) {
       lastError = e
-      if (attempt < 2) {
-        const delay = 500 * (attempt + 1)
-        await new Promise(r => setTimeout(r, delay))
+      if (attempt < 4) {
+        const delay = 500 * Math.pow(2, attempt)
+        await new Promise((r) => setTimeout(r, delay))
       }
     }
   }

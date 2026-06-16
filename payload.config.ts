@@ -159,12 +159,15 @@ export default buildConfig({
     pool: {
       connectionString: (() => {
         const uri = resolveDatabaseUriOrThrow()
-        if (!uri) console.error("[payload] DATABASE_URI could not be resolved from environment")
+        if (!uri) {
+          console.error("[payload] DATABASE_URI could not be resolved from environment — PayloadCMS will fail to start")
+        } else {
+          const masked = uri.replace(/:([^:@]+)@/, ":****@")
+          console.log(`[payload] using database: ${masked}`)
+        }
         return uri
       })(),
       ssl: shouldUseSsl(resolveDatabaseUriOrThrow()),
-      // 2026-06-14: 接続プール調整。
-      // Supavisor pooler / ローカル postgres 共通で過剰なコネクションを防ぐ。
       max: 8,
       idleTimeoutMillis: 60000,
       connectionTimeoutMillis: 30000,
