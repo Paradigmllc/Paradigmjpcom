@@ -136,7 +136,10 @@ async function createRun(countryCode: string, technology: string | null, limit: 
 async function updateRun(runId: string | null, patch: Record<string, unknown>): Promise<void> {
   if (!runId) return
   const { error } = await getSb().from(DB_TABLES.SALES_PASSIVE_INVENTORY_RUNS).update({ ...patch, heartbeat_at: nowIso() }).eq("id", runId)
-  if (error) console.error("[passive-inventory] run update failed:", error.message)
+  if (error) {
+    console.error("[passive-inventory] run update failed:", error.message)
+    throw new Error(`run update failed: ${error.message}`)
+  }
 }
 
 async function fetchArchiveEvidence(domain: string, countryCode: string) {

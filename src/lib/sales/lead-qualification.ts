@@ -41,7 +41,7 @@ async function refreshLeadBatchCounters(sb: ServiceSupabase, batchId: string): P
   const rejected = count("rejected") + count("error")
   const nextStatus: LeadBatchStatus = outreachReady > 0 || manualReview > 0 ? "outreach_ready" : "completed"
 
-  await sb
+  const { error: updateErr } = await sb
     .from(DB_TABLES.SALES_LEAD_BATCHES)
     .update({
       status: nextStatus,
@@ -56,6 +56,7 @@ async function refreshLeadBatchCounters(sb: ServiceSupabase, batchId: string): P
       completed_at: nextStatus === "completed" ? new Date().toISOString() : null,
     })
     .eq("id", batchId)
+  if (updateErr) console.error("[sales-lead-qualification] batch counters update failed:", updateErr.message)
 }
 
 function qualityForCompany(company: SalesCompany, minScore: number): {
@@ -154,7 +155,7 @@ export async function qualifyLeadBatch(batchId: string, limit = 500): Promise<{
     const result = qualityForCompany(companyRes.data as SalesCompany, batch.min_outreach_score)
     const finalStatus = result.status === "outreach_ready" && readySlots <= 0 ? "manual_review" : result.status
     if (finalStatus === "outreach_ready") readySlots--
-    await sb
+    const itemUpdate = await sb
       .from(DB_TABLES.SALES_LEAD_BATCH_ITEMS)
       .update({
         status: finalStatus,
@@ -165,6 +166,10 @@ export async function qualifyLeadBatch(batchId: string, limit = 500): Promise<{
         quality_gate: result.gate,
       })
       .eq("id", item.id)
+    if (itemUpdate.error) {
+      console.error("[sales-lead-qualification] item update failed:", item.id, itemUpdate.error.message)
+      continue
+    }
     processed++
     if (finalStatus === "outreach_ready") outreachReady++
     else if (finalStatus === "manual_review") manualReview++

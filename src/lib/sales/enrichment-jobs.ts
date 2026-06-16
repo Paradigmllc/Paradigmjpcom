@@ -148,13 +148,13 @@ export async function enqueueCompanyEnrichment(
   return { ok: false, error: error.message }
 }
 
-export async function triggerEnrichmentRunner(limit = 3): Promise<{ ok: boolean; error?: string }> {
+export async function triggerEnrichmentRunner(limit = 3): Promise<{ ok: boolean; dispatched: boolean; error?: string }> {
   const endpoint = enrichmentTriggerEndpoint()
   const secret = triggerSecretKey()
 
   if (!endpoint || !secret) {
     console.warn("[sales-enrichment] Trigger.dev not configured — enrichment worker polling will pick up queued jobs")
-    return { ok: true }
+    return { ok: true, dispatched: false }
   }
 
   try {
@@ -178,13 +178,13 @@ export async function triggerEnrichmentRunner(limit = 3): Promise<{ ok: boolean;
     if (!res.ok) {
       const text = await res.text().catch((e: unknown) => `read body failed: ${String(e)}`)
       console.warn("[sales-enrichment] runner trigger degraded:", res.status, text.slice(0, 300), "— enrichment worker polling will pick up queued jobs")
-      return { ok: true }
+      return { ok: true, dispatched: false }
     }
-    return { ok: true }
+    return { ok: true, dispatched: true }
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)
     console.warn("[sales-enrichment] runner trigger unreachable:", message, "— enrichment worker polling will pick up queued jobs")
-    return { ok: true }
+    return { ok: true, dispatched: false }
   }
 }
 

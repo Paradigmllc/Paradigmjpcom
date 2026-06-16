@@ -176,7 +176,10 @@ export async function findCompanyBySlug(
     .eq("slug", slug)
     .eq("region", region)
     .maybeSingle()
-  if (error) console.error("[sales-companies] scoped slug fetch failed:", error.message)
+  if (error) {
+    console.error("[sales-companies] scoped slug fetch failed:", error.message)
+    return null
+  }
   if (data) return data as SalesCompany
 
   const fallback = await sb
@@ -186,7 +189,10 @@ export async function findCompanyBySlug(
     .order("updated_at", { ascending: false })
     .limit(1)
     .maybeSingle()
-  if (fallback.error) console.error("[sales-companies] fallback slug fetch failed:", fallback.error.message)
+  if (fallback.error) {
+    console.error("[sales-companies] fallback slug fetch failed:", fallback.error.message)
+    return null
+  }
   return (fallback.data as SalesCompany) ?? null
 }
 

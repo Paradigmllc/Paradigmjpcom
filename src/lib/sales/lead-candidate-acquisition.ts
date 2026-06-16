@@ -50,6 +50,10 @@ async function countRunItems(sb: ServiceSupabase, runId: string): Promise<number
     .from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS)
     .select("id", { count: "exact", head: true })
     .eq("run_id", runId)
+  if (res.error) {
+    console.error("[lead-candidate-acquisition] countRunItems failed:", res.error.message)
+    return 0
+  }
   return res.count ?? 0
 }
 

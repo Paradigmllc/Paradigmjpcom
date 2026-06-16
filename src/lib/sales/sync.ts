@@ -44,7 +44,8 @@ async function recordSyncLog(
 ): Promise<void> {
   const sb = getServiceSalesSupabase()
   if (!sb) return
-  await sb.from(DB_TABLES.SALES_SYNC_LOGS).insert(entry)
+  const { error } = await sb.from(DB_TABLES.SALES_SYNC_LOGS).insert(entry)
+  if (error) console.error("[sync] recordSyncLog insert failed:", error.message)
 }
 
 /* ───── Supabase → Notion ───── */

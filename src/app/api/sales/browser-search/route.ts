@@ -21,9 +21,17 @@ export async function POST(req: NextRequest) {
     }
 
     const { runBrowserBulkSearch } = await import("@/lib/sales/sources/search-orchestrator")
+    const countryCode = body.countryCode ?? body.country_code
+    if (!countryCode) {
+      return NextResponse.json({ ok: false, error: "country_code or countryCode is required" }, { status: 400 })
+    }
+    const techStacks = body.techStacks ?? body.tech_stacks
+    if (!techStacks || techStacks.length === 0) {
+      return NextResponse.json({ ok: false, error: "tech_stacks or techStacks is required" }, { status: 400 })
+    }
     const result = await runBrowserBulkSearch({
-      countryCode: body.countryCode ?? body.country_code ?? "IN",
-      techStacks: body.techStacks ?? body.tech_stacks ?? ["Shopify", "WordPress"],
+      countryCode,
+      techStacks,
       targetCount: body.targetCount ?? body.target_count ?? 500,
     })
 

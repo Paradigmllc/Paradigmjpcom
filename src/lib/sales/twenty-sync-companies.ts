@@ -305,8 +305,18 @@ export async function syncCompanyKarteToTwenty(
 
   try {
     const existing = await findTwentyCompany(karte)
-    const twentyCompany = existing?.id ? existing : await createTwentyCompany(karte)
-    if (!twentyCompany.id) throw new Error("Twenty company id missing")
+    let twentyCompany: TwentyRecord | null = existing?.id ? existing : null
+    if (!twentyCompany) {
+      try {
+        twentyCompany = await createTwentyCompany(karte)
+      } catch (createError) {
+        const reason = createError instanceof Error ? createError.message : String(createError)
+        if (!/409|conflict|duplicate|already exists/i.test(reason)) throw createError
+        console.warn("[twenty-sync] createTwentyCompany conflict, re-finding:", reason)
+        twentyCompany = await findTwentyCompany(karte)
+      }
+    }
+    if (!twentyCompany?.id) throw new Error("Twenty company id missing")
 
     await syncTwentyCompanyHomeFields(karte, twentyCompany.id)
     const opportunityIds = await syncTwentyOpportunities(sb, karte, twentyCompany.id)

@@ -240,9 +240,10 @@ export async function processJob(sb: ServiceSupabase, job: SalesEnrichmentJob): 
 
   // Phase 3: Report generation
   const phase3 = await processReportPhase(sb, job, currentCompany)
+  let reportPhaseFailed = false
   if (!phase3.ok) {
     console.error("[sales-enrichment] Report phase failed but enrichment+diagnosis data is saved:", phase3.error)
-    // Don't fail the whole job — enrichment and diagnosis are already committed
+    reportPhaseFailed = true
   }
 
   // Phase 4: Asset generation (conditional, errors are non-fatal)
@@ -258,7 +259,7 @@ export async function processJob(sb: ServiceSupabase, job: SalesEnrichmentJob): 
     coverageScore: phase3.coverageScore,
   }, completeJob)
 
-  return { ok: phase5.ok, error: phase5.error }
+  return { ok: phase5.ok && !reportPhaseFailed, error: reportPhaseFailed ? (phase3.error ?? "report phase failed") : phase5.error }
 }
 
 export async function runEnrichmentJobs(limit = 3): Promise<EnrichmentRunResult> {

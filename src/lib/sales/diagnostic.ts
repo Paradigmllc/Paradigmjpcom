@@ -205,6 +205,10 @@ export async function fetchDiagnosticReport(opts: {
 export async function markReportGenerated(companyId: string): Promise<void> {
   const { getServiceSalesSupabase } = await import("@/lib/supabase")
   const sb = getServiceSalesSupabase()
-  if (!sb) return
-  await sb.from(DB_TABLES.SALES_COMPANIES).update({ report_generated_at: new Date().toISOString() }).eq("id", companyId)
+  if (!sb) {
+    console.error("[diagnostic] markReportGenerated: Supabase not available for company", companyId)
+    return
+  }
+  const { error } = await sb.from(DB_TABLES.SALES_COMPANIES).update({ report_generated_at: new Date().toISOString() }).eq("id", companyId)
+  if (error) console.error("[diagnostic] markReportGenerated update failed:", error.message)
 }

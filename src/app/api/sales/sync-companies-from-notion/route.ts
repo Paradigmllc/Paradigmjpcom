@@ -44,6 +44,19 @@ export const maxDuration = 60
 const DB_JP = process.env.NOTION_COMPANIES_DB_ID ?? "8cbab1f501144f83872c1738ce3e79c4"
 const DB_GLOBAL = process.env.NOTION_COMPANIES_DB_VIEW_ID ?? "35fa2b78-f3fc-8107-aa0b-f28694e1009c"
 
+function resolveCompanyNotionDbId(region: Region): string {
+  if (region === "jp") {
+    const envId = process.env.NOTION_DB_COMPANIES_JP
+    if (envId) return envId
+    console.warn("[sync-companies-from-notion] NOTION_DB_COMPANIES_JP not set, using hardcoded fallback DB ID")
+    return DB_JP
+  }
+  const envId = process.env.NOTION_DB_COMPANIES_GLOBAL
+  if (envId) return envId
+  console.warn("[sync-companies-from-notion] NOTION_DB_COMPANIES_GLOBAL not set, using hardcoded fallback DB ID")
+  return DB_GLOBAL
+}
+
 export async function POST(req: NextRequest) {
   if (!isNotionLegacySyncEnabled()) return notionLegacyDisabledResponse()
 
@@ -55,10 +68,7 @@ export async function POST(req: NextRequest) {
     return {}
   })) as { region?: string }
   const region: Region = isValidRegion(body.region ?? "") ? (body.region as Region) : "jp"
-  const dbId =
-    region === "jp"
-      ? process.env.NOTION_DB_COMPANIES_JP ?? DB_JP
-      : process.env.NOTION_DB_COMPANIES_GLOBAL ?? DB_GLOBAL
+  const dbId = resolveCompanyNotionDbId(region)
 
   const sb = getServiceSalesSupabase()
   if (!sb) return NextResponse.json({ ok: false, error: "Supabase not configured" }, { status: 500 })
