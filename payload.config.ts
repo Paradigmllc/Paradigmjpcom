@@ -1,6 +1,6 @@
 import { buildConfig } from "payload"
 import { postgresAdapter } from "@payloadcms/db-postgres"
-import { resolveDatabaseUriOrThrow, shouldUseSsl } from "./src/lib/resolve-database-uri"
+import { resolveDatabaseUriOrThrow, shouldUseSsl, checkDatabaseReachable, logDbConnectionInfo } from "./src/lib/resolve-database-uri"
 import {
   lexicalEditor,
   FixedToolbarFeature,

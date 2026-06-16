@@ -22,6 +22,12 @@ export function resolveDatabaseUri(): string {
   const explicit = process.env.DATABASE_URI
   if (explicit && explicit.trim()) return explicit.trim()
 
+  const fallback = process.env.DATABASE_URI_FALLBACK
+  if (fallback && fallback.trim()) {
+    console.warn("[resolve-database-uri] DATABASE_URI not set, using DATABASE_URI_FALLBACK")
+    return fallback.trim()
+  }
+
   const dbUrl = process.env.DATABASE_URL
   if (dbUrl && dbUrl.trim()) return dbUrl.trim()
 
@@ -79,10 +85,43 @@ export function logDbConnectionInfo(): void {
 }
 
 export function shouldUseSsl(uri: string): boolean {
+  // If URI explicitly sets sslmode, defer to it (no code-level override)
+  if (uri.includes("sslmode=disable")) return false
+  if (uri.includes("sslmode=no-verify") || uri.includes("sslmode=require") || uri.includes("sslmode=verify-full")) return true
   if (uri.includes("pooler.supabase.com")) return true
   if (uri.includes("supabase.com")) return true
   if (uri.includes("localhost") || uri.includes("127.0.0.1") || uri.includes("db:") || uri.includes("-db:")) {
     return false
   }
+  // Direct IP connections (e.g. 139.59.250.5:5433) — no SSL by default
   return false
+}
+
+/**
+ * Check if the database is reachable via a quick TCP connection.
+ * Returns true if the target host:port accepts TCP connections.
+ */
+export async function checkDatabaseReachable(uri: string): Promise<boolean> {
+  try {
+    const u = new URL(uri)
+    const host = u.hostname
+    const port = parseInt(u.port || "5432", 10)
+    const net = await import("node:net")
+    return new Promise((resolve) => {
+      const socket = net.createConnection({ host, port, timeout: 5000 }, () => {
+        socket.destroy()
+        resolve(true)
+      })
+      socket.on("error", () => {
+        socket.destroy()
+        resolve(false)
+      })
+      socket.on("timeout", () => {
+        socket.destroy()
+        resolve(false)
+      })
+    })
+  } catch {
+    return false
+  }
 }
