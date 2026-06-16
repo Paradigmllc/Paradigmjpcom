@@ -4,6 +4,7 @@ import type { SalesEnrichmentJob } from "@/lib/sales/enrichment-jobs"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+export const maxDuration = 300
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
         limit = Math.max(1, Math.min(5, Math.round(body.limit)))
       }
     } catch (error) {
-      console.warn("[enrichment-run] request body parse failed; using default limit:", error)
+      console.error("[enrichment-run] request body parse failed; using default limit:", error)
     }
 
     // Fire in background — enrichment is heavy (31 sources per company)

@@ -27,7 +27,8 @@ async function queryCrtSh(domain: string): Promise<string[]> {
         (entry.name_value ?? "").split("\n").map(s => s.trim().toLowerCase()).filter(s => s.endsWith(`.${domain}`))
       )
     )]
-  } catch {
+  } catch (e) {
+    console.warn("[subfinder] exec failed:", e)
     return []
   }
 }
@@ -45,7 +46,8 @@ async function queryAlienVaultOtx(domain: string): Promise<string[]> {
         .map(d => d.hostname?.toLowerCase())
         .filter((s): s is string => !!s && s.endsWith(`.${domain}`))
     )]
-  } catch {
+  } catch (e) {
+    console.warn("[subfinder] exec failed:", e)
     return []
   }
 }

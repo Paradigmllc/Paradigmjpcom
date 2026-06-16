@@ -124,7 +124,8 @@ async function fetchJson(url: string, options: RequestInit = {}): Promise<unknow
   const { text } = await fetchBody(url, options)
   try {
     return JSON.parse(text) as unknown
-  } catch {
+  } catch (e) {
+    console.warn("[lead-discovery] parse error:", e)
     return { html: text }
   }
 }

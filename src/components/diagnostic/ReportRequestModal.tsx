@@ -81,12 +81,12 @@ export default function ReportRequestModal({
           <>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-lg font-bold text-zinc-900">{lang === "ja" ? "資料請求" : "Request Info"}</h3>
-              <button onClick={onClose} className="p-1 text-zinc-400 hover:text-zinc-600"><X className="h-5 w-5" /></button>
+              <button onClick={onClose} className="p-1 text-zinc-400 hover:text-zinc-600" aria-label="閉じる"><X className="h-5 w-5" /></button>
             </div>
             <div className="space-y-3">
-              <input value={form.company} onChange={e => setForm({...form, company: e.target.value})} placeholder={lang === "ja" ? "会社名" : "Company name"} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-violet-500" />
-              <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder={lang === "ja" ? "お名前" : "Your name"} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-violet-500" />
-              <input value={form.email} onChange={e => setForm({...form, email: e.target.value})} type="email" placeholder="Email" className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-violet-500" />
+              <input value={form.company} onChange={e => setForm({...form, company: e.target.value})} placeholder={lang === "ja" ? "会社名" : "Company name"} aria-label={lang === "ja" ? "会社名" : "Company name"} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-violet-500" />
+              <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder={lang === "ja" ? "お名前" : "Your name"} aria-label={lang === "ja" ? "お名前" : "Your name"} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-violet-500" />
+              <input value={form.email} onChange={e => setForm({...form, email: e.target.value})} type="email" placeholder="Email" aria-label="Email" className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-violet-500" />
               <div className="pt-2">
                 <p className="text-xs font-bold text-zinc-600 mb-2">{lang === "ja" ? "知りたいこと（複数選択可）" : "What would you like to know?"} <span className="text-rose-500">*</span></p>
                 {interestOptions.map(opt => (

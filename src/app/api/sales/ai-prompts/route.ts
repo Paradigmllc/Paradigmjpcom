@@ -4,7 +4,9 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DEFAULT_AI_PROMPT_IDS, getFallbackAiPromptRows, type SalesAiPrompt } from "@/lib/sales/ai-prompts"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 
+export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+export const maxDuration = 60
 export const revalidate = 0
 
 type PromptRow = {

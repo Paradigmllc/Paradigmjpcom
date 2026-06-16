@@ -76,30 +76,29 @@ export async function recoverStaleEnrichmentJobs(limit = 20): Promise<number> {
     })
     .slice(0, safeLimit)
 
-  let recovered = 0
   const recoveredAt = nowIso()
-  for (const job of staleJobs) {
-    const { error: updateError } = await sb
-      .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
-      .update({
-        status: "queued",
-        error_message: "auto-retry: stale running enrichment job recovered",
-        next_run_at: recoveredAt,
-        started_at: null,
-        locked_at: null,
-        lock_owner: null,
-      })
-      .eq("id", job.id)
-      .eq("status", "running")
+  if (staleJobs.length === 0) return 0
 
-    if (updateError) {
-      console.error("[sales-enrichment] stale running job recovery failed:", updateError.message)
-    } else {
-      recovered += 1
-    }
+  const ids = staleJobs.map(j => j.id)
+  const { error: updateError } = await sb
+    .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
+    .update({
+      status: "queued",
+      error_message: "auto-retry: stale running enrichment job recovered",
+      next_run_at: recoveredAt,
+      started_at: null,
+      locked_at: null,
+      lock_owner: null,
+    })
+    .in("id", ids)
+    .eq("status", "running")
+
+  if (updateError) {
+    console.error("[sales-enrichment] stale running job recovery failed:", updateError.message)
+    return 0
   }
 
-  return recovered
+  return staleJobs.length
 }
 
 async function markJobFailure(

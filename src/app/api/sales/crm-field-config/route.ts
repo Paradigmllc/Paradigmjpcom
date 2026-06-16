@@ -6,6 +6,7 @@ import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+export const maxDuration = 60
 
 const FieldSchema = z.object({
   fieldKey: z.string().min(1).max(80),

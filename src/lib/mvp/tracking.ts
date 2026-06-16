@@ -39,7 +39,7 @@ export function parseTrackToken(token: string): TrackPayload | null {
   const bodyB64 = token.slice(0, dotIdx);
   const sig = token.slice(dotIdx + 1);
   let body: string;
-  try { body = Buffer.from(bodyB64, "base64url").toString("utf-8"); } catch { return null; }
+  try { body = Buffer.from(bodyB64, "base64url").toString("utf-8"); } catch (e) { console.warn("[tracking] decode failed:", e); return null; }
   const expectedSig = createHmac("sha256", SECRET).update(body).digest("base64url").slice(0, 32);
   if (sig !== expectedSig) return null;
   const [run_id, lead_id, kind, expStr, destination] = body.split("|");

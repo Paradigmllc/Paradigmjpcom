@@ -65,41 +65,41 @@ export async function computeKpiForDate(dateIso?: string): Promise<KpiSnapshot> 
     }
   }
 
-  // new_leads: その日作成された companies
-  const new_leads = await countIn("sales_companies", "created_at", start, end)
-  // outreach_sent: その日の form_outreach 活動 (activity_log)
-  const { data: acts } = await sb
-    .from(DB_TABLES.SALES_ACTIVITY_LOG)
-    .select("meta, result")
-    .gte("occurred_at", start)
-    .lte("occurred_at", end)
-    .limit(5000)
+  const [
+    new_leads,
+    { data: acts },
+    meetings_booked,
+    proposals_sent,
+    { data: deals },
+    { data: contracts },
+  ] = await Promise.all([
+    countIn("sales_companies", "created_at", start, end),
+    sb.from(DB_TABLES.SALES_ACTIVITY_LOG)
+      .select("meta, result")
+      .gte("occurred_at", start)
+      .lte("occurred_at", end)
+      .limit(5000),
+    countIn("sales_calendar_events", "start_at", start, end),
+    countIn("sales_companies", "sent_at", start, end),
+    sb.from(DB_TABLES.SALES_COMPANIES)
+      .select("deal_stage")
+      .gte("updated_at", start)
+      .lte("updated_at", end)
+      .in("deal_stage", ["成約", "失注"])
+      .limit(5000),
+    sb.from(DB_TABLES.SALES_CONTRACTS)
+      .select("amount_yen")
+      .gte("signed_at", start)
+      .lte("signed_at", end)
+      .limit(5000),
+  ])
   const outreachActs = (acts ?? []).filter(
     (a) => (a.meta as Record<string, unknown> | null)?.kind === "form_outreach",
   )
   const outreach_sent = outreachActs.filter((a) => a.result === "success").length
   const replies_received = outreachActs.filter((a) => a.result === "completed").length
-  // meetings_booked: その日 start の calendar events
-  const meetings_booked = await countIn("sales_calendar_events", "start_at", start, end)
-  // proposals_sent: その日 sent_at が入った companies
-  const proposals_sent = await countIn("sales_companies", "sent_at", start, end)
-  // deals_closed / lost: その日更新で deal_stage 成約/失注
-  const { data: deals } = await sb
-    .from(DB_TABLES.SALES_COMPANIES)
-    .select("deal_stage")
-    .gte("updated_at", start)
-    .lte("updated_at", end)
-    .in("deal_stage", ["成約", "失注"])
-    .limit(5000)
   const deals_closed = (deals ?? []).filter((d) => d.deal_stage === "成約").length
   const deals_lost = (deals ?? []).filter((d) => d.deal_stage === "失注").length
-  // revenue: その日 signed の契約合計 (amount_yen)
-  const { data: contracts } = await sb
-    .from(DB_TABLES.SALES_CONTRACTS)
-    .select("amount_yen")
-    .gte("signed_at", start)
-    .lte("signed_at", end)
-    .limit(5000)
   const revenue = (contracts ?? []).reduce(
     (sum, c) => sum + Number(c.amount_yen ?? 0),
     0,
@@ -126,6 +126,9 @@ export async function snapshotKpi(
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
   const snapshot = await computeKpiForDate(dateIso)
 
+  // TOCTOU race: concurrent snapshotKpi calls for the same date can produce
+  // duplicate rows since sales_kpi.date has no UNIQUE constraint.
+  // Consider adding UNIQUE on "date" then switching to .upsert() with onConflict: "date".
   const { data: existing } = await sb
     .from(DB_TABLES.SALES_KPI)
     .select("id")

@@ -5,6 +5,10 @@ import { isValidPipelineStatus, PIPELINE_STATUSES } from "@/lib/sales/types";
 import { syncCompanyKarteToTwenty } from "@/lib/sales/twenty-sync";
 import { DB_TABLES } from "@/lib/sales/db-tables"
 
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+export const maxDuration = 60
+
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ companyId: string }> }

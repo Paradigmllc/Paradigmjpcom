@@ -4,7 +4,9 @@ const R2_PUBLIC_BASE = "https://pub-ac30eb86a32747f1a27e304aa9c6f95a.r2.dev"
 
 interface Props { params: Promise<{ slug: string }> }
 
+export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+export const maxDuration = 60
 
 export async function GET(_request: NextRequest, { params }: Props) {
   const { slug } = await params

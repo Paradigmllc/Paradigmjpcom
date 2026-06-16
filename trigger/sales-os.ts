@@ -191,6 +191,7 @@ export const postOutreachRouterTask = task({
   description: "Accept post-outreach events from Chatwoot or LiveKit.",
   queue: { name: "post-outreach", concurrencyLimit: 2 },
   maxDuration: 300,
+  retry: { maxAttempts: 2 },
   run: handlePostOutreach,
 })
 
@@ -199,6 +200,7 @@ export const chatwootReplyRouterTask = task({
   description: "Accept Chatwoot replies after outbound outreach.",
   queue: { name: "post-outreach", concurrencyLimit: 2 },
   maxDuration: 300,
+  retry: { maxAttempts: 2 },
   run: async (payload: unknown) => {
     if (isHealthCheckPayload(payload)) return healthCheckResult("chatwoot-reply-router")
     return handlePostOutreach({ ...recordPayload(payload), source: "chatwoot" })
@@ -210,6 +212,7 @@ export const livekitDiscoveryRouterTask = task({
   description: "Accept LiveKit discovery-call events after outreach.",
   queue: { name: "post-outreach", concurrencyLimit: 2 },
   maxDuration: 300,
+  retry: { maxAttempts: 2 },
   run: async (payload: unknown) => {
     if (isHealthCheckPayload(payload)) return healthCheckResult("livekit-discovery-router")
     return handlePostOutreach({ ...recordPayload(payload), source: "livekit" })
@@ -222,7 +225,7 @@ export const salesVideoPipelineTask = task({
   queue: { name: "sales-video-pipeline", concurrencyLimit: 2 },
   maxDuration: 600,
   retry: {
-    maxAttempts: 1,
+    maxAttempts: 3,
   },
   run: async (payload: unknown) => {
     if (isHealthCheckPayload(payload)) return healthCheckResult("sales-video-pipeline")

@@ -15,6 +15,7 @@ import { generateDiagnosticVideo } from "@/lib/sales/video-generator"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+export const maxDuration = 300
 
 export async function POST(req: NextRequest) {
   const authErr = verifyWebhookSecret(req)

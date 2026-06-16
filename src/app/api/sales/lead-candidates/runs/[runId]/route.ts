@@ -6,6 +6,7 @@ import { startLeadCandidateRunFallback } from "@/lib/sales/lead-candidate-runner
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+export const maxDuration = 60
 
 const ITEM_STATUSES = ["discovered", "verified", "scored", "promoted", "failed", "skipped"] as const
 const STALE_RUN_MS = 5 * 60_000

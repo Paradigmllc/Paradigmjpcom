@@ -5,6 +5,7 @@ import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+export const maxDuration = 300
 
 export async function GET(req: NextRequest) {
   if (!(await isSalesApiAuthorized(req))) {

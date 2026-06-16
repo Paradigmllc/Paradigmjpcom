@@ -237,6 +237,8 @@ async function saveFormMessageToCompany(companyId: string, message: string, engi
   try {
     const sb = getServiceSalesSupabase()
     if (!sb) return false
+    // TOCTOU race: concurrent form submissions may lose history entries since
+    // this reads meta, spreads it, then writes back. form_message_history is best-effort.
     const { data: current } = await sb.from(DB_TABLES.SALES_COMPANIES).select("meta").eq("id", companyId).single()
     const prevMeta = (current?.meta as Record<string, unknown>) ?? {}
     const history = Array.isArray(prevMeta.form_message_history) ? prevMeta.form_message_history as Array<unknown> : []

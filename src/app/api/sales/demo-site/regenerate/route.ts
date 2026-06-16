@@ -6,6 +6,8 @@ import { generateReplacementDemo } from "@/lib/sales/demo-generator"
 import type { SalesCompany } from "@/lib/sales/types"
 
 export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+export const maxDuration = 120
 
 function readString(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null

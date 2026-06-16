@@ -15,6 +15,7 @@ import { generateFormMessage } from "@/lib/sales/form-message"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+export const maxDuration = 120
 
 export async function POST(req: NextRequest) {
   const authErr = verifyWebhookSecret(req)

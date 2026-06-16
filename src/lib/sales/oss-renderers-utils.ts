@@ -67,7 +67,7 @@ export function checkCommand(cmd: string): boolean {
     execSync(`${cmd} --version 2>&1`, { stdio: "pipe", timeout: 10_000 })
     return true
   } catch (e) {
-    console.warn("[oss-renderers] checkCommand failed:", e)
+    console.error("[oss-renderers] checkCommand failed:", e)
     return false
   }
 }
@@ -77,7 +77,7 @@ export function checkNpmPackage(pkg: string): boolean {
     execSync(`node -e "require.resolve('${pkg}')" 2>&1`, { stdio: "pipe", timeout: 10_000 })
     return true
   } catch (e) {
-    console.warn("[oss-renderers] checkNpmPackage failed:", e)
+    console.error("[oss-renderers] checkNpmPackage failed:", e)
     return false
   }
 }
@@ -87,7 +87,7 @@ export function checkPythonPackage(pkg: string): boolean {
     execSync(`python -c "import ${pkg}" 2>&1`, { stdio: "pipe", timeout: 10_000 })
     return true
   } catch (e) {
-    console.warn("[oss-renderers] checkPythonPackage failed:", e)
+    console.error("[oss-renderers] checkPythonPackage failed:", e)
     return false
   }
 }
@@ -100,7 +100,7 @@ function getNpmPackageVersion(pkg: string): string | null {
     })
     return stdout.toString().trim()
   } catch (e) {
-    console.warn("[oss-renderers] getNpmPackageVersion failed:", e)
+    console.error("[oss-renderers] getNpmPackageVersion failed:", e)
     return null
   }
 }

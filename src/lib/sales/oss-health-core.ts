@@ -8,7 +8,7 @@ import type { ServiceHealthResult } from "./oss-service-health"
 export async function checkSpiderfootHealth(): Promise<ServiceHealthResult> {
   try {
     const result = await checkSpiderFootHealth()
-    return { balanceStatus: "ok", balanceLabel: "Connected", ok: result.ok, name: "SpiderFoot", detail: result.detail, url: process.env.SPIDERFOOT_API_URL || "http://127.0.0.1:5001" }
+    return { balanceStatus: "ok", balanceLabel: "Connected", ok: result.ok, name: "SpiderFoot", detail: result.detail, url: process.env.SPIDERFOOT_API_URL ?? "http://127.0.0.1:5001" }
   } catch (e) {
     console.error("[oss-service-health] SpiderFoot check failed:", e)
     return { balanceStatus: "error", balanceLabel: "Error", ok: false, name: "SpiderFoot", detail: String(e) }
@@ -38,7 +38,7 @@ export async function checkMaigretServiceHealth(): Promise<ServiceHealthResult> 
 export async function checkFlareSolverrServiceHealth(): Promise<ServiceHealthResult> {
   try {
     const result = await checkFlareSolverrHealth()
-    return { balanceStatus: "ok", balanceLabel: "Connected", ok: result.ok, name: "FlareSolverr", detail: result.detail, url: process.env.FLARESOLVERR_API_URL || "http://127.0.0.1:8191" }
+    return { balanceStatus: "ok", balanceLabel: "Connected", ok: result.ok, name: "FlareSolverr", detail: result.detail, url: process.env.FLARESOLVERR_API_URL ?? "http://127.0.0.1:8191" }
   } catch (e) {
     console.error("[oss-service-health] FlareSolverr check failed:", e)
     return { balanceStatus: "error", balanceLabel: "Error", ok: false, name: "FlareSolverr", detail: String(e) }

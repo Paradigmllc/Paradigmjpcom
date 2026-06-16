@@ -4,6 +4,7 @@ import { listContentTemplates, updateContentTemplate } from "@/lib/sales/content
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+export const maxDuration = 60
 
 export async function GET(req: NextRequest) {
   if (!(await isSalesApiAuthorized(req))) {

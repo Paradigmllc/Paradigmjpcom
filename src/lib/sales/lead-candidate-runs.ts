@@ -257,15 +257,20 @@ async function promoteCandidate(run: RunRow, candidate: CandidateRow, score: Can
 
 async function refreshRunCounts(runId: string): Promise<{ hasMore: boolean; failures: Array<{ key: string; reason: string }> }> {
   const sb = getSb()
-  const statuses = ["discovered", "scored", "promoted", "failed"] as const
+  const [discoveredRes, scoredRes, promotedRes, failedRes, matched, jobs, runRes] = await Promise.all([
+    sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("status", "discovered"),
+    sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("status", "scored"),
+    sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("status", "promoted"),
+    sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("status", "failed"),
+    sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("tech_matched", true),
+    sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("job_enqueued", true),
+    sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).select("verify_limit").eq("id", runId).single(),
+  ])
   const counts = new Map<string, number>()
-  for (const status of statuses) {
-    const res = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("status", status)
-    counts.set(status, res.count ?? 0)
-  }
-  const matched = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("tech_matched", true)
-  const jobs = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("job_enqueued", true)
-  const runRes = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUNS).select("verify_limit").eq("id", runId).single()
+  counts.set("discovered", discoveredRes.count ?? 0)
+  counts.set("scored", scoredRes.count ?? 0)
+  counts.set("promoted", promotedRes.count ?? 0)
+  counts.set("failed", failedRes.count ?? 0)
   if (runRes.error) throw new Error(runRes.error.message)
   const verified = (counts.get("scored") ?? 0) + (counts.get("promoted") ?? 0)
   const hasMore = (counts.get("discovered") ?? 0) > 0 && verified < Number(runRes.data.verify_limit ?? 0)

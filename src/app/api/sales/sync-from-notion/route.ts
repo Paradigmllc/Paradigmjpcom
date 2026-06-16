@@ -19,6 +19,7 @@ import { isNotionLegacySyncEnabled, notionLegacyDisabledResponse } from "@/lib/s
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+export const maxDuration = 60
 
 export async function POST(req: NextRequest) {
   if (!isNotionLegacySyncEnabled()) return notionLegacyDisabledResponse()

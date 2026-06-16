@@ -19,7 +19,7 @@ const PUBLIC_SEARXNG_INSTANCES = [
 let currentInstanceIndex = 0
 
 function getSearxngUrl(): string {
-  return process.env.SEARXNG_BASE_URL || process.env.SEARXNG_API_URL || PUBLIC_SEARXNG_INSTANCES[currentInstanceIndex]
+  return process.env.SEARXNG_BASE_URL ?? process.env.SEARXNG_API_URL ?? PUBLIC_SEARXNG_INSTANCES[currentInstanceIndex]
 }
 
 function rotateInstance(): void {

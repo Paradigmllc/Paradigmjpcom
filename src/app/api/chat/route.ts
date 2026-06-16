@@ -181,7 +181,7 @@ export async function POST(req: NextRequest) {
         }
       }
     } catch (e) {
-      console.warn("[chat] Dify unavailable, falling through to Gemini:", e)
+      console.error("[chat] Dify unavailable, falling through to Gemini:", e)
     }
   }
 

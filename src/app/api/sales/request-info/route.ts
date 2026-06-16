@@ -5,6 +5,7 @@ import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+export const maxDuration = 30
 
 interface RequestBody {
   company: string

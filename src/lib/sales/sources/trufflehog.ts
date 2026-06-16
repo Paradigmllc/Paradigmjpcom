@@ -73,8 +73,8 @@ export async function scanPublicRepos(domain: string): Promise<TruffleHogResult>
             })
           }
         }
-      } catch {
-        // Individual file fetch failure — skip
+      } catch (err) {
+        console.warn("[trufflehog] scan failed:", err)
       }
     }
 

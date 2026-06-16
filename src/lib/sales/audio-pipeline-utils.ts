@@ -154,7 +154,8 @@ export function checkCommand(cmd: string): boolean {
   try {
     execSync(`${cmd} --version 2>&1`, { stdio: "pipe", timeout: 10_000 })
     return true
-  } catch {
+  } catch (e) {
+    console.error("[audio-pipeline] execSync failed:", e)
     return false
   }
 }
@@ -163,7 +164,8 @@ export function checkPythonPackage(pkg: string): boolean {
   try {
     execSync(`python -c "import ${pkg}" 2>&1`, { stdio: "pipe", timeout: 10_000 })
     return true
-  } catch {
+  } catch (e) {
+    console.error("[audio-pipeline] execSync failed:", e)
     return false
   }
 }
@@ -175,7 +177,8 @@ export function getPythonPackageVersion(pkg: string): string | null {
       timeout: 10_000,
     })
     return stdout.toString().trim()
-  } catch {
+  } catch (e) {
+    console.error("[audio-pipeline] execSync failed:", e)
     return null
   }
 }

@@ -4,6 +4,7 @@ import { matchContentTemplate } from "@/lib/sales/content-templates"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+export const maxDuration = 60
 
 export async function POST(req: NextRequest) {
   if (!(await isSalesApiAuthorized(req))) {

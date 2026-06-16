@@ -28,8 +28,8 @@ async function getStagehand(): Promise<StagehandSdk | null> {
     const mod = await import("@browserbasehq/stagehand")
     _stagehandModule = mod
     return mod as unknown as StagehandSdk
-  } catch {
-    console.warn("[stagehand-enrich] @browserbasehq/stagehand not installed — using fallback")
+  } catch (e) {
+    console.warn("[stagehand-enrich] @browserbasehq/stagehand not installed — using fallback:", e)
     return null
   }
 }

@@ -4,6 +4,10 @@ import { triggerEnrichmentRunner } from "@/lib/sales/enrichment-jobs"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+export const maxDuration = 120
+
 export async function POST(req: NextRequest) {
   if (!(await isSalesApiAuthorized(req))) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })

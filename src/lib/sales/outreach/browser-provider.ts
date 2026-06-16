@@ -150,7 +150,8 @@ function isKnownUnavailableEndpoint(endpoint: string | null): boolean {
   try {
     const host = new URL(endpoint).host.toLowerCase()
     return host === "stagehand.paradigmjp.com"
-  } catch {
+  } catch (e) {
+    console.warn("[browser-provider] cleanup failed:", e)
     return false
   }
 }

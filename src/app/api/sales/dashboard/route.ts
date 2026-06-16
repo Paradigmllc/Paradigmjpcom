@@ -7,6 +7,7 @@ import { getSalesDashboardData } from "@/lib/sales/dashboard"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+export const maxDuration = 60
 
 async function isAuthorized(req: NextRequest): Promise<boolean> {
   const webhookAuth = authorizeWebhookRequest(req.headers)

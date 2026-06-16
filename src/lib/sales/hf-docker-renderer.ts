@@ -16,7 +16,7 @@ import { tmpdir } from "node:os"
 import type { DiagnosticReportData } from "./diagnostic"
 import { buildVariantVideoHtml } from "./video-templates"
 
-const HUGGINGFACE_IMAGE = process.env.HF_RENDERER_IMAGE || "paradigm-hf-renderer"
+const HUGGINGFACE_IMAGE = process.env.HF_RENDERER_IMAGE ?? "paradigm-hf-renderer"
 const HYPERFRAMES_TIMEOUT = 5 * 60_000 // 5 minutes per render
 
 interface HyperFramesRenderResult {

@@ -55,7 +55,7 @@ async function notifyPayloadUnavailable(message: string, count: number): Promise
       message: message.slice(0, 200),
       type: "payload_db_unavailable",
     })
-  } catch { /* notification failure is non-critical */ }
+  } catch (e) { console.warn("[payload-availability] notification failed:", e) }
 }
 
 /** Clear cooldown after successful connection — indicates recovery */

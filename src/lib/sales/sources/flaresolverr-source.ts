@@ -4,7 +4,7 @@
  * Docker: ghcr.io/flaresolverr/flaresolverr:latest (port 8191)
  */
 function flaresolverrEndpoint(): string {
-  const raw = process.env.FLARESOLVERR_URL || process.env.FLARESOLVERR_API_URL || "http://127.0.0.1:8191"
+  const raw = process.env.FLARESOLVERR_URL ?? process.env.FLARESOLVERR_API_URL ?? "http://127.0.0.1:8191"
   try {
     const url = new URL(raw)
     if (!/\/v1\/?$/.test(url.pathname)) {
