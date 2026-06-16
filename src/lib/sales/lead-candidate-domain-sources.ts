@@ -86,36 +86,66 @@ export async function fetchLeadCandidateDomains(countryCode: string, limit: numb
   const sourceStats: CandidateDomainSourceSummary[] = []
   const perPatternLimit = Math.max(20, Math.ceil(limit / Math.max(patterns.length, 1)))
 
+  const withRetry = async <T>(key: string, fn: () => Promise<T>, retries = 2): Promise<T> => {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try { return await fn() }
+      catch (e) {
+        if (attempt === retries) {
+          console.error(`[candidate-domains] ${key} failed after ${retries + 1} attempts:`, e instanceof Error ? e.message : String(e))
+          throw e
+        }
+        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)))
+      }
+    }
+    throw new Error("unreachable")
+  }
+
   if (!options?.skipPassiveInventory) {
-    const passive = await fetchPassiveInventoryDomains(countryCode, options?.technology ?? null, Math.min(limit, perPatternLimit))
-    sourceStats.push(...passive.sourceStats.map((stat) => ({ ...stat, source: stat.source === "czds_local_zone" || stat.source === "czds_api_zone" ? "passive_inventory" : stat.source })))
-    failures.push(...passive.failures)
-    addDomains({ sourceByDomain, source: "passive_inventory", domains: passive.domains, limit })
-    for (const [domain, evidence] of Object.entries(passive.evidenceByDomain)) evidenceByDomain.set(domain, evidence)
+    try {
+      const passive = await withRetry("passive_inventory", () => fetchPassiveInventoryDomains(countryCode, options?.technology ?? null, Math.min(limit, perPatternLimit)))
+      sourceStats.push(...passive.sourceStats.map((stat) => ({ ...stat, source: stat.source === "czds_local_zone" || stat.source === "czds_api_zone" ? "passive_inventory" : stat.source })))
+      failures.push(...passive.failures)
+      addDomains({ sourceByDomain, source: "passive_inventory", domains: passive.domains, limit })
+      for (const [domain, evidence] of Object.entries(passive.evidenceByDomain)) evidenceByDomain.set(domain, evidence)
+    } catch (e) {
+      failures.push({ key: "passive_inventory", reason: e instanceof Error ? e.message : "passive inventory failed with retries" })
+    }
     await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
     if (sourceByDomain.size >= limit) return buildResult({ sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
   }
 
   for (const pattern of patterns) {
-    const cc = await fetchCommonCrawlDomains(pattern, perPatternLimit)
-    sourceStats.push({ source: "common_crawl_domains", pattern, fetched: cc.domains.length, total: cc.total, ok: cc.ok, error: cc.error })
-    if (!cc.ok) failures.push({ key: `common_crawl_domains:${pattern}`, reason: cc.error ?? "Common Crawl returned no domains" })
-    addDomains({ sourceByDomain, source: "common_crawl_domains", domains: cc.domains, limit })
+    try {
+      const cc = await withRetry(`cc_${pattern}`, () => fetchCommonCrawlDomains(pattern, perPatternLimit))
+      sourceStats.push({ source: "common_crawl_domains", pattern, fetched: cc.domains.length, total: cc.total, ok: cc.ok, error: cc.error })
+      if (!cc.ok) failures.push({ key: `common_crawl_domains:${pattern}`, reason: cc.error ?? "Common Crawl returned no domains" })
+      addDomains({ sourceByDomain, source: "common_crawl_domains", domains: cc.domains, limit })
+    } catch (e) {
+      failures.push({ key: `common_crawl_domains:${pattern}`, reason: e instanceof Error ? e.message : "Common Crawl failed with retries" })
+    }
     await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
     if (sourceByDomain.size >= limit) break
 
-    const tranco = await fetchTrancoTopDomains(pattern, perPatternLimit)
-    sourceStats.push({ source: "tranco_top_domains", pattern, fetched: tranco.domains.length, total: tranco.total, ok: tranco.ok, error: tranco.error })
-    if (!tranco.ok) failures.push({ key: `tranco_top_domains:${pattern}`, reason: tranco.error ?? "Tranco top list returned no domains" })
-    addDomains({ sourceByDomain, source: "tranco_top_domains", domains: tranco.domains, limit })
+    try {
+      const tranco = await withRetry(`tranco_${pattern}`, () => fetchTrancoTopDomains(pattern, perPatternLimit))
+      sourceStats.push({ source: "tranco_top_domains", pattern, fetched: tranco.domains.length, total: tranco.total, ok: tranco.ok, error: tranco.error })
+      if (!tranco.ok) failures.push({ key: `tranco_top_domains:${pattern}`, reason: tranco.error ?? "Tranco top list returned no domains" })
+      addDomains({ sourceByDomain, source: "tranco_top_domains", domains: tranco.domains, limit })
+    } catch (e) {
+      failures.push({ key: `tranco_top_domains:${pattern}`, reason: e instanceof Error ? e.message : "Tranco failed with retries" })
+    }
     await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
     if (sourceByDomain.size >= limit) break
 
-    const crtPattern = toCrtshPattern(pattern)
-    const crt = await fetchCrtshDomains(crtPattern, perPatternLimit)
-    sourceStats.push({ source: "crtsh_bulk", pattern: crtPattern, fetched: crt.domains.length, total: crt.total, ok: crt.ok, error: crt.error })
-    if (!crt.ok) failures.push({ key: `crtsh_bulk:${crtPattern}`, reason: crt.error ?? "crt.sh returned no domains" })
-    addDomains({ sourceByDomain, source: "crtsh_bulk", domains: crt.domains, limit })
+    try {
+      const crtPattern = toCrtshPattern(pattern)
+      const crt = await withRetry(`crt_${pattern}`, () => fetchCrtshDomains(crtPattern, perPatternLimit))
+      sourceStats.push({ source: "crtsh_bulk", pattern: crtPattern, fetched: crt.domains.length, total: crt.total, ok: crt.ok, error: crt.error })
+      if (!crt.ok) failures.push({ key: `crtsh_bulk:${crtPattern}`, reason: crt.error ?? "crt.sh returned no domains" })
+      addDomains({ sourceByDomain, source: "crtsh_bulk", domains: crt.domains, limit })
+    } catch (e) {
+      failures.push({ key: `crtsh_bulk:${pattern}`, reason: e instanceof Error ? e.message : "crt.sh failed with retries" })
+    }
     await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
     if (sourceByDomain.size >= limit) break
   }

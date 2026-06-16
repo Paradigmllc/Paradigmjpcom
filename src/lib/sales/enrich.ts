@@ -220,18 +220,51 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
       timedTask(def.name, def.fn, DEFAULT_TIMEOUT, null, metrics).catch(() => null)
     ),
   )
-  const sourceMap = Object.fromEntries(taskDefs.map((def, i) => [def.name, sources[i]]))
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sourceMap: Record<string, any> = Object.fromEntries(taskDefs.map((def, i) => [def.name, sources[i]]))
   const skippedStagehand = !stagehandEnabled
 
-  type SourceDatum = { [key: string]: SourceDatum }
-  const [
-    scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts,
-    wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana,
-    maigret, searxng,
-    stagehandSite, stagehandForms, steel, crawlee,
-    schemaOrg, sitemap, safeBrowsing, greenWeb, builtwith,
-    jinaReader, clearbitLogo, subfinder, trufflehog,
-  ] = sources as any[]
+  // Safety: ensure source array length matches task definitions to prevent silent misalignment
+  const sourceNames = taskDefs.map((def) => def.name)
+  if (sources.length !== sourceNames.length) {
+    console.error(`[sales-enrich] source array mismatch: ${sources.length} results for ${sourceNames.length} tasks`)
+  }
+
+  // Use sourceMap for type-safe access instead of positional destructuring
+  const scan = sourceMap.scan
+  const gbiz = sourceMap.gbiz
+  const tech = sourceMap.tech
+  const ssl = sourceMap.ssl
+  const whois = sourceMap.whois
+  const form = sourceMap.form
+  const crtsh = sourceMap.crtsh
+  const radar = sourceMap.radar
+  const observatory = sourceMap.observatory
+  const dns = sourceMap.dns
+  const hsts = sourceMap.hsts
+  const wayback = sourceMap.wayback
+  const tranco = sourceMap.tranco
+  const emailrep = sourceMap.emailrep
+  const opencorp = sourceMap.opencorp
+  const github = sourceMap.github
+  const commoncrawl = sourceMap.commoncrawl
+  const spiderfoot = sourceMap.spiderfoot
+  const katana = sourceMap.katana
+  const maigret = sourceMap.maigret
+  const searxng = sourceMap.searxng
+  const stagehandSite = sourceMap.stagehand_site
+  const stagehandForms = sourceMap.stagehand_forms
+  const steel = sourceMap.steel
+  const crawlee = sourceMap.crawlee
+  const schemaOrg = sourceMap.schema_org
+  const sitemap = sourceMap.sitemap
+  const safeBrowsing = sourceMap.safe_browsing
+  const greenWeb = sourceMap.green_web
+  const builtwith = sourceMap.builtwith
+  const jinaReader = sourceMap.jina_reader
+  const clearbitLogo = sourceMap.clearbit_logo
+  const subfinder = sourceMap.subfinder
+  const trufflehog = sourceMap.trufflehog
 
   // Step 3: 集約
   const gbizFirst = gbiz?.[0]

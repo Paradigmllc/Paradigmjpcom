@@ -204,11 +204,10 @@ export async function generateFormMessage(
   }
 
   if (dify.configured) {
-    console.error("[sales-form-message] Dify failed. DeepSeek fallback is disabled for strict enforcement.", dify.error)
-    return { ok: false, error: dify.error ?? "Dify workflow failed" }
+    console.warn("[sales-form-message] Dify workflow failed, falling back to DeepSeek V3:", dify.error?.slice(0, 120))
   }
 
-  console.warn("[sales-form-message] Dify is not configured. Falling back to DeepSeek V3.")
+  console.warn("[sales-form-message] Using DeepSeek V3 for form message generation.")
 
   const systemPrompt = await getAiPrompt("sales_form_message_system")
   const res = await callDeepSeek(

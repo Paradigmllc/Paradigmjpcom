@@ -76,9 +76,13 @@ export async function fetchDiagnosticReport(opts: {
         : null
   if (!company) return null
 
-  // Skip regeneration if report is fresh enough (generated after last relevant data update)
+  // Skip regeneration if report is fresh (within REPORT_REGENERATE_MAX_AGE_DAYS, default 7)
   if (!opts.forceRegenerate && company.report_generated_at) {
-    return null // Return null = use cached report. Caller should fall back to cached render.
+    const maxAgeDays = parseInt(process.env.REPORT_REGENERATE_MAX_AGE_DAYS ?? "7", 10) || 7
+    const reportAge = Date.now() - new Date(company.report_generated_at).getTime()
+    if (reportAge < maxAgeDays * 24 * 60 * 60 * 1000) {
+      return null
+    }
   }
 
   const routing = getRoutingMeta(company.meta)

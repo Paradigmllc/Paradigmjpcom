@@ -66,7 +66,7 @@ export function getBrowserSearchBackendStatus(): {
     flaresolverrUrl,
     steelBaseUrl,
     providers,
-    error: providers.length > 0 ? undefined : "FLARESOLVERR_URL or STEEL_BASE_URL is required for browser search",
+    error: providers.length > 0 ? undefined : "FLARESOLVERR_API_URL or STEEL_BASE_URL is required for browser search",
   }
 }
 
