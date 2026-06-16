@@ -38,7 +38,7 @@ test.describe("Revenue OS critical flows", () => {
 
   test("health API responds", async ({ request }) => {
     const res = await request.get(`${BASE}/api/sales/health`, {
-      headers: { "X-Webhook-Secret": process.env.N8N_WEBHOOK_SECRET || "test" },
+      headers: { "X-Webhook-Secret": process.env.TRIGGER_WEBHOOK_SECRET || "test" },
     })
     // May be 401 if secret is wrong, that proves auth is working
     expect([200, 401]).toContain(res.status())
@@ -46,7 +46,7 @@ test.describe("Revenue OS critical flows", () => {
 
   test("integration status API returns data", async ({ request }) => {
     const res = await request.get(`${BASE}/api/sales/integration-status`, {
-      headers: { "X-Webhook-Secret": process.env.N8N_WEBHOOK_SECRET || "test" },
+      headers: { "X-Webhook-Secret": process.env.TRIGGER_WEBHOOK_SECRET || "test" },
     })
     expect([200, 401]).toContain(res.status())
   })

@@ -100,7 +100,7 @@ ALTER TABLE public.agency_videos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.agency_demo_sites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.agency_reports ENABLE ROW LEVEL SECURITY;
 
--- 全てのテーブルに対して Service Role (バックエンド・n8n・Flows) の全権限を許可
+-- All tables: Service Role (backend / Trigger.dev) full access
 CREATE POLICY "Enable ALL for service_role on companies" ON public.agency_companies FOR ALL USING (auth.role() = 'service_role');
 CREATE POLICY "Enable ALL for service_role on presentations" ON public.agency_presentations FOR ALL USING (auth.role() = 'service_role');
 CREATE POLICY "Enable ALL for service_role on videos" ON public.agency_videos FOR ALL USING (auth.role() = 'service_role');

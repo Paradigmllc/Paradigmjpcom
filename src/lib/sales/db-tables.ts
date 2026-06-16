@@ -144,7 +144,7 @@ export const DB_TABLES = {
   PROSPECT_PATTERNS: "prospect_patterns",
   PROPOSAL_TEMPLATES: "proposal_templates",
 
-  // ── Agency (supabase/migrations/migration_034b_sales_ssot_hub.sql) ──
+  // ── Agency (supabase/migrations/migration_044_sales_ssot_hub.sql) ──
   AGENCY_COMPANIES: "agency_companies",
   AGENCY_PRESENTATIONS: "agency_presentations",
   AGENCY_VIDEOS: "agency_videos",
