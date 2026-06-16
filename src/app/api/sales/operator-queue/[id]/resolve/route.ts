@@ -27,7 +27,7 @@ export async function POST(
     const supabase = getServiceSalesSupabase();
     if (!supabase) throw new Error("Supabase is not configured");
     
-    const status = action === "approve" ? "resolved" : "dismissed";
+    const status = action === "approve" ? "resolved" : "cancelled";
     
     const { data: item, error } = await supabase
       .from(DB_TABLES.SALES_OPERATOR_QUEUE_ITEMS)

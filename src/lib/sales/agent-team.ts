@@ -2,6 +2,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { runEnrichmentJobs } from "@/lib/sales/enrichment-jobs"
 import { runOutreachBatch } from "@/lib/sales/outreach/orchestrator"
 import { pullTwentyCompaniesToSupabase } from "@/lib/sales/twenty-pull"
+import { triggerReadyDiagnosticAssets } from "./agent-team-assets"
 import { collectCompanyList, formatCollectListReply } from "./agent-team-collector"
 import { isValidRegion, type Region } from "@/lib/sales/types"
 import { DB_TABLES } from "@/lib/sales/db-tables"
@@ -325,35 +326,10 @@ export async function handleAgentCommand(input: SalesAgentCommandInput): Promise
       let assetResult: Record<string, unknown> = { queue, next: "Dify template selection -> generate-sales-asset -> Slack/Appsmith review" }
       let assetSummary = "成果物生成の準備キューを作りました。対象企業/セグメント確認後にDifyテンプレ選定へ進めます。"
 
-      // Fire asset generation for report_ready companies in the region
-      if (sb) {
-        let assetTriggered = 0
-        try {
-          const { data: ready } = await sb
-            .from(DB_TABLES.SALES_COMPANIES)
-            .select("id, domain, region, report_locale")
-            .eq("pipeline_status", "report_ready")
-            .eq("region", region)
-            .order("created_at", { ascending: false })
-            .limit(10)
-          if (ready?.length) {
-            for (const company of ready) {
-              try {
-                const { generateSalesAsset } = await import("./sales-assets")
-                await generateSalesAsset({ companyIdOrSlugOrDomain: company.id, assetType: "diagnostic_report" })
-                assetTriggered++
-              } catch (e) {
-                console.error("[agent-team] asset generation failed for", company.domain, e instanceof Error ? e.message : String(e))
-              }
-            }
-            if (assetTriggered > 0) {
-              assetResult = { ...assetResult, generated: assetTriggered }
-              assetSummary += ` ${assetTriggered}社の診断レポート生成を開始しました。`
-            }
-          }
-        } catch (e) {
-          console.error("[agent-team] asset batch scan failed:", e instanceof Error ? e.message : String(e))
-        }
+      const assetTriggered = await triggerReadyDiagnosticAssets(sb, region)
+      if (assetTriggered > 0) {
+        assetResult = { ...assetResult, generated: assetTriggered }
+        assetSummary += ` ${assetTriggered}社の診断レポート生成を開始しました。`
       }
 
       await logAgentEvent(sb, { commandId, agentRole: "paperclip_operator", eventType: "asset_prepare", status: queue.queued ? "success" : "warning", title: "成果物生成準備をキュー化しました", payload: assetResult })

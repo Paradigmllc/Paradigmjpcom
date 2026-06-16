@@ -18,7 +18,6 @@ import type {
   OutreachStage,
   SubmitOutcome,
 } from "./types"
-
 export interface RunOutreachOptions {
   region?: Region
   companyId?: string
@@ -30,11 +29,9 @@ export interface RunOutreachOptions {
   checkRobots?: boolean
   dedupDays?: number
 }
-
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://paradigmjp.com"
 const FROM_EMAIL = process.env.OUTREACH_FROM_EMAIL ?? process.env.PARADIGM_SENDER_ADDRESS ?? "contact@paradigmjp.com"
 const FROM_NAME = process.env.OUTREACH_FROM_NAME ?? process.env.PARADIGM_SENDER_NAME ?? "PARADIGM"
-
 function reportUrlFor(company: SalesCompany): string {
   if (company.report_url) return company.report_url
   if (!company.slug) return SITE
@@ -42,18 +39,15 @@ function reportUrlFor(company: SalesCompany): string {
   const locale = company.report_locale ?? routing.report_locale ?? (company.region === "jp" ? "ja" : "en")
   return `${SITE}/${locale}/report/${company.slug}`
 }
-
 function buildFields(message: string): Record<string, string> {
   return { name: FROM_NAME, company: FROM_NAME, email: FROM_EMAIL, message }
 }
-
 const OUTCOME_TO_RESULT: Record<SubmitOutcome, ActivityResult> = {
   submitted: "success",
   uncertain: "follow_up",
   failed: "no_answer",
   skipped: "declined",
 }
-
 async function fetchPageHtml(url: string, timeoutMs: number): Promise<string | null> {
   try {
     const res = await fetch(
@@ -71,7 +65,6 @@ async function fetchPageHtml(url: string, timeoutMs: number): Promise<string | n
     return null
   }
 }
-
 async function fetchCandidates(region: Region, limit: number, companyId?: string): Promise<SalesCompany[]> {
   const sb = getServiceSalesSupabase()
   if (!sb) return []
@@ -87,7 +80,6 @@ async function fetchCandidates(region: Region, limit: number, companyId?: string
     }
     return data ? [data as SalesCompany] : []
   }
-
   const { data, error } = await sb
     .from(DB_TABLES.SALES_COMPANIES)
     .select("*")
@@ -96,16 +88,13 @@ async function fetchCandidates(region: Region, limit: number, companyId?: string
     .not("industry", "is", null)
     .order("updated_at", { ascending: true })
     .limit(limit * 3)
-
   if (error) {
     console.error("[sales-outreach] fetch candidates failed:", error.message)
     return []
   }
-
   const rows = (data as SalesCompany[]) ?? []
   return rows.filter((company) => (company.detected_issues ?? []).length > 0).slice(0, limit)
 }
-
 async function applyOutcome(company: SalesCompany, stage: OutreachStage, sendResult: string): Promise<void> {
   const sb = getServiceSalesSupabase()
   if (!sb) return
@@ -118,7 +107,6 @@ async function applyOutcome(company: SalesCompany, stage: OutreachStage, sendRes
   const { error } = await sb.from(DB_TABLES.SALES_COMPANIES).update(patch).eq("id", company.id)
   if (error) console.error("[sales-outreach] outcome update failed:", error.message)
 }
-
 async function logActivity(
   company: SalesCompany,
   stage: OutreachStage,
