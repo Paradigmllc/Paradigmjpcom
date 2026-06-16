@@ -3,10 +3,11 @@
 ### Operational state
 
 - RevenueOS passive inventory and lead collection are production deployed and verified.
-- Current production code commit: `9116325` (`chore: finalize operational handoff and dependency audit`).
-- Latest pushed handoff/dependency commit: `9116325`.
-- Production deployment UUID: `o1b5ml6ftyyay9ti3h7n4vnn`, finished successfully.
-- Production container verified healthy: `i12am4vvcbggefnqdizhnv9a:911632508bb2d6e2518560c705cd6c80b96f0229`.
+- Current runtime-affecting baseline: `9116325` (`chore: finalize operational handoff and dependency audit`).
+- Handoff-only commits after that do not change RevenueOS runtime behavior; verify the latest deployed fingerprint with the container check in the commands below.
+- Last explicit deployment records captured during this handoff:
+  - `o1b5ml6ftyyay9ti3h7n4vnn`: `911632508bb2d6e2518560c705cd6c80b96f0229`, finished.
+  - `z5lqjrrq8qiqj96kqyr427jl`: `02c3f6410395e300bf3012f909f4c5a5257abbf4`, finished.
 - Full previous handoff history is archived at `docs/handoff-archive/2026-06-16-revenueos-passive-inventory-full-task-archive.md`.
 
 ### What is now shipped
