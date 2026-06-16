@@ -5,6 +5,7 @@ import { normalizeReportLocale } from "./routing"
 import { localeToRegion } from "./types"
 import { dispatchVideoJobToTriggerDev, getTriggerVideoPipelineConfig } from "./video-trigger"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { isMissingOptionalColumn, withoutOptionalColumns } from "@/lib/sales/safe-supabase-insert"
 import {
   buildProfessionalProductionPlan,
   buildProfessionalStoryboard,
@@ -212,9 +213,7 @@ export async function createVideoJob(input: {
     },
   })
   const trigger = getTriggerVideoPipelineConfig()
-  const { data, error } = await sb
-    .from(DB_TABLES.SALES_VIDEO_JOBS)
-    .insert({
+  const payload = {
       company_id: company.id,
       pipeline_run_id: input.pipelineRunId ?? null,
       job_type: input.jobType,
@@ -265,9 +264,23 @@ export async function createVideoJob(input: {
         creative_brief: input.creativeBrief ?? null,
       },
       requested_by: input.requestedBy ?? "sales-os",
-    })
+    }
+
+  let { data, error } = await sb
+    .from(DB_TABLES.SALES_VIDEO_JOBS)
+    .insert(payload)
     .select("*, sales_companies(company_name, domain, slug)")
     .single()
+  if (isMissingOptionalColumn(error, ["pipeline_run_id"])) {
+    console.warn("[sales-video-pipeline] sales_video_jobs.pipeline_run_id is not available; retrying without optional column")
+    const retry = await sb
+      .from(DB_TABLES.SALES_VIDEO_JOBS)
+      .insert(withoutOptionalColumns(payload, ["pipeline_run_id"]))
+      .select("*, sales_companies(company_name, domain, slug)")
+      .single()
+    data = retry.data
+    error = retry.error
+  }
 
   if (error) {
     console.error("[sales-video-pipeline] create failed:", error.message)

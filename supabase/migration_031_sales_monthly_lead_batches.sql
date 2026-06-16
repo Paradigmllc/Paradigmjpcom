@@ -61,6 +61,15 @@ create table if not exists public.sales_lead_batch_items (
   unique (batch_id, row_index)
 );
 
+alter table public.sales_lead_batch_items
+  add column if not exists qualification_score integer not null default 0;
+alter table public.sales_lead_batch_items
+  add column if not exists rejection_reason text;
+alter table public.sales_lead_batch_items
+  add column if not exists quality_gate jsonb not null default '{}'::jsonb;
+alter table public.sales_lead_batch_items
+  add column if not exists source_payload jsonb not null default '{}'::jsonb;
+
 create index if not exists idx_sales_lead_batches_scope_status
   on public.sales_lead_batches (region, report_locale, status, created_at desc);
 

@@ -1,6 +1,7 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { fetchCompanyKarte, type CompanyKarteSnapshot } from "@/lib/sales/company-karte"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { insertWithOptionalColumns } from "@/lib/sales/safe-supabase-insert"
 import {
   ensureCompanyProductRecommendations,
   markRecommendationOpportunityCreated,
@@ -321,7 +322,7 @@ export async function syncCompanyKarteToTwenty(
     await syncTwentyCompanyHomeFields(karte, twentyCompany.id)
     const opportunityIds = await syncTwentyOpportunities(sb, karte, twentyCompany.id)
 
-    await sb.from(DB_TABLES.SALES_SYNC_LOGS).insert([
+    const { error: successLogError } = await insertWithOptionalColumns(sb, DB_TABLES.SALES_SYNC_LOGS, [
       {
         direction: "supabase->twenty",
         entity_type: "company",
@@ -349,7 +350,8 @@ export async function syncCompanyKarteToTwenty(
           product_codes: recommendations.map((product) => product.code),
         },
       },
-    ])
+    ], ["pipeline_run_id"])
+    if (successLogError) console.error("[twenty-sync] success log insert failed:", successLogError.message)
 
     return {
       ok: true,
@@ -362,7 +364,7 @@ export async function syncCompanyKarteToTwenty(
   } catch (error) {
     const message = error instanceof Error ? error.message : "Twenty sync failed"
     console.error("[twenty-sync] failed:", error)
-    await sb.from(DB_TABLES.SALES_SYNC_LOGS).insert({
+    const { error: errorLogError } = await insertWithOptionalColumns(sb, DB_TABLES.SALES_SYNC_LOGS, {
       direction: "supabase->twenty",
       entity_type: "company",
       entity_id: companyId,
@@ -373,7 +375,8 @@ export async function syncCompanyKarteToTwenty(
       payload: {
         product_codes: recommendations.map((product) => product.code),
       },
-    })
+    }, ["pipeline_run_id"])
+    if (errorLogError) console.error("[twenty-sync] error log insert failed:", errorLogError.message)
     return { ok: false, configured: true, error: message, recommendationCount: recommendations.length }
   }
 }

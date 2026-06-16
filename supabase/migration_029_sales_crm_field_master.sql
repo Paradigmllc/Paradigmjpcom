@@ -48,6 +48,9 @@ create policy sales_crm_select_options_service_only
   using (true)
   with check (true);
 
+grant select, insert, update, delete on table public.sales_crm_view_fields to service_role;
+grant select, insert, update, delete on table public.sales_crm_select_options to service_role;
+
 insert into public.sales_crm_view_fields
   (field_key, twenty_field_name, label, position, is_visible, field_type, description)
 values
@@ -180,3 +183,5 @@ on conflict (field_key, value) do update set
 
 comment on table public.sales_crm_view_fields is 'Twenty Companiesの営業リスト表示列をSupabase SSOTで管理する設定。';
 comment on table public.sales_crm_select_options is '国名、地域名、業種名、ソース、営業ステータスなどの選択肢マスタ。';
+
+notify pgrst, 'reload schema';

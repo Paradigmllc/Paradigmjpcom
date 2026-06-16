@@ -17,7 +17,6 @@ const SERVICES = [
   { name: "Gotenberg", envs: ["GOTENBERG_URL"] },
   { name: "Slidev", envs: ["SLIDEV_RENDER_URL"] },
   { name: "SearxNG", envs: ["SEARXNG_BASE_URL"] },
-  { name: "mubeng", envs: ["MUBENG_PROXY_URL"] },
   { name: "Crawlee", envs: ["CRAWLEE_WORKER_URL"] },
   { name: "Playwright Stealth", envs: ["OUTREACH_WORKER_URL"] },
   { name: "FFmpeg", envs: ["FFMPEG_BIN"] },

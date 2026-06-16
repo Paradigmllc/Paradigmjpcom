@@ -86,6 +86,9 @@ FOR EACH ROW EXECUTE FUNCTION public.sales_touch_updated_at();
 ALTER TABLE public.sales_lead_candidate_runs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sales_lead_candidate_run_items ENABLE ROW LEVEL SECURITY;
 
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.sales_lead_candidate_runs TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.sales_lead_candidate_run_items TO service_role;
+
 DO $$
 DECLARE
   tbl text;

@@ -145,6 +145,16 @@ function providerUrl(endpoint: string, path: string): string {
   return `${endpoint.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`
 }
 
+function isKnownUnavailableEndpoint(endpoint: string | null): boolean {
+  if (!endpoint) return true
+  try {
+    const host = new URL(endpoint).host.toLowerCase()
+    return host === "stagehand.paradigmjp.com"
+  } catch {
+    return false
+  }
+}
+
 function shouldEscalate(input: SubmitFormInput, providerName: string, result: SubmitFormResult): boolean {
   const detail = result.detail.toLowerCase()
   if (result.outcome === "submitted") return false
@@ -161,12 +171,14 @@ function shouldEscalate(input: SubmitFormInput, providerName: string, result: Su
 function configuredRemoteProvider(): RemoteWorkerProvider | null {
   const endpoint = optionalEnv("OUTREACH_WORKER_URL") ?? optionalEnv("CRAWLEE_WORKER_URL")
   const secret = optionalEnv("OUTREACH_WORKER_SECRET") ?? optionalEnv("CRAWLEE_WORKER_SECRET")
+  if (isKnownUnavailableEndpoint(endpoint)) return null
   return endpoint && secret ? new RemoteWorkerProvider(endpoint, secret) : null
 }
 
 function configuredStagehandProvider(): StagehandProvider | null {
   const endpoint = optionalEnv("STAGEHAND_URL")
   const apiKey = optionalEnv("STAGEHAND_API_KEY")
+  if (isKnownUnavailableEndpoint(endpoint)) return null
   return endpoint && apiKey ? new StagehandProvider(endpoint, apiKey) : null
 }
 
@@ -227,13 +239,13 @@ export function getBrowserProvider(): BrowserProvider {
   if (mode === "stagehand") {
     const endpoint = optionalEnv("STAGEHAND_URL")
     const apiKey = optionalEnv("STAGEHAND_API_KEY")
-    if (endpoint && apiKey) return new StagehandProvider(endpoint, apiKey)
+    if (endpoint && apiKey && !isKnownUnavailableEndpoint(endpoint)) return new StagehandProvider(endpoint, apiKey)
     console.warn("[outreach] OUTREACH_BROWSER_PROVIDER=stagehand but STAGEHAND_URL/STAGEHAND_API_KEY is missing; falling back to http")
   }
   if (mode === "remote") {
     const endpoint = optionalEnv("OUTREACH_WORKER_URL")
     const secret = optionalEnv("OUTREACH_WORKER_SECRET")
-    if (endpoint && secret) return new RemoteWorkerProvider(endpoint, secret)
+    if (endpoint && secret && !isKnownUnavailableEndpoint(endpoint)) return new RemoteWorkerProvider(endpoint, secret)
     console.warn("[outreach] OUTREACH_BROWSER_PROVIDER=remote but OUTREACH_WORKER_URL/SECRET is missing; using http")
   }
   return new HttpFormProvider()

@@ -1,70 +1,31 @@
-## CURRENT STATUS — 2026-06-16 RevenueOS comprehensive audit remediation (Round 2 complete)
+## CURRENT STATUS - 2026-06-16 RevenueOS production hardening complete
 
-### Round 2 Fixes (30+ files, 40+ issues)
+### What changed
+- RevenueOS now uses Supabase Cloud as the default Sales SSOT. Dedicated/self-hosted Sales Supabase is only used when `SALES_SUPABASE_PRIMARY=true`.
+- Coolify env reads now prefer production rows over preview rows, preventing preview Supabase/Refferq values from shadowing production.
+- Refferq fallback paths were removed from runtime DB resolution, deploy migration fallback, unlock scripts, audits, and `.env.example`.
+- Passive/list collection, Twenty sync, webhook logs, outreach runs, video jobs, external studio sync, and activity logs now tolerate missing owner-only optional columns through explicit safe insert/select fallbacks.
+- Health checks now distinguish configured, degraded, missing, and internal OSS service fallback states for Supabase, Twenty, Trigger.dev, Dify, SearXNG, Crawl4AI, Stagehand, Steel, Crawlee, and outreach worker.
+- Deployment script now applies required Sales migrations through Supabase Cloud/Postgres, refuses deploy when required tables are missing, refreshes integration status, and does not depend on local env by accident.
+- Supabase migrations were repaired/added for candidate acquisition, run tracking, race-condition guards, product/tool bootstrap, optional column repair, service-role grants, and content template constraints.
+- Refferq application and `refferq-db` were deleted from Coolify after confirming no non-Refferq app/service env still referenced `refferq`.
 
-**CRITICAL — Silent catches / error suppression (12 files):**
-- `scan/[domain]/route.ts`: Added top-level try/catch (was completely unprotected)
-- `lead-discovery/route.ts`: Replaced `.then(()=>{},()=>{})` with error handler
-- `http-form-provider.ts`: Added `console.error` to 2 silent catch blocks
-- `form-tos-fetch.ts`: Added `console.error` to catch block
-- `external-form-discovery.ts`: Added logging for Crawlee worker non-2xx
-- `schema-org.ts`: `catch { return null }` → `catch(e) { console.error; return null }`
-- `stagehand-enrich-source.ts`: 2× `catch { /* ignore */ }` → `console.error`
-- `enrichment-jobs-runner.ts`: `catch {}` → `catch(e) { console.error }` + report phase failure propagated
-- `sync-companies-from-notion/route.ts`: `.catch(() => ({}))` → error logging
+### Production verification
+- Cloud Supabase required table check: 78/78 present, 0 missing.
+- `node scripts/sales-os-no-login-deploy.mjs --skip-deploy`: passed.
+- Smoke URLs passed: `https://paradigmjp.com/ja/admin/sales`, `https://paradigmjp.com/ja`, `https://twenty.paradigmjp.com`.
+- Integration status refresh saved 79 rows.
+- Sales content templates seeded: 576.
+- Refferq Coolify post-delete check: `/api/v1/applications` hits 0, `/api/v1/databases` hits 0.
 
-**CRITICAL — Env validation / Hardcoded URLs (4 files):**
-- `mvp/dify.ts`: Hardcoded URL → `normalizeDifyCloudBaseUrl()`
-- `reply-classifier.ts`: Direct env read → `resolveDifyWorkflowKey()` + `normalizeDifyCloudBaseUrl()`
-- `browser-search/route.ts`: Removed hardcoded "IN"/"Shopify/WordPress" defaults (now required params)
-- `sync-companies-from-notion/route.ts`: Added `console.warn` on fallback DB ID usage
+### Local verification
+- `npx tsc --noEmit --pretty false --incremental false`: passed.
+- Targeted RevenueOS Vitest suite: 8 files / 30 tests passed.
+- `node scripts/paradigm-quality-guard.mjs`: 0 errors, 56 existing line-length warnings.
+- `git diff --check`: pending final run.
+- `npm run context:audit`: pending final run.
 
-**CRITICAL — Error propagation (3 files):**
-- `form-message.ts`: `saveFormMessageToCompany` return type `void` → `Promise<boolean>`
-- `lead-candidates.ts`: `promoteCandidate` now returns error on DB failure (was silently ok:true)
-- `passive-inventory.ts`: `updateRun` now throws instead of swallowing DB errors
-
-**HIGH — Twenty sync (5 files):**
-- `twenty-sync.ts`: Barrel re-export fixed: old `twenty-sync-contacts` → new `twenty-pull`
-- `twenty-sync-utils.ts`: `TwentyPullResult` type extended with new fields
-- `twenty-sync-companies.ts`: TOCTOU fix (try-catch duplicate + re-find), limit 10→100
-- `twenty-crm-metadata.ts`: Counter fix (selectFields now incremented AFTER API success)
-- `agent-team-collector.ts`: Updated to new `pullTwentyCompaniesToSupabase` signature
-
-**HIGH — DB error handling / audit log (5 files):**
-- `lead-candidate-acquisition.ts`: `countRunItems` now checks `res.error`
-- `lead-qualification.ts`: Per-item updates + batch counters now check errors
-- `sync.ts`: `recordSyncLog` now logs insert errors
-- `companies.ts`: `findCompanyBySlug` now returns null on DB error (was only logging)
-- `diagnostic.ts`: `markReportGenerated` now logs DB errors + unavailable Supabase
-
-**HIGH — Auth / Webhook (2 files):**
-- `twenty/webhook/route.ts`: Auth bypass fix (empty secret guard + HTTP 502 on failure vs 200)
-- `notion-apply.ts`: Enrichment failure now records sync_log error entry
-
-**New additions:**
-- `supabase/migration_051_sales_race_condition_guards.sql`: Unique partial indexes on `sales_pipeline_runs` + `sales_enrichment_jobs` to prevent TOCTOU duplicates
-- `notion.ts`: `notionQueryDatabaseAll` (cursor pagination wrapper) + `startCursor` support
-- `health/route.ts`: Expanded env checks (DIFY_DIAGNOSIS, NOTION_API_KEY, GBIZ, etc.)
-- `enrichment-jobs.ts`: `triggerEnrichmentRunner` now returns `dispatched: boolean` for observability
-- `Users.ts`: PayloadCMS `auth: { maxLoginAttempts: 0, lockTime: 0 }` (prevents admin lockout on deploy)
-
-### Production state
-- PayloadCMS admin login: lockout disabled (prevents deploy-time lockouts)
-- Dify Cloud: all URLs go through `normalizeDifyCloudBaseUrl()` (hardcoded fallbacks removed)
-- Twenty sync: correct barrel export, TOCTOU guarded, counter bug fixed
-- Notion sync: cursor pagination now functional, hardcoded ID warnings added
-- Browser search: no silent country/tech defaults
-- Enrichment runner: `dispatched` flag for caller observability
-
-### Verification commands
-- `npx tsc --noEmit`: 0 errors in modified sales files
-- `git diff --check`: pending
-- DB migration: `supabase/migration_051_sales_race_condition_guards.sql` ready (apply via Supabase dashboard or psql)
-- Unlock users: `node scripts/unlock-payload-users.mjs` (on production server)
-
-### Known notes
-- No paid APIs, proxies, server upgrade, or manual infrastructure steps required.
-- `scripts/unlock-payload-users.sh` is intentionally not tracked.
-- Trigger.dev connectivity remains non-critical; app-side fallback/watchdog paths are live.
-- Cursor pagination in sync-customers/deliveries now works (notionQueryDatabase supports start_cursor).
+### Active handoff
+- Do not restore `SUPABASE_POSTGRES_*`, `MUBENG_*`, `SCRAPOXY_*`, or any Refferq reference.
+- `scripts/unlock-payload-users.sh` remains intentionally untracked and must not be staged unless the user explicitly requests it.
+- Next required step in this turn: final checks, commit, push, production deploy, and live verification.

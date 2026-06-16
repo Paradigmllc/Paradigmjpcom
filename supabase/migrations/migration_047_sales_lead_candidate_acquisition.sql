@@ -120,6 +120,17 @@ ALTER TABLE public.sales_lead_candidate_country_signals ENABLE ROW LEVEL SECURIT
 ALTER TABLE public.sales_lead_candidate_tech_detections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sales_lead_candidate_scores ENABLE ROW LEVEL SECURITY;
 
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.sales_lead_candidate_domains TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.sales_lead_candidate_observations TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.sales_lead_candidate_country_signals TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.sales_lead_candidate_tech_detections TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.sales_lead_candidate_scores TO service_role;
+GRANT SELECT ON public.sales_lead_candidate_domains TO authenticated;
+GRANT SELECT ON public.sales_lead_candidate_observations TO authenticated;
+GRANT SELECT ON public.sales_lead_candidate_country_signals TO authenticated;
+GRANT SELECT ON public.sales_lead_candidate_tech_detections TO authenticated;
+GRANT SELECT ON public.sales_lead_candidate_scores TO authenticated;
+
 DO $$
 DECLARE
   tbl text;

@@ -71,6 +71,7 @@ export async function checkBrowserlessHealth(): Promise<ServiceHealthResult> {
 export async function checkStagehandHealth(): Promise<ServiceHealthResult> {
   const missing = missingEnv(["STAGEHAND_URL", "STAGEHAND_API_KEY"])
   if (missing.length > 0) return notConfigured(missing)
+  if ((envValue("STAGEHAND_URL") as string).includes("stagehand.paradigmjp.com")) return notConfigured(["STAGEHAND_URL"])
 
   try {
     const url = normalizeHttpBase(envValue("STAGEHAND_URL") as string)

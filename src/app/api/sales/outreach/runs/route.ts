@@ -19,18 +19,27 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(Math.max(parseInt(url.searchParams.get("limit") ?? "20", 10) || 20, 1), 100)
     const region = url.searchParams.get("region")
 
-    let query = sb
+    const buildQuery = (select: string) => sb
       .from(DB_TABLES.SALES_ACTIVITY_LOG)
-      .select("id, company_id, pipeline_run_id, activity_type, result, subject, occurred_at, meta")
+      .select(select)
       .in("activity_type", ["form_outreach", "reply_received", "reply_classified"])
       .order("occurred_at", { ascending: false })
       .limit(limit)
 
+    let query = buildQuery("id, company_id, pipeline_run_id, activity_type, result, subject, occurred_at, meta")
     if (region) {
       query = query.eq("region", region)
     }
 
-    const { data, error } = await query
+    let { data, error } = await query
+    if (error && error.message.includes("pipeline_run_id")) {
+      console.warn("[outreach-runs] sales_activity_log.pipeline_run_id is not available; retrying without optional column")
+      let retry = buildQuery("id, company_id, activity_type, result, subject, occurred_at, meta")
+      if (region) retry = retry.eq("region", region)
+      const retryResult = await retry
+      data = retryResult.data
+      error = retryResult.error
+    }
     if (error) {
       console.error("[outreach-runs] GET failed:", error.message)
       return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
@@ -38,16 +47,18 @@ export async function GET(req: NextRequest) {
 
     // Group by company for batch view
     const byCompany = new Map<string, Array<Record<string, unknown>>>()
-    for (const row of (data ?? [])) {
+    const rows = (data ?? []) as unknown as Array<Record<string, unknown>>
+    for (const row of rows) {
       const cid = row.company_id ?? "unknown"
-      if (!byCompany.has(cid)) byCompany.set(cid, [])
-      byCompany.get(cid)!.push(row)
+      const companyId = typeof cid === "string" ? cid : "unknown"
+      if (!byCompany.has(companyId)) byCompany.set(companyId, [])
+      byCompany.get(companyId)!.push(row)
     }
 
     return NextResponse.json({
       ok: true,
-      items: data ?? [],
-      total: data?.length ?? 0,
+      items: rows,
+      total: rows.length,
       groupedByCompany: Object.fromEntries(byCompany),
     })
   } catch (e) {

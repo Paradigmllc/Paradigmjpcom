@@ -3,6 +3,7 @@ import { enqueueCompanyEnrichment } from "./enrichment-jobs"
 import { upsertCompanyByDomain } from "./companies"
 import { createSalesPipelineRun } from "./sales-pipeline"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { insertWithOptionalColumns } from "@/lib/sales/safe-supabase-insert"
 import {
   env,
   twentyBaseUrl,
@@ -207,7 +208,7 @@ export async function pullTwentyCompaniesToSupabase(
       continue
     }
 
-    await sb.from(DB_TABLES.SALES_SYNC_LOGS).insert({
+    const { error: syncLogError } = await insertWithOptionalColumns(sb, DB_TABLES.SALES_SYNC_LOGS, {
       direction: "twenty->supabase",
       entity_type: "company",
       entity_id: company.id,
@@ -223,7 +224,8 @@ export async function pullTwentyCompaniesToSupabase(
         demo_url: demoUrl,
         customer_portal_url: customerPortalUrl,
       },
-    })
+    }, ["pipeline_run_id"])
+    if (syncLogError) console.error("[twenty-sync] sync log insert failed:", syncLogError.message)
 
     updated += 1
   }

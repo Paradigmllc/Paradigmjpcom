@@ -3,6 +3,7 @@ import { upsertCompanyByDomain } from "@/lib/sales/companies"
 import { salesScopeFromCountry } from "@/lib/sales/locale-scope"
 import { ensureTwentyPipelineRun } from "./twenty-pipeline-intake"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { insertWithOptionalColumns } from "@/lib/sales/safe-supabase-insert"
 
 interface TwentyLinkField {
   primaryLinkUrl?: string | null
@@ -335,7 +336,7 @@ export async function pullTwentyCompaniesToSupabase(
       continue
     }
 
-    await sb.from(DB_TABLES.SALES_SYNC_LOGS).insert({
+    const { error: syncLogError } = await insertWithOptionalColumns(sb, DB_TABLES.SALES_SYNC_LOGS, {
       direction: "twenty->supabase",
       entity_type: "company",
       entity_id: companyId,
@@ -351,7 +352,8 @@ export async function pullTwentyCompaniesToSupabase(
         demo_url: demoUrl,
         customer_portal_url: customerPortalUrl,
       },
-    })
+    }, ["pipeline_run_id"])
+    if (syncLogError) console.error("[twenty-pull] sync log insert failed:", syncLogError.message)
 
     const effectiveReportUrl = reportUrl ?? companyReportUrl
     const effectiveFormUrl = formUrl ?? contactFormUrlFromMeta(patchMeta)

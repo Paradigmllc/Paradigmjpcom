@@ -48,8 +48,6 @@ const SOURCES = [
   sourceAll("stagehand", "Stagehand", "orchestration", ["STAGEHAND_URL", "STAGEHAND_API_KEY"], [], checkStagehand),
   source("rsshub", "RSSHub", "orchestration", ["RSSHUB_BASE_URL"], [], checkRssHub),
   sourceAll("browserless", "Browserless", "orchestration", ["BROWSERLESS_URL", "BROWSERLESS_TOKEN"], [], checkBrowserless),
-  source("mubeng", "mubeng", "orchestration", ["MUBENG_PROXY_URL"], ["MUBENG_PROXY_USERNAME", "MUBENG_PROXY_PASSWORD"]),
-  source("scrapoxy", "Scrapoxy", "orchestration", ["SCRAPOXY_PROXY_URL"], ["SCRAPOXY_API_URL", "SCRAPOXY_API_KEY"]),
   source("camoufox", "Camoufox", "orchestration", ["CAMOUFOX_WS_URL"]),
   source("wayback_machine", "Wayback Machine", "orchestration", [], [], checkWayback),
 

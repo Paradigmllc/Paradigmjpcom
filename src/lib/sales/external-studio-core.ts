@@ -1,6 +1,7 @@
 import type { getServiceSalesSupabase } from "@/lib/supabase"
 import type { CompanyKarteSnapshot } from "@/lib/sales/company-karte"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { insertWithOptionalColumns } from "@/lib/sales/safe-supabase-insert"
 
 export type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 export type JsonRecord = Record<string, unknown>
@@ -127,7 +128,7 @@ export async function logSync(sb: ServiceSupabase, row: {
   errorMessage?: string | null
   payload?: JsonRecord
 }) {
-  const { error } = await sb.from(DB_TABLES.SALES_SYNC_LOGS).insert({
+  const { error } = await insertWithOptionalColumns(sb, DB_TABLES.SALES_SYNC_LOGS, {
     direction: row.direction,
     entity_type: "company",
     entity_id: row.entityId,
@@ -136,7 +137,7 @@ export async function logSync(sb: ServiceSupabase, row: {
     status: row.status,
     error_message: row.errorMessage ?? null,
     payload: row.payload ?? null,
-  })
+  }, ["pipeline_run_id"])
   if (error) console.error("[external-studio-sync] sync log insert failed:", error.message)
 }
 

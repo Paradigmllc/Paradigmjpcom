@@ -2,6 +2,7 @@ import { createHash } from "node:crypto"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { classifyReply } from "./outreach/reply-classifier"
+import { insertWithOptionalColumns } from "@/lib/sales/safe-supabase-insert"
 
 export type JsonRecord = Record<string, unknown>
 export type SalesPostOutreachRegion = "jp" | "global"
@@ -219,7 +220,7 @@ export async function persistPostOutreachEvent(input: PersistPostOutreachEventIn
   if (!sb) return { ok: false, error: "Supabase service role not configured" }
 
   const now = new Date().toISOString()
-  const { error: activityError } = await sb.from(DB_TABLES.SALES_ACTIVITY_LOG).insert({
+  const { error: activityError } = await insertWithOptionalColumns(sb, DB_TABLES.SALES_ACTIVITY_LOG, {
     region: input.region,
     company_id: input.companyId,
     pipeline_run_id: input.pipelineRunId ?? null,
@@ -230,11 +231,11 @@ export async function persistPostOutreachEvent(input: PersistPostOutreachEventIn
     occurred_at: now,
     last_synced: now,
     meta: input.meta,
-  })
+  }, ["pipeline_run_id"])
 
   if (activityError) {
     console.error("[post-outreach-webhook] sales_activity_log insert failed:", activityError.message)
-    return { ok: false, error: activityError.message }
+    return { ok: false, error: activityError.message ?? "sales_activity_log insert failed" }
   }
 
   await updatePipelineReplySteps({

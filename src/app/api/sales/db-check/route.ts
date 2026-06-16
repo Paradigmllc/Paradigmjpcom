@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { authorizeWebhookRequest } from "@/lib/admin-auth"
+import { getSalesSupabaseConfig } from "@/lib/supabase"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -11,26 +12,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
     }
 
-    const supabaseUrl = process.env.SALES_SUPABASE_URL
-    const serviceKey = process.env.SALES_SUPABASE_SERVICE_ROLE_KEY
+    const config = getSalesSupabaseConfig()
 
-    if (!supabaseUrl || !serviceKey) {
+    if (!config) {
       return NextResponse.json({
         ok: false,
-        error: "SALES_SUPABASE_URL or SALES_SUPABASE_SERVICE_ROLE_KEY not configured"
+        error: "Sales Supabase service configuration is missing"
       }, { status: 503 })
     }
 
     const results: string[] = []
-    const baseUrl = supabaseUrl.replace(/\/+$/, "")
+    const baseUrl = config.url.replace(/\/+$/, "")
 
     // Step 1: Try to query sales_companies to see current state
     const res1 = await fetch(
       `${baseUrl}/rest/v1/sales_companies?select=id,report_locale,target_country,template_variant&limit=1`,
       {
         headers: {
-          apikey: serviceKey,
-          Authorization: `Bearer ${serviceKey}`,
+          apikey: config.serviceKey,
+          Authorization: `Bearer ${config.serviceKey}`,
           Accept: "application/json",
         },
       }
@@ -47,8 +47,8 @@ export async function POST(req: NextRequest) {
       const resNotify = await fetch(`${baseUrl}/rest/v1/rpc/reload_schema`, {
         method: "POST",
         headers: {
-          apikey: serviceKey,
-          Authorization: `Bearer ${serviceKey}`,
+          apikey: config.serviceKey,
+          Authorization: `Bearer ${config.serviceKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({}),
@@ -64,8 +64,8 @@ export async function POST(req: NextRequest) {
       `${baseUrl}/rest/v1/sales_companies?select=id,report_locale&limit=1`,
       {
         headers: {
-          apikey: serviceKey,
-          Authorization: `Bearer ${serviceKey}`,
+          apikey: config.serviceKey,
+          Authorization: `Bearer ${config.serviceKey}`,
           Accept: "application/json",
         },
       }
@@ -75,6 +75,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       ok: res2.ok,
+      source: config.source,
       results,
       done: res2.ok,
     })

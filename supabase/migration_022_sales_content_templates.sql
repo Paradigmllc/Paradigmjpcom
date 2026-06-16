@@ -83,9 +83,12 @@ alter table public.sales_content_templates enable row level security;
 drop policy if exists sales_content_templates_service_only on public.sales_content_templates;
 create policy sales_content_templates_service_only
   on public.sales_content_templates
-  for all
-  using (auth.role() = 'service_role')
-  with check (auth.role() = 'service_role');
+  for all to service_role
+  using (true)
+  with check (true);
+
+grant select, insert, update, delete on table public.sales_content_templates to service_role;
+notify pgrst, 'reload schema';
 
 comment on table public.sales_content_templates is
   'Dify/n8n template selection library for diagnostic reports, Astro demo sites, Slidev/Gotenberg decks, and ComfyUI/HyperFrames/Remotion sales videos.';

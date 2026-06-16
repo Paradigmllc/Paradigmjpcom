@@ -11,6 +11,7 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { spawnSync } from "node:child_process"
+import pg from "pg"
 
 function envValue(name, fallback = null) {
   const value = process.env[name]
@@ -160,14 +161,73 @@ async function coolify(pathname, options = {}) {
 
 async function readProductionEnv() {
   const rows = await coolify(`/api/v1/applications/${APP_UUID}/envs`)
-  return Object.fromEntries(rows.map((row) => [row.key, row.real_value || row.value]))
+  const envs = new Map()
+  const sortedRows = [...rows].sort((a, b) => {
+    if (a?.is_preview === b?.is_preview) return 0
+    return a?.is_preview ? -1 : 1
+  })
+  for (const row of sortedRows) {
+    if (!row?.key) continue
+    const raw = typeof row.real_value === "string" && row.real_value.length > 0 ? row.real_value : row.value
+    const value = typeof raw === "string" ? raw.trim().replace(/^['"]|['"]$/g, "") : raw
+    if (value !== undefined && value !== null && String(value).trim().length > 0) {
+      envs.set(row.key, value)
+    }
+  }
+  return Object.fromEntries(envs)
 }
 
 function salesSupabase(envs) {
-  const url = envs.SALES_SUPABASE_URL || envs.NEXT_PUBLIC_SUPABASE_URL
-  const key = envs.SALES_SUPABASE_SERVICE_ROLE_KEY || envs.SUPABASE_SERVICE_ROLE_KEY
+  const dedicatedPrimary = /^(1|true|yes)$/i.test(String(envs.SALES_SUPABASE_PRIMARY || ""))
+  const cloudReady = envs.NEXT_PUBLIC_SUPABASE_URL && envs.SUPABASE_SERVICE_ROLE_KEY
+  const dedicatedReady = envs.SALES_SUPABASE_URL && envs.SALES_SUPABASE_SERVICE_ROLE_KEY
+  const url = dedicatedPrimary && dedicatedReady ? envs.SALES_SUPABASE_URL : envs.NEXT_PUBLIC_SUPABASE_URL || envs.SALES_SUPABASE_URL
+  const key = dedicatedPrimary && dedicatedReady ? envs.SALES_SUPABASE_SERVICE_ROLE_KEY : envs.SUPABASE_SERVICE_ROLE_KEY || envs.SALES_SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) throw new Error("Sales Supabase URL/key are missing from Coolify app envs")
-  return { url: url.replace(/\/+$/, ""), key }
+  return { url: String(url).replace(/\/+$/, ""), key }
+}
+
+function postgresUri(envs) {
+  const candidates = [
+    envs.SALES_SUPABASE_DATABASE_URL,
+    envs.SUPABASE_DATABASE_URL,
+    envs.DATABASE_URI,
+    envs.DATABASE_URL,
+  ]
+  for (const value of candidates) {
+    if (typeof value !== "string" || value.trim().length === 0) continue
+    const uri = value.trim()
+    if (isAllowedSalesPostgresUri(envs, uri)) return uri
+    console.warn(`Sales DB migration skipped unsupported Postgres URI host: ${maskPostgresHost(uri)}`)
+  }
+  return null
+}
+
+function isAllowedSalesPostgresUri(envs, uri) {
+  if (/refferq/i.test(uri)) return false
+  try {
+    const parsed = new URL(uri)
+    const host = parsed.hostname.toLowerCase()
+    const username = decodeURIComponent(parsed.username || "")
+    const supabaseUrl = envs.NEXT_PUBLIC_SUPABASE_URL ? new URL(envs.NEXT_PUBLIC_SUPABASE_URL) : null
+    const projectRef = supabaseUrl?.hostname?.split(".")[0] || ""
+    if (host.endsWith(".pooler.supabase.com") && projectRef && username.includes(projectRef)) return true
+    if (host === `db.${projectRef}.supabase.co`) return true
+    if (envs.SALES_SUPABASE_DATABASE_URL && uri === envs.SALES_SUPABASE_DATABASE_URL) return true
+    if (envs.SUPABASE_DATABASE_URL && uri === envs.SUPABASE_DATABASE_URL) return true
+    return false
+  } catch {
+    return false
+  }
+}
+
+function maskPostgresHost(uri) {
+  try {
+    const parsed = new URL(uri)
+    return `${parsed.hostname}:${parsed.port || "5432"}`
+  } catch {
+    return "invalid-uri"
+  }
 }
 
 async function applySalesProducts(envs) {
@@ -224,10 +284,40 @@ async function applySqlMigration(envs, fileName, label) {
   if (res.ok) return `${label}: applied`
   const text = await res.text()
   if (res.status === 404 || /function.*exec_sql|schema cache/i.test(text)) {
-    return applySqlMigrationThroughHost(sql, label)
+    return applySqlMigrationThroughPostgres(envs, sql, label)
   }
   if (/already exists|duplicate/i.test(text)) return `${label}: already applied`
   throw new Error(`${label} failed: HTTP ${res.status} ${text.slice(0, 180)}`)
+}
+
+async function applySqlMigrationThroughPostgres(envs, sql, label) {
+  const connectionString = postgresUri(envs)
+  if (!connectionString) return applySqlMigrationThroughHost(sql, label)
+
+  const client = new pg.Client({
+    connectionString,
+    ssl: { rejectUnauthorized: false },
+  })
+  try {
+    await client.connect()
+    await client.query("SET search_path TO public, extensions")
+    await client.query("SET lock_timeout TO '10s'")
+    await client.query("SET statement_timeout TO '60s'")
+    await client.query(sql)
+    await client.query("NOTIFY pgrst, 'reload schema';")
+    return `${label}: applied through direct Postgres channel`
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    if (/already exists|duplicate/i.test(message)) return `${label}: already applied`
+    if (/must be owner|permission denied|insufficient privilege/i.test(message)) {
+      return `${label}: skipped by direct Postgres channel (${message.slice(0, 160)})`
+    }
+    throw new Error(`${label} direct Postgres fallback failed: ${message.slice(0, 240)}`)
+  } finally {
+    await client.end().catch((error) => {
+      console.warn(`Postgres close failed for ${label}: ${error instanceof Error ? error.message : String(error)}`)
+    })
+  }
 }
 
 function applySqlMigrationThroughHost(sql, label) {
@@ -319,6 +409,10 @@ async function applyJapanReadinessInsightsMigration(envs) {
   return applySqlMigration(envs, "migration_033_sales_japan_readiness_insights.sql", "Japan readiness insights migration")
 }
 
+async function applySalesProductsSchemaMigration(envs) {
+  return applySqlMigration(envs, "migration_052_sales_products_bootstrap.sql", "Sales products bootstrap migration")
+}
+
 function runDeployGuard() {
   if (SKIP_DEPLOY_GUARD) {
     console.log("Coolify deploy guard: skipped")
@@ -336,7 +430,7 @@ function runDeployGuard() {
   }
 }
 
-function runDbTableVerification() {
+function runDbTableVerification(envs) {
   if (SKIP_DB_VERIFY) {
     console.log("DB table verification: skipped")
     return
@@ -344,13 +438,13 @@ function runDbTableVerification() {
   console.log("DB table verification: running...")
   const result = spawnSync(process.execPath, ["scripts/verify-db-tables.mjs"], {
     cwd: process.cwd(),
-    env: process.env,
+    env: { ...process.env, ...envs },
     encoding: "utf8",
   })
   const output = `${result.stdout || ""}${result.stderr || ""}`.trim()
   if (output) console.log(output)
   if (result.status !== 0) {
-    console.error("DB table verification failed — some tables are missing. Run: node scripts/exec-migrations.cjs")
+    throw new Error("DB table verification failed; refusing deployment")
   } else {
     console.log("DB table verification: all tables present")
   }
@@ -402,6 +496,26 @@ async function applyLeadCandidateAcquisitionMigration(envs) {
 
 async function applyLeadCandidateRunsMigration(envs) {
   return applySqlMigration(envs, "migration_048_sales_lead_candidate_runs.sql", "Lead candidate run tracking migration")
+}
+
+async function applyPassiveInventoryMigration(envs) {
+  return applySqlMigration(envs, "migration_049_sales_passive_inventory.sql", "Passive inventory migration")
+}
+
+async function applyPassiveInventorySegmentsMigration(envs) {
+  return applySqlMigration(envs, "migration_050_sales_passive_inventory_segments.sql", "Passive inventory segments migration")
+}
+
+async function applySalesRaceConditionGuardsMigration(envs) {
+  return applySqlMigration(envs, "migration_051_sales_race_condition_guards.sql", "Sales race-condition guard migration")
+}
+
+async function applySalesToolingBootstrapMigration(envs) {
+  return applySqlMigration(envs, "migration_053_sales_tooling_bootstrap.sql", "Sales tooling bootstrap migration")
+}
+
+async function applySalesOptionalColumnRepairMigration(envs) {
+  return applySqlMigration(envs, "migration_054_sales_cloud_optional_column_repair.sql", "Sales optional column repair migration")
 }
 
 function applyContentTemplates(envs) {
@@ -480,7 +594,7 @@ async function waitDeploy(uuid) {
 }
 
 async function smoke(url) {
-  const res = await fetch(url, { redirect: "manual" })
+  const res = await fetch(url, { redirect: "manual", signal: AbortSignal.timeout(15_000) })
   if (res.status < 200 || res.status >= 400) throw new Error(`${url} returned HTTP ${res.status}`)
   return res.status
 }
@@ -493,37 +607,46 @@ async function refreshIntegrationStatus(envs) {
 
   const baseUrl = envs.PARADIGMJP_BASE_URL || envs.NEXT_PUBLIC_SITE_URL || "https://paradigmjp.com"
   const endpoint = `${String(baseUrl).replace(/\/+$/, "")}/api/sales/integration-status?live=1`
-  const res = await fetch(endpoint, {
-    headers: {
-      "X-Webhook-Secret": secret,
-    },
-  })
-  const body = await res.json().catch(() => null)
-  if (!res.ok || !body?.ok) {
-    throw new Error(`Integration status refresh failed: HTTP ${res.status}`)
+  try {
+    const res = await fetch(endpoint, {
+      signal: AbortSignal.timeout(60_000),
+      headers: {
+        "X-Webhook-Secret": secret,
+      },
+    })
+    const body = await res.json().catch(() => null)
+    if (!res.ok || !body?.ok) {
+      return `Integration status refresh: warning HTTP ${res.status}`
+    }
+    const count = Array.isArray(body.integrations) ? body.integrations.length : 0
+    return `Integration status refresh: saved ${count} rows`
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    return `Integration status refresh: warning ${message}`
   }
-  const count = Array.isArray(body.integrations) ? body.integrations.length : 0
-  return `Integration status refresh: saved ${count} rows`
 }
 
 async function main() {
   console.log("Sales OS no-login deploy")
-  if (!DRY && !SKIP_DEPLOY) {
-    runHostDiskPreflight()
-    runDeployGuard()
-    runDbTableVerification()
-  }
   const envs = await readProductionEnv()
   console.log("Coolify API: connected")
 
+  if (!DRY && !SKIP_DEPLOY) {
+    runHostDiskPreflight()
+    runDeployGuard()
+    runDbTableVerification(envs)
+  }
+
   if (!DRY) {
-    console.log(await applySalesDxAiTemplateVariantMigration(envs))
+    console.log(await applySalesProductsSchemaMigration(envs))
     const products = await applySalesProducts(envs)
     console.log(`Sales products: verified ${products}`)
     console.log(await applyContentTemplateMigration(envs))
+    console.log(await applySalesDxAiTemplateVariantMigration(envs))
     console.log(await applyAgentTeamMigration(envs))
     console.log(await applyIntegrationStatusMigration(envs))
     console.log(await applyRuntimeHardeningMigration(envs))
+    console.log(await applySalesToolingBootstrapMigration(envs))
     console.log(await applyVideoPipelineMigration(envs))
     console.log(await applyVideoStrategyMigration(envs))
     console.log(await applyVideoProductionMigration(envs))
@@ -543,6 +666,10 @@ async function main() {
     console.log(await applySalesCompaniesMetaMigration(envs))
     console.log(await applyLeadCandidateAcquisitionMigration(envs))
     console.log(await applyLeadCandidateRunsMigration(envs))
+    console.log(await applyPassiveInventoryMigration(envs))
+    console.log(await applyPassiveInventorySegmentsMigration(envs))
+    console.log(await applySalesRaceConditionGuardsMigration(envs))
+    console.log(await applySalesOptionalColumnRepairMigration(envs))
     console.log(applyContentTemplates(envs))
   } else {
     console.log("Dry run: skipped Supabase product upsert")

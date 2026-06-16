@@ -21,7 +21,12 @@ alter table public.sales_tool_connections
       'directus',
       'keystatic',
       'chatwoot',
-      'livekit'
+      'livekit',
+      'trigger_dev',
+      'trigger-dev',
+      'dify',
+      'crawl4ai',
+      'searxng'
     )
   );
 
@@ -44,7 +49,10 @@ alter table public.sales_tool_connections
       'cms',
       'demo_cms',
       'inbox',
-      'voice'
+      'voice',
+      'crawler',
+      'ai',
+      'search'
     )
   );
 

@@ -15,13 +15,17 @@ alter table public.sales_tool_connections
       'metabase',
       'n8n',
       'trigger_dev',
+      'trigger-dev',
       'calcom',
       'docuseal',
       'notion',
       'directus',
       'keystatic',
       'chatwoot',
-      'livekit'
+      'livekit',
+      'dify',
+      'crawl4ai',
+      'searxng'
     )
   );
 

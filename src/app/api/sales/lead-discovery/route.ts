@@ -12,6 +12,7 @@ import {
 } from "@/lib/sales/sources/lead-discovery"
 import type { Industry } from "@/lib/sales/types"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { insertWithOptionalColumns } from "@/lib/sales/safe-supabase-insert"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -138,7 +139,7 @@ export async function POST(req: NextRequest) {
     // Log search history for dashboard visibility
     const sb = getServiceSalesSupabase()
     if (sb) {
-      await sb.from(DB_TABLES.SALES_SYNC_LOGS).insert({
+      const { error: syncLogError } = await insertWithOptionalColumns(sb, DB_TABLES.SALES_SYNC_LOGS, {
         direction: "lead_discovery",
         entity_type: "search",
         action: source,
@@ -154,10 +155,8 @@ export async function POST(req: NextRequest) {
           jobs_enqueued: jobsEnqueued,
           searched_at: new Date().toISOString(),
         },
-      }).then(
-        () => {},
-        (err: unknown) => console.error("[lead-discovery] sync log insert failed:", err),
-      )
+      }, ["pipeline_run_id"])
+      if (syncLogError) console.error("[lead-discovery] sync log insert failed:", syncLogError.message)
     }
 
     return NextResponse.json({

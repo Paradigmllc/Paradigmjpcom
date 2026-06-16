@@ -16,6 +16,40 @@ function readOptionalEnv(name: string): string | null {
   return value && value.trim().length > 0 ? value : null
 }
 
+function flagEnabled(name: string): boolean {
+  const value = readOptionalEnv(name)
+  return value ? /^(1|true|yes)$/i.test(value) : false
+}
+
+export function getSalesSupabaseConfig(): { url: string; serviceKey: string; source: "cloud" | "dedicated" } | null {
+  const cloudUrl = readOptionalEnv("NEXT_PUBLIC_SUPABASE_URL")
+  const cloudServiceKey = readOptionalEnv("SUPABASE_SERVICE_ROLE_KEY")
+  const salesUrl = readOptionalEnv("SALES_SUPABASE_URL")
+  const salesServiceKey = readOptionalEnv("SALES_SUPABASE_SERVICE_ROLE_KEY")
+  const dedicatedPrimary = flagEnabled("SALES_SUPABASE_PRIMARY")
+
+  if (dedicatedPrimary && salesUrl && salesServiceKey) {
+    return { url: salesUrl, serviceKey: salesServiceKey, source: "dedicated" }
+  }
+
+  if (cloudUrl && cloudServiceKey) {
+    if ((salesUrl || salesServiceKey) && !(salesUrl && salesServiceKey)) {
+      console.error("[supabase] SALES_SUPABASE_URL and SALES_SUPABASE_SERVICE_ROLE_KEY must be configured together")
+    }
+    return { url: cloudUrl, serviceKey: cloudServiceKey, source: "cloud" }
+  }
+
+  if (salesUrl && salesServiceKey) {
+    console.warn("[supabase] using SALES_SUPABASE_* because cloud Supabase env is not fully configured")
+    return { url: salesUrl, serviceKey: salesServiceKey, source: "dedicated" }
+  }
+
+  if (salesUrl || salesServiceKey) {
+    console.error("[supabase] SALES_SUPABASE_URL and SALES_SUPABASE_SERVICE_ROLE_KEY must be configured together")
+  }
+  return null
+}
+
 export function getSupabaseClient() {
   if (browserClient) return browserClient
   const url = readEnv("NEXT_PUBLIC_SUPABASE_URL")
@@ -44,16 +78,7 @@ export function getServiceSupabase() {
 }
 
 export function getServiceSalesSupabase() {
-  const salesUrl = readOptionalEnv("SALES_SUPABASE_URL")
-  const salesServiceKey = readOptionalEnv("SALES_SUPABASE_SERVICE_ROLE_KEY")
-
-  if (salesUrl && salesServiceKey) {
-    return createClient(salesUrl, salesServiceKey, { auth: { persistSession: false } })
-  }
-
-  if (salesUrl || salesServiceKey) {
-    console.error("[supabase] SALES_SUPABASE_URL and SALES_SUPABASE_SERVICE_ROLE_KEY must be configured together")
-  }
-
-  return getServiceSupabase()
+  const config = getSalesSupabaseConfig()
+  if (!config) return null
+  return createClient(config.url, config.serviceKey, { auth: { persistSession: false } })
 }

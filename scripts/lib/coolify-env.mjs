@@ -39,7 +39,11 @@ function hasEnvValue(value) {
 
 function mergeEnvRows(rows) {
   const envs = new Map()
-  for (const row of rows) {
+  const sortedRows = [...rows].sort((a, b) => {
+    if (a?.is_preview === b?.is_preview) return 0
+    return a?.is_preview ? -1 : 1
+  })
+  for (const row of sortedRows) {
     if (!row?.key) continue
     const value = normalizeCoolifyEnvValue(row)
     const previous = envs.get(row.key)

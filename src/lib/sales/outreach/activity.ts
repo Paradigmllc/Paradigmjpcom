@@ -12,6 +12,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import type { Region } from "../types"
 import type { OutreachStage } from "./types"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { insertWithOptionalColumns } from "@/lib/sales/safe-supabase-insert"
 
 /** activity_log.result CHECK = success|no_answer|follow_up|declined|completed */
 export type ActivityResult = "success" | "no_answer" | "follow_up" | "declined" | "completed"
@@ -33,7 +34,7 @@ export async function logOutreachActivity(
 ): Promise<{ ok: boolean; error?: string }> {
   const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
-  const { error } = await sb.from(DB_TABLES.SALES_ACTIVITY_LOG).insert({
+  const { error } = await insertWithOptionalColumns(sb, DB_TABLES.SALES_ACTIVITY_LOG, {
     region: input.region,
     company_id: input.companyId,
     pipeline_run_id: input.pipelineRunId ?? null,
@@ -43,7 +44,7 @@ export async function logOutreachActivity(
     result: input.result,
     occurred_at: input.occurredAt ?? new Date().toISOString(),
     meta: { kind: "form_outreach", outreach_stage: input.outreachStage ?? null, ...input.meta },
-  })
+  }, ["pipeline_run_id"])
   if (error) return { ok: false, error: error.message }
   return { ok: true }
 }

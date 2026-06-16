@@ -2,7 +2,7 @@
 -- Supabase remains the SSOT. Runtime never stores API key values, only env names
 -- and status snapshots that can be shown in the dashboard.
 
-create table if not exists sales_integration_status (
+create table if not exists public.sales_integration_status (
   slug text primary key,
   display_name text not null,
   category text not null,
@@ -24,14 +24,18 @@ create table if not exists sales_integration_status (
     check (balance_status in ('not_applicable', 'not_configured', 'manual', 'checkable', 'ok', 'error'))
 );
 
-alter table sales_integration_status enable row level security;
+alter table public.sales_integration_status enable row level security;
 
-drop policy if exists sales_integration_status_service_role_all on sales_integration_status;
+drop policy if exists sales_integration_status_service_role_all on public.sales_integration_status;
 create policy sales_integration_status_service_role_all
-  on sales_integration_status
-  for all
-  using (auth.role() = 'service_role')
-  with check (auth.role() = 'service_role');
+  on public.sales_integration_status
+  for all to service_role
+  using (true)
+  with check (true);
 
-comment on table sales_integration_status is
+grant select, insert, update, delete on table public.sales_integration_status to service_role;
+
+comment on table public.sales_integration_status is
   'Integration status snapshots for Sales OS. Stores no secret values.';
+
+notify pgrst, 'reload schema';

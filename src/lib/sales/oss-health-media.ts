@@ -156,14 +156,25 @@ export async function checkCrawl4AiHealth(): Promise<ServiceHealthResult> {
   const missing = missingEnv(["CRAWL4AI_BASE_URL"])
   if (missing.length > 0) return notConfigured(missing)
   try {
-    const base = normalizeHttpBase(envValue("CRAWL4AI_BASE_URL") as string)
     const path = envValue("CRAWL4AI_HEALTH_PATH") ?? "/health"
-    base.pathname = `${base.pathname}/${path.replace(/^\/+/, "")}`.replace(/\/+/g, "/")
     const headers: Record<string, string> = {}
     const apiKey = envValue("CRAWL4AI_API_KEY")
     if (apiKey) headers.Authorization = `Bearer ${apiKey}`
-    const res = await safeFetch(base.toString(), { headers, signal: AbortSignal.timeout(10_000) })
-    return { balanceStatus: res.ok ? "ok" : "error", balanceLabel: `health endpoint HTTP ${res.status}` }
+
+    const rawBase = envValue("CRAWL4AI_BASE_URL") as string
+    const candidates = [
+      rawBase,
+      rawBase.includes("crawl4.paradigmjp.com") ? "http://crawl4ai:11235" : null,
+    ].filter((value): value is string => Boolean(value))
+    let lastStatus: number | null = null
+    for (const candidate of candidates) {
+      const base = normalizeHttpBase(candidate)
+      base.pathname = `${base.pathname}/${path.replace(/^\/+/, "")}`.replace(/\/+/g, "/")
+      const res = await safeFetch(base.toString(), { headers, signal: AbortSignal.timeout(10_000) })
+      lastStatus = res.status
+      if (res.ok) return { balanceStatus: "ok", balanceLabel: `health endpoint HTTP ${res.status}` }
+    }
+    return { balanceStatus: "error", balanceLabel: `health endpoint HTTP ${lastStatus ?? "unknown"}` }
   } catch (error) {
     return healthError("Crawl4AI", error)
   }
@@ -172,6 +183,7 @@ export async function checkCrawl4AiHealth(): Promise<ServiceHealthResult> {
 export async function checkCrawleeHealth(): Promise<ServiceHealthResult> {
   const missing = missingEnv(["CRAWLEE_WORKER_URL"])
   if (missing.length > 0) return notConfigured(missing)
+  if ((envValue("CRAWLEE_WORKER_URL") as string).includes("stagehand.paradigmjp.com")) return notConfigured(["CRAWLEE_WORKER_URL"])
   try {
     const url = normalizeHttpBase(envValue("CRAWLEE_WORKER_URL") as string)
     url.pathname = `${url.pathname}/health`.replace(/\/+/g, "/")
@@ -185,6 +197,7 @@ export async function checkCrawleeHealth(): Promise<ServiceHealthResult> {
 export async function checkPlaywrightStealthHealth(): Promise<ServiceHealthResult> {
   const missing = missingEnv(["OUTREACH_WORKER_URL"])
   if (missing.length > 0) return notConfigured(missing)
+  if ((envValue("OUTREACH_WORKER_URL") as string).includes("stagehand.paradigmjp.com")) return notConfigured(["OUTREACH_WORKER_URL"])
   try {
     const url = normalizeHttpBase(envValue("OUTREACH_WORKER_URL") as string)
     url.pathname = `${url.pathname}/health`.replace(/\/+/g, "/")
