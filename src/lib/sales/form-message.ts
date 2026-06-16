@@ -237,23 +237,18 @@ async function saveFormMessageToCompany(companyId: string, message: string, engi
   try {
     const sb = getServiceSalesSupabase()
     if (!sb) return false
-    // TOCTOU race: concurrent form submissions may lose history entries since
-    // this reads meta, spreads it, then writes back. form_message_history is best-effort.
-    const { data: current } = await sb.from(DB_TABLES.SALES_COMPANIES).select("meta").eq("id", companyId).single()
-    const prevMeta = (current?.meta as Record<string, unknown>) ?? {}
-    const history = Array.isArray(prevMeta.form_message_history) ? prevMeta.form_message_history as Array<unknown> : []
-    await sb.from(DB_TABLES.SALES_COMPANIES).update({
-      meta: {
-        ...prevMeta,
-        form_message: message,
-        form_message_engine: engine,
-        form_message_generated_at: new Date().toISOString(),
-        form_message_history: [
-          { message, engine, generated_at: new Date().toISOString() },
-          ...history.slice(0, 9),
-        ],
-      },
-    }).eq("id", companyId)
+    const generatedAt = new Date().toISOString()
+    // Atomic via Postgres function: single UPDATE avoids SELECT→merge→UPDATE TOCTOU race.
+    const { error } = await sb.rpc("sales_atomic_meta_history_prepend", {
+      p_company_id: companyId,
+      p_message: message,
+      p_engine: engine,
+      p_generated_at: generatedAt,
+    })
+    if (error) {
+      console.error("[sales-form-message] RPC failed:", error.message)
+      return false
+    }
     return true
   } catch (e) {
     console.error("[sales-form-message] failed to persist message:", e)

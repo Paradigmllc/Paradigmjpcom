@@ -148,33 +148,60 @@ export async function qualifyLeadBatch(batchId: string, limit = 500): Promise<{
     .eq("status", "outreach_ready")
   let readySlots = Math.max(0, batch.max_outreach_ready - (existingReady.count ?? 0))
 
-  for (const item of (itemRes.data ?? []) as BatchItemRow[]) {
+  const items = (itemRes.data ?? []) as BatchItemRow[]
+  const companyIds = [...new Set(items.map((item) => item.company_id).filter((id): id is string => id !== null))]
+  const companyMap = new Map<string, SalesCompany>()
+  if (companyIds.length > 0) {
+    const chunkSize = 300
+    for (let i = 0; i < companyIds.length; i += chunkSize) {
+      const chunk = companyIds.slice(i, i + chunkSize)
+      const { data: companiesData, error: companiesError } = await sb
+        .from(DB_TABLES.SALES_COMPANIES)
+        .select("*")
+        .in("id", chunk)
+      if (companiesError) {
+        console.error("[sales-lead-qualification] batch company fetch failed:", companiesError.message)
+        continue
+      }
+      for (const company of (companiesData ?? []) as SalesCompany[]) {
+        companyMap.set(company.id, company)
+      }
+    }
+  }
+
+  const updates: Promise<unknown>[] = []
+  for (const item of items) {
     if (!item.company_id) continue
-    const companyRes = await sb.from(DB_TABLES.SALES_COMPANIES).select("*").eq("id", item.company_id).maybeSingle()
-    if (companyRes.error || !companyRes.data) continue
-    const result = qualityForCompany(companyRes.data as SalesCompany, batch.min_outreach_score)
+    const company = companyMap.get(item.company_id)
+    if (!company) continue
+    const result = qualityForCompany(company, batch.min_outreach_score)
     const finalStatus = result.status === "outreach_ready" && readySlots <= 0 ? "manual_review" : result.status
     if (finalStatus === "outreach_ready") readySlots--
-    const itemUpdate = await sb
-      .from(DB_TABLES.SALES_LEAD_BATCH_ITEMS)
-      .update({
-        status: finalStatus,
-        qualification_score: result.score,
-        rejection_reason: finalStatus === "manual_review" && result.status === "outreach_ready"
-          ? "outreach_ready_cap_reached"
-          : result.reason,
-        quality_gate: result.gate,
-      })
-      .eq("id", item.id)
-    if (itemUpdate.error) {
-      console.error("[sales-lead-qualification] item update failed:", item.id, itemUpdate.error.message)
-      continue
-    }
-    processed++
-    if (finalStatus === "outreach_ready") outreachReady++
-    else if (finalStatus === "manual_review") manualReview++
-    else if (finalStatus === "rejected") rejected++
+    updates.push(
+      (async () => {
+        const itemUpdate = await sb
+          .from(DB_TABLES.SALES_LEAD_BATCH_ITEMS)
+          .update({
+            status: finalStatus,
+            qualification_score: result.score,
+            rejection_reason: finalStatus === "manual_review" && result.status === "outreach_ready"
+              ? "outreach_ready_cap_reached"
+              : result.reason,
+            quality_gate: result.gate,
+          })
+          .eq("id", item.id)
+        if (itemUpdate.error) {
+          console.error("[sales-lead-qualification] item update failed:", item.id, itemUpdate.error.message)
+          return
+        }
+        processed++
+        if (finalStatus === "outreach_ready") outreachReady++
+        else if (finalStatus === "manual_review") manualReview++
+        else if (finalStatus === "rejected") rejected++
+      })(),
+    )
   }
+  await Promise.all(updates)
 
   await refreshLeadBatchCounters(sb, batchId)
   return { ok: true, processed, outreachReady, manualReview, rejected }

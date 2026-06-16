@@ -387,20 +387,20 @@ export async function deployDemoToCfPages(
     try {
       const sb = getServiceSalesSupabase()
       if (sb) {
-        const existing = await sb.from(DB_TABLES.SALES_COMPANIES).select("meta").eq("id", company.id).maybeSingle()
-        const currentMeta = (existing?.data as { meta?: Record<string, unknown> } | null)?.meta ?? {}
-        await sb.from(DB_TABLES.SALES_COMPANIES).update({
-          meta: {
-            ...(currentMeta as Record<string, unknown>),
-            demo_site: {
-              url: demoUrl,
-              type: "astro_cf_pages",
-              slug,
-              committed_to_github: committed,
-              generated_at: new Date().toISOString(),
-            },
+        const demoSitePatch = {
+          demo_site: {
+            url: demoUrl,
+            type: "astro_cf_pages",
+            slug,
+            committed_to_github: committed,
+            generated_at: new Date().toISOString(),
           },
-        }).eq("id", company.id)
+        }
+        const { error } = await sb.rpc("sales_atomic_meta_merge", {
+          p_company_id: company.id,
+          p_patch: demoSitePatch,
+        })
+        if (error) console.error("[cf-pages-deploy] atomic meta merge failed:", error.message)
       }
     } catch (metaErr) {
       console.error("[cf-pages-deploy] meta update failed:", metaErr)

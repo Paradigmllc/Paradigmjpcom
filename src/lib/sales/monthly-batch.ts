@@ -1,14 +1,12 @@
-import { getServiceSalesSupabase } from "@/lib/supabase"
+﻿import { getServiceSalesSupabase } from "@/lib/supabase"
 import { normalizeCompanyName, normalizeDomain } from "./dedup"
 import { enqueueCompanyEnrichment, triggerEnrichmentRunner } from "./enrichment-jobs"
 import { salesScopeFromCountry, type SalesLocaleScope } from "./locale-scope"
-import { findExistingCompany, upsertCompanyByDomain } from "./companies"
+import { findExistingCompany, upsertCompanyByDomain, batchFindExistingByDomains } from "./companies"
 import type { Industry, Region } from "./types"
 import { DB_TABLES } from "@/lib/sales/db-tables"
-
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
-
 export type LeadBatchStatus =
   | "draft"
   | "importing"
@@ -17,7 +15,6 @@ export type LeadBatchStatus =
   | "outreach_ready"
   | "completed"
   | "failed"
-
 export type LeadBatchItemStatus =
   | "imported"
   | "duplicate"
@@ -31,7 +28,6 @@ export type LeadBatchItemStatus =
   | "sent"
   | "responded"
   | "error"
-
 export interface LeadBatchCsvRow {
   company_name?: string
   domain?: string
@@ -52,7 +48,6 @@ export interface LeadBatchCsvRow {
   searxng_run_id?: string | null
   searxng_result_id?: string | null
 }
-
 export interface SalesLeadBatchSummary {
   id: string
   name: string
@@ -80,7 +75,6 @@ export interface SalesLeadBatchSummary {
   statusCounts: Record<string, number>
   topRejectionReasons: Array<{ reason: string; count: number }>
 }
-
 interface BatchRow {
   id: string
   name: string
@@ -106,7 +100,6 @@ interface BatchRow {
   created_at: string
   updated_at: string
 }
-
 interface BatchItemRow {
   id: string
   batch_id: string
@@ -120,11 +113,9 @@ interface BatchItemRow {
   quality_gate: JsonRecord
   source_payload: JsonRecord
 }
-
 function getSb(): ServiceSupabase | null {
   return getServiceSalesSupabase()
 }
-
 function defaultBatchName(scope: SalesLocaleScope, source: string): string {
   const ym = new Intl.DateTimeFormat("ja-JP", {
     timeZone: "Asia/Tokyo",
@@ -133,7 +124,6 @@ function defaultBatchName(scope: SalesLocaleScope, source: string): string {
   }).format(new Date())
   return `${ym} ${source} ${scope.targetCountry}`
 }
-
 function countStatus(items: Pick<BatchItemRow, "status" | "rejection_reason">[]): {
   statusCounts: Record<string, number>
   topRejectionReasons: Array<{ reason: string; count: number }>
@@ -152,7 +142,6 @@ function countStatus(items: Pick<BatchItemRow, "status" | "rejection_reason">[])
       .map(([reason, count]) => ({ reason, count })),
   }
 }
-
 function mapBatch(row: BatchRow, items: Pick<BatchItemRow, "status" | "rejection_reason">[]): SalesLeadBatchSummary {
   const counts = countStatus(items)
   return {
@@ -182,7 +171,6 @@ function mapBatch(row: BatchRow, items: Pick<BatchItemRow, "status" | "rejection
     ...counts,
   }
 }
-
 export async function listLeadBatches(scope: SalesLocaleScope, limit = 8): Promise<{
   ok: boolean
   batches: SalesLeadBatchSummary[]
@@ -190,7 +178,6 @@ export async function listLeadBatches(scope: SalesLocaleScope, limit = 8): Promi
 }> {
   const sb = getSb()
   if (!sb) return { ok: false, batches: [], error: "Supabase service_role not configured" }
-
   const { data, error } = await sb
     .from(DB_TABLES.SALES_LEAD_BATCHES)
     .select("*")
@@ -199,7 +186,6 @@ export async function listLeadBatches(scope: SalesLocaleScope, limit = 8): Promi
     .order("created_at", { ascending: false })
     .limit(limit)
   if (error) return { ok: false, batches: [], error: error.message }
-
   const batches = (data ?? []) as BatchRow[]
   const ids = batches.map((batch) => batch.id)
   const itemRes = ids.length > 0
@@ -209,14 +195,12 @@ export async function listLeadBatches(scope: SalesLocaleScope, limit = 8): Promi
         .in("batch_id", ids)
     : { data: [], error: null }
   if (itemRes.error) return { ok: false, batches: [], error: itemRes.error.message }
-
   const items = ((itemRes.data ?? []) as Array<Pick<BatchItemRow, "batch_id" | "status" | "rejection_reason">>)
   return {
     ok: true,
     batches: batches.map((batch) => mapBatch(batch, items.filter((item) => item.batch_id === batch.id))),
   }
 }
-
 export async function createLeadBatch(input: {
   name?: string | null
   rows: LeadBatchCsvRow[]
@@ -250,7 +234,6 @@ export async function createLeadBatch(input: {
     .select("*")
     .single()
   if (batchInsert.error) return { ok: false, error: batchInsert.error.message }
-
   const batch = batchInsert.data as BatchRow
   const seen = new Set<string>()
   const failures: Array<{ row: number; reason: string }> = []
@@ -260,8 +243,13 @@ export async function createLeadBatch(input: {
   let jobs = 0
   let fatalError: string | null = null
   const companyIdsForTwentySync: string[] = []
-
   // ── Fix 3: Wrap entire processing in try/catch for mid-batch crash resilience ──
+  // Pre-fetch existing companies by domain to avoid N+1 lookups
+  const allDomains = input.rows
+    .map((row) => normalizeDomain(row.domain))
+    .filter((d): d is string => d !== null && d.length > 0)
+  const existingDomainMap = await batchFindExistingByDomains(allDomains)
+  const batchItems: Array<Record<string, unknown>> = []
   try {
   for (let i = 0; i < input.rows.length; i++) {
     const row = input.rows[i]
@@ -275,11 +263,10 @@ export async function createLeadBatch(input: {
       company_name: row.company_name ?? null,
       source_payload: row as JsonRecord,
     }
-
     if (!row.company_name || !cleanDomain) {
       rejected++
       failures.push({ row: i, reason: "company_name and valid domain are required" })
-      await sb.from(DB_TABLES.SALES_LEAD_BATCH_ITEMS).insert({
+      batchItems.push({
         ...baseItem,
         status: "rejected",
         rejection_reason: "missing_company_or_domain",
@@ -288,7 +275,7 @@ export async function createLeadBatch(input: {
     }
     if (dedupeKey && seen.has(dedupeKey)) {
       duplicates++
-      await sb.from(DB_TABLES.SALES_LEAD_BATCH_ITEMS).insert({
+      batchItems.push({
         ...baseItem,
         status: "duplicate",
         rejection_reason: "duplicate_in_batch",
@@ -296,12 +283,11 @@ export async function createLeadBatch(input: {
       continue
     }
     if (dedupeKey) seen.add(dedupeKey)
-
     const rowScope = salesScopeFromCountry({
       reportLocale: row.report_locale ?? input.reportLocale,
       targetCountry: row.target_country ?? row.country ?? input.targetCountry,
     })
-    const existing = await findExistingCompany({ domain: cleanDomain, nameKey, region: rowScope.region })
+    const existing = existingDomainMap.get(cleanDomain) ?? await findExistingCompany({ domain: cleanDomain, nameKey, region: rowScope.region })
     const saved = existing
       ? { ok: true, company: existing }
       : await upsertCompanyByDomain({
@@ -327,14 +313,13 @@ export async function createLeadBatch(input: {
     if (!saved.ok || !saved.company) {
       rejected++
       failures.push({ row: i, reason: saved.error ?? "company upsert failed" })
-      await sb.from(DB_TABLES.SALES_LEAD_BATCH_ITEMS).insert({
+      batchItems.push({
         ...baseItem,
         status: "error",
         rejection_reason: saved.error ?? "company_upsert_failed",
       })
       continue
     }
-
     imported++
     companyIdsForTwentySync.push(saved.company.id)
     let status: LeadBatchItemStatus = "imported"
@@ -383,19 +368,29 @@ export async function createLeadBatch(input: {
         }
       }
     }
-    await sb.from(DB_TABLES.SALES_LEAD_BATCH_ITEMS).insert({
+    batchItems.push({
       ...baseItem,
       company_id: saved.company.id,
       status,
     })
   }
+  // Batch insert all items in one operation
+  if (batchItems.length > 0) {
+    const chunkSize = 500
+    for (let i = 0; i < batchItems.length; i += chunkSize) {
+      const chunk = batchItems.slice(i, i + chunkSize)
+      await sb.from(DB_TABLES.SALES_LEAD_BATCH_ITEMS).insert(chunk)
+    }
+  }
   } catch (err) {
     // Fix 3: Save partial progress on catastrophic failure
     fatalError = err instanceof Error ? err.message : String(err)
     console.error("[monthly-batch] batch processing crashed mid-way:", err)
+    if (batchItems.length > 0) {
+      try { await sb.from(DB_TABLES.SALES_LEAD_BATCH_ITEMS).insert(batchItems) } catch { /* fallthrough */ }
+    }
     // Don't rethrow — we save partial progress below
   }
-
   let twentySynced = 0
   let twentyFailed = 0
   const uniqueCompanyIdsForTwenty = [...new Set(companyIdsForTwentySync)].slice(0, 50)
@@ -416,12 +411,10 @@ export async function createLeadBatch(input: {
       console.error("[monthly-batch] Twenty sync batch crashed:", syncError)
     }
   }
-
   // Determine batch status based on whether we completed or crashed
   const finalStatus = fatalError
     ? (imported > 0 ? "importing" : "failed") // "importing" = partial, can be retried
     : (jobs > 0 ? "enriching" : "qualifying")
-
   await sb
     .from(DB_TABLES.SALES_LEAD_BATCHES)
     .update({
@@ -434,11 +427,9 @@ export async function createLeadBatch(input: {
       completed_at: fatalError ? new Date().toISOString() : null,
     })
     .eq("id", batch.id)
-
   if (fatalError) {
     return { ok: false, error: fatalError, failures: failures.slice(0, 20) }
   }
-
   if (jobs > 0) {
     const triggered = await triggerEnrichmentRunner(Math.min(jobs, 5))
     if (!triggered.ok) {
@@ -469,7 +460,6 @@ export async function createLeadBatch(input: {
       console.error("[monthly-batch] inline enrichment fallback failed:", e)
     }
   }
-
   const listed = await listLeadBatches(scope, 1)
   return {
     ok: true,

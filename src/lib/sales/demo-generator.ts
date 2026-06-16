@@ -334,20 +334,18 @@ export async function generateReplacementDemo(
   })
   if (cfResult.ok && cfResult.demoUrl) {
     console.warn("[demo-generator] CF Pages deploy triggered:", cfResult.demoUrl)
-    // Write demo_site url back to sales_companies.meta so diagnostic reports show it
     try {
-      const existing = await sb.from(DB_TABLES.SALES_COMPANIES).select("meta").eq("id", company.id).maybeSingle()
-      const currentMeta = (existing?.data as { meta?: Record<string, unknown> } | null)?.meta ?? {}
-      await sb.from(DB_TABLES.SALES_COMPANIES).update({
-        meta: {
-          ...(currentMeta as Record<string, unknown>),
+      const { error } = await sb.rpc("sales_atomic_meta_merge", {
+        p_company_id: company.id,
+        p_patch: {
           demo_site: {
             url: cfResult.demoUrl,
             type: "astro_cf_pages",
             generated_at: new Date().toISOString(),
           },
         },
-      }).eq("id", company.id)
+      })
+      if (error) console.error("[demo-generator] atomic meta merge failed:", error.message)
     } catch (metaErr) {
       console.error("[demo-generator] meta update failed:", metaErr)
     }

@@ -240,14 +240,6 @@ export async function saveScreenshotEvidence(
   company: VisualEvidenceCompany,
   evidence: ScreenshotEvidence,
 ): Promise<void> {
-  const latest = await sb.from(DB_TABLES.SALES_COMPANIES).select("meta").eq("id", company.id).maybeSingle()
-  if (latest.error) {
-    console.error("[visual-evidence] saveScreenshotEvidence select failed:", latest.error.message)
-    throw new Error(latest.error.message)
-  }
-  const currentMeta = asRecord(latest.data?.meta ?? company.meta)
-  const visual = asRecord(currentMeta.visual_evidence)
-  const screenshots = asRecord(visual.screenshots)
   const shotMeta = {
     url: evidence.url,
     object_key: evidence.objectKey,
@@ -258,21 +250,13 @@ export async function saveScreenshotEvidence(
     captured_at: evidence.capturedAt,
     source_url: evidence.sourceUrl,
   }
-  const meta = {
-    ...currentMeta,
-    screenshot_url: evidence.viewport === "desktop" ? evidence.url : currentMeta.screenshot_url,
-    screenshot_captured_at: evidence.viewport === "desktop" ? evidence.capturedAt : currentMeta.screenshot_captured_at,
-    screenshot_provider: evidence.provider,
-    visual_evidence: {
-      ...visual,
-      last_refreshed_at: evidence.capturedAt,
-      screenshots: {
-        ...screenshots,
-        [evidence.viewport]: shotMeta,
-      },
-    },
-  }
-  const { error } = await sb.from(DB_TABLES.SALES_COMPANIES).update({ meta }).eq("id", company.id)
+  // Atomic deep-merge into visual_evidence.screenshots.{viewport} — single UPDATE,
+  // no SELECT→merge→UPDATE TOCTOU race.
+  const { error } = await sb.rpc("sales_atomic_screenshot_append", {
+    p_company_id: company.id,
+    p_viewport: evidence.viewport,
+    p_screenshot: shotMeta,
+  })
   if (error) {
     console.error("[visual-evidence] saveScreenshotEvidence update failed:", error.message)
     throw new Error(error.message)

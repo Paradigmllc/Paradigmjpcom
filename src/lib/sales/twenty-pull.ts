@@ -1,5 +1,5 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
-import { upsertCompanyByDomain } from "@/lib/sales/companies"
+import { upsertCompanyByDomain, batchFindExistingByDomains } from "@/lib/sales/companies"
 import { salesScopeFromCountry } from "@/lib/sales/locale-scope"
 import { ensureTwentyPipelineRun } from "./twenty-pipeline-intake"
 import { DB_TABLES } from "@/lib/sales/db-tables"
@@ -224,6 +224,12 @@ export async function pullTwentyCompaniesToSupabase(
   let pipelineRunsDispatched = 0
   let pipelineRunsReused = 0
 
+  // Pre-fetch all existing companies by domain to avoid N+1 lookups
+  const allDomains = records
+    .map((r) => normalizeDomain(r.domainName?.primaryLinkUrl) ?? normalizeDomain(r.domainName?.primaryLinkLabel))
+    .filter((d): d is string => d !== null && d.length > 0)
+  const existingDomainMap = await batchFindExistingByDomains(allDomains)
+
   for (const record of records) {
     const domain =
       normalizeDomain(record.domainName?.primaryLinkUrl) ??
@@ -234,18 +240,10 @@ export async function pullTwentyCompaniesToSupabase(
       continue
     }
 
-    const { data: company, error: findError } = await sb
-      .from(DB_TABLES.SALES_COMPANIES)
-      .select("id, slug, report_locale, target_country, template_variant, meta, pipeline_status, report_url")
-      .eq("domain", domain)
-      .maybeSingle()
-
-    if (findError) {
-      console.error("[twenty-pull] Supabase company lookup failed:", findError.message)
-      skipped += 1
-      failures.push({ twentyCompanyId: record.id ?? null, domain, reason: findError.message })
-      continue
-    }
+    const existingCompany = existingDomainMap.get(domain) ?? null
+    const company = existingCompany
+      ? { id: existingCompany.id, slug: existingCompany.slug, report_locale: existingCompany.report_locale, target_country: existingCompany.target_country, template_variant: existingCompany.template_variant, meta: existingCompany.meta, pipeline_status: existingCompany.pipeline_status, report_url: existingCompany.report_url }
+      : null
 
     const currentMeta = plainRecord(company?.meta)
     const reportUrl = record.paradigmReportUrl?.primaryLinkUrl ?? null
@@ -277,7 +275,7 @@ export async function pullTwentyCompaniesToSupabase(
 
     let companyId = typeof company?.id === "string" ? company.id : null
     let companyReportUrl = typeof company?.report_url === "string" && company.report_url.trim() ? company.report_url : null
-    let companyPipelineStatus = typeof company?.pipeline_status === "string" ? company.pipeline_status : null
+    let companyPipelineStatus: string | null = typeof company?.pipeline_status === "string" ? company.pipeline_status : null
 
     if (!companyId) {
       if (isDryRun) {
