@@ -173,6 +173,31 @@ export default buildConfig({
           },
         })
         console.log("[payload] admin user seeded successfully")
+        return
+      }
+      const existing = await payload.find({ collection: "users", where: { email: { equals: adminEmail } }, limit: 1 })
+      if (existing.totalDocs > 0) {
+        const user = existing.docs[0]
+        if (user) {
+          await payload.update({
+            collection: "users",
+            id: user.id as number,
+            data: { password: adminPassword, role: "admin" },
+          })
+          console.log("[payload] admin user password synced:", adminEmail)
+        }
+      } else {
+        console.log("[payload] admin email not found among existing users — seeding new admin:", adminEmail)
+        await payload.create({
+          collection: "users",
+          data: {
+            email: adminEmail,
+            password: adminPassword,
+            name: "Admin",
+            role: "admin",
+          },
+        })
+        console.log("[payload] admin user seeded successfully")
       }
     } catch (e) {
       console.error("[payload] auto-seed admin user failed:", e)
