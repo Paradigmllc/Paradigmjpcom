@@ -121,8 +121,19 @@ export function getPayloadPoolMetrics(): PayloadPoolMetrics {
  * Retries up to 3 times with exponential backoff (500ms → 1s → 2s).
  * Reduced from 5 retries to avoid contributing to pool exhaustion in pooler cases.
  */
+function isNextControlFlowError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    "digest" in error &&
+    typeof (error as { digest?: unknown }).digest === "string" &&
+    ((error as { digest: string }).digest.startsWith("NEXT_REDIRECT") ||
+      (error as { digest: string }).digest.startsWith("NEXT_NOT_FOUND"))
+  )
+}
+
 export async function withPayloadRetry<T>(fn: () => Promise<T>): Promise<T> {
   let lastError: unknown
+  let actualError: unknown = null
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const result = await fn()
@@ -131,16 +142,26 @@ export async function withPayloadRetry<T>(fn: () => Promise<T>): Promise<T> {
     } catch (e) {
       lastError = e
       const msg = e instanceof Error ? e.message.toLowerCase() : ""
-      // Do not retry on pool exhaustion — retries make pooler situation worse
-      if (msg.includes("echeckouttimeout") || msg.includes("unable to check out")) {
+      // NEXT_REDIRECT / NEXT_NOT_FOUND are Next.js internal control flow, NOT db failures
+      if (isNextControlFlowError(e)) {
+        actualError = e
         break
       }
+      // Do not retry on pool exhaustion — retries make pooler situation worse
+      if (msg.includes("echeckouttimeout") || msg.includes("unable to check out")) {
+        actualError = e
+        break
+      }
+      actualError = e
       if (attempt < 2) {
         const delay = 500 * Math.pow(2, attempt)
         await new Promise((r) => setTimeout(r, delay))
       }
     }
   }
-  markPayloadInitFailure(lastError)
-  throw lastError
+  // NEXT_REDIRECT/NEXT_NOT_FOUND are expected control flow, don't count as failures
+  if (actualError && !isNextControlFlowError(actualError)) {
+    markPayloadInitFailure(actualError)
+  }
+  throw actualError ?? lastError
 }

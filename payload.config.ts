@@ -217,8 +217,17 @@ export default buildConfig({
       const isTransactionMode = uri.includes(":6543")
       console.log(`[payload] database: ${masked} | pooler=${isPooler} | mode=${isTransactionMode ? "transaction" : "session/direct"}`)
 
+      // Transaction mode PgBouncer: search_path must be set at connection startup
+      // (SET doesn't persist across transactions). Add via connection string options.
+      let connString = uri
+      if (isTransactionMode && !uri.includes("options=")) {
+        const sep = uri.includes("?") ? "&" : "?"
+        connString = `${uri}${sep}options=-c%20search_path%3Dparadigm`
+        console.log(`[payload] transaction mode: appended search_path to connection string`)
+      }
+
       const poolConfig: Record<string, unknown> = {
-        connectionString: uri,
+        connectionString: connString,
         max: 4,
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 15000,
@@ -230,11 +239,6 @@ export default buildConfig({
         poolConfig.ssl = { rejectUnauthorized: false }
       } else {
         poolConfig.ssl = shouldUseSsl(uri)
-      }
-
-      // Transaction mode PgBouncer: set search_path via options (session SET doesn't persist across transactions)
-      if (isTransactionMode) {
-        poolConfig.options = "-c search_path=paradigm -c idle_in_transaction_session_timeout=30000 -c statement_timeout=30000"
       }
 
       return poolConfig
