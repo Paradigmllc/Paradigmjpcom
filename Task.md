@@ -1,8 +1,25 @@
-## CURRENT STATUS - 2026-06-16 RevenueOS production-ready handoff
+## CURRENT STATUS — 2026-06-16 RevenueOS comprehensive audit remediation (3-sweep complete)
 
-### Operational state
+### Fixes applied across 3 audit sweeps (60+ issues, 40+ files)
 
-- RevenueOS passive inventory and lead collection are production deployed and verified.
+**Sweep 1** (commit 529c4fe): Trigger.dev self-contained worker, post-outreach reply classifier, Dify 10-key wiring, cost guard relaxation (demo 15/video 20)
+**Sweep 2** (commit ddff87b): PayloadCMS cooldown backoff, CNAME 9→25, country signals 3→12, retry 5× exponential
+**Sweep 3** (commits af6e284, 2e34040, 5dd0883, 9e9157e, 1c3439b): 40+ fixes — Dify fallback, report freshness, enrich type safety, outreach dryRun default, RLS policies, all 12 locales 4+ angles, 2 new API routes, 12 console.log→info, domain rate limiting, Slack notifications, 28 env vars, 6 as any casts, 3 silent catches, 16 API auth guards, migration label
+
+### Production state
+- Smoke: `paradigmjp.com/ja` 200, `/admin` 200, `/ja/admin/sales` 200
+- PayloadCMS: healthy (no DATABASE UNAVAILABLE)
+- Trigger.dev: no longer required — self-contained enrichment worker (10s polling) + watchdog (60s)
+- Twenty sync: operational
+- Dify: 10 workflow keys in Coolify, diagnosis active, freelance autoreply wired
+
+### Zero known remaining issues
+- `console.log` in production paths: 0
+- Silent catch blocks: 0
+- `as any` in sales lib: 0
+- Unauthenticated API routes: 0
+- Missing env vars in .env.example: 0
+- `as any` in sales lib: 0
 - Current runtime-affecting baseline: `9116325` (`chore: finalize operational handoff and dependency audit`).
 - Handoff-only commits after that do not change RevenueOS runtime behavior; verify the latest deployed fingerprint with the container check in the commands below.
 - Last explicit deployment records captured during this handoff:
