@@ -1,11 +1,12 @@
 import { createHash } from "node:crypto"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { classifyReply } from "./outreach/reply-classifier"
 
 export type JsonRecord = Record<string, unknown>
 export type SalesPostOutreachRegion = "jp" | "global"
-export type SalesActivityType = "email" | "call" | "meeting" | "note" | "sms" | "linkedin" | "demo" | "follow_up"
-export type SalesActivityResult = "success" | "no_answer" | "follow_up" | "declined" | "completed"
+export type SalesActivityType = "email" | "call" | "meeting" | "note" | "sms" | "linkedin" | "demo" | "follow_up" | "reply_received" | "reply_classified"
+export type SalesActivityResult = "success" | "no_answer" | "follow_up" | "declined" | "completed" | "interested" | "not_interested" | "needs_info" | "unsubscribe"
 export type SalesQueueType = "cleanse" | "call" | "form_send" | "follow_up" | "crm_update" | "meeting_prep" | "analysis"
 
 export interface TriggerDevForwardResult {
@@ -98,76 +99,91 @@ function postOutreachIdempotencyKey(input: {
   return `post-outreach-${input.source}-${candidate ?? stableHash({ payload: input.payload, summary: input.summary })}`
 }
 
-export async function forwardPostOutreachToTriggerDev(input: {
-  taskId: string | null
+export async function processInboundReply(input: {
   source: "chatwoot" | "livekit"
   payload: JsonRecord
   summary: JsonRecord
-}): Promise<TriggerDevForwardResult> {
-  if (!input.taskId) return { ok: false, error: "Trigger.dev post outreach task ID not configured" }
+}): Promise<{ ok: boolean; error: string | null; classification?: { intent: string; shouldFollowUp: boolean; queuedForHumanReview: boolean } }> {
+  const address = text(input.summary, ["from", "sender", "email", "from_address", "contact_email"]) ?? "unknown"
+  const subject = text(input.summary, ["subject", "title"]) ?? ""
+  const body = text(input.summary, ["body", "content", "message", "text"]) ?? ""
 
-  const secretKey = process.env.TRIGGER_SECRET_KEY ?? process.env.TRIGGER_ACCESS_TOKEN ?? process.env.TRIGGER_DEV_API_KEY
-  if (!secretKey || secretKey.trim().length === 0) {
-    console.error("[post-outreach-webhook] TRIGGER_SECRET_KEY is not configured for outbound forwarding")
-    return { ok: false, error: "Trigger.dev secret key not configured" }
+  if (body.length === 0 && subject.length === 0) {
+    console.warn("[post-outreach-webhook] inbound reply has no body or subject — skipping classification")
+    return { ok: true, error: null, classification: { intent: "empty", shouldFollowUp: false, queuedForHumanReview: false } }
   }
 
-  const apiUrlRaw = process.env.TRIGGER_API_URL
-  if (!apiUrlRaw) {
-    console.error("[post-outreach-webhook] TRIGGER_API_URL is not configured")
-    return { ok: false, error: "TRIGGER_API_URL not configured" }
-  }
-  const apiUrl = apiUrlRaw.replace(/\/+$/, "")
-  const endpoint = `${apiUrl}/api/v1/tasks/${encodeURIComponent(input.taskId)}/trigger`
+  const classification = await classifyReply(address, subject, body)
 
-  try {
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${secretKey}`,
-      },
-      body: JSON.stringify({
-        payload: {
-          source: input.source,
-          received_at: new Date().toISOString(),
-          summary: input.summary,
-          payload: input.payload,
-        },
-        context: { source: "revenue-os", webhookSource: input.source },
-        options: {
-          idempotencyKey: postOutreachIdempotencyKey(input),
-        },
-      }),
-      signal: AbortSignal.timeout(8_000),
+  const companyId = companyIdFromRecords(input.summary, input.payload)
+  const pipelineRunId = pipelineRunIdFromRecords(input.summary, input.payload)
+
+  await updatePipelineReplySteps({
+    pipelineRunId,
+    classification,
+    summary: { provider: input.source, subject, address },
+  })
+
+  if (classification.shouldNotifyOperator || classification.intent === "unknown") {
+    await notifyOperator({
+      companyId,
+      pipelineRunId,
+      intent: classification.intent,
+      summary: classification.summary,
+      address,
+      subject,
     })
+  }
 
-    if (!res.ok) {
-      const text = await res.text()
-      return { ok: false, error: `Trigger.dev HTTP ${res.status}: ${text.slice(0, 200)}` }
-    }
-    return { ok: true, error: null }
-  } catch (error) {
-    console.error("[post-outreach-webhook] Trigger.dev forwarding failed:", error)
-    return { ok: false, error: error instanceof Error ? error.message : "Trigger.dev forwarding failed" }
+  return {
+    ok: true,
+    error: null,
+    classification: {
+      intent: classification.intent,
+      shouldFollowUp: classification.shouldFollowUp,
+      queuedForHumanReview: classification.intent === "unknown",
+    },
+  }
+}
+
+async function notifyOperator(input: {
+  companyId: string | null
+  pipelineRunId: string | null
+  intent: string
+  summary: string
+  address: string
+  subject: string
+}): Promise<void> {
+  try {
+    const { notifyBothChannels } = await import("@/lib/notify")
+    await notifyBothChannels("sales", {
+      title: `📬 返信あり: ${input.intent} (${input.address})`,
+      message: input.subject || input.summary,
+      link: input.pipelineRunId ? `/ja/admin/sales/pipeline/${input.pipelineRunId}` : undefined,
+      type: "post_outreach_reply",
+    })
+  } catch (e) {
+    console.error("[post-outreach-webhook] operator notification failed:", e instanceof Error ? e.message : String(e))
   }
 }
 
 async function updatePipelineReplySteps(input: {
   pipelineRunId: string | null | undefined
-  queuedForFollowUp: boolean
+  classification: Awaited<ReturnType<typeof classifyReply>>
   summary: JsonRecord
 }): Promise<void> {
   if (!input.pipelineRunId) return
   const sb = getServiceSalesSupabase()
   if (!sb) return
   const now = new Date().toISOString()
+  const { intent, shouldFollowUp, summary: classificationSummary } = input.classification
+
   const reply = await sb
     .from(DB_TABLES.SALES_PIPELINE_STEPS)
     .update({
       status: "completed",
       completed_at: now,
-      output_payload: { received_at: now, summary: input.summary },
+      output_payload: { received_at: now, intent, classification: classificationSummary, summary: input.summary },
     })
     .eq("run_id", input.pipelineRunId)
     .eq("step_key", "reply_capture")
@@ -176,21 +192,22 @@ async function updatePipelineReplySteps(input: {
   const followUp = await sb
     .from(DB_TABLES.SALES_PIPELINE_STEPS)
     .update({
-      status: input.queuedForFollowUp ? "needs_review" : "completed",
-      completed_at: now,
-      output_payload: { queued_for_follow_up: input.queuedForFollowUp, summary: input.summary },
+      status: shouldFollowUp ? "queued" : (intent === "unsubscribe" || intent === "not_interested" ? "completed" : "needs_review"),
+      completed_at: shouldFollowUp ? null : now,
+      output_payload: { intent, should_follow_up: shouldFollowUp, classification: classificationSummary },
     })
     .eq("run_id", input.pipelineRunId)
     .eq("step_key", "follow_up_queue")
   if (followUp.error) console.error("[post-outreach-webhook] follow-up pipeline step update failed:", followUp.error.message)
 
+  const runStatus = intent === "unsubscribe" || intent === "not_interested" ? "completed" : shouldFollowUp ? "needs_review" : "needs_review"
   const run = await sb
     .from(DB_TABLES.SALES_PIPELINE_RUNS)
     .update({
-      status: input.queuedForFollowUp ? "needs_review" : "completed",
-      current_step: input.queuedForFollowUp ? "follow_up_queue" : null,
-      completed_at: input.queuedForFollowUp ? null : now,
-      result_payload: { reply_received_at: now, queued_for_follow_up: input.queuedForFollowUp },
+      status: runStatus,
+      current_step: shouldFollowUp ? "follow_up_queue" : null,
+      completed_at: intent === "unsubscribe" || intent === "not_interested" ? now : null,
+      result_payload: { reply_received_at: now, intent, should_follow_up: shouldFollowUp },
     })
     .eq("id", input.pipelineRunId)
   if (run.error) console.error("[post-outreach-webhook] pipeline run reply update failed:", run.error.message)
@@ -222,7 +239,15 @@ export async function persistPostOutreachEvent(input: PersistPostOutreachEventIn
 
   await updatePipelineReplySteps({
     pipelineRunId: input.pipelineRunId,
-    queuedForFollowUp: Boolean(input.queueType),
+    classification: {
+      intent: input.result === "interested" ? "interested" : input.result === "declined" ? "not_interested" : "unknown",
+      confidence: "medium",
+      shouldFollowUp: input.result === "interested",
+      shouldNotifyOperator: false,
+      queueType: input.result === "interested" ? "follow_up" : null,
+      summary: `persist_${input.result}`,
+      raw: null,
+    },
     summary: {
       activity_type: input.activityType,
       result: input.result,

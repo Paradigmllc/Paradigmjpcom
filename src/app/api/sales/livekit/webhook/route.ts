@@ -5,11 +5,11 @@ import { captureException } from "@/lib/error-monitor"
 import {
   child,
   companyIdFromRecords,
-  forwardPostOutreachToTriggerDev,
   isRecord,
   parseMaybeJsonRecord,
   pipelineRunIdFromRecords,
   persistPostOutreachEvent,
+  processInboundReply,
   regionFromRecords,
   text,
   type JsonRecord,
@@ -74,9 +74,7 @@ export async function POST(req: NextRequest) {
     participantIdentity,
     transcriptSnippet: transcript ? transcript.slice(0, 300) : null,
   }
-  const discoveryTaskId = process.env.TRIGGER_LIVEKIT_DISCOVERY_TASK_ID ?? process.env.TRIGGER_POST_OUTREACH_TASK_ID ?? "livekit-discovery-router"
-  const forward = await forwardPostOutreachToTriggerDev({
-    taskId: discoveryTaskId && discoveryTaskId.trim().length > 0 ? discoveryTaskId.trim() : null,
+  const inbound = await processInboundReply({
     source: "livekit",
     payload: body,
     summary,
@@ -87,17 +85,17 @@ export async function POST(req: NextRequest) {
     companyId,
     pipelineRunId,
     activityType: activity.type,
-    result: forward.ok && eventIsFinished(eventType) ? "completed" : activity.result,
+    result: eventIsFinished(eventType) ? "completed" : activity.result,
     subject: `LiveKit discovery: ${roomName}`,
     body: transcript,
-    queueType: forward.ok ? null : "meeting_prep",
+    queueType: inbound.classification?.shouldFollowUp ? "follow_up" : null,
     queuePriority: transcript ? 80 : 70,
-    queueReason: forward.ok ? null : "LiveKit discovery call needs transcript review because Trigger.dev task dispatch did not complete.",
+    queueReason: inbound.classification?.intent || transcript ? "transcript_available" : null,
     meta: {
       provider: "livekit",
       eventType,
-      automationForwarded: forward.ok,
-      automationError: forward.error,
+      reply_classified: inbound.ok,
+      classification: inbound.classification,
       roomName,
       participantIdentity,
       raw: body,
@@ -114,7 +112,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     provider: "livekit",
-    automation_forwarded: forward.ok,
-    queued_for_meeting_prep: !forward.ok,
+    reply_classified: inbound.ok,
+    classification: inbound.classification,
   })
 }

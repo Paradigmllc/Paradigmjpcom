@@ -9,6 +9,7 @@ import { saveTechStackDetections } from "./source-acquisition"
 import { syncCompanyKarteToTwenty } from "./twenty-sync"
 import { buildReportUrl, normalizeReportLocale } from "./routing"
 import { auditJapanMarketReadiness } from "./sources/japan-market-audit"
+import { resolveDifyWorkflowKey, normalizeDifyCloudBaseUrl } from "./dify-cloud"
 import type { SalesCompany } from "./types"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import type { SalesEnrichmentJob, JsonRecord, ServiceSupabase } from "./enrichment-jobs"
@@ -170,7 +171,7 @@ export async function processAssetPhase(
   const errors: string[] = []
   const isWebProduction = company.template_variant === "website_diagnostic"
 
-  // Cost guard: check if assets were recently generated (within 30 days)
+  // Cost guard: check if assets were recently generated (within 14 days, overridable)
   const { data: recentAssets } = await sb
     .from(DB_TABLES.SALES_ARTIFACT_MANIFEST)
     .select("artifact_type, created_at")
@@ -179,34 +180,37 @@ export async function processAssetPhase(
     .order("created_at", { ascending: false })
     .limit(5)
 
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+  const recencyDays = parseInt(process.env.COST_GUARD_RECENCY_DAYS ?? "14", 10) || 14
+  const recencyAgo = new Date(Date.now() - recencyDays * 24 * 60 * 60 * 1000)
   const hasRecentAsset = (type: string) =>
     (recentAssets ?? []).some(
       (a: { artifact_type: string; created_at: string }) =>
-        a.artifact_type === type && new Date(a.created_at) > thirtyDaysAgo,
+        a.artifact_type === type && new Date(a.created_at) > recencyAgo,
     )
 
   // Check source coverage score for cost gating
   const coverage = computeSourceCoverage(company)
   const costGuardVideoEnabled = process.env.COST_GUARD_VIDEO_ENABLED !== "false"
   const costGuardDemoEnabled = process.env.COST_GUARD_DEMO_ENABLED !== "false"
+  const demoMinScore = parseInt(process.env.COST_GUARD_DEMO_MIN_SCORE ?? "15", 10) || 0
+  const videoMinScore = parseInt(process.env.COST_GUARD_VIDEO_MIN_SCORE ?? "20", 10) || 0
 
   const shouldGenerateDemo =
     reportData &&
     isWebProduction &&
     costGuardDemoEnabled &&
-    coverage.score >= 30 &&
+    coverage.score >= demoMinScore &&
     !hasRecentAsset("demo_site")
 
   const shouldGenerateVideo =
     reportData &&
     isWebProduction &&
     costGuardVideoEnabled &&
-    coverage.score >= 40 &&
+    coverage.score >= videoMinScore &&
     !hasRecentAsset("sales_video")
 
   if (reportData && isWebProduction && !shouldGenerateDemo && costGuardDemoEnabled) {
-    const reason = hasRecentAsset("demo_site") ? "recently_generated" : `coverage_score_${coverage.score}_below_30`
+    const reason = hasRecentAsset("demo_site") ? "recently_generated" : `coverage_score_${coverage.score}_below_${demoMinScore}`
     console.log(`[sales-enrichment] demo skipped for ${company.domain}: ${reason}`)
     await logDiagnosisEvent(sb, {
       companyId: company.id, jobId: _job.id,

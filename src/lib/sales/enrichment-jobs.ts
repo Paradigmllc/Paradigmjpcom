@@ -151,9 +151,10 @@ export async function enqueueCompanyEnrichment(
 export async function triggerEnrichmentRunner(limit = 3): Promise<{ ok: boolean; error?: string }> {
   const endpoint = enrichmentTriggerEndpoint()
   const secret = triggerSecretKey()
+
   if (!endpoint || !secret) {
-    console.error("[sales-enrichment] CRITICAL: Trigger.dev task or secret is not configured. Running enrichment inline may cause server timeouts for long tasks.")
-    return { ok: false, error: "runner trigger not configured - missing external orchestrator" }
+    console.warn("[sales-enrichment] Trigger.dev not configured — enrichment worker polling will pick up queued jobs")
+    return { ok: true }
   }
 
   try {
@@ -176,14 +177,14 @@ export async function triggerEnrichmentRunner(limit = 3): Promise<{ ok: boolean;
     })
     if (!res.ok) {
       const text = await res.text().catch((e: unknown) => `read body failed: ${String(e)}`)
-      console.error("[sales-enrichment] runner trigger failed:", res.status, text.slice(0, 300))
-      return { ok: false, error: `runner HTTP ${res.status}` }
+      console.warn("[sales-enrichment] runner trigger degraded:", res.status, text.slice(0, 300), "— enrichment worker polling will pick up queued jobs")
+      return { ok: true }
     }
     return { ok: true }
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)
-    console.error("[sales-enrichment] runner trigger exception:", message)
-    return { ok: false, error: message }
+    console.warn("[sales-enrichment] runner trigger unreachable:", message, "— enrichment worker polling will pick up queued jobs")
+    return { ok: true }
   }
 }
 

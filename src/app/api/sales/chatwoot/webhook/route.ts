@@ -5,10 +5,10 @@ import { captureException } from "@/lib/error-monitor"
 import {
   child,
   companyIdFromRecords,
-  forwardPostOutreachToTriggerDev,
   isRecord,
   pipelineRunIdFromRecords,
   persistPostOutreachEvent,
+  processInboundReply,
   regionFromRecords,
   text,
   type JsonRecord,
@@ -144,9 +144,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const postOutreachTaskId = process.env.TRIGGER_CHATWOOT_REPLY_TASK_ID ?? process.env.TRIGGER_POST_OUTREACH_TASK_ID ?? "chatwoot-reply-router"
-  const forward = await forwardPostOutreachToTriggerDev({
-    taskId: postOutreachTaskId && postOutreachTaskId.trim().length > 0 ? postOutreachTaskId.trim() : null,
+  const inbound = await processInboundReply({
     source: "chatwoot",
     payload: body,
     summary,
@@ -156,18 +154,18 @@ export async function POST(req: NextRequest) {
     region,
     companyId,
     pipelineRunId,
-    activityType: "email",
-    result: forward.ok ? "success" : "follow_up",
+    activityType: "reply_received",
+    result: inbound.classification?.intent === "interested" ? "interested" : inbound.classification?.intent === "not_interested" ? "not_interested" : "follow_up",
     subject,
     body: content,
-    queueType: forward.ok ? null : "follow_up",
+    queueType: inbound.classification?.shouldFollowUp ? "follow_up" : inbound.classification?.intent === "unsubscribe" ? "crm_update" : null,
     queuePriority: 85,
-    queueReason: forward.ok ? null : "Chatwoot reply needs AI/manual follow-up because Trigger.dev task dispatch did not complete.",
+    queueReason: inbound.classification?.intent || "manual_review",
     meta: {
       provider: "chatwoot",
       eventType,
-      automationForwarded: forward.ok,
-      automationError: forward.error,
+      reply_classified: inbound.ok,
+      classification: inbound.classification,
       contact: contactLabel,
       raw: body,
     },
@@ -192,8 +190,8 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     provider: "chatwoot",
-    automation_forwarded: forward.ok,
-    queued_for_follow_up: !forward.ok,
+    reply_classified: inbound.ok,
+    classification: inbound.classification,
     twenty_synced: twentySync?.ok ?? false,
     twenty_configured: twentySync?.configured ?? false,
   })

@@ -1,9 +1,9 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
-import { recoverStaleEnrichmentJobs, runEnrichmentJobs } from "./enrichment-jobs"
 import { startLeadCandidateRunFallback } from "./lead-candidate-runner"
 import { startPassiveInventoryFallback } from "./passive-inventory-runner"
 import { restartStaleSalesPipelineRuns } from "./sales-pipeline-fallback"
+import { startEnrichmentWorker, runTwentySyncTick, runReportRegeneratorTick } from "./enrichment-worker"
 
 const WATCHDOG_INTERVAL_MS = 60_000
 const STALE_RUN_MS = 5 * 60_000
@@ -81,17 +81,16 @@ async function tick(): Promise<void> {
   const restarted = await restartStaleLeadRuns()
   const restartedPassive = await restartStalePassiveInventoryRuns()
   const restartedPipelines = await restartStaleSalesPipelineRuns(3)
-  const recoveredEnrichment = await recoverStaleEnrichmentJobs(10)
-  const enrichment = await runEnrichmentJobs(3)
-  if (restarted > 0 || restartedPassive > 0 || restartedPipelines > 0 || recoveredEnrichment > 0 || enrichment.processed > 0 || enrichment.failed > 0) {
+  const twenty = await runTwentySyncTick()
+  const reports = await runReportRegeneratorTick()
+  if (restarted > 0 || restartedPassive > 0 || restartedPipelines > 0 || twenty.scanned > 0 || reports > 0) {
     console.warn("[sales-pipeline-watchdog] tick", {
       restartedLeadRuns: restarted,
       restartedPassiveInventoryRuns: restartedPassive,
       restartedPipelineRuns: restartedPipelines,
-      recoveredEnrichmentJobs: recoveredEnrichment,
-      enrichmentProcessed: enrichment.processed,
-      enrichmentCompleted: enrichment.completed,
-      enrichmentFailed: enrichment.failed,
+      twentySyncScanned: twenty.scanned,
+      twentySyncUpserted: twenty.upserted,
+      reportsRegenerated: reports,
     })
   }
 }
@@ -101,6 +100,9 @@ export function startSalesPipelineWatchdog(): void {
   const state = globalThis as WatchdogGlobal
   if (state.__salesPipelineWatchdogStarted) return
   state.__salesPipelineWatchdogStarted = true
+
+  startEnrichmentWorker()
+
   const timer = setInterval(() => {
     tick().catch((error) => {
       console.error("[sales-pipeline-watchdog] tick failed:", error)
