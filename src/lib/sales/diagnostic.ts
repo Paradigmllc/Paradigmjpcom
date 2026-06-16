@@ -89,7 +89,7 @@ export async function fetchDiagnosticReport(opts: {
       return reportAge >= maxAgeDays * 24 * 60 * 60 * 1000
     })()
   if (!regenerate) {
-    console.log("[diagnostic] report is fresh, returning cached data for", company.domain)
+    // report is fresh, using cached data
   }
 
   const routing = getRoutingMeta(company.meta)

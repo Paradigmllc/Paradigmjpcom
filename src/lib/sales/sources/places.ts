@@ -92,7 +92,7 @@ async function discoverViaSearxng(
   companyName: string,
   prefecture: string | null
 ): Promise<PlaceResult | null> {
-  const rawBase = process.env.SEARXNG_BASE_URL || "https://searxng.paradigmjp.com";
+  const rawBase = process.env.SEARXNG_BASE_URL ?? "https://searxng.paradigmjp.com";
   const baseUrl = rawBase.replace(/^'|'$/g, "").trim();
 
   try {
@@ -150,16 +150,17 @@ async function discoverViaFallback(
   if (searxngResult) return searxngResult;
   
   return {
-    found: true,
+    found: false,
     place_id: "fallback:simulated",
     name: companyName,
     formatted_address: prefecture ? `${prefecture} area` : "Japan",
     phone: null,
-    rating: 4.5,
-    review_count: 12,
+    rating: null,
+    review_count: null,
     website: null,
     opening_hours_weekly: null,
-    business_status: "OPERATIONAL"
+    business_status: null,
+    // NOTE: synthetic fallback — no real data source available
   };
 }
 

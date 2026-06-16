@@ -26,7 +26,11 @@ const BLOG_PATTERNS = /\/(blog|news|articles|posts|column|topics|journal|magazin
 const PRODUCT_PATTERNS = /\/(product|item|goods|shop|store|products|items)\//i
 const CATEGORY_PATTERNS = /\/(category|collection|genre|type|catalog|department)\//i
 
-async function fetchSitemap(url: string): Promise<string | null> {
+async function fetchSitemap(url: string, depth = 0): Promise<string | null> {
+  if (depth > 5) {
+    console.warn("[sitemap] max recursion depth reached:", url)
+    return null
+  }
   try {
     const res = await fetch(url, {
       ...getProxyFetchOptions({
@@ -40,7 +44,7 @@ async function fetchSitemap(url: string): Promise<string | null> {
       // Might be a sitemap index - parse and try first child
       const text = await res.text()
       const firstLoc = text.match(LOC_RE)
-      if (firstLoc) return await fetchSitemap(firstLoc[1])
+      if (firstLoc) return await fetchSitemap(firstLoc[1], depth + 1)
       return null
     }
     return await res.text()

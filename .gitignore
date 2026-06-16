@@ -30,6 +30,9 @@ yarn-error.log*
 .env.supabase
 .env.trigger-oss
 .supabase.keys
+reset_auth.sh
+reset.php
+roles.sql
 supabase-secrets.json
 
 # vercel

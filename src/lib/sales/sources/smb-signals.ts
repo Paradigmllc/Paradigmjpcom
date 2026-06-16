@@ -80,27 +80,8 @@ export async function collectSmbSignals(domain: string, wappalyzerTech: string[]
 }
 
 async function checkGoogleIndex(domain: string): Promise<number | null> {
-  try {
-    const res = await fetch(`https://www.google.com/search?q=site:${encodeURIComponent(domain)}&hl=en`, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; RevenueOS/1.0)",
-        "Accept": "text/html",
-      },
-      signal: AbortSignal.timeout(8_000),
-    })
-    if (!res.ok) return null
-    const html = await res.text()
-    // Extract "About X results" 
-    const match = html.match(/(?:About|約)\s*([\d,]+)\s*(?:results|件)/i)
-    if (match) return parseInt(match[1].replace(/,/g, ""), 10)
-    
-    // Fallback: count result links
-    const linkCount = (html.match(/<a[^>]*href="\/url\?q=/g) || []).length
-    return linkCount > 0 ? linkCount : null
-  } catch (e) {
-    console.error("[smb-signals] Google index check failed:", e)
-    return null
-  }
+  // Google scraping removed per compliance — use official API or skip this signal
+  return null
 }
 
 async function checkSocialPresence(domain: string): Promise<SmbSignalsResult["socialFollowers"]> {

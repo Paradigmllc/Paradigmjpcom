@@ -4,8 +4,8 @@ import { isAdmin, isLoggedIn, isSelfOrAdmin } from "../access/byRole"
 export const Users: CollectionConfig = {
   slug: "users",
   auth: {
-    maxLoginAttempts: 0,
-    lockTime: 0,
+    maxLoginAttempts: 5,
+    lockTime: 600,
   },
   admin: {
     useAsTitle: "email",
