@@ -234,7 +234,7 @@ function getFallbackAnswerEn(q: string): string {
     return "🔍 SEO / GEO: from ¥50,000/month. Keyword strategy, content, technical SEO, and AI-search (Perplexity / ChatGPT) optimization included. Free consult → https://paradigmjp.com/contact"
   }
   if (q.includes("ai") || q.includes("chatbot") || q.includes("automation") || q.includes("enablement")) {
-    return "🤖 AI enablement: from ¥200,000. AI chatbots, workflow automation (Dify / n8n), and AI-driven content/SEO. We scope to your specific use case."
+    return "🤖 AI enablement: from ¥200,000. AI chatbots, workflow automation (Dify), and AI-driven content/SEO. We scope to your specific use case."
   }
   if (q.includes("support") || q.includes("maintenance") || q.includes("after") || q.includes("launch")) {
     return "🛡️ Post-launch support:\n\n• 3-month free-fix window after delivery\n• Maintenance plans from ¥10,000/month\n• Chat/email support, weekdays 9:00–18:00 JST\n• Same-day response for outages"

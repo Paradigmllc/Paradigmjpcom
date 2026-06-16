@@ -102,27 +102,6 @@ export async function checkDataForSeoHealth(): Promise<ServiceHealthResult> {
   }
 }
 
-export async function checkSearxngHealth(): Promise<ServiceHealthResult> {
-  const missing = missingEnv(["SEARXNG_BASE_URL"])
-  if (missing.length > 0) return notConfigured(missing)
-
-  try {
-    const base = normalizeHttpBase(envValue("SEARXNG_BASE_URL") as string)
-    base.pathname = `${base.pathname}/search`.replace(/\/+/g, "/")
-    base.searchParams.set("q", "test")
-    base.searchParams.set("format", "json")
-    const res = await fetch(base.toString(), { signal: AbortSignal.timeout(10_000) })
-    if (!res.ok) return { balanceStatus: "error", balanceLabel: `SearxNG HTTP ${res.status}` }
-    const body = await res.json().catch((e) => { console.warn("[oss-health] SearXNG response parse failed:", e); return {} }) as { results?: unknown[] }
-    return {
-      balanceStatus: "ok",
-      balanceLabel: `JSON search verified: ${Array.isArray(body.results) ? body.results.length : 0} results`,
-    }
-  } catch (error) {
-    return healthError("SearxNG", error)
-  }
-}
-
 export async function checkApolloHealth(): Promise<ServiceHealthResult> {
   const missing = missingEnv(["APOLLO_API_KEY"])
   if (missing.length > 0) return notConfigured(missing)

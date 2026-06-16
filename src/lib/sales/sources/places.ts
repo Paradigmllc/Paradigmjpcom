@@ -88,66 +88,14 @@ out body limit 3;`;
   }
 }
 
-async function discoverViaSearxng(
-  companyName: string,
-  prefecture: string | null
-): Promise<PlaceResult | null> {
-  const rawBase = process.env.SEARXNG_BASE_URL ?? "https://searxng.paradigmjp.com";
-  const baseUrl = rawBase.replace(/^'|'$/g, "").trim();
-
-  try {
-    const query = prefecture ? `${companyName} ${prefecture}` : companyName;
-    const searchUrl = `${baseUrl}/search?q=${encodeURIComponent(query)}&format=json`;
-
-    const res = await fetch(searchUrl, {
-      signal: AbortSignal.timeout(6000),
-    });
-
-    if (!res.ok) return null;
-
-    const data = (await res.json()) as {
-      results?: Array<{
-        title?: string;
-        url?: string;
-        content?: string;
-      }>;
-    };
-    const results = data?.results || [];
-    if (results.length === 0) return null;
-
-    const bestResult = results[0];
-    const cleanUrl = bestResult.url || null;
-    const placeId = cleanUrl ? `searxng:${Buffer.from(cleanUrl).toString("base64").substring(0, 16)}` : "searxng:fallback";
-
-    return {
-      found: true,
-      place_id: placeId,
-      name: bestResult.title || companyName,
-      formatted_address: prefecture ? `${prefecture} (Estimated)` : "Japan",
-      phone: null,
-      rating: 4.0,
-      review_count: 4,
-      website: cleanUrl,
-      opening_hours_weekly: null,
-      business_status: "OPERATIONAL",
-    };
-  } catch (err) {
-    console.error("[PlacesFallback] SearxNG fetch failed:", err);
-    return null;
-  }
-}
-
 async function discoverViaFallback(
   companyName: string,
   prefecture: string | null
 ): Promise<PlaceResult> {
-  console.info(`[PlacesFallback] Google Places key denied or missing. Executing Overpass/SearxNG fallback for ${companyName}`);
+  console.info(`[PlacesFallback] Google Places key denied or missing. Executing Overpass fallback for ${companyName}`);
   
   const overpassResult = await discoverViaOverpass(companyName, prefecture);
   if (overpassResult) return overpassResult;
-  
-  const searxngResult = await discoverViaSearxng(companyName, prefecture);
-  if (searxngResult) return searxngResult;
   
   return {
     found: false,
@@ -160,7 +108,6 @@ async function discoverViaFallback(
     website: null,
     opening_hours_weekly: null,
     business_status: null,
-    // NOTE: synthetic fallback — no real data source available
   };
 }
 

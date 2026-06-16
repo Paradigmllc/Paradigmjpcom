@@ -16,7 +16,6 @@ const SERVICES = [
   { name: "Cloudflare R2", envs: ["CLOUDFLARE_R2_ACCOUNT_ID", "CLOUDFLARE_R2_ACCESS_KEY_ID", "CLOUDFLARE_R2_SECRET_ACCESS_KEY", "CLOUDFLARE_R2_BUCKET", "CLOUDFLARE_R2_PUBLIC_BASE_URL"] },
   { name: "Gotenberg", envs: ["GOTENBERG_URL"] },
   { name: "Slidev", envs: ["SLIDEV_RENDER_URL"] },
-  { name: "SearxNG", envs: ["SEARXNG_BASE_URL"] },
   { name: "Crawlee", envs: ["CRAWLEE_WORKER_URL"] },
   { name: "Playwright Stealth", envs: ["OUTREACH_WORKER_URL"] },
   { name: "FFmpeg", envs: ["FFMPEG_BIN"] },

@@ -25,9 +25,7 @@ describe("revenue source registry", () => {
   it("keeps browser search out of the bulk-ready bucket", () => {
     const sources = listRevenueSourceRegistry()
     const browserSearch = sources.find((source) => source.slug === "browser_search")
-    const searxng = sources.find((source) => source.slug === "searxng")
 
     expect(browserSearch?.scaleTier).toBe("browser_expensive")
-    expect(searxng?.scaleTier).toBe("browser_expensive")
   })
 })

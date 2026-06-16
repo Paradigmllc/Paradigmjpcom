@@ -29,7 +29,7 @@ async function checkAuth(searchParams: { token?: string }): Promise<boolean> {
   if (payloadAuth.ok) return true
 
   // Method 2: Token from URL query param or TRIGGER_WEBHOOK_SECRET
-  const expectedToken = process.env.TRIGGER_WEBHOOK_SECRET ?? process.env.N8N_WEBHOOK_SECRET
+  const expectedToken = process.env.TRIGGER_WEBHOOK_SECRET
   if (expectedToken && searchParams.token === expectedToken) return true
 
   return false

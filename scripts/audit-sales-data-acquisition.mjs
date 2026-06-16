@@ -101,7 +101,6 @@ const SOURCES = [
   source("similarweb_free_ui", "Similarweb Free Web UI", "analysis", ["SIMILARWEB_API_KEY", "SIMILARWEB_FREE_UI_URL"]),
   source("pytrends", "Pytrends OSS", "analysis", ["PYTRENDS_WORKER_URL"]),
   source("myipms", "Myip.ms", "analysis", ["MYIPMS_WORKER_URL"]),
-  source("searxng", "SearxNG", "analysis", ["SEARXNG_BASE_URL"], [], checkSearxng),
   source("whoogle", "Whoogle Search", "analysis", ["WHOOGLE_BASE_URL"], [], checkWhoogle),
   source("overpass", "OverPass / OpenStreetMap API", "analysis", ["OVERPASS_API_URL"], [], checkOverpass),
   source("yelp_graphql", "Yelp GraphQL API", "analysis", ["YELP_API_KEY"]),
@@ -457,13 +456,6 @@ async function checkGitHub(envs) {
 async function checkRssHub(envs) {
   const base = envValue(envs, "RSSHUB_BASE_URL") ?? "https://rsshub.app"
   const res = await fetchJson(`${base.replace(/\/$/, "")}/-/healthz`, { timeoutMs: 10_000 })
-  return { ok: res.ok, label: `HTTP ${res.status}` }
-}
-
-async function checkSearxng(envs) {
-  const base = envValue(envs, "SEARXNG_BASE_URL")
-  if (!base) return { ok: false, label: "SEARXNG_BASE_URL not configured" }
-  const res = await fetchJson(`${base.replace(/\/$/, "")}/search?q=paradigmjp&format=json`, { timeoutMs: 10_000 })
   return { ok: res.ok, label: `HTTP ${res.status}` }
 }
 

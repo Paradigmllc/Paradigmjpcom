@@ -9,8 +9,8 @@ beforeEach(() => {
   vi.stubEnv("CRAWLEE_WORKER_SECRET", "")
   vi.stubEnv("STAGEHAND_URL", "")
   vi.stubEnv("STAGEHAND_API_KEY", "")
-  vi.stubEnv("BROWSERLESS_URL", "")
-  vi.stubEnv("BROWSERLESS_TOKEN", "")
+  vi.stubEnv("STEEL_BASE_URL", "")
+  vi.stubEnv("STEEL_API_KEY", "")
 })
 
 afterEach(() => {

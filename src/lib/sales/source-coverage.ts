@@ -184,20 +184,6 @@ const SOURCES: SourceDefinition[] = [
     detect: () => false,
     detail: "Disabled by RevenueOS policy: no proxy, Tor, or mubeng acquisition path is allowed"
   },
-  {
-    slug: "browser_screenshot",
-    label: "Website Screenshot",
-    category: "analysis",
-    maxAgeDays: 14,
-    env: ["BROWSERLESS_URL"],
-    detect: (_m, c) => {
-      return !!c.visual_evidence || !!_m.screenshot_url || (() => {
-        const screenshots = asRecord(asRecord(_m.visual_evidence).screenshots)
-        return ["desktop", "mobile", "variant", "social", "map", "form"].some((slot) => !!asRecord(screenshots[slot]).url)
-      })()
-    },
-    detail: "High-resolution target website screenshot stored in R2"
-  },
   { slug: "camoufox", label: "Camoufox", category: "outreach", env: ["CAMOUFOX_WS_URL"], detect: (m) => !!m.camoufox, detail: "Fingerprint-hardened browser escalation" },
   { slug: "playwright_stealth", label: "Playwright Stealth", category: "outreach", env: ["OUTREACH_WORKER_URL"], detect: (m) => !!m.playwright_stealth || !!m.browser_worker, detail: "Final form automation worker with approval gates" },
   {
@@ -257,7 +243,6 @@ const SOURCES: SourceDefinition[] = [
   { slug: "similarweb_free_ui", label: "Similarweb Free Web UI", category: "analysis", env: ["SIMILARWEB_API_KEY"], detect: (m) => !!m.similarweb, detail: "Traffic and competitor estimate via API or manual UI fallback" },
   { slug: "pytrends", label: "Pytrends OSS", category: "analysis", env: ["PYTRENDS_WORKER_URL"], detect: (m) => !!m.pytrends || !!m.google_trends, detail: "Search trend interest by market and industry" },
   { slug: "myipms", label: "Myip.ms", category: "analysis", env: ["MYIPMS_WORKER_URL"], detect: (m) => !!m.myipms, detail: "Hosting, IP and Shopify/store footprint evidence" },
-  { slug: "searxng", label: "SearxNG", category: "analysis", env: ["SEARXNG_BASE_URL"], detect: (m) => !!m.searxng, detail: "Self-hosted search fallback for market evidence" },
   { slug: "whoogle", label: "Whoogle Search", category: "analysis", env: ["WHOOGLE_BASE_URL"], detect: (m) => !!m.whoogle, detail: "Self-hosted Google-search fallback" },
   { slug: "overpass", label: "Overpass API", category: "list", env: ["OVERPASS_API_URL"], detect: (m) => !!m.overpass, detail: "OpenStreetMap local business and location evidence" },
   { slug: "yelp_graphql", label: "Yelp GraphQL API", category: "list", env: ["YELP_API_KEY"], detect: (m) => !!m.yelp, detail: "Local review and business category evidence" },

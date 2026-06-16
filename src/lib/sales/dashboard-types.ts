@@ -172,7 +172,7 @@ export interface SalesDashboardData {
   sourceCounts: Record<string, number>
   sourceAcquisition: SourceAcquisitionSummary
   leadBatches: SalesLeadBatchSummary[]
-  searxngRuns: SearxngRunSummary[]
+  browserSearchRuns: SearxngRunSummary[]
   japanReadinessInsights: JapanReadinessInsightSummary[]
   salesPipeline: DashboardSalesPipeline
   companies: DashboardCompany[]

@@ -14,8 +14,8 @@ HTTP で委譲される実ブラウザ送信ワーカー。判断 (discovery/cla
 
 - Next アプリ (Coolify `paradigm-hp`) に `playwright`/`crawlee` を入れない → 本体イメージを軽量に保つ。
 - 共有 Droplet (4vCPU/8GB・appexx.me と同居) で Chromium を**常駐させない**。
-- **案1 (推奨・ディスク最安)**: `CDP_ENDPOINT` にリモートブラウザ (Browserless 等) を指定 → ローカル Chromium 不要。
-- **案1b**: `CDP_ENDPOINT` が空でも `BROWSERLESS_URL` + `BROWSERLESS_TOKEN` があれば worker が CDP URL を自動生成。
+- **案1 (推奨・ディスク最安)**: `CDP_ENDPOINT` にリモートブラウザ (Steel-Browser 等) を指定 → ローカル Chromium 不要。
+- **案1b**: `CDP_ENDPOINT` が空でも `STEEL_BASE_URL` があれば worker が CDP URL を自動生成。
 - **案2**: `CDP_ENDPOINT` 空 → ローカル Chromium を起動。Coolify で **scale-to-zero**（バッチ時のみ起動）にする。
 - `MAX_CONCURRENCY=2`・context 使い捨て・`CAPTURE_EVIDENCE=false` でディスク膨張を防ぐ。
 
@@ -50,14 +50,14 @@ npm run dev
 1. 新規サービス `paradigm-outreach-worker`（Dockerfile or Nixpacks）。
 2. Build: `npm ci && npm run install:browser`。Start: `npm start`。
 3. env: `WORKER_SECRET` / `MAX_CONCURRENCY=2` / `CAPTURE_EVIDENCE=false`。
-4. Stagehand を有効化する場合は `STAGEHAND_LLM_API_KEY` か `DEEPSEEK_API_KEY`、および `CDP_ENDPOINT` または `BROWSERLESS_URL` + `BROWSERLESS_TOKEN` を設定する。
+4. Stagehand を有効化する場合は `STAGEHAND_LLM_API_KEY` か `DEEPSEEK_API_KEY`、および `CDP_ENDPOINT` または `STEEL_BASE_URL` を設定する。
 5. Next 側は `STAGEHAND_URL=https://<worker-domain>`、`STAGEHAND_API_KEY=$WORKER_SECRET` を設定する。
 6. **idle 時に停止**する設定（常時稼働禁止・グローバル GPU Serverless 思想と同じ）。
 
 ## 案1 (リモートブラウザ・Chromium をこの箱に置かない)
 
-1. Browserless を別の安い VPS (Hetzner 等) or マネージドで用意。
-2. worker env に `CDP_ENDPOINT=wss://<browserless-host>?token=...`、または `BROWSERLESS_URL=https://<browserless-host>` + `BROWSERLESS_TOKEN=...`。
+1. Steel-Browser を別の安い VPS (Hetzner 等) or マネージドで用意。
+2. worker env に `CDP_ENDPOINT=ws://<steel-browser-host>:9223`、または `STEEL_BASE_URL=http://<steel-browser-host>:3000`。
 3. `npm run install:browser` は**不要**（ローカル Chromium を使わない）。
 
 ## 法務・安全 (SALES-CENTER #4 準拠)

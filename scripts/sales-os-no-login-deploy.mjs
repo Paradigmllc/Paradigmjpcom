@@ -205,7 +205,6 @@ function postgresUri(envs) {
 }
 
 function isAllowedSalesPostgresUri(envs, uri) {
-  if (/refferq/i.test(uri)) return false
   try {
     const parsed = new URL(uri)
     const host = parsed.hostname.toLowerCase()
@@ -601,9 +600,9 @@ async function smoke(url) {
 }
 
 async function refreshIntegrationStatus(envs) {
-  const secret = envs.TRIGGER_WEBHOOK_SECRET || envs.N8N_WEBHOOK_SECRET
+  const secret = envs.TRIGGER_WEBHOOK_SECRET
   if (!secret || String(secret).trim().length === 0) {
-    return "Integration status refresh: skipped; TRIGGER_WEBHOOK_SECRET or N8N_WEBHOOK_SECRET is not configured"
+    return "Integration status refresh: skipped; TRIGGER_WEBHOOK_SECRET is not configured"
   }
 
   const baseUrl = envs.PARADIGMJP_BASE_URL || envs.NEXT_PUBLIC_SITE_URL || "https://paradigmjp.com"

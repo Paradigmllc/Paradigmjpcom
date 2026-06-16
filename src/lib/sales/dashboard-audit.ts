@@ -115,7 +115,7 @@ export function buildOperationalAudit(input: {
   const sourceCoverage = sourceRunCount > 0 ? Math.round((collectedSources / sourceRunCount) * 100) : 0
   const lowSourceCoverage = sourceRunCount === 0 || sourceCoverage < 50
   const dryRunReady = reportReady > 0 && missingFormUrl === 0 && envConfigured("TRIGGER_SECRET_KEY", "TRIGGER_ACCESS_TOKEN")
-  const submitWorkerReady = envConfigured("BROWSERLESS_URL", "OUTREACH_WORKER_URL", "CAMOUFOX_WS_URL")
+  const submitWorkerReady = envConfigured("STEEL_BASE_URL", "OUTREACH_WORKER_URL", "CAMOUFOX_WS_URL")
   const sections: DashboardAuditSection[] = [
     {
       id: "ssot",
@@ -232,7 +232,7 @@ export function buildOperationalAudit(input: {
           "フォームURL",
           statusFromCount(missingFormUrl, true),
           missingFormUrl === 0 ? "送信候補のフォームURLは揃っています。" : `${missingFormUrl}件でフォームURLが未検出です。`,
-          "Crawlee/Crawl4AI/Browserlessでフォーム探索を再実行し、CAPTCHAはAppsmith手動キューへ送ってください。",
+          "Crawlee/Crawl4AI/Steelでフォーム探索を再実行し、CAPTCHAはAppsmith手動キューへ送ってください。",
           missingFormUrl,
         ),
         check(
@@ -252,10 +252,10 @@ export function buildOperationalAudit(input: {
         ),
         check(
           "browser-worker",
-          "Playwright Stealth / Browserless",
+          "Playwright Stealth / Steel-Browser",
           submitWorkerReady ? "ready" : "warning",
           submitWorkerReady ? "実ブラウザ送信ワーカーの接続情報があります。" : "実送信ワーカーが未設定のため簡易providerまたはdry-run中心です。",
-          "BROWSERLESS_URL、OUTREACH_WORKER_URL、CAMOUFOX_WS_URLのいずれかを設定し、証跡保存を有効化してください。",
+          "STEEL_BASE_URL、OUTREACH_WORKER_URL、CAMOUFOX_WS_URLのいずれかを設定し、証跡保存を有効化してください。",
         ),
       ],
     },

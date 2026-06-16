@@ -97,7 +97,7 @@ export function liveKitJwt(apiKey: string, apiSecret: string): string {
 }
 
 // ── Core OSS health checks ──
-export { checkSpiderfootHealth, checkKatanaServiceHealth, checkMaigretServiceHealth, checkFlareSolverrServiceHealth, checkBrowserlessHealth, checkStagehandHealth, checkChatwootHealth, checkDirectusHealth, checkKeystaticHealth } from "./oss-health-core"
+export { checkSpiderfootHealth, checkKatanaServiceHealth, checkMaigretServiceHealth, checkFlareSolverrServiceHealth, checkStagehandHealth, checkChatwootHealth, checkDirectusHealth, checkKeystaticHealth } from "./oss-health-core"
 
 // ── Media / AI OSS health checks ──
 export { checkLiveKitHealth, checkHyperFramesHealth, checkOpenMontageHealth, checkComfyUiHealth, checkR2DeliveryHealth, checkVastHealth, checkAstroHealth, checkCalcomHealth, checkCrawl4AiHealth, checkCrawleeHealth, checkPlaywrightStealthHealth } from "./oss-health-media"

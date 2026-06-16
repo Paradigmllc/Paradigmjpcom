@@ -225,25 +225,7 @@ export async function searchWithBrowser(
   const providersTried = backend.providers
 
   if (!backend.configured) {
-    // Fall back to SearXNG when no browser backend is available
-    console.warn("[browser-search] no browser backend, falling back to SearXNG")
-    try {
-      const { buildSearxngSearchUrl } = await import("../searxng-normalize")
-      const { fetchSearxngPage } = await import("../sources/searxng-source-helpers")
-      const searxngBaseUrl = process.env.SEARXNG_BASE_URL || "https://searx.be"
-      const searchUrl = buildSearxngSearchUrl(searxngBaseUrl, { query, page: 1, language: "en", engines: [], categories: ["general"], safesearch: 1, timeRange: null })
-      const page = await fetchSearxngPage(searchUrl, searxngBaseUrl)
-      const html = typeof page?.content === "string" ? page.content : JSON.stringify(page)
-      if (html && !isGarbageSearchResult(html)) {
-        const domains = extractDomains(html)
-        if (domains.length > 0) {
-          return { ok: true, domains, engine, total: domains.length, providersTried: ["searxng"] }
-        }
-      }
-    } catch (searxngError) {
-      console.warn("[browser-search] SearXNG fallback also failed:", searxngError)
-    }
-    console.error("[browser-search] all backends (browser + SearXNG) unavailable:", backend.error)
+    console.error("[browser-search] no browser backend configured:", backend.error)
     return {
       ok: false,
       domains: [],

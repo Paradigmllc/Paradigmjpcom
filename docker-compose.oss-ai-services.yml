@@ -1,27 +1,26 @@
-# SearXNG — Meta search engine for Sales OS
-# Deploy: Coolify → Docker Compose Service
+# OSS AI & Browser Automation Services
+# Steel-Browser: Headless browser API for scraping/screenshots (Apache 2.0)
+# FlareSolverr: Cloudflare/WAF bypass proxy for search (MIT)
 
 services:
-  searxng:
-    image: searxng/searxng:latest
+  steel-browser:
+    image: ghcr.io/steel-dev/steel-browser:latest
     restart: unless-stopped
-    volumes:
-      - searxng-data:/etc/searxng
-    environment:
-      SEARXNG_BASE_URL: http://localhost:8080/
-      SEARXNG_SECRET: ${SEARXNG_SECRET:-paradigm-searxng-key}
     ports:
-      - "8090:8080"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    deploy:
-      resources:
-        limits:
-          memory: 512m
-          cpus: "0.5"
+      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:9223:9223"
+    environment:
+      - CHROME_EXECUTABLE_PATH=/usr/bin/google-chrome
+    volumes:
+      - steel-browser-data:/app/data
+
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8191:8191"
+    environment:
+      - LOG_LEVEL=info
 
 volumes:
-  searxng-data:
+  steel-browser-data:

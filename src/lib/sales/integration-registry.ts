@@ -37,7 +37,6 @@ import {
   checkGbizinfoHealth,
   checkGooglePlacesHealth,
   checkPageSpeedHealth,
-  checkSearxngHealth,
   checkSimilarWebHealth,
 } from "./oss-service-health-diagnostic"
 
@@ -126,7 +125,6 @@ async function liveBalance(def: SalesIntegrationDefinition): Promise<Pick<SalesI
   if (def.balance === "google_places_health") return checkGooglePlacesHealth()
   if (def.balance === "similarweb_health") return checkSimilarWebHealth()
   if (def.balance === "gbizinfo_health") return checkGbizinfoHealth()
-  if (def.balance === "searxng_health") return checkSearxngHealth()
   if (def.balance === "apollo_health") return checkApolloHealth()
   return null
 }

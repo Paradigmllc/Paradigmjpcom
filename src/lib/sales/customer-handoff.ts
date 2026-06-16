@@ -16,7 +16,6 @@ export const CUSTOMER_HANDOFF_SOURCES = [
   "stripe",
   "twenty",
   "telegram",
-  "n8n",
 ] as const
 
 export type CustomerHandoffSource = (typeof CUSTOMER_HANDOFF_SOURCES)[number]

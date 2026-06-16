@@ -3,7 +3,6 @@ import { normalizeDomain } from "@/lib/sales/dedup"
 type JsonRecord = Record<string, unknown>
 
 export type LeadDiscoverySource =
-  | "searxng"
   | "whoogle"
   | "overpass"
   | "publicwww"
@@ -14,6 +13,7 @@ export type LeadDiscoverySource =
   | "partner_directory"
   | "events_directory"
   | "osint_contacts"
+  | "browser_search"
 
 export interface LeadDiscoveryInput {
   query: string
@@ -42,7 +42,7 @@ export interface LeadDiscoveryResult {
 
 const USER_AGENT = "Paradigm Lead Discovery/1.1 (+https://paradigmjp.com)"
 
-const SERP_PRESETS: Record<Exclude<LeadDiscoverySource, "searxng" | "whoogle" | "overpass" | "publicwww" | "rsshub_jobs" | "whoisds_nrd">, string> = {
+const SERP_PRESETS: Record<Exclude<LeadDiscoverySource, "whoogle" | "overpass" | "publicwww" | "rsshub_jobs" | "whoisds_nrd" | "browser_search">, string> = {
   wellfound: "site:wellfound.com/company",
   agency_directory: "(site:clutch.co OR site:sortlist.com) agency",
   partner_directory: "(site:experts.shopify.com OR site:webflow.com/experts) agency",
@@ -150,31 +150,6 @@ function candidatesFromHtml(input: {
   return dedupe(candidates, input.limit)
 }
 
-async function discoverViaSearxng(input: LeadDiscoveryInput, source: LeadDiscoverySource = "searxng"): Promise<LeadDiscoveryCandidate[]> {
-  const base = env("SEARXNG_BASE_URL")
-  if (!base) throw new Error("SEARXNG_BASE_URL is not configured")
-  const url = new URL("/search", base)
-  url.searchParams.set("q", input.query)
-  url.searchParams.set("format", "json")
-  url.searchParams.set("language", input.market ?? "en")
-  const data = (await fetchJson(url.toString())) as { results?: Array<JsonRecord> }
-  return dedupe(
-    (data.results ?? [])
-      .map((row) =>
-        candidateFromUrl({
-          url: String(row.url ?? ""),
-          title: typeof row.title === "string" ? row.title : null,
-          snippet: typeof row.content === "string" ? row.content : null,
-          source,
-          market: input.market ?? null,
-          raw: row,
-        }),
-      )
-      .filter((item): item is LeadDiscoveryCandidate => item !== null),
-    input.limit ?? 25,
-  )
-}
-
 async function discoverViaWhoogle(input: LeadDiscoveryInput, source: LeadDiscoverySource = "whoogle"): Promise<LeadDiscoveryCandidate[]> {
   const base = env("WHOOGLE_BASE_URL")
   if (!base) throw new Error("WHOOGLE_BASE_URL is not configured")
@@ -193,12 +168,7 @@ async function discoverViaSearchPreset(input: LeadDiscoveryInput, source: LeadDi
   const preset = SERP_PRESETS[source as keyof typeof SERP_PRESETS]
   const query = `${preset} ${input.query}`.trim()
   const presetInput = { ...input, query }
-  try {
-    return await discoverViaSearxng(presetInput, source)
-  } catch (searxngError) {
-    if (!env("WHOOGLE_BASE_URL")) throw searxngError
-    return discoverViaWhoogle(presetInput, source)
-  }
+  return discoverViaWhoogle(presetInput, source)
 }
 
 async function discoverViaRssHubJobs(input: LeadDiscoveryInput): Promise<LeadDiscoveryCandidate[]> {
@@ -320,7 +290,6 @@ async function discoverViaOverpass(input: LeadDiscoveryInput): Promise<LeadDisco
 
 export function isLeadDiscoverySource(value: unknown): value is LeadDiscoverySource {
   return (
-    value === "searxng" ||
     value === "whoogle" ||
     value === "overpass" ||
     value === "publicwww" ||
@@ -335,13 +304,11 @@ export function isLeadDiscoverySource(value: unknown): value is LeadDiscoverySou
 }
 
 export async function discoverLeadCandidates(input: LeadDiscoveryInput): Promise<LeadDiscoveryResult> {
-  const source = input.source ?? "searxng"
+  const source = input.source ?? "browser_search"
   const limit = Math.min(Math.max(input.limit ?? 25, 1), 100)
   try {
     const candidates =
-      source === "searxng"
-        ? await discoverViaSearxng({ ...input, limit })
-        : source === "whoogle"
+      source === "whoogle"
           ? await discoverViaWhoogle({ ...input, limit })
           : source === "publicwww"
             ? await discoverViaPublicWww({ ...input, limit })

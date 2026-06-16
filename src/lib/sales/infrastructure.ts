@@ -114,7 +114,7 @@ const NEXT_STEPS = [
   "Hetzner CX43相当を新規契約し、Coolify / Docker / Traefik の空ホストを作成",
   "DigitalOceanの /data/coolify、DB dump、Docker volumes をバックアップ",
   "Supabase OSSをHetzner側SSOTとして復元し、SALES_SUPABASE_* を切替",
-  "NocoDB / Twenty / Appsmith / Metabase / n8n を順に復元し、主要URLのHTTP 200を確認",
+  "NocoDB / Twenty / Appsmith / Metabase / 各サービスを順に復元し、主要URLのHTTP 200を確認",
   "Cloudflare DNSをHetznerへ切替後、7-14日並走してDigitalOceanを解約",
 ]
 

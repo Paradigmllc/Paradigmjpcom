@@ -93,8 +93,8 @@ const SERVICES: SeedService[] = [
     tagline: { ja: "AI で業務を革新", en: "Transform operations with AI" },
     icon: "🤖",
     features: {
-      ja: ["業務分析・自動化設計", "Dify / n8n 構築", "DeepSeek V4 統合", "社内研修"],
-      en: ["Process analysis & automation design", "Dify / n8n setup", "DeepSeek V4 integration", "In-house training"],
+      ja: ["業務分析・自動化設計", "Dify 構築", "DeepSeek V4 統合", "社内研修"],
+      en: ["Process analysis & automation design", "Dify setup", "DeepSeek V4 integration", "In-house training"],
     },
     sortOrder: 5,
   },

@@ -26,7 +26,7 @@ function userEmailFromUnknown(user: unknown): string | null {
 }
 
 export function authorizeWebhookRequest(headers: Headers): AdminAuthResult {
-  const expected = process.env.TRIGGER_WEBHOOK_SECRET ?? process.env.N8N_WEBHOOK_SECRET
+  const expected = process.env.TRIGGER_WEBHOOK_SECRET
   const received = headers.get("x-webhook-secret")
 
   if (!received) {

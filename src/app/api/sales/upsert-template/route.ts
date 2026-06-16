@@ -1,8 +1,8 @@
 /**
- * POST /api/sales/upsert-template — n8n Workflow 03 から呼ばれる endpoint (Sprint 9-A)
+ * POST /api/sales/upsert-template — Workflow 03 から呼ばれる endpoint (Sprint 9-A)
  *
  * 役割: Notion 📝 テンプレ DB のページを 1 件ずつ受け取り sales_templates に upsert.
- *       n8n Cron (1h) が全件 split して call.
+ *       Cron (1h) が全件 split して call.
  *
  * 認証: X-Webhook-Secret header 必須
  * Body:  { notion_page_id: string, properties: Record<string, unknown> }

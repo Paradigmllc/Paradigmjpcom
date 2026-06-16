@@ -27,19 +27,20 @@ function optionalEnv(name: string): string | null {
   return value && value.trim().length > 0 ? value.trim() : null
 }
 
-function browserlessCdpEndpoint(): string | null {
-  const raw = optionalEnv("BROWSERLESS_URL")
-  const token = optionalEnv("BROWSERLESS_TOKEN")
-  if (!raw || !token) return null
+function steelCdpEndpoint(): string | null {
+  const cdpEndpoint = optionalEnv("CDP_ENDPOINT")
+  if (cdpEndpoint) return cdpEndpoint
+
+  const steelBaseUrl = optionalEnv("STEEL_BASE_URL")
+  if (!steelBaseUrl) return null
 
   try {
-    const url = new URL(raw)
-    if (url.protocol === "http:") url.protocol = "ws:"
-    if (url.protocol === "https:") url.protocol = "wss:"
-    url.searchParams.set("token", token)
+    const url = new URL(steelBaseUrl)
+    url.protocol = "ws:"
+    url.port = "9223"
     return url.toString()
   } catch (error) {
-    console.warn("[worker/stagehand] invalid BROWSERLESS_URL:", error)
+    console.warn("[worker/stagehand] invalid STEEL_BASE_URL:", error)
     return null
   }
 }
@@ -61,12 +62,12 @@ function llmConfig(): { apiKey: string | null; baseURL?: string; modelName: stri
 }
 
 export function getStagehandReadiness(): StagehandReadiness {
-  const cdp = optionalEnv("CDP_ENDPOINT") ?? browserlessCdpEndpoint()
+  const cdp = optionalEnv("CDP_ENDPOINT") ?? steelCdpEndpoint()
   const browserbaseKey = optionalEnv("BROWSERBASE_API_KEY")
   const { apiKey, modelName } = llmConfig()
   const missing = [
     ...(apiKey ? [] : ["STAGEHAND_LLM_API_KEY or OPENAI_API_KEY or DEEPSEEK_API_KEY"]),
-    ...(!browserbaseKey && !cdp ? ["BROWSERBASE_API_KEY or CDP_ENDPOINT/BROWSERLESS_URL+BROWSERLESS_TOKEN"] : []),
+    ...(!browserbaseKey && !cdp ? ["BROWSERBASE_API_KEY or CDP_ENDPOINT/STEEL_BASE_URL"] : []),
   ]
   return {
     ok: missing.length === 0,
@@ -82,7 +83,7 @@ async function withStagehand<T>(fn: (stagehand: Stagehand) => Promise<T>): Promi
     throw new Error(`Stagehand is not configured: ${readiness.missing.join(", ")}`)
   }
 
-  const cdp = optionalEnv("CDP_ENDPOINT") ?? browserlessCdpEndpoint()
+  const cdp = optionalEnv("CDP_ENDPOINT") ?? steelCdpEndpoint()
   const browserbaseKey = optionalEnv("BROWSERBASE_API_KEY")
   const browserbaseProjectId = optionalEnv("BROWSERBASE_PROJECT_ID")
   const { apiKey, baseURL, modelName } = llmConfig()

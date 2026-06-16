@@ -15,16 +15,6 @@ test.describe("Revenue OS critical flows", () => {
     await expect(btn).toBeVisible()
   })
 
-  test("SearxNG panel has one-click automation button", async ({ page }) => {
-    await page.goto(`${BASE}/ja/admin/sales?tab=batches`)
-    await page.waitForTimeout(2000)
-    // Should show 全自動 button
-    const autoBtn = page.locator("button", { hasText: "全自動" })
-    const exists = await autoBtn.isVisible().catch(() => false)
-    // Button may not be visible if SearxNG panel is collapsed, just check page loaded
-    await expect(page.locator("h2").first()).toBeVisible()
-  })
-
   test("workspace panel shows checkbox and score columns", async ({ page }) => {
     await page.goto(`${BASE}/ja/admin/sales?tab=automation`)
     await page.waitForTimeout(2000)

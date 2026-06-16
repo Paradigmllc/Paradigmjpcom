@@ -93,7 +93,7 @@ export const REPORT_FAQS: Record<"ja" | "en", Record<string, FaqItem[]>> = {
     ],
     outreach: [
       { q: "Will automated outreach flag us as spammers?", a: "No. We target only verified leads using dry-runs, strict rate limits, and highly personalized B2B messages rather than generic bulk spam." },
-      { q: "How are the lead lists built?", a: "We aggregate registrar data from gBizInfo, Overpass OSM, and SearxNG, filtered by industry and tech stack indicators." },
+      { q: "How are the lead lists built?", a: "We aggregate registrar data from gBizInfo, Overpass OSM, and browser-based search, filtered by industry and tech stack indicators." },
       { q: "How is the performance tracked?", a: "Everything is logged into Twenty CRM and Metabase, giving you real-time visibility on send rates and reply captures." }
     ],
     security: [

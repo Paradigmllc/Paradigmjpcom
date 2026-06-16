@@ -6,19 +6,6 @@ import type { SalesIntegrationDefinition } from "./integration-registry-types"
 
 export const SOURCE_DEFS: SalesIntegrationDefinition[] = [
   {
-    slug: "searxng",
-    displayName: "SearxNG",
-    category: "list_source",
-    deployment: "oss",
-    role: "検索エンジン（Google/Bing等）を統合し、見込み客候補ドメインをキーワード検索で一括収集するセルフホスト検索API。",
-    requiredEnv: ["SEARXNG_BASE_URL"],
-    optionalEnv: ["SEARXNG_LANGUAGE", "SEARXNG_DEFAULT_ENGINES"],
-    balance: "searxng_health",
-    docsUrl: "https://github.com/searxng/searxng",
-    recommended: true,
-    notes: "JSON形式をsettings.ymlで有効化してから使います。検索結果はDBに保存し、重複排除とスコアリング後にリード化します。",
-  },
-  {
     slug: "google_places",
     displayName: "Google Places API",
     category: "list_source",
@@ -194,7 +181,7 @@ export const SOURCE_DEFS: SalesIntegrationDefinition[] = [
     balance: "morphic_health",
     docsUrl: "https://github.com/miurla/morphic",
     recommended: false,
-    notes: "SearXNGのAI補完として使用。生成AI回答により従来の検索よりリッチな競合・市場情報を取得できる。",
+    notes: "MorphicのAI補完として使用。生成AI回答により従来の検索よりリッチな競合・市場情報を取得できる。",
   },
   {
     slug: "perplexica",
@@ -207,7 +194,7 @@ export const SOURCE_DEFS: SalesIntegrationDefinition[] = [
     balance: "perplexica_health",
     docsUrl: "https://github.com/ItzCrazyKns/Perplexica",
     recommended: true,
-    notes: "見込み客リサーチのAI検索レイヤーとしてSearXNG+Morphicと併用。プライバシー重視の自己ホスト型。",
+    notes: "見込み客リサーチのAI検索レイヤーとしてMorphicと併用。プライバシー重視の自己ホスト型。",
   },
   {
     slug: "dataforseo",

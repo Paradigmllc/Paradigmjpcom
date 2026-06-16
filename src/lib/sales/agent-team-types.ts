@@ -130,7 +130,7 @@ export const AGENT_ROLES: SalesAgentRole[] = [
   {
     id: "outreach_worker",
     name: "Outreach Worker",
-    owner: "Trigger.dev / Browserless",
+    owner: "Trigger.dev / Steel-Browser",
     responsibility: "Dify文面生成、フォーム判定、dry-run、承認後の送信準備を担当。",
     autonomy: "デフォルトはdry-run。初回5件と危険判定はAppsmith承認。",
     guardrail: "Telegram指示だけで大量ライブ送信しない。",

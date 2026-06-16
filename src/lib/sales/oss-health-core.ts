@@ -45,29 +45,6 @@ export async function checkFlareSolverrServiceHealth(): Promise<ServiceHealthRes
   }
 }
 
-export async function checkBrowserlessHealth(): Promise<ServiceHealthResult> {
-  const missing = missingEnv(["BROWSERLESS_URL", "BROWSERLESS_TOKEN"])
-  if (missing.length > 0) return notConfigured(missing)
-
-  try {
-    const url = normalizeHttpBase(envValue("BROWSERLESS_URL") as string)
-    url.pathname = `${url.pathname}/pressure`.replace(/\/+/g, "/")
-    url.searchParams.set("token", envValue("BROWSERLESS_TOKEN") as string)
-    const res = await safeFetch(url.toString(), { signal: AbortSignal.timeout(8_000) })
-    if (!res.ok) return { balanceStatus: "error", balanceLabel: `HTTP ${res.status}` }
-    const isAvailable = recordValue(res.body, "isAvailable")
-    const running = recordValue(res.body, "running")
-    const maxConcurrent = recordValue(res.body, "maxConcurrent")
-    const queued = recordValue(res.body, "queued")
-    return {
-      balanceStatus: isAvailable === false ? "error" : "ok",
-      balanceLabel: `pressure ok: running ${running ?? "-"} / ${maxConcurrent ?? "-"}, queued ${queued ?? 0}`,
-    }
-  } catch (error) {
-    return healthError("Browserless", error)
-  }
-}
-
 export async function checkStagehandHealth(): Promise<ServiceHealthResult> {
   const missing = missingEnv(["STAGEHAND_URL", "STAGEHAND_API_KEY"])
   if (missing.length > 0) return notConfigured(missing)

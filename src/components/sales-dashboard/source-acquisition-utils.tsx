@@ -47,7 +47,7 @@ export const SOURCE_ROLE_MAP: Record<string, string> = {
   hunter: "対象ドメインに関連するメールパターンの抽出と連絡先発見",
   crawlee: "Webサイト内のリンク構造を再帰的に巡回し、問い合わせページを自動探索",
   crawl4ai: "LLMに最適化されたマークダウン抽出と問い合わせフォームの構造化検出",
-  browserless: "SPAフォーム探索やスクリーンショット撮影用のリモートブラウザ実行",
+  steel: "CDPリモートブラウザによるSPAフォーム探索や保存用スクリーンショット撮影",
   stagehand: "PlaywrightとLLMを用いて、問い合わせフォームを自律的に理解して入力・送信",
   mubeng: "クローラーやスクレイパーのアクセス遮断を防ぐIPローテーションプロキシ",
   browser_screenshot: "見込み客サイトの高解像度スクリーンショットを自動撮影しR2へ保存",

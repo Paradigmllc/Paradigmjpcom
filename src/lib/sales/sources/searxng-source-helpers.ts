@@ -257,7 +257,7 @@ export async function listSearxngRuns(scope: SalesLocaleScope, limit = 8): Promi
   const sb = getSb()
   if (!sb) return { ok: false, runs: [], error: "Supabase service_role not configured" }
   const runRes = await sb
-    .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
+    .from(DB_TABLES.SALES_BROWSER_SEARCH_RUNS)
     .select("*")
     .eq("region", scope.region)
     .eq("report_locale", scope.reportLocale)
@@ -269,7 +269,7 @@ export async function listSearxngRuns(scope: SalesLocaleScope, limit = 8): Promi
   const ids = runs.map((run) => run.id)
   const resultRes = ids.length > 0
     ? await sb
-        .from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS)
+        .from(DB_TABLES.SALES_BROWSER_SEARCH_RESULTS)
         .select("id, run_id, result_index, url, domain, title, snippet, engine, category, score, status, rejection_reason, raw")
         .in("run_id", ids)
         .order("score", { ascending: false })

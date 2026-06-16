@@ -4,7 +4,7 @@
  * 25 無料 OSS ソースで企業データを収集:
  *   - 自社スキャン (PSI + HTML)
  *   - 公開API (SSL Labs, Whois, crt.sh, DNS, Tranco, CommonCrawl, etc.)
- *   - OSSツール (SpiderFoot, Katana, Maigret, Stagehand, Steel.dev, SearXNG)
+ *   - OSSツール (SpiderFoot, Katana, Maigret, Stagehand, Steel.dev)
  *   - gBizInfo (日本のみ)
  *
  * 入力: enrichFromContact({ email, company?, message?, services? })
@@ -34,7 +34,6 @@ import { searchMaigretForDomain } from "./sources/maigret-source"
 import { extractSiteData, discoverForms } from "./sources/stagehand-enrich-source"
 import { scrapeWithSteel } from "./sources/steel-source"
 import { scrapeWithCrawlee } from "./sources/crawlee-source"
-import { estimateTrafficViaSearx } from "./sources/searxng-traffic"
 import { extractSchemaOrg } from "./sources/schema-org"
 import { analyzeSitemap } from "./sources/sitemap"
 import { checkSafeBrowsing } from "./sources/safe-browsing"
@@ -194,7 +193,6 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     { name: "spiderfoot", fn: () => enrichDomainWithSpiderFoot(domain) },
     { name: "katana", fn: () => crawlWithKatana(url) },
     { name: "maigret", fn: () => searchMaigretForDomain(domain) },
-    { name: "searxng_traffic", fn: () => estimateTrafficViaSearx(domain, companyName ?? undefined) },
     ...(stagehandEnabled ? [
       { name: "stagehand_extract", fn: () => extractSiteData(url) },
       { name: "stagehand_forms", fn: () => discoverForms(url) },
@@ -251,7 +249,6 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   const spiderfoot = sourceMap.spiderfoot
   const katana = sourceMap.katana
   const maigret = sourceMap.maigret
-  const searxng = sourceMap.searxng
   const stagehandSite = sourceMap.stagehand_site
   const stagehandForms = sourceMap.stagehand_forms
   const steel = sourceMap.steel
@@ -270,7 +267,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   const gbizFirst = gbiz?.[0]
   const techResult = tech ? (tech as { tech: Array<{ name: string; category: string }> }) : null
   const enterpriseCheck = techResult?.tech ? isEnterpriseTechStack(techResult.tech.map(t => t.name)) : { isEnterprise: false, matched: [] }
-  const allSourceResults = [scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts, wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana, maigret, searxng, steel, crawlee, schemaOrg, sitemap, safeBrowsing, greenWeb, builtwith, jinaReader, clearbitLogo, subfinder, trufflehog, ...(stagehandEnabled ? [stagehandSite, stagehandForms] : [])]
+  const allSourceResults = [scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts, wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana, maigret, steel, crawlee, schemaOrg, sitemap, safeBrowsing, greenWeb, builtwith, jinaReader, clearbitLogo, subfinder, trufflehog, ...(stagehandEnabled ? [stagehandSite, stagehandForms] : [])]
   const meta: Record<string, unknown> = {
     sales_os: {
       last_enriched_at: new Date().toISOString(),
@@ -311,7 +308,6 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     spiderfoot: Array.isArray(spiderfoot) ? spiderfoot.filter(r => r?.ok).map(r => ({ source: r.source, data: r.data })) : null,
     katana: katana?.ok ? { crawled: katana.data?.crawled, urls: katana.data?.urls?.slice(0, 20) } : null,
     maigret: maigret?.ok ? { profiles: maigret.data?.profiles_found, sites: maigret.data?.sites?.slice(0, 10) } : null,
-    searxng_traffic: searxng?.ok ? searxng.data : null,
     stagehand: !skippedStagehand && (stagehandSite?.ok || stagehandForms?.ok) ? { site: stagehandSite?.ok ? stagehandSite.data : null, forms: stagehandForms?.ok ? stagehandForms.data : null } : null,
     steel: steel?.ok ? { title: steel.data?.title, text: steel.data?.text?.slice(0, 2000), links_count: steel.data?.links?.length, screenshot: steel.data?.screenshot } : null,
     crawlee: crawlee?.ok ? { title: crawlee.data?.title, bodyText: crawlee.data?.bodyText?.slice(0, 2000), links_count: crawlee.data?.links?.length, forms_count: crawlee.data?.formsCount } : null,

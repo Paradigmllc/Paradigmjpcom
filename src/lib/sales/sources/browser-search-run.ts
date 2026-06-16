@@ -33,11 +33,11 @@ export async function runBrowserSearchRun(input: {
     enhanced_query: enhancedQuery,
     tech_stacks: techStacks,
     browser_queries: browserQueries,
-    searxng_policy: "disabled_by_default",
+    browser_search_policy: "disabled_by_default",
   }
 
   const inserted = await sb
-    .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
+    .from(DB_TABLES.SALES_BROWSER_SEARCH_RUNS)
     .insert({
       query,
       region: scope.region,
@@ -61,7 +61,7 @@ export async function runBrowserSearchRun(input: {
     const error = backend.error ?? "Browser search backend is not configured"
     console.error("[browser-search-run] backend missing:", error)
     await sb
-      .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
+      .from(DB_TABLES.SALES_BROWSER_SEARCH_RUNS)
       .update({
         status: "failed",
         completed_at: new Date().toISOString(),
@@ -87,7 +87,7 @@ export async function runBrowserSearchRun(input: {
   const errors = batch.errors.slice(0, 25)
 
   if (candidates.length > 0) {
-    const { error: upsertError } = await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).upsert(
+    const { error: upsertError } = await sb.from(DB_TABLES.SALES_BROWSER_SEARCH_RESULTS).upsert(
       candidates.map((candidate, index) => ({
         run_id: run.id,
         result_index: index,
@@ -114,7 +114,7 @@ export async function runBrowserSearchRun(input: {
     ? errors[0] ?? "Browser search returned no import-ready domains"
     : readyCount > 0 ? null : "Browser search returned no import-ready domains"
   await sb
-    .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
+    .from(DB_TABLES.SALES_BROWSER_SEARCH_RUNS)
     .update({
       status: readyCount > 0 ? "completed" : "failed",
       total_results: batch.total,

@@ -72,31 +72,7 @@ services:
     networks:
       - osint-net
 
-  # ─── SearXNG ───────────────────────────────────────────────
-  searxng:
-    image: searxng/searxng:2025.5.13-65197a4d9
-    restart: unless-stopped
-    volumes:
-      - searxng-data:/etc/searxng
-    environment:
-      - SEARXNG_BASE_URL=http://localhost:8080/
-      - SEARXNG_SECRET=${OSINT_SEARXNG_SECRET:-paradigm-osint-searxng-key}
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    deploy:
-      resources:
-        limits:
-          memory: 512m
-          cpus: "0.5"
-    networks:
-      - osint-net
 
 networks:
   osint-net:
     driver: bridge
-
-volumes:
-  searxng-data:

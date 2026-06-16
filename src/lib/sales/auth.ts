@@ -31,7 +31,7 @@ function safeCompare(a: string, b: string): boolean {
  * @returns null = 認証 OK / NextResponse = 認証エラー (401 を返す)
  */
 export function verifyWebhookSecret(req: NextRequest): NextResponse | null {
-  const expected = process.env.TRIGGER_WEBHOOK_SECRET ?? process.env.N8N_WEBHOOK_SECRET
+  const expected = process.env.TRIGGER_WEBHOOK_SECRET
   if (!expected) {
     // 本番では絶対に env を設定する。未設定時は全リジェクト (fail-closed)
     return NextResponse.json(

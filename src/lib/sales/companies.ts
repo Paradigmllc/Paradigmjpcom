@@ -2,7 +2,7 @@
  * lib/sales/companies.ts — sales_companies CRUD wrapper (Sprint 8)
  *
  * 役割: sales_companies (リード DB) への型安全な書込/読込 API。
- *       n8n webhook / API route / 内部スクリプトが共通で使う窓口。
+ *       API route / 内部スクリプトが共通で使う窓口。
  *
  * 設計:
  *   - getServiceSalesSupabase() で service_role 鍵を使う (RLS bypass)

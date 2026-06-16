@@ -1,5 +1,5 @@
 /**
- * POST /api/sales/sync-from-notion — n8n Workflow 02 から呼ばれる endpoint (Sprint 9-A)
+ * POST /api/sales/sync-from-notion — Workflow 02 から呼ばれる endpoint (Sprint 9-A)
  *
  * 役割: Notion で人間が編集した 4 field (deal_stage / follow_up_date / memo / 担当者)
  *       を Supabase sales_companies に書き戻す.

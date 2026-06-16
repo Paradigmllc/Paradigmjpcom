@@ -130,7 +130,7 @@ export function buildFootprintQueries(
 }
 
 /**
- * Build a bulk search query string for SearXNG.
+ * Build a bulk search query string for browser search.
  * Combines multiple footprint+city pairs into one query using OR.
  */
 export function buildFootprintSearchQuery(

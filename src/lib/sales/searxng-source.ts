@@ -90,7 +90,7 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
   const categories = cleanTokenList(input.categories, DEFAULT_CATEGORIES)
 
   const inserted = await sb
-    .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
+    .from(DB_TABLES.SALES_BROWSER_SEARCH_RUNS)
     .insert({
       query,
       region: scope.region,
@@ -150,7 +150,7 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
     })
 
     if (newDomains.length > 0) {
-      const { error: upsertError } = await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).upsert(
+      const { error: upsertError } = await sb.from(DB_TABLES.SALES_BROWSER_SEARCH_RESULTS).upsert(
         newDomains.map((candidate, index) => ({
           run_id: run.id,
           result_index: (page - 1) * 100 + index,
@@ -174,7 +174,7 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
     }
 
     await sb
-      .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
+      .from(DB_TABLES.SALES_BROWSER_SEARCH_RUNS)
       .update({
         total_results: totalRawResults,
         unique_domains: seenDomains.size,
@@ -216,7 +216,7 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
         })
 
         if (newDomains.length > 0) {
-          const { error: upsertError } = await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).upsert(
+          const { error: upsertError } = await sb.from(DB_TABLES.SALES_BROWSER_SEARCH_RESULTS).upsert(
             newDomains.map((candidate, index) => ({
               run_id: run.id,
               result_index: (page - 1) * 100 + index,
@@ -241,7 +241,7 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
 
       lastSavedPage = page
       await sb
-        .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
+        .from(DB_TABLES.SALES_BROWSER_SEARCH_RUNS)
         .update({
           total_results: totalRawResults,
           unique_domains: seenDomains.size,
@@ -264,7 +264,7 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
         }
       }
       await sb
-        .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
+        .from(DB_TABLES.SALES_BROWSER_SEARCH_RUNS)
         .update({
           status: seenDomains.size > 0 ? "completed_partial" : "failed",
           total_results: totalRawResults,
@@ -281,7 +281,7 @@ export async function runSearxngSearch(input: SearxngSearchInput): Promise<{
   if (!lastError) {
     const completedAt = new Date().toISOString()
     await sb
-      .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
+      .from(DB_TABLES.SALES_BROWSER_SEARCH_RUNS)
       .update({
         status: readyDomains.size > 0 ? "completed" : "failed",
         total_results: totalRawResults,
@@ -306,7 +306,7 @@ export async function importSearxngRunToLeadBatch(input: {
 }): Promise<{ ok: boolean; batch?: SalesLeadBatchSummary; imported: number; error?: string }> {
   const sb = getSb()
   if (!sb) return { ok: false, imported: 0, error: "Supabase service_role not configured" }
-  const runRes = await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS).select("*").eq("id", input.runId).single()
+  const runRes = await sb.from(DB_TABLES.SALES_BROWSER_SEARCH_RUNS).select("*").eq("id", input.runId).single()
   if (runRes.error) return { ok: false, imported: 0, error: runRes.error.message }
   const run = runRes.data as SearxngRunRow
 
@@ -322,7 +322,7 @@ export async function importSearxngRunToLeadBatch(input: {
   const minScore = Math.max(0, Math.min(100, Math.round(input.minScore ?? 58)))
   const limit = Math.max(1, Math.min(1000, Math.round(input.limit ?? 100)))
   const resultRes = await sb
-    .from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS)
+    .from(DB_TABLES.SALES_BROWSER_SEARCH_RESULTS)
     .select("id, run_id, result_index, url, domain, title, snippet, engine, category, score, status, rejection_reason, raw")
     .eq("run_id", run.id)
     .eq("status", "ready")
@@ -363,7 +363,7 @@ ${JSON.stringify(promptData, null, 2)}`
             if (decision === true || String(decision).toLowerCase() === "true") {
               validResults.push(r)
             } else {
-              await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "rejected", rejection_reason: "llm_filtered" }).eq("id", r.id)
+              await sb.from(DB_TABLES.SALES_BROWSER_SEARCH_RESULTS).update({ status: "rejected", rejection_reason: "llm_filtered" }).eq("id", r.id)
             }
           }
         } catch (parseError) {
@@ -371,7 +371,7 @@ ${JSON.stringify(promptData, null, 2)}`
           usedQualityFallback = true
           validResults.push(...chunk.filter((r) => r.score >= fallbackMinScore))
           for (const r of chunk.filter((item) => item.score < fallbackMinScore)) {
-            await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "pending_review", rejection_reason: "llm_parse_error_low_score" }).eq("id", r.id)
+            await sb.from(DB_TABLES.SALES_BROWSER_SEARCH_RESULTS).update({ status: "pending_review", rejection_reason: "llm_parse_error_low_score" }).eq("id", r.id)
           }
         }
       } else {
@@ -379,7 +379,7 @@ ${JSON.stringify(promptData, null, 2)}`
         usedQualityFallback = true
         validResults.push(...chunk.filter((r) => r.score >= fallbackMinScore))
         for (const r of chunk.filter((item) => item.score < fallbackMinScore)) {
-          await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "pending_review", rejection_reason: "llm_unavailable_low_score" }).eq("id", r.id)
+          await sb.from(DB_TABLES.SALES_BROWSER_SEARCH_RESULTS).update({ status: "pending_review", rejection_reason: "llm_unavailable_low_score" }).eq("id", r.id)
         }
       }
     } catch (e) {
@@ -387,7 +387,7 @@ ${JSON.stringify(promptData, null, 2)}`
       usedQualityFallback = true
       validResults.push(...chunk.filter((r) => r.score >= fallbackMinScore))
       for (const r of chunk.filter((item) => item.score < fallbackMinScore)) {
-        const { error: updateErr } = await sb.from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS).update({ status: "pending_review", rejection_reason: "llm_error_low_score" }).eq("id", r.id)
+        const { error: updateErr } = await sb.from(DB_TABLES.SALES_BROWSER_SEARCH_RESULTS).update({ status: "pending_review", rejection_reason: "llm_error_low_score" }).eq("id", r.id)
         if (updateErr) console.error(`[searxng-import] failed to update status for result ${r.id}:`, updateErr.message)
       }
     }
@@ -407,17 +407,17 @@ ${JSON.stringify(promptData, null, 2)}`
     domain: result.domain,
     report_locale: run.report_locale,
     target_country: run.target_country,
-    source: result.engine?.includes("browser") || result.category === "browser_search" ? "browser_search" : "searxng",
+    source: "browser_search",
     search_url: result.url,
     search_title: result.title,
     search_snippet: result.snippet,
     search_score: String(result.score),
-    searxng_run_id: run.id,
-    searxng_result_id: result.id,
+    browser_search_run_id: run.id,
+    browser_search_result_id: result.id,
   }))
-  const batchSource = rows.some((row) => row.source === "browser_search") ? "browser_search" : "searxng"
+  const batchSource = "browser_search"
   const created = await createLeadBatch({
-    name: `${batchSource === "browser_search" ? "Browser Search" : "SearxNG"} ${run.target_country} ${new Date().toISOString().slice(0, 10)}`,
+    name: `Browser Search ${run.target_country} ${new Date().toISOString().slice(0, 10)}`,
     rows,
     reportLocale: run.report_locale,
     targetCountry: run.target_country,
@@ -430,11 +430,11 @@ ${JSON.stringify(promptData, null, 2)}`
   if (!created.ok || !created.batch) return { ok: false, imported: 0, error: created.error ?? "batch import failed" }
 
   await sb
-    .from(DB_TABLES.SALES_SEARXNG_SEARCH_RESULTS)
+    .from(DB_TABLES.SALES_BROWSER_SEARCH_RESULTS)
     .update({ status: "imported" })
     .in("id", validResults.map((result) => result.id))
   await sb
-    .from(DB_TABLES.SALES_SEARXNG_SEARCH_RUNS)
+    .from(DB_TABLES.SALES_BROWSER_SEARCH_RUNS)
     .update({
       status: "imported",
       imported_count: validResults.length,

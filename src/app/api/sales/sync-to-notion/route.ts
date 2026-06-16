@@ -1,8 +1,7 @@
 /**
- * POST /api/sales/sync-to-notion — n8n Workflow 01 から呼ばれる endpoint (Sprint 9-A)
+ * POST /api/sales/sync-to-notion — Workflow 01 から呼ばれる endpoint (Sprint 9-A)
  *
  * 役割: sales_companies row を Notion リードDB に push (create or update or rehydrate).
- *       n8n が Supabase Webhook で row 変更を検知 → 本 endpoint を call.
  *
  * 認証: X-Webhook-Secret header 必須 (lib/sales/auth.ts)
  * Body:  { company: SalesCompany }

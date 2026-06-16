@@ -315,7 +315,7 @@ export async function runVideoOrchestrator(
       steps.push(makeStep("r2_signed_urls", true, r2Start, { error: "No R2 prefix available; skipped" }))
     }
 
-    /* ───── Step 9: n8n ディスパッチ ───── */
+    /* ───── Step 9: Trigger.dev ディスパッチ ───── */
     if (!skipDispatch) {
       const dispatchStart = Date.now()
       try {

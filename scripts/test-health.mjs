@@ -19,7 +19,6 @@ const env = loadEnv();
 
 const NEXT_PUBLIC_SUPABASE_URL = env.SALES_SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = env.SALES_SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_ROLE_KEY;
-const SEARXNG_BASE_URL = env.SEARXNG_BASE_URL;
 const DIFY_API_KEY = env.DIFY_API_KEY;
 const DIFY_BASE_URL = env.DIFY_BASE_URL || "https://api.dify.ai";
 const N8N_BASE_URL = env.N8N_BASE_URL;
@@ -41,18 +40,6 @@ async function check() {
     }
   } else {
     console.log('Supabase env missing');
-  }
-
-  console.log('--- SEARXNG ---');
-  if (SEARXNG_BASE_URL) {
-    try {
-      const res = await fetch(`${SEARXNG_BASE_URL}/search?q=test&format=json`, { signal: AbortSignal.timeout(5000) });
-      console.log(`SearxNG OK: HTTP ${res.status}`);
-    } catch(e) {
-      console.log('SearxNG Error:', e.message);
-    }
-  } else {
-    console.log('SearxNG env missing');
   }
 
   console.log('--- DIFY ---');

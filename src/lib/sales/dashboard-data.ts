@@ -84,7 +84,7 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
       sourceCounts: {},
       sourceAcquisition: emptySourceAcquisitionSummary(),
       leadBatches: [],
-      searxngRuns: [],
+      browserSearchRuns: [],
       japanReadinessInsights: [],
       salesPipeline: { runs: [], error: "Supabase service_role is not configured." },
       companies: [],
@@ -128,7 +128,7 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
     agentTeam,
     integrationStatus,
     leadBatchesRes,
-    searxngRunsRes,
+    browserSearchRunsRes,
     japanReadinessRes,
     salesPipeline,
     videoJobsRes,
@@ -196,7 +196,7 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
   if (!videoJobsRes.ok) warnings.push(`sales_video_jobs: ${videoJobsRes.error}`)
   if (crmFieldConfig.error) warnings.push(`sales_crm_field_config: ${crmFieldConfig.error}`)
   if (!leadBatchesRes.ok && leadBatchesRes.error) warnings.push(`sales_lead_batches: ${leadBatchesRes.error}`)
-  if (!searxngRunsRes.ok && searxngRunsRes.error) warnings.push(`sales_searxng_search_runs: ${searxngRunsRes.error}`)
+  if (!browserSearchRunsRes.ok && browserSearchRunsRes.error) warnings.push(`sales_searxng_search_runs: ${browserSearchRunsRes.error}`)
   if (!japanReadinessRes.ok && japanReadinessRes.error) warnings.push(`sales_japan_readiness_insights: ${japanReadinessRes.error}`)
   if (salesPipeline.error) warnings.push(`sales_pipeline_runs: ${salesPipeline.error}`)
   warnings.push(...infrastructure.warnings)
@@ -304,7 +304,7 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
     sourceCounts,
     sourceAcquisition,
     leadBatches: leadBatchesRes.batches,
-    searxngRuns: searxngRunsRes.runs,
+    browserSearchRuns: browserSearchRunsRes.runs,
     japanReadinessInsights: japanReadinessRes.insights,
     salesPipeline,
     companies,

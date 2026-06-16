@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
 
     const query = body.query?.trim()
     if (!query) return NextResponse.json({ ok: false, error: "query is required" }, { status: 400 })
-    const source = isLeadDiscoverySource(body.source) ? body.source : "searxng"
+    const source = isLeadDiscoverySource(body.source) ? body.source : "browser_search"
     const result = await discoverLeadCandidates({
       query,
       source,

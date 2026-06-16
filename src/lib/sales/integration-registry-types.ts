@@ -51,7 +51,6 @@ export type SalesIntegrationBalanceType =
   | "google_places_health"
   | "similarweb_health"
   | "gbizinfo_health"
-  | "searxng_health"
   | "apollo_health"
   | "spiderfoot_health"
   | "katana_health"

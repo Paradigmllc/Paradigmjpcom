@@ -97,10 +97,10 @@ function buildLanes(data: SalesDashboardData): Lane[] {
     {
       id: "outreach",
       title: "送信・回収",
-      subtitle: "Stagehand / Browserless / Trigger.dev",
+      subtitle: "Stagehand / Steel-Browser / Trigger.dev",
       metric: outreachCount.toLocaleString("ja-JP"),
       detail: "フォーム送信、証跡、手動確認キュー、同期ログを同じ営業レコードへ返却",
-      status: integrationReady(data, "stagehand") || integrationReady(data, "browserless") ? "ready" : "warning",
+      status: integrationReady(data, "stagehand") || integrationReady(data, "steel") ? "ready" : "warning",
       href: "?tab=operator",
       icon: Send,
     },

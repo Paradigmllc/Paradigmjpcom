@@ -18,7 +18,7 @@ export const ORCHESTRATION_DEFS: SalesIntegrationDefinition[] = [
     balance: "dify_health",
     docsUrl: "https://docs.dify.ai/api-reference/workflows/run-workflow",
     recommended: true,
-    notes: "DifyはCloud版 api.dify.ai のみを正とする。用途別キーを認識し、APIキーの実値はUI・ログ・n8nペイロードへ出さない。",
+    notes: "DifyはCloud版 api.dify.ai のみを正とする。用途別キーを認識し、APIキーの実値はUI・ログへ出さない。",
   },
   {
     slug: "deepseek",
@@ -31,18 +31,6 @@ export const ORCHESTRATION_DEFS: SalesIntegrationDefinition[] = [
     balance: "manual",
     recommended: true,
     notes: "Dify Cloud内の推論モデルを優先し、直APIは補助・検証用に限定する。",
-  },
-  {
-    slug: "n8n",
-    displayName: "n8n OSS (legacy)",
-    category: "orchestration",
-    deployment: "oss",
-    role: "（移行元レガシー）以前使用していたWebhook連携とアプローチ承認フローの実行エンジン。",
-    requiredEnv: ["N8N_WEBHOOK_SECRET"],
-    optionalEnv: ["N8N_BASE_URL", "N8N_SALES_ENRICHMENT_WEBHOOK_URL", "N8N_PLAYWRIGHT_FORM_WEBHOOK"],
-    balance: "none",
-    recommended: false,
-    notes: "Trigger.devに移行済みの旧ワークフローシステムです。新規ジョブの実行には使用されません。",
   },
   {
     slug: "trigger_dev",
@@ -97,7 +85,7 @@ export const ORCHESTRATION_DEFS: SalesIntegrationDefinition[] = [
     optionalEnv: ["CHROME_MCP_URL"],
     balance: "manual",
     recommended: false,
-    notes: "Used for verification and QA; production automation should remain on Browserless/Stagehand workers.",
+    notes: "Used for verification and QA; production automation should remain on Steel-Browser/Stagehand workers.",
   },
   {
     slug: "supabase_ssot",

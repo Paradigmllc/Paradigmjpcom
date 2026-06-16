@@ -3,7 +3,6 @@ import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
 import { pageSpeedApi } from "../src/lib/sales/data-sources/pagespeed";
-import { searxngApi } from "../src/lib/sales/data-sources/searxng";
 import { securityTrailsApi } from "../src/lib/sales/data-sources/security-trails";
 import { apolloApi } from "../src/lib/sales/data-sources/apollo";
 
@@ -21,7 +20,6 @@ async function audit() {
 
   const clients = [
     { name: "PageSpeed Insights", client: pageSpeedApi },
-    { name: "SearxNG", client: searxngApi },
     { name: "SecurityTrails", client: securityTrailsApi },
     { name: "Apollo", client: apolloApi },
   ];

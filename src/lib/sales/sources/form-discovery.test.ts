@@ -4,7 +4,7 @@ import { isAllowedFormUrlForOrigin } from "./external-form-discovery"
 
 beforeEach(() => {
   vi.stubEnv("CRAWL4AI_BASE_URL", "")
-  vi.stubEnv("BROWSERLESS_URL", "")
+  vi.stubEnv("STEEL_BASE_URL", "")
   vi.stubEnv("CRAWLEE_WORKER_URL", "")
   vi.stubEnv("OUTREACH_WORKER_URL", "")
 })

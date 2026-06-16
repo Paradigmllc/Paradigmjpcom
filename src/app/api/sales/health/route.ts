@@ -68,27 +68,6 @@ async function checkSupabase(): Promise<ServiceCheck> {
   }
 }
 
-async function checkSearxng(): Promise<ServiceCheck> {
-  const base = env("SEARXNG_BASE_URL")
-  if (!base) return { name: "SearxNG", status: "not_configured", detail: "SEARXNG_BASE_URL is not configured", url: null }
-
-  try {
-    const candidates = [base, base.includes("searxng.paradigmjp.com") ? "http://searxng:8080" : null].filter((value): value is string => Boolean(value))
-    let lastStatus: number | null = null
-    for (const candidate of candidates) {
-      const url = new URL("/search", candidate)
-      url.searchParams.set("q", "test")
-      url.searchParams.set("format", "json")
-      const res = await fetch(url.toString(), { signal: AbortSignal.timeout(8_000) })
-      lastStatus = res.status
-      if (res.ok) return { name: "SearxNG", status: "ok", detail: "search endpoint reachable", url: candidate }
-    }
-    return { name: "SearxNG", status: "error", detail: `HTTP ${lastStatus ?? "unknown"}`, url: base }
-  } catch (error) {
-    return { name: "SearxNG", status: "error", detail: error instanceof Error ? error.message : String(error), url: base }
-  }
-}
-
 async function checkBrowserSearch(): Promise<ServiceCheck> {
   const backend = getBrowserSearchBackendStatus()
   if (!backend.configured) {
@@ -154,7 +133,6 @@ function checkEnvSummary(): ServiceCheck {
   const required = ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "DEEPSEEK_API_KEY"]
   const requiredAny = [["TRIGGER_SECRET_KEY", "TRIGGER_ACCESS_TOKEN", "TRIGGER_DEV_API_KEY"]]
   const optional = [
-    "SEARXNG_BASE_URL",
     "FLARESOLVERR_API_URL",
     "STEEL_BASE_URL",
     "DIFY_API_KEY",
@@ -166,8 +144,6 @@ function checkEnvSummary(): ServiceCheck {
     "TWENTY_API_KEY",
     "NOTION_API_KEY",
     "CRAWL4AI_BASE_URL",
-    "BROWSERLESS_URL",
-    "BROWSERLESS_TOKEN",
     "STAGEHAND_URL",
     "STAGEHAND_API_KEY",
     "OUTREACH_WORKER_URL",
@@ -208,7 +184,6 @@ export async function GET(req: NextRequest) {
     ...(await Promise.all([
       checkSupabase(),
       checkBrowserSearch(),
-      checkSearxng(),
       checkDify(),
       checkTriggerDev(),
       guardHealth("Crawl4AI", env("CRAWL4AI_BASE_URL"), checkCrawl4AiHealth),

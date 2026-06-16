@@ -93,9 +93,9 @@ export const DB_TABLES = {
   SALES_CRM_VIEW_FIELDS: "sales_crm_view_fields",
   SALES_CRM_SELECT_OPTIONS: "sales_crm_select_options",
 
-  // ── SearXNG (migration_032) ──
-  SALES_SEARXNG_SEARCH_RUNS: "sales_searxng_search_runs",
-  SALES_SEARXNG_SEARCH_RESULTS: "sales_searxng_search_results",
+  // ── Browser Search (migration_032) ──
+  SALES_BROWSER_SEARCH_RUNS: "sales_searxng_search_runs",
+  SALES_BROWSER_SEARCH_RESULTS: "sales_searxng_search_results",
 
   // ── Japan Readiness (migration_033) ──
   SALES_JAPAN_READINESS_INSIGHTS: "sales_japan_readiness_insights",

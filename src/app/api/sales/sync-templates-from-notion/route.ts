@@ -4,7 +4,7 @@
  * 役割: Notion テンプレ DB を full sync して Supabase sales_templates に upsert.
  *       営業担当者が Notion で文面を編集すると、cron (5min) で本番 /report/[slug] に反映.
  *
- * 認証: X-Webhook-Secret 必須 (n8n cron or 手動 trigger)
+ * 認証: X-Webhook-Secret 必須 (cron or 手動 trigger)
  *
  * Body: { db_id?: string, region?: "jp"|"global" }
  *   - db_id 未指定: 環境変数 NOTION_DB_TEMPLATES_JP / NOTION_DB_TEMPLATES_GLOBAL から取得

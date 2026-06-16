@@ -6,7 +6,7 @@ import type { DiagnosticReportData } from "@/lib/sales/diagnostic"
 
 // ─── Competitor comparison table ────────────────────────────
 export function CompetitorComparison({ data, lang }: { data: DiagnosticReportData; lang: string }) {
-  // Simulated competitor data (in production, this comes from SearxNG + enrichment)
+  // Simulated competitor data (in production, this comes from browser search + enrichment)
   const competitors = [
     { name: lang === "ja" ? "御社" : "Your site", speed: Number(data.acts.find(a => a.icon === "SPEED")?.metric_value) || 38, ssl: "B", ogp: "✗", isYou: true },
     { name: lang === "ja" ? "近隣競合A" : "Competitor A", speed: 72, ssl: "A+", ogp: "✓", isYou: false },
