@@ -299,6 +299,15 @@ export async function processSyncPhase(
   const twentySync = await syncCompanyKarteToTwenty(company.id)
   if (!twentySync.ok && twentySync.configured) {
     console.error("[sales-enrichment] Twenty karte sync failed:", twentySync.error)
+    const { error: diagError } = await sb.from(DB_TABLES.SALES_DIAGNOSIS_EVENTS).insert({
+      company_id: company.id,
+      event_type: "twenty_sync_failed",
+      severity: "warning",
+      subject: `Twenty CRM sync failed for ${company.domain}`,
+      result: twentySync.error?.slice(0, 500) ?? null,
+      payload: { job_id: job.id, sync_error: twentySync.error },
+    })
+    if (diagError) console.error("[sales-enrichment] diagnosis event insert failed:", diagError.message)
   }
 
   await completeJobFn(sb, job, company, {

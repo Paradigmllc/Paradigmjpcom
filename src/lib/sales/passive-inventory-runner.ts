@@ -32,6 +32,7 @@ interface PassiveSegmentRow {
   pattern: string
   batch_limit: number
   attempts: number
+  status: string
   cursor?: JsonRecord | null
 }
 
@@ -165,30 +166,53 @@ async function loadRun(runId: string): Promise<PassiveRunRow> {
 
 async function claimSegments(runId: string, maxSegments: number): Promise<PassiveSegmentRow[]> {
   const cutoff = new Date(Date.now() - STALE_SEGMENT_MINUTES * 60_000).toISOString()
+  const now = nowIso()
+  const lockOwner = `app:${process.pid}:${Date.now()}`
+  // Atomic claim: UPDATE returns only rows we successfully locked
   const { data, error } = await getSb()
-    .from(DB_TABLES.SALES_PASSIVE_INVENTORY_SEGMENTS)
-    .select("id, run_id, segment_key, source_kind, pattern, batch_limit, attempts, cursor")
-    .eq("run_id", runId)
-    .or(`status.eq.queued,and(status.eq.running,heartbeat_at.lt.${cutoff})`)
-    .lt("attempts", 3)
-    .order("priority", { ascending: false })
-    .order("created_at", { ascending: true })
-    .limit(maxSegments)
-  if (error) throw new Error(error.message)
-  const rows = (data ?? []) as PassiveSegmentRow[]
-  for (const row of rows) {
-    const update = await getSb().from(DB_TABLES.SALES_PASSIVE_INVENTORY_SEGMENTS).update({
-      status: "running",
-      attempts: row.attempts + 1,
-      started_at: nowIso(),
-      heartbeat_at: nowIso(),
-      locked_at: nowIso(),
-      lock_owner: `app:${process.pid}`,
-      error_message: null,
-    }).eq("id", row.id)
-    if (update.error) throw new Error(update.error.message)
+    .rpc("claim_passive_inventory_segments", {
+      p_run_id: runId,
+      p_cutoff: cutoff,
+      p_max_segments: maxSegments,
+      p_now: now,
+      p_lock_owner: lockOwner,
+    })
+  if (error) {
+    // Fallback: use traditional SELECT + UPDATE if RPC not available
+    const { data: selectData, error: selectError } = await getSb()
+      .from(DB_TABLES.SALES_PASSIVE_INVENTORY_SEGMENTS)
+      .select("id, run_id, segment_key, source_kind, pattern, batch_limit, attempts, cursor")
+      .eq("run_id", runId)
+      .or(`status.eq.queued,and(status.eq.running,heartbeat_at.lt.${cutoff})`)
+      .lt("attempts", 3)
+      .order("priority", { ascending: false })
+      .order("created_at", { ascending: true })
+      .limit(maxSegments)
+    if (selectError) throw new Error(selectError.message)
+    const rows = (selectData ?? []) as PassiveSegmentRow[]
+    const claimed: PassiveSegmentRow[] = []
+    for (const row of rows) {
+      const { error: updateError, data: updatedRows } = await getSb()
+        .from(DB_TABLES.SALES_PASSIVE_INVENTORY_SEGMENTS)
+        .update({
+          status: "running",
+          attempts: row.attempts + 1,
+          started_at: now,
+          heartbeat_at: now,
+          locked_at: now,
+          lock_owner: lockOwner,
+          error_message: null,
+        })
+        .eq("id", row.id)
+        .eq("status", row.status)
+        .eq("attempts", row.attempts)
+        .select()
+      if (updateError) throw new Error(updateError.message)
+      if ((updatedRows ?? []).length > 0) claimed.push({ ...row, ...(updatedRows![0] as unknown as Partial<PassiveSegmentRow>) })
+    }
+    return claimed
   }
-  return rows
+  return (data ?? []) as PassiveSegmentRow[]
 }
 
 async function fetchSegmentDomains(pattern: string, limit: number) {

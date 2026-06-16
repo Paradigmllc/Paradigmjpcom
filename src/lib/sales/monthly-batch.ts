@@ -387,7 +387,7 @@ export async function createLeadBatch(input: {
     fatalError = err instanceof Error ? err.message : String(err)
     console.error("[monthly-batch] batch processing crashed mid-way:", err)
     if (batchItems.length > 0) {
-      try { await sb.from(DB_TABLES.SALES_LEAD_BATCH_ITEMS).insert(batchItems) } catch { /* fallthrough */ }
+      try { await sb.from(DB_TABLES.SALES_LEAD_BATCH_ITEMS).insert(batchItems) } catch (e) { console.error("[monthly-batch] fatal recovery insert failed:", e) }
     }
     // Don't rethrow — we save partial progress below
   }

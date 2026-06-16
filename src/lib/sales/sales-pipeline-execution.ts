@@ -139,8 +139,19 @@ async function enqueuePipelineReviewTask(
 
 export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, step: SalesPipelineStep): Promise<void> {
   if (step.status === "skipped" || step.status === "completed") return
+  // Atomic guard: only claim the step if it hasn't been claimed by another worker
+  const { data: updatedSteps, error: claimError } = await sb
+    .from(DB_TABLES.SALES_PIPELINE_STEPS)
+    .update({ status: "running", error_message: null })
+    .eq("id", step.id)
+    .not("status", "in", '("skipped","completed","running")')
+    .select()
+  if (claimError) {
+    console.error("[sales-pipeline-execution] step claim failed:", claimError.message)
+    return
+  }
+  if (!(updatedSteps ?? []).length) return // Another worker claimed it first
   await updateRun(sb, run.id, { current_step: step.step_key, status: "running", started_at: run.started_at ?? new Date().toISOString() })
-  await updateStep(sb, step, { status: "running", error_message: null })
 
   if (step.step_key === "twenty_csv_intake") {
     const karteResult = await fetchCompanyKarte(sb, run.company_id)

@@ -24,8 +24,6 @@ export interface PassiveInventoryConfiguration {
   zoneInputModes: string[]
   domainFeedConfigured: boolean
   archiveTechDetectionLimit: number
-  massdnsConfigured: boolean
-  resolverFileConfigured: boolean
   passiveGlobalTldsConfigured: boolean
 }
 
@@ -87,8 +85,6 @@ export function getPassiveInventoryConfiguration(): PassiveInventoryConfiguratio
     zoneInputModes,
     domainFeedConfigured: Boolean(optionalEnv("PASSIVE_DOMAIN_FEED_DIR") || optionalEnv("PASSIVE_DOMAIN_FEED_URLS")),
     archiveTechDetectionLimit: archiveTechDetectionLimit(),
-    massdnsConfigured: Boolean(optionalEnv("MASSDNS_BIN")),
-    resolverFileConfigured: Boolean(optionalEnv("MASSDNS_RESOLVERS_FILE")),
     passiveGlobalTldsConfigured: Boolean(optionalEnv("PASSIVE_GLOBAL_TLDS")),
   }
 }

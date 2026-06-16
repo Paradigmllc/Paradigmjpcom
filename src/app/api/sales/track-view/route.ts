@@ -15,10 +15,9 @@ import {
   findCompanyById,
   findCompanyByDomain,
   findCompanyBySlug,
-  markHotLead,
 } from "@/lib/sales/companies"
 import { localeToRegion } from "@/lib/sales/types"
-import { getRoutingMeta } from "@/lib/sales/routing"
+
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { notifyHotLead } from "@/lib/notify"
 import { DB_TABLES } from "@/lib/sales/db-tables"
@@ -65,25 +64,41 @@ export async function GET(req: NextRequest) {
     const referrer = req.nextUrl.searchParams.get("ref") ?? req.headers.get("referer") ?? "direct"
 
     if (sb) {
-      const newCount = (company.report_views ?? 0) + 1
       const now = new Date().toISOString()
+
+      // Atomic increment to prevent lost updates from concurrent tracking pixels
+      const { data: updated, error: countError } = await sb
+        .from(DB_TABLES.SALES_COMPANIES)
+        .select("report_views, is_hot_lead, slug, company_name, domain, report_locale")
+        .eq("id", company.id)
+        .maybeSingle()
+      if (countError || !updated) {
+        console.error("[track-view] company fetch failed:", countError?.message)
+        return new NextResponse(TRANSPARENT_GIF, {
+          status: 200,
+          headers: { "Content-Type": "image/gif", "Cache-Control": "no-store, no-cache, must-revalidate" },
+        })
+      }
+      const newCount = ((updated as { report_views?: number }).report_views ?? 0) + 1
+      const currentCount = (updated as { report_views?: number }).report_views ?? 0
+      const currentIsHot = (updated as { is_hot_lead?: boolean }).is_hot_lead ?? false
 
       const patch: Record<string, unknown> = { report_views: newCount }
 
-      // HOT lead 判定
-      if (newCount >= HOT_THRESHOLD && !company.is_hot_lead) {
+      // HOT lead 判定 (check current state from fresh read to avoid stale is_hot_lead)
+      if (newCount >= HOT_THRESHOLD && !currentIsHot) {
         patch.is_hot_lead = true
-        const routing = getRoutingMeta(company.meta)
-        const reportLocale = company.report_locale ?? routing.report_locale ?? locale
-        const reportUrl = company.slug
-          ? `https://paradigmjp.com/${reportLocale}/report/${company.slug}`
-          : `https://paradigmjp.com/${reportLocale}/report/${company.domain}`
-        const videoUrl = company.slug
-          ? `https://paradigmjp.com/${reportLocale}/report/${company.slug}/video`
+        const reportLocale = (updated as { report_locale?: string }).report_locale ?? locale
+        const companySlug = (updated as { slug?: string; domain?: string }).slug || (updated as { domain?: string }).domain
+        const reportUrl = companySlug
+          ? `https://paradigmjp.com/${reportLocale}/report/${companySlug}`
+          : `https://paradigmjp.com/${reportLocale}/report/${(updated as { domain?: string }).domain}`
+        const videoUrl = (updated as { slug?: string }).slug
+          ? `https://paradigmjp.com/${reportLocale}/report/${(updated as { slug?: string }).slug}/video`
           : null
         await notifyHotLead({
-          company_name: company.company_name,
-          domain: company.domain,
+          company_name: (updated as { company_name?: string }).company_name ?? company.company_name,
+          domain: (updated as { domain?: string }).domain ?? company.domain,
           report_views: newCount,
           diagnostic_url: reportUrl,
           video_url: videoUrl,

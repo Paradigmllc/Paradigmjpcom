@@ -43,7 +43,7 @@ export function markPayloadInitFailure(error: unknown): void {
 
   // Notify on first failure and every 5th consecutive failure
   if (consecutiveFailures === 1 || consecutiveFailures % 5 === 0) {
-    notifyPayloadUnavailable(lastFailureMessage, consecutiveFailures).catch(() => {})
+    notifyPayloadUnavailable(lastFailureMessage, consecutiveFailures).catch((e) => { console.error("[payload-availability] notify failed:", e) })
   }
 }
 

@@ -60,7 +60,7 @@ export async function POST(request: Request) {
               method: "POST",
               headers: { "Authorization": `Bearer ${slackToken}`, "Content-Type": "application/json" },
               body: JSON.stringify({
-                channel: process.env.SLACK_CHANNEL || "C0B1JJ1L276",
+                channel: (() => { const ch = process.env.SLACK_CHANNEL; if (!ch) console.warn("[demo-view] SLACK_CHANNEL not set, using hardcoded fallback"); return ch || "C0B1JJ1L276" })(),
                 text: `👀 *提案ページ閲覧* — *${prospect.business_name}* が${duration_sec}秒閲覧中\nhttps://paradigmjp.com/p/${prospect.slug}`,
               }),
             })

@@ -299,7 +299,8 @@ export function isLeadDiscoverySource(value: unknown): value is LeadDiscoverySou
     value === "agency_directory" ||
     value === "partner_directory" ||
     value === "events_directory" ||
-    value === "osint_contacts"
+    value === "osint_contacts" ||
+    value === "browser_search"
   )
 }
 
@@ -318,7 +319,9 @@ export async function discoverLeadCandidates(input: LeadDiscoveryInput): Promise
                 ? await discoverViaRssHubJobs({ ...input, limit })
                 : source === "whoisds_nrd"
                   ? await discoverViaWhoisDsNrd({ ...input, limit })
-                  : await discoverViaSearchPreset({ ...input, limit }, source)
+                  : source === "browser_search"
+                    ? await discoverViaSearchPreset({ ...input, limit }, "osint_contacts")
+                    : await discoverViaSearchPreset({ ...input, limit }, source)
     return { ok: true, source, candidates }
   } catch (error) {
     console.error("[lead-discovery] failed:", error)

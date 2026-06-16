@@ -86,7 +86,7 @@ export async function POST(request: Request) {
         method: "POST",
         headers: { "Authorization": `Bearer ${slackToken}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          channel: process.env.SLACK_CHANNEL || "C0B1JJ1L276",
+          channel: (() => { const ch = process.env.SLACK_CHANNEL; if (!ch) console.warn("[cta-click] SLACK_CHANNEL not set, using hardcoded fallback"); return ch || "C0B1JJ1L276" })(),
           text: `🔥 *HOT LEAD — ${actionLabel}*\n*${prospect.business_name}*${contactInfo}\n提案ページ: https://paradigmjp.com/p/${prospect.slug}`,
         }),
       })
