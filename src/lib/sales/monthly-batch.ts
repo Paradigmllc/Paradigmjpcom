@@ -377,7 +377,7 @@ export async function createLeadBatch(input: {
           } catch (syncError) {
             console.error("[monthly-batch] inline Twenty sync crashed:", syncError)
           }
-          console.log(`[monthly-batch] inline enrichment + Twenty sync completed for ${cleanDomain}`)
+          console.info(`[monthly-batch] inline enrichment + Twenty sync completed for ${cleanDomain}`)
         } catch (inlineErr) {
           console.error(`[monthly-batch] inline enrichment failed for ${cleanDomain}:`, inlineErr)
         }

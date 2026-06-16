@@ -152,17 +152,17 @@ const OFFER_BY_ANGLE: Record<ContentAppealAngle, { code: string; variant: Templa
 
 const ANGLES_BY_LOCALE: Record<ReportLocale, ContentAppealAngle[]> = {
   ja: ["revenue_recovery", "trust_authority", "speed_conversion", "automation_dx"],
-  en: ["japan_entry", "trust_authority", "speed_conversion", "video_retention"],
-  ko: ["japan_entry"],
-  zh: ["japan_entry"],
-  de: ["japan_entry"],
-  fr: ["japan_entry"],
-  es: ["japan_entry"],
-  pt: ["japan_entry"],
-  ru: ["japan_entry"],
-  ar: ["japan_entry"],
-  vi: ["japan_entry"],
-  id: ["japan_entry"],
+  en: ["japan_entry", "trust_authority", "speed_conversion", "video_retention", "automation_dx"],
+  ko: ["japan_entry", "speed_conversion", "trust_authority", "video_retention"],
+  zh: ["japan_entry", "speed_conversion", "automation_dx", "revenue_recovery"],
+  de: ["japan_entry", "trust_authority", "speed_conversion", "automation_dx"],
+  fr: ["japan_entry", "trust_authority", "automation_dx", "revenue_recovery"],
+  es: ["japan_entry", "speed_conversion", "revenue_recovery", "trust_authority"],
+  pt: ["japan_entry", "revenue_recovery", "speed_conversion", "automation_dx"],
+  ru: ["japan_entry", "trust_authority", "automation_dx", "video_retention"],
+  ar: ["japan_entry", "revenue_recovery", "trust_authority", "speed_conversion"],
+  vi: ["japan_entry", "speed_conversion", "automation_dx", "revenue_recovery"],
+  id: ["japan_entry", "speed_conversion", "trust_authority", "revenue_recovery"],
 }
 
 const ASSET_TOOLCHAIN: Record<ContentAssetType, Record<string, unknown>> = {
@@ -285,7 +285,7 @@ export function buildInitialContentTemplates(): SalesContentTemplate[] {
             toolchain: ASSET_TOOLCHAIN[assetType],
             sample_copy: sampleCopyFor(locale, industry, assetType, angle),
             is_active: true,
-            version: 1,
+            version: Math.floor(Date.now() / 1000),
           } satisfies SalesContentTemplate
         }),
       ),
@@ -297,7 +297,7 @@ function normalizeMatchInput(input: ContentTemplateMatchInput): Required<Content
   const reportLocale = isReportLocale(input.reportLocale) ? input.reportLocale : "ja"
   const defaultAngle = reportLocale === "ja" ? "revenue_recovery" : "japan_entry"
   const appealAngle = isAppealAngle(input.appealAngle) ? input.appealAngle : defaultAngle
-  const offer = OFFER_BY_ANGLE[appealAngle]
+  const offer = OFFER_BY_ANGLE[appealAngle] ?? OFFER_BY_ANGLE.japan_entry
   return {
     reportLocale,
     targetCountry: typeof input.targetCountry === "string" && input.targetCountry ? input.targetCountry.toUpperCase() : countryForLocale(reportLocale),

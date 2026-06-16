@@ -53,7 +53,7 @@ const ffmpeg = createFFmpeg({ log: true });
 async function render() {
   await ffmpeg.load();
   // FFCreator の代わりに FFmpeg で直接レンダリング
-  console.log('FFCreator config loaded:', JSON.stringify(config).slice(0, 200));
+  console.info('FFCreator config loaded:', JSON.stringify(config).slice(0, 200));
   writeFileSync('${outputPath.replace(/\\/g, "\\\\")}', 'placeholder');
 }
 

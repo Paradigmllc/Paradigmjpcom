@@ -469,9 +469,26 @@ export async function runOutreachBatch(options: RunOutreachOptions = {}): Promis
   const candidates = await fetchCandidates(opts.region, opts.limit, opts.companyId || undefined)
   const items: OutreachItemResult[] = []
 
+  // Per-domain rate limiting: prevent rapid repeated submissions to same domain
+  const domainLastSend = new Map<string, number>()
+  const DOMAIN_RATE_LIMIT_MS = parseInt(process.env.OUTREACH_DOMAIN_RATE_LIMIT_MS ?? "30000", 10) || 30000
+
   for (let i = 0; i < candidates.length; i++) {
-    const result = await processOne(candidates[i], opts, i)
+    const candidate = candidates[i]
+    const candidateDomain = (candidate as { domain?: string }).domain
+    if (candidateDomain && !opts.dryRun) {
+      const last = domainLastSend.get(candidateDomain)
+      if (last && Date.now() - last < DOMAIN_RATE_LIMIT_MS) {
+        const result = await processOne(candidate, { ...opts, dryRun: true }, i)
+        if (result.finalStage !== "submitted") items.push(result)
+        continue
+      }
+    }
+    const result = await processOne(candidate, opts, i)
     items.push(result)
+    if (result.finalStage === "submitted" && candidateDomain) {
+      domainLastSend.set(candidateDomain, Date.now())
+    }
     if (!opts.dryRun && i < candidates.length - 1) {
       await new Promise((resolve) => setTimeout(resolve, 1_500))
     }

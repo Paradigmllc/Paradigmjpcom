@@ -141,6 +141,34 @@ BEGIN
   END LOOP;
 END $$;
 
+-- Authenticated user read-only access for dashboard
+DO $$
+DECLARE
+  tbl text;
+BEGIN
+  FOREACH tbl IN ARRAY ARRAY[
+    'sales_lead_candidate_domains',
+    'sales_lead_candidate_observations',
+    'sales_lead_candidate_country_signals',
+    'sales_lead_candidate_tech_detections',
+    'sales_lead_candidate_scores'
+  ]
+  LOOP
+    EXECUTE format('DROP POLICY IF EXISTS "%s authenticated read access" ON public.%I', tbl, tbl);
+    EXECUTE format(
+      'CREATE POLICY "%s authenticated read access" ON public.%I FOR SELECT TO authenticated USING (true)',
+      tbl,
+      tbl
+    );
+  END LOOP;
+END $$;
+
+-- Composite index for per-candidate tech lookups
+CREATE INDEX IF NOT EXISTS idx_sales_lead_candidate_tech_by_candidate
+  ON public.sales_lead_candidate_tech_detections(candidate_id, technology_slug);
+CREATE INDEX IF NOT EXISTS idx_sales_lead_candidate_observations_by_candidate
+  ON public.sales_lead_candidate_observations(candidate_id);
+
 COMMENT ON TABLE public.sales_lead_candidate_domains IS
   'Raw lead candidate domains before promotion into sales_companies.';
 COMMENT ON TABLE public.sales_lead_candidate_scores IS

@@ -322,12 +322,44 @@ export async function handleAgentCommand(input: SalesAgentCommandInput): Promise
         region,
         priority: 85,
       })
-      const result = { queue, next: "Dify template selection -> generate-sales-asset -> Slack/Appsmith review" }
-      const summary = "成果物生成の準備キューを作りました。対象企業/セグメント確認後にDifyテンプレ選定へ進めます。"
-      await logAgentEvent(sb, { commandId, agentRole: "paperclip_operator", eventType: "asset_prepare", status: queue.queued ? "success" : "warning", title: "成果物生成準備をキュー化しました", payload: result })
-      await notifyHumanReview({ intent, summary, commandText })
-      await updateCommand(sb, commandId, { status: queue.queued ? "completed" : "blocked", runSummary: summary, resultPayload: result })
-      return { ok: queue.queued, commandId, intent, status: queue.queued ? "completed" : "blocked", approvalRequired: true, summary, reply: replyFor({ intent, summary, approvalRequired: true, status: queue.queued ? "completed" : "blocked" }), result }
+      let assetResult: Record<string, unknown> = { queue, next: "Dify template selection -> generate-sales-asset -> Slack/Appsmith review" }
+      let assetSummary = "成果物生成の準備キューを作りました。対象企業/セグメント確認後にDifyテンプレ選定へ進めます。"
+
+      // Fire asset generation for report_ready companies in the region
+      if (sb) {
+        let assetTriggered = 0
+        try {
+          const { data: ready } = await sb
+            .from(DB_TABLES.SALES_COMPANIES)
+            .select("id, domain, region, report_locale")
+            .eq("pipeline_status", "report_ready")
+            .eq("region", region)
+            .order("created_at", { ascending: false })
+            .limit(10)
+          if (ready?.length) {
+            for (const company of ready) {
+              try {
+                const { generateSalesAsset } = await import("./sales-assets")
+                await generateSalesAsset({ companyIdOrSlugOrDomain: company.id, assetType: "diagnostic_report" })
+                assetTriggered++
+              } catch (e) {
+                console.error("[agent-team] asset generation failed for", company.domain, e instanceof Error ? e.message : String(e))
+              }
+            }
+            if (assetTriggered > 0) {
+              assetResult = { ...assetResult, generated: assetTriggered }
+              assetSummary += ` ${assetTriggered}社の診断レポート生成を開始しました。`
+            }
+          }
+        } catch (e) {
+          console.error("[agent-team] asset batch scan failed:", e instanceof Error ? e.message : String(e))
+        }
+      }
+
+      await logAgentEvent(sb, { commandId, agentRole: "paperclip_operator", eventType: "asset_prepare", status: queue.queued ? "success" : "warning", title: "成果物生成準備をキュー化しました", payload: assetResult })
+      await notifyHumanReview({ intent, summary: assetSummary, commandText })
+      await updateCommand(sb, commandId, { status: queue.queued ? "completed" : "blocked", runSummary: assetSummary, resultPayload: assetResult })
+      return { ok: queue.queued, commandId, intent, status: queue.queued ? "completed" : "blocked", approvalRequired: true, summary: assetSummary, reply: replyFor({ intent, summary: assetSummary, approvalRequired: true, status: queue.queued ? "completed" : "blocked" }), result: assetResult }
     }
 
     if (intent === "collect_list") {

@@ -44,10 +44,17 @@ export async function POST(
       );
     }
 
-    // Trigger automatic real-time sync to Twenty in the background
-    syncCompanyKarteToTwenty(companyId).catch((err) => {
-      console.error("[sales-companies-status] Auto Twenty sync failed:", err);
-    });
+    syncCompanyKarteToTwenty(companyId).catch(async (err) => {
+      console.error("[sales-companies-status] Auto Twenty sync failed:", err)
+      try {
+        const { notifyBothChannels } = await import("@/lib/notify")
+        await notifyBothChannels("sales", {
+          title: "⚠️ Twenty自動同期失敗",
+          message: `会社 ${companyId}: ${err instanceof Error ? err.message : String(err)}`,
+          type: "twenty_sync_failure",
+        })
+      } catch { /* notification failure non-critical */ }
+    })
 
     return NextResponse.json({ ok: true, company });
   } catch (error) {

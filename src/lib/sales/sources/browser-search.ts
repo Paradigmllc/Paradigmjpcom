@@ -272,7 +272,7 @@ async function searchWithRetry(
       const available = ENGINE_KEYS.filter(e => e !== currentEngine && !skipEngines.has(e))
       currentEngine = available.length > 0 ? available[attempt % available.length] : currentEngine
       await retryBackoff(attempt)
-      console.log(`[browser-search] retry ${attempt}/${maxRetries} for "${query.slice(0, 40)}" via ${currentEngine}`)
+      console.info(`[browser-search] retry ${attempt}/${maxRetries} for "${query.slice(0, 40)}" via ${currentEngine}`)
     }
 
     const result = await searchWithBrowser(query, currentEngine, skipEngines)
@@ -323,7 +323,7 @@ export async function batchSearchWithBrowser(
         setTimeout(() => {
           skipEngines.delete(engine)
           engineFailStreak[engine] = 0
-          console.log(`[browser-search] engine ${engine} re-enabled`)
+          console.warn(`[browser-search] engine ${engine} re-enabled`)
         }, 300_000) // 5 minute cooldown
       }
     }

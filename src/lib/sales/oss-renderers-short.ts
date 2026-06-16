@@ -46,7 +46,7 @@ try {
   // @shtcut/sdk がインストールされていれば使用
   const sdk = require('@shtcut/sdk');
   const result = await sdk.render(config);
-  console.log(JSON.stringify(result));
+  console.info(JSON.stringify(result))
 } catch (e) {
   // SDK がない場合 FFmpeg でフォールバック
   console.warn(JSON.stringify({ fallback: true, message: e.message }));

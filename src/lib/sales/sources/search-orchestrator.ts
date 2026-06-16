@@ -53,13 +53,13 @@ export async function runBrowserBulkSearch(input: BulkSearchInput): Promise<{
   const allQueries = [...footprintQueries.map(q => q.query), ...genericQueries]
   const uniqueQueries = [...new Set(allQueries)].slice(0, 200) // cap at 200 queries
 
-  console.log(`[search-orchestrator] Starting bulk search: ${uniqueQueries.length} queries, target ${targetCount} domains`)
+  console.info(`[search-orchestrator] Starting bulk search: ${uniqueQueries.length} queries, target ${targetCount} domains`)
 
   // Run batch search
   const result = await batchSearchWithBrowser(
     uniqueQueries,
     (done, total, domains) => {
-      if (done % 10 === 0) console.log(`[search-orchestrator] ${done}/${total} queries, ${domains} domains found`)
+      if (done % 10 === 0) console.info(`[search-orchestrator] ${done}/${total} queries, ${domains} domains found`)
     },
   )
 
@@ -80,7 +80,7 @@ export async function runBrowserBulkSearch(input: BulkSearchInput): Promise<{
     const derivedName = normalized.split(".")[0].charAt(0).toUpperCase() + normalized.split(".")[0].slice(1).replace(/[-_]/g, " ")
     const nameCheck = validateCompanyName(derivedName)
     if (!nameCheck.ok) {
-      console.log(`[search-orchestrator] Skipping company: ${derivedName} — ${nameCheck.reason}`)
+      console.info(`[search-orchestrator] Skipping company: ${derivedName} — ${nameCheck.reason}`)
       continue
     }
 
@@ -109,7 +109,7 @@ export async function runBrowserBulkSearch(input: BulkSearchInput): Promise<{
     }
   }
 
-  console.log(`[search-orchestrator] Created ${created} companies`)
+  console.info(`[search-orchestrator] Created ${created} companies`)
 
   // Auto-enqueue ALL discovered companies to enrichment pipeline (not just first 20)
   if (companyIds.length > 0) {
@@ -160,7 +160,7 @@ async function autoEnqueueCompanies(sb: NonNullable<ReturnType<typeof getService
     }
   }
 
-  console.log(`[search-orchestrator] Enrichment enqueue: ${enqueued} enqueued, ${skipped} skipped, ${failed} failed`)
+  console.info(`[search-orchestrator] Enrichment enqueue: ${enqueued} enqueued, ${skipped} skipped, ${failed} failed`)
 
   // Trigger the enrichment runner to process the queue
   if (enqueued > 0) {

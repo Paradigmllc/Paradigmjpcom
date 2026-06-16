@@ -211,7 +211,7 @@ export async function processAssetPhase(
 
   if (reportData && isWebProduction && !shouldGenerateDemo && costGuardDemoEnabled) {
     const reason = hasRecentAsset("demo_site") ? "recently_generated" : `coverage_score_${coverage.score}_below_${demoMinScore}`
-    console.log(`[sales-enrichment] demo skipped for ${company.domain}: ${reason}`)
+    console.info(`[sales-enrichment] demo skipped for ${company.domain}: ${reason}`)
     await logDiagnosisEvent(sb, {
       companyId: company.id, jobId: _job.id,
       eventType: "cost_guard_skip", status: "info",
@@ -222,7 +222,7 @@ export async function processAssetPhase(
 
   if (reportData && isWebProduction && !shouldGenerateVideo && costGuardVideoEnabled) {
     const reason = hasRecentAsset("sales_video") ? "recently_generated" : `coverage_score_${coverage.score}_below_40`
-    console.log(`[sales-enrichment] video skipped for ${company.domain}: ${reason}`)
+    console.info(`[sales-enrichment] video skipped for ${company.domain}: ${reason}`)
     await logDiagnosisEvent(sb, {
       companyId: company.id, jobId: _job.id,
       eventType: "cost_guard_skip", status: "info",

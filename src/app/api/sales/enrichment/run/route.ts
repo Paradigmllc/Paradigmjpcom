@@ -71,7 +71,22 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    runEnrichment().catch(e => console.error("[enrichment-run] fatal:", e))
+    runEnrichment().catch(async (e) => {
+      console.error("[enrichment-run] fatal:", e)
+      try {
+        const { notifyBothChannels } = await import("@/lib/notify")
+        await notifyBothChannels("sales", {
+          title: "⚠️ バックグラウンドエンリッチメントが致命的エラーで停止",
+          message: e instanceof Error ? e.message : String(e),
+          type: "enrichment_fatal",
+        })
+      } catch (notifyError) {
+        console.warn(
+          "[enrichment-run] fatal notification failed:",
+          notifyError instanceof Error ? notifyError.message : String(notifyError),
+        )
+      }
+    })
 
     return NextResponse.json({
       ok: true,
