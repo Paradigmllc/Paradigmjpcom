@@ -24,7 +24,7 @@ COMMENT ON TABLE sales_error_log IS 'Sales OS batched error log. Auto-purged aft
 ALTER TABLE sales_error_log ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Service role can manage error logs" ON sales_error_log
-  FOR ALL USING (true) WITH CHECK (true);
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 CREATE POLICY "Authenticated users can read error logs" ON sales_error_log
   FOR SELECT USING (auth.role() = 'authenticated');

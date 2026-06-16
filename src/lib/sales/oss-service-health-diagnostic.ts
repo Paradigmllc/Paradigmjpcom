@@ -19,7 +19,7 @@ export async function checkPageSpeedHealth(): Promise<ServiceHealthResult> {
     url.searchParams.set("strategy", "mobile")
     const res = await fetch(url.toString(), { signal: AbortSignal.timeout(15_000) })
     if (!res.ok) return { balanceStatus: "error", balanceLabel: `PageSpeed API HTTP ${res.status}` }
-    const body = await res.json().catch(() => ({})) as { lighthouseResult?: { categories?: { performance?: { score?: number } } } }
+    const body = await res.json().catch((e) => { console.warn("[oss-health] PageSpeed response parse failed:", e); return {} }) as { lighthouseResult?: { categories?: { performance?: { score?: number } } } }
     const score = body.lighthouseResult?.categories?.performance?.score
     return { balanceStatus: "ok", balanceLabel: score != null ? `API verified (perf score: ${score})` : "API verified (key valid)" }
   } catch (error) {
@@ -39,7 +39,7 @@ export async function checkGooglePlacesHealth(): Promise<ServiceHealthResult> {
     url.searchParams.set("key", envValue("GOOGLE_PLACES_API_KEY") as string)
     const res = await fetch(url.toString(), { signal: AbortSignal.timeout(10_000) })
     if (!res.ok) return { balanceStatus: "error", balanceLabel: `Google Places HTTP ${res.status}` }
-    const body = await res.json().catch(() => ({})) as { status?: string; candidates?: unknown[] }
+    const body = await res.json().catch((e) => { console.warn("[oss-health] Google Places response parse failed:", e); return {} }) as { status?: string; candidates?: unknown[] }
     if (body.status === "REQUEST_DENIED") return { balanceStatus: "error", balanceLabel: "API key denied or billing disabled" }
     if (body.status === "INVALID_REQUEST") return { balanceStatus: "error", balanceLabel: "API key invalid" }
     return { balanceStatus: "ok", balanceLabel: `API verified (status: ${body.status ?? "ok"})` }
@@ -113,7 +113,7 @@ export async function checkSearxngHealth(): Promise<ServiceHealthResult> {
     base.searchParams.set("format", "json")
     const res = await fetch(base.toString(), { signal: AbortSignal.timeout(10_000) })
     if (!res.ok) return { balanceStatus: "error", balanceLabel: `SearxNG HTTP ${res.status}` }
-    const body = await res.json().catch(() => ({})) as { results?: unknown[] }
+    const body = await res.json().catch((e) => { console.warn("[oss-health] SearXNG response parse failed:", e); return {} }) as { results?: unknown[] }
     return {
       balanceStatus: "ok",
       balanceLabel: `JSON search verified: ${Array.isArray(body.results) ? body.results.length : 0} results`,

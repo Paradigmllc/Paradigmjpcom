@@ -16,7 +16,7 @@ import { envValue } from "./oss-service-health"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 
-const CF_ACCOUNT_ID = "7ff83549f2bdc7bc62c1d64a698aabf1"
+const CF_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID ?? "7ff83549f2bdc7bc62c1d64a698aabf1"
 const CF_PAGES_PROJECT = "paradigm-astro-demo"
 const GITHUB_REPO = "Paradigmllc/Paradigmjpcom"
 const GITHUB_BRANCH = "main"
@@ -148,7 +148,7 @@ async function commitToGitHub(
       console.warn("[cf-pages-deploy] committed to GitHub:", path)
       return true
     }
-    const errData = await putRes.json().catch(() => ({})) as { message?: string }
+    const errData = await putRes.json().catch((e) => { console.warn("[cf-pages-deploy] error response parse failed:", e); return {} }) as { message?: string }
     console.error("[cf-pages-deploy] GitHub commit failed:", errData.message ?? putRes.status)
     return false
   } catch (error) {

@@ -98,7 +98,7 @@ async function queryCdxIndex(
       ...getProxyFetchOptions(),
     })
     if (pageInfoRes.ok) {
-      const pageInfo = await pageInfoRes.json().catch(() => null) as { pages?: unknown } | null
+      const pageInfo = await pageInfoRes.json().catch((e) => { console.warn("[commoncrawl-domains] pageInfo parse failed:", e); return null }) as { pages?: unknown } | null
       const pages = typeof pageInfo?.pages === "number" ? Math.min(pageInfo.pages, 12) : 0
       const pageOrder = [...Array.from({ length: Math.max(pages - 1, 0) }, (_value, index) => index + 1), 0]
       for (const page of pageOrder) {

@@ -339,7 +339,7 @@ export async function createLeadBatch(input: {
         try {
           const { detectTechStack } = await import("./sources/wappalyzer")
           const url = cleanDomain.startsWith("http") ? cleanDomain : `https://${cleanDomain}`
-          const techResult = await detectTechStack(url).catch(() => ({ tech: [], server: null }))
+          const techResult = await detectTechStack(url).catch((e) => { console.warn("[monthly-batch] detectTechStack failed:", e); return { tech: [], server: null } })
           const { isEnterpriseTechStack } = await import("./sources/enterprise-filter")
           const enterpriseCheck = isEnterpriseTechStack(techResult.tech.map((t: { name: string }) => t.name))
           await sb.from(DB_TABLES.SALES_COMPANIES).update({

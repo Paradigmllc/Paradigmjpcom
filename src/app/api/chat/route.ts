@@ -30,7 +30,7 @@ function resolveDifyKey(locale: Locale): string {
   if (!key) {
     console.warn(`[chat] Dify API key not found for locale ${locale} (checked DIFY_API_KEY_${locale.toUpperCase()} and DIFY_API_KEY)`)
   }
-  return key || ""
+  return key ?? ""
 }
 
 const SYSTEM_PROMPT_JA = `あなたはParadigm合同会社の公式AIアシスタントです。

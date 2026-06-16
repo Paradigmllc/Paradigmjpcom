@@ -62,8 +62,8 @@ export async function checkSlidevGotenbergHealth(): Promise<ServiceHealthResult>
     slidev.pathname = `${slidev.pathname}/health`.replace(/\/+/g, "/")
     gotenberg.pathname = `${gotenberg.pathname}/health`.replace(/\/+/g, "/")
     const [resSlidev, resGotenberg] = await Promise.all([
-      fetch(slidev.toString(), { signal: AbortSignal.timeout(10_000) }).catch(() => ({ ok: false, status: 0 } as Response)),
-      fetch(gotenberg.toString(), { signal: AbortSignal.timeout(10_000) }).catch(() => ({ ok: false, status: 0 } as Response)),
+      fetch(slidev.toString(), { signal: AbortSignal.timeout(10_000) }).catch((e) => { console.warn("[oss-health-infra] slidev health fetch failed:", e); return { ok: false, status: 0 } as Response }),
+      fetch(gotenberg.toString(), { signal: AbortSignal.timeout(10_000) }).catch((e) => { console.warn("[oss-health-infra] gotenberg health fetch failed:", e); return { ok: false, status: 0 } as Response }),
     ])
     return {
       balanceStatus: (resSlidev.ok && resGotenberg.ok) ? "ok" : "error",
