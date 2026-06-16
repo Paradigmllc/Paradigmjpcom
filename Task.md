@@ -121,6 +121,15 @@
 - `node scripts/paradigm-quality-guard.mjs`: 0 errors / 54 warnings after local no-push hardening.
 - `git diff --check`: OK after local no-push hardening; only existing LF-to-CRLF working-copy warnings.
 - `npm run context:audit`: still fails on the existing PowerShell wildcard parsing issue for `[locale]` in `C:\Users\apple\.agents\scripts\context-audit.ps1`.
+- Commit `6fffdbc` pushed and deployed for passive inventory hardening; follow-up commit `69f941d` pushed and deployed to fix stale command reply wording.
+- Deploy `nv7s0rr153kinh14ux80xblk` for `69f941d` finished; production container `i12am4vvcbggefnqdizhnv9a:69f941d7209ca9de81a4d536b76e49ab386c41d2` is healthy.
+- Production smoke after final deploy:
+  - `https://paradigmjp.com/ja/admin/sales`, `https://paradigmjp.com/ja`, and `https://twenty.paradigmjp.com` returned HTTP 200.
+  - OpenCode command `OpenCode Egypt Shopify 1 sites collect list` returned HTTP 200 and the reply now says the all-mode source is free passive inventory + public bulk sources, not Common Crawl-only.
+  - Earlier all-mode passive run `5744eaf6-7756-4003-b392-81a34fb8ed63` started with `requested_limit=100000`, 9 segments, and per-segment `batch_limit=11112`; DB showed `fetched_domains_count=22654` and heartbeat progress on running segments.
+  - OpenCode command `OpenCode ZA all 3 sites collect list` completed run `48c21cef-ad47-4e60-9463-3fb1c629aaab` with `fetched=3`, `upserted=3`, `verified=3`, `matched=3`, `promoted=3`, `jobs_enqueued=3`, `failure=0`.
+  - Current-run enrichment jobs completed for `google.co.za`, `betway.co.za`, and `amazon.co.za`; all produced report URLs and `twenty_sync=synced`.
+  - Corresponding companies are `pipeline_status=report_ready` with report URLs: `https://paradigmjp.com/ja/report/google-1x7l0r`, `https://paradigmjp.com/ja/report/betway-25m3tm`, `https://paradigmjp.com/ja/report/amazon-1cmep0`.
 - Production smoke after `486103f` deploy:
   - `POST /api/sales/lead-candidates/multi-source` for `ZA / WooCommerce / limit=120 / verifyLimit=5` returned HTTP 200 in 1.997s.
   - Run `1f10a6e2-ffc3-486d-8ad2-1d5aa74e9da4`: completed with `fetched=120`, `upserted=120`, `verified=5`, `scored=5`, `promoted=0`.
