@@ -193,7 +193,39 @@ export async function findCompanyBySlug(
     console.error("[sales-companies] fallback slug fetch failed:", fallback.error.message)
     return null
   }
-  return (fallback.data as SalesCompany) ?? null
+  if (fallback.data) return fallback.data as SalesCompany
+
+  // Third fallback: search by report_url containing the slug
+  // (companies with NULL slug may still have valid report URLs)
+  const urlFallback = await sb
+    .from(DB_TABLES.SALES_COMPANIES)
+    .select("*")
+    .like("report_url", `%/${slug}`)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (urlFallback.error) {
+    console.error("[sales-companies] report_url fallback fetch failed:", urlFallback.error.message)
+    return null
+  }
+  if (urlFallback.data) {
+    const found = urlFallback.data as SalesCompany
+    // Auto-repair: set slug for future lookups
+    if (!found.slug) {
+      const { error: repairError } = await sb
+        .from(DB_TABLES.SALES_COMPANIES)
+        .update({ slug })
+        .eq("id", found.id)
+      if (repairError) {
+        console.error("[sales-companies] auto-repair slug failed:", repairError.message)
+      } else {
+        found.slug = slug
+      }
+    }
+    return found
+  }
+
+  return null
 }
 
 /** id で 1 件取得 */

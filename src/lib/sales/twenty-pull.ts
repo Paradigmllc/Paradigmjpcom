@@ -4,6 +4,7 @@ import { salesScopeFromCountry } from "@/lib/sales/locale-scope"
 import { ensureTwentyPipelineRun } from "./twenty-pipeline-intake"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { insertWithOptionalColumns } from "@/lib/sales/safe-supabase-insert"
+import { buildCompanySlug, buildReportUrl, normalizeReportLocale, normalizeTargetCountry, normalizeTemplateVariant } from "./routing"
 import { PIPELINE_LABELS } from "./twenty-sync-utils"
 
 interface TwentyLinkField {
@@ -235,7 +236,7 @@ export async function pullTwentyCompaniesToSupabase(
 
     const { data: company, error: findError } = await sb
       .from(DB_TABLES.SALES_COMPANIES)
-      .select("id, meta, pipeline_status, report_url")
+      .select("id, slug, report_locale, target_country, template_variant, meta, pipeline_status, report_url")
       .eq("domain", domain)
       .maybeSingle()
 
@@ -309,8 +310,28 @@ export async function pullTwentyCompaniesToSupabase(
       companyPipelineStatus = upsert.company.pipeline_status
       created += 1
     } else {
+      // Ensure slug and routing fields exist (companies created before slug column may have NULL)
+      const companyName = record.name?.trim() || domain
+      const scope = salesScopeFromCountry({ targetCountry: countryCodeFromTwentyRecord(record) })
+      const reportLocale = normalizeReportLocale(company?.report_locale ?? scope.reportLocale, scope.region)
+      const targetCountry = normalizeTargetCountry(company?.target_country ?? scope.targetCountry, reportLocale)
+      const templateVariant = normalizeTemplateVariant(company?.template_variant ?? "website_diagnostic")
+
       const patch: Record<string, unknown> = { meta: patchMeta }
       if (reportUrl) patch.report_url = reportUrl
+
+      // Ensure every company has a slug — null slugs cause 404 on /report/[slug]
+      if (!company?.slug) {
+        const generatedSlug = buildCompanySlug(companyName, domain)
+        patch.slug = generatedSlug
+        patch.report_url = patch.report_url ?? buildReportUrl(reportLocale, generatedSlug)
+        companyReportUrl = (patch.report_url as string) ?? companyReportUrl
+      }
+
+      // Backfill routing fields if missing
+      if (!company?.report_locale) patch.report_locale = reportLocale
+      if (!company?.target_country) patch.target_country = targetCountry
+      if (!company?.template_variant) patch.template_variant = templateVariant
 
       if (record.paradigmSalesStatus) {
         const parsed = parseSalesStatusLabel(record.paradigmSalesStatus)
