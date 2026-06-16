@@ -1,6 +1,7 @@
 # OSS AI & Browser Automation Services
 # Steel-Browser: Headless browser API for scraping/screenshots (Apache 2.0)
 # FlareSolverr: Cloudflare/WAF bypass proxy for search (MIT)
+# MassDNS: Ultra-fast passive DNS CNAME scanner (GPLv3, 100k+ domains/sec)
 
 services:
   steel-browser:
@@ -22,5 +23,16 @@ services:
     environment:
       - LOG_LEVEL=info
 
+  massdns:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.massdns
+    restart: "no"
+    cap_add:
+      - NET_RAW
+    volumes:
+      - massdns-data:/data
+
 volumes:
   steel-browser-data:
+  massdns-data:

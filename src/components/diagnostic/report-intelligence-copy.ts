@@ -105,7 +105,7 @@ const SOURCE_NAME_JA: Record<string, string> = {
   "Google Places API": "Google Places",
   "Dify pain diagnosis": "Dify診断",
   "Japan market audit": "日本市場監査",
-  "Browserless": "Browserless",
+  "Steel-Browser": "Steel-Browser",
   "Stagehand AI Agent": "Stagehand AI Agent",
   "PageSpeed Insights": "PageSpeed Insights",
   "robots.txt / sitemap.xml": "robots.txt / sitemap.xml",

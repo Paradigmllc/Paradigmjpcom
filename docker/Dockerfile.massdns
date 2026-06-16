@@ -1,0 +1,25 @@
+# MassDNS Docker image — ultra-fast DNS resolver for passive CNAME scanning
+# Build: docker build -t massdns -f docker/Dockerfile.massdns .
+# MassDNS processes 100,000+ domains/sec without any outbound HTTP requests
+
+FROM alpine:3.21 AS builder
+
+RUN apk add --no-cache git make gcc musl-dev
+
+RUN git clone --depth 1 https://github.com/blechschmidt/massdns.git /src && \
+    cd /src && make
+
+FROM alpine:3.21
+
+RUN apk add --no-cache libcap
+
+COPY --from=builder /src/bin/massdns /usr/local/bin/massdns
+
+# Default resolvers: Google, Cloudflare, Quad9 (public, free, no rate limit for DNS)
+RUN echo -e "8.8.8.8\n8.8.4.4\n1.1.1.1\n1.0.0.1\n9.9.9.9\n149.112.112.112" > /resolvers.txt
+
+RUN setcap cap_net_raw+ep /usr/local/bin/massdns
+
+WORKDIR /data
+ENTRYPOINT ["massdns"]
+CMD ["--help"]

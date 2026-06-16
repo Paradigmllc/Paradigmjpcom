@@ -11,7 +11,7 @@
  *   4. TTS 音声合成（Edge-TTS / CosyVoice / XTTSv2）
  *   5. 文字起こし + 字幕生成（WhisperX / Faster Whisper）
  *   6. OSS レンダラーで動画生成（Remotion / FFCreator / Editly / MoviePy / OpenMontage）
- *   7. R2 アップロード + n8n ディスパッチ
+ *   7. R2 アップロード + Trigger.dev ディスパッチ
  */
 
 import { getServiceSalesSupabase } from "@/lib/supabase"
@@ -91,7 +91,7 @@ export interface OrchestratorOptions {
   skipTranscription?: boolean
   /** OSS レンダリングをスキップするか */
   skipOssRender?: boolean
-  /** n8n ディスパッチをスキップするか */
+  /** Trigger.dev ディスパッチをスキップするか */
   skipDispatch?: boolean
   /** 優先度 */
   priority?: number
