@@ -31,7 +31,7 @@ export default function ReportRequestModal({
 
   async function submitRequest() {
     try {
-      await fetch("/api/sales/request-info", {
+      const res = await fetch("/api/sales/request-info", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -43,6 +43,10 @@ export default function ReportRequestModal({
           reportName: data.company_name,
         }),
       })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error((err as Record<string, unknown>).error as string || `HTTP ${res.status}`)
+      }
       setSent(true)
     } catch (e) {
       console.error("[ReportRequestModal] submitRequest failed:", e)

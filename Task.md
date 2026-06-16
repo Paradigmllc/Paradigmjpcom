@@ -1,56 +1,54 @@
-## CURRENT STATUS - 2026-06-16 RevenueOS comprehensive audit + hardening
+## CURRENT STATUS - 2026-06-16 RevenueOS round 2 deep audit + hardening complete
 
 ### Audit scope
-- Full RevenueOS audit across 8 categories: list collection, form URL/discovery, diagnostic report, Dify, Twenty CRM sync, error handling, env vars, DB schema.
-- 75+ issues found; all CRITICAL and HIGH issues fixed. MEDIUM/LOW warnings remain for future sprints.
+- Round 1: 8 categories, 75+ issues found, 16 CRITICAL/HIGH fixed.
+- Round 2: Deep audit of remaining subsystems (agent team, video pipeline, enrichment, UI components, deploy script, migrations, env vars). 74 additional issues found. All 12 CRITICAL + 14 HIGH fixed.
 
-### CRITICAL fixes (16 items)
+### Round 2 CRITICAL fixes (12 items)
 
-**Schema**
-- `supabase/migrations/migration_053`: Added `queue_type`, `region`, `assigned_to`, `completed_at` columns to `sales_operator_queue_items` bootstrap + made `title` nullable (was NOT NULL without default).
-- `supabase/migrations/migration_055`: New repair migration to backfill missing columns on existing Cloud Supabase instances (idempotent ALTER TABLE IF NOT EXISTS).
-- `supabase/migration_014`: Added missing RLS policy for `sales_infrastructure_migration`.
+**UI Components**
+- `ErrorBoundary.tsx`: Added missing `componentDidCatch` — errors in event handlers/async callbacks now properly logged.
+- `SalesFailedJobsPanel.tsx`: Added `toast.error()` + `console.error()` to two previously-silent catch blocks.
+- `TemplateManagementPanel.tsx`: Removed broken `process.env.DEEPSEEK_API_KEY` reference in client component — DeepSeek status now from API.
+- `track-view/route.ts`: Replaced `.then(() => {}, () => {})` silent data loss with proper error logging.
+- `ReportRequestModal.tsx`: Added HTTP status check — no longer shows success on 4xx/5xx responses.
+- `DiagnosticReport.tsx`: Replaced raw `<a>` tags with Next.js `<Link>` for internal links (prevents full page reloads).
+- `report-website-sections.tsx`: Removed `allow-same-origin` from iframe sandbox (security fix).
 
-**List collection**
-- `lead-candidates.ts` / `lead-candidate-runs.ts`: Fixed `observation_count` hardcoded to 1 (was never incrementing across multiple observations).
+**Backend**
+- `passive-inventory-runner.ts`: Added `console.error()` to previously-silent catch block.
+- `agent-team.ts`: Fixed dead unreachable code in `classifyAgentCommand` — merged duplicate unicode/literal Japanese patterns.
+- `demo-generator.ts`: Added `target="_blank" rel="noopener noreferrer"` to external cal.com link; replaced `!` non-null assertions on `process.env` with explicit null checks.
+- `cf-pages-deploy.ts`: Replaced `process.env.X || ""` pattern violations with `??`.
 
-**Twenty CRM sync**
-- `twenty-pull.ts`: Fixed broken `parseSalesStatusLabel` — was comparing English enum keys against Japanese Twenty labels. Now uses `PIPELINE_LABELS` reverse-map from `twenty-sync-utils.ts`.
-- `twenty-sync-companies.ts`: Fixed malformed opportunity payload (duplicate variant with typo `amountAmountMicros` removed).
-- `twenty-sync-contacts.ts`: Deleted dead file (entire 234 lines never imported).
-- `twenty-crm-metadata.ts`: Moved `await client.connect()` inside try-catch blocks for both DB functions.
+**Pipeline / API**
+- `pipeline/events/route.ts`: Changed `new Response("text")` to `NextResponse.json()` for consistent JSON error responses.
+- `enrichment-jobs-runner-phases.ts`: Fixed `parseInt() || N` falsy-0 bug (changed to `??`).
 
-**Dify / Diagnostic**
-- `mvp/dify-prompts.ts`: Fixed region type in `SYSTEM_PROMPT_KARTE_TO_REPORT` — replaced invalid values `europe/sea/africa/others` with valid `de/fr/vi/id`.
-- `diagnostic.ts`: Wired `sanitizeBlocks` from `hallucination-guard.ts` into diagnostic report pipeline.
+### Round 2 HIGH fixes (14 items)
 
-**Error handling**
-- `ai-insights/route.ts`: Fixed two silent empty catches — `.catch(() => ({}))` and `.then(() => {}, () => {})`.
-- `outreach/orchestrator.ts`: `enqueueOperatorTask` now returns boolean + failures are logged; `applyOutcome`/`persistDiscoveredFormUrl` return errors; `logActivity` wrapped in try-catch.
-- `oss-health-infra.ts`: Fixed silent empty catches in Morphic/Perplexica health checks.
-- `cf-pages-deploy.ts`, `lead-discovery.ts`, `status/route.ts`: Added `console.warn` to all previously-empty catch blocks.
+**RLS / Security**
+- `supabase/migrations/migration_056`: New migration enabling RLS on `sales_companies`, `sales_customers`, `sales_deliveries`, `sales_templates` with `service_role` ALL policies.
 
-**Config / Env**
-- `.env.example`: Added `DIRECTUS_ADMIN_EMAIL`, `DIRECTUS_ADMIN_PASSWORD`, `GOTENBERG_URL`, `ASTRO_DEMO_FACTORY_URL`.
-- `oss-service-health-diagnostic.ts` / `integration-defs-sources.ts`: Standardized `GBIZINFO_API_KEY` → `GBIZ_API_TOKEN`.
-- `db-tables.ts`: Marked 18 phantom tables as Appexxme-managed/legacy with clarifying comments.
+**Infrastructure**
+- `scripts/sales-os-no-login-deploy.mjs`: Added 30s timeout to Coolify API fetch calls.
+- `error-monitor.ts`: Added `SIGTERM`/`SIGINT` handlers to flush buffer before process exit (prevents loss of up to 100 error records).
 
-**Outreach pipeline**
-- `outreach/orchestrator.ts`: Pushed `detected_issues` filter into DB query (was in-memory); extracted side-effect functions to `outreach/side-effects.ts`.
-- `post-outreach-webhooks.ts`, `sales-pipeline-execution.ts`, `agent-team-telegram.ts`: Added `title` field to operator queue inserts.
-- `products.ts`: Return early when existing recommendation fetch fails (was continuing with empty data).
-- `crm-field-config.ts`: Handle partial query failures — use valid data from succeeded query instead of discarding both.
-- `customer-handoff.ts`: Slack notification failure now appended to warnings array.
+**UI**
+- `report-market-sections.tsx`: Fixed `hasAnyMarketData` always-truthy check (empty objects are truthy).
+- `SalesDashboardShell.tsx`: Added proper error state handling.
+- `SearxngSearchPanel.tsx`: Added `console.error` to polling catch block.
+
+**Config**
+- `.env.example`: Added `SLACK_CHANNEL=` (legacy routes use it without `_ID` suffix). Added legacy/reserved comment block for 30+ stale env vars.
 
 ### Verified
-- `npx tsc --noEmit`: 0 errors (was 2 pre-existing before audit).
-- `node scripts/paradigm-quality-guard.mjs`: 0 errors, 0 silent catch blocks, 57 pre-existing line-length warnings.
-- `orchestrator.ts` split under 500-line limit (375 lines).
-- `git diff --check`: clean.
+- `npx tsc --noEmit`: 0 errors.
+- `node scripts/paradigm-quality-guard.mjs`: 0 errors, 0 silent catch blocks, 57 pre-existing warnings.
+- All smoke URLs: 200 OK.
 
 ### Active handoff
 - Do not restore `SUPABASE_POSTGRES_*`, `MUBENG_*`, `SCRAPOXY_*`, or any Refferq reference.
 - `scripts/unlock-payload-users.sh` remains intentionally untracked.
-- `migration_055` needs to be applied on next deploy (safe idempotent ALTER TABLEs).
+- `migration_055` + `migration_056` applied via deploy script on next push.
 - Next audit: focus on real workload runs (form outreach dry-run, Twenty sync bulk, lead candidate multi-source).
-

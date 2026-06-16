@@ -299,6 +299,7 @@ export async function processPassiveInventoryRun(runId: string, options: { maxSe
       processedSegments += 1
       failures.push(...result.failures.map((failure) => ({ key: `${segment.segment_key}:${failure.key}`, reason: failure.reason })))
     } catch (error) {
+      console.error("[passive-inventory-runner] segment failed:", segment.segment_key, error)
       const message = errorMessage(error)
       failures.push({ key: segment.segment_key, reason: message })
       await getSb().from(DB_TABLES.SALES_PASSIVE_INVENTORY_SEGMENTS).update({

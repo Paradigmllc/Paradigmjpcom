@@ -195,7 +195,7 @@ export function BeforeAfterComparison({ data, lang }: { data: DiagnosticReportDa
                       className="absolute inset-0 w-full h-full border-0"
                       title={lang === "ja" ? "改善後デモサイト" : "Improved demo site"}
                       loading="lazy"
-                      sandbox="allow-scripts allow-same-origin"
+                      sandbox="allow-scripts"
                     />
                   </div>
                   <div className="px-4 py-2 bg-emerald-50 flex items-center justify-between">

@@ -180,7 +180,7 @@ export async function processAssetPhase(
     .order("created_at", { ascending: false })
     .limit(5)
 
-  const recencyDays = parseInt(process.env.COST_GUARD_RECENCY_DAYS ?? "14", 10) || 14
+  const recencyDays = parseInt(process.env.COST_GUARD_RECENCY_DAYS ?? "14", 10) ?? 14
   const recencyAgo = new Date(Date.now() - recencyDays * 24 * 60 * 60 * 1000)
   const hasRecentAsset = (type: string) =>
     (recentAssets ?? []).some(
@@ -192,8 +192,8 @@ export async function processAssetPhase(
   const coverage = computeSourceCoverage(company)
   const costGuardVideoEnabled = process.env.COST_GUARD_VIDEO_ENABLED !== "false"
   const costGuardDemoEnabled = process.env.COST_GUARD_DEMO_ENABLED !== "false"
-  const demoMinScore = parseInt(process.env.COST_GUARD_DEMO_MIN_SCORE ?? "15", 10) || 0
-  const videoMinScore = parseInt(process.env.COST_GUARD_VIDEO_MIN_SCORE ?? "20", 10) || 0
+  const demoMinScore = parseInt(process.env.COST_GUARD_DEMO_MIN_SCORE ?? "15", 10) ?? 0
+  const videoMinScore = parseInt(process.env.COST_GUARD_VIDEO_MIN_SCORE ?? "20", 10) ?? 0
 
   const shouldGenerateDemo =
     reportData &&

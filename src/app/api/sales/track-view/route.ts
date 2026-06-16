@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
         subject: event === "load" ? "レポート閲覧" : event === "scroll" ? "50%スクロール到達" : event === "cta" ? "CTAクリック" : "30秒滞在",
         result: referrer,
         occurred_at: now,
-      }).then(() => {}, () => {}) // best-effort
+      }).then(() => {}, (err: unknown) => { console.error("[track-view] activity insert failed:", err) })
     }
   }
 

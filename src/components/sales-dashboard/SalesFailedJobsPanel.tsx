@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { AlertTriangle, RefreshCw, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 interface FailedJob {
   id: string
@@ -44,6 +45,8 @@ export function SalesFailedJobsPanel() {
       setStats({ total: data.total ?? 0, last24h, byType })
       setError(null)
     } catch (e) {
+      console.error("[SalesFailedJobsPanel] fetchJobs failed:", e)
+      toast.error("Failed to load failed jobs")
       setError(e instanceof Error ? e.message : "Fetch failed")
     } finally {
       setLoading(false)
@@ -67,6 +70,8 @@ export function SalesFailedJobsPanel() {
         setError(data.error ?? "Retry failed")
       }
     } catch (e) {
+      console.error("[SalesFailedJobsPanel] handleRetry failed:", e)
+      toast.error("Failed to retry job")
       setError(e instanceof Error ? e.message : "Retry failed")
     } finally {
       setRetrying((prev) => { const next = new Set(prev); next.delete(jobId); return next })

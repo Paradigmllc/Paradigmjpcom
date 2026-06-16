@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
@@ -8,11 +8,11 @@ export const dynamic = "force-dynamic"
 
 export async function GET(req: NextRequest) {
   if (!(await isSalesApiAuthorized(req))) {
-    return new Response("Unauthorized", { status: 401 })
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
   }
 
   const sb = getServiceSalesSupabase()
-  if (!sb) return new Response("Supabase not configured", { status: 500 })
+  if (!sb) return NextResponse.json({ ok: false, error: "Supabase not configured" }, { status: 500 })
 
   const encoder = new TextEncoder()
   let closed = false

@@ -120,6 +120,12 @@ async function flush(): Promise<void> {
 
 if (typeof process !== "undefined") {
   process.on("beforeExit", () => void flush())
-  process.on("SIGTERM", () => void flush())
-  process.on("SIGINT", () => void flush())
+  process.on("SIGTERM", async () => {
+    await flush()
+    process.exit(0)
+  })
+  process.on("SIGINT", async () => {
+    await flush()
+    process.exit(0)
+  })
 }

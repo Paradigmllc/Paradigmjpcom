@@ -220,7 +220,7 @@ export function buildDemoHtml(company: SalesCompany, report: DiagnosticReportDat
             ? "デモサイトの続きや、実際の改善プランについて詳しくご説明します。お気軽にご連絡ください。"
             : "Let's discuss the full demo and your actual improvement plan. Reach out anytime."}
         </p>
-        <a href="https://cal.com/paradigm-jp/15min" class="inline-flex items-center gap-2 bg-white text-black px-8 py-4 rounded-xl text-lg font-bold hover:bg-zinc-100 transition-all shadow-xl">
+        <a href="https://cal.com/paradigm-jp/15min" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 bg-white text-black px-8 py-4 rounded-xl text-lg font-bold hover:bg-zinc-100 transition-all shadow-xl">
           ${ja ? "15分無料相談を予約" : "Book 15min Free Consult"} <svg class="w-5 h-5" viewBox="0 0 24 24">${svgIcon("arrow")}</svg>
         </a>
       </div>
@@ -267,13 +267,19 @@ export async function generateReplacementDemo(
   if (r2Config.ready && r2Config.bucket && r2Config.publicBaseUrl) {
     try {
       const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3")
-      const accountId = process.env.CLOUDFLARE_R2_ACCOUNT_ID!
+      const accountId = process.env.CLOUDFLARE_R2_ACCOUNT_ID
+      const accessKeyId = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID
+      const secretAccessKey = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY
+      if (!accountId || !accessKeyId || !secretAccessKey) {
+        console.error("[demo-generator] R2 credentials incomplete")
+        return { ok: false, demoUrl: null, error: "R2 credentials incomplete" }
+      }
       const client = new S3Client({
         region: "auto",
         endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
         credentials: {
-          accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID!,
-          secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY!,
+          accessKeyId,
+          secretAccessKey,
         },
       })
       const r2Key = sanitizeR2ObjectName(`demos/${company.id}/${slug}.html`)

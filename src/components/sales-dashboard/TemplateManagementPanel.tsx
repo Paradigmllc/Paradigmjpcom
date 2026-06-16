@@ -61,7 +61,7 @@ export function TemplateManagementPanel({ data }: { data: SalesDashboardData }) 
               { label: "Dify Cloud API", check: data.integrationStatus.find(i => i.slug === "dify_cloud")?.status === "ready" },
               { label: "カルテ→レポート", check: data.integrationStatus.find(i => i.slug === "dify_karte_to_report")?.status === "ready" },
               { label: "フォーム文面生成", check: data.integrationStatus.find(i => i.slug === "dify_form_message")?.status === "ready" },
-              { label: "DeepSeek", check: !!process.env.DEEPSEEK_API_KEY || data.integrationStatus.some(i => i.slug.includes("deepseek") && i.status === "ready") },
+              { label: "DeepSeek", check: data.integrationStatus.some(i => i.slug.includes("deepseek") && i.status === "ready") },
             ]
             return checks.map((item) => (
               <div key={item.label} className={`rounded-md border p-2.5 ${item.check ? "border-emerald-200 bg-emerald-50" : "border-zinc-200 bg-zinc-50"}`}>

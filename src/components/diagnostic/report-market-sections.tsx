@@ -16,7 +16,7 @@ export function MarketPresenceSummary({ data, lang }: { data: DiagnosticReportDa
   const dns = (meta.dns ?? {}) as Record<string, unknown>
   const wayback = (meta.wayback_machine ?? {}) as Record<string, unknown>
 
-  const hasAnyMarketData = radar || tranco || simweb || commoncrawl || github || builtwith
+  const hasAnyMarketData = meta.cloudflare_radar || meta.tranco || meta.similarweb_free || meta.commoncrawl || meta.github || meta.builtwith
   if (!hasAnyMarketData) return null
 
   return (

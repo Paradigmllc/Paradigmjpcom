@@ -147,6 +147,7 @@ async function coolify(pathname, options = {}) {
   const { token, baseUrl } = getCoolifyAuth()
   const res = await fetch(`${baseUrl}${pathname}`, {
     ...options,
+    signal: options.signal ?? AbortSignal.timeout(30_000),
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",

@@ -220,8 +220,8 @@ async function ensureCfPagesProject(slug: string, githubRepo: string, githubBran
             deployment_configs: {
               production: {
                 env_vars: {
-                  SUPABASE_URL: { value: process.env.NEXT_PUBLIC_SUPABASE_URL || "" },
-                  SUPABASE_ANON_KEY: { value: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "" },
+                  SUPABASE_URL: { value: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "" },
+                  SUPABASE_ANON_KEY: { value: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "" },
                 },
               },
             },
