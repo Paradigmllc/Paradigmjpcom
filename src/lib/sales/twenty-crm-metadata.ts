@@ -152,7 +152,6 @@ async function applyTwentyCrmMetadataViaApi(input: {
     const body: Record<string, unknown> = { label: field.label, type: twentyType }
     if (field.fieldType === "select" && options.length > 0) {
       body.options = options
-      selectFields += 1
     }
 
     await twentyMetadataRequest(`/rest/metadata/fields/${twentyField.id}`, {
@@ -160,6 +159,7 @@ async function applyTwentyCrmMetadataViaApi(input: {
       body: JSON.stringify(body),
     })
     appliedFields += 1
+    if (field.fieldType === "select" && options.length > 0) selectFields += 1
 
     const relatedViewFields = viewFields.filter((viewField) => viewField.fieldMetadataId === twentyField.id)
     for (const viewField of relatedViewFields) {

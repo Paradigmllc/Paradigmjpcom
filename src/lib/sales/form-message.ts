@@ -233,10 +233,10 @@ export async function generateFormMessage(
   }
 }
 
-async function saveFormMessageToCompany(companyId: string, message: string, engine: string): Promise<void> {
+async function saveFormMessageToCompany(companyId: string, message: string, engine: string): Promise<boolean> {
   try {
     const sb = getServiceSalesSupabase()
-    if (!sb) return
+    if (!sb) return false
     const { data: current } = await sb.from(DB_TABLES.SALES_COMPANIES).select("meta").eq("id", companyId).single()
     const prevMeta = (current?.meta as Record<string, unknown>) ?? {}
     const history = Array.isArray(prevMeta.form_message_history) ? prevMeta.form_message_history as Array<unknown> : []
@@ -252,8 +252,10 @@ async function saveFormMessageToCompany(companyId: string, message: string, engi
         ],
       },
     }).eq("id", companyId)
+    return true
   } catch (e) {
     console.error("[sales-form-message] failed to persist message:", e)
+    return false
   }
 }
 

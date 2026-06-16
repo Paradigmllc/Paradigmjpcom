@@ -128,14 +128,44 @@ export async function notionQueryDatabase(
   databaseId: string,
   filter?: Record<string, unknown>,
   pageSize: number = 100,
+  startCursor?: string,
 ): Promise<NotionResponse<QueryResult>> {
   return notionFetch<QueryResult>(`/databases/${databaseId}/query`, {
     method: "POST",
     body: JSON.stringify({
       ...(filter ? { filter } : {}),
       page_size: pageSize,
+      ...(startCursor ? { start_cursor: startCursor } : {}),
     }),
   })
+}
+
+/** Notion DB 全件取得 — cursor pagination を自動処理 */
+export async function notionQueryDatabaseAll(
+  databaseId: string,
+  filter?: Record<string, unknown>,
+  pageSize: number = 100,
+  maxPages: number = 50,
+): Promise<NotionResponse<{ results: QueryResult["results"] }>> {
+  const allResults: QueryResult["results"] = []
+  let cursor: string | undefined
+  let pages = 0
+
+  do {
+    const r = await notionQueryDatabase(databaseId, filter, pageSize, cursor)
+    if (!r.ok || !r.data) {
+      return { ok: false, error: `Notion query failed at page ${pages}: ${r.error}` }
+    }
+    allResults.push(...r.data.results)
+    cursor = r.data.has_more ? (r.data.next_cursor ?? undefined) : undefined
+    pages++
+  } while (cursor && pages < maxPages)
+
+  if (pages >= maxPages && cursor) {
+    console.warn(`[notion] notionQueryDatabaseAll hit maxPages=${maxPages} for database ${databaseId}`)
+  }
+
+  return { ok: true, data: { results: allResults } }
 }
 
 /** companies.domain で Notion 側の既存ページを検索 (重複作成防止) */

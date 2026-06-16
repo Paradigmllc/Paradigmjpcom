@@ -56,12 +56,15 @@ export interface TwentySyncResult {
 export interface TwentyPullResult {
   ok: boolean
   configured: boolean
+  dryRun?: boolean
   scanned: number
   created: number
   updated: number
   skipped: number
   pipelineRunsCreated: number
-  failures: { domain: string; reason: string }[]
+  pipelineRunsDispatched?: number
+  pipelineRunsReused?: number
+  failures: { twentyCompanyId?: string | null; domain?: string | null; reason: string }[]
   error?: string
 }
 

@@ -12,4 +12,4 @@ export type {
 
 // Re-export public functions
 export { syncCustomerHandoffToTwenty, syncCompanyKarteToTwenty } from "./twenty-sync-companies"
-export { pullTwentyCompaniesToSupabase } from "./twenty-sync-contacts"
+export { pullTwentyCompaniesToSupabase } from "./twenty-pull"

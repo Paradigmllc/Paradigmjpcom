@@ -21,7 +21,8 @@ interface Body {
 export async function POST(req: NextRequest) {
   const secret = req.headers.get("x-webhook-secret") ?? req.headers.get("x-internal-secret")
   const expected = process.env.TWENTY_WEBHOOK_SECRET ?? process.env.TRIGGER_WEBHOOK_SECRET ?? process.env.N8N_WEBHOOK_SECRET
-  if (!secret || secret !== expected) {
+  if (!expected || !secret || secret !== expected) {
+    if (!expected) console.error("[twenty-webhook] no webhook secret configured (TWENTY_WEBHOOK_SECRET / TRIGGER_WEBHOOK_SECRET / N8N_WEBHOOK_SECRET)")
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
@@ -41,6 +42,7 @@ export async function POST(req: NextRequest) {
     });
     if (!result.ok) {
        console.error("[twenty-webhook] pull failed:", result.error);
+       return NextResponse.json({ ok: false, error: result.error ?? "pull failed", result }, { status: 502 });
     }
 
     return NextResponse.json({ ok: true, message: "Webhook received, sync started", result });

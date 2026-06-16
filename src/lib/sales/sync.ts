@@ -219,10 +219,14 @@ export async function rehydrateCompanyByDomain(
   // notion_page_id をクリアして再 sync (新規作成 path に入る)
   const sb = getServiceSalesSupabase()
   if (sb) {
-    await sb
+    const { error: updateErr } = await sb
       .from(DB_TABLES.SALES_COMPANIES)
       .update({ notion_page_id: null })
       .eq("id", company.id)
+    if (updateErr) {
+      console.error("[sync] failed to clear notion_page_id before rehydrate:", updateErr.message)
+      return { ok: false, error: `rehydrate pre-update failed: ${updateErr.message}` }
+    }
   }
   return syncCompanyToNotion({ ...company, notion_page_id: null }, notionDbId)
 }

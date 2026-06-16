@@ -15,7 +15,7 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { verifyWebhookSecret } from "@/lib/sales/auth"
-import { notionQueryDatabase, extractProperty } from "@/lib/notion"
+import { notionQueryDatabaseAll, extractProperty } from "@/lib/notion"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { upsertCompanyByDomain, setNotionPageId, batchFindExistingByDomains } from "@/lib/sales/companies"
 import { enrichFromContact } from "@/lib/sales/enrich"
@@ -50,7 +50,10 @@ export async function POST(req: NextRequest) {
   const authErr = verifyWebhookSecret(req)
   if (authErr) return authErr
 
-  const body = (await req.json().catch(() => ({}))) as { region?: string }
+  const body = (await req.json().catch((e) => {
+    console.error("[sync-companies-from-notion] invalid JSON body:", e)
+    return {}
+  })) as { region?: string }
   const region: Region = isValidRegion(body.region ?? "") ? (body.region as Region) : "jp"
   const dbId =
     region === "jp"
@@ -60,8 +63,8 @@ export async function POST(req: NextRequest) {
   const sb = getServiceSalesSupabase()
   if (!sb) return NextResponse.json({ ok: false, error: "Supabase not configured" }, { status: 500 })
 
-  // Notion 取得 (※ notionQueryDatabase は cursor 非対応のため最大 100 件・id で dedupe)
-  const q = await notionQueryDatabase(dbId, undefined, 100)
+  // Notion 全件取得 (cursor pagination 対応・最大 2000 件)
+  const q = await notionQueryDatabaseAll(dbId, undefined, 100, 20)
   if (!q.ok || !q.data) {
     return NextResponse.json({ ok: false, error: `Notion query failed: ${q.error}` }, { status: 500 })
   }

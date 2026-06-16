@@ -26,7 +26,7 @@ export interface SchemaOrgResult {
 const LD_JSON_RE = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi
 
 function parseMaybeJson(raw: string): unknown {
-  try { return JSON.parse(raw) } catch { return null }
+  try { return JSON.parse(raw) } catch (e) { console.error("[schema-org] JSON parse failed:", e); return null }
 }
 
 function firstStringAt(obj: Record<string, unknown>, keys: string[]): string | undefined {

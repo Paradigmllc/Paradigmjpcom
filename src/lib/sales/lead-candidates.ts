@@ -240,7 +240,13 @@ async function promoteCandidate(input: {
       .from(DB_TABLES.SALES_LEAD_CANDIDATE_DOMAINS)
       .update({ status: "promoted", company_id: saved.company.id })
       .eq("id", input.candidate.id)
-    if (error) console.error("[lead-candidates] candidate promotion marker failed:", error.message)
+    if (error) {
+      console.error("[lead-candidates] candidate promotion marker failed:", error.message)
+      return { ok: false, error: `candidate marker update failed: ${error.message}` }
+    }
+  } else {
+    console.error("[lead-candidates] Supabase not available for candidate marker update")
+    return { ok: false, error: "Supabase service_role not configured" }
   }
 
   const queued = await enqueueCompanyEnrichment({

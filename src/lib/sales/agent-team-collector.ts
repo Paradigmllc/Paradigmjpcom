@@ -333,7 +333,7 @@ async function syncCollectedCompanies(
 ): Promise<{ attempted: boolean; synced: number; failed: number }> {
   if (companies.length === 0) return { attempted: false, synced: 0, failed: 0 }
   try {
-    await pullTwentyCompaniesToSupabase(limit, { pipelineRunId: "telegram_collect_list" })
+    await pullTwentyCompaniesToSupabase(limit, { requestedBy: "telegram_collect_list" })
     let synced = 0
     let failed = 0
     for (const company of companies) {

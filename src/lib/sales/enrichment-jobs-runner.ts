@@ -188,7 +188,9 @@ async function completeJob(
       link: reportUrlFor(company) ?? undefined,
       type: "enrichment_completed",
     })
-  } catch { /* notification non-critical */ }
+  } catch (e) {
+    console.error("[sales-enrichment] notification failed:", e)
+  }
 
   // Auto-resume local manual pipeline run if it was waiting for this job
   const pipelineRunId = typeof job.input_payload?.pipeline_run_id === "string" ? job.input_payload.pipeline_run_id : null

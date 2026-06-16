@@ -100,6 +100,7 @@ export async function fetchFormTos(url: string): Promise<FormTosResult> {
     };
   } catch (e) {
     clearTimeout(timer);
+    console.error("[form-tos-fetch] fetch failed:", e);
     return {
       ok: false,
       keywords_found: [],

@@ -220,7 +220,10 @@ export async function discoverWithCrawleeWorker(input: {
       body: JSON.stringify({ homeUrl: input.origin }),
       signal: AbortSignal.timeout(input.timeoutMs),
     })
-    if (!res.ok) return null
+    if (!res.ok) {
+      console.error("[external-form-discovery] Crawlee worker returned:", { status: res.status })
+      return null
+    }
     const payload = await readJsonOrText(res)
     return hitFromPayload("crawlee", input.origin, payload, "Crawlee worker SPA discovery")
   } catch (error) {

@@ -200,8 +200,12 @@ function checkEnvSummary(): ServiceCheck {
     "FLARESOLVERR_API_URL",
     "STEEL_BASE_URL",
     "DIFY_API_KEY",
+    "DIFY_DIAGNOSIS_API_KEY",
+    "DIFY_FORM_MESSAGE_API_KEY",
+    "DIFY_FREELANCE_AUTOREPLY_KEY",
     "TWENTY_BASE_URL",
     "TWENTY_API_KEY",
+    "NOTION_API_KEY",
     "CLOUDFLARE_R2_BUCKET",
     "CRAWL4AI_BASE_URL",
     "BROWSERLESS_URL",
@@ -210,6 +214,9 @@ function checkEnvSummary(): ServiceCheck {
     "STAGEHAND_API_KEY",
     "OUTREACH_WORKER_URL",
     "OUTREACH_WORKER_SECRET",
+    "GBIZ_API_TOKEN",
+    "GOOGLE_PSI_API_KEY",
+    "HUNTER_API_KEY",
   ]
   const missing = required.filter((name) => !env(name))
   const missingAny = requiredAny

@@ -98,7 +98,7 @@ export async function extractSiteData(url: string): Promise<StagehandExtractResu
     return { ok: false, error: e instanceof Error ? e.message : String(e) }
   } finally {
     if (stagehand) {
-      try { await stagehand.close() } catch { /* ignore close errors */ }
+      try { await stagehand.close() } catch (e) { console.error("[stagehand-enrich] close failed:", e) }
     }
   }
 }
@@ -142,7 +142,7 @@ export async function discoverForms(url: string): Promise<StagehandFormResult> {
     return { ok: false, error: e instanceof Error ? e.message : String(e) }
   } finally {
     if (stagehand) {
-      try { await stagehand.close() } catch { /* ignore close errors */ }
+      try { await stagehand.close() } catch (e) { console.error("[stagehand-enrich] close failed:", e) }
     }
   }
 }

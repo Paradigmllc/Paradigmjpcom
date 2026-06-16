@@ -51,7 +51,7 @@ export { resolveNotionDbId } from "./notion-apply-format"
 async function recordSyncLog(entry: {
   entity_type: Entity
   notion_page_id: string
-  action: "create" | "update"
+  action: "create" | "update" | "enrich"
   status: "success" | "error" | "skipped"
   error_message?: string | null
   payload?: Record<string, unknown> | null
@@ -191,7 +191,18 @@ async function applyCompany(
     company: companyName,
     message: "Notion manual lead add",
     source: "notion_webhook",
-  }).catch((e) => console.error(`[notion-apply] enrich ${domain} failed:`, e))
+  }).catch((e) => {
+    console.error(`[notion-apply] enrich ${domain} failed:`, e)
+    recordSyncLog({
+      entity_type: "company",
+      notion_page_id: pageId,
+      action: "enrich",
+      status: "error",
+      payload: { domain, error: e instanceof Error ? e.message : String(e) },
+    }).catch((logError) => {
+      console.error("[notion-apply] enrich error log failed:", logError)
+    })
+  })
   await recordSyncLog({ entity_type: "company", notion_page_id: pageId, action: "create", status: "success", payload: { domain } })
   return { ok: true, entity: "company", action: "create" }
 }

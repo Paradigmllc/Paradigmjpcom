@@ -3,7 +3,10 @@
  * customer-facing LLM output は必ず Dify 経由. DeepSeek 直叩き禁止.
  */
 
-const DIFY_BASE = process.env.DIFY_API_BASE ?? "https://api.dify.ai/v1";
+import { normalizeDifyCloudBaseUrl } from "@/lib/sales/dify-cloud"
+
+const DIFY_BASE = normalizeDifyCloudBaseUrl(process.env.DIFY_API_BASE)
+const DIFY_WORKFLOW_URL = `${DIFY_BASE}/v1/workflows/run`
 
 export type DifyWorkflowKey =
   | "templatePicker"
@@ -75,7 +78,7 @@ export async function callDify<T = unknown>(
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), opts?.timeoutMs ?? 60_000);
   try {
-    const res = await fetch(`${DIFY_BASE}/workflows/run`, {
+    const res = await fetch(`${DIFY_WORKFLOW_URL}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

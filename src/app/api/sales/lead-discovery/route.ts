@@ -154,7 +154,10 @@ export async function POST(req: NextRequest) {
           jobs_enqueued: jobsEnqueued,
           searched_at: new Date().toISOString(),
         },
-      }).then(() => {}, () => {})
+      }).then(
+        () => {},
+        (err: unknown) => console.error("[lead-discovery] sync log insert failed:", err),
+      )
     }
 
     return NextResponse.json({

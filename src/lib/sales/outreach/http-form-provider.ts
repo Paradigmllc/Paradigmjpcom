@@ -90,6 +90,7 @@ export class HttpFormProvider implements BrowserProvider {
       if (!res.ok) return { ok: false, outcome: "failed", detail: `form GET ${res.status}` }
       html = await res.text()
     } catch (error) {
+      console.error("[http-form-provider] form GET failed:", error)
       return { ok: false, outcome: "failed", detail: `form GET error: ${error instanceof Error ? error.message : String(error)}` }
     }
 
@@ -137,6 +138,7 @@ export class HttpFormProvider implements BrowserProvider {
       if (SUCCESS_RE.test(text)) return { ok: true, outcome: "submitted", detail: "submission completed; success text detected" }
       return { ok: true, outcome: "uncertain", detail: "POST returned 200 but no success text was detected" }
     } catch (error) {
+      console.error("[http-form-provider] form POST failed:", error)
       return { ok: false, outcome: "failed", detail: `POST error: ${error instanceof Error ? error.message : String(error)}` }
     }
   }

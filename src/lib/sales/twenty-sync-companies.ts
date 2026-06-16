@@ -61,7 +61,7 @@ function customerHandoffSummary(input: TwentyCustomerHandoffInput): string {
 }
 
 async function findTwentyCompany(karte: CompanyKarteSnapshot): Promise<TwentyRecord | null> {
-  const query = `limit=10&filter=domainName.primaryLinkUrl[ilike]:%25${encodeURIComponent(karte.domain)}%25`
+  const query = `limit=100&filter=domainName.primaryLinkUrl[ilike]:%25${encodeURIComponent(karte.domain)}%25`
   const result = await twentyFetch<TwentyListResponse<TwentyRecord>>(`/rest/companies?${query}`)
 
   if (!result.ok) throw new Error(result.error)

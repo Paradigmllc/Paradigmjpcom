@@ -1,4 +1,4 @@
-import type { JsonRecord } from "@/lib/sales/post-outreach-webhooks"
+import { resolveDifyWorkflowKey, normalizeDifyCloudBaseUrl } from "@/lib/sales/dify-cloud"
 
 export type ReplyIntent = "interested" | "not_interested" | "needs_info" | "unsubscribe" | "auto_reply" | "unknown"
 
@@ -84,11 +84,13 @@ function queueTypeForIntent(intent: ReplyIntent): ReplyClassification["queueType
 
 // ── Tier 2: Dify Cloud freelance-autoreply workflow ──
 async function classifyByDifyAutoreply(address: string, message: string): Promise<{ intent: ReplyIntent; raw: string | null }> {
-  const key = process.env.DIFY_FREELANCE_AUTOREPLY_KEY
+  const envName = resolveDifyWorkflowKey(["freelanceAutoreply"])
+  if (!envName) return { intent: "unknown", raw: null }
+  const key = process.env[envName]
   if (!key) return { intent: "unknown", raw: null }
 
-  const baseUrl = process.env.DIFY_BASE_URL ?? "https://api.dify.ai"
-  const endpoint = `${baseUrl.replace(/\/+$/, "")}/v1/workflows/run`
+  const baseUrl = normalizeDifyCloudBaseUrl(process.env.DIFY_BASE_URL)
+  const endpoint = `${baseUrl}/v1/workflows/run`
 
   try {
     const res = await fetch(endpoint, {
