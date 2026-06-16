@@ -22,10 +22,18 @@
 - `npx tsc --noEmit --pretty false --incremental false`: passed.
 - Targeted RevenueOS Vitest suite: 8 files / 30 tests passed.
 - `node scripts/paradigm-quality-guard.mjs`: 0 errors, 56 existing line-length warnings.
-- `git diff --check`: pending final run.
-- `npm run context:audit`: pending final run.
+- `git diff --check`: passed.
+- `git diff --cached --check`: passed before commit.
+- `npm run context:audit`: passed, `Task.md` 34/120 lines.
+
+### Deployment
+- Commit deployed: `4f16fa0c7f795f67600bc39a990b383ccd28c97c`.
+- `npm run deploy:prod`: passed.
+- Coolify deployment `bfm6kq6zu55jv3eky6dr6vu6`: finished.
+- Live container fingerprint: `i12am4vvcbggefnqdizhnv9a:4f16fa0c7f795f67600bc39a990b383ccd28c97c`, healthy.
+- Live API checks: `/api/sales/health` HTTP 200 `ok:true`; `/api/sales/db-check` HTTP 200 `ok:true`.
 
 ### Active handoff
 - Do not restore `SUPABASE_POSTGRES_*`, `MUBENG_*`, `SCRAPOXY_*`, or any Refferq reference.
 - `scripts/unlock-payload-users.sh` remains intentionally untracked and must not be staged unless the user explicitly requests it.
-- Next required step in this turn: final checks, commit, push, production deploy, and live verification.
+- Runtime is deployed and verified. Next audit should focus on real workload runs, not infrastructure cleanup.
