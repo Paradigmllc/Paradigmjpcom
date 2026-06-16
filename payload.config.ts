@@ -175,18 +175,9 @@ export default buildConfig({
         console.info("[payload] admin user seeded successfully")
         return
       }
+      // Existing users present — NEVER overwrite passwords or roles
       const existing = await payload.find({ collection: "users", where: { email: { equals: adminEmail } }, limit: 1 })
-      if (existing.totalDocs > 0) {
-        const user = existing.docs[0]
-        if (user) {
-          await payload.update({
-            collection: "users",
-            id: user.id as number,
-            data: { password: adminPassword, role: "admin" },
-          })
-          console.info("[payload] admin user password synced")
-        }
-      } else {
+      if (existing.totalDocs === 0) {
         console.info("[payload] admin email not found among existing users — seeding new admin")
         await payload.create({
           collection: "users",
@@ -198,6 +189,8 @@ export default buildConfig({
           },
         })
         console.info("[payload] admin user seeded successfully")
+      } else {
+        console.info("[payload] admin user already exists — preserving existing credentials")
       }
     } catch (e) {
       console.error("[payload] auto-seed admin user failed:", e)
@@ -210,31 +203,35 @@ export default buildConfig({
     pool: (() => {
       const uri = resolveDatabaseUriOrThrow()
       if (!uri) {
-        console.error("[payload] DATABASE_URI could not be resolved from environment — PayloadCMS will fail to start")
+        console.error("[payload] DATABASE_URI could not be resolved — PayloadCMS will fail to start")
       }
       const masked = uri ? uri.replace(/:([^:@]+)@/, ":****@") : "(empty)"
       const isPooler = uri.includes("pooler.supabase.com")
       const isTransactionMode = uri.includes(":6543")
       console.log(`[payload] database: ${masked} | pooler=${isPooler} | mode=${isTransactionMode ? "transaction" : "session/direct"}`)
 
-      // Transaction mode PgBouncer: search_path must be set at connection startup
-      // (SET doesn't persist across transactions). Add via connection string options.
+      // Append PostgreSQL safety options: statement_timeout prevents runaway queries,
+      // lock_timeout prevents lock contention storms, idle_in_transaction_session_timeout
+      // releases stuck sessions. These protect Disk IO Budget on Cloud Supabase free tier.
       let connString = uri
-      if (isTransactionMode && !uri.includes("options=")) {
-        const sep = uri.includes("?") ? "&" : "?"
-        connString = `${uri}${sep}options=-c%20search_path%3Dparadigm`
-        console.log(`[payload] transaction mode: appended search_path to connection string`)
+      if (!connString.includes("options=")) {
+        const sep = connString.includes("?") ? "&" : "?"
+        connString = `${connString}${sep}options=-c%20statement_timeout%3D30000%20-c%20lock_timeout%3D10000%20-c%20idle_in_transaction_session_timeout%3D20000`
+        if (isTransactionMode) {
+          // Transaction mode PgBouncer: search_path must be set at startup (SET doesn't persist)
+          connString = connString.replace("%20-c%20lock_timeout", "%20-c%20search_path%3Dparadigm%20-c%20lock_timeout")
+        }
+        console.log(`[payload] safety options appended to connection string`)
       }
 
       const poolConfig: Record<string, unknown> = {
         connectionString: connString,
-        max: 4,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 15000,
+        max: 2,
+        idleTimeoutMillis: 20000,
+        connectionTimeoutMillis: 10000,
         application_name: "paradigm_payload",
       }
 
-      // SSL: pooler requires SSL; use rejectUnauthorized:false for pooler (hostname mismatch possible)
       if (isPooler) {
         poolConfig.ssl = { rejectUnauthorized: false }
       } else {
@@ -243,10 +240,8 @@ export default buildConfig({
 
       return poolConfig
     })(),
-    // 2026-05-20: 専用 schema "paradigm" に分離。旧 "payload" は別アプリ
-    // 2026-06-16: Pooler Transaction mode (port 6543) + pool hardening + search_path via options
     schemaName: "paradigm",
-    push: true,
+    push: false,
   }),
   sharp,
   // P17 2026-04-27: コンテンツ多言語化も 12 言語対応

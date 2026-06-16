@@ -134,7 +134,7 @@ function isNextControlFlowError(error: unknown): boolean {
 export async function withPayloadRetry<T>(fn: () => Promise<T>): Promise<T> {
   let lastError: unknown
   let actualError: unknown = null
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 1; attempt++) {
     try {
       const result = await fn()
       if (attempt > 0) resetPayloadCooldown()
@@ -147,16 +147,17 @@ export async function withPayloadRetry<T>(fn: () => Promise<T>): Promise<T> {
         actualError = e
         break
       }
-      // Do not retry on pool exhaustion — retries make pooler situation worse
-      if (msg.includes("echeckouttimeout") || msg.includes("unable to check out")) {
+      // Do not retry on pool exhaustion, disk IO errors, too many clients — retries make it worse
+      if (msg.includes("echeckouttimeout") || msg.includes("unable to check out") ||
+          msg.includes("too many clients") || msg.includes("remaining connection slots") ||
+          msg.includes("disk full") || msg.includes("could not connect") ||
+          msg.includes("connection refused") || msg.includes("connect econnrefused")) {
         actualError = e
         break
       }
       actualError = e
-      if (attempt < 2) {
-        const delay = 500 * Math.pow(2, attempt)
-        await new Promise((r) => setTimeout(r, delay))
-      }
+      // No retry — retries amplify Disk IO consumption on Cloud Supabase free tier
+      break
     }
   }
   // NEXT_REDIRECT/NEXT_NOT_FOUND are expected control flow, don't count as failures
