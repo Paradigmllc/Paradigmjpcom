@@ -109,7 +109,7 @@ export async function processDiagnosisPhase(
     domain: company.domain,
     company_name: company.company_name,
     region: company.region,
-    pipeline_status: dify.ok ? "report_ready" : "scanning",
+    pipeline_status: "report_ready",
     meta: {
       ...(company.meta ?? {}),
       enrichment: {
@@ -252,9 +252,17 @@ export async function processAssetPhase(
     const updatedDemo = { url: demo.demoUrl, type: "astro_replacement_demo", generated_at: new Date().toISOString() }
     const { error } = await sb.from(DB_TABLES.SALES_COMPANIES).update({
       demo_site: updatedDemo,
-      meta: { ...(company.meta ?? {}), demo_site: updatedDemo },
     }).eq("id", company.id)
-    if (error) errors.push(`demo meta update: ${error.message}`)
+    if (!error) {
+      // Atomic shallow merge — avoids TOCTOU race from spreading stale company.meta.
+      const { error: metaErr } = await sb.rpc("sales_atomic_meta_merge", {
+        p_company_id: company.id,
+        p_patch: { demo_site: updatedDemo },
+      })
+      if (metaErr) errors.push(`demo meta merge: ${metaErr.message}`)
+    } else {
+      errors.push(`demo demo_site update: ${error.message}`)
+    }
     updatedCompany = { ...company, meta: { ...(company.meta ?? {}), demo_site: updatedDemo }, demo_site: updatedDemo }
   }
 

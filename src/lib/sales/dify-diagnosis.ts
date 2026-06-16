@@ -4,6 +4,7 @@ import {
 } from "./dify-cloud"
 import { getAiPrompt } from "./ai-prompts"
 import type { SalesCompany } from "./types"
+import type { DeepSeekMessage } from "@/lib/deepseek"
 
 type JsonRecord = Record<string, unknown>
 
@@ -173,11 +174,63 @@ function resolveDifyDiagnosisCredential(): { envName: string; apiKey: string; ba
   return null
 }
 
+async function deepSeekDiagnosis(company: SalesCompany): Promise<DifyDiagnosisResult["summary"] | null> {
+  if (!process.env.DEEPSEEK_API_KEY) return null
+
+  const { callDeepSeek } = await import("@/lib/deepseek")
+  const issues = (company.detected_issues ?? []).join(", ")
+  const speed = company.pagespeed_mobile ? `${company.pagespeed_mobile}/100` : "未測定"
+  const meta = company.meta ?? {}
+  const tech = (meta as Record<string, unknown>).tech as Record<string, unknown> | undefined
+  const stack = Array.isArray(tech?.stack) ? (tech.stack as string[]).slice(0, 6).join(", ") : "不明"
+  const industry = company.industry ?? "不明"
+
+  const messages: DeepSeekMessage[] = [
+    {
+      role: "system",
+      content: "あなたはWeb診断のAIです。企業のWeb課題を分析し、具体的な改善提案をJSONで出力します。\n出力形式: {\"primaryPain\": \"主な痛み\", \"evidence\": [\"根拠1\", \"根拠2\"], \"recommendedOffer\": \"推奨提案\"}",
+    },
+    {
+      role: "user",
+      content: `企業名: ${company.company_name}\n業種: ${industry}\nドメイン: ${company.domain}\nモバイル速度: ${speed}\n検出課題: ${issues || "特になし"}\n使用技術: ${stack}\n\n上記企業のWeb診断をJSONで出力してください。`,
+    },
+  ]
+
+  const res = await callDeepSeek(messages, { maxTokens: 500 })
+  if (!res.ok || !res.text) return null
+
+  try {
+    const jsonMatch = res.text.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) return null
+    const parsed = JSON.parse(jsonMatch[0]) as { primaryPain?: string; evidence?: string[]; recommendedOffer?: string }
+    return {
+      primaryPain: parsed.primaryPain ?? "Web上の信頼形成と問い合わせ導線に改善余地があります。",
+      evidence: Array.isArray(parsed.evidence) ? parsed.evidence.slice(0, 5) : ["AI診断による自動分析"],
+      recommendedOffer: parsed.recommendedOffer ?? "Web診断レポートをもとに改善提案を行う。",
+      confidence: 0.72,
+    }
+  } catch (e) {
+    console.warn("[dify-diagnosis] DeepSeek JSON parse failed:", e)
+    return null
+  }
+}
+
 export async function runDifyDiagnosis(company: SalesCompany): Promise<DifyDiagnosisResult> {
   const fallback = localDiagnosis(company)
   const credential = resolveDifyDiagnosisCredential()
   
   if (!credential) {
+    // Try DeepSeek API fallback before using local rules-based diagnosis
+    if (process.env.DEEPSEEK_API_KEY) {
+      try {
+        const deepseekResult = await deepSeekDiagnosis(company)
+        if (deepseekResult) {
+          return { ok: true, configured: false, summary: deepseekResult, error: "Dify not configured, using DeepSeek fallback" }
+        }
+      } catch (deepseekError) {
+        console.warn("[dify-diagnosis] DeepSeek fallback failed:", deepseekError)
+      }
+    }
     return { ok: true, configured: false, summary: fallback, error: "Dify diagnosis workflow key is not configured" }
   }
 

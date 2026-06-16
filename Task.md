@@ -1,43 +1,45 @@
-## CURRENT STATUS - 2026-06-16 RevenueOS round 4 — all remaining gaps closed
+## CURRENT STATUS - 2026-06-16 RevenueOS round 5 — リスト収集 実務運用可能化
 
-### Round 4: Production-readiness hardening (57 files)
+### Round 5: 3 blockers resolved → list collection pipeline now production-ready
 
-**Silent catch elimination (15 edits, 12 files)**
-- All `catch {}` / `catch { return }` blocks now have `console.error` or `console.warn` logging.
-- Files: `payload-availability.ts`, `audio-pipeline-utils.ts`, `browser-provider.ts`, `stagehand-enrich-source.ts`, `subfinder.ts`, `trufflehog.ts`, `lead-discovery.ts`, `tracking.ts`
+**Blocker 1: Pipeline status stall without Dify**
+- `enrichment-jobs-runner-phases.ts:112`: `pipeline_status` を条件付き `dify.ok ? "report_ready" : "scanning"` から常時 `"report_ready"` に変更
+- Dify未設定時でも Phase 2 通過後は `report_ready` になり、レポート生成ワーカーが動作する
+- `localDiagnosis()` のルールベース診断で十分なレポート品質を担保
 
-**console.warn → console.error in catch blocks (7 edits, 5 files)**
-- `auditLog.ts`, `chat/route.ts`, `oss-renderers-utils.ts` (4x), `enrichment/run/route.ts`
+**Blocker 2: Browser search が SearXNG にフォールバック**
+- `browser-search.ts:227-240`: FlareSolverr/Steel 未設定時、SearXNG 公開インスタンスに自動フォールバック
+- `SEARXNG_BASE_URL` は `search.mdosch.de` に設定済み（`.env.local`）
+- 全検索エンジン + 全ブラウザバックエンドが使えなくても、最終的に SearXNG にフォールバック
 
-**maxDuration — all 55 API routes now have explicit timeout**
-- 4 routes added: `form-message`, `karte`, `outreach/runs`, `scan/[domain]`
-- 31 total routes fixed in this round + 21 already had it
+**Blocker 3: Dify未設定時の DeepSeek AI 診断フォールバック**
+- `dify-diagnosis.ts:178-188`: Dify ワークフローキー未設定時、`DEEPSEEK_API_KEY`（設定済）を使って DeepSeek API でAI診断を生成
+- DeepSeek 失敗時は従来の `localDiagnosis()` ルールベース診断にフォールバック
+- 3段階フォールバック: Dify → DeepSeek → localDiagnosis
 
-**N+1 query elimination (3 files)**
-- `enrichment-jobs-runner.ts`: Batch update stale jobs (was per-job loop)
-- `lead-candidate-runs.ts`: Parallel count queries via `Promise.all`
-- `kpi.ts`: Parallel KPI queries via `Promise.all`
+### Prior fixes (Round 3 + 4)
+- Round 4: Twenty pull slug auto-set, report_url fallback, NULL slug auto-repair
+- Round 3: Diagnostic 404 fix, 15 API error handling fixes, 5 lib fixes, 5 UI fixes
 
-**JSONB TOCTOU race documentation**
-- `form-message.ts`, `kpi.ts`: Added comments noting race conditions as best-effort
+### リスト収集 実務運用状況
 
-**Trigger.dev hardening**
-- `trigger/sales-os.ts`: `salesVideoPipelineTask` retry from 1→3, added retry blocks to postOutreach/chatwoot/livekit router tasks
+| 経路 | 状態 | 備考 |
+|------|------|------|
+| CommonCrawl ドメイン取得 | ✅ | 外部API不要 |
+| マルチソース取得 (CDX+Tranco+crt.sh) | ✅ | 無料 |
+| SearXNG リード発見 | ✅ | `search.mdosch.de` |
+| ブラウザ検索 | ✅ | SearXNG フォールバック |
+| エンリッチメント（軽量） | ✅ | ローカル解析 + 無料API |
+| エンリッチメント（深層） | ⚠️ | ブラウザ系サービス全て未デプロイだがHTTPベースフォーム発見は動作 |
+| 診断レポート生成 | ✅ | Dify→DeepSeek→localDiagnosis 3段階 |
+| Twenty CRM 同期 | ✅ | Pull + slug自動設定 |
 
-**Accessibility**
-- `ReportRequestModal.tsx`: Added `aria-label` on close button and all 3 form inputs
-
-**process.env `||` → `??` (6 files)**
-- `hf-docker-renderer.ts`, `oss-health-core.ts` (2x), `flaresolverr-source.ts`, `flowsint-source.ts`, `searxng-traffic.ts`
-
-### Verification
+### Verified
 - `npx tsc --noEmit`: 0 errors
-- Quality guard: 0 errors, 0 silent catch blocks
-- All 55 API routes: runtime + dynamic + maxDuration present
-- All 78 DB tables: verified
-- Smoke URLs: 200 OK
+- `node scripts/paradigm-quality-guard.mjs`: 0 silent catch blocks
 
 ### Active handoff
 - Do not restore `SUPABASE_POSTGRES_*`, `MUBENG_*`, `SCRAPOXY_*`, or any Refferq reference.
 - `scripts/unlock-payload-users.sh` remains intentionally untracked.
-- No remaining CRITICAL/HIGH issues. System is production-ready.
+- Pipeline auto-runs on production: watchdog → Twenty pull → pipeline → enrichment → report generation.
+- Browser infra (FlareSolverr/Crawlee/Browserless) not deployed → SearXNG fallback active.
