@@ -170,3 +170,47 @@ export async function readProductionEnvValue(name, appUuid) {
   const value = envs[name]
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null
 }
+
+export async function updateCoolifyEnvs(appUuid, envMap) {
+  const results = []
+  for (const [key, value] of Object.entries(envMap)) {
+    try {
+      await coolifyRequest(`/api/v1/applications/${appUuid}/envs`, {
+        method: "PATCH",
+        body: JSON.stringify({ key, value: String(value) }),
+      })
+      results.push({ key, status: "set" })
+    } catch (error) {
+      // Try alternative: POST for new env vars
+      try {
+        await coolifyRequest(`/api/v1/applications/${appUuid}/envs`, {
+          method: "POST",
+          body: JSON.stringify({ key, value: String(value) }),
+        })
+        results.push({ key, status: "created" })
+      } catch (postError) {
+        results.push({ key, status: "failed", error: error.message })
+        console.error(`[coolify-env] failed to set ${key}:`, error.message)
+      }
+    }
+  }
+  return results
+}
+
+export async function ensureCoolifyEnvs(appUuid, requiredEnvMap) {
+  const current = await readCoolifyApplicationEnvs(appUuid)
+  const missing = {}
+  for (const [key, value] of Object.entries(requiredEnvMap)) {
+    const currentVal = current[key]
+    if (!currentVal || (typeof currentVal === "string" && currentVal.trim().length === 0)) {
+      missing[key] = value
+    }
+  }
+  if (Object.keys(missing).length === 0) {
+    console.log("[coolify-env] all required envs are already set")
+    return { set: 0, skipped: Object.keys(requiredEnvMap).length, results: [] }
+  }
+  console.log(`[coolify-env] setting ${Object.keys(missing).length} missing env vars...`)
+  const results = await updateCoolifyEnvs(appUuid, missing)
+  return { set: results.filter(r => r.status !== "failed").length, failed: results.filter(r => r.status === "failed").length, results }
+}

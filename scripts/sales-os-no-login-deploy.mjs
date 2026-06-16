@@ -631,6 +631,18 @@ async function main() {
   const envs = await readProductionEnv()
   console.log("Coolify API: connected")
 
+  // Auto-ensure critical env vars are set in Coolify
+  const { ensureCoolifyEnvs } = await import("./lib/coolify-env.mjs")
+  const APP_UUID = "i12am4vvcbggefnqdizhnv9a"
+  const requiredEnvs = {
+    // Tier 0 — app crashes without these
+    TRIGGER_WEBHOOK_SECRET: "G0W70N1EK7D6thlHZFfNeKpbG4kHYJU4X3DwRWb4Z2w",
+    // Tier 1 — core features fail without these
+    FLARESOLVERR_API_URL: "http://flaresolverr:8191",
+  }
+  const envResult = await ensureCoolifyEnvs(APP_UUID, requiredEnvs)
+  if (envResult.set > 0) console.log(`[deploy] auto-set ${envResult.set} missing env vars in Coolify`)
+
   if (!DRY && !SKIP_DEPLOY) {
     runHostDiskPreflight()
     runDeployGuard()
