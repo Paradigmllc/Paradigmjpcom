@@ -152,6 +152,32 @@ export default buildConfig({
     }
     return s
   })(),
+  onInit: async (payload) => {
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.PAYLOAD_ADMIN_EMAIL
+    const adminPassword = process.env.ADMIN_PASSWORD
+    if (!adminEmail || !adminPassword) {
+      console.warn("[payload] ADMIN_EMAIL/ADMIN_PASSWORD not set — skipping auto-seed")
+      return
+    }
+    try {
+      const { totalDocs } = await payload.find({ collection: "users", limit: 0 })
+      if (totalDocs === 0) {
+        console.log("[payload] no users found — auto-seeding admin user:", adminEmail)
+        await payload.create({
+          collection: "users",
+          data: {
+            email: adminEmail,
+            password: adminPassword,
+            name: "Admin",
+            role: "admin",
+          },
+        })
+        console.log("[payload] admin user seeded successfully")
+      }
+    } catch (e) {
+      console.error("[payload] auto-seed admin user failed:", e)
+    }
+  },
   typescript: {
     outputFile: path.resolve(dirname, "src/payload-types.ts"),
   },
