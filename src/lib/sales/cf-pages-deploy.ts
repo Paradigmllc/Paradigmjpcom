@@ -16,8 +16,11 @@ import { envValue } from "./oss-service-health"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 
-const CF_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID ?? "7ff83549f2bdc7bc62c1d64a698aabf1"
-const CF_PAGES_PROJECT = "paradigm-astro-demo"
+const CF_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || null
+if (!CF_ACCOUNT_ID) {
+  console.error("[cf-pages-deploy] CLOUDFLARE_ACCOUNT_ID is not configured — CF Pages deploy will fail")
+}
+const CF_PAGES_PROJECT = process.env.CF_PAGES_PROJECT || "paradigm-astro-demo"
 const GITHUB_REPO = "Paradigmllc/Paradigmjpcom"
 const GITHUB_BRANCH = "main"
 

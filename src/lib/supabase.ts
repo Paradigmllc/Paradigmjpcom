@@ -63,7 +63,8 @@ export const supabase = new Proxy({} as ReturnType<typeof createClient>, {
   get(_target, prop) {
     const client = getSupabaseClient()
     if (!client) {
-      throw new Error("Supabase client is not configured")
+      console.error("[supabase] Proxy access denied — client not configured (check NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY)")
+      return undefined
     }
     const value = client[prop as keyof typeof client]
     return typeof value === "function" ? value.bind(client) : value

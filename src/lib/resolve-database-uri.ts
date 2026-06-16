@@ -47,7 +47,9 @@ export function resolveDatabaseUri(): string {
 export function resolveDatabaseUriOrThrow(): string {
   const uri = resolveDatabaseUri()
   if (!uri) {
-    console.error("[resolve-database-uri] DATABASE_URI could not be resolved from any supported source")
+    const msg = "[resolve-database-uri] DATABASE_URI could not be resolved from any supported source"
+    console.error(msg)
+    throw new Error(msg)
   }
   return uri
 }

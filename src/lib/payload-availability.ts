@@ -134,7 +134,7 @@ function isNextControlFlowError(error: unknown): boolean {
 export async function withPayloadRetry<T>(fn: () => Promise<T>): Promise<T> {
   let lastError: unknown
   let actualError: unknown = null
-  for (let attempt = 0; attempt < 1; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const result = await fn()
       if (attempt > 0) resetPayloadCooldown()
@@ -156,8 +156,11 @@ export async function withPayloadRetry<T>(fn: () => Promise<T>): Promise<T> {
         break
       }
       actualError = e
-      // No retry — retries amplify Disk IO consumption on Cloud Supabase free tier
-      break
+      // Only retry on indeterminate errors (e.g. network blip, timeout)
+      if (attempt < 2) {
+        const delay = 500 * Math.pow(2, attempt)
+        await new Promise((r) => setTimeout(r, delay))
+      }
     }
   }
   // NEXT_REDIRECT/NEXT_NOT_FOUND are expected control flow, don't count as failures

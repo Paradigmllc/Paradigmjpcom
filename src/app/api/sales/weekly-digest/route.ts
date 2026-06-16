@@ -120,8 +120,8 @@ function buildSlackBlocks(d: DigestData, scope: SalesLocaleScope) {
       ? "今週は HOT lead なし"
       : d.hotLeads
           .map((h, i) => {
-            // Sprint 13: slug があれば /report/[slug]・なければ Notion 直リンク
-            const link = h.slug ? buildReportUrl(scope.reportLocale, h.slug) : `https://www.notion.so/8cbab1f501144f83872c1738ce3e79c4`
+            const fallbackUrl = process.env.SALES_DASHBOARD_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://paradigmjp.com"
+            const link = h.slug ? buildReportUrl(scope.reportLocale, h.slug) : `${fallbackUrl}/ja/admin/sales`
             return `${i + 1}. *<${link}|${h.company_name}>* — ${h.report_views} views`
           })
           .join("\n")
@@ -162,7 +162,7 @@ function buildSlackBlocks(d: DigestData, scope: SalesLocaleScope) {
         {
           type: "button",
           text: { type: "plain_text", text: "Notion で開く (リード DB)" },
-          url: "https://www.notion.so/8cbab1f501144f83872c1738ce3e79c4",
+          url: process.env.SALES_DASHBOARD_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://paradigmjp.com",
           style: "primary",
         },
       ],

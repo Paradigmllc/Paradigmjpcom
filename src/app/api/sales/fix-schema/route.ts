@@ -17,8 +17,14 @@ function getPool(): Pool | null {
   if (pool) return pool
   const uri = process.env.DATABASE_URI
   if (!uri) return null
+  // Include safety options consistent with payload.config.ts
+  let connString = uri
+  if (!connString.includes("options=")) {
+    const sep = connString.includes("?") ? "&" : "?"
+    connString = `${connString}${sep}options=-c%20statement_timeout%3D30000%20-c%20lock_timeout%3D10000%20-c%20idle_in_transaction_session_timeout%3D20000`
+  }
   pool = new Pool({
-    connectionString: uri,
+    connectionString: connString,
     max: 2,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,

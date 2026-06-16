@@ -149,9 +149,10 @@ function isKnownUnavailableEndpoint(endpoint: string | null): boolean {
   if (!endpoint) return true
   try {
     const host = new URL(endpoint).host.toLowerCase()
-    return host === "stagehand.paradigmjp.com"
+    const stagehandHost = process.env.STAGEHAND_URL ? new URL(process.env.STAGEHAND_URL).host.toLowerCase() : "stagehand.paradigmjp.com"
+    return host === stagehandHost
   } catch (e) {
-    console.warn("[browser-provider] cleanup failed:", e)
+    console.warn("[browser-provider] isKnownUnavailableEndpoint failed:", e)
     return false
   }
 }

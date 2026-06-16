@@ -147,8 +147,14 @@ export default buildConfig({
   secret: (() => {
     const s = process.env.PAYLOAD_SECRET
     if (!s) {
-      console.error("[payload] PAYLOAD_SECRET is not set — refusing to start")
-      process.exit(1)
+      const msg = "[payload] PAYLOAD_SECRET is not set"
+      console.error(msg)
+      // Only crash in production; allow dev/build to proceed (payload will fail gracefully at request time)
+      if (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production") {
+        throw new Error(msg)
+      }
+      console.warn("[payload] PAYLOAD_SECRET missing — PayloadCMS will fail at request time")
+      return "dev-unsafe-secret"
     }
     return s
   })(),
@@ -210,16 +216,18 @@ export default buildConfig({
       const isTransactionMode = uri.includes(":6543")
       console.log(`[payload] database: ${masked} | pooler=${isPooler} | mode=${isTransactionMode ? "transaction" : "session/direct"}`)
 
-      // Append PostgreSQL safety options: statement_timeout prevents runaway queries,
-      // lock_timeout prevents lock contention storms, idle_in_transaction_session_timeout
-      // releases stuck sessions. These protect Disk IO Budget on Cloud Supabase free tier.
+      // Append PostgreSQL safety options to connection string.
+      // For Transaction mode pooler (port 6543), also include search_path since SET doesn't persist.
       let connString = uri
       if (!connString.includes("options=")) {
         const sep = connString.includes("?") ? "&" : "?"
-        connString = `${connString}${sep}options=-c%20statement_timeout%3D30000%20-c%20lock_timeout%3D10000%20-c%20idle_in_transaction_session_timeout%3D20000`
+        const safetyOpts = "statement_timeout%3D30000"
+        const lockOpts = "lock_timeout%3D10000"
+        const idleOpts = "idle_in_transaction_session_timeout%3D20000"
         if (isTransactionMode) {
-          // Transaction mode PgBouncer: search_path must be set at startup (SET doesn't persist)
-          connString = connString.replace("%20-c%20lock_timeout", "%20-c%20search_path%3Dparadigm%20-c%20lock_timeout")
+          connString = `${connString}${sep}options=-c%20${safetyOpts}%20-c%20search_path%3Dparadigm%20-c%20${lockOpts}%20-c%20${idleOpts}`
+        } else {
+          connString = `${connString}${sep}options=-c%20${safetyOpts}%20-c%20${lockOpts}%20-c%20${idleOpts}`
         }
         console.log(`[payload] safety options appended to connection string`)
       }

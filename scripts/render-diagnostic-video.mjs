@@ -33,7 +33,7 @@ console.log(`📡 Fetching report data from ${baseUrl}...`)
 let reportData
 try {
   const res = await fetch(`${baseUrl}/api/sales/diagnostic?slug=${encodeURIComponent(slug)}&locale=${locale}`, {
-    headers: { "x-api-key": process.env.SALES_API_KEY || "dev" }
+    headers: { "x-api-key": process.env.SALES_API_KEY || "" }
   })
   if (!res.ok) {
     // Fallback: use demo data generation
