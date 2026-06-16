@@ -82,7 +82,8 @@ export async function dataforseoPost<TData = unknown>(
   let parsed: unknown
   try {
     parsed = JSON.parse(rawText)
-  } catch {
+  } catch (e) {
+    console.error("[dataforseo] JSON parse failed:", e instanceof Error ? e.message : String(e))
     throw new DataforseoError(
       `DataForSEO ${path} returned non-JSON (content-type: ${response.headers.get("content-type") ?? "unknown"})`,
       response.status,

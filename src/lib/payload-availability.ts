@@ -40,6 +40,22 @@ export function markPayloadInitFailure(error: unknown): void {
   lastFailureAt = Date.now()
   consecutiveFailures++
   lastFailureMessage = error instanceof Error ? error.message : String(error)
+
+  // Notify on first failure and every 5th consecutive failure
+  if (consecutiveFailures === 1 || consecutiveFailures % 5 === 0) {
+    notifyPayloadUnavailable(lastFailureMessage, consecutiveFailures).catch(() => {})
+  }
+}
+
+async function notifyPayloadUnavailable(message: string, count: number): Promise<void> {
+  try {
+    const { notifyBothChannels } = await import("@/lib/notify")
+    await notifyBothChannels("sales", {
+      title: `⚠️ PayloadCMS DB接続失敗 (${count}回目)`,
+      message: message.slice(0, 200),
+      type: "payload_db_unavailable",
+    })
+  } catch { /* notification failure is non-critical */ }
 }
 
 /** Clear cooldown after successful connection — indicates recovery */

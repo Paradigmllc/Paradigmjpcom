@@ -81,8 +81,8 @@ function extractFromSchema(schema: Record<string, unknown>): SchemaOrgResult["da
       priceRange = (item.priceRange as string) ?? priceRange
       logo = (item.logo as string) ?? (item.image as string) ?? logo
       description = (item.description as string) ?? description
-      if (typeof (item.aggregateRating as any)?.ratingValue === "number") rating = (item.aggregateRating as any).ratingValue
-      if (typeof (item.aggregateRating as any)?.reviewCount === "number") reviewCount = (item.aggregateRating as any).reviewCount
+      if (typeof (item.aggregateRating as { ratingValue?: unknown; reviewCount?: unknown })?.ratingValue === "number") rating = (item.aggregateRating as { ratingValue: number }).ratingValue
+      if (typeof (item.aggregateRating as { ratingValue?: unknown; reviewCount?: unknown })?.reviewCount === "number") reviewCount = (item.aggregateRating as { reviewCount: number }).reviewCount
       if (Array.isArray(item.sameAs)) sameAs.push(...(item.sameAs as string[]))
       if (Array.isArray(item.openingHours)) hours.push(...(item.openingHours as string[]))
       if (typeof item.openingHoursSpecification === "object") {
@@ -91,8 +91,8 @@ function extractFromSchema(schema: Record<string, unknown>): SchemaOrgResult["da
     }
 
     if (/Product/i.test(t)) {
-      if (typeof (item.aggregateRating as any)?.ratingValue === "number" && rating === undefined) rating = (item.aggregateRating as any).ratingValue
-      if (typeof (item.aggregateRating as any)?.reviewCount === "number" && reviewCount === undefined) reviewCount = (item.aggregateRating as any).reviewCount
+      if (typeof (item.aggregateRating as { ratingValue?: unknown; reviewCount?: unknown })?.ratingValue === "number" && rating === undefined) rating = (item.aggregateRating as { ratingValue: number }).ratingValue
+      if (typeof (item.aggregateRating as { ratingValue?: unknown; reviewCount?: unknown })?.reviewCount === "number" && reviewCount === undefined) reviewCount = (item.aggregateRating as { reviewCount: number }).reviewCount
     }
   }
 

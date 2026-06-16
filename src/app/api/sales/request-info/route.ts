@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { notifySlack } from "@/lib/notify"
 import { checkRateLimit } from "@/lib/rate-limit"
+import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -15,6 +16,10 @@ interface RequestBody {
 }
 
 export async function POST(req: NextRequest) {
+  if (!(await isSalesApiAuthorized(req))) {
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+  }
+
   try {
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown"
     const rl = checkRateLimit({ ip, key: "api:request-info", max: 5, windowMs: 60_000 })

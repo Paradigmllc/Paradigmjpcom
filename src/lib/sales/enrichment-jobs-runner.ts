@@ -179,6 +179,17 @@ async function completeJob(
     payload: resultPayload,
   })
 
+  // Notify on enrichment completion
+  try {
+    const { notifyBothChannels } = await import("@/lib/notify")
+    await notifyBothChannels("sales", {
+      title: `✅ エンリッチメント完了: ${company.company_name ?? company.domain}`,
+      message: `レポートURL: ${reportUrlFor(company) ?? "N/A"}`,
+      link: reportUrlFor(company) ?? undefined,
+      type: "enrichment_completed",
+    })
+  } catch { /* notification non-critical */ }
+
   // Auto-resume local manual pipeline run if it was waiting for this job
   const pipelineRunId = typeof job.input_payload?.pipeline_run_id === "string" ? job.input_payload.pipeline_run_id : null
   if (pipelineRunId) {

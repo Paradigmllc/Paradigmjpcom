@@ -35,6 +35,10 @@ export const DIFY_WORKFLOW_ENV_GROUPS = {
     "DIFY_FORM_MESSAGE_API_KEY",
     "DIFY_API_KEY",
   ],
+  freelanceAutoreply: [
+    "DIFY_FREELANCE_AUTOREPLY_KEY",
+    "DIFY_API_KEY",
+  ],
 } as const
 
 export type DifyWorkflowGroup = keyof typeof DIFY_WORKFLOW_ENV_GROUPS

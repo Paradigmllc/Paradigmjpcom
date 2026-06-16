@@ -456,13 +456,13 @@ export async function createLeadBatch(input: {
       const { processJob } = await import("./enrichment-jobs-runner")
       const firstItem = (await sb.from(DB_TABLES.SALES_LEAD_BATCH_ITEMS).select("company_id").eq("batch_id", batch.id).eq("status", "imported").order("row_index").limit(1)).data?.[0] as { company_id: string } | undefined
       if (firstItem?.company_id) {
-        const pseudoJob = {
-          id: `inline-${batch.id.slice(0, 8)}`, company_id: firstItem.company_id, job_type: "company_karte" as const,
-          status: "queued" as const, priority: 65, attempts: 0, max_attempts: 1, source, triggered_by: "monthly_lead_batch",
+        const pseudoJob: Parameters<typeof processJob>[1] = {
+          id: `inline-${batch.id.slice(0, 8)}`, company_id: firstItem.company_id, job_type: "company_karte",
+          status: "queued", priority: 65, attempts: 0, max_attempts: 1, source, triggered_by: "monthly_lead_batch",
           next_run_at: new Date().toISOString(), started_at: null, completed_at: null, locked_at: null, lock_owner: null,
           error_message: null, input_payload: { batch_id: batch.id }, result_payload: {},
           created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-        } as any
+        }
         await processJob(sb, pseudoJob)
       }
     } catch (e) {

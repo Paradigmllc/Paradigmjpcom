@@ -93,7 +93,7 @@ export async function POST(
       await markImportFailed(runId, new Error(result.error ?? "SearXNG import failed"))
       return NextResponse.json({ ok: false, status: "failed", runId, error: result.error ?? "SearXNG import failed" }, { status: 502 })
     }
-    console.log(`[sales-searxng-import] run ${runId.slice(0, 12)}... imported ${result.imported} companies`)
+    console.info(`[sales-searxng-import] run ${runId.slice(0, 12)}... imported ${result.imported} companies`)
 
     return NextResponse.json(
       {

@@ -44,7 +44,8 @@ async function fetchSitemap(url: string): Promise<string | null> {
       return null
     }
     return await res.text()
-  } catch {
+  } catch (e) {
+    console.error("[sitemap] fetch failed:", e instanceof Error ? e.message : String(e))
     return null
   }
 }

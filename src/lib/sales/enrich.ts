@@ -326,7 +326,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     trufflehog: trufflehog?.ok ? { findings: trufflehog.findings, total: trufflehog.total } : null,
     enterprise_filter: enterpriseCheck.isEnterprise ? { excluded: true, matched_tech: enterpriseCheck.matched } : null,
     market_data: industry ? (INDUSTRY_MARKET_DATA[industry as keyof typeof INDUSTRY_MARKET_DATA] ?? null) : null,
-    smb_signals: tech && dns?.ok ? await collectSmbSignals(domain, ((tech as any).tech as Array<{ name: string }>).map((t: { name: string }) => t.name), dns.mxRecords as { exchange: string }[]).catch(() => null) : null,
+    smb_signals: tech && dns?.ok ? await collectSmbSignals(domain, ((tech as { tech: Array<{ name: string }> }).tech).map((t: { name: string }) => t.name), (dns as { mxRecords: { exchange: string }[] }).mxRecords).catch(() => null) : null,
     ...(gbizFirst ? toCompanyMeta(gbizFirst) : {}),
   }
 

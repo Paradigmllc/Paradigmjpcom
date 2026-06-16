@@ -93,8 +93,8 @@ export function requireMvpUiAuth(req: Request): NextResponse | null {
         if (idx > 0 && decoded.slice(0, idx) === expectedUser && decoded.slice(idx + 1) === expectedPass) {
           return null;
         }
-      } catch {
-        // fallthrough to 401
+      } catch (e) {
+        console.error("[mvp-auth] Basic auth base64 decode failed:", e instanceof Error ? e.message : String(e))
       }
     }
   }

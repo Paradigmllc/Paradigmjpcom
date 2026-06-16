@@ -1,4 +1,4 @@
--- migration_034_sales_ssot_hub.sql
+-- migration_044_sales_ssot_hub.sql
 -- 完全自律型AIエージェンシー向け SSOT (Single Source of Truth) スキーマ
 
 -- ==========================================

@@ -1,11 +1,16 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { triggerEnrichmentRunner } from "@/lib/sales/enrichment-jobs"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
+  if (!(await isSalesApiAuthorized(req))) {
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+  }
+
   try {
-    const { jobId } = await request.json() as { jobId: string }
+    const { jobId } = await req.json() as { jobId: string }
     if (!jobId || typeof jobId !== "string") {
       return NextResponse.json({ ok: false, error: "jobId is required" }, { status: 400 })
     }
@@ -40,7 +45,11 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!(await isSalesApiAuthorized(req))) {
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+  }
+
   const sb = getServiceSalesSupabase()
   if (!sb) return NextResponse.json({ ok: false, error: "Supabase not configured" }, { status: 500 })
 
