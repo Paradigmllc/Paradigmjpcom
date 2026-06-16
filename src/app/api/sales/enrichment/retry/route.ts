@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, jobId, runnerTriggered: trigger.ok })
   } catch (e) {
+    console.error("[enrichment-retry] failed:", e)
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "Unknown error" }, { status: 500 })
   }
 }

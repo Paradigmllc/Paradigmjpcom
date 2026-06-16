@@ -94,6 +94,7 @@ export async function POST(req: NextRequest) {
       message: `Enrichment started in background. Processing up to ${limit} companies. Check Supabase for results.`,
     })
   } catch (error) {
+    console.error("[enrichment-run] request failed:", error)
     return NextResponse.json(
       { ok: false, error: error instanceof Error ? error.message : "request failed" },
       { status: 400 },

@@ -210,7 +210,7 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
           <div className="absolute left-0 top-0 h-full w-72 bg-white shadow-xl overflow-y-auto">
             <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100">
               <p className="text-sm font-bold text-zinc-900">Revenue OS</p>
-              <button onClick={() => setMobileMenuOpen(false)} className="rounded-md p-1 text-zinc-500 hover:bg-zinc-100"><X className="h-4 w-4" /></button>
+              <button onClick={() => setMobileMenuOpen(false)} className="rounded-md p-1 text-zinc-500 hover:bg-zinc-100" aria-label="メニューを閉じる"><X className="h-4 w-4" /></button>
             </div>
             <nav className="py-2">
               {tabItems.map((tab) => {

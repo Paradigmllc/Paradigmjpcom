@@ -219,11 +219,11 @@ async function forceTwentyTextOnlyFieldsViaDatabase(fields: SalesCrmViewField[])
     await client.query("commit")
     return null
   } catch (error) {
-    await client.query("rollback").catch(() => {})
+    await client.query("rollback").catch((rollbackErr) => { console.error("[twenty-crm-metadata] rollback failed:", rollbackErr) })
     console.error("[twenty-crm-metadata] text-only field coercion failed:", error)
     return error instanceof Error ? error.message : "Twenty text-only field coercion failed."
   } finally {
-    await client.end().catch(() => {})
+    await client.end().catch((endErr) => { console.error("[twenty-crm-metadata] client.end failed:", endErr) })
   }
 }
 
@@ -296,7 +296,7 @@ async function applyTwentyCrmMetadataViaDatabase(input: {
     await client.query("commit")
     return { configured: true, appliedFields, selectFields, error: null }
   } catch (error) {
-    await client.query("rollback").catch(() => {})
+    await client.query("rollback").catch((rollbackErr) => { console.error("[twenty-crm-metadata] rollback failed:", rollbackErr) })
     console.error("[twenty-crm-metadata] apply failed:", error)
     return {
       configured: true,
@@ -305,7 +305,7 @@ async function applyTwentyCrmMetadataViaDatabase(input: {
       error: error instanceof Error ? error.message : "Twenty metadata update failed.",
     }
   } finally {
-    await client.end().catch(() => {})
+    await client.end().catch((endErr) => { console.error("[twenty-crm-metadata] client.end failed:", endErr) })
   }
 }
 

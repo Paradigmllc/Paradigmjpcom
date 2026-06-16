@@ -48,15 +48,23 @@ export async function POST(req: NextRequest) {
   const region = body.region && isValidRegion(body.region) ? body.region : "jp"
   const limit = Math.min(Math.max(body.limit ?? 5, 1), 50)
 
-  const result = await runOutreachBatch({
-    region,
-    limit,
-    dryRun: body.dryRun ?? true,
-    first5Approval: body.first5Approval ?? true,
-    enableLlm: body.enableLlm ?? false,
-    checkRobots: body.checkRobots ?? true,
-    dedupDays: body.dedupDays ?? 30,
-  })
+  try {
+    const result = await runOutreachBatch({
+      region,
+      limit,
+      dryRun: body.dryRun ?? true,
+      first5Approval: body.first5Approval ?? true,
+      enableLlm: body.enableLlm ?? false,
+      checkRobots: body.checkRobots ?? true,
+      dedupDays: body.dedupDays ?? 30,
+    })
 
-  return NextResponse.json({ ok: true, ...result })
+    return NextResponse.json({ ok: true, ...result })
+  } catch (error) {
+    console.error("[sales-outreach-run] batch failed:", error)
+    return NextResponse.json(
+      { ok: false, error: error instanceof Error ? error.message : "Outreach batch failed" },
+      { status: 500 },
+    )
+  }
 }

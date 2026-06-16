@@ -18,7 +18,12 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json().catch(() => ({})) as { maxStuckMinutes?: number }
+    let body = { maxStuckMinutes: undefined } as { maxStuckMinutes?: number }
+    try {
+      body = await req.json() as { maxStuckMinutes?: number }
+    } catch (parseError) {
+      console.warn("[pipeline-recover] request body parse failed; using defaults:", parseError)
+    }
     const result = await recoverStuckPipelineRuns(sb, body.maxStuckMinutes ?? 30)
 
     // Re-dispatch recovered runs if Trigger.dev is configured
@@ -34,11 +39,15 @@ export async function POST(req: NextRequest) {
 
       for (const run of runs ?? []) {
         try {
-          await fetch(trigger.endpoint, {
+          const res = await fetch(trigger.endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${trigger.secretKey}` },
             body: JSON.stringify({ payload: { run_id: run.id, company_id: run.company_id, source: "recovery" }, context: { source: "pipeline-recovery" } }),
           })
+          if (!res.ok) {
+            console.warn("[pipeline-recover] dispatch HTTP", res.status, "for run", run.id)
+            continue
+          }
           dispatched++
         } catch (e) {
           console.warn("[pipeline-recover] dispatch failed:", e)

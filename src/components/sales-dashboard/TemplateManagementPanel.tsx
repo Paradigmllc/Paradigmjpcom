@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { ExternalLink } from "lucide-react"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 
@@ -22,11 +23,11 @@ export function TemplateManagementPanel({ data }: { data: SalesDashboardData }) 
               <option value="ja">日本語 (JA)</option>
               <option value="en">English (EN)</option>
             </select>
-            <a href={`/${previewLang}/report/template-preview`} target="_blank" rel="noopener noreferrer"
+            <Link href={`/${previewLang}/report/template-preview`} target="_blank" rel="noopener noreferrer"
               className="inline-flex h-9 items-center gap-2 rounded-lg bg-zinc-950 px-4 text-xs font-bold text-white hover:bg-zinc-800">
               <ExternalLink className="h-3.5 w-3.5" />
               新規タブで開く
-            </a>
+            </Link>
           </div>
         </div>
         <div className="p-4">
@@ -41,14 +42,14 @@ export function TemplateManagementPanel({ data }: { data: SalesDashboardData }) 
               { variant: "outreach", label: "アウトリーチ診断", desc: "フォーム・ファネル" },
               { variant: "dx_ai_package", label: "DX・AI導入診断", desc: "自動化・コスト削減・DX" },
             ].map((v) => (
-              <a key={v.variant} href={`/${previewLang}/report/demo/${v.variant}`} target="_blank" rel="noopener noreferrer"
+              <Link key={v.variant} href={`/${previewLang}/report/demo/${v.variant}`} target="_blank" rel="noopener noreferrer"
                 className="rounded-lg border border-zinc-200 p-4 hover:border-zinc-400 hover:shadow-sm transition-all">
                 <div className="text-xs font-bold text-zinc-900">{v.label}</div>
                 <div className="mt-1 text-[10px] text-zinc-500">{v.desc}</div>
                 <div className="mt-2">
                   <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[9px] font-bold text-zinc-600">{v.variant}</span>
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
         </div>

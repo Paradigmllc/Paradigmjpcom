@@ -24,89 +24,97 @@ export const dynamic = "force-dynamic"
 export const maxDuration = 120
 
 export async function POST(req: NextRequest) {
-  const authErr = verifyWebhookSecret(req)
-  if (authErr) return authErr
+  try {
+    const authErr = verifyWebhookSecret(req)
+    if (authErr) return authErr
 
-  const body = (await req.json().catch((e) => {
-    console.error("[repair-routing] invalid JSON, using defaults:", e)
-    return {}
-  })) as { limit?: number; all?: boolean }
+    const body = (await req.json().catch((e) => {
+      console.error("[repair-routing] invalid JSON, using defaults:", e)
+      return {}
+    })) as { limit?: number; all?: boolean }
 
-  const sb = getServiceSalesSupabase()
-  if (!sb) {
-    return NextResponse.json({ ok: false, error: "Supabase not configured" }, { status: 503 })
-  }
-
-  const limit = Math.min(Math.max(body.limit ?? 100, 1), 500)
-  let query = sb
-    .from(DB_TABLES.SALES_COMPANIES)
-    .select("*")
-    .order("updated_at", { ascending: true })
-    .limit(limit)
-
-  if (!body.all) {
-    query = query.or("slug.is.null,report_url.is.null")
-  }
-
-  const { data, error } = await query
-  if (error) {
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
-  }
-
-  const rows = (data as SalesCompany[]) ?? []
-  const failures: Array<{ id: string; domain: string; reason: string }> = []
-  let repaired = 0
-
-  for (const company of rows) {
-    const routing = getRoutingMeta(company.meta)
-    const reportLocale = normalizeReportLocale(
-      company.report_locale ?? routing.report_locale,
-      company.region,
-    )
-    const targetCountry = normalizeTargetCountry(
-      company.target_country ?? routing.target_country,
-      reportLocale,
-    )
-    const templateVariant = inferVariant({
-      templateVariant: company.template_variant ?? routing.template_variant,
-      reportLocale,
-      targetCountry,
-      issues: company.detected_issues,
-      meta: company.meta,
-    })
-    const result = await upsertCompanyByDomain({
-      domain: company.domain,
-      company_name: company.company_name,
-      region: company.region,
-      report_locale: reportLocale,
-      target_country: targetCountry,
-      template_variant: templateVariant,
-      industry: company.industry,
-      prefecture: company.prefecture,
-      pipeline_status: company.pipeline_status,
-      deal_stage: company.deal_stage,
-      pagespeed_mobile: company.pagespeed_mobile,
-      pagespeed_desktop: company.pagespeed_desktop,
-      detected_issues: company.detected_issues,
-      source: company.source,
-      meta: company.meta,
-    })
-    if (result.ok) {
-      repaired++
-    } else {
-      failures.push({
-        id: company.id,
-        domain: company.domain,
-        reason: result.error ?? "repair failed",
-      })
+    const sb = getServiceSalesSupabase()
+    if (!sb) {
+      return NextResponse.json({ ok: false, error: "Supabase not configured" }, { status: 503 })
     }
-  }
 
-  return NextResponse.json({
-    ok: failures.length === 0,
-    scanned: rows.length,
-    repaired,
-    failures_count: failures.length,
-    failures: failures.slice(0, 20),
-  })
+    const limit = Math.min(Math.max(body.limit ?? 100, 1), 500)
+    let query = sb
+      .from(DB_TABLES.SALES_COMPANIES)
+      .select("*")
+      .order("updated_at", { ascending: true })
+      .limit(limit)
+
+    if (!body.all) {
+      query = query.or("slug.is.null,report_url.is.null")
+    }
+
+    const { data, error } = await query
+    if (error) {
+      return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+    }
+
+    const rows = (data as SalesCompany[]) ?? []
+    const failures: Array<{ id: string; domain: string; reason: string }> = []
+    let repaired = 0
+
+    for (const company of rows) {
+      const routing = getRoutingMeta(company.meta)
+      const reportLocale = normalizeReportLocale(
+        company.report_locale ?? routing.report_locale,
+        company.region,
+      )
+      const targetCountry = normalizeTargetCountry(
+        company.target_country ?? routing.target_country,
+        reportLocale,
+      )
+      const templateVariant = inferVariant({
+        templateVariant: company.template_variant ?? routing.template_variant,
+        reportLocale,
+        targetCountry,
+        issues: company.detected_issues,
+        meta: company.meta,
+      })
+      const result = await upsertCompanyByDomain({
+        domain: company.domain,
+        company_name: company.company_name,
+        region: company.region,
+        report_locale: reportLocale,
+        target_country: targetCountry,
+        template_variant: templateVariant,
+        industry: company.industry,
+        prefecture: company.prefecture,
+        pipeline_status: company.pipeline_status,
+        deal_stage: company.deal_stage,
+        pagespeed_mobile: company.pagespeed_mobile,
+        pagespeed_desktop: company.pagespeed_desktop,
+        detected_issues: company.detected_issues,
+        source: company.source,
+        meta: company.meta,
+      })
+      if (result.ok) {
+        repaired++
+      } else {
+        failures.push({
+          id: company.id,
+          domain: company.domain,
+          reason: result.error ?? "repair failed",
+        })
+      }
+    }
+
+    return NextResponse.json({
+      ok: failures.length === 0,
+      scanned: rows.length,
+      repaired,
+      failures_count: failures.length,
+      failures: failures.slice(0, 20),
+    })
+  } catch (error) {
+    console.error("[repair-routing] failed:", error)
+    return NextResponse.json(
+      { ok: false, error: error instanceof Error ? error.message : "Repair routing failed" },
+      { status: 500 },
+    )
+  }
 }

@@ -59,6 +59,7 @@ async function executeSql(sql: string, useDirect = false): Promise<{ ok: boolean
     await p.query(sql)
     return { ok: true }
   } catch (e) {
+    console.error("[sales/fix-schema] executeSql failed:", e)
     return { ok: false, error: e instanceof Error ? e.message : String(e) }
   }
 }

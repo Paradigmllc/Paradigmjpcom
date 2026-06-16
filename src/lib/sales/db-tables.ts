@@ -109,7 +109,7 @@ export const DB_TABLES = {
   // ── Infrastructure (migration_014) ──
   SALES_INFRASTRUCTURE_MIGRATION: "sales_infrastructure_migration",
 
-  // ── Error Log (supabase/migrations/migration_035_sales_error_log.sql) ──
+  // ── Error Log (supabase/migrations/migration_045_sales_error_log.sql) ──
   SALES_ERROR_LOG: "sales_error_log",
 
   // ── Demo (migration_016) ──

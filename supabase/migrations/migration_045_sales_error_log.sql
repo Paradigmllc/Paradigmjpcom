@@ -1,4 +1,4 @@
--- migration_035_sales_error_log.sql
+-- migration_045_sales_error_log.sql
 -- Sales OS error monitoring table for error-monitor.ts
 -- Stores batched console.error/warn from enrichment, pipeline, and outreach flows.
 

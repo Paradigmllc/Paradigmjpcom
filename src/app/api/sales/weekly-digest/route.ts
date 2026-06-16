@@ -170,20 +170,28 @@ function buildSlackBlocks(d: DigestData, scope: SalesLocaleScope) {
 }
 
 async function handle(req: NextRequest) {
-  const authErr = verifyWebhookSecret(req)
-  if (authErr) return authErr
+  try {
+    const authErr = verifyWebhookSecret(req)
+    if (authErr) return authErr
 
-  const scope = salesScopeFromLocale(req.nextUrl.searchParams.get("report_locale") ?? req.nextUrl.searchParams.get("locale"))
-  const d = await collectDigest(scope)
-  if ("error" in d) {
-    return NextResponse.json({ ok: false, error: d.error }, { status: 500 })
+    const scope = salesScopeFromLocale(req.nextUrl.searchParams.get("report_locale") ?? req.nextUrl.searchParams.get("locale"))
+    const d = await collectDigest(scope)
+    if ("error" in d) {
+      return NextResponse.json({ ok: false, error: d.error }, { status: 500 })
+    }
+
+    const text = `📊 Paradigm 週次ダイジェスト: 総 ${d.totalCompanies} 社 / 新規 +${d.newLeads} / HOT ${d.hotLeads.length}`
+    const blocks = buildSlackBlocks(d, scope)
+    await notifySlack(text, blocks)
+
+    return NextResponse.json({ ok: true, digest: d })
+  } catch (error) {
+    console.error("[weekly-digest] failed:", error)
+    return NextResponse.json(
+      { ok: false, error: error instanceof Error ? error.message : "Weekly digest failed" },
+      { status: 500 },
+    )
   }
-
-  const text = `📊 Paradigm 週次ダイジェスト: 総 ${d.totalCompanies} 社 / 新規 +${d.newLeads} / HOT ${d.hotLeads.length}`
-  const blocks = buildSlackBlocks(d, scope)
-  await notifySlack(text, blocks)
-
-  return NextResponse.json({ ok: true, digest: d })
 }
 
 export const GET = handle

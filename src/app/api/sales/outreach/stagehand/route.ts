@@ -41,13 +41,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "STAGEHAND_API_KEY is not configured" }, { status: 503 })
   }
 
-  const provider = new StagehandProvider(stagehandUrl, stagehandApiKey)
-  const result = await provider.submitForm({
-    formUrl: url,
-    fields,
-    message,
-    dryRun,
-  })
+  try {
+    const provider = new StagehandProvider(stagehandUrl, stagehandApiKey)
+    const result = await provider.submitForm({
+      formUrl: url,
+      fields,
+      message,
+      dryRun,
+    })
 
-  return NextResponse.json(result)
+    return NextResponse.json(result)
+  } catch (error) {
+    console.error("[api/sales/outreach/stagehand] submit failed:", error)
+    return NextResponse.json(
+      { ok: false, error: error instanceof Error ? error.message : "Stagehand submit failed" },
+      { status: 500 },
+    )
+  }
 }

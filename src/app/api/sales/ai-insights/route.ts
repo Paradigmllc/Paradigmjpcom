@@ -80,12 +80,10 @@ export async function POST(req: NextRequest) {
 
         // Save to meta
         if (insight) {
-          sb.from(DB_TABLES.SALES_COMPANIES).update({
+          const { error: updateErr } = await sb.from(DB_TABLES.SALES_COMPANIES).update({
             meta: { ...(c.meta as Record<string, unknown> ?? {}), sales_os: { ...((c.meta as Record<string, unknown>)?.sales_os as Record<string, unknown> ?? {}), ai_insight: insight, ai_insight_at: new Date().toISOString() } }
-          }).eq("id", c.id).then(
-            () => {},
-            (updateErr) => { console.error("[ai-insights] meta update failed:", c.id, updateErr) }
-          )
+          }).eq("id", c.id)
+          if (updateErr) console.error("[ai-insights] meta update failed:", c.id, updateErr)
         }
 
         return { companyId: c.id, companyName: c.company_name, insight }

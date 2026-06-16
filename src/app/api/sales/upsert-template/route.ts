@@ -117,6 +117,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result, { status: result.ok ? 200 : 500 })
   } catch (e) {
+    console.error("[upsert-template] failed:", e)
     return NextResponse.json(
       { ok: false, error: e instanceof Error ? e.message : String(e) },
       { status: 500 },

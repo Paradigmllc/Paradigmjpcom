@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
         }).maybeSingle()
         results.push("pgrst reload: notified")
       } catch (e) {
+        console.warn("[sales-run-migration] pgrst NOTIFY fallback failed:", e)
         results.push(`pgrst reload: attempted via SQL`)
       }
     } else {

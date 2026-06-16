@@ -101,13 +101,14 @@ export async function GET(req: NextRequest) {
       await sb.from(DB_TABLES.SALES_COMPANIES).update(patch).eq("id", company.id)
 
       // Log tracking event
-      await sb.from(DB_TABLES.SALES_ACTIVITIES).insert({
+      const { error: activityError } = await sb.from(DB_TABLES.SALES_ACTIVITIES).insert({
         company_id: company.id,
         activity_type: event === "load" ? "report_viewed" : event === "scroll" ? "report_scrolled" : event === "cta" ? "cta_clicked" : "report_engaged",
         subject: event === "load" ? "レポート閲覧" : event === "scroll" ? "50%スクロール到達" : event === "cta" ? "CTAクリック" : "30秒滞在",
         result: referrer,
         occurred_at: now,
-      }).then(() => {}, (err: unknown) => { console.error("[track-view] activity insert failed:", err) })
+      })
+      if (activityError) console.error("[track-view] activity insert failed:", activityError)
     }
   }
 
