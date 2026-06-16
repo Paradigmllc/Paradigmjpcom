@@ -21,6 +21,9 @@ create table if not exists public.sales_infrastructure_migration (
 
 alter table public.sales_infrastructure_migration enable row level security;
 
+drop policy if exists sales_infrastructure_migration_service_role_all on public.sales_infrastructure_migration;
+create policy sales_infrastructure_migration_service_role_all on public.sales_infrastructure_migration for all to service_role using (true) with check (true);
+
 grant select, insert, update, delete on public.sales_infrastructure_migration to service_role;
 
 create index if not exists idx_sales_infra_migration_status

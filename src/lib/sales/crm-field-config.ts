@@ -280,7 +280,11 @@ export async function getSalesCrmFieldConfig(sb: ServiceSupabase | null = getSer
 
   const error = fieldsRes.error?.message ?? optionsRes.error?.message ?? null
   if (error) {
-    return { fields: DEFAULT_CRM_VIEW_FIELDS, options: DEFAULT_CRM_SELECT_OPTIONS, fallbackUsed: true, error }
+    const fields = (fieldsRes.data ?? []).length > 0 ? normalizeCrmViewFields(((fieldsRes.data ?? []) as CrmViewFieldRow[]).map(mapField)) : DEFAULT_CRM_VIEW_FIELDS
+    const options = (optionsRes.data ?? []).length > 0 ? ((optionsRes.data ?? []) as CrmSelectOptionRow[]).map(mapOption) : DEFAULT_CRM_SELECT_OPTIONS
+    const partial = (fields !== DEFAULT_CRM_VIEW_FIELDS || options !== DEFAULT_CRM_SELECT_OPTIONS)
+    console.error("[sales-crm-field-config] Supabase fetch error:", error, partial ? "(partial data used)" : "(full fallback)")
+    return { fields, options, fallbackUsed: !partial, error }
   }
 
   return {

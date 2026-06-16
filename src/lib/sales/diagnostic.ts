@@ -39,6 +39,7 @@ import {
 import { buildVisualEvidenceStory } from "./diagnostic/visual-story"
 import type { DiagnosticReportData } from "./diagnostic/types"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { sanitizeBlocks } from "@/lib/mvp/hallucination-guard"
 
 export type {
   DiagnosticAct,
@@ -162,6 +163,15 @@ export async function fetchDiagnosticReport(opts: {
     reportLocale,
   })
 
+  const rawMeta = (company.meta ?? {}) as Record<string, unknown>
+  const metaUnifiedProfile = rawMeta.unified_profile as Record<string, unknown> | undefined
+  const metaBlocks = rawMeta.blocks
+  const sanitized = sanitizeBlocks(metaBlocks, metaUnifiedProfile)
+  if (sanitized.stripped_keys.length > 0) {
+    console.warn(`[diagnostic] hallucination-guard stripped ${sanitized.stripped_keys.length} fields from meta blocks:`, sanitized.stripped_keys.slice(0, 5))
+  }
+  const safeMeta = metaBlocks != null ? { ...rawMeta, blocks: sanitized.blocks } : rawMeta
+
   return {
     company_name: company.company_name,
     report_locale: reportLocale,
@@ -185,7 +195,7 @@ export async function fetchDiagnosticReport(opts: {
     visitor_journey: visualStory.visitorJourney,
     source_coverage: sourceCoverage,
     intelligence: buildCompanyIntelligence(company, sourceCoverage.items),
-    meta: (company.meta ?? {}) as Record<string, unknown>,
+    meta: safeMeta,
     contactFormUrl: (company.meta?.contact_form_url as string) ?? null,
     content_template: {
       title: contentTemplate.title,

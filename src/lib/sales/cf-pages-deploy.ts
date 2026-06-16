@@ -119,8 +119,9 @@ async function commitToGitHub(
         const getData = await getRes.json() as { sha?: string }
         sha = getData.sha ?? null
       }
-    } catch {
+    } catch (e) {
       // File doesn't exist yet — that's fine for create
+      console.warn("[cf-pages-deploy] file not found (expected for new deploy):", e instanceof Error ? e.message : String(e))
     }
 
     const body: Record<string, string> = {

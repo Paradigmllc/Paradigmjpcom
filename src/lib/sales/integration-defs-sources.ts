@@ -75,7 +75,7 @@ export const SOURCE_DEFS: SalesIntegrationDefinition[] = [
     deployment: "api",
     role: "経済産業省の公的データベースから、法人の登録情報、財務情報、許認可などの実績データを取得するAPI。",
     requiredEnv: [],
-    optionalEnv: ["GBIZINFO_API_KEY"],
+    optionalEnv: ["GBIZ_API_TOKEN"],
     balance: "gbizinfo_health",
     recommended: true,
     notes: "無料の公的情報を優先して企業カルテへ入れる。",

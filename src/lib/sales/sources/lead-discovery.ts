@@ -58,7 +58,8 @@ function env(name: string): string | null {
 function safeUrl(value: string): URL | null {
   try {
     return new URL(value.startsWith("http") ? value : `https://${value}`)
-  } catch {
+  } catch (e) {
+    console.warn("[lead-discovery] invalid URL:", value, e instanceof Error ? e.message : String(e))
     return null
   }
 }

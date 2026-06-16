@@ -25,13 +25,17 @@ CREATE INDEX IF NOT EXISTS idx_sales_tool_connections_status
 
 CREATE TABLE IF NOT EXISTS public.sales_operator_queue_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  region text NOT NULL DEFAULT 'jp',
   company_id uuid REFERENCES public.sales_companies (id) ON DELETE SET NULL,
+  queue_type text NOT NULL,
   source_tool text REFERENCES public.sales_tool_connections (slug) ON DELETE SET NULL,
   target_tool text REFERENCES public.sales_tool_connections (slug) ON DELETE SET NULL,
-  title text NOT NULL,
+  title text,
+  assigned_to text,
   status text NOT NULL DEFAULT 'open',
   priority integer NOT NULL DEFAULT 50,
   due_at timestamptz,
+  completed_at timestamptz,
   pipeline_run_id uuid REFERENCES public.sales_pipeline_runs (id) ON DELETE SET NULL,
   meta jsonb NOT NULL DEFAULT '{}'::jsonb,
   created_at timestamptz NOT NULL DEFAULT now(),

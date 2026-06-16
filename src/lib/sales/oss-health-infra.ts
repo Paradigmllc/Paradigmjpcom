@@ -135,7 +135,8 @@ export async function checkMorphicHealth(): Promise<ServiceHealthResult> {
         const res = await fetch(url.toString(), { signal: AbortSignal.timeout(10_000) })
         lastStatus = res.status
         if (res.ok) return { balanceStatus: "ok", balanceLabel: `health endpoint ok: ${path}` }
-      } catch {
+      } catch (e) {
+        console.warn("[oss-health] Morphic candidate path failed:", path, e instanceof Error ? e.message : String(e))
         continue
       }
     }
@@ -159,7 +160,8 @@ export async function checkPerplexicaHealth(): Promise<ServiceHealthResult> {
         const res = await fetch(url.toString(), { signal: AbortSignal.timeout(10_000) })
         lastStatus = res.status
         if (res.ok) return { balanceStatus: "ok", balanceLabel: `health endpoint ok: ${path}` }
-      } catch {
+      } catch (e) {
+        console.warn("[oss-health] Perplexica candidate path failed:", path, e instanceof Error ? e.message : String(e))
         continue
       }
     }

@@ -263,8 +263,9 @@ export async function persistPostOutreachEvent(input: PersistPostOutreachEventIn
   const { error: queueError } = await sb.from(DB_TABLES.SALES_OPERATOR_QUEUE_ITEMS).insert({
     region: input.region,
     company_id: input.companyId,
-    pipeline_run_id: input.pipelineRunId ?? null,
     queue_type: input.queueType,
+    title: input.subject ?? `Post-outreach: ${input.queueType}`,
+    pipeline_run_id: input.pipelineRunId ?? null,
     priority: input.queuePriority,
     status: "open",
     source_tool: null,

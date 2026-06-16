@@ -22,6 +22,7 @@ export const DB_TABLES = {
   CMS_WORKS: "cms_works",
   CMS_SETTINGS: "cms_settings",
   CMS_MEDIA: "cms_media",
+  // NOTE: CMS_CONTENT_BLOCKS has no migration in this repo. Managed by Appexxme (separate project).
   CMS_CONTENT_BLOCKS: "cms_content_blocks",
 
   // ── Sales OS Core (migration_003) ──
@@ -113,15 +114,19 @@ export const DB_TABLES = {
 
   // ── Demo (migration_016) ──
   WEB_DEMOS: "web_demos",
+  // NOTE: These tables have no migrations in this repo. Managed by Appexxme (separate project).
   DIAGNOSTIC_REPORTS: "diagnostic_reports",
   DIAGNOSTIC_RUNS: "diagnostic_runs",
 
-  // ── Notifications ──
+  // ── External-project tables (Appexxme / parallel project) ──
+  // The following tables are referenced by code in this repo but have NO corresponding
+  // migrations here. They are provisioned and managed by Appexxme or are legacy tables
+  // from a previous project phase. Do NOT create migrations for them in this repo.
   NOTIFICATIONS: "notifications",
   SALES_ACTIVITIES: "sales_activities",
   LEADS: "leads",
 
-  // ── MVP (legacy) ──
+  // ── MVP (Appexxme-managed legacy tables, no migrations in this repo) ──
   MVP_CAMPAIGNS: "mvp_campaigns",
   MVP_OUTREACH_RUNS: "mvp_outreach_runs",
   MVP_OPTOUT_TOKENS: "mvp_optout_tokens",
@@ -129,11 +134,11 @@ export const DB_TABLES = {
   MVP_CLICK_EVENTS: "mvp_click_events",
   MVP_SEND_QUOTAS: "mvp_send_quotas",
 
-  // ── Form / Persona ──
+  // ── Form / Persona (Appexxme-managed, no migrations in this repo) ──
   FORM_MESSAGE_TEMPLATES: "form_message_templates",
   PARADIGM_PERSONAS: "paradigm_personas",
 
-  // ── Legacy Automation ──
+  // ── Legacy Automation (previous-project tables, no migrations in this repo) ──
   PROSPECTS: "prospects",
   PROSPECT_VIEWS: "prospect_views",
   PROSPECT_PATTERNS: "prospect_patterns",

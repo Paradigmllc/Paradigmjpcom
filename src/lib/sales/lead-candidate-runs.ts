@@ -223,7 +223,9 @@ async function saveEvidence(input: {
     scored_at: observedAt,
   }, { onConflict: "candidate_id", ignoreDuplicates: false })
   if (score.error) throw new Error(score.error.message)
-  const candidateUpdate = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_DOMAINS).update({ status: "scored", observation_count: 1, last_seen_at: observedAt }).eq("id", input.candidate.id)
+  const { data: currentCandidate } = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_DOMAINS).select("observation_count").eq("id", input.candidate.id).single()
+  const currentCount = (currentCandidate as { observation_count?: number } | null)?.observation_count ?? 0
+  const candidateUpdate = await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_DOMAINS).update({ status: "scored", observation_count: currentCount + 1, last_seen_at: observedAt }).eq("id", input.candidate.id)
   if (candidateUpdate.error) throw new Error(candidateUpdate.error.message)
 }
 

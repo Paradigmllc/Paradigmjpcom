@@ -4,6 +4,7 @@ import { salesScopeFromCountry } from "@/lib/sales/locale-scope"
 import { ensureTwentyPipelineRun } from "./twenty-pipeline-intake"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { insertWithOptionalColumns } from "@/lib/sales/safe-supabase-insert"
+import { PIPELINE_LABELS } from "./twenty-sync-utils"
 
 interface TwentyLinkField {
   primaryLinkUrl?: string | null
@@ -172,9 +173,13 @@ function parseSalesStatusLabel(label: string | null): { pipelineStatus?: string;
   const parts = label.split(" / ")
   const pipelineLabel = parts[0]?.trim()
   const dealStage = parts[1]?.trim()
-  const allowed = ["pending", "scanning", "report_ready", "sent", "manual_queue"]
+  // Reverse-map from Japanese/English display labels back to pipeline_status codes
+  // Uses the same PIPELINE_LABELS reverse mapping as twenty-sync-utils.ts
+  const pipelineStatus = pipelineLabel
+    ? Object.entries(PIPELINE_LABELS).find(([, translated]) => translated.startsWith(pipelineLabel ?? ""))?.[0] ?? pipelineLabel
+    : undefined
   return {
-    ...(pipelineLabel && allowed.includes(pipelineLabel) ? { pipelineStatus: pipelineLabel } : {}),
+    ...(pipelineStatus ? { pipelineStatus } : {}),
     ...(dealStage ? { dealStage } : {}),
   }
 }

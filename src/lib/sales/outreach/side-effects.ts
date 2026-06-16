@@ -1,0 +1,165 @@
+import { getServiceSalesSupabase } from "@/lib/supabase"
+import { notifySlack } from "@/lib/notify"
+import { DB_TABLES } from "@/lib/sales/db-tables"
+import { normalizeOrigin } from "../sources/form-discovery"
+import { isAllowedFormUrlForOrigin } from "../sources/external-form-discovery"
+import { getRoutingMeta } from "../routing"
+import { logOutreachActivity, type ActivityResult } from "./activity"
+import { stageToPipelineStatus } from "./state-machine"
+import type { Region, SalesCompany } from "../types"
+import type { OutreachStage } from "./types"
+
+const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://paradigmjp.com"
+
+function reportUrlFor(company: SalesCompany): string {
+  if (company.report_url) return company.report_url
+  if (!company.slug) return SITE
+  const routing = getRoutingMeta(company.meta)
+  const locale = company.report_locale ?? routing.report_locale ?? (company.region === "jp" ? "ja" : "en")
+  return `${SITE}/${locale}/report/${company.slug}`
+}
+
+export async function applyOutcome(company: SalesCompany, stage: OutreachStage, sendResult: string): Promise<boolean> {
+  const sb = getServiceSalesSupabase()
+  if (!sb) return false
+  const patch: Record<string, unknown> = {
+    pipeline_status: stageToPipelineStatus(stage),
+    send_result: sendResult,
+    report_url: reportUrlFor(company),
+  }
+  if (stage === "submitted") patch.sent_at = new Date().toISOString()
+  const { error } = await sb.from(DB_TABLES.SALES_COMPANIES).update(patch).eq("id", company.id)
+  if (error) {
+    console.error("[sales-outreach] outcome update failed:", error.message)
+    return false
+  }
+  return true
+}
+
+export async function logActivity(
+  company: SalesCompany,
+  stage: OutreachStage,
+  result: ActivityResult,
+  meta: Record<string, unknown>,
+  pipelineRunId?: string | null,
+): Promise<void> {
+  try {
+    await logOutreachActivity({
+      companyId: company.id,
+      region: company.region,
+      pipelineRunId,
+      subject: `Form outreach (${stage})`,
+      body: typeof meta.message === "string" ? meta.message : "",
+      result,
+      outreachStage: stage,
+      meta,
+    })
+  } catch (e) {
+    console.error("[sales-outreach] log activity failed:", e)
+  }
+}
+
+export async function persistDiscoveredFormUrl(
+  company: SalesCompany,
+  input: { formUrl: string; source: string; confidence?: number; candidates?: string[] },
+): Promise<boolean> {
+  const sb = getServiceSalesSupabase()
+  if (!sb) return false
+  const origin = normalizeOrigin(company.domain)
+  if (origin && !isAllowedFormUrlForOrigin(origin, input.formUrl)) return false
+  const currentMeta = (company.meta ?? {}) as Record<string, unknown>
+  const currentUrl = typeof currentMeta.contact_form_url === "string" ? currentMeta.contact_form_url : null
+  if (currentUrl === input.formUrl) return true
+
+  const { error } = await sb
+    .from(DB_TABLES.SALES_COMPANIES)
+    .update({
+      meta: {
+        ...currentMeta,
+        contact_form_url: input.formUrl,
+        form_discovery: {
+          source: input.source,
+          confidence: input.confidence ?? null,
+          candidates: input.candidates?.slice(0, 20) ?? [],
+          discovered_at: new Date().toISOString(),
+        },
+      },
+    })
+    .eq("id", company.id)
+  if (error) {
+    console.error("[sales-outreach] form URL persistence failed:", error.message)
+    return false
+  }
+  return true
+}
+
+export async function enqueueOperatorTask(
+  company: SalesCompany,
+  input: {
+    reason: string
+    formUrl?: string | null
+    message?: string | null
+    classification?: string | null
+    priority?: number
+    approvalRequired?: boolean
+    pipelineRunId?: string | null
+  },
+): Promise<boolean> {
+  const sb = getServiceSalesSupabase()
+  if (!sb) return false
+  const title = input.reason.slice(0, 80) || "unknown"
+  const { error } = await sb.from(DB_TABLES.SALES_OPERATOR_QUEUE_ITEMS).insert({
+    region: company.region,
+    company_id: company.id,
+    queue_type: "form_send",
+    title,
+    pipeline_run_id: input.pipelineRunId ?? null,
+    priority: input.priority ?? (input.approvalRequired ? 90 : 70),
+    status: "open",
+    source_tool: "trigger_dev",
+    target_tool: "appsmith",
+    meta: {
+      reason: input.reason,
+      form_url: input.formUrl ?? null,
+      message: input.message ?? null,
+      classification: input.classification ?? null,
+      approval_required: input.approvalRequired ?? false,
+      report_url: reportUrlFor(company),
+      pipeline_run_id: input.pipelineRunId ?? null,
+      created_by: "sales_outreach_orchestrator",
+    },
+  })
+  if (error) {
+    console.error("[sales-outreach] operator queue insert failed:", error.message)
+    return false
+  }
+  return true
+}
+
+export async function persistOutcome(
+  company: SalesCompany,
+  stage: OutreachStage,
+  result: ActivityResult,
+  sendResult: string,
+  meta: Record<string, unknown>,
+  dryRun: boolean,
+  pipelineRunId?: string | null,
+): Promise<void> {
+  if (dryRun) return
+  await applyOutcome(company, stage, sendResult)
+  await logActivity(company, stage, result, meta, pipelineRunId)
+  if (stage === "manual_queue") {
+    const queued = await enqueueOperatorTask(company, {
+      reason: sendResult,
+      formUrl: typeof meta.formUrl === "string" ? meta.formUrl : null,
+      message: typeof meta.message === "string" ? meta.message : null,
+      classification: typeof meta.classification === "string" ? meta.classification : null,
+      priority: meta.approvalRequired === true ? 95 : undefined,
+      approvalRequired: meta.approvalRequired === true,
+      pipelineRunId,
+    })
+    if (!queued) {
+      console.error("[sales-outreach] operator queue enqueue failed silently for:", company.id)
+    }
+  }
+}

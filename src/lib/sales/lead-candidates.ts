@@ -197,9 +197,15 @@ async function saveCandidateEvidence(input: {
   )
   if (scoreError) throw new Error(scoreError.message)
 
+  const { data: currentCandidate } = await sb
+    .from(DB_TABLES.SALES_LEAD_CANDIDATE_DOMAINS)
+    .select("observation_count")
+    .eq("id", input.candidate.id)
+    .single()
+  const currentCount = (currentCandidate as { observation_count?: number } | null)?.observation_count ?? 0
   const { error: updateError } = await sb
     .from(DB_TABLES.SALES_LEAD_CANDIDATE_DOMAINS)
-    .update({ status: "scored", observation_count: 1, last_seen_at: now })
+    .update({ status: "scored", observation_count: currentCount + 1, last_seen_at: now })
     .eq("id", input.candidate.id)
   if (updateError) throw new Error(updateError.message)
 }

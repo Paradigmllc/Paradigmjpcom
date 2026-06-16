@@ -64,7 +64,7 @@ export async function checkSimilarWebHealth(): Promise<ServiceHealthResult> {
 }
 
 export async function checkGbizinfoHealth(): Promise<ServiceHealthResult> {
-  const apiKey = envValue("GBIZINFO_API_KEY")
+  const apiKey = envValue("GBIZ_API_TOKEN")
   if (!apiKey) return { balanceStatus: "ok", balanceLabel: "no API key (unauthenticated OK)" }
 
   try {

@@ -247,7 +247,10 @@ export async function ensureCompanyProductRecommendations(
     .eq("company_id", input.companyId)
     .in("product_id", productIds)
 
-  if (existingRes.error) console.error("[sales-products] existing recommendation fetch failed:", existingRes.error.message)
+  if (existingRes.error) {
+    console.error("[sales-products] existing recommendation fetch failed:", existingRes.error.message)
+    return []
+  }
   const existingByProduct = new Map(
     ((existingRes.data ?? []) as Array<{ id: string; product_id: string; status: string; twenty_opportunity_id: string | null }>).map((row) => [row.product_id, row]),
   )

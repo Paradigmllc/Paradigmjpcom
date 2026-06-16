@@ -191,8 +191,8 @@ async function forceTwentyTextOnlyFieldsViaDatabase(fields: SalesCrmViewField[])
   }
 
   const client = new Client({ connectionString })
-  await client.connect()
   try {
+    await client.connect()
     await client.query("begin")
     const objectRes = await client.query<{ id: string }>(
       'select "id" from core."objectMetadata" where "nameSingular" = $1 limit 1',
@@ -219,11 +219,11 @@ async function forceTwentyTextOnlyFieldsViaDatabase(fields: SalesCrmViewField[])
     await client.query("commit")
     return null
   } catch (error) {
-    await client.query("rollback")
+    await client.query("rollback").catch(() => {})
     console.error("[twenty-crm-metadata] text-only field coercion failed:", error)
     return error instanceof Error ? error.message : "Twenty text-only field coercion failed."
   } finally {
-    await client.end()
+    await client.end().catch(() => {})
   }
 }
 
@@ -242,8 +242,8 @@ async function applyTwentyCrmMetadataViaDatabase(input: {
   }
 
   const client = new Client({ connectionString })
-  await client.connect()
   try {
+    await client.connect()
     await client.query("begin")
 
     const objectRes = await client.query<{ id: string }>(
@@ -296,7 +296,7 @@ async function applyTwentyCrmMetadataViaDatabase(input: {
     await client.query("commit")
     return { configured: true, appliedFields, selectFields, error: null }
   } catch (error) {
-    await client.query("rollback")
+    await client.query("rollback").catch(() => {})
     console.error("[twenty-crm-metadata] apply failed:", error)
     return {
       configured: true,
@@ -305,7 +305,7 @@ async function applyTwentyCrmMetadataViaDatabase(input: {
       error: error instanceof Error ? error.message : "Twenty metadata update failed.",
     }
   } finally {
-    await client.end()
+    await client.end().catch(() => {})
   }
 }
 

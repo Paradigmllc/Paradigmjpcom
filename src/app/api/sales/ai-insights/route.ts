@@ -46,7 +46,12 @@ export async function POST(req: NextRequest) {
   if (!sb) return NextResponse.json({ ok: false, error: "Supabase not configured" }, { status: 500 })
 
   try {
-    const body = await req.json().catch(() => ({})) as { companyId?: string; limit?: number }
+    let body: { companyId?: string; limit?: number } = {}
+    try {
+      body = (await req.json()) as { companyId?: string; limit?: number }
+    } catch (e) {
+      console.error("[ai-insights] JSON parse failed:", e)
+    }
     const limit = Math.min(body.limit ?? 5, 20)
 
     let companies: Array<{ id: string; company_name: string; industry: string | null; pagespeed_mobile: number | null; detected_issues: string[] | null; meta: unknown }>
@@ -75,9 +80,12 @@ export async function POST(req: NextRequest) {
 
         // Save to meta
         if (insight) {
-          await sb.from(DB_TABLES.SALES_COMPANIES).update({
+          sb.from(DB_TABLES.SALES_COMPANIES).update({
             meta: { ...(c.meta as Record<string, unknown> ?? {}), sales_os: { ...((c.meta as Record<string, unknown>)?.sales_os as Record<string, unknown> ?? {}), ai_insight: insight, ai_insight_at: new Date().toISOString() } }
-          }).eq("id", c.id).then(() => {}, () => {})
+          }).eq("id", c.id).then(
+            () => {},
+            (updateErr) => { console.error("[ai-insights] meta update failed:", c.id, updateErr) }
+          )
         }
 
         return { companyId: c.id, companyName: c.company_name, insight }

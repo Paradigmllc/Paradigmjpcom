@@ -485,6 +485,7 @@ export async function runCustomerSuccessHandoff(
     }
     await notifySlack(`Customer success handoff failed: ${message}`).catch((notifyError) => {
       console.error("[customer-handoff] Slack notify failed:", notifyError)
+      warnings.push(`Slack notification failed: ${notifyError instanceof Error ? notifyError.message : String(notifyError)}`)
     })
     return result
   }

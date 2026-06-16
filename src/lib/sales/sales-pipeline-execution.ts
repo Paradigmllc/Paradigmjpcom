@@ -118,8 +118,9 @@ async function enqueuePipelineReviewTask(
   const { error } = await sb.from(DB_TABLES.SALES_OPERATOR_QUEUE_ITEMS).insert({
     region: typeof companyRes.data?.region === "string" ? companyRes.data.region : "jp",
     company_id: run.company_id,
-    pipeline_run_id: run.id,
     queue_type: input.queueType ?? "form_send",
+    title: input.reason,
+    pipeline_run_id: run.id,
     priority: input.priority ?? 90,
     status: "open",
     source_tool: "trigger_dev",

@@ -256,6 +256,7 @@ export async function enqueueManualReview(
   const { error } = await sb.from(DB_TABLES.SALES_OPERATOR_QUEUE_ITEMS).insert({
     region: input.region,
     queue_type: "analysis",
+    title: input.reason,
     priority: input.priority ?? 80,
     status: "open",
     source_tool: "trigger_dev",

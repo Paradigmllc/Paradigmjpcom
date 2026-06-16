@@ -26,7 +26,7 @@ export const SYSTEM_PROMPT_KARTE_TO_REPORT = `\
 {
   "lead_id": string,
   "template_id": string,
-  "region": "ja"|"en"|"ko"|"zh"|"europe"|"es"|"pt"|"ru"|"ar"|"sea"|"africa"|"others",
+  "region": "ja"|"en"|"ko"|"zh"|"de"|"fr"|"es"|"pt"|"ru"|"ar"|"vi"|"id",
   "language": "ja"|"en"|...,
   "company_name": string,
   "domain": string,

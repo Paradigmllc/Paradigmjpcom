@@ -224,11 +224,6 @@ function opportunityPayloads(
           }
         : null,
     },
-    {
-      ...base,
-      amountAmountMicros: amountMicros,
-      amountCurrencyCode: product.defaultCurrency,
-    },
   ]
 }
 

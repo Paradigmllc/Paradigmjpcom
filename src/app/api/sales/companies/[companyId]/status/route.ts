@@ -53,7 +53,9 @@ export async function POST(
           message: `会社 ${companyId}: ${err instanceof Error ? err.message : String(err)}`,
           type: "twenty_sync_failure",
         })
-      } catch { /* notification failure non-critical */ }
+      } catch (e) {
+        console.warn("[sales-companies-status] notification failed (non-critical):", e instanceof Error ? e.message : String(e))
+      }
     })
 
     return NextResponse.json({ ok: true, company });
