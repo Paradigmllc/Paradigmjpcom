@@ -1,6 +1,20 @@
 ## CURRENT STATUS - 2026-06-16 PayloadCMS DB Pooler 根治 + RevenueOS Round 5 リスト収集
 
-### 2026-06-16: Pooler Session→Transaction モード切替 + DB 接続層全面硬化
+### 2026-06-16 commit ebe5dfe: NEXT_REDIRECT false-positive fix + pool options compatibility
+
+**問題**: Deploy 後も 37 失敗 / 3 成功。エラーメッセージが `NEXT_REDIRECT` (DB エラーではなく PayloadCMS の認証リダイレクトだった)。
+
+**原因2つ**:
+1. `withPayloadRetry` が `NEXT_REDIRECT` (Next.js 内部制御) も DB 接続失敗として集計 → クールダウン発動
+2. `poolConfig.options` が `@payloadcms/db-postgres` で `pg.Pool` に正しく渡されていなかった可能性
+
+**修正**:
+- `withPayloadRetry`: `NEXT_REDIRECT`/`NEXT_NOT_FOUND` の場合は `markPayloadInitFailure` をスキップ
+- `payload.config.ts`: `pool.options` パラメータを廃止、代わりに connectionString に `?options=-c search_path=paradigm` を付加
+
+### 2026-06-16 commit 46a6b2c: Pooler Session→Transaction モード切替 + DB 接続層全面硬化
+
+...（省略）...
 
 **問題**: PayloadCMS 管理画面で `ECHECKOUTTIMEOUT: unable to check out connection from the pool after 15000ms in Session mode` が連続18回発生。
 
