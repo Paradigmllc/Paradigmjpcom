@@ -3,9 +3,10 @@
 ### Operational state
 
 - RevenueOS passive inventory and lead collection are production deployed and verified.
-- Current production code commit: `69f941d` (`fix: update passive inventory command note`).
-- Latest pushed documentation/archive commit: `e7d1f38`.
-- Production container verified healthy: `i12am4vvcbggefnqdizhnv9a:69f941d7209ca9de81a4d536b76e49ab386c41d2`.
+- Current production code commit: `9116325` (`chore: finalize operational handoff and dependency audit`).
+- Latest pushed handoff/dependency commit: `9116325`.
+- Production deployment UUID: `o1b5ml6ftyyay9ti3h7n4vnn`, finished successfully.
+- Production container verified healthy: `i12am4vvcbggefnqdizhnv9a:911632508bb2d6e2518560c705cd6c80b96f0229`.
 - Full previous handoff history is archived at `docs/handoff-archive/2026-06-16-revenueos-passive-inventory-full-task-archive.md`.
 
 ### What is now shipped
