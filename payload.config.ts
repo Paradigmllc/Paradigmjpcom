@@ -249,7 +249,7 @@ export default buildConfig({
       return poolConfig
     })(),
     schemaName: "paradigm",
-    push: false,
+    push: true, // 即時テーブル作成後 false に戻す
   }),
   sharp,
   // P17 2026-04-27: コンテンツ多言語化も 12 言語対応
