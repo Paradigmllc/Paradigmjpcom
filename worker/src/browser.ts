@@ -20,26 +20,8 @@ function optionalEnv(name: string): string | null {
   return value && value.trim().length > 0 ? value.trim() : null
 }
 
-function steelCdpEndpoint(): string | null {
-  const cdpEndpoint = optionalEnv("CDP_ENDPOINT")
-  if (cdpEndpoint) return cdpEndpoint
-
-  const steelBaseUrl = optionalEnv("STEEL_BASE_URL")
-  if (!steelBaseUrl) return null
-
-  try {
-    const url = new URL(steelBaseUrl)
-    url.protocol = "ws:"
-    url.port = "9223"
-    return url.toString()
-  } catch (error) {
-    console.warn("[worker/browser] invalid STEEL_BASE_URL:", error)
-    return null
-  }
-}
-
 async function launch(): Promise<Browser> {
-  const cdp = optionalEnv("CDP_ENDPOINT") ?? steelCdpEndpoint()
+  const cdp = optionalEnv("CDP_ENDPOINT")
   if (cdp) return chromium.connectOverCDP(cdp)
 
   return chromium.launch({
