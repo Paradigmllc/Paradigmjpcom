@@ -97,6 +97,9 @@ async function patchTwentyCompanyHome(
   const removableFields = [
     "xLink",
     "linkedinLink",
+    "employees",
+    "annualRecurringRevenue",
+    "address",
     "paradigmReportUrl",
     "paradigmFormUrl",
     "paradigmDemoUrl",
