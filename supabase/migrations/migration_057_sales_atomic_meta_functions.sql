@@ -66,36 +66,57 @@ CREATE OR REPLACE FUNCTION sales_atomic_screenshot_append(
   p_viewport   TEXT,
   p_screenshot JSONB
 ) RETURNS VOID AS $$
+DECLARE
+  v_updated integer;
 BEGIN
-  UPDATE public.sales_companies
-  SET meta = 
-    COALESCE(meta, '{}'::jsonb)
-    || jsonb_build_object(
-      'screenshot_provider', p_screenshot->>'provider',
-      'screenshot_url',
-        CASE WHEN p_viewport = 'desktop'
-          THEN p_screenshot->>'url'
-          ELSE meta->>'screenshot_url'
-        END,
-      'screenshot_captured_at',
-        CASE WHEN p_viewport = 'desktop'
-          THEN p_screenshot->>'captured_at'
-          ELSE meta->>'screenshot_captured_at'
-        END,
-      'visual_evidence',
-      jsonb_set(
-        jsonb_set(
-          COALESCE(meta->'visual_evidence', '{}'::jsonb),
-          '{last_refreshed_at}',
-          p_screenshot->'captured_at',
-          true
-        ),
-        '{screenshots,' || p_viewport || '}',
-        p_screenshot,
-        true
+  WITH current_row AS (
+    SELECT
+      id,
+      meta,
+      COALESCE(visual_evidence, meta->'visual_evidence', '{}'::jsonb) AS current_visual
+    FROM public.sales_companies
+    WHERE id = p_company_id
+    FOR UPDATE
+  ),
+  patched AS (
+    SELECT
+      id,
+      meta,
+      current_visual
+      || jsonb_build_object(
+        'last_refreshed_at', p_screenshot->'captured_at',
+        'screenshots',
+          COALESCE(current_visual->'screenshots', '{}'::jsonb)
+          || jsonb_build_object(p_viewport, p_screenshot)
+      ) AS next_visual
+    FROM current_row
+  )
+  UPDATE public.sales_companies AS c
+  SET
+    visual_evidence = patched.next_visual,
+    meta =
+      COALESCE(c.meta, '{}'::jsonb)
+      || jsonb_build_object(
+        'screenshot_provider', p_screenshot->>'provider',
+        'screenshot_url',
+          CASE WHEN p_viewport = 'desktop'
+            THEN p_screenshot->>'url'
+            ELSE c.meta->>'screenshot_url'
+          END,
+        'screenshot_captured_at',
+          CASE WHEN p_viewport = 'desktop'
+            THEN p_screenshot->>'captured_at'
+            ELSE c.meta->>'screenshot_captured_at'
+          END,
+        'visual_evidence', patched.next_visual
       )
-    )
-  WHERE id = p_company_id;
+  FROM patched
+  WHERE c.id = patched.id;
+
+  GET DIAGNOSTICS v_updated = ROW_COUNT;
+  IF v_updated = 0 THEN
+    RAISE EXCEPTION 'sales_company not found: %', p_company_id;
+  END IF;
 END;
 $$ LANGUAGE plpgsql
 SECURITY DEFINER
