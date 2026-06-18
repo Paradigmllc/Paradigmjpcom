@@ -66,3 +66,16 @@ Cloud Supabase → OSS Supabase 全データ移行済み (280MB pg_dump)。
 - [ ] Coolifyに全サービス登録 (n8n/Cal.com/Twenty他はDocker直接管理)
 - [ ] RevenueOS SSOTパネル認証確認 (ユーザーログイン後に表示確認)
 - [ ] Cloud Supabase 解約
+## CURRENT STATUS - 2026-06-18 Supabase delete safety / Appexx recovery
+
+- RevenueOS practical-operation update: Twenty HOME sync now includes the 30+ API/OSS source visibility inside `paradigmKarteSummary` (collected/configured/missing sources, evidence, and next actions) while keeping `paradigmSourceCoverage` as the list-level score.
+- Cloud Supabase delete is NOT approved yet. Direct Postgres/CLI dump is still blocked because stored DB passwords fail authentication and the available Supabase connector/CLI auth has no project access.
+- Safety backups present on Hetzner:
+  - `/opt/backups/final-supabase-cutover-20260618T014151Z.tar.gz` (full Cloud REST/Auth/Storage export + OSS pg_dump bundle)
+  - `/opt/backups/pre-cloud-supabase-delete-safety-20260618T061536Z.tar.gz` (fresh copy of the final cutover backup + sha256)
+  - `/opt/backups/cloud-supabase-rest-refresh-20260618T055721Z.tar.gz` (fresh REST/Storage reachability backup)
+- Appexx app restored on Hetzner as `appexx-web`; internal Next.js root returns 200 and Traefik Host-header checks for `appexx.me` / `www.appexx.me` return 200.
+- Paperclip route restored on Hetzner; Traefik Host-header check for `paperclip.appexx.me/api/health` returns 200.
+- Public DNS for `appexx.me`, `www.appexx.me`, and `paperclip.appexx.me` still points to old DigitalOcean `139.59.250.5`; public external URLs will remain broken until Cloudflare DNS is updated to `178.105.138.55`.
+- Stored Cloudflare token found so far is valid but has zero zone visibility for `appexx.me`; DNS edit token still missing.
+- OSS Supabase public `/rest/v1/` remains healthy through `supabase.paradigmjp.com`. Auth/Storage/Realtime containers are not running in the current OSS stack, so no extra public routes were left enabled.
