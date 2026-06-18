@@ -27,6 +27,7 @@ describe("buildExternalStudioPayload", () => {
       collectedCount: 5,
       configuredCount: 7,
       missingCount: 1,
+      errorCount: 0,
       sourceItems: [],
       evidence: [],
       intelligence: { signals: [], painPoints: [], nextActions: [] },

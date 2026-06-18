@@ -53,6 +53,7 @@ export interface CompanyKarteSnapshot {
   collectedCount: number
   configuredCount: number
   missingCount: number
+  errorCount: number
   sourceItems: SourceCoverageItem[]
   evidence: CompanyKarteEvidence[]
   intelligence: CompanyIntelligence
@@ -180,6 +181,7 @@ function coverageCounts(items: SourceCoverageItem[]) {
     collectedCount: items.filter((item) => item.status === "collected").length,
     configuredCount: items.filter((item) => item.status === "configured").length,
     missingCount: items.filter((item) => item.status === "missing").length,
+    errorCount: items.filter((item) => item.status === "error").length,
   }
 }
 

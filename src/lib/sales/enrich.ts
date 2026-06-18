@@ -59,6 +59,7 @@ interface SourceMetrics {
   failed: number
   timeout: number
   skipped: number
+  lastError?: string
 }
 
 async function batchAll(tasks: (() => Promise<unknown>)[], limit = 6): Promise<unknown[]> {
@@ -90,9 +91,11 @@ async function timedTask<R>(
     const msg = e instanceof Error ? e.message : String(e)
     if (msg === "TIMEOUT") {
       metrics[name].timeout++
+      metrics[name].lastError = `timeout after ${timeoutMs}ms`
       console.warn(`[enrich] ${name} timed out after ${timeoutMs}ms`)
     } else {
       metrics[name].failed++
+      metrics[name].lastError = msg.slice(0, 500)
       console.error(`[enrich] ${name} failed:`, msg)
     }
     return fallback
@@ -230,14 +233,14 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
 
   // Use sourceMap for type-safe access instead of positional destructuring
   const scan = sourceMap.scan
-  const gbiz = sourceMap.gbiz
-  const tech = sourceMap.tech
-  const ssl = sourceMap.ssl
+  const gbiz = sourceMap.gbizinfo
+  const tech = sourceMap.wappalyzer
+  const ssl = sourceMap.ssllabs
   const whois = sourceMap.whois
-  const form = sourceMap.form
+  const form = sourceMap.form_discovery
   const crtsh = sourceMap.crtsh
-  const radar = sourceMap.radar
-  const observatory = sourceMap.observatory
+  const radar = sourceMap.cloudflare_radar
+  const observatory = sourceMap.mozilla_observatory
   const dns = sourceMap.dns
   const hsts = sourceMap.hsts
   const wayback = sourceMap.wayback
@@ -249,7 +252,7 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   const spiderfoot = sourceMap.spiderfoot
   const katana = sourceMap.katana
   const maigret = sourceMap.maigret
-  const stagehandSite = sourceMap.stagehand_site
+  const stagehandSite = sourceMap.stagehand_extract
   const stagehandForms = sourceMap.stagehand_forms
   const steel = sourceMap.steel
   const crawlee = sourceMap.crawlee

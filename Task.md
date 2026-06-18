@@ -65,3 +65,10 @@
 - RevenueOS CRM tab now shows an operational queue: send-ready / review-required / blocked.
 - Twenty company karte summary now includes `Outreach quality gate` and `Next action`.
 - Verification: `npm test -- src/lib/sales/outreach/readiness.test.ts src/lib/sales/form-message.test.ts` and `npx tsc --noEmit --pretty false --skipLibCheck --types node -p tsconfig.json`.
+## CURRENT STATUS - 2026-06-18 RevenueOS Twenty data collection GUI/retry
+
+- Twenty Companies上でRevenueOS取得データを確認できるよう、`Data Status` / `Data Sources` / `Next Action` / `Last Error` をCRM表示順とTwenty metadata DB反映対象に追加。
+- enrichment結果のsource名不一致を修正し、Wappalyzer/SSL Labs/form discovery/Cloudflare Radar/Mozilla Observatory/Stagehandなどの取得結果と失敗理由がmetaへ正しく残るようにした。
+- source_qualityの失敗/timeoutをSource Coverageの`error`として可視化し、Twenty同期時に最終エラーも反映。
+- Twentyからのpullは不正なreport/form URLを信用せず、低カバレッジ・古いデータ・source error・未生成artifactを検出したら既存リストでも再収集/診断レポート生成キューへ戻す。
+- Verification: `npm test -- src/lib/sales/source-coverage.test.ts src/lib/sales/twenty-sync.test.ts src/lib/sales/enrich.test.ts src/lib/sales/external-studio-sync.test.ts`; `npx tsc --noEmit --pretty false --skipLibCheck --types node -p tsconfig.json`; `git diff --check`.

@@ -4,6 +4,12 @@ import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type JsonRecord = Record<string, unknown>
 
+interface SourceQualityMetric {
+  failed?: number
+  timeout?: number
+  lastError?: string
+}
+
 function asRecord(value: unknown): JsonRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : {}
 }
@@ -320,12 +326,70 @@ function genericNextStep(source: SourceDefinition): string {
   return `${source.label} の取得ジョブを再実行し、取得できない場合は手動確認キューに回します。`
 }
 
+const SOURCE_QUALITY_ALIASES: Record<string, string[]> = {
+  pagespeed: ["scan"],
+  lighthouse_api: ["scan"],
+  html_metadata: ["scan"],
+  security_headers_free: ["scan"],
+  wappalyzer: ["wappalyzer"],
+  whatweb: ["wappalyzer"],
+  ssllabs: ["ssllabs"],
+  gbizinfo: ["gbizinfo"],
+  form_discovery_http: ["form_discovery"],
+  crawl4ai: ["form_discovery"],
+  cloudflare_radar: ["cloudflare_radar"],
+  mozilla_observatory: ["mozilla_observatory"],
+  dns_doh: ["dns"],
+  hsts_preload: ["hsts"],
+  wayback_machine: ["wayback"],
+  open_corporates: ["opencorp"],
+  github_rest: ["github"],
+  common_crawl: ["commoncrawl"],
+  spiderfoot: ["spiderfoot"],
+  katana: ["katana"],
+  maigret: ["maigret"],
+  stagehand: ["stagehand_extract", "stagehand_forms"],
+  steel: ["steel"],
+  crawlee: ["crawlee"],
+  schema_org: ["schema_org"],
+  sitemap: ["sitemap"],
+  safe_browsing: ["safe_browsing"],
+  green_web: ["green_web"],
+  builtwith_free: ["builtwith"],
+  jina_reader: ["jina_reader"],
+  subfinder: ["subfinder"],
+  trufflehog: ["trufflehog"],
+}
+
+function sourceQualityError(meta: JsonRecord, slug: string): string | null {
+  const salesOs = asRecord(meta.sales_os)
+  const sourceQuality = asRecord(salesOs.source_quality)
+  const aliases = SOURCE_QUALITY_ALIASES[slug] ?? [slug]
+
+  for (const alias of aliases) {
+    const metric = asRecord(sourceQuality[alias]) as SourceQualityMetric
+    const failed = typeof metric.failed === "number" ? metric.failed : 0
+    const timeout = typeof metric.timeout === "number" ? metric.timeout : 0
+    if (failed > 0 || timeout > 0) {
+      const reason = typeof metric.lastError === "string" && metric.lastError.trim()
+        ? metric.lastError.trim()
+        : timeout > 0
+          ? "timeout"
+          : "source fetch failed"
+      return `${alias}: ${reason}`
+    }
+  }
+
+  return null
+}
+
 export function computeSourceCoverage(company: SalesCompany): SourceCoverageSnapshot {
   const meta = (company.meta ?? {}) as JsonRecord
   const items = SOURCES.map((source): SourceCoverageItem => {
     const collected = source.detect(meta, company)
     const configured = hasConfiguredEnv(source.env)
-    const status: SourceCoverageStatus = collected ? "collected" : configured ? "configured" : "missing"
+    const sourceError = collected ? null : sourceQualityError(meta, source.slug)
+    const status: SourceCoverageStatus = collected ? "collected" : sourceError ? "error" : configured ? "configured" : "missing"
     // ── Freshness scoring (migration_046): degrade score for stale data ──
     const maxAgeDays = source.maxAgeDays ?? null
     let freshnessScore = scoreFor(status)
@@ -343,10 +407,10 @@ export function computeSourceCoverage(company: SalesCompany): SourceCoverageSnap
       category: source.category,
       status,
       score: freshnessScore,
-      detail: source.detail,
+      detail: sourceError ? `${source.detail} / last error: ${sourceError}` : source.detail,
       meaning: source.meaning ?? genericMeaning(source),
       missingConsequence: source.missingConsequence ?? genericMissingConsequence(source),
-      nextStep: source.nextStep ?? genericNextStep(source),
+      nextStep: sourceError ? `${source.label} failed previously; rerun the company enrichment job and keep this source isolated if it fails again.` : source.nextStep ?? genericNextStep(source),
     }
   })
   const scored = items.filter((item) => item.status !== "not_applicable")

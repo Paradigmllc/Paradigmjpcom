@@ -26,6 +26,10 @@ interface TwentyRecord {
   paradigmIndustryName?: string | null
   paradigmSourceName?: string | null
   paradigmSalesStatus?: string | null
+  paradigmDataStatus?: string | null
+  paradigmDataSources?: string | null
+  paradigmNextAction?: string | null
+  paradigmLastError?: string | null
   paradigmKarteScore?: number | null
   paradigmSourceCoverage?: number | null
   paradigmRecommendedProducts?: string[] | null
@@ -169,6 +173,65 @@ function contactFormUrlFromMeta(meta: Record<string, unknown>): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null
 }
 
+function validHttpUrl(value: string | null): URL | null {
+  if (!value) return null
+  try {
+    const url = new URL(value)
+    return url.protocol === "http:" || url.protocol === "https:" ? url : null
+  } catch (error) {
+    console.warn("[twenty-pull] invalid URL:", { value, error })
+    return null
+  }
+}
+
+function reportUrlFromTwenty(value: string | null): string | null {
+  const url = validHttpUrl(value)
+  if (!url) return null
+  const host = url.hostname.replace(/^www\./, "").toLowerCase()
+  if (host !== "paradigmjp.com") return null
+  if (!/\/report\//.test(url.pathname)) return null
+  return url.toString()
+}
+
+function formUrlFromTwenty(value: string | null, domain: string): string | null {
+  const url = validHttpUrl(value)
+  if (!url) return null
+  const host = url.hostname.replace(/^www\./, "").toLowerCase()
+  const normalizedDomain = domain.replace(/^www\./, "").toLowerCase()
+  if (host !== normalizedDomain && !host.endsWith(`.${normalizedDomain}`)) return null
+  return url.toString()
+}
+
+function hasSourceErrors(meta: Record<string, unknown>): boolean {
+  const salesOs = plainRecord(meta.sales_os)
+  const sourceQuality = plainRecord(salesOs.source_quality)
+  return Object.values(sourceQuality).some((value) => {
+    const metric = plainRecord(value)
+    const failed = typeof metric.failed === "number" ? metric.failed : 0
+    const timeout = typeof metric.timeout === "number" ? metric.timeout : 0
+    return failed > 0 || timeout > 0
+  })
+}
+
+function isDataStale(meta: Record<string, unknown>): boolean {
+  const salesOs = plainRecord(meta.sales_os)
+  const lastEnrichedAt = typeof salesOs.last_enriched_at === "string" ? Date.parse(salesOs.last_enriched_at) : 0
+  if (!lastEnrichedAt || !Number.isFinite(lastEnrichedAt)) return true
+  const refreshDays = Number.parseInt(process.env.REVENUEOS_DATA_REFRESH_DAYS ?? "14", 10)
+  const safeRefreshDays = Number.isFinite(refreshDays) && refreshDays > 0 ? refreshDays : 14
+  return Date.now() - lastEnrichedAt > safeRefreshDays * 24 * 60 * 60 * 1000
+}
+
+function sourceCoverageTooLow(record: TwentyRecord, meta: Record<string, unknown>): boolean {
+  const twentyMeta = plainRecord(meta.twenty)
+  const value = typeof record.paradigmSourceCoverage === "number"
+    ? record.paradigmSourceCoverage
+    : typeof twentyMeta.sourceCoverage === "number"
+      ? twentyMeta.sourceCoverage
+      : null
+  return value === null || value < 20
+}
+
 function parseSalesStatusLabel(label: string | null): { pipelineStatus?: string; dealStage?: string } {
   if (!label) return {}
   const parts = label.split(" / ")
@@ -246,11 +309,20 @@ export async function pullTwentyCompaniesToSupabase(
       : null
 
     const currentMeta = plainRecord(company?.meta)
-    const reportUrl = record.paradigmReportUrl?.primaryLinkUrl ?? null
-    const formUrl = record.paradigmFormUrl?.primaryLinkUrl ?? null
+    const rawReportUrl = record.paradigmReportUrl?.primaryLinkUrl ?? null
+    const rawFormUrl = record.paradigmFormUrl?.primaryLinkUrl ?? null
+    const reportUrl = reportUrlFromTwenty(rawReportUrl)
+    const formUrl = formUrlFromTwenty(rawFormUrl, domain)
     const salesMaterialUrl = record.paradigmSalesMaterialUrl?.primaryLinkUrl ?? null
     const demoUrl = record.paradigmDemoUrl?.primaryLinkUrl ?? null
     const customerPortalUrl = record.paradigmCustomerPortalUrl?.primaryLinkUrl ?? null
+    const invalidTwentyUrl = Boolean((rawReportUrl && !reportUrl) || (rawFormUrl && !formUrl))
+    if (rawReportUrl && !reportUrl) {
+      failures.push({ twentyCompanyId: record.id ?? null, domain, reason: `invalid Twenty report URL ignored: ${rawReportUrl}` })
+    }
+    if (rawFormUrl && !formUrl) {
+      failures.push({ twentyCompanyId: record.id ?? null, domain, reason: `invalid Twenty form URL ignored: ${rawFormUrl}` })
+    }
     const patchMeta: Record<string, unknown> = {
       ...currentMeta,
       twenty: {
@@ -262,6 +334,10 @@ export async function pullTwentyCompaniesToSupabase(
         industryName: record.paradigmIndustryName ?? null,
         sourceName: record.paradigmSourceName ?? null,
         salesStatus: record.paradigmSalesStatus ?? null,
+        dataStatus: record.paradigmDataStatus ?? null,
+        dataSources: record.paradigmDataSources ?? null,
+        nextAction: record.paradigmNextAction ?? null,
+        lastError: record.paradigmLastError ?? null,
         karteScore: record.paradigmKarteScore ?? null,
         sourceCoverage: record.paradigmSourceCoverage ?? null,
         recommendedProducts: record.paradigmRecommendedProducts ?? [],
@@ -316,7 +392,10 @@ export async function pullTwentyCompaniesToSupabase(
       const templateVariant = normalizeTemplateVariant(company?.template_variant ?? "website_diagnostic")
 
       const patch: Record<string, unknown> = { meta: patchMeta }
-      if (reportUrl) patch.report_url = reportUrl
+      if (reportUrl && !companyReportUrl) {
+        patch.report_url = reportUrl
+        companyReportUrl = reportUrl
+      }
 
       // Ensure every company has a slug — null slugs cause 404 on /report/[slug]
       if (!company?.slug) {
@@ -353,9 +432,16 @@ export async function pullTwentyCompaniesToSupabase(
     }
 
     if (isDryRun) {
-      const effectiveReportUrl = reportUrl ?? companyReportUrl
+      const effectiveReportUrl = companyReportUrl ?? reportUrl
       const effectiveFormUrl = formUrl ?? contactFormUrlFromMeta(patchMeta)
-      const needsGeneration = !effectiveReportUrl || !effectiveFormUrl || companyPipelineStatus !== "report_ready"
+      const needsGeneration =
+        !effectiveReportUrl ||
+        !effectiveFormUrl ||
+        companyPipelineStatus !== "report_ready" ||
+        sourceCoverageTooLow(record, patchMeta) ||
+        hasSourceErrors(patchMeta) ||
+        isDataStale(patchMeta) ||
+        invalidTwentyUrl
       if (shouldAutoRunPipeline && needsGeneration && companyId) pipelineRunsCreated += 1
       continue
     }
@@ -379,9 +465,16 @@ export async function pullTwentyCompaniesToSupabase(
     }, ["pipeline_run_id"])
     if (syncLogError) console.error("[twenty-pull] sync log insert failed:", syncLogError.message)
 
-    const effectiveReportUrl = reportUrl ?? companyReportUrl
+    const effectiveReportUrl = companyReportUrl ?? reportUrl
     const effectiveFormUrl = formUrl ?? contactFormUrlFromMeta(patchMeta)
-    const needsGeneration = !effectiveReportUrl || !effectiveFormUrl || companyPipelineStatus !== "report_ready"
+    const needsGeneration =
+      !effectiveReportUrl ||
+      !effectiveFormUrl ||
+      companyPipelineStatus !== "report_ready" ||
+      sourceCoverageTooLow(record, patchMeta) ||
+      hasSourceErrors(patchMeta) ||
+      isDataStale(patchMeta) ||
+      invalidTwentyUrl
     if (!shouldAutoRunPipeline || !needsGeneration) continue
 
     const pipeline = await ensureTwentyPipelineRun(sb, {

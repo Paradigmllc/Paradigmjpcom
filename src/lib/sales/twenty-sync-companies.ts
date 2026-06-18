@@ -40,6 +40,7 @@ function outreachGateSummary(karte: CompanyKarteSnapshot): { label: string; deta
   if (!karte.reportUrl) blockers.push("diagnostic report URL missing")
   if (!karte.formUrl) warnings.push("form URL missing")
   if (!karte.industry) warnings.push("industry not normalized")
+  if (karte.errorCount > 0) warnings.push(`${karte.errorCount} source error(s)`)
   if (!karte.diagnosisSummary && karte.sourceScore < 20) warnings.push(`low evidence coverage (${karte.sourceScore}%)`)
 
   if (blockers.length > 0) {
@@ -61,6 +62,20 @@ function outreachGateSummary(karte: CompanyKarteSnapshot): { label: string; deta
     detail: "Report URL, form URL, and evidence are present.",
     nextAction: "Run dry-run, then move to first-5 approval.",
   }
+}
+
+function sourceDataStatus(karte: CompanyKarteSnapshot): string {
+  const gate = outreachGateSummary(karte)
+  return `${gate.label}: ${gate.detail}`
+}
+
+function sourceDataCounts(karte: CompanyKarteSnapshot): string {
+  return `collected ${karte.collectedCount} / configured ${karte.configuredCount} / missing ${karte.missingCount} / error ${karte.errorCount}`
+}
+
+function firstSourceError(karte: CompanyKarteSnapshot): string | null {
+  const item = karte.sourceItems.find((source) => source.status === "error")
+  return item ? `${item.label}: ${item.detail}`.slice(0, 500) : null
 }
 
 function karteHomeSummary(karte: CompanyKarteSnapshot): string {
@@ -187,6 +202,10 @@ async function patchTwentyCompanyHome(
     "paradigmDemoUrl",
     "paradigmKarteScore",
     "paradigmSourceCoverage",
+    "paradigmDataStatus",
+    "paradigmDataSources",
+    "paradigmNextAction",
+    "paradigmLastError",
     "paradigmKarteSummary",
     "paradigmCustomerPortalUrl",
   ]
@@ -237,6 +256,10 @@ async function syncTwentyCompanyHomeFields(
       paradigmDemoUrl: linkField("デモURL", karte.demoUrl),
       paradigmKarteScore: karteScore(karte),
       paradigmSourceCoverage: karte.sourceScore,
+      paradigmDataStatus: sourceDataStatus(karte),
+      paradigmDataSources: sourceDataCounts(karte),
+      paradigmNextAction: outreachGateSummary(karte).nextAction,
+      paradigmLastError: firstSourceError(karte),
       paradigmKarteSummary: { markdown: karteHomeSummary(karte) },
   })
 
@@ -275,6 +298,7 @@ export async function syncCustomerHandoffToTwenty(
     collectedCount: 0,
     configuredCount: 0,
     missingCount: 0,
+    errorCount: 0,
     sourceItems: [],
     evidence: [],
     intelligence: {
