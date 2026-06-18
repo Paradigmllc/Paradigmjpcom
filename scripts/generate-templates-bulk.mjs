@@ -62,7 +62,7 @@ JSON 厳守:
 }`
 
 const DEEPSEEK_API = "https://api.deepseek.com/v1/chat/completions"
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://yihdmgtxiqfdgdueolub.supabase.co"
+const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
 const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY ?? ""
 

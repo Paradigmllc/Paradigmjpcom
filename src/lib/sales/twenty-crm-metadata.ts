@@ -39,6 +39,14 @@ export interface TwentyCrmMetadataApplyResult {
 
 const SELECT_FIELD_KEYS = new Set(["country", "region", "industry", "source", "sales_status"])
 const TWENTY_TEXT_ONLY_FIELD_KEYS = new Set(["region"])
+const TWENTY_COMPANY_LIST_VIEW_NAMES = ["All {objectLabelPlural}", "All Companies", "All 会社", "営業リスト"]
+const TWENTY_COMPANY_LIST_VIEW_NAME = "営業リスト"
+const TWENTY_COMPANY_RECORD_VIEW_NAME = "Company Record Page Fields"
+const TWENTY_HOME_EXTRA_FIELDS = [
+  { name: "paradigmKarteScore", position: 12 },
+  { name: "paradigmSourceCoverage", position: 13 },
+  { name: "paradigmKarteSummary", position: 14 },
+] as const
 
 function env(name: string): string | null {
   const value = process.env[name]
@@ -178,7 +186,115 @@ async function applyTwentyCrmMetadataViaApi(input: {
     return { configured: true, appliedFields, selectFields, error: textOnlyError }
   }
 
+  const viewOrderError = await normalizeTwentyCompanyViewsViaDatabase(input.fields)
+  if (viewOrderError) {
+    return { configured: true, appliedFields, selectFields, error: viewOrderError }
+  }
+
   return { configured: true, appliedFields, selectFields, error: null }
+}
+
+async function normalizeTwentyCompanyViewsViaDatabase(fields: SalesCrmViewField[]): Promise<string | null> {
+  const connectionString = env("TWENTY_DATABASE_URL") ?? env("TWENTY_METADATA_DATABASE_URL")
+  if (!connectionString) {
+    return "TWENTY_DATABASE_URL is required to normalize Twenty company view order."
+  }
+
+  const orderedFields = fields
+    .map((field) => ({
+      name: field.twentyFieldName,
+      position: field.position,
+      visible: field.isVisible,
+    }))
+    .sort((a, b) => a.position - b.position)
+
+  const client = new Client({ connectionString })
+  try {
+    await client.connect()
+    await client.query("begin")
+    const objectRes = await client.query<{ id: string }>(
+      'select "id" from core."objectMetadata" where "nameSingular" = $1 limit 1',
+      ["company"],
+    )
+    const objectId = objectRes.rows[0]?.id
+    if (!objectId) throw new Error("Twenty company object metadata was not found.")
+
+    await client.query(
+      `
+        with crm_order as (
+          select *
+          from jsonb_to_recordset($2::jsonb) as order_row(name text, position int, visible boolean)
+        ),
+        list_views as (
+          select id
+          from core."view"
+          where "objectMetadataId" = $1
+            and name = any($3::text[])
+        ),
+        extra_home_fields as (
+          select *
+          from jsonb_to_recordset($4::jsonb) as extra_row(name text, position int)
+        ),
+        renamed_views as (
+          update core."view"
+          set name = $5,
+              "updatedAt" = now()
+          where id in (select id from list_views)
+          returning id
+        ),
+        normalized_list as (
+          update core."viewField" view_field
+          set
+            "position" = coalesce(crm_order.position, view_field."position"),
+            "isVisible" = coalesce(crm_order.visible, false),
+            "updatedAt" = now()
+          from core."fieldMetadata" field
+          left join crm_order on crm_order.name = field.name
+          where view_field."viewId" in (select id from list_views)
+            and view_field."fieldMetadataId" = field.id
+            and field."objectMetadataId" = $1
+          returning view_field.id
+        )
+        update core."viewField" view_field
+        set
+          "position" = coalesce(crm_order.position, extra_home_fields.position, view_field."position"),
+          "isVisible" = case
+            when crm_order.name is not null then crm_order.visible
+            when extra_home_fields.name is not null then true
+            else false
+          end,
+          "updatedAt" = now()
+        from core."fieldMetadata" field
+        left join crm_order on crm_order.name = field.name
+        left join extra_home_fields on extra_home_fields.name = field.name
+        where view_field."viewId" in (
+          select id
+          from core."view"
+          where "objectMetadataId" = $1
+            and name = $6
+        )
+          and view_field."fieldMetadataId" = field.id
+          and field."objectMetadataId" = $1
+      `,
+      [
+        objectId,
+        JSON.stringify(orderedFields),
+        TWENTY_COMPANY_LIST_VIEW_NAMES,
+        JSON.stringify(TWENTY_HOME_EXTRA_FIELDS),
+        TWENTY_COMPANY_LIST_VIEW_NAME,
+        TWENTY_COMPANY_RECORD_VIEW_NAME,
+      ],
+    )
+
+    await client.query("commit")
+    return null
+  } catch (error) {
+    await client.query("rollback").catch((rollbackErr) => { console.error("[twenty-crm-metadata] rollback failed:", rollbackErr) })
+    console.error("[twenty-crm-metadata] company view normalization failed:", error)
+    return error instanceof Error ? error.message : "Twenty company view normalization failed."
+  } finally {
+    await client.end().catch((endErr) => { console.error("[twenty-crm-metadata] client.end failed:", endErr) })
+  }
 }
 
 async function forceTwentyTextOnlyFieldsViaDatabase(fields: SalesCrmViewField[]): Promise<string | null> {
@@ -294,6 +410,9 @@ async function applyTwentyCrmMetadataViaDatabase(input: {
     }
 
     await client.query("commit")
+    const viewOrderError = await normalizeTwentyCompanyViewsViaDatabase(input.fields)
+    if (viewOrderError) return { configured: true, appliedFields, selectFields, error: viewOrderError }
+
     return { configured: true, appliedFields, selectFields, error: null }
   } catch (error) {
     await client.query("rollback").catch((rollbackErr) => { console.error("[twenty-crm-metadata] rollback failed:", rollbackErr) })

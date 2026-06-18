@@ -2,8 +2,8 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 
-const DEFAULT_COOLIFY_URL = process.env.COOLIFY_URL || "https://coolify.appexx.me"
-const DEFAULT_APP_UUID = process.env.PARADIGM_APP_UUID || "i12am4vvcbggefnqdizhnv9a"
+export const DEFAULT_COOLIFY_URL = process.env.COOLIFY_API_URL || process.env.COOLIFY_URL || "http://178.105.138.55:8000"
+export const DEFAULT_APP_UUID = process.env.PARADIGM_APP_UUID || "n8i2sjiqvr2d8hrzppop2m2i"
 const CLAUDE_PROJECT_MEMORY_DIR = path.join(os.homedir(), ".claude", "projects")
 
 function envValue(name, fallback = null) {
@@ -59,7 +59,7 @@ function parseReferenceField(text, labels) {
     const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
     const patterns = [
       new RegExp(`^\\s*-\\s*\\*\\*${escaped}\\*\\*:\\s*\`([^\`]+)\`\\s*$`, "im"),
-      new RegExp(`^\\s*${escaped}\\s*[:=]\\s*([A-Za-z0-9_:/?&.=+~%-]+)\\s*$`, "im"),
+      new RegExp(`^\\s*-?\\s*(?:\\*\\*)?${escaped}(?:\\*\\*)?\\s*[:=]\\s*([A-Za-z0-9_|:/?&.=+~%-]+)\\s*$`, "im"),
     ]
     for (const pattern of patterns) {
       const match = text.match(pattern)
@@ -83,9 +83,18 @@ function findCoolifyFromClaudeReferences() {
     }
   }
   walk(CLAUDE_PROJECT_MEMORY_DIR)
-  files.sort((a, b) => b.localeCompare(a))
+  const scored = files
+    .map((file) => {
+      const normalized = file.replace(/\\/g, "/").toLowerCase()
+      let score = 0
+      if (normalized.includes("paradigmjpcom")) score += 10
+      if (normalized.includes("hetzner")) score += 5
+      if (path.basename(normalized).includes("coolify")) score += 1
+      return { file, score }
+    })
+    .sort((a, b) => b.score - a.score || b.file.localeCompare(a.file))
 
-  for (const file of files) {
+  for (const { file } of scored) {
     try {
       const text = fs.readFileSync(file, "utf8")
       const token = parseReferenceField(text, ["COOLIFY_API_TOKEN", "token", "api token"])
@@ -128,16 +137,23 @@ function findCoolifyFromMcpBackup() {
 
 export function getCoolifyAuth() {
   const token = envValue("COOLIFY_API_TOKEN")
+  const explicitUrl = envValue("COOLIFY_API_URL") || envValue("COOLIFY_URL")
+  if (token && explicitUrl) {
+    return {
+      token,
+      baseUrl: explicitUrl,
+    }
+  }
+  const reference = findCoolifyFromClaudeReferences()
+  if (reference) return reference
   if (token) {
     return {
       token,
-      baseUrl: envValue("COOLIFY_API_URL", DEFAULT_COOLIFY_URL),
+      baseUrl: DEFAULT_COOLIFY_URL,
     }
   }
   const backup = findCoolifyFromMcpBackup()
   if (backup) return backup
-  const reference = findCoolifyFromClaudeReferences()
-  if (reference) return reference
   return null
 }
 

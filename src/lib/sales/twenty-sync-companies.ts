@@ -54,6 +54,10 @@ function karteHomeSummary(karte: CompanyKarteSnapshot): string {
     sourceSummary.nextSteps ? `次アクション:\n${sourceSummary.nextSteps}` : null,
     karte.personalizedHook ? `パーソナライズHook: ${karte.personalizedHook}` : null,
     karte.personalizedCTA ? `CTA: ${karte.personalizedCTA}` : null,
+    karte.reportUrl ? `Report URL: ${karte.reportUrl}` : null,
+    karte.formUrl ? `Form URL: ${karte.formUrl}` : null,
+    karte.salesMaterialUrl ? `Sales material URL: ${karte.salesMaterialUrl}` : null,
+    karte.demoUrl ? `Demo URL: ${karte.demoUrl}` : null,
   ].filter(Boolean).join("\n")
 }
 
@@ -140,19 +144,54 @@ async function patchTwentyCompanyHome(
   twentyCompanyId: string,
   payload: Record<string, unknown>,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  return twentyFetch<any>(`/rest/companies/${twentyCompanyId}`, {
-    method: "PATCH",
-    body: JSON.stringify(payload),
-  })
+  const removableFields = [
+    "xLink",
+    "linkedinLink",
+    "employees",
+    "annualRecurringRevenue",
+    "address",
+    "paradigmReportUrl",
+    "paradigmFormUrl",
+    "paradigmDemoUrl",
+    "paradigmKarteScore",
+    "paradigmSourceCoverage",
+    "paradigmKarteSummary",
+    "paradigmCustomerPortalUrl",
+  ]
+  let currentPayload = { ...payload }
+  let lastError = "Twenty company patch failed"
+
+  for (let attempt = 0; attempt <= removableFields.length; attempt += 1) {
+    const result = await twentyFetch<any>(`/rest/companies/${twentyCompanyId}`, {
+      method: "PATCH",
+      body: JSON.stringify(currentPayload),
+    })
+    if (result.ok) return { ok: true }
+
+    lastError = result.error
+    const missingField = removableFields.find((field) => (
+      Object.prototype.hasOwnProperty.call(currentPayload, field) &&
+      (
+        new RegExp(`[\\\\"']?${field}[\\\\"']?\\s+field`, "i").test(result.error) ||
+        result.error.includes(`"${field}"`) ||
+        result.error.includes(`\\"${field}\\"`)
+      )
+    ))
+    if (!missingField) break
+
+    const { [missingField]: _removed, ...nextPayload } = currentPayload
+    currentPayload = nextPayload
+    console.warn(`[twenty-sync] removed unavailable Twenty company field ${missingField} and retrying`)
+  }
+
+  return { ok: false, error: lastError }
 }
 
 async function syncTwentyCompanyHomeFields(
   karte: CompanyKarteSnapshot,
   twentyCompanyId: string,
 ): Promise<void> {
-  const result = await twentyFetch<any>(`/rest/companies/${twentyCompanyId}`, {
-    method: "PATCH",
-    body: JSON.stringify({
+  const result = await patchTwentyCompanyHome(twentyCompanyId, {
       name: karte.companyName,
       // Standard visible fields (show immediately in Twenty UI)
       xLink: linkField("診断レポート", karte.reportUrl),
@@ -167,7 +206,6 @@ async function syncTwentyCompanyHomeFields(
       paradigmKarteScore: karteScore(karte),
       paradigmSourceCoverage: karte.sourceScore,
       paradigmKarteSummary: { markdown: karteHomeSummary(karte) },
-    }),
   })
 
   if (!result.ok) throw new Error(result.error)

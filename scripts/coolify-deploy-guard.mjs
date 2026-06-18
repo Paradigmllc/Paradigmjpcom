@@ -12,9 +12,9 @@
 
 import fs from "node:fs"
 import { spawnSync } from "node:child_process"
-import { coolifyRequest } from "./lib/coolify-env.mjs"
+import { DEFAULT_APP_UUID, coolifyRequest } from "./lib/coolify-env.mjs"
 
-const appUuid = process.env.PARADIGM_APP_UUID || "i12am4vvcbggefnqdizhnv9a"
+const appUuid = process.env.PARADIGM_APP_UUID || DEFAULT_APP_UUID
 const host = process.env.PARADIGM_DEPLOY_HOST || "paradigm-droplet"
 const timeoutSec = Number.parseInt(process.env.PARADIGM_SSH_CONNECT_TIMEOUT || "20", 10)
 const staleMinutes = Number.parseInt(process.env.PARADIGM_STUCK_DEPLOY_MINUTES || "25", 10)
@@ -76,7 +76,7 @@ select
   q.updated_at,
   left(coalesce(q.commit_message, ''), 90) as commit_message
 from application_deployment_queues q
-join applications a on a.id = q.application_id
+join applications a on a.id::text = q.application_id::text
 where a.uuid = '${appUuid.replace(/'/g, "''")}'
   and q.status in ('queued', 'in_progress')
 order by q.created_at asc;
@@ -123,13 +123,26 @@ function inspectHost() {
     "echo 'disk='$(df -P / | awk 'NR==2 {print $5}')",
     "echo 'load='$(awk '{print $1\",\"$2\",\"$3}' /proc/loadavg)",
     "echo 'helpers='$(docker ps --filter ancestor=ghcr.io/coollabsio/coolify-helper:1.0.13 --format '{{.Names}}' | wc -l)",
-    "docker ps --filter name=i12am4vvcbggefnqdizhnv9a --format 'app_container={{.Names}} {{.Status}} {{.Image}}'",
+    `docker ps --filter name=${appUuid} --format 'app_container={{.Names}} {{.Status}} {{.Image}}'`,
   ].join("; ")
   console.log(ssh(command))
 }
 
 async function main() {
   assertDockerfileRuntimeGuards()
+
+  if (inspectOnly) {
+    const active = readActiveDeployments()
+    if (active.length === 0) {
+      console.log("Coolify queue guard: no queued/in_progress paradigm-hp deployments")
+    } else {
+      for (const row of active) {
+        console.log(`Coolify queue guard: active ${row.deploymentUuid} ${row.status} age=${row.minutesOld}m updated=${row.updatedAt}`)
+      }
+    }
+    inspectHost()
+    return
+  }
 
   if (preDeploy) {
     // Run quality guard before deploy (non-blocking for pre-existing issues)

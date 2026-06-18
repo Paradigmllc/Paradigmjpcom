@@ -42,7 +42,8 @@ function getDirectPool(): Pool | null {
   if (!uri) return null
   try {
     const u = new URL(uri)
-    const ref = u.username?.split(".")[1] || "yihdmgtxiqfdgdueolub"
+    const ref = u.username?.split(".")[1]
+    if (!ref) return null
     const config: IPv4PoolConfig = {
       host: `db.${ref}.supabase.co`,
       port: 5432,

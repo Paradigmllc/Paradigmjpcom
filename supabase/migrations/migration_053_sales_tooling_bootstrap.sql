@@ -109,7 +109,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.sales_campaigns TO service_role;
 INSERT INTO public.sales_tool_connections
   (slug, display_name, role, interface_type, deployment_type, base_url, health_url, status, owner, meta)
 VALUES
-  ('supabase', 'Supabase Cloud', 'RevenueOS SSOT: companies, candidate runs, pipeline runs, reports, and audit logs.', 'database', 'cloud', 'https://yihdmgtxiqfdgdueolub.supabase.co', 'https://yihdmgtxiqfdgdueolub.supabase.co/rest/v1/', 'active', 'Paradigm', '{"source_of_truth":true}'::jsonb),
+  ('supabase', 'Supabase OSS', 'RevenueOS SSOT: companies, candidate runs, pipeline runs, reports, and audit logs.', 'database', 'self_hosted', 'https://supabase.paradigmjp.com', 'https://supabase.paradigmjp.com/rest/v1/', 'active', 'Paradigm', '{"source_of_truth":true}'::jsonb),
   ('twenty', 'Twenty OSS', 'CRM projection and bidirectional relationship layer synchronized from Supabase SSOT.', 'crm', 'oss_self_hosted', 'https://twenty.paradigmjp.com', NULL, 'active', 'Paradigm', '{"sync_mode":"supabase_ssot_projection"}'::jsonb),
   ('trigger-dev', 'Trigger.dev', 'Durable background orchestration for lead candidate collection, enrichment, report generation, and CRM sync.', 'automation', 'cloud', NULL, NULL, 'active', 'Paradigm', '{"primary_orchestrator":true}'::jsonb),
   ('dify', 'Dify Cloud', 'Copy, diagnosis, and form-message generation workflows.', 'ai', 'cloud', 'https://api.dify.ai', NULL, 'active', 'Paradigm', '{"workflow_copy_generation":true}'::jsonb),
