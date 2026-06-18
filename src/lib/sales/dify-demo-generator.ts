@@ -53,7 +53,7 @@ export async function generateDemoWithDify(
   report: DiagnosticReportData,
 ): Promise<DemoJsonBlueprint> {
   const apiKey = readOptionalEnv("DIFY_API_KEY")
-  const baseUrl = readOptionalEnv("DIFY_API_BASE") || "https://api.dify.ai/v1"
+  const baseUrl = readOptionalEnv("DIFY_API_URL") || readOptionalEnv("DIFY_API_BASE") || "https://api.dify.ai/v1"
 
   if (!apiKey) {
     console.warn("[dify-demo] DIFY_API_KEY not configured, falling back to rules-based generation")
