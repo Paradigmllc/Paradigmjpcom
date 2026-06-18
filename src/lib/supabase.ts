@@ -78,8 +78,37 @@ export function getServiceSupabase() {
   return createClient(url, serviceKey, { auth: { persistSession: false } })
 }
 
+function shouldRewriteDirectPostgrest(url: string): boolean {
+  return /supabase-rest-1(?::3000)?$/i.test(new URL(url).host) || flagEnabled("SALES_SUPABASE_DIRECT_POSTGREST")
+}
+
+function createDirectPostgrestFetch(baseUrl: string): typeof fetch {
+  const normalizedBase = baseUrl.replace(/\/+$/, "")
+  const restPrefix = `${normalizedBase}/rest/v1`
+
+  return async (input, init) => {
+    if (typeof input === "string" || input instanceof URL) {
+      const raw = input.toString()
+      if (raw.startsWith(restPrefix)) {
+        return fetch(`${normalizedBase}${raw.slice(restPrefix.length)}`, init)
+      }
+      return fetch(input, init)
+    }
+
+    const raw = input.url
+    if (!raw.startsWith(restPrefix)) return fetch(input, init)
+    const rewritten = `${normalizedBase}${raw.slice(restPrefix.length)}`
+    return fetch(new Request(rewritten, input), init)
+  }
+}
+
 export function getServiceSalesSupabase() {
   const config = getSalesSupabaseConfig()
   if (!config) return null
-  return createClient(config.url, config.serviceKey, { auth: { persistSession: false } })
+  return createClient(config.url, config.serviceKey, {
+    auth: { persistSession: false },
+    global: shouldRewriteDirectPostgrest(config.url)
+      ? { fetch: createDirectPostgrestFetch(config.url) }
+      : undefined,
+  })
 }
