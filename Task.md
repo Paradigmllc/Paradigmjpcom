@@ -51,3 +51,10 @@
 - astro-demo dev: `npm run dev` (localhost:4321)
 - 新規デモ生成: Sales OS enrichment pipeline → `generateReplacementDemo()` → Supabase自動保存
 - Difyからの直接生成: `POST /api/demo-pages/{slug}` + `x-admin-secret` ヘッダー
+## CURRENT STATUS - 2026-06-18 RevenueOS outreach quality gate
+
+- Implemented shared outreach readiness gate for RevenueOS/Twenty/outreach worker.
+- No diagnostic report URL now blocks outreach instead of falling back to `https://paradigmjp.com`.
+- RevenueOS CRM tab now shows an operational queue: send-ready / review-required / blocked.
+- Twenty company karte summary now includes `Outreach quality gate` and `Next action`.
+- Verification: `npm test -- src/lib/sales/outreach/readiness.test.ts src/lib/sales/form-message.test.ts` and `npx tsc --noEmit --pretty false --skipLibCheck --types node -p tsconfig.json`.

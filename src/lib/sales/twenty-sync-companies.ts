@@ -34,14 +34,46 @@ function salesStatusLabel(karte: CompanyKarteSnapshot): string {
   return `${pipeline} / ${karte.dealStage}`
 }
 
+function outreachGateSummary(karte: CompanyKarteSnapshot): { label: string; detail: string; nextAction: string } {
+  const blockers: string[] = []
+  const warnings: string[] = []
+  if (!karte.reportUrl) blockers.push("diagnostic report URL missing")
+  if (!karte.formUrl) warnings.push("form URL missing")
+  if (!karte.industry) warnings.push("industry not normalized")
+  if (!karte.diagnosisSummary && karte.sourceScore < 20) warnings.push(`low evidence coverage (${karte.sourceScore}%)`)
+
+  if (blockers.length > 0) {
+    return {
+      label: "blocked",
+      detail: blockers.join(" / "),
+      nextAction: "Generate a diagnostic report, then sync this company to Twenty again.",
+    }
+  }
+  if (warnings.length > 0) {
+    return {
+      label: "review_required",
+      detail: warnings.join(" / "),
+      nextAction: karte.formUrl ? "Review copy and evidence before first-5 approval." : "Discover the form URL with Crawl4AI/Crawlee/Stagehand.",
+    }
+  }
+  return {
+    label: "send_ready",
+    detail: "Report URL, form URL, and evidence are present.",
+    nextAction: "Run dry-run, then move to first-5 approval.",
+  }
+}
+
 function karteHomeSummary(karte: CompanyKarteSnapshot): string {
   const products = karte.recommendedProducts
     .slice(0, 3)
     .map((product) => `${product.displayName}(${product.fitScore})`)
     .join(" / ")
   const sourceSummary = sourceCoverageSummary(karte.sourceItems)
+  const outreachGate = outreachGateSummary(karte)
 
   return [
+    `Outreach quality gate: ${outreachGate.label} - ${outreachGate.detail}`,
+    `Next action: ${outreachGate.nextAction}`,
     `対象: ${karte.targetCountry} / ${karte.reportLocale} / ${karte.templateVariant}`,
     `取得状況: ${karte.sourceScore}% (${karte.collectedCount} collected, ${karte.configuredCount} configured, ${karte.missingCount} missing)`,
     sourceSummary.collected ? `取得済みソース: ${sourceSummary.collected}` : null,
