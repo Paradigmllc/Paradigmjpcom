@@ -115,7 +115,11 @@ async function patchTwentyCompanyHome(
     lastError = result.error
     const missingField = removableFields.find((field) => (
       Object.prototype.hasOwnProperty.call(currentPayload, field) &&
-      new RegExp(`["']?${field}["']?\\s+field`, "i").test(result.error)
+      (
+        new RegExp(`[\\\\"']?${field}[\\\\"']?\\s+field`, "i").test(result.error) ||
+        result.error.includes(`"${field}"`) ||
+        result.error.includes(`\\"${field}\\"`)
+      )
     ))
     if (!missingField) break
 

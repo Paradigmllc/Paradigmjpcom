@@ -17,6 +17,7 @@ const DRY = process.argv.includes("--dry")
 const NO_WAIT = process.argv.includes("--no-wait")
 const SKIP_HOST_PREFLIGHT = process.argv.includes("--skip-host-preflight")
 const SKIP_DEPLOY_GUARD = process.argv.includes("--skip-deploy-guard")
+const DEPLOY_HOST = process.env.PARADIGM_DEPLOY_HOST || "paradigm-droplet"
 
 const AUTH = getCoolifyAuth()
 if (!AUTH) {
@@ -81,6 +82,91 @@ function runDeployGuard() {
   if (result.status !== 0) throw new Error("Coolify deploy guard failed; refusing deployment")
 }
 
+function refreshManualTraefikRoute() {
+  if (SKIP_HOST_PREFLIGHT || DRY) {
+    console.log("Manual Traefik route refresh: skipped")
+    return
+  }
+
+  const script = `
+set -euo pipefail
+app_uuid='${APP_UUID.replace(/'/g, "'\\''")}'
+route_file='/data/coolify/proxy/dynamic/paradigmjp.yml'
+if [ ! -f "$route_file" ]; then
+  echo "Manual Traefik route refresh: route file not found"
+  exit 0
+fi
+new_container="$(docker ps --filter "name=${APP_UUID.replace(/"/g, '\\"')}" --format '{{.Names}}' | head -n1)"
+if [ -z "$new_container" ]; then
+  echo "Manual Traefik route refresh: app container not found"
+  exit 1
+fi
+python3 - "$route_file" "$app_uuid" "$new_container" <<'PY'
+import re
+import sys
+
+path, app_uuid, new_container = sys.argv[1:4]
+with open(path, encoding="utf-8") as handle:
+    text = handle.read()
+
+pattern = rf"{re.escape(app_uuid)}-[0-9]{{12}}"
+updated = re.sub(pattern, new_container, text)
+if updated == text:
+    print(f"Manual Traefik route refresh: already points to {new_container}")
+else:
+    backup = f"{path}.bak-deploy"
+    with open(backup, "w", encoding="utf-8") as handle:
+        handle.write(text)
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write(updated)
+    print(f"Manual Traefik route refresh: updated route to {new_container}")
+PY
+`
+  const result = spawnSync("ssh", [DEPLOY_HOST, "bash -s"], {
+    input: script,
+    cwd: process.cwd(),
+    env: process.env,
+    encoding: "utf8",
+  })
+  const output = `${result.stdout || ""}${result.stderr || ""}`.trim()
+  if (output) console.log(output)
+  if (result.status !== 0) throw new Error("Manual Traefik route refresh failed")
+}
+
+function connectRuntimeNetworks() {
+  if (SKIP_HOST_PREFLIGHT || DRY) {
+    console.log("Runtime network connect: skipped")
+    return
+  }
+
+  const script = `
+set -euo pipefail
+app_uuid='${APP_UUID.replace(/'/g, "'\\''")}'
+app_container="$(docker ps --filter "name=${APP_UUID.replace(/"/g, '\\"')}" --format '{{.Names}}' | head -n1)"
+if [ -z "$app_container" ]; then
+  echo "Runtime network connect: app container not found"
+  exit 1
+fi
+for net in supabase_supabase-net services-net; do
+  if docker network inspect "$net" >/dev/null 2>&1; then
+    docker network connect "$net" "$app_container" 2>/dev/null || true
+    echo "Runtime network connect: ensured $app_container on $net"
+  else
+    echo "Runtime network connect: missing optional network $net"
+  fi
+done
+`
+  const result = spawnSync("ssh", [DEPLOY_HOST, "bash -s"], {
+    input: script,
+    cwd: process.cwd(),
+    env: process.env,
+    encoding: "utf8",
+  })
+  const output = `${result.stdout || ""}${result.stderr || ""}`.trim()
+  if (output) console.log(output)
+  if (result.status !== 0) throw new Error("Runtime network connect failed")
+}
+
 async function cancelDeploy(uuid, reason) {
   try {
     await api(`/api/v1/deployments/${uuid}/cancel`, { method: "POST" })
@@ -128,7 +214,11 @@ async function run() {
     const status = await api(`/api/v1/deployments/${deployUuid}`)
     const state = status?.status || "unknown"
     console.log(`[${i}/80] status: ${state}`)
-    if (state === "finished" || state === "running:healthy") return
+    if (state === "finished" || state === "running:healthy") {
+      connectRuntimeNetworks()
+      refreshManualTraefikRoute()
+      return
+    }
     if (state === "failed" || state === "error" || state === "cancelled") {
       throw new Error(`Deployment failed: ${state}`)
     }

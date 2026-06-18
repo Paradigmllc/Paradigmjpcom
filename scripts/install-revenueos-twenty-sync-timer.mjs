@@ -89,7 +89,7 @@ systemctl --no-pager --full status revenueos-twenty-sync.timer
 `
 
 const result = spawnSync("ssh", [host, "bash -s"], {
-  input: remote,
+  input: remote.replace(/\r/g, ""),
   encoding: "utf8",
   stdio: "inherit",
 })
