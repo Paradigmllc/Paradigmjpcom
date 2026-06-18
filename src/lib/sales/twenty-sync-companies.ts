@@ -103,6 +103,9 @@ async function patchTwentyCompanyHome(
     "paradigmReportUrl",
     "paradigmFormUrl",
     "paradigmDemoUrl",
+    "paradigmKarteScore",
+    "paradigmSourceCoverage",
+    "paradigmKarteSummary",
     "paradigmCustomerPortalUrl",
   ]
   let currentPayload = { ...payload }
