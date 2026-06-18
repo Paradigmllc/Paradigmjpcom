@@ -52,6 +52,19 @@
 - Stale old project-ref strings remain only in historical migration comments and two legacy seed scripts that currently fail `node --check` before any Supabase call; they are not part of the checked production runtime.
 - Safe cancellation judgement: Cloud Supabase is no longer required for the checked production runtime. Keep a final export/archive before deleting because Supabase project deletion permanently removes project data and backups.
 
+### Final Backup Implementation - 2026-06-18
+- Final cutover archive created on Hetzner: `/opt/backups/final-supabase-cutover-20260618T014151Z.tar.gz`.
+- Local copy also saved: `C:\Users\apple\Desktop\final-supabase-cutover-20260618T014151Z.tar.gz`.
+- Archive SHA256: `751cc899e34d117bdfc546b0e0fd62a364cd9cd353673f445dcdea880047c3fd`.
+- Archive verification passed on host with `sha256sum -c` and `tar -tzf`; local Desktop copy checksum also matched.
+- Cloud Supabase API export included: 276 REST tables, 341,802 exported rows, 0 table errors, 2 Auth users, 2 Storage buckets, 24/24 Storage objects downloaded, 0 Storage errors.
+- Cloud direct `pg_dump` was attempted but failed because the saved pooler credential was rejected. The archive includes the error log at `logs/cloud-pg-dump.err`.
+- Current OSS Supabase full backup included: `oss/db/oss-postgres.dump`, `oss/db/oss-postgres.sql.gz`, `oss/db/oss-globals.sql.gz`, table lists, and key table counts.
+- OSS key table counts at backup time: `sales_companies=255`, `leads=198`, `sales_pipeline_runs=1520`.
+- Nightly OSS Supabase backup implemented with systemd: `/usr/local/sbin/backup-oss-supabase.sh`, `oss-supabase-backup.service`, `oss-supabase-backup.timer`.
+- Timer status: enabled + active. Schedule: daily 03:30 UTC with 15 min randomized delay. Retention: 14 days.
+- First nightly backup succeeded: `/opt/backups/oss-supabase-nightly/20260618T015642Z.tar.gz`, checksum verified.
+
 ## CURRENT STATUS - 2026-06-17 Hetzner CX43 移行完了 / RevenueOS SSOT 修正
 
 ### 移行概要
