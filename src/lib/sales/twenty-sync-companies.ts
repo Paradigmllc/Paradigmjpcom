@@ -22,6 +22,7 @@ import {
   type TwentyCustomerHandoffInput,
   type TwentyCustomerHandoffResult,
 } from "./twenty-sync-utils"
+import type { SourceCoverageItem } from "@/lib/sales/source-coverage"
 
 function karteScore(karte: CompanyKarteSnapshot): number {
   const topFit = karte.recommendedProducts[0]?.fitScore ?? 70
@@ -38,13 +39,19 @@ function karteHomeSummary(karte: CompanyKarteSnapshot): string {
     .slice(0, 3)
     .map((product) => `${product.displayName}(${product.fitScore})`)
     .join(" / ")
+  const sourceSummary = sourceCoverageSummary(karte.sourceItems)
 
   return [
     `対象: ${karte.targetCountry} / ${karte.reportLocale} / ${karte.templateVariant}`,
     `取得状況: ${karte.sourceScore}% (${karte.collectedCount} collected, ${karte.configuredCount} configured, ${karte.missingCount} missing)`,
+    sourceSummary.collected ? `取得済みソース: ${sourceSummary.collected}` : null,
+    sourceSummary.configured ? `次に取得可能: ${sourceSummary.configured}` : null,
+    sourceSummary.missing ? `不足ソース: ${sourceSummary.missing}` : null,
     `主な痛み: ${karte.diagnosisSummary ?? "Dify診断待ち"}`,
     `推奨提案: ${karte.recommendedOffer ?? (products || "商材判定待ち")}`,
     `推奨商材: ${products || "未判定"}`,
+    sourceSummary.evidence ? `主要証跡:\n${sourceSummary.evidence}` : null,
+    sourceSummary.nextSteps ? `次アクション:\n${sourceSummary.nextSteps}` : null,
     karte.personalizedHook ? `パーソナライズHook: ${karte.personalizedHook}` : null,
     karte.personalizedCTA ? `CTA: ${karte.personalizedCTA}` : null,
     karte.reportUrl ? `Report URL: ${karte.reportUrl}` : null,
@@ -52,6 +59,49 @@ function karteHomeSummary(karte: CompanyKarteSnapshot): string {
     karte.salesMaterialUrl ? `Sales material URL: ${karte.salesMaterialUrl}` : null,
     karte.demoUrl ? `Demo URL: ${karte.demoUrl}` : null,
   ].filter(Boolean).join("\n")
+}
+
+function sourceCoverageSummary(items: SourceCoverageItem[]): {
+  collected: string
+  configured: string
+  missing: string
+  evidence: string
+  nextSteps: string
+} {
+  const byStatus = (status: SourceCoverageItem["status"], limit: number) =>
+    items
+      .filter((item) => item.status === status)
+      .sort((a, b) => b.score - a.score || a.label.localeCompare(b.label))
+      .slice(0, limit)
+      .map((item) => item.label)
+      .join(" / ")
+
+  const evidence = items
+    .filter((item) => item.status === "collected")
+    .sort((a, b) => b.score - a.score || a.label.localeCompare(b.label))
+    .slice(0, 8)
+    .map((item) => `- ${item.label}: ${item.detail}`)
+    .join("\n")
+
+  const nextSteps = items
+    .filter((item) => item.status === "configured" || item.status === "missing" || item.status === "error")
+    .sort((a, b) => {
+      const priority = { error: 0, configured: 1, missing: 2 } as const
+      const aPriority = priority[a.status as keyof typeof priority] ?? 3
+      const bPriority = priority[b.status as keyof typeof priority] ?? 3
+      return aPriority - bPriority || a.label.localeCompare(b.label)
+    })
+    .slice(0, 6)
+    .map((item) => `- ${item.label}: ${item.nextStep}`)
+    .join("\n")
+
+  return {
+    collected: byStatus("collected", 12),
+    configured: byStatus("configured", 8),
+    missing: byStatus("missing", 8),
+    evidence,
+    nextSteps,
+  }
 }
 
 function customerHandoffSummary(input: TwentyCustomerHandoffInput): string {

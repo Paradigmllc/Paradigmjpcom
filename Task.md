@@ -44,13 +44,17 @@
 - RevenueOS app env was restored for OSS Supabase, Trigger.dev, Twenty, Dify, Crawl4AI, and browser-search integrations.
 - Supabase OSS security/runtime migration was added and applied: RevenueOS grants restored, anon/auth access to sensitive Sales OS tables revoked, enrichment runtime columns restored.
 - Twenty sync now tolerates missing OSS custom/standard fields and falls back instead of failing writeback.
+- Twenty HOME sync now includes the 30+ API/OSS source visibility inside `paradigmKarteSummary` (collected/configured/missing sources, evidence, and next actions) while keeping `paradigmSourceCoverage` as the list-level score.
 - Host-side `revenueos-twenty-sync.timer` is enabled and active; it runs pull + writeback once per minute.
 - Cal.com compose configuration was repaired: `ALLOWED_HOSTNAMES` added and malformed compose sections fixed so the service can be recreated.
 - Final cloud-to-OSS cutover archive and nightly OSS Supabase backup were implemented and verified earlier on 2026-06-18.
 
 ### Remaining Notes
+- Cloud Supabase delete is NOT approved yet. Direct Postgres/CLI dump is still blocked because stored DB passwords fail authentication and the available Supabase connector/CLI auth has no project access.
+- Appexx Hetzner app and Paperclip routes are internally restored, but public DNS for `appexx.me`, `www.appexx.me`, and `paperclip.appexx.me` still points to old DigitalOcean `139.59.250.5`; the available Cloudflare token has no zone visibility for `appexx.me`.
 - RevenueOS `/api/sales/health` is `degraded` only because optional providers are not configured: Stagehand, Steel.dev, Crawlee worker, and Outreach worker.
 - Twenty pull skips records with missing or invalid domains; this is source data quality, not an infra failure.
 - Directus health is protected by design and returns 403 from the public URL.
 - Chatwoot and Docuseal are reachable at setup/onboarding states; seed/admin setup may still be needed before business use.
-- `npx tsc --noEmit` currently fails on pre-existing missing type-definition packages in the local workspace. `npm run lint` also fails because the script still uses removed `next lint` behavior.
+- `npx tsc --noEmit` currently fails on pre-existing missing type-definition packages in the local workspace. Use `npx tsc --noEmit --pretty false --skipLibCheck --types node -p tsconfig.json` for the current verified check until dependency types are repaired.
+- `npm run lint` currently fails because the script still uses removed `next lint` behavior.
