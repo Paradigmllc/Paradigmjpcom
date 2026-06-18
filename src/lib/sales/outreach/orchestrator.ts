@@ -1,6 +1,6 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { notifySlack } from "@/lib/notify"
-import { generateFormMessage, fillReportUrl } from "../form-message"
+import { generateFormMessage, fillReportUrl, fillDemoUrl } from "../form-message"
 import { discoverFormUrl, normalizeOrigin } from "../sources/form-discovery"
 import { isAllowedFormUrlForOrigin } from "../sources/external-form-discovery"
 import type { Region, SalesCompany } from "../types"
@@ -123,6 +123,13 @@ async function processOne(
     return base("discovery_failed", `message generation failed: ${generated.error ?? "empty"}`)
   }
   const message = fillReportUrl(generated.message, reportUrl)
+  // Inject demo URL if company has one (WEB制作診断レポ�EチEvariant only)
+  const companyMeta = (company.meta ?? {}) as Record<string, unknown>
+  const demoSite = companyMeta.demo_site as Record<string, unknown> | undefined
+  const demoUrl = typeof demoSite?.url === "string" ? demoSite.url as string : null
+  const finalMessage = demoUrl ? fillDemoUrl(message, demoUrl) : message
+
+  const msg = finalMessage // alias for readability in closures below
 
   if (!opts.dryRun && (generated.fallbacks?.issueCode || readiness.status !== "send_ready")) {
     await persistOutcome(
@@ -130,11 +137,11 @@ async function processOne(
       "manual_queue",
       "follow_up",
       `outreach quality gate requires review: ${[...readiness.warnings, ...(generated.fallbacks?.issueCode ? ["diagnostic issue was inferred"] : [])].join("; ")}`,
-      { message, fallbacks: generated.fallbacks, readiness },
+      { message: msg, fallbacks: generated.fallbacks, readiness },
       opts.dryRun,
       opts.pipelineRunId,
     )
-    return { ...base("manual_queue", "outreach quality gate requires review before automatic submission"), message }
+    return { ...base("manual_queue", "outreach quality gate requires review before automatic submission"), message: msg }
   }
 
   const provider = getBrowserProvider()
@@ -154,7 +161,7 @@ async function processOne(
         "manual_queue",
         "follow_up",
         `form URL not found: ${discovery.method}`,
-        { formUrl, discovery, message },
+        { formUrl, discovery, message: msg },
         opts.dryRun,
         opts.pipelineRunId,
       )
@@ -175,7 +182,7 @@ async function processOne(
       "manual_queue",
       "follow_up",
       "form URL is outside the company domain and trusted hosted-form allowlist",
-      { formUrl, message },
+      { formUrl, message: msg },
       opts.dryRun,
       opts.pipelineRunId,
     )
@@ -189,7 +196,7 @@ async function processOne(
       "manual_queue",
       "follow_up",
       "form HTML fetch failed",
-      { formUrl, message },
+      { formUrl, message: msg },
       opts.dryRun,
       opts.pipelineRunId,
     )
@@ -203,17 +210,17 @@ async function processOne(
       "manual_queue",
       "follow_up",
       "captcha requires manual handling",
-      { formUrl, classification: classification.classification, message },
+      { formUrl, classification: classification.classification, message: msg },
       opts.dryRun,
       opts.pipelineRunId,
     )
     if (!opts.dryRun) {
       const { notifyBothChannels } = await import("@/lib/notify")
-      const title = `🤖 CAPTCHA手動対応: ${company.company_name}`
-      const notificationMessage = `会社「${company.company_name}」（${company.domain}）にてロボット防御（CAPTCHA）を検出したため、手動キューに送信しました。Appsmithで送信承認または手動送信を行ってください。\n送信先URL: ${formUrl ?? "不明"}`
+      const title = `🤁ECAPTCHA手動対忁E ${company.company_name}`
+      const notificationMessage = `会社、E{company.company_name}」！E{company.domain}�E�にてロボット防御�E�EAPTCHA�E�を検�Eしたため、手動キューに送信しました、Eppsmithで送信承認また�E手動送信を行ってください、En送信允ERL: ${formUrl ?? "不�E"}`
 
       await notifyBothChannels(
-        `🚨 *CAPTCHA手動対応が必要* 🚨\n*会社名*: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不明"}\n*対応*: 営業ダッシュボード等で手動対応を行ってください。`,
+        `🚨 *CAPTCHA手動対応が忁E��E 🚨\n*会社吁E: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不�E"}\n*対忁E: 営業ダチE��ュボ�Eド等で手動対応を行ってください。`,
         {
           title,
           message: notificationMessage,
@@ -222,7 +229,7 @@ async function processOne(
         }
       ).catch((e) => console.error("[sales-outreach] notifyBothChannels failed:", e))
     }
-    return { ...base("manual_queue", "captcha detected"), formUrl, message, classification: classification.classification }
+    return { ...base("manual_queue", "captcha detected"), formUrl, message: msg, classification: classification.classification }
   }
 
   if (!classification.classification.startsWith("safe_")) {
@@ -235,7 +242,7 @@ async function processOne(
       opts.dryRun,
       opts.pipelineRunId,
     )
-    return { ...base("classified_skip", `unsafe: ${classification.classification}`), formUrl, message, classification: classification.classification }
+    return { ...base("classified_skip", `unsafe: ${classification.classification}`), formUrl, message: msg, classification: classification.classification }
   }
 
   const preflightResult = await preflight({ formUrl, classification, checkRobots: opts.checkRobots })
@@ -249,7 +256,7 @@ async function processOne(
       opts.dryRun,
       opts.pipelineRunId,
     )
-    return { ...base("preflight_failed", preflightResult.reason), formUrl, message, classification: classification.classification }
+    return { ...base("preflight_failed", preflightResult.reason), formUrl, message: msg, classification: classification.classification }
   }
 
   if (!opts.dryRun && opts.first5Approval && index < 5) {
@@ -263,11 +270,11 @@ async function processOne(
       opts.pipelineRunId,
     )
     const { notifyBothChannels } = await import("@/lib/notify")
-    const title = `⏳ 送信承認待ち: ${company.company_name}`
-    const notificationMessage = `会社「${company.company_name}」（${company.domain}）への初回のフォーム送信（first-5ゲート）前に、人間による承認が必要です。営業ダッシュボードで承認してください。\n送信先URL: ${formUrl ?? "不明"}\n診断レポート: ${reportUrl}`
+    const title = `⏳ 送信承認征E��: ${company.company_name}`
+    const notificationMessage = `会社、E{company.company_name}」！E{company.domain}�E�への初回のフォーム送信�E�Eirst-5ゲート）前に、人間による承認が忁E��です。営業ダチE��ュボ�Eドで承認してください、En送信允ERL: ${formUrl ?? "不�E"}\n診断レポ�EチE ${reportUrl}`
 
     await notifyBothChannels(
-      `⏳ *送信承認待ち* (初回送信ゲート)\n*会社名*: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不明"}\n*診断*: ${reportUrl}\n営業ダッシュボードで確認してください。`,
+      `⏳ *送信承認征E��* (初回送信ゲーチE\n*会社吁E: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不�E"}\n*診断*: ${reportUrl}\n営業ダチE��ュボ�Eドで確認してください。`,
       {
         title,
         message: notificationMessage,
@@ -275,13 +282,13 @@ async function processOne(
         type: "approval_required"
       }
     ).catch((e) => console.error("[sales-outreach] notifyBothChannels failed:", e))
-    return { ...base("manual_queue", "approval required before live form submit"), formUrl, message, classification: classification.classification }
+    return { ...base("manual_queue", "approval required before live form submit"), formUrl, message: msg, classification: classification.classification }
   }
 
   const submit = await provider.submitForm({
     formUrl,
-    fields: buildFields(message),
-    message,
+    fields: buildFields(msg),
+    message: msg,
     dryRun: opts.dryRun,
   })
   const stage: OutreachStage =
@@ -305,7 +312,7 @@ async function processOne(
       outcome: submit.outcome,
       detail: submit.detail,
       evidenceUrl: submit.evidenceUrl ?? null,
-      message,
+      message: msg,
     },
     opts.dryRun,
     opts.pipelineRunId,
@@ -313,11 +320,11 @@ async function processOne(
 
   if (!opts.dryRun && opts.first5Approval && index < 5 && stage === "submitted") {
     const { notifyBothChannels } = await import("@/lib/notify")
-    const title = `✅ 送信完了: ${company.company_name}`
-    const notificationMessage = `会社「${company.company_name}」（${company.domain}）へのフォーム送信が完了しました。 (送信件数: #${index + 1})\n診断レポート: ${reportUrl}`
+    const title = `✁E送信完亁E ${company.company_name}`
+    const notificationMessage = `会社、E{company.company_name}」！E{company.domain}�E�へのフォーム送信が完亁E��ました、E(送信件数: #${index + 1})\n診断レポ�EチE ${reportUrl}`
 
     await notifyBothChannels(
-      `✅ *フォーム送信完了* (#${index + 1})\n*会社名*: ${company.company_name} (${company.domain})\n*診断*: ${reportUrl}`,
+      `✁E*フォーム送信完亁E (#${index + 1})\n*会社吁E: ${company.company_name} (${company.domain})\n*診断*: ${reportUrl}`,
       {
         title,
         message: notificationMessage,

@@ -58,8 +58,9 @@ ${templateLoss ? `損失: ${templateLoss}` : ""}
 ${company.pagespeed_mobile != null ? `モバイルスコア: ${company.pagespeed_mobile}点` : ""}
 ${company.pagespeed_desktop != null ? `PCスコア: ${company.pagespeed_desktop}点` : ""}
 
-上記をもとに、200-300 文字のフォーム送信文面を 1 つ生成してください。
-末尾に {{report_url}} プレースホルダを必ず含めること。`
+ 上記をもとに、200-300 文字のフォーム送信文面を 1 つ生成してください。
+ 末尾に {{report_url}} プレースホルダを必ず含めること。
+ また、WEB制作診断レポートの場合は改善デモサイトのURLプレースホルダ {{demo_url}} も含めること。`
 }
 
 /* ───── Public API ───── */
@@ -294,4 +295,9 @@ async function saveFormMessageToCompany(companyId: string, message: string, engi
  */
 export function fillReportUrl(message: string, reportUrl: string): string {
   return message.replaceAll("{{report_url}}", reportUrl)
+}
+
+/** 生成済みメッセージの {{demo_url}} を実URLに置換するヘルパ */
+export function fillDemoUrl(message: string, demoUrl: string): string {
+  return message.replaceAll("{{demo_url}}", demoUrl)
 }

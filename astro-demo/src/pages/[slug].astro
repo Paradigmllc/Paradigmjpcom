@@ -274,6 +274,9 @@ const themeCSS = `
     )
   }
 
+  <!-- ═══ TRACKING SCRIPTS ═══ -->
+  <script set:html={`(function(){var s="${slug}";var b="https://paradigmjp.com";try{fetch(b+"/api/track?event=view&slug="+encodeURIComponent(s)+"&page="+encodeURIComponent(location.pathname),{method:"GET",keepalive:true}).catch(function(){});}catch(_){}document.addEventListener("click",function(e){var t=e.target.closest('a[href*=\\"cal.com\\"]');if(t){try{fetch(b+"/api/track?event=cta_click&slug="+encodeURIComponent(s)+"&type=cal_booking",{method:"GET",keepalive:true}).catch(function(){});}catch(_){}}});})();`}></script>
+
   <!-- ═══ SCRIPTS ═══ -->
   <script>
     import { gsap } from 'gsap';
@@ -441,5 +444,7 @@ const themeCSS = `
   <button id="back-to-top" class="fixed bottom-8 right-8 z-50 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-colors" style="background:linear-gradient(135deg,{accentColor},{accentColorDark})" aria-label="Back to top">
     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
   </button>
+  <!-- ═══ TRACKING ═══ -->
+  <script set:html={`(function(){var s="${slug}";var b="https://paradigmjp.com";try{fetch(b+"/api/track?event=view&slug="+encodeURIComponent(s)+"&page="+encodeURIComponent(location.pathname),{method:"GET",keepalive:true}).catch(function(){});}catch(_){}document.addEventListener("click",function(e){var t=e.target.closest('a[href*=\\"cal.com\\"]');if(t){try{fetch(b+"/api/track?event=cta_click&slug="+encodeURIComponent(s)+"&type=cal_booking",{method:"GET",keepalive:true}).catch(function(){});}catch(_){}}});})();`}></script>
 </body>
 </html>

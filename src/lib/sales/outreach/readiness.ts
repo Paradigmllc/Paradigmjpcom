@@ -9,6 +9,7 @@ export type OutreachReadinessStatus = "send_ready" | "review_required" | "blocke
 export interface OutreachReadiness {
   status: OutreachReadinessStatus
   reportUrl: string | null
+  demoUrl: string | null
   formUrl: string | null
   sourceScore: number
   collectedSources: number
@@ -51,6 +52,14 @@ export function formUrlForCompany(company: SalesCompany): string | null {
   )
 }
 
+export function demoUrlForCompany(company: SalesCompany): string | null {
+  const meta = asRecord(company.meta)
+  return (
+    stringAt(meta, ["demo_site", "url"]) ??
+    null
+  )
+}
+
 function hasDiagnosisEvidence(company: SalesCompany): boolean {
   const meta = asRecord(company.meta)
   return (
@@ -66,6 +75,7 @@ function hasDiagnosisEvidence(company: SalesCompany): boolean {
 export function evaluateOutreachReadiness(company: SalesCompany): OutreachReadiness {
   const coverage = computeSourceCoverage(company)
   const reportUrl = reportUrlForCompany(company)
+  const demoUrl = demoUrlForCompany(company)
   const formUrl = formUrlForCompany(company)
   const blockers: string[] = []
   const warnings: string[] = []
@@ -80,6 +90,11 @@ export function evaluateOutreachReadiness(company: SalesCompany): OutreachReadin
   if (coverage.score < MIN_SEND_READY_SOURCE_SCORE) {
     warnings.push(`取得ソース網羅率が低いです (${coverage.score}%)`)
   }
+  // Demo-enabled sites always go to review queue for human confirmation
+  // (Web制作診断レポート variant only — ensures quality before sending)
+  if (demoUrl) {
+    warnings.push("デモサイト生成済み - 送信前に人間確認推奨")
+  }
 
   const status: OutreachReadinessStatus =
     blockers.length > 0 ? "blocked" : warnings.length > 0 ? "review_required" : "send_ready"
@@ -88,11 +103,14 @@ export function evaluateOutreachReadiness(company: SalesCompany): OutreachReadin
     blockers[0] ??
     (warnings.includes("フォームURLが未特定です")
       ? "Crawl4AI/Crawlee/StagehandでフォームURLを特定"
-      : warnings[0] ?? "dry-run後にfirst-5承認へ進む")
+      : demoUrl
+        ? "デモサイトURLを確認後、手動で送信承認"
+        : warnings[0] ?? "dry-run後にfirst-5承認へ進む")
 
   return {
     status,
     reportUrl,
+    demoUrl,
     formUrl,
     sourceScore: coverage.score,
     collectedSources: coverage.collected,
