@@ -32,6 +32,7 @@ const navItems = [
   { href: "/faq", label: t.nav.faq },
 ]
 const currentPath = Astro.url.pathname
+const themeVariables = `:root { --brand: ${accentColor}; --brand-dark: ${accentColorDark}; --brand-light: ${accentColorLight}; }`
 ---
 
 <!doctype html>
@@ -47,9 +48,7 @@ const currentPath = Astro.url.pathname
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
-    <style is:inline>
-      :root { --brand: {accentColor}; --brand-dark: {accentColorDark}; --brand-light: {accentColorLight}; }
-    </style>
+    <style is:inline set:html={themeVariables}></style>
     <script is:inline>
       // Scroll-triggered fade animations
       document.addEventListener('DOMContentLoaded', () => {
@@ -60,7 +59,7 @@ const currentPath = Astro.url.pathname
       })
     </script>
   </head>
-  <body class="min-h-screen">
+  <body class="min-h-screen overflow-x-hidden bg-[#050510] text-white">
     <!-- NAV -->
     <nav class="fixed top-0 inset-x-0 z-50 bg-[#050510]/70 backdrop-blur-2xl border-b border-white/5">
       <div class="max-w-7xl mx-auto flex items-center justify-between px-6 h-16">

@@ -96,3 +96,15 @@
   - Container routing: 64/64 industry demo URLs returned 200 after redirects.
   - Public routing: 64/64 `https://demo.paradigmjp.com/{ja,en}/{industry}/{appeal}` URLs returned 200 after redirects.
   - Public sample routes passed: `/`, `/ja/accounting/brand`, `/en/restaurant/sales`, `/demo/astrowind-demo/services`.
+
+## CURRENT STATUS - 2026-06-19 Astro demo visual CSS recovery
+
+- Fixed `/demo` visual breakage caused by React-style `className` attributes in an Astro page. The public HTML now emits `class=` and `className=0`.
+- Fixed `DemoLayout` theme variables so `--brand`, `--brand-dark`, and `--brand-light` render actual color values instead of `{accentColor}` literals.
+- Added the missing dark page base (`bg-[#050510] text-white`) so white text and glass panels render correctly.
+- Rebuilt and restarted the production `astro-demo` container.
+- Verification:
+  - `npm run build` in `astro-demo`: passed.
+  - `https://demo.paradigmjp.com/demo`: HTTP 200.
+  - Public HTML checks: `className=0`, `accentLiteral=0`, `--brand: #7c3aed`.
+  - Chrome headless screenshot saved at `C:\Users\apple\AppData\Local\Temp\demo-paradigmjp-demo-fixed.png` and visually checked.
