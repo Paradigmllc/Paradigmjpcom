@@ -17,6 +17,10 @@ export interface TwentyRecord {
   paradigmIndustryName?: string | null
   paradigmSourceName?: string | null
   paradigmSalesStatus?: string | null
+  paradigmDataStatus?: string | null
+  paradigmDataSources?: string | null
+  paradigmNextAction?: string | null
+  paradigmLastError?: string | null
   paradigmKarteScore?: number | null
   paradigmSourceCoverage?: number | null
   paradigmRecommendedProducts?: string[] | null

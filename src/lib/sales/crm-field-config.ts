@@ -62,6 +62,13 @@ export const DEFAULT_CRM_VIEW_FIELDS: SalesCrmViewField[] = [
   { fieldKey: "customer_portal_url", twentyFieldName: "paradigmCustomerPortalUrl", label: "顧客用Notion URL", position: 11, isVisible: true, fieldType: "url", description: "成約後の顧客ポータル" },
 ]
 
+const OPERATIONAL_CRM_VIEW_FIELDS: SalesCrmViewField[] = [
+  { fieldKey: "data_status", twentyFieldName: "paradigmDataStatus", label: "Data Status", position: 7, isVisible: true, fieldType: "text", description: "RevenueOS readiness and data collection state" },
+  { fieldKey: "data_sources", twentyFieldName: "paradigmDataSources", label: "Data Sources", position: 8, isVisible: true, fieldType: "text", description: "Collected/configured/missing/error source counts" },
+  { fieldKey: "next_action", twentyFieldName: "paradigmNextAction", label: "Next Action", position: 9, isVisible: true, fieldType: "text", description: "Next required pipeline action" },
+  { fieldKey: "last_error", twentyFieldName: "paradigmLastError", label: "Last Error", position: 10, isVisible: true, fieldType: "text", description: "Latest source or pipeline error summary" },
+]
+
 const JAPAN_PREFECTURES = [
   "北海道",
   "青森県",
@@ -237,7 +244,13 @@ function mapField(row: CrmViewFieldRow): SalesCrmViewField {
 }
 
 function normalizeCrmViewFields(fields: SalesCrmViewField[]): SalesCrmViewField[] {
-  return fields.map((field) =>
+  const byKey = new Map<string, SalesCrmViewField>()
+  for (const field of fields) byKey.set(field.fieldKey, field)
+  for (const field of OPERATIONAL_CRM_VIEW_FIELDS) {
+    if (!byKey.has(field.fieldKey)) byKey.set(field.fieldKey, field)
+  }
+
+  return [...byKey.values()].map((field): SalesCrmViewField =>
     field.fieldKey === "region"
       ? {
           ...field,
@@ -247,7 +260,7 @@ function normalizeCrmViewFields(fields: SalesCrmViewField[]): SalesCrmViewField[
             "国別の地域候補はSales OSの選択肢マスタで管理し、Twentyには確定した地域名だけを表示",
         }
       : field,
-  )
+  ).sort((a, b) => a.position - b.position || a.fieldKey.localeCompare(b.fieldKey))
 }
 
 function mapOption(row: CrmSelectOptionRow): SalesCrmSelectOption {

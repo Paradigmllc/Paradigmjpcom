@@ -95,7 +95,7 @@ function createSupabaseMock(options: SupabaseMockOptions = {}) {
   return { client: { from }, calls }
 }
 
-function stubTwentyList() {
+function stubTwentyList(companyPatch: Record<string, unknown> = {}) {
   vi.stubEnv("TWENTY_BASE_URL", "https://twenty.example.com")
   vi.stubEnv("TWENTY_API_KEY", "test-key")
   vi.stubGlobal(
@@ -110,6 +110,7 @@ function stubTwentyList() {
                 name: "Example Co",
                 domainName: { primaryLinkUrl: "https://www.example.jp" },
                 paradigmCountryName: "JP",
+                ...companyPatch,
               },
             ],
           },
@@ -215,5 +216,30 @@ describe("pullTwentyCompaniesToSupabase", () => {
     expect(result.pipelineRunsReused).toBe(1)
     expect(result.pipelineRunsCreated).toBe(0)
     expect(supabase.calls.runInserts).toHaveLength(0)
+  })
+
+  it("ignores invalid Twenty URLs and requeues existing companies for regeneration", async () => {
+    stubTwentyList({
+      paradigmReportUrl: { primaryLinkUrl: "https://wrong.example/report/demo" },
+      paradigmFormUrl: { primaryLinkUrl: "https://other.example/contact" },
+      paradigmSourceCoverage: 10,
+    })
+    const supabase = createSupabaseMock({
+      existingCompany: {
+        id: "company-1",
+        meta: {},
+        pipeline_status: "report_ready",
+        report_url: "https://paradigmjp.com/ja/report/example",
+      },
+    })
+    mocks.getServiceSalesSupabase.mockReturnValue(supabase.client)
+
+    const result = await pullTwentyCompaniesToSupabase(10, { autoRunPipeline: true, dispatchPipeline: false })
+
+    expect(result.updated).toBe(1)
+    expect(result.pipelineRunsCreated).toBe(1)
+    expect(result.failures?.map((failure) => failure.reason).join("\n")).toContain("invalid Twenty report URL ignored")
+    expect(result.failures?.map((failure) => failure.reason).join("\n")).toContain("invalid Twenty form URL ignored")
+    expect(supabase.calls.companyUpdates[0]).not.toHaveProperty("report_url", "https://wrong.example/report/demo")
   })
 })
