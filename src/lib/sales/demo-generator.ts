@@ -239,6 +239,7 @@ export function buildDemoHtml(company: SalesCompany, report: DiagnosticReportDat
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { matchContentTemplate } from "./content-templates"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { generateDemoWithDify } from "./dify-demo-generator"
 
 /**
  * Build theme demo JSON blueprint (AstroWind widget-based).
@@ -339,7 +340,10 @@ export async function generateReplacementDemo(
 
   const locale = company.report_locale ?? report.report_locale
   const slug = `${rawSlug}-demo`
-  const themeJson = buildThemeDemoJson(company, report, locale)
+
+  // Try Dify AI-powered generation first, fall back to rules-based
+  const themeJson = await generateDemoWithDify(company, report)
+  console.warn(`[demo-generator] generated with ${themeJson.engine}: ${themeJson.blocks.length} blocks, theme=${themeJson.theme}`)
 
   // Save to theme_demo_pages (new Supabase table, Astro SSR reads from here)
   const { error: upsertError } = await sb
