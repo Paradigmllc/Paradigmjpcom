@@ -11,8 +11,20 @@
 import type { DiagnosticReportData } from "./diagnostic"
 import type { SalesCompany } from "./types"
 
+type DemoTheme = "astrowind" | "screwfast" | "astroship"
+
+interface IndustryThemeConfig {
+  theme: DemoTheme
+  labelJa: string
+  labelEn: string
+  heroHook: string
+  services?: string[]
+  faqs?: string[]
+  metrics?: string[]
+}
+
 // Inline industry config (duplicated from personalize.ts for independence)
-const INDUSTRY_THEMES: Record<string, { theme: string; labelJa: string; labelEn: string; heroHook: string }> = {
+const INDUSTRY_THEMES: Record<string, IndustryThemeConfig> = {
   dental: { theme: "astrowind", labelJa: "歯科医院", labelEn: "Dental Clinic", heroHook: "新患数が2.4倍に。データが証明する歯科医院のWeb集患" },
   construction: { theme: "screwfast", labelJa: "建設業", labelEn: "Construction", heroHook: "問合せ数3.1倍。建設業のためのWeb集客改善" },
   consulting: { theme: "astrowind", labelJa: "コンサルティング", labelEn: "Consulting", heroHook: "成約率38%改善。コンサルティングファームのWeb刷新" },
@@ -23,7 +35,7 @@ const INDUSTRY_THEMES: Record<string, { theme: string; labelJa: string; labelEn:
   cleaning: { theme: "screwfast", labelJa: "清掃業", labelEn: "Cleaning Service", heroHook: "問合せ数2.5倍。清掃業のためのWeb集客改善" },
 }
 
-function selectTheme(industry: string): string {
+function selectTheme(industry: string): DemoTheme {
   return INDUSTRY_THEMES[industry]?.theme || "astrowind"
 }
 
@@ -37,7 +49,7 @@ function readOptionalEnv(name: string): string | null {
 }
 
 export interface DemoJsonBlueprint {
-  theme: "astrowind" | "screwfast" | "astroship"
+  theme: DemoTheme
   title: string
   blocks: Array<{ id: string; type: string; props: Record<string, unknown> }>
   meta: Record<string, unknown>
@@ -141,8 +153,12 @@ export async function generateDemoWithDify(
 
     console.warn(`[dify-demo] AI-generated blueprint for ${company.company_name}: ${parsed.blocks.length} blocks, theme=${parsed.theme}`)
 
+    const parsedTheme = parsed.theme === "astrowind" || parsed.theme === "screwfast" || parsed.theme === "astroship"
+      ? parsed.theme
+      : selectTheme(industry)
+
     return {
-      theme: (parsed.theme as "astrowind" | "screwfast" | "astroship") || selectTheme(industry),
+      theme: parsedTheme,
       title: parsed.title || `${company.company_name} — ${locale === "ja" ? "Web改善デモ" : "Web Improvement Demo"}`,
       blocks: parsed.blocks,
       meta: {

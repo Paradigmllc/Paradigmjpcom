@@ -10,6 +10,15 @@ interface TwentyPipelineRecord {
   id?: string | null
 }
 
+interface ActivePipelineRun {
+  id: string
+  status: string
+  trigger_run_id: string | null
+  require_video: boolean
+  auto_sync_external_studios: boolean
+  stepCount: number
+}
+
 export interface TwentyPipelineEnsureResult {
   created: boolean
   dispatched: boolean
@@ -17,10 +26,10 @@ export interface TwentyPipelineEnsureResult {
   error?: string
 }
 
-async function activePipelineRunId(sb: ServiceSupabase, companyId: string): Promise<string | null> {
+async function activePipelineRun(sb: ServiceSupabase, companyId: string): Promise<ActivePipelineRun | null> {
   const { data, error } = await sb
     .from(DB_TABLES.SALES_PIPELINE_RUNS)
-    .select("id")
+    .select("id, status, trigger_run_id, require_video, auto_sync_external_studios")
     .eq("company_id", companyId)
     .in("status", ["queued", "running", "waiting_external"])
     .order("created_at", { ascending: false })
@@ -31,7 +40,64 @@ async function activePipelineRunId(sb: ServiceSupabase, companyId: string): Prom
     console.error("[twenty-pipeline-intake] active pipeline lookup failed:", error.message)
     return null
   }
-  return typeof data?.id === "string" ? data.id : null
+  if (typeof data?.id !== "string") return null
+
+  const { count, error: stepsError } = await sb
+    .from(DB_TABLES.SALES_PIPELINE_STEPS)
+    .select("id", { count: "exact", head: true })
+    .eq("run_id", data.id)
+  if (stepsError) {
+    console.error("[twenty-pipeline-intake] active pipeline step count failed:", stepsError.message)
+    return {
+      id: data.id,
+      status: typeof data.status === "string" ? data.status : "queued",
+      trigger_run_id: typeof data.trigger_run_id === "string" ? data.trigger_run_id : null,
+      require_video: data.require_video === true,
+      auto_sync_external_studios: data.auto_sync_external_studios !== false,
+      stepCount: 0,
+    }
+  }
+
+  return {
+    id: data.id,
+    status: typeof data.status === "string" ? data.status : "queued",
+    trigger_run_id: typeof data.trigger_run_id === "string" ? data.trigger_run_id : null,
+    require_video: data.require_video === true,
+    auto_sync_external_studios: data.auto_sync_external_studios !== false,
+    stepCount: count ?? 0,
+  }
+}
+
+async function ensurePipelineSteps(
+  sb: ServiceSupabase,
+  input: {
+    runId: string
+    companyId: string
+    requireVideo: boolean
+    autoSyncExternalStudios: boolean
+  },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const plan = buildSalesPipelinePlan({
+    requireVideo: input.requireVideo,
+    autoSyncExternalStudios: input.autoSyncExternalStudios,
+  })
+  const steps = plan.map((step, index) => ({
+    run_id: input.runId,
+    company_id: input.companyId,
+    step_key: step.key,
+    position: index + 1,
+    status: step.required ? "queued" : "skipped",
+    required: step.required,
+    owner_tool: step.ownerTool,
+    input_payload: {},
+  }))
+  const { error } = await sb.from(DB_TABLES.SALES_PIPELINE_STEPS).insert(steps)
+  if (error) {
+    if (/duplicate|unique|conflict/i.test(error.message)) return { ok: true }
+    console.error("[twenty-pipeline-intake] pipeline step ensure failed:", error.message)
+    return { ok: false, error: error.message }
+  }
+  return { ok: true }
 }
 
 async function createPipelineRun(
@@ -72,18 +138,21 @@ async function createPipelineRun(
     return { ok: false, error: error?.message ?? "Sales pipeline run insert failed" }
   }
 
-  const steps = plan.map((step, index) => ({
-    run_id: run.id,
-    company_id: input.companyId,
-    step_key: step.key,
-    position: index + 1,
-    status: step.required ? "queued" : "skipped",
-    required: step.required,
-    owner_tool: step.ownerTool,
-    input_payload: {},
-  }))
-  const { error: stepsError } = await sb.from(DB_TABLES.SALES_PIPELINE_STEPS).insert(steps)
-  if (stepsError) return { ok: false, error: stepsError.message }
+  const steps = await ensurePipelineSteps(sb, {
+    runId: run.id as string,
+    companyId: input.companyId,
+    requireVideo: input.options.requireVideo === true,
+    autoSyncExternalStudios: input.options.autoSyncExternalStudios !== false,
+  })
+  if (!steps.ok) {
+    await updateRun(sb, run.id as string, {
+      status: "failed",
+      error_message: `Pipeline step creation failed: ${steps.error}`,
+    }).catch((updateError) => {
+      console.error("[twenty-pipeline-intake] failed to mark step-less run failed:", updateError)
+    })
+    return { ok: false, error: steps.error }
+  }
 
   return { ok: true, runId: run.id as string }
 }
@@ -171,8 +240,38 @@ export async function ensureTwentyPipelineRun(
     dispatch: boolean
   },
 ): Promise<TwentyPipelineEnsureResult> {
-  const activeRun = await activePipelineRunId(sb, input.companyId)
-  if (activeRun) return { created: false, dispatched: false, reused: true }
+  const activeRun = await activePipelineRun(sb, input.companyId)
+  if (activeRun) {
+    if (activeRun.stepCount === 0) {
+      const repaired = await ensurePipelineSteps(sb, {
+        runId: activeRun.id,
+        companyId: input.companyId,
+        requireVideo: activeRun.require_video,
+        autoSyncExternalStudios: activeRun.auto_sync_external_studios,
+      })
+      if (!repaired.ok) {
+        await updateRun(sb, activeRun.id, {
+          status: "failed",
+          error_message: `Active pipeline had no steps and repair failed: ${repaired.error}`,
+        }).catch((updateError) => {
+          console.error("[twenty-pipeline-intake] failed to mark unrecoverable active run failed:", updateError)
+        })
+        return { created: false, dispatched: false, reused: true, error: repaired.error }
+      }
+    }
+
+    if (input.dispatch && activeRun.status === "queued" && !activeRun.trigger_run_id) {
+      const dispatched = await dispatchPipelineRun(sb, { runId: activeRun.id, companyId: input.companyId })
+      return {
+        created: false,
+        dispatched: dispatched.dispatched,
+        reused: true,
+        error: dispatched.error,
+      }
+    }
+
+    return { created: false, dispatched: false, reused: true }
+  }
 
   const pipeline = await createPipelineRun(sb, input)
   if (!pipeline.ok) return { created: false, dispatched: false, reused: false, error: pipeline.error }
@@ -184,6 +283,6 @@ export async function ensureTwentyPipelineRun(
     created: true,
     dispatched: dispatched.dispatched,
     reused: false,
-    error: dispatched.ok ? undefined : dispatched.error,
+    error: dispatched.error,
   }
 }

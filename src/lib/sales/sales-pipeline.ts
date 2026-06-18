@@ -92,11 +92,66 @@ export async function listSalesPipelineRuns(limit = 20): Promise<DashboardSalesP
     .order("position", { referencedTable: "sales_pipeline_steps", ascending: true })
     .limit(limit)
 
-  if (error) {
-    console.error("[sales-pipeline] list failed:", error.message)
-    return { runs: [], error: error.message }
+  if (!error) return { runs: (data ?? []) as SalesPipelineRun[], error: null }
+
+  if (/relationship|schema cache/i.test(error.message)) {
+    const { data: runs, error: runsError } = await sb
+      .from(DB_TABLES.SALES_PIPELINE_RUNS)
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(limit)
+    if (runsError) {
+      console.error("[sales-pipeline] list fallback runs failed:", runsError.message)
+      return { runs: [], error: runsError.message }
+    }
+
+    const runRows = (runs ?? []) as SalesPipelineRun[]
+    const runIds = runRows.map((run) => run.id)
+    const companyIds = [...new Set(runRows.map((run) => run.company_id).filter((id): id is string => typeof id === "string"))]
+    const stepsRes = runIds.length
+      ? await sb
+          .from(DB_TABLES.SALES_PIPELINE_STEPS)
+          .select("*")
+          .in("run_id", runIds)
+          .order("position", { ascending: true })
+      : { data: [], error: null }
+    const companiesRes = companyIds.length
+      ? await sb
+          .from(DB_TABLES.SALES_COMPANIES)
+          .select("id, company_name, domain")
+          .in("id", companyIds)
+      : { data: [], error: null }
+
+    const fallbackErrors = [stepsRes.error?.message, companiesRes.error?.message].filter(Boolean)
+    if (fallbackErrors.length) console.error("[sales-pipeline] list fallback partial errors:", fallbackErrors.join("; "))
+
+    const stepsByRun = new Map<string, unknown[]>()
+    for (const step of stepsRes.data ?? []) {
+      const runId = typeof step.run_id === "string" ? step.run_id : null
+      if (!runId) continue
+      const list = stepsByRun.get(runId) ?? []
+      list.push(step)
+      stepsByRun.set(runId, list)
+    }
+    const companiesById = new Map(
+      (companiesRes.data ?? []).map((company) => [
+        company.id,
+        { company_name: company.company_name ?? null, domain: company.domain ?? null },
+      ]),
+    )
+
+    return {
+      runs: runRows.map((run) => ({
+        ...run,
+        sales_companies: companiesById.get(run.company_id) ?? null,
+        steps: (stepsByRun.get(run.id) ?? []) as SalesPipelineRun["steps"],
+      })),
+      error: fallbackErrors.length ? fallbackErrors.join("; ") : null,
+    }
   }
-  return { runs: (data ?? []) as SalesPipelineRun[], error: null }
+
+  console.error("[sales-pipeline] list failed:", error.message)
+  return { runs: [], error: error.message }
 }
 
 export async function dispatchSalesPipelineRun(runId: string): Promise<{ ok: boolean; run?: SalesPipelineRun; error?: string; message?: string }> {

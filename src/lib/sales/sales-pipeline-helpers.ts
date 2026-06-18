@@ -143,11 +143,53 @@ export async function fetchRunWithSteps(sb: ServiceSupabase, runId: string): Pro
     .eq("id", runId)
     .order("position", { referencedTable: "sales_pipeline_steps", ascending: true })
     .single()
-  if (error) {
+  if (!error) return data as SalesPipelineRun
+
+  if (/relationship|schema cache/i.test(error.message)) {
+    const { data: run, error: runError } = await sb
+      .from(DB_TABLES.SALES_PIPELINE_RUNS)
+      .select("*")
+      .eq("id", runId)
+      .single()
+    if (runError) {
+      console.error("[sales-pipeline-helpers] fetch fallback run failed:", runError.message)
+      throw new Error(runError.message)
+    }
+
+    const { data: steps, error: stepsError } = await sb
+      .from(DB_TABLES.SALES_PIPELINE_STEPS)
+      .select("*")
+      .eq("run_id", runId)
+      .order("position", { ascending: true })
+    if (stepsError) {
+      console.error("[sales-pipeline-helpers] fetch fallback steps failed:", stepsError.message)
+      throw new Error(stepsError.message)
+    }
+
+    const companyId = typeof run.company_id === "string" ? run.company_id : null
+    const company = companyId
+      ? await sb
+          .from(DB_TABLES.SALES_COMPANIES)
+          .select("company_name, domain")
+          .eq("id", companyId)
+          .maybeSingle()
+      : null
+
+    if (company?.error) {
+      console.error("[sales-pipeline-helpers] fetch fallback company failed:", company.error.message)
+    }
+
+    return {
+      ...(run as SalesPipelineRun),
+      sales_companies: company?.data ?? null,
+      steps: (steps ?? []) as SalesPipelineStep[],
+    }
+  }
+
+  {
     console.error("[sales-pipeline-helpers] fetchRunWithSteps failed:", error.message)
     throw new Error(error.message)
   }
-  return data as SalesPipelineRun
 }
 
 export async function updateStepByKey(
