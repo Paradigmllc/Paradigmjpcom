@@ -135,9 +135,7 @@ async function syncTwentyCompanyHomeFields(
   karte: CompanyKarteSnapshot,
   twentyCompanyId: string,
 ): Promise<void> {
-  const result = await twentyFetch<any>(`/rest/companies/${twentyCompanyId}`, {
-    method: "PATCH",
-    body: JSON.stringify({
+  const result = await patchTwentyCompanyHome(twentyCompanyId, {
       name: karte.companyName,
       // Standard visible fields (show immediately in Twenty UI)
       xLink: linkField("診断レポート", karte.reportUrl),
@@ -152,7 +150,6 @@ async function syncTwentyCompanyHomeFields(
       paradigmKarteScore: karteScore(karte),
       paradigmSourceCoverage: karte.sourceScore,
       paradigmKarteSummary: { markdown: karteHomeSummary(karte) },
-    }),
   })
 
   if (!result.ok) throw new Error(result.error)
