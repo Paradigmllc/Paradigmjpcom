@@ -85,8 +85,6 @@ async function fetchCandidates(region: Region, limit: number, companyId?: string
     .select("*")
     .eq("region", region)
     .eq("pipeline_status", "report_ready")
-    .not("industry", "is", null)
-    .not("detected_issues", "is", null)
     .order("updated_at", { ascending: true })
     .limit(limit)
   if (error) {
@@ -119,6 +117,19 @@ async function processOne(
     return base("discovery_failed", `message generation failed: ${generated.error ?? "empty"}`)
   }
   const message = fillReportUrl(generated.message, reportUrl)
+
+  if (!opts.dryRun && generated.fallbacks?.issueCode) {
+    await persistOutcome(
+      company,
+      "manual_queue",
+      "follow_up",
+      "diagnostic issue was inferred; review before automatic submission",
+      { message, fallbacks: generated.fallbacks },
+      opts.dryRun,
+      opts.pipelineRunId,
+    )
+    return { ...base("manual_queue", "diagnostic issue fallback requires review before automatic submission"), message }
+  }
 
   const provider = getBrowserProvider()
   const meta = (company.meta ?? {}) as Record<string, unknown>
