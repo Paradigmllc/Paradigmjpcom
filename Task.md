@@ -1,3 +1,47 @@
+## CURRENT STATUS - 2026-06-18 Hetzner / OSS Supabase Recovery
+
+### Summary
+- Coolify / RevenueOS / Supabase OSS / Twenty / surrounding OSS routes were audited and repaired on Hetzner (`178.105.138.55`).
+- Do not paste real API keys or passwords into this file. Production secrets are stored in runtime env / approved non-git secret storage.
+
+### Production Verification
+| Service | Result |
+| --- | --- |
+| paradigmjp.com `/ja` | HTTP 200 |
+| Coolify | HTTP 302 `/login` |
+| Supabase Studio | HTTP 307 `/project/default`; container healthy |
+| Supabase REST | `/rest/v1/sales_companies` returns JSON 401 for anon, not Studio HTML |
+| RevenueOS health | HTTP 200, core lanes OK; degraded only by optional missing integrations |
+| Twenty | HTTP 200; API token regenerated from current workspace and pull dry-run works |
+| Twenty pull | scanned 5, updated 1, skipped 4 due missing/invalid domains |
+| Trigger.dev | runs API reachable from RevenueOS health |
+| Dify | API reachable from RevenueOS health |
+| Crawl4AI | health HTTP 200 |
+| FlareSolverr | connected from RevenueOS health |
+| n8n | container up |
+| NocoDB | HTTP 200 |
+| Directus | route reachable, `/server/health` returns 403 |
+| Metabase | HTTP 200 |
+| Docuseal | HTTP 302 `/setup` |
+| Chatwoot | HTTP 302 `/installation/onboarding` after pgvector DB fix |
+
+### Fixes Applied
+- Supabase OSS: restored RevenueOS RLS/grants, revoked anon/authenticated access on `sales_*` and `leads`, restored `service_role` DML, added missing enrichment runtime columns and missed migration fields.
+- Supabase routing: added high-priority Traefik route for `supabase.paradigmjp.com/rest/v1` to PostgREST while keeping Studio on root.
+- Supabase Studio: fixed container healthcheck / edge functions management env and recreated Studio.
+- RevenueOS app: restored OSS Supabase env, Trigger.dev env, Twenty env, Dify env, browser-search env, and attached app to `supabase_supabase-net` and `services-net`.
+- Twenty: regenerated a valid current workspace API token, fixed custom field physical columns on the workspace company table, verified REST and RevenueOS pull.
+- Chatwoot: changed `chatwoot-db` from plain Postgres to `pgvector/pgvector:pg16`, ran `db:chatwoot_prepare`, and restored web boot.
+- Traefik OSS routes: restored NocoDB / Directus / Metabase / Docuseal / Chatwoot public routing.
+- Local migration added: `supabase/migrations/migration_058_sales_oss_security_and_enrichment_runtime.sql`.
+
+### Remaining Notes
+- RevenueOS `/api/sales/health` is `degraded` only because optional providers are not configured: Steel, Stagehand, Crawlee worker, Outreach worker, some Dify optional keys, Notion, GBiz, PSI, Hunter.
+- Twenty pull skips records that have no valid domain in Twenty. That is data quality, not infra.
+- Directus route is reachable; health endpoint responds 403 rather than public 200.
+- Chatwoot is now reachable at onboarding. If actual use is needed, complete/admin-seed Chatwoot setup next.
+- Existing unrelated local changes before this recovery remain untouched: `package.json`, `package-lock.json`, `scripts/unlock-payload-users.sh`.
+
 ## CURRENT STATUS - 2026-06-17 Hetzner CX43 移行完了 / RevenueOS SSOT 修正
 
 ### 移行概要
