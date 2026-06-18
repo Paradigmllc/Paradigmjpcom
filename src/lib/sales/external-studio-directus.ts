@@ -20,8 +20,13 @@ export async function directusFetch<T>(
   init: RequestInit = {},
 ): Promise<{ ok: true; data: T } | { ok: false; error: string }> {
   const baseUrl = env("DIRECTUS_BASE_URL")
-  const token = env("DIRECTUS_TOKEN")
-  if (!baseUrl || !token) return { ok: false, error: "DIRECTUS_BASE_URL or DIRECTUS_TOKEN is not configured" }
+  const token = await resolveDirectusToken(baseUrl)
+  if (!baseUrl || !token) {
+    return {
+      ok: false,
+      error: "DIRECTUS_BASE_URL and DIRECTUS_TOKEN or DIRECTUS_ADMIN_EMAIL/PASSWORD are not configured",
+    }
+  }
 
   const res = await fetch(`${trimTrailingSlash(baseUrl)}${path}`, {
     ...init,
@@ -39,6 +44,34 @@ export async function directusFetch<T>(
   } catch (error) {
     console.error("[external-studio-sync] invalid Directus JSON:", error)
     return { ok: false, error: "Directus returned invalid JSON" }
+  }
+}
+
+async function resolveDirectusToken(baseUrl: string | null): Promise<string | null> {
+  const staticToken = env("DIRECTUS_TOKEN")
+  if (staticToken) return staticToken
+  if (!baseUrl) return null
+
+  const email = env("DIRECTUS_ADMIN_EMAIL")
+  const password = env("DIRECTUS_ADMIN_PASSWORD")
+  if (!email || !password) return null
+
+  try {
+    const res = await fetch(`${trimTrailingSlash(baseUrl)}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    })
+    const text = await res.text()
+    if (!res.ok) {
+      console.error("[external-studio-sync] Directus admin login failed:", text || `HTTP ${res.status}`)
+      return null
+    }
+    const parsed = text ? (JSON.parse(text) as { data?: { access_token?: unknown } }) : null
+    return typeof parsed?.data?.access_token === "string" ? parsed.data.access_token : null
+  } catch (error) {
+    console.error("[external-studio-sync] Directus token resolution failed:", error)
+    return null
   }
 }
 
