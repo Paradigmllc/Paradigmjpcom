@@ -2,16 +2,18 @@
 export interface Props {
   locale?: 'ja' | 'en';
   current?: string;
+  company?: string;
 }
 
-const { locale = 'ja', current } = Astro.props;
+const { locale = 'ja', current, company = 'paradigm' } = Astro.props;
+const base = company ? `/${company}` : '';
 const navItems = [
   { label: { ja: 'ホーム', en: 'Home' }, href: '/' },
-  { label: { ja: 'サービス', en: 'Services' }, href: '/services/paradigm' },
-  { label: { ja: '料金', en: 'Pricing' }, href: '/pricing/paradigm' },
-  { label: { ja: '事例', en: 'Cases' }, href: '/cases/paradigm' },
-  { label: { ja: '会社概要', en: 'About' }, href: '/about/paradigm' },
-  { label: { ja: 'お問い合わせ', en: 'Contact' }, href: '/contact/paradigm' },
+  { label: { ja: 'サービス', en: 'Services' }, href: `/services${base}` },
+  { label: { ja: '料金', en: 'Pricing' }, href: `/pricing${base}` },
+  { label: { ja: '事例', en: 'Cases' }, href: `/cases${base}` },
+  { label: { ja: '会社概要', en: 'About' }, href: `/about${base}` },
+  { label: { ja: 'お問い合わせ', en: 'Contact' }, href: `/contact${base}` },
   { label: { ja: 'ブログ', en: 'Blog' }, href: '/blog' },
 ];
 ---
@@ -30,27 +32,27 @@ const navItems = [
         {navItems.map((item) => (
           <a
             href={item.href}
-            class={`px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150 ${
+            class={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               current === item.href
                 ? 'bg-brand-50 text-brand-700'
-                : 'text-gray-600 hover:text-brand-600 hover:bg-gray-50'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
             }`}
           >
-            {locale === 'ja' ? item.label.ja : item.label.en}
+            {item.label[locale as 'ja' | 'en'] || item.label.ja}
           </a>
         ))}
       </div>
-      <div class="flex items-center gap-3">
-        <a href="/{locale === 'ja' ? 'en' : 'ja'}/" class="text-xs font-medium text-gray-500 hover:text-brand-600 px-2 py-1 rounded">
-          {locale === 'ja' ? 'EN' : 'JA'}
-        </a>
-        <button class="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100" aria-label="Menu">
+      <div class="lg:hidden">
+        <button
+          id="mobile-menu-toggle"
+          class="p-2 rounded-lg text-gray-600 hover:bg-gray-50"
+          aria-label="Toggle menu"
+        >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
           </svg>
         </button>
       </div>
     </div>
   </div>
 </nav>
-<div class="h-16"></div>

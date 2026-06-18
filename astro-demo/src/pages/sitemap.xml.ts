@@ -18,7 +18,6 @@ export const GET: APIRoute = async ({ site }) => {
   const staticPages = [
     { loc: '/', lastmod: '2025-06-18', changefreq: 'weekly', priority: '1.0' },
     { loc: '/blog', lastmod: '2025-06-15', changefreq: 'daily', priority: '0.9' },
-    { loc: '/404', lastmod: '2025-01-01', changefreq: 'monthly', priority: '0.1' },
   ];
 
   const companyPages: { loc: string; lastmod: string; changefreq: string; priority: string }[] = [];

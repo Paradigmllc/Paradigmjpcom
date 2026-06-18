@@ -105,7 +105,7 @@ const crumbs = [
           class="bg-white border border-gray-200 rounded-xl p-6 sm:p-8 space-y-5"
         >
           <!-- Web3Forms Access Key -->
-          <input type="hidden" name="access_key" value="YOUR_WEB3FORMS_ACCESS_KEY" />
+          <input type="hidden" name="access_key" value={import.meta.env.WEB3FORMS_KEY || 'YOUR_WEB3FORMS_ACCESS_KEY'} />
           <input type="hidden" name="subject" value={`[${data.nameJa}] ${t('お問い合わせ', 'Contact Form Submission')}`} />
           <input type="hidden" name="from_name" value={data.nameJa} />
 
