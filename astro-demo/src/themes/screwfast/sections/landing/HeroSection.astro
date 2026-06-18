@@ -1,0 +1,71 @@
+---
+/**
+ * ScrewFast HeroSection adapter.
+ * Simplified version that matches ScrewFast's visual style without
+ * the complex Preline UI / avatar / rating sub-components.
+ */
+export interface Props {
+  title?: string
+  subTitle?: string
+  primaryBtn?: string
+  primaryBtnURL?: string
+  secondaryBtn?: string
+  secondaryBtnURL?: string
+  src?: any
+  alt?: string
+  rating?: string
+  reviews?: string
+}
+
+const {
+  title = 'Build faster with ScrewFast',
+  subTitle = '',
+  primaryBtn = 'Get Started',
+  primaryBtnURL = '#',
+  secondaryBtn = '',
+  secondaryBtnURL = '#',
+  rating = '',
+  reviews = '',
+} = Astro.props as Props
+---
+
+<section class="relative overflow-hidden">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
+    <div class="grid lg:grid-cols-2 gap-12 items-center">
+      <div class="space-y-8">
+        {title && (
+          <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 leading-[1.1]">
+            {title}
+          </h1>
+        )}
+        {subTitle && (
+          <p class="text-lg text-gray-600 max-w-xl">{subTitle}</p>
+        )}
+        <div class="flex flex-wrap gap-4">
+          {primaryBtn && (
+            <a href={primaryBtnURL} class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors shadow-sm">
+              {primaryBtn}
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+            </a>
+          )}
+          {secondaryBtn && (
+            <a href={secondaryBtnURL} class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+              {secondaryBtn}
+            </a>
+          )}
+        </div>
+        {(rating || reviews) && (
+          <div class="flex items-center gap-3 text-sm text-gray-500">
+            {rating && <span class="font-semibold text-gray-900">{rating}</span>}
+            {reviews && <span>{reviews}</span>}
+          </div>
+        )}
+      </div>
+      <div class="hidden lg:block">
+        <div class="aspect-[4/3] rounded-2xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+          <svg class="h-16 w-16 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

@@ -112,6 +112,9 @@ export const DB_TABLES = {
   // ── Error Log (supabase/migrations/migration_045_sales_error_log.sql) ──
   SALES_ERROR_LOG: "sales_error_log",
 
+  // ── Theme Demo Pages (migration_058) ──
+  THEME_DEMO_PAGES: "theme_demo_pages",
+
   // ── Demo (migration_016) ──
   WEB_DEMOS: "web_demos",
   // NOTE: These tables have no migrations in this repo. Managed by Appexxme (separate project).

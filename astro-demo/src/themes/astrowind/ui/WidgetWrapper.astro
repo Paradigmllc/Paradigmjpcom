@@ -1,0 +1,24 @@
+---
+import type { Widget } from '../types'
+
+const { id, isDark, bg, classes } = Astro.props as Widget
+---
+
+<section
+  {...(id ? { id } : {})}
+  class:list={[
+    'relative scroll-mt-[72px]',
+    classes?.container,
+    isDark ? 'bg-gray-900 dark:bg-gray-900' : '',
+  ]}
+>
+  {bg && <Fragment set:html={bg} />}
+  <div
+    class:list={[
+      'relative mx-auto max-w-7xl px-4 sm:px-6',
+      classes?.inner,
+    ]}
+  >
+    <slot />
+  </div>
+</section>

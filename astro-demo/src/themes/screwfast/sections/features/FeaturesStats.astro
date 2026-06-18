@@ -1,0 +1,23 @@
+---
+/**
+ * ScrewFast FeaturesStats — features with stats.
+ */
+export interface Props {
+  title?: string
+  subTitle?: string
+}
+
+const { title = 'Stats', subTitle = '' } = Astro.props as Props
+---
+
+<section class="py-20 bg-gray-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="text-center mb-14">
+      <h2 class="text-3xl font-bold text-gray-900">{title}</h2>
+      {subTitle && <p class="mt-3 text-lg text-gray-600">{subTitle}</p>}
+    </div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <slot />
+    </div>
+  </div>
+</section>

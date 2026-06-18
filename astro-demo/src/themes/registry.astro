@@ -1,0 +1,74 @@
+---
+/**
+ * Theme Widget Registry — unified widget component resolution.
+ *
+ * Imports all theme widget components statically and exports them via
+ * THEME_WIDGETS for use by [slug].astro's dynamic renderer.
+ */
+
+// ─── AstroWind (primary — 15 core widgets) ───
+import AstroWindHero from './astrowind/widgets/Hero.astro'
+import AstroWindHero2 from './astrowind/widgets/Hero2.astro'
+import AstroWindHeroText from './astrowind/widgets/HeroText.astro'
+import AstroWindFeatures from './astrowind/widgets/Features.astro'
+import AstroWindFeatures2 from './astrowind/widgets/Features2.astro'
+import AstroWindFeatures3 from './astrowind/widgets/Features3.astro'
+import AstroWindCallToAction from './astrowind/widgets/CallToAction.astro'
+import AstroWindPricing from './astrowind/widgets/Pricing.astro'
+import AstroWindFaqs from './astrowind/widgets/FAQs.astro'
+import AstroWindStats from './astrowind/widgets/Stats.astro'
+import AstroWindSteps from './astrowind/widgets/Steps.astro'
+import AstroWindSteps2 from './astrowind/widgets/Steps2.astro'
+import AstroWindTestimonials from './astrowind/widgets/Testimonials.astro'
+import AstroWindContact from './astrowind/widgets/Contact.astro'
+import AstroWindBrands from './astrowind/widgets/Brands.astro'
+
+// ─── ScrewFast (simplified adapters) ───
+import ScrewFastHero from './screwfast/sections/landing/HeroSection.astro'
+import ScrewFastHeroAlt from './screwfast/sections/landing/HeroSectionAlt.astro'
+import ScrewFastFeatures from './screwfast/sections/features/FeaturesGeneral.astro'
+import ScrewFastPricing from './screwfast/sections/pricing/PricingSection.astro'
+
+// ─── Astroship (simplified adapters) ───
+import AstroshipHero from './astroship/components/hero.astro'
+import AstroshipFeatures from './astroship/components/features.astro'
+import AstroshipCTA from './astroship/components/cta.astro'
+import AstroshipPricing from './astroship/components/pricing.astro'
+
+// ─── Registry ─────────────────────────────────────────────────────────────
+
+export type ThemeName = 'astrowind' | 'screwfast' | 'astroship'
+
+export const THEME_WIDGETS: Record<ThemeName, Record<string, any>> = {
+  astrowind: {
+    Hero: AstroWindHero,
+    Hero2: AstroWindHero2,
+    HeroText: AstroWindHeroText,
+    Features: AstroWindFeatures,
+    Features2: AstroWindFeatures2,
+    Features3: AstroWindFeatures3,
+    CallToAction: AstroWindCallToAction,
+    Pricing: AstroWindPricing,
+    FAQs: AstroWindFaqs,
+    Stats: AstroWindStats,
+    Steps: AstroWindSteps,
+    Steps2: AstroWindSteps2,
+    Testimonials: AstroWindTestimonials,
+    Contact: AstroWindContact,
+    Brands: AstroWindBrands,
+  },
+  screwfast: {
+    Hero: ScrewFastHero,
+    HeroAlt: ScrewFastHeroAlt,
+    Features: ScrewFastFeatures,
+    Pricing: ScrewFastPricing,
+  },
+  astroship: {
+    Hero: AstroshipHero,
+    Features: AstroshipFeatures,
+    CTA: AstroshipCTA,
+    Pricing: AstroshipPricing,
+  },
+}
+---
+<!-- registry — no UI -->

@@ -1,0 +1,31 @@
+---
+/**
+ * ScrewFast HeroSectionAlt — centered variant.
+ */
+export interface Props {
+  title?: string
+  subTitle?: string
+  url?: string
+}
+
+const {
+  title = 'Build faster.',
+  subTitle = '',
+  url = '#',
+} = Astro.props as Props
+---
+
+<section class="relative py-24 md:py-32">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 text-center">
+    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 mb-6">
+      {title}
+    </h1>
+    {subTitle && (
+      <p class="text-lg text-gray-600 mb-8">{subTitle}</p>
+    )}
+    <a href={url} class="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-6 py-3 text-sm font-semibold text-white hover:bg-gray-800 transition-colors">
+      Continue
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+    </a>
+  </div>
+</section>

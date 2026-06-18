@@ -1,0 +1,13 @@
+---
+import type { Image } from '../types'
+
+const { src, alt = '' } = Astro.props as Image
+---
+
+<img
+  src={src}
+  alt={alt}
+  loading="lazy"
+  decoding="async"
+  class="w-full h-auto rounded-xl"
+/>

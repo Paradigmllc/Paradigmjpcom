@@ -1,0 +1,172 @@
+---
+/**
+ * [slug].astro — Dynamic Theme Demo Page Renderer
+ *
+ * Fetches a JSON blueprint from Supabase (via Next.js API) and dynamically
+ * mounts the specified theme widgets in order. This is the "魔改造" (hack):
+ * Astro SSR reads a JSON design doc and renders matching widgets automatically.
+ *
+ * URL: /demo/{slug} — e.g. /demo/tokyo-sushi-diagnostic
+ *
+ * Supabase `theme_demo_pages` schema:
+ *   slug    TEXT PK     — unique page identifier
+ *   theme   TEXT        — 'astrowind' | 'screwfast' | 'astroship'
+ *   blocks  JSONB       — [{id, type, props}]
+ *   meta    JSONB       — {title, description, industry, appeal, locale, ...}
+ */
+import { THEME_WIDGETS, type ThemeName } from '../themes/registry.astro'
+
+// ─── Config ────────────────────────────────────────────────────────────────
+const API_BASE = import.meta.env.PUBLIC_API_BASE || import.meta.env.API_BASE || 'http://localhost:3000'
+
+const { slug } = Astro.params
+
+// ─── Fetch page blueprint ──────────────────────────────────────────────────
+interface DemoBlock { id: string; type: string; props: Record<string, any> }
+interface DemoPage {
+  slug: string
+  theme: ThemeName
+  blocks: DemoBlock[]
+  meta: Record<string, any>
+  title?: string
+}
+
+let page: DemoPage | null = null
+let fetchError: string | null = null
+
+try {
+  const apiUrl = `${API_BASE}/api/demo-pages/${encodeURIComponent(slug)}`
+  const res = await fetch(apiUrl, {
+    headers: { 'x-source': 'astro-ssr' },
+    signal: AbortSignal.timeout(10000),
+  })
+  if (res.ok) {
+    page = await res.json() as DemoPage
+  } else if (res.status === 404) {
+    fetchError = 'not_found'
+  } else {
+    fetchError = `API error ${res.status}`
+    console.error(`[slug.astro] API fetch failed: ${res.status} for ${slug}`)
+  }
+} catch (e) {
+  fetchError = e instanceof Error ? e.message : String(e)
+  console.error(`[slug.astro] fetch error for "${slug}":`, fetchError)
+}
+
+const theme = page?.theme || 'astrowind'
+const blocks = page?.blocks || []
+const meta = page?.meta || {}
+const pageTitle = page?.title || meta?.title || `${slug} — Demo`
+const pageDesc = meta?.description || ''
+const locale = meta?.locale || 'ja'
+const isJa = locale === 'ja'
+
+// ─── Resolve widgets ───────────────────────────────────────────────────────
+const themeWidgets = THEME_WIDGETS[theme] || THEME_WIDGETS.astrowind
+
+// ─── Theme CSS loading ─────────────────────────────────────────────────────
+const themeCSS: Record<string, string> = {
+  astrowind: 'bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100',
+  screwfast: 'bg-white text-gray-900',
+  astroship: 'bg-white text-slate-900',
+}
+---
+
+<!doctype html>
+<html lang={locale}>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="description" content={pageDesc} />
+  <meta property="og:title" content={pageTitle} />
+  <meta property="og:type" content="website" />
+  <title>{pageTitle}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <style is:inline>
+    :root {
+      --aw-brand: {meta.accentColor || '#7c3aed'};
+      --aw-brand-dark: {meta.accentColorDark || '#5b21b6'};
+      --aw-brand-light: {meta.accentColorLight || '#a78bfa'};
+    }
+  </style>
+</head>
+<body class:list={[
+  'min-h-screen antialiased',
+  themeCSS[theme] || themeCSS.astrowind,
+  meta.bgClass || '',
+]} style={meta.bgStyle ? meta.bgStyle : ''}>
+  {
+    fetchError === 'not_found' ? (
+      <div class="flex min-h-screen items-center justify-center">
+        <div class="text-center max-w-md px-6">
+          <div class="text-6xl mb-6">🔍</div>
+          <h1 class="text-2xl font-bold mb-3">{isJa ? 'ページが見つかりません' : 'Page Not Found'}</h1>
+          <p class="text-gray-500 mb-6">{isJa ? `スラッグ "${slug}" のデモページはまだ生成されていません。` : `Demo page for "${slug}" has not been generated yet.`}</p>
+          <a href="/demo" class="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-6 py-3 font-semibold text-white hover:bg-purple-700 transition-colors">
+            {isJa ? 'ギャラリーに戻る' : 'Back to Gallery'}
+          </a>
+        </div>
+      </div>
+    ) : fetchError ? (
+      <div class="flex min-h-screen items-center justify-center">
+        <div class="text-center max-w-md px-6">
+          <div class="text-6xl mb-6">⚠️</div>
+          <h1 class="text-2xl font-bold mb-3">{isJa ? '読み込みエラー' : 'Loading Error'}</h1>
+          <p class="text-gray-500 mb-6">{fetchError}</p>
+          <a href="/demo" class="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-6 py-3 font-semibold text-white hover:bg-purple-700 transition-colors">
+            {isJa ? 'ギャラリーに戻る' : 'Back to Gallery'}
+          </a>
+        </div>
+      </div>
+    ) : (
+      <>
+        <div class="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+          <div class="absolute -top-[20%] -right-[10%] w-[600px] h-[600px] rounded-full opacity-20 blur-[120px]" style={`background:${meta.accentColor || '#7c3aed'}`}></div>
+          <div class="absolute -bottom-[10%] -left-[5%] w-[400px] h-[400px] rounded-full opacity-10 blur-[120px]" style={`background:${meta.accentColorLight || '#a78bfa'}`}></div>
+        </div>
+
+        <!-- NAV -->
+        <nav class="sticky top-0 z-50 border-b border-gray-200/20 bg-white/70 dark:bg-gray-950/70 backdrop-blur-xl">
+          <div class="max-w-7xl mx-auto flex items-center justify-between px-6 h-16">
+            <a href="/demo" class="flex items-center gap-3">
+              <div class="flex h-8 w-8 items-center justify-center rounded-lg font-black text-white text-[10px]" style={`background:linear-gradient(135deg,${meta.accentColor || '#7c3aed'},${meta.accentColorDark || '#5b21b6'})`}>P</div>
+              <span class="text-sm font-bold">Paradigm</span>
+            </a>
+            <div class="flex items-center gap-3">
+              {meta.calBookingUrl && (
+                <a href={meta.calBookingUrl} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all hover:-translate-y-0.5" style={`background:linear-gradient(135deg,${meta.accentColor || '#7c3aed'},${meta.accentColorDark || '#5b21b6'})`}>
+                  {isJa ? '無料相談を予約' : 'Book Free Consult'}
+                  <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                </a>
+              )}
+            </div>
+          </div>
+        </nav>
+
+        <main>
+          {
+            blocks.map((block: DemoBlock) => {
+              const Widget = themeWidgets[block.type]
+              if (!Widget) {
+                console.warn(`[slug.astro] Unknown widget type "${block.type}" for theme "${theme}"`)
+                return null
+              }
+              return <Widget {...block.props} />
+            })
+          }
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="border-t border-gray-200/10 py-12 px-6">
+          <div class="max-w-7xl mx-auto text-center text-sm text-gray-400">
+            <p>{isJa ? `© ${new Date().getFullYear()} Paradigm LLC — 診断データに基づくパーソナライズドデモ (${theme})` : `© ${new Date().getFullYear()} Paradigm LLC — Personalized demo based on diagnostic data (${theme})`}</p>
+          </div>
+        </footer>
+      </>
+    )
+  }
+</body>
+</html>

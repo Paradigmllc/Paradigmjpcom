@@ -4,14 +4,15 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "deploy": "wrangler pages deploy dist --project-name=paradigm-astro-demo"
+    "start": "node dist/server/entry.mjs"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^10.4.0",
+    "@astrojs/node": "^8.3.0",
     "astro": "^4.16.0",
+    "astro-icon": "^1.1.5",
+    "@supabase/supabase-js": "^2.49.0",
     "@tailwindcss/vite": "^4.0.0",
     "tailwindcss": "^4.0.0"
   },

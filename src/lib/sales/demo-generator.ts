@@ -238,9 +238,89 @@ export function buildDemoHtml(company: SalesCompany, report: DiagnosticReportDat
 
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { matchContentTemplate } from "./content-templates"
-import { getR2StorageConfig, sanitizeR2ObjectName } from "./r2-storage"
-import { deployDemoToCfPages } from "./cf-pages-deploy"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+
+/**
+ * Build theme demo JSON blueprint (AstroWind widget-based).
+ * Replaces the old buildDemoHtml() — now outputs structured JSON for Astro SSR.
+ */
+function buildThemeDemoJson(
+  company: SalesCompany,
+  report: DiagnosticReportData,
+  locale: string,
+): { theme: string; blocks: Array<{ id: string; type: string; props: Record<string, unknown> }>; meta: Record<string, unknown> } {
+  const ja = locale === "ja"
+  const name = company.company_name
+  const ctaUrl = "https://cal.com/paradigm-jp/15min"
+
+  return {
+    theme: "astrowind",
+    blocks: [
+      {
+        id: "hero",
+        type: "Hero",
+        props: {
+          title: report.hook ?? `${name}のWebサイト改善提案`,
+          subtitle: ja
+            ? "データ診断に基づくパーソナライズド改善プラン。御社のデジタルプレゼンスを次のステージへ。"
+            : "Personalized improvement plan based on data diagnostics. Take your digital presence to the next level.",
+          tagline: ja ? "データ診断済み · 改善提案" : "Data-Diagnosed · Improvement Plan",
+          actions: [
+            { variant: "primary", text: ja ? "無料診断を申し込む" : "Get Free Diagnostic", href: ctaUrl },
+            { variant: "secondary", text: ja ? "改善内容を見る" : "See Improvements", href: "#features" },
+          ],
+        },
+      },
+      {
+        id: "features",
+        type: "Features",
+        props: {
+          title: ja ? "改善ソリューション" : "Improvement Solutions",
+          subtitle: ja
+            ? `${name}の特性に合わせた最適プラン`
+            : `Tailored plans for ${name}`,
+          items: report.acts.slice(0, 3).map((act, i) => ({
+            title: act.headline?.slice(0, 60) ?? (ja ? "改善施策" : "Improvement"),
+            description: act.body?.slice(0, 120) ?? "",
+            icon: ["tabler:search", "tabler:palette", "tabler:chart-bar"][i] || "tabler:star",
+          })),
+        },
+      },
+      {
+        id: "stats",
+        type: "Stats",
+        props: {
+          title: ja ? "改善シミュレーション" : "Improvement Simulation",
+          subtitle: ja ? "同業他社での改善実績に基づく想定インパクト" : "Projected impact based on industry benchmarks",
+          stats: [
+            { amount: "2.4", title: ja ? "問合せ増加倍率" : "Inquiry Multiplier", icon: "tabler:trending-up" },
+            { amount: 92, title: "PageSpeed", icon: "tabler:bolt" },
+            { amount: "38", title: ja ? "CVR改善率 (%)" : "CVR Gain (%)", icon: "tabler:chart-pie" },
+            { amount: "#3", title: ja ? "主要KW 順位" : "Primary KW Rank", icon: "tabler:search" },
+          ],
+        },
+      },
+      {
+        id: "cta",
+        type: "CallToAction",
+        props: {
+          title: ja ? "まずは無料診断から" : "Start with a Free Diagnostic",
+          subtitle: ja ? "15分のオンライン診断で改善余地を可視化します" : "15-min online diagnostic reveals your improvement potential",
+          callToAction: { variant: "primary", text: ja ? "無料診断を申し込む" : "Book Free Consult", href: ctaUrl },
+        },
+      },
+    ],
+    meta: {
+      title: `${name} — ${ja ? "Web改善デモサイト" : "Web Improvement Demo"}`,
+      description: report.hook ?? `${name} — data-driven web improvement proposal`,
+      industry: company.industry ?? "consulting",
+      locale,
+      calBookingUrl: ctaUrl,
+      generator: "theme_demo_json",
+      generated_at: new Date().toISOString(),
+    },
+  }
+}
 
 export async function generateReplacementDemo(
   company: SalesCompany,
@@ -248,110 +328,80 @@ export async function generateReplacementDemo(
 ): Promise<{ ok: boolean; demoUrl: string | null; error?: string }> {
   const sb = getServiceSalesSupabase()
   if (!sb) return { ok: false, demoUrl: null, error: "Supabase service_role not configured" }
-  if (!company.slug) return { ok: false, demoUrl: null, error: "company slug is missing" }
 
-  const slug = `${company.slug}-demo`
-  const contentTemplate = await matchContentTemplate({
-    reportLocale: company.report_locale ?? report.report_locale,
-    targetCountry: company.target_country ?? report.target_country,
-    industry: company.industry,
-    assetType: "astro_demo_site",
-    templateVariant: company.template_variant ?? report.template_variant,
-  })
-  const html = buildDemoHtml(company, report, contentTemplate.title)
+  const rawSlug = (company.domain || company.slug || company.id)
+    .replace(/^https?:\/\//, "")
+    .replace(/\.[^.]+$/, "")
+    .replace(/[^a-zA-Z0-9-]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase()
+    .slice(0, 50)
 
-  const r2Config = getR2StorageConfig()
-  let demoUrl: string | null = null
   const locale = company.report_locale ?? report.report_locale
+  const slug = `${rawSlug}-demo`
+  const themeJson = buildThemeDemoJson(company, report, locale)
 
-  if (r2Config.ready && r2Config.bucket && r2Config.publicBaseUrl) {
-    try {
-      const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3")
-      const accountId = process.env.CLOUDFLARE_R2_ACCOUNT_ID
-      const accessKeyId = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID
-      const secretAccessKey = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY
-      if (!accountId || !accessKeyId || !secretAccessKey) {
-        console.error("[demo-generator] R2 credentials incomplete")
-        return { ok: false, demoUrl: null, error: "R2 credentials incomplete" }
-      }
-      const client = new S3Client({
-        region: "auto",
-        endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-        credentials: {
-          accessKeyId,
-          secretAccessKey,
+  // Save to theme_demo_pages (new Supabase table, Astro SSR reads from here)
+  const { error: upsertError } = await sb
+    .from(DB_TABLES.THEME_DEMO_PAGES)
+    .upsert({
+      slug,
+      theme: themeJson.theme,
+      title: themeJson.meta.title,
+      blocks: themeJson.blocks,
+      meta: themeJson.meta,
+      company_id: company.id,
+      is_published: true,
+    }, { onConflict: "slug" })
+
+  if (upsertError) {
+    console.error("[demo-generator] theme_demo_pages upsert failed:", upsertError.message)
+    return { ok: false, demoUrl: null, error: upsertError.message }
+  }
+
+  const baseUrl = process.env.ASTRO_DEMO_BASE_URL || "https://demo.paradigmjp.com"
+  const demoUrl = `${baseUrl}/demo/${encodeURIComponent(slug)}?lang=${locale}`
+
+  console.warn(`[demo-generator] saved to theme_demo_pages: ${slug} → ${demoUrl}`)
+
+  // Write demo_site url back to sales_companies
+  try {
+    const { error } = await sb.rpc("sales_atomic_meta_merge", {
+      p_company_id: company.id,
+      p_patch: {
+        demo_site: {
+          url: demoUrl,
+          type: "theme_astro_ssr",
+          slug,
+          theme: themeJson.theme,
+          generated_at: new Date().toISOString(),
         },
-      })
-      const r2Key = sanitizeR2ObjectName(`demos/${company.id}/${slug}.html`)
-      await client.send(new PutObjectCommand({
-        Bucket: r2Config.bucket,
-        Key: r2Key,
-        Body: html,
-        ContentType: "text/html; charset=utf-8",
-      }))
-      demoUrl = `${r2Config.publicBaseUrl.replace(/\/+$/, "")}/${r2Key}`
-      console.warn("[demo-generator] saved to R2:", r2Key)
-    } catch (r2Err) {
-      console.error("[demo-generator] R2 upload failed, falling back to Supabase:", r2Err)
-    }
+      },
+    })
+    if (error) console.error("[demo-generator] atomic meta merge failed:", error.message)
+  } catch (metaErr) {
+    console.error("[demo-generator] meta update failed:", metaErr)
   }
 
-  const meta: Record<string, unknown> = {
-    generator: "astro_replacement_demo",
-    renderer_version: "professional-v4-tailwind-glassmorphism",
-    content_template: {
-      title: contentTemplate.title,
-      quality_bar: contentTemplate.quality_bar,
-      dify_selection_rule: contentTemplate.dify_selection_rule,
-    },
-    report_url: report.report_url,
-    r2_url: demoUrl,
-    generated_at: new Date().toISOString(),
-  }
-
-  const { error } = await sb.from(DB_TABLES.WEB_DEMOS).upsert(
-    {
+  // Also save legacy web_demos entry for compatibility
+  try {
+    await sb.from(DB_TABLES.WEB_DEMOS).upsert({
       company_id: company.id,
       slug,
       name: `${company.company_name} Demo`,
-      html_content: demoUrl ?? html,
-      html: demoUrl ?? html,
-      source: "sales_enrichment",
+      html_content: JSON.stringify(themeJson),
+      source: "theme_demo_v2",
       is_published: true,
-      meta,
-    },
-    { onConflict: "slug" },
-  )
-  if (error) {
-    console.error("[demo-generator] upsert failed:", error.message)
-    if (!demoUrl) return { ok: false, demoUrl: null, error: error.message }
+      meta: {
+        generator: "theme_demo_v2",
+        demo_url: demoUrl,
+        theme: themeJson.theme,
+        generated_at: new Date().toISOString(),
+      },
+    }, { onConflict: "slug" })
+  } catch (e) {
+    console.warn("[demo-generator] legacy web_demos save failed (non-critical):", e)
   }
 
-  // Deploy to Cloudflare Pages (Astro demo pipeline) — await so demo_url is saved
-  const cfResult = await deployDemoToCfPages(company, report).catch((err) => {
-    console.error("[demo-generator] CF Pages deploy error:", err)
-    return { ok: false as const, demoUrl: undefined, error: String(err) }
-  })
-  if (cfResult.ok && cfResult.demoUrl) {
-    console.warn("[demo-generator] CF Pages deploy triggered:", cfResult.demoUrl)
-    try {
-      const { error } = await sb.rpc("sales_atomic_meta_merge", {
-        p_company_id: company.id,
-        p_patch: {
-          demo_site: {
-            url: cfResult.demoUrl,
-            type: "astro_cf_pages",
-            generated_at: new Date().toISOString(),
-          },
-        },
-      })
-      if (error) console.error("[demo-generator] atomic meta merge failed:", error.message)
-    } catch (metaErr) {
-      console.error("[demo-generator] meta update failed:", metaErr)
-    }
-  } else {
-    console.error("[demo-generator] CF Pages deploy failed:", cfResult.error)
-  }
-
-  return { ok: true, demoUrl: demoUrl ?? cfResult.demoUrl ?? null }
+  return { ok: true, demoUrl }
 }

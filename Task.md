@@ -1,60 +1,53 @@
-## CURRENT STATUS - 2026-06-18 Hetzner / OSS Recovery
+## CURRENT STATUS - 2026-06-18 デモHP制作フロー v2 実装完了 (Astroテーマ魔改造)
 
-### Summary
-- Hetzner migration recovery is complete for the core production stack: Coolify deploys, RevenueOS, OSS Supabase, Twenty, and the surrounding OSS routes.
-- Do not paste real API keys, tokens, passwords, or database credentials into this file. Use approved non-git secret storage and runtime env only.
-- Existing unrelated local changes remain untouched: `package.json`, `package-lock.json`, `scripts/unlock-payload-users.sh`.
+### デモHP v2 アーキテクチャ
+旧: Tailwind CDN HTML生成 → CF Pages → 会社別pages.dev
+新: **Dify JSON設計図 → Supabase → Astro SSR (Hetzner) → テーマWidget動的マウント**
 
-### Live Verification
-| Area | Result |
-| --- | --- |
-| `https://paradigmjp.com/ja` | HTTP 200, production page renders |
-| Coolify | Login route reachable; deploy path repaired for Hetzner app UUID |
-| Supabase Studio | HTTP 200 on `supabase.paradigmjp.com/project/default` |
-| Supabase REST | JSON 401 for anon on `sales_companies`, confirming REST routing + locked permissions |
-| RevenueOS health | HTTP 200; core checks OK; status degraded only by optional providers |
-| Twenty UI/API | UI HTTP 200; current workspace API token works |
-| Twenty -> RevenueOS | Pull timer active; latest ticks scan/update records and reuse pipeline runs |
-| RevenueOS -> Twenty | Writeback succeeds with `failed=0` after field-fallback repair |
-| Trigger.dev | Reachable from RevenueOS health |
-| Dify | Reachable from RevenueOS health |
-| Crawl4AI | Public `/health` HTTP 200 and internal health OK |
-| FlareSolverr browser search | OK from RevenueOS health |
-| n8n | HTTP 200 |
-| NocoDB | HTTP 200 |
-| Directus | Route reachable; `/server/health` returns protected 403 |
-| Metabase | HTTP 200 |
-| Docuseal | Setup redirect reachable |
-| Chatwoot | Onboarding redirect reachable |
-| Cal.com | Followed redirect reaches setup page HTTP 200; `ALLOWED_HOSTNAMES` repaired |
-| SearXNG | HTTP 200 |
+### 3テーマ統合 (Phase 1 完了)
+| テーマ | Widget数 | 用途 |
+|--------|---------|------|
+| AstroWind | 15 core (22 total) | デジタルエージェンシー/SaaS/コンサル |
+| ScrewFast | 4 simplified | 建設/物流/B2Bローカル |
+| Astroship | 4 simplified | EC/クリエイター/ローカル店舗 |
 
-### Data Snapshot
-| Table | Count |
-| --- | ---: |
-| `sales_companies` | 255 |
-| `leads` | 198 |
-| `sales_pipeline_runs` | 1523 |
-| `sales_sync_logs` | 1356 |
-| `sales_crm_view_fields` | 12 |
-| `sales_crm_select_options` | 95 |
+### 魔改造の中核
+- `astro-demo/src/pages/[slug].astro` — JSON設計図からWidget動的マウント
+- `astro-demo/src/themes/registry.astro` — 3テーマWidget統合レジストリ
+- `src/app/api/demo-pages/[slug]/route.ts` — Dify用CRUD API
+- `supabase/migrations/migration_058_theme_demo_pages.sql` — デモページJSON永続化
+- `src/lib/sales/demo-generator.ts` — HTML文字列生成 → JSONブループリント生成に刷新
+- Adapter: `@astrojs/cloudflare` → `@astrojs/node` (standalone mode)
+- Redirect: `/d/[slug]` → `ASTRO_DEMO_BASE_URL/demo/[slug]` (env制御)
 
-### Fixes Applied
-- Coolify scripts now default to Hetzner Coolify and the current app UUID, and deployment refreshes the runtime networks plus manual Traefik route.
-- RevenueOS app env was restored for OSS Supabase, Trigger.dev, Twenty, Dify, Crawl4AI, and browser-search integrations.
-- Supabase OSS security/runtime migration was added and applied: RevenueOS grants restored, anon/auth access to sensitive Sales OS tables revoked, enrichment runtime columns restored.
-- Twenty sync now tolerates missing OSS custom/standard fields and falls back instead of failing writeback.
-- Twenty HOME sync now includes the 30+ API/OSS source visibility inside `paradigmKarteSummary` (collected/configured/missing sources, evidence, and next actions) while keeping `paradigmSourceCoverage` as the list-level score.
-- Host-side `revenueos-twenty-sync.timer` is enabled and active; it runs pull + writeback once per minute.
-- Cal.com compose configuration was repaired: `ALLOWED_HOSTNAMES` added and malformed compose sections fixed so the service can be recreated.
-- Final cloud-to-OSS cutover archive and nightly OSS Supabase backup were implemented and verified earlier on 2026-06-18.
+### デプロイ先
+- Astro SSR: Coolify新サービス (demo.paradigmjp.com or astro-demo.paradigmjp.com)
+- Next.js: paradigmjp.com (変更なし)
 
-### Remaining Notes
-- Cloud Supabase delete is NOT approved yet. Direct Postgres/CLI dump is still blocked because stored DB passwords fail authentication and the available Supabase connector/CLI auth has no project access.
-- Appexx Hetzner app and Paperclip routes are internally restored, but public DNS for `appexx.me`, `www.appexx.me`, and `paperclip.appexx.me` still points to old DigitalOcean `139.59.250.5`; the available Cloudflare token has no zone visibility for `appexx.me`.
-- RevenueOS `/api/sales/health` is `degraded` only because optional providers are not configured: Stagehand, Steel.dev, Crawlee worker, and Outreach worker.
-- Twenty pull skips records with missing or invalid domains; this is source data quality, not an infra failure.
-- Directus health is protected by design and returns 403 from the public URL.
-- Chatwoot and Docuseal are reachable at setup/onboarding states; seed/admin setup may still be needed before business use.
-- `npx tsc --noEmit` currently fails on pre-existing missing type-definition packages in the local workspace. Use `npx tsc --noEmit --pretty false --skipLibCheck --types node -p tsconfig.json` for the current verified check until dependency types are repaired.
-- `npm run lint` currently fails because the script still uses removed `next lint` behavior.
+### Astro build: ✅ 成功 (2026-06-18)
+
+### 残タスク
+- [ ] Coolifyにastro-demoサービス登録 + デプロイ
+- [ ] Difyワークフロー: 業種×訴求→テーマ選択→Widget JSON生成→API POST
+- [ ] index.astro テンプレートギャラリー刷新 (テーマベース)
+- [ ] Supabase migration_058 本番適用
+- [ ] Cloud Supabase 解約
+
+### サーバー情報
+- Hetzner IP: 178.105.138.55
+- Coolify: coolify.paradigmjp.com (contact@paradigmjp.com / Paramore416)
+- OSS Supabase: localhost:5433 (postgres/supabase2026pass)
+- Coolify API Token: `3|coolify_ed9cc16a71a2d9f1c91bb8436c3d355a191994a6553493760397f95e1fb2c959`
+- Coolify App UUID: `n8i2sjiqvr2d8hrzppop2m2i` (paradigm-hp)
+
+### RevenueOS SSOT 設定
+- `SALES_SUPABASE_URL`: http://supabase-studio-1:3000
+- `ASTRO_DEMO_BASE_URL`: https://demo.paradigmjp.com (env追加予定)
+
+### 重要操作手順
+- paradigm-hp 再起動後: `docker network connect supabase_supabase-net <container>` 必須
+- PostgREST 再起動でスキーマキャッシュリロード
+- astro-demo deploy: `npm run build && npm start` (standalone Node.js)
+- astro-demo dev: `npm run dev` (localhost:4321)
+- 新規デモ生成: Sales OS enrichment pipeline → `generateReplacementDemo()` → Supabase自動保存
+- Difyからの直接生成: `POST /api/demo-pages/{slug}` + `x-admin-secret` ヘッダー

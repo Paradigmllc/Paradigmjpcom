@@ -1,0 +1,36 @@
+---
+/**
+ * ScrewFast ClientsSection — partner/client logo grid.
+ */
+export interface Props {
+  title?: string
+  subTitle?: string
+  partners?: Array<{ icon?: string; name?: string; href?: string }>
+}
+
+const {
+  title = 'Trusted by industry leaders',
+  subTitle = '',
+  partners = [],
+} = Astro.props as Props
+---
+
+<section class="py-16 bg-gray-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="text-center mb-10">
+      <h2 class="text-2xl font-bold text-gray-900">{title}</h2>
+      {subTitle && <p class="mt-2 text-gray-600">{subTitle}</p>}
+    </div>
+    <div class="flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
+      {partners.map((p) => (
+        p.href ? (
+          <a href={p.href} target="_blank" rel="noopener" class="text-gray-400 hover:text-gray-600 transition-colors font-semibold text-sm">
+            {p.name || 'Partner'}
+          </a>
+        ) : (
+          <span class="text-gray-400 font-semibold text-sm">{p.name || 'Partner'}</span>
+        )
+      ))}
+    </div>
+  </div>
+</section>
