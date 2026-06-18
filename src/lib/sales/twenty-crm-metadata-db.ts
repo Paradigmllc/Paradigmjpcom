@@ -25,7 +25,6 @@ export async function ensureTwentyTextFieldsViaDatabase(
       select "applicationId"
       from core."fieldMetadata"
       where "objectMetadataId" = $1
-        and "isCustom" = true
         and "applicationId" is not null
       limit 1
     `,
@@ -60,10 +59,10 @@ export async function ensureTwentyTextFieldsViaDatabase(
           icon,
           settings,
           options,
-          "isCustom",
           "isActive",
           "isSystem",
           "isUIReadOnly",
+          "isUIEditable",
           "isNullable",
           "workspaceId",
           "isLabelSyncedWithName",
@@ -83,9 +82,9 @@ export async function ensureTwentyTextFieldsViaDatabase(
           null,
           null,
           true,
+          false,
+          false,
           true,
-          false,
-          false,
           true,
           $5,
           false,
