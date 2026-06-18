@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 const mocks = vi.hoisted(() => ({
   getServiceSalesSupabase: vi.fn(),
+  batchFindExistingByDomains: vi.fn(),
   upsertCompanyByDomain: vi.fn(),
   updateRun: vi.fn(),
 }))
@@ -11,6 +12,7 @@ vi.mock("@/lib/supabase", () => ({
 }))
 
 vi.mock("@/lib/sales/companies", () => ({
+  batchFindExistingByDomains: mocks.batchFindExistingByDomains,
   upsertCompanyByDomain: mocks.upsertCompanyByDomain,
 }))
 
@@ -37,6 +39,10 @@ interface SupabaseMockOptions {
 }
 
 function createSupabaseMock(options: SupabaseMockOptions = {}) {
+  mocks.batchFindExistingByDomains.mockResolvedValue(
+    options.existingCompany ? new Map([["example.jp", options.existingCompany]]) : new Map(),
+  )
+
   const calls = {
     companyUpdates: [] as Record<string, unknown>[],
     runInserts: [] as Record<string, unknown>[],

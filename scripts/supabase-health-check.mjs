@@ -20,11 +20,11 @@ const PROJECT_ID = process.env.SUPABASE_PROJECT_ID || ""
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const PAT = process.env.SUPABASE_PAT
 const COOLIFY_TOKEN = process.env.COOLIFY_API_TOKEN
-const APP_UUID = process.env.PARADIGM_APP_UUID || "i12am4vvcbggefnqdizhnv9a"
+const APP_UUID = process.env.PARADIGM_APP_UUID || "n8i2sjiqvr2d8hrzppop2m2i"
 
 const MGMT_API = "https://api.supabase.com"
 const DATA_API = PROJECT_ID ? `https://${PROJECT_ID}.supabase.co` : ""
-const COOLIFY_API = process.env.COOLIFY_API_URL || "https://coolify.appexx.me"
+const COOLIFY_API = process.env.COOLIFY_API_URL || "http://178.105.138.55:8000"
 
 const MIGRATE = process.argv.includes("--migrate") || process.argv.includes("--all")
 const RESTORE = process.argv.includes("--restore") || process.argv.includes("--all")

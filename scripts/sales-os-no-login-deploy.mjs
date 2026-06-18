@@ -12,6 +12,11 @@ import os from "node:os"
 import path from "node:path"
 import { spawnSync } from "node:child_process"
 import pg from "pg"
+import {
+  DEFAULT_APP_UUID,
+  DEFAULT_COOLIFY_URL,
+  getCoolifyAuth as getSharedCoolifyAuth,
+} from "./lib/coolify-env.mjs"
 
 function envValue(name, fallback = null) {
   const value = process.env[name]
@@ -19,8 +24,7 @@ function envValue(name, fallback = null) {
   return fallback
 }
 
-const APP_UUID = envValue("PARADIGM_APP_UUID", "i12am4vvcbggefnqdizhnv9a")
-const DEFAULT_COOLIFY_URL = "https://coolify.appexx.me"
+const APP_UUID = envValue("PARADIGM_APP_UUID", DEFAULT_APP_UUID)
 const DRY = process.argv.includes("--dry")
 const SKIP_DEPLOY = process.argv.includes("--skip-deploy")
 const SKIP_HOST_PREFLIGHT = process.argv.includes("--skip-host-preflight")
@@ -115,10 +119,19 @@ function findCoolifyFromMcpBackup() {
 
 function getCoolifyAuth() {
   const token = envValue("COOLIFY_API_TOKEN")
+  const explicitUrl = envValue("COOLIFY_API_URL") || envValue("COOLIFY_URL")
+  if (token && explicitUrl) {
+    return {
+      token,
+      baseUrl: explicitUrl,
+    }
+  }
+  const shared = getSharedCoolifyAuth()
+  if (shared) return shared
   if (token) {
     return {
       token,
-      baseUrl: envValue("COOLIFY_API_URL", DEFAULT_COOLIFY_URL),
+      baseUrl: DEFAULT_COOLIFY_URL,
     }
   }
   const backup = findCoolifyFromMcpBackup()
@@ -633,7 +646,6 @@ async function main() {
 
   // Auto-ensure critical env vars are set in Coolify
   const { ensureCoolifyEnvs } = await import("./lib/coolify-env.mjs")
-  const APP_UUID = "i12am4vvcbggefnqdizhnv9a"
   const requiredEnvs = {
     // Tier 0 — app crashes without these
     TRIGGER_WEBHOOK_SECRET: "G0W70N1EK7D6thlHZFfNeKpbG4kHYJU4X3DwRWb4Z2w",

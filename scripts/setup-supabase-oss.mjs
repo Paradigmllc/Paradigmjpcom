@@ -17,7 +17,7 @@ if (!TOKEN) {
   process.exit(1)
 }
 
-const BASE = process.env.COOLIFY_API_URL || "https://coolify.appexx.me"
+const BASE = process.env.COOLIFY_API_URL || "http://178.105.138.55:8000"
 const PROJECT_UUID = "okgoks4gwkg0o04csso0s0wg"
 const SERVER_UUID = "cw84s4488k8kwc4osckkosk8"
 
@@ -99,7 +99,7 @@ async function main() {
       console.error("  ❌ Also failed:", e2.message)
       console.log()
       console.log("🔧 Manual setup required:")
-      console.log("  1. Open https://coolify.appexx.me")
+      console.log("  1. Open http://178.105.138.55:8000")
       console.log("  2. New Service → Docker Compose")
       console.log("  3. Paste docker-compose.supabase.yml")
       console.log("  4. Deploy")
