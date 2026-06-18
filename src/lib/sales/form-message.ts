@@ -69,9 +69,16 @@ export interface GenerateFormMessageResult {
   message?: string
   engine?: "dify" | "deepseek_fallback"
   used_template_id?: string | null
+  fallbacks?: {
+    industry: boolean
+    issueCode: boolean
+  }
   usage?: DeepSeekResponse["usage"]
   error?: string
 }
+
+const DEFAULT_OUTREACH_INDUSTRY: Industry = "consulting"
+const DEFAULT_OUTREACH_ISSUE: IssueCode = "no_ogp"
 
 function readOptionalEnv(name: string): string | null {
   const value = process.env[name]
@@ -99,10 +106,12 @@ function readDifyMessage(raw: JsonRecord): string | null {
 
 async function generateWithDify(input: {
   company: SalesCompany
+  industry: Industry
   issueCode: IssueCode
   templateHeadline: string | null
   templatePain: string | null
   templateLoss: string | null
+  fallbacks: GenerateFormMessageResult["fallbacks"]
 }): Promise<{ ok: true; message: string } | { ok: false; configured: boolean; error: string }> {
   const apiKey =
     readOptionalEnv("DIFY_FORM_MESSAGE_API_KEY") ??
@@ -127,9 +136,10 @@ async function generateWithDify(input: {
             company_id: input.company.id,
             company_name: input.company.company_name,
             domain: input.company.domain,
-            industry: input.company.industry,
+            industry: input.industry,
             region: input.company.region,
             issue_code: input.issueCode,
+            fallback_context: input.fallbacks,
             template_headline: input.templateHeadline,
             template_pain: input.templatePain,
             template_loss: input.templateLoss,
@@ -161,6 +171,18 @@ async function generateWithDify(input: {
   }
 }
 
+function selectOutreachIssue(company: SalesCompany): { issueCode: IssueCode; fallback: boolean } {
+  const firstIssue = (company.detected_issues ?? [])[0]
+  if (firstIssue) return { issueCode: firstIssue, fallback: false }
+  if (company.pagespeed_mobile != null && company.pagespeed_mobile < 50) {
+    return { issueCode: "speed_critical", fallback: true }
+  }
+  if (company.pagespeed_desktop != null && company.pagespeed_desktop < 50) {
+    return { issueCode: "speed_critical", fallback: true }
+  }
+  return { issueCode: DEFAULT_OUTREACH_ISSUE, fallback: true }
+}
+
 /**
  * companyId から 1 つフォームメッセージを生成して返す.
  *
@@ -174,19 +196,27 @@ export async function generateFormMessage(
 ): Promise<GenerateFormMessageResult> {
   const company = await findCompanyById(companyId)
   if (!company) return { ok: false, error: "company not found" }
-  if (!company.industry) return { ok: false, error: "company.industry is null" }
-  const firstIssue = (company.detected_issues ?? [])[0]
-  if (!firstIssue) return { ok: false, error: "company has no detected_issues" }
+  const industry = company.industry ?? DEFAULT_OUTREACH_INDUSTRY
+  const issue = selectOutreachIssue(company)
+  const fallbacks = {
+    industry: !company.industry,
+    issueCode: issue.fallback,
+  }
 
   // テンプレ取得 (なければ null pain/loss でも DeepSeek に投げる)
-  const template = await matchTemplate(company.industry, firstIssue)
+  const template = await matchTemplate(industry, issue.issueCode, company.region, {
+    reportLocale: company.report_locale,
+    targetCountry: company.target_country,
+    templateVariant: company.template_variant,
+  })
 
   const templateContext = {
-    industry: company.industry,
-    issueCode: firstIssue,
+    industry,
+    issueCode: issue.issueCode,
     templateHeadline: template?.headline ?? null,
     templatePain: template?.pain ?? null,
     templateLoss: template?.loss ?? null,
+    fallbacks,
   }
 
   const dify = await generateWithDify({
@@ -200,6 +230,7 @@ export async function generateFormMessage(
       message: dify.message,
       engine: "dify",
       used_template_id: template?.id ?? null,
+      fallbacks,
     }
   }
 
@@ -229,6 +260,7 @@ export async function generateFormMessage(
     message,
     engine: "deepseek_fallback",
     used_template_id: template?.id ?? null,
+    fallbacks,
     usage: res.usage,
   }
 }

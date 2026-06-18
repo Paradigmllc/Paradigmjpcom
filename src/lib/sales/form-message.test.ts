@@ -38,9 +38,11 @@ vi.mock("./dify-cloud", () => ({
 }))
 
 import { generateFormMessage, fillReportUrl } from "./form-message"
+import type { SalesCompany } from "./types"
 
 afterEach(() => {
   vi.clearAllMocks()
+  vi.unstubAllEnvs()
 })
 
 describe("fillReportUrl", () => {
@@ -67,5 +69,63 @@ describe("generateFormMessage", () => {
     expect(result.ok).toBe(false)
     expect(result.error).toBe("company not found")
     expect(mocks.findCompanyById).toHaveBeenCalledWith("nonexistent-id")
+  })
+
+  it("uses safe outreach fallbacks when Twenty has not normalized industry and issues yet", async () => {
+    vi.stubEnv("DIFY_API_KEY", "")
+    const company = {
+      id: "company-1",
+      region: "global",
+      slug: "example",
+      name_key: null,
+      report_locale: "en",
+      target_country: "US",
+      template_variant: "website_diagnostic",
+      domain: "https://example.com",
+      company_name: "Example Inc",
+      industry: null,
+      prefecture: null,
+      pipeline_status: "report_ready",
+      deal_stage: "未対応",
+      pagespeed_mobile: null,
+      pagespeed_desktop: null,
+      detected_issues: [],
+      report_views: 0,
+      is_hot_lead: false,
+      send_result: null,
+      sent_at: null,
+      report_url: null,
+      follow_up_date: null,
+      memo: null,
+      assigned_to: null,
+      notion_page_id: null,
+      source: "twenty",
+      tech_stack: null,
+      pain_diagnosis: null,
+      dify_result: null,
+      japan_market_audit: null,
+      demo_site: null,
+      visual_evidence: null,
+      report_generated_at: null,
+      meta: {},
+      created_at: "2026-06-18T00:00:00.000Z",
+      updated_at: "2026-06-18T00:00:00.000Z",
+    } as SalesCompany
+    mocks.findCompanyById.mockResolvedValue(company)
+    mocks.matchTemplate.mockResolvedValue(null)
+    mocks.getAiPrompt.mockResolvedValue("system prompt")
+    mocks.callDeepSeek.mockResolvedValue({ ok: true, text: "Please review {{report_url}}" })
+    mocks.getServiceSalesSupabase.mockReturnValue(null)
+
+    const result = await generateFormMessage("company-1")
+
+    expect(result.ok).toBe(true)
+    expect(result.fallbacks).toEqual({ industry: true, issueCode: true })
+    expect(mocks.matchTemplate).toHaveBeenCalledWith("consulting", "no_ogp", "global", {
+      reportLocale: "en",
+      targetCountry: "US",
+      templateVariant: "website_diagnostic",
+    })
+    expect(mocks.callDeepSeek).toHaveBeenCalled()
   })
 })
