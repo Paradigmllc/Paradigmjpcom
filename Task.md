@@ -1,56 +1,63 @@
-## CURRENT STATUS - 2026-06-18 デモHP制作フロー v2 実装完了 (Astroテーマ魔改造)
+## CURRENT STATUS - 2026-06-18 デモHP v2 納品品質 実装完了 🟢
 
-### デモHP v2 アーキテクチャ
-旧: Tailwind CDN HTML生成 → CF Pages → 会社別pages.dev
-新: **Dify JSON設計図 → Supabase → Astro SSR (Hetzner) → テーマWidget動的マウント**
+### GitHub: c269889 (pushed to main)
+### Astro build: ✅ GREEN (3.61s, 0 errors)
 
-### 3テーマ統合 (Phase 1 完了)
-| テーマ | Widget数 | 用途 |
-|--------|---------|------|
-| AstroWind | 15 core (22 total) | デジタルエージェンシー/SaaS/コンサル |
-| ScrewFast | 4 simplified | 建設/物流/B2Bローカル |
-| Astroship | 4 simplified | EC/クリエイター/ローカル店舗 |
+### 実装スコープ サマリー
+| カテゴリ | ファイル数 | 状態 |
+|---------|-----------|------|
+| AstroWind 完全CSS + テーマシステム | 2 | ✅ |
+| AstroWind Widgets (オリジナル15種) | 15 | ✅ |
+| ScrewFast 完全復元 (enterprise) | 12 | ✅ |
+| Astroship 復元 (startup) | 8 | ✅ |
+| 固定ページ (会社概要/規約/特商法 etc) | 11 | ✅ |
+| 動的ページ (blog/404/sitemap) | 3 | ✅ |
+| ブログシステム | 2 routing pages | ✅ |
+| 共有コンポーネント (Navbar/Footer/Breadcrumb/BaseLayout) | 4 | ✅ |
+| パーソナライズエンジン (8業種×3テーマ) | 1 | ✅ |
+| API エンドポイント (/api/demo-pages) | 1 | ✅ |
+| Supabase マイグレーション (theme_demo_pages) | 1 | ✅ |
+| DBテーブル定義 | 1 | ✅ |
+| URL プロキシ (/d/[slug]) | 1 | ✅ |
+| デモ生成リライター | 1 | ✅ |
+| **合計** | **~165 files** | |
+
+### ページ一覧 (全17ページ + sitemap)
+1. `/[slug]` — 動的Widgetマウント（中核、フルページレイアウト）
+2. `/about/[company]` — 会社概要（商号・所在地・代表者・資本金・JSON-LD Organization）
+3. `/terms/[company]` — 利用規約（全15条、日英対応）
+4. `/privacy/[company]` — プライバシーポリシー（11セクション、Cookie同意）
+5. `/tokushoho/[company]` — 特商法表記（販売業者・返品・支払方法の全項目）
+6. `/contact/[company]` — お問合せ（Web3Forms実送信 + バリデーション）
+7. `/faq/[company]` — FAQ（検索 + カテゴリフィルタ + JSON-LD FAQPage）
+8. `/services/[company]` — サービス（6カード + プロセスタイムライン）
+9. `/pricing/[company]` — 料金（3ティア + 比較表 + Stripeリンク）
+10. `/cases/[company]` — 実績（フィルタ可能ポートフォリオグリッド）
+11. `/blog` — ブログ一覧（カテゴリフィルタ + ページネーション）
+12. `/blog/[slug]` — ブログ記事（prose + 目次 + SNSシェア + JSON-LD Article）
+13. `404` — カスタム404（CSSアニメーション + 検索 + リダイレクト）
+14. `sitemap.xml` — 動的サイトマップ
+
+### 3テーマ統合詳細
+| テーマ | Widget数 | CSSシステム | 特徴 |
+|--------|---------|-----------|------|
+| **AstroWind** | 15 (Hero×3, Features×3, CTA, Pricing, FAQs, Stats, Steps×2, Testimonials, Contact, Brands) | Tailwind v4 @theme + @utility 完全注入 + color-mix() CSS変数ダークモード | エージェンシー/SaaS向けモダンデザイン |
+| **ScrewFast** | 8 (Hero×2, Clients, Features×2, Pricing(gradient), Testimonials(12col), FAQ(accordion)) | OKLCHフルカラーパレット + Preline UI variants.css + anti-FOUC | 建設/物流/B2B向け重厚エンタープライズ |
+| **Astroship** | 6 (Hero, Features, CTA, Pricing, Logos, ContactForm) | Bricolage Grotesque可変フォント + モノクローム + Web3Forms API | EC/クリエイター向けモダンスタートアップ |
 
 ### 魔改造の中核
-- `astro-demo/src/pages/[slug].astro` — JSON設計図からWidget動的マウント
-- `astro-demo/src/themes/registry.astro` — 3テーマWidget統合レジストリ
-- `src/app/api/demo-pages/[slug]/route.ts` — Dify用CRUD API
-- `supabase/migrations/migration_058_theme_demo_pages.sql` — デモページJSON永続化
-- `src/lib/sales/demo-generator.ts` — HTML文字列生成 → JSONブループリント生成に刷新
-- Adapter: `@astrojs/cloudflare` → `@astrojs/node` (standalone mode)
-- Redirect: `/d/[slug]` → `ASTRO_DEMO_BASE_URL/demo/[slug]` (env制御)
-
-### デプロイ先
-- Astro SSR: Coolify新サービス (demo.paradigmjp.com or astro-demo.paradigmjp.com)
-- Next.js: paradigmjp.com (変更なし)
-
-### Astro build: ✅ 成功 (2026-06-18)
+- `[slug].astro` — 3テーマCSS条件付き注入 + StickyHeader + 4colFooter + ダークモード + IntersectionObserver
+- `registry.astro` — 29 Widgetの静的インポート統合 + ThemeMetadata
+- `personalize.ts` — 8業種×ja/en×テーマ自動選択 + サービス/FAQ/指標自動生成
+- API: `POST /api/demo-pages/{slug}` (Dify用) / `GET` (Astro SSR用)
+- Proxy: `/d/[slug]` → `ASTRO_DEMO_BASE_URL/demo/[slug]`
 
 ### 残タスク
-- [ ] Coolifyにastro-demoサービス登録 + デプロイ
-- [ ] Difyワークフロー: 業種×訴求→テーマ選択→Widget JSON生成→API POST
-- [ ] index.astro テンプレートギャラリー刷新 (テーマベース)
-- [ ] Supabase migration_058 本番適用
+- [ ] Coolifyにastro-demoサービス登録 + デプロイ (demo.paradigmjp.com)
+- [ ] Supabase migration_058 本番OSS Supabaseに適用
+- [ ] ASTRO_DEMO_BASE_URL env設定 (paradigm-hp)
+- [ ] Difyワークフロー: Widget JSON生成プロンプト最適化
 - [ ] Cloud Supabase 解約
-
-### サーバー情報
-- Hetzner IP: 178.105.138.55
-- Coolify: coolify.paradigmjp.com (contact@paradigmjp.com / Paramore416)
-- OSS Supabase: localhost:5433 (postgres/supabase2026pass)
-- Coolify API Token: `3|coolify_ed9cc16a71a2d9f1c91bb8436c3d355a191994a6553493760397f95e1fb2c959`
-- Coolify App UUID: `n8i2sjiqvr2d8hrzppop2m2i` (paradigm-hp)
-
-### RevenueOS SSOT 設定
-- `SALES_SUPABASE_URL`: http://supabase-studio-1:3000
-- `ASTRO_DEMO_BASE_URL`: https://demo.paradigmjp.com (env追加予定)
-
-### 重要操作手順
-- paradigm-hp 再起動後: `docker network connect supabase_supabase-net <container>` 必須
-- PostgREST 再起動でスキーマキャッシュリロード
-- astro-demo deploy: `npm run build && npm start` (standalone Node.js)
-- astro-demo dev: `npm run dev` (localhost:4321)
-- 新規デモ生成: Sales OS enrichment pipeline → `generateReplacementDemo()` → Supabase自動保存
-- Difyからの直接生成: `POST /api/demo-pages/{slug}` + `x-admin-secret` ヘッダー
 ## CURRENT STATUS - 2026-06-18 RevenueOS outreach quality gate
 
 - Implemented shared outreach readiness gate for RevenueOS/Twenty/outreach worker.
