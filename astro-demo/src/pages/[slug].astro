@@ -7,13 +7,10 @@
 import { THEME_WIDGETS, THEME_META, type ThemeName } from '../themes/registry.astro'
 
 // ─── Config ────────────────────────────────────────────────────────────────
-const SUPABASE_URL = import.meta.env.SUPABASE_URL || 'http://supabase-rest-1:3000'
-const SUPABASE_ANON_KEY = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || ''
-const SUPABASE_SERVICE_KEY = import.meta.env.SUPABASE_SERVICE_ROLE_KEY || ''
-
+const API_BASE = process.env.API_BASE || process.env.PUBLIC_API_BASE || 'http://localhost:3000'
 const { slug } = Astro.params
 
-// ─── Fetch from Supabase directly ──────────────────────────────────────────
+// ─── Fetch from Next.js API ─────────────────────────────────────────────────
 interface DemoBlock { id: string; type: string; props: Record<string, any> }
 interface DemoPage {
   slug: string; theme: ThemeName; blocks: DemoBlock[]
@@ -24,28 +21,17 @@ let page: DemoPage | null = null
 let fetchError: string | null = null
 
 try {
-  const key = SUPABASE_SERVICE_KEY || SUPABASE_ANON_KEY
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/theme_demo_pages?slug=eq.${encodeURIComponent(slug)}&is_published=eq.true&select=*`,
-    {
-      headers: {
-        'apikey': key,
-        'Authorization': `Bearer ${key}`,
-        'Accept': 'application/json',
-      },
-      signal: AbortSignal.timeout(10000),
-    },
-  )
+  const res = await fetch(`${API_BASE}/api/demo-pages/${encodeURIComponent(slug)}`, {
+    headers: { 'x-source': 'astro-ssr' },
+    signal: AbortSignal.timeout(10000),
+  })
   if (res.ok) {
-    const data = await res.json()
-    if (Array.isArray(data) && data.length > 0) {
-      page = data[0] as DemoPage
-    } else {
-      fetchError = 'not_found'
-    }
+    page = await res.json() as DemoPage
+  } else if (res.status === 404) {
+    fetchError = 'not_found'
   } else {
-    fetchError = `Supabase error ${res.status}`
-    console.error(`[slug] Supabase fetch failed: ${res.status}`)
+    fetchError = `API error ${res.status}`
+    console.error(`[slug] API fetch failed: ${res.status}`)
   }
 } catch (e) {
   fetchError = e instanceof Error ? e.message : String(e)
