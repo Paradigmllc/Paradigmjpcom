@@ -44,7 +44,7 @@ curl -fsS --max-time 90 -X POST "\${BASE_URL}/api/sales/twenty/pull" \\
 curl -fsS --max-time 90 -X POST "\${BASE_URL}/api/sales/twenty-sync" \\
   -H "content-type: application/json" \\
   -H "x-webhook-secret: \${SECRET}" \\
-  --data '{"limit":10}' >/tmp/revenueos-twenty-writeback.json
+  --data '{"limit":3}' >/tmp/revenueos-twenty-writeback.json
 
 echo "[revenueos-twenty-sync] pull=$(cat /tmp/revenueos-twenty-pull.json) writeback=$(cat /tmp/revenueos-twenty-writeback.json)"
 `

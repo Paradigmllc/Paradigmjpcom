@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json() as { company_id?: string; limit?: number }
-    const limit = Math.max(1, Math.min(50, body.limit ?? 10))
+    const limit = body.company_id ? 1 : Math.max(1, Math.min(3, body.limit ?? 3))
 
     // Sync companies directly to Twenty
     const { getServiceSalesSupabase } = await import("@/lib/supabase")
@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
 
     let synced = 0
     let failed = 0
+    let rateLimited = false
     const errors: string[] = []
 
     for (const company of companies) {
@@ -39,10 +40,14 @@ export async function POST(req: NextRequest) {
       else {
         failed++
         if (result.error) errors.push(`${company.domain}: ${result.error}`)
+        if (/429|limit reached|rate limit/i.test(result.error ?? "")) {
+          rateLimited = true
+          break
+        }
       }
     }
 
-    return NextResponse.json({ ok: true, synced, failed, errors: errors.slice(0, 10) })
+    return NextResponse.json({ ok: true, synced, failed, rateLimited, limit, errors: errors.slice(0, 10) })
   } catch (error) {
     console.error("[twenty-sync] failed:", error)
     return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : "sync failed" }, { status: 500 })
