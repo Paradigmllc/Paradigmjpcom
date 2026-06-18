@@ -23,6 +23,12 @@ import {
   type TwentyCustomerHandoffResult,
 } from "./twenty-sync-utils"
 import type { SourceCoverageItem } from "@/lib/sales/source-coverage"
+import {
+  firstSourceError,
+  outreachGateSummary,
+  sourceDataCounts,
+  sourceDataStatus,
+} from "@/lib/sales/twenty-sync-karte-fields"
 
 function karteScore(karte: CompanyKarteSnapshot): number {
   const topFit = karte.recommendedProducts[0]?.fitScore ?? 70
@@ -32,50 +38,6 @@ function karteScore(karte: CompanyKarteSnapshot): number {
 function salesStatusLabel(karte: CompanyKarteSnapshot): string {
   const pipeline = PIPELINE_LABELS[karte.pipelineStatus] ?? karte.pipelineStatus
   return `${pipeline} / ${karte.dealStage}`
-}
-
-function outreachGateSummary(karte: CompanyKarteSnapshot): { label: string; detail: string; nextAction: string } {
-  const blockers: string[] = []
-  const warnings: string[] = []
-  if (!karte.reportUrl) blockers.push("diagnostic report URL missing")
-  if (!karte.formUrl) warnings.push("form URL missing")
-  if (!karte.industry) warnings.push("industry not normalized")
-  if (karte.errorCount > 0) warnings.push(`${karte.errorCount} source error(s)`)
-  if (!karte.diagnosisSummary && karte.sourceScore < 20) warnings.push(`low evidence coverage (${karte.sourceScore}%)`)
-
-  if (blockers.length > 0) {
-    return {
-      label: "blocked",
-      detail: blockers.join(" / "),
-      nextAction: "Generate a diagnostic report, then sync this company to Twenty again.",
-    }
-  }
-  if (warnings.length > 0) {
-    return {
-      label: "review_required",
-      detail: warnings.join(" / "),
-      nextAction: karte.formUrl ? "Review copy and evidence before first-5 approval." : "Discover the form URL with Crawl4AI/Crawlee/Stagehand.",
-    }
-  }
-  return {
-    label: "send_ready",
-    detail: "Report URL, form URL, and evidence are present.",
-    nextAction: "Run dry-run, then move to first-5 approval.",
-  }
-}
-
-function sourceDataStatus(karte: CompanyKarteSnapshot): string {
-  const gate = outreachGateSummary(karte)
-  return `${gate.label}: ${gate.detail}`
-}
-
-function sourceDataCounts(karte: CompanyKarteSnapshot): string {
-  return `collected ${karte.collectedCount} / configured ${karte.configuredCount} / missing ${karte.missingCount} / error ${karte.errorCount}`
-}
-
-function firstSourceError(karte: CompanyKarteSnapshot): string | null {
-  const item = karte.sourceItems.find((source) => source.status === "error")
-  return item ? `${item.label}: ${item.detail}`.slice(0, 500) : null
 }
 
 function karteHomeSummary(karte: CompanyKarteSnapshot): string {
