@@ -1,0 +1,27 @@
+---
+const rawPath = Astro.params.path ?? ""
+const segments = rawPath.split("/").filter(Boolean)
+const slug = segments[0] || ""
+const section = segments[1] || ""
+
+const sectionRoutes: Record<string, string> = {
+  about: "about",
+  cases: "cases",
+  contact: "contact",
+  faq: "faq",
+  pricing: "pricing",
+  privacy: "privacy",
+  services: "services",
+  terms: "terms",
+  tokushoho: "tokushoho",
+}
+
+if (!slug) return Astro.redirect("/", 302)
+if (!section) return Astro.redirect(`/${slug}`, 302)
+if (section === "blog") return Astro.redirect("/blog", 302)
+
+const mapped = sectionRoutes[section]
+if (mapped) return Astro.redirect(`/${mapped}/${slug}`, 302)
+
+return Astro.redirect(`/${slug}`, 302)
+---

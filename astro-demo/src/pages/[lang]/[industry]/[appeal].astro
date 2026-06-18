@@ -1,0 +1,18 @@
+---
+import { allAppeals, allIndustries, allLocales } from "../../../keystatic/demo-data"
+
+const lang = Astro.params.lang ?? "ja"
+const industry = Astro.params.industry ?? "consulting"
+const appeal = Astro.params.appeal ?? "diagnostic"
+
+const locale = allLocales().includes(lang as "ja" | "en") ? lang : "ja"
+const selectedIndustry = allIndustries().includes(industry) ? industry : "consulting"
+const selectedAppeal = allAppeals().includes(appeal as ReturnType<typeof allAppeals>[number])
+  ? appeal
+  : "diagnostic"
+
+return Astro.redirect(
+  `/demo?lang=${encodeURIComponent(locale)}&industry=${encodeURIComponent(selectedIndustry)}&appeal=${encodeURIComponent(selectedAppeal)}`,
+  302,
+)
+---
