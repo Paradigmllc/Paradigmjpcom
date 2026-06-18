@@ -42,6 +42,16 @@
 - Chatwoot is now reachable at onboarding. If actual use is needed, complete/admin-seed Chatwoot setup next.
 - Existing unrelated local changes before this recovery remain untouched: `package.json`, `package-lock.json`, `scripts/unlock-payload-users.sh`.
 
+### Cloud Supabase Cancellation Check - 2026-06-18
+- Production RevenueOS container env points to OSS Supabase only: `SALES_SUPABASE_URL=http://supabase-api-proxy:80`, `NEXT_PUBLIC_SUPABASE_URL=https://supabase.paradigmjp.com`.
+- Running container env scan found zero `*.supabase.co` / old project-ref references.
+- n8n SQLite workflow and credentials scan found zero old Cloud Supabase references.
+- Public smoke responses for paradigmjp.com, RevenueOS health, Supabase REST, Twenty, and n8n contain no old project-ref references.
+- Disabled the old root cron entry that retried `/opt/backups/retry-cloud-dump.sh` every 2 minutes.
+- Removed old Cloud Supabase fallback defaults from checked runnable helper scripts and updated the tooling bootstrap migration to `https://supabase.paradigmjp.com`.
+- Stale old project-ref strings remain only in historical migration comments and two legacy seed scripts that currently fail `node --check` before any Supabase call; they are not part of the checked production runtime.
+- Safe cancellation judgement: Cloud Supabase is no longer required for the checked production runtime. Keep a final export/archive before deleting because Supabase project deletion permanently removes project data and backups.
+
 ## CURRENT STATUS - 2026-06-17 Hetzner CX43 移行完了 / RevenueOS SSOT 修正
 
 ### 移行概要

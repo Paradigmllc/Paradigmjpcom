@@ -9,21 +9,21 @@
  *   node scripts/supabase-health-check.mjs --all              # 全チェック + 復旧 + migration
  *
  * 環境変数:
- *   SUPABASE_PROJECT_ID      — default: yihdmgtxiqfdgdueolub
+ *   SUPABASE_PROJECT_ID      — required for Supabase Cloud management checks
  *   SUPABASE_SERVICE_ROLE_KEY — 必須（Data API + SQL 用）
  *   SUPABASE_PAT             — Supabase Management API 用 Personal Access Token（復旧時必須）
  *   COOLIFY_API_TOKEN        — Coolify API token
  *   PARADIGM_APP_UUID        — default: i12am4vvcbggefnqdizhnv9a
  */
 
-const PROJECT_ID = process.env.SUPABASE_PROJECT_ID || "yihdmgtxiqfdgdueolub"
+const PROJECT_ID = process.env.SUPABASE_PROJECT_ID || ""
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const PAT = process.env.SUPABASE_PAT
 const COOLIFY_TOKEN = process.env.COOLIFY_API_TOKEN
 const APP_UUID = process.env.PARADIGM_APP_UUID || "i12am4vvcbggefnqdizhnv9a"
 
 const MGMT_API = "https://api.supabase.com"
-const DATA_API = `https://${PROJECT_ID}.supabase.co`
+const DATA_API = PROJECT_ID ? `https://${PROJECT_ID}.supabase.co` : ""
 const COOLIFY_API = process.env.COOLIFY_API_URL || "https://coolify.appexx.me"
 
 const MIGRATE = process.argv.includes("--migrate") || process.argv.includes("--all")
@@ -321,7 +321,7 @@ async function main() {
     console.log("🔧 Recommended actions:")
     if (results.dataApi && !results.dataApi.ok) {
       console.log("  1. Supabase Dashboard → プロジェクトが paused なら Resume")
-      console.log("      https://supabase.com/dashboard/project/yihdmgtxiqfdgdueolub")
+      console.log(`      https://supabase.com/dashboard/project/${PROJECT_ID}`)
     }
     if (results.project && !results.project.ok && !PAT) {
       console.log("  2. SUPABASE_PAT を設定して --restore で自動復旧")
