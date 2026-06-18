@@ -6,6 +6,13 @@ import { DB_TABLES } from "@/lib/sales/db-tables"
 import { insertWithOptionalColumns } from "@/lib/sales/safe-supabase-insert"
 import { buildCompanySlug, buildReportUrl, normalizeReportLocale, normalizeTargetCountry, normalizeTemplateVariant } from "./routing"
 import { PIPELINE_LABELS } from "./twenty-sync-utils"
+import {
+  formUrlFromTwenty,
+  hasSourceErrors,
+  isDataStale,
+  reportUrlFromTwenty,
+  sourceCoverageTooLow,
+} from "@/lib/sales/twenty-pull-retry"
 
 interface TwentyLinkField {
   primaryLinkUrl?: string | null
@@ -171,65 +178,6 @@ function countryCodeFromTwentyRecord(record: TwentyRecord): string | null {
 function contactFormUrlFromMeta(meta: Record<string, unknown>): string | null {
   const value = meta.contact_form_url
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null
-}
-
-function validHttpUrl(value: string | null): URL | null {
-  if (!value) return null
-  try {
-    const url = new URL(value)
-    return url.protocol === "http:" || url.protocol === "https:" ? url : null
-  } catch (error) {
-    console.warn("[twenty-pull] invalid URL:", { value, error })
-    return null
-  }
-}
-
-function reportUrlFromTwenty(value: string | null): string | null {
-  const url = validHttpUrl(value)
-  if (!url) return null
-  const host = url.hostname.replace(/^www\./, "").toLowerCase()
-  if (host !== "paradigmjp.com") return null
-  if (!/\/report\//.test(url.pathname)) return null
-  return url.toString()
-}
-
-function formUrlFromTwenty(value: string | null, domain: string): string | null {
-  const url = validHttpUrl(value)
-  if (!url) return null
-  const host = url.hostname.replace(/^www\./, "").toLowerCase()
-  const normalizedDomain = domain.replace(/^www\./, "").toLowerCase()
-  if (host !== normalizedDomain && !host.endsWith(`.${normalizedDomain}`)) return null
-  return url.toString()
-}
-
-function hasSourceErrors(meta: Record<string, unknown>): boolean {
-  const salesOs = plainRecord(meta.sales_os)
-  const sourceQuality = plainRecord(salesOs.source_quality)
-  return Object.values(sourceQuality).some((value) => {
-    const metric = plainRecord(value)
-    const failed = typeof metric.failed === "number" ? metric.failed : 0
-    const timeout = typeof metric.timeout === "number" ? metric.timeout : 0
-    return failed > 0 || timeout > 0
-  })
-}
-
-function isDataStale(meta: Record<string, unknown>): boolean {
-  const salesOs = plainRecord(meta.sales_os)
-  const lastEnrichedAt = typeof salesOs.last_enriched_at === "string" ? Date.parse(salesOs.last_enriched_at) : 0
-  if (!lastEnrichedAt || !Number.isFinite(lastEnrichedAt)) return true
-  const refreshDays = Number.parseInt(process.env.REVENUEOS_DATA_REFRESH_DAYS ?? "14", 10)
-  const safeRefreshDays = Number.isFinite(refreshDays) && refreshDays > 0 ? refreshDays : 14
-  return Date.now() - lastEnrichedAt > safeRefreshDays * 24 * 60 * 60 * 1000
-}
-
-function sourceCoverageTooLow(record: TwentyRecord, meta: Record<string, unknown>): boolean {
-  const twentyMeta = plainRecord(meta.twenty)
-  const value = typeof record.paradigmSourceCoverage === "number"
-    ? record.paradigmSourceCoverage
-    : typeof twentyMeta.sourceCoverage === "number"
-      ? twentyMeta.sourceCoverage
-      : null
-  return value === null || value < 20
 }
 
 function parseSalesStatusLabel(label: string | null): { pipelineStatus?: string; dealStage?: string } {
