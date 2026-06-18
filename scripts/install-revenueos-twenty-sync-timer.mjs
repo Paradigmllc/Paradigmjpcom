@@ -12,15 +12,11 @@ const host = process.env.PARADIGM_DEPLOY_HOST || "paradigm-droplet"
 const appUuid = process.env.PARADIGM_APP_UUID || "n8i2sjiqvr2d8hrzppop2m2i"
 const baseUrl = process.env.REVENUEOS_PUBLIC_URL || "https://paradigmjp.com"
 
-const remote = String.raw`
+const syncScript = `#!/usr/bin/env bash
 set -euo pipefail
 
-cat >/usr/local/sbin/revenueos-twenty-sync.sh <<'SH'
-#!/usr/bin/env bash
-set -euo pipefail
-
-APP_UUID="\${REVENUEOS_APP_UUID:-__APP_UUID__}"
-BASE_URL="\${REVENUEOS_PUBLIC_URL:-__BASE_URL__}"
+APP_UUID="\${REVENUEOS_APP_UUID:-${appUuid}}"
+BASE_URL="\${REVENUEOS_PUBLIC_URL:-${baseUrl}}"
 APP_CONTAINER="\${REVENUEOS_APP_CONTAINER:-$(docker ps --filter "name=\${APP_UUID}" --format '{{.Names}}' | head -n1)}"
 
 if [[ -z "\${APP_CONTAINER}" ]]; then
@@ -40,24 +36,20 @@ if [[ -z "\${SECRET}" ]]; then
   exit 1
 fi
 
-curl -fsS -X POST "\${BASE_URL}/api/sales/twenty/pull" \
-  -H "content-type: application/json" \
-  -H "x-webhook-secret: \${SECRET}" \
+curl -fsS --max-time 90 -X POST "\${BASE_URL}/api/sales/twenty/pull" \\
+  -H "content-type: application/json" \\
+  -H "x-webhook-secret: \${SECRET}" \\
   --data '{"limit":100,"auto_run_pipeline":true,"dispatch_pipeline":true}' >/tmp/revenueos-twenty-pull.json
 
-curl -fsS -X POST "\${BASE_URL}/api/sales/twenty-sync" \
-  -H "content-type: application/json" \
-  -H "x-webhook-secret: \${SECRET}" \
+curl -fsS --max-time 90 -X POST "\${BASE_URL}/api/sales/twenty-sync" \\
+  -H "content-type: application/json" \\
+  -H "x-webhook-secret: \${SECRET}" \\
   --data '{"limit":10}' >/tmp/revenueos-twenty-writeback.json
 
 echo "[revenueos-twenty-sync] pull=$(cat /tmp/revenueos-twenty-pull.json) writeback=$(cat /tmp/revenueos-twenty-writeback.json)"
-SH
+`
 
-sed -i "s#__APP_UUID__#${appUuid}#g; s#__BASE_URL__#${baseUrl}#g" /usr/local/sbin/revenueos-twenty-sync.sh
-chmod 0755 /usr/local/sbin/revenueos-twenty-sync.sh
-
-cat >/etc/systemd/system/revenueos-twenty-sync.service <<'SERVICE'
-[Unit]
+const serviceUnit = `[Unit]
 Description=RevenueOS Twenty bidirectional sync tick
 Wants=network-online.target
 After=network-online.target docker.service
@@ -65,11 +57,10 @@ After=network-online.target docker.service
 [Service]
 Type=oneshot
 ExecStart=/usr/local/sbin/revenueos-twenty-sync.sh
-TimeoutStartSec=120
-SERVICE
+TimeoutStartSec=210
+`
 
-cat >/etc/systemd/system/revenueos-twenty-sync.timer <<'TIMER'
-[Unit]
+const timerUnit = `[Unit]
 Description=Run RevenueOS Twenty bidirectional sync every minute
 
 [Timer]
@@ -80,18 +71,27 @@ Persistent=true
 
 [Install]
 WantedBy=timers.target
-TIMER
+`
 
-systemctl daemon-reload
-systemctl enable --now revenueos-twenty-sync.timer
-systemctl start revenueos-twenty-sync.service
-systemctl --no-pager --full status revenueos-twenty-sync.timer
+function b64(value) {
+  return Buffer.from(value.replace(/\r/g, ""), "utf8").toString("base64")
+}
+
+const remote = `
+set -euo pipefail
+printf '%s' '${b64(syncScript)}' | base64 -d >/usr/local/sbin/revenueos-twenty-sync.sh
+chmod 0755 /usr/local/sbin/revenueos-twenty-sync.sh
+printf '%s' '${b64(serviceUnit)}' | base64 -d >/etc/systemd/system/revenueos-twenty-sync.service
+printf '%s' '${b64(timerUnit)}' | base64 -d >/etc/systemd/system/revenueos-twenty-sync.timer
+timeout 30s systemctl daemon-reload
+timeout 30s systemctl enable --now revenueos-twenty-sync.timer
+echo 'revenueos-twenty-sync.timer installed'
 `
 
 const result = spawnSync("ssh", [host, "bash -s"], {
   input: remote.replace(/\r/g, ""),
   encoding: "utf8",
-  stdio: "inherit",
+  stdio: ["pipe", "inherit", "inherit"],
 })
 
 if (result.status !== 0) {
