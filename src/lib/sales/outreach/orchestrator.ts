@@ -3,7 +3,6 @@ import { notifySlack } from "@/lib/notify"
 import { generateFormMessage, fillReportUrl } from "../form-message"
 import { discoverFormUrl, normalizeOrigin } from "../sources/form-discovery"
 import { isAllowedFormUrlForOrigin } from "../sources/external-form-discovery"
-import { getRoutingMeta } from "../routing"
 import type { Region, SalesCompany } from "../types"
 import { classifyForm } from "./form-classifier"
 import { preflight } from "./preflight"
@@ -12,6 +11,7 @@ import { recentlyContacted, type ActivityResult } from "./activity"
 import { getProxyFetchOptions } from "../proxy-agent"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { applyOutcome, logActivity, persistDiscoveredFormUrl, enqueueOperatorTask, persistOutcome } from "./side-effects"
+import { evaluateOutreachReadiness } from "./readiness"
 import type {
   OutreachBatchResult,
   OutreachItemResult,
@@ -29,16 +29,8 @@ export interface RunOutreachOptions {
   checkRobots?: boolean
   dedupDays?: number
 }
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://paradigmjp.com"
 const FROM_EMAIL = process.env.OUTREACH_FROM_EMAIL ?? process.env.PARADIGM_SENDER_ADDRESS ?? "contact@paradigmjp.com"
 const FROM_NAME = process.env.OUTREACH_FROM_NAME ?? process.env.PARADIGM_SENDER_NAME ?? "PARADIGM"
-function reportUrlFor(company: SalesCompany): string {
-  if (company.report_url) return company.report_url
-  if (!company.slug) return SITE
-  const routing = getRoutingMeta(company.meta)
-  const locale = company.report_locale ?? routing.report_locale ?? (company.region === "jp" ? "ja" : "en")
-  return `${SITE}/${locale}/report/${company.slug}`
-}
 function buildFields(message: string): Record<string, string> {
   return { name: FROM_NAME, company: FROM_NAME, email: FROM_EMAIL, message }
 }
@@ -111,24 +103,38 @@ async function processOne(
     return base("classified_skip", `dedup: contacted within ${opts.dedupDays} days`)
   }
 
-  const reportUrl = reportUrlFor(company)
+  const readiness = evaluateOutreachReadiness(company)
+  if (!readiness.reportUrl) {
+    await persistOutcome(
+      company,
+      "manual_queue",
+      "follow_up",
+      "diagnostic report URL is missing; generate report before outreach",
+      { readiness },
+      opts.dryRun,
+      opts.pipelineRunId,
+    )
+    return { ...base("manual_queue", "diagnostic report URL is missing; generate report before outreach") }
+  }
+
+  const reportUrl = readiness.reportUrl
   const generated = await generateFormMessage(company.id)
   if (!generated.ok || !generated.message) {
     return base("discovery_failed", `message generation failed: ${generated.error ?? "empty"}`)
   }
   const message = fillReportUrl(generated.message, reportUrl)
 
-  if (!opts.dryRun && generated.fallbacks?.issueCode) {
+  if (!opts.dryRun && (generated.fallbacks?.issueCode || readiness.status !== "send_ready")) {
     await persistOutcome(
       company,
       "manual_queue",
       "follow_up",
-      "diagnostic issue was inferred; review before automatic submission",
-      { message, fallbacks: generated.fallbacks },
+      `outreach quality gate requires review: ${[...readiness.warnings, ...(generated.fallbacks?.issueCode ? ["diagnostic issue was inferred"] : [])].join("; ")}`,
+      { message, fallbacks: generated.fallbacks, readiness },
       opts.dryRun,
       opts.pipelineRunId,
     )
-    return { ...base("manual_queue", "diagnostic issue fallback requires review before automatic submission"), message }
+    return { ...base("manual_queue", "outreach quality gate requires review before automatic submission"), message }
   }
 
   const provider = getBrowserProvider()

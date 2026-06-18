@@ -1,6 +1,8 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import type { DashboardCompany } from "@/lib/sales/dashboard-types"
 import type { SalesLocaleScope } from "@/lib/sales/locale-scope"
+import { evaluateOutreachReadiness } from "@/lib/sales/outreach/readiness"
+import type { SalesCompany } from "@/lib/sales/types"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type JsonRecord = Record<string, unknown>
@@ -49,6 +51,18 @@ function extractString(meta: JsonRecord | null, path: string[]): string | null {
 }
 
 export function mapCompany(row: SalesCompanyRow): DashboardCompany {
+  const company = {
+    ...row,
+    region: row.region ?? "jp",
+    report_views: row.report_views ?? 0,
+    is_hot_lead: row.is_hot_lead ?? false,
+    detected_issues: row.detected_issues ?? [],
+    target_country: row.target_country ?? null,
+    report_locale: row.report_locale ?? null,
+    template_variant: row.template_variant ?? null,
+    meta: row.meta ?? {},
+  } as SalesCompany
+
   return {
     id: row.id,
     region: row.region ?? "jp",
@@ -83,6 +97,7 @@ export function mapCompany(row: SalesCompanyRow): DashboardCompany {
     formMessage: extractString(row.meta, ["form_message"]),
     formMessageEngine: extractString(row.meta, ["form_message_engine"]),
     formMessageGeneratedAt: extractString(row.meta, ["form_message_generated_at"]),
+    outreachReadiness: evaluateOutreachReadiness(company),
   }
 }
 

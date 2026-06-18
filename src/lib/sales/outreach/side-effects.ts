@@ -3,30 +3,21 @@ import { notifySlack } from "@/lib/notify"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { normalizeOrigin } from "../sources/form-discovery"
 import { isAllowedFormUrlForOrigin } from "../sources/external-form-discovery"
-import { getRoutingMeta } from "../routing"
 import { logOutreachActivity, type ActivityResult } from "./activity"
+import { reportUrlForCompany } from "./readiness"
 import { stageToPipelineStatus } from "./state-machine"
 import type { Region, SalesCompany } from "../types"
 import type { OutreachStage } from "./types"
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://paradigmjp.com"
-
-function reportUrlFor(company: SalesCompany): string {
-  if (company.report_url) return company.report_url
-  if (!company.slug) return SITE
-  const routing = getRoutingMeta(company.meta)
-  const locale = company.report_locale ?? routing.report_locale ?? (company.region === "jp" ? "ja" : "en")
-  return `${SITE}/${locale}/report/${company.slug}`
-}
-
 export async function applyOutcome(company: SalesCompany, stage: OutreachStage, sendResult: string): Promise<boolean> {
   const sb = getServiceSalesSupabase()
   if (!sb) return false
+  const reportUrl = reportUrlForCompany(company)
   const patch: Record<string, unknown> = {
     pipeline_status: stageToPipelineStatus(stage),
     send_result: sendResult,
-    report_url: reportUrlFor(company),
   }
+  if (reportUrl) patch.report_url = reportUrl
   if (stage === "submitted") patch.sent_at = new Date().toISOString()
   const { error } = await sb.from(DB_TABLES.SALES_COMPANIES).update(patch).eq("id", company.id)
   if (error) {
@@ -124,7 +115,7 @@ export async function enqueueOperatorTask(
       message: input.message ?? null,
       classification: input.classification ?? null,
       approval_required: input.approvalRequired ?? false,
-      report_url: reportUrlFor(company),
+      report_url: reportUrlForCompany(company),
       pipeline_run_id: input.pipelineRunId ?? null,
       created_by: "sales_outreach_orchestrator",
     },

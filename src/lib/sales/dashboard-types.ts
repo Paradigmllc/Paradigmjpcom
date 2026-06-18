@@ -10,6 +10,7 @@ import type { SalesLeadBatchSummary } from "@/lib/sales/monthly-batch"
 import type { SearxngRunSummary } from "@/lib/sales/searxng-source"
 import type { JapanReadinessInsightSummary } from "@/lib/sales/japan-readiness"
 import type { DashboardSalesPipeline } from "@/lib/sales/sales-pipeline"
+import type { OutreachReadiness } from "@/lib/sales/outreach/readiness"
 
 export interface SalesDashboardInput {
   reportLocale?: string | null
@@ -63,6 +64,7 @@ export interface DashboardCompany {
   formMessage: string | null
   formMessageEngine: string | null
   formMessageGeneratedAt: string | null
+  outreachReadiness: OutreachReadiness
 }
 
 export interface DashboardActivity {
