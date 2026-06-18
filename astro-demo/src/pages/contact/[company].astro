@@ -269,6 +269,13 @@ const crumbs = [
         if (data.success) {
           showResult('success', 'お問い合わせありがとうございます。確認メールをお送りしました。 / Thank you! A confirmation email has been sent.');
           form.reset();
+          // Confetti celebration
+          try {
+            const confetti = (await import('canvas-confetti')).default;
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#7c3aed', '#a78bfa', '#5b21b6', '#fff'] });
+            setTimeout(() => confetti({ particleCount: 40, spread: 100, origin: { y: 0.5, x: 0.3 }, colors: ['#7c3aed', '#a78bfa'] }), 300);
+            setTimeout(() => confetti({ particleCount: 40, spread: 100, origin: { y: 0.5, x: 0.7 }, colors: ['#5b21b6', '#fff'] }), 500);
+          } catch {}
         } else {
           showResult('error', '送信に失敗しました。お手数ですが、再度お試しいただくか、メールで直接ご連絡ください。 / Submission failed. Please try again or contact us by email.');
         }

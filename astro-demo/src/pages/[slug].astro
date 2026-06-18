@@ -5,6 +5,7 @@
  * Fetches JSON blueprint directly from Supabase and renders matching widgets.
  */
 import { THEME_WIDGETS, THEME_META, type ThemeName } from '../themes/registry.astro'
+import '../styles/global.css'
 
 // ─── Config ────────────────────────────────────────────────────────────────
 const API_BASE = process.env.API_BASE || process.env.PUBLIC_API_BASE || 'http://localhost:3000'
@@ -182,13 +183,32 @@ const themeCSS = `
 
         <!-- ═══ ORBS (AstroWind) ═══ -->
         {isAstroWind && (
-          <div class="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-            <div class="absolute -top-[20%] -right-[10%] w-[600px] h-[600px] rounded-full opacity-20 blur-[120px] animate-float" style={`background:${accentColor}`}></div>
-            <div class="absolute -bottom-[10%] -left-[5%] w-[400px] h-[400px] rounded-full opacity-10 blur-[120px] animate-float" style={`background:${accentColorLight}; animation-delay: 2s; animation-duration: 25s`}></div>
+          <div class="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+            <div class="absolute -top-[20%] -right-[10%] w-[600px] h-[600px] rounded-full opacity-20 blur-[120px] orb-parallax" style={`background:${accentColor}`}></div>
+            <div class="absolute -bottom-[10%] -left-[5%] w-[400px] h-[400px] rounded-full opacity-10 blur-[120px] orb-parallax-slow" style={`background:${accentColorLight}`}></div>
           </div>
         )}
 
         <main class="pt-16">
+          <!-- ═══ LOADING SKELETON ═══ -->
+          {blocks.length === 0 && (
+            <div class="max-w-7xl mx-auto px-4 py-20 space-y-10">
+              <div class="skeleton h-16 w-2/3 mx-auto rounded-xl"></div>
+              <div class="skeleton h-6 w-1/2 mx-auto rounded-lg"></div>
+              <div class="skeleton h-12 w-48 mx-auto rounded-full mt-8"></div>
+              <div class="grid md:grid-cols-3 gap-6 mt-16">
+                <div class="skeleton h-48 rounded-2xl"></div>
+                <div class="skeleton h-48 rounded-2xl"></div>
+                <div class="skeleton h-48 rounded-2xl"></div>
+              </div>
+              <div class="grid grid-cols-4 gap-6 mt-8">
+                <div class="skeleton h-32 rounded-2xl"></div>
+                <div class="skeleton h-32 rounded-2xl"></div>
+                <div class="skeleton h-32 rounded-2xl"></div>
+                <div class="skeleton h-32 rounded-2xl"></div>
+              </div>
+            </div>
+          )}
           <!-- ═══ WIDGETS ═══ -->
           {
             blocks.map((block: DemoBlock) => {
@@ -197,9 +217,11 @@ const themeCSS = `
                 console.warn(`[slug] Unknown widget "${block.type}" for theme "${theme}"`)
                 return null
               }
-              return <div class="widget-section intersect-once motion-safe:md:opacity-0 motion-safe:md:intersect:animate-fade" data-animate>
-                <Widget {...block.props} />
-              </div>
+              return (
+                <div class="widget-section" data-animate>
+                  <Widget {...block.props} />
+                </div>
+              )
             })
           }
         </main>
@@ -253,27 +275,171 @@ const themeCSS = `
   }
 
   <!-- ═══ SCRIPTS ═══ -->
-  <script is:inline>
-    // IntersectionObserver — scroll-triggered fade animations
-    document.addEventListener('DOMContentLoaded', () => {
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(e => {
-          if (e.isIntersecting) {
-            e.target.removeAttribute('no-intersect');
-            e.target.classList.add('intersect:animate-fade');
-          }
-        });
-      }, { threshold: 0.15 });
-      document.querySelectorAll('[data-animate]').forEach(el => observer.observe(el));
+  <script>
+    import { gsap } from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
+    gsap.registerPlugin(ScrollTrigger);
 
-      // Sticky header scroll effect
+    document.addEventListener('DOMContentLoaded', () => {
+      // ─── Scroll-triggered staggered reveals ───
+      document.querySelectorAll('.widget-section').forEach((section, i) => {
+        const items = section.querySelectorAll('[data-reveal]');
+        if (items.length > 0) {
+          gsap.fromTo(items, 
+            { opacity: 0, y: 48, scale: 0.97 },
+            {
+              opacity: 1, y: 0, scale: 1,
+              duration: 0.8,
+              stagger: 0.12,
+              ease: 'power3.out',
+              scrollTrigger: {
+                trigger: section,
+                start: 'top 82%',
+                toggleActions: 'play none none none',
+              },
+            }
+          );
+        } else {
+          gsap.fromTo(section,
+            { opacity: 0, y: 40 },
+            {
+              opacity: 1, y: 0,
+              duration: 0.9,
+              ease: 'power2.out',
+              scrollTrigger: {
+                trigger: section,
+                start: 'top 85%',
+                toggleActions: 'play none none none',
+              },
+            }
+          );
+        }
+      });
+
+      // ─── Animated counters (data-count elements) ───
+      document.querySelectorAll('[data-count]').forEach(el => {
+        const target = parseFloat(el.getAttribute('data-count') || '0');
+        const suffix = el.getAttribute('data-suffix') || '';
+        const decimals = target % 1 !== 0 ? 1 : 0;
+        gsap.fromTo(el, 
+          { textContent: 0 },
+          {
+            textContent: target,
+            duration: 2.2,
+            ease: 'power2.out',
+            snap: { textContent: decimals },
+            scrollTrigger: { trigger: el, start: 'top 90%' },
+            onUpdate: function() {
+              el.textContent = (decimals ? this.targets()[0].textContent : Math.round(this.targets()[0].textContent)) + suffix;
+            },
+          }
+        );
+      });
+
+      // ─── Parallax orbs ───
+      gsap.to('.orb-parallax', {
+        y: 120,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: 'body',
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: 0.5,
+        },
+      });
+      gsap.to('.orb-parallax-slow', {
+        y: -80,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: 'body',
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: 0.8,
+        },
+      });
+
+      // ─── Sticky header scroll effect ───
       const header = document.querySelector('#header[data-aw-sticky-header]');
       if (header) {
-        window.addEventListener('scroll', () => {
-          header.classList.toggle('scroll', window.scrollY > 60);
+        ScrollTrigger.create({
+          start: 'top -60',
+          onEnter: () => header.classList.add('scroll'),
+          onLeaveBack: () => header.classList.remove('scroll'),
         });
       }
+
+      // ─── Back to top button ───
+      const backToTop = document.getElementById('back-to-top');
+      if (backToTop) {
+        gsap.set(backToTop, { opacity: 0, scale: 0.8, pointerEvents: 'none' });
+        ScrollTrigger.create({
+          start: 'top -300',
+          onEnter: () => gsap.to(backToTop, { opacity: 1, scale: 1, pointerEvents: 'auto', duration: 0.3 }),
+          onLeaveBack: () => gsap.to(backToTop, { opacity: 0, scale: 0.8, pointerEvents: 'none', duration: 0.3 }),
+        });
+        backToTop.addEventListener('click', () => {
+          gsap.to(window, { scrollTo: 0, duration: 1, ease: 'power2.inOut' });
+        });
+      }
+
+      // ─── Card 3D tilt on hover ───
+      document.querySelectorAll('[data-tilt]').forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+          const rect = card.getBoundingClientRect();
+          const x = (e.clientX - rect.left) / rect.width - 0.5;
+          const y = (e.clientY - rect.top) / rect.height - 0.5;
+          gsap.to(card, {
+            rotateY: x * 8,
+            rotateX: -y * 8,
+            transformPerspective: 800,
+            duration: 0.4,
+            ease: 'power2.out',
+          });
+        });
+        card.addEventListener('mouseleave', () => {
+          gsap.to(card, {
+            rotateY: 0, rotateX: 0,
+            duration: 0.6,
+            ease: 'power2.out',
+          });
+        });
+      });
+
+      // ─── Image zoom on hover ───
+      document.querySelectorAll('[data-zoom-hover]').forEach(img => {
+        const wrapper = img.closest('.img-zoom-wrap') || img;
+        wrapper.addEventListener('mouseenter', () => {
+          gsap.to(img, { scale: 1.05, duration: 0.6, ease: 'power2.out' });
+        });
+        wrapper.addEventListener('mouseleave', () => {
+          gsap.to(img, { scale: 1, duration: 0.6, ease: 'power2.out' });
+        });
+      });
+
+      // ─── Smooth anchor scroll ───
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+          const target = document.querySelector(this.getAttribute('href'));
+          if (target) {
+            e.preventDefault();
+            gsap.to(window, { scrollTo: { y: target, offsetY: 80 }, duration: 1, ease: 'power2.inOut' });
+          }
+        });
+      });
+
+      // Refresh ScrollTrigger after all setup
+      ScrollTrigger.refresh();
+    });
+
+    // Handle Astro page transitions
+    document.addEventListener('astro:after-swap', () => {
+      ScrollTrigger.refresh();
     });
   </script>
+
+  <!-- ═══ BACK TO TOP ═══ -->
+  <button id="back-to-top" class="fixed bottom-8 right-8 z-50 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-colors" style="background:linear-gradient(135deg,{accentColor},{accentColorDark})" aria-label="Back to top">
+    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+  </button>
 </body>
 </html>

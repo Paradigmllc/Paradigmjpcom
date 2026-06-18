@@ -93,3 +93,193 @@
 .browser-dot:nth-child(1){background:#ff5f57} .browser-dot:nth-child(2){background:#febc2e} .browser-dot:nth-child(3){background:#28c840}
 .browser-url { margin-left:.75rem;height:1.25rem;width:16rem;background:rgba(255,255,255,.06);border-radius:.375rem; }
 .browser-content { padding:1.5rem; min-height:16rem; }
+
+/* ═══════════════ Premium Effects ═══════════════ */
+
+/* Card 3D tilt base */
+[data-tilt] { transform-style: preserve-3d; transition: transform 0.1s ease-out; }
+[data-tilt]:hover { z-index: 10; }
+
+/* Image zoom wrapper */
+.img-zoom-wrap { overflow: hidden; border-radius: inherit; }
+.img-zoom-wrap img { transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Glow pulse on CTA buttons */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px var(--brand-rgb, 124 58 237) / 0.3, 0 8px 32px -8px var(--brand, #7c3aed); }
+  50% { box-shadow: 0 0 40px var(--brand-rgb, 124 58 237) / 0.5, 0 12px 48px -8px var(--brand, #7c3aed); }
+}
+.glow-cta { animation: glow-pulse 3s ease-in-out infinite; }
+
+/* Underline sweep on nav links */
+.nav-link-underline {
+  position: relative;
+}
+.nav-link-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: currentColor;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.nav-link-underline:hover::after { width: 100%; }
+
+/* Shimmer loading skeleton */
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 37%, rgba(255,255,255,0.03) 63%);
+  background-size: 200% 100%;
+  animation: shimmer-sweep 1.5s ease-in-out infinite;
+  border-radius: 0.5rem;
+}
+.dark .skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.06) 37%, rgba(255,255,255,0.02) 63%);
+  background-size: 200% 100%;
+}
+
+/* Entrance stagger helper */
+.stagger-children > * { opacity: 0; }
+.stagger-children.revealed > * { animation: fadeInUp 0.6s both; }
+.stagger-children.revealed > *:nth-child(1) { animation-delay: 0s; }
+.stagger-children.revealed > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-children.revealed > *:nth-child(3) { animation-delay: 0.2s; }
+.stagger-children.revealed > *:nth-child(4) { animation-delay: 0.3s; }
+.stagger-children.revealed > *:nth-child(5) { animation-delay: 0.4s; }
+.stagger-children.revealed > *:nth-child(6) { animation-delay: 0.5s; }
+.stagger-children.revealed > *:nth-child(7) { animation-delay: 0.6s; }
+.stagger-children.revealed > *:nth-child(8) { animation-delay: 0.7s; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(2rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Text gradient animation */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.gradient-text-animated {
+  background: linear-gradient(135deg, var(--brand), var(--brand-light), var(--brand), var(--brand-dark));
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 6s ease infinite;
+}
+
+/* Section divider wave */
+.section-divider {
+  position: relative;
+  height: 4rem;
+  overflow: hidden;
+}
+.section-divider::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background: linear-gradient(180deg, transparent, var(--brand-rgb, 124 58 237) / 0.03);
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 100'%3E%3Cpath d='M0 50 Q360 0 720 50 T1440 50 L1440 100 L0 100 Z' fill='black'/%3E%3C/svg%3E");
+  mask-size: cover;
+}
+
+/* ═══════════════ CSS Scroll-Snap Carousel ═══════════════ */
+.carousel {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  gap: 1.5rem;
+  padding: 0.5rem;
+}
+.carousel::-webkit-scrollbar { display: none; }
+.carousel > * {
+  scroll-snap-align: start;
+  flex: 0 0 min(85vw, 400px);
+}
+@media (min-width: 768px) {
+  .carousel > * { flex: 0 0 min(45vw, 500px); }
+}
+@media (min-width: 1024px) {
+  .carousel > * { flex: 0 0 min(30vw, 400px); }
+}
+
+/* Carousel dots */
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+.carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+.carousel-dot.active {
+  background: var(--brand, #7c3aed);
+  width: 24px;
+  border-radius: 4px;
+}
+
+/* Floating label animation for form inputs */
+.form-float-group {
+  position: relative;
+}
+.form-float-group input,
+.form-float-group textarea {
+  width: 100%;
+  padding: 1rem 0.75rem 0.5rem;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 0.75rem;
+  background: rgba(255,255,255,0.03);
+  color: inherit;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.form-float-group input:focus,
+.form-float-group textarea:focus {
+  outline: none;
+  border-color: var(--brand, #7c3aed);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+}
+.form-float-group label {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.4);
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+.form-float-group input:focus ~ label,
+.form-float-group input:not(:placeholder-shown) ~ label,
+.form-float-group textarea:focus ~ label,
+.form-float-group textarea:not(:placeholder-shown) ~ label {
+  top: 0.25rem;
+  font-size: 0.625rem;
+  color: var(--brand-light, #a78bfa);
+}
+
+/* Success checkmark animation */
+@keyframes checkmark-pop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.checkmark-animate {
+  animation: checkmark-pop 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
