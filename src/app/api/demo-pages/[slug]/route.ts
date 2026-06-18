@@ -10,7 +10,7 @@
  * Astro [slug].astro fetches from here at SSR time.
  */
 import { NextRequest, NextResponse } from "next/server"
-import { getServiceSupabase } from "@/lib/supabase"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 
 export const dynamic = "force-dynamic"
 
@@ -20,7 +20,7 @@ export async function GET(
 ) {
   const { slug } = await params
   try {
-    const sb = getServiceSupabase()
+    const sb = getServiceSalesSupabase()
     if (!sb) return NextResponse.json({ error: "supabase not configured" }, { status: 500 })
 
     const { data, error } = await sb
@@ -72,7 +72,7 @@ export async function POST(
   }
 
   try {
-    const sb = getServiceSupabase()
+    const sb = getServiceSalesSupabase()
     if (!sb) return NextResponse.json({ error: "supabase not configured" }, { status: 500 })
 
     const row: Record<string, unknown> = {
@@ -135,7 +135,7 @@ export async function PATCH(
   }
 
   try {
-    const sb = getServiceSupabase()
+    const sb = getServiceSalesSupabase()
     if (!sb) return NextResponse.json({ error: "supabase not configured" }, { status: 500 })
 
     const { data, error } = await sb
