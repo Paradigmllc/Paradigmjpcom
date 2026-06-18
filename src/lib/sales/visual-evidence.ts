@@ -1,6 +1,7 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { getMubengProxyUrl } from "./proxy-agent"
 import { uploadToR2 } from "./r2-storage"
+import { screenshotWithSteel } from "./sources/steel-source"
 import type { TemplateVariant } from "./types"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 
@@ -21,7 +22,7 @@ export interface VisualEvidenceCompany {
 export interface ScreenshotEvidence {
   url: string
   objectKey: string
-  provider: "playwright"
+  provider: "playwright" | "steel"
   viewport: VisualEvidenceSlot
   width: number
   height: number
@@ -102,6 +103,46 @@ async function captureWithPlaywright(input: {
   }
 }
 
+async function bufferFromSteelScreenshot(value: string): Promise<Buffer | null> {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+
+  const dataUri = trimmed.match(/^data:image\/(?:png|jpeg|jpg|webp);base64,(.+)$/i)
+  if (dataUri?.[1]) return Buffer.from(dataUri[1], "base64")
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    const res = await fetch(trimmed, { signal: AbortSignal.timeout(20_000) })
+    if (!res.ok) throw new Error(`Steel screenshot URL fetch failed: HTTP ${res.status}`)
+    return Buffer.from(await res.arrayBuffer())
+  }
+
+  if (/^[A-Za-z0-9+/=\r\n]+$/.test(trimmed)) {
+    return Buffer.from(trimmed.replace(/\s+/g, ""), "base64")
+  }
+
+  return null
+}
+
+async function captureWithSteel(input: {
+  targetUrl: string
+}): Promise<ScreenshotCapture | null> {
+  const result = await screenshotWithSteel(input.targetUrl)
+  if (!result.ok || !result.screenshot) {
+    if (result.error && result.error !== "STEEL_BASE_URL is not configured") {
+      console.warn("[visual-evidence] Steel screenshot unavailable:", result.error)
+    }
+    return null
+  }
+
+  try {
+    const buffer = await bufferFromSteelScreenshot(result.screenshot)
+    return buffer ? { buffer, provider: "steel" } : null
+  } catch (error) {
+    console.warn("[visual-evidence] Steel screenshot decode failed:", error)
+    return null
+  }
+}
+
 export async function captureWebsiteScreenshot(
   company: Pick<VisualEvidenceCompany, "domain">,
   options: ScreenshotOptions = {},
@@ -113,7 +154,9 @@ export async function captureWebsiteScreenshot(
   const objectKey = `screenshots/${dateStr}/${fileSlug}-${size.viewport}.png`
 
   try {
-    const capture = await captureWithPlaywright({ targetUrl, ...size })
+    const capture =
+      (await captureWithPlaywright({ targetUrl, ...size })) ??
+      (await captureWithSteel({ targetUrl }))
     if (!capture) return { ok: false, error: "No screenshot provider available" }
 
     const publicUrl = await uploadToR2(objectKey, capture.buffer, "image/png")
