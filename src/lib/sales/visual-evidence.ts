@@ -22,7 +22,7 @@ export interface VisualEvidenceCompany {
 export interface ScreenshotEvidence {
   url: string
   objectKey: string
-  provider: "playwright" | "steel"
+  provider: "playwright" | "outreach_worker" | "steel"
   viewport: VisualEvidenceSlot
   width: number
   height: number
@@ -64,6 +64,12 @@ function viewportSize(input: ScreenshotOptions): { viewport: VisualEvidenceSlot;
 
 function viewportIsMobile(viewport: VisualEvidenceSlot): boolean {
   return viewport === "mobile" || viewport === "social" || viewport === "form"
+}
+
+function withPath(base: string, pathname: string): string {
+  const url = new URL(base)
+  url.pathname = `${url.pathname.replace(/\/+$/, "")}/${pathname.replace(/^\/+/, "")}`.replace(/\/+/g, "/")
+  return url.toString()
 }
 
 function browserCleanupCss(): string {
@@ -123,6 +129,45 @@ async function bufferFromSteelScreenshot(value: string): Promise<Buffer | null> 
   return null
 }
 
+async function captureWithOutreachWorker(input: {
+  targetUrl: string
+  width: number
+  height: number
+  viewport: VisualEvidenceSlot
+}): Promise<ScreenshotCapture | null> {
+  const endpoint = optionalEnv("OUTREACH_WORKER_URL") ?? optionalEnv("CRAWLEE_WORKER_URL")
+  const secret = optionalEnv("OUTREACH_WORKER_SECRET") ?? optionalEnv("CRAWLEE_WORKER_SECRET")
+  if (!endpoint || !secret) return null
+
+  try {
+    const res = await fetch(withPath(endpoint, "/screenshot"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Worker-Secret": secret,
+      },
+      body: JSON.stringify({
+        url: input.targetUrl,
+        width: input.width,
+        height: input.height,
+        isMobile: viewportIsMobile(input.viewport),
+      }),
+      signal: AbortSignal.timeout(75_000),
+    })
+    const text = await res.text()
+    if (!res.ok) {
+      console.warn("[visual-evidence] outreach worker screenshot unavailable:", text.slice(0, 240))
+      return null
+    }
+    const parsed = text ? (JSON.parse(text) as { screenshot?: unknown }) : {}
+    if (typeof parsed.screenshot !== "string" || !parsed.screenshot.trim()) return null
+    return { buffer: Buffer.from(parsed.screenshot, "base64"), provider: "outreach_worker" }
+  } catch (error) {
+    console.warn("[visual-evidence] outreach worker screenshot failed:", error)
+    return null
+  }
+}
+
 async function captureWithSteel(input: {
   targetUrl: string
 }): Promise<ScreenshotCapture | null> {
@@ -156,6 +201,7 @@ export async function captureWebsiteScreenshot(
   try {
     const capture =
       (await captureWithPlaywright({ targetUrl, ...size })) ??
+      (await captureWithOutreachWorker({ targetUrl, ...size })) ??
       (await captureWithSteel({ targetUrl }))
     if (!capture) return { ok: false, error: "No screenshot provider available" }
 

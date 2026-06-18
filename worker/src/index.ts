@@ -4,12 +4,14 @@
  * Endpoints:
  * - GET /health
  * - POST /submit       with X-Worker-Secret
+ * - POST /screenshot   with X-Worker-Secret
  * - POST /discover-spa with X-Worker-Secret
  */
 
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http"
 import { submitForm, type SubmitInput } from "./submit.js"
 import { discoverSpaForm } from "./discover-spa.js"
+import { captureScreenshot, type ScreenshotInput } from "./screenshot.js"
 import { closeBrowser } from "./browser.js"
 import {
   discoverFormWithStagehand,
@@ -105,6 +107,13 @@ const server = createServer(async (req, res) => {
       const targetUrl = body.url
       const formUrl = await limiter.run(() => discoverFormWithStagehand({ url: targetUrl, mode: "contact_form_discovery" }))
       return send(res, 200, { ok: true, formUrl })
+    }
+
+    if (req.method === "POST" && req.url === "/screenshot") {
+      const body = await readJson<ScreenshotInput>(req)
+      if (!body.url) return send(res, 400, { ok: false, error: "url required" })
+      const result = await limiter.run(() => captureScreenshot(body))
+      return send(res, result.ok ? 200 : 502, result)
     }
 
     if (req.method === "POST" && req.url === "/discover-spa") {
