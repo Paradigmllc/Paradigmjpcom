@@ -1,0 +1,254 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import Breadcrumb from '../../components/Breadcrumb.astro';
+import { getCompany, type CompanyData } from '../../data/demoData';
+
+export function getStaticPaths() {
+  return [
+    { params: { company: 'paradigm' } },
+    { params: { company: 'sampletech' } },
+    { params: { company: 'tokyocommerce' } },
+  ];
+}
+
+const { company } = Astro.params;
+const data: CompanyData = getCompany(company);
+const loc = data.locale;
+const t = (ja: string, en: string) => (loc === 'en' ? en : ja);
+const title = t(`${data.nameJa} | 料金プラン`, `${data.name} | Pricing`);
+const desc = t(`${data.nameJa}の料金プラン。`, `Pricing plans for ${data.name}.`);
+
+const crumbs = [
+  { label: { ja: 'ホーム', en: 'Home' }, href: '/' },
+  { label: { ja: '料金', en: 'Pricing' }, href: `/pricing/${company}` },
+];
+
+const tiers = [
+  {
+    name: { ja: 'ベーシック', en: 'Basic' },
+    price: { ja: '¥50,000', en: '¥50,000' },
+    period: { ja: '/月', en: '/mo' },
+    desc: { ja: '小規模ビジネス向けのスタータープラン', en: 'Starter plan for small businesses' },
+    features: {
+      ja: ['月間10,000PV対応', 'レスポンシブデザイン', 'SEO基本対策', 'お問い合わせフォーム', 'メールサポート', '月1回のアクセスレポート'],
+      en: ['10,000 monthly PV support', 'Responsive design', 'Basic SEO', 'Contact form', 'Email support', 'Monthly access report'],
+    },
+    cta: { ja: '無料相談', en: 'Free Consultation' },
+    stripeLink: 'https://buy.stripe.com/basic',
+    highlighted: false,
+  },
+  {
+    name: { ja: 'スタンダード', en: 'Standard' },
+    price: { ja: '¥150,000', en: '¥150,000' },
+    period: { ja: '/月', en: '/mo' },
+    desc: { ja: '成長中のビジネスに最適なプラン', en: 'Ideal plan for growing businesses' },
+    badge: { ja: '人気', en: 'Popular' },
+    features: {
+      ja: ['月間100,000PV対応', 'SEO本格対策', 'MEO対策', 'ブログ/CMS機能', 'チャットサポート優先対応', '週1回のアクセスレポート', 'コンテンツ制作 月2本'],
+      en: ['100,000 monthly PV', 'Advanced SEO', 'MEO optimization', 'Blog/CMS', 'Priority chat support', 'Weekly access report', '2 content pieces/month'],
+    },
+    cta: { ja: '無料相談', en: 'Free Consultation' },
+    stripeLink: 'https://buy.stripe.com/standard',
+    highlighted: true,
+  },
+  {
+    name: { ja: 'エンタープライズ', en: 'Enterprise' },
+    price: { ja: '¥500,000', en: '¥500,000' },
+    period: { ja: '/月', en: '/mo' },
+    desc: { ja: '大規模ビジネス向けフルカスタマイズプラン', en: 'Fully customized plan for large businesses' },
+    features: {
+      ja: ['無制限PV対応', 'フルカスタマイズ', '専任ディレクター', '24時間電話サポート', 'デイリーレポート', 'コンテンツ制作 月10本', '動画制作 月1本'],
+      en: ['Unlimited PV', 'Full customization', 'Dedicated director', '24/7 phone support', 'Daily reports', '10 content pieces/month', '1 video/month'],
+    },
+    cta: { ja: 'お問い合わせ', en: 'Contact Us' },
+    stripeLink: 'https://buy.stripe.com/enterprise',
+    highlighted: false,
+  },
+];
+
+const comparisonRows = [
+  { feature: { ja: '月間PV対応', en: 'Monthly PV Support' }, basic: { ja: '10,000', en: '10,000' }, standard: { ja: '100,000', en: '100,000' }, enterprise: { ja: '無制限', en: 'Unlimited' } },
+  { feature: { ja: 'レスポンシブデザイン', en: 'Responsive Design' }, basic: true, standard: true, enterprise: true },
+  { feature: { ja: 'SEO内部対策', en: 'On-page SEO' }, basic: true, standard: true, enterprise: true },
+  { feature: { ja: 'SEO外部対策', en: 'Off-page SEO' }, basic: false, standard: true, enterprise: true },
+  { feature: { ja: 'MEO対策', en: 'MEO' }, basic: false, standard: true, enterprise: true },
+  { feature: { ja: 'CMS構築', en: 'CMS' }, basic: true, standard: true, enterprise: true },
+  { feature: { ja: '多言語対応', en: 'Multilingual' }, basic: false, standard: true, enterprise: true },
+  { feature: { ja: 'コンテンツ制作', en: 'Content Creation' }, basic: { ja: '―', en: 'None' }, standard: { ja: '月2本', en: '2/mo' }, enterprise: { ja: '月10本', en: '10/mo' } },
+  { feature: { ja: '動画制作', en: 'Video Production' }, basic: false, standard: false, enterprise: true },
+  { feature: { ja: 'レポート頻度', en: 'Report Frequency' }, basic: { ja: '月1回', en: 'Monthly' }, standard: { ja: '週1回', en: 'Weekly' }, enterprise: { ja: '毎日', en: 'Daily' } },
+  { feature: { ja: 'サポート', en: 'Support' }, basic: { ja: 'メール', en: 'Email' }, standard: { ja: 'チャット優先', en: 'Priority Chat' }, enterprise: { ja: '24時間電話', en: '24/7 Phone' } },
+  { feature: { ja: '専任担当者', en: 'Dedicated Manager' }, basic: false, standard: false, enterprise: true },
+];
+
+const pricingFaqs = [
+  { q: { ja: '最低契約期間はありますか？', en: 'Is there a minimum contract period?' }, a: { ja: 'ベーシックプラン・スタンダードプランは月額契約となります。エンタープライズプランは年間契約が基本です。', en: 'Basic and Standard plans are monthly contracts. Enterprise plans are annual by default.' } },
+  { q: { ja: '途中でプランを変更できますか？', en: 'Can I change plans mid-contract?' }, a: { ja: 'はい、いつでもアップグレード・ダウングレードが可能です。日割り計算での請求となります。', en: 'Yes, you can upgrade or downgrade at any time. Billing is prorated.' } },
+  { q: { ja: '請求書払いには対応していますか？', en: 'Do you support invoice payments?' }, a: { ja: '法人のお客様は、銀行振込による請求書払いが可能です。', en: 'Corporate clients can pay by invoice via bank transfer.' } },
+];
+---
+
+<BaseLayout title={title} description={desc} locale={loc}>
+  <Navbar locale={loc} current={`/pricing/${company}`} />
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <Breadcrumb items={crumbs} locale={loc} />
+
+    <!-- Hero -->
+    <section class="text-center my-12 lg:my-16">
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-4">
+        {t('料金プラン', 'Pricing Plans')}
+      </h1>
+      <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+        {t('ビジネスの規模や目的に合わせてお選びいただける3つのプランをご用意しています。', 'Choose from three plans tailored to your business size and goals.')}
+      </p>
+      <!-- Money-back badge -->
+      <div class="inline-flex items-center gap-2 mt-6 px-4 py-2 bg-green-50 border border-green-200 rounded-full">
+        <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+        </svg>
+        <span class="text-sm font-medium text-green-700">{t('30日間返金保証付き', '30-Day Money-Back Guarantee')}</span>
+      </div>
+    </section>
+
+    <!-- Pricing Cards -->
+    <section class="mb-20">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        {tiers.map((tier) => (
+          <div class={`relative bg-white border-2 rounded-2xl p-6 sm:p-8 flex flex-col ${tier.highlighted ? 'border-brand-500 shadow-xl scale-[1.02] z-10' : 'border-gray-200 hover:border-brand-300 hover:shadow-lg'} transition-all duration-300`}>
+            {tier.badge && (
+              <span class="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-brand-600 text-white text-xs font-bold rounded-full uppercase tracking-wider">
+                {loc === 'ja' ? tier.badge.ja : tier.badge.en}
+              </span>
+            )}
+            <div class="mb-6">
+              <h3 class="text-lg font-bold text-gray-900">{loc === 'ja' ? tier.name.ja : tier.name.en}</h3>
+              <p class="text-xs text-gray-500 mt-1">{loc === 'ja' ? tier.desc.ja : tier.desc.en}</p>
+            </div>
+            <div class="mb-6">
+              <span class="text-4xl font-extrabold text-gray-900">{loc === 'ja' ? tier.price.ja : tier.price.en}</span>
+              <span class="text-sm text-gray-500">{loc === 'ja' ? tier.period.ja : tier.period.en}</span>
+            </div>
+            <ul class="space-y-3 mb-8 flex-1">
+              {(loc === 'ja' ? tier.features.ja : tier.features.en).map((f) => (
+                <li class="flex items-start gap-2 text-sm text-gray-600">
+                  <svg class="w-4 h-4 text-green-500 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <a
+              href={tier.stripeLink}
+              class={`block text-center py-3 px-6 rounded-lg font-semibold text-sm transition-all duration-200 ${
+                tier.highlighted
+                  ? 'bg-brand-600 text-white hover:bg-brand-700 shadow-lg shadow-brand-200'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {loc === 'ja' ? tier.cta.ja : tier.cta.en}
+            </a>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Feature Comparison Table -->
+    <section class="mb-20">
+      <h2 class="text-2xl font-bold text-gray-900 text-center mb-8">{t('プラン比較', 'Plan Comparison')}</h2>
+      <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm overflow-x-auto">
+        <table class="w-full min-w-[640px]">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-200">
+              <th class="px-4 sm:px-6 py-4 text-left text-sm font-semibold text-gray-700">{t('機能', 'Feature')}</th>
+              <th class="px-4 sm:px-6 py-4 text-center text-sm font-semibold text-gray-700">{t('ベーシック', 'Basic')}</th>
+              <th class="px-4 sm:px-6 py-4 text-center text-sm font-semibold text-brand-700 bg-brand-50/50">{t('スタンダード', 'Standard')}</th>
+              <th class="px-4 sm:px-6 py-4 text-center text-sm font-semibold text-gray-700">{t('エンタープライズ', 'Enterprise')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {comparisonRows.map((row, i) => (
+              <tr class={`${i % 2 === 0 ? 'bg-gray-50/50' : 'bg-white'} border-b border-gray-100`}>
+                <td class="px-4 sm:px-6 py-3.5 text-sm text-gray-700 font-medium">{loc === 'ja' ? row.feature.ja : row.feature.en}</td>
+                {(['basic', 'standard', 'enterprise'] as const).map((tier) => (
+                  <td class={`px-4 sm:px-6 py-3.5 text-center text-sm ${tier === 'standard' ? 'bg-brand-50/30' : ''}`}>
+                    {typeof row[tier] === 'boolean' ? (
+                      row[tier] ? (
+                        <svg class="w-5 h-5 text-green-500 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg class="w-5 h-5 text-gray-300 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                      )
+                    ) : (
+                      <span class="text-gray-600">{(row[tier] as { ja: string; en: string })[loc === 'ja' ? 'ja' : 'en']}</span>
+                    )}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Pricing FAQ -->
+    <section class="mb-20 max-w-3xl mx-auto">
+      <h2 class="text-2xl font-bold text-gray-900 text-center mb-8">{t('よくある質問', 'FAQ')}</h2>
+      <div class="space-y-3">
+        {pricingFaqs.map((faq) => (
+          <details class="group border border-gray-200 rounded-xl overflow-hidden">
+            <summary class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors list-none">
+              <span class="text-sm font-medium text-gray-800 pr-6">{loc === 'ja' ? faq.q.ja : faq.q.en}</span>
+              <svg class="shrink-0 w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div class="px-5 pb-5">
+              <p class="text-sm text-gray-600 leading-relaxed border-t border-gray-100 pt-3">{loc === 'ja' ? faq.a.ja : faq.a.en}</p>
+            </div>
+          </details>
+        ))}
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="mb-12 bg-gradient-to-r from-brand-700 to-brand-900 rounded-2xl p-8 sm:p-12 text-center text-white">
+      <h2 class="text-2xl sm:text-3xl font-bold mb-3">
+        {t('どのプランが最適かお悩みですか？', 'Not sure which plan is right for you?')}
+      </h2>
+      <p class="text-brand-100 mb-6 max-w-xl mx-auto">
+        {t('お客様のビジネス状況をお聞かせください。最適なプランをご提案します。', 'Tell us about your business and we will recommend the best plan.')}
+      </p>
+      <a href={`/contact/${company}`} class="inline-block px-8 py-3 bg-white text-brand-700 font-semibold text-sm rounded-lg hover:bg-brand-50 transition-colors shadow-lg">
+        {t('無料相談はこちら', 'Free Consultation')}
+      </a>
+    </section>
+  </main>
+
+  <Footer locale={loc} />
+
+  <script type="application/ld+json" set:html={JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `${data.nameJa} 料金プラン`,
+    numberOfItems: tiers.length,
+    itemListElement: tiers.map((tier, i) => ({
+      '@type': 'Product',
+      position: i + 1,
+      name: `${loc === 'ja' ? tier.name.ja : tier.name.en} ${t('プラン', 'Plan')}`,
+      description: loc === 'ja' ? tier.desc.ja : tier.desc.en,
+      offers: {
+        '@type': 'Offer',
+        price: tier.price.ja.replace(/[¥,]/g, ''),
+        priceCurrency: 'JPY',
+        category: 'Web Development Services',
+      },
+    })),
+  })} />
+</BaseLayout>

@@ -1,23 +1,56 @@
 ---
-/**
- * ScrewFast FeaturesGeneral — simplified feature grid.
- */
 export interface Props {
   title?: string
   subTitle?: string
+  src?: any
+  alt?: string
+  features?: Array<{ heading: string; content: string; svg: string }>
 }
 
-const { title = 'Features', subTitle = '' } = Astro.props as Props
+const {
+  title = 'Everything You Need',
+  subTitle = 'From rapid prototyping to production deployment, ScrewFast covers the entire development lifecycle.',
+  src,
+  alt = 'Feature illustration',
+  features = [],
+} = Astro.props as Props
 ---
 
-<section class="py-20">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6">
-    <div class="text-center mb-14">
-      <h2 class="text-3xl font-bold text-gray-900">{title}</h2>
-      {subTitle && <p class="mt-3 text-lg text-gray-600">{subTitle}</p>}
-    </div>
-    <div class="grid md:grid-cols-3 gap-8">
-      <slot />
+<section class="py-16 sm:py-20 lg:py-24">
+  <div class="mx-auto max-w-[85rem] px-4 sm:px-6 lg:px-8">
+    {src && (
+      <div class="mb-16 overflow-hidden rounded-2xl">
+        <Image src={src} alt={alt} class="h-auto w-full object-cover" loading="lazy" />
+      </div>
+    )}
+    <div class="grid gap-12 lg:grid-cols-3">
+      <div class="lg:col-span-1">
+        <h2 class="text-balance text-2xl font-bold text-neutral-800 sm:text-3xl lg:text-4xl dark:text-neutral-200">
+          {title}
+        </h2>
+        {subTitle && (
+          <p class="text-pretty mt-4 text-neutral-600 dark:text-neutral-400">
+            {subTitle}
+          </p>
+        )}
+      </div>
+      <div class="grid gap-8 sm:grid-cols-2 lg:col-span-2">
+        {features.map((f) => (
+          <div class="flex gap-x-5">
+            <span class="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-100 dark:bg-orange-900/30">
+              <span set:html={f.svg} />
+            </span>
+            <div class="grow">
+              <h3 class="text-balance text-lg font-bold text-neutral-800 dark:text-neutral-200">
+                {f.heading}
+              </h3>
+              <p class="text-pretty mt-1 text-neutral-600 dark:text-neutral-400">
+                {f.content}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   </div>
 </section>

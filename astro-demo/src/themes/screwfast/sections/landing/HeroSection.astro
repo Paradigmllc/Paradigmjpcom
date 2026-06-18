@@ -1,9 +1,4 @@
 ---
-/**
- * ScrewFast HeroSection adapter.
- * Simplified version that matches ScrewFast's visual style without
- * the complex Preline UI / avatar / rating sub-components.
- */
 export interface Props {
   title?: string
   subTitle?: string
@@ -11,59 +6,116 @@ export interface Props {
   primaryBtnURL?: string
   secondaryBtn?: string
   secondaryBtnURL?: string
-  src?: any
-  alt?: string
+  withReview?: boolean
+  avatars?: string[]
+  starCount?: number
   rating?: string
   reviews?: string
+  src?: any
+  alt?: string
 }
 
 const {
-  title = 'Build faster with ScrewFast',
-  subTitle = '',
+  title = 'Build Faster with ScrewFast',
+  subTitle = 'Enterprise-grade tooling that empowers teams to ship robust applications at lightning speed.',
   primaryBtn = 'Get Started',
   primaryBtnURL = '#',
-  secondaryBtn = '',
+  secondaryBtn = 'Learn More',
   secondaryBtnURL = '#',
-  rating = '',
-  reviews = '',
+  withReview = true,
+  avatars = [],
+  starCount = 5,
+  rating = '4.9',
+  reviews = '2,000+ reviews',
+  src,
+  alt = 'Hero illustration',
 } = Astro.props as Props
 ---
 
-<section class="relative overflow-hidden">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
-    <div class="grid lg:grid-cols-2 gap-12 items-center">
+<section class="relative overflow-hidden py-16 sm:py-20 lg:py-28">
+  <div class="mx-auto max-w-[85rem] px-4 sm:px-6 lg:px-8">
+    <div class="grid items-center gap-12 md:grid-cols-2">
       <div class="space-y-8">
         {title && (
-          <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 leading-[1.1]">
-            {title}
+          <h1 class="text-balance text-3xl font-bold tracking-tight text-neutral-800 sm:text-4xl lg:text-6xl dark:text-neutral-200">
+            <Fragment set:html={title} />
           </h1>
         )}
         {subTitle && (
-          <p class="text-lg text-gray-600 max-w-xl">{subTitle}</p>
+          <p class="text-pretty text-lg text-neutral-600 dark:text-neutral-400">
+            {subTitle}
+          </p>
         )}
         <div class="flex flex-wrap gap-4">
           {primaryBtn && (
-            <a href={primaryBtnURL} class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors shadow-sm">
+            <a
+              href={primaryBtnURL}
+              class="inline-flex items-center gap-x-2 rounded-lg bg-orange-500 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-600"
+            >
               {primaryBtn}
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
             </a>
           )}
           {secondaryBtn && (
-            <a href={secondaryBtnURL} class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+            <a
+              href={secondaryBtnURL}
+              class="inline-flex items-center gap-x-2 rounded-lg border border-neutral-300 bg-white px-6 py-3 text-sm font-semibold text-neutral-700 shadow-sm transition-colors hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+            >
               {secondaryBtn}
             </a>
           )}
         </div>
-        {(rating || reviews) && (
-          <div class="flex items-center gap-3 text-sm text-gray-500">
-            {rating && <span class="font-semibold text-gray-900">{rating}</span>}
-            {reviews && <span>{reviews}</span>}
+        {withReview && (
+          <div class="flex items-center gap-4">
+            <div class="flex -space-x-3">
+              {avatars.length > 0
+                ? avatars.map((src, i) => (
+                    <img
+                      class="inline-block h-10 w-10 rounded-full border-2 border-white object-cover dark:border-neutral-800"
+                      src={src}
+                      alt={`Avatar ${i + 1}`}
+                      loading="lazy"
+                    />
+                  ))
+                : [...Array(3)].map((_, i) => (
+                    <span class="inline-flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-orange-100 text-xs font-bold text-orange-600 dark:border-neutral-800 dark:bg-orange-900/30 dark:text-orange-400">
+                      {String.fromCharCode(65 + i)}
+                    </span>
+                  ))}
+            </div>
+            <div>
+              <div class="flex items-center gap-x-0.5">
+                {[...Array(starCount)].map((_, i) => (
+                  <svg class="h-4 w-4 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <p class="text-sm text-neutral-600 dark:text-neutral-400">
+                <span class="font-semibold text-neutral-800 dark:text-neutral-200">{rating}</span> {reviews}
+              </p>
+            </div>
           </div>
         )}
       </div>
-      <div class="hidden lg:block">
-        <div class="aspect-[4/3] rounded-2xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-          <svg class="h-16 w-16 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      <div class="hidden md:block">
+        <div class="overflow-hidden rounded-2xl">
+          {src ? (
+            <Image
+              src={src}
+              alt={alt}
+              class="h-auto w-full scale-110 object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div class="flex aspect-[4/3] items-center justify-center rounded-2xl bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30">
+              <svg class="h-20 w-20 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+          )}
         </div>
       </div>
     </div>

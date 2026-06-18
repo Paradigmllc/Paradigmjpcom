@@ -1,0 +1,264 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+
+export function getStaticPaths() {
+  return [
+    { params: { slug: 'seo-trends-2025' } },
+    { params: { slug: 'web-design-trends' } },
+    { params: { slug: 'meo-google-maps-guide' } },
+    { params: { slug: 'nextjs-vs-astro' } },
+    { params: { slug: 'sns-marketing-2025' } },
+    { params: { slug: 'accessibility-guide' } },
+    { params: { slug: 'ai-content-marketing' } },
+    { params: { slug: 'woocommerce-seo' } },
+    { params: { slug: 'responsive-design-tips' } },
+  ];
+}
+
+const { slug } = Astro.params;
+
+const posts: Record<string, any> = {
+  'seo-trends-2025': {
+    slg: 'seo-trends-2025',
+    image: '/placeholder-blog-1.jpg',
+    cat: { ja: 'SEO', en: 'SEO' },
+    date: '2025-06-15',
+    updated: '2025-06-16',
+    title: { ja: '2025年最新SEO対策：Googleアルゴリズム変動への対応戦略', en: '2025 SEO Strategy: Adapting to Google Algorithm Changes' },
+    excerpt: { ja: '2025年上半期のGoogleアルゴリズム変動を分析し、効果的なSEO対策を解説します。', en: 'Analyzing Google algorithm changes in early 2025.' },
+    author: { ja: '山本 剛', en: 'Takeshi Yamamoto' },
+    authorImg: '',
+    authorBio: { ja: '代表取締役。SEO/デジタルマーケティング歴10年。', en: 'CEO. 10 years in SEO and digital marketing.' },
+    readTime: { ja: '8分', en: '8 min' },
+    tags: ['seo', 'marketing'],
+    body: {
+      ja: `<h2 id="intro">はじめに</h2><p>2025年上半期、Googleは複数回にわたり大規模なアルゴリズム更新を実施しました。本記事では、これらの変動を詳細に分析し、今後のSEO戦略に活かすための実践的なアプローチを解説します。</p><h2 id="changes">2025年上半期の主な変更点</h2><p>2025年3月のコアアップデートでは、E-E-A-T（経験、専門性、権威性、信頼性）の評価基準がさらに強化されました。特に、実体験に基づくコンテンツがこれまで以上に優遇される傾向が見られます。</p><h3 id="eeat">E-E-A-Tの強化</h3><p>具体的には、著者プロフィールの充実度、一次情報の引用、実績の明示などが重要な評価要素となっています。単なる情報の羅列ではなく、「誰が、どのような経験に基づいて書いたか」が問われる時代です。</p><h2 id="strategy">具体的な対応戦略</h2><p>以下の4つの施策が特に効果的です。第一に、著者ページの充実。第二に、一次データの活用。第三に、体験談の積極的な組み込み。第四に、専門家による監修の明示です。</p><h3 id="author">著者情報の最適化</h3><p>各記事に著者の経歴、専門分野、実績を明記し、SNSやポートフォリオへのリンクを設置することで、E-E-A-Tのスコア向上が期待できます。</p><h2 id="summary">まとめ</h2><p>2025年のSEOでは、テクニカルな施策に加えて、コンテンツの質と信頼性がこれまで以上に重要になっています。定期的なコンテンツ監査と継続的な改善が成功の鍵です。</p>`,
+      en: `<h2 id="intro">Introduction</h2><p>In early 2025, Google implemented several major algorithm updates. This article provides a detailed analysis of these changes and practical approaches for your SEO strategy.</p><h2 id="changes">Key Changes in Early 2025</h2><p>The March 2025 Core Update further strengthened E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness) evaluation criteria. Content based on real experience is being favored more than ever.</p><h3 id="eeat">Strengthening E-E-A-T</h3><p>Specifically, the depth of author profiles, citation of primary sources, and demonstration of track record have become key evaluation factors. It is no longer about listing information — it is about who wrote it and based on what experience.</p><h2 id="strategy">Specific Response Strategies</h2><p>The following four measures are particularly effective: first, enhancing author pages; second, leveraging primary data; third, actively incorporating testimonials; and fourth, clearly indicating expert supervision.</p><h3 id="author">Optimizing Author Information</h3><p>By clearly stating the author's background, area of expertise, and achievements in each article, and linking to their SNS and portfolio, you can expect improved E-E-A-T scores.</p><h2 id="summary">Summary</h2><p>In 2025 SEO, content quality and trustworthiness are more important than ever, alongside technical measures. Regular content audits and continuous improvement are the keys to success.</p>`,
+    },
+  },
+};
+
+const defaultPost = {
+  slg: slug,
+  image: '/placeholder-blog-1.jpg',
+  cat: { ja: 'SEO', en: 'SEO' },
+  date: '2025-06-01',
+  updated: '2025-06-02',
+  title: { ja: 'ブログ記事タイトル', en: 'Blog Post Title' },
+  excerpt: { ja: 'ブログ記事の抜粋文。', en: 'Blog post excerpt.' },
+  author: { ja: '山本 剛', en: 'Takeshi Yamamoto' },
+  authorImg: '',
+  authorBio: { ja: '代表取締役。デジタルマーケティング歴10年。', en: 'CEO with 10 years in digital marketing.' },
+  readTime: { ja: '5分', en: '5 min' },
+  tags: ['seo'],
+  body: {
+    ja: `<h2 id="intro">はじめに</h2><p>この記事では、最新のデジタルマーケティング戦略について解説します。</p><h2 id="chapter1">第1章：現状分析</h2><p>現在の市場環境を分析すると、いくつかの重要なトレンドが浮かび上がります。</p><h3 id="section1">1.1 モバイルファースト</h3><p>スマートフォンからのアクセスが全体の70%を超えており、モバイル対応は不可欠です。</p><h2 id="conclusion">まとめ</h2><p>これらの施策を総合的に実施することで、成果を最大化することができます。</p>`,
+    en: `<h2 id="intro">Introduction</h2><p>This article explains the latest digital marketing strategies.</p><h2 id="chapter1">Chapter 1: Current Analysis</h2><p>Analyzing the current market environment reveals several key trends.</p><h3 id="section1">1.1 Mobile First</h3><p>Over 70% of traffic comes from smartphones, making mobile optimization essential.</p><h2 id="conclusion">Conclusion</h2><p>Implementing these measures comprehensively will maximize results.</p>`,
+  },
+};
+
+const post = posts[slug] || defaultPost;
+const locale = 'ja';
+const t = (ja: string, en: string) => locale === 'en' ? en : ja;
+const title = t(post.title.ja, post.title.en);
+const desc = t(post.excerpt.ja, post.excerpt.en);
+const blogUrl = 'https://paradigm.co.jp';
+const pageUrl = `${blogUrl}/blog/${slug}`;
+
+const relatedPosts = [
+  { slug: 'web-design-trends', title: { ja: '2025年ウェブデザイントレンド', en: '2025 Web Design Trends' }, cat: { ja: 'Web制作', en: 'Web Dev' }, date: '2025-06-10' },
+  { slug: 'meo-google-maps-guide', title: { ja: 'MEO対策完全ガイド', en: 'Complete MEO Guide' }, cat: { ja: 'マーケティング', en: 'Marketing' }, date: '2025-06-05' },
+  { slug: 'nextjs-vs-astro', title: { ja: 'Next.js vs Astro', en: 'Next.js vs Astro' }, cat: { ja: 'Web制作', en: 'Web Dev' }, date: '2025-05-28' },
+];
+---
+
+<BaseLayout title={title} description={desc} locale="ja">
+  <Navbar locale="ja" current="/blog" />
+  <link rel="alternate" type="application/rss+xml" title="Paradigm Blog" href={`${blogUrl}/blog/rss.xml`} />
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="no-print">
+      <ol class="flex flex-wrap items-center gap-1 text-xs sm:text-sm text-gray-500 py-3">
+        <li><a href="/" class="hover:text-brand-600 transition-colors">ホーム</a></li>
+        <li><svg class="w-3 h-3 mx-1 text-gray-300 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" /></svg></li>
+        <li><a href="/blog" class="hover:text-brand-600 transition-colors">ブログ</a></li>
+        <li><svg class="w-3 h-3 mx-1 text-gray-300 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" /></svg></li>
+        <li><span class="text-gray-800 font-medium truncate max-w-[200px] inline-block" aria-current="page">{title}</span></li>
+      </ol>
+    </nav>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+      <!-- Article Content -->
+      <article class="lg:col-span-8">
+        <!-- Hero -->
+        <header class="mb-8">
+          <div class="flex flex-wrap items-center gap-2 mb-4">
+            <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-brand-50 text-brand-600">
+              {t(post.cat.ja, post.cat.en)}
+            </span>
+            <span class="text-xs text-gray-400">{post.date}</span>
+            {post.updated && (
+              <span class="text-xs text-gray-400">({locale === 'ja' ? '更新: ' : 'Updated: '}{post.updated})</span>
+            )}
+          </div>
+          <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight mb-4">
+            {title}
+          </h1>
+          <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+            <span>{t(post.author.ja, post.author.en)}</span>
+            <span class="text-gray-300">|</span>
+            <span>{t(post.readTime.ja, post.readTime.en)}</span>
+          </div>
+        </header>
+
+        <!-- Featured Image -->
+        <div class="mb-10 h-64 sm:h-80 lg:h-96 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center">
+          <svg class="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+
+        <!-- Prose Body -->
+        <div class="prose prose-lg prose-slate max-w-none mb-12" id="article-body">
+          <div set:html={t(post.body.ja, post.body.en)} />
+        </div>
+
+        <!-- Social Share -->
+        <div class="flex items-center gap-3 py-6 border-t border-gray-200">
+          <span class="text-sm font-medium text-gray-500 mr-2">{locale === 'ja' ? 'シェアする' : 'Share'}:</span>
+          <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(pageUrl)}&text=${encodeURIComponent(title)}`} target="_blank" rel="noopener" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-900 hover:text-white transition-colors" aria-label="Share on X">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          </a>
+          <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`} target="_blank" rel="noopener" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-blue-600 hover:text-white transition-colors" aria-label="Share on Facebook">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          </a>
+          <a href={`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(pageUrl)}`} target="_blank" rel="noopener" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-green-500 hover:text-white transition-colors" aria-label="Share on LINE">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.145 2 11.257c0 4.462 3.773 8.207 8.773 8.899.34.075.803.227.92.522.107.27.07.694.035.968l-.148.905c-.04.256-.198 1.002.874.546.965-.42 5.22-3.078 7.124-5.272C20.932 16.364 22 13.934 22 11.257 22 6.145 17.523 2 12 2zm.003 3.8c.44 0 .793.344.793.766 0 .42-.354.762-.793.762-.436 0-.793-.341-.793-.762 0-.422.357-.766.793-.766zm-3.165 0c.436 0 .793.344.793.766 0 .42-.357.762-.793.762-.44 0-.792-.341-.792-.762 0-.422.352-.766.792-.766zm6.33 0c.436 0 .793.344.793.766 0 .42-.357.762-.793.762-.44 0-.792-.341-.792-.762 0-.422.352-.766.792-.766z"/></svg>
+          </a>
+          <button
+            type="button"
+            onclick={`navigator.clipboard.writeText('${pageUrl}');this.classList.add('text-green-500');setTimeout(()=>this.classList.remove('text-green-500'),2000)`}
+            class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+            aria-label="Copy URL"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+          </button>
+        </div>
+
+        <!-- Author Bio -->
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 sm:p-6 flex items-start gap-4 mb-12">
+          <div class="w-14 h-14 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center shrink-0">
+            <span class="text-white text-lg font-bold">{t(post.author.ja, post.author.en).charAt(0)}</span>
+          </div>
+          <div>
+            <p class="font-bold text-gray-900">{t(post.author.ja, post.author.en)}</p>
+            <p class="text-sm text-gray-600 mt-1">{t(post.authorBio.ja, post.authorBio.en)}</p>
+          </div>
+        </div>
+
+        <!-- Related Posts -->
+        <section class="mb-12">
+          <h2 class="text-xl font-bold text-gray-900 mb-5">{locale === 'ja' ? '関連記事' : 'Related Posts'}</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {relatedPosts.map((rp) => (
+              <a href={`/blog/${rp.slug}`} class="group block bg-white border border-gray-200 rounded-lg p-4 hover:border-brand-300 hover:shadow-md transition-all duration-200">
+                <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-brand-50 text-brand-600 mb-2 inline-block">{t(rp.cat.ja, rp.cat.en)}</span>
+                <h3 class="text-sm font-bold text-gray-900 group-hover:text-brand-700 transition-colors line-clamp-2">{t(rp.title.ja, rp.title.en)}</h3>
+                <p class="text-xs text-gray-400 mt-2">{rp.date}</p>
+              </a>
+            ))}
+          </div>
+        </section>
+      </article>
+
+      <!-- Sidebar: Table of Contents -->
+      <aside class="lg:col-span-4">
+        <div class="lg:sticky lg:top-24 space-y-6">
+          <!-- TOC on desktop -->
+          <div class="hidden lg:block bg-white border border-gray-200 rounded-xl p-5">
+            <h3 class="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wider">{locale === 'ja' ? '目次' : 'Table of Contents'}</h3>
+            <nav class="space-y-1 text-sm" id="toc">
+              <!-- Populated by JS -->
+            </nav>
+          </div>
+          <!-- TOC collapsible on mobile -->
+          <details class="lg:hidden bg-white border border-gray-200 rounded-xl overflow-hidden" id="toc-mobile">
+            <summary class="flex items-center justify-between px-5 py-3 cursor-pointer list-none">
+              <span class="text-sm font-bold text-gray-900">{locale === 'ja' ? '目次' : 'Table of Contents'}</span>
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+            </summary>
+            <nav class="px-5 pb-4 space-y-1 text-sm" id="toc-mobile-nav">
+              <!-- Populated by JS -->
+            </nav>
+          </details>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <Footer locale="ja" />
+
+  <script>
+    function buildToc() {
+      const article = document.getElementById('article-body');
+      if (!article) return;
+      const headings = article.querySelectorAll('h2, h3');
+      if (headings.length === 0) return;
+      const tocNav = document.getElementById('toc');
+      const tocMobile = document.getElementById('toc-mobile-nav');
+      const items: string[] = [];
+      headings.forEach((h) => {
+        const level = h.tagName === 'H2' ? 0 : 1;
+        const text = h.textContent || '';
+        const id = h.getAttribute('id') || '';
+        items.push(`<a href="#${id}" class="block py-1 text-gray-600 hover:text-brand-600 transition-colors ${level === 1 ? 'pl-4 text-xs' : 'text-sm font-medium'}" data-toc-link>${text}</a>`);
+      });
+      const html = items.join('');
+      if (tocNav) tocNav.innerHTML = html;
+      if (tocMobile) tocMobile.innerHTML = html;
+
+      // Highlight active heading on scroll
+      const links = document.querySelectorAll('[data-toc-link]');
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          const id = entry.target.id;
+          links.forEach((link) => {
+            const href = link.getAttribute('href');
+            if (href === `#${id}`) {
+              link.classList.toggle('text-brand-600', entry.isIntersecting);
+              link.classList.toggle('font-bold', entry.isIntersecting);
+            }
+          });
+        });
+      }, { rootMargin: '-80px 0px -70% 0px' });
+      headings.forEach((h) => observer.observe(h));
+    }
+    buildToc();
+  </script>
+
+  <script type="application/ld+json" set:html={JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    mainEntityOfPage: { '@type': 'WebPage', '@id': pageUrl },
+    headline: title,
+    description: desc,
+    image: `${blogUrl}${post.image}`,
+    datePublished: post.date,
+    dateModified: post.updated || post.date,
+    author: {
+      '@type': 'Person',
+      name: t(post.author.ja, post.author.en),
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: '株式会社パラダイム',
+      logo: { '@type': 'ImageObject', url: `${blogUrl}/logo.png` },
+    },
+    inLanguage: locale === 'ja' ? 'ja' : 'en',
+    wordCount: t(post.body.ja, post.body.en).replace(/<[^>]+>/g, '').length,
+    about: post.tags.map((tag: string) => ({ '@type': 'Thing', name: tag })),
+  })} />
+</BaseLayout>

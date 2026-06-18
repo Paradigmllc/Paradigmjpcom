@@ -1,209 +1,170 @@
 ---
-//Import relevant dependencies
-import ThemeIcon from '@components/ThemeIcon.astro';
-import NavLink from '@components/ui/links/NavLink.astro';
-import Authentication from '../misc/Authentication.astro';
-import enStrings from '@utils/navigation.ts';
-import frStrings from '@utils/fr/navigation.ts';
-import BrandLogo from '@components/BrandLogo.astro';
-import LanguagePicker from '@components/ui/LanguagePicker.astro';
+export interface Props {
+  title?: string
+  links?: Array<{ label: string; href: string }>
+  ctaLabel?: string
+  ctaUrl?: string
+}
 
-// Select the correct translation based on the page's lang prop:
-const strings = Astro.currentLocale === 'fr' ? frStrings : enStrings;
-const homeUrl = Astro.currentLocale === 'fr' ? '/fr' : '/';
+const {
+  title = 'ScrewFast',
+  links = [
+    { label: 'Home', href: '/' },
+    { label: 'Features', href: '#features' },
+    { label: 'Pricing', href: '#pricing' },
+    { label: 'FAQ', href: '#faq' },
+  ],
+  ctaLabel = 'Get Started',
+  ctaUrl = '#',
+} = Astro.props as Props
 ---
 
-{/* Main header component */}
-<header
-  class="sticky inset-x-0 top-4 z-50 flex w-full flex-wrap text-sm md:flex-nowrap md:justify-start"
->
-  {/* Navigation container */}
+<header class="sticky inset-x-0 top-0 z-50 flex w-full flex-wrap text-sm md:flex-nowrap md:justify-start">
   <nav
-    class="relative mx-2 w-full rounded-[36px] border border-yellow-100/40 bg-yellow-50/60 px-4 py-3 backdrop-blur-md md:flex md:items-center md:justify-between md:px-6 md:py-0 lg:px-8 xl:mx-auto dark:border-neutral-700/40 dark:bg-neutral-800/80 dark:backdrop-blur-md"
+    class="relative mx-auto flex w-full max-w-[85rem] items-center justify-between rounded-b-2xl border border-yellow-100/40 bg-yellow-50/60 px-4 py-3 backdrop-blur-md md:px-6 md:py-0 lg:px-8 dark:border-neutral-700/40 dark:bg-neutral-800/80 dark:backdrop-blur-md"
     aria-label="Global"
   >
     <div class="flex items-center justify-between">
-      {/* Brand logo */}
       <a
-        class="flex-none rounded-lg text-xl font-bold ring-zinc-500 outline-hidden focus-visible:ring-3 dark:ring-zinc-200 dark:focus:outline-hidden"
-        href={homeUrl}
-        aria-label="Brand"
+        class="flex-none rounded-lg text-xl font-bold text-neutral-800 ring-zinc-500 outline-hidden focus-visible:ring-3 dark:text-neutral-200 dark:ring-zinc-200"
+        href="/"
+        aria-label={title}
       >
-        <BrandLogo class="h-auto w-24" />
+        <span class="mr-2 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500 text-sm font-bold text-white">
+          {title.charAt(0)}
+        </span>
+        {title}
       </a>
-      {/* Collapse toggle for smaller screens */}
+
       <div class="mr-5 ml-auto md:hidden">
         <button
           type="button"
           class="hs-collapse-toggle flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-neutral-600 transition duration-300 hover:bg-neutral-200 disabled:pointer-events-none disabled:opacity-50 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:focus:outline-hidden"
-          data-hs-collapse="#navbar-collapse-with-animation"
-          aria-controls="navbar-collapse-with-animation"
+          data-hs-collapse="#navbar-collapse-main"
+          aria-controls="navbar-collapse-main"
           aria-label="Toggle navigation"
         >
-          <svg
-            class="hs-collapse-open:hidden h-[1.25rem] w-[1.25rem] shrink-0"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <line x1="3" x2="21" y1="6" y2="6"></line>
-            <line x1="3" x2="21" y1="12" y2="12"></line>
-            <line x1="3" x2="21" y1="18" y2="18"></line>
+          <svg class="hs-collapse-open:hidden h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" x2="21" y1="6" y2="6" />
+            <line x1="3" x2="21" y1="12" y2="12" />
+            <line x1="3" x2="21" y1="18" y2="18" />
           </svg>
-          <svg
-            class="hs-collapse-open:block hidden h-[1.25rem] w-[1.25rem] shrink-0"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M18 6 6 18"></path>
-            <path d="m6 6 12 12"></path>
+          <svg class="hs-collapse-open:block hidden h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
           </svg>
         </button>
       </div>
-      {/* ThemeIcon component specifically for smaller screens */}
+
       <span class="inline-block md:hidden">
-        <ThemeIcon />
+        <button
+          type="button"
+          class="flex h-8 w-8 items-center justify-center rounded-full text-neutral-600 transition duration-300 hover:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-700"
+          aria-label="Toggle theme"
+          onclick="document.documentElement.classList.toggle('dark'); const isDark = document.documentElement.classList.contains('dark'); localStorage.setItem('hs_theme', isDark ? 'dark' : 'default'); this.querySelector('.sun-icon').classList.toggle('hidden'); this.querySelector('.moon-icon').classList.toggle('hidden'); if (window.dispatchEvent) { window.dispatchEvent(new CustomEvent('on-hs-appearance-change', { detail: isDark ? 'dark' : 'default' })); }"
+        >
+          <svg class="sun-icon hidden h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2m0 16v2m-10-10h2m16 0h2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h0m20 0h0M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41" />
+          </svg>
+          <svg class="moon-icon h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+        </button>
       </span>
     </div>
-    {/* Contains navigation links */}
+
     <div
-      id="navbar-collapse-with-animation"
+      id="navbar-collapse-main"
       class="hs-collapse hidden grow basis-full overflow-hidden transition-all duration-300 md:block"
     >
-      {/* Navigation links container */}
-      <div
-        class="mt-5 flex flex-col gap-x-0 gap-y-4 md:mt-0 md:flex-row md:items-center md:justify-end md:gap-x-4 md:gap-y-0 md:ps-7 lg:gap-x-7"
-      >
-        {/* Navigation links and Authentication component */}
-        {
-          strings.navBarLinks.map(link => (
-            <NavLink url={link.url} name={link.name} />
-          ))
-        }
-
-        <Authentication />
-        <LanguagePicker />
-        {/* ThemeIcon component specifically for larger screens */}
+      <div class="mt-5 flex flex-col gap-x-0 gap-y-4 md:mt-0 md:flex-row md:items-center md:justify-end md:gap-x-4 md:gap-y-0 md:ps-7 lg:gap-x-7">
+        {links.map((link) => (
+          <a
+            href={link.href}
+            class="rounded-lg text-sm font-medium text-neutral-700 underline-offset-4 transition hover:underline hover:text-orange-500 outline-hidden focus-visible:ring-3 dark:text-neutral-300 dark:hover:text-orange-400"
+          >
+            {link.label}
+          </a>
+        ))}
+        <a
+          href={ctaUrl}
+          class="inline-flex items-center gap-x-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-600"
+        >
+          {ctaLabel}
+        </a>
         <span class="hidden md:inline-block">
-          <ThemeIcon />
+          <button
+            type="button"
+            class="flex h-8 w-8 items-center justify-center rounded-full text-neutral-600 transition duration-300 hover:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-700"
+            aria-label="Toggle theme"
+            onclick="document.documentElement.classList.toggle('dark'); const isDark = document.documentElement.classList.contains('dark'); localStorage.setItem('hs_theme', isDark ? 'dark' : 'default'); this.querySelector('.sun-icon').classList.toggle('hidden'); this.querySelector('.moon-icon').classList.toggle('hidden'); if (window.dispatchEvent) { window.dispatchEvent(new CustomEvent('on-hs-appearance-change', { detail: isDark ? 'dark' : 'default' })); }"
+          >
+            <svg class="sun-icon block h-5 w-5 shrink-0 dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2m0 16v2m-10-10h2m16 0h2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h0m20 0h0M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41" />
+            </svg>
+            <svg class="moon-icon hidden h-5 w-5 shrink-0 dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+            </svg>
+          </button>
         </span>
       </div>
     </div>
   </nav>
 </header>
-{/* Theme Appearance script to manage light/dark modes */}
+
 <script is:inline>
   const HSThemeAppearance = {
     init() {
-      const defaultTheme = 'default';
-      let theme = localStorage.getItem('hs_theme') || defaultTheme;
-
-      if (document.querySelector('html').classList.contains('dark')) return;
-      this.setAppearance(theme);
+      const defaultTheme = 'default'
+      let theme = localStorage.getItem('hs_theme') || defaultTheme
+      if (document.querySelector('html').classList.contains('dark')) return
+      this.setAppearance(theme)
     },
     _resetStylesOnLoad() {
-      const $resetStyles = document.createElement('style');
-      $resetStyles.innerText = `*{transition: unset !important;}`;
-      $resetStyles.setAttribute('data-hs-appearance-onload-styles', '');
-      document.head.appendChild($resetStyles);
-      return $resetStyles;
+      const $resetStyles = document.createElement('style')
+      $resetStyles.innerText = `*{transition:unset!important;}`
+      $resetStyles.setAttribute('data-hs-appearance-onload-styles', '')
+      document.head.appendChild($resetStyles)
+      return $resetStyles
     },
     setAppearance(theme, saveInStore = true, dispatchEvent = true) {
-      const $resetStylesEl = this._resetStylesOnLoad();
-
-      if (saveInStore) {
-        localStorage.setItem('hs_theme', theme);
-      }
-
+      const $resetStylesEl = this._resetStylesOnLoad()
+      if (saveInStore) localStorage.setItem('hs_theme', theme)
       if (theme === 'auto') {
-        theme = window.matchMedia('(prefers-color-scheme: dark)').matches
-          ? 'dark'
-          : 'default';
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default'
       }
-
-      document.querySelector('html').classList.remove('dark');
-      document.querySelector('html').classList.remove('default');
-      document.querySelector('html').classList.remove('auto');
-
-      document
-        .querySelector('html')
-        .classList.add(this.getOriginalAppearance());
-
-      setTimeout(() => {
-        $resetStylesEl.remove();
-      });
-
+      document.querySelector('html').classList.remove('dark')
+      document.querySelector('html').classList.remove('default')
+      document.querySelector('html').classList.remove('auto')
+      document.querySelector('html').classList.add(this.getOriginalAppearance())
+      setTimeout(() => { $resetStylesEl.remove() })
       if (dispatchEvent) {
-        window.dispatchEvent(
-          new CustomEvent('on-hs-appearance-change', { detail: theme })
-        );
+        window.dispatchEvent(new CustomEvent('on-hs-appearance-change', { detail: theme }))
       }
     },
     getAppearance() {
-      let theme = this.getOriginalAppearance();
-      if (theme === 'auto') {
-        theme = window.matchMedia('(prefers-color-scheme: dark)').matches
-          ? 'dark'
-          : 'default';
-      }
-      return theme;
+      let theme = this.getOriginalAppearance()
+      if (theme === 'auto') theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default'
+      return theme
     },
     getOriginalAppearance() {
-      const defaultTheme = 'default';
-      return localStorage.getItem('hs_theme') || defaultTheme;
+      const defaultTheme = 'default'
+      return localStorage.getItem('hs_theme') || defaultTheme
     },
-  };
-  HSThemeAppearance.init();
-
-  window
-    .matchMedia('(prefers-color-scheme: dark)')
-    .addEventListener('change', () => {
-      if (HSThemeAppearance.getOriginalAppearance() === 'auto') {
-        HSThemeAppearance.setAppearance('auto', false);
-      }
-    });
-
+  }
+  HSThemeAppearance.init()
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (HSThemeAppearance.getOriginalAppearance() === 'auto') {
+      HSThemeAppearance.setAppearance('auto', false)
+    }
+  })
   window.addEventListener('load', () => {
-    const $clickableThemes = document.querySelectorAll(
-      '[data-hs-theme-click-value]'
-    );
-    const $switchableThemes = document.querySelectorAll(
-      '[data-hs-theme-switch]'
-    );
-
-    $clickableThemes.forEach($item => {
-      $item.addEventListener('click', () =>
-        HSThemeAppearance.setAppearance(
-          $item.getAttribute('data-hs-theme-click-value'),
-          true,
-          $item
-        )
-      );
-    });
-
-    $switchableThemes.forEach($item => {
-      $item.addEventListener('change', e => {
-        HSThemeAppearance.setAppearance(e.target.checked ? 'dark' : 'default');
-      });
-
-      $item.checked = HSThemeAppearance.getAppearance() === 'dark';
-    });
-
-    window.addEventListener('on-hs-appearance-change', e => {
-      $switchableThemes.forEach($item => {
-        $item.checked = e.detail === 'dark';
-      });
-    });
-  });
+    const $sunIcons = document.querySelectorAll('.sun-icon')
+    const $moonIcons = document.querySelectorAll('.moon-icon')
+    const isDark = document.documentElement.classList.contains('dark')
+    $sunIcons.forEach(el => { if (isDark) el.classList.add('hidden'); else el.classList.remove('hidden') })
+    $moonIcons.forEach(el => { if (isDark) el.classList.remove('hidden'); else el.classList.add('hidden') })
+  })
 </script>

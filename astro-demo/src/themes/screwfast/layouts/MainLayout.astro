@@ -1,0 +1,68 @@
+---
+import '../styles/global.css'
+
+export interface Props {
+  title?: string
+  meta?: string
+  lang?: string
+}
+
+const {
+  title = 'ScrewFast',
+  meta = 'Enterprise-grade tooling for modern teams.',
+  lang = 'en',
+} = Astro.props as Props
+---
+
+<html lang={lang} class="scrollbar-hide scroll-pt-16">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={meta} />
+    <title>{title}</title>
+
+    <script is:inline>
+      (function () {
+        if (
+          localStorage.getItem('hs_theme') === 'dark' ||
+          (!('hs_theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        ) {
+          document.documentElement.classList.add('dark')
+        } else {
+          document.documentElement.classList.remove('dark')
+        }
+      })()
+    </script>
+  </head>
+  <body class="flex min-h-screen flex-col bg-neutral-200 selection:bg-yellow-400 selection:text-neutral-700 dark:bg-neutral-800">
+    <div class="mx-auto w-full max-w-(--breakpoint-2xl) grow px-4 sm:px-6 lg:px-8">
+      <slot name="nav" />
+      <main><slot /></main>
+    </div>
+    <slot name="footer" />
+
+    <script>
+      import 'preline'
+
+      const initPreline = () => {
+        window.HSStaticMethods?.autoInit?.()
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPreline)
+      } else {
+        initPreline()
+      }
+    </script>
+
+    <style>
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+  </body>
+</html>

@@ -1,0 +1,93 @@
+---
+/**
+ * CustomStyles.astro — AstroWind CSS Custom Properties
+ * Injects brand color, dark mode, and animation variables.
+ * Must be rendered as <style is:inline> in <head> to prevent FOUC.
+ */
+const { accentColor = '#0161ef', accentColorDark = '#0154cf', accentColorLight = '#6d28d9' } = Astro.props
+---
+
+<style is:inline>
+  :root {
+    /* Primary (brand) */
+    --aw-color-primary-50: color-mix(in srgb, {accentColor} 5%, white);
+    --aw-color-primary-100: color-mix(in srgb, {accentColor} 10%, white);
+    --aw-color-primary-200: color-mix(in srgb, {accentColor} 30%, white);
+    --aw-color-primary-300: color-mix(in srgb, {accentColor} 50%, white);
+    --aw-color-primary-400: color-mix(in srgb, {accentColor} 70%, white);
+    --aw-color-primary-500: {accentColor};
+    --aw-color-primary-600: {accentColor};
+    --aw-color-primary-700: {accentColorDark};
+    --aw-color-primary-800: color-mix(in srgb, {accentColorDark} 70%, black);
+    --aw-color-primary-900: color-mix(in srgb, {accentColorDark} 50%, black);
+    --aw-color-primary-950: color-mix(in srgb, {accentColorDark} 30%, black);
+
+    /* Secondary */
+    --aw-color-secondary-50: color-mix(in srgb, {accentColorDark} 5%, white);
+    --aw-color-secondary-100: color-mix(in srgb, {accentColorDark} 10%, white);
+    --aw-color-secondary-200: color-mix(in srgb, {accentColorDark} 30%, white);
+    --aw-color-secondary-300: color-mix(in srgb, {accentColorDark} 50%, white);
+    --aw-color-secondary-400: color-mix(in srgb, {accentColorDark} 70%, white);
+    --aw-color-secondary-500: {accentColorDark};
+    --aw-color-secondary-600: {accentColorDark};
+    --aw-color-secondary-700: color-mix(in srgb, {accentColorDark} 70%, black);
+    --aw-color-secondary-800: color-mix(in srgb, {accentColorDark} 55%, black);
+    --aw-color-secondary-900: color-mix(in srgb, {accentColorDark} 40%, black);
+    --aw-color-secondary-950: color-mix(in srgb, {accentColorDark} 25%, black);
+
+    /* Accent */
+    --aw-color-accent-50: color-mix(in srgb, {accentColorLight} 5%, white);
+    --aw-color-accent-100: color-mix(in srgb, {accentColorLight} 10%, white);
+    --aw-color-accent-200: color-mix(in srgb, {accentColorLight} 30%, white);
+    --aw-color-accent-300: color-mix(in srgb, {accentColorLight} 50%, white);
+    --aw-color-accent-400: color-mix(in srgb, {accentColorLight} 70%, white);
+    --aw-color-accent-500: {accentColorLight};
+    --aw-color-accent-600: {accentColorLight};
+    --aw-color-accent-700: color-mix(in srgb, {accentColorLight} 70%, black);
+    --aw-color-accent-800: color-mix(in srgb, {accentColorLight} 55%, black);
+    --aw-color-accent-900: color-mix(in srgb, {accentColorLight} 40%, black);
+    --aw-color-accent-950: color-mix(in srgb, {accentColorLight} 25%, black);
+
+    /* Text */
+    --aw-color-text-default: rgb(16 16 16);
+    --aw-color-text-muted: rgb(16 16 16 / 66%);
+
+    /* Background */
+    --aw-color-bg-page: rgb(255 255 255);
+  }
+
+  /* Dark Mode */
+  .dark {
+    --aw-color-text-default: rgb(229 236 246);
+    --aw-color-text-muted: rgb(229 236 246 / 66%);
+    --aw-color-bg-page: rgb(3 6 32);
+    --aw-color-primary-50: color-mix(in srgb, {accentColor} 10%, rgb(3 6 32));
+    --aw-color-primary-100: color-mix(in srgb, {accentColor} 20%, rgb(3 6 32));
+    --aw-color-primary-200: color-mix(in srgb, {accentColor} 40%, rgb(3 6 32));
+    --aw-color-primary-300: color-mix(in srgb, {accentColor} 60%, rgb(3 6 32));
+    --aw-color-primary-400: color-mix(in srgb, {accentColor} 80%, rgb(3 6 32));
+    --aw-color-primary-600: {accentColorLight};
+    --aw-color-primary-700: color-mix(in srgb, {accentColorLight} 80%, white);
+    --aw-color-primary-800: color-mix(in srgb, {accentColorLight} 60%, white);
+    --aw-color-primary-900: color-mix(in srgb, {accentColorLight} 40%, white);
+    --aw-color-primary-950: color-mix(in srgb, {accentColorLight} 20%, white);
+    --aw-color-secondary-50: color-mix(in srgb, {accentColorDark} 10%, rgb(3 6 32));
+    --aw-color-secondary-100: color-mix(in srgb, {accentColorDark} 20%, rgb(3 6 32));
+    --aw-color-secondary-200: color-mix(in srgb, {accentColorDark} 40%, rgb(3 6 32));
+    --aw-color-secondary-300: color-mix(in srgb, {accentColorDark} 60%, rgb(3 6 32));
+    --aw-color-secondary-400: color-mix(in srgb, {accentColorDark} 80%, rgb(3 6 32));
+    --aw-color-secondary-600: color-mix(in srgb, {accentColorDark} 80%, white);
+    --aw-color-secondary-700: color-mix(in srgb, {accentColorDark} 60%, white);
+    --aw-color-secondary-800: color-mix(in srgb, {accentColorDark} 40%, white);
+    --aw-color-secondary-900: color-mix(in srgb, {accentColorDark} 20%, white);
+    --aw-color-accent-50: color-mix(in srgb, {accentColorLight} 10%, rgb(3 6 32));
+    --aw-color-accent-100: color-mix(in srgb, {accentColorLight} 20%, rgb(3 6 32));
+    --aw-color-accent-200: color-mix(in srgb, {accentColorLight} 40%, rgb(3 6 32));
+    --aw-color-accent-300: color-mix(in srgb, {accentColorLight} 60%, rgb(3 6 32));
+    --aw-color-accent-400: color-mix(in srgb, {accentColorLight} 80%, rgb(3 6 32));
+    --aw-color-accent-600: color-mix(in srgb, {accentColorLight} 80%, white);
+    --aw-color-accent-700: color-mix(in srgb, {accentColorLight} 60%, white);
+    --aw-color-accent-800: color-mix(in srgb, {accentColorLight} 40%, white);
+    --aw-color-accent-900: color-mix(in srgb, {accentColorLight} 20%, white);
+  }
+</style>

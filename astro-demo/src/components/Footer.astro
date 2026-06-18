@@ -1,0 +1,63 @@
+---
+export interface Props {
+  locale?: 'ja' | 'en';
+}
+
+const { locale = 'ja' } = Astro.props;
+---
+
+<footer class="bg-gray-900 text-gray-300 no-print">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+      <div>
+        <a href="/" class="inline-flex items-center gap-2 font-bold text-lg text-white mb-4">
+          <svg class="w-7 h-7" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="#60a5fa"/>
+            <text x="16" y="22" text-anchor="middle" fill="#1e3a8a" font-size="18" font-weight="900">P</text>
+          </svg>
+          {locale === 'ja' ? '株式会社パラダイム' : 'Paradigm Inc.'}
+        </a>
+        <p class="text-sm text-gray-400 mt-2 leading-relaxed">
+          {locale === 'ja'
+            ? 'デジタルの力で、すべてのビジネスに成長機会を提供します。'
+            : 'Empowering every business with digital innovation.'}
+        </p>
+      </div>
+      <div>
+        <h3 class="text-white font-semibold text-sm tracking-wider uppercase mb-4">
+          {locale === 'ja' ? 'サービス' : 'Services'}
+        </h3>
+        <ul class="space-y-2 text-sm">
+          <li><a href="/services/paradigm" class="hover:text-white transition">{locale === 'ja' ? 'Web制作' : 'Web Development'}</a></li>
+          <li><a href="/services/paradigm" class="hover:text-white transition">{locale === 'ja' ? 'SEO対策' : 'SEO'}</a></li>
+          <li><a href="/services/paradigm" class="hover:text-white transition">{locale === 'ja' ? 'MEO対策' : 'MEO'}</a></li>
+          <li><a href="/services/paradigm" class="hover:text-white transition">{locale === 'ja' ? '動画制作' : 'Video Production'}</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="text-white font-semibold text-sm tracking-wider uppercase mb-4">
+          {locale === 'ja' ? '会社情報' : 'Company'}
+        </h3>
+        <ul class="space-y-2 text-sm">
+          <li><a href="/about/paradigm" class="hover:text-white transition">{locale === 'ja' ? '会社概要' : 'About'}</a></li>
+          <li><a href="/cases/paradigm" class="hover:text-white transition">{locale === 'ja' ? '実績・事例' : 'Case Studies'}</a></li>
+          <li><a href="/blog" class="hover:text-white transition">{locale === 'ja' ? 'ブログ' : 'Blog'}</a></li>
+          <li><a href="/contact/paradigm" class="hover:text-white transition">{locale === 'ja' ? 'お問い合わせ' : 'Contact'}</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="text-white font-semibold text-sm tracking-wider uppercase mb-4">
+          {locale === 'ja' ? '規約・ポリシー' : 'Legal'}
+        </h3>
+        <ul class="space-y-2 text-sm">
+          <li><a href="/terms/paradigm" class="hover:text-white transition">{locale === 'ja' ? '利用規約' : 'Terms'}</a></li>
+          <li><a href="/privacy/paradigm" class="hover:text-white transition">{locale === 'ja' ? 'プライバシーポリシー' : 'Privacy Policy'}</a></li>
+          <li><a href="/tokushoho/paradigm" class="hover:text-white transition">{locale === 'ja' ? '特定商取引法に基づく表記' : 'Commercial Law'}</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="mt-10 pt-8 border-t border-gray-800 text-center text-sm text-gray-500">
+      <p>&copy; {new Date().getFullYear()} {locale === 'ja' ? '株式会社パラダイム' : 'Paradigm Inc.'} All rights reserved.</p>
+    </div>
+  </div>
+</footer>

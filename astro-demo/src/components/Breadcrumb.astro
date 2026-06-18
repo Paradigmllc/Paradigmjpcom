@@ -1,0 +1,36 @@
+---
+export interface Crumb {
+  label: { ja: string; en: string };
+  href?: string;
+}
+
+export interface Props {
+  items: Crumb[];
+  locale?: 'ja' | 'en';
+}
+
+const { items, locale = 'ja' } = Astro.props;
+---
+
+<nav aria-label="breadcrumb" class="no-print">
+  <ol class="flex flex-wrap items-center gap-1 text-xs sm:text-sm text-gray-500 py-3">
+    {items.map((item, i) => (
+      <li class="flex items-center gap-1">
+        {i > 0 && (
+          <svg class="w-3 h-3 mx-1 text-gray-300 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        )}
+        {item.href ? (
+          <a href={item.href} class="hover:text-brand-600 transition-colors duration-150">
+            {locale === 'ja' ? item.label.ja : item.label.en}
+          </a>
+        ) : (
+          <span class="text-gray-800 font-medium" aria-current="page">
+            {locale === 'ja' ? item.label.ja : item.label.en}
+          </span>
+        )}
+      </li>
+    ))}
+  </ol>
+</nav>

@@ -1,0 +1,183 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import Breadcrumb from '../../components/Breadcrumb.astro';
+import { getCompany, type CompanyData } from '../../data/demoData';
+
+export function getStaticPaths() {
+  return [
+    { params: { company: 'paradigm' } },
+    { params: { company: 'sampletech' } },
+    { params: { company: 'tokyocommerce' } },
+  ];
+}
+
+const { company } = Astro.params;
+const data: CompanyData = getCompany(company);
+const loc = data.locale;
+const t = (ja: string, en: string) => (loc === 'en' ? en : ja);
+const title = t(`${data.nameJa} | 会社概要`, `${data.name} | Company Profile`);
+const desc = t(
+  `${data.nameJa}の会社概要ページ。所在地、代表者、設立年月日、資本金、事業内容などを掲載。`,
+  `${data.name} company profile with address, representative, established date, capital, and business description.`
+);
+
+const crumbs = [
+  { label: { ja: 'ホーム', en: 'Home' }, href: '/' },
+  { label: { ja: '会社概要', en: 'About' }, href: `/about/${company}` },
+];
+---
+
+<BaseLayout title={title} description={desc} locale={loc}>
+  <Navbar locale={loc} current={`/about/${company}`} />
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <Breadcrumb items={crumbs} locale={loc} />
+
+    <!-- Hero -->
+    <section class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 px-6 sm:px-10 lg:px-16 py-16 sm:py-20 lg:py-24 mb-12">
+      <div class="absolute inset-0 opacity-10">
+        <div class="absolute top-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl translate-x-1/3 -translate-y-1/3"></div>
+        <div class="absolute bottom-0 left-0 w-72 h-72 bg-accent-400 rounded-full blur-3xl -translate-x-1/4 translate-y-1/4"></div>
+      </div>
+      <div class="relative z-10">
+        <span class="inline-block px-3 py-1 text-xs font-semibold tracking-wider uppercase rounded-full bg-white/20 text-white mb-4">
+          {t(data.industryJa, data.industry)}
+        </span>
+        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-4">
+          {t(data.nameJa, data.name)}
+        </h1>
+        <p class="text-brand-100 text-lg max-w-2xl">
+          {t(`設立: ${data.founded}`, `Established: ${data.founded}`)}
+        </p>
+      </div>
+    </section>
+
+    <!-- Company Info Table -->
+    <section class="mb-16">
+      <h2 class="text-2xl font-bold text-gray-900 mb-6">
+        {t('会社情報', 'Company Information')}
+      </h2>
+      <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+        <table class="w-full">
+          <tbody>
+            {[
+              [t('商号', 'Company Name'), t(data.nameJa, data.name)],
+              [t('所在地', 'Address'), t(data.addressJa, data.address)],
+              [t('代表者', 'Representative'), t(data.representativeJa, data.representative)],
+              [t('設立', 'Established'), data.founded],
+              [t('資本金', 'Capital'), data.capital],
+              [t('従業員数', 'Employees'), data.employees],
+              [t('事業内容', 'Business'), t(data.businessDescriptionJa, data.businessDescription)],
+              [t('許可番号', 'Licenses'), data.licenseNumbers.join(' / ')],
+              [t('主要取引先', 'Major Clients'), data.majorClients.join(' / ')],
+            ].map(([label, value], i) => (
+              <tr class={`${i % 2 === 0 ? 'bg-gray-50/50' : 'bg-white'} border-b border-gray-100 last:border-0`}>
+                <th class="px-4 sm:px-6 py-4 text-left text-sm font-semibold text-gray-700 w-40 sm:w-56 align-top whitespace-nowrap">
+                  {label}
+                </th>
+                <td class="px-4 sm:px-6 py-4 text-sm text-gray-600 leading-relaxed">
+                  {value}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Access Map Placeholder -->
+    <section class="mb-16">
+      <h2 class="text-2xl font-bold text-gray-900 mb-6">
+        {t('アクセス', 'Access')}
+      </h2>
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div class="lg:col-span-3 bg-gray-100 rounded-xl flex items-center justify-center h-64 sm:h-80 relative overflow-hidden">
+          <div class="text-center text-gray-400">
+            <svg class="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <p class="text-sm font-medium">Google Maps</p>
+          </div>
+          <div class="absolute inset-0 grid grid-cols-8 grid-rows-6 opacity-[0.03]">
+            {Array.from({ length: 48 }).map(() => <div class="border border-gray-800"></div>)}
+          </div>
+        </div>
+        <div class="lg:col-span-2 bg-gray-50 rounded-xl p-5 text-sm text-gray-600 space-y-2">
+          <p class="font-semibold text-gray-800">{t('所在地', 'Address')}</p>
+          <p>{t(data.addressJa, data.address)}</p>
+          <p class="font-semibold text-gray-800 mt-3">{t('電話番号', 'Phone')}</p>
+          <p>{data.phone}</p>
+          <p class="font-semibold text-gray-800 mt-3">{t('営業時間', 'Business Hours')}</p>
+          <p>{t(data.businessHoursJa, data.businessHours)}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Company Values -->
+    <section class="mb-16">
+      <h2 class="text-2xl font-bold text-gray-900 mb-6">
+        {t('企業理念', 'Our Philosophy')}
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="group bg-white border border-gray-200 rounded-xl p-6 sm:p-8 hover:border-brand-300 hover:shadow-lg transition-all duration-300">
+          <div class="w-12 h-12 rounded-lg bg-brand-50 flex items-center justify-center mb-4 group-hover:bg-brand-100 transition-colors">
+            <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">{t('ミッション', 'Mission')}</h3>
+          <p class="text-sm text-gray-600 leading-relaxed">{t(data.missionJa, data.missionJa)}</p>
+        </div>
+        <div class="group bg-white border border-gray-200 rounded-xl p-6 sm:p-8 hover:border-brand-300 hover:shadow-lg transition-all duration-300">
+          <div class="w-12 h-12 rounded-lg bg-accent-50 flex items-center justify-center mb-4 group-hover:bg-accent-100 transition-colors">
+            <svg class="w-6 h-6 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">{t('ビジョン', 'Vision')}</h3>
+          <p class="text-sm text-gray-600 leading-relaxed">{t(data.visionJa, data.visionJa)}</p>
+        </div>
+        <div class="group bg-white border border-gray-200 rounded-xl p-6 sm:p-8 hover:border-brand-300 hover:shadow-lg transition-all duration-300">
+          <div class="w-12 h-12 rounded-lg bg-green-50 flex items-center justify-center mb-4 group-hover:bg-green-100 transition-colors">
+            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">{t('バリュー', 'Values')}</h3>
+          <p class="text-sm text-gray-600 leading-relaxed">{t(data.valuesJa, data.valuesJa)}</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <Footer locale={loc} />
+
+  <script type="application/ld+json" set:html={JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: data.nameJa,
+    alternateName: data.name,
+    url: `https://paradigm.co.jp/about/${company}`,
+    description: data.businessDescriptionJa,
+    foundingDate: data.founded,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: data.addressJa,
+      addressLocality: '渋谷区',
+      addressRegion: '東京都',
+      postalCode: '150-0043',
+      addressCountry: 'JP',
+    },
+    contactPoint: {
+      '@type': 'ContactPoint',
+      telephone: data.phone,
+      email: data.email,
+      contactType: 'customer service',
+    },
+    numberOfEmployees: data.employees,
+  })} />
+</BaseLayout>

@@ -1,0 +1,112 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import Breadcrumb from '../../components/Breadcrumb.astro';
+import { getCompany, type CompanyData } from '../../data/demoData';
+
+export function getStaticPaths() {
+  return [
+    { params: { company: 'paradigm' } },
+    { params: { company: 'sampletech' } },
+    { params: { company: 'tokyocommerce' } },
+  ];
+}
+
+const { company } = Astro.params;
+const data: CompanyData = getCompany(company);
+const loc = data.locale;
+const t = (ja: string, en: string) => (loc === 'en' ? en : ja);
+const title = t(`${data.nameJa} | 特定商取引法に基づく表記`, `${data.name} | Commercial Law Disclosure`);
+const desc = t(`${data.nameJa}の特定商取引法に基づく表記。`, `Commercial Law disclosure for ${data.name}.`);
+
+const crumbs = [
+  { label: { ja: 'ホーム', en: 'Home' }, href: '/' },
+  { label: { ja: '特定商取引法に基づく表記', en: 'Commercial Law Disclosure' }, href: `/tokushoho/${company}` },
+];
+---
+
+<BaseLayout title={title} description={desc} locale={loc} noindex>
+  <Navbar locale={loc} current={`/tokushoho/${company}`} />
+
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <Breadcrumb items={crumbs} locale={loc} />
+
+    <div class="mb-10 mt-4">
+      <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight mb-2">
+        {t('特定商取引法に基づく表記', 'Commercial Law Disclosure')}
+      </h1>
+      <p class="text-sm text-gray-500">
+        {t('特定商取引に関する法律（特定商取引法）第11条に基づき、以下のとおり表示します。', 'Disclosed in accordance with Article 11 of the Act on Specified Commercial Transactions.')}
+      </p>
+      <hr class="mt-6 border-gray-200" />
+    </div>
+
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+      <table class="w-full">
+        <tbody>
+          {[
+            { label: [t('販売業者', 'Seller'), t('販売業者', 'Seller Name')], value: t(data.nameJa, data.name) },
+            { label: [t('運営統括責任者', 'Responsible Person'), t('運営統括責任者', 'Operations Manager')], value: t(data.representativeJa, data.representative) },
+            { label: [t('所在地', 'Address'), t('所在地', 'Address')], value: t(data.addressJa, data.address) },
+            { label: [t('電話番号', 'Phone'), t('電話番号', 'Phone Number')], value: data.phone },
+            { label: [t('メールアドレス', 'Email'), t('メールアドレス', 'Email Address')], value: data.email },
+            { label: [t('営業時間', 'Business Hours'), t('営業時間', 'Business Hours')], value: t(data.businessHoursJa, data.businessHours) },
+            { label: [t('販売価格', 'Price'), t('販売価格', 'Selling Price')], value: t(data.priceNoteJa, data.priceNoteJa) },
+            { label: [t('商品代金以外の必要料金', 'Additional Fees'), t('商品代金以外の必要料金', 'Additional Fees')], value: t(data.additionalFeesJa, data.additionalFeesJa) },
+            { label: [t('支払方法', 'Payment Methods'), t('支払方法', 'Payment Methods')], value: t(data.paymentMethodsJa, data.paymentMethodsJa) },
+            { label: [t('支払時期', 'Payment Timing'), t('支払時期', 'Payment Timing')], value: t('クレジットカード：ご注文時 / 銀行振込：請求書発行後14日以内', 'Credit card: at time of order / Bank transfer: within 14 days of invoice') },
+            { label: [t('引渡時期', 'Delivery Time'), t('引渡時期', 'Delivery Time')], value: t(data.deliveryTimeJa, data.deliveryTimeJa) },
+            { label: [t('返品・キャンセル', 'Returns & Cancellations'), t('返品・キャンセル', 'Returns & Cancellations')], value: t(data.returnPolicyJa, data.returnPolicyJa) },
+            { label: [t('返品送料', 'Return Shipping'), t('返品送料', 'Return Shipping Cost')], value: t('不良品の場合は当社負担。お客様都合の場合はお客様負担。', 'At our expense for defective items. Customer expense for personal reasons.') },
+            { label: [t('解約条件', 'Cancellation Terms'), t('解約条件', 'Cancellation Terms')], value: t('継続契約の場合、解約希望月の前月末までにご連絡ください。', 'For ongoing contracts, please contact us by the end of the month prior to the desired cancellation month.') },
+            { label: [t('販売数量の制限', 'Quantity Limits'), t('販売数量の制限', 'Quantity Limits')], value: t('特になし（ただし、合理的な範囲内に限ります）', 'None in particular (within reasonable range)') },
+          ].map(({ label, value }, i) => (
+            <tr class={`${i % 2 === 0 ? 'bg-gray-50/50' : 'bg-white'} border-b border-gray-100 last:border-0`}>
+              <th class="px-4 sm:px-6 py-4 text-left text-sm font-semibold text-gray-700 w-48 sm:w-60 align-top">
+                {label[0]}
+                {loc === 'ja' ? '' : <span class="block text-xs font-normal text-gray-400 mt-0.5">{label[1]}</span>}
+              </th>
+              <td class="px-4 sm:px-6 py-4 text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+                {value}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-10 p-5 bg-amber-50 border border-amber-100 rounded-xl text-sm text-amber-800">
+      <p class="font-semibold mb-1">{t('【注意事項】', '【Note】')}</p>
+      <p>{t('本表示は、特定商取引法第11条に基づくものです。サービス内容や料金は予告なく変更されることがあります。最新情報は当社Webサイトをご確認ください。', 'This disclosure is based on Article 11 of the Specified Commercial Transactions Act. Content and pricing are subject to change without notice. Please check our website for the latest information.')}</p>
+    </div>
+  </main>
+
+  <Footer locale={loc} />
+
+  <script type="application/ld+json" set:html={JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    name: data.nameJa,
+    image: 'https://paradigm.co.jp/ogp-default.jpg',
+    '@id': `https://paradigm.co.jp/tokushoho/${company}`,
+    url: `https://paradigm.co.jp/tokushoho/${company}`,
+    telephone: data.phone,
+    email: data.email,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: data.addressJa,
+      addressLocality: '渋谷区',
+      addressRegion: '東京都',
+      postalCode: '150-0043',
+      addressCountry: 'JP',
+    },
+    openingHoursSpecification: {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+      opens: '10:00',
+      closes: '19:00',
+    },
+    priceRange: '¥',
+  })} />
+</BaseLayout>

@@ -4,9 +4,11 @@
  *
  * Imports all theme widget components statically and exports them via
  * THEME_WIDGETS for use by [slug].astro's dynamic renderer.
+ *
+ * v2: Full delivery-quality components for all 3 themes.
  */
 
-// ─── AstroWind (primary — 15 core widgets) ───
+// ─── AstroWind (primary — 15 core widgets, full CSS system) ───
 import AstroWindHero from './astrowind/widgets/Hero.astro'
 import AstroWindHero2 from './astrowind/widgets/Hero2.astro'
 import AstroWindHeroText from './astrowind/widgets/HeroText.astro'
@@ -23,17 +25,23 @@ import AstroWindTestimonials from './astrowind/widgets/Testimonials.astro'
 import AstroWindContact from './astrowind/widgets/Contact.astro'
 import AstroWindBrands from './astrowind/widgets/Brands.astro'
 
-// ─── ScrewFast (simplified adapters) ───
+// ─── ScrewFast (fully restored enterprise components) ───
 import ScrewFastHero from './screwfast/sections/landing/HeroSection.astro'
 import ScrewFastHeroAlt from './screwfast/sections/landing/HeroSectionAlt.astro'
+import ScrewFastClients from './screwfast/sections/landing/ClientsSection.astro'
 import ScrewFastFeatures from './screwfast/sections/features/FeaturesGeneral.astro'
+import ScrewFastFeaturesStats from './screwfast/sections/features/FeaturesStats.astro'
 import ScrewFastPricing from './screwfast/sections/pricing/PricingSection.astro'
+import ScrewFastTestimonials from './screwfast/sections/testimonials/TestimonialsSection.astro'
+import ScrewFastFAQ from './screwfast/sections/misc/FAQ.astro'
 
-// ─── Astroship (simplified adapters) ───
+// ─── Astroship (modern startup components) ───
 import AstroshipHero from './astroship/components/hero.astro'
 import AstroshipFeatures from './astroship/components/features.astro'
 import AstroshipCTA from './astroship/components/cta.astro'
 import AstroshipPricing from './astroship/components/pricing.astro'
+import AstroshipLogos from './astroship/components/logos.astro'
+import AstroshipContactForm from './astroship/components/contactform.astro'
 
 // ─── Registry ─────────────────────────────────────────────────────────────
 
@@ -60,14 +68,49 @@ export const THEME_WIDGETS: Record<ThemeName, Record<string, any>> = {
   screwfast: {
     Hero: ScrewFastHero,
     HeroAlt: ScrewFastHeroAlt,
+    Clients: ScrewFastClients,
     Features: ScrewFastFeatures,
+    FeaturesStats: ScrewFastFeaturesStats,
     Pricing: ScrewFastPricing,
+    Testimonials: ScrewFastTestimonials,
+    FAQ: ScrewFastFAQ,
   },
   astroship: {
     Hero: AstroshipHero,
     Features: AstroshipFeatures,
     CTA: AstroshipCTA,
     Pricing: AstroshipPricing,
+    Logos: AstroshipLogos,
+    ContactForm: AstroshipContactForm,
+  },
+}
+
+// ─── Theme metadata for layout selection ───────────────────────────────────
+
+export const THEME_META: Record<string, Record<string, string>> = {
+  astrowind: {
+    label: 'AstroWind',
+    description: 'Digital Agency / SaaS Modern Design',
+    targetLabel: 'Agency / SaaS / Consulting',
+    bgClass: 'bg-white dark:bg-gray-950',
+    textClass: 'text-gray-900 dark:text-gray-100',
+    fontFamily: 'Inter, Noto Sans JP, sans-serif',
+  },
+  screwfast: {
+    label: 'ScrewFast',
+    description: 'Construction / Logistics / B2B Enterprise Design',
+    targetLabel: 'Construction / Manufacturing / B2B',
+    bgClass: 'bg-neutral-200 dark:bg-neutral-800',
+    textClass: 'text-neutral-800 dark:text-neutral-200',
+    fontFamily: 'Inter, Noto Sans JP, sans-serif',
+  },
+  astroship: {
+    label: 'Astroship',
+    description: 'E-Commerce / Creator / Modern Startup Design',
+    targetLabel: 'Startup / E-Commerce / Local Business',
+    bgClass: 'bg-white',
+    textClass: 'text-slate-800',
+    fontFamily: 'Bricolage Grotesque, Inter, Noto Sans JP, sans-serif',
   },
 }
 ---

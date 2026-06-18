@@ -1,0 +1,184 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+
+const locale = 'ja';
+const t = (ja: string, en: string) => locale === 'en' ? en : ja;
+const title = t('ブログ', 'Blog');
+const desc = t('Web制作、SEO、マーケティングに関する最新情報を発信しています。', 'Latest insights on web development, SEO, and marketing.');
+
+const posts = [
+  { slug: 'seo-trends-2025', image: '/placeholder-blog-1.jpg', cat: { ja: 'SEO', en: 'SEO' }, date: '2025-06-15', title: { ja: '2025年最新SEO対策：Googleアルゴリズム変動への対応戦略', en: '2025 SEO Strategy: Adapting to Google Algorithm Changes' }, excerpt: { ja: '2025年上半期のGoogleアルゴリズム変動を分析し、効果的なSEO対策を解説します。Core Web Vitalsの最新基準やAI時代のコンテンツ戦略について詳しく紹介。', en: 'Analyzing Google algorithm changes in early 2025 and explaining effective SEO strategies. Covers latest Core Web Vitals standards and AI-era content strategy.' }, author: { ja: '山本 剛', en: 'Takeshi Yamamoto' }, readTime: { ja: '8分', en: '8 min' }, tags: ['seo'] },
+  { slug: 'web-design-trends', image: '/placeholder-blog-2.jpg', cat: { ja: 'Web制作', en: 'Web Dev' }, date: '2025-06-10', title: { ja: '2025年ウェブデザイントレンド：ユーザー体験を最大化するUI/UX設計', en: '2025 Web Design Trends: UI/UX to Maximize User Experience' }, excerpt: { ja: '最新のデザイントレンドを取り入れた、ユーザー体験を最大化するUI/UX設計のポイントを解説。アクセシビリティ、マイクロインタラクション、ダークモード対応など。', en: 'Key UI/UX design principles incorporating the latest trends to maximize user experience. Accessibility, micro-interactions, dark mode, and more.' }, author: { ja: '鈴木 花子', en: 'Hanako Suzuki' }, readTime: { ja: '6分', en: '6 min' }, tags: ['web'] },
+  { slug: 'meo-google-maps-guide', image: '/placeholder-blog-3.jpg', cat: { ja: 'マーケティング', en: 'Marketing' }, date: '2025-06-05', title: { ja: 'MEO対策完全ガイド：Googleマップで上位表示する7つの施策', en: 'Complete MEO Guide: 7 Strategies to Rank Higher on Google Maps' }, excerpt: { ja: 'Googleビジネスプロフィールを最適化し、地域検索での上位表示を実現するMEO対策の具体的な施策を7つにまとめて解説します。', en: 'A comprehensive guide to 7 MEO strategies for optimizing your Google Business Profile and ranking higher in local search results.' }, author: { ja: '田中 健太', en: 'Kenta Tanaka' }, readTime: { ja: '10分', en: '10 min' }, tags: ['seo', 'marketing'] },
+  { slug: 'nextjs-vs-astro', image: '/placeholder-blog-4.jpg', cat: { ja: 'Web制作', en: 'Web Dev' }, date: '2025-05-28', title: { ja: 'Next.js vs Astro：2025年Webフレームワーク比較', en: 'Next.js vs Astro: 2025 Web Framework Comparison' }, excerpt: { ja: '静的サイトと動的サイトの両方で人気の2大フレームワークを徹底比較。表示速度、開発効率、SEO性能、実案件での使い分けまで詳しく解説。', en: 'In-depth comparison of the two most popular frameworks for static and dynamic sites. Covers performance, developer efficiency, SEO capabilities, and real-world use cases.' }, author: { ja: '山本 剛', en: 'Takeshi Yamamoto' }, readTime: { ja: '12分', en: '12 min' }, tags: ['web'] },
+  { slug: 'sns-marketing-2025', image: '/placeholder-blog-5.jpg', cat: { ja: 'マーケティング', en: 'Marketing' }, date: '2025-05-20', title: { ja: 'SNSマーケティング最新戦略：2025年に押さえるべき3つのトレンド', en: 'SNS Marketing Strategy: 3 Trends to Master in 2025' }, excerpt: { ja: 'ショート動画、インフルエンサーコラボ、AI活用など、2025年のSNSマーケティングで成果を出すための最新戦略をご紹介します。', en: 'Discover the latest SNS marketing strategies for 2025 including short-form video, influencer collaboration, and AI-powered optimization.' }, author: { ja: '鈴木 花子', en: 'Hanako Suzuki' }, readTime: { ja: '7分', en: '7 min' }, tags: ['marketing'] },
+  { slug: 'accessibility-guide', image: '/placeholder-blog-6.jpg', cat: { ja: '業界別', en: 'Industry' }, date: '2025-05-15', title: { ja: 'ウェブアクセシビリティ入門：2025年改正法対応のための実践ガイド', en: 'Web Accessibility Guide: Practical Steps for 2025 Compliance' }, excerpt: { ja: '2025年のウェブアクセシビリティ法改正に対応するため、WCAG 2.2準拠の実践的なアプローチを段階的に解説します。', en: 'Step-by-step practical approach to WCAG 2.2 compliance in preparation for 2025 web accessibility law amendments.' }, author: { ja: '田中 健太', en: 'Kenta Tanaka' }, readTime: { ja: '9分', en: '9 min' }, tags: ['web', 'industry'] },
+  { slug: 'ai-content-marketing', image: '/placeholder-blog-7.jpg', cat: { ja: 'マーケティング', en: 'Marketing' }, date: '2025-05-08', title: { ja: 'AI×コンテンツマーケティング：ChatGPT時代の差別化戦略', en: 'AI & Content Marketing: Differentiation Strategy in the ChatGPT Era' }, excerpt: { ja: 'AIツールを活用したコンテンツ制作の効率化と、人間ならではの価値を最大化する差別化戦略を解説。生成AI時代のコンテンツマーケティングの在り方。', en: 'How to leverage AI tools for content creation efficiency while maximizing the unique value that only humans can deliver in the generative AI era.' }, author: { ja: '山本 剛', en: 'Takeshi Yamamoto' }, readTime: { ja: '11分', en: '11 min' }, tags: ['seo', 'marketing'] },
+  { slug: 'woocommerce-seo', image: '/placeholder-blog-8.jpg', cat: { ja: '業界別', en: 'Industry' }, date: '2025-04-25', title: { ja: 'ECサイトのためのSEO完全攻略：WooCommerceで成果を出す方法', en: 'Complete EC Site SEO Guide: How to Get Results with WooCommerce' }, excerpt: { ja: 'WooCommerceを使ったECサイトのSEO対策を基礎から応用まで解説。商品ページ最適化、構造化データ、サイト速度改善など実践テクニックを紹介。', en: 'Comprehensive SEO guide for WooCommerce e-commerce sites from basics to advanced. Covering product page optimization, structured data, site speed, and more.' }, author: { ja: '鈴木 花子', en: 'Hanako Suzuki' }, readTime: { ja: '15分', en: '15 min' }, tags: ['seo', 'industry'] },
+  { slug: 'responsive-design-tips', image: '/placeholder-blog-9.jpg', cat: { ja: 'Web制作', en: 'Web Dev' }, date: '2025-04-18', title: { ja: 'レスポンシブデザインの最新ベストプラクティス 2025', en: 'Responsive Design Best Practices 2025' }, excerpt: { ja: 'モバイルファーストの考え方からTailwind CSS v4を活用した実装テクニックまで、2025年のレスポンシブデザインの最適解を紹介。', en: 'From mobile-first thinking to implementation techniques using Tailwind CSS v4, discover the optimal approach to responsive design in 2025.' }, author: { ja: '田中 健太', en: 'Kenta Tanaka' }, readTime: { ja: '5分', en: '5 min' }, tags: ['web'] },
+];
+
+const categories = [
+  { id: 'all', label: { ja: 'すべて', en: 'All' } },
+  { id: 'seo', label: { ja: 'SEO', en: 'SEO' } },
+  { id: 'web', label: { ja: 'Web制作', en: 'Web Dev' } },
+  { id: 'marketing', label: { ja: 'マーケティング', en: 'Marketing' } },
+  { id: 'industry', label: { ja: '業界別', en: 'Industry' } },
+];
+
+const blogUrl = 'https://paradigm.co.jp/blog';
+---
+
+<BaseLayout title={title} description={desc} locale="ja">
+  <Navbar locale="ja" current="/blog" />
+  <link rel="alternate" type="application/rss+xml" title="Paradigm Blog" href={`${blogUrl}/rss.xml`} />
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="no-print">
+      <ol class="flex flex-wrap items-center gap-1 text-xs sm:text-sm text-gray-500 py-3">
+        <li class="flex items-center gap-1">
+          <a href="/" class="hover:text-brand-600 transition-colors">{locale === 'ja' ? 'ホーム' : 'Home'}</a>
+        </li>
+        <li class="flex items-center gap-1">
+          <svg class="w-3 h-3 mx-1 text-gray-300 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" /></svg>
+          <span class="text-gray-800 font-medium" aria-current="page">{locale === 'ja' ? 'ブログ' : 'Blog'}</span>
+        </li>
+      </ol>
+    </nav>
+
+    <!-- Hero -->
+    <section class="text-center my-12 lg:my-16">
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-4">
+        {locale === 'ja' ? 'ブログ' : 'Blog'}
+      </h1>
+      <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+        {locale === 'ja'
+          ? 'Web制作、SEO、マーケティングに関する最新の知見・ノウハウをお届けします。'
+          : 'Delivering the latest insights and expertise on web development, SEO, and marketing.'}
+      </p>
+    </section>
+
+    <!-- Category Filters -->
+    <div class="flex flex-wrap justify-center gap-2 mb-10" id="blog-categories">
+      {categories.map((cat) => (
+        <button
+          type="button"
+          data-category={cat.id}
+          class={`blog-cat-btn px-5 py-2 rounded-full text-sm font-medium transition-colors duration-150 ${
+            cat.id === 'all'
+              ? 'bg-brand-600 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
+        >
+          {locale === 'ja' ? cat.label.ja : cat.label.en}
+        </button>
+      ))}
+    </div>
+
+    <!-- Blog Cards Grid -->
+    <section class="mb-12" id="blog-grid">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {posts.map((post) => (
+          <a
+            href={`/blog/${post.slug}`}
+            class="blog-card group block bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-brand-300 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+            data-categories={post.tags.join(',')}
+          >
+            <div class="h-44 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+              <svg class="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div class="p-5">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-brand-50 text-brand-600">
+                  {locale === 'ja' ? post.cat.ja : post.cat.en}
+                </span>
+                <span class="text-[10px] text-gray-400">{post.date}</span>
+              </div>
+              <h2 class="text-base font-bold text-gray-900 mb-2 group-hover:text-brand-700 transition-colors line-clamp-2">
+                {locale === 'ja' ? post.title.ja : post.title.en}
+              </h2>
+              <p class="text-xs text-gray-500 leading-relaxed mb-3 line-clamp-2">
+                {locale === 'ja' ? post.excerpt.ja : post.excerpt.en}
+              </p>
+              <div class="flex items-center gap-3 text-xs text-gray-400 pt-3 border-t border-gray-100">
+                <span>{locale === 'ja' ? post.author.ja : post.author.en}</span>
+                <span class="text-gray-300">|</span>
+                <span>{locale === 'ja' ? post.readTime.ja : post.readTime.en}</span>
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+      <div id="no-blog-results" class="hidden text-center py-12 text-gray-400">
+        <p class="text-sm">{locale === 'ja' ? '該当する記事が見つかりませんでした。' : 'No matching posts found.'}</p>
+      </div>
+    </section>
+
+    <!-- Pagination -->
+    <nav class="flex items-center justify-center gap-2 mb-16" aria-label="pagination">
+      <span class="px-3 py-2 text-sm text-gray-400 bg-gray-100 rounded-lg" aria-disabled="true">{locale === 'ja' ? '前へ' : 'Prev'}</span>
+      <span class="px-4 py-2 text-sm font-bold text-white bg-brand-600 rounded-lg">1</span>
+      <a href="/blog/page/2" class="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">2</a>
+      <a href="/blog/page/2" class="px-3 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">{locale === 'ja' ? '次へ' : 'Next'}</a>
+    </nav>
+  </main>
+
+  <Footer locale="ja" />
+
+  <script>
+    const blogBtns = document.querySelectorAll('.blog-cat-btn');
+    const blogCards = document.querySelectorAll('.blog-card');
+    const noBlog = document.getElementById('no-blog-results');
+    let activeBlogCat = 'all';
+
+    function filterBlog() {
+      let visible = 0;
+      blogCards.forEach((card) => {
+        const cats = card.dataset.categories?.split(',') || [];
+        const match = activeBlogCat === 'all' || cats.includes(activeBlogCat);
+        card.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+      if (noBlog) noBlog.classList.toggle('hidden', visible > 0);
+    }
+
+    blogBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        activeBlogCat = btn.dataset.category || 'all';
+        blogBtns.forEach((b) => {
+          b.className = b.dataset.category === activeBlogCat
+            ? 'blog-cat-btn px-5 py-2 rounded-full text-sm font-medium transition-colors duration-150 bg-brand-600 text-white'
+            : 'blog-cat-btn px-5 py-2 rounded-full text-sm font-medium transition-colors duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200';
+        });
+        filterBlog();
+      });
+    });
+  </script>
+
+  <script type="application/ld+json" set:html={JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    name: `${locale === 'ja' ? '株式会社パラダイム' : 'Paradigm Inc.'} ブログ`,
+    description: desc,
+    url: blogUrl,
+    author: {
+      '@type': 'Organization',
+      name: '株式会社パラダイム',
+      url: 'https://paradigm.co.jp',
+    },
+    blogPost: posts.slice(0, 9).map((post, i) => ({
+      '@type': 'BlogPosting',
+      '@id': `${blogUrl}/${post.slug}`,
+      headline: locale === 'ja' ? post.title.ja : post.title.en,
+      datePublished: post.date,
+      author: { '@type': 'Person', name: locale === 'ja' ? post.author.ja : post.author.en },
+      url: `${blogUrl}/${post.slug}`,
+      position: i + 1,
+    })),
+  })} />
+</BaseLayout>

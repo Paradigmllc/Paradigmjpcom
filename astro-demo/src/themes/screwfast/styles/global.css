@@ -1,0 +1,87 @@
+@import 'tailwindcss';
+@custom-variant dark (&:is(.dark *));
+
+@source '../node_modules/preline/dist/*.js';
+
+@theme inline {
+  --color-gray-50: oklch(0.985 0.002 247.839);
+  --color-gray-100: oklch(0.968 0.003 247.858);
+  --color-gray-200: oklch(0.929 0.006 248.037);
+  --color-gray-300: oklch(0.872 0.009 258.338);
+  --color-gray-400: oklch(0.707 0.022 261.325);
+  --color-gray-500: oklch(0.551 0.027 264.364);
+  --color-gray-600: oklch(0.446 0.024 261.325);
+  --color-gray-700: oklch(0.372 0.021 261.325);
+  --color-gray-800: oklch(0.279 0.017 261.325);
+  --color-gray-900: oklch(0.211 0.013 261.325);
+  --color-gray-950: oklch(0.130 0.009 261.325);
+
+  --color-neutral-50: oklch(0.985 0 0);
+  --color-neutral-100: oklch(0.969 0 0);
+  --color-neutral-200: oklch(0.922 0 0);
+  --color-neutral-300: oklch(0.868 0 0);
+  --color-neutral-400: oklch(0.707 0.022 261.325);
+  --color-neutral-500: oklch(0.551 0.027 264.364);
+  --color-neutral-600: oklch(0.446 0.024 261.325);
+  --color-neutral-700: oklch(0.372 0.021 261.325);
+  --color-neutral-800: oklch(0.279 0.017 261.325);
+  --color-neutral-900: oklch(0.211 0.013 261.325);
+  --color-neutral-950: oklch(0.130 0.009 261.325);
+
+  --color-orange-50: oklch(0.979 0.016 73.641);
+  --color-orange-100: oklch(0.955 0.036 73.647);
+  --color-orange-200: oklch(0.901 0.076 70.695);
+  --color-orange-300: oklch(0.837 0.120 66.020);
+  --color-orange-400: oklch(0.747 0.168 52.002);
+  --color-orange-500: oklch(0.644 0.193 40.011);
+  --color-orange-600: oklch(0.543 0.167 33.907);
+  --color-orange-700: oklch(0.451 0.139 35.320);
+  --color-orange-800: oklch(0.370 0.113 35.853);
+  --color-orange-900: oklch(0.296 0.087 37.876);
+  --color-orange-950: oklch(0.233 0.066 40.062);
+
+  --color-yellow-50: oklch(0.987 0.026 102.212);
+  --color-yellow-100: oklch(0.973 0.053 100.950);
+  --color-yellow-200: oklch(0.947 0.093 99.024);
+  --color-yellow-300: oklch(0.906 0.141 86.735);
+  --color-yellow-400: oklch(0.851 0.190 83.956);
+  --color-yellow-500: oklch(0.795 0.184 86.047);
+  --color-yellow-600: oklch(0.681 0.162 75.834);
+  --color-yellow-700: oklch(0.554 0.135 66.442);
+  --color-yellow-800: oklch(0.476 0.114 61.907);
+  --color-yellow-900: oklch(0.418 0.095 57.023);
+  --color-yellow-950: oklch(0.286 0.066 53.813);
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: var(--color-yellow-400);
+    color: var(--color-neutral-700);
+  }
+}
+
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@utility scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

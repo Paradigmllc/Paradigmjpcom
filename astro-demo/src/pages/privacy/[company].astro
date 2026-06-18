@@ -1,0 +1,144 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import Breadcrumb from '../../components/Breadcrumb.astro';
+import { getCompany, type CompanyData } from '../../data/demoData';
+
+export function getStaticPaths() {
+  return [
+    { params: { company: 'paradigm' } },
+    { params: { company: 'sampletech' } },
+    { params: { company: 'tokyocommerce' } },
+  ];
+}
+
+const { company } = Astro.params;
+const data: CompanyData = getCompany(company);
+const loc = data.locale;
+const t = (ja: string, en: string) => (loc === 'en' ? en : ja);
+const title = t(`${data.nameJa} | プライバシーポリシー`, `${data.name} | Privacy Policy`);
+const desc = t(`${data.nameJa}のプライバシーポリシー。`, `${data.name} Privacy Policy.`);
+const lastUpdated = '2025-05-15';
+
+const crumbs = [
+  { label: { ja: 'ホーム', en: 'Home' }, href: '/' },
+  { label: { ja: 'プライバシーポリシー', en: 'Privacy Policy' }, href: `/privacy/${company}` },
+];
+
+const sections = {
+  ja: [
+    { title: '個人情報の定義', body: '本プライバシーポリシーにおいて「個人情報」とは、個人情報保護法第2条第1項に定義される「個人情報」を意味します。すなわち、生存する個人に関する情報であって、当該情報に含まれる氏名、生年月日その他の記述等により特定の個人を識別することができるもの（他の情報と容易に照合することができ、それにより特定の個人を識別することができることとなるものを含みます）を指します。' },
+    { title: '収集する情報', body: '当社は、以下の情報を収集する場合があります。\n・お名前、会社名、部署名、役職\n・メールアドレス、電話番号、住所\n・お問い合わせ内容、アンケート回答\n・本サービスの利用履歴、アクセスログ\n・Cookie および類似技術を通じて収集される情報\n・その他、当社が別途通知し、ご同意いただいた情報' },
+    { title: '利用目的', body: '当社は、収集した個人情報を以下の目的で利用します。\n(1) 当社サービスの提供・運営のため\n(2) お問い合わせへの回答、資料送付のため\n(3) 当社サービスに関する情報提供・メールマガジン配信のため\n(4) サービスの改善・新サービス開発のため\n(5) 利用規約違反の調査・対応のため\n(6) 統計データの作成・分析のため（個人を特定できない形で）\n(7) その他、上記に関連する業務の遂行のため' },
+    { title: 'Cookieの使用', body: '当社のウェブサイトでは、アクセス解析、広告配信、ユーザー体験の向上を目的として Cookie を使用しています。Cookie とは、ウェブサイトが利用者のブラウザに保存する小さなテキストファイルです。利用者は、ブラウザの設定により Cookie の受け入れを拒否することができますが、その場合、本サービスの一部機能がご利用いただけなくなる可能性があります。当社が使用する主な Cookie の種類は以下のとおりです。\n・必須 Cookie：サイトの基本的な機能に必要\n・分析 Cookie：Google Analytics 等によるサイト利用状況の分析\n・マーケティング Cookie：広告配信の最適化' },
+    { title: '第三者提供', body: '当社は、以下のいずれかに該当する場合を除き、ご本人の同意なく個人情報を第三者に提供いたしません。\n(1) 法令に基づく場合\n(2) 人の生命、身体または財産の保護のために必要がある場合であって、ご本人の同意を得ることが困難であるとき\n(3) 公衆衛生の向上または児童の健全な育成の推進のために特に必要がある場合\n(4) 国の機関もしくは地方公共団体またはその委託を受けた者が法令の定める事務を遂行することに対して協力する必要がある場合' },
+    { title: '外部委託', body: '当社は、業務の一部を外部委託する際に、委託先に対して個人情報を提供することがあります。この場合、当社は、個人情報の安全管理が図られるよう、委託先に対する必要かつ適切な監督を行います。委託先の例としては、以下のものがあります。\n・クラウドサービスプロバイダー（AWS、Google Cloud等）\n・メール配信サービス\n・データ分析ツールベンダー\n・決済代行事業者' },
+    { title: '情報の開示・訂正・削除', body: '当社は、ご本人から個人情報の開示、訂正、追加、削除、利用停止、消去、第三者提供の停止（以下「開示等」）の請求があった場合、ご本人であることを確認した上で、法令に従い、合理的な期間内に対応します。開示等の請求は、下記のお問い合わせ窓口までご連絡ください。なお、開示請求については、1件あたり1,000円（税込）の手数料を申し受けます。' },
+    { title: 'セキュリティ', body: '当社は、個人情報への不正アクセス、個人情報の紛失、破壊、改ざん、漏洩等の防止その他個人情報の安全管理のために、組織的、人的、物理的および技術的な安全管理措置を講じています。具体的には以下の措置を実施しています。\n・SSL/TLS による通信の暗号化\n・ファイアウォールの設置\n・アクセス制限および認証システムの導入\n・定期的なセキュリティ監査の実施\n・従業員に対する情報セキュリティ教育の実施' },
+    { title: 'SSL暗号化', body: '当社のウェブサイトでは、個人情報の入力ページにおいて、SSL（Secure Socket Layer）暗号化技術を使用しています。これにより、利用者のブラウザと当社サーバー間の通信が暗号化され、第三者による情報の傍受を防止します。当社ウェブサイトのURLが「https://」で始まることをご確認ください。' },
+    { title: 'プライバシーポリシーの変更', body: '当社は、必要に応じて本プライバシーポリシーを変更することができます。変更後のプライバシーポリシーは、当社ウェブサイトに掲載した時点から効力を生じるものとします。重要な変更がある場合は、当社ウェブサイト上での告知または登録メールアドレスへの通知により、利用者にお知らせします。' },
+    { title: 'お問い合わせ窓口', body: `個人情報の取扱いに関するお問い合わせ、開示等のご請求、苦情のお申し出は、以下の窓口までご連絡ください。\n\n${data.nameJa} 個人情報保護管理責任者\n住所: ${data.addressJa}\nメールアドレス: ${data.email}\n電話番号: ${data.phone}\n受付時間: ${data.businessHoursJa}` },
+  ],
+  en: [
+    { title: 'Definition of Personal Information', body: 'In this Privacy Policy, "Personal Information" means "personal information" as defined in Article 2, Paragraph 1 of the Act on the Protection of Personal Information of Japan. This refers to information about a living individual that can identify a specific individual by name, date of birth, or other description contained in such information (including information that can be readily collated with other information and thereby identify a specific individual).' },
+    { title: 'Information We Collect', body: 'The Company may collect the following information:\n- Name, company name, department, job title\n- Email address, phone number, address\n- Inquiry details, survey responses\n- Service usage history, access logs\n- Information collected through cookies and similar technologies\n- Other information separately notified and consented to by the user' },
+    { title: 'Purpose of Use', body: 'The Company uses collected personal information for the following purposes:\n(1) Provision and operation of the Company\'s services\n(2) Responding to inquiries and sending materials\n(3) Providing information about the Company\'s services and distributing newsletters\n(4) Improving services and developing new services\n(5) Investigating and responding to violations of Terms of Service\n(6) Creating and analyzing statistical data (in a form that cannot identify individuals)\n(7) Other related business operations' },
+    { title: 'Use of Cookies', body: 'The Company\'s website uses cookies for the purposes of access analysis, advertising delivery, and improving user experience. Cookies are small text files saved by websites on a user\'s browser. Users can refuse to accept cookies through their browser settings, but this may prevent the use of some features of the Services. The main types of cookies used by the Company are:\n- Essential Cookies: Required for basic site functionality\n- Analytics Cookies: Analysis of site usage via Google Analytics etc.\n- Marketing Cookies: Optimization of advertising delivery' },
+    { title: 'Provision to Third Parties', body: 'The Company will not provide personal information to third parties without the consent of the individual, except in the following cases:\n(1) When required by law\n(2) When necessary for the protection of human life, body, or property and obtaining consent is difficult\n(3) When particularly necessary for improving public health or promoting the healthy development of children\n(4) When cooperation is required with national or local government agencies or their agents in performing legally prescribed duties' },
+    { title: 'Outsourcing', body: 'The Company may provide personal information to subcontractors when outsourcing part of its business operations. In such cases, the Company exercises necessary and appropriate supervision over subcontractors to ensure the safe management of personal information. Examples of subcontractors include:\n- Cloud service providers (AWS, Google Cloud, etc.)\n- Email delivery services\n- Data analysis tool vendors\n- Payment processing providers' },
+    { title: 'Disclosure, Correction, and Deletion', body: 'When a request for disclosure, correction, addition, deletion, suspension of use, erasure, or suspension of third-party provision (hereinafter "Disclosure, etc.") is received from the individual, the Company will respond within a reasonable period in accordance with applicable law after confirming the identity of the individual. Please contact the inquiry desk below for requests related to Disclosure, etc. A fee of ¥1,000 (tax included) per request applies for disclosure requests.' },
+    { title: 'Security', body: 'The Company implements organizational, human, physical, and technical security measures to prevent unauthorized access to personal information, as well as loss, destruction, alteration, leakage, and other security incidents. Specifically, the following measures are implemented:\n- Communication encryption via SSL/TLS\n- Firewall installation\n- Access restriction and authentication system implementation\n- Regular security audits\n- Information security training for employees' },
+    { title: 'SSL Encryption', body: 'The Company uses SSL (Secure Socket Layer) encryption technology on pages where personal information is entered. This encrypts communication between the user\'s browser and the Company\'s servers, preventing interception of information by third parties. Please verify that the Company\'s website URL begins with "https://".' },
+    { title: 'Changes to Privacy Policy', body: 'The Company may change this Privacy Policy as necessary. The revised Privacy Policy shall become effective from the time it is posted on the Company\'s website. In the event of significant changes, the Company will notify users through announcements on the Company\'s website or by email to registered addresses.' },
+    { title: 'Contact Information', body: `For inquiries regarding the handling of personal information, requests for Disclosure, etc., and complaints, please contact the following:\n\n${data.name}, Personal Information Protection Manager\nAddress: ${data.address}\nEmail: ${data.email}\nPhone: ${data.phone}\nBusiness Hours: ${data.businessHours}` },
+  ],
+};
+---
+
+<BaseLayout title={title} description={desc} locale={loc} noindex>
+  <Navbar locale={loc} current={`/privacy/${company}`} />
+
+  <!-- Cookie Consent Banner -->
+  <div id="cookie-banner" class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-2xl p-4 sm:p-6 print:hidden">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <p class="text-sm text-gray-700 leading-relaxed">
+        {t(
+          '当サイトでは、お客様の体験向上のためCookieを使用しています。サイトの利用を継続することで、Cookieの使用に同意いただいたものとみなします。',
+          'This website uses cookies to enhance your experience. By continuing, you agree to our use of cookies.'
+        )}
+        <a href={`/privacy/${company}#cookie`} class="text-brand-600 underline ml-1">
+          {t('詳細を見る', 'Learn more')}
+        </a>
+      </p>
+      <button
+        id="cookie-accept"
+        class="shrink-0 px-5 py-2 bg-brand-600 text-white text-sm font-medium rounded-lg hover:bg-brand-700 transition-colors"
+      >
+        {t('同意する', 'Accept')}
+      </button>
+    </div>
+  </div>
+
+  <main class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <Breadcrumb items={crumbs} locale={loc} />
+
+    <div class="mb-10 mt-4">
+      <h1 class="text-3xl font-bold text-gray-900 leading-tight mb-2">
+        {t('プライバシーポリシー', 'Privacy Policy')}
+      </h1>
+      <p class="text-sm text-gray-500">
+        {data.nameJa}
+        &mdash;
+        {t(`最終更新日: ${lastUpdated}`, `Last Updated: ${lastUpdated}`)}
+      </p>
+      <hr class="mt-6 border-gray-200" />
+    </div>
+
+    <div class="prose prose-slate max-w-none space-y-8 print:space-y-6">
+      {(loc === 'ja' ? sections.ja : sections.en).map((section, idx) => (
+        <section id={section.title.replace(/\s/g, '-').toLowerCase()} class="pb-6 border-b border-gray-100 last:border-0">
+          <h2 class="text-lg font-bold text-gray-900 mb-3">
+            {idx + 1}. {section.title}
+          </h2>
+          <div class="text-sm leading-relaxed text-gray-700 whitespace-pre-line">
+            {section.body}
+          </div>
+        </section>
+      ))}
+    </div>
+
+    <div class="mt-12 p-6 bg-gray-50 rounded-xl text-center text-sm text-gray-500">
+      <p>{t('以上', 'End of Privacy Policy')}</p>
+      <p class="mt-3 font-medium text-gray-700">
+        {data.nameJa} / {data.name}
+      </p>
+    </div>
+  </main>
+
+  <Footer locale={loc} />
+
+  <script>
+    document.getElementById('cookie-accept')?.addEventListener('click', () => {
+      document.getElementById('cookie-banner')?.remove();
+      localStorage.setItem('cookie-consent', 'accepted');
+    });
+    if (localStorage.getItem('cookie-consent') === 'accepted') {
+      document.getElementById('cookie-banner')?.remove();
+    }
+  </script>
+
+  <script type="application/ld+json" set:html={JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: title,
+    description: desc,
+    url: `https://paradigm.co.jp/privacy/${company}`,
+    dateModified: lastUpdated,
+    isPartOf: {
+      '@type': 'WebSite',
+      name: data.nameJa,
+      url: 'https://paradigm.co.jp',
+    },
+  })} />
+</BaseLayout>

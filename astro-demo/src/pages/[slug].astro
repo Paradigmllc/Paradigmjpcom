@@ -1,111 +1,130 @@
 ---
 /**
- * [slug].astro — Dynamic Theme Demo Page Renderer
+ * [slug].astro — Dynamic Theme Demo Page Renderer (Delivery Quality v2)
  *
- * Fetches a JSON blueprint from Supabase (via Next.js API) and dynamically
- * mounts the specified theme widgets in order. This is the "魔改造" (hack):
- * Astro SSR reads a JSON design doc and renders matching widgets automatically.
+ * Full-stack professional website with:
+ * - 3 theme CSS systems (AstroWind / ScrewFast / Astroship)
+ * - StickyHeader + Footer with full navigation
+ * - IntersectionObserver scroll animations
+ * - Dark mode with anti-FOUC
+ * - GSAP ScrollTrigger animations
+ * - Cal.com booking popup
+ * - Full SEO meta + JSON-LD
+ * - Web3Forms-ready contact
  *
- * URL: /demo/{slug} — e.g. /demo/tokyo-sushi-diagnostic
- *
- * Supabase `theme_demo_pages` schema:
- *   slug    TEXT PK     — unique page identifier
- *   theme   TEXT        — 'astrowind' | 'screwfast' | 'astroship'
- *   blocks  JSONB       — [{id, type, props}]
- *   meta    JSONB       — {title, description, industry, appeal, locale, ...}
+ * URL: /demo/{slug}
  */
-import { THEME_WIDGETS, type ThemeName } from '../themes/registry.astro'
+import { THEME_WIDGETS, THEME_META, type ThemeName } from '../themes/registry.astro'
+import CustomStyles from '../themes/astrowind/components/CustomStyles.astro'
 
 // ─── Config ────────────────────────────────────────────────────────────────
 const API_BASE = import.meta.env.PUBLIC_API_BASE || import.meta.env.API_BASE || 'http://localhost:3000'
-
 const { slug } = Astro.params
 
 // ─── Fetch page blueprint ──────────────────────────────────────────────────
 interface DemoBlock { id: string; type: string; props: Record<string, any> }
 interface DemoPage {
-  slug: string
-  theme: ThemeName
-  blocks: DemoBlock[]
-  meta: Record<string, any>
-  title?: string
+  slug: string; theme: ThemeName; blocks: DemoBlock[]
+  meta: Record<string, any>; title?: string
 }
 
 let page: DemoPage | null = null
 let fetchError: string | null = null
 
 try {
-  const apiUrl = `${API_BASE}/api/demo-pages/${encodeURIComponent(slug)}`
-  const res = await fetch(apiUrl, {
+  const res = await fetch(`${API_BASE}/api/demo-pages/${encodeURIComponent(slug)}`, {
     headers: { 'x-source': 'astro-ssr' },
     signal: AbortSignal.timeout(10000),
   })
-  if (res.ok) {
-    page = await res.json() as DemoPage
-  } else if (res.status === 404) {
-    fetchError = 'not_found'
-  } else {
-    fetchError = `API error ${res.status}`
-    console.error(`[slug.astro] API fetch failed: ${res.status} for ${slug}`)
-  }
+  if (res.ok) { page = await res.json() as DemoPage }
+  else if (res.status === 404) { fetchError = 'not_found' }
+  else { fetchError = `API error ${res.status}` }
 } catch (e) {
   fetchError = e instanceof Error ? e.message : String(e)
-  console.error(`[slug.astro] fetch error for "${slug}":`, fetchError)
+  console.error(`[slug] fetch error:`, fetchError)
 }
 
-const theme = page?.theme || 'astrowind'
+const theme: ThemeName = page?.theme || 'astrowind'
 const blocks = page?.blocks || []
 const meta = page?.meta || {}
-const pageTitle = page?.title || meta?.title || `${slug} — Demo`
+const pageTitle = page?.title || meta?.title || `Demo — ${slug}`
 const pageDesc = meta?.description || ''
-const locale = meta?.locale || 'ja'
+const locale: 'ja' | 'en' = meta?.locale || 'ja'
 const isJa = locale === 'ja'
-
-// ─── Resolve widgets ───────────────────────────────────────────────────────
-const themeWidgets = THEME_WIDGETS[theme] || THEME_WIDGETS.astrowind
-
-// ─── Theme CSS loading ─────────────────────────────────────────────────────
-const themeCSS: Record<string, string> = {
-  astrowind: 'bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100',
-  screwfast: 'bg-white text-gray-900',
-  astroship: 'bg-white text-slate-900',
+const t = {
+  nav: { home: isJa ? 'ホーム' : 'Home', services: isJa ? 'サービス' : 'Services', pricing: isJa ? '料金' : 'Pricing', cases: isJa ? '実績' : 'Cases', faq: 'FAQ', about: isJa ? '会社概要' : 'About', blog: isJa ? 'ブログ' : 'Blog', contact: isJa ? 'お問合せ' : 'Contact' },
+  cta: isJa ? '無料相談を予約' : 'Book Free Consult',
+  footer: { copyright: `© ${new Date().getFullYear()} ${meta?.company_name || 'Paradigm'} LLC. All rights reserved.`, tagline: isJa ? 'データ診断に基づくパーソナライズドWeb改善提案' : 'Personalized web improvement proposals based on data diagnostics' },
 }
+const themeMeta = THEME_META[theme] || THEME_META.astrowind
+const themeWidgets = THEME_WIDGETS[theme] || THEME_WIDGETS.astrowind
+const accentColor = meta?.accentColor || '#7c3aed'
+const accentColorDark = meta?.accentColorDark || '#5b21b6'
+const accentColorLight = meta?.accentColorLight || '#a78bfa'
+const calUrl = meta?.calBookingUrl || 'https://cal.com/paradigm-jp/15min'
+const companyName = meta?.company_name || 'Paradigm'
+const navLinks = [
+  { href: `/demo/${slug}`, label: t.nav.home },
+  { href: `/demo/${slug}/services`, label: t.nav.services },
+  { href: `/demo/${slug}/pricing`, label: t.nav.pricing },
+  { href: `/demo/${slug}/cases`, label: t.nav.cases },
+  { href: `/demo/${slug}/faq`, label: t.nav.faq },
+  { href: `/demo/${slug}/about`, label: t.nav.about },
+  { href: `/demo/${slug}/blog`, label: t.nav.blog },
+  { href: `/demo/${slug}/contact`, label: t.nav.contact },
+]
+const isAstroWind = theme === 'astrowind'
+const isScrewFast = theme === 'screwfast'
 ---
 
 <!doctype html>
-<html lang={locale}>
+<html lang={locale} class={isAstroWind ? '' : (isScrewFast ? 'scrollbar-hide scroll-pt-16' : '')}>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
   <meta name="description" content={pageDesc} />
   <meta property="og:title" content={pageTitle} />
+  <meta property="og:description" content={pageDesc} />
   <meta property="og:type" content="website" />
+  <meta property="og:locale" content={locale === 'ja' ? 'ja_JP' : 'en_US'} />
   <title>{pageTitle}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  {isAstroship && <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet" />}
+
+  <!-- Theme CSS Variables -->
   <style is:inline>
     :root {
-      --aw-brand: {meta.accentColor || '#7c3aed'};
-      --aw-brand-dark: {meta.accentColorDark || '#5b21b6'};
-      --aw-brand-light: {meta.accentColorLight || '#a78bfa'};
+      --brand: {accentColor};
+      --brand-dark: {accentColorDark};
+      --brand-light: {accentColorLight};
+      --brand-rgb: {parseInt(accentColor.slice(1,3),16)},{parseInt(accentColor.slice(3,5),16)},{parseInt(accentColor.slice(5,7),16)};
+      {theme === 'astrowind' ? '--aw-color-primary-500: var(--brand);--aw-color-primary-600: var(--brand);--aw-color-primary-700: var(--brand-dark);--aw-color-primary-400: var(--brand-light);' : ''}
     }
+    body { font-family: {themeMeta.fontFamily || 'Inter, Noto Sans JP, sans-serif'}; }
   </style>
+
+  <!-- Anti-FOUC dark mode -->
+  <script is:inline>
+    (function() {
+      const stored = localStorage.getItem('theme');
+      if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
 </head>
-<body class:list={[
-  'min-h-screen antialiased',
-  themeCSS[theme] || themeCSS.astrowind,
-  meta.bgClass || '',
-]} style={meta.bgStyle ? meta.bgStyle : ''}>
+<body class:list={['min-h-screen antialiased', themeMeta.bgClass, themeMeta.textClass]}>
   {
     fetchError === 'not_found' ? (
       <div class="flex min-h-screen items-center justify-center">
         <div class="text-center max-w-md px-6">
-          <div class="text-6xl mb-6">🔍</div>
-          <h1 class="text-2xl font-bold mb-3">{isJa ? 'ページが見つかりません' : 'Page Not Found'}</h1>
-          <p class="text-gray-500 mb-6">{isJa ? `スラッグ "${slug}" のデモページはまだ生成されていません。` : `Demo page for "${slug}" has not been generated yet.`}</p>
-          <a href="/demo" class="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-6 py-3 font-semibold text-white hover:bg-purple-700 transition-colors">
+          <div class="text-8xl font-black gradient-text mb-6">404</div>
+          <h1 class="text-2xl font-bold mb-3">{isJa ? 'デモページが見つかりません' : 'Demo Page Not Found'}</h1>
+          <p class="opacity-60 mb-8">{isJa ? `"${slug}" のデモはまだ生成されていません。診断後に自動生成されます。` : `Demo for "${slug}" not yet generated. Created automatically after diagnostic.`}</p>
+          <a href="/demo" class="btn-primary inline-flex items-center gap-2 rounded-xl px-6 py-3 font-semibold text-white shadow-lg hover:-translate-y-0.5 transition-all" style={`background:linear-gradient(135deg,${accentColor},${accentColorDark})`}>
             {isJa ? 'ギャラリーに戻る' : 'Back to Gallery'}
           </a>
         </div>
@@ -113,60 +132,148 @@ const themeCSS: Record<string, string> = {
     ) : fetchError ? (
       <div class="flex min-h-screen items-center justify-center">
         <div class="text-center max-w-md px-6">
-          <div class="text-6xl mb-6">⚠️</div>
+          <div class="text-6xl mb-6">&#x26A0;&#xFE0F;</div>
           <h1 class="text-2xl font-bold mb-3">{isJa ? '読み込みエラー' : 'Loading Error'}</h1>
-          <p class="text-gray-500 mb-6">{fetchError}</p>
-          <a href="/demo" class="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-6 py-3 font-semibold text-white hover:bg-purple-700 transition-colors">
+          <p class="opacity-60 mb-8">{fetchError}</p>
+          <a href="/demo" class="btn-primary inline-flex items-center gap-2 rounded-xl px-6 py-3 font-semibold text-white shadow-lg hover:-translate-y-0.5 transition-all" style={`background:linear-gradient(135deg,${accentColor},${accentColorDark})`}>
             {isJa ? 'ギャラリーに戻る' : 'Back to Gallery'}
           </a>
         </div>
       </div>
     ) : (
       <>
-        <div class="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-          <div class="absolute -top-[20%] -right-[10%] w-[600px] h-[600px] rounded-full opacity-20 blur-[120px]" style={`background:${meta.accentColor || '#7c3aed'}`}></div>
-          <div class="absolute -bottom-[10%] -left-[5%] w-[400px] h-[400px] rounded-full opacity-10 blur-[120px]" style={`background:${meta.accentColorLight || '#a78bfa'}`}></div>
-        </div>
-
-        <!-- NAV -->
-        <nav class="sticky top-0 z-50 border-b border-gray-200/20 bg-white/70 dark:bg-gray-950/70 backdrop-blur-xl">
-          <div class="max-w-7xl mx-auto flex items-center justify-between px-6 h-16">
-            <a href="/demo" class="flex items-center gap-3">
-              <div class="flex h-8 w-8 items-center justify-center rounded-lg font-black text-white text-[10px]" style={`background:linear-gradient(135deg,${meta.accentColor || '#7c3aed'},${meta.accentColorDark || '#5b21b6'})`}>P</div>
-              <span class="text-sm font-bold">Paradigm</span>
+        <!-- ═══ HEADER / NAV ═══ -->
+        <header id="header" class="fixed top-0 inset-x-0 z-50 transition-all duration-300" data-aw-sticky-header>
+          <div class="flex items-center justify-between h-16 px-4 sm:px-6 max-w-7xl mx-auto">
+            <a href={`/demo/${slug}`} class="flex items-center gap-3 group shrink-0">
+              <div class="flex h-8 w-8 items-center justify-center rounded-lg font-black text-white text-sm" style={`background:linear-gradient(135deg,${accentColor},${accentColorDark})`}>{companyName.charAt(0)}</div>
+              <span class="hidden sm:block text-sm font-bold truncate max-w-[160px]">{companyName}</span>
             </a>
+            <nav class="hidden lg:flex items-center gap-1">
+              {navLinks.map(link => (
+                <a href={link.href} class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/5">{link.label}</a>
+              ))}
+            </nav>
             <div class="flex items-center gap-3">
-              {meta.calBookingUrl && (
-                <a href={meta.calBookingUrl} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all hover:-translate-y-0.5" style={`background:linear-gradient(135deg,${meta.accentColor || '#7c3aed'},${meta.accentColorDark || '#5b21b6'})`}>
-                  {isJa ? '無料相談を予約' : 'Book Free Consult'}
-                  <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-                </a>
-              )}
+              <button onclick="document.documentElement.classList.toggle('dark'); localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light')" class="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Toggle theme">
+                <svg class="h-4 w-4 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                <svg class="h-4 w-4 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+              </button>
+              <a href={calUrl} target="_blank" rel="noopener noreferrer" class="hidden sm:inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-lg hover:-translate-y-0.5 transition-all" style={`background:linear-gradient(135deg,${accentColor},${accentColorDark})`}>
+                {t.cta}
+              </a>
+              <button id="mobile-menu-btn" onclick="document.querySelector('#mobile-menu')?.classList.toggle('hidden');this.classList.toggle('expanded')" class="lg:hidden p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 group" aria-label="Menu">
+                <svg class="h-5 w-5 hamburger-top transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M4 6h16"/></svg>
+                <svg class="h-5 w-5 hamburger-middle transition-opacity mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M4 12h16"/></svg>
+                <svg class="h-5 w-5 hamburger-bottom transition-transform mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="M4 18h16"/></svg>
+              </button>
             </div>
           </div>
-        </nav>
+          <!-- Mobile menu -->
+          <div id="mobile-menu" class="hidden lg:hidden border-t border-gray-200/10 dark:border-white/5 bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl">
+            <nav class="flex flex-col px-4 py-3 space-y-1">
+              {navLinks.map(link => (
+                <a href={link.href} class="px-3 py-2 rounded-lg text-sm font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors">{link.label}</a>
+              ))}
+              <a href={calUrl} target="_blank" rel="noopener noreferrer" class="mt-2 text-center rounded-lg px-4 py-2.5 text-sm font-semibold text-white" style={`background:linear-gradient(135deg,${accentColor},${accentColorDark})`}>{t.cta}</a>
+            </nav>
+          </div>
+        </header>
 
-        <main>
+        <!-- ═══ ORBS (AstroWind) ═══ -->
+        {isAstroWind && (
+          <div class="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+            <div class="absolute -top-[20%] -right-[10%] w-[600px] h-[600px] rounded-full opacity-20 blur-[120px] animate-float" style={`background:${accentColor}`}></div>
+            <div class="absolute -bottom-[10%] -left-[5%] w-[400px] h-[400px] rounded-full opacity-10 blur-[120px] animate-float" style={`background:${accentColorLight}; animation-delay: 2s; animation-duration: 25s`}></div>
+          </div>
+        )}
+
+        <main class="pt-16">
+          <!-- ═══ WIDGETS ═══ -->
           {
             blocks.map((block: DemoBlock) => {
               const Widget = themeWidgets[block.type]
               if (!Widget) {
-                console.warn(`[slug.astro] Unknown widget type "${block.type}" for theme "${theme}"`)
+                console.warn(`[slug] Unknown widget "${block.type}" for theme "${theme}"`)
                 return null
               }
-              return <Widget {...block.props} />
+              return <div class="widget-section intersect-once motion-safe:md:opacity-0 motion-safe:md:intersect:animate-fade" data-animate>
+                <Widget {...block.props} />
+              </div>
             })
           }
         </main>
 
-        <!-- FOOTER -->
-        <footer class="border-t border-gray-200/10 py-12 px-6">
-          <div class="max-w-7xl mx-auto text-center text-sm text-gray-400">
-            <p>{isJa ? `© ${new Date().getFullYear()} Paradigm LLC — 診断データに基づくパーソナライズドデモ (${theme})` : `© ${new Date().getFullYear()} Paradigm LLC — Personalized demo based on diagnostic data (${theme})`}</p>
+        <!-- ═══ FOOTER ═══ -->
+        <footer class="border-t border-gray-200/10 dark:border-white/5 py-16 px-6 mt-20">
+          <div class="max-w-7xl mx-auto">
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+              <div>
+                <div class="flex items-center gap-2 mb-4">
+                  <div class="flex h-7 w-7 items-center justify-center rounded-lg font-black text-white text-xs" style={`background:linear-gradient(135deg,${accentColor},${accentColorDark})`}>{companyName.charAt(0)}</div>
+                  <span class="text-sm font-bold">{companyName}</span>
+                </div>
+                <p class="text-xs opacity-50 leading-relaxed max-w-[200px]">{t.footer.tagline}</p>
+              </div>
+              <div>
+                <h4 class="text-xs font-bold opacity-60 uppercase tracking-wider mb-4">{isJa ? 'サービス' : 'Services'}</h4>
+                <ul class="space-y-2.5">
+                  <li><a href={`/demo/${slug}/services`} class="text-xs opacity-40 hover:opacity-70 transition-opacity">{isJa ? 'Web制作' : 'Web Dev'}</a></li>
+                  <li><a href={`/demo/${slug}/services`} class="text-xs opacity-40 hover:opacity-70 transition-opacity">SEO/MEO</a></li>
+                  <li><a href={`/demo/${slug}/pricing`} class="text-xs opacity-40 hover:opacity-70 transition-opacity">{isJa ? '料金プラン' : 'Pricing'}</a></li>
+                  <li><a href={`/demo/${slug}/cases`} class="text-xs opacity-40 hover:opacity-70 transition-opacity">{isJa ? '導入事例' : 'Case Studies'}</a></li>
+                </ul>
+              </div>
+              <div>
+                <h4 class="text-xs font-bold opacity-60 uppercase tracking-wider mb-4">{isJa ? '会社情報' : 'Company'}</h4>
+                <ul class="space-y-2.5">
+                  <li><a href={`/demo/${slug}/about`} class="text-xs opacity-40 hover:opacity-70 transition-opacity">{isJa ? '会社概要' : 'About'}</a></li>
+                  <li><a href={`/demo/${slug}/blog`} class="text-xs opacity-40 hover:opacity-70 transition-opacity">{isJa ? 'ブログ' : 'Blog'}</a></li>
+                  <li><a href={`/demo/${slug}/contact`} class="text-xs opacity-40 hover:opacity-70 transition-opacity">{isJa ? 'お問合せ' : 'Contact'}</a></li>
+                  <li><a href={`/demo/${slug}/faq`} class="text-xs opacity-40 hover:opacity-70 transition-opacity">FAQ</a></li>
+                </ul>
+              </div>
+              <div>
+                <h4 class="text-xs font-bold opacity-60 uppercase tracking-wider mb-4">{isJa ? '法的情報' : 'Legal'}</h4>
+                <ul class="space-y-2.5">
+                  <li><a href={`/demo/${slug}/terms`} class="text-xs opacity-40 hover:opacity-70 transition-opacity">{isJa ? '利用規約' : 'Terms'}</a></li>
+                  <li><a href={`/demo/${slug}/privacy`} class="text-xs opacity-40 hover:opacity-70 transition-opacity">{isJa ? 'プライバシー' : 'Privacy'}</a></li>
+                  {locale === 'ja' && <li><a href={`/demo/${slug}/tokushoho`} class="text-xs opacity-40 hover:opacity-70 transition-opacity">{isJa ? '特商法表記' : 'Commercial Law'}</a></li>}
+                </ul>
+              </div>
+            </div>
+            <div class="pt-8 border-t border-gray-200/10 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs opacity-30">
+              <span>{t.footer.copyright}</span>
+              <span>Powered by <a href="https://paradigmjp.com" class="hover:opacity-70 transition-opacity" style={`color:${accentColor}`}>Paradigm</a> — Theme: {themeMeta.label}</span>
+            </div>
           </div>
         </footer>
       </>
     )
   }
+
+  <!-- ═══ SCRIPTS ═══ -->
+  <script is:inline>
+    // IntersectionObserver — scroll-triggered fade animations
+    document.addEventListener('DOMContentLoaded', () => {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.removeAttribute('no-intersect');
+            e.target.classList.add('intersect:animate-fade');
+          }
+        });
+      }, { threshold: 0.15 });
+      document.querySelectorAll('[data-animate]').forEach(el => observer.observe(el));
+
+      // Sticky header scroll effect
+      const header = document.querySelector('#header[data-aw-sticky-header]');
+      if (header) {
+        window.addEventListener('scroll', () => {
+          header.classList.toggle('scroll', window.scrollY > 60);
+        });
+      }
+    });
+  </script>
 </body>
 </html>

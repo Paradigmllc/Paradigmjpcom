@@ -1,23 +1,143 @@
 ---
-/**
- * ScrewFast PricingSection — simplified pricing grid.
- */
 export interface Props {
-  title?: string
-  subTitle?: string
+  pricing?: {
+    title?: string
+    subTitle?: string
+    starterKit?: {
+      name?: string
+      description?: string
+      price?: string
+      cents?: string
+      billingFrequency?: string
+      features?: string[]
+    }
+    professionalToolbox?: {
+      name?: string
+      description?: string
+      price?: string
+      cents?: string
+      billingFrequency?: string
+      features?: string[]
+      badge?: string
+      btnText?: string
+    }
+    thirdOption?: {
+      name?: string
+      description?: string
+    }
+  }
 }
 
-const { title = 'Pricing', subTitle = '' } = Astro.props as Props
+const {
+  pricing = {},
+} = Astro.props as Props
+
+const {
+  title = 'Pricing Plans',
+  subTitle = 'Choose the plan that fits your team.',
+  starterKit = {
+    name: 'Starter Kit',
+    description: 'Perfect for small teams getting started.',
+    price: '49',
+    cents: '',
+    billingFrequency: '/mo',
+    features: ['Up to 5 projects', 'Basic analytics', '48-hour support response time', 'Community access', '1 GB storage'],
+  },
+  professionalToolbox = {
+    name: 'Professional Toolbox',
+    description: 'For growing teams that need more power.',
+    price: '149',
+    cents: '',
+    billingFrequency: '/mo',
+    features: ['Unlimited projects', 'Advanced analytics & reports', 'Priority 24/7 support', 'SSO & SAML authentication', 'Custom integrations', '100 GB storage'],
+    badge: 'Best value',
+    btnText: 'Start free trial',
+  },
+  thirdOption = {},
+} = pricing
 ---
 
-<section class="py-20">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6">
-    <div class="text-center mb-14">
-      <h2 class="text-3xl font-bold text-gray-900">{title}</h2>
-      {subTitle && <p class="mt-3 text-lg text-gray-600">{subTitle}</p>}
+<section class="py-16 sm:py-20 lg:py-24">
+  <div class="mx-auto max-w-[85rem] px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto mb-14 max-w-2xl text-center">
+      <h2 class="text-3xl font-bold text-neutral-800 dark:text-neutral-200">{title}</h2>
+      {subTitle && <p class="mt-3 text-lg text-neutral-600 dark:text-neutral-400">{subTitle}</p>}
     </div>
-    <div class="grid md:grid-cols-3 gap-8">
-      <slot />
+
+    <div class="mx-auto max-w-4xl">
+      <div class="grid items-stretch sm:grid-cols-2">
+        <div class="flex flex-col rounded-xl border border-neutral-300 bg-neutral-800 p-8 sm:rounded-r-none dark:border-neutral-700 dark:bg-neutral-800">
+          <h3 class="text-xl font-bold text-neutral-200">{starterKit.name}</h3>
+          <p class="mt-2 text-neutral-400">{starterKit.description}</p>
+          <div class="mt-6">
+            <span class="text-4xl font-bold text-white">${starterKit.price}</span>
+            <span class="text-neutral-400">{starterKit.billingFrequency}</span>
+          </div>
+          <ul class="mt-8 space-y-3">
+            {starterKit.features?.map((f) => (
+              <li class="flex items-start gap-x-2">
+                <svg class="mt-0.5 h-5 w-5 shrink-0 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+                <span class="text-sm text-neutral-300">{f}</span>
+              </li>
+            ))}
+          </ul>
+          <div class="mt-auto pt-8">
+            <a
+              href="#"
+              class="block w-full rounded-lg border border-neutral-600 px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:border-neutral-500 hover:bg-neutral-700"
+            >
+              Get started
+            </a>
+          </div>
+        </div>
+
+        <div class="relative flex flex-col rounded-xl bg-gradient-to-tr from-[#FF512F] to-[#F09819] p-8 shadow-xl sm:-ml-1 sm:rounded-l-none sm:rounded-r-xl">
+          {professionalToolbox.badge && (
+            <span class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-white px-4 py-1 text-xs font-bold text-orange-600 shadow dark:bg-neutral-900">
+              {professionalToolbox.badge}
+            </span>
+          )}
+          <div class="mt-2">
+            <h3 class="text-xl font-bold text-white">{professionalToolbox.name}</h3>
+            <p class="mt-2 text-white/80">{professionalToolbox.description}</p>
+            <div class="mt-6">
+              <span class="text-6xl font-bold text-white">${professionalToolbox.price}</span>
+              <span class="text-white/70">{professionalToolbox.billingFrequency}</span>
+            </div>
+            <ul class="mt-8 space-y-3">
+              {professionalToolbox.features?.map((f) => (
+                <li class="flex items-start gap-x-2">
+                  <svg class="mt-0.5 h-5 w-5 shrink-0 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                  </svg>
+                  <span class="text-sm text-white/90">{f}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div class="mt-auto pt-8">
+            <a
+              href="#"
+              class="block w-full rounded-lg bg-white px-4 py-3 text-center text-sm font-semibold text-orange-600 shadow transition-colors hover:bg-orange-50"
+            >
+              {professionalToolbox.btnText || 'Get started'}
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {thirdOption?.name && (
+        <div class="mt-6 text-center">
+          <p class="text-neutral-600 dark:text-neutral-400">
+            <a href="#" class="font-semibold text-orange-500 underline underline-offset-2 hover:text-orange-600">
+              {thirdOption.name}
+            </a>
+            {' '}{thirdOption.description}
+          </p>
+        </div>
+      )}
     </div>
   </div>
 </section>

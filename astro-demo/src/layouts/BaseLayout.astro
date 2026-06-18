@@ -1,0 +1,93 @@
+---
+export interface Props {
+  title: string;
+  description: string;
+  locale?: 'ja' | 'en';
+  image?: string;
+  noindex?: boolean;
+}
+
+const { title, description, locale = 'ja', image, noindex } = Astro.props;
+const siteName = locale === 'ja' ? '株式会社パラダイム' : 'Paradigm Inc.';
+const ogImage = image ?? 'https://paradigm.co.jp/ogp-default.jpg';
+---
+
+<!doctype html>
+<html lang={locale === 'ja' ? 'ja' : 'en'}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} | {siteName}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={`${title} | ${siteName}`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={siteName} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={`${title} | ${siteName}`} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
+    <link rel="canonical" href={Astro.url.href} />
+    <link
+      rel="alternate"
+      hreflang={locale === 'ja' ? 'ja' : 'en'}
+      href={Astro.url.href}
+    />
+    <script is:inline src="https://cdn.tailwindcss.com"></script>
+    <script is:inline>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['"Noto Sans JP"', '"Inter"', 'system-ui', 'sans-serif'],
+              display: ['"Noto Serif JP"', '"Playfair Display"', 'serif'],
+            },
+            colors: {
+              brand: {
+                50: '#eff6ff',
+                100: '#dbeafe',
+                200: '#bfdbfe',
+                300: '#93c5fd',
+                400: '#60a5fa',
+                500: '#1e40af',
+                600: '#1e3a8a',
+                700: '#1e3380',
+                800: '#1a2d6d',
+                900: '#172554',
+                950: '#0f172a',
+              },
+              accent: {
+                50: '#fefce8',
+                100: '#fef9c3',
+                200: '#fef08a',
+                300: '#fde047',
+                400: '#facc15',
+                500: '#eab308',
+                600: '#ca8a04',
+                700: '#a16207',
+                800: '#854d0e',
+                900: '#713f12',
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <style is:global>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700;900&family=Noto+Serif+JP:wght@400;600;700&display=swap');
+      html { scroll-behavior: smooth; }
+      body { font-family: 'Noto Sans JP', 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+      @media print {
+        nav, footer, .no-print { display: none !important; }
+        body { background: white !important; color: black !important; }
+      }
+      details summary::-webkit-details-marker { display: none; }
+      details summary::marker { display: none; content: none; }
+    </style>
+  </head>
+  <body class="bg-white text-gray-900 min-h-screen">
+    <slot />
+  </body>
+</html>

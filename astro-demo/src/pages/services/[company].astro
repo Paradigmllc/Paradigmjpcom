@@ -1,0 +1,182 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import Breadcrumb from '../../components/Breadcrumb.astro';
+import { getCompany, type CompanyData } from '../../data/demoData';
+
+export function getStaticPaths() {
+  return [
+    { params: { company: 'paradigm' } },
+    { params: { company: 'sampletech' } },
+    { params: { company: 'tokyocommerce' } },
+  ];
+}
+
+const { company } = Astro.params;
+const data: CompanyData = getCompany(company);
+const loc = data.locale;
+const t = (ja: string, en: string) => (loc === 'en' ? en : ja);
+const title = t(`${data.nameJa} | サービス`, `${data.name} | Services`);
+const desc = t(`${data.nameJa}のサービス一覧。Web制作、SEO、MEO、動画制作など。`, `Services offered by ${data.name}. Web development, SEO, MEO, video production, and more.`);
+
+const crumbs = [
+  { label: { ja: 'ホーム', en: 'Home' }, href: '/' },
+  { label: { ja: 'サービス', en: 'Services' }, href: `/services/${company}` },
+];
+
+const services = [
+  { icon: 'web', title: { ja: 'Web制作', en: 'Web Development' }, desc: { ja: 'コーポレートサイト、LP、ECサイト、オウンドメディアなど、ビジネス目的に最適化されたWebサイトを制作します。', en: 'We build business-optimized websites including corporate sites, landing pages, e-commerce, and owned media.' }, features: { ja: ['レスポンシブ対応', 'SEO内部対策', '高速表示', 'CMS構築（WordPress / MicroCMS）', '多言語対応'], en: ['Responsive Design', 'SEO Optimization', 'High Performance', 'CMS Integration', 'Multilingual Support'] } },
+  { icon: 'seo', title: { ja: 'SEO対策', en: 'SEO Services' }, desc: { ja: '検索エンジン上位表示のための戦略立案から技術的対策、コンテンツ制作まで一貫してサポートします。', en: 'We provide comprehensive support from SEO strategy planning to technical implementation and content creation.' }, features: { ja: ['キーワード戦略', '内部対策', '外部対策（リンクビルディング）', 'コンテンツマーケティング', 'アクセス解析'], en: ['Keyword Strategy', 'On-page SEO', 'Link Building', 'Content Marketing', 'Analytics'] } },
+  { icon: 'meo', title: { ja: 'MEO対策', en: 'MEO Services' }, desc: { ja: 'Googleビジネスプロフィール最適化により、地域検索での上位表示を実現し、実店舗への集客を強化します。', en: 'Optimize your Google Business Profile to achieve top rankings in local searches and drive foot traffic.' }, features: { ja: ['GBP最適化', '口コミ管理', 'ローカルSEO施策', '写真・動画運用', '競合分析'], en: ['GBP Optimization', 'Review Management', 'Local SEO', 'Photo/Video Management', 'Competitor Analysis'] } },
+  { icon: 'video', title: { ja: '動画制作', en: 'Video Production' }, desc: { ja: 'プロモーション動画、サービス紹介動画、採用動画など、目的に合わせた動画コンテンツを企画・制作します。', en: 'We plan and produce video content tailored to your goals — promotional videos, service introductions, recruitment videos.' }, features: { ja: ['企画・構成', '撮影', '編集', 'アニメーション', 'SNS最適化'], en: ['Planning & Scripting', 'Filming', 'Editing', 'Animation', 'SNS Optimization'] } },
+  { icon: 'sns', title: { ja: 'SNSマーケティング', en: 'SNS Marketing' }, desc: { ja: 'Twitter、Instagram、Facebook、LINEなど各SNSプラットフォームでの運用代行・広告運用を提供します。', en: 'We provide social media management and advertising across Twitter, Instagram, Facebook, LINE, and more.' }, features: { ja: ['アカウント運用', 'コンテンツ企画', '広告運用', 'インフルエンサー施策', '効果測定'], en: ['Account Management', 'Content Planning', 'Ad Operations', 'Influencer Marketing', 'Performance Analysis'] } },
+  { icon: 'system', title: { ja: 'システム開発', en: 'System Development' }, desc: { ja: '業務効率化ツール、予約システム、顧客管理システムなど、ビジネス課題を解決するシステムを開発します。', en: 'We develop systems to solve business challenges — efficiency tools, booking systems, CRM, and more.' }, features: { ja: ['要件定義', '設計・開発', 'テスト・QA', '運用保守', 'クラウド基盤構築'], en: ['Requirements Definition', 'Design & Development', 'Testing & QA', 'Maintenance', 'Cloud Infrastructure'] } },
+];
+
+const steps = [
+  { step: '01', title: { ja: 'ヒアリング', en: 'Consultation' }, desc: { ja: 'お客様のビジネス課題や目標を詳細にヒアリングします。', en: 'We conduct detailed consultation to understand your business challenges and goals.' } },
+  { step: '02', title: { ja: 'ご提案', en: 'Proposal' }, desc: { ja: '最適なソリューションと制作スケジュールをご提案します。', en: 'We propose optimal solutions and production schedules.' } },
+  { step: '03', title: { ja: '制作', en: 'Production' }, desc: { ja: '企画・デザイン・開発を進め、定期的にご報告します。', en: 'We proceed with planning, design, and development, providing regular progress updates.' } },
+  { step: '04', title: { ja: '公開・運用', en: 'Launch' }, desc: { ja: '公開後も効果測定と改善提案を継続的に実施します。', en: 'After launch, we continue to measure effectiveness and suggest improvements.' } },
+];
+
+const techStack = [
+  { name: 'Astro', color: 'from-purple-500 to-purple-700' },
+  { name: 'Next.js', color: 'from-black to-gray-800' },
+  { name: 'React', color: 'from-cyan-400 to-blue-500' },
+  { name: 'Vue.js', color: 'from-emerald-400 to-green-600' },
+  { name: 'TypeScript', color: 'from-blue-400 to-blue-600' },
+  { name: 'Tailwind', color: 'from-teal-400 to-cyan-500' },
+  { name: 'Supabase', color: 'from-emerald-500 to-emerald-700' },
+  { name: 'Stripe', color: 'from-indigo-500 to-violet-600' },
+];
+---
+
+<BaseLayout title={title} description={desc} locale={loc}>
+  <Navbar locale={loc} current={`/services/${company}`} />
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <Breadcrumb items={crumbs} locale={loc} />
+
+    <!-- Hero -->
+    <section class="text-center my-12 lg:my-16">
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-4">
+        {t('サービス', 'Our Services')}
+      </h1>
+      <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+        {t('ビジネスの成長を加速させる、総合的なデジタルソリューションをご提供します。', 'We provide comprehensive digital solutions to accelerate your business growth.')}
+      </p>
+    </section>
+
+    <!-- Service Cards -->
+    <section class="mb-20">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {services.map((svc) => (
+          <div class="group bg-white border border-gray-200 rounded-xl p-6 sm:p-7 hover:border-brand-300 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+            <div class="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center mb-4 group-hover:bg-brand-100 transition-colors">
+              {svc.icon === 'web' && <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
+              {svc.icon === 'seo' && <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>}
+              {svc.icon === 'meo' && <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
+              {svc.icon === 'video' && <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>}
+              {svc.icon === 'sns' && <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>}
+              {svc.icon === 'system' && <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>}
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">
+              {loc === 'ja' ? svc.title.ja : svc.title.en}
+            </h3>
+            <p class="text-sm text-gray-600 mb-4 leading-relaxed">
+              {loc === 'ja' ? svc.desc.ja : svc.desc.en}
+            </p>
+            <ul class="space-y-1.5">
+              {(loc === 'ja' ? svc.features.ja : svc.features.en).map((f) => (
+                <li class="flex items-center gap-2 text-xs text-gray-500">
+                  <svg class="w-3.5 h-3.5 text-brand-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                  {f}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Process -->
+    <section class="mb-20">
+      <h2 class="text-2xl font-bold text-gray-900 text-center mb-10">{t('制作の流れ', 'Our Process')}</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {steps.map((s, i) => (
+          <div class="relative group">
+            <div class="bg-white border border-gray-200 rounded-xl p-6 text-center hover:border-brand-300 hover:shadow-lg transition-all duration-300 h-full">
+              <span class="inline-block text-4xl font-extrabold text-brand-100 mb-3">{s.step}</span>
+              <h3 class="text-base font-bold text-gray-900 mb-2">{loc === 'ja' ? s.title.ja : s.title.en}</h3>
+              <p class="text-xs text-gray-600 leading-relaxed">{loc === 'ja' ? s.desc.ja : s.desc.en}</p>
+            </div>
+            {i < steps.length - 1 && (
+              <div class="hidden lg:block absolute top-1/2 -right-3 transform -translate-y-1/2 z-10">
+                <svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Tech Stack -->
+    <section class="mb-20">
+      <h2 class="text-2xl font-bold text-gray-900 text-center mb-10">{t('技術スタック', 'Technology Stack')}</h2>
+      <div class="flex flex-wrap justify-center gap-3">
+        {techStack.map((tech) => (
+          <span class={`inline-block px-5 py-2.5 rounded-full bg-gradient-to-r ${tech.color} text-white text-sm font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200`}>
+            {tech.name}
+          </span>
+        ))}
+      </div>
+    </section>
+
+    <!-- CTA Banner -->
+    <section class="mb-12 bg-gradient-to-r from-brand-700 to-brand-900 rounded-2xl p-8 sm:p-12 text-center text-white">
+      <h2 class="text-2xl sm:text-3xl font-bold mb-3">
+        {t('まずは無料相談から', 'Start with a Free Consultation')}
+      </h2>
+      <p class="text-brand-100 mb-6 max-w-xl mx-auto">
+        {t('お客様のビジネスに最適なソリューションをご提案します。お気軽にご相談ください。', 'We will propose the optimal solution for your business. Feel free to consult with us.')}
+      </p>
+      <a href={`/contact/${company}`} class="inline-block px-8 py-3 bg-white text-brand-700 font-semibold text-sm rounded-lg hover:bg-brand-50 transition-colors shadow-lg">
+        {t('無料相談を申し込む', 'Request Free Consultation')}
+      </a>
+    </section>
+  </main>
+
+  <Footer locale={loc} />
+
+  <script type="application/ld+json" set:html={JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: `${data.nameJa} サービス`,
+    provider: {
+      '@type': 'Organization',
+      name: data.nameJa,
+      url: data.website,
+    },
+    description: desc,
+    serviceType: 'Digital Solutions',
+    areaServed: { '@type': 'Country', name: 'JP' },
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog',
+      name: 'Service Catalog',
+      itemListElement: services.map((svc) => ({
+        '@type': 'Offer',
+        itemOffered: {
+          '@type': 'Service',
+          name: loc === 'ja' ? svc.title.ja : svc.title.en,
+          description: loc === 'ja' ? svc.desc.ja : svc.desc.en,
+        },
+      })),
+    },
+  })} />
+</BaseLayout>

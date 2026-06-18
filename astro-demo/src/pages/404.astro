@@ -1,0 +1,111 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+
+const locale = 'ja';
+const t = (ja: string, en: string) => locale === 'en' ? en : ja;
+const title = t('404 ページが見つかりません', '404 Page Not Found');
+const desc = t('お探しのページが見つかりませんでした。', 'The page you are looking for was not found.');
+---
+
+<BaseLayout title={title} description={desc} locale="ja" noindex>
+  <Navbar locale="ja" />
+
+  <main class="min-h-[70vh] flex items-center justify-center px-4 py-16 sm:py-24 relative overflow-hidden">
+    <!-- Floating orbs (CSS animation) -->
+    <div class="absolute inset-0 pointer-events-none overflow-hidden">
+      <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-brand-100 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-pulse" style="animation-duration: 4s;"></div>
+      <div class="absolute top-1/3 right-1/4 w-72 h-72 bg-accent-100 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse" style="animation-duration: 6s; animation-delay: 2s;"></div>
+      <div class="absolute bottom-1/4 left-1/3 w-56 h-56 bg-green-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" style="animation-duration: 5s; animation-delay: 1s;"></div>
+    </div>
+
+    <div class="relative z-10 text-center max-w-lg mx-auto">
+      <!-- 404 Number -->
+      <div class="mb-6">
+        <h1 class="text-8xl sm:text-9xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-brand-500 via-brand-700 to-accent-500 animate-pulse">
+          404
+        </h1>
+      </div>
+
+      <!-- Message -->
+      <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+        {locale === 'ja' ? 'ページが見つかりません' : 'Page Not Found'}
+      </h2>
+      <p class="text-gray-500 mb-8 leading-relaxed">
+        {locale === 'ja'
+          ? 'お探しのページは削除されたか、URLが変更された可能性があります。'
+          : 'The page you are looking for may have been removed or the URL may have changed.'}
+      </p>
+
+      <!-- Search bar -->
+      <form
+        action="https://www.google.com/search"
+        method="get"
+        target="_blank"
+        class="flex gap-2 mb-8 max-w-md mx-auto"
+      >
+        <input type="hidden" name="q" value="site:paradigm.co.jp" />
+        <input
+          type="text"
+          name="q"
+          placeholder={locale === 'ja' ? 'サイト内を検索...' : 'Search the website...'}
+          class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition"
+        />
+        <button type="submit" class="px-4 py-2.5 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors">
+          {locale === 'ja' ? '検索' : 'Search'}
+        </button>
+      </form>
+
+      <!-- Navigation Links -->
+      <div class="flex flex-wrap justify-center gap-3 mb-8">
+        <a href="/" class="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 transition-colors">
+          {locale === 'ja' ? 'ホーム' : 'Home'}
+        </a>
+        <a href="/services/paradigm" class="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 transition-colors">
+          {locale === 'ja' ? 'サービス' : 'Services'}
+        </a>
+        <a href="/contact/paradigm" class="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 transition-colors">
+          {locale === 'ja' ? 'お問い合わせ' : 'Contact'}
+        </a>
+        <a href="/faq/paradigm" class="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 transition-colors">
+          FAQ
+        </a>
+      </div>
+
+      <!-- Auto-redirect note -->
+      <p class="text-xs text-gray-400" id="redirect-note">
+        {locale === 'ja' ? '5秒後に自動的にトップページへ移動します...' : 'Redirecting to homepage in 5 seconds...'}
+      </p>
+    </div>
+  </main>
+
+  <Footer locale="ja" />
+
+  <script>
+    let count = 5;
+    const note = document.getElementById('redirect-note');
+    const interval = setInterval(() => {
+      count--;
+      if (count <= 0) {
+        clearInterval(interval);
+        window.location.href = '/';
+      } else if (note) {
+        note.textContent = `${locale === 'ja' ? '' : ''}${count}${locale === 'ja' ? '秒後に自動的にトップページへ移動します...' : ' seconds... Redirecting to homepage...'}`;
+      }
+    }, 1000);
+  </script>
+
+  <script type="application/ld+json" set:html={JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: title,
+    description: desc,
+    url: Astro.url.href,
+    isPartOf: {
+      '@type': 'WebSite',
+      name: '株式会社パラダイム',
+      url: 'https://paradigm.co.jp',
+    },
+  })} />
+</BaseLayout>

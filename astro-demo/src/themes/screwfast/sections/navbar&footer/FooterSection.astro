@@ -1,122 +1,150 @@
 ---
-// Import the necessary dependencies
-import FooterSocialLink from '@components/ui/links/FooterSocialLink.astro';
-import EmailFooterInput from '@components/ui/forms/input/EmailFooterInput.astro';
-import enStrings from '@utils/navigation.ts';
-import frStrings from '@utils/fr/navigation.ts';
-import Icon from '@components/ui/icons/Icon.astro';
-import BrandLogo from '@components/BrandLogo.astro';
-import { SITE } from '@data/constants';
+export interface Props {
+  companyName?: string
+  links?: Array<{
+    section: string
+    links: Array<{ name: string; url: string }>
+  }>
+  socialLinks?: {
+    facebook?: string
+    x?: string
+    github?: string
+    google?: string
+    slack?: string
+  }
+}
 
-// Select the correct translation based on the page's lang prop:
-const strings = Astro.currentLocale === 'fr' ? frStrings : enStrings;
-
-// Define the variables that will be used in this component
-const sectionThreeTitle: string =
-  Astro.currentLocale === 'fr' ? 'Rester à jour' : 'Stay up to date';
-const sectionThreeContent: string =
-  Astro.currentLocale === 'fr'
-    ? 'Restez informé des derniers outils et des offres exclusives.'
-    : 'Stay updated with the latest tools and exclusive deals.';
-const crafted: string =
-  Astro.currentLocale === 'fr' ? 'Fabriqué par' : 'Crafted by';
+const {
+  companyName = 'ScrewFast',
+  links = [
+    {
+      section: 'Product',
+      links: [
+        { name: 'Features', url: '#' },
+        { name: 'Pricing', url: '#' },
+        { name: 'Changelog', url: '#' },
+        { name: 'Documentation', url: '#' },
+      ],
+    },
+    {
+      section: 'Company',
+      links: [
+        { name: 'About', url: '#' },
+        { name: 'Blog', url: '#' },
+        { name: 'Careers', url: '#' },
+        { name: 'Contact', url: '#' },
+      ],
+    },
+  ],
+  socialLinks = {
+    facebook: '#',
+    x: '#',
+    github: '#',
+    google: '#',
+    slack: '#',
+  },
+} = Astro.props as Props
 ---
 
-<footer class="w-full bg-neutral-300 dark:bg-neutral-900">
-  <div
-    class="mx-auto w-full max-w-[85rem] px-4 py-10 sm:px-6 lg:px-16 lg:pt-20 2xl:max-w-(--breakpoint-2xl)"
-  >
+<footer class="w-full border-t border-neutral-300 bg-neutral-200 dark:border-neutral-700 dark:bg-neutral-900">
+  <div class="mx-auto w-full max-w-[85rem] px-4 py-10 sm:px-6 lg:px-16 lg:pt-20">
     <div class="grid grid-cols-2 gap-6 md:grid-cols-4 lg:grid-cols-5">
       <div class="col-span-full lg:col-span-1">
-        {/* Brand Logo */}
-        <BrandLogo class="h-auto w-32" />
+        <a href="/" class="inline-flex items-center gap-x-2 text-xl font-bold text-neutral-800 dark:text-neutral-200" aria-label={companyName}>
+          <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500 text-sm font-bold text-white">
+            {companyName.charAt(0)}
+          </span>
+          {companyName}
+        </a>
       </div>
-      {/* An array of links for Product and Company sections */}
-      {
-        strings.footerLinks.map(section => (
-          <div class="col-span-1">
-            <h3 class="font-bold text-neutral-800 dark:text-neutral-200">
-              {section.section}
-            </h3>
-            <ul class="mt-3 grid space-y-3">
-              {section.links.map((link, index) => (
-                <li>
-                  <a
-                    href={link.url}
-                    class="inline-flex gap-x-2 rounded-lg text-neutral-600 ring-zinc-500 outline-hidden transition duration-300 hover:text-neutral-500 focus-visible:ring-3 dark:text-neutral-400 dark:ring-zinc-200 dark:hover:text-neutral-300 dark:focus:outline-hidden"
-                  >
-                    {link.name}
-                  </a>
-                  {section.section === 'Company' && index === 2 ? (
-                    <span class="ms-1 inline rounded-lg bg-orange-500 px-2 py-1 text-xs font-bold text-neutral-50">
-                      We're hiring!
-                    </span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))
-      }
+
+      {links.map((section) => (
+        <div class="col-span-1">
+          <h3 class="font-bold text-neutral-800 dark:text-neutral-200">{section.section}</h3>
+          <ul class="mt-3 grid space-y-3">
+            {section.links.map((link, index) => (
+              <li>
+                <a
+                  href={link.url}
+                  class="inline-flex gap-x-2 rounded-lg text-neutral-600 ring-zinc-500 outline-hidden transition duration-300 hover:text-neutral-500 focus-visible:ring-3 dark:text-neutral-400 dark:ring-zinc-200 dark:hover:text-neutral-300 dark:focus:outline-hidden"
+                >
+                  {link.name}
+                </a>
+                {section.section === 'Company' && index === 2 && (
+                  <span class="ms-1 inline rounded-lg bg-orange-500 px-2 py-1 text-xs font-bold text-white">
+                    We're hiring!
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
 
       <div class="col-span-2">
-        <h3 class="font-bold text-neutral-800 dark:text-neutral-200">
-          {sectionThreeTitle}
-        </h3>
-
-        <form>
-          <EmailFooterInput />
+        <h3 class="font-bold text-neutral-800 dark:text-neutral-200">Stay up to date</h3>
+        <form class="mt-3" onsubmit="return false">
+          <div class="flex items-center gap-x-2">
+            <input
+              type="email"
+              placeholder="Enter your email"
+              class="block w-full rounded-full border border-neutral-300 bg-white px-4 py-2.5 text-sm text-neutral-800 placeholder-neutral-400 outline-hidden focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200 dark:placeholder-neutral-500 dark:focus:border-orange-400"
+            />
+            <button
+              type="submit"
+              class="inline-flex shrink-0 items-center gap-x-2 rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-600"
+            >
+              Subscribe
+            </button>
+          </div>
           <p class="mt-3 text-sm text-neutral-600 dark:text-neutral-400">
-            {sectionThreeContent}
+            Stay updated with the latest tools and exclusive deals.
           </p>
         </form>
       </div>
     </div>
 
-    <div
-      class="mt-9 grid gap-y-2 sm:mt-12 sm:flex sm:items-center sm:justify-between sm:gap-y-0"
-    >
+    <div class="mt-9 grid gap-y-2 sm:mt-12 sm:flex sm:items-center sm:justify-between sm:gap-y-0">
       <div class="flex items-center justify-between">
         <p class="text-sm text-neutral-600 dark:text-neutral-400">
-          © <span id="current-year"></span>
-          {SITE.title}. {crafted}
-          <a
-            class="rounded-lg font-medium underline underline-offset-2 ring-zinc-500 outline-hidden transition duration-300 hover:text-neutral-700 hover:decoration-dashed focus:outline-hidden focus-visible:ring-3 dark:ring-zinc-200 dark:hover:text-neutral-300"
-            href="https://www.gulamoff.dev/"
-            target="_blank"
-            rel="noopener noreferrer">gulamoff</a
-          >.
+          &copy; <span id="footer-current-year"></span> {companyName}. All rights reserved.
         </p>
       </div>
 
-      {/* Social Brands */}
-      <div>
-        <FooterSocialLink url={strings.socialLinks.facebook}
-          ><Icon name="facebookFooter" />
-        </FooterSocialLink>
-
-        <FooterSocialLink url={strings.socialLinks.x}
-          ><Icon name="xFooter" /></FooterSocialLink
-        >
-
-        <FooterSocialLink url={strings.socialLinks.github}
-          ><Icon name="githubFooter" />
-        </FooterSocialLink>
-
-        <FooterSocialLink url={strings.socialLinks.google}
-          ><Icon name="googleFooter" />
-        </FooterSocialLink>
-
-        <FooterSocialLink url={strings.socialLinks.slack}
-          ><Icon name="slackFooter" />
-        </FooterSocialLink>
+      <div class="flex items-center gap-x-3">
+        <a href={socialLinks.facebook} class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-neutral-300 text-neutral-700 transition-colors hover:bg-blue-500 hover:text-white dark:bg-neutral-700 dark:text-neutral-400 dark:hover:bg-blue-500 dark:hover:text-white" aria-label="Facebook" target="_blank" rel="noopener">
+          <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z" />
+          </svg>
+        </a>
+        <a href={socialLinks.x} class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-neutral-300 text-neutral-700 transition-colors hover:bg-neutral-800 hover:text-white dark:bg-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-600 dark:hover:text-white" aria-label="X" target="_blank" rel="noopener">
+          <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
+          </svg>
+        </a>
+        <a href={socialLinks.github} class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-neutral-300 text-neutral-700 transition-colors hover:bg-neutral-800 hover:text-white dark:bg-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-600 dark:hover:text-white" aria-label="GitHub" target="_blank" rel="noopener">
+          <svg class="h-4 w-4 shrink-0" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+          </svg>
+        </a>
+        <a href={socialLinks.google} class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-neutral-300 text-neutral-700 transition-colors hover:bg-red-500 hover:text-white dark:bg-neutral-700 dark:text-neutral-400 dark:hover:bg-red-500 dark:hover:text-white" aria-label="Google" target="_blank" rel="noopener">
+          <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
+          </svg>
+        </a>
+        <a href={socialLinks.slack} class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-neutral-300 text-neutral-700 transition-colors hover:bg-purple-500 hover:text-white dark:bg-neutral-700 dark:text-neutral-400 dark:hover:bg-purple-500 dark:hover:text-white" aria-label="Slack" target="_blank" rel="noopener">
+          <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" />
+          </svg>
+        </a>
       </div>
     </div>
-
-    <script>
-      const year = new Date().getFullYear();
-      const element = document.getElementById('current-year');
-      element!.innerText = year.toString();
-    </script>
   </div>
 </footer>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const yearEl = document.getElementById('footer-current-year')
+    if (yearEl) yearEl.innerText = new Date().getFullYear().toString()
+  })
+</script>

@@ -1,0 +1,196 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Footer from '../../components/Footer.astro';
+import Breadcrumb from '../../components/Breadcrumb.astro';
+import { getCompany, type CompanyData } from '../../data/demoData';
+
+export function getStaticPaths() {
+  return [
+    { params: { company: 'paradigm' } },
+    { params: { company: 'sampletech' } },
+    { params: { company: 'tokyocommerce' } },
+  ];
+}
+
+const { company } = Astro.params;
+const data: CompanyData = getCompany(company);
+const loc = data.locale;
+const t = (ja: string, en: string) => (loc === 'en' ? en : ja);
+const title = t(`${data.nameJa} | よくあるご質問`, `${data.name} | FAQ`);
+const desc = t(`${data.nameJa}のよくあるご質問。`, `Frequently asked questions about ${data.name}.`);
+
+const crumbs = [
+  { label: { ja: 'ホーム', en: 'Home' }, href: '/' },
+  { label: { ja: 'FAQ', en: 'FAQ' }, href: `/faq/${company}` },
+];
+
+const faqs = [
+  { q: { ja: 'Webサイト制作の費用はいくらですか？', en: 'How much does website development cost?' }, a: { ja: '制作するサイトの種類や規模によって異なります。コーポレートサイトの場合は50万円〜、ECサイトの場合は100万円〜が目安です。まずは無料相談でお見積りさせていただきます。', en: 'The cost varies depending on the type and scale of the website. Corporate sites start from ¥500,000, e-commerce sites from ¥1,000,000. Please contact us for a free quote.' }, cat: 'service' },
+  { q: { ja: '制作期間はどのくらいかかりますか？', en: 'How long does development take?' }, a: { ja: 'コーポレートサイトの場合、企画・設計から公開まで約4〜8週間が目安です。規模や機能によって前後します。', en: 'For corporate websites, approximately 4-8 weeks from planning to launch. This varies depending on scale and features.' }, cat: 'service' },
+  { q: { ja: 'SEO対策の効果はいつ頃から現れますか？', en: 'How long until SEO results appear?' }, a: { ja: 'SEO対策の効果が検索順位に反映されるまでには、通常3〜6ヶ月程度かかります。競合状況やキーワードの難易度によって異なります。', en: 'SEO results typically take 3-6 months to reflect in search rankings. This varies depending on competition and keyword difficulty.' }, cat: 'service' },
+  { q: { ja: 'MEO対策とは何ですか？', en: 'What is MEO?' }, a: { ja: 'MEO（Map Engine Optimization）とは、Googleマップなどの地図検索エンジンでの上位表示を目指す対策です。Googleビジネスプロフィールの最適化、口コミ管理、ローカルコンテンツの制作などを通じて、地域のお客様へのリーチを強化します。', en: 'MEO (Map Engine Optimization) aims to improve visibility on map search engines like Google Maps. Through Google Business Profile optimization, review management, and local content creation, it strengthens reach to local customers.' }, cat: 'service' },
+  { q: { ja: 'サポート体制はどのようになっていますか？', en: 'What is your support structure?' }, a: { ja: '公開後の運用サポートも承っております。月額の保守プランでは、コンテンツ更新代行、セキュリティアップデート、アクセス解析レポートの提供を行います。緊急時は電話・メールにて対応いたします。', en: 'We also offer post-launch support. Our monthly maintenance plan includes content update services, security updates, and access analysis reports. Emergency support is available by phone and email.' }, cat: 'service' },
+  { q: { ja: '料金の支払い方法を教えてください。', en: 'What payment methods do you accept?' }, a: { ja: `クレジットカード（VISA/Mastercard/JCB/AMEX）、銀行振込、Stripe決済に対応しています。分割払いについては別途ご相談ください。`, en: 'We accept credit cards (VISA/Mastercard/JCB/AMEX), bank transfers, and Stripe. For installment payments, please consult us separately.' }, cat: 'pricing' },
+  { q: { ja: '解約やキャンセルは可能ですか？', en: 'Can I cancel my subscription?' }, a: { ja: '継続契約の解約は、解約希望月の前月末までにご連絡ください。月途中の解約でも、日割り計算は行っておりませんのでご了承ください。年間契約の途中解約については、契約内容により条件が異なります。', en: 'For ongoing contracts, please contact us by the end of the month prior to your desired cancellation month. Please note that we do not offer prorated refunds for mid-month cancellations. Early termination of annual contracts has different conditions based on the contract terms.' }, cat: 'pricing' },
+  { q: { ja: '対応している技術スタックは何ですか？', en: 'What tech stack do you use?' }, a: { ja: 'Astro、Next.js、React、Vue.js、TypeScript、Tailwind CSS、Supabase、Stripe、MicroCMS など、モダンな技術スタックを採用しています。クライアント様の要件に応じて最適な技術を選定します。', en: 'We use modern tech stacks including Astro, Next.js, React, Vue.js, TypeScript, Tailwind CSS, Supabase, Stripe, and MicroCMS. We select the optimal technology based on client requirements.' }, cat: 'tech' },
+  { q: { ja: 'セキュリティ対策はどのようなものがありますか？', en: 'What security measures do you have?' }, a: { ja: '全ページSSL（HTTPS）対応、WAF（Web Application Firewall）導入、定期的な脆弱性診断、二要素認証、アクセス制限など、複数のセキュリティ対策を実施しています。また、ISO/IEC 27001:2022 認証を取得しています。', en: 'We implement multiple security measures including full SSL (HTTPS), WAF (Web Application Firewall), regular vulnerability assessments, two-factor authentication, and access restrictions. We are also ISO/IEC 27001:2022 certified.' }, cat: 'tech' },
+  { q: { ja: 'スマートフォン対応（レスポンシブ対応）はしていますか？', en: 'Do you support mobile/responsive design?' }, a: { ja: 'すべてのWeb制作案件で、レスポンシブデザインを標準対応しています。スマートフォン、タブレット、デスクトップの各デバイスで最適な表示を実現します。', en: 'Responsive design is a standard feature for all our web development projects. We ensure optimal display across smartphones, tablets, and desktop devices.' }, cat: 'tech' },
+  { q: { ja: '納品後の修正対応は可能ですか？', en: 'Can I request revisions after delivery?' }, a: { ja: '公開後30日間は軽微な修正を無償で承ります。それ以降の修正や機能追加については、別途お見積りとなります。', en: 'Minor revisions are provided free of charge for 30 days after launch. Subsequent modifications or feature additions will be quoted separately.' }, cat: 'service' },
+  { q: { ja: 'クレジットカード情報は安全ですか？', en: 'Is my credit card information safe?' }, a: { ja: '決済はStripe（PCI DSS Level 1認証取得）を通じて行われ、当社サーバーにクレジットカード情報が保存されることは一切ありません。通信はSSL/TLSで暗号化されています。', en: 'Payments are processed through Stripe (PCI DSS Level 1 certified). Credit card information is never stored on our servers. All communication is encrypted via SSL/TLS.' }, cat: 'pricing' },
+  { q: { ja: '問い合わせ後の流れを教えてください。', en: 'What happens after I contact you?' }, a: { ja: 'お問い合わせいただいてから1営業日以内に、担当者よりメールまたはお電話でご連絡いたします。その後、ヒアリングお打ち合わせ → ご提案書の提出 → 契約 → 制作開始という流れになります。', en: 'Within 1 business day of your inquiry, a representative will contact you by email or phone. The process then proceeds: consultation meeting → proposal submission → contract → project start.' }, cat: 'other' },
+];
+---
+
+<BaseLayout title={title} description={desc} locale={loc}>
+  <Navbar locale={loc} current={`/faq/${company}`} />
+
+  <main class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <Breadcrumb items={crumbs} locale={loc} />
+
+    <div class="my-8">
+      <h1 class="text-3xl font-bold text-gray-900 leading-tight mb-2">{t('よくあるご質問', 'FAQ')}</h1>
+      <p class="text-gray-600">{t('お客様からよくいただくご質問をまとめました。', 'Here are answers to frequently asked questions.')}</p>
+    </div>
+
+    <!-- Search -->
+    <div class="relative mb-6">
+      <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <input
+        type="text"
+        id="faq-search"
+        placeholder={t('質問を検索...', 'Search questions...')}
+        class="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition"
+      />
+    </div>
+
+    <!-- Category tabs -->
+    <div class="flex flex-wrap gap-2 mb-8" id="faq-tabs">
+      {[
+        { id: 'all', label: { ja: 'すべて', en: 'All' } },
+        { id: 'service', label: { ja: 'サービス', en: 'Services' } },
+        { id: 'pricing', label: { ja: '料金', en: 'Pricing' } },
+        { id: 'tech', label: { ja: '技術', en: 'Technical' } },
+        { id: 'other', label: { ja: 'その他', en: 'Other' } },
+      ].map((tab) => (
+        <button
+          type="button"
+          data-category={tab.id}
+          class={`faq-tab px-4 py-2 rounded-full text-sm font-medium transition-colors duration-150 ${
+            tab.id === 'all'
+              ? 'bg-brand-600 text-white'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
+        >
+          {loc === 'ja' ? tab.label.ja : tab.label.en}
+        </button>
+      ))}
+    </div>
+
+    <!-- FAQ accordion -->
+    <div class="space-y-3" id="faq-list">
+      {faqs.map((faq, i) => (
+        <details class="faq-item group border border-gray-200 rounded-xl overflow-hidden" data-category={faq.cat}>
+          <summary class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors duration-150 list-none">
+            <div class="flex items-start gap-3 pr-6">
+              <span class="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full bg-brand-100 text-brand-700 text-xs font-bold mt-0.5">
+                Q
+              </span>
+              <span class="text-sm font-medium text-gray-800">
+                {loc === 'ja' ? faq.q.ja : faq.q.en}
+              </span>
+            </div>
+            <svg class="shrink-0 w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </summary>
+          <div class="px-5 pb-5">
+            <div class="flex items-start gap-3 pt-3 border-t border-gray-100">
+              <span class="shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-700 text-xs font-bold mt-0.5">
+                A
+              </span>
+              <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+                {loc === 'ja' ? faq.a.ja : faq.a.en}
+              </p>
+            </div>
+          </div>
+        </details>
+      ))}
+      <div id="no-results" class="hidden text-center py-12 text-gray-400">
+        <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <p class="text-sm">{t('該当する質問が見つかりませんでした。', 'No matching questions found.')}</p>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="mt-12 text-center bg-brand-50 rounded-2xl p-8">
+      <h3 class="text-lg font-bold text-brand-900 mb-2">{t('お探しの回答が見つかりませんか？', "Didn't find the answer you're looking for?")}</h3>
+      <p class="text-sm text-brand-700 mb-4">{t('お気軽にお問い合わせください。', 'Please feel free to contact us.')}</p>
+      <a href={`/contact/${company}`} class="inline-block px-6 py-2.5 bg-brand-600 text-white text-sm font-semibold rounded-lg hover:bg-brand-700 transition-colors">
+        {t('お問い合わせはこちら', 'Contact Us')}
+      </a>
+    </div>
+  </main>
+
+  <Footer locale={loc} />
+
+  <script>
+    const searchInput = document.getElementById('faq-search');
+    const tabs = document.querySelectorAll('.faq-tab');
+    const items = document.querySelectorAll('.faq-item');
+    const noResults = document.getElementById('no-results');
+    let activeCategory = 'all';
+
+    function filterFaqs() {
+      const query = searchInput?.value.toLowerCase() || '';
+      let visibleCount = 0;
+      items.forEach((item) => {
+        const cat = item.dataset.category;
+        const text = item.querySelector('summary span:last-child')?.textContent?.toLowerCase() || '';
+        const matchCat = activeCategory === 'all' || cat === activeCategory;
+        const matchSearch = text.includes(query);
+        if (matchCat && matchSearch) {
+          item.style.display = '';
+          visibleCount++;
+        } else {
+          item.style.display = 'none';
+        }
+      });
+      if (noResults) {
+        noResults.classList.toggle('hidden', visibleCount > 0);
+      }
+    }
+
+    searchInput?.addEventListener('input', filterFaqs);
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        activeCategory = tab.dataset.category || 'all';
+        tabs.forEach((t) => {
+          t.className = t.dataset.category === activeCategory
+            ? 'faq-tab px-4 py-2 rounded-full text-sm font-medium transition-colors duration-150 bg-brand-600 text-white'
+            : 'faq-tab px-4 py-2 rounded-full text-sm font-medium transition-colors duration-150 bg-gray-100 text-gray-600 hover:bg-gray-200';
+        });
+        filterFaqs();
+      });
+    });
+  </script>
+
+  <script type="application/ld+json" set:html={JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    name: title,
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: loc === 'ja' ? faq.q.ja : faq.q.en,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: loc === 'ja' ? faq.a.ja : faq.a.en,
+      },
+    })),
+  })} />
+</BaseLayout>
