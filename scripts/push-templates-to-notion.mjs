@@ -10,7 +10,7 @@
  *   $env:SUPABASE_SERVICE_ROLE_KEY="..."; $env:NOTION_API_KEY="..."; node scripts/push-templates-to-notion.mjs
  */
 
-const SUPA = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://yihdmgtxiqfdgdueolub.supabase.co"
+const SUPA = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""
 const SKEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const NKEY = process.env.NOTION_API_KEY
 const DB = process.env.NOTION_DB_TEMPLATES_JP ?? "115e2b0e79424bb0813fc05402096f95"

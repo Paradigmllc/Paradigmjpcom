@@ -11,7 +11,7 @@
  */
 
 import { spawnSync } from "node:child_process"
-import { getCoolifyAuth } from "./lib/coolify-env.mjs"
+import { DEFAULT_APP_UUID, getCoolifyAuth } from "./lib/coolify-env.mjs"
 
 const DRY = process.argv.includes("--dry")
 const NO_WAIT = process.argv.includes("--no-wait")
@@ -26,7 +26,7 @@ if (!AUTH) {
 
 const TOKEN = AUTH.token
 const BASE = AUTH.baseUrl
-const APP_UUID = process.env.PARADIGM_APP_UUID || "i12am4vvcbggefnqdizhnv9a"
+const APP_UUID = process.env.PARADIGM_APP_UUID || DEFAULT_APP_UUID
 const GH_REPO = "git@github.com:Paradigmllc/Paradigmjpcom.git"
 
 async function api(path, options = {}) {

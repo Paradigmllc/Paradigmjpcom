@@ -1,3 +1,70 @@
+## CURRENT STATUS - 2026-06-18 Hetzner / OSS Supabase Recovery
+
+### Summary
+- Coolify / RevenueOS / Supabase OSS / Twenty / surrounding OSS routes were audited and repaired on Hetzner (`178.105.138.55`).
+- Do not paste real API keys or passwords into this file. Production secrets are stored in runtime env / approved non-git secret storage.
+
+### Production Verification
+| Service | Result |
+| --- | --- |
+| paradigmjp.com `/ja` | HTTP 200 |
+| Coolify | HTTP 302 `/login` |
+| Supabase Studio | HTTP 307 `/project/default`; container healthy |
+| Supabase REST | `/rest/v1/sales_companies` returns JSON 401 for anon, not Studio HTML |
+| RevenueOS health | HTTP 200, core lanes OK; degraded only by optional missing integrations |
+| Twenty | HTTP 200; API token regenerated from current workspace and pull dry-run works |
+| Twenty pull | scanned 5, updated 1, skipped 4 due missing/invalid domains |
+| Trigger.dev | runs API reachable from RevenueOS health |
+| Dify | API reachable from RevenueOS health |
+| Crawl4AI | health HTTP 200 |
+| FlareSolverr | connected from RevenueOS health |
+| n8n | container up |
+| NocoDB | HTTP 200 |
+| Directus | route reachable, `/server/health` returns 403 |
+| Metabase | HTTP 200 |
+| Docuseal | HTTP 302 `/setup` |
+| Chatwoot | HTTP 302 `/installation/onboarding` after pgvector DB fix |
+
+### Fixes Applied
+- Supabase OSS: restored RevenueOS RLS/grants, revoked anon/authenticated access on `sales_*` and `leads`, restored `service_role` DML, added missing enrichment runtime columns and missed migration fields.
+- Supabase routing: added high-priority Traefik route for `supabase.paradigmjp.com/rest/v1` to PostgREST while keeping Studio on root.
+- Supabase Studio: fixed container healthcheck / edge functions management env and recreated Studio.
+- RevenueOS app: restored OSS Supabase env, Trigger.dev env, Twenty env, Dify env, browser-search env, and attached app to `supabase_supabase-net` and `services-net`.
+- Twenty: regenerated a valid current workspace API token, fixed custom field physical columns on the workspace company table, verified REST and RevenueOS pull.
+- Chatwoot: changed `chatwoot-db` from plain Postgres to `pgvector/pgvector:pg16`, ran `db:chatwoot_prepare`, and restored web boot.
+- Traefik OSS routes: restored NocoDB / Directus / Metabase / Docuseal / Chatwoot public routing.
+- Local migration added: `supabase/migrations/migration_058_sales_oss_security_and_enrichment_runtime.sql`.
+
+### Remaining Notes
+- RevenueOS `/api/sales/health` is `degraded` only because optional providers are not configured: Steel, Stagehand, Crawlee worker, Outreach worker, some Dify optional keys, Notion, GBiz, PSI, Hunter.
+- Twenty pull skips records that have no valid domain in Twenty. That is data quality, not infra.
+- Directus route is reachable; health endpoint responds 403 rather than public 200.
+- Chatwoot is now reachable at onboarding. If actual use is needed, complete/admin-seed Chatwoot setup next.
+- Existing unrelated local changes before this recovery remain untouched: `package.json`, `package-lock.json`, `scripts/unlock-payload-users.sh`.
+
+### Cloud Supabase Cancellation Check - 2026-06-18
+- Production RevenueOS container env points to OSS Supabase only: `SALES_SUPABASE_URL=http://supabase-api-proxy:80`, `NEXT_PUBLIC_SUPABASE_URL=https://supabase.paradigmjp.com`.
+- Running container env scan found zero `*.supabase.co` / old project-ref references.
+- n8n SQLite workflow and credentials scan found zero old Cloud Supabase references.
+- Public smoke responses for paradigmjp.com, RevenueOS health, Supabase REST, Twenty, and n8n contain no old project-ref references.
+- Disabled the old root cron entry that retried `/opt/backups/retry-cloud-dump.sh` every 2 minutes.
+- Removed old Cloud Supabase fallback defaults from checked runnable helper scripts and updated the tooling bootstrap migration to `https://supabase.paradigmjp.com`.
+- Stale old project-ref strings remain only in historical migration comments and two legacy seed scripts that currently fail `node --check` before any Supabase call; they are not part of the checked production runtime.
+- Safe cancellation judgement: Cloud Supabase is no longer required for the checked production runtime. Keep a final export/archive before deleting because Supabase project deletion permanently removes project data and backups.
+
+### Final Backup Implementation - 2026-06-18
+- Final cutover archive created on Hetzner: `/opt/backups/final-supabase-cutover-20260618T014151Z.tar.gz`.
+- Local copy also saved: `C:\Users\apple\Desktop\final-supabase-cutover-20260618T014151Z.tar.gz`.
+- Archive SHA256: `751cc899e34d117bdfc546b0e0fd62a364cd9cd353673f445dcdea880047c3fd`.
+- Archive verification passed on host with `sha256sum -c` and `tar -tzf`; local Desktop copy checksum also matched.
+- Cloud Supabase API export included: 276 REST tables, 341,802 exported rows, 0 table errors, 2 Auth users, 2 Storage buckets, 24/24 Storage objects downloaded, 0 Storage errors.
+- Cloud direct `pg_dump` was attempted but failed because the saved pooler credential was rejected. The archive includes the error log at `logs/cloud-pg-dump.err`.
+- Current OSS Supabase full backup included: `oss/db/oss-postgres.dump`, `oss/db/oss-postgres.sql.gz`, `oss/db/oss-globals.sql.gz`, table lists, and key table counts.
+- OSS key table counts at backup time: `sales_companies=255`, `leads=198`, `sales_pipeline_runs=1520`.
+- Nightly OSS Supabase backup implemented with systemd: `/usr/local/sbin/backup-oss-supabase.sh`, `oss-supabase-backup.service`, `oss-supabase-backup.timer`.
+- Timer status: enabled + active. Schedule: daily 03:30 UTC with 15 min randomized delay. Retention: 14 days.
+- First nightly backup succeeded: `/opt/backups/oss-supabase-nightly/20260618T015642Z.tar.gz`, checksum verified.
+
 ## CURRENT STATUS - 2026-06-17 Hetzner CX43 移行完了 / RevenueOS SSOT 修正
 
 ### 移行概要
