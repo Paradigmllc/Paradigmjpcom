@@ -1,12 +1,9 @@
 /**
- * Dify Demo Generator — AI-powered JSON blueprint generation
+ * AI-powered Astro demo JSON generator.
  *
- * Calls Dify Cloud workflow to generate personalized demo page blueprints
- * using LLM-powered copy generation. Falls back to rule-based generation
- * if Dify is unavailable.
- *
- * Dify API Key: DIFY_API_KEY (from reference_api_keys.md)
- * Dify Base URL: DIFY_API_BASE (default: https://api.dify.ai/v1)
+ * Dify can produce the page blueprint, but the fallback must still be
+ * customer-sendable. This module therefore validates Dify output and falls
+ * back to deterministic Japanese/English copy with the same widget contract.
  */
 import type { DiagnosticReportData } from "./diagnostic"
 import type { SalesCompany } from "./types"
@@ -17,35 +14,36 @@ interface IndustryThemeConfig {
   theme: DemoTheme
   labelJa: string
   labelEn: string
-  heroHook: string
-  services?: string[]
-  faqs?: string[]
-  metrics?: string[]
+  accentColor: string
+  accentColorDark: string
 }
 
-// Inline industry config (duplicated from personalize.ts for independence)
 const INDUSTRY_THEMES: Record<string, IndustryThemeConfig> = {
-  dental: { theme: "astrowind", labelJa: "歯科医院", labelEn: "Dental Clinic", heroHook: "新患数が2.4倍に。データが証明する歯科医院のWeb集患" },
-  construction: { theme: "screwfast", labelJa: "建設業", labelEn: "Construction", heroHook: "問合せ数3.1倍。建設業のためのWeb集客改善" },
-  consulting: { theme: "astrowind", labelJa: "コンサルティング", labelEn: "Consulting", heroHook: "成約率38%改善。コンサルティングファームのWeb刷新" },
-  restaurant: { theme: "astroship", labelJa: "飲食店", labelEn: "Restaurant", heroHook: "予約率42%向上。データドリブンな飲食店Web戦略" },
-  retail: { theme: "astroship", labelJa: "小売業", labelEn: "Retail", heroHook: "EC売上28%増。小売業のためのデジタル刷新" },
-  beauty_salon: { theme: "astroship", labelJa: "美容サロン", labelEn: "Beauty Salon", heroHook: "予約数2.8倍。美容サロンのためのWeb集客改善" },
-  accounting: { theme: "astrowind", labelJa: "会計事務所", labelEn: "Accounting Office", heroHook: "問合せ数2.1倍。会計事務所のための信頼構築Web戦略" },
-  cleaning: { theme: "screwfast", labelJa: "清掃業", labelEn: "Cleaning Service", heroHook: "問合せ数2.5倍。清掃業のためのWeb集客改善" },
-}
-
-function selectTheme(industry: string): DemoTheme {
-  return INDUSTRY_THEMES[industry]?.theme || "astrowind"
-}
-
-function getIndustryConfig(industry: string) {
-  return INDUSTRY_THEMES[industry] || INDUSTRY_THEMES.consulting
+  dental: { theme: "astrowind", labelJa: "歯科医院", labelEn: "Dental Clinic", accentColor: "#2563eb", accentColorDark: "#1e3a8a" },
+  construction: { theme: "screwfast", labelJa: "建設業", labelEn: "Construction", accentColor: "#f59e0b", accentColorDark: "#92400e" },
+  consulting: { theme: "astrowind", labelJa: "コンサルティング", labelEn: "Consulting", accentColor: "#7c3aed", accentColorDark: "#5b21b6" },
+  restaurant: { theme: "astroship", labelJa: "飲食店", labelEn: "Restaurant", accentColor: "#f97316", accentColorDark: "#9a3412" },
+  retail: { theme: "astroship", labelJa: "小売業", labelEn: "Retail", accentColor: "#0891b2", accentColorDark: "#155e75" },
+  beauty_salon: { theme: "astroship", labelJa: "美容サロン", labelEn: "Beauty Salon", accentColor: "#db2777", accentColorDark: "#831843" },
+  accounting: { theme: "astrowind", labelJa: "会計事務所", labelEn: "Accounting Office", accentColor: "#0f766e", accentColorDark: "#134e4a" },
+  cleaning: { theme: "screwfast", labelJa: "清掃業", labelEn: "Cleaning Service", accentColor: "#16a34a", accentColorDark: "#166534" },
 }
 
 function readOptionalEnv(name: string): string | null {
   const value = process.env[name]
   return value && value.trim().length > 0 ? value.trim() : null
+}
+
+function industryConfig(industry: string | null | undefined): IndustryThemeConfig {
+  return INDUSTRY_THEMES[industry ?? ""] ?? INDUSTRY_THEMES.consulting
+}
+
+function cleanText(value: unknown, fallback: string, max = 180): string {
+  if (typeof value !== "string") return fallback
+  const trimmed = value.replace(/\s+/g, " ").trim()
+  if (!trimmed) return fallback
+  if (/[�邵郢鬮隴陞陷驍]/.test(trimmed)) return fallback
+  return trimmed.length > max ? `${trimmed.slice(0, max - 1)}…` : trimmed
 }
 
 export interface DemoJsonBlueprint {
@@ -56,10 +54,6 @@ export interface DemoJsonBlueprint {
   engine: "dify" | "rules"
 }
 
-/**
- * Call Dify Cloud to generate a demo page JSON blueprint.
- * Falls back to rule-based buildThemeDemoJson() if Dify fails.
- */
 export async function generateDemoWithDify(
   company: SalesCompany,
   report: DiagnosticReportData,
@@ -68,14 +62,14 @@ export async function generateDemoWithDify(
   const baseUrl = readOptionalEnv("DIFY_API_URL") || readOptionalEnv("DIFY_API_BASE") || "https://api.dify.ai/v1"
 
   if (!apiKey) {
-    console.warn("[dify-demo] DIFY_API_KEY not configured, falling back to rules-based generation")
+    console.warn("[dify-demo] DIFY_API_KEY not configured; using rules-based demo blueprint")
     return buildRulesBasedBlueprint(company, report)
   }
 
   try {
     const locale = company.report_locale ?? report.report_locale ?? "ja"
     const industry = company.industry || "consulting"
-    const cfg = getIndustryConfig(industry)
+    const cfg = industryConfig(industry)
 
     const res = await fetch(`${baseUrl}/workflows/run`, {
       method: "POST",
@@ -89,30 +83,28 @@ export async function generateDemoWithDify(
           company_name: company.company_name,
           industry,
           locale,
-          theme: selectTheme(industry),
+          theme: cfg.theme,
           pagespeed_mobile: company.pagespeed_mobile,
           pagespeed_desktop: company.pagespeed_desktop,
           detected_issues: company.detected_issues ?? [],
           report_hook: report.hook,
           total_loss: report.total_loss,
-          acts: report.acts?.slice(0, 5).map(a => ({
-            headline: a.headline,
-            body: a.body,
-            metric_label: a.metric_label,
-            metric_value: a.metric_value,
+          acts: report.acts?.slice(0, 5).map((act) => ({
+            headline: act.headline,
+            body: act.body,
+            metric_label: act.metric_label,
+            metric_value: act.metric_value,
           })) ?? [],
           personalization_inputs: {
             industry_label: locale === "ja" ? cfg.labelJa : cfg.labelEn,
-            services: cfg.services,
-            faqs: cfg.faqs,
-            metrics: cfg.metrics,
-            hero_hook_template: cfg.heroHook,
+            accentColor: cfg.accentColor,
+            accentColorDark: cfg.accentColorDark,
           },
         },
         response_mode: "blocking",
         user: `paradigm-demo-${company.id}`,
       }),
-      signal: AbortSignal.timeout(90000),
+      signal: AbortSignal.timeout(90_000),
     })
 
     if (!res.ok) {
@@ -123,88 +115,93 @@ export async function generateDemoWithDify(
     const raw = await res.json() as Record<string, unknown>
     const data = (raw.data as Record<string, unknown>) ?? raw
     const outputs = (data.outputs as Record<string, unknown>) ?? data
-
-    // Extract the generated JSON blueprint from Dify output
     const blueprintText =
-      (outputs.text as string) ??
-      (outputs.result as string) ??
-      (outputs.json_blueprint as string) ??
-      (data.answer as string)
+      (outputs.text as string | undefined) ??
+      (outputs.result as string | undefined) ??
+      (outputs.json_blueprint as string | undefined) ??
+      (data.answer as string | undefined)
 
     if (!blueprintText) {
-      console.error("[dify-demo] No output from Dify")
+      console.error("[dify-demo] Dify returned no blueprint text")
       return buildRulesBasedBlueprint(company, report)
     }
 
-    // Parse JSON from Dify output (may be wrapped in markdown code block)
-    const jsonMatch = blueprintText.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, blueprintText]
-    const jsonStr = (jsonMatch[1] || blueprintText).trim()
-    const parsed = JSON.parse(jsonStr) as {
+    const jsonMatch = blueprintText.match(/```(?:json)?\s*([\s\S]*?)```/)
+    const parsed = JSON.parse((jsonMatch?.[1] ?? blueprintText).trim()) as {
       theme?: string
       title?: string
       blocks?: Array<{ id: string; type: string; props: Record<string, unknown> }>
       meta?: Record<string, unknown>
     }
 
-    if (!parsed.blocks || !Array.isArray(parsed.blocks) || parsed.blocks.length === 0) {
-      console.error("[dify-demo] Dify returned invalid blueprint structure, falling back")
+    if (!parsed.blocks || !Array.isArray(parsed.blocks) || parsed.blocks.length < 3) {
+      console.error("[dify-demo] Dify returned an incomplete blueprint")
       return buildRulesBasedBlueprint(company, report)
     }
 
-    console.warn(`[dify-demo] AI-generated blueprint for ${company.company_name}: ${parsed.blocks.length} blocks, theme=${parsed.theme}`)
-
-    const parsedTheme = parsed.theme === "astrowind" || parsed.theme === "screwfast" || parsed.theme === "astroship"
+    const theme: DemoTheme = parsed.theme === "astrowind" || parsed.theme === "screwfast" || parsed.theme === "astroship"
       ? parsed.theme
-      : selectTheme(industry)
+      : cfg.theme
 
     return {
-      theme: parsedTheme,
-      title: parsed.title || `${company.company_name} — ${locale === "ja" ? "Web改善デモ" : "Web Improvement Demo"}`,
+      theme,
+      title: cleanText(parsed.title, `${company.company_name} | Web改善デモ`, 90),
       blocks: parsed.blocks,
       meta: {
         ...parsed.meta,
+        locale,
+        industry,
+        accentColor: cfg.accentColor,
+        accentColorDark: cfg.accentColorDark,
         generator: "dify_llm",
         generated_at: new Date().toISOString(),
         engine: "dify",
       },
       engine: "dify",
     }
-  } catch (e) {
-    console.error("[dify-demo] Error:", e instanceof Error ? e.message : String(e))
+  } catch (error) {
+    console.error("[dify-demo] generation failed:", error instanceof Error ? error.message : String(error))
     return buildRulesBasedBlueprint(company, report)
   }
 }
 
-/**
- * Rule-based fallback — uses industry templates and diagnostic data.
- */
 function buildRulesBasedBlueprint(
   company: SalesCompany,
   report: DiagnosticReportData,
 ): DemoJsonBlueprint {
   const locale = company.report_locale ?? report.report_locale ?? "ja"
-  const ja = locale === "ja"
-  const name = company.company_name
+  const isJa = locale === "ja"
+  const name = cleanText(company.company_name, "Your Company", 80)
   const industry = company.industry || "consulting"
-  const theme = selectTheme(industry)
+  const cfg = industryConfig(industry)
   const ctaUrl = "https://cal.com/paradigm-jp/15min"
+  const primaryIssue = report.acts?.[0]
+  const secondaryIssue = report.acts?.[1]
+  const thirdIssue = report.acts?.[2]
+  const title = cleanText(
+    report.hook,
+    isJa
+      ? `${name}の強みが最初の5秒で伝わるWeb改善デモ`
+      : `A web demo that makes ${name}'s value clear in the first five seconds`,
+    110,
+  )
 
   return {
-    theme,
-    title: `${name} — ${ja ? "Web改善デモサイト" : "Web Improvement Demo"}`,
+    theme: cfg.theme,
+    title: `${name} | ${isJa ? "Web改善デモサイト" : "Web Improvement Demo"}`,
     blocks: [
       {
         id: "hero",
         type: "Hero",
         props: {
-          title: report.hook ?? `${name}のWebサイト改善提案`,
-          subtitle: ja
-            ? "データ診断に基づくパーソナライズド改善プラン。御社のデジタルプレゼンスを次のステージへ。"
-            : "Personalized improvement plan based on data diagnostics.",
-          tagline: ja ? "データ診断済み · 改善提案" : "Data-Diagnosed · Improvement Plan",
+          title,
+          subtitle: isJa
+            ? "公開データと診断結果をもとに、問い合わせ前の不安解消、比較検討、信頼材料の見せ方を改善したデモです。"
+            : "A diagnostic-led demo that improves trust proof, comparison clarity, and the path to inquiry.",
+          tagline: isJa ? `${cfg.labelJa}向け改善デモ` : `${cfg.labelEn} improvement demo`,
           actions: [
-            { variant: "primary", text: ja ? "無料診断を申し込む" : "Get Free Diagnostic", href: ctaUrl },
-            { variant: "secondary", text: ja ? "改善内容を見る" : "See Improvements", href: "#features" },
+            { variant: "primary", text: isJa ? "無料相談を予約" : "Book a free consultation", href: ctaUrl },
+            { variant: "secondary", text: isJa ? "改善ポイントを見る" : "See improvements", href: "#features" },
           ],
         },
       },
@@ -212,26 +209,40 @@ function buildRulesBasedBlueprint(
         id: "features",
         type: "Features",
         props: {
-          title: ja ? "改善ソリューション" : "Improvement Solutions",
-          subtitle: ja ? `${name}の特性に合わせた最適プラン` : `Tailored plans for ${name}`,
-          items: (report.acts ?? []).slice(0, 3).map((act, i) => ({
-            title: act.headline?.slice(0, 60) ?? (ja ? "改善施策" : "Improvement"),
-            description: act.body?.slice(0, 120) ?? "",
-            icon: ["tabler:search", "tabler:palette", "tabler:chart-bar"][i] || "tabler:star",
-          })),
+          title: isJa ? "問い合わせにつながる3つの改善" : "Three improvements that move buyers to action",
+          subtitle: isJa
+            ? `${name}の現状データから、優先度の高い改善だけを営業導線に落とし込みました。`
+            : `Built from ${name}'s diagnostic data, focused on the highest-impact sales path.`,
+          items: [
+            {
+              title: cleanText(primaryIssue?.headline, isJa ? "第一印象を整理" : "Clarify the first impression", 64),
+              description: cleanText(primaryIssue?.body, isJa ? "訪問直後に何を提供し、なぜ選ぶべきかが伝わる構成にします。" : "Make the offer and reason to choose you obvious immediately.", 140),
+              icon: "tabler:sparkles",
+            },
+            {
+              title: cleanText(secondaryIssue?.headline, isJa ? "信頼材料を前面に配置" : "Bring trust proof forward", 64),
+              description: cleanText(secondaryIssue?.body, isJa ? "実績、比較材料、対応範囲を検討中の相手が迷わない位置に配置します。" : "Place proof, scope, and comparison details where buyers expect them.", 140),
+              icon: "tabler:shield-check",
+            },
+            {
+              title: cleanText(thirdIssue?.headline, isJa ? "問い合わせ導線を短縮" : "Shorten the inquiry path", 64),
+              description: cleanText(thirdIssue?.body, isJa ? "フォーム、予約、相談CTAまでの心理的な距離を短くします。" : "Reduce hesitation between interest and a booked conversation.", 140),
+              icon: "tabler:route",
+            },
+          ],
         },
       },
       {
         id: "stats",
         type: "Stats",
         props: {
-          title: ja ? "改善シミュレーション" : "Improvement Simulation",
-          subtitle: ja ? "同業他社での改善実績に基づく想定インパクト" : "Projected impact based on industry benchmarks",
+          title: isJa ? "改善後の目標指標" : "Target improvement metrics",
+          subtitle: isJa ? "診断結果と同業ベンチマークをもとにした初期目標です。" : "Initial targets based on diagnostic findings and industry benchmarks.",
           stats: [
-            { amount: "2.4", title: ja ? "問合せ増加倍率" : "Inquiry Multiplier", icon: "tabler:trending-up" },
-            { amount: 92, title: "PageSpeed", icon: "tabler:bolt" },
-            { amount: "38", title: ja ? "CVR改善率 (%)" : "CVR Gain (%)", icon: "tabler:chart-pie" },
-            { amount: "#3", title: ja ? "主要KW 順位" : "Primary KW Rank", icon: "tabler:search" },
+            { amount: "85+", title: "PageSpeed", icon: "tabler:bolt" },
+            { amount: "A+", title: "SSL / Trust", icon: "tabler:lock" },
+            { amount: "3", title: isJa ? "主要CTA" : "Primary CTAs", icon: "tabler:target-arrow" },
+            { amount: "24h", title: isJa ? "初期改善案" : "First action plan", icon: "tabler:clock" },
           ],
         },
       },
@@ -239,61 +250,61 @@ function buildRulesBasedBlueprint(
         id: "cta",
         type: "CallToAction",
         props: {
-          title: ja ? "まずは無料診断から" : "Start with a Free Diagnostic",
-          subtitle: ja ? "15分のオンライン診断で改善余地を可視化します" : "15-min online diagnostic reveals your improvement potential",
-          callToAction: { variant: "primary", text: ja ? "無料診断を申し込む" : "Book Free Consult", href: ctaUrl },
+          title: isJa ? "この改善案を実サイトに落とし込みます" : "Turn this demo into the live site",
+          subtitle: isJa
+            ? "15分で、優先順位、制作範囲、最短で問い合わせ改善につなげる実装順を整理します。"
+            : "In 15 minutes we clarify priorities, scope, and the fastest implementation sequence.",
+          callToAction: { variant: "primary", text: isJa ? "15分無料相談を予約" : "Book a free 15-min call", href: ctaUrl },
         },
       },
     ],
     meta: {
-      title: `${name} — ${ja ? "Web改善デモサイト" : "Web Improvement Demo"}`,
-      description: report.hook ?? `${name} improvement proposal`,
+      title: `${name} | ${isJa ? "Web改善デモサイト" : "Web Improvement Demo"}`,
+      description: cleanText(report.hook, isJa ? `${name}のWeb改善デモ` : `${name} web improvement demo`, 150),
       industry,
       locale,
+      company_name: name,
+      accentColor: cfg.accentColor,
+      accentColorDark: cfg.accentColorDark,
       calBookingUrl: ctaUrl,
-      generator: "rules_v2",
+      generator: "rules_v3",
       generated_at: new Date().toISOString(),
+      engine: "rules",
     },
     engine: "rules",
   }
 }
 
-const DIFY_DEMO_SYSTEM_PROMPT = `あなたはプロのWeb制作ディレクターです。
-企業の診断データに基づいて、最高品質のWebサイト構成JSONを生成してください。
+const DIFY_DEMO_SYSTEM_PROMPT = `You are a senior web strategist and Astro component planner for Paradigm Revenue OS.
 
-## 出力形式
+Return only valid JSON. Do not wrap the response in markdown.
+
+Create a high-quality, customer-sendable demo page blueprint from diagnostic evidence.
+The output must match this shape:
 {
   "theme": "astrowind" | "screwfast" | "astroship",
-  "title": "企業名 — Web改善デモ",
+  "title": "Company | Web improvement demo",
   "blocks": [
     {
-      "id": "一意のID",
-      "type": "Widget名（Hero, Features, Stats, CallToAction, FAQs, Testimonials, Pricing, Steps, Content, Brands, Contact から選択）",
-      "props": { Widget固有のプロパティ（title, subtitle, items, stats, actions など） }
+      "id": "stable-id",
+      "type": "Hero" | "Features" | "Stats" | "CallToAction",
+      "props": {}
     }
   ],
   "meta": {
-    "title": "ページタイトル",
-    "description": "メタディスクリプション（120文字以内）",
-    "industry": "業種コード",
-    "locale": "ja/en",
-    "accentColor": "#HEXカラー",
-    "accentColorDark": "#HEXカラー",
+    "title": "...",
+    "description": "...",
+    "industry": "...",
+    "locale": "ja" | "en",
+    "accentColor": "#7c3aed",
+    "accentColorDark": "#5b21b6",
     "calBookingUrl": "https://cal.com/paradigm-jp/15min"
   }
 }
 
-## 必須ブロック（最低6個）
-1. Hero — 企業名 + 診断結果の核心 + CTA
-2. Features — 3-6改善施策
-3. Stats — 診断指標（PageSpeed/損失額/改善余地）
-4. Testimonials — 想定効果
-5. FAQs — 業種別FAQ 3-5問
-6. CallToAction — 最終CTA
-
-## コピールール
-- 診断データの具体的数値を必ず盛り込む
-- 日本語は「です・ます」調
-- Heroタイトルは20-30文字
-- CTAは「無料診断を申し込む」など行動喚起型
-- 誇大表現禁止`
+Rules:
+- If locale is "ja", all visible copy must be natural Japanese.
+- Use the provided diagnostic acts as evidence; do not invent precise facts.
+- Include at least Hero, Features, Stats, and CallToAction blocks.
+- Keep copy concise enough to fit a polished landing page.
+- Do not output mojibake, escaped HTML, markdown, or explanatory text.`

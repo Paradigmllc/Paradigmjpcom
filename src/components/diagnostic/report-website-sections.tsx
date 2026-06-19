@@ -188,18 +188,21 @@ export function BeforeAfterComparison({ data, lang }: { data: DiagnosticReportDa
               )}
               {!hasSteelScreenshot && hasDemo && (
                 <div className="rounded-lg border border-emerald-200 overflow-hidden mb-4">
-                  {/* 改善後デモサイトのiframeプレビュー */}
-                  <div className="relative" style={{ paddingBottom: "75%" }}>
-                    <iframe
-                      src={data.demo_url!}
-                      className="absolute inset-0 w-full h-full border-0"
-                      title={lang === "ja" ? "改善後デモサイト" : "Improved demo site"}
-                      loading="lazy"
-                      sandbox="allow-scripts"
-                    />
+                  <div className="relative h-[360px] overflow-hidden bg-[#050510]">
+                    <div className="absolute left-0 top-0 h-[820px] w-[1280px] origin-top-left scale-[0.45] sm:scale-[0.55] lg:scale-[0.42]">
+                      <iframe
+                        src={data.demo_url!}
+                        className="h-[820px] w-[1280px] border-0"
+                        title={lang === "ja" ? "改善後デモサイト" : "Improved demo site"}
+                        loading="lazy"
+                        sandbox="allow-scripts allow-same-origin"
+                        scrolling="no"
+                      />
+                    </div>
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#050510] to-transparent" />
                   </div>
                   <div className="px-4 py-2 bg-emerald-50 flex items-center justify-between">
-                    <span className="text-xs text-emerald-700 font-medium">{lang === "ja" ? "改善後デモサイト（スクロール可能）" : "Improved demo (scrollable)"}</span>
+                    <span className="text-xs text-emerald-700 font-medium">{lang === "ja" ? "改善後デモサイト（プレビュー）" : "Improved demo preview"}</span>
                     <a href={data.demo_url!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-800 font-bold">
                       <ExternalLink className="h-3 w-3" />{lang === "ja" ? "別タブで開く" : "Open in new tab"}
                     </a>

@@ -36,7 +36,8 @@ export function sourceDataStatus(karte: CompanyKarteSnapshot): string {
 }
 
 export function sourceDataCounts(karte: CompanyKarteSnapshot): string {
-  return `collected ${karte.collectedCount} / configured ${karte.configuredCount} / missing ${karte.missingCount} / error ${karte.errorCount}`
+  const total = karte.sourceItems.length || karte.collectedCount + karte.configuredCount + karte.missingCount + karte.errorCount
+  return `collected ${karte.collectedCount}/${total} / configured ${karte.configuredCount} / missing ${karte.missingCount} / error ${karte.errorCount}`
 }
 
 export function firstSourceError(karte: CompanyKarteSnapshot): string | null {

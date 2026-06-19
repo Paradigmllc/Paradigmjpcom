@@ -35,12 +35,13 @@ import { pullTwentyCompaniesToSupabase } from "./twenty-pull"
 
 interface SupabaseMockOptions {
   existingCompany?: Record<string, unknown> | null
+  existingDomain?: string
   activeRunId?: string | null
 }
 
 function createSupabaseMock(options: SupabaseMockOptions = {}) {
   mocks.batchFindExistingByDomains.mockResolvedValue(
-    options.existingCompany ? new Map([["example.jp", options.existingCompany]]) : new Map(),
+    options.existingCompany ? new Map([[options.existingDomain ?? "example.jp", options.existingCompany]]) : new Map(),
   )
 
   const calls = {
@@ -95,7 +96,7 @@ function createSupabaseMock(options: SupabaseMockOptions = {}) {
   return { client: { from }, calls }
 }
 
-function stubTwentyList(companyPatch: Record<string, unknown> = {}) {
+function stubTwentyList(companyPatch: Record<string, unknown> = {}, domain = "https://www.example.jp") {
   vi.stubEnv("TWENTY_BASE_URL", "https://twenty.example.com")
   vi.stubEnv("TWENTY_API_KEY", "test-key")
   vi.stubGlobal(
@@ -108,7 +109,7 @@ function stubTwentyList(companyPatch: Record<string, unknown> = {}) {
               {
                 id: "twenty-company-1",
                 name: "Example Co",
-                domainName: { primaryLinkUrl: "https://www.example.jp" },
+                domainName: { primaryLinkUrl: domain },
                 paradigmCountryName: "JP",
                 ...companyPatch,
               },
@@ -160,6 +161,64 @@ describe("pullTwentyCompaniesToSupabase", () => {
       requested_by: "twenty_sync",
     })
     expect(supabase.calls.stepInserts[0]).toHaveLength(2)
+  })
+
+  it("routes foreign ccTLD companies to global Japan-entry reports", async () => {
+    stubTwentyList({ paradigmCountryName: null }, "https://www.smesouthafrica.co.za")
+    const supabase = createSupabaseMock()
+    mocks.getServiceSalesSupabase.mockReturnValue(supabase.client)
+    mocks.upsertCompanyByDomain.mockResolvedValue({
+      ok: true,
+      company: {
+        id: "company-za",
+        report_url: "https://paradigmjp.com/en/report/smesouthafrica",
+        pipeline_status: "pending",
+      },
+    })
+
+    const result = await pullTwentyCompaniesToSupabase(10)
+
+    expect(result.created).toBe(1)
+    expect(mocks.upsertCompanyByDomain).toHaveBeenCalledWith(
+      expect.objectContaining({
+        domain: "smesouthafrica.co.za",
+        region: "global",
+        report_locale: "en",
+        target_country: "ZA",
+        template_variant: "japan_entry",
+      }),
+    )
+  })
+
+  it("repairs existing foreign companies that were previously saved as ja website reports", async () => {
+    stubTwentyList({ paradigmCountryName: null }, "https://www.smesouthafrica.co.za")
+    const supabase = createSupabaseMock({
+      existingDomain: "smesouthafrica.co.za",
+      existingCompany: {
+        id: "company-za",
+        slug: "smesouthafrica-abc123",
+        meta: {},
+        region: "jp",
+        report_locale: "ja",
+        target_country: "JP",
+        template_variant: "website_diagnostic",
+        pipeline_status: "report_ready",
+        report_url: "https://paradigmjp.com/ja/report/smesouthafrica-abc123",
+        detected_issues: [],
+      },
+    })
+    mocks.getServiceSalesSupabase.mockReturnValue(supabase.client)
+
+    const result = await pullTwentyCompaniesToSupabase(10)
+
+    expect(result.updated).toBe(1)
+    expect(supabase.calls.companyUpdates[0]).toMatchObject({
+      region: "global",
+      report_locale: "en",
+      target_country: "ZA",
+      template_variant: "japan_entry",
+      report_url: "https://paradigmjp.com/en/report/smesouthafrica-abc123",
+    })
   })
 
   it("does not auto-create pipeline runs unless explicitly requested", async () => {

@@ -3,6 +3,7 @@
 import { motion } from "framer-motion"
 import { ArrowRight, Check, ExternalLink, Sparkles } from "lucide-react"
 import type { ReactNode } from "react"
+import { useEffect, useState } from "react"
 import type { VisualEvidenceAnnotation } from "@/lib/sales/diagnostic"
 import { Pill } from "./report-utils"
 
@@ -36,6 +37,15 @@ export default function ReportHeroSection({
   screenshotUrl?: string | null
   annotations?: VisualEvidenceAnnotation[]
 }) {
+  const [imageFailed, setImageFailed] = useState(false)
+
+  useEffect(() => {
+    setImageFailed(false)
+  }, [screenshotUrl])
+
+  const isJapanese = lang === "ja"
+  const showScreenshot = Boolean(screenshotUrl && !imageFailed)
+
   return (
     <section className="relative overflow-hidden px-5 py-16 sm:py-24">
       <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(24,24,27,0.07)_1px,transparent_1px),linear-gradient(to_bottom,rgba(24,24,27,0.07)_1px,transparent_1px)] bg-[size:64px_64px]" />
@@ -89,7 +99,7 @@ export default function ReportHeroSection({
             rel="noopener noreferrer"
             className="inline-flex h-12 items-center gap-2 rounded-full border border-zinc-300 bg-white px-5 text-sm font-semibold text-zinc-950 shadow-sm transition-transform hover:scale-105"
           >
-            {lang === "ja" ? "15分無料相談を予約" : "Book Free 15min Call"}
+            {isJapanese ? "15分無料相談を予約" : "Book Free 15min Call"}
             <ExternalLink size={15} aria-hidden />
           </a>
         </motion.div>
@@ -118,31 +128,40 @@ export default function ReportHeroSection({
               <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
               <span className="ml-auto text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
-                {lang === "ja" ? "取得済みサイト証拠" : "Captured Site Evidence"}
+                {isJapanese ? "取得済みサイト証拠" : "Captured Site Evidence"}
               </span>
             </div>
-            <div className="relative max-h-[520px] overflow-hidden bg-zinc-100">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={screenshotUrl}
-                alt={offerCopy.screenshotAlt}
-                loading="eager"
-                crossOrigin="anonymous"
-                className="w-full object-cover object-top"
-                onError={(e) => {
-                  const target = e.currentTarget
-                  target.style.display = "none"
-                  const fallback = target.parentElement
-                  if (fallback && !fallback.querySelector(".screenshot-fallback")) {
-                    const div = document.createElement("div")
-                    div.className = "screenshot-fallback flex items-center justify-center h-64 bg-zinc-100 text-zinc-400 text-sm"
-                    div.textContent = lang === "ja" ? "スクリーンショット取得中..." : "Screenshot loading..."
-                    fallback.appendChild(div)
-                  }
-                }}
-              />
+            <div className="relative aspect-[16/9] max-h-[520px] overflow-hidden bg-zinc-100">
+              {showScreenshot ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={screenshotUrl}
+                  alt={offerCopy.screenshotAlt}
+                  loading="eager"
+                  crossOrigin="anonymous"
+                  referrerPolicy="no-referrer"
+                  className="h-full w-full object-cover object-top"
+                  onError={() => setImageFailed(true)}
+                />
+              ) : (
+                <div className="flex h-full min-h-72 items-center justify-center bg-[radial-gradient(circle_at_30%_20%,rgba(124,58,237,0.12),transparent_34%),linear-gradient(135deg,#f4f4f5,#ffffff)] px-6">
+                  <div className="max-w-md text-center">
+                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white text-zinc-950 shadow-sm">
+                      <Sparkles size={18} aria-hidden />
+                    </div>
+                    <p className="text-sm font-semibold text-zinc-800">
+                      {isJapanese ? "サイト証拠スクリーンショットを再取得中" : "Refreshing captured site evidence"}
+                    </p>
+                    <p className="mt-2 text-xs leading-6 text-zinc-500">
+                      {isJapanese
+                        ? "画像CDNやブラウザキャッシュで一時的に読めない場合でも、レポートのレイアウトは崩れません。"
+                        : "The report keeps its layout even when the image CDN or browser cache misses temporarily."}
+                    </p>
+                  </div>
+                </div>
+              )}
               <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(244,63,94,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(244,63,94,0.1)_1px,transparent_1px)] bg-[size:56px_56px]" />
-              {annotations.slice(0, 2).map((annotation, index) => (
+              {showScreenshot && annotations.slice(0, 2).map((annotation, index) => (
                 <div
                   key={annotation.id}
                   className="absolute"

@@ -12,10 +12,12 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { upsertCompanyByDomain } from "@/lib/sales/companies"
 import {
   inferVariant,
+  inferTargetCountryFromDomain,
   getRoutingMeta,
   normalizeReportLocale,
   normalizeTargetCountry,
 } from "@/lib/sales/routing"
+import { salesScopeFromCountry } from "@/lib/sales/locale-scope"
 import type { SalesCompany } from "@/lib/sales/types"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 
@@ -60,16 +62,28 @@ export async function POST(req: NextRequest) {
 
     for (const company of rows) {
       const routing = getRoutingMeta(company.meta)
-      const reportLocale = normalizeReportLocale(
-        company.report_locale ?? routing.report_locale,
-        company.region,
+      const inferredCountry = inferTargetCountryFromDomain(company.domain)
+      const shouldRepairForeignRouting = Boolean(
+        inferredCountry &&
+        inferredCountry !== "JP" &&
+        (
+          company.region === "jp" ||
+          company.report_locale === "ja" ||
+          company.target_country === "JP" ||
+          company.template_variant === "website_diagnostic"
+        ),
       )
-      const targetCountry = normalizeTargetCountry(
-        company.target_country ?? routing.target_country,
-        reportLocale,
-      )
+      const scope = salesScopeFromCountry({
+        targetCountry: shouldRepairForeignRouting ? inferredCountry : company.target_country ?? routing.target_country,
+      })
+      const reportLocale = shouldRepairForeignRouting
+        ? scope.reportLocale
+        : normalizeReportLocale(company.report_locale ?? routing.report_locale, company.region)
+      const targetCountry = shouldRepairForeignRouting
+        ? scope.targetCountry
+        : normalizeTargetCountry(company.target_country ?? routing.target_country, reportLocale)
       const templateVariant = inferVariant({
-        templateVariant: company.template_variant ?? routing.template_variant,
+        templateVariant: shouldRepairForeignRouting ? undefined : company.template_variant ?? routing.template_variant,
         reportLocale,
         targetCountry,
         issues: company.detected_issues,
@@ -78,7 +92,7 @@ export async function POST(req: NextRequest) {
       const result = await upsertCompanyByDomain({
         domain: company.domain,
         company_name: company.company_name,
-        region: company.region,
+        region: shouldRepairForeignRouting ? scope.region : company.region,
         report_locale: reportLocale,
         target_country: targetCountry,
         template_variant: templateVariant,

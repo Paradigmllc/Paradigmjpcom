@@ -5,6 +5,7 @@ import path from "node:path"
 import fs from "node:fs"
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts")
+const isWebpackBuild = process.env.NEXT_BUILD_BUNDLER === "webpack"
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -17,10 +18,10 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
   },
+  serverExternalPackages: isWebpackBuild ? ["pino", "playwright", "playwright-core"] : [],
   // 2026-05-03: @paradigmllc/blocks は TypeScript ソース直配布 (no build step)
   // Appexxme と同一 Block 実装を共有するため transpile 必須。
   transpilePackages: ["@paradigmllc/blocks"],
-  serverExternalPackages: ["pino"],
   // 2026-05-08: OOM 真因 #2 根治 (Appexxme 同期適用 / commit 508a6e3 と同パターン)
   //   build 内の TypeScript validation が別 Node プロセスで peak ~3GB RSS を消費し、
   //   DigitalOcean 4vCPU/8GB Droplet で OOM-killer に殺されていた (paradigm-hp 4 連続 deploy fail root cause)。

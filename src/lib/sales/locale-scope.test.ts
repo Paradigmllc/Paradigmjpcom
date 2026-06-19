@@ -30,6 +30,12 @@ describe("sales locale scope", () => {
     expect(salesScopeFromCountry({ targetCountry: "BR" }).reportLocale).toBe("pt")
     expect(salesScopeFromCountry({ targetCountry: "JP" }).reportLocale).toBe("ja")
     expect(salesScopeFromCountry({ targetCountry: "CA" }).reportLocale).toBe("en")
+    expect(salesScopeFromCountry({ targetCountry: "CA" }).targetCountry).toBe("CA")
+    expect(salesScopeFromCountry({ targetCountry: "ZA" })).toEqual({
+      reportLocale: "en",
+      region: "global",
+      targetCountry: "ZA",
+    })
   })
 
   it("builds report links from the company locale instead of hardcoding ja", () => {

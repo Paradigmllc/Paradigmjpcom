@@ -1,7 +1,6 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { fetchRunWithSteps, updateRun } from "./sales-pipeline-helpers"
-import { runSalesPipelineLocally } from "./sales-pipeline-execution"
 import type { SalesPipelineRun, SalesPipelineStep } from "./sales-pipeline-types"
 
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
@@ -93,6 +92,7 @@ async function runPipelineFallback(runId: string, delayMs: number): Promise<void
       return
     }
     if (!(await shouldRunFallback(sb, runId))) return
+    const { runSalesPipelineLocally } = await import("./sales-pipeline-execution")
     await runSalesPipelineLocally(runId)
   } catch (error) {
     console.error("[sales-pipeline-fallback] fallback run failed:", runId, error)

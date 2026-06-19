@@ -3,6 +3,7 @@ import {
   buildCompanySlug,
   buildReportUrl,
   inferVariant,
+  inferTargetCountryFromDomain,
   normalizeReportLocale,
   normalizeTargetCountry,
   normalizeTemplateVariant,
@@ -26,6 +27,12 @@ describe("sales routing", () => {
   it("normalizes template variants", () => {
     expect(normalizeTemplateVariant("security")).toBe("security")
     expect(normalizeTemplateVariant("unknown")).toBe("website_diagnostic")
+  })
+
+  it("infers countries from ccTLD domains", () => {
+    expect(inferTargetCountryFromDomain("https://www.smesouthafrica.co.za")).toBe("ZA")
+    expect(inferTargetCountryFromDomain("pigalle.capetown")).toBe("ZA")
+    expect(inferTargetCountryFromDomain("example.com")).toBeNull()
   })
 
   it("infers variants from country and issues", () => {

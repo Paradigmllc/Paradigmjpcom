@@ -1,3 +1,13 @@
+## CURRENT STATUS - 2026-06-19 RevenueOS Twenty country/template routing repair
+
+- Fixed Twenty -> Supabase intake so foreign ccTLDs such as `.co.za` infer the correct target country instead of falling back to `JP/ja`.
+- Fixed `salesScopeFromCountry` so English-locale countries keep their own ISO target country (`ZA`, `CA`, etc.) instead of becoming `US`.
+- Fixed company upsert to persist `report_locale`, `target_country`, and `template_variant` columns, not only `meta.routing`.
+- Fixed Twenty writeback to send country/region/industry/source/status plus visible `Source Coverage` and `Data Sources` counts.
+- CRM metadata normalization now pins important Twenty columns near the front: Name, Domain, country, Source Coverage, Data Sources, Data Status.
+- Repair-routing now corrects already-bad foreign records that were saved as `JP/ja/website_diagnostic`.
+- Verification: `npx tsc --noEmit --pretty false --skipLibCheck --types node -p tsconfig.json`; `npm test -- src/lib/sales/routing.test.ts src/lib/sales/locale-scope.test.ts src/lib/sales/twenty-sync.test.ts src/lib/sales/source-coverage.test.ts`; `git diff --check`.
+
 ## CURRENT STATUS - 2026-06-18 デモHP v2 納品品質 実装完了 🟢
 
 ### GitHub: c269889 (pushed to main)

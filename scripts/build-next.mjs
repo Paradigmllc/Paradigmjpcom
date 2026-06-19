@@ -13,6 +13,10 @@ import fs from "node:fs"
 
 const binExt = process.platform === "win32" ? ".cmd" : ""
 
+process.env.PAYLOAD_READS_DISABLED_DURING_BUILD ||= "1"
+process.env.PAYLOAD_DISABLE_DATABASE_DURING_BUILD ||= "1"
+process.env.DATABASE_URI ||= "postgresql://payload:payload@127.0.0.1:1/payload"
+
 function localBin(name) {
   return path.join(process.cwd(), "node_modules", ".bin", `${name}${binExt}`)
 }
@@ -76,16 +80,49 @@ function runWithHeartbeat(command, args, options = {}) {
   })
 }
 
+function ensureTurbopackExternalShims() {
+  const shims = [
+    ["pino-1937dc62079f7d79", "pino"],
+    ["pino-pretty-8058e85f21bde600", "pino-pretty"],
+    ["sharp-f9ff7e9aeb14e04a", "sharp"],
+    ["pg-5d52e11f38b0f90a", "pg"],
+    ["pg-a8aea133d5e19d13", "pg"],
+    ["@aws-sdk/client-s3-bf84029279c75b9f", "@aws-sdk/client-s3"],
+    ["@aws-sdk/s3-request-presigner-9f4ce0e7a9203bcb", "@aws-sdk/s3-request-presigner"],
+  ]
+  for (const [externalName, realName] of shims) {
+    if (!fs.existsSync(path.join(process.cwd(), "node_modules", realName))) continue
+
+    // Next 16/Turbopack can rewrite some server dependencies to stable
+    // external names during page-data collection. Node then tries to require
+    // those names as real packages. Keep these shims tiny and local.
+    const shimDir = path.join(process.cwd(), "node_modules", externalName)
+    fs.mkdirSync(shimDir, { recursive: true })
+    fs.writeFileSync(
+      path.join(shimDir, "package.json"),
+      JSON.stringify({ name: externalName, main: "index.js", private: true }, null, 2),
+    )
+    fs.writeFileSync(path.join(shimDir, "index.js"), `module.exports = require('${realName}')\n`)
+  }
+}
+
 if (!process.env.PAYLOAD_READS_DISABLED_DURING_BUILD && !process.env.PAYLOAD_DISABLE_DATABASE_DURING_BUILD) {
   run(localBin("payload"), ["generate:importmap"])
 }
 const buildArgs = ["build"]
-if (process.argv.includes("--turbo")) {
+if (process.argv.includes("--webpack") || process.env.NEXT_BUILD_BUNDLER === "webpack") {
+  buildArgs.push("--webpack")
+} else if (process.argv.includes("--turbo")) {
   buildArgs.push("--turbo")
+}
+if (!buildArgs.includes("--webpack")) {
+  ensureTurbopackExternalShims()
 }
 const nextStatus = await runWithHeartbeat(localBin("next"), buildArgs, {
   env: {
     PAYLOAD_READS_DISABLED_DURING_BUILD: "1",
+    PAYLOAD_DISABLE_DATABASE_DURING_BUILD: "1",
+    DATABASE_URI: process.env.DATABASE_URI || "postgresql://payload:payload@127.0.0.1:1/payload",
   },
 })
 if (nextStatus !== 0) process.exit(nextStatus)

@@ -36,7 +36,10 @@ export function salesScopeFromCountry(input: {
   const country = typeof input.targetCountry === "string" ? input.targetCountry.trim().toUpperCase() : ""
   const localeForCountry = REPORT_LOCALES.find((locale) => countryForLocale(locale) === country)
   if (localeForCountry) return salesScopeFromLocale(localeForCountry)
-  if (country && country !== "JP") return salesScopeFromLocale(input.fallbackLocale ?? "en")
+  if (country && country !== "JP") {
+    const fallbackScope = salesScopeFromLocale(input.fallbackLocale ?? "en")
+    return { ...fallbackScope, targetCountry: country }
+  }
   return salesScopeFromLocale(input.fallbackLocale ?? "ja")
 }
 

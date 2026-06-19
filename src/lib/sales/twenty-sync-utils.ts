@@ -22,7 +22,7 @@ export interface TwentyRecord {
   paradigmNextAction?: string | null
   paradigmLastError?: string | null
   paradigmKarteScore?: number | null
-  paradigmSourceCoverage?: number | null
+  paradigmSourceCoverage?: number | string | null
   paradigmRecommendedProducts?: string[] | null
   paradigmKarteSummary?: {
     markdown?: string | null

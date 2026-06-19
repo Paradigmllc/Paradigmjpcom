@@ -35,6 +35,8 @@ interface ScreenshotCapture {
   provider: ScreenshotEvidence["provider"]
 }
 
+type PlaywrightModule = typeof import("playwright")
+
 interface ScreenshotOptions {
   viewport?: ScreenshotViewport
   slot?: VisualEvidenceSlot
@@ -87,7 +89,8 @@ async function captureWithPlaywright(input: {
   viewport: VisualEvidenceSlot
 }): Promise<ScreenshotCapture | null> {
   try {
-    const { chromium } = await import("playwright")
+    const runtimeImport = new Function("specifier", "return import(specifier)") as (specifier: string) => Promise<PlaywrightModule>
+    const { chromium } = await runtimeImport("playwright")
     const browser = await chromium.launch({ headless: true })
     try {
       const page = await browser.newPage({

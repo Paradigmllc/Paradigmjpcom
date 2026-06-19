@@ -1,5 +1,5 @@
 export interface TwentyPullRetryRecord {
-  paradigmSourceCoverage?: number | null
+  paradigmSourceCoverage?: number | string | null
 }
 
 function plainRecord(value: unknown): Record<string, unknown> {
@@ -57,10 +57,13 @@ export function isDataStale(meta: Record<string, unknown>): boolean {
 
 export function sourceCoverageTooLow(record: TwentyPullRetryRecord, meta: Record<string, unknown>): boolean {
   const twentyMeta = plainRecord(meta.twenty)
-  const value = typeof record.paradigmSourceCoverage === "number"
-    ? record.paradigmSourceCoverage
-    : typeof twentyMeta.sourceCoverage === "number"
-      ? twentyMeta.sourceCoverage
-      : null
+  const value = sourceCoverageValue(record.paradigmSourceCoverage) ?? sourceCoverageValue(twentyMeta.sourceCoverage)
   return value === null || value < 20
+}
+
+function sourceCoverageValue(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value !== "string") return null
+  const parsed = Number.parseFloat(value.replace("%", "").trim())
+  return Number.isFinite(parsed) ? parsed : null
 }

@@ -118,8 +118,9 @@ export async function upsertCompanyByDomain(
     name_key: normalizeCompanyName(input.company_name),
     slug,
     report_url: reportUrl,
-    // report_locale/target_country/template_variant stored in meta.routing
-    // to avoid PostgREST schema cache misses during deploy migration window
+    report_locale: reportLocale,
+    target_country: targetCountry,
+    template_variant: templateVariant,
     industry: input.industry ?? current?.industry ?? null,
     prefecture: input.prefecture ?? current?.prefecture ?? null,
     pipeline_status: input.pipeline_status ?? current?.pipeline_status ?? "pending",

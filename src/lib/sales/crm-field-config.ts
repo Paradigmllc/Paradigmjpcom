@@ -63,11 +63,32 @@ export const DEFAULT_CRM_VIEW_FIELDS: SalesCrmViewField[] = [
 ]
 
 const OPERATIONAL_CRM_VIEW_FIELDS: SalesCrmViewField[] = [
-  { fieldKey: "data_status", twentyFieldName: "paradigmDataStatus", label: "Data Status", position: 7, isVisible: true, fieldType: "text", description: "RevenueOS readiness and data collection state" },
-  { fieldKey: "data_sources", twentyFieldName: "paradigmDataSources", label: "Data Sources", position: 8, isVisible: true, fieldType: "text", description: "Collected/configured/missing/error source counts" },
-  { fieldKey: "next_action", twentyFieldName: "paradigmNextAction", label: "Next Action", position: 9, isVisible: true, fieldType: "text", description: "Next required pipeline action" },
-  { fieldKey: "last_error", twentyFieldName: "paradigmLastError", label: "Last Error", position: 10, isVisible: true, fieldType: "text", description: "Latest source or pipeline error summary" },
+  { fieldKey: "source_coverage", twentyFieldName: "paradigmSourceCoverage", label: "Source Coverage", position: 3, isVisible: true, fieldType: "text", description: "0-100 coverage score across RevenueOS API/OSS sources" },
+  { fieldKey: "data_sources", twentyFieldName: "paradigmDataSources", label: "Data Sources", position: 4, isVisible: true, fieldType: "text", description: "Collected/configured/missing/error source counts" },
+  { fieldKey: "data_status", twentyFieldName: "paradigmDataStatus", label: "Data Status", position: 5, isVisible: true, fieldType: "text", description: "RevenueOS readiness and data collection state" },
+  { fieldKey: "next_action", twentyFieldName: "paradigmNextAction", label: "Next Action", position: 6, isVisible: true, fieldType: "text", description: "Next required pipeline action" },
+  { fieldKey: "last_error", twentyFieldName: "paradigmLastError", label: "Last Error", position: 7, isVisible: true, fieldType: "text", description: "Latest source or pipeline error summary" },
 ]
+
+const CRM_FIELD_OVERRIDES: Record<string, Partial<SalesCrmViewField>> = {
+  name: { label: "Name", position: 0, isVisible: true },
+  domain: { label: "Domain Name", position: 1, isVisible: true },
+  country: { label: "国名", position: 2, isVisible: true, fieldType: "select", description: "対象国" },
+  source_coverage: { label: "Source Coverage", position: 3, isVisible: true },
+  data_sources: { label: "Data Sources", position: 4, isVisible: true },
+  data_status: { label: "Data Status", position: 5, isVisible: true },
+  next_action: { label: "Next Action", position: 6, isVisible: true },
+  last_error: { label: "Last Error", position: 7, isVisible: true },
+  sales_status: { label: "営業ステータス", position: 8, isVisible: true },
+  form_url: { label: "フォームURL", position: 9, isVisible: true },
+  report_url: { label: "診断レポートURL", position: 10, isVisible: true },
+  region: { label: "地域名", position: 11, isVisible: true, fieldType: "text" },
+  industry: { label: "業種名", position: 12, isVisible: true },
+  source: { label: "ソース元", position: 13, isVisible: true },
+  sales_material_url: { label: "営業資料URL", position: 14, isVisible: true },
+  demo_url: { label: "デモURL", position: 15, isVisible: true },
+  customer_portal_url: { label: "顧客用Notion URL", position: 16, isVisible: true },
+}
 
 const JAPAN_PREFECTURES = [
   "北海道",
@@ -195,8 +216,14 @@ export const DEFAULT_CRM_SELECT_OPTIONS: SalesCrmSelectOption[] = [
   option("country", "ポルトガル", "ポルトガル", 8, "PT", "orange"),
   option("country", "ロシア", "ロシア", 9, "RU", "gray"),
   option("country", "UAE", "UAE", 10, "AE", "teal"),
-  option("country", "ベトナム", "ベトナム", 11, "VN", "green"),
-  option("country", "インドネシア", "インドネシア", 12, "ID", "green"),
+  option("country", "南アフリカ", "南アフリカ", 11, "ZA", "green"),
+  option("country", "英国", "英国", 12, "GB", "blue"),
+  option("country", "カナダ", "カナダ", 13, "CA", "blue"),
+  option("country", "オーストラリア", "オーストラリア", 14, "AU", "yellow"),
+  option("country", "インド", "インド", 15, "IN", "orange"),
+  option("country", "シンガポール", "シンガポール", 16, "SG", "cyan"),
+  option("country", "ベトナム", "ベトナム", 17, "VN", "green"),
+  option("country", "インドネシア", "インドネシア", 18, "ID", "green"),
   ...JAPAN_PREFECTURES.map((name, index) => option("region", name, name, index, "JP", "green")),
   ...US_STATES.map((name, index) => option("region", name, name, 100 + index, "US", "blue")),
   option("industry", "美容サロン", "美容サロン", 0, null, "pink"),
@@ -249,6 +276,10 @@ function normalizeCrmViewFields(fields: SalesCrmViewField[]): SalesCrmViewField[
   for (const field of OPERATIONAL_CRM_VIEW_FIELDS) {
     if (!byKey.has(field.fieldKey)) byKey.set(field.fieldKey, field)
   }
+  for (const [fieldKey, override] of Object.entries(CRM_FIELD_OVERRIDES)) {
+    const field = byKey.get(fieldKey)
+    if (field) byKey.set(fieldKey, { ...field, ...override })
+  }
 
   return [...byKey.values()].map((field): SalesCrmViewField =>
     field.fieldKey === "region"
@@ -276,6 +307,18 @@ function mapOption(row: CrmSelectOptionRow): SalesCrmSelectOption {
   }
 }
 
+function normalizeCrmSelectOptions(options: SalesCrmSelectOption[]): SalesCrmSelectOption[] {
+  const byKey = new Map<string, SalesCrmSelectOption>()
+  for (const option of options) byKey.set(`${option.fieldKey}:${option.value}`, option)
+  for (const option of DEFAULT_CRM_SELECT_OPTIONS) {
+    const key = `${option.fieldKey}:${option.value}`
+    if (!byKey.has(key)) byKey.set(key, option)
+  }
+  return [...byKey.values()].sort((a, b) =>
+    a.fieldKey.localeCompare(b.fieldKey) || a.position - b.position || a.value.localeCompare(b.value),
+  )
+}
+
 export async function getSalesCrmFieldConfig(sb: ServiceSupabase | null = getServiceSalesSupabase()): Promise<{
   fields: SalesCrmViewField[]
   options: SalesCrmSelectOption[]
@@ -283,7 +326,7 @@ export async function getSalesCrmFieldConfig(sb: ServiceSupabase | null = getSer
   error: string | null
 }> {
   if (!sb) {
-    return { fields: DEFAULT_CRM_VIEW_FIELDS, options: DEFAULT_CRM_SELECT_OPTIONS, fallbackUsed: true, error: "Supabase is not configured." }
+    return { fields: normalizeCrmViewFields(DEFAULT_CRM_VIEW_FIELDS), options: normalizeCrmSelectOptions(DEFAULT_CRM_SELECT_OPTIONS), fallbackUsed: true, error: "Supabase is not configured." }
   }
 
   const [fieldsRes, optionsRes] = await Promise.all([
@@ -293,8 +336,8 @@ export async function getSalesCrmFieldConfig(sb: ServiceSupabase | null = getSer
 
   const error = fieldsRes.error?.message ?? optionsRes.error?.message ?? null
   if (error) {
-    const fields = (fieldsRes.data ?? []).length > 0 ? normalizeCrmViewFields(((fieldsRes.data ?? []) as CrmViewFieldRow[]).map(mapField)) : DEFAULT_CRM_VIEW_FIELDS
-    const options = (optionsRes.data ?? []).length > 0 ? ((optionsRes.data ?? []) as CrmSelectOptionRow[]).map(mapOption) : DEFAULT_CRM_SELECT_OPTIONS
+    const fields = (fieldsRes.data ?? []).length > 0 ? normalizeCrmViewFields(((fieldsRes.data ?? []) as CrmViewFieldRow[]).map(mapField)) : normalizeCrmViewFields(DEFAULT_CRM_VIEW_FIELDS)
+    const options = (optionsRes.data ?? []).length > 0 ? normalizeCrmSelectOptions(((optionsRes.data ?? []) as CrmSelectOptionRow[]).map(mapOption)) : normalizeCrmSelectOptions(DEFAULT_CRM_SELECT_OPTIONS)
     const partial = (fields !== DEFAULT_CRM_VIEW_FIELDS || options !== DEFAULT_CRM_SELECT_OPTIONS)
     console.error("[sales-crm-field-config] Supabase fetch error:", error, partial ? "(partial data used)" : "(full fallback)")
     return { fields, options, fallbackUsed: !partial, error }
@@ -302,7 +345,7 @@ export async function getSalesCrmFieldConfig(sb: ServiceSupabase | null = getSer
 
   return {
     fields: normalizeCrmViewFields(((fieldsRes.data ?? []) as CrmViewFieldRow[]).map(mapField)),
-    options: ((optionsRes.data ?? []) as CrmSelectOptionRow[]).map(mapOption),
+    options: normalizeCrmSelectOptions(((optionsRes.data ?? []) as CrmSelectOptionRow[]).map(mapOption)),
     fallbackUsed: false,
     error: null,
   }
@@ -327,7 +370,7 @@ export async function saveSalesCrmFieldConfig(input: {
     field_type: field.fieldType,
     description: field.description,
   }))
-  const optionRows = input.options.map((item) => ({
+  const optionRows = normalizeCrmSelectOptions(input.options).map((item) => ({
     field_key: item.fieldKey,
     value: item.value,
     label: item.label,

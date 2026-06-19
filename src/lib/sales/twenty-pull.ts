@@ -4,7 +4,16 @@ import { salesScopeFromCountry } from "@/lib/sales/locale-scope"
 import { ensureTwentyPipelineRun } from "./twenty-pipeline-intake"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { insertWithOptionalColumns } from "@/lib/sales/safe-supabase-insert"
-import { buildCompanySlug, buildReportUrl, normalizeReportLocale, normalizeTargetCountry, normalizeTemplateVariant } from "./routing"
+import {
+  buildCompanySlug,
+  buildReportUrl,
+  inferTargetCountryFromDomain,
+  inferVariant,
+  normalizeCountryCode,
+  normalizeReportLocale,
+  normalizeTargetCountry,
+  normalizeTemplateVariant,
+} from "./routing"
 import { PIPELINE_LABELS } from "./twenty-sync-utils"
 import {
   formUrlFromTwenty,
@@ -38,7 +47,7 @@ interface TwentyRecord {
   paradigmNextAction?: string | null
   paradigmLastError?: string | null
   paradigmKarteScore?: number | null
-  paradigmSourceCoverage?: number | null
+  paradigmSourceCoverage?: number | string | null
   paradigmRecommendedProducts?: string[] | null
   paradigmKarteSummary?: {
     markdown?: string | null
@@ -145,22 +154,39 @@ function plainRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {}
 }
 
-function countryCodeFromTwentyRecord(record: TwentyRecord): string | null {
+function countryCodeFromTwentyRecord(record: TwentyRecord, domain: string | null): string | null {
   const raw = record.paradigmCountryName?.trim()
-  if (!raw) return null
+  if (!raw) return inferTargetCountryFromDomain(domain)
   const upper = raw.toUpperCase()
-  if (/^[A-Z]{2}$/.test(upper)) return upper
+  const code = normalizeCountryCode(upper)
+  if (code) return code
 
   const byLabel: Record<string, string> = {
     JAPAN: "JP",
-    "日本": "JP",
+    NIPPON: "JP",
     UNITED_STATES: "US",
     "UNITED STATES": "US",
+    UNITED_STATES_OF_AMERICA: "US",
+    "UNITED STATES OF AMERICA": "US",
+    AMERICA: "US",
     USA: "US",
+    UNITED_KINGDOM: "GB",
+    "UNITED KINGDOM": "GB",
+    UK: "GB",
+    BRITAIN: "GB",
+    GREAT_BRITAIN: "GB",
+    "GREAT BRITAIN": "GB",
+    SOUTH_AFRICA: "ZA",
+    "SOUTH AFRICA": "ZA",
     KOREA: "KR",
+    SOUTH_KOREA: "KR",
     "SOUTH KOREA": "KR",
     CHINA: "CN",
     TAIWAN: "TW",
+    CANADA: "CA",
+    AUSTRALIA: "AU",
+    INDIA: "IN",
+    SINGAPORE: "SG",
     GERMANY: "DE",
     FRANCE: "FR",
     SPAIN: "ES",
@@ -168,11 +194,31 @@ function countryCodeFromTwentyRecord(record: TwentyRecord): string | null {
     BRAZIL: "BR",
     RUSSIA: "RU",
     UAE: "AE",
+    UNITED_ARAB_EMIRATES: "AE",
     "UNITED ARAB EMIRATES": "AE",
     VIETNAM: "VN",
     INDONESIA: "ID",
   }
-  return byLabel[upper] ?? null
+  return byLabel[upper] ?? inferTargetCountryFromDomain(domain)
+}
+
+function routingNeedsRepair(input: {
+  company: {
+    region?: string | null
+    report_locale?: string | null
+    target_country?: string | null
+    template_variant?: string | null
+  } | null
+  inferredCountry: string | null
+}): boolean {
+  const company = input.company
+  if (!company) return true
+  if (!company.report_locale || !company.target_country || !company.template_variant) return true
+  if (!input.inferredCountry) return false
+  if (company.target_country !== input.inferredCountry) return true
+  if (input.inferredCountry !== "JP" && (company.region === "jp" || company.report_locale === "ja")) return true
+  if (input.inferredCountry !== "JP" && company.template_variant === "website_diagnostic") return true
+  return false
 }
 
 function contactFormUrlFromMeta(meta: Record<string, unknown>): string | null {
@@ -252,9 +298,7 @@ export async function pullTwentyCompaniesToSupabase(
     }
 
     const existingCompany = existingDomainMap.get(domain) ?? null
-    const company = existingCompany
-      ? { id: existingCompany.id, slug: existingCompany.slug, report_locale: existingCompany.report_locale, target_country: existingCompany.target_country, template_variant: existingCompany.template_variant, meta: existingCompany.meta, pipeline_status: existingCompany.pipeline_status, report_url: existingCompany.report_url }
-      : null
+    const company = existingCompany ?? null
 
     const currentMeta = plainRecord(company?.meta)
     const rawReportUrl = record.paradigmReportUrl?.primaryLinkUrl ?? null
@@ -296,6 +340,8 @@ export async function pullTwentyCompaniesToSupabase(
     if (salesMaterialUrl) patchMeta.sales_material_url = salesMaterialUrl
     if (demoUrl) patchMeta.demo_site = { ...plainRecord(currentMeta.demo_site), url: demoUrl }
     if (customerPortalUrl) patchMeta.customer_portal_url = customerPortalUrl
+    const inferredCountry = countryCodeFromTwentyRecord(record, domain)
+    const inferredScope = salesScopeFromCountry({ targetCountry: inferredCountry })
 
     let companyId = typeof company?.id === "string" ? company.id : null
     let companyReportUrl = typeof company?.report_url === "string" && company.report_url.trim() ? company.report_url : null
@@ -308,14 +354,19 @@ export async function pullTwentyCompaniesToSupabase(
         continue
       }
 
-      const scope = salesScopeFromCountry({ targetCountry: countryCodeFromTwentyRecord(record) })
+      const scope = inferredScope
+      const templateVariant = inferVariant({
+        reportLocale: scope.reportLocale,
+        targetCountry: scope.targetCountry,
+        meta: patchMeta,
+      })
       const upsert = await upsertCompanyByDomain({
         domain,
         company_name: record.name?.trim() || domain,
         region: scope.region,
         report_locale: scope.reportLocale,
         target_country: scope.targetCountry,
-        template_variant: "website_diagnostic",
+        template_variant: templateVariant,
         pipeline_status: shouldAutoRunPipeline ? "scanning" : "pending",
         source: "twenty",
         meta: patchMeta,
@@ -334,10 +385,29 @@ export async function pullTwentyCompaniesToSupabase(
     } else {
       // Ensure slug and routing fields exist (companies created before slug column may have NULL)
       const companyName = record.name?.trim() || domain
-      const scope = salesScopeFromCountry({ targetCountry: countryCodeFromTwentyRecord(record) })
-      const reportLocale = normalizeReportLocale(company?.report_locale ?? scope.reportLocale, scope.region)
-      const targetCountry = normalizeTargetCountry(company?.target_country ?? scope.targetCountry, reportLocale)
-      const templateVariant = normalizeTemplateVariant(company?.template_variant ?? "website_diagnostic")
+      const scope = inferredScope
+      const shouldRepairRouting = routingNeedsRepair({ company, inferredCountry })
+      const reportLocale = shouldRepairRouting
+        ? scope.reportLocale
+        : normalizeReportLocale(company?.report_locale ?? scope.reportLocale, company?.region ?? scope.region)
+      const targetCountry = shouldRepairRouting
+        ? scope.targetCountry
+        : normalizeTargetCountry(company?.target_country ?? scope.targetCountry, reportLocale)
+      const inferredTemplateVariant = inferVariant({
+        reportLocale,
+        targetCountry,
+        issues: company?.detected_issues,
+        meta: patchMeta,
+      })
+      const templateVariant = shouldRepairRouting
+        ? inferredTemplateVariant
+        : normalizeTemplateVariant(company?.template_variant ?? inferredTemplateVariant)
+      patchMeta.routing = {
+        ...plainRecord(patchMeta.routing),
+        report_locale: reportLocale,
+        target_country: targetCountry,
+        template_variant: templateVariant,
+      }
 
       const patch: Record<string, unknown> = { meta: patchMeta }
       if (reportUrl && !companyReportUrl) {
@@ -345,7 +415,7 @@ export async function pullTwentyCompaniesToSupabase(
         companyReportUrl = reportUrl
       }
 
-      // Ensure every company has a slug — null slugs cause 404 on /report/[slug]
+      // Ensure every company has a slug 窶・null slugs cause 404 on /report/[slug]
       if (!company?.slug) {
         const generatedSlug = buildCompanySlug(companyName, domain)
         patch.slug = generatedSlug
@@ -353,10 +423,22 @@ export async function pullTwentyCompaniesToSupabase(
         companyReportUrl = (patch.report_url as string) ?? companyReportUrl
       }
 
-      // Backfill routing fields if missing
-      if (!company?.report_locale) patch.report_locale = reportLocale
-      if (!company?.target_country) patch.target_country = targetCountry
-      if (!company?.template_variant) patch.template_variant = templateVariant
+      const effectiveSlug = typeof patch.slug === "string" ? patch.slug : company?.slug
+      if (shouldRepairRouting) {
+        patch.region = scope.region
+        patch.report_locale = reportLocale
+        patch.target_country = targetCountry
+        patch.template_variant = templateVariant
+        if (effectiveSlug) {
+          patch.report_url = buildReportUrl(reportLocale, effectiveSlug)
+          companyReportUrl = patch.report_url as string
+        }
+      } else {
+        // Backfill routing fields if missing.
+        if (!company?.report_locale) patch.report_locale = reportLocale
+        if (!company?.target_country) patch.target_country = targetCountry
+        if (!company?.template_variant) patch.template_variant = templateVariant
+      }
 
       if (record.paradigmSalesStatus) {
         const parsed = parseSalesStatusLabel(record.paradigmSalesStatus)

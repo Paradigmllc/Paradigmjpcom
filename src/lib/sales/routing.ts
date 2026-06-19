@@ -50,6 +50,51 @@ const LOCALE_COUNTRY: Record<ReportLocale, string> = {
   id: "ID",
 }
 
+const COUNTRY_BY_DOMAIN_SUFFIX: Record<string, string> = {
+  jp: "JP",
+  "co.jp": "JP",
+  za: "ZA",
+  "co.za": "ZA",
+  capetown: "ZA",
+  uk: "GB",
+  "co.uk": "GB",
+  us: "US",
+  ca: "CA",
+  au: "AU",
+  "com.au": "AU",
+  nz: "NZ",
+  kr: "KR",
+  "co.kr": "KR",
+  cn: "CN",
+  tw: "TW",
+  hk: "HK",
+  sg: "SG",
+  in: "IN",
+  id: "ID",
+  vn: "VN",
+  th: "TH",
+  my: "MY",
+  ph: "PH",
+  de: "DE",
+  fr: "FR",
+  es: "ES",
+  pt: "PT",
+  br: "BR",
+  it: "IT",
+  nl: "NL",
+  se: "SE",
+  no: "NO",
+  dk: "DK",
+  fi: "FI",
+  pl: "PL",
+  ru: "RU",
+  ae: "AE",
+  sa: "SA",
+  mx: "MX",
+  ar: "AR",
+  cl: "CL",
+}
+
 export function isReportLocale(value: unknown): value is ReportLocale {
   return typeof value === "string" && (REPORT_LOCALES as readonly string[]).includes(value)
 }
@@ -72,6 +117,33 @@ export function normalizeTargetCountry(value: unknown, locale: ReportLocale): st
     return value.trim().toUpperCase()
   }
   return countryForLocale(locale)
+}
+
+export function normalizeCountryCode(value: unknown): string | null {
+  if (typeof value !== "string") return null
+  const normalized = value.trim().toUpperCase().replace(/[^A-Z]/g, "")
+  return /^[A-Z]{2}$/.test(normalized) ? normalized : null
+}
+
+export function inferTargetCountryFromDomain(value: unknown): string | null {
+  if (typeof value !== "string" || value.trim().length === 0) return null
+  const raw = value.trim().toLowerCase()
+  let host = raw
+  try {
+    host = new URL(raw.startsWith("http") ? raw : `https://${raw}`).hostname.toLowerCase()
+  } catch (error) {
+    console.warn("[sales-routing] invalid domain while inferring country:", { value, error })
+    host = raw
+  }
+  const domain = host.replace(/^www\./, "").replace(/\.$/, "")
+  if (!domain.includes(".")) return null
+  const parts = domain.split(".").filter(Boolean)
+  for (let i = 0; i < parts.length; i += 1) {
+    const suffix = parts.slice(i).join(".")
+    const country = COUNTRY_BY_DOMAIN_SUFFIX[suffix]
+    if (country) return country
+  }
+  return null
 }
 
 export function normalizeTemplateVariant(value: unknown): TemplateVariant {

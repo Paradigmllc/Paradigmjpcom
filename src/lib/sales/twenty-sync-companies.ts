@@ -40,6 +40,33 @@ function salesStatusLabel(karte: CompanyKarteSnapshot): string {
   return `${pipeline} / ${karte.dealStage}`
 }
 
+function countrySelectValue(countryCode: string | null | undefined): string | null {
+  const code = typeof countryCode === "string" ? countryCode.trim().toUpperCase() : ""
+  const labels: Record<string, string> = {
+    JP: "日本",
+    US: "米国",
+    ZA: "南アフリカ",
+    GB: "英国",
+    CA: "カナダ",
+    AU: "オーストラリア",
+    IN: "インド",
+    SG: "シンガポール",
+    KR: "韓国",
+    CN: "中国",
+    TW: "台湾",
+    DE: "ドイツ",
+    FR: "フランス",
+    ES: "スペイン",
+    PT: "ポルトガル",
+    BR: "ブラジル",
+    RU: "ロシア",
+    AE: "UAE",
+    VN: "ベトナム",
+    ID: "インドネシア",
+  }
+  return labels[code] ?? (code.length === 2 ? code : null)
+}
+
 function karteHomeSummary(karte: CompanyKarteSnapshot): string {
   const products = karte.recommendedProducts
     .slice(0, 3)
@@ -162,6 +189,11 @@ async function patchTwentyCompanyHome(
     "paradigmReportUrl",
     "paradigmFormUrl",
     "paradigmDemoUrl",
+    "paradigmCountryName",
+    "paradigmRegionName",
+    "paradigmIndustryName",
+    "paradigmSourceName",
+    "paradigmSalesStatus",
     "paradigmKarteScore",
     "paradigmSourceCoverage",
     "paradigmDataStatus",
@@ -216,8 +248,13 @@ async function syncTwentyCompanyHomeFields(
       paradigmReportUrl: linkField("診断レポートURL", karte.reportUrl),
       paradigmFormUrl: linkField("フォームURL", karte.formUrl),
       paradigmDemoUrl: linkField("デモURL", karte.demoUrl),
+      paradigmCountryName: countrySelectValue(karte.targetCountry),
+      paradigmRegionName: karte.regionName,
+      paradigmIndustryName: karte.industry,
+      paradigmSourceName: karte.sourceName,
+      paradigmSalesStatus: salesStatusLabel(karte),
       paradigmKarteScore: karteScore(karte),
-      paradigmSourceCoverage: karte.sourceScore,
+      paradigmSourceCoverage: `${karte.sourceScore}%`,
       paradigmDataStatus: sourceDataStatus(karte),
       paradigmDataSources: sourceDataCounts(karte),
       paradigmNextAction: outreachGateSummary(karte).nextAction,

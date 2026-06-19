@@ -2,7 +2,6 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { startLeadCandidateRunFallback } from "./lead-candidate-runner"
 import { startPassiveInventoryFallback } from "./passive-inventory-runner"
-import { restartStaleSalesPipelineRuns } from "./sales-pipeline-fallback"
 import { startEnrichmentWorker, runTwentySyncTick, runReportRegeneratorTick } from "./enrichment-worker"
 
 const WATCHDOG_INTERVAL_MS = 60_000
@@ -80,6 +79,7 @@ async function restartStalePassiveInventoryRuns(): Promise<number> {
 async function tick(): Promise<void> {
   const restarted = await restartStaleLeadRuns()
   const restartedPassive = await restartStalePassiveInventoryRuns()
+  const { restartStaleSalesPipelineRuns } = await import("./sales-pipeline-fallback")
   const restartedPipelines = await restartStaleSalesPipelineRuns(3)
   const twenty = await runTwentySyncTick()
   const reports = await runReportRegeneratorTick()
