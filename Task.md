@@ -5,23 +5,11 @@
 - Generated/company demo pages now render a hand-crafted first view, proof section, signature section, process section, and CTA before the generic widget blocks.
 - Fixed the demo CSS delivery path by inlining critical page/component CSS so `/demo` does not fall back to unstyled HTML.
 - Replaced visible generated-demo navigation/CTA/footer labels with clean Japanese/English display text.
-- Verification:
-  - `npm run build` in `astro-demo`: passed.
-  - Local HTTP checks for restaurant/construction demo variants: HTTP 200, premium CSS present, no horizontal overflow.
-  - Pushed commit `65196ee` to `main`.
-  - Production deploy: uploaded `astro-demo` source tarball to `/root/astro-demo-src.tgz`, built `astro-demo:latest` on `paradigm-prod-01`, and restarted the `astro-demo` container.
-  - Public verification passed:
-    - `https://demo.paradigmjp.com/demo?lang=ja&industry=restaurant&appeal=brand`: HTTP 200, premium CSS present, no literal style bug.
-    - `https://demo.paradigmjp.com/demo?lang=ja&industry=construction&appeal=brand`: HTTP 200, construction archetype present.
-    - `https://paradigmjp.com/ja/admin/sales`: HTTP 200 after host recovery.
-  - Host recovery note: Hetzner `paradigm-prod-01` was CPU/IO saturated and HTTP/SSH/Coolify timed out. Rebooted via Hetzner API, diagnosed `paradigm-outreach-worker` at >100% CPU, then stopped it and disabled its restart policy to stabilize the host. Load dropped from ~271 to ~2.84 current while historical 5/15-min averages decayed.
-  - Playwright screenshots saved:
-    - `C:\Users\apple\AppData\Local\Temp\astro-demo-restaurant-desktop-final.png`
-    - `C:\Users\apple\AppData\Local\Temp\astro-demo-construction-desktop-final.png`
-    - `C:\Users\apple\AppData\Local\Temp\astro-demo-restaurant-mobile-final.png`
-    - `C:\Users\apple\AppData\Local\Temp\astro-demo-prod-restaurant-verified.png`
-    - `C:\Users\apple\AppData\Local\Temp\astro-demo-prod-construction-verified.png`
-    - `C:\Users\apple\AppData\Local\Temp\astro-demo-prod-mobile-verified.png`
+- Verification: `npm run build` in `astro-demo` passed; local and production Playwright checks passed for restaurant/construction desktop and restaurant mobile with no horizontal overflow.
+- Production deploy: pushed `65196ee`, uploaded source tarball to `/root/astro-demo-src.tgz`, built `astro-demo:latest` on `paradigm-prod-01`, and restarted the `astro-demo` container.
+- Public verification: restaurant and construction `/demo` URLs return HTTP 200 with premium CSS/archetype present; `https://paradigmjp.com/ja/admin/sales` returns HTTP 200.
+- Host recovery note: `paradigm-prod-01` was CPU/IO saturated; rebooted via Hetzner API and stopped `paradigm-outreach-worker` (>100% CPU) with restart disabled, dropping current load from ~271 to ~2.84.
+- Screenshot evidence: `astro-demo-prod-restaurant-verified.png`, `astro-demo-prod-construction-verified.png`, `astro-demo-prod-mobile-verified.png` in `%TEMP%`.
 
 ## CURRENT STATUS - 2026-06-19 RevenueOS Twenty country/template routing repair
 
