@@ -413,15 +413,15 @@ const shownCases = section === "home" ? profile.cases.slice(0, 3) : profile.case
 </html>
 
 <style is:inline>
-  :global(*) { box-sizing: border-box; }
-  :global(html) { scroll-behavior: smooth; }
-  :global(body) {
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
     margin: 0;
     font-family: Inter, "Noto Sans JP", system-ui, sans-serif;
     color: #12131a;
     background: #fbfaf7;
   }
-  :global(a) { color: inherit; text-decoration: none; }
+  a { color: inherit; text-decoration: none; }
   .site-header {
     position: sticky;
     top: 0;
