@@ -1,224 +1,131 @@
 ---
-import DemoLayout from "../layouts/DemoLayout.astro"
-import { generateDemo, getIndustryLabel, getAppealLabel } from "../keystatic/demo-data"
+import PremiumDemoPage from "../components/premium/PremiumDemoPage.astro"
+import { getPremiumDemoProfile } from "../lib/premium-demo"
+import { generateDemo } from "../keystatic/demo-data"
+import "../styles/global.css"
 
 const lang = (Astro.url.searchParams.get("lang") || "ja") as "ja" | "en"
 const industry = Astro.url.searchParams.get("industry") || "consulting"
-const appeal = Astro.url.searchParams.get("appeal") || "diagnostic"
-
-const data = generateDemo(industry, appeal as "diagnostic" | "sales" | "brand" | "tech", lang)
+const appeal = (Astro.url.searchParams.get("appeal") || "brand") as "diagnostic" | "sales" | "brand" | "tech"
+const data = generateDemo(industry, appeal, lang)
 const isJa = lang === "ja"
+const profile = getPremiumDemoProfile({
+  slug: `${lang}-${industry}-${appeal}`,
+  title: data.title,
+  locale: lang,
+  meta: {
+    industry,
+    locale: lang,
+    company_name: data.customerName,
+    accentColor: data.accentColor,
+    accentColorDark: data.accentColorDark,
+    accentColorLight: data.accentColorLight,
+    calBookingUrl: data.calBookingUrl,
+  },
+})
+
+const industries = [
+  { id: "restaurant", labelJa: "飲食", labelEn: "Restaurant" },
+  { id: "construction", labelJa: "建設", labelEn: "Construction" },
+  { id: "dental", labelJa: "歯科", labelEn: "Dental" },
+  { id: "beauty_salon", labelJa: "美容", labelEn: "Beauty" },
+  { id: "retail", labelJa: "小売", labelEn: "Retail" },
+  { id: "accounting", labelJa: "士業", labelEn: "Advisory" },
+  { id: "cleaning", labelJa: "清掃", labelEn: "Cleaning" },
+  { id: "consulting", labelJa: "コンサル", labelEn: "Consulting" },
+]
 ---
 
-<DemoLayout title={`${data.customerName} — ${isJa?"改善デモ":"Demo"}`} accentColor={data.accentColor} accentColorDark={data.accentColorDark} accentColorLight={data.accentColorLight} lang={lang}>
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{isJa ? "Paradigm 業種別デモギャラリー" : "Paradigm Industry Demo Gallery"}</title>
+    <meta name="description" content={isJa ? "業種ごとに作り分けたプロ品質のデモサイト" : "Professionally crafted demo sites by industry"} />
+    <style set:html={`
+      :root {
+        --brand: ${data.accentColor};
+        --brand-dark: ${data.accentColorDark};
+        --brand-light: ${data.accentColorLight};
+      }
+      body { margin: 0; font-family: Inter, "Noto Sans JP", system-ui, sans-serif; background: #f8fafc; color: #111827; }
+      .demo-shell-nav {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 64px;
+        padding: 0 24px;
+        background: rgba(255,255,255,.88);
+        border-bottom: 1px solid rgba(17,24,39,.08);
+        backdrop-filter: blur(18px);
+      }
+      .demo-brand { display: flex; align-items: center; gap: 10px; font-weight: 900; text-decoration: none; color: #111827; }
+      .demo-brand-mark { width: 32px; height: 32px; border-radius: 6px; display: grid; place-items: center; color: white; background: linear-gradient(135deg,var(--brand),var(--brand-dark)); }
+      .demo-actions { display: flex; align-items: center; gap: 8px; }
+      .demo-actions a { min-height: 36px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 6px; color: #111827; text-decoration: none; font-size: 13px; font-weight: 800; border: 1px solid rgba(17,24,39,.1); background: white; }
+      .demo-gallery { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 76px 0 96px; }
+      .demo-gallery-head { display: flex; justify-content: space-between; gap: 24px; align-items: end; margin-bottom: 24px; }
+      .demo-gallery-head h2 { margin: 0; font-size: 38px; line-height: 1.1; letter-spacing: 0; }
+      .demo-gallery-head p { margin: 0; max-width: 560px; color: #5b6472; line-height: 1.7; }
+      .demo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+      .demo-tile { min-height: 150px; border-radius: 8px; padding: 18px; color: #111827; text-decoration: none; background: white; border: 1px solid rgba(17,24,39,.1); box-shadow: 0 18px 48px rgba(15,23,42,.06); transition: transform .2s ease, border-color .2s ease; }
+      .demo-tile:hover { transform: translateY(-3px); border-color: var(--brand); }
+      .demo-tile.active { background: linear-gradient(135deg,var(--brand),var(--brand-dark)); color: white; }
+      .demo-tile span { display: block; font-size: 12px; font-weight: 900; opacity: .62; margin-bottom: 42px; }
+      .demo-tile strong { display: block; font-size: 20px; }
+      .demo-shell-footer { padding: 28px 24px; text-align: center; color: #6b7280; font-size: 12px; border-top: 1px solid rgba(17,24,39,.08); background: white; }
+      @media (max-width: 900px) {
+        .demo-gallery-head { display: grid; }
+        .demo-gallery-head h2 { font-size: 30px; }
+        .demo-grid { grid-template-columns: repeat(2, 1fr); }
+      }
+      @media (max-width: 560px) {
+        .demo-shell-nav { padding: 0 14px; }
+        .demo-actions a:nth-child(2) { display: none; }
+        .demo-grid { grid-template-columns: 1fr; }
+      }
+    `}></style>
+  </head>
+  <body>
+    <nav class="demo-shell-nav">
+      <a href="/demo" class="demo-brand" aria-label="Paradigm demo gallery">
+        <span class="demo-brand-mark">P</span>
+        <span>Paradigm Demo</span>
+      </a>
+      <div class="demo-actions">
+        <a href={`/demo?lang=ja&industry=${industry}&appeal=${appeal}`}>JA</a>
+        <a href={`/demo?lang=en&industry=${industry}&appeal=${appeal}`}>EN</a>
+        <a href="https://paradigmjp.com" target="_blank" rel="noopener noreferrer">{isJa ? "Paradigmへ" : "Paradigm"}</a>
+      </div>
+    </nav>
 
-  <!-- ═══════════════ HERO ═══════════════ -->
-  <section class="relative min-h-[90vh] flex items-center overflow-hidden">
-    <div class="orb orb-1 animate-float top-[-10%] left-[-10%]"></div>
-    <div class="orb orb-2 animate-float-slow top-[40%] right-[-5%]"></div>
-    <div class="absolute inset-0 opacity-15 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMiI+PHBhdGggZD0iTTM2IDYwVjBIMjR2NjB6TTYwIDI0VjM2SDBWMjR6Ii8+PC9nPjwvZz48L3N2Zz4=')]"></div>
+    <PremiumDemoPage profile={profile} />
 
-    <div class="relative z-10 w-full max-w-7xl mx-auto section">
-      <div class="max-w-3xl">
-        <div class="flex items-center gap-3 mb-6">
-          <div class="badge"><span class="badge-dot badge-dot-pulse"></span>{getIndustryLabel(industry, lang)}</div>
-          <div class="badge">{getAppealLabel(appeal, lang)}</div>
-        </div>
-        <h1 class="text-display gradient-text mb-6">{data.heroHeadline}</h1>
-        <p class="text-body text-lg md:text-xl mb-8">{data.heroSubtitle}</p>
-        <div class="flex flex-col sm:flex-row gap-3 mb-14">
-          <a href={data.calBookingUrl} target="_blank" rel="noopener noreferrer" class="btn btn-primary">
-            {data.heroCta}
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+    <section class="demo-gallery" aria-label={isJa ? "業種別デモ一覧" : "Industry demo gallery"}>
+      <div class="demo-gallery-head">
+        <h2>{isJa ? "業種ごとに、別の勝ち方で作る。" : "Different industries, different winning structures."}</h2>
+        <p>{isJa ? "色と文章だけを変えた量産デモではなく、職員が1件ずつ設計したように、写真・証拠・導線の順番まで作り分けます。" : "These are not color-swapped templates. Each industry changes imagery, proof, and the order of conversion cues."}</p>
+      </div>
+      <div class="demo-grid">
+        {industries.map((item, index) => (
+          <a
+            class={`demo-tile ${item.id === industry ? "active" : ""}`}
+            href={`/demo?lang=${lang}&industry=${item.id}&appeal=${appeal}`}
+          >
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <strong>{isJa ? item.labelJa : item.labelEn}</strong>
           </a>
-          <a href="#services" class="btn btn-ghost">
-            {isJa ? "改善内容を見る" : "See Improvements"}
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-          </a>
-        </div>
-
-        <!-- Browser Mockup -->
-        <div class="browser-mock max-w-2xl">
-          <div class="browser-bar">
-            <span class="browser-dot"></span>
-            <span class="browser-dot"></span>
-            <span class="browser-dot"></span>
-            <div class="browser-url"></div>
-          </div>
-          <div class="browser-content">
-            <div class="flex items-center gap-3 mb-6">
-              <div class="h-10 w-10 rounded-xl bg-brand/20 flex items-center justify-center text-brand-light text-sm font-black">P</div>
-              <div>
-                <div class="h-3 w-28 rounded-full bg-white/[.06] mb-2"></div>
-                <div class="h-2.5 w-20 rounded-full bg-white/[.04]"></div>
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3 mb-5">
-              <div class="rounded-xl bg-white/[.03] border border-white/[.05] p-4">
-                <div class="h-4 w-16 rounded-full bg-brand/20 mb-3"></div>
-                <div class="h-2.5 w-full rounded-full bg-white/[.04] mb-2"></div>
-                <div class="h-2.5 w-2/3 rounded-full bg-white/[.04]"></div>
-              </div>
-              <div class="rounded-xl bg-white/[.03] border border-white/[.05] p-4">
-                <div class="h-4 w-12 rounded-full bg-brand/20 mb-3"></div>
-                <div class="h-2.5 w-full rounded-full bg-white/[.04] mb-2"></div>
-                <div class="h-2.5 w-3/4 rounded-full bg-white/[.04]"></div>
-              </div>
-            </div>
-            {data.improvementPoints && data.improvementPoints.length > 0 && (
-              <div class="space-y-2">
-                {data.improvementPoints.slice(0, 3).map((pt: string) => (
-                  <div class="flex items-center gap-2">
-                    <div class="h-1.5 w-1.5 rounded-full bg-brand-light flex-shrink-0"></div>
-                    <div class="h-2 w-48 rounded-full bg-white/[.04]"></div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {data.heroStats && (
-          <div class="flex flex-wrap gap-8 pt-10 mt-10 border-t border-white/[.06]">
-            {data.heroStats.map((s: { label: string; value: string; suffix: string }) => (
-              <div>
-                <div class="text-3xl font-black text-white tabular-nums">
-                  {s.value}<span class="text-lg gradient-text ml-1">{s.suffix}</span>
-                </div>
-                <div class="mt-1 text-xs text-white/30">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════ LOGO WALL ═══════════════ -->
-  <section class="section border-t border-white/[.03]">
-    <div class="max-w-7xl mx-auto text-center">
-      <p class="text-caption opacity-40 mb-8">{isJa ? "信頼されるパートナー" : "Trusted Partners"}</p>
-      <div class="logo-wall flex flex-wrap items-center justify-center gap-x-14 gap-y-6">
-        {[...(data.certifications || []), data.customerName].map((name: string) => <span>{name}</span>)}
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════ SERVICES ═══════════════ -->
-  <section id="services" class="section">
-    <div class="max-w-7xl mx-auto">
-      <div class="text-center mb-16">
-        <div class="badge mb-4"><span class="badge-dot"></span>Services</div>
-        <h2 class="text-headline gradient-text mb-4">{data.serviceTitle}</h2>
-        <p class="text-body max-w-2xl mx-auto">{data.serviceSubtitle}</p>
-      </div>
-      <div class="grid-3">
-        {data.services.map((svc: { title: string; description: string; icon: string; features?: string[] }) => (
-          <div class="card card-padded group">
-            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-dark text-white text-xl shadow-lg shadow-brand/20 mb-5 group-hover:scale-110 transition-transform duration-300">
-              {svc.icon === "Globe" ? "🌐" : svc.icon === "Search" ? "🔍" : "⚡"}
-            </div>
-            <h3 class="text-title text-white mb-2">{svc.title}</h3>
-            <p class="text-body text-sm leading-relaxed mb-4">{svc.description}</p>
-            {svc.features && svc.features.length > 0 && (
-              <div class="flex flex-wrap gap-2">
-                {svc.features.map((f: string) => (
-                  <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/5 text-white/40 border border-white/5">{f}</span>
-                ))}
-              </div>
-            )}
-          </div>
         ))}
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- ═══════════════ CASE METRICS ═══════════════ -->
-  <section class="section section-alt">
-    <div class="max-w-7xl mx-auto">
-      <div class="text-center mb-16">
-        <div class="badge mb-4"><span class="badge-dot"></span>Results</div>
-        <h2 class="text-headline gradient-text mb-4">{data.caseTitle}</h2>
-        <p class="text-body max-w-2xl mx-auto">{data.caseDescription}</p>
-      </div>
-      <div class="grid-4" data-reveal>
-        {data.caseMetrics.map((m: { label: string; value: string; suffix: string; detail?: string }) => (
-          <div class="card card-padded text-center">
-            <div class="text-4xl md:text-5xl font-black gradient-text mb-3">
-              {m.value}<span class="text-xl ml-1">{m.suffix}</span>
-            </div>
-            <div class="text-sm font-semibold text-white/60 mb-1">{m.label}</div>
-            {m.detail && <div class="text-xs text-white/30 leading-relaxed">{m.detail}</div>}
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════ PROCESS ═══════════════ -->
-  <section class="section">
-    <div class="max-w-7xl mx-auto">
-      <div class="text-center mb-16">
-        <div class="badge mb-4"><span class="badge-dot"></span>Process</div>
-        <h2 class="text-headline gradient-text mb-4">{data.processTitle}</h2>
-      </div>
-      <div class="grid-4">
-        {data.processSteps?.map((step: { step: string; title: string; description: string; icon: string }, i: number) => (
-          <div class="card card-padded text-center group relative">
-            <div class="absolute top-3 right-4 text-[72px] font-black opacity-[.03] select-none leading-none">{i + 1}</div>
-            <div class="flex h-14 w-14 mx-auto items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-dark text-white text-xl shadow-lg shadow-brand/20 mb-5 group-hover:scale-110 transition-transform duration-300">
-              {step.icon === "Search" ? "🔍" : step.icon === "Zap" ? "⚡" : step.icon === "BarChart" ? "📊" : "🛡️"}
-            </div>
-            <div class="text-xs font-bold text-brand-light mb-2">{step.step}</div>
-            <h3 class="text-title text-white mb-2">{step.title}</h3>
-            <p class="text-body text-xs leading-relaxed">{step.description}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════ FAQ ═══════════════ -->
-  <section class="section section-alt">
-    <div class="max-w-3xl mx-auto">
-      <div class="text-center mb-16">
-        <div class="badge mb-4"><span class="badge-dot"></span>FAQ</div>
-        <h2 class="text-headline gradient-text mb-4">{data.faqTitle}</h2>
-      </div>
-      <div class="space-y-3">
-        {data.faqItems?.map((faq: { question: string; answer: string }, i: number) => (
-          <details class="glass cursor-pointer group" open={i === 0}>
-            <summary class="flex items-center justify-between p-5 font-semibold text-white/70 group-open:text-white list-none">
-              <span class="flex items-center gap-3">
-                <span class="text-brand-light text-sm font-bold">Q{i + 1}</span>
-                {faq.question}
-              </span>
-              <svg class="h-4 w-4 text-white/20 group-open:rotate-180 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-              </svg>
-            </summary>
-            <div class="px-5 pb-5 pt-1 text-sm text-white/40 leading-relaxed">{faq.answer}</div>
-          </details>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════ CTA ═══════════════ -->
-  <section class="section">
-    <div class="max-w-3xl mx-auto text-center">
-      <div class="glass-strong p-12 md:p-20 relative overflow-hidden">
-        <div class="absolute inset-0 opacity-[.07] bg-[radial-gradient(circle_at_50%_50%,var(--brand),transparent_70%)]"></div>
-        <div class="relative z-10">
-          <h2 class="text-headline gradient-text mb-6">{data.ctaTitle}</h2>
-          <p class="text-body mb-10 max-w-xl mx-auto">{data.ctaBody}</p>
-          <a href={data.calBookingUrl} target="_blank" rel="noopener noreferrer" class="btn btn-primary text-lg">
-            {data.heroCta}
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-</DemoLayout>
+    <footer class="demo-shell-footer">
+      {isJa ? "診断データから生成する、業種別プロ品質デモサイト。" : "Production-quality industry demos generated from diagnostic data."}
+    </footer>
+  </body>
+</html>

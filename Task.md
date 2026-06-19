@@ -1,3 +1,18 @@
+## CURRENT STATUS - 2026-06-19 Astro demo TCD-quality art direction
+
+- Reworked `https://demo.paradigmjp.com/demo` from a generic one-layout LP into an industry demo gallery powered by a premium art-direction layer.
+- Added industry-specific demo archetypes for restaurant, construction, clinic, beauty, retail, advisory, and local service demos.
+- Generated/company demo pages now render a hand-crafted first view, proof section, signature section, process section, and CTA before the generic widget blocks.
+- Fixed the demo CSS delivery path by inlining critical page/component CSS so `/demo` does not fall back to unstyled HTML.
+- Replaced visible generated-demo navigation/CTA/footer labels with clean Japanese/English display text.
+- Verification:
+  - `npm run build` in `astro-demo`: passed.
+  - Local HTTP checks for restaurant/construction demo variants: HTTP 200, premium CSS present, no horizontal overflow.
+  - Playwright screenshots saved:
+    - `C:\Users\apple\AppData\Local\Temp\astro-demo-restaurant-desktop-final.png`
+    - `C:\Users\apple\AppData\Local\Temp\astro-demo-construction-desktop-final.png`
+    - `C:\Users\apple\AppData\Local\Temp\astro-demo-restaurant-mobile-final.png`
+
 ## CURRENT STATUS - 2026-06-19 RevenueOS Twenty country/template routing repair
 
 - Fixed Twenty -> Supabase intake so foreign ccTLDs such as `.co.za` infer the correct target country instead of falling back to `JP/ja`.

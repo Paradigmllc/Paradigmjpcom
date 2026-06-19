@@ -1,0 +1,486 @@
+---
+import type { PremiumDemoProfile } from "../../lib/premium-demo"
+
+interface Props {
+  profile: PremiumDemoProfile
+}
+
+const { profile } = Astro.props
+const isJa = profile.locale === "ja"
+const themeClass = `premium-${profile.archetype}`
+---
+
+<section
+  class={`premium-demo ${themeClass}`}
+  style={`--premium-accent:${profile.accentColor};--premium-dark:${profile.accentColorDark};--premium-light:${profile.accentColorLight};`}
+>
+  <div class="premium-hero">
+    <div class="premium-copy">
+      <div class="premium-kicker">
+        <span></span>
+        {profile.badge}
+      </div>
+      <p class="premium-industry">{profile.industryLabel}</p>
+      <h1>{profile.heroTitle}</h1>
+      <p class="premium-lead">{profile.heroLead}</p>
+      <div class="premium-actions">
+        <a href="#premium-proof" class="premium-button primary">{profile.primaryCta}</a>
+        <a href="#premium-signature" class="premium-button secondary">{profile.secondaryCta}</a>
+      </div>
+    </div>
+
+    <div class="premium-visual" aria-label={profile.imageAlt}>
+      <img src={profile.imageUrl} alt={profile.imageAlt} loading="eager" />
+      <div class="premium-visual-card">
+        <strong>{profile.companyName}</strong>
+        <span>{isJa ? "顧客が最初に見る証拠を再設計" : "First-screen proof redesigned"}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="premium-stats" aria-label={isJa ? "デモ構成の特徴" : "Demo structure highlights"}>
+    {profile.stats.map((stat) => (
+      <div>
+        <strong>{stat.value}</strong>
+        <span>{stat.label}</span>
+      </div>
+    ))}
+  </div>
+
+  <section id="premium-proof" class="premium-proof">
+    <div>
+      <p class="premium-section-label">{isJa ? "Evidence Design" : "Evidence design"}</p>
+      <h2>{profile.proofTitle}</h2>
+    </div>
+    <p>{profile.proofLead}</p>
+  </section>
+
+  <section id="premium-signature" class="premium-signature">
+    <div class="premium-signature-head">
+      <p class="premium-section-label">{isJa ? "Signature" : "Signature"}</p>
+      <h2>{profile.signatureTitle}</h2>
+    </div>
+    <div class="premium-card-grid">
+      {profile.signatureItems.map((item, index) => (
+        <article>
+          <span>{String(index + 1).padStart(2, "0")}</span>
+          <h3>{item.title}</h3>
+          <p>{item.body}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="premium-process">
+    <div class="premium-process-title">
+      <p class="premium-section-label">{isJa ? "Craft Process" : "Craft process"}</p>
+      <h2>{profile.processTitle}</h2>
+    </div>
+    <div class="premium-process-steps">
+      {profile.process.map((step) => (
+        <article>
+          <span>{step.step}</span>
+          <h3>{step.title}</h3>
+          <p>{step.body}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="premium-final">
+    <div>
+      <p class="premium-section-label">{isJa ? "Next" : "Next"}</p>
+      <h2>{profile.ctaTitle}</h2>
+      <p>{profile.ctaBody}</p>
+    </div>
+    <a href={profile.calUrl} target="_blank" rel="noopener noreferrer" class="premium-button primary">
+      {isJa ? "15分相談を予約" : "Book a 15-min call"}
+    </a>
+  </section>
+</section>
+
+<style is:inline>
+  .premium-demo {
+    color: #12131a;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.96), rgba(250,250,248,.98)),
+      radial-gradient(circle at top right, color-mix(in srgb, var(--premium-accent) 20%, transparent), transparent 42%);
+    overflow: hidden;
+  }
+
+  .premium-hero,
+  .premium-stats,
+  .premium-proof,
+  .premium-signature,
+  .premium-process,
+  .premium-final {
+    width: min(1180px, calc(100% - 32px));
+    margin-inline: auto;
+  }
+
+  .premium-hero {
+    min-height: min(820px, calc(100vh - 64px));
+    display: grid;
+    grid-template-columns: minmax(0, .9fr) minmax(360px, 1.1fr);
+    gap: clamp(32px, 6vw, 84px);
+    align-items: center;
+    padding: clamp(56px, 8vw, 112px) 0 48px;
+  }
+
+  .premium-kicker,
+  .premium-section-label,
+  .premium-industry {
+    text-transform: uppercase;
+    letter-spacing: 0;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .premium-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--premium-dark);
+    margin-bottom: 20px;
+  }
+
+  .premium-kicker span {
+    width: 34px;
+    height: 2px;
+    background: var(--premium-accent);
+  }
+
+  .premium-industry {
+    color: #6b7280;
+    margin: 0 0 16px;
+  }
+
+  .premium-copy h1 {
+    max-width: 780px;
+    font-size: 76px;
+    line-height: .96;
+    letter-spacing: 0;
+    margin: 0;
+  }
+
+  .premium-lead {
+    max-width: 650px;
+    margin: 26px 0 0;
+    font-size: 20px;
+    line-height: 1.75;
+    color: #4b5563;
+  }
+
+  .premium-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 34px;
+  }
+
+  .premium-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    padding: 0 22px;
+    border-radius: 6px;
+    font-weight: 800;
+    text-decoration: none;
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+
+  .premium-button:hover {
+    transform: translateY(-2px);
+  }
+
+  .premium-button.primary {
+    color: white;
+    background: linear-gradient(135deg, var(--premium-accent), var(--premium-dark));
+    box-shadow: 0 18px 46px color-mix(in srgb, var(--premium-accent) 24%, transparent);
+  }
+
+  .premium-button.secondary {
+    color: #111827;
+    border: 1px solid rgba(17, 24, 39, .16);
+    background: rgba(255,255,255,.72);
+  }
+
+  .premium-visual {
+    position: relative;
+    min-height: 560px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 36px 90px rgba(15, 23, 42, .18);
+  }
+
+  .premium-visual img {
+    width: 100%;
+    height: 100%;
+    min-height: 560px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .premium-visual-card {
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    bottom: 24px;
+    display: grid;
+    gap: 6px;
+    padding: 18px;
+    border-radius: 8px;
+    color: white;
+    background: rgba(11, 16, 32, .78);
+    backdrop-filter: blur(18px);
+  }
+
+  .premium-visual-card strong {
+    font-size: 18px;
+  }
+
+  .premium-visual-card span {
+    color: rgba(255,255,255,.76);
+    font-size: 13px;
+  }
+
+  .premium-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid rgba(17, 24, 39, .11);
+    border-bottom: 1px solid rgba(17, 24, 39, .11);
+  }
+
+  .premium-stats div {
+    padding: 28px;
+    border-right: 1px solid rgba(17, 24, 39, .11);
+  }
+
+  .premium-stats div:last-child {
+    border-right: 0;
+  }
+
+  .premium-stats strong {
+    display: block;
+    font-size: 42px;
+    line-height: 1;
+    color: var(--premium-dark);
+  }
+
+  .premium-stats span {
+    display: block;
+    margin-top: 8px;
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .premium-proof,
+  .premium-signature,
+  .premium-process,
+  .premium-final {
+    padding: clamp(64px, 10vw, 120px) 0;
+  }
+
+  .premium-proof {
+    display: grid;
+    grid-template-columns: .9fr 1.1fr;
+    gap: 48px;
+    align-items: end;
+  }
+
+  .premium-section-label {
+    color: var(--premium-accent);
+    margin: 0 0 12px;
+  }
+
+  .premium-proof h2,
+  .premium-signature h2,
+  .premium-process h2,
+  .premium-final h2 {
+    font-size: 48px;
+    line-height: 1.08;
+    letter-spacing: 0;
+    margin: 0;
+  }
+
+  .premium-proof > p,
+  .premium-final p {
+    margin: 0;
+    color: #4b5563;
+    font-size: 18px;
+    line-height: 1.8;
+  }
+
+  .premium-signature-head {
+    max-width: 680px;
+    margin-bottom: 30px;
+  }
+
+  .premium-card-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .premium-card-grid article,
+  .premium-process-steps article {
+    border-radius: 8px;
+    padding: 26px;
+    background: white;
+    border: 1px solid rgba(17, 24, 39, .09);
+    box-shadow: 0 18px 46px rgba(15, 23, 42, .07);
+  }
+
+  .premium-card-grid span,
+  .premium-process-steps span {
+    color: var(--premium-accent);
+    font-weight: 900;
+    font-size: 13px;
+  }
+
+  .premium-card-grid h3,
+  .premium-process-steps h3 {
+    margin: 18px 0 10px;
+    font-size: 21px;
+  }
+
+  .premium-card-grid p,
+  .premium-process-steps p {
+    margin: 0;
+    color: #5b6472;
+    line-height: 1.7;
+  }
+
+  .premium-process {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 44px;
+  }
+
+  .premium-process-steps {
+    display: grid;
+    gap: 14px;
+  }
+
+  .premium-final {
+    display: flex;
+    justify-content: space-between;
+    gap: 28px;
+    align-items: center;
+    border-top: 1px solid rgba(17, 24, 39, .12);
+  }
+
+  .premium-final > div {
+    max-width: 720px;
+  }
+
+  .premium-culinary {
+    background: #fffaf1;
+  }
+
+  .premium-culinary .premium-visual {
+    border-radius: 999px 999px 8px 8px;
+  }
+
+  .premium-construction {
+    color: #f8fafc;
+    background: linear-gradient(135deg, #101316, #23211d);
+  }
+
+  .premium-construction .premium-lead,
+  .premium-construction .premium-proof > p,
+  .premium-construction .premium-final p,
+  .premium-construction .premium-industry,
+  .premium-construction .premium-stats span {
+    color: rgba(248,250,252,.7);
+  }
+
+  .premium-construction .premium-button.secondary,
+  .premium-construction .premium-card-grid article,
+  .premium-construction .premium-process-steps article {
+    color: #f8fafc;
+    background: rgba(255,255,255,.06);
+    border-color: rgba(255,255,255,.13);
+  }
+
+  .premium-construction .premium-card-grid p,
+  .premium-construction .premium-process-steps p {
+    color: rgba(248,250,252,.7);
+  }
+
+  .premium-construction .premium-stats {
+    border-color: rgba(255,255,255,.16);
+  }
+
+  .premium-beauty .premium-visual,
+  .premium-clinical .premium-visual {
+    border-radius: 8px 80px 8px 80px;
+  }
+
+  .premium-commerce .premium-card-grid {
+    grid-template-columns: 1.2fr .8fr 1fr;
+  }
+
+  .premium-advisory .premium-hero {
+    grid-template-columns: 1.1fr .9fr;
+  }
+
+  .premium-localService .premium-visual {
+    border-radius: 8px;
+    outline: 10px solid rgba(255,255,255,.6);
+  }
+
+  @media (max-width: 860px) {
+    .premium-copy h1 {
+      font-size: 44px;
+    }
+
+    .premium-lead {
+      font-size: 17px;
+    }
+
+    .premium-proof h2,
+    .premium-signature h2,
+    .premium-process h2,
+    .premium-final h2 {
+      font-size: 32px;
+    }
+
+    .premium-stats strong {
+      font-size: 34px;
+    }
+
+    .premium-hero,
+    .premium-proof,
+    .premium-process {
+      grid-template-columns: 1fr;
+    }
+
+    .premium-hero {
+      min-height: auto;
+    }
+
+    .premium-visual,
+    .premium-visual img {
+      min-height: 380px;
+    }
+
+    .premium-stats,
+    .premium-card-grid,
+    .premium-commerce .premium-card-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .premium-stats div {
+      border-right: 0;
+      border-bottom: 1px solid rgba(17, 24, 39, .11);
+    }
+
+    .premium-final {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+</style>
