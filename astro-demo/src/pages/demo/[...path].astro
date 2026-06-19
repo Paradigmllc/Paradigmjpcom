@@ -1,27 +1,54 @@
 ---
+import FullSitePage from "../../components/fullsite/FullSitePage.astro"
+import { getFullSiteProfile, normalizeSection } from "../../lib/full-site"
+
+const API_BASE = process.env.API_BASE || process.env.PUBLIC_API_BASE || "http://localhost:3000"
 const rawPath = Astro.params.path ?? ""
 const segments = rawPath.split("/").filter(Boolean)
 const slug = segments[0] || ""
-const section = segments[1] || ""
+const section = normalizeSection(segments[1])
 
-const sectionRoutes: Record<string, string> = {
-  about: "about",
-  cases: "cases",
-  contact: "contact",
-  faq: "faq",
-  pricing: "pricing",
-  privacy: "privacy",
-  services: "services",
-  terms: "terms",
-  tokushoho: "tokushoho",
+if (!slug) return Astro.redirect("/demo", 302)
+
+interface DemoPagePayload {
+  title?: string
+  meta?: Record<string, unknown>
 }
 
-if (!slug) return Astro.redirect("/", 302)
-if (!section) return Astro.redirect(`/${slug}`, 302)
-if (section === "blog") return Astro.redirect("/blog", 302)
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
 
-const mapped = sectionRoutes[section]
-if (mapped) return Astro.redirect(`/${mapped}/${slug}`, 302)
+function toDemoPage(value: unknown): DemoPagePayload {
+  if (!isRecord(value)) return {}
+  return {
+    title: typeof value.title === "string" ? value.title : undefined,
+    meta: isRecord(value.meta) ? value.meta : {},
+  }
+}
 
-return Astro.redirect(`/${slug}`, 302)
+let page: DemoPagePayload = {}
+
+try {
+  const response = await fetch(`${API_BASE}/api/demo-pages/${encodeURIComponent(slug)}`, {
+    headers: { "x-source": "astro-full-site" },
+    signal: AbortSignal.timeout(10000),
+  })
+  if (response.ok) {
+    page = toDemoPage(await response.json())
+  } else if (response.status !== 404) {
+    console.warn(`[full-site] demo page fetch failed: ${response.status}`)
+  }
+} catch (error) {
+  console.warn("[full-site] demo page fetch error", error)
+}
+
+const profile = getFullSiteProfile({
+  slug,
+  title: page.title,
+  meta: page.meta,
+  locale: typeof page.meta?.locale === "string" ? page.meta.locale : undefined,
+})
 ---
+
+<FullSitePage profile={profile} section={section} />

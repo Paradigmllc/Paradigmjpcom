@@ -1,0 +1,698 @@
+---
+import type { FullSiteProfile, FullSiteSection } from "../../lib/full-site"
+
+interface Props {
+  profile: FullSiteProfile
+  section: FullSiteSection
+}
+
+const { profile, section } = Astro.props
+const isJa = profile.locale === "ja"
+const currentLabel = profile.nav.find((item) => item.section === section)?.label ?? (isJa ? "ホーム" : "Home")
+const homeHref = `/demo/${profile.slug}`
+const contactHref = `/demo/${profile.slug}/contact`
+const servicesHref = `/demo/${profile.slug}/services`
+const pageTitle = section === "home" ? profile.siteTitle : `${currentLabel} | ${profile.companyName}`
+const legalBody = section === "privacy" ? profile.legal.privacy : profile.legal.terms
+const processSteps = isJa ? ["要件整理", "構成・コピー", "実装・API", "検証・公開"] : ["Brief", "Structure", "Build/API", "Verify/Launch"]
+const shownCases = section === "home" ? profile.cases.slice(0, 3) : profile.cases
+---
+
+<html lang={profile.locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="description" content={profile.description} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={profile.description} />
+    <meta property="og:type" content="website" />
+    <title>{pageTitle}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  </head>
+  <body style={`--accent:${profile.accentColor};--accent-dark:${profile.accentColorDark};--accent-light:${profile.accentColorLight};`}>
+    <header class="site-header">
+      <a class="brand" href={homeHref} aria-label={profile.companyName}>
+        <span>{profile.companyName.slice(0, 1)}</span>
+        <strong>{profile.companyName}</strong>
+      </a>
+      <nav class="desktop-nav" aria-label={isJa ? "主要ナビゲーション" : "Primary navigation"}>
+        {profile.nav.map((item) => (
+          <a href={item.href} aria-current={item.section === section ? "page" : undefined}>{item.label}</a>
+        ))}
+      </nav>
+      <div class="header-actions">
+        <a href={contactHref} class="header-cta">{isJa ? "相談する" : "Contact"}</a>
+        <button class="menu-button" type="button" aria-label={isJa ? "メニューを開く" : "Open menu"} data-menu-button>
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+      <nav class="mobile-nav" aria-label={isJa ? "モバイルナビゲーション" : "Mobile navigation"} data-mobile-nav hidden>
+        {profile.nav.map((item) => (
+          <a href={item.href} aria-current={item.section === section ? "page" : undefined}>{item.label}</a>
+        ))}
+      </nav>
+    </header>
+
+    <main>
+      {section === "home" && (
+        <>
+          <section class={`hero hero-${profile.archetype}`}>
+            <div class="hero-copy">
+              <p class="eyebrow">{profile.hero.eyebrow}</p>
+              <h1>{profile.hero.title}</h1>
+              <p class="hero-lead">{profile.hero.lead}</p>
+              <div class="hero-actions">
+                <a href={contactHref} class="button primary">{profile.hero.primary}</a>
+                <a href={servicesHref} class="button secondary">{profile.hero.secondary}</a>
+              </div>
+            </div>
+            <figure class="hero-visual">
+              <img src={profile.imageUrl} alt={`${profile.companyName} ${profile.industryLabel}`} loading="eager" />
+              <figcaption>
+                <strong>{profile.companyName}</strong>
+                <span>{profile.industryLabel}</span>
+              </figcaption>
+            </figure>
+          </section>
+
+          <section class="proof-strip" aria-label={isJa ? "サイトの特徴" : "Site highlights"}>
+            {profile.proof.map((item) => (
+              <div>
+                <strong>{item.value}</strong>
+                <span>{item.label}</span>
+              </div>
+            ))}
+          </section>
+
+          <section class="section-intro">
+            <p class="section-kicker">Service</p>
+            <h2>{isJa ? "見込み客が迷わず判断できる情報設計" : "Information architecture that helps buyers decide"}</h2>
+            <p>{isJa ? "ページ数を増やすだけではなく、顧客が比較検討で必要とする順番に情報を配置します。" : "The site is organized around the order buyers need, not around a generic template."}</p>
+          </section>
+          <section class="cards">
+            {profile.services.map((service) => (
+              <article class="card">
+                <h3>{service.title}</h3>
+                <p>{service.body}</p>
+                <div class="tag-list">{service.deliverables.map((item) => <span>{item}</span>)}</div>
+              </article>
+            ))}
+          </section>
+
+          <section class="split-feature">
+            <div class="split-media">
+              <img src={profile.imageUrl} alt={`${profile.companyName} ${profile.industryLabel}`} loading="lazy" />
+            </div>
+            <div class="split-copy">
+              <p class="section-kicker">Full Stack</p>
+              <h2>{isJa ? "フォーム、計測、下層更新まで運用前提で作る" : "Built for forms, tracking, and ongoing updates"}</h2>
+              <p>{isJa ? "見た目だけの静的ページではなく、問い合わせAPI、行動計測、CRM連携、更新可能な事例・FAQを前提にしたHPとして構成します。" : "This is not a visual-only static page. It is structured for an inquiry API, tracking, CRM handoff, and maintainable cases and FAQs."}</p>
+              <div class="tag-list">
+                <span>Astro SSR</span><span>API Form</span><span>CRM Ready</span><span>SEO Schema</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="section-intro">
+            <p class="section-kicker">Cases</p>
+            <h2>{isJa ? "公開後に改善できる事例ページ" : "Case pages designed for post-launch improvement"}</h2>
+            <p>{isJa ? "成果指標、Before/After、改善方針を蓄積できるため、営業資料としても使えます。" : "Each case can store results, before/after context, and the improvement direction for sales use."}</p>
+          </section>
+          <section class="cards">
+            {shownCases.map((item) => (
+              <article class="case-card">
+                <small>{item.industry}</small>
+                <h3>{item.title}</h3>
+                <p>{item.body}</p>
+                <div class="case-metrics">{item.metrics.map((metric) => <span>{metric}</span>)}</div>
+              </article>
+            ))}
+          </section>
+        </>
+      )}
+
+      {section !== "home" && (
+        <section class="section-shell">
+          <div class="page-head">
+            <p class="section-kicker">{currentLabel}</p>
+            <h1 class="section-heading">
+              {section === "services" && (isJa ? "提供サービス" : "Services")}
+              {section === "pricing" && (isJa ? "料金プラン" : "Pricing")}
+              {section === "cases" && (isJa ? "制作・改善事例" : "Case Studies")}
+              {section === "faq" && (isJa ? "よくある質問" : "FAQ")}
+              {section === "about" && (isJa ? "会社情報" : "Company Profile")}
+              {section === "blog" && (isJa ? "コラム" : "Journal")}
+              {section === "contact" && (isJa ? "お問い合わせ" : "Contact")}
+              {(section === "privacy" || section === "terms" || section === "tokushoho") && currentLabel}
+            </h1>
+            <p class="page-lead">
+              {section === "services" && (isJa ? "業種に合わせて、集客、信頼形成、問い合わせ導線まで一体で設計します。" : "Services are designed around acquisition, trust, and inquiry flow for this industry.")}
+              {section === "pricing" && (isJa ? "単発制作から改善運用まで、目的に合わせて選べる構成です。" : "Choose from launch, standard, and growth plans depending on the goal.")}
+              {section === "cases" && (isJa ? "サイト公開後に何を検証するかまで含めて見せられる事例ページです。" : "Case pages show not only the design but also what gets verified after launch.")}
+              {section === "faq" && (isJa ? "問い合わせ前の不安を先回りして解消します。" : "Common concerns are answered before they become inquiry friction.")}
+              {section === "about" && (isJa ? "信頼の前提になる基本情報、考え方、対応範囲を整理して掲載します。" : "Core business details, positioning, and scope are presented clearly.")}
+              {section === "blog" && (isJa ? "検索流入と営業資料化のための更新コンテンツを用意します。" : "Editorial content supports search traffic and sales enablement.")}
+              {section === "contact" && (isJa ? "状況を整理して送信できる、API連携済みフォームです。" : "An API-backed inquiry form that captures useful context.")}
+              {(section === "privacy" || section === "terms" || section === "tokushoho") && (isJa ? "納品時に最低限必要な法務ページも同一デザインで用意します。" : "Required legal pages are included in the same design system.")}
+            </p>
+          </div>
+
+          {section === "services" && (
+            <>
+              <section class="cards">
+                {profile.services.map((service) => (
+                  <article class="card">
+                    <h3>{service.title}</h3>
+                    <p>{service.body}</p>
+                    <div class="tag-list">{service.deliverables.map((item) => <span>{item}</span>)}</div>
+                  </article>
+                ))}
+              </section>
+              <section class="process-block">
+                {processSteps.map((step, index) => (
+                  <article>
+                    <strong>{String(index + 1).padStart(2, "0")}</strong>
+                    <h3>{step}</h3>
+                    <p>{isJa ? "公開後に検証できるよう、成果物と確認項目を残します。" : "Each step leaves deliverables and verification points for launch."}</p>
+                  </article>
+                ))}
+              </section>
+            </>
+          )}
+
+          {section === "pricing" && (
+            <>
+              <section class="cards pricing-grid">
+                {profile.plans.map((plan) => (
+                  <article class={`plan ${plan.featured ? "featured" : ""}`}>
+                    <h3>{plan.name}</h3>
+                    <span class="price">{plan.price}</span>
+                    <p>{plan.lead}</p>
+                    <ul class="check-list">{plan.features.map((feature) => <li>{feature}</li>)}</ul>
+                  </article>
+                ))}
+              </section>
+              <section class="comparison">
+                <table>
+                  <thead>
+                    <tr><th>{isJa ? "項目" : "Item"}</th><th>{isJa ? "対応" : "Included"}</th><th>{isJa ? "運用効果" : "Operational value"}</th></tr>
+                  </thead>
+                  <tbody>
+                    {profile.services.map((service) => (
+                      <tr>
+                        <td>{service.title}</td>
+                        <td>{service.deliverables.join(" / ")}</td>
+                        <td>{isJa ? "問い合わせ品質と更新性を高めます" : "Improves inquiry quality and maintainability"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </section>
+            </>
+          )}
+
+          {section === "cases" && (
+            <section class="cards">
+              {shownCases.map((item) => (
+                <article class="case-card">
+                  <small>{item.industry}</small>
+                  <h3>{item.title}</h3>
+                  <p>{item.body}</p>
+                  <div class="case-metrics">{item.metrics.map((metric) => <span>{metric}</span>)}</div>
+                </article>
+              ))}
+            </section>
+          )}
+
+          {section === "faq" && (
+            <section class="faq-list">
+              {profile.faqs.map((faq, index) => (
+                <details class="faq-item" open={index === 0}>
+                  <summary>{faq.question}</summary>
+                  <p>{faq.answer}</p>
+                </details>
+              ))}
+            </section>
+          )}
+
+          {section === "about" && (
+            <section class="info-table">
+              {profile.company.map((row) => (
+                <div>
+                  <dt>{row.label}</dt>
+                  <dd>{row.value}</dd>
+                </div>
+              ))}
+            </section>
+          )}
+
+          {section === "blog" && (
+            <section class="cards">
+              {profile.posts.map((post) => (
+                <article class="post-card">
+                  <small>{post.category} / {post.date}</small>
+                  <h3>{post.title}</h3>
+                  <p>{post.excerpt}</p>
+                </article>
+              ))}
+            </section>
+          )}
+
+          {section === "contact" && (
+            <section class="contact-layout">
+              <aside class="contact-panel">
+                <h2>{isJa ? "相談前に整理できること" : "What the form captures"}</h2>
+                <p>{isJa ? "会社名、課題、希望時期、予算感を受け取り、次の商談に使える形で計測します。" : "Company, challenge, timing, and budget are captured for the next sales step."}</p>
+                <div class="tag-list"><span>API</span><span>Tracking</span><span>CRM</span></div>
+              </aside>
+              <form class="contact-panel contact-form" data-contact-form>
+                <input type="hidden" name="slug" value={profile.slug} />
+                <input type="hidden" name="company" value={profile.companyName} />
+                <label>{isJa ? "お名前" : "Name"}<input name="name" autocomplete="name" required /></label>
+                <div class="field-grid">
+                  <label>{isJa ? "メール" : "Email"}<input type="email" name="email" autocomplete="email" required /></label>
+                  <label>{isJa ? "会社名" : "Company"}<input name="client_company" autocomplete="organization" /></label>
+                </div>
+                <div class="field-grid">
+                  <label>{isJa ? "相談内容" : "Topic"}
+                    <select name="topic">
+                      <option value="website">{isJa ? "ホームページ制作" : "Website production"}</option>
+                      <option value="improvement">{isJa ? "改善・運用" : "Improvement"}</option>
+                      <option value="estimate">{isJa ? "見積もり" : "Estimate"}</option>
+                    </select>
+                  </label>
+                  <label>{isJa ? "希望時期" : "Timeline"}
+                    <select name="timeline">
+                      <option value="soon">{isJa ? "なるべく早く" : "As soon as possible"}</option>
+                      <option value="month">{isJa ? "1か月以内" : "Within a month"}</option>
+                      <option value="quarter">{isJa ? "3か月以内" : "Within a quarter"}</option>
+                    </select>
+                  </label>
+                </div>
+                <label>{isJa ? "相談内容" : "Message"}<textarea name="message" required></textarea></label>
+                <input type="text" name="website" tabindex="-1" autocomplete="off" hidden />
+                <p data-form-status aria-live="polite"></p>
+                <button class="button primary" type="submit">{isJa ? "送信する" : "Send inquiry"}</button>
+              </form>
+            </section>
+          )}
+
+          {(section === "privacy" || section === "terms") && (
+            <div class="legal-body">{legalBody.map((body) => <p>{body}</p>)}</div>
+          )}
+
+          {section === "tokushoho" && (
+            <section class="info-table">
+              {profile.legal.tokushoho.map((row) => (
+                <div>
+                  <dt>{row.label}</dt>
+                  <dd>{row.value}</dd>
+                </div>
+              ))}
+            </section>
+          )}
+        </section>
+      )}
+
+      <section class="final-cta">
+        <div>
+          <h2>{isJa ? "この品質で本番用サイトに仕上げる" : "Turn this into a production website"}</h2>
+          <p>{isJa ? "トップだけでなく、下層、問い合わせ、計測、更新運用まで含めて納品できます。" : "Delivery includes lower pages, inquiry flow, tracking, and update-ready content."}</p>
+        </div>
+        <a href={contactHref} class="button primary">{isJa ? "相談する" : "Contact"}</a>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div>
+        <a class="brand footer-brand" href={homeHref}>
+          <span>{profile.companyName.slice(0, 1)}</span>
+          <strong>{profile.companyName}</strong>
+        </a>
+        <p>{isJa ? "業種別に設計された、納品品質のフルスタックHPデモ。" : "A production-quality full-stack website demo tailored by industry."}</p>
+      </div>
+      <nav aria-label={isJa ? "フッターナビゲーション" : "Footer navigation"}>
+        <a href={`/demo/${profile.slug}/privacy`}>{isJa ? "プライバシー" : "Privacy"}</a>
+        <a href={`/demo/${profile.slug}/terms`}>{isJa ? "利用規約" : "Terms"}</a>
+        <a href={`/demo/${profile.slug}/tokushoho`}>{isJa ? "特商法表記" : "Legal Notice"}</a>
+      </nav>
+      <small>© {new Date().getFullYear()} {profile.companyName}. Powered by Paradigm.</small>
+    </footer>
+
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: profile.companyName,
+      url: `https://demo.paradigmjp.com/demo/${profile.slug}`,
+      description: profile.description,
+    })} />
+    {section === "faq" && (
+      <script type="application/ld+json" set:html={JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: profile.faqs.map((faq) => ({
+          "@type": "Question",
+          name: faq.question,
+          acceptedAnswer: { "@type": "Answer", text: faq.answer },
+        })),
+      })} />
+    )}
+
+    <script is:inline>
+      const menuButton = document.querySelector("[data-menu-button]");
+      const mobileNav = document.querySelector("[data-mobile-nav]");
+      menuButton?.addEventListener("click", () => {
+        if (!mobileNav) return;
+        mobileNav.hidden = !mobileNav.hidden;
+      });
+
+      document.querySelectorAll("[data-contact-form]").forEach((form) => {
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const status = form.querySelector("[data-form-status]");
+          const button = form.querySelector("button[type='submit']");
+          const formData = new FormData(form);
+          const email = String(formData.get("email") || "");
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            if (status) {
+              status.textContent = "有効なメールアドレスを入力してください。";
+              status.dataset.state = "error";
+            }
+            return;
+          }
+          if (button) button.disabled = true;
+          if (status) {
+            status.textContent = "送信中です...";
+            status.dataset.state = "loading";
+          }
+          try {
+            const response = await fetch("/api/inquiries", { method: "POST", body: formData });
+            const payload = await response.json();
+            if (!response.ok || !payload.ok) throw new Error(payload.error || "Submission failed");
+            form.reset();
+            if (status) {
+              status.textContent = "送信しました。担当者よりご連絡します。";
+              status.dataset.state = "success";
+            }
+          } catch (error) {
+            console.error("Inquiry submission failed", error);
+            if (status) {
+              status.textContent = "送信に失敗しました。時間を置いて再度お試しください。";
+              status.dataset.state = "error";
+            }
+          } finally {
+            if (button) button.disabled = false;
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
+
+<style is:inline>
+  :global(*) { box-sizing: border-box; }
+  :global(html) { scroll-behavior: smooth; }
+  :global(body) {
+    margin: 0;
+    font-family: Inter, "Noto Sans JP", system-ui, sans-serif;
+    color: #12131a;
+    background: #fbfaf7;
+  }
+  :global(a) { color: inherit; text-decoration: none; }
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 20px;
+    min-height: 72px;
+    padding: 0 clamp(18px, 4vw, 44px);
+    border-bottom: 1px solid rgba(18, 19, 26, .08);
+    background: rgba(251, 250, 247, .92);
+    backdrop-filter: blur(18px);
+  }
+  .brand { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+  .brand span {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  }
+  .brand strong {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 15px;
+  }
+  .desktop-nav { display: flex; justify-content: center; gap: 4px; }
+  .desktop-nav a, .mobile-nav a {
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 750;
+    color: #4b5563;
+  }
+  .desktop-nav a:hover, .desktop-nav a[aria-current="page"], .mobile-nav a:hover, .mobile-nav a[aria-current="page"] {
+    color: #111827;
+    background: rgba(18, 19, 26, .06);
+  }
+  .header-actions { display: flex; align-items: center; gap: 10px; }
+  .header-cta, .button.primary {
+    color: white;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    box-shadow: 0 14px 32px color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+  .header-cta {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 850;
+  }
+  .menu-button {
+    display: none;
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(18, 19, 26, .12);
+    border-radius: 6px;
+    background: white;
+  }
+  .menu-button span { display: block; width: 18px; height: 2px; margin: 4px auto; background: #111827; }
+  .mobile-nav { grid-column: 1 / -1; padding: 8px 0 18px; }
+  .mobile-nav a { display: block; }
+  .hero, .section-shell, .proof-strip, .section-intro, .cards, .split-feature, .process-block, .comparison, .final-cta, .site-footer {
+    width: min(1180px, calc(100% - 32px));
+    margin-inline: auto;
+  }
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, .9fr) minmax(360px, 1.1fr);
+    gap: clamp(36px, 7vw, 88px);
+    align-items: center;
+    min-height: calc(100vh - 72px);
+    padding: clamp(54px, 8vw, 110px) 0;
+  }
+  .eyebrow, .section-kicker {
+    margin: 0 0 14px;
+    color: var(--accent-dark);
+    text-transform: uppercase;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0;
+  }
+  .hero h1, .section-heading {
+    margin: 0;
+    font-size: clamp(44px, 7vw, 82px);
+    line-height: .96;
+    letter-spacing: 0;
+  }
+  .hero-lead, .page-lead, .section-intro p, .split-copy p, .final-cta p {
+    color: #596171;
+    line-height: 1.85;
+  }
+  .hero-lead { max-width: 680px; margin: 28px 0 0; font-size: 19px; }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 50px;
+    padding: 0 22px;
+    border: 0;
+    border-radius: 6px;
+    font: inherit;
+    font-weight: 850;
+    cursor: pointer;
+  }
+  .button.secondary { border: 1px solid rgba(18, 19, 26, .14); background: white; }
+  .hero-visual {
+    position: relative;
+    margin: 0;
+    min-height: 560px;
+    overflow: hidden;
+    border-radius: 8px;
+    box-shadow: 0 34px 90px rgba(15, 23, 42, .18);
+  }
+  .hero-culinary .hero-visual { border-radius: 999px 999px 8px 8px; }
+  .hero-clinical .hero-visual, .hero-beauty .hero-visual { border-radius: 8px 84px 8px 84px; }
+  .hero-visual img {
+    width: 100%;
+    height: 100%;
+    min-height: 560px;
+    display: block;
+    object-fit: cover;
+  }
+  .hero-visual figcaption {
+    position: absolute;
+    left: 22px;
+    right: 22px;
+    bottom: 22px;
+    display: grid;
+    gap: 5px;
+    padding: 18px;
+    border-radius: 8px;
+    color: white;
+    background: rgba(11, 16, 32, .78);
+    backdrop-filter: blur(16px);
+  }
+  .proof-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid rgba(18, 19, 26, .11);
+    border-bottom: 1px solid rgba(18, 19, 26, .11);
+  }
+  .proof-strip div { padding: 28px; border-right: 1px solid rgba(18, 19, 26, .11); }
+  .proof-strip div:last-child { border-right: 0; }
+  .proof-strip strong { display: block; color: var(--accent-dark); font-size: 40px; line-height: 1; }
+  .proof-strip span { display: block; margin-top: 8px; color: #6b7280; font-size: 13px; font-weight: 800; }
+  .section-shell { padding: clamp(50px, 7vw, 86px) 0; }
+  .page-head, .section-intro { max-width: 760px; margin-bottom: 34px; }
+  .section-heading { font-size: clamp(38px, 5vw, 64px); }
+  .page-lead { max-width: 700px; font-size: 18px; }
+  .section-intro { padding-top: clamp(70px, 10vw, 120px); }
+  .section-intro h2, .split-copy h2, .final-cta h2 {
+    margin: 0;
+    font-size: clamp(32px, 4.5vw, 54px);
+    line-height: 1.08;
+    letter-spacing: 0;
+  }
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .card, .plan, .case-card, .faq-item, .post-card, .contact-panel {
+    border: 1px solid rgba(18, 19, 26, .09);
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 18px 46px rgba(15, 23, 42, .06);
+  }
+  .card, .plan, .case-card, .post-card { padding: 26px; }
+  .card h3, .plan h3, .case-card h3, .post-card h3 { margin: 0 0 10px; font-size: 21px; }
+  .card p, .plan p, .case-card p, .post-card p { color: #596171; line-height: 1.7; }
+  .tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .tag-list span, .post-card small, .case-card small {
+    color: var(--accent-dark);
+    background: color-mix(in srgb, var(--accent-light) 18%, white);
+    border-radius: 999px;
+    padding: 5px 9px;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .split-feature {
+    display: grid;
+    grid-template-columns: .9fr 1.1fr;
+    gap: 44px;
+    align-items: center;
+    padding: clamp(70px, 10vw, 120px) 0 30px;
+  }
+  .split-media { min-height: 420px; border-radius: 8px; overflow: hidden; }
+  .split-media img { width: 100%; height: 100%; min-height: 420px; object-fit: cover; display: block; }
+  .process-block, .comparison, .final-cta { margin-top: 48px; }
+  .process-block { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .process-block article { padding: 22px; border-top: 3px solid var(--accent); background: rgba(255, 255, 255, .72); }
+  .process-block strong { color: var(--accent-dark); }
+  .pricing-grid .plan.featured { border-color: color-mix(in srgb, var(--accent) 48%, white); transform: translateY(-10px); }
+  .price { display: block; margin: 18px 0; font-size: 34px; font-weight: 900; }
+  .check-list { display: grid; gap: 10px; padding: 0; margin: 18px 0 0; list-style: none; }
+  .check-list li::before { content: "✓"; margin-right: 8px; color: var(--accent-dark); font-weight: 900; }
+  .comparison { overflow-x: auto; border: 1px solid rgba(18, 19, 26, .09); border-radius: 8px; background: white; }
+  .comparison table { width: 100%; min-width: 660px; border-collapse: collapse; }
+  .comparison th, .comparison td { padding: 16px; border-bottom: 1px solid rgba(18, 19, 26, .08); text-align: left; }
+  .case-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 18px; }
+  .case-metrics span { padding: 10px; border-radius: 6px; background: #f4f4f1; font-size: 12px; font-weight: 850; text-align: center; }
+  .faq-list { display: grid; gap: 12px; }
+  .faq-item { padding: 0; }
+  .faq-item summary { cursor: pointer; padding: 20px 24px; font-weight: 850; }
+  .faq-item p { margin: 0; padding: 0 24px 22px; color: #596171; line-height: 1.75; }
+  .info-table { display: grid; border: 1px solid rgba(18, 19, 26, .09); border-radius: 8px; overflow: hidden; background: white; }
+  .info-table div { display: grid; grid-template-columns: 220px 1fr; border-bottom: 1px solid rgba(18, 19, 26, .08); }
+  .info-table div:last-child { border-bottom: 0; }
+  .info-table dt, .info-table dd { margin: 0; padding: 16px 18px; }
+  .info-table dt { font-weight: 850; background: #f4f4f1; }
+  .contact-layout { display: grid; grid-template-columns: .85fr 1.15fr; gap: 22px; }
+  .contact-panel { padding: 26px; }
+  .contact-form { display: grid; gap: 16px; }
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  label { display: grid; gap: 7px; font-size: 13px; font-weight: 800; }
+  input, select, textarea {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid rgba(18, 19, 26, .14);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font: inherit;
+    background: white;
+  }
+  textarea { min-height: 140px; resize: vertical; }
+  [data-form-status] { min-height: 22px; font-size: 13px; font-weight: 800; }
+  [data-form-status][data-state="success"] { color: #057a55; }
+  [data-form-status][data-state="error"] { color: #c81e1e; }
+  .legal-body { display: grid; gap: 14px; max-width: 780px; }
+  .legal-body p { margin: 0; padding: 18px 20px; border-left: 4px solid var(--accent); background: white; line-height: 1.8; }
+  .final-cta {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    align-items: center;
+    padding: 34px;
+    border-radius: 8px;
+    color: white;
+    background: linear-gradient(135deg, #111827, color-mix(in srgb, var(--accent-dark) 68%, #111827));
+  }
+  .final-cta p { color: rgba(255,255,255,.72); }
+  .site-footer {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 24px;
+    align-items: start;
+    padding: 46px 0 54px;
+    margin-top: 70px;
+    border-top: 1px solid rgba(18, 19, 26, .1);
+  }
+  .site-footer p { max-width: 420px; color: #596171; line-height: 1.7; }
+  .site-footer nav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 14px; }
+  .site-footer small { grid-column: 1 / -1; color: #6b7280; }
+  @media (max-width: 920px) {
+    .desktop-nav, .header-cta { display: none; }
+    .menu-button { display: block; }
+    .site-header { grid-template-columns: auto auto; justify-content: space-between; }
+    .hero, .split-feature, .contact-layout { grid-template-columns: 1fr; }
+    .hero { min-height: auto; }
+    .hero-visual, .hero-visual img { min-height: 380px; }
+    .cards, .process-block, .proof-strip { grid-template-columns: 1fr; }
+    .proof-strip div { border-right: 0; border-bottom: 1px solid rgba(18, 19, 26, .11); }
+    .pricing-grid .plan.featured { transform: none; }
+    .info-table div, .field-grid, .site-footer { grid-template-columns: 1fr; }
+    .site-footer nav { justify-content: flex-start; }
+    .final-cta { align-items: flex-start; flex-direction: column; }
+  }
+</style>

@@ -1,15 +1,12 @@
-## CURRENT STATUS - 2026-06-19 Astro demo TCD-quality art direction
+﻿## CURRENT STATUS - 2026-06-19 Astro demo full-stack HP delivery quality
 
-- Reworked `https://demo.paradigmjp.com/demo` from a generic one-layout LP into an industry demo gallery powered by a premium art-direction layer.
-- Added industry-specific demo archetypes for restaurant, construction, clinic, beauty, retail, advisory, and local service demos.
-- Generated/company demo pages now render a hand-crafted first view, proof section, signature section, process section, and CTA before the generic widget blocks.
-- Fixed the demo CSS delivery path by inlining critical page/component CSS so `/demo` does not fall back to unstyled HTML.
-- Replaced visible generated-demo navigation/CTA/footer labels with clean Japanese/English display text.
-- Verification: `npm run build` in `astro-demo` passed; local and production Playwright checks passed for restaurant/construction desktop and restaurant mobile with no horizontal overflow.
-- Production deploy: pushed `65196ee`, uploaded source tarball to `/root/astro-demo-src.tgz`, built `astro-demo:latest` on `paradigm-prod-01`, and restarted the `astro-demo` container.
-- Public verification: restaurant and construction `/demo` URLs return HTTP 200 with premium CSS/archetype present; `https://paradigmjp.com/ja/admin/sales` returns HTTP 200.
-- Host recovery note: `paradigm-prod-01` was CPU/IO saturated; rebooted via Hetzner API and stopped `paradigm-outreach-worker` (>100% CPU) with restart disabled, dropping current load from ~271 to ~2.84.
-- Screenshot evidence: `astro-demo-prod-restaurant-verified.png`, `astro-demo-prod-construction-verified.png`, `astro-demo-prod-mobile-verified.png` in `%TEMP%`.
+- Replaced the generated demo renderer for `/{slug}` and `/demo/{slug}/{section}` with a delivery-quality full-site renderer instead of redirecting to broken static-looking lower pages.
+- Added full-site data generation for home, services, pricing, cases, FAQ, about, blog, contact, privacy, terms, and tokushoho pages.
+- Added industry-specific service/case/pricing copy for restaurant, construction, clinic, beauty, retail, advisory, and local-service archetypes.
+- Added an Astro server API endpoint at `/api/inquiries` so contact forms POST through the demo app and emit tracking to `paradigmjp.com/api/track`.
+- Repaired premium demo Japanese copy and kept industry-specific visual assets/colors.
+- Local verification: `npm run build` in `astro-demo` passed; Playwright checked home/services/contact/pricing/FAQ for HTTP rendering, no mojibake, no horizontal overflow; contact form returned success.
+- Local screenshot evidence: `%TEMP%\\astro-demo-fullsite-contact.png`.
 
 ## CURRENT STATUS - 2026-06-19 RevenueOS Twenty country/template routing repair
 
@@ -21,66 +18,6 @@
 - Repair-routing now corrects already-bad foreign records that were saved as `JP/ja/website_diagnostic`.
 - Verification: `npx tsc --noEmit --pretty false --skipLibCheck --types node -p tsconfig.json`; `npm test -- src/lib/sales/routing.test.ts src/lib/sales/locale-scope.test.ts src/lib/sales/twenty-sync.test.ts src/lib/sales/source-coverage.test.ts`; `git diff --check`.
 
-## CURRENT STATUS - 2026-06-18 デモHP v2 納品品質 実装完了 🟢
-
-### GitHub: c269889 (pushed to main)
-### Astro build: ✅ GREEN (3.61s, 0 errors)
-
-### 実装スコープ サマリー
-| カテゴリ | ファイル数 | 状態 |
-|---------|-----------|------|
-| AstroWind 完全CSS + テーマシステム | 2 | ✅ |
-| AstroWind Widgets (オリジナル15種) | 15 | ✅ |
-| ScrewFast 完全復元 (enterprise) | 12 | ✅ |
-| Astroship 復元 (startup) | 8 | ✅ |
-| 固定ページ (会社概要/規約/特商法 etc) | 11 | ✅ |
-| 動的ページ (blog/404/sitemap) | 3 | ✅ |
-| ブログシステム | 2 routing pages | ✅ |
-| 共有コンポーネント (Navbar/Footer/Breadcrumb/BaseLayout) | 4 | ✅ |
-| パーソナライズエンジン (8業種×3テーマ) | 1 | ✅ |
-| API エンドポイント (/api/demo-pages) | 1 | ✅ |
-| Supabase マイグレーション (theme_demo_pages) | 1 | ✅ |
-| DBテーブル定義 | 1 | ✅ |
-| URL プロキシ (/d/[slug]) | 1 | ✅ |
-| デモ生成リライター | 1 | ✅ |
-| **合計** | **~165 files** | |
-
-### ページ一覧 (全17ページ + sitemap)
-1. `/[slug]` — 動的Widgetマウント（中核、フルページレイアウト）
-2. `/about/[company]` — 会社概要（商号・所在地・代表者・資本金・JSON-LD Organization）
-3. `/terms/[company]` — 利用規約（全15条、日英対応）
-4. `/privacy/[company]` — プライバシーポリシー（11セクション、Cookie同意）
-5. `/tokushoho/[company]` — 特商法表記（販売業者・返品・支払方法の全項目）
-6. `/contact/[company]` — お問合せ（Web3Forms実送信 + バリデーション）
-7. `/faq/[company]` — FAQ（検索 + カテゴリフィルタ + JSON-LD FAQPage）
-8. `/services/[company]` — サービス（6カード + プロセスタイムライン）
-9. `/pricing/[company]` — 料金（3ティア + 比較表 + Stripeリンク）
-10. `/cases/[company]` — 実績（フィルタ可能ポートフォリオグリッド）
-11. `/blog` — ブログ一覧（カテゴリフィルタ + ページネーション）
-12. `/blog/[slug]` — ブログ記事（prose + 目次 + SNSシェア + JSON-LD Article）
-13. `404` — カスタム404（CSSアニメーション + 検索 + リダイレクト）
-14. `sitemap.xml` — 動的サイトマップ
-
-### 3テーマ統合詳細
-| テーマ | Widget数 | CSSシステム | 特徴 |
-|--------|---------|-----------|------|
-| **AstroWind** | 15 (Hero×3, Features×3, CTA, Pricing, FAQs, Stats, Steps×2, Testimonials, Contact, Brands) | Tailwind v4 @theme + @utility 完全注入 + color-mix() CSS変数ダークモード | エージェンシー/SaaS向けモダンデザイン |
-| **ScrewFast** | 8 (Hero×2, Clients, Features×2, Pricing(gradient), Testimonials(12col), FAQ(accordion)) | OKLCHフルカラーパレット + Preline UI variants.css + anti-FOUC | 建設/物流/B2B向け重厚エンタープライズ |
-| **Astroship** | 6 (Hero, Features, CTA, Pricing, Logos, ContactForm) | Bricolage Grotesque可変フォント + モノクローム + Web3Forms API | EC/クリエイター向けモダンスタートアップ |
-
-### 魔改造の中核
-- `[slug].astro` — 3テーマCSS条件付き注入 + StickyHeader + 4colFooter + ダークモード + IntersectionObserver
-- `registry.astro` — 29 Widgetの静的インポート統合 + ThemeMetadata
-- `personalize.ts` — 8業種×ja/en×テーマ自動選択 + サービス/FAQ/指標自動生成
-- API: `POST /api/demo-pages/{slug}` (Dify用) / `GET` (Astro SSR用)
-- Proxy: `/d/[slug]` → `ASTRO_DEMO_BASE_URL/demo/[slug]`
-
-### 残タスク
-- [ ] Coolifyにastro-demoサービス登録 + デプロイ (demo.paradigmjp.com)
-- [ ] Supabase migration_058 本番OSS Supabaseに適用
-- [ ] ASTRO_DEMO_BASE_URL env設定 (paradigm-hp)
-- [ ] Difyワークフロー: Widget JSON生成プロンプト最適化
-- [ ] Cloud Supabase 解約
 ## CURRENT STATUS - 2026-06-18 RevenueOS outreach quality gate
 
 - Implemented shared outreach readiness gate for RevenueOS/Twenty/outreach worker.
@@ -90,10 +27,10 @@
 - Verification: `npm test -- src/lib/sales/outreach/readiness.test.ts src/lib/sales/form-message.test.ts` and `npx tsc --noEmit --pretty false --skipLibCheck --types node -p tsconfig.json`.
 ## CURRENT STATUS - 2026-06-18 RevenueOS Twenty data collection GUI/retry
 
-- Twenty Companies上でRevenueOS取得データを確認できるよう、`Data Status` / `Data Sources` / `Next Action` / `Last Error` をCRM表示順とTwenty metadata DB反映対象に追加。
-- enrichment結果のsource名不一致を修正し、Wappalyzer/SSL Labs/form discovery/Cloudflare Radar/Mozilla Observatory/Stagehandなどの取得結果と失敗理由がmetaへ正しく残るようにした。
-- source_qualityの失敗/timeoutをSource Coverageの`error`として可視化し、Twenty同期時に最終エラーも反映。
-- Twentyからのpullは不正なreport/form URLを信用せず、低カバレッジ・古いデータ・source error・未生成artifactを検出したら既存リストでも再収集/診断レポート生成キューへ戻す。
+- Twenty Companies荳翫〒RevenueOS蜿門ｾ励ョ繝ｼ繧ｿ繧堤｢ｺ隱阪〒縺阪ｋ繧医≧縲～Data Status` / `Data Sources` / `Next Action` / `Last Error` 繧辰RM陦ｨ遉ｺ鬆・→Twenty metadata DB蜿肴丐蟇ｾ雎｡縺ｫ霑ｽ蜉縲・
+- enrichment邨先棡縺ｮsource蜷堺ｸ堺ｸ閾ｴ繧剃ｿｮ豁｣縺励仝appalyzer/SSL Labs/form discovery/Cloudflare Radar/Mozilla Observatory/Stagehand縺ｪ縺ｩ縺ｮ蜿門ｾ礼ｵ先棡縺ｨ螟ｱ謨礼炊逕ｱ縺稽eta縺ｸ豁｣縺励￥谿九ｋ繧医≧縺ｫ縺励◆縲・
+- source_quality縺ｮ螟ｱ謨・timeout繧担ource Coverage縺ｮ`error`縺ｨ縺励※蜿ｯ隕門喧縺励ゝwenty蜷梧悄譎ゅ↓譛邨ゅお繝ｩ繝ｼ繧ょ渚譏縲・
+- Twenty縺九ｉ縺ｮpull縺ｯ荳肴ｭ｣縺ｪreport/form URL繧剃ｿ｡逕ｨ縺帙★縲∽ｽ弱き繝舌Ξ繝・ず繝ｻ蜿､縺・ョ繝ｼ繧ｿ繝ｻsource error繝ｻ譛ｪ逕滓・artifact繧呈､懷・縺励◆繧画里蟄倥Μ繧ｹ繝医〒繧ょ・蜿朱寔/險ｺ譁ｭ繝ｬ繝昴・繝育函謌舌く繝･繝ｼ縺ｸ謌ｻ縺吶・
 - Verification: `npm test -- src/lib/sales/source-coverage.test.ts src/lib/sales/twenty-sync.test.ts src/lib/sales/enrich.test.ts src/lib/sales/external-studio-sync.test.ts`; `npx tsc --noEmit --pretty false --skipLibCheck --types node -p tsconfig.json`; `git diff --check`.
 
 ## CURRENT STATUS - 2026-06-18 RevenueOS production recovery
