@@ -380,19 +380,20 @@ async function applyTwentyCrmMetadataViaDatabase(input: {
     for (const field of input.fields) {
       const options = selectOptionsForField(field, input.options)
       const shouldBeSelect = field.fieldType === "select" && options.length > 0
+      const shouldBeLinks = field.fieldType === "url"
       const shouldBeTextOnly = TWENTY_TEXT_ONLY_FIELD_KEYS.has(field.fieldKey)
       const metadataRes = await client.query(
         `
           update core."fieldMetadata"
           set
             "label" = $1,
-            "type" = case when $6 then 'TEXT' when $2 then 'SELECT' else "type" end,
+            "type" = case when $6 then 'TEXT' when $7 then 'LINKS' when $2 then 'SELECT' else "type" end,
             "options" = case when $6 then null when $2 then $3::jsonb else "options" end,
             "updatedAt" = now()
           where "objectMetadataId" = $4
             and "name" = $5
         `,
-        [field.label, shouldBeSelect, JSON.stringify(options), objectId, field.twentyFieldName, shouldBeTextOnly],
+        [field.label, shouldBeSelect, JSON.stringify(options), objectId, field.twentyFieldName, shouldBeTextOnly, shouldBeLinks],
       )
       appliedFields += metadataRes.rowCount ?? 0
       if (shouldBeSelect) selectFields += 1

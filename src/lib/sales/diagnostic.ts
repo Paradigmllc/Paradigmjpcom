@@ -40,6 +40,12 @@ import { buildVisualEvidenceStory } from "./diagnostic/visual-story"
 import type { DiagnosticReportData } from "./diagnostic/types"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { sanitizeBlocks } from "@/lib/mvp/hallucination-guard"
+import {
+  companyContactFormUrl,
+  companyDemoSite,
+  companyVisualEvidence,
+  mergedCompanyMeta,
+} from "@/lib/sales/company-data-view"
 
 export type {
   DiagnosticAct,
@@ -131,9 +137,10 @@ export async function fetchDiagnosticReport(opts: {
   if (personalizedCopy?.personalized_loss && acts[2]) acts[2] = { ...acts[2], body: personalizedCopy.personalized_loss }
 
   const totalLossYen = templates.reduce((sum, template) => sum + parseLossYen(template.loss), 0)
-  const demoSite = asRecord(company.meta.demo_site)
+  const unifiedMeta = mergedCompanyMeta(company)
+  const demoSite = companyDemoSite(company)
   const demoUrl = typeof demoSite?.url === "string" ? demoSite.url : null
-  const visualEvidence = asRecord(company.meta.visual_evidence)
+  const visualEvidence = companyVisualEvidence(company)
   const visualScreenshots = asRecord(visualEvidence?.screenshots)
   const desktopScreenshot = asRecord(visualScreenshots?.desktop)
   const mobileScreenshot = asRecord(visualScreenshots?.mobile)
@@ -144,8 +151,8 @@ export async function fetchDiagnosticReport(opts: {
   const screenshotUrl =
     typeof desktopScreenshot?.url === "string"
       ? desktopScreenshot.url
-      : typeof company.meta?.screenshot_url === "string"
-        ? company.meta.screenshot_url
+      : typeof unifiedMeta.screenshot_url === "string"
+        ? unifiedMeta.screenshot_url
         : null
   const screenshotMobileUrl = typeof mobileScreenshot?.url === "string" ? mobileScreenshot.url : null
   const evidenceShotCandidates = [
@@ -162,14 +169,14 @@ export async function fetchDiagnosticReport(opts: {
   const evidenceScreenshotKind =
     typeof evidenceScreenshot?.viewport === "string" ? evidenceScreenshot.viewport : evidenceScreenshotUrl ? "desktop" : null
   const visualStory = buildVisualEvidenceStory({
-    meta: (company.meta ?? {}) as Record<string, unknown>,
+    meta: unifiedMeta,
     acts,
     sourceCoverage,
     templateVariant,
     reportLocale,
   })
 
-  const rawMeta = (company.meta ?? {}) as Record<string, unknown>
+  const rawMeta = unifiedMeta
   const metaUnifiedProfile = rawMeta.unified_profile as Record<string, unknown> | undefined
   const metaBlocks = rawMeta.blocks
   const sanitized = sanitizeBlocks(metaBlocks, metaUnifiedProfile)
@@ -202,7 +209,7 @@ export async function fetchDiagnosticReport(opts: {
     source_coverage: sourceCoverage,
     intelligence: buildCompanyIntelligence(company, sourceCoverage.items),
     meta: safeMeta,
-    contactFormUrl: (company.meta?.contact_form_url as string) ?? null,
+    contactFormUrl: companyContactFormUrl(company),
     content_template: {
       title: contentTemplate.title,
       purpose: contentTemplate.purpose,
@@ -213,7 +220,7 @@ export async function fetchDiagnosticReport(opts: {
       appeal_angle: contentTemplate.appeal_angle,
     },
     report_url: reportUrlFor(company, reportLocale),
-    video_url: typeof company.meta?.video_url === "string" ? company.meta.video_url : null,
+    video_url: typeof unifiedMeta.video_url === "string" ? unifiedMeta.video_url : null,
   }
 }
 

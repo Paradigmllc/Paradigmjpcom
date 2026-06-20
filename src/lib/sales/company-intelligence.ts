@@ -1,5 +1,12 @@
 import type { SourceCoverageItem } from "./source-coverage"
 import type { SalesCompany } from "./types"
+import {
+  companyContactFormUrl,
+  companyJapanMarketAudit,
+  companyPainDiagnosis,
+  companyTechStack,
+  mergedCompanyMeta,
+} from "@/lib/sales/company-data-view"
 
 type JsonRecord = Record<string, unknown>
 
@@ -82,16 +89,16 @@ export function buildCompanyIntelligence(
   company: SalesCompany,
   sourceItems: SourceCoverageItem[],
 ): CompanyIntelligence {
-  const meta = (company.meta ?? {}) as JsonRecord
+  const meta = mergedCompanyMeta(company)
   const scan = asRecord(meta.scan)
-  const tech = asRecord(meta.tech)
+  const tech = companyTechStack(company)
   const ssl = asRecord(meta.ssl)
   const headers = asRecord(meta.security_headers)
   const robots = asRecord(meta.robots_sitemap)
   const place = asRecord(meta.place)
-  const diagnosis = asRecord(meta.pain_diagnosis)
+  const diagnosis = companyPainDiagnosis(company)
   const formDiscovery = asRecord(meta.form_discovery)
-  const japanMarketAudit = asRecord(meta.japan_market_audit)
+  const japanMarketAudit = companyJapanMarketAudit(company)
   const japanMarketStatus = asRecord(japanMarketAudit?.status)
   const dns = asRecord(meta.dns)
   const w3c = asRecord(meta.w3c_validation)
@@ -205,13 +212,13 @@ export function buildCompanyIntelligence(
     {
       id: "form",
       label: "Form URL",
-      value: asString(meta.contact_form_url) ?? "not discovered",
+      value: companyContactFormUrl(company) ?? "not discovered",
       source: "Crawlee / Crawl4AI / form discovery",
       category: "outreach",
-      tone: asString(meta.contact_form_url) ? "good" : "warning",
+      tone: companyContactFormUrl(company) ? "good" : "warning",
       detail: `Discovery method: ${asString(formDiscovery?.method) ?? "not collected"}`,
       whyItMatters: meaningFor(sourceItems, "crawlee", "A discoverable inquiry path matters for both users and outreach automation."),
-      missingConsequence: !asString(meta.contact_form_url) ? missingFor(sourceItems, "crawlee") : undefined,
+      missingConsequence: !companyContactFormUrl(company) ? missingFor(sourceItems, "crawlee") : undefined,
     },
     {
       id: "japan-market-audit",
@@ -338,7 +345,8 @@ export function buildCompanyIntelligence(
       recommendedAction: "Add offer-specific OGP, structured data, and proof-led preview copy.",
     })
   }
-  if (!asString(meta.contact_form_url)) {
+  const contactFormUrl = companyContactFormUrl(company)
+  if (!contactFormUrl) {
     painPoints.push({
       id: "form-missing",
       title: "Inquiry path is not machine-discoverable yet",
@@ -404,7 +412,7 @@ export function buildCompanyIntelligence(
 
   const nextActions = [
     "Review the company karte, sales material, and opportunity record on the Twenty company page.",
-    asString(meta.contact_form_url)
+    contactFormUrl
       ? "Run form outreach in dry-run mode first and verify the message, target form, and CAPTCHA risk."
       : "Confirm the form URL in Appsmith/NocoDB before any automated outreach.",
     japanMarketAudit

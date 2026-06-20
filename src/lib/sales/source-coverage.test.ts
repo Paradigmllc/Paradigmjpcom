@@ -45,4 +45,23 @@ describe("computeSourceCoverage", () => {
     expect(formDiscovery?.status).toBe("error")
     expect(formDiscovery?.detail).toContain("HTTP 500")
   })
+
+  it("counts normalized enrichment columns as collected evidence", () => {
+    const coverage = computeSourceCoverage({
+      ...companyWithMeta({}),
+      pain_diagnosis: {
+        primaryPain: "Inquiry path is weak",
+      },
+      japan_market_audit: {
+        readinessScore: 42,
+      },
+      tech_stack: {
+        stack: ["Next.js"],
+      },
+    })
+
+    expect(coverage.items.find((item) => item.slug === "dify")?.status).toBe("collected")
+    expect(coverage.items.find((item) => item.slug === "japan_market_audit")?.status).toBe("collected")
+    expect(coverage.items.find((item) => item.slug === "wappalyzer")?.status).toBe("collected")
+  })
 })

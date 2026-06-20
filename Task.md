@@ -1,4 +1,51 @@
-﻿## CURRENT STATUS - 2026-06-19 Astro demo full-stack HP delivery quality
+## CURRENT STATUS - 2026-06-20 RevenueOS/Twenty list collection deep audit hardening
+
+- Audited the Twenty blank-column issue beyond the visible screenshot symptoms: missing/optional CRM metadata was being silently removed during writeback, normalized enrichment columns were not consistently read by karte/coverage/report generation, report-phase coverage used stale company data, Twenty pull was capped to a single page, and the manual sync API only processed three records by default.
+- Added a shared company data view so `pain_diagnosis`, `dify_result`, `tech_stack`, `japan_market_audit`, `demo_site`, `visual_evidence`, and form URL discovery are read from normalized columns and legacy `meta` consistently.
+- Mirrored diagnosis/report enrichment back into `meta`, refreshed company rows before final source coverage persistence, and marked reports generated so Twenty receives fresh report/form/data-source state.
+- Hardened Twenty CRM metadata/writeback: required operational fields now fail loudly if missing instead of being dropped; URL fields are created as LINKS, select/text fields are typed correctly, ZA/GB/CA/AU/IN/SG country options are seeded, and Source Coverage/Data Sources/Data Status/Next Action/Last Error are pinned near the front of the CRM view.
+- Scaled Twenty intake/sync for large lists: pull now pages up to 10,000 records with cursor duplicate detection to avoid infinite loops, and `/api/sales/twenty-sync` now supports 60-record batches with `next_cursor_created_at` continuation for thousands of writebacks.
+- 整理: the existing public-site/load-timeout workspace changes are kept separate from the Twenty hardening changes where possible; local-only `opencode.json` is ignored because it contains machine-specific absolute paths.
+- Verification so far: targeted Vitest for Twenty pull, source coverage, and company karte passed; `npm exec -- tsc --noEmit --pretty false` passed.
+
+## CURRENT STATUS - 2026-06-20 RevenueOS/Twenty load timeout mitigation
+
+- Fixed RevenueOS initial load so `/[locale]/admin/sales` no longer waits for every secondary dashboard dataset before rendering. `getSalesDashboardData()` now wraps expensive Supabase/dashboard reads with a soft fallback timeout (`SALES_DASHBOARD_QUERY_TIMEOUT_MS`, default 2200ms) and returns a degraded dashboard with visible warnings instead of hanging into a 1-minute timeout.
+- Reduced initial dashboard payload pressure by lowering non-critical list limits for enrichment jobs, source runs, batches, browser-search runs, Japan-readiness insights, pipeline runs, and video jobs.
+- Stopped the client dashboard shell from immediately re-fetching the same heavy dashboard after receiving server `initialData`; the query key now includes locale and passes `report_locale` to `/api/sales/dashboard`.
+- Added network timeouts to Sales Supabase fetches (`SALES_SUPABASE_FETCH_TIMEOUT_MS`, default 12000ms) including the direct PostgREST rewrite path.
+- Added a Twenty API request timeout (`TWENTY_FETCH_TIMEOUT_MS`, default 8000ms) so Twenty pull/sync fails fast when Twenty is unreachable instead of tying up the request.
+- Local degraded-path verification: with unreachable Supabase and `SALES_DASHBOARD_QUERY_TIMEOUT_MS=700`, `/api/sales/dashboard?report_locale=ja` returned HTTP 200 in 1.46s with `status=degraded` and fallback warnings. With unreachable Twenty and `TWENTY_FETCH_TIMEOUT_MS=1000`, `/api/sales/twenty/pull` returned HTTP 502 in 1.05s instead of hanging.
+- Verification: `npm exec -- tsc --noEmit --pretty false` and `npm run build` passed.
+
+## CURRENT STATUS - 2026-06-19 Site-wide dynamic delivery quality reset
+
+- Reworked the public site from a static-looking animated shell into a dynamic, CMS-first business site: `/[locale]`, about, services, service details, pricing, works, contact, legal/privacy, LP, agency, and video routes are now dynamic-rendered where applicable.
+- Replaced the over-animated shared inner-page hero and MagicUI-heavy CTA with restrained editorial components inspired by premium Japanese theme-site information architecture, without copying external assets/design.
+- Toned down global Aurora/glass/glow styling so legacy `paradigm-glass` pages render as solid 8px business cards with low-motion shadows and no negative display letter spacing.
+- Added CMS-empty fallback content for services, pricing, and works from existing `src/lib/data.ts`, so a fresh/empty DB still shows delivery-ready content while live Payload data remains the priority.
+- Hid Dify chatbot across public marketing pages and kept conversion focused on contact/consultation CTAs.
+- Fixed the dynamic-site Timeout risk by bounding public Payload/CMS reads with a short fail-soft fallback (`PAYLOAD_PUBLIC_READ_TIMEOUT_MS`, default 1200ms) plus a lightweight DB TCP probe before Payload initialization. Settings/Header/Footer, homepage, services, pricing, works, FAQ, blog list, and blog detail no longer hold the whole page open when Payload DB is slow or unavailable.
+- DB-down verification: with `DATABASE_URI=postgresql://payload:payload@127.0.0.1:1/payload`, `/ja` returned 200 in 245ms and `/ja/services`, `/ja/pricing`, `/ja/works`, `/ja/blog` returned 200 in 16-25ms. Server logs no longer emit Payload connection stack traces or notification noise for public fallback reads; Playwright confirmed `/ja/services` and `/ja/pricing` render visible fallback content with `overflowX=0`.
+- Verification: `tsc --noEmit`, `git diff --check`, `npm audit --audit-level=high`, `npm run quality:guard` (0 errors), targeted Vitest suite (29/29), `npm run build`, and Chrome screenshots for `/ja/services`, `/ja/pricing`, `/ja/works`, `/ja/contact` desktop/mobile all passed with `overflowX=0`, `chatbotButtons=0`, `consoleErrors=[]`, and no empty CMS text.
+
+## CURRENT STATUS - 2026-06-19 RevenueOS audit hardening
+
+- Fixed mojibake in RevenueOS outreach DB bell / Slack notification copy for CAPTCHA handling, first-5 approval, and form submission completion.
+- Split Twenty sync helper responsibilities so RevenueOS quality guard no longer blocks on 500+ line Twenty files.
+- Root TypeScript pre-check now excludes the separate `astro-demo` app from the Next.js tsconfig boundary.
+- Pinned vulnerable transitive `hono` and `undici` versions through npm overrides and regenerated `package-lock.json`.
+- Added a build-time-only Payload placeholder secret in `scripts/build-next.mjs` so disabled Payload reads do not fail page-data collection when local envs are absent.
+- Repaired the mojibake handoff entry below so future agents can read the latest RevenueOS data collection status.
+
+## CURRENT STATUS - 2026-06-19 Site quality reset
+
+- Replaced the over-animated Aurora/MagicUI homepage with a restrained Revenue OS homepage for Japanese and English routes.
+- Reduced global glow/mesh intensity and removed negative display letter spacing from the shared typography primitive.
+- Hid the Dify chatbot on locale home routes and changed cookie consent from a full-width bottom bar to a smaller floating notice.
+- Verification in progress: TypeScript, targeted tests, quality guard, build, and Chrome screenshots for `/ja` and `/en`.
+
+## CURRENT STATUS - 2026-06-19 Astro demo full-stack HP delivery quality
 
 - Replaced the generated demo renderer for `/{slug}` and `/demo/{slug}/{section}` with a delivery-quality full-site renderer instead of redirecting to broken static-looking lower pages.
 - Added full-site data generation for home, services, pricing, cases, FAQ, about, blog, contact, privacy, terms, and tokushoho pages.
@@ -29,10 +76,10 @@
 - Verification: `npm test -- src/lib/sales/outreach/readiness.test.ts src/lib/sales/form-message.test.ts` and `npx tsc --noEmit --pretty false --skipLibCheck --types node -p tsconfig.json`.
 ## CURRENT STATUS - 2026-06-18 RevenueOS Twenty data collection GUI/retry
 
-- Twenty Companies荳翫〒RevenueOS蜿門ｾ励ョ繝ｼ繧ｿ繧堤｢ｺ隱阪〒縺阪ｋ繧医≧縲～Data Status` / `Data Sources` / `Next Action` / `Last Error` 繧辰RM陦ｨ遉ｺ鬆・→Twenty metadata DB蜿肴丐蟇ｾ雎｡縺ｫ霑ｽ蜉縲・
-- enrichment邨先棡縺ｮsource蜷堺ｸ堺ｸ閾ｴ繧剃ｿｮ豁｣縺励仝appalyzer/SSL Labs/form discovery/Cloudflare Radar/Mozilla Observatory/Stagehand縺ｪ縺ｩ縺ｮ蜿門ｾ礼ｵ先棡縺ｨ螟ｱ謨礼炊逕ｱ縺稽eta縺ｸ豁｣縺励￥谿九ｋ繧医≧縺ｫ縺励◆縲・
-- source_quality縺ｮ螟ｱ謨・timeout繧担ource Coverage縺ｮ`error`縺ｨ縺励※蜿ｯ隕門喧縺励ゝwenty蜷梧悄譎ゅ↓譛邨ゅお繝ｩ繝ｼ繧ょ渚譏縲・
-- Twenty縺九ｉ縺ｮpull縺ｯ荳肴ｭ｣縺ｪreport/form URL繧剃ｿ｡逕ｨ縺帙★縲∽ｽ弱き繝舌Ξ繝・ず繝ｻ蜿､縺・ョ繝ｼ繧ｿ繝ｻsource error繝ｻ譛ｪ逕滓・artifact繧呈､懷・縺励◆繧画里蟄倥Μ繧ｹ繝医〒繧ょ・蜿朱寔/險ｺ譁ｭ繝ｬ繝昴・繝育函謌舌く繝･繝ｼ縺ｸ謌ｻ縺吶・
+- Twenty Companies上でRevenueOS取得データを確認できるよう、`Data Status` / `Data Sources` / `Next Action` / `Last Error` をCRM表示順とTwenty metadata DB反映対象に追加。
+- enrichment結果のsource名を統一し、Wappalyzer / SSL Labs / form discovery / Cloudflare Radar / Mozilla Observatory / Stagehandなどの取得結果と失敗理由がmetaへ正しく残るよう修正。
+- source_qualityの失敗・timeoutをSource Coverageの`error`として可視化し、Twenty同期時にも最終エラーを反映。
+- Twentyからのpullは不正なreport/form URLを信用せず、低カバレッジ・古いデータ・source error・未生成artifactを検出した場合は再取得/診断レポート生成キューへ戻す。
 - Verification: `npm test -- src/lib/sales/source-coverage.test.ts src/lib/sales/twenty-sync.test.ts src/lib/sales/enrich.test.ts src/lib/sales/external-studio-sync.test.ts`; `npx tsc --noEmit --pretty false --skipLibCheck --types node -p tsconfig.json`; `git diff --check`.
 
 ## CURRENT STATUS - 2026-06-18 RevenueOS production recovery

@@ -1,6 +1,14 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import type { SalesCompany } from "./types"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import {
+  companyJapanMarketAudit,
+  companyPainDiagnosis,
+  companyTechStack,
+  companyVisualEvidence,
+  companyDifyResult,
+  mergedCompanyMeta,
+} from "@/lib/sales/company-data-view"
 
 type JsonRecord = Record<string, unknown>
 
@@ -106,7 +114,7 @@ const SOURCES: SourceDefinition[] = [
     label: "Wappalyzer CLI",
     category: "analysis",
     maxAgeDays: 30,
-    detect: (_m, c) => !!c.tech_stack || Array.isArray((_m.tech as JsonRecord | undefined)?.stack),
+    detect: (_m, c) => !!companyTechStack(c) || Array.isArray((_m.tech as JsonRecord | undefined)?.stack),
     detail: "CMS/framework/analytics stack",
     meaning: "CMS・計測・フレームワークは、改修難度、表示速度、セキュリティ負債、既存投資の見込みを読む材料です。",
     missingConsequence: "未取得だと、なぜAstro/Next.js差し替えが効くのか、既存環境に合わせた説明が薄くなります。",
@@ -122,7 +130,7 @@ const SOURCES: SourceDefinition[] = [
     category: "analysis",
     maxAgeDays: 30,
     env: ["DIFY_JAPAN_MARKET_AUDITOR_API_KEY", "DIFY_API_KEY", "CRAWL4AI_BASE_URL"],
-    detect: (_m, c) => !!c.japan_market_audit || !!_m.japan_market_audit,
+    detect: (_m, c) => !!companyJapanMarketAudit(c),
     detail: "Tokushoho, APPI/privacy, and Japan-local payment readiness",
     meaning: "Japan-entry prospects need a buyer-ready trust path: commercial disclosure, privacy handling, and local payment familiarity. This signal turns public-page gaps into a human-reviewed sales hypothesis.",
     missingConsequence: "Without this audit, Japan-entry reports can miss the concrete friction that makes overseas SMBs hesitate or fail to convert Japanese buyers.",
@@ -204,7 +212,7 @@ const SOURCES: SourceDefinition[] = [
       "DIFY_KARTE_TO_SALES_MATERIAL_KEY",
       "DIFY_API_KEY",
     ],
-    detect: (m) => !!m.pain_diagnosis || !!m.dify_diagnosis,
+    detect: (_m, c) => !!companyPainDiagnosis(c) || !!companyDifyResult(c),
     detail: "Pain summary and offer mapping",
     meaning: "取得した事実を、相手の業種・国・商材に合わせた痛みと言葉へ変換する中核です。",
     missingConsequence: "未取得だと、レポートは数字の羅列に寄り、相手が自分事として理解しにくくなります。",
@@ -384,7 +392,7 @@ function sourceQualityError(meta: JsonRecord, slug: string): string | null {
 }
 
 export function computeSourceCoverage(company: SalesCompany): SourceCoverageSnapshot {
-  const meta = (company.meta ?? {}) as JsonRecord
+  const meta = mergedCompanyMeta(company)
   const items = SOURCES.map((source): SourceCoverageItem => {
     const collected = source.detect(meta, company)
     const configured = hasConfiguredEnv(source.env)
@@ -431,13 +439,13 @@ function getSourceMeasuredAt(company: SalesCompany, slug: string): string | null
       return company.report_generated_at
     case "wappalyzer":
     case "whatweb":
-      return company.tech_stack ? company.report_generated_at : null
+      return companyTechStack(company) ? company.report_generated_at : null
     case "google_places":
       return typeof company.meta?.place === "object" && company.meta.place ? company.report_generated_at : null
     case "browser_screenshot":
-      return company.visual_evidence ? company.report_generated_at : null
+      return companyVisualEvidence(company) ? company.report_generated_at : null
     case "japan_market_audit":
-      return company.japan_market_audit ? company.report_generated_at : null
+      return companyJapanMarketAudit(company) ? company.report_generated_at : null
     default:
       return null
   }

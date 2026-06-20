@@ -5,6 +5,14 @@ import { computeSourceCoverage, type SourceCoverageItem } from "@/lib/sales/sour
 import type { CompanyProductRecommendation } from "@/lib/sales/products"
 import type { SalesCompany } from "@/lib/sales/types"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import {
+  companyContactFormUrl,
+  companyDemoSite,
+  companyDifyResult,
+  companyPainDiagnosis,
+  companyTechStack,
+  mergedCompanyMeta,
+} from "@/lib/sales/company-data-view"
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
@@ -147,19 +155,19 @@ function localizedReportUrls(company: SalesCompany, reportLocale: ReportLocale):
 }
 
 function evidenceFromCompany(company: SalesCompany): CompanyKarteEvidence[] {
-  const meta = (company.meta ?? {}) as JsonRecord
-  const diagnosis = asRecord(meta.pain_diagnosis)
-  const dify = asRecord(meta.dify_diagnosis)
-  const tech = asRecord(meta.tech)
+  const meta = mergedCompanyMeta(company)
+  const diagnosis = companyPainDiagnosis(company)
+  const dify = companyDifyResult(company)
+  const tech = companyTechStack(company)
   const place = asRecord(meta.place)
-  const demo = asRecord(meta.demo_site)
+  const demo = companyDemoSite(company)
 
   return [
     numberEvidence("PageSpeed Mobile", company.pagespeed_mobile, "PageSpeed Insights"),
     numberEvidence("PageSpeed Desktop", company.pagespeed_desktop, "PageSpeed Insights"),
     textEvidence(
       "フォームURL",
-      firstString(meta, [["contact_form_url"], ["form_discovery", "form_url"], ["discovery", "contact_form_url"]]),
+      companyContactFormUrl(company),
       "Crawlee / Crawl4AI",
       "good",
     ),
@@ -190,7 +198,7 @@ export function buildCompanyKarte(
   sourceRows: SourceRunRow[] = [],
   recommendedProducts: CompanyProductRecommendation[] = [],
 ): CompanyKarteSnapshot {
-  const meta = (company.meta ?? {}) as JsonRecord
+  const meta = mergedCompanyMeta(company)
   const routing = asRecord(meta.routing)
   const reportLocale = (company.report_locale ?? routing?.report_locale ?? "ja") as ReportLocale
   const targetCountry =
@@ -200,8 +208,8 @@ export function buildCompanyKarte(
     (typeof routing?.template_variant === "string" ? routing.template_variant : "website_diagnostic")
   const sourceItems = sourceItemsFromRows(company, sourceRows)
   const counts = coverageCounts(sourceItems)
-  const formUrl = firstString(meta, [["contact_form_url"], ["form_discovery", "form_url"], ["discovery", "contact_form_url"]])
-  const diagnosis = asRecord(meta.pain_diagnosis)
+  const formUrl = companyContactFormUrl(company)
+  const diagnosis = companyPainDiagnosis(company)
   const personalizedCopy = asRecord(meta.personalized_copy)
 
   return {
