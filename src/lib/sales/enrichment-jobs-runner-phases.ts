@@ -126,8 +126,12 @@ export async function processDiagnosisPhase(
     japan_market_audit: japanMarketAudit as unknown as Record<string, unknown> | null,
   })
 
+  // Phase 1 retry-isolation (root-cause fix for "0 reports"): a Dify failure (e.g. HTTP 400)
+  // must NOT fail the whole enrichment job or block report generation. The local/DeepSeek
+  // fallback summary is already persisted above, so record the Dify error and continue — the
+  // diagnostic report and DeepSeek personalization (autoPersonalize) still get produced.
   if (!dify.ok && dify.configured) {
-    return { ok: false, error: dify.error ?? "Dify diagnosis failed", difyConfigured: dify.configured, difyOk: false, difyError: dify.error ?? undefined, painSummary: dify.summary.primaryPain }
+    console.warn(`[sales-enrichment] Dify diagnosis degraded (${dify.error ?? "unknown"}); continuing with fallback summary so the report still generates`)
   }
 
   return { ok: true, difyConfigured: dify.configured, difyOk: dify.ok, difyError: dify.ok ? undefined : (dify.error ?? undefined), painSummary: dify.summary.primaryPain }
