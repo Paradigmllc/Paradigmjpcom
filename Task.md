@@ -40,7 +40,7 @@ Phase 5 — テスト/デプロイ（LL/SAFE-DEPLOY/T-PLUS）
 
 Phase 6 — レポート品質・Dify本文正本化・トレース可視化
 - [x] 6-1 Dify karte→report を5幕本文の正本・meta.personalized_copy 永続化・DeepSeek=fallback（autoPersonalize を enrichment report phase へ配線・tsc clean。Dify正本化は DIFY_KARTE_TO_REPORT_API_KEY 設定時に昇格）
-- [ ] 6-2 generatedBy＋テンプレ選定トレースを report meta 保存・GUI/Twenty表示
+- [x] 6-2 generatedBy＋テンプレ選定トレースを report meta 保存・GUI/Twenty表示（karte snapshot に reportEngine/diagnosisEngine 追加・karteHomeSummary に「生成エンジン」行・tsc clean・14 tests pass）
 - [ ] 6-3 Dify/DeepSeek 用途マップ文書化
 - [ ] 6-4 hallucination-guard 全文面適用・confidence/出典ラベル必須・捏造禁止回帰
 
