@@ -2,7 +2,7 @@
  * POST /api/sales/kpi-snapshot — 日次 KPI スナップショット (Phase 4)
  *
  * 役割: その日 (or 指定日) の営業 KPI を集計し sales_kpi に upsert。
- *       cron (1 日 1 回) or admin から呼ぶ。
+ *       webhook, deploy/recovery event, or admin action から one-shot で呼ぶ。
  *
  * 認証: X-Webhook-Secret
  * Body: { date?: "YYYY-MM-DD" }  (省略時 = 今日 UTC)

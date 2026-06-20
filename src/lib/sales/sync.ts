@@ -164,7 +164,7 @@ export async function syncCompanyToNotion(
   return { ok: false, error: created.error }
 }
 
-/* ───── Notion → Supabase 逆流 (5min cron) ───── */
+/* ───── Notion → Supabase 逆流 (Notion webhook / explicit one-shot) ───── */
 
 /**
  * Notion 側で編集された 4 field (deal_stage / follow_up_date / memo / assigned_to)

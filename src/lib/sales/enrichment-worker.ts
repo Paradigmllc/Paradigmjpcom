@@ -3,64 +3,24 @@ import { pullTwentyCompaniesToSupabase } from "./twenty-pull"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 
-const TICK_INTERVAL_MS = 10_000
 const DRAIN_BATCH_SIZE = 10
-const DRAIN_MAX_BATCHES = 50
-const DRAIN_SLEEP_MS = 2_000
 
-type WorkerGlobal = typeof globalThis & { __enrichmentWorkerStarted?: boolean }
-
-function isProductionRuntime(): boolean {
-  return process.env.NODE_ENV === "production" || process.env.SALES_PIPELINE_WATCHDOG_ENABLED === "1"
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-export function startEnrichmentWorker(): void {
-  if (!isProductionRuntime()) return
-  const state = globalThis as WorkerGlobal
-  if (state.__enrichmentWorkerStarted) return
-  state.__enrichmentWorkerStarted = true
-
-  let draining = false
-  const timer = setInterval(() => {
-    if (draining) return
-    enrichmentTick().catch((e) => console.error("[enrichment-worker] tick failed:", e))
-  }, TICK_INTERVAL_MS)
-  timer.unref?.()
-
-  async function enrichmentTick() {
-    const recovered = await recoverStaleEnrichmentJobs(10)
-    const result = await runEnrichmentJobs(DRAIN_BATCH_SIZE)
-    if (recovered > 0 || result.processed > 0) {
-      console.warn("[enrichment-worker] tick", { recovered, processed: result.processed, completed: result.completed, failed: result.failed })
-    }
-    if (result.processed > 0) {
-      draining = true
-      try {
-        await drainQueue(result)
-      } finally {
-        draining = false
-      }
-    }
+export async function runEnrichmentEventDrain(limit = DRAIN_BATCH_SIZE): Promise<EnrichmentRunResult> {
+  const safeLimit = Math.max(1, Math.min(Math.round(limit), DRAIN_BATCH_SIZE))
+  const recovered = await recoverStaleEnrichmentJobs(safeLimit)
+  const result = await runEnrichmentJobs(safeLimit)
+  if (recovered > 0 || result.processed > 0) {
+    console.warn("[enrichment-worker] event drain", {
+      recovered,
+      processed: result.processed,
+      completed: result.completed,
+      failed: result.failed,
+    })
   }
-
-  async function drainQueue(firstResult: EnrichmentRunResult) {
-    let lastCount = firstResult.processed
-    for (let batch = 1; batch < DRAIN_MAX_BATCHES && lastCount > 0; batch++) {
-      await sleep(DRAIN_SLEEP_MS)
-      const result = await runEnrichmentJobs(DRAIN_BATCH_SIZE)
-      lastCount = result.processed
-      if (result.processed > 0) {
-        console.warn("[enrichment-worker] drain", { batch, processed: result.processed, completed: result.completed, failed: result.failed })
-      }
-    }
-  }
+  return result
 }
 
-// ── Cron replacement: Twenty sync (was Trigger.dev twentySyncCron * * * * *) ──
+// ── Event-triggered Twenty sync (webhook/API/manual action; no timer loop) ──
 let lastTwentySyncAt = 0
 export async function runTwentySyncTick(): Promise<{ scanned: number; upserted: number }> {
   if (Date.now() - lastTwentySyncAt < 55_000) return { scanned: 0, upserted: 0 }
@@ -78,7 +38,7 @@ export async function runTwentySyncTick(): Promise<{ scanned: number; upserted: 
   }
 }
 
-// ── Cron replacement: Report regenerator (was Trigger.dev salesReportRegeneratorTask */5 * * * *) ──
+// ── Event-triggered report repair (webhook/API/manual action; no timer loop) ──
 let lastReportRegenAt = 0
 export async function runReportRegeneratorTick(): Promise<number> {
   if (Date.now() - lastReportRegenAt < 4 * 60_000) return 0

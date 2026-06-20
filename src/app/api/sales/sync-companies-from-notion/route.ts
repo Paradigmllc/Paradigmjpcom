@@ -10,7 +10,7 @@
  *
  * Notion = GUI / Supabase = SSOT。新規判定は notion_page_id (無ければ domain) で照合。
  * 認証: X-Webhook-Secret 必須 / Body: { region?: "jp"|"global" }
- * cron (pg_cron) が 数分間隔で叩く想定 → アップロードから数分でカルテ完成。
+ * 定期実行は禁止。Notion webhook の取りこぼし補正や管理操作から one-shot で呼ぶ。
  */
 
 import { NextRequest, NextResponse } from "next/server"

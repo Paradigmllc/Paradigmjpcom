@@ -1,42 +1,28 @@
--- Migration 013: IO Budget 復旧後の cron ジョブ再開
--- migration_012 の逆操作。Disk IO Budget リセット後に実行する
+-- Migration 013: IO Budget recovery without cron restore
+-- Permanent infra rule (2026-06-20): do not restore pg_cron jobs. Notion/Supabase
+-- sync must be driven by Notion webhooks, Supabase Database Webhooks, queues, or
+-- explicit admin actions.
 
 -- ============================================================
--- STEP 1: pg_cron ジョブ 再スケジュール（間隔を長くして負荷低減）
+-- STEP 1: keep legacy pg_cron jobs disabled if they exist
 -- ============================================================
 DO $$ BEGIN
-  PERFORM cron.schedule(
-    'companies-notion-sync',
-    '30 minutes',
-    $$ 
-    -- Notion → Supabase companies 同期（30分毎に緩和）
-    SELECT net.http_post(
-      url:='https://paradigmjp.com/api/sales/sync-companies-from-notion',
-      headers:='{"Content-Type": "application/json", "x-webhook-secret": "' || current_setting('app.n8n_webhook_secret', true) || '"}'::jsonb
-    );
-    $$
-  );
+  PERFORM cron.unschedule('companies-notion-sync');
 EXCEPTION WHEN undefined_table OR undefined_function THEN
-  RAISE NOTICE 'pg_cron not available, skipping job reschedule';
+  RAISE NOTICE 'pg_cron not available, skipping companies-notion-sync disable';
+WHEN OTHERS THEN
+  RAISE NOTICE 'companies-notion-sync was not scheduled or could not be unscheduled: %', SQLERRM;
 END $$;
 
 DO $$ BEGIN
-  PERFORM cron.schedule(
-    'templates-notion-sync',
-    '60 minutes',
-    $$
-    -- Notion → Supabase templates 同期（1時間毎）
-    SELECT net.http_post(
-      url:='https://paradigmjp.com/api/sales/sync-templates-from-notion',
-      headers:='{"Content-Type": "application/json", "x-webhook-secret": "' || current_setting('app.n8n_webhook_secret', true) || '"}'::jsonb
-    );
-    $$
-  );
+  PERFORM cron.unschedule('templates-notion-sync');
 EXCEPTION WHEN undefined_table OR undefined_function THEN
-  RAISE NOTICE 'pg_cron not available, skipping job reschedule';
+  RAISE NOTICE 'pg_cron not available, skipping templates-notion-sync disable';
+WHEN OTHERS THEN
+  RAISE NOTICE 'templates-notion-sync was not scheduled or could not be unscheduled: %', SQLERRM;
 END $$;
 
 -- ============================================================
--- 実行確認
+-- 実行確認: cron.job に Paradigm site automation がないこと
 -- ============================================================
--- SELECT * FROM cron.job;
+-- SELECT * FROM cron.job WHERE command ILIKE '%paradigmjp.com%';

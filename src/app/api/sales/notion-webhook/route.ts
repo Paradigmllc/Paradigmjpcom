@@ -3,7 +3,7 @@
  *
  * 役割: Notion API Webhook (integration の Webhooks subscription) を受け、
  *       営業 OS 4 DB (リード/顧客/納品/テンプレ) のページ編集を数秒で Supabase へ反映する。
- *       旧 5min cron (sync-*-from-notion) を置き換える主経路。cron は取りこぼし保険として残す。
+ *       旧 5min cron (sync-*-from-notion) を置き換える主経路。取りこぼしは手動 one-shot で補正する。
  *
  * 入力: Notion からの POST (page.created / page.properties_updated / page.content_updated 等)
  * 出力: { ok, ... }

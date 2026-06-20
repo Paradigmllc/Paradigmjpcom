@@ -1,7 +1,7 @@
 /**
  * lib/sales/auth.ts — Trigger.dev webhook shared secret
  *
- * Role: protect /api/sales/* endpoints called by Trigger.dev, cron, and trusted automation.
+ * Role: protect /api/sales/* endpoints called by Trigger.dev, webhooks, and trusted automation.
  *       Compare `X-Webhook-Secret` with `TRIGGER_WEBHOOK_SECRET`.
  *
  * 設計判断:

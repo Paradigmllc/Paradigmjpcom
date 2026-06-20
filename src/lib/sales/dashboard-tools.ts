@@ -154,7 +154,7 @@ export const FALLBACK_TOOLS: DashboardToolConnection[] = [
   {
     slug: "trigger_dev",
     displayName: "Trigger.dev",
-    role: "通知、同期、定期実行、長時間ジョブを担う本番オーケストレーター。",
+    role: "通知、同期、イベント駆動ジョブ、長時間ジョブを担う本番オーケストレーター。",
     interfaceType: "automation",
     deploymentType: "cloud_or_self_hosted",
     status: readToolStatus("trigger_dev"),

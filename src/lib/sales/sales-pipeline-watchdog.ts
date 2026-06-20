@@ -2,13 +2,10 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { startLeadCandidateRunFallback } from "./lead-candidate-runner"
 import { startPassiveInventoryFallback } from "./passive-inventory-runner"
-import { startEnrichmentWorker, runTwentySyncTick, runReportRegeneratorTick } from "./enrichment-worker"
+import { runEnrichmentEventDrain, runTwentySyncTick, runReportRegeneratorTick } from "./enrichment-worker"
 
-const WATCHDOG_INTERVAL_MS = 60_000
 const STALE_RUN_MS = 5 * 60_000
 const MAX_RESTARTS_PER_TICK = 3
-
-type WatchdogGlobal = typeof globalThis & { __salesPipelineWatchdogStarted?: boolean }
 
 interface CandidateRunRow {
   id: string
@@ -16,10 +13,6 @@ interface CandidateRunRow {
   heartbeat_at: string | null
   created_at: string | null
   updated_at: string | null
-}
-
-function isProductionRuntime(): boolean {
-  return process.env.NODE_ENV === "production" || process.env.SALES_PIPELINE_WATCHDOG_ENABLED === "1"
 }
 
 function isStale(row: CandidateRunRow): boolean {
@@ -77,14 +70,16 @@ async function restartStalePassiveInventoryRuns(): Promise<number> {
 }
 
 async function tick(): Promise<void> {
+  const enrichment = await runEnrichmentEventDrain(3)
   const restarted = await restartStaleLeadRuns()
   const restartedPassive = await restartStalePassiveInventoryRuns()
   const { restartStaleSalesPipelineRuns } = await import("./sales-pipeline-fallback")
   const restartedPipelines = await restartStaleSalesPipelineRuns(3)
   const twenty = await runTwentySyncTick()
   const reports = await runReportRegeneratorTick()
-  if (restarted > 0 || restartedPassive > 0 || restartedPipelines > 0 || twenty.scanned > 0 || reports > 0) {
-    console.warn("[sales-pipeline-watchdog] tick", {
+  if (enrichment.processed > 0 || restarted > 0 || restartedPassive > 0 || restartedPipelines > 0 || twenty.scanned > 0 || reports > 0) {
+    console.warn("[sales-pipeline-watchdog] event drain", {
+      enrichmentProcessed: enrichment.processed,
       restartedLeadRuns: restarted,
       restartedPassiveInventoryRuns: restartedPassive,
       restartedPipelineRuns: restartedPipelines,
@@ -95,18 +90,12 @@ async function tick(): Promise<void> {
   }
 }
 
+export async function runSalesPipelineEventDrain(): Promise<void> {
+  await tick()
+}
+
 export function startSalesPipelineWatchdog(): void {
-  if (!isProductionRuntime()) return
-  const state = globalThis as WatchdogGlobal
-  if (state.__salesPipelineWatchdogStarted) return
-  state.__salesPipelineWatchdogStarted = true
-
-  startEnrichmentWorker()
-
-  const timer = setInterval(() => {
-    tick().catch((error) => {
-      console.error("[sales-pipeline-watchdog] tick failed:", error)
-    })
-  }, WATCHDOG_INTERVAL_MS)
-  timer.unref?.()
+  if (process.env.SALES_PIPELINE_WATCHDOG_ENABLED === "1") {
+    console.warn("[sales-pipeline-watchdog] disabled: use webhook/API-triggered runSalesPipelineEventDrain instead of a timer loop")
+  }
 }

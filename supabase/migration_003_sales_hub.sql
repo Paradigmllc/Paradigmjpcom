@@ -155,7 +155,7 @@ CREATE INDEX IF NOT EXISTS idx_sales_deliveries_due ON sales_deliveries (due_dat
 CREATE INDEX IF NOT EXISTS idx_sales_deliveries_notion_id ON sales_deliveries (notion_page_id);
 
 -- ─── 4. sales_templates (業種×課題テンプレ・Notion 主管) ─────
--- Notion 📝 テンプレDBから Supabase へ 1h cron で upsert
+-- Notion テンプレDBから Supabase へ webhook / one-shot 補正で upsert
 -- 業種 8 × 課題 7 = 56 templates 想定 (但し全組合せ作る必要なし)
 CREATE TABLE IF NOT EXISTS sales_templates (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -171,7 +171,7 @@ CREATE TABLE IF NOT EXISTS sales_templates (
   cta_text text,
   is_active boolean DEFAULT true,
   notion_page_id text UNIQUE,
-  -- 1h cron で更新する時刻 (drift 検知用)
+  -- webhook / one-shot 補正で更新する時刻 (drift 検知用)
   last_synced timestamptz,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now(),
@@ -274,7 +274,7 @@ END $$;
 COMMENT ON TABLE sales_companies IS 'リードDB (営業 OS 主軸・Notion 🎯 と双方向同期)';
 COMMENT ON TABLE sales_customers IS '顧客DB (成約後・Notion 🏢 と双方向同期・WL 戦略対応)';
 COMMENT ON TABLE sales_deliveries IS '納品物DB (Notion 📦 主管・n8n が自動処理)';
-COMMENT ON TABLE sales_templates IS '業種×課題テンプレDB (Notion 📝 主管・1h cron sync)';
+COMMENT ON TABLE sales_templates IS '業種×課題テンプレDB (Notion 主管・webhook/one-shot sync)';
 COMMENT ON TABLE sales_sync_logs IS '同期ログ (debug + RTBF audit)';
 
 COMMENT ON COLUMN sales_companies.notion_page_id IS 'Notion ページの一意 ID・削除復元の anchor';

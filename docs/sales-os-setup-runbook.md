@@ -1,7 +1,7 @@
 # Sales OS — 本番運用セットアップ Runbook (Sprint 11/12)
 
 > 役割: Sprint 11/12 で実装した Sales OS API・LP を本番運用するために必要な
->       残作業 (Coolify 環境変数の追加・cron 設定・Stripe / Notion 設定) の手順.
+>       残作業 (Coolify 環境変数の追加・webhook 設定・Stripe / Notion 設定) の手順.
 >
 > 対象スコープ: paradigmjp.com (Coolify app `i12am4vvcbggefnqdizhnv9a`)
 
@@ -81,20 +81,20 @@ curl -sS -X POST "https://api.notion.com/v1/databases/8cbab1f501144f83872c1738ce
 - Plan C: Vast.ai + ComfyUI + Wan2.2 (avatar 動画パイプライン)
 - どの方式でも endpoint URL を `HYPERFRAMES_API_URL` に投入すれば自動切替
 
-## 📅 Cron スケジュール (Coolify で設定)
+## 📣 イベント駆動ジョブ (Cron / 定期実行は禁止)
 
-### 週次ダイジェスト (毎週月曜 09:00 JST)
-- Coolify scheduled task で:
-  - Schedule: `0 0 * * 1` (UTC) = 毎週月曜 09:00 JST
-  - Command:
-    ```bash
-    curl -X POST -H "X-Webhook-Secret: $TRIGGER_WEBHOOK_SECRET" \
-      https://paradigmjp.com/api/sales/weekly-digest
-    ```
+### 週次ダイジェスト
+- Coolify Scheduled Task / pg_cron / systemd timer は使わない。
+- 管理者の明示操作、Slack slash command、または外部 webhook から one-shot で呼ぶ。
+- 手動実行:
+  ```bash
+  curl -X POST -H "X-Webhook-Secret: $TRIGGER_WEBHOOK_SECRET" \
+    https://paradigmjp.com/api/sales/weekly-digest
+  ```
 
-### HOT lead 自動検出 (Trigger.dev で 5 分ごと polling)
-- Trigger.dev task で `sales_companies` を WHERE `is_hot_lead=true` AND `is_hot_lead_at` > now() - 5min で SELECT
-- 検出時に Slack 通知 (Block Kit)
+### HOT lead 自動検出
+- `sales_companies` の INSERT/UPDATE は Supabase Database Webhook から通知する。
+- poll ではなく、`is_hot_lead` が true に変わったイベントで Slack 通知 (Block Kit) を送る。
 
 ## 🧪 動作確認チェックリスト (deploy 完了後)
 
@@ -143,8 +143,8 @@ sales_companies に INSERT
 🌱 新規リード: {name} ({domain})
   └→ ボタン: 診断レポート / 管理画面
 
-毎週月曜 09:00 (cron)
-  └→ /api/sales/weekly-digest
+管理者操作 / Slack command / webhook
+  └→ /api/sales/weekly-digest (one-shot)
         └→ Slack に Block Kit
             📊 週次ダイジェスト
             - HOT leads top 5
@@ -154,4 +154,4 @@ sales_companies に INSERT
 ```
 
 ---
-最終更新: 2026-05-13 (Sprint 12 完了時)
+最終更新: 2026-06-20 (Cron 廃止・イベント駆動化)
