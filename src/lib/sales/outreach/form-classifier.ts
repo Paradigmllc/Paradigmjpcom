@@ -26,7 +26,7 @@ const REGEX_HINTS: Array<{ classification: FormClassification; pattern: RegExp; 
     reason: "captcha / bot-protection detected; switch to human-led queue",
   },
   { classification: "risky_login", pattern: /<input[^>]+type=["']password["']/i, conf: 0.9 },
-  { classification: "skip_payment", pattern: /stripe|paypal|braintree|square|checkout\.js|card-number/i, conf: 0.75 },
+  { classification: "skip_payment", pattern: /\bstripe\.com\b|\bpaypal\.com\b|\bbraintree\b|\bsquareup\.com\b|\bsquare\s+(?:payments?|checkout|register)\b|\bcheckout\s*(?:\.js|\.com|now)\b|\bcard.number\b/i, conf: 0.85 },
   { classification: "risky_iframe", pattern: /<iframe[^>]+(form|contact|hsforms|typeform)/i, conf: 0.8 },
   { classification: "safe_cf7", pattern: /wpcf7|contact-form-7/i, conf: 0.85 },
   { classification: "safe_wpforms", pattern: /wpforms|gform_|gravity-?form|ninja-?forms/i, conf: 0.85 },
