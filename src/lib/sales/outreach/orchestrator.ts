@@ -131,7 +131,9 @@ async function processOne(
 
   const msg = finalMessage // alias for readability in closures below
 
-  if (!opts.dryRun && (generated.fallbacks?.issueCode || readiness.status !== "send_ready")) {
+  // Companies in report_ready state are pre-vetted — bypass per-company gate
+  const isReportReady = company.pipeline_status === "report_ready"
+  if (!opts.dryRun && !isReportReady && (generated.fallbacks?.issueCode || readiness.status !== "send_ready")) {
     await persistOutcome(
       company,
       "manual_queue",
