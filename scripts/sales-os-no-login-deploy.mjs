@@ -499,6 +499,10 @@ async function applySalesDxAiTemplateVariantMigration(envs) {
   return applySqlMigration(envs, "migration_043_sales_dx_ai_template_variant.sql", "Sales DX/AI template variant migration")
 }
 
+async function applyAbolishPgCronMigration(envs) {
+  return applySqlMigration(envs, "migration_044_abolish_pg_cron_event_driven.sql", "Abolish pg_cron event-driven migration")
+}
+
 async function applySalesCompaniesMetaMigration(envs) {
   return applySqlMigration(envs, "migration_046_sales_companies_meta_normalization.sql", "Sales companies meta normalization migration")
 }
@@ -687,6 +691,7 @@ async function main() {
     console.log(await applySalesAiPromptsRepairMigration(envs))
     console.log(await applySalesTriggerDevToolSlugMigration(envs))
     console.log(await applySalesVideoTriggerColumnsMigration(envs))
+    console.log(await applyAbolishPgCronMigration(envs))
     console.log(await applySalesCompaniesMetaMigration(envs))
     console.log(await applyLeadCandidateAcquisitionMigration(envs))
     console.log(await applyLeadCandidateRunsMigration(envs))

@@ -102,6 +102,6 @@
       "NOTION_DB_TEMPLATES_ID",
       "PARADIGMJP_BASE_URL"
     ],
-    "scale": "業種 8 × 課題 7 = 最大 56 templates・1h cron で十分"
+    "scale": "業種 8 × 課題 7 = 最大 56 templates・webhook / 手動 one-shot で同期"
   }
 }

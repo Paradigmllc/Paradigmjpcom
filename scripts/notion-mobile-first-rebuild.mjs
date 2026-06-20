@@ -243,7 +243,7 @@ function parentHubBlocks() {
         blk.navCard("讌ｭ遞ｮ蛻･蝟ｶ讌ｭ謌ｦ逡･", "8 讌ｭ遞ｮ ﾃ・Hook 遏･隴・, U(PAGES.strategy), "雌", "default"),
       ],
       [
-        blk.navCard("Setup & Environment", "env / cron / Slack 險ｭ螳・, U("35fa2b78-f3fc-81dd-8dda-e455d1f20d09"), "肌", "default"),
+        blk.navCard("Setup & Environment", "env / event webhook / Slack 險ｭ螳・, U("35fa2b78-f3fc-81dd-8dda-e455d1f20d09"), "肌", "default"),
         blk.navCard("R2 Storage Spec", "蜍慕判 / PDF 菫晏ｭ倅ｻ墓ｧ・, U("35fa2b78-f3fc-8163-8e90-c55cc0218ad5"), "淀・・, "default"),
       ],
     ),
@@ -370,7 +370,7 @@ function pipelineBlocks() {
     blk.p(""),
 
     blk.h2("Kanban Board"),
-    blk.p("繝ｪ繝ｼ繝・DB 繧・Notion UI 縺ｧ縲後・繝ｼ繝峨貢iew 縺ｫ縺励※縲悟膚隲・せ繝・・繧ｸ縲阪〒繧ｰ繝ｫ繝ｼ繝怜喧縲ゅせ繝・・繧ｸ髢薙ラ繝ｩ繝・げ縺ｧ Supabase 閾ｪ蜍募渚譏 (5min cron)縲・),
+    blk.p("繝ｪ繝ｼ繝・DB 繧・Notion UI 縺ｧ縲後・繝ｼ繝峨貢iew 縺ｫ縺励※縲悟膚隲・せ繝・・繧ｸ縲阪〒繧ｰ繝ｫ繝ｼ繝怜喧縲ゅせ繝・・繧ｸ髢薙ラ繝ｩ繝・げ縺ｧ Supabase 閾ｪ蜍募渚譏 (webhook one-shot)縲・),
     blk.linkedDb(DB.leadsJp),
     blk.p(""),
 

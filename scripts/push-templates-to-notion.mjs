@@ -2,7 +2,7 @@
  * scripts/push-templates-to-notion.mjs — Supabase sales_templates → Notion 📝 テンプレDB push
  *
  * 役割: seed 済の sales_templates を Notion テンプレDB に作成し、非エンジニアが
- *       Notion 上で文面編集できる状態にする (以降は cron で Notion→Supabase 逆同期)。
+ *       Notion 上で文面編集できる状態にする (以降は webhook / 手動 one-shot で Notion→Supabase 逆同期)。
  *
  * 冪等: 既存 Notion ページ (業種+課題コード 一致) はスキップ。
  *

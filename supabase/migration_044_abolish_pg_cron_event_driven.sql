@@ -1,4 +1,4 @@
--- Migration 014: Abolish pg_cron jobs — event-driven only (WW-EVENT permanent rule)
+-- Migration 044: Abolish pg_cron jobs — event-driven only (WW-EVENT permanent rule)
 --
 -- Server-load mitigation: site-wide cron / scheduled execution is abolished.
 -- Notion → Supabase sync (companies / templates / customers) must run on

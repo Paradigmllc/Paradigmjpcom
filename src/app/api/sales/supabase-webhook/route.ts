@@ -4,7 +4,7 @@
  * 役割: Supabase Database Webhook (sales_companies / sales_customers / sales_deliveries の
  *       INSERT/UPDATE) を受け、該当 row を Notion に push する。enrich/CSV/Stripe/手動 等
  *       「どの経路で Supabase が変わっても」数秒で Notion に反映される全自動トリガーの片翼。
- *       → 旧 5min cron (S→N 役) を置換。N→S は /api/sales/notion-webhook が担う。
+ *       → 旧定期同期 (S→N 役) を置換。N→S は /api/sales/notion-webhook が担う。
  *
  * 入力: Supabase DB Webhook payload { type, table, record, old_record, schema }
  * 認証: header x-webhook-secret == env SUPABASE_WEBHOOK_SECRET (constant-time・fail-closed)

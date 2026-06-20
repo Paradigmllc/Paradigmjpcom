@@ -259,6 +259,64 @@ function checkFileSizes() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// 5. WW-EVENT: NO SERVER-SIDE PERIODIC AUTOMATION
+// ═══════════════════════════════════════════════════════════════
+
+function checkEventDrivenAutomation() {
+  const triggerSource = readFile("trigger/sales-os.ts")
+  if (triggerSource) {
+    if (/schedules\.task\s*\(/.test(triggerSource)) {
+      error("trigger/sales-os.ts: schedules.task is forbidden by WW-EVENT; use event-triggered task()")
+    }
+    if (/\bcron\s*:/.test(triggerSource)) {
+      error("trigger/sales-os.ts: cron property is forbidden by WW-EVENT")
+    }
+  }
+
+  for (const rel of [
+    "n8n-workflows/01-supabase-to-notion-sync.json",
+    "n8n-workflows/02-notion-to-supabase-reverse.json",
+    "n8n-workflows/03-notion-template-sync.json",
+    "n8n-workflows/04-sales-video-pipeline.json",
+  ]) {
+    const workflow = readFile(rel)
+    if (workflow && workflow.includes("n8n-nodes-base.scheduleTrigger")) {
+      error(`${rel}: n8n scheduleTrigger is forbidden by WW-EVENT; use webhook trigger`)
+    }
+  }
+
+  const serverFiles = [
+    "src/instrumentation.ts",
+    ...findSourceFiles().filter((rel) => rel.startsWith("src/lib/sales/") || rel.startsWith("src/app/api/sales/")),
+  ]
+  for (const rel of serverFiles) {
+    const content = readFile(rel)
+    if (content && /\bsetInterval\s*\(/.test(content)) {
+      error(`${rel}: server-side setInterval is forbidden by WW-EVENT; use webhook/queue event drain`)
+    }
+  }
+
+  const runMigrations = readFile("scripts/run-migrations.sh")
+  if (runMigrations && !runMigrations.includes("migration_044_abolish_pg_cron_event_driven.sql")) {
+    error("scripts/run-migrations.sh: missing migration_044_abolish_pg_cron_event_driven.sql")
+  }
+
+  const abolishRoute = readFile("src/app/api/sales/admin/abolish-periodic-jobs/route.ts")
+  if (!abolishRoute) {
+    error("src/app/api/sales/admin/abolish-periodic-jobs/route.ts: missing one-shot pg_cron abolition endpoint")
+  } else {
+    if (!abolishRoute.includes("isSalesApiAuthorized")) {
+      error("src/app/api/sales/admin/abolish-periodic-jobs/route.ts: must require sales API authorization")
+    }
+    if (!abolishRoute.includes("to_regclass('cron.job')") || !abolishRoute.includes("cron.unschedule")) {
+      error("src/app/api/sales/admin/abolish-periodic-jobs/route.ts: must verify and unschedule pg_cron jobs")
+    }
+  }
+
+  ok("WW-EVENT no periodic automation guards verified")
+}
+
+// ═══════════════════════════════════════════════════════════════
 // MAIN
 // ═══════════════════════════════════════════════════════════════
 
@@ -268,6 +326,7 @@ checkMobileSafariGuards()
 checkBuildSpeedGuards()
 checkSilentCatches()
 checkFileSizes()
+checkEventDrivenAutomation()
 
 console.log(`\n${errors === 0 ? "✅" : "❌"} ${errors} error(s), ${warnings} warning(s)\n`)
 
