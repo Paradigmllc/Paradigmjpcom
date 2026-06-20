@@ -336,7 +336,7 @@ async function applySqlMigrationThroughPostgres(envs, sql, label) {
 function applySqlMigrationThroughHost(sql, label) {
   if (SKIP_DB_SSH_FALLBACK) return `${label}: exec_sql unavailable; DB SSH fallback skipped`
 
-  const sshTarget = envValue("PARADIGM_SUPABASE_SSH_TARGET", "root@139.59.250.5")
+  const sshTarget = envValue("PARADIGM_SUPABASE_SSH_TARGET", "root@178.105.138.55")
   const commonArgs = ["-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=accept-new", sshTarget]
   const apply = spawnSync(
     "ssh",

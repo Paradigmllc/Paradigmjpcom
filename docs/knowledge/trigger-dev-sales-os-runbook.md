@@ -15,7 +15,7 @@ These IDs are the production defaults used by the app when task env vars are not
 
 ## Architecture (OSS Docker Compose)
 
-Trigger.dev OSS runs as a Coolify `docker-compose` service on a dedicated Droplet.
+Trigger.dev OSS runs as a Coolify `docker-compose` service on a dedicated Hetzner server.
 
 **Containers (docker-compose.trigger-oss.yml):**
 
@@ -65,7 +65,7 @@ TRIGGER_SECRET_KEY=<PAT from Trigger.dev dashboard → Settings → Personal Acc
 node scripts/setup-trigger-oss.mjs
 
 # 2. Check webapp container logs for magic link + worker token
-#    (on the Droplet or via Coolify UI)
+#    (on the Hetzner server or via Coolify UI)
 
 # 3. Login to self-hosted CLI
 npx trigger.dev@latest login -a https://trigger.paradigmjp.com

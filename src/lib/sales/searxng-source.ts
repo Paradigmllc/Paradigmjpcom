@@ -423,6 +423,8 @@ ${JSON.stringify(promptData, null, 2)}`
     targetCountry: run.target_country,
     source: batchSource,
     enrich: input.enrich ?? true,
+    allowInlineFallback: false,
+    syncTwentyImmediately: false,
     minOutreachScore: minScore,
     maxOutreachReady: input.maxOutreachReady ?? 300,
     dryRunOnly: false,

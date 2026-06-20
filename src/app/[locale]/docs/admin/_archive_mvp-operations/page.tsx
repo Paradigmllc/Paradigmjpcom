@@ -175,7 +175,7 @@ export default function MvpOperationsDocsPage() {
           <tbody className="text-xs">
             <tr className="border-t border-paradigm-line">
               <td className="px-3 py-2">paradigmjp.com 全体ダウン</td>
-              <td className="px-3 py-2">Coolify webhook 再 deploy → 解消なければ DigitalOcean API <code>power_cycle</code> (Droplet 555590454・2-3 分復旧)</td>
+              <td className="px-3 py-2">Coolify 再 deploy → 解消しなければ Hetzner API で <code>paradigm-prod-01</code> の metrics 確認後に reboot/reset</td>
             </tr>
             <tr className="border-t border-paradigm-line">
               <td className="px-3 py-2">Dify Cloud 503</td>

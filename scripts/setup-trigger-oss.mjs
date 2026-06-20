@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * setup-trigger-oss.mjs — Coolify API 経由で Trigger.dev OSS を新 Droplet にデプロイ
+ * setup-trigger-oss.mjs — Coolify API 経由で Trigger.dev OSS を新 Hetzner server にデプロイ
  *
  * 使用法:
  *   node scripts/setup-trigger-oss.mjs
  *
  * 事前準備:
- *   1. Coolify 管理画面で新サーバー（Droplet 4vCPU/8GB+, Ubuntu 22.04+）を追加
+ *   1. Coolify 管理画面で新サーバー（Hetzner server 4vCPU/8GB+, Ubuntu 22.04+）を追加
  *   2. サーバーに Docker がインストールされていることを確認
  *   3. サーバー UUID をこのスクリプトの SERVER_UUID に設定
  *   4. COOLIFY_API_TOKEN を環境変数に設定
@@ -27,7 +27,7 @@ import crypto from "node:crypto"
 const ROOT = path.resolve(import.meta.dirname, "..")
 
 // ── Configuration ──
-const COOLIFY_API_URL = process.env.COOLIFY_API_URL || "http://178.105.138.55:8000"
+const COOLIFY_API_URL = process.env.COOLIFY_API_URL || "https://coolify.paradigmjp.com"
 const PROJECT_UUID = "okgoks4gwkg0o04csso0s0wg"
 const SERVER_UUID = process.env.TRIGGER_SERVER_UUID || "" // Set this!
 const DOMAIN = process.env.TRIGGER_DOMAIN || "trigger.paradigmjp.com"
@@ -116,7 +116,7 @@ async function main() {
   if (existingTrigger) {
     console.log(`  ✓ Service already exists: ${existingTrigger.uuid}`)
     console.log(`    Status: ${existingTrigger.status || "unknown"}`)
-    console.log(`    URL: http://178.105.138.55:8000/project/${PROJECT_UUID}/services`)
+    console.log(`    URL: https://coolify.paradigmjp.com/project/${PROJECT_UUID}/services`)
     printPostDeployInstructions(composeEnv, registryUser, registryPass)
     return
   }
@@ -145,7 +145,7 @@ async function main() {
     console.error(`  ❌ API creation failed: ${e.message}`)
     console.log()
     console.log("🔧 Manual setup:")
-    console.log("  1. Open http://178.105.138.55:8000")
+    console.log("  1. Open https://coolify.paradigmjp.com")
     console.log("  2. New Service → Docker Compose")
     console.log("  3. Paste docker-compose.trigger-oss.yml")
     console.log(`  4. Set domain: ${DOMAIN} → port 8030`)

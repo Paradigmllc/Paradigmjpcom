@@ -4,7 +4,7 @@ Updated: 2026-05-30
 
 ## Current Production State
 
-- Coolify and Traefik are running on `139.59.250.5`.
+- Coolify and Traefik are running on `178.105.138.55`.
 - Docker log rotation is configured in `/etc/docker/daemon.json`.
 - `appexx-host-janitor.timer` runs daily and now switches to aggressive unused-image pruning when root disk usage reaches 70%.
 - `supabase.paradigmjp.com` currently serves the Sales OS SSOT through PostgreSQL + PostgREST + Studio + Postgres Meta.

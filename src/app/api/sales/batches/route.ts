@@ -5,7 +5,7 @@ import { salesScopeFromCountry, salesScopeFromLocale } from "@/lib/sales/locale-
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
-export const maxDuration = 120
+export const maxDuration = 60
 
 interface CreateBody {
   name?: string | null
@@ -75,6 +75,8 @@ export async function POST(req: NextRequest) {
       targetCountry: scope.targetCountry,
       source: body.source,
       enrich: body.enrich,
+      allowInlineFallback: false,
+      syncTwentyImmediately: false,
       minOutreachScore: body.min_outreach_score,
       maxOutreachReady: body.max_outreach_ready,
       dryRunOnly: body.dry_run_only,

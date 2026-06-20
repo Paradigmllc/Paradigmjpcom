@@ -208,6 +208,8 @@ export async function createLeadBatch(input: {
   targetCountry?: string | null
   source?: string | null
   enrich?: boolean
+  allowInlineFallback?: boolean
+  syncTwentyImmediately?: boolean
   minOutreachScore?: number
   maxOutreachReady?: number
   dryRunOnly?: boolean
@@ -334,7 +336,7 @@ export async function createLeadBatch(input: {
       if (queued.ok) {
         jobs++
         status = "enrichment_queued"
-      } else {
+      } else if (input.allowInlineFallback === true) {
         // Enrichment queue failed — run lightweight enrichment inline
         try {
           const { detectTechStack } = await import("./sources/wappalyzer")
@@ -366,6 +368,9 @@ export async function createLeadBatch(input: {
         } catch (inlineErr) {
           console.error(`[monthly-batch] inline enrichment failed for ${cleanDomain}:`, inlineErr)
         }
+      } else {
+        failures.push({ row: i, reason: queued.error ?? "enrichment enqueue failed" })
+        console.warn("[monthly-batch] enrichment queue failed; inline fallback disabled to keep request bounded:", queued.error)
       }
     }
     batchItems.push({
@@ -393,7 +398,9 @@ export async function createLeadBatch(input: {
   }
   let twentySynced = 0
   let twentyFailed = 0
-  const uniqueCompanyIdsForTwenty = [...new Set(companyIdsForTwentySync)].slice(0, 50)
+  const uniqueCompanyIdsForTwenty = input.syncTwentyImmediately === true
+    ? [...new Set(companyIdsForTwentySync)].slice(0, 20)
+    : []
   if (uniqueCompanyIdsForTwenty.length > 0) {
     try {
       const { syncCompanyKarteToTwenty } = await import("./twenty-sync-companies")
@@ -441,7 +448,7 @@ export async function createLeadBatch(input: {
         console.error("[monthly-batch] inline enrichment fallback failed:", e)
       }
     }
-  } else if (imported > 0) {
+  } else if (imported > 0 && input.allowInlineFallback === true) {
     console.warn("[monthly-batch] enrichment queue unavailable, running first company enrichment inline")
     try {
       const { processJob } = await import("./enrichment-jobs-runner")

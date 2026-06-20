@@ -4,10 +4,10 @@ const fs = require('fs');
 
 try {
   console.log('Creating directory on server...');
-  execSync('ssh -o BatchMode=yes root@139.59.250.5 "mkdir -p /root/supabase-oss/migrations"');
+  execSync('ssh -o BatchMode=yes root@178.105.138.55 "mkdir -p /root/supabase-oss/migrations"');
 
   console.log('Copying root SQL files...');
-  execSync('scp supabase/*.sql root@139.59.250.5:/root/supabase-oss/migrations/');
+  execSync('scp supabase/*.sql root@178.105.138.55:/root/supabase-oss/migrations/');
 
   const subDir = path.join('supabase', 'migrations');
   if (fs.existsSync(subDir)) {
@@ -16,15 +16,15 @@ try {
       const num = f.match(/^migration_(\d+)/);
       const dest = num ? f.replace(/^migration_(\d+)/, 'migration_$1' + 'b') : f;
       console.log(`Copying subdirectory migration: ${f} -> ${dest}`);
-      execSync(`scp "${path.join(subDir, f)}" "root@139.59.250.5:/root/supabase-oss/migrations/${dest}"`);
+      execSync(`scp "${path.join(subDir, f)}" "root@178.105.138.55:/root/supabase-oss/migrations/${dest}"`);
     }
   }
 
   console.log('Copying run-migrations.sh...');
-  execSync('scp scripts/run-migrations.sh root@139.59.250.5:/root/supabase-oss/run-migrations.sh');
+  execSync('scp scripts/run-migrations.sh root@178.105.138.55:/root/supabase-oss/run-migrations.sh');
 
   console.log('Running migrations on server...');
-  const output = execSync('ssh root@139.59.250.5 "chmod +x /root/supabase-oss/run-migrations.sh && cd /root/supabase-oss && ./run-migrations.sh"');
+  const output = execSync('ssh root@178.105.138.55 "chmod +x /root/supabase-oss/run-migrations.sh && cd /root/supabase-oss && ./run-migrations.sh"');
   console.log(output.toString());
   
   console.log('Done!');
