@@ -15,6 +15,8 @@ import { pageAlternates } from "@/lib/page-metadata"
 import PageHero from "@/components/PageHero"
 import FadeIn from "@/components/aesop/FadeIn"
 
+export const dynamic = "force-dynamic"
+
 interface Props { params: Promise<{ locale: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

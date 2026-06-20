@@ -123,7 +123,7 @@ async function processOne(
     return base("discovery_failed", `message generation failed: ${generated.error ?? "empty"}`)
   }
   const message = fillReportUrl(generated.message, reportUrl)
-  // Inject demo URL if company has one (WEB制作診断レポ�EチEvariant only)
+  // Inject demo URL if company has one for the website diagnostic variant.
   const companyMeta = (company.meta ?? {}) as Record<string, unknown>
   const demoSite = companyMeta.demo_site as Record<string, unknown> | undefined
   const demoUrl = typeof demoSite?.url === "string" ? demoSite.url as string : null
@@ -216,11 +216,11 @@ async function processOne(
     )
     if (!opts.dryRun) {
       const { notifyBothChannels } = await import("@/lib/notify")
-      const title = `🤁ECAPTCHA手動対忁E ${company.company_name}`
-      const notificationMessage = `会社、E{company.company_name}」！E{company.domain}�E�にてロボット防御�E�EAPTCHA�E�を検�Eしたため、手動キューに送信しました、Eppsmithで送信承認また�E手動送信を行ってください、En送信允ERL: ${formUrl ?? "不�E"}`
+      const title = `CAPTCHA手動対応: ${company.company_name}`
+      const notificationMessage = `会社「${company.company_name}」（${company.domain}）でCAPTCHAまたはロボット防御を検出したため、手動キューに送信しました。営業ダッシュボードで送信可否を確認してください。\n送信先URL: ${formUrl ?? "不明"}`
 
       await notifyBothChannels(
-        `🚨 *CAPTCHA手動対応が忁E��E 🚨\n*会社吁E: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不�E"}\n*対忁E: 営業ダチE��ュボ�Eド等で手動対応を行ってください。`,
+        `*CAPTCHA手動対応が必要です*\n*会社名*: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不明"}\n*対応*: 営業ダッシュボードで手動確認してください。`,
         {
           title,
           message: notificationMessage,
@@ -270,11 +270,11 @@ async function processOne(
       opts.pipelineRunId,
     )
     const { notifyBothChannels } = await import("@/lib/notify")
-    const title = `⏳ 送信承認征E��: ${company.company_name}`
-    const notificationMessage = `会社、E{company.company_name}」！E{company.domain}�E�への初回のフォーム送信�E�Eirst-5ゲート）前に、人間による承認が忁E��です。営業ダチE��ュボ�Eドで承認してください、En送信允ERL: ${formUrl ?? "不�E"}\n診断レポ�EチE ${reportUrl}`
+    const title = `送信承認待ち: ${company.company_name}`
+    const notificationMessage = `会社「${company.company_name}」（${company.domain}）への初回フォーム送信は、first-5ゲートにより人間の承認が必要です。営業ダッシュボードで承認してください。\n送信先URL: ${formUrl ?? "不明"}\n診断レポート: ${reportUrl}`
 
     await notifyBothChannels(
-      `⏳ *送信承認征E��* (初回送信ゲーチE\n*会社吁E: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不�E"}\n*診断*: ${reportUrl}\n営業ダチE��ュボ�Eドで確認してください。`,
+      `*送信承認待ち* (初回送信ゲート)\n*会社名*: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不明"}\n*診断*: ${reportUrl}\n営業ダッシュボードで確認してください。`,
       {
         title,
         message: notificationMessage,
@@ -320,11 +320,11 @@ async function processOne(
 
   if (!opts.dryRun && opts.first5Approval && index < 5 && stage === "submitted") {
     const { notifyBothChannels } = await import("@/lib/notify")
-    const title = `✁E送信完亁E ${company.company_name}`
-    const notificationMessage = `会社、E{company.company_name}」！E{company.domain}�E�へのフォーム送信が完亁E��ました、E(送信件数: #${index + 1})\n診断レポ�EチE ${reportUrl}`
+    const title = `送信完了: ${company.company_name}`
+    const notificationMessage = `会社「${company.company_name}」（${company.domain}）へのフォーム送信が完了しました。(送信件数: #${index + 1})\n診断レポート: ${reportUrl}`
 
     await notifyBothChannels(
-      `✁E*フォーム送信完亁E (#${index + 1})\n*会社吁E: ${company.company_name} (${company.domain})\n*診断*: ${reportUrl}`,
+      `*フォーム送信完了* (#${index + 1})\n*会社名*: ${company.company_name} (${company.domain})\n*診断*: ${reportUrl}`,
       {
         title,
         message: notificationMessage,

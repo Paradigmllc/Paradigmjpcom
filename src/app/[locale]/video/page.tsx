@@ -22,6 +22,8 @@ import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
 
+export const dynamic = "force-dynamic"
+
 interface Props {
   params: Promise<{ locale: string }>
 }

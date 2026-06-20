@@ -18,7 +18,7 @@ import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
 import { filterByLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
 import { FAQ_JSONLD } from "@/lib/jsonld"
-import { markPayloadInitFailure, shouldSkipPayloadReads } from "@/lib/payload-availability"
+import { withPayloadReadFallback } from "@/lib/payload-availability"
 
 export const dynamic = "force-dynamic"
 
@@ -55,9 +55,7 @@ export default async function FaqPage({ params }: Props) {
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
   const t = await getTranslations({ locale, namespace: "faqPage" })
 
-  let faqs: FaqDoc[] = []
-  if (!shouldSkipPayloadReads()) {
-    try {
+  const faqs = await withPayloadReadFallback<FaqDoc[]>("faq.payload.find", async () => {
       const payload = await getPayload({ config })
       const res = await payload.find({
         collection: "faqs",
@@ -67,12 +65,8 @@ export default async function FaqPage({ params }: Props) {
         depth: 0,
         ...localeFindOptions(locale),
       })
-      faqs = (res.docs as unknown as FaqDoc[]) ?? []
-    } catch (e) {
-      markPayloadInitFailure(e)
-      console.error("[faq] payload.find failed:", e)
-    }
-  }
+      return (res.docs as unknown as FaqDoc[]) ?? []
+  }, [])
 
   const faqPairs = faqs.map((f) => ({ q: f.question ?? "", a: lexicalToPlainText(f.answer) }))
 
@@ -89,11 +83,11 @@ export default async function FaqPage({ params }: Props) {
         <div className="paradigm-mesh opacity-30" />
         <div className="relative z-10 max-w-3xl mx-auto px-6 md:px-8">
           {faqPairs.length === 0 ? (
-            <FadeIn className="text-center paradigm-glass rounded-2xl p-8 paradigm-glow-md">
+            <FadeIn className="text-center paradigm-glass rounded-lg p-8 paradigm-glow-md">
               <p className="text-[14px] text-paradigm-ink-soft leading-[1.85] mb-7">
                 {t("emptyMessage")}
               </p>
-              <Link href="/contact" className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-xl text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors">
+              <Link href="/contact" className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors">
                 {t("emptyCta")}
               </Link>
             </FadeIn>
@@ -101,13 +95,13 @@ export default async function FaqPage({ params }: Props) {
             <ul className="space-y-3">
               {faqPairs.map((faq, i) => (
                 <FadeIn key={i} delay={i * 0.04}>
-                  <li className="paradigm-glass rounded-2xl paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500 overflow-hidden">
+                  <li className="paradigm-glass rounded-lg paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500 overflow-hidden">
                     <details className="group">
                       <summary className="cursor-pointer flex items-start gap-4 p-5 list-none [&::-webkit-details-marker]:hidden">
                         <span className="font-display text-[18px] leading-none text-paradigm-accent mt-1 flex-shrink-0">
                           Q.
                         </span>
-                        <span className="font-display text-[15px] md:text-[18px] leading-[1.4] text-paradigm-ink flex-1 pr-4 tracking-[-0.005em]">
+                        <span className="font-display text-[15px] md:text-[18px] leading-[1.4] text-paradigm-ink flex-1 pr-4">
                           {faq.q}
                         </span>
                         <span aria-hidden className="shrink-0 text-paradigm-ink-mute mt-1 group-open:rotate-45 transition-transform text-[20px] leading-none">+</span>

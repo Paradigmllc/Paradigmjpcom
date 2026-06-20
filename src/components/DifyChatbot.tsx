@@ -65,7 +65,12 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
     if (open) bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, open])
 
-  if (pathname.includes("/p/") || /^\/[a-z]{2}\/d\//.test(pathname) || pathname.includes("/report/")) return null
+  if (
+    /^\/[a-z]{2}(\/(about|services|pricing|works|blog|faq|contact|legal|privacy|lp|agency|video)(\/|$)|\/?$)/.test(pathname) ||
+    pathname.includes("/p/") ||
+    /^\/[a-z]{2}\/d\//.test(pathname) ||
+    pathname.includes("/report/")
+  ) return null
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return

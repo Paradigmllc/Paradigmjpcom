@@ -19,7 +19,8 @@ import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
 import { filterByLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
-import { markPayloadInitFailure, shouldSkipPayloadReads } from "@/lib/payload-availability"
+import { withPayloadReadFallback } from "@/lib/payload-availability"
+import { getServices } from "@/lib/data"
 
 export const dynamic = "force-dynamic"
 
@@ -48,10 +49,10 @@ type ServiceDoc = {
 }
 
 const CARD_GRADIENTS = [
-  "from-pink-400 via-paradigm-accent to-paradigm-tech",
-  "from-paradigm-tech via-paradigm-glow to-violet-400",
-  "from-paradigm-glow via-violet-400 to-paradigm-accent",
-  "from-paradigm-accent via-pink-400 to-orange-300",
+  "from-zinc-950 via-zinc-800 to-blue-700",
+  "from-zinc-900 via-blue-800 to-emerald-700",
+  "from-zinc-900 via-emerald-800 to-blue-700",
+  "from-zinc-950 via-blue-800 to-amber-600",
 ]
 
 export default async function ServicesPage({ params }: Props) {
@@ -59,9 +60,7 @@ export default async function ServicesPage({ params }: Props) {
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
   const t = await getTranslations({ locale, namespace: "servicesPage" })
 
-  let services: ServiceDoc[] = []
-  if (!shouldSkipPayloadReads()) {
-    try {
+  let services = await withPayloadReadFallback<ServiceDoc[]>("services.payload.find", async () => {
       const payload = await getPayload({ config })
       const res = await payload.find({
         collection: "services",
@@ -71,11 +70,18 @@ export default async function ServicesPage({ params }: Props) {
         depth: 0,
         ...localeFindOptions(locale),
       })
-      services = (res.docs as unknown as ServiceDoc[]) ?? []
-    } catch (e) {
-      markPayloadInitFailure(e)
-      console.error("[services] payload.find failed:", e)
-    }
+      return (res.docs as unknown as ServiceDoc[]) ?? []
+  }, [])
+  if (services.length === 0) {
+    services = getServices(locale).map((service, index) => ({
+      id: service.id,
+      name: service.title,
+      slug: service.id,
+      tagline: service.tagline,
+      icon: service.icon,
+      features: service.features.slice(0, 4).map((feature) => ({ feature })),
+      sortOrder: index,
+    }))
   }
 
   return (
@@ -91,13 +97,13 @@ export default async function ServicesPage({ params }: Props) {
         <div className="paradigm-mesh opacity-30" />
         <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-8">
           {services.length === 0 ? (
-            <FadeIn className="text-center py-12 max-w-xl mx-auto paradigm-glass rounded-2xl p-8 paradigm-glow-md">
+            <FadeIn className="text-center py-12 max-w-xl mx-auto paradigm-glass rounded-lg p-8 paradigm-glow-md">
               <p className="text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.85] mb-7">
                 {t("emptyMessage")}
               </p>
               <Link
                 href="/contact"
-                className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-xl text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
+                className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
               >
                 {t("emptyCta")}
               </Link>
@@ -113,12 +119,12 @@ export default async function ServicesPage({ params }: Props) {
                     <article
                       className={`grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-stretch ${reversed ? "md:[direction:rtl]" : ""}`}
                     >
-                      <div className={`relative rounded-2xl bg-gradient-to-br ${gradient} aspect-[4/3] flex items-center justify-center text-paradigm-paper paradigm-glow-lg ${reversed ? "md:[direction:ltr]" : ""}`}>
-                        <div className="absolute inset-0 paradigm-mesh opacity-30 rounded-2xl" />
+                      <div className={`relative rounded-lg bg-gradient-to-br ${gradient} aspect-[4/3] flex items-center justify-center text-paradigm-paper paradigm-glow-lg ${reversed ? "md:[direction:ltr]" : ""}`}>
+                        <div className="absolute inset-0 paradigm-mesh opacity-30 rounded-lg" />
                         <div className="relative z-10 text-center px-6">
                           {s.icon && <span aria-hidden className="block mb-3 text-[44px] leading-none opacity-90">{s.icon}</span>}
                           {s.tagline && (
-                            <p className="font-display text-[20px] md:text-[26px] leading-[1.2] tracking-[-0.015em] paradigm-glow-text">
+                            <p className="font-display text-[20px] md:text-[26px] leading-[1.2]  paradigm-glow-text">
                               {s.tagline}
                             </p>
                           )}
@@ -127,11 +133,11 @@ export default async function ServicesPage({ params }: Props) {
 
                       <div className={`flex flex-col justify-center ${reversed ? "md:[direction:ltr]" : ""}`}>
                         <p className="paradigm-eyebrow text-paradigm-accent mb-3">{String(i + 1).padStart(2, "0")}</p>
-                        <h2 className="font-display text-[24px] md:text-[34px] leading-[1.15] tracking-[-0.02em] text-paradigm-ink mb-4">
+                        <h2 className="font-display text-[24px] md:text-[34px] leading-[1.15]  text-paradigm-ink mb-4">
                           {s.name ?? "—"}
                         </h2>
                         {features.length > 0 && (
-                          <ul className="paradigm-glass rounded-xl divide-y divide-paradigm-line/60 mb-6 paradigm-glow-sm">
+                          <ul className="paradigm-glass rounded-lg divide-y divide-paradigm-line/60 mb-6 paradigm-glow-sm">
                             {features.map((f, idx) => (
                               <li
                                 key={idx}
@@ -146,14 +152,14 @@ export default async function ServicesPage({ params }: Props) {
                           {s.slug && (
                             <Link
                               href={`/services/${s.slug}`}
-                              className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-6 py-3 rounded-xl text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
+                              className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-6 py-3 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
                             >
                               {t("learnMore")}
                             </Link>
                           )}
                           <Link
                             href="/contact"
-                            className="inline-flex items-center gap-2 paradigm-glass text-paradigm-ink-soft hover:text-paradigm-ink px-6 py-3 rounded-xl text-[12px] tracking-[0.14em] uppercase font-medium transition-colors"
+                            className="inline-flex items-center gap-2 paradigm-glass text-paradigm-ink-soft hover:text-paradigm-ink px-6 py-3 rounded-lg text-[12px] tracking-[0.14em] uppercase font-medium transition-colors"
                           >
                             {t("getInTouch")}
                           </Link>

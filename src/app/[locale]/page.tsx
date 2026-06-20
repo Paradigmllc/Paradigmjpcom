@@ -13,21 +13,19 @@
 import { getPayload } from "payload"
 import config from "@payload-config"
 import { coerceLocale, assertLocale, filterByLocale, localeFindOptions } from "@/lib/cms/filters"
-import { markPayloadInitFailure, shouldSkipPayloadReads } from "@/lib/payload-availability"
+import { withPayloadReadFallback } from "@/lib/payload-availability"
 import BlockRenderer from "@/blocks/BlockRenderer"
 import HomeClient from "./HomeClient"
 import HomeEnClient from "./HomeEnClient"
+
+export const dynamic = "force-dynamic"
 
 interface Props {
   params: Promise<{ locale: string }>
 }
 
 async function fetchHomepage(locale: string) {
-  if (shouldSkipPayloadReads()) {
-    return null
-  }
-
-  try {
+  return withPayloadReadFallback<unknown | null>("home.payload.find", async () => {
     const payload = await getPayload({ config: config as Parameters<typeof getPayload>[0]["config"] })
     const typedLocale = locale as Parameters<typeof filterByLocale>[0]
     const res = await payload.find({
@@ -43,11 +41,7 @@ async function fetchHomepage(locale: string) {
       ...localeFindOptions(typedLocale),
     } as Parameters<typeof payload.find>[0])
     return res.docs[0] ?? null
-  } catch (e) {
-    markPayloadInitFailure(e)
-    console.error("[home] payload.find homepage failed:", e)
-    return null
-  }
+  }, null)
 }
 
 export default async function HomePage({ params }: Props) {

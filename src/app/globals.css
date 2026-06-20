@@ -7,16 +7,16 @@
 @source "../../node_modules/@paradigmllc/blocks";
 
 /* ────────────────────────────────────────────────────────────────────────
-   Paradigm "Aurora" Design Tokens (2026-06-09 全面刷新)
+   Paradigm editorial design tokens
    ────────────────────────────────────────────────────────────────────────
-   旧 "Modern Tech × Aesop" (indigo/cyan/冷クリーム) → Aurora システムへ刷新:
-     - アクセント: violet → fuchsia → warm orange のオーロラグラデーション
-     - 紙色: より暖かみのあるクリーム (light) / 深い紫黒 (dark)
-     - 全体的にコントラスト高め・ビビッド寄り・Stripe 風のモダン路線
+   Public site direction:
+     - CMS/editable business site, not a static one-off landing page
+     - neutral paper, restrained blue/green accents, editorial hierarchy
+     - low-motion cards that stay readable across all locale routes
    Hex equivalents:
      LIGHT   paper #fafaf7  paper-deep #f2f0eb  paper-card #fefefc
              ink #0f1115    ink-soft   #3d4148  ink-mute   #787c85
-             line #e5e3de   accent     #8b5cf6  glow       #ec4899
+             line #e4e7eb   accent     #2563eb  glow       #10b981
              tech #f59e0b   surface    #ffffff
      DARK    paper #0a0813  paper-deep #06040c  paper-card #13101f
              ink #f0edf5    ink-soft   #c4bfd3  ink-mute   #7a7590
@@ -26,16 +26,16 @@
 :root,
 [data-theme="light"] {
   --paradigm-paper: 250 250 247;
-  --paradigm-paper-deep: 242 240 235;
-  --paradigm-paper-card: 254 254 252;
+  --paradigm-paper-deep: 246 247 249;
+  --paradigm-paper-card: 255 255 255;
   --paradigm-surface: 255 255 255;
   --paradigm-ink: 15 17 21;
   --paradigm-ink-soft: 61 65 72;
   --paradigm-ink-mute: 120 124 133;
-  --paradigm-line: 229 227 222;
-  --paradigm-accent: 139 92 246;
-  --paradigm-accent-soft: 167 139 250;
-  --paradigm-glow: 236 72 153;
+  --paradigm-line: 228 231 235;
+  --paradigm-accent: 37 99 235;
+  --paradigm-accent-soft: 96 165 250;
+  --paradigm-glow: 16 185 129;
   --paradigm-tech: 245 158 11;
 
   --background: rgb(var(--paradigm-paper));
@@ -134,7 +134,7 @@ body {
 
 /* Display — bold geometric headings (Aurora redesign: Outfit 600-800 weight).
    Sharp, modern, high-impact. Letter-spacing tightened for large sizes. */
-.font-display { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.03em; }
+.font-display { font-family: var(--font-display); font-weight: 600; letter-spacing: 0; }
 
 /* Eyebrow — Aesop's signature small caps with wide tracking, used above
    section headings to anchor hierarchy without competing for attention. */
@@ -252,11 +252,11 @@ body.no-grain::before { display: none; }
   inset: -10%;
   pointer-events: none;
   background:
-    radial-gradient(circle at 20% 20%, rgb(var(--paradigm-accent) / 0.10), transparent 45%),
-    radial-gradient(circle at 80% 30%, rgb(var(--paradigm-glow) / 0.08), transparent 45%),
-    radial-gradient(circle at 50% 80%, rgb(var(--paradigm-tech) / 0.08), transparent 45%);
-  filter: blur(60px);
-  animation: meshDrift 22s ease-in-out infinite;
+    radial-gradient(circle at 20% 20%, rgb(var(--paradigm-accent) / 0.05), transparent 45%),
+    radial-gradient(circle at 80% 30%, rgb(var(--paradigm-glow) / 0.04), transparent 45%),
+    radial-gradient(circle at 50% 80%, rgb(var(--paradigm-tech) / 0.04), transparent 45%);
+  filter: blur(72px);
+  animation: none;
 }
 [data-theme="dark"] .paradigm-mesh {
   background:
@@ -271,39 +271,45 @@ body.no-grain::before { display: none; }
   inset: -10%;
   pointer-events: none;
   background:
-    radial-gradient(circle at 15% 15%, rgb(139 92 246 / 0.28), transparent 40%),
-    radial-gradient(circle at 85% 20%, rgb(236 72 153 / 0.28), transparent 40%),
-    radial-gradient(circle at 25% 85%, rgb(245 158 11 / 0.24), transparent 40%),
-    radial-gradient(circle at 75% 75%, rgb(167 139 250 / 0.24), transparent 40%),
-    radial-gradient(circle at 50% 50%, rgb(244 114 182 / 0.16), transparent 50%);
-  filter: blur(80px);
-  animation: meshDrift 18s ease-in-out infinite;
+    radial-gradient(circle at 15% 15%, rgb(37 99 235 / 0.12), transparent 42%),
+    radial-gradient(circle at 85% 20%, rgb(16 185 129 / 0.10), transparent 42%),
+    radial-gradient(circle at 25% 85%, rgb(245 158 11 / 0.10), transparent 42%);
+  filter: blur(88px);
+  animation: none;
 }
 
-/* Glassmorphism — semi-transparent + backdrop blur card */
+/* Editorial card surface — kept under legacy class name for site-wide migration. */
 .paradigm-glass {
-  background: rgb(var(--paradigm-paper) / 0.65);
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  border: 1px solid rgb(var(--paradigm-paper) / 0.35);
+  background: rgb(var(--paradigm-surface));
+  border: 1px solid rgb(var(--paradigm-line));
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 [data-theme="dark"] .paradigm-glass {
-  background: rgb(var(--paradigm-paper-card) / 0.55);
-  border-color: rgb(var(--paradigm-line) / 0.5);
+  background: rgb(var(--paradigm-paper-card));
+  border-color: rgb(var(--paradigm-line));
 }
 
-/* Glow shadows for premium depth — aurora palette */
-.paradigm-glow-sm { box-shadow: 0 4px 16px -4px rgb(139 92 246 / 0.18); }
-.paradigm-glow-md { box-shadow: 0 12px 36px -8px rgb(139 92 246 / 0.22); }
-.paradigm-glow-lg { box-shadow: 0 24px 60px -16px rgb(139 92 246 / 0.28), 0 8px 16px -4px rgb(236 72 153 / 0.14); }
-.paradigm-glow-xl { box-shadow: 0 36px 96px -24px rgb(139 92 246 / 0.32), 0 12px 24px -6px rgb(236 72 153 / 0.18), 0 4px 8px -2px rgb(245 158 11 / 0.10); }
+/* Restrained depth for production pages. */
+.paradigm-glow-sm { box-shadow: 0 1px 2px rgb(15 23 42 / 0.04); }
+.paradigm-glow-md { box-shadow: 0 8px 22px -18px rgb(15 23 42 / 0.18); }
+.paradigm-glow-lg { box-shadow: 0 16px 32px -24px rgb(15 23 42 / 0.22); }
+.paradigm-glow-xl { box-shadow: 0 24px 48px -30px rgb(15 23 42 / 0.24); }
+
+.paradigm-glass.rounded-xl,
+.paradigm-glass.rounded-2xl,
+.paradigm-glass.rounded-3xl,
+.rounded-2xl.paradigm-glass,
+.rounded-3xl.paradigm-glass {
+  border-radius: 0.5rem !important;
+}
 
 /* Gradient border (1px outer ring with rainbow) — used on CTAs */
 .paradigm-gradient-border {
   position: relative;
   background:
     linear-gradient(rgb(var(--paradigm-paper)), rgb(var(--paradigm-paper))) padding-box,
-    linear-gradient(135deg, rgb(99 102 241), rgb(14 165 233), rgb(244 114 182)) border-box;
+    linear-gradient(135deg, rgb(var(--paradigm-line)), rgb(var(--paradigm-accent) / 0.28)) border-box;
   border: 1px solid transparent;
 }
 
@@ -333,9 +339,7 @@ body.no-grain::before { display: none; }
 
 /* Ambient glow text — for hero headlines */
 .paradigm-glow-text {
-  text-shadow:
-    0 0 40px rgb(165 180 252 / 0.35),
-    0 0 80px rgb(99 102 241 / 0.25);
+  text-shadow: none;
 }
 
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }

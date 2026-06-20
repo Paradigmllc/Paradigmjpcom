@@ -14,7 +14,14 @@ import {
   normalizeTargetCountry,
   normalizeTemplateVariant,
 } from "./routing"
-import { PIPELINE_LABELS } from "./twenty-sync-utils"
+import {
+  env,
+  normalizeDomain,
+  parseSalesStatusLabel,
+  twentyBaseUrl,
+  type TwentyRecord,
+} from "./twenty-sync-utils"
+import { fetchTwentyCompanyPages } from "./twenty-pull-pages"
 import {
   formUrlFromTwenty,
   hasSourceErrors,
@@ -22,43 +29,6 @@ import {
   reportUrlFromTwenty,
   sourceCoverageTooLow,
 } from "@/lib/sales/twenty-pull-retry"
-
-interface TwentyLinkField {
-  primaryLinkUrl?: string | null
-  primaryLinkLabel?: string | null
-}
-
-interface TwentyRecord {
-  id?: string
-  name?: string
-  domainName?: TwentyLinkField | null
-  paradigmReportUrl?: TwentyLinkField | null
-  paradigmFormUrl?: TwentyLinkField | null
-  paradigmCustomerPortalUrl?: TwentyLinkField | null
-  paradigmSalesMaterialUrl?: TwentyLinkField | null
-  paradigmDemoUrl?: TwentyLinkField | null
-  paradigmCountryName?: string | null
-  paradigmRegionName?: string | null
-  paradigmIndustryName?: string | null
-  paradigmSourceName?: string | null
-  paradigmSalesStatus?: string | null
-  paradigmDataStatus?: string | null
-  paradigmDataSources?: string | null
-  paradigmNextAction?: string | null
-  paradigmLastError?: string | null
-  paradigmKarteScore?: number | null
-  paradigmSourceCoverage?: number | string | null
-  paradigmRecommendedProducts?: string[] | null
-  paradigmKarteSummary?: {
-    markdown?: string | null
-  } | null
-}
-
-interface TwentyListResponse<T> {
-  data?: {
-    companies?: T[]
-  }
-}
 
 export interface TwentyPullResult {
   ok: boolean
@@ -83,55 +53,8 @@ export interface TwentyPullOptions {
   autoSyncExternalStudios?: boolean
   requestedBy?: string
   dryRun?: boolean
-}
-
-function env(name: string): string | null {
-  const value = process.env[name]
-  return value && value.trim().length > 0 ? value.trim() : null
-}
-
-function twentyBaseUrl(): string | null {
-  const base = env("TWENTY_BASE_URL")
-  return base ? base.replace(/\/$/, "") : null
-}
-
-function normalizeDomain(input: string | null | undefined): string | null {
-  if (!input) return null
-  try {
-    const withProto = input.startsWith("http") ? input : `https://${input}`
-    return new URL(withProto).hostname.replace(/^www\./, "").toLowerCase()
-  } catch (error) {
-    console.warn("[twenty-pull] invalid domain:", { input, error })
-    return null
-  }
-}
-
-async function twentyFetch<T>(
-  path: string,
-  init: RequestInit = {},
-): Promise<{ ok: true; data: T } | { ok: false; error: string }> {
-  const baseUrl = twentyBaseUrl()
-  const apiKey = env("TWENTY_API_KEY")
-  if (!baseUrl || !apiKey) return { ok: false, error: "TWENTY_BASE_URL or TWENTY_API_KEY is not configured" }
-
-  const res = await fetch(`${baseUrl}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      ...(init.headers ?? {}),
-    },
-  })
-
-  const text = await res.text()
-  if (!res.ok) return { ok: false, error: text || `Twenty API HTTP ${res.status}` }
-
-  try {
-    return { ok: true, data: JSON.parse(text) as T }
-  } catch (error) {
-    console.error("[twenty-pull] invalid JSON response:", error)
-    return { ok: false, error: "Twenty API returned invalid JSON" }
-  }
+  pageSize?: number
+  maxPages?: number
 }
 
 function emptyResult(input: { configured: boolean; dryRun: boolean; error?: string }): TwentyPullResult {
@@ -226,22 +149,6 @@ function contactFormUrlFromMeta(meta: Record<string, unknown>): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null
 }
 
-function parseSalesStatusLabel(label: string | null): { pipelineStatus?: string; dealStage?: string } {
-  if (!label) return {}
-  const parts = label.split(" / ")
-  const pipelineLabel = parts[0]?.trim()
-  const dealStage = parts[1]?.trim()
-  // Reverse-map from Japanese/English display labels back to pipeline_status codes
-  // Uses the same PIPELINE_LABELS reverse mapping as twenty-sync-utils.ts
-  const pipelineStatus = pipelineLabel
-    ? Object.entries(PIPELINE_LABELS).find(([, translated]) => translated.startsWith(pipelineLabel ?? ""))?.[0] ?? pipelineLabel
-    : undefined
-  return {
-    ...(pipelineStatus ? { pipelineStatus } : {}),
-    ...(dealStage ? { dealStage } : {}),
-  }
-}
-
 export async function pullTwentyCompaniesToSupabase(
   limit = 200,
   options: TwentyPullOptions = {},
@@ -266,14 +173,14 @@ export async function pullTwentyCompaniesToSupabase(
     })
   }
 
-  const safeLimit = Math.min(Math.max(limit, 1), 500)
-  const result = await twentyFetch<TwentyListResponse<TwentyRecord>>(`/rest/companies?limit=${safeLimit}`)
-  if (!result.ok) return emptyResult({ configured: true, dryRun: isDryRun, error: result.error })
+  const safeLimit = Math.min(Math.max(Math.round(limit), 1), 10_000)
+  const pageResult = await fetchTwentyCompanyPages(safeLimit, options)
+  if (!pageResult.ok) return emptyResult({ configured: true, dryRun: isDryRun, error: pageResult.error })
 
-  const records = result.data.data?.companies ?? []
+  const records = pageResult.records
   const shouldAutoRunPipeline = options.autoRunPipeline === true
   const shouldDispatchPipeline = options.dispatchPipeline !== false
-  const failures: NonNullable<TwentyPullResult["failures"]> = []
+  const failures: NonNullable<TwentyPullResult["failures"]> = [...pageResult.failures]
   let created = 0
   let updated = 0
   let skipped = 0

@@ -79,4 +79,26 @@ describe("buildCompanyKarte", () => {
     )
     expect(karte.sourceItems[0]?.label).toBe("PageSpeed Insights")
   })
+
+  it("uses normalized enrichment columns when legacy meta mirrors are absent", () => {
+    const karte = buildCompanyKarte({
+      ...fixtureCompany,
+      pain_diagnosis: {
+        primaryPain: "Japan buyers cannot find trust signals",
+        recommendedOffer: "Japan-entry landing page",
+      },
+      tech_stack: {
+        stack: ["Astro", "Payload"],
+      },
+      demo_site: {
+        url: "https://paradigmjp.com/en/d/acme-normalized-demo",
+      },
+      meta: {},
+    }, [])
+
+    expect(karte.diagnosisSummary).toBe("Japan buyers cannot find trust signals")
+    expect(karte.recommendedOffer).toBe("Japan-entry landing page")
+    expect(karte.demoUrl).toBe("https://paradigmjp.com/en/d/acme-normalized-demo")
+    expect(karte.evidence.map((item) => item.label)).toContain("技術スタック")
+  })
 })

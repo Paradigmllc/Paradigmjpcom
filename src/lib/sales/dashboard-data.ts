@@ -22,6 +22,7 @@ import { buildOperationalAudit, emptyKpis, emptyOperationalAudit, increment, typ
 import { DB_TABLES } from "@/lib/sales/db-tables"
 
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
+type QueryFallback<T> = { data: T; error: null; count: number | null; status: number; statusText: string; success: true }
 
 interface ActivityRow {
   id: string
@@ -54,7 +55,79 @@ interface QueueRow {
   target_tool: string | null
   due_at: string | null
   created_at: string
-  sales_companies?: { company_name?: string | null } | null
+  sales_companies: Array<{ company_name: string | null }>
+}
+
+const DEFAULT_DASHBOARD_QUERY_TIMEOUT_MS = 2_200
+
+function dashboardQueryTimeoutMs(): number {
+  const raw = process.env.SALES_DASHBOARD_QUERY_TIMEOUT_MS
+  const parsed = raw ? Number.parseInt(raw, 10) : Number.NaN
+  return Number.isFinite(parsed) && parsed >= 500 ? parsed : DEFAULT_DASHBOARD_QUERY_TIMEOUT_MS
+}
+
+function fallbackQuery<T>(data: T, count: number | null = null): QueryFallback<T> {
+  return { data, error: null, count, status: 200, statusText: "RevenueOS dashboard fallback", success: true }
+}
+
+function queryErrorMessage(result: { error?: unknown }): string | null {
+  const error = result.error
+  if (!error) return null
+  if (error instanceof Error) return error.message
+  if (typeof error === "object" && "message" in error) {
+    const message = (error as { message?: unknown }).message
+    return typeof message === "string" ? message : String(message)
+  }
+  return String(error)
+}
+
+async function withDashboardFallback<T>(
+  label: string,
+  warnings: string[],
+  task: PromiseLike<T>,
+  fallback: T,
+  timeoutMs = dashboardQueryTimeoutMs(),
+): Promise<T> {
+  let settled = false
+  const guarded = Promise.resolve(task).then(
+    (value) => {
+      settled = true
+      return value
+    },
+    (error: unknown) => {
+      settled = true
+      const message = error instanceof Error ? error.message : String(error)
+      warnings.push(`${label}: ${message}`)
+      console.error(`[sales-dashboard] ${label} failed:`, error)
+      return fallback
+    },
+  )
+
+  const timer = new Promise<T>((resolve) => {
+    setTimeout(() => {
+      if (!settled) {
+        warnings.push(`${label}: ${timeoutMs}ms soft timeout; fallback data used`)
+        console.warn(`[sales-dashboard] ${label} exceeded ${timeoutMs}ms; returning fallback data`)
+      }
+      resolve(fallback)
+    }, timeoutMs)
+  })
+
+  return Promise.race([guarded, timer])
+}
+
+function emptyContentTemplateCoverage() {
+  return {
+    total: 0,
+    byLocale: {},
+    byAssetType: {},
+    byIndustry: {},
+    fallbackUsed: true,
+  }
+}
+
+function queueCompanyName(row: QueueRow): string | null {
+  return Array.isArray(row.sales_companies) ? row.sales_companies[0]?.company_name ?? null : null
 }
 
 export async function getSalesDashboardData(input: SalesDashboardInput = {}): Promise<SalesDashboardData> {
@@ -133,66 +206,83 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
     salesPipeline,
     videoJobsRes,
   ] = await Promise.all([
-    fetchDashboardCompanies(sb, scope),
-    sb
+    withDashboardFallback("sales_companies", warnings, fetchDashboardCompanies(sb, scope), fallbackQuery<SalesCompanyRow[]>([])),
+    withDashboardFallback("sales_activity_log", warnings, sb
       .from(DB_TABLES.SALES_ACTIVITY_LOG)
       .select("id, company_id, activity_type, subject, result, assigned_to, occurred_at")
       .eq("region", scope.region)
       .order("occurred_at", { ascending: false })
-      .limit(30),
-    sb
+      .limit(30), fallbackQuery<ActivityRow[]>([])),
+    withDashboardFallback("sales_sync_logs", warnings, sb
       .from(DB_TABLES.SALES_SYNC_LOGS)
       .select("id, direction, entity_type, action, status, error_message, created_at")
       .order("created_at", { ascending: false })
-      .limit(30),
-    sb
+      .limit(30), fallbackQuery<SyncLogRow[]>([])),
+    withDashboardFallback("sales_tool_connections", warnings, sb
       .from(DB_TABLES.SALES_TOOL_CONNECTIONS)
-      .select("slug, display_name, role, interface_type, deployment_type, status, base_url, health_url, owner, last_checked_at"),
-    sb
+      .select("slug, display_name, role, interface_type, deployment_type, status, base_url, health_url, owner, last_checked_at"), fallbackQuery<ToolConnectionRow[]>([])),
+    withDashboardFallback("sales_operator_queue_items", warnings, sb
       .from(DB_TABLES.SALES_OPERATOR_QUEUE_ITEMS)
       .select("id, company_id, queue_type, priority, status, assigned_to, source_tool, target_tool, due_at, created_at, sales_companies(company_name)")
       .eq("region", scope.region)
       .in("status", ["open", "in_progress", "blocked"])
       .order("priority", { ascending: false })
       .order("created_at", { ascending: false })
-      .limit(30),
-    sb
+      .limit(30), fallbackQuery<QueueRow[]>([])),
+    withDashboardFallback("sales_source_runs", warnings, sb
       .from(DB_TABLES.SALES_SOURCE_RUNS)
       .select("company_id, status, score, measured_at")
       .order("measured_at", { ascending: false })
-      .limit(2000),
-    sb
+      .limit(600), fallbackQuery<SourceRunRow[]>([])),
+    withDashboardFallback("sales_calendar_events", warnings, sb
       .from(DB_TABLES.SALES_CALENDAR_EVENTS)
       .select("id", { count: "exact", head: true })
       .eq("region", scope.region)
-      .gte("start_at", sevenDaysAgo),
-    sb
+      .gte("start_at", sevenDaysAgo), fallbackQuery<[]>([], 0)),
+    withDashboardFallback("sales_contracts", warnings, sb
       .from(DB_TABLES.SALES_CONTRACTS)
       .select("amount_yen")
       .eq("region", scope.region)
-      .gte("signed_at", thirtyDaysAgo),
-    calculateMrr(),
-    fetchRecentEnrichmentJobs(40),
-    getInfrastructureMigrationData(sb),
-    getContentTemplateCoverage(),
-    getSalesCrmFieldConfig(sb),
-    getDashboardAgentTeam(),
-    getSalesIntegrationStatus(),
-    listLeadBatches(scope, 8),
-    listSearxngRuns(scope, 8).catch(() => ({ ok: false as const, runs: [] as SearxngRunSummary[], error: "table missing" })),
-    listJapanReadinessInsights(scope, 8),
-    listSalesPipelineRuns(20),
-    listVideoJobs(25, { locale: scope.reportLocale }),
+      .gte("signed_at", thirtyDaysAgo), fallbackQuery<Array<{ amount_yen: number | null }>>([])),
+    withDashboardFallback("mrr", warnings, calculateMrr(), { total: 0, active_count: 0, wl_count: 0, wl_revenue: 0 }),
+    withDashboardFallback("sales_enrichment_jobs", warnings, fetchRecentEnrichmentJobs(20), []),
+    withDashboardFallback("sales_infrastructure_migration", warnings, getInfrastructureMigrationData(sb), await getInfrastructureMigrationData(null)),
+    withDashboardFallback("sales_content_templates", warnings, getContentTemplateCoverage(), emptyContentTemplateCoverage()),
+    withDashboardFallback("sales_crm_field_config", warnings, getSalesCrmFieldConfig(sb), await getSalesCrmFieldConfig(null)),
+    withDashboardFallback("sales_agent_team", warnings, getDashboardAgentTeam(), {
+      status: "degraded",
+      endpointPath: "/api/sales/agent/telegram-command",
+      telegramBot: "@aiparadigmbot",
+      roles: [],
+      autonomyLevels: [],
+      guardrails: [],
+      recentCommands: [],
+      storageStatus: "unconfigured",
+    }),
+    withDashboardFallback("sales_integration_status", warnings, getSalesIntegrationStatus(), []),
+    withDashboardFallback("sales_lead_batches", warnings, listLeadBatches(scope, 6), { ok: false, batches: [], error: "RevenueOS dashboard fallback" }),
+    withDashboardFallback("sales_browser_search_runs", warnings, listSearxngRuns(scope, 6), { ok: false as const, runs: [] as SearxngRunSummary[], error: "RevenueOS dashboard fallback" }),
+    withDashboardFallback("sales_japan_readiness_insights", warnings, listJapanReadinessInsights(scope, 6), { ok: false, insights: [], error: "RevenueOS dashboard fallback" }),
+    withDashboardFallback("sales_pipeline_runs", warnings, listSalesPipelineRuns(12), { runs: [], error: "RevenueOS dashboard fallback" }),
+    withDashboardFallback("sales_video_jobs", warnings, listVideoJobs(12, { locale: scope.reportLocale }), { ok: false as const, jobs: [], config: getVideoPipelineConfig(), error: "RevenueOS dashboard fallback" }),
   ])
 
-  if (companyRes.error) warnings.push(`sales_companies: ${companyRes.error.message}`)
-  if (activityRes.error) warnings.push(`sales_activity_log: ${activityRes.error.message}`)
-  if (syncRes.error) warnings.push(`sales_sync_logs: ${syncRes.error.message}`)
-  if (toolsRes.error) warnings.push(`sales_tool_connections: ${toolsRes.error.message}`)
-  if (queueRes.error) warnings.push(`sales_operator_queue_items: ${queueRes.error.message}`)
-  if (sourceRunsRes.error) warnings.push(`sales_source_runs: ${sourceRunsRes.error.message}`)
-  if (meetingsRes.error) warnings.push(`sales_calendar_events: ${meetingsRes.error.message}`)
-  if (contractsRes.error) warnings.push(`sales_contracts: ${contractsRes.error.message}`)
+  const companyError = queryErrorMessage(companyRes)
+  const activityError = queryErrorMessage(activityRes)
+  const syncError = queryErrorMessage(syncRes)
+  const toolsError = queryErrorMessage(toolsRes)
+  const queueError = queryErrorMessage(queueRes)
+  const sourceRunsError = queryErrorMessage(sourceRunsRes)
+  const meetingsError = queryErrorMessage(meetingsRes)
+  const contractsError = queryErrorMessage(contractsRes)
+  if (companyError) warnings.push(`sales_companies: ${companyError}`)
+  if (activityError) warnings.push(`sales_activity_log: ${activityError}`)
+  if (syncError) warnings.push(`sales_sync_logs: ${syncError}`)
+  if (toolsError) warnings.push(`sales_tool_connections: ${toolsError}`)
+  if (queueError) warnings.push(`sales_operator_queue_items: ${queueError}`)
+  if (sourceRunsError) warnings.push(`sales_source_runs: ${sourceRunsError}`)
+  if (meetingsError) warnings.push(`sales_calendar_events: ${meetingsError}`)
+  if (contractsError) warnings.push(`sales_contracts: ${contractsError}`)
   if (!videoJobsRes.ok) warnings.push(`sales_video_jobs: ${videoJobsRes.error}`)
   if (crmFieldConfig.error) warnings.push(`sales_crm_field_config: ${crmFieldConfig.error}`)
   if (!leadBatchesRes.ok && leadBatchesRes.error) warnings.push(`sales_lead_batches: ${leadBatchesRes.error}`)
@@ -256,7 +346,7 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
     .map((row) => ({
       id: row.id,
       companyId: row.company_id,
-      companyName: row.sales_companies?.company_name ?? null,
+      companyName: queueCompanyName(row),
       queueType: row.queue_type,
       priority: row.priority ?? 50,
       status: row.status,
@@ -268,7 +358,12 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
     }))
 
   const sourceRuns = ((sourceRunsRes.data ?? []) as SourceRunRow[]).filter((row) => scopedCompanyIds.has(row.company_id))
-  const sourceAcquisition = await getSourceAcquisitionSummary(sb, scopedCompanyIds)
+  const sourceAcquisition = await withDashboardFallback(
+    "sales_source_acquisition",
+    warnings,
+    getSourceAcquisitionSummary(sb, scopedCompanyIds),
+    emptySourceAcquisitionSummary(["RevenueOS dashboard fallback"]),
+  )
   warnings.push(...sourceAcquisition.errors)
 
   const kpis: DashboardKpis = {

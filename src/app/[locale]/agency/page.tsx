@@ -14,6 +14,8 @@ import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
 import RoiCalculator from "@/components/agency/RoiCalculator"
 
+export const dynamic = "force-dynamic"
+
 interface Props {
   params: Promise<{ locale: string }>
 }

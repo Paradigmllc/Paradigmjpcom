@@ -1,7 +1,7 @@
 import { enrichFromContact } from "./enrich"
 import { upsertCompanyByDomain } from "./companies"
 import { runDifyDiagnosis } from "./dify-diagnosis"
-import { fetchDiagnosticReport } from "./diagnostic"
+import { fetchDiagnosticReport, markReportGenerated } from "./diagnostic"
 import { generateReplacementDemo } from "./demo-generator"
 import { generateDiagnosticVideo } from "./video-generator"
 import { computeSourceCoverage, saveSourceCoverageRows } from "./source-coverage"
@@ -116,6 +116,9 @@ export async function processDiagnosisPhase(
         ...(company.meta?.enrichment as JsonRecord ?? {}),
         phase2_completed_at: new Date().toISOString(),
       },
+      pain_diagnosis: painDiagnosis,
+      dify_diagnosis: dify.raw ?? dify.summary,
+      japan_market_audit: japanMarketAudit,
     },
     pain_diagnosis: painDiagnosis as Record<string, unknown> | null,
     dify_result: dify.raw as Record<string, unknown> | null,
@@ -143,8 +146,14 @@ export async function processReportPhase(
     templateVariant: company.template_variant ?? undefined,
   })
 
-  await saveSourceCoverageRows(company)
-  const coverage = computeSourceCoverage(company)
+  if (report) await markReportGenerated(company.id)
+
+  const refreshed = await sb.from(DB_TABLES.SALES_COMPANIES).select("*").eq("id", company.id).maybeSingle()
+  if (refreshed.error) console.error("[sales-enrichment] refresh after report failed:", refreshed.error.message)
+  const coverageCompany = (refreshed.data as SalesCompany | null) ?? company
+
+  await saveSourceCoverageRows(coverageCompany)
+  const coverage = computeSourceCoverage(coverageCompany)
 
   await logDiagnosisEvent(sb, {
     companyId: company.id,

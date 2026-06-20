@@ -14,7 +14,7 @@
  */
 
 import { cache } from "react"
-import { markPayloadInitFailure, shouldSkipPayloadReads } from "./payload-availability"
+import { withPayloadReadFallback } from "./payload-availability"
 
 export interface NavLink {
   label: string
@@ -46,11 +46,7 @@ export interface FooterNav {
 
 /** locale-aware で payload global を取得する共通ヘルパ。失敗時 null。 */
 async function findGlobal<T>(slug: string, locale: string): Promise<T | null> {
-  if (shouldSkipPayloadReads()) {
-    return null
-  }
-
-  try {
+  return withPayloadReadFallback<T | null>(`navigation.findGlobal(${slug})`, async () => {
     const { getPayload } = await import("payload")
     const config = (await import("@payload-config")).default
     const payload = await getPayload({ config: config as Parameters<typeof getPayload>[0]["config"] })
@@ -60,11 +56,7 @@ async function findGlobal<T>(slug: string, locale: string): Promise<T | null> {
       depth: 0,
     })
     return doc as unknown as T
-  } catch (e) {
-    markPayloadInitFailure(e)
-    console.error(`[navigation] findGlobal("${slug}") failed:`, e instanceof Error ? e.message : e)
-    return null
-  }
+  }, null)
 }
 
 type RawNavItem = {

@@ -45,6 +45,7 @@ next-env.d.ts
 
 # claude code worktrees (local only)
 .claude/worktrees/
+opencode.json
 
 # Sprint 8 temp files (Notion fetch result decoding)
 .notion-mvp-*.md

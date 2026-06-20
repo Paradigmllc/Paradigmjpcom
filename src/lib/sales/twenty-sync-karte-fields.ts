@@ -37,7 +37,14 @@ export function sourceDataStatus(karte: CompanyKarteSnapshot): string {
 
 export function sourceDataCounts(karte: CompanyKarteSnapshot): string {
   const total = karte.sourceItems.length || karte.collectedCount + karte.configuredCount + karte.missingCount + karte.errorCount
-  return `collected ${karte.collectedCount}/${total} / configured ${karte.configuredCount} / missing ${karte.missingCount} / error ${karte.errorCount}`
+  const collectedLabels = karte.sourceItems
+    .filter((source) => source.status === "collected")
+    .slice(0, 5)
+    .map((source) => source.label)
+    .join(", ")
+  const prefix = `${total}+ API/OSS catalog`
+  const counts = `collected ${karte.collectedCount}/${total} / configured ${karte.configuredCount} / missing ${karte.missingCount} / error ${karte.errorCount}`
+  return collectedLabels ? `${prefix}: ${counts}; evidence: ${collectedLabels}` : `${prefix}: ${counts}`
 }
 
 export function firstSourceError(karte: CompanyKarteSnapshot): string | null {

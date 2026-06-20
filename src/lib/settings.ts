@@ -9,7 +9,7 @@
  */
 
 import { cache } from "react"
-import { markPayloadInitFailure, shouldSkipPayloadReads } from "./payload-availability"
+import { withPayloadReadFallback } from "./payload-availability"
 import type { ThemeTokens } from "./theme-tokens"
 
 export interface SiteSettings {
@@ -140,11 +140,7 @@ function mediaUrl(v: unknown): string | null {
  * React cache() でリクエスト中の重複呼び出しを排除。
  */
 export const getSiteSettings = cache(async (locale: string = "ja"): Promise<SiteSettings> => {
-  if (shouldSkipPayloadReads()) {
-    return DEFAULTS
-  }
-
-  try {
+  return withPayloadReadFallback("settings.findGlobal", async () => {
     const { getPayload } = await import("payload")
     const config = (await import("@payload-config")).default
     const payload = await getPayload({ config: config as Parameters<typeof getPayload>[0]["config"] })
@@ -203,11 +199,7 @@ export const getSiteSettings = cache(async (locale: string = "ja"): Promise<Site
       announcement: { ...DEFAULTS.announcement, ...(s.announcement ?? {}) },
       company: { ...DEFAULTS.company, ...(s.company ?? {}) },
     }
-  } catch (e) {
-    markPayloadInitFailure(e)
-    console.error("[settings] payload.findGlobal failed, using defaults:", e)
-    return DEFAULTS
-  }
+  }, DEFAULTS)
 })
 
 /**

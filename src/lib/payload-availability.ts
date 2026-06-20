@@ -1,6 +1,7 @@
 const INITIAL_COOLDOWN_MS = 3_000
 const MAX_COOLDOWN_MS = 60_000
 const MAX_CONSECUTIVE_BEFORE_SLACK = 3
+const DEFAULT_PUBLIC_READ_TIMEOUT_MS = 1_200
 
 let lastFailureAt = 0
 let lastFailureMessage = ""
@@ -8,6 +9,7 @@ let consecutiveFailures = 0
 let lastSuccessAt = 0
 let totalFailuresSinceStart = 0
 let totalSuccessesSinceStart = 0
+let publicReadProbeInFlight = false
 
 function cooldownMs(): number {
   const override = process.env.PAYLOAD_INIT_FAILURE_COOLDOWN_MS
@@ -40,11 +42,86 @@ export function shouldSkipPayloadReads(): boolean {
   return arePayloadReadsDisabled() || isPayloadInitCoolingDown()
 }
 
-export function markPayloadInitFailure(error: unknown): void {
+function publicReadTimeoutMs(): number {
+  const override = process.env.PAYLOAD_PUBLIC_READ_TIMEOUT_MS
+  if (!override) return DEFAULT_PUBLIC_READ_TIMEOUT_MS
+  const parsed = Number(override)
+  if (!Number.isFinite(parsed)) return DEFAULT_PUBLIC_READ_TIMEOUT_MS
+  return Math.max(300, Math.min(parsed, 5_000))
+}
+
+function timeoutError(label: string, timeoutMs: number): Error {
+  return new Error(`[payload-availability] ${label} timed out after ${timeoutMs}ms`)
+}
+
+async function isDatabaseProbablyReachable(timeoutMs = 250): Promise<boolean> {
+  const raw = process.env.DATABASE_URI
+  if (!raw) return true
+
+  try {
+    const url = new URL(raw)
+    const host = url.hostname
+    const port = Number(url.port || "5432")
+    if (!host || !Number.isFinite(port)) return true
+
+    const net = await import("node:net")
+    return await new Promise<boolean>((resolve) => {
+      const socket = net.createConnection({ host, port, timeout: timeoutMs }, () => {
+        socket.destroy()
+        resolve(true)
+      })
+      const fail = () => {
+        socket.destroy()
+        resolve(false)
+      }
+      socket.once("error", fail)
+      socket.once("timeout", fail)
+    })
+  } catch {
+    return true
+  }
+}
+
+export async function withPayloadReadFallback<T>(
+  label: string,
+  read: () => Promise<T>,
+  fallback: T,
+  timeoutMs: number = publicReadTimeoutMs(),
+): Promise<T> {
+  if (shouldSkipPayloadReads()) return fallback
+  if (publicReadProbeInFlight) return fallback
+  if (!(await isDatabaseProbablyReachable())) {
+    markPayloadInitFailure(new Error("[payload-availability] database TCP probe failed"), { notify: false })
+    return fallback
+  }
+
+  let timer: ReturnType<typeof setTimeout> | null = null
+  publicReadProbeInFlight = true
+  try {
+    const result = await Promise.race([
+      read(),
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(timeoutError(label, timeoutMs)), timeoutMs)
+      }),
+    ])
+    resetPayloadCooldown()
+    return result
+  } catch (error) {
+    markPayloadInitFailure(error, { notify: false })
+    console.error(`[payload-availability] ${label} failed, using fallback:`, error)
+    return fallback
+  } finally {
+    if (timer) clearTimeout(timer)
+    publicReadProbeInFlight = false
+  }
+}
+
+export function markPayloadInitFailure(error: unknown, options: { notify?: boolean } = {}): void {
   lastFailureAt = Date.now()
   consecutiveFailures++
   totalFailuresSinceStart++
   lastFailureMessage = error instanceof Error ? error.message : String(error)
+  const shouldNotify = options.notify !== false
 
   // Classify error for better diagnostics
   const msg = lastFailureMessage.toLowerCase()
@@ -54,7 +131,7 @@ export function markPayloadInitFailure(error: unknown): void {
   }
 
   // Notify on first failure, then every MAX_CONSECUTIVE_BEFORE_SLACK failures
-  if (consecutiveFailures === 1 || consecutiveFailures % MAX_CONSECUTIVE_BEFORE_SLACK === 0) {
+  if (shouldNotify && (consecutiveFailures === 1 || consecutiveFailures % MAX_CONSECUTIVE_BEFORE_SLACK === 0)) {
     notifyPayloadUnavailable(lastFailureMessage, consecutiveFailures).catch((e) => { console.error("[payload-availability] notify failed:", e) })
   }
 }

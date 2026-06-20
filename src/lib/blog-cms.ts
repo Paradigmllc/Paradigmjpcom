@@ -20,7 +20,7 @@
 
 import type { BlogPost } from "./blog"
 import { BLOG_POSTS } from "./blog"
-import { markPayloadInitFailure, shouldSkipPayloadReads } from "./payload-availability"
+import { withPayloadReadFallback } from "./payload-availability"
 
 type PayloadPost = {
   id: string | number
@@ -75,11 +75,7 @@ function mapPayloadToBlogPost(p: PayloadPost, fallbackBySlug?: BlogPost): BlogPo
 }
 
 async function fetchAllPayloadPosts(locale: string): Promise<BlogPost[]> {
-  if (shouldSkipPayloadReads()) {
-    return []
-  }
-
-  try {
+  return withPayloadReadFallback<BlogPost[]>("blog-cms.payload.find", async () => {
     // dynamic import keeps lib/blog-cms.ts safe to import from edge / non-payload contexts
     const { getPayload } = await import("payload")
     const config = (await import("@payload-config")).default
@@ -99,11 +95,7 @@ async function fetchAllPayloadPosts(locale: string): Promise<BlogPost[]> {
 
     const docs = (res?.docs ?? []) as unknown as PayloadPost[]
     return docs.map((p) => mapPayloadToBlogPost(p, BLOG_POSTS.find((b) => b.slug === p.slug)))
-  } catch (e) {
-    markPayloadInitFailure(e)
-    console.error("[blog-cms] payload.find failed, falling back to BLOG_POSTS:", e)
-    return []
-  }
+  }, [])
 }
 
 /**

@@ -111,6 +111,8 @@
     "@opentelemetry/exporter-trace-otlp-http": "^0.219.0",
     "@opentelemetry/instrumentation-fetch": "^0.219.0",
     "@opentelemetry/otlp-exporter-base": "^0.219.0",
-    "@opentelemetry/otlp-transformer": "^0.219.0"
+    "@opentelemetry/otlp-transformer": "^0.219.0",
+    "hono": "^4.12.26",
+    "undici": "7.28.0"
   }
 }

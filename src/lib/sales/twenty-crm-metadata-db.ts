@@ -1,8 +1,10 @@
 import { Client } from "pg"
 import type { SalesCrmViewField } from "@/lib/sales/crm-field-config"
 
-function twentyTextColumnName(fieldName: string): string {
-  return fieldName
+function twentyFieldType(fieldType: SalesCrmViewField["fieldType"]): string {
+  if (fieldType === "url") return "LINKS"
+  if (fieldType === "select" || fieldType === "multi_select") return "SELECT"
+  return "TEXT"
 }
 
 export async function ensureTwentyTextFieldsViaDatabase(
@@ -10,8 +12,8 @@ export async function ensureTwentyTextFieldsViaDatabase(
   objectId: string,
   fields: SalesCrmViewField[],
 ): Promise<void> {
-  const textFields = fields.filter((field) => field.fieldType === "text" && field.twentyFieldName.startsWith("paradigm"))
-  if (textFields.length === 0) return
+  const customFields = fields.filter((field) => field.twentyFieldName.startsWith("paradigm"))
+  if (customFields.length === 0) return
 
   const objectRes = await client.query<{ workspaceId: string | null }>(
     'select "workspaceId" from core."objectMetadata" where id = $1 limit 1',
@@ -46,7 +48,8 @@ export async function ensureTwentyTextFieldsViaDatabase(
   if (!companySchema) throw new Error("Twenty workspace company table was not found.")
   if (!/^workspace_[a-z0-9_]+$/.test(companySchema)) throw new Error("Unexpected Twenty workspace schema name.")
 
-  for (const field of textFields) {
+  for (const field of customFields) {
+    const twentyType = twentyFieldType(field.fieldType)
     await client.query(
       `
         insert into core."fieldMetadata" (
@@ -74,7 +77,7 @@ export async function ensureTwentyTextFieldsViaDatabase(
         values (
           gen_random_uuid(),
           $1,
-          'TEXT',
+          $7,
           $2,
           $3,
           $4,
@@ -97,15 +100,20 @@ export async function ensureTwentyTextFieldsViaDatabase(
         do update set
           label = excluded.label,
           description = excluded.description,
-          type = 'TEXT',
-          options = null,
+          type = excluded.type,
           "isActive" = true,
           "isLabelSyncedWithName" = false,
           "updatedAt" = now()
       `,
-      [objectId, field.twentyFieldName, field.label, field.description, workspaceId, applicationId],
+      [objectId, field.twentyFieldName, field.label, field.description, workspaceId, applicationId, twentyType],
     )
-    await client.query(`alter table ${companySchema}.company add column if not exists "${twentyTextColumnName(field.twentyFieldName)}" text`)
+    if (twentyType === "LINKS") {
+      await client.query(`alter table ${companySchema}.company add column if not exists "${field.twentyFieldName}PrimaryLinkLabel" text`)
+      await client.query(`alter table ${companySchema}.company add column if not exists "${field.twentyFieldName}PrimaryLinkUrl" text`)
+      await client.query(`alter table ${companySchema}.company add column if not exists "${field.twentyFieldName}SecondaryLinks" jsonb`)
+    } else {
+      await client.query(`alter table ${companySchema}.company add column if not exists "${field.twentyFieldName}" text`)
+    }
   }
 }
 

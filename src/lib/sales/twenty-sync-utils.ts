@@ -101,6 +101,12 @@ export function twentyBaseUrl(): string | null {
   return base ? base.replace(/\/$/, "") : null
 }
 
+function twentyFetchTimeoutMs(): number {
+  const raw = process.env.TWENTY_FETCH_TIMEOUT_MS
+  const parsed = raw ? Number.parseInt(raw, 10) : Number.NaN
+  return Number.isFinite(parsed) && parsed >= 1_000 ? parsed : 8_000
+}
+
 export function normalizeDomain(input: string | null | undefined): string | null {
   if (!input) return null
   try {
@@ -127,23 +133,30 @@ export async function twentyFetch<T>(
   const apiKey = env("TWENTY_API_KEY")
   if (!baseUrl || !apiKey) return { ok: false, error: "TWENTY_BASE_URL or TWENTY_API_KEY is not configured" }
 
-  const res = await fetch(`${baseUrl}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      ...(init.headers ?? {}),
-    },
-  })
-
-  const text = await res.text()
-  if (!res.ok) return { ok: false, error: text || `Twenty API HTTP ${res.status}` }
-
   try {
-    return { ok: true, data: JSON.parse(text) as T }
+    const res = await fetch(`${baseUrl}${path}`, {
+      ...init,
+      signal: init.signal ?? AbortSignal.timeout(twentyFetchTimeoutMs()),
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        ...(init.headers ?? {}),
+      },
+    })
+
+    const text = await res.text()
+    if (!res.ok) return { ok: false, error: text || `Twenty API HTTP ${res.status}` }
+
+    try {
+      return { ok: true, data: JSON.parse(text) as T }
+    } catch (error) {
+      console.error("[twenty-sync] invalid JSON response:", error)
+      return { ok: false, error: "Twenty API returned invalid JSON" }
+    }
   } catch (error) {
-    console.error("[twenty-sync] invalid JSON response:", error)
-    return { ok: false, error: "Twenty API returned invalid JSON" }
+    const message = error instanceof Error ? error.message : "Twenty API request failed"
+    console.error("[twenty-sync] request failed:", error)
+    return { ok: false, error: message }
   }
 }
 
@@ -210,8 +223,8 @@ export function parseSalesStatusLabel(label: string | null): { pipelineStatus?: 
 
   let pipelineStatus: string | undefined
   if (pipelineLabel) {
-    const entry = Object.entries(PIPELINE_LABELS).find(([, val]) => val === pipelineLabel)
-    if (entry) pipelineStatus = entry[0]
+    const entry = Object.entries(PIPELINE_LABELS).find(([, val]) => val.startsWith(pipelineLabel))
+    pipelineStatus = entry?.[0] ?? pipelineLabel
   }
 
   return {

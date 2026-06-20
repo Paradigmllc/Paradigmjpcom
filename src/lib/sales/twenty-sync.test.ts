@@ -122,6 +122,47 @@ function stubTwentyList(companyPatch: Record<string, unknown> = {}, domain = "ht
   )
 }
 
+function stubTwentyPages() {
+  vi.stubEnv("TWENTY_BASE_URL", "https://twenty.example.com")
+  vi.stubEnv("TWENTY_API_KEY", "test-key")
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      const companies = url.includes("cursor=cursor-2")
+        ? [
+            {
+              id: "twenty-company-2",
+              name: "Second Co",
+              domainName: { primaryLinkUrl: "https://second.example.jp" },
+              paradigmCountryName: "JP",
+            },
+          ]
+        : [
+            {
+              id: "twenty-company-1",
+              name: "First Co",
+              domainName: { primaryLinkUrl: "https://first.example.jp" },
+              paradigmCountryName: "JP",
+            },
+          ]
+      const pageInfo = url.includes("cursor=cursor-2")
+        ? { hasNextPage: false }
+        : { hasNextPage: true, nextCursor: "cursor-2" }
+
+      return new Response(
+        JSON.stringify({
+          data: {
+            companies,
+            pageInfo,
+          },
+        }),
+        { status: 200 },
+      )
+    }),
+  )
+}
+
 afterEach(() => {
   vi.unstubAllEnvs()
   vi.unstubAllGlobals()
@@ -300,5 +341,36 @@ describe("pullTwentyCompaniesToSupabase", () => {
     expect(result.failures?.map((failure) => failure.reason).join("\n")).toContain("invalid Twenty report URL ignored")
     expect(result.failures?.map((failure) => failure.reason).join("\n")).toContain("invalid Twenty form URL ignored")
     expect(supabase.calls.companyUpdates[0]).not.toHaveProperty("report_url", "https://wrong.example/report/demo")
+  })
+
+  it("pulls multiple Twenty pages without dropping records beyond the first page", async () => {
+    stubTwentyPages()
+    const supabase = createSupabaseMock()
+    mocks.getServiceSalesSupabase.mockReturnValue(supabase.client)
+    mocks.upsertCompanyByDomain
+      .mockResolvedValueOnce({
+        ok: true,
+        company: {
+          id: "company-first",
+          report_url: "https://paradigmjp.com/ja/report/first",
+          pipeline_status: "pending",
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        company: {
+          id: "company-second",
+          report_url: "https://paradigmjp.com/ja/report/second",
+          pipeline_status: "pending",
+        },
+      })
+
+    const result = await pullTwentyCompaniesToSupabase(2, { pageSize: 1 })
+
+    expect(result.scanned).toBe(2)
+    expect(result.created).toBe(2)
+    expect(mocks.upsertCompanyByDomain).toHaveBeenCalledWith(expect.objectContaining({ domain: "first.example.jp" }))
+    expect(mocks.upsertCompanyByDomain).toHaveBeenCalledWith(expect.objectContaining({ domain: "second.example.jp" }))
+    expect(fetch).toHaveBeenCalledTimes(2)
   })
 })

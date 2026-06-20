@@ -18,6 +18,8 @@ import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
 
+export const dynamic = "force-dynamic"
+
 interface Props { params: Promise<{ locale: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -32,9 +34,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 const VALUE_ICONS = [Rocket, Handshake, Lightbulb] as const
 const VALUE_GRADIENTS = [
-  "from-pink-400 via-paradigm-accent to-paradigm-tech",
-  "from-paradigm-tech via-paradigm-glow to-violet-400",
-  "from-paradigm-glow via-violet-400 to-pink-400",
+  "from-zinc-950 via-zinc-800 to-blue-700",
+  "from-zinc-900 via-blue-800 to-emerald-700",
+  "from-zinc-900 via-emerald-800 to-blue-700",
 ] as const
 
 interface ValueRow { title: string; desc: string }
@@ -63,8 +65,8 @@ export default async function AboutPage({ params }: Props) {
         <div className="paradigm-mesh opacity-40" />
         <FadeIn className="relative z-10 max-w-3xl mx-auto px-6 md:px-8 text-center">
           <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{t("missionEyebrow")}</p>
-          <h2 className="font-display text-[28px] md:text-[44px] leading-[1.1] tracking-[-0.025em] text-paradigm-ink mb-6">
-            <span className="bg-gradient-to-br from-paradigm-ink via-paradigm-accent to-paradigm-tech bg-clip-text text-transparent">
+          <h2 className="font-display text-[28px] md:text-[44px] leading-[1.1]  text-paradigm-ink mb-6">
+            <span className="bg-gradient-to-br from-paradigm-ink via-paradigm-ink to-paradigm-accent bg-clip-text text-transparent">
               {t("missionTitle")}
             </span>
           </h2>
@@ -79,8 +81,8 @@ export default async function AboutPage({ params }: Props) {
         <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-8">
           <FadeIn className="mb-10 max-w-2xl">
             <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("valuesEyebrow")}</p>
-            <h2 className="font-display text-[26px] md:text-[40px] leading-[1.1] tracking-[-0.025em] text-paradigm-ink">
-              <span className="bg-gradient-to-br from-paradigm-ink via-paradigm-tech to-paradigm-glow bg-clip-text text-transparent">
+            <h2 className="font-display text-[26px] md:text-[40px] leading-[1.1]  text-paradigm-ink">
+              <span className="bg-gradient-to-br from-paradigm-ink via-paradigm-ink to-paradigm-accent bg-clip-text text-transparent">
                 {t("valuesTitle")}
               </span>
             </h2>
@@ -90,11 +92,11 @@ export default async function AboutPage({ params }: Props) {
               const Icon = v.icon
               return (
                 <FadeIn key={v.title} delay={idx * 0.1}>
-                  <div className="paradigm-glass rounded-2xl p-6 md:p-7 paradigm-glow-sm hover:paradigm-glow-lg hover:-translate-y-1 transition-all duration-500 h-full">
-                    <div className={`inline-flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br ${v.gradient} text-paradigm-paper mb-4 paradigm-glow-sm`}>
+                  <div className="paradigm-glass rounded-lg p-6 md:p-7 paradigm-glow-sm hover:paradigm-glow-lg  transition-all duration-500 h-full">
+                    <div className={`inline-flex items-center justify-center w-11 h-11 rounded-lg bg-gradient-to-br ${v.gradient} text-paradigm-paper mb-4 paradigm-glow-sm`}>
                       <Icon size={20} strokeWidth={1.5} />
                     </div>
-                    <h3 className="font-display text-[18px] md:text-[20px] leading-[1.2] text-paradigm-ink mb-2 tracking-[-0.015em]">{v.title}</h3>
+                    <h3 className="font-display text-[18px] md:text-[20px] leading-[1.2] text-paradigm-ink mb-2 ">{v.title}</h3>
                     <p className="text-[13px] text-paradigm-ink-soft leading-[1.75]">{v.desc}</p>
                   </div>
                 </FadeIn>
@@ -108,12 +110,12 @@ export default async function AboutPage({ params }: Props) {
         <div className="relative z-10 max-w-3xl mx-auto px-6 md:px-8">
           <FadeIn className="mb-8">
             <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("companyEyebrow")}</p>
-            <h2 className="font-display text-[26px] md:text-[36px] leading-[1.15] tracking-[-0.025em] text-paradigm-ink">
+            <h2 className="font-display text-[26px] md:text-[36px] leading-[1.15]  text-paradigm-ink">
               {t("companyTitle")}
             </h2>
           </FadeIn>
           <FadeIn>
-            <div className="paradigm-glass rounded-2xl overflow-hidden border border-paradigm-line paradigm-glow-sm">
+            <div className="paradigm-glass rounded-lg overflow-hidden border border-paradigm-line paradigm-glow-sm">
               <dl>
                 {COMPANY_INFO.map(([label, value], i) => (
                   <div key={label} className={`grid grid-cols-1 md:grid-cols-[180px_1fr] py-4 px-6 ${i < COMPANY_INFO.length - 1 ? "border-b border-paradigm-line/60" : ""}`}>
