@@ -14,7 +14,7 @@ on:
       app_uuid:
         description: "Coolify application UUID"
         required: false
-        default: "i12am4vvcbggefnqdizhnv9a"
+        default: "n8i2sjiqvr2d8hrzppop2m2i"
 
 permissions:
   contents: read
