@@ -1,5 +1,3 @@
-import config from "@payload-config"
-import { getPayload } from "payload"
 import { isPayloadInitCoolingDown, markPayloadInitFailure } from "./payload-availability"
 
 export type AdminAuthSource = "payload" | "legacy" | "webhook" | "none"
@@ -63,6 +61,10 @@ export async function authorizePayloadAdminRequest(input: {
   }
 
   try {
+    const [{ getPayload }, { default: config }] = await Promise.all([
+      import("payload"),
+      import("@payload-config"),
+    ])
     const payload = await getPayload({ config })
     const { user } = await payload.auth({ headers: input.headers })
 

@@ -8,8 +8,6 @@
  * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
  */
 import type { Metadata } from "next"
-import { getPayload } from "payload"
-import config from "@payload-config"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
 import { buildArticleSchema } from "@/lib/seo/schemas"
@@ -20,7 +18,7 @@ import { filterByLocale, assertLocale, localeFindOptions } from "@/lib/cms/filte
 import { LOCALE_HREFLANG } from "@/lib/locale-map"
 import { withPayloadReadFallback } from "@/lib/payload-availability"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 300
 
 interface Props { params: Promise<{ locale: string }> }
 
@@ -70,6 +68,10 @@ export default async function BlogPage({ params }: Props) {
   const t = await getTranslations({ locale, namespace: "blogPage" })
 
   const posts = await withPayloadReadFallback<PostDoc[]>("blog.payload.find", async () => {
+      const [{ getPayload }, { default: config }] = await Promise.all([
+        import("payload"),
+        import("@payload-config"),
+      ])
       const payload = await getPayload({ config })
       const res = await payload.find({
         collection: "posts",
