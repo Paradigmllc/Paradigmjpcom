@@ -1,11 +1,16 @@
 ## CURRENT STATUS - 2026-06-20 Cloudflare 524 origin timeout hardening
 
+- 2026-06-20 追加監査: OpenCode が古い `coolify.appexx.me` を参照する原因は、OpenCode 本体の共通ルール未読込ではなく、dotfiles SSOT 配下の MCP/API registry・運用 runbook・同期対象漏れに古い Coolify/DigitalOcean 情報が残っていたこと。正本は `https://coolify.paradigmjp.com`、Hetzner は `paradigm-prod-01` / server id `142222420` / `178.105.138.55`。
+- dotfiles 側で `sync.sh pull` に OpenCode global config 配布を追加し、macOS LaunchAgent `com.paradigm.agent-context-sync` を導入。dotfiles SSOT の AGENTS/CLAUDE/MCP/OpenCode/AI rules 変更はローカル Claude/Codex/OpenCode/Cline/Cursor/Windsurf/Antigravity へ自動反映される。
+- Coolify API key / Hetzner API key は Keychain と reference memory に保存済み。API 実値は Task.md に書かない。デプロイコードは `scripts/lib/coolify-env.mjs` で env → reference memory → `~/.claude/mcp.json` → macOS Keychain の順に解決し、default URL は `https://coolify.paradigmjp.com`。
+- 524 頻発時の実測: Hetzner metrics で CPU が約 795%・read IOPS 約 26k まで張り付き、SSH banner timeout / Cloudflare 524 / Coolify timeout が同時発生。Hetzner API reset 後、Coolify API・本番 `/api/ready`・`/ja` は HTTP 200 に復旧。
+- 恒久対策追加: deploy 前フックが Hetzner CPU を Keychain 経由で確認し、過負荷時は deploy を止める。ホストガード cron は 5分間隔で disk/load/memory/Coolify/Traefik を記録し、stale Coolify helper を清掃する。大量リストの batch 作成はインライン解析・即時 Twenty 逐次同期を外し、既存 enrichment queue に寄せて HTTP リクエストを長時間占有しない。
+- Verification: `bash -n sync.sh scripts/audit-api-keys.sh opencode-telegram/scripts/entrypoint.sh scripts/agent-context-sync/agent-context-sync.sh`、`node -c claude/hooks/pre-coolify-deploy-load-check.js`、`bash sync.sh pull`、`npm test -- src/lib/sales/enrich.test.ts src/lib/sales/twenty-sync.test.ts`、`npm exec -- tsc --noEmit --pretty false`、`git diff --check` が通過。本番 `https://paradigmjp.com/api/ready` / `/ja` / `https://coolify.paradigmjp.com/login` は 200。
 - Root-cause方向: Cloudflare 524 は Cloudflare が origin に接続できた後、origin が読み取りタイムアウト内に応答できない状態。公開ページが Payload/CMS 読み込みや `/` healthcheck に巻き込まれると、DB/Pooler遅延時に origin 全体が詰まりやすい。
 - 公開サイトの恒久対策として、`withPayloadReadFallback` を `PAYLOAD_PUBLIC_READS_ENABLED=1` の明示 opt-in に変更。デフォルトでは Settings/Header/Footer/Home/Services/Pricing/Works/FAQ/Blog の公開 Payload 読み込みを開始せず、静的/ローカル fallback を即返す。
 - `/ja` `/services` `/works` `/blog` `/faq` のトップレベル `getPayload` / `@payload-config` import を遅延 import に変更し、CMS opt-in 時以外は Payload 初期化を起動しない。`/pricing` は国判定 headers を使うため dynamic のまま、Payload import だけ遅延化。
 - Docker healthcheck を DB/CMS 非依存の `/api/ready` に切り替え。公開トップページや Payload が重くてもコンテナ readiness が巻き添えにならないようにした。
 - 検証: `npm test -- src/lib/payload-availability.test.ts src/lib/settings.test.ts`、`npm exec -- tsc --noEmit --pretty false`、`npm run quality:guard`、`npm audit --audit-level=high`、`npm run build` が通過。ローカル production server で `/api/ready` `/ja` `/ja/services` `/ja/pricing` が HTTP 200 / 0.3s 未満で応答。
-- GitHub: PR #19 を merge 済み。main commit `0f6a184`。PR #21 で `COOLIFY_TOKEN` GitHub Secret を使う手動 `Coolify Deploy` workflow も追加済み。Run `27861530360` は `Trigger Coolify deployment` で Coolify API 応答待ちになったためキャンセル。`https://coolify.appexx.me` / `http://178.105.138.55:8000` は 10s timeout、`http://139.59.250.5:8000` と `https://139.59.250.5` は connection refused、SSH は `root@139.59.250.5` publickey denied / `root@178.105.138.55` banner timeout。Production deploy は Coolify/host 管理面に到達できず未完了。本番 `https://paradigmjp.com/api/ready` と `/ja` は未デプロイのため timeout 継続。
 
 ## CURRENT STATUS - 2026-06-20 RevenueOS/Twenty list collection deep audit hardening
 

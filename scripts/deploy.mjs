@@ -33,6 +33,7 @@ const GH_REPO = "git@github.com:Paradigmllc/Paradigmjpcom.git"
 async function api(path, options = {}) {
   const res = await fetch(`${BASE}${path}`, {
     ...options,
+    signal: options.signal ?? AbortSignal.timeout(30_000),
     headers: {
       Authorization: `Bearer ${TOKEN}`,
       "Content-Type": "application/json",
@@ -181,6 +182,11 @@ async function run() {
   runHostDiskPreflight()
   runDeployGuard()
 
+  if (DRY) {
+    console.log("--dry: skipping Coolify mutations")
+    return
+  }
+
   console.log("Syncing git_repository to Coolify")
   try {
     await api(`/api/v1/applications/${APP_UUID}`, {
@@ -190,11 +196,6 @@ async function run() {
     console.log("git_repository synced")
   } catch (error) {
     console.warn("git_repository sync skipped:", error instanceof Error ? error.message : String(error))
-  }
-
-  if (DRY) {
-    console.log("--dry: skipping deploy")
-    return
   }
 
   const deployResp = await api(`/api/v1/deploy?uuid=${APP_UUID}&force=true`, { method: "POST" })

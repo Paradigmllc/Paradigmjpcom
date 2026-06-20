@@ -1,10 +1,13 @@
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
+import { spawnSync } from "node:child_process"
 
-export const DEFAULT_COOLIFY_URL = process.env.COOLIFY_API_URL || process.env.COOLIFY_URL || "http://178.105.138.55:8000"
+export const DEFAULT_COOLIFY_URL = process.env.COOLIFY_API_URL || process.env.COOLIFY_URL || "https://coolify.paradigmjp.com"
 export const DEFAULT_APP_UUID = process.env.PARADIGM_APP_UUID || "n8i2sjiqvr2d8hrzppop2m2i"
 const CLAUDE_PROJECT_MEMORY_DIR = path.join(os.homedir(), ".claude", "projects")
+const DOTFILES_CLAUDE_MEMORY_DIR = path.join(os.homedir(), "Desktop", "dotfiles", "claude", "memory")
+const CLAUDE_MCP_FILE = path.join(os.homedir(), ".claude", "mcp.json")
 
 function envValue(name, fallback = null) {
   const value = process.env[name]
@@ -70,19 +73,21 @@ function parseReferenceField(text, labels) {
 }
 
 function findCoolifyFromClaudeReferences() {
-  if (!fs.existsSync(CLAUDE_PROJECT_MEMORY_DIR)) return null
+  const roots = [CLAUDE_PROJECT_MEMORY_DIR, DOTFILES_CLAUDE_MEMORY_DIR].filter((dir) => fs.existsSync(dir))
+  if (roots.length === 0) return null
   const files = []
   const walk = (dir) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const fullPath = path.join(dir, entry.name)
-      if (entry.isDirectory()) {
+      const isDirectory = entry.isDirectory() || (entry.isSymbolicLink() && fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory())
+      if (isDirectory) {
         walk(fullPath)
-      } else if (/^reference_.*coolify.*\.md$/i.test(entry.name)) {
+      } else if (/^reference_.*(?:coolify|api_keys).*\.md$/i.test(entry.name)) {
         files.push(fullPath)
       }
     }
   }
-  walk(CLAUDE_PROJECT_MEMORY_DIR)
+  for (const root of roots) walk(root)
   const scored = files
     .map((file) => {
       const normalized = file.replace(/\\/g, "/").toLowerCase()
@@ -101,13 +106,37 @@ function findCoolifyFromClaudeReferences() {
       if (!token || token.length <= 10) continue
       return {
         token,
-        baseUrl: parseReferenceField(text, ["COOLIFY_API_URL", "baseUrl", "base url", "url"]) || DEFAULT_COOLIFY_URL,
+        baseUrl: parseReferenceField(text, ["COOLIFY_API_URL", "API base URL", "baseUrl", "base url", "url"]) || DEFAULT_COOLIFY_URL,
       }
     } catch (error) {
       console.warn(`[coolify-env] failed to read Coolify reference ${file}:`, error)
     }
   }
   return null
+}
+
+function findCoolifyFromCurrentMcp() {
+  const cfg = readJson(CLAUDE_MCP_FILE)
+  const server = cfg?.mcpServers?.coolify || cfg?.servers?.coolify
+  const token = server?.env?.COOLIFY_API_TOKEN
+  if (typeof token !== "string" || token.length <= 10) return null
+  return {
+    token,
+    baseUrl: server.env.COOLIFY_API_URL || DEFAULT_COOLIFY_URL,
+  }
+}
+
+function findCoolifyFromKeychain() {
+  if (process.platform !== "darwin") return null
+  const result = spawnSync("security", ["find-generic-password", "-w", "-s", "Paradigm-Coolify-API"], {
+    encoding: "utf8",
+  })
+  const token = result.status === 0 ? result.stdout.trim() : ""
+  if (token.length <= 10) return null
+  return {
+    token,
+    baseUrl: DEFAULT_COOLIFY_URL,
+  }
 }
 
 function findCoolifyFromMcpBackup() {
@@ -146,6 +175,10 @@ export function getCoolifyAuth() {
   }
   const reference = findCoolifyFromClaudeReferences()
   if (reference) return reference
+  const currentMcp = findCoolifyFromCurrentMcp()
+  if (currentMcp) return currentMcp
+  const keychain = findCoolifyFromKeychain()
+  if (keychain) return keychain
   if (token) {
     return {
       token,
@@ -162,6 +195,7 @@ export async function coolifyRequest(pathname, options = {}) {
   if (!auth) throw new Error("COOLIFY_API_TOKEN is not configured")
   const res = await fetch(`${auth.baseUrl}${pathname}`, {
     ...options,
+    signal: options.signal ?? AbortSignal.timeout(30_000),
     headers: {
       Authorization: `Bearer ${auth.token}`,
       "Content-Type": "application/json",

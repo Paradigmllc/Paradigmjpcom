@@ -10,7 +10,7 @@ on:
       coolify_url:
         description: "Coolify API base URL"
         required: false
-        default: "https://coolify.appexx.me"
+        default: "https://coolify.paradigmjp.com"
       app_uuid:
         description: "Coolify application UUID"
         required: false

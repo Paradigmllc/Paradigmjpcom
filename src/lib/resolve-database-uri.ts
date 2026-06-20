@@ -95,7 +95,7 @@ export function shouldUseSsl(uri: string): boolean {
   if (uri.includes("localhost") || uri.includes("127.0.0.1") || uri.includes("db:") || uri.includes("-db:")) {
     return false
   }
-  // Direct IP connections (e.g. 139.59.250.5:5433) — no SSL by default
+  // Direct IP connections to private/self-hosted Postgres endpoints use no SSL by default.
   return false
 }
 

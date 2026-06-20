@@ -24,7 +24,7 @@ const APP_UUID = process.env.PARADIGM_APP_UUID || "n8i2sjiqvr2d8hrzppop2m2i"
 
 const MGMT_API = "https://api.supabase.com"
 const DATA_API = PROJECT_ID ? `https://${PROJECT_ID}.supabase.co` : ""
-const COOLIFY_API = process.env.COOLIFY_API_URL || "http://178.105.138.55:8000"
+const COOLIFY_API = process.env.COOLIFY_API_URL || "https://coolify.paradigmjp.com"
 
 const MIGRATE = process.argv.includes("--migrate") || process.argv.includes("--all")
 const RESTORE = process.argv.includes("--restore") || process.argv.includes("--all")
