@@ -106,6 +106,7 @@ export function karteHomeSummary(karte: CompanyKarteSnapshot): string {
     `取得状況: ${karte.sourceScore}% (${karte.collectedCount} collected, ${karte.configuredCount} configured, ${karte.missingCount} missing)`,
     `カテゴリ別: ${sourceCategoryBreakdown(karte)}`,
     `全ソース詳細(50+): ${sourceCoveragePanelLink(karte)}`,
+    `生成エンジン: report=${karte.reportEngine ?? "未生成"} / diagnosis=${karte.diagnosisEngine ?? "未実行"} / template=${karte.templateVariant}`,
     sourceSummary.collected ? `取得済みソース: ${sourceSummary.collected}` : null,
     sourceSummary.configured ? `次に取得可能: ${sourceSummary.configured}` : null,
     sourceSummary.missing ? `不足ソース: ${sourceSummary.missing}` : null,

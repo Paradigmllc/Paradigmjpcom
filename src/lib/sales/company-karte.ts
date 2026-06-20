@@ -70,6 +70,9 @@ export interface CompanyKarteSnapshot {
   recommendedOffer: string | null
   personalizedHook: string | null
   personalizedCTA: string | null
+  // Phase 6-2: generation trace so operators can see which engine produced the copy.
+  reportEngine?: string | null
+  diagnosisEngine?: string | null
   generatedAt: string
 }
 
@@ -255,6 +258,13 @@ export function buildCompanyKarte(
     recommendedOffer: typeof diagnosis?.recommendedOffer === "string" ? diagnosis.recommendedOffer : null,
     personalizedHook: typeof personalizedCopy?.personalized_hook === "string" ? personalizedCopy.personalized_hook : null,
     personalizedCTA: typeof personalizedCopy?.personalized_cta === "string" ? personalizedCopy.personalized_cta : null,
+    reportEngine:
+      typeof personalizedCopy?.model === "string"
+        ? personalizedCopy.model
+        : personalizedCopy && Object.keys(personalizedCopy).length > 0
+          ? "personalized"
+          : "template",
+    diagnosisEngine: typeof diagnosis?.engine === "string" ? diagnosis.engine : null,
     generatedAt: new Date().toISOString(),
     ...counts,
   }
