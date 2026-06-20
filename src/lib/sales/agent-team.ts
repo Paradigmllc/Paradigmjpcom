@@ -26,6 +26,7 @@ import {
   agentMenuSummary,
   approveQueueItem,
   buildMainMenuKeyboard,
+  buildOssLinksKeyboard,
   enqueueManualReview,
   getCompanyCard,
   isAgentMenuSelection,
@@ -82,6 +83,7 @@ export function classifyAgentCommand(text: string): SalesAgentIntent {
   const value = text.toLowerCase()
   // Combined patterns (unicode-escaped + literal) into single checks to avoid dead code
   if (/(\u72b6\u6cc1|\u9032\u6357|\u4ef6\u6570|\u30b5\u30de\u30ea|状況|進捗|status|kpi|件数|サマリ|summary)/i.test(text)) return "status_report"
+  if (/(\/oss|oss管理|metabase|chatwoot|keystatic|directus|動向|ダッシュボード|dashboard|管理画面)/i.test(text)) return "oss_links"
   if (/(\u30ea\u30b9\u30c8|\u53ce\u96c6|\u53d6\u96c6|\u96c6\u3081\u3066|\u62bd\u51fa|\u4e00\u89a7|リスト|収集|集めて|抽出|一覧|list\s*collect|collect\s*list|collect|lead\s*list)/i.test(text)) return "collect_list"
   if (/(カルテ|診断|enrich|enrichment|解析|生成|report|レポート)/i.test(text)) return "run_enrichment"
   if (/(フォーム|送信|営業|outreach|dry.?run|preflight|文面)/i.test(text)) return "run_outreach_dry_run"
@@ -347,6 +349,14 @@ export async function handleAgentCommand(input: SalesAgentCommandInput): Promise
       await logAgentEvent(sb, { commandId, agentRole: "openclaw_researcher", eventType: "collect_list", status: listResult.ok ? "success" : "warning", title: "企業リスト収集", payload: listResult as unknown as JsonRecord })
       await updateCommand(sb, commandId, { status: listResult.ok ? "completed" : "failed", runSummary: reply, resultPayload: listResult as unknown as JsonRecord })
       return { ok: listResult.ok, commandId, intent, status: listResult.ok ? "completed" : "failed", approvalRequired: false, summary: reply, reply, result: listResult as unknown as JsonRecord }
+    }
+
+    if (intent === "oss_links") {
+      const keyboard = buildOssLinksKeyboard()
+      const summary = "🛠 OSS管理ツール\n\n各ツールを開くには下のボタンをタップしてください:\n📈 Metabase — 営業動向・KPIダッシュボード\n💬 Chatwoot — 顧客返信・inbox\n🖥 Keystatic — デモサイトCMS\n📑 Directus — 営業資料CMS\n🗂 RevenueOS — 営業OSパネル"
+      const result = { oss: true, keyboard }
+      await updateCommand(sb, commandId, { status: "completed", runSummary: summary, resultPayload: result })
+      return { ok: true, commandId, intent, status: "completed", approvalRequired: false, summary, reply: summary, result }
     }
 
     if (intent === "show_menu") {

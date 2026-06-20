@@ -68,7 +68,30 @@ export function buildMainMenuKeyboard(): TelegramKeyboard {
       [{ text: "🔍 企業検索", callback_data: "/search " }, { text: "🩺 カルテ生成", callback_data: "/enrich" }],
       [{ text: "📋 ジョブ一覧", callback_data: "/jobs" }, { text: "📝 承認待ち", callback_data: "/queue" }],
       [{ text: "📤 Twenty同期", callback_data: "/sync" }, { text: "📦 資料生成", callback_data: "/assets" }],
-      [{ text: "📋 リスト収集", callback_data: "/collect" }, { text: "❓ ヘルプ", callback_data: "/help" }],
+      [{ text: "📋 リスト収集", callback_data: "/collect" }, { text: "🛠 OSS管理", callback_data: "/oss" }],
+      [{ text: "❓ ヘルプ", callback_data: "/help" }],
+    ],
+  }
+}
+
+// Phase 8-3: OSS management deep links. One-tap open of the営業動向/OSS tools from Telegram
+// (deep-link approach: Metabase trends, Chatwoot replies, Keystatic demo CMS, Directus sales-asset CMS,
+// RevenueOS panel). Uses env base URLs with production defaults.
+function ossBase(envName: string, fallback: string): string {
+  const v = process.env[envName]
+  return (typeof v === "string" && v.trim() ? v.trim() : fallback).replace(/\/+$/, "")
+}
+
+export function buildOssLinksKeyboard(): TelegramKeyboard {
+  const revenueOs = ossBase("PAYLOAD_PUBLIC_SERVER_URL", "https://paradigmjp.com")
+  return {
+    inline_keyboard: [
+      [{ text: "📈 営業動向 (Metabase)", url: `${ossBase("METABASE_URL", "https://metabase.paradigmjp.com")}` }],
+      [{ text: "💬 返信 (Chatwoot)", url: `${ossBase("CHATWOOT_BASE_URL", "https://chatwoot.paradigmjp.com")}` }],
+      [{ text: "🖥 デモCMS (Keystatic)", url: `${ossBase("KEYSTATIC_BASE_URL", "https://keystatic.paradigmjp.com")}` }],
+      [{ text: "📑 営業資料CMS (Directus)", url: `${ossBase("DIRECTUS_BASE_URL", "https://directus.paradigmjp.com")}` }],
+      [{ text: "🗂 RevenueOS パネル", url: `${revenueOs}/ja/admin/sales` }],
+      [{ text: "◀️ メニュー", callback_data: "/menu" }],
     ],
   }
 }

@@ -52,11 +52,11 @@ Phase 7 — Twenty 50+ ソース可視化
 Phase 8 — Telegram bot 修復・OSS管理・Realtime
 - [ ] 8-1 webhook状態確認・TELEGRAM_BOT_TOKEN/SECRET 設定・再登録
 - [ ] 8-2 enrich/outreach のインライン撤去→Trigger.dev dispatch（Phase1/2統一）
-- [ ] 8-3 OSS deep link（Metabase動向先行→Chatwoot/Keystatic/Directus・スコープ調整可）
+- [x] 8-3 OSS deep link（Metabase動向/Chatwoot/Keystatic/Directus/RevenueOS への URL ボタン・`oss_links` intent・/oss コマンド・tsc clean・test pass）
 - [ ] 8-4 Supabase Realtime→Telegram event駆動 push（HOT lead/返信/承認要求）
-- [ ] 8-5 inline keyboard拡充・返信構造化
+- [x] 8-5 inline keyboard拡充（メインメニューに OSS管理ボタン＋URL ボタン対応に TelegramKeyboard 型拡張）※返信構造化は継続
 - [ ] 8-6 dashboard に bot履歴・webhook health・OSS接続状態
-- [ ] 8-7 Vitest（intent分類/OSS deep link/realtime payload）＋secret検証
+- [x] 8-7 Vitest（OSS deep link/intent分類）pass ※realtime payload/secret検証は 8-4/8-1 と併せて継続
 
 Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - [ ] 9-1 重ワーカー（Browserless/Steel/Stagehand/ComfyUI/HyperFrames/OpenMontage/video/crawl）を別box/serverless へ offload
