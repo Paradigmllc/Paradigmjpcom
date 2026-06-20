@@ -19,6 +19,10 @@ const expectedTasks = [
   "chatwoot-reply-router",
   "livekit-discovery-router",
   "sales-video-pipeline",
+  "twenty-sync-cron",
+  "twenty-sync-event",
+  "sales-report-regenerator",
+  "sales-report-regenerator-event",
 ]
 
 const envTaskMap = {
@@ -56,6 +60,12 @@ if (!fs.existsSync(taskSource) || !fs.existsSync(configSource)) {
 }
 
 const source = fs.readFileSync(taskSource, "utf8")
+if (/schedules\.task\s*\(/.test(source)) {
+  fail("Trigger.dev schedules.task is forbidden by WW-EVENT; use event-triggered task() instead.")
+}
+if (/\bcron\s*:/.test(source)) {
+  fail("Trigger.dev cron property is forbidden by WW-EVENT; remove scheduled execution.")
+}
 for (const taskId of expectedTasks) {
   printStatus(`task:${taskId}`, source.includes(`id: "${taskId}"`), "defined in trigger/sales-os.ts")
   if (!source.includes(`id: "${taskId}"`)) fail(`Missing Trigger.dev task ${taskId}`)

@@ -139,7 +139,7 @@ async function buildHub() {
         T("Notion = GUI", { bold: true }),
         T(" (莠ｺ髢捺桃菴・UI) / "),
         T("Cloudflare R2 = 螟ｧ繝輔ぃ繧､繝ｫ", { bold: true }),
-        T(" (蜍慕判/PDF). 5min cron 縺ｧ螳悟・蜿梧婿蜷・sync."),
+        T(" (蜍慕判/PDF). webhook one-shot 縺ｧ螳悟・蜿梧婿蜷・sync."),
       ],
       "識",
       "blue_background",
@@ -163,7 +163,7 @@ async function buildHub() {
     b.p(""),
 
     b.h2("屏・・繧ｷ繧ｹ繝・Β莉墓ｧ・),
-    SUB_PAGE_LINK(SUB.setup, "肌 Setup & Environment", "Coolify env (15 vars) + 6 cron + Slack 險ｭ螳壹・螳悟・繝ｪ繝輔ぃ繝ｬ繝ｳ繧ｹ", "肌"),
+    SUB_PAGE_LINK(SUB.setup, "肌 Setup & Environment", "Coolify env (15 vars) + 6 event webhook + Slack 險ｭ螳壹・螳悟・繝ｪ繝輔ぃ繝ｬ繝ｳ繧ｹ", "肌"),
     SUB_PAGE_LINK(SUB.r2, "淀・・R2 Storage Spec", "蜍慕判/PDF/謠先｡郁ｳ・侭縺ｮ菫晏ｭ伜・莉墓ｧ・+ R2 繧ｻ繝・ヨ繧｢繝・・ + 繧ｳ繧ｹ繝郁ｩｦ邂・, "淀・・),
     SUB_PAGE_LINK(SUB.syncFlow, "答 Architecture & Sync Flow", "Supabase 竊・Notion 蜿梧婿蜷・sync 莉墓ｧ・+ 邱ｨ髮・庄閭ｽ繝輔ぅ繝ｼ繝ｫ繝・+ Conflict 隗｣豎ｺ", "答"),
     b.p(""),

@@ -306,7 +306,7 @@ async function createTemplates() {
         type: "text",
         text: {
           content:
-            "Global market sales copy templates (8 industries ÁE7 issues = 56). Despair→Hope 5-stage frame encoded. Edits sync to Supabase via 5min cron ↁE/report/[slug] reflects in 6 min.",
+            "Global market sales copy templates (8 industries ÁE7 issues = 56). Despair→Hope 5-stage frame encoded. Edits sync to Supabase via webhook one-shot ↁE/report/[slug] reflects in 6 min.",
         },
       },
     ],

@@ -1,16 +1,19 @@
 ## CURRENT STATUS - 2026-06-20 WW-EVENT: cron/定期実行を全廃しイベント駆動化（永久ルール）
 
 - 永久ルール (WW-EVENT): サーバー負荷対策のため、サイト全体で cron / 定期実行 / 常駐 polling / `setInterval` worker / pg_cron / Coolify Scheduled Task / systemd timer を新設しない。同期・監視・ジョブ起動は webhook / DB event・realtime / queue enqueue / GitHub push / ユーザー操作などのイベント駆動にする。UI animation や単発 timeout/retry は対象外。
-- 主因: Next.js コンテナが起動時から常駐 setInterval ループ（enrichment 10s + watchdog 60s で Twenty pull・report 再生成・DB スキャン）を回しオリジン過負荷(521/522/524)。→ 常駐ループ全廃（instrumentation no-op / enrichment-worker・watchdog は one-shot drain / `/api/sales/pipeline/recover` 起点 / rate-limit は遅延 sweep / SSE は Supabase Realtime）。上流コミット 913175a と統合済み。
+- 主因: Next.js コンテナが起動時から常駐 setInterval ループ（enrichment 10s + watchdog 60s で Twenty pull・report 再生成・DB スキャン）を回しオリジン過負荷(521/522/524)。→ 常駐ループ全廃（instrumentation no-op / enrichment-worker・watchdog は one-shot drain / `/api/sales/pipeline/tick`・`/api/sales/pipeline/recover` 起点 / rate-limit は遅延 sweep / SSE は Supabase Realtime）。上流コミット 913175a と統合済み。
 - 本セッションの net-new（上流が未対応の分）:
-  - `trigger/sales-os.ts`【本命】: Trigger.dev が現役オーケストレータ（`migration_040`/`053`: `replaces n8n` / `primary_orchestrator`）。その `schedules.task`（`* * * * *` / `*/5`）= 唯一の現役 cron を非スケジュール `task`（イベント起動）へ変換。`schedules` import 削除。
+  - `trigger/sales-os.ts`【本命】: Trigger.dev が現役オーケストレータ（`migration_040`/`053`: `replaces n8n` / `primary_orchestrator`）。その `schedules.task`（`* * * * *` / `*/5`）= 唯一の現役 cron を非スケジュール `task`（イベント起動）へ変換。旧 `twenty-sync-cron` / `sales-report-regenerator` は no-op tombstone 化し、実処理は `twenty-sync-event` / `sales-report-regenerator-event` へ分離。
+  - `src/app/api/sales/pipeline/tick/route.ts`: webhook/手動用の軽量 one-shot tick を新設。既定では enrichment/recovery のみ実行し、Twenty pull / report regeneration は body opt-in（誤爆時の負荷防止）。
+  - `src/app/api/sales/admin/abolish-periodic-jobs/route.ts`: 本番アプリ内から固定SQLだけを実行する認証付き one-shot 管理APIを追加。外部DB/SSH到達性に依存せず、`cron.job` の残存を 0 件まで掃除して残数を返す。
   - `n8n-workflows/02,03`【レガシー】: n8n は Trigger.dev に置換済み・src から呼び出し無しの非稼働成果物。整合のため `scheduleTrigger`→`webhook` 化したが live runtime ではない（再 import 不要）。
-  - `supabase/migration_044_abolish_pg_cron_event_driven.sql`: pg_cron 全ジョブを unschedule（冪等・pg_cron 不在でも安全）。`migration_013` の cron 再作成は no-op 化（上流と統合）。
-- 残作業（外部操作要）:
-  1. `migration_044` を本番 Supabase に適用し `SELECT * FROM cron.job;` = 0 行を確認。
-  2. Trigger.dev: 旧 `twent-sync-cron` / `sales-report-regenerator` の schedule 登録が cloud に残っていれば削除（コードは非スケジュール化済み）。Notion 同期は Notion webhook → `/api/sales/sync-*-from-notion`、パイプライン維持は `/api/sales/pipeline/recover` で event 駆動。
-  3. n8n は decommission 済み前提。もし live n8n インスタンスが schedule trigger を回していれば停止（コード/CRM 上は非依存）。
-- 検証: `tsc --noEmit` クリーン / 変更スクリプト `node --check` OK / n8n JSON parse OK。
+  - `supabase/migration_044_abolish_pg_cron_event_driven.sql`: pg_cron 全ジョブを unschedule（冪等・pg_cron 不在でも安全）。`scripts/run-migrations.sh` にも追加済み。`migration_013` の cron 再作成は no-op 化（上流と統合）。
+- 運用確認:
+  1. デプロイ後に `/api/sales/admin/abolish-periodic-jobs` を shared-secret 付きで one-shot 実行し、`remaining: 0` を確認する。
+  2. Trigger.dev cloud の `/api/v1/schedules` は `count: 0` 確認済み。旧 `twenty-sync-cron` / `sales-report-regenerator` は schedule が残ってもコード側 no-op tombstone、実処理は `twenty-sync-event` / `sales-report-regenerator-event` を明示イベントで起動。
+  3. Notion 同期は Notion webhook → `/api/sales/sync-*-from-notion`、パイプライン維持は `/api/sales/pipeline/tick` / `/api/sales/pipeline/recover` で event 駆動。
+  4. n8n は decommission 済み前提。成果物 JSON 01-04 に `scheduleTrigger` は 0 件。
+- 検証: `tsc --noEmit` クリーン / `npm run quality:guard` OK / 変更スクリプト `node --check` OK / n8n schedule audit OK / `npm run build` OK。
 
 
 

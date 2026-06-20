@@ -15,7 +15,7 @@
  *   5. 新規リード (Notion で行追加) は domain があれば作成 + enrich 発火 →
  *      Notion を「リード追加の入口」にできる。
  *
- * 2026-05-21 新規 (Notion 即時 GUI 化 / 旧 5min cron を Webhook 駆動へ)。
+ * 2026-05-21 新規 (Notion 即時 GUI 化 / 旧定期同期を Webhook 駆動へ)。
  */
 
 import { getServiceSalesSupabase } from "@/lib/supabase"

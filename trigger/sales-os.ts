@@ -44,6 +44,16 @@ const videoPayload = z.object({
   note: z.string().optional().nullable(),
 })
 
+const twentySyncPayload = z.object({
+  limit: z.coerce.number().int().min(1).max(500).default(100),
+  auto_run_pipeline: z.boolean().optional().default(true),
+  dispatch_pipeline: z.boolean().optional().default(true),
+})
+
+const reportRegeneratorPayload = z.object({
+  limit: z.coerce.number().int().min(1).max(10).default(10),
+})
+
 function recordPayload(payload: unknown): Record<string, unknown> {
   return payload && typeof payload === "object" && !Array.isArray(payload) ? (payload as Record<string, unknown>) : {}
 }
@@ -246,20 +256,32 @@ export const salesVideoPipelineTask = task({
   },
 })
 
-/**
- * Scheduled task: pull companies from Twenty CRM every 5 minutes.
- * When new companies are found, automatically creates them in Supabase
- * and dispatches the Sales OS pipeline (enrichment → report → video).
- */
-export const twentySyncCron = task({
+export const twentySyncCronTombstone = task({
   id: "twenty-sync-cron",
-  maxDuration: 180,
+  description: "Deprecated tombstone for the old scheduled Twenty sync. It does no work.",
+  maxDuration: 30,
   run: async () => {
-    logger.info("Twenty CRM scheduled sync starting")
-    const result = await pullTwentyCompaniesToSupabase(500, {
-      autoRunPipeline: true,
-      dispatchPipeline: true,
-      requestedBy: "twenty_sync_cron",
+    logger.warn("Deprecated twenty-sync-cron invoked; no-op because WW-EVENT forbids scheduled sync")
+    return { ok: true, deprecated: true, workPerformed: false }
+  },
+})
+
+/**
+ * Event-triggered task: pull companies from Twenty CRM only when a webhook,
+ * admin action, or explicit queue event asks for it.
+ */
+export const twentySyncEventTask = task({
+  id: "twenty-sync-event",
+  description: "Event-triggered Twenty CRM pull into RevenueOS.",
+  maxDuration: 180,
+  run: async (payload: unknown) => {
+    if (isHealthCheckPayload(payload)) return healthCheckResult("twenty-sync-event")
+    const parsed = twentySyncPayload.parse(payload ?? {})
+    logger.info("Twenty CRM event sync starting", { limit: parsed.limit })
+    const result = await pullTwentyCompaniesToSupabase(parsed.limit, {
+      autoRunPipeline: parsed.auto_run_pipeline,
+      dispatchPipeline: parsed.dispatch_pipeline,
+      requestedBy: "twenty_sync_event",
     })
     logger.info("Twenty CRM sync completed", {
       scanned: result.scanned,
@@ -271,15 +293,27 @@ export const twentySyncCron = task({
   },
 })
 
-/**
- * Scheduled task: regenerate diagnostic reports for companies whose data has changed.
- * Runs every 5 minutes. Scans for companies with report_generated_at IS NULL
- * (set by DB trigger when relevant fields change) and regenerates their reports.
- */
-export const salesReportRegeneratorTask = task({
+export const salesReportRegeneratorTombstone = task({
   id: "sales-report-regenerator",
-  maxDuration: 300,
+  description: "Deprecated tombstone for the old scheduled report regenerator. It does no work.",
+  maxDuration: 30,
   run: async () => {
+    logger.warn("Deprecated sales-report-regenerator invoked; no-op because WW-EVENT forbids scheduled regeneration")
+    return { ok: true, deprecated: true, workPerformed: false }
+  },
+})
+
+/**
+ * Event-triggered task: regenerate diagnostic reports when a webhook/admin event
+ * requests repair for companies whose report_generated_at is NULL.
+ */
+export const salesReportRegeneratorEventTask = task({
+  id: "sales-report-regenerator-event",
+  description: "Event-triggered diagnostic report regeneration.",
+  maxDuration: 300,
+  run: async (payload: unknown) => {
+    if (isHealthCheckPayload(payload)) return healthCheckResult("sales-report-regenerator-event")
+    const parsed = reportRegeneratorPayload.parse(payload ?? {})
     const { getServiceSalesSupabase } = await import("../src/lib/supabase")
     const DB_TABLES = (await import("../src/lib/sales/db-tables")).DB_TABLES
     const sb = getServiceSalesSupabase()
@@ -291,7 +325,7 @@ export const salesReportRegeneratorTask = task({
       .select("id, domain, company_name")
       .is("report_generated_at", null)
       .eq("pipeline_status", "report_ready")
-      .limit(10)
+      .limit(parsed.limit)
 
     if (error) {
       logger.error("Report regenerator: fetch stale companies failed", { error: error.message })

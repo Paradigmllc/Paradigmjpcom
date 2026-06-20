@@ -7,6 +7,25 @@ import { runEnrichmentEventDrain, runTwentySyncTick, runReportRegeneratorTick } 
 const STALE_RUN_MS = 5 * 60_000
 const MAX_RESTARTS_PER_TICK = 3
 
+export interface SalesPipelineEventDrainOptions {
+  enrichmentLimit?: number
+  recoverStaleRuns?: boolean
+  includeTwentySync?: boolean
+  includeReportRegenerator?: boolean
+}
+
+export interface SalesPipelineEventDrainResult {
+  enrichmentProcessed: number
+  enrichmentCompleted: number
+  enrichmentFailed: number
+  restartedLeadRuns: number
+  restartedPassiveInventoryRuns: number
+  restartedPipelineRuns: number
+  twentySyncScanned: number
+  twentySyncUpserted: number
+  reportsRegenerated: number
+}
+
 interface CandidateRunRow {
   id: string
   status: string | null
@@ -69,29 +88,43 @@ async function restartStalePassiveInventoryRuns(): Promise<number> {
   return restarted
 }
 
-async function tick(): Promise<void> {
-  const enrichment = await runEnrichmentEventDrain(3)
-  const restarted = await restartStaleLeadRuns()
-  const restartedPassive = await restartStalePassiveInventoryRuns()
-  const { restartStaleSalesPipelineRuns } = await import("./sales-pipeline-fallback")
-  const restartedPipelines = await restartStaleSalesPipelineRuns(3)
-  const twenty = await runTwentySyncTick()
-  const reports = await runReportRegeneratorTick()
-  if (enrichment.processed > 0 || restarted > 0 || restartedPassive > 0 || restartedPipelines > 0 || twenty.scanned > 0 || reports > 0) {
+async function tick(options: SalesPipelineEventDrainOptions = {}): Promise<SalesPipelineEventDrainResult> {
+  const enrichmentLimit = Math.max(1, Math.min(Math.round(options.enrichmentLimit ?? 3), 10))
+  const enrichment = await runEnrichmentEventDrain(enrichmentLimit)
+  let restarted = 0
+  let restartedPassive = 0
+  let restartedPipelines = 0
+  if (options.recoverStaleRuns !== false) {
+    restarted = await restartStaleLeadRuns()
+    restartedPassive = await restartStalePassiveInventoryRuns()
+    const { restartStaleSalesPipelineRuns } = await import("./sales-pipeline-fallback")
+    restartedPipelines = await restartStaleSalesPipelineRuns(3)
+  }
+  const twenty = options.includeTwentySync === true ? await runTwentySyncTick() : { scanned: 0, upserted: 0 }
+  const reports = options.includeReportRegenerator === true ? await runReportRegeneratorTick() : 0
+  const result = {
+    enrichmentProcessed: enrichment.processed,
+    enrichmentCompleted: enrichment.completed,
+    enrichmentFailed: enrichment.failed,
+    restartedLeadRuns: restarted,
+    restartedPassiveInventoryRuns: restartedPassive,
+    restartedPipelineRuns: restartedPipelines,
+    twentySyncScanned: twenty.scanned,
+    twentySyncUpserted: twenty.upserted,
+    reportsRegenerated: reports,
+  }
+  if (Object.values(result).some((value) => value > 0)) {
     console.warn("[sales-pipeline-watchdog] event drain", {
-      enrichmentProcessed: enrichment.processed,
-      restartedLeadRuns: restarted,
-      restartedPassiveInventoryRuns: restartedPassive,
-      restartedPipelineRuns: restartedPipelines,
-      twentySyncScanned: twenty.scanned,
-      twentySyncUpserted: twenty.upserted,
-      reportsRegenerated: reports,
+      ...result,
     })
   }
+  return result
 }
 
-export async function runSalesPipelineEventDrain(): Promise<void> {
-  await tick()
+export async function runSalesPipelineEventDrain(
+  options: SalesPipelineEventDrainOptions = {},
+): Promise<SalesPipelineEventDrainResult> {
+  return tick(options)
 }
 
 export function startSalesPipelineWatchdog(): void {

@@ -9,7 +9,7 @@
  *    - 套 Calendar (cal.com 邨ｱ蜷・
  *    - 塘 Contracts (DocuSign + R2 PDF)
  * 4. 譁ｰ sub pages:
- *    - 肌 Setup & Environment (Coolify env / cron 遲・
+ *    - 肌 Setup & Environment (Coolify env / event webhook 遲・
  *    - 笶・FAQ
  *    - 答 Architecture & Sync Flow (Supabase竊年otion 蜿梧婿蜷・sync 莉墓ｧ・
  *    - 淀・・R2 Storage Spec (蜍慕判/PDF 菫晏ｭ伜・莉墓ｧ・
@@ -406,7 +406,7 @@ async function createSetupPage() {
     "肌",
     "https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=1500&q=80",
     [
-      block.callout("Coolify 迺ｰ蠅・､画焚 + cron + Slack 險ｭ螳壹・螳悟・繝ｪ繝輔ぃ繝ｬ繝ｳ繧ｹ縲・, "笞呻ｸ・, "blue_background"),
+      block.callout("Coolify 迺ｰ蠅・､画焚 + event webhook + Slack 險ｭ螳壹・螳悟・繝ｪ繝輔ぃ繝ｬ繝ｳ繧ｹ縲・, "笞呻ｸ・, "blue_background"),
       block.p(""),
       block.h2("笨・謚募・貂・(Sprint 8-16)"),
       block.bullet("NOTION_API_KEY 笨・(Internal Integration Token)"),
@@ -428,10 +428,10 @@ async function createSetupPage() {
       block.bullet("DOCUSIGN_INTEGRATION_KEY (螂醍ｴ・嶌髮ｻ蟄千ｽｲ蜷・"),
       block.bullet("CLOUDFLARE_R2_ACCESS_KEY + R2_SECRET_KEY + R2_BUCKET_NAME"),
       block.p(""),
-      block.h2("竢ｰ Coolify Scheduled Tasks (5 min cron)"),
+      block.h2("竢ｰ Event Webhooks (event webhook)"),
       block.calloutR(
         [
-          T("莉･荳・6 cron 繧・Coolify Scheduled Tasks 縺ｫ逋ｻ骭ｲ縺吶ｋ縺ｨ縲¨otion 竊・Supabase 蜿梧婿蜷・sync 縺悟ｮ悟・閾ｪ蜍募喧:"),
+          T("莉･荳・6 event webhook 繧・Event Webhooks 縺ｫ逋ｻ骭ｲ縺吶ｋ縺ｨ縲¨otion 竊・Supabase 蜿梧婿蜷・sync 縺悟ｮ悟・閾ｪ蜍募喧:"),
         ],
         "､・,
         "yellow_background",
@@ -447,7 +447,7 @@ async function createSetupPage() {
         "bash",
       ),
       block.p(""),
-      block.h2("套 騾ｱ谺｡ cron"),
+      block.h2("套 騾ｱ谺｡ event webhook"),
       block.code(
         `# 譛域屆 09:00 JST (=00:00 UTC) Slack 騾ｱ谺｡繝繧､繧ｸ繧ｧ繧ｹ繝・
 0 0 * * 1   curl -X POST -H "X-Webhook-Secret: $N8N_WEBHOOK_SECRET" https://paradigmjp.com/api/sales/weekly-digest`,
@@ -543,8 +543,8 @@ async function createSyncFlowPage() {
       block.bullet("Stripe Webhook 竊・sales_customers INSERT 竊・鬘ｧ螳｢ DB 縺ｫ譁ｰ繝壹・繧ｸ"),
       block.bullet("R2 video upload 螳御ｺ・竊・sales_deliveries INSERT 竊・邏榊刀 DB 縺ｫ譁ｰ繝壹・繧ｸ"),
       block.p(""),
-      block.h3("Notion 竊・Supabase (5 min cron)"),
-      block.bulletR([T("/api/sales/sync-templates-from-notion", { code: true }), T(" 窶・Notion 縺ｧ譁・擇邱ｨ髮・竊・5min cron 竊・Supabase upsert")]),
+      block.h3("Notion 竊・Supabase (event webhook)"),
+      block.bulletR([T("/api/sales/sync-templates-from-notion", { code: true }), T(" 窶・Notion 縺ｧ譁・擇邱ｨ髮・竊・webhook one-shot 竊・Supabase upsert")]),
       block.bulletR([T("/api/sales/sync-companies-from-notion", { code: true }), T(" 窶・Notion 縺ｧ deal_stage / 繝｡繝｢ / 繝輔か繝ｭ繝ｼ繧｢繝・・譌･ 譖ｴ譁ｰ 竊・Supabase 蜿肴丐")]),
       block.bulletR([T("/api/sales/sync-customers-from-notion", { code: true }), T(" 窶・蛛･蜈ｨ蠎ｦ / 谺｡蝗槭Α繝ｼ繝・ぅ繝ｳ繧ｰ / 陬懷勧驥醍憾豕・遲峨・譖ｴ譁ｰ sync")]),
       block.bulletR([T("/api/sales/sync-deliveries-from-notion", { code: true }), T(" 窶・繧ｹ繝・・繧ｿ繧ｹ / 騾ｲ謐・% 譖ｴ譁ｰ sync")]),
@@ -565,7 +565,7 @@ async function createSyncFlowPage() {
       block.h3("繝・Φ繝励Ξ DB 縺九ｉ邱ｨ髮・庄 (蜈ｨ繝輔ぅ繝ｼ繝ｫ繝・"),
       block.bullet("headline / pain / fear / loss / cta_text (5 谿ｵ髫弱ヵ繝ｬ繝ｼ繝譛ｬ譁・"),
       block.bullet("譛牙柑 (checkbox) / 驥崎ｦ∝ｺｦ / 讌ｭ遞ｮ / 隱ｲ鬘後さ繝ｼ繝・),
-      block.callout("繝・Φ繝励Ξ邱ｨ髮・竊・5min cron 竊・/report/[slug] 譛螟ｧ 6 蛻・〒譛ｬ逡ｪ蜿肴丐縲・, "識", "green_background"),
+      block.callout("繝・Φ繝励Ξ邱ｨ髮・竊・webhook one-shot 竊・/report/[slug] 譛螟ｧ 6 蛻・〒譛ｬ逡ｪ蜿肴丐縲・, "識", "green_background"),
       block.p(""),
       block.h3("邏榊刀 DB 縺九ｉ邱ｨ髮・庄"),
       block.bullet("繧ｹ繝・・繧ｿ繧ｹ / 騾ｲ謐・% / 蜈ｬ髢九ヵ繝ｩ繧ｰ"),
@@ -641,7 +641,7 @@ async function buildCompactHub(newDbIds, newSubPageIds) {
     block.calloutR(
       [
         T("Supabase 縺ｨ縺ｮ蜿梧婿蜷・sync 蟇ｾ雎｡縲・, { bold: true }),
-        T(" Notion 邱ｨ髮・竊・5min cron 竊・譛ｬ逡ｪ /report/[slug] 縺梧怙螟ｧ 6 蛻・〒蜿肴丐縲・),
+        T(" Notion 邱ｨ髮・竊・webhook one-shot 竊・譛ｬ逡ｪ /report/[slug] 縺梧怙螟ｧ 6 蛻・〒蜿肴丐縲・),
       ],
       "売",
       "default",
@@ -720,7 +720,7 @@ async function buildCompactHub(newDbIds, newSubPageIds) {
     ),
     setupId
       ? block.calloutR(
-          [linkT("肌 Setup & Environment", `https://www.notion.so/${setupId.replace(/-/g, "")}`), T(" 窶・Coolify env / cron / Slack 險ｭ螳壹・螳悟・繝ｪ繝輔ぃ繝ｬ繝ｳ繧ｹ")],
+          [linkT("肌 Setup & Environment", `https://www.notion.so/${setupId.replace(/-/g, "")}`), T(" 窶・Coolify env / event webhook / Slack 險ｭ螳壹・螳悟・繝ｪ繝輔ぃ繝ｬ繝ｳ繧ｹ")],
           "肌",
           "gray_background",
         )

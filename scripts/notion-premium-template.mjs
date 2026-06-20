@@ -344,17 +344,17 @@ async function buildHubContent() {
     block.toggle("Supabase 竊・Notion 蜿梧婿蜷・sync", [
       block.paragraph("譁ｹ蠑・(Sprint 8 縺ｧ險ｭ險域ｸ・:"),
       block.bullet("Supabase 竊・Notion: webhook trigger 縺ｧ閾ｪ蜍・(繝ｪ繧｢繝ｫ繧ｿ繧､繝)"),
-      block.bullet("Notion 竊・Supabase: n8n cron 5min 縺斐→ (deal_stage / memo / follow_up_date / assigned_to 縺ｮ縺ｿ蜿肴丐)"),
+      block.bullet("Notion 竊・Supabase: webhook one-shot 縺斐→ (deal_stage / memo / follow_up_date / assigned_to 縺ｮ縺ｿ蜿肴丐)"),
       block.bullet("蜈ｨ sync 謫堺ｽ懊・ sales_sync_logs 縺ｫ audit (Supabase) 縺ｨ sales_sync_logs 縺九ｉ Notion DB 縺ｫ騾・ｵ・),
     ]),
     block.toggle("Slack 騾夂衍 (#all-paradigm)", [
       block.bullet("験 譁ｰ隕上Μ繝ｼ繝画､懷・譎・(corporate domain 閾ｪ蜍輔お繝ｳ繝ｪ繝・メ螳御ｺ・: 繝ｪ繝ｼ繝・DB / 險ｺ譁ｭ繝ｬ繝昴・繝・/ 蜍慕判繝ｬ繝昴・繝・繝懊ち繝ｳ"),
       block.bullet("櫨 HOT lead 讀懷・譎・(3+ views): 蜷御ｸ・+ 邱頑･繧｢繧ｯ繧ｷ繝ｧ繝ｳ繝励Ο繝ｳ繝励ヨ"),
-      block.bullet("投 騾ｱ谺｡繝繧､繧ｸ繧ｧ繧ｹ繝・(豈朱ｱ譛域屆 09:00 JST cron): HOT top 5 / 繧ｹ繝・・繧ｸ蛻･ / 隱ｲ鬘悟挨 / 驛ｽ驕灘ｺ懃恁蛻･ 繧ｵ繝槭Μ"),
+      block.bullet("投 騾ｱ谺｡繝繧､繧ｸ繧ｧ繧ｹ繝・(豈朱ｱ譛域屆 09:00 JST event webhook): HOT top 5 / 繧ｹ繝・・繧ｸ蛻･ / 隱ｲ鬘悟挨 / 驛ｽ驕灘ｺ懃恁蛻･ 繧ｵ繝槭Μ"),
     ]),
     block.toggle("n8n 繝ｯ繝ｼ繧ｯ繝輔Ο繝ｼ (遉ｾ蜀・dify.appexx.me)", [
       block.bullet("01-supabase-to-notion-sync: Webhook trigger 竊・繝ｪ繝ｼ繝・DB 譁ｰ隕上・繝ｼ繧ｸ菴懈・"),
-      block.bullet("02-notion-to-supabase-reverse: Cron 5min 竊・recently edited 縺ｧ騾・ｵ・),
+      block.bullet("02-notion-to-supabase-reverse: Webhook one-shot 竊・recently edited 縺ｧ騾・ｵ・),
       block.bullet("03-notion-template-sync: Notion 繝・Φ繝励Ξ DB 邱ｨ髮・竊・Supabase sales_templates upsert"),
     ]),
   )

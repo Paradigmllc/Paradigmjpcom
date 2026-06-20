@@ -254,7 +254,7 @@ async function buildDailyDashboard(counts, newPages) {
       [
         T("譛昜ｸ縺ｫ髢九￥逕ｻ髱｢縲・, { bold: true }),
         T(" 莉頑律繧｢繧ｯ繧ｷ繝ｧ繝ｳ縺吶∋縺阪Μ繝ｼ繝峨・蝠・ｫ・・繧ｿ繧ｹ繧ｯ繧・1 逕ｻ髱｢縺ｫ髮・ｴ・・),
-        T("KPI 縺ｯ Notion API 邨檎罰縺ｧ閾ｪ蜍墓峩譁ｰ (run script with cron)縲・),
+        T("KPI 縺ｯ Notion API 邨檎罰縺ｧ閾ｪ蜍墓峩譁ｰ (run script with event webhook)縲・),
       ],
       "笘・・,
       "yellow_background",
@@ -469,7 +469,7 @@ async function createPipelinePage() {
           T("\n1. 荳玖ｨ・DB 繧帝幕縺・竊・蜿ｳ荳翫・ view 繧定ｿｽ蜉縲・),
           T("\n2. 繝懊・繝牙ｽ｢蠑・竊・繧ｰ繝ｫ繝ｼ繝怜喧縲悟膚隲・せ繝・・繧ｸ縲・),
           T("\n3. 繧ｫ繝ｼ繝峨↓陦ｨ遉ｺ: 讌ｭ遞ｮ / 繝｢繝舌う繝ｫ繧ｹ繧ｳ繧｢ / 讀懷・隱ｲ鬘・/ 繝輔か繝ｭ繝ｼ繧｢繝・・譌･"),
-          T("\n4. 繧ｹ繝・・繧ｸ髢薙・繝峨Λ繝・げ縺ｧ繧ｹ繝・・繧ｸ閾ｪ蜍墓峩譁ｰ (= Supabase 蜿肴丐 in 5min cron)"),
+          T("\n4. 繧ｹ繝・・繧ｸ髢薙・繝峨Λ繝・げ縺ｧ繧ｹ繝・・繧ｸ閾ｪ蜍墓峩譁ｰ (= Supabase 蜿肴丐 in webhook one-shot)"),
         ],
         "当",
         "yellow_background",
@@ -751,7 +751,7 @@ async function simplifyParentHub(newPages) {
         T(" 窶・Salesforce ﾃ・Apollo ﾃ・DocuSign ﾃ・cal.com 邨ｱ蜷・),
         T("\n3 螻､蛻・･ｭ: ", { color: "gray" }),
         T("Supabase = SSOT / Notion = GUI / R2 = 螟ｧ繝輔ぃ繧､繝ｫ", { color: "gray" }),
-        T("繝ｻ5min cron 縺ｧ螳悟・蜿梧婿蜷・sync", { color: "gray" }),
+        T("繝ｻwebhook one-shot 縺ｧ螳悟・蜿梧婿蜷・sync", { color: "gray" }),
       ],
       "識",
       "blue_background",
@@ -846,7 +846,7 @@ async function simplifyParentHub(newPages) {
         blk.callout(
           [
             linkT("肌 Setup & Environment", `https://www.notion.so/${EXISTING_PAGES.setup.replace(/-/g, "")}`),
-            T("\nCoolify env + cron + Slack 螳悟・繝ｪ繝輔ぃ繝ｬ繝ｳ繧ｹ", { color: "gray" }),
+            T("\nCoolify env + event webhook + Slack 螳悟・繝ｪ繝輔ぃ繝ｬ繝ｳ繧ｹ", { color: "gray" }),
           ],
           "肌",
           "gray_background",

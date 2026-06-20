@@ -59,7 +59,7 @@ async function main() {
         T(": Supabase + Notion 荳｡譁ｹ縺ｧ 4 DB 繧・2 蛟榊喧縲Ｋp = 譌･譛ｬ蟶ょｴ / global = 豬ｷ螟・11 locale縲・),
         T("\n2. "),
         T("繝・Φ繝励Ξ邱ｨ髮・竊・5min 閾ｪ蜍・sync", { bold: true }),
-        T(": Notion 縺ｧ譁・擇邱ｨ髮・竊・cron 縺ｧ Supabase 蜿肴丐 竊・/report/[slug] 縺梧怙螟ｧ 6 蛻・〒譖ｴ譁ｰ縲・),
+        T(": Notion 縺ｧ譁・擇邱ｨ髮・竊・event webhook 縺ｧ Supabase 蜿肴丐 竊・/report/[slug] 縺梧怙螟ｧ 6 蛻・〒譖ｴ譁ｰ縲・),
       ],
       "訣",
       "green_background",
@@ -97,7 +97,7 @@ async function main() {
 
     b.h2("統 繝・Φ繝励Ξ邱ｨ髮・竊・5min 閾ｪ蜍・sync"),
     b.calloutR(
-      [T("Notion 縺ｧ譁・擇邱ｨ髮・☆繧九→縲・ min cron 縺・Supabase 縺ｫ蜿肴丐縲∵怙螟ｧ 6 蛻・〒譛ｬ逡ｪ /report/[slug] 縺梧峩譁ｰ縺輔ｌ縺ｾ縺吶・, { bold: true })],
+      [T("Notion 縺ｧ譁・擇邱ｨ髮・☆繧九→縲・ min event webhook 縺・Supabase 縺ｫ蜿肴丐縲∵怙螟ｧ 6 蛻・〒譛ｬ逡ｪ /report/[slug] 縺梧峩譁ｰ縺輔ｌ縺ｾ縺吶・, { bold: true })],
       "売",
       "blue_background",
     ),
@@ -105,7 +105,7 @@ async function main() {
     b.num("Notion 統 / 訣 繝・Φ繝励Ξ DB 繧帝幕縺・),
     b.num("蟇ｾ雎｡繝・Φ繝励Ξ縺ｮ縲敬eadline縲阪継ain縲阪掲ear縲阪畦oss縲阪慶ta_text縲阪・繝ｭ繝代ユ繧｣繧堤ｷｨ髮・),
     b.num("Notion 縺・last_edited_time 繧定・蜍墓峩譁ｰ"),
-    b.num("5 min cron (n8n or Coolify scheduled task) 縺・/api/sales/sync-templates-from-notion 繧貞娼縺・),
+    b.num("event webhook (n8n or Coolify scheduled task) 縺・/api/sales/sync-templates-from-notion 繧貞娼縺・),
     b.num("Supabase sales_templates 縺悟・莉ｶ upsert (notion_page_id 縺ｧ驥崎､・亟豁｢)"),
     b.num("/report/[slug] 縺梧ｬ｡蝗・SSR (revalidate=60s) 縺ｧ譁ｰ譁・擇陦ｨ遉ｺ"),
     b.num("邱ｨ髮・°繧画怙螟ｧ 6 蛻・〒譛ｬ逡ｪ蜿肴丐螳御ｺ・),
@@ -128,8 +128,8 @@ curl -X POST -H "X-Webhook-Secret: $N8N_WEBHOOK_SECRET" \\
     ),
     b.p(""),
 
-    b.h2("屏・・Coolify cron 縺ｧ閾ｪ蜍募喧"),
-    b.toggle("5 min cron 險ｭ螳壽焔鬆・(Coolify Scheduled Tasks)", [
+    b.h2("屏・・Coolify event webhook 縺ｧ閾ｪ蜍募喧"),
+    b.toggle("event webhook 險ｭ螳壽焔鬆・(Event Webhooks)", [
       b.num("Coolify 繝繝・す繝･繝懊・繝・竊・paradigm-hp app 竊・Scheduled Tasks"),
       b.num("Add Scheduled Task 竊・Cron: */5 * * * * (5 min 縺斐→)"),
       b.num("Command: curl -X POST -H 'X-Webhook-Secret: $N8N_WEBHOOK_SECRET' -d '{\"region\":\"jp\"}' https://paradigmjp.com/api/sales/sync-templates-from-notion"),
