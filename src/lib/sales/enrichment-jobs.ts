@@ -1,5 +1,6 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { recoverStaleEnrichmentJobs, runEnrichmentJobs } from "./enrichment-jobs-runner"
+import { shouldDeferHeavyDispatch } from "./host-admission"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export type JsonRecord = Record<string, unknown>
@@ -153,6 +154,12 @@ export async function enqueueCompanyEnrichment(
 }
 
 export async function triggerEnrichmentRunner(limit = 3): Promise<{ ok: boolean; dispatched: boolean; error?: string }> {
+  // Phase 9-9: admission gate. When saturated (opt-in via ADMISSION_MAX_RUNNING_JOBS), defer
+  // dispatch instead of piling on the host. Jobs stay queued and resume on the next event.
+  if (await shouldDeferHeavyDispatch()) {
+    console.warn("[sales-enrichment] admission gate: deferring dispatch (system saturated); jobs remain queued")
+    return { ok: true, dispatched: false }
+  }
   const endpoint = enrichmentTriggerEndpoint()
   const secret = triggerSecretKey()
   const safeLimit = Math.max(1, Math.min(Math.round(limit), 3))

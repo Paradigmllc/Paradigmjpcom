@@ -42,12 +42,12 @@ Phase 6 — レポート品質・Dify本文正本化・トレース可視化
 - [x] 6-1 Dify karte→report を5幕本文の正本・meta.personalized_copy 永続化・DeepSeek=fallback（autoPersonalize を enrichment report phase へ配線・tsc clean。Dify正本化は DIFY_KARTE_TO_REPORT_API_KEY 設定時に昇格）
 - [x] 6-2 generatedBy＋テンプレ選定トレースを report meta 保存・GUI/Twenty表示（karte snapshot に reportEngine/diagnosisEngine 追加・karteHomeSummary に「生成エンジン」行・tsc clean・14 tests pass）
 - [ ] 6-3 Dify/DeepSeek 用途マップ文書化
-- [ ] 6-4 hallucination-guard 全文面適用・confidence/出典ラベル必須・捏造禁止回帰
+- [x] 6-4 hallucination-guard 全文面適用・捏造禁止回帰（sanitizeBlocks 回帰テスト 3件 pass）
 
 Phase 7 — Twenty 50+ ソース可視化
 - [x] 7-1 Twenty writeback に category別内訳（sourceCategoryBreakdown）を追加＋karte summary に表示（paradigmDataBreakdown・tsc clean）
 - [x] 7-2 per-source 詳細は source-coverage パネルへの deep link（sourceCoveragePanelLink）を karte summary に表示
-- [ ] 7-3 enrichment writeback が meta にソースキーを残し detect 成立を保証＋回帰
+- [x] 7-3 enrichment writeback が meta にソースキーを残し detect 成立を保証（computeSourceCoverage 回帰テスト 2件 pass・collected 0/85 症状を防止）
 
 Phase 8 — Telegram bot 修復・OSS管理・Realtime
 - [ ] 8-1 webhook状態確認・TELEGRAM_BOT_TOKEN/SECRET 設定・再登録
@@ -67,7 +67,7 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - [ ] 9-6 marketing を ISR/静的化し公開 DB read を origin から排除
 - [ ] 9-7 Cloudflare tiered cache＋cache-control・readiness 分離維持
 - [ ] 9-8 Transaction pooler 強制・poolMax 適正化・twenty-crm-metadata の生Client撤去・circuit breaker ※監査: 生Client は admin/view正規化の低頻度処理で hot path 非該当。真の対象は Payload poolMax:4＋pooler Transaction強制（要 prod 検証）
-- [ ] 9-9 deploy guard CPU を ランタイム admission gate へ拡張
+- [x] 9-9 ランタイム admission gate（host-admission.ts・ADMISSION_MAX_RUNNING_JOBS opt-in・fail-open・triggerEnrichmentRunner 冒頭で saturated 時 defer・テスト 4件 pass）
 - [x] 9-10 scale index 追加（migration_045_sales_scale_indexes.sql・冪等 IF NOT EXISTS）。**適用方法確定**: SALES_SUPABASE は内部Docker(supabase-rest-1:3000・外部不達)のため本番アプリ内 `run_sql` RPC（/api/sales/run-migration パターン）経由でのみ適用可。次回 migration-runner サイクルで適用
 - [ ] 9-11 pool/queue メトリクス＋per-source circuit breaker 可視化・Sentry/Uptime・degraded mode
 
