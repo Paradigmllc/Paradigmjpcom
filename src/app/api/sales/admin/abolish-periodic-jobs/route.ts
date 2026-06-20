@@ -54,6 +54,7 @@ END $$;
 
 interface Attempt {
   target: string
+  ssl: boolean
   error: string
 }
 
@@ -93,7 +94,7 @@ function targetLabel(connectionString: string): string {
   }
 }
 
-function shouldUseSsl(connectionString: string): boolean {
+function shouldPreferSsl(connectionString: string): boolean {
   try {
     const host = new URL(connectionString).hostname
     return !["localhost", "127.0.0.1", "host.docker.internal", "paradigm-supabase-db"].includes(host)
@@ -103,18 +104,23 @@ function shouldUseSsl(connectionString: string): boolean {
   }
 }
 
+function isSslUnsupported(error: unknown): boolean {
+  const message = safeError(error).toLowerCase()
+  return message.includes("does not support ssl") || message.includes("ssl off")
+}
+
 function safeError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error)
   return message.slice(0, 240)
 }
 
-async function runAgainstDatabase(connectionString: string) {
+async function runAgainstDatabase(connectionString: string, useSsl: boolean) {
   const client = new pg.Client({
     connectionString,
     connectionTimeoutMillis: 10_000,
     query_timeout: 30_000,
     statement_timeout: 30_000,
-    ssl: shouldUseSsl(connectionString) ? { rejectUnauthorized: false } : undefined,
+    ssl: useSsl ? { rejectUnauthorized: false } : undefined,
   })
 
   await client.connect()
@@ -172,13 +178,18 @@ export async function POST(req: NextRequest) {
   const attempts: Attempt[] = []
   for (const connectionString of candidates) {
     const target = targetLabel(connectionString)
-    try {
-      const result = await runAgainstDatabase(connectionString)
-      return NextResponse.json({ ok: true, target, ...result })
-    } catch (error) {
-      const message = safeError(error)
-      attempts.push({ target, error: message })
-      console.warn(`[abolish-periodic-jobs] ${target} failed: ${message}`)
+    const sslModes = shouldPreferSsl(connectionString) ? [true, false] : [false]
+    for (const useSsl of sslModes) {
+      try {
+        const result = await runAgainstDatabase(connectionString, useSsl)
+        return NextResponse.json({ ok: true, target, ssl: useSsl, ...result })
+      } catch (error) {
+        const message = safeError(error)
+        attempts.push({ target, ssl: useSsl, error: message })
+        console.warn(`[abolish-periodic-jobs] ${target} failed with ssl=${useSsl}: ${message}`)
+        if (useSsl && isSslUnsupported(error)) continue
+        break
+      }
     }
   }
 
