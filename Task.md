@@ -3,6 +3,8 @@
 不変前提: WW-EVENT 厳守＝cron/n8n/pg_cron 不使用・Trigger.dev イベント駆動 one-shot のみ。
 決定: オーケストレータ維持＋完了イベント再開 / デモ=フルサイト一本化 / Dify=queue隔離かつ本文正本 / Twenty=category集約＋deep link / Telegram=webhook修復＋OSS deep link＋Realtime push / インフラ=重ワーカー分離＋Upstash＋ISR/CDN。
 
+DEPLOY 2026-06-20: PR #30 → main(677a37c)→Coolify deploy(voqjuu09fu99qcyayil4hahm) status=finished→本番 /api/ready=200・/ja=200・demo/demo=200・app running:healthy（直後502はコンテナ起動窓で即回復）。0-1/1-2a/1-3/1-4/2-1/2-2/2-4/3-1/3-2/3-4/6-1/7-1/7-2/8-2/9-10(file) 本番反映済み。追補: Phase7 unit test + 6-3 doc(diagnostic-report-generation-pipeline.md)。
+
 Phase 0 — Dify doc の n8n残滓除去
 - [x] 0-1 dify-cloud-runtime.md を Trigger.dev `sales-video-pipeline` 経由へ書換え／video-pipeline の n8n_* は legacy DB列と明示（runtime n8n=0）
 
@@ -66,7 +68,7 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - [ ] 9-7 Cloudflare tiered cache＋cache-control・readiness 分離維持
 - [ ] 9-8 Transaction pooler 強制・poolMax 適正化・twenty-crm-metadata の生Client撤去・circuit breaker ※監査: 生Client は admin/view正規化の低頻度処理で hot path 非該当。真の対象は Payload poolMax:4＋pooler Transaction強制（要 prod 検証）
 - [ ] 9-9 deploy guard CPU を ランタイム admission gate へ拡張
-- [x] 9-10 sales_companies/enrichment_jobs/source_runs/operator_queue/pipeline_runs に scale index 追加（migration_045_sales_scale_indexes.sql・冪等 IF NOT EXISTS・**本番適用はロック検証後**）
+- [x] 9-10 scale index 追加（migration_045_sales_scale_indexes.sql・冪等 IF NOT EXISTS）。**適用方法確定**: SALES_SUPABASE は内部Docker(supabase-rest-1:3000・外部不達)のため本番アプリ内 `run_sql` RPC（/api/sales/run-migration パターン）経由でのみ適用可。次回 migration-runner サイクルで適用
 - [ ] 9-11 pool/queue メトリクス＋per-source circuit breaker 可視化・Sentry/Uptime・degraded mode
 
 ### INFRA監査 2026-06-20（read-only・full-autonomy 権限下）
