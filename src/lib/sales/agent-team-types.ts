@@ -18,11 +18,12 @@ export const SALES_AGENT_INTENTS = [
   "list_jobs",
   "list_queue",
   "approve_queue",
+  "oss_links",
 ] as const
 export type SalesAgentIntent = (typeof SALES_AGENT_INTENTS)[number]
 
 export interface TelegramKeyboard {
-  inline_keyboard: Array<Array<{ text: string; callback_data: string }>>
+  inline_keyboard: Array<Array<{ text: string; callback_data?: string; url?: string }>>
 }
 
 export const SALES_AGENT_AUTONOMY_LEVELS = ["observe", "copilot", "autopilot_guarded"] as const
