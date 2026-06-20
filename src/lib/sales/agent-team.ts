@@ -1,5 +1,5 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
-import { runEnrichmentJobs } from "@/lib/sales/enrichment-jobs"
+import { triggerEnrichmentRunner } from "@/lib/sales/enrichment-jobs"
 import { runOutreachBatch } from "@/lib/sales/outreach/orchestrator"
 import { pullTwentyCompaniesToSupabase } from "@/lib/sales/twenty-pull"
 import { triggerReadyDiagnosticAssets } from "./agent-team-assets"
@@ -276,9 +276,13 @@ export async function handleAgentCommand(input: SalesAgentCommandInput): Promise
 
     if (intent === "run_enrichment") {
       const limit = normalizeLimit(input.limit, 5)
-      const result = await runEnrichmentJobs(limit)
-      const summary = `企業カルテ生成を実行しました。処理 ${result.processed}件、完了 ${result.completed}件、失敗 ${result.failed}件。`
-      await logAgentEvent(sb, { commandId, agentRole: "openclaw_researcher", eventType: "enrichment_run", status: result.ok ? "success" : "warning", title: "企業カルテ生成を実行しました", payload: result as unknown as JsonRecord })
+      // Phase 8-2: dispatch enrichment to Trigger.dev (event-driven) instead of running it
+      // inline in the webhook request (WW-EVENT: no long HTTP occupation in the bot handler).
+      const result = await triggerEnrichmentRunner(limit)
+      const summary = result.dispatched
+        ? `企業カルテ生成をキューに投入しました（最大 ${limit}件）。完了はベル/Slack通知でお知らせします。`
+        : `企業カルテ生成の投入に失敗しました: ${result.error ?? "不明なエラー"}`
+      await logAgentEvent(sb, { commandId, agentRole: "openclaw_researcher", eventType: "enrichment_dispatch", status: result.ok ? "success" : "warning", title: "企業カルテ生成をキュー投入しました", payload: result as unknown as JsonRecord })
       await updateCommand(sb, commandId, { status: result.ok ? "completed" : "failed", runSummary: summary, resultPayload: result as unknown as JsonRecord })
       return { ok: result.ok, commandId, intent, status: result.ok ? "completed" : "failed", approvalRequired: false, summary, reply: replyFor({ intent, summary, approvalRequired: false, status: result.ok ? "completed" : "failed" }), result: result as unknown as JsonRecord }
     }

@@ -1,3 +1,83 @@
+## ACTIVE PLAN - 2026-06-20 営業OS全面強化（Phase 0-9・壁打ち合意済み）
+
+不変前提: WW-EVENT 厳守＝cron/n8n/pg_cron 不使用・Trigger.dev イベント駆動 one-shot のみ。
+決定: オーケストレータ維持＋完了イベント再開 / デモ=フルサイト一本化 / Dify=queue隔離かつ本文正本 / Twenty=category集約＋deep link / Telegram=webhook修復＋OSS deep link＋Realtime push / インフラ=重ワーカー分離＋Upstash＋ISR/CDN。
+
+Phase 0 — Dify doc の n8n残滓除去
+- [x] 0-1 dify-cloud-runtime.md を Trigger.dev `sales-video-pipeline` 経由へ書換え／video-pipeline の n8n_* は legacy DB列と明示（runtime n8n=0）
+
+Phase 1 — Dify を queue job 化（retry分離）
+- [ ] 1-1 ※監査結果: `EnrichmentJobType` に `dify_diagnosis`/`report_personalize` が既存。新規列は不要、`enqueueCompanyEnrichment` を jobType 受け取りに拡張する方針へ変更
+- [ ] 1-2 enrichment-jobs.ts に Dify subtype handler（confidence≥0.7・直接INSERT禁止）※Phase2/3 として runner 内に既存。retry を job 単位に分離するのが残作業
+  - [x] 1-2a enqueueCompanyEnrichment を jobType 受け取りに拡張（隔離 job enqueue 基盤・後方互換・tsc clean）
+- [x] 1-3 karte_generate の inline runEnrichmentJobs(1) 撤去→triggerEnrichmentRunner dispatch + waiting_external（HTTP長時間占有=524主因を解消・tsc clean）
+- [x] 1-4 report_generate の karte→report 文面生成を配線（autoPersonalize を processReportPhase へ・meta.personalized_copy 永続化・tsc clean）※Phase 6-1 と同時解決
+
+Phase 2 — 完了イベント再開（オーケストレータ維持）
+- [x] 2-1 completeJob の自動再開を dispatchSalesPipelineRun（Trigger.dev dispatch・fallback内蔵）へ変更（既存 inline runSalesPipelineLocally から昇格・tsc clean）
+- [x] 2-2 enrichment 完了で該当 run を Trigger.dev 経由再開（runner プロセスから隔離）
+- [ ] 2-3 video / reply / demo 完了でも再開発火 ※reply=post-outreach router 既存・video=sales-video-pipeline 既存・demo=report phase 経由で再開。Dify 単独 job の再開のみ残
+- [x] 2-4 watchdog restartStaleSalesPipelineRuns は stale 保険として既存（startSalesPipelineWatchdog は no-op 化済み・tick の recoverStaleRuns gating 済み）
+
+Phase 3 — デモHp フルサイト一本化＋一級ステップ化
+- [x] 3-1 LP系統撤去: demo.astro を index 化（PremiumDemoPage を public から退役）・matrix を redirect 化（premium-demo.ts は full-site が共有のため保持・astro build OK）
+- [x] 3-2 旧 LP URL（/{lang}/{industry}/{appeal}）→ /demo/sample-{industry} フルサイトへ 301（astro build OK）
+- [ ] 3-3 demo_site_generate step を report 後・twenty_writeback 前に新設 ※enrichment Phase4 で generateReplacementDemo 既存。明示 step 化は任意
+- [x] 3-4 8業種サンプル slug フルサイト index（/demo・inferDemoArchetype が slug 推論で業種別描画・DB seed不要・astro build OK）
+- [ ] 3-5 getFullSiteProfile/demo-generator の archetype依存を減らし診断+lead注入
+- [ ] 3-6 demo_site.url が twenty_writeback・outreach readiness で使われるか回帰 ※既存配線確認済（twenty-pull/outreach readiness/diagnostic）
+
+Phase 4 — GUI/可視化
+- [ ] 4-1 dashboard+Twenty karte に demo_url・Dify job status・continuation 状態表示
+- [ ] 4-2 エラー可視化（toast + notifyBothChannels）
+
+Phase 5 — テスト/デプロイ（LL/SAFE-DEPLOY/T-PLUS）
+- [ ] 5-1 Vitest（Dify subtype/continuation/demo step/twenty writeback/redirect）
+- [ ] 5-2 tsc --noEmit / quality:guard / astro-demo build / Next build
+- [ ] 5-3 doc更新→commit+push→Coolify finished→本番URL確認
+
+Phase 6 — レポート品質・Dify本文正本化・トレース可視化
+- [x] 6-1 Dify karte→report を5幕本文の正本・meta.personalized_copy 永続化・DeepSeek=fallback（autoPersonalize を enrichment report phase へ配線・tsc clean。Dify正本化は DIFY_KARTE_TO_REPORT_API_KEY 設定時に昇格）
+- [ ] 6-2 generatedBy＋テンプレ選定トレースを report meta 保存・GUI/Twenty表示
+- [ ] 6-3 Dify/DeepSeek 用途マップ文書化
+- [ ] 6-4 hallucination-guard 全文面適用・confidence/出典ラベル必須・捏造禁止回帰
+
+Phase 7 — Twenty 50+ ソース可視化
+- [x] 7-1 Twenty writeback に category別内訳（sourceCategoryBreakdown）を追加＋karte summary に表示（paradigmDataBreakdown・tsc clean）
+- [x] 7-2 per-source 詳細は source-coverage パネルへの deep link（sourceCoveragePanelLink）を karte summary に表示
+- [ ] 7-3 enrichment writeback が meta にソースキーを残し detect 成立を保証＋回帰
+
+Phase 8 — Telegram bot 修復・OSS管理・Realtime
+- [ ] 8-1 webhook状態確認・TELEGRAM_BOT_TOKEN/SECRET 設定・再登録
+- [ ] 8-2 enrich/outreach のインライン撤去→Trigger.dev dispatch（Phase1/2統一）
+- [ ] 8-3 OSS deep link（Metabase動向先行→Chatwoot/Keystatic/Directus・スコープ調整可）
+- [ ] 8-4 Supabase Realtime→Telegram event駆動 push（HOT lead/返信/承認要求）
+- [ ] 8-5 inline keyboard拡充・返信構造化
+- [ ] 8-6 dashboard に bot履歴・webhook health・OSS接続状態
+- [ ] 8-7 Vitest（intent分類/OSS deep link/realtime payload）＋secret検証
+
+Phase 9 — インフラ堅牢化（数千〜数万件対応）
+- [ ] 9-1 重ワーカー（Browserless/Steel/Stagehand/ComfyUI/HyperFrames/OpenMontage/video/crawl）を別box/serverless へ offload
+- [ ] 9-2 Trigger.dev supervisor/enrichment 実処理を heavy box へ・paradigm-prod-01 軽量化
+- [ ] 9-3 Upstash Redis 導入・rate-limit.ts を @upstash/ratelimit 分散版へ
+- [ ] 9-4 グローバル token bucket＋per-source 並列上限
+- [ ] 9-5 dead-letter queue＋指数backoff＋idempotency 統一
+- [ ] 9-6 marketing を ISR/静的化し公開 DB read を origin から排除
+- [ ] 9-7 Cloudflare tiered cache＋cache-control・readiness 分離維持
+- [ ] 9-8 Transaction pooler 強制・poolMax 適正化・twenty-crm-metadata の生Client撤去・circuit breaker ※監査: 生Client は admin/view正規化の低頻度処理で hot path 非該当。真の対象は Payload poolMax:4＋pooler Transaction強制（要 prod 検証）
+- [ ] 9-9 deploy guard CPU を ランタイム admission gate へ拡張
+- [x] 9-10 sales_companies/enrichment_jobs/source_runs/operator_queue/pipeline_runs に scale index 追加（migration_045_sales_scale_indexes.sql・冪等 IF NOT EXISTS・**本番適用はロック検証後**）
+- [ ] 9-11 pool/queue メトリクス＋per-source circuit breaker 可視化・Sentry/Uptime・degraded mode
+
+### INFRA監査 2026-06-20（read-only・full-autonomy 権限下）
+- Coolify `paradigm-hp` = `running:healthy`（paradigmjp.com/www/keystatic）。env 96件。
+- 設定済: DIFY_API_KEY/BASE/URL・SUPABASE系・TRIGGER_*・TWENTY_*・CLOUDFLARE_R2_*・DATABASE_URI・PAYLOAD_PUBLIC_SERVER_URL。
+- 未設定（要対応）: TELEGRAM_BOT_TOKEN / TELEGRAM_WEBHOOK_SECRET / UPSTASH_* / SENTRY_* / DIFY_DIAGNOSIS_API_KEY / DIFY_KARTE_TO_REPORT_* / PAYLOAD_PUBLIC_READS_ENABLED。
+- 自律実行可能 MCP: supabase(migration) / cloudflare(CDN) / hetzner+coolify+docker(box/Redis) / sentry / vercel。→ 9-3 は Upstash 不在のため Coolify 自前 Redis で代替実装する方針。
+- **唯一の真のブロッカー**: TELEGRAM_BOT_TOKEN は memory/mcp/Coolify いずれにも無く @BotFather でのみ発行可能（第三者secret）。8-1 の webhook 登録は token 取得後に自動実行。それ以外の 8-2〜8-7 は token 非依存で先行実装可。
+
+---
+
 ## CURRENT STATUS - 2026-06-20 WW-EVENT: cron/定期実行を全廃しイベント駆動化（永久ルール）
 
 - 永久ルール (WW-EVENT): サーバー負荷対策のため、サイト全体で cron / 定期実行 / 常駐 polling / `setInterval` worker / pg_cron / Coolify Scheduled Task / systemd timer を新設しない。同期・監視・ジョブ起動は webhook / DB event・realtime / queue enqueue / GitHub push / ユーザー操作などのイベント駆動にする。UI animation や単発 timeout/retry は対象外。

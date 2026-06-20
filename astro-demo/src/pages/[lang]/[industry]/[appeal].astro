@@ -1,18 +1,20 @@
 ---
-import { allAppeals, allIndustries, allLocales } from "../../../keystatic/demo-data"
+// Phase 3-2: the legacy industry×appeal LP matrix is retired. Every industry URL now
+// 301-redirects to its canonical full-site sample (/demo/sample-{industry}), so the
+// public demo surface is the navigable full site, not a single-page LP.
+const VALID_INDUSTRIES = [
+  "restaurant",
+  "construction",
+  "dental",
+  "beauty_salon",
+  "retail",
+  "accounting",
+  "cleaning",
+  "consulting",
+] as const
 
-const lang = Astro.params.lang ?? "ja"
-const industry = Astro.params.industry ?? "consulting"
-const appeal = Astro.params.appeal ?? "diagnostic"
+const industry = (Astro.params.industry ?? "consulting").toLowerCase()
+const target = (VALID_INDUSTRIES as readonly string[]).includes(industry) ? industry : "consulting"
 
-const locale = allLocales().includes(lang as "ja" | "en") ? lang : "ja"
-const selectedIndustry = allIndustries().includes(industry) ? industry : "consulting"
-const selectedAppeal = allAppeals().includes(appeal as ReturnType<typeof allAppeals>[number])
-  ? appeal
-  : "diagnostic"
-
-return Astro.redirect(
-  `/demo?lang=${encodeURIComponent(locale)}&industry=${encodeURIComponent(selectedIndustry)}&appeal=${encodeURIComponent(selectedAppeal)}`,
-  302,
-)
+return Astro.redirect(`/demo/sample-${target}`, 301)
 ---

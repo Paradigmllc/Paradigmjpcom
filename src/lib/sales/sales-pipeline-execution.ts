@@ -7,7 +7,7 @@
 
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { fetchCompanyKarte } from "./company-karte"
-import { enqueueCompanyEnrichment, runEnrichmentJobs, triggerEnrichmentRunner } from "./enrichment-jobs"
+import { enqueueCompanyEnrichment, triggerEnrichmentRunner } from "./enrichment-jobs"
 import { startLeadCandidateEnrichmentFallback } from "./lead-candidate-enrichment-fallback"
 import { syncCompanyAcrossSalesTools } from "./external-studio-sync"
 import { runOutreachBatch } from "./outreach/orchestrator"
@@ -230,10 +230,12 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
       console.error("[sales-pipeline-execution] karte_generate enqueue failed:", enqueue.error)
       throw new Error(enqueue.error ?? "enrichment enqueue failed")
     }
-    const isTriggerDev = run.trigger_provider === "trigger.dev"
-    const trigger = isTriggerDev ? await triggerEnrichmentRunner(1) : { ok: false, error: "local_run_forced_inline" }
+    // WW-EVENT / Phase 1-3: do NOT run enrichment inline here (long HTTP occupation).
+    // triggerEnrichmentRunner dispatches the Trigger.dev runner when configured, and
+    // self-falls-back to a single bounded one-shot drain when it is not. On job
+    // completion, completeJob() auto-resumes this pipeline run (enrichment-jobs-runner.ts).
+    const trigger = await triggerEnrichmentRunner(1)
     startLeadCandidateEnrichmentFallback(1)
-    const inlineRun = await runEnrichmentJobs(1)
     const karteResult = await fetchCompanyKarte(sb, run.company_id)
     const companyRes = await sb
       .from(DB_TABLES.SALES_COMPANIES)
@@ -253,9 +255,8 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
       output_payload: {
         enrichment_job_id: enqueue.job?.id ?? null,
         runner_triggered: trigger.ok,
+        runner_dispatched: trigger.dispatched,
         runner_error: trigger.error ?? null,
-        inline_runner_completed: inlineRun?.completed ?? null,
-        inline_runner_failed: inlineRun?.failed ?? null,
         report_ready: reportReady,
         report_url: karteResult.ok ? karteResult.karte.reportUrl : companyRes.data?.report_url ?? null,
         source_score: karteResult.ok ? karteResult.karte.sourceScore : null,
