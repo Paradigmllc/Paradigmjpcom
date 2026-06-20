@@ -5,6 +5,7 @@
 - `/ja` `/services` `/works` `/blog` `/faq` のトップレベル `getPayload` / `@payload-config` import を遅延 import に変更し、CMS opt-in 時以外は Payload 初期化を起動しない。`/pricing` は国判定 headers を使うため dynamic のまま、Payload import だけ遅延化。
 - Docker healthcheck を DB/CMS 非依存の `/api/ready` に切り替え。公開トップページや Payload が重くてもコンテナ readiness が巻き添えにならないようにした。
 - 検証: `npm test -- src/lib/payload-availability.test.ts src/lib/settings.test.ts`、`npm exec -- tsc --noEmit --pretty false`、`npm run quality:guard`、`npm audit --audit-level=high`、`npm run build` が通過。ローカル production server で `/api/ready` `/ja` `/ja/services` `/ja/pricing` が HTTP 200 / 0.3s 未満で応答。
+- GitHub: PR #19 を merge 済み。main commit `0f6a184`。Production deploy は `COOLIFY_API_TOKEN is not set and no local MCP backup token was found` でブロック。SSH もローカルに秘密鍵/agent identity がなく `root@139.59.250.5` は publickey denied。本番 `https://paradigmjp.com/api/ready` と `/ja` は未デプロイのため 20s timeout 継続。
 
 ## CURRENT STATUS - 2026-06-20 RevenueOS/Twenty list collection deep audit hardening
 
