@@ -66,7 +66,7 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - [ ] 9-5 dead-letter queue＋指数backoff＋idempotency 統一
 - [ ] 9-6 marketing を ISR/静的化し公開 DB read を origin から排除
 - [ ] 9-7 Cloudflare tiered cache＋cache-control・readiness 分離維持
-- [ ] 9-8 Transaction pooler 強制・poolMax 適正化・twenty-crm-metadata の生Client撤去・circuit breaker ※監査: 生Client は admin/view正規化の低頻度処理で hot path 非該当。真の対象は Payload poolMax:4＋pooler Transaction強制（要 prod 検証）
+- [ ] 9-8 Transaction pooler 強制・poolMax 適正化・circuit breaker ※監査: twenty-crm-metadata の生Client は全て try/finally で client.end() 済み・リークなし（撤去不要）。真の対象は Payload poolMax:4＋pooler Transaction強制で本番 pooler-mode 検証が前提（risky-config・要 prod 確認）
 - [x] 9-9 ランタイム admission gate（host-admission.ts・ADMISSION_MAX_RUNNING_JOBS opt-in・fail-open・triggerEnrichmentRunner 冒頭で saturated 時 defer・テスト 4件 pass）
 - [x] 9-10 scale index 追加（migration_045_sales_scale_indexes.sql・冪等 IF NOT EXISTS）。**適用方法確定**: SALES_SUPABASE は内部Docker(supabase-rest-1:3000・外部不達)のため本番アプリ内 `run_sql` RPC（/api/sales/run-migration パターン）経由でのみ適用可。次回 migration-runner サイクルで適用
 - [ ] 9-11 pool/queue メトリクス＋per-source circuit breaker 可視化・Sentry/Uptime・degraded mode
