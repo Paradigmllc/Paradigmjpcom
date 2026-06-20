@@ -5,6 +5,9 @@
 
 DEPLOY 2026-06-20: PR #30 → main(677a37c)→Coolify deploy(voqjuu09fu99qcyayil4hahm) status=finished→本番 /api/ready=200・/ja=200・demo/demo=200・app running:healthy（直後502はコンテナ起動窓で即回復）。0-1/1-2a/1-3/1-4/2-1/2-2/2-4/3-1/3-2/3-4/6-1/7-1/7-2/8-2/9-10(file) 本番反映済み。追補: Phase7 unit test + 6-3 doc(diagnostic-report-generation-pipeline.md)。
 
+DEMO-DEPLOY 2026-06-20: astro-demo は Coolify アプリでなく host `/root/astro-demo` の standalone Docker(Traefik file-provider `astro-demo:4321`)。Phase 3 変更が未反映だったため、ローカル source を rsync→host で docker build→コンテナをロールバック付きで再作成。検証: `demo.paradigmjp.com/demo`=「業種別デモサイト一覧」・`/demo/sample-restaurant`=200・`/ja/restaurant/sales`→301→/demo/sample-restaurant。
+INCIDENT 2026-06-20: E2E enrichment 検証(airbnb/figma 85ソース crawl・admission gate OFF)が CPU を 174→796% 暴走させ本番一時ダウン(521/000)。Hetzner API soft reboot 無効→hard reset で復旧(521→200)。**教訓**: 1 enrichment job の 85ソース並列 fan-out が真のリスク。9-9 admission gate は job dispatch 数のみ制御し per-job fan-out は未制御。要対策=per-source 並列上限(9-4)＋本番での実 enrichment 実行は慎重に。
+
 ROOT-CAUSE 2026-06-20: 本番 255社で診断0/レポート0/personalized_copy 0 を DB 実測 → E2E(airbnb/figma)実行で原因特定=**`Dify HTTP 400` が processDiagnosisPhase で job 全体を fail させ report 生成前に早期 return**（→ レポート永久未生成・job retry ループ）。修正: Dify 失敗を job 失敗にせず fallback 要約で report 生成へ継続（retry分離の核心・最高インパクト）。**実証(PR#37 deploy後 E2E再実行)**: jobs running→completed（ループ解消）・airbnb/figma とも report_generated_at=SET（レポート生成成功）。personalized_copy は industry=null のため autoPersonalize が正しくスキップ（業種ありリードで生成）。
 
 Phase 0 — Dify doc の n8n残滓除去
