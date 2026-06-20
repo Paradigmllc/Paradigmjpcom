@@ -76,8 +76,25 @@ function findCoolifyFromClaudeReferences() {
   const roots = [CLAUDE_PROJECT_MEMORY_DIR, DOTFILES_CLAUDE_MEMORY_DIR].filter((dir) => fs.existsSync(dir))
   if (roots.length === 0) return null
   const files = []
+  const seen = new Set()
   const walk = (dir) => {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    // Follow symlinked dirs (e.g. project memory dirs symlinked into dotfiles)
+    // and guard against symlink loops via realpath dedup.
+    let real
+    try {
+      real = fs.realpathSync(dir)
+    } catch {
+      return
+    }
+    if (seen.has(real)) return
+    seen.add(real)
+    let entries
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true })
+    } catch {
+      return
+    }
+    for (const entry of entries) {
       const fullPath = path.join(dir, entry.name)
       const isDirectory = entry.isDirectory() || (entry.isSymbolicLink() && fs.existsSync(fullPath) && fs.statSync(fullPath).isDirectory())
       if (isDirectory) {

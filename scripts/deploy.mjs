@@ -12,11 +12,13 @@
 
 import { spawnSync } from "node:child_process"
 import { DEFAULT_APP_UUID, getCoolifyAuth } from "./lib/coolify-env.mjs"
+import { createCoolifyClient } from "./lib/coolify-api.mjs"
 
 const DRY = process.argv.includes("--dry")
 const NO_WAIT = process.argv.includes("--no-wait")
 const SKIP_HOST_PREFLIGHT = process.argv.includes("--skip-host-preflight")
 const SKIP_DEPLOY_GUARD = process.argv.includes("--skip-deploy-guard")
+const CANCEL_ON_TIMEOUT = process.argv.includes("--cancel-on-timeout")
 const DEPLOY_HOST = process.env.PARADIGM_DEPLOY_HOST || "paradigm-droplet"
 
 const AUTH = getCoolifyAuth()
@@ -30,27 +32,11 @@ const BASE = AUTH.baseUrl
 const APP_UUID = process.env.PARADIGM_APP_UUID || DEFAULT_APP_UUID
 const GH_REPO = "git@github.com:Paradigmllc/Paradigmjpcom.git"
 
+const client = createCoolifyClient({ token: TOKEN, baseUrl: BASE })
+
+// Retrying wrapper kept for back-compat with existing callers (e.g. cancelDeploy).
 async function api(path, options = {}) {
-  const res = await fetch(`${BASE}${path}`, {
-    ...options,
-    signal: options.signal ?? AbortSignal.timeout(30_000),
-    headers: {
-      Authorization: `Bearer ${TOKEN}`,
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-  })
-  const text = await res.text()
-  let data = null
-  if (text.length > 0) {
-    try {
-      data = JSON.parse(text)
-    } catch {
-      throw new Error(`Coolify API ${res.status}: ${text.slice(0, 200)}`)
-    }
-  }
-  if (!res.ok) throw new Error(`Coolify API ${res.status}: ${text.slice(0, 200)}`)
-  return data
+  return client.request(path, options)
 }
 
 function runHostDiskPreflight() {
@@ -198,34 +184,60 @@ async function run() {
     console.warn("git_repository sync skipped:", error instanceof Error ? error.message : String(error))
   }
 
-  const deployResp = await api(`/api/v1/deploy?uuid=${APP_UUID}&force=true`, { method: "POST" })
-  const deployments = deployResp?.deployments || []
-  if (deployments.length === 0) throw new Error("No deployment UUID returned")
-
-  const deployUuid = deployments[0].deployment_uuid
-  console.log(`Deployment queued: ${deployUuid}`)
-
-  if (NO_WAIT) {
-    console.log("--no-wait: skipping poll")
+  if (DRY) {
+    console.log("--dry: skipping deploy")
     return
   }
 
-  for (let i = 1; i <= 80; i++) {
-    await new Promise((resolve) => setTimeout(resolve, 15_000))
-    const status = await api(`/api/v1/deployments/${deployUuid}`)
-    const state = status?.status || "unknown"
-    console.log(`[${i}/80] status: ${state}`)
-    if (state === "finished" || state === "running:healthy") {
-      connectRuntimeNetworks()
-      refreshManualTraefikRoute()
-      return
-    }
-    if (state === "failed" || state === "error" || state === "cancelled") {
-      throw new Error(`Deployment failed: ${state}`)
-    }
+  const resumeHint = (uuid) => `\nResume monitoring later with:\n  node scripts/deploy-status.mjs ${uuid}`
+
+  // Trigger is resilient: a Cloudflare/nginx gateway timeout on the POST does NOT
+  // mean the deploy failed — Coolify queues it anyway. Fall back to locating the
+  // freshly-queued deployment instead of aborting.
+  let deployUuid
+  const trigger = await client.rawRequest(`/api/v1/deploy?uuid=${APP_UUID}&force=true`, { method: "POST" })
+  if (trigger.ok) {
+    deployUuid = (trigger.data?.deployments || [])[0]?.deployment_uuid
+  } else {
+    console.warn(
+      `Deploy trigger returned ${trigger.status || trigger.error} (gateway/timeout) — the deploy is usually queued regardless; locating it…`,
+    )
+    deployUuid = await client.getLatestDeploymentUuid(APP_UUID)
   }
-  await cancelDeploy(deployUuid, "poll timeout")
-  throw new Error("Deployment timed out")
+  if (!deployUuid) {
+    throw new Error("No deployment UUID (trigger failed and no in-flight deployment found) — check the Coolify UI")
+  }
+  console.log(`Deployment queued: ${deployUuid}`)
+
+  if (NO_WAIT) {
+    console.log(`--no-wait: skipping poll.${resumeHint(deployUuid)}`)
+    return
+  }
+
+  // Resilient polling: transient origin overload (the build saturating the host)
+  // is treated as "still building", never as a failure, and never auto-cancelled.
+  const result = await client.pollDeployment(deployUuid, {
+    maxMinutes: Number(process.env.COOLIFY_POLL_MAX_MINUTES) || 30,
+    onUpdate: ({ tick, state, transient, note }) => {
+      console.log(transient ? `[${tick}] ${note}` : `[${tick}] status: ${state}`)
+    },
+  })
+
+  if (result.ok) {
+    console.log(`Deployment ${result.status} ✅`)
+    connectRuntimeNetworks()
+    refreshManualTraefikRoute()
+    return
+  }
+  if (result.timedOut) {
+    if (CANCEL_ON_TIMEOUT) await cancelDeploy(deployUuid, "poll timeout (--cancel-on-timeout)")
+    console.warn(
+      `Monitoring window elapsed without a terminal status (last seen: ${result.status}). ` +
+        `The build may still be running on the saturated origin and was NOT cancelled.${resumeHint(deployUuid)}`,
+    )
+    process.exit(2)
+  }
+  throw new Error(`Deployment failed: ${result.status}`)
 }
 
 run().catch((error) => {
