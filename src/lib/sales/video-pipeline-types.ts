@@ -51,7 +51,9 @@ export interface SalesVideoJob {
   orchestration_stage: string
   trigger_endpoint: string | null
   trigger_run_id: string | null
+  /** @deprecated legacy DB column alias kept for schema compat — now carries the Trigger.dev endpoint, not n8n (WW-EVENT: n8n decommissioned) */
   n8n_workflow_url: string | null
+  /** @deprecated legacy DB column alias kept for schema compat — now carries the Trigger.dev run id, not n8n */
   n8n_execution_id: string | null
   vast_instance_id: string | null
   r2_output_url: string | null

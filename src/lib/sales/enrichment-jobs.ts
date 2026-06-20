@@ -36,6 +36,8 @@ export interface EnqueueEnrichmentInput {
   triggeredBy: string
   priority?: number
   payload?: JsonRecord
+  /** Phase 1-2: isolate Dify diagnosis / report personalization as their own job type so a retry does not re-run collection. Defaults to company_karte. */
+  jobType?: EnrichmentJobType
 }
 
 export interface EnrichmentRunResult {
@@ -115,11 +117,13 @@ export async function enqueueCompanyEnrichment(
   const sb = getSb()
   if (!sb) return { ok: false, error: "Supabase service_role not configured" }
 
+  const jobType: EnrichmentJobType = input.jobType ?? "company_karte"
+
   const { data, error } = await sb
     .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
     .insert({
       company_id: input.companyId,
-      job_type: "company_karte",
+      job_type: jobType,
       status: "queued",
       priority: input.priority ?? 50,
       source: input.source,
@@ -136,7 +140,7 @@ export async function enqueueCompanyEnrichment(
       .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
       .select("*")
       .eq("company_id", input.companyId)
-      .eq("job_type", "company_karte")
+      .eq("job_type", jobType)
       .in("status", ["queued", "running"])
       .order("created_at", { ascending: false })
       .limit(1)

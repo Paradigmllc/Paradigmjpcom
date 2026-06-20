@@ -191,16 +191,18 @@ async function completeJob(
     console.error("[sales-enrichment] notification failed:", e)
   }
 
-  // Auto-resume local manual pipeline run if it was waiting for this job
+  // Phase 2-1/2-2: resume the waiting pipeline run via Trigger.dev dispatch (event-driven,
+  // isolated from the enrichment runner process; dispatchSalesPipelineRun falls back to an
+  // app-side one-shot when Trigger.dev is not configured) instead of running it inline here.
   const pipelineRunId = typeof job.input_payload?.pipeline_run_id === "string" ? job.input_payload.pipeline_run_id : null
   if (pipelineRunId) {
     try {
-      const { runSalesPipelineLocally } = await import("./sales-pipeline-execution")
-      void runSalesPipelineLocally(pipelineRunId).catch((err: unknown) => {
-        console.error("[sales-enrichment] auto-resume pipeline failed:", err)
+      const { dispatchSalesPipelineRun } = await import("./sales-pipeline")
+      void dispatchSalesPipelineRun(pipelineRunId).catch((err: unknown) => {
+        console.error("[sales-enrichment] auto-resume pipeline dispatch failed:", err)
       })
     } catch (importErr) {
-      console.error("[sales-enrichment] failed to import runSalesPipelineLocally for auto-resume:", importErr)
+      console.error("[sales-enrichment] failed to import dispatchSalesPipelineRun for auto-resume:", importErr)
     }
   }
 }

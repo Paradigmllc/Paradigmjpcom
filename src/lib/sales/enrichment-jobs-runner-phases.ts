@@ -2,6 +2,7 @@ import { enrichFromContact } from "./enrich"
 import { upsertCompanyByDomain } from "./companies"
 import { runDifyDiagnosis } from "./dify-diagnosis"
 import { fetchDiagnosticReport, markReportGenerated } from "./diagnostic"
+import { autoPersonalize } from "./personalize"
 import { generateReplacementDemo } from "./demo-generator"
 import { generateDiagnosticVideo } from "./video-generator"
 import { computeSourceCoverage, saveSourceCoverageRows } from "./source-coverage"
@@ -146,7 +147,26 @@ export async function processReportPhase(
     templateVariant: company.template_variant ?? undefined,
   })
 
-  if (report) await markReportGenerated(company.id)
+  if (report) {
+    await markReportGenerated(company.id)
+    // Phase 6-1 / 1-4: generate company-specific report copy into meta.personalized_copy
+    // so diagnostic.ts renders a tailored narrative instead of the generic template.
+    // personalizeReport uses DeepSeek today; Dify karte→report becomes primary once
+    // DIFY_KARTE_TO_REPORT_API_KEY is configured (decision: Dify 正本 / DeepSeek fallback).
+    try {
+      const personalize = await autoPersonalize(company.id)
+      await logDiagnosisEvent(sb, {
+        companyId: company.id,
+        jobId: _job.id,
+        eventType: "report_personalized",
+        status: personalize.ok ? "success" : "warning",
+        title: personalize.ok ? "診断レポート文面をパーソナライズしました" : "文面パーソナライズをスキップ",
+        message: personalize.ok ? undefined : (personalize.skipped ?? personalize.error),
+      })
+    } catch (e) {
+      console.error("[sales-enrichment] autoPersonalize failed (non-fatal):", e)
+    }
+  }
 
   const refreshed = await sb.from(DB_TABLES.SALES_COMPANIES).select("*").eq("id", company.id).maybeSingle()
   if (refreshed.error) console.error("[sales-enrichment] refresh after report failed:", refreshed.error.message)

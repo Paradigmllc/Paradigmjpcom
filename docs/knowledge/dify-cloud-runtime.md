@@ -6,8 +6,8 @@ Runtime rules:
 
 - Official endpoint: `https://api.dify.ai`
 - Old or accidental self-host URLs are normalized back to the official cloud endpoint.
-- API key values are never returned to the UI, logs, or n8n payloads.
-- The video pipeline sends n8n a `dify` metadata block only: `provider`, `base_url`, `workflow_url`, `configured_groups`, `missing_groups`, `secret_values_in_payload`.
+- API key values are never returned to the UI, logs, or Trigger.dev payloads.
+- The video pipeline (Trigger.dev `sales-video-pipeline` task) carries a `dify` metadata block only: `provider`, `base_url`, `workflow_url`, `configured_groups`, `missing_groups`, `secret_values_in_payload`. n8n is decommissioned (WW-EVENT); the orchestrator is Trigger.dev.
 
 Recognized key aliases:
 
