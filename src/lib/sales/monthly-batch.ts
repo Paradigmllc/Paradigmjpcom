@@ -345,7 +345,7 @@ export async function createLeadBatch(input: {
           const { isEnterpriseTechStack } = await import("./sources/enterprise-filter")
           const enterpriseCheck = isEnterpriseTechStack(techResult.tech.map((t: { name: string }) => t.name))
           await sb.from(DB_TABLES.SALES_COMPANIES).update({
-            pipeline_status: enterpriseCheck.isEnterprise ? "pending" : "report_ready",
+            pipeline_status: enterpriseCheck.isEnterprise ? "pending" : "scanning",
             meta: {
               tech: { stack: techResult.tech, server: techResult.server, count: techResult.tech.length },
               sales_os: { last_enriched_at: new Date().toISOString(), enriched_via: "inline_import" },

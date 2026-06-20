@@ -329,7 +329,8 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     ...(gbizFirst ? toCompanyMeta(gbizFirst) : {}),
   }
 
-  const pipelineStatus = scan ? (enterpriseCheck.isEnterprise ? "pending" : "report_ready") : "pending"
+  // Report may not be generated yet — use "scanning" until report pipeline confirms
+  const pipelineStatus = scan ? (enterpriseCheck.isEnterprise ? "pending" : "scanning") : "pending"
 
   const result = await upsertCompanyByDomain({
     domain, company_name: gbizFirst?.name ?? scan?.html.title ?? companyName,
