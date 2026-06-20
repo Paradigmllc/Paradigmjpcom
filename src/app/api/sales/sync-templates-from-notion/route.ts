@@ -2,9 +2,10 @@
  * POST /api/sales/sync-templates-from-notion — Sprint 16 Notion テンプレ編集 → Supabase 反映
  *
  * 役割: Notion テンプレ DB を full sync して Supabase sales_templates に upsert.
- *       営業担当者が Notion で文面を編集すると、cron (5min) で本番 /report/[slug] に反映.
+ *       営業担当者が Notion で文面を編集した時は Notion webhook を主経路にし、
+ *       この endpoint は取りこぼし補正の one-shot として使う.
  *
- * 認証: X-Webhook-Secret 必須 (cron or 手動 trigger)
+ * 認証: X-Webhook-Secret 必須 (webhook or 手動 trigger)
  *
  * Body: { db_id?: string, region?: "jp"|"global" }
  *   - db_id 未指定: 環境変数 NOTION_DB_TEMPLATES_JP / NOTION_DB_TEMPLATES_GLOBAL から取得
@@ -12,12 +13,11 @@
  *
  * 出力: { ok, synced, errors, total }
  *
- * 運用フロー (5min cron で自動・人間介在ゼロ):
+ * 運用フロー (イベント駆動):
  *   1. 営業担当が Notion テンプレ DB で headline / pain / fear / loss / cta を編集
- *   2. cron が 5min ごとに本 endpoint を叩く
+ *   2. Notion webhook または管理者の明示操作が本 endpoint を one-shot で叩く
  *   3. 全テンプレを取得 → notion_page_id で upsert
  *   4. /report/[slug] が次回 SSR (revalidate=60s) で新文面表示
- *   5. 編集から最大 6 分で本番反映
  */
 
 import { NextRequest, NextResponse } from "next/server"

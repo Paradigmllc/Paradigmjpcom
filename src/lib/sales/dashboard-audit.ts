@@ -174,7 +174,7 @@ export function buildOperationalAudit(input: {
           "Enrichment滞留",
           statusFromCount(stuckJobs, true),
           stuckJobs === 0 ? "現在の待機/実行中ジョブはありません。" : `${stuckJobs}件が待機または実行中です。`,
-          "Trigger.dev または /api/sales/enrichment/run を定期実行し、滞留を解消してください。",
+          "enqueue元のwebhook/管理操作から /api/sales/enrichment/run を one-shot 実行し、滞留を解消してください。",
           stuckJobs,
         ),
         check(

@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 /**
- * Installs a lightweight systemd disk guard on the Coolify host.
+ * Installs a lightweight one-shot disk guard on the Coolify host.
  *
- * The guard runs every 15 minutes and prunes Docker build cache / unused images
- * only when root disk usage is high. It intentionally never prunes volumes.
+ * Permanent infra rule: do not install cron/systemd timer loops. Run this guard
+ * from explicit deploy/recovery events when disk pressure needs verification.
+ * It prunes Docker build cache / unused images only when root disk usage is high.
+ * It intentionally never prunes volumes.
  */
 
 import { spawnSync } from "node:child_process"
@@ -54,19 +56,6 @@ IOSchedulingClass=best-effort
 IOSchedulingPriority=7
 `
 
-const timer = `[Unit]
-Description=Run Appexx host disk pressure guard every 15 minutes
-
-[Timer]
-OnBootSec=5min
-OnUnitActiveSec=15min
-AccuracySec=1min
-Persistent=true
-
-[Install]
-WantedBy=timers.target
-`
-
 function ssh(command) {
   const result = spawnSync(
     "ssh",
@@ -88,16 +77,14 @@ chmod 0755 /usr/local/sbin/appexx-host-disk-guard.sh
 cat > /etc/systemd/system/appexx-host-disk-guard.service <<'EOF'
 ${service}
 EOF
-cat > /etc/systemd/system/appexx-host-disk-guard.timer <<'EOF'
-${timer}
-EOF
+systemctl disable --now appexx-host-disk-guard.timer 2>/dev/null || true
+rm -f /etc/systemd/system/appexx-host-disk-guard.timer
 systemctl daemon-reload
-systemctl enable --now appexx-host-disk-guard.timer
 systemctl restart appexx-host-disk-guard.service
-systemctl is-active appexx-host-disk-guard.timer
+systemctl is-active appexx-host-disk-guard.service || true
 `)
   const status = ssh("systemctl list-timers --all | grep appexx-host-disk-guard || true; tail -40 /var/log/appexx/host-disk-guard.log || true")
-  console.log(`Installed host disk guard on ${host}`)
+  console.log(`Installed one-shot host disk guard on ${host}`)
   console.log(status)
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error))

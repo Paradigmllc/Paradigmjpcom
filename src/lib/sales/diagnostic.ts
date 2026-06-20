@@ -84,7 +84,7 @@ export async function fetchDiagnosticReport(opts: {
   if (!company) return null
 
   // Report freshness/regeneration is handled out-of-band (markReportGenerated +
-  // external cron). This fetch always returns the latest persisted data so that
+  // webhook/admin-triggered event drains). This fetch always returns the latest persisted data so that
   // recently-generated reports never 404. REPORT_REGENERATE_MAX_AGE_DAYS and
   // opts.forceRegenerate are consumed by the regeneration job, not the display path.
 

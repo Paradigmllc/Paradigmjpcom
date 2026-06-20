@@ -2,13 +2,16 @@
 /**
  * Install a small host-side Coolify hygiene guard.
  *
- * The installed cron script:
+ * The installed one-shot script:
  * - prunes Docker build cache/images only when root disk is above a threshold
  * - records host load, memory pressure, and Coolify/Traefik reachability
  * - removes Coolify helper containers only after their deployment is no longer active
  * - removes very stale helper containers even if Coolify DB is unavailable
  * - never prunes Docker volumes
  * - writes a compact log to /var/log/paradigm-coolify-host-guard.log
+ *
+ * Permanent infra rule: do not install cron/systemd timer loops. Run this guard
+ * from deploy/recovery events only.
  */
 
 import { spawnSync } from "node:child_process"
@@ -16,7 +19,6 @@ import { spawnSync } from "node:child_process"
 const host = process.env.PARADIGM_DEPLOY_HOST || "paradigm-droplet"
 const timeoutSec = Number.parseInt(process.env.PARADIGM_SSH_CONNECT_TIMEOUT || "20", 10)
 const scriptPath = "/usr/local/sbin/paradigm-coolify-host-guard.sh"
-const cronPath = "/etc/cron.d/paradigm-coolify-host-guard"
 
 const guardScript = String.raw`#!/usr/bin/env bash
 set -uo pipefail
@@ -114,12 +116,6 @@ fi
 echo "[$(date -Is)] guard done"
 `.replaceAll("__DOLLAR__", "$")
 
-const cronFile = `SHELL=/bin/bash
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-PARADIGM_DISK_PRUNE_AT=70
-*/5 * * * * root ${scriptPath}
-`
-
 function ssh(command, input = null) {
   const result = spawnSync(
     "ssh",
@@ -140,8 +136,8 @@ function installRemoteFile(path, mode, content) {
 
 function main() {
   installRemoteFile(scriptPath, "0755", guardScript)
-  installRemoteFile(cronPath, "0644", cronFile)
-  const output = ssh(`${scriptPath}; echo '--- cron'; cat ${cronPath}; echo '--- tail'; tail -n 20 /var/log/paradigm-coolify-host-guard.log`)
+  ssh(`rm -f /etc/cron.d/paradigm-coolify-host-guard /etc/systemd/system/paradigm-coolify-host-guard.timer /etc/systemd/system/paradigm-coolify-host-guard.service 2>/dev/null || true; systemctl daemon-reload 2>/dev/null || true`)
+  const output = ssh(`${scriptPath}; echo '--- timer-status'; systemctl list-timers --all 2>/dev/null | grep -F 'paradigm-coolify-host-guard' || true; echo '--- tail'; tail -n 20 /var/log/paradigm-coolify-host-guard.log`)
   console.log(output)
 }
 

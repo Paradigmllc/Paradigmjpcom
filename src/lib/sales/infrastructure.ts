@@ -77,7 +77,7 @@ const FALLBACK_ITEMS: InfrastructureMigrationItem[] = [
     memoryLabel: "16 GB",
     diskLabel: "160 GB",
     publicUrl: "https://coolify.paradigmjp.com",
-    notes: "現行本番。Cloudflare 524 再発防止のため、Coolify/Traefik/アプリ負荷を定期監視します。",
+    notes: "現行本番。Cloudflare 524 再発防止のため、Coolify/Traefik/アプリ負荷はdeploy/recoveryイベントで確認します。",
     updatedAt: null,
   },
   {

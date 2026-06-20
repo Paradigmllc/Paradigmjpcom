@@ -6,7 +6,7 @@ Updated: 2026-05-30
 
 - Coolify and Traefik are running on `178.105.138.55`.
 - Docker log rotation is configured in `/etc/docker/daemon.json`.
-- `appexx-host-janitor.timer` runs daily and now switches to aggressive unused-image pruning when root disk usage reaches 70%.
+- Legacy `appexx-host-janitor.timer` / host guard timers are superseded by event-triggered one-shot recovery guards. Do not add cron/systemd timers for site operations.
 - `supabase.paradigmjp.com` currently serves the Sales OS SSOT through PostgreSQL + PostgREST + Studio + Postgres Meta.
 - The current Supabase OSS stack is not yet a full Supabase Cloud replacement because Kong, Auth, Storage, and Realtime are not deployed.
 

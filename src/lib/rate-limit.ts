@@ -15,20 +15,13 @@
 
 type Bucket = { count: number; resetAt: number }
 const store = new Map<string, Bucket>()
+let nextSweepAt = 0
 
-// Sweep expired buckets every 60s to prevent memory growth on long-running process.
-let sweepTimer: ReturnType<typeof setInterval> | null = null
-function ensureSweeper() {
-  if (sweepTimer) return
-  sweepTimer = setInterval(() => {
-    const now = Date.now()
-    for (const [k, v] of store) {
-      if (v.resetAt < now) store.delete(k)
-    }
-  }, 60_000)
-  // unref so it doesn't keep Node alive in tests
-  if (typeof (sweepTimer as { unref?: () => void }).unref === "function") {
-    ;(sweepTimer as { unref: () => void }).unref()
+function sweepExpiredBuckets(now: number) {
+  if (now < nextSweepAt) return
+  nextSweepAt = now + 60_000
+  for (const [bucketKey, bucket] of store) {
+    if (bucket.resetAt < now) store.delete(bucketKey)
   }
 }
 
@@ -54,8 +47,8 @@ export function checkRateLimit({
   if (process.env.RATE_LIMIT_DISABLED === "1") {
     return { ok: true, remaining: max, resetAt: Date.now() + windowMs }
   }
-  ensureSweeper()
   const now = Date.now()
+  sweepExpiredBuckets(now)
   const bucketKey = `${key}:${ip}`
   const bucket = store.get(bucketKey)
 

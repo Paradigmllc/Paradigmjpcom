@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 /**
- * Install the host-side Twenty <-> RevenueOS near-real-time sync timer.
+ * Install the host-side Twenty <-> RevenueOS one-shot sync service.
  *
- * The timer reads TRIGGER_WEBHOOK_SECRET from the running RevenueOS container,
- * then calls the production pull and writeback endpoints once per minute.
+ * Permanent infra rule: do not install cron/systemd timer loops. Webhooks,
+ * queue events, or explicit admin/deploy actions should invoke this service.
+ * It reads TRIGGER_WEBHOOK_SECRET from the running RevenueOS container, then
+ * calls the production pull and writeback endpoints once.
  */
 
 import { spawnSync } from "node:child_process"
@@ -50,7 +52,7 @@ echo "[revenueos-twenty-sync] pull=$(cat /tmp/revenueos-twenty-pull.json) writeb
 `
 
 const serviceUnit = `[Unit]
-Description=RevenueOS Twenty bidirectional sync tick
+Description=RevenueOS Twenty bidirectional sync event
 Wants=network-online.target
 After=network-online.target docker.service
 
@@ -58,19 +60,6 @@ After=network-online.target docker.service
 Type=oneshot
 ExecStart=/usr/local/sbin/revenueos-twenty-sync.sh
 TimeoutStartSec=210
-`
-
-const timerUnit = `[Unit]
-Description=Run RevenueOS Twenty bidirectional sync every minute
-
-[Timer]
-OnBootSec=45s
-OnUnitActiveSec=60s
-AccuracySec=10s
-Persistent=true
-
-[Install]
-WantedBy=timers.target
 `
 
 function b64(value) {
@@ -82,10 +71,12 @@ set -euo pipefail
 printf '%s' '${b64(syncScript)}' | base64 -d >/usr/local/sbin/revenueos-twenty-sync.sh
 chmod 0755 /usr/local/sbin/revenueos-twenty-sync.sh
 printf '%s' '${b64(serviceUnit)}' | base64 -d >/etc/systemd/system/revenueos-twenty-sync.service
-printf '%s' '${b64(timerUnit)}' | base64 -d >/etc/systemd/system/revenueos-twenty-sync.timer
 timeout 30s systemctl daemon-reload
-timeout 30s systemctl enable --now revenueos-twenty-sync.timer
-echo 'revenueos-twenty-sync.timer installed'
+timeout 30s systemctl disable --now revenueos-twenty-sync.timer 2>/dev/null || true
+rm -f /etc/systemd/system/revenueos-twenty-sync.timer
+timeout 30s systemctl daemon-reload
+timeout 210s systemctl restart revenueos-twenty-sync.service || true
+echo 'revenueos-twenty-sync.service installed as one-shot; timer removed'
 `
 
 const result = spawnSync("ssh", [host, "bash -s"], {

@@ -2,7 +2,7 @@
  * lib/sales/templates.ts — sales_templates lookup + Notion 同期 (Sprint 8・Sprint 16 region 拡張)
  *
  * 役割: 業種×課題コードで診断レポートのテンプレ文言を取得.
- *       Notion 📝 テンプレDB が主管・cron で Supabase に upsert.
+ *       Notion テンプレDB が主管・webhook / one-shot 補正で Supabase に upsert.
  *
  * Sprint 16: region (jp / global) スコープ必須.
  *           jp = 日本語テンプレ (paradigmjp.com/ja/report)
@@ -92,7 +92,7 @@ export async function getTemplatesByIndustry(
   return issueCodes.map((issue) => byIssue.get(issue)).filter(Boolean) as SalesTemplate[]
 }
 
-/** Notion → Supabase upsert (cron が呼ぶ・notion_page_id で重複防止) */
+/** Notion → Supabase upsert (webhook / one-shot 補正・notion_page_id で重複防止) */
 export async function upsertTemplateFromNotion(input: {
   notion_page_id: string
   region?: Region

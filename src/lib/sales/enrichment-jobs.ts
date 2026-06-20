@@ -151,10 +151,12 @@ export async function enqueueCompanyEnrichment(
 export async function triggerEnrichmentRunner(limit = 3): Promise<{ ok: boolean; dispatched: boolean; error?: string }> {
   const endpoint = enrichmentTriggerEndpoint()
   const secret = triggerSecretKey()
+  const safeLimit = Math.max(1, Math.min(Math.round(limit), 3))
 
   if (!endpoint || !secret) {
-    console.warn("[sales-enrichment] Trigger.dev not configured — enrichment worker polling will pick up queued jobs")
-    return { ok: true, dispatched: false }
+    console.warn("[sales-enrichment] Trigger.dev not configured — running a bounded event drain")
+    const result = await runEnrichmentJobs(safeLimit)
+    return { ok: result.ok, dispatched: result.processed > 0, error: result.errors[0] }
   }
 
   try {
@@ -165,7 +167,7 @@ export async function triggerEnrichmentRunner(limit = 3): Promise<{ ok: boolean;
         Authorization: `Bearer ${secret}`,
       },
       body: JSON.stringify({
-        payload: { limit },
+        payload: { limit: safeLimit },
         context: { source: "revenue-os", job: "sales-enrichment" },
         options: {
           idempotencyKey: `sales-enrichment-runner-${new Date().toISOString().slice(0, 16)}`,
@@ -177,14 +179,16 @@ export async function triggerEnrichmentRunner(limit = 3): Promise<{ ok: boolean;
     })
     if (!res.ok) {
       const text = await res.text().catch((e: unknown) => `read body failed: ${String(e)}`)
-      console.warn("[sales-enrichment] runner trigger degraded:", res.status, text.slice(0, 300), "— enrichment worker polling will pick up queued jobs")
-      return { ok: true, dispatched: false }
+      console.warn("[sales-enrichment] runner trigger degraded:", res.status, text.slice(0, 300), "— running a bounded event drain")
+      const result = await runEnrichmentJobs(safeLimit)
+      return { ok: result.ok, dispatched: result.processed > 0, error: result.errors[0] }
     }
     return { ok: true, dispatched: true }
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)
-    console.warn("[sales-enrichment] runner trigger unreachable:", message, "— enrichment worker polling will pick up queued jobs")
-    return { ok: true, dispatched: false }
+    console.warn("[sales-enrichment] runner trigger unreachable:", message, "— running a bounded event drain")
+    const result = await runEnrichmentJobs(safeLimit)
+    return { ok: result.ok, dispatched: result.processed > 0, error: result.errors[0] }
   }
 }
 
