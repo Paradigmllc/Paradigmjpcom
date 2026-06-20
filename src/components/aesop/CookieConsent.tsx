@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * CookieConsent — Aesop-style bottom-fixed editorial banner.
+ * CookieConsent — compact bottom-fixed consent notice.
  *
  * Brand grammar (matches paradigm-Aesop direction exactly):
  *   - Paper background + ink type (no dark modal intrusion)
@@ -116,16 +116,16 @@ export default function CookieConsent() {
       role="dialog"
       aria-labelledby="cookie-consent-title"
       aria-describedby="cookie-consent-body"
-      className="fixed inset-x-0 bottom-0 z-[95] border-t border-paradigm-line bg-paradigm-paper"
+      className="fixed inset-x-3 bottom-3 z-[95] rounded-lg border border-paradigm-line bg-white shadow-lg shadow-zinc-200/70 md:left-auto md:right-6 md:bottom-4 md:max-w-xl"
     >
-      <div className="max-w-[1440px] mx-auto px-6 md:px-12 py-3 md:py-3.5 flex flex-col md:flex-row md:items-center gap-3 md:gap-8">
+      <div className="flex flex-col gap-2 px-3 py-2.5 md:flex-row md:items-center md:gap-4 md:px-4 md:py-3">
         <div className="flex-1 min-w-0">
           <p id="cookie-consent-title" className="sr-only">
             {t("srTitle")}
           </p>
           <p
             id="cookie-consent-body"
-            className="text-[13px] md:text-[13.5px] leading-snug text-paradigm-ink-soft max-w-4xl"
+            className="text-[11px] leading-snug text-paradigm-ink-soft md:text-[12px] md:leading-relaxed"
           >
             {t("bodyBeforeLink")}{" "}
             <Link
@@ -140,16 +140,18 @@ export default function CookieConsent() {
         <div className="flex flex-row gap-2 md:gap-3 shrink-0">
           <button
             type="button"
+            aria-label={t("decline")}
             onClick={() => handle("decline")}
-            className="inline-flex items-center justify-center px-4 md:px-5 py-2 text-[11px] tracking-[0.18em] uppercase border border-paradigm-line text-paradigm-ink-soft hover:border-paradigm-ink hover:text-paradigm-ink transition-colors"
+            className="inline-flex h-8 items-center justify-center rounded-md border border-paradigm-line px-3 text-[11px] font-semibold text-paradigm-ink-soft transition-colors hover:border-paradigm-ink hover:text-paradigm-ink md:h-9"
           >
             {t("decline")}
           </button>
           <button
             type="button"
+            aria-label={t("accept")}
             onClick={() => handle("accept")}
             autoFocus
-            className="inline-flex items-center justify-center px-4 md:px-5 py-2 text-[11px] tracking-[0.18em] uppercase bg-paradigm-ink text-paradigm-paper hover:bg-paradigm-accent transition-colors"
+            className="inline-flex h-8 items-center justify-center rounded-md bg-paradigm-ink px-3 text-[11px] font-semibold text-paradigm-paper transition-colors hover:bg-paradigm-accent md:h-9"
           >
             {t("accept")}
           </button>

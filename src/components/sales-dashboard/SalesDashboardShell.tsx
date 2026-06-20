@@ -5,8 +5,9 @@ import { QueryProvider } from "@/components/providers/QueryProvider"
 import { SalesCommandCenter } from "./SalesCommandCenter"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 
-async function fetchDashboard(): Promise<SalesDashboardData> {
-  const res = await fetch("/api/sales/dashboard", { cache: "no-store" })
+async function fetchDashboard(locale: string): Promise<SalesDashboardData> {
+  const params = new URLSearchParams({ report_locale: locale })
+  const res = await fetch(`/api/sales/dashboard?${params.toString()}`, { cache: "no-store" })
   if (!res.ok) {
     let errorMsg = `Dashboard fetch failed (${res.status})`
     try {
@@ -28,9 +29,12 @@ export const DASHBOARD_QUERY_KEY = ["sales-dashboard"] as const
 
 function Shell({ initialData, locale }: { initialData: SalesDashboardData; locale: string }) {
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: DASHBOARD_QUERY_KEY,
-    queryFn: fetchDashboard,
+    queryKey: [...DASHBOARD_QUERY_KEY, locale],
+    queryFn: () => fetchDashboard(locale),
     initialData,
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   })
 
   if (isLoading) {

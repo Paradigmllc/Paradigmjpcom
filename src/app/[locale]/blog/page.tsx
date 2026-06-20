@@ -18,7 +18,7 @@ import PageHero from "@/components/PageHero"
 import FadeIn from "@/components/aesop/FadeIn"
 import { filterByLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
 import { LOCALE_HREFLANG } from "@/lib/locale-map"
-import { markPayloadInitFailure, shouldSkipPayloadReads } from "@/lib/payload-availability"
+import { withPayloadReadFallback } from "@/lib/payload-availability"
 
 export const dynamic = "force-dynamic"
 
@@ -46,10 +46,10 @@ type PostDoc = {
 }
 
 const CATEGORY_GRADIENTS = [
-  "from-pink-400 via-paradigm-accent to-paradigm-tech",
-  "from-paradigm-tech via-paradigm-glow to-violet-400",
-  "from-paradigm-glow via-violet-400 to-paradigm-accent",
-  "from-paradigm-accent via-pink-400 to-orange-300",
+  "from-zinc-950 via-zinc-800 to-blue-700",
+  "from-zinc-900 via-blue-800 to-emerald-700",
+  "from-zinc-900 via-emerald-800 to-blue-700",
+  "from-zinc-950 via-blue-800 to-amber-600",
 ]
 
 function formatDate(iso: string | undefined, locale: string): string {
@@ -69,9 +69,7 @@ export default async function BlogPage({ params }: Props) {
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
   const t = await getTranslations({ locale, namespace: "blogPage" })
 
-  let posts: PostDoc[] = []
-  if (!shouldSkipPayloadReads()) {
-    try {
+  const posts = await withPayloadReadFallback<PostDoc[]>("blog.payload.find", async () => {
       const payload = await getPayload({ config })
       const res = await payload.find({
         collection: "posts",
@@ -81,12 +79,8 @@ export default async function BlogPage({ params }: Props) {
         depth: 0,
         ...localeFindOptions(locale),
       })
-      posts = (res.docs as unknown as PostDoc[]) ?? []
-    } catch (e) {
-      markPayloadInitFailure(e)
-      console.error("[blog] payload.find failed:", e)
-    }
-  }
+      return (res.docs as unknown as PostDoc[]) ?? []
+  }, [])
 
   return (
     <>
@@ -101,11 +95,11 @@ export default async function BlogPage({ params }: Props) {
         <div className="paradigm-mesh opacity-30" />
         <div className="relative z-10 max-w-5xl mx-auto px-6 md:px-8">
           {posts.length === 0 ? (
-            <FadeIn className="text-center max-w-xl mx-auto paradigm-glass rounded-2xl p-8 paradigm-glow-md">
+            <FadeIn className="text-center max-w-xl mx-auto paradigm-glass rounded-lg p-8 paradigm-glow-md">
               <p className="text-[14px] text-paradigm-ink-soft leading-[1.85] mb-7">
                 {t("emptyMessage")}
               </p>
-              <Link href="/contact" className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-xl text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors">
+              <Link href="/contact" className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors">
                 {t("emptyCta")}
               </Link>
             </FadeIn>
@@ -118,7 +112,7 @@ export default async function BlogPage({ params }: Props) {
                   <FadeIn key={String(post.id)} delay={i * 0.05}>
                     <Link
                       href={post.slug ? `/blog/${post.slug}` : "#"}
-                      className="group block paradigm-glass rounded-2xl p-6 paradigm-glow-sm hover:paradigm-glow-lg hover:-translate-y-1 transition-all duration-500 h-full"
+                      className="group block paradigm-glass rounded-lg p-6 paradigm-glow-sm hover:paradigm-glow-lg  transition-all duration-500 h-full"
                     >
                       <div className="flex flex-wrap items-center gap-2 mb-4">
                         {post.category && (
@@ -133,7 +127,7 @@ export default async function BlogPage({ params }: Props) {
                           </span>
                         )}
                       </div>
-                      <h2 className="font-display text-[18px] md:text-[22px] leading-[1.2] tracking-[-0.015em] text-paradigm-ink group-hover:text-paradigm-accent transition-colors mb-3">
+                      <h2 className="font-display text-[18px] md:text-[22px] leading-[1.2]  text-paradigm-ink group-hover:text-paradigm-accent transition-colors mb-3">
                         {post.title ?? "—"}
                       </h2>
                       {post.excerpt && (

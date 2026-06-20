@@ -18,14 +18,7 @@ import FadeIn from "@/components/aesop/FadeIn"
 import { LOCALE_OG_LOCALE, LOCALE_ORG_NAME } from "@/lib/locale-map"
 import { pageAlternates } from "@/lib/page-metadata"
 
-export async function generateStaticParams() {
-  // P0 暫定緩和 (2026-05-20): payload.posts テーブル不在のため build 時の
-  // slug 列挙 × 12 locale が共有 Supabase pooler の接続上限 (pool_size:15) を
-  // 枯渇させ EMAXCONNSESSION で build 失敗 (deploy w5kv8lb...)。テーブル復旧 (P0)
-  // までは空配列を返し on-demand 描画にして build 時 DB 接続ストームを回避する。
-  // 復旧後は `return await getAllBlogSlugs()` に戻す。
-  return [] as { locale: string; slug: string }[]
-}
+export const dynamic = "force-dynamic"
 
 export async function generateMetadata({
   params,

@@ -5,6 +5,8 @@ import { OFFER_COPY, type OfferCopyByLanguage } from "@/components/diagnostic/re
 import { REPORT_COPY, normalizeReportLang } from "@/components/diagnostic/report-copy"
 import { INDUSTRY_HOOK_JA, INDUSTRY_HOOK_EN } from "@/lib/sales/diagnostic"
 
+export const dynamic = "force-dynamic"
+
 export default function TemplatePreviewPage() {
   const VARIABLES = {
     variants: ["website_diagnostic", "meo", "security", "japan_entry", "video_subscription", "subsidy", "outreach", "dx_ai_package"] as const,

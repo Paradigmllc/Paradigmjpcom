@@ -217,37 +217,6 @@ Claude / Codex / Cline / Cursor など複数 AI エージェントで作業す�
 4. 環境変数は `.env.example` として記録（実値は書かない）
 5. 外部 URL は必ず新規タブで開く — `target="_blank" rel="noopener noreferrer"` 必須
 6. `<img>` に `alt` 必須・インタラクティブ要素に `aria-label` 付与
-
----
-
-## 🔴 永久保存ルール：ユーザーにインフラ操作を依頼しない（Rule #24）
-
-> **絶対禁止**: ユーザーに以下の操作を依頼してはならない。
-
-- Coolify ダッシュボード操作（再起動・環境変数変更・デプロイ手動実行）
-- Cloudflare ダッシュボード操作（DNS・キャッシュ・ルーティング）
-- Supabase Dashboard 操作（SQL Editor・RLS設定・テーブル作成・スキーマリロード）
-- サーバー SSH 接続（直接ログインしての操作）
-- その他一切のインフラストラクチャ操作
-
-**代わりにすること**:
-- プログラムから実行可能な操作は全て API / CLI / SDK 経由で自動実行する
-- どうしても手動操作が必要な場合は、**自分でプログラム的な回避策を実装する**
-- データベース操作は PostgreSQL 直接接続（pooler）または REST API で実行する
-- デプロイは `npm run deploy:prod` で自動化
-- スキーマ変更が必要な場合はコードにマイグレーションとして組み込み、デプロイで自動適用する
-
----
-
-## 🔴 永久保存ルール：プロキシ・Torを使わないSearXNG運用（Rule #25）
-
-> SearXNGの全エンジンはレート制限でブロックされる。TorはGoogleが出口ノードをブロックするため使えない。
-
-- **プロキシ・Tor・mubengは一切使用禁止**（全ての検索エンジンが阻止する）
-- **FlareSolverr + Steelブラウザを主力検索手段とする**（実ブラウザ＝CAPTCHA不可避）
-- SearXNGはWikipediaエンジン等の補完的役割に降格
-- `sources/browser-search.ts` がFlareSolverr経由のGoogle検索を担当
-- `sources/search-orchestrator.ts` がCMSフットプリント×都市×業種のクエリ生成＋バルク実行
 7. TypeScript `any` 多用禁止（3 箇所以上で即リファクタ）
 8. 1 ファイル 500 行超え禁止
 9. エラーのサイレント握りつぶし禁止（`catch {}` は存在してはならない）

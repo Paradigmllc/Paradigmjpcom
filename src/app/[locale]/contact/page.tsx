@@ -18,6 +18,8 @@ import PageHero from "@/components/PageHero"
 import { ContactForm } from "./ContactForm"
 import { calendarUrlFor, getSiteSettings } from "@/lib/settings"
 
+export const dynamic = "force-dynamic"
+
 interface Props { params: Promise<{ locale: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -36,13 +38,13 @@ export default async function ContactPage({ params }: Props) {
   const SIDEBAR_BLOCKS = [
     {
       icon: Calendar,
-      gradient: "from-pink-400 via-paradigm-accent to-paradigm-tech",
+      gradient: "from-zinc-950 via-zinc-800 to-blue-700",
       label: t("consultLabel"),
       items: t.raw("consultItems") as string[],
     },
     {
       icon: Mail,
-      gradient: "from-paradigm-tech via-paradigm-glow to-violet-400",
+      gradient: "from-zinc-900 via-blue-800 to-emerald-700",
       label: t("contactLabel"),
       items: t.raw("contactItems") as string[],
     },
@@ -63,9 +65,9 @@ export default async function ContactPage({ params }: Props) {
       <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
         <div className="paradigm-mesh opacity-30" />
         <div className="relative z-10 max-w-5xl mx-auto px-6 md:px-8 grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
-          <div className="lg:col-span-3 paradigm-glass rounded-2xl p-6 md:p-8 paradigm-glow-md">
+          <div className="lg:col-span-3 paradigm-glass rounded-lg p-6 md:p-8 paradigm-glow-md">
             <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("formEyebrow")}</p>
-            <h2 className="font-display text-[22px] md:text-[28px] leading-[1.2] text-paradigm-ink mb-7 tracking-[-0.015em]">
+            <h2 className="font-display text-[22px] md:text-[28px] leading-[1.2] text-paradigm-ink mb-7 ">
               {t("formTitle")}
             </h2>
             <ContactForm />
@@ -75,7 +77,7 @@ export default async function ContactPage({ params }: Props) {
             {SIDEBAR_BLOCKS.map((b) => {
               const Icon = b.icon
               return (
-                <div key={b.label} className="paradigm-glass rounded-2xl p-6 paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500">
+                <div key={b.label} className="paradigm-glass rounded-lg p-6 paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500">
                   <div className={`inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br ${b.gradient} text-paradigm-paper mb-3 paradigm-glow-sm`}>
                     <Icon size={18} strokeWidth={1.5} />
                   </div>
@@ -91,8 +93,8 @@ export default async function ContactPage({ params }: Props) {
                 admin が PayloadCMS Settings > calendarByLocale (12-locale) で URL を
                 設定したら自動的に表示される。 */}
             {bookingUrl && (
-              <div className="paradigm-glass rounded-2xl p-6 paradigm-glow-md border border-paradigm-accent/30">
-                <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-paradigm-glow via-paradigm-accent to-pink-400 text-paradigm-paper mb-3 paradigm-glow-sm">
+              <div className="paradigm-glass rounded-lg p-6 paradigm-glow-md border border-paradigm-accent/30">
+                <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-paradigm-glow via-paradigm-accent to-paradigm-accent text-paradigm-paper mb-3 paradigm-glow-sm">
                   <Clock size={18} strokeWidth={1.5} />
                 </div>
                 <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("hurryLabel")}</p>
@@ -103,7 +105,7 @@ export default async function ContactPage({ params }: Props) {
                   href={bookingUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex w-full justify-center items-center gap-2 bg-paradigm-ink text-paradigm-paper rounded-xl py-3 text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
+                  className="inline-flex w-full justify-center items-center gap-2 bg-paradigm-ink text-paradigm-paper rounded-lg py-3 text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
                 >
                   {t("hurryButton")}
                 </a>

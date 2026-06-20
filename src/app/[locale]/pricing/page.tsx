@@ -28,7 +28,8 @@ import {
   type FormatPriceResult,
 } from "@/lib/ppp"
 import { LOCALE_HREFLANG } from "@/lib/locale-map"
-import { markPayloadInitFailure, shouldSkipPayloadReads } from "@/lib/payload-availability"
+import { withPayloadReadFallback } from "@/lib/payload-availability"
+import { getPricingFor, getServices } from "@/lib/data"
 
 export const dynamic = "force-dynamic"
 
@@ -82,9 +83,7 @@ export default async function PricingPage({ params, searchParams }: Props) {
   const forcedCountry = force_country?.toUpperCase()
   const country = forcedCountry || detectCountryFromHeaders(h)
 
-  let plans: PricingDoc[] = []
-  if (!shouldSkipPayloadReads()) {
-    try {
+  let plans = await withPayloadReadFallback<PricingDoc[]>("pricing.payload.find", async () => {
       const payload = await getPayload({ config })
       const res = await payload.find({
         collection: "pricing",
@@ -94,11 +93,23 @@ export default async function PricingPage({ params, searchParams }: Props) {
         depth: 0,
         ...localeFindOptions(locale),
       })
-      plans = (res.docs as unknown as PricingDoc[]) ?? []
-    } catch (e) {
-      markPayloadInitFailure(e)
-      console.error("[pricing] payload.find failed:", e)
-    }
+      return (res.docs as unknown as PricingDoc[]) ?? []
+  }, [])
+  if (plans.length === 0) {
+    plans = getServices(contentLocale).flatMap((service) =>
+      getPricingFor(contentLocale, service.id as "web" | "meo" | "seo" | "ai").plans.map((plan, index) => ({
+        id: `${service.id}-${plan.name}`,
+        planName: `${service.title} / ${plan.name}`,
+        serviceId: service.id,
+        price: Number(plan.price.replace(/,/g, "")),
+        currency: "jpy" as const,
+        billingCycle: plan.period.includes("/") ? "monthly" as const : "one-time" as const,
+        description: plan.desc,
+        features: plan.features.map((feature) => ({ feature, included: true })),
+        isPopular: plan.popular ?? index === 1,
+        ctaLabel: t("defaultCta"),
+      }))
+    )
   }
 
   const priceFor = (plan: PricingDoc): FormatPriceResult => {
@@ -122,11 +133,11 @@ export default async function PricingPage({ params, searchParams }: Props) {
         <div className="paradigm-mesh opacity-30" />
         <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-8">
           {plans.length === 0 ? (
-            <FadeIn className="text-center max-w-xl mx-auto paradigm-glass rounded-2xl p-8 paradigm-glow-md">
+            <FadeIn className="text-center max-w-xl mx-auto paradigm-glass rounded-lg p-8 paradigm-glow-md">
               <p className="text-[14px] text-paradigm-ink-soft leading-[1.85] mb-7">
                 {t("emptyMessage")}
               </p>
-              <Link href="/contact" className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-xl text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors">
+              <Link href="/contact" className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors">
                 {t("emptyCta")}
               </Link>
             </FadeIn>
@@ -142,10 +153,10 @@ export default async function PricingPage({ params, searchParams }: Props) {
                   return (
                     <FadeIn key={String(plan.id)} delay={idx * 0.08}>
                       <div
-                        className={`relative paradigm-glass rounded-2xl p-6 md:p-7 transition-all duration-500 flex flex-col h-full ${
+                        className={`relative paradigm-glass rounded-lg p-6 md:p-7 transition-all duration-500 flex flex-col h-full ${
                           plan.isPopular
                             ? "border border-paradigm-accent/40 paradigm-glow-lg"
-                            : "paradigm-glow-sm hover:paradigm-glow-md hover:-translate-y-1"
+                            : "paradigm-glow-sm hover:paradigm-glow-md "
                         }`}
                       >
                         <p className="paradigm-eyebrow mb-3">
@@ -157,7 +168,7 @@ export default async function PricingPage({ params, searchParams }: Props) {
                             <span className="text-paradigm-ink-mute text-[10px]">{t("planEyebrow")}</span>
                           )}
                         </p>
-                        <h3 className="font-display text-[20px] md:text-[24px] leading-[1.15] text-paradigm-ink mb-2 tracking-[-0.015em]">
+                        <h3 className="font-display text-[20px] md:text-[24px] leading-[1.15] text-paradigm-ink mb-2 ">
                           {plan.planName ?? "—"}
                         </h3>
                         {plan.description && (
@@ -166,7 +177,7 @@ export default async function PricingPage({ params, searchParams }: Props) {
                         <div className="mb-5">
                           <div className="flex items-baseline gap-1">
                             <span className="font-display text-[32px] md:text-[40px] leading-none">
-                              <span className="bg-gradient-to-br from-paradigm-accent via-paradigm-tech to-paradigm-glow bg-clip-text text-transparent">
+                              <span className="bg-gradient-to-br from-paradigm-accent via-paradigm-accent to-paradigm-ink bg-clip-text text-transparent">
                                 {price.display}
                               </span>
                             </span>
@@ -196,7 +207,7 @@ export default async function PricingPage({ params, searchParams }: Props) {
                         )}
                         <Link
                           href="/contact"
-                          className={`mt-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-[11px] tracking-[0.14em] uppercase font-semibold transition-colors ${
+                          className={`mt-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-[11px] tracking-[0.14em] uppercase font-semibold transition-colors ${
                             plan.isPopular
                               ? "bg-paradigm-ink text-paradigm-paper hover:bg-paradigm-accent"
                               : "paradigm-glass text-paradigm-ink-soft hover:text-paradigm-ink"
@@ -223,8 +234,8 @@ export default async function PricingPage({ params, searchParams }: Props) {
           <div className="relative z-10 max-w-3xl mx-auto px-6 md:px-8">
             <FadeIn className="mb-8 max-w-2xl">
               <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("faqEyebrow")}</p>
-              <h2 className="font-display text-[24px] md:text-[36px] leading-[1.15] tracking-[-0.02em] text-paradigm-ink">
-                <span className="bg-gradient-to-br from-paradigm-ink via-paradigm-tech to-paradigm-glow bg-clip-text text-transparent">
+              <h2 className="font-display text-[24px] md:text-[36px] leading-[1.15]  text-paradigm-ink">
+                <span className="bg-gradient-to-br from-paradigm-ink via-paradigm-ink to-paradigm-accent bg-clip-text text-transparent">
                   {t("faqTitle")}
                 </span>
               </h2>
@@ -232,13 +243,13 @@ export default async function PricingPage({ params, searchParams }: Props) {
             <ul className="space-y-3">
               {faqPairs.map((faq, i) => (
                 <FadeIn key={i} delay={i * 0.04}>
-                  <li className="paradigm-glass rounded-2xl paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500 overflow-hidden">
+                  <li className="paradigm-glass rounded-lg paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500 overflow-hidden">
                     <details className="group">
                       <summary className="cursor-pointer flex items-start gap-4 p-5 list-none [&::-webkit-details-marker]:hidden">
                         <span className="font-display text-[18px] leading-none text-paradigm-accent mt-1 flex-shrink-0">
                           Q.
                         </span>
-                        <span className="font-display text-[15px] md:text-[18px] leading-[1.4] text-paradigm-ink flex-1 pr-4 tracking-[-0.005em]">
+                        <span className="font-display text-[15px] md:text-[18px] leading-[1.4] text-paradigm-ink flex-1 pr-4 ">
                           {faq.q}
                         </span>
                         <span aria-hidden className="shrink-0 text-paradigm-ink-mute mt-1 group-open:rotate-45 transition-transform text-[20px] leading-none">+</span>
