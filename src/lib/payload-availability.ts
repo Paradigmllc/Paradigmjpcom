@@ -2,6 +2,7 @@ const INITIAL_COOLDOWN_MS = 3_000
 const MAX_COOLDOWN_MS = 60_000
 const MAX_CONSECUTIVE_BEFORE_SLACK = 3
 const DEFAULT_PUBLIC_READ_TIMEOUT_MS = 1_200
+const PUBLIC_PAYLOAD_READS_ENABLED = "PAYLOAD_PUBLIC_READS_ENABLED"
 
 let lastFailureAt = 0
 let lastFailureMessage = ""
@@ -38,8 +39,16 @@ export function arePayloadReadsDisabled(): boolean {
   )
 }
 
+export function arePublicPayloadReadsEnabled(): boolean {
+  return process.env[PUBLIC_PAYLOAD_READS_ENABLED] === "1"
+}
+
 export function shouldSkipPayloadReads(): boolean {
   return arePayloadReadsDisabled() || isPayloadInitCoolingDown()
+}
+
+export function shouldSkipPublicPayloadReads(): boolean {
+  return shouldSkipPayloadReads() || !arePublicPayloadReadsEnabled()
 }
 
 function publicReadTimeoutMs(): number {
@@ -77,7 +86,8 @@ async function isDatabaseProbablyReachable(timeoutMs = 250): Promise<boolean> {
       socket.once("error", fail)
       socket.once("timeout", fail)
     })
-  } catch {
+  } catch (error) {
+    console.warn("[payload-availability] database TCP probe skipped:", error)
     return true
   }
 }
@@ -88,7 +98,7 @@ export async function withPayloadReadFallback<T>(
   fallback: T,
   timeoutMs: number = publicReadTimeoutMs(),
 ): Promise<T> {
-  if (shouldSkipPayloadReads()) return fallback
+  if (shouldSkipPublicPayloadReads()) return fallback
   if (publicReadProbeInFlight) return fallback
   if (!(await isDatabaseProbablyReachable())) {
     markPayloadInitFailure(new Error("[payload-availability] database TCP probe failed"), { notify: false })

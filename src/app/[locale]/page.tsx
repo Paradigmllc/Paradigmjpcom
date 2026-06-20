@@ -10,15 +10,13 @@
  * AE-PHP-4 準拠 (役割/入力/出力 明示) + AE-PHP-7 準拠 (DB化 + admin編集可能 → fallback あり)。
  */
 
-import { getPayload } from "payload"
-import config from "@payload-config"
 import { coerceLocale, assertLocale, filterByLocale, localeFindOptions } from "@/lib/cms/filters"
 import { withPayloadReadFallback } from "@/lib/payload-availability"
 import BlockRenderer from "@/blocks/BlockRenderer"
 import HomeClient from "./HomeClient"
 import HomeEnClient from "./HomeEnClient"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 300
 
 interface Props {
   params: Promise<{ locale: string }>
@@ -26,6 +24,10 @@ interface Props {
 
 async function fetchHomepage(locale: string) {
   return withPayloadReadFallback<unknown | null>("home.payload.find", async () => {
+    const [{ getPayload }, { default: config }] = await Promise.all([
+      import("payload"),
+      import("@payload-config"),
+    ])
     const payload = await getPayload({ config: config as Parameters<typeof getPayload>[0]["config"] })
     const typedLocale = locale as Parameters<typeof filterByLocale>[0]
     const res = await payload.find({

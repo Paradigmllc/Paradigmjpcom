@@ -11,8 +11,6 @@
  */
 import type { Metadata } from "next"
 import { headers } from "next/headers"
-import { getPayload } from "payload"
-import config from "@payload-config"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
 import { buildServiceSchema } from "@/lib/seo/schemas"
@@ -84,6 +82,10 @@ export default async function PricingPage({ params, searchParams }: Props) {
   const country = forcedCountry || detectCountryFromHeaders(h)
 
   let plans = await withPayloadReadFallback<PricingDoc[]>("pricing.payload.find", async () => {
+      const [{ getPayload }, { default: config }] = await Promise.all([
+        import("payload"),
+        import("@payload-config"),
+      ])
       const payload = await getPayload({ config })
       const res = await payload.find({
         collection: "pricing",

@@ -8,8 +8,6 @@
  * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
  */
 import type { Metadata } from "next"
-import { getPayload } from "payload"
-import config from "@payload-config"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
 import { Link } from "@/i18n/routing"
@@ -20,7 +18,7 @@ import { filterByLocale, assertLocale, localeFindOptions } from "@/lib/cms/filte
 import { FAQ_JSONLD } from "@/lib/jsonld"
 import { withPayloadReadFallback } from "@/lib/payload-availability"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 300
 
 interface Props { params: Promise<{ locale: string }> }
 
@@ -56,6 +54,10 @@ export default async function FaqPage({ params }: Props) {
   const t = await getTranslations({ locale, namespace: "faqPage" })
 
   const faqs = await withPayloadReadFallback<FaqDoc[]>("faq.payload.find", async () => {
+      const [{ getPayload }, { default: config }] = await Promise.all([
+        import("payload"),
+        import("@payload-config"),
+      ])
       const payload = await getPayload({ config })
       const res = await payload.find({
         collection: "faqs",
