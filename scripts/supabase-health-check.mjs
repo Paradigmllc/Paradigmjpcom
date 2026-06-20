@@ -13,7 +13,7 @@
  *   SUPABASE_SERVICE_ROLE_KEY — 必須（Data API + SQL 用）
  *   SUPABASE_PAT             — Supabase Management API 用 Personal Access Token（復旧時必須）
  *   COOLIFY_API_TOKEN        — Coolify API token
- *   PARADIGM_APP_UUID        — default: i12am4vvcbggefnqdizhnv9a
+ *   PARADIGM_APP_UUID        — default: n8i2sjiqvr2d8hrzppop2m2i
  */
 
 const PROJECT_ID = process.env.SUPABASE_PROJECT_ID || ""
