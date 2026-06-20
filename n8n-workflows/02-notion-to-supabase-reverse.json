@@ -1,16 +1,16 @@
 {
-  "name": "Sales 02 — Notion → Supabase reverse sync (5min cron)",
-  "description": "Notion リードDB で人間が編集した 4 field (deal_stage / follow_up_date / memo / 担当者) を Supabase sales_companies に書き戻す。5 分 cron で差分のみ処理。Sprint 8 / 2026-05-13.",
+  "name": "Sales 02 — Notion → Supabase reverse sync (webhook, event-driven)",
+  "description": "Notion リードDB で人間が編集した 4 field (deal_stage / follow_up_date / memo / 担当者) を Supabase sales_companies に書き戻す。WW-EVENT: cron 廃止 → Notion automation / 手動 webhook で起動し直近 5 分の差分のみ処理。Sprint 8 / 2026-05-13.",
   "nodes": [
     {
       "parameters": {
-        "rule": {
-          "interval": [{ "field": "minutes", "minutesInterval": 5 }]
-        }
+        "httpMethod": "POST",
+        "path": "notion-reverse-sync",
+        "responseMode": "onReceived"
       },
-      "name": "Cron (5min)",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.1,
+      "name": "Webhook trigger (event-driven)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
       "position": [240, 300]
     },
     {
@@ -71,7 +71,7 @@
     }
   ],
   "connections": {
-    "Cron (5min)": {
+    "Webhook trigger (event-driven)": {
       "main": [[{ "node": "Compute since", "type": "main", "index": 0 }]]
     },
     "Compute since": {
@@ -90,7 +90,7 @@
   "_meta": {
     "sprint": "Sprint 8 (2026-05-13)",
     "purpose": "Notion 編集 (deal_stage / memo / etc.) を Supabase に逆流",
-    "frequency": "5 minutes (Sprint 8 既定値・需要に応じて調整)",
+    "frequency": "event-driven (webhook; WW-EVENT: cron 廃止)",
     "env_required": [
       "NOTION_API_KEY",
       "NOTION_DB_COMPANIES_ID",

@@ -1,16 +1,16 @@
 {
-  "name": "Sales 03 — Notion テンプレ → Supabase upsert (1h cron)",
-  "description": "Notion 📝 テンプレ DB を 1 時間毎に全件取得し、sales_templates に upsert。Notion 主管・Supabase 側は read-only。Sprint 8 / 2026-05-13.",
+  "name": "Sales 03 — Notion テンプレ → Supabase upsert (webhook, event-driven)",
+  "description": "Notion 📝 テンプレ DB を全件取得し sales_templates に upsert。WW-EVENT: cron 廃止 → Notion automation / 手動 webhook で起動。Notion 主管・Supabase 側は read-only。Sprint 8 / 2026-05-13.",
   "nodes": [
     {
       "parameters": {
-        "rule": {
-          "interval": [{ "field": "hours", "hoursInterval": 1 }]
-        }
+        "httpMethod": "POST",
+        "path": "notion-template-sync",
+        "responseMode": "onReceived"
       },
-      "name": "Cron (1h)",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.1,
+      "name": "Webhook trigger (event-driven)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
       "position": [240, 300]
     },
     {
@@ -77,7 +77,7 @@
     }
   ],
   "connections": {
-    "Cron (1h)": {
+    "Webhook trigger (event-driven)": {
       "main": [[{ "node": "Notion query all active templates", "type": "main", "index": 0 }]]
     },
     "Notion query all active templates": {

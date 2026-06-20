@@ -1,4 +1,18 @@
-## CURRENT STATUS - 2026-06-20 Cloudflare 524 origin timeout hardening
+## CURRENT STATUS - 2026-06-20 WW-EVENT: cron/定期実行を全廃しイベント駆動化（永久ルール）
+
+- 永久ルール (WW-EVENT): サーバー負荷対策のため、サイト全体で cron / 定期実行 / 常駐 polling / `setInterval` worker / pg_cron / Coolify Scheduled Task / systemd timer を新設しない。同期・監視・ジョブ起動は webhook / DB event・realtime / queue enqueue / GitHub push / ユーザー操作などのイベント駆動にする。UI animation や単発 timeout/retry は対象外。
+- 主因: Next.js コンテナが起動時から常駐 setInterval ループ（enrichment 10s + watchdog 60s で Twenty pull・report 再生成・DB スキャン）を回しオリジン過負荷(521/522/524)。→ 常駐ループ全廃（instrumentation no-op / enrichment-worker・watchdog は one-shot drain / `/api/sales/pipeline/recover` 起点 / rate-limit は遅延 sweep / SSE は Supabase Realtime）。上流コミット 913175a と統合済み。
+- 本セッションの net-new（上流が未対応の分）:
+  - `trigger/sales-os.ts`【本命】: Trigger.dev が現役オーケストレータ（`migration_040`/`053`: `replaces n8n` / `primary_orchestrator`）。その `schedules.task`（`* * * * *` / `*/5`）= 唯一の現役 cron を非スケジュール `task`（イベント起動）へ変換。`schedules` import 削除。
+  - `n8n-workflows/02,03`【レガシー】: n8n は Trigger.dev に置換済み・src から呼び出し無しの非稼働成果物。整合のため `scheduleTrigger`→`webhook` 化したが live runtime ではない（再 import 不要）。
+  - `supabase/migration_044_abolish_pg_cron_event_driven.sql`: pg_cron 全ジョブを unschedule（冪等・pg_cron 不在でも安全）。`migration_013` の cron 再作成は no-op 化（上流と統合）。
+- 残作業（外部操作要）:
+  1. `migration_044` を本番 Supabase に適用し `SELECT * FROM cron.job;` = 0 行を確認。
+  2. Trigger.dev: 旧 `twent-sync-cron` / `sales-report-regenerator` の schedule 登録が cloud に残っていれば削除（コードは非スケジュール化済み）。Notion 同期は Notion webhook → `/api/sales/sync-*-from-notion`、パイプライン維持は `/api/sales/pipeline/recover` で event 駆動。
+  3. n8n は decommission 済み前提。もし live n8n インスタンスが schedule trigger を回していれば停止（コード/CRM 上は非依存）。
+- 検証: `tsc --noEmit` クリーン / 変更スクリプト `node --check` OK / n8n JSON parse OK。
+
+
 
 - 2026-06-20 追加監査: OpenCode が古い `coolify.appexx.me` を参照する原因は、OpenCode 本体の共通ルール未読込ではなく、dotfiles SSOT 配下の MCP/API registry・運用 runbook・同期対象漏れに古い Coolify/DigitalOcean 情報が残っていたこと。正本は `https://coolify.paradigmjp.com`、Hetzner は `paradigm-prod-01` / server id `142222420` / `178.105.138.55`。
 - dotfiles 側で `sync.sh pull` に OpenCode global config 配布を追加し、macOS LaunchAgent `com.paradigm.agent-context-sync` を導入。dotfiles SSOT の AGENTS/CLAUDE/MCP/OpenCode/AI rules 変更はローカル Claude/Codex/OpenCode/Cline/Cursor/Windsurf/Antigravity へ自動反映される。

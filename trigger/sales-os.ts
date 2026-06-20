@@ -1,4 +1,4 @@
-import { logger, task, schedules } from "@trigger.dev/sdk/v3"
+import { logger, task } from "@trigger.dev/sdk/v3"
 import { z } from "zod"
 
 import { runEnrichmentJobs } from "../src/lib/sales/enrichment-jobs"
@@ -251,9 +251,8 @@ export const salesVideoPipelineTask = task({
  * When new companies are found, automatically creates them in Supabase
  * and dispatches the Sales OS pipeline (enrichment → report → video).
  */
-export const twentySyncCron = schedules.task({
+export const twentySyncCron = task({
   id: "twenty-sync-cron",
-  cron: "* * * * *", // Every 1 minute — near real-time Twenty sync
   maxDuration: 180,
   run: async () => {
     logger.info("Twenty CRM scheduled sync starting")
@@ -277,9 +276,8 @@ export const twentySyncCron = schedules.task({
  * Runs every 5 minutes. Scans for companies with report_generated_at IS NULL
  * (set by DB trigger when relevant fields change) and regenerates their reports.
  */
-export const salesReportRegeneratorTask = schedules.task({
+export const salesReportRegeneratorTask = task({
   id: "sales-report-regenerator",
-  cron: "*/5 * * * *", // Every 5 minutes
   maxDuration: 300,
   run: async () => {
     const { getServiceSalesSupabase } = await import("../src/lib/supabase")
