@@ -1,22 +1,26 @@
 ﻿"use client"
 
 import { motion } from "framer-motion"
-import { AlertTriangle, ArrowDown, ArrowUp, Building2, MapPin, Search, Shield, TrendingDown, TrendingUp, Zap } from "lucide-react"
+import { AlertTriangle, MapPin, Search, Shield, TrendingUp, Zap } from "lucide-react"
 import type { DiagnosticReportData } from "@/lib/sales/diagnostic"
 
-// ─── Competitor comparison table ────────────────────────────
+// ─── Industry benchmark comparison (data-driven, no fabricated competitors) ──
 export function CompetitorComparison({ data, lang }: { data: DiagnosticReportData; lang: string }) {
-  // Simulated competitor data (in production, this comes from browser search + enrichment)
-  const competitors = [
-    { name: lang === "ja" ? "御社" : "Your site", speed: Number(data.acts.find(a => a.icon === "SPEED")?.metric_value) || 38, ssl: "B", ogp: "✗", isYou: true },
-    { name: lang === "ja" ? "近隣競合A" : "Competitor A", speed: 72, ssl: "A+", ogp: "✓", isYou: false },
-    { name: lang === "ja" ? "近隣競合B" : "Competitor B", speed: 68, ssl: "A", ogp: "✓", isYou: false },
-    { name: lang === "ja" ? "近隣競合C" : "Competitor C", speed: 81, ssl: "A+", ogp: "✓", isYou: false },
-  ]
+  const isJa = lang === "ja"
+  const speedAct = data.acts.find(a => a.icon === "SPEED")
+  const yourSpeed = Number(speedAct?.metric_value)
+  const benchNum = Number(String(speedAct?.metric_bench ?? "").replace(/[^0-9.]/g, ""))
+  const industryTarget = Number.isFinite(benchNum) && benchNum > 0 ? Math.round(benchNum) : null
 
-  const yourSpeed = competitors.find(c => c.isYou)?.speed ?? 0
-  const avgCompetitorSpeed = Math.round(competitors.filter(c => !c.isYou).reduce((s, c) => s + c.speed, 0) / 3)
-  const speedGap = avgCompetitorSpeed - yourSpeed
+  // 実データ（実測スコア + ベンチマーク）が無い場合は数値を捏造せずセクション非表示
+  if (!Number.isFinite(yourSpeed) || industryTarget === null) return null
+
+  const gap = Math.max(0, industryTarget - yourSpeed)
+  const maxVal = Math.max(100, yourSpeed, industryTarget)
+  const rows = [
+    { label: isJa ? "御社サイト" : "Your site", value: yourSpeed, isYou: true },
+    { label: isJa ? "業界の目安水準" : "Industry target", value: industryTarget, isYou: false },
+  ]
 
   return (
     <section className="px-5 py-14 bg-gradient-to-b from-rose-50 to-white border-t border-rose-100">
@@ -30,90 +34,64 @@ export function CompetitorComparison({ data, lang }: { data: DiagnosticReportDat
         >
           <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-700 mb-4">
             <AlertTriangle className="h-3 w-3" />
-            {lang === "ja" ? "競合はもう対策済み" : "Competitors already fixed this"}
+            {gap > 0
+              ? (isJa ? "業界の目安に届いていません" : "Below the industry target")
+              : (isJa ? "業界の目安水準を満たしています" : "Meets the industry target")}
           </span>
           <h2 className="text-2xl font-bold text-zinc-900">
-            {lang === "ja"
-              ? `御社だけが取り残されています — 競合平均より${speedGap}点も低いPageSpeed`
-              : `You're being left behind — ${speedGap}pts below competitor average`}
+            {gap > 0
+              ? (isJa
+                ? `PageSpeedが業界の目安より${gap}点低い状態です`
+                : `Your PageSpeed is ${gap} pts below the industry target`)
+              : (isJa
+                ? "PageSpeedは業界の目安水準に達しています"
+                : "Your PageSpeed meets the industry target")}
           </h2>
           <p className="mt-3 text-sm text-zinc-500 max-w-2xl mx-auto">
-            {lang === "ja"
-              ? `近隣の同業3社はすでにサイト改善済み。御社だけが遅れていることで、検索流入と予約問い合わせの${Math.round(speedGap * 1.5)}%を競合に奪われている計算です。`
-              : `3 nearby competitors have already improved their sites. Your delay is costing you ~${Math.round(speedGap * 1.5)}% of search traffic and inquiries — going to them instead.`}
+            {isJa
+              ? "表示速度の遅れは検索評価と離脱率に直結します。"
+              : "Slow page speed directly impacts search ranking and bounce rate."}
+            {speedAct?.metric_bench ? `（${speedAct.metric_bench}）` : null}
           </p>
         </motion.div>
 
-        {/* Comparison table */}
-        <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-zinc-50 text-xs text-zinc-500">
-              <tr>
-                <th className="px-4 py-3 font-medium">{lang === "ja" ? "企業" : "Company"}</th>
-                <th className="px-4 py-3 font-medium">PageSpeed</th>
-                <th className="px-4 py-3 font-medium">SSL</th>
-                <th className="px-4 py-3 font-medium">OGP</th>
-                <th className="px-4 py-3 font-medium">{lang === "ja" ? "検索順位(推定)" : "Est. Rank"}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {competitors.map((comp, i) => (
-                <motion.tr
-                  key={comp.name}
-                  initial={{ opacity: 0, x: -10 }}
-                  whileInView={{ opacity: 1, x: 0 }}
+        {/* Real vs target benchmark bars */}
+        <div className="mx-auto max-w-2xl space-y-5 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+          {rows.map((row, i) => (
+            <motion.div
+              key={row.label}
+              initial={{ opacity: 0, x: -10 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+            >
+              <div className="mb-1.5 flex items-center justify-between text-sm">
+                <span className="flex items-center gap-2 font-medium text-zinc-700">
+                  {row.isYou && <span className="flex h-5 w-5 items-center justify-center rounded bg-rose-500 text-[9px] font-bold text-white">YOU</span>}
+                  {row.label}
+                </span>
+                <span className={`font-bold tabular-nums ${row.isYou ? (row.value < 50 ? "text-rose-600" : row.value < 70 ? "text-amber-600" : "text-emerald-600") : "text-zinc-500"}`}>
+                  {row.value}/100
+                </span>
+              </div>
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-zinc-100">
+                <motion.div
+                  className={`h-full rounded-full ${row.isYou ? "bg-rose-500" : "bg-zinc-400"}`}
+                  initial={{ width: 0 }}
+                  whileInView={{ width: `${Math.min(100, (row.value / maxVal) * 100)}%` }}
                   viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  className={`${comp.isYou ? "bg-rose-50 font-bold" : "hover:bg-zinc-50"}`}
-                >
-                  <td className="px-4 py-3">
-                    <span className="flex items-center gap-2">
-                      {comp.isYou && <span className="flex h-5 w-5 items-center justify-center rounded bg-rose-500 text-[9px] font-bold text-white">YOU</span>}
-                      {comp.name}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <span className={comp.speed < 50 ? "text-rose-600" : comp.speed < 70 ? "text-amber-600" : "text-emerald-600"}>
-                        {comp.speed}/100
-                      </span>
-                      {!comp.isYou && (
-                        <span className="text-[10px] text-rose-500">
-                          <ArrowUp className="inline h-3 w-3" />+{comp.speed - yourSpeed}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-bold ${
-                      comp.ssl.startsWith("A") ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
-                    }`}>{comp.ssl}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={comp.ogp === "✓" ? "text-emerald-600" : "text-rose-600"}>{comp.ogp}</span>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-zinc-500">
-                    {comp.isYou ? (lang === "ja" ? "圏外" : "N/A") : `#${i * 2 + 1}`}
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
+                  transition={{ duration: 0.9, delay: 0.2 + i * 0.1 }}
+                />
+              </div>
+            </motion.div>
+          ))}
         </div>
 
-        {/* Call to action */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mt-6 text-center"
-        >
-          <p className="text-sm text-zinc-600 mb-3">
-            {lang === "ja"
-              ? `御社のPageSpeedを${avgCompetitorSpeed}点以上に改善すれば、競合に流出している検索流入を取り戻せます。`
-              : `Improve your PageSpeed to ${avgCompetitorSpeed}+ and reclaim search traffic currently going to competitors.`}
-          </p>
-        </motion.div>
+        <p className="mt-6 text-center text-[10px] text-zinc-400">
+          {isJa
+            ? "※業界の目安水準は一般的なベンチマークに基づく参考値です。実測値は御社サイトの計測結果です。"
+            : "Industry target is a general benchmark reference; your score is measured from your live site."}
+        </p>
       </div>
     </section>
   )
@@ -121,11 +99,14 @@ export function CompetitorComparison({ data, lang }: { data: DiagnosticReportDat
 
 // ─── "Your site in 5 seconds" visual breakdown ──────────────
 export function FiveSecondAudit({ data, lang }: { data: DiagnosticReportData; lang: string }) {
+  const speedVal = Number(data.acts.find(a => a.icon === "SPEED")?.metric_value) || 0
+  const hasTrustIssue = data.acts.some(a => a.icon === "TRUST")
+  const hasSocialIssue = data.acts.some(a => a.icon === "SNS")
   const issues = [
-    { icon: Zap, label: lang === "ja" ? "読み込み速度" : "Load speed", fail: (Number(data.acts.find(a => a.icon === "SPEED")?.metric_value) || 0) < 70, detail: lang === "ja" ? "3秒以上かかると53%が離脱" : "53% leave if >3 seconds" },
-    { icon: Shield, label: lang === "ja" ? "セキュリティ表示" : "Security display", fail: true, detail: lang === "ja" ? "「保護なし」警告で信頼低下" : "'Not Secure' warning hurts trust" },
-    { icon: Search, label: lang === "ja" ? "SNSプレビュー" : "Social preview", fail: true, detail: lang === "ja" ? "共有時に文字化け" : "Garbled when shared" },
-    { icon: MapPin, label: lang === "ja" ? "モバイル表示" : "Mobile display", fail: (Number(data.acts.find(a => a.icon === "SPEED")?.metric_value) || 0) < 60, detail: lang === "ja" ? "スマホで崩れる" : "Broken on mobile" },
+    { icon: Zap, label: lang === "ja" ? "読み込み速度" : "Load speed", fail: speedVal > 0 && speedVal < 70, detail: lang === "ja" ? "3秒以上かかると53%が離脱" : "53% leave if >3 seconds" },
+    { icon: Shield, label: lang === "ja" ? "セキュリティ表示" : "Security display", fail: hasTrustIssue, detail: lang === "ja" ? "「保護なし」警告で信頼低下" : "'Not Secure' warning hurts trust" },
+    { icon: Search, label: lang === "ja" ? "SNSプレビュー" : "Social preview", fail: hasSocialIssue, detail: lang === "ja" ? "共有時に文字化け" : "Garbled when shared" },
+    { icon: MapPin, label: lang === "ja" ? "モバイル表示" : "Mobile display", fail: speedVal > 0 && speedVal < 60, detail: lang === "ja" ? "スマホで崩れる" : "Broken on mobile" },
   ]
 
   const failCount = issues.filter(i => i.fail).length
@@ -221,8 +202,8 @@ export function SaviorPositioning({ data, lang }: { data: DiagnosticReportData; 
               {lang === "ja" ? "弊社のソリューション" : "Our solution"}
             </h3>
             {[
-              { label: lang === "ja" ? "PageSpeed改善" : "PageSpeed fix", detail: lang === "ja" ? "Astro移行で85点以上を保証" : "Astro migration guarantees 85+", icon: "✓" },
-              { label: lang === "ja" ? "SSL/HSTS対応" : "SSL/HSTS", detail: lang === "ja" ? "A+グレード + HSTS Preload" : "A+ grade + HSTS Preload", icon: "✓" },
+              { label: lang === "ja" ? "PageSpeed改善" : "PageSpeed fix", detail: lang === "ja" ? "Astro移行で85点以上を目標に最適化" : "Astro migration targeting 85+", icon: "✓" },
+              { label: lang === "ja" ? "SSL/HSTS対応" : "SSL/HSTS", detail: lang === "ja" ? "A+グレードを目標に設定 + HSTS Preload" : "Targeting A+ grade + HSTS Preload", icon: "✓" },
               { label: lang === "ja" ? "OGP/SNS最適化" : "OGP/Social", detail: lang === "ja" ? "全ページにOGP自動設定" : "Auto-OGP on all pages", icon: "✓" },
               { label: hasDemo ? (lang === "ja" ? "改善デモ公開" : "Demo site live") : (lang === "ja" ? "改善デモ作成" : "Demo site creation"), detail: hasDemo ? (lang === "ja" ? "すでに公開済み・URLあり" : "Already live at demo URL") : (lang === "ja" ? "即日作成・公開" : "Same-day creation"), icon: "✓" },
             ].map((item, i) => (

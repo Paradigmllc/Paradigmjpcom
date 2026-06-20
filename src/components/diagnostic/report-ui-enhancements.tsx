@@ -45,6 +45,7 @@ export function BackToTop({ isDark }: { isDark?: boolean }) {
       initial={{ opacity: 0, scale: 0.5 }}
       animate={{ opacity: 1, scale: 1 }}
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      aria-label="Back to top"
       className={`fixed bottom-24 right-6 z-40 flex h-10 w-10 items-center justify-center rounded-full shadow-lg transition-colors ${
         isDark ? "bg-zinc-700 text-zinc-200 hover:bg-zinc-600" : "bg-white text-zinc-600 hover:bg-zinc-100 border border-zinc-200"
       }`}

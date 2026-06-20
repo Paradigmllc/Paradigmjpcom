@@ -41,18 +41,27 @@ export function ReportHeader({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setIsDark(!isDark)} className={`p-1.5 rounded-md ${isDark ? "text-zinc-400 hover:text-white" : "text-zinc-500 hover:text-zinc-900"}`} title={isDark ? "ライト" : "ダーク"}>
+          <button
+            onClick={() => setIsDark(!isDark)}
+            aria-label={isDark ? (lang === "ja" ? "ライトモードに切り替え" : "Switch to light mode") : (lang === "ja" ? "ダークモードに切り替え" : "Switch to dark mode")}
+            aria-pressed={isDark}
+            className={`p-1.5 rounded-md ${isDark ? "text-zinc-400 hover:text-white" : "text-zinc-500 hover:text-zinc-900"}`}
+            title={isDark ? "ライト" : "ダーク"}
+          >
             {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
           <ShareReport url="" title="" lang={lang} />
           <div className="relative">
             <button onClick={() => setActionOpen(!actionOpen)}
+              aria-haspopup="menu"
+              aria-expanded={actionOpen}
+              aria-label={lang === "ja" ? "お問い合わせメニュー" : "Contact menu"}
               className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-bold transition-colors ${isDark ? "bg-zinc-800 text-white hover:bg-zinc-700" : "bg-zinc-900 text-white hover:bg-zinc-800"}`}>
               <MessageCircle className="h-3 w-3" />{lang === "ja" ? "お問い合わせ" : "Contact"}
               <ChevronDown className={`h-3 w-3 transition-transform ${actionOpen ? "rotate-180" : ""}`} />
             </button>
             {actionOpen && (
-              <div className={`absolute right-0 top-full mt-1 w-48 rounded-lg border py-1 shadow-lg z-50 ${isDark ? "bg-zinc-800 border-zinc-700" : "bg-white border-zinc-200"}`}>
+              <div role="menu" aria-label={lang === "ja" ? "お問い合わせメニュー" : "Contact menu"} className={`absolute right-0 top-full mt-1 w-48 rounded-lg border py-1 shadow-lg z-50 ${isDark ? "bg-zinc-800 border-zinc-700" : "bg-white border-zinc-200"}`}>
                 <a href={calHref} target="_blank" rel="noopener noreferrer" onClick={() => setActionOpen(false)}
                   className={`flex items-center gap-2 px-3 py-2 text-xs hover:bg-zinc-50 ${isDark ? "text-zinc-200 hover:bg-zinc-700" : "text-zinc-700"}`}>
                   📅 {lang === "ja" ? "無料相談を予約" : "Book Free Consult"}

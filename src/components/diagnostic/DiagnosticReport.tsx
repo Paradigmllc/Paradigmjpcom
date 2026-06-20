@@ -1,8 +1,8 @@
 ﻿"use client"
 
 import { LineChart } from "lucide-react"
+import { MotionConfig } from "framer-motion"
 import { useState } from "react"
-import Link from "next/link"
 import dynamic from "next/dynamic"
 import type { DiagnosticReportData } from "@/lib/sales/diagnostic"
 import { signalScore } from "@/lib/sales/company-intelligence"
@@ -11,9 +11,9 @@ import { localizeReportIntelligence, reportEvidenceText, sourceCategoryLabel, so
 import { REPORT_COPY, normalizeReportLang, type ReportLang } from "./report-copy"
 import { getReportOfferCopy } from "./report-offer-copy"
 import { cleanText, formatMoney, numericValue, reportTitle, Pill, Stat } from "./report-utils"
-import { SlideInSection, StaggeredFadeIn } from "./ReportAnimations"
+import { SlideInSection } from "./ReportAnimations"
 import { ReportExecutiveSummary } from "./ReportExecutiveSummary"
-import { LossImpactBar, SourceCoverageRadar, CompetitorBenchmarkChart, TimelineChart, type BenchmarkItem, type LossImpactItem, type TimelinePoint } from "./ReportCharts"
+import { LossImpactBar, CompetitorBenchmarkChart, type BenchmarkItem, type LossImpactItem, type TimelinePoint } from "./ReportCharts"
 import { getVariantLayout } from "./report-section-config"
 import { VariantSection } from "./report-variant-sections"
 import { ReportFaqSection } from "./ReportFaqSection"
@@ -26,8 +26,7 @@ import ReportHeroSection from "./ReportHeroSection"
 import ReportDarkSurface from "./ReportDarkSurface"
 import ReportFindingCard from "./ReportFindingCard"
 import ReportPainCard from "./ReportPainCard"
-import ReportSignalCard from "./ReportSignalCard"
-import ReportSourceRow from "./ReportSourceRow"
+import { ReportAppendixSections, ReportFooter } from "./ReportAppendixSections"
 import ReportFinalCta from "./ReportFinalCta"
 import ReportRequestModal from "./ReportRequestModal"
 import ReportFindingsSection from "./ReportFindingsSection"
@@ -98,10 +97,12 @@ export default function DiagnosticReport({
       const n = numericValue(act.metric_value)
       const maxVal = 100
       const yourScore = Math.min(100, Math.max(0, (n / maxVal) * 100))
+      const benchN = Number(String(act.metric_bench ?? "").replace(/[^0-9.]/g, ""))
+      const industryAvg = Number.isFinite(benchN) && benchN > 0 ? Math.min(100, benchN) : 70
       return {
         label: cleanText(act.metric_label, copy.evidence).slice(0, 20),
         yourScore,
-        industryAvg: 70,
+        industryAvg,
       }
     })
 
@@ -142,6 +143,7 @@ export default function DiagnosticReport({
   const isProjection = lang === "ja" ? "※改善しない場合の推定値" : "Projection if unaddressed"
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className={[
       "relative",
       isDark ? "bg-zinc-950 text-white" : "bg-[#fbfaf7] text-zinc-950",
@@ -372,66 +374,20 @@ export default function DiagnosticReport({
           </div>
         </section>
 
-        {/* ── Source Coverage Radar ─────────────────────────── */}
-        {radarItems.length > 1 && (
-          <SlideInSection direction="up" className="px-5 py-10">
-            <div className="mx-auto max-w-6xl">
-              <h3 className="text-lg font-semibold text-slate-800 mb-1">
-                {lang === "ja" ? "ソースカバレッジ（カテゴリ別）" : "Source Coverage by Category"}
-              </h3>
-              <p className="text-sm text-slate-500 mb-4">
-                {lang === "ja" ? "各データカテゴリのカバレッジスコア分布" : "Coverage score distribution across data categories"}
-              </p>
-              <SourceCoverageRadar items={radarItems} />
-            </div>
-          </SlideInSection>
-        )}
-
-        {/* ── Timeline Forecast ─────────────────────────────── */}
-        <SlideInSection direction="up" className="px-5 pb-10">
-          <div className="mx-auto max-w-6xl">
-            <h3 className="text-lg font-semibold text-slate-800 mb-1">
-              {lang === "ja" ? "損失予測" : "Loss Forecast"}
-            </h3>
-            <p className="text-sm text-slate-500 mb-4">
-              {lang === "ja" ? "現状維持の場合の月間損失推移と競合との差" : "Monthly loss trajectory and competitor gap"}
-            </p>
-            <TimelineChart points={timelineItems} lang={lang} />
-            <p className="mt-2 text-[10px] text-slate-400 text-center">{isProjection}</p>
-          </div>
-        </SlideInSection>
-
-        {/* ── Evidence / Data Appendix ──────────────────────── */}
-        <section className="px-5 py-14">
-          <div className="mx-auto max-w-6xl">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <SlideInSection direction="left">
-                <div>
-                  <Pill tone="neutral">{copy.evidence}</Pill>
-                  <h2 className="mt-5 text-3xl font-semibold text-zinc-950">
-                    {copy.dataAppendix}
-                  </h2>
-                </div>
-              </SlideInSection>
-              <div className="text-sm text-zinc-500">
-                {data.source_coverage.collected} / {data.source_coverage.configured} /{" "}
-                {data.source_coverage.missing}
-              </div>
-            </div>
-            <StaggeredFadeIn delay={0.1} stagger={0.05} className="mt-7 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {intelligence.signals
-                .slice(0, 9)
-                .map((signal) => (
-                  <ReportSignalCard key={signal.id} signal={signal} copy={copy} lang={lang} />
-                ))}
-            </StaggeredFadeIn>
-            <div className="mt-8 grid gap-0 rounded-lg border border-zinc-200 bg-white shadow-sm md:grid-cols-2 lg:grid-cols-3">
-              {visibleSources.map((item) => (
-                <ReportSourceRow key={item.slug} item={item} copy={copy} lang={lang} />
-              ))}
-            </div>
-          </div>
-        </section>
+        <ReportAppendixSections
+          radarItems={radarItems}
+          timelineItems={timelineItems}
+          isProjection={isProjection}
+          copy={copy}
+          lang={lang}
+          sourceSummary={{
+            collected: data.source_coverage.collected,
+            configured: data.source_coverage.configured,
+            missing: data.source_coverage.missing,
+          }}
+          signals={intelligence.signals}
+          sources={visibleSources}
+        />
 
         {/* ── FAQ ───────────────────────────────────────────── */}
         <ReportFaqSection
@@ -458,19 +414,7 @@ export default function DiagnosticReport({
       <img src={`/api/sales/track-view?slug=${encodeURIComponent(trackingSlug || "")}&event=ab_test&variant=${encodeURIComponent(data.template_variant)}&industry=${encodeURIComponent(data.industry || "")}`} alt="" width={1} height={1} className="hidden" />
 
       {/* ── Footer ── */}
-      <footer className={`border-t px-5 py-8 mt-10 ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"}`}>
-        <div className="mx-auto max-w-6xl flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className={`text-xs ${isDark ? "text-zinc-500" : "text-zinc-400"}`}>
-            © {new Date().getFullYear()} Paradigm LLC. {lang === "ja" ? "無断転載禁止" : "All rights reserved."}
-          </div>
-          <div className="flex items-center gap-4 text-xs">
-            <Link href="/ja" className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>Paradigm HP</Link>
-            <Link href="/ja/agency" className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>{lang === "ja" ? "制作事例" : "Works"}</Link>
-            <Link href="/ja/video" className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>{lang === "ja" ? "動画制作" : "Video"}</Link>
-            <a href={calHref} target="_blank" rel="noopener noreferrer" className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>{lang === "ja" ? "無料相談" : "Free Consult"}</a>
-          </div>
-        </div>
-      </footer>
+      <ReportFooter isDark={isDark} lang={lang} calHref={calHref} />
       <BackToTop />
 
       {/* ── 資料請求 Modal ── */}
@@ -484,5 +428,6 @@ export default function DiagnosticReport({
       <style>{PRINT_CSS}</style>
       <DifyChatbot locale={localeContentVariant(locale ?? data.report_locale as string)} />
     </div>
+    </MotionConfig>
   )
 }

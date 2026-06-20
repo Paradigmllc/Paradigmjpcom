@@ -83,20 +83,10 @@ export async function fetchDiagnosticReport(opts: {
         : null
   if (!company) return null
 
-  // Skip regeneration if report is fresh (within REPORT_REGENERATE_MAX_AGE_DAYS, default 7)
-  // NOTE: fresh reports still return data — the freshness check only gates costly regeneration,
-  // not the report display. Returning null here caused 404s for valid recently-generated reports.
-  const regenerate =
-    opts.forceRegenerate ||
-    !company.report_generated_at ||
-    (() => {
-      const maxAgeDays = parseInt(process.env.REPORT_REGENERATE_MAX_AGE_DAYS ?? "7", 10) || 7
-      const reportAge = Date.now() - new Date(company.report_generated_at).getTime()
-      return reportAge >= maxAgeDays * 24 * 60 * 60 * 1000
-    })()
-  if (!regenerate) {
-    // report is fresh, using cached data
-  }
+  // Report freshness/regeneration is handled out-of-band (markReportGenerated +
+  // external cron). This fetch always returns the latest persisted data so that
+  // recently-generated reports never 404. REPORT_REGENERATE_MAX_AGE_DAYS and
+  // opts.forceRegenerate are consumed by the regeneration job, not the display path.
 
   const routing = getRoutingMeta(company.meta)
   const reportLocale = normalizeReportLocale(opts.reportLocale ?? company.report_locale ?? routing.report_locale, region)
