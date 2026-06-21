@@ -4,14 +4,12 @@ import type { NextRequest } from "next/server";
 export function middleware(request: NextRequest) {
   const host = request.headers.get("host") || "";
 
-  // status.paradigmjp.com → proxy to infra dashboard on host
   if (host.startsWith("status.")) {
     try {
-      const url = new URL(request.url);
-      url.protocol = "http:";
-      url.hostname = "host.docker.internal";
-      url.port = "9877";
-      return NextResponse.rewrite(url);
+      // Docker gateway IP — always reaches the host
+      return NextResponse.rewrite(
+        new URL(request.nextUrl.pathname + request.nextUrl.search, "http://172.17.0.1:9877")
+      );
     } catch {
       return new NextResponse("Dashboard unavailable", { status: 502 });
     }
