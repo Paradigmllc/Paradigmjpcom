@@ -1,53 +1,23 @@
-/**
- * src/middleware.ts — locale routing + noindex header for archived report URLs
- */
-import { NextRequest, NextResponse } from "next/server"
-import createMiddleware from "next-intl/middleware"
-import { routing } from "./i18n/routing"
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-const intlMiddleware = createMiddleware(routing)
+export const runtime = "nodejs";
 
-const NOINDEX_PATTERN = /^\/(?:[a-z]{2}\/)?(?:report|p|diagnostic)(?:\/|$)/i
-const NOINDEX_VALUE = "noindex, nofollow, noarchive, nosnippet, noimageindex"
-const KEYSTATIC_HOSTS = new Set(["keystatic.paradigmjp.com"])
+export function middleware(request: NextRequest) {
+  const host = request.headers.get("host") || "";
 
-function resolveHostname(request: NextRequest): string {
-  const forwardedHost = request.headers.get("x-forwarded-host")
-  const host = forwardedHost || request.headers.get("host") || ""
-  return host.split(",")[0]?.split(":")[0]?.trim().toLowerCase() ?? ""
-}
-
-function rewriteKeystaticSubdomain(request: NextRequest): NextResponse | null {
-  const hostname = resolveHostname(request)
-  if (!KEYSTATIC_HOSTS.has(hostname)) return null
-  const url = request.nextUrl.clone()
-  if (url.pathname === "/" || url.pathname === "") {
-    url.pathname = "/keystatic"
-    return NextResponse.redirect(url)
-  }
-  if (!url.pathname.startsWith("/keystatic")) {
-    url.pathname = `/keystatic${url.pathname}`
-    return NextResponse.redirect(url)
-  }
-  return NextResponse.next()
-}
-
-export default async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-  const keystaticRewrite = rewriteKeystaticSubdomain(request)
-  if (keystaticRewrite) return keystaticRewrite
-
-  const response = intlMiddleware(request)
-
-  if (NOINDEX_PATTERN.test(pathname)) {
-    response.headers.set("X-Robots-Tag", NOINDEX_VALUE)
+  // status.paradigmjp.com → proxy to local dashboard server
+  if (host.startsWith("status.")) {
+    const url = new URL(request.url);
+    url.protocol = "http:";
+    url.hostname = "localhost";
+    url.port = "9877";
+    return NextResponse.rewrite(url);
   }
 
-  return response
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    "/((?!api|admin|_next|_vercel|icon|apple-icon|opengraph-image|sitemap\\.xml|robots\\.txt|manifest\\.webmanifest|favicon|.*\\..*).*)",
-  ],
-}
+  matcher: "/((?!_next|api|static|favicon).*)",
+};
