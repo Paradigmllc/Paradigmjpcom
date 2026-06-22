@@ -377,7 +377,7 @@ export function getIndustryProfile(code: IndustryCode | string | null): Industry
 
 /** 業種の構造的課題をランダムに N 件取得（文面に織り込むため） */
 export function pickStructuralChallenges(profile: IndustryProfile, count: number, lang: "ja" | "en"): string[] {
-  const pool = lang === "ja" ? profile.structuralChallenges.ja : profile.structuralChallenges.en
+  const pool = lang === "ja" ? (profile.structuralChallenges?.ja ?? '') : (profile.structuralChallenges?.en ?? '')
   const shuffled = [...pool].sort(() => Math.random() - 0.5)
   return shuffled.slice(0, count)
 }

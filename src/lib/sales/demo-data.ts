@@ -179,7 +179,7 @@ const VARIANT_DEMO_DATA: Record<string, VariantDemoData> = {
 
 function localeStr(value: string | { ja: string; en: string }, lang: string): string {
   if (typeof value === "string") return value
-  return lang === "ja" ? value.ja : value.en
+  return lang === "ja" ? (value?.ja ?? "") : (value?.en ?? "")
 }
 
 export function buildDemoData(variant: string, lang: string): DiagnosticReportData {
