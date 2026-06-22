@@ -89,7 +89,7 @@ async function restartStalePassiveInventoryRuns(): Promise<number> {
 }
 
 async function tick(options: SalesPipelineEventDrainOptions = {}): Promise<SalesPipelineEventDrainResult> {
-  const enrichmentLimit = Math.max(1, Math.min(Math.round(options.enrichmentLimit ?? 3), 10))
+  const enrichmentLimit = Math.max(1, Math.min(Math.round(options.enrichmentLimit ?? 50), 100))
   const enrichment = await runEnrichmentEventDrain(enrichmentLimit)
   let restarted = 0
   let restartedPassive = 0

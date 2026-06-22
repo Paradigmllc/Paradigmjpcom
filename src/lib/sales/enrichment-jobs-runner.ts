@@ -269,7 +269,7 @@ export async function runEnrichmentJobs(limit = 3): Promise<EnrichmentRunResult>
     return { ok: false, processed: 0, completed: 0, failed: 0, errors: ["Supabase service_role not configured"] }
   }
 
-  const safeLimit = Math.max(1, Math.min(limit, 10))
+  const safeLimit = Math.max(1, Math.min(limit, 100))
   const runnerId = `next-${process.pid}-${Date.now()}`
   await recoverStaleEnrichmentJobs(safeLimit)
   const jobs = await fetchQueuedJobs(sb, safeLimit)

@@ -4,7 +4,7 @@ import { runSalesPipelineEventDrain } from "@/lib/sales/sales-pipeline-watchdog"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
-export const maxDuration = 120
+export const maxDuration = 300
 
 interface PipelineTickBody {
   enrichment_limit?: number

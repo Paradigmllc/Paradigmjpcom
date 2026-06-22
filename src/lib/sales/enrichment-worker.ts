@@ -3,7 +3,7 @@ import { pullTwentyCompaniesToSupabase } from "./twenty-pull"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 
-const DRAIN_BATCH_SIZE = 10
+const DRAIN_BATCH_SIZE = 100
 
 export async function runEnrichmentEventDrain(limit = DRAIN_BATCH_SIZE): Promise<EnrichmentRunResult> {
   const safeLimit = Math.max(1, Math.min(Math.round(limit), DRAIN_BATCH_SIZE))
