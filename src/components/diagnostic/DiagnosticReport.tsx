@@ -1,4 +1,5 @@
 ﻿"use client"
+// force chunk rebuild 2026-06-22
 
 import { LineChart } from "lucide-react"
 import { MotionConfig } from "framer-motion"
