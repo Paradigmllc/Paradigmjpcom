@@ -450,13 +450,18 @@ function runDbTableVerification(envs) {
     return
   }
   console.log("DB table verification: running...")
+  const timeoutMs = Number.parseInt(process.env.RELEASE_DB_VERIFY_TIMEOUT_MS || "120000", 10)
   const result = spawnSync(process.execPath, ["scripts/verify-db-tables.mjs"], {
     cwd: process.cwd(),
     env: { ...process.env, ...envs },
     encoding: "utf8",
+    timeout: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 120000,
   })
   const output = `${result.stdout || ""}${result.stderr || ""}`.trim()
   if (output) console.log(output)
+  if (result.error) {
+    throw new Error(`DB table verification failed before completion: ${result.error.message}`)
+  }
   if (result.status !== 0) {
     throw new Error("DB table verification failed; refusing deployment")
   } else {
