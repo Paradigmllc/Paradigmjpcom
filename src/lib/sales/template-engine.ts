@@ -121,7 +121,7 @@ ${input.prefecture ? `- 所在: ${input.prefecture}` : ""}
 ${challenges.map((c) => `- ${c}`).join("\n")}
 
 # 検出課題: ${issue.labelJa}
-- 技術説明: ${issue.technicalExplanation.ja}
+- 技術説明: ${issue.technicalExplanation?.ja ?? ''}
 - 現在値: ${benchmark ? `${benchmark.value}（${benchmark.interpretation}）` : "未測定"}
 ${input.pagespeedMobile != null ? `- PSI モバイル: ${input.pagespeedMobile}/100` : ""}
 ${input.pagespeedDesktop != null ? `- PSI デスクトップ: ${input.pagespeedDesktop}/100` : ""}
@@ -136,7 +136,7 @@ ${impacts.map((i) => `- ${i}`).join("\n")}
 - 12 ヶ月後: ${forecast.months12}
 
 # 損失試算コンテキスト
-${industry.lossContext.ja}
+${industry.lossContext?.ja ?? ''}
 
 # 参考テンプレ（あれば）
 ${input.existingTemplate?.headline ? `- 見出し案: ${input.existingTemplate.headline}` : ""}
@@ -153,7 +153,7 @@ ${input.prefecture ? `- Location: ${input.prefecture}` : ""}
 ${challenges.map((c) => `- ${c}`).join("\n")}
 
 # Detected Issue: ${issue.labelEn}
-- Technical: ${issue.technicalExplanation.en}
+- Technical: ${issue.technicalExplanation?.en ?? ''}
 - Current: ${benchmark ? `${benchmark.value} (${benchmark.interpretation})` : "not measured"}
 ${input.pagespeedMobile != null ? `- PSI Mobile: ${input.pagespeedMobile}/100` : ""}
 ${input.pagespeedDesktop != null ? `- PSI Desktop: ${input.pagespeedDesktop}/100` : ""}
@@ -168,7 +168,7 @@ ${impacts.map((i) => `- ${i}`).join("\n")}
 - 12 months: ${forecast.months12}
 
 # Loss Calculation Context
-${industry.lossContext.en}
+${industry.lossContext?.en ?? ''}
 
 # Reference Template (if any)
 ${input.existingTemplate?.headline ? `- Headline: ${input.existingTemplate.headline}` : ""}
