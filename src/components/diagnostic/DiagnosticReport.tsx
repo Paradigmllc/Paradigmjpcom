@@ -152,6 +152,24 @@ export default function DiagnosticReport({
   const isProjection = lang === "ja" ? "※改善しない場合の推定値" : "Projection if unaddressed"
 
   return (
+    <ErrorBoundary fallback={
+      <div className="flex min-h-[60vh] items-center justify-center bg-[#fbfaf7] dark:bg-zinc-950">
+        <div className="text-center px-5">
+          <p className="text-xl font-semibold text-zinc-800 dark:text-zinc-200 mb-2">
+            {lang === "ja" ? "レポートの読み込みに失敗しました" : "Failed to load report"}
+          </p>
+          <p className="text-sm text-zinc-500 mb-6">
+            {lang === "ja" ? "再読込で解決することがあります" : "Please try refreshing the page"}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors"
+          >
+            {lang === "ja" ? "再試行" : "Retry"}
+          </button>
+        </div>
+      </div>
+    }>
     <MotionConfig reducedMotion="user">
     <div className={[
       "relative",
@@ -221,7 +239,7 @@ export default function DiagnosticReport({
           const layout = getVariantLayout(safeData.template_variant)
           return layout.sections
             .filter((s) => !["hero", "stats", "executive_summary", "dark_surface", "benchmark", "findings", "loss_chart", "screenshot", "pain_points", "source_coverage", "timeline", "evidence", "faq", "cta"].includes(s.id))
-            .map((s) => <VariantSection key={s.id} sectionId={s.id} data={data} lang={lang} />)
+            .map((s) => <VariantSection key={s.id} sectionId={s.id} data={safeData} lang={lang} />)
         })()}
 
         {/* ── Stats Row ─────────────────────────────────────── */}
@@ -269,7 +287,7 @@ export default function DiagnosticReport({
         />
 
         {/* ── Score Overview ─────────────────────────────────── */}
-        <ReportScoreOverview data={data} lang={lang} confidence={confidence} sourceScore={sourceScore} />
+        <ReportScoreOverview data={safeData} lang={lang} confidence={confidence} sourceScore={sourceScore} />
 
         {/* ── Dark Diagnostic Surface ───────────────────────── */}
         <ReportDarkSurface
@@ -321,7 +339,7 @@ export default function DiagnosticReport({
         {displayScreenshotUrl && (
           <SlideInSection direction="right">
             <ReportVisualEvidenceShowcase
-              data={data}
+              data={safeData}
               screenshotUrl={displayScreenshotUrl}
               lang={lang}
               screenshotAlt={`${safeData.company_name} ${offerCopy.screenshotAlt}`}
@@ -431,12 +449,13 @@ export default function DiagnosticReport({
         isOpen={requestOpen}
         onClose={() => setRequestOpen(false)}
         lang={lang}
-        data={data}
+        data={safeData}
       />
 
       <style>{PRINT_CSS}</style>
       <DifyChatbot locale={localeContentVariant(locale ?? safeData.report_locale as string)} />
     </div>
     </MotionConfig>
+    </ErrorBoundary>
   )
 }
