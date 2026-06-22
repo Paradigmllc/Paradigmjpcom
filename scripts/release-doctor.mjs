@@ -22,6 +22,8 @@ const SKIP_REMOTE = args.has("--skip-remote") || process.env.RELEASE_DOCTOR_SKIP
 const BASE_URL = (process.env.RELEASE_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://paradigmjp.com").replace(/\/+$/, "")
 const TWENTY_URL = (process.env.RELEASE_TWENTY_URL || "https://twenty.paradigmjp.com").replace(/\/+$/, "")
 const REPORT_PATH = process.env.RELEASE_REPORT_SMOKE_PATH || "/en/report/ccbc-xynd21"
+const DEPLOY_HOST = process.env.PARADIGM_DEPLOY_HOST || "root@178.105.138.55"
+const APP_UUID = process.env.PARADIGM_APP_UUID || "n8i2sjiqvr2d8hrzppop2m2i"
 
 const failures = []
 
@@ -103,6 +105,16 @@ function checkStaticReleaseRules() {
   } else {
     fail("sales-os-no-login-deploy timeout behavior is not explicit")
   }
+  if (noLoginDeploy.includes("refreshManualTraefikRoute") && /paradigmhp-svc/.test(noLoginDeploy)) {
+    pass("deploy refreshes manual Traefik route after Coolify finishes")
+  } else {
+    fail("deploy must refresh the manual Traefik route after Coolify finishes")
+  }
+  if (noLoginDeploy.includes("isInternalDataApiUrl") && noLoginDeploy.includes("applySqlMigrationThroughPostgres")) {
+    pass("deploy avoids local calls to Docker-internal Supabase REST URLs")
+  } else {
+    fail("deploy must avoid local calls to Docker-internal Supabase REST URLs")
+  }
 
   const buildWrapper = fs.readFileSync("scripts/build-next.mjs", "utf8")
   if (buildWrapper.includes("PAYLOAD_DISABLE_DATABASE_DURING_BUILD") && buildWrapper.includes("runWithHeartbeat")) {
@@ -110,6 +122,58 @@ function checkStaticReleaseRules() {
   } else {
     fail("Next build wrapper must keep builds DB-independent with heartbeat output")
   }
+}
+
+function checkTraefikRouteDrift() {
+  if (LOCAL_ONLY || SKIP_REMOTE) return
+  section("Traefik route drift")
+  const script = `
+set -euo pipefail
+app_uuid='${APP_UUID.replace(/'/g, "'\\''")}'
+route_file='/data/coolify/proxy/dynamic/paradigmjp.yml'
+if [ ! -f "$route_file" ]; then
+  echo "SKIP route-file-missing"
+  exit 0
+fi
+container="$(docker ps --filter "name=${APP_UUID.replace(/"/g, '\\"')}" --format '{{.Names}}' | head -n1)"
+if [ -z "$container" ]; then
+  echo "FAIL app-container-missing"
+  exit 2
+fi
+ip="$(docker inspect "$container" --format '{{with index .NetworkSettings.Networks "coolify"}}{{.IPAddress}}{{end}}')"
+route="$(python3 - "$route_file" <<'PY'
+import re
+import sys
+text = open(sys.argv[1], encoding='utf-8').read()
+match = re.search(r'paradigmhp-svc:\\n\\s+loadBalancer:\\n\\s+servers:\\n\\s+- url: http://([^\\s]+):3000', text)
+print(match.group(1) if match else '')
+PY
+)"
+if [ -z "$route" ]; then
+  echo "FAIL route-upstream-missing container=$container ip=$ip"
+  exit 3
+fi
+if [ "$route" != "$ip" ] && [ "$route" != "$container" ]; then
+  echo "FAIL route-drift container=$container ip=$ip route=$route"
+  exit 4
+fi
+echo "OK container=$container ip=$ip route=$route"
+`
+  const result = spawnSync("ssh", ["-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=accept-new", DEPLOY_HOST, "bash -s"], {
+    input: script,
+    cwd: process.cwd(),
+    env: process.env,
+    encoding: "utf8",
+    timeout: 30_000,
+    maxBuffer: 1024 * 1024,
+  })
+  const output = `${result.stdout || ""}${result.stderr || ""}`.trim()
+  if (output) console.log(output)
+  if (result.status !== 0 || result.error) {
+    fail(`Traefik paradigmhp-svc route drift detected; run npm run release:prod, which refreshes it automatically`)
+    return
+  }
+  pass("manual Traefik route points at the latest app container")
 }
 
 function checkSyntax() {
@@ -135,6 +199,7 @@ function checkPreDeployRemote() {
   section("Remote preflight")
   runOrFail("host disk preflight", process.execPath, ["scripts/host-disk-preflight.mjs"])
   runOrFail("Coolify deploy guard", process.execPath, ["scripts/coolify-deploy-guard.mjs", "--pre-deploy"])
+  checkTraefikRouteDrift()
 }
 
 function isBadReportBody(text) {
@@ -206,6 +271,7 @@ async function main() {
     checkPreDeployRemote()
   }
   if (POST_DEPLOY) {
+    checkTraefikRouteDrift()
     await checkPostDeployUrls()
   }
 

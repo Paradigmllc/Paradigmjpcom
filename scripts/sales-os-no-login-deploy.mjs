@@ -33,6 +33,7 @@ const SKIP_DB_VERIFY = process.argv.includes("--skip-db-verify")
 const SKIP_DB_SSH_FALLBACK = process.argv.includes("--skip-db-ssh-fallback")
 const CANCEL_ON_TIMEOUT = process.argv.includes("--cancel-on-timeout")
 let preferDbSshChannel = false
+const DEPLOY_HOST = process.env.PARADIGM_DEPLOY_HOST || "root@178.105.138.55"
 
 const PRODUCTS = [
   {
@@ -885,9 +886,81 @@ async function waitDeploy(uuid) {
 }
 
 async function smoke(url) {
-  const res = await fetch(url, { redirect: "manual", signal: AbortSignal.timeout(15_000) })
-  if (res.status < 200 || res.status >= 400) throw new Error(`${url} returned HTTP ${res.status}`)
-  return res.status
+  try {
+    const res = await fetch(url, { redirect: "manual", signal: AbortSignal.timeout(30_000) })
+    if (res.status < 200 || res.status >= 400) throw new Error(`${url} returned HTTP ${res.status}`)
+    return res.status
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    throw new Error(`Smoke failed for ${url}: ${message}`)
+  }
+}
+
+function refreshManualTraefikRoute() {
+  if (SKIP_HOST_PREFLIGHT || DRY || SKIP_DEPLOY) {
+    console.log("Manual Traefik route refresh: skipped")
+    return
+  }
+
+  const script = `
+set -euo pipefail
+app_uuid='${APP_UUID.replace(/'/g, "'\\''")}'
+route_file='/data/coolify/proxy/dynamic/paradigmjp.yml'
+if [ ! -f "$route_file" ]; then
+  echo "Manual Traefik route refresh: route file not found"
+  exit 0
+fi
+new_container="$(docker ps --filter "name=${APP_UUID.replace(/"/g, '\\"')}" --format '{{.Names}}' | head -n1)"
+if [ -z "$new_container" ]; then
+  echo "Manual Traefik route refresh: app container not found"
+  exit 1
+fi
+new_ip="$(docker inspect "$new_container" --format '{{with index .NetworkSettings.Networks "coolify"}}{{.IPAddress}}{{end}}')"
+if [ -z "$new_ip" ]; then
+  echo "Manual Traefik route refresh: app container has no coolify network IP"
+  exit 1
+fi
+python3 - "$route_file" "$new_container" "$new_ip" <<'PY'
+import re
+import sys
+from datetime import datetime, timezone
+
+path, new_container, new_ip = sys.argv[1:4]
+with open(path, encoding="utf-8") as handle:
+    text = handle.read()
+
+pattern = r"(paradigmhp-svc:\\n\\s+loadBalancer:\\n\\s+servers:\\n\\s+- url: )http://[^\\s]+:3000"
+replacement = rf"\\1http://{new_ip}:3000"
+updated, count = re.subn(pattern, replacement, text, count=1)
+if count == 0:
+    print("Manual Traefik route refresh: paradigmhp-svc upstream not found")
+    sys.exit(1)
+if updated == text:
+    print(f"Manual Traefik route refresh: already points to {new_container} ({new_ip})")
+else:
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    backup = f"{path}.bak-release-{stamp}"
+    with open(backup, "w", encoding="utf-8") as handle:
+        handle.write(text)
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write(updated)
+    print(f"Manual Traefik route refresh: updated route to {new_container} ({new_ip})")
+PY
+`
+  const result = spawnSync("ssh", ["-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=accept-new", DEPLOY_HOST, "bash -s"], {
+    input: script,
+    cwd: process.cwd(),
+    env: process.env,
+    encoding: "utf8",
+    timeout: 30_000,
+    maxBuffer: 1024 * 1024,
+  })
+  const output = `${result.stdout || ""}${result.stderr || ""}`.trim()
+  if (output) console.log(output)
+  if (result.status !== 0 || result.error) {
+    const detail = result.error ? result.error.message : "non-zero exit"
+    throw new Error(`Manual Traefik route refresh failed: ${detail}`)
+  }
 }
 
 async function refreshIntegrationStatus(envs) {
@@ -983,6 +1056,7 @@ async function main() {
     const uuid = await triggerDeploy()
     console.log(`Deployment queued: ${uuid}`)
     await waitDeploy(uuid)
+    refreshManualTraefikRoute()
   } else {
     console.log("Dry/skip mode: skipped Coolify deploy")
   }

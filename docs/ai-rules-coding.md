@@ -191,11 +191,19 @@ APIキーはグローバルメモリ管理（環境変数 `LITELLM_API_KEY`）�
 **deploy 完了の定義**:
 - deploy webhook の HTTP 200 は「キュー成功」であって「build 成功」ではない
 - 本番 URL で新コードの fingerprint を確認するまで完了とみなさない
+- Paradigmjpcom は `npm run release:prod` のみを正式入口にする。互換の `npm run deploy:prod` も release gate へ入るが、`node scripts/sales-os-no-login-deploy.mjs` / Coolify webhook / UI 直叩きで完了扱いにしてはいけない。
+- release gate は `release-doctor --pre-deploy` → DB/migration/seed → Coolify deploy → Traefik route refresh → `release-doctor --post-deploy` の順に完走して初めて完了。
+- `NEXT_PUBLIC_SUPABASE_URL` / `SALES_SUPABASE_URL` が `http://supabase-rest-1:3000` の場合、それは Docker 内部専用 URL。ローカル AI agent から REST fetch してはいけない。DB 検証・migration・seed は既存スクリプトの Postgres/DB SSH channel に任せる。
+- Coolify `finished` 後に `paradigmjp.com` が 502 の場合、同じ deploy を再試行しない。まず Traefik file-provider の `paradigmhp-svc` upstream が最新 app container の coolify network IP を向いているかを確認する。正式 release script は自動修復する。
 
 **deploy 失敗時の即診断**:
 - `module-not-found` → untracked ファイルの push 忘れ
 - `EUSAGE: Missing from lock file` → `package.json` 手編集後に `npm install` 忘れ
 - `ENOSPC` → `docker builder prune -af && docker image prune -af` を実行
+- `fetch failed` / `ETIMEDOUT` が Supabase REST 検証で連発 → `supabase-rest-1` 内部 URL をローカルから叩いている。再試行せず `scripts/verify-db-tables.mjs` / `release:prod` の SSH/psql fallback を使う。
+- `The operation was aborted due to timeout` → 例外だけで判断しない。直前の URL 名・Coolify deployment UUID・`deploy-status`・post-deploy smoke を確認し、同じ操作を無限再試行しない。
+- `paradigmjp.com` だけ 502 で container 内 `127.0.0.1:3000/api/ready` が OK → アプリではなく Traefik upstream drift。`release:prod` の route refresh を通す。
+- `Coolify deployment monitor timed out` → deploy は cancel しない。`node scripts/deploy-status.mjs <deployment_uuid>` で状態確認し、finished 後は post-deploy smoke を実行する。
 
 ---
 

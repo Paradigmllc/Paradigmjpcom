@@ -17,7 +17,7 @@
     "e2e:a11y": "playwright test e2e/a11y.spec.ts",
     "lhci": "lhci autorun --config=lighthouserc.json",
     "deploy:guard": "node scripts/coolify-deploy-guard.mjs --inspect",
-    "deploy:prod": "node scripts/sales-os-no-login-deploy.mjs",
+    "deploy:prod": "npm run release:prod",
     "release:doctor": "node scripts/release-doctor.mjs",
     "release:prod": "node scripts/release-doctor.mjs --pre-deploy && node scripts/sales-os-no-login-deploy.mjs && node scripts/release-doctor.mjs --post-deploy",
     "quality:guard": "node scripts/paradigm-quality-guard.mjs",

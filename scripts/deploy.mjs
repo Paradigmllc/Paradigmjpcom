@@ -88,25 +88,36 @@ if [ -z "$new_container" ]; then
   echo "Manual Traefik route refresh: app container not found"
   exit 1
 fi
-python3 - "$route_file" "$app_uuid" "$new_container" <<'PY'
+new_ip="$(docker inspect "$new_container" --format '{{with index .NetworkSettings.Networks "coolify"}}{{.IPAddress}}{{end}}')"
+if [ -z "$new_ip" ]; then
+  echo "Manual Traefik route refresh: app container has no coolify network IP"
+  exit 1
+fi
+python3 - "$route_file" "$app_uuid" "$new_container" "$new_ip" <<'PY'
 import re
 import sys
 
-path, app_uuid, new_container = sys.argv[1:4]
+path, app_uuid, new_container, new_ip = sys.argv[1:5]
 with open(path, encoding="utf-8") as handle:
     text = handle.read()
 
 pattern = rf"{re.escape(app_uuid)}-[0-9]{{12}}"
 updated = re.sub(pattern, new_container, text)
+updated = re.sub(
+    r"(paradigmhp-svc:\n\s+loadBalancer:\n\s+servers:\n\s+- url: )http://[^\s]+:3000",
+    rf"\\1http://{new_ip}:3000",
+    updated,
+    count=1,
+)
 if updated == text:
-    print(f"Manual Traefik route refresh: already points to {new_container}")
+    print(f"Manual Traefik route refresh: already points to {new_container} ({new_ip})")
 else:
     backup = f"{path}.bak-deploy"
     with open(backup, "w", encoding="utf-8") as handle:
         handle.write(text)
     with open(path, "w", encoding="utf-8") as handle:
         handle.write(updated)
-    print(f"Manual Traefik route refresh: updated route to {new_container}")
+    print(f"Manual Traefik route refresh: updated route to {new_container} ({new_ip})")
 PY
 `
   const result = spawnSync("ssh", [DEPLOY_HOST, "bash -s"], {
