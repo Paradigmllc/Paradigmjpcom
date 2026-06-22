@@ -80,7 +80,7 @@ export function DemoFeatures({
                   <div
                     className="flex h-12 w-12 items-center justify-center rounded-xl border text-lg font-bold"
                     style={{
-                      background: `linear-gradient(to bottom right, ${accentColor}20, ${accentColorDark ?? accentColor}20)`,
+                      background: `linear-gradient(to bottom right, ${accentColor}20, ${accentColor}20)`,
                       borderColor: `${accentColor}30`,
                       color: accentColor,
                     }}

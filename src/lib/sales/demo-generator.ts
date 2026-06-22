@@ -726,7 +726,7 @@ export async function fetchDemoPageData(slug: string): Promise<DemoPageData | nu
             generatedAt: String(meta.generated_at ?? new Date().toISOString()),
             engine: "theme_demo_pages",
           },
-          blocks,
+          blocks: blocks as DemoBlock[],
         }
       }
     }
