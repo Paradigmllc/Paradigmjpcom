@@ -77,6 +77,7 @@ export default function DiagnosticReport({
   const displayScreenshotUrl = safeData.evidence_screenshot_url ?? safeData.screenshot_url ?? null
 
   const [isDark, setIsDark] = useState(false)
+  const [hasError, setHasError] = useState(false)
   const [actionOpen, setActionOpen] = useState(false)
   const [requestOpen, setRequestOpen] = useState(false)
 
