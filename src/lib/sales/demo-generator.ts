@@ -3,6 +3,7 @@
  * Features: Tailwind CDN + Glassmorphism + Bento Grid + animated counters + responsive.
  */
 import type { DiagnosticAct, DiagnosticReportData } from "./diagnostic"
+import type { DemoBlock } from "./demo-site-types"
 import type { SalesCompany, Industry, ReportLocale } from "./types"
 import { compactText, escapeHtml, labelForIndustry, themeForIndustry } from "./render-quality"
 

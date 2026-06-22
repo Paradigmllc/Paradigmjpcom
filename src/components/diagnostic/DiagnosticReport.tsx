@@ -63,7 +63,6 @@ export default function DiagnosticReport({
   const offerCopy = getReportOfferCopy(lang, safeData.template_variant)
   const intelligence = localizeReportIntelligence(safeData.intelligence, lang)
   const activeLocale = locale ?? safeData.report_locale
-  const activeLocale = locale ?? safeData.report_locale
   const confidence = signalScore(intelligence.signals)
   const loss = numericValue(safeData.total_loss)
   const topPain = intelligence.painPoints?.[0] ?? { label: lang === "ja" ? "改善ポイント" : "Improvement point" }
@@ -274,7 +273,7 @@ export default function DiagnosticReport({
 
         {/* ── Dark Diagnostic Surface ───────────────────────── */}
         <ReportDarkSurface
-          data={localizedData}
+          data={safeData}
           copy={copy}
           confidence={confidence}
           lang={lang}
@@ -296,7 +295,7 @@ export default function DiagnosticReport({
 
         {/* ── Findings ──────────────────────────────────────── */}
         <ReportFindingsSection
-          data={localizedData}
+          data={safeData}
           copy={copy}
           lang={lang}
           businessImpact={businessImpact}
