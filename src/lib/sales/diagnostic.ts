@@ -15,6 +15,8 @@ import {
   normalizeReportLocale,
   normalizeTargetCountry,
   normalizeTemplateVariant,
+  REPORT_LOCALES,
+  buildReportUrl,
   type ReportLocale,
   type TemplateVariant,
 } from "./routing"
@@ -52,6 +54,7 @@ export type {
   DiagnosticReportData,
   CompanyMeta,
   ImprovementPreview,
+  LocalizedReportLink,
   PersonalizedCopy,
   VisitorJourneyStep,
   VisualEvidenceAnnotation,
@@ -211,6 +214,12 @@ export async function fetchDiagnosticReport(opts: {
     },
     report_url: reportUrlFor(company, reportLocale),
     video_url: typeof unifiedMeta.video_url === "string" ? unifiedMeta.video_url : null,
+    localized_report_urls: company.slug
+      ? REPORT_LOCALES.map((locale) => ({
+          label: locale === reportLocale ? `${locale.toUpperCase()} (active)` : locale.toUpperCase(),
+          url: buildReportUrl(locale, company.slug!),
+        }))
+      : [],
   }
 }
 

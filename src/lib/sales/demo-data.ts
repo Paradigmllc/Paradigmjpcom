@@ -307,5 +307,6 @@ export function buildDemoData(variant: string, lang: string): DiagnosticReportDa
       appeal_angle: "speed_conversion",
     },
     report_url: `https://paradigmjp.com/${lang}/report/demo/${variant}`,
+    localized_report_urls: [],
   }
 }

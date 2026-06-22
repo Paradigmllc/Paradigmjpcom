@@ -38,6 +38,11 @@ export interface VisitorJourneyStep {
   status: "blocked" | "weak" | "ready"
 }
 
+export interface LocalizedReportLink {
+  label: string
+  url: string
+}
+
 export interface DiagnosticReportData {
   company_name: string
   report_locale: ReportLocale
@@ -69,6 +74,8 @@ export interface DiagnosticReportData {
   >
   report_url: string
   video_url?: string | null
+  /** Canonical report URLs for every locale (e.g. /ja/report/..., /en/report/...). Always non-null. */
+  localized_report_urls: LocalizedReportLink[]
 }
 
 export type CompanyMeta = {

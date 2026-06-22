@@ -55,6 +55,7 @@ function buildFallbackReportData(opts: {
     intelligence: {} as DiagnosticReportData["intelligence"],
     content_template: {} as DiagnosticReportData["content_template"],
     report_url: "",
+    localized_report_urls: [],
   }
 }
 
