@@ -23,35 +23,12 @@ const getCachedReport = cache(
     fetchDiagnosticReport({ slug, region, reportLocale: locale }),
 )
 
-// 🔒 Safe fallback: guarantees DiagnosticReportData shape even on partial fetch failure
-function safeReportData(data: DiagnosticReportData | null): DiagnosticReportData | null {
-  if (!data) return null
-  return {
-    ...data,
-    localized_report_urls: data.localized_report_urls ?? [],
-    content_template: data.content_template ?? { purpose: "", variant: "website_diagnostic", html_content: "" },
-    acts: data.acts ?? [],
-    evidence_ready: data.evidence_ready ?? 0,
-    source_coverage: data.source_coverage ?? 0,
-    monthly_loss_estimate: data.monthly_loss_estimate ?? 0,
-    roi: data.roi ?? { payback_months: 0, recovered_12m: 0 },
-    competitor_benchmark: data.competitor_benchmark ?? [],
-    faq: data.faq ?? [],
-    visual_evidence: data.visual_evidence ?? [],
-    template_variant: data.template_variant ?? "website_diagnostic",
-    report_url: data.report_url ?? "",
-    video_url: data.video_url ?? null,
-    meta: data.meta ?? {},
-  }
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, locale } = await params
   const region = localeToRegion(locale)
   const lang = normalizeReportLang(locale)
   const copy: ReportCopy = (REPORT_COPY as Record<string, ReportCopy>)[lang] ?? REPORT_COPY.ja
-  const raw = await getCachedReport(slug, region, locale)
-  const data = safeReportData(raw)
+  const data = await getCachedReport(slug, region, locale)
   const offerCopy = data ? getReportOfferCopy(lang, data.template_variant) : null
   const reportLabel = offerCopy?.reportLabel ?? copy.privateReport
   return {
@@ -65,8 +42,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ReportPage({ params }: Props) {
   const { locale, slug } = await params
   const region = localeToRegion(locale)
-  const raw = await getCachedReport(slug, region, locale)
-  const data = safeReportData(raw)
+  const data = await getCachedReport(slug, region, locale)
   if (!data) notFound()
-  return <DiagnosticReport data={data} trackingSlug={slug} locale={locale} />
+
+  // Null-safe wrapper — guarantees every field the DiagnosticReport client component accesses
+  const safeData: DiagnosticReportData = {
+    ...data,
+    localized_report_urls: data.localized_report_urls ?? [],
+    content_template: data.content_template ?? {
+      title: "", purpose: "", quality_bar: "", dify_selection_rule: "", prompt_template: "", offer_code: "", appeal_angle: "",
+    },
+    acts: data.acts ?? [],
+    source_coverage: data.source_coverage ?? { score: 0, detail: "", items: [] },
+    total_loss: data.total_loss ?? "0",
+    hook: data.hook ?? "",
+    cta_text: data.cta_text ?? "",
+    intelligence: data.intelligence ?? { signals: [], summary: "" },
+    visual_annotations: data.visual_annotations ?? [],
+  }
+
+  return <DiagnosticReport data={safeData} trackingSlug={slug} locale={locale} />
 }
