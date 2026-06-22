@@ -45,5 +45,7 @@ export default async function ReportPage({ params }: Props) {
   const region = localeToRegion(locale)
   const data = await getCachedReport(slug, region, locale)
   if (!data) notFound()
-  return <DiagnosticReport data={data} trackingSlug={slug} locale={locale} />
+  // Safety: ensure localizedReportUrls is never undefined (prevents hydration crash)
+  const safeData = { ...data, localized_report_urls: data.localized_report_urls ?? [] }
+  return <DiagnosticReport data={safeData} trackingSlug={slug} locale={locale} />
 }
