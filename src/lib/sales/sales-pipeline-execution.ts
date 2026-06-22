@@ -12,6 +12,7 @@ import { startLeadCandidateEnrichmentFallback } from "./lead-candidate-enrichmen
 import { syncCompanyAcrossSalesTools } from "./external-studio-sync"
 import { runOutreachBatch } from "./outreach/orchestrator"
 import { getR2StorageConfig, sanitizeR2ObjectName } from "./r2-storage"
+import { generateFullStackDemo } from "./demo-generator"
 import { generateSalesAsset } from "./sales-assets"
 import { syncCompanyKarteToTwenty } from "./twenty-sync"
 import { createVideoJob, runVideoJobAction } from "./video-pipeline"
@@ -564,6 +565,33 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
         visual_evidence_variant_target: visualEvidence.variantTarget,
       },
     })
+    // Fire-and-forget: generate full-stack demo site if WEB制作 is recommended
+    void (async () => {
+      try {
+        const karteResult = await fetchCompanyKarte(sb, run.company_id)
+        if (!karteResult.ok) return
+        const hasWebProduction = karteResult.karte.recommendedProducts.some(
+          (p) =>
+            p.code === "jp_web_production" ||
+            p.displayName.includes("WEB制作") ||
+            p.displayName.includes("Web制作"),
+        )
+        if (!hasWebProduction) return
+        const demoResult = await generateFullStackDemo(run.company_id, karteResult.karte.reportLocale)
+        if (demoResult.ok) {
+          console.warn(`[sales-pipeline-execution] demo site generated for ${run.company_id}: ${demoResult.demoUrl}`)
+        } else {
+          console.error(
+            `[sales-pipeline-execution] demo site generation failed for ${run.company_id}: ${demoResult.error}`,
+          )
+        }
+      } catch (err) {
+        console.error(
+          "[sales-pipeline-execution] demo generation check failed:",
+          err instanceof Error ? err.message : String(err),
+        )
+      }
+    })()
     return
   }
 
