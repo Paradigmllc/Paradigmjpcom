@@ -50,16 +50,12 @@ export default function DiagnosticReport({
 }) {
   // 🔒 Client-side safety: prevent hydration crashes from undefined nested fields
   const safeContentTemplate = data.content_template ?? { purpose: "", variant: "website_diagnostic" as const, html_content: "", title: "", quality_bar: "" }
-  const safeData = {
+  const safeData: typeof data = {
     ...data,
     content_template: safeContentTemplate,
-    localized_report_urls: safeData.localized_report_urls ?? [],
-    acts: safeData.acts ?? [],
-    source_coverage: safeData.source_coverage ?? { score: 0, detail: "", items: [] },
-    faq: safeData.faq ?? [],
-    competitor_benchmark: safeData.competitor_benchmark ?? [],
-    visual_evidence: safeData.visual_evidence ?? [],
-    roi: safeData.roi ?? { payback_months: 0, recovered_12m: 0 },
+    localized_report_urls: data.localized_report_urls ?? [],
+    acts: data.acts ?? [],
+    source_coverage: data.source_coverage ?? { score: 0, detail: "", items: [] },
   }
   
   const lang = normalizeReportLang(locale ?? safeData.report_locale)
