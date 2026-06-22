@@ -31,6 +31,7 @@ const SKIP_HOST_PREFLIGHT = process.argv.includes("--skip-host-preflight")
 const SKIP_DEPLOY_GUARD = process.argv.includes("--skip-deploy-guard")
 const SKIP_DB_VERIFY = process.argv.includes("--skip-db-verify")
 const SKIP_DB_SSH_FALLBACK = process.argv.includes("--skip-db-ssh-fallback")
+const CANCEL_ON_TIMEOUT = process.argv.includes("--cancel-on-timeout")
 
 const PRODUCTS = [
   {
@@ -595,10 +596,22 @@ async function readDeploymentLogTail(uuid) {
 }
 
 async function waitDeploy(uuid) {
+  let lastState = "unknown"
+  let transientErrors = 0
   for (let i = 1; i <= 80; i++) {
     await new Promise((resolve) => setTimeout(resolve, 15_000))
-    const status = await coolify(`/api/v1/deployments/${uuid}`)
+    let status = null
+    try {
+      status = await coolify(`/api/v1/deployments/${uuid}`)
+      transientErrors = 0
+    } catch (error) {
+      transientErrors += 1
+      const message = error instanceof Error ? error.message : String(error)
+      console.warn(`[deploy ${i}/80] transient Coolify status read failed (${transientErrors}): ${message}`)
+      continue
+    }
     const state = status?.status || "unknown"
+    lastState = state
     console.log(`[deploy ${i}/80] ${state}`)
     if (state === "finished" || state === "running:healthy") return state
     if (state === "failed" || state === "error" || state === "cancelled") {
@@ -606,8 +619,12 @@ async function waitDeploy(uuid) {
       throw new Error(`Coolify deployment failed: ${state}`)
     }
   }
-  await cancelDeploy(uuid, "poll timeout")
-  throw new Error("Coolify deployment timed out")
+  if (CANCEL_ON_TIMEOUT) {
+    await cancelDeploy(uuid, "poll timeout (--cancel-on-timeout)")
+  }
+  throw new Error(
+    `Coolify deployment monitor timed out with last state ${lastState}; deployment was not cancelled. Resume with: node scripts/deploy-status.mjs ${uuid}`,
+  )
 }
 
 async function smoke(url) {
@@ -712,7 +729,14 @@ async function main() {
     console.log("Dry/skip mode: skipped Coolify deploy")
   }
 
-  for (const url of ["https://paradigmjp.com/ja/admin/sales", "https://paradigmjp.com/ja", "https://twenty.paradigmjp.com"]) {
+  const smokeUrls = [
+    "https://paradigmjp.com/api/ready",
+    "https://paradigmjp.com/ja/admin/sales",
+    "https://paradigmjp.com/ja",
+    `https://paradigmjp.com${envValue("RELEASE_REPORT_SMOKE_PATH", "/en/report/ccbc-xynd21")}`,
+    "https://twenty.paradigmjp.com",
+  ]
+  for (const url of smokeUrls) {
     const status = await smoke(url)
     console.log(`Smoke OK: ${url} HTTP ${status}`)
   }

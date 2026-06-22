@@ -111,10 +111,12 @@ if (!process.env.PAYLOAD_READS_DISABLED_DURING_BUILD && !process.env.PAYLOAD_DIS
   run(localBin("payload"), ["generate:importmap"])
 }
 const buildArgs = ["build"]
-if (process.argv.includes("--webpack") || process.env.NEXT_BUILD_BUNDLER === "webpack") {
-  buildArgs.push("--webpack")
-} else if (process.argv.includes("--turbo")) {
+if (process.argv.includes("--turbo") || process.env.NEXT_BUILD_BUNDLER === "turbo") {
   buildArgs.push("--turbo")
+} else {
+  // Production deploys default to webpack because Turbopack still traces Payload
+  // and generated package sources too broadly in this app.
+  buildArgs.push("--webpack")
 }
 if (!buildArgs.includes("--webpack")) {
   ensureTurbopackExternalShims()

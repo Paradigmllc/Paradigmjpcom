@@ -51,12 +51,27 @@ export default function DiagnosticReport({
 }) {
   // 🔒 Client-side safety: prevent hydration crashes from undefined nested fields
   const safeContentTemplate = data.content_template ?? { purpose: "", variant: "website_diagnostic" as const, html_content: "", title: "", quality_bar: "" }
+  const safeIntelligence = {
+    signals: Array.isArray(data.intelligence?.signals) ? data.intelligence.signals : [],
+    painPoints: Array.isArray(data.intelligence?.painPoints) ? data.intelligence.painPoints : [],
+    nextActions: Array.isArray(data.intelligence?.nextActions) && data.intelligence.nextActions.length > 0
+      ? data.intelligence.nextActions
+      : [locale === "ja" ? "Revenue OSで診断データを再取得する" : "Refresh diagnostic data in Revenue OS"],
+  }
+  const safeSourceCoverage = data.source_coverage ?? { score: 0, collected: 0, configured: 0, missing: 0, items: [] }
   const safeData: typeof data = {
     ...data,
     content_template: safeContentTemplate,
     localized_report_urls: data.localized_report_urls ?? [],
     acts: data.acts ?? [],
-    source_coverage: data.source_coverage ?? { score: 0, detail: "", items: [] },
+    intelligence: safeIntelligence,
+    source_coverage: {
+      score: Number.isFinite(safeSourceCoverage.score) ? safeSourceCoverage.score : 0,
+      collected: Number.isFinite(safeSourceCoverage.collected) ? safeSourceCoverage.collected : 0,
+      configured: Number.isFinite(safeSourceCoverage.configured) ? safeSourceCoverage.configured : 0,
+      missing: Number.isFinite(safeSourceCoverage.missing) ? safeSourceCoverage.missing : 0,
+      items: Array.isArray(safeSourceCoverage.items) ? safeSourceCoverage.items : [],
+    },
   }
   
   const lang = normalizeReportLang(locale ?? safeData.report_locale)

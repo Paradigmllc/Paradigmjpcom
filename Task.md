@@ -3,6 +3,13 @@
 不変前提: WW-EVENT 厳守＝cron/n8n/pg_cron 不使用・Trigger.dev イベント駆動 one-shot のみ。
 決定: オーケストレータ維持＋完了イベント再開 / デモ=フルサイト一本化 / Dify=queue隔離かつ本文正本 / Twenty=category集約＋deep link / Telegram=webhook修復＋OSS deep link＋Realtime push / インフラ=重ワーカー分離＋Upstash＋ISR/CDN。
 
+CURRENT STATUS - 2026-06-23 Release Doctor 恒久化（ビルド/デプロイ時間浪費の再発防止）
+- 本番 deploy の正規入口を `npm run release:prod` に固定。`release-doctor --pre-deploy` → `sales-os-no-login-deploy.mjs` → `release-doctor --post-deploy` の順に通し、今後 OpenCode/Codex/Claude/Cursor 等は単独の deploy script 直叩きを避ける。
+- `scripts/release-doctor.mjs` を追加。pre-deploy で worktree/untracked、deploy script の破壊的 timeout cancel、build wrapper の DB 非依存/heartbeat、主要 script 構文、host disk/Coolify queue guard を検査する。
+- post-deploy で `/api/ready`、`/ja`、`/ja/admin/sales`、既知の診断レポートURL（既定 `/en/report/ccbc-xynd21`、必要時 `RELEASE_REPORT_SMOKE_PATH` で差替）、`twenty.paradigmjp.com` を実HTTP検証し、Server Components digest/レポートエラー画面を検出したら release 失敗にする。
+- `scripts/sales-os-no-login-deploy.mjs` の monitor timeout は既定で deployment を cancel しない。破壊的 cancel は明示 `--cancel-on-timeout` のみ。Coolify status 取得の一時的 5xx/timeout は origin busy として継続監視し、失敗シグネチャを分類する。
+- 目的: 外部障害をゼロにするのではなく、同じ build/deploy 失敗を何十回も再試行しない。危険な状態なら deploy 前に止め、deploy 後は Revenue OS の成果物URLまで通らない限り完了扱いしない。
+
 DEPLOY 2026-06-20: PR #30 → main(677a37c)→Coolify deploy(voqjuu09fu99qcyayil4hahm) status=finished→本番 /api/ready=200・/ja=200・demo/demo=200・app running:healthy（直後502はコンテナ起動窓で即回復）。0-1/1-2a/1-3/1-4/2-1/2-2/2-4/3-1/3-2/3-4/6-1/7-1/7-2/8-2/9-10(file) 本番反映済み。追補: Phase7 unit test + 6-3 doc(diagnostic-report-generation-pipeline.md)。
 
 DEMO-DEPLOY 2026-06-20: astro-demo は Coolify アプリでなく host `/root/astro-demo` の standalone Docker(Traefik file-provider `astro-demo:4321`)。Phase 3 変更が未反映だったため、ローカル source を rsync→host で docker build→コンテナをロールバック付きで再作成。検証: `demo.paradigmjp.com/demo`=「業種別デモサイト一覧」・`/demo/sample-restaurant`=200・`/ja/restaurant/sales`→301→/demo/sample-restaurant。

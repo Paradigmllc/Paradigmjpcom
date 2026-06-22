@@ -18,6 +18,8 @@
     "lhci": "lhci autorun --config=lighthouserc.json",
     "deploy:guard": "node scripts/coolify-deploy-guard.mjs --inspect",
     "deploy:prod": "node scripts/sales-os-no-login-deploy.mjs",
+    "release:doctor": "node scripts/release-doctor.mjs",
+    "release:prod": "node scripts/release-doctor.mjs --pre-deploy && node scripts/sales-os-no-login-deploy.mjs && node scripts/release-doctor.mjs --post-deploy",
     "quality:guard": "node scripts/paradigm-quality-guard.mjs",
     "quality:ci": "node scripts/paradigm-quality-guard.mjs --ci",
     "host:install-coolify-guard": "node scripts/install-coolify-host-guard.mjs",
