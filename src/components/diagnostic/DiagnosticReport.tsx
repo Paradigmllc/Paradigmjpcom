@@ -58,10 +58,10 @@ export default function DiagnosticReport({
     source_coverage: data.source_coverage ?? { score: 0, detail: "", items: [] },
   }
   
-  const lang = normalizeReportLang(locale ?? safeData.report_locale)
-  const copy = REPORT_COPY[lang]
-  const offerCopy = getReportOfferCopy(lang, safeData.template_variant)
-  const intelligence = localizeReportIntelligence(safeData.intelligence, lang)
+  const lang = normalizeReportLang(locale ?? data.report_locale ?? "ja")
+  const copy = (REPORT_COPY as Record<string, ReportCopy>)[lang] ?? (REPORT_COPY as Record<string, ReportCopy>).ja
+  const offerCopy = getReportOfferCopy(lang, data.template_variant ?? "website_diagnostic")
+  const intelligence = localizeReportIntelligence(data.intelligence ?? { signals: [], summary: "" }, lang)
   const activeLocale = locale ?? safeData.report_locale
   const confidence = signalScore(intelligence.signals)
   const loss = numericValue(safeData.total_loss)
