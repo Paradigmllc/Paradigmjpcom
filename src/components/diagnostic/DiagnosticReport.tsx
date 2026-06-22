@@ -48,47 +48,61 @@ export default function DiagnosticReport({
   trackingSlug?: string
   locale?: string
 }) {
-  const lang = normalizeReportLang(locale ?? data.report_locale)
+  // 🔒 Client-side safety: prevent hydration crashes from undefined nested fields
+  const safeContentTemplate = data.content_template ?? { purpose: "", variant: "website_diagnostic" as const, html_content: "", title: "", quality_bar: "" }
+  const safeData = {
+    ...data,
+    content_template: safeContentTemplate,
+    localized_report_urls: safeData.localized_report_urls ?? [],
+    acts: safeData.acts ?? [],
+    source_coverage: safeData.source_coverage ?? { score: 0, detail: "", items: [] },
+    faq: safeData.faq ?? [],
+    competitor_benchmark: safeData.competitor_benchmark ?? [],
+    visual_evidence: safeData.visual_evidence ?? [],
+    roi: safeData.roi ?? { payback_months: 0, recovered_12m: 0 },
+  }
+  
+  const lang = normalizeReportLang(locale ?? safeData.report_locale)
   const copy = REPORT_COPY[lang]
-  const offerCopy = getReportOfferCopy(lang, data.template_variant)
-  const intelligence = localizeReportIntelligence(data.intelligence, lang)
-  const localizedData = { ...data, intelligence }
-  const activeLocale = locale ?? data.report_locale
+  const offerCopy = getReportOfferCopy(lang, safeData.template_variant)
+  const intelligence = localizeReportIntelligence(safeData.intelligence, lang)
+  const activeLocale = locale ?? safeData.report_locale
+  const activeLocale = locale ?? safeData.report_locale
   const confidence = signalScore(intelligence.signals)
-  const loss = numericValue(data.total_loss)
+  const loss = numericValue(safeData.total_loss)
   const topPain = intelligence.painPoints?.[0] ?? { label: lang === "ja" ? "改善ポイント" : "Improvement point" }
   const videoHref = trackingSlug
     ? `/${activeLocale}/report/${trackingSlug}/video`
     : null
-  const industryLabel = labelForIndustry(data.industry, lang)
-  const visibleSources = (data.source_coverage?.items ?? [])
+  const industryLabel = labelForIndustry(safeData.industry, lang)
+  const visibleSources = (safeData.source_coverage?.items ?? [])
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
     .slice(0, 14)
-  const calHref = `https://cal.com/paradigm-jp/15min?name=${encodeURIComponent(data.company_name ?? "Client")}`
-  const displayScreenshotUrl = data.evidence_screenshot_url ?? data.screenshot_url ?? null
+  const calHref = `https://cal.com/paradigm-jp/15min?name=${encodeURIComponent(safeData.company_name ?? "Client")}`
+  const displayScreenshotUrl = safeData.evidence_screenshot_url ?? safeData.screenshot_url ?? null
 
   const [isDark, setIsDark] = useState(false)
   const [actionOpen, setActionOpen] = useState(false)
   const [requestOpen, setRequestOpen] = useState(false)
 
-  const heroText = cleanText(reportEvidenceText(data.hook, lang), offerCopy.heroLead)
-  const ctaText = cleanText(reportEvidenceText(data.cta_text, lang), offerCopy.finalBody)
+  const heroText = cleanText(reportEvidenceText(safeData.hook, lang), offerCopy.heroLead)
+  const ctaText = cleanText(reportEvidenceText(safeData.cta_text, lang), offerCopy.finalBody)
   const qualityBar = cleanText(
-    reportEvidenceText(data.content_template.quality_bar, lang),
+    reportEvidenceText(safeData.content_template.quality_bar, lang),
     copy.qualityBar
   )
   const templateTitle = cleanText(
-    reportEvidenceText(data.content_template.title, lang),
+    reportEvidenceText(safeData.content_template.title, lang),
     copy.templateDirection
   )
   const templatePurpose = cleanText(
-    reportEvidenceText(data.content_template.purpose, lang),
+    reportEvidenceText(safeData.content_template.purpose, lang),
     copy.finalBody
   )
   const businessImpact = cleanText(topPain?.implication, ctaText)
-  const sourceScore = data.source_coverage.score
+  const sourceScore = safeData.source_coverage.score
 
-  const benchmarkItems: BenchmarkItem[] = data.acts
+  const benchmarkItems: BenchmarkItem[] = safeData.acts
     .filter((act) => {
       const n = numericValue(act.metric_value)
       return n > 0 && !isNaN(n)
@@ -106,14 +120,14 @@ export default function DiagnosticReport({
       }
     })
 
-  const lossItems: LossImpactItem[] = data.acts
+  const lossItems: LossImpactItem[] = safeData.acts
     .filter((act) => {
       const n = numericValue(act.metric_value)
       return n > 0 && !isNaN(n)
     })
     .map((act, i) => ({
       label: cleanText(act.headline, act.metric_label).slice(0, 30),
-      amount: Math.round((loss / data.acts.length) * (data.acts.length - i) * 0.8 + loss * 0.2),
+      amount: Math.round((loss / safeData.acts.length) * (safeData.acts.length - i) * 0.8 + loss * 0.2),
     }))
 
   const radarItems = (() => {
@@ -180,16 +194,16 @@ export default function DiagnosticReport({
         {/* ── Hero ──────────────────────────────────────────── */}
         <ReportHeroSection
           offerCopy={offerCopy}
-          reportTitleEl={reportTitle(data.company_name, offerCopy.reportLabel, lang)}
+          reportTitleEl={reportTitle(safeData.company_name, offerCopy.reportLabel, lang)}
           heroText={heroText}
-          demoUrl={data.demo_url ?? null}
+          demoUrl={safeData.demo_url ?? null}
           calHref={calHref}
           lang={lang}
           industryLabel={industryLabel}
-          targetCountry={data.target_country}
-          prefecture={data.prefecture ?? null}
+          targetCountry={safeData.target_country}
+          prefecture={safeData.prefecture ?? null}
           screenshotUrl={displayScreenshotUrl}
-          annotations={data.visual_annotations ?? []}
+          annotations={safeData.visual_annotations ?? []}
         />
 
         {/* ── Diagnostic video ─────── */}
@@ -201,7 +215,7 @@ export default function DiagnosticReport({
                   {lang === "ja" ? "動画を読み込めませんでした。" : "Failed to load video."}
                 </p>
               }>
-                <ReportHyperFramesPlayer src={videoHref} lang={lang} mp4Url={data.video_url} />
+                <ReportHyperFramesPlayer src={videoHref} lang={lang} mp4Url={safeData.video_url} />
               </ErrorBoundary>
             </div>
           </section>
@@ -209,7 +223,7 @@ export default function DiagnosticReport({
 
         {/* ── Variant-specific sections ─────── */}
         {(() => {
-          const layout = getVariantLayout(data.template_variant)
+          const layout = getVariantLayout(safeData.template_variant)
           return layout.sections
             .filter((s) => !["hero", "stats", "executive_summary", "dark_surface", "benchmark", "findings", "loss_chart", "screenshot", "pain_points", "source_coverage", "timeline", "evidence", "faq", "cta"].includes(s.id))
             .map((s) => <VariantSection key={s.id} sectionId={s.id} data={data} lang={lang} />)
@@ -220,16 +234,16 @@ export default function DiagnosticReport({
           <div className="mx-auto grid max-w-6xl border-y border-zinc-200 md:grid-cols-4">
             <Stat
               label={copy.evidenceReady}
-              value={`${data.source_coverage.collected}`}
+              value={`${safeData.source_coverage.collected}`}
               detail={sourceCoverageDetail(
-                data.source_coverage.configured,
-                data.source_coverage.missing,
+                safeData.source_coverage.configured,
+                safeData.source_coverage.missing,
                 lang
               )}
             />
             <Stat
               label={copy.sourceCoverage}
-              value={`${data.source_coverage.score}%`}
+              value={`${safeData.source_coverage.score}%`}
               detail={copy.sourceMissing}
             />
             <Stat
@@ -248,15 +262,15 @@ export default function DiagnosticReport({
         {/* ── Executive Summary ──────────────────────────────── */}
         <ReportExecutiveSummary
           lang={lang}
-          companyName={data.company_name}
+          companyName={safeData.company_name}
           reportLabel={offerCopy.reportLabel}
           businessImpact={businessImpact}
           firstAction={cleanText(intelligence.nextActions[0], ctaText)}
           topPain={topPain}
-          sourceScore={data.source_coverage.score}
+          sourceScore={safeData.source_coverage.score}
           confidence={confidence}
           monthlyLoss={loss}
-          findingsCount={data.acts.length}
+          findingsCount={safeData.acts.length}
         />
 
         {/* ── Score Overview ─────────────────────────────────── */}
@@ -315,7 +329,7 @@ export default function DiagnosticReport({
               data={data}
               screenshotUrl={displayScreenshotUrl}
               lang={lang}
-              screenshotAlt={`${data.company_name} ${offerCopy.screenshotAlt}`}
+              screenshotAlt={`${safeData.company_name} ${offerCopy.screenshotAlt}`}
               heroText={heroText}
             />
           </SlideInSection>
@@ -381,9 +395,9 @@ export default function DiagnosticReport({
           copy={copy}
           lang={lang}
           sourceSummary={{
-            collected: data.source_coverage.collected,
-            configured: data.source_coverage.configured,
-            missing: data.source_coverage.missing,
+            collected: safeData.source_coverage.collected,
+            configured: safeData.source_coverage.configured,
+            missing: safeData.source_coverage.missing,
           }}
           signals={intelligence.signals}
           sources={visibleSources}
@@ -391,7 +405,7 @@ export default function DiagnosticReport({
 
         {/* ── FAQ ───────────────────────────────────────────── */}
         <ReportFaqSection
-          variant={data.template_variant}
+          variant={safeData.template_variant}
           lang={lang === "ja" ? "ja" : "en"}
           copy={copy}
           isDark={isDark}
@@ -403,7 +417,7 @@ export default function DiagnosticReport({
           copy={copy}
           lang={lang}
           calHref={calHref}
-          demoUrl={data.demo_url ?? null}
+          demoUrl={safeData.demo_url ?? null}
           videoHref={videoHref}
         />
       </main>
@@ -411,7 +425,7 @@ export default function DiagnosticReport({
 
       <script dangerouslySetInnerHTML={{ __html: TRACKING_SCRIPT(trackingSlug ?? "") }} />
       {/* A/B test tracking */}
-      <img src={`/api/sales/track-view?slug=${encodeURIComponent(trackingSlug || "")}&event=ab_test&variant=${encodeURIComponent(data.template_variant)}&industry=${encodeURIComponent(data.industry || "")}`} alt="" width={1} height={1} className="hidden" />
+      <img src={`/api/sales/track-view?slug=${encodeURIComponent(trackingSlug || "")}&event=ab_test&variant=${encodeURIComponent(safeData.template_variant)}&industry=${encodeURIComponent(safeData.industry || "")}`} alt="" width={1} height={1} className="hidden" />
 
       {/* ── Footer ── */}
       <ReportFooter isDark={isDark} lang={lang} calHref={calHref} />
@@ -426,7 +440,7 @@ export default function DiagnosticReport({
       />
 
       <style>{PRINT_CSS}</style>
-      <DifyChatbot locale={localeContentVariant(locale ?? data.report_locale as string)} />
+      <DifyChatbot locale={localeContentVariant(locale ?? safeData.report_locale as string)} />
     </div>
     </MotionConfig>
   )
