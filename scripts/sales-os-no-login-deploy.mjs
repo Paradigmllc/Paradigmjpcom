@@ -32,6 +32,7 @@ const SKIP_DEPLOY_GUARD = process.argv.includes("--skip-deploy-guard")
 const SKIP_DB_VERIFY = process.argv.includes("--skip-db-verify")
 const SKIP_DB_SSH_FALLBACK = process.argv.includes("--skip-db-ssh-fallback")
 const CANCEL_ON_TIMEOUT = process.argv.includes("--cancel-on-timeout")
+let preferDbSshChannel = false
 
 const PRODUCTS = [
   {
@@ -202,6 +203,25 @@ function salesSupabase(envs) {
   return { url: String(url).replace(/\/+$/, ""), key }
 }
 
+function isInternalDataApiUrl(url) {
+  try {
+    const host = new URL(url).hostname.toLowerCase()
+    return (
+      host === "supabase-rest-1" ||
+      host === "kong" ||
+      host === "rest" ||
+      host.endsWith(".internal") ||
+      (!host.includes(".") && !host.endsWith("localhost"))
+    )
+  } catch {
+    return false
+  }
+}
+
+function quoteSqlString(value) {
+  return `'${String(value).replace(/'/g, "''")}'`
+}
+
 function postgresUri(envs) {
   const candidates = [
     envs.SALES_SUPABASE_DATABASE_URL,
@@ -222,6 +242,8 @@ function isAllowedSalesPostgresUri(envs, uri) {
   try {
     const parsed = new URL(uri)
     const host = parsed.hostname.toLowerCase()
+    const dataApiUrl = envs.SALES_SUPABASE_URL || envs.NEXT_PUBLIC_SUPABASE_URL || ""
+    if (isInternalDataApiUrl(dataApiUrl) && uri === envs.DATABASE_URI) return true
     const username = decodeURIComponent(parsed.username || "")
     const supabaseUrl = envs.NEXT_PUBLIC_SUPABASE_URL ? new URL(envs.NEXT_PUBLIC_SUPABASE_URL) : null
     const projectRef = supabaseUrl?.hostname?.split(".")[0] || ""
@@ -246,17 +268,25 @@ function maskPostgresHost(uri) {
 
 async function applySalesProducts(envs) {
   const { url, key } = salesSupabase(envs)
+  if (isInternalDataApiUrl(url)) return applySalesProductsThroughPostgres(envs)
   const endpoint = `${url}/rest/v1/sales_products?on_conflict=code`
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      apikey: key,
-      Authorization: `Bearer ${key}`,
-      "Content-Type": "application/json",
-      Prefer: "resolution=merge-duplicates,return=representation",
-    },
-    body: JSON.stringify(PRODUCTS),
-  })
+  let res
+  try {
+    res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates,return=representation",
+      },
+      body: JSON.stringify(PRODUCTS),
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    if (/fetch failed|ECONN|ENOTFOUND|timed out|aborted/i.test(message)) return applySalesProductsThroughPostgres(envs)
+    throw error
+  }
   const body = await res.text()
   if (!res.ok) throw new Error(`Sales product upsert failed: HTTP ${res.status} ${body.slice(0, 160)}`)
 
@@ -278,6 +308,64 @@ async function applySalesProducts(envs) {
   return json.length
 }
 
+async function applySalesProductsThroughPostgres(envs) {
+  const sql = `
+with incoming as (
+  select *
+  from jsonb_to_recordset(${quoteSqlString(JSON.stringify(PRODUCTS))}::jsonb) as row(
+    code text,
+    display_name text,
+    market_scope text,
+    template_variant text,
+    default_currency text,
+    default_amount_yen integer,
+    is_subscription boolean,
+    description text,
+    sort_order integer,
+    meta jsonb
+  )
+)
+insert into public.sales_products (
+  code,
+  display_name,
+  market_scope,
+  template_variant,
+  default_currency,
+  default_amount_yen,
+  is_subscription,
+  description,
+  sort_order,
+  meta
+)
+select
+  code,
+  display_name,
+  market_scope,
+  template_variant,
+  default_currency,
+  default_amount_yen,
+  is_subscription,
+  description,
+  sort_order,
+  coalesce(meta, '{}'::jsonb)
+from incoming
+on conflict (code) do update set
+  display_name = excluded.display_name,
+  market_scope = excluded.market_scope,
+  template_variant = excluded.template_variant,
+  default_currency = excluded.default_currency,
+  default_amount_yen = excluded.default_amount_yen,
+  is_subscription = excluded.is_subscription,
+  description = excluded.description,
+  sort_order = excluded.sort_order,
+  meta = excluded.meta,
+  updated_at = now();
+notify pgrst, 'reload schema';
+`
+  await applySqlMigrationThroughPostgres(envs, sql, "Sales products upsert")
+  return PRODUCTS.length
+}
+
 async function applySqlMigration(envs, fileName, label) {
   const { url, key } = salesSupabase(envs)
   const sqlPath = [
@@ -286,15 +374,23 @@ async function applySqlMigration(envs, fileName, label) {
   ].find((candidate) => fs.existsSync(candidate))
   if (!sqlPath) return `${label}: local SQL file missing`
   const sql = fs.readFileSync(sqlPath, "utf8")
-  const res = await fetch(`${url}/rest/v1/rpc/exec_sql`, {
-    method: "POST",
-    headers: {
-      apikey: key,
-      Authorization: `Bearer ${key}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ query: sql }),
-  })
+  if (isInternalDataApiUrl(url)) return applySqlMigrationThroughPostgres(envs, sql, label)
+  let res
+  try {
+    res = await fetch(`${url}/rest/v1/rpc/exec_sql`, {
+      method: "POST",
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query: sql }),
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    if (/fetch failed|ECONN|ENOTFOUND|timed out|aborted/i.test(message)) return applySqlMigrationThroughPostgres(envs, sql, label)
+    throw error
+  }
   if (res.ok) return `${label}: applied`
   const text = await res.text()
   if (res.status === 404 || /function.*exec_sql|schema cache/i.test(text)) {
@@ -306,11 +402,15 @@ async function applySqlMigration(envs, fileName, label) {
 
 async function applySqlMigrationThroughPostgres(envs, sql, label) {
   const connectionString = postgresUri(envs)
+  if (preferDbSshChannel && !SKIP_DB_SSH_FALLBACK) return applySqlMigrationThroughHost(sql, label)
   if (!connectionString) return applySqlMigrationThroughHost(sql, label)
 
   const client = new pg.Client({
     connectionString,
-    ssl: { rejectUnauthorized: false },
+    ssl: isInternalDataApiUrl(envs.SALES_SUPABASE_URL || envs.NEXT_PUBLIC_SUPABASE_URL || "") ? undefined : { rejectUnauthorized: false },
+    connectionTimeoutMillis: 10_000,
+    query_timeout: 90_000,
+    statement_timeout: 90_000,
   })
   try {
     await client.connect()
@@ -326,6 +426,11 @@ async function applySqlMigrationThroughPostgres(envs, sql, label) {
     if (/must be owner|permission denied|insufficient privilege/i.test(message)) {
       return `${label}: skipped by direct Postgres channel (${message.slice(0, 160)})`
     }
+    if (!SKIP_DB_SSH_FALLBACK && /ECONN|timeout|does not support SSL|ENOTFOUND|connect/i.test(message)) {
+      console.warn(`${label}: direct Postgres unavailable; retrying through DB SSH channel`)
+      preferDbSshChannel = true
+      return applySqlMigrationThroughHost(sql, label)
+    }
     throw new Error(`${label} direct Postgres fallback failed: ${message.slice(0, 240)}`)
   } finally {
     await client.end().catch((error) => {
@@ -338,6 +443,7 @@ function applySqlMigrationThroughHost(sql, label) {
   if (SKIP_DB_SSH_FALLBACK) return `${label}: exec_sql unavailable; DB SSH fallback skipped`
 
   const sshTarget = envValue("PARADIGM_SUPABASE_SSH_TARGET", "root@178.105.138.55")
+  const dbContainer = resolveSupabaseDbContainer(sshTarget)
   const commonArgs = ["-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=accept-new", sshTarget]
   const apply = spawnSync(
     "ssh",
@@ -346,7 +452,7 @@ function applySqlMigrationThroughHost(sql, label) {
       "docker",
       "exec",
       "-i",
-      "paradigm-supabase-db",
+      dbContainer,
       "psql",
       "-U",
       "postgres",
@@ -364,7 +470,7 @@ function applySqlMigrationThroughHost(sql, label) {
     "ssh",
     [
       ...commonArgs,
-      "docker exec paradigm-supabase-db psql -U postgres -d postgres -c \"NOTIFY pgrst, 'reload schema';\"",
+      `docker exec ${dbContainer} psql -U postgres -d postgres -c "NOTIFY pgrst, 'reload schema';"`,
     ],
     { encoding: "utf8", maxBuffer: 1024 * 1024 },
   )
@@ -373,6 +479,49 @@ function applySqlMigrationThroughHost(sql, label) {
     throw new Error(`${label} schema reload failed: ${detail.slice(0, 300)}`)
   }
   return `${label}: applied through DB SSH channel`
+}
+
+function resolveSupabaseDbContainer(sshTarget) {
+  const explicit = envValue("PARADIGM_SUPABASE_DB_CONTAINER")
+  if (explicit) return explicit
+
+  const result = spawnSync(
+    "ssh",
+    [
+      "-o",
+      "BatchMode=yes",
+      "-o",
+      "StrictHostKeyChecking=accept-new",
+      sshTarget,
+      "docker ps --format '{{.Names}}\t{{.Image}}'",
+    ],
+    {
+      encoding: "utf8",
+      timeout: 15_000,
+      maxBuffer: 1024 * 1024,
+    },
+  )
+  if (result.error) throw result.error
+  if (result.status !== 0) {
+    const detail = `${result.stderr || result.stdout || ""}`.trim()
+    throw new Error(`Could not list host containers: ${detail.slice(0, 180)}`)
+  }
+
+  const rows = String(result.stdout || "")
+    .split("\n")
+    .map((line) => {
+      const [name, image] = line.split("\t")
+      return { name: name?.trim() || "", image: image?.trim() || "" }
+    })
+    .filter((row) => row.name.length > 0)
+
+  const exact = rows.find((row) => row.name === "paradigm-supabase-db" || row.name === "supabase-db-1")
+  if (exact) return exact.name
+
+  const candidate = rows.find((row) => /supabase.*db|db.*supabase/i.test(row.name) && /postgres/i.test(row.image))
+  if (candidate) return candidate.name
+
+  throw new Error("Could not resolve Supabase Postgres container on host")
 }
 
 async function applyContentTemplateMigration(envs) {
@@ -425,6 +574,10 @@ async function applyJapanReadinessInsightsMigration(envs) {
 
 async function applySalesProductsSchemaMigration(envs) {
   return applySqlMigration(envs, "migration_052_sales_products_bootstrap.sql", "Sales products bootstrap migration")
+}
+
+async function applyReleaseTableParityMigration(envs) {
+  return applySqlMigration(envs, "migration_061_release_table_parity.sql", "Release table parity migration")
 }
 
 function runDeployGuard() {
@@ -541,8 +694,9 @@ async function applySalesOptionalColumnRepairMigration(envs) {
   return applySqlMigration(envs, "migration_054_sales_cloud_optional_column_repair.sql", "Sales optional column repair migration")
 }
 
-function applyContentTemplates(envs) {
+async function applyContentTemplates(envs) {
   const { url, key } = salesSupabase(envs)
+  if (isInternalDataApiUrl(url)) return applyContentTemplatesThroughPostgres(envs)
   const result = spawnSync(process.execPath, ["scripts/seed-sales-content-templates.mjs"], {
     cwd: process.cwd(),
     env: {
@@ -559,6 +713,104 @@ function applyContentTemplates(envs) {
     return "Content templates: skipped until migration_022 is applied"
   }
   throw new Error(`Content template seed failed: ${message.slice(0, 180)}`)
+}
+
+async function applyContentTemplatesThroughPostgres(envs) {
+  const { templates } = await import("./seed-sales-content-templates.mjs")
+  const rows = templates()
+  const sql = `
+with incoming as (
+  select *
+  from jsonb_to_recordset(${quoteSqlString(JSON.stringify(rows))}::jsonb) as row(
+    region text,
+    report_locale text,
+    target_country text,
+    industry text,
+    offer_code text,
+    asset_type text,
+    appeal_angle text,
+    template_variant text,
+    title text,
+    purpose text,
+    quality_bar text,
+    dify_selection_rule text,
+    structure jsonb,
+    prompt_template text,
+    output_contract jsonb,
+    toolchain jsonb,
+    sample_copy text,
+    is_active boolean,
+    version integer
+  )
+)
+insert into public.sales_content_templates (
+  region,
+  report_locale,
+  target_country,
+  industry,
+  offer_code,
+  asset_type,
+  appeal_angle,
+  template_variant,
+  title,
+  purpose,
+  quality_bar,
+  dify_selection_rule,
+  structure,
+  prompt_template,
+  output_contract,
+  toolchain,
+  sample_copy,
+  is_active,
+  version
+)
+select
+  region,
+  report_locale,
+  target_country,
+  industry,
+  offer_code,
+  asset_type,
+  appeal_angle,
+  template_variant,
+  title,
+  purpose,
+  quality_bar,
+  dify_selection_rule,
+  coalesce(structure, '{}'::jsonb),
+  prompt_template,
+  coalesce(output_contract, '{}'::jsonb),
+  coalesce(toolchain, '{}'::jsonb),
+  coalesce(sample_copy, ''),
+  coalesce(is_active, true),
+  coalesce(version, 1)
+from incoming
+on conflict (
+  report_locale,
+  target_country,
+  industry,
+  offer_code,
+  asset_type,
+  appeal_angle,
+  template_variant,
+  version
+) do update set
+  region = excluded.region,
+  title = excluded.title,
+  purpose = excluded.purpose,
+  quality_bar = excluded.quality_bar,
+  dify_selection_rule = excluded.dify_selection_rule,
+  structure = excluded.structure,
+  prompt_template = excluded.prompt_template,
+  output_contract = excluded.output_contract,
+  toolchain = excluded.toolchain,
+  sample_copy = excluded.sample_copy,
+  is_active = excluded.is_active,
+  updated_at = now();
+notify pgrst, 'reload schema';
+`
+  await applySqlMigrationThroughPostgres(envs, sql, "Content templates seed")
+  return `Seeded sales_content_templates: ${rows.length}`
 }
 
 async function triggerDeploy() {
@@ -684,10 +936,10 @@ async function main() {
   if (!DRY && !SKIP_DEPLOY) {
     runHostDiskPreflight()
     runDeployGuard()
-    runDbTableVerification(envs)
   }
 
   if (!DRY) {
+    console.log(await applyReleaseTableParityMigration(envs))
     console.log(await applySalesProductsSchemaMigration(envs))
     const products = await applySalesProducts(envs)
     console.log(`Sales products: verified ${products}`)
@@ -721,7 +973,8 @@ async function main() {
     console.log(await applyPassiveInventorySegmentsMigration(envs))
     console.log(await applySalesRaceConditionGuardsMigration(envs))
     console.log(await applySalesOptionalColumnRepairMigration(envs))
-    console.log(applyContentTemplates(envs))
+    console.log(await applyContentTemplates(envs))
+    if (!SKIP_DEPLOY) runDbTableVerification(envs)
   } else {
     console.log("Dry run: skipped Supabase product upsert")
   }
