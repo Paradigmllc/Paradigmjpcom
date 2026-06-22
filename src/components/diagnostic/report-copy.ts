@@ -193,7 +193,7 @@ function localize(overrides: Partial<ReportCopy>): ReportCopy {
   return { ...EN, ...overrides }
 }
 
-export const REPORT_COPY: Record<ReportLang, ReportCopy> = {
+export const REPORT_COPY: Record<string, ReportCopy> = {
   ja: JA,
   en: EN,
   ko: localize({ privateReport: "Private executive business assessment" }),
