@@ -178,7 +178,9 @@ export async function fetchDiagnosticReport(opts: {
   }
   const safeMeta = metaBlocks != null ? { ...rawMeta, blocks: sanitized.blocks } : rawMeta
 
-  return {
+  const intelligence = buildCompanyIntelligence(company, sourceCoverage?.items ?? [])
+
+  const reportResult: DiagnosticReportData = {
     company_name: company.company_name,
     report_locale: reportLocale,
     target_country: targetCountry,
@@ -199,19 +201,29 @@ export async function fetchDiagnosticReport(opts: {
     visual_annotations: visualStory.visualAnnotations,
     improvement_preview: visualStory.improvementPreview,
     visitor_journey: visualStory.visitorJourney,
-    source_coverage: sourceCoverage,
-    intelligence: buildCompanyIntelligence(company, sourceCoverage.items),
+    source_coverage: sourceCoverage ?? { score: 0, collected: 0, configured: 0, missing: 0, items: [] },
+    intelligence: intelligence ?? { signals: [], painPoints: [], nextActions: [] },
     meta: safeMeta,
     contactFormUrl: companyContactFormUrl(company),
-    content_template: {
-      title: contentTemplate.title,
-      purpose: contentTemplate.purpose,
-      quality_bar: contentTemplate.quality_bar,
-      dify_selection_rule: contentTemplate.dify_selection_rule,
-      prompt_template: contentTemplate.prompt_template,
-      offer_code: contentTemplate.offer_code,
-      appeal_angle: contentTemplate.appeal_angle,
-    },
+    content_template: contentTemplate
+      ? {
+          title: contentTemplate.title ?? "",
+          purpose: contentTemplate.purpose ?? "",
+          quality_bar: contentTemplate.quality_bar ?? "",
+          dify_selection_rule: contentTemplate.dify_selection_rule ?? "",
+          prompt_template: contentTemplate.prompt_template ?? "",
+          offer_code: contentTemplate.offer_code ?? "",
+          appeal_angle: contentTemplate.appeal_angle ?? "",
+        }
+      : {
+          title: "",
+          purpose: "",
+          quality_bar: "",
+          dify_selection_rule: "",
+          prompt_template: "",
+          offer_code: "",
+          appeal_angle: "speed_conversion" as const,
+        },
     report_url: reportUrlFor(company, reportLocale),
     video_url: typeof unifiedMeta.video_url === "string" ? unifiedMeta.video_url : null,
     localized_report_urls: company.slug
@@ -221,6 +233,17 @@ export async function fetchDiagnosticReport(opts: {
         }))
       : [],
   }
+
+  // Safe wrapper: guarantee all fields accessed by the DiagnosticReport
+  // client component are non-null with sensible defaults.
+  const safeReport: DiagnosticReportData = {
+    ...reportResult,
+    acts: reportResult.acts ?? [],
+    localized_report_urls: reportResult.localized_report_urls ?? [],
+    total_loss: reportResult.total_loss ?? "0",
+  }
+
+  return safeReport
 }
 
 /** Mark report as freshly generated so auto-regeneration can skip until data changes. */
