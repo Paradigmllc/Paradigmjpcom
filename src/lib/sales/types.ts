@@ -33,6 +33,22 @@ export const INDUSTRIES = [
   "retail",
   "cleaning",
   "consulting",
+  "Hospitality / Food",
+  "E-Commerce / Retail",
+  "Technology / IT",
+  "Healthcare / Medical",
+  "Manufacturing / Industrial",
+  "Real Estate / Property",
+  "Education / Training",
+  "Legal / Professional Services",
+  "Finance / Insurance",
+  "Transport / Logistics",
+  "Media / Entertainment",
+  "Nonprofit / Government",
+  "Energy / Utilities",
+  "Agriculture / Farming",
+  "Fashion / Apparel",
+  "Other",
 ] as const
 export type Industry = (typeof INDUSTRIES)[number]
 
