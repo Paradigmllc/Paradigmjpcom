@@ -16,6 +16,7 @@ export type SalesPipelineStepStatus = SalesPipelineStatus | "skipped"
 export type SalesPipelineStepKey =
   | "twenty_csv_intake"
   | "supabase_normalize"
+  | "data_collection"
   | "karte_generate"
   | "report_generate"
   | "video_generate"
@@ -101,6 +102,7 @@ export interface DashboardSalesPipeline {
 export const SALES_PIPELINE_STEPS: SalesPipelineStepDefinition[] = [
   { key: "twenty_csv_intake", label: "Twenty/CSV intake", ownerTool: "twenty_or_csv", required: true },
   { key: "supabase_normalize", label: "Supabase normalization", ownerTool: "supabase", required: true },
+  { key: "data_collection", label: "Multi-source data collection", ownerTool: "multi_source", required: true },
   { key: "karte_generate", label: "Company karte generation", ownerTool: "supabase_dify", required: true },
   { key: "report_generate", label: "Diagnostic report generation", ownerTool: "nextjs_reports", required: true },
   { key: "video_generate", label: "Video job generation", ownerTool: "trigger_dev_video", required: false },
