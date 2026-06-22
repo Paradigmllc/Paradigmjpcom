@@ -59,3 +59,4 @@ const nextConfig: NextConfig = {
 }
 
 export default withPayload(withNextIntl(nextConfig))
+// force rebuild Mon Jun 22 13:02:26 JST 2026
