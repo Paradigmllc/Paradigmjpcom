@@ -1,0 +1,70 @@
+"use client"
+
+import type { DemoPageData } from "@/lib/sales/demo-site-types"
+import { DemoHero } from "./DemoHero"
+import { DemoNavigation } from "./DemoNavigation"
+import { DemoFeatures } from "./DemoFeatures"
+import { DemoStats } from "./DemoStats"
+import { DemoBeforeAfter } from "./DemoBeforeAfter"
+import { DemoCallToAction } from "./DemoCallToAction"
+import { DemoFooter } from "./DemoFooter"
+
+export function DemoPageClient({ data }: { data: DemoPageData }) {
+  const isJa = data.locale === "ja"
+  const {
+    hero,
+    navigation,
+    features,
+    stats,
+    beforeAfter,
+    cta,
+    totalLoss,
+    companyName,
+  } = data
+
+  return (
+    <div className="relative min-h-dvh overflow-hidden bg-[#050510] text-white antialiased">
+      {/* Ambient orbs */}
+      <div
+        className="pointer-events-none absolute -right-[100px] -top-[200px] z-0 h-[600px] w-[600px] rounded-full opacity-30 blur-[120px]"
+        style={{ background: hero.accentColor }}
+      />
+      <div
+        className="pointer-events-none absolute -bottom-[100px] -left-[50px] z-0 h-[400px] w-[400px] rounded-full opacity-30 blur-[120px]"
+        style={{ background: hero.accentColorDark }}
+      />
+
+      <DemoNavigation items={navigation} ctaText={hero.primaryCta.text} ctaHref={hero.primaryCta.href} companyName={companyName} accentColor={hero.accentColor} />
+
+      <main className="relative z-10">
+        <DemoHero {...hero} isJa={isJa} />
+
+        <DemoStats stats={stats} isJa={isJa} accentColor={hero.accentColor} />
+
+        {totalLoss && (
+          <section className="border-y border-white/5 bg-white/[.02] px-6 py-16">
+            <div className="mx-auto max-w-3xl text-center">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-red-400/20 bg-red-500/10 px-4 py-1.5 text-xs font-bold text-red-400">
+                {isJa ? "推定機会損失" : "Estimated Opportunity Loss"}
+              </div>
+              <p className="mb-4 text-6xl font-black text-red-400 md:text-8xl">{totalLoss}</p>
+              <p className="mx-auto max-w-xl text-lg text-zinc-400">
+                {isJa
+                  ? "現状のWebサイトで毎月失われている推定売上です。改善によりこの損失を回収できます。"
+                  : "Estimated revenue lost each month with the current website. This can be recovered through improvement."}
+              </p>
+            </div>
+          </section>
+        )}
+
+        <DemoBeforeAfter items={beforeAfter} isJa={isJa} accentColor={hero.accentColor} />
+
+        <DemoFeatures features={features} isJa={isJa} accentColor={hero.accentColor} />
+
+        <DemoCallToAction {...cta} isJa={isJa} />
+      </main>
+
+      <DemoFooter isJa={isJa} />
+    </div>
+  )
+}
