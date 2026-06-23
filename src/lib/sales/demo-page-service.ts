@@ -204,10 +204,10 @@ export async function generateFullStackDemo(
     // Build page data with template selection + personalization
     const companyProfile: CompanyProfile = {
       industry: (company.industry ?? "consulting") as string,
+      company_name: company.company_name,
       report_locale: effectiveLocale,
       tech_stack: company.tech_stack as Record<string, unknown> | null,
       meta: company.meta as Record<string, unknown> | null,
-      visual_evidence: company.visual_evidence as Record<string, unknown> | null,
     }
     const template = selectTemplate(companyProfile, diagnostic)
     const pageData = buildPersonalizedDemoData(
