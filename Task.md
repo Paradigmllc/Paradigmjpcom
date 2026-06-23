@@ -3,6 +3,15 @@
 不変前提: WW-EVENT 厳守＝cron/n8n/pg_cron 不使用・Trigger.dev イベント駆動 one-shot のみ。
 決定: オーケストレータ維持＋完了イベント再開 / デモ=フルサイト一本化 / Dify=queue隔離かつ本文正本 / Twenty=category集約＋deep link / Telegram=webhook修復＋OSS deep link＋Realtime push / インフラ=重ワーカー分離＋Upstash＋ISR/CDN。
 
+CURRENT STATUS - 2026-06-23 Demo route recovery / Astro full-site surface
+- `https://demo.paradigmjp.com/` が Next 側 `/en/demo` の粗い Web Improvement Demos 一覧（Shopify/Notion/Stripe/Figma/Airbnb 等）を露出し、`/demo/sample-restaurant` が `/en/demo/sample-restaurant` へ寄って 404 になる状態を確認。
+- 修正: `src/middleware.ts` で `demo.` host を `ASTRO_DEMO_INTERNAL_ORIGIN`（既定 `http://astro-demo:4321`）へ rewrite。`/` は Astro `/demo` へ、legacy `/ja|en/demo/*` は canonical `/demo/*` へ redirect。`api` matcher 除外を外し、demo host の Astro `/api/inquiries` も Next 側で潰さない。
+- 修正: `astro-demo/src/pages/index.astro` は旧テンプレートギャラリーを出さず `/demo` へ redirect。Next fallback の `src/app/[locale]/demo/page.tsx` も外部ブランド一覧/DB依存一覧をやめ、業種別フルサイトデモ一覧へ差し替え。`src/app/demo/page.tsx` の既定 locale は `/ja/demo`。
+- 検証: `npm exec -- tsc --noEmit --pretty false` OK、`npm run build` OK、`cd astro-demo && npm run build` OK。ローカル Astro server 実HTTPで `/`→`/demo` 200、`/demo` 200、`/demo/sample-restaurant` 200、`/ja/restaurant/sales`→`/demo/sample-restaurant` 200。
+- Next middleware 実証: `ASTRO_DEMO_INTERNAL_ORIGIN=http://127.0.0.1:4321 npm run start` + `Host: demo.paradigmjp.com` で `/` は `x-middleware-rewrite=http://127.0.0.1:4321/demo` かつ 200、`/en/demo` は `/demo` へ 307、`/demo/sample-restaurant` は `x-middleware-rewrite=http://127.0.0.1:4321/demo/sample-restaurant` かつ 200。
+- 画面検証: Chrome/Playwright で `/demo` desktop、`/demo/sample-restaurant` desktop/mobile を撮影。desktop/mobile とも `bodyWidth === viewportWidth` で横はみ出しなし。
+- 未解消の既存ガード: `npm run quality:guard` は今回未変更の既存 500行超ファイル `src/lib/sales/demo-deepseek-enhancer.ts`、`src/lib/sales/demo-multi-page-builder.ts`、`src/lib/sales/demo-page-service.ts` で失敗。今回差分由来の `min-h-screen` 警告は `min-h-dvh` へ修正済み。
+
 CURRENT STATUS - 2026-06-23 Release Doctor 恒久化（ビルド/デプロイ時間浪費の再発防止）
 - 2026-06-23 追加恒久化: 監査で「HTTP 200 だが Sales health JSON `ok:false`」「Supabase Realtime 実体なし」「n8n runtime 残存」「Twenty worker OOM restart 2829回」を検出。コード/インフラ/共通ルールの 3 面で修復中。
 - `release-doctor` は Coolify env から shared secret を取得して `/api/sales/health` の JSON `ok:true` まで検査する。HTTP 200 だけでは合格しない。

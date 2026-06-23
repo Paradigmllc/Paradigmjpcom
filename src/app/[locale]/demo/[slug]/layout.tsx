@@ -31,8 +31,8 @@ export default async function DemoMultiLayoutWrapper({ children, params }: Layou
       templateId = data.templateId
       accentColor = data.meta?.accentColor || data.pages?.home?.hero?.accentColor
     }
-  } catch {
-    // fallback to default
+  } catch (error) {
+    console.warn("[demo-layout] failed to load demo data:", error instanceof Error ? error.message : String(error))
   }
 
   const navLabels = isJa
