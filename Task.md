@@ -15,6 +15,12 @@ CURRENT STATUS - 2026-06-23 Demo route recovery / Astro full-site surface
 - 本番確認: `https://demo.paradigmjp.com/` 200（`Paradigm 業種別デモサイト一覧`）、`/demo` 200、legacy `/en/demo`→`/demo` 200、`/demo/sample-restaurant` 200、legacy `/ja/restaurant/sales`→`/demo/sample-restaurant` 200。旧 `Shopify/Notion/Stripe/Figma/Airbnb/Web Improvement Demos/Page not found` シグネチャは未検出。Chrome/Playwright 本番 desktop/mobile screenshot でも横はみ出しなし。
 - 未解消の既存ガード: `npm run quality:guard` は今回未変更の既存 500行超ファイル `src/lib/sales/demo-deepseek-enhancer.ts`、`src/lib/sales/demo-multi-page-builder.ts`、`src/lib/sales/demo-page-service.ts` で失敗。今回差分由来の `min-h-screen` 警告は `min-h-dvh` へ修正済み。
 
+CURRENT STATUS - 2026-06-23 Demo generator quality guard cleanup
+- 残タスクの 500行超エラー3件を実装分割。`demo-deepseek-enhancer.ts` は型・DeepSeek API/sanitize・prompt を `demo-deepseek-types.ts` / `demo-deepseek-client.ts` / `demo-deepseek-prompts.ts` へ分離し、既存 import 互換のため元モジュールから型を再export。
+- `demo-multi-page-builder.ts` は issue detection / metrics / FAQ / services / about story helper を `demo-multi-page-content.ts` へ分離。`demo-page-service.ts` は fetch 系を `demo-page-fetch.ts`、DeepSeek merge を `demo-deepseek-merge.ts` へ分離し、既存の `fetchDemoPageData` / `fetchDemoMultiPageData` export を維持。
+- 行数実測: `demo-deepseek-enhancer.ts` 182、`demo-deepseek-client.ts` 268、`demo-deepseek-prompts.ts` 225、`demo-multi-page-builder.ts` 327、`demo-multi-page-content.ts` 387、`demo-page-service.ts` 164、`demo-page-fetch.ts` 354、`demo-deepseek-merge.ts` 104。
+- 検証: `npm exec -- tsc --noEmit --pretty false` OK、`npm run quality:guard` OK（0 error / warningのみ）、`npm run build` OK。
+
 CURRENT STATUS - 2026-06-23 Release Doctor 恒久化（ビルド/デプロイ時間浪費の再発防止）
 - 2026-06-23 追加恒久化: 監査で「HTTP 200 だが Sales health JSON `ok:false`」「Supabase Realtime 実体なし」「n8n runtime 残存」「Twenty worker OOM restart 2829回」を検出。コード/インフラ/共通ルールの 3 面で修復中。
 - `release-doctor` は Coolify env から shared secret を取得して `/api/sales/health` の JSON `ok:true` まで検査する。HTTP 200 だけでは合格しない。
