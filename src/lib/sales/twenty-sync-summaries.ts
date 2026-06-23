@@ -153,7 +153,7 @@ export function twentyCompanyHomePayload(karte: CompanyKarteSnapshot): Record<st
     paradigmSourceName: karte.sourceName,
     paradigmSalesStatus: salesStatusLabel(karte),
     paradigmKarteScore: karteScore(karte),
-    paradigmSourceCoverage: `${karte.sourceScore}%`,
+    paradigmSourceCoverage: karte.sourceScore,
     paradigmDataStatus: sourceDataStatus(karte),
     paradigmDataSources: sourceDataCounts(karte),
     paradigmDataBreakdown: sourceCategoryBreakdown(karte),
