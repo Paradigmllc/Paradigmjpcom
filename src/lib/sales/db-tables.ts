@@ -115,6 +115,9 @@ export const DB_TABLES = {
   // ── Theme Demo Pages (migration_058) ──
   THEME_DEMO_PAGES: "theme_demo_pages",
 
+  // ── Demo Contact Submissions ──
+  DEMO_CONTACT_SUBMISSIONS: "demo_contact_submissions",
+
   // ── Demo (migration_016) ──
   WEB_DEMOS: "web_demos",
   // NOTE: These tables have no migrations in this repo. Managed by Appexxme (separate project).

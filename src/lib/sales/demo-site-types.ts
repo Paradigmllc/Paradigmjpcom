@@ -137,6 +137,27 @@ export interface DemoHomePage {
   beforeAfter: DemoBeforeAfterItem[]
   totalLoss: string
   cta: DemoCtaProps
+  /** Metrics summary card displayed above Before/After (real diagnostic numbers) */
+  metricsSummary?: DemoMetricsSummary
+  /** Data-driven FAQ items generated from detected issues */
+  faq?: DemoFAQItem[]
+}
+
+export interface DemoMetricsSummary {
+  currentPageSpeed: string | null
+  targetPageSpeed: string
+  currentSslGrade: string | null
+  targetSslGrade: string
+  currentSeoIssues: number
+  targetSeoIssues: number
+  monthlyLoss: string | null
+  recoveryAmount: string | null
+}
+
+export interface DemoFAQItem {
+  id: string
+  question: string
+  answer: string
 }
 
 export interface DemoAboutPage {
@@ -178,6 +199,8 @@ export interface DemoContactPage {
   phone?: string
   address: string
   calBookingUrl: string
+  /** Direct link to Cal.com (non-embed) for fallback CTA button */
+  calDirectUrl?: string
   formNote?: string
   accentColor: string
 }

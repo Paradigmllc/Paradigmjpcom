@@ -2,7 +2,8 @@
 
 import { motion, useInView } from "framer-motion"
 import { useRef } from "react"
-import type { DemoMultiPageData } from "@/lib/sales/demo-site-types"
+import type { DemoMultiPageData, DemoMetricsSummary } from "@/lib/sales/demo-site-types"
+import { DemoFAQ } from "./DemoFAQ"
 
 interface Props {
   data: DemoMultiPageData
@@ -28,14 +29,25 @@ export function DemoHomePage({ data }: Props) {
         <LossEstimate totalLoss={home.totalLoss} isJa={isJa} />
       )}
 
-      {/* Before / After */}
+      {/* Before / After with Metrics Summary */}
       {home.beforeAfter.length > 0 && (
-        <BeforeAfterSection items={home.beforeAfter} isJa={isJa} accent={accent} />
+        <>
+          {/* Metrics Summary Card */}
+          {home.metricsSummary && (
+            <MetricsSummarySection metrics={home.metricsSummary} isJa={isJa} accent={accent} />
+          )}
+          <BeforeAfterSection items={home.beforeAfter} isJa={isJa} accent={accent} />
+        </>
       )}
 
       {/* Features */}
       {home.features.length > 0 && (
         <FeaturesSection features={home.features} isJa={isJa} accent={accent} />
+      )}
+
+      {/* FAQ */}
+      {home.faq && home.faq.length > 0 && (
+        <DemoFAQ faq={home.faq} isJa={isJa} accent={accent} />
       )}
 
       {/* CTA */}
@@ -181,7 +193,6 @@ function StatsSection({ stats, isJa, accent }: { stats: DemoMultiPageData["pages
 /* ─── Loss Estimate ─── */
 
 function LossEstimate({ totalLoss, isJa }: { totalLoss: string; isJa: boolean }) {
-  // Format totalLoss with commas if it's a numeric value
   const formattedLoss = formatLoss(totalLoss)
 
   return (
@@ -211,14 +222,139 @@ function LossEstimate({ totalLoss, isJa }: { totalLoss: string; isJa: boolean })
   )
 }
 
-function formatLoss(value: string): string {
-  // Extract numeric part and yen symbol
-  const match = value.match(/^(¥?\s*)([\d,]+)(.*)$/)
-  if (!match) return value
-  const [, symbol, num, suffix] = match
-  const cleaned = num.replace(/,/g, "")
-  const formatted = Number(cleaned).toLocaleString("en-US")
-  return `${symbol}${formatted}${suffix}`
+/* ─── Metrics Summary ─── */
+
+function MetricsSummarySection({ metrics, isJa, accent }: { metrics: DemoMetricsSummary; isJa: boolean; accent: string }) {
+  const hasData =
+    metrics.currentPageSpeed ||
+    metrics.currentSslGrade ||
+    metrics.currentSeoIssues > 0 ||
+    metrics.monthlyLoss
+
+  if (!hasData) return null
+
+  const rows: { label: string; current: string; target: string; icon: string }[] = []
+
+  if (metrics.currentPageSpeed) {
+    rows.push({
+      label: isJa ? "PageSpeedスコア" : "PageSpeed Score",
+      current: metrics.currentPageSpeed,
+      target: metrics.targetPageSpeed,
+      icon: "bolt",
+    })
+  }
+
+  if (metrics.currentSslGrade) {
+    rows.push({
+      label: isJa ? "SSLグレード" : "SSL Grade",
+      current: metrics.currentSslGrade,
+      target: metrics.targetSslGrade,
+      icon: "lock",
+    })
+  }
+
+  if (metrics.currentSeoIssues > 0) {
+    rows.push({
+      label: isJa ? "SEO課題" : "SEO Issues",
+      current: `${metrics.currentSeoIssues} ${isJa ? "件" : "issues"}`,
+      target: `${metrics.targetSeoIssues} ${isJa ? "件" : "issues"}`,
+      icon: "target",
+    })
+  }
+
+  if (metrics.monthlyLoss && metrics.recoveryAmount) {
+    rows.push({
+      label: isJa ? "月間損失" : "Monthly Loss",
+      current: metrics.monthlyLoss,
+      target: metrics.recoveryAmount,
+      icon: "clock",
+    })
+  }
+
+  if (rows.length === 0) return null
+
+  return (
+    <section className="bg-white px-4 pb-8 pt-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl">
+        <motion.div
+          className="rounded-2xl border border-gray-100 bg-gradient-to-br from-gray-50 to-white p-6 shadow-sm sm:p-8"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        >
+          <div className="mb-4 flex items-center gap-2">
+            <span
+              className="inline-flex h-6 w-6 items-center justify-center rounded-md text-xs font-bold text-white"
+              style={{ background: accent }}
+            >
+              ✓
+            </span>
+            <h3 className="font-display text-lg font-bold text-gray-900">
+              {isJa ? "改善目標サマリー" : "Improvement Targets Summary"}
+            </h3>
+          </div>
+
+          <div className="overflow-hidden rounded-xl border border-gray-100">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50/50">
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700">
+                    {isJa ? "指標" : "Metric"}
+                  </th>
+                  <th className="px-4 py-3 text-center font-semibold text-red-600">
+                    {isJa ? "現在" : "Current"}
+                  </th>
+                  <th className="px-4 py-3 text-center" />
+                  <th className="px-4 py-3 text-center font-semibold text-emerald-600">
+                    {isJa ? "目標" : "Target"}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, i) => (
+                  <tr key={i} className="border-b border-gray-50 last:border-0">
+                    <td className="px-4 py-3 font-medium text-gray-700">
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="flex h-6 w-6 items-center justify-center rounded-md"
+                          style={{ background: `${accent}10` }}
+                        >
+                          <MetricIcon name={row.icon} accent={accent} />
+                        </span>
+                        {row.label}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center font-semibold text-red-600">
+                      {row.current}
+                    </td>
+                    <td className="px-2 py-3 text-center text-gray-300">
+                      <svg className="mx-auto h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M5 12h14M12 5l7 7-7 7" />
+                      </svg>
+                    </td>
+                    <td className="px-4 py-3 text-center font-semibold text-emerald-600">
+                      {row.target}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  )
+}
+
+function MetricIcon({ name, accent }: { name: string; accent: string }) {
+  const icons: Record<string, React.ReactNode> = {
+    bolt: <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>,
+    lock: <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2.5"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>,
+    target: <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg>,
+    clock: <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>,
+  }
+  return icons[name] ?? <MetricIcon name="bolt" accent={accent} />
 }
 
 /* ─── Before / After ─── */
@@ -412,6 +548,17 @@ function CtaSection({ cta, isJa, accent, accentDark }: {
       </motion.div>
     </section>
   )
+}
+
+/* ─── Helpers ─── */
+
+function formatLoss(value: string): string {
+  const match = value.match(/^(¥?\s*)([\d,]+)(.*)$/)
+  if (!match) return value
+  const [, symbol, num, suffix] = match
+  const cleaned = num.replace(/,/g, "")
+  const formatted = Number(cleaned).toLocaleString("en-US")
+  return `${symbol}${formatted}${suffix}`
 }
 
 /* ─── Icons ─── */
