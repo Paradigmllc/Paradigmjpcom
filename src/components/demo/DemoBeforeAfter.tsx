@@ -1,5 +1,6 @@
 "use client"
 
+import { motion } from "framer-motion"
 import type { DemoBeforeAfterItem } from "@/lib/sales/demo-site-types"
 
 const SEVERITY_BADGES: Record<string, { label: string; labelJa: string; className: string }> = {
@@ -22,7 +23,13 @@ export function DemoBeforeAfter({
   return (
     <section id="before-after" className="px-6 py-16">
       <div className="mx-auto max-w-5xl">
-        <div className="mb-12 text-center">
+        <motion.div
+          className="mb-12 text-center"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        >
           <p
             className="mb-4 text-sm font-bold uppercase tracking-[.3em]"
             style={{ color: accentColor }}
@@ -32,15 +39,19 @@ export function DemoBeforeAfter({
           <h2 className="text-3xl font-bold md:text-4xl">
             {isJa ? "改善前後の比較" : "Before & After Comparison"}
           </h2>
-        </div>
+        </motion.div>
 
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {items.map((item) => {
+          {items.map((item, i) => {
             const badge = SEVERITY_BADGES[item.severity] ?? SEVERITY_BADGES.info
             return (
-              <div
+              <motion.div
                 key={item.id}
                 className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm"
+                initial={{ opacity: 0, x: i % 2 === 0 ? -30 : 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.1, ease: "easeOut" }}
               >
                 <div className="p-6">
                   <div className="mb-3 flex items-center justify-between">
@@ -73,7 +84,7 @@ export function DemoBeforeAfter({
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )
           })}
         </div>

@@ -1,5 +1,6 @@
 "use client"
 
+import { motion } from "framer-motion"
 import type { DemoFeatureItem } from "@/lib/sales/demo-site-types"
 
 const ICON_MAP: Record<string, string> = {
@@ -56,7 +57,13 @@ export function DemoFeatures({
   return (
     <section id="features" className="px-6 py-16">
       <div className="mx-auto max-w-5xl">
-        <div className="mb-12 text-center">
+        <motion.div
+          className="mb-12 text-center"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        >
           <p
             className="mb-4 text-sm font-bold uppercase tracking-[.3em]"
             style={{ color: accentColor }}
@@ -66,15 +73,19 @@ export function DemoFeatures({
           <h2 className="text-3xl font-bold md:text-4xl">
             {isJa ? "具体的な改善内容" : "What We Improve"}
           </h2>
-        </div>
+        </motion.div>
 
         <div className="grid gap-6 md:grid-cols-3">
           {features.map((feature, i) => {
             const sev = SEVERITY_COLORS[feature.severity] ?? SEVERITY_COLORS.info
             return (
-              <div
+              <motion.div
                 key={feature.title}
                 className="group rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm transition-all hover:border-white/20"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.1, ease: "easeOut" }}
               >
                 <div className="mb-4 flex items-center gap-4">
                   <div
@@ -105,7 +116,7 @@ export function DemoFeatures({
                     )}
                   </div>
                 )}
-              </div>
+              </motion.div>
             )
           })}
         </div>

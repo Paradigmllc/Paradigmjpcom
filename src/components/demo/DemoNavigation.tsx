@@ -1,5 +1,6 @@
 "use client"
 
+import { motion } from "framer-motion"
 import type { DemoNavigationItem } from "@/lib/sales/demo-site-types"
 
 interface Props {
@@ -21,12 +22,21 @@ export function DemoNavigation({ items, ctaText, ctaHref, companyName, accentCol
     .slice(0, 2)
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-white/5 bg-black/60 backdrop-blur-xl">
+    <motion.nav
+      className="sticky top-0 z-50 border-b border-white/5 bg-black/60 backdrop-blur-xl"
+      initial={{ y: -20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+    >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-sm font-bold text-black">
+          <motion.div
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-sm font-bold text-black"
+            whileHover={{ borderRadius: "0.75rem" }}
+            transition={{ duration: 0.2 }}
+          >
             {initials || companyName.slice(0, 1)}
-          </div>
+          </motion.div>
           <span className="max-w-[200px] truncate text-sm font-bold text-white">
             {companyName}
           </span>
@@ -54,7 +64,7 @@ export function DemoNavigation({ items, ctaText, ctaHref, companyName, accentCol
           <ArrowIcon />
         </a>
       </div>
-    </nav>
+    </motion.nav>
   )
 }
 

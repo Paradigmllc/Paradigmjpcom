@@ -1,5 +1,7 @@
 "use client"
 
+import { motion, useInView } from "framer-motion"
+import { useRef } from "react"
 import type { DemoMultiPageData } from "@/lib/sales/demo-site-types"
 
 interface Props {
@@ -22,7 +24,7 @@ export function DemoHomePage({ data }: Props) {
       <StatsSection stats={home.stats} isJa={isJa} accent={accent} />
 
       {/* Loss Estimate */}
-      {home.totalLoss && (
+      {home.totalLoss && home.totalLoss !== "¥0" && home.totalLoss !== "0" && home.totalLoss !== "¥ 0" && (
         <LossEstimate totalLoss={home.totalLoss} isJa={isJa} />
       )}
 
@@ -50,9 +52,19 @@ function HeroSection({ hero, isJa }: { hero: DemoMultiPageData["pages"]["home"][
       {/* Subtle grid pattern */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)] bg-[size:64px_64px]" />
 
-      <div className="relative mx-auto max-w-4xl text-center">
+      <motion.div
+        className="relative mx-auto max-w-4xl text-center"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      >
         {/* Tagline */}
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--home-accent,#2563eb)]/20 bg-[var(--home-accent,#2563eb)]/5 px-4 py-1.5">
+        <motion.div
+          className="mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--home-accent,#2563eb)]/20 bg-[var(--home-accent,#2563eb)]/5 px-4 py-1.5"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
+        >
           <span
             className="h-1.5 w-1.5 rounded-full"
             style={{ background: "var(--home-accent, #2563eb)" }}
@@ -60,29 +72,49 @@ function HeroSection({ hero, isJa }: { hero: DemoMultiPageData["pages"]["home"][
           <span className="text-xs font-semibold tracking-wide" style={{ color: "var(--home-accent, #2563eb)" }}>
             {hero.tagline}
           </span>
-        </div>
+        </motion.div>
 
         {/* Title */}
-        <h1 className="mx-auto max-w-3xl font-display text-4xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
+        <motion.h1
+          className="mx-auto max-w-3xl font-display text-4xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-5xl lg:text-6xl"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+        >
           {hero.title}
-        </h1>
+        </motion.h1>
 
         {/* Subtitle */}
-        <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-gray-500 sm:text-xl">
+        <motion.p
+          className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-gray-500 sm:text-xl"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
+        >
           {hero.subtitle}
-        </p>
+        </motion.p>
 
         {/* Company info */}
-        <div className="mt-6 flex items-center justify-center gap-3 text-sm text-gray-400">
+        <motion.div
+          className="mt-6 flex items-center justify-center gap-3 text-sm text-gray-400"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.4, ease: "easeOut" }}
+        >
           <span className="font-semibold text-gray-700">{hero.companyName}</span>
           <span className="text-gray-300">•</span>
           <span>{hero.industryLabel}</span>
           <span className="text-gray-300">•</span>
           <span>{hero.locationLabel}</span>
-        </div>
+        </motion.div>
 
         {/* CTAs */}
-        <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+        <motion.div
+          className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5, ease: "easeOut" }}
+        >
           <a
             href={hero.primaryCta.href}
             target="_blank"
@@ -99,8 +131,8 @@ function HeroSection({ hero, isJa }: { hero: DemoMultiPageData["pages"]["home"][
           >
             {hero.secondaryCta.text}
           </a>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </section>
   )
 }
@@ -108,12 +140,28 @@ function HeroSection({ hero, isJa }: { hero: DemoMultiPageData["pages"]["home"][
 /* ─── Stats ─── */
 
 function StatsSection({ stats, isJa, accent }: { stats: DemoMultiPageData["pages"]["home"]["stats"]; isJa: boolean; accent: string }) {
+  const ref = useRef(null)
+  const inView = useInView(ref, { once: true, margin: "-50px" })
+
   return (
     <section className="border-y border-gray-100 bg-white px-4 py-12 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-4xl">
+      <motion.div
+        ref={ref}
+        className="mx-auto max-w-4xl"
+        initial="hidden"
+        animate={inView ? "visible" : "hidden"}
+      >
         <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
           {stats.map((stat, i) => (
-            <div key={i} className="text-center">
+            <motion.div
+              key={i}
+              className="text-center"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0 },
+              }}
+              transition={{ duration: 0.4, delay: i * 0.1, ease: "easeOut" }}
+            >
               <div
                 className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl"
                 style={{ background: `${accent}10` }}
@@ -122,10 +170,10 @@ function StatsSection({ stats, isJa, accent }: { stats: DemoMultiPageData["pages
               </div>
               <p className="font-display text-3xl font-extrabold text-gray-900 sm:text-4xl">{stat.amount}</p>
               <p className="mt-1 text-sm font-medium text-gray-500">{stat.title}</p>
-            </div>
+            </motion.div>
           ))}
         </div>
-      </div>
+      </motion.div>
     </section>
   )
 }
@@ -133,66 +181,130 @@ function StatsSection({ stats, isJa, accent }: { stats: DemoMultiPageData["pages
 /* ─── Loss Estimate ─── */
 
 function LossEstimate({ totalLoss, isJa }: { totalLoss: string; isJa: boolean }) {
+  // Format totalLoss with commas if it's a numeric value
+  const formattedLoss = formatLoss(totalLoss)
+
   return (
-    <section className="bg-gradient-to-r from-red-50 to-orange-50 px-4 py-16 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-3xl text-center">
+    <section className="relative overflow-hidden px-4 py-16 sm:px-6 lg:px-8" style={{ background: "linear-gradient(135deg, #fef2f2 0%, #fff7ed 50%, #fef2f2 100%)" }}>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(239,68,68,0.08)_0%,transparent_70%)]" />
+      <motion.div
+        className="relative mx-auto max-w-3xl text-center"
+        initial={{ opacity: 0, scale: 0.95 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      >
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-100/60 px-4 py-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
           <span className="text-xs font-bold text-red-600">
             {isJa ? "推定機会損失" : "Estimated Opportunity Loss"}
           </span>
         </div>
-        <p className="mb-4 font-display text-5xl font-black text-red-600 sm:text-7xl">{totalLoss}</p>
+        <p className="mb-4 font-display text-5xl font-black text-red-600 sm:text-7xl">{formattedLoss}</p>
         <p className="mx-auto max-w-xl text-lg leading-relaxed text-gray-600">
           {isJa
             ? "現状のWebサイトで毎月失われている推定売上です。改善によりこの損失を回収できます。"
             : "Estimated revenue lost each month with the current website. This can be recovered through improvement."}
         </p>
-      </div>
+      </motion.div>
     </section>
   )
+}
+
+function formatLoss(value: string): string {
+  // Extract numeric part and yen symbol
+  const match = value.match(/^(¥?\s*)([\d,]+)(.*)$/)
+  if (!match) return value
+  const [, symbol, num, suffix] = match
+  const cleaned = num.replace(/,/g, "")
+  const formatted = Number(cleaned).toLocaleString("en-US")
+  return `${symbol}${formatted}${suffix}`
 }
 
 /* ─── Before / After ─── */
 
 function BeforeAfterSection({ items, isJa, accent }: { items: DemoMultiPageData["pages"]["home"]["beforeAfter"]; isJa: boolean; accent: string }) {
+  const ref = useRef(null)
+  const inView = useInView(ref, { once: true, margin: "-50px" })
+
   return (
     <section id="before-after" className="bg-white px-4 py-20 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
-        <div className="mb-12 text-center">
+        <motion.div
+          className="mb-12 text-center"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        >
           <h2 className="font-display text-3xl font-bold text-gray-900 sm:text-4xl">
             {isJa ? "改善前後の比較" : "Before & After Comparison"}
           </h2>
           <p className="mt-3 text-gray-500">
             {isJa ? "診断データに基づく改善ポイント" : "Improvement points based on diagnostic data"}
           </p>
-        </div>
-        <div className="grid gap-8 md:grid-cols-3">
-          {items.map((item) => (
-            <div key={item.id} className="group rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+        </motion.div>
+
+        <motion.div
+          ref={ref}
+          className="grid gap-8 md:grid-cols-3"
+          initial="hidden"
+          animate={inView ? "visible" : "hidden"}
+        >
+          {items.map((item, i) => (
+            <motion.div
+              key={item.id}
+              className="group rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+              variants={{
+                hidden: { opacity: 0, x: i % 2 === 0 ? -30 : 30 },
+                visible: { opacity: 1, x: 0 },
+              }}
+              transition={{ duration: 0.4, delay: i * 0.12, ease: "easeOut" }}
+            >
               <div className="mb-4">
                 <SeverityBadge severity={item.severity} />
               </div>
               <h3 className="mb-4 font-display text-lg font-semibold text-gray-900">{item.label}</h3>
 
-              {/* Before */}
-              <div className="mb-4 rounded-xl border border-red-100 bg-red-50/50 p-4">
-                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-red-500">
-                  {isJa ? "Before" : "Before"}
-                </p>
-                <p className="text-sm leading-relaxed text-gray-600">{item.beforeDescription}</p>
-              </div>
+              {/* Before & After side-by-side */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* Before */}
+                <div className="rounded-xl border border-red-200 bg-red-50/70 p-3">
+                  <div className="mb-1.5 flex items-center gap-1.5">
+                    <svg className="h-3.5 w-3.5 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-red-500">
+                      {isJa ? "BEFORE" : "BEFORE"}
+                    </p>
+                  </div>
+                  <p className="text-xs leading-relaxed text-gray-600">{item.beforeDescription}</p>
+                </div>
 
-              {/* After */}
-              <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
-                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-emerald-600">
-                  {isJa ? "After" : "After"}
-                </p>
-                <p className="text-sm leading-relaxed text-gray-600">{item.afterDescription}</p>
+                {/* Arrow + After */}
+                <div>
+                  <div className="flex justify-center -my-0.5 mb-1">
+                    <svg className="h-4 w-4 rotate-90 text-gray-300 md:rotate-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3">
+                    <div className="mb-1.5 flex items-center gap-1.5">
+                      <svg className="h-3.5 w-3.5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">
+                        {isJa ? "AFTER" : "AFTER"}
+                      </p>
+                    </div>
+                    <p className="text-xs leading-relaxed text-gray-600">{item.afterDescription}</p>
+                  </div>
+                </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   )
@@ -201,20 +313,43 @@ function BeforeAfterSection({ items, isJa, accent }: { items: DemoMultiPageData[
 /* ─── Features ─── */
 
 function FeaturesSection({ features, isJa, accent }: { features: DemoMultiPageData["pages"]["home"]["features"]; isJa: boolean; accent: string }) {
+  const ref = useRef(null)
+  const inView = useInView(ref, { once: true, margin: "-50px" })
+
   return (
     <section id="features" className="bg-gray-50/80 px-4 py-20 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
-        <div className="mb-12 text-center">
+        <motion.div
+          className="mb-12 text-center"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        >
           <h2 className="font-display text-3xl font-bold text-gray-900 sm:text-4xl">
             {isJa ? "改善のポイント" : "Key Improvements"}
           </h2>
           <p className="mt-3 text-gray-500">
             {isJa ? "診断レポートに基づく3つの重点領域" : "Three focus areas based on the diagnostic report"}
           </p>
-        </div>
-        <div className="grid gap-8 md:grid-cols-3">
+        </motion.div>
+
+        <motion.div
+          ref={ref}
+          className="grid gap-8 md:grid-cols-3"
+          initial="hidden"
+          animate={inView ? "visible" : "hidden"}
+        >
           {features.map((feature, i) => (
-            <div key={i} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+            <motion.div
+              key={i}
+              className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+              variants={{
+                hidden: { opacity: 0, y: 30 },
+                visible: { opacity: 1, y: 0 },
+              }}
+              transition={{ duration: 0.4, delay: i * 0.1, ease: "easeOut" }}
+            >
               <div
                 className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl"
                 style={{ background: `${accent}10` }}
@@ -231,9 +366,9 @@ function FeaturesSection({ features, isJa, accent }: { features: DemoMultiPageDa
                   )}
                 </div>
               )}
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   )
@@ -249,24 +384,32 @@ function CtaSection({ cta, isJa, accent, accentDark }: {
 }) {
   return (
     <section className="px-4 py-20 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-3xl rounded-3xl p-10 text-center sm:p-16"
-        style={{ background: `linear-gradient(135deg, ${accent}, ${accentDark})` }}>
+      <motion.div
+        className="mx-auto max-w-3xl rounded-3xl p-10 text-center sm:p-16"
+        style={{ background: `linear-gradient(135deg, ${accent}, ${accentDark})` }}
+        initial={{ opacity: 0, scale: 0.9 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      >
         <h2 className="font-display text-3xl font-bold text-white sm:text-4xl">
           {cta.title}
         </h2>
         <p className="mx-auto mt-4 max-w-xl text-lg leading-relaxed text-white/80">
           {cta.subtitle}
         </p>
-        <a
+        <motion.a
           href={cta.buttonHref}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-8 py-3.5 text-base font-semibold text-gray-900 shadow-lg transition-all hover:bg-gray-50 hover:shadow-xl hover:-translate-y-0.5"
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.98 }}
         >
           {cta.buttonText}
           <ArrowRightIcon />
-        </a>
-      </div>
+        </motion.a>
+      </motion.div>
     </section>
   )
 }
@@ -306,9 +449,14 @@ function SeverityBadge({ severity }: { severity: "critical" | "warning" | "info"
     warning: "border-amber-200 bg-amber-50 text-amber-700",
     info: "border-blue-200 bg-blue-50 text-blue-700",
   }
+  const labels = {
+    critical: "Critical",
+    warning: "Warning",
+    info: "Info",
+  }
   return (
     <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${colors[severity]}`}>
-      {severity}
+      {labels[severity]}
     </span>
   )
 }

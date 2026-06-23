@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { DemoMultiLayout } from "@/components/demo/DemoMultiLayout"
+import { fetchDemoMultiPageData } from "@/lib/sales/demo-generator"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 300
@@ -15,17 +16,33 @@ interface LayoutProps {
 
 export default async function DemoMultiLayoutWrapper({ children, params }: LayoutProps) {
   const { locale, slug } = await params
+  const isJa = locale === "ja"
   const basePath = `/${locale}/demo/${slug}`
 
+  // Fetch demo data for company name
+  let companyName = "Paradigm"
+  try {
+    const data = await fetchDemoMultiPageData(slug)
+    if (data?.meta?.companyName) {
+      companyName = data.meta.companyName
+    }
+  } catch {
+    // fallback to default
+  }
+
+  const navLabels = isJa
+    ? { home: "ホーム", about: "会社概要", services: "サービス", contact: "お問い合わせ" }
+    : { home: "Home", about: "About", services: "Services", contact: "Contact" }
+
   const navLinks = [
-    { label: "Home", href: basePath },
-    { label: "About", href: `${basePath}/about` },
-    { label: "Services", href: `${basePath}/services` },
-    { label: "Contact", href: `${basePath}/contact` },
+    { label: navLabels.home, href: basePath },
+    { label: navLabels.about, href: `${basePath}/about` },
+    { label: navLabels.services, href: `${basePath}/services` },
+    { label: navLabels.contact, href: `${basePath}/contact` },
   ]
 
   return (
-    <DemoMultiLayout navLinks={navLinks} basePath={basePath}>
+    <DemoMultiLayout navLinks={navLinks} basePath={basePath} isJa={isJa} companyName={companyName}>
       {children}
     </DemoMultiLayout>
   )
