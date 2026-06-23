@@ -20,6 +20,7 @@ CURRENT STATUS - 2026-06-23 Demo generator quality guard cleanup
 - `demo-multi-page-builder.ts` は issue detection / metrics / FAQ / services / about story helper を `demo-multi-page-content.ts` へ分離。`demo-page-service.ts` は fetch 系を `demo-page-fetch.ts`、DeepSeek merge を `demo-deepseek-merge.ts` へ分離し、既存の `fetchDemoPageData` / `fetchDemoMultiPageData` export を維持。
 - 行数実測: `demo-deepseek-enhancer.ts` 182、`demo-deepseek-client.ts` 268、`demo-deepseek-prompts.ts` 225、`demo-multi-page-builder.ts` 327、`demo-multi-page-content.ts` 387、`demo-page-service.ts` 164、`demo-page-fetch.ts` 354、`demo-deepseek-merge.ts` 104。
 - 検証: `npm exec -- tsc --noEmit --pretty false` OK、`npm run quality:guard` OK（0 error / warningのみ）、`npm run build` OK。
+- DEPLOY: commit `8e1aba5` を main push 後、`npm run release:prod` 実行。preflight の `quality:guard` も 0 error。DB table verification は 78/78 OK、Missing 0、Errors 0。Coolify deployment `bszegtyffiy0klk5fsbz3aui` finished、Traefik route refresh は app container `n8i2sjiqvr2d8hrzppop2m2i-103524222824` / `10.0.1.32`。post-deploy smoke は `/api/ready`、`/ja`、`/ja/admin/sales`、`/en/report/ccbc-xynd21`、Twenty、Sales health JSON `ok:true` まで合格。
 
 CURRENT STATUS - 2026-06-23 Release Doctor 恒久化（ビルド/デプロイ時間浪費の再発防止）
 - 2026-06-23 追加恒久化: 監査で「HTTP 200 だが Sales health JSON `ok:false`」「Supabase Realtime 実体なし」「n8n runtime 残存」「Twenty worker OOM restart 2829回」を検出。コード/インフラ/共通ルールの 3 面で修復中。
