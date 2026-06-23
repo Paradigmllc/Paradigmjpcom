@@ -170,12 +170,14 @@ export function slugifyCompanyName(name: string): string {
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "")
-    .slice(0, 72)
+    .slice(0, 50)
   return slug || "company"
 }
 
-export function buildCompanySlug(companyName: string, domain: string): string {
-  return `${slugifyCompanyName(companyName)}-${stableHash(domain.toLowerCase())}`
+export function buildCompanySlug(companyName: string, _domain: string): string {
+  // Use company name only (clean, human-readable). Hash removed per user request.
+  // Uniqueness is enforced at the DB level with ON CONFLICT handling.
+  return slugifyCompanyName(companyName)
 }
 
 export function buildReportUrl(locale: ReportLocale, slug: string): string {

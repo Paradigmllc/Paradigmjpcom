@@ -99,7 +99,24 @@ export async function upsertCompanyByDomain(
         meta: mergedMeta,
       }),
   )
-  const slug = input.slug ?? current?.slug ?? buildCompanySlug(input.company_name, domain)
+  let slug = input.slug ?? current?.slug ?? buildCompanySlug(input.company_name, domain)
+  // Ensure uniqueness: if another company already has this slug, append suffix
+  if (!input.slug && !current?.slug) {
+    let suffix = 1
+    let candidate = slug
+    while (true) {
+      const { data: clash } = await sb
+        .from(DB_TABLES.SALES_COMPANIES)
+        .select("id")
+        .eq("slug", candidate)
+        .neq("domain", domain)
+        .maybeSingle()
+      if (!clash) break
+      suffix++
+      candidate = `${slug}-${suffix}`
+    }
+    slug = candidate
+  }
   const reportUrl = buildReportUrl(reportLocale, slug)
   const metaWithRouting = {
     ...mergedMeta,
