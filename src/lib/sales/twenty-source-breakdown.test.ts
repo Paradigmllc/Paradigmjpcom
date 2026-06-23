@@ -5,6 +5,10 @@ import {
   sourceCategoryBreakdown,
   sourceCoveragePanelLink,
 } from "./twenty-sync-karte-fields"
+import {
+  karteHomeSummary,
+  twentyCompanyHomePayload,
+} from "./twenty-sync-summaries"
 
 function item(partial: Partial<SourceCoverageItem>): SourceCoverageItem {
   return {
@@ -55,5 +59,57 @@ describe("sourceCoveragePanelLink (Phase 7-2)", () => {
     const link = sourceCoveragePanelLink(karteWith([], "Sakura Dining"))
     expect(link).toMatch(/\/ja\/admin\/sales\?q=/)
     expect(link).toContain(encodeURIComponent("Sakura Dining"))
+  })
+})
+
+describe("twentyCompanyHomePayload", () => {
+  it("promotes the 50+ API/OSS breakdown and detail URL to first-class Twenty fields", () => {
+    const karte = {
+      companyId: "company-1",
+      region: "global",
+      companyName: "Digitalhumanity",
+      domain: "digitalhumanity.co.za",
+      reportLocale: "en",
+      targetCountry: "ZA",
+      templateVariant: "japan_entry",
+      reportUrl: "https://paradigmjp.com/en/report/digitalhumanity",
+      formUrl: null,
+      demoUrl: null,
+      salesMaterialUrl: null,
+      customerPortalUrl: null,
+      industry: "IT",
+      regionName: null,
+      sourceName: "twenty",
+      pipelineStatus: "report_ready",
+      dealStage: "未対応",
+      localizedReportUrls: [],
+      sourceScore: 42,
+      collectedCount: 2,
+      configuredCount: 1,
+      missingCount: 1,
+      errorCount: 1,
+      sourceItems: [
+        item({ category: "analysis", status: "collected", label: "Crawl4AI" }),
+        item({ category: "analysis", status: "error", label: "Stagehand", detail: "timeout" }),
+        item({ category: "list", status: "collected", label: "Twenty" }),
+        item({ category: "demo", status: "missing", label: "Astro demo" }),
+      ],
+      evidence: [],
+      intelligence: { signals: [], painPoints: [], nextActions: [] },
+      diagnosisSummary: null,
+      recommendedOffer: null,
+      personalizedHook: null,
+      personalizedCTA: null,
+      recommendedProducts: [],
+      generatedAt: "2026-06-23T00:00:00.000Z",
+    } satisfies CompanyKarteSnapshot
+
+    const payload = twentyCompanyHomePayload(karte)
+    expect(payload.paradigmDataBreakdown).toContain("analysis 1/2 (err 1)")
+    expect(payload.paradigmSourceDetailsUrl).toEqual({
+      primaryLinkLabel: "50+ API/OSS詳細",
+      primaryLinkUrl: expect.stringContaining("/ja/admin/sales?q=Digitalhumanity"),
+    })
+    expect(karteHomeSummary(karte)).toContain("無料API/OSS取得データ(50+)")
   })
 })

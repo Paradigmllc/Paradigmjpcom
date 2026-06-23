@@ -100,12 +100,13 @@ export function karteHomeSummary(karte: CompanyKarteSnapshot): string {
   const outreachGate = outreachGateSummary(karte)
 
   return [
+    `無料API/OSS取得データ(50+): ${sourceDataCounts(karte)}`,
+    `カテゴリ別取得結果: ${sourceCategoryBreakdown(karte)}`,
+    `全ソース詳細(50+): ${sourceCoveragePanelLink(karte)}`,
     `Outreach quality gate: ${outreachGate.label} - ${outreachGate.detail}`,
     `Next action: ${outreachGate.nextAction}`,
     `対象: ${karte.targetCountry} / ${karte.reportLocale} / ${karte.templateVariant}`,
     `取得状況: ${karte.sourceScore}% (${karte.collectedCount} collected, ${karte.configuredCount} configured, ${karte.missingCount} missing)`,
-    `カテゴリ別: ${sourceCategoryBreakdown(karte)}`,
-    `全ソース詳細(50+): ${sourceCoveragePanelLink(karte)}`,
     `生成エンジン: report=${karte.reportEngine ?? "未生成"} / diagnosis=${karte.diagnosisEngine ?? "未実行"} / template=${karte.templateVariant}`,
     sourceSummary.collected ? `取得済みソース: ${sourceSummary.collected}` : null,
     sourceSummary.configured ? `次に取得可能: ${sourceSummary.configured}` : null,
@@ -156,6 +157,7 @@ export function twentyCompanyHomePayload(karte: CompanyKarteSnapshot): Record<st
     paradigmDataStatus: sourceDataStatus(karte),
     paradigmDataSources: sourceDataCounts(karte),
     paradigmDataBreakdown: sourceCategoryBreakdown(karte),
+    paradigmSourceDetailsUrl: { primaryLinkLabel: "50+ API/OSS詳細", primaryLinkUrl: sourceCoveragePanelLink(karte) },
     paradigmNextAction: outreachGateSummary(karte).nextAction,
     paradigmLastError: firstSourceError(karte),
     paradigmKarteSummary: { markdown: karteHomeSummary(karte) },

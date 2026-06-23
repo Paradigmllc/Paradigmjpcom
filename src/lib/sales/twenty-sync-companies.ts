@@ -61,6 +61,8 @@ async function patchTwentyCompanyHome(
     "paradigmSourceCoverage",
     "paradigmDataStatus",
     "paradigmDataSources",
+    "paradigmDataBreakdown",
+    "paradigmSourceDetailsUrl",
     "paradigmNextAction",
     "paradigmLastError",
   ])
@@ -82,6 +84,8 @@ async function patchTwentyCompanyHome(
     "paradigmSourceCoverage",
     "paradigmDataStatus",
     "paradigmDataSources",
+    "paradigmDataBreakdown",
+    "paradigmSourceDetailsUrl",
     "paradigmNextAction",
     "paradigmLastError",
     "paradigmKarteSummary",

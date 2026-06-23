@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { syncCompanyKarteToTwenty } from "@/lib/sales/twenty-sync-companies"
+import { getSalesCrmFieldConfig } from "@/lib/sales/crm-field-config"
+import { applyTwentyCrmMetadata } from "@/lib/sales/twenty-crm-metadata"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -53,6 +55,18 @@ export async function POST(req: NextRequest) {
     const sb = getServiceSalesSupabase()
     if (!sb) return NextResponse.json({ ok: false, error: "DB not configured" }, { status: 503 })
 
+    const crmFieldConfig = await getSalesCrmFieldConfig(sb)
+    const twentyMetadata = await applyTwentyCrmMetadata({
+      fields: crmFieldConfig.fields,
+      options: crmFieldConfig.options,
+    })
+    if (twentyMetadata.error) {
+      return NextResponse.json(
+        { ok: false, error: `Twenty CRM metadata apply failed: ${twentyMetadata.error}`, twenty_metadata: twentyMetadata },
+        { status: 500 },
+      )
+    }
+
     let query = sb
       .from(DB_TABLES.SALES_COMPANIES)
       .select("id,company_name,domain,created_at")
@@ -97,6 +111,7 @@ export async function POST(req: NextRequest) {
       failed,
       rateLimited,
       limit,
+      twenty_metadata: twentyMetadata,
       next_cursor_created_at: nextCursor,
       has_more: Boolean(nextCursor),
       errors: errors.slice(0, 10),
