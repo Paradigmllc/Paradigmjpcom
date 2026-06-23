@@ -55,9 +55,6 @@ async function patchTwentyCompanyHome(
   payload: Record<string, unknown>,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const requiredFields = new Set([
-    "paradigmReportUrl",
-    "paradigmCountryName",
-    "paradigmSalesStatus",
     "paradigmSourceCoverage",
     "paradigmDataStatus",
     "paradigmDataSources",

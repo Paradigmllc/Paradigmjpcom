@@ -8,6 +8,7 @@ CURRENT STATUS - 2026-06-23 Twenty 50+ API/OSS取得結果のUI可視化修復
 - 原因: `twentyCompanyHomePayload` は `paradigmDataBreakdown` を送っていたが、CRM view field / Twenty record view の正式フィールドとして前面固定されておらず、`paradigmSourceDetailsUrl` も独立リンクフィールド化されていなかった。さらに `/api/sales/twenty-sync` は企業同期前に Twenty メタデータ自己修復を実行していなかったため、設定適用漏れでもUIが空のまま成功扱いになり得た。
 - 修正: `crm-field-config` に `50+ API/OSS取得率` / `取得ソース数` / `50+ API/OSS内訳` / `50+ API/OSS詳細URL` / `取得ステータス` を operational field として追加・上位表示。`twenty-crm-metadata` の record Home fields も同順で前面固定。
 - 修正: Twenty writeback payload に `paradigmSourceDetailsUrl` link field を追加し、`paradigmDataBreakdown` / `paradigmSourceDetailsUrl` を required field 化。欠けた場合は `Apply CRM metadata before writeback` で失敗させる。
+- 追補修正: 本番再同期で `paradigmCountryName` select のTwenty側不整合が 50+ API/OSS 書き戻しまで巻き止めることを確認したため、writeback required はソース可視化フィールドに限定。国名・営業ステータス等の補助CRMフィールドは欠けても削って再試行し、50+ API/OSS結果の可視化を優先する。
 - 修正: `/api/sales/twenty-sync` は同期前に `getSalesCrmFieldConfig` → `applyTwentyCrmMetadata` を実行し、Twenty field/view metadata を自己修復してから company writeback する。
 - 検証: `npm run test -- src/lib/sales/twenty-source-breakdown.test.ts` OK（5 tests）、`npm exec -- tsc --noEmit --pretty false` OK、`npm run quality:guard` OK（0 error / 59 warning）、`npm run build` OK。
 
