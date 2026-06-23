@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { cache } from "react"
 import { fetchDemoMultiPageData } from "@/lib/sales/demo-generator"
-import { DemoHomePage } from "@/components/demo/DemoHomePage"
+import { DemoServicesPage } from "@/components/demo/DemoServicesPage"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 300
@@ -19,26 +19,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const data = await getCachedData(slug)
   if (!data) {
-    return { title: "Demo Not Found", robots: { index: false, follow: false } }
+    return { title: "Services | Demo", robots: { index: false, follow: false } }
   }
-  const meta = data.meta
   return {
-    title: meta.title,
-    description: meta.description,
-    openGraph: {
-      title: meta.title,
-      description: meta.description,
-      images: meta.ogImage ? [{ url: meta.ogImage }] : [],
-      type: "website",
-    },
+    title: `${data.pages.services.title} | ${data.companyName}`,
+    description: data.pages.services.subtitle,
     robots: { index: false, follow: false },
   }
 }
 
-export default async function DemoHomeServerPage({ params }: Props) {
+export default async function DemoServicesServerPage({ params }: Props) {
   const { slug } = await params
   const data = await getCachedData(slug)
   if (!data) notFound()
 
-  return <DemoHomePage data={data} />
+  return <DemoServicesPage services={data.pages.services} companyName={data.companyName} locale={data.locale} />
 }

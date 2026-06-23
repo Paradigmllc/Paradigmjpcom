@@ -1,7 +1,8 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { buildDemoPageData } from "./demo-page-builder"
-import type { DemoBlock, DemoGenerateOutput, DemoPageData } from "./demo-site-types"
+import { buildDemoMultiPageData } from "./demo-multi-page-builder"
+import type { DemoBlock, DemoGenerateOutput, DemoMultiPageData, DemoPageData } from "./demo-site-types"
 import type { Industry, ReportLocale } from "./types"
 
 /**
@@ -276,5 +277,97 @@ export async function generateFullStackDemo(
     const message = err instanceof Error ? err.message : String(err)
     console.error("[demo-generator] generateFullStackDemo failed:", message)
     return { ok: false, demoUrl: null, slug: null, error: message }
+  }
+}
+
+/**
+ * Fetch multi-page demo data by slug. Reuses the same Supabase lookup
+ * logic as fetchDemoPageData but returns DemoMultiPageData for the
+ * multi-page website (Home/About/Services/Contact).
+ */
+export async function fetchDemoMultiPageData(slug: string): Promise<DemoMultiPageData | null> {
+  const sb = getServiceSalesSupabase()
+  if (!sb) {
+    console.error("[demo-generator] fetchDemoMultiPageData: Supabase not configured")
+    return null
+  }
+
+  try {
+    // Try theme_demo_pages first
+    const { data: themePage, error: themeError } = await sb
+      .from(DB_TABLES.THEME_DEMO_PAGES)
+      .select("slug, company_id, title, blocks, meta")
+      .eq("slug", slug)
+      .eq("is_published", true)
+      .maybeSingle()
+
+    if (themePage && !themeError) {
+      const meta = (themePage.meta ?? {}) as Record<string, unknown>
+
+      const { data: company } = await sb
+        .from(DB_TABLES.SALES_COMPANIES)
+        .select("id, company_name, domain, slug, industry, prefecture, report_locale, tech_stack, pain_diagnosis, dify_result, visual_evidence, demo_site, meta")
+        .eq("id", themePage.company_id)
+        .maybeSingle()
+
+      if (company) {
+        const { fetchDiagnosticReport } = await import("./diagnostic")
+        const { localeToRegion } = await import("./types")
+
+        const locale = (company.report_locale ?? meta.locale ?? "ja") as string
+        const region = localeToRegion(locale)
+        let diagnostic = null
+        try {
+          diagnostic = await fetchDiagnosticReport({ slug: company.slug ?? themePage.slug, region, reportLocale: locale })
+        } catch (diagErr) {
+          console.error("[demo-generator] fetchDiagnosticReport threw:", diagErr instanceof Error ? diagErr.message : String(diagErr))
+        }
+
+        if (diagnostic) {
+          return buildDemoMultiPageData(
+            company as Record<string, unknown> as Parameters<typeof buildDemoMultiPageData>[0],
+            diagnostic,
+          )
+        }
+      }
+    }
+
+    // Fallback: try direct sales_companies lookup
+    const { data: companyBySlug } = await sb
+      .from(DB_TABLES.SALES_COMPANIES)
+      .select("id, company_name, domain, slug, industry, prefecture, report_locale, tech_stack, pain_diagnosis, dify_result, visual_evidence, demo_site, meta")
+      .eq("slug", slug.replace(/-demo$/, ""))
+      .maybeSingle()
+
+    if (companyBySlug) {
+      const { fetchDiagnosticReport } = await import("./diagnostic")
+      const { localeToRegion } = await import("./types")
+
+      const locale = (companyBySlug.report_locale ?? "ja") as string
+      const region = localeToRegion(locale)
+      let diagnostic = null
+      try {
+        diagnostic = await fetchDiagnosticReport({
+          slug: companyBySlug.slug ?? slug.replace(/-demo$/, ""),
+          region,
+          reportLocale: locale,
+        })
+      } catch (diagErr) {
+        console.error("[demo-generator] fetchDiagnosticReport (fallback) threw:", diagErr instanceof Error ? diagErr.message : String(diagErr))
+      }
+
+      if (diagnostic) {
+        return buildDemoMultiPageData(
+          companyBySlug as Record<string, unknown> as Parameters<typeof buildDemoMultiPageData>[0],
+          diagnostic,
+        )
+      }
+    }
+
+    return null
+  } catch (err) {
+    console.error("[demo-generator] fetchDemoMultiPageData failed:", err instanceof Error ? err.message : String(err))
+    if (err instanceof Error && err.stack) console.error("[demo-generator] stack:", err.stack.slice(0, 1000))
+    return null
   }
 }

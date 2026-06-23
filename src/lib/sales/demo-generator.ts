@@ -6,7 +6,8 @@ import type { SalesCompany } from "./types"
 
 export { buildDemoHtml } from "./demo-generator-html"
 export { buildDemoPageData } from "./demo-page-builder"
-export { fetchDemoPageData, generateFullStackDemo } from "./demo-page-service"
+export { buildDemoMultiPageData } from "./demo-multi-page-builder"
+export { fetchDemoPageData, fetchDemoMultiPageData, generateFullStackDemo } from "./demo-page-service"
 
 export async function generateReplacementDemo(
   company: SalesCompany,
