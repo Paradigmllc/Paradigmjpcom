@@ -201,33 +201,35 @@ export async function generateFullStackDemo(
       return { ok: false, demoUrl: null, slug: null, error: "No diagnostic report found for this company" }
     }
 
-    // Build page data
-    const pageData = buildDemoPageData(
-      company as Record<string, unknown> as Parameters<typeof buildDemoPageData>[0],
+    // Build page data with template selection + personalization
+    const companyProfile: CompanyProfile = {
+      industry: (company.industry ?? "consulting") as string,
+      report_locale: effectiveLocale,
+      tech_stack: company.tech_stack as Record<string, unknown> | null,
+      meta: company.meta as Record<string, unknown> | null,
+      visual_evidence: company.visual_evidence as Record<string, unknown> | null,
+    }
+    const template = selectTemplate(companyProfile, diagnostic)
+    const pageData = buildPersonalizedDemoData(
+      company as Record<string, unknown> as Parameters<typeof buildDemoMultiPageData>[0],
       diagnostic,
+      template,
     )
 
     const slug = pageData.slug
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.ASTRO_DEMO_BASE_URL || "https://demo.paradigmjp.com"
-    const demoUrl = `${baseUrl.replace(/\/+$/, "")}/${slug}`
+    const cleanBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl
+    const demoUrl = `${cleanBase}/${slug}`
 
-    // Save to theme_demo_pages
-    const blocks = [
-      { id: "hero", type: "Hero", props: pageData.hero as unknown as Record<string, unknown> },
-      { id: "features", type: "Features", props: { items: pageData.features } as unknown as Record<string, unknown> },
-      { id: "stats", type: "Stats", props: { stats: pageData.stats } as unknown as Record<string, unknown> },
-      { id: "before-after", type: "BeforeAfter", props: { items: pageData.beforeAfter } as unknown as Record<string, unknown> },
-      { id: "cta", type: "CallToAction", props: pageData.cta as unknown as Record<string, unknown> },
-    ]
-
+    // Save to theme_demo_pages — store full multi-page data
     const { error: upsertError } = await sb
       .from(DB_TABLES.THEME_DEMO_PAGES)
       .upsert({
         slug,
-        theme: "nextjs-fullstack",
+        theme: template.id,
         title: pageData.meta.title,
-        blocks,
-        meta: pageData.meta as unknown as Record<string, unknown>,
+        blocks: pageData.pages as unknown as Record<string, unknown>[],
+        meta: { ...pageData.meta, templateId: template.id, engine: "full-stack-nextjs-multi-page" } as unknown as Record<string, unknown>,
         company_id: companyId,
         is_published: true,
       }, { onConflict: "slug" })
