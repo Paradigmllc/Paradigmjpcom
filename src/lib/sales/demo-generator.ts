@@ -7,9 +7,11 @@ import type { SalesCompany } from "./types"
 export { buildDemoHtml } from "./demo-generator-html"
 export { buildDemoPageData } from "./demo-page-builder"
 export { buildDemoMultiPageData } from "./demo-multi-page-builder"
-export { buildPersonalizedDemoData } from "./demo-personalized-builder"
+export { buildPersonalizedDemoData, buildAIPersonalizedDemoData } from "./demo-personalized-builder"
 export { selectTemplate } from "./demo-template-selector"
 export { fetchDemoPageData, fetchDemoMultiPageData, generateFullStackDemo } from "./demo-page-service"
+export { enhanceDemoWithDeepSeek } from "./demo-deepseek-enhancer"
+export type { DeepSeekEnhancedOutput } from "./demo-deepseek-enhancer"
 
 export async function generateReplacementDemo(
   company: SalesCompany,
