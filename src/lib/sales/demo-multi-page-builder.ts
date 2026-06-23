@@ -433,7 +433,7 @@ export function buildDemoMultiPageData(
   const industryLabel = isJa ? (cfg.labelJa ?? "コンサルティング") : (cfg.labelEn ?? "Consulting")
   // Cal.com booking URL — use embed parameter for iframe
   const calBookingUrl = "https://cal.com/paradigm-jp/15min"
-  const calEmbedUrl = "https://cal.com/paradigm-jp/15min?embed=true"
+  const calEmbedUrl = ""  // Disabled until valid Cal.com URL is configured
   const ctaUrl = calBookingUrl
   const accentColor = cfg.accentColor ?? "#7c3aed"
   const accentColorDark = cfg.accentColorDark ?? "#5b21b6"
