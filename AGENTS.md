@@ -207,6 +207,10 @@ APIキーはグローバルメモリ管理（環境変数 `LITELLM_API_KEY`）�
 - release gate は `release-doctor --pre-deploy` → DB/migration/seed → Coolify deploy → Traefik route refresh → `release-doctor --post-deploy` の順に完走して初めて完了。
 - `NEXT_PUBLIC_SUPABASE_URL` / `SALES_SUPABASE_URL` が `http://supabase-rest-1:3000` の場合、それは Docker 内部専用 URL。ローカル AI agent から REST fetch してはいけない。DB 検証・migration・seed は既存スクリプトの Postgres/DB SSH channel に任せる。
 - Coolify `finished` 後に `paradigmjp.com` が 502 の場合、同じ deploy を再試行しない。まず Traefik file-provider の `paradigmhp-svc` upstream が最新 app container の coolify network IP を向いているかを確認する。正式 release script は自動修復する。
+- Revenue OS の release gate は HTTP 200 だけで合格にしない。`/api/sales/health` は Coolify env の shared secret を使って JSON `ok:true` まで検査し、`ok:false` なら deploy 失敗。
+- WW-EVENT の実体条件: 本番で `services-n8n-1` / cron / `pg_cron` / systemd timer / 常駐 polling worker が稼働していたら release 失敗。n8n は成果物 JSON の archive のみ許可し、runtime container は停止状態を維持する。
+- Supabase Realtime はコード前提ではなくインフラ前提も必須。`supabase-db-1` は `wal_level=logical`、`supabase-realtime` は healthy、`public.sales_pipeline_runs` は `supabase_realtime` publication に含める。`/api/sales/pipeline/events` は `SALES_SUPABASE_REALTIME_URL` を使い、PostgREST (`supabase-rest-1`) に WebSocket 接続しない。
+- Twenty は server が 200 でも worker 再起動ループなら不合格。`opt-twenty-worker-1` は restart count が低く、1GiB mem limit / `NODE_OPTIONS=--max-old-space-size=768` / worker 側 migrations disabled を維持する。
 
 **deploy 失敗時の即診断**:
 - `module-not-found` → untracked ファイルの push 忘れ
@@ -216,6 +220,8 @@ APIキーはグローバルメモリ管理（環境変数 `LITELLM_API_KEY`）�
 - `The operation was aborted due to timeout` → 例外だけで判断しない。直前の URL 名・Coolify deployment UUID・`deploy-status`・post-deploy smoke を確認し、同じ操作を無限再試行しない。
 - `paradigmjp.com` だけ 502 で container 内 `127.0.0.1:3000/api/ready` が OK → アプリではなく Traefik upstream drift。`release:prod` の route refresh を通す。
 - `Coolify deployment monitor timed out` → deploy は cancel しない。`node scripts/deploy-status.mjs <deployment_uuid>` で状態確認し、finished 後は post-deploy smoke を実行する。
+- `/api/sales/health` が HTTP 200 でも JSON `ok:false` → 成功扱い禁止。Payload DB / Supabase / Trigger / worker などの failing check を直してから再 deploy。
+- Realtime SSE が snapshot だけで更新されない → `supabase-realtime` container、`wal_level=logical`、publication、`SALES_SUPABASE_REALTIME_URL` を順に確認。cron/polling で代替しない。
 
 ---
 

@@ -11,6 +11,7 @@
 
 import fs from "node:fs"
 import { spawnSync } from "node:child_process"
+import { readCoolifyApplicationEnvs } from "./lib/coolify-env.mjs"
 
 const args = new Set(process.argv.slice(2))
 const PRE_DEPLOY = args.has("--pre-deploy") || (!args.has("--post-deploy") && !args.has("--local-only"))
@@ -176,6 +177,74 @@ echo "OK container=$container ip=$ip route=$route"
   pass("manual Traefik route points at the latest app container")
 }
 
+function checkRemoteInfraDrift() {
+  if (LOCAL_ONLY || SKIP_REMOTE) return
+  section("Revenue OS infra drift")
+  const script = `
+set -euo pipefail
+fail=0
+
+wal_level="$(docker exec supabase-db-1 psql -U postgres -d postgres -Atc "select setting from pg_settings where name='wal_level'" 2>/dev/null || true)"
+if [ "$wal_level" = "logical" ]; then
+  echo "OK supabase wal_level=logical"
+else
+  echo "FAIL supabase wal_level=\${wal_level:-unknown}"
+  fail=1
+fi
+
+if docker ps --format '{{.Names}}' | grep -qx 'supabase-realtime'; then
+  realtime_status="$(docker inspect supabase-realtime --format '{{.State.Status}} {{if .State.Health}}{{.State.Health.Status}}{{else}}no-health{{end}}' 2>/dev/null || true)"
+  case "$realtime_status" in
+    running\\ healthy|running\\ no-health) echo "OK supabase-realtime $realtime_status" ;;
+    *) echo "FAIL supabase-realtime $realtime_status"; fail=1 ;;
+  esac
+else
+  echo "FAIL supabase-realtime container missing"
+  fail=1
+fi
+
+if docker ps --format '{{.Names}}' | grep -qx 'services-n8n-1'; then
+  echo "FAIL n8n legacy container is running"
+  fail=1
+else
+  echo "OK n8n legacy container stopped"
+fi
+
+twenty_worker_status="$(docker inspect opt-twenty-worker-1 --format '{{.State.Status}}' 2>/dev/null || true)"
+twenty_worker_restarts="$(docker inspect opt-twenty-worker-1 --format '{{.RestartCount}}' 2>/dev/null || echo 9999)"
+if [ "$twenty_worker_status" = "running" ] && [ "$twenty_worker_restarts" -le 3 ]; then
+  echo "OK twenty-worker running restarts=$twenty_worker_restarts"
+else
+  echo "FAIL twenty-worker status=\${twenty_worker_status:-missing} restarts=$twenty_worker_restarts"
+  fail=1
+fi
+
+if docker exec supabase-db-1 psql -U postgres -d postgres -Atc "select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='sales_pipeline_runs' limit 1" | grep -qx 1; then
+  echo "OK sales_pipeline_runs published to supabase_realtime"
+else
+  echo "FAIL sales_pipeline_runs not published to supabase_realtime"
+  fail=1
+fi
+
+exit "$fail"
+`
+  const result = spawnSync("ssh", ["-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=accept-new", DEPLOY_HOST, "bash -s"], {
+    input: script,
+    cwd: process.cwd(),
+    env: process.env,
+    encoding: "utf8",
+    timeout: 30_000,
+    maxBuffer: 1024 * 1024,
+  })
+  const output = `${result.stdout || ""}${result.stderr || ""}`.trim()
+  if (output) console.log(output)
+  if (result.status !== 0 || result.error) {
+    fail("Revenue OS infra drift detected")
+    return
+  }
+  pass("Revenue OS infra drift checks passed")
+}
+
 function checkSyntax() {
   section("Script syntax")
   const targets = [
@@ -200,6 +269,7 @@ function checkPreDeployRemote() {
   runOrFail("host disk preflight", process.execPath, ["scripts/host-disk-preflight.mjs"])
   runOrFail("Coolify deploy guard", process.execPath, ["scripts/coolify-deploy-guard.mjs", "--pre-deploy"])
   checkTraefikRouteDrift()
+  checkRemoteInfraDrift()
 }
 
 function isBadReportBody(text) {
@@ -235,6 +305,68 @@ async function fetchCheck(label, url, options = {}) {
   pass(`${label} HTTP ${res.status}`)
 }
 
+async function resolveSalesHealthSecret() {
+  const local =
+    process.env.TRIGGER_WEBHOOK_SECRET ||
+    process.env.SALES_API_SECRET ||
+    process.env.INTERNAL_API_SECRET
+  if (local) return local
+
+  try {
+    const envs = await readCoolifyApplicationEnvs(APP_UUID)
+    return envs.TRIGGER_WEBHOOK_SECRET || envs.SALES_API_SECRET || envs.INTERNAL_API_SECRET || null
+  } catch (error) {
+    warn(`Sales health secret lookup from Coolify env failed: ${error instanceof Error ? error.message : String(error)}`)
+    return null
+  }
+}
+
+async function checkSalesHealth() {
+  const secret = await resolveSalesHealthSecret()
+  if (!secret) {
+    fail("Sales health secret is unavailable; release cannot prove Revenue OS health")
+    return
+  }
+
+  let res
+  try {
+    res = await fetch(`${BASE_URL}/api/sales/health`, {
+      signal: AbortSignal.timeout(30_000),
+      headers: { "X-Webhook-Secret": secret },
+    })
+  } catch (error) {
+    fail(`Sales health fetch failed: ${error instanceof Error ? error.message : String(error)}`)
+    return
+  }
+
+  const text = await res.text().catch(() => "")
+  if (res.status < 200 || res.status >= 400) {
+    fail(`Sales health returned HTTP ${res.status}`)
+    return
+  }
+
+  let body = null
+  try {
+    body = text ? JSON.parse(text) : null
+  } catch {
+    fail("Sales health did not return JSON")
+    return
+  }
+
+  if (!body || body.ok !== true) {
+    const checks = Array.isArray(body?.checks)
+      ? body.checks
+          .filter((check) => check?.status === "error")
+          .map((check) => `${check.name}: ${check.detail}`)
+          .slice(0, 5)
+      : []
+    fail(`Sales health JSON is not ok${checks.length > 0 ? ` (${checks.join("; ")})` : ""}`)
+    return
+  }
+
+  pass(`Sales health HTTP ${res.status} JSON ok`)
+}
+
 async function checkPostDeployUrls() {
   if (SKIP_REMOTE) {
     section("Post-deploy smoke")
@@ -252,15 +384,7 @@ async function checkPostDeployUrls() {
   })
   await fetchCheck("Twenty", TWENTY_URL, { timeoutMs: 20_000 })
 
-  const secret = process.env.TRIGGER_WEBHOOK_SECRET || process.env.SALES_API_SECRET || process.env.INTERNAL_API_SECRET
-  if (secret) {
-    await fetchCheck("Sales health", `${BASE_URL}/api/sales/health`, {
-      timeoutMs: 30_000,
-      headers: { "X-Webhook-Secret": secret },
-    })
-  } else {
-    warn("Sales health skipped; no local shared secret available")
-  }
+  await checkSalesHealth()
 }
 
 async function main() {
@@ -272,6 +396,7 @@ async function main() {
   }
   if (POST_DEPLOY) {
     checkTraefikRouteDrift()
+    checkRemoteInfraDrift()
     await checkPostDeployUrls()
   }
 

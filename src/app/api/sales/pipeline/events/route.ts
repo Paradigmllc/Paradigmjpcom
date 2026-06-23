@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
+import { RealtimeClient } from "@supabase/supabase-js"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
-import { getServiceSalesSupabase } from "@/lib/supabase"
+import { getSalesSupabaseConfig, getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export const runtime = "nodejs"
@@ -22,6 +23,32 @@ interface PipelineChangePayload {
   old?: PipelineRunEventRow | null
 }
 
+function optionalEnv(name: string): string | null {
+  const value = process.env[name]
+  return value && value.trim().length > 0 ? value.trim() : null
+}
+
+function normalizeRealtimeUrl(url: string): string {
+  const base = url.replace(/\/+$/, "")
+  return base.endsWith("/realtime/v1") ? base : `${base}/realtime/v1`
+}
+
+function getSalesRealtimeUrl(restUrl: string): string {
+  const explicit = optionalEnv("SALES_SUPABASE_REALTIME_URL") ?? optionalEnv("NEXT_PUBLIC_SUPABASE_REALTIME_URL")
+  if (explicit) return normalizeRealtimeUrl(explicit)
+
+  const parsed = new URL(restUrl)
+  if (/^supabase-rest-1$/i.test(parsed.hostname)) {
+    return "http://supabase-realtime:4000/realtime/v1"
+  }
+
+  parsed.pathname = "/realtime/v1"
+  parsed.search = ""
+  parsed.hash = ""
+  parsed.protocol = parsed.protocol.replace(/^ws/i, "http")
+  return parsed.toString()
+}
+
 export async function GET(req: NextRequest) {
   if (!(await isSalesApiAuthorized(req))) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
@@ -29,6 +56,8 @@ export async function GET(req: NextRequest) {
 
   const sb = getServiceSalesSupabase()
   if (!sb) return NextResponse.json({ ok: false, error: "Supabase not configured" }, { status: 500 })
+  const config = getSalesSupabaseConfig()
+  if (!config) return NextResponse.json({ ok: false, error: "Sales Supabase not configured" }, { status: 500 })
 
   const encoder = new TextEncoder()
   let closed = false
@@ -60,7 +89,16 @@ export async function GET(req: NextRequest) {
 
       send({ type: "snapshot", runs: runs ?? [], at: new Date().toISOString() })
 
-      const channel = sb
+      const realtimeUrl = getSalesRealtimeUrl(config.url)
+      const realtime = new RealtimeClient(realtimeUrl, {
+        params: { apikey: config.serviceKey },
+        headers: {
+          apikey: config.serviceKey,
+          Authorization: `Bearer ${config.serviceKey}`,
+        },
+      })
+
+      const channel = realtime
         .channel("sales-pipeline-runs-events")
         .on(
           "postgres_changes",
@@ -89,13 +127,15 @@ export async function GET(req: NextRequest) {
         .subscribe((status) => {
           if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
             send({ type: "warning", message: `Realtime channel status: ${status}`, at: new Date().toISOString() })
+            console.warn("[pipeline-events] realtime channel status:", status)
           }
         })
 
       req.signal.addEventListener("abort", async () => {
         close()
         try {
-          await sb.removeChannel(channel)
+          await realtime.removeChannel(channel)
+          await realtime.disconnect()
         } catch (error) {
           console.warn("[pipeline-events] remove channel failed:", error)
         }

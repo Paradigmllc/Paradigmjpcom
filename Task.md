@@ -4,6 +4,13 @@
 決定: オーケストレータ維持＋完了イベント再開 / デモ=フルサイト一本化 / Dify=queue隔離かつ本文正本 / Twenty=category集約＋deep link / Telegram=webhook修復＋OSS deep link＋Realtime push / インフラ=重ワーカー分離＋Upstash＋ISR/CDN。
 
 CURRENT STATUS - 2026-06-23 Release Doctor 恒久化（ビルド/デプロイ時間浪費の再発防止）
+- 2026-06-23 追加恒久化: 監査で「HTTP 200 だが Sales health JSON `ok:false`」「Supabase Realtime 実体なし」「n8n runtime 残存」「Twenty worker OOM restart 2829回」を検出。コード/インフラ/共通ルールの 3 面で修復中。
+- `release-doctor` は Coolify env から shared secret を取得して `/api/sales/health` の JSON `ok:true` まで検査する。HTTP 200 だけでは合格しない。
+- `release-doctor` pre/post に Revenue OS infra drift gate を追加: `supabase-db-1 wal_level=logical`、`supabase-realtime healthy`、`services-n8n-1` 非稼働、`opt-twenty-worker-1` restart count 低値、`public.sales_pipeline_runs` の `supabase_realtime` publication 参加を必須化。
+- 本番インフラ修復: n8n runtime container は停止・削除済み（legacy JSON archive のみ保持）。Supabase DB は同一 volume `supabase_supabase-db-data` を保持して Compose 管理へ戻し、`wal_level=logical` で再作成。`supabase-realtime` を追加し healthy。`pg_cron` は `cron.job` table missing。`sales_pipeline_runs` は `supabase_realtime` publication 済み。
+- Twenty worker 修復: 正しい管理元 `/opt/twenty-compose.yml` を更新し、worker 側 migration disabled、`NODE_OPTIONS=--max-old-space-size=768`、mem limit 1GiB へ変更。実測: restart=0 / running。
+- Payload DB 修復: Coolify app env `DATABASE_URI` を外向き `178.105.138.55:5433` から Docker 内部 `supabase-db-1:5432` へ更新。`SALES_SUPABASE_REALTIME_URL=http://supabase-realtime:4000/realtime/v1` も追加。
+- `/api/sales/pipeline/events` は PostgREST 用 Supabase client と Realtime client を分離。`SALES_SUPABASE_REALTIME_URL` を使い、`supabase-rest-1:3000` へ WebSocket 接続しない。
 - 本番 deploy の正規入口を `npm run release:prod` に固定。`release-doctor --pre-deploy` → `sales-os-no-login-deploy.mjs` → `release-doctor --post-deploy` の順に通し、今後 OpenCode/Codex/Claude/Cursor 等は単独の deploy script 直叩きを避ける。
 - `scripts/release-doctor.mjs` を追加。pre-deploy で worktree/untracked、deploy script の破壊的 timeout cancel、build wrapper の DB 非依存/heartbeat、主要 script 構文、host disk/Coolify queue guard を検査する。
 - post-deploy で `/api/ready`、`/ja`、`/ja/admin/sales`、既知の診断レポートURL（既定 `/en/report/ccbc-xynd21`、必要時 `RELEASE_REPORT_SMOKE_PATH` で差替）、`twenty.paradigmjp.com` を実HTTP検証し、Server Components digest/レポートエラー画面を検出したら release 失敗にする。
