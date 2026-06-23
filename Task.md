@@ -12,6 +12,10 @@ CURRENT STATUS - 2026-06-23 Twenty 50+ API/OSS取得結果のUI可視化修復
 - 追補修正: Twenty server 再起動で metadata cache を再読込後、`paradigmSourceCoverage` の既存 workspace column が numeric であることを実エラー確認。writeback は `"33%"` 文字列ではなく `33` の数値で送るよう修正。
 - 修正: `/api/sales/twenty-sync` は同期前に `getSalesCrmFieldConfig` → `applyTwentyCrmMetadata` を実行し、Twenty field/view metadata を自己修復してから company writeback する。
 - 検証: `npm run test -- src/lib/sales/twenty-source-breakdown.test.ts` OK（5 tests）、`npm exec -- tsc --noEmit --pretty false` OK、`npm run quality:guard` OK（0 error / 59 warning）、`npm run build` OK。
+- DEPLOY: commits `d6b51ae` / `4acb549` / `3871672` を main push 後、`npm run release:prod` を3回通過。最終 Coolify deployment `z135w5dkbh96ol1eka50fwlp` finished、Traefik route refresh は app container `n8i2sjiqvr2d8hrzppop2m2i-120331318600` / `10.0.1.31`。post-deploy smoke は `/api/ready`、`/ja`、`/ja/admin/sales`、`/en/report/ccbc-xynd21`、Twenty、Sales health JSON `ok:true` まで合格。
+- 本番補修: Twenty DB metadata は `paradigmSourceCoverage` / `paradigmDataSources` / `paradigmDataBreakdown` / `paradigmSourceDetailsUrl` / `paradigmDataStatus` が active、visible viewField 10件を確認。Twenty server を再起動して metadata cache を再読込し、外部 `https://twenty.paradigmjp.com` HTTP 200 復帰を確認。
+- 本番補修: workspace company table の `paradigmSourceCoverage` column を metadata と揃えて TEXT 化。`Digitalhumanity` (`7168eb9b-62f9-40ed-b541-1610963c0024`) に `sourceCoverage=32`、`dataSources=12+ API/OSS catalog: collected 4/12 / configured 0 / missing 8 / error 0; evidence: diagnostic_report, form_discovery, twenty, wappalyzer`、カテゴリ内訳、詳細URLを反映。
+- 本番確認: Twenty REST `/rest/companies?filter=domainName.primaryLinkUrl[ilike]:%25digitalhumanity.co.za%25` は `Digitalhumanity` に `paradigmSourceCoverage: "32"`、`paradigmDataSources`、`paradigmDataBreakdown`、`paradigmSourceDetailsUrl.primaryLinkUrl=https://paradigmjp.com/ja/admin/sales?q=Digitalhumanity` を返す。
 
 CURRENT STATUS - 2026-06-23 Demo route recovery / Astro full-site surface
 - `https://demo.paradigmjp.com/` が Next 側 `/en/demo` の粗い Web Improvement Demos 一覧（Shopify/Notion/Stripe/Figma/Airbnb 等）を露出し、`/demo/sample-restaurant` が `/en/demo/sample-restaurant` へ寄って 404 になる状態を確認。
