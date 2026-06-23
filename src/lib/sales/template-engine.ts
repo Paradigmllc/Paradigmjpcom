@@ -107,8 +107,8 @@ const SYSTEM_PROMPT_EN = `You are a diagnostic report AI for Paradigm LLC. Write
 function buildUserPrompt(input: TemplateEngineInput, industry: IndustryProfile, issue: IssueProfile): string {
   const benchmark = issue.industryBenchmark[input.industry]
   const challenges = pickStructuralChallenges(industry, 2, input.locale)
-  const impacts = issue.businessImpact[input.locale]
-  const forecast = issue.deteriorationForecast[input.locale]
+  const impacts = issue.businessImpact?.[input.locale] ?? []
+  const forecast = issue.deteriorationForecast?.[input.locale] ?? { months3: "", months6: "", months12: "" }
 
   return input.locale === "ja"
     ? `# 対象企業
@@ -239,8 +239,8 @@ function buildProfileFallbackContent(industry: IndustryProfile, issue: IssueProf
   const lang = input.locale
   const benchmark = issue.industryBenchmark[input.industry]
   const challenges = pickStructuralChallenges(industry, 1, lang)
-  const impacts = issue.businessImpact[lang]
-  const forecast = issue.deteriorationForecast[lang]
+  const impacts = issue.businessImpact?.[lang] ?? []
+  const forecast = issue.deteriorationForecast?.[lang] ?? { months3: "", months6: "", months12: "" }
 
   const hook = lang === "ja"
     ? `${industry.labelJa}の${issue.labelJa}に関する診断です。${challenges[0] ?? ""}`

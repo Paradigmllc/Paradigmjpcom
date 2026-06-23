@@ -11,9 +11,9 @@ export function middleware(request: NextRequest) {
     );
   }
 
-  // demo.paradigmjp.com root → demo page
+  // demo.paradigmjp.com root → demo index page
   if (host.startsWith("demo.") && request.nextUrl.pathname === "/") {
-    return NextResponse.redirect(new URL("/en/demo/joburg-1oi4gv", request.url));
+    return NextResponse.redirect(new URL("/en/demo", request.url));
   }
 
   return NextResponse.next();

@@ -113,7 +113,7 @@ export function labelForIndustry(industry: Industry | null | undefined, locale: 
   if (!industry) return locale === "ja" ? "対象業種" : "target industry"
   const entry = INDUSTRY_LABEL[industry]
   if (!entry) return locale === "ja" ? "その他業種" : "other industry"
-  return locale === "ja" ? entry.ja : entry.en
+  return locale === "ja" ? (entry.ja ?? "その他業種") : (entry.en ?? "other industry")
 }
 
 export function escapeHtml(value: string | number | null | undefined): string {

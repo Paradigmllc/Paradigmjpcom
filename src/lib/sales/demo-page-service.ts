@@ -42,7 +42,12 @@ export async function fetchDemoPageData(slug: string): Promise<DemoPageData | nu
 
         const locale = (company.report_locale ?? meta.locale ?? "ja") as string
         const region = localeToRegion(locale)
-        const diagnostic = await fetchDiagnosticReport({ slug: company.slug ?? themePage.slug, region, reportLocale: locale })
+        let diagnostic = null
+        try {
+          diagnostic = await fetchDiagnosticReport({ slug: company.slug ?? themePage.slug, region, reportLocale: locale })
+        } catch (diagErr) {
+          console.error("[demo-generator] fetchDiagnosticReport threw:", diagErr instanceof Error ? diagErr.message : String(diagErr))
+        }
 
         if (diagnostic) {
           return buildDemoPageData(
@@ -124,11 +129,16 @@ export async function fetchDemoPageData(slug: string): Promise<DemoPageData | nu
 
       const locale = (companyBySlug.report_locale ?? "ja") as string
       const region = localeToRegion(locale)
-      const diagnostic = await fetchDiagnosticReport({
-        slug: companyBySlug.slug ?? slug.replace(/-demo$/, ""),
-        region,
-        reportLocale: locale,
-      })
+      let diagnostic = null
+      try {
+        diagnostic = await fetchDiagnosticReport({
+          slug: companyBySlug.slug ?? slug.replace(/-demo$/, ""),
+          region,
+          reportLocale: locale,
+        })
+      } catch (diagErr) {
+        console.error("[demo-generator] fetchDiagnosticReport (fallback) threw:", diagErr instanceof Error ? diagErr.message : String(diagErr))
+      }
 
       if (diagnostic) {
         return buildDemoPageData(
@@ -141,6 +151,7 @@ export async function fetchDemoPageData(slug: string): Promise<DemoPageData | nu
     return null
   } catch (err) {
     console.error("[demo-generator] fetchDemoPageData failed:", err instanceof Error ? err.message : String(err))
+    if (err instanceof Error && err.stack) console.error("[demo-generator] stack:", err.stack.slice(0, 1000))
     return null
   }
 }
