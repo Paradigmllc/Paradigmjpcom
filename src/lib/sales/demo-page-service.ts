@@ -364,6 +364,100 @@ export async function fetchDemoMultiPageData(slug: string): Promise<DemoMultiPag
       }
     }
 
+    // Last-resort fallback: build minimal multi-page data from theme_demo_pages meta
+    if (themePage) {
+      const meta = (themePage.meta ?? {}) as Record<string, unknown>
+      const { data: company } = await sb
+        .from(DB_TABLES.SALES_COMPANIES)
+        .select("id, company_name, domain, slug, industry, prefecture, report_locale")
+        .eq("id", themePage.company_id)
+        .maybeSingle()
+
+      const locale = ((company?.report_locale ?? meta.locale ?? "en") as string)
+      const isJa = locale === "ja"
+      const name = String(meta.companyName ?? company?.company_name ?? "Company")
+      const accent = String(meta.accentColor ?? "#2563eb")
+      const accentDark = String(meta.accentColorDark ?? "#1e40af")
+      const ctaUrl = String(meta.calBookingUrl ?? "https://cal.com/paradigm-jp/15min")
+
+      return {
+        slug,
+        companyId: String(themePage.company_id),
+        companyName: name,
+        locale: locale as import("./types").ReportLocale,
+        industry: (meta.industry ?? company?.industry ?? "consulting") as import("./types").Industry,
+        meta: {
+          title: `${name} | ${isJa ? "Web改善デモサイト" : "Web Improvement Demo"}`,
+          description: String(meta.description ?? ""),
+          ogImage: "",
+          industry: (meta.industry as import("./types").Industry) ?? "consulting",
+          locale: locale as import("./types").ReportLocale,
+          companyName: name,
+          accentColor: accent,
+          accentColorDark: accentDark,
+          calBookingUrl: ctaUrl,
+          generatedAt: String(meta.generatedAt ?? new Date().toISOString()),
+          engine: "fallback",
+        },
+        pages: {
+          home: {
+            hero: {
+              title: `${name} | Web Improvement Demo`,
+              subtitle: isJa ? "御社データに基づく改善デモサイトです" : "Improvement demo based on your data",
+              tagline: isJa ? "改善デモ" : "Improvement Demo",
+              companyName: name,
+              industryLabel: isJa ? "改善事例" : "Improvement Case",
+              locationLabel: "",
+              primaryCta: { text: isJa ? "無料相談を予約" : "Book free consult", href: ctaUrl },
+              secondaryCta: { text: isJa ? "改善ポイント" : "See improvements", href: "#features" },
+              accentColor: accent,
+              accentColorDark: accentDark,
+            },
+            features: [],
+            stats: [],
+            beforeAfter: [],
+            totalLoss: "",
+            cta: {
+              title: isJa ? "無料相談を予約" : "Book free consult",
+              subtitle: "",
+              buttonText: isJa ? "15分無料相談を予約" : "Book 15min Free Consult",
+              buttonHref: ctaUrl,
+              accentColor: accent,
+              accentColorDark: accentDark,
+            },
+          },
+          about: {
+            title: name,
+            subtitle: isJa ? "事業概要" : "Business Overview",
+            companyName: name,
+            industryLabel: String(meta.industry ?? ""),
+            locationLabel: "",
+            story: isJa ? `${name}の事業概要です` : `Overview of ${name}`,
+            mission: "",
+            values: [],
+            teamNote: "",
+            accentColor: accent,
+          },
+          services: {
+            title: isJa ? "サービス内容" : "Our Services",
+            subtitle: "",
+            services: [],
+            process: [],
+            accentColor: accent,
+          },
+          contact: {
+            title: isJa ? "お問い合わせ" : "Contact Us",
+            subtitle: "",
+            companyName: name,
+            email: "contact@paradigmjp.com",
+            address: "Tokyo, Japan",
+            calBookingUrl: ctaUrl,
+            accentColor: accent,
+          },
+        },
+      }
+    }
+
     return null
   } catch (err) {
     console.error("[demo-generator] fetchDemoMultiPageData failed:", err instanceof Error ? err.message : String(err))
