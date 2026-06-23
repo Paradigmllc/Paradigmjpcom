@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { cache } from "react"
 import { fetchDemoMultiPageData } from "@/lib/sales/demo-generator"
 import { DemoHomePage } from "@/components/demo/DemoHomePage"
+import { getTemplateById } from "@/lib/sales/demo-templates/registry"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 300
@@ -40,5 +41,8 @@ export default async function DemoHomeServerPage({ params }: Props) {
   const data = await getCachedData(slug)
   if (!data) notFound()
 
-  return <DemoHomePage data={data} />
+  // Resolve template from templateId
+  const template = getTemplateById(data.templateId ?? "zenith")
+
+  return <DemoHomePage data={data} template={template} />
 }

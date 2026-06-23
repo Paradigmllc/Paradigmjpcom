@@ -2,6 +2,8 @@
 
 import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
+import { navClasses, type NavStyle } from "@/lib/sales/demo-templates/registry"
+import type { DemoTemplate } from "@/lib/sales/demo-templates/registry"
 
 interface NavLink {
   label: string
@@ -13,18 +15,44 @@ interface Props {
   basePath: string
   isJa: boolean
   companyName: string
+  /** Template ID for navigation style */
+  templateId?: string
+  /** Design tokens for accent colors */
+  accentColor?: string
   children: React.ReactNode
 }
 
-export function DemoMultiLayout({ navLinks, basePath, isJa, companyName, children }: Props) {
+export function DemoMultiLayout({
+  navLinks,
+  basePath,
+  isJa,
+  companyName,
+  templateId,
+  accentColor,
+  children,
+}: Props) {
   const pathname = usePathname()
-
   const isActive = (href: string) => {
     if (href === basePath) return pathname === basePath
     return pathname.startsWith(href)
   }
 
-  // Extract initials from company name (first 1-2 chars of the first two words)
+  // Map template to nav style
+  const navStyleMap: Record<string, NavStyle> = {
+    zenith: "sticky",
+    aether: "transparent",
+    prism: "bordered",
+    terra: "sticky",
+    flux: "transparent",
+    vertex: "bordered",
+    nomad: "minimal",
+    apex: "transparent",
+  }
+  const navStyle: NavStyle = templateId ? navStyleMap[templateId] ?? "sticky" : "sticky"
+  const nc = navClasses(navStyle)
+  const accent = accentColor || "#2563eb"
+
+  // Extract initials
   const initials = companyName
     .split(/\s+/)
     .filter(Boolean)
@@ -35,27 +63,29 @@ export function DemoMultiLayout({ navLinks, basePath, isJa, companyName, childre
     .slice(0, 2) || companyName.slice(0, 1).toUpperCase()
 
   const ctaText = isJa ? "無料相談" : "Free Consultation"
-  const footerDescription = isJa
-    ? "診断データから自動生成されました。改善後のWebサイトのイメージです。"
-    : "Generated from diagnostic data. This is a demonstration of what an improved website could look like."
   const footerCTA = isJa ? "無料相談を予約 →" : "Book a call →"
   const footerContactLabel = isJa ? "お問い合わせ" : "Contact"
   const footerPagesLabel = isJa ? "ページ" : "Pages"
+  const footerDescription = isJa
+    ? "診断データから自動生成されました。改善後のWebサイトのイメージです。"
+    : "Generated from diagnostic data. This is a demonstration of what an improved website could look like."
+
+  // Dark theme for flux
+  const isDarkNav = templateId === "flux"
+  const isTransparent = navStyle === "transparent"
 
   return (
-    <div className="flex min-h-dvh flex-col bg-white text-gray-900 antialiased">
+    <div className={`flex min-h-dvh flex-col antialiased ${isDarkNav ? "bg-gray-950 text-white" : "bg-white text-gray-900"}`}>
       {/* Nav */}
-      <nav className="sticky top-0 z-50 border-b border-gray-100 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          {/* Logo */}
-          <a
-            href={basePath}
-            className="flex items-center gap-2.5 font-display text-lg font-bold text-gray-900 hover:text-[var(--demo-accent,#2563eb)] transition-colors group"
+      <nav className={nc.wrapper} style={isDarkNav ? { background: "rgba(17,24,39,0.95)" } : {}}>
+        <div className={`${nc.inner} ${templateId === "apex" ? "max-w-4xl" : templateId === "terra" ? "max-w-7xl" : "max-w-6xl"}`}>
+          <a href={basePath}
+            className={`flex items-center gap-2.5 font-display text-lg font-bold transition-colors group ${isDarkNav ? "text-white hover:text-white/80" : "text-gray-900 hover:text-[var(--demo-accent,#2563eb)]"}`}
           >
             <motion.div
-              className="flex h-12 w-12 items-center justify-center rounded-xl text-base font-bold text-white shadow-sm"
+              className={`flex h-10 w-10 items-center justify-center text-sm font-bold text-white shadow-sm ${navStyle === "bordered" ? "h-11 w-11 rounded-lg" : "rounded-xl"}`}
               style={{ background: "var(--demo-accent, #2563eb)" }}
-              whileHover={{ borderRadius: "0.75rem" }}
+              whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.2 }}
             >
               {initials}
@@ -63,7 +93,6 @@ export function DemoMultiLayout({ navLinks, basePath, isJa, companyName, childre
             <span className="hidden sm:inline">{companyName}</span>
           </a>
 
-          {/* Links */}
           <div className="hidden gap-1 text-sm font-medium md:flex">
             {navLinks.map((link) => (
               <a
@@ -71,8 +100,12 @@ export function DemoMultiLayout({ navLinks, basePath, isJa, companyName, childre
                 href={link.href}
                 className={`rounded-lg px-3.5 py-2 transition-colors ${
                   isActive(link.href)
-                    ? "bg-[var(--demo-accent,#2563eb)]/10 text-[var(--demo-accent,#2563eb)]"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    ? isDarkNav
+                      ? "bg-white/10 text-white"
+                      : "bg-[var(--demo-accent,#2563eb)]/10 text-[var(--demo-accent,#2563eb)]"
+                    : isDarkNav
+                      ? "text-white/60 hover:bg-white/10 hover:text-white"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 }`}
               >
                 {link.label}
@@ -80,29 +113,33 @@ export function DemoMultiLayout({ navLinks, basePath, isJa, companyName, childre
             ))}
           </div>
 
-          {/* CTA */}
           <a
             href={`${basePath}/contact`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all hover:opacity-90"
+            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all hover:opacity-90 ${
+              templateId === "apex" ? "rounded-full" : ""
+            }`}
             style={{ background: "var(--demo-accent, #2563eb)" }}
           >
-            {ctaText}
-            <ArrowIcon />
+            {ctaText} <ArrowIcon />
           </a>
         </div>
 
         {/* Mobile nav */}
-        <div className="flex gap-1 overflow-x-auto border-t border-gray-100 px-4 py-2 md:hidden">
+        <div className={`flex gap-1 overflow-x-auto border-t px-4 py-2 md:hidden ${isDarkNav ? "border-white/10" : "border-gray-100"}`}>
           {navLinks.map((link) => (
             <a
               key={link.href}
               href={link.href}
               className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
                 isActive(link.href)
-                  ? "bg-[var(--demo-accent,#2563eb)]/10 text-[var(--demo-accent,#2563eb)]"
-                  : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                  ? isDarkNav
+                    ? "bg-white/10 text-white"
+                    : "bg-[var(--demo-accent,#2563eb)]/10 text-[var(--demo-accent,#2563eb)]"
+                  : isDarkNav
+                    ? "text-white/50 hover:bg-white/10 hover:text-white"
+                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
               }`}
             >
               {link.label}
@@ -111,11 +148,10 @@ export function DemoMultiLayout({ navLinks, basePath, isJa, companyName, childre
         </div>
       </nav>
 
-      {/* Main */}
       <main className="flex-1">{children}</main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-100 bg-gray-50">
+      <footer className={`border-t ${isDarkNav ? "border-white/10 bg-gray-950" : "border-gray-100 bg-gray-50"}`}>
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="grid gap-8 sm:grid-cols-3">
             <div>
@@ -126,18 +162,21 @@ export function DemoMultiLayout({ navLinks, basePath, isJa, companyName, childre
                 >
                   {initials}
                 </div>
-                <span className="font-display text-base font-semibold text-gray-900">{companyName}</span>
+                <span className="font-display text-base font-semibold">{companyName}</span>
               </div>
-              <p className="text-sm leading-relaxed text-gray-500">
+              <p className={`text-sm leading-relaxed ${isDarkNav ? "text-white/50" : "text-gray-500"}`}>
                 {footerDescription}
               </p>
             </div>
             <div>
-              <h4 className="mb-3 font-display text-sm font-semibold text-gray-900">{footerPagesLabel}</h4>
+              <h4 className={`mb-3 font-display text-sm font-semibold ${isDarkNav ? "text-white" : "text-gray-900"}`}>
+                {footerPagesLabel}
+              </h4>
               <ul className="space-y-2 text-sm">
                 {navLinks.map((link) => (
                   <li key={link.href}>
-                    <a href={link.href} className="text-gray-500 transition-colors hover:text-[var(--demo-accent,#2563eb)]">
+                    <a href={link.href}
+                      className={`transition-colors ${isDarkNav ? "text-white/50 hover:text-[var(--demo-accent,#2563eb)]" : "text-gray-500 hover:text-[var(--demo-accent,#2563eb)]"}`}>
                       {link.label}
                     </a>
                   </li>
@@ -145,8 +184,10 @@ export function DemoMultiLayout({ navLinks, basePath, isJa, companyName, childre
               </ul>
             </div>
             <div>
-              <h4 className="mb-3 font-display text-sm font-semibold text-gray-900">{footerContactLabel}</h4>
-              <p className="text-sm leading-relaxed text-gray-500">
+              <h4 className={`mb-3 font-display text-sm font-semibold ${isDarkNav ? "text-white" : "text-gray-900"}`}>
+                {footerContactLabel}
+              </h4>
+              <p className={`text-sm leading-relaxed ${isDarkNav ? "text-white/50" : "text-gray-500"}`}>
                 {isJa
                   ? "Webサイトの改善にご興味はありませんか？15分の無料コンサルテーションを予約してください。"
                   : "Ready to improve your website? Book a free 15-minute consultation."}
@@ -162,7 +203,7 @@ export function DemoMultiLayout({ navLinks, basePath, isJa, companyName, childre
               </a>
             </div>
           </div>
-          <div className="mt-10 border-t border-gray-200 pt-6 text-center text-xs text-gray-400">
+          <div className={`mt-10 border-t pt-6 text-center text-xs ${isDarkNav ? "border-white/10 text-white/30" : "border-gray-200 text-gray-400"}`}>
             {isJa
               ? `© ${new Date().getFullYear()} Paradigm LLC — このデモは診断データから自動生成されました。`
               : `© ${new Date().getFullYear()} Paradigm LLC — This demo was auto-generated from diagnostic data.`}
@@ -176,13 +217,7 @@ export function DemoMultiLayout({ navLinks, basePath, isJa, companyName, childre
 function ArrowIcon() {
   return (
     <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M5 12h14M12 5l7 7-7 7"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }

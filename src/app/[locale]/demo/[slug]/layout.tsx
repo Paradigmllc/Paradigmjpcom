@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { DemoMultiLayout } from "@/components/demo/DemoMultiLayout"
 import { fetchDemoMultiPageData } from "@/lib/sales/demo-generator"
+import { getTemplateById } from "@/lib/sales/demo-templates/registry"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 300
@@ -19,12 +20,16 @@ export default async function DemoMultiLayoutWrapper({ children, params }: Layou
   const isJa = locale === "ja"
   const basePath = `/${locale}/demo/${slug}`
 
-  // Fetch demo data for company name
   let companyName = "Paradigm"
+  let templateId: string | undefined
+  let accentColor: string | undefined
+
   try {
     const data = await fetchDemoMultiPageData(slug)
-    if (data?.meta?.companyName) {
-      companyName = data.meta.companyName
+    if (data) {
+      companyName = data.meta?.companyName || companyName
+      templateId = data.templateId
+      accentColor = data.meta?.accentColor || data.pages?.home?.hero?.accentColor
     }
   } catch {
     // fallback to default
@@ -42,7 +47,14 @@ export default async function DemoMultiLayoutWrapper({ children, params }: Layou
   ]
 
   return (
-    <DemoMultiLayout navLinks={navLinks} basePath={basePath} isJa={isJa} companyName={companyName}>
+    <DemoMultiLayout
+      navLinks={navLinks}
+      basePath={basePath}
+      isJa={isJa}
+      companyName={companyName}
+      templateId={templateId}
+      accentColor={accentColor}
+    >
       {children}
     </DemoMultiLayout>
   )

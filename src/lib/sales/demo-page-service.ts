@@ -4,6 +4,10 @@ import { buildDemoPageData } from "./demo-page-builder"
 import { buildDemoMultiPageData } from "./demo-multi-page-builder"
 import type { DemoBlock, DemoGenerateOutput, DemoMultiPageData, DemoPageData } from "./demo-site-types"
 import type { Industry, ReportLocale } from "./types"
+import { selectTemplate, type CompanyProfile } from "./demo-template-selector"
+import { buildPersonalizedDemoData } from "./demo-personalized-builder"
+import type { DiagnosticReportData } from "./diagnostic"
+import { getTemplateById } from "./demo-templates/registry"
 
 /**
  * Fetch demo page data by slug from the theme_demo_pages table,
@@ -324,9 +328,13 @@ export async function fetchDemoMultiPageData(slug: string): Promise<DemoMultiPag
         }
 
         if (diagnostic) {
-          return buildDemoMultiPageData(
-            company as Record<string, unknown> as Parameters<typeof buildDemoMultiPageData>[0],
+          return buildPersonalizedDemoData(
+            company as unknown as Parameters<typeof buildDemoMultiPageData>[0],
             diagnostic,
+            selectTemplate(
+              company as unknown as CompanyProfile,
+              diagnostic,
+            ),
           )
         }
       }
@@ -357,9 +365,13 @@ export async function fetchDemoMultiPageData(slug: string): Promise<DemoMultiPag
       }
 
       if (diagnostic) {
-        return buildDemoMultiPageData(
-          companyBySlug as Record<string, unknown> as Parameters<typeof buildDemoMultiPageData>[0],
+        return buildPersonalizedDemoData(
+          companyBySlug as unknown as Parameters<typeof buildDemoMultiPageData>[0],
           diagnostic,
+          selectTemplate(
+            companyBySlug as unknown as CompanyProfile,
+            diagnostic,
+          ),
         )
       }
     }

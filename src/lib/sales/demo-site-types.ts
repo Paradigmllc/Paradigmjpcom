@@ -8,6 +8,7 @@
  * multi-page deliverable website upgrade (Home/About/Services/Contact).
  */
 import type { Industry, ReportLocale } from "./types"
+import type { DemoTemplate } from "./demo-templates/registry"
 
 export interface DemoBlock {
   id: string
@@ -122,6 +123,10 @@ export interface DemoMultiPageData {
   locale: ReportLocale
   industry: Industry | null
   meta: DemoMeta
+  /** Template ID used to render this demo (e.g., "zenith", "aether") */
+  templateId?: string
+  /** Design tokens from the selected template */
+  designTokens?: DemoTemplate["designTokens"]
   pages: {
     home: DemoHomePage
     about: DemoAboutPage
@@ -141,6 +146,24 @@ export interface DemoHomePage {
   metricsSummary?: DemoMetricsSummary
   /** Data-driven FAQ items generated from detected issues */
   faq?: DemoFAQItem[]
+  /** Template-specific: testimonials (if template includes testimonials section) */
+  testimonials?: DemoTestimonial[]
+  /** Template-specific: trusted-by logos (if template includes trustedBy section) */
+  trustedBy?: DemoTrustedByItem[]
+}
+
+export interface DemoTestimonial {
+  id: string
+  quote: string
+  author: string
+  role: string
+  avatarInitials: string
+}
+
+export interface DemoTrustedByItem {
+  id: string
+  name: string
+  initials: string
 }
 
 export interface DemoMetricsSummary {
