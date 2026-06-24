@@ -16,6 +16,7 @@ CURRENT STATUS - 2026-06-24 Global SMB / DNS freshness lane foundation
 - 残タスク実装: `POST /api/sales/lead-candidates/fresh-domains/discover` を追加。CZDS/zone + crt.sh + RDAP one-shot でfresh domain候補を取得し、既存 `dns_freshness` ingestionへ投入。通知は `notifyBothChannels` 経由でDBベル+Slackへ送る。
 - ガード: SNS・Apollo等有料B2B DB・Google Maps UI scrape・n8n runtime は使わない。
 - 検証: `npm run test -- src/lib/sales/lead-candidates.test.ts src/lib/sales/source-registry.test.ts src/lib/sales/source-acquisition.test.ts` OK（3 files / 13 tests）。`npm exec -- tsc --noEmit --pretty false` OK。`npm run quality:guard` OK（0 error / 59 warnings）。`npm run build` OK。`node scripts/audit-sales-os.mjs` OK（13 pass / 0 warn / 0 fail）。`npm run release:prod -- --dry-run` は未コミット/未追跡ファイルを検出して停止（release gate正常動作）。
+- DEPLOY: PR #40 → main `0b09300` → `npm run release:prod` 完走。`migration_062_sales_dns_freshness_lane.sql` はDB SSH channelで本番適用済み。DB table verification 78/78 OK。Coolify deployment `p14cjlg1d9q5adw0jsohwq4e` finished、Traefik route refresh は app container `n8i2sjiqvr2d8hrzppop2m2i-004623646867` / `10.0.1.32`。post-deploy smoke は `/api/ready`、`/ja`、`/ja/admin/sales`、`/en/report/ccbc-xynd21`、Twenty、Sales health JSON `ok:true` まで合格。追加確認: `/ja/admin/sales?tab=freshDomains` HTTP 200、`/api/sales/lead-candidates/fresh-domains/discover` は未認証POSTで 401。
 
 CURRENT STATUS - 2026-06-23 Twenty 50+ API/OSS取得結果のUI可視化修復
 - 事象: Twenty company 詳細で `Digitalhumanity` を開いても Fields には `ドメイン名` しか前面表示されず、50+ API/OSS の取得率・取得ソース数・カテゴリ別内訳・詳細リンクが確認できない。
