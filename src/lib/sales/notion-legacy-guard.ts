@@ -8,7 +8,7 @@ export function notionLegacyDisabledResponse() {
   return NextResponse.json(
     {
       ok: false,
-      error: "Notion legacy sync is disabled. Supabase OSS is the Sales OS SSOT; use Notion only for customer-facing workspaces.",
+      error: "Notion legacy sync is disabled. Twenty is the Sales OS SSOT; use Notion only for customer-facing workspaces.",
     },
     { status: 410 },
   )

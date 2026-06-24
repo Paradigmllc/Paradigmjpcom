@@ -349,7 +349,7 @@ export async function handleAgentCommand(input: SalesAgentCommandInput): Promise
 
     if (intent === "oss_links") {
       const keyboard = buildOssLinksKeyboard()
-      const summary = "🛠 OSS管理ツール\n\n各ツールを開くには下のボタンをタップしてください:\n📈 Metabase — 営業動向・KPIダッシュボード\n💬 Chatwoot — 顧客返信・inbox\n🖥 Keystatic — デモサイトCMS\n📑 Directus — 営業資料CMS\n🗂 RevenueOS — 営業OSパネル"
+      const summary = "🛠 OSS管理ツール\n\n各ツールを開くには下のボタンをタップしてください:\n📈 Metabase — 営業動向・KPIダッシュボード\n💬 Chatwoot — 顧客返信・inbox\n🖥 Keystatic — デモサイトCMS\n📑 Directus — 営業資料CMS\n🗂 Twenty Sales OS — 営業OSパネル"
       const result = { oss: true, keyboard }
       await updateCommand(sb, commandId, { status: "completed", runSummary: summary, resultPayload: result })
       return { ok: true, commandId, intent, status: "completed", approvalRequired: false, summary, reply: summary, result }
@@ -357,7 +357,7 @@ export async function handleAgentCommand(input: SalesAgentCommandInput): Promise
 
     if (intent === "show_menu") {
       const keyboard = buildMainMenuKeyboard()
-      const summary = "📋 RevenueOS 営業指令メニュー\n\nボタンまたはコマンドを入力してください:\n/status - 状況確認\n/search [企業名/ドメイン] - 企業検索\n/enrich - カルテ生成\n/jobs - ジョブ一覧\n/queue - 承認待ち\n/sync - Twenty同期\n/help - 使い方"
+      const summary = "📋 Twenty Sales OS 営業指令メニュー\n\nボタンまたはコマンドを入力してください:\n/status - 状況確認\n/search [企業名/ドメイン] - 企業検索\n/enrich - カルテ生成\n/jobs - ジョブ一覧\n/queue - 承認待ち\n/sync - Twenty同期\n/help - 使い方"
       const result = { menu: true, keyboard }
       await updateCommand(sb, commandId, { status: "completed", runSummary: summary, resultPayload: result })
       return { ok: true, commandId, intent, status: "completed", approvalRequired: false, summary, reply: summary, result }

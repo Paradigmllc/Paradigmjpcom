@@ -4,6 +4,7 @@ import { cookies, headers } from "next/headers";
 import { SalesDashboardShell } from "@/components/sales-dashboard/SalesDashboardShell";
 import { authorizePayloadAdminRequest } from "@/lib/admin-auth";
 import { getSalesDashboardData } from "@/lib/sales/dashboard";
+import { twentyBaseUrl } from "@/lib/sales/twenty-sync-utils";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -60,5 +61,11 @@ export default async function SalesDashboardPage({ params }: Props) {
   if (!authed) return <UnauthorizedView />;
 
   const dashboard = await getSalesDashboardData({ reportLocale: locale });
-  return <SalesDashboardShell initialData={dashboard} locale={locale} />;
+  return (
+    <SalesDashboardShell
+      initialData={dashboard}
+      locale={locale}
+      twentyUrl={twentyBaseUrl() ?? "https://twenty.paradigmjp.com"}
+    />
+  );
 }

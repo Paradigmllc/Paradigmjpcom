@@ -54,10 +54,10 @@ function emptyOperationalAudit(): DashboardOperationalAudit {
         checks: [
           {
             id: "supabase-configured",
-            label: "Supabase SSOT",
+            label: "Supabase event store",
             status: "blocked",
             detail: "SALES_SUPABASE_URL または service role が未設定です。",
-            action: "Coolify の環境変数を確認し、営業OSのSSOT接続を復旧してください。",
+            action: "Coolify の環境変数を確認し、営業OSのログ・Realtime接続を復旧してください。",
           },
         ],
       },

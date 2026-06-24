@@ -3,6 +3,16 @@
 不変前提: WW-EVENT 厳守＝cron/n8n/pg_cron 不使用・Trigger.dev イベント駆動 one-shot のみ。
 決定: オーケストレータ維持＋完了イベント再開 / デモ=フルサイト一本化 / Dify=queue隔離かつ本文正本 / Twenty=category集約＋deep link / Telegram=webhook修復＋OSS deep link＋Realtime push / インフラ=重ワーカー分離＋Upstash＋ISR/CDN。
 
+CURRENT STATUS - 2026-06-24 Twenty Sales OS SSOT pivot
+- 壁打ち決定: RevenueOS を営業OS/SSOTとして継続改善しない。Twenty を営業OS/SSOTに昇格し、RevenueOS側は Twenty API に接続する外部OSS/worker監視・ログ・legacy engine surfaceへ降格する。
+- 実装: `/[locale]/admin/sales` と `/[locale]/sales` の営業画面に `TWENTY_BASE_URL` 由来の Twenty CTA を渡し、サイドバー/ヘッダー/外部ツール導線を `Twenty Sales OS` / `Twenty SSOT` へ変更。既存タブは外部OSS連携・旧RevenueOSジョブ監視として残す。
+- 実装: 統合定義と監査表示の `Supabase SSOT` 表現を `Supabase Event Store` へ変更。Supabase は営業マスターではなくジョブ履歴・Realtime・監査ログ・重い成果物メタデータの補助DBとして扱う。
+- 実装: `sync-knowledge-from-notion` API の top-level Supabase client 作成を廃止し、実行時 `getServiceSalesSupabase()` へ遅延。env未設定のbuildでも落ちず、API実行時は明示 503 を返す。
+- 実務運用追補: `/api/sales/import-csv` は既存/新規リードを保存後、既定で Twenty へ即時writebackする。`SALES_CSV_TWENTY_SYNC_LIMIT`（既定50 / 最大100）を超えるCSVは静かに staging 残しせず `twenty_deferred` と failure を返す。`sync_twenty=false` の明示時だけスキップ可能。
+- 実務運用追補: `/api/sales/health` は `TWENTY_BASE_URL` / `TWENTY_API_KEY` と Twenty `/rest/companies` 到達性を必須チェックに昇格。Twenty API が死んでいる場合は営業SSOT不成立として health `ok:false`。
+- 実務運用追補: Telegramメニュー、日次レポート、AI prompt説明、CRM field説明、source registry、diagnostic fallback の運用文言を Twenty Sales OS / Supabase Event Store 前提へ修正。
+- 検証: `npm run test -- src/app/api/sales/import-csv/route.test.ts` OK（2 tests）。`npm exec -- tsc --noEmit --pretty false` OK。`npm run quality:guard` OK（0 error / 57 warnings）。`npm run build` OK。
+
 CURRENT STATUS - 2026-06-24 Global SMB / DNS freshness lane foundation
 - 壁打ち決定: Google Maps UI スクレイピングやWHOIS連絡先依存ではなく、DNS/RDAP/CZDS/公開ディレクトリを「鮮度シグナル」として扱い、公開サイト/フォーム/明示連絡先が取れた候補だけをRevenue OSでレビューする。
 - 実装: `dns_freshness` lane を候補基盤に追加。既存 `sales_lead_candidate_*` テーブルを使い、新テーブルは作らない。DB制約migration `migration_062_sales_dns_freshness_lane.sql` を追加。

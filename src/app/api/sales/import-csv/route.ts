@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { upsertCompanyByDomain, batchFindExistingByDomains } from "@/lib/sales/companies"
 import { enqueueCompanyEnrichment, triggerEnrichmentRunner } from "@/lib/sales/enrichment-jobs"
+import { syncCompanyKarteToTwenty } from "@/lib/sales/twenty-sync-companies"
+import {
+  resolveCsvTwentySyncLimit,
+  selectCsvTwentySyncBatch,
+  type CsvTwentySyncItem,
+} from "@/lib/sales/import-csv-twenty-sync"
 import { normalizeDomain, normalizeCompanyName } from "@/lib/sales/dedup"
 import { salesScopeFromCountry } from "@/lib/sales/locale-scope"
 import {
@@ -35,6 +41,7 @@ interface CsvRow {
 interface Body {
   rows?: CsvRow[]
   enrich?: boolean
+  sync_twenty?: boolean
 }
 
 function isCsvRowArray(value: unknown): value is CsvRow[] {
@@ -66,6 +73,7 @@ export async function POST(req: NextRequest) {
   }
 
   const shouldEnrich = body.enrich !== false
+  const shouldSyncTwenty = body.sync_twenty !== false
   const seenKeys = new Set<string>()
   const dedupedRows = rows.filter((row) => {
     const key = normalizeDomain(row.domain) ?? normalizeCompanyName(row.company_name)
@@ -78,7 +86,11 @@ export async function POST(req: NextRequest) {
   let inserted = 0
   let skipped = 0
   let jobsEnqueued = 0
+  let twentySynced = 0
+  let twentyFailed = 0
+  let twentyDeferred = 0
   const failures: { row: number; reason: string }[] = []
+  const companiesForTwentySync: CsvTwentySyncItem[] = []
 
   // Batch preload all existing companies by domain (N+1 prevention)
   const allDomains = dedupedRows
@@ -106,6 +118,7 @@ export async function POST(req: NextRequest) {
     const existing = existingMap.get(cleanDomain)
     if (existing) {
       skipped++
+      companiesForTwentySync.push({ row: i, companyId: existing.id })
       if (shouldEnrich && existing.pipeline_status !== "report_ready") {
         const queued = await enqueueCompanyEnrichment({
           companyId: existing.id,
@@ -173,6 +186,7 @@ export async function POST(req: NextRequest) {
     }
 
     inserted++
+    companiesForTwentySync.push({ row: i, companyId: result.company.id })
     if (!shouldEnrich) continue
 
     const queued = await enqueueCompanyEnrichment({
@@ -200,12 +214,35 @@ export async function POST(req: NextRequest) {
     else failures.push({ row: i, reason: queued.error ?? "enrichment enqueue failed" })
   }
 
+  if (shouldSyncTwenty) {
+    const syncLimit = resolveCsvTwentySyncLimit()
+    const { immediate, deferred } = selectCsvTwentySyncBatch(companiesForTwentySync, syncLimit)
+    twentyDeferred = deferred
+
+    for (const item of immediate) {
+      const synced = await syncCompanyKarteToTwenty(item.companyId)
+      if (synced.ok) {
+        twentySynced++
+      } else {
+        twentyFailed++
+        failures.push({ row: item.row, reason: `twenty sync failed: ${synced.error ?? "unknown error"}` })
+      }
+    }
+
+    if (twentyDeferred > 0) {
+      failures.push({
+        row: -1,
+        reason: `twenty sync deferred for ${twentyDeferred} companies; split CSV into chunks of ${syncLimit} or less`,
+      })
+    }
+  }
+
   if (jobsEnqueued > 0) {
     await triggerEnrichmentRunner(Math.min(jobsEnqueued, 3))
   }
 
   return NextResponse.json({
-    ok: true,
+    ok: failures.length === 0,
     total: rows.length,
     batch_duplicates_removed: rows.length - dedupedRows.length,
     deduped_total: dedupedRows.length,
@@ -213,9 +250,12 @@ export async function POST(req: NextRequest) {
     skipped,
     jobs_enqueued: jobsEnqueued,
     enrich_triggered: jobsEnqueued,
+    twenty_synced: twentySynced,
+    twenty_failed: twentyFailed,
+    twenty_deferred: twentyDeferred,
     failures: failures.slice(0, 20),
-    note: shouldEnrich
-      ? "Rows were saved to Supabase SSOT and durable enrichment jobs were queued."
-      : "Rows were saved only. Enrichment was skipped because enrich=false.",
+    note: shouldSyncTwenty
+      ? "Rows were saved to the staging store and written to Twenty as the Sales OS SSOT."
+      : "Rows were saved only. Twenty writeback was skipped because sync_twenty=false.",
   })
 }

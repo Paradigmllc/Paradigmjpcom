@@ -63,11 +63,11 @@ export const DEFAULT_CRM_VIEW_FIELDS: SalesCrmViewField[] = [
 ]
 
 const OPERATIONAL_CRM_VIEW_FIELDS: SalesCrmViewField[] = [
-  { fieldKey: "source_coverage", twentyFieldName: "paradigmSourceCoverage", label: "50+ API/OSS取得率", position: 3, isVisible: true, fieldType: "text", description: "RevenueOS API/OSS source catalog coverage score from 0 to 100" },
+  { fieldKey: "source_coverage", twentyFieldName: "paradigmSourceCoverage", label: "50+ API/OSS取得率", position: 3, isVisible: true, fieldType: "text", description: "External API/OSS source catalog coverage score from 0 to 100" },
   { fieldKey: "data_sources", twentyFieldName: "paradigmDataSources", label: "取得ソース数", position: 4, isVisible: true, fieldType: "text", description: "Collected/configured/missing/error source counts" },
-  { fieldKey: "data_breakdown", twentyFieldName: "paradigmDataBreakdown", label: "50+ API/OSS内訳", position: 5, isVisible: true, fieldType: "text", description: "Collected source count by RevenueOS source category" },
-  { fieldKey: "source_details_url", twentyFieldName: "paradigmSourceDetailsUrl", label: "50+ API/OSS詳細URL", position: 6, isVisible: true, fieldType: "url", description: "RevenueOS dashboard deep link for per-source acquisition results" },
-  { fieldKey: "data_status", twentyFieldName: "paradigmDataStatus", label: "取得ステータス", position: 7, isVisible: true, fieldType: "text", description: "RevenueOS readiness and data collection state" },
+  { fieldKey: "data_breakdown", twentyFieldName: "paradigmDataBreakdown", label: "50+ API/OSS内訳", position: 5, isVisible: true, fieldType: "text", description: "Collected source count by external source category" },
+  { fieldKey: "source_details_url", twentyFieldName: "paradigmSourceDetailsUrl", label: "50+ API/OSS詳細URL", position: 6, isVisible: true, fieldType: "url", description: "Twenty Sales OS legacy monitor deep link for per-source acquisition results" },
+  { fieldKey: "data_status", twentyFieldName: "paradigmDataStatus", label: "取得ステータス", position: 7, isVisible: true, fieldType: "text", description: "Twenty Sales OS readiness and data collection state" },
   { fieldKey: "next_action", twentyFieldName: "paradigmNextAction", label: "Next Action", position: 8, isVisible: true, fieldType: "text", description: "Next required pipeline action" },
   { fieldKey: "last_error", twentyFieldName: "paradigmLastError", label: "最終エラー", position: 9, isVisible: true, fieldType: "text", description: "Latest source or pipeline error summary" },
 ]

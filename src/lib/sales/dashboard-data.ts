@@ -67,7 +67,7 @@ function dashboardQueryTimeoutMs(): number {
 }
 
 function fallbackQuery<T>(data: T, count: number | null = null): QueryFallback<T> {
-  return { data, error: null, count, status: 200, statusText: "RevenueOS dashboard fallback", success: true }
+  return { data, error: null, count, status: 200, statusText: "Twenty Sales OS legacy monitor fallback", success: true }
 }
 
 function queryErrorMessage(result: { error?: unknown }): string | null {
@@ -260,11 +260,11 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
       storageStatus: "unconfigured",
     }),
     withDashboardFallback("sales_integration_status", warnings, getSalesIntegrationStatus(), []),
-    withDashboardFallback("sales_lead_batches", warnings, listLeadBatches(scope, 6), { ok: false, batches: [], error: "RevenueOS dashboard fallback" }),
-    withDashboardFallback("sales_browser_search_runs", warnings, listSearxngRuns(scope, 6), { ok: false as const, runs: [] as SearxngRunSummary[], error: "RevenueOS dashboard fallback" }),
-    withDashboardFallback("sales_japan_readiness_insights", warnings, listJapanReadinessInsights(scope, 6), { ok: false, insights: [], error: "RevenueOS dashboard fallback" }),
-    withDashboardFallback("sales_pipeline_runs", warnings, listSalesPipelineRuns(12), { runs: [], error: "RevenueOS dashboard fallback" }),
-    withDashboardFallback("sales_video_jobs", warnings, listVideoJobs(12, { locale: scope.reportLocale }), { ok: false as const, jobs: [], config: getVideoPipelineConfig(), error: "RevenueOS dashboard fallback" }),
+    withDashboardFallback("sales_lead_batches", warnings, listLeadBatches(scope, 6), { ok: false, batches: [], error: "Twenty Sales OS legacy monitor fallback" }),
+    withDashboardFallback("sales_browser_search_runs", warnings, listSearxngRuns(scope, 6), { ok: false as const, runs: [] as SearxngRunSummary[], error: "Twenty Sales OS legacy monitor fallback" }),
+    withDashboardFallback("sales_japan_readiness_insights", warnings, listJapanReadinessInsights(scope, 6), { ok: false, insights: [], error: "Twenty Sales OS legacy monitor fallback" }),
+    withDashboardFallback("sales_pipeline_runs", warnings, listSalesPipelineRuns(12), { runs: [], error: "Twenty Sales OS legacy monitor fallback" }),
+    withDashboardFallback("sales_video_jobs", warnings, listVideoJobs(12, { locale: scope.reportLocale }), { ok: false as const, jobs: [], config: getVideoPipelineConfig(), error: "Twenty Sales OS legacy monitor fallback" }),
   ])
 
   const companyError = queryErrorMessage(companyRes)
@@ -362,7 +362,7 @@ export async function getSalesDashboardData(input: SalesDashboardInput = {}): Pr
     "sales_source_acquisition",
     warnings,
     getSourceAcquisitionSummary(sb, scopedCompanyIds),
-    emptySourceAcquisitionSummary(["RevenueOS dashboard fallback"]),
+    emptySourceAcquisitionSummary(["Twenty Sales OS legacy monitor fallback"]),
   )
   warnings.push(...sourceAcquisition.errors)
 

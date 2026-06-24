@@ -69,7 +69,7 @@ export function sourceCategoryBreakdown(karte: CompanyKarteSnapshot): string {
   return parts.length > 0 ? parts.join(" / ") : "no source data"
 }
 
-// Phase 7-2: deep link to the RevenueOS source-coverage panel for per-source detail
+// Phase 7-2: deep link to the Twenty Sales OS source-coverage panel for per-source detail
 // (the full 50+ catalog with status/meaning/nextStep is shown in the dashboard).
 export function sourceCoveragePanelLink(karte: CompanyKarteSnapshot): string {
   const base = (process.env.PAYLOAD_PUBLIC_SERVER_URL || "https://paradigmjp.com").replace(/\/+$/, "")

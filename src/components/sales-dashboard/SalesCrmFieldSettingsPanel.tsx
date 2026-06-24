@@ -309,7 +309,7 @@ export function SalesCrmFieldSettingsPanel({
           </div>
           <h2 className="mt-2 text-lg font-semibold text-zinc-950">営業リスト表示列・選択肢マスタ</h2>
           <p className="mt-1 text-sm leading-relaxed text-zinc-500">
-            ハンドルをドラッグして並び替え、表記名と選択肢をSupabase SSOTから管理します。
+            ハンドルをドラッグして並び替え、Twentyに同期する表示名と選択肢を管理します。
           </p>
           {fallbackUsed || error ? (
             <p className="mt-2 rounded-md bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800">

@@ -14,7 +14,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { verifyWebhookSecret } from "@/lib/sales/auth"
 import { notionQueryDatabase, extractProperty } from "@/lib/notion"
-import { createClient } from "@supabase/supabase-js"
+import { getServiceSalesSupabase } from "@/lib/supabase"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -24,12 +24,8 @@ const DB_TOOLS   = process.env.NOTION_DB_TOOLS    ?? "389a2b78f3fc8169a987deb00a
 const DB_PHASES  = process.env.NOTION_DB_PHASES   ?? "389a2b78-f3fc-81b8-b0fd-d3730ec12560"
 const DB_DIAGNOSIS = process.env.NOTION_DB_DIAGNOSIS ?? "389a2b78-f3fc-81e1-a8da-c784a4fb1976"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-)
-
 type DbType = "tools" | "phases" | "diagnosis"
+type SalesSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 
 interface SyncConfig {
   dbId: string
@@ -81,7 +77,7 @@ const configs: Record<DbType, SyncConfig> = {
   },
 }
 
-async function syncOne(config: SyncConfig): Promise<{ synced: number; errors: string[] }> {
+async function syncOne(supabase: SalesSupabase, config: SyncConfig): Promise<{ synced: number; errors: string[] }> {
   let synced = 0
   const errors: string[] = []
 
@@ -113,9 +109,15 @@ export async function POST(req: NextRequest) {
 
   let body: { db_type?: string; db_id?: string }
   try {
-    body = (await req.json().catch(() => ({}))) as { db_type?: string; db_id?: string }
-  } catch {
+    body = (await req.json()) as { db_type?: string; db_id?: string }
+  } catch (error) {
+    console.error("[sync-knowledge-from-notion] invalid JSON body:", error)
     body = {}
+  }
+
+  const supabase = getServiceSalesSupabase()
+  if (!supabase) {
+    return NextResponse.json({ ok: false, error: "Sales Supabase service_role not configured" }, { status: 503 })
   }
 
   const type = (body.db_type ?? "") as DbType | ""
@@ -123,10 +125,10 @@ export async function POST(req: NextRequest) {
 
   if (type && configs[type]) {
     const cfg = { ...configs[type], dbId: body.db_id || configs[type].dbId }
-    results[type] = await syncOne(cfg)
+    results[type] = await syncOne(supabase, cfg)
   } else {
     for (const [t, cfg] of Object.entries(configs)) {
-      results[t] = await syncOne({ ...cfg, dbId: body.db_id || cfg.dbId })
+      results[t] = await syncOne(supabase, { ...cfg, dbId: body.db_id || cfg.dbId })
     }
   }
 

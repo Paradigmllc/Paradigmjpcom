@@ -1,9 +1,9 @@
 /**
  * Diagnostic report data builder.
  *
- * Builds the public/private report payload from the Supabase Sales OS SSOT:
- * company facts, collected OSS/API evidence, business impact hypotheses, and
- * selected content templates for `/[locale]/report/[slug]`.
+ * Builds the public/private report payload from the sales event store:
+ * company facts mirrored from Twenty, collected OSS/API evidence, business
+ * impact hypotheses, and selected content templates for `/[locale]/report/[slug]`.
  */
 
 import { findCompanyByDomain, findCompanyById, findCompanyBySlug } from "./companies"

@@ -146,7 +146,7 @@ export function AiPromptsPanel({ data: _data }: AiPromptsPanelProps) {
           </div>
         </div>
         <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-600">
-          Dify 診断とアウトバウンド文面生成に渡す system prompt を Supabase SSOT で管理します。保存した内容は次回の Sales OS 実行から反映されます。
+          Dify 診断とアウトバウンド文面生成に渡す system prompt を補助DBで管理します。保存した内容は次回の Twenty Sales OS 連携実行から反映されます。
         </p>
       </header>
 

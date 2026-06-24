@@ -35,6 +35,7 @@ type SalesTab = "crm" | "freshDomains" | "integrations" | "audit" | "templates" 
 type SalesCommandCenterProps = {
   data: SalesDashboardData
   locale: string
+  twentyUrl: string
 }
 
 type TabItem = {
@@ -56,14 +57,17 @@ const tabItems: TabItem[] = [
   { id: "failedJobs", label: "失敗ジョブ", description: "エンリッチメント失敗監視", icon: CircleAlert },
 ]
 
-const externalTools = [
-  { label: "Chatwoot", url: "https://chatwoot.paradigmjp.com" },
-  { label: "Directus", url: "https://directus.paradigmjp.com/admin" },
-  { label: "Keystatic", url: "https://keystatic.paradigmjp.com" },
-  { label: "Supabase", url: "https://supabase.com/dashboard" },
-  { label: "Metabase", url: "https://metabase.paradigmjp.com" },
-  { label: "HyperFrames", url: "https://hyperframes.paradigmjp.com" },
-]
+function externalToolLinks(twentyUrl: string) {
+  return [
+    { label: "Twenty", url: twentyUrl },
+    { label: "Chatwoot", url: "https://chatwoot.paradigmjp.com" },
+    { label: "Directus", url: "https://directus.paradigmjp.com/admin" },
+    { label: "Keystatic", url: "https://keystatic.paradigmjp.com" },
+    { label: "Supabase", url: "https://supabase.com/dashboard" },
+    { label: "Metabase", url: "https://metabase.paradigmjp.com" },
+    { label: "HyperFrames", url: "https://hyperframes.paradigmjp.com" },
+  ]
+}
 
 const tabIds = new Set<SalesTab>(tabItems.map((tab) => tab.id))
 
@@ -119,7 +123,7 @@ function MetricTile({ label, value, helper, delay, urgent }: { label: string; va
   )
 }
 
-export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
+export function SalesCommandCenter({ data, locale, twentyUrl }: SalesCommandCenterProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -155,6 +159,7 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
   const localeMeta = localeLabels[locale] ?? localeLabels.ja
   const activeTabItem = tabItems.find((item) => item.id === activeTab) ?? tabItems[0]
   const ActiveTabIcon = activeTabItem.icon
+  const externalTools = useMemo(() => externalToolLinks(twentyUrl), [twentyUrl])
 
   const metrics = useMemo(
     () => {
@@ -197,7 +202,7 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
         <button onClick={() => setMobileMenuOpen(true)} className="rounded-md p-1.5 text-zinc-600 hover:bg-zinc-100" aria-label="メニューを開く">
           <Menu className="h-5 w-5" />
         </button>
-        <span className="text-sm font-bold text-zinc-900">Revenue OS</span>
+        <span className="text-sm font-bold text-zinc-900">Twenty Sales OS</span>
         <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
           {statusLabel(data.status)}
@@ -209,7 +214,7 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileMenuOpen(false)} />
           <div className="absolute left-0 top-0 h-full w-72 bg-white shadow-xl overflow-y-auto">
             <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100">
-              <p className="text-sm font-bold text-zinc-900">Revenue OS</p>
+              <p className="text-sm font-bold text-zinc-900">Twenty Sales OS</p>
               <button onClick={() => setMobileMenuOpen(false)} className="rounded-md p-1 text-zinc-500 hover:bg-zinc-100" aria-label="メニューを閉じる"><X className="h-4 w-4" /></button>
             </div>
             <nav className="py-2">
@@ -247,11 +252,20 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
               <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-zinc-200 to-transparent" />
               <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.3em] text-violet-500">Paradigm</p>
               <h1 className="bg-gradient-to-br from-zinc-900 to-zinc-600 bg-clip-text text-2xl font-bold tracking-tight text-transparent">
-                Revenue OS
+                Twenty Sales OS
               </h1>
               <p className="mt-3 text-xs font-medium leading-relaxed text-zinc-500">
-                Supabase SSOTを中心に、リストから商談までの全工程を一元管理。
+                Twentyを営業SSOTに固定。ここは外部OSS連携と旧RevenueOSジョブ監視だけに限定。
               </p>
+              <a
+                href={twentyUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex h-9 items-center gap-2 rounded-lg bg-zinc-950 px-3 text-xs font-bold text-white hover:bg-zinc-800"
+              >
+                Twentyを開く
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
             </div>
 
             <nav className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-3" aria-label="営業機能">
@@ -322,12 +336,20 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
             <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-zinc-500">
-                  <span className="rounded-md bg-zinc-100 px-2 py-1 text-zinc-600">Revenue OS</span>
+                  <span className="rounded-md bg-zinc-100 px-2 py-1 text-zinc-600">Twenty SSOT</span>
                   <span className="flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 font-bold text-emerald-700">
                     <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
                     {statusLabel(data.status)}
                   </span>
                   <span className="font-mono text-[11px] tracking-tight text-zinc-400">Sync: {formatGeneratedAt(data.generatedAt)}</span>
+                  <a
+                    href={twentyUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 rounded-md bg-zinc-900 px-2 py-1 font-bold text-white hover:bg-zinc-800"
+                  >
+                    Twentyを開く <ExternalLink className="h-3 w-3" />
+                  </a>
                 </div>
 
                 <div className="mt-5 flex items-center gap-4">

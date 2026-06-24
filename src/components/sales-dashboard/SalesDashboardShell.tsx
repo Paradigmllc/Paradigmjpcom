@@ -27,7 +27,7 @@ async function fetchDashboard(locale: string): Promise<SalesDashboardData> {
 
 export const DASHBOARD_QUERY_KEY = ["sales-dashboard"] as const
 
-function Shell({ initialData, locale }: { initialData: SalesDashboardData; locale: string }) {
+function Shell({ initialData, locale, twentyUrl }: { initialData: SalesDashboardData; locale: string; twentyUrl: string }) {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: [...DASHBOARD_QUERY_KEY, locale],
     queryFn: () => fetchDashboard(locale),
@@ -62,13 +62,13 @@ function Shell({ initialData, locale }: { initialData: SalesDashboardData; local
     )
   }
 
-  return <SalesCommandCenter data={data} locale={locale} />
+  return <SalesCommandCenter data={data} locale={locale} twentyUrl={twentyUrl} />
 }
 
-export function SalesDashboardShell({ initialData, locale }: { initialData: SalesDashboardData; locale: string }) {
+export function SalesDashboardShell({ initialData, locale, twentyUrl }: { initialData: SalesDashboardData; locale: string; twentyUrl: string }) {
   return (
     <QueryProvider>
-      <Shell initialData={initialData} locale={locale} />
+      <Shell initialData={initialData} locale={locale} twentyUrl={twentyUrl} />
     </QueryProvider>
   )
 }

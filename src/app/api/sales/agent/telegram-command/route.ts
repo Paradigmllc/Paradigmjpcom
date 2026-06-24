@@ -202,7 +202,7 @@ export async function POST(req: NextRequest) {
 
   if (!command.text.trim() && isTelegram) {
     const keyboard = buildMainMenuKeyboard()
-    const reply = await sendTelegramReply(command.chatId, "📋 RevenueOS 営業指令メニュー\n操作したい内容をボタンまたはコマンドで選択してください。", keyboard)
+    const reply = await sendTelegramReply(command.chatId, "📋 Twenty Sales OS 営業指令メニュー\n操作したい内容をボタンまたはコマンドで選択してください。", keyboard)
     return NextResponse.json({ ok: true, menu: true, telegramReply: reply })
   }
   if (!command.text.trim()) {

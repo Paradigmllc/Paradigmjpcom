@@ -23,13 +23,13 @@ function fallbackIntelligence(locale: string): CompanyIntelligence {
         severity: "warning",
         evidence: isJa ? "一部の診断データが未取得または不完全です。" : "Some diagnostic data is missing or incomplete.",
         implication: isJa ? "詳細な優先順位は再取得後に確定します。" : "Detailed prioritization will be finalized after refresh.",
-        recommendedAction: isJa ? "Revenue OSで再診断を実行してください。" : "Run a Revenue OS diagnostic refresh.",
+        recommendedAction: isJa ? "Twenty Sales OSで再診断を実行してください。" : "Run a Twenty Sales OS diagnostic refresh.",
       },
     ],
     nextActions: [
       isJa
-        ? "Revenue OSで企業カルテと診断レポートを再生成する"
-        : "Regenerate the company profile and diagnostic report in Revenue OS",
+        ? "Twenty Sales OSで企業カルテと診断レポートを再生成する"
+        : "Regenerate the company profile and diagnostic report in Twenty Sales OS",
     ],
   }
 }

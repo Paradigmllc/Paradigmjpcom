@@ -76,7 +76,7 @@ export function buildMainMenuKeyboard(): TelegramKeyboard {
 
 // Phase 8-3: OSS management deep links. One-tap open of the営業動向/OSS tools from Telegram
 // (deep-link approach: Metabase trends, Chatwoot replies, Keystatic demo CMS, Directus sales-asset CMS,
-// RevenueOS panel). Uses env base URLs with production defaults.
+// Twenty Sales OS panel). Uses env base URLs with production defaults.
 function ossBase(envName: string, fallback: string): string {
   const v = process.env[envName]
   return (typeof v === "string" && v.trim() ? v.trim() : fallback).replace(/\/+$/, "")
@@ -90,7 +90,7 @@ export function buildOssLinksKeyboard(): TelegramKeyboard {
       [{ text: "💬 返信 (Chatwoot)", url: `${ossBase("CHATWOOT_BASE_URL", "https://chatwoot.paradigmjp.com")}` }],
       [{ text: "🖥 デモCMS (Keystatic)", url: `${ossBase("KEYSTATIC_BASE_URL", "https://keystatic.paradigmjp.com")}` }],
       [{ text: "📑 営業資料CMS (Directus)", url: `${ossBase("DIRECTUS_BASE_URL", "https://directus.paradigmjp.com")}` }],
-      [{ text: "🗂 RevenueOS パネル", url: `${revenueOs}/ja/admin/sales` }],
+      [{ text: "🗂 Twenty Sales OS パネル", url: `${revenueOs}/ja/admin/sales` }],
       [{ text: "◀️ メニュー", callback_data: "/menu" }],
     ],
   }

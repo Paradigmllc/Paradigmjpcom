@@ -15,6 +15,7 @@ import { getBrowserSearchBackendStatus } from "@/lib/sales/sources/browser-searc
 import { getSalesSupabaseConfig, getServiceSalesSupabase } from "@/lib/supabase"
 import { checkPoolHealth, getPoolConfigSummary } from "@/lib/db/pool-monitor"
 import { getPayloadPoolMetrics, getConsecutiveFailures } from "@/lib/payload-availability"
+import { twentyBaseUrl, twentyFetch, type TwentyListResponse, type TwentyRecord } from "@/lib/sales/twenty-sync-utils"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -49,7 +50,7 @@ async function checkSupabase(): Promise<ServiceCheck> {
   const config = getSalesSupabaseConfig()
   if (!config) {
     return {
-      name: "Supabase",
+      name: "Supabase Event Store",
       status: "not_configured",
       detail: "NEXT_PUBLIC_SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY or SALES_SUPABASE_* is not configured",
       url: env("NEXT_PUBLIC_SUPABASE_URL") ?? env("SALES_SUPABASE_URL"),
@@ -58,16 +59,36 @@ async function checkSupabase(): Promise<ServiceCheck> {
 
   const sb = getServiceSalesSupabase()
   if (!sb) {
-    return { name: "Supabase", status: "error", detail: "Supabase service client could not be created", url: config.url }
+    return { name: "Supabase Event Store", status: "error", detail: "Supabase service client could not be created", url: config.url }
   }
 
   try {
     const { error } = await sb.from(DB_TABLES.SALES_COMPANIES).select("id", { count: "exact", head: true }).limit(1)
-    if (error) return { name: "Supabase", status: "error", detail: `${config.source}: ${error.message}`, url: config.url }
-    return { name: "Supabase", status: "ok", detail: `${config.source}: sales_companies reachable`, url: config.url }
+    if (error) return { name: "Supabase Event Store", status: "error", detail: `${config.source}: ${error.message}`, url: config.url }
+    return { name: "Supabase Event Store", status: "ok", detail: `${config.source}: event store reachable`, url: config.url }
   } catch (error) {
-    return { name: "Supabase", status: "error", detail: error instanceof Error ? error.message : String(error), url: config.url }
+    return { name: "Supabase Event Store", status: "error", detail: error instanceof Error ? error.message : String(error), url: config.url }
   }
+}
+
+async function checkTwentyApi(): Promise<ServiceCheck> {
+  const baseUrl = twentyBaseUrl()
+  const apiKey = env("TWENTY_API_KEY")
+  if (!baseUrl || !apiKey) {
+    return {
+      name: "Twenty Sales OS API",
+      status: "error",
+      detail: "TWENTY_BASE_URL and TWENTY_API_KEY are required because Twenty is the Sales OS SSOT",
+      url: baseUrl,
+    }
+  }
+
+  const result = await twentyFetch<TwentyListResponse<TwentyRecord>>("/rest/companies?limit=1")
+  if (!result.ok) {
+    return { name: "Twenty Sales OS API", status: "error", detail: result.error, url: baseUrl }
+  }
+
+  return { name: "Twenty Sales OS API", status: "ok", detail: "companies REST API reachable", url: baseUrl }
 }
 
 async function checkBrowserSearch(): Promise<ServiceCheck> {
@@ -132,7 +153,7 @@ function checkOutreachEnvSummary(): ServiceCheck {
 }
 
 function checkEnvSummary(): ServiceCheck {
-  const required = ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "DEEPSEEK_API_KEY"]
+  const required = ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "DEEPSEEK_API_KEY", "TWENTY_BASE_URL", "TWENTY_API_KEY"]
   const requiredAny = [["TRIGGER_SECRET_KEY", "TRIGGER_ACCESS_TOKEN", "TRIGGER_DEV_API_KEY"]]
   const optional = [
     "FLARESOLVERR_API_URL",
@@ -142,8 +163,6 @@ function checkEnvSummary(): ServiceCheck {
     "DIFY_FORM_MESSAGE_API_KEY",
     "DIFY_FORM_MESSAGE_KEY",
     "DIFY_FREELANCE_AUTOREPLY_KEY",
-    "TWENTY_BASE_URL",
-    "TWENTY_API_KEY",
     "NOTION_API_KEY",
     "CRAWL4AI_BASE_URL",
     "STAGEHAND_URL",
@@ -205,6 +224,7 @@ export async function GET(req: NextRequest) {
     checkOutreachEnvSummary(),
     ...(await Promise.all([
       checkSupabase(),
+      checkTwentyApi(),
       checkPayloadPool(),
       checkBrowserSearch(),
       checkDify(),
