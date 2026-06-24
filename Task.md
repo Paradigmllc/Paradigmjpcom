@@ -3,6 +3,20 @@
 不変前提: WW-EVENT 厳守＝cron/n8n/pg_cron 不使用・Trigger.dev イベント駆動 one-shot のみ。
 決定: オーケストレータ維持＋完了イベント再開 / デモ=フルサイト一本化 / Dify=queue隔離かつ本文正本 / Twenty=category集約＋deep link / Telegram=webhook修復＋OSS deep link＋Realtime push / インフラ=重ワーカー分離＋Upstash＋ISR/CDN。
 
+CURRENT STATUS - 2026-06-24 Global SMB / DNS freshness lane foundation
+- 壁打ち決定: Google Maps UI スクレイピングやWHOIS連絡先依存ではなく、DNS/RDAP/CZDS/公開ディレクトリを「鮮度シグナル」として扱い、公開サイト/フォーム/明示連絡先が取れた候補だけをRevenue OSでレビューする。
+- 実装: `dns_freshness` lane を候補基盤に追加。既存 `sales_lead_candidate_*` テーブルを使い、新テーブルは作らない。DB制約migration `migration_062_sales_dns_freshness_lane.sql` を追加。
+- 実装: 国別market config (`US/GB/AU/CA/DE/JP`) と fresh-domain scoring を追加。既存Revenue OSの国コードに合わせて `UK` 入力は `GB` へ正規化。parked/under_construction/default_server/dead/legacy/modern の website state、鮮度、地域、ローカルサービス適合、大企業キーワードをスコア化。
+- 実装: 認証付き `POST /api/sales/lead-candidates/fresh-domains` を追加。最大500件の fresh domain 候補を投入し、`promote` 指定時のみ上位候補を企業化・enrichment queue へ進める。
+- 実装: Source registry に `DNS freshness candidates` を live bulk lane として追加。`GET /api/sales/lead-candidates?lane=dns_freshness` でレビュー可能。
+- 実務監査修正: `migration_062_sales_dns_freshness_lane.sql` を正式 `release:prod` 経路の migration 適用順に追加。未適用DBで `dns_freshness` lane insert がcheck制約で落ちる事故を防止。
+- 実務監査修正: 公開メールは `contact_email_present` の真偽値だけを保存し、国判定の証跡本文には混ぜない。WHOIS/RDAP は連絡先DBではなくタイミングシグナルとして扱う。
+- 実務監査修正: `scripts/sales-os-no-login-deploy.mjs` から git 管理された webhook secret 実値を除去。`TRIGGER_WEBHOOK_SECRET` はCoolify envに存在しない場合リリース停止。
+- 残タスク実装: Sales管理画面に `Fresh Domains` 専用タブを追加。国/取得上限/RDAP確認数/HP状態/企業化のGUI操作、候補レビュー、取得元ログ、ローディング/空/エラー状態を実装。
+- 残タスク実装: `POST /api/sales/lead-candidates/fresh-domains/discover` を追加。CZDS/zone + crt.sh + RDAP one-shot でfresh domain候補を取得し、既存 `dns_freshness` ingestionへ投入。通知は `notifyBothChannels` 経由でDBベル+Slackへ送る。
+- ガード: SNS・Apollo等有料B2B DB・Google Maps UI scrape・n8n runtime は使わない。
+- 検証: `npm run test -- src/lib/sales/lead-candidates.test.ts src/lib/sales/source-registry.test.ts src/lib/sales/source-acquisition.test.ts` OK（3 files / 13 tests）。`npm exec -- tsc --noEmit --pretty false` OK。`npm run quality:guard` OK（0 error / 59 warnings）。`npm run build` OK。`node scripts/audit-sales-os.mjs` OK（13 pass / 0 warn / 0 fail）。`npm run release:prod -- --dry-run` は未コミット/未追跡ファイルを検出して停止（release gate正常動作）。
+
 CURRENT STATUS - 2026-06-23 Twenty 50+ API/OSS取得結果のUI可視化修復
 - 事象: Twenty company 詳細で `Digitalhumanity` を開いても Fields には `ドメイン名` しか前面表示されず、50+ API/OSS の取得率・取得ソース数・カテゴリ別内訳・詳細リンクが確認できない。
 - 原因: `twentyCompanyHomePayload` は `paradigmDataBreakdown` を送っていたが、CRM view field / Twenty record view の正式フィールドとして前面固定されておらず、`paradigmSourceDetailsUrl` も独立リンクフィールド化されていなかった。さらに `/api/sales/twenty-sync` は企業同期前に Twenty メタデータ自己修復を実行していなかったため、設定適用漏れでもUIが空のまま成功扱いになり得た。

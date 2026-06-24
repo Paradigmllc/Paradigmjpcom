@@ -59,7 +59,7 @@ export interface CandidateAcquisitionSummary {
   candidates: CandidateListItem[]
 }
 
-interface CandidateRow {
+export interface CandidateRow {
   id: string
   domain: string
   root_url: string | null
@@ -75,7 +75,7 @@ function identityHash(value: string): string {
   return createHash("sha1").update(value).digest("hex").slice(0, 12)
 }
 
-function guessedCompanyName(domain: string): string {
+export function guessedCompanyName(domain: string): string {
   const normalized = normalizeDomain(domain) ?? domain
   const label = normalized.split(".")[0] ?? normalized
   return label
@@ -91,7 +91,7 @@ function localSmbIdentity(row: LocalSmbInputRow): string {
   return `local-${identityHash(seed)}.no-website.local`
 }
 
-async function upsertCandidateDomain(input: {
+export async function upsertCandidateDomain(input: {
   domain: string
   rootUrl: string | null
   lane: CandidateLane
@@ -101,7 +101,7 @@ async function upsertCandidateDomain(input: {
 }): Promise<CandidateRow> {
   const sb = getServiceSalesSupabase()
   if (!sb) throw new Error("Supabase service_role not configured")
-  const normalized = input.lane === "tech_footprint" ? normalizeDomain(input.domain) : input.domain.trim().toLowerCase()
+  const normalized = input.lane === "no_website_local_smb" ? input.domain.trim().toLowerCase() : normalizeDomain(input.domain)
   if (!normalized) throw new Error(`invalid candidate domain: ${input.domain}`)
 
   const { data, error } = await sb
@@ -124,7 +124,7 @@ async function upsertCandidateDomain(input: {
   return data as CandidateRow
 }
 
-async function saveCandidateEvidence(input: {
+export async function saveCandidateEvidence(input: {
   candidate: CandidateRow
   sourceSlug: string
   observedUrl: string | null
@@ -210,7 +210,7 @@ async function saveCandidateEvidence(input: {
   if (updateError) throw new Error(updateError.message)
 }
 
-async function promoteCandidate(input: {
+export async function promoteCandidate(input: {
   candidate: CandidateRow
   countryCode: string
   sourceSlug: string

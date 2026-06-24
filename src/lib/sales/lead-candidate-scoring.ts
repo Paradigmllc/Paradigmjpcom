@@ -1,6 +1,7 @@
 import type { TechItem } from "./sources/wappalyzer"
+import { normalizeSalesCountryCode } from "./country-code"
 
-export type CandidateLane = "tech_footprint" | "no_website_local_smb"
+export type CandidateLane = "tech_footprint" | "no_website_local_smb" | "dns_freshness"
 export type CandidateStatus = "candidate" | "scored" | "promoted" | "rejected"
 
 export interface CandidateCountrySignal {
@@ -25,6 +26,9 @@ export interface CandidateScore {
 const COUNTRY_TLD_PATTERNS: Record<string, string[]> = {
   JP: ["*.jp", "*.co.jp", "*.or.jp", "*.ne.jp", "*.ac.jp"],
   US: ["*.us", "*.com", "*.org"],
+  GB: ["*.uk", "*.co.uk", "*.org.uk", "*.ltd.uk"],
+  AU: ["*.au", "*.com.au", "*.net.au", "*.org.au"],
+  CA: ["*.ca", "*.com", "*.org"],
   DE: ["*.de", "*.co.de"],
   FR: ["*.fr", "*.co.fr"],
   TH: ["*.th", "*.co.th", "*.or.th", "*.go.th"],
@@ -47,6 +51,21 @@ const COUNTRY_SIGNAL_RULES: Record<string, Array<{ type: string; pattern: RegExp
     { type: "phone", pattern: /\+1[^0-9]|\b1-\d{3}/i, confidence: 78 },
     { type: "currency", pattern: /\bUSD\b|\$\s?\d{2,}|US Dollar/i, confidence: 72 },
     { type: "address", pattern: /United States|New York|Los Angeles|Chicago|Houston|Phoenix/i, confidence: 74 },
+  ],
+  GB: [
+    { type: "phone", pattern: /\+44|0044|\b0\d{3}\s?\d{3}\s?\d{3}\b/i, confidence: 88 },
+    { type: "currency", pattern: /\bGBP\b|£\s?\d{2,}|Pound Sterling/i, confidence: 82 },
+    { type: "address", pattern: /United Kingdom|England|Scotland|Wales|London|Manchester|Birmingham|Leeds|Glasgow/i, confidence: 82 },
+  ],
+  AU: [
+    { type: "phone", pattern: /\+61|0061|\b0[2378]\s?\d{4}\s?\d{4}\b/i, confidence: 88 },
+    { type: "currency", pattern: /\bAUD\b|A\$\s?\d{2,}|Australian Dollar/i, confidence: 82 },
+    { type: "address", pattern: /Australia|Sydney|Melbourne|Brisbane|Perth|Adelaide|Gold Coast/i, confidence: 84 },
+  ],
+  CA: [
+    { type: "phone", pattern: /\+1[^0-9]|\b1-\d{3}/i, confidence: 76 },
+    { type: "currency", pattern: /\bCAD\b|C\$\s?\d{2,}|Canadian Dollar/i, confidence: 78 },
+    { type: "address", pattern: /Canada|Toronto|Vancouver|Montreal|Calgary|Ottawa|Edmonton/i, confidence: 82 },
   ],
   DE: [
     { type: "phone", pattern: /\+49|0049/i, confidence: 92 },
@@ -114,7 +133,7 @@ export function technologySlug(value: string): string {
 }
 
 function countryTldSignal(domain: string, countryCode: string): CandidateCountrySignal | null {
-  const cc = countryCode.toUpperCase()
+  const cc = normalizeSalesCountryCode(countryCode)
   const normalized = domain.toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, "")
   const patterns = COUNTRY_TLD_PATTERNS[cc]
   if (patterns) {
@@ -137,7 +156,7 @@ export function inferCountrySignals(input: {
   targetCountry: string
   evidenceText?: string | null
 }): CandidateCountrySignal[] {
-  const countryCode = input.targetCountry.trim().toUpperCase()
+  const countryCode = normalizeSalesCountryCode(input.targetCountry)
   const signals: CandidateCountrySignal[] = []
   if (input.domain) {
     const signal = countryTldSignal(input.domain, countryCode)
@@ -174,18 +193,22 @@ export function scoreCandidate(input: {
   hasWebsite: boolean
   hasContactSignal?: boolean
   source: string
+  isEnterpriseLike?: boolean
+  websiteWeaknessScore?: number
+  freshnessHintScore?: number
+  marketFitScore?: number
 }): CandidateScore {
   const requestedSlug = input.requestedTechnology ? technologySlug(input.requestedTechnology) : null
   const detectionSlugs = (input.detections ?? []).map((tech) => technologySlug(tech.name))
   const exactStack = requestedSlug ? detectionSlugs.includes(requestedSlug) : detectionSlugs.length > 0
-  const stackFitScore = requestedSlug ? (exactStack ? 96 : 0) : Math.min(90, detectionSlugs.length * 18)
+  const stackFitScore = requestedSlug ? (exactStack ? 96 : 0) : input.marketFitScore ?? Math.min(90, detectionSlugs.length * 18)
   const geoConfidence = maxCountryConfidence(input.countrySignals)
-  const websiteAbsenceScore = input.hasWebsite ? 0 : 92
-  const smbScore = input.lane === "no_website_local_smb" ? 86 : 58
-  const freshnessScore = input.source === "common_crawl_domains" ? 62 : 74
+  const websiteAbsenceScore = input.websiteWeaknessScore ?? (input.hasWebsite ? 0 : 92)
+  const smbScore = input.isEnterpriseLike ? 8 : input.lane === "no_website_local_smb" ? 86 : input.lane === "dns_freshness" ? 78 : 58
+  const freshnessScore = input.freshnessHintScore ?? (input.lane === "dns_freshness" ? 92 : input.source === "common_crawl_domains" ? 62 : 74)
   const contactabilityScore = input.hasContactSignal ? 70 : 34
-  const falsePositiveRisk = clampScore((requestedSlug && !exactStack ? 35 : 12) + (geoConfidence < 50 ? 28 : 0))
-  const laneOpportunityBonus = input.lane === "no_website_local_smb" ? 12 : 0
+  const falsePositiveRisk = clampScore((requestedSlug && !exactStack ? 35 : 12) + (geoConfidence < 50 ? 28 : 0) + (input.isEnterpriseLike ? 70 : 0))
+  const laneOpportunityBonus = input.lane === "no_website_local_smb" ? 12 : input.lane === "dns_freshness" ? 8 : 0
   const opportunityScore = clampScore(
     stackFitScore * 0.34 +
       geoConfidence * 0.24 +
@@ -212,11 +235,13 @@ export function scoreCandidate(input: {
       exactStack,
       source: input.source,
       laneOpportunityBonus,
+      isEnterpriseLike: input.isEnterpriseLike ?? false,
+      marketFitScore: input.marketFitScore ?? null,
     },
   }
 }
 
 export function tldPatternsForCountry(countryCode: string): string[] {
-  const cc = countryCode.trim().toUpperCase()
+  const cc = normalizeSalesCountryCode(countryCode)
   return COUNTRY_TLD_PATTERNS[cc] ?? [`*.${cc.toLowerCase()}`]
 }

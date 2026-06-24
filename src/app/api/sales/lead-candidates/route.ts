@@ -11,7 +11,7 @@ const QuerySchema = z.object({
   country_code: z.string().length(2).optional(),
   technology: z.string().min(1).max(80).optional(),
   status: z.enum(["candidate", "scored", "promoted", "rejected"]).optional(),
-  lane: z.enum(["tech_footprint", "no_website_local_smb"]).optional(),
+  lane: z.enum(["tech_footprint", "no_website_local_smb", "dns_freshness"]).optional(),
   min_score: z.coerce.number().min(0).max(100).optional(),
   limit: z.coerce.number().int().min(1).max(500).optional(),
 })

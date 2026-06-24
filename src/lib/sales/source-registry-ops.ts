@@ -6,6 +6,19 @@ function item(input: RevenueSourceRegistryItem): RevenueSourceRegistryItem {
 
 export const REVENUE_SOURCE_REGISTRY_OPS: RevenueSourceRegistryItem[] = [
   item({
+    slug: "dns_freshness",
+    label: "DNS freshness candidates",
+    category: "list",
+    lane: "dns_freshness",
+    cost: "free_with_limits",
+    implementationStatus: "live",
+    scaleTier: "bulk",
+    env: [],
+    primaryInput: "fresh or recently changed domains from CZDS/RDAP/partner feeds/manual CSV",
+    primaryOutput: "fresh SMB candidate domains with website-state and market-fit scoring",
+    notes: "Treats WHOIS/RDAP as a freshness signal, not as a contact database. Public contact routes are required before outreach.",
+  }),
+  item({
     slug: "stagehand",
     label: "Stagehand",
     category: "outreach",
