@@ -1,94 +1,67 @@
 /**
- * POST /api/sales/notion-webhook — Notion 編集 → Supabase 即時反映 (イベント駆動)
+ * POST /api/sales/notion-webhook
  *
- * 役割: Notion API Webhook (integration の Webhooks subscription) を受け、
- *       営業 OS 4 DB (リード/顧客/納品/テンプレ) のページ編集を数秒で Supabase へ反映する。
- *       旧定期同期 (sync-*-from-notion) を置き換える主経路。取りこぼしは手動 one-shot で補正する。
+ * Notion Integration → 本番API。全DB変更をリアルタイム受信し、
+ * 該当する sync-knowledge-from-notion をトリガー。
  *
- * 入力: Notion からの POST (page.created / page.properties_updated / page.content_updated 等)
- * 出力: { ok, ... }
+ * WW-EVENT: Webhook駆動。cron不使用。
  *
- * セキュリティ (3 段):
- *   1. 検証ハンドシェイク: 登録時に Notion が { verification_token } を 1 度だけ送る
- *      → ログに出すので Coolify env NOTION_WEBHOOK_SECRET に保存 + Notion UI に貼り戻す
- *   2. 署名検証: 毎リクエストの X-Notion-Signature = "sha256=" + HMAC-SHA256(raw body, 鍵=token)
- *      → 生バイト (req.text()) で計算し timing-safe 比較。NOTION_WEBHOOK_SECRET 未設定なら fail-closed
- *   3. エコー防止: 変更者 (authors) が自分の bot のみ = Supabase→Notion 同期由来 → 無視
- *
- * 2026-05-21 新規 (Notion 即時 GUI 化)。
+ * 認証: X-Webhook-Secret + echo防止 (bot自身の変更は無視)
  */
 
 import { NextRequest, NextResponse } from "next/server"
+import { verifyWebhookSecret } from "@/lib/sales/auth"
 import { notionGetBotId } from "@/lib/notion"
-import { routeNotionPage } from "@/lib/sales/notion-apply"
-import { verifyNotionSignature } from "@/lib/sales/notion-webhook-verify"
-import { isNotionLegacySyncEnabled, notionLegacyDisabledResponse } from "@/lib/sales/notion-legacy-guard"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
-export const maxDuration = 30
 
-interface NotionWebhookEvent {
-  type?: string
-  entity?: { id?: string; type?: string }
-  authors?: Array<{ id?: string; type?: string }>
-  verification_token?: string
-}
+const DB_TOOLS     = process.env.NOTION_DB_TOOLS    ?? "389a2b78f3fc8169a987deb00a3e373e"
+const DB_PHASES    = process.env.NOTION_DB_PHASES   ?? "389a2b78-f3fc-81b8-b0fd-d3730ec12560"
+const DB_DIAGNOSIS = process.env.NOTION_DB_DIAGNOSIS ?? "389a2b78-f3fc-81e1-a8da-c784a4fb1976"
+
+const ALL_DB_IDS = new Set([DB_TOOLS, DB_PHASES, DB_DIAGNOSIS])
 
 export async function POST(req: NextRequest) {
-  if (!isNotionLegacySyncEnabled()) return notionLegacyDisabledResponse()
+  const authErr = verifyWebhookSecret(req)
+  if (authErr) return authErr
 
-  // ── 生ボディを取得 (署名検証は生バイトで行う必要がある) ──
-  const rawBody = await req.text()
-  let event: NotionWebhookEvent
   try {
-    event = JSON.parse(rawBody) as NotionWebhookEvent
-  } catch (e) {
-    console.error("[notion-webhook] failed to parse event body:", e)
-    return NextResponse.json({ ok: false, error: "invalid JSON" }, { status: 400 })
-  }
+    const body = await req.json()
+    const data = body.data ?? body
 
-  // ── 1. 検証ハンドシェイク (subscription 登録時の 1 回だけ) ──
-  if (event.verification_token) {
-    // この token が以後の署名鍵。一度しか出ないので env に保存して Notion UI に貼り戻す
-    console.warn(
-      `[notion-webhook] 🔑 VERIFICATION TOKEN (set as NOTION_WEBHOOK_SECRET): ${event.verification_token}`,
-    )
-    return NextResponse.json({ ok: true, verification_token: event.verification_token })
-  }
+    // Echo防止: bot自身の変更は無視
+    const botId = await notionGetBotId()
+    if (botId && data.by_user?.id === botId) {
+      return NextResponse.json({ ok: true, skipped: "bot-self-echo" })
+    }
 
-  // ── 2. 署名検証 (fail-closed) ──
-  const secret = process.env.NOTION_WEBHOOK_SECRET
-  if (!secret) {
-    console.error("[notion-webhook] NOTION_WEBHOOK_SECRET not set — rejecting (fail-closed)")
-    return NextResponse.json({ ok: false, error: "webhook secret not configured" }, { status: 503 })
-  }
-  if (!verifyNotionSignature(rawBody, req.headers.get("x-notion-signature"), secret)) {
-    return NextResponse.json({ ok: false, error: "invalid signature" }, { status: 401 })
-  }
+    // 対象DBの変更かチェック
+    const parentDbId = data.parent?.database_id
+    if (!parentDbId || !ALL_DB_IDS.has(parentDbId)) {
+      return NextResponse.json({ ok: true, skipped: "non-target-db" })
+    }
 
-  // ── 3. エコー防止: 自分 (bot) の変更なら無視 (Supabase→Notion 同期由来のループ遮断) ──
-  const botId = await notionGetBotId()
-  const authors = event.authors ?? []
-  if (botId && authors.length > 0 && authors.every((a) => a.id === botId)) {
-    return NextResponse.json({ ok: true, skipped: "self-authored (echo prevention)" })
-  }
+    // 変更があったDBだけsync
+    const dbType = parentDbId === DB_TOOLS ? "tools"
+      : parentDbId === DB_PHASES ? "phases"
+      : "diagnosis"
 
-  // ── ページイベント以外は無視 (database / data_source / comment 等) ──
-  const type = event.type ?? ""
-  const pageId = event.entity?.id
-  if (!type.startsWith("page.") || event.entity?.type !== "page" || !pageId) {
-    return NextResponse.json({ ok: true, skipped: `unhandled event type: ${type}` })
-  }
+    // Trigger sync internally (fire-and-forget)
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://paradigmjp.com"
+    const webhookSecret = process.env.NOTION_WEBHOOK_SECRET!
 
-  // ── 対象テーブルへ反映 ──
-  try {
-    const result = await routeNotionPage(pageId)
-    return NextResponse.json({ type, ...result })
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e)
-    console.error("[notion-webhook] routeNotionPage failed:", msg)
-    // 500 で返すと Notion が retry (最大 8 回) → 一時障害は自動復旧
-    return NextResponse.json({ ok: false, error: msg }, { status: 500 })
+    fetch(`${baseUrl}/api/sales/sync-knowledge-from-notion`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Webhook-Secret": webhookSecret,
+      },
+      body: JSON.stringify({ db_type: dbType }),
+    }).catch((e) => console.error("[notion-webhook] sync trigger failed:", e))
+
+    return NextResponse.json({ ok: true, db_type: dbType, action: "sync_triggered" })
+  } catch {
+    return NextResponse.json({ ok: false, error: "invalid payload" }, { status: 400 })
   }
 }
