@@ -581,6 +581,10 @@ async function applyReleaseTableParityMigration(envs) {
   return applySqlMigration(envs, "migration_061_release_table_parity.sql", "Release table parity migration")
 }
 
+async function applySalesDnsFreshnessLaneMigration(envs) {
+  return applySqlMigration(envs, "migration_062_sales_dns_freshness_lane.sql", "Sales DNS freshness lane migration")
+}
+
 function runDeployGuard() {
   if (SKIP_DEPLOY_GUARD) {
     console.log("Coolify deploy guard: skipped")
@@ -995,16 +999,17 @@ async function main() {
   const envs = await readProductionEnv()
   console.log("Coolify API: connected")
 
-  // Auto-ensure critical env vars are set in Coolify
+  // Auto-ensure non-secret defaults are set in Coolify.
+  // Secret values must already exist in the approved runtime secret store.
   const { ensureCoolifyEnvs } = await import("./lib/coolify-env.mjs")
-  const requiredEnvs = {
-    // Tier 0 — app crashes without these
-    TRIGGER_WEBHOOK_SECRET: "G0W70N1EK7D6thlHZFfNeKpbG4kHYJU4X3DwRWb4Z2w",
-    // Tier 1 — core features fail without these
+  const requiredNonSecretEnvs = {
     FLARESOLVERR_API_URL: "http://flaresolverr:8191",
   }
-  const envResult = await ensureCoolifyEnvs(APP_UUID, requiredEnvs)
+  const envResult = await ensureCoolifyEnvs(APP_UUID, requiredNonSecretEnvs)
   if (envResult.set > 0) console.log(`[deploy] auto-set ${envResult.set} missing env vars in Coolify`)
+  if (!envs.TRIGGER_WEBHOOK_SECRET || String(envs.TRIGGER_WEBHOOK_SECRET).trim().length === 0) {
+    throw new Error("TRIGGER_WEBHOOK_SECRET is missing in Coolify env; set it in the approved secret store before deploy")
+  }
 
   if (!DRY && !SKIP_DEPLOY) {
     runHostDiskPreflight()
@@ -1013,6 +1018,7 @@ async function main() {
 
   if (!DRY) {
     console.log(await applyReleaseTableParityMigration(envs))
+    console.log(await applySalesDnsFreshnessLaneMigration(envs))
     console.log(await applySalesProductsSchemaMigration(envs))
     const products = await applySalesProducts(envs)
     console.log(`Sales products: verified ${products}`)

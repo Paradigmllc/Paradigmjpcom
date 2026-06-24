@@ -34,6 +34,7 @@ const SOURCE_STATUS_VALUES: RevenueSourceImplementationStatus[] = [
 const SOURCE_LANE_VALUES: RevenueSourceLane[] = [
   "tech_footprint",
   "no_website_local_smb",
+  "dns_freshness",
   "enrichment",
   "outreach",
   "orchestration",

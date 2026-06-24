@@ -20,6 +20,7 @@ describe("revenue source registry", () => {
     expect(summary.byStatus.disabled_by_policy).toBeGreaterThan(0)
     expect(sources.find((source) => source.slug === "google_places")?.implementationStatus).toBe("disabled_by_policy")
     expect(sources.find((source) => source.slug === "common_crawl_domains")?.scaleTier).toBe("bulk")
+    expect(sources.find((source) => source.slug === "dns_freshness")?.lane).toBe("dns_freshness")
   })
 
   it("keeps browser search out of the bulk-ready bucket", () => {

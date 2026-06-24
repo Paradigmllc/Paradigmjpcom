@@ -27,9 +27,10 @@ import { AssetManagementPanel } from "./AssetManagementPanel"
 import { TemplateManagementPanel } from "./TemplateManagementPanel"
 import { AnalyticsPanel } from "./SalesAnalyticsPanel"
 import { SalesFailedJobsPanel } from "./SalesFailedJobsPanel"
+import { SalesFreshDomainsPanel } from "./SalesFreshDomainsPanel"
 import type { SalesDashboardData } from "@/lib/sales/dashboard"
 
-type SalesTab = "crm" | "integrations" | "audit" | "templates" | "prompts" | "assets" | "analytics" | "failedJobs"
+type SalesTab = "crm" | "freshDomains" | "integrations" | "audit" | "templates" | "prompts" | "assets" | "analytics" | "failedJobs"
 
 type SalesCommandCenterProps = {
   data: SalesDashboardData
@@ -45,6 +46,7 @@ type TabItem = {
 
 const tabItems: TabItem[] = [
   { id: "crm", label: "CRM", description: "Twenty連携・商談管理", icon: BriefcaseBusiness },
+  { id: "freshDomains", label: "Fresh Domains", description: "海外SMB候補収集", icon: Globe2 },
   { id: "integrations", label: "統合監査", description: "API/OSS接続状況", icon: Plug },
   { id: "audit", label: "運用監査", description: "パイプライン監視", icon: ShieldCheck },
   { id: "templates", label: "テンプレート", description: "レポートテンプレート管理", icon: FileText },
@@ -175,6 +177,7 @@ export function SalesCommandCenter({ data, locale }: SalesCommandCenterProps) {
   const renderTab = () => {
     switch (activeTab) {
       case "crm":          return <CrmPanel data={data} />
+      case "freshDomains": return <SalesFreshDomainsPanel />
       case "integrations": return <IntegrationsPanel data={data} />
       case "audit":        return <SalesOperationsAuditPanel data={data} />
       case "templates":    return <TemplateManagementPanel data={data} />
