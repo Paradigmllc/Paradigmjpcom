@@ -12,6 +12,7 @@ CURRENT STATUS - 2026-06-24 Twenty Sales OS SSOT pivot
 - 実務運用追補: `/api/sales/health` は `TWENTY_BASE_URL` / `TWENTY_API_KEY` と Twenty `/rest/companies` 到達性を必須チェックに昇格。Twenty API が死んでいる場合は営業SSOT不成立として health `ok:false`。
 - 実務運用追補: Telegramメニュー、日次レポート、AI prompt説明、CRM field説明、source registry、diagnostic fallback の運用文言を Twenty Sales OS / Supabase Event Store 前提へ修正。
 - 検証: `npm run test -- src/app/api/sales/import-csv/route.test.ts` OK（2 tests）。`npm exec -- tsc --noEmit --pretty false` OK。`npm run quality:guard` OK（0 error / 57 warnings）。`npm run build` OK。
+- DEPLOY: commit `4777f2e` を main push 後、`npm run release:prod` 完走。DB table verification 78/78 OK、Coolify deployment `v14ep97l2x6hovdg5zi2xvce` finished、Traefik route refresh は app container `n8i2sjiqvr2d8hrzppop2m2i-133124772585` / `10.0.1.32`。post-deploy smoke は `/api/ready`、`/ja`、`/ja/admin/sales`、`/en/report/ccbc-xynd21`、Twenty、Sales health JSON `ok:true` まで合格。infra drift gate は Supabase Realtime healthy、wal_level logical、n8n stopped、Twenty worker restart=0、`sales_pipeline_runs` publication OK。
 
 CURRENT STATUS - 2026-06-24 Global SMB / DNS freshness lane foundation
 - 壁打ち決定: Google Maps UI スクレイピングやWHOIS連絡先依存ではなく、DNS/RDAP/CZDS/公開ディレクトリを「鮮度シグナル」として扱い、公開サイト/フォーム/明示連絡先が取れた候補だけをRevenue OSでレビューする。
