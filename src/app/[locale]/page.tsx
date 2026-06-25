@@ -49,21 +49,9 @@ async function fetchHomepage(locale: string) {
 export default async function HomePage({ params }: Props) {
   const { locale: rawLocale } = await params
   const locale = coerceLocale(rawLocale)
-  const homepage = await fetchHomepage(locale)
 
-  if (homepage) {
-    const layout = ((homepage as { layout?: unknown[] }).layout ?? []) as Array<{
-      blockType: string
-      [k: string]: unknown
-    }>
-    if (layout.length > 0) {
-      return <BlockRenderer blocks={layout} />
-    }
-  }
-
-  // Fallback (CMS homepage 未作成時):
-  //   /ja          → HomeClient (国内SMB・4商材 構成)
-  //   /en + 10locale → HomeEnClient (JaaS 痛み/損失可視化アーク・Plan B)
-  // 2026-05-20 壁打ち確定: /ja と /en は構造が別 → locale 分岐 (CLAUDE.md s1-2)。
+  // HomeClient (ja) / HomeEnClient (en+) are the canonical company homepages.
+  // PayloadCMS homepage overrides are NOT used — they inject Revenue OS content
+  // which is not appropriate for the paradigmjp.com corporate site.
   return assertLocale(rawLocale) === "ja" ? <HomeClient /> : <HomeEnClient />
 }
