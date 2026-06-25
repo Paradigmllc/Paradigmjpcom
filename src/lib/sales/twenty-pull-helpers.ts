@@ -1,5 +1,6 @@
 import { inferTargetCountryFromDomain, normalizeCountryCode } from "./routing"
 import type { TwentyRecord } from "./twenty-sync-utils"
+import { hasSourceErrors, isDataStale, sourceCoverageTooLow } from "./twenty-pull-retry"
 
 export function plainRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {}
@@ -58,8 +59,6 @@ export function needsGenerationCheck(record: TwentyRecord, patchMeta: Record<str
     !patchMeta.contact_form_url
   if (needsGen) return true
 
-  // Reuse existing source/error/stale checks from twenty-pull-retry
-  const { hasSourceErrors, isDataStale, sourceCoverageTooLow } = require("./twenty-pull-retry")
   return (
     sourceCoverageTooLow(record, patchMeta) ||
     hasSourceErrors(patchMeta) ||
