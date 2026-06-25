@@ -3,6 +3,7 @@ import { DB_TABLES } from "@/lib/sales/db-tables"
 import { buildDemoPageData } from "./demo-page-builder"
 import { buildDemoMultiPageData } from "./demo-multi-page-builder"
 import { buildPersonalizedDemoData } from "./demo-personalized-builder"
+import { applyDemoAdminOverrides } from "./artifact-admin-overrides"
 import type { DemoBlock, DemoMultiPageData, DemoPageData } from "./demo-site-types"
 import { selectTemplate, type CompanyProfile } from "./demo-template-selector"
 import type { Industry, ReportLocale } from "./types"
@@ -203,7 +204,7 @@ export async function fetchDemoMultiPageData(slug: string): Promise<DemoMultiPag
         }
 
         if (diagnostic) {
-          return buildPersonalizedDemoData(
+          const generated = buildPersonalizedDemoData(
             company as unknown as Parameters<typeof buildDemoMultiPageData>[0],
             diagnostic,
             selectTemplate(
@@ -211,6 +212,10 @@ export async function fetchDemoMultiPageData(slug: string): Promise<DemoMultiPag
               diagnostic,
             ),
           )
+          return applyDemoAdminOverrides({
+            ...generated,
+            meta: { ...generated.meta, artifact_admin: meta.artifact_admin } as DemoMultiPageData["meta"],
+          })
         }
       }
     }
@@ -267,7 +272,7 @@ export async function fetchDemoMultiPageData(slug: string): Promise<DemoMultiPag
       const accentDark = String(meta.accentColorDark ?? "#1e40af")
       const ctaUrl = String(meta.calBookingUrl ?? "https://cal.com/paradigm-jp/15min")
 
-      return {
+      return applyDemoAdminOverrides({
         slug,
         companyId: String(themePage.company_id),
         companyName: name,
@@ -285,7 +290,8 @@ export async function fetchDemoMultiPageData(slug: string): Promise<DemoMultiPag
           calBookingUrl: ctaUrl,
           generatedAt: String(meta.generatedAt ?? new Date().toISOString()),
           engine: "fallback",
-        },
+          artifact_admin: meta.artifact_admin,
+        } as DemoMultiPageData["meta"],
         pages: {
           home: {
             hero: {
@@ -342,7 +348,7 @@ export async function fetchDemoMultiPageData(slug: string): Promise<DemoMultiPag
             accentColor: accent,
           },
         },
-      }
+      })
     }
 
     return null

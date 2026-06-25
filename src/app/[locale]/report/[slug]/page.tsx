@@ -4,6 +4,8 @@
 import type { Metadata } from "next"
 import { cache } from "react"
 import DiagnosticReport from "@/components/diagnostic/DiagnosticReport"
+import { ArtifactInlineEditor } from "@/components/admin/ArtifactInlineEditor"
+import { isCurrentRequestAdmin } from "@/lib/admin-page-auth"
 import { getReportOfferCopy } from "@/components/diagnostic/report-offer-copy"
 import { REPORT_COPY, normalizeReportLang, type ReportCopy } from "@/components/diagnostic/report-copy"
 import { fetchDiagnosticReport } from "@/lib/sales/diagnostic"
@@ -54,6 +56,27 @@ export default async function ReportPage({ params }: Props) {
     console.error("[report-page] report fetch failed:", error)
   }
   const safeData = ensureSafeDiagnosticReport(data, slug, locale)
+  const isAdmin = await isCurrentRequestAdmin()
 
-  return <DiagnosticReport data={safeData} trackingSlug={slug} locale={locale} />
+  return (
+    <>
+      <DiagnosticReport data={safeData} trackingSlug={slug} locale={locale} />
+      {isAdmin && (
+        <ArtifactInlineEditor
+          kind="report"
+          slug={slug}
+          locale={locale}
+          title={safeData.company_name}
+          salesOsHref={`/${locale}/admin/sales`}
+          initialFields={{
+            hook: safeData.hook,
+            pain: safeData.acts[0]?.body ?? "",
+            fear: safeData.acts[1]?.body ?? "",
+            loss: safeData.acts[2]?.body ?? "",
+            cta: safeData.cta_text,
+          }}
+        />
+      )}
+    </>
+  )
 }

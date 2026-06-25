@@ -3,6 +3,14 @@
 不変前提: WW-EVENT 厳守＝cron/n8n/pg_cron 不使用・Trigger.dev イベント駆動 one-shot のみ。
 決定: オーケストレータ維持＋完了イベント再開 / デモ=フルサイト一本化 / Dify=queue隔離かつ本文正本 / Twenty=category集約＋deep link / Telegram=webhook修復＋OSS deep link＋Realtime push / インフラ=重ワーカー分離＋Upstash＋ISR/CDN。
 
+CURRENT STATUS - 2026-06-25 Inline artifact admin editor for Twenty Sales OS
+- 壁打ち決定: RevenueOS は archive 扱い。Twenty を営業OS/SSOTにし、診断レポートとWeb制作デモは今まで通り自動生成。ただし管理者ログイン時だけ公開成果物ページ上にWP風の薄い編集パネルを出し、手動補正差分を保存できるようにする。
+- 実装: `/ja/report/[slug]` は Payload admin cookie / `paradigm_admin_token` 認可済み管理者だけ右下に「診断レポート編集」パネルを表示。保存先は既存 `sales_companies.meta.personalized_copy`。冒頭フック、診断本文3本、最終CTAを上書き可能。リセットで自動生成文へ戻せる。
+- 実装: `/ja/demo/[slug]` 配下のホーム/会社概要/サービス/問い合わせ全ページ共通で「デモサイト編集」パネルを表示。保存先は `theme_demo_pages.meta.artifact_admin.demo_overrides`。SEO、ホームFV、CTA、会社概要、サービス見出し、問い合わせ情報を補正可能。`fetchDemoMultiPageData` が表示直前に override をマージする。
+- 実装: 管理者保存API `PATCH /api/sales/artifact-edits/report/[slug]` / `PATCH /api/sales/artifact-edits/demo/[slug]` を追加。両方とも Payload admin / legacy cookie 認可、入力sanitize、DB保存、`notifyBothChannels` によるDBベル+Slack通知を通す。公開ユーザーは 401。
+- 検証: `npm exec -- tsc --noEmit` OK、`npm exec -- vitest run src/lib/sales/artifact-admin-overrides.test.ts` OK（3 tests）、`npm run quality:guard` OK（0 error / 57 warnings）、`npm run build` OK。ローカル Chrome channel で未認可 `PATCH /api/sales/artifact-edits/report/ccbc-xynd21` = 401、公開 `/ja/report/ccbc-xynd21` と `/ja/demo/ccbc-xynd21-demo` は編集ボタン0件を確認。
+- 次の操作: 管理者は `/admin` または `/ja/admin/sales` にログイン後、対象の `/ja/report/...` / `/ja/demo/...` を開き、右下「編集」から保存。Twenty でリード追加・同期後も成果物は自動生成が基本で、商談前の文言補正だけこの inline editor で行う。
+
 CURRENT STATUS - 2026-06-24 Twenty Sales OS SSOT pivot
 - 壁打ち決定: RevenueOS を営業OS/SSOTとして継続改善しない。Twenty を営業OS/SSOTに昇格し、RevenueOS側は Twenty API に接続する外部OSS/worker監視・ログ・legacy engine surfaceへ降格する。
 - 実装: `/[locale]/admin/sales` と `/[locale]/sales` の営業画面に `TWENTY_BASE_URL` 由来の Twenty CTA を渡し、サイドバー/ヘッダー/外部ツール導線を `Twenty Sales OS` / `Twenty SSOT` へ変更。既存タブは外部OSS連携・旧RevenueOSジョブ監視として残す。

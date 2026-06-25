@@ -1,5 +1,8 @@
 import type { Metadata } from "next"
+import { ArtifactInlineEditor } from "@/components/admin/ArtifactInlineEditor"
 import { DemoMultiLayout } from "@/components/demo/DemoMultiLayout"
+import { isCurrentRequestAdmin } from "@/lib/admin-page-auth"
+import type { DemoMultiPageData } from "@/lib/sales/demo-site-types"
 import { fetchDemoMultiPageData } from "@/lib/sales/demo-generator"
 import { getTemplateById } from "@/lib/sales/demo-templates/registry"
 
@@ -23,10 +26,12 @@ export default async function DemoMultiLayoutWrapper({ children, params }: Layou
   let companyName = "Paradigm"
   let templateId: string | undefined
   let accentColor: string | undefined
+  let demoData: DemoMultiPageData | null = null
 
   try {
     const data = await fetchDemoMultiPageData(slug)
     if (data) {
+      demoData = data
       companyName = data.meta?.companyName || companyName
       templateId = data.templateId
       accentColor = data.meta?.accentColor || data.pages?.home?.hero?.accentColor
@@ -45,17 +50,46 @@ export default async function DemoMultiLayoutWrapper({ children, params }: Layou
     { label: navLabels.services, href: `${basePath}/services` },
     { label: navLabels.contact, href: `${basePath}/contact` },
   ]
+  const isAdmin = await isCurrentRequestAdmin()
 
   return (
-    <DemoMultiLayout
-      navLinks={navLinks}
-      basePath={basePath}
-      isJa={isJa}
-      companyName={companyName}
-      templateId={templateId}
-      accentColor={accentColor}
-    >
-      {children}
-    </DemoMultiLayout>
+    <>
+      <DemoMultiLayout
+        navLinks={navLinks}
+        basePath={basePath}
+        isJa={isJa}
+        companyName={companyName}
+        templateId={templateId}
+        accentColor={accentColor}
+      >
+        {children}
+      </DemoMultiLayout>
+      {isAdmin && demoData && (
+        <ArtifactInlineEditor
+          kind="demo"
+          slug={slug}
+          locale={locale}
+          title={demoData.companyName}
+          salesOsHref={`/${locale}/admin/sales`}
+          initialFields={{
+            metaTitle: demoData.meta.title,
+            metaDescription: demoData.meta.description,
+            homeTitle: demoData.pages.home.hero.title,
+            homeSubtitle: demoData.pages.home.hero.subtitle,
+            homeCtaTitle: demoData.pages.home.cta.title,
+            homeCtaSubtitle: demoData.pages.home.cta.subtitle,
+            aboutTitle: demoData.pages.about.title,
+            aboutSubtitle: demoData.pages.about.subtitle,
+            aboutStory: demoData.pages.about.story,
+            servicesTitle: demoData.pages.services.title,
+            servicesSubtitle: demoData.pages.services.subtitle,
+            contactTitle: demoData.pages.contact.title,
+            contactSubtitle: demoData.pages.contact.subtitle,
+            contactEmail: demoData.pages.contact.email,
+            contactAddress: demoData.pages.contact.address,
+          }}
+        />
+      )}
+    </>
   )
 }
