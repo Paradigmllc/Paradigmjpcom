@@ -36,6 +36,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       return {}
     }))
     const reset = body.reset === true
+    const dryRun = body.dryRun === true
     const supabase = getServiceSalesSupabase()
     if (!supabase) {
       console.error("[artifact-demo-edit] Supabase is not configured")
@@ -57,6 +58,10 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     }
 
     const editedAt = new Date().toISOString()
+    if (dryRun) {
+      return NextResponse.json({ ok: true, dryRun: true, editedAt, slug, reset })
+    }
+
     const currentMeta = readRecord(themePage.meta)
     const currentArtifactAdmin = readRecord(currentMeta.artifact_admin)
     const overrides = reset ? {} : compactRecord(sanitizeDemoAdminFields(body.fields) as Record<string, unknown>)

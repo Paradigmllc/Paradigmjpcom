@@ -68,6 +68,8 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
   if (
     /^\/[a-z]{2}(\/(about|services|pricing|works|blog|faq|contact|legal|privacy|lp|agency|video)(\/|$)|\/?$)/.test(pathname) ||
     pathname.includes("/p/") ||
+    pathname.includes("/d/") ||
+    pathname.includes("/demo/") ||
     /^\/[a-z]{2}\/d\//.test(pathname) ||
     pathname.includes("/report/")
   ) return null

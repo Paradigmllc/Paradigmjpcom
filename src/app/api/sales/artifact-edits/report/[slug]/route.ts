@@ -42,6 +42,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       return {}
     }))
     const reset = body.reset === true
+    const dryRun = body.dryRun === true
     const fields = reset ? {} : sanitizeReportAdminFields(body.fields)
     const supabase = getServiceSalesSupabase()
     if (!supabase) {
@@ -66,6 +67,10 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     }
 
     const editedAt = new Date().toISOString()
+    if (dryRun) {
+      return NextResponse.json({ ok: true, dryRun: true, editedAt, slug, reset })
+    }
+
     const personalizedCopy = reset
       ? {
           personalized_hook: null,
