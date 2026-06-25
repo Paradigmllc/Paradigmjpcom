@@ -33,6 +33,8 @@ import {
   plainRecord,
   routingNeedsRepair,
 } from "./twenty-pull-helpers"
+import { requireTwentyAuth } from "./twenty-health"
+import { checkTwentyConflict, lastKnownTwentyUpdatedAt } from "./twenty-conflict"
 
 export interface TwentyPullResult {
   ok: boolean
@@ -77,10 +79,16 @@ export async function pullTwentyCompaniesToSupabase(
   options: TwentyPullOptions = {},
 ): Promise<TwentyPullResult> {
   const isDryRun = options.dryRun === true
-  const baseUrl = twentyBaseUrl()
-  const apiKey = env("TWENTY_API_KEY")
-  if (!baseUrl || !apiKey) {
-    return emptyResult({ configured: false, dryRun: isDryRun, error: "TWENTY_BASE_URL or TWENTY_API_KEY is not configured" })
+
+  // Twenty is the Sales OS SSOT — auth is REQUIRED, not optional
+  try {
+    requireTwentyAuth()
+  } catch (authError) {
+    return emptyResult({
+      configured: false,
+      dryRun: isDryRun,
+      error: authError instanceof Error ? authError.message : "Twenty auth not configured — SSOT sync cannot proceed",
+    })
   }
 
   const sb = getServiceSalesSupabase()
@@ -135,6 +143,7 @@ export async function pullTwentyCompaniesToSupabase(
       twenty: {
         ...plainRecord(currentMeta.twenty),
         id: record.id ?? null,
+        updatedAt: record.updatedAt ?? null,
         lastPulledAt: new Date().toISOString(),
         countryName: record.paradigmCountryName ?? null,
         regionName: record.paradigmRegionName ?? null,
@@ -183,6 +192,16 @@ export async function pullTwentyCompaniesToSupabase(
       companyPipelineStatus = upsert.company.pipeline_status
       created += 1
     } else {
+      // Conflict check: if Twenty has been edited externally since our last sync,
+      // log it but still pull (Twenty = SSOT, so its data wins by definition).
+      const lastKnownAt = lastKnownTwentyUpdatedAt(company?.meta)
+      const conflict = checkTwentyConflict(record, lastKnownAt)
+      if (conflict.twentyWins) {
+        console.warn(
+          `[twenty-pull] Twenty won conflict for ${domain}: Twenty updatedAt=${conflict.twentyUpdatedAt}, our lastKnown=${conflict.lastKnownUpdatedAt}`,
+        )
+      }
+
       const companyName = record.name?.trim() || domain
       const scope = inferredScope
       const shouldRepairRouting = routingNeedsRepair({ company, inferredCountry })

@@ -24,8 +24,11 @@ import {
   customerHandoffSummary,
   twentyCompanyHomePayload,
 } from "./twenty-sync-summaries"
+import { requireTwentyAuth } from "./twenty-health"
 
 async function findTwentyCompany(karte: CompanyKarteSnapshot): Promise<TwentyRecord | null> {
+  // Server-side ILIKE is intentionally broad (matches subdomains) — client-side
+  // domainMatches() does strict exact matching to eliminate false positives.
   const query = `limit=100&filter=domainName.primaryLinkUrl[ilike]:%25${encodeURIComponent(karte.domain)}%25`
   const result = await twentyFetch<TwentyListResponse<TwentyRecord>>(`/rest/companies?${query}`)
 
@@ -50,78 +53,75 @@ async function createTwentyCompany(karte: CompanyKarteSnapshot): Promise<TwentyR
   return company
 }
 
+// Cached set of Twenty company fields known to be unavailable.
+// Populated on first failed PATCH to avoid repeated retry loops.
+const unavailableFields = new Set<string>()
+
 async function patchTwentyCompanyHome(
   twentyCompanyId: string,
   payload: Record<string, unknown>,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const requiredFields = new Set([
-    "paradigmSourceCoverage",
-    "paradigmDataStatus",
-    "paradigmDataSources",
-    "paradigmDataBreakdown",
-    "paradigmSourceDetailsUrl",
-    "paradigmNextAction",
-    "paradigmLastError",
-  ])
-  const removableFields = [
-    "xLink",
-    "linkedinLink",
-    "employees",
-    "annualRecurringRevenue",
-    "address",
-    "paradigmReportUrl",
-    "paradigmFormUrl",
-    "paradigmDemoUrl",
-    "paradigmCountryName",
-    "paradigmRegionName",
-    "paradigmIndustryName",
-    "paradigmSourceName",
-    "paradigmSalesStatus",
-    "paradigmKarteScore",
-    "paradigmSourceCoverage",
-    "paradigmDataStatus",
-    "paradigmDataSources",
-    "paradigmDataBreakdown",
-    "paradigmSourceDetailsUrl",
-    "paradigmNextAction",
-    "paradigmLastError",
-    "paradigmKarteSummary",
-    "paradigmCustomerPortalUrl",
-  ]
-  let currentPayload = { ...payload }
-  let lastError = "Twenty company patch failed"
-
-  for (let attempt = 0; attempt <= removableFields.length; attempt += 1) {
-    const result = await twentyFetch<TwentyMutationResponse>(`/rest/companies/${twentyCompanyId}`, {
-      method: "PATCH",
-      body: JSON.stringify(currentPayload),
-    })
-    if (result.ok) return { ok: true }
-
-    lastError = result.error
-    const missingField = removableFields.find((field) => (
-      Object.prototype.hasOwnProperty.call(currentPayload, field) &&
-      (
-        new RegExp(`[\\\\"']?${field}[\\\\"']?\\s+field`, "i").test(result.error) ||
-        result.error.includes(`"${field}"`) ||
-        result.error.includes(`\\"${field}\\"`)
-      )
-    ))
-    if (!missingField) break
-
-    if (requiredFields.has(missingField)) {
-      return {
-        ok: false,
-        error: `Twenty company field ${missingField} is missing or unavailable. Apply CRM metadata before writeback.`,
-      }
+  // Pre-filter: remove known-unavailable fields before the first attempt
+  let filteredPayload = payload
+  if (unavailableFields.size > 0) {
+    const cleaned: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(payload)) {
+      if (!unavailableFields.has(key)) cleaned[key] = value
     }
-
-    const { [missingField]: _removed, ...nextPayload } = currentPayload
-    currentPayload = nextPayload
-    console.warn(`[twenty-sync] removed unavailable Twenty company field ${missingField} and retrying`)
+    if (Object.keys(cleaned).length < Object.keys(payload).length) {
+      console.warn(
+        `[twenty-sync] pre-filtered ${Object.keys(payload).length - Object.keys(cleaned).length} known-unavailable fields:`,
+        Object.keys(payload).filter((k) => unavailableFields.has(k)),
+      )
+    }
+    filteredPayload = cleaned
   }
 
-  return { ok: false, error: lastError }
+  const result = await twentyFetch<TwentyMutationResponse>(`/rest/companies/${twentyCompanyId}`, {
+    method: "PATCH",
+    body: JSON.stringify(filteredPayload),
+  })
+  if (result.ok) return { ok: true }
+
+  // If the error mentions specific fields, cache them as unavailable and retry once
+  const errorText = result.error
+  const fieldPattern = /"(\w+)"/g
+  let match: RegExpExecArray | null
+  const mentionedFields = new Set<string>()
+  while ((match = fieldPattern.exec(errorText)) !== null) {
+    if (match[1] in payload) mentionedFields.add(match[1])
+  }
+
+  if (mentionedFields.size === 0) {
+    return { ok: false, error: errorText }
+  }
+
+  // Cache these fields for future calls
+  for (const field of mentionedFields) {
+    unavailableFields.add(field)
+  }
+  console.warn(
+    `[twenty-sync] cached ${mentionedFields.size} unavailable Twenty fields — run applyTwentyCrmMetadata to fix:`,
+    [...mentionedFields],
+  )
+
+  // Retry once with discovered fields removed
+  const retryPayload: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(filteredPayload)) {
+    if (!mentionedFields.has(key)) retryPayload[key] = value
+  }
+
+  if (Object.keys(retryPayload).length === 0) {
+    return { ok: false, error: `All fields rejected by Twenty: ${errorText}` }
+  }
+
+  const retry = await twentyFetch<TwentyMutationResponse>(`/rest/companies/${twentyCompanyId}`, {
+    method: "PATCH",
+    body: JSON.stringify(retryPayload),
+  })
+  if (retry.ok) return { ok: true }
+
+  return { ok: false, error: retry.error }
 }
 
 async function syncTwentyCompanyHomeFields(
@@ -136,10 +136,14 @@ async function syncTwentyCompanyHomeFields(
 export async function syncCustomerHandoffToTwenty(
   input: TwentyCustomerHandoffInput,
 ): Promise<TwentyCustomerHandoffResult> {
-  const baseUrl = twentyBaseUrl()
-  const apiKey = env("TWENTY_API_KEY")
-  if (!baseUrl || !apiKey) {
-    return { ok: false, configured: false, error: "TWENTY_BASE_URL or TWENTY_API_KEY is not configured" }
+  try {
+    requireTwentyAuth()
+  } catch (authError) {
+    return {
+      ok: false,
+      configured: false,
+      error: authError instanceof Error ? authError.message : "Twenty auth required for customer handoff",
+    }
   }
 
   const pseudoKarte: CompanyKarteSnapshot = {
@@ -287,10 +291,14 @@ export async function syncCompanyKarteToTwenty(
   companyId: string,
   options: { pipelineRunId?: string | null } = {},
 ): Promise<TwentySyncResult> {
-  const baseUrl = twentyBaseUrl()
-  const apiKey = env("TWENTY_API_KEY")
-  if (!baseUrl || !apiKey) {
-    return { ok: false, configured: false, error: "TWENTY_BASE_URL or TWENTY_API_KEY is not configured" }
+  try {
+    requireTwentyAuth()
+  } catch (authError) {
+    return {
+      ok: false,
+      configured: false,
+      error: authError instanceof Error ? authError.message : "Twenty auth required for karte sync",
+    }
   }
 
   const sb = getServiceSalesSupabase()

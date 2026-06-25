@@ -6,6 +6,7 @@ export interface TwentyLinkField {
 export interface TwentyRecord {
   id?: string
   name?: string
+  updatedAt?: string | null
   domainName?: TwentyLinkField | null
   paradigmReportUrl?: TwentyLinkField | null
   paradigmFormUrl?: TwentyLinkField | null
@@ -119,7 +120,10 @@ export function normalizeDomain(input: string | null | undefined): string | null
 }
 
 export function domainMatches(record: TwentyRecord, domain: string): boolean {
-  const normalized = domain.toLowerCase()
+  // Strict exact match after normalization — no partial/subdomain matching.
+  // example.com must NOT match example.com.au or myexample.com.
+  const normalized = normalizeDomain(domain)
+  if (!normalized) return false
   const url = normalizeDomain(record.domainName?.primaryLinkUrl)
   const label = normalizeDomain(record.domainName?.primaryLinkLabel)
   return url === normalized || label === normalized
@@ -131,7 +135,25 @@ export async function twentyFetch<T>(
 ): Promise<{ ok: true; data: T } | { ok: false; error: string }> {
   const baseUrl = twentyBaseUrl()
   const apiKey = env("TWENTY_API_KEY")
-  if (!baseUrl || !apiKey) return { ok: false, error: "TWENTY_BASE_URL or TWENTY_API_KEY is not configured" }
+  if (!baseUrl || !apiKey) {
+    const msg = "Twenty is the Sales OS SSOT — TWENTY_BASE_URL and TWENTY_API_KEY are REQUIRED. Sync cannot proceed."
+    console.error(`[twenty-sync] ${msg}`)
+    return { ok: false, error: msg }
+  }
+
+  // Circuit breaker: don't hammer a failing Twenty instance
+  const opKey = init.method === "GET" || !init.method ? "read" : "write"
+  // Dynamic import to avoid circular dependency — circuit is loaded lazily
+  let circuitGate = true
+  try {
+    const { circuitAllows } = await import("./twenty-circuit")
+    circuitGate = circuitAllows(opKey)
+  } catch {
+    // If circuit module can't be loaded, proceed without it
+  }
+  if (!circuitGate) {
+    return { ok: false, error: "Twenty circuit breaker is open — all calls blocked temporarily" }
+  }
 
   try {
     const res = await fetch(`${baseUrl}${path}`, {
@@ -145,17 +167,28 @@ export async function twentyFetch<T>(
     })
 
     const text = await res.text()
-    if (!res.ok) return { ok: false, error: text || `Twenty API HTTP ${res.status}` }
+    if (!res.ok) {
+      const { circuitReportFailure } = await import("./twenty-circuit").catch(() => ({ circuitReportFailure: () => {} }))
+      circuitReportFailure(opKey)
+      return { ok: false, error: text || `Twenty API HTTP ${res.status}` }
+    }
 
     try {
-      return { ok: true, data: JSON.parse(text) as T }
+      const data = JSON.parse(text) as T
+      const { circuitReportSuccess } = await import("./twenty-circuit").catch(() => ({ circuitReportSuccess: () => {} }))
+      circuitReportSuccess(opKey)
+      return { ok: true, data }
     } catch (error) {
       console.error("[twenty-sync] invalid JSON response:", error)
+      const { circuitReportFailure } = await import("./twenty-circuit").catch(() => ({ circuitReportFailure: () => {} }))
+      circuitReportFailure(opKey)
       return { ok: false, error: "Twenty API returned invalid JSON" }
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Twenty API request failed"
     console.error("[twenty-sync] request failed:", error)
+    const { circuitReportFailure } = await import("./twenty-circuit").catch(() => ({ circuitReportFailure: () => {} }))
+    circuitReportFailure(opKey)
     return { ok: false, error: message }
   }
 }
