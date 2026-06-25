@@ -8,8 +8,6 @@ import {
   type CompanyProductRecommendation,
 } from "@/lib/sales/products"
 import {
-  env,
-  twentyBaseUrl,
   domainMatches,
   twentyFetch,
   linkField,

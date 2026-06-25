@@ -13,10 +13,8 @@ import {
   normalizeTemplateVariant,
 } from "./routing"
 import {
-  env,
   normalizeDomain,
   parseSalesStatusLabel,
-  twentyBaseUrl,
   type TwentyRecord,
 } from "./twenty-sync-utils"
 import { fetchTwentyCompanyPages } from "./twenty-pull-pages"
