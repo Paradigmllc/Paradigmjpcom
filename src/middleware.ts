@@ -23,6 +23,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.rewrite(new URL(astroPath + request.nextUrl.search, astroDemoOrigin));
   }
 
+  // Root path without locale → redirect to /ja (default)
+  if (pathname === "/") {
+    return NextResponse.redirect(new URL("/ja", request.url));
+  }
+
   return NextResponse.next();
 }
 
