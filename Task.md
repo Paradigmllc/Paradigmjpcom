@@ -10,7 +10,7 @@ CURRENT STATUS - 2026-06-25 Inline artifact admin editor for Twenty Sales OS
 - 実装: 管理者保存API `PATCH /api/sales/artifact-edits/report/[slug]` / `PATCH /api/sales/artifact-edits/demo/[slug]` を追加。両方とも Payload admin / legacy cookie 認可、入力sanitize、DB保存、`notifyBothChannels` によるDBベル+Slack通知を通す。公開ユーザーは 401。
 - 検証: `npm exec -- tsc --noEmit` OK、`npm exec -- vitest run src/lib/sales/artifact-admin-overrides.test.ts` OK（3 tests）、`npm run quality:guard` OK（0 error / 57 warnings）、`npm run build` OK。ローカル Chrome channel で未認可 `PATCH /api/sales/artifact-edits/report/ccbc-xynd21` = 401、公開 `/ja/report/ccbc-xynd21` と `/ja/demo/ccbc-xynd21-demo` は編集ボタン0件を確認。
 - 次の操作: 管理者は `/admin` または `/ja/admin/sales` にログイン後、対象の `/ja/report/...` / `/ja/demo/...` を開き、右下「編集」から保存。Twenty でリード追加・同期後も成果物は自動生成が基本で、商談前の文言補正だけこの inline editor で行う。
-- 追補対応: 管理者保存E2E用に `dryRun` を artifact edit API へ追加し、`scripts/smoke-artifact-admin.mjs` で本番 `ADMIN_PASSWORD` を出力せず cookie として使い、管理者UI表示 + report/demo dry-run PATCH を検証できるようにした。`DifyChatbot` は `/d/` と `/demo/` で非表示にし、demoページ除外 warning を解消。`npm audit --audit-level=high` は 0 件。Playwright browser install は CDN download 後のcache生成が止まったため中断し、既存 Chrome channel 検証を継続利用。
+- 追補対応: 管理者保存E2E用に `dryRun` を artifact edit API へ追加し、`scripts/smoke-artifact-admin.mjs` で本番 secret を出力せず cookie / webhook dry-run として使い、report/demo dry-run PATCH を検証できるようにした。`DifyChatbot` は `/d/` と `/demo/` で非表示にし、demoページ除外 warning を解消。`npm audit --audit-level=high` は 0 件。Playwright browser install は CDN download 後のcache生成が止まったため中断し、既存 Chrome channel 検証を継続利用。
 
 CURRENT STATUS - 2026-06-24 Twenty Sales OS SSOT pivot
 - 壁打ち決定: RevenueOS を営業OS/SSOTとして継続改善しない。Twenty を営業OS/SSOTに昇格し、RevenueOS側は Twenty API に接続する外部OSS/worker監視・ログ・legacy engine surfaceへ降格する。

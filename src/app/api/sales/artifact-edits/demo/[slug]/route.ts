@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { authorizePayloadAdminRequest } from "@/lib/admin-auth"
+import { authorizePayloadAdminRequest, authorizeWebhookRequest } from "@/lib/admin-auth"
 import { sanitizeDemoAdminFields } from "@/lib/sales/artifact-admin-overrides"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { getServiceSalesSupabase } from "@/lib/supabase"
@@ -22,14 +22,6 @@ function compactRecord(input: Record<string, unknown>): Record<string, unknown> 
 
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
   try {
-    const auth = await authorizePayloadAdminRequest({
-      headers: req.headers,
-      legacyToken: req.cookies.get("paradigm_admin_token")?.value,
-    })
-    if (!auth.ok) {
-      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
-    }
-
     const { slug } = await params
     const body = readRecord(await req.json().catch((error: unknown) => {
       console.error("[artifact-demo-edit] invalid JSON:", error)
@@ -37,6 +29,16 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
     }))
     const reset = body.reset === true
     const dryRun = body.dryRun === true
+    const webhookAuth = dryRun ? authorizeWebhookRequest(req.headers) : { ok: false }
+    const auth = webhookAuth.ok
+      ? { ok: true, userEmail: null }
+      : await authorizePayloadAdminRequest({
+          headers: req.headers,
+          legacyToken: req.cookies.get("paradigm_admin_token")?.value,
+        })
+    if (!auth.ok) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+    }
     const supabase = getServiceSalesSupabase()
     if (!supabase) {
       console.error("[artifact-demo-edit] Supabase is not configured")
