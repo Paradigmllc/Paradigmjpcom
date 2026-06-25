@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { authorizePayloadAdminRequest, authorizeWebhookRequest } from "@/lib/admin-auth"
-import { DB_TABLES } from "@/lib/sales/db-tables"
 import { sanitizeReportAdminFields } from "@/lib/sales/artifact-admin-overrides"
+import { findCompanyBySlug } from "@/lib/sales/companies"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 
 export const runtime = "nodejs"
@@ -52,18 +52,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ ok: false, error: "Supabase is not configured" }, { status: 500 })
     }
 
-    const { data: company, error: companyError } = await supabase
-      .from(DB_TABLES.SALES_COMPANIES)
-      .select("id, company_name, slug")
-      .eq("slug", slug)
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    if (companyError) {
-      console.error("[artifact-report-edit] company fetch failed:", companyError.message)
-      return NextResponse.json({ ok: false, error: "Company lookup failed" }, { status: 500 })
-    }
+    const company = await findCompanyBySlug(slug, "jp")
     if (!company) {
       return NextResponse.json({ ok: false, error: "Company not found" }, { status: 404 })
     }
