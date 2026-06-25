@@ -2,7 +2,7 @@
 import { readProductionEnvValue } from "./lib/coolify-env.mjs"
 
 const baseUrl = (process.env.ARTIFACT_SMOKE_BASE_URL || "https://paradigmjp.com").replace(/\/$/, "")
-const reportSlug = process.env.ARTIFACT_SMOKE_REPORT_SLUG || "ccbc-xynd21"
+const reportSlug = process.env.ARTIFACT_SMOKE_REPORT_SLUG || "airbnb"
 const demoSlug = process.env.ARTIFACT_SMOKE_DEMO_SLUG || `${reportSlug}-demo`
 const adminPassword = await readProductionEnvValue("ADMIN_PASSWORD")
 const webhookSecret = await readProductionEnvValue("TRIGGER_WEBHOOK_SECRET")
