@@ -52,7 +52,14 @@ export async function syncCompanyAcrossSalesTools(
   const results: ExternalStudioTargetResult[] = []
 
   if (requestedTargets.includes("twenty")) {
-    const pushed = await syncCompanyKarteToTwenty(companyId, { pipelineRunId: options.pipelineRunId })
+    let pushed: Awaited<ReturnType<typeof syncCompanyKarteToTwenty>>
+    try {
+      pushed = await syncCompanyKarteToTwenty(companyId, { pipelineRunId: options.pipelineRunId })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Twenty sync threw"
+      console.error("[external-studio-sync] Twenty sync exception:", message)
+      pushed = { ok: false, configured: false, error: message }
+    }
     results.push({
       target: "twenty",
       direction: "supabase->twenty",
