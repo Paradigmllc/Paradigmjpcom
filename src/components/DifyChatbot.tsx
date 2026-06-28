@@ -65,12 +65,10 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
     if (open) bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, open])
 
+  // Hide chatbot on LP-only & admin pages. Homepage always shows it.
   if (
-    /^\/[a-z]{2}(\/(about|services|pricing|works|blog|faq|contact|legal|privacy|lp|agency|video)(\/|$)|\/?$)/.test(pathname) ||
+    /^\/[a-z]{2}\/(d|demo)\//.test(pathname) ||
     pathname.includes("/p/") ||
-    pathname.includes("/d/") ||
-    pathname.includes("/demo/") ||
-    /^\/[a-z]{2}\/d\//.test(pathname) ||
     pathname.includes("/report/")
   ) return null
 
