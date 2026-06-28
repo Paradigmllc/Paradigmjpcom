@@ -1,45 +1,42 @@
 import { Link } from "@/i18n/routing"
 
 /**
- * Enhanced Aesop-style wordmark + geometric icon mark.
+ * Paradigm logo — geometric lens mark + title-case wordmark.
  *
- * The icon mark — a perfectly split regular hexagon (left half outlined,
- * right half filled) — represents the paradigm shift (パラダイムシフト):
- * the same structural whole seen from two complementary perspectives.
- *
- * AE-PHP-1: ~30 lines. AE-PHP-2: no hardcoded UI strings — "PARADIGM" is
- * the brand wordmark (proper noun, not subject to i18n).
+ * The icon: two overlapping circles forming a lens (almond shape) at their
+ * intersection — the paradigm as a way of seeing. One circle outlined
+ * (current view), one filled (new view). Their overlap is the shift.
+ * Minimal, architectural, luxury-brand feel.
  */
 
-function ParadigmMark({ className = "" }: { className?: string }) {
+function ParadigmLens({ className = "" }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 28 28"
+      viewBox="0 0 32 32"
       fill="none"
       aria-hidden="true"
       className={className}
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Left half — outlined (classic view) */}
-      <path
-        d="M14 3.6L5.2 8.6V19.4L14 24.4"
+      {/* Left circle — outlined (established perspective) */}
+      <circle
+        cx="12" cy="16" r="9"
         stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-        className="opacity-60"
+        strokeWidth="1.8"
+        className="opacity-50"
       />
-      {/* Right half — filled (shifted view) */}
-      <path
-        d="M14 3.6L22.8 8.6V19.4L14 24.4Z"
+      {/* Right circle — filled (new perspective) */}
+      <circle
+        cx="20" cy="16" r="9"
         fill="currentColor"
-        className="opacity-90"
+        className="opacity-85"
       />
-      {/* Center dividing line */}
-      <line
-        x1="14" y1="3.6" x2="14" y2="24.4"
+      {/* Lens intersection — the shift itself */}
+      <path
+        d="M16.5 7.5C18.5 9.5 20 12 20 16C20 20 18.5 22.5 16.5 24.5"
         stroke="currentColor"
-        strokeWidth="1.5"
-        className="opacity-60"
+        strokeWidth="1.8"
+        strokeLinecap="round"
       />
     </svg>
   )
@@ -54,12 +51,12 @@ export default function Logo({
 }) {
   const content = (
     <span
-      className={`inline-flex items-center gap-2.5 select-none ${className}`}
+      className={`inline-flex items-center gap-3 select-none ${className}`}
       aria-label="Paradigm"
     >
-      <ParadigmMark className="w-6 h-6 md:w-7 md:h-7 shrink-0 text-paradigm-accent" />
-      <span className="text-[18px] md:text-[20px] uppercase font-light tracking-[0.25em] text-paradigm-ink leading-none">
-        PARADIGM
+      <ParadigmLens className="w-[26px] h-[26px] md:w-7 md:h-7 shrink-0 text-paradigm-ink" />
+      <span className="text-[19px] md:text-[21px] font-light tracking-[0.06em] text-paradigm-ink leading-none">
+        Paradigm
       </span>
     </span>
   )

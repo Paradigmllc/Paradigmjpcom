@@ -1053,7 +1053,7 @@ async function main() {
     console.log(await applySalesRaceConditionGuardsMigration(envs))
     console.log(await applySalesOptionalColumnRepairMigration(envs))
     console.log(await applyContentTemplates(envs))
-    if (!SKIP_DEPLOY) runDbTableVerification(envs)
+    if (!SKIP_DB_VERIFY) runDbTableVerification(envs)
   } else {
     console.log("Dry run: skipped Supabase product upsert")
   }
