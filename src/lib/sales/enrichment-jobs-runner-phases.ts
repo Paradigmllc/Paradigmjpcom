@@ -1,6 +1,7 @@
 import { enrichFromContact } from "./enrich"
 import { upsertCompanyByDomain } from "./companies"
 import { runDifyDiagnosis } from "./dify-diagnosis"
+import { runAssetExtraction } from "./extract-assets"
 import { fetchDiagnosticReport, markReportGenerated } from "./diagnostic"
 import { autoPersonalize } from "./personalize"
 import { generateReplacementDemo } from "./demo-generator"
@@ -63,6 +64,21 @@ export async function processEnrichmentPhase(
   }
 
   const refreshed = (enrich.company ?? company) as SalesCompany
+
+  // Extract real website assets (images, colors, subpage content) for demo personalization.
+  // Non-blocking: if extraction fails, enrichment continues with partial data.
+  let websiteAssets: Record<string, unknown> | null = null
+  try {
+    const assets = await runAssetExtraction(refreshed)
+    if (assets.ok && assets.assets) {
+      websiteAssets = assets.assets as unknown as Record<string, unknown>
+    } else {
+      console.warn(`[sales-enrichment] website asset extraction skipped: ${assets.error ?? assets.skipped ?? "unknown"}`)
+    }
+  } catch (e) {
+    console.error("[sales-enrichment] website asset extraction failed (non-fatal):", e)
+  }
+
   const save = await upsertCompanyByDomain({
     domain: refreshed.domain,
     company_name: refreshed.company_name,
@@ -80,6 +96,7 @@ export async function processEnrichmentPhase(
     meta: {
       ...(refreshed.meta ?? {}),
       enrichment: { job_id: job.id, phase1_completed_at: new Date().toISOString() },
+      ...(websiteAssets ? { website_assets: websiteAssets } : {}),
     },
     tech_stack: refreshed.meta?.tech as Record<string, unknown> | null,
   })

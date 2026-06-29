@@ -96,6 +96,12 @@ const titleByArchetypeJa: Record<DemoArchetype, string> = {
   commerce: "商品選びから購入まで迷わせないストアホームページ",
   advisory: "専門性を相談につなげる士業・相談型ホームページ",
   localService: "地域からすぐ相談されるサービス業ホームページ",
+  // Japan Entry
+  jpSaaS: "日本市場向けに最適化されたSaaSランディングサイト",
+  jpD2C: "越境ECを成功させるD2Cブランド日本版サイト",
+  jpB2B: "日本企業の信頼を獲得するB2Bコーポレートサイト",
+  jpHealthtech: "薬機法準拠のヘルステック日本参入サイト",
+  jpEdtech: "日本の学習者に最適化したEdTechプラットフォームサイト",
 }
 
 const titleByArchetypeEn: Record<DemoArchetype, string> = {
@@ -106,6 +112,12 @@ const titleByArchetypeEn: Record<DemoArchetype, string> = {
   commerce: "A retail website that guides customers from choice to purchase",
   advisory: "An expert-service website that turns credibility into inquiries",
   localService: "A local-service website built for fast, qualified inquiries",
+  // Japan Entry
+  jpSaaS: "A SaaS landing site optimized for the Japanese market",
+  jpD2C: "A D2C brand site for successful cross-border eCommerce in Japan",
+  jpB2B: "A B2B corporate site that earns trust with Japanese enterprises",
+  jpHealthtech: "A healthtech site compliant with Japanese regulations for market entry",
+  jpEdtech: "An EdTech platform site designed for Japanese learners and parents",
 }
 
 function asText(value: unknown, fallback: string): string {
@@ -154,6 +166,32 @@ function contentFor(archetype: DemoArchetype, locale: DemoLocale) {
       { title: "作業事例と口コミ", body: "Before/After、所要時間、顧客評価を一覧化します。", deliverables: ["作業写真", "口コミ", "所要時間"] },
       { title: "緊急相談フォーム", body: "電話、LINE、フォームを状況別に出し分けます。", deliverables: ["電話CTA", "LINE導線", "写真添付"] },
     ],
+    // Japan Entry
+    jpSaaS: [
+      { title: "日本語UI/UX設計", body: "日本語フォント、レイアウト、ボタン文言を日本ユーザー向けに最適化します。", deliverables: ["日本語UI", "フォーム設計", "エラーメッセージ"] },
+      { title: "決済・法令対応", body: "日本の決済手段（コンビニ、銀行振込、Paidy）と特定商取引法、個人情報保護法に対応します。", deliverables: ["決済導線", "特商法表記", "プライバシーポリシー"] },
+      { title: "導入事例・ローカライズ", body: "日本語事例、日本市場向け価格、オンボーディング手順を提示します。", deliverables: ["事例ページ", "料金表", "オンボーディング"] },
+    ],
+    jpD2C: [
+      { title: "越境配送導線", body: "送料、日数、通関、返品対応を日本の購買習慣に合わせて設計します。", deliverables: ["配送案内", "通関FAQ", "返品ポリシー"] },
+      { title: "日本決済対応", body: "クレジットカード、コンビニ払い、PayPay、キャリア決済に対応した導線を構築します。", deliverables: ["決済手段一覧", "支払いCI", "注文確認"] },
+      { title: "ブランド一貫性", body: "海外ブランドの世界観を保ったまま、日本の消費者に違和感のないUI/UXに仕上げます。", deliverables: ["ブランドページ", "日本語コピー", "ビジュアル整合"] },
+    ],
+    jpB2B: [
+      { title: "信頼シグナル設計", body: "日本企業向けに実績、認証、日本語サポート、国内拠点情報を強調します。", deliverables: ["導入実績", "認証・資格", "サポート体制"] },
+      { title: "商談前の情報整理", body: "製品仕様、価格体系、導入フローを明確化し、日本企業の購買プロセスに合わせます。", deliverables: ["製品資料", "価格表", "導入事例"] },
+      { title: "問い合わせ導線", body: "技術質問、営業問い合わせ、資料請求を適切に振り分けるフォームを設計します。", deliverables: ["問い合わせフォーム", "資料DL", "デモ予約"] },
+    ],
+    jpHealthtech: [
+      { title: "薬機法・規制対応", body: "薬機法、医療広告ガイドライン、個人情報保護法に準拠した表現で製品を紹介します。", deliverables: ["規制準拠表現", "リスク表記", "承認情報"] },
+      { title: "臨床エビデンス提示", body: "臨床データ、論文、導入施設の声を信頼できる形で提示します。", deliverables: ["臨床データ", "論文リンク", "ユーザー事例"] },
+      { title: "導入フロー設計", body: "医療機関・企業向けのトライアル、契約、導入トレーニングの流れを図示します。", deliverables: ["導入ステップ", "FAQ", "サポート案内"] },
+    ],
+    jpEdtech: [
+      { title: "学習導線設計", body: "対象年齢、教科、レベル、検定対応を軸にした教材探索導線を構築します。", deliverables: ["教材マップ", "レベル診断", "無料体験"] },
+      { title: "保護者・学習者向け安心設計", body: "料金、進捗管理、サポート体制を保護者と学習者の両方に伝えます。", deliverables: ["料金プラン", "学習レポート", "保護者FAQ"] },
+      { title: "成果の可視化", body: "学習成果、合格実績、ユーザーの声をデータとストーリーで示します。", deliverables: ["合格実績", "体験談", "比較表"] },
+    ],
   }
 
   const servicesEn: Record<DemoArchetype, FullSiteProfile["services"]> = {
@@ -191,6 +229,32 @@ function contentFor(archetype: DemoArchetype, locale: DemoLocale) {
       { title: "Service area flow", body: "Cities, response speed, and travel fees are easy to confirm.", deliverables: ["Coverage", "Pricing", "Hours"] },
       { title: "Work proof", body: "Before/after photos, duration, and customer ratings are structured.", deliverables: ["Photos", "Reviews", "Duration"] },
       { title: "Urgent inquiry", body: "Phone, LINE, and forms are routed by customer situation.", deliverables: ["Phone CTA", "LINE", "Photo upload"] },
+    ],
+    // Japan Entry
+    jpSaaS: [
+      { title: "Japanese UI/UX", body: "Font, layout, button copy, and form conventions localized for Japanese users.", deliverables: ["JP UI", "Form design", "Error messages"] },
+      { title: "Payments & compliance", body: "Japanese payment methods (konbini, bank transfer, Paidy) plus Specified Commercial Transactions Act and APPI.", deliverables: ["Payment flow", "Legal notices", "Privacy policy"] },
+      { title: "Case studies & pricing", body: "Japanese case studies, market-specific pricing, and onboarding process.", deliverables: ["Cases", "Price table", "Onboarding"] },
+    ],
+    jpD2C: [
+      { title: "Cross-border shipping", body: "Rates, transit time, customs, and returns aligned with Japanese buying habits.", deliverables: ["Shipping guide", "Customs FAQ", "Return policy"] },
+      { title: "JP payment methods", body: "Credit card, konbini, PayPay, and carrier billing integrated into checkout.", deliverables: ["Payment list", "Checkout UI", "Order confirm"] },
+      { title: "Brand consistency", body: "Overseas brand identity preserved while delivering native-feel UX for Japanese consumers.", deliverables: ["Brand page", "JP copy", "Visual fit"] },
+    ],
+    jpB2B: [
+      { title: "Trust signals", body: "Case studies, certifications, Japanese-language support, and local office details for enterprise buyers.", deliverables: ["Cases", "Certifications", "Support info"] },
+      { title: "Pre-sales clarity", body: "Product specs, pricing tiers, and implementation process mapped to Japanese procurement cycles.", deliverables: ["Docs", "Pricing", "Case studies"] },
+      { title: "Inquiry routing", body: "Forms that route technical, sales, and document requests to the right team.", deliverables: ["Contact form", "Downloads", "Demo booking"] },
+    ],
+    jpHealthtech: [
+      { title: "Regulatory compliance", body: "PMD Act, medical advertising guidelines, and APPI-compliant product presentation.", deliverables: ["Compliant copy", "Risk notices", "Approval info"] },
+      { title: "Clinical evidence", body: "Clinical data, publications, and implementing-institution testimonials presented with credibility.", deliverables: ["Clinical data", "Papers", "User stories"] },
+      { title: "Onboarding flow", body: "Trial, contract, and training stages visualized for hospitals and enterprises.", deliverables: ["Steps", "FAQ", "Support"] },
+    ],
+    jpEdtech: [
+      { title: "Learning discovery", body: "Browse by age, subject, level, and exam alignment — designed for Japanese curriculum expectations.", deliverables: ["Curriculum map", "Level check", "Free trial"] },
+      { title: "Parent & learner trust", body: "Pricing, progress tracking, and support communicated clearly to both parents and students.", deliverables: ["Plans", "Progress reports", "Parent FAQ"] },
+      { title: "Outcome proof", body: "Learning results, exam pass rates, and user testimonials shown with data and stories.", deliverables: ["Pass rates", "Testimonials", "Comparison"] },
     ],
   }
 

@@ -1,3 +1,15 @@
+## CURRENT STATUS - 2026-06-30 Astro demo hyper-personalization Phase 1 — データ抽出パイプライン
+
+- 壁打ち合意: ペラLPから apple.com 級のフルスタックパーソナライズデモへ根本再設計。テンプレの色差し替えではなく、企業実データ＋LLMで毎回異なる構成・デザイン・コピーを生成。
+- 方針: ①6軸デザイン哲学（visual_language / layout_rhythm / navigation / color / typography / motion）をDeepSeekが企業ごとに完全決定 ②画像・色・文言はフリー素材禁止、相手企業の実サイトから Playwright で抽出 ③有料API不使用（Google Maps/Tavily/SerpAPI NG） ④Astro SSG→Cloudflare R2静的配信 ⑤納品時はNext.js+PayloadCMSで再構築。
+- 実装: Phase 1 — `src/lib/sales/sources/website-extract.ts`（458行）を新設。Playwrightで企業実サイトを開き、hero画像・ロゴ・ギャラリー画像をBuffer抽出、CSSブランド色（primary/background/text/accent/headerBg/ctaBg/ctaText）を取得、Schema.org JSON-LD+OGPメタデータ抽出、内部リンク（about/service/pricing/contact/blog）を検出。Jina Readerでサブページの実テキストをMarkdown抽出。
+- 実装: `src/lib/sales/extract-assets.ts`（127行）を新設。website-extract結果の画像をR2へアップロード（`sites/{domain}/hero.webp`等）、構造化データを組み立てて返却。
+- 実装: `processEnrichmentPhase`（Phase 1）に `runAssetExtraction` を追加。`enrichFromContact` の後、`upsertCompanyByDomain` の前に非ブロッキング実行。失敗してもenrichment継続。抽出結果は `company.meta.website_assets` に保存。
+- 実装: ソースカバレッジ `website_assets` を登録（source-coverage.ts、alias 追加）。
+- データモデル: `meta.website_assets = { images: { hero/logo/gallery }, colors: { primary/background/text/accent/headerBg/ctaBg/ctaText }, content: { about/services/pricing/testimonials/contact/blog }, structured: { organization/localBusiness/ogTitle/ogDescription/ogImage }, r2_prefix }`
+- 未着手（Phase 2-4）: design.json設計+DeepSeekプロンプト / Astro全ページ6軸多態コンポーネント / SSG→R2静的配信 / テスト+deploy
+- 検証: `npm exec -- tsc --noEmit` OK、`npm run quality:guard` OK（0 error / 58 warnings 全て既存）、`npm run build` OK、`npm exec -- vitest run src/lib/sales/source-coverage.test.ts src/lib/sales/enrich.test.ts` OK（6 tests）
+
 ## ACTIVE PLAN - 2026-06-20 営業OS全面強化（Phase 0-9・壁打ち合意済み）
 
 不変前提: WW-EVENT 厳守＝cron/n8n/pg_cron 不使用・Trigger.dev イベント駆動 one-shot のみ。

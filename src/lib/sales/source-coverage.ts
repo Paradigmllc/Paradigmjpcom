@@ -183,6 +183,22 @@ const SOURCES: SourceDefinition[] = [
     nextStep: "Crawl4AIで候補URLを抽出し、フォーム分類とpreflightへ渡します。",
   },
   {
+    slug: "website_assets",
+    label: "Website visual & content extraction",
+    category: "outreach",
+    detect: (m) => {
+      const wa = m.website_assets as Record<string, unknown> | undefined
+      const imgs = wa?.images as Record<string, unknown> | undefined
+      const hero = imgs?.hero as Record<string, unknown> | undefined
+      const c = wa?.content as Record<string, unknown> | undefined
+      return !!(hero?.url) || !!(c?.about)
+    },
+    detail: "Real company images, brand colors, and subpage content extracted from the company's own website",
+    meaning: "デモサイトのパーソナライズに使う実画像・実色・実テキストです。フリー素材やAI生成に依存せず、相手企業の本物だけを使います。",
+    missingConsequence: "未取得だと、デモサイトのビジュアルと文言が汎用テンプレートのままになり、パーソナライズ感が大幅に下がります。",
+    nextStep: "Playwrightで企業HPを開き、hero画像・ロゴ・ブランド色・about/serviceページの実テキストを収集します。",
+  },
+  {
     slug: "stagehand",
     label: "Stagehand AI Agent",
     category: "outreach",
@@ -365,6 +381,7 @@ const SOURCE_QUALITY_ALIASES: Record<string, string[]> = {
   green_web: ["green_web"],
   builtwith_free: ["builtwith"],
   jina_reader: ["jina_reader"],
+  website_assets: ["website_assets"],
   subfinder: ["subfinder"],
   trufflehog: ["trufflehog"],
 }
