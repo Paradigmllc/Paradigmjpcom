@@ -18,7 +18,7 @@ import { assertLocale } from "@/lib/cms/filters"
 import { LOCALE_HREFLANG } from "@/lib/locale-map"
 import { withPayloadReadFallback } from "@/lib/payload-availability"
 
-export const revalidate = 300
+export const dynamic = "force-dynamic"
 
 interface Props { params: Promise<{ locale: string }> }
 
