@@ -14,7 +14,7 @@ import { buildArticleSchema } from "@/lib/seo/schemas"
 import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import FadeIn from "@/components/aesop/FadeIn"
-import { assertLocale, localeFindOptions } from "@/lib/cms/filters"
+import { assertLocale } from "@/lib/cms/filters"
 import { LOCALE_HREFLANG } from "@/lib/locale-map"
 import { withPayloadReadFallback } from "@/lib/payload-availability"
 
