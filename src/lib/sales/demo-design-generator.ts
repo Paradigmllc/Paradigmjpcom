@@ -86,6 +86,10 @@ const FIELD_ALIASES: Record<string, string> = {
   link: "cta", action: "cta", cta_primary: "primary_cta",
   cta_secondary: "secondary_cta", button_text: "label", btn_text: "label",
   background: "image", photo: "image", picture: "image",
+  cta1: "primary_cta", cta2: "secondary_cta",
+  action_primary: "primary_cta", action_secondary: "secondary_cta",
+  button_primary: "primary_cta", button_secondary: "secondary_cta",
+  primary: "primary_cta", secondary: "secondary_cta",
 }
 
 // Normalize proof items: map {heading,description}→{value,label} and {name,detail}→{value,label}
@@ -178,15 +182,43 @@ function normalizeBlock(raw: Record<string, unknown>): Record<string, unknown> {
   // Ensure hero has variant default
   if (b.type === "hero" && !b.variant) b.variant = "fullbleed"
 
-  // Normalize block items based on block type
-  if (b.type === "proof" && Array.isArray(b.items)) {
-    b.items = normalizeProofItems(b.items as unknown[])
+  // Normalize block items based on block type — ensure items is always an array
+  const itemsArray = Array.isArray(b.items) ? b.items : (b.items ? [b.items] : [])
+  b.items = itemsArray
+
+  if (b.type === "proof") {
+    b.items = normalizeProofItems(itemsArray as unknown[])
   }
-  if (b.type === "testimonials" && Array.isArray(b.items)) {
-    b.items = normalizeTestimonialItems(b.items as unknown[])
+  if (b.type === "testimonials") {
+    b.items = normalizeTestimonialItems(itemsArray as unknown[])
   }
-  if (b.type === "plans" && Array.isArray(b.items)) {
-    b.items = normalizePlanItems(b.items as unknown[])
+  if (b.type === "plans") {
+    b.items = normalizePlanItems(itemsArray as unknown[])
+  }
+
+  // before-after: ensure before/after items are arrays
+  if (b.type === "before-after") {
+    const before = (b.before ?? {}) as Record<string, unknown>
+    if (before && !Array.isArray(before.items)) before.items = before.items ? [before.items] : []
+    if (before.image && typeof before.image === "string") before.image = { url: before.image, alt: "", source: "hero" }
+    b.before = before
+    const after = (b.after ?? {}) as Record<string, unknown>
+    if (after && !Array.isArray(after.items)) after.items = after.items ? [after.items] : []
+    b.after = after
+  }
+
+  // cta: ensure ctas is an array
+  if (b.type === "cta") {
+    if (!b.ctas && b.items) { b.ctas = (b.items as unknown[]).map((i: unknown) => {
+      const item = i as Record<string, unknown>
+      return { label: String(item.label ?? item.cta ?? item.text ?? ""), href: String(item.href ?? "#") }
+    })}
+    if (!b.ctas && b.cta) {
+      if (Array.isArray(b.cta)) b.ctas = b.cta
+      else b.ctas = [b.cta]
+    }
+    if (!b.ctas) b.ctas = [{ label: "詳細を見る", href: "#" }]
+    if (!b.title && b.headline) b.title = b.headline
   }
 
   // Cards: ensure items have title (not headline)

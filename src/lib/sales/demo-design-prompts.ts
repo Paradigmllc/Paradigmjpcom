@@ -241,8 +241,8 @@ export function buildDesignSpecPrompt(input: DesignPromptInput, slug: string): {
   "design_philosophy": { "visual_language":"...", "layout_rhythm":"...", "navigation_style":"...", "color_strategy":"...", "typography_personality":"...", "motion_character":"...", "rationale":"なぜこの選択か" },
   "design_tokens": { "palette":{"primary":"#hex",...}, "typography":{"headingFont":"...","bodyFont":"...","scale":"..."}, "radius":"sharp|soft|pill" },
   "site": { "pages":["home","about",...], "nav":[{label,section,href}], "footer":{tagline,address,phone,email,social_links} },
-  "pages": {
-    "home": { "title":"...", "description":"...", "hero":{...}, "blocks":[{type:"proof",...}, {type:"cards",...}, ...] },
+   "pages": {
+     "home": { "title":"...", "description":"...", "hero":{"headline":"見出し","subheadline":"サブ見出し","eyebrow":"ラベル","primary_cta":{"label":"ボタン","href":"#section"},"secondary_cta":{"label":"ボタン2","href":"#section2"},"image":null,"variant":"fullbleed|split|centered|type-marquee|before-after"}, "blocks":[{type:"proof",...}, {type:"cards",...}, ...] },
     "about": { "title":"...", "blocks":[...] },
     "services": { ... },
     ...

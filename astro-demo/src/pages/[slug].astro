@@ -2,7 +2,7 @@
 import DesignRoot from "../components/renderer/DesignRoot.astro"
 import type { DemoDesignSpec } from "../lib/design-spec"
 
-const API_BASE = import.meta.env.API_BASE || import.meta.env.PUBLIC_API_BASE || "http://localhost:3000"
+const API_BASE = process.env.API_BASE || process.env.PUBLIC_API_BASE || "http://localhost:3000"
 const slug = Astro.params.slug ?? "demo"
 
 interface ApiResult {

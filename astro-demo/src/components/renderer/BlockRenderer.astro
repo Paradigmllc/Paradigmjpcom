@@ -53,7 +53,9 @@ const isJa = spec.locale === "ja"
         <h1>{block.headline}</h1>
         {block.subheadline && <p class="hero__lead">{block.subheadline}</p>}
         <div class="hero__ctas">
-          <a href={block.primary_cta.href} class="hero__cta-pri">{block.primary_cta.label}</a>
+          {block.primary_cta && (
+            <a href={block.primary_cta.href} class="hero__cta-pri">{block.primary_cta.label}</a>
+          )}
           {block.secondary_cta && (
             <a href={block.secondary_cta.href} class="hero__cta-sec">{block.secondary_cta.label}</a>
           )}
@@ -326,11 +328,11 @@ const isJa = spec.locale === "ja"
           <div class="ba__col ba__col--before">
             <h3>{block.before.label}</h3>
             {block.before.image && <img src={block.before.image.url} alt={block.before.image.alt} loading="lazy" />}
-            <ul>{block.before.items.map((i) => <li>{i}</li>)}</ul>
+            {block.before.items.length > 0 && <ul>{block.before.items.map((i) => <li>{i}</li>)}</ul>}
           </div>
           <div class="ba__col ba__col--after">
             <h3>{block.after.label}</h3>
-            <ul>{block.after.items.map((i) => <li>{i}</li>)}</ul>
+            {block.after.items.length > 0 && <ul>{block.after.items.map((i) => <li>{i}</li>)}</ul>}
           </div>
         </div>
       </div>
