@@ -11,15 +11,11 @@ const TWENTY_COMPANY_LIST_VIEW_NAMES = ["All {objectLabelPlural}", "All Companie
 const TWENTY_COMPANY_LIST_VIEW_NAME = "営業リスト"
 const TWENTY_COMPANY_RECORD_VIEW_NAME = "Company Record Page Fields"
 const TWENTY_HOME_EXTRA_FIELDS = [
-  { name: "paradigmSourceCoverage", position: 3 },
-  { name: "paradigmDataSources", position: 4 },
-  { name: "paradigmDataBreakdown", position: 5 },
-  { name: "paradigmSourceDetailsUrl", position: 6 },
-  { name: "paradigmDataStatus", position: 7 },
-  { name: "paradigmNextAction", position: 8 },
-  { name: "paradigmLastError", position: 9 },
-  { name: "paradigmKarteScore", position: 10 },
-  { name: "paradigmKarteSummary", position: 11 },
+  { name: "paradigmDataStatus", position: 3 },
+  { name: "paradigmNextAction", position: 4 },
+  { name: "paradigmLastError", position: 5 },
+  { name: "paradigmKarteScore", position: 6 },
+  { name: "paradigmKarteSummary", position: 7 },
 ] as const
 
 export interface TwentyCrmMetadataApplyResult {
