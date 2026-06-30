@@ -54,7 +54,7 @@ export async function scrapeWithSteel(url: string): Promise<SteelScrapeResult> {
       method: "POST",
       headers,
       body: JSON.stringify({ url, format: "json", waitFor: 3000 }),
-      signal: AbortSignal.timeout(60_000),
+      signal: AbortSignal.timeout(15_000),
     })
     if (!res.ok) {
       return { ok: false, error: `Steel HTTP ${res.status}` }
@@ -97,7 +97,7 @@ export async function screenshotWithSteel(url: string): Promise<SteelScreenshotR
       method: "POST",
       headers,
       body: JSON.stringify({ url, fullPage: true }),
-      signal: AbortSignal.timeout(30_000),
+      signal: AbortSignal.timeout(12_000),
     })
     if (!res.ok) return { ok: false, error: `Steel HTTP ${res.status}` }
     const data = await res.json() as { screenshot?: string }

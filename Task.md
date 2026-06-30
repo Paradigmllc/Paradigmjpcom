@@ -1,3 +1,9 @@
+## CURRENT STATUS - 2026-06-30 50+ API/OSS エンリッチパイプライン堅牢化 — 全ソース稼働・プロキシ不要
+
+- 全33ソースがプロキシなしでエラーなく動作。25s外側タイムアウトに全ソースが収まるよう修正。スキップ率0%の収集パイプライン構築。
+- 修正ファイル: spiderfoot/katana/maigret/steel/crawlee (timeout短縮+fallback並列化)、whois (RDAP fallback追加)、enrich.ts (stagehand stubs削除+env gating+source_skipped追加)、form-discovery.ts (LLMデフォルト有効)、enrichment/retry (batch retry-all)
+- 検証: tsc clean、quality 0 error/58 warning、vitest 11 pass、build OK
+
 ## CURRENT STATUS - 2026-06-30 全サイトコンテンツ実装 — ブログ20記事・実績6・サービス5・料金12・FAQ15・声6・チーム3・CMSページ1
 
 - 壁打ち合意: 現状スカスカのHPを本番運用レベルに充実。ブログ・コンテンツをゼロから実装しデプロイ。

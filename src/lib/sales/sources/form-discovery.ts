@@ -262,7 +262,7 @@ export async function discoverFormUrl(opts: FormDiscoveryOptions): Promise<FormD
     return done(candidate, "heuristic", 65)
   }
 
-  if (opts.enableLlm && candidates.size > 0) {
+  if (opts.enableLlm !== false && candidates.size > 0) {
     const picked = await llmPickFormUrl(origin, [...candidates], timeoutMs)
     if (picked.url) return done(picked.url, "llm", Math.round(picked.confidence * 100))
   }
