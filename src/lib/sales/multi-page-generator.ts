@@ -130,7 +130,7 @@ export async function generateMultiPageSite(
         max_tokens: 16384,
         response_format: { type: "json_object" },
       }),
-      signal: AbortSignal.timeout(90_000),
+      signal: AbortSignal.timeout(120_000),
     })
 
     const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> }
@@ -138,7 +138,19 @@ export async function generateMultiPageSite(
     if (!raw) return { ok: false, error: "DeepSeek returned empty" }
 
     raw = raw.replace(/```(?:json)?\s*|\s*```/g, "").trim()
-    const parsed = JSON.parse(raw) as MultiPageManifest
+    // Fix common JSON issues from LLM output
+    raw = raw.replace(/[\u0000-\u001F]/g, " ")  // control chars
+             .replace(/\\(?!["\\/bfnrtu])/g, "\\\\") // fix bad escapes
+    let parsed: MultiPageManifest
+    try {
+      parsed = JSON.parse(raw) as MultiPageManifest
+    } catch {
+      // Try lenient parse: find the outermost { }
+      const m = raw.match(/\{[\s\S]*\}/)
+      if (!m) return { ok: false, error: "no valid JSON found" }
+      try { parsed = JSON.parse(m[0]) as MultiPageManifest }
+      catch { return { ok: false, error: "JSON parse failed after recovery" } }
+    }
 
     if (!parsed.site || !parsed.pages || !parsed.pages.home) {
       return { ok: false, error: "invalid manifest: missing site or pages.home" }
