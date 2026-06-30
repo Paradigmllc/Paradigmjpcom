@@ -1,8 +1,8 @@
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { cookies, headers } from "next/headers"
-import { SalesDashboardShell } from "@/components/sales-dashboard/SalesDashboardShell"
-import { getSalesDashboardData } from "@/lib/sales/dashboard"
+import { SalesDashboardShell } from "@/components/_archive_sales-dashboard/SalesDashboardShell"
+import { getSalesDashboardData } from "@/lib/_archive_sales-dashboard/dashboard"
 import { authorizePayloadAdminRequest } from "@/lib/admin-auth"
 import { twentyBaseUrl } from "@/lib/sales/twenty-sync-utils"
 
