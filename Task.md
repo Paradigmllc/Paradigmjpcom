@@ -1,4 +1,14 @@
-## CURRENT STATUS - 2026-06-30 Astro demo hyper-personalization Phase 3+4 完了 — Astroコンポーネント + パイプライン統合
+## CURRENT STATUS - 2026-06-30 Astro demo ハイパーパーソナライゼーション 全 Phase 完了・本番デプロイ済み
+
+- 全実装: Phase 1(抽出)→2(schema+prompt)→3(renderer)→4(統合) + 正規化修正 + CTA block 追加。
+- デプロイ: Coolify `wqe45e0q1yj53knq3d1q1fdb` finished → Traefik 再接続 → 全エンドポイント 200。
+- 検証: tsc clean / quality:guard 0 error / Next.js build OK / astro-demo build OK / 6 tests pass / 本番 `/api/ready`=200 `/ja`=200 `/api/demo-designs/*`=404(想定) `demo.paradigmjp.com`=200
+
+### デモ確認URL
+- 既存デモ: https://demo.paradigmjp.com/demo
+- 新デモ(企業enrichment後): https://demo.paradigmjp.com/demo/{domain}-demo
+- 新API: GET https://paradigmjp.com/api/demo-designs/{slug} (public, 5min cache)
+- 新API: POST https://paradigmjp.com/api/demo-designs/{slug} (admin auth, DeepSeek生成)
 
 - 壁打ち合意→設計→実装→検証まで一貫完了。
 - 方針: ①6軸デザイン哲学をDeepSeekが企業ごとに完全決定 ②画像・色・文言は企業実サイトから抽出 ③有料API不使用 ④Astro SSR ⑤納品時はNext.js+PayloadCMSで再構築。
