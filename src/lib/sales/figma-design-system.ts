@@ -1,9 +1,7 @@
 /**
- * Design system extracted from Figma MCP — the single source of truth
- * for all design decisions. DeepSeek compiles this + company data into
+ * Design systems extracted from Figma — multiple variants for industry-specific
+ * auto-selection. DeepSeek compiles the selected design + company data into
  * unique Astro code per company.
- *
- * This JSON mirrors what `@hapins/figma-mcp` returns from a Figma file.
  */
 export interface FigmaDesignSystem {
   colors: {
@@ -156,4 +154,114 @@ export const APPLE_DESIGN_SYSTEM: FigmaDesignSystem = {
     },
     nav: { height: "72px", background: "rgba(255,255,255,.95)", blur: "16px" },
   },
+}
+
+// ── Design System B: 35 Modern Heros with Gradients (Tech/SaaS) ──
+
+export const TECH_GRADIENT_DESIGN_SYSTEM: FigmaDesignSystem = {
+  colors: {
+    tokens: {
+      "primary":   { light: "#0587ff", dark: "#45dff9", gradient: ["#0587ff", "#00a3ff", 135] },
+      "accent":    { light: "#ff2d78", dark: "#ff2d78", gradient: ["#ff2d78", "#7650f5", 135] },
+      "bg-dark":   { light: "#000105", dark: "#000105", gradient: ["#0e002d", "#05042f", 180] },
+      "bg-light":  { light: "#ffffff", dark: "#0e0d17", gradient: ["#ffffff", "#c3eeff", 180] },
+      "bg-glass":  { light: "#000623", dark: "#100a25", gradient: ["#001b64", "#0e002d", 160] },
+      "text-dark": { light: "#ffffff", dark: "#ffffff" },
+      "text-light":{ light: "#000105", dark: "#ffffff" },
+      "text-muted":{ light: "#cdd0d8", dark: "#cdd0d8" },
+      "highlight": { light: "#c0ff3a", dark: "#c0ff3a", gradient: ["#c0ff3a", "#00ffa3", 90] },
+      "glow":      { light: "#7650f5", dark: "#aa81f1", gradient: ["#4322a0", "#2299a0", 180] },
+    },
+  },
+  typography: {
+    scale: {
+      h1:    { fontSize: "clamp(3rem,7vw,5.5rem)", fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.05 },
+      h2:    { fontSize: "clamp(1.8rem,4vw,3rem)", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.1 },
+      h3:    { fontSize: "clamp(1.2rem,2vw,1.6rem)", fontWeight: 600, letterSpacing: "-0.01em", lineHeight: 1.2 },
+      body:  { fontSize: "clamp(0.95rem,1.2vw,1.1rem)", fontWeight: 400, lineHeight: 1.75 },
+      caption: { fontSize: "0.78rem", fontWeight: 600, letterSpacing: "0.04em" },
+    },
+    families: { heading: "'Inter','Caveat',sans-serif", body: "'Inter',sans-serif" },
+  },
+  spacing: {
+    sectionPadding: "clamp(4rem,8vw,7rem)",
+    sectionGap: "0",
+    containerMax: "max-width:1100px;margin:0 auto;padding:0 clamp(1.5rem,4vw,2rem)",
+    cardGap: "1.5rem",
+    cardPadding: "2rem",
+  },
+  radius: { sm: "8px", md: "14px", lg: "20px", pill: "100px" },
+  shadows: {
+    sm: "0 4px 12px rgba(0,0,0,.15)",
+    md: "0 12px 40px rgba(0,0,0,.25)",
+    lg: "0 30px 80px rgba(0,0,0,.35)",
+    glow: "0 0 40px rgba(5,135,255,.3)",
+  },
+  layout: {
+    sectionRhythm: ["dark", "dark", "glass", "light", "dark"],
+    heroVariants: [
+      {
+        name: "gradient-full",
+        textAlign: "center",
+        minHeight: "100vh",
+        contentMaxWidth: "800px",
+        css: "background:linear-gradient(180deg,var(--hero-from),var(--hero-to));display:flex;align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden",
+      },
+    ],
+  },
+  components: {
+    card: {
+      background: "rgba(255,255,255,.05)",
+      padding: "2rem",
+      radius: "14px",
+      border: "1px solid rgba(255,255,255,.08)",
+      hover: "transform:translateY(-6px);box-shadow:0 20px 60px rgba(0,0,0,.3);border-color:rgba(5,135,255,.3)",
+    },
+    button: {
+      primary: {
+        background: "linear-gradient(135deg,#0587ff,#7650f5)",
+        color: "#ffffff",
+        padding: "1rem 2.5rem",
+        radius: "100px",
+        hover: "transform:translateY(-2px);box-shadow:0 0 40px rgba(5,135,255,.4)",
+      },
+      secondary: {
+        background: "rgba(255,255,255,.06)",
+        color: "#ffffff",
+        padding: "1rem 2.5rem",
+        radius: "100px",
+        hover: "background:rgba(255,255,255,.12);box-shadow:0 0 20px rgba(5,135,255,.15)",
+      },
+    },
+    nav: { height: "72px", background: "rgba(0,1,5,.9)", blur: "24px" },
+  },
+}
+
+// ── Industry → Design System mapping ──
+
+const INDUSTRY_DESIGN_MAP: Record<string, FigmaDesignSystem> = {
+  "飲食店":     APPLE_DESIGN_SYSTEM,
+  "建設業":     APPLE_DESIGN_SYSTEM,
+  "歯科医院":   APPLE_DESIGN_SYSTEM,
+  "美容サロン": APPLE_DESIGN_SYSTEM,
+  "小売店":     APPLE_DESIGN_SYSTEM,
+  "会計事務所": APPLE_DESIGN_SYSTEM,
+  "清掃業":     APPLE_DESIGN_SYSTEM,
+  "コンサル":   TECH_GRADIENT_DESIGN_SYSTEM,
+  "IT":         TECH_GRADIENT_DESIGN_SYSTEM,
+  "SaaS":       TECH_GRADIENT_DESIGN_SYSTEM,
+  "ソフトウェア": TECH_GRADIENT_DESIGN_SYSTEM,
+  "マーケティング": TECH_GRADIENT_DESIGN_SYSTEM,
+  "広告":       TECH_GRADIENT_DESIGN_SYSTEM,
+  "デザイン":   TECH_GRADIENT_DESIGN_SYSTEM,
+}
+
+export function selectDesignSystem(industry: string | null): FigmaDesignSystem {
+  if (industry && INDUSTRY_DESIGN_MAP[industry]) return INDUSTRY_DESIGN_MAP[industry]
+  // Check partial matches
+  if (industry) {
+    const low = industry.toLowerCase()
+    if (low.includes("tech") || low.includes("it") || low.includes("saas") || low.includes("ソフト") || low.includes("開発")) return TECH_GRADIENT_DESIGN_SYSTEM
+  }
+  return APPLE_DESIGN_SYSTEM
 }

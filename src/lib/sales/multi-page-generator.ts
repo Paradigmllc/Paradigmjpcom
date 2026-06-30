@@ -157,7 +157,7 @@ export { buildSystemPrompt } from "./astro-code-generator"
 
 export function buildAstroPages(manifest: MultiPageManifest): Map<string, string> {
   const files = new Map<string, string>()
-  const ds = selectDesignSystem(manifest.industry)
+  const ds = selectDesignSystem(manifest.site.industry)
   const tokens = ds.colors.tokens
   const typo = ds.typography
   const space = ds.spacing
