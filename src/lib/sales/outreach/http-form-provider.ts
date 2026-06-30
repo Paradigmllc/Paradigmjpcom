@@ -2,6 +2,7 @@ import type { BrowserProvider } from "./browser-provider"
 import type { SubmitFormInput, SubmitFormResult } from "./types"
 import { guessFieldRole } from "./form-classifier"
 import { getProxyFetchOptions } from "../proxy-agent"
+import { submitWithCmsTemplate } from "./cms-form-templates"
 
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
@@ -71,6 +72,19 @@ function fillValues(parsed: ParsedForm, input: SubmitFormInput): Record<string, 
   return out
 }
 
+function collectPageHiddenFields(html: string): Record<string, string> {
+  const fields: Record<string, string> = {}
+  const re = /<input\b[^>]*\btype=["']hidden["'][^>]*>/gi
+  let m: RegExpExecArray | null
+  while ((m = re.exec(html)) !== null) {
+    const tag = m[0]
+    const name = /\bname=["']([^"']+)["']/i.exec(tag)?.[1]
+    const value = /\bvalue=["']([^"']*)["']/i.exec(tag)?.[1]
+    if (name && value !== undefined) fields[name] = value
+  }
+  return fields
+}
+
 export class HttpFormProvider implements BrowserProvider {
   readonly name = "http"
 
@@ -103,14 +117,19 @@ export class HttpFormProvider implements BrowserProvider {
       }
     }
 
+    const cmsResult = await submitWithCmsTemplate(input, html)
+    if (cmsResult) return cmsResult
+
     const body = fillValues(parsed, input)
+    const pageHiddens = collectPageHiddenFields(html)
+    const merged = { ...pageHiddens, ...body } // pageHiddens first, body overrides
     const actionUrl = resolveUrl(input.formUrl, parsed.action)
 
     if (input.dryRun) {
       return {
         ok: true,
         outcome: "uncertain",
-        detail: `dry-run: prepared ${Object.keys(body).length} fields -> ${parsed.method} ${actionUrl} (POST not executed)`,
+        detail: `dry-run: prepared ${Object.keys(merged).length} fields -> ${parsed.method} ${actionUrl} (POST not executed)`,
       }
     }
 
@@ -127,7 +146,7 @@ export class HttpFormProvider implements BrowserProvider {
             Referer: input.formUrl,
             Origin: new URL(input.formUrl).origin,
           },
-          body: new URLSearchParams(body).toString(),
+          body: new URLSearchParams(merged).toString(),
         })
       )
       const text = await res.text().catch((error) => {

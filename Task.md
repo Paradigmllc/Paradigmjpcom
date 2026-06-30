@@ -1,3 +1,13 @@
+## CURRENT STATUS - 2026-06-30 Sales OS ダッシュボード全廃棄 — Twenty を営業GUIの唯一のSSOTに
+
+- 決定: 営業GUI操作は Twenty (twenty.paradigmjp.com) に一元化。全Sales OSダッシュボードパネルをアーカイブ。今後非Twentyの営業GUIは作成禁止。
+- アーカイブ: `src/components/sales-dashboard/` (38ファイル) → `src/components/_archive_sales-dashboard/`
+- アーカイブ: `src/app/[locale]/admin/sales` → Twentyリダイレクトに差替
+- アーカイブ: `src/app/api/sales/dashboard/`、`src/lib/sales/dashboard*.ts` (6ファイル) → アーカイブ
+- 保持: 全バックエンドAPI・ライブラリ（実際のデータ処理は維持）
+- リンク修正: BeforeDashboard、/admin、report/demo、通知、Telegram → すべてTwenty URL
+- 検証: tsc clean、quality 0 error/58 warning、build OK
+
 ## CURRENT STATUS - 2026-06-30 全サイトコンテンツ実装・本番確認 — ブログ20・実績6・サービス5・料金12・FAQ15・声6・チーム3
 
 - 壁打ち合意→設計→実装→DB投入→本番公開まで一貫完了。

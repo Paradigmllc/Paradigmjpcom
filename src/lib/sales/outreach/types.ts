@@ -43,6 +43,16 @@ export interface SubmitFormInput {
   message: string
   dryRun: boolean
   timeoutMs?: number
+  cachedParsed?: CachedFormStructure | null
+}
+
+export interface CachedFormStructure {
+  action: string
+  method: string
+  enctype: string
+  inputNames: string[]
+  cmsType: string
+  cachedAt: string
 }
 
 export interface SubmitFormResult {

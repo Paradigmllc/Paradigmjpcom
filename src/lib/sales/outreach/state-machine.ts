@@ -58,7 +58,7 @@ export function stageToPipelineStatus(stage: OutreachStage): PipelineStatus {
     case "classified_risky":
       return "manual_queue"
     case "submit_uncertain":
-      return "manual_queue"
+      return "report_ready" // 3回まで再試行可能（applyOutcome側でカウント閾値判定）
     case "submit_failed":
     case "discovery_failed":
     case "preflight_failed":
@@ -68,3 +68,5 @@ export function stageToPipelineStatus(stage: OutreachStage): PipelineStatus {
       return "scanning"
   }
 }
+
+export const MAX_UNCERTAIN_RETRIES = 3

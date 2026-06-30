@@ -252,15 +252,24 @@ export async function discoverFormUrl(opts: FormDiscoveryOptions): Promise<FormD
   }
 
   const paths = opts.region === "global" ? HEURISTIC_PATHS_GLOBAL : HEURISTIC_PATHS_JP
-  for (const path of paths) {
-    const candidate = `${origin}${encodeURI(path)}`
-    const pageType = await inspectContactPage(candidate, Math.min(timeoutMs, 4_000))
+  const perPathTimeout = Math.min(timeoutMs, 4_000)
+  const settled = await Promise.allSettled(
+    paths.map(async (path) => {
+      const candidate = `${origin}${encodeURI(path)}`
+      const pageType = await inspectContactPage(candidate, perPathTimeout)
+      return { path, candidate, pageType }
+    }),
+  )
+  let bestPage: string | null = null
+  for (const result of settled) {
+    if (result.status !== "fulfilled") continue
+    const { candidate, pageType } = result.value
     if (pageType === "missing") continue
-
     candidates.add(candidate)
     if (pageType === "form") return done(candidate, "heuristic", 82)
-    return done(candidate, "heuristic", 65)
+    if (!bestPage) bestPage = candidate
   }
+  if (bestPage) return done(bestPage, "heuristic", 65)
 
   if (opts.enableLlm !== false && candidates.size > 0) {
     const picked = await llmPickFormUrl(origin, [...candidates], timeoutMs)

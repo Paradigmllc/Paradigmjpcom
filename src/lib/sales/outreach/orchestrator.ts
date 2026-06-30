@@ -4,19 +4,21 @@ import { generateFormMessage, fillReportUrl, fillDemoUrl } from "../form-message
 import { discoverFormUrl, normalizeOrigin } from "../sources/form-discovery"
 import { isAllowedFormUrlForOrigin } from "../sources/external-form-discovery"
 import type { Region, SalesCompany } from "../types"
-import { classifyForm } from "./form-classifier"
+import { classifyForm, detectFormFields } from "./form-classifier"
 import { preflight } from "./preflight"
 import { getBrowserProvider } from "./browser-provider"
 import { recentlyContacted, type ActivityResult } from "./activity"
 import { getProxyFetchOptions } from "../proxy-agent"
 import { DB_TABLES } from "@/lib/sales/db-tables"
-import { applyOutcome, logActivity, persistDiscoveredFormUrl, enqueueOperatorTask, persistOutcome } from "./side-effects"
+import { applyOutcome, logActivity, persistDiscoveredFormUrl, enqueueOperatorTask, persistOutcome, saveFormStructureCache } from "./side-effects"
 import { evaluateOutreachReadiness } from "./readiness"
+import { detectCmsType } from "./cms-form-templates"
 import type {
   OutreachBatchResult,
   OutreachItemResult,
   OutreachStage,
   SubmitOutcome,
+  CachedFormStructure,
 } from "./types"
 export interface RunOutreachOptions {
   region?: Region
@@ -33,6 +35,23 @@ export interface RunOutreachOptions {
 const FROM_EMAIL = process.env.OUTREACH_FROM_EMAIL ?? process.env.PARADIGM_SENDER_ADDRESS ?? "contact@paradigmjp.com"
 const FROM_NAME = process.env.OUTREACH_FROM_NAME ?? process.env.PARADIGM_SENDER_NAME ?? "PARADIGM"
 const DEFAULT_ITEM_TIMEOUT_MS = 120_000
+const FORM_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000
+
+function readCachedForm(company: SalesCompany, formUrl: string): CachedFormStructure | null {
+  const meta = (company.meta ?? {}) as Record<string, unknown>
+  const cache = meta.parsed_form as Record<string, unknown> | undefined
+  if (!cache || typeof cache.form_url !== "string" || cache.form_url !== formUrl) return null
+  const cachedAt = typeof cache.cached_at === "string" ? new Date(cache.cached_at).getTime() : 0
+  if (Date.now() - cachedAt > FORM_CACHE_MAX_AGE_MS) return null
+  return {
+    action: typeof cache.action === "string" ? cache.action : "",
+    method: typeof cache.method === "string" ? cache.method : "POST",
+    enctype: typeof cache.enctype === "string" ? cache.enctype : "application/x-www-form-urlencoded",
+    inputNames: Array.isArray(cache.inputNames) ? cache.inputNames as string[] : [],
+    cmsType: typeof cache.cmsType === "string" ? cache.cmsType : "generic",
+    cachedAt: cache.cached_at as string,
+  }
+}
 
 async function withTimeout<T extends OutreachItemResult>(
   promise: Promise<T>,
@@ -265,7 +284,7 @@ async function processOneInner(
         {
           title,
           message: notificationMessage,
-          link: "/ja/admin/sales",
+          link: "https://twenty.paradigmjp.com",
           type: "manual_handling"
         }
       ).catch((e) => console.error("[sales-outreach] notifyBothChannels failed:", e))
@@ -326,11 +345,15 @@ async function processOneInner(
     return { ...base("manual_queue", "approval required before live form submit"), formUrl, message: msg, classification: classification.classification }
   }
 
+  const cmsType = detectCmsType(html)
+  const cachedParsed = readCachedForm(company, formUrl)
+
   const submit = await provider.submitForm({
     formUrl,
     fields: buildFields(msg),
     message: msg,
     dryRun: opts.dryRun,
+    cachedParsed,
   })
   const stage: OutreachStage =
     submit.outcome === "submitted"
@@ -373,6 +396,17 @@ async function processOneInner(
         type: "form_submitted"
       }
     ).catch((e) => console.error("[sales-outreach] notifyBothChannels failed:", e))
+  }
+
+  if (!opts.dryRun && stage === "submitted" && !cachedParsed) {
+    const fields = detectFormFields(html)
+    saveFormStructureCache(company, formUrl, {
+      action: "", // action URL is resolved by provider
+      method: "POST",
+      enctype: "application/x-www-form-urlencoded",
+      inputNames: fields,
+      cmsType,
+    }).catch((e) => console.error("[sales-outreach] form cache save failed:", e))
   }
 
   return {

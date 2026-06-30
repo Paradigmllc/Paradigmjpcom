@@ -5,7 +5,7 @@ import { normalizeOrigin } from "../sources/form-discovery"
 import { isAllowedFormUrlForOrigin } from "../sources/external-form-discovery"
 import { logOutreachActivity, type ActivityResult } from "./activity"
 import { reportUrlForCompany } from "./readiness"
-import { stageToPipelineStatus } from "./state-machine"
+import { stageToPipelineStatus, MAX_UNCERTAIN_RETRIES } from "./state-machine"
 import type { Region, SalesCompany } from "../types"
 import type { OutreachStage } from "./types"
 
@@ -13,12 +13,28 @@ export async function applyOutcome(company: SalesCompany, stage: OutreachStage, 
   const sb = getServiceSalesSupabase()
   if (!sb) return false
   const reportUrl = reportUrlForCompany(company)
+
+  const companyMeta = (company.meta ?? {}) as Record<string, unknown>
+  const uncertainCount = typeof companyMeta.uncertain_count === "number" ? companyMeta.uncertain_count : 0
+
+  let pipelineStatus = stageToPipelineStatus(stage)
+
+  if (stage === "submit_uncertain") {
+    const newCount = uncertainCount + 1
+    if (newCount >= MAX_UNCERTAIN_RETRIES) {
+      pipelineStatus = "manual_queue"
+    }
+  }
+
   const patch: Record<string, unknown> = {
-    pipeline_status: stageToPipelineStatus(stage),
+    pipeline_status: pipelineStatus,
     send_result: sendResult,
   }
   if (reportUrl) patch.report_url = reportUrl
   if (stage === "submitted") patch.sent_at = new Date().toISOString()
+  if (stage === "submit_uncertain") {
+    patch.meta = { ...companyMeta, uncertain_count: uncertainCount + 1 }
+  }
   const { error } = await sb.from(DB_TABLES.SALES_COMPANIES).update(patch).eq("id", company.id)
   if (error) {
     console.error("[sales-outreach] outcome update failed:", error.message)
@@ -82,6 +98,30 @@ export async function persistDiscoveredFormUrl(
     return false
   }
   return true
+}
+
+export async function saveFormStructureCache(
+  company: SalesCompany,
+  formUrl: string,
+  parsed: { action: string; method: string; enctype: string; inputNames: string[]; cmsType: string },
+): Promise<void> {
+  const sb = getServiceSalesSupabase()
+  if (!sb) return
+  const currentMeta = (company.meta ?? {}) as Record<string, unknown>
+  const { error } = await sb
+    .from(DB_TABLES.SALES_COMPANIES)
+    .update({
+      meta: {
+        ...currentMeta,
+        parsed_form: {
+          form_url: formUrl,
+          ...parsed,
+          cached_at: new Date().toISOString(),
+        },
+      },
+    })
+    .eq("id", company.id)
+  if (error) console.error("[sales-outreach] form cache save failed:", error.message)
 }
 
 export async function enqueueOperatorTask(

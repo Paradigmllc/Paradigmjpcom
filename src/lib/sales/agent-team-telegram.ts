@@ -90,7 +90,7 @@ export function buildOssLinksKeyboard(): TelegramKeyboard {
       [{ text: "💬 返信 (Chatwoot)", url: `${ossBase("CHATWOOT_BASE_URL", "https://chatwoot.paradigmjp.com")}` }],
       [{ text: "🖥 デモCMS (Keystatic)", url: `${ossBase("KEYSTATIC_BASE_URL", "https://keystatic.paradigmjp.com")}` }],
       [{ text: "📑 営業資料CMS (Directus)", url: `${ossBase("DIRECTUS_BASE_URL", "https://directus.paradigmjp.com")}` }],
-      [{ text: "🗂 Twenty Sales OS パネル", url: `${revenueOs}/ja/admin/sales` }],
+      [{ text: "🗂 Twenty Sales OS", url: "https://twenty.paradigmjp.com" }],
       [{ text: "◀️ メニュー", callback_data: "/menu" }],
     ],
   }
