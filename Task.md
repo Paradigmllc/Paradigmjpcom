@@ -1,3 +1,41 @@
+## CURRENT STATUS - 2026-06-30 リスト収集パイプライン全面拡張 — 実装完了・デプロイ中
+
+- 新規ソース5件 + 3段階フィルタパイプライン実装完了。
+- 実装ファイル: `whoxy.ts`(75行) / `country-nic.ts`(90行) / `manta.ts`(95行) / `bbb.ts`(90行) / `hello-work.ts`(110行) / `smb-purification-pipeline.ts`(277行)
+- source-registry-core: 6件登録 / source-coverage: 6件検出 / enrich.ts: 2件taskDefs配線
+- 検証: tsc clean、quality 0 error/58 warning、vitest 6 pass、build OK
+
+### 新ソース
+| ソース | 取得データ | コスト | 対象 |
+|--------|-----------|--------|------|
+| Whoxy API | WHOIS会社名・国・登録者メール・レジストラ | 無料枠 | 全世界 |
+| Country NIC | .uk/.au/.jp/.de/.ca/.us RDAP | 無料 | 6カ国 |
+| Manta.com | 米国SMB（従業員<10人） | 無料 | 米国 |
+| BBB.org | 米加地域SMB（BBB認定） | 無料 | 米国/カナダ |
+| ハローワーク | 日本求人企業（採用予算あり） | 無料 | 日本 |
+
+### 3段階フィルタ (smb-purification-pipeline)
+```
+CZDS全TLD (2億件) → Stage1: 大企業除外 (90%) → 2000万件
+  → Stage2: Crawl4AI高速スキャン (WP/viewport/footer) → 200-300万件
+  → Stage3: Wappalyzer深堀り分析 → スコアリング済み候補
+```
+
+## CURRENT STATUS - 2026-06-30 リスト収集パイプライン全面拡張 — 壁打ち合意済み・実装中
+
+- Gemini壁打ち合意: 全てもれなく実装する方針決定。
+- 新規ソース5件: Whoxy API(WHOIS) / 各国NIC直叩き / Manta.com(米SMB) / BBB.org(米加地域SMB) / ハローワーク求人(日本)
+- 3段階フィルタパイプライン: CZDS全TLD→大企業除外(90%)→Crawl4AI高速スキャン→Wappalyzer深堀り
+- 既存部品: passive_inventory(CZDS)、wappalyzer、crawl4ai、crawlee、massdns/httpx定義あり。統合パイプラインがないのが課題。
+
+### 実装計画
+1. 新ソース5件のソースファイル作成
+2. source-registry-core.ts に登録
+3. source-coverage.ts に検出関数追加
+4. enrich.ts taskDefs に配線
+5. 3段階フィルタパイプライン統合
+6. 検証→commit→push→deploy
+
 ## CURRENT STATUS - 2026-06-30 Twenty CRM 列整理 — 運用監視列4つ削除・全営業GUI Twenty一元化完了
 
 - Twenty 列から削除: `paradigmSourceCoverage` / `paradigmDataSources` / `paradigmDataBreakdown` / `paradigmSourceDetailsUrl` — 内部運用監視用、営業実務に不要

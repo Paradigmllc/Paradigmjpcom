@@ -46,6 +46,8 @@ import { INDUSTRY_MARKET_DATA } from "./sources/market-data"
 import { collectSmbSignals } from "./sources/smb-signals"
 import { autoPersonalize } from "./personalize"
 import { saveTechStackDetections } from "./source-acquisition"
+import { queryWhoxy } from "./sources/whoxy"
+import { queryMultiCountryNic } from "./sources/country-nic"
 import type { Industry, SalesCompany } from "./types"
 
 function envFlag(name: string): boolean {
@@ -224,6 +226,8 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     { name: "clearbit_logo", fn: () => fetch(`https://logo.clearbit.com/${domain}`, { signal: AbortSignal.timeout(5_000), method: "HEAD" }).then(r => r.ok ? `https://logo.clearbit.com/${domain}` : sourceSkipped("clearbit_logo", "logo not available")).catch(() => sourceSkipped("clearbit_logo", "unreachable")) },
     { name: "subfinder", fn: () => discoverSubdomains(domain) },
     { name: "trufflehog", fn: () => scanPublicRepos(domain) },
+    { name: "whoxy", fn: () => queryWhoxy(domain) },
+    { name: "country_nic", fn: () => queryMultiCountryNic(domain) },
   ]
 
   const sources = await batchAll(
@@ -272,12 +276,14 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
   const clearbitLogo = sourceMap.clearbit_logo
   const subfinder = sourceMap.subfinder
   const trufflehog = sourceMap.trufflehog
+  const whoxy = sourceMap.whoxy
+  const countryNic = sourceMap.country_nic
 
   // Step 3: 集約
   const gbizFirst = gbiz?.[0]
   const techResult = tech ? (tech as { tech: Array<{ name: string; category: string }> }) : null
   const enterpriseCheck = techResult?.tech ? isEnterpriseTechStack(techResult.tech.map(t => t.name)) : { isEnterprise: false, matched: [] }
-  const allSourceResults = [scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts, wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana, maigret, steel, crawlee, schemaOrg, sitemap, safeBrowsing, greenWeb, builtwith, jinaReader, clearbitLogo, subfinder, trufflehog]
+  const allSourceResults = [scan, gbiz, tech, ssl, whois, form, crtsh, radar, observatory, dns, hsts, wayback, tranco, emailrep, opencorp, github, commoncrawl, spiderfoot, katana, maigret, steel, crawlee, schemaOrg, sitemap, safeBrowsing, greenWeb, builtwith, jinaReader, clearbitLogo, subfinder, trufflehog, whoxy, countryNic]
   const meta: Record<string, unknown> = {
     sales_os: {
       last_enriched_at: new Date().toISOString(),
@@ -338,6 +344,8 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     clearbit_logo_url: typeof clearbitLogo === "string" ? clearbitLogo : null,
     subfinder: subfinder?.ok ? { subdomains: subfinder.subdomains, total: subfinder.total, sources: subfinder.sources } : null,
     trufflehog: trufflehog?.ok ? { findings: trufflehog.findings, total: trufflehog.total } : null,
+    whoxy: whoxy?.ok ? { companyName: whoxy.companyName, countryCode: whoxy.countryCode, registrar: whoxy.registrar, yearsOld: whoxy.yearsOld } : null,
+    country_nic: Array.isArray(countryNic) ? countryNic.filter(r => r?.ok).map(r => ({ countryCode: r.countryCode, registrar: r.registrar, yearsOld: r.yearsOld, organizationName: r.organizationName })) : null,
     enterprise_filter: enterpriseCheck.isEnterprise ? { excluded: true, matched_tech: enterpriseCheck.matched } : null,
     market_data: industry ? (INDUSTRY_MARKET_DATA[industry as keyof typeof INDUSTRY_MARKET_DATA] ?? null) : null,
     smb_signals: tech && dns?.ok ? await collectSmbSignals(domain, ((tech as { tech: Array<{ name: string }> }).tech).map((t: { name: string }) => t.name), (dns as { mxRecords: { exchange: string }[] }).mxRecords).catch(() => null) : null,

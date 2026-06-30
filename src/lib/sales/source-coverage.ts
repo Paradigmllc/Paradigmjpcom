@@ -2,12 +2,8 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import type { SalesCompany } from "./types"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import {
-  companyJapanMarketAudit,
-  companyPainDiagnosis,
-  companyTechStack,
-  companyVisualEvidence,
-  companyDifyResult,
-  mergedCompanyMeta,
+  companyJapanMarketAudit, companyPainDiagnosis, companyTechStack,
+  companyVisualEvidence, companyDifyResult, mergedCompanyMeta,
 } from "@/lib/sales/company-data-view"
 
 type JsonRecord = Record<string, unknown>
@@ -313,6 +309,12 @@ const SOURCES: SourceDefinition[] = [
   { slug: "smb_signals", label: "SMB Signals", category: "analysis", env: [], detect: (m) => !!m.smb_signals, detail: "Small business digital presence signals" },
   { slug: "market_data", label: "e-Stat Market Data", category: "analysis", env: [], detect: (m) => !!m.market_data, detail: "Industry market statistics from e-Stat API" },
   { slug: "flowsint", label: "Flowsint OSINT", category: "list", env: ["FLOWSINT_API_URL", "FLOWSINT_API_TOKEN"], detect: (m) => !!m.flowsint, detail: "Flowsint internal OSINT aggregation" },
+  { slug: "whoxy", label: "Whoxy API WHOIS", category: "list", env: ["WHOXY_API_KEY"], detect: (m) => !!m.whoxy, detail: "Whoxy WHOIS company name, country, email, registrar, dates" },
+  { slug: "country_nic", label: "Country NIC RDAP", category: "list", env: [], detect: (m) => !!m.country_nic, detail: "Official NIC RDAP lookup — UK/DE/AU/JP/US/CA registries" },
+  { slug: "manta", label: "Manta.com SMB", category: "list", env: [], detect: (m) => !!m.manta, detail: "US SMB directory — <10 employees, category, location" },
+  { slug: "bbb", label: "BBB.org Businesses", category: "list", env: [], detect: (m) => !!m.bbb, detail: "US/CA BBB accredited local businesses — rating, years in business" },
+  { slug: "hello_work", label: "Hello Work Jobs (JP)", category: "list", env: [], detect: (m) => !!m.hello_work, detail: "Japan Hello Work job postings — hiring SMBs by prefecture/industry" },
+  { slug: "smb_purification", label: "SMB Pipeline 3-Stage", category: "orchestration", env: ["CRAWL4AI_BASE_URL"], detect: (m) => !!m.smb_pipeline, detail: "CZDS→Enterprise exclusion→Crawl4AI→Wappalyzer 3-stage filter" },
 ]
 
 function hasConfiguredEnv(names?: string[]): boolean {
