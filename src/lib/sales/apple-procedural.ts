@@ -31,6 +31,19 @@ export interface BrandDNA {
 
 // ── Radix color palette from hue ──
 
+// Apple-grade design constants extracted via Figma MCP from
+// https://www.figma.com/file/PzQUo9cnPBQHu9mSJF570X/Apple-Website-Clone
+const APPLE_DNA = {
+  heroWeight: 400,        // Apple uses LIGHT weight, not bold
+  heroLineHeight: 1.69,   // Generous line height
+  subheadWeight: 600,
+  subheadLetterSpacing: -0.01, // Slightly negative
+  cardRadius: 22,          // Large radius for cards
+  buttonRadius: 54,        // Pill-shaped buttons
+  primaryFont: "'Gilroy', 'SF Pro Display', -apple-system, sans-serif",
+  sectionSpacing: 120,     // Generous section gaps
+}
+
 const RADIX_SCALES = [
   "tomato", "red", "crimson", "pink", "plum", "purple", "violet",
   "indigo", "blue", "sky", "cyan", "teal", "mint", "green", "grass",
@@ -76,9 +89,10 @@ export function radixPalette(hue: number, warmth: number) {
 
 function appleCSS(dna: BrandDNA, palette: ReturnType<typeof radixPalette>) {
   const g = dna.gravity; const v = dna.velocity; const c = dna.complexity; const w = dna.warmth
-  const isSerif = g > 0.6
-  const font = isSerif ? "'Noto Serif JP', 'Georgia', serif" : "'Inter', 'SF Pro Display', sans-serif"
-  const radius = `${4 + w * 16}px`
+  const A = APPLE_DNA
+  const font = A.primaryFont
+  const radius = `${A.cardRadius * (0.8 + w * 0.4)}px`
+  const btnRadius = `${A.buttonRadius * (0.8 + w * 0.4)}px`
   
   return `
 :root {
@@ -99,7 +113,7 @@ function appleCSS(dna: BrandDNA, palette: ReturnType<typeof radixPalette>) {
   --h1-size: clamp(${2.5 + g * 1.5}rem, ${5 + g * 3}vw, ${4 + g * 2}rem);
   --h2-size: clamp(${1.5 + g * 0.5}rem, 3vw, 2.5rem);
   --body-size: clamp(${0.9 + c * 0.1}rem, 1.1vw, 1.1rem);
-  --section-pad: clamp(${3 + g * 2}rem, ${6 + g * 4}vw, ${5 + g * 3}rem);
+  --section-pad: clamp(${3 + g * 2}rem, ${6 + g * 4}vw, ${A.sectionSpacing * (0.7 + g * 0.3) / 16}rem);
   --card-pad: ${1 + g * 1}rem ${1 + c * 0.5}rem;
   --gap: ${1 + c * 0.5}rem;
   --max-w: ${800 + c * 400}px;
@@ -108,7 +122,7 @@ function appleCSS(dna: BrandDNA, palette: ReturnType<typeof radixPalette>) {
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font);background:var(--c-bg);color:var(--c-text);line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-h1,h2,h3{font-family:var(--font);font-weight:${600 + Math.round(g * 300)};letter-spacing:${-0.03 + g * 0.01}em;line-height:1.12}
+h1,h2,h3{font-family:var(--font);font-weight:${A.heroWeight + Math.round(g * 300)};letter-spacing:${-0.03 + g * 0.01}em;line-height:${A.heroLineHeight}}
 h1{font-size:var(--h1-size)}h2{font-size:var(--h2-size)}h3{font-size:clamp(1.1rem,2vw,1.4rem)}
 a{color:var(--c-primary);text-decoration:none}
 img{max-width:100%;height:auto}
