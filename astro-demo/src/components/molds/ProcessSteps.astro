@@ -1,0 +1,84 @@
+---
+// StepByStep.astro
+interface Step {
+  number: number;
+  title: string;
+  body: string;
+  icon?: string;
+}
+
+interface Props {
+  steps: Step[];
+}
+
+const { steps } = Astro.props;
+---
+
+<div class="relative">
+  <!-- 縦線（コネクター） -->
+  <div class="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700"></div>
+
+  <div class="space-y-8">
+    {
+      steps.map((step) => (
+        <div class="relative flex items-start gap-5">
+          <!-- アイコン + 番号 -->
+          <div class="relative z-10 flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 text-white shadow-md">
+            <span class="text-sm font-bold">
+              {step.icon ? (
+                <span class="text-lg">{step.icon}</span>
+              ) : (
+                step.number
+              )}
+            </span>
+          </div>
+
+          <!-- コンテンツ -->
+          <div class="flex-1 pt-1 min-w-0">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {step.number}. {step.title}
+            </h3>
+            <p class="mt-2 text-gray-600 dark:text-gray-300 leading-relaxed">
+              {step.body}
+            </p>
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</div>
+
+**使用例：**astro
+---
+import StepByStep from './components/StepByStep.astro';
+
+const steps = [
+  {
+    number: 1,
+    title: "プロジェクトを作成",
+    body: "Astro + Tailwind CSS のプロジェクトをセットアップします。",
+    icon: "🚀"
+  },
+  {
+    number: 2,
+    title: "コンポーネントを追加",
+    body: "ステップバイステップのコンポーネントを実装します。",
+    icon: "⚙️"
+  },
+  {
+    number: 3,
+    title: "カスタマイズ",
+    body: "必要に応じてデザインを調整します。",
+    icon: "🎨"
+  }
+];
+---
+
+<StepByStep steps={steps} />
+
+**主な特徴：**
+- Tailwind CSS を使用したレスポンシブデザイン
+- 番号またはアイコンを表示可能
+- ステップ間の縦線コネクター
+- ダークモード対応（`dark:` プレフィックス）
+- アクセシブルなマークアップ

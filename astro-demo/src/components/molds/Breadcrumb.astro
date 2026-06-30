@@ -1,0 +1,67 @@
+---
+
+export interface Props {
+	items: { label: string; href?: string }[];
+}
+
+const { items } = Astro.props;
+
+const itemListElement = items.map((item, index) => ({
+	"@type": "ListItem",
+	position: index + 1,
+	name: item.label,
+	...(item.href && { item: item.href }),
+}));
+
+const schema = {
+	"@context": "https://schema.org",
+	"@type": "BreadcrumbList",
+	itemListElement,
+};
+
+---
+
+<nav aria-label="パンくずリスト" class="flex items-center text-sm text-gray-500">
+	<script type="application/ld+json" set:html={JSON.stringify(schema)}></script>
+
+	<ol class="flex items-center gap-1">
+		{
+			items.map((item, index) => (
+				<li key={index} class="flex items-center gap-1">
+					{index > 0 && (
+						<svg
+							class="h-4 w-4 flex-shrink-0 text-gray-400"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+							aria-hidden="true"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M9 5l7 7-7 7"
+							/>
+						</svg>
+					)}
+
+					{index === items.length - 1 ? (
+						<span
+							aria-current="page"
+							class="font-medium text-gray-900"
+						>
+							{item.label}
+						</span>
+					) : (
+						<a
+							href={item.href}
+							class="hover:text-blue-600 transition-colors"
+						>
+							{item.label}
+						</a>
+					)}
+				</li>
+			))
+		}
+	</ol>
+</nav>

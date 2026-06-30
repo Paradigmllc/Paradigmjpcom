@@ -1,0 +1,74 @@
+---
+// CardGrid.astro
+export interface Props {
+  items: {
+    icon: string;
+    title: string;
+    body: string;
+  }[];
+  columns?: 1 | 2 | 3 | 4;
+}
+
+const { items, columns = 3 } = Astro.props;
+
+const colClasses: Record<number, string> = {
+  1: 'grid-cols-1',
+  2: 'grid-cols-1 sm:grid-cols-2',
+  3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+  4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
+};
+---
+
+<div class="grid gap-6 md:gap-8 {colClasses[columns]}">
+  {
+    items.map(({ icon, title, body }) => (
+      <div
+        class="group relative flex flex-col items-center rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl dark:border-gray-700 dark:bg-gray-800"
+      >
+        {/* アイコン */}
+        <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-blue-50 to-indigo-100 text-2xl text-indigo-600 transition-transform duration-300 group-hover:scale-110 group-hover:from-blue-100 group-hover:to-indigo-200 dark:from-blue-900/30 dark:to-indigo-900/30 dark:text-indigo-400">
+          <span class="[&>svg]:h-7 [&>svg]:w-7" set:html={icon} />
+        </div>
+
+        {/* タイトル */}
+        <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+          {title}
+        </h3>
+
+        {/* 説明 */}
+        <p class="text-center text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+          {body}
+        </p>
+
+        {/* アクセントライン（ホバー時に表示） */}
+        <div class="absolute bottom-0 left-0 h-1 w-0 rounded-b-2xl bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-300 group-hover:w-full" />
+      </div>
+    ))
+  }
+</div>
+
+**使用例:**astro
+---
+import CardGrid from '@/components/CardGrid.astro';
+---
+
+<CardGrid
+  columns={3}
+  items={[
+    {
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>',
+      title: '高速パフォーマンス',
+      body: 'Astroの静的生成とTailwindの最適化により、驚異的な読み込み速度を実現します。'
+    },
+    {
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>',
+      title: 'タイポグラフィ',
+      body: '美しいフォント設計とレスポンシブな文字組みで、読みやすいコンテンツを提供。'
+    },
+    {
+      icon: '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" /></svg>',
+      title: 'グローバル対応',
+      body: '多言語対応と国際化機能を標準装備。世界中のユーザーに最適な体験を。'
+    }
+  ]}
+/>

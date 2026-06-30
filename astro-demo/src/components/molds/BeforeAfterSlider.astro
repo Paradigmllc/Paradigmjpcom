@@ -1,0 +1,95 @@
+---
+interface Props {
+  beforeImage: string;
+  afterImage: string;
+  label?: string;
+}
+
+const { beforeImage, afterImage, label } = Astro.props;
+---
+
+<div class="relative w-full max-w-2xl mx-auto overflow-hidden rounded-xl group">
+  <!-- ラベル -->
+  {label && (
+    <span class="absolute top-4 left-4 z-20 bg-black/60 text-white px-3 py-1 rounded-full text-sm font-medium backdrop-blur-sm">
+      {label}
+    </span>
+  )}
+
+  <!-- After画像（前面） -->
+  <div class="after-image relative w-full">
+    <img
+      src={afterImage}
+      alt="After"
+      class="w-full h-auto block"
+      loading="lazy"
+    />
+
+    <!-- Before画像（クリップで表示） -->
+    <div class="before-image absolute inset-0 overflow-hidden">
+      <img
+        src={beforeImage}
+        alt="Before"
+        class="w-full h-auto block min-w-full min-h-full object-cover"
+        loading="lazy"
+        style="clip-path: inset(0 50% 0 0);"
+      />
+    </div>
+  </div>
+
+  <!-- スライダーハンドル（中央の縦線＋三角形） -->
+  <div class="absolute inset-y-0 left-1/2 -translate-x-1/2 z-10 w-1 cursor-col-resize group-hover:opacity-100 opacity-80 transition-opacity duration-200">
+    <div class="absolute inset-0 bg-white shadow-lg"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center">
+      <svg class="w-4 h-4 text-gray-700" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M6 4L2 8L6 12" />
+        <path d="M10 4L14 8L10 12" />
+      </svg>
+    </div>
+  </div>
+
+  <!-- インジケーターラベル（Before/After） -->
+  <span class="absolute bottom-4 left-4 z-20 bg-black/60 text-white px-2 py-0.5 rounded text-xs font-medium backdrop-blur-sm">
+    Before
+  </span>
+  <span class="absolute bottom-4 right-4 z-20 bg-black/60 text-white px-2 py-0.5 rounded text-xs font-medium backdrop-blur-sm">
+    After
+  </span>
+
+  <!-- スライダー入力（クリッパジー制御） -->
+  <input
+    type="range"
+    min="0"
+    max="100"
+    value="50"
+    class="absolute inset-0 z-30 w-full h-full opacity-0 cursor-col-resize"
+    oninput="this.previousElementSibling.previousElementSibling.querySelector('.before-image img').style.clipPath = 'inset(0 ' + (100 - this.value) + '% 0 0)'"
+  />
+</div>
+
+<style>
+  /* ベースはTailwindでカバー、追加の微調整 */
+  .before-image img {
+    transition: clip-path 0.1s ease-out;
+  }
+</style>
+
+## 使い方astro
+---
+import BeforeAfterSlider from './components/BeforeAfterSlider.astro';
+---
+
+<BeforeAfterSlider
+  beforeImage="/images/before.jpg"
+  afterImage="/images/after.jpg"
+  label="リノベーション前後"
+/>
+
+## 特徴
+
+- **CSSのみの実装**（JavaScriptはスライダー制御の最小限のみ）
+- **クリップパス**でBefore画像を切り抜き表示
+- **スライダー**は`<input type="range">`を透過配置して操作
+- **Tailwind**でスタイリング済み
+- **レスポンシブ**対応（`max-w-2xl`で最大幅制限）
+- **アクセシブル**（キーボード操作対応）

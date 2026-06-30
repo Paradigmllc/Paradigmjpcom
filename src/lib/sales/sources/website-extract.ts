@@ -433,26 +433,131 @@ export async function extractWebsiteAssets(
   const baseUrl = targetUrl(domain)
   console.info(`[website-extract] extracting assets from ${baseUrl}`)
 
-  // Step 1: Browser extraction (images, colors, structured data, internal links)
-  const browserData = await extractWithBrowser(domain)
-  if (!browserData) {
-    return { ok: false, error: "browser extraction failed (site unreachable or empty)" }
+  // Step 1: Try fast HTTP extraction (no browser needed)
+  const httpData = await extractWithHTTP(domain)
+  
+  // Step 2: Try browser extraction for richer data (may fail if Playwright unavailable)
+  let browserData = null
+  try {
+    browserData = await extractWithBrowser(domain)
+  } catch {
+    console.info("[website-extract] browser extraction unavailable, using HTTP fallback")
   }
 
-  // Step 2: Subpage content via Jina Reader
+  // Merge: browser data preferred, HTTP fallback
+  const merged = browserData || httpData
+  if (!merged) {
+    return { ok: false, error: "extraction failed (site unreachable or empty)" }
+  }
+
+  // Step 3: Subpage content via Jina Reader
   let subpageContent: WebsiteContent | null = null
-  if (browserData.internalLinks.length > 0) {
-    subpageContent = await extractSubpageContent(browserData.internalLinks, domain)
+  if (merged.internalLinks && merged.internalLinks.length > 0) {
+    subpageContent = await extractSubpageContent(merged.internalLinks, domain)
   }
 
   return {
     ok: true,
     data: {
       domain,
-      images: browserData.images,
-      colors: browserData.colors,
+      images: merged.images || { hero: null, logo: null, gallery: [] },
+      colors: merged.colors || { primary: null, background: null, text: null, accent: null, headerBg: null, ctaBg: null, ctaText: null },
       content: subpageContent,
-      structured: browserData.structured,
+      structured: merged.structured || null,
     },
+  }
+}
+
+// ── HTTP fallback extraction (no browser needed) ──
+
+async function extractWithHTTP(domain: string): Promise<BrowserExtractPayload | null> {
+  try {
+    const baseUrl = targetUrl(domain)
+    const res = await fetch(baseUrl, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; ParadigmBot/1.0)" },
+      signal: AbortSignal.timeout(15000),
+    })
+    if (!res.ok) return null
+
+    const html = await res.text()
+
+    // Extract og:image
+    const ogImage = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/)?.[1]
+      || html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:image"/)?.[1]
+      || null
+
+    // Extract all img src
+    const imgMatches = html.matchAll(/<img[^>]+src="([^"]+)"[^>]*>/g)
+    const imgUrls: string[] = []
+    for (const m of imgMatches) {
+      const url = m[1]
+      if (url && !url.startsWith("data:") && !url.includes("1x1") && !url.includes("pixel")) {
+        try { imgUrls.push(new URL(url, baseUrl).href) } catch {}
+      }
+    }
+
+    // Extract colors from CSS
+    const bgMatch = html.match(/background(?:-color)?:\s*([#\w]+)/i)
+    const primaryMatch = html.match(/--primary(?:-color)?:\s*([#\w]+)/)
+    const colors = {
+      primary: primaryMatch?.[1] || null,
+      background: bgMatch?.[1] || "#ffffff",
+      text: null, accent: null, headerBg: null, ctaBg: null, ctaText: null,
+    }
+
+    // Extract internal links
+    const linkMatches = html.matchAll(/<a[^>]+href="([^"]+)"[^>]*>/g)
+    const internalLinks: string[] = []
+    const host = new URL(baseUrl).hostname
+    for (const m of linkMatches) {
+      try {
+        const url = new URL(m[1], baseUrl)
+        if (url.hostname === host && !url.hash) internalLinks.push(url.href)
+      } catch {}
+    }
+    const uniqueLinks = [...new Set(internalLinks)].slice(0, 30)
+
+    // Extract structured data
+    const ldJson = html.match(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/)?.[1]
+    let organization = null
+    if (ldJson) {
+      try { const parsed = JSON.parse(ldJson); if (parsed["@type"] === "Organization" || parsed["@type"] === "LocalBusiness") organization = parsed } catch {}
+    }
+
+    const ogTitle = html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/)?.[1] || null
+    const ogDescription = html.match(/<meta[^>]+property="og:description"[^>]+content="([^"]+)"/)?.[1] || null
+
+    // Download hero image if available
+    let heroImage: WebsiteImage | null = null
+    if (ogImage) {
+      try {
+        const imgRes = await fetch(new URL(ogImage, baseUrl).href, { signal: AbortSignal.timeout(10000) })
+        if (imgRes.ok) {
+          const buffer = Buffer.from(await imgRes.arrayBuffer())
+          heroImage = { url: new URL(ogImage, baseUrl).href, width: 0, height: 0, alt: "hero", buffer, contentType: imgRes.headers.get("content-type") }
+        }
+      } catch {}
+    }
+
+    // Download first few images
+    const galleryImages: WebsiteImage[] = []
+    for (const url of imgUrls.slice(0, 5)) {
+      try {
+        const imgRes = await fetch(url, { signal: AbortSignal.timeout(8000) })
+        if (imgRes.ok && (imgRes.headers.get("content-type") || "").startsWith("image/")) {
+          const buffer = Buffer.from(await imgRes.arrayBuffer())
+          galleryImages.push({ url, width: 0, height: 0, alt: "", buffer, contentType: imgRes.headers.get("content-type") })
+        }
+      } catch {}
+    }
+
+    return {
+      images: { hero: heroImage, logo: null, gallery: galleryImages },
+      colors,
+      structured: { organization, localBusiness: organization?.["@type"] === "LocalBusiness" ? organization : null, ogTitle, ogDescription, ogImage, ogSiteName: null, twitterImage: null },
+      internalLinks: uniqueLinks,
+    }
+  } catch {
+    return null
   }
 }

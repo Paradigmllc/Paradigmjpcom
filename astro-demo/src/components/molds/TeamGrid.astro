@@ -1,0 +1,41 @@
+---
+interface Member {
+  name: string;
+  role: string;
+  image: string;
+  bio?: string;
+}
+
+interface Props {
+  members: Member[];
+}
+
+const { members } = Astro.props;
+---
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+  {
+    members.map((member) => (
+      <div class="group relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
+        {/* 画像 */}
+        <div class="aspect-square overflow-hidden">
+          <img
+            src={member.image}
+            alt={member.name}
+            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+          />
+        </div>
+
+        {/* テキスト */}
+        <div class="p-4">
+          <h3 class="text-lg font-semibold text-gray-900">{member.name}</h3>
+          <p class="text-sm text-blue-600 font-medium mt-1">{member.role}</p>
+          {member.bio && (
+            <p class="mt-2 text-sm text-gray-500 line-clamp-2">{member.bio}</p>
+          )}
+        </div>
+      </div>
+    ))
+  }
+</div>

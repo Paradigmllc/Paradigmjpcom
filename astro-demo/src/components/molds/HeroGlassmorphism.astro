@@ -1,0 +1,135 @@
+---
+export interface Props {
+  headline: string;
+  subheadline: string;
+  ctaLabel: string;
+  ctaHref: string;
+  theme?: 'light' | 'dark';
+}
+
+const { headline, subheadline, ctaLabel, ctaHref, theme = 'dark' } = Astro.props;
+const isDark = theme === 'dark';
+---
+
+<section
+  class="relative min-h-screen flex items-center justify-center overflow-hidden px-4 sm:px-6 lg:px-8"
+  class:list={{
+    'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800': isDark,
+    'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50': !isDark,
+  }}
+>
+  <!-- Animated background shapes -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+    <div
+      class="absolute -top-40 -right-40 w-96 h-96 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"
+      class:list={{
+        'bg-purple-400': isDark,
+        'bg-purple-300': !isDark,
+      }}
+    ></div>
+    <div
+      class="absolute -bottom-40 -left-40 w-96 h-96 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"
+      class:list={{
+        'bg-blue-400': isDark,
+        'bg-blue-300': !isDark,
+      }}
+    ></div>
+    <div
+      class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"
+      class:list={{
+        'bg-pink-400': isDark,
+        'bg-pink-300': !isDark,
+      }}
+    ></div>
+  </div>
+
+  <!-- Glassmorphism Card -->
+  <div
+    class="relative w-full max-w-4xl mx-auto backdrop-blur-2xl rounded-3xl shadow-2xl border p-8 sm:p-12 lg:p-16 transition-all duration-500 hover:shadow-3xl"
+    class:list={{
+      'bg-white/10 border-white/20': isDark,
+      'bg-black/5 border-black/10': !isDark,
+      'text-white': isDark,
+      'text-gray-900': !isDark,
+    }}
+  >
+    <div class="text-center space-y-8">
+      <!-- Headline -->
+      <h1
+        class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight"
+        class:list={{
+          'text-white': isDark,
+          'text-gray-900': !isDark,
+        }}
+      >
+        {headline}
+      </h1>
+
+      <!-- Subheadline -->
+      <p
+        class="max-w-2xl mx-auto text-lg sm:text-xl md:text-2xl leading-relaxed font-light"
+        class:list={{
+          'text-white/80': isDark,
+          'text-gray-700': !isDark,
+        }}
+      >
+        {subheadline}
+      </p>
+
+      <!-- CTA Button -->
+      <div class="pt-4">
+        <a
+          href={ctaHref}
+          class="inline-flex items-center gap-2 px-8 py-4 text-lg font-semibold rounded-full transition-all duration-300 transform hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2"
+          class:list={{
+            'bg-white text-gray-900 hover:bg-gray-100 focus:ring-white focus:ring-offset-gray-900': isDark,
+            'bg-gray-900 text-white hover:bg-gray-800 focus:ring-gray-900 focus:ring-offset-white': !isDark,
+          }}
+        >
+          {ctaLabel}
+          <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subtle bottom gradient -->
+  <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-transparent to-transparent pointer-events-none"></div>
+</section>
+
+<style>
+  @keyframes blob {
+    0% {
+      transform: translate(0px, 0px) scale(1);
+    }
+    33% {
+      transform: translate(30px, -50px) scale(1.1);
+    }
+    66% {
+      transform: translate(-20px, 20px) scale(0.9);
+    }
+    100% {
+      transform: translate(0px, 0px) scale(1);
+    }
+  }
+
+  .animate-blob {
+    animation: blob 7s infinite;
+  }
+
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+
+  /* Ensure text is readable on glass */
+  .backdrop-blur-2xl {
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+  }
+</style>

@@ -1,0 +1,74 @@
+---
+// Hero.astro
+interface Props {
+  headline: string[];
+  subheadline: string;
+  cta: string;
+}
+
+const { headline, subheadline, cta } = Astro.props;
+---
+
+<section class="relative flex flex-col items-center justify-center min-h-screen bg-gray-950 text-white overflow-hidden px-6">
+  <!-- メインタイトル：文字が順番にフェードイン -->
+  <h1 class="text-5xl md:text-7xl font-bold leading-tight text-center max-w-4xl mb-6">
+    {headline.map((word, wordIndex) => (
+      <span class="inline-block mr-4 last:mr-0">
+        {word.split("").map((char, charIndex) => (
+          <span
+            class="inline-block opacity-0 animate-charFadeIn"
+            style={`animation-delay: ${(wordIndex * word.length + charIndex) * 0.05}s`}
+          >
+            {char === " " ? "\u00A0" : char}
+          </span>
+        ))}
+      </span>
+    ))}
+  </h1>
+
+  <!-- サブヘッドライン -->
+  <p class="text-lg md:text-xl text-gray-400 text-center max-w-2xl mb-10 opacity-0 animate-fadeInUp" style="animation-delay: 1.5s">
+    {subheadline}
+  </p>
+
+  <!-- CTA -->
+  <a
+    href="#"
+    class="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-gray-950 bg-white rounded-lg hover:bg-gray-200 transition-all opacity-0 animate-fadeInUp"
+    style="animation-delay: 2s"
+  >
+    {cta}
+  </a>
+</section>
+
+<style is:global>
+  @keyframes charFadeIn {
+    0% {
+      opacity: 0;
+      transform: translateY(10px) scale(0.95);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes fadeInUp {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-charFadeIn {
+    animation: charFadeIn 0.4s ease-out forwards;
+  }
+
+  .animate-fadeInUp {
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+</style>

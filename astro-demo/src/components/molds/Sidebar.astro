@@ -1,0 +1,41 @@
+---
+interface Link {
+  label: string;
+  href: string;
+}
+
+interface Section {
+  title: string;
+  links: Link[];
+}
+
+interface Props {
+  sections: Section[];
+}
+
+const { sections } = Astro.props;
+---
+
+<aside class="w-64 h-screen bg-gray-900 text-white p-6 overflow-y-auto">
+  <nav>
+    {sections.map((section) => (
+      <div class="mb-8">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
+          {section.title}
+        </h3>
+        <ul class="space-y-2">
+          {section.links.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                class="block px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-150"
+              >
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </nav>
+</aside>

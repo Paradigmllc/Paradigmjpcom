@@ -1,0 +1,86 @@
+---
+// src/components/HeroVideo.astro
+export interface Props {
+  headline: string;
+  subheadline?: string;
+  videoUrl: string;
+  posterImage?: string;
+  cta?: {
+    text: string;
+    url: string;
+  };
+}
+
+const { headline, subheadline, videoUrl, posterImage, cta } = Astro.props;
+---
+
+<section class="relative h-screen w-full overflow-hidden">
+  <!-- 動画背景 -->
+  <video
+    autoplay
+    muted
+    loop
+    playsinline
+    class="absolute inset-0 h-full w-full object-cover"
+    poster={posterImage}
+  >
+    <source src={videoUrl} type="video/mp4" />
+  </video>
+
+  <!-- オーバーレイ（グラデーション） -->
+  <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70"></div>
+
+  <!-- コンテンツ -->
+  <div class="relative z-10 flex h-full items-center justify-center px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl text-center text-white">
+      {headline && (
+        <h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
+          {headline}
+        </h1>
+      )}
+
+      {subheadline && (
+        <p class="mb-8 text-lg text-gray-200 sm:text-xl md:text-2xl">
+          {subheadline}
+        </p>
+      )}
+
+      {cta && (
+        <a
+          href={cta.url}
+          class="inline-block rounded-lg bg-white px-8 py-3 text-base font-semibold text-gray-900 shadow-lg transition-all duration-300 hover:bg-gray-100 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-900 sm:text-lg"
+        >
+          {cta.text}
+        </a>
+      )}
+    </div>
+  </div>
+</section>
+
+<style>
+  /* フォールバック：動画が読み込めない場合の背景色 */
+  section {
+    background-color: #1a1a2e;
+  }
+
+  /* パフォーマンス最適化 */
+  video {
+    will-change: transform;
+  }
+</style>
+
+**使用例：**astro
+---
+import HeroVideo from '@/components/HeroVideo.astro';
+---
+
+<HeroVideo
+  headline="未来を創るテクノロジー"
+  subheadline="革新的なソリューションで、あなたのビジネスを次のステージへ"
+  videoUrl="/videos/hero-background.mp4"
+  posterImage="/images/hero-poster.jpg"
+  cta={{
+    text: "詳しく見る",
+    url: "/about"
+  }}
+/>
