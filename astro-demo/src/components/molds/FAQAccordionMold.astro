@@ -1,0 +1,56 @@
+---
+export interface Props {
+  items: { q: string; a: string }[];
+}
+
+const { items } = Astro.props;
+---
+
+<details
+  class="group rounded-lg border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md"
+  open
+>
+  <summary class="flex cursor-pointer items-center justify-between px-5 py-4 text-lg font-semibold text-gray-900">
+    <span class="pr-4">よくある質問</span>
+    <svg
+      class="h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200 group-open:rotate-180"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 20 20"
+      fill="currentColor"
+    >
+      <path
+        fill-rule="evenodd"
+        d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+        clip-rule="evenodd"
+      />
+    </svg>
+  </summary>
+  <div class="border-t border-gray-200">
+    <ul class="divide-y divide-gray-100">
+      {items.map((item, index) => (
+        <li key={index}>
+          <details class="group/item px-5 py-3 transition-colors duration-150 hover:bg-gray-50">
+            <summary class="flex cursor-pointer items-center justify-between py-1 text-base font-medium text-gray-800">
+              <span>{item.q}</span>
+              <svg
+                class="h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200 group-open/item:rotate-180"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </summary>
+            <div class="mt-2 pl-0 text-gray-600">
+              <p class="leading-relaxed">{item.a}</p>
+            </div>
+          </details>
+        </li>
+      ))}
+    </ul>
+  </div>
+</details>

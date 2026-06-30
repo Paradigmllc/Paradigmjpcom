@@ -1,0 +1,62 @@
+---
+export interface Plan {
+  name: string;
+  price: string;
+  description: string;
+  features: string[];
+  cta: { label: string; href: string };
+  featured?: boolean;
+}
+
+const { plans }: { plans: Plan[] } = Astro.props;
+---
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto px-4 py-8 items-stretch">
+  {
+    plans.map((plan, index) => (
+      <div
+        class={`relative flex flex-col rounded-2xl border-2 p-6 shadow-sm transition-all duration-200 hover:shadow-lg ${
+          plan.featured
+            ? "border-indigo-500 bg-indigo-50 scale-105 md:scale-110 z-10"
+            : "border-gray-200 bg-white"
+        }`}
+      >
+        {plan.featured && (
+          <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
+            Most Popular
+          </span>
+        )}
+
+        <h3 class="text-xl font-bold text-gray-900 mt-2">{plan.name}</h3>
+        <p class="mt-1 text-sm text-gray-500">{plan.description}</p>
+
+        <p class="mt-4">
+          <span class="text-4xl font-extrabold text-gray-900">{plan.price}</span>
+          <span class="text-sm text-gray-500">/month</span>
+        </p>
+
+        <ul class="mt-6 space-y-3 flex-1">
+          {plan.features.map((feature) => (
+            <li class="flex items-start gap-2 text-sm text-gray-600">
+              <svg class="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              {feature}
+            </li>
+          ))}
+        </ul>
+
+        <a
+          href={plan.cta.href}
+          class={`mt-8 block w-full text-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors duration-200 ${
+            plan.featured
+              ? "bg-indigo-600 text-white hover:bg-indigo-700"
+              : "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
+          }`}
+        >
+          {plan.cta.label}
+        </a>
+      </div>
+    ))
+  }
+</div>

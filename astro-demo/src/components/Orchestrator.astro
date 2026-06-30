@@ -1,0 +1,47 @@
+---
+// Orchestrator — DeepSeek JSON blueprint → Astro molds.
+// AI writes zero code. Molds are locked.
+import PageLayout from './pipeline/PageLayout.astro'
+
+const ComponentMap: Record<string, any> = {}
+
+// Lazy — only import what's used
+function getComponent(type: string): any {
+  if (ComponentMap[type]) return ComponentMap[type]
+  return null
+}
+
+interface BlueprintBlock { type: string; props: Record<string, unknown> }
+interface Blueprint { site: { companyName: string; pages?: { label: string; href: string }[]; footer?: { address?: string; phone?: string; email?: string } }; blocks: BlueprintBlock[] }
+
+const { blueprint } = Astro.props as { blueprint: Blueprint }
+const navPages = blueprint.site.pages?.map((p: any) => ({
+  label: String(p.label || p.title || ""),
+  href: String(p.href || p.path || "/"),
+})) || [{ label: "ホーム", href: "/" }]
+
+const footer = blueprint.site.footer || {}
+---
+
+<PageLayout
+  companyName={blueprint.site.companyName}
+  pages={navPages}
+  footer={{ address: footer.address, phone: footer.phone, email: footer.email }}
+>
+  {blueprint.blocks.map((block: BlueprintBlock) => {
+    // Only render blocks that exist in molds
+    const name = block.type
+    // Simple HTML fallback for any mold
+    const props = block.props || {}
+    return <div data-mold={name} style="padding:40px 0">
+      {Object.entries(props).map(([k, v]) => {
+        if (k === 'headline' || k === 'title') return <h2 style="font-size:2rem;font-weight:700;text-align:center;margin-bottom:1rem">{String(v)}</h2>
+        if (k === 'subheadline' || k === 'body') return <p style="text-align:center;max-width:600px;margin:0 auto 2rem;opacity:0.7">{String(v)}</p>
+        if (k === 'items' && Array.isArray(v)) return <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem;max-width:1000px;margin:0 auto;padding:0 1rem">{v.map((item: any, i: number) => <div key={i} style="padding:1.5rem;border:1px solid #e5e7eb;border-radius:12px"><strong>{item.title || item.label || item.question}</strong><p style="opacity:0.6;margin-top:0.5rem">{item.body || item.description || item.answer || item.value}</p></div>)}</div>
+        if (k === 'ctas' && Array.isArray(v)) return <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">{v.map((cta: any, i: number) => <a key={i} href={cta.href || '#'} style={`padding:14px 28px;border-radius:12px;font-weight:600;text-decoration:none;${i===0?'background:#191a23;color:#fff':'border:1.5px solid #e5e7eb'}`}>{cta.label}</a>)}</div>
+        if (k === 'metrics' && Array.isArray(v)) return <div style="display:flex;gap:2rem;justify-content:center;flex-wrap:wrap;padding:1rem">{v.map((m: any, i: number) => <div key={i} style="text-align:center"><div style="font-size:2rem;font-weight:900;color:#191a23">{m.value}{m.suffix||''}</div><div style="font-size:0.8rem;opacity:0.5">{m.label}</div></div>)}</div>
+        return null
+      })}
+    </div>
+  })}
+</PageLayout>

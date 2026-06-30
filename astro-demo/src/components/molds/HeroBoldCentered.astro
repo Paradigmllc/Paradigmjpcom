@@ -1,0 +1,141 @@
+---
+export interface Props {
+  headline: string
+  subheadline?: string
+  image?: string
+  primaryCta: { label: string; href: string }
+  secondaryCta?: { label: string; href: string }
+  theme?: "light" | "dark" | "gradient"
+  accentColor?: string
+}
+
+const {
+  headline,
+  subheadline,
+  image,
+  primaryCta,
+  secondaryCta,
+  theme = "dark",
+  accentColor = "#6366f1",
+} = Astro.props
+
+const themeClasses: Record<string, string> = {
+  light: "bg-white text-gray-900",
+  dark: "bg-gray-950 text-white",
+  gradient: `bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-white`,
+}
+
+const btnBase = `inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-sm md:text-base transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2`
+const primaryBtnClass = `${btnBase} text-white shadow-lg hover:shadow-xl`
+const secondaryBtnClass = `${btnBase} border-2 backdrop-blur-sm hover:bg-white/10`
+---
+
+<section
+  class="relative overflow-hidden py-20 md:py-28 lg:py-36 px-4 sm:px-6 lg:px-8 text-center"
+  class:list={[themeClasses[theme]]}
+>
+  <!-- 背景装飾アニメーション -->
+  <div aria-hidden="true" class="absolute inset-0 -z-10 overflow-hidden">
+    <div
+      class="absolute -top-40 -right-40 w-80 h-80 rounded-full opacity-20 blur-3xl animate-pulse-slow"
+      style="background-color: {accentColor};"
+    ></div>
+    <div
+      class="absolute -bottom-40 -left-40 w-80 h-80 rounded-full opacity-20 blur-3xl animate-pulse-slow animation-delay-2000"
+      style="background-color: {accentColor};"
+    ></div>
+  </div>
+
+  <div class="max-w-4xl mx-auto relative z-10">
+    <!-- 画像 -->
+    {image && (
+      <div class="mb-8 md:mb-10 animate-fade-in-up">
+        <img
+          src={image}
+          alt="Hero visual"
+          class="w-full max-w-lg mx-auto rounded-2xl shadow-2xl object-cover aspect-video"
+          loading="eager"
+        />
+      </div>
+    )}
+
+    <!-- 見出し -->
+    <h1
+      class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-tight animate-fade-in-up"
+      style="animation-delay: 0.1s;"
+    >
+      {headline}
+    </h1>
+
+    <!-- サブ見出し -->
+    {subheadline && (
+      <p
+        class="mt-6 text-lg sm:text-xl md:text-2xl max-w-2xl mx-auto opacity-80 animate-fade-in-up"
+        style="animation-delay: 0.2s;"
+      >
+        {subheadline}
+      </p>
+    )}
+
+    <!-- CTA ボタン群 -->
+    <div
+      class="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up"
+      style="animation-delay: 0.3s;"
+    >
+      <a
+        href={primaryCta.href}
+        class={primaryBtnClass}
+        style="background-color: {accentColor};"
+      >
+        {primaryCta.label}
+      </a>
+
+      {secondaryCta && (
+        <a
+          href={secondaryCta.href}
+          class={secondaryBtnClass}
+          style="border-color: {accentColor}; color: {accentColor};"
+        >
+          {secondaryCta.label}
+        </a>
+      )}
+    </div>
+  </div>
+</section>
+
+<style is:global>
+  @keyframes fade-in-up {
+    0% {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pulse-slow {
+    0%,
+    100% {
+      opacity: 0.1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.3;
+      transform: scale(1.1);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.7s ease-out both;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse-slow 6s ease-in-out infinite;
+  }
+
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+</style>

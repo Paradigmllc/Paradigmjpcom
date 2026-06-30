@@ -1,0 +1,155 @@
+---
+export interface Props {
+  headline: string
+  subheadline?: string
+  image?: string
+  primaryCta: { label: string; href: string }
+  secondaryCta?: { label: string; href: string }
+  theme?: "light" | "dark" | "gradient"
+  accentColor?: string
+}
+
+const {
+  headline,
+  subheadline,
+  image,
+  primaryCta,
+  secondaryCta,
+  theme = "dark",
+  accentColor = "#ff0040"
+} = Astro.props
+
+const themeClasses: Record<string, string> = {
+  light: "bg-white text-gray-900",
+  dark: "bg-gray-950 text-white",
+  gradient: "bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-white"
+}
+---
+
+<section
+  class="relative overflow-hidden min-h-[90vh] flex items-center justify-center px-4 sm:px-8 md:px-16 lg:px-24 py-16 sm:py-20 md:py-24 lg:py-32"
+  class:list={[themeClasses[theme]]}
+>
+  <!-- ネオングロー背景エフェクト -->
+  <div
+    class="absolute inset-0 pointer-events-none"
+    style={`background: radial-gradient(circle at 30% 40%, ${accentColor}22 0%, transparent 70%), radial-gradient(circle at 70% 60%, ${accentColor}15 0%, transparent 60%)`}
+  ></div>
+
+  <!-- アニメーションするグローライン -->
+  <div class="absolute inset-0 overflow-hidden">
+    <div
+      class="absolute -top-1/2 -left-1/2 w-full h-full animate-glow-pulse opacity-30"
+      style={`background: conic-gradient(from 0deg, transparent, ${accentColor}88, transparent, ${accentColor}44, transparent); filter: blur(80px)`}
+    ></div>
+  </div>
+
+  <!-- コンテンツラッパー -->
+  <div class="relative z-10 w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+    <!-- テキストエリア -->
+    <div class="flex flex-col items-center lg:items-start text-center lg:text-left space-y-6 sm:space-y-8">
+      <h1
+        class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black leading-tight animate-fade-in-up"
+        style={`text-shadow: 0 0 30px ${accentColor}66, 0 0 60px ${accentColor}33, 0 0 100px ${accentColor}11; color: ${theme === "light" ? "#1a1a1a" : "#ffffff"}`}
+      >
+        {headline}
+      </h1>
+
+      {subheadline && (
+        <p
+          class="text-base sm:text-lg md:text-xl lg:text-2xl max-w-xl opacity-90 animate-fade-in-up"
+          style="animation-delay: 0.15s"
+        >
+          {subheadline}
+        </p>
+      )}
+
+      <div class="flex flex-wrap gap-4 sm:gap-6 justify-center lg:justify-start animate-fade-in-up" style="animation-delay: 0.3s">
+        <a
+          href={primaryCta.href}
+          class="relative inline-flex items-center justify-center px-8 py-4 sm:px-10 sm:py-5 text-base sm:text-lg font-bold rounded-full transition-all duration-300 hover:scale-105 active:scale-95 group"
+          style={`
+            background: ${accentColor};
+            color: #ffffff;
+            box-shadow: 0 0 20px ${accentColor}88, 0 0 40px ${accentColor}44;
+          `}
+        >
+          <span class="relative z-10">{primaryCta.label}</span>
+          <span
+            class="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-glow-pulse"
+            style={`background: ${accentColor}; filter: blur(20px)`}
+          ></span>
+        </a>
+
+        {secondaryCta && (
+          <a
+            href={secondaryCta.href}
+            class="inline-flex items-center justify-center px-8 py-4 sm:px-10 sm:py-5 text-base sm:text-lg font-bold rounded-full border-2 transition-all duration-300 hover:scale-105 active:scale-95"
+            style={`
+              border-color: ${accentColor}88;
+              color: ${theme === "light" ? "#1a1a1a" : "#ffffff"};
+              box-shadow: 0 0 15px ${accentColor}33;
+            `}
+          >
+            {secondaryCta.label}
+          </a>
+        )}
+      </div>
+    </div>
+
+    <!-- 画像エリア -->
+    {image && (
+      <div class="relative flex items-center justify-center animate-fade-in-up" style="animation-delay: 0.45s">
+        <div
+          class="absolute inset-0 rounded-2xl opacity-30 blur-3xl"
+          style={`background: ${accentColor}; filter: blur(60px)`}
+        ></div>
+        <img
+          src={image}
+          alt=""
+          class="relative z-10 w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl h-auto object-cover rounded-2xl shadow-2xl"
+          style={`box-shadow: 0 0 40px ${accentColor}44, 0 0 80px ${accentColor}22`}
+          loading="eager"
+        />
+      </div>
+    )}
+  </div>
+
+  <!-- 下部グラデーションオーバーレイ -->
+  <div
+    class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"
+  ></div>
+</section>
+
+<style is:global>
+  @keyframes fade-in-up {
+    0% {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes glow-pulse {
+    0%, 100% {
+      opacity: 0.4;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.8;
+      transform: scale(1.05);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+  }
+
+  .animate-glow-pulse {
+    animation: glow-pulse 4s ease-in-out infinite;
+  }
+</style>

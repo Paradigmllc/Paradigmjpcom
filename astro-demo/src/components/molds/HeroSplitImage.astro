@@ -1,0 +1,125 @@
+---
+// HeroSection.astro
+export interface Props {
+  headline: string
+  subheadline?: string
+  image?: string
+  primaryCta: { label: string; href: string }
+  secondaryCta?: { label: string; href: string }
+  theme?: "light" | "dark" | "gradient"
+  accentColor?: string
+}
+
+const {
+  headline,
+  subheadline,
+  image = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80",
+  primaryCta,
+  secondaryCta,
+  theme = "light",
+  accentColor = "#6366f1",
+} = Astro.props as Props
+
+const bgClass = {
+  light: "bg-white text-gray-900",
+  dark: "bg-gray-900 text-white",
+  gradient: `bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white`,
+}[theme]
+
+const accentBg = theme === "gradient" ? accentColor : accentColor
+---
+
+<section class={`relative overflow-hidden ${bgClass}`}>
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24">
+    <div class="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+      <!-- テキストエリア -->
+      <div class="order-2 lg:order-1 animate-fade-in-up">
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
+          {headline}
+        </h1>
+        {subheadline && (
+          <p class="mt-6 text-lg sm:text-xl text-gray-500 dark:text-gray-300 max-w-2xl">
+            {subheadline}
+          </p>
+        )}
+        <div class="mt-8 flex flex-col sm:flex-row gap-4">
+          <a
+            href={primaryCta.href}
+            class="inline-flex items-center justify-center px-8 py-3 rounded-lg font-semibold text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
+            style="background-color: {accentBg}"
+          >
+            {primaryCta.label}
+          </a>
+          {secondaryCta && (
+            <a
+              href={secondaryCta.href}
+              class={`inline-flex items-center justify-center px-8 py-3 rounded-lg font-semibold border-2 transition-all duration-300 hover:scale-105 active:scale-95 ${
+                theme === "dark" || theme === "gradient"
+                  ? "border-white text-white hover:bg-white hover:text-gray-900"
+                  : "border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white"
+              }`}
+            >
+              {secondaryCta.label}
+            </a>
+          )}
+        </div>
+      </div>
+
+      <!-- 画像エリア -->
+      <div class="order-1 lg:order-2 animate-fade-in-right">
+        <div class="relative">
+          <div
+            class="absolute -inset-4 rounded-3xl opacity-30 blur-2xl"
+            style="background-color: {accentBg}"
+          ></div>
+          <img
+            src={image}
+            alt="Hero visual"
+            class="relative w-full h-auto rounded-2xl shadow-2xl object-cover aspect-[4/3] sm:aspect-[16/12] lg:aspect-[4/3] animate-float"
+            loading="eager"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style is:global>
+  @keyframes fade-in-up {
+    0% {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes fade-in-right {
+    0% {
+      opacity: 0;
+      transform: translateX(30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+  .animate-fade-in-up {
+    animation: fade-in-up 0.8s ease-out forwards;
+  }
+  .animate-fade-in-right {
+    animation: fade-in-right 0.8s ease-out forwards;
+  }
+  .animate-float {
+    animation: float 5s ease-in-out infinite;
+  }
+</style>

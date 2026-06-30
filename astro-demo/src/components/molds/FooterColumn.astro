@@ -1,0 +1,78 @@
+---
+interface Props {
+  company: {
+    name: string;
+    description?: string;
+  };
+  columns: Array<{
+    title: string;
+    links: Array<{
+      label: string;
+      href: string;
+    }>;
+  }>;
+  social: Array<{
+    name: string;
+    href: string;
+    icon: string;
+  }>;
+}
+
+const { company, columns, social } = Astro.props;
+---
+
+<footer class="bg-gray-900 text-gray-300">
+  <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+      <!-- Company Info -->
+      <div>
+        <h3 class="text-lg font-semibold text-white">{company.name}</h3>
+        {company.description && (
+          <p class="mt-4 text-sm text-gray-400">{company.description}</p>
+        )}
+      </div>
+
+      <!-- Dynamic Columns -->
+      {columns.map((column) => (
+        <div>
+          <h3 class="text-lg font-semibold text-white">{column.title}</h3>
+          <ul class="mt-4 space-y-2">
+            {column.links.map((link) => (
+              <li>
+                <a
+                  href={link.href}
+                  class="text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+
+      <!-- Social Links -->
+      <div>
+        <h3 class="text-lg font-semibold text-white">Social</h3>
+        <div class="mt-4 flex space-x-4">
+          {social.map((item) => (
+            <a
+              href={item.href}
+              class="text-gray-400 hover:text-white transition-colors"
+              aria-label={item.name}
+            >
+              <span class="sr-only">{item.name}</span>
+              <span class="text-xl" set:html={item.icon}></span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-8 border-t border-gray-700 pt-8">
+      <p class="text-sm text-gray-400">
+        &copy; {new Date().getFullYear()} {company.name}. All rights reserved.
+      </p>
+    </div>
+  </div>
+</footer>
