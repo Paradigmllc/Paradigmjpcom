@@ -3,6 +3,7 @@ import { upsertCompanyByDomain } from "./companies"
 import { runDifyDiagnosis } from "./dify-diagnosis"
 import { runAssetExtraction } from "./extract-assets"
 import { generateDemoDesign, buildDesignInput } from "./demo-design-generator"
+import { buildAndDeployDemo } from "./demo-build-deploy"
 import { fetchDiagnosticReport, markReportGenerated } from "./diagnostic"
 import { autoPersonalize } from "./personalize"
 import { generateReplacementDemo } from "./demo-generator"
@@ -332,6 +333,14 @@ export async function processAssetPhase(
       })()
     : Promise.resolve(null)
 
+  // Hyper-personalized code-generation demo (DeepSeek V4 → complete Astro → R2 deploy)
+  const codeGenDemoPromise = shouldGenerateDemo
+    ? buildAndDeployDemo(company).catch((e: unknown) => {
+        errors.push(`code-gen demo: ${e instanceof Error ? e.message : String(e)}`)
+        return { ok: false, url: null }
+      })
+    : Promise.resolve({ ok: false, url: null as string | null, slug: null as string | null })
+
   const [demo, videoResult] = await Promise.all([
     shouldGenerateDemo
       ? generateReplacementDemo(company, reportData).catch((e: unknown) => {
@@ -348,6 +357,8 @@ export async function processAssetPhase(
       : Promise.resolve(null),
 
     designSpecPromise,
+
+    codeGenDemoPromise,
   ])
 
   let updatedCompany = company
