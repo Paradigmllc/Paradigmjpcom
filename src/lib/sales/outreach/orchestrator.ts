@@ -28,9 +28,27 @@ export interface RunOutreachOptions {
   enableLlm?: boolean
   checkRobots?: boolean
   dedupDays?: number
+  itemTimeoutMs?: number
 }
 const FROM_EMAIL = process.env.OUTREACH_FROM_EMAIL ?? process.env.PARADIGM_SENDER_ADDRESS ?? "contact@paradigmjp.com"
 const FROM_NAME = process.env.OUTREACH_FROM_NAME ?? process.env.PARADIGM_SENDER_NAME ?? "PARADIGM"
+const DEFAULT_ITEM_TIMEOUT_MS = 120_000
+
+async function withTimeout<T extends OutreachItemResult>(
+  promise: Promise<T>,
+  companyId: string,
+  timeoutMs: number = DEFAULT_ITEM_TIMEOUT_MS,
+): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<T>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`item timeout after ${timeoutMs}ms`)), timeoutMs)
+  })
+  try {
+    return await Promise.race([promise, timeout])
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
+}
 function buildFields(message: string): Record<string, string> {
   return { name: FROM_NAME, company: FROM_NAME, email: FROM_EMAIL, message }
 }
@@ -87,6 +105,27 @@ async function fetchCandidates(region: Region, limit: number, companyId?: string
 }
 
 async function processOne(
+  company: SalesCompany,
+  opts: Required<RunOutreachOptions>,
+  index: number,
+): Promise<OutreachItemResult> {
+  const base = (stage: OutreachStage, reason: string): OutreachItemResult => ({
+    companyId: company.id,
+    domain: company.domain,
+    finalStage: stage,
+    reason,
+    dryRun: opts.dryRun,
+  })
+
+  try {
+    return await processOneInner(company, opts, index)
+  } catch (error) {
+    console.error(`[sales-outreach] unhandled error for company ${company.id} (${company.domain}):`, error)
+    return base("submit_failed", `unhandled: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
+async function processOneInner(
   company: SalesCompany,
   opts: Required<RunOutreachOptions>,
   index: number,
@@ -356,6 +395,7 @@ export async function runOutreachBatch(options: RunOutreachOptions = {}): Promis
     enableLlm: options.enableLlm ?? false,
     checkRobots: options.checkRobots ?? true,
     dedupDays: options.dedupDays ?? 30,
+    itemTimeoutMs: options.itemTimeoutMs ?? DEFAULT_ITEM_TIMEOUT_MS,
   }
 
   const candidates = await fetchCandidates(opts.region, opts.limit, opts.companyId || undefined)
@@ -371,12 +411,12 @@ export async function runOutreachBatch(options: RunOutreachOptions = {}): Promis
     if (candidateDomain && !opts.dryRun) {
       const last = domainLastSend.get(candidateDomain)
       if (last && Date.now() - last < DOMAIN_RATE_LIMIT_MS) {
-        const result = await processOne(candidate, { ...opts, dryRun: true }, i)
+        const result = await withTimeout(processOne(candidate, { ...opts, dryRun: true }, i), candidate.id)
         if (result.finalStage !== "submitted") items.push(result)
         continue
       }
     }
-    const result = await processOne(candidate, opts, i)
+    const result = await withTimeout(processOne(candidate, opts, i), candidate.id)
     items.push(result)
     if (result.finalStage === "submitted" && candidateDomain) {
       domainLastSend.set(candidateDomain, Date.now())

@@ -137,8 +137,8 @@ export async function persistOutcome(
   pipelineRunId?: string | null,
 ): Promise<void> {
   if (dryRun) return
-  await applyOutcome(company, stage, sendResult)
   await logActivity(company, stage, result, meta, pipelineRunId)
+  await applyOutcome(company, stage, sendResult)
   if (stage === "manual_queue") {
     const queued = await enqueueOperatorTask(company, {
       reason: sendResult,

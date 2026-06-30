@@ -56,17 +56,22 @@ export async function recentlyContacted(
   companyId: string,
   withinDays: number = 30,
 ): Promise<boolean> {
-  const sb = getServiceSalesSupabase()
-  if (!sb) return false
-  const since = new Date(Date.now() - withinDays * 86_400_000).toISOString()
-  const { data } = await sb
-    .from(DB_TABLES.SALES_ACTIVITY_LOG)
-    .select("id, result, meta")
-    .eq("company_id", companyId)
-    .gte("occurred_at", since)
-    .limit(20)
-  if (!data) return false
-  return data.some((row) => isContactAttemptLog(row.meta, row.result))
+  try {
+    const sb = getServiceSalesSupabase()
+    if (!sb) return true
+    const since = new Date(Date.now() - withinDays * 86_400_000).toISOString()
+    const { data, error } = await sb
+      .from(DB_TABLES.SALES_ACTIVITY_LOG)
+      .select("id, result, meta")
+      .eq("company_id", companyId)
+      .gte("occurred_at", since)
+      .limit(20)
+    if (error || !data) return true
+    return data.some((row) => isContactAttemptLog(row.meta, row.result))
+  } catch (error) {
+    console.error("[sales-outreach/activity] recentlyContacted query failed:", error)
+    return true
+  }
 }
 
 export function isContactAttemptLog(meta: unknown, result?: unknown): boolean {
