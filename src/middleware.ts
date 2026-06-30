@@ -28,6 +28,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/ja", request.url));
   }
 
+  // Sales OS dashboard → Twenty SSOT
+  if (pathname.match(/^\/(?:ja|en)\/admin\/sales/) || pathname.match(/^\/(?:ja|en)\/sales$/)) {
+    return NextResponse.redirect(new URL("https://twenty.paradigmjp.com"));
+  }
+
   return NextResponse.next();
 }
 
