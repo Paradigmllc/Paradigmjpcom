@@ -1,5 +1,5 @@
 import type { BrowserProvider } from "./browser-provider"
-import type { SubmitFormInput, SubmitFormResult } from "./types"
+import type { SubmitFormInput, SubmitFormResult, CachedFormStructure } from "./types"
 import { guessFieldRole } from "./form-classifier"
 import { getProxyFetchOptions } from "../proxy-agent"
 import { submitWithCmsTemplate } from "./cms-form-templates"
@@ -85,6 +85,46 @@ function collectPageHiddenFields(html: string): Record<string, string> {
   return fields
 }
 
+async function submitCached(input: SubmitFormInput, cache: CachedFormStructure, html: string, timeoutMs: number): Promise<SubmitFormResult> {
+  const pageHiddens = collectPageHiddenFields(html)
+  const body: Record<string, string> = { ...pageHiddens }
+  for (const name of cache.inputNames) {
+    const role = guessFieldRole(name)
+    if (role === "message") body[name] = input.message
+    else if (role === "email" && input.fields.email) body[name] = input.fields.email
+    else if (role === "name" && input.fields.name) body[name] = input.fields.name
+    else if (role === "company" && input.fields.company) body[name] = input.fields.company
+    else if (role === "phone" && input.fields.phone) body[name] = input.fields.phone
+    else body[name] = body[name] ?? ""
+  }
+
+  const actionUrl = cache.action ? resolveUrl(input.formUrl, cache.action) : input.formUrl
+  if (input.dryRun) {
+    return { ok: true, outcome: "uncertain", detail: `dry-run (cached): prepared ${Object.keys(body).length} fields` }
+  }
+
+  try {
+    const res = await fetch(actionUrl, getProxyFetchOptions({
+      method: cache.method === "GET" ? "POST" : cache.method,
+      redirect: "follow",
+      signal: AbortSignal.timeout(timeoutMs),
+      headers: {
+        "User-Agent": UA,
+        "Content-Type": cache.enctype?.includes("multipart") ? "application/x-www-form-urlencoded" : (cache.enctype || "application/x-www-form-urlencoded"),
+        Referer: input.formUrl,
+        Origin: new URL(input.formUrl).origin,
+      },
+      body: new URLSearchParams(body).toString(),
+    }))
+    const text = await res.text().catch(() => "")
+    if (!res.ok) return { ok: false, outcome: "failed", detail: `POST (cached) ${res.status}` }
+    if (SUCCESS_RE.test(text)) return { ok: true, outcome: "submitted", detail: "submission (cached) completed; success text detected" }
+    return { ok: true, outcome: "uncertain", detail: "POST (cached) returned 200 but no success text was detected" }
+  } catch (error) {
+    return { ok: false, outcome: "failed", detail: `POST (cached) error: ${error instanceof Error ? error.message : String(error)}` }
+  }
+}
+
 export class HttpFormProvider implements BrowserProvider {
   readonly name = "http"
 
@@ -108,6 +148,13 @@ export class HttpFormProvider implements BrowserProvider {
       return { ok: false, outcome: "failed", detail: `form GET error: ${error instanceof Error ? error.message : String(error)}` }
     }
 
+    const cmsResult = await submitWithCmsTemplate(input, html)
+    if (cmsResult) return cmsResult
+
+    if (input.cachedParsed && input.cachedParsed.inputNames.length > 0) {
+      return submitCached(input, input.cachedParsed, html, timeout)
+    }
+
     const parsed = parseForm(html, input.formUrl)
     if (!parsed) {
       return {
@@ -117,12 +164,9 @@ export class HttpFormProvider implements BrowserProvider {
       }
     }
 
-    const cmsResult = await submitWithCmsTemplate(input, html)
-    if (cmsResult) return cmsResult
-
     const body = fillValues(parsed, input)
     const pageHiddens = collectPageHiddenFields(html)
-    const merged = { ...pageHiddens, ...body } // pageHiddens first, body overrides
+    const merged = { ...pageHiddens, ...body }
     const actionUrl = resolveUrl(input.formUrl, parsed.action)
 
     if (input.dryRun) {

@@ -73,7 +73,7 @@ export async function generateMultiPageSite(
 
   const isJa = input.locale === "ja"
   const suggestedPages = suggestPages(input.industry, input.locale)
-  const system = buildSystemPrompt()
+  const system = buildSystemPrompt(input.industry)
 
   const user = [
     `企業名: ${input.companyName}`,
@@ -152,12 +152,12 @@ export async function generateMultiPageSite(
 
 // ── Builder: manifest → .astro files ──
 
-import { APPLE_DESIGN_SYSTEM } from "./figma-design-system"
+import { selectDesignSystem } from "./figma-design-system"
 export { buildSystemPrompt } from "./astro-code-generator"
 
 export function buildAstroPages(manifest: MultiPageManifest): Map<string, string> {
   const files = new Map<string, string>()
-  const ds = APPLE_DESIGN_SYSTEM
+  const ds = selectDesignSystem(manifest.industry)
   const tokens = ds.colors.tokens
   const typo = ds.typography
   const space = ds.spacing

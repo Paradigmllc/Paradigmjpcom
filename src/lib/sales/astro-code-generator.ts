@@ -4,7 +4,7 @@
  * from the pipeline component library and renders a complete site.
  */
 import type { DesignPromptInput } from "./demo-design-prompts"
-import { APPLE_DESIGN_SYSTEM } from "./figma-design-system"
+import { selectDesignSystem } from "./figma-design-system"
 
 const DEEPSEEK_BASE_URL = process.env.DEEPSEEK_API_BASE || "https://api.deepseek.com/v1"
 const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat" // DeepSeek V4
@@ -19,8 +19,8 @@ export interface AstroCodeResult {
 
 // ── System Prompt ──
 
-export function buildSystemPrompt(): string {
-  const ds = APPLE_DESIGN_SYSTEM
+export function buildSystemPrompt(industry?: string | null): string {
+  const ds = selectDesignSystem(industry ?? null)
   const tokens = ds.colors.tokens
   const typo = ds.typography
   const space = ds.spacing
@@ -119,7 +119,7 @@ export async function generateAstroCode(input: DesignPromptInput): Promise<Astro
       body: JSON.stringify({
         model: DEEPSEEK_MODEL,
         messages: [
-          { role: "system", content: buildSystemPrompt() },
+          { role: "system", content: buildSystemPrompt(input.company.industry) },
           { role: "user", content: userPrompt },
         ],
         temperature: 0.7,

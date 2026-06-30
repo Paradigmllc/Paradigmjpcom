@@ -1,16 +1,14 @@
 /**
- * Layer C: SPA contact-form discovery with Crawlee + Playwright Stealth.
+ * Layer C: SPA contact-form discovery with Crawlee + Playwright.
  *
  * Next.js handles cheap fetch/sitemap/heuristic discovery first. This worker is
  * reserved for JS-rendered sites where a real browser is needed. It only follows
  * contact-like links and stops after a small crawl budget.
+ * Uses native Playwright (no puppeteer-extra dependency).
  */
 
 import { PlaywrightCrawler } from "crawlee"
-import { chromium } from "playwright-extra"
-import StealthPlugin from "puppeteer-extra-plugin-stealth"
-
-chromium.use(StealthPlugin())
+import { chromium } from "playwright"
 
 const CONTACT_RE =
   /contact|inquiry|enquiry|toiawase|otoiawase|お問い合わせ|お問合せ|問い合わせ|get-in-touch|form|資料請求|相談|無料相談/i

@@ -12,7 +12,7 @@ const FORM_HTML = `<html><body>
   <input name="your-name" value="">
   <input name="your-email" type="email">
   <textarea name="your-message"></textarea>
-  <input type="hidden" name="_wpcf7" value="123">
+  <input type="hidden" name="csrf_token" value="abc123">
   <button type="submit">送信</button>
 </form>
 </body></html>`

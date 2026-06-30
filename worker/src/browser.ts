@@ -5,14 +5,29 @@
  * - CDP_ENDPOINT empty: launch one local Chromium instance and reuse it.
  * Each job gets an isolated context that is always closed after use.
  * Browser is restarted every MAX_CONTEXTS_PER_BROWSER to prevent memory leaks.
+ * Uses native Playwright stealth (no puppeteer-extra dependency).
  */
 
-import { chromium } from "playwright-extra"
-import StealthPlugin from "puppeteer-extra-plugin-stealth"
+import { chromium } from "playwright"
 import type { Browser, BrowserContext } from "playwright"
 
-// Playwright Stealth reduces common automation fingerprints such as navigator.webdriver.
-chromium.use(StealthPlugin())
+const STEALTH_SCRIPT = `
+// Remove webdriver detection
+Object.defineProperty(navigator, 'webdriver', { get: () => false });
+// Override plugins
+Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+// Override languages
+Object.defineProperty(navigator, 'languages', { get: () => ['ja-JP', 'ja', 'en-US', 'en'] });
+// Override chrome object
+window.chrome = { runtime: {} };
+// Override permissions
+const originalQuery = window.navigator.permissions.query;
+window.navigator.permissions.query = (parameters) => (
+  parameters.name === 'notifications' ?
+    Promise.resolve({ state: Notification.permission }) :
+    originalQuery(parameters)
+);
+`
 
 let browserPromise: Promise<Browser> | null = null
 let contextCount = 0
@@ -30,7 +45,7 @@ async function launch(): Promise<Browser> {
 
   return chromium.launch({
     headless: true,
-    args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+    args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu", "--disable-blink-features=AutomationControlled"],
   })
 }
 
@@ -85,6 +100,7 @@ async function withContextOnBrowser<T>(
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
     ...(proxyConfig ? { proxy: proxyConfig } : {}),
   })
+  await ctx.addInitScript(STEALTH_SCRIPT)
 
   let timer: ReturnType<typeof setTimeout> | undefined
   const ctxTimeout = new Promise<never>((_, reject) => {

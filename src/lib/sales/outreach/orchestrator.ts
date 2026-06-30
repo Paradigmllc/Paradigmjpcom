@@ -438,10 +438,23 @@ export async function runOutreachBatch(options: RunOutreachOptions = {}): Promis
   // Per-domain rate limiting: prevent rapid repeated submissions to same domain
   const domainLastSend = new Map<string, number>()
   const DOMAIN_RATE_LIMIT_MS = parseInt(process.env.OUTREACH_DOMAIN_RATE_LIMIT_MS ?? "30000", 10) || 30000
+  // Circuit breaker: skip domain after N consecutive failures
+  const domainFailures = new Map<string, number>()
+  const MAX_DOMAIN_FAILURES = 3
 
   for (let i = 0; i < candidates.length; i++) {
     const candidate = candidates[i]
     const candidateDomain = (candidate as { domain?: string }).domain
+    if (candidateDomain && (domainFailures.get(candidateDomain) ?? 0) >= MAX_DOMAIN_FAILURES) {
+      items.push({
+        companyId: candidate.id,
+        domain: candidateDomain,
+        finalStage: "classified_skip",
+        reason: `circuit open: ${MAX_DOMAIN_FAILURES}+ consecutive failures for this domain`,
+        dryRun: opts.dryRun,
+      })
+      continue
+    }
     if (candidateDomain && !opts.dryRun) {
       const last = domainLastSend.get(candidateDomain)
       if (last && Date.now() - last < DOMAIN_RATE_LIMIT_MS) {
@@ -454,6 +467,13 @@ export async function runOutreachBatch(options: RunOutreachOptions = {}): Promis
     items.push(result)
     if (result.finalStage === "submitted" && candidateDomain) {
       domainLastSend.set(candidateDomain, Date.now())
+      domainFailures.set(candidateDomain, 0)
+    } else if (candidateDomain && ["submit_failed", "preflight_failed", "discovery_failed"].includes(result.finalStage)) {
+      const current = domainFailures.get(candidateDomain) ?? 0
+      domainFailures.set(candidateDomain, current + 1)
+      if (current + 1 >= MAX_DOMAIN_FAILURES) {
+        console.warn(`[sales-outreach] circuit breaker opened for domain ${candidateDomain} after ${current + 1} failures`)
+      }
     }
     if (!opts.dryRun && i < candidates.length - 1) {
       await new Promise((resolve) => setTimeout(resolve, 1_500))

@@ -67,7 +67,8 @@ function regexClassify(html: string): ClassifyFormResult {
   const fields = detectFormFields(targetHtml)
 
   for (const h of REGEX_HINTS) {
-    if (h.pattern.test(targetHtml)) {
+    const matchTarget = h.classification === "risky_captcha" ? html : targetHtml
+    if (h.pattern.test(matchTarget)) {
       // For SPA pages, skip_payment should only trigger if there are actual
       // payment-related input fields (card-number, etc.), not just brand
       // mentions in footer/client-logos
