@@ -5,8 +5,8 @@
  */
 import type { DesignPromptInput } from "./demo-design-prompts"
 
-const DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
-const DEEPSEEK_MODEL = "deepseek-chat"
+const DEEPSEEK_BASE_URL = process.env.DEEPSEEK_API_BASE || "https://api.deepseek.com/v1"
+const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat" // DeepSeek V4 Pro (via LiteLLM proxy or direct API)
 const TIMEOUT_MS = 90_000
 const MAX_TOKENS = 8192
 
