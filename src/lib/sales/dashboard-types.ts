@@ -1,5 +1,4 @@
-export { getSalesDashboardData } from "./dashboard-data"
-
+// Stub: re-exports from _archive
 export type {
   DashboardActivity,
   DashboardAuditCheck,
@@ -14,4 +13,4 @@ export type {
   SalesDashboardData,
   SalesDashboardInput,
   SalesDashboardStatus,
-} from "./dashboard-types"
+} from "../_archive_sales-dashboard/dashboard-types"
