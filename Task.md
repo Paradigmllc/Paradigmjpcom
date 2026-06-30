@@ -1,5 +1,16 @@
 ## CURRENT STATUS - 2026-06-30 生成型デザインコンパイルパイプライン — DeepSeek V4 → 完全Astroコード生成
 
+### Active Handoff (2026-06-30 OpenCode)
+- 営業OS outreachパイプライン堅牢化：6箇所修正で数千件連続処理の耐障害性を確保
+  - `orchestrator.ts`: processOne try/catch分離 + 1件120sタイムアウト
+  - `worker/browser.ts`: context 90sタイムアウト + 50context毎ブラウザ再起動(OOM防止)
+  - `activity.ts`: recentlyContacted がDBエラー時 true を返す（二重送信防止）
+  - `side-effects.ts`: logActivity→applyOutcome の順序修正（状態不整合防止）
+  - 全修正ゼロコスト（新規有料API/プロキシ/サーバー増強なし）
+  - 起動トリガー不変（API/webhookイベント駆動・cron/polling不使用）
+
+### 現状
+
 - 根本シフト: design.json → BlockRenderer（テンプレ選択の自動化）から、DeepSeek V4 が**完全な .astro ソースコードをゼロから生成**する方式に転換。
 - 8種のパイプラインコンポーネントライブラリ（HeroSection/ProofStrip/ServiceCards/TestimonialCards/PricingTable/FAQAccordion/CTABanner/PageLayout）を DeepSeek が import して自由に構成。
 - コスト: ~5K output tokens/社 ≈ $0.01（DeepSeek V4 直叩き）。LiteLLM 廃止済み。
@@ -196,11 +207,13 @@ Phase 8 — Telegram bot 修復・OSS管理・Realtime
 - [x] 8-7 Vitest（OSS deep link/intent分類）pass ※realtime payload/secret検証は 8-4/8-1 と併せて継続
 
 Phase 9 — インフラ堅牢化（数千〜数万件対応）
+- [x] 9-1 outreach worker プロセス堅牢化（2026-06-30）: コンテキスト90秒タイムアウト + 50コンテキストごとブラウザ再起動(OOM防止) + 死活判定(`isConnected`)
 - [ ] 9-1 重ワーカー（Browserless/Steel/Stagehand/ComfyUI/HyperFrames/OpenMontage/video/crawl）を別box/serverless へ offload
 - [ ] 9-2 Trigger.dev supervisor/enrichment 実処理を heavy box へ・paradigm-prod-01 軽量化
 - [ ] 9-3 Upstash Redis 導入・rate-limit.ts を @upstash/ratelimit 分散版へ
 - [ ] 9-4 グローバル token bucket＋per-source 並列上限
-- [ ] 9-5 dead-letter queue＋指数backoff＋idempotency 統一
+- [x] 9-5 outreach orchestrator 耐障害性（2026-06-30）: 1件あたり try/catch 孤立 + 120秒 Promise.race タイムアウト + recentlyContacted の DB エラー時 safe-default(true) + persistOutcome 順序修正(log→apply) ※idempotency/dead-letter は未着手
+- [ ] 9-5 dead-letter queue＋指数backoff＋idempotency 統一（outreach 以外の全パイプライン）
 - [ ] 9-6 marketing を ISR/静的化し公開 DB read を origin から排除
 - [ ] 9-7 Cloudflare tiered cache＋cache-control・readiness 分離維持
 - [ ] 9-8 Transaction pooler 強制・poolMax 適正化・circuit breaker ※監査: twenty-crm-metadata の生Client は全て try/finally で client.end() 済み・リークなし（撤去不要）。真の対象は Payload poolMax:4＋pooler Transaction強制で本番 pooler-mode 検証が前提（risky-config・要 prod 確認）
