@@ -120,136 +120,115 @@ export const TEAM_MEMBERS = [
   { nameJa:"テクニカルリード", nameEn:"Technical Lead", roleJa:"Senior Full-Stack Engineer", roleEn:"Senior Full-Stack Engineer", bioJa:"Next.js、TypeScript、Supabaseを専門。ヘッドレスCMSアーキテクチャ設計とAIパイプライン構築の経験が豊富。", bioEn:"Full-stack engineer specializing in Next.js, TypeScript, Supabase. Extensive headless CMS architecture and AI pipeline experience.", sort:2 },
   { nameJa:"デザインリード", nameEn:"Design Lead", roleJa:"UX Designer & Frontend Engineer", roleEn:"UX Designer & Frontend Engineer", bioJa:"プロダクトデザインとフロントエンド実装の両方を持ちTailwindCSS/Framer Motion/shadcn/uiを駆使したモダンUI設計が得意。", bioEn:"Bridging product design and frontend. Specializes in modern UI with TailwindCSS, Framer Motion, shadcn/ui.", sort:3 },
 ]
-
 export async function seedAllContent() {
   const [{ getPayload }, { default: config }] = await Promise.all([
     import("payload"),
     import("@payload-config"),
   ])
   const payload = await getPayload({ config })
-  const summary: Record<string, { created: number; updated: number; errors: number }> = {}
+  const ctx = { skipAutoTranslate: true }
+  const sum: Record<string, { created: number; updated: number; errors: number }> = {}
+
+  async function upsert(collection: string, where: Record<string, unknown>, jaData: Record<string, unknown>, enData?: Record<string, unknown>) {
+    const result = { created: 0, updated: 0, errors: 0 }
+    try {
+      const { docs: ex } = await payload.find({ collection, where, limit: 1 } as Parameters<typeof payload.find>[0])
+      let id: string | number
+      if (ex.length > 0) {
+        const u = await payload.update({ collection, id: ex[0].id, data: jaData, locale: "ja", context: ctx } as unknown as Parameters<typeof payload.update>[0]) as unknown as { id: string | number }
+        id = u.id; result.updated++
+      } else {
+        const c = await payload.create({ collection, data: jaData, locale: "ja", context: ctx } as unknown as Parameters<typeof payload.create>[0]) as unknown as { id: string | number }
+        id = c.id; result.created++
+      }
+      if (enData) {
+        await payload.update({ collection, id, data: enData, locale: "en", context: ctx } as unknown as Parameters<typeof payload.update>[0])
+      }
+    } catch (e) { console.error(`[seed] ${collection}:`, e); result.errors++ }
+    return result
+  }
+
+  function add(acc: Record<string, { created: number; updated: number; errors: number }>, key: string, r: { created: number; updated: number; errors: number }) {
+    const s = acc[key] || { created: 0, updated: 0, errors: 0 }
+    s.created += r.created; s.updated += r.updated; s.errors += r.errors
+    acc[key] = s
+  }
 
   // Categories
-  summary.categories = { created: 0, updated: 0, errors: 0 }
+  sum.categories = { created: 0, updated: 0, errors: 0 }
   for (const c of CATEGORIES) {
-    try {
-      const { docs: ex } = await payload.find({ collection: "categories", where: { slug: { equals: c.slug } }, limit: 1 })
-      const data = { name: c.ja.name, slug: c.slug, description: c.ja.desc, color: c.color, sortOrder: c.sort, availableLocales: ["ja","en"] }
-      let id: string | number
-      if (ex.length > 0) { const u = await payload.update({ collection: "categories", id: ex[0].id, data, locale: "ja" }) as unknown as { id: string | number }; id = u.id; summary.categories.updated++ }
-      else { const cr = await payload.create({ collection: "categories", data, locale: "ja" } as unknown as Parameters<typeof payload.create>[0]) as unknown as { id: string | number }; id = cr.id; summary.categories.created++ }
-      await payload.update({ collection: "categories", id, data: { name: c.en.name, description: c.en.desc }, locale: "en" })
-    } catch (e) { console.error(`[seed] category ${c.slug}:`, e); summary.categories.errors++ }
+    const r = await upsert("categories", { slug: { equals: c.slug } }, { name: c.ja.name, slug: c.slug, description: c.ja.desc, color: c.color, sortOrder: c.sort, availableLocales: ["ja","en"] }, { name: c.en.name, description: c.en.desc })
+    add(sum, "categories", r)
   }
 
   // Posts
-  summary.posts = { created: 0, updated: 0, errors: 0 }
+  sum.posts = { created: 0, updated: 0, errors: 0 }
   for (const p of ALL_POSTS) {
-    try {
-      const { docs: ex } = await payload.find({ collection: "posts", where: { slug: { equals: p.slug } }, limit: 1 })
-      const data = { title: p.ja.title, slug: p.slug, excerpt: p.ja.excerpt, content: textToLexical(p.ja.content), category: p.ja.cat, readTime: p.ja.read, tags: p.tags.map(t => ({ tag: t })), status: "published" as const, publishedAt: new Date(p.date).toISOString(), availableLocales: ["ja","en"] }
-      let id: string | number
-      if (ex.length > 0) { const u = await payload.update({ collection: "posts", id: ex[0].id, data, locale: "ja" }) as unknown as { id: string | number }; id = u.id; summary.posts.updated++ }
-      else { const cr = await payload.create({ collection: "posts", data, locale: "ja" } as unknown as Parameters<typeof payload.create>[0]) as unknown as { id: string | number }; id = cr.id; summary.posts.created++ }
-      await payload.update({ collection: "posts", id, data: { title: p.en.title, excerpt: p.en.excerpt, content: textToLexical(p.en.content), category: p.en.cat, readTime: p.en.read }, locale: "en" })
-    } catch (e) { console.error(`[seed] post ${p.slug}:`, e); summary.posts.errors++ }
+    const r = await upsert("posts", { slug: { equals: p.slug } }, { title: p.ja.title, slug: p.slug, excerpt: p.ja.excerpt, content: textToLexical(p.ja.content), category: p.ja.cat, readTime: p.ja.read, tags: p.tags.map(t => ({ tag: t })), status: "published", publishedAt: new Date(p.date).toISOString(), availableLocales: ["ja","en"] }, { title: p.en.title, excerpt: p.en.excerpt, content: textToLexical(p.en.content), category: p.en.cat, readTime: p.en.read })
+    add(sum, "posts", r)
   }
 
   // Services
-  summary.services = { created: 0, updated: 0, errors: 0 }
+  sum.services = { created: 0, updated: 0, errors: 0 }
   for (const s of SERVICES) {
-    try {
-      const { docs: ex } = await payload.find({ collection: "services", where: { slug: { equals: s.slug } }, limit: 1 })
-      const data = { name: s.ja.name, slug: s.slug, tagline: s.ja.tagline, icon: s.icon, features: s.ja.features.map(f => ({ feature: f })), sortOrder: s.sort, availableLocales: ["ja","en"], isActive: true }
-      let id: string | number
-      if (ex.length > 0) { const u = await payload.update({ collection: "services", id: ex[0].id, data, locale: "ja" }) as unknown as { id: string | number }; id = u.id; summary.services.updated++ }
-      else { const cr = await payload.create({ collection: "services", data, locale: "ja" } as unknown as Parameters<typeof payload.create>[0]) as unknown as { id: string | number }; id = cr.id; summary.services.created++ }
-      await payload.update({ collection: "services", id, data: { name: s.en.name, tagline: s.en.tagline, features: s.en.features.map(f => ({ feature: f })) }, locale: "en" })
-    } catch (e) { console.error(`[seed] service ${s.slug}:`, e); summary.services.errors++ }
+    const r = await upsert("services", { slug: { equals: s.slug } }, { name: s.ja.name, slug: s.slug, tagline: s.ja.tagline, icon: s.icon, features: s.ja.features.map(f => ({ feature: f })), sortOrder: s.sort, availableLocales: ["ja","en"], isActive: true }, { name: s.en.name, tagline: s.en.tagline, features: s.en.features.map(f => ({ feature: f })) })
+    add(sum, "services", r)
   }
 
   // Pricing
-  summary.pricing = { created: 0, updated: 0, errors: 0 }
+  sum.pricing = { created: 0, updated: 0, errors: 0 }
   for (const p of PRICING_PLANS) {
-    try {
-      const { docs: ex } = await payload.find({ collection: "pricing", where: { serviceId: { equals: p.sid }, planName: { equals: p.planJa } }, limit: 1 })
-      const data = { planName: p.planJa, serviceId: p.sid, price: p.price, currency: p.cur, billingCycle: p.bill, description: p.descJa, features: p.featJa.map(f => ({ feature: f, included: true })), isPopular: p.pop, ctaLabel: p.ctaJa, sortOrder: p.sort, availableLocales: ["ja","en"] }
-      let id: string | number
-      if (ex.length > 0) { const u = await payload.update({ collection: "pricing", id: ex[0].id, data, locale: "ja" }) as unknown as { id: string | number }; id = u.id; summary.pricing.updated++ }
-      else { const cr = await payload.create({ collection: "pricing", data, locale: "ja" } as unknown as Parameters<typeof payload.create>[0]) as unknown as { id: string | number }; id = cr.id; summary.pricing.created++ }
-      await payload.update({ collection: "pricing", id, data: { planName: p.planEn, description: p.descEn, features: p.featEn.map(f => ({ feature: f, included: true })), ctaLabel: p.ctaEn }, locale: "en" })
-    } catch (e) { console.error(`[seed] pricing ${p.sid}/${p.planJa}:`, e); summary.pricing.errors++ }
+    const r = await upsert("pricing", { serviceId: { equals: p.sid }, planName: { equals: p.planJa } }, { planName: p.planJa, serviceId: p.sid, price: p.price, currency: p.cur, billingCycle: p.bill, description: p.descJa, features: p.featJa.map(f => ({ feature: f, included: true })), isPopular: p.pop, ctaLabel: p.ctaJa, sortOrder: p.sort, availableLocales: ["ja","en"] }, { planName: p.planEn, description: p.descEn, features: p.featEn.map(f => ({ feature: f, included: true })), ctaLabel: p.ctaEn })
+    add(sum, "pricing", r)
   }
 
   // Works
-  summary.works = { created: 0, updated: 0, errors: 0 }
+  sum.works = { created: 0, updated: 0, errors: 0 }
   for (const w of WORKS) {
-    try {
-      const { docs: ex } = await payload.find({ collection: "works", where: { slug: { equals: w.slug } }, limit: 1 })
-      const data = { title: w.ja.title, slug: w.slug, industry: w.ja.industry, description: w.ja.desc, challenge: w.ja.challenge, solution: w.ja.solution, metrics: w.ja.metrics, tags: w.tags.map(t => ({ tag: t })), color: w.color, sortOrder: w.sort, availableLocales: ["ja","en"], isPublished: true }
-      let id: string | number
-      if (ex.length > 0) { const u = await payload.update({ collection: "works", id: ex[0].id, data, locale: "ja" }) as unknown as { id: string | number }; id = u.id; summary.works.updated++ }
-      else { const cr = await payload.create({ collection: "works", data, locale: "ja" } as unknown as Parameters<typeof payload.create>[0]) as unknown as { id: string | number }; id = cr.id; summary.works.created++ }
-      await payload.update({ collection: "works", id, data: { title: w.en.title, industry: w.en.industry, description: w.en.desc, challenge: w.en.challenge, solution: w.en.solution, metrics: w.en.metrics }, locale: "en" })
-    } catch (e) { console.error(`[seed] work ${w.slug}:`, e); summary.works.errors++ }
+    const r = await upsert("works", { slug: { equals: w.slug } }, { title: w.ja.title, slug: w.slug, industry: w.ja.industry, description: w.ja.desc, challenge: w.ja.challenge, solution: w.ja.solution, metrics: w.ja.metrics, tags: w.tags.map(t => ({ tag: t })), color: w.color, sortOrder: w.sort, availableLocales: ["ja","en"], isPublished: true }, { title: w.en.title, industry: w.en.industry, description: w.en.desc, challenge: w.en.challenge, solution: w.en.solution, metrics: w.en.metrics })
+    add(sum, "works", r)
   }
 
   // FAQs
-  summary.faqs = { created: 0, updated: 0, errors: 0 }
+  sum.faqs = { created: 0, updated: 0, errors: 0 }
   for (const f of FAQS) {
-    try {
-      const { docs: ex } = await payload.find({ collection: "faqs", where: { question: { equals: f.qJa } }, limit: 1 })
-      const data = { question: f.qJa, answer: textToLexical(f.aJa), category: f.catJa, sortOrder: f.sort, availableLocales: ["ja","en"] }
-      let id: string | number
-      if (ex.length > 0) { const u = await payload.update({ collection: "faqs", id: ex[0].id, data, locale: "ja" }) as unknown as { id: string | number }; id = u.id; summary.faqs.updated++ }
-      else { const cr = await payload.create({ collection: "faqs", data, locale: "ja" } as unknown as Parameters<typeof payload.create>[0]) as unknown as { id: string | number }; id = cr.id; summary.faqs.created++ }
-      await payload.update({ collection: "faqs", id, data: { question: f.qEn, answer: textToLexical(f.aEn), category: f.catEn }, locale: "en" })
-    } catch (e) { console.error(`[seed] faq:`, e); summary.faqs.errors++ }
+    const r = await upsert("faqs", { question: { equals: f.qJa } }, { question: f.qJa, answer: textToLexical(f.aJa), category: f.catJa, sortOrder: f.sort, availableLocales: ["ja","en"] }, { question: f.qEn, answer: textToLexical(f.aEn), category: f.catEn })
+    add(sum, "faqs", r)
   }
 
   // Testimonials
-  summary.testimonials = { created: 0, updated: 0, errors: 0 }
+  sum.testimonials = { created: 0, updated: 0, errors: 0 }
   for (const t of TESTIMONIALS) {
-    try {
-      const { docs: ex } = await payload.find({ collection: "testimonials", where: { authorName: { equals: t.author }, company: { equals: t.company } }, limit: 1 })
-      const data = { quote: t.quoteJa, authorName: t.author, authorTitle: t.titleJa, company: t.company, rating: t.rating, serviceTag: t.tag, consentGiven: t.consent, isAnonymous: (t as { anon?: boolean }).anon || false, isPublished: t.pub, sortOrder: t.sort, availableLocales: ["ja","en"] }
-      let id: string | number
-      if (ex.length > 0) { const u = await payload.update({ collection: "testimonials", id: ex[0].id, data, locale: "ja" }) as unknown as { id: string | number }; id = u.id; summary.testimonials.updated++ }
-      else { const cr = await payload.create({ collection: "testimonials", data, locale: "ja" } as unknown as Parameters<typeof payload.create>[0]) as unknown as { id: string | number }; id = cr.id; summary.testimonials.created++ }
-      await payload.update({ collection: "testimonials", id, data: { quote: t.quoteEn, authorTitle: t.titleEn }, locale: "en" })
-    } catch (e) { console.error(`[seed] testimonial ${t.author}:`, e); summary.testimonials.errors++ }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const anon = (t as any).anon || false
+    const r = await upsert("testimonials", { authorName: { equals: t.author }, company: { equals: t.company } }, { quote: t.quoteJa, authorName: t.author, authorTitle: t.titleJa, company: t.company, rating: t.rating, serviceTag: t.tag, consentGiven: t.consent, isAnonymous: anon, isPublished: t.pub, sortOrder: t.sort, availableLocales: ["ja","en"] }, { quote: t.quoteEn, authorTitle: t.titleEn })
+    add(sum, "testimonials", r)
   }
 
   // Team Members
-  summary.team = { created: 0, updated: 0, errors: 0 }
+  sum.team = { created: 0, updated: 0, errors: 0 }
   for (const m of TEAM_MEMBERS) {
-    try {
-      const { docs: ex } = await payload.find({ collection: "team-members", where: { name: { equals: m.nameJa } }, limit: 1 })
-      const data = { name: m.nameJa, role: m.roleJa, bio: m.bioJa, sortOrder: m.sort, availableLocales: ["ja","en"], isActive: true }
-      let id: string | number
-      if (ex.length > 0) { const u = await payload.update({ collection: "team-members", id: ex[0].id, data, locale: "ja" }) as unknown as { id: string | number }; id = u.id; summary.team.updated++ }
-      else { const cr = await payload.create({ collection: "team-members", data, locale: "ja" } as unknown as Parameters<typeof payload.create>[0]) as unknown as { id: string | number }; id = cr.id; summary.team.created++ }
-      await payload.update({ collection: "team-members", id, data: { name: m.nameEn, role: m.roleEn, bio: m.bioEn }, locale: "en" })
-    } catch (e) { console.error(`[seed] team ${m.nameJa}:`, e); summary.team.errors++ }
+    const r = await upsert("team-members", { name: { equals: m.nameJa } }, { name: m.nameJa, role: m.roleJa, bio: m.bioJa, sortOrder: m.sort, availableLocales: ["ja","en"], isActive: true }, { name: m.nameEn, role: m.roleEn, bio: m.bioEn })
+    add(sum, "team", r)
   }
 
   // CMS Homepage
-  summary.pages = { created: 0, updated: 0, errors: 0 }
+  sum.pages = { created: 0, updated: 0, errors: 0 }
   try {
-    const { docs: ex } = await payload.find({ collection: "pages", where: { slug: { equals: "home" } }, limit: 1 })
     const layout = [
       { blockType: "hero", variant: "centered", badge: "PARADIGM", title: "テクノロジーで、ビジネスの未来を創る", subtitle: "AI × Web × グローバル — 中小企業のデジタル競争力を、テクノロジーの力で引き上げます。Webサイト制作からAI導入、海外展開支援まで、すべてをワンストップで。", primaryCtaLabel: "まずは無料相談", primaryCtaHref: "/contact", secondaryCtaLabel: "制作実績を見る", secondaryCtaHref: "/works" },
       { blockType: "section", kicker: "SERVICES", title: "選べる5つのサービス", subtitle: "Web制作からAI導入・海外展開まで、ビジネスの成長ステージに合わせた最適なサービスを提供します。", alignment: "center", background: "default" },
-      { blockType: "card-grid", variant: "bento", columns: 3, cards: [{ icon:"Globe", title:"Web制作", description:"Next.js + PayloadCMSによる高性能サイト構築。SEO/GEO/MEO標準対応、12カ国語対応。", href:"/services/web", highlighted:false },{ icon:"MapPin", title:"MEO対策", description:"Googleマップ検索で上位表示。口コミ戦略と投稿運用で地域集客を最大化。", href:"/services/meo", highlighted:false },{ icon:"Search", title:"SEO/GEO対策", description:"検索エンジン＋AI検索の両方から集客。データドリブンなキーワード戦略。", href:"/services/seo", highlighted:true },{ icon:"Bot", title:"AI導入支援", description:"DeepSeek V4 + Dify + n8nで業務自動化。月額数万円から始めるAI/DX。", href:"/services/ai", highlighted:false },{ icon:"Globe", title:"海外展開支援 (JaaS)", description:"日本市場参入をフルスタックでサポート。市場調査からLP構築、決済・CSまで。", href:"/services/jaas", highlighted:false }] },
+      { blockType: "card-grid", variant: "bento", columns: 3, cards: [{ icon:"Globe", title:"Web制作", description:"Next.js + PayloadCMSによる高性能サイト構築。SEO/GEO/MEO標準対応、12カ国語多言語対応。", href:"/services/web", highlighted:false },{ icon:"MapPin", title:"MEO対策", description:"Googleマップ検索で上位表示。口コミ戦略と投稿運用で地域集客を最大化。", href:"/services/meo", highlighted:false },{ icon:"Search", title:"SEO/GEO対策", description:"検索エンジン＋AI検索の両方から集客。データドリブンなキーワード戦略。", href:"/services/seo", highlighted:true },{ icon:"Bot", title:"AI導入支援", description:"DeepSeek V4 + Dify + n8nで業務自動化。月額数万円から始めるAI/DX。", href:"/services/ai", highlighted:false },{ icon:"Globe", title:"海外展開支援 (JaaS)", description:"日本市場参入をフルスタックでサポート。市場調査からLP構築、決済・CSまで。", href:"/services/jaas", highlighted:false }] },
       { blockType: "cta", title: "まずは無料相談から", subtitle: "御社の課題と目標をお聞かせください。最適なソリューションをご提案します。", primaryCtaLabel: "無料相談を申し込む", primaryCtaHref: "/contact", background: "gradient" },
       { blockType: "stats", kicker: "ACHIEVEMENTS", title: "数字で見るParadigm", stats: [{ value:"12", label:"対応言語", sublabel:"日本語からアラビア語まで" },{ value:"5", label:"サービス", sublabel:"Web/MEO/SEO/AI/海外展開" },{ value:"98%", label:"Lighthouseスコア", sublabel:"パフォーマンス最適化済み" },{ value:"6+", label:"プロジェクト実績", sublabel:"SaaS/D2C/コーポレート" }], background: "surface" },
       { blockType: "process", kicker: "PROCESS", title: "プロジェクトの流れ", subtitle: "初回相談から公開・運用まで、安心のステップバイステップ", steps: [{ title:"ヒアリング", description:"課題・目標・予算をお聞きし最適なご提案をいたします", icon:"MessageCircle" },{ title:"企画・設計", description:"サイト構造、デザイン方針、技術選定を確定します", icon:"Pencil" },{ title:"開発・制作", description:"定期的な進捗共有を行いながら透明性の高い開発を進めます", icon:"Code" },{ title:"検証・公開", description:"品質チェック、SEO監査を経て本番環境に公開します", icon:"CheckCircle" },{ title:"運用・改善", description:"アクセス解析、コンテンツ更新、継続的な改善を行います", icon:"RefreshCw" }] },
       { blockType: "cta", title: "ビジネスの成長を、テクノロジーで加速しませんか？", subtitle: "無料相談では、具体的なお見積りと改善の方向性をご提示します。お気軽にご連絡ください。", primaryCtaLabel: "無料相談を申し込む", primaryCtaHref: "/contact", secondaryCtaLabel: "お問い合わせ", secondaryCtaHref: "/contact", background: "accent" },
     ]
     const data = { title: "Paradigm — テクノロジーでビジネスの未来を創る", slug: "home", description: "ParadigmはAI×Web×グローバルで中小企業のデジタル競争力を引き上げます。Web制作、SEO/MEO対策、AI導入支援、海外展開支援をワンストップで提供。", layout, availableLocales: ["ja","en"], isHomepage: true }
-    if (ex.length > 0) { await payload.update({ collection: "pages", id: ex[0].id, data, locale: "ja" }); summary.pages.updated++ }
-    else { await payload.create({ collection: "pages", data, locale: "ja" } as unknown as Parameters<typeof payload.create>[0]); summary.pages.created++ }
-  } catch (e) { console.error(`[seed] pages:`, e); summary.pages.errors++ }
+    const { docs: ex } = await payload.find({ collection: "pages", where: { slug: { equals: "home" } }, limit: 1 } as Parameters<typeof payload.find>[0])
+    if (ex.length > 0) { await payload.update({ collection: "pages", id: ex[0].id, data, locale: "ja", context: ctx } as unknown as Parameters<typeof payload.update>[0]); sum.pages.updated++ }
+    else { await payload.create({ collection: "pages", data, locale: "ja", context: ctx } as unknown as Parameters<typeof payload.create>[0]); sum.pages.created++ }
+  } catch (e) { console.error(`[seed] pages:`, e); sum.pages.errors++ }
 
-  return summary
+  return sum
 }
