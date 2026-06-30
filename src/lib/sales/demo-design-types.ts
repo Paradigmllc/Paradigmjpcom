@@ -213,6 +213,13 @@ export interface TestimonialBlock {
   }[]
 }
 
+export interface CTABlock {
+  type: "cta"
+  title: string
+  subtitle: string | null
+  ctas: { label: string; href: string }[]
+}
+
 export type PageBlock =
   | HeroBlock
   | ProofBlock
@@ -225,6 +232,7 @@ export type PageBlock =
   | BeforeAfterBlock
   | TimelineBlock
   | TestimonialBlock
+  | CTABlock
 
 // ── Page Specifications ──
 

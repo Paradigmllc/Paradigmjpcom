@@ -146,6 +146,13 @@ export interface TestimonialBlock extends PageBlockBase {
   items: { quote: string; author: string; role: string | null; image: ImageRef | null }[]
 }
 
+export interface CTABlock extends PageBlockBase {
+  type: "cta"
+  title: string
+  subtitle: string | null
+  ctas: { label: string; href: string }[]
+}
+
 export type PageBlock =
   | HeroBlock
   | ProofBlock
@@ -158,6 +165,7 @@ export type PageBlock =
   | BeforeAfterBlock
   | TimelineBlock
   | TestimonialBlock
+  | CTABlock
 
 export interface PageSpec {
   title: string

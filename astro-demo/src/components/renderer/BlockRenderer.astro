@@ -401,7 +401,31 @@ const isJa = spec.locale === "ja"
   )
 }
 
+{
+  block.type === "cta" && (
+    <section class="cta section-py">
+      <style is:inline set:html={`
+        .cta{text-align:center;padding:clamp(3rem,8vw,5rem) clamp(16px,4vw,40px);background:linear-gradient(135deg,var(--c-primary),var(--c-primary-dark));color:#fff;border-radius:0}
+        .cta h2{font-size:var(--font-scale-h2);margin-bottom:0.5rem}
+        .cta p{font-size:var(--font-scale-body);opacity:0.9;margin-bottom:2rem;max-width:500px;margin-left:auto;margin-right:auto}
+        .cta__actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+        .cta__btn{display:inline-flex;align-items:center;padding:14px 32px;border-radius:var(--radius);font-weight:700;font-size:1rem;transition:transform var(--transition)}
+        .cta__btn--pri{background:#fff;color:var(--c-primary)}
+        .cta__btn--sec{border:2px solid rgba(255,255,255,.4);color:#fff}
+        .cta__btn:hover{transform:translateY(-2px)}
+      `}></style>
+      <h2>{block.title}</h2>
+      {block.subtitle && <p>{block.subtitle}</p>}
+      <div class="cta__actions">
+        {block.ctas.map((cta: any, i: number) => (
+          <a href={cta.href} class={`cta__btn ${i === 0 ? "cta__btn--pri" : "cta__btn--sec"}`}>{cta.label}</a>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 <!-- fallback for unknown block types -->
-{!["hero","proof","cards","media-text","faq","contact","company-info","plans","before-after","timeline","testimonials"].includes(block.type) && (
+{!["hero","proof","cards","media-text","faq","contact","company-info","plans","before-after","timeline","testimonials","cta"].includes(block.type) && (
   <p style="text-align:center;color:var(--c-text-muted);padding:2rem">Unknown block: {block.type}</p>
 )}
