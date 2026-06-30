@@ -1,0 +1,22 @@
+---
+export interface Props { title: string; subtitle?: string; ctas: { label: string; href: string }[]; colors?: { primary?: string } }
+const { title, subtitle, ctas, colors = {} } = Astro.props
+const p = colors.primary || "var(--c-primary)"
+---
+<section class="cta">
+  <style is:inline set:html={`
+    .cta{text-align:center;padding:clamp(3rem,8vw,5rem) clamp(16px,4vw,40px);background:linear-gradient(135deg,var(--cp,${p}),color-mix(in srgb,var(--cp,${p}) 30%,#000));color:#fff}
+    .cta h2{font-size:clamp(1.6rem,3.5vw,2.4rem);margin-bottom:0.5rem}
+    .cta p{opacity:0.9;margin-bottom:2rem;max-width:500px;margin-left:auto;margin-right:auto;font-size:1rem}
+    .cta__actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+    .cta__btn{display:inline-flex;align-items:center;padding:14px 32px;border-radius:12px;font-weight:700;font-size:1rem;text-decoration:none;transition:transform .2s}
+    .cta__btn:first-child{background:#fff;color:var(--cp,${p})}
+    .cta__btn:not(:first-child){border:2px solid rgba(255,255,255,.4);color:#fff}
+    .cta__btn:hover{transform:translateY(-2px)}
+  `}></style>
+  <h2>{title}</h2>
+  {subtitle && <p>{subtitle}</p>}
+  <div class="cta__actions">
+    {ctas.map((cta, i) => <a href={cta.href} class="cta__btn">{cta.label}</a>)}
+  </div>
+</section>

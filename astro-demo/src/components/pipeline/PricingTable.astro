@@ -1,0 +1,33 @@
+---
+export interface Plan { name: string; price: string; description: string; features: string[]; featured?: boolean; cta: { label: string; href: string } }
+export interface Props { plans: Plan[]; colors?: { primary?: string } }
+const { plans, colors = {} } = Astro.props
+const p = colors.primary || "var(--c-primary)"
+---
+<section class="plans">
+  <style is:inline set:html={`
+    .plans{padding:clamp(3rem,6vw,5rem) clamp(16px,4vw,40px)}
+    .plans__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem;max-width:960px;margin:0 auto;align-items:start}
+    .plan{padding:2rem;border-radius:14px;background:#fff;border:1.5px solid rgba(0,0,0,.08);text-align:center}
+    .plan--featured{border-color:var(--cp,${p});transform:scale(1.03);box-shadow:0 0 0 1px var(--cp,${p})}
+    .plan h3{font-size:1.2rem;margin-bottom:0.3rem}
+    .plan__price{font-size:2.2rem;font-weight:900;color:var(--cp,${p});margin:0.8rem 0}
+    .plan__desc{font-size:0.88rem;opacity:0.6;margin-bottom:1.2rem}
+    .plan ul{list-style:none;text-align:left;margin-bottom:1.5rem}
+    .plan li{font-size:0.88rem;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.04)}
+    .plan li::before{content:'✓ ';color:var(--cp,${p});font-weight:700}
+    .plan__cta{display:block;padding:12px 0;background:var(--cp,${p});color:#fff;border-radius:10px;font-weight:700;font-size:0.92rem;text-decoration:none}
+    @media(max-width:640px){.plans__grid{grid-template-columns:1fr;max-width:380px;margin:0 auto}.plan--featured{transform:none}}
+  `}></style>
+  <div class="plans__grid">
+    {plans.map(plan => (
+      <div class={`plan ${plan.featured ? "plan--featured" : ""}`}>
+        <h3>{plan.name}</h3>
+        <div class="plan__price">{plan.price}</div>
+        <p class="plan__desc">{plan.description}</p>
+        <ul>{plan.features.map(f => <li>{f}</li>)}</ul>
+        <a href={plan.cta.href} class="plan__cta">{plan.cta.label}</a>
+      </div>
+    ))}
+  </div>
+</section>

@@ -1,0 +1,41 @@
+---
+export interface Props { companyName: string; pages: { label: string; href: string }[]; footer: { address?: string; phone?: string; email?: string } }
+const { companyName, pages, footer } = Astro.props
+---
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>{companyName}</title>
+  <style is:inline set:html={`
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Inter,"Noto Sans JP",system-ui,sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+    .nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(18px);border-bottom:1px solid rgba(0,0,0,.06);height:64px;display:flex;align-items:center;padding:0 clamp(16px,4vw,40px)}
+    .nav__brand{font-weight:900;font-size:1.05rem;color:inherit;text-decoration:none}
+    .nav__links{display:flex;align-items:center;gap:6px;margin-left:auto}
+    .nav__links a{padding:6px 12px;border-radius:8px;font-size:0.88rem;font-weight:600;color:inherit;opacity:0.6;text-decoration:none}
+    .nav__links a:hover{opacity:1}
+    .footer{padding:clamp(2rem,5vw,4rem) clamp(16px,4vw,40px);border-top:1px solid rgba(0,0,0,.06);text-align:center}
+    .footer__info{font-size:0.82rem;opacity:0.5;line-height:1.8;margin-bottom:1rem}
+    .footer__copy{font-size:0.78rem;opacity:0.35}
+    @media(max-width:640px){.nav__links a:not(:last-child){display:none}}
+  `}></style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="nav__brand">{companyName}</a>
+    <div class="nav__links">
+      {pages.map(p => <a href={p.href}>{p.label}</a>)}
+    </div>
+  </nav>
+  <slot />
+  <footer class="footer">
+    <div class="footer__info">
+      {footer.address && <div>{footer.address}</div>}
+      {footer.phone && <div>{footer.phone}</div>}
+      {footer.email && <div>{footer.email}</div>}
+    </div>
+    <div class="footer__copy">&copy; {new Date().getFullYear()} {companyName}</div>
+  </footer>
+</body>
+</html>

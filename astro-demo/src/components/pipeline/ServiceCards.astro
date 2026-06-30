@@ -1,0 +1,33 @@
+---
+export interface Props {
+  title: string
+  items: { title: string; body: string; icon?: string }[]
+  layout?: "3-col" | "2-col"
+}
+const { title, items, layout = "3-col" } = Astro.props
+---
+
+<section class="svc">
+  <style is:inline set:html={`
+    .svc{padding:clamp(3rem,6vw,5rem) clamp(16px,4vw,40px)}
+    .svc h2{text-align:center;margin-bottom:clamp(1.5rem,3vw,2.5rem);font-size:clamp(1.6rem,3.5vw,2.4rem)}
+    .svc__grid{display:grid;gap:1.5rem;max-width:1000px;margin:0 auto}
+    .svc__grid--3-col{grid-template-columns:repeat(3,1fr)}
+    .svc__grid--2-col{grid-template-columns:repeat(2,1fr)}
+    .svc__card{padding:clamp(1.5rem,3vw,2rem);border-radius:12px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.6)}
+    .svc__icon{font-size:1.8rem;margin-bottom:0.8rem}
+    .svc__card h3{font-size:1.1rem;margin-bottom:0.4rem}
+    .svc__card p{font-size:0.9rem;opacity:0.7;line-height:1.7}
+    @media(max-width:768px){.svc__grid--3-col{grid-template-columns:1fr}.svc__grid--2-col{grid-template-columns:1fr}}
+  `}></style>
+  <h2>{title}</h2>
+  <div class={`svc__grid svc__grid--${layout}`}>
+    {items.map(item => (
+      <div class="svc__card">
+        {item.icon && <div class="svc__icon">{item.icon}</div>}
+        <h3>{item.title}</h3>
+        <p>{item.body}</p>
+      </div>
+    ))}
+  </div>
+</section>

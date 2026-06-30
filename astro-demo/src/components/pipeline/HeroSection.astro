@@ -1,0 +1,54 @@
+---
+// Component library for AI-generated demo sites.
+// Each component accepts explicit Props, enabling DeepSeek to generate
+// complete index.astro files by importing and composing these building blocks.
+export interface Props {
+  headline: string
+  subheadline?: string
+  image?: string | null
+  primaryCta: { label: string; href: string }
+  secondaryCta?: { label: string; href: string } | null
+  variant?: "fullbleed" | "split" | "centered" | "gradient"
+  colors?: { primary?: string; bg?: string; text?: string }
+}
+
+const { headline, subheadline, image, primaryCta, secondaryCta, variant = "fullbleed", colors = {} } = Astro.props
+const p = colors.primary || "var(--c-primary)"
+const bg = colors.bg || "var(--c-bg)"
+const text = colors.text || "var(--c-text)"
+---
+
+<section class={`hero hero--${variant}`} style={`--hp:${p};--hbg:${bg};--htx:${text}`}>
+  <style is:inline set:html={`
+    .hero{position:relative;display:flex;align-items:center;min-height:80vh;overflow:hidden}
+    .hero--fullbleed{min-height:100vh}
+    .hero--centered{justify-content:center;text-align:center}
+    .hero--split{display:grid;grid-template-columns:1fr 1fr;gap:0;min-height:80vh}
+    .hero--gradient{background:linear-gradient(135deg,var(--hp),color-mix(in srgb,var(--hp) 30%,#000))}
+    .hero__bg{position:absolute;inset:0;z-index:0}
+    .hero__bg img{width:100%;height:100%;object-fit:cover}
+    .hero__bg::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,var(--hbg) 100%)}
+    .hero--gradient .hero__bg::after{display:none}
+    .hero__content{position:relative;z-index:1;max-width:720px;padding:0 clamp(16px,4vw,40px)}
+    .hero--centered .hero__content{text-align:center;margin:0 auto}
+    .hero h1{font-size:clamp(2.4rem,6vw,4.8rem);font-weight:900;line-height:1.08;letter-spacing:-0.03em;margin-bottom:1rem;color:var(--htx)}
+    .hero p{font-size:clamp(1rem,1.5vw,1.2rem);line-height:1.7;margin-bottom:2rem;opacity:0.8;color:var(--htx)}
+    .hero__ctas{display:flex;flex-wrap:wrap;gap:12px}
+    .hero__cta-pri{display:inline-flex;align-items:center;padding:14px 28px;background:var(--hp);color:#fff;font-weight:700;font-size:0.95rem;border-radius:12px;transition:transform .2s}
+    .hero__cta-pri:hover{transform:translateY(-1px)}
+    .hero__cta-sec{display:inline-flex;align-items:center;padding:14px 28px;font-weight:700;font-size:0.95rem;border-radius:12px;border:1.5px solid rgba(255,255,255,.3);color:var(--htx);transition:border-color .2s}
+    .hero__cta-sec:hover{border-color:var(--hp)}
+    @media(max-width:768px){.hero--split{grid-template-columns:1fr}.hero--split .hero__bg{min-height:250px;order:-1}}
+  `}></style>
+  {image && (
+    <div class="hero__bg"><img src={image} alt="" loading="eager" /></div>
+  )}
+  <div class="hero__content">
+    <h1>{headline}</h1>
+    {subheadline && <p>{subheadline}</p>}
+    <div class="hero__ctas">
+      <a href={primaryCta.href} class="hero__cta-pri">{primaryCta.label}</a>
+      {secondaryCta && <a href={secondaryCta.href} class="hero__cta-sec">{secondaryCta.label}</a>}
+    </div>
+  </div>
+</section>

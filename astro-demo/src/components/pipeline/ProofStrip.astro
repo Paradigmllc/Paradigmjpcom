@@ -1,0 +1,26 @@
+---
+export interface Props {
+  items: { value: string; label: string }[]
+  colors?: { primary?: string; bg?: string; text?: string }
+}
+const { items, colors = {} } = Astro.props
+const p = colors.primary || "var(--c-primary)"
+---
+
+<section class="proof" style={`--cp:${p}`}>
+  <style is:inline set:html={`
+    .proof{padding:clamp(2rem,5vw,4rem) 0;text-align:center}
+    .proof__grid{display:flex;flex-wrap:wrap;gap:2rem;justify-content:center;max-width:900px;margin:0 auto;padding:0 clamp(16px,4vw,40px)}
+    .proof__item{min-width:140px}
+    .proof__value{font-size:clamp(2rem,4vw,3rem);font-weight:900;color:var(--cp);line-height:1}
+    .proof__label{font-size:0.85rem;opacity:0.6;margin-top:0.5rem}
+  `}></style>
+  <div class="proof__grid">
+    {items.map(item => (
+      <div class="proof__item">
+        <div class="proof__value">{item.value}</div>
+        <div class="proof__label">{item.label}</div>
+      </div>
+    ))}
+  </div>
+</section>
