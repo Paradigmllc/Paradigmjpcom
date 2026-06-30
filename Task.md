@@ -1,4 +1,16 @@
-## CURRENT STATUS - 2026-06-30 生成型デザインコンパイルパイプライン — DeepSeek V4 → 完全Astroコード生成
+## CURRENT STATUS - 2026-06-30 全サイトコンテンツ実装 — ブログ20記事・実績6・サービス5・料金12・FAQ15・声6・チーム3・CMSページ1
+
+- 壁打ち合意: 現状スカスカのHPを本番運用レベルに充実。ブログ・コンテンツをゼロから実装しデプロイ。
+- 実装: `src/app/api/admin/seed-all-content/route.ts` + `seed-data.ts` — 全コンテンツ一括投入APIエンドポイント。
+  - カテゴリ4件（SEO/GEO, AI・自動化, Web制作, デジタルマーケティング）
+  - ブログ記事20件（JA+EN、Lexical richText本文付き、12カ国語autoTranslate対応）
+  - サービス5件（JaaS/Web/MEO/SEO/AI）
+  - 料金プラン12件（4サービス×3ティア）
+  - 制作実績6件（Sericia/Appexxme/AirTabi/Paradigm/DXDoctor/Temploft）
+  - FAQ 15件、お客様の声6件、チームメンバー3件
+  - CMSトップページ（7ブロック: hero/section/card-grid/cta/stats/process/cta）
+- 投入方法: デプロイ後に `POST /api/admin/seed-all-content { confirm: true }` + `x-admin-secret`
+- 検証: tsc clean / quality:guard 0 error / build OK
 
 ### Active Handoff (2026-06-30 OpenCode)
 - 営業OS outreachパイプライン堅牢化：6箇所修正で数千件連続処理の耐障害性を確保
