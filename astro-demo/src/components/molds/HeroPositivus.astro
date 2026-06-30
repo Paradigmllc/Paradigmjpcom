@@ -1,0 +1,90 @@
+---
+export interface Props {
+  companyName: string;
+  headline: string;
+  subheadline: string;
+  ctaLabel: string;
+  ctaHref: string;
+}
+
+const { companyName, headline, subheadline, ctaLabel, ctaHref } = Astro.props;
+---
+
+<section class="px-[100px] py-0 gap-10 flex flex-col bg-white">
+  <!-- Nav -->
+  <nav class="px-[100px] py-0 gap-[206px] flex items-center justify-between w-full pt-8">
+    <div class="flex items-center gap-2">
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 0L22.5 13.5L36 18L22.5 22.5L18 36L13.5 22.5L0 18L13.5 13.5L18 0Z" fill="#191a23"/>
+      </svg>
+      <span class="font-space-grotesk text-2xl font-bold text-[#191a23]">{companyName}</span>
+    </div>
+    <div class="flex items-center gap-8">
+      <a href="#" class="font-space-grotesk text-[18px] text-[#191a23] hover:underline">About us</a>
+      <a href="#" class="font-space-grotesk text-[18px] text-[#191a23] hover:underline">Services</a>
+      <a href="#" class="font-space-grotesk text-[18px] text-[#191a23] hover:underline">Use Cases</a>
+      <a href="#" class="font-space-grotesk text-[18px] text-[#191a23] hover:underline">Pricing</a>
+      <a href="#" class="font-space-grotesk text-[18px] text-[#191a23] hover:underline">Blog</a>
+      <a href={ctaHref} class="font-space-grotesk text-[18px] text-[#191a23] border-2 border-[#191a23] px-[35px] py-[20px] rounded-[14px] hover:bg-[#191a23] hover:text-white transition-all">
+        {ctaLabel}
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero Content -->
+  <div class="flex items-center justify-between gap-20 mt-16">
+    <div class="max-w-[600px] flex flex-col gap-8">
+      <h1 class="font-space-grotesk text-[40px] leading-tight font-medium text-[#191a23] m-0">
+        {headline}
+      </h1>
+      <p class="font-space-grotesk text-[18px] leading-relaxed text-[#191a23] m-0">
+        {subheadline}
+      </p>
+      <a
+        href={ctaHref}
+        class="inline-block w-fit font-space-grotesk text-[18px] text-white bg-[#191a23] px-[35px] py-[20px] rounded-[14px] hover:bg-[#b9ff66] hover:text-[#191a23] transition-all"
+      >
+        {ctaLabel}
+      </a>
+    </div>
+    <div class="shrink-0">
+      <svg width="600" height="580" viewBox="0 0 600 580" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="50" y="40" width="500" height="500" rx="45" fill="#f3f3f3"/>
+        <circle cx="300" cy="290" r="120" fill="#b9ff66"/>
+        <circle cx="300" cy="290" r="80" fill="#191a23"/>
+        <circle cx="300" cy="290" r="40" fill="#b9ff66"/>
+        <rect x="100" y="440" width="400" height="60" rx="14" fill="#191a23"/>
+        <rect x="120" y="455" width="80" height="30" rx="14" fill="#b9ff66"/>
+        <rect x="400" y="455" width="80" height="30" rx="14" fill="#b9ff66"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Logo Strip -->
+  <div class="flex items-center justify-between gap-12 mt-8 mb-16 opacity-60">
+    <svg width="124" height="40" viewBox="0 0 124 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="124" height="40" rx="8" fill="#191a23"/>
+      <text x="20" y="26" font-family="Space Grotesk" font-size="14" fill="white">Amazon</text>
+    </svg>
+    <svg width="124" height="40" viewBox="0 0 124 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="124" height="40" rx="8" fill="#191a23"/>
+      <text x="20" y="26" font-family="Space Grotesk" font-size="14" fill="white">Dribbble</text>
+    </svg>
+    <svg width="124" height="40" viewBox="0 0 124 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="124" height="40" rx="8" fill="#191a23"/>
+      <text x="20" y="26" font-family="Space Grotesk" font-size="14" fill="white">HubSpot</text>
+    </svg>
+    <svg width="124" height="40" viewBox="0 0 124 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="124" height="40" rx="8" fill="#191a23"/>
+      <text x="20" y="26" font-family="Space Grotesk" font-size="14" fill="white">Notion</text>
+    </svg>
+    <svg width="124" height="40" viewBox="0 0 124 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="124" height="40" rx="8" fill="#191a23"/>
+      <text x="20" y="26" font-family="Space Grotesk" font-size="14" fill="white">Netflix</text>
+    </svg>
+    <svg width="124" height="40" viewBox="0 0 124 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="124" height="40" rx="8" fill="#191a23"/>
+      <text x="20" y="26" font-family="Space Grotesk" font-size="14" fill="white">Zoom</text>
+    </svg>
+  </div>
+</section>

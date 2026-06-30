@@ -1,0 +1,46 @@
+---
+export interface Props {
+  steps: {
+    number: string;
+    title: string;
+    body: string;
+  }[];
+}
+
+const { steps } = Astro.props;
+---
+
+<section class="px-[100px] py-0 flex flex-col gap-[40px]">
+  <div class="flex flex-col gap-[77px]">
+    {
+      steps.map((step, index) => (
+        <details
+          class="group bg-[#f3f3f3] p-[50px] rounded-[45px] [&:nth-child(2n+2)]:bg-[#b9ff66] [&:nth-child(3n+3)]:bg-[#191a23] [&:nth-child(3n+3)]:text-white open:[&:nth-child(3n+3)]:bg-[#191a23]"
+          open={index === 0}
+        >
+          <summary class="list-none flex items-center justify-between cursor-pointer">
+            <div class="flex items-center gap-[77px]">
+              <span class="font-space-grotesk text-[40px] font-bold">{step.number}</span>
+              <span class="font-space-grotesk text-[18px] font-medium">{step.title}</span>
+            </div>
+            <div class="w-8 h-8 rounded-full border-2 border-current flex items-center justify-center group-open:rotate-45 transition-transform duration-300">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M8 3V13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </summary>
+          <div class="mt-[30px] pt-[30px] border-t border-current">
+            <p class="font-space-grotesk text-[18px] leading-relaxed">{step.body}</p>
+          </div>
+        </details>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  details[open] > summary {
+    margin-bottom: 0;
+  }
+</style>
