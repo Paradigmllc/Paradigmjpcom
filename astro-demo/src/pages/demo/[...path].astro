@@ -1,3 +1,5 @@
 ---
+const rawPath = Astro.params.path ?? ""
+if (rawPath.startsWith("demos/")) return new Response("Static file not found. Check /demos/ path.", { status: 404 })
 return Astro.redirect("/demos/trattoria-soleil/index.html", 301)
 ---

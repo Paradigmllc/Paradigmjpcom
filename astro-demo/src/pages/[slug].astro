@@ -1,4 +1,6 @@
 ---
-// All old demo routes redirect to new AI-generated demos
+// Redirect old demo routes. Skip new /demos/ static paths.
+const slug = Astro.params.slug ?? ""
+if (slug.startsWith("demos/")) return Astro.redirect(`/${slug}`, 301)
 return Astro.redirect("/demos/trattoria-soleil/index.html", 301)
 ---
