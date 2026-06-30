@@ -1,3 +1,12 @@
+## CURRENT STATUS - 2026-06-30 Twenty CRM 列整理 — 運用監視列4つ削除・全営業GUI Twenty一元化完了
+
+- Twenty 列から削除: `paradigmSourceCoverage` / `paradigmDataSources` / `paradigmDataBreakdown` / `paradigmSourceDetailsUrl` — 内部運用監視用、営業実務に不要
+- 残存15列: Name / Domain / 国名 / 取得ステータス / Next Action / 最終エラー / 営業ステータス / フォームURL / 診断レポートURL / 地域名 / 業種名 / ソース元 / 営業資料URL / デモURL / 顧客用Notion URL
+- 修正ファイル: `crm-field-config.ts` (OPERATIONAL_CRM_VIEW_FIELDS + CRM_FIELD_OVERRIDESの4行削除)、`twenty-crm-metadata-db-apply.ts` (TWENTY_HOME_EXTRA_FIELDSの4行削除)
+- データパイプライン（source-coverage/twenty writeback）は全維持。列だけ非表示化
+- Twenty メタデータ適用 → Twenty サーバー再起動 → Traefik HUP で反映
+- DEPLOY: 本番deploy済み、Twenty稼働確認済み
+
 ## CURRENT STATUS - 2026-06-30 Sales OS ダッシュボード全廃棄 — Twenty を営業GUIの唯一のSSOTに
 
 - 決定: 営業GUI操作は Twenty (twenty.paradigmjp.com) に一元化。全Sales OSダッシュボードパネルをアーカイブ。今後非Twentyの営業GUIは作成禁止。
