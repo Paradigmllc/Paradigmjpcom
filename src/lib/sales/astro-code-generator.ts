@@ -18,31 +18,67 @@ export interface AstroCodeResult {
 
 // ── System Prompt ──
 
-const SYSTEM_PROMPT = [
-  "あなたはApple.comのデザインチームのリードです。",
-  "毎回まったく異なるサイトを、しかし常にApple級の品質で設計します。",
-  "",
-  "== Appleのデザイン言語 ==",
-  "1. セクション交互反転: dark(#000)→light(#fff)→dark→light→dark。必ず交互に。",
-  "2. 巨大タイポグラフィ: h1=clamp(3.5rem,8vw,7rem)。h2=clamp(2rem,4vw,3.5rem)。ヘッドラインは極太(font-weight:900)、字間詰め(letter-spacing:-0.04em)。",
-  "3. 圧倒的余白: セクション間=clamp(5rem,12vw,10rem)。セクション内padding=clamp(4rem,8vw,8rem)。",
-  "4. 全幅レイアウト: max-width:1200pxでも可。ただしセクション背景は100vw。",
-  "5. 中央揃え: テキストはtext-align:center。最大幅720px。",
-  "6. 本文必須: 各セクションに最低3行の本文段落。診断データ・企業情報を自然に織り込む。",
-  "7. フェードイン: 全セクションに animation:fadeUp 0.8s ease both（スクロールで出現）。",
-  "8. グラデーション: 単色禁止。linear-gradientかradial-gradientで奥行きを。",
-  "9. カラー反転: darkセクションでは color:#fff, lightセクションでは color:#111。",
-  "10. 画像不要: imgタグは使わない。CSS gradientとタイポグラフィだけで表現する。",
-  "",
-  "== 最重要：差別化 ==",
-  "同じサイト構造を2度使うな。密度・セクション数・フォント選択・gradient方向を毎回変えろ。",
-  "",
-  "== 出力 ==",
-  "有効なAstroコード（v4+）のみ。説明禁止。",
-  "PageLayout必須: import PageLayout from '../components/pipeline/PageLayout.astro'",
-  "PageLayout props: companyName(必須), pages:{label,href}[](必須,nav用), footer:{address,phone,email}(必須)",
-  "例: <PageLayout companyName=\"社名\" pages={[{label:\"ホーム\",href:\"/\"}]} footer={{address:\"住所\",phone:\"電話\",email:\"mail\"}}>",
-].join("\n")
+import { APPLE_DESIGN_SYSTEM } from "./figma-design-system"
+
+function buildSystemPrompt(): string {
+  const ds = APPLE_DESIGN_SYSTEM
+  const tokens = ds.colors.tokens
+  const typo = ds.typography
+  const space = ds.spacing
+  const rad = ds.radius
+  const shadows = ds.shadows
+  const comp = ds.components
+
+  const colorTable = Object.entries(tokens).map(([name, t]) =>
+    `  --c-${name}: ${t.light} (dark:${t.dark})${t.gradient ? ` gradient(${t.gradient.join(",")})` : ""}`
+  ).join("\n")
+
+  return [
+    "あなたはFigmaから抽出されたデザインシステムをAstroコードにコンパイルする翻訳エンジンです。",
+    "デザインを考えるな。与えられたスペックを忠実にコード化せよ。",
+    "",
+    "== Figmaデザインシステム（変更禁止）==",
+    `カラートークン:\n${colorTable}`,
+    "",
+    `タイポグラフィ:`,
+    `  h1: ${typo.scale.h1.fontSize} weight:${typo.scale.h1.fontWeight} tracking:${typo.scale.h1.letterSpacing}`,
+    `  h2: ${typo.scale.h2.fontSize} weight:${typo.scale.h2.fontWeight}`,
+    `  h3: ${typo.scale.h3.fontSize} weight:${typo.scale.h3.fontWeight}`,
+    `  body: ${typo.scale.body.fontSize}`,
+    `  フォント: ${typo.families.heading}`,
+    "",
+    `余白:`,
+    `  セクションpadding: ${space.sectionPadding}`,
+    `  コンテナ: ${space.containerMax}`,
+    `  カードgap: ${space.cardGap} カードpadding: ${space.cardPadding}`,
+    "",
+    `半径: sm=${rad.sm} md=${rad.md} lg=${rad.lg} pill=${rad.pill}`,
+    `シャドウ: card=${shadows.md} button=${shadows.glow}`,
+    "",
+    `コンポーネント仕様:`,
+    `  カード: bg=${comp.card.background} radius=${comp.card.radius} hover=${comp.card.hover}`,
+    `  ボタン(primary): ${comp.button.primary.background} radius=${comp.button.primary.radius} hover=${comp.button.primary.hover}`,
+    `  ボタン(secondary): radius=${comp.button.secondary.radius}`,
+    `  ナビ: height=${comp.nav.height} bg=${comp.nav.background} blur=${comp.nav.blur}`,
+    "",
+    "== セクションリズム ==",
+    `必須順序: ${ds.layout.sectionRhythm.join(" → ")} → dark(call to action)。絶対にこの順序を守れ。`,
+    "",
+    "== コンパイルルール ==",
+    "1. <style is:inline>で上記トークンをCSSカスタムプロパティとして定義。",
+    "2. 各セクションは<section>でラップ。背景色はトークン通り。交互反転厳守。",
+    "3. 全セクションに animation:fadeUp .8s ease both を付与。",
+    "4. 見出しサイズ・太さ・字間はタイポグラフィ仕様通り。",
+    "5. カードはコンポーネント仕様通り。ボタンも同じ。",
+    "6. 企業データ（社名・地名・診断数値）を本文に織り込め。最低3段落/セクション。",
+    "7. 画像は使わない。CSS gradientで代替。",
+    "8. PageLayout必須: import PageLayout from '../components/pipeline/PageLayout.astro'",
+    "   props: companyName, pages:{label,href}[], footer:{address,phone,email}",
+    "",
+    "== 出力 ==",
+    "有効なAstroコードのみ。説明禁止。先頭の---から末尾の</html>まで。",
+  ].join("\n")
+}
 
 // ── Generate ──
 
@@ -84,7 +120,7 @@ export async function generateAstroCode(input: DesignPromptInput): Promise<Astro
       body: JSON.stringify({
         model: DEEPSEEK_MODEL,
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: buildSystemPrompt() },
           { role: "user", content: userPrompt },
         ],
         temperature: 0.7,
