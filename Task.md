@@ -1,31 +1,46 @@
-## CURRENT STATUS - 2026-06-30 Astro demo ハイパーパーソナライゼーション 全 Phase 完了・本番デプロイ済み
+## CURRENT STATUS - 2026-06-30 生成型デザインコンパイルパイプライン — DeepSeek V4 → 完全Astroコード生成
 
-- 全実装: Phase 1(抽出)→2(schema+prompt)→3(renderer)→4(統合) + 正規化修正 + CTA block 追加。
-- デプロイ: Coolify `wqe45e0q1yj53knq3d1q1fdb` finished → Traefik 再接続 → 全エンドポイント 200。
-- 検証: tsc clean / quality:guard 0 error / Next.js build OK / astro-demo build OK / 6 tests pass / 本番 `/api/ready`=200 `/ja`=200 `/api/demo-designs/*`=404(想定) `demo.paradigmjp.com`=200
+- 根本シフト: design.json → BlockRenderer（テンプレ選択の自動化）から、DeepSeek V4 が**完全な .astro ソースコードをゼロから生成**する方式に転換。
+- 8種のパイプラインコンポーネントライブラリ（HeroSection/ProofStrip/ServiceCards/TestimonialCards/PricingTable/FAQAccordion/CTABanner/PageLayout）を DeepSeek が import して自由に構成。
+- コスト: ~5K output tokens/社 ≈ $0.01（DeepSeek V4 直叩き）。LiteLLM 廃止済み。
+- Astro Docs MCP + Figma MCP を全 AI エージェント（Claude/Codex/OpenCode/Cursor）に登録済み（dotfiles SSOT 管理）。
+
+### 新パイプライン
+```
+企業データ + 診断
+  → DeepSeek V4（generateAstroCode）→ 完全な index.astro
+  → astro build → dist/
+  → R2 / Cloudflare Pages → 即納品URL
+```
+
+### 実装ファイル
+| ファイル | 役割 |
+|----------|------|
+| `astro-code-generator.ts`(135行) | DeepSeek V4 → 完全な Astro コード生成プロンプト+呼出 |
+| `astro-demo/src/components/pipeline/HeroSection.astro` | ヒーロー（4 variant） |
+| `astro-demo/src/components/pipeline/ProofStrip.astro` | 数値実績ストリップ |
+| `astro-demo/src/components/pipeline/ServiceCards.astro` | サービスカード（2/3-col） |
+| `astro-demo/src/components/pipeline/TestimonialCards.astro` | お客様の声 |
+| `astro-demo/src/components/pipeline/PricingTable.astro` | 料金プラン |
+| `astro-demo/src/components/pipeline/FAQAccordion.astro` | よくある質問 |
+| `astro-demo/src/components/pipeline/CTABanner.astro` | 行動喚起バナー |
+| `astro-demo/src/components/pipeline/PageLayout.astro` | サイト外枠（nav+footer） |
+| `cf-pages-deploy.ts`(139行) | CF Pages Direct Upload + R2 フォールバック |
+| `demo-design-generator.ts`(472行) | 正規化レイヤー+design spec生成（旧方式、フォールバック用） |
+
+### 残タスク
+- [ ] astro-demo コンテナに新コンポーネントライブラリをデプロイ
+- [ ] 実企業データで generateAstroCode() → astro build → R2 deploy の E2E 検証
+- [ ] Cloudflare Pages プロジェクト作成 + Direct Upload 本番稼働
+- [ ] Figma MCP からデザイントークン抽出 → プロンプト注入
 
 ### デモ確認URL
-- 既存デモ: https://demo.paradigmjp.com/demo
-- 新デモ(企業enrichment後): https://demo.paradigmjp.com/demo/{domain}-demo
-- 新API: GET https://paradigmjp.com/api/demo-designs/{slug} (public, 5min cache)
-- 新API: POST https://paradigmjp.com/api/demo-designs/{slug} (admin auth, DeepSeek生成)
+- 旧 BlockRenderer デモ: https://demo.paradigmjp.com/demo/sample-restaurant
+- 新コード生成デモ（astro-demo再デプロイ後）: 同上URLが新コンポーネントで表示される
 
-- 壁打ち合意→設計→実装→検証まで一貫完了。
-- 方針: ①6軸デザイン哲学をDeepSeekが企業ごとに完全決定 ②画像・色・文言は企業実サイトから抽出 ③有料API不使用 ④Astro SSR ⑤納品時はNext.js+PayloadCMSで再構築。
-- 実装(Phase 1): `src/lib/sales/sources/website-extract.ts`(458行) — Playwrightで実サイト画像・色・構造化データ抽出。`src/lib/sales/extract-assets.ts`(127行) — R2アップロード+meta保存。`processEnrichmentPhase`に統合。
-- 実装(Phase 2): `src/lib/sales/demo-design-types.ts`(317行) — DemoDesignSpec型: 6軸哲学/10種PageBlock/11ページ型。`src/lib/sales/demo-design-prompts.ts`(302行) — 日英プロンプト+バリデーター。`src/lib/sales/demo-design-generator.ts`(193行) — DeepSeek呼出+パース。
-- 実装(Phase 3): `src/app/api/demo-designs/[slug]/route.ts`(152行) — GET=キャッシュ仕様返却 / POST=DeepSeek生成+theme_demo_pages保存。`astro-demo/src/lib/design-spec.ts`(239行) — Astro側型定義+tokensToCSS。`astro-demo/src/components/renderer/DesignRoot.astro`(137行) — HTMLシェル+nav+footer+デザイントークンCSS注入。`astro-demo/src/components/renderer/BlockRenderer.astro`(407行) — 10種PageBlockを単一コンポーネントでレンダリング（hero/proof/cards/media-text/faq/contact/company-info/plans/before-after/timeline/testimonials）。全CSSをdesign_tokensカスタムプロパティで駆動。6軸多態（visual_language→hero高さ変化、layout_rhythm→grid幅変化、radius→角丸変化等）。
-- 実装(Phase 4): `processAssetPhase`にDeepSeek設計仕様生成を追加。デモ生成条件成立時（カバレッジ≥15、DEEPSEEK_API_KEY設定済み）に並列実行。生成されたDemoDesignSpecを`theme_demo_pages`にupsert。既存デモ生成と並列・独立（失敗してもデモ生成は継続）。
-- 検証: `npm exec -- tsc --noEmit` OK（Next.js + Astro両方）`npm run quality:guard` OK（0 error / 58 warnings 全て既存）`npm run build` OK（Next.js + astro-demo両方）`npm exec -- vitest run src/lib/sales/source-coverage.test.ts src/lib/sales/enrich.test.ts` OK（6 tests）
-
-- 壁打ち合意: ペラLPから apple.com 級のフルスタックパーソナライズデモへ根本再設計。テンプレの色差し替えではなく、企業実データ＋LLMで毎回異なる構成・デザイン・コピーを生成。
-- 方針: ①6軸デザイン哲学（visual_language / layout_rhythm / navigation / color / typography / motion）をDeepSeekが企業ごとに完全決定 ②画像・色・文言はフリー素材禁止、相手企業の実サイトから Playwright で抽出 ③有料API不使用（Google Maps/Tavily/SerpAPI NG） ④Astro SSG→Cloudflare R2静的配信 ⑤納品時はNext.js+PayloadCMSで再構築。
-- 実装(Phase 1): `src/lib/sales/sources/website-extract.ts`（458行）— Playwrightで実サイト画像・色・構造化データ・内部リンク抽出。`src/lib/sales/extract-assets.ts`（127行）— R2アップロード+meta保存。`processEnrichmentPhase` に非ブロッキング統合。ソースカバレッジ登録済み。
-- 実装(Phase 2): `src/lib/sales/demo-design-types.ts`（317行）— 完全な設計仕様の型定義。DemoDesignSpec：company(実データ), creative_brief(4項目), design_philosophy(6軸), design_tokens(色/書体/半径), site(ページ構成/nav/footer), pages(全ページのblock配列)。PageBlock = HeroBlock | ProofBlock | CardsBlock | MediaTextBlock | FAQBlock | ContactBlock | CompanyInfoBlock | PlanBlock | BeforeAfterBlock | TimelineBlock | TestimonialBlock。全blockは実画像ref・実テキスト・実数値を注入可能。
-- 実装(Phase 2): `src/lib/sales/demo-design-prompts.ts`（302行）— システムプロンプト（シニアCD役・絶対ルール8条・6軸説明・コピー方針）＋ユーザープロンプト（企業データ・実画像URL・実色・実テキスト・診断結果の注入）＋出力スキーマインジェクション＋validateDesignSpec（6軸の有効値チェック・必須フィールド検証）。
-- 実装(Phase 2): `src/lib/sales/demo-design-generator.ts`（193行）— buildDesignInputで企業データ+website_assets+診断→DesignPromptInputに変換、generateDemoDesignでDeepSeek API（deepseek-chat, max_tokens=16384, response_format=json_object）を呼び出し、parseDesignSpecOutputでJSON→DemoDesignSpecに変換+バリデーション。
-- 未着手（Phase 3-4）: Astro全ページ6軸多態コンポーネント / SSG→R2静的配信 / テスト+deploy
-- 検証: `npm exec -- tsc --noEmit` OK、`npm run quality:guard` OK（0 error / 58 warnings 全て既存）、`npm run build` OK
+### MCP 統合
+- Astro Docs MCP: `https://mcp.docs.astro.build/mcp` — SSOT registry → 全エージェントに展開済み
+- Figma MCP: `@hapins/figma-mcp` — 登録済み、FigmaファイルURL指定で即抽出可能
 
 ## ACTIVE PLAN - 2026-06-20 営業OS全面強化（Phase 0-9・壁打ち合意済み）
 
