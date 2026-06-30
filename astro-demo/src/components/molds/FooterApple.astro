@@ -1,0 +1,63 @@
+---
+// Apple Footer Component
+// Props: companyName: string, columns: { title: string; links: { label: string; href: string }[] }[]
+export interface Props {
+  companyName: string;
+  columns: {
+    title: string;
+    links: {
+      label: string;
+      href: string;
+    }[];
+  }[];
+}
+
+const { companyName, columns } = Astro.props;
+---
+
+<footer class="bg-[#f5f5f7] border-t border-black/5">
+  <div class="mx-auto max-w-[980px] px-6 py-16 md:py-20 lg:py-24">
+    <!-- 6-column navigation grid -->
+    <nav class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-8 gap-y-12">
+      {
+        columns.map((col) => (
+          <div class="flex flex-col gap-3">
+            <h3 class="text-[12px] font-[400] tracking-[-0.01em] text-[#1d1d1f] uppercase">
+              {col.title}
+            </h3>
+            <ul class="flex flex-col gap-2">
+              {
+                col.links.map((link) => (
+                  <li>
+                    <a
+                      href={link.href}
+                      class="text-[12px] font-[400] leading-[1.6] text-[#424245] hover:text-[#1d1d1f] transition-colors duration-200 ease-out"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+        ))
+      }
+    </nav>
+
+    <!-- Divider + copyright -->
+    <div class="mt-16 pt-6 border-t border-black/10">
+      <p class="text-[12px] font-[400] tracking-[-0.01em] text-[#424245]">
+        © {new Date().getFullYear()} {companyName}. All rights reserved.
+      </p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  /* Gilroy font fallback */
+  footer {
+    font-family: 'Gilroy', -apple-system, 'Helvetica Neue', 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+</style>

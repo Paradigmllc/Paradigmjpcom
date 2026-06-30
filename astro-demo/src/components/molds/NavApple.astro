@@ -1,0 +1,43 @@
+---
+// Apple風ナビゲーションコンポーネント
+// Props: logo (string), links (Array<{label: string, href: string}>)
+
+export interface Props {
+  logo: string;
+  links: Array<{ label: string; href: string }>;
+}
+
+const { logo, links } = Astro.props;
+---
+
+<nav class="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-white/80 border-b border-gray-200/30">
+  <div class="mx-auto flex items-center justify-between" style="max-width: 980px; padding: 0 clamp(1rem, 2vw, 2rem); height: 52px;">
+    <!-- ロゴ -->
+    <a href="/" class="text-xl font-normal tracking-tight text-[#1d1d1f] hover:opacity-70 transition-opacity duration-200" style="font-family: 'Gilroy', -apple-system, sans-serif;">
+      {logo}
+    </a>
+
+    <!-- ナビゲーションリンク -->
+    <div class="flex items-center gap-8">
+      {
+        links.map((link) => (
+          <a
+            href={link.href}
+            class="text-sm font-normal text-[#1d1d1f]/80 hover:text-[#1d1d1f] transition-all duration-200 relative after:absolute after:bottom-[-2px] after:left-0 after:w-0 after:h-[2px] after:bg-[#0071e3] after:transition-all after:duration-300 hover:after:w-full"
+            style="font-family: 'Gilroy', -apple-system, sans-serif; letter-spacing: 0.01em;"
+          >
+            {link.label}
+          </a>
+        ))
+      }
+    </div>
+  </div>
+</nav>
+
+<style>
+  /* ナビゲーションのぼかし効果を強化 */
+  nav {
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+  }
+</style>
