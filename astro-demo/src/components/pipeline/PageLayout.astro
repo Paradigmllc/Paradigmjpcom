@@ -7,18 +7,30 @@ const { companyName, pages, footer } = Astro.props
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
   <title>{companyName}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
   <style is:inline set:html={`
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Inter,"Noto Sans JP",system-ui,sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-    .nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(18px);border-bottom:1px solid rgba(0,0,0,.06);height:64px;display:flex;align-items:center;padding:0 clamp(16px,4vw,40px)}
-    .nav__brand{font-weight:900;font-size:1.05rem;color:inherit;text-decoration:none}
-    .nav__links{display:flex;align-items:center;gap:6px;margin-left:auto}
-    .nav__links a{padding:6px 12px;border-radius:8px;font-size:0.88rem;font-weight:600;color:inherit;opacity:0.6;text-decoration:none}
-    .nav__links a:hover{opacity:1}
-    .footer{padding:clamp(2rem,5vw,4rem) clamp(16px,4vw,40px);border-top:1px solid rgba(0,0,0,.06);text-align:center}
-    .footer__info{font-size:0.82rem;opacity:0.5;line-height:1.8;margin-bottom:1rem}
-    .footer__copy{font-size:0.78rem;opacity:0.35}
-    @media(max-width:640px){.nav__links a:not(:last-child){display:none}}
+    body{font-family:Inter,"Noto Sans JP",system-ui,sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-x:hidden;background:#fff;color:#111827}
+    h1,h2,h3,h4{font-family:Inter,"Noto Sans JP",system-ui,sans-serif;font-weight:800;line-height:1.15;letter-spacing:-0.02em}
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;height:auto;display:block}
+    .nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,.85);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid rgba(0,0,0,.06);height:64px;display:flex;align-items:center;padding:0 clamp(1.5rem,4vw,3rem);transition:background .3s ease}
+    .nav__brand{font-weight:800;font-size:1.05rem;letter-spacing:-0.01em}
+    .nav__links{display:flex;align-items:center;gap:2px;margin-left:auto}
+    .nav__links a{padding:8px 16px;border-radius:10px;font-size:0.85rem;font-weight:500;opacity:0.55;transition:opacity .2s ease}
+    .nav__links a:hover{opacity:0.9;background:rgba(0,0,0,.04)}
+    .nav__cta{margin-left:8px;padding:8px 18px!important;background:#111827;color:#fff!important;opacity:1!important;font-weight:600!important;border-radius:12px!important}
+    .footer{margin-top:clamp(4rem,8vw,6rem);padding:clamp(3rem,5vw,5rem) clamp(1.5rem,4vw,3rem);border-top:1px solid rgba(0,0,0,.06);background:#fafafa}
+    .footer__inner{max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;gap:2rem;justify-content:space-between}
+    .footer__brand{font-weight:800;font-size:1.1rem;margin-bottom:0.8rem}
+    .footer__info{font-size:0.82rem;opacity:0.45;line-height:2}
+    .footer__links{display:flex;gap:2rem}
+    .footer__links a{font-size:0.85rem;opacity:0.45;transition:opacity .2s}
+    .footer__links a:hover{opacity:0.8}
+    .footer__copy{padding-top:2rem;margin-top:2rem;border-top:1px solid rgba(0,0,0,.04);text-align:center;font-size:0.75rem;opacity:0.3}
+    @media(max-width:640px){.nav__links a:not(.nav__cta){display:none}}
   `}></style>
 </head>
 <body>
@@ -26,16 +38,25 @@ const { companyName, pages, footer } = Astro.props
     <a href="/" class="nav__brand">{companyName}</a>
     <div class="nav__links">
       {pages.map(p => <a href={p.href}>{p.label}</a>)}
+      {pages.length > 0 && <a href={pages[pages.length-1].href} class="nav__cta">相談する</a>}
     </div>
   </nav>
   <slot />
   <footer class="footer">
-    <div class="footer__info">
-      {footer.address && <div>{footer.address}</div>}
-      {footer.phone && <div>{footer.phone}</div>}
-      {footer.email && <div>{footer.email}</div>}
+    <div class="footer__inner">
+      <div>
+        <div class="footer__brand">{companyName}</div>
+        <div class="footer__info">
+          {footer.address && <div>{footer.address}</div>}
+          {footer.phone && <div>{footer.phone}</div>}
+          {footer.email && <div>{footer.email}</div>}
+        </div>
+      </div>
+      <div class="footer__links">
+        {pages.map(p => <a href={p.href}>{p.label}</a>)}
+      </div>
     </div>
-    <div class="footer__copy">&copy; {new Date().getFullYear()} {companyName}</div>
+    <div class="footer__copy">&copy; {new Date().getFullYear()} {companyName}. All rights reserved.</div>
   </footer>
 </body>
 </html>
