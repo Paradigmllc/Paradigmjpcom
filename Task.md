@@ -1,19 +1,19 @@
-## CURRENT STATUS - 2026-06-30 50+ API/OSS エンリッチパイプライン堅牢化 — 全ソース稼働・プロキシ不要
+## CURRENT STATUS - 2026-06-30 全サイトコンテンツ実装・本番確認 — ブログ20・実績6・サービス5・料金12・FAQ15・声6・チーム3
 
-- 全33ソースがプロキシなしでエラーなく動作。25s外側タイムアウトに全ソースが収まるよう修正。スキップ率0%の収集パイプライン構築。
-- 修正ファイル: spiderfoot/katana/maigret/steel/crawlee (timeout短縮+fallback並列化)、whois (RDAP fallback追加)、enrich.ts (stagehand stubs削除+env gating+source_skipped追加)、form-discovery.ts (LLMデフォルト有効)、enrichment/retry (batch retry-all)
-- 検証: tsc clean、quality 0 error/58 warning、vitest 11 pass、build OK
-
-## CURRENT STATUS - 2026-06-30 全サイトコンテンツ実装 — ブログ20記事・実績6・サービス5・料金12・FAQ15・声6・チーム3・CMSページ1
-
-- 壁打ち合意: 現状スカスカのHPを本番運用レベルに充実。ブログ・コンテンツをゼロから実装しデプロイ。
-- 実装: `src/app/api/admin/seed-all-content/route.ts` + `seed-data.ts` — 全コンテンツ一括投入APIエンドポイント。
-  - カテゴリ4件（SEO/GEO, AI・自動化, Web制作, デジタルマーケティング）
-  - ブログ記事20件（JA+EN、Lexical richText本文付き、12カ国語autoTranslate対応）
-  - サービス5件（JaaS/Web/MEO/SEO/AI）
-  - 料金プラン12件（4サービス×3ティア）
-  - 制作実績6件（Sericia/Appexxme/AirTabi/Paradigm/DXDoctor/Temploft）
-  - FAQ 15件、お客様の声6件、チームメンバー3件
+- 壁打ち合意→設計→実装→DB投入→本番公開まで一貫完了。
+- DB実績: paradigm.posts 20件、categories 4件、services 5件、pricing 12件、works 6件、faqs 15件、testimonials 6件、team_members 3件。
+- インフラ修正: `PAYLOAD_PUBLIC_READS_ENABLED=1` をCoolify envに追加（全公開ページでPayloadCMS読み込み有効化）。`ADMIN_SCRIPT_SECRET` を追加（seed API認証用）。
+- 本番確認:
+  - ✅ ブログ記事詳細ページ (`/ja/blog/{slug}`) → HTTP 200、本文表示確認
+  - ✅ サービス一覧 (`/ja/services`) → CMSデータ表示（JaaS含む5サービス）
+  - ✅ 料金プラン (`/ja/pricing`) → CMSデータ表示（DXパートナープラン含む）
+  - ⚠️ ブログ一覧 (`/ja/blog`) → 空表示（filterByLocaleのAND/OR結合問題）。詳細ページは正常。
+  - ⚠️ 制作実績一覧 (`/ja/works`) → ハードコードフォールバック表示
+  - ⚠️ FAQ (`/ja/faq`) → ハードコードフォールバック表示
+- 未完了:
+  - CMSトップページ: ブロックビルダー用レイアウトは定義済みだがCTA blockのフィールド名不一致で保存失敗。要payload admin UIで作成。
+  - ブログ一覧のfilterByLocale不具合: PayloadCMS v3の内部`or`クエリが`availableLocales` join tableに正しくマッチしない。blog/page.tsxを直接filterに変更するか、PayloadCMSバージョン確認要。
+  - ENロケールデータ: JAは全件保存済み。ENはseed時にautoTranslate hookがDB制約エラーで失敗。`_posts_v_locales` にJAデータのみ存在。手動でEN翻訳投入要。
   - CMSトップページ（7ブロック: hero/section/card-grid/cta/stats/process/cta）
 - 投入方法: デプロイ後に `POST /api/admin/seed-all-content { confirm: true }` + `x-admin-secret`
 - 検証: tsc clean / quality:guard 0 error / build OK
