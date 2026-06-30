@@ -1,54 +1,68 @@
 ---
-import FullSitePage from "../../components/fullsite/FullSitePage.astro"
-import { getFullSiteProfile, normalizeSection } from "../../lib/full-site"
+import DesignRoot from "../../components/renderer/DesignRoot.astro"
+import type { DemoDesignSpec } from "../../lib/design-spec"
 
-const API_BASE = process.env.API_BASE || process.env.PUBLIC_API_BASE || "http://localhost:3000"
+const API_BASE = import.meta.env.API_BASE || import.meta.env.PUBLIC_API_BASE || "http://localhost:3000"
 const rawPath = Astro.params.path ?? ""
 const segments = rawPath.split("/").filter(Boolean)
 const slug = segments[0] || ""
-const section = normalizeSection(segments[1])
+const rawSection = segments[1]?.toLowerCase() || ""
+
+const validSections = ["home","about","services","pricing","cases","faq","blog","contact","privacy","terms","tokushoho"]
+const section = validSections.includes(rawSection) ? rawSection : "home"
 
 if (!slug) return Astro.redirect("/demo", 302)
 
-interface DemoPagePayload {
-  title?: string
-  meta?: Record<string, unknown>
+interface ApiResult { error?: string }
+
+function isDesignSpec(value: unknown): value is DemoDesignSpec {
+  return typeof value === "object" && value !== null &&
+    "schema_version" in value && "design_philosophy" in value &&
+    "design_tokens" in value && "pages" in value
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
-}
-
-function toDemoPage(value: unknown): DemoPagePayload {
-  if (!isRecord(value)) return {}
-  return {
-    title: typeof value.title === "string" ? value.title : undefined,
-    meta: isRecord(value.meta) ? value.meta : {},
-  }
-}
-
-let page: DemoPagePayload = {}
+let spec: DemoDesignSpec | null = null
+let error: string | null = null
 
 try {
-  const response = await fetch(`${API_BASE}/api/demo-pages/${encodeURIComponent(slug)}`, {
-    headers: { "x-source": "astro-full-site" },
-    signal: AbortSignal.timeout(10000),
+  const response = await fetch(`${API_BASE}/api/demo-designs/${encodeURIComponent(slug)}`, {
+    headers: { "x-source": "astro-design-root" },
+    signal: AbortSignal.timeout(15000),
   })
+
   if (response.ok) {
-    page = toDemoPage(await response.json())
+    const data = await response.json()
+    if (isDesignSpec(data)) {
+      spec = data
+    } else if ((data as ApiResult).error) {
+      error = (data as ApiResult).error ?? "invalid spec"
+    }
   } else if (response.status !== 404) {
-    console.warn(`[full-site] demo page fetch failed: ${response.status}`)
+    error = `API ${response.status}`
   }
-} catch (error) {
-  console.warn("[full-site] demo page fetch error", error)
+} catch (e) {
+  error = e instanceof Error ? e.message : "fetch failed"
 }
 
-const profile = getFullSiteProfile({
-  slug,
-  title: page.title,
-  meta: page.meta,
-  locale: typeof page.meta?.locale === "string" ? page.meta.locale : undefined,
-})
+// Validate the requested section exists in spec
+if (spec && !spec.pages[section]) {
+  error = `section "${section}" not found`
+  spec = null
+}
 ---
 
-<FullSitePage profile={profile} section={section} />
+{
+  spec ? (
+    <DesignRoot spec={spec} section={section} />
+  ) : (
+    <html lang="ja">
+      <head><meta charset="UTF-8" /><title>Demo Not Ready</title></head>
+      <body style="font-family:system-ui;display:grid;place-items:center;min-height:100vh;background:#f8fafc;color:#64748b">
+        <div style="text-align:center">
+          <h1 style="font-size:1.5rem;margin-bottom:0.5rem">Design spec not yet generated</h1>
+          <p style="font-size:0.9rem">{error ?? "Run enrichment to generate this demo."}</p>
+        </div>
+      </body>
+    </html>
+  )
+}

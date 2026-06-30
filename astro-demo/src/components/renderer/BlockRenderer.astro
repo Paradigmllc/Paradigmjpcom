@@ -1,0 +1,407 @@
+---
+import type { DemoDesignSpec, PageBlock } from "../../lib/design-spec"
+
+interface Props {
+  block: PageBlock
+  spec: DemoDesignSpec
+}
+
+const { block, spec } = Astro.props
+const isJa = spec.locale === "ja"
+---
+
+{
+  block.type === "hero" && (
+    <section class={`hero hero--${block.variant}`}>
+      <style is:inline set:html={`
+        .hero{position:relative;display:flex;align-items:center;min-height:var(--hero-min-h,80vh);overflow:hidden}
+        .hero--fullbleed{min-height:100vh}
+        .hero--centered{justify-content:center;text-align:center;min-height:80vh}
+        .hero--split{min-height:80vh}
+        .hero--type-marquee{min-height:70vh;align-items:center;justify-content:center}
+        .hero--before-after{min-height:85vh}
+        .hero__bg{position:absolute;inset:0;z-index:0}
+        .hero__bg img{width:100%;height:100%;object-fit:cover}
+        .hero__bg::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 30%,var(--c-bg) 100%)}
+        .hero__content{position:relative;z-index:1;max-width:720px;padding:0 clamp(16px,4vw,40px)}
+        .hero--centered .hero__content{text-align:center}
+        .hero__eyebrow{display:inline-block;font-size:0.82rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--c-accent);margin-bottom:1rem;padding:4px 12px;background:color-mix(in srgb,var(--c-accent) 12%,transparent);border-radius:var(--radius)}
+        .hero h1{font-size:var(--font-scale-h1);margin-bottom:1rem}
+        .hero__lead{font-size:var(--font-scale-body);color:var(--c-text-muted);margin-bottom:2rem;line-height:1.8}
+        .hero__ctas{display:flex;flex-wrap:wrap;gap:12px}
+        .hero__cta-pri{display:inline-flex;align-items:center;padding:14px 28px;background:var(--c-primary);color:#fff;font-weight:700;font-size:0.95rem;border-radius:var(--radius);transition:transform var(--transition)}
+        .hero__cta-pri:hover{transform:translateY(-1px)}
+        .hero__cta-sec{display:inline-flex;align-items:center;padding:14px 28px;font-weight:700;font-size:0.95rem;border-radius:var(--radius);border:1.5px solid var(--c-border);transition:border-color var(--transition)}
+        .hero__cta-sec:hover{border-color:var(--c-primary)}
+        .hero--split{display:grid;grid-template-columns:1fr 1fr;gap:0;align-items:center}
+        .hero--split .hero__content{padding:clamp(2rem,5vw,5rem)}
+        .hero--split .hero__bg{position:relative;height:100%;min-height:400px}
+        .hero--split .hero__bg::after{background:linear-gradient(to right,var(--c-bg),transparent 40%)}
+        .hero--type-marquee h1{font-size:clamp(3rem,8vw,7rem);line-height:1}
+        @media(max-width:768px){
+          .hero--split{grid-template-columns:1fr}
+          .hero--split .hero__bg{min-height:250px;order:-1}
+        }
+      `}></style>
+      {block.image && (
+        <div class="hero__bg">
+          <img src={block.image.url} alt={block.image.alt} loading="eager" />
+        </div>
+      )}
+      <div class="hero__content">
+        {block.eyebrow && <span class="hero__eyebrow">{block.eyebrow}</span>}
+        <h1>{block.headline}</h1>
+        {block.subheadline && <p class="hero__lead">{block.subheadline}</p>}
+        <div class="hero__ctas">
+          <a href={block.primary_cta.href} class="hero__cta-pri">{block.primary_cta.label}</a>
+          {block.secondary_cta && (
+            <a href={block.secondary_cta.href} class="hero__cta-sec">{block.secondary_cta.label}</a>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+{
+  block.type === "proof" && (
+    <section class="proof section-py">
+      <style is:inline set:html={`
+        .proof{background:var(--c-surface)}
+        .proof__grid{display:flex;flex-wrap:wrap;gap:2rem;justify-content:center;max-width:900px;margin:0 auto}
+        .proof__item{text-align:center;min-width:140px}
+        .proof__value{font-family:var(--font-heading);font-size:clamp(2rem,4vw,3rem);font-weight:900;color:var(--c-primary);line-height:1}
+        .proof__label{font-size:0.85rem;color:var(--c-text-muted);margin-top:0.5rem}
+      `}></style>
+      <div class="page-wrap">
+        <div class="proof__grid">
+          {block.items.map((item) => (
+            <div class="proof__item">
+              <div class="proof__value">{item.prefix ?? ""}{item.value}{item.suffix ?? ""}</div>
+              <div class="proof__label">{item.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+{
+  block.type === "cards" && (
+    <section class="cards section-py">
+      <style is:inline set:html={`
+        .cards__head{text-align:center;margin-bottom:clamp(2rem,4vw,3rem)}
+        .cards__head h2{margin-bottom:0.5rem}
+        .cards__head p{color:var(--c-text-muted);max-width:500px;margin:0 auto;font-size:var(--font-scale-body)}
+        .cards__grid{display:grid;gap:1.5rem}
+        .cards__grid--grid-3{grid-template-columns:repeat(3,1fr)}
+        .cards__grid--grid-2{grid-template-columns:repeat(2,1fr)}
+        .cards__grid--grid-4{grid-template-columns:repeat(4,1fr)}
+        .card{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--radius);padding:clamp(1.5rem,3vw,2rem);transition:transform var(--transition)}
+        .card:hover{transform:translateY(-2px)}
+        .card__icon{font-size:1.8rem;margin-bottom:1rem}
+        .card h3{font-size:1.1rem;margin-bottom:0.5rem}
+        .card p{font-size:0.9rem;color:var(--c-text-muted);line-height:1.7}
+        .card__bullets{margin-top:0.8rem;list-style:none}
+        .card__bullets li{font-size:0.85rem;color:var(--c-text-muted);padding:3px 0}
+        .card__bullets li::before{content:'✓ ';color:var(--c-primary);font-weight:700}
+        .card__link{display:inline-block;margin-top:1rem;font-size:0.88rem;font-weight:700;color:var(--c-primary)}
+        @media(max-width:900px){.cards__grid--grid-3,.cards__grid--grid-4{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:600px){.cards__grid--grid-3,.cards__grid--grid-4,.cards__grid--grid-2{grid-template-columns:1fr}}
+      `}></style>
+      <div class="page-wrap">
+        <div class="cards__head">
+          <h2>{block.title}</h2>
+          {block.subtitle && <p>{block.subtitle}</p>}
+        </div>
+        <div class={`cards__grid cards__grid--${block.layout}`}>
+          {block.items.map((item) => (
+            <div class="card fade-in">
+              {item.icon_emoji && <div class="card__icon">{item.icon_emoji}</div>}
+              {item.image && <img src={item.image.url} alt={item.image.alt} loading="lazy" style="width:100%;height:180px;object-fit:cover;border-radius:var(--radius);margin-bottom:1rem" />}
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
+              {item.bullets && (
+                <ul class="card__bullets">
+                  {item.bullets.map((b) => <li>{b}</li>)}
+                </ul>
+              )}
+              {item.link && (
+                <a href={item.link.href} class="card__link">{item.link.label} →</a>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+{
+  block.type === "media-text" && (
+    <section class={`mt section-py mt--${block.image_position}`}>
+      <style is:inline set:html={`
+        .mt{display:grid;grid-template-columns:1fr 1fr;gap:clamp(2rem,5vw,4rem);align-items:center}
+        .mt--background{grid-template-columns:1fr;position:relative;min-height:500px}
+        .mt--background .mt__img{position:absolute;inset:0}
+        .mt--background .mt__img img{width:100%;height:100%;object-fit:cover}
+        .mt--background .mt__img::after{content:'';position:absolute;inset:0;background:linear-gradient(to right,var(--c-bg) 0%,transparent 70%)}
+        .mt--background .mt__text{position:relative;z-index:1;max-width:500px;padding:clamp(2rem,5vw,4rem)}
+        .mt--left .mt__img{order:-1}
+        .mt__img img{border-radius:var(--radius);width:100%}
+        .mt h2{margin-bottom:1rem}
+        .mt__body{color:var(--c-text-muted);line-height:1.8;margin-bottom:1.5rem}
+        .mt__ctas{display:flex;flex-wrap:wrap;gap:10px}
+        .mt__ctas a{padding:12px 24px;border-radius:var(--radius);font-weight:700;font-size:0.92rem}
+        .mt__ctas a:first-child{background:var(--c-primary);color:#fff}
+        .mt__ctas a:last-child{border:1.5px solid var(--c-border)}
+        @media(max-width:768px){.mt{grid-template-columns:1fr}.mt--background{min-height:350px}}
+      `}></style>
+      <div class="page-wrap">
+        <div class="mt">
+          {block.image && (
+            <div class="mt__img">
+              <img src={block.image.url} alt={block.image.alt} loading="lazy" />
+            </div>
+          )}
+          <div class="mt__text">
+            <h2>{block.headline}</h2>
+            <div class="mt__body">{block.body}</div>
+            {block.ctas && block.ctas.length > 0 && (
+              <div class="mt__ctas">
+                {block.ctas.map((cta) => (
+                  <a href={cta.href}>{cta.label}</a>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+{
+  block.type === "faq" && (
+    <section class="faq section-py">
+      <style is:inline set:html={`
+        .faq__list{max-width:720px;margin:0 auto}
+        .faq details{border-bottom:1px solid var(--c-border);padding:1.2rem 0}
+        .faq summary{font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;font-size:1rem}
+        .faq summary::after{content:'+';font-size:1.3rem;color:var(--c-text-muted);transition:transform 0.2s}
+        .faq details[open] summary::after{content:'−'}
+        .faq details p{padding-top:0.8rem;color:var(--c-text-muted);line-height:1.8;font-size:0.92rem}
+      `}></style>
+      <div class="page-wrap">
+        <div class="faq__list">
+          {block.items.map((item, i) => (
+            <details open={i === 0}>
+              <summary>{item.question}</summary>
+              <p>{item.answer}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+{
+  block.type === "contact" && (
+    <section class="contact section-py">
+      <style is:inline set:html={`
+        .contact__wrap{max-width:640px;margin:0 auto}
+        .contact__wrap h2{margin-bottom:0.5rem;text-align:center}
+        .contact__body{color:var(--c-text-muted);text-align:center;margin-bottom:2rem;font-size:var(--font-scale-body)}
+        .contact__form{display:flex;flex-direction:column;gap:1rem}
+        .contact__form input,.contact__form textarea{width:100%;padding:12px 16px;border:1.5px solid var(--c-border);border-radius:var(--radius);font-family:var(--font-body);font-size:0.95rem;background:var(--c-bg);color:var(--c-text);transition:border-color var(--transition)}
+        .contact__form input:focus,.contact__form textarea:focus{outline:none;border-color:var(--c-primary)}
+        .contact__form textarea{min-height:140px;resize:vertical}
+        .contact__form button{padding:14px 32px;background:var(--c-primary);color:#fff;border:none;border-radius:var(--radius);font-weight:700;font-size:1rem;cursor:pointer;transition:transform var(--transition)}
+        .contact__form button:hover{transform:translateY(-1px)}
+        .contact__success{display:none;text-align:center;padding:3rem 1rem;color:var(--c-primary);font-weight:700}
+      `}></style>
+      <div class="page-wrap">
+        <div class="contact__wrap">
+          <h2>{block.headline}</h2>
+          <p class="contact__body">{block.body}</p>
+          <form class="contact__form" method="POST" action="/api/inquiries" data-contact-form>
+            <input type="text" name="name" placeholder={isJa ? "お名前" : "Name"} required />
+            <input type="email" name="email" placeholder="Email" required />
+            {block.fields.includes("phone") && <input type="tel" name="phone" placeholder={isJa ? "電話番号" : "Phone"} />}
+            {block.fields.includes("company") && <input type="text" name="company" placeholder={isJa ? "会社名" : "Company"} />}
+            <textarea name="message" placeholder={isJa ? "お問い合わせ内容" : "Message"} required></textarea>
+            <input type="text" name="website" style="display:none" tabindex="-1" autocomplete="off" />
+            <button type="submit">{isJa ? "送信する" : "Send Message"}</button>
+          </form>
+          <div class="contact__success" data-form-success>{block.success_message}</div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+{
+  block.type === "company-info" && (
+    <section class="cinfo section-py">
+      <style is:inline set:html={`
+        .cinfo__table{max-width:700px;margin:0 auto}
+        .cinfo__row{display:flex;border-bottom:1px solid var(--c-border);padding:1rem 0}
+        .cinfo__row dt{width:160px;flex-shrink:0;font-weight:700;font-size:0.9rem;color:var(--c-text-muted)}
+        .cinfo__row dd{font-size:0.95rem}
+        @media(max-width:500px){.cinfo__row{flex-direction:column;gap:0.3rem}}
+      `}></style>
+      <div class="page-wrap">
+        <dl class="cinfo__table">
+          {block.items.map((item) => (
+            <div class="cinfo__row">
+              <dt>{item.label}</dt>
+              <dd>{item.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </section>
+  )
+}
+
+{
+  block.type === "plans" && (
+    <section class="plans section-py">
+      <style is:inline set:html={`
+        .plans__grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;max-width:960px;margin:0 auto;align-items:start}
+        .plan{padding:clamp(1.5rem,3vw,2.5rem);border-radius:var(--radius);background:var(--c-surface);border:1.5px solid var(--c-border);text-align:center}
+        .plan--featured{border-color:var(--c-primary);transform:scale(1.03);box-shadow:0 0 0 1px var(--c-primary)}
+        .plan h3{font-size:1.2rem;margin-bottom:0.3rem}
+        .plan__price{font-family:var(--font-heading);font-size:2.2rem;font-weight:900;color:var(--c-primary);margin:0.8rem 0}
+        .plan__desc{font-size:0.88rem;color:var(--c-text-muted);margin-bottom:1.2rem}
+        .plan ul{list-style:none;text-align:left;margin-bottom:1.5rem}
+        .plan li{font-size:0.88rem;padding:6px 0;border-bottom:1px solid var(--c-border)}
+        .plan li::before{content:'✓ ';color:var(--c-primary);font-weight:700}
+        .plan__cta{display:block;padding:12px 0;background:var(--c-primary);color:#fff;border-radius:var(--radius);font-weight:700;font-size:0.92rem}
+        .plan--featured .plan__cta{background:var(--c-primary-dark)}
+        @media(max-width:768px){.plans__grid{grid-template-columns:1fr;max-width:400px}.plan--featured{transform:none}}
+      `}></style>
+      <div class="page-wrap">
+        <div class="plans__grid">
+          {block.items.map((plan) => (
+            <div class={`plan ${plan.featured ? "plan--featured" : ""}`}>
+              <h3>{plan.name}</h3>
+              <div class="plan__price">{plan.price_monthly}</div>
+              <p class="plan__desc">{plan.description}</p>
+              <ul>
+                {plan.features.map((f) => <li>{f}</li>)}
+              </ul>
+              <a href={plan.cta.href} class="plan__cta">{plan.cta.label}</a>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+{
+  block.type === "before-after" && (
+    <section class="ba section-py">
+      <style is:inline set:html={`
+        .ba h2{text-align:center;margin-bottom:clamp(1.5rem,3vw,2.5rem)}
+        .ba__grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;max-width:900px;margin:0 auto}
+        .ba__col{padding:clamp(1.2rem,2vw,2rem);border-radius:var(--radius)}
+        .ba__col--before{background:#fef2f2;border:1px solid #fecaca}
+        .ba__col--after{background:#f0fdf4;border:1px solid #bbf7d0}
+        .ba__col h3{font-size:1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem}
+        .ba__col ul{list-style:none}
+        .ba__col li{font-size:0.9rem;padding:4px 0;line-height:1.6}
+        .ba__col li::before{font-weight:700;margin-right:8px}
+        .ba__col--before li::before{content:'✗';color:#ef4444}
+        .ba__col--after li::before{content:'✓';color:#22c55e}
+        .ba__col img{width:100%;border-radius:var(--radius);margin-bottom:1rem}
+        @media(max-width:640px){.ba__grid{grid-template-columns:1fr}}
+      `}></style>
+      <div class="page-wrap">
+        <h2>{block.headline}</h2>
+        <div class="ba__grid">
+          <div class="ba__col ba__col--before">
+            <h3>{block.before.label}</h3>
+            {block.before.image && <img src={block.before.image.url} alt={block.before.image.alt} loading="lazy" />}
+            <ul>{block.before.items.map((i) => <li>{i}</li>)}</ul>
+          </div>
+          <div class="ba__col ba__col--after">
+            <h3>{block.after.label}</h3>
+            <ul>{block.after.items.map((i) => <li>{i}</li>)}</ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+{
+  block.type === "timeline" && (
+    <section class="tl section-py">
+      <style is:inline set:html={`
+        .tl{max-width:700px;margin:0 auto}
+        .tl h2{text-align:center;margin-bottom:clamp(1.5rem,3vw,2.5rem)}
+        .tl__item{position:relative;padding-left:2.5rem;padding-bottom:2rem;border-left:2px solid var(--c-primary)}
+        .tl__item:last-child{border-left-color:transparent}
+        .tl__dot{position:absolute;left:-6px;top:2px;width:10px;height:10px;border-radius:50%;background:var(--c-primary)}
+        .tl__date{font-size:0.78rem;color:var(--c-primary);font-weight:700;margin-bottom:0.3rem}
+        .tl__title{font-weight:700;margin-bottom:0.3rem}
+        .tl__body{font-size:0.9rem;color:var(--c-text-muted);line-height:1.7}
+      `}></style>
+      <div class="page-wrap">
+        <h2>{block.headline}</h2>
+        <div class="tl">
+          {block.items.map((item) => (
+            <div class="tl__item fade-in">
+              <div class="tl__dot"></div>
+              <div class="tl__date">{item.date_label}</div>
+              <div class="tl__title">{item.title}</div>
+              <div class="tl__body">{item.body}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+{
+  block.type === "testimonials" && (
+    <section class="tmon section-py">
+      <style is:inline set:html={`
+        .tmon__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;max-width:960px;margin:0 auto}
+        .tmon__card{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--radius);padding:clamp(1.5rem,3vw,2rem)}
+        .tmon__card blockquote{font-size:0.95rem;line-height:1.8;margin-bottom:1rem;color:var(--c-text)}
+        .tmon__card blockquote::before{content:'"';font-size:2rem;color:var(--c-primary);line-height:0;vertical-align:-0.4em;margin-right:4px}
+        .tmon__author{display:flex;align-items:center;gap:0.6rem}
+        .tmon__author img{width:36px;height:36px;border-radius:50%;object-fit:cover}
+        .tmon__author strong{font-size:0.88rem}
+        .tmon__author span{font-size:0.78rem;color:var(--c-text-muted)}
+      `}></style>
+      <div class="page-wrap">
+        <div class="tmon__grid">
+          {block.items.map((item) => (
+            <div class="tmon__card fade-in">
+              <blockquote>{item.quote}</blockquote>
+              <div class="tmon__author">
+                {item.image && <img src={item.image.url} alt={item.author} loading="lazy" />}
+                <div>
+                  <strong>{item.author}</strong>
+                  {item.role && <span>{item.role}</span>}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<!-- fallback for unknown block types -->
+{!["hero","proof","cards","media-text","faq","contact","company-info","plans","before-after","timeline","testimonials"].includes(block.type) && (
+  <p style="text-align:center;color:var(--c-text-muted);padding:2rem">Unknown block: {block.type}</p>
+)}

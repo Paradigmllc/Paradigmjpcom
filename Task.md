@@ -1,4 +1,12 @@
-## CURRENT STATUS - 2026-06-30 Astro demo hyper-personalization Phase 2 — design.json スキーマ + DeepSeek プロンプト
+## CURRENT STATUS - 2026-06-30 Astro demo hyper-personalization Phase 3+4 完了 — Astroコンポーネント + パイプライン統合
+
+- 壁打ち合意→設計→実装→検証まで一貫完了。
+- 方針: ①6軸デザイン哲学をDeepSeekが企業ごとに完全決定 ②画像・色・文言は企業実サイトから抽出 ③有料API不使用 ④Astro SSR ⑤納品時はNext.js+PayloadCMSで再構築。
+- 実装(Phase 1): `src/lib/sales/sources/website-extract.ts`(458行) — Playwrightで実サイト画像・色・構造化データ抽出。`src/lib/sales/extract-assets.ts`(127行) — R2アップロード+meta保存。`processEnrichmentPhase`に統合。
+- 実装(Phase 2): `src/lib/sales/demo-design-types.ts`(317行) — DemoDesignSpec型: 6軸哲学/10種PageBlock/11ページ型。`src/lib/sales/demo-design-prompts.ts`(302行) — 日英プロンプト+バリデーター。`src/lib/sales/demo-design-generator.ts`(193行) — DeepSeek呼出+パース。
+- 実装(Phase 3): `src/app/api/demo-designs/[slug]/route.ts`(152行) — GET=キャッシュ仕様返却 / POST=DeepSeek生成+theme_demo_pages保存。`astro-demo/src/lib/design-spec.ts`(239行) — Astro側型定義+tokensToCSS。`astro-demo/src/components/renderer/DesignRoot.astro`(137行) — HTMLシェル+nav+footer+デザイントークンCSS注入。`astro-demo/src/components/renderer/BlockRenderer.astro`(407行) — 10種PageBlockを単一コンポーネントでレンダリング（hero/proof/cards/media-text/faq/contact/company-info/plans/before-after/timeline/testimonials）。全CSSをdesign_tokensカスタムプロパティで駆動。6軸多態（visual_language→hero高さ変化、layout_rhythm→grid幅変化、radius→角丸変化等）。
+- 実装(Phase 4): `processAssetPhase`にDeepSeek設計仕様生成を追加。デモ生成条件成立時（カバレッジ≥15、DEEPSEEK_API_KEY設定済み）に並列実行。生成されたDemoDesignSpecを`theme_demo_pages`にupsert。既存デモ生成と並列・独立（失敗してもデモ生成は継続）。
+- 検証: `npm exec -- tsc --noEmit` OK（Next.js + Astro両方）`npm run quality:guard` OK（0 error / 58 warnings 全て既存）`npm run build` OK（Next.js + astro-demo両方）`npm exec -- vitest run src/lib/sales/source-coverage.test.ts src/lib/sales/enrich.test.ts` OK（6 tests）
 
 - 壁打ち合意: ペラLPから apple.com 級のフルスタックパーソナライズデモへ根本再設計。テンプレの色差し替えではなく、企業実データ＋LLMで毎回異なる構成・デザイン・コピーを生成。
 - 方針: ①6軸デザイン哲学（visual_language / layout_rhythm / navigation / color / typography / motion）をDeepSeekが企業ごとに完全決定 ②画像・色・文言はフリー素材禁止、相手企業の実サイトから Playwright で抽出 ③有料API不使用（Google Maps/Tavily/SerpAPI NG） ④Astro SSG→Cloudflare R2静的配信 ⑤納品時はNext.js+PayloadCMSで再構築。

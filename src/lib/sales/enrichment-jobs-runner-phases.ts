@@ -2,6 +2,7 @@ import { enrichFromContact } from "./enrich"
 import { upsertCompanyByDomain } from "./companies"
 import { runDifyDiagnosis } from "./dify-diagnosis"
 import { runAssetExtraction } from "./extract-assets"
+import { generateDemoDesign, buildDesignInput } from "./demo-design-generator"
 import { fetchDiagnosticReport, markReportGenerated } from "./diagnostic"
 import { autoPersonalize } from "./personalize"
 import { generateReplacementDemo } from "./demo-generator"
@@ -281,6 +282,56 @@ export async function processAssetPhase(
     })
   }
 
+  // Generate hyper-personalized design spec (DeepSeek) when demo conditions are met
+  const shouldGenerateDesign = shouldGenerateDemo && !!process.env.DEEPSEEK_API_KEY
+  const designSpecPromise = shouldGenerateDesign
+    ? (async () => {
+        try {
+          const websiteAssets = company.meta?.website_assets as Record<string, unknown> | undefined
+          const input = buildDesignInput({
+            company_name: company.company_name,
+            domain: company.domain,
+            industry: company.industry ?? null,
+            location: company.prefecture ?? null,
+            locale: company.report_locale ?? "ja",
+            website_assets: websiteAssets ?? null,
+            diagnosis: {
+              pain_summary: company.pain_diagnosis ?? company.dify_result ?? {},
+              detected_issues: company.detected_issues,
+              pagespeed_mobile: company.pagespeed_mobile,
+              pagespeed_desktop: company.pagespeed_desktop,
+              tech_stack: company.tech_stack,
+              improvement_actions: reportData?.acts ?? [],
+            } as Record<string, unknown>,
+          })
+          if (!input) return null
+          const slug = `${company.domain?.replace(/[^a-zA-Z0-9.-]+/g, "-").replace(/-+/g, "-").slice(0, 50) ?? company.id}-demo`
+          const result = await generateDemoDesign(input, slug)
+          if (result.ok && result.spec) {
+            await sb.from("theme_demo_pages").upsert({
+              slug,
+              theme: "hyper-personalized",
+              title: result.spec.pages.home?.title ?? `${company.company_name} Demo`,
+              blocks: result.spec,
+              meta: {
+                ...(company.meta as Record<string, unknown> ?? {}),
+                design_spec: result.spec,
+                design_philosophy: result.spec.design_philosophy,
+                generated_at: new Date().toISOString(),
+              },
+              is_published: true,
+              company_id: company.id,
+            }, { onConflict: "slug" })
+            return result.spec
+          }
+          return null
+        } catch (e) {
+          console.error("[sales-enrichment] design spec generation failed:", e)
+          return null
+        }
+      })()
+    : Promise.resolve(null)
+
   const [demo, videoResult] = await Promise.all([
     shouldGenerateDemo
       ? generateReplacementDemo(company, reportData).catch((e: unknown) => {
@@ -295,6 +346,8 @@ export async function processAssetPhase(
           return null
         })
       : Promise.resolve(null),
+
+    designSpecPromise,
   ])
 
   let updatedCompany = company
