@@ -4,6 +4,7 @@
  * from the pipeline component library and renders a complete site.
  */
 import type { DesignPromptInput } from "./demo-design-prompts"
+import { APPLE_DESIGN_SYSTEM } from "./figma-design-system"
 
 const DEEPSEEK_BASE_URL = process.env.DEEPSEEK_API_BASE || "https://api.deepseek.com/v1"
 const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat" // DeepSeek V4
@@ -18,9 +19,7 @@ export interface AstroCodeResult {
 
 // ── System Prompt ──
 
-import { APPLE_DESIGN_SYSTEM } from "./figma-design-system"
-
-function buildSystemPrompt(): string {
+export function buildSystemPrompt(): string {
   const ds = APPLE_DESIGN_SYSTEM
   const tokens = ds.colors.tokens
   const typo = ds.typography

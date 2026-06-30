@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    reportLines.push(``, `🔗 https://paradigmjp.com/ja/admin/sales`)
+    reportLines.push(``, `🔗 https://twenty.paradigmjp.com`)
 
     await notifySlack(reportLines.join("\n"))
 

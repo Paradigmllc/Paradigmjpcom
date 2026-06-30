@@ -79,7 +79,6 @@ export default async function BlogPage({ params }: Props) {
         sort: "-publishedAt",
         limit: 100,
         depth: 0,
-        ...localeFindOptions(locale),
       })
       return (res.docs as unknown as PostDoc[]) ?? []
   }, [])

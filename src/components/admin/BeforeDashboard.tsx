@@ -59,8 +59,7 @@ export default async function BeforeDashboard({ payload }: { payload: Payload })
   const requestHeaders = await headers()
   const acceptLang = requestHeaders.get("accept-language") || ""
   const detectedLocale = acceptLang.toLowerCase().startsWith("en") ? "en" : "ja"
-  const salesDashboardPath = `/${detectedLocale}/admin/sales`
-  const salesIntegrationsPath = `${salesDashboardPath}?tab=integrations`
+  const twentyUrl = "https://twenty.paradigmjp.com"
 
   let counts: Counts = {}
   let leadsByStage: Counts = {}
@@ -119,16 +118,16 @@ export default async function BeforeDashboard({ payload }: { payload: Payload })
               この画面はPayloadのコンテンツ管理とリード入口だけに絞りました。Supabase、NocoDB、Appsmith、Twenty、Metabase、Trigger.dev、Cal.com、Docusealなどの営業基盤はRevenue OSの「統合」に集約しています。
             </p>
           </div>
-          <a href={salesDashboardPath} target="_blank" rel="noopener noreferrer" style={adminButtonStyle("primary")}>
-            Revenue OSを開く
+          <a href={twentyUrl} target="_blank" rel="noopener noreferrer" style={adminButtonStyle("primary")}>
+            Twenty Sales OS を開く
           </a>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 16 }}>
           <a href="/admin/collections/leads" style={adminButtonStyle()}>
             Payloadリード
           </a>
-          <a href={salesIntegrationsPath} target="_blank" rel="noopener noreferrer" style={adminButtonStyle()}>
-            Revenue OS 統合
+          <a href={twentyUrl} target="_blank" rel="noopener noreferrer" style={adminButtonStyle()}>
+            Twenty Sales OS
           </a>
         </div>
       </section>

@@ -49,7 +49,7 @@ function PayloadAdminUnavailable({ locale }: { locale: string }) {
   const message = getPayloadInitFailureMessage()
   const failures = getConsecutiveFailures()
   const metrics = getPayloadPoolMetrics()
-  const salesDashboardPath = `/${locale}/admin/sales`
+  const salesDashboardPath = "https://twenty.paradigmjp.com"
   const isPoolExhaustion = message.toLowerCase().includes("echeckouttimeout") || message.toLowerCase().includes("unable to check out")
 
   let dbInfo: ReturnType<typeof getDbUriInfo> | null = null

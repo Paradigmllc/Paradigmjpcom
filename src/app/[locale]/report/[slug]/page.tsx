@@ -67,7 +67,7 @@ export default async function ReportPage({ params }: Props) {
           slug={slug}
           locale={locale}
           title={safeData.company_name}
-          salesOsHref={`/${locale}/admin/sales`}
+          salesOsHref="https://twenty.paradigmjp.com"
           initialFields={{
             hook: safeData.hook,
             pain: safeData.acts[0]?.body ?? "",

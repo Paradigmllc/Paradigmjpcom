@@ -70,7 +70,7 @@ export default async function DemoMultiLayoutWrapper({ children, params }: Layou
           slug={slug}
           locale={locale}
           title={demoData.companyName}
-          salesOsHref={`/${locale}/admin/sales`}
+          salesOsHref="https://twenty.paradigmjp.com"
           initialFields={{
             metaTitle: demoData.meta.title,
             metaDescription: demoData.meta.description,

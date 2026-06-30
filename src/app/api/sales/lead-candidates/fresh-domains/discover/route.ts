@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       await notifyBothChannels("sales", {
         title: "Fresh domain candidates updated",
         message: `${result.countryCode}: discovered ${result.discovered}, upserted ${result.ingestion.upserted}, promoted ${result.ingestion.promoted}`,
-        link: "/ja/admin/sales?tab=freshDomains",
+        link: "https://twenty.paradigmjp.com",
         type: "info",
       }).catch((error) => console.error("[lead-candidates/fresh-domains/discover] notification failed:", error))
     }
