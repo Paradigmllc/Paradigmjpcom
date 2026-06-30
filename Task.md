@@ -29,13 +29,12 @@
 - 検証: tsc clean / quality:guard 0 error / build OK
 
 ### Active Handoff (2026-06-30 OpenCode)
-- 営業OS outreachパイプライン堅牢化：6箇所修正で数千件連続処理の耐障害性を確保
-  - `orchestrator.ts`: processOne try/catch分離 + 1件120sタイムアウト
-  - `worker/browser.ts`: context 90sタイムアウト + 50context毎ブラウザ再起動(OOM防止)
-  - `activity.ts`: recentlyContacted がDBエラー時 true を返す（二重送信防止）
-  - `side-effects.ts`: logActivity→applyOutcome の順序修正（状態不整合防止）
-  - 全修正ゼロコスト（新規有料API/プロキシ/サーバー増強なし）
-  - 起動トリガー不変（API/webhookイベント駆動・cron/polling不使用）
+- 営業OS outreachパイプライン全面堅牢化 計14修正・10ファイル・テスト29件全pass
+  - **堅牢性(6)**: プロセス分離 + 120sタイムアウト + Worker 90sコンテキストタイムアウト + 50context毎ブラウザ再起動 + DBエラー時二重送信防止 + 状態整合性
+  - **効率性(3)**: heuristicパス24並列化 + CMSテンプレート(CF7/WPForms/Gravity) + フォーム構造24hキャッシュ
+  - **品質(3)**: CSRF hidden field補完 + submit_uncertain 3回自動再試行 + URL変化サクセス検証
+  - **保護(2)**: ドメイン単位サーキットブレイカー + Playwrightネイティブstealth化
+  - 全修正ゼロコスト（新規有料API/プロキシ/サーバー増強なし・イベント駆動不変）
 
 ### 現状
 
