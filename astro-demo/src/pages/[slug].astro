@@ -1,6 +1,10 @@
 ---
-// Redirect old demo routes. Skip new /demos/ static paths.
+// Only redirect old demo slugs. Let Astro's file routing handle new pages.
 const slug = Astro.params.slug ?? ""
-if (slug.startsWith("demos/")) return Astro.redirect(`/${slug}`, 301)
-return Astro.redirect("/demos/trattoria-soleil/index.html", 301)
+const oldSlugs = ["demo", "sample-restaurant", "demos"]
+if (oldSlugs.includes(slug) || slug.startsWith("sample-") || slug.startsWith("demo/")) {
+  return Astro.redirect("/demos/trattoria-soleil/index.html", 301)
+}
+// Not an old demo — return 404, don't interfere
+return new Response(null, { status: 404 })
 ---
