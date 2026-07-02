@@ -1,3 +1,56 @@
+## CURRENT STATUS - 2026-07-02 OpenClaw営業パイプライン全面再設計 — 壁打ち合意・アーキテクチャ承認
+
+### 決定事項
+- **OpenClawをオーケストレータに** → Trigger.devはフォールバックに降格
+- **全面移行（Next.js非依存）** → パイプラインロジックはOpenClawスキルに移動。Next.jsはWebサイト表示のみ
+- **Twenty単一データハブ** → OpenClawは全データ操作をTwenty API経由で実行
+- **4ステップに圧縮** → ①lead-discovery ②diagnosis-output ③crm-sync ④outreach-exec
+- **Mac + Hetzner冗長実行** → 両方でパイプライン実行、負荷分散
+- **自社営業自動化のみ** → SaaS外販は将来検討。まず自社パイプライン完動
+- **Webサイトはそのまま** → paradigmjp.comの公開ページは変更しない
+
+### 新アーキテクチャ
+```
+OpenClaw (オーケストレータ) ──(Twenty API)──► Twenty (単一Hub: 企業DB+状態管理+成功事例)
+    │                                            │
+    ├── ① lead-discovery (Crawlee + 外部ソース)   │ (成果物メタデータ)
+    ├── ② diagnosis-output (DeepSeek + Astro)     ▼
+    ├── ③ crm-sync (Twenty更新 + Slack/Telegram) Supabase ──► paradigmjp.com (表示)
+    └── ④ outreach-exec (Stagehand/Playwright)
+```
+
+### 4ステップ詳細
+| # | スキル | 処理内容 | 出力先 |
+|---|--------|---------|--------|
+| ① | `lead-discovery` | Crawleeでリード発見 + Crawl4AIで企業データ収集 → Twentyに企業登録 | Twenty |
+| ② | `diagnosis-output` | DeepSeekで診断 → Astro Demo生成 → Cloudflareデプロイ | Twenty + Supabase |
+| ③ | `crm-sync` | Twenty企業ステータス更新 + Slack/Telegram通知 + 成果物メタデータ保存 | Twenty + Supabase + Slack |
+| ④ | `outreach-exec` | Stagehandでフォーム発見 → メッセージ送信 → 結果記録 → 返信監視 | Twenty |
+
+### 削除/アーカイブ対象
+- `trigger/sales-os.ts` 全Task定義（Trigger.dev課金停止）
+- `src/lib/sales/sales-pipeline*.ts`（6ファイル、4ステップに圧縮）
+- `src/lib/sales/enrichment-jobs*.ts`（OpenClaw内で完結）
+- `src/app/api/sales/pipeline/*` 全API（Twenty API直叩きに変更）
+- `src/lib/sales/outreach/*`（Stagehand + OpenClawスキルに移動）
+
+### 残すもの
+- Supabase sales_*テーブル（成果物メタデータ + レポート/Demo表示用）
+- `/api/sales/health`（リリースドクター）
+- `/api/sales/artifact-edits/*`（管理者編集パネル用）
+- `src/app/[locale]/report/[slug]/`, `src/app/[locale]/demo/[slug]/`（表示ページ）
+- Twenty CRM（営業GUIのSSOT）
+- Supabase Realtime（イベント通知）
+
+### 実装計画
+1. OpenClawにTwenty APIツール登録
+2. 4スキルのOpenClawスキル開発
+3. Stagehand連携・DeepSeekプロンプト整備
+4. OpenClawをHetznerに常駐デプロイ
+5. 既存Trigger.devパイプラインを段階停止
+6. 旧コード削除・アーカイブ
+7. 検証→commit→push→deploy
+
 ## CURRENT STATUS - 2026-06-30 リスト収集パイプライン全面拡張 — 実装・デプロイ完了
 
 - 新規ソース5件 + 3段階フィルタパイプライン実装完了。本番デプロイ済み。
