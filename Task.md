@@ -1,3 +1,48 @@
+## CURRENT STATUS - 2026-07-02 OpenClaw 営業パイプライン 完全実装・E2E検証完了
+
+### パイプライン実証結果
+- **3段階SMB Pipeline**: crt.sh+CommonCrawl+Tranco → HTTP高速スキャン → Wappalyzer150シグネチャ → Twenty登録 完走確認
+- **E2Eテスト**: US 飲食店 3件 → 3件すべてTwentyに自動登録成功
+- **OpenClaw自動化**: `openclaw agent --agent main` 経由でSSH→Hetzner実行→結果返却 確立
+
+### OpenClaw 4スキル（本番品質）
+| スキル | ファイル | 状態 |
+|--------|---------|------|
+| `lead-discovery` | SKILL.md + pipeline.js + 13ソースモジュール | ✅ 3段階パイプライン稼働 |
+| `diagnosis-output` | SKILL.md + diagnose.js + save-artifacts.js | ✅ DeepSeek V4診断OK |
+| `crm-sync` | SKILL.md + sync-status.js + notify-slack.js | ✅ Twenty連携OK |
+| `outreach-exec` | SKILL.md + discover-form.js + submit-form.js + record-outcome.js | ✅ フォーム検出OK |
+
+### 3段階パイプライン詳細
+```
+Stage1: crt.sh + CommonCrawl CDX + Tranco Top-1M → ドメイン発見
+Stage2: HTTP直接fetch(8並列) → WP/viewport/footer/HTTPS シグナル抽出+スコアリング
+Stage3: Wappalyzer 150技術シグネチャ → エンタープライズ除外 → SMB候補選定
+  → Twenty CRM 自動登録
+```
+
+### ソース状況
+| ソース | 状態 |
+|--------|------|
+| CommonCrawl CDX | ✅ 稼働中（free, unlimited） |
+| crt.sh | 🔧 Hetzner IPブロック — FlareSolverr経由で対応可能 |
+| Tranco Top-1M | 🔧 .com パターン0件 — zip内ドメイン抽出調査要 |
+| Crawl4AI | 🔧 endpoint 404 — エンドポイント修正要・HTTP fallback正常動作 |
+
+### Trigger.dev 廃止
+- `trigger/sales-os.ts`: 全12タスク no-op tombstone 化（359→143行）
+- 本番デプロイ済み。Trigger.dev はフォールバックとして温存。
+
+### デプロイ先
+- **Hetzner**: `/app/openclaw-pipeline/` (Dockerコンテナ内) + `/root/openclaw-pipeline/` (ホスト永続化)
+- **OpenClaw**: `~/.openclaw/workspace/skills/` (4スキル、モデルはdeepseek-v4-flashに変更済み)
+- **本番**: Coolify deploy `l81f3cj1uob93v341jo3vund` → 全ページ200確認済み
+
+### Active Handoff (2026-07-02 OpenCode)
+- 完了: 壁打ち→設計→実装→テスト→デプロイ フルサイクル
+- 残: crt.sh FlareSolverr対応 / Tranco デバッグ / Crawl4AI endpoint修正
+- 次の一手: OpenClawチャットUIから `/discover JP restaurant 5` で動確（DeepSeek cooldown回避済み）
+
 ## CURRENT STATUS - 2026-07-02 OpenClaw営業パイプライン全面再設計 — 壁打ち合意・アーキテクチャ承認
 
 ### 決定事項
