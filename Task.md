@@ -1,4 +1,33 @@
-## CURRENT STATUS - 2026-07-06 Trigger.dev/n8n全廃止 → OpenClaw一本化 完了
+## CURRENT STATUS - 2026-07-07 本番運用開始 + E2E検証完了
+
+### 本番稼働状態
+- **Deploy**: 2026-07-07 00:54 UTC, container healthy
+- **E2Eテスト**: discovery pipeline全段階が正常実行 (JP/1件→Tranco→filter→scan)
+- **Health API**: healthy, OpenClaw Pipeline = ok
+
+### パイプライン復旧手順
+```bash
+# 1. OpenClawがダウンした場合 → SSHで直接実行
+ssh paradigm-hetzner "docker exec \$(docker ps --filter name=n8i2sjiqvr2d8hrzppop2m2i --format '{{.ID}}' | head -1) node /app/openclaw-pipeline/lead-discovery/scripts/health-check.js"
+
+# 2. ヘルスチェック失敗時 → 5項目を順に確認
+#    Twenty API: curl https://twenty.paradigmjp.com/rest/companies?limit=1
+#    DeepSeek: env | grep DEEPSEEK_API_KEY
+#    Tranco: curl -I https://tranco-list.eu/top-1m.csv.zip
+#    CommonCrawl: curl -I https://index.commoncrawl.org/collinfo.json
+#    Pipeline scripts: ls /app/openclaw-pipeline/lead-discovery/scripts/
+
+# 3. Traefik upstream drift (502) → IPを確認して修正
+ssh paradigm-hetzner "docker inspect \$(docker ps --filter name=n8i2sjiqvr2d8hrzppop2m2i --format '{{.ID}}' | head -1) --format '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}'"
+# → coolify-proxy内の /traefik/dynamic/paradigmjp.yml の paradigmhp-svc のurlを更新
+# → docker kill -s HUP coolify-proxy (再起動禁止)
+
+# 4. 全サービスがダウン → Hetzner power cycle
+# → Coolify API: POST /api/v1/deploy?uuid=n8i2sjiqvr2d8hrzppop2m2i&force=true
+
+# 5. crt.shブロック → FlareSolverrが迂回。FlareSolverrもダウン時は以下:
+ssh paradigm-hetzner "docker restart services-flaresolverr-1"
+```
 
 ### 完了した移行
 - **Trigger.dev 完全削除**: コード/env/docker-compose/scriptsから全除去

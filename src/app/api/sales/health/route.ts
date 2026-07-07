@@ -111,7 +111,69 @@ async function checkDify(): Promise<ServiceCheck> {
 }
 
 async function checkOpenClaw(): Promise<ServiceCheck> {
-  return { name: "OpenClaw Pipeline", status: "ok", detail: "2026-07-06: OpenClaw replaces Trigger.dev as orchestrator" }
+  const results: string[] = []
+  let ok = true
+
+  // 1. Verify pipeline scripts are deployed
+  try {
+    const { readdirSync, existsSync } = await import("node:fs")
+    const pipeDir = "/app/openclaw-pipeline"
+    const skills = ["lead-discovery", "diagnosis-output", "crm-sync", "outreach-exec"]
+    let scriptsFound = 0
+    for (const skill of skills) {
+      const scriptsDir = `${pipeDir}/${skill}/scripts`
+      if (existsSync(scriptsDir)) {
+        const files = readdirSync(scriptsDir).filter((f) => f.endsWith(".js"))
+        scriptsFound += files.length
+      }
+    }
+    if (scriptsFound === 0) {
+      results.push("no pipeline scripts found")
+      ok = false
+    } else {
+      results.push(`${scriptsFound} pipeline scripts deployed`)
+    }
+  } catch (e) {
+    results.push("pipeline scripts check failed")
+    ok = false
+  }
+
+  // 2. Verify Twenty API connectivity
+  try {
+    const twentyBase = process.env.TWENTY_BASE_URL
+    const twentyKey = process.env.TWENTY_API_KEY
+    if (twentyBase && twentyKey) {
+      const r = await fetch(`${twentyBase}/rest/companies?limit=1`, {
+        headers: { Authorization: `Bearer ${twentyKey}` },
+        signal: AbortSignal.timeout(5_000),
+      })
+      if (r.ok) {
+        results.push("Twenty API reachable")
+      } else {
+        results.push(`Twenty HTTP ${r.status}`)
+        ok = false
+      }
+    } else {
+      results.push("Twenty not configured")
+    }
+  } catch (e) {
+    results.push("Twenty unreachable")
+    ok = false
+  }
+
+  // 3. Verify DeepSeek API key
+  if (process.env.DEEPSEEK_API_KEY) {
+    results.push("DeepSeek configured")
+  } else {
+    results.push("DeepSeek missing")
+    ok = false
+  }
+
+  return {
+    name: "OpenClaw Pipeline",
+    status: ok ? "ok" : "error",
+    detail: results.join("; "),
+  }
 }
 
 /** @deprecated 2026-07-06 */
