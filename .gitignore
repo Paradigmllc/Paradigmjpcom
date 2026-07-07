@@ -28,7 +28,6 @@ yarn-error.log*
 .env*.local
 .env
 .env.supabase
-.env.trigger-oss
 .supabase.keys
 reset_auth.sh
 reset.php
@@ -37,7 +36,6 @@ supabase-secrets.json
 
 # vercel
 .vercel
-.trigger/
 
 # typescript
 *.tsbuildinfo
@@ -51,5 +49,4 @@ opencode.json
 .notion-mvp-*.md
 .next*.log
 docker-compose.sales-pipeline.yml
-services/
 2026-*-openclaw-backup.tar.gz

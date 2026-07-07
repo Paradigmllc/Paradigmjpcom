@@ -336,6 +336,7 @@ export async function processAssetPhase(
   // Hyper-personalized code-generation demo (DeepSeek V4 → complete Astro → R2 deploy)
   const codeGenDemoPromise = shouldGenerateDemo
     ? buildAndDeployDemo(company).catch((e: unknown) => {
+        console.error(`[enrichment-phases] code-gen demo build/deploy:`, e instanceof Error ? e.message : String(e))
         errors.push(`code-gen demo: ${e instanceof Error ? e.message : String(e)}`)
         return { ok: false, url: null }
       })
@@ -344,6 +345,7 @@ export async function processAssetPhase(
   const [demo, videoResult] = await Promise.all([
     shouldGenerateDemo
       ? generateReplacementDemo(company, reportData).catch((e: unknown) => {
+          console.error(`[enrichment-phases] replacement demo generation:`, e instanceof Error ? e.message : String(e))
           errors.push(`demo generation: ${e instanceof Error ? e.message : String(e)}`)
           return { ok: false, demoUrl: null }
         })
@@ -351,6 +353,7 @@ export async function processAssetPhase(
 
     shouldGenerateVideo
       ? generateDiagnosticVideo(company.id, company.report_locale).catch((e: unknown) => {
+          console.error(`[enrichment-phases] diagnostic video generation:`, e instanceof Error ? e.message : String(e))
           errors.push(`video generation: ${e instanceof Error ? e.message : String(e)}`)
           return null
         })

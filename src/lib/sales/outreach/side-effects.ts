@@ -147,7 +147,7 @@ export async function enqueueOperatorTask(
     pipeline_run_id: input.pipelineRunId ?? null,
     priority: input.priority ?? (input.approvalRequired ? 90 : 70),
     status: "open",
-    source_tool: "trigger_dev",
+    source_tool: "openclaw",
     target_tool: "appsmith",
     meta: {
       reason: input.reason,

@@ -86,8 +86,8 @@ const SEGMENT_DEFAULTS: Record<VideoTargetSegment, Required<VideoLossInputs>> = 
 export const VIDEO_PIPELINE_STAGES = [
   { id: "brief", label: "企画ブリーフ作成", owner: "Dify / DeepSeek", gate: "企業カルテと訴求軸がそろっている" },
   { id: "storyboard", label: "絵コンテ・字幕・CTA", owner: "Sales OS", gate: "未検証の断定を入れず、推定値は推定と明記する" },
-  { id: "asset_prompts", label: "ComfyUI素材指示", owner: "Trigger.dev -> ComfyUI", gate: "ブランド、業界、用途に合う素材だけ生成する" },
-  { id: "gpu_route", label: "Vast.ai GPU割当", owner: "Trigger.dev -> Vast.ai", gate: "動画サブスクや重いComfyUI生成だけGPUを起動する" },
+  { id: "asset_prompts", label: "ComfyUI素材指示", owner: "OpenClaw -> ComfyUI", gate: "ブランド、業界、用途に合う素材だけ生成する" },
+  { id: "gpu_route", label: "Vast.ai GPU割当", owner: "OpenClaw -> Vast.ai", gate: "動画サブスクや重いComfyUI生成だけGPUを起動する" },
   { id: "render", label: "HyperFrames / OpenMontageレンダー", owner: "Renderer", gate: "用途に応じて軽量レンダーとプロ納品レンダーを分ける" },
   { id: "review", label: "Slack / Appsmith確認", owner: "Human", gate: "初回納品、契約前、危険表現は人間確認へ戻す" },
   { id: "delivery", label: "R2配信・Twenty記録", owner: "Sales OS", gate: "URLと納品ステータスをSSOTへ保存する" },

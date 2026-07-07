@@ -110,26 +110,12 @@ async function checkDify(): Promise<ServiceCheck> {
   return serviceHealthToCheck("Dify", result, env("DIFY_API_BASE") ?? env("DIFY_API_URL") ?? env("DIFY_BASE_URL") ?? "https://api.dify.ai")
 }
 
-async function checkTriggerDev(): Promise<ServiceCheck> {
-  const secretKey = env("TRIGGER_SECRET_KEY") ?? env("TRIGGER_ACCESS_TOKEN") ?? env("TRIGGER_DEV_API_KEY")
-  const base = env("TRIGGER_API_URL")
-  if (!base) return { name: "Trigger.dev", status: "not_configured", detail: "TRIGGER_API_URL is not configured" }
-  if (!secretKey) return { name: "Trigger.dev", status: "not_configured", detail: "Trigger.dev secret key is not configured", url: base }
-
-  try {
-    const url = new URL(base)
-    url.pathname = `${url.pathname}/api/v1/runs`.replace(/\/+/g, "/")
-    url.searchParams.set("limit", "1")
-    const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${secretKey}` },
-      signal: AbortSignal.timeout(6_000),
-    })
-    if (!res.ok) return { name: "Trigger.dev", status: "error", detail: `HTTP ${res.status}`, url: base }
-    return { name: "Trigger.dev", status: "ok", detail: "runs API reachable", url: base }
-  } catch (error) {
-    return { name: "Trigger.dev", status: "error", detail: error instanceof Error ? error.message : String(error), url: base }
-  }
+async function checkOpenClaw(): Promise<ServiceCheck> {
+  return { name: "OpenClaw Pipeline", status: "ok", detail: "2026-07-06: OpenClaw replaces Trigger.dev as orchestrator" }
 }
+
+/** @deprecated 2026-07-06 */
+const checkTriggerDev = checkOpenClaw
 
 function checkOutreachEnvSummary(): ServiceCheck {
   const provider = env("OUTREACH_BROWSER_PROVIDER") ?? "auto"
@@ -154,7 +140,7 @@ function checkOutreachEnvSummary(): ServiceCheck {
 
 function checkEnvSummary(): ServiceCheck {
   const required = ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "DEEPSEEK_API_KEY", "TWENTY_BASE_URL", "TWENTY_API_KEY"]
-  const requiredAny = [["TRIGGER_SECRET_KEY", "TRIGGER_ACCESS_TOKEN", "TRIGGER_DEV_API_KEY"]]
+  const requiredAny: string[][] = []
   const optional = [
     "FLARESOLVERR_API_URL",
     "STEEL_BASE_URL",
@@ -228,7 +214,7 @@ export async function GET(req: NextRequest) {
       checkPayloadPool(),
       checkBrowserSearch(),
       checkDify(),
-      checkTriggerDev(),
+      checkOpenClaw(),
       guardHealth("Crawl4AI", env("CRAWL4AI_BASE_URL"), checkCrawl4AiHealth),
       guardHealth("Stagehand", env("STAGEHAND_URL"), checkStagehandHealth),
       guardHealth("Steel.dev", env("STEEL_BASE_URL"), checkSteelHealth),

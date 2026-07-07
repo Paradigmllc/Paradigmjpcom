@@ -18,8 +18,7 @@ async function main() {
     process.exit(1)
   }
 
-  const webhookSecret = await readProductionEnvValue("N8N_WEBHOOK_SECRET") ??
-    await readProductionEnvValue("TRIGGER_WEBHOOK_SECRET")
+  const webhookSecret = await readProductionEnvValue("TRIGGER_WEBHOOK_SECRET")
 
   console.log("Twenty CRM Webhook Setup")
   console.log("=========================")
@@ -82,7 +81,7 @@ function printManualSteps() {
   console.log("   3. Add webhook:")
   console.log(`      URL: ${WEBHOOK_URL}`)
   console.log("      Events: company.created, company.updated")
-  console.log(`      Secret: (use N8N_WEBHOOK_SECRET from Coolify)`)
+  console.log(`      Secret: (use TRIGGER_WEBHOOK_SECRET from Coolify)`)
   console.log()
   console.log("Alternatively, trigger /api/sales/twenty/pull from a webhook or explicit admin action.")
 }

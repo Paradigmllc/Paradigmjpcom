@@ -125,7 +125,7 @@ export async function enqueuePipelineReviewTask(
     pipeline_run_id: run.id,
     priority: input.priority ?? 90,
     status: "open",
-    source_tool: "trigger_dev",
+    source_tool: "openclaw",
     target_tool: "appsmith",
     meta: {
       reason: input.reason,

@@ -340,21 +340,8 @@ export async function processPassiveInventoryRun(runId: string, options: { maxSe
 }
 
 export async function triggerPassiveInventoryRunner(runId: string): Promise<{ ok: boolean; error?: string }> {
-  const apiUrl = optionalEnv("TRIGGER_API_URL")?.replace(/\/+$/, "")
-  const secret = optionalEnv("TRIGGER_SECRET_KEY") ?? optionalEnv("TRIGGER_ACCESS_TOKEN") ?? optionalEnv("TRIGGER_DEV_API_KEY")
-  const taskId = optionalEnv("TRIGGER_PASSIVE_INVENTORY_TASK_ID") ?? "sales-passive-inventory-runner"
-  if (!apiUrl || !secret) return { ok: false, error: "Trigger.dev passive inventory runner not configured" }
-  const res = await fetch(`${apiUrl}/api/v1/tasks/${encodeURIComponent(taskId)}/trigger`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
-    body: JSON.stringify({
-      payload: { run_id: runId },
-      context: { source: "revenue-os", job: "sales-passive-inventory-runner" },
-      options: { idempotencyKey: `passive-inventory-${runId}-${new Date().toISOString().slice(0, 16)}`, concurrencyKey: `passive-inventory-${runId}`, queue: { name: "sales-passive-inventory", concurrencyLimit: 1 } },
-    }),
-    signal: AbortSignal.timeout(8_000),
-  })
-  if (!res.ok) return { ok: false, error: `Trigger.dev HTTP ${res.status}` }
+  const fallback = startPassiveInventoryFallback(runId)
+  if (!fallback.started && !fallback.alreadyRunning) return { ok: false, error: "Passive inventory fallback failed to start" }
   return { ok: true }
 }
 

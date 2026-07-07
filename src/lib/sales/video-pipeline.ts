@@ -3,7 +3,7 @@ import { findCompanyByDomain, findCompanyById, findCompanyBySlug } from "./compa
 import { fetchDiagnosticReport } from "./diagnostic"
 import { normalizeReportLocale } from "./routing"
 import { localeToRegion } from "./types"
-import { dispatchVideoJobToTriggerDev, getTriggerVideoPipelineConfig } from "./video-trigger"
+import { dispatchVideoJobViaOpenClaw, getOpenClawVideoPipelineConfig } from "./video-openclaw"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { isMissingOptionalColumn, withoutOptionalColumns } from "@/lib/sales/safe-supabase-insert"
 import {
@@ -77,7 +77,7 @@ function sanitizeVideoJobForOutput(job: SalesVideoJob): SalesVideoJob {
   if (!job.error_message?.includes(legacyN8nError)) return job
   return {
     ...job,
-    error_message: "旧ワークフロー時代の投入エラーです。必要な場合はTrigger.devへ再投入してください。",
+    error_message: "旧ワークフロー時代の投入エラーです。必要な場合はOpenClawパイプラインへ再投入してください。",
   }
 }
 
@@ -212,7 +212,7 @@ export async function createVideoJob(input: {
       r2: config.r2.ready,
     },
   })
-  const trigger = getTriggerVideoPipelineConfig()
+  const orchestrator = getOpenClawVideoPipelineConfig()
   const payload = {
       company_id: company.id,
       pipeline_run_id: input.pipelineRunId ?? null,
@@ -232,8 +232,8 @@ export async function createVideoJob(input: {
       story_framework: productionProfile.storyFramework,
       quality_tier: productionProfile.qualityTier,
       orchestration_stage: "draft",
-      trigger_endpoint: trigger.endpoint,
-      n8n_workflow_url: trigger.endpoint,
+      trigger_endpoint: orchestrator.endpoint,
+      n8n_workflow_url: null,
       r2_bucket: r2Bucket,
       r2_asset_prefix: r2AssetPrefix,
       preview_url: previewUrl,
@@ -379,13 +379,13 @@ export async function runVideoJobAction(input: {
   try {
     const job = await fetchJob(input.jobId)
     if (input.action === "dispatch") {
-      await updateJob(job.id, { status: "routing", orchestration_stage: "trigger_dev_dispatching", error_message: null })
-      const dispatched = await dispatchVideoJobToTriggerDev(job)
+      await updateJob(job.id, { status: "routing", orchestration_stage: "openclaw_dispatching", error_message: null })
+      const dispatched = await dispatchVideoJobViaOpenClaw(job)
       const updated = await updateJob(job.id, {
         status: dispatched.manual ? "review_required" : "waiting_render",
-        orchestration_stage: dispatched.manual ? "trigger_dev_manual_required" : "trigger_dev_dispatched",
+        orchestration_stage: dispatched.manual ? "openclaw_manual_required" : "openclaw_dispatched",
         trigger_run_id: dispatched.executionId,
-        n8n_execution_id: dispatched.executionId,
+        n8n_execution_id: null,
         error_message: dispatched.manual ? dispatched.message : null,
       })
       await updateLinkedPipelineVideoStep(updated, updated.status)

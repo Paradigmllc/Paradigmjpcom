@@ -132,7 +132,7 @@ export function inferTargetCountryFromDomain(value: unknown): string | null {
   try {
     host = new URL(raw.startsWith("http") ? raw : `https://${raw}`).hostname.toLowerCase()
   } catch (error) {
-    console.warn("[sales-routing] invalid domain while inferring country:", { value, error })
+    console.error("[sales-routing] invalid domain while inferring country:", { value, error })
     host = raw
   }
   const domain = host.replace(/^www\./, "").replace(/\.$/, "")

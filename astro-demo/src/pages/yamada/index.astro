@@ -35,13 +35,13 @@ h2{font-size:clamp(32px,5vw,56px);font-weight:600;letter-spacing:-.015em;line-he
 <body>
 <nav class="nav"><a href="/yamada/" class="nav-brand">山田建設</a><div class="nav-links"><a href="/yamada/">Home</a><a href="/yamada/about/">About</a><a href="/yamada/services/">Services</a><a href="/yamada/contact/">Contact</a></div></nav>
 
-<HeroIsland title="大阪を、創り続ける。" subtitle="1950年創業。4世代の技術と信頼で、確かな未来を築きます。" ctaLabel="サービスを見る" ctaHref="/yamada/services/" variant="gradient" accentColor="#2997ff" client:load />
+<HeroIsland title="大阪を、創り続ける。" subtitle="1950年創業。4世代の技術と信頼で、確かな未来を築きます。" ctaLabel="サービスを見る" ctaHref="/yamada/services/" variant="gradient" accentColor="#2997ff" client:only="react" />
 
 <section class="section section-light">
-  <ScrollRevealIsland client:load><h2>サービス</h2><p class="sub">確かな技術で、あなたのビジョンを形に</p></ScrollRevealIsland>
+  <ScrollRevealIsland client:only="react"><h2>サービス</h2><p class="sub">確かな技術で、あなたのビジョンを形に</p></ScrollRevealIsland>
   <div class="grid">
     {services.map((s, i) => (
-      <ScrollRevealIsland delay={i * 0.1} client:load>
+      <ScrollRevealIsland delay={i * 0.1} client:only="react">
         <div class="card"><h3>{s.title}</h3><p>{s.body}</p></div>
       </ScrollRevealIsland>
     ))}
@@ -49,16 +49,16 @@ h2{font-size:clamp(32px,5vw,56px);font-weight:600;letter-spacing:-.015em;line-he
 </section>
 
 <section class="section section-gray">
-  <ScrollRevealIsland client:load><h2>4世代の信頼</h2><p class="sub">1950年から大阪の街とともに</p></ScrollRevealIsland>
+  <ScrollRevealIsland client:only="react"><h2>4世代の信頼</h2><p class="sub">1950年から大阪の街とともに</p></ScrollRevealIsland>
   <div style="display:flex;gap:48px;justify-content:center;flex-wrap:wrap">
     {[{v:'1950',l:'創業'},{v:'4',l:'世代'},{v:'2000+',l:'プロジェクト'}].map((s,i) => (
-      <ScrollRevealIsland delay={i*.15} client:load><div style="text-align:center"><div style="font-size:clamp(40px,6vw,64px);font-weight:700;color:#2997ff;line-height:1">{s.v}</div><div style="font-size:14px;color:#86868b;margin-top:8px">{s.l}</div></div></ScrollRevealIsland>
+      <ScrollRevealIsland delay={i*.15} client:only="react"><div style="text-align:center"><div style="font-size:clamp(40px,6vw,64px);font-weight:700;color:#2997ff;line-height:1">{s.v}</div><div style="font-size:14px;color:#86868b;margin-top:8px">{s.l}</div></div></ScrollRevealIsland>
     ))}
   </div>
 </section>
 
 <section class="section" style="background:linear-gradient(180deg,#000,#1d1d1f)">
-  <ScrollRevealIsland client:load><h2 style="color:#fff">まずはご相談ください</h2><p class="sub" style="color:#86868b">無料見積もり・現地調査を承ります</p><a href="/yamada/contact/" style="display:inline-flex;padding:14px 32px;background:#2997ff;color:#fff;border-radius:980px;font-size:17px;font-weight:500;text-decoration:none">お問い合わせ</a></ScrollRevealIsland>
+  <ScrollRevealIsland client:only="react"><h2 style="color:#fff">まずはご相談ください</h2><p class="sub" style="color:#86868b">無料見積もり・現地調査を承ります</p><a href="/yamada/contact/" style="display:inline-flex;padding:14px 32px;background:#2997ff;color:#fff;border-radius:980px;font-size:17px;font-weight:500;text-decoration:none">お問い合わせ</a></ScrollRevealIsland>
 </section>
 
 <footer class="footer">&copy; 2024 山田建設株式会社</footer>

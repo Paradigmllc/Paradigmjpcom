@@ -122,7 +122,7 @@ export async function notifyBothChannels(text: string, options: NotifyBothOption
       queue_type: "analysis",
       priority: options.priority ?? 80,
       status: "open",
-      source_tool: "trigger_dev",
+      source_tool: "openclaw",
       target_tool: "appsmith",
       meta: {
         type: options.type ?? "system_alert",

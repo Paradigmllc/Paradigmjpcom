@@ -1,53 +1,57 @@
-## CURRENT STATUS - 2026-07-02 OpenClaw 営業パイプライン 完全実装・E2E検証完了
+## CURRENT STATUS - 2026-07-06 Trigger.dev/n8n全廃止 → OpenClaw一本化 完了
 
-### パイプライン実証結果
-- **3段階SMB Pipeline**: crt.sh+CommonCrawl+Tranco → HTTP高速スキャン → Wappalyzer150シグネチャ → Twenty登録 完走確認
-- **E2Eテスト**: US 飲食店 3件 → 3件すべてTwentyに自動登録成功
-- **OpenClaw自動化**: `openclaw agent --agent main` 経由でSSH→Hetzner実行→結果返却 確立
+### 完了した移行
+- **Trigger.dev 完全削除**: コード/env/docker-compose/scriptsから全除去
+  - `trigger/sales-os.ts` + `trigger.config.ts` 削除
+  - `@trigger.dev/sdk` + `trigger.dev` npmパッケージ削除
+  - 7コアファイルのdispatchコード → ローカル実行に統一
+  - 13呼び出し元ファイルの`trigger_dev` → `openclaw` に書換
+  - `docker-compose.trigger-oss.yml` 削除
+  - `.env.example` のTrigger.dev変数22個削除、OpenClaw変数追加
+- **n8n 残滓除去**: `scripts/n8n/deploy-studio-workflow.ts` 削除
+  - DB migration_064: n8nカラム deprecate + trigger_providerに`openclaw`追加
+  - integration-defs/Chatwoot/LiveKitのn8n/Trigger.dev参照をOpenClawに更新
+- **OpenClaw パイプラインをリポジトリに統合**:
+  - `services/openclaw-pipeline/` に4スキル + 16スクリプト + libを配置
+  - DockerfileにOpenClaw pipeline COPY追加
+  - docker-compose.dev.yml + deployスクリプト作成
+  - デプロイ検証: 全チェックPASS ✅
 
-### OpenClaw 4スキル（本番品質）
-| スキル | ファイル | 状態 |
-|--------|---------|------|
-| `lead-discovery` | SKILL.md + pipeline.js + 13ソースモジュール | ✅ 3段階パイプライン稼働 |
-| `diagnosis-output` | SKILL.md + diagnose.js + save-artifacts.js | ✅ DeepSeek V4診断OK |
-| `crm-sync` | SKILL.md + sync-status.js + notify-slack.js | ✅ Twenty連携OK |
-| `outreach-exec` | SKILL.md + discover-form.js + submit-form.js + record-outcome.js | ✅ フォーム検出OK |
-
-### 3段階パイプライン詳細
+### アーキテクチャ
 ```
-Stage1: crt.sh + CommonCrawl CDX + Tranco Top-1M → ドメイン発見
-Stage2: HTTP直接fetch(8並列) → WP/viewport/footer/HTTPS シグナル抽出+スコアリング
-Stage3: Wappalyzer 150技術シグネチャ → エンタープライズ除外 → SMB候補選定
-  → Twenty CRM 自動登録
+OpenClaw CLI (Mac/Hetzner) → SSH → docker exec → /app/openclaw-pipeline/scripts/
+  ├─ lead-discovery/orchestrator.js    (発見→診断→同期 全自動)
+  ├─ diagnosis-output/diagnose-batch.js (DeepSeek V4診断)
+  ├─ crm-sync/sync-status.js           (Twenty同期)
+  └─ outreach-exec/outreach-batch.js    (フォームアウトリーチ)
+
+Next.js App内のパイプラインロジック:
+  sales-pipeline.ts       → ローカル実行 (Trigger.dev dispatch削除)
+  enrichment-jobs.ts      → runEnrichmentRunner() (常にローカル)
+  video-pipeline.ts       → dispatchVideoJobViaOpenClaw()
+  trigger_provider        → 'openclaw' (DB migration_064)
 ```
+
+### OpenClaw 4スキル（リポジトリ管理）
+| スキル | パス | 状態 |
+|--------|------|------|
+| `lead-discovery` | services/openclaw-pipeline/lead-discovery/ (5 scripts) | ✅ |
+| `diagnosis-output` | services/openclaw-pipeline/diagnosis-output/ (4 scripts) | ✅ |
+| `crm-sync` | services/openclaw-pipeline/crm-sync/ (2 scripts) | ✅ |
+| `outreach-exec` | services/openclaw-pipeline/outreach-exec/ (5 scripts) | ✅ |
 
 ### ソース状況
 | ソース | 状態 |
 |--------|------|
-| CommonCrawl CDX | ✅ 稼働中（free, unlimited） |
-| crt.sh | 🔧 Hetzner IPブロック — FlareSolverr経由で対応可能 |
-| Tranco Top-1M | 🔧 .com パターン0件 — zip内ドメイン抽出調査要 |
-| Crawl4AI | 🔧 endpoint 404 — エンドポイント修正要・HTTP fallback正常動作 |
+| CommonCrawl CDX | ✅ 稼働中 |
+| crt.sh | 🔧 Hetzner IPブロック — FlareSolverr待ち |
+| Tranco Top-1M | 🔧 .com パターン0件 |
+| Crawl4AI | 🔧 endpoint 404 |
 
-### Trigger.dev 廃止
-- `trigger/sales-os.ts`: 全12タスク no-op tombstone 化（359→143行）
-- 本番デプロイ済み。Trigger.dev はフォールバックとして温存。
-
-### デプロイ先
-- **Hetzner**: `/app/openclaw-pipeline/` (Dockerコンテナ内) + `/root/openclaw-pipeline/` (ホスト永続化)
-- **OpenClaw**: `~/.openclaw/workspace/skills/` (4スキル、モデルはdeepseek-v4-flashに変更済み)
-- **本番**: Coolify deploy `l81f3cj1uob93v341jo3vund` → 全ページ200確認済み
-
-### Active Handoff (2026-07-02 OpenCode)
-- 完了: 壁打ち→設計→実装→テスト→デプロイ フルサイクル
-- 残: crt.sh FlareSolverr対応 / Tranco デバッグ / Crawl4AI endpoint修正
-- 次の一手: OpenClawチャットUIから `/discover JP restaurant 5` で動確（DeepSeek cooldown回避済み）
-
-## CURRENT STATUS - 2026-07-02 OpenClaw営業パイプライン全面再設計 — 壁打ち合意・アーキテクチャ承認
-
-### 決定事項
-- **OpenClawをオーケストレータに** → Trigger.devはフォールバックに降格
-- **全面移行（Next.js非依存）** → パイプラインロジックはOpenClawスキルに移動。Next.jsはWebサイト表示のみ
+### Active Handoff (2026-07-06)
+- 完了: Trigger.dev/n8n/cron → OpenClaw 一本化の全コード移行
+- 残: crt.sh / Tranco / Crawl4AI のブロッカー解消
+- 次の一手: 品質改善 (21件空catch/60件console.error欠落/80件AbortSignal欠落)
 - **Twenty単一データハブ** → OpenClawは全データ操作をTwenty API経由で実行
 - **4ステップに圧縮** → ①lead-discovery ②diagnosis-output ③crm-sync ④outreach-exec
 - **Mac + Hetzner冗長実行** → 両方でパイプライン実行、負荷分散

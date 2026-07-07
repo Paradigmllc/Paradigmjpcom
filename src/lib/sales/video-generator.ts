@@ -216,7 +216,7 @@ export async function generateDiagnosticVideo(
       }
       console.warn("[video-generator] HF API returned non-ok, falling back to local render")
     } catch (error) {
-      console.warn("[video-generator] HF API failed, falling back to local render:", error)
+      console.error("[video-generator] HF API failed, falling back to local render:", error)
     }
   }
 

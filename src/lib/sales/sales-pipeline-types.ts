@@ -41,7 +41,7 @@ export interface SalesPipelineRun {
   source: SalesPipelineSource
   status: SalesPipelineStatus
   current_step: SalesPipelineStepKey | null
-  trigger_provider: "trigger.dev" | "local" | "manual"
+  trigger_provider: "openclaw" | "local" | "manual"
   trigger_task_id: string | null
   trigger_run_id: string | null
   requested_by: string
@@ -105,7 +105,7 @@ export const SALES_PIPELINE_STEPS: SalesPipelineStepDefinition[] = [
   { key: "data_collection", label: "Multi-source data collection", ownerTool: "multi_source", required: true },
   { key: "karte_generate", label: "Company karte generation", ownerTool: "supabase_dify", required: true },
   { key: "report_generate", label: "Diagnostic report generation", ownerTool: "nextjs_reports", required: true },
-  { key: "video_generate", label: "Video job generation", ownerTool: "trigger_dev_video", required: false },
+  { key: "video_generate", label: "Video job generation", ownerTool: "openclaw_video", required: false },
   { key: "r2_manifest", label: "R2 artifact manifest", ownerTool: "cloudflare_r2", required: true },
   { key: "external_studio_sync", label: "Directus/Keystatic sync", ownerTool: "directus_keystatic", required: false },
   { key: "twenty_writeback", label: "Twenty delivery writeback", ownerTool: "twenty", required: true },

@@ -12,7 +12,7 @@ type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 type JsonRecord = Record<string, unknown>
 
 export function isAgentMenuSelection(text: string, source: SalesAgentSource): boolean {
-  if (source === "telegram" || source === "dashboard" || source === "trigger_dev") return false
+  if (source === "telegram" || source === "dashboard" || source === "openclaw") return false
   const normalized = text.toLowerCase().replace(/[^a-z0-9]+/g, "")
   return [
     "hermes",
@@ -282,7 +282,7 @@ export async function enqueueManualReview(
     title: input.reason,
     priority: input.priority ?? 80,
     status: "open",
-    source_tool: "trigger_dev",
+    source_tool: "openclaw",
     target_tool: "appsmith",
     meta: {
       reason: input.reason,

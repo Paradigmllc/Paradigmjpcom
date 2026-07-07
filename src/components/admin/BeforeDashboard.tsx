@@ -115,7 +115,7 @@ export default async function BeforeDashboard({ payload }: { payload: Payload })
             </div>
             <h2 style={{ fontSize: 20, margin: 0 }}>サイト管理ダッシュボード</h2>
             <p style={{ color: "var(--theme-elevation-600)", margin: "8px 0 0", fontSize: 13, lineHeight: 1.7 }}>
-              この画面はPayloadのコンテンツ管理とリード入口だけに絞りました。Supabase、NocoDB、Appsmith、Twenty、Metabase、Trigger.dev、Cal.com、Docusealなどの営業基盤はRevenue OSの「統合」に集約しています。
+              この画面はPayloadのコンテンツ管理とリード入口だけに絞りました。Supabase、NocoDB、Appsmith、Twenty、Metabase、OpenClaw、Cal.com、Docusealなどの営業基盤はRevenue OSの「統合」に集約しています。
             </p>
           </div>
           <a href={twentyUrl} target="_blank" rel="noopener noreferrer" style={adminButtonStyle("primary")}>

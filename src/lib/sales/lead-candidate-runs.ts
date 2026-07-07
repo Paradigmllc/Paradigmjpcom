@@ -385,21 +385,8 @@ export async function processLeadCandidateRun(runId: string, options: { batchSiz
 }
 
 export async function triggerLeadCandidateRunner(runId: string): Promise<{ ok: boolean; error?: string }> {
-  const apiUrl = optionalEnv("TRIGGER_API_URL")?.replace(/\/+$/, "")
-  const secret = optionalEnv("TRIGGER_SECRET_KEY") ?? optionalEnv("TRIGGER_ACCESS_TOKEN") ?? optionalEnv("TRIGGER_DEV_API_KEY")
-  const taskId = optionalEnv("TRIGGER_SALES_LEAD_CANDIDATE_TASK_ID") ?? "sales-lead-candidate-runner"
-  if (!apiUrl || !secret) return { ok: false, error: "Trigger.dev lead candidate runner not configured" }
-  const res = await fetch(`${apiUrl}/api/v1/tasks/${encodeURIComponent(taskId)}/trigger`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
-    body: JSON.stringify({
-      payload: { run_id: runId },
-      context: { source: "revenue-os", job: "sales-lead-candidate-runner" },
-      options: { idempotencyKey: `lead-candidate-${runId}-${new Date().toISOString().slice(0, 16)}`, concurrencyKey: `lead-candidate-${runId}`, queue: { name: "sales-lead-candidates", concurrencyLimit: 2 } },
-    }),
-    signal: AbortSignal.timeout(8_000),
-  })
-  if (!res.ok) return { ok: false, error: `Trigger.dev HTTP ${res.status}` }
+  const fallback = await startFallbackRunner(runId)
+  if (!fallback.started) return { ok: false, error: "Fallback runner already running" }
   return { ok: true }
 }
 

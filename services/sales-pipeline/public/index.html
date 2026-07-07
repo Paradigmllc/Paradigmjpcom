@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>営業パイプライン管制塔</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f7f8fb;
+        --panel: #ffffff;
+        --text: #172033;
+        --muted: #687386;
+        --line: #dfe4ec;
+        --brand: #2463eb;
+        --brand-dark: #194bb5;
+        --danger: #c73535;
+        --ok: #1f8a5b;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        letter-spacing: 0;
+      }
+      header {
+        border-bottom: 1px solid var(--line);
+        background: var(--panel);
+      }
+      .wrap {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+      .topbar {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 0;
+      }
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1.25;
+      }
+      .subtitle {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      main {
+        padding: 22px 0 36px;
+      }
+      .toolbar {
+        display: grid;
+        grid-template-columns: minmax(220px, 1fr) auto auto;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+      input,
+      select,
+      button {
+        min-height: 40px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        font: inherit;
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 0 12px;
+        background: var(--panel);
+        color: var(--text);
+      }
+      button {
+        padding: 0 14px;
+        background: var(--brand);
+        color: #fff;
+        border-color: var(--brand);
+        cursor: pointer;
+        font-weight: 650;
+      }
+      button.secondary {
+        background: var(--panel);
+        color: var(--text);
+      }
+      button:hover {
+        background: var(--brand-dark);
+      }
+      button.secondary:hover {
+        background: #eef3ff;
+      }
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .metric,
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+      .metric {
+        padding: 14px;
+      }
+      .metric b {
+        display: block;
+        font-size: 26px;
+        line-height: 1.1;
+      }
+      .metric span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .columns {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+        gap: 14px;
+        margin-top: 14px;
+      }
+      .panel {
+        overflow: hidden;
+      }
+      .panel h2 {
+        margin: 0;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+        font-size: 16px;
+      }
+      .panel-body {
+        padding: 14px 16px 16px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 10px 8px;
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        border-radius: 999px;
+        padding: 0 9px;
+        background: #eef3ff;
+        color: #24437c;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .pill.failed {
+        background: #fff0f0;
+        color: var(--danger);
+      }
+      .pill.completed,
+      .pill.promoted {
+        background: #edf8f2;
+        color: var(--ok);
+      }
+      .stack {
+        display: grid;
+        gap: 10px;
+      }
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 120px 120px;
+        gap: 8px;
+      }
+      .notice,
+      .error,
+      .empty {
+        padding: 12px 14px;
+        border-radius: 8px;
+        background: #f2f5fa;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .error {
+        background: #fff0f0;
+        color: var(--danger);
+      }
+      .small {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .steps {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      @media (max-width: 900px) {
+        .toolbar,
+        .columns,
+        .form-row {
+          grid-template-columns: 1fr;
+        }
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .topbar {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
+      @media (max-width: 540px) {
+        .wrap {
+          width: min(100% - 20px, 1180px);
+        }
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        h1 {
+          font-size: 21px;
+        }
+        table {
+          font-size: 12px;
+        }
+        th,
+        td {
+          padding: 8px 5px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap topbar">
+        <div>
+          <h1>営業パイプライン管制塔</h1>
+          <p class="subtitle">Revenue OS 本体とは別コンテナで、既存 Supabase 営業テーブルを直接確認します。</p>
+        </div>
+        <div class="small" id="health">未接続</div>
+      </div>
+    </header>
+    <main class="wrap">
+      <section class="toolbar" aria-label="接続操作">
+        <input id="secret" type="password" autocomplete="current-password" placeholder="コンテナ secret" aria-label="コンテナ secret" />
+        <button id="saveSecret" type="button">接続</button>
+        <button id="refresh" class="secondary" type="button">更新</button>
+      </section>
+      <div id="message" class="notice">secret を入力するとデータを読み込みます。</div>
+
+      <section class="grid" aria-label="営業指標">
+        <div class="metric"><b id="mCandidates">-</b><span>候補ドメイン</span></div>
+        <div class="metric"><b id="mScored">-</b><span>スコア済み</span></div>
+        <div class="metric"><b id="mPromoted">-</b><span>企業化済み</span></div>
+        <div class="metric"><b id="mActive">-</b><span>パイプライン稼働中</span></div>
+      </section>
+
+      <section class="columns">
+        <article class="panel">
+          <h2>候補レビュー</h2>
+          <div class="panel-body stack">
+            <div class="form-row">
+              <select id="lane" aria-label="レーン">
+                <option value="">全レーン</option>
+                <option value="dns_freshness">Fresh Domains</option>
+                <option value="tech_footprint">Tech Footprint</option>
+                <option value="no_website_local_smb">No Website SMB</option>
+              </select>
+              <select id="candidateStatus" aria-label="候補ステータス">
+                <option value="">全状態</option>
+                <option value="candidate">candidate</option>
+                <option value="scored">scored</option>
+                <option value="promoted">promoted</option>
+                <option value="rejected">rejected</option>
+              </select>
+              <button id="filterCandidates" class="secondary" type="button">絞り込み</button>
+            </div>
+            <div id="candidates"></div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h2>手動パイプライン作成</h2>
+          <div class="panel-body stack">
+            <input id="companyId" placeholder="sales_companies.id" aria-label="企業 ID" />
+            <div class="form-row">
+              <select id="requireVideo" aria-label="動画生成">
+                <option value="false">動画なし</option>
+                <option value="true">動画あり</option>
+              </select>
+              <select id="externalSync" aria-label="外部同期">
+                <option value="true">外部同期あり</option>
+                <option value="false">外部同期なし</option>
+              </select>
+              <button id="createRun" type="button">作成</button>
+            </div>
+            <div class="small">作成のみ行います。実行開始は Trigger.dev / 既存 Revenue OS 側のイベント起動へ接続してください。</div>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel" style="margin-top: 14px">
+        <h2>パイプライン runs</h2>
+        <div class="panel-body" id="runs"></div>
+      </section>
+
+      <section class="panel" style="margin-top: 14px">
+        <h2>候補取得 runs</h2>
+        <div class="panel-body" id="acquisitionRuns"></div>
+      </section>
+    </main>
+
+    <script>
+      const state = {
+        secret: localStorage.getItem("salesPipelineSecret") || "",
+        loading: false,
+      }
+
+      const $ = (id) => document.getElementById(id)
+      $("secret").value = state.secret
+
+      function setMessage(text, type = "notice") {
+        const node = $("message")
+        node.className = type
+        node.textContent = text
+      }
+
+      async function api(path, options = {}) {
+        const res = await fetch(path, {
+          ...options,
+          headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${state.secret}`,
+            ...(options.headers || {}),
+          },
+        })
+        const json = await res.json().catch(() => ({}))
+        if (!res.ok || json.ok === false) {
+          throw new Error(json.error || `HTTP ${res.status}`)
+        }
+        return json
+      }
+
+      function pill(value) {
+        const escaped = String(value || "-").replace(/[&<>"']/g, (ch) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#039;",
+        }[ch]))
+        return `<span class="pill ${escaped}">${escaped}</span>`
+      }
+
+      function dateText(value) {
+        if (!value) return "-"
+        return new Intl.DateTimeFormat("ja-JP", { dateStyle: "short", timeStyle: "short" }).format(new Date(value))
+      }
+
+      function renderTable(target, rows, headers, rowHtml) {
+        if (!rows.length) {
+          target.innerHTML = '<div class="empty">表示できるデータがありません。</div>'
+          return
+        }
+        target.innerHTML = `<table><thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.map(rowHtml).join("")}</tbody></table>`
+      }
+
+      async function loadHealth() {
+        const res = await fetch("/health")
+        const json = await res.json().catch(() => ({ ok: false }))
+        $("health").textContent = json.ok ? "container ready" : "container未設定"
+      }
+
+      async function loadAll() {
+        if (!state.secret) {
+          setMessage("secret を入力してください。", "error")
+          return
+        }
+        state.loading = true
+        $("refresh").disabled = true
+        try {
+          const lane = encodeURIComponent($("lane").value)
+          const candidateStatus = encodeURIComponent($("candidateStatus").value)
+          const candidateQuery = `/api/candidates?limit=40${lane ? `&lane=${lane}` : ""}${candidateStatus ? `&status=${candidateStatus}` : ""}`
+          const [summary, candidates, runs, acquisitionRuns] = await Promise.all([
+            api("/api/summary"),
+            api(candidateQuery),
+            api("/api/pipeline-runs?limit=24"),
+            api("/api/acquisition-runs?limit=24"),
+          ])
+          $("mCandidates").textContent = summary.summary.candidates
+          $("mScored").textContent = summary.summary.scored
+          $("mPromoted").textContent = summary.summary.promoted
+          $("mActive").textContent = summary.summary.pipelineQueued + summary.summary.pipelineRunning
+          renderCandidates(candidates.candidates)
+          renderRuns(runs.runs)
+          renderAcquisitionRuns(acquisitionRuns.runs)
+          setMessage("更新しました。", "notice")
+        } catch (error) {
+          console.error(error)
+          setMessage(error.message, "error")
+        } finally {
+          state.loading = false
+          $("refresh").disabled = false
+        }
+      }
+
+      function renderCandidates(rows) {
+        renderTable($("candidates"), rows, ["domain", "lane", "status", "会社ID", "更新"], (row) => `
+          <tr>
+            <td><strong>${row.domain || "-"}</strong><div class="small">${row.source_slug || "-"}</div></td>
+            <td>${pill(row.lane)}</td>
+            <td>${pill(row.status)}</td>
+            <td class="small">${row.company_id || "-"}</td>
+            <td>${dateText(row.updated_at)}</td>
+          </tr>
+        `)
+      }
+
+      function renderRuns(rows) {
+        renderTable($("runs"), rows, ["run", "status", "step", "steps", "更新"], (row) => `
+          <tr>
+            <td><strong>${row.id}</strong><div class="small">${row.company_id}</div></td>
+            <td>${pill(row.status)}</td>
+            <td>${row.current_step || "-"}</td>
+            <td><div class="steps">${(row.steps || []).map((step) => pill(step.status)).join("")}</div></td>
+            <td>${dateText(row.updated_at)}</td>
+          </tr>
+        `)
+      }
+
+      function renderAcquisitionRuns(rows) {
+        renderTable($("acquisitionRuns"), rows, ["source", "status", "件数", "国/技術", "更新"], (row) => `
+          <tr>
+            <td><strong>${row.source_slug}</strong><div class="small">${row.id}</div></td>
+            <td>${pill(row.status)}</td>
+            <td>${row.upserted_count || 0} upsert / ${row.promoted_count || 0} promoted</td>
+            <td>${row.country_code || "-"} / ${row.technology || "-"}</td>
+            <td>${dateText(row.updated_at)}</td>
+          </tr>
+        `)
+      }
+
+      $("saveSecret").addEventListener("click", () => {
+        state.secret = $("secret").value.trim()
+        localStorage.setItem("salesPipelineSecret", state.secret)
+        loadAll()
+      })
+      $("refresh").addEventListener("click", loadAll)
+      $("filterCandidates").addEventListener("click", loadAll)
+      $("createRun").addEventListener("click", async () => {
+        try {
+          const companyId = $("companyId").value.trim()
+          const result = await api("/api/pipeline-runs", {
+            method: "POST",
+            body: JSON.stringify({
+              companyId,
+              requireVideo: $("requireVideo").value === "true",
+              autoSyncExternalStudios: $("externalSync").value === "true",
+              source: "manual",
+            }),
+          })
+          setMessage(`作成しました: ${result.run.id}`, "notice")
+          await loadAll()
+        } catch (error) {
+          console.error(error)
+          setMessage(error.message, "error")
+        }
+      })
+
+      loadHealth()
+      if (state.secret) loadAll()
+    </script>
+  </body>
+</html>

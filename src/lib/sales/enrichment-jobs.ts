@@ -91,25 +91,12 @@ function getSb(): ServiceSupabase | null {
   return getServiceSalesSupabase()
 }
 
-import { optionalEnv } from "./japan-readiness-utils"
-
-function triggerSecretKey(): string | null {
-  return optionalEnv("TRIGGER_SECRET_KEY") ?? optionalEnv("TRIGGER_ACCESS_TOKEN") ?? optionalEnv("TRIGGER_DEV_API_KEY")
-}
-
-function enrichmentTriggerEndpoint(): string | null {
-  const taskId =
-    optionalEnv("TRIGGER_SALES_ENRICHMENT_TASK_ID") ??
-    optionalEnv("TRIGGER_DEV_SALES_ENRICHMENT_TASK_ID") ??
-    "sales-enrichment-runner"
-
-  const apiUrlRaw = optionalEnv("TRIGGER_API_URL")
-  if (!apiUrlRaw) {
-    console.error("[enrichment-jobs] TRIGGER_API_URL is not configured")
-    return null
+export function getEnrichmentOrchestratorConfig() {
+  return {
+    provider: "openclaw" as const,
+    taskId: "openclaw-diagnosis-output",
+    ready: true,
   }
-  const apiUrl = apiUrlRaw.replace(/\/+$/, "")
-  return `${apiUrl}/api/v1/tasks/${encodeURIComponent(taskId)}/trigger`
 }
 
 export async function enqueueCompanyEnrichment(
@@ -153,55 +140,22 @@ export async function enqueueCompanyEnrichment(
   return { ok: false, error: error.message }
 }
 
-export async function triggerEnrichmentRunner(limit = 3): Promise<{ ok: boolean; dispatched: boolean; error?: string }> {
-  // Phase 9-9: admission gate. When saturated (opt-in via ADMISSION_MAX_RUNNING_JOBS), defer
-  // dispatch instead of piling on the host. Jobs stay queued and resume on the next event.
+/**
+ * Run enrichment jobs locally. Trigger.dev dispatch removed (2026-07-06).
+ * Always uses the bounded event-drain path.
+ */
+export async function runEnrichmentRunner(limit = 3): Promise<{ ok: boolean; dispatched: boolean; error?: string }> {
   if (await shouldDeferHeavyDispatch()) {
     console.warn("[sales-enrichment] admission gate: deferring dispatch (system saturated); jobs remain queued")
     return { ok: true, dispatched: false }
   }
-  const endpoint = enrichmentTriggerEndpoint()
-  const secret = triggerSecretKey()
   const safeLimit = Math.max(1, Math.min(Math.round(limit), 3))
-
-  if (!endpoint || !secret) {
-    console.warn("[sales-enrichment] Trigger.dev not configured — running a bounded event drain")
-    const result = await runEnrichmentJobs(safeLimit)
-    return { ok: result.ok, dispatched: result.processed > 0, error: result.errors[0] }
-  }
-
-  try {
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${secret}`,
-      },
-      body: JSON.stringify({
-        payload: { limit: safeLimit },
-        context: { source: "revenue-os", job: "sales-enrichment" },
-        options: {
-          idempotencyKey: `sales-enrichment-runner-${new Date().toISOString().slice(0, 16)}`,
-          concurrencyKey: "sales-enrichment-runner",
-          queue: { name: "sales-enrichment", concurrencyLimit: 1 },
-        },
-      }),
-      signal: AbortSignal.timeout(8_000),
-    })
-    if (!res.ok) {
-      const text = await res.text().catch((e: unknown) => `read body failed: ${String(e)}`)
-      console.warn("[sales-enrichment] runner trigger degraded:", res.status, text.slice(0, 300), "— running a bounded event drain")
-      const result = await runEnrichmentJobs(safeLimit)
-      return { ok: result.ok, dispatched: result.processed > 0, error: result.errors[0] }
-    }
-    return { ok: true, dispatched: true }
-  } catch (e) {
-    const message = e instanceof Error ? e.message : String(e)
-    console.warn("[sales-enrichment] runner trigger unreachable:", message, "— running a bounded event drain")
-    const result = await runEnrichmentJobs(safeLimit)
-    return { ok: result.ok, dispatched: result.processed > 0, error: result.errors[0] }
-  }
+  const result = await runEnrichmentJobs(safeLimit)
+  return { ok: result.ok, dispatched: result.processed > 0, error: result.errors[0] }
 }
+
+/** @deprecated 2026-07-06 — Trigger.dev decommissioned. Use runEnrichmentRunner() instead. */
+export const triggerEnrichmentRunner = runEnrichmentRunner
 
 export async function fetchRecentEnrichmentJobs(limit = 30): Promise<DashboardEnrichmentJob[]> {
   const sb = getSb()

@@ -81,7 +81,8 @@ function ensureProtocol(url: string, base: string): string {
   if (url.startsWith("http")) return url
   try {
     return new URL(url, base).href
-  } catch {
+  } catch (e) {
+    console.error("[website-extract] URL parsing failed in ensureProtocol:", e instanceof Error ? e.message : String(e))
     return ""
   }
 }
@@ -190,8 +191,8 @@ export async function extractWithBrowser(domain: string): Promise<BrowserExtract
                 buffer = Buffer.from(await res.arrayBuffer())
                 contentType = res.headers.get("content-type") ?? null
               }
-            } catch {
-              // image fetch failed, skip gracefully
+            } catch (e) {
+              console.error("[website-extract] image fetch failed:", e instanceof Error ? e.message : String(e))
             }
 
             const w = img.renderedWidth || img.width || 0
@@ -275,7 +276,7 @@ export async function extractWithBrowser(domain: string): Promise<BrowserExtract
         const scripts = Array.from(document.querySelectorAll('script[type="application/ld+json"]'))
         const org = scripts
           .map((s) => {
-            try { return JSON.parse(s.textContent || "") } catch { return null }
+            try { return JSON.parse(s.textContent || "") } catch (e) { console.error("[website-extract] JSON-LD parse failed:", e instanceof Error ? e.message : String(e)); return null }
           })
           .find((d) => d?.["@type"] === "Organization" || d?.["@type"] === "LocalBusiness")
 
@@ -304,7 +305,8 @@ export async function extractWithBrowser(domain: string): Promise<BrowserExtract
           .filter((href) => {
             try {
               return new URL(href).hostname === host && !href.startsWith("mailto:") && !href.startsWith("tel:")
-            } catch {
+            } catch (e) {
+              console.error("[website-extract] URL parsing failed in internal links:", e instanceof Error ? e.message : String(e))
               return false
             }
           })
@@ -367,8 +369,8 @@ function findSubpageUrls(
             }
           }
         }
-      } catch {
-        // skip invalid URLs
+      } catch (e) {
+        console.error("[website-extract] URL parsing failed in subpage links:", e instanceof Error ? e.message : String(e))
       }
     }
   }
@@ -396,8 +398,8 @@ export async function extractSubpageContent(
             text: result.data.markdown,
           }
         }
-      } catch {
-        // subpage read failed, skip
+      } catch (e) {
+        console.error("[website-extract] subpage read failed:", e instanceof Error ? e.message : String(e))
       }
       return null
     }),
@@ -440,8 +442,8 @@ export async function extractWebsiteAssets(
   let browserData = null
   try {
     browserData = await extractWithBrowser(domain)
-  } catch {
-    console.info("[website-extract] browser extraction unavailable, using HTTP fallback")
+  } catch (e) {
+    console.error("[website-extract] browser extraction failed, using HTTP fallback:", e instanceof Error ? e.message : String(e))
   }
 
   // Merge: browser data preferred, HTTP fallback
@@ -492,7 +494,7 @@ async function extractWithHTTP(domain: string): Promise<BrowserExtractPayload | 
     for (const m of imgMatches) {
       const url = m[1]
       if (url && !url.startsWith("data:") && !url.includes("1x1") && !url.includes("pixel")) {
-        try { imgUrls.push(new URL(url, baseUrl).href) } catch {}
+        try { imgUrls.push(new URL(url, baseUrl).href) } catch (e) { console.error("[website-extract] image URL parsing failed:", e instanceof Error ? e.message : String(e)) }
       }
     }
 
@@ -513,7 +515,7 @@ async function extractWithHTTP(domain: string): Promise<BrowserExtractPayload | 
       try {
         const url = new URL(m[1], baseUrl)
         if (url.hostname === host && !url.hash) internalLinks.push(url.href)
-      } catch {}
+      } catch (e) { console.error("[website-extract] internal link URL parsing failed:", e instanceof Error ? e.message : String(e)) }
     }
     const uniqueLinks = [...new Set(internalLinks)].slice(0, 30)
 
@@ -521,7 +523,7 @@ async function extractWithHTTP(domain: string): Promise<BrowserExtractPayload | 
     const ldJson = html.match(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/)?.[1]
     let organization = null
     if (ldJson) {
-      try { const parsed = JSON.parse(ldJson); if (parsed["@type"] === "Organization" || parsed["@type"] === "LocalBusiness") organization = parsed } catch {}
+      try { const parsed = JSON.parse(ldJson); if (parsed["@type"] === "Organization" || parsed["@type"] === "LocalBusiness") organization = parsed } catch (e) { console.error("[website-extract] structured data JSON.parse failed:", e instanceof Error ? e.message : String(e)) }
     }
 
     const ogTitle = html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/)?.[1] || null
@@ -536,7 +538,7 @@ async function extractWithHTTP(domain: string): Promise<BrowserExtractPayload | 
           const buffer = Buffer.from(await imgRes.arrayBuffer())
           heroImage = { url: new URL(ogImage, baseUrl).href, width: 0, height: 0, alt: "hero", buffer, contentType: imgRes.headers.get("content-type") }
         }
-      } catch {}
+      } catch (e) { console.error("[website-extract] hero image fetch failed:", e instanceof Error ? e.message : String(e)) }
     }
 
     // Download first few images
@@ -548,7 +550,7 @@ async function extractWithHTTP(domain: string): Promise<BrowserExtractPayload | 
           const buffer = Buffer.from(await imgRes.arrayBuffer())
           galleryImages.push({ url, width: 0, height: 0, alt: "", buffer, contentType: imgRes.headers.get("content-type") })
         }
-      } catch {}
+      } catch (e) { console.error("[website-extract] gallery image fetch failed:", e instanceof Error ? e.message : String(e)) }
     }
 
     return {
@@ -557,7 +559,8 @@ async function extractWithHTTP(domain: string): Promise<BrowserExtractPayload | 
       structured: { organization, localBusiness: organization?.["@type"] === "LocalBusiness" ? organization : null, ogTitle, ogDescription, ogImage, ogSiteName: null, twitterImage: null },
       internalLinks: uniqueLinks,
     }
-  } catch {
+  } catch (e) {
+    console.error("[website-extract] HTTP extraction failed:", e instanceof Error ? e.message : String(e))
     return null
   }
 }

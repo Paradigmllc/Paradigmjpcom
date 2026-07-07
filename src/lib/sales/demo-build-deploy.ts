@@ -153,8 +153,8 @@ export async function buildAndDeployDemo(
     try {
       const body = fsp.readFileSync(fullPath)
       await deployStaticToR2(key, body.toString("utf-8"))
-    } catch {
-      // non-fatal
+    } catch (e) {
+      console.error("[demo-build-deploy] R2 deploy failed:", e instanceof Error ? e.message : String(e))
     }
   }
 

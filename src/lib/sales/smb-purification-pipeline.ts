@@ -118,25 +118,25 @@ async function crawl4AiFastScan(domain: string): Promise<Crawl4AiScanResult> {
   }
 
   try {
-    const res = await fetch(`${baseUrl.replace(/\/+$/, "")}/scan`, {
+    const res = await fetch(`${baseUrl.replace(/\/+$/, "")}/crawl`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: `https://${domain}`, waitFor: 2000, extractSignals: true }),
-      signal: AbortSignal.timeout(10_000),
+      body: JSON.stringify({ urls: `https://${domain}`, wait_for: 2000, extract_technologies: true }),
+      signal: AbortSignal.timeout(15_000),
     })
     if (!res.ok) return { ok: false, hasViewport: false, hasHttps: false, error: `Crawl4AI HTTP ${res.status}` }
-    const data = await res.json() as {
-      html?: string; wordpress?: boolean; wpVersion?: string
-      hasViewport?: boolean; footerYear?: number; https?: boolean
-    }
+    const body = await res.json() as Record<string, unknown>
+    const result = body.result ?? body
+    const html = (result as Record<string, unknown>)?.html as string | undefined
+    const technologies = (result as Record<string, unknown>)?.technologies as string[] | undefined
     return {
       ok: true,
-      html: data.html?.slice(0, 8000),
-      wordpress: data.wordpress ?? false,
-      wpVersion: data.wpVersion ?? undefined,
-      hasViewport: data.hasViewport ?? false,
-      footerYear: data.footerYear,
-      hasHttps: data.https === true,
+      html: html?.slice(0, 8000),
+      wordpress: technologies?.some((t: string) => /wordpress/i.test(t)) ?? false,
+      wpVersion: html?.match(/WordPress\s*([\d.]+)/i)?.[1] ?? undefined,
+      hasViewport: html ? /viewport/.test(html) : false,
+      footerYear: html?.match(/©\s*(\d{4})/i)?.[1] ? Number(html.match(/©\s*(\d{4})/i)![1]) : undefined,
+      hasHttps: html ? /https:/i.test(html) : false,
     }
   } catch (e) {
     return { ok: false, hasViewport: false, hasHttps: false, error: e instanceof Error ? e.message : "Crawl4AI unreachable" }

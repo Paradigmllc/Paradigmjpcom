@@ -3,6 +3,7 @@ import { fetchCommonCrawlDomains } from "./sources/commoncrawl-domains"
 import { fetchCrtshDomains } from "./sources/crtsh-bulk"
 import { fetchTrancoTopDomains } from "./sources/tranco-top-domains"
 import { fetchPassiveInventoryDomains } from "./passive-inventory"
+import { fetchHttpArchiveCandidates, toTechItems } from "./sources/http-archive-bigquery"
 
 export interface CandidateDomainSourceSummary {
   source: string
@@ -26,6 +27,7 @@ const MAX_FAILURES = 40
 interface FetchLeadCandidateDomainsOptions {
   onProgress?: (result: CandidateDomainFetchResult) => Promise<void>
   skipPassiveInventory?: boolean
+  skipBigQuery?: boolean
 }
 
 function toCrtshPattern(pattern: string): string {
@@ -108,7 +110,45 @@ export async function fetchLeadCandidateDomains(countryCode: string, limit: numb
       addDomains({ sourceByDomain, source: "passive_inventory", domains: passive.domains, limit })
       for (const [domain, evidence] of Object.entries(passive.evidenceByDomain)) evidenceByDomain.set(domain, evidence)
     } catch (e) {
+      console.error("[lead-candidate-domain-sources] passive_inventory failed:", e instanceof Error ? e.message : String(e))
       failures.push({ key: "passive_inventory", reason: e instanceof Error ? e.message : "passive inventory failed with retries" })
+    }
+    await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
+    if (sourceByDomain.size >= limit) return buildResult({ sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
+  }
+
+  // HTTP Archive BigQuery — bulk tech-stack discovery (free 1TB/month)
+  if (!options?.skipBigQuery) {
+    try {
+      const bq = await withRetry("http_archive", () => fetchHttpArchiveCandidates({
+        countryCode,
+        technologies: options?.technology ? [options.technology] : undefined,
+        limit: Math.min(limit, 200),
+      }))
+      sourceStats.push({
+        source: "http_archive",
+        pattern: countryCode,
+        fetched: bq.candidates.length,
+        total: bq.candidates.length,
+        ok: bq.ok,
+        error: bq.error,
+      })
+      if (bq.ok && bq.candidates.length > 0) {
+        const domains = bq.candidates.map((c) => c.domain)
+        addDomains({ sourceByDomain, source: "http_archive", domains, limit })
+        for (const cand of bq.candidates) {
+          if (cand.technologies.length > 0) {
+            evidenceByDomain.set(cand.domain, {
+              http_archive_techs: toTechItems(cand.technologies),
+              http_archive_rank: cand.rank,
+              http_archive_snapshot: cand.snapshotMonth,
+            })
+          }
+        }
+      }
+      if (!bq.ok && bq.error) failures.push({ key: "http_archive", reason: bq.error })
+    } catch (e) {
+      console.error("[lead-candidate-domain-sources] http_archive failed:", e instanceof Error ? e.message : String(e))
     }
     await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
     if (sourceByDomain.size >= limit) return buildResult({ sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
@@ -121,6 +161,7 @@ export async function fetchLeadCandidateDomains(countryCode: string, limit: numb
       if (!cc.ok) failures.push({ key: `common_crawl_domains:${pattern}`, reason: cc.error ?? "Common Crawl returned no domains" })
       addDomains({ sourceByDomain, source: "common_crawl_domains", domains: cc.domains, limit })
     } catch (e) {
+      console.error("[lead-candidate-domain-sources] common_crawl_domains failed:", pattern, e instanceof Error ? e.message : String(e))
       failures.push({ key: `common_crawl_domains:${pattern}`, reason: e instanceof Error ? e.message : "Common Crawl failed with retries" })
     }
     await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
@@ -132,6 +173,7 @@ export async function fetchLeadCandidateDomains(countryCode: string, limit: numb
       if (!tranco.ok) failures.push({ key: `tranco_top_domains:${pattern}`, reason: tranco.error ?? "Tranco top list returned no domains" })
       addDomains({ sourceByDomain, source: "tranco_top_domains", domains: tranco.domains, limit })
     } catch (e) {
+      console.error("[lead-candidate-domain-sources] tranco_top_domains failed:", pattern, e instanceof Error ? e.message : String(e))
       failures.push({ key: `tranco_top_domains:${pattern}`, reason: e instanceof Error ? e.message : "Tranco failed with retries" })
     }
     await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
@@ -144,6 +186,7 @@ export async function fetchLeadCandidateDomains(countryCode: string, limit: numb
       if (!crt.ok) failures.push({ key: `crtsh_bulk:${crtPattern}`, reason: crt.error ?? "crt.sh returned no domains" })
       addDomains({ sourceByDomain, source: "crtsh_bulk", domains: crt.domains, limit })
     } catch (e) {
+      console.error("[lead-candidate-domain-sources] crtsh_bulk failed:", pattern, e instanceof Error ? e.message : String(e))
       failures.push({ key: `crtsh_bulk:${pattern}`, reason: e instanceof Error ? e.message : "crt.sh failed with retries" })
     }
     await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })

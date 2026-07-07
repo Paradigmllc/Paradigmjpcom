@@ -144,12 +144,13 @@ export async function generateMultiPageSite(
     let parsed: MultiPageManifest
     try {
       parsed = JSON.parse(raw) as MultiPageManifest
-    } catch {
+    } catch (e) {
+      console.error("[multi-page-generator] JSON.parse failed:", String(e))
       // Try lenient parse: find the outermost { }
       const m = raw.match(/\{[\s\S]*\}/)
       if (!m) return { ok: false, error: "no valid JSON found" }
       try { parsed = JSON.parse(m[0]) as MultiPageManifest }
-      catch { return { ok: false, error: "JSON parse failed after recovery" } }
+      catch (e) { console.error("[multi-page-generator] JSON.parse recovery failed:", String(e)); return { ok: false, error: "JSON parse failed after recovery" } }
     }
 
     if (!parsed.site || !parsed.pages || !parsed.pages.home) {

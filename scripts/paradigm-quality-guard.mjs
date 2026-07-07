@@ -189,7 +189,7 @@ function checkBuildSpeedGuards() {
   // 🟡 .dockerignore allows heavy directories into build context
   const dockerignore = readFile(".dockerignore")
   if (dockerignore) {
-    const requiredIgnores = ["astro-demo", "worker", "trigger", "supabase"]
+    const requiredIgnores = ["astro-demo", "worker", "supabase"]
     for (const entry of requiredIgnores) {
       if (!dockerignore.includes(entry)) {
         warn(`.dockerignore: "${entry}" not excluded from Docker build context — adds unnecessary transfer time`)
@@ -263,16 +263,6 @@ function checkFileSizes() {
 // ═══════════════════════════════════════════════════════════════
 
 function checkEventDrivenAutomation() {
-  const triggerSource = readFile("trigger/sales-os.ts")
-  if (triggerSource) {
-    if (/schedules\.task\s*\(/.test(triggerSource)) {
-      error("trigger/sales-os.ts: schedules.task is forbidden by WW-EVENT; use event-triggered task()")
-    }
-    if (/\bcron\s*:/.test(triggerSource)) {
-      error("trigger/sales-os.ts: cron property is forbidden by WW-EVENT")
-    }
-  }
-
   for (const rel of [
     "n8n-workflows/01-supabase-to-notion-sync.json",
     "n8n-workflows/02-notion-to-supabase-reverse.json",

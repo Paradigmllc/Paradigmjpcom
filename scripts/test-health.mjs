@@ -21,9 +21,6 @@ const NEXT_PUBLIC_SUPABASE_URL = env.SALES_SUPABASE_URL || env.NEXT_PUBLIC_SUPAB
 const SUPABASE_SERVICE_ROLE_KEY = env.SALES_SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_ROLE_KEY;
 const DIFY_API_KEY = env.DIFY_API_KEY;
 const DIFY_BASE_URL = env.DIFY_BASE_URL || "https://api.dify.ai";
-const N8N_BASE_URL = env.N8N_BASE_URL;
-const TRIGGER_SECRET_KEY = env.TRIGGER_SECRET_KEY || env.TRIGGER_ACCESS_TOKEN || env.TRIGGER_DEV_API_KEY;
-const TRIGGER_API_URL = env.TRIGGER_API_URL || "http://localhost:3010";
 
 async function check() {
   console.log('--- SUPABASE ---');
@@ -45,7 +42,6 @@ async function check() {
   console.log('--- DIFY ---');
   if (DIFY_API_KEY) {
     try {
-      // Just test authentication
       const res = await fetch(`${DIFY_BASE_URL}/v1/parameters`, {
         headers: { 'Authorization': `Bearer ${DIFY_API_KEY}` },
         signal: AbortSignal.timeout(5000)
@@ -58,35 +54,10 @@ async function check() {
     console.log('Dify env missing');
   }
 
-  console.log('--- TRIGGER.DEV ---');
-  if (TRIGGER_SECRET_KEY) {
-    try {
-      const url = new URL(TRIGGER_API_URL);
-      url.pathname = `${url.pathname}/api/v1/runs`.replace(/\/+/g, "/");
-      url.searchParams.set("limit", "1");
-      const res = await fetch(url.toString(), {
-        headers: { Authorization: `Bearer ${TRIGGER_SECRET_KEY}` },
-        signal: AbortSignal.timeout(5000),
-      });
-      console.log(`Trigger.dev OK: HTTP ${res.status}`);
-    } catch(e) {
-      console.log('Trigger.dev Error:', e.message);
-    }
-  } else {
-    console.log('Trigger.dev env missing');
-  }
-
-  console.log('--- N8N (LEGACY) ---');
-  if (N8N_BASE_URL) {
-    try {
-      const res = await fetch(`${N8N_BASE_URL}/healthz`, { signal: AbortSignal.timeout(5000) });
-      console.log(`n8n (legacy) OK: HTTP ${res.status}`);
-    } catch(e) {
-      console.log('n8n (legacy) Error:', e.message);
-    }
-  } else {
-    console.log('N8N env missing');
-  }
+  console.log('--- OPENCLAW PIPELINE ---');
+  console.log('OpenClaw: 2026-07-06 replaces Trigger.dev + n8n as orchestrator');
+  console.log('Pipeline scripts: services/openclaw-pipeline/');
+  console.log('4 skills: lead-discovery | diagnosis-output | crm-sync | outreach-exec');
 }
 
 check();

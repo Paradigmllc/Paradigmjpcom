@@ -61,7 +61,8 @@ export async function POST(req: NextRequest) {
     }).catch((e) => console.error("[notion-webhook] sync trigger failed:", e))
 
     return NextResponse.json({ ok: true, db_type: dbType, action: "sync_triggered" })
-  } catch {
+  } catch (e) {
+    console.error("[notion-webhook] failed:", e instanceof Error ? e.message : String(e))
     return NextResponse.json({ ok: false, error: "invalid payload" }, { status: 400 })
   }
 }

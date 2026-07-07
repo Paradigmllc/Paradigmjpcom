@@ -35,7 +35,6 @@ export const SALES_AGENT_SOURCES = [
   "paperclip",
   "opencode",
   "openclaw",
-  "trigger_dev",
   "dashboard",
 ] as const
 export type SalesAgentSource = (typeof SALES_AGENT_SOURCES)[number]
@@ -131,7 +130,7 @@ export const AGENT_ROLES: SalesAgentRole[] = [
   {
     id: "outreach_worker",
     name: "Outreach Worker",
-    owner: "Trigger.dev / Steel-Browser",
+    owner: "OpenClaw / Steel-Browser",
     responsibility: "Dify文面生成、フォーム判定、dry-run、承認後の送信準備を担当。",
     autonomy: "デフォルトはdry-run。初回5件と危険判定はAppsmith承認。",
     guardrail: "Telegram指示だけで大量ライブ送信しない。",

@@ -43,7 +43,7 @@ async function callDeepSeek(
     })
 
     if (!response.ok) {
-      const body = await response.text().catch(() => "")
+      const body = await response.text().catch((e) => { console.error("[demo-design-generator] response body read failed:", e); return "" })
       console.error(`[demo-design-generator] API error ${response.status}: ${body.slice(0, 500)}`)
       return null
     }

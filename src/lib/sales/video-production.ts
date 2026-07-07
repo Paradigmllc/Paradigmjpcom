@@ -271,7 +271,7 @@ export function buildProfessionalProductionPlan(input: {
   const theme = themeForIndustry(input.industry)
   return {
     version: "video-pipeline-v3-pro-production-r2",
-    architecture: "Trigger.dev coordinates; specialist renderers create assets; Cloudflare R2 stores deliverables",
+    architecture: "OpenClaw coordinates; specialist renderers create assets; Cloudflare R2 stores deliverables",
     job_intent: input.jobType === "subscription_video" ? "recurring_delivery" : "sales_enablement",
     company: { name: input.companyName, domain: input.domain, industry: labelForIndustry(input.industry, input.locale) },
     production_profile: input.profile,

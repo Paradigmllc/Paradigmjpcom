@@ -315,7 +315,7 @@ export async function runVideoOrchestrator(
       steps.push(makeStep("r2_signed_urls", true, r2Start, { error: "No R2 prefix available; skipped" }))
     }
 
-    /* ───── Step 9: Trigger.dev ディスパッチ ───── */
+    /* ───── Step 9: OpenClaw ディスパッチ ───── */
     if (!skipDispatch) {
       const dispatchStart = Date.now()
       try {
@@ -323,12 +323,12 @@ export async function runVideoOrchestrator(
           jobId: jobResult.job.id,
           action: "dispatch",
         })
-        steps.push(makeStep("trigger_dev_dispatch", dispatchResult.ok, dispatchStart, { error: dispatchResult.error }))
+        steps.push(makeStep("openclaw_dispatch", dispatchResult.ok, dispatchStart, { error: dispatchResult.error }))
       } catch (error) {
-        steps.push(makeStep("trigger_dev_dispatch", false, dispatchStart, { error: error instanceof Error ? error.message : String(error) }))
+        steps.push(makeStep("openclaw_dispatch", false, dispatchStart, { error: error instanceof Error ? error.message : String(error) }))
       }
     } else {
-      steps.push(makeStep("trigger_dev_dispatch", true, Date.now(), { error: "Skipped by option" }))
+      steps.push(makeStep("openclaw_dispatch", true, Date.now(), { error: "Skipped by option" }))
     }
 
     /* ───── 完了 ───── */
@@ -370,7 +370,7 @@ export function getOrchestratorStatus(): {
     { name: "HyperFrames", ready: true, note: "HTML-based rendering" },
     { name: "OSS Renderers", ready: true, note: "6 engines available with FFmpeg fallback" },
     { name: "R2 Storage", ready: true, note: "Signed URL generation" },
-    { name: "Trigger.dev Dispatch", ready: true, note: "Pipeline orchestration" },
+    { name: "OpenClaw Dispatch", ready: true, note: "Pipeline orchestration" },
   ]
 
   return {

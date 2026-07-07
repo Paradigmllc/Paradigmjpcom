@@ -5,7 +5,7 @@
  *   node scripts/render-video-hyperframes.mjs [--profile draft|standard|high]
  *
  * Renders test-video/index.html to MP4 via HyperFrames CLI.
- * Pipeline integration: callable from n8n or trigger.dev workers.
+ * Pipeline integration: callable from OpenClaw pipeline.
  */
 import { execSync } from "child_process"
 import { existsSync, mkdirSync } from "fs"

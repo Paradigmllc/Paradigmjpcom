@@ -1,4 +1,4 @@
-import { getTriggerVideoPipelineConfig } from "./video-trigger"
+import { getOpenClawVideoPipelineConfig, dispatchVideoJobViaOpenClaw } from "./video-openclaw"
 import { getComfyuiClientConfig } from "./comfyui-client"
 import { getDifyCloudRuntimeConfig } from "./dify-cloud"
 import { getR2StorageConfig } from "./r2-storage"
@@ -51,9 +51,9 @@ export interface SalesVideoJob {
   orchestration_stage: string
   trigger_endpoint: string | null
   trigger_run_id: string | null
-  /** @deprecated legacy DB column alias kept for schema compat — now carries the Trigger.dev endpoint, not n8n (WW-EVENT: n8n decommissioned) */
+  /** @deprecated legacy DB column alias — WW-EVENT: n8n decommissioned. Will be dropped in migration. */
   n8n_workflow_url: string | null
-  /** @deprecated legacy DB column alias kept for schema compat — now carries the Trigger.dev run id, not n8n */
+  /** @deprecated legacy DB column alias — WW-EVENT: n8n decommissioned. Will be dropped in migration. */
   n8n_execution_id: string | null
   vast_instance_id: string | null
   r2_output_url: string | null
@@ -78,7 +78,7 @@ export interface SalesVideoJob {
 
 export interface VideoPipelineConfig {
   orchestrator: {
-    provider: "trigger.dev"
+    provider: "openclaw"
     ready: boolean
     taskId: string | null
     apiUrl: string
@@ -114,7 +114,7 @@ export function normalizeIndustry(value: string | null | undefined): Industry | 
 }
 
 function pipelineConfig(): VideoPipelineConfig {
-  const trigger = getTriggerVideoPipelineConfig()
+  const orchestrator = getOpenClawVideoPipelineConfig()
   const comfyConfig = getComfyuiClientConfig()
   const r2Config = getR2StorageConfig()
   const dify = getDifyCloudRuntimeConfig([
@@ -125,18 +125,18 @@ function pipelineConfig(): VideoPipelineConfig {
     "karteToReport",
     "karteToSalesMaterial",
   ])
-  const triggerReady = trigger.taskId !== null && trigger.secretKey !== null
+  const orchestratorReady = orchestrator.taskId !== null
 
   return {
     orchestrator: {
-      provider: "trigger.dev",
-      ready: triggerReady,
-      taskId: trigger.taskId,
-      apiUrl: trigger.apiUrl,
-      dashboardUrl: trigger.dashboardUrl,
-      note: triggerReady
-        ? "Trigger.devで動画ジョブをキュー投入できます。"
-        : "Trigger.devのSecret Keyまたは動画タスクIDが未設定です。ブリーフ保存と手動確認までは利用できます。",
+      provider: "openclaw",
+      ready: orchestratorReady,
+      taskId: orchestrator.taskId,
+      apiUrl: orchestrator.apiUrl,
+      dashboardUrl: orchestrator.dashboardUrl,
+      note: orchestratorReady
+        ? "OpenClawで動画ジョブをキュー投入できます。"
+        : "OpenClawが未設定です。ブリーフ保存と手動確認までは利用できます。",
     },
     dify: {
       ready: dify.ready,

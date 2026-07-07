@@ -33,7 +33,7 @@ async function main() {
   await check("HyperFrames", async () => ({ ok: true, detail: await getStatus("hyperframes") }))
   await check("Cloudflare R2", async () => ({ ok: true, detail: await getStatus("r2_delivery") }))
   await check("Dify Cloud", async () => ({ ok: true, detail: await getStatus("dify_cloud") }))
-  await check("Trigger.dev", async () => ({ ok: true, detail: await getStatus("trigger_dev") }))
+  await check("OpenClaw", async () => ({ ok: true, detail: await getStatus("openclaw") }))
   await check("Report JA", async () => {
     const r = await fetch(`${BASE}/ja/report/demo/japan_entry`)
     return { ok: r.ok, detail: r.status }

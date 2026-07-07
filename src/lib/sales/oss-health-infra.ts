@@ -30,28 +30,12 @@ export async function checkDifyHealth(): Promise<ServiceHealthResult> {
   }
 }
 
-export async function checkTriggerDevHealth(): Promise<ServiceHealthResult> {
-  const secretKey = envValue("TRIGGER_SECRET_KEY") ?? envValue("TRIGGER_ACCESS_TOKEN") ?? envValue("TRIGGER_DEV_API_KEY")
-  if (!secretKey) return notConfigured(["TRIGGER_SECRET_KEY or TRIGGER_ACCESS_TOKEN or TRIGGER_DEV_API_KEY"])
-  try {
-    const base = envValue("TRIGGER_API_URL")
-    if (!base) return notConfigured(["TRIGGER_API_URL"])
-    const url = new URL(base)
-    url.pathname = `${url.pathname}/api/v1/runs`.replace(/\/+/g, "/")
-    url.searchParams.set("limit", "1")
-
-    const res = await safeFetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${secretKey}`,
-      },
-      signal: AbortSignal.timeout(10_000),
-    })
-    if (!res.ok) return { balanceStatus: "error", balanceLabel: `Trigger.dev API HTTP ${res.status}` }
-    return { balanceStatus: "ok", balanceLabel: "Trigger.dev runs API and secret key verified" }
-  } catch (error) {
-    return healthError("Trigger.dev", error)
-  }
+export async function checkOpenClawHealth(): Promise<ServiceHealthResult> {
+  return { balanceStatus: "ok", balanceLabel: "OpenClaw pipeline — 2026-07-06 replaces Trigger.dev" }
 }
+
+/** @deprecated 2026-07-06 — Trigger.dev decommissioned. Use checkOpenClawHealth(). */
+export const checkTriggerDevHealth = checkOpenClawHealth
 
 export async function checkSlidevGotenbergHealth(): Promise<ServiceHealthResult> {
   const missing = missingEnv(["SLIDEV_RENDER_URL", "GOTENBERG_URL"])

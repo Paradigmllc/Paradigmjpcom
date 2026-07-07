@@ -1,5 +1,5 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
-import { buildSalesPipelinePlan, getSalesPipelineTriggerConfig, updateRun } from "./sales-pipeline-helpers"
+import { buildSalesPipelinePlan, getPipelineOrchestratorConfig, updateRun } from "./sales-pipeline-helpers"
 import type { TwentyPullOptions } from "./twenty-pull"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { startSalesPipelineRunFallback } from "./sales-pipeline-fallback"
@@ -109,7 +109,7 @@ async function createPipelineRun(
     options: TwentyPullOptions
   },
 ): Promise<{ ok: true; runId: string } | { ok: false; error: string }> {
-  const trigger = getSalesPipelineTriggerConfig()
+  const orchestrator = getPipelineOrchestratorConfig()
   const plan = buildSalesPipelinePlan({
     requireVideo: input.options.requireVideo === true,
     autoSyncExternalStudios: input.options.autoSyncExternalStudios,
@@ -121,7 +121,7 @@ async function createPipelineRun(
       source: "twenty",
       status: "queued",
       current_step: plan[0]?.key ?? null,
-      trigger_task_id: trigger.taskId,
+      trigger_task_id: orchestrator.taskId,
       requested_by: input.options.requestedBy ?? "twenty_sync",
       require_video: input.options.requireVideo === true,
       auto_sync_external_studios: input.options.autoSyncExternalStudios !== false,
@@ -161,73 +161,25 @@ async function dispatchPipelineRun(
   sb: ServiceSupabase,
   input: { runId: string; companyId: string },
 ): Promise<{ ok: boolean; dispatched: boolean; error?: string }> {
-  const trigger = getSalesPipelineTriggerConfig()
-  if (!trigger.endpoint || !trigger.secretKey) {
+  const orchestrator = getPipelineOrchestratorConfig()
+  if (!orchestrator.ready) {
     await updateRun(sb, input.runId, {
       status: "queued",
       trigger_provider: "local",
-      error_message: "Trigger.dev Sales OS pipeline task is not configured; app fallback queued",
+      error_message: "OpenClaw pipeline orchestrator is not ready; app fallback queued",
     })
     startSalesPipelineRunFallback(input.runId)
-    return { ok: true, dispatched: false, error: "Trigger.dev is not configured; app fallback queued" }
+    return { ok: true, dispatched: false, error: "OpenClaw orchestrator not ready; app fallback queued" }
   }
 
-  try {
-    const res = await fetch(trigger.endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${trigger.secretKey}` },
-      body: JSON.stringify({
-        payload: {
-          run_id: input.runId,
-          company_id: input.companyId,
-          source: "twenty",
-        },
-        context: { source: "twenty-sync", runId: input.runId },
-        options: {
-          idempotencyKey: `sales-os-pipeline-${input.runId}`,
-          concurrencyKey: `company-${input.companyId}`,
-          queue: { name: "sales-os-pipeline", concurrencyLimit: 2 },
-        },
-      }),
-    })
-    const text = await res.text()
-    if (!res.ok) throw new Error(`Trigger.dev dispatch failed: HTTP ${res.status} ${text.slice(0, 240)}`)
-
-    let parsed: Record<string, unknown> = {}
-    try {
-      parsed = text ? (JSON.parse(text) as Record<string, unknown>) : {}
-    } catch (error) {
-      console.warn("[twenty-pipeline-intake] Trigger.dev returned non-json:", error)
-    }
-    const triggerRunId =
-      typeof parsed.id === "string"
-        ? parsed.id
-        : typeof parsed.runId === "string"
-          ? parsed.runId
-          : typeof parsed.run_id === "string"
-            ? parsed.run_id
-            : null
-
-    await updateRun(sb, input.runId, {
-      status: "waiting_external",
-      trigger_provider: "trigger.dev",
-      trigger_run_id: triggerRunId,
-      started_at: new Date().toISOString(),
-      error_message: null,
-    })
-    startSalesPipelineRunFallback(input.runId, { delayMs: 60_000 })
-    return { ok: true, dispatched: true }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Trigger.dev dispatch failed"
-    console.error("[twenty-pipeline-intake] pipeline dispatch failed:", error)
-    await updateRun(sb, input.runId, {
-      status: "queued",
-      trigger_provider: "local",
-      error_message: `${message}; app fallback queued`,
-    })
-    startSalesPipelineRunFallback(input.runId)
-    return { ok: true, dispatched: false, error: `${message}; app fallback queued` }
-  }
+  await updateRun(sb, input.runId, {
+    status: "queued",
+    trigger_provider: "openclaw",
+    started_at: new Date().toISOString(),
+    error_message: null,
+  })
+  startSalesPipelineRunFallback(input.runId)
+  return { ok: true, dispatched: true }
 }
 
 export async function ensureTwentyPipelineRun(

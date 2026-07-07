@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
     const result = await syncCompanyFromNotion(body.notion_page_id, body.properties)
     return NextResponse.json(result, { status: result.ok ? 200 : 500 })
   } catch (e) {
+    console.error("[sync-from-notion] failed:", e instanceof Error ? e.message : String(e))
     return NextResponse.json(
       { ok: false, error: e instanceof Error ? e.message : String(e) },
       { status: 500 },

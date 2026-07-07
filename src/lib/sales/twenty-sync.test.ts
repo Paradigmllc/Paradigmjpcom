@@ -21,12 +21,14 @@ vi.mock("./sales-pipeline-helpers", () => ({
     { key: "twenty_csv_intake", label: "Twenty/CSV intake", ownerTool: "twenty_or_csv", required: true },
     { key: "supabase_normalize", label: "Supabase normalization", ownerTool: "supabase", required: true },
   ],
-  getSalesPipelineTriggerConfig: () => ({
-    taskId: "sales-os-pipeline",
+  getPipelineOrchestratorConfig: () => ({
+    provider: "openclaw",
+    taskId: "openclaw-pipeline",
+    ready: true,
+    endpoint: null,
     secretKey: null,
-    apiUrl: "http://localhost:3010",
+    apiUrl: "",
     dashboardUrl: null,
-    endpoint: "http://localhost:3010/api/v1/tasks/sales-os-pipeline/trigger",
   }),
   updateRun: mocks.updateRun,
 }))

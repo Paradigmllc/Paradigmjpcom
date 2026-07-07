@@ -2,7 +2,7 @@
 
 ## 基本思想
 
-営業データの正本は Supabase OSS です。Twenty、NocoDB、Appsmith、Metabase、n8n、Cal.com、Docuseal はすべて用途別の操作画面として扱います。
+営業データの正本は Supabase OSS です。Twenty、NocoDB、Appsmith、Metabase、Cal.com、Docuseal、OpenClaw はすべて用途別の操作画面として扱います。
 
 ## 毎日の使い方
 
@@ -22,7 +22,7 @@
 | Twenty OSS | CRM | 企業ページ、商談、担当、活動履歴 |
 | Appsmith OSS | 手動承認 | 初回送信承認、CAPTCHA/SPAフォーム確認 |
 | Metabase OSS | 分析 | 返信率、商談化率、ソース別成績 |
-| n8n OSS | 自動化 | ジョブ起動、Slack通知、外部API連携 |
+| OpenClaw | オーケストレーター/リサーチ | ジョブ起動、Slack通知、外部API連携、Crawleeリサーチ |
 | Cal.com OSS | 予約 | 商談予約 |
 | Docuseal OSS | 契約 | 契約書送付、署名ステータス |
 | Paradigm AI Bot | Telegram司令塔 | @aiparadigmbot からHermes/Paperclip/OpenCode/OpenClawへ営業指示を渡す |
@@ -54,7 +54,7 @@
 
 ## Paradigm AI Bot / 自律営業チーム
 
-`@aiparadigmbot` は営業OSのチャット入口です。Telegramからの指示は n8n または Hermes Agent が
+`@aiparadigmbot` は営業OSのチャット入口です。Telegramからの指示は OpenClaw Pipeline または Hermes Agent が
 `POST /api/sales/agent/telegram-command` に渡し、Supabaseの `sales_agent_commands` に記録します。
 
 役割:
@@ -110,7 +110,7 @@
 
 実行系:
 
-- `POST /api/sales/content-templates/match`: Dify/n8nがテンプレート選定だけを行う。
+- `POST /api/sales/content-templates/match`: Dify/OpenClawがテンプレート選定だけを行う。
 - `POST /api/sales/generate-sales-asset`: Slidev資料、動画ブリーフ、Astroデモブリーフ、診断JSONを生成し、`sales_deliveries` にレビュー待ちで記録する。
 - `node scripts/seed-sales-content-templates.mjs`: migration_022適用後に初期テンプレートをSupabaseへ投入する。
 

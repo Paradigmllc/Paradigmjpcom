@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { getServiceSalesSupabase } from "@/lib/supabase"
-import { recoverStuckPipelineRuns, getSalesPipelineTriggerConfig } from "@/lib/sales/sales-pipeline-helpers"
+import { recoverStuckPipelineRuns } from "@/lib/sales/sales-pipeline-helpers"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { startSalesPipelineRunFallback } from "@/lib/sales/sales-pipeline-fallback"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -27,10 +28,8 @@ export async function POST(req: NextRequest) {
     }
     const result = await recoverStuckPipelineRuns(sb, body.maxStuckMinutes ?? 30)
 
-    // Re-dispatch recovered runs if Trigger.dev is configured
-    const trigger = getSalesPipelineTriggerConfig()
     let dispatched = 0
-    if (trigger.endpoint && trigger.secretKey && result.recovered > 0) {
+    if (result.recovered > 0) {
       const { data: runs } = await sb
         .from(DB_TABLES.SALES_PIPELINE_RUNS)
         .select("id, company_id")
@@ -40,18 +39,10 @@ export async function POST(req: NextRequest) {
 
       for (const run of runs ?? []) {
         try {
-          const res = await fetch(trigger.endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${trigger.secretKey}` },
-            body: JSON.stringify({ payload: { run_id: run.id, company_id: run.company_id, source: "recovery" }, context: { source: "pipeline-recovery" } }),
-          })
-          if (!res.ok) {
-            console.warn("[pipeline-recover] dispatch HTTP", res.status, "for run", run.id)
-            continue
-          }
+          await startSalesPipelineRunFallback(run.id)
           dispatched++
         } catch (e) {
-          console.warn("[pipeline-recover] dispatch failed:", e)
+          console.warn("[pipeline-recover] local dispatch failed:", e)
         }
       }
     }
