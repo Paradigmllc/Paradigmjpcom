@@ -94,7 +94,7 @@ export function checkFreshness(
   const remainingDays = Math.round((expiresAt - Date.now()) / (1000 * 60 * 60 * 24))
 
   let status: FreshnessStatus
-  if (remainingDays > 7) {
+  if (remainingDays >= 7) {
     status = "fresh"
   } else if (remainingDays > 0) {
     status = "aging"

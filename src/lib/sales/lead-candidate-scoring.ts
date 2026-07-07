@@ -196,6 +196,9 @@ export function scoreCandidate(input: {
   isEnterpriseLike?: boolean
   websiteWeaknessScore?: number
   freshnessHintScore?: number
+  techCollectedAt?: string | null
+  rdapChangedAt?: string | null
+  certCollectedAt?: string | null
   marketFitScore?: number
 }): CandidateScore {
   const requestedSlug = input.requestedTechnology ? technologySlug(input.requestedTechnology) : null
@@ -205,7 +208,34 @@ export function scoreCandidate(input: {
   const geoConfidence = maxCountryConfidence(input.countrySignals)
   const websiteAbsenceScore = input.websiteWeaknessScore ?? (input.hasWebsite ? 0 : 92)
   const smbScore = input.isEnterpriseLike ? 8 : input.lane === "no_website_local_smb" ? 86 : input.lane === "dns_freshness" ? 78 : 58
-  const freshnessScore = input.freshnessHintScore ?? (input.lane === "dns_freshness" ? 92 : input.source === "common_crawl_domains" ? 62 : 74)
+  // Freshness: use hint if available, otherwise measure from collected timestamps
+  let freshnessScore = input.freshnessHintScore
+  if (freshnessScore == null) {
+    // Try to derive from actual collection timestamps before falling back to lane constant
+    const collectedAts = [
+      input.techCollectedAt,
+      input.rdapChangedAt,
+      input.certCollectedAt,
+    ].filter((v): v is string => typeof v === "string" && v.length > 0)
+
+    if (collectedAts.length > 0) {
+      const newestMs = Math.max(...collectedAts.map((ts) => new Date(ts).getTime()))
+      const ageDays = Math.max(0, Math.round((Date.now() - newestMs) / (1000 * 60 * 60 * 24)))
+      freshnessScore =
+        ageDays <= 7 ? 96
+        : ageDays <= 14 ? 88
+        : ageDays <= 30 ? 74
+        : ageDays <= 60 ? 55
+        : ageDays <= 90 ? 38
+        : 22
+    } else {
+      freshnessScore =
+        input.lane === "dns_freshness" ? 92
+        : input.source === "common_crawl_domains" ? 62
+        : input.source === "http_archive" ? 50
+        : 74
+    }
+  }
   const contactabilityScore = input.hasContactSignal ? 70 : 34
   const falsePositiveRisk = clampScore((requestedSlug && !exactStack ? 35 : 12) + (geoConfidence < 50 ? 28 : 0) + (input.isEnterpriseLike ? 70 : 0))
   const laneOpportunityBonus = input.lane === "no_website_local_smb" ? 12 : input.lane === "dns_freshness" ? 8 : 0

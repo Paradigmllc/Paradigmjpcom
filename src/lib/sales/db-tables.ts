@@ -103,6 +103,9 @@ export const DB_TABLES = {
   // ── Video (migration_026, 027, 028) ──
   SALES_VIDEO_JOBS: "sales_video_jobs",
 
+  // ── Pipeline Metrics (migration_066) ──
+  SALES_PIPELINE_METRICS: "sales_pipeline_metrics",
+
   // ── Platform Health (migration_025) ──
   SALES_PLATFORM_HEALTH_SNAPSHOTS: "sales_platform_health_snapshots",
 
