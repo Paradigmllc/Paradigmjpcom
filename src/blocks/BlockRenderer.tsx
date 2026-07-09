@@ -1,5 +1,3 @@
-"use client"
-
 /**
  * BlockRenderer.tsx — Pages collection layout の dispatcher (Aesop voice)
  *

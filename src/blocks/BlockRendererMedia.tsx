@@ -1,10 +1,3 @@
-"use client"
-
-import { motion } from "framer-motion"
-import { Marquee } from "@/components/magicui/marquee"
-
-const EASE = [0.22, 1, 0.36, 1] as const
-
 interface AnyBlock {
   blockType: string
   id?: string
@@ -29,21 +22,24 @@ export function VideoRender(b: AnyBlock) {
 
 export function MarqueeRender(b: AnyBlock) {
   const items = (b.items as Array<{ text?: string }>) ?? []
-  if (items.length === 0) return null
   const direction = (b.direction as string) ?? "left"
   const speed = (b.speed as string) ?? "normal"
-  const duration = speed === "slow" ? 50 : speed === "fast" ? 20 : 40
+  const duration = speed === "slow" ? "60s" : speed === "fast" ? "20s" : "40s"
+  const animDir = direction === "right" ? "reverse" : "normal"
+  const repeated = [...items, ...items, ...items]
   return (
-    <section className="bg-paradigm-paper-deep py-7 overflow-hidden border-y border-paradigm-line relative">
-      <div className="paradigm-mesh opacity-25 absolute inset-0" />
-      <Marquee duration={duration} pauseOnHover reverse={direction === "right"} className="relative z-10">
-        {items.map((it, i) => (
-          <span key={i} className="text-[12px] md:text-[14px] font-medium whitespace-nowrap inline-flex items-center gap-3 px-6 text-paradigm-ink-soft">
-            <span className="inline-block w-2 h-2 rounded-full bg-gradient-to-br from-paradigm-accent to-paradigm-glow" />
+    <section className="bg-paradigm-paper-deep py-8 overflow-hidden border-y border-paradigm-line">
+      <div
+        className="flex whitespace-nowrap"
+        style={{ animation: `gradientShift ${duration} linear infinite ${animDir}` }}
+      >
+        {repeated.map((it, i) => (
+          <span key={i} className="inline-flex items-center px-8 paradigm-eyebrow text-paradigm-ink-soft">
             {it.text ?? ""}
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-paradigm-accent/40 ml-8" />
           </span>
         ))}
-      </Marquee>
+      </div>
     </section>
   )
 }
@@ -53,7 +49,7 @@ export function LogoCloudRender(b: AnyBlock) {
   return (
     <section className="bg-paradigm-paper-deep paradigm-section py-16 border-y border-paradigm-line">
       <div className="max-w-6xl mx-auto px-6 md:px-12 text-center">
-        {!!b.title && <p className="paradigm-eyebrow text-paradigm-accent mb-8">{String(b.title)}</p>}
+        {!!b.title && <p className="paradigm-eyebrow mb-8">{String(b.title)}</p>}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 items-center justify-items-center opacity-30 hover:opacity-50 transition-opacity grayscale">
           {logos.map((l, i) => (
             <div key={i} className="paradigm-eyebrow text-paradigm-ink-mute text-[11px] tracking-[0.14em] uppercase">
