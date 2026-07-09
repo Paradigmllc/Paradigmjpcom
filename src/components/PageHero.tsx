@@ -28,6 +28,7 @@ export default async function PageHero({ badge, title, desc, highlight }: PageHe
 
   return (
     <section className="relative border-b border-paradigm-line bg-paradigm-paper pt-28 pb-14 md:pt-36 md:pb-20">
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-paradigm-accent/30 to-transparent" />
       <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-10 px-5 md:grid-cols-[minmax(0,1fr)_320px] md:px-8 lg:px-10">
         <div>
           <p className="paradigm-eyebrow mb-5 text-paradigm-accent">{badge}</p>

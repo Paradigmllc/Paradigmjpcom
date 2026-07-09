@@ -76,7 +76,8 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
   const cmsSocials = nav?.socialLinks ?? []
 
   return (
-    <footer className="bg-paradigm-paper-deep text-paradigm-ink mt-32">
+    <footer className="bg-paradigm-paper-deep text-paradigm-ink mt-32 relative">
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-paradigm-accent/40 to-transparent" />
       <div className="max-w-[1440px] mx-auto px-6 md:px-12">
         {/* Band 1 — Editorial */}
         <motion.section initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7, ease: EASE }}
