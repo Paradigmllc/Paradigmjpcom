@@ -283,8 +283,8 @@ export async function seedAllContent() {
         badge: "中小企業のデジタルパートナー",
         title: "Web制作×AIで、ビジネスの成長を加速する",
         subtitle: "戦略設計から公開後の集客・運用まで。Paradigmが一気通貫で支援します。無料相談で最適なプランをご提案します。",
-        primaryCtaLabel: "無料相談を予約する", primaryCtaHref: "/contact",
-        secondaryCtaLabel: "サービスを見る", secondaryCtaHref: "/services",
+        primaryCta: { label: "無料相談を予約する", href: "/contact" },
+        secondaryCta: { label: "サービスを見る", href: "/services" },
       },
       {
         blockType: "marquee",
@@ -360,8 +360,8 @@ export async function seedAllContent() {
         blockType: "cta",
         title: "まずは無料相談から。ビジネスの成長を、テクノロジーで加速しませんか？",
         subtitle: "無料相談では、お客様の課題をヒアリングし、具体的なお見積りと改善の方向性をご提示します。営業電話は一切ありません。",
-        primaryCtaLabel: "無料相談を予約する", primaryCtaHref: "/contact",
-        secondaryCtaLabel: "お問い合わせ", secondaryCtaHref: "/contact",
+        primaryCta: { label: "無料相談を予約する", href: "/contact" },
+        secondaryCta: { label: "お問い合わせ", href: "/contact" },
         background: "gradient",
       },
     ]
@@ -372,8 +372,8 @@ export async function seedAllContent() {
         badge: "FOR FOREIGN BRANDS ENTERING JAPAN",
         title: "You're invisible in the world's 3rd-largest economy",
         subtitle: "Japan's $4.5T economy is wide open — but without a localized presence, Japanese buyers can't find you, trust you, or pay you. Paradigm makes you Japan-ready end-to-end. You never touch a word of Japanese.",
-        primaryCtaLabel: "Get your Japan Market Fit Report", primaryCtaHref: "/contact",
-        secondaryCtaLabel: "Book a free 30-min call", secondaryCtaHref: "/contact",
+        primaryCta: { label: "Get your Japan Market Fit Report", href: "/contact" },
+        secondaryCta: { label: "Book a free 30-min call", href: "/contact" },
       },
       {
         blockType: "stats",
@@ -459,8 +459,8 @@ export async function seedAllContent() {
         blockType: "cta",
         title: "Stop leaving Japan on the table.",
         subtitle: "Start with a $1,500 report or a free 30-minute call. Either way, you'll know exactly what Japan is worth — and how to capture it.",
-        primaryCtaLabel: "Get your Japan Market Fit Report", primaryCtaHref: "/contact",
-        secondaryCtaLabel: "Book a free 30-min call", secondaryCtaHref: "/contact",
+        primaryCta: { label: "Get your Japan Market Fit Report", href: "/contact" },
+        secondaryCta: { label: "Book a free 30-min call", href: "/contact" },
         background: "gradient",
       },
     ]
