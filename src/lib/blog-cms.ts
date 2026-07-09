@@ -76,7 +76,6 @@ function mapPayloadToBlogPost(p: PayloadPost, fallbackBySlug?: BlogPost): BlogPo
 
 async function fetchAllPayloadPosts(locale: string): Promise<BlogPost[]> {
   return withPayloadReadFallback<BlogPost[]>("blog-cms.payload.find", async () => {
-    // dynamic import keeps lib/blog-cms.ts safe to import from edge / non-payload contexts
     const { getPayload } = await import("payload")
     const config = (await import("@payload-config")).default
     const payload = await getPayload({ config: config as Parameters<typeof getPayload>[0]["config"] })
@@ -94,7 +93,9 @@ async function fetchAllPayloadPosts(locale: string): Promise<BlogPost[]> {
     } as Parameters<typeof payload.find>[0])
 
     const docs = (res?.docs ?? []) as unknown as PayloadPost[]
-    return docs.map((p) => mapPayloadToBlogPost(p, BLOG_POSTS.find((b) => b.slug === p.slug)))
+    return docs
+      .filter((p) => !!p.title)
+      .map((p) => mapPayloadToBlogPost(p, locale === "ja" ? BLOG_POSTS.find((b) => b.slug === p.slug) : undefined))
   }, [])
 }
 
