@@ -43,6 +43,13 @@ interface ServiceDetailLayoutProps {
   ctaLabel: string
   /** Optional middle band (e.g. process / use cases / comparison) */
   middleBand?: React.ReactNode
+  /** Optional stats/metrics band */
+  stats?: readonly { value: string; label: string }[]
+  statsEyebrow?: string
+  statsTitle?: string
+  /** Optional FAQ items */
+  faqs?: readonly { question: string; answer: string }[]
+  faqTitle?: string
 }
 
 export default function ServiceDetailLayout({
@@ -56,6 +63,11 @@ export default function ServiceDetailLayout({
   ctaDesc,
   ctaLabel,
   middleBand,
+  stats,
+  statsEyebrow,
+  statsTitle,
+  faqs,
+  faqTitle,
 }: ServiceDetailLayoutProps) {
   const t = useTranslations("serviceDetailLayout")
   return (
@@ -85,6 +97,25 @@ export default function ServiceDetailLayout({
           </FadeIn>
         </div>
       </section>
+
+      {/* Optional stats band */}
+      {stats && stats.length > 0 && (
+        <section className="relative bg-paradigm-paper-deep paradigm-section overflow-hidden">
+          <div className="absolute inset-0 paradigm-mesh opacity-35" />
+          <div className="relative z-10 max-w-5xl mx-auto px-6 md:px-8 text-center">
+            {statsEyebrow && <p className="paradigm-eyebrow text-paradigm-accent mb-4">{statsEyebrow}</p>}
+            {statsTitle && <h2 className="font-display text-[26px] md:text-[40px] leading-[1.15] text-paradigm-ink mb-10">{statsTitle}</h2>}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10">
+              {stats.map((s, i) => (
+                <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1, ease: EASE }}>
+                  <div className="font-display text-[40px] md:text-[56px] leading-[1] mb-2 bg-gradient-to-br from-paradigm-ink via-paradigm-accent to-paradigm-glow bg-clip-text text-transparent">{s.value}</div>
+                  <div className="paradigm-eyebrow text-paradigm-ink-soft">{s.label}</div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Optional middle band */}
       {middleBand}
@@ -146,6 +177,28 @@ export default function ServiceDetailLayout({
           </p>
         </div>
       </section>
+
+      {/* Optional FAQ section */}
+      {faqs && faqs.length > 0 && (
+        <section className="bg-paradigm-paper paradigm-section relative overflow-hidden">
+          <div className="max-w-3xl mx-auto px-6 md:px-12 relative z-10">
+            {faqTitle && <h2 className="font-display text-[26px] md:text-[40px] leading-[1.15] tracking-[-0.01em] text-paradigm-ink text-center mb-10">{faqTitle}</h2>}
+            <ul className="border-t border-paradigm-line">
+              {faqs.map((item, i) => (
+                <li key={i} className="border-b border-paradigm-line">
+                  <details className="group">
+                    <summary className="cursor-pointer flex items-start gap-5 py-5 list-none [&::-webkit-details-marker]:hidden">
+                      <span className="font-display text-[16px] md:text-[18px] leading-[1.4] text-paradigm-ink flex-1 pr-8">{item.question}</span>
+                      <span aria-hidden className="shrink-0 text-paradigm-ink-mute mt-1.5 group-open:rotate-45 transition-transform text-[16px] leading-none">+</span>
+                    </summary>
+                    <div className="pl-1 pr-8 pb-5 -mt-1 text-[14px] text-paradigm-ink-soft leading-[1.85]">{item.answer}</div>
+                  </details>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
 
       <RichCtaBand
         eyebrow={badge}

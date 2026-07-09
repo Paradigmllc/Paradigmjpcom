@@ -93,6 +93,11 @@ export default async function AiServicePage({ params }: Props) {
         results={service.results}
         plans={pricing.plans}
         pricingFootnote={pricing.monthly}
+        statsEyebrow={t("ai.statsEyebrow")}
+        statsTitle={t("ai.statsTitle")}
+        stats={t.raw("ai.stats") as Array<{ value: string; label: string }>}
+        faqTitle={t("ai.faqTitle")}
+        faqs={t.raw("ai.faqs") as Array<{ question: string; answer: string }>}
         iconBg="from-zinc-950 via-blue-800 to-amber-600"
         beamFrom="rgb(79 70 229)"
         beamTo="rgb(251 146 60)"

@@ -37,6 +37,49 @@
           "title": "Launch & Grow",
           "desc": "Post-launch analytics, SEO iteration, and ongoing maintenance to maximise long-term results."
         }
+      ],
+      "statsEyebrow": "OUTCOMES",
+      "statsTitle": "What our web builds deliver",
+      "stats": [
+        {
+          "value": "95+",
+          "label": "Lighthouse performance score"
+        },
+        {
+          "value": "2×",
+          "label": "Average increase in contact-form conversions"
+        },
+        {
+          "value": "2 weeks",
+          "label": "Typical project turnaround"
+        },
+        {
+          "value": "3 months",
+          "label": "Free post-launch support included"
+        }
+      ],
+      "faqTitle": "Web development FAQs",
+      "faqs": [
+        {
+          "question": "How long does a typical website build take?",
+          "answer": "A standard 5-page corporate site takes about 2 weeks from kickoff to launch. Larger projects with custom features may take 4–6 weeks. We'll give you a precise timeline after the initial consultation."
+        },
+        {
+          "question": "Do you offer post-launch maintenance?",
+          "answer": "Yes. Every build includes 3 months of free post-launch support (bug fixes, content updates, performance monitoring). After that, ongoing maintenance retainers start at ¥19,800/month."
+        },
+        {
+          "question": "Can I update the site myself after launch?",
+          "answer": "Absolutely. All our sites include a CMS (PayloadCMS) so you can edit text, images, blog posts, and pricing without touching code. We provide a video walkthrough and written guide."
+        },
+        {
+          "question": "Do you do e-commerce sites?",
+          "answer": "Yes. We build Shopify storefronts and custom Next.js + Stripe e-commerce solutions. Payment integration includes credit cards, Konbini, and PayPay for the Japan market."
+        },
+        {
+          "question": "What if I already have a site? Can you redesign it?",
+          "answer": "Yes. We can redesign your existing site while preserving your SEO equity (URLs, metadata, content). We handle the migration so there's zero downtime."
+        }
       ]
     },
     "meo": {
@@ -71,6 +114,45 @@
           "title": "Measure + Iterate",
           "desc": "Rank tracking and monthly reports. Data-driven continuous improvement."
         }
+      ],
+      "statsEyebrow": "OUTCOMES",
+      "statsTitle": "MEO results our clients see",
+      "stats": [
+        {
+          "value": "TOP 3",
+          "label": "Average Google Maps ranking achieved"
+        },
+        {
+          "value": "3 months",
+          "label": "Typical time to first-page Maps results"
+        },
+        {
+          "value": "+40%",
+          "label": "Average increase in direction requests"
+        },
+        {
+          "value": "+25%",
+          "label": "Average increase in phone calls from GBP"
+        }
+      ],
+      "faqTitle": "MEO frequently asked questions",
+      "faqs": [
+        {
+          "question": "What's the difference between SEO and MEO?",
+          "answer": "SEO focuses on ranking in Google's web search results. MEO (Map Engine Optimization) focuses on ranking in Google Maps and the local 3-pack. For businesses with physical locations, MEO often delivers faster, higher-intent traffic."
+        },
+        {
+          "question": "How long until I see results from MEO?",
+          "answer": "Most clients see measurable improvements within 1–3 months. Rankings improve gradually as we optimize your profile, build reviews, and post regularly. We provide monthly rank-tracking reports."
+        },
+        {
+          "question": "Do I need to respond to every review?",
+          "answer": "We handle review monitoring and response templates. Responding to reviews — especially negative ones — is one of the highest-impact MEO activities. We'll draft responses and keep your profile active."
+        },
+        {
+          "question": "Can you help if I have multiple locations?",
+          "answer": "Yes. Our Pro plan covers multiple locations. We manage each Google Business Profile separately with location-specific optimization, posting calendars, and review strategies."
+        }
       ]
     },
     "seo": {
@@ -102,7 +184,46 @@
         "FAQ structuring",
         "Trust signal reinforcement"
       ],
-      "geoBadge": "Paradigm exclusive"
+      "geoBadge": "Paradigm exclusive",
+      "statsEyebrow": "OUTCOMES",
+      "statsTitle": "SEO/GEO performance benchmarks",
+      "stats": [
+        {
+          "value": "2.5×",
+          "label": "Average organic traffic increase"
+        },
+        {
+          "value": "6 months",
+          "label": "Typical time to first-page rankings"
+        },
+        {
+          "value": "98%",
+          "label": "Core Web Vitals pass rate after optimization"
+        },
+        {
+          "value": "GEO-ready",
+          "label": "AI-search optimized from day one"
+        }
+      ],
+      "faqTitle": "SEO/GEO frequently asked questions",
+      "faqs": [
+        {
+          "question": "What is GEO and why does it matter?",
+          "answer": "GEO (Generative Engine Optimization) optimizes your content to be cited by AI search engines like ChatGPT, Gemini, and Perplexity. As more users switch to AI search, appearing in AI-generated answers is becoming as important as traditional Google rankings."
+        },
+        {
+          "question": "Do you guarantee #1 rankings?",
+          "answer": "No ethical SEO provider can guarantee specific rankings — Google's algorithm changes constantly. What we guarantee: data-driven strategy, transparent monthly reporting, and continuous improvement. Our MEO service includes a results-based refund window."
+        },
+        {
+          "question": "How is Paradigm's SEO different from other agencies?",
+          "answer": "We combine traditional SEO with GEO (AI-search optimization). Most agencies still only optimize for Google. We prepare your content for ChatGPT, Gemini, and Perplexity too — future-proofing your search presence."
+        },
+        {
+          "question": "What's included in the monthly SEO retainer?",
+          "answer": "Monthly keyword research, 2–8 articles (depending on plan), technical SEO audits, structured data implementation, backlink monitoring, GEO optimization, and a detailed monthly report with rankings, traffic, and conversion data."
+        }
+      ]
     },
     "ai": {
       "metaTitle": "AI Integration",
@@ -139,6 +260,49 @@
           "gradient": "from-paradigm-glow to-pink-400",
           "title": "2x sales forecast accuracy",
           "desc": "AI analyses historical sales data. Demand forecasting accuracy doubles. Inventory waste minimised."
+        }
+      ],
+      "statsEyebrow": "OUTCOMES",
+      "statsTitle": "AI integration impact",
+      "stats": [
+        {
+          "value": "40%",
+          "label": "Average reduction in operational hours"
+        },
+        {
+          "value": "80%",
+          "label": "Customer inquiries handled by AI"
+        },
+        {
+          "value": "2 weeks",
+          "label": "Chatbot deployment time"
+        },
+        {
+          "value": "24/7",
+          "label": "AI support availability after launch"
+        }
+      ],
+      "faqTitle": "AI integration frequently asked questions",
+      "faqs": [
+        {
+          "question": "Do I need technical knowledge to use AI tools?",
+          "answer": "No. We handle the entire setup and provide training in plain language. You'll get written guides and a walkthrough video. Our support team is available for questions anytime."
+        },
+        {
+          "question": "What AI tools do you work with?",
+          "answer": "We integrate DeepSeek V4, ChatGPT, Gemini, Dify (AI workflow builder), and n8n (automation). The specific stack depends on your use case and budget. We recommend the best tools during the initial consultation."
+        },
+        {
+          "question": "Can AI integrate with our existing systems?",
+          "answer": "Yes. We connect AI to Google Workspace, Slack, CRMs, databases, and custom APIs. Most integrations take 1–2 weeks depending on complexity."
+        },
+        {
+          "question": "Is my business data safe with AI?",
+          "answer": "We use enterprise-grade API endpoints with encryption in transit and at rest. Your data is never used to train public AI models. For highly sensitive data, we can deploy on-premise or private cloud instances."
+        },
+        {
+          "question": "What's the ROI of AI integration?",
+          "answer": "Most clients see ROI within 2–4 months. A chatbot handling 200 inquiries/month saves ~40 hours of staff time — roughly ¥120,000/month in labor costs. Automation of reporting and data entry typically saves 10–20 hours/week."
         }
       ]
     }

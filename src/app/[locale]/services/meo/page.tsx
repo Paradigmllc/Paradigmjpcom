@@ -96,6 +96,11 @@ export default async function MeoServicePage({ params }: Props) {
         results={service.results}
         plans={pricing.plans}
         pricingFootnote={pricing.monthly}
+        statsEyebrow={t("meo.statsEyebrow")}
+        statsTitle={t("meo.statsTitle")}
+        stats={t.raw("meo.stats") as Array<{ value: string; label: string }>}
+        faqTitle={t("meo.faqTitle")}
+        faqs={t.raw("meo.faqs") as Array<{ question: string; answer: string }>}
         iconBg="from-zinc-900 via-blue-800 to-emerald-700"
         beamFrom="rgb(14 165 233)"
         beamTo="rgb(165 180 252)"

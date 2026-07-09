@@ -122,6 +122,11 @@ export default async function SeoServicePage({ params }: Props) {
         results={service.results}
         plans={pricing.plans}
         pricingFootnote={pricing.monthly}
+        statsEyebrow={t("seo.statsEyebrow")}
+        statsTitle={t("seo.statsTitle")}
+        stats={t.raw("seo.stats") as Array<{ value: string; label: string }>}
+        faqTitle={t("seo.faqTitle")}
+        faqs={t.raw("seo.faqs") as Array<{ question: string; answer: string }>}
         iconBg="from-zinc-900 via-emerald-800 to-blue-700"
         beamFrom="rgb(165 180 252)"
         beamTo="rgb(79 70 229)"

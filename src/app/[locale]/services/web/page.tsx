@@ -101,6 +101,11 @@ export default async function WebServicePage({ params }: Props) {
         results={service.results}
         plans={pricing.plans}
         pricingFootnote={pricing.monthly}
+        statsEyebrow={t("web.statsEyebrow")}
+        statsTitle={t("web.statsTitle")}
+        stats={t.raw("web.stats") as Array<{ value: string; label: string }>}
+        faqTitle={t("web.faqTitle")}
+        faqs={t.raw("web.faqs") as Array<{ question: string; answer: string }>}
         iconBg="from-zinc-950 via-zinc-800 to-blue-700"
         beamFrom="rgb(244 114 182)"
         beamTo="rgb(14 165 233)"
