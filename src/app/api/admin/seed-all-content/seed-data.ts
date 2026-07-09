@@ -376,6 +376,18 @@ export async function seedAllContent() {
         secondaryCta: { label: "Book a free 30-min call", href: "/contact" },
       },
       {
+        blockType: "marquee",
+        items: [
+          { text: "Tokyo-based operations" },
+          { text: "Bilingual async workflow" },
+          { text: "Fixed scope, fixed price" },
+          { text: "Japan payment rails ready" },
+          { text: "MEO + LINE + SEO/GEO" },
+          { text: "30–90 days to Japan-live" },
+        ],
+        direction: "left", speed: "slow",
+      },
+      {
         blockType: "stats",
         kicker: "THE COST OF WAITING",
         title: "What \"not being in Japan\" actually costs you",
@@ -402,6 +414,18 @@ export async function seedAllContent() {
           { icon: "Shield", title: "Legal compliance", description: "Required disclosures so you can sell to Japanese consumers legally from day one.", href: "", highlighted: false },
           { icon: "CreditCard", title: "Local payments", description: "Konbini, PayPay, credit, domestic delivery — the rails Japanese buyers actually use.", href: "", highlighted: false },
           { icon: "MapPin", title: "Discovery & support", description: "MEO (Google Maps), LINE official, AI customer support in Japanese. Found where it matters.", href: "", highlighted: false },
+        ],
+      },
+      {
+        blockType: "process",
+        kicker: "HOW IT WORKS",
+        title: "Your path to Japan — 30 to 90 days",
+        subtitle: "Four stages from zero to Japan-live. You review in English at every step.",
+        steps: [
+          { title: "Discovery & audit", description: "We analyze your brand, competitors, compliance gaps, and size your Japan TAM. You get a Market Fit Report with concrete numbers.", icon: "Search" },
+          { title: "Localization & build", description: "Your site, payments, and compliance are rebuilt for Japanese buyers. All copy and UX are culturally adapted — you approve in English.", icon: "Code2" },
+          { title: "Launch & optimize", description: "Go live with MEO, LINE, and 24/7 AI support in Japanese. 30-day sprint to fine-tune conversions and discovery.", icon: "TrendingUp" },
+          { title: "Grow & scale", description: "Monthly performance reports, continuous channel expansion, and quarterly strategy reviews. You focus on your product — we run Japan.", icon: "RefreshCw" },
         ],
       },
       {
@@ -439,6 +463,16 @@ export async function seedAllContent() {
           { name: "Essential", price: "$3,000", period: "one-time", description: "Validate Japan demand with a localized presence and a clear buyer path.", features: "Japan-ready landing page\nCore localization (not translation)\nCompliance & trust checklist\nLead capture with English handoff", ctaLabel: "Discuss this tier", ctaHref: "/contact", highlighted: false },
           { name: "Growth", price: "$5,000", period: "one-time", description: "Launch the full market-entry stack for e-commerce, SaaS, or funded brands.", features: "Localized site sections\nMEO foundation (Google Maps)\nLINE / inquiry flow + AI support\n30-day launch sprint", ctaLabel: "Discuss this tier", ctaHref: "/contact", highlighted: true },
           { name: "Scale", price: "$8,000", period: "one-time", description: "Build a stronger Japan operation with deeper support and automation.", features: "Expanded localization + CRO\nAI customer support + ops automation\nExecutive report + Q3 roadmap\nPayments + logistics advisory", ctaLabel: "Discuss this tier", ctaHref: "/contact", highlighted: false },
+        ],
+      },
+      {
+        blockType: "testimonials",
+        kicker: "TRUSTED BY",
+        title: "Global brands launch in Japan with Paradigm",
+        items: [
+          { name: "Kickstarter-funded D2C brand", location: "United States", text: "Launched a fully localized Japanese storefront with Konbini + PayPay checkout in 45 days. First-month revenue exceeded projections by 40%.", rating: 5 },
+          { name: "European SaaS company", location: "Germany", text: "Entered Japan without hiring a single Japanese-speaking employee. Our entire team operates in English — Paradigm handles everything on the Japan side.", rating: 5 },
+          { name: "Shopify merchant", location: "Australia", text: "Went from zero Japan presence to ranking on Google Maps and LINE in 60 days. Customer support is fully automated in Japanese via AI — zero overhead.", rating: 5 },
         ],
       },
       {
