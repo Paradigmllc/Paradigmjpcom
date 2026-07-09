@@ -18,7 +18,7 @@ import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
-import { filterByLocale, coerceLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
+import { coerceLocale, assertLocale } from "@/lib/cms/filters"
 import {
   formatPricePPP,
   formatPricePPPFromHeaders,
@@ -26,7 +26,6 @@ import {
   type FormatPriceResult,
 } from "@/lib/ppp"
 import { LOCALE_HREFLANG } from "@/lib/locale-map"
-import { withPayloadReadFallback } from "@/lib/payload-availability"
 import { getPricingFor, getServices } from "@/lib/data"
 
 export const dynamic = "force-dynamic"
@@ -81,38 +80,20 @@ export default async function PricingPage({ params, searchParams }: Props) {
   const forcedCountry = force_country?.toUpperCase()
   const country = forcedCountry || detectCountryFromHeaders(h)
 
-  let plans = await withPayloadReadFallback<PricingDoc[]>("pricing.payload.find", async () => {
-      const [{ getPayload }, { default: config }] = await Promise.all([
-        import("payload"),
-        import("@payload-config"),
-      ])
-      const payload = await getPayload({ config })
-      const res = await payload.find({
-        collection: "pricing",
-        where: filterByLocale(locale),
-        sort: "sortOrder",
-        limit: 100,
-        depth: 0,
-        ...localeFindOptions(locale),
-      })
-      return (res.docs as unknown as PricingDoc[]) ?? []
-  }, [])
-  if (plans.length === 0) {
-    plans = getServices(contentLocale).flatMap((service) =>
-      getPricingFor(contentLocale, service.id as "web" | "meo" | "seo" | "ai").plans.map((plan, index) => ({
-        id: `${service.id}-${plan.name}`,
-        planName: `${service.title} / ${plan.name}`,
-        serviceId: service.id,
-        price: Number(plan.price.replace(/,/g, "")),
-        currency: "jpy" as const,
-        billingCycle: plan.period.includes("/") ? "monthly" as const : "one-time" as const,
-        description: plan.desc,
-        features: plan.features.map((feature) => ({ feature, included: true })),
-        isPopular: plan.popular ?? index === 1,
-        ctaLabel: t("defaultCta"),
-      }))
-    )
-  }
+  const plans: PricingDoc[] = getServices(contentLocale).flatMap((service, si) =>
+    getPricingFor(contentLocale, service.id as "web" | "meo" | "seo" | "ai").plans.map((plan, index) => ({
+      id: `${service.id}-${plan.name}`,
+      planName: `${service.title} / ${plan.name}`,
+      serviceId: service.id,
+      price: Number(plan.price.replace(/,/g, "")),
+      currency: "jpy" as const,
+      billingCycle: plan.period.includes("/") ? "monthly" as const : "one-time" as const,
+      description: plan.desc,
+      features: plan.features.map((feature) => ({ feature, included: true })),
+      isPopular: plan.popular ?? index === 1,
+      ctaLabel: t("defaultCta"),
+    }))
+  )
 
   const priceFor = (plan: PricingDoc): FormatPriceResult => {
     const priceJPY = plan.price ?? 0
