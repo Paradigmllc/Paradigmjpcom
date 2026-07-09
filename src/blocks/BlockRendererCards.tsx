@@ -1,12 +1,10 @@
 "use client"
 
-import { useRef } from "react"
 import { motion } from "framer-motion"
 import { Headphones, PenTool, Code2, TrendingUp, MessageCircle, PenLine, Code, CheckCircle, RefreshCw, Globe, Bot, Search, Video, MapPin, Shield, CreditCard, LucideIcon } from "lucide-react"
 import { Sparkles } from "@/components/magicui/sparkles"
 import { Meteors } from "@/components/magicui/meteors"
 import { BorderBeam } from "@/components/magicui/border-beam"
-import { AnimatedBeam } from "@/components/magicui/animated-beam"
 import { NumberTicker } from "@/components/magicui/number-ticker"
 
 const EASE = [0.22, 1, 0.36, 1] as const
@@ -109,8 +107,6 @@ export function TestimonialsRender({ block: b }: { block: AnyBlock }) {
 
 export function ProcessRender({ block: b }: { block: AnyBlock }) {
   const steps = (b.steps as Array<{ title?: string; description?: string; icon?: string }>) ?? []
-  const containerRef = useRef<HTMLDivElement>(null)
-  const refs = steps.map(() => useRef<HTMLDivElement>(null))
   const ICON_MAP: Record<string, LucideIcon> = { Headphones, PenTool, Code2, TrendingUp, MessageCircle, PenLine, Code, CheckCircle, RefreshCw, Globe, Bot, Search, Video, MapPin, Shield, CreditCard }
   const GRADIENTS = ["from-fuchsia-400 to-paradigm-accent", "from-paradigm-accent to-paradigm-tech", "from-paradigm-tech to-paradigm-glow", "from-paradigm-glow to-fuchsia-400", "from-paradigm-accent to-paradigm-glow", "from-violet-400 to-fuchsia-400"]
 
@@ -122,12 +118,12 @@ export function ProcessRender({ block: b }: { block: AnyBlock }) {
         {!!b.kicker && <p className="paradigm-eyebrow text-paradigm-accent mb-3 text-center">{String(b.kicker)}</p>}
         {!!b.title && <h2 className="font-display text-[28px] md:text-[44px] leading-[1.15] tracking-[-0.01em] bg-gradient-to-br from-paradigm-ink via-paradigm-accent to-paradigm-glow bg-clip-text text-transparent text-center mb-4">{String(b.title)}</h2>}
         {!!b.subtitle && <p className="text-[15px] text-paradigm-ink-soft max-w-2xl mx-auto text-center mb-12 leading-[1.85]">{String(b.subtitle)}</p>}
-        <div ref={containerRef} className="relative grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
+        <div className="relative grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
           {steps.map((s, idx) => {
             const Icon = (s.icon && ICON_MAP[s.icon]) ? ICON_MAP[s.icon] : ICON_MAP.Code2
             const grad = GRADIENTS[idx % GRADIENTS.length]
             return (
-              <motion.div key={idx} ref={refs[idx]} initial={{ opacity: 0, y: 28, scale: 0.95 }} whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              <motion.div key={idx} initial={{ opacity: 0, y: 28, scale: 0.95 }} whileInView={{ opacity: 1, y: 0, scale: 1 }}
                 viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.6, delay: idx * 0.12, ease: EASE }}
                 className="relative paradigm-glass rounded-2xl p-6 md:p-7 paradigm-glow-sm hover:paradigm-glow-md hover:-translate-y-1.5 transition-all duration-500">
                 <span className="absolute top-4 right-5 font-display text-[28px] md:text-[40px] leading-none text-paradigm-ink/8">0{idx + 1}</span>
