@@ -1,9 +1,9 @@
 ## CURRENT STATUS - 2026-07-09 トップページCMS化 + JA/EN出し分け 本番反映完了
 
 ### 本番確認
-- `/ja` → CMS homepage (home-ja): ✅ 中小企業のデジタルパートナー / Web制作×AI 表示
-- `/en` → CMS homepage (home-en): ✅ FOR FOREIGN BRANDS / invisible in Japan 表示
-- `isHomepage` flag + slug-based locale routing で動作
+- `/ja` → CMS homepage (home-ja): ✅ シネマティック品質 (dark Hero+Meteors+Sparkles+gradients)
+- `/en` → CMS homepage (home-en): ✅ シネマティック品質 (dark Hero+Meteors+Sparkles+gradients)
+- 全BlockRenderer: framer-motion + Magic UI (Sparkles/Meteors/BorderBeam/AnimatedBeam/NumberTicker) + gradient 注入済み
 
 - **決定事項**:
   - JAロケール: Web制作メイン（国内SMB向け）
