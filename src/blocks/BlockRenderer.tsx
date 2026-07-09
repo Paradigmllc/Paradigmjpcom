@@ -16,7 +16,7 @@
 import BlockRendererHero from "./BlockRendererHero"
 import { SectionRender, CTARender, FAQRender, RichTextRender, SplitContentRender } from "./BlockRendererContent"
 import { VideoRender, MarqueeRender, LogoCloudRender } from "./BlockRendererMedia"
-import { CardGridRender, StatsRender, TestimonialsRender, ProcessRender, PricingRender, TimelineRender, ComparisonRender } from "./BlockRendererCards"
+import { CardGridRender, StatsRender, TestimonialsRender, ProcessRender, PricingRender, TimelineRender } from "./BlockRendererCards"
 
 interface AnyBlock {
   blockType: string
@@ -40,7 +40,6 @@ const RENDERERS: Record<string, (b: AnyBlock) => React.ReactNode> = {
   video: VideoRender,
   "split-content": SplitContentRender,
   timeline: TimelineRender,
-  comparison: ComparisonRender,
 }
 
 export default function BlockRenderer({ blocks }: { blocks: AnyBlock[] }) {

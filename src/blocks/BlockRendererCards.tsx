@@ -178,59 +178,6 @@ export function PricingRender(b: AnyBlock) {
   )
 }
 
-export function ComparisonRender(b: AnyBlock) {
-  const rows = (b.rows as Array<{ item?: string; leftValue?: string; rightValue?: string }>) ?? []
-  const leftLabel = (b.leftLabel as string) ?? "Paradigm"
-  const rightLabel = (b.rightLabel as string) ?? "Traditional"
-  return (
-    <section className="bg-paradigm-paper paradigm-section py-24 md:py-32">
-      <div className="max-w-5xl mx-auto px-6 md:px-12">
-        {!!b.kicker && <p className="paradigm-eyebrow text-paradigm-accent mb-4 text-center">{String(b.kicker)}</p>}
-        {!!b.title && (
-          <h2 className="font-display text-[28px] md:text-[44px] leading-[1.15] tracking-[-0.01em] text-paradigm-ink text-center mb-4">
-            {String(b.title)}
-          </h2>
-        )}
-        {!!b.subtitle && (
-          <p className="text-[15px] text-paradigm-ink-soft max-w-2xl mx-auto text-center mb-12 leading-[1.85]">
-            {String(b.subtitle)}
-          </p>
-        )}
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b-2 border-paradigm-ink">
-                <th className="text-left py-4 px-4 text-[12px] tracking-[0.14em] uppercase text-paradigm-ink-soft font-medium" />
-                <th className="text-left py-4 px-4 text-[12px] tracking-[0.14em] uppercase text-paradigm-ink font-display font-semibold">
-                  {leftLabel}
-                </th>
-                <th className="text-left py-4 px-4 text-[12px] tracking-[0.14em] uppercase text-paradigm-ink-soft font-medium">
-                  {rightLabel}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r, i) => (
-                <tr key={i} className="border-b border-paradigm-line last:border-0">
-                  <td className="py-4 px-4 text-[13px] md:text-[14px] text-paradigm-ink-soft font-medium">
-                    {r.item ?? ""}
-                  </td>
-                  <td className="py-4 px-4 text-[13px] md:text-[14px] text-paradigm-ink font-display font-semibold">
-                    {r.leftValue ?? ""}
-                  </td>
-                  <td className="py-4 px-4 text-[13px] md:text-[14px] text-paradigm-ink-soft">
-                    {r.rightValue ?? ""}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-  )
-}
-
 export function TimelineRender(b: AnyBlock) {
   const items = (b.items as Array<{ date?: string; title?: string; description?: string }>) ?? []
   return (

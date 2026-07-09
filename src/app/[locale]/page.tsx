@@ -1,12 +1,21 @@
+/**
+ * /[locale] — Aesop-style luxury homepage
+ *
+ * All 12 locales render the same Aesop 8-band cinematic composition (HomeClient).
+ * Next-intl translations handle locale-specific text via the "home" namespace.
+ *
+ * 入力:   params.locale (12 locales)
+ * 出力:   <HomeClient> (next-intl aware)
+ */
+
 import HomeClient from "./HomeClient"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 300
 
-export default function HomePage() {
-  try {
-    return <HomeClient />
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error)
-    return <div className="p-20"><h1>SSR Error</h1><pre className="text-red-500">{msg}</pre></div>
-  }
+interface Props {
+  params: Promise<{ locale: string }>
+}
+
+export default async function HomePage({ params }: Props) {
+  return <HomeClient />
 }
