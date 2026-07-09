@@ -31,8 +31,8 @@ export default async function PageHero({ badge, title, desc, highlight }: PageHe
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-paradigm-accent/30 to-transparent" />
       <div className="mx-auto grid max-w-[1180px] grid-cols-1 gap-10 px-5 md:grid-cols-[minmax(0,1fr)_320px] md:px-8 lg:px-10">
         <div>
-          <p className="paradigm-eyebrow mb-5 text-paradigm-accent">{badge}</p>
-          <h1 className="max-w-4xl font-display text-[34px] leading-[1.1] text-paradigm-ink md:text-[54px]">
+          <p className="paradigm-eyebrow mb-5 text-paradigm-accent anim-fade-up">{badge}</p>
+          <h1 className="max-w-4xl font-display text-[34px] leading-[1.1] text-paradigm-ink md:text-[54px] anim-fade-up-1">
             {parts.match ? (
               <>
                 {parts.before}
@@ -44,13 +44,13 @@ export default async function PageHero({ badge, title, desc, highlight }: PageHe
             )}
           </h1>
           {desc && (
-            <p className="mt-6 max-w-2xl text-[14px] leading-[1.9] text-paradigm-ink-soft md:text-[16px]">
+            <p className="mt-6 max-w-2xl text-[14px] leading-[1.9] text-paradigm-ink-soft md:text-[16px] anim-fade-up-2">
               {desc}
             </p>
           )}
-        </div>
 
-        <aside className="self-end border-l border-paradigm-line pl-6">
+        </div>
+        <aside className="self-end border-l border-paradigm-line pl-6 anim-fade-up-3">
           <p className="text-[12px] leading-[1.8] text-paradigm-ink-mute">
             {tFooter("companyTagline")}
           </p>
