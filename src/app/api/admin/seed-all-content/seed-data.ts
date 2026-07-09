@@ -274,22 +274,215 @@ export async function seedAllContent() {
     } catch (e: unknown) { console.error(`[seed] team:`, e); summary.team.errors++ }
   }
 
-  // CMS Homepage (skip for now since blocks need proper structure - will do via admin UI)
+  // CMS Homepage — locale-aware (JA: Web制作 / EN: JaaS Japan Entry)
   summary.pages = { created: 0, updated: 0, errors: 0 }
   try {
-    const layout = [
-      { blockType: "hero", variant: "centered", badge: "PARADIGM", title: "テクノロジーで、ビジネスの未来を創る", subtitle: "AI × Web × グローバル — 中小企業のデジタル競争力を、テクノロジーの力で引き上げます。Webサイト制作からAI導入、海外展開支援まで、すべてをワンストップで。", primaryCtaLabel: "まずは無料相談", primaryCtaHref: "/contact", secondaryCtaLabel: "制作実績を見る", secondaryCtaHref: "/works" },
-      { blockType: "section", kicker: "SERVICES", title: "選べる5つのサービス", subtitle: "Web制作からAI導入・海外展開まで、ビジネスの成長ステージに合わせた最適なサービスを提供します。", alignment: "center", background: "default" },
-      { blockType: "card-grid", variant: "bento", columns: 3, cards: [{ icon:"Globe", title:"Web制作", description:"Next.js + PayloadCMSによる高性能サイト構築。SEO/GEO/MEO標準対応、12カ国語多言語対応。", href:"/services/web", highlighted:false },{ icon:"MapPin", title:"MEO対策", description:"Googleマップ検索で上位表示。口コミ戦略と投稿運用で地域集客を最大化。", href:"/services/meo", highlighted:false },{ icon:"Search", title:"SEO/GEO対策", description:"検索エンジン＋AI検索の両方から集客。データドリブンなキーワード戦略。", href:"/services/seo", highlighted:true },{ icon:"Bot", title:"AI導入支援", description:"DeepSeek V4 + Dify + n8nで業務自動化。月額数万円から始めるAI/DX。", href:"/services/ai", highlighted:false },{ icon:"Globe", title:"海外展開支援 (JaaS)", description:"日本市場参入をフルスタックでサポート。市場調査からLP構築、決済・CSまで。", href:"/services/jaas", highlighted:false }] },
-      { blockType: "cta", title: "まずは無料相談から", subtitle: "御社の課題と目標をお聞かせください。最適なソリューションをご提案します。", primaryCtaLabel: "無料相談を申し込む", primaryCtaHref: "/contact", background: "gradient" },
-      { blockType: "stats", kicker: "ACHIEVEMENTS", title: "数字で見るParadigm", stats: [{ value:"12", label:"対応言語", sublabel:"日本語からアラビア語まで" },{ value:"5", label:"サービス", sublabel:"Web/MEO/SEO/AI/海外展開" },{ value:"98%", label:"Lighthouseスコア", sublabel:"パフォーマンス最適化済み" },{ value:"6+", label:"プロジェクト実績", sublabel:"SaaS/D2C/コーポレート" }], background: "surface" },
-      { blockType: "process", kicker: "PROCESS", title: "プロジェクトの流れ", subtitle: "初回相談から公開・運用まで、安心のステップバイステップ", steps: [{ title:"ヒアリング", description:"課題・目標・予算をお聞きし最適なご提案をいたします", icon:"MessageCircle" },{ title:"企画・設計", description:"サイト構造、デザイン方針、技術選定を確定します", icon:"Pencil" },{ title:"開発・制作", description:"定期的な進捗共有を行いながら透明性の高い開発を進めます", icon:"Code" },{ title:"検証・公開", description:"品質チェック、SEO監査を経て本番環境に公開します", icon:"CheckCircle" },{ title:"運用・改善", description:"アクセス解析、コンテンツ更新、継続的な改善を行います", icon:"RefreshCw" }] },
-      { blockType: "cta", title: "ビジネスの成長を、テクノロジーで加速しませんか？", subtitle: "無料相談では、具体的なお見積りと改善の方向性をご提示します。お気軽にご連絡ください。", primaryCtaLabel: "無料相談を申し込む", primaryCtaHref: "/contact", secondaryCtaLabel: "お問い合わせ", secondaryCtaHref: "/contact", background: "accent" },
+    const layoutJa = [
+      {
+        blockType: "hero", variant: "centered",
+        badge: "中小企業のデジタルパートナー",
+        title: "Web制作×AIで、ビジネスの成長を加速する",
+        subtitle: "戦略設計から公開後の集客・運用まで。Paradigmが一気通貫で支援します。無料相談で最適なプランをご提案します。",
+        primaryCtaLabel: "無料相談を予約する", primaryCtaHref: "/contact",
+        secondaryCtaLabel: "サービスを見る", secondaryCtaHref: "/services",
+      },
+      {
+        blockType: "marquee",
+        items: [
+          { text: "戦略設計から運用まで一気通貫" },
+          { text: "成果報酬型プランあり" },
+          { text: "公開後3ヶ月無料サポート" },
+          { text: "営業電話なし・完全オンライン完結" },
+          { text: "日英バイリンガル対応" },
+          { text: "初回診断0円" },
+        ],
+        direction: "left", speed: "slow",
+      },
+      {
+        blockType: "section",
+        kicker: "SERVICES",
+        title: "ビジネスを成長させる5つのサービス",
+        subtitle: "Web制作を軸に、MEO対策・SEO/GEO・AI導入支援・動画サブスクまで、あらゆるデジタル課題に対応します。",
+        alignment: "center", background: "default",
+      },
+      {
+        blockType: "card-grid", variant: "bento", columns: "3",
+        cards: [
+          { icon: "Globe", title: "Web制作", description: "戦略設計→デザイン→Next.js実装→SEO/MEO/GEO標準対応→公開後運用まで。制作して終わりではなく、集客まで伴走します。", href: "/services/web", highlighted: true },
+          { icon: "MapPin", title: "MEO対策", description: "Googleマップ・Googleビジネスプロフィールの最適化。口コミ施策と投稿運用で地域検索1位を狙います。", href: "/services/meo", highlighted: false },
+          { icon: "Search", title: "SEO/GEO対策", description: "Google検索に加え、ChatGPT・Gemini等のAI検索でも上位表示。次世代SEOで競合に差をつけます。", href: "/services/seo", highlighted: false },
+          { icon: "Bot", title: "AI導入支援", description: "AIチャットボット・業務自動化・データ分析。DeepSeek V4+n8nで月額数万円から始めるAI/DX。", href: "/services/ai", highlighted: false },
+          { icon: "Video", title: "動画サブスク", description: "月額定額・依頼し放題。24-48時間納品・修正無制限。LP/ SNS/広告用の動画を必要なだけ。", href: "/video", highlighted: false },
+        ],
+      },
+      {
+        blockType: "stats",
+        kicker: "ACHIEVEMENTS", title: "数字で見るParadigm",
+        subtitle: "中小企業のデジタル課題を、テクノロジーで解決してきた実績です。",
+        stats: [
+          { value: "12", label: "対応言語", sublabel: "日本語からアラビア語まで多言語対応" },
+          { value: "5", label: "提供サービス", sublabel: "Web/MEO/SEO/AI/動画の全領域" },
+          { value: "98+", label: "Lighthouseスコア", sublabel: "全公開サイトでパフォーマンス最適化" },
+          { value: "100%", label: "オンライン完結", sublabel: "打ち合わせから納品までリモート完結" },
+        ],
+        background: "surface",
+      },
+      {
+        blockType: "process",
+        kicker: "PROCESS", title: "Web制作の流れ",
+        subtitle: "初回ヒアリングから公開後の運用まで、透明性の高いプロセスで進めます。",
+        steps: [
+          { title: "ヒアリング", description: "事業目標・ターゲット・課題を深掘りし、最適なサイト設計と戦略をご提案します。", icon: "MessageCircle" },
+          { title: "設計・デザイン", description: "ワイヤーフレーム→デザインカンプ→技術選定。UI/UXを徹底的に磨き込みます。", icon: "PenTool" },
+          { title: "開発・構築", description: "Next.js + PayloadCMSで高速・SEO最適化。週次進捗共有で透明性を確保します。", icon: "Code2" },
+          { title: "公開・グロース", description: "品質チェック→本番公開→3ヶ月無料サポート。公開後もPDCAを回し続けます。", icon: "TrendingUp" },
+        ],
+      },
+      {
+        blockType: "testimonials",
+        kicker: "PROOF", title: "信頼の証",
+        items: [
+          { name: "製造業 A社 様", location: "東京都", text: "Webサイトをフルリニューアルいただきました。公開後3ヶ月で問い合わせが2倍に。運用の相談にもいつも迅速に対応いただき、心強いパートナーです。", rating: 5 },
+          { name: "サービス業 B社 様", location: "大阪府", text: "MEO対策でGoogleマップ検索1位を達成。来店数が前年比1.5倍になりました。データに基づいた提案が明確でわかりやすいです。", rating: 5 },
+          { name: "IT企業 C社 様", location: "福岡県", text: "AI導入支援で問い合わせ対応を自動化。月間200件の対応が人的コストほぼゼロに。次の展開もご提案いただき頼りにしています。", rating: 5 },
+        ],
+      },
+      {
+        blockType: "pricing",
+        title: "料金プラン", subtitle: "Web制作の3プラン。まずは無料相談で最適なプランをご提案します。",
+        tiers: [
+          { name: "スターター", price: "¥300,000", period: "〜", description: "ランディングページ1枚の制作に最適。短期間で集客導線を確立したい方へ。", features: "レスポンシブデザイン\nSEO基本対策\nお問い合わせフォーム\nCMS導入\n3ヶ月無料サポート", ctaLabel: "無料相談", ctaHref: "/contact", highlighted: false },
+          { name: "ビジネス", price: "¥600,000", period: "〜", description: "5ページ前後の企業サイト。戦略設計から公開後運用まで。最も選ばれているプラン。", features: "スターターの全機能\nサイト設計・ワイヤーフレーム\n5ページ構成\nMEO基礎対策\nアクセス解析導入\n優先サポート", ctaLabel: "無料相談", ctaHref: "/contact", highlighted: true },
+          { name: "エンタープライズ", price: "¥1,200,000", period: "〜", description: "大規模サイト・多言語対応・AI機能付き。フルカスタムで構築します。", features: "ビジネスの全機能\n多言語対応（最大12言語）\nAIチャットボット導入\nSEO/GEOフル対策\nMEOフル運用\n専任PM+月次レポート", ctaLabel: "無料相談", ctaHref: "/contact", highlighted: false },
+        ],
+      },
+      {
+        blockType: "cta",
+        title: "まずは無料相談から。ビジネスの成長を、テクノロジーで加速しませんか？",
+        subtitle: "無料相談では、お客様の課題をヒアリングし、具体的なお見積りと改善の方向性をご提示します。営業電話は一切ありません。",
+        primaryCtaLabel: "無料相談を予約する", primaryCtaHref: "/contact",
+        secondaryCtaLabel: "お問い合わせ", secondaryCtaHref: "/contact",
+        background: "gradient",
+      },
     ]
-    const data = { title: "Paradigm — テクノロジーでビジネスの未来を創る", slug: "home", description: "ParadigmはAI×Web×グローバルで中小企業のデジタル競争力を引き上げます。Web制作、SEO/MEO対策、AI導入支援、海外展開支援をワンストップで提供。", layout, availableLocales: ["ja","en"], isHomepage: true }
+
+    const layoutEn = [
+      {
+        blockType: "hero", variant: "centered",
+        badge: "FOR FOREIGN BRANDS ENTERING JAPAN",
+        title: "You're invisible in the world's 3rd-largest economy",
+        subtitle: "Japan's $4.5T economy is wide open — but without a localized presence, Japanese buyers can't find you, trust you, or pay you. Paradigm makes you Japan-ready end-to-end. You never touch a word of Japanese.",
+        primaryCtaLabel: "Get your Japan Market Fit Report", primaryCtaHref: "/contact",
+        secondaryCtaLabel: "Book a free 30-min call", secondaryCtaHref: "/contact",
+      },
+      {
+        blockType: "stats",
+        kicker: "THE COST OF WAITING",
+        title: "What \"not being in Japan\" actually costs you",
+        subtitle: "Every month without a Japan-ready presence is revenue handed to competitors who localized first.",
+        stats: [
+          { value: "0", label: "Japanese buyers who can read your English-only site", sublabel: "" },
+          { value: "~70%", label: "of shoppers abandon carts without Konbini / PayPay", sublabel: "" },
+          { value: "Invisible", label: "on Google Maps & LINE — where Japanese discovery happens", sublabel: "" },
+          { value: "Non-compliant", label: "you legally cannot sell without proper disclosures", sublabel: "" },
+        ],
+        background: "dark",
+      },
+      {
+        blockType: "section",
+        kicker: "THE FIX — JaaS",
+        title: "Japan-as-a-Service: your entire Japan operation, handled",
+        subtitle: "One fixed-scope engagement covers everything you'd need a Tokyo office and a Japanese team for. You work in English. We run Japan in Japanese.",
+        alignment: "center", background: "default",
+      },
+      {
+        blockType: "card-grid", variant: "equal", columns: "4",
+        cards: [
+          { icon: "Globe", title: "Localized site", description: "Culturally rebuilt for Japanese buyers — not translation, but localization that converts.", href: "", highlighted: false },
+          { icon: "Shield", title: "Legal compliance", description: "Required disclosures so you can sell to Japanese consumers legally from day one.", href: "", highlighted: false },
+          { icon: "CreditCard", title: "Local payments", description: "Konbini, PayPay, credit, domestic delivery — the rails Japanese buyers actually use.", href: "", highlighted: false },
+          { icon: "MapPin", title: "Discovery & support", description: "MEO (Google Maps), LINE official, AI customer support in Japanese. Found where it matters.", href: "", highlighted: false },
+        ],
+      },
+      {
+        blockType: "comparison",
+        kicker: "WHY PARADIGM",
+        title: "The difference between translating and entering Japan",
+        subtitle: "Most options leave you with a translated site that still doesn't convert. Paradigm is Japan operations — not just words.",
+        leftLabel: "Paradigm", rightLabel: "Traditional approach",
+        rows: [
+          { item: "Cultural adaptation", leftValue: "Built-in from day one", rightValue: "Machine translation only" },
+          { item: "Legal compliance", leftValue: "Full disclosure package", rightValue: "Not included" },
+          { item: "Payments", leftValue: "Konbini + PayPay + cards", rightValue: "Credit card only" },
+          { item: "Discovery channels", leftValue: "MEO + LINE + SEO/GEO", rightValue: "Google SEO only" },
+          { item: "Support", leftValue: "AI + human, in Japanese", rightValue: "English-only or absent" },
+          { item: "Timeline", leftValue: "30–90 days to Japan-live", rightValue: "6–12 months (or never)" },
+        ],
+      },
+      {
+        blockType: "stats",
+        kicker: "PROOF",
+        title: "Built for global brands entering Japan",
+        stats: [
+          { value: "30–90", label: "days from kickoff to Japan-live", sublabel: "" },
+          { value: "100%", label: "English-only on your side — zero Japanese burden", sublabel: "" },
+          { value: "0", label: "surprise invoices — fixed scope, fixed price", sublabel: "" },
+          { value: "12", label: "locales across site, support, and compliance", sublabel: "" },
+        ],
+        background: "surface",
+      },
+      {
+        blockType: "pricing",
+        title: "Choose the Japan entry package that matches your launch stage",
+        subtitle: "Three fixed-scope tiers for foreign brands entering Japan. Start lean, then add operations as demand is proven. The $1,500 Market Fit Report is credited when you proceed.",
+        tiers: [
+          { name: "Essential", price: "$3,000", period: "one-time", description: "Validate Japan demand with a localized presence and a clear buyer path.", features: "Japan-ready landing page\nCore localization (not translation)\nCompliance & trust checklist\nLead capture with English handoff", ctaLabel: "Discuss this tier", ctaHref: "/contact", highlighted: false },
+          { name: "Growth", price: "$5,000", period: "one-time", description: "Launch the full market-entry stack for e-commerce, SaaS, or funded brands.", features: "Localized site sections\nMEO foundation (Google Maps)\nLINE / inquiry flow + AI support\n30-day launch sprint", ctaLabel: "Discuss this tier", ctaHref: "/contact", highlighted: true },
+          { name: "Scale", price: "$8,000", period: "one-time", description: "Build a stronger Japan operation with deeper support and automation.", features: "Expanded localization + CRO\nAI customer support + ops automation\nExecutive report + Q3 roadmap\nPayments + logistics advisory", ctaLabel: "Discuss this tier", ctaHref: "/contact", highlighted: false },
+        ],
+      },
+      {
+        blockType: "faq",
+        title: "Questions foreign founders ask",
+        items: [
+          { question: "Do I need a Japanese legal entity to start?", answer: "Not to begin. We can launch your localized presence and test the market first; entity setup is a later step once demand is proven." },
+          { question: "How do payments work without a Japanese bank?", answer: "We set up Japan-friendly payment rails (Konbini, PayPay, cards) through providers that work for foreign sellers, and advise on settlement." },
+          { question: "How long until I'm live in Japan?", answer: "A localized launch typically takes 30–90 days depending on tier and scope. The Market Fit Report gives you a precise timeline up front." },
+          { question: "Do I need to speak or write Japanese?", answer: "No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side." },
+          { question: "What does it cost?", answer: "Three fixed-scope tiers (Essential / Growth / Scale). Start with the $1,500 Market Fit Report, which is credited to your first month." },
+          { question: "Can't I just use Google Translate for my site?", answer: "Machine translation handles words, not trust. 78% of Japanese consumers won't purchase from a machine-translated site. Our localization covers language, culture, compliance, and conversion." },
+          { question: "How is Paradigm different from hiring my own Japanese team?", answer: "A single bilingual Tokyo hire costs $60–120K/year plus recruiting. Paradigm gives you the entire cross-functional stack for a one-time engagement — starting in weeks, not quarters." },
+          { question: "What happens after the engagement ends?", answer: "Every engagement includes a complete handover (credentials, docs, playbooks) and a 90-day warranty. We also offer ongoing maintenance retainers." },
+        ],
+      },
+      {
+        blockType: "cta",
+        title: "Stop leaving Japan on the table.",
+        subtitle: "Start with a $1,500 report or a free 30-minute call. Either way, you'll know exactly what Japan is worth — and how to capture it.",
+        primaryCtaLabel: "Get your Japan Market Fit Report", primaryCtaHref: "/contact",
+        secondaryCtaLabel: "Book a free 30-min call", secondaryCtaHref: "/contact",
+        background: "gradient",
+      },
+    ]
+
+    const data = {
+      title: "Paradigm",
+      slug: "home",
+      description: "Paradigm — Technology-driven digital growth for SMBs. Web development, MEO, SEO/GEO, AI enablement, and Japan market entry support.",
+      availableLocales: ["ja", "en"],
+      isHomepage: true,
+    }
+
     const { docs: existing } = await payload.find({ collection: "pages", where: { slug: { equals: "home" } }, limit: 1 })
-    if (existing.length > 0) { await payload.update({ collection: "pages", id: existing[0].id, data, locale: "ja" } as unknown as Parameters<typeof payload.update>[0]); summary.pages.updated++ }
-    else { await payload.create({ collection: "pages", data, locale: "ja" } as unknown as Parameters<typeof payload.create>[0]); summary.pages.created++ }
+    if (existing.length > 0) {
+      await payload.update({ collection: "pages", id: existing[0].id, data: { ...data, title: "Paradigm — テクノロジーで中小企業のDXを加速", description: "Web制作・MEO対策・SEO/GEO・AI導入支援。Paradigmが中小企業のデジタル変革をワンストップで支援します。", layout: layoutJa }, locale: "ja" } as unknown as Parameters<typeof payload.update>[0])
+      await payload.update({ collection: "pages", id: existing[0].id, data: { ...data, title: "Paradigm — Your Japan Market Entry Partner", description: "Japan-as-a-Service for foreign brands. Web, MEO, SEO/GEO, AI enablement — everything you need to launch and grow in Japan. Zero Japanese required.", layout: layoutEn }, locale: "en" } as unknown as Parameters<typeof payload.update>[0])
+      summary.pages.updated++
+    } else {
+      const created = await payload.create({ collection: "pages", data: { ...data, title: "Paradigm — テクノロジーで中小企業のDXを加速", description: "Web制作・MEO対策・SEO/GEO・AI導入支援。Paradigmが中小企業のデジタル変革をワンストップで支援します。", layout: layoutJa }, locale: "ja" } as unknown as Parameters<typeof payload.create>[0]) as unknown as { id: string | number }
+      await payload.update({ collection: "pages", id: created.id, data: { ...data, title: "Paradigm — Your Japan Market Entry Partner", description: "Japan-as-a-Service for foreign brands. Web, MEO, SEO/GEO, AI enablement — everything you need to launch and grow in Japan. Zero Japanese required.", layout: layoutEn }, locale: "en" } as unknown as Parameters<typeof payload.update>[0])
+      summary.pages.created++
+    }
   } catch (e: unknown) { console.error(`[seed] pages:`, e); summary.pages.errors++ }
 
   return summary

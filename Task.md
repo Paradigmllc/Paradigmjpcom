@@ -1,4 +1,79 @@
-## CURRENT STATUS - 2026-07-07 本番運用開始 + E2E検証完了
+## CURRENT STATUS - 2026-07-09 トップページCMS化 + JA/EN出し分け完了
+
+### 壁打ち合意 → 実装 → 検証 一貫完了
+
+- **決定事項**:
+  - JAロケール: Web制作メイン（国内SMB向け）
+  - ENロケール(他10ロケール含む): Japan Entry Package (JaaS) メイン（海外企業向け）
+  - 動画サブスク: 全ロケール共通のDesignJoy式
+  - 全コンテンツをCMS駆動に移行（A-CONTENT永久ルール準拠）
+
+### 実装内容
+
+**Pagesコレクション拡張** (`src/collections/Pages.ts`):
+- `layout` フィールドに `localized: true` 追加 → JA/ENで異なるブロック構成が可能に
+- ComparisonBlock を layout blocks に追加
+
+**新規ブロック: ComparisonBlock**:
+- `src/blocks/Comparison.ts` — 比較テーブル用CMSブロック
+- `ComparisonRender` (`BlockRendererCards.tsx`) — Aesop-styleテーブルレンダラー
+- `BlockRenderer.tsx` に `comparison` dispatcher 登録
+
+**page.tsx をCMS駆動に書き換え** (`src/app/[locale]/page.tsx`):
+- `isHomepage: true` のPagesドキュメントを取得 → BlockRendererでレンダリング
+- CMS未設定時は旧HomeClientにフォールバック
+
+**シードデータ** (`src/app/api/admin/seed-all-content/seed-data.ts`):
+
+| ロケール | ブロック構成 | 内容 |
+|---------|------------|------|
+| JA | Hero → Marquee → Section → CardGrid(5サービス) → Stats → Process(4step) → Testimonials(3件) → Pricing(3tier) → CTA | Web制作メイン |
+| EN | Hero → Stats(損失) → Section(JaaS) → CardGrid(4機能) → Comparison(6行) → Stats(実績) → Pricing(3tier) → FAQ(8問) → CTA | JaaSメイン |
+
+### 変更ファイル一覧
+| ファイル | 変更 |
+|----------|------|
+| `src/collections/Pages.ts` | layout localized化 + ComparisonBlock追加 |
+| `src/blocks/Comparison.ts` | 新規作成 (比較テーブルブロック) |
+| `src/blocks/BlockRenderer.tsx` | comparison dispatcher追加 |
+| `src/blocks/BlockRendererCards.tsx` | ComparisonRender追加 (54行) |
+| `src/app/[locale]/page.tsx` | CMS駆動に書き換え (48行) |
+| `src/app/api/admin/seed-all-content/seed-data.ts` | JA/EN homepage layout差替 |
+
+### 検証
+- `tsc --noEmit`: 0 error ✅
+- `quality:guard`: 0 new error (既存2件: apple-final.ts silent catch / website-extract.ts 500行超) ✅
+- `npm run build`: OK ✅
+
+### 本番反映手順
+```bash
+# 1. commit + push
+# 2. npm run release:prod
+# 3. POST /api/admin/seed-all-content { confirm: true }
+#     → JA/EN両ロケールのhomepage layoutをDB投入
+# 4. /ja と /en で新CMSページが表示されることを確認
+```
+
+### Active Handoff (2026-07-09 OpenCode)
+- 完了: トップページCMS化 + JA/EN出し分け + ComparisonBlock追加
+- 残:
+  - 本番seed投入後にCMS homepageを確認
+  - Videoサブスク共通セクションのPages collection化（既存のvideoページをCMS化）
+  - 旧HomeClient/HomeEnClientの段階的削除（CMS安定稼働確認後）
+  - 多言語(ko/zh/de/fr/es/pt/ru/ar/vi/id)向けHomeClientフォールバック→全locale ENフォールバックの確認
+
+### アーキテクチャ変更
+```
+旧: page.tsx → HomeClient (8-band hardcoded)
+新: page.tsx → PayloadCMS Pages(isHomepage:true) → BlockRenderer
+    ├─ JA: layout_ja (hero/section/card-grid/stats/process/testimonials/pricing/cta)
+    └─ EN: layout_en (hero/stats/section/card-grid/comparison/stats/pricing/faq/cta)
+    └─ fallback: HomeClient (CMS未設定時)
+```
+
+### 旧実装 (保守)
+- `src/components/aesop/home/*` (9ファイル) — フォールバック用に保持。CMS安定後に削除予定。
+- `HomeClient.tsx` / `HomeEnClient.tsx` — 同上。
 
 ### 本番稼働状態
 - **Deploy**: 2026-07-07 00:54 UTC, container healthy
