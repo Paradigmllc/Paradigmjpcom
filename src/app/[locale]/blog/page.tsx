@@ -16,6 +16,7 @@ import PageHero from "@/components/PageHero"
 import FadeIn from "@/components/aesop/FadeIn"
 import { assertLocale } from "@/lib/cms/filters"
 import { LOCALE_HREFLANG } from "@/lib/locale-map"
+import { getAllBlogPosts } from "@/lib/blog-cms"
 import { BLOG_POSTS } from "@/lib/blog"
 
 export const dynamic = "force-dynamic"
@@ -67,7 +68,15 @@ export default async function BlogPage({ params }: Props) {
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
   const t = await getTranslations({ locale, namespace: "blogPage" })
 
-  const posts: PostDoc[] = locale === "ja" ? BLOG_POSTS as unknown as PostDoc[] : []
+  let posts: PostDoc[] = []
+  try {
+    posts = await getAllBlogPosts(locale) as unknown as PostDoc[]
+  } catch {
+    // PayloadCMS unavailable — fall through to BLOG_POSTS
+  }
+  if (posts.length === 0 && locale === "ja") {
+    posts = BLOG_POSTS as unknown as PostDoc[]
+  }
 
   return (
     <>
