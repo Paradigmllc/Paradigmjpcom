@@ -445,14 +445,14 @@ export async function seedAllContent() {
         blockType: "faq",
         title: "Questions foreign founders ask",
         items: [
-          { question: "Do I need a Japanese legal entity to start?", answer: "Not to begin. We can launch your localized presence and test the market first; entity setup is a later step once demand is proven." },
-          { question: "How do payments work without a Japanese bank?", answer: "We set up Japan-friendly payment rails (Konbini, PayPay, cards) through providers that work for foreign sellers, and advise on settlement." },
-          { question: "How long until I'm live in Japan?", answer: "A localized launch typically takes 30–90 days depending on tier and scope. The Market Fit Report gives you a precise timeline up front." },
-          { question: "Do I need to speak or write Japanese?", answer: "No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side." },
-          { question: "What does it cost?", answer: "Three fixed-scope tiers (Essential / Growth / Scale). Start with the $1,500 Market Fit Report, which is credited to your first month." },
-          { question: "Can't I just use Google Translate for my site?", answer: "Machine translation handles words, not trust. 78% of Japanese consumers won't purchase from a machine-translated site. Our localization covers language, culture, compliance, and conversion." },
-          { question: "How is Paradigm different from hiring my own Japanese team?", answer: "A single bilingual Tokyo hire costs $60–120K/year plus recruiting. Paradigm gives you the entire cross-functional stack for a one-time engagement — starting in weeks, not quarters." },
-          { question: "What happens after the engagement ends?", answer: "Every engagement includes a complete handover (credentials, docs, playbooks) and a 90-day warranty. We also offer ongoing maintenance retainers." },
+          { question: "Do I need a Japanese legal entity to start?", answer: textToLexical("Not to begin. We can launch your localized presence and test the market first; entity setup is a later step once demand is proven.") },
+          { question: "How do payments work without a Japanese bank?", answer: textToLexical("We set up Japan-friendly payment rails (Konbini, PayPay, cards) through providers that work for foreign sellers, and advise on settlement.") },
+          { question: "How long until I'm live in Japan?", answer: textToLexical("A localized launch typically takes 30–90 days depending on tier and scope. The Market Fit Report gives you a precise timeline up front.") },
+          { question: "Do I need to speak or write Japanese?", answer: textToLexical("No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side.") },
+          { question: "What does it cost?", answer: textToLexical("Three fixed-scope tiers (Essential / Growth / Scale). Start with the $1,500 Market Fit Report, which is credited to your first month.") },
+          { question: "Can't I just use Google Translate for my site?", answer: textToLexical("Machine translation handles words, not trust. 78% of Japanese consumers won't purchase from a machine-translated site. Our localization covers language, culture, compliance, and conversion.") },
+          { question: "How is Paradigm different from hiring my own Japanese team?", answer: textToLexical("A single bilingual Tokyo hire costs $60–120K/year plus recruiting. Paradigm gives you the entire cross-functional stack for a one-time engagement — starting in weeks, not quarters.") },
+          { question: "What happens after the engagement ends?", answer: textToLexical("Every engagement includes a complete handover (credentials, docs, playbooks) and a 90-day warranty. We also offer ongoing maintenance retainers.") },
         ],
       },
       {
@@ -466,6 +466,12 @@ export async function seedAllContent() {
     ]
 
     async function upsertHomePage(slug: string, pageTitle: string, pageDesc: string, layout: unknown[]) {
+
+  function faqAnswer(text: string) {
+    return {
+      root: { type: "root", children: [{ type: "paragraph", children: [{ type: "text", text }] }], direction: "ltr", format: "", indent: 0, version: 1 },
+    }
+  }
       const pageData = { title: pageTitle, slug, description: pageDesc, layout, availableLocales: ["ja","en"], isHomepage: true }
       const { docs: existing } = await payload.find({ collection: "pages", where: { slug: { equals: slug } }, limit: 1 })
       if (existing.length > 0) {
