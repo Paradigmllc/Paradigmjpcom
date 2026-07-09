@@ -17,6 +17,7 @@ import FadeIn from "@/components/aesop/FadeIn"
 import { assertLocale } from "@/lib/cms/filters"
 import { LOCALE_HREFLANG } from "@/lib/locale-map"
 import { withPayloadReadFallback } from "@/lib/payload-availability"
+import { getAllBlogPosts } from "@/lib/blog-cms"
 
 export const dynamic = "force-dynamic"
 
@@ -67,21 +68,7 @@ export default async function BlogPage({ params }: Props) {
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
   const t = await getTranslations({ locale, namespace: "blogPage" })
 
-  const posts = await withPayloadReadFallback<PostDoc[]>("blog.payload.find", async () => {
-      const [{ getPayload }, { default: config }] = await Promise.all([
-        import("payload"),
-        import("@payload-config"),
-      ])
-      const payload = await getPayload({ config })
-      const res = await payload.find({
-        collection: "posts",
-        where: { and: [{ status: { equals: "published" } }, { availableLocales: { contains: locale } }] },
-        sort: "-publishedAt",
-        limit: 100,
-        depth: 0,
-      })
-      return (res.docs as unknown as PostDoc[]) ?? []
-  }, [])
+  const posts = await getAllBlogPosts(locale) as unknown as PostDoc[]
 
   return (
     <>
