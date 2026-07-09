@@ -96,7 +96,10 @@ async function fetchAllPayloadPosts(locale: string): Promise<BlogPost[]> {
     } as Parameters<typeof payload.find>[0])
 
     const docs = (res?.docs ?? []) as unknown as PayloadPost[]
-    return docs.map((p) => mapPayloadToBlogPost(p, BLOG_POSTS.find((b) => b.slug === p.slug)))
+    const useFallback = cl === "ja"
+    return docs
+      .filter((p) => !!p.title)
+      .map((p) => mapPayloadToBlogPost(p, useFallback ? BLOG_POSTS.find((b) => b.slug === p.slug) : undefined))
   }, [])
 }
 
