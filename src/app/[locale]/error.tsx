@@ -45,7 +45,13 @@ export default function Error({
             {t("title")}
           </span>
         </h1>
-        <p className="text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.7] mb-8">{t("desc")}</p>
+        <p className="text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.7] mb-8">
+          {t("desc")}
+          <br />
+          <span className="text-[11px] text-red-400 mt-2 block break-all">
+            Debug: {error?.message || "No message"} {error?.digest ? `[digest: ${error.digest}]` : ""}
+          </span>
+        </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
           <button
