@@ -34,7 +34,7 @@ export function getOrganizationJsonLd(locale: string = "ja") {
         ? "Web制作・MEO対策・SEO/GEO対策・AI導入支援。デジタル技術で中小企業の成長を支援するParadigm合同会社。"
         : "Web development, MEO, SEO/GEO, and AI integration. Paradigm LLC supports SMB growth through digital technology.",
     email: "contact@paradigmjp.com",
-    sameAs: ["https://github.com/Paradigmllc"],
+    sameAs: [],
     foundingDate: "2025",
     areaServed: { "@type": "Country", name: "Japan" },
     serviceArea: { "@type": "Country", name: "Japan" },

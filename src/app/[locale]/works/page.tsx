@@ -17,7 +17,7 @@ import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
 import { filterByLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
 import { withPayloadReadFallback } from "@/lib/payload-availability"
-import { WORKS } from "@/lib/data"
+import { WORKS, WORKS_EN } from "@/lib/data"
 
 export const revalidate = 300
 
@@ -74,7 +74,8 @@ export default async function WorksPage({ params }: Props) {
       return (res.docs as unknown as WorkDoc[]) ?? []
   }, [])
   if (works.length === 0) {
-    works = WORKS.map((work, index) => ({
+    const fallback = locale === "ja" ? WORKS : WORKS_EN
+    works = fallback.map((work, index) => ({
       id: `fallback-${index}`,
       title: work.title,
       industry: work.industry,

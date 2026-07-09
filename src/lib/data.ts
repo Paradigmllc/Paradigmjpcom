@@ -217,7 +217,24 @@ export const FAQS = [
   { q: "制作期間はどのくらいですか？", a: "ライトプラン: 2-3週間、スタンダード: 1-2ヶ月、プレミアム: 2-3ヶ月が目安です。" },
 ]
 
+export const FAQS_EN = [
+  { q: "Is the initial consultation free?", a: "Yes — the first 30-minute online consultation is completely free." },
+  { q: "How long does a website build take?", a: "Light plan: 2–3 weeks, Standard: 1–2 months, Premium: 2–3 months. We'll give you an exact timeline after the initial call." },
+  { q: "Do you offer post-launch support?", a: "Yes. Every build includes 3 months of free support. After that, maintenance retainers start at ¥19,800/month." },
+  { q: "Can I update the site myself?", a: "Absolutely. All our sites come with a CMS so you can edit text, images, and blog posts without touching code." },
+  { q: "What services do you offer?", a: "Web development, MEO (local SEO for Google Maps), SEO/GEO, AI integration, and video subscriptions — all in one place." },
+  { q: "Do you work with clients outside Japan?", a: "Yes. We specialize in helping foreign brands enter the Japanese market. All communication in English." },
+  { q: "What does MEO mean?", a: "MEO (Map Engine Optimization) optimizes your Google Business Profile to rank higher in Google Maps and the local 3-pack. Critical for businesses with physical locations." },
+  { q: "How is GEO different from SEO?", a: "SEO targets Google's web search. GEO (Generative Engine Optimization) optimizes your content to be cited by AI search engines like ChatGPT and Gemini — the next frontier of search." },
+]
+
 // ─── Works (legacy JP-only export — replaced by Payload `works` collection) ─
 export const WORKS = [
   { title: "飲食店HP制作+MEO", industry: "飲食", desc: "個人経営イタリアンのHP制作とMEO対策。", metrics: "予約数 +30件/月", tags: ["Web制作", "MEO"], color: "emerald" },
+]
+
+export const WORKS_EN = [
+  { title: "Restaurant Website + MEO", industry: "Restaurant", desc: "Custom website and Google Maps optimization for an Italian restaurant — 30+ more monthly reservations.", metrics: "+30 reservations/mo", tags: ["Web Dev", "MEO"], color: "emerald" },
+  { title: "Beauty Salon MEO Campaign", industry: "Beauty", desc: "MEO strategy for a Tokyo hair salon — reached #1 on Google Maps within 3 months.", metrics: "Maps ranking #1", tags: ["MEO"], color: "violet" },
+  { title: "SaaS Japan Entry Landing Page", industry: "SaaS", desc: "Localized landing page with Konbini + PayPay checkout for a US-based SaaS entering Japan.", metrics: "40% conversion lift", tags: ["Web Dev", "JaaS"], color: "blue" },
 ]

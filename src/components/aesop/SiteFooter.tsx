@@ -153,11 +153,6 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
                 <ul className="space-y-3 text-[14px] text-paradigm-ink-soft">
                   <li><Link href="/contact" className="hover:text-paradigm-ink transition-colors">{tNav("contact")}</Link></li>
                   <li><Link href="/blog" className="hover:text-paradigm-ink transition-colors">{tNav("blog")}</Link></li>
-                  <li>
-                    <a href="https://github.com/Paradigmllc" target="_blank" rel="noopener noreferrer" className="hover:text-paradigm-ink transition-colors">
-                      GitHub
-                    </a>
-                  </li>
                 </ul>
               </div>
             </div>
@@ -172,43 +167,13 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
             </p>
             <div className="flex items-center gap-4">
               {cmsSocials.length > 0 ? (
-                // CMS Footer.socialLinks があればそれを描画
                 cmsSocials.map((s) => (
-                  <a
-                    key={s.platform + s.url}
-                    href={s.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={s.platform}
-                    className="inline-flex h-10 w-10 items-center justify-center border border-paradigm-line hover:border-paradigm-ink hover:bg-paradigm-ink hover:text-paradigm-paper transition-colors text-paradigm-ink-soft"
-                  >
+                  <a key={s.platform + s.url} href={s.url} target="_blank" rel="noopener noreferrer" aria-label={s.platform}
+                    className="inline-flex h-10 w-10 items-center justify-center border border-paradigm-line hover:border-paradigm-ink hover:bg-paradigm-ink hover:text-paradigm-paper transition-colors text-paradigm-ink-soft">
                     <SocialIcon platform={s.platform} />
                   </a>
                 ))
-              ) : (
-                // 既定: GitHub 常時 + Settings.social の twitter/linkedin
-                <>
-                  <a
-                    href="https://github.com/Paradigmllc"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={t("socialGithub")}
-                    className="inline-flex h-10 w-10 items-center justify-center border border-paradigm-line hover:border-paradigm-ink hover:bg-paradigm-ink hover:text-paradigm-paper transition-colors text-paradigm-ink-soft"
-                  >
-                    <SocialIcon platform="github" />
-                  </a>
-                  {social.twitter && (
-                    <a href={social.twitter} target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)" className="inline-flex h-10 w-10 items-center justify-center border border-paradigm-line hover:border-paradigm-ink hover:bg-paradigm-ink hover:text-paradigm-paper transition-colors text-paradigm-ink-soft">
-                      <SocialIcon platform="twitter" />
-                    </a>
-                  )}
-                  {social.linkedin && (
-                    <a href={social.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="inline-flex h-10 w-10 items-center justify-center border border-paradigm-line hover:border-paradigm-ink hover:bg-paradigm-ink hover:text-paradigm-paper transition-colors text-paradigm-ink-soft">
-                      <SocialIcon platform="linkedin" />
-                    </a>
-                  )}
-                </>
-              )}
+              ) : null}
               <a
                 href={`mailto:${contactEmail}`}
                 aria-label={t("socialEmail")}

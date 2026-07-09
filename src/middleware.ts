@@ -23,9 +23,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.rewrite(new URL(astroPath + request.nextUrl.search, astroDemoOrigin));
   }
 
-  // Root path without locale → redirect to /ja (default)
+  // Root path without locale → detect Accept-Language and redirect to best locale
   if (pathname === "/") {
-    return NextResponse.redirect(new URL("/ja", request.url));
+    const acceptLang = request.headers.get("accept-language") || ""
+    const preferred = acceptLang.toLowerCase()
+    if (preferred.includes("ja") || preferred.includes("jp")) {
+      return NextResponse.redirect(new URL("/ja", request.url))
+    }
+    return NextResponse.redirect(new URL("/en", request.url))
   }
 
   // Sales OS dashboard → Twenty SSOT

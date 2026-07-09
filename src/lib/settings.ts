@@ -91,7 +91,7 @@ const DEFAULTS: SiteSettings = {
   description: "",
   contact: { email: "info@paradigmjp.com", phone: null, address: null, businessHours: null },
   social: {
-    twitter: "https://twitter.com/paradigm_jp",
+    twitter: null,
     instagram: null,
     facebook: null,
     linkedin: null,

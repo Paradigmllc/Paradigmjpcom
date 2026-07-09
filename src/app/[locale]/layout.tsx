@@ -286,7 +286,7 @@ export default async function LocaleLayout({ children, params }: Props) {
                   ? "Web 制作・MEO 対策・SEO/GEO・AI 導入支援。Paradigm合同会社が提供する 4 つのデジタル支援サービス。"
                   : "Web development, MEO, SEO/GEO, and AI integration. Four productized services from Paradigm LLC.",
               address: { "@type": "PostalAddress", addressCountry: "JP", addressRegion: "Tokyo" },
-              sameAs: ["https://github.com/Paradigmllc"],
+              sameAs: [],
               priceRange: "¥¥¥",
               areaServed: ["JP", "US", "EU", "Worldwide"],
             }),

@@ -55,7 +55,7 @@ export function buildLocalBusinessSchema(locale: string = "ja") {
       addressCountry: "JP",
       addressRegion: "Tokyo",
     },
-    sameAs: ["https://github.com/Paradigmllc", "https://twitter.com/paradigm_jp"],
+    sameAs: [],
     serviceArea: { "@type": "Country", name: ["Japan", "Worldwide"] },
     priceRange: "¥¥¥",
     areaServed: ["JP", "US", "EU", "Worldwide"],

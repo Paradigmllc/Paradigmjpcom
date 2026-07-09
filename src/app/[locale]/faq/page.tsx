@@ -17,6 +17,7 @@ import FadeIn from "@/components/aesop/FadeIn"
 import { filterByLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
 import { FAQ_JSONLD } from "@/lib/jsonld"
 import { withPayloadReadFallback } from "@/lib/payload-availability"
+import { FAQS, FAQS_EN } from "@/lib/data"
 
 export const revalidate = 300
 
@@ -68,7 +69,7 @@ export default async function FaqPage({ params }: Props) {
         ...localeFindOptions(locale),
       })
       return (res.docs as unknown as FaqDoc[]) ?? []
-  }, [])
+  }, locale === "ja" ? FAQS.map((f, i) => ({ id: i, question: f.q, answer: { root: { type: "root", children: [{ type: "paragraph", children: [{ type: "text", text: f.a }] }], direction: "ltr", format: "", indent: 0, version: 1 } } })) : FAQS_EN.map((f, i) => ({ id: i, question: f.q, answer: { root: { type: "root", children: [{ type: "paragraph", children: [{ type: "text", text: f.a }] }], direction: "ltr", format: "", indent: 0, version: 1 } } })))
 
   const faqPairs = faqs.map((f) => ({ q: f.question ?? "", a: lexicalToPlainText(f.answer) }))
 
