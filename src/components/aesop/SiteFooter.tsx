@@ -22,7 +22,10 @@
 
 import { Link } from "@/i18n/routing"
 import { useLocale, useTranslations } from "next-intl"
+import { motion } from "framer-motion"
 import type { FooterNav } from "@/lib/navigation"
+
+const EASE = [0.22, 1, 0.36, 1] as const
 
 const SERVICE_LINKS = [
   { href: "/services/web", labelKey: "web" },
@@ -76,7 +79,8 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
     <footer className="bg-paradigm-paper-deep text-paradigm-ink mt-32">
       <div className="max-w-[1440px] mx-auto px-6 md:px-12">
         {/* Band 1 — Editorial */}
-        <section className="py-20 md:py-28 border-b border-paradigm-line">
+        <motion.section initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7, ease: EASE }}
+          className="py-20 md:py-28 border-b border-paradigm-line">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
             <div className="lg:col-span-7">
               <p className="paradigm-eyebrow mb-6">{t("company")}</p>
@@ -98,10 +102,11 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
               </Link>
             </div>
           </div>
-        </section>
+        </motion.section>
 
-        {/* Band 2 — Link columns. CMS Footer.columns があればそれを、無ければ既定 3 列。 */}
-        <section className="py-16 md:py-20 border-b border-paradigm-line">
+        {/* Band 2 — Link columns. */}
+        <motion.section initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.1, ease: EASE }}
+          className="py-16 md:py-20 border-b border-paradigm-line">
           {nav?.columns?.length ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10 md:gap-12">
               {nav.columns.map((col) => (
@@ -157,10 +162,11 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
               </div>
             </div>
           )}
-        </section>
+        </motion.section>
 
         {/* Band 3 — Studio + social */}
-        <section className="py-12 border-b border-paradigm-line">
+        <motion.section initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.15, ease: EASE }}
+          className="py-12 border-b border-paradigm-line">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <p className="text-[13px] text-paradigm-ink-soft leading-[1.8] max-w-xl">
               {nav?.studioLocation || t("studioLocation")}
@@ -186,10 +192,11 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
               </a>
             </div>
           </div>
-        </section>
+        </motion.section>
 
         {/* Band 4 — Legal micro-row */}
-        <section className="py-7 flex flex-wrap items-center justify-between gap-x-8 gap-y-3 text-[11px] tracking-wider text-paradigm-ink-mute">
+        <motion.section initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.2, ease: EASE }}
+          className="py-7 flex flex-wrap items-center justify-between gap-x-8 gap-y-3 text-[11px] tracking-wider text-paradigm-ink-mute">
           <p>
             © {new Date().getFullYear()}{" "}
             {nav?.copyright || `${t("company")} · ${t("rights")}`}
@@ -222,7 +229,7 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
             <span className="text-paradigm-ink-mute/60 mr-2">{locale.toUpperCase()}</span>
             <span className="text-paradigm-ink-soft">{tLocale("name")}</span>
           </p>
-        </section>
+        </motion.section>
       </div>
     </footer>
   )
