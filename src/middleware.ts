@@ -24,7 +24,8 @@ export function middleware(request: NextRequest) {
   }
 
   // Root path without locale → detect Accept-Language and redirect to best locale
-  if (pathname === "/") {
+  // Only on the main domain (not subdomains like twenty, demo, status, etc.)
+  if (pathname === "/" && (host === "paradigmjp.com" || host === "www.paradigmjp.com" || host.startsWith("localhost"))) {
     const acceptLang = request.headers.get("accept-language") || ""
     const preferred = acceptLang.toLowerCase()
     if (preferred.includes("ja") || preferred.includes("jp")) {
