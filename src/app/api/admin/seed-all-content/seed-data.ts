@@ -417,18 +417,6 @@ export async function seedAllContent() {
         ],
       },
       {
-        blockType: "process",
-        kicker: "HOW IT WORKS",
-        title: "Your path to Japan — 30 to 90 days",
-        subtitle: "Four stages from zero to Japan-live. You review in English at every step.",
-        steps: [
-          { title: "Discovery & audit", description: "We analyze your brand, competitors, compliance gaps, and size your Japan TAM. You get a Market Fit Report with concrete numbers.", icon: "Search" },
-          { title: "Localization & build", description: "Your site, payments, and compliance are rebuilt for Japanese buyers. All copy and UX are culturally adapted — you approve in English.", icon: "Code2" },
-          { title: "Launch & optimize", description: "Go live with MEO, LINE, and 24/7 AI support in Japanese. 30-day sprint to fine-tune conversions and discovery.", icon: "TrendingUp" },
-          { title: "Grow & scale", description: "Monthly performance reports, continuous channel expansion, and quarterly strategy reviews. You focus on your product — we run Japan.", icon: "RefreshCw" },
-        ],
-      },
-      {
         blockType: "comparison",
         kicker: "WHY PARADIGM",
         title: "The difference between translating and entering Japan",
