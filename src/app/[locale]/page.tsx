@@ -10,12 +10,8 @@
 
 import HomeClient from "./HomeClient"
 
-export const revalidate = 300
+export const dynamic = "force-dynamic"
 
-interface Props {
-  params: Promise<{ locale: string }>
-}
-
-export default async function HomePage({ params }: Props) {
+export default function HomePage() {
   return <HomeClient />
 }
