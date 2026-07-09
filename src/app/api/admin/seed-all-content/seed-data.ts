@@ -465,24 +465,26 @@ export async function seedAllContent() {
       },
     ]
 
-    const data = {
-      title: "Paradigm",
-      slug: "home",
-      description: "Paradigm — Technology-driven digital growth for SMBs. Web development, MEO, SEO/GEO, AI enablement, and Japan market entry support.",
-      availableLocales: ["ja", "en"],
-      isHomepage: true,
-    }
-
-    const { docs: existing } = await payload.find({ collection: "pages", where: { slug: { equals: "home" } }, limit: 1 })
-    if (existing.length > 0) {
-      await payload.update({ collection: "pages", id: existing[0].id, data: { ...data, title: "Paradigm — テクノロジーで中小企業のDXを加速", description: "Web制作・MEO対策・SEO/GEO・AI導入支援。Paradigmが中小企業のデジタル変革をワンストップで支援します。", layout: layoutJa }, locale: "ja" } as unknown as Parameters<typeof payload.update>[0])
-      await payload.update({ collection: "pages", id: existing[0].id, data: { ...data, title: "Paradigm — Your Japan Market Entry Partner", description: "Japan-as-a-Service for foreign brands. Web, MEO, SEO/GEO, AI enablement — everything you need to launch and grow in Japan. Zero Japanese required.", layout: layoutEn }, locale: "en" } as unknown as Parameters<typeof payload.update>[0])
-      summary.pages.updated++
-    } else {
-      const created = await payload.create({ collection: "pages", data: { ...data, title: "Paradigm — テクノロジーで中小企業のDXを加速", description: "Web制作・MEO対策・SEO/GEO・AI導入支援。Paradigmが中小企業のデジタル変革をワンストップで支援します。", layout: layoutJa }, locale: "ja" } as unknown as Parameters<typeof payload.create>[0]) as unknown as { id: string | number }
-      await payload.update({ collection: "pages", id: created.id, data: { ...data, title: "Paradigm — Your Japan Market Entry Partner", description: "Japan-as-a-Service for foreign brands. Web, MEO, SEO/GEO, AI enablement — everything you need to launch and grow in Japan. Zero Japanese required.", layout: layoutEn }, locale: "en" } as unknown as Parameters<typeof payload.update>[0])
+    async function upsertHomePage(slug: string, pageTitle: string, pageDesc: string, layout: unknown[]) {
+      const pageData = { title: pageTitle, slug, description: pageDesc, layout, availableLocales: ["ja","en"], isHomepage: true }
+      const { docs: existing } = await payload.find({ collection: "pages", where: { slug: { equals: slug } }, limit: 1 })
+      if (existing.length > 0) {
+        await payload.update({ collection: "pages", id: existing[0].id, data: pageData } as Parameters<typeof payload.update>[0])
+        summary.pages.updated++
+        return
+      }
+      await payload.create({ collection: "pages", data: pageData } as Parameters<typeof payload.create>[0])
       summary.pages.created++
     }
+
+    await upsertHomePage("home-ja",
+      "Paradigm — テクノロジーで中小企業のDXを加速",
+      "Web制作・MEO対策・SEO/GEO・AI導入支援。Paradigmが中小企業のデジタル変革をワンストップで支援します。",
+      layoutJa)
+    await upsertHomePage("home-en",
+      "Paradigm — Your Japan Market Entry Partner",
+      "Japan-as-a-Service for foreign brands. Web, MEO, SEO/GEO, AI enablement — everything you need to launch and grow in Japan. Zero Japanese required.",
+      layoutEn)
   } catch (e: unknown) { console.error(`[seed] pages:`, e); summary.pages.errors++ }
 
   return summary

@@ -2,17 +2,17 @@
  * /[locale] — CMS-driven locale-aware homepage
  *
  * Fetches the PayloadCMS Pages collection document with `isHomepage: true`
- * and renders its `layout` (localized Block array) via BlockRenderer.
+ * and renders its `layout` (Block array) via BlockRenderer.
  *
- * JA locale: Web制作メインのブロック構成
- * EN/other locales: Japan Entry Package (JaaS) メインのブロック構成
+ * JA locale → slug "home-ja" (Web制作メイン)
+ * EN/other locales → slug "home-en" (JaaS / Japan Entry Package)
  *
  * Fallback: HomeClient (hardcoded 8-band) if CMS unavailable
  */
 
 import { getPayload } from "payload"
 import config from "@payload-config"
-import { coerceLocale, filterByLocale, localeFindOptions, type AppLocale } from "@/lib/cms/filters"
+import { coerceLocale, filterByLocale, localeFindOptions } from "@/lib/cms/filters"
 import BlockRenderer from "@/blocks/BlockRenderer"
 import HomeClient from "./HomeClient"
 
@@ -28,10 +28,14 @@ async function fetchHomepage(locale: string) {
     const contentLocale = coerceLocale(locale)
     const payload = await getPayload({ config })
     const typedLocale = contentLocale as Parameters<typeof filterByLocale>[0]
+    const slug = contentLocale === "ja" ? "home-ja" : "home-en"
     const res = await payload.find({
       collection: "pages",
       where: filterByLocale(typedLocale, {
-        isHomepage: { equals: true },
+        and: [
+          { isHomepage: { equals: true } },
+          { slug: { equals: slug } },
+        ],
       }),
       limit: 1,
       depth: 2,
