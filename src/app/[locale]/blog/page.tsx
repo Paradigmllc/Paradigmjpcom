@@ -14,7 +14,7 @@ import { buildArticleSchema } from "@/lib/seo/schemas"
 import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import FadeIn from "@/components/aesop/FadeIn"
-import { assertLocale } from "@/lib/cms/filters"
+import { assertLocale, coerceLocale, localeFindOptions, type AppLocale } from "@/lib/cms/filters"
 import { LOCALE_HREFLANG } from "@/lib/locale-map"
 import { withPayloadReadFallback } from "@/lib/payload-availability"
 
@@ -73,12 +73,14 @@ export default async function BlogPage({ params }: Props) {
         import("@payload-config"),
       ])
       const payload = await getPayload({ config })
+      const cl = coerceLocale(locale) as AppLocale
       const res = await payload.find({
         collection: "posts",
-        where: { and: [{ status: { equals: "published" } }, { availableLocales: { contains: locale } }] },
+        where: { and: [{ status: { equals: "published" } }, { availableLocales: { contains: cl } }] },
         sort: "-publishedAt",
         limit: 100,
         depth: 0,
+        ...localeFindOptions(cl),
       })
       return (res.docs as unknown as PostDoc[]) ?? []
   }, [])

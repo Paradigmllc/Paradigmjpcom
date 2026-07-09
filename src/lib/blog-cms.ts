@@ -20,6 +20,7 @@
 
 import type { BlogPost } from "./blog"
 import { BLOG_POSTS } from "./blog"
+import { filterByLocale, coerceLocale, localeFindOptions, type AppLocale } from "./cms/filters"
 import { withPayloadReadFallback } from "./payload-availability"
 
 type PayloadPost = {
@@ -75,8 +76,8 @@ function mapPayloadToBlogPost(p: PayloadPost, fallbackBySlug?: BlogPost): BlogPo
 }
 
 async function fetchAllPayloadPosts(locale: string): Promise<BlogPost[]> {
+  const cl = coerceLocale(locale) as AppLocale
   return withPayloadReadFallback<BlogPost[]>("blog-cms.payload.find", async () => {
-    // dynamic import keeps lib/blog-cms.ts safe to import from edge / non-payload contexts
     const { getPayload } = await import("payload")
     const config = (await import("@payload-config")).default
     const payload = await getPayload({ config: config as Parameters<typeof getPayload>[0]["config"] })
@@ -86,11 +87,12 @@ async function fetchAllPayloadPosts(locale: string): Promise<BlogPost[]> {
       where: {
         and: [
           { status: { equals: "published" } },
-          { availableLocales: { contains: locale } },
+          { availableLocales: { contains: cl } },
         ],
       },
       limit: 200,
       depth: 1,
+      ...localeFindOptions(cl),
     } as Parameters<typeof payload.find>[0])
 
     const docs = (res?.docs ?? []) as unknown as PayloadPost[]
