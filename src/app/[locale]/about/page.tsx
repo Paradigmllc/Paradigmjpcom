@@ -10,13 +10,15 @@
  * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
  */
 import type { Metadata } from "next"
-import { Rocket, Handshake, Lightbulb } from "lucide-react"
+import { Rocket, Handshake, Lightbulb, Users } from "lucide-react"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
 import { buildArticleSchema } from "@/lib/seo/schemas"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
+import { withPayloadReadFallback } from "@/lib/payload-availability"
+import { filterByLocale, assertLocale, coerceLocale, localeFindOptions, type AppLocale } from "@/lib/cms/filters"
 
 export const dynamic = "force-dynamic"
 
@@ -51,6 +53,14 @@ export default async function AboutPage({ params }: Props) {
     desc: v.desc,
   }))
   const COMPANY_INFO = t.raw("companyInfo") as Array<[string, string]>
+
+  const teamMembers = await withPayloadReadFallback<Array<{ id: string | number; name?: string; role?: string; bio?: string }>>("about.team", async () => {
+    const [{ getPayload }, { default: config }] = await Promise.all([import("payload"), import("@payload-config")])
+    const payload = await getPayload({ config })
+    const cl = coerceLocale(locale) as AppLocale
+    const res = await payload.find({ collection: "team-members", where: filterByLocale(cl, { isActive: { equals: true } }), sort: "sortOrder", limit: 20, ...localeFindOptions(cl) })
+    return (res.docs as unknown as Array<{ id: string | number; name?: string; role?: string; bio?: string }>) ?? []
+  }, [])
 
   return (
     <>
@@ -128,6 +138,31 @@ export default async function AboutPage({ params }: Props) {
           </FadeIn>
         </div>
       </section>
+
+      {teamMembers.length > 0 && (
+        <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
+          <div className="relative z-10 max-w-5xl mx-auto px-6 md:px-8">
+            <FadeIn className="mb-8 text-center">
+              <p className="paradigm-eyebrow text-paradigm-accent mb-3">Team</p>
+              <h2 className="font-display text-[26px] md:text-[40px] leading-[1.15] text-paradigm-ink">Our team</h2>
+            </FadeIn>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {teamMembers.map((m, i) => (
+                <FadeIn key={String(m.id)} delay={i * 0.1}>
+                  <div className="paradigm-glass rounded-lg p-6 paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-paradigm-accent to-paradigm-glow text-white mb-4 paradigm-glow-sm">
+                      <Users size={20} strokeWidth={1.5} />
+                    </div>
+                    <h3 className="font-display text-[18px] md:text-[20px] leading-[1.2] text-paradigm-ink mb-1">{m.name ?? ""}</h3>
+                    <p className="paradigm-eyebrow text-paradigm-accent mb-3">{m.role ?? ""}</p>
+                    {m.bio && <p className="text-[13px] text-paradigm-ink-soft leading-[1.75]">{m.bio}</p>}
+                  </div>
+                </FadeIn>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <RichCtaBand
         eyebrow={t("ctaEyebrow")}
