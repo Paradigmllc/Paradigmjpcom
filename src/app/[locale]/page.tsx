@@ -1,35 +1,54 @@
-export default function HomePage() {
+import { getPayload } from "payload"
+import config from "@payload-config"
+import { coerceLocale, filterByLocale, localeFindOptions } from "@/lib/cms/filters"
+import BlockRenderer from "@/blocks/BlockRenderer"
+
+export const dynamic = "force-dynamic"
+
+async function fetchHomepage(locale: string) {
+  try {
+    const contentLocale = coerceLocale(locale)
+    const payload = await getPayload({ config })
+    const typedLocale = contentLocale as Parameters<typeof filterByLocale>[0]
+    const slug = contentLocale === "ja" ? "home-ja" : "home-en"
+    const res = await payload.find({
+      collection: "pages",
+      where: filterByLocale(typedLocale, {
+        and: [
+          { isHomepage: { equals: true } },
+          { slug: { equals: slug } },
+        ],
+      }),
+      limit: 1,
+      depth: 2,
+      ...localeFindOptions(typedLocale),
+    })
+    return res.docs[0] ?? null
+  } catch (e) {
+    console.error("[homepage] CMS fetch failed:", e)
+    return null
+  }
+}
+
+interface Props {
+  params: Promise<{ locale: string }>
+}
+
+export default async function HomePage({ params }: Props) {
+  const { locale } = await params
+  const page = await fetchHomepage(locale)
+
+  if (page?.layout && Array.isArray(page.layout) && page.layout.length > 0) {
+    return (
+      <BlockRenderer
+        blocks={page.layout as Array<{ blockType: string; [k: string]: unknown }>}
+      />
+    )
+  }
+
   return (
-    <div className="overflow-x-hidden">
-      <section className="relative min-h-[80vh] sm:min-h-[90vh] flex items-center bg-paradigm-ink overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 paradigm-mesh-vivid opacity-90" />
-          <div className="absolute inset-0 bg-gradient-to-br from-paradigm-ink/75 via-paradigm-ink/60 to-transparent" />
-        </div>
-        <div className="relative z-10 w-full max-w-5xl mx-auto px-6 md:px-12 pt-32 pb-20 text-center">
-          <div className="inline-flex items-center gap-2.5 bg-paradigm-surface/10 backdrop-blur-sm border border-paradigm-line/20 rounded-full px-4 py-2 mb-8">
-            <span className="w-2 h-2 rounded-full bg-gradient-to-r from-paradigm-accent to-paradigm-glow animate-pulse" />
-            <span className="paradigm-eyebrow text-paradigm-paper/80 text-[10px]">中小企業のデジタルパートナー</span>
-          </div>
-          <h1 style={{ fontSize: "clamp(2.2rem, 6.5vw, 4.5rem)" }} className="font-display leading-[1.1] tracking-[-0.04em] text-paradigm-paper mb-6">
-            <span className="bg-gradient-to-r from-paradigm-paper via-paradigm-glow to-paradigm-tech bg-clip-text text-transparent">
-              Web制作×AIで、ビジネスの成長を加速する
-            </span>
-          </h1>
-          <p className="text-[15px] md:text-[17px] text-paradigm-paper/70 max-w-2xl mx-auto mb-10 leading-[1.85] font-light">
-            戦略設計から公開後の集客・運用まで。Paradigmが一気通貫で支援します。無料相談で最適なプランをご提案します。
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="/ja/contact" className="inline-flex items-center gap-2 bg-paradigm-glow/20 backdrop-blur-sm border border-paradigm-glow/40 text-paradigm-paper hover:bg-paradigm-glow/30 px-8 py-4 text-[12px] tracking-[0.18em] uppercase transition-all rounded-xl">
-              無料相談を予約する
-            </a>
-            <a href="/ja/services" className="inline-flex items-center gap-2 border border-paradigm-paper/15 text-paradigm-paper/70 hover:bg-paradigm-paper/8 px-8 py-4 text-[12px] tracking-[0.18em] uppercase transition-colors rounded-xl">
-              サービスを見る
-            </a>
-          </div>
-        </div>
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-paradigm-paper to-transparent pointer-events-none" />
-      </section>
+    <div className="flex items-center justify-center min-h-[60vh] bg-paradigm-paper">
+      <p className="text-paradigm-ink-soft">Loading...</p>
     </div>
   )
 }
