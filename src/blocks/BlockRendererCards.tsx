@@ -2,6 +2,7 @@
 
 import { useRef } from "react"
 import { motion } from "framer-motion"
+import { Headphones, PenTool, Code2, TrendingUp, MessageCircle, PenLine, Code, CheckCircle, RefreshCw, Globe, Bot, Search, Video, MapPin, Shield, CreditCard, LucideIcon } from "lucide-react"
 import { Sparkles } from "@/components/magicui/sparkles"
 import { Meteors } from "@/components/magicui/meteors"
 import { BorderBeam } from "@/components/magicui/border-beam"
@@ -136,23 +137,8 @@ export function ProcessRender(b: AnyBlock) {
   const containerRef = useRef<HTMLDivElement>(null)
   const refs = steps.map(() => useRef<HTMLDivElement>(null))
 
-  const ICON_MAP: Record<string, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
-    Headphones: require("lucide-react").Headphones,
-    PenTool: require("lucide-react").PenTool,
-    Code2: require("lucide-react").Code2,
-    TrendingUp: require("lucide-react").TrendingUp,
-    MessageCircle: require("lucide-react").MessageCircle,
-    Pen: require("lucide-react").Pen,
-    Code: require("lucide-react").Code,
-    CheckCircle: require("lucide-react").CheckCircle,
-    RefreshCw: require("lucide-react").RefreshCw,
-    Globe: require("lucide-react").Globe,
-    Bot: require("lucide-react").Bot,
-    Search: require("lucide-react").Search,
-    Video: require("lucide-react").Video,
-    MapPin: require("lucide-react").MapPin,
-    Shield: require("lucide-react").Shield,
-    CreditCard: require("lucide-react").CreditCard,
+  const ICON_MAP: Record<string, LucideIcon> = {
+    Headphones, PenTool, Code2, TrendingUp, MessageCircle, PenLine, Code, CheckCircle, RefreshCw, Globe, Bot, Search, Video, MapPin, Shield, CreditCard,
   }
 
   const GRADIENTS = ["from-fuchsia-400 to-paradigm-accent", "from-paradigm-accent to-paradigm-tech", "from-paradigm-tech to-paradigm-glow", "from-paradigm-glow to-fuchsia-400", "from-paradigm-accent to-paradigm-glow", "from-violet-400 to-fuchsia-400"]
