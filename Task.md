@@ -1,4 +1,4 @@
-## CURRENT STATUS - 2026-07-11 全ページ Japan Entry 公開サイト仕上げ（ローカル公開品質検証完了・release未実施）
+## CURRENT STATUS - 2026-07-11 全ページ Japan Entry 公開サイト仕上げ（公開インフラ設定済み・release待ち）
 
 ### 固定条件・公開方針
 - ENの主対象は欧米豪の「意思決定が早いSMB」。業種・従業員数ではなく、短期間で最終承認できるかを適格条件にする。
@@ -7,7 +7,7 @@
 - 保守対象はJA/ENの公開ページ。旧ENサービス／LP／video／agency導線はJapan Entryへ集約し、JA/EN以外の公開localeはENへredirectする。内部・アーカイブページは`noindex`とする。
 - 営業フローの設計・運用自動化は別途壁打ちへ延期し、この作業ではHPの公開品質、問い合わせ受付、SEO、法務表示、セキュリティ、配信インフラだけを完了対象にする。
 
-### working treeで実装済み（未commit・未release）
+### 実装済み（commit / push / PR済み・未release）
 - ホームだけでなく、about / services / pricing / FAQ / works / blog / contact / legal / privacy / report系を含むJA/EN公開導線、header/footer、metadata、sitemap、robots、OG、404/error/loading、cookie consent、Dify UIを横断整備した。
 - Japan Entryの価格・CTA・適格条件を共通SSOTへ統一。未承認CMS実績、架空fallback、根拠のない診断数値・改善スコア・補助金適格性を公開面から除外し、証拠がない値は`Not measured`または明示的なestimate/targetとして扱う。
 - 問い合わせを署名付きワンタイムchallenge + production Turnstile fail-closed + atomic RPC（lead/outbox）+ idempotency/CAS claimへ更新。Slack通知をescapeし、IP/個人メール等のPIIをログへ残さない。DB変更は`migration_068_contact_submission_atomicity.sql`で用意済みだが、本番適用はrelease待ち。
@@ -24,12 +24,20 @@
 - Japan Entry主要フローPlaywright: desktop + Pixel 7相当mobile **14/14 pass**。JA/EN全公開route、旧URL redirect、固定価格、申込導線、診断デモのclaim safetyを確認。
 - axe WCAG 2.2 AA監査: JA/EN主要30 route **30/30 pass**（critical / serious 0）。代表5画面×desktop/mobileの横overflow **0**、visual screenshot確認済み。
 - `node scripts/release-doctor.mjs --local-only --allow-dirty`: **pass**。
-- ここまでの証跡に **commit、PR、merge、正式release、live smokeは含まれない**。
+- commit `6f75ad0`、push、PR #48作成済み。ここまでの証跡に **merge、正式release、live smokeは含まれない**。
+
+### 2026-07-11 公開インフラ設定
+- Cloudflare Turnstile widget `Paradigm Japan Entry Contact` をManaged mode・pre-clearance無効で作成し、`paradigmjp.com` / `www.paradigmjp.com`の2 hostを許可した。site key / secretはTask.md・git・chatへ記録せず、Coolify production envの`NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY`へ直接登録した。
+- Cloudflare SSL/TLS modeを`Full (strict)`、Minimum TLS Versionを`TLS 1.2`へ更新した。apex / wwwのA recordはCloudflare proxiedを確認した。
+- `keystatic.paradigmjp.com`はSales OSの既存Keystatic連携・release gateで参照されるため、HP公開作業では削除しない。DNS-only + origin lockで外部403の現状を維持し、営業基盤の壁打ち時に認証付き公開または廃止を判断する。
+- Coolify `paradigm-hp`でapplication health checkを有効化した。path=`/api/ready`、GET / HTTP 200、interval=30s、timeout=5s、retries=3、start period=30s。設定後も`running:healthy`を確認した。
+- Coolify resource limitsをCPU 2、memory 4GB、swap 4GB、reservation 1GB、swappiness 0へ設定した。
+- Slack即時通知credential（`SLACK_BOT_TOKEN` / `SLACK_WEBHOOK_URL` / `SLACK_CHANNEL_ID`）は未登録。問い合わせはDB lead/outboxへ原子的に保存されるため受付を失わないが、Slack即時通知はcredential登録までdegraded扱いとする。
 
 ### Active Handoff / 完了条件
-- 次: commit / push / PR / merge。Cloudflare Turnstile widgetと本番envを設定してから、merged `main`からのみ`npm run release:prod`を実行する。
+- 次: PR #48をmergeし、merged `main`からのみ`npm run release:prod`を実行する。
 - release後: migration 068、限定seed、post-deploy doctor、JA/EN全route、contact challenge、SEO/security header、Cloudflare origin lock、TLSのlive smokeを行う。営業フローは触らない。
-- **現在の外部production blocker**: 本番に`NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY`がなく、既存Cloudflare API tokenにもTurnstile write権限がない。Cloudflare Dashboardでwidgetを作成するか、Turnstile Sites Write権限のあるtokenを用意してCoolifyへ設定するまで、release doctorは意図どおりfailする。秘密値はchat／Task.md／gitへ記載しない。
+- **現在の外部production blocker**: release自体を妨げるblockerなし。Slack即時通知、会社正式情報、オフホストbackup / paid Hetzner backupは公開後の運用残課題として分離する。
 - 会社代表者・住所・電話の設定値は現状未登録のため、法定表示は申込前のメール開示fallbackを使用する。実値を取得できた時点でsettingsへ登録し、最終的な法務レビューを行う。
 
 ## CURRENT STATUS - 2026-07-10 Japan Entry固定オファー型ホームページ改修（本番反映完了）
