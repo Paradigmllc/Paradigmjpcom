@@ -5,6 +5,8 @@ import Footer from '../../components/Footer.astro';
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import { getCompany, type CompanyData } from '../../data/demoData';
 
+export const prerender = true;
+
 export function getStaticPaths() {
   return [
     { params: { company: 'paradigm' } },

@@ -10,11 +10,9 @@ export function proxy(request: NextRequest) {
   const host = request.headers.get("host") || "";
   const pathname = request.nextUrl.pathname;
 
-  // status.paradigmjp.com → infra dashboard (same Docker network)
+  // Keep the public status host independent from optional internal dashboards.
   if (host.startsWith("status.")) {
-    return NextResponse.rewrite(
-      new URL(pathname + request.nextUrl.search, "http://infra-dashboard:9877")
-    );
+    return NextResponse.redirect(new URL("/api/ready", "https://paradigmjp.com"), 308);
   }
 
   if (host.startsWith("demo.")) {
