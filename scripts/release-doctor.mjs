@@ -153,7 +153,7 @@ function checkStaticReleaseRules() {
     fail("deploy must prepare Cloudflare CIDRs before deploy and atomically apply them afterward")
   }
   const applyHelperBody = originLockHelper.match(
-    /def apply_cached_origin_lock\([\s\S]*?\n\ndef main\(/,
+    /def apply_cached_origin_lock\([\s\S]*?(?:\r?\n){2,}def main\(/,
   )?.[0] ?? ""
   if (
     noLoginDeploy.includes("refresh-traefik-origin-lock.py") &&
@@ -532,7 +532,8 @@ else
   fail=1
 fi
 
-contact_db_guard="$(docker exec supabase-db-1 psql -U postgres -d postgres -Atc "
+if [ "${POST_DEPLOY ? "1" : "0"}" = "1" ]; then
+  contact_db_guard="$(docker exec supabase-db-1 psql -U postgres -d postgres -Atc "
 select case when
   to_regclass('public.sales_contact_submissions') is not null
   and to_regprocedure('public.sales_create_contact_submission(text,text,jsonb,jsonb)') is not null
@@ -545,11 +546,14 @@ select case when
   and not has_function_privilege('anon', to_regprocedure('public.sales_atomic_screenshot_append(uuid,text,jsonb)'), 'EXECUTE')
 then 1 else 0 end;
 " 2>/dev/null || true)"
-if [ "$contact_db_guard" = "1" ]; then
-  echo "OK contact ingress table/RPC ACL/CAS guard"
+  if [ "$contact_db_guard" = "1" ]; then
+    echo "OK contact ingress table/RPC ACL/CAS guard"
+  else
+    echo "FAIL contact ingress table/RPC ACL/CAS guard"
+    fail=1
+  fi
 else
-  echo "FAIL contact ingress table/RPC ACL/CAS guard"
-  fail=1
+  echo "OK contact ingress guard deferred to post-deploy after migration apply"
 fi
 
 exit "$fail"
