@@ -12,6 +12,7 @@
 import fs from "node:fs"
 import { spawnSync } from "node:child_process"
 import { readCoolifyApplicationEnvs } from "./lib/coolify-env.mjs"
+import { sshArgs } from "./lib/ssh-options.mjs"
 
 const args = new Set(process.argv.slice(2))
 const PRE_DEPLOY = args.has("--pre-deploy") || (!args.has("--post-deploy") && !args.has("--local-only"))
@@ -23,7 +24,7 @@ const SKIP_REMOTE = args.has("--skip-remote") || process.env.RELEASE_DOCTOR_SKIP
 const BASE_URL = (process.env.RELEASE_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://paradigmjp.com").replace(/\/+$/, "")
 const TWENTY_URL = (process.env.RELEASE_TWENTY_URL || "https://twenty.paradigmjp.com").replace(/\/+$/, "")
 const REPORT_PATH = process.env.RELEASE_REPORT_SMOKE_PATH || "/en/report/ccbc-xynd21"
-const DEPLOY_HOST = process.env.PARADIGM_DEPLOY_HOST || "root@178.105.138.55"
+const DEPLOY_HOST = process.env.PARADIGM_DEPLOY_HOST || "paradigm-droplet"
 const APP_UUID = process.env.PARADIGM_APP_UUID || "n8i2sjiqvr2d8hrzppop2m2i"
 
 const failures = []
@@ -160,7 +161,7 @@ if [ "$route" != "$ip" ] && [ "$route" != "$container" ]; then
 fi
 echo "OK container=$container ip=$ip route=$route"
 `
-  const result = spawnSync("ssh", ["-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=accept-new", DEPLOY_HOST, "bash -s"], {
+  const result = spawnSync("ssh", [...sshArgs(DEPLOY_HOST, { acceptNew: true }), "bash -s"], {
     input: script,
     cwd: process.cwd(),
     env: process.env,
@@ -228,7 +229,7 @@ fi
 
 exit "$fail"
 `
-  const result = spawnSync("ssh", ["-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=accept-new", DEPLOY_HOST, "bash -s"], {
+  const result = spawnSync("ssh", [...sshArgs(DEPLOY_HOST, { acceptNew: true }), "bash -s"], {
     input: script,
     cwd: process.cwd(),
     env: process.env,

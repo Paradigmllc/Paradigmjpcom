@@ -17,6 +17,7 @@ import {
   DEFAULT_COOLIFY_URL,
   getCoolifyAuth as getSharedCoolifyAuth,
 } from "./lib/coolify-env.mjs"
+import { sshArgs } from "./lib/ssh-options.mjs"
 
 function envValue(name, fallback = null) {
   const value = process.env[name]
@@ -33,7 +34,7 @@ const SKIP_DB_VERIFY = process.argv.includes("--skip-db-verify")
 const SKIP_DB_SSH_FALLBACK = process.argv.includes("--skip-db-ssh-fallback")
 const CANCEL_ON_TIMEOUT = process.argv.includes("--cancel-on-timeout")
 let preferDbSshChannel = false
-const DEPLOY_HOST = process.env.PARADIGM_DEPLOY_HOST || "root@178.105.138.55"
+const DEPLOY_HOST = process.env.PARADIGM_DEPLOY_HOST || "paradigm-droplet"
 
 const PRODUCTS = [
   {
@@ -443,9 +444,9 @@ async function applySqlMigrationThroughPostgres(envs, sql, label) {
 function applySqlMigrationThroughHost(sql, label) {
   if (SKIP_DB_SSH_FALLBACK) return `${label}: exec_sql unavailable; DB SSH fallback skipped`
 
-  const sshTarget = envValue("PARADIGM_SUPABASE_SSH_TARGET", "root@178.105.138.55")
+  const sshTarget = envValue("PARADIGM_SUPABASE_SSH_TARGET", "paradigm-droplet")
   const dbContainer = resolveSupabaseDbContainer(sshTarget)
-  const commonArgs = ["-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=accept-new", sshTarget]
+  const commonArgs = sshArgs(sshTarget, { acceptNew: true })
   const apply = spawnSync(
     "ssh",
     [
@@ -489,11 +490,7 @@ function resolveSupabaseDbContainer(sshTarget) {
   const result = spawnSync(
     "ssh",
     [
-      "-o",
-      "BatchMode=yes",
-      "-o",
-      "StrictHostKeyChecking=accept-new",
-      sshTarget,
+      ...sshArgs(sshTarget, { acceptNew: true }),
       "docker ps --format '{{.Names}}\t{{.Image}}'",
     ],
     {
@@ -951,7 +948,7 @@ else:
     print(f"Manual Traefik route refresh: updated route to {new_container} ({new_ip})")
 PY
 `
-  const result = spawnSync("ssh", ["-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=accept-new", DEPLOY_HOST, "bash -s"], {
+  const result = spawnSync("ssh", [...sshArgs(DEPLOY_HOST, { acceptNew: true }), "bash -s"], {
     input: script,
     cwd: process.cwd(),
     env: process.env,
