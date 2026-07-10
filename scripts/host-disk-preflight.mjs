@@ -8,6 +8,7 @@
  */
 
 import { spawnSync } from "node:child_process"
+import { sshArgs } from "./lib/ssh-options.mjs"
 
 const host = process.env.PARADIGM_DEPLOY_HOST || "paradigm-droplet"
 const pruneAt = Number.parseInt(process.env.PARADIGM_DISK_PRUNE_AT || "70", 10)
@@ -18,7 +19,7 @@ const skip = process.argv.includes("--skip") || process.env.PARADIGM_SKIP_HOST_P
 function ssh(command) {
   const result = spawnSync(
     "ssh",
-    ["-o", "BatchMode=yes", "-o", `ConnectTimeout=${timeoutSec}`, host, command],
+    [...sshArgs(host, { connectTimeout: timeoutSec }), command],
     { encoding: "utf8" },
   )
   if (result.status !== 0) {

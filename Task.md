@@ -11,12 +11,14 @@
 - `/en/contact?intent=japan-entry` に専用申込フォームを追加。会社URL、本社国、最終決裁権、$12,000承認時期、希望開始時期、固定価格同意を必須化。
 - `/api/contact` は入力を型付きで検証・sanitizeし、Supabase lead metadataへ全項目を保存。DBベル + Slack通知を `notifyBothChannels` へ統一。
 - ENホーム／申込ページのヘッダーCTAを `Apply — $12K` と専用申込URLへ統一。
+- Release gateの分割SSH接続が本番hostの6接続目制限に当たる問題を再現し、ControlMaster socket共有へ修正。ゲート迂回なしで全remote infra check通過を確認。
 
 ### 検証（公開前）
 - `npm exec -- tsc --noEmit`: 0 error ✅
 - `contact-payload.test.ts`: 5/5 pass ✅
 - `npm run build`: 337 pages、exit 0 ✅
 - Chrome実表示: 新Hero・固定価格・選別項目・`Apply — $12K`を確認。旧`Free Consult`導線なし ✅
+- Release Doctor remote preflight: Traefik / Realtime / n8n停止 / Twenty worker / publicationを全項目pass ✅
 - `quality:guard`: 今回の新規error 0。既存2件のみ（`apple-final.ts` silent catch / `website-extract.ts` 500行超）。
 - 全体テスト: 257/263 pass。既存の非関連6件は未変更（agent-team links / content templates / dify timeout / routing / sales pipeline / browser search）。
 

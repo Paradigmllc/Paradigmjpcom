@@ -13,6 +13,7 @@
 import fs from "node:fs"
 import { spawnSync } from "node:child_process"
 import { DEFAULT_APP_UUID, coolifyRequest } from "./lib/coolify-env.mjs"
+import { sshArgs } from "./lib/ssh-options.mjs"
 
 const appUuid = process.env.PARADIGM_APP_UUID || DEFAULT_APP_UUID
 const host = process.env.PARADIGM_DEPLOY_HOST || "paradigm-droplet"
@@ -25,7 +26,7 @@ const skipSsh = process.argv.includes("--skip-ssh") || process.env.PARADIGM_SKIP
 function ssh(command, input = null) {
   const result = spawnSync(
     "ssh",
-    ["-o", "BatchMode=yes", "-o", `ConnectTimeout=${timeoutSec}`, host, command],
+    [...sshArgs(host, { connectTimeout: timeoutSec }), command],
     { encoding: "utf8", input },
   )
   if (result.status !== 0) {
