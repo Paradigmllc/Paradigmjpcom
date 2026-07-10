@@ -582,6 +582,10 @@ async function applySalesDnsFreshnessLaneMigration(envs) {
   return applySqlMigration(envs, "migration_062_sales_dns_freshness_lane.sql", "Sales DNS freshness lane migration")
 }
 
+async function applyPayloadPagesPricingMigration(envs) {
+  return applySqlMigration(envs, "migration_066_payload_pages_pricing_blocks.sql", "Payload Pages pricing migration")
+}
+
 function runDeployGuard() {
   if (SKIP_DEPLOY_GUARD) {
     console.log("Coolify deploy guard: skipped")
@@ -1016,6 +1020,7 @@ async function main() {
   if (!DRY) {
     console.log(await applyReleaseTableParityMigration(envs))
     console.log(await applySalesDnsFreshnessLaneMigration(envs))
+    console.log(await applyPayloadPagesPricingMigration(envs))
     console.log(await applySalesProductsSchemaMigration(envs))
     const products = await applySalesProducts(envs)
     console.log(`Sales products: verified ${products}`)
