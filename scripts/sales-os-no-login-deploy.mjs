@@ -66,12 +66,18 @@ const PRODUCTS = [
     display_name: "Japan Entry Package (JaaS)",
     market_scope: "global",
     template_variant: "japan_entry",
-    default_currency: "JPY",
-    default_amount_yen: 300000,
+    default_currency: "USD",
+    default_amount_yen: 12000,
     is_subscription: false,
-    description: "海外SMB向けの日本市場参入パッケージ。調査、ローカライズ、LP、営業導線をまとめて提供する。",
+    description: "Fast-decision global SMBs向けの日本市場参入パッケージ。$12,000の固定セットアップで、21営業日の立ち上げ目標と最初の6ヶ月の運用を提供する。",
     sort_order: 30,
-    meta: { primary_market: "global", delivery: "lp_localization_ops" },
+    meta: {
+      primary_market: "global",
+      delivery: "lp_localization_ops",
+      setup_price_usd: 12000,
+      included_months: 6,
+      monthly_price_usd_after_included_period: 995,
+    },
   },
   {
     code: "global_video_subscription",
@@ -590,6 +596,10 @@ async function applyPayloadPagesPricingVersionsMigration(envs) {
   return applySqlMigration(envs, "migration_067_payload_pages_pricing_versions.sql", "Payload Pages pricing versions migration")
 }
 
+async function applyContactSubmissionAtomicityMigration(envs) {
+  return applySqlMigration(envs, "migration_068_contact_submission_atomicity.sql", "Contact submission atomicity migration")
+}
+
 function runDeployGuard() {
   if (SKIP_DEPLOY_GUARD) {
     console.log("Coolify deploy guard: skipped")
@@ -894,10 +904,21 @@ async function waitDeploy(uuid) {
   )
 }
 
-async function smoke(url) {
+async function smoke(url, markers = []) {
   try {
-    const res = await fetch(url, { redirect: "manual", signal: AbortSignal.timeout(30_000) })
+    const res = await fetch(url, {
+      redirect: "manual",
+      signal: AbortSignal.timeout(30_000),
+      headers: { "Cache-Control": "no-cache" },
+    })
     if (res.status < 200 || res.status >= 400) throw new Error(`${url} returned HTTP ${res.status}`)
+    if (markers.length > 0) {
+      const body = await res.text()
+      const missing = markers.filter((marker) => !body.includes(marker))
+      if (missing.length > 0) {
+        throw new Error(`${url} is missing release marker(s): ${missing.join(", ")}`)
+      }
+    }
     return res.status
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
@@ -905,19 +926,95 @@ async function smoke(url) {
   }
 }
 
+async function seedEnglishHomepage(envs) {
+  const secret = envs.ADMIN_SCRIPT_SECRET
+  if (typeof secret !== "string" || secret.trim().length < 16) {
+    throw new Error("ADMIN_SCRIPT_SECRET must be configured before publishing the English homepage")
+  }
+
+  const response = await fetch("https://paradigmjp.com/api/admin/seed-all-content", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-admin-secret": secret,
+    },
+    body: JSON.stringify({ confirm: true, scope: "homepage-en" }),
+    signal: AbortSignal.timeout(120_000),
+  })
+  const bodyText = await response.text()
+  let result = null
+  try {
+    result = bodyText ? JSON.parse(bodyText) : null
+  } catch (error) {
+    console.error("English homepage seed returned invalid JSON:", error)
+  }
+  if (!response.ok || result?.success !== true) {
+    throw new Error(
+      `English homepage publish failed: HTTP ${response.status}${bodyText ? ` ${bodyText.slice(0, 500)}` : ""}`,
+    )
+  }
+  console.log("English homepage CMS publish OK")
+}
+
+function readOriginLockHelper() {
+  return fs.readFileSync(
+    new URL("./lib/refresh-traefik-origin-lock.py", import.meta.url),
+    "utf8",
+  )
+}
+
+function runOriginLockHostScript(label, script) {
+  const result = spawnSync("ssh", [...sshArgs(DEPLOY_HOST, { acceptNew: true }), "bash -s"], {
+    input: script,
+    cwd: process.cwd(),
+    env: process.env,
+    encoding: "utf8",
+    timeout: 60_000,
+    maxBuffer: 1024 * 1024,
+  })
+  const output = `${result.stdout || ""}${result.stderr || ""}`.trim()
+  if (output) console.log(output)
+  if (result.status !== 0 || result.error) {
+    const detail = result.error ? result.error.message : "non-zero exit"
+    throw new Error(`${label} failed: ${detail}`)
+  }
+}
+
+function prepareManualTraefikOriginLock() {
+  if (DRY || SKIP_DEPLOY) {
+    console.log("Manual Traefik origin lock prepare: skipped")
+    return
+  }
+  const originLockHelper = readOriginLockHelper()
+  const script = `
+set -euo pipefail
+route_file='/data/coolify/proxy/dynamic/paradigmjp.yml'
+cache_file='/data/coolify/proxy/.paradigmjp-origin-lock-cidrs.json'
+if [ ! -f "$route_file" ]; then
+  echo "Manual Traefik origin lock prepare: route file not found"
+  exit 1
+fi
+python3 - --prepare "$route_file" "$cache_file" <<'PY'
+${originLockHelper}
+PY
+`
+  runOriginLockHostScript("Manual Traefik origin lock prepare before deploy", script)
+}
+
 function refreshManualTraefikRoute() {
-  if (SKIP_HOST_PREFLIGHT || DRY || SKIP_DEPLOY) {
+  if (DRY || SKIP_DEPLOY) {
     console.log("Manual Traefik route refresh: skipped")
     return
   }
-
+  const originLockHelper = readOriginLockHelper()
   const script = `
 set -euo pipefail
 app_uuid='${APP_UUID.replace(/'/g, "'\\''")}'
 route_file='/data/coolify/proxy/dynamic/paradigmjp.yml'
+cache_file='/data/coolify/proxy/.paradigmjp-origin-lock-cidrs.json'
 if [ ! -f "$route_file" ]; then
   echo "Manual Traefik route refresh: route file not found"
-  exit 0
+  exit 1
 fi
 new_container="$(docker ps --filter "name=${APP_UUID.replace(/"/g, '\\"')}" --format '{{.Names}}' | head -n1)"
 if [ -z "$new_container" ]; then
@@ -929,47 +1026,11 @@ if [ -z "$new_ip" ]; then
   echo "Manual Traefik route refresh: app container has no coolify network IP"
   exit 1
 fi
-python3 - "$route_file" "$new_container" "$new_ip" <<'PY'
-import re
-import sys
-from datetime import datetime, timezone
-
-path, new_container, new_ip = sys.argv[1:4]
-with open(path, encoding="utf-8") as handle:
-    text = handle.read()
-
-pattern = r"(paradigmhp-svc:\\n\\s+loadBalancer:\\n\\s+servers:\\n\\s+- url: )http://[^\\s]+:3000"
-replacement = rf"\\1http://{new_ip}:3000"
-updated, count = re.subn(pattern, replacement, text, count=1)
-if count == 0:
-    print("Manual Traefik route refresh: paradigmhp-svc upstream not found")
-    sys.exit(1)
-if updated == text:
-    print(f"Manual Traefik route refresh: already points to {new_container} ({new_ip})")
-else:
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    backup = f"{path}.bak-release-{stamp}"
-    with open(backup, "w", encoding="utf-8") as handle:
-        handle.write(text)
-    with open(path, "w", encoding="utf-8") as handle:
-        handle.write(updated)
-    print(f"Manual Traefik route refresh: updated route to {new_container} ({new_ip})")
+python3 - --apply "$route_file" "$cache_file" "$app_uuid" "$new_container" "$new_ip" <<'PY'
+${originLockHelper}
 PY
 `
-  const result = spawnSync("ssh", [...sshArgs(DEPLOY_HOST, { acceptNew: true }), "bash -s"], {
-    input: script,
-    cwd: process.cwd(),
-    env: process.env,
-    encoding: "utf8",
-    timeout: 30_000,
-    maxBuffer: 1024 * 1024,
-  })
-  const output = `${result.stdout || ""}${result.stderr || ""}`.trim()
-  if (output) console.log(output)
-  if (result.status !== 0 || result.error) {
-    const detail = result.error ? result.error.message : "non-zero exit"
-    throw new Error(`Manual Traefik route refresh failed: ${detail}`)
-  }
+  runOriginLockHostScript("Manual Traefik atomic route refresh", script)
 }
 
 async function refreshIntegrationStatus(envs) {
@@ -1009,6 +1070,9 @@ async function main() {
   const { ensureCoolifyEnvs } = await import("./lib/coolify-env.mjs")
   const requiredNonSecretEnvs = {
     FLARESOLVERR_API_URL: "http://flaresolverr:8191",
+    ...(/^(1|true|yes)$/i.test(String(envs.CLOUDFLARE_ORIGIN_LOCKED || "").trim())
+      ? { TRUSTED_PROXY_MODE: "cloudflare" }
+      : {}),
   }
   const envResult = await ensureCoolifyEnvs(APP_UUID, requiredNonSecretEnvs)
   if (envResult.set > 0) console.log(`[deploy] auto-set ${envResult.set} missing env vars in Coolify`)
@@ -1035,6 +1099,7 @@ async function main() {
     console.log(await applyIntegrationStatusMigration(envs))
     console.log(await applyRuntimeHardeningMigration(envs))
     console.log(await applySalesToolingBootstrapMigration(envs))
+    console.log(await applyContactSubmissionAtomicityMigration(envs))
     console.log(await applyVideoPipelineMigration(envs))
     console.log(await applyVideoStrategyMigration(envs))
     console.log(await applyVideoProductionMigration(envs))
@@ -1066,24 +1131,49 @@ async function main() {
   }
 
   if (!DRY && !SKIP_DEPLOY) {
+    prepareManualTraefikOriginLock()
     const uuid = await triggerDeploy()
     console.log(`Deployment queued: ${uuid}`)
     await waitDeploy(uuid)
     refreshManualTraefikRoute()
+    await seedEnglishHomepage(envs)
   } else {
     console.log("Dry/skip mode: skipped Coolify deploy")
   }
 
-  const smokeUrls = [
-    "https://paradigmjp.com/api/ready",
-    "https://paradigmjp.com/ja/admin/sales",
-    "https://paradigmjp.com/ja",
-    `https://paradigmjp.com${envValue("RELEASE_REPORT_SMOKE_PATH", "/en/report/ccbc-xynd21")}`,
-    "https://twenty.paradigmjp.com",
+  const smokeTargets = [
+    { url: "https://paradigmjp.com/api/ready" },
+    { url: "https://paradigmjp.com/ja/admin/sales" },
+    { url: "https://paradigmjp.com/ja" },
+    {
+      url: "https://paradigmjp.com/en",
+      markers: [
+        "Launch in Japan without hiring a local team",
+        "$12,000",
+        "Apply for Japan Entry",
+      ],
+    },
+    {
+      url: "https://paradigmjp.com/en/contact",
+      markers: [
+        "Japan Entry package.",
+        "Confirm your fit and launch timing",
+        "$12,000 fixed setup",
+      ],
+    },
+    { url: "https://paradigmjp.com/en/about" },
+    { url: "https://paradigmjp.com/en/pricing", markers: ["$12,000", "$995"] },
+    { url: "https://paradigmjp.com/en/faq", markers: ["$12,000"] },
+    { url: "https://paradigmjp.com/en/works" },
+    { url: "https://paradigmjp.com/en/blog" },
+    { url: "https://paradigmjp.com/en/privacy" },
+    { url: "https://paradigmjp.com/en/legal", markers: ["$12,000"] },
+    { url: `https://paradigmjp.com${envValue("RELEASE_REPORT_SMOKE_PATH", "/en/report/ccbc-xynd21")}` },
+    { url: "https://twenty.paradigmjp.com" },
   ]
-  for (const url of smokeUrls) {
-    const status = await smoke(url)
-    console.log(`Smoke OK: ${url} HTTP ${status}`)
+  for (const target of smokeTargets) {
+    const status = await smoke(target.url, target.markers)
+    console.log(`Smoke OK: ${target.url} HTTP ${status}`)
   }
   if (!DRY) console.log(await refreshIntegrationStatus(envs))
 }

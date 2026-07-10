@@ -9,6 +9,7 @@
  * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
  */
 import type { Metadata } from "next"
+import { permanentRedirect } from "next/navigation"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
 import { buildServiceSchema } from "@/lib/seo/schemas"
@@ -37,6 +38,7 @@ type Plan = { name: string; price: string; desc: string; features: string[]; pop
 
 export default async function WebLP({ params }: Props) {
   const { locale } = await params
+  if (locale === "en") permanentRedirect("/en#japan-entry-pricing")
   const t = await getTranslations({ locale, namespace: "lpWeb" })
   const pains = t.raw("pains") as string[]
   const solutions = t.raw("solutions") as Solution[]

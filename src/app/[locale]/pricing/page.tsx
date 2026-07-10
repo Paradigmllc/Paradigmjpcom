@@ -58,13 +58,17 @@ type PricingDoc = {
   ctaLabel?: string
 }
 
+type ScopeGroup = { title: string; items: string[] }
+
 export default async function PricingPage({ params, searchParams }: Props) {
   const { locale: rawLocale } = await params
   const { force_country } = await searchParams
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
   const contentLocale = coerceLocale(rawLocale)     // ja/en（通貨フォーマット判定専用: formatPricePPP）
+  const isEnglish = locale === "en"
   const t = await getTranslations({ locale, namespace: "pricingPage" })
   const faqPairs = (t.raw("pricingFaqs") as Array<{ q: string; a: string }>) ?? []
+  const scopeGroups = isEnglish ? (t.raw("scopeGroups") as ScopeGroup[]) : []
 
   // Billing cycle ラベルは namespace 経由で locale 別取得 (旧 BILLING_LABEL hardcode 廃止)
   const billingLabelFor = (cycle: string | undefined): string => {
@@ -80,7 +84,20 @@ export default async function PricingPage({ params, searchParams }: Props) {
   const forcedCountry = force_country?.toUpperCase()
   const country = forcedCountry || detectCountryFromHeaders(h)
 
-  const plans: PricingDoc[] = getServices(contentLocale).flatMap((service, si) =>
+  const plans: PricingDoc[] = isEnglish
+    ? [{
+        id: "japan-entry",
+        planName: t("fixedPlanName"),
+        serviceId: "japan-entry",
+        price: 12000,
+        currency: "usd",
+        billingCycle: "one-time",
+        description: t("fixedPlanDescription"),
+        features: (t.raw("fixedPlanFeatures") as string[]).map((feature) => ({ feature, included: true })),
+        isPopular: true,
+        ctaLabel: t("defaultCta"),
+      }]
+    : getServices(contentLocale).flatMap((service) =>
     getPricingFor(contentLocale, service.id as "web" | "meo" | "seo" | "ai").plans.map((plan, index) => ({
       id: `${service.id}-${plan.name}`,
       planName: `${service.title} / ${plan.name}`,
@@ -98,6 +115,15 @@ export default async function PricingPage({ params, searchParams }: Props) {
   const priceFor = (plan: PricingDoc): FormatPriceResult => {
     const priceJPY = plan.price ?? 0
     const currency = (plan.currency ?? "jpy").toUpperCase() as "JPY" | "USD"
+    if (isEnglish) {
+      return {
+        display: "$12,000",
+        adjusted: 12000,
+        original: 12000,
+        factor: 1,
+        discounted: false,
+      }
+    }
     return forcedCountry
       ? formatPricePPP(priceJPY, currency, forcedCountry, contentLocale)
       : formatPricePPPFromHeaders(priceJPY, currency, h, contentLocale)
@@ -120,13 +146,17 @@ export default async function PricingPage({ params, searchParams }: Props) {
               <p className="text-[14px] text-paradigm-ink-soft leading-[1.85] mb-7">
                 {t("emptyMessage")}
               </p>
-              <Link href="/contact" className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors">
+              <Link
+                href={isEnglish ? "/contact?intent=japan-entry" : "/contact"}
+                {...(isEnglish ? { "data-umami-event": "japan-entry-apply", "data-umami-event-source": "pricing-empty" } : {})}
+                className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
+              >
                 {t("emptyCta")}
               </Link>
             </FadeIn>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+              <div className={`grid grid-cols-1 gap-3 md:gap-4 ${isEnglish ? "max-w-2xl mx-auto" : "md:grid-cols-2 lg:grid-cols-3"}`}>
                 {plans.map((plan, idx) => {
                   const price = priceFor(plan)
                   const billingLabel = billingLabelFor(plan.billingCycle)
@@ -189,7 +219,11 @@ export default async function PricingPage({ params, searchParams }: Props) {
                           </ul>
                         )}
                         <Link
-                          href="/contact"
+                          href={isEnglish ? "/contact?intent=japan-entry" : "/contact"}
+                          {...(isEnglish ? {
+                            "data-umami-event": "japan-entry-apply",
+                            "data-umami-event-source": "pricing-card",
+                          } : {})}
                           className={`mt-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-[11px] tracking-[0.14em] uppercase font-semibold transition-colors ${
                             plan.isPopular
                               ? "bg-paradigm-ink text-paradigm-paper hover:bg-paradigm-accent"
@@ -203,13 +237,42 @@ export default async function PricingPage({ params, searchParams }: Props) {
                   )
                 })}
               </div>
-              <p className="mt-6 paradigm-eyebrow text-paradigm-ink-mute text-center text-[10px]">
-                {t("regionFooter", { country })}
-              </p>
+              {!isEnglish && (
+                <p className="mt-6 paradigm-eyebrow text-paradigm-ink-mute text-center text-[10px]">
+                  {t("regionFooter", { country })}
+                </p>
+              )}
             </>
           )}
         </div>
       </section>
+
+      {scopeGroups.length > 0 && (
+        <section className="relative overflow-hidden bg-paradigm-paper-deep paradigm-section" aria-labelledby="scope-heading">
+          <div className="paradigm-mesh opacity-30" />
+          <div className="relative z-10 mx-auto max-w-5xl px-6 md:px-8">
+            <FadeIn className="mb-8 max-w-2xl">
+              <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{t("scopeEyebrow")}</p>
+              <h2 id="scope-heading" className="font-display text-[24px] leading-[1.15] text-paradigm-ink md:text-[36px]">
+                {t("scopeTitle")}
+              </h2>
+              <p className="mt-4 text-[14px] leading-[1.8] text-paradigm-ink-soft">{t("scopeDesc")}</p>
+            </FadeIn>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {scopeGroups.map((group) => (
+                <FadeIn key={group.title}>
+                  <div className="h-full rounded-lg border border-paradigm-line bg-paradigm-paper p-6 paradigm-glow-sm">
+                    <h3 className="font-display text-[18px] text-paradigm-ink">{group.title}</h3>
+                    <ul className="mt-4 list-disc space-y-2 pl-5 text-[13px] leading-[1.75] text-paradigm-ink-soft">
+                      {group.items.map((item) => <li key={item}>{item}</li>)}
+                    </ul>
+                  </div>
+                </FadeIn>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {faqPairs.length > 0 && (
         <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
@@ -225,11 +288,10 @@ export default async function PricingPage({ params, searchParams }: Props) {
             </FadeIn>
             <ul className="space-y-3">
               {faqPairs.map((faq, i) => (
-                <FadeIn key={i} delay={i * 0.04}>
-                  <li className="paradigm-glass rounded-lg paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500 overflow-hidden">
+                <FadeIn key={i} delay={i * 0.04} as="li" className="paradigm-glass rounded-lg paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500 overflow-hidden">
                     <details className="group">
                       <summary className="cursor-pointer flex items-start gap-4 p-5 list-none [&::-webkit-details-marker]:hidden">
-                        <span className="font-display text-[18px] leading-none text-paradigm-accent mt-1 flex-shrink-0">
+                        <span aria-hidden className="font-display text-[18px] leading-none text-paradigm-accent mt-1 flex-shrink-0">
                           Q.
                         </span>
                         <span className="font-display text-[15px] md:text-[18px] leading-[1.4] text-paradigm-ink flex-1 pr-4 ">
@@ -241,7 +303,6 @@ export default async function PricingPage({ params, searchParams }: Props) {
                         <p className="text-[13px] md:text-[14px] text-paradigm-ink-soft leading-[1.85] whitespace-pre-line">{faq.a}</p>
                       </div>
                     </details>
-                  </li>
                 </FadeIn>
               ))}
             </ul>
@@ -255,6 +316,8 @@ export default async function PricingPage({ params, searchParams }: Props) {
         highlight={t("ctaHighlight")}
         desc={t("ctaDesc")}
         buttonLabel={t("ctaButton")}
+        buttonHref={isEnglish ? "/contact?intent=japan-entry" : "/contact"}
+        analyticsSource="pricing-final-cta"
       />
       <script
         type="application/ld+json"

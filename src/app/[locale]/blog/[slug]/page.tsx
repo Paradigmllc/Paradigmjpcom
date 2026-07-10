@@ -9,6 +9,7 @@ import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
 import { LOCALE_OG_LOCALE, LOCALE_ORG_NAME } from "@/lib/locale-map"
 import { pageAlternates } from "@/lib/page-metadata"
+import { MARKETING_LOCALES } from "@/i18n/locales"
 import { ArrowRight, Calendar, Clock, Tag } from "lucide-react"
 
 export const dynamic = "force-dynamic"
@@ -19,13 +20,24 @@ export async function generateMetadata({
   params: Promise<{ slug: string; locale: string }>
 }): Promise<Metadata> {
   const { slug, locale } = await params
-  const t = await getTranslations({ locale, namespace: "blogPostPage" })
-  const post = await getBlogPostBySlug(slug, locale)
+  const [t, localizedPosts] = await Promise.all([
+    getTranslations({ locale, namespace: "blogPostPage" }),
+    Promise.all(
+      MARKETING_LOCALES.map(async (candidate) => ({
+        locale: candidate,
+        post: await getBlogPostBySlug(slug, candidate),
+      })),
+    ),
+  ])
+  const post = localizedPosts.find((entry) => entry.locale === locale)?.post ?? null
   if (!post) return { title: t("notFound") }
+  const availableLocales = localizedPosts
+    .filter((entry) => entry.post !== null)
+    .map((entry) => entry.locale)
   return {
     title: post.title,
     description: post.excerpt,
-    alternates: pageAlternates(locale, `/blog/${slug}`),
+    alternates: pageAlternates(locale, `/blog/${slug}`, availableLocales),
     openGraph: {
       title: post.title, description: post.excerpt, type: "article",
       publishedTime: post.date,
@@ -34,8 +46,26 @@ export async function generateMetadata({
   }
 }
 
-function formatInline(text: string): string {
+function escapeHtml(text: string): string {
   return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;")
+}
+
+function headingId(text: string): string {
+  return text
+    .normalize("NFKD")
+    .toLowerCase()
+    .replace(/[^a-z0-9\u3040-\u30ff\u3400-\u9fff]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 64)
+}
+
+function formatInline(text: string): string {
+  return escapeHtml(text)
     .replace(/\*\*(.+?)\*\*/g, '<strong class="text-paradigm-ink font-medium">$1</strong>')
     .replace(/`(.+?)`/g, '<code class="font-mono text-[13px] bg-paradigm-paper-deep px-1.5 py-0.5 rounded border border-paradigm-line">$1</code>')
     .replace(/❌/g, '<span class="text-pink-500">❌</span>')
@@ -55,13 +85,13 @@ function renderMarkdown(md: string) {
     if (trimmed.startsWith("|")) {
       if (trimmed.replace(/[|\-\s]/g, "") === "") continue
       const cells = trimmed.split("|").filter(Boolean).map((c) => c.trim())
-      if (!inTable) { html.push('<div class="overflow-x-auto my-8 paradigm-glass rounded-2xl paradigm-glow-sm"><table class="w-full text-[14px] border-collapse"><thead><tr>'); cells.forEach((c) => html.push(`<th class="text-left py-3 px-4 border-b border-paradigm-line paradigm-eyebrow text-paradigm-accent">${c}</th>`)); html.push("</tr></thead><tbody>"); inTable = true }
-      else { html.push("<tr>"); cells.forEach((c) => html.push(`<td class="py-3 px-4 border-b border-paradigm-line/60 text-paradigm-ink-soft">${c}</td>`)); html.push("</tr>") }
+      if (!inTable) { html.push('<div class="overflow-x-auto my-8 paradigm-glass rounded-2xl paradigm-glow-sm"><table class="w-full text-[14px] border-collapse"><thead><tr>'); cells.forEach((c) => html.push(`<th scope="col" class="text-left py-3 px-4 border-b border-paradigm-line paradigm-eyebrow text-paradigm-accent">${formatInline(c)}</th>`)); html.push("</tr></thead><tbody>"); inTable = true }
+      else { html.push("<tr>"); cells.forEach((c) => html.push(`<td class="py-3 px-4 border-b border-paradigm-line/60 text-paradigm-ink-soft">${formatInline(c)}</td>`)); html.push("</tr>") }
       continue
     }
     if (inTable) { html.push("</tbody></table></div>"); inTable = false }
-    if (trimmed.startsWith("### ")) { html.push(`<h3 id="${trimmed.slice(4).toLowerCase().replace(/\s+/g,'-').slice(0,40)}" class="font-display text-[20px] md:text-[22px] leading-[1.25] text-paradigm-ink mt-10 mb-3 tracking-[-0.01em]">${trimmed.slice(4)}</h3>`); continue }
-    if (trimmed.startsWith("## ")) { html.push(`<h2 id="${trimmed.slice(3).toLowerCase().replace(/\s+/g,'-').slice(0,40)}" class="font-display text-[24px] md:text-[28px] leading-[1.2] mt-12 mb-5 tracking-[-0.015em]"><span class="bg-gradient-to-br from-paradigm-ink via-paradigm-accent to-paradigm-tech bg-clip-text text-transparent">${trimmed.slice(3)}</span></h2>`); continue }
+    if (trimmed.startsWith("### ")) { const heading = trimmed.slice(4); html.push(`<h3 id="${headingId(heading)}" class="font-display text-[20px] md:text-[22px] leading-[1.25] text-paradigm-ink mt-10 mb-3 tracking-[-0.01em]">${formatInline(heading)}</h3>`); continue }
+    if (trimmed.startsWith("## ")) { const heading = trimmed.slice(3); html.push(`<h2 id="${headingId(heading)}" class="font-display text-[24px] md:text-[28px] leading-[1.2] mt-12 mb-5 tracking-[-0.015em]"><span class="bg-gradient-to-br from-paradigm-ink via-paradigm-accent to-paradigm-tech bg-clip-text text-transparent">${formatInline(heading)}</span></h2>`); continue }
     if (/^[-*]\s/.test(trimmed) || /^\d+\.\s/.test(trimmed)) {
       if (!inList) { html.push('<ul class="my-5 space-y-2">'); inList = true }
       html.push(`<li class="flex gap-2.5 items-start text-[13px] md:text-[14px] text-paradigm-ink-soft leading-[1.85]"><span class="inline-block w-1.5 h-1.5 rounded-full bg-gradient-to-br from-paradigm-accent to-paradigm-tech mt-2 flex-shrink-0"></span><span>${formatInline(trimmed.replace(/^[-*]\s|^\d+\.\s/, ""))}</span></li>`)
@@ -80,10 +110,10 @@ function extractToc(md: string): Array<{ id: string; text: string; level: number
   for (const line of md.split("\n")) {
     if (line.startsWith("## ")) {
       const text = line.slice(3)
-      items.push({ id: text.toLowerCase().replace(/\s+/g, "-").slice(0, 40), text, level: 2 })
+      items.push({ id: headingId(text), text, level: 2 })
     } else if (line.startsWith("### ")) {
       const text = line.slice(4)
-      items.push({ id: text.toLowerCase().replace(/\s+/g, "-").slice(0, 40), text, level: 3 })
+      items.push({ id: headingId(text), text, level: 3 })
     }
   }
   return items
@@ -101,6 +131,7 @@ export default async function BlogPostPage({
   const orgName = (LOCALE_ORG_NAME as Record<string, string>)[locale] ?? "Paradigm LLC"
   const toc = extractToc(post.content)
   const isJa = locale === "ja"
+  const contactHref = isJa ? "/contact" : "/contact?intent=japan-entry"
 
   return (
     <>
@@ -177,10 +208,10 @@ export default async function BlogPostPage({
 
                 {/* CTA Card */}
                 <div className="paradigm-glass rounded-2xl p-5 paradigm-glow-sm bg-gradient-to-br from-paradigm-accent/5 to-paradigm-glow/5">
-                  <h4 className="font-display text-[14px] text-paradigm-ink mb-2 tracking-[-0.01em]">{isJa ? "無料相談はこちら" : "Free consultation"}</h4>
-                  <p className="text-[11px] text-paradigm-ink-soft leading-[1.7] mb-4">{isJa ? "御社に最適なプランをご提案します" : "We'll propose the best plan for your business"}</p>
-                  <Link href="/contact" className="inline-flex items-center gap-1.5 text-[11px] tracking-[0.12em] uppercase font-semibold bg-paradigm-ink text-paradigm-paper hover:bg-paradigm-accent transition-colors px-4 py-2 rounded-xl paradigm-glow-sm">
-                    {isJa ? "無料相談" : "Free consult"} <ArrowRight size={12} />
+                  <h4 className="font-display text-[14px] text-paradigm-ink mb-2 tracking-[-0.01em]">{isJa ? "無料相談はこちら" : "Japan Entry — $12K fixed"}</h4>
+                  <p className="text-[11px] text-paradigm-ink-soft leading-[1.7] mb-4">{isJa ? "御社に最適なプランをご提案します" : "Apply if your team can approve this week and launch this month."}</p>
+                  <Link href={contactHref} className="inline-flex items-center gap-1.5 text-[11px] tracking-[0.12em] uppercase font-semibold bg-paradigm-ink text-paradigm-paper hover:bg-paradigm-accent transition-colors px-4 py-2 rounded-xl paradigm-glow-sm">
+                    {isJa ? "無料相談" : "Apply — $12K"} <ArrowRight size={12} />
                   </Link>
                 </div>
               </div>
@@ -195,6 +226,7 @@ export default async function BlogPostPage({
         highlight={t("ctaHighlight")}
         desc={t("ctaDesc")}
         buttonLabel={t("ctaButton")}
+        buttonHref={contactHref}
       />
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({

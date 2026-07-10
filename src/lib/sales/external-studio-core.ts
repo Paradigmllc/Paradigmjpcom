@@ -106,6 +106,7 @@ export function buildExternalStudioPayload(karte: CompanyKarteSnapshot): JsonRec
       code: product.code,
       display_name: product.displayName,
       fit_score: product.fitScore,
+      default_currency: product.defaultCurrency,
       default_amount_yen: product.defaultAmountYen,
       is_subscription: product.isSubscription,
       twenty_opportunity_id: product.twentyOpportunityId,

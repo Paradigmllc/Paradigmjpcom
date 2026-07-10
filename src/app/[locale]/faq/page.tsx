@@ -17,7 +17,7 @@ import FadeIn from "@/components/aesop/FadeIn"
 import { filterByLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
 import { FAQ_JSONLD } from "@/lib/jsonld"
 import { withPayloadReadFallback } from "@/lib/payload-availability"
-import { FAQS, FAQS_EN } from "@/lib/data"
+import { FAQS_EN } from "@/lib/data"
 
 export const revalidate = 300
 
@@ -53,8 +53,11 @@ export default async function FaqPage({ params }: Props) {
   const { locale: rawLocale } = await params
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
   const t = await getTranslations({ locale, namespace: "faqPage" })
+  const translatedPublicFaqs = locale === "en" || locale === "ja"
+    ? (t.raw("items") as Array<{ q: string; a: string }>)
+    : null
 
-  const faqs = await withPayloadReadFallback<FaqDoc[]>("faq.payload.find", async () => {
+  const faqs = translatedPublicFaqs ? [] : await withPayloadReadFallback<FaqDoc[]>("faq.payload.find", async () => {
       const [{ getPayload }, { default: config }] = await Promise.all([
         import("payload"),
         import("@payload-config"),
@@ -69,9 +72,12 @@ export default async function FaqPage({ params }: Props) {
         ...localeFindOptions(locale),
       })
       return (res.docs as unknown as FaqDoc[]) ?? []
-  }, locale === "ja" ? FAQS.map((f, i) => ({ id: i, question: f.q, answer: { root: { type: "root", children: [{ type: "paragraph", children: [{ type: "text", text: f.a }] }], direction: "ltr", format: "", indent: 0, version: 1 } } })) : FAQS_EN.map((f, i) => ({ id: i, question: f.q, answer: { root: { type: "root", children: [{ type: "paragraph", children: [{ type: "text", text: f.a }] }], direction: "ltr", format: "", indent: 0, version: 1 } } })))
+  }, FAQS_EN.map((f, i) => ({ id: i, question: f.q, answer: { root: { type: "root", children: [{ type: "paragraph", children: [{ type: "text", text: f.a }] }], direction: "ltr", format: "", indent: 0, version: 1 } } })))
 
-  const faqPairs = faqs.map((f) => ({ q: f.question ?? "", a: lexicalToPlainText(f.answer) }))
+  const cmsFaqPairs = faqs
+    .map((f) => ({ q: f.question?.trim() ?? "", a: lexicalToPlainText(f.answer).trim() }))
+    .filter((faq) => faq.q.length > 0 && faq.a.length > 0)
+  const faqPairs = translatedPublicFaqs ?? cmsFaqPairs
 
   return (
     <>
@@ -90,18 +96,21 @@ export default async function FaqPage({ params }: Props) {
               <p className="text-[14px] text-paradigm-ink-soft leading-[1.85] mb-7">
                 {t("emptyMessage")}
               </p>
-              <Link href="/contact" className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors">
+              <Link
+                href={locale === "en" ? "/contact?intent=japan-entry" : "/contact"}
+                {...(locale === "en" ? { "data-umami-event": "japan-entry-apply", "data-umami-event-source": "faq-empty" } : {})}
+                className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
+              >
                 {t("emptyCta")}
               </Link>
             </FadeIn>
           ) : (
             <ul className="space-y-3">
               {faqPairs.map((faq, i) => (
-                <FadeIn key={i} delay={i * 0.04}>
-                  <li className="paradigm-glass rounded-lg paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500 overflow-hidden">
+                <FadeIn key={faq.q} delay={i * 0.04} as="li" className="paradigm-glass rounded-lg paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500 overflow-hidden">
                     <details className="group">
                       <summary className="cursor-pointer flex items-start gap-4 p-5 list-none [&::-webkit-details-marker]:hidden">
-                        <span className="font-display text-[18px] leading-none text-paradigm-accent mt-1 flex-shrink-0">
+                        <span aria-hidden className="font-display text-[18px] leading-none text-paradigm-accent mt-1 flex-shrink-0">
                           Q.
                         </span>
                         <span className="font-display text-[15px] md:text-[18px] leading-[1.4] text-paradigm-ink flex-1 pr-4">
@@ -113,7 +122,6 @@ export default async function FaqPage({ params }: Props) {
                         <p className="text-[13px] md:text-[14px] text-paradigm-ink-soft leading-[1.85] whitespace-pre-line">{faq.a}</p>
                       </div>
                     </details>
-                  </li>
                 </FadeIn>
               ))}
             </ul>
@@ -131,6 +139,8 @@ export default async function FaqPage({ params }: Props) {
         highlight={t("ctaHighlight")}
         desc={t("ctaDesc")}
         buttonLabel={t("ctaButton")}
+        buttonHref={locale === "en" ? "/contact?intent=japan-entry" : "/contact"}
+        analyticsSource="faq-final-cta"
       />
     </>
   )

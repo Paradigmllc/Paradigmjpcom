@@ -15,6 +15,7 @@ import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
 import PageHero from "@/components/PageHero"
 import FadeIn from "@/components/aesop/FadeIn"
+import { getSiteSettings } from "@/lib/settings"
 
 export const dynamic = "force-dynamic"
 
@@ -40,7 +41,18 @@ interface PrivacySection {
 export default async function PrivacyPage({ params }: Props) {
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: "privacyPage" })
-  const sections = t.raw("sections") as PrivacySection[]
+  const settings = await getSiteSettings(locale)
+  const sections = (t.raw("sections") as PrivacySection[]).map((section) => (
+    section.contact
+      ? {
+          ...section,
+          contact: {
+            name: settings.company.legalName || section.contact.name,
+            email: settings.contact.email || section.contact.email,
+          },
+        }
+      : section
+  ))
 
   return (
     <>

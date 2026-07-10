@@ -1,7 +1,7 @@
 /**
  * /[locale]/video — 動画サブスク LP（DesignJoy 型 productized video subscription）
  *
- * 役割:   月額動画サブスク商材の LP。月額固定・依頼無制限・いつでも停止。
+ * 役割:   月額動画サブスク商材の LP。月額固定・プラン別上限・契約条件を表示。
  * 入力:   params.locale
  * 出力:   PageHero + 比較表 + 3-Tier pricing + Process + CTA
  *
@@ -14,10 +14,12 @@
  */
 
 import type { Metadata } from "next"
+import { permanentRedirect } from "next/navigation"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
 import { buildServiceSchema } from "@/lib/seo/schemas"
 import { assertLocale } from "@/lib/cms/filters"
+import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
@@ -45,6 +47,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function VideoSubscriptionPage({ params }: Props) {
   const { locale: rawLocale } = await params
   const locale = assertLocale(rawLocale)
+  if (locale === "en") permanentRedirect("/en#japan-entry-pricing")
   const t = await getTranslations({ locale, namespace: "videoPage" })
 
   const plans = t.raw("plans") as Plan[]
@@ -133,12 +136,12 @@ export default async function VideoSubscriptionPage({ params }: Props) {
                       </li>
                     ))}
                   </ul>
-                  <a
+                  <Link
                     href="/contact?intent=video"
                     className="inline-flex w-full justify-center items-center gap-2 bg-paradigm-ink text-paradigm-paper rounded-xl py-3 text-[12px] tracking-wider uppercase font-semibold hover:bg-paradigm-accent transition-colors"
                   >
                     {t("ctaButton")}
-                  </a>
+                  </Link>
                 </div>
               </FadeIn>
             ))}

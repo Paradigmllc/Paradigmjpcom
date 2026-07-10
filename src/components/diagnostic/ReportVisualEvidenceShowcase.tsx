@@ -63,7 +63,7 @@ export default function ReportVisualEvidenceShowcase({
               <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
               <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
-              <span className="ml-auto text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
+              <span className="ml-auto text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-600">
                 {lang === "ja" ? "Visual audit layer" : "Visual audit layer"}
               </span>
             </div>

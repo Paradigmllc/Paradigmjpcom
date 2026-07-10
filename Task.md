@@ -1,3 +1,37 @@
+## CURRENT STATUS - 2026-07-11 全ページ Japan Entry 公開サイト仕上げ（ローカル公開品質検証完了・release未実施）
+
+### 固定条件・公開方針
+- ENの主対象は欧米豪の「意思決定が早いSMB」。業種・従業員数ではなく、短期間で最終承認できるかを適格条件にする。
+- 商条件はセットアップ **$12,000固定**、最初の6か月 **$0/month**、7か月目以降 **$995/month**。解約条件は「署名済み契約条件に従う」に統一し、「いつでも解約可」は使用しない。
+- 初月 **20 qualified launches** は変更不可の社内運用目標として表示し、成果保証ではないことを明示する。
+- 保守対象はJA/ENの公開ページ。旧ENサービス／LP／video／agency導線はJapan Entryへ集約し、JA/EN以外の公開localeはENへredirectする。内部・アーカイブページは`noindex`とする。
+- 営業フローの設計・運用自動化は別途壁打ちへ延期し、この作業ではHPの公開品質、問い合わせ受付、SEO、法務表示、セキュリティ、配信インフラだけを完了対象にする。
+
+### working treeで実装済み（未commit・未release）
+- ホームだけでなく、about / services / pricing / FAQ / works / blog / contact / legal / privacy / report系を含むJA/EN公開導線、header/footer、metadata、sitemap、robots、OG、404/error/loading、cookie consent、Dify UIを横断整備した。
+- Japan Entryの価格・CTA・適格条件を共通SSOTへ統一。未承認CMS実績、架空fallback、根拠のない診断数値・改善スコア・補助金適格性を公開面から除外し、証拠がない値は`Not measured`または明示的なestimate/targetとして扱う。
+- 問い合わせを署名付きワンタイムchallenge + production Turnstile fail-closed + atomic RPC（lead/outbox）+ idempotency/CAS claimへ更新。Slack通知をescapeし、IP/個人メール等のPIIをログへ残さない。DB変更は`migration_068_contact_submission_atomicity.sql`で用意済みだが、本番適用はrelease待ち。
+- Cloudflare公式CIDRの事前取得・checksum検証・atomic適用、全app aliasの直origin拒否実測を正式release gateへ組み込んだ。既存本番origin lockはCloudflare経由200、直origin／偽装CF header 403、内部upstream 200を実測済み。
+- Next.jsの`middleware.ts`を`src/proxy.ts`へ移行し、Playwrightは専用headless Chromiumのdesktop / Pixel 7相当mobileを検証できる構成にした。旧deploy入口はrelease gateを迂回できないblock-onlyへ変更した。
+
+### 現時点の検証証跡
+- `npm exec -- tsc --noEmit --pretty false`: **0 error**。
+- `npm run build`: **337 pages / exit 0**。
+- 全Vitest: **86 files / 412 tests pass**。
+- `npm run quality:guard`: **0 error / 59 warnings**（hard gate違反なし）。
+- `npm audit --audit-level=high`: **0 vulnerabilities**。
+- origin-lock Python test: **4/4 pass**。`git diff --check`、messages JSON parse、release script syntax checkもpass。
+- Japan Entry主要フローPlaywright: desktop + Pixel 7相当mobile **14/14 pass**。JA/EN全公開route、旧URL redirect、固定価格、申込導線、診断デモのclaim safetyを確認。
+- axe WCAG 2.2 AA監査: JA/EN主要30 route **30/30 pass**（critical / serious 0）。代表5画面×desktop/mobileの横overflow **0**、visual screenshot確認済み。
+- `node scripts/release-doctor.mjs --local-only --allow-dirty`: **pass**。
+- ここまでの証跡に **commit、PR、merge、正式release、live smokeは含まれない**。
+
+### Active Handoff / 完了条件
+- 次: commit / push / PR / merge。Cloudflare Turnstile widgetと本番envを設定してから、merged `main`からのみ`npm run release:prod`を実行する。
+- release後: migration 068、限定seed、post-deploy doctor、JA/EN全route、contact challenge、SEO/security header、Cloudflare origin lock、TLSのlive smokeを行う。営業フローは触らない。
+- **現在の外部production blocker**: 本番に`NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY`がなく、既存Cloudflare API tokenにもTurnstile write権限がない。Cloudflare Dashboardでwidgetを作成するか、Turnstile Sites Write権限のあるtokenを用意してCoolifyへ設定するまで、release doctorは意図どおりfailする。秘密値はchat／Task.md／gitへ記載しない。
+- 会社代表者・住所・電話の設定値は現状未登録のため、法定表示は申込前のメール開示fallbackを使用する。実値を取得できた時点でsettingsへ登録し、最終的な法務レビューを行う。
+
 ## CURRENT STATUS - 2026-07-10 Japan Entry固定オファー型ホームページ改修（本番反映完了）
 
 ### 決定事項
@@ -33,6 +67,14 @@
 ### Active Handoff（このタスク）
 - 完了: 実装・型検査・対象unit test・production build・PR merge・production release・CMS seed・実ブラウザ確認。
 - 残: 今回のJapan Entryホームページ改修に必須の作業なし。既存quality baseline 2件は別タスク。
+
+### 2026-07-10 Cloudflare origin lock hardening
+- 同一ホストに稼働中のDNS-onlyサービスがあるため、Hetzner Firewall / UFWの80・443全体制限は適用せず維持。`paradigmjp.com` のTraefikルーター単位でCloudflare公式CIDRだけを許可し、他サービスとSSH管理経路を保護した。
+- main / www / Keystatic / Coolify生成aliasの全app Hostを`paradigm-cloudflare-only` middlewareで保護。公式CIDR再取得、Docker alias再列挙、600権限backup、atomic更新を`scripts/lib/refresh-traefik-origin-lock.py`へ実装し、正式release後のroute refreshから毎回再適用する。
+- release-doctor pre/postはenv自己申告だけでなく、Cloudflare通常経路200、直origin HTTP/HTTPS、偽装`CF-Connecting-IP`、未知Host、全app aliasを外部runnerから実測する。
+- 本番確認: Cloudflare ready / ENページは200、直originと偽装headerは全保護Hostで403、未知Hostはapp非到達、内部upstreamは200、SSH接続維持、Traefik設定error 0。demo / crawl4 / Supabase / Twenty / Coolify / Appexxの既存statusに変化なし。
+- Coolifyはorigin実測成功後に指定された2つのproxy/origin-attestation envだけを更新して再読込一致を確認。contact challenge secretは別担当のため未変更。
+- 復旧: host上の最新`paradigmjp.yml.bak-*-origin-lock`を元のroute fileへ戻してTraefik再読込を確認し、Coolifyの上記2 envを変更前状態へ戻す。Hetzner/UFW/DNSは今回未変更のため復旧対象外。
 
 ## CURRENT STATUS - 2026-07-09 トップページCMS化 + JA/EN出し分け 本番反映完了
 

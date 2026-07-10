@@ -19,38 +19,14 @@ export const SOLUTION_COSTS: Record<string, number> = {
   website_diagnostic: 450000,
   meo: 450000,
   subsidy: 450000,
-  japan_entry: 300000,
+  japan_entry: 12000,
   video_subscription: 250000,
   outreach: 650000,
   security: 350000,
 }
 
-export const BLOG_LINKS: Record<string, Record<"ja" | "en", { title: string; url: string }>> = {
-  speed_critical: {
-    ja: { title: "表示速度とコンバージョンの関係性", url: "/ja/blog/pagespeed-conversion-correlation" },
-    en: { title: "Page Speed & Conversion Rates Study", url: "/en/blog/pagespeed-conversion-correlation" },
-  },
-  ssl_expired: {
-    ja: { title: "セキュリティヘッダーとAPPI/特商法準拠ガイド", url: "/ja/blog/appi-compliance-checklist" },
-    en: { title: "Security Headers & APPI Compliance Guide", url: "/en/blog/appi-compliance-checklist" },
-  },
-  wp_outdated: {
-    ja: { title: "WordPress脆弱性とヘッドレス移行のすゝめ", url: "/ja/blog/modern-web-migration" },
-    en: { title: "WordPress Security Gaps & Astro Rebuilding", url: "/en/blog/modern-web-migration" },
-  },
-  no_ogp: {
-    ja: { title: "SNSプレビュー（OGP）と信頼獲得の基礎", url: "/ja/blog/ogp-trust-mechanisms" },
-    en: { title: "Optimizing OGP for Social Sharing and Credibility", url: "/en/blog/ogp-trust-mechanisms" },
-  },
-  no_sns: {
-    ja: { title: "B2Bマーケティングにおける外部接点の設計図", url: "/ja/blog/b2b-external-touchpoints" },
-    en: { title: "Design Patterns for B2B External Channels", url: "/en/blog/b2b-external-touchpoints" },
-  },
-  copyright_old: {
-    ja: { title: "古い著作権表示がもたらす信頼低下リスク", url: "/ja/blog/freshness-and-user-trust" },
-    en: { title: "Content Freshness & Brand Professionalism", url: "/en/blog/freshness-and-user-trust" },
-  },
-}
+export type ReportBlogLink = { title: string; url: string }
+export type ReportBlogLinks = Partial<Record<string, ReportBlogLink>>
 
 export const ICON_TO_ISSUE_KEY: Record<string, string> = {
   SPEED: "speed_critical",

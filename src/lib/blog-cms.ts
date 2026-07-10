@@ -15,7 +15,8 @@
  *     consumer には plain-text 化して返す (極めて単純化). 詳細フォーマットを
  *     維持したい場合は admin で `contentMarkdown` を別途保存する設計を P19 で。
  *   - locale 判定: Posts.availableLocales (multi-select) で当該 locale が
- *     含まれていれば返す。なければスキップ (= JP-only 記事は EN /blog に出ない)。
+ *     含まれていれば返す。英語記事は加えて `japan-entry-public` tag を公開承認
+ *     marker として要求し、旧サービス販売コピーを誤公開しない。
  */
 
 import type { BlogPost } from "./blog"
@@ -36,6 +37,39 @@ type PayloadPost = {
   status?: string
   availableLocales?: string[]
   tags?: Array<{ tag?: string }>
+}
+
+export const ENGLISH_BLOG_PUBLICATION_TAG = "japan-entry-public"
+export const JAPANESE_BLOG_PUBLICATION_TAG = "ja-public-reviewed-2026"
+
+const BLOCKED_ENGLISH_SALES_COPY = [
+  /free consult(?:ation)?/i,
+  /free quote/i,
+  /¥\s*\d/i,
+  /\b12[- ]languages?\b/i,
+  /\b(?:basic|starter|pro|enterprise) plan\b/i,
+] as const
+
+export function isPublicEnglishBlogPost(post: BlogPost): boolean {
+  const explicitlyApproved = post.tags.some(
+    (tag) => tag.trim().toLowerCase() === ENGLISH_BLOG_PUBLICATION_TAG,
+  )
+  if (!explicitlyApproved) return false
+  const searchableCopy = [post.title, post.excerpt, post.content].join("\n")
+  return !BLOCKED_ENGLISH_SALES_COPY.some((pattern) =>
+    pattern.test(searchableCopy),
+  )
+}
+
+/**
+ * Japanese legacy articles contain time-sensitive product and performance
+ * claims. They remain available in the CMS for editorial work, but are public
+ * only after a human adds the current review marker.
+ */
+export function isPublicJapaneseBlogPost(post: BlogPost): boolean {
+  return post.tags.some(
+    (tag) => tag.trim().toLowerCase() === JAPANESE_BLOG_PUBLICATION_TAG,
+  )
 }
 
 /** Lexical (Payload v3 richText) tree → plain text (best-effort, depth-first). */
@@ -93,9 +127,12 @@ async function fetchAllPayloadPosts(locale: string): Promise<BlogPost[]> {
     } as Parameters<typeof payload.find>[0])
 
     const docs = (res?.docs ?? []) as unknown as PayloadPost[]
-    return docs
+    const mappedPosts = docs
       .filter((p) => !!p.title)
       .map((p) => mapPayloadToBlogPost(p, locale === "ja" ? BLOG_POSTS.find((b) => b.slug === p.slug) : undefined))
+    if (locale === "en") return mappedPosts.filter(isPublicEnglishBlogPost)
+    if (locale === "ja") return mappedPosts.filter(isPublicJapaneseBlogPost)
+    return mappedPosts
   }, [])
 }
 
@@ -111,7 +148,9 @@ async function fetchAllPayloadPosts(locale: string): Promise<BlogPost[]> {
 export async function getAllBlogPosts(locale: string = "ja"): Promise<BlogPost[]> {
   const cmsPosts = await fetchAllPayloadPosts(locale)
   const cmsSlugs = new Set(cmsPosts.map((p) => p.slug))
-  const legacyPosts = locale === "ja" ? BLOG_POSTS.filter((p) => !cmsSlugs.has(p.slug)) : []
+  const legacyPosts = locale === "ja"
+    ? BLOG_POSTS.filter(isPublicJapaneseBlogPost).filter((p) => !cmsSlugs.has(p.slug))
+    : []
   return [...cmsPosts, ...legacyPosts].sort((a, b) => (a.date < b.date ? 1 : -1))
 }
 
@@ -132,6 +171,6 @@ export async function getAllBlogSlugs(): Promise<Array<{ slug: string }>> {
     const posts = await fetchAllPayloadPosts(locale)
     for (const p of posts) slugSet.add(p.slug)
   }
-  for (const p of BLOG_POSTS) slugSet.add(p.slug)
+  for (const p of BLOG_POSTS.filter(isPublicJapaneseBlogPost)) slugSet.add(p.slug)
   return Array.from(slugSet).map((slug) => ({ slug }))
 }

@@ -51,14 +51,14 @@ export interface FaqItem {
 export const REPORT_FAQS: Record<"ja" | "en", Record<string, FaqItem[]>> = {
   ja: {
     website_diagnostic: [
-      { q: "既存のシステムやドメインを捨てる必要がありますか？", a: "いいえ。既存の環境はそのままで、改善した表示部分のみをステージング環境で構築・検証し、本番移行するためダウンタイムは発生しません。" },
-      { q: "Lighthouseの表示速度スコア85点以上は本当に保証されますか？", a: "はい。私たちのAstro/Next.js最適化パッケージはLighthouseモバイルスコア85点以上を品質保証しており、未達の場合はパフォーマンス報酬を全額返金いたします。" },
+      { q: "既存のシステムやドメインを捨てる必要がありますか？", a: "通常は既存環境を維持し、ステージングで構築・検証してから移行します。切替方法、停止リスク、ロールバック手順は着手前の書面で確認します。" },
+      { q: "Lighthouseの表示速度スコア85点以上は本当に保証されますか？", a: "無条件のスコア保証は行いません。端末、外部スクリプト、配信環境を含む計測条件を固定し、基準値と公開時の実測結果を報告します。" },
       { q: "どのようなプロセスで進めますか？", a: "現状分析、Astro/Next.jsでのビジュアル制作、ステージングでの検証、ドメイン切り替えの順で進行し、最短2週間で完了します。" }
     ],
     japan_entry: [
-      { q: "日本に現地法人がなくても営業を開始できますか？", a: "はい。日本法人を設立する前に、特商法・APPIに準拠したローカライズLPの構築と、決済代行のローカライズを完了させて営業検証を開始できます。" },
-      { q: "特商法（特定商取引法に基づく表記）はなぜ必須なのですか？", a: "日本の商慣習および法律により、ウェブサイト上で販売や予約を行う際は運営元の情報開示が義務付けられており、これが無いと日本の買い手は警戒して購入しません。" },
-      { q: "ローカライズにかかる期間はどれくらいですか？", a: "ドキュメントと基本LPの構築を含め、キックオフから通常2〜4週間で日本向けの公開が可能です。" }
+      { q: "日本に現地法人がなくても営業を開始できますか？", a: "商材、販売方法、決済、規制要件によって異なります。契約前に利用可能な問い合わせ・販売経路を確認し、法人・税務・許認可の判断は専門家へつなぎます。" },
+      { q: "特商法（特定商取引法に基づく表記）はなぜ必要ですか？", a: "日本の消費者向け通信販売など対象となる取引では、販売条件や事業者情報等の表示が必要です。必要項目は販売モデルに応じて確認し、専門判断が必要な場合は有資格者のレビューを前提にします。" },
+      { q: "ローカライズにかかる期間はどれくらいですか？", a: "合意、入金、必要素材とアクセスが揃ってから21営業日を公開目標とします。承認遅延、範囲変更、規制・外部事業者の審査は日程に影響します。" }
     ],
     video_subscription: [
       { q: "動画サブスクの毎月の本数は変更できますか？", a: "はい。キャンペーンやプロモーションのスケジュールに応じて、月ごとの制作本数を柔軟に調整できるプランをご用意しています。" },
@@ -67,24 +67,24 @@ export const REPORT_FAQS: Record<"ja" | "en", Record<string, FaqItem[]>> = {
     ],
     outreach: [
       { q: "フォーム営業の自動化はスパム判定されませんか？", a: "私たちは闇雲なスパム送信は行いません。事前分類フィルタを使い、課題が明確なターゲット企業にのみ、パーソナライズされた丁寧な文面で送信します。" },
-      { q: "配信先のリストはどのように用意しますか？", a: "gBizInfoやOverpass等のオープンデータをスクレイピング・精査し、御社のターゲット業界に完全に一致するリードリストを自動構築します。" },
-      { q: "送信結果のレポーティングはありますか？", a: "はい。MetabaseダッシュボードおよびTwenty CRMと完全連携し、送信ステータスや返信率をリアルタイムに可視化します。" }
+      { q: "配信先のリストはどのように用意しますか？", a: "利用条件を確認した公開データや検索結果を精査し、合意した業種・地域・技術シグナルに合う候補だけを選定します。" },
+      { q: "送信結果のレポーティングはありますか？", a: "はい。取得できた送信状態や返信をTwenty CRM等に記録し、参照可能な範囲をダッシュボードで可視化します。" }
     ],
     security: [
-      { q: "セキュリティヘッダーの適用でサイトが壊れることはありませんか？", a: "CSP（コンテンツセキュリティポリシー）などの設定は、慎重にステージングでテストした上で適用するため、既存機能に影響を与えません。" },
+      { q: "セキュリティヘッダーの適用でサイトが壊れることはありませんか？", a: "影響の可能性はあります。必要な外部スクリプトを棚卸しし、CSP等をステージングで検証してロールバック手順を用意してから本番へ反映します。" },
       { q: "SSL証明書の更新エラーはなぜ発生するのですか？", a: "DNSの不整合や自動更新スクリプトの不具合が原因であることが多く、私たちのインフラチームがDNS設定のクリーンアップを含めて恒久対応します。" }
     ]
   },
   en: {
     website_diagnostic: [
-      { q: "Do we need to scrap our existing hosting or domain?", a: "No. We build and test the high-performance presentation layer on a staging environment and swap it with zero downtime when approved." },
-      { q: "Is the Lighthouse 85+ score guaranteed?", a: "Yes. Our Astro/Next.js build package guarantees a Lighthouse mobile score of 85+. If we fail to reach this, we refund the performance optimization fee." },
-      { q: "What is the timeline for deployment?", a: "We proceed from baseline audit, staging build, trust setup, to deployment within 2 to 3 weeks." }
+      { q: "Do we need to scrap our existing hosting or domain?", a: "Usually not. We stage and verify the agreed presentation layer first, then document the cutover, downtime risk, and rollback path before touching production." },
+      { q: "Is a Lighthouse 85+ score guaranteed?", a: "No unconditional score is guaranteed. We fix the measurement conditions, record the baseline, and report the launch result, including third-party scripts or infrastructure that constrain it." },
+      { q: "What is the timeline for deployment?", a: "For the fixed Japan Entry scope, the launch target is 21 business days after agreement, payment, required access, and assets are complete. External review or client delays move the target." }
     ],
     japan_entry: [
-      { q: "Can we start sales before establishing a local Japanese entity?", a: "Yes. You can test and validate the Japanese market by setting up a localized LP compliant with APPI/Tokushoho and local billing before incorporating." },
-      { q: "Why is the Tokushoho commercial disclosure mandatory?", a: "Japanese consumer laws require transparent disclosure of the seller's entity. Japanese B2B/B2C buyers actively look for this page to verify credibility before buying." },
-      { q: "How long does the localization setup take?", a: "Typically 2 to 4 weeks from kickoff to a live, compliant, localized launch." }
+      { q: "Can we start sales before establishing a local Japanese entity?", a: "Sometimes. The viable inquiry, payment, fulfilment, and disclosure route depends on your product, regulated status, provider eligibility, and tax or legal requirements. We confirm the route before accepting the fixed scope." },
+      { q: "When is a Tokushoho commercial disclosure needed?", a: "Covered Japanese consumer mail-order transactions require specified seller and commercial information. The exact disclosure depends on the sales model, and specialist legal review remains separate where needed." },
+      { q: "How long does the localization setup take?", a: "The target is 21 business days after agreement, payment, required access, and assets are complete. Delayed approvals, expanded scope, regulation, or third-party reviews can move the date." }
     ],
     video_subscription: [
       { q: "Can we adjust the monthly video volume?", a: "Yes. We offer flexible plans where you can scale your video pipeline up or down depending on your current marketing campaigns." },
@@ -92,12 +92,12 @@ export const REPORT_FAQS: Record<"ja" | "en", Record<string, FaqItem[]>> = {
       { q: "What formats do you specialize in?", a: "We focus on short landing page demos, automated proposal explainers, and customer success tutorials." }
     ],
     outreach: [
-      { q: "Will automated outreach flag us as spammers?", a: "No. We target only verified leads using dry-runs, strict rate limits, and highly personalized B2B messages rather than generic bulk spam." },
+      { q: "Can automated outreach be flagged as spam?", a: "Yes, that risk cannot be eliminated. Any approved outreach must use relevant B2B targeting, lawful source and suppression controls, conservative limits, and accurate sender identity rather than generic bulk messaging." },
       { q: "How are the lead lists built?", a: "We aggregate registrar data from gBizInfo, Overpass OSM, and browser-based search, filtered by industry and tech stack indicators." },
       { q: "How is the performance tracked?", a: "Everything is logged into Twenty CRM and Metabase, giving you real-time visibility on send rates and reply captures." }
     ],
     security: [
-      { q: "Will implementing security headers break our site functions?", a: "No. We test HSTS and CSP settings in report staging environments first to ensure they don't block required third-party scripts." },
+      { q: "Can security-header changes affect site functions?", a: "Yes. We inventory required third-party scripts, test CSP and related headers in staging, and define a rollback path before production changes." },
       { q: "What causes certificate verification issues?", a: "Common causes are DNS lookup gaps or stale server configurations. We verify and resolve the underlying network route." }
     ]
   }
@@ -212,4 +212,3 @@ export function normalizeReportLang(locale?: string): ReportLang {
   if (!locale) return "ja"
   return (Object.keys(REPORT_COPY) as ReportLang[]).includes(locale as ReportLang) ? (locale as ReportLang) : "en"
 }
-

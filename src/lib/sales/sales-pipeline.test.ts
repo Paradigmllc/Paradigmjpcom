@@ -7,6 +7,7 @@ describe("Sales OS unified pipeline", () => {
     expect(plan.map((step) => step.key)).toEqual([
       "twenty_csv_intake",
       "supabase_normalize",
+      "data_collection",
       "karte_generate",
       "report_generate",
       "video_generate",
@@ -20,6 +21,7 @@ describe("Sales OS unified pipeline", () => {
     ])
     expect(plan.find((step) => step.key === "video_generate")?.required).toBe(true)
     expect(plan.find((step) => step.key === "external_studio_sync")?.required).toBe(true)
+    expect(plan.find((step) => step.key === "data_collection")?.required).toBe(true)
   })
 
   it("skips optional video and external studio steps by policy, not by removing them", () => {

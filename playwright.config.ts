@@ -15,6 +15,7 @@
 import { defineConfig, devices } from "@playwright/test"
 
 const BASE_URL = process.env.E2E_BASE_URL ?? "https://paradigmjp.com"
+const CHROME_EXECUTABLE = process.env.PLAYWRIGHT_CHROME_EXECUTABLE
 
 export default defineConfig({
   testDir: "./e2e",
@@ -36,11 +37,26 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        ...(CHROME_EXECUTABLE
+          ? { launchOptions: { executablePath: CHROME_EXECUTABLE } }
+          : {}),
+      },
     },
-    {
-      name: "mobile-safari",
-      use: { ...devices["iPhone 14"] },
-    },
+    CHROME_EXECUTABLE
+      ? {
+          name: "mobile-chrome",
+          use: {
+            ...devices["Pixel 7"],
+            launchOptions: { executablePath: CHROME_EXECUTABLE },
+          },
+        }
+      : {
+          name: "mobile-safari",
+          use: {
+            ...devices["iPhone 14"],
+          },
+        },
   ],
 })

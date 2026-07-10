@@ -24,7 +24,7 @@ describe("OSS management deep links (Phase 8-3 / 8-7)", () => {
     expect(urls.some((u) => /chatwoot/i.test(u))).toBe(true)
     expect(urls.some((u) => /keystatic/i.test(u))).toBe(true)
     expect(urls.some((u) => /directus/i.test(u))).toBe(true)
-    expect(urls.some((u) => /\/ja\/admin\/sales$/.test(u))).toBe(true)
+    expect(urls).toContain("https://twenty.paradigmjp.com")
     // back-to-menu uses a callback, not a url
     expect(kb.inline_keyboard.flat().some((b) => b.callback_data === "/menu")).toBe(true)
   })

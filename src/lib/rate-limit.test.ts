@@ -6,8 +6,8 @@
  * 出力: pass/fail
  */
 
-import { describe, it, expect, beforeEach } from "vitest"
-import { checkRateLimit, getClientIp } from "./rate-limit"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { checkRateLimit, getClientIp, verifyTurnstile } from "./rate-limit"
 
 describe("checkRateLimit", () => {
   beforeEach(() => {
@@ -45,13 +45,22 @@ describe("checkRateLimit", () => {
 
   it("respects RATE_LIMIT_DISABLED env", () => {
     process.env.RATE_LIMIT_DISABLED = "1"
-    const r = checkRateLimit({ ip: "1.2.3.4", key: `disabled-${Math.random()}`, max: 1, windowMs: 1000 })
+    const r = checkRateLimit({
+      ip: "1.2.3.4",
+      key: `disabled-${Math.random()}`,
+      max: 1,
+      windowMs: 1000,
+    })
     expect(r.ok).toBe(true)
     delete process.env.RATE_LIMIT_DISABLED
   })
 })
 
 describe("getClientIp", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
   function makeReq(headers: Record<string, string>): Request {
     return new Request("http://localhost/", { headers: new Headers(headers) })
   }
@@ -78,5 +87,65 @@ describe("getClientIp", () => {
   it("returns 0.0.0.0 when nothing set", () => {
     const req = makeReq({})
     expect(getClientIp(req)).toBe("0.0.0.0")
+  })
+
+  it("trusts only Cloudflare's validated header in cloudflare mode", () => {
+    vi.stubEnv("TRUSTED_PROXY_MODE", "cloudflare")
+    const req = makeReq({
+      host: "paradigmjp.com",
+      "cf-connecting-ip": "203.0.113.20",
+      "x-forwarded-for": "198.51.100.10",
+    })
+    expect(getClientIp(req)).toBe("203.0.113.20")
+
+    const forgedFallback = makeReq({
+      host: "www.paradigmjp.com",
+      "cf-connecting-ip": "not-an-ip",
+      "x-forwarded-for": "198.51.100.10",
+    })
+    expect(getClientIp(forgedFallback)).toBe("0.0.0.0")
+  })
+
+  it("ignores spoofed Cloudflare headers on the DNS-only keystatic host", () => {
+    vi.stubEnv("NODE_ENV", "production")
+    vi.stubEnv("TRUSTED_PROXY_MODE", "cloudflare")
+    const req = makeReq({
+      host: "keystatic.paradigmjp.com",
+      "cf-connecting-ip": "203.0.113.20",
+      "x-forwarded-for": "198.51.100.10",
+    })
+
+    expect(getClientIp(req)).toBe("0.0.0.0")
+  })
+
+  it("does not trust forwarding headers in unconfigured production", () => {
+    vi.stubEnv("NODE_ENV", "production")
+    vi.stubEnv("TRUSTED_PROXY_MODE", "")
+    const req = makeReq({
+      "cf-connecting-ip": "203.0.113.20",
+      "x-forwarded-for": "198.51.100.10",
+      "x-real-ip": "192.0.2.10",
+    })
+    expect(getClientIp(req)).toBe("0.0.0.0")
+  })
+})
+
+describe("verifyTurnstile", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+  })
+
+  it("allows an omitted secret only outside production", async () => {
+    vi.stubEnv("NODE_ENV", "test")
+    vi.stubEnv("TURNSTILE_SECRET_KEY", "")
+    await expect(verifyTurnstile(null)).resolves.toBe(true)
+  })
+
+  it("fails closed when the production secret is missing", async () => {
+    vi.stubEnv("NODE_ENV", "production")
+    vi.stubEnv("TURNSTILE_SECRET_KEY", "")
+    vi.spyOn(console, "error").mockImplementation(() => undefined)
+    await expect(verifyTurnstile("token")).resolves.toBe(false)
   })
 })

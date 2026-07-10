@@ -10,13 +10,14 @@
 import type { Metadata } from "next"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
-import { buildArticleSchema } from "@/lib/seo/schemas"
+import { buildPageSchema } from "@/lib/seo/schemas"
 import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import FadeIn from "@/components/aesop/FadeIn"
 import { assertLocale } from "@/lib/cms/filters"
 import { LOCALE_HREFLANG } from "@/lib/locale-map"
-import { BLOG_POSTS } from "@/lib/blog"
+import { getAllBlogPosts } from "@/lib/blog-cms"
+import type { BlogPost } from "@/lib/blog"
 
 export const dynamic = "force-dynamic"
 
@@ -30,17 +31,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: t("metaDescription"),
     alternates: pageAlternates(locale, "/blog"),
   }
-}
-
-type PostDoc = {
-  id: string | number
-  title?: string
-  slug?: string
-  excerpt?: string
-  category?: string
-  readTime?: string
-  tags?: Array<{ tag?: string }>
-  publishedAt?: string
 }
 
 const CATEGORY_GRADIENTS = [
@@ -67,7 +57,7 @@ export default async function BlogPage({ params }: Props) {
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
   const t = await getTranslations({ locale, namespace: "blogPage" })
 
-  const posts: PostDoc[] = locale === "ja" ? BLOG_POSTS as unknown as PostDoc[] : []
+  const posts: BlogPost[] = await getAllBlogPosts(locale)
 
   return (
     <>
@@ -86,19 +76,19 @@ export default async function BlogPage({ params }: Props) {
               <p className="text-[14px] text-paradigm-ink-soft leading-[1.85] mb-7">
                 {t("emptyMessage")}
               </p>
-              <Link href="/contact" className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors">
+              <Link href={locale === "en" ? "/contact?intent=japan-entry" : "/contact"} className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors">
                 {t("emptyCta")}
               </Link>
             </FadeIn>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               {posts.map((post, i) => {
-                const tags = (post.tags ?? []).map((t) => t.tag).filter(Boolean) as string[]
+                const tags = post.tags ?? []
                 const gradient = CATEGORY_GRADIENTS[i % CATEGORY_GRADIENTS.length]
                 return (
-                  <FadeIn key={String(post.id)} delay={i * 0.05}>
+                  <FadeIn key={post.slug} delay={i * 0.05}>
                     <Link
-                      href={post.slug ? `/blog/${post.slug}` : "#"}
+                      href={`/blog/${post.slug}`}
                       className="group block paradigm-glass rounded-lg p-6 paradigm-glow-sm hover:paradigm-glow-lg  transition-all duration-500 h-full"
                     >
                       <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -107,7 +97,7 @@ export default async function BlogPage({ params }: Props) {
                             {post.category}
                           </span>
                         )}
-                        <span className="paradigm-eyebrow text-paradigm-ink-mute text-[10px]">{formatDate(post.publishedAt, locale)}</span>
+                        <span className="paradigm-eyebrow text-paradigm-ink-mute text-[10px]">{formatDate(post.date, locale)}</span>
                         {post.readTime && (
                           <span className="paradigm-eyebrow text-paradigm-ink-mute text-[10px]">
                             {t("readTimeFormat", { readTime: post.readTime })}
@@ -139,7 +129,8 @@ export default async function BlogPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(
-            buildArticleSchema({
+            buildPageSchema({
+              type: "CollectionPage",
               title: t("heroTitle"),
               description: t("heroDesc"),
               url: `https://paradigmjp.com/${locale}/blog`,

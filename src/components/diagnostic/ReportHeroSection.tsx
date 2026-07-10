@@ -95,11 +95,14 @@ export default function ReportHeroSection({
           )}
           <a
             href={calHref}
-            target="_blank"
-            rel="noopener noreferrer"
+            {...(calHref.startsWith("http")
+              ? { target: "_blank", rel: "noopener noreferrer" }
+              : {})}
+            data-umami-event="diagnostic-report-apply"
+            data-umami-event-source="hero"
             className="inline-flex h-12 items-center gap-2 rounded-full border border-zinc-300 bg-white px-5 text-sm font-semibold text-zinc-950 shadow-sm transition-transform hover:scale-105"
           >
-            {isJapanese ? "15分無料相談を予約" : "Book Free 15min Call"}
+            {isJapanese ? "15分相談を予約" : "Apply — $12K fixed"}
             <ExternalLink size={15} aria-hidden />
           </a>
         </motion.div>
@@ -127,7 +130,7 @@ export default function ReportHeroSection({
               <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
               <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
-              <span className="ml-auto text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
+              <span className="ml-auto text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-600">
                 {isJapanese ? "取得済みサイト証拠" : "Captured Site Evidence"}
               </span>
             </div>

@@ -1,4 +1,4 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 
 /* 2026-05-03: @paradigmllc/blocks 内の Tailwind class を scan 対象に追加。
    node_modules は v4 default では scan されないため @source 必須。
@@ -15,7 +15,7 @@
      - low-motion cards that stay readable across all locale routes
    Hex equivalents:
      LIGHT   paper #fafaf7  paper-deep #f2f0eb  paper-card #fefefc
-             ink #0f1115    ink-soft   #3d4148  ink-mute   #787c85
+             ink #0f1115    ink-soft   #3d4148  ink-mute   #676c75
              line #e4e7eb   accent     #2563eb  glow       #10b981
              tech #f59e0b   surface    #ffffff
      DARK    paper #0a0813  paper-deep #06040c  paper-card #13101f
@@ -31,7 +31,7 @@
   --paradigm-surface: 255 255 255;
   --paradigm-ink: 15 17 21;
   --paradigm-ink-soft: 61 65 72;
-  --paradigm-ink-mute: 120 124 133;
+  --paradigm-ink-mute: 103 108 117;
   --paradigm-line: 228 231 235;
   --paradigm-accent: 37 99 235;
   --paradigm-accent-soft: 96 165 250;
@@ -138,7 +138,7 @@ body {
 
 /* Eyebrow — Aesop's signature small caps with wide tracking, used above
    section headings to anchor hierarchy without competing for attention. */
-.paradigm-eyebrow {
+:where(.paradigm-eyebrow) {
   font-family: var(--font-mono);
   font-size: 0.6875rem;       /* 11px */
   letter-spacing: 0.18em;

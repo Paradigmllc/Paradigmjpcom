@@ -83,7 +83,7 @@ export default function TemplatePreviewPage() {
                     <td className="px-4 py-3"><span className="rounded bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700">{copy.ja.badge}</span></td>
                     <td className="px-4 py-3"><span className="rounded bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-700">{copy.en.badge}</span></td>
                     <td className="px-4 py-3">
-                      <a href={`/ja/report/template-preview/${variant}`} className="text-xs font-semibold text-indigo-600 hover:underline">
+                      <a href={`/ja/report/demo/${variant}`} className="text-xs font-semibold text-indigo-600 hover:underline">
                         詳細を見る →
                       </a>
                     </td>

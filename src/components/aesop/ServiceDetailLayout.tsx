@@ -107,7 +107,7 @@ export default function ServiceDetailLayout({
             {statsTitle && <h2 className="font-display text-[26px] md:text-[40px] leading-[1.15] text-paradigm-ink mb-10">{statsTitle}</h2>}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10">
               {stats.map((s, i) => (
-                <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1, ease: EASE }}>
+                <motion.div key={`${s.value}-${s.label}`} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.1, ease: EASE }}>
                   <div className="font-display text-[40px] md:text-[56px] leading-[1] mb-2 bg-gradient-to-br from-paradigm-ink via-paradigm-accent to-paradigm-glow bg-clip-text text-transparent">{s.value}</div>
                   <div className="paradigm-eyebrow text-paradigm-ink-soft">{s.label}</div>
                 </motion.div>

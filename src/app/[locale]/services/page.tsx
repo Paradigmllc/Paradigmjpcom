@@ -10,6 +10,7 @@
  * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
  */
 import type { Metadata } from "next"
+import { permanentRedirect } from "next/navigation"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
 import { Link } from "@/i18n/routing"
@@ -19,6 +20,7 @@ import FadeIn from "@/components/aesop/FadeIn"
 import { filterByLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
 import { withPayloadReadFallback } from "@/lib/payload-availability"
 import { getServices } from "@/lib/data"
+import { containsUnverifiedJapaneseMarketingClaim } from "@/lib/public-content-safety"
 
 export const revalidate = 300
 
@@ -53,9 +55,12 @@ const CARD_GRADIENTS = [
   "from-zinc-950 via-blue-800 to-amber-600",
 ]
 
+const SERVICE_DETAIL_SLUGS = new Set(["web", "meo", "seo", "ai"])
+
 export default async function ServicesPage({ params }: Props) {
   const { locale: rawLocale } = await params
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
+  if (locale === "en") permanentRedirect("/en#japan-entry-pricing")
   const t = await getTranslations({ locale, namespace: "servicesPage" })
 
   let services = await withPayloadReadFallback<ServiceDoc[]>("services.payload.find", async () => {
@@ -84,6 +89,23 @@ export default async function ServicesPage({ params }: Props) {
       features: service.features.slice(0, 4).map((feature) => ({ feature })),
       sortOrder: index,
     }))
+  } else if (locale === "ja") {
+    const safeFallbacks = new Map(
+      getServices(locale).map((service, index) => [service.id, {
+        id: service.id,
+        name: service.title,
+        slug: service.id,
+        tagline: service.tagline,
+        icon: service.icon,
+        features: service.features.slice(0, 4).map((feature) => ({ feature })),
+        sortOrder: index,
+      }]),
+    )
+    services = services.map((service) => {
+      if (!containsUnverifiedJapaneseMarketingClaim(service)) return service
+      const fallback = service.slug ? safeFallbacks.get(service.slug) : undefined
+      return fallback ?? service
+    })
   }
 
   return (
@@ -116,6 +138,9 @@ export default async function ServicesPage({ params }: Props) {
                 const features = (s.features ?? []).map((f) => f.feature).filter(Boolean) as string[]
                 const reversed = i % 2 === 1
                 const gradient = CARD_GRADIENTS[i % CARD_GRADIENTS.length]
+                const hasDetailPage = Boolean(
+                  s.slug && SERVICE_DETAIL_SLUGS.has(s.slug),
+                )
                 return (
                   <FadeIn key={String(s.id)} delay={i * 0.05}>
                     <article
@@ -151,7 +176,7 @@ export default async function ServicesPage({ params }: Props) {
                           </ul>
                         )}
                         <div className="flex gap-2 flex-wrap">
-                          {s.slug && (
+                          {hasDetailPage && s.slug && (
                             <Link
                               href={`/services/${s.slug}`}
                               className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-6 py-3 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"

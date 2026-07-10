@@ -10,10 +10,17 @@
  * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
  */
 import type { Metadata } from "next"
+import Link from "next/link"
 import { Mail, Clock, Calendar } from "lucide-react"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
-import { buildArticleSchema } from "@/lib/seo/schemas"
+import { buildPageSchema } from "@/lib/seo/schemas"
+import {
+  JAPAN_ENTRY_CONTACT_CANONICAL_URL,
+  JAPAN_ENTRY_DESCRIPTION,
+  JAPAN_ENTRY_TITLE,
+  getJapanEntryApplicationJsonLd,
+} from "@/lib/jsonld"
 import PageHero from "@/components/PageHero"
 import { ContactForm } from "./ContactForm"
 import { calendarUrlFor, getSiteSettings } from "@/lib/settings"
@@ -27,6 +34,36 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
+  const isJapanEntry = locale === "en"
+  if (isJapanEntry) {
+    const title = `Apply for the ${JAPAN_ENTRY_TITLE}`
+    return {
+      title,
+      description: JAPAN_ENTRY_DESCRIPTION,
+      alternates: pageAlternates("en", "/contact"),
+      openGraph: {
+        type: "website",
+        url: JAPAN_ENTRY_CONTACT_CANONICAL_URL,
+        title,
+        description: JAPAN_ENTRY_DESCRIPTION,
+        images: [
+          {
+            url: "/en/opengraph-image",
+            width: 1200,
+            height: 630,
+            alt: `${JAPAN_ENTRY_TITLE} — application`,
+          },
+        ],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description: JAPAN_ENTRY_DESCRIPTION,
+        images: ["/en/opengraph-image"],
+      },
+    }
+  }
+
   const t = await getTranslations({ locale, namespace: "contactPage" })
   return {
     title: t("metaTitle"),
@@ -35,17 +72,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function ContactPage({ params, searchParams }: Props) {
-  const [{ locale }, query] = await Promise.all([params, searchParams])
+export default async function ContactPage({ params }: Props) {
+  const { locale } = await params
   const t = await getTranslations({ locale, namespace: "contactPage" })
-  const isJapanEntry = locale === "en" && query.intent === "japan-entry"
+  const isJapanEntry = locale === "en"
   const sidebarBlocks = isJapanEntry
     ? [
         {
           icon: Calendar,
           gradient: "from-zinc-950 via-zinc-800 to-blue-700",
           label: "Fixed commercial terms",
-          items: ["$12,000 setup paid before kickoff", "$0/month for the first six months", "$995/month from month seven", "Cancel the monthly service anytime"],
+          items: ["$12,000 setup paid before kickoff", "$0/month for the first six months", "$995/month from month seven", "Future billing is cancellable under the signed terms"],
         },
         {
           icon: Mail,
@@ -76,8 +113,8 @@ export default async function ContactPage({ params, searchParams }: Props) {
     <>
       <PageHero
         badge={isJapanEntry ? "Japan Entry" : t("heroBadge")}
-        title={isJapanEntry ? "Apply for a Japan launch slot." : t("heroTitle")}
-        highlight={isJapanEntry ? "Japan launch slot." : t("heroHighlight")}
+        title={isJapanEntry ? "Apply for the fixed Japan Entry package." : t("heroTitle")}
+        highlight={isJapanEntry ? "Japan Entry package." : t("heroHighlight")}
         desc={isJapanEntry ? "$12,000 fixed setup. $0/month for the first six months. Confirm your decision authority and launch timing below." : t("heroDesc")}
         asideText={isJapanEntry ? "Built for companies that can decide this week and launch with one accountable owner." : undefined}
         asideCta={isJapanEntry ? { label: "Review the fixed offer", href: "/#japan-entry-pricing" } : undefined}
@@ -91,6 +128,14 @@ export default async function ContactPage({ params, searchParams }: Props) {
             <h2 className="font-display text-[22px] md:text-[28px] leading-[1.2] text-paradigm-ink mb-7 ">
               {isJapanEntry ? "Confirm your fit and launch timing" : t("formTitle")}
             </h2>
+            {isJapanEntry && (
+              <Link
+                href="/en"
+                className="mb-6 inline-flex min-h-11 items-center text-sm font-semibold text-paradigm-accent underline decoration-paradigm-accent/40 underline-offset-4 transition-colors hover:text-paradigm-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-paradigm-accent"
+              >
+                ← Back to the Japan Entry Package
+              </Link>
+            )}
             <ContactForm />
           </div>
 
@@ -100,7 +145,7 @@ export default async function ContactPage({ params, searchParams }: Props) {
               return (
                 <div key={b.label} className="paradigm-glass rounded-lg p-6 paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500">
                   <div className={`inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br ${b.gradient} text-paradigm-paper mb-3 paradigm-glow-sm`}>
-                    <Icon size={18} strokeWidth={1.5} />
+                    <Icon aria-hidden="true" size={18} strokeWidth={1.5} />
                   </div>
                   <p className="paradigm-eyebrow text-paradigm-accent mb-3">{b.label}</p>
                   <ul className="space-y-2 text-[13px] text-paradigm-ink-soft leading-[1.75]">
@@ -116,7 +161,7 @@ export default async function ContactPage({ params, searchParams }: Props) {
             {!isJapanEntry && bookingUrl && (
               <div className="paradigm-glass rounded-lg p-6 paradigm-glow-md border border-paradigm-accent/30">
                 <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-paradigm-glow via-paradigm-accent to-paradigm-accent text-paradigm-paper mb-3 paradigm-glow-sm">
-                  <Clock size={18} strokeWidth={1.5} />
+                  <Clock aria-hidden="true" size={18} strokeWidth={1.5} />
                 </div>
                 <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("hurryLabel")}</p>
                 <p className="text-[13px] text-paradigm-ink-soft leading-[1.75] mb-4">
@@ -139,12 +184,15 @@ export default async function ContactPage({ params, searchParams }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(
-            buildArticleSchema({
-              title: t("heroTitle"),
-              description: t("heroDesc"),
-              url: `https://paradigmjp.com/${locale}/contact`,
-              locale,
-            })
+            isJapanEntry
+              ? getJapanEntryApplicationJsonLd()
+              : buildPageSchema({
+                  type: "ContactPage",
+                  title: t("heroTitle"),
+                  description: t("heroDesc"),
+                  url: `https://paradigmjp.com/${locale}/contact`,
+                  locale,
+                })
           ),
         }}
       />

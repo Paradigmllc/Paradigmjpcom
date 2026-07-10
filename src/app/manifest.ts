@@ -12,10 +12,10 @@ import type { MetadataRoute } from "next"
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Paradigm",
+    name: "Paradigm Japan Entry",
     short_name: "Paradigm",
-    description: "Digital growth partner — Web / MEO / SEO·GEO / AI",
-    start_url: "/",
+    description: "$12,000 fixed Japan Entry setup, six months at $0, then $995/month for fast-decision global SMBs.",
+    start_url: "/en",
     display: "standalone",
     orientation: "portrait",
     background_color: "#FAFAF7",
@@ -26,7 +26,7 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/apple-icon", sizes: "180x180", type: "image/png", purpose: "any" },
     ],
     categories: ["business", "productivity"],
-    lang: "ja",
+    lang: "en",
     dir: "ltr",
   }
 }

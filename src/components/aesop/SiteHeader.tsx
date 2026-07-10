@@ -67,9 +67,26 @@ export default function SiteHeader({ nav, announcementActive = false }: SiteHead
     { href: "/blog", label: t("blog") },
     { href: "/faq", label: t("faq") },
   ]
-  const NAV: NavLink[] = nav?.items?.length ? nav.items : DEFAULT_NAV
-  const ctaEnabled = nav?.cta ? nav.cta.enabled : true
-  const isJapanEntryConversionRoute = pathname === "/en" || pathname.startsWith("/en/contact")
+  // Every public English route sells the same fixed Japan Entry package.
+  // Do not let CMS navigation re-introduce a generic contact CTA on sub-pages.
+  const isJapanEntryConversionRoute = pathname === "/en" || pathname.startsWith("/en/")
+  const JAPAN_ENTRY_NAV: NavLink[] = [
+    { href: "/about", label: t("about") },
+    { href: "/pricing", label: t("pricing") },
+    { href: "/works", label: t("works") },
+    { href: "/faq", label: t("faq") },
+    { href: "/blog", label: t("blog") },
+  ]
+  const NAV: NavLink[] = isJapanEntryConversionRoute
+    ? JAPAN_ENTRY_NAV
+    : nav?.items?.length
+      ? nav.items
+      : DEFAULT_NAV
+  const ctaEnabled = isJapanEntryConversionRoute
+    ? true
+    : nav?.cta
+      ? nav.cta.enabled
+      : true
   const ctaLabel = isJapanEntryConversionRoute ? tCta("primary") : nav?.cta?.label || tCta("primary")
   const ctaHref = isJapanEntryConversionRoute
     ? "/contact?intent=japan-entry"
@@ -95,7 +112,7 @@ export default function SiteHeader({ nav, announcementActive = false }: SiteHead
         </div>
 
         {/* Center: primary nav (desktop only). children があればホバードロップダウン。 */}
-        <nav className="hidden md:flex items-center gap-7 lg:gap-9">
+        <nav aria-label={t("primaryNav")} className="hidden md:flex items-center gap-7 lg:gap-9">
           {NAV.map((n) =>
             n.children?.length ? (
               <div key={n.href} className="relative group">
@@ -106,7 +123,7 @@ export default function SiteHeader({ nav, announcementActive = false }: SiteHead
                 >
                   {n.label}
                 </Link>
-                <div className="absolute left-0 top-full pt-3 hidden group-hover:block min-w-[180px]">
+                <div className="absolute left-0 top-full pt-3 hidden group-hover:block group-focus-within:block min-w-[180px]">
                   <ul className="bg-paradigm-paper border border-paradigm-line shadow-lg py-2">
                     {n.children.map((c) => (
                       <li key={c.href}>
@@ -142,6 +159,10 @@ export default function SiteHeader({ nav, announcementActive = false }: SiteHead
           {ctaEnabled && (
             <Link
               href={ctaHref}
+              {...(isJapanEntryConversionRoute ? {
+                "data-umami-event": "japan-entry-apply",
+                "data-umami-event-source": "header",
+              } : {})}
               className="hidden md:inline-flex text-[11px] tracking-[0.18em] uppercase border border-paradigm-ink px-5 py-2.5 text-paradigm-ink hover:bg-paradigm-ink hover:text-paradigm-paper transition-colors whitespace-nowrap"
             >
               {ctaLabel}

@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 // force chunk rebuild 2026-06-22
 
 import { LineChart } from "lucide-react"
@@ -11,7 +11,7 @@ import { labelForIndustry } from "@/lib/sales/render-quality"
 import { localizeReportIntelligence, reportEvidenceText, sourceCategoryLabel, sourceCoverageDetail } from "./report-intelligence-copy"
 import { REPORT_COPY, normalizeReportLang, type ReportLang } from "./report-copy"
 import { getReportOfferCopy } from "./report-offer-copy"
-import { cleanText, formatMoney, numericValue, reportTitle, Pill, Stat } from "./report-utils"
+import { cleanText, formatMoney, reportTitle, Pill, Stat } from "./report-utils"
 import { SlideInSection } from "./ReportAnimations"
 import { ReportExecutiveSummary } from "./ReportExecutiveSummary"
 import { LossImpactBar, CompetitorBenchmarkChart, type BenchmarkItem, type LossImpactItem, type TimelinePoint } from "./ReportCharts"
@@ -25,7 +25,6 @@ import { localeContentVariant } from "@/lib/locale-map"
 import { ReportHeader } from "./ReportHeader"
 import ReportHeroSection from "./ReportHeroSection"
 import ReportDarkSurface from "./ReportDarkSurface"
-import ReportFindingCard from "./ReportFindingCard"
 import ReportPainCard from "./ReportPainCard"
 import { ReportAppendixSections, ReportFooter } from "./ReportAppendixSections"
 import ReportFinalCta from "./ReportFinalCta"
@@ -33,6 +32,8 @@ import ReportRequestModal from "./ReportRequestModal"
 import ReportFindingsSection from "./ReportFindingsSection"
 import { ErrorBoundary } from "./ErrorBoundary"
 import { TRACKING_SCRIPT, PRINT_CSS } from "./report-tracking"
+import type { ReportBlogLinks } from "./report-constants"
+import { parseExplicitPositiveAmount } from "./report-evidence"
 
 // Heavy components — code-split for faster initial load
 const ReportHyperFramesPlayer = dynamic(() => import("./ReportHyperFramesPlayer"), { ssr: false, loading: () => <div className="aspect-video bg-zinc-100 rounded-2xl animate-pulse" /> })
@@ -44,10 +45,12 @@ export default function DiagnosticReport({
   data,
   trackingSlug,
   locale,
+  approvedBlogLinks = {},
 }: {
   data: DiagnosticReportData
   trackingSlug?: string
   locale?: string
+  approvedBlogLinks?: ReportBlogLinks
 }) {
   // 🔒 Client-side safety: prevent hydration crashes from undefined nested fields
   const safeContentTemplate = data.content_template ?? { purpose: "", variant: "website_diagnostic" as const, html_content: "", title: "", quality_bar: "" }
@@ -79,8 +82,11 @@ export default function DiagnosticReport({
   const offerCopy = getReportOfferCopy(lang, safeData.template_variant)
   const intelligence = localizeReportIntelligence(safeData.intelligence, lang)
   const activeLocale = locale ?? safeData.report_locale
-  const confidence = signalScore(intelligence.signals)
-  const loss = numericValue(safeData.total_loss)
+  const confidence = intelligence.signals.length > 0
+    ? signalScore(intelligence.signals)
+    : null
+  const loss = parseExplicitPositiveAmount(safeData.total_loss)
+  const notMeasured = lang === "ja" ? "未測定" : "Not measured"
   const topPain = intelligence.painPoints?.[0] ?? { label: lang === "ja" ? "改善ポイント" : "Improvement point" }
   const videoHref = trackingSlug
     ? `/${activeLocale}/report/${trackingSlug}/video`
@@ -89,7 +95,9 @@ export default function DiagnosticReport({
   const visibleSources = (safeData.source_coverage?.items ?? [])
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
     .slice(0, 14)
-  const calHref = `https://cal.com/paradigm-jp/15min?name=${encodeURIComponent(safeData.company_name ?? "Client")}`
+  const calHref = lang === "ja"
+    ? `https://cal.com/paradigm-jp/15min?name=${encodeURIComponent(safeData.company_name ?? "Client")}`
+    : `/en/contact?intent=japan-entry&utm_source=diagnostic-report&utm_campaign=outbound-report&company=${encodeURIComponent(safeData.company_name ?? "Client")}`
   const displayScreenshotUrl = safeData.evidence_screenshot_url ?? safeData.screenshot_url ?? null
 
   const [isDark, setIsDark] = useState(false)
@@ -113,33 +121,12 @@ export default function DiagnosticReport({
   const businessImpact = cleanText(topPain?.implication, ctaText)
   const sourceScore = safeData.source_coverage.score
 
-  const benchmarkItems: BenchmarkItem[] = safeData.acts
-    .filter((act) => {
-      const n = numericValue(act.metric_value)
-      return n > 0 && !isNaN(n)
-    })
-    .map((act) => {
-      const n = numericValue(act.metric_value)
-      const maxVal = 100
-      const yourScore = Math.min(100, Math.max(0, (n / maxVal) * 100))
-      const benchN = Number(String(act.metric_bench ?? "").replace(/[^0-9.]/g, ""))
-      const industryAvg = Number.isFinite(benchN) && benchN > 0 ? Math.min(100, benchN) : 70
-      return {
-        label: cleanText(act.metric_label, copy.evidence).slice(0, 20),
-        yourScore,
-        industryAvg,
-      }
-    })
-
-  const lossItems: LossImpactItem[] = safeData.acts
-    .filter((act) => {
-      const n = numericValue(act.metric_value)
-      return n > 0 && !isNaN(n)
-    })
-    .map((act, i) => ({
-      label: cleanText(act.headline, act.metric_label).slice(0, 30),
-      amount: Math.round((loss / safeData.acts.length) * (safeData.acts.length - i) * 0.8 + loss * 0.2),
-    }))
+  // Diagnostic acts currently carry presentation copy, not source provenance or
+  // per-metric calculation inputs. Do not manufacture comparison/loss values
+  // from those strings. These charts stay hidden until the report payload has
+  // explicit, source-backed series for them.
+  const benchmarkItems: BenchmarkItem[] = []
+  const lossItems: LossImpactItem[] = []
 
   const radarItems = (() => {
     const categories: Record<string, { sum: number; count: number }> = {}
@@ -157,15 +144,10 @@ export default function DiagnosticReport({
       .slice(0, 8)
   })()
 
-  const timelineItems: TimelinePoint[] = [
-    { month: lang === "ja" ? "現在" : "Now", loss, competitorGap: loss * 0.5 },
-    ...([1, 3, 6].map((m) => ({
-      month: `${m}${lang === "ja" ? "ヶ月" : "mo"}`,
-      loss: Math.round(loss * (1 + m * 0.05)),
-      competitorGap: Math.round(Math.max(0, loss * (1 + m * 0.05) * 0.4)),
-    }))),
-  ]
-  const isProjection = lang === "ja" ? "※改善しない場合の推定値" : "Projection if unaddressed"
+  const timelineItems: TimelinePoint[] = []
+  const isProjection = lang === "ja"
+    ? "出典付きの時系列予測データは未取得です。"
+    : "No source-backed forecast is available."
 
   return (
     <MotionConfig reducedMotion="user">
@@ -259,13 +241,17 @@ export default function DiagnosticReport({
             />
             <Stat
               label={copy.monthlyLoss}
-              value={formatMoney(loss, lang)}
-              detail={ctaText}
+              value={loss === null ? notMeasured : formatMoney(loss, lang)}
+              detail={loss === null
+                ? (lang === "ja" ? "出典付きの損失試算は未取得です。" : "No source-backed loss estimate is available.")
+                : ctaText}
             />
             <Stat
               label={copy.confidence}
-              value={`${confidence}/100`}
-              detail={qualityBar}
+              value={confidence === null ? notMeasured : `${confidence}/100`}
+              detail={confidence === null
+                ? (lang === "ja" ? "診断シグナルが未取得です。" : "No diagnostic signals are available.")
+                : qualityBar}
             />
           </div>
         </section>
@@ -279,8 +265,8 @@ export default function DiagnosticReport({
           firstAction={cleanText(intelligence.nextActions[0], ctaText)}
           topPain={topPain}
           sourceScore={safeData.source_coverage.score}
-          confidence={confidence}
-          monthlyLoss={loss}
+          confidence={confidence ?? undefined}
+          monthlyLoss={loss ?? undefined}
           findingsCount={safeData.acts.length}
         />
 
@@ -292,6 +278,7 @@ export default function DiagnosticReport({
           data={safeData}
           copy={copy}
           confidence={confidence}
+          monthlyLoss={loss}
           lang={lang}
           sourceScore={sourceScore}
         />
@@ -316,6 +303,7 @@ export default function DiagnosticReport({
           lang={lang}
           businessImpact={businessImpact}
           loss={loss}
+          approvedBlogLinks={approvedBlogLinks}
         />
 
         {/* ── Loss Impact Chart ─────────────────────────────── */}

@@ -4,7 +4,7 @@ import { motion } from "framer-motion"
 import { Gauge } from "lucide-react"
 import type { DiagnosticReportData } from "@/lib/sales/diagnostic"
 import type { ReportCopy, ReportLang } from "./report-copy"
-import { cleanText, numericValue } from "./report-utils"
+import { cleanText, reportCurrencySymbol } from "./report-utils"
 import { Pill } from "./report-utils"
 import { CountUpMetric } from "./ReportAnimations"
 import { PerformanceGauge } from "./ReportCharts"
@@ -13,16 +13,17 @@ export default function ReportDarkSurface({
   data,
   copy,
   confidence,
+  monthlyLoss,
   lang,
   sourceScore,
 }: {
   data: DiagnosticReportData
   copy: ReportCopy
-  confidence: number
+  confidence: number | null
+  monthlyLoss: number | null
   lang: ReportLang
   sourceScore: number
 }) {
-  const loss = numericValue(data.total_loss)
   const ctaText = cleanText(data.cta_text, copy.finalBody)
   const firstAction = cleanText(data.intelligence.nextActions[0], ctaText)
 
@@ -41,13 +42,17 @@ export default function ReportDarkSurface({
             <div className="border-t border-white/15 pt-4">
               <div className="text-xs font-semibold text-white/50">{copy.monthlyLoss}</div>
               <div className="mt-2 text-2xl font-semibold tabular-nums">
-                <CountUpMetric value={loss} prefix="¥" duration={1.2} />
+                {monthlyLoss === null
+                  ? (lang === "ja" ? "未測定" : "Not measured")
+                  : <CountUpMetric value={monthlyLoss} prefix={reportCurrencySymbol(lang)} duration={1.2} />}
               </div>
             </div>
             <div className="border-t border-white/15 pt-4">
               <div className="text-xs font-semibold text-white/50">{copy.confidence}</div>
               <div className="mt-2 text-2xl font-semibold tabular-nums">
-                <CountUpMetric value={confidence} suffix="/100" duration={1} />
+                {confidence === null
+                  ? (lang === "ja" ? "未測定" : "Not measured")
+                  : <CountUpMetric value={confidence} suffix="/100" duration={1} />}
               </div>
             </div>
             <div className="border-t border-white/15 pt-4">
@@ -61,8 +66,7 @@ export default function ReportDarkSurface({
           <div className="mt-6">
             <PerformanceGauge
               score={sourceScore}
-              industryAvg={75}
-              label={lang === "ja" ? "PSI総合スコア" : "Overall PSI Score"}
+              label={lang === "ja" ? "情報ソース品質" : "Source quality"}
               lang={lang}
             />
           </div>

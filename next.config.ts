@@ -3,12 +3,14 @@ import createNextIntlPlugin from "next-intl/plugin"
 import type { NextConfig } from "next"
 import path from "node:path"
 import fs from "node:fs"
+import { buildSecurityHeaders } from "./src/lib/security-headers"
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts")
 const isWebpackBuild = process.env.NEXT_BUILD_BUNDLER === "webpack"
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  poweredByHeader: false,
   staticPageGenerationTimeout: 180,
   // Pin Turbopack workspace root to this directory so worktree node_modules
   // resolves correctly. Without this, Next.js auto-detects the parent
@@ -53,6 +55,14 @@ const nextConfig: NextConfig = {
         source: "/p/:slug",
         destination: "/ja/report/:slug",
         permanent: true,
+      },
+    ]
+  },
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: buildSecurityHeaders(process.env.NODE_ENV === "production"),
       },
     ]
   },

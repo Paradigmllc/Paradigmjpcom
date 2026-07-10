@@ -12,6 +12,7 @@ interface RichCtaBandProps {
   buttonLabel: string
   buttonHref?: string
   bullets?: readonly string[]
+  analyticsSource?: string
 }
 
 function renderTitle(title: string, highlight?: string) {
@@ -34,7 +35,9 @@ export default function RichCtaBand({
   buttonLabel,
   buttonHref = "/contact",
   bullets,
+  analyticsSource = "final-cta",
 }: RichCtaBandProps) {
+  const isJapanEntryCta = buttonHref.includes("intent=japan-entry")
   return (
     <section className="border-y border-paradigm-line bg-paradigm-ink text-paradigm-paper">
       <FadeIn className="mx-auto grid max-w-[1180px] grid-cols-1 gap-8 px-5 py-14 md:grid-cols-[minmax(0,1fr)_280px] md:px-8 md:py-20 lg:px-10">
@@ -51,6 +54,10 @@ export default function RichCtaBand({
         <div className="flex flex-col justify-end gap-5">
           <Link
             href={buttonHref}
+            {...(isJapanEntryCta ? {
+              "data-umami-event": "japan-entry-apply",
+              "data-umami-event-source": analyticsSource,
+            } : {})}
             className="inline-flex h-12 items-center justify-center gap-2 border border-paradigm-paper bg-paradigm-paper px-6 text-[12px] font-semibold text-paradigm-ink transition-colors hover:bg-transparent hover:text-paradigm-paper"
           >
             {buttonLabel}
