@@ -7,7 +7,8 @@
 
 ### 実装済み
 - ENホームのCMS seedをJapan Entry単一オファーへ全面改稿（Hero / outcomes / 21日プロセス / 比較 / 固定価格 / 適格条件 / FAQ / CTA）。
-- `Pages.layout` のlocale対応、欠落していたPricing / Comparison block登録を修復し、Payload型を再生成。
+- 既存の`home-ja` / `home-en`別ドキュメント方式を維持し、欠落していたPricing / Comparison block登録を修復。`layout.localized`は未移行DB構造を要求するため使用しない。
+- seed APIに`scope: "homepage"`を追加し、他CMSコレクションに触れず2つのホームページだけを投入可能にした。部分失敗をHTTP 200にしないようerror集計も追加。
 - `/en/contact?intent=japan-entry` に専用申込フォームを追加。会社URL、本社国、最終決裁権、$12,000承認時期、希望開始時期、固定価格同意を必須化。
 - `/api/contact` は入力を型付きで検証・sanitizeし、Supabase lead metadataへ全項目を保存。DBベル + Slack通知を `notifyBothChannels` へ統一。
 - ENホーム／申込ページのヘッダーCTAを `Apply — $12K` と専用申込URLへ統一。
@@ -42,7 +43,7 @@
 ### 実装内容
 
 **Pagesコレクション拡張** (`src/collections/Pages.ts`):
-- `layout` フィールドに `localized: true` 追加 → JA/ENで異なるブロック構成が可能に
+- JA/ENは`home-ja` / `home-en`の別ドキュメントで異なるブロック構成を管理（`layout.localized`はDB非互換のため2026-07-10に撤回）
 - ComparisonBlock を layout blocks に追加
 
 **新規ブロック: ComparisonBlock**:
