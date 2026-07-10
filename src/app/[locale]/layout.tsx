@@ -40,9 +40,9 @@ const LOCALE_TITLES: Record<Locale, { default: string; template: string; descrip
     ogLocale: "ja_JP",
   },
   en: {
-    default: "Paradigm LLC | Productized Services for Foreign SMBs Entering Japan",
+    default: "Japan Entry Package for Fast-Decision SMBs | Paradigm",
     template: "%s | Paradigm LLC",
-    description: "Translation-free onboarding, local compliance, and AI-powered automation for foreign SMBs entering Japan. Built by operators in Tokyo.",
+    description: "$12,000 fixed Japan entry setup with six months of managed operation included. Launch a market-ready Japanese revenue path with a Tokyo-based team.",
     ogSiteName: "Paradigm LLC",
     ogLocale: "en_US",
   },

@@ -1,4 +1,4 @@
-## CURRENT STATUS - 2026-07-10 Japan Entry固定オファー型ホームページ改修（公開前検証完了）
+## CURRENT STATUS - 2026-07-10 Japan Entry固定オファー型ホームページ改修（本番反映完了）
 
 ### 決定事項
 - 対象: 欧米豪の意思決定が早いSMB。業種・従業員数ではなく、7日以内の最終承認可否で選別する。
@@ -16,7 +16,7 @@
 - ENホーム／申込ページのヘッダーCTAを `Apply — $12K` と専用申込URLへ統一。
 - Release gateの分割SSH接続が本番hostの6接続目制限に当たる問題を再現し、ControlMaster socket共有へ修正。ゲート迂回なしで全remote infra check通過を確認。
 
-### 検証（公開前）
+### 検証
 - `npm exec -- tsc --noEmit`: 0 error ✅
 - `contact-payload.test.ts`: 5/5 pass ✅
 - `npm run build`: 337 pages、exit 0 ✅
@@ -24,10 +24,15 @@
 - Release Doctor remote preflight: Traefik / Realtime / n8n停止 / Twenty worker / publicationを全項目pass ✅
 - `quality:guard`: 今回の新規error 0。既存2件のみ（`apple-final.ts` silent catch / `website-extract.ts` 500行超）。
 - 全体テスト: 257/263 pass。既存の非関連6件は未変更（agent-team links / content templates / dify timeout / routing / sales pipeline / browser search）。
+- Production release: DB 78/78、Traefik、Realtime、Twenty、Sales health JSON `ok:true`を正式gateでpass ✅
+- Production CMS seed: `scope=homepage`で2ページupdated、errors 0 ✅
+- Production Chrome: `/en`の新Hero・$12,000・6か月$0・$995/month・20 slots・旧$1,500/Free Consult非表示を確認 ✅
+- Production Chrome: `/en/contact?intent=japan-entry`の決裁権・承認時期・開始時期・固定価格同意・送信CTAを確認 ✅
+- Playwright CLIはローカルChromium executable未導入で起動不可。テスト内容はChrome拡張の実ブラウザ検証で代替（アプリ不具合ではない）。
 
 ### Active Handoff（このタスク）
-- 完了: 実装・型検査・対象unit test・production build・ローカルChrome表示確認。
-- 次: commit → push → PR/merge → `npm run release:prod` → 本番seed → `/en`と専用申込ページのproduction E2E。
+- 完了: 実装・型検査・対象unit test・production build・PR merge・production release・CMS seed・実ブラウザ確認。
+- 残: 今回のJapan Entryホームページ改修に必須の作業なし。既存quality baseline 2件は別タスク。
 
 ## CURRENT STATUS - 2026-07-09 トップページCMS化 + JA/EN出し分け 本番反映完了
 
