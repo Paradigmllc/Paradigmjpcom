@@ -142,7 +142,6 @@ export const Pages: CollectionConfig = {
       type: "blocks",
       label: "レイアウト (Block を組み合わせる)",
       minRows: 1,
-      localized: true,
       blocks: [
         HeroBlock,
         SectionBlock,

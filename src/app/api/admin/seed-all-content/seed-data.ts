@@ -124,7 +124,7 @@ export const TEAM_MEMBERS = [
   { nameJa:"テクニカルリード", nameEn:"Technical Lead", roleJa:"Senior Full-Stack Engineer", roleEn:"Senior Full-Stack Engineer", bioJa:"Next.js、TypeScript、Supabaseを専門。ヘッドレスCMSアーキテクチャ設計とAIパイプライン構築の経験が豊富。", bioEn:"Full-stack engineer specializing in Next.js, TypeScript, Supabase. Extensive headless CMS architecture and AI pipeline experience.", sort:2 },
   { nameJa:"デザインリード", nameEn:"Design Lead", roleJa:"UX Designer & Frontend Engineer", roleEn:"UX Designer & Frontend Engineer", bioJa:"プロダクトデザインとフロントエンド実装の両方を持ちTailwindCSS/Framer Motion/shadcn/uiを駆使したモダンUI設計が得意。", bioEn:"Bridging product design and frontend. Specializes in modern UI with TailwindCSS, Framer Motion, shadcn/ui.", sort:3 },
 ]
-export async function seedAllContent() {
+export async function seedAllContent(scope: "all" | "homepage" = "all") {
   const [{ getPayload }, { default: config }] = await Promise.all([
     import("payload"),
     import("@payload-config"),
@@ -132,6 +132,7 @@ export async function seedAllContent() {
   const payload = await getPayload({ config })
   const summary: Record<string, { created: number; updated: number; errors: number }> = {}
 
+  if (scope !== "homepage") {
   // Categories
   summary.categories = { created: 0, updated: 0, errors: 0 }
   for (const c of CATEGORIES) {
@@ -276,6 +277,7 @@ export async function seedAllContent() {
       }
       await payload.update({ collection: "team-members", id: docId, data: { name: m.nameEn, role: m.roleEn, bio: m.bioEn }, locale: "en" } as unknown as Parameters<typeof payload.update>[0])
     } catch (e: unknown) { console.error(`[seed] team:`, e); summary.team.errors++ }
+  }
   }
 
   // CMS Homepage — locale-aware (JA: Web制作 / EN: JaaS Japan Entry)

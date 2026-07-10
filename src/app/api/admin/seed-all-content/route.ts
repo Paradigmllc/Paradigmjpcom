@@ -11,15 +11,18 @@ export async function POST(req: Request) {
   if (secret !== expected) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const body = await req.json().catch(() => ({}))
+  const scope = body.scope === "homepage" ? "homepage" : "all"
   if (body.dryRun) {
     const { CATEGORIES, ALL_POSTS, SERVICES, PRICING_PLANS, WORKS, FAQS, TESTIMONIALS, TEAM_MEMBERS } = await import("./seed-data")
-    return NextResponse.json({ dryRun: true, would_seed: { categories: CATEGORIES.length, posts: ALL_POSTS.length, services: SERVICES.length, pricing: PRICING_PLANS.length, works: WORKS.length, faqs: FAQS.length, testimonials: TESTIMONIALS.length, team: TEAM_MEMBERS.length, pages: 1 }, hint: "{ confirm: true } で実行" })
+    const allCounts = { categories: CATEGORIES.length, posts: ALL_POSTS.length, services: SERVICES.length, pricing: PRICING_PLANS.length, works: WORKS.length, faqs: FAQS.length, testimonials: TESTIMONIALS.length, team: TEAM_MEMBERS.length, pages: 2 }
+    return NextResponse.json({ dryRun: true, scope, would_seed: scope === "homepage" ? { pages: 2 } : allCounts, hint: "{ confirm: true, scope: 'homepage' } でホームページのみ実行" })
   }
   if (!body.confirm) return NextResponse.json({ error: "Send { confirm: true } to execute", hint: "{ dryRun: true } で内容確認" }, { status: 400 })
 
   try {
-    const result = await seedAllContent()
-    return NextResponse.json({ success: true, summary: result })
+    const result = await seedAllContent(scope)
+    const errors = Object.values(result).reduce((total, item) => total + item.errors, 0)
+    return NextResponse.json({ success: errors === 0, scope, summary: result }, { status: errors === 0 ? 200 : 500 })
   } catch (e) {
     console.error("[seed-all-content] fatal:", e)
     return NextResponse.json({ error: (e as Error).message }, { status: 500 })
