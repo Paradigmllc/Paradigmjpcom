@@ -1,3 +1,29 @@
+## CURRENT STATUS - 2026-07-10 Japan Entry固定オファー型ホームページ改修（公開前検証完了）
+
+### 決定事項
+- 対象: 欧米豪の意思決定が早いSMB。業種・従業員数ではなく、7日以内の最終承認可否で選別する。
+- 商条件: セットアップ **$12,000固定**、最初の6か月は **$0/month**、7か月目以降 **$995/month**（いつでも解約可）。
+- 提供目標: 必要素材受領後 **21 business days**、初月 **20 launch slots**。安価なパイロット、$1,500レポート、無料相談は販売導線から除外する。
+
+### 実装済み
+- ENホームのCMS seedをJapan Entry単一オファーへ全面改稿（Hero / outcomes / 21日プロセス / 比較 / 固定価格 / 適格条件 / FAQ / CTA）。
+- `Pages.layout` のlocale対応、欠落していたPricing / Comparison block登録を修復し、Payload型を再生成。
+- `/en/contact?intent=japan-entry` に専用申込フォームを追加。会社URL、本社国、最終決裁権、$12,000承認時期、希望開始時期、固定価格同意を必須化。
+- `/api/contact` は入力を型付きで検証・sanitizeし、Supabase lead metadataへ全項目を保存。DBベル + Slack通知を `notifyBothChannels` へ統一。
+- ENホーム／申込ページのヘッダーCTAを `Apply — $12K` と専用申込URLへ統一。
+
+### 検証（公開前）
+- `npm exec -- tsc --noEmit`: 0 error ✅
+- `contact-payload.test.ts`: 5/5 pass ✅
+- `npm run build`: 337 pages、exit 0 ✅
+- Chrome実表示: 新Hero・固定価格・選別項目・`Apply — $12K`を確認。旧`Free Consult`導線なし ✅
+- `quality:guard`: 今回の新規error 0。既存2件のみ（`apple-final.ts` silent catch / `website-extract.ts` 500行超）。
+- 全体テスト: 257/263 pass。既存の非関連6件は未変更（agent-team links / content templates / dify timeout / routing / sales pipeline / browser search）。
+
+### Active Handoff（このタスク）
+- 完了: 実装・型検査・対象unit test・production build・ローカルChrome表示確認。
+- 次: commit → push → PR/merge → `npm run release:prod` → 本番seed → `/en`と専用申込ページのproduction E2E。
+
 ## CURRENT STATUS - 2026-07-09 トップページCMS化 + JA/EN出し分け 本番反映完了
 
 ### 本番確認

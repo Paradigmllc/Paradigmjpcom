@@ -141,18 +141,23 @@ export function ProcessRender({ block: b }: { block: AnyBlock }) {
 
 export function PricingRender({ block: b }: { block: AnyBlock }) {
   const tiers = (b.tiers as Array<{ name?: string; price?: string; period?: string; description?: string; features?: string; ctaLabel?: string; ctaHref?: string; highlighted?: boolean }>) ?? []
+  const gridClass = tiers.length === 1
+    ? "grid grid-cols-1 gap-8 max-w-2xl mx-auto"
+    : tiers.length === 2
+      ? "grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto"
+      : "grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto"
   return (
-    <section className="bg-paradigm-paper-deep paradigm-section relative overflow-hidden">
+    <section id={tiers.length === 1 ? "japan-entry-pricing" : undefined} className="bg-paradigm-paper-deep paradigm-section relative overflow-hidden scroll-mt-24">
       <div className="paradigm-mesh opacity-30" />
       <div className="max-w-6xl mx-auto px-6 md:px-12 relative z-10">
         {!!b.title && <h2 className="font-display text-[28px] md:text-[44px] leading-[1.15] tracking-[-0.01em] bg-gradient-to-br from-paradigm-ink via-paradigm-accent to-paradigm-glow bg-clip-text text-transparent text-center mb-4">{String(b.title)}</h2>}
         {!!b.subtitle && <p className="text-[15px] text-paradigm-ink-soft max-w-2xl mx-auto text-center mb-16 leading-[1.85]">{String(b.subtitle)}</p>}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className={gridClass}>
           {tiers.map((t, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-40px" }}
               transition={{ duration: 0.5, delay: i * 0.1, ease: EASE }} whileHover={{ y: -4 }}
               className={`rounded-2xl p-8 paradigm-glass paradigm-glow-sm hover:paradigm-glow-md transition-all relative overflow-hidden ${t.highlighted ? "ring-2 ring-paradigm-accent" : "border border-paradigm-line"}`}>
-              {t.highlighted && <><BorderBeam size={120} duration={6} colorFrom="rgb(236 72 153)" colorTo="rgb(245 158 11)" /><span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-paradigm-accent text-paradigm-paper text-[11px] tracking-[0.14em] uppercase px-3 py-1 rounded-full">Popular</span></>}
+              {t.highlighted && <><BorderBeam size={120} duration={6} colorFrom="rgb(236 72 153)" colorTo="rgb(245 158 11)" /><span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-paradigm-accent text-paradigm-paper text-[11px] tracking-[0.14em] uppercase px-3 py-1 rounded-full">{tiers.length === 1 ? "Fixed offer" : "Popular"}</span></>}
               <h3 className="font-display text-[22px] text-paradigm-ink mb-3">{t.name ?? ""}</h3>
               <div className="mb-4"><span className="font-display text-[40px] text-paradigm-ink">{t.price ?? ""}</span>{t.period && <span className="text-[14px] text-paradigm-ink-mute ml-1">/{t.period}</span>}</div>
               {t.description && <p className="text-[13px] text-paradigm-ink-soft leading-[1.75] mb-6">{t.description}</p>}

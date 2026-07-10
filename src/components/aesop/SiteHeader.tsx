@@ -69,8 +69,11 @@ export default function SiteHeader({ nav, announcementActive = false }: SiteHead
   ]
   const NAV: NavLink[] = nav?.items?.length ? nav.items : DEFAULT_NAV
   const ctaEnabled = nav?.cta ? nav.cta.enabled : true
-  const ctaLabel = nav?.cta?.label || tCta("primary")
-  const ctaHref = nav?.cta?.href || "/contact"
+  const isJapanEntryConversionRoute = pathname === "/en" || pathname.startsWith("/en/contact")
+  const ctaLabel = isJapanEntryConversionRoute ? tCta("primary") : nav?.cta?.label || tCta("primary")
+  const ctaHref = isJapanEntryConversionRoute
+    ? "/contact?intent=japan-entry"
+    : nav?.cta?.href || "/contact"
   const showLocale = nav ? nav.showLocaleSwitcher : true
   const showTheme = nav ? nav.showThemeToggle : true
 
