@@ -20,7 +20,12 @@ import { captureException } from "@/lib/error-monitor"
 import { LOCALE_COUNTRY, localeContentVariant } from "@/lib/locale-map"
 import { enrichFromContact } from "@/lib/sales/enrich"
 import { buildReportUrl, normalizeReportLocale } from "@/lib/sales/routing"
-import { notifySlack } from "@/lib/notify"
+import { notifyBothChannels, notifySlack } from "@/lib/notify"
+import {
+  JAPAN_ENTRY_INTENT,
+  parseContactPayload,
+  validateContactPayload,
+} from "./contact-payload"
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,15 +47,37 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const body = await req.json()
-    const { name, company, email, phone, services, message, budget, locale, turnstileToken } = body
-
-    // 2. Required field validation
-    if (!name || !email || !message) {
-      return NextResponse.json({ error: "必須項目が入力されていません" }, { status: 400 })
+    const body: unknown = await req.json()
+    const payload = parseContactPayload(body)
+    if (!payload) {
+      return NextResponse.json({ error: "Invalid request payload" }, { status: 400 })
     }
 
-    // 3. Turnstile CAPTCHA (no-op if TURNSTILE_SECRET_KEY unset)
+    const validationError = validateContactPayload(payload)
+    if (validationError) {
+      return NextResponse.json({ error: validationError }, { status: 400 })
+    }
+
+    const {
+      name,
+      company,
+      email,
+      phone,
+      services,
+      message,
+      budget,
+      locale,
+      turnstileToken,
+      intent,
+      companyWebsite,
+      companyCountry,
+      decisionAuthority,
+      approvalTimeline,
+      desiredLaunch,
+      setupFeeAcknowledged,
+    } = payload
+
+    // 2. Turnstile CAPTCHA (no-op if TURNSTILE_SECRET_KEY unset)
     const captchaOk = await verifyTurnstile(turnstileToken)
     if (!captchaOk) {
       return NextResponse.json(
@@ -66,6 +93,7 @@ export async function POST(req: NextRequest) {
     // 4. Slack notification (best-effort)
     const slackText = [
       "📩 *paradigmjp.com お問い合わせ*",
+      `*intent:* ${intent}`,
       `*locale:* ${reportLocale}`,
       `*お名前:* ${name}`,
       company ? `*会社名:* ${company}` : null,
@@ -73,30 +101,24 @@ export async function POST(req: NextRequest) {
       phone ? `*電話:* ${phone}` : null,
       services?.length ? `*興味のあるサービス:* ${services.join(", ")}` : null,
       budget ? `*ご予算:* ${budget}` : null,
+      companyWebsite ? `*会社URL:* ${companyWebsite}` : null,
+      companyCountry ? `*本社国:* ${companyCountry}` : null,
+      decisionAuthority ? `*決裁権:* ${decisionAuthority}` : null,
+      approvalTimeline ? `*$12K承認時期:* ${approvalTimeline}` : null,
+      desiredLaunch ? `*開始希望:* ${desiredLaunch}` : null,
       `*ご相談内容:*\n${message}`,
     ]
       .filter(Boolean)
       .join("\n")
 
-    // 2026-05-13 appexx.me 連携一時断絶: SLACK_WEBHOOK_URL env から
-    // Slack Incoming Webhook を直接呼ぶ。env 未設定なら no-op + warn (fail-soft)。
-    const slackWebhookUrl = process.env.SLACK_WEBHOOK_URL
-    if (slackWebhookUrl) {
-      try {
-        await fetch(slackWebhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: slackText }),
-          signal: AbortSignal.timeout(5_000),
-        })
-      } catch (e) {
-        console.error("[contact] Slack notify failed (best-effort):", e)
-      }
-    } else {
-      console.warn(
-        "[contact] SLACK_WEBHOOK_URL not set — skipping Slack notify (appexx.me archive 2026-05-13)",
-      )
-    }
+    await notifyBothChannels(slackText, {
+      title: intent === JAPAN_ENTRY_INTENT ? "Japan Entry application" : "Website inquiry",
+      message: `${company || name} submitted ${intent === JAPAN_ENTRY_INTENT ? "a Japan Entry application" : "an inquiry"}.`,
+      link: intent === JAPAN_ENTRY_INTENT ? "/en/contact?intent=japan-entry" : `/${reportLocale}/contact`,
+      type: intent === JAPAN_ENTRY_INTENT ? "japan_entry_application" : "contact_inquiry",
+      region: "global",
+      priority: intent === JAPAN_ENTRY_INTENT ? 100 : 80,
+    })
 
     // 5. Supabase leads insert (best-effort)
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -127,6 +149,13 @@ export async function POST(req: NextRequest) {
                 message,
                 budget,
                 locale,
+                intent,
+                company_website: companyWebsite || null,
+                company_country: companyCountry || null,
+                decision_authority: decisionAuthority || null,
+                approval_timeline: approvalTimeline || null,
+                desired_launch: desiredLaunch || null,
+                setup_fee_acknowledged: setupFeeAcknowledged,
                 report_locale: reportLocale,
                 ip,
                 submitted_at: new Date().toISOString(),

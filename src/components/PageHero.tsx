@@ -11,6 +11,8 @@ interface PageHeroProps {
   /** @deprecated accent variant ignored in unified voice */
   accent?: "violet" | "indigo" | "emerald" | "rose" | "amber"
   highlight?: string
+  asideText?: string
+  asideCta?: { label: string; href: string } | null
 }
 
 function splitTitle(title: string, highlight?: string) {
@@ -21,7 +23,7 @@ function splitTitle(title: string, highlight?: string) {
   return { before, match: highlight, after }
 }
 
-export default async function PageHero({ badge, title, desc, highlight }: PageHeroProps) {
+export default async function PageHero({ badge, title, desc, highlight, asideText, asideCta }: PageHeroProps) {
   const tCta = await getTranslations("cta")
   const tFooter = await getTranslations("footer")
   const parts = splitTitle(title, highlight)
@@ -52,15 +54,17 @@ export default async function PageHero({ badge, title, desc, highlight }: PageHe
         </div>
         <aside className="self-end border-l border-paradigm-line pl-6 anim-fade-up-3">
           <p className="text-[12px] leading-[1.8] text-paradigm-ink-mute">
-            {tFooter("companyTagline")}
+            {asideText ?? tFooter("companyTagline")}
           </p>
-          <Link
-            href="/contact"
-            className="mt-5 inline-flex items-center gap-2 text-[12px] font-semibold text-paradigm-ink transition-colors hover:text-paradigm-accent"
-          >
-            {tCta("primary")}
-            <ArrowRight size={14} aria-hidden />
-          </Link>
+          {asideCta !== null && (
+            <Link
+              href={asideCta?.href ?? "/contact"}
+              className="mt-5 inline-flex items-center gap-2 text-[12px] font-semibold text-paradigm-ink transition-colors hover:text-paradigm-accent"
+            >
+              {asideCta?.label ?? tCta("primary")}
+              <ArrowRight size={14} aria-hidden />
+            </Link>
+          )}
         </aside>
       </div>
     </section>

@@ -13,6 +13,8 @@ import { StatsBlock } from "../blocks/Stats"
 import { TestimonialsBlock } from "../blocks/Testimonials"
 import { ProcessBlock } from "../blocks/Process"
 import { MarqueeBlock } from "../blocks/Marquee"
+import { PricingBlock } from "../blocks/Pricing"
+import { ComparisonBlock } from "../blocks/Comparison"
 
 /**
  * Pages collection — Block ベースの Visual Page Builder
@@ -140,6 +142,7 @@ export const Pages: CollectionConfig = {
       type: "blocks",
       label: "レイアウト (Block を組み合わせる)",
       minRows: 1,
+      localized: true,
       blocks: [
         HeroBlock,
         SectionBlock,
@@ -151,6 +154,8 @@ export const Pages: CollectionConfig = {
         TestimonialsBlock,
         ProcessBlock,
         MarqueeBlock,
+        PricingBlock,
+        ComparisonBlock,
       ],
     },
     {

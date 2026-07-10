@@ -642,6 +642,44 @@ export interface Page {
             blockName?: string | null;
             blockType: 'marquee';
           }
+        | {
+            title?: string | null;
+            subtitle?: string | null;
+            tiers?:
+              | {
+                  name: string;
+                  price?: string | null;
+                  period?: string | null;
+                  description?: string | null;
+                  features?: string | null;
+                  ctaLabel?: string | null;
+                  ctaHref?: string | null;
+                  highlighted?: boolean | null;
+                  id?: string | null;
+                }[]
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'pricing';
+          }
+        | {
+            kicker?: string | null;
+            title?: string | null;
+            subtitle?: string | null;
+            leftLabel?: string | null;
+            rightLabel?: string | null;
+            rows?:
+              | {
+                  item: string;
+                  leftValue?: string | null;
+                  rightValue?: string | null;
+                  id?: string | null;
+                }[]
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'comparison';
+          }
       )[]
     | null;
   /**
@@ -1327,6 +1365,46 @@ export interface PagesSelect<T extends boolean = true> {
                   };
               direction?: T;
               speed?: T;
+              id?: T;
+              blockName?: T;
+            };
+        pricing?:
+          | T
+          | {
+              title?: T;
+              subtitle?: T;
+              tiers?:
+                | T
+                | {
+                    name?: T;
+                    price?: T;
+                    period?: T;
+                    description?: T;
+                    features?: T;
+                    ctaLabel?: T;
+                    ctaHref?: T;
+                    highlighted?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        comparison?:
+          | T
+          | {
+              kicker?: T;
+              title?: T;
+              subtitle?: T;
+              leftLabel?: T;
+              rightLabel?: T;
+              rows?:
+                | T
+                | {
+                    item?: T;
+                    leftValue?: T;
+                    rightValue?: T;
+                    id?: T;
+                  };
               id?: T;
               blockName?: T;
             };
