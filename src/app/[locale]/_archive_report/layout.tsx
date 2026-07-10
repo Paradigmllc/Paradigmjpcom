@@ -8,7 +8,7 @@ import type { ReactNode } from "react"
  *   /report/ は 1 顧客 1 URL の個別生成ページ = SEO インデックス禁止
  *
  * 4 層 noindex 防御:
- *   Layer 1: HTTP Header X-Robots-Tag       — middleware.ts
+ *   Layer 1: HTTP Header X-Robots-Tag       — proxy.ts
  *   Layer 2: HTML <meta name="robots">      — この layout (Metadata API)
  *   Layer 3: robots.txt Disallow            — src/app/robots.ts
  *   Layer 4: canonical 自己参照を出さない    — alternates.canonical 未設定

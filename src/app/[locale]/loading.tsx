@@ -8,8 +8,13 @@
 
 export default function Loading() {
   return (
-    <div className="min-h-[60vh] flex items-center justify-center bg-paradigm-paper">
-      <div className="relative w-10 h-10">
+    <div
+      className="min-h-[60vh] flex items-center justify-center bg-paradigm-paper"
+      role="status"
+      aria-live="polite"
+      aria-label="Loading"
+    >
+      <div className="relative w-10 h-10" aria-hidden="true">
         {/* Outer track */}
         <div className="absolute inset-0 rounded-full border-2 border-paradigm-line/40" />
         {/* Spinning arc */}

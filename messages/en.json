@@ -2,18 +2,18 @@
   "serviceDetail": {
     "breadcrumbHome": "Home",
     "breadcrumbServices": "Services",
-    "ctaHighlight": "Talk to us",
-    "ctaDesc": "First 30-minute consultation is on us.",
-    "ctaLabel": "Book a free consultation",
+    "ctaHighlight": "Japan Entry",
+    "ctaDesc": "This module is delivered through the fixed $12,000 Japan Entry package.",
+    "ctaLabel": "Apply for Japan Entry — $12K",
     "web": {
       "metaTitle": "Web Development",
       "metaDescription": "High-performance, SEO-optimised Next.js / WordPress sites — design through post-launch operations.",
       "heroBadge": "Web Development",
       "heroBadgeShort": "Web Dev",
-      "ctaTitle": "Talk to us about web development",
-      "ctaHighlight": "Web Dev",
-      "ctaDesc": "Conversion-focused websites. Free consultation to find your best plan.",
-      "ctaLabel": "Book a free consultation",
+      "ctaTitle": "Launch the localized revenue-site module",
+      "ctaHighlight": "revenue-site",
+      "ctaDesc": "Included within the agreed scope of the fixed Japan Entry package.",
+      "ctaLabel": "Apply for Japan Entry — $12K",
       "processEyebrow": "Process",
       "processTitle": "How we build",
       "process": [
@@ -42,31 +42,31 @@
       "statsTitle": "What our web builds deliver",
       "stats": [
         {
-          "value": "95+",
-          "label": "Lighthouse performance score"
+          "value": "$12K",
+          "label": "Fixed Japan Entry setup"
         },
         {
-          "value": "2×",
-          "label": "Average increase in contact-form conversions"
+          "value": "21 days",
+          "label": "Business-day launch target, subject to dependencies"
         },
         {
-          "value": "2 weeks",
-          "label": "Typical project turnaround"
+          "value": "6 months",
+          "label": "Defined ongoing service at $0/month"
         },
         {
-          "value": "3 months",
-          "label": "Free post-launch support included"
+          "value": "$995",
+          "label": "Monthly service from month seven"
         }
       ],
       "faqTitle": "Web development FAQs",
       "faqs": [
         {
           "question": "How long does a typical website build take?",
-          "answer": "A standard 5-page corporate site takes about 2 weeks from kickoff to launch. Larger projects with custom features may take 4–6 weeks. We'll give you a precise timeline after the initial consultation."
+          "answer": "The package uses a 21-business-day launch target. It depends on the agreed scope, complete source materials, access, prompt feedback, one empowered approver, and third-party review timing."
         },
         {
           "question": "Do you offer post-launch maintenance?",
-          "answer": "Yes. Every build includes 3 months of free post-launch support (bug fixes, content updates, performance monitoring). After that, ongoing maintenance retainers start at ¥19,800/month."
+          "answer": "The defined ongoing service is $0/month for the first six months, then $995/month from month seven unless cancelled under the signed terms. Its exact responsibilities are confirmed in the engagement scope."
         },
         {
           "question": "Can I update the site myself after launch?",
@@ -78,7 +78,7 @@
         },
         {
           "question": "What if I already have a site? Can you redesign it?",
-          "answer": "Yes. We can redesign your existing site while preserving your SEO equity (URLs, metadata, content). We handle the migration so there's zero downtime."
+          "answer": "A redesign can be included only when agreed in scope. We inventory URLs, metadata, content, access, and cutover risks, but no migration can promise zero downtime or unchanged search performance."
         }
       ]
     },
@@ -89,8 +89,8 @@
       "heroBadgeShort": "MEO",
       "ctaTitle": "Ready to start MEO?",
       "ctaHighlight": "MEO",
-      "ctaDesc": "Free local-SEO audit on us.",
-      "ctaLabel": "Get a free audit",
+      "ctaDesc": "Japan discovery work is one module inside the fixed Japan Entry package.",
+      "ctaLabel": "Apply for Japan Entry — $12K",
       "processEyebrow": "Process",
       "processTitle": "How MEO works",
       "process": [
@@ -116,23 +116,23 @@
         }
       ],
       "statsEyebrow": "OUTCOMES",
-      "statsTitle": "MEO results our clients see",
+      "statsTitle": "Local discovery implementation boundaries",
       "stats": [
         {
-          "value": "TOP 3",
-          "label": "Average Google Maps ranking achieved"
+          "value": "Included",
+          "label": "Google Business Profile and local discovery review where applicable"
         },
         {
-          "value": "3 months",
-          "label": "Typical time to first-page Maps results"
+          "value": "Baseline",
+          "label": "Launch-time profile, category, and trust-signal setup"
         },
         {
-          "value": "+40%",
-          "label": "Average increase in direction requests"
+          "value": "Tracked",
+          "label": "Available discovery and inquiry signals configured for measurement"
         },
         {
-          "value": "+25%",
-          "label": "Average increase in phone calls from GBP"
+          "value": "No rank promise",
+          "label": "Search and map outcomes depend on market and platform factors"
         }
       ],
       "faqTitle": "MEO frequently asked questions",
@@ -143,7 +143,7 @@
         },
         {
           "question": "How long until I see results from MEO?",
-          "answer": "Most clients see measurable improvements within 1–3 months. Rankings improve gradually as we optimize your profile, build reviews, and post regularly. We provide monthly rank-tracking reports."
+          "answer": "Timing varies by market, competition, profile history, customer activity, and platform changes. We establish the agreed foundation and measurement; we do not promise a specific ranking or date."
         },
         {
           "question": "Do I need to respond to every review?",
@@ -151,7 +151,7 @@
         },
         {
           "question": "Can you help if I have multiple locations?",
-          "answer": "Yes. Our Pro plan covers multiple locations. We manage each Google Business Profile separately with location-specific optimization, posting calendars, and review strategies."
+          "answer": "Yes, when multiple locations are included in the signed Japan Entry scope. Each eligible Google Business Profile is handled with location-specific setup, content, measurement, and review-response responsibilities."
         }
       ]
     },
@@ -162,8 +162,8 @@
       "heroBadgeShort": "SEO / GEO",
       "ctaTitle": "Start your AI-era search strategy",
       "ctaHighlight": "AI-era search",
-      "ctaDesc": "Free SEO + GEO site audit available.",
-      "ctaLabel": "Get a free audit",
+      "ctaDesc": "Search readiness is one module inside the fixed Japan Entry package.",
+      "ctaLabel": "Apply for Japan Entry — $12K",
       "comparisonEyebrow": "Comparison",
       "comparisonTitle": "SEO vs. GEO",
       "seoColEyebrow": "Conventional",
@@ -184,21 +184,21 @@
         "FAQ structuring",
         "Trust signal reinforcement"
       ],
-      "geoBadge": "Paradigm exclusive",
+      "geoBadge": "Package module",
       "statsEyebrow": "OUTCOMES",
       "statsTitle": "SEO/GEO performance benchmarks",
       "stats": [
         {
-          "value": "2.5×",
-          "label": "Average organic traffic increase"
+          "value": "Included",
+          "label": "Technical and on-page search-readiness baseline"
         },
         {
-          "value": "6 months",
-          "label": "Typical time to first-page rankings"
+          "value": "Structured",
+          "label": "Metadata, information architecture, and eligible schema setup"
         },
         {
-          "value": "98%",
-          "label": "Core Web Vitals pass rate after optimization"
+          "value": "Measured",
+          "label": "Launch analytics baseline for future iteration"
         },
         {
           "value": "GEO-ready",
@@ -213,7 +213,7 @@
         },
         {
           "question": "Do you guarantee #1 rankings?",
-          "answer": "No ethical SEO provider can guarantee specific rankings — Google's algorithm changes constantly. What we guarantee: data-driven strategy, transparent monthly reporting, and continuous improvement. Our MEO service includes a results-based refund window."
+          "answer": "No. Search engines and AI answer systems change independently. We commit to the written implementation scope and transparent handover, not a specific ranking, citation, traffic level, or refund based on platform outcomes."
         },
         {
           "question": "How is Paradigm's SEO different from other agencies?",
@@ -221,7 +221,7 @@
         },
         {
           "question": "What's included in the monthly SEO retainer?",
-          "answer": "Monthly keyword research, 2–8 articles (depending on plan), technical SEO audits, structured data implementation, backlink monitoring, GEO optimization, and a detailed monthly report with rankings, traffic, and conversion data."
+          "answer": "There is no separate English SEO retainer. Search-readiness work and any defined ongoing responsibilities are documented in the fixed Japan Entry scope; expanded content or integrations require written approval."
         }
       ]
     },
@@ -232,50 +232,50 @@
       "heroBadgeShort": "AI Integration",
       "ctaTitle": "Transform your operations with AI",
       "ctaHighlight": "AI",
-      "ctaDesc": "Free consultation to scope your AI roadmap.",
-      "ctaLabel": "Book a free consultation",
+      "ctaDesc": "Bilingual support and automation are scoped within the fixed Japan Entry package.",
+      "ctaLabel": "Apply for Japan Entry — $12K",
       "useCasesEyebrow": "Use Cases",
       "useCasesTitle": "AI integration cases",
       "useCases": [
         {
           "tag": "Chatbot",
           "gradient": "from-pink-400 to-paradigm-accent",
-          "title": "80% of CS auto-answered",
-          "desc": "Train AI chatbot on FAQs. Eight out of ten inquiries answered automatically — major labour cost reduction."
+          "title": "Bilingual first-line support",
+          "desc": "Configure the agreed knowledge and escalation path for common Japan-facing inquiries. Automation coverage depends on approved content and use case."
         },
         {
           "tag": "Automation",
           "gradient": "from-paradigm-accent to-paradigm-tech",
-          "title": "5x faster reports",
-          "desc": "Monthly reports automated. Collection → analysis → charts, end-to-end."
+          "title": "Repeatable operator handoff",
+          "desc": "Document agreed inputs, routing, escalation, and ownership so the support workflow can be operated after launch."
         },
         {
           "tag": "Content",
           "gradient": "from-paradigm-tech to-paradigm-glow",
-          "title": "60% lower content cost",
-          "desc": "AI drafts blog articles. Humans review / polish — quality maintained at 40% the price."
+          "title": "Human-reviewed assistance",
+          "desc": "Use AI only where appropriate, with human review for brand, cultural, factual, and compliance-sensitive output."
         },
         {
           "tag": "Analytics",
           "gradient": "from-paradigm-glow to-pink-400",
-          "title": "2x sales forecast accuracy",
-          "desc": "AI analyses historical sales data. Demand forecasting accuracy doubles. Inventory waste minimised."
+          "title": "Visible operating boundaries",
+          "desc": "Define what the assistant may answer, when it must escalate, and which external systems or costs remain outside scope."
         }
       ],
       "statsEyebrow": "OUTCOMES",
       "statsTitle": "AI integration impact",
       "stats": [
         {
-          "value": "40%",
-          "label": "Average reduction in operational hours"
+          "value": "Scoped",
+          "label": "Approved support and automation use cases"
         },
         {
-          "value": "80%",
-          "label": "Customer inquiries handled by AI"
+          "value": "Reviewed",
+          "label": "Human oversight for sensitive or uncertain responses"
         },
         {
-          "value": "2 weeks",
-          "label": "Chatbot deployment time"
+          "value": "Documented",
+          "label": "Knowledge, escalation, and handover materials"
         },
         {
           "value": "24/7",
@@ -290,7 +290,7 @@
         },
         {
           "question": "What AI tools do you work with?",
-          "answer": "We integrate DeepSeek V4, ChatGPT, Gemini, Dify (AI workflow builder), and n8n (automation). The specific stack depends on your use case and budget. We recommend the best tools during the initial consultation."
+          "answer": "The provider and workflow depend on the approved use case, data boundaries, existing systems, and third-party costs. The selected stack and responsibilities are documented during scope confirmation."
         },
         {
           "question": "Can AI integrate with our existing systems?",
@@ -298,11 +298,11 @@
         },
         {
           "question": "Is my business data safe with AI?",
-          "answer": "We use enterprise-grade API endpoints with encryption in transit and at rest. Your data is never used to train public AI models. For highly sensitive data, we can deploy on-premise or private cloud instances."
+          "answer": "Security and provider data use depend on the selected system and configuration. We document the agreed data flow and access boundaries; sensitive or regulated use cases require separate review and may be out of scope."
         },
         {
           "question": "What's the ROI of AI integration?",
-          "answer": "Most clients see ROI within 2–4 months. A chatbot handling 200 inquiries/month saves ~40 hours of staff time — roughly ¥120,000/month in labor costs. Automation of reporting and data entry typically saves 10–20 hours/week."
+          "answer": "We do not promise a standard ROI. Value depends on inquiry volume, data quality, approved automation, operator adoption, provider costs, and the baseline process. We identify measurable signals for your agreed use case."
         }
       ]
     }
@@ -313,48 +313,71 @@
     "heroBadge": "Journal",
     "heroTitle": "Insights from the front lines.",
     "heroHighlight": "front lines",
-    "heroDesc": "Real-world knowledge on Japan market entry, productized services, and AI-native operations.",
+    "heroDesc": "Practical notes on Japan-entry scope, launch dependencies, localization, discovery, support, and operating decisions.",
     "emptyMessage": "No posts are published yet. Check back soon.",
-    "emptyCta": "Contact us",
+    "emptyCta": "Apply for Japan Entry — $12K",
     "readTimeFormat": "{readTime} read"
   },
   "worksPage": {
-    "metaTitle": "Case Studies",
-    "metaDescription": "Case studies from Paradigm LLC.",
-    "heroBadge": "Case studies",
-    "heroTitle": "Real results we've shipped together.",
-    "heroHighlight": "shipped together",
-    "heroDesc": "Real results from productized engagements with foreign SMBs entering Japan.",
-    "emptyMessage": "No case studies are published yet.",
-    "emptyCta": "Contact us",
-    "ctaEyebrow": "Together",
-    "ctaTitle": "Let's build your next case study together",
-    "ctaHighlight": "together",
-    "ctaDesc": "Book a free consultation to scope your Japan entry.",
-    "ctaButton": "Book a free consultation",
-    "processEyebrow": "How We Work",
-    "processTitle": "How we deliver projects",
+    "metaTitle": "Delivery Evidence | Japan Entry Package",
+    "metaDescription": "Inspect the systems, process, and fixed deliverables behind Paradigm's $12,000 Japan Entry package.",
+    "heroBadge": "Delivery evidence",
+    "heroTitle": "Evidence you can inspect before you apply.",
+    "heroHighlight": "inspect",
+    "heroDesc": "We do not publish inflated anonymous results. These are concrete capabilities demonstrated by this site and its operating workflow.",
+    "emptyMessage": "Delivery evidence is being prepared.",
+    "emptyCta": "Apply for Japan Entry — $12K",
+    "ctaEyebrow": "Your launch",
+    "ctaTitle": "Put this delivery system behind your Japan entry.",
+    "ctaHighlight": "Japan entry",
+    "ctaDesc": "Apply if a decision-maker can approve a fixed $12,000 setup and supply launch inputs promptly.",
+    "ctaButton": "Apply for Japan Entry — $12K",
+    "processEyebrow": "Delivery process",
+    "processTitle": "A gated 21-business-day launch target",
     "process": [
       {
         "step": "01",
-        "title": "Discovery",
-        "desc": "We listen to your challenges, goals, and budget, then propose the optimal plan and timeline."
+        "title": "Fit and input check",
+        "desc": "We confirm decision authority, target offer, source content, access, and the dependencies required to start."
       },
       {
         "step": "02",
-        "title": "Design & Build",
-        "desc": "From design to coding and AI integration, a dedicated team manages quality throughout."
+        "title": "Localized build",
+        "desc": "We implement the agreed revenue site, trust and compliance coordination, discovery foundation, and bilingual support setup."
       },
       {
         "step": "03",
-        "title": "Launch & Support",
-        "desc": "After final QA, we go live. Post-launch maintenance and improvements continue."
+        "title": "Approval and launch",
+        "desc": "Your team reviews the agreed scope, resolves blockers, and approves launch. The target depends on timely inputs and approvals."
+      }
+    ],
+    "proofItems": [
+      {
+        "title": "Localized revenue-site system",
+        "industry": "Inspectable delivery",
+        "description": "This site demonstrates localized routing, CMS-managed content, structured page sections, responsive layouts, and a dedicated application path.",
+        "metrics": "Visible on paradigmjp.com",
+        "tags": ["Localization", "CMS", "Responsive", "SEO"]
+      },
+      {
+        "title": "Qualified application workflow",
+        "industry": "Operating process",
+        "description": "The Japan Entry application captures company, authority, timing, launch context, and source information so review starts with concrete inputs.",
+        "metrics": "Decision data captured",
+        "tags": ["Qualification", "Routing", "Handoff", "Privacy"]
+      },
+      {
+        "title": "Fixed commercial scope",
+        "industry": "Commercial clarity",
+        "description": "One public offer keeps setup, included launch work, exclusions, support period, and ongoing price visible before application.",
+        "metrics": "$12K · 6 months $0",
+        "tags": ["Fixed scope", "USD", "Support", "Handover"]
       }
     ]
   },
   "legalPage": {
-    "metaTitle": "Specified Commercial Transactions Act notice",
-    "metaDescription": "Paradigm LLC commercial transactions disclosure (Japan SCT Act).",
+    "metaTitle": "Commercial Terms | Japan Entry Package",
+    "metaDescription": "Commercial disclosure for Paradigm's fixed $12,000 Japan Entry package.",
     "heroBadge": "Legal",
     "heroTitle": "Specified Commercial Transactions Act notice",
     "rows": [
@@ -362,29 +385,29 @@
         "Vendor",
         "Paradigm LLC"
       ],
-      [
-        "Representative",
-        "Managing Member"
-      ],
-      [
-        "Address",
-        "Disclosed promptly on request"
-      ],
-      [
-        "Phone",
-        "Disclosed promptly on request"
+    [
+      "Representative",
+      "Disclosed without delay by email before application on request (info@paradigmjp.com)"
+    ],
+    [
+      "Address",
+      "Disclosed without delay by email before application on request (info@paradigmjp.com)"
+    ],
+    [
+      "Phone",
+      "Disclosed without delay by email before application on request (info@paradigmjp.com)"
       ],
       [
         "Email",
-        "contact@paradigmjp.com"
+        "info@paradigmjp.com"
       ],
       [
         "URL",
         "https://paradigmjp.com"
       ],
       [
-        "Pricing",
-        "As listed on each service page (excl. tax)"
+        "Japan Entry setup price",
+        "$12,000 USD for the fixed setup scope. Any applicable taxes are stated in the engagement documents."
       ],
       [
         "Payment",
@@ -392,23 +415,27 @@
       ],
       [
         "Payment timing",
-        "Net 30 (invoice issued, paid by end of next month)"
+        "The due date and any staged payment schedule are stated in the invoice and engagement terms before work starts."
       ],
       [
-        "Service start",
-        "On contract signing, per mutually agreed schedule"
+        "Ongoing service price",
+        "$0/month for the first six months, then $995/month from month seven unless cancelled under the signed terms."
       ],
       [
-        "Returns / cancellations",
-        "Due to the service nature, no refunds after start. Thorough scoping before signing."
+        "Service start and launch target",
+        "Work starts after written acceptance, required payment, and receipt of the agreed inputs. The 21-business-day launch target depends on timely access, content, approvals, scope, and third-party reviews."
       ],
       [
-        "Termination",
-        "Web dev: ends on delivery. MEO/SEO: 6-month minimum, no early-termination fee (ends end of month)."
+        "Cancellation and refunds",
+        "A submitted application may be withdrawn before an engagement is accepted. After work starts, cancellation, completed work, committed third-party costs, and any refund are handled under the signed terms and applicable law. Statutory rights are not excluded."
       ],
       [
-        "Extra fees",
-        "Any out-of-scope work requires prior approval before execution."
+        "Ongoing cancellation",
+        "The $995/month ongoing service may be cancelled for future periods under the notice and effective-date provisions in the signed terms."
+      ],
+      [
+        "Separate costs and exclusions",
+        "Provider fees, hosting, software, payment processing, advertising, inventory, logistics, licences, and legal, tax, banking, or incorporation advice are separate unless expressly included. Out-of-scope work requires written approval before execution."
       ]
     ]
   },
@@ -417,173 +444,242 @@
     "metaDescription": "Paradigm LLC privacy policy.",
     "heroBadge": "Privacy",
     "heroTitle": "Privacy Policy",
-    "heroDesc": "Last updated: April 2025",
+    "heroDesc": "Last updated: July 10, 2026",
     "sections": [
       {
-        "title": "1. Definition of personal information",
-        "body": "Personal information refers to information about a living individual that can identify the individual through items such as name, date of birth, or other descriptions."
+        "title": "1. Controller and scope",
+        "body": "Paradigm LLC, operating paradigmjp.com from Japan, is responsible for personal data handled through this website, the Japan Entry application, related messages, and engagement operations. Current company and contact details are displayed from our site settings on the About and Legal pages."
       },
       {
-        "title": "2. Collection methods",
-        "body": "We may collect personal information via contact forms, email, or phone. Collected items include name, email, phone number, and company name."
+        "title": "2. Data we collect",
+        "body": "We may collect your name, company, work email, phone, website, selected modules, commercial readiness, decision authority, approval and launch timing, country or market context, message, and subsequent correspondence. We may also receive IP address, browser and device information, requested page, timestamp, referrer, and campaign parameters such as UTM values. Do not submit secrets or unnecessary sensitive information."
       },
       {
-        "title": "3. Purposes of use",
-        "body": "We use collected personal information for:",
+        "title": "3. Why we use the data",
+        "body": "We use this data where reasonably necessary to:",
         "bullets": [
-          "Responding to inquiries",
-          "Service delivery and improvement",
-          "Announcements of new services / updates",
-          "Contract and billing operations",
-          "Usage analysis and statistics"
+          "Review Japan Entry fit, authority, timing, and launch dependencies",
+          "Respond, prepare scope and terms, deliver services, bill, support, and maintain records",
+          "Route and prioritize applications for internal operator follow-up",
+          "Protect the site, prevent spam or abuse, troubleshoot, and improve reliability",
+          "Measure aggregate page and campaign performance when analytics consent or another lawful basis applies"
         ]
       },
       {
-        "title": "4. Third-party disclosure",
-        "body": "We do not disclose personal information to third parties without your consent, except as required by law."
+        "title": "4. Systems and internal notifications",
+        "body": "Application records may be stored in our Supabase-backed sales systems. Operational alerts may be sent to restricted internal Slack channels and in-product operator notifications so an authorized team member can review and respond. These systems act as service providers or internal work surfaces; we do not sell application data."
       },
       {
-        "title": "5. Security measures",
-        "body": "We take appropriate security measures to prevent leakage, loss, or damage of personal information."
+        "title": "5. Service providers, disclosure, and international processing",
+        "body": "We may use hosting, database, communications, security, analytics, and professional service providers under appropriate controls. Data may be processed outside your country, including outside Japan, depending on provider infrastructure. We may also disclose data when required by law, to protect rights or safety, or with your direction or consent."
       },
       {
-        "title": "6. Cookies",
-        "body": "This site may use cookies for usage analysis and service improvement."
+        "title": "6. Analytics, cookies, and attribution",
+        "body": "The site may use Google Analytics or Tag Manager, Meta Pixel, Umami, and other configured campaign-measurement tools only after optional analytics consent. Referrer and UTM campaign values may be associated with an application so we can understand its source. You may decline optional analytics in the cookie notice and change that choice at any time through Cookie settings in the footer; essential security and submission processing still operate."
       },
       {
-        "title": "7. Disclosure / correction / deletion",
-        "body": "You may request disclosure, correction, or deletion of your personal information. Please contact us at the address below."
+        "title": "7. Retention and security",
+        "body": "We retain application and engagement data only for as long as reasonably necessary for fit review, communication, delivery, accounting, dispute handling, security, and legal obligations. Retention varies by record and jurisdiction. We use access controls and other reasonable safeguards, but no internet transmission or storage system can be guaranteed completely secure."
       },
       {
-        "title": "8. Policy changes",
-        "body": "We may revise this policy as needed. The updated policy takes effect on publication on this site."
+        "title": "8. Your rights and choices",
+        "body": "Subject to applicable law, you may request access, correction, deletion, restriction, objection, or portability, and may withdraw consent where processing relies on consent. We may need to verify identity and may retain records where law or overriding obligations require it. You may also complain to an applicable data-protection authority."
       },
       {
-        "title": "9. Contact",
-        "body": "For inquiries regarding personal information handling, please contact:",
+        "title": "9. Automated support and prioritization",
+        "body": "The website may use AI-assisted chat and internal rules to summarize or prioritize information. These tools support human operations; a form submission does not automatically accept or reject a contract, and material engagement decisions are confirmed by an authorized person."
+      },
+      {
+        "title": "10. Changes and contact",
+        "body": "We may update this policy and will publish the revised date on this page. For privacy requests or questions, contact:",
         "contact": {
           "name": "Paradigm LLC",
-          "email": "contact@paradigmjp.com"
+          "email": "info@paradigmjp.com"
         }
       }
     ]
   },
   "pricingPage": {
-    "metaTitle": "Pricing",
-    "metaDescription": "Transparent, productized pricing from Paradigm LLC.",
-    "heroBadge": "Pricing",
-    "heroTitle": "Transparent productized pricing.",
-    "heroHighlight": "Transparent",
-    "heroDesc": "Prices auto-adjust to your region's purchasing power.",
-    "emptyMessage": "No pricing plans are currently published.",
-    "emptyCta": "Contact us",
-    "popularBadge": "Most popular",
+    "metaTitle": "Japan Entry Pricing — Fixed $12,000 Setup",
+    "metaDescription": "One fixed Japan Entry offer: $12,000 setup, $0/month for six months, then $995/month.",
+    "heroBadge": "One package · fixed USD price",
+    "heroTitle": "One decision. One scope. One Japan launch.",
+    "heroHighlight": "One scope",
+    "heroDesc": "$12,000 setup. The first six months of ongoing service are $0, then $995/month from month seven. No regional price adjustment.",
+    "emptyMessage": "The Japan Entry application is temporarily unavailable.",
+    "emptyCta": "Apply for Japan Entry — $12K",
+    "popularBadge": "Fixed offer",
     "planEyebrow": "Plan",
     "billingMonthly": "/mo",
     "billingYearly": "/yr",
-    "billingOnetime": "one-time",
-    "defaultCta": "Get started",
-    "pppHint": "PPP-adjusted — standard ¥{originalPrice}",
-    "regionFooter": "Prices shown are adjusted for visitors from {country}.",
-    "ctaEyebrow": "Custom",
-    "ctaTitle": "Need a custom scope?",
-    "ctaHighlight": "custom",
-    "ctaDesc": "Enterprise / retainers / white-label — let's talk.",
-    "ctaButton": "Book a free consultation",
+    "billingOnetime": "one-time setup",
+    "defaultCta": "Apply for Japan Entry — $12K",
+    "pppHint": "Fixed USD price — standard {originalPrice}",
+    "regionFooter": "The English Japan Entry package uses one fixed USD price.",
+    "fixedPlanName": "Japan Entry Package",
+    "fixedPlanDescription": "A fixed-scope launch for fast-decision SMBs entering Japan, with an accountable delivery path and an English-language client workflow.",
+    "fixedPlanFeatures": [
+      "Localized revenue-site launch within the agreed scope",
+      "Japan trust and compliance coordination",
+      "Local discovery and search-readiness foundation",
+      "Eligible inquiry or payment-routing implementation",
+      "Bilingual support setup and operator handover",
+      "Analytics baseline and launch documentation",
+      "$0/month for the first six months",
+      "$995/month from month seven"
+    ],
+    "scopeEyebrow": "Scope boundary",
+    "scopeTitle": "Know what the fixed price covers before you apply.",
+    "scopeDesc": "Final deliverables and dependencies are written into the engagement scope before work starts. The launch target assumes timely access, content, feedback, and approval.",
+    "scopeGroups": [
+      {
+        "title": "Included in the agreed launch scope",
+        "items": [
+          "The agreed localized site and conversion path",
+          "Trust and compliance implementation coordination",
+          "Discovery, analytics, support, and handover setup",
+          "Six months of the defined ongoing service at $0/month"
+        ]
+      },
+      {
+        "title": "Separate or out of scope",
+        "items": [
+          "Legal, tax, banking, licensing, or incorporation advice",
+          "Advertising spend, inventory, fulfilment, and logistics",
+          "Payment-provider, software, hosting, and other third-party fees",
+          "New features, content production, or integrations not agreed in writing"
+        ]
+      }
+    ],
+    "ctaEyebrow": "Fast decision",
+    "ctaTitle": "Ready to approve the fixed Japan Entry scope?",
+    "ctaHighlight": "fixed Japan Entry scope",
+    "ctaDesc": "Apply with your company, decision authority, launch target, and current market context. Submission does not itself create a contract.",
+    "ctaButton": "Apply for Japan Entry — $12K",
     "faqEyebrow": "FAQ",
     "faqTitle": "Frequently asked pricing questions",
     "pricingFaqs": [
       {
-        "q": "Are prices tax-inclusive?",
-        "a": "All displayed prices include tax. We also support Japan's qualified invoice system (インボイス制度)."
+        "q": "Is the setup price adjusted by country?",
+        "a": "No. The English Japan Entry package has one fixed setup price of $12,000 USD. Any applicable tax and payment details are confirmed in the engagement documents."
       },
       {
-        "q": "What payment methods do you accept?",
-        "a": "Bank transfer, credit card (via Stripe), and invoice payment. Web projects: 50% upfront + 50% on delivery. Monthly services: billed end of month, due the following month."
+        "q": "When does the $995 monthly fee begin?",
+        "a": "The defined ongoing service is $0/month for the first six months. The $995/month fee begins in month seven unless the ongoing service is cancelled under the signed terms."
       },
       {
-        "q": "Are there any additional costs?",
-        "a": "No extra fees for items listed in your plan. Significant scope changes outside the original spec — such as additional photography, translations, or custom features — will be quoted separately."
+        "q": "Can the setup scope change?",
+        "a": "Only by written agreement. Work outside the fixed launch scope is identified and approved before it is performed or charged."
       },
       {
-        "q": "What is PPP adjustment?",
-        "a": "PPP (Purchasing Power Parity) adjustment automatically scales prices based on your region's cost of living. For example, visitors from Southeast Asia see lower prices than Japan's standard rates. Developed-market visitors see standard Japanese pricing."
+        "q": "Are third-party costs included?",
+        "a": "No. Provider fees, software, hosting, advertising, payment processing, legal or tax advice, licences, inventory, and logistics remain separate unless the signed scope explicitly says otherwise."
       },
       {
-        "q": "How much does maintenance cost?",
-        "a": "Post-launch web maintenance starts at ¥19,800/mo (SSL, monitoring, backups, minor fixes). AI maintenance starts at ¥29,800/mo (model updates, incident response, improvements). MEO/SEO monthly plans include maintenance."
-      },
-      {
-        "q": "Is there a minimum contract term?",
-        "a": "Web and AI (lump-sum) projects have no minimum term. MEO/SEO monthly plans require a minimum 6-month commitment."
+        "q": "What can change the 21-business-day target?",
+        "a": "Missing content or access, delayed approvals, expanded scope, regulated requirements, and third-party provider reviews can change the launch date. We surface those dependencies before kickoff."
       }
     ]
   },
   "contactPage": {
-    "metaTitle": "Contact",
-    "metaDescription": "Contact Paradigm LLC. Book a free first consultation here.",
-    "heroBadge": "Contact",
-    "heroTitle": "Drop us a line.",
-    "heroHighlight": "Drop us",
-    "heroDesc": "First 30-minute consultation is on us.",
-    "formEyebrow": "Form",
-    "formTitle": "Get in touch",
-    "consultLabel": "About the consultation",
+    "metaTitle": "Apply for the $12,000 Japan Entry Package",
+    "metaDescription": "Apply for Paradigm's fixed Japan Entry package for fast-decision SMBs.",
+    "heroBadge": "Japan Entry application",
+    "heroTitle": "Bring a decision, not a procurement maze.",
+    "heroHighlight": "a decision",
+    "heroDesc": "$12,000 setup · first six months $0/month · then $995/month. We review fit before confirming an engagement.",
+    "formEyebrow": "Application",
+    "formTitle": "Tell us what must launch in Japan",
+    "consultLabel": "Before you apply",
     "consultItems": [
-      "First 30 minutes are free",
-      "Zoom or Google Meet",
-      "Weekdays 10:00-18:00 JST",
-      "Discovery + initial proposal"
+      "An empowered approver should be involved",
+      "The setup fee is fixed at $12,000 USD",
+      "The 21-business-day target depends on timely inputs",
+      "Submission is a fit review, not contract acceptance"
     ],
     "contactLabel": "Contact details",
     "contactItems": [
-      "Email: contact@paradigmjp.com",
+      "Email: info@paradigmjp.com",
       "Hours: weekdays 10:00-18:00 JST",
-      "Reply: within one business day"
+      "Applications are reviewed by the Paradigm operator team"
     ],
-    "hurryLabel": "In a hurry?",
-    "hurryDesc": "Book directly via Cal.com.",
-    "hurryButton": "Book online"
+    "hurryLabel": "Need the commercial details first?",
+    "hurryDesc": "Review the fixed scope, exclusions, support period, and cancellation outline before submitting.",
+    "hurryButton": "Review package pricing"
   },
   "faqPage": {
-    "metaTitle": "Frequently Asked Questions",
-    "metaDescription": "Common questions about Paradigm LLC's productized services.",
+    "metaTitle": "Japan Entry Package FAQ",
+    "metaDescription": "Scope, price, timeline, eligibility, exclusions, and support answers for Paradigm's fixed Japan Entry package.",
     "heroBadge": "FAQ",
     "heroTitle": "Answers to common questions.",
     "heroHighlight": "common questions",
-    "heroDesc": "Answers to the questions we hear most from foreign SMBs entering Japan.",
+    "heroDesc": "Clear answers about the fixed $12,000 package, launch target, eligibility, scope, and ongoing support.",
     "emptyMessage": "No FAQs are published yet.",
-    "emptyCta": "Contact us",
-    "ctaEyebrow": "Still curious",
-    "ctaTitle": "Still have questions?",
-    "ctaHighlight": "questions",
-    "ctaDesc": "Reach out anytime — we'll get back within one business day.",
-    "ctaButton": "Contact us"
+    "emptyCta": "Apply for Japan Entry — $12K",
+    "ctaEyebrow": "Ready to decide",
+    "ctaTitle": "Apply when your decision-maker is ready.",
+    "ctaHighlight": "decision-maker",
+    "ctaDesc": "The application is for SMBs able to approve the fixed scope and provide launch inputs without a long procurement cycle.",
+    "ctaButton": "Apply for Japan Entry — $12K",
+    "items": [
+      {
+        "q": "What exactly does the Japan Entry package cost?",
+        "a": "The setup fee is fixed at $12,000 USD. Ongoing service is $0 per month for the first six months, then $995 per month from month seven. Third-party fees and approved work outside the fixed scope are separate."
+      },
+      {
+        "q": "What is included in the fixed setup?",
+        "a": "The package covers the agreed localized revenue-site launch, Japan trust and compliance coordination, a local discovery foundation, an eligible inquiry or payment-routing path, bilingual support setup, analytics baseline, and handover materials. The exact deliverables are confirmed before work starts."
+      },
+      {
+        "q": "What is not included?",
+        "a": "Company incorporation, tax or legal opinions, regulated licences, inventory, logistics charges, advertising spend, payment-provider fees, third-party software, photography, and work outside the agreed launch scope are not included unless added in writing."
+      },
+      {
+        "q": "Is launch guaranteed in 21 business days?",
+        "a": "It is a launch target, not an unconditional guarantee. It assumes complete source materials, required account access, a single empowered approver, prompt feedback, and no external compliance or provider delay. We identify blockers before kickoff."
+      },
+      {
+        "q": "Who is the package designed for?",
+        "a": "It is designed for established SMBs in Europe, North America, and Australia that can make a fast owner-led or executive decision. Sector and headcount are less important than decision speed, a real offer, and the ability to supply launch inputs."
+      },
+      {
+        "q": "Do we need a Japanese entity, bank account, or Japanese-speaking employee?",
+        "a": "Not for every launch. The required structure depends on what you sell and how payment, fulfilment, support, and regulated obligations apply. We coordinate the launch path but do not replace legal, tax, banking, or licensed professional advice."
+      },
+      {
+        "q": "Can we cancel the ongoing service?",
+        "a": "The setup engagement remains governed by the agreed scope. The first six months of ongoing service are $0. From month seven it is $995 per month and may be cancelled for future periods under the signed service terms; fees already earned and third-party commitments are not reversed."
+      },
+      {
+        "q": "What happens after we apply?",
+        "a": "We review fit, authority, timeline, source context, and launch constraints. A submitted application is not acceptance of an engagement. If the package fits, we confirm scope, dependencies, terms, and the start date before work begins."
+      }
+    ]
   },
   "aboutPage": {
-    "metaTitle": "About",
-    "metaDescription": "About Paradigm LLC. We help SMBs grow through digital technology.",
+    "metaTitle": "About Paradigm's Japan Entry Delivery",
+    "metaDescription": "How Paradigm delivers a fixed $12,000 Japan Entry package for fast-decision SMBs.",
     "heroBadge": "About",
-    "heroTitle": "Reframe what business does with technology.",
-    "heroHighlight": "what business does",
-    "heroDesc": "End-to-end web, MEO, SEO/GEO, and AI integration. We are your partner for SMB digital transformation.",
-    "missionEyebrow": "Mission",
-    "missionTitle": "Accelerate business with digital.",
-    "missionDesc": "Paradigm LLC supports SMB digital transformation through web development, MEO, SEO/GEO, and AI integration. We combine state-of-the-art AI with proven digital marketing expertise to build foundations for sustained growth.",
-    "valuesEyebrow": "Values",
-    "valuesTitle": "What we stand for",
+    "heroTitle": "A focused Japan-entry operator for decisive SMBs.",
+    "heroHighlight": "decisive SMBs",
+    "heroDesc": "One accountable package combines the localized revenue site, launch coordination, discovery foundation, support setup, and handover.",
+    "missionEyebrow": "Operating principle",
+    "missionTitle": "Reduce the distance between decision and Japan launch.",
+    "missionDesc": "Paradigm gives foreign SMBs one English-language delivery path into Japan. We use a written fixed scope, visible dependencies, and a 21-business-day launch target rather than an open-ended agency engagement.",
+    "valuesEyebrow": "How we work",
+    "valuesTitle": "Commercial clarity before activity",
     "values": [
       {
-        "title": "Outcomes over deliverables",
-        "desc": "Not 'ship and forget' — we partner until the numbers move. Shared KPIs, data-driven iteration."
+        "title": "One public offer",
+        "desc": "$12,000 setup, six months at $0/month, then $995/month. The price does not change by visitor region."
       },
       {
-        "title": "One-stop confidence",
-        "desc": "Web build + traffic + AI under one roof. No fragmented vendors to coordinate."
+        "title": "Written scope boundaries",
+        "desc": "Included work, exclusions, client inputs, approval gates, and third-party dependencies are confirmed before kickoff."
       },
       {
-        "title": "Plain-spoken modern tech",
-        "desc": "AI / GEO and other frontier tech, explained clearly. Adopted at a sustainable pace."
+        "title": "Evidence over theatre",
+        "desc": "We show inspectable systems and process, avoid anonymous outcome claims, and distinguish launch targets from guarantees."
       }
     ],
     "companyEyebrow": "Company",
@@ -591,55 +687,39 @@
     "companyInfo": [
       [
         "Company",
-        "Paradigm LLC (Paradigm 合同会社)"
+        "Paradigm LLC"
       ],
       [
-        "Founded",
-        "2025"
-      ],
-      [
-        "Representative",
-        "Managing Member"
-      ],
-      [
-        "Location",
-        "Japan"
-      ],
-      [
-        "Services",
-        "Web development / MEO / SEO+GEO / AI integration"
-      ],
-      [
-        "Email",
-        "contact@paradigmjp.com"
+        "Public offer",
+        "$12,000 Japan Entry setup"
       ],
       [
         "Website",
         "https://paradigmjp.com"
       ]
     ],
-    "ctaEyebrow": "Together",
-    "ctaTitle": "Let's go digital together",
-    "ctaHighlight": "digital",
-    "ctaDesc": "Tell us about your digital challenges — we'd love to help.",
-    "ctaButton": "Book a free consultation"
+    "ctaEyebrow": "Fit first",
+    "ctaTitle": "Apply when your team can decide and launch.",
+    "ctaHighlight": "decide and launch",
+    "ctaDesc": "We prioritize SMBs with an empowered approver, a real offer, and the ability to provide source materials and feedback promptly.",
+    "ctaButton": "Apply for Japan Entry — $12K"
   },
   "servicesPage": {
-    "metaTitle": "Services",
-    "metaDescription": "Web development, MEO (local SEO), SEO/GEO, and AI integration — Paradigm LLC's productized service suite for foreign SMBs entering Japan.",
-    "heroBadge": "Services",
-    "heroTitle": "Productized services that move Japan.",
-    "heroHighlight": "move Japan",
-    "heroDesc": "Productized engagements that help foreign SMBs enter and scale in Japan.",
-    "emptyMessage": "No services are currently published. Please contact us for a tailored engagement.",
-    "emptyCta": "Contact us",
-    "learnMore": "Learn more",
-    "getInTouch": "Get in touch",
-    "ctaEyebrow": "Together",
-    "ctaTitle": "Not sure which service fits?",
-    "ctaHighlight": "fits",
-    "ctaDesc": "Book a free consultation and we'll scope the right engagement for you.",
-    "ctaButton": "Book a free consultation"
+    "metaTitle": "Japan Entry Package Modules",
+    "metaDescription": "The delivery modules inside Paradigm's single fixed $12,000 Japan Entry package.",
+    "heroBadge": "One package · coordinated modules",
+    "heroTitle": "Everything points to one Japan launch.",
+    "heroHighlight": "one Japan launch",
+    "heroDesc": "The pages below explain individual delivery modules. They are not separate low-cost offers on the English site; they support the fixed Japan Entry package.",
+    "emptyMessage": "Package module details are being prepared.",
+    "emptyCta": "Apply for Japan Entry — $12K",
+    "learnMore": "See module details",
+    "getInTouch": "Apply for Japan Entry — $12K",
+    "ctaEyebrow": "One commercial decision",
+    "ctaTitle": "Choose the package, not a maze of retainers.",
+    "ctaHighlight": "the package",
+    "ctaDesc": "$12,000 setup, the first six months at $0/month, then $995/month. Final scope and dependencies are confirmed before kickoff.",
+    "ctaButton": "Apply for Japan Entry — $12K"
   },
   "locale": {
     "name": "English",
@@ -652,7 +732,7 @@
     "pricing": "Pricing",
     "faq": "FAQ",
     "blog": "Blog",
-    "contact": "Contact",
+    "contact": "Apply — $12K",
     "menu": "Menu",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
@@ -660,14 +740,14 @@
   },
   "cta": {
     "primary": "Apply — $12K",
-    "secondary": "Explore Services",
-    "bookConsult": "Book a Free Consult",
-    "diagnose": "Get a Free Diagnosis",
-    "reportCta": "Discuss This Report"
+    "secondary": "See the Japan Entry package",
+    "bookConsult": "Apply for Japan Entry — $12K",
+    "diagnose": "Check Japan Entry fit",
+    "reportCta": "Apply for Japan Entry — $12K"
   },
   "footer": {
     "company": "Paradigm LLC",
-    "companyTagline": "Paradigm LLC — productized services that help foreign SMBs land and grow in Japan.",
+    "companyTagline": "One fixed-scope Japan Entry package for fast-decision SMBs: $12,000 setup, six months at $0, then $995/month.",
     "servicesHeading": "Services",
     "companyHeading": "Company",
     "contactHeading": "Contact",
@@ -675,31 +755,33 @@
     "privacy": "Privacy Policy",
     "legal": "Terms & Specified Commercial Transactions",
     "services": {
-      "web": "Web Development",
-      "meo": "Local SEO (MEO)",
-      "seo": "SEO / GEO",
-      "ai": "AI Enablement"
+      "web": "Localized revenue site",
+      "meo": "Japan discovery setup",
+      "seo": "Search readiness",
+      "ai": "Bilingual support setup"
     },
-    "studioLocation": "Tokyo, Japan · Paradigm LLC",
+    "studioLocation": "Japan · Paradigm LLC",
     "socialGithub": "GitHub",
     "socialEmail": "Email",
-    "companyHeadline": "Technology that moves your business forward."
+    "companyHeadline": "Enter Japan with one accountable launch partner.",
+    "representativeLabel": "Representative",
+    "registrationLabel": "Registration"
   },
   "home": {
-    "heroBadge": "Your local digital partner in Japan",
-    "heroTitle": "Productized Services for Foreign SMBs Entering Japan",
-    "heroSubtitle": "Translation-free onboarding, local compliance, and AI-powered automation — built by operators in Tokyo.",
-    "heroSuffix": " to accelerate your Japan entry.",
-    "heroSubheadline": "Web, Local SEO, SEO/GEO, and AI Enablement — full-stack support to land and grow in Japan.",
+    "heroBadge": "Fixed Japan Entry Package",
+    "heroTitle": "Launch in Japan with one accountable package",
+    "heroSubtitle": "$12,000 setup · first six months $0/month · then $995/month.",
+    "heroSuffix": " for fast-decision SMBs.",
+    "heroSubheadline": "Localized revenue site, trust and compliance coordination, discovery foundation, support setup, and handover in one agreed scope.",
     "heroTypingWords": [
-      "Local SEO",
-      "AI Automation",
-      "Web Build",
-      "SEO/GEO"
+      "Localized launch",
+      "Trust coordination",
+      "Japan discovery",
+      "Bilingual support"
     ],
-    "heroBookConsult": "Book a Free Consult",
-    "heroSeeServices": "Explore Services",
-    "trusted": "Companies we've supported",
+    "heroBookConsult": "Apply — $12K",
+    "heroSeeServices": "Review package scope",
+    "trusted": "Public commercial facts",
     "stats": {
       "support": {
         "suffix": " langs",
@@ -719,83 +801,83 @@
       }
     },
     "servicesEyebrow": "Services",
-    "servicesHeading": "Four services that grow your Japan business",
+    "servicesHeading": "Four coordinated modules in one Japan Entry package",
     "servicesViewMore": "Learn more",
     "services": {
       "web": {
-        "title": "Web Development",
-        "tagline": "Modern sites built for inbound",
-        "desc": "Responsive, SEO-optimized, with CMS. We handle launch and the inbound flywheel that follows.",
-        "results": "We stay on after launch",
-        "badge": "Most popular"
+        "title": "Localized revenue site",
+        "tagline": "A Japanese buyer path, not raw translation",
+        "desc": "The agreed responsive site, content structure, trust elements, conversion path, and CMS handover.",
+        "results": "Included in fixed scope",
+        "badge": "Core module"
       },
       "meo": {
-        "title": "Local SEO (MEO)",
-        "tagline": "Top of Google Maps in Japan",
-        "desc": "Review management, posting cadence, and rank tracking — aimed at #1 in your local pack.",
-        "results": "Aim for the map pack",
+        "title": "Japan discovery setup",
+        "tagline": "Build an eligible local discovery foundation",
+        "desc": "Profile, category, trust-signal, and measurement setup where applicable. Specific rankings are not promised.",
+        "results": "Launch baseline",
         "badge": ""
       },
       "seo": {
-        "title": "SEO / GEO",
-        "tagline": "Win Google + AI search",
-        "desc": "Next-gen SEO that ChatGPT, Gemini, and Perplexity actually cite when prospects ask.",
-        "results": "Optimized for AI search",
-        "badge": "New standard"
+        "title": "Search readiness",
+        "tagline": "Structure content for search and answer systems",
+        "desc": "Metadata, structure, eligible schema, and clear entities within the agreed site scope. Results depend on external platforms.",
+        "results": "Inspectable implementation",
+        "badge": "Included"
       },
       "ai": {
-        "title": "AI Enablement",
-        "tagline": "Automate operations end-to-end",
-        "desc": "AI chatbots, ops automation, and AI ad pipelines — from rollout to ongoing operations.",
-        "results": "From rollout to operations",
+        "title": "Bilingual support setup",
+        "tagline": "Defined knowledge, routing, and escalation",
+        "desc": "Configure the agreed first-line support and operator handoff with human review boundaries.",
+        "results": "Documented handover",
         "badge": ""
       },
       "video": {
-        "title": "Video subscription",
-        "tagline": "Flat monthly · unlimited requests",
-        "desc": "20-100 videos/month for web, LP & social. 24-48h delivery, unlimited revisions, pause anytime.",
-        "results": "Flat monthly, unlimited",
-        "badge": "New"
+        "title": "Launch operations",
+        "tagline": "One timeline and accountable owner",
+        "desc": "Coordinate dependencies, approval gates, launch checks, analytics baseline, and the agreed handover.",
+        "results": "21-business-day target",
+        "badge": "Fixed process"
       }
     },
     "featuresEyebrow": "Why Paradigm",
     "featuresHeading": "Four reasons clients choose us",
     "features": {
       "speed": {
-        "title": "2-week delivery",
-        "desc": "A lean process that ships quality fast — including last-minute work."
+        "title": "21-business-day target",
+        "desc": "A gated target based on complete inputs, access, prompt feedback, one approver, and third-party timing."
       },
       "guarantee": {
-        "title": "Outcome-backed plan",
-        "desc": "Local SEO and SEO/GEO come with a refund window if outcomes don't materialize."
+        "title": "Fixed commercial scope",
+        "desc": "One public setup price with written inclusions, exclusions, dependencies, and change approval."
       },
       "team": {
-        "title": "Dedicated owner",
-        "desc": "Same point of contact end-to-end — monthly reports and standing reviews."
+        "title": "English-language workflow",
+        "desc": "Your team works in English while the agreed Japan-facing implementation is coordinated locally."
       },
       "aiFusion": {
-        "title": "AI × digital fusion",
-        "desc": "Latest AI tools weaponized for inbound — strategies that beat your competitors."
+        "title": "Human-reviewed automation",
+        "desc": "Automation is used where appropriate, with explicit escalation and review for uncertain or sensitive work."
       }
     },
     "testimonialsEyebrow": "Proof",
     "testimonialsHeading": "Proof, built together.",
     "trustBadges": {
       "1": "Bilingual JP / EN",
-      "2": "Outcome-based pricing",
-      "3": "3 months free post-launch support",
-      "4": "No hard sells"
+      "2": "$12,000 fixed setup",
+      "3": "Six months at $0/month",
+      "4": "$995/month from month seven"
     },
     "ctaEyebrow": "Get Started",
-    "ctaHeading": "Start with a ",
-    "ctaHeadingHighlight": "free consult",
+    "ctaHeading": "Apply for the ",
+    "ctaHeadingHighlight": "fixed Japan Entry package",
     "ctaHeadingSuffix": "",
-    "ctaSubheading": "A free online consultation to map your current challenges and propose the right digital strategy — at no cost.",
-    "ctaButton": "Book a free consult",
+    "ctaSubheading": "Submit your company, decision authority, launch target, and current Japan context for a fit review.",
+    "ctaButton": "Apply for Japan Entry — $12K",
     "ctaBullets": {
-      "1": "Always free",
-      "2": "No sales calls",
-      "3": "Fully online"
+      "1": "$12,000 fixed setup",
+      "2": "Fast-decision SMBs",
+      "3": "Submission is not acceptance"
     },
     "processEyebrow": "Process",
     "processHeading": "Four steps to ship your project successfully.",
@@ -820,32 +902,32 @@
         "desc": "PDCA + KPI optimisation as your partner"
       }
     },
-    "testimonialsBody": "As a young studio, we don't post inflated numbers or anonymous testimonials. Instead, on a free initial diagnosis we show you — in concrete figures — the revenue your site is leaving on the table. Want client references? Just ask on the call.",
-    "heroBrandStory": "「Paradigm」means to shift common sense. We help Japan's SMBs embrace digital — a new paradigm."
+    "testimonialsBody": "We do not publish anonymous outcome claims as proof. Review the inspectable site, application workflow, scope boundaries, delivery process, and company details, then decide whether the package fits.",
+    "heroBrandStory": "Paradigm focuses the English site on one fixed Japan Entry decision for foreign SMBs."
   },
   "chatbot": {
     "title": "Paradigm Assistant",
     "status": "AI agent online · instant replies",
     "openLabel": "Ask our AI assistant",
-    "greeting": "Hi! I'm Paradigm's AI assistant.\n\nAsk me anything about:\n• Web development & Japan market entry (JaaS)\n• MEO (Google Maps SEO) for local businesses\n• SEO & GEO (AI-search optimization)\n• AI integration (chatbots, automation, analytics)\n\nTap a question below or just type your own — I reply instantly.",
+    "greeting": "Hi! I'm Paradigm's AI assistant.\n\nAsk about the fixed Japan Entry package:\n• $12,000 setup and ongoing terms\n• Included scope and exclusions\n• The 21-business-day launch target\n• Fit for fast-decision SMBs\n\nMy replies are general information. Final scope and terms are confirmed by a person.",
     "placeholder": "Ask us anything...",
     "errorReply": "Sorry — something went wrong generating a reply.",
     "errorNetwork": "Sorry — a connection error occurred.\n\n📧 info@paradigmjp.com",
     "footerLine": "Powered by Paradigm AI",
-    "footerContact": "Talk to a human →",
+    "footerContact": "Apply for Japan Entry →",
     "quick": {
-      "pricingLabel": "Pricing & packages",
-      "pricingMessage": "What are your pricing packages for a website build? I need a rough estimate.",
+      "pricingLabel": "Fixed price & terms",
+      "pricingMessage": "Explain the $12,000 Japan Entry setup, the first six months at $0, and the $995 monthly fee from month seven.",
       "processLabel": "How it works",
-      "processMessage": "Walk me through what happens after I contact you — step by step.",
+      "processMessage": "Walk me through what happens after I submit a Japan Entry application.",
       "timelineLabel": "Timeline",
-      "timelineMessage": "How quickly can you get my site live? What's a realistic timeline?",
-      "meoLabel": "MEO (Google Maps SEO)",
-      "meoMessage": "I run a local business. How can you get me ranking higher on Google Maps?",
-      "aiLabel": "AI integration",
-      "aiMessage": "What can AI actually automate in my business? Give me concrete examples.",
-      "supportLabel": "Support & maintenance",
-      "supportMessage": "What happens after launch? Do you offer ongoing support and updates?"
+      "timelineMessage": "What inputs and approvals are required for the 21-business-day Japan launch target?",
+      "meoLabel": "Japan discovery setup",
+      "meoMessage": "What local discovery and search-readiness work is included in the Japan Entry package?",
+      "aiLabel": "Bilingual support setup",
+      "aiMessage": "What bilingual support and automation setup is included, and what remains out of scope?",
+      "supportLabel": "After launch",
+      "supportMessage": "What is included during the first six months at $0, and what does the $995 monthly service cover from month seven?"
     }
   },
   "report": {
@@ -893,17 +975,18 @@
     },
     "impact": "Expected Impact",
     "ctaHeading": "Let's turn these insights into a concrete plan.",
-    "ctaSubheading": "Book a 30-minute consult — we'll recommend the highest-leverage next steps.",
-    "ctaButton": "Book a free consult",
+    "ctaSubheading": "Apply for the fixed Japan Entry package if your decision-maker and launch inputs are ready.",
+    "ctaButton": "Apply for Japan Entry — $12K",
     "ctaEmail": "Reply by email",
     "intro": "Here's how your web, SEO, competitor posture, and review response stack up."
   },
   "cookieConsent": {
     "srTitle": "Cookie consent notice",
-    "bodyBeforeLink": "We use a minimum of cookies for performance and usage analytics. For more, see our",
+    "bodyBeforeLink": "We use optional analytics and campaign-measurement technologies only after you accept. For details, see our",
     "privacyLink": "privacy policy",
     "accept": "Accept",
-    "decline": "Decline"
+    "decline": "Decline",
+    "settings": "Cookie settings"
   },
   "contactForm": {
     "name": "Your name",
@@ -914,47 +997,43 @@
     "emailPh": "you@example.com",
     "phone": "Phone",
     "phonePh": "+1 555 123 4567",
-    "services": "Services you are interested in",
+    "services": "Japan Entry modules relevant to your launch",
     "servicesList": [
-      "Web Development",
-      "MEO (Local SEO)",
-      "SEO / GEO",
-      "AI Integration"
+      "Localized revenue site",
+      "Japan discovery and search readiness",
+      "Trust and compliance coordination",
+      "Bilingual support and automation"
     ],
     "message": "Message",
-    "messagePh": "Tell us about your challenges and goals.",
-    "budget": "Budget",
+    "messagePh": "Describe your offer, target customer, current Japan activity, desired launch date, and any known constraints.",
+    "budget": "Commercial readiness",
     "budgetOptions": [
       {
         "v": "",
         "l": "Please select"
       },
       {
-        "v": "~$2K",
-        "l": "Up to $2K"
+        "v": "$12K-fixed",
+        "l": "Ready to approve the fixed $12,000 setup"
       },
       {
-        "v": "$2-5K",
-        "l": "$2K – $5K"
+        "v": "$12K-plus",
+        "l": "$12,000 setup plus approved third-party costs"
       },
       {
-        "v": "$5-10K",
-        "l": "$5K – $10K"
+        "v": "needs-review",
+        "l": "Need internal review before approval"
       },
       {
-        "v": "$10K+",
-        "l": "$10K+"
-      },
-      {
-        "v": "undecided",
-        "l": "Not sure / want to discuss"
+        "v": "not-ready",
+        "l": "Not ready for the fixed setup"
       }
     ],
-    "submit": "Send",
-    "submitting": "Sending…",
-    "success": "Sent",
-    "successDefault": "Thanks for reaching out. We will reply within one business day.",
-    "errorDefault": "Failed to send",
+    "submit": "Submit Japan Entry application",
+    "submitting": "Submitting…",
+    "success": "Application received",
+    "successDefault": "Your application was received for fit review. This does not create a contract or reserve delivery capacity.",
+    "errorDefault": "Application could not be submitted",
     "errorNetwork": "A network error occurred",
     "privacy": "Submissions are handled in accordance with our",
     "privacyLink": "privacy policy",
@@ -967,21 +1046,21 @@
     "desc": "An unexpected error occurred. Please try again, or return to the home page.",
     "retry": "Try again",
     "home": "Back to home",
-    "contact": "Contact us if the problem persists"
+    "contact": "Apply for Japan Entry — $12K"
   },
   "notFoundPage": {
     "eyebrow": "404",
     "title": "Page not found",
     "desc": "The page you are looking for has been moved or deleted.",
     "home": "Back to home",
-    "services": "Our services",
-    "contact": "Contact us"
+    "services": "Review Japan Entry",
+    "contact": "Apply for Japan Entry — $12K"
   },
   "serviceDetailLayout": {
     "pricingEyebrow": "Pricing",
-    "pricingHeading": "Pricing plans",
-    "popularBadge": "Most popular",
-    "consultButton": "Get in touch"
+    "pricingHeading": "Fixed Japan Entry package",
+    "popularBadge": "Included module",
+    "consultButton": "Apply for Japan Entry — $12K"
   },
   "maintenancePage": {
     "eyebrow": "Maintenance",
@@ -992,21 +1071,21 @@
   "blogPostPage": {
     "readTimeFormat": "{date} · {readTime} read",
     "backLink": "← Back to all posts",
-    "ctaEyebrow": "Talk",
-    "ctaTitle": "Talk to us about this article",
-    "ctaHighlight": "Talk",
-    "ctaDesc": "We will tailor a concrete proposal for your business.",
-    "ctaButton": "Book a free consultation",
+    "ctaEyebrow": "From insight to launch",
+    "ctaTitle": "Apply the lesson to your Japan entry.",
+    "ctaHighlight": "Japan entry",
+    "ctaDesc": "The public offer is fixed: $12,000 setup, six months at $0/month, then $995/month. Apply if your decision-maker is ready.",
+    "ctaButton": "Apply for Japan Entry — $12K",
     "notFound": "Article not found",
     "emptyContent": "The full article content is being prepared. Please check back soon."
   },
   "lpWeb": {
-    "metaTitle": "Web development free consultation | Paradigm",
-    "metaDescription": "High-performance Next.js / WordPress sites from $2,000+. Lighthouse 95+ quality. Free first consultation.",
-    "heroBadge": "Web Development Landing",
-    "heroTitle": "Sites that sell, on modern stacks.",
-    "heroHighlight": "sell",
-    "heroDesc": "Lighthouse 95+ sites from $2,000+. Design → code → SEO → ops, end-to-end. First 30-minute call free.",
+    "metaTitle": "Localized Revenue Site | Japan Entry Package",
+    "metaDescription": "The localized revenue-site module inside Paradigm's fixed $12,000 Japan Entry package.",
+    "heroBadge": "Japan Entry module",
+    "heroTitle": "Build a Japanese buyer path, not a raw translation.",
+    "heroHighlight": "buyer path",
+    "heroDesc": "This module is available through the fixed $12,000 Japan Entry setup, with six months at $0/month and then $995/month.",
     "painsEyebrow": "Pains",
     "painsHeading": "Any of these sound familiar?",
     "pains": [
@@ -1022,8 +1101,8 @@
     "solutions": [
       {
         "gradient": "from-pink-400 via-paradigm-accent to-paradigm-tech",
-        "title": "Lighthouse 95+",
-        "desc": "Next.js / WordPress optimised for Core Web Vitals. SEO benefits as a bonus."
+        "title": "Performance baseline",
+        "desc": "Responsive implementation and launch checks within the agreed revenue-site scope. Scores vary by content, providers, device, and network."
       },
       {
         "gradient": "from-paradigm-tech via-paradigm-glow to-violet-400",
@@ -1040,76 +1119,75 @@
     "pricingHeading": "Transparent pricing",
     "priceSuffix": "+",
     "popularBadge": "Most popular",
-    "consultButton": "Get in touch",
+    "consultButton": "Apply for Japan Entry — $12K",
     "plans": [
       {
-        "name": "Light",
-        "price": "298,000",
-        "desc": "Up to 5 pages",
+        "name": "Japan Entry setup",
+        "price": "12,000",
+        "desc": "One fixed implementation scope, paid before kickoff.",
         "features": [
-          "Home + 4 pages",
-          "Responsive",
-          "SEO basics",
-          "1 month support"
-        ]
-      },
-      {
-        "name": "Standard",
-        "price": "598,000",
-        "desc": "Up to 10 pages",
-        "features": [
-          "Home + 9 pages",
-          "CMS",
-          "On-page SEO",
-          "Animations",
-          "3 month support"
+          "Japan-ready revenue path",
+          "Localized positioning and trust content",
+          "Eligible inquiry or payment routing",
+          "21-business-day launch target, subject to dependencies"
         ],
         "popular": true
       },
       {
-        "name": "Premium",
-        "price": "980,000",
-        "desc": "Unlimited pages",
+        "name": "Months 1–6",
+        "price": "0",
+        "desc": "Defined managed Japan operation at $0/month.",
         "features": [
-          "Next.js custom",
-          "i18n",
-          "3 design variants",
-          "6 month support"
+          "Agreed monitoring and support",
+          "Analytics and notifications",
+          "Written ownership and escalation path",
+          "Third-party costs remain separate"
+        ]
+      },
+      {
+        "name": "Month 7 onward",
+        "price": "995",
+        "desc": "Defined managed operation from month seven.",
+        "features": [
+          "$995/month",
+          "Future-period cancellation follows the signed terms",
+          "Paradigm-operated work stops when service ends",
+          "Approved out-of-scope work remains separate"
         ]
       }
     ],
     "ctaEyebrow": "Begin",
-    "ctaTitle": "Start with a free consultation",
-    "ctaHighlight": "free consultation",
-    "ctaDesc": "Rebuild your site in as little as 2 weeks.",
-    "ctaButton": "Book a free 30-min call"
+    "ctaTitle": "Apply for the fixed Japan Entry package",
+    "ctaHighlight": "Japan Entry package",
+    "ctaDesc": "$12,000 setup · first six months $0/month · then $995/month.",
+    "ctaButton": "Apply for Japan Entry — $12K"
   },
   "lpMeo": {
-    "metaTitle": "MEO free audit | Paradigm",
-    "metaDescription": "Win local on Google Maps. TOP3 listing in ~3 months. From ¥29,800/mo. Free audit available.",
+    "metaTitle": "Japan Discovery Setup | Japan Entry Package",
+    "metaDescription": "The local discovery module inside Paradigm's fixed $12,000 Japan Entry package.",
     "heroBadge": "MEO Landing",
     "heroTitle": "Win local on Google Maps.",
     "heroHighlight": "Win local",
-    "heroDesc": "TOP3 Google Maps listing in ~3 months. Maximise foot-traffic conversions. From ¥29,800/mo, free audit included.",
+    "heroDesc": "Build the agreed local discovery foundation without a promise of specific rankings or platform outcomes.",
     "outcomesEyebrow": "Outcomes",
     "outcomesHeading": "What MEO unlocks",
     "stats": [
       {
-        "num": "TOP 3",
-        "label": "Google Maps rank",
-        "desc": "Top 3 in local search. Click-through rates spike noticeably.",
+        "num": "Foundation",
+        "label": "Eligible profile setup",
+        "desc": "Configure the agreed profile and trust foundation without promising a specific rank.",
         "gradient": "from-pink-400 via-paradigm-accent to-paradigm-tech"
       },
       {
-        "num": "+30/mo",
-        "label": "More visits / month",
-        "desc": "Average client outcome: 30+ extra visits/month within 3 months.",
+        "num": "Measured",
+        "label": "Available discovery signals",
+        "desc": "Establish the agreed measurement baseline for future iteration.",
         "gradient": "from-paradigm-tech via-paradigm-glow to-violet-400"
       },
       {
-        "num": "3 mo",
-        "label": "Time to results",
-        "desc": "Sometimes 1 month. Typically 3 months to TOP3 visibility.",
+        "num": "Variable",
+        "label": "Platform outcomes",
+        "desc": "Timing and visibility depend on competition, profile history, customer activity, and platform changes.",
         "gradient": "from-paradigm-glow via-violet-400 to-pink-400"
       }
     ],
@@ -1126,83 +1204,79 @@
       "Hotels / inns"
     ],
     "ctaEyebrow": "Begin",
-    "ctaTitle": "Start with a free audit",
-    "ctaHighlight": "free audit",
-    "ctaDesc": "We'll audit your Google Business Profile on us.",
-    "ctaButton": "Get a free audit",
+    "ctaTitle": "Include discovery in your Japan launch",
+    "ctaHighlight": "discovery",
+    "ctaDesc": "This module is scoped through the fixed Japan Entry package.",
+    "ctaButton": "Apply for Japan Entry — $12K",
     "processEyebrow": "Process",
-    "processHeading": "MEO 対策の流れ",
+    "processHeading": "How the discovery module is delivered",
     "process": [
       {
         "step": "01",
-        "title": "無料診断",
-        "desc": "現在の Google ビジネスプロフィールを分析し、改善ポイントを洗い出します。"
+        "title": "Eligibility and baseline",
+        "desc": "Confirm whether local discovery applies, review the current profile and constraints, and document the launch baseline."
       },
       {
         "step": "02",
-        "title": "戦略設計",
-        "desc": "競合分析に基づき、最適なカテゴリ・キーワード・投稿戦略を設計します。"
+        "title": "Agreed configuration",
+        "desc": "Implement approved categories, content, trust details, and measurement within the fixed launch scope."
       },
       {
         "step": "03",
-        "title": "運用開始",
-        "desc": "プロフィール最適化・口コミ施策・投稿運用を開始し、継続的に改善します。"
+        "title": "Launch and handover",
+        "desc": "Verify the agreed route, record ownership, and hand over operating steps without promising a rank."
       }
     ],
-    "plansTitle": "料金プラン",
+    "plansTitle": "Japan Entry commercial stages",
     "plans": [
       {
-        "name": "エントリー",
-        "price": "29,800",
-        "period": "/月",
-        "desc": "まず始めてみたい方",
+        "name": "Setup",
+        "price": "12,000",
+        "period": "USD",
+        "desc": "Fixed Japan Entry setup",
         "features": [
-          "GBP初期最適化",
-          "月2回投稿代行",
-          "順位レポート（月次）"
+          "Eligible discovery baseline",
+          "Agreed launch configuration",
+          "Ownership and measurement handover"
         ]
       },
       {
-        "name": "スタンダード",
-        "price": "49,800",
-        "period": "/月",
-        "desc": "本格的にMEOに取り組む方",
+        "name": "Months 1–6",
+        "price": "0",
+        "period": "/month",
+        "desc": "Defined ongoing service",
         "features": [
-          "GBP完全最適化",
-          "月4回投稿代行",
-          "口コミ獲得施策",
-          "週次レポート",
-          "競合分析"
+          "Responsibilities defined in scope",
+          "No separate English discovery retainer",
+          "External platform outcomes not guaranteed"
         ]
       },
       {
-        "name": "プロ",
-        "price": "79,800",
-        "period": "/月",
-        "desc": "複数店舗・エリア制覇",
+        "name": "Month 7 onward",
+        "price": "995",
+        "period": "/month",
+        "desc": "Defined ongoing service unless cancelled",
         "features": [
-          "複数店舗対応",
-          "毎日投稿",
-          "口コミ管理ツール",
-          "SNS連携",
-          "専任担当者"
+          "Cancellation follows signed terms",
+          "Provider fees remain separate",
+          "Expanded locations require written scope"
         ]
       }
     ]
   },
   "lpSeo": {
-    "metaTitle": "SEO / GEO free audit | Paradigm",
-    "metaDescription": "Conventional SEO + AI-search (GEO). Organic traffic 2.5x on average. From ¥49,800/mo.",
+    "metaTitle": "Search Readiness | Japan Entry Package",
+    "metaDescription": "The search-readiness module inside Paradigm's fixed $12,000 Japan Entry package.",
     "heroBadge": "SEO / GEO Landing",
     "heroTitle": "Build a discovery engine.",
     "heroHighlight": "discovery engine",
-    "heroDesc": "Google + AI-search (ChatGPT / Gemini) dual strategy. Organic traffic 2.5x on average. From ¥49,800/mo, free audit included.",
+    "heroDesc": "Structure the agreed Japan-facing content for search and answer systems without promising rankings, traffic, or citations.",
     "comparisonEyebrow": "Comparison",
     "comparisonHeading": "SEO alone isn't enough anymore.",
     "conventionalLabel": "Conventional",
     "conventionalTitle": "Conventional SEO",
     "conventionalDesc": "Top rankings on Google / Yahoo",
-    "conventionalStat": "2.5x average",
+    "conventionalStat": "Baseline measured",
     "conventionalStatLabel": "organic traffic uplift",
     "newLabel": "New",
     "newTitle": "GEO (AI-search ready)",
@@ -1212,95 +1286,90 @@
     "ctaEyebrow": "Future",
     "ctaTitle": "Start your AI-era search strategy",
     "ctaHighlight": "AI-era search",
-    "ctaDesc": "Free SEO / GEO audit report on request.",
-    "ctaButton": "Get a free audit",
+    "ctaDesc": "Search readiness is scoped through the fixed Japan Entry package.",
+    "ctaButton": "Apply for Japan Entry — $12K",
     "processEyebrow": "Process",
-    "processHeading": "SEO / GEO 対策の流れ",
+    "processHeading": "How search readiness is delivered",
     "process": [
       {
         "step": "01",
-        "title": "無料サイト診断",
-        "desc": "御社サイトの SEO 状態をスキャンし、AI 検索での表示状況も含めて診断します。"
+        "title": "Baseline review",
+        "desc": "Review the agreed site, content, metadata, and technical constraints without promising a search outcome."
       },
       {
         "step": "02",
-        "title": "戦略設計",
-        "desc": "診断結果に基づき、キーワード戦略・コンテンツ計画・GEO 最適化方針を策定します。"
+        "title": "Information design",
+        "desc": "Define approved content structure, entities, metadata, and eligible schema for the Japan-facing launch."
       },
       {
         "step": "03",
-        "title": "施策実行",
-        "desc": "記事作成・構造化データ実装・内部 SEO 改善を進め、月次レポートで効果を可視化します。"
+        "title": "Implementation and measurement",
+        "desc": "Implement the agreed baseline and hand over measurable launch signals for future iteration."
       }
     ],
-    "plansTitle": "料金プラン",
+    "plansTitle": "Japan Entry commercial stages",
     "plans": [
       {
-        "name": "SEOベーシック",
-        "price": "49,800",
-        "period": "/月",
-        "desc": "内部SEO+コンテンツ",
+        "name": "Setup",
+        "price": "12,000",
+        "period": "USD",
+        "desc": "Fixed Japan Entry setup",
         "features": [
-          "サイト診断・改善",
-          "月2本記事作成",
-          "キーワード調査",
-          "月次レポート"
+          "Agreed search-readiness baseline",
+          "Metadata and information structure",
+          "Eligible schema and measurement handover"
         ]
       },
       {
-        "name": "SEO+GEO",
-        "price": "79,800",
-        "period": "/月",
-        "desc": "SEO+AI検索対策",
+        "name": "Months 1–6",
+        "price": "0",
+        "period": "/month",
+        "desc": "Defined ongoing service",
         "features": [
-          "SEOベーシック全機能",
-          "AI検索最適化（GEO）",
-          "構造化データ実装",
-          "月4本記事作成",
-          "競合分析"
+          "Responsibilities defined in scope",
+          "No separate English search retainer",
+          "Rankings, traffic, and citations not guaranteed"
         ]
       },
       {
-        "name": "フルパッケージ",
-        "price": "148,000",
-        "period": "/月",
-        "desc": "SEO+GEO+コンテンツ戦略",
+        "name": "Month 7 onward",
+        "price": "995",
+        "period": "/month",
+        "desc": "Defined ongoing service unless cancelled",
         "features": [
-          "SEO+GEO全機能",
-          "コンテンツ戦略設計",
-          "月8本記事作成",
-          "被リンク施策",
-          "週次ミーティング"
+          "Cancellation follows signed terms",
+          "Third-party and expanded content costs are separate",
+          "New content or integrations require written scope"
         ]
       }
     ]
   },
   "lpAi": {
-    "metaTitle": "AI Integration free consultation | Paradigm",
-    "metaDescription": "Bring ChatGPT / Gemini into operations. Chatbots, automation, analytics. Reduce ops time by ~40%. From ¥198,000+.",
+    "metaTitle": "Bilingual Support Setup | Japan Entry Package",
+    "metaDescription": "The bilingual support and automation module inside Paradigm's fixed $12,000 Japan Entry package.",
     "heroBadge": "AI Integration Landing",
     "heroTitle": "Turn AI into a business weapon.",
     "heroHighlight": "business weapon",
-    "heroDesc": "Chatbots, automation, analytics. Latest AI cuts ops time by ~40%. From ¥198,000+, free first consultation.",
+    "heroDesc": "Configure agreed support knowledge, routing, human review, and operator handover inside the Japan Entry package.",
     "outcomesEyebrow": "Outcomes",
     "outcomesHeading": "Three numbers AI changes",
     "stats": [
       {
-        "num": "-40%",
+        "num": "Scoped",
         "label": "Operating time",
         "desc": "AI automates repetitive work. Humans focus on creative tasks.",
         "gradient": "from-pink-400 via-paradigm-accent to-paradigm-tech"
       },
       {
-        "num": "80%",
+        "num": "Reviewed",
         "label": "CS auto-handled",
         "desc": "AI chatbot answers 24/7. Major labour cost reduction.",
         "gradient": "from-paradigm-tech via-paradigm-glow to-violet-400"
       },
       {
-        "num": "1/5",
-        "label": "Reporting time",
-        "desc": "Collect → analyse → write — all automated. Faster decisions.",
+        "num": "Handover",
+        "label": "Operator ownership",
+        "desc": "Document knowledge, providers, escalation, and the agreed human-review boundary.",
         "gradient": "from-paradigm-glow via-violet-400 to-paradigm-accent"
       }
     ],
@@ -1323,70 +1392,65 @@
     "ctaEyebrow": "Begin",
     "ctaTitle": "Take the first step into AI",
     "ctaHighlight": "AI",
-    "ctaDesc": "Free consultation to scope your AI roadmap.",
-    "ctaButton": "Book a free consultation",
+    "ctaDesc": "This module is scoped through the fixed Japan Entry package.",
+    "ctaButton": "Apply for Japan Entry — $12K",
     "processEyebrow": "Process",
-    "processHeading": "AI 導入の流れ",
+    "processHeading": "How support and automation are delivered",
     "process": [
       {
         "step": "01",
-        "title": "無料相談・ヒアリング",
-        "desc": "御社の業務課題をヒアリングし、AI で自動化できる領域を特定します。"
+        "title": "Use-case and data review",
+        "desc": "Confirm the approved support use case, source knowledge, sensitive-data boundaries, providers, and escalation needs."
       },
       {
         "step": "02",
-        "title": "導入設計",
-        "desc": "最適な AI ツールを選定し、業務フローに合わせた導入プランを設計します。"
+        "title": "Workflow design",
+        "desc": "Define what may be automated, what requires human review, and where the workflow must escalate."
       },
       {
         "step": "03",
-        "title": "構築・テスト",
-        "desc": "チャットボット / 自動化ワークフローを構築し、御社環境で動作確認を行います。"
+        "title": "Build and test",
+        "desc": "Implement the agreed workflow and test expected, uncertain, and failure paths before launch."
       },
       {
         "step": "04",
-        "title": "運用・改善",
-        "desc": "導入後も定期的に効果を測定し、AI モデルの更新と改善を継続します。"
+        "title": "Launch and handover",
+        "desc": "Document providers, ownership, knowledge updates, escalation, and the agreed ongoing responsibilities."
       }
     ],
-    "plansTitle": "料金プラン",
+    "plansTitle": "Japan Entry commercial stages",
     "plans": [
       {
-        "name": "AIスタート",
-        "price": "198,000",
-        "period": "〜",
-        "desc": "チャットボット1つ導入",
+        "name": "Setup",
+        "price": "12,000",
+        "period": "USD",
+        "desc": "Fixed Japan Entry setup",
         "features": [
-          "AIチャットボット構築",
-          "FAQ学習（100問）",
-          "サイト埋め込み",
-          "1ヶ月運用サポート"
+          "Agreed support or automation use case",
+          "Human-review and escalation boundaries",
+          "Provider and operator handover"
         ]
       },
       {
-        "name": "AI業務改革",
-        "price": "498,000",
-        "period": "〜",
-        "desc": "業務プロセスのAI化",
+        "name": "Months 1–6",
+        "price": "0",
+        "period": "/month",
+        "desc": "Defined ongoing service",
         "features": [
-          "業務フロー分析",
-          "自動化ワークフロー3本",
-          "AIチャットボット",
-          "社内研修（2時間）",
-          "3ヶ月サポート"
+          "Responsibilities defined in scope",
+          "No separate English AI retainer",
+          "Provider usage fees remain separate"
         ]
       },
       {
-        "name": "AIフル導入",
-        "price": "980,000",
-        "period": "〜",
-        "desc": "全社AI戦略+開発",
+        "name": "Month 7 onward",
+        "price": "995",
+        "period": "/month",
+        "desc": "Defined ongoing service unless cancelled",
         "features": [
-          "AI戦略コンサル",
-          "カスタムAI開発",
-          "自動化ワークフロー無制限",
-          "データ分析基盤",
-          "6ヶ月サポート"
+          "Cancellation follows signed terms",
+          "Expanded workflows require written scope",
+          "Sensitive or regulated use cases require separate review"
         ]
       }
     ]
@@ -1396,86 +1460,58 @@
     "message": "Please wait a moment…"
   },
   "videoPage": {
-    "metaTitle": "Video subscription — your entire video team, on subscription",
-    "metaDescription": "Unlimited video requests, one flat monthly fee, pause anytime. 20-100 videos/month delivered in 24-48h. Cheaper than hiring or agencies.",
-    "heroBadge": "Productized video subscription",
-    "heroTitle": "Your entire video team, on subscription",
-    "heroHighlight": "from ¥300K / mo",
-    "heroDesc": "Unlimited video requests, one flat monthly fee, pause anytime. 20-100 videos a month, delivered in 24-48h. No hiring, no agencies, no contracts.",
+    "metaTitle": "Content Support | Japan Entry Package",
+    "metaDescription": "Content support is scoped only as part of Paradigm's fixed $12,000 Japan Entry package on the English site.",
+    "heroBadge": "Japan Entry module",
+    "heroTitle": "Content support follows the Japan launch scope",
+    "heroHighlight": "Japan launch scope",
+    "heroDesc": "The English site offers one fixed Japan Entry package, not a separate video subscription.",
     "comparisonEyebrow": "Comparison",
     "comparisonTitle": "The limits of hiring & agencies — and how we fix them",
     "comparisonItemHead": "Item",
     "comparisonParadigmHead": "Paradigm",
     "comparisonTraditionalHead": "Agency / hire",
     "pricingEyebrow": "Pricing",
-    "pricingTitle": "Flat monthly. Pick by volume.",
-    "pricingDesc": "Overage ¥10,000 per extra video. 20% off annual.\nCancel anytime, no minimum term.",
+    "pricingTitle": "One fixed Japan Entry package",
+    "pricingDesc": "$12,000 setup · first six months $0/month · then $995/month. Content work outside the agreed launch scope requires written approval.",
     "processEyebrow": "Process",
     "processTitle": "From request to delivery — 4 steps",
-    "ctaButton": "Talk to us first",
-    "popularLabel": "Most popular",
-    "ctaBandEyebrow": "Start now",
-    "ctaBandTitle": "Book a free 15-min intro",
-    "ctaBandDesc": "No pricing pressure. We'll work out how many videos you need and what for, then recommend the right plan.",
-    "ctaBandButton": "Book a free intro",
+    "ctaButton": "Apply for Japan Entry — $12K",
+    "popularLabel": "Fixed offer",
+    "ctaBandEyebrow": "Japan Entry",
+    "ctaBandTitle": "Apply for the fixed package",
+    "ctaBandDesc": "Content deliverables are included only when written into the agreed launch scope.",
+    "ctaBandButton": "Apply for Japan Entry — $12K",
     "plans": [
       {
-        "name": "Basic",
-        "price": "¥300,000",
-        "period": "/mo",
-        "volume": "20 videos / mo",
-        "popular": false,
-        "features": [
-          "24-48h delivery",
-          "Request via your board",
-          "All formats (vertical / square / wide)",
-          "Auto subtitles",
-          "Permanent hosting"
-        ]
-      },
-      {
-        "name": "Pro",
-        "price": "¥500,000",
-        "period": "/mo",
-        "volume": "50 videos / mo",
+        "name": "Japan Entry Package",
+        "price": "$12,000",
+        "period": "setup",
+        "volume": "$0/month for months 1–6 · $995/month from month 7",
         "popular": true,
         "features": [
-          "24h delivery (priority queue)",
-          "AI voiceover",
-          "Auto logo / captions / end cards",
-          "Monthly report videos",
-          "Request via Slack"
-        ]
-      },
-      {
-        "name": "Scale",
-        "price": "¥800,000",
-        "period": "/mo",
-        "volume": "100 videos / mo",
-        "popular": false,
-        "features": [
-          "12h delivery (fast queue)",
-          "AI avatar videos",
-          "Custom template support",
-          "Dedicated Slack channel",
-          "Monthly strategy call"
+          "Content deliverables only when included in the signed scope",
+          "Delivery timing and revision limits agreed before kickoff",
+          "No separate English video subscription or volume promise",
+          "Future-period cancellation follows the signed terms",
+          "Month-one target: 20 qualified launches is an internal operating target, not a customer outcome guarantee"
         ]
       }
     ],
     "comparison": [
       {
         "item": "Cost per video",
-        "paradigm": "¥15,000 (Pro)",
-        "traditional": "¥80,000-300,000"
+        "paradigm": "Written into fixed scope",
+        "traditional": "Varies by vendor"
       },
       {
         "item": "Turnaround",
-        "paradigm": "24-48h",
+        "paradigm": "Agreed schedule",
         "traditional": "1-3 weeks"
       },
       {
         "item": "Revisions",
-        "paradigm": "Unlimited (re-queue)",
+        "paradigm": "Written revision scope",
         "traditional": "2-3 max"
       },
       {
@@ -1485,15 +1521,15 @@
       },
       {
         "item": "Billing",
-        "paradigm": "Monthly, cancel anytime",
+        "paradigm": "$0/month for six months, then $995/month; future-period cancellation follows the signed terms",
         "traditional": "Per-project, minimums"
       }
     ],
     "process": [
       {
         "step": "01",
-        "title": "Subscribe & get your board",
-        "desc": "Start your subscription and we issue your request board"
+        "title": "Confirm the signed scope",
+        "desc": "The fixed $12,000 setup, included content work, timing, and acceptance criteria are agreed before kickoff"
       },
       {
         "step": "02",
@@ -1502,262 +1538,258 @@
       },
       {
         "step": "03",
-        "title": "Delivered in 24-48h",
-        "desc": "MP4 delivered to your board with a Slack ping"
+        "title": "Delivered to the agreed workflow",
+        "desc": "Files and notifications follow the written scope and schedule"
       },
       {
         "step": "04",
-        "title": "Revise until perfect",
-        "desc": "Re-queue until you love it. Your monthly count doesn't change"
+        "title": "Review against acceptance criteria",
+        "desc": "Revision count, acceptance, and delivery timing follow the written scope"
       }
     ]
   },
   "agencyPage": {
-    "metaTitle": "Agency White-Label | 動画案件を断らずに済む唯一の方法",
-    "metaDescription": "AI 動画制作パイプラインを御社ブランドで提供。クライアント数無制限・粗利率 85%+。Paradigm が裏方として全自動レンダリング。",
-    "heroBadge": "Agency White-Label",
-    "heroTitle": "動画案件を断るたびに、御社の利益が他社へ流れています",
-    "heroHighlight": "WL で取り返す",
-    "heroDesc": "月 2-3 件の動画案件を断っているなら、年 $72,000-$288,000 が素通りしています。Paradigm の AI パイプラインを御社ブランドで提供すれば、断らずに済みます。",
-    "roiEyebrow": "Loss Calculator",
-    "roiTitle": "御社は今月、いくら損していますか?",
-    "roiDesc": "動画案件を断る / 外注に出すたびに、利益が他社へ流れています。",
-    "roiQ1": "Q1. 月に動画案件を断る or 外注する件数は?",
-    "roiQ2": "Q2. 1 件あたりの平均受注金額は?",
-    "roiMonthly": "月間損失",
-    "roiAnnual": "年間損失",
-    "roiParadigm": "Paradigm 年間費",
-    "roiNetGain": "回収可能粗利 (年間)",
-    "roiNetGainDesc": "今、御社を素通りしている動画案件を WL で回収できる粗利です。",
-    "roiCta": "この損失を止める方法を 15 分で説明します",
+    "metaTitle": "Agency Partners | Japan Entry Package",
+    "metaDescription": "English agency inquiries are routed to Paradigm's fixed $12,000 Japan Entry package.",
+    "heroBadge": "Japan Entry for agency clients",
+    "heroTitle": "Bring a qualified client and a fast decision",
+    "heroHighlight": "fast decision",
+    "heroDesc": "The English public offer is one fixed Japan Entry package. White-label or expanded work is not included unless agreed in writing.",
+    "roiEyebrow": "Fit review",
+    "roiTitle": "Can the client approve and support a fast Japan launch?",
+    "roiDesc": "The fixed package is evaluated on authority, launch need, source readiness, and scope fit — not an unsourced loss estimate.",
+    "roiQ1": "Q1. How many client opportunities need a Japan launch?",
+    "roiQ2": "Q2. What commercial value does the client assign to the launch?",
+    "roiMonthly": "Monthly context",
+    "roiAnnual": "Annual context",
+    "roiParadigm": "Fixed setup",
+    "roiNetGain": "Client-defined value",
+    "roiNetGainDesc": "Any business case remains the client's estimate; Paradigm does not guarantee recovered revenue or margin.",
+    "roiCta": "Submit the qualified client context",
     "howItWorksEyebrow": "How it works",
-    "howItWorksTitle": "御社が表・Paradigm が裏方",
-    "pricingTitle": "WL 専用 2 プラン",
-    "pricingDesc": "超過課金: 1 本あたり $80。年払いで Agency 20%・White 25% OFF。",
+    "howItWorksTitle": "One written scope across agency, client, and Paradigm",
+    "pricingTitle": "One public package",
+    "pricingDesc": "$12,000 setup · first six months $0/month · then $995/month. Agency-specific additions require written scope approval.",
     "comparisonEyebrow": "Why WL",
-    "comparisonTitle": "外注の限界 vs WL の構造優位",
+    "comparisonTitle": "Written responsibilities instead of assumed white-label promises",
     "faqEyebrow": "FAQ",
-    "faqTitle": "よくある質問",
+    "faqTitle": "Agency partner questions",
     "recommendedLabel": "Recommended",
     "steps": [
       {
         "step": "01",
         "title": "Client orders from you",
-        "desc": "Your client only sees your brand. Paradigm is invisible behind the scenes."
+        "desc": "Brand visibility, contracting, support, and ownership are confirmed in writing before work starts."
       },
       {
         "step": "02",
         "title": "You submit request via Notion",
-        "desc": "Drop title + assets into a Notion DB. n8n handles the rest automatically."
+        "desc": "Provide the approved brief and assets through the agreed workflow; automation is used only within documented boundaries."
       },
       {
         "step": "03",
         "title": "Deliver under your brand",
-        "desc": "MP4 ready in 24-48h. Delivered with your logo, from your domain."
+        "desc": "Delivery timing, branding, and channels require written scope approval."
       }
     ],
     "plans": [
       {
-        "name": "Agency",
-        "price": "$8,000",
-        "period": "/mo",
-        "videos": "Up to 100 videos/mo",
-        "desc": "Mid-size agencies · unlimited clients",
+        "name": "Japan Entry setup",
+      "price": "$12,000",
+      "period": "setup",
+        "videos": "Fixed launch scope",
+      "desc": "Agency additions require written scope",
         "features": [
-          "White-label delivery (zero Paradigm branding)",
-          "Per-client Notion database",
-          "n8n automated request handling",
-          "Slack / Webhook integration",
-          "Monthly check-in (optional)"
+          "Agency and client responsibilities agreed in writing",
+          "Approved delivery and handover workflow",
+          "Expanded or white-label work remains separate"
         ]
       },
       {
-        "name": "White",
-        "price": "$15,000",
-        "period": "/mo",
-        "videos": "Up to 300 videos/mo",
-        "desc": "Large agencies · custom-branded dashboard",
+        "name": "Month 7 onward",
+      "price": "$995",
+      "period": "/month",
+        "videos": "Defined ongoing service",
+        "desc": "Unless cancelled under signed terms",
         "features": [
-          "Custom-branded dashboard (your domain)",
-          "Per-client delivery reports (WL)",
-          "AI avatar video (Wan2.2 + MuseTalk)",
-          "Dedicated Slack channel + 1 engineer",
-          "Annual billing 25% OFF"
+          "Responsibilities defined in scope",
+          "Provider and out-of-scope costs remain separate",
+          "Cancellation follows the signed terms"
         ]
       }
     ],
     "comparison": [
       {
         "item": "Cost per video (COGS)",
-        "paradigm": "$80",
-        "outsourcing": "$300-800"
+      "paradigm": "Written scope",
+      "outsourcing": "Varies by vendor"
       },
       {
         "item": "Bill to client",
-        "paradigm": "$150-400",
-        "outsourcing": "$500-1,500"
+      "paradigm": "Client-defined",
+      "outsourcing": "Varies by vendor"
       },
       {
         "item": "Gross margin",
-        "paradigm": "85%+",
+      "paradigm": "Depends on client pricing",
         "outsourcing": "30-50%"
       },
       {
         "item": "Turnaround",
-        "paradigm": "24-48 hr",
+      "paradigm": "Agreed schedule",
         "outsourcing": "1-3 weeks"
       },
       {
         "item": "Scale",
-        "paradigm": "300+/mo flat fee",
+        "paradigm": "Written capacity",
         "outsourcing": "Per-project negotiation"
       },
       {
         "item": "Risk",
-        "paradigm": "Paradigm guarantees quality",
+      "paradigm": "Written acceptance criteria",
         "outsourcing": "Freelancer ghosting / burnout"
       }
     ],
     "faqs": [
       {
         "q": "Will Paradigm's name ever appear to my clients?",
-        "a": "Never. Deliverables, emails, and invoices all carry your brand. DNS, email sender, and video filenames are all configured under your identity."
+        "a": "Branding, contracting identity, sender details, domains, and deliverable attribution must be agreed in writing. No blanket invisibility promise applies."
       },
       {
         "q": "Is there a client limit?",
-        "a": "Both Agency and White plans have unlimited clients. Monthly billing is based on total video volume (100 or 300), not client count."
+      "a": "No separate English agency plan is publicly offered. Client count, volume, delivery, and branding require an approved written scope."
       },
       {
         "q": "We already have designers. Won't this overlap?",
-        "a": "It's complementary. Your designers handle creative direction (color, composition). Paradigm handles volume production (template rendering, captions, voice synthesis). This split maximises your margin."
+        "a": "Responsibilities can be divided in the written scope. The agency remains responsible for its client commitments and any margin assumptions."
       },
       {
-        "q": "Can I cancel anytime?",
-        "a": "Monthly plans cancel any month. Annual billing (25% OFF) requires a 12-month commitment."
+        "q": "How does future-period cancellation work?",
+        "a": "The public English terms are $0/month for six months and then $995/month. Future-period cancellation follows the signed terms; agency additions may have separate commitments."
       }
     ],
     "ctaEyebrow": "Partnership",
-    "ctaTitle": "Let's audit your video pipeline — 15 minutes",
-    "ctaDesc": "Map your current video workflow, lost deals, and gross margin in 15 minutes. We'll size how much annual revenue the WL model recovers for you.",
-    "ctaButton": "Book a free diagnosis"
+    "ctaTitle": "Apply for the fixed Japan Entry package",
+    "ctaDesc": "Submit the client context, decision authority, and launch target. Expanded or white-label work is separate unless agreed in writing.",
+    "ctaButton": "Apply for Japan Entry — $12K"
   },
   "diagnosticReport": {
-    "diagnosticBadge": "診断対象",
+    "diagnosticBadge": "Diagnostic subject",
     "estimatedMonthlyLoss": "ESTIMATED MONTHLY LOSS",
-    "lossDesc": "上記の課題による月間推定機会損失の合算です。\n改善により回収可能な損失として試算しています。",
-    "videoTeaser": "改善した場合の試算を2分で説明します",
-    "videoBranding": "専用の解説動画",
-    "videoPlaceholder": "※ HyperFrames / Loom 動画を埋め込み予定 (Sprint 11)",
-    "videoFooter": "御社サイトの診断結果と、具体的な改善シミュレーションをまとめました。まずは動画をご覧ください。",
+    "lossDesc": "Any opportunity estimate is directional and depends on stated assumptions. It is not guaranteed recoverable revenue.",
+    "videoTeaser": "Review the evidence and assumptions behind the diagnostic",
+    "videoBranding": "Diagnostic explanation",
+    "videoPlaceholder": "Explanation media is not available yet.",
+    "videoFooter": "Review the evidence, assumptions, and recommended priorities before deciding on any action.",
     "ctaEyebrow": "NEXT STEP",
-    "ctaTitle": "まず30分、話だけでも聞いてみてください",
-    "ctaDesc": "費用の話は一切しません。\n診断結果の詳細説明と、改善の優先順位をお伝えします。",
-    "ctaSubtext": "無料 · オンライン対応 · 30分",
-    "footerNote": "Paradigm Web Diagnostics · このレポートは {date} まで有効です",
-    "severityCritical": "緊急対応",
-    "severityWarning": "要対応",
-    "severityInfo": "推奨"
+    "ctaTitle": "Apply for the fixed Japan Entry package",
+    "ctaDesc": "$12,000 setup · first six months $0/month · then $995/month. Submission is a fit review, not contract acceptance.",
+    "ctaSubtext": "For fast-decision SMBs with launch-ready inputs",
+    "footerNote": "Paradigm Web Diagnostics · report valid until {date}",
+    "severityCritical": "Critical",
+    "severityWarning": "Needs attention",
+    "severityInfo": "Recommended"
   },
   "homeEn": {
     "hero": {
       "eyebrow": "FOR FOREIGN BRANDS ENTERING JAPAN",
-      "h1": "You're invisible in the world's 3rd-largest economy — and it's costing you every month.",
-      "sub": "Japan's ¥22T e-commerce and ¥5.8T inbound market is wide open. But with no Japanese site, no legal compliance, and no Konbini / PayPay checkout, Japanese buyers can't find you, trust you, or pay you. Paradigm makes you Japan-ready end-to-end — you never touch a word of Japanese.",
-      "ctaPrimary": "Get your Japan Market Fit Report",
-      "ctaPrimaryNote": "$1,500 · credited to your first month",
-      "ctaSecondary": "Book a free 30-min call",
-      "trust": "Built for Kickstarter-funded brands · Shopify D2C · SaaS entering Japan"
+      "h1": "Launch in Japan with one fixed package and one accountable delivery path.",
+      "sub": "A localized revenue site, trust and compliance coordination, discovery foundation, eligible inquiry or payment routing, bilingual support setup, analytics baseline, and handover — scoped before kickoff.",
+      "ctaPrimary": "Apply for Japan Entry — $12K",
+      "ctaPrimaryNote": "$12,000 setup · six months $0 · then $995/month",
+      "ctaSecondary": "Review fixed scope",
+      "trust": "For fast-decision SMBs in Europe, North America, and Australia"
     },
     "loss": {
       "eyebrow": "THE COST OF WAITING",
-      "heading": "What “not being in Japan” actually costs you",
-      "sub": "Every month without a Japan-ready presence is revenue handed to competitors who localized first.",
-      "card1Stat": "0",
-      "card1Label": "Japanese buyers who can read your English-only site",
-      "card2Stat": "~70%",
-      "card2Label": "of Japanese shoppers abandon carts without Konbini / PayPay",
-      "card3Stat": "Invisible",
-      "card3Label": "on Google Maps & LINE — where Japanese discovery actually happens",
-      "card4Stat": "Non-compliant",
-      "card4Label": "you legally cannot sell to Japanese consumers without proper disclosures"
+      "heading": "The launch risks to resolve before spending on demand",
+      "sub": "The package focuses on controllable launch foundations rather than unsourced revenue projections.",
+      "card1Stat": "Language",
+      "card1Label": "Can a Japanese buyer understand the offer and next step?",
+      "card2Stat": "Trust",
+      "card2Label": "Are identity, support, commercial, and required disclosures clear?",
+      "card3Stat": "Discovery",
+      "card3Label": "Can eligible search and local channels interpret the launch correctly?",
+      "card4Stat": "Operations",
+      "card4Label": "Are inquiry routing, ownership, analytics, and escalation ready?"
     },
     "offer": {
       "eyebrow": "THE FIX — JaaS",
       "heading": "Japan-as-a-Service: your entire Japan operation, handled",
-      "sub": "One fixed-scope engagement covers everything you'd otherwise need a Tokyo office and a Japanese team for. You work in English. We run Japan in Japanese.",
+      "sub": "One agreed engagement coordinates the launch modules that would otherwise be split across multiple vendors. Your working language with Paradigm is English.",
       "point1": "Japanese site & localization — not translation, but culturally rebuilt for Japanese buyers",
-      "point2": "Legal compliance — required disclosures so you can sell to consumers legally",
-      "point3": "Local payments & logistics — Konbini, PayPay, credit, domestic delivery",
-      "point4": "Discovery & support — MEO (Google Maps), LINE official, AI customer support in Japanese"
+      "point2": "Trust and compliance coordination — implementation of the agreed launch requirements, without replacing licensed advice",
+      "point3": "Eligible inquiry or payment routing — provider-dependent paths agreed for your offer",
+      "point4": "Discovery and support setup — eligible channels, measurement, knowledge, routing, and handover"
     },
     "mechanism": {
       "eyebrow": "WHY IT WORKS",
-      "heading": "Insurance against failure. Booster for growth.",
+      "heading": "A controlled launch process, not an outcome guarantee.",
       "item1Title": "Bilingual, async",
       "item1Body": "We take everything in English and handle the Japanese side entirely. Zero Japanese burden on your team.",
       "item2Title": "Japan-specific stack",
-      "item2Body": "MEO, LINE, Yahoo! Japan SEO, Konbini & PayPay — the channels Japanese customers actually use.",
+      "item2Body": "Eligible discovery, inquiry, payment, and support components are selected for the agreed offer and provider constraints.",
       "item3Title": "AI + local experts",
-      "item3Body": "AI handles scale (support, content); Tokyo operators handle judgment, culture, and compliance.",
+      "item3Body": "Automation supports repeatable work; people review uncertain, cultural, commercial, and compliance-sensitive decisions.",
       "item4Title": "Fixed scope, fixed price",
-      "item4Body": "You know exactly what you get and what it costs. No scope creep, no surprise invoices."
+      "item4Body": "Included work, exclusions, client inputs, approval gates, and third-party costs are documented before work starts."
     },
     "proof": {
       "eyebrow": "PROOF",
-      "heading": "Trusted by foreign brands entering Japan",
-      "marquee1": "Tokyo-based operations",
+      "heading": "Commercial and delivery facts you can verify",
+      "marquee1": "Japan-based operator",
       "marquee2": "Bilingual async workflow",
       "marquee3": "Fixed scope, fixed price",
-      "marquee4": "Japan payment rails ready",
-      "metric1Value": "30–90",
-      "metric1Label": "days from kickoff to Japan-live",
-      "metric2Value": "100%",
-      "metric2Label": "English-only on your side — zero Japanese burden",
-      "metric3Value": "0",
-      "metric3Label": "surprise invoices — fixed scope, fixed price, always",
-      "metric4Value": "12",
-      "metric4Label": "locales supported across site, support, and compliance",
-      "footnote": "Client references available on request during your intro call."
+      "marquee4": "Written scope boundaries",
+      "metric1Value": "21",
+      "metric1Label": "business-day launch target, subject to stated dependencies",
+      "metric2Value": "$12K",
+      "metric2Label": "fixed setup price in USD",
+      "metric3Value": "6",
+      "metric3Label": "first months of defined ongoing service at $0/month",
+      "metric4Value": "$995",
+      "metric4Label": "monthly service price from month seven",
+      "footnote": "Month-one target: 20 qualified launches is Paradigm's internal operating target, not a customer outcome guarantee. Delivery targets and scope are confirmed before kickoff; external platform outcomes are not guaranteed."
     },
     "report": {
-      "eyebrow": "START HERE — LOW RISK",
-      "heading": "See exactly what Japan is worth to you — for $1,500",
-      "body": "Before any commitment, get a Japan Market Fit Report: your addressable market, competitor landscape, recommended channels, compliance gaps, and a concrete revenue projection. If you move forward, the full $1,500 is credited to your first month.",
-      "bullet1": "Your specific Japan TAM & missed revenue, quantified",
-      "bullet2": "Competitor & channel analysis (MEO / LINE / EC)",
-      "bullet3": "Compliance checklist + a prioritized 90-day entry plan",
-      "cta": "Get your Japan Market Fit Report — $1,500",
-      "note": "Fully credited to your first month if you proceed."
+      "eyebrow": "ONE COMMERCIAL DECISION",
+      "heading": "Apply for the fixed $12,000 Japan Entry setup",
+      "body": "We review company fit, decision authority, timing, offer context, and known launch constraints before accepting an engagement.",
+      "bullet1": "One empowered approval path",
+      "bullet2": "Required source content, access, and launch context",
+      "bullet3": "Written scope, dependencies, exclusions, and start date",
+      "cta": "Apply for Japan Entry — $12K",
+      "note": "Submitting an application does not create a contract or reserve a slot."
     },
     "pricing": {
       "eyebrow": "JAPAN ENTRY PACKAGE",
-      "heading": "Choose the Japan entry package that matches your launch stage.",
-      "sub": "Three fixed-scope tiers for foreign brands entering Japan. Start lean, then add operations as demand is proven.",
-      "cycle": "one-time",
-      "popular": "Most selected",
-      "cta": "Discuss this tier",
-      "note": "USD pricing for non-Japanese locales. The $1,500 Market Fit Report is credited when you proceed.",
+      "heading": "One package across three commercial stages.",
+      "sub": "The English public price does not change by country or package tier.",
+      "cycle": "fixed terms",
+      "popular": "Fixed offer",
+      "cta": "Apply for Japan Entry — $12K",
+      "note": "Third-party fees and approved work outside the fixed launch scope are separate.",
       "tiers": {
         "essential": {
-          "name": "Essential",
-          "price": "$3,000",
-          "desc": "Validate Japan demand with a localized presence and a clear buyer path.",
+          "name": "Setup",
+          "price": "$12,000",
+          "desc": "The fixed Japan Entry implementation scope.",
           "feature1": "Japan-ready landing page and core localization",
           "feature2": "Compliance and trust checklist",
           "feature3": "Lead capture flow with English handoff"
         },
         "growth": {
-          "name": "Growth",
-          "price": "$5,000",
-          "desc": "Launch the full market-entry stack for e-commerce, SaaS, or funded brands.",
+          "name": "Months 1–6",
+          "price": "$0/month",
+          "desc": "The defined ongoing service during the included support period.",
           "feature1": "Localized site sections plus MEO foundation",
           "feature2": "LINE / inquiry flow and AI support setup",
           "feature3": "30-day launch improvement sprint"
         },
         "scale": {
-          "name": "Scale",
-          "price": "$8,000",
-          "desc": "Build a stronger Japan operation with deeper support, automation, and reporting.",
+          "name": "Month 7 onward",
+          "price": "$995/month",
+          "desc": "The defined ongoing service unless cancelled under the signed terms.",
           "feature1": "Expanded localization and conversion optimization",
           "feature2": "AI customer support and operations automation",
           "feature3": "Executive report with next-quarter Japan roadmap"
@@ -1767,40 +1799,40 @@
     "faq": {
       "heading": "Questions foreign founders ask",
       "q1": "Do I need a Japanese legal entity to start?",
-      "a1": "Not to begin. We can launch your localized presence and test the market first; entity setup is part of the Enterprise tier or a later step once demand is proven.",
+      "a1": "Not for every launch. The required structure depends on your offer, payment, fulfilment, support, tax, and regulated obligations. We coordinate implementation but do not replace legal or tax advice.",
       "q2": "How do payments work without a Japanese bank?",
-      "a2": "We set up Japan-friendly payment rails (Konbini, PayPay, cards) through providers that work for foreign sellers, and advise on settlement.",
+      "a2": "The eligible inquiry or payment-routing path depends on provider acceptance, your entity and settlement setup, product type, and compliance requirements. Provider fees and approvals are separate.",
       "q3": "How long until I'm live in Japan?",
-      "a3": "A localized launch typically takes 30–90 days depending on tier and scope. The Market Fit Report gives you a precise timeline up front.",
+      "a3": "The package uses a 21-business-day target after kickoff, complete inputs, required access, and the agreed approval path. External reviews or scope changes can move the date.",
       "q4": "Do I need to speak or write Japanese?",
       "a4": "No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side.",
       "q5": "What does it cost?",
-      "a5": "Three fixed-scope tiers (Essential / Growth / Enterprise). Start with the $1,500 Market Fit Report, which is credited to your first month.",
+      "a5": "$12,000 setup, $0/month for the first six months, then $995/month from month seven. Third-party costs and approved out-of-scope work are separate.",
       "q6": "Can't I just use Google Translate or DeepL for my site?",
-      "a6": "Machine translation handles words, not trust. Japanese consumers are among the most discerning online — 78% say they won't purchase from a machine-translated site. Legal disclaimers, payment flows, and culturally appropriate UX can't be auto-translated. Our localization covers language, culture, compliance, and conversion — not just vocabulary.",
+      "a6": "Machine translation can help with words but does not decide information architecture, buyer context, required disclosures, provider constraints, trust signals, escalation, or ownership. The package addresses the agreed launch system, not translation alone.",
       "q7": "How is Paradigm different from hiring my own Japanese team?",
-      "a7": "A single bilingual Tokyo hire costs $60–120K/year in salary alone, plus recruiting (3–6 months), office, and management overhead. That one person can't do web development, MEO, LINE setup, legal compliance, and AI support simultaneously. Paradigm gives you the entire cross-functional stack for a one-time engagement — and you start in weeks, not quarters.",
+      "a7": "Hiring builds internal capability; the package is a fixed external launch scope. Choose based on control, timing, existing team capacity, and the responsibilities you need to retain internally.",
       "q8": "What happens after the engagement ends? Will I be left on my own?",
-      "a8": "Every engagement includes a complete handover package (credentials, docs, playbooks) and a 90-day warranty on all deliverables. We also offer ongoing maintenance retainers for continuous optimization, content updates, and support. You'll never be left with a black box — and we stay available for questions well beyond the engagement."
+      "a8": "The agreed handover materials and ownership are documented in scope. The defined ongoing service is $0/month for six months, then $995/month unless cancelled under the signed terms."
     },
     "finalCta": {
       "heading": "Stop leaving Japan on the table.",
-      "sub": "Start with a $1,500 report or a free 30-minute call. Either way, you'll know exactly what Japan is worth — and how to capture it.",
-      "button": "Get your Japan Market Fit Report",
-      "secondary": "Book a free 30-min call"
+      "sub": "Apply if your company can approve the fixed $12,000 setup and provide launch inputs without a long procurement cycle.",
+      "button": "Apply for Japan Entry — $12K",
+      "secondary": "Review fixed scope"
     },
     "comparison": {
       "eyebrow": "WHY PARADIGM",
       "heading": "The difference between \"translating\" and actually entering Japan",
       "sub": "Most options leave you with a translated site that still doesn't convert. Paradigm is Japan operations — not just words.",
       "item1Title": "vs. DIY / Machine Translation",
-      "item1Body": "Google Translate can't handle cultural adaptation, legal disclaimers, trust signals, or SEO. Japanese consumers spot machine translation instantly — and 78% won't buy from a machine-translated site.",
+      "item1Body": "Translation alone does not define buyer context, required disclosures, routing, analytics, provider dependencies, support, or ownership.",
       "item2Title": "vs. Traditional Japanese Agency",
       "item2Body": "Language barrier, opaque pricing, and waterfall processes built for domestic clients. You'll spend weeks in email translation hell before seeing a single deliverable.",
       "item3Title": "vs. Freelance Translator",
       "item3Body": "Translation ≠ localization ≠ market entry. You need payments, compliance, discovery, and support — not just words on a page.",
       "item4Title": "vs. Hiring In-House",
-      "item4Body": "A single bilingual Tokyo hire costs $60–120K/year and takes 3–6 months to recruit. We deliver the full stack in 30–90 days for a one-time engagement."
+      "item4Body": "An internal hire and a fixed launch package solve different needs. The package is designed for a fast external launch scope with documented handover."
     }
   }
 }

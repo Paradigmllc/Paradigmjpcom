@@ -36,7 +36,8 @@ export const DB_TABLES = {
   SALES_CONTRACTS: "sales_contracts",
   SALES_KPI: "sales_kpi",
   SALES_PRODUCTS: "sales_products",
-  SALES_COMPANY_PRODUCT_RECOMMENDATIONS: "sales_company_product_recommendations",
+  SALES_COMPANY_PRODUCT_RECOMMENDATIONS:
+    "sales_company_product_recommendations",
 
   // ── Activity & Sync (migration_017, 019) ──
   SALES_ACTIVITY_LOG: "sales_activity_log",
@@ -44,6 +45,7 @@ export const DB_TABLES = {
 
   // ── Operator Queue (migration_023) ──
   SALES_OPERATOR_QUEUE_ITEMS: "sales_operator_queue_items",
+  SALES_CONTACT_SUBMISSIONS: "sales_contact_submissions",
 
   // ── Tool Connections (migration_024) ──
   SALES_TOOL_CONNECTIONS: "sales_tool_connections",

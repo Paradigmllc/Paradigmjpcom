@@ -1,24 +1,21 @@
 "use client"
 
 /**
- * ContactForm — 12-locale i18n対応 (AE-PHP-2).
- *
- * 旧実装: isJa ? JA_T : EN_T の二択ハードコード → ja/en の2言語しか対応不可。
- * 新実装: useTranslations("contactForm") + useLocale() で12言語全てに対応。
- *   - UI文字列は messages/{locale}.json:contactForm から取得
- *   - servicesList / budgetOptions は t.raw() で配列取得
- *   - locale は useLocale() で取得し form submit payload に添付
- *
- * 2026-05-01 audit: Cloudflare Turnstile invisible widget 統合。
- *   NEXT_PUBLIC_TURNSTILE_SITE_KEY が設定されている時のみ widget 表示。
- *   未設定時は完全にスキップ (CAPTCHA なしで送信可)。
+ * Localized contact form with a qualification-first Japan Entry flow.
+ * English routes always use Japan Entry; other locales retain general contact
+ * unless `intent=japan-entry` is explicitly requested.
  */
 
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import Script from "next/script"
 import { useSearchParams } from "next/navigation"
 import { Link } from "@/i18n/routing"
 import { useLocale, useTranslations } from "next-intl"
+import {
+  ContactFormFields,
+  EMPTY_CONTACT_FORM,
+  type BudgetOption,
+} from "./ContactFormFields"
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ""
 
@@ -41,263 +38,327 @@ declare global {
   }
 }
 
-const FIELD_BASE =
-  "w-full px-0 py-3 bg-transparent border-b border-paradigm-line focus:border-paradigm-accent outline-none transition-colors text-[15px] text-paradigm-ink placeholder:text-paradigm-ink-mute"
+function newSubmissionKey(): string {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID()
+  }
+  const bytes = globalThis.crypto.getRandomValues(new Uint8Array(16))
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  )
+}
 
-interface BudgetOption { v: string; l: string }
+export function isJapanEntryContact(
+  locale: string,
+  intent: string | null,
+): boolean {
+  return locale === "en" || intent === "japan-entry"
+}
 
-const EMPTY_FORM = {
-  name: "",
-  company: "",
-  email: "",
-  phone: "",
-  message: "",
-  budget: "",
-  companyWebsite: "",
-  companyCountry: "",
-  decisionAuthority: "",
-  approvalTimeline: "",
-  desiredLaunch: "",
-  setupFeeAcknowledged: false,
+export function shouldRotateSubmissionIdentity(status: number): boolean {
+  return [400, 401, 403, 409, 422].includes(status)
+}
+
+async function requestFormChallenge(
+  submissionIdentity: string,
+  locale: string,
+  signal?: AbortSignal,
+): Promise<string> {
+  const response = await fetch("/api/contact", {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "X-Contact-Submission-Id": submissionIdentity,
+      "X-Contact-Locale": locale,
+    },
+    cache: "no-store",
+    signal,
+  })
+  const data: unknown = await response.json()
+  const challenge =
+    typeof data === "object" &&
+    data !== null &&
+    "challenge" in data &&
+    typeof data.challenge === "string"
+      ? data.challenge
+      : ""
+  if (!response.ok || !challenge) {
+    throw new Error(`Form challenge request failed with HTTP ${response.status}`)
+  }
+  return challenge
 }
 
 export function ContactForm() {
   const t = useTranslations("contactForm")
   const locale = useLocale()
   const searchParams = useSearchParams()
-  const isJapanEntry = searchParams.get("intent") === "japan-entry"
-
+  const isJapanEntry = isJapanEntryContact(locale, searchParams.get("intent"))
   const servicesList = t.raw("servicesList") as string[]
   const budgetOptions = t.raw("budgetOptions") as BudgetOption[]
+  const challengeLoadError =
+    locale === "en"
+      ? "Form verification could not be loaded. Reload the page and try again."
+      : t("errorNetwork")
 
-  const [form, setForm] = useState({ ...EMPTY_FORM })
+  const [form, setForm] = useState(() => ({
+    ...EMPTY_CONTACT_FORM,
+    company: (searchParams.get("company") ?? "").trim().slice(0, 200),
+  }))
   const [services, setServices] = useState<string[]>([])
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle")
   const [msg, setMsg] = useState("")
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const [turnstileScriptReady, setTurnstileScriptReady] = useState(false)
+  const [formChallenge, setFormChallenge] = useState("")
+  const [honeypot, setHoneypot] = useState("")
   const turnstileRef = useRef<HTMLDivElement>(null)
   const turnstileWidgetIdRef = useRef<string | null>(null)
+  const idempotencyKeyRef = useRef<string | null>(null)
 
-  // Turnstile widget 描画 (TURNSTILE_SITE_KEY 設定時のみ)
-  useEffect(() => {
-    if (!TURNSTILE_SITE_KEY) return
-    if (!turnstileRef.current) return
-    let mounted = true
-    const tryRender = () => {
-      if (!mounted) return
-      const ts = window.turnstile
-      if (!ts || !turnstileRef.current) {
-        setTimeout(tryRender, 200)
-        return
+  const refreshVerification = useCallback(
+    async (options?: {
+      rotateSubmissionIdentity?: boolean
+      resetWidget?: boolean
+      signal?: AbortSignal
+    }) => {
+      setFormChallenge("")
+      setTurnstileToken(null)
+      if (options?.resetWidget && window.turnstile) {
+        window.turnstile.reset(turnstileWidgetIdRef.current ?? undefined)
       }
-      if (turnstileWidgetIdRef.current) return
-      turnstileWidgetIdRef.current = ts.render(turnstileRef.current, {
+      if (options?.rotateSubmissionIdentity || !idempotencyKeyRef.current) {
+        idempotencyKeyRef.current = newSubmissionKey()
+      }
+      const submissionIdentity = idempotencyKeyRef.current
+      if (!submissionIdentity) {
+        throw new Error("Unable to create a form submission identity")
+      }
+      const challenge = await requestFormChallenge(
+        submissionIdentity,
+        locale,
+        options?.signal,
+      )
+      setFormChallenge(challenge)
+    },
+    [locale],
+  )
+
+  useEffect(() => {
+    let active = true
+    const controller = new AbortController()
+    void (async () => {
+      try {
+        await refreshVerification({ signal: controller.signal })
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return
+        console.error("[ContactForm] form challenge loading failed:", error)
+        if (active) {
+          setStatus("error")
+          setMsg(challengeLoadError)
+        }
+      }
+    })()
+    return () => {
+      active = false
+      controller.abort()
+    }
+  }, [challengeLoadError, refreshVerification])
+
+  useEffect(() => {
+    if (
+      !TURNSTILE_SITE_KEY ||
+      !turnstileScriptReady ||
+      !window.turnstile ||
+      !turnstileRef.current ||
+      turnstileWidgetIdRef.current
+    ) {
+      return
+    }
+    try {
+      const turnstile = window.turnstile
+      turnstileWidgetIdRef.current = turnstile.render(turnstileRef.current, {
         sitekey: TURNSTILE_SITE_KEY,
-        callback: (token: string) => setTurnstileToken(token),
-        "expired-callback": () => setTurnstileToken(null),
-        "error-callback": () => setTurnstileToken(null),
+        callback: (token) => {
+          setTurnstileToken(token)
+          setStatus((current) => (current === "error" ? "idle" : current))
+          setMsg("")
+        },
+        "expired-callback": () => {
+          console.warn("[ContactForm] Turnstile token expired")
+          setTurnstileToken(null)
+          setStatus("error")
+          setMsg(challengeLoadError)
+          window.turnstile?.reset(turnstileWidgetIdRef.current ?? undefined)
+        },
+        "error-callback": () => {
+          console.error("[ContactForm] Turnstile verification failed to render")
+          setTurnstileToken(null)
+          setStatus("error")
+          setMsg(challengeLoadError)
+        },
         theme: "light",
         size: "normal",
       })
+    } catch (error) {
+      console.error("[ContactForm] Turnstile widget rendering failed:", error)
+      setTurnstileToken(null)
+      setStatus("error")
+      setMsg(challengeLoadError)
     }
-    tryRender()
-    return () => {
-      mounted = false
-    }
-  }, [])
+  }, [challengeLoadError, turnstileScriptReady])
 
-  const toggleService = (s: string) =>
-    setServices((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]))
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
     setStatus("loading")
     try {
-      const res = await fetch("/api/contact", {
+      if (!idempotencyKeyRef.current)
+        idempotencyKeyRef.current = newSubmissionKey()
+
+      const referrer = document.referrer
+      const referrerParams =
+        referrer && URL.canParse(referrer)
+          ? new URL(referrer).searchParams
+          : new URLSearchParams()
+      const navigationEntry = performance.getEntriesByType("navigation")[0]
+      const landingPage =
+        navigationEntry?.name && URL.canParse(navigationEntry.name)
+          ? navigationEntry.name
+          : window.location.href
+      const landingParams = new URL(landingPage).searchParams
+      const attributionValue = (key: string) =>
+        searchParams.get(key) ??
+        landingParams.get(key) ??
+        referrerParams.get(key) ??
+        ""
+      const ctaSource =
+        attributionValue("cta_source") ||
+        attributionValue("cta") ||
+        attributionValue("source") ||
+        (isJapanEntry ? "japan-entry-application" : "contact-form")
+
+      const response = await fetch("/api/contact", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKeyRef.current,
+          "X-Contact-Submission-Id": idempotencyKeyRef.current,
+          "X-Contact-Locale": locale,
+        },
         body: JSON.stringify({
           ...form,
           intent: isJapanEntry ? "japan-entry" : "general",
           services: isJapanEntry ? ["Japan Entry Package"] : services,
           locale,
           turnstileToken,
+          idempotencyKey: idempotencyKeyRef.current,
+          utmSource: attributionValue("utm_source"),
+          utmMedium: attributionValue("utm_medium"),
+          utmCampaign: attributionValue("utm_campaign"),
+          utmTerm: attributionValue("utm_term"),
+          utmContent: attributionValue("utm_content"),
+          referrer,
+          landingPage,
+          ctaSource,
+          formChallenge,
+          honeypot,
         }),
       })
-      const data = await res.json()
-      if (res.ok) {
+      const data: unknown = await response.json()
+      const result =
+        typeof data === "object" && data !== null
+          ? (data as { success?: boolean; message?: string; error?: string })
+          : {}
+      if (response.ok && result.success === true) {
         setStatus("success")
-        setMsg(data.message || t("successDefault"))
-        setForm({ ...EMPTY_FORM })
+        setMsg(result.message || t("successDefault"))
+        setForm({ ...EMPTY_CONTACT_FORM })
         setServices([])
       } else {
         setStatus("error")
-        setMsg(data.error || t("errorDefault"))
+        setMsg(result.error || t("errorDefault"))
+        try {
+          await refreshVerification({
+            rotateSubmissionIdentity: shouldRotateSubmissionIdentity(
+              response.status,
+            ),
+            resetWidget: true,
+          })
+        } catch (error) {
+          console.error(
+            "[ContactForm] form verification refresh failed:",
+            error,
+          )
+          setMsg(challengeLoadError)
+        }
       }
-    } catch (e) {
-      console.error("[ContactForm] form submission failed:", e)
+    } catch (error) {
+      console.error("[ContactForm] form submission failed:", error)
       setStatus("error")
       setMsg(t("errorNetwork"))
+      try {
+        // Preserve the same identity after an ambiguous network/5xx failure so
+        // a server-side success can be recovered through the idempotent RPC.
+        await refreshVerification({ resetWidget: true })
+      } catch (refreshError) {
+        console.error(
+          "[ContactForm] form verification recovery failed:",
+          refreshError,
+        )
+        setMsg(challengeLoadError)
+      }
     }
   }
 
   if (status === "success") {
     return (
       <div className="text-center py-12 paradigm-glass rounded-2xl p-8 paradigm-glow-md">
-        <div className="font-display text-[40px] text-paradigm-accent mb-4">✓</div>
+        <div className="font-display text-[40px] text-paradigm-accent mb-4">
+          ✓
+        </div>
         <h3 className="font-display text-[22px] md:text-[26px] leading-[1.2] text-paradigm-ink mb-3 tracking-[-0.015em]">
           {t("success")}
         </h3>
-        <p className="text-[14px] text-paradigm-ink-soft leading-[1.7]">{msg}</p>
+        <p className="text-[14px] text-paradigm-ink-soft leading-[1.7]">
+          {msg}
+        </p>
       </div>
     )
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-7">
-      {isJapanEntry && (
-        <div className="rounded-2xl border border-paradigm-accent/30 bg-paradigm-accent/5 p-5 sm:p-6">
-          <p className="paradigm-eyebrow text-paradigm-accent mb-2">Japan Entry Application</p>
-          <p className="font-display text-[22px] leading-tight text-paradigm-ink mb-2">$12,000 fixed setup</p>
-          <p className="text-[13px] leading-[1.7] text-paradigm-ink-soft">
-            $0/month for the first six months, then $995/month. Apply only if your company can make a final decision within seven days and assign one launch owner.
-          </p>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block paradigm-eyebrow text-paradigm-ink-soft mb-2">
-            {t("name")} <span className="text-pink-500">{t("required")}</span>
-          </label>
-          <input type="text" required autoComplete="name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className={FIELD_BASE} placeholder={t("namePh")} />
-        </div>
-        <div>
-          <label className="block paradigm-eyebrow text-paradigm-ink-soft mb-2">
-            {t("company")} {isJapanEntry && <span className="text-pink-500">{t("required")}</span>}
-          </label>
-          <input type="text" required={isJapanEntry} autoComplete="organization" value={form.company} onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))} className={FIELD_BASE} placeholder={t("companyPh")} />
-        </div>
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-7"
+      aria-busy={status === "loading"}
+    >
+      <div
+        className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden"
+        aria-hidden="true"
+      >
+        <label htmlFor="companyFax">Company fax</label>
+        <input
+          id="companyFax"
+          name="companyFax"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={honeypot}
+          onChange={(event) => setHoneypot(event.target.value)}
+        />
       </div>
+      <ContactFormFields
+        isJapanEntry={isJapanEntry}
+        form={form}
+        setForm={setForm}
+        services={services}
+        setServices={setServices}
+        servicesList={servicesList}
+        budgetOptions={budgetOptions}
+        t={t}
+      />
 
-      {isJapanEntry && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label htmlFor="companyWebsite" className="block paradigm-eyebrow text-paradigm-ink-soft mb-2">
-              Company website <span className="text-pink-500">*</span>
-            </label>
-            <input id="companyWebsite" type="url" required autoComplete="url" inputMode="url" value={form.companyWebsite} onChange={(e) => setForm((f) => ({ ...f, companyWebsite: e.target.value }))} className={FIELD_BASE} placeholder="https://example.com" />
-          </div>
-          <div>
-            <label htmlFor="companyCountry" className="block paradigm-eyebrow text-paradigm-ink-soft mb-2">
-              Headquarters country <span className="text-pink-500">*</span>
-            </label>
-            <input id="companyCountry" type="text" required autoComplete="country-name" value={form.companyCountry} onChange={(e) => setForm((f) => ({ ...f, companyCountry: e.target.value }))} className={FIELD_BASE} placeholder="United States, United Kingdom, Australia..." />
-          </div>
-        </div>
-      )}
-
-      <div>
-        <label className="block paradigm-eyebrow text-paradigm-ink-soft mb-2">
-          {t("email")} <span className="text-pink-500">{t("required")}</span>
-        </label>
-        <input type="email" required autoComplete="email" inputMode="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} className={FIELD_BASE} placeholder={t("emailPh")} />
-      </div>
-
-      <div>
-        <label className="block paradigm-eyebrow text-paradigm-ink-soft mb-2">{t("phone")}</label>
-        <input type="tel" autoComplete="tel" inputMode="tel" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} className={FIELD_BASE} placeholder={t("phonePh")} />
-      </div>
-
-      {!isJapanEntry && (
-        <div>
-          <label className="block paradigm-eyebrow text-paradigm-ink-soft mb-3">{t("services")}</label>
-          <div className="grid grid-cols-2 gap-2">
-            {servicesList.map((s) => (
-              <label
-                key={s}
-                className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors text-[12px] ${services.includes(s) ? "border-paradigm-accent bg-paradigm-accent/8 text-paradigm-ink" : "border-paradigm-line text-paradigm-ink-soft hover:border-paradigm-ink"}`}
-              >
-                <input type="checkbox" checked={services.includes(s)} onChange={() => toggleService(s)} className="accent-paradigm-accent" />
-                <span>{s}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {isJapanEntry && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label htmlFor="decisionAuthority" className="block paradigm-eyebrow text-paradigm-ink-soft mb-2">
-              Final decision authority <span className="text-pink-500">*</span>
-            </label>
-            <select id="decisionAuthority" required value={form.decisionAuthority} onChange={(e) => setForm((f) => ({ ...f, decisionAuthority: e.target.value }))} className={FIELD_BASE}>
-              <option value="">Select one</option>
-              <option value="final-decision-maker">I am the final decision-maker</option>
-              <option value="direct-access">I can secure final approval directly</option>
-              <option value="not-final">I need several internal approvals</option>
-            </select>
-          </div>
-          <div>
-            <label htmlFor="approvalTimeline" className="block paradigm-eyebrow text-paradigm-ink-soft mb-2">
-              $12,000 approval timeline <span className="text-pink-500">*</span>
-            </label>
-            <select id="approvalTimeline" required value={form.approvalTimeline} onChange={(e) => setForm((f) => ({ ...f, approvalTimeline: e.target.value }))} className={FIELD_BASE}>
-              <option value="">Select one</option>
-              <option value="within-7-days">Within seven days</option>
-              <option value="within-30-days">Within 30 days</option>
-              <option value="procurement-required">Procurement or board approval required</option>
-              <option value="not-ready">Not ready to approve</option>
-            </select>
-          </div>
-          <div className="md:col-span-2">
-            <label htmlFor="desiredLaunch" className="block paradigm-eyebrow text-paradigm-ink-soft mb-2">
-              Desired Japan launch <span className="text-pink-500">*</span>
-            </label>
-            <select id="desiredLaunch" required value={form.desiredLaunch} onChange={(e) => setForm((f) => ({ ...f, desiredLaunch: e.target.value }))} className={FIELD_BASE}>
-              <option value="">Select one</option>
-              <option value="this-month">Start this month</option>
-              <option value="within-30-days">Start within 30 days</option>
-              <option value="within-60-days">Start within 60 days</option>
-              <option value="later">Later or exploratory</option>
-            </select>
-          </div>
-        </div>
-      )}
-
-      <div>
-        <label className="block paradigm-eyebrow text-paradigm-ink-soft mb-2">
-          {isJapanEntry ? "What are you launching in Japan?" : t("message")} <span className="text-pink-500">{t("required")}</span>
-        </label>
-        <textarea required rows={5} value={form.message} onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))} className={`${FIELD_BASE} resize-none`} placeholder={isJapanEntry ? "Product, current markets, Japanese demand signals, and why the launch matters now" : t("messagePh")} />
-      </div>
-
-      {!isJapanEntry && (
-        <div>
-          <label className="block paradigm-eyebrow text-paradigm-ink-soft mb-2">{t("budget")}</label>
-          <select value={form.budget} onChange={(e) => setForm((f) => ({ ...f, budget: e.target.value }))} className={FIELD_BASE}>
-            {budgetOptions.map((o) => (
-              <option key={o.v} value={o.v}>{o.l}</option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {isJapanEntry && (
-        <label className="flex items-start gap-3 rounded-xl border border-paradigm-line p-4 text-[13px] leading-[1.65] text-paradigm-ink-soft cursor-pointer">
-          <input
-            type="checkbox"
-            required
-            checked={form.setupFeeAcknowledged}
-            onChange={(e) => setForm((f) => ({ ...f, setupFeeAcknowledged: e.target.checked }))}
-            className="mt-1 accent-paradigm-accent"
-          />
-          <span>I understand that the Japan Entry setup fee is fixed at $12,000 and is paid before the 21-business-day launch sequence begins.</span>
-        </label>
-      )}
-
-      {/* Cloudflare Turnstile (TURNSTILE_SITE_KEY 設定時のみ表示) */}
       {TURNSTILE_SITE_KEY && (
         <>
           <Script
@@ -305,29 +366,69 @@ export function ContactForm() {
             strategy="afterInteractive"
             async
             defer
+            onReady={() => setTurnstileScriptReady(true)}
+            onError={(error) => {
+              console.error("[ContactForm] Turnstile script loading failed:", error)
+              setTurnstileScriptReady(false)
+              setTurnstileToken(null)
+              setStatus("error")
+              setMsg(challengeLoadError)
+            }}
           />
-          <div ref={turnstileRef} className="flex justify-center" aria-label="CAPTCHA" />
+          <div
+            ref={turnstileRef}
+            className="flex justify-center"
+            aria-label="CAPTCHA"
+          />
         </>
       )}
 
       {status === "error" && (
-        <div className="paradigm-glass rounded-xl p-4 border border-pink-500/40 paradigm-glow-sm">
+        <div
+          className="paradigm-glass rounded-xl p-4 border border-pink-500/40 paradigm-glow-sm"
+          role="alert"
+          aria-live="assertive"
+        >
           <p className="text-[13px] text-pink-500">{msg}</p>
         </div>
       )}
 
       <button
         type="submit"
-        disabled={status === "loading" || (Boolean(TURNSTILE_SITE_KEY) && !turnstileToken)}
+        {...(isJapanEntry
+          ? {
+              "data-umami-event": "japan-entry-apply-submit",
+              "data-umami-event-source": "contact-form",
+            }
+          : {})}
+        disabled={
+          status === "loading" ||
+          !formChallenge ||
+          (Boolean(TURNSTILE_SITE_KEY) && !turnstileToken)
+        }
         className="group relative w-full inline-flex items-center justify-center gap-2 bg-paradigm-ink text-paradigm-paper py-3.5 rounded-xl text-[12px] tracking-[0.14em] uppercase font-semibold paradigm-glow-md hover:paradigm-glow-lg disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden transition-all"
       >
-        <span aria-hidden className="absolute inset-0 bg-gradient-to-r from-pink-300/0 via-paradigm-glow/40 to-paradigm-tech/0 bg-[length:200%_100%] animate-[gradientShift_2.5s_linear_infinite] opacity-0 group-hover:opacity-100 transition-opacity" />
-        <span className="relative z-10">{status === "loading" ? t("submitting") : isJapanEntry ? "Submit Japan Entry Application" : t("submit")}</span>
+        <span
+          aria-hidden
+          className="absolute inset-0 bg-gradient-to-r from-pink-300/0 via-paradigm-glow/40 to-paradigm-tech/0 bg-[length:200%_100%] animate-[gradientShift_2.5s_linear_infinite] opacity-0 group-hover:opacity-100 transition-opacity"
+        />
+        <span className="relative z-10">
+          {status === "loading"
+            ? t("submitting")
+            : isJapanEntry
+              ? "Submit Japan Entry Application"
+              : t("submit")}
+        </span>
       </button>
 
       <p className="text-[11px] text-paradigm-ink-mute text-center leading-[1.6]">
         {t("privacy")}
-        <Link href="/privacy" className="underline hover:text-paradigm-accent ml-1">{t("privacyLink")}</Link>
+        <Link
+          href="/privacy"
+          className="underline hover:text-paradigm-accent ml-1"
+        >
+          {t("privacyLink")}
+        </Link>
         {t("privacySuffix")}
       </p>
     </form>

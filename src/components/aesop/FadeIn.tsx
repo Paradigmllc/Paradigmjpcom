@@ -12,7 +12,7 @@
  * AE-PHP-1: 32 lines. Pure motion primitive — no business logic.
  */
 
-import { motion, type Variants } from "framer-motion"
+import { motion, useReducedMotion, type Variants } from "framer-motion"
 import type { ReactNode } from "react"
 
 const variants: Variants = {
@@ -35,6 +35,7 @@ export default function FadeIn({
   as?: AsTag
   duration?: number
 }) {
+  const shouldReduceMotion = useReducedMotion()
   const Cmp =
     as === "section" ? motion.section
     : as === "article" ? motion.article
@@ -43,11 +44,11 @@ export default function FadeIn({
   return (
     <Cmp
       className={className}
-      variants={variants}
-      initial="hidden"
-      whileInView="visible"
+      variants={shouldReduceMotion ? undefined : variants}
+      initial={shouldReduceMotion ? false : "hidden"}
+      whileInView={shouldReduceMotion ? undefined : "visible"}
       viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration, ease: [0.22, 1, 0.36, 1], delay }}
+      transition={shouldReduceMotion ? { duration: 0 } : { duration, ease: [0.22, 1, 0.36, 1], delay }}
     >
       {children}
     </Cmp>

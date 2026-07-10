@@ -62,9 +62,10 @@ export function ReportHeader({
             </button>
             {actionOpen && (
               <div role="menu" aria-label={lang === "ja" ? "お問い合わせメニュー" : "Contact menu"} className={`absolute right-0 top-full mt-1 w-48 rounded-lg border py-1 shadow-lg z-50 ${isDark ? "bg-zinc-800 border-zinc-700" : "bg-white border-zinc-200"}`}>
-                <a href={calHref} target="_blank" rel="noopener noreferrer" onClick={() => setActionOpen(false)}
+                <a href={calHref} {...(calHref.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})} onClick={() => setActionOpen(false)}
+                  data-umami-event="diagnostic-report-apply" data-umami-event-source="header"
                   className={`flex items-center gap-2 px-3 py-2 text-xs hover:bg-zinc-50 ${isDark ? "text-zinc-200 hover:bg-zinc-700" : "text-zinc-700"}`}>
-                  📅 {lang === "ja" ? "無料相談を予約" : "Book Free Consult"}
+                  📅 {lang === "ja" ? "相談を予約" : "Apply — $12K fixed"}
                 </a>
                 <a href="https://chatwoot.paradigmjp.com" target="_blank" rel="noopener noreferrer" onClick={() => setActionOpen(false)}
                   className={`flex items-center gap-2 px-3 py-2 text-xs hover:bg-zinc-50 ${isDark ? "text-zinc-200 hover:bg-zinc-700" : "text-zinc-700"}`}>
@@ -81,7 +82,7 @@ export function ReportHeader({
               </div>
             )}
           </div>
-          <a href="https://paradigmjp.com/ja" className={`text-[10px] hidden sm:inline ${isDark ? "text-zinc-500 hover:text-zinc-300" : "text-zinc-400 hover:text-zinc-600"}`}>ParadigmHPへ</a>
+          <a href={`/${lang === "ja" ? "ja" : "en"}`} className={`text-[10px] hidden sm:inline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-600 hover:text-zinc-900"}`}>Paradigm HP</a>
         </div>
       </div>
     </header>

@@ -85,7 +85,7 @@ export function buildServiceSchema(input: {
       "@id": `${BASE}#organization`,
       name: orgNameFor(locale),
     },
-    areaServed: { "@type": "Country", name: ["Japan", "Worldwide"] },
+    areaServed: { "@type": "Country", name: "Japan" },
     offers: input.priceRangeJpy
       ? {
           "@type": "Offer",
@@ -97,6 +97,34 @@ export function buildServiceSchema(input: {
           },
         }
       : undefined,
+  }
+}
+
+export function buildPageSchema(input: {
+  type: "WebPage" | "AboutPage" | "CollectionPage" | "ContactPage"
+  title: string
+  description?: string
+  url: string
+  locale: string
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": input.type,
+    "@id": `${input.url}#webpage`,
+    name: input.title,
+    description: input.description,
+    url: input.url,
+    inLanguage: input.locale,
+    isPartOf: {
+      "@type": "WebSite",
+      "@id": `${BASE}#website`,
+      url: BASE,
+    },
+    about: {
+      "@type": "Organization",
+      "@id": `${BASE}#organization`,
+      name: orgNameFor(input.locale),
+    },
   }
 }
 
@@ -167,19 +195,11 @@ export function buildWebSiteSchema(locale: string = "ja") {
     "@id": `${BASE}#website`,
     url: BASE,
     name: orgNameFor(locale),
-    inLanguage: ["ja", "en", "ko", "zh", "de", "fr", "es", "pt", "ru", "ar", "vi", "id"],
+    inLanguage: ["ja", "en"],
     publisher: {
       "@type": "Organization",
       "@id": `${BASE}#organization`,
       name: orgNameFor(locale),
-    },
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: `${BASE}/${locale}/blog?q={search_term_string}`,
-      },
-      "query-input": "required name=search_term_string",
     },
   }
 }

@@ -27,7 +27,7 @@ const ALL_TABLES = [
   // Activity & Sync
   "sales_activity_log", "sales_sync_logs",
   // Operator Queue
-  "sales_operator_queue_items",
+  "sales_operator_queue_items", "sales_contact_submissions",
   // Tool Connections
   "sales_tool_connections", "sales_integration_status",
   // Enrichment & Diagnosis

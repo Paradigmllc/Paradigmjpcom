@@ -5,7 +5,14 @@
  */
 
 import { describe, it, expect } from "vitest"
-import { getOrganizationJsonLd, getServicesJsonLd, BREADCRUMB_JSONLD, FAQ_JSONLD } from "./jsonld"
+import {
+  BREADCRUMB_JSONLD,
+  FAQ_JSONLD,
+  getJapanEntryApplicationJsonLd,
+  getJapanEntryHomeJsonLd,
+  getOrganizationJsonLd,
+  getServicesJsonLd,
+} from "./jsonld"
 
 describe("getOrganizationJsonLd", () => {
   it("returns JP brand name for ja", () => {
@@ -18,7 +25,9 @@ describe("getOrganizationJsonLd", () => {
   it("returns EN brand name for en", () => {
     const o = getOrganizationJsonLd("en")
     expect(o.name).toBe("Paradigm LLC")
-    expect(o.knowsAbout).toContain("Web Development")
+    expect(o.knowsAbout).toContain("Japan Market Entry")
+    expect(o).not.toHaveProperty("foundingDate")
+    expect(o).not.toHaveProperty("email")
   })
 
   it("defaults to ja when locale omitted", () => {
@@ -34,9 +43,48 @@ describe("getServicesJsonLd", () => {
     expect(s.itemListElement[0].provider.name).toBe("Paradigm合同会社")
   })
 
-  it("uses USD-equivalent JPY pricing for en (kept as JPY)", () => {
+  it("emits the fixed USD Japan Entry offer for en", () => {
     const s = getServicesJsonLd("en")
-    expect(s.itemListElement[0].offers.priceCurrency).toBe("JPY")
+    expect(s.itemListElement).toHaveLength(1)
+    expect(s.itemListElement[0].name).toContain("Japan Entry Package")
+    expect(s.itemListElement[0].offers).toMatchObject({
+      priceCurrency: "USD",
+      price: "12000",
+    })
+  })
+})
+
+describe("Japan Entry structured data", () => {
+  it("publishes one fixed Service offer and FAQPage on the homepage", () => {
+    const data = getJapanEntryHomeJsonLd()
+    expect(data["@graph"][0]).toMatchObject({
+      "@type": "Service",
+      offers: {
+        "@type": "Offer",
+        price: "12000",
+        priceCurrency: "USD",
+        priceSpecification: [
+          expect.objectContaining({ price: "12000", priceCurrency: "USD" }),
+          expect.objectContaining({ price: "0", unitText: "MONTH" }),
+          expect.objectContaining({ price: "995", unitText: "MONTH" }),
+        ],
+      },
+    })
+    const faqPage = data["@graph"].find((node) => node["@type"] === "FAQPage")
+    expect(faqPage).toBeDefined()
+    if (!faqPage || !("mainEntity" in faqPage)) throw new Error("FAQPage schema is missing")
+    expect(faqPage.mainEntity.length).toBeGreaterThanOrEqual(5)
+  })
+
+  it("publishes an intent-specific application page", () => {
+    const data = getJapanEntryApplicationJsonLd()
+    expect(data).toMatchObject({
+      "@type": "ContactPage",
+      inLanguage: "en",
+      potentialAction: { "@type": "CommunicateAction" },
+    })
+    expect(data.url).toBe("https://paradigmjp.com/en/contact")
+    expect(data.potentialAction.target.urlTemplate).toContain("intent=japan-entry")
   })
 })
 

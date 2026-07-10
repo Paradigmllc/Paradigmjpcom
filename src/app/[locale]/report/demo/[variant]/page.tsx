@@ -24,6 +24,11 @@ export default function DemoReportPage() {
           <a href="/ja/report/template-preview" className="text-[10px] text-zinc-400 hover:text-white underline">← テンプレート一覧に戻る</a>
         </div>
       </div>
+      <div className="border-b border-amber-300 bg-amber-50 px-4 py-3 text-center text-xs leading-5 text-amber-950">
+        {locale === "ja"
+          ? "説明用の架空シナリオです。社名・数値・診断内容は実績や成果保証を示すものではありません。"
+          : "Illustrative fictional scenario. Names, figures, and findings are not client results or an outcome guarantee."}
+      </div>
       <DiagnosticReport data={data} trackingSlug={slug} locale={locale} />
     </>
   )

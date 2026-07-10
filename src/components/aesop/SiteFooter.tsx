@@ -24,6 +24,7 @@ import { Link } from "@/i18n/routing"
 import { useLocale, useTranslations } from "next-intl"
 import { motion } from "framer-motion"
 import type { FooterNav } from "@/lib/navigation"
+import { CONSENT_SETTINGS_EVENT } from "@/lib/cookie-consent"
 
 const EASE = [0.22, 1, 0.36, 1] as const
 
@@ -38,6 +39,12 @@ interface FooterProps {
   /** PayloadCMS Settings global から渡される編集可能な値 (admin で編集可能) */
   settings?: {
     contactEmail?: string | null
+    company?: {
+      legalName?: string | null
+      representativeName?: string | null
+      registrationNumber?: string | null
+      address?: string | null
+    }
     social?: {
       twitter?: string | null
       instagram?: string | null
@@ -69,11 +76,37 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
   const t = useTranslations("footer")
   const tNav = useTranslations("nav")
   const tLocale = useTranslations("locale")
+  const tCookie = useTranslations("cookieConsent")
   const locale = useLocale()
+  const contactHref = locale === "en" ? "/contact?intent=japan-entry" : "/contact"
+  const japanEntryAnalytics = locale === "en" ? {
+    "data-umami-event": "japan-entry-apply",
+    "data-umami-event-source": "footer",
+  } : {}
   const contactEmail = settings?.contactEmail ?? "info@paradigmjp.com"
   const social = settings?.social ?? {}
+  const legalName = settings?.company?.legalName || t("company")
+  const companyDetails = [
+    settings?.company?.address,
+    settings?.company?.representativeName
+      ? `${t("representativeLabel")}: ${settings.company.representativeName}`
+      : null,
+    settings?.company?.registrationNumber
+      ? `${t("registrationLabel")}: ${settings.company.registrationNumber}`
+      : null,
+  ].filter((value): value is string => Boolean(value))
   // CMS Footer global 由来の SNS。無ければ Settings.social から組み立てる (後方互換)。
   const cmsSocials = nav?.socialLinks ?? []
+  const settingsSocials = Object.entries(social)
+    .filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].length > 0)
+    .map(([platform, url]) => ({ platform, url }))
+  const visibleSocials = cmsSocials.length > 0 ? cmsSocials : settingsSocials
+  const englishOfferLinks = [
+    { href: "/pricing", label: tNav("pricing") },
+    { href: "/faq", label: tNav("faq") },
+    { href: "/works", label: tNav("works") },
+    { href: "/about", label: tNav("about") },
+  ]
 
   return (
     <footer className="bg-paradigm-paper-deep text-paradigm-ink mt-32 relative">
@@ -84,7 +117,7 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
           className="py-20 md:py-28 border-b border-paradigm-line">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
             <div className="lg:col-span-7">
-              <p className="paradigm-eyebrow mb-6">{t("company")}</p>
+              <p className="paradigm-eyebrow mb-6">{legalName}</p>
               {/* 編集見出し (companyHeadline) と説明文 (companyTagline) は別キー。
                   旧実装は両方 companyTagline で同一文が二重表示されていた。 */}
               <h2 className="font-display text-[28px] md:text-[40px] leading-[1.18] font-normal tracking-tight max-w-[560px] text-paradigm-ink">
@@ -93,10 +126,11 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
             </div>
             <div className="lg:col-span-5 flex flex-col gap-6">
               <p className="text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.85] max-w-md">
-                {nav?.tagline || t("companyTagline")}
+                {locale === "en" ? t("companyTagline") : nav?.tagline || t("companyTagline")}
               </p>
               <Link
-                href="/contact"
+                href={contactHref}
+                {...japanEntryAnalytics}
                 className="self-start text-[11px] tracking-[0.18em] uppercase border border-paradigm-ink px-6 py-3 text-paradigm-ink hover:bg-paradigm-ink hover:text-paradigm-paper transition-colors"
               >
                 {tNav("contact")}
@@ -108,7 +142,7 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
         {/* Band 2 — Link columns. */}
         <motion.section initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.1, ease: EASE }}
           className="py-16 md:py-20 border-b border-paradigm-line">
-          {nav?.columns?.length ? (
+          {locale !== "en" && nav?.columns?.length ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10 md:gap-12">
               {nav.columns.map((col) => (
                 <div key={col.heading}>
@@ -118,10 +152,14 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
                       <li key={`${col.heading}-${l.href}`}>
                         {l.openInNewTab ? (
                           <a href={l.href} target="_blank" rel="noopener noreferrer" className="hover:text-paradigm-ink transition-colors">
-                            {l.label}
+                            {locale === "en" && l.href === "/contact" ? tNav("contact") : l.label}
                           </a>
                         ) : (
-                          <Link href={l.href} className="hover:text-paradigm-ink transition-colors">
+                          <Link
+                            href={locale === "en" && l.href === "/contact" ? contactHref : l.href}
+                            {...(locale === "en" && l.href === "/contact" ? japanEntryAnalytics : {})}
+                            className="hover:text-paradigm-ink transition-colors"
+                          >
                             {l.label}
                           </Link>
                         )}
@@ -136,10 +174,10 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
               <div>
                 <p className="paradigm-eyebrow mb-5">{t("servicesHeading")}</p>
                 <ul className="space-y-3 text-[14px] text-paradigm-ink-soft">
-                  {SERVICE_LINKS.map((l) => (
+                  {(locale === "en" ? englishOfferLinks : SERVICE_LINKS).map((l) => (
                     <li key={l.href}>
                       <Link href={l.href} className="hover:text-paradigm-ink transition-colors">
-                        {t(`services.${l.labelKey}`)}
+                        {"label" in l ? l.label : t(`services.${l.labelKey}`)}
                       </Link>
                     </li>
                   ))}
@@ -157,7 +195,7 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
               <div className="col-span-2 md:col-span-1">
                 <p className="paradigm-eyebrow mb-5">{t("contactHeading")}</p>
                 <ul className="space-y-3 text-[14px] text-paradigm-ink-soft">
-                  <li><Link href="/contact" className="hover:text-paradigm-ink transition-colors">{tNav("contact")}</Link></li>
+                  <li><Link href={contactHref} {...japanEntryAnalytics} className="hover:text-paradigm-ink transition-colors">{tNav("contact")}</Link></li>
                   <li><Link href="/blog" className="hover:text-paradigm-ink transition-colors">{tNav("blog")}</Link></li>
                 </ul>
               </div>
@@ -170,17 +208,19 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
           className="py-12 border-b border-paradigm-line">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <p className="text-[13px] text-paradigm-ink-soft leading-[1.8] max-w-xl">
-              {nav?.studioLocation || t("studioLocation")}
+              {companyDetails.length > 0
+                ? companyDetails.join(" · ")
+                : locale === "en"
+                  ? t("studioLocation")
+                  : nav?.studioLocation || t("studioLocation")}
             </p>
             <div className="flex items-center gap-4">
-              {cmsSocials.length > 0 ? (
-                cmsSocials.map((s) => (
+              {visibleSocials.map((s) => (
                   <a key={s.platform + s.url} href={s.url} target="_blank" rel="noopener noreferrer" aria-label={s.platform}
                     className="inline-flex h-10 w-10 items-center justify-center border border-paradigm-line hover:border-paradigm-ink hover:bg-paradigm-ink hover:text-paradigm-paper transition-colors text-paradigm-ink-soft">
                     <SocialIcon platform={s.platform} />
                   </a>
-                ))
-              ) : null}
+                ))}
               <a
                 href={`mailto:${contactEmail}`}
                 aria-label={t("socialEmail")}
@@ -200,7 +240,7 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
           className="py-7 flex flex-wrap items-center justify-between gap-x-8 gap-y-3 text-[11px] tracking-wider text-paradigm-ink-mute">
           <p>
             © {new Date().getFullYear()}{" "}
-            {nav?.copyright || `${t("company")} · ${t("rights")}`}
+            {nav?.copyright || `${legalName} · ${t("rights")}`}
           </p>
           <ul className="flex flex-wrap items-center gap-x-5 gap-y-2">
             {nav?.legalLinks?.length ? (
@@ -225,6 +265,15 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
                 </li>
               </>
             )}
+            <li>
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new Event(CONSENT_SETTINGS_EVENT))}
+                className="hover:text-paradigm-ink-soft transition-colors"
+              >
+                {tCookie("settings")}
+              </button>
+            </li>
           </ul>
           <p>
             <span className="text-paradigm-ink-mute/60 mr-2">{locale.toUpperCase()}</span>

@@ -60,7 +60,7 @@ export default function ReportRequestModal({
     { ja: "Webサイト改善のプランと費用", en: "Website improvement plan & pricing" },
     { ja: "SEO/MEO対策の具体案", en: "SEO/MEO strategy details" },
     { ja: "AI/DX導入の事例と費用感", en: "AI/DX case studies & cost" },
-    { ja: "その他・相談したい", en: "Other (free consultation)" },
+    { ja: "その他・相談したい", en: "Other requirements" },
   ]
 
   return (
@@ -107,7 +107,7 @@ export default function ReportRequestModal({
                 className="w-full rounded-lg bg-violet-600 py-2.5 text-sm font-bold text-white hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                 {lang === "ja" ? "送信する" : "Send Request"}
               </button>
-              <p className="text-[10px] text-zinc-400 text-center">{lang === "ja" ? "送信先: contact@paradigmjp.com" : "Sent to: contact@paradigmjp.com"}</p>
+              <p className="text-[10px] text-zinc-400 text-center">{lang === "ja" ? "送信先: info@paradigmjp.com" : "Sent to: info@paradigmjp.com"}</p>
             </div>
           </>
         )}

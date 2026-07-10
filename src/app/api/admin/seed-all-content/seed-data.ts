@@ -4,6 +4,11 @@ import {
   EN_JAPAN_ENTRY_COMPARISON_BLOCK,
   EN_JAPAN_ENTRY_PROCESS_BLOCK,
 } from "./homepage-en-blocks"
+import {
+  JAPAN_ENTRY_MONTH_ONE_TARGET,
+  JAPAN_ENTRY_MONTH_ONE_TARGET_DISCLOSURE,
+  JAPAN_ENTRY_MONTH_ONE_TARGET_STAT,
+} from "@/lib/japan-entry-public-copy"
 
 function textToLexical(text: string) {
   return {
@@ -65,7 +70,7 @@ export const SERVICES = [
   { slug:"web", ja:{name:"Web制作", tagline:"集客に強いモダンなビジネスサイトを", features:["コーポレートサイト/LP/ECサイト制作","レスポンシブデザイン（スマホ・タブレット対応）","SEO内部対策 + 構造化データ実装","CMS管理画面（PayloadCMS / WordPress）","Next.js + Tailwind CSS + shadcn/ui 採用","12カ国語多言語対応"]}, en:{name:"Web Development", tagline:"Modern, conversion-focused business websites", features:["Corporate/LP/EC site development","Responsive design","On-page SEO + structured data","CMS admin","Next.js + Tailwind CSS + shadcn/ui","12-language i18n"]}, icon:"Globe", sort:2 },
   { slug:"meo", ja:{name:"MEO対策", tagline:"Googleマップで上位表示、地域集客を最大化", features:["Googleビジネスプロフィール最適化","口コミ獲得・返信代行","投稿運用（最新情報・特典の定期発信）","ローカルSEO（地域キーワード対策）","順位レポート・分析レポート（月次）","競合分析と改善提案"]}, en:{name:"MEO (Local SEO)", tagline:"Top Google Maps rankings for maximum local reach", features:["GBP optimization","Review acquisition & response","Post management","Local SEO","Ranking & analytics reports","Competitor analysis"]}, icon:"MapPin", sort:3 },
   { slug:"seo", ja:{name:"SEO / GEO対策", tagline:"検索エンジンとAI検索からの集客を最大化", features:["キーワード戦略立案・検索意図分析","コンテンツSEO（記事制作・リライト）","テクニカルSEO（サイト速度・構造改善）","GEO対策（ChatGPT/Perplexity最適化）","構造化データ（JSON-LD）実装","月次レポート・分析レポート"]}, en:{name:"SEO / GEO", tagline:"Maximize traffic from search engines and AI", features:["Keyword strategy & intent analysis","Content SEO","Technical SEO","GEO (AI search optimization)","Structured data implementation","Monthly reporting"]}, icon:"Search", sort:4 },
-  { slug:"ai", ja:{name:"AI導入支援 / DX", tagline:"AIと自動化で業務を革新する", features:["業務分析・自動化設計コンサルティング","Dify構築（AIチャットボット・社内ナレッジQ&A）","n8nワークフロー自動化（1000+サービス連携）","DeepSeek V4統合（低コストLLM活用）","社内研修・AIリテラシー向上支援","運用保守・継続改善"]}, en:{name:"AI Enablement / DX", tagline:"Transform operations with AI and automation", features:["Process analysis & automation consulting","Dify setup","n8n workflow automation","DeepSeek V4 integration","Staff training & AI literacy","Ongoing operations"]}, icon:"Bot", sort:5 },
+  { slug:"ai", ja:{name:"AI導入支援 / DX", tagline:"対象業務と確認工程からAI導入を設計", features:["業務分析・自動化設計コンサルティング","Dify構築（AIチャットボット・社内ナレッジQ&A）","OpenClaw / Difyによるイベント駆動ワークフロー","DeepSeek V4統合（低コストLLM活用）","社内研修・AIリテラシー向上支援","運用保守・継続改善"]}, en:{name:"AI Enablement / DX", tagline:"Design AI around scoped workflows and human review", features:["Process analysis & automation consulting","Dify setup","Event-driven OpenClaw / Dify workflows","DeepSeek V4 integration","Staff training & AI literacy","Ongoing operations"]}, icon:"Bot", sort:5 },
 ]
 
 export const PRICING_PLANS = [
@@ -79,8 +84,8 @@ export const PRICING_PLANS = [
   { planJa:"ビジネス", planEn:"Business", sid:"seo", price:150000, cur:"jpy", bill:"monthly", descJa:"SEO + GEO統合対策。月4記事制作 + AI検索最適化を含む本格パッケージ。", descEn:"Integrated SEO + GEO. 4 articles/month + AI search optimization.", featJa:["キーワード戦略 + 検索意図分析","コンテンツSEO（月4記事）","テクニカルSEO（サイト改善）","GEO対策（AI検索最適化）","構造化データ実装","月次詳細レポート"], featEn:["Keyword strategy + intent analysis","Content SEO (4 articles/month)","Technical SEO","GEO optimization","Structured data","Monthly detailed report"], pop:true, ctaJa:"詳細を見る", ctaEn:"Learn More", sort:8 },
   { planJa:"エンタープライズ", planEn:"Enterprise", sid:"seo", price:400000, cur:"jpy", bill:"monthly", descJa:"大規模サイト向けSEO + GEO + 被リンク獲得戦略のフルパッケージ。", descEn:"Full SEO + GEO + link-building for large-scale sites.", featJa:["全SEO/GEO機能","被リンク獲得戦略","多言語SEO（12カ国語）","コンテンツマーケティング戦略","専任SEOコンサルタント"], featEn:["All SEO/GEO features","Link-building strategy","Multilingual SEO","Content marketing strategy","Dedicated SEO consultant"], pop:false, ctaJa:"資料請求", ctaEn:"Request Info", sort:9 },
   { planJa:"スターター", planEn:"Starter", sid:"ai", price:100000, cur:"jpy", bill:"monthly", descJa:"業務分析 + Difyチャットボット構築の入門パッケージ。", descEn:"Process analysis + Dify chatbot build starter package.", featJa:["業務分析（1業務）","Difyチャットボット構築","ナレッジベース設定","操作研修（1回）"], featEn:["Process analysis (1 workflow)","Dify chatbot build","Knowledge base setup","Training (1 session)"], pop:false, ctaJa:"詳細を見る", ctaEn:"Learn More", sort:10 },
-  { planJa:"ビジネス", planEn:"Business", sid:"ai", price:300000, cur:"jpy", bill:"monthly", descJa:"複数業務の自動化設計 + Dify/n8n導入 + DeepSeek統合。", descEn:"Multi-workflow automation + Dify/n8n + DeepSeek integration.", featJa:["業務分析（3業務）","Dify + n8n導入","DeepSeek V4統合","社内研修（3回）","月次サポート"], featEn:["Process analysis (3 workflows)","Dify + n8n deployment","DeepSeek V4 integration","Training (3 sessions)","Monthly support"], pop:true, ctaJa:"詳細を見る", ctaEn:"Learn More", sort:11 },
-  { planJa:"DXパートナー", planEn:"DX Partner", sid:"ai", price:800000, cur:"jpy", bill:"monthly", descJa:"全社DX推進パートナー。専任コンサルタントが伴走しAI化・自動化・データ活用を全面支援。", descEn:"Company-wide DX partner. Dedicated consultant for AI, automation, and data enablement.", featJa:["全社業務棚卸し + DXロードマップ","Dify/n8n/DeepSeekフル導入","カスタムAIアプリ開発","データ分析基盤構築","役員向けAI戦略コンサル","専任DXコンサルタント（週次定例）"], featEn:["Company-wide audit + DX roadmap","Full Dify/n8n/DeepSeek deployment","Custom AI app development","Data analytics foundation","Executive AI strategy consulting","Dedicated DX consultant (weekly)"], pop:false, ctaJa:"お問い合わせ", ctaEn:"Contact Us", sort:12 },
+  { planJa:"ビジネス", planEn:"Business", sid:"ai", price:300000, cur:"jpy", bill:"monthly", descJa:"複数業務の自動化設計 + Dify/OpenClaw導入 + DeepSeek統合。", descEn:"Multi-workflow automation + Dify/OpenClaw + DeepSeek integration.", featJa:["業務分析（3業務）","Dify + OpenClaw導入","DeepSeek V4統合","社内研修（3回）","月次サポート"], featEn:["Process analysis (3 workflows)","Dify + OpenClaw deployment","DeepSeek V4 integration","Training (3 sessions)","Monthly support"], pop:true, ctaJa:"詳細を見る", ctaEn:"Learn More", sort:11 },
+  { planJa:"DXパートナー", planEn:"DX Partner", sid:"ai", price:800000, cur:"jpy", bill:"monthly", descJa:"全社DX推進パートナー。専任コンサルタントが伴走しAI化・自動化・データ活用を全面支援。", descEn:"Company-wide DX partner. Dedicated consultant for AI, automation, and data enablement.", featJa:["全社業務棚卸し + DXロードマップ","Dify/OpenClaw/DeepSeek導入","カスタムAIアプリ開発","データ分析基盤構築","役員向けAI戦略コンサル","専任DXコンサルタント（週次定例）"], featEn:["Company-wide audit + DX roadmap","Dify/OpenClaw/DeepSeek deployment","Custom AI app development","Data analytics foundation","Executive AI strategy consulting","Dedicated DX consultant (weekly)"], pop:false, ctaJa:"お問い合わせ", ctaEn:"Contact Us", sort:12 },
 ]
 
 export const WORKS = [
@@ -110,21 +115,13 @@ export const FAQS = [
   { qJa:"無料相談・お見積もりは可能ですか？", qEn:"Do you offer free consultations?", aJa:"はい、無料で承っています。お問い合わせフォームまたはお電話でお気軽にご連絡ください。初回相談で課題感やご予算をお聞きし最適な提案をします。", aEn:"Yes, free consultations and quotes. Contact us via form or phone. We'll discuss challenges and propose the optimal approach.", catJa:"お取引", catEn:"Business", sort:15 },
 ]
 
-export const TESTIMONIALS = [
-  { author:"田中 健太", titleJa:"代表取締役", titleEn:"CEO", company:"株式会社フードコネクト", quoteJa:"海外展開を検討していた際、JaaSの提案が非常に的確でした。市場調査からLP構築、決済基盤まで一貫支援いただき、わずか3ヶ月で海外売上が全体の40%を超えました。多言語対応の品質も高く海外顧客からの評価も上々です。", quoteEn:"The JaaS proposal was spot-on. End-to-end support from market research to LP and payments helped international sales surpass 40% of revenue in just 3 months.", rating:5, tag:"web" as const, consent:true, pub:true, sort:1 },
-  { author:"佐藤 美咲", titleJa:"マーケティング部長", titleEn:"Marketing Director", company:"メイクリーン株式会社", quoteJa:"MEO対策をお願いしてからGoogleマップ表示順位が3ページ目から1位に上がりました。口コミ返信代行も丁寧で顧客満足度向上にも貢献。毎月のレポートも経営会議でそのまま使える資料です。", quoteEn:"Since starting MEO, our Google Maps ranking went from page 3 to #1. Review response service is meticulous and boosted satisfaction. Reports are presentation-ready.", rating:5, tag:"meo" as const, consent:true, pub:true, sort:2 },
-  { author:"鈴木 太郎", titleJa:"IT統括部長", titleEn:"Head of IT", company:"山陽工業株式会社", quoteJa:"AIチャットボット導入でカスタマーサポートの一次対応が完全自動化されました。問い合わせ対応時間が平均2時間から3分に短縮されサポートチームの残業もほぼゼロに。ROIは導入後4ヶ月でプラス転換しました。", quoteEn:"AI chatbot completely automated first-response support. Response time dropped from 2 hours to 3 minutes, overtime nearly vanished. ROI positive within 4 months.", rating:5, tag:"ai" as const, consent:true, pub:true, sort:3 },
-  { author:"山本 直子", titleJa:"経営企画室", titleEn:"Corporate Planning", company:"株式会社リージョナルフーズ", quoteJa:"SEO/GEO対策を総合的にお願いしました。特にGEOの効果が顕著でChatGPTやPerplexity経由の流入が前年比4倍に。検索意図に沿ったコンテンツ設計のおかげで問い合わせの質も明らかに向上しています。", quoteEn:"Integrated SEO/GEO services. GEO impact is striking — traffic from ChatGPT and Perplexity up 4x YoY. Content designed around search intent elevated inquiry quality.", rating:5, tag:"seo" as const, consent:true, pub:true, sort:4 },
-  { author:"伊藤 健一", titleJa:"代表取締役", titleEn:"CEO", company:"株式会社グローカル", quoteJa:"コーポレートサイトリニューアルをお願いしました。表示速度が劇的に改善しスマホからの問い合わせが2倍に。管理画面も直感的でスタッフだけで日常更新ができるようになりました。デザインも取引先から高評価です。", quoteEn:"Corporate site redesign. Load speed improved dramatically, mobile inquiries doubled. Intuitive admin enables staff to handle daily updates. Partners praise the design.", rating:5, tag:"web" as const, consent:true, pub:true, sort:5 },
-  { author:"匿名希望", titleJa:"営業部長", titleEn:"Sales Director", company:"中堅製造業", quoteJa:"DXの進め方が全くわからない状態でしたが、AI導入支援のおかげで小さな業務から自動化を始められました。最初のn8nワークフローで月20時間の残業削減に成功し社内のDX抵抗感も大きく緩和されました。", quoteEn:"We had no idea how to approach DX, but the AI enablement service helped us start small. First n8n workflow cut 20 hours of monthly overtime and reduced internal DX resistance.", rating:4, tag:"ai" as const, consent:true, anon:true, pub:true, sort:6 },
-]
-
-export const TEAM_MEMBERS = [
-  { nameJa:"代表取締役", nameEn:"CEO", roleJa:"Founder & CEO", roleEn:"Founder & CEO", bioJa:"AI・Web技術を活用した中小企業の成長支援に情熱を注ぐ。複数のSaaSプロダクトをBootstrapで立ち上げPMFからグローバル展開まで一貫リード。", bioEn:"Passionate about empowering SMB growth through AI and web technology. Bootstrap-launched multiple SaaS products from PMF through global expansion.", sort:1 },
-  { nameJa:"テクニカルリード", nameEn:"Technical Lead", roleJa:"Senior Full-Stack Engineer", roleEn:"Senior Full-Stack Engineer", bioJa:"Next.js、TypeScript、Supabaseを専門。ヘッドレスCMSアーキテクチャ設計とAIパイプライン構築の経験が豊富。", bioEn:"Full-stack engineer specializing in Next.js, TypeScript, Supabase. Extensive headless CMS architecture and AI pipeline experience.", sort:2 },
-  { nameJa:"デザインリード", nameEn:"Design Lead", roleJa:"UX Designer & Frontend Engineer", roleEn:"UX Designer & Frontend Engineer", bioJa:"プロダクトデザインとフロントエンド実装の両方を持ちTailwindCSS/Framer Motion/shadcn/uiを駆使したモダンUI設計が得意。", bioEn:"Bridging product design and frontend. Specializes in modern UI with TailwindCSS, Framer Motion, shadcn/ui.", sort:3 },
-]
-export async function seedAllContent(scope: "all" | "homepage" = "all") {
+// Public testimonials and team profiles must be created from named, verified,
+// consented records in Payload. The seed must never invent social proof.
+export const TESTIMONIALS: Array<Record<string, never>> = []
+export const TEAM_MEMBERS: Array<Record<string, never>> = []
+export async function seedAllContent(
+  scope: "all" | "homepage" | "homepage-en" = "all",
+) {
   const [{ getPayload }, { default: config }] = await Promise.all([
     import("payload"),
     import("@payload-config"),
@@ -132,7 +129,7 @@ export async function seedAllContent(scope: "all" | "homepage" = "all") {
   const payload = await getPayload({ config })
   const summary: Record<string, { created: number; updated: number; errors: number }> = {}
 
-  if (scope !== "homepage") {
+  if (scope === "all") {
   // Categories
   summary.categories = { created: 0, updated: 0, errors: 0 }
   for (const c of CATEGORIES) {
@@ -288,17 +285,17 @@ export async function seedAllContent(scope: "all" | "homepage" = "all") {
         blockType: "hero", variant: "centered",
         badge: "中小企業のデジタルパートナー",
         title: "Web制作×AIで、ビジネスの成長を加速する",
-        subtitle: "戦略設計から公開後の集客・運用まで。Paradigmが一気通貫で支援します。無料相談で最適なプランをご提案します。",
-        primaryCta: { label: "無料相談を予約する", href: "/contact" },
+        subtitle: "戦略設計から公開後の計測・運用まで。Paradigmが一気通貫で支援します。初回相談で範囲と条件を確認します。",
+        primaryCta: { label: "無料相談を申し込む", href: "/contact" },
         secondaryCta: { label: "サービスを見る", href: "/services" },
       },
       {
         blockType: "marquee",
         items: [
           { text: "戦略設計から運用まで一気通貫" },
-          { text: "成果報酬型プランあり" },
-          { text: "公開後3ヶ月無料サポート" },
-          { text: "営業電話なし・完全オンライン完結" },
+          { text: "提供範囲と料金を事前に明記" },
+          { text: "保守条件は契約前に確認" },
+          { text: "オンラインで相談可能" },
           { text: "日英バイリンガル対応" },
           { text: "初回診断0円" },
         ],
@@ -315,21 +312,21 @@ export async function seedAllContent(scope: "all" | "homepage" = "all") {
         blockType: "card-grid", variant: "bento", columns: "3",
         cards: [
           { icon: "Globe", title: "Web制作", description: "戦略設計→デザイン→Next.js実装→SEO/MEO/GEO標準対応→公開後運用まで。制作して終わりではなく、集客まで伴走します。", href: "/services/web", highlighted: true },
-          { icon: "MapPin", title: "MEO対策", description: "Googleマップ・Googleビジネスプロフィールの最適化。口コミ施策と投稿運用で地域検索1位を狙います。", href: "/services/meo", highlighted: false },
-          { icon: "Search", title: "SEO/GEO対策", description: "Google検索に加え、ChatGPT・Gemini等のAI検索でも上位表示。次世代SEOで競合に差をつけます。", href: "/services/seo", highlighted: false },
-          { icon: "Bot", title: "AI導入支援", description: "AIチャットボット・業務自動化・データ分析。DeepSeek V4+n8nで月額数万円から始めるAI/DX。", href: "/services/ai", highlighted: false },
-          { icon: "Video", title: "動画サブスク", description: "月額定額・依頼し放題。24-48時間納品・修正無制限。LP/ SNS/広告用の動画を必要なだけ。", href: "/video", highlighted: false },
+          { icon: "MapPin", title: "MEO対策", description: "Googleビジネスプロフィールの情報整備、投稿・口コミ運用、順位計測を継続支援します。", href: "/services/meo", highlighted: false },
+          { icon: "Search", title: "SEO/GEO対策", description: "Google検索とAI検索を分けて計測し、技術・コンテンツ・構造化を改善します。", href: "/services/seo", highlighted: false },
+          { icon: "Bot", title: "AI導入支援", description: "対象業務、人の確認工程、ログ、評価指標を定義してからAIを実装します。", href: "/services/ai", highlighted: false },
+          { icon: "Video", title: "動画サブスク", description: "月額定額で依頼を管理し、プラン別の月間上限・制作キュー・合意した納期目標で進行します。", href: "/video", highlighted: false },
         ],
       },
       {
         blockType: "stats",
-        kicker: "ACHIEVEMENTS", title: "数字で見るParadigm",
-        subtitle: "中小企業のデジタル課題を、テクノロジーで解決してきた実績です。",
+        kicker: "WORKING MODEL", title: "支援の進め方",
+        subtitle: "検証可能な提供範囲と運用条件を先に共有します。",
         stats: [
-          { value: "12", label: "対応言語", sublabel: "日本語からアラビア語まで多言語対応" },
-          { value: "5", label: "提供サービス", sublabel: "Web/MEO/SEO/AI/動画の全領域" },
-          { value: "98+", label: "Lighthouseスコア", sublabel: "全公開サイトでパフォーマンス最適化" },
-          { value: "100%", label: "オンライン完結", sublabel: "打ち合わせから納品までリモート完結" },
+          { value: "4", label: "中核サービス", sublabel: "Web/MEO/SEO・GEO/AI" },
+          { value: "明記", label: "提供範囲", sublabel: "成果物・作業・検収条件" },
+          { value: "計測", label: "評価方法", sublabel: "開始時の基準値から確認" },
+          { value: "1", label: "担当窓口", sublabel: "責任者と承認工程を明確化" },
         ],
         background: "surface",
       },
@@ -341,32 +338,23 @@ export async function seedAllContent(scope: "all" | "homepage" = "all") {
           { title: "ヒアリング", description: "事業目標・ターゲット・課題を深掘りし、最適なサイト設計と戦略をご提案します。", icon: "MessageCircle" },
           { title: "設計・デザイン", description: "ワイヤーフレーム→デザインカンプ→技術選定。UI/UXを徹底的に磨き込みます。", icon: "PenTool" },
           { title: "開発・構築", description: "Next.js + PayloadCMSで高速・SEO最適化。週次進捗共有で透明性を確保します。", icon: "Code2" },
-          { title: "公開・グロース", description: "品質チェック→本番公開→3ヶ月無料サポート。公開後もPDCAを回し続けます。", icon: "TrendingUp" },
-        ],
-      },
-      {
-        blockType: "testimonials",
-        kicker: "PROOF", title: "信頼の証",
-        items: [
-          { name: "製造業 A社 様", location: "東京都", text: "Webサイトをフルリニューアルいただきました。公開後3ヶ月で問い合わせが2倍に。運用の相談にもいつも迅速に対応いただき、心強いパートナーです。", rating: 5 },
-          { name: "サービス業 B社 様", location: "大阪府", text: "MEO対策でGoogleマップ検索1位を達成。来店数が前年比1.5倍になりました。データに基づいた提案が明確でわかりやすいです。", rating: 5 },
-          { name: "IT企業 C社 様", location: "福岡県", text: "AI導入支援で問い合わせ対応を自動化。月間200件の対応が人的コストほぼゼロに。次の展開もご提案いただき頼りにしています。", rating: 5 },
+          { title: "公開・計測", description: "検収項目を確認して公開し、合意した保守範囲と評価指標に沿って運用します。", icon: "TrendingUp" },
         ],
       },
       {
         blockType: "pricing",
-        title: "料金プラン", subtitle: "Web制作の3プラン。まずは無料相談で最適なプランをご提案します。",
+        title: "Web制作の公開料金", subtitle: "表示価格と標準範囲を基準に、追加条件は申込み前に書面で確定します。",
         tiers: [
-          { name: "スターター", price: "¥300,000", period: "〜", description: "ランディングページ1枚の制作に最適。短期間で集客導線を確立したい方へ。", features: "レスポンシブデザイン\nSEO基本対策\nお問い合わせフォーム\nCMS導入\n3ヶ月無料サポート", ctaLabel: "無料相談", ctaHref: "/contact", highlighted: false },
-          { name: "ビジネス", price: "¥600,000", period: "〜", description: "5ページ前後の企業サイト。戦略設計から公開後運用まで。最も選ばれているプラン。", features: "スターターの全機能\nサイト設計・ワイヤーフレーム\n5ページ構成\nMEO基礎対策\nアクセス解析導入\n優先サポート", ctaLabel: "無料相談", ctaHref: "/contact", highlighted: true },
-          { name: "エンタープライズ", price: "¥1,200,000", period: "〜", description: "大規模サイト・多言語対応・AI機能付き。フルカスタムで構築します。", features: "ビジネスの全機能\n多言語対応（最大12言語）\nAIチャットボット導入\nSEO/GEOフル対策\nMEOフル運用\n専任PM+月次レポート", ctaLabel: "無料相談", ctaHref: "/contact", highlighted: false },
+          { name: "ライト", price: "¥298,000", period: "〜", description: "5ページ以内の標準構成。", features: "トップ+4ページ\nレスポンシブ\nSEO基本\n1ヶ月サポート", ctaLabel: "相談する", ctaHref: "/contact", highlighted: false },
+          { name: "スタンダード", price: "¥598,000", period: "〜", description: "10ページ以内・CMSを含む構成。", features: "トップ+9ページ\nCMS導入\nSEO内部対策\nアニメーション\n3ヶ月サポート", ctaLabel: "相談する", ctaHref: "/contact", highlighted: true },
+          { name: "プレミアム", price: "¥980,000", period: "〜", description: "範囲を要件定義で確定するカスタム構成。", features: "Next.jsカスタム\n多言語対応\nデザイン3案\n6ヶ月サポート", ctaLabel: "相談する", ctaHref: "/contact", highlighted: false },
         ],
       },
       {
         blockType: "cta",
-        title: "まずは無料相談から。ビジネスの成長を、テクノロジーで加速しませんか？",
-        subtitle: "無料相談では、お客様の課題をヒアリングし、具体的なお見積りと改善の方向性をご提示します。営業電話は一切ありません。",
-        primaryCta: { label: "無料相談を予約する", href: "/contact" },
+        title: "課題を、実装できる計画に変えます。",
+        subtitle: "無料相談で課題、範囲、依存条件、評価方法を整理し、実行可能な見積りをご提示します。",
+        primaryCta: { label: "無料相談を申し込む", href: "/contact" },
         secondaryCta: { label: "お問い合わせ", href: "/contact" },
         background: "gradient",
       },
@@ -377,14 +365,14 @@ export async function seedAllContent(scope: "all" | "homepage" = "all") {
         blockType: "hero", variant: "centered",
         badge: "FOR FAST-DECISION GLOBAL SMBs",
         title: "Launch in Japan without hiring a local team",
-        subtitle: "A fixed-scope Japan entry operation for owner-led companies ready to move this month. We build the localized revenue path, launch it, and operate it in Japanese while your team stays focused on the core business.",
-        primaryCta: { label: "Apply for a Japan launch slot", href: "/en/contact?intent=japan-entry" },
+        subtitle: "A fixed-scope Japan entry operation for companies with an empowered approver ready to move this month. We build the localized revenue path, launch it, and operate it in Japanese while your team stays focused on the core business.",
+        primaryCta: { label: "Apply for Japan Entry — $12K", href: "/en/contact?intent=japan-entry" },
         secondaryCta: { label: "See the fixed offer", href: "#japan-entry-pricing" },
         stats: [
           { value: "$12K", label: "fixed setup" },
           { value: "$0", label: "monthly for 6 months" },
-          { value: "21", label: "business days to launch" },
-          { value: "20", label: "launch slots" },
+          { value: "21", label: "business-day launch target" },
+          JAPAN_ENTRY_MONTH_ONE_TARGET_STAT,
         ],
       },
       {
@@ -395,7 +383,7 @@ export async function seedAllContent(scope: "all" | "homepage" = "all") {
           { text: "Europe" },
           { text: "Australia & New Zealand" },
           { text: "Tokyo-based execution" },
-          { text: "Founder-led decisions" },
+          { text: "Fast executive decisions" },
           { text: "Fixed scope, fixed price" },
         ],
         direction: "left", speed: "slow",
@@ -404,7 +392,7 @@ export async function seedAllContent(scope: "all" | "homepage" = "all") {
         blockType: "section",
         kicker: "THE OUTCOME",
         title: "A Japan-ready revenue path, not another strategy deck",
-        subtitle: "Paradigm turns your existing offer into a market-ready Japanese operation with a clear scope, a fixed launch date, and one accountable Tokyo-based team.",
+        subtitle: "Paradigm turns your existing offer into a market-ready Japanese operation with a clear scope, a 21-business-day launch target, and one accountable Tokyo-based team.",
         alignment: "center", background: "default",
       },
       {
@@ -423,7 +411,7 @@ export async function seedAllContent(scope: "all" | "homepage" = "all") {
         title: "One fixed Japan entry offer",
         subtitle: "No low-cost pilot, no three-tier maze, and no surprise agency retainer. We accept companies only after confirming the fixed scope can be delivered.",
         tiers: [
-          { name: "Japan Entry Package", price: "$12,000", period: "one-time", description: "A complete market-ready launch with six months of managed Japan operation included at no additional monthly charge.", features: "21-business-day Japan-ready launch target\nLocalized revenue site and conversion path\nTrust and compliance coordination\nEligible payment and inquiry routing\nJapanese AI-assisted support setup\nAnalytics, notifications, and handover\n$0/month for the first six months\nThen $995/month — cancel anytime", ctaLabel: "Apply for a launch slot", ctaHref: "/en/contact?intent=japan-entry", highlighted: true },
+          { name: "Japan Entry Package", price: "$12,000", period: "one-time", description: "A complete market-ready launch with six months of managed Japan operation included at no additional monthly charge.", features: "21-business-day Japan-ready launch target\nLocalized revenue site and conversion path\nTrust and compliance coordination\nEligible payment and inquiry routing\nJapanese AI-assisted support setup\nAnalytics, notifications, and handover\n$0/month for the first six months\nThen $995/month — cancellable for future billing under the signed terms", ctaLabel: "Apply for Japan Entry — $12K", ctaHref: "/en/contact?intent=japan-entry", highlighted: true },
         ],
       },
       {
@@ -449,19 +437,19 @@ export async function seedAllContent(scope: "all" | "homepage" = "all") {
         items: [
           { question: "Is the setup fee always $12,000?", answer: textToLexical("Yes. The setup fee is fixed at $12,000 and paid before kickoff. If your launch cannot fit the published scope, we will decline the application rather than expand the price after the fact.") },
           { question: "What does $0/month for six months mean?", answer: textToLexical("The standard managed operating service is included for the first six months at no additional monthly charge. Third-party usage, advertising, hosting, payment processing, legal, tax, and other external costs remain your responsibility.") },
-          { question: "What happens after six months?", answer: textToLexical("Managed operation continues at $995 per month. You can cancel anytime. Your content and data remain yours; Paradigm-operated monitoring, optimization, and support stop when the service ends.") },
+          { question: "What happens after six months?", answer: textToLexical("Managed operation continues at $995 per month and may be cancelled for future billing under the signed service terms. Paradigm-operated monitoring, optimization, and support stop when the service ends.") },
           { question: "Do I need a Japanese entity or bank account?", answer: textToLexical("Not for every launch. Eligibility depends on your product, regulated category, payment methods, and provider account location. We confirm the viable route before accepting the fixed-scope engagement and do not promise unsupported payment methods.") },
-          { question: "Do you guarantee Japanese sales?", answer: textToLexical("No. Product-market fit and purchasing decisions remain yours. We guarantee the agreed market-ready environment and launch work, not a specific revenue outcome.") },
+          { question: "Do you guarantee Japanese sales?", answer: textToLexical("No. Product-market fit and purchasing decisions remain yours. We deliver the agreed market-ready environment and launch work, not a specific revenue outcome.") },
           { question: "Is this only for SaaS or e-commerce?", answer: textToLexical("No. We evaluate the launch path, decision speed, and commercial fit rather than filtering primarily by industry or employee count.") },
           { question: "What must our team provide?", answer: textToLexical("One final decision-maker, one implementation owner, accurate product and policy information, brand assets, and the required account access within 48 hours of kickoff.") },
-          { question: "What if the launch takes longer than 21 business days?", answer: textToLexical("The launch target starts after payment, scope confirmation, and complete access. If Paradigm misses the agreed target for reasons within our control, we continue the agreed launch work at no additional service fee until it is complete.") },
+          { question: "What can change the 21-business-day target?", answer: textToLexical("The launch target starts after payment, scope confirmation, and complete access. Missing inputs, delayed approvals, expanded scope, regulated requirements, and third-party reviews can change the date; dependencies are recorded before kickoff.") },
         ],
       },
       {
         blockType: "cta",
-        title: "Twenty launch slots. One fixed decision.",
-        subtitle: "If your company can approve the $12,000 setup this week and assign one launch owner, apply now. We reply with a fit decision and fixed deployment scope — not a low-cost pilot.",
-        primaryCta: { label: "Apply for a Japan launch slot", href: "/en/contact?intent=japan-entry" },
+        title: JAPAN_ENTRY_MONTH_ONE_TARGET,
+        subtitle: `${JAPAN_ENTRY_MONTH_ONE_TARGET_DISCLOSURE} If your company can approve the $12,000 setup this week and assign one launch owner, apply now. We reply with a fit decision and fixed deployment scope — not a low-cost pilot.`,
+        primaryCta: { label: "Apply for Japan Entry — $12K", href: "/en/contact?intent=japan-entry" },
         secondaryCta: { label: "Review the fixed offer", href: "#japan-entry-pricing" },
         background: "gradient",
       },
@@ -479,10 +467,12 @@ export async function seedAllContent(scope: "all" | "homepage" = "all") {
       summary.pages.created++
     }
 
-    await upsertHomePage("home-ja",
-      "Paradigm — テクノロジーで中小企業のDXを加速",
-      "Web制作・MEO対策・SEO/GEO・AI導入支援。Paradigmが中小企業のデジタル変革をワンストップで支援します。",
-      layoutJa, "ja")
+    if (scope !== "homepage-en") {
+      await upsertHomePage("home-ja",
+        "Paradigm — テクノロジーで中小企業のDXを加速",
+        "Web制作・MEO対策・SEO/GEO・AI導入支援。Paradigmが中小企業のデジタル変革をワンストップで支援します。",
+        layoutJa, "ja")
+    }
     await upsertHomePage("home-en",
       "Paradigm — Fixed-Price Japan Entry for Fast-Decision Global SMBs",
       "$12,000 fixed Japan entry setup with six months of managed operation included. Launch a market-ready Japanese revenue path without hiring a local team.",

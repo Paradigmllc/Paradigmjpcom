@@ -260,7 +260,8 @@
     "bodyBeforeLink": "Nous utilisons un minimum de cookies pour la performance et les analyses. Pour en savoir plus, consultez notre",
     "privacyLink": "politique de confidentialité",
     "accept": "Accepter",
-    "decline": "Refuser"
+    "decline": "Refuser",
+    "settings": "Paramètres des cookies"
   },
   "servicesPage": {
     "metaTitle": "Services",

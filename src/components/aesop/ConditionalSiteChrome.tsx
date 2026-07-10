@@ -45,6 +45,12 @@ import type { HeaderNav, FooterNav } from "@/lib/navigation"
  */
 type SiteFooterSettings = {
   contactEmail?: string | null
+  company?: {
+    legalName?: string | null
+    representativeName?: string | null
+    registrationNumber?: string | null
+    address?: string | null
+  }
   social?: {
     twitter?: string | null
     instagram?: string | null

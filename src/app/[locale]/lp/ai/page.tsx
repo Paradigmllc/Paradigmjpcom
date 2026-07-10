@@ -9,6 +9,7 @@
  * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
  */
 import type { Metadata } from "next"
+import { permanentRedirect } from "next/navigation"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
 import { buildServiceSchema } from "@/lib/seo/schemas"
@@ -38,6 +39,7 @@ type Plan = { name: string; price: string; period: string; desc: string; feature
 
 export default async function AiLP({ params }: Props) {
   const { locale } = await params
+  if (locale === "en") permanentRedirect("/en#japan-entry-pricing")
   const t = await getTranslations({ locale, namespace: "lpAi" })
   const stats = t.raw("stats") as Stat[]
   const faqs = t.raw("faqs") as Faq[]
@@ -91,11 +93,9 @@ export default async function AiLP({ params }: Props) {
           </FadeIn>
           <ul className="space-y-3">
             {faqs.map((f, i) => (
-              <FadeIn key={f.q} delay={i * 0.08}>
-                <li className="paradigm-glass rounded-lg p-5 paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500">
+              <FadeIn key={f.q} delay={i * 0.08} as="li" className="paradigm-glass rounded-lg p-5 paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500">
                   <p className="font-display text-[16px] md:text-[18px] leading-[1.3] text-paradigm-ink mb-2 ">{f.q}</p>
                   <p className="text-[12px] md:text-[13px] text-paradigm-ink-soft leading-[1.75]">{f.a}</p>
-                </li>
               </FadeIn>
             ))}
           </ul>
@@ -116,14 +116,12 @@ export default async function AiLP({ params }: Props) {
           </FadeIn>
           <ol className="space-y-3">
             {STEPS.map((s, i) => (
-              <FadeIn key={s.step} delay={i * 0.08}>
-                <li className="paradigm-glass rounded-lg p-5 grid grid-cols-1 md:grid-cols-[60px_1fr] gap-3 paradigm-glow-sm hover:paradigm-glow-md  transition-all duration-500">
+              <FadeIn key={s.step} delay={i * 0.08} as="li" className="paradigm-glass rounded-lg p-5 grid grid-cols-1 md:grid-cols-[60px_1fr] gap-3 paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500">
                   <span className="font-display text-[24px] md:text-[28px] leading-none bg-gradient-to-br from-paradigm-accent to-paradigm-ink bg-clip-text text-transparent">{s.step}</span>
                   <div>
                     <h3 className="font-display text-[16px] md:text-[18px] leading-[1.2] text-paradigm-ink mb-1 ">{s.title}</h3>
                     <p className="text-[12px] md:text-[13px] text-paradigm-ink-soft leading-[1.7]">{s.desc}</p>
                   </div>
-                </li>
               </FadeIn>
             ))}
           </ol>

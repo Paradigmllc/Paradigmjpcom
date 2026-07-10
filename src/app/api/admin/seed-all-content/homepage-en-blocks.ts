@@ -1,13 +1,13 @@
 export const EN_JAPAN_ENTRY_PROCESS_BLOCK = {
   blockType: "process",
-  kicker: "21-DAY LAUNCH",
+  kicker: "21-BUSINESS-DAY TARGET",
   title: "One decision. One owner. One launch sequence.",
   subtitle: "The timeline starts when the agreement, payment, and required access are complete. Your team works through one English-speaking point of contact.",
   steps: [
     { title: "Scope in 48 hours", description: "We confirm the offer, eligible payment and operating routes, required specialist review, and the exact launch checklist.", icon: "ClipboardCheck" },
     { title: "Localize the revenue path", description: "We rebuild the Japanese positioning, page structure, trust content, pricing presentation, and inquiry flow.", icon: "Languages" },
     { title: "Connect the operation", description: "We connect analytics, supported payment or lead routes, Japanese support, notifications, and ownership handover.", icon: "Workflow" },
-    { title: "Launch by day 21", description: "We publish, verify the buyer journey end to end, and begin the included six-month managed operating period.", icon: "Rocket" },
+    { title: "Target launch: day 21", description: "Subject to the stated inputs and dependencies, we publish, verify the buyer journey end to end, and begin the included six-month managed operating period.", icon: "Rocket" },
   ],
 } as const
 

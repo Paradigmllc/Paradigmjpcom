@@ -57,19 +57,21 @@ export function ReportAppendixSections({
         </SlideInSection>
       )}
 
-      {/* ── Timeline Forecast ─────────────────────────────── */}
-      <SlideInSection direction="up" className="px-5 pb-10">
-        <div className="mx-auto max-w-6xl">
-          <h3 className="text-lg font-semibold text-slate-800 mb-1">
-            {lang === "ja" ? "損失予測" : "Loss Forecast"}
-          </h3>
-          <p className="text-sm text-slate-500 mb-4">
-            {lang === "ja" ? "現状維持の場合の月間損失推移と競合との差" : "Monthly loss trajectory and competitor gap"}
-          </p>
-          <TimelineChart points={timelineItems} lang={lang} />
-          <p className="mt-2 text-[10px] text-slate-400 text-center">{isProjection}</p>
-        </div>
-      </SlideInSection>
+      {/* ── Timeline Forecast: only render a source-backed series ── */}
+      {timelineItems.length >= 2 && (
+        <SlideInSection direction="up" className="px-5 pb-10">
+          <div className="mx-auto max-w-6xl">
+            <h3 className="text-lg font-semibold text-slate-800 mb-1">
+              {lang === "ja" ? "損失予測" : "Loss Forecast"}
+            </h3>
+            <p className="text-sm text-slate-500 mb-4">
+              {lang === "ja" ? "出典付き時系列データによる損失推移" : "Loss trajectory from a source-backed time series"}
+            </p>
+            <TimelineChart points={timelineItems} lang={lang} />
+            <p className="mt-2 text-[10px] text-slate-400 text-center">{isProjection}</p>
+          </div>
+        </SlideInSection>
+      )}
 
       {/* ── Evidence / Data Appendix ──────────────────────── */}
       <section className="px-5 py-14">
@@ -112,17 +114,18 @@ export function ReportFooter({
   lang: ReportLang
   calHref: string
 }) {
+  const siteLocale = lang === "ja" ? "ja" : "en"
   return (
     <footer className={`border-t px-5 py-8 mt-10 ${isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"}`}>
       <div className="mx-auto max-w-6xl flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className={`text-xs ${isDark ? "text-zinc-500" : "text-zinc-400"}`}>
+        <div className={`text-xs ${isDark ? "text-zinc-400" : "text-zinc-600"}`}>
           © {new Date().getFullYear()} Paradigm LLC. {lang === "ja" ? "無断転載禁止" : "All rights reserved."}
         </div>
         <nav aria-label={lang === "ja" ? "フッターナビゲーション" : "Footer navigation"} className="flex items-center gap-4 text-xs">
-          <Link href="/ja" className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>Paradigm HP</Link>
-          <Link href="/ja/agency" className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>{lang === "ja" ? "制作事例" : "Works"}</Link>
-          <Link href="/ja/video" className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>{lang === "ja" ? "動画制作" : "Video"}</Link>
-          <a href={calHref} target="_blank" rel="noopener noreferrer" className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>{lang === "ja" ? "無料相談" : "Free Consult"}</a>
+          <Link href={`/${siteLocale}`} className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>Paradigm HP</Link>
+          <Link href={`/${siteLocale}/works`} className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>{lang === "ja" ? "制作事例" : "Works"}</Link>
+          <Link href={`/${siteLocale}/pricing`} className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>{lang === "ja" ? "料金" : "Fixed scope"}</Link>
+          <a href={calHref} {...(calHref.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})} data-umami-event="diagnostic-report-apply" data-umami-event-source="footer" className={`hover:underline ${isDark ? "text-zinc-400 hover:text-zinc-200" : "text-zinc-500 hover:text-zinc-700"}`}>{lang === "ja" ? "相談を予約" : "Apply — $12K"}</a>
         </nav>
       </div>
     </footer>

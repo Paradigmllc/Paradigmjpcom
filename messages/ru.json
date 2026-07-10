@@ -260,7 +260,8 @@
     "bodyBeforeLink": "Мы используем минимум cookie для производительности и аналитики. Подробнее в нашей",
     "privacyLink": "политике конфиденциальности",
     "accept": "Принять",
-    "decline": "Отклонить"
+    "decline": "Отклонить",
+    "settings": "Настройки файлов cookie"
   },
   "servicesPage": {
     "metaTitle": "Services",

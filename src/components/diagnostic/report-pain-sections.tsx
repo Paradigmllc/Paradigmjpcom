@@ -1,19 +1,48 @@
-﻿"use client"
+"use client"
 
 import { motion } from "framer-motion"
-import { AlertTriangle, MapPin, Search, Shield, TrendingUp, Zap } from "lucide-react"
+import { AlertTriangle, Search, Shield, TrendingUp, Zap } from "lucide-react"
 import type { DiagnosticReportData } from "@/lib/sales/diagnostic"
+import {
+  buildFirstImpressionSignals,
+  buildPageSpeedComparison,
+  type FirstImpressionSignalKind,
+  type FirstImpressionSignalStatus,
+} from "./report-evidence"
+
+const SIGNAL_STYLE: Record<FirstImpressionSignalStatus, { card: string; icon: string; text: string }> = {
+  pass: {
+    card: "border-emerald-500/30 bg-emerald-500/5",
+    icon: "text-emerald-400",
+    text: "text-emerald-400",
+  },
+  issue: {
+    card: "border-rose-500/30 bg-rose-500/5",
+    icon: "text-rose-400",
+    text: "text-rose-400",
+  },
+  unknown: {
+    card: "border-zinc-700 bg-zinc-800/40",
+    icon: "text-zinc-400",
+    text: "text-zinc-400",
+  },
+}
+
+const SIGNAL_ICON: Record<FirstImpressionSignalKind, typeof Zap> = {
+  performance: Zap,
+  ssl: Shield,
+  social: Search,
+}
 
 // ─── Industry benchmark comparison (data-driven, no fabricated competitors) ──
 export function CompetitorComparison({ data, lang }: { data: DiagnosticReportData; lang: string }) {
   const isJa = lang === "ja"
-  const speedAct = data.acts.find(a => a.icon === "SPEED")
-  const yourSpeed = Number(speedAct?.metric_value)
-  const benchNum = Number(String(speedAct?.metric_bench ?? "").replace(/[^0-9.]/g, ""))
-  const industryTarget = Number.isFinite(benchNum) && benchNum > 0 ? Math.round(benchNum) : null
+  const comparison = buildPageSpeedComparison(data)
 
-  // 実データ（実測スコア + ベンチマーク）が無い場合は数値を捏造せずセクション非表示
-  if (!Number.isFinite(yourSpeed) || industryTarget === null) return null
+  // 実測スコア、目標値、出典が揃わない場合は比較セクションを表示しない。
+  if (!comparison) return null
+  const yourSpeed = comparison.measuredScore
+  const industryTarget = comparison.targetScore
 
   const gap = Math.max(0, industryTarget - yourSpeed)
   const maxVal = Math.max(100, yourSpeed, industryTarget)
@@ -51,7 +80,7 @@ export function CompetitorComparison({ data, lang }: { data: DiagnosticReportDat
             {isJa
               ? "表示速度の遅れは検索評価と離脱率に直結します。"
               : "Slow page speed directly impacts search ranking and bounce rate."}
-            {speedAct?.metric_bench ? `（${speedAct.metric_bench}）` : null}
+            {` (${comparison.source})`}
           </p>
         </motion.div>
 
@@ -89,8 +118,8 @@ export function CompetitorComparison({ data, lang }: { data: DiagnosticReportDat
 
         <p className="mt-6 text-center text-[10px] text-zinc-400">
           {isJa
-            ? "※業界の目安水準は一般的なベンチマークに基づく参考値です。実測値は御社サイトの計測結果です。"
-            : "Industry target is a general benchmark reference; your score is measured from your live site."}
+            ? `※目安水準の出典: ${comparison.source}。御社スコアは公開サイトの実測値です。`
+            : `Target source: ${comparison.source}. Your score is measured from the public site.`}
         </p>
       </div>
     </section>
@@ -99,50 +128,50 @@ export function CompetitorComparison({ data, lang }: { data: DiagnosticReportDat
 
 // ─── "Your site in 5 seconds" visual breakdown ──────────────
 export function FiveSecondAudit({ data, lang }: { data: DiagnosticReportData; lang: string }) {
-  const speedVal = Number(data.acts.find(a => a.icon === "SPEED")?.metric_value) || 0
-  const hasTrustIssue = data.acts.some(a => a.icon === "TRUST")
-  const hasSocialIssue = data.acts.some(a => a.icon === "SNS")
-  const issues = [
-    { icon: Zap, label: lang === "ja" ? "読み込み速度" : "Load speed", fail: speedVal > 0 && speedVal < 70, detail: lang === "ja" ? "3秒以上かかると53%が離脱" : "53% leave if >3 seconds" },
-    { icon: Shield, label: lang === "ja" ? "セキュリティ表示" : "Security display", fail: hasTrustIssue, detail: lang === "ja" ? "「保護なし」警告で信頼低下" : "'Not Secure' warning hurts trust" },
-    { icon: Search, label: lang === "ja" ? "SNSプレビュー" : "Social preview", fail: hasSocialIssue, detail: lang === "ja" ? "共有時に文字化け" : "Garbled when shared" },
-    { icon: MapPin, label: lang === "ja" ? "モバイル表示" : "Mobile display", fail: speedVal > 0 && speedVal < 60, detail: lang === "ja" ? "スマホで崩れる" : "Broken on mobile" },
-  ]
-
-  const failCount = issues.filter(i => i.fail).length
+  const signals = buildFirstImpressionSignals(data, lang)
+  const issueCount = signals.filter((signal) => signal.status === "issue").length
+  const measuredCount = signals.filter((signal) => signal.status !== "unknown").length
 
   return (
     <section className="px-5 py-14 bg-zinc-900 text-white">
       <div className="mx-auto max-w-6xl">
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold">
-            {lang === "ja" ? "御社のサイト、最初の5秒で起きていること" : "What happens in the first 5 seconds on your site"}
+            {lang === "ja" ? "実測できた第一印象シグナル" : "Measured first-impression signals"}
           </h2>
           <p className="mt-3 text-zinc-400 text-sm">
             {lang === "ja"
-              ? `訪問者が離脱するまでに${failCount}つの致命的な問題が発生しています。`
-              : `${failCount} critical issues occur before visitors leave.`}
+              ? `${measuredCount}項目を測定し、${issueCount}項目で改善シグナルを検出しました。未測定は判定しません。`
+              : `${measuredCount} measured; ${issueCount} improvement signal${issueCount === 1 ? "" : "s"} observed. Unmeasured items remain unknown.`}
           </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {issues.map((issue, i) => (
+        <div className="grid gap-4 sm:grid-cols-3">
+          {signals.map((signal, i) => {
+            const style = SIGNAL_STYLE[signal.status]
+            const SignalIcon = SIGNAL_ICON[signal.kind]
+            return (
             <motion.div
-              key={i}
+              key={signal.label}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className={`rounded-xl border p-5 ${issue.fail ? "border-rose-500/30 bg-rose-500/5" : "border-emerald-500/30 bg-emerald-500/5"}`}
+              className={`rounded-xl border p-5 ${style.card}`}
             >
-              <issue.icon className={`h-6 w-6 mb-3 ${issue.fail ? "text-rose-400" : "text-emerald-400"}`} />
-              <div className="text-sm font-bold mb-1">{issue.label}</div>
-              <div className="text-xs text-zinc-400">{issue.detail}</div>
-              <div className={`mt-3 text-[10px] font-bold ${issue.fail ? "text-rose-400" : "text-emerald-400"}`}>
-                {issue.fail ? "✗ 問題あり" : "✓ 正常"}
+              <SignalIcon className={`h-6 w-6 mb-3 ${style.icon}`} />
+              <div className="text-sm font-bold mb-1">{signal.label}</div>
+              <div className="text-xs text-zinc-400">{signal.detail}</div>
+              <div className={`mt-3 text-[10px] font-bold ${style.text}`}>
+                {signal.status === "pass"
+                  ? (lang === "ja" ? "✓ 実測で基準内" : "✓ Measured within threshold")
+                  : signal.status === "issue"
+                    ? (lang === "ja" ? "✗ 改善シグナル" : "✗ Improvement signal")
+                    : (lang === "ja" ? "? 判定保留" : "? Unknown")}
               </div>
             </motion.div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </section>
@@ -153,6 +182,34 @@ export function FiveSecondAudit({ data, lang }: { data: DiagnosticReportData; la
 export function SaviorPositioning({ data, lang }: { data: DiagnosticReportData; lang: string }) {
   const issues = data.acts.filter(a => a.type === "pain" || a.type === "fear").slice(0, 4)
   const hasDemo = !!data.demo_url
+  const solutionItems = [
+    {
+      label: lang === "ja" ? "表示速度の改善" : "Performance remediation",
+      detail: lang === "ja"
+        ? "実測したボトルネックを基に、対象範囲と合格条件を契約前に確定します。"
+        : "Scope and acceptance checks are agreed from measured bottlenecks before work begins.",
+    },
+    {
+      label: lang === "ja" ? "SSL/HSTSの強化" : "SSL/HSTS hardening",
+      detail: lang === "ja"
+        ? "証明書とヘッダーの実測結果に応じて、必要な変更だけを提案します。"
+        : "Changes are proposed only after the current certificate and header state is measured.",
+    },
+    {
+      label: lang === "ja" ? "OGP/SNS表示の整備" : "OGP/social metadata",
+      detail: lang === "ja"
+        ? "公開ページで不足を確認できた項目を、合意した対象ページで整備します。"
+        : "Observed gaps are addressed only on the pages included in the agreed scope.",
+    },
+    ...(hasDemo
+      ? [{
+          label: lang === "ja" ? "改善デモを確認可能" : "Demo available for review",
+          detail: lang === "ja"
+            ? "このレポートに実在するデモURLが記録されています。"
+            : "A live demo URL is recorded in this report.",
+        }]
+      : []),
+  ]
 
   return (
     <section className="px-5 py-14 bg-gradient-to-b from-white to-violet-50">
@@ -165,10 +222,10 @@ export function SaviorPositioning({ data, lang }: { data: DiagnosticReportData; 
         >
           <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700 mb-4">
             <TrendingUp className="h-3 w-3" />
-            {lang === "ja" ? "弊社が解決します" : "We fix this"}
+            {lang === "ja" ? "改善範囲の候補" : "Potential remediation scope"}
           </span>
           <h2 className="text-2xl font-bold text-zinc-900">
-            {lang === "ja" ? "これらすべての問題を、弊社が一括で解決します" : "We solve all of these problems — in one package"}
+            {lang === "ja" ? "実測結果から、合意する実装範囲を決めます" : "Measured evidence defines the scope we agree to deliver"}
           </h2>
         </motion.div>
 
@@ -198,24 +255,19 @@ export function SaviorPositioning({ data, lang }: { data: DiagnosticReportData; 
 
           {/* Our solution */}
           <div className="space-y-3">
-            <h3 className="text-sm font-bold text-emerald-600 mb-2">
-              {lang === "ja" ? "弊社のソリューション" : "Our solution"}
+            <h3 className="text-sm font-bold text-violet-700 mb-2">
+              {lang === "ja" ? "提案可能な実装範囲" : "Scope options"}
             </h3>
-            {[
-              { label: lang === "ja" ? "PageSpeed改善" : "PageSpeed fix", detail: lang === "ja" ? "Astro移行で85点以上を目標に最適化" : "Astro migration targeting 85+", icon: "✓" },
-              { label: lang === "ja" ? "SSL/HSTS対応" : "SSL/HSTS", detail: lang === "ja" ? "A+グレードを目標に設定 + HSTS Preload" : "Targeting A+ grade + HSTS Preload", icon: "✓" },
-              { label: lang === "ja" ? "OGP/SNS最適化" : "OGP/Social", detail: lang === "ja" ? "全ページにOGP自動設定" : "Auto-OGP on all pages", icon: "✓" },
-              { label: hasDemo ? (lang === "ja" ? "改善デモ公開" : "Demo site live") : (lang === "ja" ? "改善デモ作成" : "Demo site creation"), detail: hasDemo ? (lang === "ja" ? "すでに公開済み・URLあり" : "Already live at demo URL") : (lang === "ja" ? "即日作成・公開" : "Same-day creation"), icon: "✓" },
-            ].map((item, i) => (
+            {solutionItems.map((item, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, x: 10 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08 }}
-                className="flex items-start gap-3 rounded-lg border border-emerald-100 bg-emerald-50/30 p-4"
+                className="flex items-start gap-3 rounded-lg border border-violet-100 bg-violet-50/30 p-4"
               >
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-emerald-100 text-emerald-600 text-[10px] font-bold">{item.icon}</div>
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-violet-100 text-violet-700 text-[10px] font-bold">→</div>
                 <div>
                   <div className="text-sm font-bold text-zinc-800">{item.label}</div>
                   <div className="mt-0.5 text-xs text-zinc-500">{item.detail}</div>
@@ -234,8 +286,8 @@ export function SaviorPositioning({ data, lang }: { data: DiagnosticReportData; 
         >
           <p className="text-sm text-zinc-500 mb-3">
             {lang === "ja"
-              ? "すべての対応をパッケージで提供。個別に依頼するより早く、安く、確実です。"
-              : "Everything in one package — faster, cheaper, and more reliable than piecemeal fixes."}
+              ? "対象範囲、前提条件、合格基準、除外事項、変更承認を文書で確定してから着手します。"
+              : "One fixed scope with written dependencies, acceptance checks, exclusions, and change approval."}
           </p>
         </motion.div>
       </div>

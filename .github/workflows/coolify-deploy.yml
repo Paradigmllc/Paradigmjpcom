@@ -1,125 +1,17 @@
-name: Coolify Deploy
+name: Coolify Deploy (release gate required)
 
 on:
   workflow_dispatch:
-    inputs:
-      ref:
-        description: "Git ref to deploy"
-        required: false
-        default: "main"
-      coolify_url:
-        description: "Coolify API base URL"
-        required: false
-        default: "https://coolify.paradigmjp.com"
-      app_uuid:
-        description: "Coolify application UUID"
-        required: false
-        default: "n8i2sjiqvr2d8hrzppop2m2i"
 
 permissions:
   contents: read
 
 jobs:
-  deploy:
+  blocked-direct-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 50
-    env:
-      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
-      COOLIFY_API_URL: ${{ inputs.coolify_url }}
-      PARADIGM_APP_UUID: ${{ inputs.app_uuid }}
-      DEPLOY_REF: ${{ inputs.ref }}
     steps:
-      - name: Checkout target ref
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-
-      - name: Trigger Coolify deployment
-        id: deploy
+      - name: Block deploys that bypass the production release gate
         run: |
-          node --input-type=module <<'NODE'
-          import fs from "node:fs/promises"
-          const token = process.env.COOLIFY_API_TOKEN
-          const baseUrl = process.env.COOLIFY_API_URL
-          const appUuid = process.env.PARADIGM_APP_UUID
-          if (!token) throw new Error("COOLIFY_TOKEN GitHub secret is not configured")
-          async function coolify(pathname, options = {}) {
-            const res = await fetch(`${baseUrl}${pathname}`, {
-              ...options,
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-                ...(options.headers || {}),
-              },
-            })
-            const text = await res.text()
-            const data = text ? JSON.parse(text) : null
-            if (!res.ok) throw new Error(`Coolify API HTTP ${res.status}: ${text.slice(0, 200)}`)
-            return data
-          }
-          const data = await coolify(`/api/v1/deploy?uuid=${appUuid}&force=true`, { method: "POST" })
-          const deploymentUuid = data?.deployments?.[0]?.deployment_uuid || data?.deployment_uuid
-          if (!deploymentUuid) throw new Error("No Coolify deployment UUID returned")
-          console.log(`Deployment queued: ${deploymentUuid}`)
-          await fs.appendFile(process.env.GITHUB_OUTPUT, `deployment_uuid=${deploymentUuid}\n`)
-          NODE
-
-      - name: Poll Coolify deployment
-        run: |
-          node --input-type=module <<'NODE'
-          const token = process.env.COOLIFY_API_TOKEN
-          const baseUrl = process.env.COOLIFY_API_URL
-          const deploymentUuid = process.env.DEPLOYMENT_UUID
-          async function coolify(pathname, options = {}) {
-            const res = await fetch(`${baseUrl}${pathname}`, {
-              ...options,
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-                ...(options.headers || {}),
-              },
-            })
-            const text = await res.text()
-            const data = text ? JSON.parse(text) : null
-            if (!res.ok) throw new Error(`Coolify API HTTP ${res.status}: ${text.slice(0, 200)}`)
-            return data
-          }
-          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-          for (let i = 1; i <= 90; i++) {
-            const data = await coolify(`/api/v1/deployments/${deploymentUuid}`)
-            const state = data?.status || data?.state || data?.deployment?.status || "unknown"
-            console.log(`[deploy ${i}/90] ${state}`)
-            if (["finished", "success", "succeeded"].includes(state)) process.exit(0)
-            if (["failed", "error", "cancelled", "canceled"].includes(state)) {
-              throw new Error(`Coolify deployment failed: ${state}`)
-            }
-            await sleep(30_000)
-          }
-          throw new Error("Coolify deployment timed out")
-          NODE
-        env:
-          DEPLOYMENT_UUID: ${{ steps.deploy.outputs.deployment_uuid }}
-
-      - name: Smoke check production
-        run: |
-          node --input-type=module <<'NODE'
-          const urls = [
-            "https://paradigmjp.com/api/ready",
-            "https://paradigmjp.com/ja",
-          ]
-          for (const url of urls) {
-            const controller = new AbortController()
-            const timer = setTimeout(() => controller.abort(), 30_000)
-            try {
-              const res = await fetch(url, {
-                method: "GET",
-                signal: controller.signal,
-                headers: { "Cache-Control": "no-cache" },
-              })
-              console.log(`${url} -> HTTP ${res.status}`)
-              if (!res.ok) throw new Error(`${url} returned HTTP ${res.status}`)
-            } finally {
-              clearTimeout(timer)
-            }
-          }
-          NODE
+          echo "::error::Direct Coolify deployment is disabled for Paradigmjpcom."
+          echo "Run 'npm run release:prod' from the approved release environment so migration, CMS publish, origin-lock refresh, and post-deploy verification all execute."
+          exit 1

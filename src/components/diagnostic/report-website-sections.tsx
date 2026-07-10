@@ -1,10 +1,91 @@
-﻿"use client"
+"use client"
 
 import { motion } from "framer-motion"
 import { ArrowRight, ExternalLink, Monitor, Smartphone, ZoomIn } from "lucide-react"
 import { useState } from "react"
 import type { DiagnosticReportData } from "@/lib/sales/diagnostic"
 import { websiteCopy } from "./report-section-copy"
+
+type ExplicitWebsiteTarget = string | number | boolean | null
+
+interface WebsiteTargets {
+  pageSpeed: ExplicitWebsiteTarget
+  mobilePageSpeed: ExplicitWebsiteTarget
+  sslGrade: ExplicitWebsiteTarget
+  ogp: ExplicitWebsiteTarget
+}
+
+const TARGET_COPY = {
+  ja: {
+    comparisonHeading: "現状と提案目標値",
+    proposedDemo: "提案目標値（デモ）",
+    proposed: "提案目標値",
+    notSet: "未設定",
+    included: "提案に含む",
+    excluded: "提案対象外",
+  },
+  en: {
+    comparisonHeading: "Current vs proposed target",
+    proposedDemo: "Proposed target (demo)",
+    proposed: "Proposed target",
+    notSet: "Not set",
+    included: "Included in proposal",
+    excluded: "Not included",
+  },
+} as const
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null
+}
+
+function explicitTarget(value: unknown): ExplicitWebsiteTarget {
+  if (typeof value === "string") return value.trim() || null
+  if (typeof value === "number") return Number.isFinite(value) ? value : null
+  return typeof value === "boolean" ? value : null
+}
+
+function readWebsiteTargets(meta: DiagnosticReportData["meta"]): WebsiteTargets {
+  const root = meta ?? {}
+  const nested = asRecord(root.website_targets) ?? {}
+  const mobilePageSpeed = explicitTarget(
+    nested.pagespeed_mobile
+      ?? nested.mobile_pagespeed
+      ?? root.mobile_pagespeed_target,
+  )
+
+  return {
+    pageSpeed: explicitTarget(
+      nested.pagespeed
+        ?? nested.pagespeed_score
+        ?? root.pagespeed_target,
+    ) ?? mobilePageSpeed,
+    mobilePageSpeed,
+    sslGrade: explicitTarget(nested.ssl_grade ?? nested.ssl ?? root.ssl_target),
+    ogp: explicitTarget(nested.ogp ?? nested.ogp_status ?? root.ogp_target),
+  }
+}
+
+function targetValue(
+  value: ExplicitWebsiteTarget,
+  lang: string,
+  kind: "score" | "text",
+): string {
+  const copy = lang === "ja" ? TARGET_COPY.ja : TARGET_COPY.en
+  if (value === null) return copy.notSet
+  if (typeof value === "boolean") return value ? copy.included : copy.excluded
+  if (kind === "score" && typeof value === "number") return `${value}/100`
+  return String(value)
+}
+
+function targetPercent(value: ExplicitWebsiteTarget): number {
+  if (typeof value === "number") return Math.min(Math.max(value, 0), 100)
+  if (typeof value !== "string") return 0
+  const match = value.trim().match(/^(\d+(?:\.\d+)?)(?:\+|\/100)?$/u)
+  if (!match) return 0
+  return Math.min(Math.max(Number(match[1]), 0), 100)
+}
 
 // ─── Screenshot with problem annotations ────────────────────
 export function AnnotatedScreenshot({ data, lang }: { data: DiagnosticReportData; lang: string }) {
@@ -122,6 +203,8 @@ export function BeforeAfterComparison({ data, lang }: { data: DiagnosticReportDa
   const hasSteelScreenshot = !!steelScreenshot?.screenshot
   const hasDemo = !!data.demo_url
   const t = websiteCopy(lang)
+  const targetCopy = lang === "ja" ? TARGET_COPY.ja : TARGET_COPY.en
+  const targets = readWebsiteTargets(data.meta)
 
   if (!hasScreenshot && !hasDemo) return null
 
@@ -132,9 +215,9 @@ export function BeforeAfterComparison({ data, lang }: { data: DiagnosticReportDa
   ].filter(b => b.value !== "-")
 
   const afterItems = [
-    { label: "PageSpeed", value: "85+", improvement: beforeItems[0]?.value !== "-" ? "↑" : null },
-    { label: "SSL", value: "A+", improvement: beforeItems[1]?.value !== "-" ? "↑" : null },
-    { label: "OGP", value: t.ogpConfigured, improvement: beforeItems[2]?.value !== "-" ? "↑" : null },
+    { label: "PageSpeed", value: targetValue(targets.pageSpeed, lang, "score") },
+    { label: "SSL", value: targetValue(targets.sslGrade, lang, "text") },
+    { label: "OGP", value: targetValue(targets.ogp, lang, "text") },
   ]
 
   return (
@@ -143,7 +226,7 @@ export function BeforeAfterComparison({ data, lang }: { data: DiagnosticReportDa
         <div className="flex items-center gap-2 mb-6">
           <ArrowRight className="h-5 w-5 text-violet-600" />
           <h2 className="text-xl font-bold text-zinc-900">
-            {t.beforeAfterHeading}
+            {targetCopy.comparisonHeading}
           </h2>
         </div>
 
@@ -166,8 +249,8 @@ export function BeforeAfterComparison({ data, lang }: { data: DiagnosticReportDa
                 </div>
               )}
               <div className="space-y-2">
-                {beforeItems.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between text-sm">
+                {beforeItems.map((item) => (
+                  <div key={item.label} className="flex items-center justify-between text-sm">
                     <span className="text-zinc-600">{item.label}</span>
                     <span className="font-bold text-rose-700">{item.value}</span>
                   </div>
@@ -184,7 +267,9 @@ export function BeforeAfterComparison({ data, lang }: { data: DiagnosticReportDa
             className="rounded-2xl border border-emerald-200 bg-emerald-50/30 overflow-hidden"
           >
             <div className="bg-emerald-100 px-4 py-2">
-              <span className="text-xs font-bold text-emerald-700">{t.afterTargetDemo}</span>
+              <span className="text-xs font-bold text-emerald-700">
+                {hasDemo || hasSteelScreenshot ? targetCopy.proposedDemo : targetCopy.proposed}
+              </span>
             </div>
             <div className="p-5">
               {/* Steel.dev screenshot — real browser screenshot of the actual site */}
@@ -228,10 +313,10 @@ export function BeforeAfterComparison({ data, lang }: { data: DiagnosticReportDa
                 </div>
               )}
               <div className="space-y-2">
-                {afterItems.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between text-sm">
+                {afterItems.map((item) => (
+                  <div key={item.label} className="flex items-center justify-between text-sm">
                     <span className="text-zinc-600">{item.label}</span>
-                    <span className="font-bold text-emerald-700">{item.value} {item.improvement && <span className="text-emerald-500">{item.improvement}</span>}</span>
+                    <span className="font-bold text-emerald-700">{item.value}</span>
                   </div>
                 ))}
               </div>
@@ -262,6 +347,10 @@ export function BeforeAfterComparison({ data, lang }: { data: DiagnosticReportDa
 export function MobileComparison({ data, lang }: { data: DiagnosticReportData; lang: string }) {
   const speedMobile = data.acts.find(a => a.icon === "SPEED")?.metric_value
   const t = websiteCopy(lang)
+  const targetCopy = lang === "ja" ? TARGET_COPY.ja : TARGET_COPY.en
+  const mobileTarget = readWebsiteTargets(data.meta).mobilePageSpeed
+  const mobileTargetValue = targetValue(mobileTarget, lang, "score")
+  const mobileTargetPercent = targetPercent(mobileTarget)
 
   return (
     <section className="px-5 py-14 bg-zinc-900 text-white">
@@ -295,14 +384,14 @@ export function MobileComparison({ data, lang }: { data: DiagnosticReportData; l
           </div>
           <div className="text-center">
             <div className="mx-auto w-48 h-96 rounded-3xl border-4 border-emerald-500/50 bg-zinc-800 flex flex-col items-center justify-center gap-3">
-              <div className="text-emerald-400 text-lg font-bold">{t.afterTarget}</div>
-              <div className="text-5xl font-black text-emerald-500">85+</div>
-              <div className="text-emerald-400/60 text-sm">/100</div>
+              <div className="text-emerald-400 text-lg font-bold">{targetCopy.proposed}</div>
+              <div className="text-4xl font-black text-emerald-500">{mobileTargetValue}</div>
+              {mobileTarget !== null && <div className="text-emerald-400/60 text-sm">PageSpeed</div>}
               <div className="mt-4 w-32 h-2 bg-zinc-700 rounded overflow-hidden">
                 <motion.div
                   className="h-full bg-emerald-500 rounded"
                   initial={{ width: 0 }}
-                  whileInView={{ width: "85%" }}
+                  whileInView={{ width: `${mobileTargetPercent}%` }}
                   viewport={{ once: true }}
                   transition={{ duration: 1, delay: 0.5 }}
                 />

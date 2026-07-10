@@ -1,8 +1,8 @@
 /**
  * RoiCalculator.tsx — 代理店向け WL LP の ROI 計算機 (Sprint 9-C)
  *
- * 役割: Notion 営業MVP壁打ち② の「損失訴求 Aha モーメント設計」を実装。
- *       「断り件数 × 1 件単価 × 12ヶ月 = 年間損失」を可視化する 3-step フォーム.
+ * 役割: 利用者が入力した件数と単価から、未受注案件の売上機会を
+ *       単純試算するフォーム。受注・粗利・成果の予測には使用しない。
  *
  * 設計:
  *   - Client component (slider + リアルタイム計算)
@@ -12,23 +12,19 @@
 "use client"
 
 import { useState } from "react"
+import { Link } from "@/i18n/routing"
 
 interface CalcInputs {
   declinedPerMonth: number // 月あたり断っている件数 (1-10)
   avgValuePerProject: number // 1 件単価 (USD)
 }
 
-function calculateAnnualLoss(inputs: CalcInputs): {
-  monthlyLoss: number
-  annualLoss: number
-  paradigmAnnual: number
-  netGain: number
+function calculateAnnualOpportunity(inputs: CalcInputs): {
+  monthlyOpportunity: number
+  annualOpportunity: number
 } {
-  const monthlyLoss = inputs.declinedPerMonth * inputs.avgValuePerProject
-  const annualLoss = monthlyLoss * 12
-  const paradigmAnnual = 9997 * 12 // White plan $9,997/月
-  const netGain = annualLoss - paradigmAnnual
-  return { monthlyLoss, annualLoss, paradigmAnnual, netGain }
+  const monthlyOpportunity = inputs.declinedPerMonth * inputs.avgValuePerProject
+  return { monthlyOpportunity, annualOpportunity: monthlyOpportunity * 12 }
 }
 
 const DECLINED_OPTIONS = [
@@ -48,7 +44,7 @@ export default function RoiCalculator() {
   const [declinedPerMonth, setDeclined] = useState<number>(2)
   const [avgValue, setAvgValue] = useState<number>(5000)
 
-  const result = calculateAnnualLoss({
+  const result = calculateAnnualOpportunity({
     declinedPerMonth,
     avgValuePerProject: avgValue,
   })
@@ -59,19 +55,19 @@ export default function RoiCalculator() {
   return (
     <div className="paradigm-glass rounded-3xl p-8 md:p-10 paradigm-glow-lg max-w-3xl mx-auto">
       <p className="paradigm-eyebrow text-paradigm-accent mb-2 text-center">
-        Loss Calculator
+        Scenario Calculator
       </p>
       <h3 className="font-display text-[22px] md:text-[28px] text-paradigm-ink text-center mb-2 tracking-tight">
-        御社は今月、いくら損していますか?
+        未受注案件の売上機会を試算
       </h3>
       <p className="text-[13px] text-paradigm-ink-soft text-center mb-8 leading-relaxed">
-        動画案件を断る / 外注に出すたびに、利益が他社へ流れています。
+        入力した件数と単価を掛けた参考値です。受注や利益を保証するものではありません。
       </p>
 
       {/* Q1: 断り件数 */}
       <div className="mb-7">
         <label className="block text-[12px] paradigm-eyebrow text-paradigm-ink-soft mb-3">
-          Q1. 月に動画案件を断る or 外注する件数は?
+          Q1. 月に未受注・外注となる動画案件数は?
         </label>
         <div className="grid grid-cols-4 gap-2">
           {DECLINED_OPTIONS.map((opt) => (
@@ -115,62 +111,37 @@ export default function RoiCalculator() {
       </div>
 
       {/* 結果表示 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-7">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-7">
         <div className="paradigm-glass rounded-xl p-5 text-center bg-paradigm-paper-card">
           <div className="paradigm-eyebrow text-paradigm-ink-mute mb-2 text-[10px]">
-            月間損失
+            月間売上機会の単純試算
           </div>
           <div className="font-display text-[24px] text-paradigm-ink leading-none">
-            {fmtUsd(result.monthlyLoss)}
-          </div>
-        </div>
-        <div
-          className="rounded-xl p-5 text-center text-paradigm-paper"
-          style={{
-            background: "linear-gradient(135deg, #dc2626 0%, #991b1b 100%)",
-          }}
-        >
-          <div className="paradigm-eyebrow text-paradigm-paper/70 mb-2 text-[10px]">
-            年間損失
-          </div>
-          <div className="font-display text-[28px] leading-none font-black">
-            {fmtUsd(result.annualLoss)}
+            {fmtUsd(result.monthlyOpportunity)}
           </div>
         </div>
         <div className="paradigm-glass rounded-xl p-5 text-center bg-paradigm-paper-card">
           <div className="paradigm-eyebrow text-paradigm-ink-mute mb-2 text-[10px]">
-            Paradigm 年間費
+            年間売上機会の単純試算
           </div>
-          <div className="font-display text-[24px] text-paradigm-ink-soft leading-none">
-            {fmtUsd(result.paradigmAnnual)}
+          <div className="font-display text-[24px] text-paradigm-ink leading-none">
+            {fmtUsd(result.annualOpportunity)}
           </div>
         </div>
       </div>
 
-      <div
-        className="rounded-2xl p-6 text-center text-paradigm-paper"
-        style={{
-          background: "linear-gradient(135deg, #16a34a 0%, #14532d 100%)",
-        }}
-      >
-        <div className="paradigm-eyebrow text-paradigm-paper/70 mb-2 text-[10px]">
-          回収可能粗利 (年間)
-        </div>
-        <div className="font-display text-[40px] md:text-[48px] leading-none font-black mb-2">
-          {fmtUsd(result.netGain)}
-        </div>
-        <p className="text-[12px] text-paradigm-paper/80 leading-relaxed">
-          今、御社を素通りしている動画案件を WL で回収できる粗利です。
-        </p>
-      </div>
+      <p className="rounded-2xl border border-paradigm-line bg-paradigm-paper-card p-5 text-center text-[12px] leading-relaxed text-paradigm-ink-soft">
+        制作原価、実際の受注率、修正、税金、解約、Paradigm利用料を含まない単純試算です。
+        利益見込みは個別の契約条件と実績値から判断してください。
+      </p>
 
       <div className="mt-7 text-center">
-        <a
-          href="mailto:info@paradigmjp.com?subject=代理店WLパッケージの相談"
+        <Link
+          href="/contact?intent=agency"
           className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper rounded-xl px-9 py-4 text-[12px] tracking-wider uppercase font-semibold paradigm-glow-md hover:paradigm-glow-lg transition-all"
         >
-          この損失を止める方法を 15 分で説明します
-        </a>
+          提供範囲と原価条件を相談する
+        </Link>
       </div>
     </div>
   )

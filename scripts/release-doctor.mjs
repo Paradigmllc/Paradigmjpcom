@@ -11,6 +11,8 @@
 
 import fs from "node:fs"
 import { spawnSync } from "node:child_process"
+import { lookup } from "node:dns/promises"
+import { isIP } from "node:net"
 import { readCoolifyApplicationEnvs } from "./lib/coolify-env.mjs"
 import { sshArgs } from "./lib/ssh-options.mjs"
 
@@ -99,6 +101,31 @@ function checkStaticReleaseRules() {
     fail("package.json must expose release:prod through release-doctor")
   }
 
+  const githubDeployWorkflow = fs.readFileSync(
+    ".github/workflows/coolify-deploy.yml",
+    "utf8",
+  )
+  if (
+    githubDeployWorkflow.includes("Block deploys that bypass the production release gate") &&
+    !githubDeployWorkflow.includes("/api/v1/deploy") &&
+    !githubDeployWorkflow.includes("sales-os-no-login-deploy")
+  ) {
+    pass("GitHub Actions cannot bypass release:prod")
+  } else {
+    fail("GitHub Actions must not expose a direct Coolify deployment path")
+  }
+
+  const legacyDeployEntrypoint = fs.readFileSync("scripts/deploy.mjs", "utf8")
+  if (
+    legacyDeployEntrypoint.includes("Direct deployment is disabled") &&
+    !legacyDeployEntrypoint.includes("/api/v1/deploy") &&
+    !legacyDeployEntrypoint.includes("createCoolifyClient")
+  ) {
+    pass("legacy deploy entrypoint cannot bypass release:prod")
+  } else {
+    fail("scripts/deploy.mjs must not expose a direct Coolify deployment path")
+  }
+
   const noLoginDeploy = fs.readFileSync("scripts/sales-os-no-login-deploy.mjs", "utf8")
   if (/cancelDeploy\(uuid,\s*"poll timeout"\)/.test(noLoginDeploy)) {
     fail("sales-os-no-login-deploy still cancels deployments on monitor timeout")
@@ -107,15 +134,97 @@ function checkStaticReleaseRules() {
   } else {
     fail("sales-os-no-login-deploy timeout behavior is not explicit")
   }
-  if (noLoginDeploy.includes("refreshManualTraefikRoute") && /paradigmhp-svc/.test(noLoginDeploy)) {
-    pass("deploy refreshes manual Traefik route after Coolify finishes")
+  const originLockHelperPath = "scripts/lib/refresh-traefik-origin-lock.py"
+  const originLockHelper = fs.existsSync(originLockHelperPath)
+    ? fs.readFileSync(originLockHelperPath, "utf8")
+    : ""
+  const prepareCall = noLoginDeploy.lastIndexOf("prepareManualTraefikOriginLock()")
+  const deployCall = noLoginDeploy.indexOf("const uuid = await triggerDeploy()")
+  const applyCall = noLoginDeploy.lastIndexOf("refreshManualTraefikRoute()")
+  if (
+    prepareCall >= 0 &&
+    deployCall > prepareCall &&
+    applyCall > deployCall &&
+    noLoginDeploy.includes("python3 - --prepare") &&
+    noLoginDeploy.includes("python3 - --apply")
+  ) {
+    pass("deploy validates and caches Cloudflare CIDRs before replacing the app container")
   } else {
-    fail("deploy must refresh the manual Traefik route after Coolify finishes")
+    fail("deploy must prepare Cloudflare CIDRs before deploy and atomically apply them afterward")
+  }
+  const applyHelperBody = originLockHelper.match(
+    /def apply_cached_origin_lock\([\s\S]*?\n\ndef main\(/,
+  )?.[0] ?? ""
+  if (
+    noLoginDeploy.includes("refresh-traefik-origin-lock.py") &&
+    originLockHelper.includes("https://api.cloudflare.com/client/v4/ips") &&
+    originLockHelper.includes("CACHE_MAX_AGE_SECONDS") &&
+    originLockHelper.includes("prepare_cloudflare_cache") &&
+    originLockHelper.includes("load_cached_ranges") &&
+    originLockHelper.includes("--prepare") &&
+    originLockHelper.includes("--apply") &&
+    originLockHelper.includes("paradigm-cloudflare-only") &&
+    originLockHelper.includes("ipAllowList") &&
+    originLockHelper.includes("paradigmhp-origin-alias-https") &&
+    applyHelperBody.includes("load_cached_ranges") &&
+    applyHelperBody.includes("atomic_write(") &&
+    !applyHelperBody.includes("fetch_cloudflare_ranges(")
+  ) {
+    pass("post-deploy route refresh uses only a validated cache and one atomic route write")
+  } else {
+    fail("post-deploy route refresh must not depend on a live Cloudflare API request")
   }
   if (noLoginDeploy.includes("isInternalDataApiUrl") && noLoginDeploy.includes("applySqlMigrationThroughPostgres")) {
     pass("deploy avoids local calls to Docker-internal Supabase REST URLs")
   } else {
     fail("deploy must avoid local calls to Docker-internal Supabase REST URLs")
+  }
+  const japanEntryProductBlock = noLoginDeploy.match(
+    /code:\s*"global_jaas"[\s\S]*?(?=\r?\n  },\r?\n  \{)/,
+  )?.[0] ?? ""
+  const japanEntryCurrency = japanEntryProductBlock.match(/default_currency:\s*"([A-Z]{3})"/)?.[1]
+  const japanEntryAmount = japanEntryProductBlock.match(/default_amount_yen:\s*(\d+)/)?.[1]
+  if (japanEntryCurrency === "USD" && japanEntryAmount === "12000") {
+    pass("Japan Entry sales product matches the public $12,000 USD offer")
+  } else {
+    fail("global_jaas must use USD 12000 in the production sales product seed")
+  }
+  if (
+    noLoginDeploy.includes("https://paradigmjp.com/en") &&
+    noLoginDeploy.includes("https://paradigmjp.com/en/contact") &&
+    noLoginDeploy.includes("Confirm your fit and launch timing") &&
+    noLoginDeploy.includes("seedEnglishHomepage") &&
+    noLoginDeploy.includes('scope: "homepage-en"')
+  ) {
+    pass("deploy publishes and smokes the English Japan Entry funnel")
+  } else {
+    fail("deploy must publish the English CMS homepage and smoke the dedicated application")
+  }
+
+  const contactMigrationPath = "supabase/migrations/migration_068_contact_submission_atomicity.sql"
+  const contactMigration = fs.existsSync(contactMigrationPath)
+    ? fs.readFileSync(contactMigrationPath, "utf8")
+    : ""
+  const contactIntegrityMarkers = [
+    "sales_contact_submissions",
+    "sales_create_contact_submission",
+    "sales_complete_contact_notification",
+    "notification_claim_token",
+    "notification_claim_token = p_claim_token",
+    "REVOKE ALL ON FUNCTION public.sales_create_contact_submission",
+    "sales_atomic_meta_merge(uuid,jsonb) FROM PUBLIC, anon, authenticated",
+    "sales_atomic_meta_history_prepend(uuid,text,text,text) FROM PUBLIC, anon, authenticated",
+    "sales_atomic_screenshot_append(uuid,text,jsonb) FROM PUBLIC, anon, authenticated",
+  ]
+  if (
+    contactMigration &&
+    contactIntegrityMarkers.every((marker) => contactMigration.includes(marker)) &&
+    noLoginDeploy.includes("migration_068_contact_submission_atomicity.sql") &&
+    noLoginDeploy.includes("applyContactSubmissionAtomicityMigration")
+  ) {
+    pass("contact ingress has atomic lead/outbox persistence, lease CAS, and RPC ACL hardening")
+  } else {
+    fail("contact migration/release wiring must enforce atomicity, lease CAS, and service-role-only RPCs")
   }
 
   const buildWrapper = fs.readFileSync("scripts/build-next.mjs", "utf8")
@@ -131,35 +240,88 @@ function checkTraefikRouteDrift() {
   section("Traefik route drift")
   const script = `
 set -euo pipefail
-app_uuid='${APP_UUID.replace(/'/g, "'\\''")}'
 route_file='/data/coolify/proxy/dynamic/paradigmjp.yml'
 if [ ! -f "$route_file" ]; then
-  echo "SKIP route-file-missing"
-  exit 0
+  echo "FAIL route-file-missing"
+  exit 2
 fi
 container="$(docker ps --filter "name=${APP_UUID.replace(/"/g, '\\"')}" --format '{{.Names}}' | head -n1)"
 if [ -z "$container" ]; then
   echo "FAIL app-container-missing"
-  exit 2
-fi
-ip="$(docker inspect "$container" --format '{{with index .NetworkSettings.Networks "coolify"}}{{.IPAddress}}{{end}}')"
-route="$(python3 - "$route_file" <<'PY'
-import re
-import sys
-text = open(sys.argv[1], encoding='utf-8').read()
-match = re.search(r'paradigmhp-svc:\\n\\s+loadBalancer:\\n\\s+servers:\\n\\s+- url: http://([^\\s]+):3000', text)
-print(match.group(1) if match else '')
-PY
-)"
-if [ -z "$route" ]; then
-  echo "FAIL route-upstream-missing container=$container ip=$ip"
   exit 3
 fi
-if [ "$route" != "$ip" ] && [ "$route" != "$container" ]; then
-  echo "FAIL route-drift container=$container ip=$ip route=$route"
-  exit 4
-fi
-echo "OK container=$container ip=$ip route=$route"
+ip="$(docker inspect "$container" --format '{{with index .NetworkSettings.Networks "coolify"}}{{.IPAddress}}{{end}}')"
+python3 - "$route_file" "$container" "$ip" <<'PY'
+import ipaddress
+import json
+import re
+import subprocess
+import sys
+import urllib.request
+
+import yaml
+
+path, container, expected_ip = sys.argv[1:4]
+config = yaml.safe_load(open(path, encoding="utf-8"))
+http = config.get("http", {})
+routers = http.get("routers", {})
+middleware = http.get("middlewares", {}).get("paradigm-cloudflare-only", {})
+ranges = middleware.get("ipAllowList", {}).get("sourceRange", [])
+with urllib.request.urlopen("https://api.cloudflare.com/client/v4/ips", timeout=15) as response:
+    cloudflare = json.load(response)
+if cloudflare.get("success") is not True:
+    raise RuntimeError("Cloudflare IP source failed")
+official = set(cloudflare["result"]["ipv4_cidrs"] + cloudflare["result"]["ipv6_cidrs"])
+if set(ranges) != official or len(ranges) != len(official):
+    raise RuntimeError("Cloudflare middleware ranges are stale or incomplete")
+for value in ranges:
+    ipaddress.ip_network(value, strict=True)
+
+servers = http.get("services", {}).get("paradigmhp-svc", {}).get("loadBalancer", {}).get("servers", [])
+if len(servers) != 1:
+    raise RuntimeError("Paradigm upstream is missing")
+route_match = re.fullmatch(r"http://([^/:]+):3000", str(servers[0].get("url", "")))
+if not route_match or route_match.group(1) not in {expected_ip, container}:
+    raise RuntimeError("Paradigm upstream drift detected")
+
+protected = ["paradigmhp-http", "paradigmhp-https", "keystatic-http", "keystatic-https"]
+for name, router in routers.items():
+    if router.get("service") == "paradigmhp-svc":
+        protected.append(name)
+for name in set(protected):
+    router = routers.get(name)
+    if not isinstance(router, dict) or (router.get("middlewares") or [None])[0] != "paradigm-cloudflare-only":
+        raise RuntimeError("An app router is missing the Cloudflare middleware")
+
+def rule_hosts(rule):
+    hosts = set()
+    for call in re.findall(r"Host\\(([^)]*)\\)", str(rule)):
+        hosts.update(value.lower() for value in re.findall(r'\\x60([A-Za-z0-9._-]+)\\x60', call))
+    return hosts
+
+if rule_hosts(routers["paradigmhp-https"].get("rule")) != {"paradigmjp.com", "www.paradigmjp.com"}:
+    raise RuntimeError("Main app host rule is not exact")
+if rule_hosts(routers["keystatic-https"].get("rule")) != {"keystatic.paradigmjp.com"}:
+    raise RuntimeError("Keystatic host rule is not isolated")
+
+labels = json.loads(subprocess.check_output(
+    ["docker", "inspect", container, "--format", "{{json .Config.Labels}}"],
+    text=True,
+)) or {}
+docker_hosts = set()
+for key, value in labels.items():
+    if re.fullmatch(r"traefik\\.http\\.routers\\.[^.]+\\.rule", str(key)):
+        docker_hosts.update(rule_hosts(value))
+aliases = docker_hosts - {"paradigmjp.com", "www.paradigmjp.com", "keystatic.paradigmjp.com"}
+configured_aliases = set()
+for name in ("paradigmhp-origin-alias-http", "paradigmhp-origin-alias-https"):
+    if name in routers:
+        configured_aliases.update(rule_hosts(routers[name].get("rule")))
+if not aliases.issubset(configured_aliases):
+    raise RuntimeError("A Docker app alias bypasses the Cloudflare middleware")
+
+print(f"OK origin-lock-current aliases={len(aliases)} ranges={len(ranges)}")
+PY
 `
   const result = spawnSync("ssh", [...sshArgs(DEPLOY_HOST, { acceptNew: true }), "bash -s"], {
     input: script,
@@ -176,6 +338,149 @@ echo "OK container=$container ip=$ip route=$route"
     return
   }
   pass("manual Traefik route points at the latest app container")
+}
+
+async function resolveOriginAddress() {
+  const config = run("ssh", ["-G", DEPLOY_HOST])
+  if (config.status !== 0) throw new Error("SSH origin configuration is unavailable")
+  const hostname = config.output
+    .split(/\r?\n/)
+    .map((line) => line.trim().split(/\s+/, 2))
+    .find(([name]) => name === "hostname")?.[1]
+  if (!hostname) throw new Error("SSH origin hostname is unavailable")
+  if (isIP(hostname)) return hostname
+  const resolved = await lookup(hostname)
+  if (!resolved?.address || !isIP(resolved.address)) throw new Error("SSH origin hostname did not resolve")
+  return resolved.address
+}
+
+function discoverProtectedAppHosts() {
+  const script = `
+set -euo pipefail
+container="$(docker ps --filter "name=${APP_UUID.replace(/"/g, '\\"')}" --format '{{.Names}}' | head -n1)"
+if [ -z "$container" ]; then
+  exit 2
+fi
+python3 - "$container" <<'PY'
+import json
+import re
+import subprocess
+import sys
+
+container = sys.argv[1]
+labels = json.loads(subprocess.check_output(
+    ["docker", "inspect", container, "--format", "{{json .Config.Labels}}"],
+    text=True,
+)) or {}
+hosts = {"paradigmjp.com", "www.paradigmjp.com", "keystatic.paradigmjp.com"}
+for key, value in labels.items():
+    if not re.fullmatch(r"traefik\\.http\\.routers\\.[^.]+\\.rule", str(key)):
+        continue
+    for call in re.findall(r"Host\\(([^)]*)\\)", str(value)):
+        hosts.update(item.lower() for item in re.findall(r'\\x60([A-Za-z0-9._-]+)\\x60', call))
+print(json.dumps(sorted(hosts)))
+PY
+`
+  const result = spawnSync("ssh", [...sshArgs(DEPLOY_HOST, { acceptNew: true }), "bash -s"], {
+    input: script,
+    cwd: process.cwd(),
+    env: process.env,
+    encoding: "utf8",
+    timeout: 30_000,
+    maxBuffer: 1024 * 1024,
+  })
+  if (result.status !== 0 || result.error) throw new Error("Unable to enumerate protected app aliases")
+  const parsed = JSON.parse(String(result.stdout || "").trim())
+  if (!Array.isArray(parsed) || parsed.length < 3 || parsed.some((value) => typeof value !== "string")) {
+    throw new Error("Protected app alias inventory is invalid")
+  }
+  return [...new Set(parsed)]
+}
+
+function probeDirectOrigin(originAddress, hostname, scheme, { forgedCloudflareHeader = false } = {}) {
+  const port = scheme === "https" ? 443 : 80
+  const curlAddress = originAddress.includes(":") ? `[${originAddress}]` : originAddress
+  const commandArgs = [
+    "--noproxy",
+    "*",
+    "--silent",
+    "--show-error",
+    "--insecure",
+    "--output",
+    "/dev/null",
+    "--write-out",
+    "%{http_code}",
+    "--connect-timeout",
+    "5",
+    "--max-time",
+    "12",
+    "--resolve",
+    `${hostname}:${port}:${curlAddress}`,
+  ]
+  if (forgedCloudflareHeader) commandArgs.push("--header", "CF-Connecting-IP: 203.0.113.10")
+  commandArgs.push(`${scheme}://${hostname}/api/ready`)
+  const result = spawnSync("curl", commandArgs, {
+    cwd: process.cwd(),
+    env: process.env,
+    encoding: "utf8",
+    timeout: 15_000,
+  })
+  if (result.error?.code === "ENOENT") throw new Error("curl is unavailable")
+  const statusCode = String(result.stdout || "").trim()
+  return {
+    blocked: result.status !== 0 || statusCode === "403",
+    unavailable: result.status !== 0 || /^[45]\d\d$/.test(statusCode),
+  }
+}
+
+async function checkOriginAccessGate() {
+  if (LOCAL_ONLY || SKIP_REMOTE) return
+  section("Cloudflare origin access")
+  try {
+    const publicResponse = await fetch("https://paradigmjp.com/api/ready", {
+      redirect: "manual",
+      signal: AbortSignal.timeout(15_000),
+      headers: { "Cache-Control": "no-cache" },
+    })
+    if (publicResponse.status !== 200 || !publicResponse.headers.get("cf-ray")) {
+      fail("Cloudflare public readiness path must return HTTP 200 through a Cloudflare edge")
+      return
+    }
+    pass("Cloudflare public readiness path returns HTTP 200")
+
+    const originAddress = await resolveOriginAddress()
+    const protectedHosts = discoverProtectedAppHosts()
+    const directHttp = probeDirectOrigin(originAddress, "paradigmjp.com", "http")
+    if (!directHttp.blocked) {
+      fail("direct origin HTTP remains reachable")
+      return
+    }
+    pass("direct origin HTTP is blocked")
+
+    for (let index = 0; index < protectedHosts.length; index += 1) {
+      const hostname = protectedHosts[index]
+      const directHttps = probeDirectOrigin(originAddress, hostname, "https")
+      const forgedHttps = probeDirectOrigin(originAddress, hostname, "https", {
+        forgedCloudflareHeader: true,
+      })
+      if (!directHttps.blocked || !forgedHttps.blocked) {
+        fail(`protected app alias ${index + 1} remains reachable at the origin`)
+        return
+      }
+    }
+    pass(`direct origin HTTPS and forged Cloudflare headers are blocked for ${protectedHosts.length} app host rules`)
+
+    const unknownHost = probeDirectOrigin(originAddress, "origin-lock.invalid", "https", {
+      forgedCloudflareHeader: true,
+    })
+    if (!unknownHost.unavailable) {
+      fail("an unknown Host header reaches a live origin route")
+      return
+    }
+    pass("unknown Host headers do not reach the application")
+  } catch (error) {
+    fail(`Cloudflare origin gate failed: ${error instanceof Error ? error.message : String(error)}`)
+  }
 }
 
 function checkRemoteInfraDrift() {
@@ -224,6 +529,26 @@ if docker exec supabase-db-1 psql -U postgres -d postgres -Atc "select 1 from pg
   echo "OK sales_pipeline_runs published to supabase_realtime"
 else
   echo "FAIL sales_pipeline_runs not published to supabase_realtime"
+  fail=1
+fi
+
+contact_db_guard="$(docker exec supabase-db-1 psql -U postgres -d postgres -Atc "
+select case when
+  to_regclass('public.sales_contact_submissions') is not null
+  and to_regprocedure('public.sales_create_contact_submission(text,text,jsonb,jsonb)') is not null
+  and to_regprocedure('public.sales_complete_contact_notification(text,uuid,text,text)') is not null
+  and has_function_privilege('service_role', to_regprocedure('public.sales_create_contact_submission(text,text,jsonb,jsonb)'), 'EXECUTE')
+  and not has_function_privilege('anon', to_regprocedure('public.sales_create_contact_submission(text,text,jsonb,jsonb)'), 'EXECUTE')
+  and not has_function_privilege('authenticated', to_regprocedure('public.sales_create_contact_submission(text,text,jsonb,jsonb)'), 'EXECUTE')
+  and not has_function_privilege('anon', to_regprocedure('public.sales_atomic_meta_merge(uuid,jsonb)'), 'EXECUTE')
+  and not has_function_privilege('anon', to_regprocedure('public.sales_atomic_meta_history_prepend(uuid,text,text,text)'), 'EXECUTE')
+  and not has_function_privilege('anon', to_regprocedure('public.sales_atomic_screenshot_append(uuid,text,jsonb)'), 'EXECUTE')
+then 1 else 0 end;
+" 2>/dev/null || true)"
+if [ "$contact_db_guard" = "1" ]; then
+  echo "OK contact ingress table/RPC ACL/CAS guard"
+else
+  echo "FAIL contact ingress table/RPC ACL/CAS guard"
   fail=1
 fi
 
@@ -299,8 +624,14 @@ async function fetchCheck(label, url, options = {}) {
     fail(`${label} rendered an application/report error`)
     return
   }
-  if (options.mustContain && !text.includes(options.mustContain)) {
-    fail(`${label} did not contain expected marker: ${options.mustContain}`)
+  const expectedMarkers = options.mustContain
+    ? Array.isArray(options.mustContain)
+      ? options.mustContain
+      : [options.mustContain]
+    : []
+  const missingMarkers = expectedMarkers.filter((marker) => !text.includes(marker))
+  if (missingMarkers.length > 0) {
+    fail(`${label} did not contain expected marker(s): ${missingMarkers.join(", ")}`)
     return
   }
   pass(`${label} HTTP ${res.status}`)
@@ -378,6 +709,40 @@ async function checkPostDeployUrls() {
   section("Post-deploy smoke")
   await fetchCheck("readiness", `${BASE_URL}/api/ready`, { timeoutMs: 12_000 })
   await fetchCheck("Japanese public site", `${BASE_URL}/ja`, { timeoutMs: 20_000 })
+  await fetchCheck("English Japan Entry homepage", `${BASE_URL}/en`, {
+    timeoutMs: 20_000,
+    mustContain: [
+      "Launch in Japan without hiring a local team",
+      "$12,000",
+      "Apply for Japan Entry",
+    ],
+  })
+  await fetchCheck(
+    "Japan Entry application",
+    `${BASE_URL}/en/contact`,
+    {
+      timeoutMs: 20_000,
+      mustContain: [
+        "Japan Entry package.",
+        "Confirm your fit and launch timing",
+        "$12,000 fixed setup",
+      ],
+    },
+  )
+  const maintainedPages = [
+    ["About", "/en/about"],
+    ["Pricing", "/en/pricing"],
+    ["FAQ", "/en/faq"],
+    ["Works", "/en/works"],
+    ["Blog", "/en/blog"],
+    ["Privacy", "/en/privacy"],
+    ["Legal", "/en/legal"],
+  ]
+  for (const [label, path] of maintainedPages) {
+    await fetchCheck(`English ${label}`, `${BASE_URL}${path}`, {
+      timeoutMs: 20_000,
+    })
+  }
   await fetchCheck("Revenue OS dashboard", `${BASE_URL}/ja/admin/sales`, { timeoutMs: 20_000 })
   await fetchCheck("diagnostic report value URL", `${BASE_URL}${REPORT_PATH}`, {
     timeoutMs: 25_000,
@@ -388,16 +753,64 @@ async function checkPostDeployUrls() {
   await checkSalesHealth()
 }
 
+async function checkPublicFunnelEnvironment() {
+  if (LOCAL_ONLY || SKIP_REMOTE) return
+  section("Public funnel environment")
+  try {
+    const envs = await readCoolifyApplicationEnvs(APP_UUID)
+    const hasMinimumSecret = (name) =>
+      typeof envs[name] === "string" && envs[name].trim().length >= 16
+    if (hasMinimumSecret("ADMIN_SCRIPT_SECRET")) {
+      pass("English CMS publish secret is configured")
+    } else {
+      fail("ADMIN_SCRIPT_SECRET must be configured for the English CMS publish gate")
+    }
+    if (
+      typeof envs.CONTACT_FORM_CHALLENGE_SECRET === "string" &&
+      envs.CONTACT_FORM_CHALLENGE_SECRET.trim().length >= 32
+    ) {
+      pass("dedicated contact form challenge secret is configured")
+    } else {
+      fail("CONTACT_FORM_CHALLENGE_SECRET must contain at least 32 characters")
+    }
+    if (String(envs.TRUSTED_PROXY_MODE || "").trim().toLowerCase() === "cloudflare") {
+      pass("public API client IPs trust Cloudflare only")
+    } else {
+      fail("TRUSTED_PROXY_MODE=cloudflare is required for public API rate limits")
+    }
+    if (/^(1|true|yes)$/i.test(String(envs.CLOUDFLARE_ORIGIN_LOCKED || "").trim())) {
+      pass("Cloudflare-only origin access is attested")
+    } else {
+      fail("CLOUDFLARE_ORIGIN_LOCKED=1 must attest that direct origin access is blocked")
+    }
+    const hasTurnstile =
+      hasMinimumSecret("TURNSTILE_SECRET_KEY") &&
+      typeof envs.NEXT_PUBLIC_TURNSTILE_SITE_KEY === "string" &&
+      envs.NEXT_PUBLIC_TURNSTILE_SITE_KEY.trim().length > 0
+    if (!hasTurnstile) {
+      fail("TURNSTILE_SECRET_KEY and NEXT_PUBLIC_TURNSTILE_SITE_KEY are required in production")
+    } else {
+      pass("Turnstile production keys are configured")
+    }
+  } catch (error) {
+    fail(`public funnel env lookup failed: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
 async function main() {
   checkStaticReleaseRules()
   checkSyntax()
   if (PRE_DEPLOY) {
     checkGitHygiene()
     checkPreDeployRemote()
+    await checkOriginAccessGate()
+    await checkPublicFunnelEnvironment()
   }
   if (POST_DEPLOY) {
     checkTraefikRouteDrift()
+    await checkOriginAccessGate()
     checkRemoteInfraDrift()
+    await checkPublicFunnelEnvironment()
     await checkPostDeployUrls()
   }
 

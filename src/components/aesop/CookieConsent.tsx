@@ -22,48 +22,30 @@
  * rewraps; resets to 0px on dismount.
  *
  * AE-PHP-1: 165 lines. AE-PHP-2: every visible string via t().
- * AE-PHP-4: privacy banner UX only — no analytics opt-in glue here.
+ * ConsentAwareTracking listens for the emitted event and loads optional tags
+ * only after an explicit acceptance.
  */
 
 import { useEffect, useRef, useState } from "react"
 import { Link } from "@/i18n/routing"
 import { useTranslations } from "next-intl"
+import {
+  CONSENT_CHANGED_EVENT,
+  CONSENT_SETTINGS_EVENT,
+  CONSENT_STORAGE_KEY,
+  isConsentStillValid,
+  readStoredConsent,
+  type ConsentDecision,
+  type StoredConsent,
+} from "@/lib/cookie-consent"
 
-type Decision = "accept" | "decline"
-type Stored = { decision: Decision; decidedAt: string }
-
-const STORAGE_KEY = "paradigm:cookie-consent"
-const REASK_AFTER_DAYS = 365
-
-function readStored(): Stored | null {
-  if (typeof window === "undefined") return null
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as Stored
-    if (parsed?.decision && parsed?.decidedAt) return parsed
-    return null
-  } catch (e) {
-    console.warn("[CookieConsent] failed to read stored consent:", e)
-    return null
-  }
-}
-
-function isStillValid(stored: Stored): boolean {
-  const decidedAt = new Date(stored.decidedAt).getTime()
-  if (Number.isNaN(decidedAt)) return false
-  const ageMs = Date.now() - decidedAt
-  const maxAgeMs = REASK_AFTER_DAYS * 24 * 60 * 60 * 1000
-  return ageMs < maxAgeMs
-}
-
-function writeDecision(decision: Decision) {
+function writeDecision(decision: ConsentDecision) {
   if (typeof window === "undefined") return
   try {
-    const payload: Stored = { decision, decidedAt: new Date().toISOString() }
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
+    const payload: StoredConsent = { decision, decidedAt: new Date().toISOString() }
+    window.localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(payload))
     window.dispatchEvent(
-      new CustomEvent("paradigm:consent-changed", { detail: payload })
+      new CustomEvent(CONSENT_CHANGED_EVENT, { detail: payload })
     )
   } catch (e) {
     console.error("[CookieConsent] failed to persist decision:", e)
@@ -76,10 +58,16 @@ export default function CookieConsent() {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const stored = readStored()
-    if (!stored || !isStillValid(stored)) {
-      const timer = window.setTimeout(() => setVisible(true), 600)
-      return () => window.clearTimeout(timer)
+    const stored = readStoredConsent()
+    const openSettings = () => setVisible(true)
+    let timer: number | undefined
+    if (!stored || !isConsentStillValid(stored)) {
+      timer = window.setTimeout(() => setVisible(true), 600)
+    }
+    window.addEventListener(CONSENT_SETTINGS_EVENT, openSettings)
+    return () => {
+      if (timer !== undefined) window.clearTimeout(timer)
+      window.removeEventListener(CONSENT_SETTINGS_EVENT, openSettings)
     }
   }, [])
 
@@ -105,15 +93,20 @@ export default function CookieConsent() {
 
   if (!visible) return null
 
-  const handle = (decision: Decision) => {
+  const handle = (decision: ConsentDecision) => {
+    const previous = readStoredConsent()
     writeDecision(decision)
     setVisible(false)
+    if (previous?.decision === "accept" && decision === "decline") {
+      window.location.reload()
+    }
   }
 
   return (
     <div
       ref={ref}
       role="dialog"
+      aria-modal="false"
       aria-labelledby="cookie-consent-title"
       aria-describedby="cookie-consent-body"
       className="fixed inset-x-3 bottom-3 z-[95] rounded-lg border border-paradigm-line bg-white shadow-lg shadow-zinc-200/70 md:left-auto md:right-6 md:bottom-4 md:max-w-xl"
@@ -150,7 +143,6 @@ export default function CookieConsent() {
             type="button"
             aria-label={t("accept")}
             onClick={() => handle("accept")}
-            autoFocus
             className="inline-flex h-8 items-center justify-center rounded-md bg-paradigm-ink px-3 text-[11px] font-semibold text-paradigm-paper transition-colors hover:bg-paradigm-accent md:h-9"
           >
             {t("accept")}

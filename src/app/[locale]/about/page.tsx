@@ -13,12 +13,11 @@ import type { Metadata } from "next"
 import { Rocket, Handshake, Lightbulb, Users } from "lucide-react"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
-import { buildArticleSchema } from "@/lib/seo/schemas"
+import { buildPageSchema } from "@/lib/seo/schemas"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
-import { withPayloadReadFallback } from "@/lib/payload-availability"
-import { filterByLocale, assertLocale, coerceLocale, localeFindOptions, type AppLocale } from "@/lib/cms/filters"
+import { getSiteSettings } from "@/lib/settings"
 
 export const dynamic = "force-dynamic"
 
@@ -43,24 +42,69 @@ const VALUE_GRADIENTS = [
 
 interface ValueRow { title: string; desc: string }
 
+function buildEnglishCompanyInfo(
+  settings: Awaited<ReturnType<typeof getSiteSettings>>,
+): Array<[string, string]> {
+  const rows: Array<[string, string]> = [
+    ["Registered name", settings.company.legalName ?? settings.siteName],
+  ]
+  if (settings.company.registrationNumber) rows.push(["Registration number", settings.company.registrationNumber])
+  if (settings.company.representativeName) rows.push(["Representative", settings.company.representativeName])
+  if (settings.company.foundedYear) rows.push(["Founded", settings.company.foundedYear])
+  const configuredAddress = settings.company.address ?? settings.contact.address
+  if (configuredAddress) {
+    rows.push(["Registered address", [settings.company.postalCode, configuredAddress].filter(Boolean).join(" ")])
+  }
+  rows.push(
+    ["Email", settings.contact.email ?? "info@paradigmjp.com"],
+    ["Website", "https://paradigmjp.com"],
+    ["Public offer", "$12,000 Japan Entry setup · first six months $0 · then $995/month"],
+  )
+  return rows
+}
+
+function buildJapaneseCompanyInfo(
+  settings: Awaited<ReturnType<typeof getSiteSettings>>,
+): Array<[string, string]> {
+  const rows: Array<[string, string]> = [
+    ["会社名", settings.company.legalName ?? settings.siteName],
+  ]
+  if (settings.company.registrationNumber) rows.push(["法人番号", settings.company.registrationNumber])
+  if (settings.company.representativeName) rows.push(["代表", settings.company.representativeName])
+  if (settings.company.foundedYear) rows.push(["設立", `${settings.company.foundedYear}年`])
+  const configuredAddress = settings.company.address ?? settings.contact.address
+  if (configuredAddress) {
+    rows.push(["所在地", [settings.company.postalCode, configuredAddress].filter(Boolean).join(" ")])
+  }
+  rows.push(
+    ["事業内容", "Web制作 / MEO対策 / SEO・GEO対策 / AI導入支援"],
+    ["メール", settings.contact.email ?? "info@paradigmjp.com"],
+    ["Webサイト", "https://paradigmjp.com"],
+  )
+  return rows
+}
+
 export default async function AboutPage({ params }: Props) {
   const { locale } = await params
-  const t = await getTranslations({ locale, namespace: "aboutPage" })
+  const [t, settings] = await Promise.all([
+    getTranslations({ locale, namespace: "aboutPage" }),
+    getSiteSettings(locale),
+  ])
   const VALUES = (t.raw("values") as ValueRow[]).map((v, i) => ({
     icon: VALUE_ICONS[i] ?? Rocket,
     gradient: VALUE_GRADIENTS[i] ?? VALUE_GRADIENTS[0],
     title: v.title,
     desc: v.desc,
   }))
-  const COMPANY_INFO = t.raw("companyInfo") as Array<[string, string]>
+  const COMPANY_INFO = locale === "en"
+    ? buildEnglishCompanyInfo(settings)
+    : locale === "ja"
+      ? buildJapaneseCompanyInfo(settings)
+      : t.raw("companyInfo") as Array<[string, string]>
 
-  const teamMembers = await withPayloadReadFallback<Array<{ id: string | number; name?: string; role?: string; bio?: string }>>("about.team", async () => {
-    const [{ getPayload }, { default: config }] = await Promise.all([import("payload"), import("@payload-config")])
-    const payload = await getPayload({ config })
-    const cl = coerceLocale(locale) as AppLocale
-    const res = await payload.find({ collection: "team-members", where: filterByLocale(cl, { isActive: { equals: true } }), sort: "sortOrder", limit: 20, ...localeFindOptions(cl) })
-    return (res.docs as unknown as Array<{ id: string | number; name?: string; role?: string; bio?: string }>) ?? []
-  }, [])
+  // Public bios stay hidden until named members and publication consent have
+  // been verified. Generic seeded roles are not evidence of a real team.
+  const teamMembers: Array<{ id: string | number; name?: string; role?: string; bio?: string }> = []
 
   return (
     <>
@@ -104,7 +148,7 @@ export default async function AboutPage({ params }: Props) {
                 <FadeIn key={v.title} delay={idx * 0.1}>
                   <div className="paradigm-glass rounded-lg p-6 md:p-7 paradigm-glow-sm hover:paradigm-glow-lg  transition-all duration-500 h-full">
                     <div className={`inline-flex items-center justify-center w-11 h-11 rounded-lg bg-gradient-to-br ${v.gradient} text-paradigm-paper mb-4 paradigm-glow-sm`}>
-                      <Icon size={20} strokeWidth={1.5} />
+                      <Icon size={20} strokeWidth={1.5} aria-hidden />
                     </div>
                     <h3 className="font-display text-[18px] md:text-[20px] leading-[1.2] text-paradigm-ink mb-2 ">{v.title}</h3>
                     <p className="text-[13px] text-paradigm-ink-soft leading-[1.75]">{v.desc}</p>
@@ -151,7 +195,7 @@ export default async function AboutPage({ params }: Props) {
                 <FadeIn key={String(m.id)} delay={i * 0.1}>
                   <div className="paradigm-glass rounded-lg p-6 paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500">
                     <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-paradigm-accent to-paradigm-glow text-white mb-4 paradigm-glow-sm">
-                      <Users size={20} strokeWidth={1.5} />
+                      <Users size={20} strokeWidth={1.5} aria-hidden />
                     </div>
                     <h3 className="font-display text-[18px] md:text-[20px] leading-[1.2] text-paradigm-ink mb-1">{m.name ?? ""}</h3>
                     <p className="paradigm-eyebrow text-paradigm-accent mb-3">{m.role ?? ""}</p>
@@ -170,12 +214,15 @@ export default async function AboutPage({ params }: Props) {
         highlight={t("ctaHighlight")}
         desc={t("ctaDesc")}
         buttonLabel={t("ctaButton")}
+        buttonHref={locale === "en" ? "/contact?intent=japan-entry" : "/contact"}
+        analyticsSource="about-final-cta"
       />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(
-            buildArticleSchema({
+            buildPageSchema({
+              type: "AboutPage",
               title: t("heroTitle"),
               description: t("heroDesc"),
               url: `https://paradigmjp.com/${locale}/about`,

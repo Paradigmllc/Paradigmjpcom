@@ -10,6 +10,7 @@
  * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
  */
 import type { Metadata } from "next"
+import { permanentRedirect } from "next/navigation"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
 import PageHero from "@/components/PageHero"
@@ -67,6 +68,7 @@ async function UseCasesBand({ locale }: { locale: string }) {
 
 export default async function AiServicePage({ params }: Props) {
   const { locale } = await params
+  if (locale === "en") permanentRedirect("/en#japan-entry-pricing")
   const t = await getTranslations({ locale, namespace: "serviceDetail" })
   const service = getServiceByKey(locale, "ai")
   const pricing = getPricingFor(locale, "ai")

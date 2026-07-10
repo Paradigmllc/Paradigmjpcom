@@ -10,14 +10,18 @@
 import type { Metadata } from "next"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
-import { buildArticleSchema } from "@/lib/seo/schemas"
+import { buildPageSchema } from "@/lib/seo/schemas"
 import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
 import { filterByLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
 import { withPayloadReadFallback } from "@/lib/payload-availability"
-import { WORKS, WORKS_EN } from "@/lib/data"
+import { WORKS_EN } from "@/lib/data"
+import {
+  JAPANESE_WORK_PUBLICATION_TAG,
+  isVerifiedJapaneseWork,
+} from "@/lib/public-content-safety"
 
 export const revalidate = 300
 
@@ -57,7 +61,13 @@ export default async function WorksPage({ params }: Props) {
   const t = await getTranslations({ locale, namespace: "worksPage" })
   const STEPS = t.raw("process") as ProcessStep[]
 
-  let works = await withPayloadReadFallback<WorkDoc[]>("works.payload.find", async () => {
+  let works = locale === "en"
+    ? (t.raw("proofItems") as Array<Omit<WorkDoc, "id" | "tags"> & { tags: string[] }>).map((work, index) => ({
+        ...work,
+        id: `verified-proof-${index}`,
+        tags: work.tags.map((tag) => ({ tag })),
+      }))
+    : await withPayloadReadFallback<WorkDoc[]>("works.payload.find", async () => {
       const [{ getPayload }, { default: config }] = await Promise.all([
         import("payload"),
         import("@payload-config"),
@@ -71,11 +81,11 @@ export default async function WorksPage({ params }: Props) {
         depth: 1,
         ...localeFindOptions(locale),
       })
-      return (res.docs as unknown as WorkDoc[]) ?? []
-  }, [])
-  if (works.length === 0) {
-    const fallback = locale === "ja" ? WORKS : WORKS_EN
-    works = fallback.map((work, index) => ({
+      const docs = (res.docs as unknown as WorkDoc[]) ?? []
+      return locale === "ja" ? docs.filter((work) => isVerifiedJapaneseWork(work.tags)) : docs
+      }, [])
+  if (works.length === 0 && locale !== "ja" && locale !== "en") {
+    works = WORKS_EN.map((work, index) => ({
       id: `fallback-${index}`,
       title: work.title,
       industry: work.industry,
@@ -102,14 +112,20 @@ export default async function WorksPage({ params }: Props) {
               <p className="text-[14px] text-paradigm-ink-soft leading-[1.85] mb-7">
                 {t("emptyMessage")}
               </p>
-              <Link href="/contact" className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors">
+              <Link
+                href={locale === "en" ? "/contact?intent=japan-entry" : "/contact"}
+                {...(locale === "en" ? { "data-umami-event": "japan-entry-apply", "data-umami-event-source": "works-empty" } : {})}
+                className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
+              >
                 {t("emptyCta")}
               </Link>
             </FadeIn>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
               {works.map((w, i) => {
-                const tags = (w.tags ?? []).map((t) => t.tag).filter(Boolean) as string[]
+                const tags = (w.tags ?? [])
+                  .map((t) => t.tag)
+                  .filter((tag): tag is string => typeof tag === "string" && tag !== JAPANESE_WORK_PUBLICATION_TAG)
                 const gradient = TILE_GRADIENTS[i % TILE_GRADIENTS.length]
                 return (
                   <FadeIn key={String(w.id)} delay={i * 0.05}>
@@ -118,7 +134,7 @@ export default async function WorksPage({ params }: Props) {
                         <div className="absolute inset-0 paradigm-mesh opacity-30" />
                         <p className="relative z-10 paradigm-eyebrow text-paradigm-paper/85">{w.industry ?? "—"}</p>
                         <div className="relative z-10">
-                          <p className="font-display text-[18px] md:text-[22px] leading-[1.15]  mb-2 paradigm-glow-text">{w.title ?? ""}</p>
+                          <h3 className="font-display text-[18px] md:text-[22px] leading-[1.15] mb-2 paradigm-glow-text">{w.title ?? ""}</h3>
                           {w.metrics && (
                             <p className="paradigm-eyebrow paradigm-glass rounded-full inline-block px-2.5 py-1 text-paradigm-paper text-[10px]">
                               {w.metrics}
@@ -163,14 +179,12 @@ export default async function WorksPage({ params }: Props) {
           </FadeIn>
           <ol className="space-y-3">
             {STEPS.map((s, i) => (
-              <FadeIn key={s.step} delay={i * 0.08}>
-                <li className="paradigm-glass rounded-lg p-5 grid grid-cols-1 md:grid-cols-[60px_1fr] gap-3 paradigm-glow-sm hover:paradigm-glow-md  transition-all duration-500">
+              <FadeIn key={s.step} delay={i * 0.08} as="li" className="paradigm-glass rounded-lg p-5 grid grid-cols-1 md:grid-cols-[60px_1fr] gap-3 paradigm-glow-sm hover:paradigm-glow-md transition-all duration-500">
                   <span className="font-display text-[24px] md:text-[28px] leading-none bg-gradient-to-br from-paradigm-accent to-paradigm-ink bg-clip-text text-transparent">{s.step}</span>
                   <div>
                     <h3 className="font-display text-[16px] md:text-[18px] leading-[1.2] text-paradigm-ink mb-1 ">{s.title}</h3>
                     <p className="text-[12px] md:text-[13px] text-paradigm-ink-soft leading-[1.7]">{s.desc}</p>
                   </div>
-                </li>
               </FadeIn>
             ))}
           </ol>
@@ -183,12 +197,15 @@ export default async function WorksPage({ params }: Props) {
         highlight={t("ctaHighlight")}
         desc={t("ctaDesc")}
         buttonLabel={t("ctaButton")}
+        buttonHref={locale === "en" ? "/contact?intent=japan-entry" : "/contact"}
+        analyticsSource="works-final-cta"
       />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(
-            buildArticleSchema({
+            buildPageSchema({
+              type: "CollectionPage",
               title: t("heroTitle"),
               description: t("heroDesc"),
               url: `https://paradigmjp.com/${locale}/works`,

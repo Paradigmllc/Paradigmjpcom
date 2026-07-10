@@ -10,9 +10,12 @@ import {
   LOCALE_FLAG,
   type Locale,
 } from "@/lib/locale-map"
+import { MARKETING_LOCALES } from "@/i18n/locales"
+import { isPublicMarketingPath } from "@/lib/marketing-routing"
 
 /**
- * Locale Switcher — 12 言語 dropdown（P17 2026-04-27 拡張）
+ * Locale Switcher — public marketing exposes maintained ja/en; personalised
+ * report/demo routes retain the full locale set.
  *
  * next-intl v4 `createNavigation` 由来の usePathname / useRouter を使い、
  * 現在パスを locale だけ付け替えて遷移する（query-string も保持）。
@@ -50,6 +53,9 @@ export default function LocaleSwitcher() {
 
   const currentFlag = LOCALE_FLAG[locale]
   const currentName = LOCALE_DISPLAY_NAME[locale]
+  const visibleLocales = isPublicMarketingPath(pathname)
+    ? MARKETING_LOCALES
+    : LOCALES
 
   return (
     <div ref={ref} className="relative inline-block">
@@ -74,7 +80,7 @@ export default function LocaleSwitcher() {
           aria-label="Languages"
           className="absolute right-0 mt-1.5 min-w-[180px] max-h-[60vh] overflow-y-auto border border-paradigm-line bg-paradigm-paper z-50 py-1"
         >
-          {LOCALES.map((l) => {
+          {visibleLocales.map((l) => {
             const active = l === locale
             return (
               <button

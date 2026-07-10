@@ -1,12 +1,27 @@
 import { describe, expect, it } from "vitest"
-import { buildInitialContentTemplates, CONTENT_ASSET_LABELS, INDUSTRY_LABELS, matchContentTemplate } from "./content-templates"
+import {
+  buildInitialContentTemplates,
+  CONTENT_ASSET_LABELS,
+  INDUSTRY_LABELS,
+  matchContentTemplate,
+  REPORT_LOCALES,
+} from "./content-templates"
 
 const mojibakePattern = /繝|蜍|譛|縺|邯|荳|逶|螟|諡|蛻|蟇|髢|遯|鬚|蝟|繧|譁ｭ|險/
 
 describe("sales content templates", () => {
   it("builds a locale-scoped matrix for all supported sales locales", () => {
     const rows = buildInitialContentTemplates()
-    expect(rows.length).toBe(576)
+    expect(rows).toHaveLength(4704)
+    expect(new Set(rows.map((row) => [
+      row.report_locale,
+      row.industry,
+      row.asset_type,
+      row.appeal_angle,
+    ].join(":"))).size).toBe(rows.length)
+    for (const locale of REPORT_LOCALES) {
+      expect(rows.some((row) => row.report_locale === locale)).toBe(true)
+    }
     expect(rows.some((row) => row.report_locale === "ja" && row.asset_type === "diagnostic_report")).toBe(true)
     expect(rows.some((row) => row.report_locale === "en" && row.asset_type === "sales_video")).toBe(true)
     expect(rows.some((row) => row.report_locale === "ko" && row.target_country === "KR")).toBe(true)

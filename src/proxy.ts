@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import {
+  getEnglishLegacyOfferRedirect,
+  getInternationalMarketingRedirect,
+  isNonIndexablePath,
+} from "@/lib/marketing-routing";
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const host = request.headers.get("host") || "";
   const pathname = request.nextUrl.pathname;
 
@@ -34,12 +39,26 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/en", request.url))
   }
 
+  const englishLegacyOfferRedirect = getEnglishLegacyOfferRedirect(request.nextUrl)
+  if (englishLegacyOfferRedirect) {
+    return NextResponse.redirect(englishLegacyOfferRedirect, 308)
+  }
+
+  const internationalMarketingRedirect = getInternationalMarketingRedirect(request.nextUrl)
+  if (internationalMarketingRedirect) {
+    return NextResponse.redirect(internationalMarketingRedirect, 308)
+  }
+
   // Sales OS dashboard → Twenty SSOT
   if (pathname.match(/^\/(?:ja|en)\/admin\/sales/) || pathname.match(/^\/(?:ja|en)\/sales$/)) {
     return NextResponse.redirect(new URL("https://twenty.paradigmjp.com"));
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  if (isNonIndexablePath(pathname) || request.nextUrl.searchParams.get("draft") === "true") {
+    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+  }
+  return response;
 }
 
 export const config = {

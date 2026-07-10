@@ -4,7 +4,7 @@ import { motion } from "framer-motion"
 import { ExternalLink } from "lucide-react"
 import type { DiagnosticAct } from "@/lib/sales/diagnostic"
 import type { ReportCopy, ReportLang } from "./report-copy"
-import { BLOG_LINKS, ICON_TO_ISSUE_KEY, SEVERITY_LABEL } from "./report-constants"
+import { SEVERITY_LABEL, type ReportBlogLink } from "./report-constants"
 import { cleanText, formatMetric } from "./report-utils"
 import { Pill } from "./report-utils"
 import CompetitorBenchmarkBar from "./ReportCompetitorBenchmark"
@@ -14,11 +14,13 @@ export default function ReportFindingCard({
   index,
   copy,
   lang,
+  blogLink,
 }: {
   act: DiagnosticAct
   index: number
   copy: ReportCopy
   lang: ReportLang
+  blogLink?: ReportBlogLink
 }) {
   const severity =
     SEVERITY_LABEL[act.severity][lang === "ja" ? "ja" : "en"]
@@ -29,9 +31,6 @@ export default function ReportFindingCard({
   const body = cleanText(act.body, copy.heroLead)
   const metricLabel = cleanText(act.metric_label, copy.evidence)
   const metricBench = cleanText(act.metric_bench, copy.qualityBar)
-
-  const issueKey = ICON_TO_ISSUE_KEY[act.icon] || act.icon
-  const blogLink = BLOG_LINKS[issueKey]?.[lang === "ja" ? "ja" : "en"]
 
   return (
     <motion.article

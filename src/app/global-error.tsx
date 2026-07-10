@@ -28,7 +28,7 @@ export default function GlobalError({
   }, [error])
 
   return (
-    <html>
+    <html lang="en">
       <body
         style={{
           minHeight: "100vh",
@@ -52,6 +52,7 @@ export default function GlobalError({
             A critical error occurred. Please refresh the page or contact us at info@paradigmjp.com.
           </p>
           <button
+            type="button"
             onClick={() => reset()}
             style={{
               background: "#1c1c2e",

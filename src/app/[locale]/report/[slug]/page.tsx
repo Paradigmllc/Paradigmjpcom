@@ -11,6 +11,7 @@ import { REPORT_COPY, normalizeReportLang, type ReportCopy } from "@/components/
 import { fetchDiagnosticReport } from "@/lib/sales/diagnostic"
 import { ensureSafeDiagnosticReport } from "@/lib/sales/diagnostic/safe-report"
 import { localeToRegion } from "@/lib/sales/types"
+import { getApprovedReportBlogLinks } from "@/components/diagnostic/report-blog-links"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 60
@@ -56,11 +57,19 @@ export default async function ReportPage({ params }: Props) {
     console.error("[report-page] report fetch failed:", error)
   }
   const safeData = ensureSafeDiagnosticReport(data, slug, locale)
-  const isAdmin = await isCurrentRequestAdmin()
+  const [isAdmin, approvedBlogLinks] = await Promise.all([
+    isCurrentRequestAdmin(),
+    getApprovedReportBlogLinks(locale),
+  ])
 
   return (
     <>
-      <DiagnosticReport data={safeData} trackingSlug={slug} locale={locale} />
+      <DiagnosticReport
+        data={safeData}
+        trackingSlug={slug}
+        locale={locale}
+        approvedBlogLinks={approvedBlogLinks}
+      />
       {isAdmin && (
         <ArtifactInlineEditor
           kind="report"

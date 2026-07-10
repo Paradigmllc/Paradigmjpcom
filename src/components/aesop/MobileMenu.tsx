@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 /**
  * MobileMenu — left-side drawer for primary nav on small screens.
@@ -23,19 +23,27 @@
  * AE-PHP-2: all visible strings via useTranslations.
  */
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { usePathname } from "next/navigation"
 import { createPortal } from "react-dom"
 import { Link } from "@/i18n/routing"
 import { useTranslations } from "next-intl"
 import { motion, AnimatePresence } from "framer-motion"
 
-export type MobileNavItem = { href: string; label: string }
+export type MobileNavItem = { href: string; label: string; openInNewTab?: boolean }
 
 export default function MobileMenu({ items }: { items: MobileNavItem[] }) {
   const t = useTranslations("nav")
   const tCta = useTranslations("cta")
   const [open, setOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const closeRef = useRef<HTMLButtonElement>(null)
+  const pathname = usePathname()
+  const ctaHref = pathname === "/en" || pathname.startsWith("/en/")
+    ? "/contact?intent=japan-entry"
+    : "/contact"
+  const isJapanEntryCta = ctaHref.includes("intent=japan-entry")
 
   // Portal target only resolves client-side; server-render returns hamburger only
   useEffect(() => setMounted(true), [])
@@ -46,6 +54,35 @@ export default function MobileMenu({ items }: { items: MobileNavItem[] }) {
     document.body.style.overflow = "hidden"
     return () => {
       document.body.style.overflow = prev
+    }
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false)
+      if (event.key !== "Tab") return
+      const panel = document.getElementById("mobile-navigation-dialog")
+      const focusable = panel
+        ? Array.from(panel.querySelectorAll<HTMLElement>("a[href], button:not([disabled]), [tabindex]:not([tabindex='-1'])"))
+        : []
+      const first = focusable[0]
+      const last = focusable.at(-1)
+      if (!first || !last) return
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    const focusFrame = window.requestAnimationFrame(() => closeRef.current?.focus())
+    return () => {
+      window.cancelAnimationFrame(focusFrame)
+      document.removeEventListener("keydown", handleKeyDown)
+      triggerRef.current?.focus()
     }
   }, [open])
 
@@ -64,6 +101,7 @@ export default function MobileMenu({ items }: { items: MobileNavItem[] }) {
               aria-hidden
             />
             <motion.aside
+              id="mobile-navigation-dialog"
               key="panel"
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
@@ -73,12 +111,14 @@ export default function MobileMenu({ items }: { items: MobileNavItem[] }) {
               aria-label={t("primaryNav")}
               role="dialog"
               aria-modal="true"
+              aria-labelledby="mobile-menu-title"
             >
               {/* Vivid mesh accent on header strip */}
               <div className="relative flex items-center justify-between px-6 py-5 border-b border-paradigm-line overflow-hidden">
                 <div className="paradigm-mesh opacity-40" />
-                <p className="relative paradigm-eyebrow text-paradigm-accent">{t("menu")}</p>
+                <p id="mobile-menu-title" className="relative paradigm-eyebrow text-paradigm-accent">{t("menu")}</p>
                 <button
+                  ref={closeRef}
                   type="button"
                   onClick={() => setOpen(false)}
                   aria-label={t("closeMenu")}
@@ -97,6 +137,7 @@ export default function MobileMenu({ items }: { items: MobileNavItem[] }) {
                     <li key={item.href}>
                       <Link
                         href={item.href}
+                        {...(item.openInNewTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                         onClick={() => setOpen(false)}
                         className="group flex items-center justify-between py-5 text-[22px] leading-tight font-light text-paradigm-ink hover:text-paradigm-accent transition-colors"
                       >
@@ -117,7 +158,11 @@ export default function MobileMenu({ items }: { items: MobileNavItem[] }) {
 
               <div className="border-t border-paradigm-line px-6 py-5 space-y-3">
                 <Link
-                  href="/contact"
+                  href={ctaHref}
+                  {...(isJapanEntryCta ? {
+                    "data-umami-event": "japan-entry-apply",
+                    "data-umami-event-source": "mobile-menu",
+                  } : {})}
                   onClick={() => setOpen(false)}
                   className="group relative block w-full text-center text-[12px] tracking-[0.18em] uppercase font-semibold bg-paradigm-ink text-paradigm-paper py-3.5 rounded-xl paradigm-glow-md overflow-hidden hover:paradigm-glow-lg transition-all"
                 >
@@ -137,9 +182,11 @@ export default function MobileMenu({ items }: { items: MobileNavItem[] }) {
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         aria-label={t("openMenu")}
         aria-expanded={open}
+        aria-controls="mobile-navigation-dialog"
         onClick={() => setOpen(true)}
         className="md:hidden p-1.5 text-paradigm-ink-soft hover:text-paradigm-ink transition-colors"
       >

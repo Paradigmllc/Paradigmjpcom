@@ -20,28 +20,158 @@ const altNamesOf = (locale: string) =>
   (LOCALE_ORG_ALTERNATE_NAMES as Record<string, string[]>)[locale] ??
   LOCALE_ORG_ALTERNATE_NAMES.en
 
+export const JAPAN_ENTRY_TITLE = "Japan Entry Package for Fast-Decision SMBs"
+export const JAPAN_ENTRY_DESCRIPTION =
+  "$12,000 fixed Japan entry setup with six months of managed operation included. Launch a market-ready Japanese revenue path with one accountable Tokyo-based team."
+export const JAPAN_ENTRY_URL = "https://paradigmjp.com/en"
+export const JAPAN_ENTRY_CONTACT_CANONICAL_URL =
+  "https://paradigmjp.com/en/contact"
+export const JAPAN_ENTRY_CONTACT_URL =
+  "https://paradigmjp.com/en/contact?intent=japan-entry"
+
+export const JAPAN_ENTRY_FAQS = [
+  {
+    q: "Is the setup fee always $12,000?",
+    a: "Yes. The setup fee is fixed at $12,000 and paid before kickoff. If the launch cannot fit the published scope, Paradigm declines the application rather than increasing the price after the fact.",
+  },
+  {
+    q: "What does $0/month for six months mean?",
+    a: "The standard managed operating service is included for the first six months at no additional monthly charge. Third-party usage, advertising, hosting, payment processing, legal, tax, and other external costs remain the client's responsibility.",
+  },
+  {
+    q: "What happens after six months?",
+    a: "Managed operation continues at $995 per month and may be cancelled for future billing under the signed service terms. Paradigm-operated monitoring, optimization, and support stop when the service ends.",
+  },
+  {
+    q: "Do I need a Japanese entity or bank account?",
+    a: "Not for every launch. Eligibility depends on the product, regulated category, payment methods, and provider account location. Paradigm confirms the viable route before accepting the fixed-scope engagement.",
+  },
+  {
+    q: "Do you guarantee Japanese sales?",
+    a: "No. Paradigm delivers the agreed market-ready environment and launch work, but does not guarantee a specific revenue outcome.",
+  },
+  {
+    q: "What must our team provide?",
+    a: "One final decision-maker, one implementation owner, accurate product and policy information, brand assets, and required account access within 48 hours of kickoff.",
+  },
+] as const
+
+function getJapanEntryServiceJsonLd() {
+  return {
+    "@type": "Service",
+    "@id": `${JAPAN_ENTRY_URL}#japan-entry-service`,
+    name: JAPAN_ENTRY_TITLE,
+    description: JAPAN_ENTRY_DESCRIPTION,
+    serviceType: "Japan market entry implementation and managed operation",
+    url: JAPAN_ENTRY_URL,
+    provider: {
+      "@type": "Organization",
+      "@id": "https://paradigmjp.com#organization",
+      name: "Paradigm LLC",
+      url: "https://paradigmjp.com",
+    },
+    areaServed: { "@type": "Country", name: "Japan" },
+    audience: {
+      "@type": "BusinessAudience",
+      audienceType: "Fast-decision global small and medium-sized businesses",
+    },
+    offers: {
+      "@type": "Offer",
+      "@id": `${JAPAN_ENTRY_URL}#fixed-offer`,
+      url: JAPAN_ENTRY_CONTACT_URL,
+      price: "12000",
+      priceCurrency: "USD",
+      description:
+        "$12,000 one-time setup. Managed operation is $0/month for the first six months, then $995/month with future billing cancellable under the signed service terms.",
+      eligibleRegion: ["US", "CA", "GB", "EU", "AU", "NZ"],
+      priceSpecification: [
+        {
+          "@type": "UnitPriceSpecification",
+          name: "Fixed setup",
+          price: "12000",
+          priceCurrency: "USD",
+        },
+        {
+          "@type": "UnitPriceSpecification",
+          name: "Managed operation — months 1 through 6",
+          price: "0",
+          priceCurrency: "USD",
+          unitText: "MONTH",
+        },
+        {
+          "@type": "UnitPriceSpecification",
+          name: "Managed operation — from month 7",
+          price: "995",
+          priceCurrency: "USD",
+          unitText: "MONTH",
+        },
+      ],
+    },
+  }
+}
+
+export function getJapanEntryHomeJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      getJapanEntryServiceJsonLd(),
+      {
+        "@type": "FAQPage",
+        "@id": `${JAPAN_ENTRY_URL}#faq`,
+        url: JAPAN_ENTRY_URL,
+        inLanguage: "en",
+        mainEntity: JAPAN_ENTRY_FAQS.map((faq) => ({
+          "@type": "Question",
+          name: faq.q,
+          acceptedAnswer: { "@type": "Answer", text: faq.a },
+        })),
+      },
+    ],
+  }
+}
+
+export function getJapanEntryApplicationJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    "@id": `${JAPAN_ENTRY_CONTACT_CANONICAL_URL}#webpage`,
+    name: `Apply for the ${JAPAN_ENTRY_TITLE}`,
+    description: JAPAN_ENTRY_DESCRIPTION,
+    url: JAPAN_ENTRY_CONTACT_CANONICAL_URL,
+    inLanguage: "en",
+    about: getJapanEntryServiceJsonLd(),
+    potentialAction: {
+      "@type": "CommunicateAction",
+      name: "Submit a Japan Entry application",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: JAPAN_ENTRY_CONTACT_URL,
+      },
+    },
+  }
+}
+
 export function getOrganizationJsonLd(locale: string = "ja") {
   const variant = localeContentVariant(locale)
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": "https://paradigmjp.com#organization",
     name: orgNameOf(locale),
     alternateName: altNamesOf(locale),
     url: "https://paradigmjp.com",
-    logo: "https://paradigmjp.com/opengraph-image",
+    logo: "https://paradigmjp.com/favicon.svg",
     description:
       variant === "ja"
         ? "Web制作・MEO対策・SEO/GEO対策・AI導入支援。デジタル技術で中小企業の成長を支援するParadigm合同会社。"
-        : "Web development, MEO, SEO/GEO, and AI integration. Paradigm LLC supports SMB growth through digital technology.",
-    email: "contact@paradigmjp.com",
+        : JAPAN_ENTRY_DESCRIPTION,
     sameAs: [],
-    foundingDate: "2025",
     areaServed: { "@type": "Country", name: "Japan" },
     serviceArea: { "@type": "Country", name: "Japan" },
     knowsAbout:
       variant === "ja"
         ? ["Web制作", "MEO対策", "SEO", "GEO", "AI導入支援", "デジタルマーケティング"]
-        : ["Web Development", "Local SEO (MEO)", "SEO", "GEO", "AI Integration", "Digital Marketing"],
+        : ["Japan Market Entry", "Localization", "Revenue Operations", "Buyer Trust", "Bilingual Support"],
   }
 }
 
@@ -56,10 +186,13 @@ export function getServicesJsonLd(locale: string = "ja") {
         { name: "AI導入支援", desc: "ChatGPT/Gemini等を活用した業務自動化・チャットボット構築", url: "/services/ai", price: "198000", priceDesc: "AIスタートプラン〜" },
       ]
     : [
-        { name: "Web Development", desc: "High-performance, SEO-optimised Next.js / WordPress sites", url: "/services/web", price: "298000", priceDesc: "From Light plan" },
-        { name: "MEO (Local SEO)", desc: "Google Business Profile optimisation for top local rankings", url: "/services/meo", price: "29800", priceDesc: "From Entry plan / month" },
-        { name: "SEO / GEO", desc: "Conventional SEO plus AI-search (GEO) for traffic growth", url: "/services/seo", price: "49800", priceDesc: "From SEO Basic / month" },
-        { name: "AI Integration", desc: "ChatGPT / Gemini-powered automation and chatbot deployment", url: "/services/ai", price: "198000", priceDesc: "From AI Start plan" },
+        {
+          name: JAPAN_ENTRY_TITLE,
+          desc: JAPAN_ENTRY_DESCRIPTION,
+          url: "/en",
+          price: "12000",
+          priceDesc: "Fixed one-time setup with six months of managed operation included",
+        },
       ]
   return {
     "@context": "https://schema.org",
@@ -70,7 +203,12 @@ export function getServicesJsonLd(locale: string = "ja") {
       description: s.desc,
       provider: { "@type": "Organization", name: orgName },
       url: `https://paradigmjp.com${s.url}`,
-      offers: { "@type": "Offer", priceCurrency: "JPY", price: s.price, description: s.priceDesc },
+      offers: {
+        "@type": "Offer",
+        priceCurrency: variant === "ja" ? "JPY" : "USD",
+        price: s.price,
+        description: s.priceDesc,
+      },
     })),
   }
 }

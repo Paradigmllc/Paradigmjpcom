@@ -6,6 +6,10 @@ import { SlideInSection } from "./ReportAnimations"
 import { Pill } from "./report-utils"
 import ReportFindingCard from "./ReportFindingCard"
 import ReportRoiCalculator from "./ReportRoiCalculator"
+import {
+  ICON_TO_ISSUE_KEY,
+  type ReportBlogLinks,
+} from "./report-constants"
 
 export default function ReportFindingsSection({
   data,
@@ -13,12 +17,14 @@ export default function ReportFindingsSection({
   lang,
   businessImpact,
   loss,
+  approvedBlogLinks = {},
 }: {
   data: DiagnosticReportData
   copy: ReportCopy
   lang: ReportLang
   businessImpact: string
-  loss: number
+  loss: number | null
+  approvedBlogLinks?: ReportBlogLinks
 }) {
   return (
     <section className="px-5 py-14">
@@ -40,17 +46,20 @@ export default function ReportFindingsSection({
               index={index}
               copy={copy}
               lang={lang}
+              blogLink={approvedBlogLinks[ICON_TO_ISSUE_KEY[act.icon] || act.icon]}
             />
           ))}
         </div>
-        <div className="mt-8">
-          <ReportRoiCalculator
-            variant={data.template_variant}
-            monthlyLoss={loss}
-            copy={copy}
-            lang={lang}
-          />
-        </div>
+        {loss !== null && (
+          <div className="mt-8">
+            <ReportRoiCalculator
+              variant={data.template_variant}
+              monthlyLoss={loss}
+              copy={copy}
+              lang={lang}
+            />
+          </div>
+        )}
       </div>
     </section>
   )

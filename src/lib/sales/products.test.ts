@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { inferCompanyProductRecommendations } from "./products"
+import { inferCompanyProductRecommendations, productFromFallback } from "./products"
 
 describe("inferCompanyProductRecommendations", () => {
   it("prioritizes Web production for domestic website diagnostics", () => {
@@ -37,5 +37,17 @@ describe("inferCompanyProductRecommendations", () => {
     })
 
     expect(products.map((product) => product.code)).toEqual(["global_video_subscription", "global_jaas"])
+  })
+
+  it("uses the fixed USD 12,000 Japan Entry setup price", () => {
+    const product = productFromFallback("global_jaas")
+
+    expect(product.default_currency).toBe("USD")
+    expect(product.default_amount_yen).toBe(12_000)
+    expect(product.meta).toMatchObject({
+      setup_amount_usd: 12_000,
+      monthly_free_months: 6,
+      monthly_amount_usd_after_free_period: 995,
+    })
   })
 })

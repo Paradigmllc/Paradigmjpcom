@@ -9,13 +9,12 @@
  *   このヘルパーを使えば、各 page の generateMetadata で
  *   `alternates: pageAlternates(locale, "/about")` 1 行だけで:
  *     - canonical = paradigmjp.com/{locale}/about
- *     - languages = 全 12 locale の同じ path への hreflang
- *     - x-default = defaultLocale (ja) の同じ path
+ *     - languages = actively maintained ja/en URLs only
+ *     - x-default = international English funnel
  *   が正しく出力される。
  *
- * Why centralized helper:
- *   AE-2 (single-route-owner): 12-locale URL 構築ロジックは 1 箇所に住む。
- *   将来 13 locale 化や URL 構造変更 (例: subdomain → path) もこのファイル 1 箇所で対応。
+ * Personalised report/demo locales stay routable but are deliberately omitted
+ * from public marketing hreflang until their public translations are maintained.
  *
  * 使用例:
  *   ```ts
@@ -29,8 +28,16 @@
  *   ```
  */
 
-import { routing } from "@/i18n/routing"
+import {
+  MARKETING_DEFAULT_LOCALE,
+  MARKETING_LOCALES,
+} from "@/i18n/locales"
 import { LOCALE_HREFLANG } from "@/lib/locale-map"
+import {
+  isJapaneseOnlyLegacyOfferPath,
+  isMarketingLocale,
+  type MarketingLocale,
+} from "@/lib/marketing-routing"
 
 const BASE = "https://paradigmjp.com"
 
@@ -39,17 +46,34 @@ const BASE = "https://paradigmjp.com"
  *
  * @param locale  Current locale (URL の `[locale]` segment)
  * @param path    Locale 後のパス (例: "/about" "/services/web" ""=home)
+ * @param availableLocales Optional per-resource locale set (for example a blog post)
  * @returns       { canonical, languages } shape for Next.js Metadata.alternates
  */
-export function pageAlternates(locale: string, path: string = "") {
+export function pageAlternates(
+  locale: string,
+  path: string = "",
+  availableLocales?: readonly MarketingLocale[],
+) {
+  const japaneseOnly = isJapaneseOnlyLegacyOfferPath(path)
+  const locales = availableLocales?.length
+    ? availableLocales
+    : japaneseOnly
+      ? (["ja"] as const)
+      : MARKETING_LOCALES
+  const defaultLocale = locales.includes(MARKETING_DEFAULT_LOCALE)
+    ? MARKETING_DEFAULT_LOCALE
+    : locales[0]
   const languages: Record<string, string> = {
-    "x-default": `${BASE}/${routing.defaultLocale}${path}`,
+    "x-default": `${BASE}/${defaultLocale}${path}`,
   }
-  for (const l of routing.locales) {
+  for (const l of locales) {
     languages[LOCALE_HREFLANG[l]] = `${BASE}/${l}${path}`
   }
+  const canonicalLocale = isMarketingLocale(locale) && locales.includes(locale)
+    ? locale
+    : defaultLocale
   return {
-    canonical: `${BASE}/${locale}${path}`,
+    canonical: `${BASE}/${canonicalLocale}${path}`,
     languages,
   }
 }

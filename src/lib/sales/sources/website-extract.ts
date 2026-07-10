@@ -10,7 +10,12 @@
  * Uses only OSS/free tools (no Google Maps/Tavily/SerpAPI).
  * Images are NOT free stock — they come from the company's own website.
  */
-import { readWithJina, type JinaReaderResult } from "./jina-reader"
+import { readWithJina } from "./jina-reader"
+import {
+  extractWithHTTP,
+  targetUrl,
+  type BrowserExtractPayload,
+} from "./website-extract-http"
 
 export interface WebsiteImage {
   url: string
@@ -70,11 +75,6 @@ export interface WebsiteExtractResult {
 
 // ── Helpers ──
 
-function targetUrl(domain: string): string {
-  if (/^https?:\/\//i.test(domain)) return domain
-  return `https://${domain}`
-}
-
 function ensureProtocol(url: string, base: string): string {
   if (!url) return ""
   if (url.startsWith("data:") || url.startsWith("blob:")) return url
@@ -101,30 +101,7 @@ function imageIsLogo(url: string, alt: string | null, width: number, height: num
   return false
 }
 
-function imageFileType(url: string): { ext: string; mime: string } | null {
-  const low = url.split("?")[0].toLowerCase()
-  if (low.endsWith(".png")) return { ext: "png", mime: "image/png" }
-  if (low.endsWith(".jpg") || low.endsWith(".jpeg")) return { ext: "jpg", mime: "image/jpeg" }
-  if (low.endsWith(".webp")) return { ext: "webp", mime: "image/webp" }
-  if (low.endsWith(".svg")) return { ext: "svg", mime: "image/svg+xml" }
-  if (low.endsWith(".gif")) return { ext: "gif", mime: "image/gif" }
-  return null
-}
-
 // ── Browser extraction ──
-
-interface BrowserImages {
-  hero: WebsiteImage | null
-  logo: WebsiteImage | null
-  gallery: WebsiteImage[]
-}
-
-interface BrowserExtractPayload {
-  images: BrowserImages
-  colors: WebsiteColors
-  structured: WebsiteStructured | null
-  internalLinks: string[]
-}
 
 export async function extractWithBrowser(domain: string): Promise<BrowserExtractPayload | null> {
   try {
@@ -467,100 +444,5 @@ export async function extractWebsiteAssets(
       content: subpageContent,
       structured: merged.structured || null,
     },
-  }
-}
-
-// ── HTTP fallback extraction (no browser needed) ──
-
-async function extractWithHTTP(domain: string): Promise<BrowserExtractPayload | null> {
-  try {
-    const baseUrl = targetUrl(domain)
-    const res = await fetch(baseUrl, {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; ParadigmBot/1.0)" },
-      signal: AbortSignal.timeout(15000),
-    })
-    if (!res.ok) return null
-
-    const html = await res.text()
-
-    // Extract og:image
-    const ogImage = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/)?.[1]
-      || html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:image"/)?.[1]
-      || null
-
-    // Extract all img src
-    const imgMatches = html.matchAll(/<img[^>]+src="([^"]+)"[^>]*>/g)
-    const imgUrls: string[] = []
-    for (const m of imgMatches) {
-      const url = m[1]
-      if (url && !url.startsWith("data:") && !url.includes("1x1") && !url.includes("pixel")) {
-        try { imgUrls.push(new URL(url, baseUrl).href) } catch (e) { console.error("[website-extract] image URL parsing failed:", e instanceof Error ? e.message : String(e)) }
-      }
-    }
-
-    // Extract colors from CSS
-    const bgMatch = html.match(/background(?:-color)?:\s*([#\w]+)/i)
-    const primaryMatch = html.match(/--primary(?:-color)?:\s*([#\w]+)/)
-    const colors = {
-      primary: primaryMatch?.[1] || null,
-      background: bgMatch?.[1] || "#ffffff",
-      text: null, accent: null, headerBg: null, ctaBg: null, ctaText: null,
-    }
-
-    // Extract internal links
-    const linkMatches = html.matchAll(/<a[^>]+href="([^"]+)"[^>]*>/g)
-    const internalLinks: string[] = []
-    const host = new URL(baseUrl).hostname
-    for (const m of linkMatches) {
-      try {
-        const url = new URL(m[1], baseUrl)
-        if (url.hostname === host && !url.hash) internalLinks.push(url.href)
-      } catch (e) { console.error("[website-extract] internal link URL parsing failed:", e instanceof Error ? e.message : String(e)) }
-    }
-    const uniqueLinks = [...new Set(internalLinks)].slice(0, 30)
-
-    // Extract structured data
-    const ldJson = html.match(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/)?.[1]
-    let organization = null
-    if (ldJson) {
-      try { const parsed = JSON.parse(ldJson); if (parsed["@type"] === "Organization" || parsed["@type"] === "LocalBusiness") organization = parsed } catch (e) { console.error("[website-extract] structured data JSON.parse failed:", e instanceof Error ? e.message : String(e)) }
-    }
-
-    const ogTitle = html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/)?.[1] || null
-    const ogDescription = html.match(/<meta[^>]+property="og:description"[^>]+content="([^"]+)"/)?.[1] || null
-
-    // Download hero image if available
-    let heroImage: WebsiteImage | null = null
-    if (ogImage) {
-      try {
-        const imgRes = await fetch(new URL(ogImage, baseUrl).href, { signal: AbortSignal.timeout(10000) })
-        if (imgRes.ok) {
-          const buffer = Buffer.from(await imgRes.arrayBuffer())
-          heroImage = { url: new URL(ogImage, baseUrl).href, width: 0, height: 0, alt: "hero", buffer, contentType: imgRes.headers.get("content-type") }
-        }
-      } catch (e) { console.error("[website-extract] hero image fetch failed:", e instanceof Error ? e.message : String(e)) }
-    }
-
-    // Download first few images
-    const galleryImages: WebsiteImage[] = []
-    for (const url of imgUrls.slice(0, 5)) {
-      try {
-        const imgRes = await fetch(url, { signal: AbortSignal.timeout(8000) })
-        if (imgRes.ok && (imgRes.headers.get("content-type") || "").startsWith("image/")) {
-          const buffer = Buffer.from(await imgRes.arrayBuffer())
-          galleryImages.push({ url, width: 0, height: 0, alt: "", buffer, contentType: imgRes.headers.get("content-type") })
-        }
-      } catch (e) { console.error("[website-extract] gallery image fetch failed:", e instanceof Error ? e.message : String(e)) }
-    }
-
-    return {
-      images: { hero: heroImage, logo: null, gallery: galleryImages },
-      colors,
-      structured: { organization, localBusiness: organization?.["@type"] === "LocalBusiness" ? organization : null, ogTitle, ogDescription, ogImage, ogSiteName: null, twitterImage: null },
-      internalLinks: uniqueLinks,
-    }
-  } catch (e) {
-    console.error("[website-extract] HTTP extraction failed:", e instanceof Error ? e.message : String(e))
-    return null
   }
 }

@@ -1,13 +1,54 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Headphones, PenTool, Code2, TrendingUp, MessageCircle, PenLine, Code, CheckCircle, RefreshCw, Globe, Bot, Search, Video, MapPin, Shield, CreditCard, LucideIcon } from "lucide-react"
+import { BadgeDollarSign, Bot, CheckCircle, ClipboardCheck, Code, Code2, CreditCard, Globe, Headphones, Languages, LucideIcon, MapPin, MessageCircle, PenLine, PenTool, RefreshCw, Rocket, Search, Shield, ShieldCheck, Timer, TrendingUp, UserCheck, UserCog, Video, Workflow } from "lucide-react"
 import { Sparkles } from "@/components/magicui/sparkles"
 import { Meteors } from "@/components/magicui/meteors"
 import { BorderBeam } from "@/components/magicui/border-beam"
 import { NumberTicker } from "@/components/magicui/number-ticker"
 
 const EASE = [0.22, 1, 0.36, 1] as const
+
+const CARD_ICON_MAP: Record<string, LucideIcon> = {
+  Headphones,
+  PenTool,
+  Code2,
+  TrendingUp,
+  MessageCircle,
+  PenLine,
+  Code,
+  CheckCircle,
+  RefreshCw,
+  Globe,
+  Bot,
+  Search,
+  Video,
+  MapPin,
+  Shield,
+  ShieldCheck,
+  CreditCard,
+  ClipboardCheck,
+  Languages,
+  Workflow,
+  Rocket,
+  UserCheck,
+  BadgeDollarSign,
+  UserCog,
+  Timer,
+}
+
+export function getCardIcon(icon: string | undefined): LucideIcon | undefined {
+  if (!icon) return undefined
+  return CARD_ICON_MAP[icon]
+}
+
+export function formatPricingPeriod(period: string | undefined): string {
+  const value = period?.trim()
+  if (!value) return ""
+  if (value.startsWith("/")) return value
+  if (value === "one-time" || value === "〜") return ` ${value}`
+  return `/${value}`
+}
 
 interface AnyBlock {
   blockType: string
@@ -29,20 +70,23 @@ export function CardGridRender({ block: b }: { block: AnyBlock }) {
       <div className="max-w-6xl mx-auto px-6 md:px-12 relative z-10">
         {!!b.title && <h2 className="font-display text-[28px] md:text-[40px] leading-[1.15] tracking-[-0.01em] text-paradigm-ink text-center mb-4">{String(b.title)}</h2>}
         <div className={`grid grid-cols-1 ${colsClass} gap-4 md:gap-5`}>
-          {cards.map((c, i) => (
+          {cards.map((c, i) => {
+            const Icon = getCardIcon(c.icon)
+            return (
             <motion.div key={i} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.5, delay: i * 0.08, ease: EASE }}
               className={`relative paradigm-glass rounded-2xl p-6 md:p-8 paradigm-glow-sm hover:paradigm-glow-md hover:-translate-y-1.5 transition-all duration-500 overflow-hidden group ${c.highlighted ? "ring-1 ring-paradigm-accent/30" : ""}`}>
               {c.highlighted && <BorderBeam size={120} duration={6} colorFrom="rgb(236 72 153)" colorTo="rgb(245 158 11)" />}
               <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-paradigm-accent/3 via-transparent to-paradigm-glow/3 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <div className="relative z-10">
-                {c.highlighted && <p className="paradigm-eyebrow text-paradigm-accent mb-3">Featured</p>}
-                {c.icon && <div className="text-[28px] mb-5 opacity-70">{c.icon}</div>}
+                {c.highlighted && <p className="paradigm-eyebrow text-paradigm-accent mb-3">Included</p>}
+                {Icon && <div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-paradigm-paper-deep text-paradigm-accent" aria-hidden><Icon size={22} strokeWidth={1.5} /></div>}
                 <h3 className="font-display text-[20px] md:text-[24px] leading-[1.2] text-paradigm-ink mb-3 tracking-[-0.02em]">{c.title ?? ""}</h3>
                 {c.description && <p className="text-[13px] md:text-[14px] text-paradigm-ink-soft leading-[1.8]">{c.description}</p>}
               </div>
             </motion.div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </section>
@@ -70,8 +114,8 @@ export function StatsRender({ block: b }: { block: AnyBlock }) {
               <div className={`font-display text-[40px] md:text-[56px] leading-[1] mb-2 ${isDark ? "bg-gradient-to-br from-paradigm-glow via-paradigm-tech to-paradigm-accent bg-clip-text text-transparent" : "text-paradigm-ink"}`}>
                 {isNumeric(s.value) ? <NumberTicker value={parseFloat(s.value!.replace(/[,%]/g, ""))} /> : (s.value ?? "")}
               </div>
-              <div className={`paradigm-eyebrow mb-1 ${isDark ? "text-paradigm-glow" : "text-paradigm-accent"}`}>{s.label ?? ""}</div>
-              {s.sublabel && <div className={`text-[12px] ${isDark ? "text-paradigm-paper/55" : "text-paradigm-ink-mute"}`}>{s.sublabel}</div>}
+              <div className={`paradigm-eyebrow mb-1 ${isDark ? "text-paradigm-ink-soft" : "text-paradigm-accent"}`}>{s.label ?? ""}</div>
+              {s.sublabel && <div className="text-[12px] text-paradigm-ink-mute">{s.sublabel}</div>}
             </motion.div>
           ))}
         </div>
@@ -127,7 +171,7 @@ export function ProcessRender({ block: b }: { block: AnyBlock }) {
                 viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.6, delay: idx * 0.12, ease: EASE }}
                 className="relative paradigm-glass rounded-2xl p-6 md:p-7 paradigm-glow-sm hover:paradigm-glow-md hover:-translate-y-1.5 transition-all duration-500">
                 <span className="absolute top-4 right-5 font-display text-[28px] md:text-[40px] leading-none text-paradigm-ink/8">0{idx + 1}</span>
-                <div className={`inline-flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br ${grad} text-white mb-4 paradigm-glow-sm`}><Icon size={20} strokeWidth={1.5} /></div>
+                <div className={`inline-flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br ${grad} text-white mb-4 paradigm-glow-sm`} aria-hidden><Icon size={20} strokeWidth={1.5} /></div>
                 <h3 className="font-display text-[19px] md:text-[22px] leading-[1.2] text-paradigm-ink mb-2 tracking-[-0.02em]">{s.title ?? ""}</h3>
                 <p className="text-[13px] md:text-[14px] text-paradigm-ink-soft leading-[1.7]">{s.description ?? ""}</p>
               </motion.div>
@@ -157,12 +201,12 @@ export function PricingRender({ block: b }: { block: AnyBlock }) {
             <motion.div key={i} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-40px" }}
               transition={{ duration: 0.5, delay: i * 0.1, ease: EASE }} whileHover={{ y: -4 }}
               className={`rounded-2xl p-8 paradigm-glass paradigm-glow-sm hover:paradigm-glow-md transition-all relative overflow-hidden ${t.highlighted ? "ring-2 ring-paradigm-accent" : "border border-paradigm-line"}`}>
-              {t.highlighted && <><BorderBeam size={120} duration={6} colorFrom="rgb(236 72 153)" colorTo="rgb(245 158 11)" /><span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-paradigm-accent text-paradigm-paper text-[11px] tracking-[0.14em] uppercase px-3 py-1 rounded-full">{tiers.length === 1 ? "Fixed offer" : "Popular"}</span></>}
+              {t.highlighted && <><BorderBeam size={120} duration={6} colorFrom="rgb(236 72 153)" colorTo="rgb(245 158 11)" /><span className="mb-4 inline-flex bg-paradigm-accent text-paradigm-paper text-[11px] tracking-[0.14em] uppercase px-3 py-1 rounded-full">{tiers.length === 1 ? "Fixed offer" : "Popular"}</span></>}
               <h3 className="font-display text-[22px] text-paradigm-ink mb-3">{t.name ?? ""}</h3>
-              <div className="mb-4"><span className="font-display text-[40px] text-paradigm-ink">{t.price ?? ""}</span>{t.period && <span className="text-[14px] text-paradigm-ink-mute ml-1">/{t.period}</span>}</div>
+              <div className="mb-4"><span className="font-display text-[40px] text-paradigm-ink">{t.price ?? ""}</span>{t.period && <span className="text-[14px] text-paradigm-ink-mute">{formatPricingPeriod(t.period)}</span>}</div>
               {t.description && <p className="text-[13px] text-paradigm-ink-soft leading-[1.75] mb-6">{t.description}</p>}
-              {t.features && <ul className="space-y-3 mb-8">{t.features.split("\n").filter(Boolean).map((f: string, j: number) => <li key={j} className="flex items-start gap-2 text-[13px] text-paradigm-ink-soft"><span className="text-paradigm-accent shrink-0 mt-0.5">✓</span>{f}</li>)}</ul>}
-              {t.ctaHref && <a href={t.ctaHref} className={`block text-center py-3 rounded-xl text-[12px] tracking-[0.14em] uppercase transition-all ${t.highlighted ? "bg-paradigm-ink text-paradigm-paper hover:bg-paradigm-accent paradigm-glow-sm" : "border border-paradigm-ink text-paradigm-ink hover:bg-paradigm-ink hover:text-paradigm-paper"}`}>{t.ctaLabel ?? "Get started"}</a>}
+              {t.features && <ul className="space-y-3 mb-8">{t.features.split("\n").filter(Boolean).map((f: string, j: number) => <li key={j} className="flex items-start gap-2 text-[13px] text-paradigm-ink-soft"><span aria-hidden className="text-paradigm-accent shrink-0 mt-0.5">✓</span>{f}</li>)}</ul>}
+              {t.ctaHref && <a href={t.ctaHref} {...(t.ctaHref.includes("intent=japan-entry") ? { "data-umami-event": "japan-entry-apply", "data-umami-event-source": "homepage-pricing" } : {})} className={`block text-center py-3 rounded-xl text-[12px] tracking-[0.14em] uppercase transition-all ${t.highlighted ? "bg-paradigm-ink text-paradigm-paper hover:bg-paradigm-accent paradigm-glow-sm" : "border border-paradigm-ink text-paradigm-ink hover:bg-paradigm-ink hover:text-paradigm-paper"}`}>{t.ctaLabel ?? "Get started"}</a>}
             </motion.div>
           ))}
         </div>
@@ -182,11 +226,11 @@ export function ComparisonRender({ block: b }: { block: AnyBlock }) {
         {!!b.subtitle && <p className="text-[15px] text-paradigm-ink-soft max-w-2xl mx-auto text-center mb-12 leading-[1.85]">{String(b.subtitle)}</p>}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
-            <thead><tr className="border-b-2 border-paradigm-ink"><th className="text-left py-4 px-4 text-[12px] tracking-[0.14em] uppercase text-paradigm-ink-soft font-medium" /><th className="text-left py-4 px-4 text-[12px] tracking-[0.14em] uppercase text-paradigm-ink font-display font-semibold">{String(b.leftLabel ?? "Paradigm")}</th><th className="text-left py-4 px-4 text-[12px] tracking-[0.14em] uppercase text-paradigm-ink-soft font-medium">{String(b.rightLabel ?? "Traditional")}</th></tr></thead>
+            <thead><tr className="border-b-2 border-paradigm-ink"><th scope="col" className="text-left py-4 px-4 text-[12px] tracking-[0.14em] uppercase text-paradigm-ink-soft font-medium"><span className="sr-only">Comparison item</span></th><th scope="col" className="text-left py-4 px-4 text-[12px] tracking-[0.14em] uppercase text-paradigm-ink font-display font-semibold">{String(b.leftLabel ?? "Paradigm")}</th><th scope="col" className="text-left py-4 px-4 text-[12px] tracking-[0.14em] uppercase text-paradigm-ink-soft font-medium">{String(b.rightLabel ?? "Traditional")}</th></tr></thead>
             <tbody>
               {rows.map((r, i) => (
                 <motion.tr key={i} initial={{ opacity: 0, x: -10 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.3, delay: i * 0.05 }} className="border-b border-paradigm-line last:border-0 hover:bg-paradigm-paper-deep/50 transition-colors">
-                  <td className="py-4 px-4 text-[13px] md:text-[14px] text-paradigm-ink-soft font-medium">{r.item ?? ""}</td>
+                  <th scope="row" className="py-4 px-4 text-left text-[13px] md:text-[14px] text-paradigm-ink-soft font-medium">{r.item ?? ""}</th>
                   <td className="py-4 px-4 text-[13px] md:text-[14px] text-paradigm-ink font-display font-semibold">{r.leftValue ?? ""}</td>
                   <td className="py-4 px-4 text-[13px] md:text-[14px] text-paradigm-ink-soft">{r.rightValue ?? ""}</td>
                 </motion.tr>

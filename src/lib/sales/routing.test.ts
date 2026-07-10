@@ -10,11 +10,11 @@ import {
 } from "./routing"
 
 describe("sales routing", () => {
-  it("builds stable company slugs with a domain suffix", () => {
+  it("builds stable, human-readable company slugs without a domain suffix", () => {
     const a = buildCompanySlug("Sample Trading", "sample.co.jp")
-    const b = buildCompanySlug("Sample Trading", "sample.co.jp")
+    const b = buildCompanySlug("Sample Trading", "another.example")
     expect(a).toBe(b)
-    expect(a).toMatch(/^sample-trading-[a-z0-9]+$/)
+    expect(a).toBe("sample-trading")
   })
 
   it("normalizes report locale and country defaults", () => {

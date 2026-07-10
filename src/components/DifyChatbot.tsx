@@ -55,6 +55,13 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
   const [loading, setLoading] = useState(false)
   const [conversationId, setConversationId] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const toggleButtonRef = useRef<HTMLButtonElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+
+  const closeChat = useCallback(() => {
+    setOpen(false)
+    window.requestAnimationFrame(() => toggleButtonRef.current?.focus())
+  }, [])
 
   useEffect(() => {
     setMessages([{ role: "bot", text: t("greeting") }])
@@ -65,12 +72,28 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
     if (open) bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, open])
 
-  // Hide chatbot on LP-only & admin pages. Homepage always shows it.
-  if (
-    /^\/[a-z]{2}\/(d|demo)\//.test(pathname) ||
+  useEffect(() => {
+    if (!open) return
+    const frame = window.requestAnimationFrame(() => closeButtonRef.current?.focus())
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeChat()
+    }
+    document.addEventListener("keydown", onKeyDown)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      document.removeEventListener("keydown", onKeyDown)
+    }
+  }, [closeChat, open])
+
+  // Hide chatbot on LP-only & admin pages. Keep the return below every hook:
+  // this component persists across client-side navigation, so returning before
+  // handleKey's useCallback would change the hook count between routes.
+  const shouldHide =
+    pathname.includes("/d/") ||
+    pathname.includes("/demo/") ||
+    pathname.startsWith("/en/contact") ||
     pathname.includes("/p/") ||
     pathname.includes("/report/")
-  ) return null
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return
@@ -83,9 +106,13 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text, conversationId, locale }),
       })
-      const data = await res.json()
-      setMessages((prev) => [...prev, { role: "bot", text: data.answer || t("errorReply") }])
-      if (data.conversation_id) setConversationId(data.conversation_id)
+      if (!res.ok) throw new Error(`Chat request failed with status ${res.status}`)
+      const data: unknown = await res.json()
+      const response = data && typeof data === "object" ? data as Record<string, unknown> : {}
+      const answer = typeof response.answer === "string" ? response.answer : t("errorReply")
+      const nextConversationId = typeof response.conversation_id === "string" ? response.conversation_id : null
+      setMessages((prev) => [...prev, { role: "bot", text: answer }])
+      if (nextConversationId) setConversationId(nextConversationId)
     } catch (error) {
       console.error("[DifyChatbot] failed to send message:", error)
       setMessages((prev) => [...prev, { role: "bot", text: t("errorNetwork") }])
@@ -104,14 +131,18 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
     [input, loading, locale],
   )
 
+  if (shouldHide) return null
+
   return (
     <>
       {!open && (
         <button
+          ref={toggleButtonRef}
           onClick={() => setOpen(true)}
+          className="max-sm:right-4!"
           style={{
             position: "fixed",
-            bottom: 24,
+            bottom: "calc(var(--cookie-consent-h, 0px) + 24px + env(safe-area-inset-bottom))",
             right: 24,
             zIndex: 9999,
             width: 56,
@@ -141,6 +172,7 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
           title={t("openLabel")}
         >
           <svg
+            aria-hidden
             width="22"
             height="22"
             viewBox="0 0 24 24"
@@ -169,15 +201,19 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
 
       {open && (
         <div
+          role="dialog"
+          aria-modal="false"
+          aria-label={t("title")}
+          className="max-sm:right-4!"
           style={{
             position: "fixed",
-            bottom: 28,
+            bottom: "calc(var(--cookie-consent-h, 0px) + 28px + env(safe-area-inset-bottom))",
             right: 28,
             zIndex: 9999,
             width: 380,
             maxWidth: "calc(100vw - 32px)",
             height: 600,
-            maxHeight: "calc(100vh - 56px)",
+            maxHeight: "calc(100dvh - var(--cookie-consent-h, 0px) - 56px - env(safe-area-inset-bottom))",
             background: TOKENS.paper,
             border: `1px solid ${TOKENS.line}`,
             display: "flex",
@@ -226,7 +262,8 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
               </p>
             </div>
             <button
-              onClick={() => setOpen(false)}
+              ref={closeButtonRef}
+              onClick={closeChat}
               style={{
                 position: "relative",
                 zIndex: 1,
@@ -246,13 +283,17 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
               }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.30)" }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.18)" }}
-              aria-label="Close"
+              aria-label={locale === "ja" ? "チャットを閉じる" : "Close chat"}
             >
               ✕
             </button>
           </div>
 
           <div
+            role="log"
+            aria-label={locale === "ja" ? "チャットメッセージ" : "Chat messages"}
+            aria-live="polite"
+            aria-busy={loading}
             style={{
               flex: 1,
               overflowY: "auto",
@@ -307,6 +348,7 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
                       }}
                     />
                   ))}
+                  <span className="sr-only">{locale === "ja" ? "回答を作成中" : "Preparing a reply"}</span>
                 </div>
                 <style>{`@keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-4px);opacity:1}}`}</style>
               </div>
@@ -355,6 +397,7 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
           >
             <div style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
               <input
+                aria-label={t("placeholder")}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKey}
@@ -379,7 +422,7 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
               <button
                 onClick={() => sendMessage(input)}
                 disabled={!input.trim() || loading}
-                aria-label="Send"
+                aria-label={locale === "ja" ? "送信" : "Send message"}
                 style={{
                   width: 40,
                   height: 40,
@@ -394,6 +437,7 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
                 }}
               >
                 <svg
+                  aria-hidden
                   width="14"
                   height="14"
                   viewBox="0 0 24 24"
@@ -421,7 +465,14 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
               }}
             >
               {t("footerLine")} ·{" "}
-              <Link href="/contact" style={{ color: TOKENS.inkSoft, textDecoration: "none", borderBottom: `1px solid ${TOKENS.line}` }}>
+              <Link
+                href={locale === "en" ? "/contact?intent=japan-entry" : "/contact"}
+                {...(locale === "en" ? {
+                  "data-umami-event": "japan-entry-apply",
+                  "data-umami-event-source": "chatbot",
+                } : {})}
+                style={{ color: TOKENS.inkSoft, textDecoration: "none", borderBottom: `1px solid ${TOKENS.line}` }}
+              >
                 {t("footerContact")}
               </Link>
             </p>

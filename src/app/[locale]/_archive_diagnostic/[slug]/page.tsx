@@ -8,7 +8,7 @@
  *
  * SEO:
  *   - **noindex 強制** (個別生成・1 顧客 1 URL の private 設計)
- *   - X-Robots-Tag header は middleware.ts には付けない (現在 /diagnostic/* は NOINDEX_PATTERN 対象外)
+ *   - X-Robots-Tag header は proxy.ts には付けない (現在 /diagnostic/* は NOINDEX_PATTERN 対象外)
  *     → 本 page の generateMetadata で robots: noindex を返す
  *
  * AE-PHP-4 準拠 (役割/入力/出力 明示).

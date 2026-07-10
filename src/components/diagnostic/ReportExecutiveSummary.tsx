@@ -48,14 +48,6 @@ export interface ExecutiveSummaryProps {
   reportUrl?: string
 }
 
-function formatMoney(amount: number, lang: ReportLang): string {
-  return new Intl.NumberFormat(lang === "ja" ? "ja-JP" : "en-US", {
-    style: "currency",
-    currency: "JPY",
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
-
 export function ReportExecutiveSummary({
   lang,
   companyName,
@@ -78,37 +70,42 @@ export function ReportExecutiveSummary({
   const impactLabel = isJa ? "事業上の意味" : "Business impact"
   const actionLabel = isJa ? "最初の一手" : "First move"
 
-  const defaultKpis: KpiMetric[] = kpis ?? [
+  const measuredKpis: KpiMetric[] = [
     {
       label: isJa ? "ソースカバレッジ" : "Source Coverage",
       value: sourceScore ?? 0,
       suffix: "%",
       icon: <BarChart3 size={18} />,
-      trend: (sourceScore ?? 0) >= 70 ? "up" : "down",
-      trendLabel: isJa ? "vs 業界平均" : "vs benchmark",
+      trend: "neutral",
+      trendLabel: isJa ? "取得ソースの範囲" : "collected source scope",
       severity: (sourceScore ?? 0) >= 70 ? "good" : (sourceScore ?? 0) >= 45 ? "warning" : "critical",
     },
-    {
+  ]
+  if (confidence != null) {
+    measuredKpis.push({
       label: isJa ? "推定信頼度" : "Confidence",
-      value: confidence ?? 0,
+      value: confidence,
       prefix: "",
       suffix: "/100",
       icon: <ShieldCheck size={18} />,
-      trend: (confidence ?? 0) >= 70 ? "up" : "down",
+      trend: confidence >= 70 ? "up" : "down",
       trendLabel: isJa ? "シグナル一致度" : "signal match",
-      severity: (confidence ?? 0) >= 70 ? "good" : (confidence ?? 0) >= 45 ? "warning" : "critical",
-    },
-    {
+      severity: confidence >= 70 ? "good" : confidence >= 45 ? "warning" : "critical",
+    })
+  }
+  if (monthlyLoss != null) {
+    measuredKpis.push({
       label: isJa ? "月間損失試算" : "Monthly Loss",
-      value: monthlyLoss ?? 0,
-      prefix: "¥",
+      value: monthlyLoss,
+      prefix: isJa ? "¥" : "$",
       suffix: "",
       icon: <TrendingDown size={18} />,
       trend: "down",
       trendLabel: isJa ? "推定値" : "estimated",
-      severity: (monthlyLoss ?? 0) > 500000 ? "critical" : "warning",
-    },
-    {
+      severity: monthlyLoss > (isJa ? 500000 : 5000) ? "critical" : "warning",
+    })
+  }
+  measuredKpis.push({
       label: isJa ? "優先対応項目" : "Priority Findings",
       value: findingsCount ?? 0,
       suffix: "",
@@ -116,8 +113,8 @@ export function ReportExecutiveSummary({
       trend: "neutral",
       trendLabel: isJa ? "改善ポイント" : "action items",
       severity: (findingsCount ?? 0) > 3 ? "critical" : "warning",
-    },
-  ]
+  })
+  const defaultKpis = kpis ?? measuredKpis
 
   const severityColors = {
     good: "text-emerald-500",
@@ -202,20 +199,14 @@ export function ReportExecutiveSummary({
                       <span className="text-[11px] font-semibold text-zinc-500">{kpi.label}</span>
                     </div>
                     <div className="mt-2">
-                      {kpi.value > 100000 ? (
-                        <p className="text-lg font-bold tabular-nums text-zinc-950">
-                          <CountUpMetric value={kpi.value} prefix="¥" duration={1} />
-                        </p>
-                      ) : (
-                        <p className="text-lg font-bold tabular-nums text-zinc-950">
-                          <CountUpMetric
-                            value={kpi.value}
-                            prefix={kpi.prefix}
-                            suffix={kpi.suffix}
-                            duration={1}
-                          />
-                        </p>
-                      )}
+                      <p className="text-lg font-bold tabular-nums text-zinc-950">
+                        <CountUpMetric
+                          value={kpi.value}
+                          prefix={kpi.prefix}
+                          suffix={kpi.suffix}
+                          duration={1}
+                        />
+                      </p>
                       {kpi.trendLabel && (
                         <div className="mt-0.5 flex items-center gap-1">
                           {kpi.trend === "up" && <TrendingUp size={10} className="text-emerald-500" />}

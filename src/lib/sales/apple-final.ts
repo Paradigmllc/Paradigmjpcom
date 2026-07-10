@@ -111,6 +111,7 @@ ${img ? `.hero-bg{position:absolute;inset:0;z-index:0}.hero-bg img{width:100%;he
 .contact-form button{background:${p.primary};color:#fff;border:none;padding:${A.btnPad};border-radius:${A.btnRadius};font-size:1rem;font-weight:500;cursor:pointer;transition:background .3s}
 .contact-form button:hover{background:${p.primaryDark}}
 .contact-form .success{display:none;text-align:center;padding:2rem;color:${p.primary};font-weight:500}
+.contact-error{display:none;max-width:500px;margin:1rem auto 0;padding:1rem;color:#b42318;font-weight:500}
 .footer{padding:${A.sectionPad} 0;background:${p.bgAlt};color:${p.textMuted};font-size:.8rem}
 .footer-inner{max-width:980px;margin:0 auto;padding:0 clamp(1.5rem,4vw,3rem);display:flex;flex-wrap:wrap;gap:2rem;justify-content:space-between}
 .footer-info{line-height:2}
@@ -143,6 +144,7 @@ ${img ? `.hero-bg{position:absolute;inset:0;z-index:0}.hero-bg img{width:100%;he
     <button type="submit">送信する</button>
   </form>
   <div class="success" id="contactSuccess">お問い合わせありがとうございます。担当者よりご連絡いたします。</div>
+  <div class="contact-error" id="contactError" role="alert">送信に失敗しました。時間をおいて再度お試しください。</div>
 </section>
 
 <footer class="footer">
@@ -161,14 +163,20 @@ document.getElementById('contactForm')?.addEventListener('submit', async functio
   e.preventDefault();
   const form = this;
   const btn = form.querySelector('button');
+  const errorMessage = document.getElementById('contactError');
+  errorMessage.style.display = 'none';
   btn.textContent = '送信中...'; btn.disabled = true;
   try {
     const res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+    if (!res.ok) throw new Error('Contact API returned HTTP ' + res.status);
     if (res.ok) {
       form.style.display = 'none';
       document.getElementById('contactSuccess').style.display = 'block';
     }
-  } catch {}
+  } catch (error) {
+    console.error('Contact form submission failed:', error);
+    errorMessage.style.display = 'block';
+  }
   btn.textContent = '送信する'; btn.disabled = false;
 });
 </script>

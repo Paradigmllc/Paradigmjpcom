@@ -26,33 +26,33 @@ interface VariantDemoData {
 
 const VARIANT_DEMO_DATA: Record<string, VariantDemoData> = {
   japan_entry: {
-    companyName: { ja: "GreenTech Solutions Inc.", en: "GreenTech Solutions Inc." },
+    companyName: { ja: "Illustrative Exporter, Inc.", en: "Illustrative Exporter, Inc." },
     industry: "consulting",
     hook: {
-      ja: "日本市場で御社の製品を購入しようとした消費者が、特商法表示の不備を理由に離脱しています。競合のEcoVantage社は半年前に弊社支援で日本参入し、すでに月商1,200万円を達成。御社の参入遅れは月間280万円の機会損失です。",
-      en: "Japanese consumers attempting to purchase your product are abandoning due to missing commercial law disclosures. Competitor EcoVantage entered Japan 6 months ago through our support and is now generating $82,000/month. Your delay is costing ~$19,000/month in lost revenue.",
+      ja: "これは架空企業を使った説明用シナリオです。実際の診断では、公開データと提供資料を検証し、日本向け購入・問い合わせ導線の不足を事実と推測に分けて提示します。",
+      en: "This is an illustrative scenario using a fictional company. A live assessment verifies public data and supplied evidence before separating observed Japan-entry gaps from assumptions.",
     },
     acts: [
       {
-        type: "pain", icon: "TRUST", headline: { ja: "日本市場で御社のブランドが信用されていない", en: "Your brand lacks trust signals for Japanese consumers" },
-        body: { ja: "日本消費者は購入前に必ず「特定商取引法に基づく表記」を確認します。これがないサイトからの購入率は8%以下。御社の現状では、せっかくの日本流入トラフィックの92%が信用不足で離脱しています。これは競合EcoVantageが獲得している月間1,200万円の売上を、そのまま取りこぼしている計算です。", en: "Japanese consumers check Commercial Law disclosures before ANY purchase. Without them, conversion drops below 8%. Your current state means 92% of Japan-bound traffic leaves without buying. This is revenue EcoVantage is capturing instead — $82,000/month that should be yours." },
-        metric_label: { ja: "信頼スコア", en: "Trust score" }, metric_value: "8/100", metric_unit: { ja: "点", en: "pts" }, metric_bench: { ja: "最低限: 特商法 + プライバシーポリシー", en: "Minimum: Commercial Law + Privacy Policy" }, severity: "critical",
+        type: "pain", icon: "TRUST", headline: { ja: "日本向けの購入・問い合わせ導線を検証する", en: "Verify the Japan buyer and inquiry path" },
+        body: { ja: "日本語の価値提案、必要な事業者表示、問い合わせまたは適格な決済導線、計測、通知が連続して動くかを実データで確認します。未確認の売上や離脱率は表示しません。", en: "We verify the Japanese value proposition, required seller disclosures, eligible inquiry or payment routing, analytics, and notifications as one path. Unverified revenue or conversion claims are not shown." },
+        metric_label: { ja: "証拠ステータス", en: "Evidence status" }, metric_value: { ja: "要検証", en: "Verify" }, metric_unit: "", metric_bench: { ja: "実測値と出典を記録", en: "Record measurements and sources" }, severity: "critical",
       },
       {
-        type: "fear", icon: "OPS", headline: { ja: "このまま放置すると取り返しがつかない", en: "Delay is compounding your competitive disadvantage" },
-        body: { ja: "日本EC市場は年率12%で成長中（2026年市場規模22兆円）。EcoVantageに続き、同業3社が2026年下期の日本参入を計画しています。先発優位の窓はあと3〜6ヶ月。このタイミングを逃すと、後発として認知獲得コストが3倍になります。", en: "Japan's e-commerce market is growing 12% YoY (¥22T in 2026). Three competitors are planning H2 2026 Japan entry, following EcoVantage. The first-mover window is 3-6 months. Missing it triples customer acquisition costs as a late entrant." },
-        metric_label: { ja: "残り猶予", en: "Window remaining" }, metric_value: { ja: "3-6ヶ月", en: "3-6 months" }, metric_unit: "", metric_bench: { ja: "今すぐ着手が最適", en: "Start now for optimal timing" }, severity: "warning",
+        type: "fear", icon: "OPS", headline: { ja: "意思決定速度が着手可否を決める", en: "Decision speed determines launch readiness" },
+        body: { ja: "Japan Entryは、7日以内に最終承認でき、1名の責任者が素材・アクセス・確認を集約できるSMB向けです。複数部門の長期調達プロセスは対象外です。", en: "Japan Entry is for SMBs that can approve the fixed scope within seven days and assign one owner for access, assets, and feedback. Long multi-department procurement is not a fit." },
+        metric_label: { ja: "最終承認", en: "Final approval" }, metric_value: { ja: "7日以内", en: "Within 7 days" }, metric_unit: "", metric_bench: { ja: "承認者1名", en: "One empowered approver" }, severity: "warning",
       },
       {
-        type: "hope", icon: "REACH", headline: { ja: "最短30日で日本参入・売上化が可能", en: "Japan entry and revenue in 30 days is achievable" },
-        body: { ja: "弊社の日本参入パッケージでは、特商法対応・決済導入・日本語サイト構築を全て並行して進め、最短30日で販売開始できます。EcoVantageの事例では、参入初月から月商320万円、3ヶ月目には1,200万円に到達。御社の製品力があれば、これを上回る成果が十分可能です。", en: "Our Japan entry package handles commercial law compliance, payment integration, and Japanese site build in parallel — go live in 30 days. EcoVantage's case: $22K in month 1, $82K by month 3. With your product strength, exceeding this is entirely realistic." },
-        metric_label: { ja: "最短納期", en: "Fastest delivery" }, metric_value: { ja: "30日", en: "30 days" }, metric_unit: "", metric_bench: { ja: "通常3-6ヶ月 -> 弊社なら30日", en: "Typical 3-6 months -> 30 days with us" }, severity: "info",
+        type: "hope", icon: "REACH", headline: { ja: "固定範囲のJapan Entryを開始する", en: "Launch a fixed-scope Japan Entry deployment" },
+        body: { ja: "セットアップは12,000米ドル固定。必要条件が揃った後21営業日の公開を目標とし、運用は最初の6か月が月額0ドル、その後は月額995ドルです。将来期間の解約は署名済み契約条件に従います。売上成果は保証しません。", en: "Setup is fixed at USD $12,000. The launch target is 21 business days after prerequisites are complete. Managed operation is $0/month for six months, then $995/month; future-period cancellation follows the signed terms. Sales outcomes are not guaranteed." },
+        metric_label: { ja: "公開目標", en: "Launch target" }, metric_value: { ja: "21営業日", en: "21 business days" }, metric_unit: "", metric_bench: { ja: "前提条件完了後", en: "After prerequisites are complete" }, severity: "info",
       },
     ],
-    totalLoss: { ja: "¥2,800,000", en: "$19,000" },
+    totalLoss: { ja: "個別算定", en: "Not estimated" },
     cta: {
-      ja: "まずは15分の無料診断で、御社の日本参入に必要な具体的ステップを明確にします。EcoVantageと同様の成果を、より早く達成するロードマップをお渡しします。",
-      en: "In a 15-minute free assessment, we'll map your exact Japan entry steps. You'll get a roadmap to achieve — and exceed — EcoVantage-level results, faster.",
+      ja: "固定範囲、12,000米ドルの承認時期、必要素材、21営業日の目標条件を申込み前に書面で確認します。",
+      en: "Apply to confirm fit, the fixed $12,000 scope, approval timing, required inputs, and the conditions behind the 21-business-day launch target.",
     },
   },
   website_diagnostic: {
@@ -282,7 +282,7 @@ export function buildDemoData(variant: string, lang: string): DiagnosticReportDa
     acts,
     cta_text: localeStr(data.cta, lang),
     video_thumbnail: null,
-    demo_url: `https://paradigm-astro-demo.pages.dev/?slug=${variant}-demo`,
+    demo_url: variant === "japan_entry" ? null : `https://paradigm-astro-demo.pages.dev/?slug=${variant}-demo`,
      screenshot_url: demoScreenshotUrl,
      screenshot_mobile_url: demoMobileScreenshotUrl,
       evidence_screenshot_url: demoScreenshotUrl,
@@ -292,19 +292,21 @@ export function buildDemoData(variant: string, lang: string): DiagnosticReportDa
       visitor_journey: visualStory.visitorJourney,
       source_coverage: sourceCoverage,
     intelligence,
-    video_url: variant === "japan_entry"
-      ? `https://pub-ac30eb86a32747f1a27e304aa9c6f95a.r2.dev/videos/demo/${variant}/${lang}/diagnostic-${variant}.mp4`
-      : null,
+    video_url: null,
     meta,
     contactFormUrl: "https://example.com/contact",
     content_template: {
-      title: isJa ? "Web制作診断テンプレート" : "Website Production Diagnostic",
-      purpose: isJa ? "Web集客改善の優先順位を明確にする" : "Clarify web marketing priorities",
+      title: variant === "japan_entry"
+        ? (isJa ? "Japan Entry 適合性診断" : "Japan Entry Fit Assessment")
+        : (isJa ? "Web制作診断テンプレート" : "Website Production Diagnostic"),
+      purpose: variant === "japan_entry"
+        ? (isJa ? "固定範囲への適合性と公開前提を明確にする" : "Clarify fixed-scope fit and launch prerequisites")
+        : (isJa ? "Web集客改善の優先順位を明確にする" : "Clarify web marketing priorities"),
       quality_bar: isJa ? "すべての数値は実測データに基づくこと。推測や一般論は禁止。" : "All numbers must be based on measured data. No speculation.",
       dify_selection_rule: `industry=beauty_salon&variant=${variant}`,
       prompt_template: "",
-      offer_code: "jp_web_production",
-      appeal_angle: "speed_conversion",
+      offer_code: variant === "japan_entry" ? "global_jaas" : "jp_web_production",
+      appeal_angle: variant === "japan_entry" ? "japan_entry" : "speed_conversion",
     },
     report_url: `https://paradigmjp.com/${lang}/report/demo/${variant}`,
     localized_report_urls: [],

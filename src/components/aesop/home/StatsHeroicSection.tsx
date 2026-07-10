@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useTranslations } from "next-intl"
 import { motion } from "framer-motion"
@@ -9,9 +9,9 @@ import FadeIn from "@/components/aesop/FadeIn"
 import { SectionHeader } from "@/components/paradigm-ui"
 
 const STAT_DEFS = [
-  { key: "support", to: 12, gradient: "from-fuchsia-400 via-paradigm-accent to-paradigm-tech" },
+  { key: "support", to: 4, gradient: "from-fuchsia-400 via-paradigm-accent to-paradigm-tech" },
   { key: "retention", to: 4, gradient: "from-paradigm-tech via-paradigm-glow to-fuchsia-400" },
-  { key: "growth", to: 24, gradient: "from-paradigm-glow via-violet-400 to-paradigm-accent" },
+  { key: "growth", to: 1, gradient: "from-paradigm-glow via-violet-400 to-paradigm-accent" },
   { key: "consult", to: 0, gradient: "from-paradigm-accent via-fuchsia-400 to-amber-400" },
 ] as const
 

@@ -26,7 +26,7 @@ describe("browser search backend status", () => {
     const status = getBrowserSearchBackendStatus()
 
     expect(status.configured).toBe(false)
-    expect(status.error).toContain("FLARESOLVERR_URL or STEEL_BASE_URL")
+    expect(status.error).toContain("FLARESOLVERR_API_URL or STEEL_BASE_URL")
   })
 
   it("extracts result links but rejects browser search provider links", () => {
