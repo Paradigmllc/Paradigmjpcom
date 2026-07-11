@@ -33,7 +33,7 @@
 - `npm run quality:guard`: **0 errors / 47 warnings**（全て300〜499行の分割候補）
 - `npm audit --audit-level=high`: **0 vulnerabilities**（workerはlowのみ）
 - `node scripts/release-doctor.mjs --local-only --allow-dirty`: **pass**
-- `npm run release:prod`のpre-deploy: host / Coolify / Traefik / Cloudflare origin lock / Realtime / Twenty workerはpass。公開envの不足はSlack、metric provider、暗号化off-host backup、法定表示の4件だけで、gateが停止したためdeployは実行されていない。
+- `npm run release:prod`相当のpre-deploy: host / Coolify / Traefik / Cloudflare origin lock / Realtime / Twenty workerはpass。`OUTREACH_EVIDENCE_MODE=public-signals`により有料metric providerは不要になり、公開envの残りはSlack、暗号化off-host backup、法定表示の3件。gateが停止したためdeployは実行されていない。
 - release未実行のため、現本番は旧コンテナのまま（実測: `/api/infra` HTTP 200、`/api/infra/status` HTTP 200、`/ja/services` HTTP 200）。新コードの401/308/410挙動は正式release後に再検証する。
 - Twentyは稼働確認済み。Stagehand/CrawleeのworkerコードとAPIは保持しているが、`STAGEHAND_ENABLED=false` のオンデマンド設計のため外部healthは現在503（営業フローを再開する別タスクでworker/CDP/APIキーを用意してから有効化する）。
 
