@@ -52,6 +52,7 @@ export async function POST(req: Request) {
           collection: "posts",
           where: { slug: { equals: post.slug } },
           limit: 1,
+          locale: "en",
         })
         const data = {
           title: post.title,
