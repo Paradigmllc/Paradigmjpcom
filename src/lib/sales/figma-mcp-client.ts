@@ -31,7 +31,12 @@ class MCPStdioClient implements FigmaMCPSession {
     // Spawn the Figma MCP server as a child process
     this.proc = spawn("npx", ["-y", "@hapins/figma-mcp"], {
       stdio: ["pipe", "pipe", "pipe"],
-      env: { ...process.env, FIGMA_ACCESS_TOKEN: process.env.FIGMA_ACCESS_TOKEN || "" },
+      env: {
+        ...process.env,
+        ...(process.env.FIGMA_ACCESS_TOKEN?.trim()
+          ? { FIGMA_ACCESS_TOKEN: process.env.FIGMA_ACCESS_TOKEN.trim() }
+          : {}),
+      },
     })
 
     // Read responses from stdout line by line

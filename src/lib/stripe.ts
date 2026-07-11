@@ -15,7 +15,7 @@
 
 const STRIPE_API = "https://api.stripe.com/v1"
 
-const apiKey = () => process.env.STRIPE_SECRET_KEY ?? ""
+const apiKey = () => process.env.STRIPE_SECRET_KEY?.trim()
 
 interface StripeResponse<T> {
   ok: boolean
@@ -40,7 +40,10 @@ async function stripeFetch<T>(
       signal: AbortSignal.timeout(15_000),
     })
     if (!res.ok) {
-      const text = await res.text().catch(() => "")
+      const text = await res.text().catch((error) => {
+        console.error("[stripe] error response body could not be read:", error)
+        return ""
+      })
       return { ok: false, error: text || res.statusText }
     }
     const data = (await res.json()) as T

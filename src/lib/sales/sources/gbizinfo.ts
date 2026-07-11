@@ -32,7 +32,7 @@ export interface GBizCompany {
 export async function getCompanyByCorporateNumber(
   corporateNumber: string,
 ): Promise<GBizCompany | null> {
-  const token = process.env.GBIZ_API_TOKEN ?? ""
+  const token = process.env.GBIZ_API_TOKEN?.trim()
   if (!token) {
     console.warn("[gbizinfo] GBIZ_API_TOKEN not set")
     return null
@@ -59,7 +59,7 @@ export async function searchByName(
   name: string,
   limit: number = 5,
 ): Promise<GBizCompany[]> {
-  const token = process.env.GBIZ_API_TOKEN ?? ""
+  const token = process.env.GBIZ_API_TOKEN?.trim()
   if (!token) return []
   try {
     const params = new URLSearchParams({ name, limit: String(limit) })

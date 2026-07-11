@@ -72,7 +72,7 @@ function primaryModels(optModel?: string): string[] {
 
 function buildProviders(optModel?: string): Provider[] {
   const providers: Provider[] = []
-  const dsKey = process.env.DEEPSEEK_API_KEY ?? ""
+  const dsKey = process.env.DEEPSEEK_API_KEY?.trim()
   if (dsKey) {
     providers.push({
       name: "deepseek",
@@ -82,7 +82,7 @@ function buildProviders(optModel?: string): Provider[] {
     })
   }
   // 第2プロバイダ fallback (OpenRouter)
-  const orKey = process.env.OPENROUTER_API_KEY ?? ""
+  const orKey = process.env.OPENROUTER_API_KEY?.trim()
   if (orKey) {
     providers.push({
       name: "openrouter",

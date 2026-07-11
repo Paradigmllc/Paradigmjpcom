@@ -116,7 +116,8 @@ export async function findPlace(
   companyName: string,
   prefecture: string | null,
 ): Promise<PlaceResult> {
-  const key = (process.env.GOOGLE_PLACES_API_KEY ?? "").replace(/^'|'$/g, "").trim();
+  const rawKey = process.env.GOOGLE_PLACES_API_KEY?.trim()
+  const key = rawKey ? rawKey.replace(/^'|'$/g, "").trim() : null
   if (!key) {
     return discoverViaFallback(companyName, prefecture);
   }

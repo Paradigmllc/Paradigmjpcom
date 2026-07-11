@@ -18,7 +18,7 @@ export interface EstatResult {
  */
 export async function queryEstat(industry: string): Promise<EstatResult> {
   // e-Stat public application ID (free registration)
-  const APP_ID = process.env.ESTAT_APP_ID ?? ""
+const APP_ID = process.env.ESTAT_APP_ID?.trim()
   
   const industryQueries: Record<string, { statCode: string; desc: string }> = {
     beauty_salon: { statCode: "0003101234", desc: "美容業" },
