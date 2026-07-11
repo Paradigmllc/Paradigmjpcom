@@ -46,7 +46,11 @@ describe("japan readiness scoring", () => {
   it("turns traffic, Shopify, and public-page gaps into a high-priority human-reviewed insight", () => {
     const insight = __japanReadinessTest.buildLocalInsight(
       company({
-        traffic: { monthly_visits: 300000, japan_share_percent: 0.5 },
+        dataforseo: {
+          monthly_visits: 300000,
+          traffic: { country_distribution: { JP: 0.005 } },
+          source_url: "https://dataforseo.com/verified-report/demo",
+        },
         tech: { stack: [{ name: "Shopify" }, { name: "Stripe" }, { name: "Klaviyo" }] },
       }),
       {
@@ -66,9 +70,10 @@ describe("japan readiness scoring", () => {
     expect(insight.priority).toBe("high")
     expect(insight.status).toBe("manual_review")
     expect(insight.estimates.japanVisits).toBe(1500)
-    expect(insight.estimates.lossMinUsd).toBe(600)
+    expect(insight.estimates.lossMinUsd).toBeNull()
     expect(insight.manualReviewFlags).toContain("legal_payment_claim_requires_review")
-    expect(insight.body).toContain("sales hypothesis")
+    expect(insight.manualReviewFlags).toContain("revenue_and_loss_not_publicly_observable")
+    expect(insight.body).toContain("review hypothesis")
   })
 
   it("keeps missing traffic as explicit evidence instead of inventing numbers", () => {

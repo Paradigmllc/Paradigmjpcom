@@ -12,6 +12,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { verifyWebhookSecret } from "@/lib/sales/auth"
 import { generateFormMessage } from "@/lib/sales/form-message"
+import { requiresVerifiedOutreachMetrics } from "@/lib/sales/outreach/evidence-mode"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       )
     }
-    const result = await generateFormMessage(body.company_id, { requireVerifiedMetrics: true })
+    const result = await generateFormMessage(body.company_id, { requireVerifiedMetrics: requiresVerifiedOutreachMetrics() })
     return NextResponse.json(result, { status: result.ok ? 200 : 500 })
   } catch (e) {
     console.error("[generate-form-message] failed:", e)

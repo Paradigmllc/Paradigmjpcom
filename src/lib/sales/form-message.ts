@@ -34,6 +34,7 @@ import {
   type VerifiedOutreachContext,
   type VerifiedOutreachMetric,
 } from "./outreach/verified-metrics"
+import { getOutreachEvidenceMode } from "./outreach/evidence-mode"
 
 type JsonRecord = Record<string, unknown>
 
@@ -80,6 +81,7 @@ export interface GenerateFormMessageResult {
   ok: boolean
   message?: string
   engine?: "dify" | "deepseek_fallback"
+  evidence_mode?: "public-signals" | "paid-traffic"
   used_template_id?: string | null
   fallbacks?: {
     industry: boolean
@@ -140,6 +142,7 @@ async function generateWithDify(input: {
   templateLoss: string | null
   fallbacks: GenerateFormMessageResult["fallbacks"]
   verifiedContext: VerifiedOutreachContext
+  evidenceMode: "public-signals" | "paid-traffic"
 }): Promise<{ ok: true; message: string; workflowRunId: string | null } | { ok: false; configured: boolean; error: string }> {
   const apiKey =
     readOptionalEnv("DIFY_FORM_MESSAGE_API_KEY") ??
@@ -173,6 +176,7 @@ async function generateWithDify(input: {
             template_loss: input.templateLoss,
             verified_metrics: input.verifiedContext.metrics,
             metric_unknowns: input.verifiedContext.unknowns,
+            evidence_mode: input.evidenceMode,
             numeric_claim_policy: "Only use numbers present in verified_metrics or the fixed offer facts; never invent revenue, conversion, traffic, or loss values.",
             pagespeed_mobile: input.company.pagespeed_mobile,
             pagespeed_desktop: input.company.pagespeed_desktop,
@@ -219,8 +223,7 @@ function numericTokens(message: string): string[] {
 }
 
 function validateNumericClaims(message: string, context: VerifiedOutreachContext, requireVerifiedMetrics: boolean): string | null {
-  if (!requireVerifiedMetrics) return null
-  if (context.metrics.length === 0) return "No verified metrics available for personalized numeric copy"
+  if (requireVerifiedMetrics && context.metrics.length === 0) return "No verified metrics available for personalized numeric copy"
   const allowed = new Set([
     ...FIXED_OFFER_NUMBERS,
     ...context.metrics.map((metric) => String(metric.value)),
@@ -264,11 +267,13 @@ export async function generateFormMessage(
   if (!company) return { ok: false, error: "company not found" }
   const requireVerifiedMetrics = options.requireVerifiedMetrics === true
   const allowDirectFallback = options.allowDirectFallback === true
+  const evidenceMode = getOutreachEvidenceMode()
   const verifiedContext = buildVerifiedOutreachContext(company)
   if (requireVerifiedMetrics && verifiedContext.metrics.length === 0) {
     return {
       ok: false,
       evidence_ready: false,
+      evidence_mode: evidenceMode,
       verified_metrics: [],
       metric_unknowns: verifiedContext.unknowns,
       error: "No verified metrics available for personalized numeric copy",
@@ -301,6 +306,7 @@ export async function generateFormMessage(
   const dify = await generateWithDify({
     company,
     ...templateContext,
+    evidenceMode,
   })
   if (dify.ok) {
     const validationError = validateNumericClaims(dify.message, verifiedContext, requireVerifiedMetrics)
@@ -310,6 +316,7 @@ export async function generateFormMessage(
         ok: true,
         message: dify.message,
         engine: "dify",
+        evidence_mode: evidenceMode,
         used_template_id: template?.id ?? null,
         fallbacks,
         verified_metrics: verifiedContext.metrics,
@@ -327,6 +334,7 @@ export async function generateFormMessage(
       ok: false,
       verified_metrics: verifiedContext.metrics,
       metric_unknowns: verifiedContext.unknowns,
+      evidence_mode: evidenceMode,
       evidence_ready: verifiedContext.metrics.length > 0,
       fallback_allowed: false,
       error: dify.ok
@@ -361,6 +369,7 @@ export async function generateFormMessage(
       ok: false,
       verified_metrics: verifiedContext.metrics,
       metric_unknowns: verifiedContext.unknowns,
+      evidence_mode: evidenceMode,
       evidence_ready: verifiedContext.metrics.length > 0,
       error: validationError,
     }
@@ -370,6 +379,7 @@ export async function generateFormMessage(
     ok: true,
     message,
     engine: "deepseek_fallback",
+    evidence_mode: evidenceMode,
     used_template_id: template?.id ?? null,
     fallbacks,
     verified_metrics: verifiedContext.metrics,

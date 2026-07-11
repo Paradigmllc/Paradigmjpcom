@@ -887,14 +887,23 @@ async function checkPublicFunnelEnvironment() {
     } else {
       fail("SLACK_BOT_TOKEN + SLACK_CHANNEL_ID or SLACK_WEBHOOK_URL are required for operator notifications")
     }
-    const hasVerifiedTrafficProvider =
-      (typeof envs.DATAFORSEO_LOGIN === "string" && envs.DATAFORSEO_LOGIN.trim().length > 0 &&
-        hasMinimumSecret("DATAFORSEO_PASSWORD")) ||
-      hasMinimumSecret("SIMILARWEB_API_KEY")
-    if (hasVerifiedTrafficProvider) {
-      pass("verified outreach traffic provider is configured")
+    const evidenceMode = typeof envs.OUTREACH_EVIDENCE_MODE === "string"
+      ? envs.OUTREACH_EVIDENCE_MODE.trim().toLowerCase()
+      : "public-signals"
+    if (evidenceMode === "public-signals") {
+      pass("free public-signals evidence mode is configured; traffic/revenue numeric claims remain disabled")
+    } else if (evidenceMode === "paid-traffic") {
+      const hasVerifiedTrafficProvider =
+        (typeof envs.DATAFORSEO_LOGIN === "string" && envs.DATAFORSEO_LOGIN.trim().length > 0 &&
+          hasMinimumSecret("DATAFORSEO_PASSWORD")) ||
+        hasMinimumSecret("SIMILARWEB_API_KEY")
+      if (hasVerifiedTrafficProvider) {
+        pass("verified outreach traffic provider is configured for paid-traffic evidence mode")
+      } else {
+        fail("DATAFORSEO_LOGIN/PASSWORD or SIMILARWEB_API_KEY is required when OUTREACH_EVIDENCE_MODE=paid-traffic")
+      }
     } else {
-      fail("DATAFORSEO_LOGIN/PASSWORD or SIMILARWEB_API_KEY is required for traffic-backed personalized outreach; PageSpeed alone is insufficient")
+      fail("OUTREACH_EVIDENCE_MODE must be public-signals or paid-traffic")
     }
     if (hasMinimumSecret("TWENTY_API_KEY")) {
       pass("Twenty CRM sync credential is configured")

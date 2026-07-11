@@ -57,14 +57,6 @@ function localizedUnknown(lang: string): string {
   return lang === "ja" ? "未測定" : "Not measured"
 }
 
-function formatUsdRange(min: number | null, max: number | null): string | null {
-  if (min === null && max === null) return null
-  if (min !== null && max !== null && min !== max) {
-    return `$${min.toLocaleString("en-US")}–$${max.toLocaleString("en-US")}`
-  }
-  return `$${(min ?? max ?? 0).toLocaleString("en-US")}`
-}
-
 export function parseExplicitPositiveAmount(value: unknown): number | null {
   if (typeof value !== "string" && typeof value !== "number") return null
   const text = String(value).trim()
@@ -157,25 +149,21 @@ export function buildSecurityChecks(data: DiagnosticReportData): EvidenceCheck[]
 
 export function buildJapanMarketMetrics(data: DiagnosticReportData, lang: string): JapanMarketMetric[] {
   const meta = data.meta ?? {}
-  const similarweb = asRecord(meta.similarweb_free) ?? asRecord(meta.similarweb)
-  const radar = asRecord(meta.cloudflare_radar)
   const smb = asRecord(meta.smb_signals)
-  const readiness = asRecord(meta.japan_readiness_insight)
+  const visibility = asRecord(smb?.marketVisibility) ?? asRecord(meta.market_visibility)
   const unknown = localizedUnknown(lang)
 
-  const monthlyVisits = finiteNumber(similarweb?.estimatedMonthlyVisits ?? similarweb?.visits)
-  const topCountries = Array.isArray(similarweb?.topCountries)
-    ? similarweb.topCountries.filter((value): value is string => typeof value === "string")
-    : Array.isArray(similarweb?.countries)
-      ? similarweb.countries.filter((value): value is string => typeof value === "string")
-      : []
-  const japanVisits = finiteNumber(
-    readiness?.japan_visits_estimate ?? readiness?.japanVisitsEstimate,
-  )
-  const radarRank = finiteNumber(radar?.rank)
-  const radarBucket = typeof radar?.rank_bucket === "string" && radar.rank_bucket.trim()
-    ? radar.rank_bucket.trim()
-    : null
+  const visibilityIndex = finiteNumber(visibility?.index)
+  const visibilityBand = typeof visibility?.band === "string" ? visibility.band : null
+  const bestRank = finiteNumber(visibility?.bestRank)
+  const countrySignals = Array.isArray(visibility?.countrySignals)
+    ? visibility.countrySignals
+      .map((value) => asRecord(value))
+      .filter((value): value is Record<string, unknown> => value !== null)
+    : []
+  const observedCountries = countrySignals
+    .map((signal) => typeof signal.countryCode === "string" ? signal.countryCode : null)
+    .filter((value): value is string => value !== null)
   const businessMaturity = typeof smb?.businessMaturity === "string"
     ? smb.businessMaturity
     : null
@@ -186,46 +174,45 @@ export function buildJapanMarketMetrics(data: DiagnosticReportData, lang: string
       : businessMaturity === "early"
         ? (lang === "ja" ? "初期段階" : "Early stage")
         : unknown
-  const lossMin = finiteNumber(readiness?.loss_amount_usd_min)
-  const lossMax = finiteNumber(readiness?.loss_amount_usd_max)
-  const modeledLoss = formatUsdRange(lossMin, lossMax)
-  const confidence = finiteNumber(readiness?.confidence)
-  const globalValue = monthlyVisits !== null
-    ? `${monthlyVisits.toLocaleString()} ${lang === "ja" ? "訪問/月" : "visits/mo"}`
-    : radarBucket ?? (radarRank !== null ? `#${radarRank.toLocaleString()}` : unknown)
-  const globalSource = monthlyVisits !== null
-    ? "Similarweb"
-    : radarBucket || radarRank !== null
-      ? "Cloudflare Radar"
-      : (lang === "ja" ? "出典データなし" : "No source data")
-  const japanTrafficValue = japanVisits !== null
-    ? `${japanVisits.toLocaleString()} ${lang === "ja" ? "訪問/月" : "visits/mo"}`
-    : topCountries.includes("JP")
-      ? (lang === "ja" ? "上位市場に日本を検出" : "Japan appears in top markets")
-      : unknown
+  const globalValue = visibilityIndex !== null
+    ? `${lang === "ja" ? "公開可視性" : "Public visibility"} ${visibilityIndex}/100`
+    : visibilityBand ?? (bestRank !== null ? `#${bestRank.toLocaleString()}` : unknown)
+  const globalSource = visibilityIndex !== null || visibilityBand || bestRank !== null
+    ? "Free public signals"
+    : (lang === "ja" ? "出典データなし" : "No source data")
+  const marketValue = observedCountries.length > 0
+    ? (lang === "ja" ? `市場シグナル: ${observedCountries.join(", ")}` : `Market signals: ${observedCountries.join(", ")}`)
+    : unknown
+  const revenueRecord = asRecord(meta.revenue)
+  const publicRevenue = finiteNumber(revenueRecord?.annual_usd ?? revenueRecord?.annual_revenue_usd)
+  const revenueSourceUrl = typeof revenueRecord?.source_url === "string" ? revenueRecord.source_url : null
+  const revenueSourceType = typeof revenueRecord?.source_type === "string" ? revenueRecord.source_type.trim().toLowerCase() : ""
+  const hasRevenueProvenance = revenueRecord?.verified === true || revenueSourceType === "public_filing" || revenueSourceType === "client_verified"
+  const revenueValue = publicRevenue !== null && revenueSourceUrl && hasRevenueProvenance
+    ? `$${publicRevenue.toLocaleString("en-US")} annual`
+    : (lang === "ja" ? "公開なし" : "Not publicly disclosed")
+  const revenueSource = publicRevenue !== null && revenueSourceUrl && hasRevenueProvenance
+    ? (lang === "ja" ? `公開財務情報: ${revenueSourceUrl}` : `Public filing: ${revenueSourceUrl}`)
+    : (lang === "ja" ? "一次データまたは公開財務情報が必要" : "First-party analytics or public filings required")
 
   return [
     {
       icon: "🌏",
-      label: lang === "ja" ? "グローバル流入" : "Global traffic",
+      label: lang === "ja" ? "公開可視性" : "Public visibility",
       value: globalValue,
       source: globalSource,
       tone: globalValue === unknown ? "zinc" : "blue",
     },
     {
       icon: "🇯🇵",
-      label: lang === "ja" ? "日本流入" : "Japan traffic",
-      value: japanTrafficValue,
-      source: japanVisits !== null
-        ? (lang === "ja" ? "Japan readiness 推計値" : "Japan readiness estimate")
-        : topCountries.includes("JP")
-          ? "Similarweb"
-          : (lang === "ja" ? "出典データなし" : "No source data"),
-      tone: japanTrafficValue === unknown ? "zinc" : "blue",
+      label: lang === "ja" ? "市場適合シグナル" : "Market alignment signals",
+      value: marketValue,
+      source: observedCountries.length > 0 ? "Domain registry / schema.org / public signals" : (lang === "ja" ? "出典データなし" : "No source data"),
+      tone: marketValue === unknown ? "zinc" : "blue",
     },
     {
       icon: "📊",
-      label: lang === "ja" ? "事業成熟度" : "Maturity",
+      label: lang === "ja" ? "事業シグナル成熟度" : "Business signal maturity",
       value: maturityLabel,
       source: businessMaturity && businessMaturity !== "unknown"
         ? (typeof smb?.emailProvider === "string" ? smb.emailProvider : "SMB signals")
@@ -234,12 +221,10 @@ export function buildJapanMarketMetrics(data: DiagnosticReportData, lang: string
     },
     {
       icon: "💰",
-      label: lang === "ja" ? "推定機会損失レンジ" : "Modeled revenue gap",
-      value: modeledLoss ?? unknown,
-      source: modeledLoss
-        ? `Japan readiness model${confidence === null ? "" : ` · ${confidence}/100 confidence`}`
-        : (lang === "ja" ? "出典データなし" : "No source data"),
-      tone: modeledLoss ? "rose" : "zinc",
+      label: lang === "ja" ? "売上データ" : "Revenue data",
+      value: revenueValue,
+      source: revenueSource,
+      tone: "zinc",
     },
   ]
 }

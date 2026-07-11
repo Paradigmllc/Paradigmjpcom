@@ -171,4 +171,38 @@ describe("generateFormMessage", () => {
     expect(prompt).toContain("japan-monthly-visits")
     expect(prompt).toContain("Similarweb API")
   })
+
+  it("rejects unsupported numeric claims even in free public-signals mode", async () => {
+    vi.stubEnv("DIFY_API_KEY", "")
+    const company = {
+      id: "company-free",
+      region: "global",
+      slug: "free-mode",
+      report_locale: "en",
+      target_country: "US",
+      template_variant: "website_diagnostic",
+      domain: "https://example.com",
+      company_name: "Example Inc",
+      industry: "consulting",
+      pagespeed_mobile: null,
+      pagespeed_desktop: null,
+      detected_issues: [],
+      pipeline_status: "report_ready",
+      meta: {},
+    } as unknown as SalesCompany
+    mocks.findCompanyById.mockResolvedValue(company)
+    mocks.matchTemplate.mockResolvedValue(null)
+    mocks.getAiPrompt.mockResolvedValue("system prompt")
+    mocks.callDeepSeek.mockResolvedValue({
+      ok: true,
+      text: "We estimate 99% of visitors leave before seeing your Japan offer. {{report_url}}",
+    })
+    mocks.getServiceSalesSupabase.mockReturnValue(null)
+
+    const result = await generateFormMessage("company-free", { allowDirectFallback: true })
+
+    expect(result.ok).toBe(false)
+    expect(result.error).toContain("Unsupported numeric claims")
+    expect(result.evidence_mode).toBe("public-signals")
+  })
 })

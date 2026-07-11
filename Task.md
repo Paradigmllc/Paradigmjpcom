@@ -1,5 +1,13 @@
 ## CURRENT STATUS - 2026-07-11 P0公開面・実運用ハードニング（実装済み / 正式releaseは外部設定待ち）
 
+### 2026-07-12 無料OSS Market Visibility Index（実装済み・正式release待ち）
+- Similarwebのような私有アクセス数・売上を無料ソースから推測して表示することは止め、`public-signals-v1`契約を追加。Tranco / Cloudflare Radar / Common Crawl / 公開sitemap / schema.org / 国別NIC-RDAPの観測値だけを保存する。
+- `MarketVisibilityIndex` は公開順位・クロールフットプリント・更新鮮度を0–100の可視性指標に正規化するが、`actualMonthlyVisits` / `actualRevenue` / 国別実訪問比率は常に `null`。各証拠にsource URL・観測日時・confidence・制約を保存する。
+- 公開レポートの「推定トラフィック」「モデル売上損失」は撤去し、「Public visibility」「Market alignment signals」「Revenue not publicly disclosed」へ統一。公開財務情報をsource_typeとURL付きで登録した場合だけ年次売上を表示し、月次化やconversion loss計算は行わない。
+- 営業文面は `OUTREACH_EVIDENCE_MODE=public-signals` を既定値にし、根拠URLのない数値をDify/DeepSeekの出力検証で拒否する。`paid-traffic`を明示した場合だけDataForSEO/Similarwebの検証済みメトリクスを要求する。PageSpeedは市場アクセス根拠から除外した。
+- `release-doctor` は無料モードでは有料traffic credentialをブロッカーにせず、paid-traffic時だけ要求する。無料モードでもSlack、Twenty、Dify、法務表示、暗号化off-host backupなど他の運用ゲートは維持する。
+- 検証: 対象Vitest 23/23 pass、全体Vitest 85 files / 397 tests pass、全体ESLint 0 error、`tsc --noEmit` pass、production build 324/324 pages pass、quality guard 0 error / 47 warning、`release-doctor --local-only --allow-dirty` pass。
+
 ### 2026-07-11 Dify制御面固定 + Twenty選択リスト運用（実装済み・正式release待ち）
 - 実務運用の本番経路はDifyに固定。Difyのworkflow / prompt / 実行IDを監査情報として保存し、Dify停止・出力の数値根拠違反時は失敗扱いにしてDeepSeekへ黙って切り替えない。
 - DeepSeek直呼び出しは `allowDirectFallback: true` を明示した開発・緊急時だけ許可。本番の `/api/sales/generate-form-message`、enrichment、フォームアウトバウンドはfail-closedでDifyのみを使用する。
@@ -32,7 +40,7 @@
 ### 正式release前に必要な外部設定（値を推測してはならない）
 - `PARADIGM_LEGAL_REPRESENTATIVE_NAME`、`PARADIGM_LEGAL_POSTAL_CODE`、`PARADIGM_LEGAL_ADDRESS`、`PARADIGM_LEGAL_PHONE` の法務確認済み実値。
 - `SLACK_BOT_TOKEN` + `SLACK_CHANNEL_ID` または `SLACK_WEBHOOK_URL`。
-- `DATAFORSEO_LOGIN` + `DATAFORSEO_PASSWORD` または `SIMILARWEB_API_KEY` の検証済みtraffic credential（PageSpeed単独は不可）、`TWENTY_API_KEY`、Dify form-message credential。
+- `OUTREACH_EVIDENCE_MODE=paid-traffic` を選ぶ場合のみ `DATAFORSEO_LOGIN` + `DATAFORSEO_PASSWORD` または `SIMILARWEB_API_KEY`。通常の無料 `public-signals` モードでは不要。`TWENTY_API_KEY`、Dify form-message credentialは引き続き必須。
 - `OSS_SUPABASE_BACKUP_GPG_PASSPHRASE` と `OSS_SUPABASE_BACKUP_SSH_TARGET`（暗号化off-host保全）。
 
 上記をCoolify production envへ登録した後、`npm run release:prod`のみを正式入口としてDB/migration、Coolify deploy、Traefik refresh、post-deploy doctor、公開URL smokeまで実施する。外部設定なしにrelease gateを迂回しない。
@@ -41,13 +49,13 @@
 
 ### 2026-07-11 API根拠付きフォーム文面下書き（実装済み・送信は未変更）
 - 参考Gemini会話をレビューし、候補収集→根拠付きLLM下書き→Twenty同期→人間レビューの順に限定。自動フォーム送信は変更していない。
-- `src/lib/sales/outreach/verified-metrics.ts`を追加。DataForSEO / Similarwebの月間訪問数・日本比率・導出日本訪問数、PageSpeed値を出典URL・測定日時・confidence・計算式付きで正規化する。未ラベルのtraffic metaはAPI根拠として扱わない。
+- `src/lib/sales/outreach/verified-metrics.ts`を追加。paid-traffic modeでのみDataForSEO / Similarwebの月間訪問数・日本比率・導出日本訪問数を、出典URL・測定日時・confidence・計算式付きで正規化する。未ラベルのtraffic metaとPageSpeedは市場アクセス根拠として扱わない。
 - `/api/sales/generate-form-message` は既定で `require_verified_metrics` を有効化。検証済みメトリクスがない場合、またはLLM出力に許可されていない数値が含まれる場合は文面を保存せずエラーにする。
 - lead-candidate由来のenrichment完了時だけ、送信を行わずに根拠付き文面下書きを生成してからTwenty karteを同期する。下書き失敗はenrichment全体を落とさず、診断イベントと `needs_review` 相当の結果へ記録する。
 - 文面保存時に `sales_atomic_meta_merge` で `form_message_evidence`（metrics / unknowns / saved_at）を原子的に保存。Twenty同期のkarte summaryに、文面に使った数値と未知項目を表示する。
 - 検証: `tsc --noEmit` pass、`npm run lint` pass、Sales tests 45 files / 178 tests pass、quality guard 0 error（既存warningのみ）。
 - 追加監査修正: 全体Lintの既存117エラー（Payload内部リンク、React effect/ref purity、デモ引用符等）を解消し、`npm run lint` は **0 error / 0 warning**。`scripts/audit-sales-data-acquisition.mjs` はDocker内部Supabase URLを検出した場合にSSH経由のPostgres snapshotへ切り替え、DB 0件と接続不能を混同しないようにした。
-- 2026-07-11 live evidence: production PageSpeed keyless APIはHTTP 429（quota=0）で、外部metric provider credentialがないため、実リードのPageSpeed数値をまだ取得できない。release-doctorへGoogle PSI / DataForSEO / Similarweb API credential必須チェックを追加した。
+- 2026-07-11 live evidence（過去記録）: production PageSpeed keyless APIはHTTP 429（quota=0）だった。現在はPageSpeedを市場アクセス根拠から外し、paid-trafficを選んだ場合だけDataForSEO / Similarweb credentialをrelease-doctorで検査する。
 - この作業ブランチでは本番release・pushは未実施。公開サイトの大規模な未確定差分と分離してから正式releaseする。
 
 ### 2026-07-11 公開サイト依存の全面スリムダウン（実装中）

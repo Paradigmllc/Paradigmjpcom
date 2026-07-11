@@ -49,20 +49,24 @@ function stringAt(record: JsonRecord, paths: string[][]): string | null {
   return null
 }
 
-function sourceContext(meta: JsonRecord, key: string): { source: string; sourceUrl: string | null; measuredAt: string | null } {
+function sourceContext(meta: JsonRecord, key: string): { record: JsonRecord; source: string; sourceUrl: string | null; measuredAt: string | null; trusted: boolean } {
   const record = asRecord(meta[key]) ?? {}
   const provider = stringAt(record, [["provider"], ["source"], ["engine"]])
   const source = key === "dataforseo"
     ? "DataForSEO API"
     : key === "similarweb"
       ? "Similarweb API"
-      : key === "similarweb_free"
-        ? "Similarweb public estimate (not API)"
       : provider ?? "verified API data"
+  const sourceUrl = stringAt(record, [["source_url"], ["url"], ["report_url"], ["endpoint"]])
+  const trusted = (key === "dataforseo" || key === "similarweb") && (
+    sourceUrl !== null || record.verified === true
+  )
   return {
+    record,
     source,
-    sourceUrl: stringAt(record, [["source_url"], ["url"], ["report_url"], ["endpoint"]]),
+    sourceUrl,
     measuredAt: stringAt(record, [["measured_at"], ["captured_at"], ["collected_at"], ["generated_at"]]),
+    trusted,
   }
 }
 
@@ -79,25 +83,18 @@ export function buildVerifiedOutreachContext(company: SalesCompany): VerifiedOut
 
   const dataforseo = sourceContext(meta, "dataforseo")
   const similarweb = sourceContext(meta, "similarweb")
-  const enrichmentMeta = asRecord(meta.sales_os) ?? asRecord(meta.enrichment) ?? {}
-  const measuredAt = stringAt(meta, [
-    ["pagespeed", "measured_at"],
-    ["scan", "measured_at"],
-  ]) ?? stringAt(enrichmentMeta, [["last_enriched_at"], ["measured_at"]])
   const monthlyCandidates = [
-    { value: numberAt(asRecord(meta.dataforseo) ?? {}, ["traffic", "monthly_visits"]), context: dataforseo },
-    { value: numberAt(asRecord(meta.dataforseo) ?? {}, ["monthly_visits"]), context: dataforseo },
-    { value: numberAt(asRecord(meta.similarweb) ?? {}, ["monthly_visits"]), context: similarweb },
+    { value: dataforseo.trusted ? numberAt(dataforseo.record, ["traffic", "monthly_visits"]) : null, context: dataforseo },
+    { value: dataforseo.trusted ? numberAt(dataforseo.record, ["monthly_visits"]) : null, context: dataforseo },
+    { value: similarweb.trusted ? numberAt(similarweb.record, ["monthly_visits"]) : null, context: similarweb },
   ]
   const monthlyCandidate = monthlyCandidates.find((candidate) => candidate.value !== null)
   const monthlyVisits = monthlyCandidate?.value ?? null
-  const trafficSource = monthlyCandidate?.context ?? similarweb
+  const trafficSource = monthlyCandidate?.context ?? (dataforseo.trusted ? dataforseo : similarweb.trusted ? similarweb : null)
   const japanShareRaw =
-    numberAt(asRecord(meta.traffic) ?? {}, ["japan_share_percent"]) ??
-    numberAt(asRecord(meta.traffic) ?? {}, ["jp_share_percent"]) ??
-    numberAt(asRecord(meta.dataforseo) ?? {}, ["traffic", "country_distribution", "JP"]) ??
-    numberAt(asRecord(meta.dataforseo) ?? {}, ["traffic", "countries", "JP"]) ??
-    numberAt(asRecord(meta.similarweb) ?? {}, ["country_shares", "JP"])
+    (dataforseo.trusted ? numberAt(dataforseo.record, ["traffic", "country_distribution", "JP"]) : null) ??
+    (dataforseo.trusted ? numberAt(dataforseo.record, ["traffic", "countries", "JP"]) : null) ??
+    (similarweb.trusted ? numberAt(similarweb.record, ["country_shares", "JP"]) : null)
   const japanSharePercent = japanShareRaw !== null && japanShareRaw <= 1 ? japanShareRaw * 100 : japanShareRaw
 
   addMetric(metrics, monthlyVisits === null ? null : {
@@ -105,9 +102,9 @@ export function buildVerifiedOutreachContext(company: SalesCompany): VerifiedOut
     label: "Estimated monthly visits",
     value: Math.round(monthlyVisits),
     unit: "visits/month",
-    source: trafficSource.source,
-    sourceUrl: trafficSource.sourceUrl,
-    measuredAt: trafficSource.measuredAt,
+    source: trafficSource?.source ?? "No verified traffic provider",
+    sourceUrl: trafficSource?.sourceUrl ?? null,
+    measuredAt: trafficSource?.measuredAt ?? null,
     confidence: 0.78,
   })
   addMetric(metrics, japanSharePercent === null ? null : {
@@ -115,9 +112,9 @@ export function buildVerifiedOutreachContext(company: SalesCompany): VerifiedOut
     label: "Estimated Japan traffic share",
     value: Number(japanSharePercent.toFixed(2)),
     unit: "%",
-    source: trafficSource.source,
-    sourceUrl: trafficSource.sourceUrl,
-    measuredAt: trafficSource.measuredAt,
+    source: trafficSource?.source ?? "No verified traffic provider",
+    sourceUrl: trafficSource?.sourceUrl ?? null,
+    measuredAt: trafficSource?.measuredAt ?? null,
     confidence: 0.72,
   })
   if (monthlyVisits !== null && japanSharePercent !== null) {
@@ -127,35 +124,10 @@ export function buildVerifiedOutreachContext(company: SalesCompany): VerifiedOut
       value: Math.round((monthlyVisits * japanSharePercent) / 100),
       unit: "visits/month",
       source: "Derived from verified traffic metrics",
-      sourceUrl: trafficSource.sourceUrl,
-      measuredAt: trafficSource.measuredAt,
-      confidence: Math.min(0.7, trafficSource.source === "verified API data" ? 0.5 : 0.68),
+      sourceUrl: trafficSource?.sourceUrl ?? null,
+      measuredAt: trafficSource?.measuredAt ?? null,
+      confidence: Math.min(0.7, trafficSource?.source === "verified API data" ? 0.5 : 0.68),
       calculation: "monthly visits × Japan traffic share ÷ 100",
-    })
-  }
-
-  if (company.pagespeed_mobile !== null && company.pagespeed_mobile !== undefined) {
-    addMetric(metrics, {
-      id: "pagespeed-mobile",
-      label: "Mobile PageSpeed score",
-      value: company.pagespeed_mobile,
-      unit: "score/100",
-      source: "PageSpeed Insights data",
-      sourceUrl: company.domain ? `https://pagespeed.web.dev/analysis?url=${encodeURIComponent(company.domain)}` : null,
-      measuredAt,
-      confidence: 0.85,
-    })
-  }
-  if (company.pagespeed_desktop !== null && company.pagespeed_desktop !== undefined) {
-    addMetric(metrics, {
-      id: "pagespeed-desktop",
-      label: "Desktop PageSpeed score",
-      value: company.pagespeed_desktop,
-      unit: "score/100",
-      source: "PageSpeed Insights data",
-      sourceUrl: company.domain ? `https://pagespeed.web.dev/analysis?url=${encodeURIComponent(company.domain)}` : null,
-      measuredAt,
-      confidence: 0.85,
     })
   }
 

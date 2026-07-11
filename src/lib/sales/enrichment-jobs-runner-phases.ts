@@ -12,6 +12,7 @@ import { computeSourceCoverage, saveSourceCoverageRows } from "./source-coverage
 import { saveTechStackDetections } from "./source-acquisition"
 import { syncCompanyKarteToTwenty } from "./twenty-sync"
 import { generateFormMessage } from "./form-message"
+import { requiresVerifiedOutreachMetrics } from "./outreach/evidence-mode"
 import { buildReportUrl, normalizeReportLocale } from "./routing"
 import { auditJapanMarketReadiness } from "./sources/japan-market-audit"
 import { resolveDifyWorkflowKey, normalizeDifyCloudBaseUrl } from "./dify-cloud"
@@ -416,7 +417,7 @@ export async function processSyncPhase(
 ): Promise<{ ok: boolean; error?: string }> {
   const isLeadCandidateFlow = job.triggered_by === "lead_candidate_acquisition" || job.source === "lead_candidate_acquisition"
   const formMessage = isLeadCandidateFlow
-    ? await generateFormMessage(company.id, { requireVerifiedMetrics: true })
+    ? await generateFormMessage(company.id, { requireVerifiedMetrics: requiresVerifiedOutreachMetrics() })
     : null
   if (formMessage && !formMessage.ok) {
     await logDiagnosisEvent(sb, {

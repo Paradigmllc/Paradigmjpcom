@@ -1,15 +1,17 @@
 import { cleanDomain as canonicalDomain } from "@/lib/sales/japan-readiness-utils"
+import type { MarketVisibilityIndex, MarketVisibilityInput } from "../market-visibility"
+import { buildMarketVisibilityIndex } from "../market-visibility"
 
 /**
- * SMB market signals — free proxies for traffic/revenue estimation.
- * Unlike Similarweb (enterprise-focused), these work for ANY domain.
+ * SMB market signals — free public signals for prospect qualification.
+ * These are not traffic or revenue measurements and must not be presented as
+ * such.
  * 
  * Signals:
- * 1. Google Index Count — proxy for content volume/SEO maturity
- * 2. Social media followers — proxy for brand reach
- * 3. Review count — proxy for customer volume
- * 4. Technology tier — proxy for business sophistication
- * 5. Email provider — proxy for business maturity (Google Workspace vs free)
+ * 1. Public web footprint — Common Crawl/sitemap/rank signals
+ * 2. Social presence — public links only, not follower counts
+ * 3. Technology tier — observable stack signals
+ * 4. Email provider — DNS MX signal
  */
 
 export interface SmbSignalsResult {
@@ -21,11 +23,17 @@ export interface SmbSignalsResult {
   techTier: "basic" | "standard" | "advanced" | "unknown"
   emailProvider: string | null
   businessMaturity: "early" | "growing" | "established" | "unknown"
-  estimatedMonthlyVisits: string | null
+  estimatedMonthlyVisits: null
+  marketVisibility: MarketVisibilityIndex
   error?: string
 }
 
-export async function collectSmbSignals(domain: string, wappalyzerTech: string[], dnsMxRecords: Array<{ exchange: string }>): Promise<SmbSignalsResult> {
+export async function collectSmbSignals(
+  domain: string,
+  wappalyzerTech: string[],
+  dnsMxRecords: Array<{ exchange: string }>,
+  publicSources: Omit<MarketVisibilityInput, "domain"> = {},
+): Promise<SmbSignalsResult> {
   try {
     const cleanDomain = canonicalDomain(domain)
     
@@ -38,8 +46,6 @@ export async function collectSmbSignals(domain: string, wappalyzerTech: string[]
 
     // Estimate business maturity
     let maturity: SmbSignalsResult["businessMaturity"] = "unknown"
-    let estimatedVisits: string | null = null
-
     const signalScore = 
       (googleCount ? (googleCount > 500 ? 3 : googleCount > 50 ? 2 : 1) : 0) +
       (social.instagram ? 2 : 0) + (social.twitter ? 1 : 0) + (social.facebook ? 1 : 0) +
@@ -47,9 +53,14 @@ export async function collectSmbSignals(domain: string, wappalyzerTech: string[]
       (emailProvider?.includes("Google") ? 2 : emailProvider?.includes("Microsoft") ? 2 : 0) +
       0
 
-    if (signalScore >= 10) { maturity = "established"; estimatedVisits = "5,000-50,000 PV/月" }
-    else if (signalScore >= 5) { maturity = "growing"; estimatedVisits = "500-5,000 PV/月" }
-    else { maturity = "early"; estimatedVisits = "50-500 PV/月" }
+    if (signalScore >= 10) maturity = "established"
+    else if (signalScore >= 5) maturity = "growing"
+    else maturity = "early"
+
+    const marketVisibility = buildMarketVisibilityIndex({
+      domain: cleanDomain,
+      ...publicSources,
+    })
 
     return {
       ok: true,
@@ -60,7 +71,8 @@ export async function collectSmbSignals(domain: string, wappalyzerTech: string[]
       techTier,
       emailProvider,
       businessMaturity: maturity,
-      estimatedMonthlyVisits: estimatedVisits,
+      estimatedMonthlyVisits: null,
+      marketVisibility,
     }
   } catch (e) {
     console.error("[smb-signals] failed:", e)
@@ -74,6 +86,7 @@ export async function collectSmbSignals(domain: string, wappalyzerTech: string[]
       emailProvider: null,
       businessMaturity: "unknown",
       estimatedMonthlyVisits: null,
+      marketVisibility: buildMarketVisibilityIndex({ domain }),
       error: e instanceof Error ? e.message : "SMB signals collection failed",
     }
   }

@@ -1,5 +1,6 @@
 import { notifySlack } from "@/lib/notify"
 import { generateFormMessage, fillReportUrl, fillDemoUrl } from "../form-message"
+import { requiresVerifiedOutreachMetrics } from "./evidence-mode"
 import { discoverFormUrl, normalizeOrigin } from "../sources/form-discovery"
 import { isAllowedFormUrlForOrigin } from "../sources/external-form-discovery"
 import type { Region, SalesCompany } from "../types"
@@ -150,7 +151,7 @@ async function processOneInner(
   }
 
   const reportUrl = readiness.reportUrl
-  const generated = await generateFormMessage(company.id, { requireVerifiedMetrics: true })
+  const generated = await generateFormMessage(company.id, { requireVerifiedMetrics: requiresVerifiedOutreachMetrics() })
   if (!generated.ok || !generated.message) {
     return base("discovery_failed", `message generation failed: ${generated.error ?? "empty"}`)
   }
