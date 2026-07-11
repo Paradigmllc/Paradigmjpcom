@@ -250,8 +250,8 @@ export function buildDataDrivenServices(
       ? `PageSpeed診断で検出された表示速度の問題を根本から解決します。最新のNext.jsと最適化技術で、${speedCritical ? "現状の低スコア" : "現在のスコア"}から85点以上の高速サイトへ刷新。表示速度改善により直帰率低減と検索順位向上を実現します。`
       : `Root-cause fix for speed issues detected in your PageSpeed diagnostics. Using cutting-edge Next.js and optimization, we upgrade from your ${speedCritical ? "low current score" : "current score"} to 85+. Faster loading reduces bounce rates and improves search rankings.`
     webFeatures = isJa
-      ? ["PageSpeed スコア 85+ 保証", "Next.js + ISR による高速表示", "画像最適化（WebP/AVIF）", "クリティカルCSSのインライン化", "Core Web Vitals 全項目改善"]
-      : ["PageSpeed 85+ guaranteed", "Fast loading with Next.js + ISR", "Image optimization (WebP/AVIF)", "Critical CSS inlining", "All Core Web Vitals improved"]
+      ? ["PageSpeedの基準値・目標値を合意", "Next.js + ISR による高速表示", "画像最適化（WebP/AVIF）", "クリティカルCSSのインライン化", "Core Web Vitalsを基準値と比較"]
+      : ["PageSpeed baseline and target agreed in writing", "Fast loading with Next.js + ISR", "Image optimization (WebP/AVIF)", "Critical CSS inlining", "Core Web Vitals measured against baseline"]
   } else if (trustMissing) {
     webDesc = isJa
       ? `セキュリティ診断で特定された信頼材料の不足を解消し、訪問者が安心して問い合わせできるサイトを構築します。SSL/TLS最適化、セキュリティヘッダー実装、実績・事例の効果的な配置により、成約率を向上させます。`
@@ -340,7 +340,7 @@ export function buildDataDrivenServices(
     features: isJa
       ? ["AIチャットボット導入", "業務自動化ワークフロー設計", "データ分析・可視化", "AI活用コンサルティング", "社内トレーニング"]
       : ["AI chatbot implementation", "Workflow automation design", "Data analysis & visualization", "AI adoption consulting", "In-house training"],
-    priceNote: `${isJa ? "まずは無料相談" : "Free initial consultation"} · ${aiTimeline} · ${aiDeliverable}`,
+    priceNote: `${isJa ? "Japan Entryの申込で適合性を確認" : "Apply for Japan Entry for a fit review"} · ${aiTimeline} · ${aiDeliverable}`,
   })
 
   return services

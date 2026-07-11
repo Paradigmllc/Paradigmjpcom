@@ -38,6 +38,12 @@ export async function POST(req: Request) {
     body.scope === "homepage" || body.scope === "homepage-en"
       ? body.scope
       : "all"
+  if (scope === "all") {
+    return NextResponse.json(
+      { error: "Legacy all-content seeding is retired. Seed only the reviewed homepage scopes." },
+      { status: 410 },
+    )
+  }
   if (body.dryRun === true) {
     const { CATEGORIES, ALL_POSTS, SERVICES, PRICING_PLANS, WORKS, FAQS, TESTIMONIALS, TEAM_MEMBERS } = await import("./seed-data")
     const allCounts = { categories: CATEGORIES.length, posts: ALL_POSTS.length, services: SERVICES.length, pricing: PRICING_PLANS.length, works: WORKS.length, faqs: FAQS.length, testimonials: TESTIMONIALS.length, team: TEAM_MEMBERS.length, pages: 2 }

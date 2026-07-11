@@ -50,6 +50,10 @@ fi
 
 BACKUP_ROOT="${OSS_SUPABASE_BACKUP_ROOT:-/opt/backups/oss-supabase-nightly}"
 RETENTION_DAYS="${OSS_SUPABASE_BACKUP_RETENTION_DAYS:-14}"
+ENCRYPTION_REQUIRED="${OSS_SUPABASE_BACKUP_ENCRYPTION_REQUIRED:-false}"
+GPG_PASSPHRASE="${OSS_SUPABASE_BACKUP_GPG_PASSPHRASE:-}"
+OFFSITE_TARGET="${OSS_SUPABASE_BACKUP_SSH_TARGET:-}"
+OFFSITE_ROOT="${OSS_SUPABASE_BACKUP_SSH_ROOT:-/backups/paradigmjpcom}"
 PGHOST_VALUE="${OSS_SUPABASE_PGHOST:-127.0.0.1}"
 PGPORT_VALUE="${OSS_SUPABASE_PGPORT:-5433}"
 PGUSER_VALUE="${OSS_SUPABASE_PGUSER:-postgres}"
@@ -58,15 +62,24 @@ PGDATABASE_VALUE="${OSS_SUPABASE_PGDATABASE:-postgres}"
 [[ "$RETENTION_DAYS" =~ ^[1-9][0-9]*$ ]] ||
   die "OSS_SUPABASE_BACKUP_RETENTION_DAYS must be a positive integer"
 
+if [[ "$ENCRYPTION_REQUIRED" =~ ^(1|true|yes)$ ]] && [[ -z "$GPG_PASSPHRASE" ]]; then
+  die "OSS_SUPABASE_BACKUP_GPG_PASSPHRASE is required when encryption is enabled"
+fi
+if [[ -n "$GPG_PASSPHRASE" ]] && ! command -v gpg >/dev/null 2>&1; then
+  die "gpg is required for encrypted backups"
+fi
+
 DATE="$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$BACKUP_ROOT"
 chmod 700 "$BACKUP_ROOT"
 WORK_DIR="$(mktemp -d "$BACKUP_ROOT/.${DATE}.tmp.XXXXXX")"
 ARCHIVE_TMP="$BACKUP_ROOT/.${DATE}.tar.gz.tmp"
 CHECKSUM_TMP="$BACKUP_ROOT/.${DATE}.tar.gz.sha256.tmp"
+ARCHIVE_PATH="$BACKUP_ROOT/${DATE}.tar.gz"
 
 cleanup() {
-  rm -rf "$WORK_DIR" "$ARCHIVE_TMP" "$CHECKSUM_TMP"
+  rm -rf "$WORK_DIR" "$ARCHIVE_TMP" "$CHECKSUM_TMP" "${ARCHIVE_TMP}.gpg" \
+    "$BACKUP_ROOT/.${DATE}.tar.gz.gpg.sha256.tmp"
 }
 trap cleanup EXIT
 
@@ -108,16 +121,43 @@ psql \
 find "$WORK_DIR" -type f -print0 | sort -z | xargs -0 sha256sum \
   > "$WORK_DIR/SHA256SUMS"
 tar -C "$BACKUP_ROOT" -czf "$ARCHIVE_TMP" "$(basename "$WORK_DIR")"
-sha256sum "$ARCHIVE_TMP" > "$CHECKSUM_TMP"
 
-mv "$ARCHIVE_TMP" "$BACKUP_ROOT/${DATE}.tar.gz"
-sed "s#$(basename "$ARCHIVE_TMP")#${DATE}.tar.gz#" "$CHECKSUM_TMP" \
-  > "$BACKUP_ROOT/${DATE}.tar.gz.sha256"
+if [[ -n "$GPG_PASSPHRASE" ]]; then
+  gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
+    --symmetric --cipher-algo AES256 --output "${ARCHIVE_TMP}.gpg" "$ARCHIVE_TMP"
+  rm -f "$ARCHIVE_TMP"
+  ARCHIVE_PATH="${ARCHIVE_PATH}.gpg"
+  CHECKSUM_TMP="$BACKUP_ROOT/.${DATE}.tar.gz.gpg.sha256.tmp"
+  sha256sum "${ARCHIVE_TMP}.gpg" > "$CHECKSUM_TMP"
+else
+  sha256sum "$ARCHIVE_TMP" > "$CHECKSUM_TMP"
+fi
+
+if [[ -n "$GPG_PASSPHRASE" ]]; then
+  mv "${ARCHIVE_TMP}.gpg" "$ARCHIVE_PATH"
+  sed "s#$(basename "${ARCHIVE_TMP}.gpg")#$(basename "$ARCHIVE_PATH")#" "$CHECKSUM_TMP" \
+    > "${ARCHIVE_PATH}.sha256"
+else
+  mv "$ARCHIVE_TMP" "$ARCHIVE_PATH"
+  sed "s#$(basename "$ARCHIVE_TMP")#$(basename "$ARCHIVE_PATH")#" "$CHECKSUM_TMP" \
+    > "${ARCHIVE_PATH}.sha256"
+fi
 rm -f "$CHECKSUM_TMP"
+
+if [[ -n "$OFFSITE_TARGET" ]]; then
+  scp -q "$ARCHIVE_PATH" "${ARCHIVE_PATH}.sha256" "${OFFSITE_TARGET}:${OFFSITE_ROOT}/" \
+    || die "offsite backup upload failed"
+elif [[ "$ENCRYPTION_REQUIRED" =~ ^(1|true|yes)$ ]]; then
+  die "OSS_SUPABASE_BACKUP_SSH_TARGET is required when encrypted offsite backups are enabled"
+fi
 
 find "$BACKUP_ROOT" -maxdepth 1 -name '*.tar.gz' -type f \
   -mtime "+$RETENTION_DAYS" -delete
 find "$BACKUP_ROOT" -maxdepth 1 -name '*.tar.gz.sha256' -type f \
+  -mtime "+$RETENTION_DAYS" -delete
+find "$BACKUP_ROOT" -maxdepth 1 -name '*.tar.gz.gpg' -type f \
+  -mtime "+$RETENTION_DAYS" -delete
+find "$BACKUP_ROOT" -maxdepth 1 -name '*.tar.gz.gpg.sha256' -type f \
   -mtime "+$RETENTION_DAYS" -delete
 
 printf 'OSS Supabase backup completed: %s\n' "$DATE"

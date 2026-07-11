@@ -5,6 +5,7 @@
 import type { DiagnosticAct, DiagnosticReportData } from "./diagnostic"
 import type { SalesCompany } from "./types"
 import { compactText, escapeHtml, labelForIndustry, themeForIndustry } from "./render-quality"
+import { JAPAN_ENTRY_CTA_EN, JAPAN_ENTRY_CTA_JA } from "@/lib/japan-entry-public-copy"
 
 const CORRUPT = /縺|繝|譁|蜑|荳|譛|谿|險|螟|豕|邨|髻|蠕|蝠|逕|莠|陦|蛻|諡|蜷|繧|�/
 
@@ -81,7 +82,7 @@ export function buildDemoHtml(company: SalesCompany, report: DiagnosticReportDat
   const industry = labelForIndustry(company.industry, loc)
   const locStr = cln(company.prefecture, ja ? "全国対応" : "Nationwide", 30)
   const hook = cln(report.hook, ja ? "公開データと実測値に基づき、御社の強みが最初の5秒で伝わるサイトへ再設計しました。" : "A focused redesign that makes your strengths clear in the first five seconds.", 250)
-  const cta = cln(report.cta_text, ja ? "無料相談を予約する" : "Book a free consultation", 40)
+  const cta = ja ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN
   const lossStr = esc(report.total_loss)
 
   // Theme colors
@@ -221,7 +222,7 @@ export function buildDemoHtml(company: SalesCompany, report: DiagnosticReportDat
             : "Let's discuss the full demo and your actual improvement plan. Reach out anytime."}
         </p>
         <a href="https://cal.com/paradigm-jp/15min" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 bg-white text-black px-8 py-4 rounded-xl text-lg font-bold hover:bg-zinc-100 transition-all shadow-xl">
-          ${ja ? "15分無料相談を予約" : "Book 15min Free Consult"} <svg class="w-5 h-5" viewBox="0 0 24 24">${svgIcon("arrow")}</svg>
+          ${ja ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN} <svg class="w-5 h-5" viewBox="0 0 24 24">${svgIcon("arrow")}</svg>
         </a>
       </div>
     </div>

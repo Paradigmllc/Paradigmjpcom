@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 import type { DemoServicesPage as DemoServicesPageData } from "@/lib/sales/demo-site-types"
 import type { DemoTemplate, ServiceSectionId, ServiceCardStyle } from "@/lib/sales/demo-templates/registry"
 import { headingSizeClass } from "@/lib/sales/demo-templates/registry"
+import { JAPAN_ENTRY_CTA_EN, JAPAN_ENTRY_CTA_JA } from "@/lib/japan-entry-public-copy"
 import {
   ServiceCardsDetailed,
   ServiceCardsMinimal,
@@ -90,7 +91,7 @@ function ServicesCta({ isJa, accent, services: _services }: { isJa: boolean; acc
       <motion.div className="relative mx-auto max-w-3xl text-center"
         initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
         <h2 className="font-display text-3xl font-bold text-white sm:text-4xl">
-          {isJa ? "まずは無料相談から" : "Start with a Free Consultation"}
+          {isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN}
         </h2>
         <p className="mt-4 text-lg leading-relaxed text-white/80">
           {isJa ? "お客様の課題に合わせた最適なプランをご提案します" : "We'll propose the optimal plan for your needs"}
@@ -99,7 +100,7 @@ function ServicesCta({ isJa, accent, services: _services }: { isJa: boolean; acc
           <a href="https://cal.com/paradigm-jp/15min" target="_blank" rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-3.5 text-base font-bold shadow-xl transition-all hover:-translate-y-0.5 hover:shadow-2xl"
             style={{ color: accent }}>
-            {isJa ? "15分無料相談を予約" : "Book 15min Free Consult"}
+            {isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN}
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
           </a>
         </div>

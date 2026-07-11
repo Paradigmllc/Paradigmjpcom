@@ -13,9 +13,11 @@
  */
 
 import { defineConfig, devices } from "@playwright/test"
+import fs from "node:fs"
 
 const BASE_URL = process.env.E2E_BASE_URL ?? "https://paradigmjp.com"
-const CHROME_EXECUTABLE = process.env.PLAYWRIGHT_CHROME_EXECUTABLE
+const SYSTEM_CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+const CHROME_EXECUTABLE = process.env.PLAYWRIGHT_CHROME_EXECUTABLE || (fs.existsSync(SYSTEM_CHROME) ? SYSTEM_CHROME : undefined)
 
 export default defineConfig({
   testDir: "./e2e",

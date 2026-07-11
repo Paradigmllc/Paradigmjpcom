@@ -101,6 +101,19 @@ function checkStaticReleaseRules() {
     fail("package.json must expose release:prod through release-doctor")
   }
 
+  const englishMessages = JSON.parse(fs.readFileSync("messages/en.json", "utf8"))
+  const legalRows = Array.isArray(englishMessages.legalPage?.rows)
+    ? englishMessages.legalPage.rows
+    : []
+  const legalPlaceholders = legalRows
+    .flat()
+    .filter((value) => typeof value === "string" && /disclosed without delay|on request/i.test(value))
+  if (legalPlaceholders.length > 0) {
+    fail("English legal identity still uses request-only representative/address/phone placeholders")
+  } else {
+    pass("English legal identity fields are populated")
+  }
+
   const githubDeployWorkflow = fs.readFileSync(
     ".github/workflows/coolify-deploy.yml",
     "utf8",
@@ -531,6 +544,22 @@ else
   echo "OK n8n legacy container stopped"
 fi
 
+if systemctl list-timers --all --no-legend 2>/dev/null | grep -Eq 'paradigm-runtime-guard|paradigm-outreach'; then
+  echo "FAIL resident Paradigm runtime/systemd timer detected"
+  fail=1
+else
+  echo "OK no resident Paradigm runtime timer detected"
+fi
+
+for forbidden_container in paradigm-outreach-worker services-steel-browser-1; do
+  if docker ps --format '{{.Names}}' | grep -qx "$forbidden_container"; then
+    echo "FAIL forbidden resident container is running: $forbidden_container"
+    fail=1
+  else
+    echo "OK forbidden resident container stopped: $forbidden_container"
+  fi
+done
+
 twenty_worker_status="$(docker inspect opt-twenty-worker-1 --format '{{.State.Status}}' 2>/dev/null || true)"
 twenty_worker_restarts="$(docker inspect opt-twenty-worker-1 --format '{{.RestartCount}}' 2>/dev/null || echo 9999)"
 if [ "$twenty_worker_status" = "running" ] && [ "$twenty_worker_restarts" -le 3 ]; then
@@ -565,6 +594,34 @@ then 1 else 0 end;
     echo "OK contact ingress table/RPC ACL/CAS guard"
   else
     echo "FAIL contact ingress table/RPC ACL/CAS guard"
+    fail=1
+  fi
+
+  security_db_guard="$(docker exec supabase-db-1 psql -U postgres -d postgres -Atc "
+select case when
+  not exists (
+    select 1 from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity
+  )
+  and not exists (
+    select 1 from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relkind = 'r'
+      and has_table_privilege('anon', format('public.%I', c.relname), 'SELECT')
+  )
+  and exists (
+    select 1 from pg_constraint where conrelid = 'public.sales_integration_status'::regclass and contype in ('p','u')
+  )
+  and exists (
+    select 1 from pg_constraint where conrelid = 'public.sales_tool_connections'::regclass and contype in ('p','u')
+  )
+then 1 else 0 end;
+" 2>/dev/null || true)"
+  if [ "$security_db_guard" = "1" ]; then
+    echo "OK public schema RLS/anon ACL and integration slug constraints"
+  else
+    echo "FAIL public schema RLS/anon ACL or integration slug constraints"
     fail=1
   fi
 else

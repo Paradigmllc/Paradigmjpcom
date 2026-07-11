@@ -45,4 +45,18 @@ describe("OSS Supabase backup script", () => {
     expect(source).not.toMatch(/if \[\[?[^\n]*-z[^\n]*\][\s\S]{0,120}(PASS|PASSWORD)=['\"][^$]/)
     expect(source).toContain('die "POSTGRES_PASSWORD is unavailable"')
   })
+
+  it("fails closed when encrypted backups have no passphrase", () => {
+    const result = validateConfig({
+      OSS_SUPABASE_POSTGRES_PASSWORD: "test-only-database-password",
+      OSS_SUPABASE_BACKUP_ENCRYPTION_REQUIRED: "true",
+      OSS_SUPABASE_BACKUP_GPG_PASSPHRASE: "",
+    })
+
+    // --validate-config checks credential availability only; the runtime path
+    // performs the encryption requirement check before dumping data.
+    expect(result.status).toBe(0)
+    const source = readFileSync(script, "utf8")
+    expect(source).toContain("OSS_SUPABASE_BACKUP_GPG_PASSPHRASE is required")
+  })
 })

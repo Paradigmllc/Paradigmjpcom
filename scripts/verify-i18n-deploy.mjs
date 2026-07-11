@@ -4,8 +4,8 @@
  *
  * P17 2026-04-27 新規実装
  *
- * 全 12 locale の `/{locale}` トップページが HTTP 200 を返すことを検証。
- * ar の Content-Language / dir 属性も検証。
+ * Public marketing locales are JA/EN. The legacy locale paths intentionally
+ * return a permanent redirect to /en and are verified as redirects.
  *
  * 使い方: node scripts/verify-i18n-deploy.mjs [--base=https://paradigmjp.com]
  */
@@ -15,6 +15,7 @@ const baseArg = args.find((a) => a.startsWith("--base="))
 const BASE = baseArg ? baseArg.replace("--base=", "") : "https://paradigmjp.com"
 
 const LOCALES = ["ja", "en", "ko", "zh", "de", "fr", "es", "pt", "ru", "ar", "vi", "id"]
+const PUBLIC_LOCALES = new Set(["ja", "en"])
 
 async function check(locale) {
   const url = `${BASE}/${locale}`
@@ -29,6 +30,10 @@ async function check(locale) {
     const status = res.status
     const contentType = res.headers.get("content-type") || ""
     const html = await res.text()
+    if (!PUBLIC_LOCALES.has(locale)) {
+      const ok = [301, 302, 307, 308].includes(status) && Boolean(res.headers.get("location"))
+      return { locale, status, redirect: res.headers.get("location"), ok, elapsed, urlLen: url.length, htmlLen: html.length }
+    }
     const langMatch = html.match(/<html[^>]*lang="([^"]+)"/)
     const dirMatch = html.match(/<html[^>]*dir="([^"]+)"/)
     const lang = langMatch ? langMatch[1] : "?"
@@ -48,8 +53,10 @@ async function main() {
   for (const l of LOCALES) {
     const r = await check(l)
     results.push(r)
-    if (r.ok) {
+    if (r.ok && PUBLIC_LOCALES.has(l)) {
       console.log(`  ✅ /${l.padEnd(2)} → ${r.status} | lang="${r.lang}" dir="${r.dir}" | ${r.elapsed}ms | ${(r.htmlLen / 1024).toFixed(0)}KB`)
+    } else if (r.ok) {
+      console.log(`  ✅ /${l.padEnd(2)} → ${r.status} redirect=${r.redirect} | ${r.elapsed}ms`)
     } else if (r.status === "ERROR") {
       console.log(`  ❌ /${l.padEnd(2)} → ERROR: ${r.error}`)
     } else {

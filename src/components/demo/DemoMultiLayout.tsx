@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
 import { navClasses, type NavStyle } from "@/lib/sales/demo-templates/registry"
 import type { DemoTemplate } from "@/lib/sales/demo-templates/registry"
+import { JAPAN_ENTRY_CTA_EN, JAPAN_ENTRY_CTA_JA } from "@/lib/japan-entry-public-copy"
 
 interface NavLink {
   label: string
@@ -62,8 +63,8 @@ export function DemoMultiLayout({
     .toUpperCase()
     .slice(0, 2) || companyName.slice(0, 1).toUpperCase()
 
-  const ctaText = isJa ? "無料相談" : "Free Consultation"
-  const footerCTA = isJa ? "無料相談を予約 →" : "Book a call →"
+  const ctaText = isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN
+  const footerCTA = isJa ? `${JAPAN_ENTRY_CTA_JA} →` : `${JAPAN_ENTRY_CTA_EN} →`
   const footerContactLabel = isJa ? "お問い合わせ" : "Contact"
   const footerPagesLabel = isJa ? "ページ" : "Pages"
   const footerDescription = isJa
@@ -190,7 +191,7 @@ export function DemoMultiLayout({
               <p className={`text-sm leading-relaxed ${isDarkNav ? "text-white/50" : "text-gray-500"}`}>
                 {isJa
                   ? "Webサイトの改善にご興味はありませんか？15分の無料コンサルテーションを予約してください。"
-                  : "Ready to improve your website? Book a free 15-minute consultation."}
+                  : "Ready to review the Japan Entry package? Submit an application for a fit review."}
               </p>
               <a
                 href={`${basePath}/contact`}

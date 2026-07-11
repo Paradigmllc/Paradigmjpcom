@@ -36,6 +36,9 @@ export async function GET(
   // Demo slugs: use local demo data without DB
   if (slug.startsWith("demo-")) {
     const variant = slug.replace("demo-", "")
+    if (variant !== "japan_entry") {
+      return new Response("Not Found", { status: 404, headers: { "Content-Type": "text/plain" } })
+    }
     const data = buildDemoData(variant, locale)
     const script = reportVideoScript(data)
     const html = buildVariantVideoHtml(data, script, { format })

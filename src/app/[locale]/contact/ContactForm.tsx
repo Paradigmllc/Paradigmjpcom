@@ -17,7 +17,7 @@ import {
   type BudgetOption,
 } from "./ContactFormFields"
 
-const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? ""
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim()
 
 declare global {
   interface Window {

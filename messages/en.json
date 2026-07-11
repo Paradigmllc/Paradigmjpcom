@@ -479,7 +479,7 @@
       },
       {
         "title": "7. Retention and security",
-        "body": "We retain application and engagement data only for as long as reasonably necessary for fit review, communication, delivery, accounting, dispute handling, security, and legal obligations. Retention varies by record and jurisdiction. We use access controls and other reasonable safeguards, but no internet transmission or storage system can be guaranteed completely secure."
+        "body": "We use the following operational retention targets unless a longer period is required for an active engagement, accounting, dispute, security investigation, or applicable law: application and lead records are reviewed for deletion 24 months after the last interaction; analytics, attribution, and security event logs are retained for 90 days; contract, invoice, and tax records are retained for the applicable statutory accounting period. Deletion requests are handled through the privacy contact after identity verification. We use access controls and other reasonable safeguards, but no internet transmission or storage system can be guaranteed completely secure."
       },
       {
         "title": "8. Your rights and choices",
@@ -515,7 +515,7 @@
     "billingOnetime": "one-time setup",
     "defaultCta": "Apply for Japan Entry — $12K",
     "pppHint": "Fixed USD price — standard {originalPrice}",
-    "regionFooter": "The English Japan Entry package uses one fixed USD price.",
+    "regionFooter": "The English Japan Entry package uses one fixed USD price for {country}; it does not change by region.",
     "fixedPlanName": "Japan Entry Package",
     "fixedPlanDescription": "A fixed-scope launch for fast-decision SMBs entering Japan, with an accountable delivery path and an English-language client workflow.",
     "fixedPlanFeatures": [

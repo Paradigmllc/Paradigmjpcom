@@ -7,6 +7,7 @@ import { applyDemoAdminOverrides } from "./artifact-admin-overrides"
 import type { DemoBlock, DemoMultiPageData, DemoPageData } from "./demo-site-types"
 import { selectTemplate, type CompanyProfile } from "./demo-template-selector"
 import type { Industry, ReportLocale } from "./types"
+import { JAPAN_ENTRY_CTA_EN, JAPAN_ENTRY_CTA_JA } from "@/lib/japan-entry-public-copy"
 
 /**
  * Fetch demo page data by slug from the theme_demo_pages table,
@@ -82,7 +83,7 @@ export async function fetchDemoPageData(slug: string): Promise<DemoPageData | nu
             companyName: name,
             industryLabel: isJa ? "改善デモ" : "Improvement Demo",
             locationLabel: "",
-            primaryCta: { text: isJa ? "無料相談を予約" : "Book free consult", href: ctaUrl },
+            primaryCta: { text: isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN, href: "https://paradigmjp.com/en/contact?intent=japan-entry" },
             secondaryCta: { text: isJa ? "改善ポイントを見る" : "See improvements", href: "#features" },
             accentColor,
             accentColorDark,
@@ -94,10 +95,10 @@ export async function fetchDemoPageData(slug: string): Promise<DemoPageData | nu
           stats: [],
           beforeAfter: [],
           cta: {
-            title: isJa ? "無料相談を予約" : "Book free consult",
+            title: isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN,
             subtitle: isJa ? "詳しくはお問い合わせください" : "Contact us for details",
-            buttonText: isJa ? "15分無料相談を予約" : "Book 15min Free Consult",
-            buttonHref: ctaUrl,
+            buttonText: isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN,
+            buttonHref: "https://paradigmjp.com/en/contact?intent=japan-entry",
             accentColor,
             accentColorDark,
           },
@@ -301,7 +302,7 @@ export async function fetchDemoMultiPageData(slug: string): Promise<DemoMultiPag
               companyName: name,
               industryLabel: isJa ? "改善事例" : "Improvement Case",
               locationLabel: "",
-              primaryCta: { text: isJa ? "無料相談を予約" : "Book free consult", href: ctaUrl },
+              primaryCta: { text: isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN, href: "https://paradigmjp.com/en/contact?intent=japan-entry" },
               secondaryCta: { text: isJa ? "改善ポイント" : "See improvements", href: "#features" },
               accentColor: accent,
               accentColorDark: accentDark,
@@ -311,10 +312,10 @@ export async function fetchDemoMultiPageData(slug: string): Promise<DemoMultiPag
             beforeAfter: [],
             totalLoss: "",
             cta: {
-              title: isJa ? "無料相談を予約" : "Book free consult",
+              title: isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN,
               subtitle: "",
-              buttonText: isJa ? "15分無料相談を予約" : "Book 15min Free Consult",
-              buttonHref: ctaUrl,
+              buttonText: isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN,
+              buttonHref: "https://paradigmjp.com/en/contact?intent=japan-entry",
               accentColor: accent,
               accentColorDark: accentDark,
             },

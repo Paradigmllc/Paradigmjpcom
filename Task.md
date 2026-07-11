@@ -1,5 +1,19 @@
 ## CURRENT STATUS - 2026-07-11 全ページ Japan Entry 公開サイト仕上げ（本番公開・運用基盤検証完了）
 
+### 2026-07-11 運用監査 remediation（実装済み・次回release待ち）
+- 公開管理API（infra / analytics / demo-designs）をoperator認証＋`no-store`へ変更。`/api/infra`の内部origin情報は未認証公開しない。
+- `content-blocks`の診断run公開フォールバックを廃止し、診断ID prefixから会社名・損失額等を返さない。demo pagesは公開フィールドのみ返す。
+- 公開trackingはtrusted proxy IP＋rate limit＋イベントallowlistへ統一。公開pixelからhot-lead昇格・Slack通知を実行しない。旧`/api/cta-click`は410 retired。
+- demo contactはTurnstile/honeypot/rate limit、DB保存失敗時の成功返却禁止、DB bell通知へ更新。`migration_070_demo_contact_hardening.sql`をrelease pathへ追加。
+- `sales_integration_status` / `sales_tool_connections`のslug制約、public schema全体のdefault-deny RLS/anon ACLを`migration_071_public_surface_rls_and_constraints.sql`で適用するrelease pathを追加。DB verificationとpost-deploy doctorでRLS/制約を検査する。
+- 問い合わせ後のエンリッチメントをHTTP fire-and-forgetから、企業stub＋`sales_enrichment_jobs` durable queueへの同期enqueueへ変更。
+- `paradigm-runtime-guard.timer`、`paradigm-outreach-worker`、`services-steel-browser-1`を本番hostから停止・撤去。release-doctorでも常駐timer/containerをfailにする。
+- lintをNext 16互換のESLint flat configへ移行し、Playwrightの実Chrome自動選択と`e2e:install`を追加。i18n verifierはJA/EN=200、他locale=308 redirectを正しく検証する。
+- backup scriptにAES-256 GPG暗号化とSSH off-host転送を追加。復元手順は`docs/ops/backup-restore.md`に記録。
+- 実装検証: TypeScript / ESLint / Vitest / build / quality guard / i18n integrity pass。公開migration適用と本番再deployは、法定表示の代表者・住所・電話、Slack、off-host backup credential登録後に実施。
+
+※下記の過去セクションに残る件数・コミット・「migration待ち」記述は履歴であり、上記remediation記録とrelease doctorの実測を正本とする。
+
 ### 2026-07-11 Japan Entryコンテンツ拡張（本番反映完了）
 - EN商流表現を全主要導線で統一: **$12,000 one-time setup**、標準月額運用はセットアップに含めて最初の6ヶ月は追加月額なし、7ヶ月目以降 **$995/month**。単なる値引きの「無料」ではなく、included serviceとして説明する。
 - Blogを汎用Web制作記事からJapan Entry意思決定者向けへ再編。`src/lib/japan-entry-blog.ts`に英語基幹記事6本（市場参入、21営業日準備、翻訳とローカライズ、法人・銀行、費用比較、買い手信頼）を追加した。

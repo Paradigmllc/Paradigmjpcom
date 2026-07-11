@@ -148,7 +148,7 @@ const FAQS: SeedFaq[] = [
     question: { ja: "WordPressとNext.jsの違いは？どちらを選べばいいですか？", en: "WordPress vs Next.js — which should I choose?" },
     answer: {
       ja: "WordPressは管理画面が充実しており、自分で更新したい方におすすめです。Next.jsは表示速度が非常に速く、SEOに強く、より高度な機能実装が可能です。どちらが適しているかはサイトの目的や更新頻度によって異なります。無料相談時にヒアリングの上、最適な方をご提案します。",
-      en: "WordPress has a rich admin panel — ideal if you want to update content yourself. Next.js offers superior speed, SEO performance, and advanced functionality. The best choice depends on your site's purpose and update frequency. We'll recommend the optimal stack during your free consultation.",
+      en: "WordPress has a rich admin panel, while Next.js offers a high-performance delivery layer. The right choice depends on the agreed Japan Entry scope, current stack, and handover requirements; we confirm it during the fit review.",
     },
     category: { ja: "Web制作", en: "Web Development" },
     sortOrder: 12,
@@ -184,7 +184,7 @@ const FAQS: SeedFaq[] = [
     question: { ja: "見積もりだけでも大丈夫ですか？", en: "Can I just get a quote?" },
     answer: {
       ja: "もちろんです。無料相談（30分）でヒアリングの上、無料でお見積りを提出します。見積もり後のご判断はご自由です。お見積りだけでご発注いただけなくても問題ありません。",
-      en: "Absolutely. After a 30-minute free consultation, we'll provide a free quote. There's no obligation to proceed — we're happy to help even if you're just exploring options.",
+      en: "The Japan Entry application is a fit review, not contract acceptance. We confirm the fixed $12,000 setup scope, dependencies, and written terms before any work starts.",
     },
     category: { ja: "お申し込み前", en: "Before Ordering" },
     sortOrder: 16,

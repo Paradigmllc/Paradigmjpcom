@@ -3,6 +3,7 @@
  */
 
 import type { ReportLocaleData } from "./report-i18n-shared"
+import { JAPAN_ENTRY_CTA_EN } from "@/lib/japan-entry-public-copy"
 
 export const EN: ReportLocaleData = {
   ui: {
@@ -50,7 +51,7 @@ export const EN: ReportLocaleData = {
   },
   cta: [
     "View improvement demo",
-    "Schedule a free consultation",
+    JAPAN_ENTRY_CTA_EN,
     "Read the full diagnostic",
     "Start improving now",
   ],
@@ -60,8 +61,8 @@ export const EN: ReportLocaleData = {
       a: "No. We build and test the high-performance presentation layer on a staging environment and swap it with zero downtime when approved. Your current infrastructure remains untouched — we've lifted Lighthouse scores from the 40s to the 90s without touching the backend in dozens of projects.",
     },
     {
-      q: "Is the Lighthouse 85+ mobile score guaranteed?",
-      a: "Yes. Our Astro/Next.js build package guarantees a Lighthouse mobile score of 85+. If we fail to reach this threshold, we refund the performance optimization fee in full. Our average delivery score across all 2024–2026 projects is 92.",
+      q: "Is a Lighthouse score guaranteed?",
+      a: "No unconditional performance score is guaranteed. We agree a measurement method and target within the written scope, then report the result against the agreed baseline and dependencies.",
     },
     {
       q: "What does the process look like and how long does it take?",
@@ -73,13 +74,13 @@ export const EN: ReportLocaleData = {
     },
     {
       q: "What ROI can a typical B2B service business expect?",
-      a: "Based on our portfolio of 50+ SMB clients, the median recovery is 2.3× the investment within 6 months. For a typical B2B service company with 500–2,000 monthly visitors, improving page speed from <50 to >85 typically yields a 15–30% increase in qualified inbound leads.",
+      a: "We do not publish unsupported outcome averages. The review identifies observable friction and a prioritised first move; commercial impact is measured against the agreed baseline after implementation.",
     },
   ],
   reassurance: [
     "14-day improvement cycle — from kickoff to production in as little as 2 weeks",
-    "Performance-guaranteed — full refund if Lighthouse 85+ is not achieved",
-    "50+ SMBs served — manufacturing, construction, professional services, beauty, and more",
+    "Inspectable implementation and written scope",
+    "Evidence-led review with human approval",
     "Zero downtime deployment — your existing systems stay online throughout",
   ],
   offerBadges: [
@@ -87,7 +88,7 @@ export const EN: ReportLocaleData = {
     "No-code editable",
     "Mobile-optimized",
     "Multi-language ready",
-    "Performance guaranteed",
+    "Evidence-led",
   ],
   culturalNotes: {
     toneDescription:

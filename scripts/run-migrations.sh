@@ -49,3 +49,5 @@ docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabas
 docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_048b_sales_lead_candidate_runs.sql  # original: supabase/migrations/migration_048_sales_lead_candidate_runs.sql
 docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_049b_sales_passive_inventory.sql  # original: supabase/migrations/migration_049_sales_passive_inventory.sql
 docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_050b_sales_passive_inventory_segments.sql  # original: supabase/migrations/migration_050_sales_passive_inventory_segments.sql
+docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_070_demo_contact_hardening.sql
+docker exec -i paradigm-supabase-db psql -U postgres -d postgres < /root/supabase-oss/migrations/migration_071_public_surface_rls_and_constraints.sql

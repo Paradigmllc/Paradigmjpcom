@@ -15,6 +15,7 @@ import { readFileSync } from "node:fs"
 
 const LOCALES = ["ja", "en", "ko", "zh", "de", "fr", "es", "pt", "ru", "ar", "vi", "id"]
 const BASE = "ja"
+const ACTIVE_PUBLIC_LOCALES = new Set(["ja", "en"])
 
 function flatten(obj, prefix = "") {
   const out = {}
@@ -57,6 +58,10 @@ const report = {}
 
 for (const l of LOCALES) {
   if (l === BASE) continue
+  if (!ACTIVE_PUBLIC_LOCALES.has(l)) {
+    console.log(`${l}: inactive legacy catalog (public route redirects to /en; skipped from public-content gate)`)
+    continue
+  }
   const issues = {
     placeholderMismatch: [],
     htmlMismatch: [],
@@ -93,6 +98,7 @@ for (const l of LOCALES) {
 let totalIssues = 0
 for (const l of LOCALES) {
   if (l === BASE) continue
+  if (!ACTIVE_PUBLIC_LOCALES.has(l)) continue
   const r = report[l]
   const sum = r.placeholderMismatch.length + r.htmlMismatch.length + r.jpLeak.length
   totalIssues += sum
@@ -106,6 +112,7 @@ console.log(`\n=== TOTAL ISSUES: ${totalIssues} ===\n`)
 // Detail: first 10 of each problem type per locale
 for (const l of LOCALES) {
   if (l === BASE) continue
+  if (!ACTIVE_PUBLIC_LOCALES.has(l)) continue
   const r = report[l]
   if (r.placeholderMismatch.length > 0) {
     console.log(`\n## ${l} — placeholder mismatch (${r.placeholderMismatch.length}):`)

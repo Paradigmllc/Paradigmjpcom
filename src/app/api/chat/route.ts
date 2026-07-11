@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { normalizeDifyCloudBaseUrl } from "@/lib/sales/dify-cloud"
-import { checkRateLimit } from "@/lib/rate-limit"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import {
   getFallbackAnswer,
   isSafeEnglishCommercialAnswer,
@@ -20,7 +20,7 @@ import {
 // env 未設定または古いDify URLが残っている場合も Dify Cloud 公式 endpoint に寄せる。
 const DIFY_BASE = normalizeDifyCloudBaseUrl(process.env.DIFY_BASE_URL)
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? ""
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY?.trim()
 
 function resolveDifyKey(locale: ChatLocale): string {
   const localeKey = locale === "en" ? process.env.DIFY_API_KEY_EN : process.env.DIFY_API_KEY_JA
@@ -99,7 +99,7 @@ async function callGemini(message: string, locale: ChatLocale): Promise<string> 
 }
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown"
+  const ip = getClientIp(req)
   const rl = checkRateLimit({ ip, key: "api:chat", max: 20, windowMs: 60_000 })
   if (!rl.ok) return NextResponse.json({ error: "Too many requests" }, { status: 429 })
 

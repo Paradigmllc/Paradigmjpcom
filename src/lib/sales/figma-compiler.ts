@@ -150,7 +150,7 @@ function buildSections(layout: FigmaNode[], company: any): string[] {
   html.push(`  <div style="display:flex;padding:0 60px;gap:275px;align-items:center;background:#f3f3f3;border-radius:45px;width:100%">`)
   html.push(`    <div style="display:flex;flex-direction:column;gap:26px;padding:60px 0">`)
   html.push(`      <h2 style="font-size:30px;font-weight:500">${company.ctaText}</h2>`)
-  html.push(`      <p style="font-size:18px">まずは無料相談から。御社に最適なプランをご提案します。</p>`)
+  html.push(`      <p style="font-size:18px">Japan Entryの固定範囲と適合性を申込前に確認します。</p>`)
   html.push(`      <a href="/contact" style="display:inline-flex;padding:20px 35px;background:#191a23;color:#fff;border-radius:14px;font-size:20px;width:fit-content">相談する</a>`)
   html.push(`    </div>`)
   html.push(`  </div>`)

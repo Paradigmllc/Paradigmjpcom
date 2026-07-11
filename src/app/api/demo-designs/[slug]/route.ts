@@ -8,15 +8,19 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { generateDemoDesign, buildDesignInput } from "@/lib/sales/demo-design-generator"
 import type { DesignPromptInput } from "@/lib/sales/demo-design-prompts"
+import { isAuthorizedOperatorRequest } from "@/lib/api-security"
 
 export const dynamic = "force-dynamic"
 
 // ── GET — return cached design spec ──
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
+  if (!(await isAuthorizedOperatorRequest(req))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
   const { slug } = await params
   try {
     const sb = getServiceSalesSupabase()
