@@ -147,6 +147,8 @@ class OriginLockReleaseTests(unittest.TestCase):
             config["routers"]["paradigmhp-origin-alias-https"]["middlewares"][0],
             ORIGIN_LOCK.MIDDLEWARE_NAME,
         )
+        for router_name in ("paradigmhp-https", "keystatic-https"):
+            self.assertEqual(config["routers"][router_name]["priority"], 1000)
         backups = list(self.root.glob("paradigmjp.yml.bak-release-*-origin-lock"))
         self.assertEqual(len(backups), 1)
         self.assertEqual(stat.S_IMODE(backups[0].stat().st_mode), 0o600)

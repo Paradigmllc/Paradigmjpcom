@@ -296,13 +296,16 @@ def apply_cached_origin_lock(
     keystatic_rule = f"Host({tick}{KEYSTATIC_HOST}{tick})"
 
     http_router["rule"] = main_rule
+    http_router["priority"] = 1000
     http_router["middlewares"] = prepend_once(middleware_list(http_router), MIDDLEWARE_NAME)
     https_router["rule"] = main_rule
+    https_router["priority"] = 1000
     https_router["middlewares"] = prepend_once(middleware_list(https_router), MIDDLEWARE_NAME)
 
     keystatic_http = copy.deepcopy(routers.get("keystatic-http") or http_router)
     keystatic_http.update({
         "rule": keystatic_rule,
+        "priority": 1000,
         "middlewares": prepend_once(middleware_list(keystatic_http), MIDDLEWARE_NAME),
         "service": "paradigmhp-svc",
     })
@@ -311,6 +314,7 @@ def apply_cached_origin_lock(
     keystatic_https = copy.deepcopy(routers.get("keystatic-https") or https_router)
     keystatic_https.update({
         "rule": keystatic_rule,
+        "priority": 1000,
         "middlewares": prepend_once(middleware_list(keystatic_https), MIDDLEWARE_NAME),
         "service": "paradigmhp-svc",
     })
