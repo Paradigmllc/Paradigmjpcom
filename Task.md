@@ -17,6 +17,7 @@
 - `npm audit --audit-level=high`: **0 vulnerabilities**（workerはlowのみ）
 - `node scripts/release-doctor.mjs --local-only --allow-dirty`: **pass**
 - `npm run release:prod`のpre-deploy: host / Coolify / Traefik / Cloudflare origin lock / Realtime / Twenty workerはpass。公開envの不足はSlack、metric provider、暗号化off-host backup、法定表示の4件だけで、gateが停止したためdeployは実行されていない。
+- release未実行のため、現本番は旧コンテナのまま（実測: `/api/infra` HTTP 200、`/api/infra/status` HTTP 200、`/ja/services` HTTP 200）。新コードの401/308/410挙動は正式release後に再検証する。
 
 ### 正式release前に必要な外部設定（値を推測してはならない）
 - `PARADIGM_LEGAL_REPRESENTATIVE_NAME`、`PARADIGM_LEGAL_POSTAL_CODE`、`PARADIGM_LEGAL_ADDRESS`、`PARADIGM_LEGAL_PHONE` の法務確認済み実値。
