@@ -31,7 +31,7 @@ describe("production origin-lock release wiring", () => {
     expect(helper).toContain("paradigmhp-origin-alias-https")
     expect(helper).toContain("keystatic-https")
 
-    const applyBody = helper.match(/def apply_cached_origin_lock\([\s\S]*?\n\ndef main\(/)?.[0]
+    const applyBody = helper.match(/def apply_cached_origin_lock\([\s\S]*?(?:\r?\n){2,}def main\(/)?.[0]
     expect(applyBody).toContain("load_cached_ranges")
     expect(applyBody).toContain("atomic_write(")
     expect(applyBody).not.toContain("fetch_cloudflare_ranges(")
