@@ -65,16 +65,10 @@ export async function POST(req: Request) {
           status: "published" as const,
           _status: "published" as const,
           publishedAt: new Date(post.publishedAt).toISOString(),
-          availableLocales: ["ja", "en"],
+          availableLocales: ["en"],
         }
 
         if (existing.docs.length > 0) {
-          await payload.update({
-            collection: "posts",
-            id: existing.docs[0].id,
-            data,
-            locale: "ja",
-          } as unknown as Parameters<typeof payload.update>[0])
           await payload.update({
             collection: "posts",
             id: existing.docs[0].id,
@@ -83,17 +77,11 @@ export async function POST(req: Request) {
           } as unknown as Parameters<typeof payload.update>[0])
           results.push({ slug: post.slug, action: "updated" })
         } else {
-          const created = await payload.create({
+          await payload.create({
             collection: "posts",
-            data,
-            locale: "ja",
-          } as unknown as Parameters<typeof payload.create>[0])
-          await payload.update({
-            collection: "posts",
-            id: created.id,
             data,
             locale: "en",
-          } as unknown as Parameters<typeof payload.update>[0])
+          } as unknown as Parameters<typeof payload.create>[0])
           results.push({ slug: post.slug, action: "created" })
         }
       } catch (error: unknown) {

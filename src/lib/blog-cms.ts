@@ -125,6 +125,7 @@ async function fetchAllPayloadPosts(locale: string): Promise<BlogPost[]> {
       },
       limit: 200,
       depth: 1,
+      locale,
     } as Parameters<typeof payload.find>[0])
 
     const docs = (res?.docs ?? []) as unknown as PayloadPost[]
