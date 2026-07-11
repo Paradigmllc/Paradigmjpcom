@@ -6,6 +6,9 @@ import { envValue, missingEnv, notConfigured, normalizeHttpBase, safeFetch, heal
 import type { ServiceHealthResult } from "./oss-service-health"
 
 export async function checkSpiderfootHealth(): Promise<ServiceHealthResult> {
+  if (!envValue("SPIDERFOOT_API_URL")) {
+    return notConfigured(["SPIDERFOOT_API_URL (optional)"])
+  }
   try {
     const result = await checkSpiderFootHealth()
     return { balanceStatus: "ok", balanceLabel: "Connected", ok: result.ok, name: "SpiderFoot", detail: result.detail, url: process.env.SPIDERFOOT_API_URL ?? "http://127.0.0.1:5001" }
@@ -16,6 +19,9 @@ export async function checkSpiderfootHealth(): Promise<ServiceHealthResult> {
 }
 
 export async function checkKatanaServiceHealth(): Promise<ServiceHealthResult> {
+  if (!envValue("KATANA_API_URL")) {
+    return notConfigured(["KATANA_API_URL (optional)"])
+  }
   try {
     const result = await checkKatanaHealth()
     return { balanceStatus: "ok", balanceLabel: "Connected", ok: result.ok, name: "Katana", detail: result.detail, url: "http://localhost:5002" }
@@ -26,6 +32,9 @@ export async function checkKatanaServiceHealth(): Promise<ServiceHealthResult> {
 }
 
 export async function checkMaigretServiceHealth(): Promise<ServiceHealthResult> {
+  if (!envValue("MAIGRET_API_URL")) {
+    return notConfigured(["MAIGRET_API_URL (optional)"])
+  }
   try {
     const result = await checkMaigretHealth()
     return { balanceStatus: "ok", balanceLabel: "Connected", ok: result.ok, name: "Maigret", detail: result.detail, url: "http://localhost:5003" }
@@ -36,6 +45,9 @@ export async function checkMaigretServiceHealth(): Promise<ServiceHealthResult> 
 }
 
 export async function checkFlareSolverrServiceHealth(): Promise<ServiceHealthResult> {
+  if (!envValue("FLARESOLVERR_API_URL") && !envValue("FLARESOLVERR_URL")) {
+    return notConfigured(["FLARESOLVERR_API_URL (optional)"])
+  }
   try {
     const result = await checkFlareSolverrHealth()
     return { balanceStatus: "ok", balanceLabel: "Connected", ok: result.ok, name: "FlareSolverr", detail: result.detail, url: process.env.FLARESOLVERR_API_URL ?? "http://127.0.0.1:8191" }
