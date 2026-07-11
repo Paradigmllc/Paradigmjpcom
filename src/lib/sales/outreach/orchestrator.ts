@@ -1,4 +1,3 @@
-import { getServiceSalesSupabase } from "@/lib/supabase"
 import { notifySlack } from "@/lib/notify"
 import { generateFormMessage, fillReportUrl, fillDemoUrl } from "../form-message"
 import { discoverFormUrl, normalizeOrigin } from "../sources/form-discovery"
@@ -13,6 +12,7 @@ import { DB_TABLES } from "@/lib/sales/db-tables"
 import { applyOutcome, logActivity, persistDiscoveredFormUrl, enqueueOperatorTask, persistOutcome, saveFormStructureCache } from "./side-effects"
 import { evaluateOutreachReadiness } from "./readiness"
 import { detectCmsType } from "./cms-form-templates"
+import { fetchCandidates } from "./candidate-selection"
 import type {
   OutreachBatchResult,
   OutreachItemResult,
@@ -23,6 +23,8 @@ import type {
 export interface RunOutreachOptions {
   region?: Region
   companyId?: string
+  /** Twenty の選択行を指定する。指定時はこの順序で処理する。 */
+  companyIds?: string[]
   pipelineRunId?: string | null
   limit?: number
   dryRun?: boolean
@@ -94,35 +96,6 @@ async function fetchPageHtml(url: string, timeoutMs: number): Promise<string | n
     return null
   }
 }
-async function fetchCandidates(region: Region, limit: number, companyId?: string): Promise<SalesCompany[]> {
-  const sb = getServiceSalesSupabase()
-  if (!sb) return []
-  if (companyId) {
-    const { data, error } = await sb
-      .from(DB_TABLES.SALES_COMPANIES)
-      .select("*")
-      .eq("id", companyId)
-      .maybeSingle()
-    if (error) {
-      console.error("[sales-outreach] fetch pipeline company failed:", error.message)
-      return []
-    }
-    return data ? [data as SalesCompany] : []
-  }
-  const { data, error } = await sb
-    .from(DB_TABLES.SALES_COMPANIES)
-    .select("*")
-    .eq("region", region)
-    .eq("pipeline_status", "report_ready")
-    .order("updated_at", { ascending: true })
-    .limit(limit)
-  if (error) {
-    console.error("[sales-outreach] fetch candidates failed:", error.message)
-    return []
-  }
-  return (data as SalesCompany[]) ?? []
-}
-
 async function processOne(
   company: SalesCompany,
   opts: Required<RunOutreachOptions>,
@@ -422,6 +395,7 @@ export async function runOutreachBatch(options: RunOutreachOptions = {}): Promis
   const opts: Required<RunOutreachOptions> = {
     region: options.region ?? "jp",
     companyId: options.companyId ?? "",
+    companyIds: options.companyIds ?? [],
     pipelineRunId: options.pipelineRunId ?? null,
     limit: options.limit ?? 5,
     dryRun: options.dryRun ?? true,
@@ -432,7 +406,13 @@ export async function runOutreachBatch(options: RunOutreachOptions = {}): Promis
     itemTimeoutMs: options.itemTimeoutMs ?? DEFAULT_ITEM_TIMEOUT_MS,
   }
 
-  const candidates = await fetchCandidates(opts.region, opts.limit, opts.companyId || undefined)
+  const selection = await fetchCandidates(
+    opts.region,
+    opts.limit,
+    opts.companyId || undefined,
+    opts.companyIds,
+  )
+  const candidates = selection.companies
   const items: OutreachItemResult[] = []
 
   // Per-domain rate limiting: prevent rapid repeated submissions to same domain
@@ -489,6 +469,16 @@ export async function runOutreachBatch(options: RunOutreachOptions = {}): Promis
       ["discovery_failed", "preflight_failed", "submit_failed"].includes(item.finalStage),
     ).length,
     dryRun: opts.dryRun,
+    selection: {
+      requestedCompanyIds: opts.companyIds.length > 0
+        ? opts.companyIds
+        : opts.companyId
+          ? [opts.companyId]
+          : [],
+      acceptedCompanyIds: candidates.map((candidate) => candidate.id),
+      missingCompanyIds: selection.missingCompanyIds,
+      notReadyCompanyIds: selection.notReadyCompanyIds,
+    },
     items,
   }
 }

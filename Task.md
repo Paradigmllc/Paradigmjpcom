@@ -1,5 +1,13 @@
 ## CURRENT STATUS - 2026-07-11 P0公開面・実運用ハードニング（実装済み / 正式releaseは外部設定待ち）
 
+### 2026-07-11 Dify制御面固定 + Twenty選択リスト運用（実装済み・正式release待ち）
+- 実務運用の本番経路はDifyに固定。Difyのworkflow / prompt / 実行IDを監査情報として保存し、Dify停止・出力の数値根拠違反時は失敗扱いにしてDeepSeekへ黙って切り替えない。
+- DeepSeek直呼び出しは `allowDirectFallback: true` を明示した開発・緊急時だけ許可。本番の `/api/sales/generate-form-message`、enrichment、フォームアウトバウンドはfail-closedでDifyのみを使用する。
+- `POST /api/sales/outreach/run` が `companyIds`（最大50件）を受け取り、Twentyの選択行を入力順にdry-runできるようにした。`report_ready` 以外・存在しないIDは `selection.notReadyCompanyIds` / `selection.missingCompanyIds` で明示する。
+- オペレーター承認は送信を暗黙実行せず、`form_send` キューを `report_ready` に戻すだけ。Twentyで承認後、dry-run確認を経て `dryRun:false` の明示送信を行う。
+- 実務操作: (1) Twentyで選択→companyIds付きdry-run、(2) 文面・根拠URL・未知項目を確認、(3) キュー承認、(4) 同じcompanyIdsで再dry-run、(5) operatorが明示的にlive send。CAPTCHA/robots/重複/ドメインrate-limitは既存の手動キュー・遮断を維持する。
+- 検証: `npx tsc --noEmit` pass、`npm run lint` pass、`npx vitest run src/lib/sales/form-message.test.ts` 5/5 pass。
+
 ### 今回実装した内容
 - 日本語を含む旧 `services` / `video` / `agency` / `lp` / `pricing` 導線を `/ja#japan-entry-pricing` へ308統一。公開価格・CTAの旧表現が残るページを現行Japan Entry導線から切り離した。
 - 公開 `demo-pages` / `content-blocks` APIを再帰的な公開サニタイズへ変更し、診断・CRM・生成内部メタデータを返さない。`demo-designs` は `private, no-store`、障害レスポンスは内部エラー詳細を返さない。

@@ -5,7 +5,7 @@
  *       judgment は本ルート (Next)、実ブラウザ送信は BrowserProvider 経由。
  *
  * 認証: X-Webhook-Secret (Trigger.dev webhook / admin action から呼ぶ)
- * Body: { region?, limit?, dryRun?, first5Approval?, enableLlm?, checkRobots?, dedupDays? }
+ * Body: { companyIds?, region?, limit?, dryRun?, first5Approval?, enableLlm?, checkRobots?, dedupDays? }
  *   - dryRun は **default true** (安全側)。実送信は明示的に dryRun:false が必要。
  * 出力: OutreachBatchResult (processed/submitted/manualQueue/skipped/failed/items)
  *
@@ -23,6 +23,7 @@ export const dynamic = "force-dynamic"
 export const maxDuration = 300
 
 interface Body {
+  companyIds?: unknown
   region?: string
   limit?: number
   dryRun?: boolean
@@ -46,11 +47,24 @@ export async function POST(req: NextRequest) {
   }
 
   const region = body.region && isValidRegion(body.region) ? body.region : "jp"
-  const limit = Math.min(Math.max(body.limit ?? 5, 1), 50)
+  const companyIds = Array.isArray(body.companyIds)
+    ? [...new Set(body.companyIds.filter((id): id is string => typeof id === "string" && id.trim().length > 0))].slice(0, 50)
+    : []
+  const limit = Math.min(Math.max(body.limit ?? (companyIds.length || 5), 1), 50)
+
+  // Live submission is intentionally selection-scoped. A region-wide request
+  // can only prepare a dry-run; it may never become an accidental bulk send.
+  if (body.dryRun === false && companyIds.length === 0) {
+    return NextResponse.json(
+      { ok: false, error: "Live send requires explicit companyIds selected in Twenty" },
+      { status: 400 },
+    )
+  }
 
   try {
     const result = await runOutreachBatch({
       region,
+      companyIds,
       limit,
       dryRun: body.dryRun ?? true,
       first5Approval: body.first5Approval ?? true,

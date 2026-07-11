@@ -116,7 +116,7 @@ describe("generateFormMessage", () => {
     mocks.callDeepSeek.mockResolvedValue({ ok: true, text: "Please review {{report_url}}" })
     mocks.getServiceSalesSupabase.mockReturnValue(null)
 
-    const result = await generateFormMessage("company-1")
+    const result = await generateFormMessage("company-1", { allowDirectFallback: true })
 
     expect(result.ok).toBe(true)
     expect(result.fallbacks).toEqual({ industry: true, issueCode: true })
@@ -162,7 +162,7 @@ describe("generateFormMessage", () => {
     })
     mocks.getServiceSalesSupabase.mockReturnValue(null)
 
-    const result = await generateFormMessage("company-2", { requireVerifiedMetrics: true })
+    const result = await generateFormMessage("company-2", { requireVerifiedMetrics: true, allowDirectFallback: true })
 
     expect(result.ok).toBe(true)
     expect(result.evidence_ready).toBe(true)

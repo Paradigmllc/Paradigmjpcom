@@ -89,5 +89,11 @@ export interface OutreachBatchResult {
   skipped: number
   failed: number
   dryRun: boolean
+  selection?: {
+    requestedCompanyIds: string[]
+    acceptedCompanyIds: string[]
+    missingCompanyIds: string[]
+    notReadyCompanyIds: string[]
+  }
   items: OutreachItemResult[]
 }

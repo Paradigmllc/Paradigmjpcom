@@ -2,7 +2,7 @@
  * lib/sales/form-message.ts — 営業フォームメッセージ生成 (Sprint 10-A)
  *
  * 役割: sales_companies (リード) と sales_templates (業種×課題) を組み合わせ、
- *       DeepSeek V3 で「教えてあげる体裁」のフォーム送信文面を生成。
+ *       Dify workflow（モデルはDify側で管理）で「教えてあげる体裁」のフォーム送信文面を生成。
  *
  * 戦略原典:
  *   - グローバル CLAUDE.md s11.5 SALES-CENTER: Stage 1 = フォーム営業ドリブン
@@ -89,12 +89,19 @@ export interface GenerateFormMessageResult {
   metric_unknowns?: string[]
   evidence_ready?: boolean
   usage?: DeepSeekResponse["usage"]
+  dify_workflow_run_id?: string | null
+  fallback_allowed?: boolean
   error?: string
 }
 
 export interface GenerateFormMessageOptions {
   /** Require at least one verified metric and reject unsupported numeric claims. */
   requireVerifiedMetrics?: boolean
+  /**
+   * Allow the direct DeepSeek path only for an explicit operator/dev invocation.
+   * Production outreach must keep this false so a Dify outage fails closed.
+   */
+  allowDirectFallback?: boolean
 }
 
 const DEFAULT_OUTREACH_INDUSTRY: Industry = "consulting"
@@ -133,7 +140,7 @@ async function generateWithDify(input: {
   templateLoss: string | null
   fallbacks: GenerateFormMessageResult["fallbacks"]
   verifiedContext: VerifiedOutreachContext
-}): Promise<{ ok: true; message: string } | { ok: false; configured: boolean; error: string }> {
+}): Promise<{ ok: true; message: string; workflowRunId: string | null } | { ok: false; configured: boolean; error: string }> {
   const apiKey =
     readOptionalEnv("DIFY_FORM_MESSAGE_API_KEY") ??
     readOptionalEnv("DIFY_FORM_MESSAGE_KEY") ??
@@ -187,7 +194,17 @@ async function generateWithDify(input: {
     }
     const message = readDifyMessage(raw)
     if (!message) return { ok: false, configured: true, error: "Dify response did not include a message" }
-    return { ok: true, message: message.includes("{{report_url}}") ? message : `${message}\n{{report_url}}` }
+    const data = asRecord(raw.data)
+    const workflowRunId = typeof raw.workflow_run_id === "string"
+      ? raw.workflow_run_id
+      : typeof data?.workflow_run_id === "string"
+        ? data.workflow_run_id
+        : null
+    return {
+      ok: true,
+      message: message.includes("{{report_url}}") ? message : `${message}\n{{report_url}}`,
+      workflowRunId,
+    }
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)
     console.error("[sales-form-message] Dify failed:", message)
@@ -236,7 +253,7 @@ function selectOutreachIssue(company: SalesCompany): { issueCode: IssueCode; fal
  *
  * 1. company を取得
  * 2. detected_issues[0] と industry でテンプレを matching
- * 3. DeepSeek にプロンプト投入 (system prompt 固定で cache hit 90%+)
+ * 3. Dify workflow にプロンプト投入（system prompt と根拠データを監査可能な形で渡す）
  * 4. 結果テキストをそのまま返す (caller 側で {{report_url}} を実 URL に置換)
  */
 export async function generateFormMessage(
@@ -246,6 +263,7 @@ export async function generateFormMessage(
   const company = await findCompanyById(companyId)
   if (!company) return { ok: false, error: "company not found" }
   const requireVerifiedMetrics = options.requireVerifiedMetrics === true
+  const allowDirectFallback = options.allowDirectFallback === true
   const verifiedContext = buildVerifiedOutreachContext(company)
   if (requireVerifiedMetrics && verifiedContext.metrics.length === 0) {
     return {
@@ -287,7 +305,7 @@ export async function generateFormMessage(
   if (dify.ok) {
     const validationError = validateNumericClaims(dify.message, verifiedContext, requireVerifiedMetrics)
     if (!validationError) {
-      await saveFormMessageToCompany(company.id, dify.message, "dify", verifiedContext)
+      await saveFormMessageToCompany(company.id, dify.message, "dify", verifiedContext, dify.workflowRunId)
       return {
         ok: true,
         message: dify.message,
@@ -297,9 +315,24 @@ export async function generateFormMessage(
         verified_metrics: verifiedContext.metrics,
         metric_unknowns: verifiedContext.unknowns,
         evidence_ready: verifiedContext.metrics.length > 0,
+        dify_workflow_run_id: dify.workflowRunId,
+        fallback_allowed: allowDirectFallback,
       }
     }
     console.warn("[sales-form-message] Dify numeric claim validation failed:", validationError)
+  }
+
+  if (!allowDirectFallback) {
+    return {
+      ok: false,
+      verified_metrics: verifiedContext.metrics,
+      metric_unknowns: verifiedContext.unknowns,
+      evidence_ready: verifiedContext.metrics.length > 0,
+      fallback_allowed: false,
+      error: dify.ok
+        ? "Dify generated a message that failed numeric evidence validation"
+        : `Dify form-message generation failed: ${dify.error}`,
+    }
   }
 
   if (!dify.ok && dify.configured) {
@@ -342,6 +375,7 @@ export async function generateFormMessage(
     verified_metrics: verifiedContext.metrics,
     metric_unknowns: verifiedContext.unknowns,
     evidence_ready: verifiedContext.metrics.length > 0,
+    fallback_allowed: true,
     usage: res.usage,
   }
 }
@@ -351,6 +385,7 @@ async function saveFormMessageToCompany(
   message: string,
   engine: string,
   verifiedContext: VerifiedOutreachContext,
+  difyWorkflowRunId: string | null = null,
 ): Promise<boolean> {
   try {
     const sb = getServiceSalesSupabase()
@@ -373,6 +408,8 @@ async function saveFormMessageToCompany(
         form_message_evidence: {
           metrics: verifiedContext.metrics,
           unknowns: verifiedContext.unknowns,
+          provider: engine === "dify" ? "dify" : "deepseek_direct",
+          dify_workflow_run_id: difyWorkflowRunId,
           saved_at: generatedAt,
         },
       },
