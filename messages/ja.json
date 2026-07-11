@@ -1764,7 +1764,7 @@
       "metric2Value": "$12K",
       "metric2Label": "fixed setup price in USD",
       "metric3Value": "6",
-      "metric3Label": "first months of defined ongoing service at $0/month",
+      "metric3Label": "first six months of standard monthly service included",
       "metric4Value": "$995",
       "metric4Label": "monthly service price from month seven",
       "footnote": "Month-one target: 20 qualified launches is Paradigm's internal operating target, not a customer outcome guarantee. Delivery targets and scope are confirmed before kickoff; external platform outcomes are not guaranteed."
@@ -1825,13 +1825,13 @@
       "q4": "Do I need to speak or write Japanese?",
       "a4": "No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side.",
       "q5": "What does it cost?",
-      "a5": "$12,000 setup, $0/month for the first six months, then $995/month from month seven. Third-party costs and approved out-of-scope work are separate.",
+      "a5": "$12,000 one-time setup, with the standard monthly service included for the first six months, then $995/month from month seven. Third-party costs and approved out-of-scope work are separate.",
       "q6": "Can't I just use Google Translate or DeepL for my site?",
       "a6": "Machine translation can help with words but does not decide information architecture, buyer context, required disclosures, provider constraints, trust signals, escalation, or ownership. The package addresses the agreed launch system, not translation alone.",
       "q7": "How is Paradigm different from hiring my own Japanese team?",
       "a7": "Hiring builds internal capability; the package is a fixed external launch scope. Choose based on control, timing, existing team capacity, and the responsibilities you need to retain internally.",
       "q8": "What happens after the engagement ends? Will I be left on my own?",
-      "a8": "The agreed handover materials and ownership are documented in scope. The defined ongoing service is $0/month for six months, then $995/month unless cancelled under the signed terms."
+      "a8": "The agreed handover materials and ownership are documented in scope. The standard monthly service is included for six months, then $995/month unless cancelled under the signed terms."
     },
     "finalCta": {
       "heading": "Stop leaving Japan on the table.",

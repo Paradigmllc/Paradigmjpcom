@@ -22,6 +22,7 @@ describe("English public blog gate", () => {
   it("requires an explicit publication marker", () => {
     expect(isPublicEnglishBlogPost(SAFE_POST)).toBe(true)
     expect(isPublicEnglishBlogPost({ ...SAFE_POST, tags: [] })).toBe(false)
+    expect(isPublicEnglishBlogPost({ ...SAFE_POST, content: "" })).toBe(false)
   })
 
   it.each([

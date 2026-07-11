@@ -55,6 +55,7 @@ export function isPublicEnglishBlogPost(post: BlogPost): boolean {
     (tag) => tag.trim().toLowerCase() === ENGLISH_BLOG_PUBLICATION_TAG,
   )
   if (!explicitlyApproved) return false
+  if (!post.content.trim()) return false
   const searchableCopy = [post.title, post.excerpt, post.content].join("\n")
   return !BLOCKED_ENGLISH_SALES_COPY.some((pattern) =>
     pattern.test(searchableCopy),
