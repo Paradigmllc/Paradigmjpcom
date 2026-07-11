@@ -227,6 +227,21 @@ function checkStaticReleaseRules() {
     fail("contact migration/release wiring must enforce atomicity, lease CAS, and service-role-only RPCs")
   }
 
+  const postsConstraintsPath = "supabase/migrations/migration_069_payload_posts_constraints.sql"
+  const postsConstraintsMigration = fs.existsSync(postsConstraintsPath)
+    ? fs.readFileSync(postsConstraintsPath, "utf8")
+    : ""
+  if (
+    postsConstraintsMigration.includes("payload_posts_id_uidx") &&
+    postsConstraintsMigration.includes("posts_locales_locale_parent_uidx") &&
+    noLoginDeploy.includes("migration_069_payload_posts_constraints.sql") &&
+    noLoginDeploy.includes("applyPayloadPostsConstraintsMigration")
+  ) {
+    pass("Payload posts writes have id/slug/locale unique arbiters")
+  } else {
+    fail("Payload posts migration/release wiring must preserve ON CONFLICT writes")
+  }
+
   const buildWrapper = fs.readFileSync("scripts/build-next.mjs", "utf8")
   if (buildWrapper.includes("PAYLOAD_DISABLE_DATABASE_DURING_BUILD") && buildWrapper.includes("runWithHeartbeat")) {
     pass("Next build wrapper disables build-time DB dependency and emits heartbeat")
