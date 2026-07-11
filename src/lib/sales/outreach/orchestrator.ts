@@ -13,6 +13,7 @@ import { applyOutcome, logActivity, persistDiscoveredFormUrl, enqueueOperatorTas
 import { evaluateOutreachReadiness } from "./readiness"
 import { detectCmsType } from "./cms-form-templates"
 import { fetchCandidates } from "./candidate-selection"
+import { syncOutreachDraftToTwenty } from "./draft-sync"
 import type {
   OutreachBatchResult,
   OutreachItemResult,
@@ -159,6 +160,13 @@ async function processOneInner(
   const demoSite = companyMeta.demo_site as Record<string, unknown> | undefined
   const demoUrl = typeof demoSite?.url === "string" ? demoSite.url as string : null
   const finalMessage = demoUrl ? fillDemoUrl(message, demoUrl) : message
+
+  const draftSync = await syncOutreachDraftToTwenty(company.id)
+  if (!draftSync.ok) {
+    const reason = `Twenty draft sync failed: ${draftSync.error}`
+    await persistOutcome(company, "manual_queue", "follow_up", reason, { message: finalMessage }, opts.dryRun, opts.pipelineRunId)
+    return { ...base("manual_queue", reason), message: finalMessage }
+  }
 
   const msg = finalMessage // alias for readability in closures below
 
