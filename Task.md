@@ -1,4 +1,4 @@
-## CURRENT STATUS - 2026-07-11 全ページ Japan Entry 公開サイト仕上げ（公開インフラ設定済み・release待ち）
+## CURRENT STATUS - 2026-07-11 全ページ Japan Entry 公開サイト仕上げ（本番公開・運用基盤検証完了）
 
 ### 固定条件・公開方針
 - ENの主対象は欧米豪の「意思決定が早いSMB」。業種・従業員数ではなく、短期間で最終承認できるかを適格条件にする。
@@ -7,7 +7,7 @@
 - 保守対象はJA/ENの公開ページ。旧ENサービス／LP／video／agency導線はJapan Entryへ集約し、JA/EN以外の公開localeはENへredirectする。内部・アーカイブページは`noindex`とする。
 - 営業フローの設計・運用自動化は別途壁打ちへ延期し、この作業ではHPの公開品質、問い合わせ受付、SEO、法務表示、セキュリティ、配信インフラだけを完了対象にする。
 
-### 実装済み（commit / push / PR済み・未release）
+### 実装・本番反映済み
 - ホームだけでなく、about / services / pricing / FAQ / works / blog / contact / legal / privacy / report系を含むJA/EN公開導線、header/footer、metadata、sitemap、robots、OG、404/error/loading、cookie consent、Dify UIを横断整備した。
 - Japan Entryの価格・CTA・適格条件を共通SSOTへ統一。未承認CMS実績、架空fallback、根拠のない診断数値・改善スコア・補助金適格性を公開面から除外し、証拠がない値は`Not measured`または明示的なestimate/targetとして扱う。
 - 問い合わせを署名付きワンタイムchallenge + production Turnstile fail-closed + atomic RPC（lead/outbox）+ idempotency/CAS claimへ更新。Slack通知をescapeし、IP/個人メール等のPIIをログへ残さない。DB変更は`migration_068_contact_submission_atomicity.sql`で用意済みだが、本番適用はrelease待ち。
@@ -24,7 +24,7 @@
 - Japan Entry主要フローPlaywright: desktop + Pixel 7相当mobile **14/14 pass**。JA/EN全公開route、旧URL redirect、固定価格、申込導線、診断デモのclaim safetyを確認。
 - axe WCAG 2.2 AA監査: JA/EN主要30 route **30/30 pass**（critical / serious 0）。代表5画面×desktop/mobileの横overflow **0**、visual screenshot確認済み。
 - `node scripts/release-doctor.mjs --local-only --allow-dirty`: **pass**。
-- commit `6f75ad0`、push、PR #48作成済み。ここまでの証跡に **merge、正式release、live smokeは含まれない**。
+- PR #48 / #49 / #50をmergeし、公開コードcommit `6a04d4f`を正式`npm run release:prod`経由で本番反映した。
 
 ### 2026-07-11 公開インフラ設定
 - Cloudflare Turnstile widget `Paradigm Japan Entry Contact` をManaged mode・pre-clearance無効で作成し、`paradigmjp.com` / `www.paradigmjp.com`の2 hostを許可した。site key / secretはTask.md・git・chatへ記録せず、Coolify production envの`NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY`へ直接登録した。
@@ -34,10 +34,20 @@
 - Coolify resource limitsをCPU 2、memory 4GB、swap 4GB、reservation 1GB、swappiness 0へ設定した。
 - Slack即時通知credential（`SLACK_BOT_TOKEN` / `SLACK_WEBHOOK_URL` / `SLACK_CHANNEL_ID`）は未登録。問い合わせはDB lead/outboxへ原子的に保存されるため受付を失わないが、Slack即時通知はcredential登録までdegraded扱いとする。
 
+### 2026-07-11 正式release / live運用証跡
+- migration 068を含むrelease migrationをDB SSH channelで適用し、DB table verification **79/79 OK**。`sales_contact_submissions`、atomic create/complete RPC、service-role限定EXECUTE、lease CASをpost-deploy doctorで実測した。
+- Coolify deployment完了後、app containerはcommit `6a04d4f`、`running:healthy`。health check `/api/ready`、CPU 2、memory 4GB、reservation 1GB、swap 4GB、swappiness 0を維持した。
+- `paradigmjp.com` / `www` / `status`をCloudflare経由で配信。`status.paradigmjp.com`の旧internal dashboard依存を除去し、origin lock配下から`/api/ready`へ308、follow後200を確認した。
+- TLS 1.0 / 1.1はprotocol-version alertで拒否、TLS 1.2 / 1.3のみhandshake成功。Full (strict)、security headers、robots、sitemap、apex / www proxied、直origin / forged Cloudflare header 403を確認した。
+- 本番問い合わせ画面でCloudflare Turnstile script・response field・有効token（値は非表示）を確認し、GET `/api/contact`の署名challengeはHTTP 200 / 30分expiry。問い合わせDB/outboxは原子的に永続化される。
+- root / worker / astro-demoの`npm audit`はhigh / moderate / critical **0**。Dependabotはmerge後、low 2件のみ（上流に修正版なし）。workerはオンデマンド実行・共有Droplet常駐なしを維持する。
+- Astro demoをAstro 6 Content Layerへ移行し、production build成功。固定dynamic routeはprerenderされ、旧build warningを解消した。
+- 日次OSS Supabase backupは追跡済み安全版へ置換。secretをroot-only systemd EnvironmentFileへ分離し、手動実行成功、最新archive checksum、`pg_restore --list`、SQL/global gzip streamを検証した。14日retention・直近連続backupを確認した。
+- release途中の一時502は新container起動直後のseedで発生。deploy再試行ではなく、container health / Traefik upstream / ready 200を確認後にseedのみ再実行し、最終post-deploy doctorを全項目passさせた。
+
 ### Active Handoff / 完了条件
-- 次: PR #48をmergeし、merged `main`からのみ`npm run release:prod`を実行する。
-- release後: migration 068、限定seed、post-deploy doctor、JA/EN全route、contact challenge、SEO/security header、Cloudflare origin lock、TLSのlive smokeを行う。営業フローは触らない。
-- **現在の外部production blocker**: release自体を妨げるblockerなし。Slack即時通知、会社正式情報、オフホストbackup / paid Hetzner backupは公開後の運用残課題として分離する。
+- HP公開と無停止運用に必要なcode / environment / Cloudflare / Coolify / DB / backup / live smokeは完了。営業フローの壁打ち・自動化は別タスクのまま維持する。
+- **ユーザーまたは契約情報が必要な残件**: (1) Slack app webhook/token/channelの発行、(2) 代表者・住所・電話の正式値と法務レビュー、(3) 災害復旧用オフホスト保全の選択。現行backupは同一hostのため、Cloudflare R2等の保存先credentialを用意するか、有償Hetzner Backupを承認後に有効化する。
 - 会社代表者・住所・電話の設定値は現状未登録のため、法定表示は申込前のメール開示fallbackを使用する。実値を取得できた時点でsettingsへ登録し、最終的な法務レビューを行う。
 
 ## CURRENT STATUS - 2026-07-10 Japan Entry固定オファー型ホームページ改修（本番反映完了）
