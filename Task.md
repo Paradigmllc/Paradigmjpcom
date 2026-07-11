@@ -18,6 +18,7 @@
 - `node scripts/release-doctor.mjs --local-only --allow-dirty`: **pass**
 - `npm run release:prod`のpre-deploy: host / Coolify / Traefik / Cloudflare origin lock / Realtime / Twenty workerはpass。公開envの不足はSlack、metric provider、暗号化off-host backup、法定表示の4件だけで、gateが停止したためdeployは実行されていない。
 - release未実行のため、現本番は旧コンテナのまま（実測: `/api/infra` HTTP 200、`/api/infra/status` HTTP 200、`/ja/services` HTTP 200）。新コードの401/308/410挙動は正式release後に再検証する。
+- Twentyは稼働確認済み。Stagehand/CrawleeのworkerコードとAPIは保持しているが、`STAGEHAND_ENABLED=false` のオンデマンド設計のため外部healthは現在503（営業フローを再開する別タスクでworker/CDP/APIキーを用意してから有効化する）。
 
 ### 正式release前に必要な外部設定（値を推測してはならない）
 - `PARADIGM_LEGAL_REPRESENTATIVE_NAME`、`PARADIGM_LEGAL_POSTAL_CODE`、`PARADIGM_LEGAL_ADDRESS`、`PARADIGM_LEGAL_PHONE` の法務確認済み実値。
@@ -124,6 +125,7 @@
 - 会社代表者・住所・電話の設定値は現状未登録のため、法定表示は申込前のメール開示fallbackを使用する。実値を取得できた時点でsettingsへ登録し、最終的な法務レビューを行う。
 - `node scripts/release-doctor.mjs --pre-deploy --allow-dirty` 実測: infra / Cloudflare / Twenty / Turnstile / Dify は pass。残るfailは Slack credential、verified metric provider、暗号化off-host backup、法定表示4項目、未追跡新規ファイル（commit前のため）の5系統。
 - 変更は `5dacdde`（`feat: harden public surface and evidence-backed outreach`）としてcommit/push済み。clean worktreeでの`--pre-deploy`再実測は、Slack、verified metric provider、暗号化off-host backup、法定表示の4 failureのみ。コード不備や未追跡ファイルによるblockは解消済み。
+- 最終commit `2e85036` 後に `npm run build` を再実行し、Next.js production build **324/324 pages** 生成・standalone content copyまで完了。`npm run lint`、`tsc --noEmit`、対象Vitest 4/4、quality guard 0 errorも再確認済み。
 
 ## CURRENT STATUS - 2026-07-10 Japan Entry固定オファー型ホームページ改修（本番反映完了）
 
