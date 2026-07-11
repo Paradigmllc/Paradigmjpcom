@@ -64,6 +64,15 @@ describe("buildVerifiedOutreachContext", () => {
     expect(context.unknowns).toContain("Japan monthly visits are unavailable from a verified traffic API")
   })
 
+  it("does not promote Similarweb public-page estimates to API evidence", () => {
+    const context = buildVerifiedOutreachContext(company({
+      similarweb_free: { estimatedMonthlyVisits: 24800, topCountries: ["JP"] },
+    }))
+
+    expect(context.metrics.some((metric) => metric.id === "monthly-visits")).toBe(false)
+    expect(context.unknowns).toContain("Japan monthly visits are unavailable from a verified traffic API")
+  })
+
   it("renders provenance and unknowns for the LLM prompt", () => {
     const context = buildVerifiedOutreachContext(company({
       dataforseo: { monthly_visits: 1000, traffic: { country_distribution: { JP: 0.1 } }, source_url: "https://dataforseo.com" },

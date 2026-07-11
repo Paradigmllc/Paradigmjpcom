@@ -54,8 +54,10 @@ function sourceContext(meta: JsonRecord, key: string): { source: string; sourceU
   const provider = stringAt(record, [["provider"], ["source"], ["engine"]])
   const source = key === "dataforseo"
     ? "DataForSEO API"
-    : key === "similarweb" || key === "similarweb_free"
+    : key === "similarweb"
       ? "Similarweb API"
+      : key === "similarweb_free"
+        ? "Similarweb public estimate (not API)"
       : provider ?? "verified API data"
   return {
     source,
@@ -77,7 +79,6 @@ export function buildVerifiedOutreachContext(company: SalesCompany): VerifiedOut
 
   const dataforseo = sourceContext(meta, "dataforseo")
   const similarweb = sourceContext(meta, "similarweb")
-  const similarwebFree = sourceContext(meta, "similarweb_free")
   const enrichmentMeta = asRecord(meta.sales_os) ?? asRecord(meta.enrichment) ?? {}
   const measuredAt = stringAt(meta, [
     ["pagespeed", "measured_at"],
@@ -87,12 +88,10 @@ export function buildVerifiedOutreachContext(company: SalesCompany): VerifiedOut
     { value: numberAt(asRecord(meta.dataforseo) ?? {}, ["traffic", "monthly_visits"]), context: dataforseo },
     { value: numberAt(asRecord(meta.dataforseo) ?? {}, ["monthly_visits"]), context: dataforseo },
     { value: numberAt(asRecord(meta.similarweb) ?? {}, ["monthly_visits"]), context: similarweb },
-    { value: numberAt(asRecord(meta.similarweb_free) ?? {}, ["estimatedMonthlyVisits"]), context: similarwebFree },
-    { value: numberAt(asRecord(meta.similarweb_free) ?? {}, ["visits"]), context: similarwebFree },
   ]
   const monthlyCandidate = monthlyCandidates.find((candidate) => candidate.value !== null)
   const monthlyVisits = monthlyCandidate?.value ?? null
-  const trafficSource = monthlyCandidate?.context ?? similarwebFree
+  const trafficSource = monthlyCandidate?.context ?? similarweb
   const japanShareRaw =
     numberAt(asRecord(meta.traffic) ?? {}, ["japan_share_percent"]) ??
     numberAt(asRecord(meta.traffic) ?? {}, ["jp_share_percent"]) ??

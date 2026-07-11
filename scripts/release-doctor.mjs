@@ -887,15 +887,14 @@ async function checkPublicFunnelEnvironment() {
     } else {
       fail("SLACK_BOT_TOKEN + SLACK_CHANNEL_ID or SLACK_WEBHOOK_URL are required for operator notifications")
     }
-    const hasVerifiedMetricProvider =
-      hasMinimumSecret("GOOGLE_PSI_API_KEY") ||
+    const hasVerifiedTrafficProvider =
       (typeof envs.DATAFORSEO_LOGIN === "string" && envs.DATAFORSEO_LOGIN.trim().length > 0 &&
         hasMinimumSecret("DATAFORSEO_PASSWORD")) ||
       hasMinimumSecret("SIMILARWEB_API_KEY")
-    if (hasVerifiedMetricProvider) {
-      pass("verified outreach metric provider is configured")
+    if (hasVerifiedTrafficProvider) {
+      pass("verified outreach traffic provider is configured")
     } else {
-      fail("GOOGLE_PSI_API_KEY, DATAFORSEO_LOGIN/PASSWORD, or SIMILARWEB_API_KEY is required for evidence-backed outreach")
+      fail("DATAFORSEO_LOGIN/PASSWORD or SIMILARWEB_API_KEY is required for traffic-backed personalized outreach; PageSpeed alone is insufficient")
     }
     if (hasMinimumSecret("TWENTY_API_KEY")) {
       pass("Twenty CRM sync credential is configured")
