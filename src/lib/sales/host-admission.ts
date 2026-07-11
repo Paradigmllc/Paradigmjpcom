@@ -13,7 +13,8 @@ import { DB_TABLES } from "@/lib/sales/db-tables"
  * it never defers (returns false) so the gate can never accidentally stall the pipeline.
  */
 export async function shouldDeferHeavyDispatch(): Promise<boolean> {
-  const cap = Number.parseInt(process.env.ADMISSION_MAX_RUNNING_JOBS ?? "", 10)
+  const rawCap = process.env.ADMISSION_MAX_RUNNING_JOBS?.trim()
+  const cap = rawCap ? Number.parseInt(rawCap, 10) : Number.NaN
   if (!Number.isFinite(cap) || cap <= 0) return false
 
   const sb = getServiceSalesSupabase()
@@ -38,6 +39,7 @@ export async function shouldDeferHeavyDispatch(): Promise<boolean> {
 
 /** Parsed admission cap (or null when the gate is disabled). Exposed for diagnostics/tests. */
 export function admissionCap(): number | null {
-  const cap = Number.parseInt(process.env.ADMISSION_MAX_RUNNING_JOBS ?? "", 10)
+  const rawCap = process.env.ADMISSION_MAX_RUNNING_JOBS?.trim()
+  const cap = rawCap ? Number.parseInt(rawCap, 10) : Number.NaN
   return Number.isFinite(cap) && cap > 0 ? cap : null
 }

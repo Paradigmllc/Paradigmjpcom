@@ -19,8 +19,20 @@ interface PoolHealthStatus {
 }
 
 export async function checkPoolHealth(): Promise<PoolHealthStatus> {
-  const uri = process.env.DATABASE_URI || process.env.DATABASE_URL || ""
+  const uri = process.env.DATABASE_URI?.trim() ?? process.env.DATABASE_URL?.trim()
   const warnings: string[] = []
+
+  if (!uri) {
+    return {
+      status: "unavailable",
+      poolerMode: "unknown",
+      poolerHost: "unknown",
+      poolerPort: "unknown",
+      isPooler: false,
+      isTransactionMode: false,
+      warnings: ["DATABASE_URI or DATABASE_URL is not configured"],
+    }
+  }
 
   let poolerMode: PoolHealthStatus["poolerMode"] = "unknown"
   let poolerHost = "unknown"
@@ -82,22 +94,26 @@ export async function checkPoolHealth(): Promise<PoolHealthStatus> {
 }
 
 export function getPoolConfigSummary(): Record<string, unknown> {
-  const uri = process.env.DATABASE_URI || process.env.DATABASE_URL || ""
-  const masked = uri ? uri.replace(/:([^:@]+)@/, ":****@") : "(empty)"
+  const uri = process.env.DATABASE_URI?.trim() ?? process.env.DATABASE_URL?.trim()
+  const masked = uri ? uri.replace(/:([^:@]+)@/, ":****@") : "(not configured)"
 
   let port = "unknown"
   let host = "unknown"
-  try {
-    const u = new URL(uri)
-    port = u.port || "5432"
-    host = u.hostname
-  } catch (_) { /* malformed */ }
+  if (uri) {
+    try {
+      const u = new URL(uri)
+      port = u.port || "5432"
+      host = u.hostname
+    } catch (error) {
+      console.warn("[pool-monitor] DATABASE_URI could not be parsed:", error)
+    }
+  }
 
   return {
     uri: masked,
     host,
     port,
-    isPooler: uri.includes("pooler.supabase.com"),
+    isPooler: uri?.includes("pooler.supabase.com") ?? false,
     isTransactionMode: port === "6543",
     poolMax: 4,
     applicationName: "paradigm_payload",

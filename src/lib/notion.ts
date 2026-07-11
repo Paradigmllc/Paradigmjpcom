@@ -17,7 +17,7 @@ const NOTION_API = "https://api.notion.com/v1"
 const NOTION_VERSION = "2022-06-28"
 const RATE_LIMIT_MS = 350 // 3 req/秒 → 333ms 間隔 + 17ms バッファ
 
-const apiKey = () => process.env.NOTION_API_KEY ?? ""
+const apiKey = () => process.env.NOTION_API_KEY?.trim()
 
 /* ───── Rate limiter (in-memory FIFO queue) ───── */
 let lastCallAt = 0
@@ -60,7 +60,10 @@ async function notionFetch<T = unknown>(
       signal: AbortSignal.timeout(15_000),
     })
     if (!res.ok) {
-      const text = await res.text().catch(() => "")
+      const text = await res.text().catch((error) => {
+        console.error("[notion] error response body could not be read:", error)
+        return ""
+      })
       return { ok: false, error: text || res.statusText, status: res.status }
     }
     const data = (await res.json()) as T
