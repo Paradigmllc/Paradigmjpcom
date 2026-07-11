@@ -1,50 +1,34 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
+import { beforeEach, describe, expect, test, vi } from "vitest"
 
 const mocks = vi.hoisted(() => ({
-  enrichFromContact: vi.fn(),
-  notifyBothChannels: vi.fn(),
+  upsertCompanyByDomain: vi.fn(),
+  enqueueCompanyEnrichment: vi.fn(),
 }))
 
-vi.mock("@/lib/notify", () => ({
-  notifyBothChannels: mocks.notifyBothChannels,
+vi.mock("@/lib/sales/companies", () => ({
+  upsertCompanyByDomain: mocks.upsertCompanyByDomain,
 }))
-vi.mock("@/lib/sales/enrich", () => ({
-  enrichFromContact: mocks.enrichFromContact,
+vi.mock("@/lib/sales/enrichment-jobs", () => ({
+  enqueueCompanyEnrichment: mocks.enqueueCompanyEnrichment,
 }))
 
 import { startContactEnrichment } from "./contact-enrichment"
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mocks.enrichFromContact.mockResolvedValue({
+  mocks.upsertCompanyByDomain.mockResolvedValue({
     ok: true,
-    company: {
-      company_name: "Acme Software",
-      domain: "example.com",
-      industry: "SaaS",
-      pagespeed_mobile: 80,
-      detected_issues: ["no_japanese_content"],
-      slug: "acme-software",
-      report_url: "https://paradigmjp.com/en/report/acme-software",
-      report_locale: "en",
-      region: "global",
-    },
+    company: { id: "44444444-4444-4444-8444-444444444444" },
   })
-  mocks.notifyBothChannels.mockResolvedValue({
+  mocks.enqueueCompanyEnrichment.mockResolvedValue({
     ok: true,
-    slack: { ok: true },
-    database: { ok: true },
+    job: { id: "55555555-5555-4555-8555-555555555555" },
   })
 })
-
-afterEach(() => {
-  vi.restoreAllMocks()
-})
-
 describe("startContactEnrichment", () => {
-  test("sends enrichment through the shared DB-bell and Slack path", async () => {
+  test("persists a company and durable enrichment job before returning", async () => {
     const leadId = "11111111-1111-4111-8111-111111111111"
-    startContactEnrichment({
+    await startContactEnrichment({
       leadId,
       email: "founder@example.com",
       company: "Acme Software",
@@ -54,67 +38,23 @@ describe("startContactEnrichment", () => {
       targetCountry: "AU",
     })
 
-    await vi.waitFor(() => {
-      expect(mocks.notifyBothChannels).toHaveBeenCalledWith(
-        expect.stringContaining(`lead ${leadId}`),
-        expect.objectContaining({
-          type: "contact_enrichment_complete",
-          leadId,
-          clientMessageId: leadId,
-          blocks: expect.any(Array),
-        }),
-      )
-    })
+    expect(mocks.upsertCompanyByDomain).toHaveBeenCalledWith(expect.objectContaining({
+      domain: "example.com",
+      company_name: "Acme Software",
+      pipeline_status: "scanning",
+    }))
+    expect(mocks.enqueueCompanyEnrichment).toHaveBeenCalledWith(expect.objectContaining({
+      companyId: "44444444-4444-4444-8444-444444444444",
+      triggeredBy: "contact_submission",
+      payload: expect.objectContaining({ lead_id: leadId }),
+    }))
   })
 
-  test("neutralizes Slack markup from enrichment fields and ignores stored external report URLs", async () => {
-    mocks.enrichFromContact.mockResolvedValue({
-      ok: true,
-      company: {
-        company_name: "<@U123> *Acme*",
-        domain: "example.com\n<!channel>",
-        industry: "_SaaS_",
-        pagespeed_mobile: 80,
-        detected_issues: ["`payload`", "<https://evil.example|click>"],
-        slug: "safe-report",
-        report_url: "https://evil.example/phish",
-        report_locale: "en",
-        region: "global",
-      },
-    })
-
-    startContactEnrichment({
-      leadId: "22222222-2222-4222-8222-222222222222",
-      email: "founder@example.com",
-      company: "Acme",
-      message: "Launch in Japan",
-      services: ["Japan Entry Package"],
-      reportLocale: "en",
-      targetCountry: "US",
-    })
-
-    await vi.waitFor(() => expect(mocks.notifyBothChannels).toHaveBeenCalled())
-    const [text, options] = mocks.notifyBothChannels.mock.calls.at(-1) ?? []
-    expect(text).not.toContain("<@U123>")
-    expect(text).not.toContain("<!channel>")
-    expect(text).not.toContain("*Acme*")
-    expect(JSON.stringify(options?.blocks)).not.toContain("evil.example/phish")
-    expect(JSON.stringify(options?.blocks)).toContain(
-      "paradigmjp.com/en/report/safe-report",
-    )
-  })
-
-  test("does not write a personal email address to production logs", async () => {
-    mocks.enrichFromContact.mockResolvedValue({
-      ok: false,
-      skipped: "personal_domain",
-    })
+  test("does not enqueue a job when the email has no usable domain", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined)
-    const leadId = "33333333-3333-4333-8333-333333333333"
-
-    startContactEnrichment({
-      leadId,
-      email: "private.person@gmail.com",
+    await startContactEnrichment({
+      leadId: "33333333-3333-4333-8333-333333333333",
+      email: "invalid-email",
       company: null,
       message: "Hello",
       services: [],
@@ -122,10 +62,9 @@ describe("startContactEnrichment", () => {
       targetCountry: "US",
     })
 
-    await vi.waitFor(() => expect(warn).toHaveBeenCalled())
-    expect(warn.mock.calls.flat().join(" ")).toContain(leadId)
-    expect(warn.mock.calls.flat().join(" ")).not.toContain(
-      "private.person@gmail.com",
-    )
+    expect(mocks.upsertCompanyByDomain).not.toHaveBeenCalled()
+    expect(mocks.enqueueCompanyEnrichment).not.toHaveBeenCalled()
+    expect(warn.mock.calls.flat().join(" ")).toContain("33333333-3333-4333-8333-333333333333")
+    warn.mockRestore()
   })
 })

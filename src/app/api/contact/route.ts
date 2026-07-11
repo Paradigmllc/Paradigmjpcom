@@ -295,7 +295,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (persistedLead.created) {
-      startContactEnrichment({
+      await startContactEnrichment({
         leadId: persistedLead.id,
         email,
         company: company || null,

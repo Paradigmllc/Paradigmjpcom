@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
+import { isAuthorizedOperatorRequest } from "@/lib/api-security";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(req: Request) {
+  if (!(await isAuthorizedOperatorRequest(req))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   return new Response(
     `<!DOCTYPE html>
 <html lang="ja">
@@ -10,6 +14,6 @@ export async function GET() {
 <title>Paradigm Infrastructure</title></head>
 <body><p>Redirecting to <a href="http://178.105.138.55:9877/">Infrastructure Dashboard</a>...</p></body>
 </html>`,
-    { headers: { "Content-Type": "text/html; charset=utf-8" } }
+    { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } }
   );
 }

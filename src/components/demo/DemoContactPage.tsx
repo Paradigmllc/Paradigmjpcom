@@ -1,10 +1,13 @@
 "use client"
 
 import { useState } from "react"
+import { useEffect, useRef } from "react"
 import { motion } from "framer-motion"
+import Script from "next/script"
 import type { DemoContactPage as DemoContactPageData } from "@/lib/sales/demo-site-types"
 import type { DemoTemplate, ContactSectionId } from "@/lib/sales/demo-templates/registry"
 import { headingSizeClass } from "@/lib/sales/demo-templates/registry"
+import { JAPAN_ENTRY_CTA_EN, JAPAN_ENTRY_CTA_JA } from "@/lib/japan-entry-public-copy"
 import { ContactInfoCard, BookingEmbed } from "./contact/ContactVariants"
 
 interface Props {
@@ -18,6 +21,9 @@ interface FormState {
   status: "idle" | "loading" | "success" | "error"
   error?: string
 }
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim()
+type TurnstileApi = { render: (container: HTMLElement, options: { sitekey: string; callback: (token: string) => void; "error-callback"?: () => void; "expired-callback"?: () => void; theme?: "light" | "dark" | "auto" }) => string; reset: (widgetId?: string) => void }
 
 export function DemoContactPage({ contact, companyName, locale, template }: Props) {
   const isJa = locale === "ja"
@@ -85,6 +91,28 @@ function ContactFormSection({
 }: { isJa: boolean; accent: string; companyName: string; contact: DemoContactPageData }) {
   const [formState, setFormState] = useState<FormState>({ status: "idle" })
   const [formData, setFormData] = useState({ name: "", email: "", company: "", message: "" })
+  const [honeypot, setHoneypot] = useState("")
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const [turnstileScriptReady, setTurnstileScriptReady] = useState(false)
+  const turnstileRef = useRef<HTMLDivElement>(null)
+  const turnstileWidgetIdRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    const turnstile = (window as Window & { turnstile?: TurnstileApi }).turnstile
+    if (!TURNSTILE_SITE_KEY || !turnstileScriptReady || !turnstile || !turnstileRef.current || turnstileWidgetIdRef.current) return
+    try {
+      turnstileWidgetIdRef.current = turnstile.render(turnstileRef.current, {
+        sitekey: TURNSTILE_SITE_KEY,
+        callback: (token) => setTurnstileToken(token),
+        "error-callback": () => { console.error("[DemoContact] Turnstile render failed"); setTurnstileToken(null) },
+        "expired-callback": () => { console.warn("[DemoContact] Turnstile token expired"); setTurnstileToken(null); turnstile.reset(turnstileWidgetIdRef.current ?? undefined) },
+        theme: "light",
+      })
+    } catch (error) {
+      console.error("[DemoContact] Turnstile widget render failed:", error)
+      setTurnstileToken(null)
+    }
+  }, [turnstileScriptReady])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -113,6 +141,8 @@ function ContactFormSection({
           email: formData.email.trim(),
           company: formData.company.trim() || companyName,
           message: formData.message.trim(),
+          turnstileToken,
+          honeypot,
         }),
       })
 
@@ -137,7 +167,7 @@ function ContactFormSection({
             </svg>
           </div>
           <p className="text-lg font-semibold text-gray-900">{isJa ? "お問い合わせありがとうございます！" : "Thank you for reaching out!"}</p>
-          <p className="mt-2 text-sm text-gray-500">{isJa ? "担当者より24時間以内にご連絡いたします。" : "We'll get back to you within 24 hours."}</p>
+          <p className="mt-2 text-sm text-gray-500">{isJa ? "安全な申込フォームで内容を確認します。" : "We review secure submissions during business hours."}</p>
           <button type="button" onClick={() => setFormState({ status: "idle" })}
             className="mt-4 text-sm font-medium underline transition-colors hover:opacity-80" style={{ color: accent }}>
             {isJa ? "別のお問い合わせを送る" : "Send another message"}
@@ -153,6 +183,10 @@ function ContactFormSection({
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
           <h3 className="mb-6 font-display text-xl font-bold text-gray-900">{isJa ? "お問い合わせフォーム" : "Contact Form"}</h3>
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+            <div className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
+              <label htmlFor="demo-contact-fax">Company fax</label>
+              <input id="demo-contact-fax" name="companyFax" type="text" tabIndex={-1} autoComplete="off" value={honeypot} onChange={(event) => setHoneypot(event.target.value)} />
+            </div>
             <div>
               <label htmlFor="contact-name" className="mb-1.5 block text-sm font-medium text-gray-700">{isJa ? "お名前" : "Name"}</label>
               <input type="text" id="contact-name" name="name" value={formData.name} onChange={handleChange}
@@ -160,6 +194,12 @@ function ContactFormSection({
                 className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[var(--cta-accent,#2563eb)]/30 disabled:opacity-50"
                 placeholder={isJa ? "山田 太郎" : "John Doe"} />
             </div>
+            {TURNSTILE_SITE_KEY && (
+              <>
+                <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" async defer onReady={() => setTurnstileScriptReady(true)} onError={(error) => { console.error("[DemoContact] Turnstile script loading failed:", error); setTurnstileScriptReady(false) }} />
+                <div ref={turnstileRef} className="flex justify-center" aria-label="CAPTCHA" />
+              </>
+            )}
             <div>
               <label htmlFor="contact-email" className="mb-1.5 block text-sm font-medium text-gray-700">{isJa ? "メールアドレス" : "Email"} <span className="text-red-500">*</span></label>
               <input type="email" id="contact-email" name="email" value={formData.email} onChange={handleChange}
@@ -189,7 +229,7 @@ function ContactFormSection({
                 <p className="text-sm text-red-700">{formState.error}</p>
               </div>
             )}
-            <button type="submit" disabled={formState.status === "loading"}
+            <button type="submit" disabled={formState.status === "loading" || (Boolean(TURNSTILE_SITE_KEY) && !turnstileToken)}
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               style={{ background: accent }}>
               {formState.status === "loading" ? (
@@ -237,8 +277,8 @@ function ContactFaq({ isJa, accent, contact }: { isJa: boolean; accent: string; 
         <h3 className="mb-6 font-display text-center text-xl font-bold text-gray-900">{isJa ? "よくある質問" : "FAQ"}</h3>
         <div className="space-y-3 text-sm">
           <div className="rounded-xl border border-gray-100 p-4">
-            <p className="font-semibold text-gray-900">{isJa ? "無料相談は本当に無料ですか？" : "Is the consultation really free?"}</p>
-            <p className="mt-1 text-gray-500">{isJa ? "はい、15分のオンライン相談は完全無料です。お気軽にご予約ください。" : "Yes, the 15-minute online consultation is completely free."}</p>
+            <p className="font-semibold text-gray-900">{isJa ? "申込前に何を確認できますか？" : "What happens after I apply?"}</p>
+            <p className="mt-1 text-gray-500">{isJa ? `${JAPAN_ENTRY_CTA_JA}から、適合性、固定範囲、前提条件を確認します。` : `${JAPAN_ENTRY_CTA_EN} starts a fit review; a submitted application is not contract acceptance.`}</p>
           </div>
           <div className="rounded-xl border border-gray-100 p-4">
             <p className="font-semibold text-gray-900">{isJa ? "メールでの問い合わせも可能ですか？" : "Can I reach out by email?"}</p>

@@ -1,15 +1,26 @@
 import { NextResponse } from "next/server";
 import { execSync } from "child_process";
+import { isAuthorizedOperatorRequest } from "@/lib/api-security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function sh(cmd: string): string {
   try { return execSync(cmd, { timeout: 8000, encoding: "utf-8" }).trim(); }
-  catch { return ""; }
+  catch (error) {
+    console.error(`[infra/status] command failed: ${cmd}`, error);
+    return "";
+  }
 }
 
-function parseDockerPs(): any[] {
+interface DockerContainerStatus {
+  name: string;
+  running: boolean;
+  image: string;
+  size: string;
+}
+
+function parseDockerPs(): DockerContainerStatus[] {
   const out = sh("docker ps --format '{{.Names}}\t{{.Status}}\t{{.Image}}\t{{.Size}}' --no-trunc");
   if (!out) return [];
   return out.split("\n").map(line => {
@@ -18,7 +29,10 @@ function parseDockerPs(): any[] {
   });
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  if (!(await isAuthorizedOperatorRequest(req))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const diskRaw = sh("df -h / | tail -1");
   const diskParts = diskRaw.split(/\s+/);
   const diskTotal = diskParts[1] || "?";
@@ -52,5 +66,5 @@ export async function GET() {
     swap,
     uptime: sh("uptime -p") || "?",
     ok: true,
-  });
+  }, { headers: { "Cache-Control": "no-store" } });
 }

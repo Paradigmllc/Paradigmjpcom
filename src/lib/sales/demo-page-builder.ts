@@ -1,6 +1,7 @@
 import type { DiagnosticReportData } from "./diagnostic"
 import type { DemoBeforeAfterItem, DemoFeatureItem, DemoPageData, DemoStatsItem } from "./demo-site-types"
 import type { Industry, ReportLocale } from "./types"
+import { JAPAN_ENTRY_CTA_EN, JAPAN_ENTRY_CTA_JA } from "@/lib/japan-entry-public-copy"
 
 const CORRUPT_FS = /[�邵郢鬮隴陞陷驍縺繝譁蜑荳譛谿險螟豕邨髻蠕蝠逕莠陦蛻諡蜷繧]/
 
@@ -75,7 +76,7 @@ export function buildDemoPageData(
     industryLabel,
     locationLabel: locationStr,
     primaryCta: {
-      text: cleanFs(report.cta_text, isJa ? "無料相談を予約する" : "Book a free consultation", 40),
+      text: isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN,
       href: ctaUrl,
     },
     secondaryCta: {
@@ -150,11 +151,11 @@ export function buildDemoPageData(
   }) ?? []
 
   const cta: DemoPageData["cta"] = {
-    title: cleanFs(report.cta_text, isJa ? "無料相談を予約する" : "Book a free consultation", 40),
+    title: isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN,
     subtitle: isJa
       ? "デモサイトの続きや、実際の改善プランについて詳しくご説明します。お気軽にご連絡ください。"
       : "Let's discuss the full demo and your actual improvement plan. Reach out anytime.",
-    buttonText: isJa ? "15分無料相談を予約" : "Book 15min Free Consult",
+    buttonText: isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN,
     buttonHref: ctaUrl,
     accentColor: cfg.accentColor ?? "#7c3aed",
     accentColorDark: cfg.accentColorDark ?? "#5b21b6",

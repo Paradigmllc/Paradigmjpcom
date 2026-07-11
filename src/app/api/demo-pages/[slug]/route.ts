@@ -25,7 +25,7 @@ export async function GET(
 
     const { data, error } = await sb
       .from("theme_demo_pages")
-      .select("*")
+      .select("slug,theme,title,blocks,meta,is_published")
       .eq("slug", slug)
       .eq("is_published", true)
       .maybeSingle()
@@ -38,7 +38,24 @@ export async function GET(
       return NextResponse.json({ error: "not found" }, { status: 404 })
     }
 
-    return NextResponse.json(data, {
+    const rawMeta = data.meta && typeof data.meta === "object" && !Array.isArray(data.meta)
+      ? data.meta as Record<string, unknown>
+      : {}
+    const publicMeta = Object.fromEntries(
+      Object.entries(rawMeta).filter(([key]) => ![
+        "company_id", "visits", "generator", "artifact_admin", "diagnostic",
+        "pain_diagnosis", "dify_result", "visual_evidence", "tech_stack",
+      ].includes(key)),
+    )
+
+    return NextResponse.json({
+      slug: data.slug,
+      theme: data.theme,
+      title: data.title,
+      blocks: data.blocks,
+      meta: publicMeta,
+      is_published: data.is_published,
+    }, {
       headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
     })
   } catch (e) {

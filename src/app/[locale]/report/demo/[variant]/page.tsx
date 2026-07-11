@@ -9,6 +9,16 @@ export default function DemoReportPage() {
   const variant = (params?.variant as string) || "website_diagnostic"
   const locale = (params?.locale as string) || "ja"
 
+  if (variant !== "japan_entry") {
+    return (
+        <main className="mx-auto flex min-h-dvh max-w-xl flex-col items-center justify-center gap-4 px-6 text-center">
+        <h1 className="text-xl font-semibold">This demo is archived</h1>
+        <p className="text-sm text-zinc-600">Only the verified Japan Entry example is available publicly.</p>
+        <a className="rounded-lg bg-zinc-900 px-4 py-2 text-sm text-white" href="/en/contact?intent=japan-entry">Apply for Japan Entry — $12K</a>
+      </main>
+    )
+  }
+
   const data = buildDemoData(variant, locale)
   const slug = `demo-${variant}`
 

@@ -37,7 +37,7 @@ function generateCompositionHTML(data: DiagnosticReportData): string {
     pain: data.acts[0]?.headline || "改善すべき課題が見つかりました",
     fear: data.acts[1]?.headline || "このままでは機会損失が拡大",
     hope: data.intelligence.nextActions[0] || "改善で収益最大化",
-    cta: data.cta_text || "無料相談を予約する",
+    cta: data.cta_text || "Japan Entryについて問い合わせる",
   }
   return buildVariantVideoHtml(data, script)
 }

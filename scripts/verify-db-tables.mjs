@@ -65,6 +65,8 @@ const ALL_TABLES = [
   "sales_infrastructure_migration",
   // Error Log
   "sales_error_log",
+  // Public form storage
+  "demo_contact_submissions",
   // Demo
   "web_demos", "diagnostic_reports", "diagnostic_runs",
   // Notifications
@@ -379,7 +381,8 @@ function printSummaryAndExit(ok, missing, errored) {
         "sales_templates": "migration_003_sales_hub.sql",
         "sales_campaigns": "migration_003_sales_hub.sql",
         "sales_contracts": "migration_017_sales_twenty_karte_sync.sql",
-        "sales_error_log": "supabase/migrations/migration_035_sales_error_log.sql",
+        "sales_error_log": "supabase/migrations/migration_045_sales_error_log.sql",
+        "demo_contact_submissions": "supabase/migrations/migration_070_demo_contact_hardening.sql",
         "sales_lead_candidate_domains": "supabase/migrations/migration_047_sales_lead_candidate_acquisition.sql",
         "sales_lead_candidate_observations": "supabase/migrations/migration_047_sales_lead_candidate_acquisition.sql",
         "sales_lead_candidate_country_signals": "supabase/migrations/migration_047_sales_lead_candidate_acquisition.sql",

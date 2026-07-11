@@ -604,6 +604,14 @@ async function applyPayloadPostsConstraintsMigration(envs) {
   return applySqlMigration(envs, "migration_069_payload_posts_constraints.sql", "Payload posts constraints migration")
 }
 
+async function applyDemoContactHardeningMigration(envs) {
+  return applySqlMigration(envs, "migration_070_demo_contact_hardening.sql", "Demo contact hardening migration")
+}
+
+async function applyPublicSurfaceRlsMigration(envs) {
+  return applySqlMigration(envs, "migration_071_public_surface_rls_and_constraints.sql", "Public surface RLS and constraint migration")
+}
+
 function runDeployGuard() {
   if (SKIP_DEPLOY_GUARD) {
     console.log("Coolify deploy guard: skipped")
@@ -1105,6 +1113,8 @@ async function main() {
     console.log(await applySalesToolingBootstrapMigration(envs))
     console.log(await applyContactSubmissionAtomicityMigration(envs))
     console.log(await applyPayloadPostsConstraintsMigration(envs))
+    console.log(await applyDemoContactHardeningMigration(envs))
+    console.log(await applyPublicSurfaceRlsMigration(envs))
     console.log(await applyVideoPipelineMigration(envs))
     console.log(await applyVideoStrategyMigration(envs))
     console.log(await applyVideoProductionMigration(envs))

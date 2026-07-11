@@ -7,10 +7,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { isAuthorizedOperatorRequest } from "@/lib/api-security"
 
 export const dynamic = "force-dynamic"
 
 export async function GET(req: NextRequest) {
+  if (!(await isAuthorizedOperatorRequest(req))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
   const url = new URL(req.url)
   const detail = url.searchParams.get("detail") === "true"
 
@@ -101,7 +105,7 @@ export async function GET(req: NextRequest) {
 
     if (!detail) {
       return NextResponse.json(overview, {
-        headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
+        headers: { "Cache-Control": "private, no-store" },
       })
     }
 
@@ -126,7 +130,7 @@ export async function GET(req: NextRequest) {
     }))
 
     return NextResponse.json({ overview, details: enriched }, {
-      headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
+      headers: { "Cache-Control": "private, no-store" },
     })
   } catch (e) {
     console.error("[analytics] error:", e instanceof Error ? e.message : String(e))
