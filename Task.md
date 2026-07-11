@@ -23,7 +23,7 @@
 ### 正式release前に必要な外部設定（値を推測してはならない）
 - `PARADIGM_LEGAL_REPRESENTATIVE_NAME`、`PARADIGM_LEGAL_POSTAL_CODE`、`PARADIGM_LEGAL_ADDRESS`、`PARADIGM_LEGAL_PHONE` の法務確認済み実値。
 - `SLACK_BOT_TOKEN` + `SLACK_CHANNEL_ID` または `SLACK_WEBHOOK_URL`。
-- Google PSI / DataForSEO / Similarwebのいずれかの検証済みmetric credential、`TWENTY_API_KEY`、Dify form-message credential。
+- `DATAFORSEO_LOGIN` + `DATAFORSEO_PASSWORD` または `SIMILARWEB_API_KEY` の検証済みtraffic credential（PageSpeed単独は不可）、`TWENTY_API_KEY`、Dify form-message credential。
 - `OSS_SUPABASE_BACKUP_GPG_PASSPHRASE` と `OSS_SUPABASE_BACKUP_SSH_TARGET`（暗号化off-host保全）。
 
 上記をCoolify production envへ登録した後、`npm run release:prod`のみを正式入口としてDB/migration、Coolify deploy、Traefik refresh、post-deploy doctor、公開URL smokeまで実施する。外部設定なしにrelease gateを迂回しない。
