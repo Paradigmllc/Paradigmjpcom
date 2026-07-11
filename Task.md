@@ -1,12 +1,14 @@
 ## CURRENT STATUS - 2026-07-11 全ページ Japan Entry 公開サイト仕上げ（本番公開・運用基盤検証完了）
 
-### 2026-07-11 Japan Entryコンテンツ拡張（実装中）
+### 2026-07-11 Japan Entryコンテンツ拡張（本番反映完了）
 - EN商流表現を全主要導線で統一: **$12,000 one-time setup**、標準月額運用はセットアップに含めて最初の6ヶ月は追加月額なし、7ヶ月目以降 **$995/month**。単なる値引きの「無料」ではなく、included serviceとして説明する。
 - Blogを汎用Web制作記事からJapan Entry意思決定者向けへ再編。`src/lib/japan-entry-blog.ts`に英語基幹記事6本（市場参入、21営業日準備、翻訳とローカライズ、法人・銀行、費用比較、買い手信頼）を追加した。
 - `/api/admin/seed-japan-entry-blog`を追加。`japan-entry-public`タグ、本文、英語localeを含む冪等seed。公開英語記事は本文空欄を`blog-cms`側でも拒否する。
 - 未検証の`industry first`、ChatGPT等での推薦保証、Google Maps上位保証、`instant replies`表現を公開英語コピーから除去・弱めた。
 - ローカル検証: `messages/en.json` parse OK、対象Vitest **12/12 pass**、`tsc --noEmit` 0 error、`quality:guard` 0 error、production build **337 pages / exit 0**。新seed routeもbuild route一覧に含まれる。既存backup scriptのCRLFをLFへ正規化し、backup validation testsも復旧した。
-- 次: branchをcommit/push後、正式release、認証済みseedを実行し、`/en/blog`と6記事URL、価格・CTA・主要ページを本番確認する。月額の対応件数・時間・SLAは契約で確定していないため、公開コピーには推測値を書かない。
+- Payloadの既存import schemaに`posts` / `posts_locales`等のunique arbiterが欠落しており、`ON CONFLICT` seedが失敗する状態を検出。`migration_069_payload_posts_constraints.sql`を追加し、正式release pathへ組み込んだ（PR #58）。既存26件の重複なしを確認後、production DBへ適用した。
+- 本番seed: 認証済み`/api/admin/seed-japan-entry-blog`で**6/6 updated、errors 0**。`/en/blog`一覧と6記事URLで期待するH1・本文表示を確認。`/en/pricing`で`$12,000`、6ヶ月included、7ヶ月目以降`$995/month`を確認。
+- 正式`npm run release:prod`: DB **79/79**、Cloudflare origin lock 4 host、主要英語route、Sales health JSON `ok:true`、direct origin / forged header **403**を全てpass。月額の対応件数・時間・SLAは契約で確定していないため、公開コピーには推測値を書かない。
 
 ### 固定条件・公開方針
 - ENの主対象は欧米豪の「意思決定が早いSMB」。業種・従業員数ではなく、短期間で最終承認できるかを適格条件にする。
