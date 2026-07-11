@@ -35,6 +35,7 @@
 - PR #48 / #49 / #50をmergeし、公開コードcommit `6a04d4f`を正式`npm run release:prod`経由で本番反映した。
 
 ### 2026-07-11 公開インフラ設定
+- コンテンツ拡張releaseのpost-deploy doctorで、Coolify生成の`keystatic.paradigmjp.com` routeが手動origin-lockより優先され直origin 200になるドリフトを検知。`refresh-traefik-origin-lock.py`のapp / keystatic手動routerにpriority=1000を固定し、Python + Vitestで再発条件をテスト化した。修正commitは次回正式releaseへ含める。
 - Cloudflare Turnstile widget `Paradigm Japan Entry Contact` をManaged mode・pre-clearance無効で作成し、`paradigmjp.com` / `www.paradigmjp.com`の2 hostを許可した。site key / secretはTask.md・git・chatへ記録せず、Coolify production envの`NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY`へ直接登録した。
 - Cloudflare SSL/TLS modeを`Full (strict)`、Minimum TLS Versionを`TLS 1.2`へ更新した。apex / wwwのA recordはCloudflare proxiedを確認した。
 - `keystatic.paradigmjp.com`はSales OSの既存Keystatic連携・release gateで参照されるため、HP公開作業では削除しない。DNS-only + origin lockで外部403の現状を維持し、営業基盤の壁打ち時に認証付き公開または廃止を判断する。
