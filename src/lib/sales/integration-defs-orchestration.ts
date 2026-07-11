@@ -60,18 +60,6 @@ export const ORCHESTRATION_DEFS: SalesIntegrationDefinition[] = [
     notes: "Keeps autonomous jobs behind approval gates and records the human escalation surface.",
   },
   {
-    slug: "notion_mcp",
-    displayName: "Notion MCP",
-    category: "orchestration",
-    deployment: "api",
-    role: "顧客用の共有スペース、議事録、および社内の引継ぎナレッジを同期するためのNotion連携API。",
-    requiredEnv: [],
-    optionalEnv: ["NOTION_API_KEY", "NOTION_MCP_TOKEN"],
-    balance: "manual",
-    recommended: false,
-    notes: "Twenty remains the Sales OS SSOT; Notion is only a customer-facing or knowledge-capture surface.",
-  },
-  {
     slug: "chrome_mcp",
     displayName: "Chrome MCP",
     category: "orchestration",

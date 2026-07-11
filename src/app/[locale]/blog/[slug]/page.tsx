@@ -131,7 +131,7 @@ export default async function BlogPostPage({
   const orgName = (LOCALE_ORG_NAME as Record<string, string>)[locale] ?? "Paradigm LLC"
   const toc = extractToc(post.content)
   const isJa = locale === "ja"
-  const contactHref = isJa ? "/contact" : "/contact?intent=japan-entry"
+  const contactHref = "/contact?intent=japan-entry"
 
   return (
     <>
@@ -208,10 +208,10 @@ export default async function BlogPostPage({
 
                 {/* CTA Card */}
                 <div className="paradigm-glass rounded-2xl p-5 paradigm-glow-sm bg-gradient-to-br from-paradigm-accent/5 to-paradigm-glow/5">
-                  <h4 className="font-display text-[14px] text-paradigm-ink mb-2 tracking-[-0.01em]">{isJa ? "無料相談はこちら" : "Japan Entry — $12K fixed"}</h4>
-                  <p className="text-[11px] text-paradigm-ink-soft leading-[1.7] mb-4">{isJa ? "御社に最適なプランをご提案します" : "Apply if your team can approve this week and launch this month."}</p>
+                  <h4 className="font-display text-[14px] text-paradigm-ink mb-2 tracking-[-0.01em]">{isJa ? "Japan Entry 適合審査 — $12K" : "Japan Entry — $12K fixed"}</h4>
+                  <p className="text-[11px] text-paradigm-ink-soft leading-[1.7] mb-4">{isJa ? "セットアップ費用固定。月額運用は最初の6か月無料。" : "Apply if your team can approve this week and launch this month."}</p>
                   <Link href={contactHref} className="inline-flex items-center gap-1.5 text-[11px] tracking-[0.12em] uppercase font-semibold bg-paradigm-ink text-paradigm-paper hover:bg-paradigm-accent transition-colors px-4 py-2 rounded-xl paradigm-glow-sm">
-                    {isJa ? "無料相談" : "Apply — $12K"} <ArrowRight size={12} />
+                    {isJa ? "Apply — $12K" : "Apply — $12K"} <ArrowRight size={12} />
                   </Link>
                 </div>
               </div>

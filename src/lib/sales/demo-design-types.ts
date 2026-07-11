@@ -22,7 +22,7 @@ export type VisualLanguage =
   | "editorial"          // 雑誌ライク・ストーリーテリング
 
 export type LayoutRhythm =
-  | "modular-grid"       // 整列されたグリッド (Stripe, Notion風)
+  | "modular-grid"       // 整列されたグリッド (Stripe風)
   | "asymmetric-fluid"   // 非対称・流動的レイアウト (Apple風)
   | "editorial-narrative" // スクロールで物語が展開
   | "single-column"      // 1カラム・集中型

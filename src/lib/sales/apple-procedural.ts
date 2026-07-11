@@ -9,6 +9,7 @@
  *  5. Image injection — real company images from Crawl4AI
  */
 import * as RadixColors from "@radix-ui/colors"
+import { boundedNumber, isJsonObject, parseJsonObject, readChatContent, stringValue } from "./llm-response"
 
 const API = process.env.DEEPSEEK_API_BASE || "https://api.deepseek.com/v1"
 const MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat"
@@ -66,8 +67,9 @@ function nearestRadixScale(hue: number): keyof typeof RadixColors {
 
 export function radixPalette(hue: number, warmth: number) {
   const scale = nearestRadixScale(hue)
-  const colors = (RadixColors as any)[scale] || (RadixColors as any).blue
-  const darkBg = (RadixColors as any)[`${scale}Dark`] || (RadixColors as any).blueDark
+  const palettes = RadixColors as unknown as Record<string, Record<string, string>>
+  const colors = palettes[scale] ?? palettes.blue
+  const darkBg = palettes[`${scale}Dark`] ?? palettes.blueDark
   
   return {
     primary: colors[`${scale}9`] || "#3b82f6",
@@ -77,7 +79,7 @@ export function radixPalette(hue: number, warmth: number) {
     surface: colors[`${scale}2`] || "#f8fafc",
     text: colors[`${scale}12`] || "#0f172a",
     textMuted: colors[`${scale}10`] || "#64748b",
-    accent: (RadixColors as any).amber?.[`amber9`] || "#f59e0b",
+    accent: palettes.amber?.amber9 ?? "#f59e0b",
     border: colors[`${scale}5`] || "#e2e8f0",
     shadow: `0 ${4 + warmth * 8}px ${16 + warmth * 16}px ${colors[`${scale}7`]}20`,
     darkBg: darkBg?.[`${scale}2`] || "#0f172a",
@@ -327,15 +329,45 @@ export async function extractBrandDNA(company: {
       body: JSON.stringify({ model: MODEL, messages: [{ role: "user", content: prompt }], temperature: 0.7, max_tokens: 2048, response_format: { type: "json_object" } }),
       signal: AbortSignal.timeout(45000),
     })
-    const data = await res.json() as any
-    const raw = data.choices?.[0]?.message?.content || ""
-    const dna = JSON.parse(raw.replace(/```json\s*|\s*```/g, ""))
-    
-    dna.gravity = Math.max(0, Math.min(1, Number(dna.gravity) || 0.5))
-    dna.velocity = Math.max(0, Math.min(1, Number(dna.velocity) || 0.5))
-    dna.complexity = Math.max(0, Math.min(1, Number(dna.complexity) || 0.5))
-    dna.warmth = Math.max(0, Math.min(1, Number(dna.warmth) || 0.5))
-    dna.color_hue = ((Number(dna.color_hue) || 210) % 360 + 360) % 360
+    const data: unknown = await res.json()
+    const parsed = parseJsonObject(readChatContent(data))
+    const copy = isJsonObject(parsed.copy) ? parsed.copy : {}
+    const titleBodyList = (value: unknown): Array<{ title: string; body: string }> =>
+      Array.isArray(value)
+        ? value.flatMap((item): Array<{ title: string; body: string }> => {
+            if (!isJsonObject(item)) return []
+            const title = stringValue(item.title)
+            const body = stringValue(item.body)
+            return title && body ? [{ title, body }] : []
+          })
+        : []
+    const faqList = (value: unknown): Array<{ q: string; a: string }> =>
+      Array.isArray(value)
+        ? value.flatMap((item): Array<{ q: string; a: string }> => {
+            if (!isJsonObject(item)) return []
+            const q = stringValue(item.q)
+            const a = stringValue(item.a)
+            return q && a ? [{ q, a }] : []
+          })
+        : []
+    const dna: BrandDNA = {
+      brand_seed: stringValue(parsed.brand_seed, company.name),
+      gravity: boundedNumber(parsed.gravity, 0.5),
+      velocity: boundedNumber(parsed.velocity, 0.5),
+      complexity: boundedNumber(parsed.complexity, 0.5),
+      warmth: boundedNumber(parsed.warmth, 0.5),
+      color_hue: boundedNumber(parsed.color_hue, 210, 0, 360),
+      copy: {
+        headline: stringValue(copy.headline, company.name),
+        subheadline: stringValue(copy.subheadline),
+        aboutTitle: stringValue(copy.aboutTitle, "私たちについて"),
+        aboutBody: stringValue(copy.aboutBody),
+        services: titleBodyList(copy.services),
+        cases: titleBodyList(copy.cases),
+        faq: faqList(copy.faq),
+        cta: stringValue(copy.cta, "Japan Entry Fit Review"),
+      },
+    }
 
     return { ok: true, dna }
   } catch (e) {

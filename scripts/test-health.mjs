@@ -55,7 +55,7 @@ async function check() {
   }
 
   console.log('--- OPENCLAW PIPELINE ---');
-  console.log('OpenClaw: 2026-07-06 replaces Trigger.dev + n8n as orchestrator');
+  console.log('OpenClaw: event-driven orchestrator for Twenty and Stagehand operations');
   console.log('Pipeline scripts: services/openclaw-pipeline/');
   console.log('4 skills: lead-discovery | diagnosis-output | crm-sync | outreach-exec');
 }

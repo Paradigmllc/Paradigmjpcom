@@ -47,7 +47,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(internationalMarketingRedirect, 308)
   }
 
-  // Sales OS dashboard → Twenty SSOT
+  // Legacy Sales OS paths → Twenty CRM SSOT
   if (pathname.match(/^\/(?:ja|en)\/admin\/sales/) || pathname.match(/^\/(?:ja|en)\/sales$/)) {
     return NextResponse.redirect(new URL("https://twenty.paradigmjp.com"));
   }

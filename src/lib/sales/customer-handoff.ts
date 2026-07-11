@@ -1,7 +1,5 @@
 import { notifySlack } from "@/lib/notify"
-import { notionCreatePage, notionPageUrl, N } from "@/lib/notion"
 import { getServiceSalesSupabase } from "@/lib/supabase"
-import { resolveNotionDbId } from "@/lib/sales/notion-apply"
 import { syncCustomerHandoffToTwenty } from "@/lib/sales/twenty-sync"
 import type { Region } from "@/lib/sales/types"
 import { DB_TABLES } from "@/lib/sales/db-tables"
@@ -40,8 +38,6 @@ export interface CustomerSuccessHandoffInput {
   docusealSubmissionId?: string | null
   docusealUrl?: string | null
   calComUrl?: string | null
-  notionPageUrl?: string | null
-  notionPageId?: string | null
   assignedTo?: string | null
   meta?: JsonRecord | null
 }
@@ -51,8 +47,6 @@ export interface CustomerSuccessHandoffResult {
   companyId: string
   customerId: string | null
   contractId: string | null
-  notionPageId: string | null
-  notionPageUrl: string | null
   twentyCompanyId: string | null
   twentyCustomerPortalFieldSynced: boolean
   source: CustomerHandoffSource
@@ -151,8 +145,6 @@ async function upsertCustomer(
     productTypes: CustomerHandoffProductType[]
     monthlyAmountYen: number | null
     assignedTo: string | null
-    notionPageId: string | null
-    notionUrl: string | null
     contractStatus: string
     source: CustomerHandoffSource
     meta: JsonRecord
@@ -172,7 +164,7 @@ async function upsertCustomer(
   const meta = mergeMeta(existing.data?.meta as JsonRecord | null, {
     customer_success: {
       source: input.source,
-      notion_page_url: input.notionUrl,
+      customer_portal_url: null,
       handoff_completed_at: new Date().toISOString(),
     },
     ...input.meta,
@@ -188,7 +180,6 @@ async function upsertCustomer(
     contract_status: input.contractStatus,
     health: "🟢 良好",
     assigned_to: input.assignedTo,
-    notion_page_id: input.notionPageId,
     meta,
   }
 
@@ -256,43 +247,6 @@ async function upsertContract(
   return typeof result.data?.id === "string" ? result.data.id : null
 }
 
-async function createCustomerNotionPage(input: {
-  company: CompanyRow
-  customerId: string
-  productTypes: CustomerHandoffProductType[]
-  contractName: string
-  contractStatus: string
-  contractAmountYen: number | null
-  calComUrl: string | null
-  docusealUrl: string | null
-}): Promise<{ pageId: string | null; pageUrl: string | null; warning?: string }> {
-  const dbId = resolveNotionDbId("customer", input.company.region)
-  if (!dbId) return { pageId: null, pageUrl: null, warning: "Notion customer DB is not configured" }
-
-  const titleProps = ["顧客名", "Customer", "Name"]
-  const baseProps = {
-    契約ステータス: N.select(input.contractStatus),
-    契約商材: N.multiSelect(productLabels(input.productTypes)),
-    月額: N.number(input.contractAmountYen ?? 0),
-    契約開始日: N.date(new Date().toISOString().slice(0, 10)),
-    診断レポートURL: input.company.report_url ? N.url(input.company.report_url) : undefined,
-    CalComURL: input.calComUrl ? N.url(input.calComUrl) : undefined,
-    DocusealURL: input.docusealUrl ? N.url(input.docusealUrl) : undefined,
-  }
-  const cleanBaseProps = Object.fromEntries(Object.entries(baseProps).filter(([, value]) => value !== undefined))
-
-  for (const titleProp of titleProps) {
-    const res = await notionCreatePage(dbId, {
-      [titleProp]: N.title(input.company.company_name),
-      ...cleanBaseProps,
-    })
-    if (res.ok && res.data?.id) return { pageId: res.data.id, pageUrl: notionPageUrl(res.data.id) }
-    console.warn("[customer-handoff] Notion customer page create failed:", res.error)
-  }
-
-  return { pageId: null, pageUrl: null, warning: "Notion customer page could not be created with known title properties" }
-}
-
 async function logHandoff(
   sb: ServiceSupabase,
   input: CustomerSuccessHandoffResult & { payload: JsonRecord },
@@ -301,7 +255,6 @@ async function logHandoff(
     direction: "supabase->twenty",
     entity_type: "customer",
     entity_id: input.customerId,
-    notion_page_id: input.notionPageId,
     action: "update",
     status: input.ok ? "success" : "error",
     error_message: input.error ?? null,
@@ -322,8 +275,6 @@ export async function runCustomerSuccessHandoff(
       companyId: input.companyId,
       customerId: null,
       contractId: null,
-      notionPageId: null,
-      notionPageUrl: null,
       twentyCompanyId: null,
       twentyCustomerPortalFieldSynced: false,
       source,
@@ -347,52 +298,15 @@ export async function runCustomerSuccessHandoff(
     const calComUrl = readUrl(input.calComUrl)
     const docusealUrl = readUrl(input.docusealUrl)
 
-    let notionPageId = input.notionPageId ?? null
-    let notionUrl = readUrl(input.notionPageUrl)
-
     const customer = await upsertCustomer(sb, {
       company,
       productTypes,
       monthlyAmountYen: numberOrNull(input.monthlyAmountYen) ?? amountYen,
       assignedTo,
-      notionPageId,
-      notionUrl,
       contractStatus,
       source,
       meta: input.meta ?? {},
     })
-
-    if (!notionPageId && !notionUrl) {
-      const notion = await createCustomerNotionPage({
-        company,
-        customerId: customer.id,
-        productTypes,
-        contractName,
-        contractStatus,
-        contractAmountYen: amountYen,
-        calComUrl,
-        docusealUrl,
-      })
-      notionPageId = notion.pageId
-      notionUrl = notion.pageUrl
-      if (notion.warning) warnings.push(notion.warning)
-
-      if (notionPageId || notionUrl) {
-        await sb
-          .from(DB_TABLES.SALES_CUSTOMERS)
-          .update({
-            notion_page_id: notionPageId,
-            meta: mergeMeta(customer.meta, {
-              customer_success: {
-                source,
-                notion_page_url: notionUrl,
-                handoff_completed_at: new Date().toISOString(),
-              },
-            }),
-          })
-          .eq("id", customer.id)
-      }
-    }
 
     const contractId = await upsertContract(sb, {
       customerId: customer.id,
@@ -415,7 +329,7 @@ export async function runCustomerSuccessHandoff(
           customer_success: {
             customer_id: customer.id,
             contract_id: contractId,
-            notion_page_url: notionUrl,
+            customer_portal_url: null,
             product_types: productTypes,
             handoff_completed_at: new Date().toISOString(),
           },
@@ -426,7 +340,7 @@ export async function runCustomerSuccessHandoff(
     const twenty = await syncCustomerHandoffToTwenty({
       domain: company.domain,
       companyName: company.company_name,
-      customerPortalUrl: notionUrl,
+      customerPortalUrl: docusealUrl ?? calComUrl,
       contractName,
       contractStatus,
       contractAmountYen: amountYen,
@@ -446,7 +360,7 @@ export async function runCustomerSuccessHandoff(
       subject: "成約後ハンドオフ",
       result: "completed",
       assigned_to: assignedTo,
-      body: `Notion: ${notionUrl ?? "pending"} / Contract: ${contractName}`,
+      body: `Twenty customer record / Contract: ${contractName}`,
       meta: { source, product_types: productTypes, twenty },
     })
 
@@ -455,8 +369,6 @@ export async function runCustomerSuccessHandoff(
       companyId: company.id,
       customerId: customer.id,
       contractId,
-      notionPageId,
-      notionPageUrl: notionUrl,
       twentyCompanyId: twenty.companyId ?? null,
       twentyCustomerPortalFieldSynced: twenty.customerPortalFieldSynced === true,
       source,
@@ -473,8 +385,6 @@ export async function runCustomerSuccessHandoff(
       companyId: input.companyId,
       customerId: null,
       contractId: null,
-      notionPageId: null,
-      notionPageUrl: null,
       twentyCompanyId: null,
       twentyCustomerPortalFieldSynced: false,
       source,

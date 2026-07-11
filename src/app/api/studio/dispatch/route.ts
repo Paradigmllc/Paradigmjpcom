@@ -5,8 +5,7 @@ export async function POST() {
   return NextResponse.json(
     {
       ok: false,
-      error: "旧Studio dispatch APIは廃止済みです。Revenue OSの動画制作ラインAPIを使用してください。",
-      replacement: "/api/sales/video-pipeline/jobs",
+      error: "Studio dispatch API is retired; public Japan Entry applications use the contact flow.",
     },
     { status: 410 },
   )

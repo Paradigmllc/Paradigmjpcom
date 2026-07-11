@@ -1,6 +1,6 @@
 # Sales OS API / OSS 接続台帳
 
-この台帳は `src/lib/sales/integration-registry.ts` が正本です。環境変数の実値は表示せず、設定済みの変数名、不足している変数名、残量確認方式だけを `/api/sales/integration-status` と営業ダッシュボードの「統合」タブに出します。
+この台帳は `src/lib/sales/integration-registry.ts` が正本です。環境変数の実値は表示せず、設定済みの変数名、不足している変数名、残量確認方式だけを `/api/sales/integration-status` とTwenty CRM運用ログへ出します。
 
 ## 優先接続
 

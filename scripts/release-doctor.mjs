@@ -537,13 +537,6 @@ else
   fail=1
 fi
 
-if docker ps --format '{{.Names}}' | grep -qx 'services-n8n-1'; then
-  echo "FAIL n8n legacy container is running"
-  fail=1
-else
-  echo "OK n8n legacy container stopped"
-fi
-
 if systemctl list-timers --all --no-legend 2>/dev/null | grep -Eq 'paradigm-runtime-guard|paradigm-outreach'; then
   echo "FAIL resident Paradigm runtime/systemd timer detected"
   fail=1
@@ -819,7 +812,7 @@ async function checkPostDeployUrls() {
       timeoutMs: 20_000,
     })
   }
-  await fetchCheck("Revenue OS dashboard", `${BASE_URL}/ja/admin/sales`, { timeoutMs: 20_000 })
+  await fetchCheck("Twenty CRM redirect", `${BASE_URL}/ja/admin/sales`, { timeoutMs: 20_000 })
   await fetchCheck("diagnostic report value URL", `${BASE_URL}${REPORT_PATH}`, {
     timeoutMs: 25_000,
     rejectReportError: true,

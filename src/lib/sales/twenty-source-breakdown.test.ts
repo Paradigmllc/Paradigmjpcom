@@ -55,10 +55,9 @@ describe("sourceCategoryBreakdown (Phase 7-1)", () => {
 })
 
 describe("sourceCoveragePanelLink (Phase 7-2)", () => {
-  it("builds a panel deep link with the company name query", () => {
+  it("builds a Twenty CRM company link", () => {
     const link = sourceCoveragePanelLink(karteWith([], "Sakura Dining"))
-    expect(link).toMatch(/\/ja\/admin\/sales\?q=/)
-    expect(link).toContain(encodeURIComponent("Sakura Dining"))
+    expect(link).toBe("https://twenty.paradigmjp.com/companies")
   })
 })
 
@@ -109,7 +108,7 @@ describe("twentyCompanyHomePayload", () => {
     expect(payload.paradigmDataBreakdown).toContain("analysis 1/2 (err 1)")
     expect(payload.paradigmSourceDetailsUrl).toEqual({
       primaryLinkLabel: "50+ API/OSS詳細",
-      primaryLinkUrl: expect.stringContaining("/ja/admin/sales?q=Digitalhumanity"),
+      primaryLinkUrl: expect.stringContaining("/companies"),
     })
     expect(karteHomeSummary(karte)).toContain("無料API/OSS取得データ(50+)")
   })

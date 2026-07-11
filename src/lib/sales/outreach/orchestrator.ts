@@ -277,10 +277,10 @@ async function processOneInner(
     if (!opts.dryRun) {
       const { notifyBothChannels } = await import("@/lib/notify")
       const title = `CAPTCHA手動対応: ${company.company_name}`
-      const notificationMessage = `会社「${company.company_name}」（${company.domain}）でCAPTCHAまたはロボット防御を検出したため、手動キューに送信しました。営業ダッシュボードで送信可否を確認してください。\n送信先URL: ${formUrl ?? "不明"}`
+      const notificationMessage = `会社「${company.company_name}」（${company.domain}）でCAPTCHAまたはロボット防御を検出したため、手動キューに送信しました。Twenty CRMで送信可否を確認してください。\n送信先URL: ${formUrl ?? "不明"}`
 
       await notifyBothChannels(
-        `*CAPTCHA手動対応が必要です*\n*会社名*: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不明"}\n*対応*: 営業ダッシュボードで手動確認してください。`,
+        `*CAPTCHA手動対応が必要です*\n*会社名*: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不明"}\n*対応*: Twenty CRMで手動確認してください。`,
         {
           title,
           message: notificationMessage,
@@ -331,14 +331,14 @@ async function processOneInner(
     )
     const { notifyBothChannels } = await import("@/lib/notify")
     const title = `送信承認待ち: ${company.company_name}`
-    const notificationMessage = `会社「${company.company_name}」（${company.domain}）への初回フォーム送信は、first-5ゲートにより人間の承認が必要です。営業ダッシュボードで承認してください。\n送信先URL: ${formUrl ?? "不明"}\n診断レポート: ${reportUrl}`
+    const notificationMessage = `会社「${company.company_name}」（${company.domain}）への初回フォーム送信は、first-5ゲートにより人間の承認が必要です。Twenty CRMで承認してください。\n送信先URL: ${formUrl ?? "不明"}\n診断レポート: ${reportUrl}`
 
     await notifyBothChannels(
-      `*送信承認待ち* (初回送信ゲート)\n*会社名*: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不明"}\n*診断*: ${reportUrl}\n営業ダッシュボードで確認してください。`,
+        `*送信承認待ち* (初回送信ゲート)\n*会社名*: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不明"}\n*診断*: ${reportUrl}\nTwenty CRMで確認してください。`,
       {
         title,
         message: notificationMessage,
-        link: "/ja/admin/sales",
+        link: process.env.TWENTY_BASE_URL || "https://twenty.paradigmjp.com",
         type: "approval_required"
       }
     ).catch((e) => console.error("[sales-outreach] notifyBothChannels failed:", e))

@@ -245,9 +245,6 @@ export function buildCompanyKarte(
     ]),
     customerPortalUrl: firstString(meta, [
       ["customer_portal_url"],
-      ["notion_page_url"],
-      ["customer_success", "notion_page_url"],
-      ["customer_success", "notion_url"],
     ]),
     localizedReportUrls: localizedReportUrls(company, reportLocale),
     sourceItems,

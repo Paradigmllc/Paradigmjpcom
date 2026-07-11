@@ -21,9 +21,6 @@ const PUBLIC_MARKETING_ROOTS = new Set([
 
 const LEGACY_OFFER_ROOTS = new Set(["agency", "lp", "services", "video"])
 const NON_INDEXABLE_LOCALE_ROOTS = new Set([
-  "_archive_diagnostic",
-  "_archive_optout",
-  "_archive_report",
   "admin",
   "cms",
   "d",

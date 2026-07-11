@@ -15,7 +15,7 @@
  */
 
 const API_BASE = process.env.MIGRATION_API_BASE || "http://localhost:3000"
-const API_KEY = process.env.MIGRATION_API_KEY || ""
+const API_KEY = process.env.MIGRATION_API_KEY
 const DRY_RUN = process.argv.includes("--dry-run")
 const LIMIT_ARG = process.argv.indexOf("--limit")
 const LIMIT = LIMIT_ARG > -1 ? parseInt(process.argv[LIMIT_ARG + 1], 10) || 100 : 100
@@ -60,6 +60,7 @@ async function fetchCompanies() {
 }
 
 async function generateDemo(companyId) {
+  if (!API_KEY) throw new Error("MIGRATION_API_KEY is required for demo generation")
   const res = await fetch(`${API_BASE}/api/sales/demo-site/generate`, {
     method: "POST",
     headers: {

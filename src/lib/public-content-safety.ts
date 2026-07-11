@@ -30,7 +30,6 @@ const UNVERIFIED_JAPANESE_MARKETING_PATTERNS = [
   /最も選ばれて/,
   /地域検索1位/,
   /月額数万円から/,
-  /\bn8n\b/i,
 ] as const
 
 export function containsUnverifiedJapaneseMarketingClaim(value: unknown): boolean {

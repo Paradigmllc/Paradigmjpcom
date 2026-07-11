@@ -128,7 +128,7 @@ export function karteHomeSummary(karte: CompanyKarteSnapshot): string {
 export function customerHandoffSummary(input: TwentyCustomerHandoffInput): string {
   return [
     `成約後ハンドオフ: ${input.companyName}`,
-    `顧客共有Notion: ${input.customerPortalUrl ?? "作成待ち"}`,
+    `顧客ポータル: ${input.customerPortalUrl ?? "未設定"}`,
     `契約: ${input.contractName ?? "未設定"} / ${input.contractStatus ?? "unknown"}`,
     `契約金額: ${input.contractAmountYen === null ? "未設定" : `JPY ${input.contractAmountYen.toLocaleString("ja-JP")}`}`,
     `Docuseal: ${input.docusealUrl ?? "未設定"}`,

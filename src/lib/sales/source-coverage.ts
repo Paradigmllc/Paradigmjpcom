@@ -242,7 +242,6 @@ const SOURCES: SourceDefinition[] = [
   { slug: "docsend", label: "DocSend", category: "outreach", env: ["DOCSEND_API_KEY"], detect: (m) => !!m.docsend, detail: "Tracked sales material delivery" },
   { slug: "twilio", label: "Twilio / IVRy", category: "outreach", env: ["TWILIO_ACCOUNT_SID", "IVRY_API_KEY"], detect: (m) => !!m.twilio || !!m.ivry, detail: "Phone outreach and call status" },
   { slug: "serp_tavily", label: "Serp API / Tavily", category: "analysis", env: ["SERPAPI_API_KEY", "TAVILY_API_KEY"], detect: (m) => !!m.serpapi || !!m.tavily, detail: "Search result and market context evidence" },
-  { slug: "notion_mcp", label: "Notion MCP", category: "orchestration", env: ["NOTION_API_KEY", "NOTION_MCP_TOKEN"], detect: (m) => !!m.notion_mcp || !!m.customer_notion_url, detail: "Customer portal and handoff page integration" },
   { slug: "supabase_mcp", label: "Supabase MCP / NocoDB", category: "orchestration", env: ["SUPABASE_ACCESS_TOKEN", "NOCODB_BASE_URL"], detect: (m) => !!m.supabase_mcp || !!m.nocodb, detail: "Event-store operations and spreadsheet workbench bridge" },
   { slug: "directus", label: "Directus", category: "asset", env: ["DIRECTUS_BASE_URL", "DIRECTUS_TOKEN"], detect: (m) => !!m.directus || !!m.sales_material_cms, detail: "Asset and proposal management studio" },
   { slug: "keystatic", label: "Keystatic", category: "demo", env: ["KEYSTATIC_BASE_URL", "NEXT_PUBLIC_KEYSTATIC_URL"], detect: (m) => !!m.keystatic || !!m.demo_site_cms, detail: "Git-backed CMS for Astro demo sites" },

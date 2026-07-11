@@ -4,6 +4,8 @@
  *
  * Token cost: ~500 output tokens = ~$0.00014 per company.
  */
+import { parseJsonObject, readChatContent } from "./llm-response"
+
 const API = process.env.DEEPSEEK_API_BASE || "https://api.deepseek.com/v1"
 const MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat"
 
@@ -89,9 +91,8 @@ export async function generateBlueprint(companyData: {
       }),
       signal: AbortSignal.timeout(30000),
     })
-    const data = await res.json() as any
-    const raw = data.choices?.[0]?.message?.content || ""
-    const json = JSON.parse(raw.replace(/```json\s*|\s*```/g, ""))
+    const data: unknown = await res.json()
+    const json = parseJsonObject(readChatContent(data))
     return { ok: true, blueprint: json }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) }

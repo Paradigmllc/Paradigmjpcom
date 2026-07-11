@@ -28,7 +28,6 @@ function company(meta: Record<string, unknown>): SalesCompany {
     follow_up_date: null,
     memo: null,
     assigned_to: null,
-    notion_page_id: null,
     source: "test",
     tech_stack: null,
     pain_diagnosis: null,

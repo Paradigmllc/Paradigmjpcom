@@ -49,7 +49,7 @@ function PayloadAdminUnavailable({ locale }: { locale: string }) {
   const message = getPayloadInitFailureMessage()
   const failures = getConsecutiveFailures()
   const metrics = getPayloadPoolMetrics()
-  const salesDashboardPath = "https://twenty.paradigmjp.com"
+  const twentyCrmPath = "https://twenty.paradigmjp.com"
   const isPoolExhaustion = message.toLowerCase().includes("echeckouttimeout") || message.toLowerCase().includes("unable to check out")
 
   let dbInfo: ReturnType<typeof getDbUriInfo> | null = null
@@ -76,7 +76,7 @@ function PayloadAdminUnavailable({ locale }: { locale: string }) {
         </h1>
         <p style={{ color: "#52525b", fontSize: 14, lineHeight: 1.8, margin: 0 }}>
           PayloadCMS の Postgres 接続が一時的に失敗したため、通常の CMS 管理画面を保護表示に切り替えました。
-          公開サイトと営業ダッシュボードの fallback 画面は利用できます。
+          公開サイトとTwenty CRMのfallback画面は利用できます。
         </p>
         {isPoolExhaustion ? (
           <div style={{ background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: 6, marginTop: 14, padding: "12px 14px" }}>
@@ -119,7 +119,7 @@ function PayloadAdminUnavailable({ locale }: { locale: string }) {
         ) : null}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 22 }}>
           <a
-            href={salesDashboardPath}
+            href={twentyCrmPath}
             target="_blank"
             rel="noopener noreferrer"
             style={{
@@ -132,7 +132,7 @@ function PayloadAdminUnavailable({ locale }: { locale: string }) {
               textDecoration: "none",
             }}
           >
-            営業ダッシュボードへ
+            Twenty CRMへ
           </a>
           <a
             href="/admin"

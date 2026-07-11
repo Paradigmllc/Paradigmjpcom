@@ -1,5 +1,13 @@
 ## CURRENT STATUS - 2026-07-11 全ページ Japan Entry 公開サイト仕上げ（本番公開・運用基盤検証完了）
 
+### 2026-07-11 公開サイト依存の全面スリムダウン（実装中）
+- ユーザー決定: 公開HPに不要なSales dashboard、Notion同期、n8n/video orchestration、旧MVP/提案・レポートアーカイブは撤去する。ただし **Twenty CRM と Stagehand worker は現行営業実務で使うため削除しない**。
+- 撤去済み: Notion API/Webhook/syncライブラリ・スクリプト、n8n workflow JSON、旧Sales dashboard UI/専用pipelineコンテナ、旧MVP API、旧提案/レポート/optout archive、旧video orchestration routes/lib、未参照のaudio/pipeline helper。
+- 維持: `/api/sales/twenty/**`、`twenty-sync`、Twenty CRM metadata/sync、`worker/**` Stagehand、Twenty向けpipeline intake/data collection、公開report/video template（レポート埋め込み互換）。
+- Twenty pipelineの旧`video_generate` stepは、既存DB行との互換性を保ったまま明示的にskipする（n8n/video runtimeへの依存を再導入しない）。
+- 顧客ポータル表示名をNotion依存から汎用の「顧客ポータルURL」へ統一。旧DBカラム名 `paradigmCustomerPortalUrl` はTwenty互換のため保持する。
+- 検証状況: `tsc --noEmit` pass、quality guardは旧チェックを削除後に再実行予定。production releaseはこのブランチのbuild/test/release gate完了後に実施する。
+
 ### 2026-07-11 運用監査 remediation（実装済み・次回release待ち）
 - 公開管理API（infra / analytics / demo-designs）をoperator認証＋`no-store`へ変更。`/api/infra`の内部origin情報は未認証公開しない。
 - `content-blocks`の診断run公開フォールバックを廃止し、診断ID prefixから会社名・損失額等を返さない。demo pagesは公開フィールドのみ返す。

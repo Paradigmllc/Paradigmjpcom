@@ -10,7 +10,7 @@ function validateConfig(extraEnv: Record<string, string> = {}) {
     encoding: "utf8",
     env: {
       NODE_ENV: "test",
-      PATH: process.env.PATH ?? "",
+      PATH: process.env.PATH,
       OSS_SUPABASE_ENV_FILE: path.resolve(
         process.cwd(),
         ".missing-oss-supabase-backup-env",

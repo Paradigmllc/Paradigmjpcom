@@ -37,7 +37,6 @@ const SOURCES = [
     "DIFY_VIDEO_API_KEY",
   ]),
   source("hermes_slack", "Hermes Agent / Slack", "orchestration", ["HERMES_AGENT_WEBHOOK_URL", "SLACK_WEBHOOK_URL", "SLACK_BOT_TOKEN"]),
-  source("notion_mcp", "Notion MCP", "orchestration", ["NOTION_API_KEY", "NOTION_MCP_TOKEN"]),
   source("supabase_mcp", "Supabase MCP / NocoDB", "orchestration", ["SUPABASE_ACCESS_TOKEN", "NOCODB_BASE_URL"]),
   source("listmonk_mautic", "Listmonk / Mautic", "orchestration", ["LISTMONK_BASE_URL", "MAUTIC_BASE_URL"]),
   source("chrome_mcp", "Chrome MCP", "orchestration", ["CHROME_MCP_URL"]),

@@ -59,7 +59,7 @@ export const DEFAULT_CRM_VIEW_FIELDS: SalesCrmViewField[] = [
   { fieldKey: "report_url", twentyFieldName: "paradigmReportUrl", label: "診断レポートURL", position: 8, isVisible: true, fieldType: "url", description: "顧客向け診断ページ" },
   { fieldKey: "sales_material_url", twentyFieldName: "paradigmSalesMaterialUrl", label: "営業資料URL", position: 9, isVisible: true, fieldType: "url", description: "Slidev/Gotenberg資料" },
   { fieldKey: "demo_url", twentyFieldName: "paradigmDemoUrl", label: "デモURL", position: 10, isVisible: true, fieldType: "url", description: "Astroデモサイト" },
-  { fieldKey: "customer_portal_url", twentyFieldName: "paradigmCustomerPortalUrl", label: "顧客用Notion URL", position: 11, isVisible: true, fieldType: "url", description: "成約後の顧客ポータル" },
+  { fieldKey: "customer_portal_url", twentyFieldName: "paradigmCustomerPortalUrl", label: "顧客ポータルURL", position: 11, isVisible: true, fieldType: "url", description: "成約後の顧客ポータル" },
 ]
 
 const OPERATIONAL_CRM_VIEW_FIELDS: SalesCrmViewField[] = [
@@ -83,7 +83,7 @@ const CRM_FIELD_OVERRIDES: Record<string, Partial<SalesCrmViewField>> = {
   source: { label: "ソース元", position: 11, isVisible: true },
   sales_material_url: { label: "営業資料URL", position: 12, isVisible: true },
   demo_url: { label: "デモURL", position: 13, isVisible: true },
-  customer_portal_url: { label: "顧客用Notion URL", position: 14, isVisible: true },
+  customer_portal_url: { label: "顧客ポータルURL", position: 14, isVisible: true },
 }
 
 const JAPAN_PREFECTURES = [

@@ -48,7 +48,6 @@ const SIGNATURES: Signature[] = [
   { name: "Concrete5", category: "CMS", confidence: 78, patterns: [/concrete5|CCM_DISPATCHER_FILENAME/i] },
   { name: "Movable Type", category: "CMS", confidence: 78, patterns: [/movabletype|mt\.js|MT-Version/i] },
   { name: "HubSpot CMS", category: "CMS", confidence: 82, patterns: [/hs-scripts\.com|hbspt\.forms|hs-cms/i] },
-  { name: "Notion", category: "CMS", confidence: 76, patterns: [/notion\.so|notion-static/i] },
 
   // ─── Japanese CMS/EC ───
   { name: "EC-CUBE", category: "EC", confidence: 88, patterns: [/ec-cube|ECCUBE|eccube/i], cookiePatterns: [/eccube/i] },

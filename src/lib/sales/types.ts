@@ -7,7 +7,7 @@
  * 設計原則:
  *   - enum 値は const tuple で literal type narrowing (Sprint 1 で確立した pattern)
  *   - DB の CHECK 制約と完全一致 (migration_003 と同じ値リスト)
- *   - Notion 側 property name と DB column 名の mapping は別ファイル (sync.ts) で持つ
+ *   - Twenty側 field name と DB column 名の mapping は sync helpers で持つ
  */
 
 /* ───── enum tuples (DB CHECK と完全一致) ───── */
@@ -185,7 +185,6 @@ export interface SalesCompany {
   follow_up_date: string | null
   memo: string | null
   assigned_to: string | null
-  notion_page_id: string | null
   source: string | null
   // ── migration_046: normalized from meta JSONB ──
   tech_stack: Record<string, unknown> | null
@@ -216,7 +215,6 @@ export interface SalesCustomer {
   is_white_label: boolean
   wl_client_count: number
   assigned_to: string | null
-  notion_page_id: string | null
   meta: Record<string, unknown>
   created_at: string
   updated_at: string
@@ -233,7 +231,6 @@ export interface SalesDelivery {
   delivery_url: string | null
   r2_path: string | null
   created_by: string | null
-  notion_page_id: string | null
   meta: Record<string, unknown>
   created_at: string
   updated_at: string
@@ -255,7 +252,6 @@ export interface SalesTemplate {
   loss: string | null
   cta_text: string | null
   is_active: boolean
-  notion_page_id: string | null
   last_synced: string | null
   created_at: string
   updated_at: string
@@ -264,8 +260,6 @@ export interface SalesTemplate {
 export interface SalesSyncLog {
   id: string
   direction:
-    | "supabase->notion"
-    | "notion->supabase"
     | "supabase->twenty"
     | "twenty->supabase"
     | "supabase->directus"
@@ -274,7 +268,6 @@ export interface SalesSyncLog {
     | "keystatic->supabase"
   entity_type: "company" | "customer" | "delivery" | "template"
   entity_id: string | null
-  notion_page_id: string | null
   action:
     | "create"
     | "update"

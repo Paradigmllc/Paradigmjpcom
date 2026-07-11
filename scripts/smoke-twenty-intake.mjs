@@ -36,10 +36,11 @@ const dispatchPipeline = boolArg("dispatch-pipeline", false)
 
 if (!baseUrl) fail("base URL is empty")
 
-const localSecret = env("TRIGGER_WEBHOOK_SECRET") ?? env("N8N_WEBHOOK_SECRET")
-const productionSecret =
-  (await readProductionEnvValue("TRIGGER_WEBHOOK_SECRET").catch(() => null)) ??
-  (await readProductionEnvValue("N8N_WEBHOOK_SECRET").catch(() => null))
+const localSecret = env("TRIGGER_WEBHOOK_SECRET")
+const productionSecret = await readProductionEnvValue("TRIGGER_WEBHOOK_SECRET").catch((error) => {
+  console.error("[smoke-twenty-intake] failed to read production webhook secret:", error)
+  return null
+})
 const isLocalBaseUrl = /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::|\/|$)/.test(baseUrl)
 const secret = isLocalBaseUrl ? localSecret ?? productionSecret : productionSecret ?? localSecret
 
