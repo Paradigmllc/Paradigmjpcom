@@ -600,6 +600,10 @@ async function applyContactSubmissionAtomicityMigration(envs) {
   return applySqlMigration(envs, "migration_068_contact_submission_atomicity.sql", "Contact submission atomicity migration")
 }
 
+async function applyPayloadPostsConstraintsMigration(envs) {
+  return applySqlMigration(envs, "migration_069_payload_posts_constraints.sql", "Payload posts constraints migration")
+}
+
 function runDeployGuard() {
   if (SKIP_DEPLOY_GUARD) {
     console.log("Coolify deploy guard: skipped")
@@ -1100,6 +1104,7 @@ async function main() {
     console.log(await applyRuntimeHardeningMigration(envs))
     console.log(await applySalesToolingBootstrapMigration(envs))
     console.log(await applyContactSubmissionAtomicityMigration(envs))
+    console.log(await applyPayloadPostsConstraintsMigration(envs))
     console.log(await applyVideoPipelineMigration(envs))
     console.log(await applyVideoStrategyMigration(envs))
     console.log(await applyVideoProductionMigration(envs))
