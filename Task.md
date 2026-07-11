@@ -16,7 +16,7 @@
 - `npm run quality:guard`: **0 errors / 47 warnings**（全て300〜499行の分割候補）
 - `npm audit --audit-level=high`: **0 vulnerabilities**（workerはlowのみ）
 - `node scripts/release-doctor.mjs --local-only --allow-dirty`: **pass**
-- `node scripts/release-doctor.mjs --pre-deploy --allow-dirty`: host / Coolify / Traefik / Realtime / Twenty workerはpass。ただしこの端末からCloudflare gateとCoolify env取得がfetch失敗し、未コミット状態も検出したためreleaseは未実行。
+- `npm run release:prod`のpre-deploy: host / Coolify / Traefik / Cloudflare origin lock / Realtime / Twenty workerはpass。公開envの不足はSlack、metric provider、暗号化off-host backup、法定表示の4件だけで、gateが停止したためdeployは実行されていない。
 
 ### 正式release前に必要な外部設定（値を推測してはならない）
 - `PARADIGM_LEGAL_REPRESENTATIVE_NAME`、`PARADIGM_LEGAL_POSTAL_CODE`、`PARADIGM_LEGAL_ADDRESS`、`PARADIGM_LEGAL_PHONE` の法務確認済み実値。
@@ -122,6 +122,7 @@
 - **ユーザーまたは契約情報が必要な残件**: (1) Slack app webhook/token/channelの発行、(2) 代表者・住所・電話の正式値と法務レビュー、(3) 災害復旧用オフホスト保全の選択、(4) PageSpeed quota付きAPI key / DataForSEO / Similarweb APIのいずれか。現行backupは同一hostのため、Cloudflare R2等の保存先credentialを用意するか、有償Hetzner Backupを承認後に有効化する。
 - 会社代表者・住所・電話の設定値は現状未登録のため、法定表示は申込前のメール開示fallbackを使用する。実値を取得できた時点でsettingsへ登録し、最終的な法務レビューを行う。
 - `node scripts/release-doctor.mjs --pre-deploy --allow-dirty` 実測: infra / Cloudflare / Twenty / Turnstile / Dify は pass。残るfailは Slack credential、verified metric provider、暗号化off-host backup、法定表示4項目、未追跡新規ファイル（commit前のため）の5系統。
+- 変更は `5dacdde`（`feat: harden public surface and evidence-backed outreach`）としてcommit/push済み。clean worktreeでの`--pre-deploy`再実測は、Slack、verified metric provider、暗号化off-host backup、法定表示の4 failureのみ。コード不備や未追跡ファイルによるblockは解消済み。
 
 ## CURRENT STATUS - 2026-07-10 Japan Entry固定オファー型ホームページ改修（本番反映完了）
 
