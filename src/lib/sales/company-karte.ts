@@ -13,6 +13,7 @@ import {
   companyTechStack,
   mergedCompanyMeta,
 } from "@/lib/sales/company-data-view"
+import type { VerifiedOutreachContext } from "@/lib/sales/outreach/verified-metrics"
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
@@ -73,6 +74,7 @@ export interface CompanyKarteSnapshot {
   // Phase 6-2: generation trace so operators can see which engine produced the copy.
   reportEngine?: string | null
   diagnosisEngine?: string | null
+  formMessageEvidence?: VerifiedOutreachContext | null
   generatedAt: string
 }
 
@@ -214,6 +216,7 @@ export function buildCompanyKarte(
   const formUrl = companyContactFormUrl(company)
   const diagnosis = companyPainDiagnosis(company)
   const personalizedCopy = asRecord(meta.personalized_copy)
+  const formMessageEvidence = asRecord(meta.form_message_evidence) as VerifiedOutreachContext | null
 
   return {
     companyId: company.id,
@@ -262,6 +265,7 @@ export function buildCompanyKarte(
           ? "personalized"
           : "template",
     diagnosisEngine: typeof diagnosis?.engine === "string" ? diagnosis.engine : null,
+    formMessageEvidence,
     generatedAt: new Date().toISOString(),
     ...counts,
   }

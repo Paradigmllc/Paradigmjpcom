@@ -24,6 +24,7 @@ export async function isAuthorizedOperatorRequest(req: Request): Promise<boolean
   const payloadAuth = await authorizePayloadAdminRequest({
     headers: new Headers(req.headers),
     legacyToken: req.headers.get("x-admin-password"),
+    allowLegacyPassword: true,
   })
   return payloadAuth.ok
 }

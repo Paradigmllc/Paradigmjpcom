@@ -3,6 +3,7 @@ import { RootPage, generatePageMetadata } from "@payloadcms/next/views"
 import { importMap } from "../importMap.js"
 import config from "@payload-config"
 import { headers } from "next/headers"
+import Link from "next/link"
 import {
   getPayloadInitFailureMessage,
   getConsecutiveFailures,
@@ -53,7 +54,11 @@ function PayloadAdminUnavailable({ locale }: { locale: string }) {
   const isPoolExhaustion = message.toLowerCase().includes("echeckouttimeout") || message.toLowerCase().includes("unable to check out")
 
   let dbInfo: ReturnType<typeof getDbUriInfo> | null = null
-  try { dbInfo = getDbUriInfo() } catch (_) { /* ignore */ }
+  try {
+    dbInfo = getDbUriInfo()
+  } catch (error) {
+    console.error("[payload-admin] database URI inspection failed:", error)
+  }
 
   return (
     <main style={{ minHeight: "100vh", background: "#f7f7f4", color: "#18181b", padding: 24 }}>
@@ -134,7 +139,7 @@ function PayloadAdminUnavailable({ locale }: { locale: string }) {
           >
             Twenty CRMへ
           </a>
-          <a
+          <Link
             href="/admin"
             style={{
               border: "1px solid #d4d4d8",
@@ -147,7 +152,7 @@ function PayloadAdminUnavailable({ locale }: { locale: string }) {
             }}
           >
             再試行
-          </a>
+          </Link>
         </div>
         {remainingSeconds > 0 ? (
           <p style={{ color: "#71717a", fontSize: 12, margin: "16px 0 0" }}>

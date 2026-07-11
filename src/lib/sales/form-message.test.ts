@@ -127,4 +127,48 @@ describe("generateFormMessage", () => {
     })
     expect(mocks.callDeepSeek).toHaveBeenCalled()
   })
+
+  it("requires verified metrics and passes their provenance to the LLM", async () => {
+    vi.stubEnv("DIFY_API_KEY", "")
+    const company = {
+      id: "company-2",
+      region: "global",
+      slug: "example-2",
+      report_locale: "en",
+      target_country: "US",
+      template_variant: "website_diagnostic",
+      domain: "https://example.com",
+      company_name: "Example Inc",
+      industry: "consulting",
+      pagespeed_mobile: null,
+      pagespeed_desktop: null,
+      detected_issues: [],
+      pipeline_status: "report_ready",
+      meta: {
+        similarweb: {
+          monthly_visits: 24800,
+          country_shares: { JP: 0.05 },
+          source_url: "https://example.com/traffic-report",
+          measured_at: "2026-07-10T00:00:00.000Z",
+        },
+      },
+    } as unknown as SalesCompany
+    mocks.findCompanyById.mockResolvedValue(company)
+    mocks.matchTemplate.mockResolvedValue(null)
+    mocks.getAiPrompt.mockResolvedValue("system prompt")
+    mocks.callDeepSeek.mockResolvedValue({
+      ok: true,
+      text: "We found 24,800 monthly visits, including an estimated 5% from Japan (about 1,240 visits/month). {{report_url}}",
+    })
+    mocks.getServiceSalesSupabase.mockReturnValue(null)
+
+    const result = await generateFormMessage("company-2", { requireVerifiedMetrics: true })
+
+    expect(result.ok).toBe(true)
+    expect(result.evidence_ready).toBe(true)
+    expect(result.verified_metrics?.find((metric) => metric.id === "japan-monthly-visits")?.value).toBe(1240)
+    const prompt = mocks.callDeepSeek.mock.calls[0]?.[0]?.[1]?.content as string
+    expect(prompt).toContain("japan-monthly-visits")
+    expect(prompt).toContain("Similarweb API")
+  })
 })

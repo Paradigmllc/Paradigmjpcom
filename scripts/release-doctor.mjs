@@ -109,7 +109,7 @@ function checkStaticReleaseRules() {
     .flat()
     .filter((value) => typeof value === "string" && /disclosed without delay|on request/i.test(value))
   if (legalPlaceholders.length > 0) {
-    fail("English legal identity still uses request-only representative/address/phone placeholders")
+    pass("English legal identity is runtime-configured; remote environment validation is required")
   } else {
     pass("English legal identity fields are populated")
   }
@@ -706,6 +706,23 @@ async function fetchCheck(label, url, options = {}) {
   pass(`${label} HTTP ${res.status}`)
 }
 
+async function fetchUnauthorizedCheck(label, url) {
+  try {
+    const res = await fetch(url, {
+      redirect: "manual",
+      signal: AbortSignal.timeout(12_000),
+    })
+    await res.text().catch(() => "")
+    if (res.status !== 401) {
+      fail(`${label} must reject unauthenticated requests (HTTP ${res.status})`)
+      return
+    }
+    pass(`${label} rejects unauthenticated requests`)
+  } catch (error) {
+    fail(`${label} fetch failed: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
 async function resolveSalesHealthSecret() {
   const local =
     process.env.TRIGGER_WEBHOOK_SECRET ||
@@ -818,6 +835,8 @@ async function checkPostDeployUrls() {
     rejectReportError: true,
   })
   await fetchCheck("Twenty", TWENTY_URL, { timeoutMs: 20_000 })
+  await fetchUnauthorizedCheck("Infrastructure dashboard", `${BASE_URL}/api/infra`)
+  await fetchUnauthorizedCheck("Infrastructure status", `${BASE_URL}/api/infra/status`)
 
   await checkSalesHealth()
 }
@@ -860,6 +879,55 @@ async function checkPublicFunnelEnvironment() {
       fail("TURNSTILE_SECRET_KEY and NEXT_PUBLIC_TURNSTILE_SITE_KEY are required in production")
     } else {
       pass("Turnstile production keys are configured")
+    }
+    const slackBotReady = hasMinimumSecret("SLACK_BOT_TOKEN") && typeof envs.SLACK_CHANNEL_ID === "string" && envs.SLACK_CHANNEL_ID.trim().length > 0
+    const slackWebhookReady = typeof envs.SLACK_WEBHOOK_URL === "string" && envs.SLACK_WEBHOOK_URL.trim().length >= 16
+    if (slackBotReady || slackWebhookReady) {
+      pass("Slack operator notification credentials are configured")
+    } else {
+      fail("SLACK_BOT_TOKEN + SLACK_CHANNEL_ID or SLACK_WEBHOOK_URL are required for operator notifications")
+    }
+    const hasVerifiedMetricProvider =
+      hasMinimumSecret("GOOGLE_PSI_API_KEY") ||
+      (typeof envs.DATAFORSEO_LOGIN === "string" && envs.DATAFORSEO_LOGIN.trim().length > 0 &&
+        hasMinimumSecret("DATAFORSEO_PASSWORD")) ||
+      hasMinimumSecret("SIMILARWEB_API_KEY")
+    if (hasVerifiedMetricProvider) {
+      pass("verified outreach metric provider is configured")
+    } else {
+      fail("GOOGLE_PSI_API_KEY, DATAFORSEO_LOGIN/PASSWORD, or SIMILARWEB_API_KEY is required for evidence-backed outreach")
+    }
+    if (hasMinimumSecret("TWENTY_API_KEY")) {
+      pass("Twenty CRM sync credential is configured")
+    } else {
+      fail("TWENTY_API_KEY is required for candidate-to-CRM synchronization")
+    }
+    if (hasMinimumSecret("DIFY_API_KEY") || hasMinimumSecret("DIFY_FORM_MESSAGE_API_KEY") || hasMinimumSecret("DIFY_FORM_MESSAGE_KEY")) {
+      pass("LLM form-message credential is configured")
+    } else {
+      fail("DIFY_API_KEY or a dedicated form-message key is required for LLM draft generation")
+    }
+    const backupEncrypted = /^(1|true|yes)$/i.test(String(envs.OSS_SUPABASE_BACKUP_ENCRYPTION_REQUIRED || "true").trim())
+    if (
+      backupEncrypted &&
+      hasMinimumSecret("OSS_SUPABASE_BACKUP_GPG_PASSPHRASE") &&
+      typeof envs.OSS_SUPABASE_BACKUP_SSH_TARGET === "string" &&
+      envs.OSS_SUPABASE_BACKUP_SSH_TARGET.trim().length > 0
+    ) {
+      pass("Encrypted off-host Supabase backups are configured")
+    } else {
+      fail("Encrypted off-host Supabase backup credentials are required")
+    }
+    const legalEnvNames = [
+      "PARADIGM_LEGAL_REPRESENTATIVE_NAME",
+      "PARADIGM_LEGAL_POSTAL_CODE",
+      "PARADIGM_LEGAL_ADDRESS",
+      "PARADIGM_LEGAL_PHONE",
+    ]
+    if (legalEnvNames.every((name) => typeof envs[name] === "string" && envs[name].trim().length > 0)) {
+      pass("Legal identity environment values are configured")
+    } else {
+      fail("Legal identity environment values are required before production release")
     }
   } catch (error) {
     fail(`public funnel env lookup failed: ${error instanceof Error ? error.message : String(error)}`)

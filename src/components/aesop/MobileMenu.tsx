@@ -46,7 +46,10 @@ export default function MobileMenu({ items }: { items: MobileNavItem[] }) {
   const isJapanEntryCta = ctaHref.includes("intent=japan-entry")
 
   // Portal target only resolves client-side; server-render returns hamburger only
-  useEffect(() => setMounted(true), [])
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setMounted(true))
+    return () => window.cancelAnimationFrame(frame)
+  }, [])
 
   useEffect(() => {
     if (!open) return
@@ -59,6 +62,7 @@ export default function MobileMenu({ items }: { items: MobileNavItem[] }) {
 
   useEffect(() => {
     if (!open) return
+    const trigger = triggerRef.current
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false)
       if (event.key !== "Tab") return
@@ -82,7 +86,7 @@ export default function MobileMenu({ items }: { items: MobileNavItem[] }) {
     return () => {
       window.cancelAnimationFrame(focusFrame)
       document.removeEventListener("keydown", handleKeyDown)
-      triggerRef.current?.focus()
+      trigger?.focus()
     }
   }, [open])
 

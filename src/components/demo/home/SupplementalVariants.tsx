@@ -40,8 +40,8 @@ export function TestimonialsSection({
               className="relative rounded-2xl border border-gray-100 bg-white p-8 shadow-sm"
               variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }}
               transition={{ duration: 0.4, delay: i * 0.15, ease: "easeOut" }}>
-              <div className="mb-4 text-5xl font-serif leading-none text-gray-200">"</div>
-              <p className="mb-6 text-base leading-relaxed text-gray-600">"{t.quote}"</p>
+              <div className="mb-4 text-5xl font-serif leading-none text-gray-200">&ldquo;</div>
+              <p className="mb-6 text-base leading-relaxed text-gray-600">&ldquo;{t.quote}&rdquo;</p>
               <div className="flex items-center gap-3 border-t border-gray-100 pt-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full font-bold text-white text-sm"
                   style={{ background: accent }}>

@@ -1,4 +1,43 @@
+## CURRENT STATUS - 2026-07-11 P0公開面・実運用ハードニング（実装済み / 正式releaseは外部設定待ち）
+
+### 今回実装した内容
+- 日本語を含む旧 `services` / `video` / `agency` / `lp` / `pricing` 導線を `/ja#japan-entry-pricing` へ308統一。公開価格・CTAの旧表現が残るページを現行Japan Entry導線から切り離した。
+- 公開 `demo-pages` / `content-blocks` APIを再帰的な公開サニタイズへ変更し、診断・CRM・生成内部メタデータを返さない。`demo-designs` は `private, no-store`、障害レスポンスは内部エラー詳細を返さない。
+- 管理APIの平文パスワードCookieとGETクエリログインを廃止。HMAC署名・7日有効期限の管理セッション、5回/分のログインレート制限、署名改ざん・期限切れテストを追加した。
+- 旧Stripe checkout / sales video proxyはHTTP 410で固定Japan Entry申込へ誘導。Twenty CRMとStagehand workerは削除せず維持した。
+- Slack webhook fallback、法定表示の環境変数SSOT、暗号化＋off-hostバックアップ必須化を実装。release-doctorでSlack、検証済み外部metric provider、Twenty、LLM、法定表示、off-host backupを本番release必須にした。
+- CMS field auditはLeads/Usersのidentity nameをローカライズ欠落として誤検出しないよう修正。ESLint flat configと既存React 19/Payloadルールを整理し、全体lintをゼロエラーにした。
+
+### 検証証跡（このブランチの実測）
+- `npm exec -- tsc --noEmit --pretty false`: **0 error**
+- `npm run build`: **exit 0**、Next全ルート生成完了
+- `npx eslint . --max-warnings=0`: **exit 0 / 0 error / 0 warning**
+- `npm test`: **84 files / 393 tests pass**
+- `npm run quality:guard`: **0 errors / 47 warnings**（全て300〜499行の分割候補）
+- `npm audit --audit-level=high`: **0 vulnerabilities**（workerはlowのみ）
+- `node scripts/release-doctor.mjs --local-only --allow-dirty`: **pass**
+- `node scripts/release-doctor.mjs --pre-deploy --allow-dirty`: host / Coolify / Traefik / Realtime / Twenty workerはpass。ただしこの端末からCloudflare gateとCoolify env取得がfetch失敗し、未コミット状態も検出したためreleaseは未実行。
+
+### 正式release前に必要な外部設定（値を推測してはならない）
+- `PARADIGM_LEGAL_REPRESENTATIVE_NAME`、`PARADIGM_LEGAL_POSTAL_CODE`、`PARADIGM_LEGAL_ADDRESS`、`PARADIGM_LEGAL_PHONE` の法務確認済み実値。
+- `SLACK_BOT_TOKEN` + `SLACK_CHANNEL_ID` または `SLACK_WEBHOOK_URL`。
+- Google PSI / DataForSEO / Similarwebのいずれかの検証済みmetric credential、`TWENTY_API_KEY`、Dify form-message credential。
+- `OSS_SUPABASE_BACKUP_GPG_PASSPHRASE` と `OSS_SUPABASE_BACKUP_SSH_TARGET`（暗号化off-host保全）。
+
+上記をCoolify production envへ登録した後、`npm run release:prod`のみを正式入口としてDB/migration、Coolify deploy、Traefik refresh、post-deploy doctor、公開URL smokeまで実施する。外部設定なしにrelease gateを迂回しない。
+
 ## CURRENT STATUS - 2026-07-11 全ページ Japan Entry 公開サイト仕上げ（本番公開・運用基盤検証完了）
+
+### 2026-07-11 API根拠付きフォーム文面下書き（実装済み・送信は未変更）
+- 参考Gemini会話をレビューし、候補収集→根拠付きLLM下書き→Twenty同期→人間レビューの順に限定。自動フォーム送信は変更していない。
+- `src/lib/sales/outreach/verified-metrics.ts`を追加。DataForSEO / Similarwebの月間訪問数・日本比率・導出日本訪問数、PageSpeed値を出典URL・測定日時・confidence・計算式付きで正規化する。未ラベルのtraffic metaはAPI根拠として扱わない。
+- `/api/sales/generate-form-message` は既定で `require_verified_metrics` を有効化。検証済みメトリクスがない場合、またはLLM出力に許可されていない数値が含まれる場合は文面を保存せずエラーにする。
+- lead-candidate由来のenrichment完了時だけ、送信を行わずに根拠付き文面下書きを生成してからTwenty karteを同期する。下書き失敗はenrichment全体を落とさず、診断イベントと `needs_review` 相当の結果へ記録する。
+- 文面保存時に `sales_atomic_meta_merge` で `form_message_evidence`（metrics / unknowns / saved_at）を原子的に保存。Twenty同期のkarte summaryに、文面に使った数値と未知項目を表示する。
+- 検証: `tsc --noEmit` pass、`npm run lint` pass、Sales tests 45 files / 178 tests pass、quality guard 0 error（既存warningのみ）。
+- 追加監査修正: 全体Lintの既存117エラー（Payload内部リンク、React effect/ref purity、デモ引用符等）を解消し、`npm run lint` は **0 error / 0 warning**。`scripts/audit-sales-data-acquisition.mjs` はDocker内部Supabase URLを検出した場合にSSH経由のPostgres snapshotへ切り替え、DB 0件と接続不能を混同しないようにした。
+- 2026-07-11 live evidence: production PageSpeed keyless APIはHTTP 429（quota=0）で、外部metric provider credentialがないため、実リードのPageSpeed数値をまだ取得できない。release-doctorへGoogle PSI / DataForSEO / Similarweb API credential必須チェックを追加した。
+- この作業ブランチでは本番release・pushは未実施。公開サイトの大規模な未確定差分と分離してから正式releaseする。
 
 ### 2026-07-11 公開サイト依存の全面スリムダウン（実装中）
 - ユーザー決定: 公開HPに不要なSales dashboard、Notion同期、n8n/video orchestration、旧MVP/提案・レポートアーカイブは撤去する。ただし **Twenty CRM と Stagehand worker は現行営業実務で使うため削除しない**。
@@ -80,8 +119,9 @@
 
 ### Active Handoff / 完了条件
 - HP公開と無停止運用に必要なcode / environment / Cloudflare / Coolify / DB / backup / live smokeは完了。営業フローの壁打ち・自動化は別タスクのまま維持する。
-- **ユーザーまたは契約情報が必要な残件**: (1) Slack app webhook/token/channelの発行、(2) 代表者・住所・電話の正式値と法務レビュー、(3) 災害復旧用オフホスト保全の選択。現行backupは同一hostのため、Cloudflare R2等の保存先credentialを用意するか、有償Hetzner Backupを承認後に有効化する。
+- **ユーザーまたは契約情報が必要な残件**: (1) Slack app webhook/token/channelの発行、(2) 代表者・住所・電話の正式値と法務レビュー、(3) 災害復旧用オフホスト保全の選択、(4) PageSpeed quota付きAPI key / DataForSEO / Similarweb APIのいずれか。現行backupは同一hostのため、Cloudflare R2等の保存先credentialを用意するか、有償Hetzner Backupを承認後に有効化する。
 - 会社代表者・住所・電話の設定値は現状未登録のため、法定表示は申込前のメール開示fallbackを使用する。実値を取得できた時点でsettingsへ登録し、最終的な法務レビューを行う。
+- `node scripts/release-doctor.mjs --pre-deploy --allow-dirty` 実測: infra / Cloudflare / Twenty / Turnstile / Dify は pass。残るfailは Slack credential、verified metric provider、暗号化off-host backup、法定表示4項目、未追跡新規ファイル（commit前のため）の5系統。
 
 ## CURRENT STATUS - 2026-07-10 Japan Entry固定オファー型ホームページ改修（本番反映完了）
 

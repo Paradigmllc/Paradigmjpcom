@@ -110,7 +110,7 @@ function ContactFormSection({
       })
     } catch (error) {
       console.error("[DemoContact] Turnstile widget render failed:", error)
-      setTurnstileToken(null)
+      window.queueMicrotask(() => setTurnstileToken(null))
     }
   }, [turnstileScriptReady])
 

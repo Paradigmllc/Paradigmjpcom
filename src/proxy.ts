@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import {
   getEnglishLegacyOfferRedirect,
   getInternationalMarketingRedirect,
+  getJapaneseLegacyOfferRedirect,
   isNonIndexablePath,
 } from "@/lib/marketing-routing";
 
@@ -40,6 +41,11 @@ export function proxy(request: NextRequest) {
   const englishLegacyOfferRedirect = getEnglishLegacyOfferRedirect(request.nextUrl)
   if (englishLegacyOfferRedirect) {
     return NextResponse.redirect(englishLegacyOfferRedirect, 308)
+  }
+
+  const japaneseLegacyOfferRedirect = getJapaneseLegacyOfferRedirect(request.nextUrl)
+  if (japaneseLegacyOfferRedirect) {
+    return NextResponse.redirect(japaneseLegacyOfferRedirect, 308)
   }
 
   const internationalMarketingRedirect = getInternationalMarketingRedirect(request.nextUrl)

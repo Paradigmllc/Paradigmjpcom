@@ -34,6 +34,12 @@ interface ConfettiPiece {
   rotate: number
   distance: number
   size: number
+  xOffset: number
+}
+
+function seededUnit(seed: number) {
+  const value = Math.sin(seed * 12.9898) * 43758.5453
+  return value - Math.floor(value)
 }
 
 export function Confetti({
@@ -47,12 +53,13 @@ export function Confetti({
     () =>
       Array.from({ length: count }, (_, i) => ({
         id: i,
-        left: Math.random() * 100,
-        color: colors[Math.floor(Math.random() * colors.length)]!,
-        delay: Math.random() * 0.3,
-        rotate: Math.random() * 720 - 360,
-        distance: 120 + Math.random() * 260,
-        size: 6 + Math.random() * 6,
+        left: seededUnit(i * 7 + count) * 100,
+        color: colors[Math.floor(seededUnit(i * 11 + count) * colors.length)]!,
+        delay: seededUnit(i * 13 + count) * 0.3,
+        rotate: seededUnit(i * 17 + count) * 720 - 360,
+        distance: 120 + seededUnit(i * 19 + count) * 260,
+        size: 6 + seededUnit(i * 23 + count) * 6,
+        xOffset: seededUnit(i * 29 + count) * 80 - 40,
       })),
     [count, colors]
   )
@@ -81,7 +88,7 @@ export function Confetti({
             y: p.distance,
             opacity: [0, 1, 1, 0],
             rotate: p.rotate,
-            x: (Math.random() - 0.5) * 80,
+            x: p.xOffset,
           }}
           transition={{
             duration,

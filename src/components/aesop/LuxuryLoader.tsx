@@ -31,8 +31,8 @@ export default function LuxuryLoader() {
 
     const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches
     if (reduced) {
-      setGone(true)
-      return
+      const frame = window.requestAnimationFrame(() => setGone(true))
+      return () => window.cancelAnimationFrame(frame)
     }
 
     const fadeTimer = window.setTimeout(() => setFading(true), 600)

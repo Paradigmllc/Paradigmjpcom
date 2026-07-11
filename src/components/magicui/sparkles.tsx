@@ -45,7 +45,8 @@ export function Sparkles({
       size: 2 + Math.random() * 4,
       delay: Math.random() * 0.3,
     }))
-    setParticles(generated)
+    const frame = window.requestAnimationFrame(() => setParticles(generated))
+    return () => window.cancelAnimationFrame(frame)
   }, [count])
 
   return (

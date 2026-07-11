@@ -28,6 +28,12 @@ import { matchTemplate } from "./templates"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import type { Industry, IssueCode, SalesCompany } from "./types"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import {
+  buildVerifiedOutreachContext,
+  formatVerifiedOutreachContext,
+  type VerifiedOutreachContext,
+  type VerifiedOutreachMetric,
+} from "./outreach/verified-metrics"
 
 type JsonRecord = Record<string, unknown>
 
@@ -40,8 +46,9 @@ function buildUserPrompt(input: {
   templateHeadline: string | null
   templatePain: string | null
   templateLoss: string | null
+  verifiedContext: VerifiedOutreachContext
 }): string {
-  const { company, industry, issueCode, templateHeadline, templatePain, templateLoss } = input
+  const { company, industry, issueCode, templateHeadline, templatePain, templateLoss, verifiedContext } = input
   return `【対象企業】
 会社名: ${company.company_name}
 業種: ${industry}
@@ -58,7 +65,11 @@ ${templateLoss ? `損失: ${templateLoss}` : ""}
 ${company.pagespeed_mobile != null ? `モバイルスコア: ${company.pagespeed_mobile}点` : ""}
 ${company.pagespeed_desktop != null ? `PCスコア: ${company.pagespeed_desktop}点` : ""}
 
+${formatVerifiedOutreachContext(verifiedContext)}
+
  上記をもとに、200-300 文字のフォーム送信文面を 1 つ生成してください。
+ 検証済みメトリクスにない数値、conversion rate、売上損失、離脱率は絶対に作らないこと。
+ 推定値は必ず「estimated」と表現し、根拠URLのない数値は本文に含めないこと。
  末尾に {{report_url}} プレースホルダを必ず含めること。
  また、WEB制作診断レポートの場合は改善デモサイトのURLプレースホルダ {{demo_url}} も含めること。`
 }
@@ -74,8 +85,16 @@ export interface GenerateFormMessageResult {
     industry: boolean
     issueCode: boolean
   }
+  verified_metrics?: VerifiedOutreachMetric[]
+  metric_unknowns?: string[]
+  evidence_ready?: boolean
   usage?: DeepSeekResponse["usage"]
   error?: string
+}
+
+export interface GenerateFormMessageOptions {
+  /** Require at least one verified metric and reject unsupported numeric claims. */
+  requireVerifiedMetrics?: boolean
 }
 
 const DEFAULT_OUTREACH_INDUSTRY: Industry = "consulting"
@@ -113,6 +132,7 @@ async function generateWithDify(input: {
   templatePain: string | null
   templateLoss: string | null
   fallbacks: GenerateFormMessageResult["fallbacks"]
+  verifiedContext: VerifiedOutreachContext
 }): Promise<{ ok: true; message: string } | { ok: false; configured: boolean; error: string }> {
   const apiKey =
     readOptionalEnv("DIFY_FORM_MESSAGE_API_KEY") ??
@@ -144,6 +164,9 @@ async function generateWithDify(input: {
             template_headline: input.templateHeadline,
             template_pain: input.templatePain,
             template_loss: input.templateLoss,
+            verified_metrics: input.verifiedContext.metrics,
+            metric_unknowns: input.verifiedContext.unknowns,
+            numeric_claim_policy: "Only use numbers present in verified_metrics or the fixed offer facts; never invent revenue, conversion, traffic, or loss values.",
             pagespeed_mobile: input.company.pagespeed_mobile,
             pagespeed_desktop: input.company.pagespeed_desktop,
             detected_issues: input.company.detected_issues,
@@ -172,6 +195,30 @@ async function generateWithDify(input: {
   }
 }
 
+const FIXED_OFFER_NUMBERS = new Set(["0", "6", "7", "12,000", "12000", "995", "21", "20", "200", "300"])
+
+function numericTokens(message: string): string[] {
+  return message.match(/(?:[$€£¥]\s*)?\d[\d,]*(?:\.\d+)?%?/g) ?? []
+}
+
+function validateNumericClaims(message: string, context: VerifiedOutreachContext, requireVerifiedMetrics: boolean): string | null {
+  if (!requireVerifiedMetrics) return null
+  if (context.metrics.length === 0) return "No verified metrics available for personalized numeric copy"
+  const allowed = new Set([
+    ...FIXED_OFFER_NUMBERS,
+    ...context.metrics.map((metric) => String(metric.value)),
+    ...context.metrics.map((metric) => metric.value.toLocaleString("en-US")),
+    ...context.metrics
+      .filter((metric) => metric.unit === "%")
+      .flatMap((metric) => [`${metric.value}%`, `${metric.value.toFixed(2)}%`]),
+  ])
+  const unsupported = numericTokens(message).filter((token) => {
+    const normalized = token.replace(/^[$€£¥]\s*/, "")
+    return !allowed.has(token) && !allowed.has(normalized)
+  })
+  return unsupported.length > 0 ? `Unsupported numeric claims: ${unsupported.slice(0, 5).join(", ")}` : null
+}
+
 function selectOutreachIssue(company: SalesCompany): { issueCode: IssueCode; fallback: boolean } {
   const firstIssue = (company.detected_issues ?? [])[0]
   if (firstIssue) return { issueCode: firstIssue, fallback: false }
@@ -194,9 +241,21 @@ function selectOutreachIssue(company: SalesCompany): { issueCode: IssueCode; fal
  */
 export async function generateFormMessage(
   companyId: string,
+  options: GenerateFormMessageOptions = {},
 ): Promise<GenerateFormMessageResult> {
   const company = await findCompanyById(companyId)
   if (!company) return { ok: false, error: "company not found" }
+  const requireVerifiedMetrics = options.requireVerifiedMetrics === true
+  const verifiedContext = buildVerifiedOutreachContext(company)
+  if (requireVerifiedMetrics && verifiedContext.metrics.length === 0) {
+    return {
+      ok: false,
+      evidence_ready: false,
+      verified_metrics: [],
+      metric_unknowns: verifiedContext.unknowns,
+      error: "No verified metrics available for personalized numeric copy",
+    }
+  }
   const industry = company.industry ?? DEFAULT_OUTREACH_INDUSTRY
   const issue = selectOutreachIssue(company)
   const fallbacks = {
@@ -218,6 +277,7 @@ export async function generateFormMessage(
     templatePain: template?.pain ?? null,
     templateLoss: template?.loss ?? null,
     fallbacks,
+    verifiedContext,
   }
 
   const dify = await generateWithDify({
@@ -225,17 +285,24 @@ export async function generateFormMessage(
     ...templateContext,
   })
   if (dify.ok) {
-    await saveFormMessageToCompany(company.id, dify.message, "dify")
-    return {
-      ok: true,
-      message: dify.message,
-      engine: "dify",
-      used_template_id: template?.id ?? null,
-      fallbacks,
+    const validationError = validateNumericClaims(dify.message, verifiedContext, requireVerifiedMetrics)
+    if (!validationError) {
+      await saveFormMessageToCompany(company.id, dify.message, "dify", verifiedContext)
+      return {
+        ok: true,
+        message: dify.message,
+        engine: "dify",
+        used_template_id: template?.id ?? null,
+        fallbacks,
+        verified_metrics: verifiedContext.metrics,
+        metric_unknowns: verifiedContext.unknowns,
+        evidence_ready: verifiedContext.metrics.length > 0,
+      }
     }
+    console.warn("[sales-form-message] Dify numeric claim validation failed:", validationError)
   }
 
-  if (dify.configured) {
+  if (!dify.ok && dify.configured) {
     console.warn("[sales-form-message] Dify workflow failed, falling back to DeepSeek V3:", dify.error?.slice(0, 120))
   }
 
@@ -255,18 +322,36 @@ export async function generateFormMessage(
   }
 
   const message = res.text.trim()
-  await saveFormMessageToCompany(company.id, message, "deepseek_fallback")
+  const validationError = validateNumericClaims(message, verifiedContext, requireVerifiedMetrics)
+  if (validationError) {
+    return {
+      ok: false,
+      verified_metrics: verifiedContext.metrics,
+      metric_unknowns: verifiedContext.unknowns,
+      evidence_ready: verifiedContext.metrics.length > 0,
+      error: validationError,
+    }
+  }
+  await saveFormMessageToCompany(company.id, message, "deepseek_fallback", verifiedContext)
   return {
     ok: true,
     message,
     engine: "deepseek_fallback",
     used_template_id: template?.id ?? null,
     fallbacks,
+    verified_metrics: verifiedContext.metrics,
+    metric_unknowns: verifiedContext.unknowns,
+    evidence_ready: verifiedContext.metrics.length > 0,
     usage: res.usage,
   }
 }
 
-async function saveFormMessageToCompany(companyId: string, message: string, engine: string): Promise<boolean> {
+async function saveFormMessageToCompany(
+  companyId: string,
+  message: string,
+  engine: string,
+  verifiedContext: VerifiedOutreachContext,
+): Promise<boolean> {
   try {
     const sb = getServiceSalesSupabase()
     if (!sb) return false
@@ -280,6 +365,20 @@ async function saveFormMessageToCompany(companyId: string, message: string, engi
     })
     if (error) {
       console.error("[sales-form-message] RPC failed:", error.message)
+      return false
+    }
+    const { error: evidenceError } = await sb.rpc("sales_atomic_meta_merge", {
+      p_company_id: companyId,
+      p_patch: {
+        form_message_evidence: {
+          metrics: verifiedContext.metrics,
+          unknowns: verifiedContext.unknowns,
+          saved_at: generatedAt,
+        },
+      },
+    })
+    if (evidenceError) {
+      console.error("[sales-form-message] evidence context RPC failed:", evidenceError.message)
       return false
     }
     return true

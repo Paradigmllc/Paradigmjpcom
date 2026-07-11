@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   getEnglishLegacyOfferRedirect,
   getInternationalMarketingRedirect,
+  getJapaneseLegacyOfferRedirect,
   isJapaneseOnlyLegacyOfferPath,
   isNonIndexablePath,
   isPublicMarketingPath,
@@ -66,6 +67,17 @@ describe("marketing routing", () => {
   it("identifies the domestic-only legacy service paths", () => {
     expect(isJapaneseOnlyLegacyOfferPath("/ja/services/seo")).toBe(true)
     expect(isJapaneseOnlyLegacyOfferPath("/en/pricing")).toBe(false)
+  })
+
+  it("redirects Japanese legacy offers to the fixed Japan Entry package", () => {
+    expect(
+      getJapaneseLegacyOfferRedirect(
+        new URL("https://paradigmjp.com/ja/video?utm_source=legacy"),
+      )?.toString(),
+    ).toBe("https://paradigmjp.com/ja#japan-entry-pricing")
+    expect(
+      getJapaneseLegacyOfferRedirect(new URL("https://paradigmjp.com/ja/pricing"))?.pathname,
+    ).toBe("/ja")
   })
 
   it("publishes only maintained hreflang URLs", () => {

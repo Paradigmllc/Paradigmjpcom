@@ -19,7 +19,11 @@ const STEP_META = [
 
 export default function ProcessSection() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const refs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)]
+  const firstRef = useRef<HTMLDivElement>(null)
+  const secondRef = useRef<HTMLDivElement>(null)
+  const thirdRef = useRef<HTMLDivElement>(null)
+  const fourthRef = useRef<HTMLDivElement>(null)
+  const refs = [firstRef, secondRef, thirdRef, fourthRef]
   const t = useTranslations("home")
 
   return (
@@ -59,9 +63,9 @@ export default function ProcessSection() {
           })}
 
           <div className="hidden md:block absolute inset-0 pointer-events-none">
-            <AnimatedBeam containerRef={containerRef} fromRef={refs[0]} toRef={refs[1]} duration={4} curvature={-22} gradientStartColor="#ec4899" gradientStopColor="#8b5cf6" />
-            <AnimatedBeam containerRef={containerRef} fromRef={refs[1]} toRef={refs[2]} duration={4} curvature={-22} delay={0.5} gradientStartColor="#8b5cf6" gradientStopColor="#f59e0b" />
-            <AnimatedBeam containerRef={containerRef} fromRef={refs[2]} toRef={refs[3]} duration={4} curvature={-22} delay={1.0} gradientStartColor="#f59e0b" gradientStopColor="#c4b5fd" />
+            <AnimatedBeam containerRef={containerRef} fromRef={firstRef} toRef={secondRef} duration={4} curvature={-22} gradientStartColor="#ec4899" gradientStopColor="#8b5cf6" />
+            <AnimatedBeam containerRef={containerRef} fromRef={secondRef} toRef={thirdRef} duration={4} curvature={-22} delay={0.5} gradientStartColor="#8b5cf6" gradientStopColor="#f59e0b" />
+            <AnimatedBeam containerRef={containerRef} fromRef={thirdRef} toRef={fourthRef} duration={4} curvature={-22} delay={1.0} gradientStartColor="#f59e0b" gradientStopColor="#c4b5fd" />
           </div>
         </div>
       </div>

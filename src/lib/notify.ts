@@ -50,8 +50,28 @@ async function slackPost(
 ): Promise<SlackPostResult> {
   const token = process.env.SLACK_BOT_TOKEN
   if (!token || token.trim().length === 0) {
-    console.warn("[notify] SLACK_BOT_TOKEN not set; Slack notification skipped")
-    return { ok: false, error: "SLACK_BOT_TOKEN not configured" }
+    const webhook = process.env.SLACK_WEBHOOK_URL?.trim()
+    if (!webhook) {
+      console.warn("[notify] Slack credentials not set; Slack notification skipped")
+      return { ok: false, error: "SLACK_BOT_TOKEN or SLACK_WEBHOOK_URL not configured" }
+    }
+    try {
+      const res = await fetch(webhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: JSON.stringify({ text: body.text, ...(body.blocks ? { blocks: body.blocks } : {}) }),
+        signal: AbortSignal.timeout(5_000),
+      })
+      if (!res.ok) {
+        const error = `Slack webhook HTTP ${res.status}`
+        console.error("[notify] Slack webhook request failed:", error)
+        return { ok: false, error }
+      }
+      return { ok: true }
+    } catch (error) {
+      console.error("[notify] Slack webhook failed:", error)
+      return { ok: false, error: error instanceof Error ? error.message : String(error) }
+    }
   }
 
   try {

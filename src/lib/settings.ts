@@ -12,6 +12,11 @@ import { cache } from "react"
 import { withPayloadReadFallback } from "./payload-availability"
 import type { ThemeTokens } from "./theme-tokens"
 
+function configuredEnv(name: string): string | null {
+  const value = process.env[name]
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null
+}
+
 export interface SiteSettings {
   siteName: string
   tagline: string
@@ -89,7 +94,12 @@ const DEFAULTS: SiteSettings = {
   siteName: "Paradigm合同会社",
   tagline: "デジタルで事業を加速する",
   description: "",
-  contact: { email: "info@paradigmjp.com", phone: null, address: null, businessHours: null },
+  contact: {
+    email: "info@paradigmjp.com",
+    phone: configuredEnv("PARADIGM_LEGAL_PHONE"),
+    address: configuredEnv("PARADIGM_LEGAL_ADDRESS"),
+    businessHours: null,
+  },
   social: {
     twitter: null,
     instagram: null,
@@ -118,11 +128,11 @@ const DEFAULTS: SiteSettings = {
   announcement: { enabled: false, message: null, linkLabel: null, linkHref: null, variant: "ink" },
   company: {
     legalName: "Paradigm合同会社",
-    representativeName: null,
-    registrationNumber: null,
+    representativeName: configuredEnv("PARADIGM_LEGAL_REPRESENTATIVE_NAME"),
+    registrationNumber: configuredEnv("PARADIGM_LEGAL_REGISTRATION_NUMBER"),
     foundedYear: null,
-    postalCode: null,
-    address: null,
+    postalCode: configuredEnv("PARADIGM_LEGAL_POSTAL_CODE"),
+    address: configuredEnv("PARADIGM_LEGAL_ADDRESS"),
   },
 }
 
@@ -178,7 +188,12 @@ export const getSiteSettings = cache(async (locale: string = "ja"): Promise<Site
       siteName: s.siteName ?? DEFAULTS.siteName,
       tagline: s.tagline ?? DEFAULTS.tagline,
       description: s.description ?? DEFAULTS.description,
-      contact: { ...DEFAULTS.contact, ...(s.contact ?? {}) },
+      contact: {
+        ...DEFAULTS.contact,
+        ...(s.contact ?? {}),
+        phone: s.contact?.phone ?? DEFAULTS.contact.phone,
+        address: s.contact?.address ?? DEFAULTS.contact.address,
+      },
       social: { ...DEFAULTS.social, ...(s.social ?? {}) },
       maintenance: { ...DEFAULTS.maintenance, ...(s.maintenance ?? {}) },
       analytics: { ...DEFAULTS.analytics, ...(s.analytics ?? {}) },
@@ -197,7 +212,14 @@ export const getSiteSettings = cache(async (locale: string = "ja"): Promise<Site
       },
       tracking: { ...DEFAULTS.tracking, ...(s.tracking ?? {}) },
       announcement: { ...DEFAULTS.announcement, ...(s.announcement ?? {}) },
-      company: { ...DEFAULTS.company, ...(s.company ?? {}) },
+      company: {
+        ...DEFAULTS.company,
+        ...(s.company ?? {}),
+        representativeName: s.company?.representativeName ?? DEFAULTS.company.representativeName,
+        registrationNumber: s.company?.registrationNumber ?? DEFAULTS.company.registrationNumber,
+        postalCode: s.company?.postalCode ?? DEFAULTS.company.postalCode,
+        address: s.company?.address ?? DEFAULTS.company.address,
+      },
     }
   }, DEFAULTS)
 })

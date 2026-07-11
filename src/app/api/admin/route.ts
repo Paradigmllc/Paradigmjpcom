@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServiceSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { createAdminSessionToken, verifyAdminSessionToken } from "@/lib/admin-auth"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 // 認証チェック
 function getAdminPassword(): string | null {
   const pw = process.env.ADMIN_PASSWORD
-  if (!pw) {
-    console.error("[admin] ADMIN_PASSWORD env var is not set — authentication disabled for safety")
+  if (!pw || pw.length < 16) {
+    console.error("[admin] ADMIN_PASSWORD must be configured with at least 16 characters")
     return null
   }
   return pw
@@ -16,7 +18,20 @@ function isAuthenticated(req: NextRequest): boolean {
   const password = getAdminPassword()
   if (!password) return false
   const token = req.cookies.get("paradigm_admin_token")?.value
-  return token === password
+  return Boolean(password && verifyAdminSessionToken(token))
+}
+
+function setAdminSession(res: NextResponse): NextResponse {
+  const token = createAdminSessionToken()
+  if (!token) return NextResponse.json({ error: "管理者セッションが設定されていません" }, { status: 500 })
+  res.cookies.set("paradigm_admin_token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 7,
+    path: "/",
+  })
+  return res
 }
 
 // 認証ミドルウェア
@@ -32,6 +47,10 @@ export async function POST(req: NextRequest) {
 
     // ─── 認証不要アクション（login / logout）───
     if (action === "login") {
+      const rateLimit = checkRateLimit({ ip: getClientIp(req), key: "admin-login", max: 5, windowMs: 60_000 })
+      if (!rateLimit.ok) {
+        return NextResponse.json({ error: "ログイン試行が多すぎます" }, { status: 429, headers: { "Retry-After": "60" } })
+      }
       const password = getAdminPassword()
       if (!password) {
         return NextResponse.json({ error: "管理者認証が設定されていません" }, { status: 500 })
@@ -39,15 +58,7 @@ export async function POST(req: NextRequest) {
       if (params.password !== password) {
         return NextResponse.json({ error: "パスワードが違います" }, { status: 401 })
       }
-      const res = NextResponse.json({ success: true })
-      res.cookies.set("paradigm_admin_token", password, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 7,
-        path: "/",
-      })
-      return res
+      return setAdminSession(NextResponse.json({ success: true }))
     }
 
     if (action === "logout") {
@@ -311,25 +322,6 @@ export async function GET(req: NextRequest) {
   // 認証チェック（ログイン状態確認用）
   if (isAuthenticated(req)) {
     return NextResponse.json({ authenticated: true })
-  }
-  // ログイン用パスワード認証
-  const pw = req.nextUrl.searchParams.get("password")
-  if (pw) {
-    const password = getAdminPassword()
-    if (!password) {
-      return NextResponse.json({ error: "管理者認証が設定されていません" }, { status: 500 })
-    }
-    if (pw === password) {
-      const res = NextResponse.json({ authenticated: true })
-      res.cookies.set("paradigm_admin_token", password, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 7,
-        path: "/",
-      })
-      return res
-    }
   }
   return NextResponse.json({ authenticated: false }, { status: 401 })
 }

@@ -50,7 +50,7 @@ fi
 
 BACKUP_ROOT="${OSS_SUPABASE_BACKUP_ROOT:-/opt/backups/oss-supabase-nightly}"
 RETENTION_DAYS="${OSS_SUPABASE_BACKUP_RETENTION_DAYS:-14}"
-ENCRYPTION_REQUIRED="${OSS_SUPABASE_BACKUP_ENCRYPTION_REQUIRED:-false}"
+ENCRYPTION_REQUIRED="${OSS_SUPABASE_BACKUP_ENCRYPTION_REQUIRED:-true}"
 GPG_PASSPHRASE="${OSS_SUPABASE_BACKUP_GPG_PASSPHRASE:-}"
 OFFSITE_TARGET="${OSS_SUPABASE_BACKUP_SSH_TARGET:-}"
 OFFSITE_ROOT="${OSS_SUPABASE_BACKUP_SSH_ROOT:-/backups/paradigmjpcom}"
@@ -64,6 +64,9 @@ PGDATABASE_VALUE="${OSS_SUPABASE_PGDATABASE:-postgres}"
 
 if [[ "$ENCRYPTION_REQUIRED" =~ ^(1|true|yes)$ ]] && [[ -z "$GPG_PASSPHRASE" ]]; then
   die "OSS_SUPABASE_BACKUP_GPG_PASSPHRASE is required when encryption is enabled"
+fi
+if [[ "$ENCRYPTION_REQUIRED" =~ ^(1|true|yes)$ ]] && [[ -z "$OFFSITE_TARGET" ]]; then
+  die "OSS_SUPABASE_BACKUP_SSH_TARGET is required when encrypted backups are enabled"
 fi
 if [[ -n "$GPG_PASSPHRASE" ]] && ! command -v gpg >/dev/null 2>&1; then
   die "gpg is required for encrypted backups"
@@ -147,8 +150,6 @@ rm -f "$CHECKSUM_TMP"
 if [[ -n "$OFFSITE_TARGET" ]]; then
   scp -q "$ARCHIVE_PATH" "${ARCHIVE_PATH}.sha256" "${OFFSITE_TARGET}:${OFFSITE_ROOT}/" \
     || die "offsite backup upload failed"
-elif [[ "$ENCRYPTION_REQUIRED" =~ ^(1|true|yes)$ ]]; then
-  die "OSS_SUPABASE_BACKUP_SSH_TARGET is required when encrypted offsite backups are enabled"
 fi
 
 find "$BACKUP_ROOT" -maxdepth 1 -name '*.tar.gz' -type f \

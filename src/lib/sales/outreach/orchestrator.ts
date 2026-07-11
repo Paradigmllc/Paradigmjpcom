@@ -176,7 +176,7 @@ async function processOneInner(
   }
 
   const reportUrl = readiness.reportUrl
-  const generated = await generateFormMessage(company.id)
+  const generated = await generateFormMessage(company.id, { requireVerifiedMetrics: true })
   if (!generated.ok || !generated.message) {
     return base("discovery_failed", `message generation failed: ${generated.error ?? "empty"}`)
   }

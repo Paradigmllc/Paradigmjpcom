@@ -254,7 +254,9 @@ export default function ReportHyperFramesPlayer({
   }, [])
 
   useEffect(() => {
-    if (mp4Url) setUseNative(true)
+    if (!mp4Url) return
+    const frame = window.requestAnimationFrame(() => setUseNative(true))
+    return () => window.cancelAnimationFrame(frame)
   }, [mp4Url])
 
   useEffect(() => {

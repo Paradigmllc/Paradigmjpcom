@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       )
     }
-    const result = await generateFormMessage(body.company_id)
+    const result = await generateFormMessage(body.company_id, { requireVerifiedMetrics: true })
     return NextResponse.json(result, { status: result.ok ? 200 : 500 })
   } catch (e) {
     console.error("[generate-form-message] failed:", e)

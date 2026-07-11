@@ -203,9 +203,11 @@ export function ContactForm() {
       })
     } catch (error) {
       console.error("[ContactForm] Turnstile widget rendering failed:", error)
-      setTurnstileToken(null)
-      setStatus("error")
-      setMsg(challengeLoadError)
+      window.queueMicrotask(() => {
+        setTurnstileToken(null)
+        setStatus("error")
+        setMsg(challengeLoadError)
+      })
     }
   }, [challengeLoadError, turnstileScriptReady])
 

@@ -12,9 +12,23 @@ if (!adminPassword && !webhookSecret) {
   process.exit(1)
 }
 
-const authHeaders = adminPassword
-  ? { cookie: `paradigm_admin_token=${encodeURIComponent(adminPassword)}` }
-  : { "x-webhook-secret": webhookSecret }
+let authHeaders
+if (adminPassword) {
+  const login = await fetch(`${baseUrl}/api/admin`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ action: "login", password: adminPassword }),
+  })
+  if (!login.ok) {
+    throw new Error(`admin login HTTP ${login.status}`)
+  }
+  const setCookie = login.headers.get("set-cookie") ?? ""
+  const cookie = setCookie.split(";")[0]
+  if (!cookie) throw new Error("admin login did not return a session cookie")
+  authHeaders = { cookie }
+} else {
+  authHeaders = { "x-webhook-secret": webhookSecret }
+}
 
 async function expectOk(label, url, options = {}) {
   const response = await fetch(url, {
@@ -34,7 +48,7 @@ async function expectOk(label, url, options = {}) {
 async function expectTextWithCookie(label, url, signature) {
   if (!adminPassword) return
   const response = await fetch(url, {
-    headers: { cookie: `paradigm_admin_token=${encodeURIComponent(adminPassword)}` },
+    headers: authHeaders,
   })
   if (!response.ok) throw new Error(`${label} HTTP ${response.status}`)
   const html = await response.text()
