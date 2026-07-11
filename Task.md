@@ -12,7 +12,7 @@
 - `npm exec -- tsc --noEmit --pretty false`: **0 error**
 - `npm run build`: **exit 0**、Next全ルート生成完了
 - `npx eslint . --max-warnings=0`: **exit 0 / 0 error / 0 warning**
-- `npm test`: **84 files / 393 tests pass**
+- `npm test`: **84 files / 394 tests pass**
 - `npm run quality:guard`: **0 errors / 47 warnings**（全て300〜499行の分割候補）
 - `npm audit --audit-level=high`: **0 vulnerabilities**（workerはlowのみ）
 - `node scripts/release-doctor.mjs --local-only --allow-dirty`: **pass**
