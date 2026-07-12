@@ -11,6 +11,7 @@
 - `.env.example` にSlack・off-host backup・法務identityのrelease blocker条件を明記し、秘密値をrepoへ入れない運用を固定した。
 - `release-doctor` にvisual proof 3 assets / `next/image` / Signal Check CTAの静的検査と、本番home/utilityのvisual・utility marker smokeを追加。画像やutilityが欠けた旧ビルドをHTTP 200だけで合格扱いにしない。
 - コード・runbook・監査は完了。productionは現在も旧ビルドで、法務4項目、Slack credential、暗号化off-host backupの実値が揃うまで正式releaseを意図的に停止する。値を推測して公開状態にすることはしない。
+- 直近の公開URL実測（2026-07-12）: `/en` `/en/about` `/en/works` はHTTP 200だが新visual markerなし、`/en/tools/japan-entry-score` は404、`/api/ready` は200。これはコード不備ではなく、`50a4f18`を本番へ流すrelease gateが外部設定3件で停止している証跡。
 
 ### 2026-07-12 Production 502 recovery（復旧済み）
 - 03:06 JST頃、`https://paradigmjp.com/`、`/en`、`/api/ready` がCloudflare HTTP 502。アプリコンテナ自体の `127.0.0.1:3000/api/ready` と現行コンテナIP `10.0.1.13:3000/api/ready` はHTTP 200で、アプリ障害ではなかった。
