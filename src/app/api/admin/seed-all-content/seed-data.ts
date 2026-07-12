@@ -462,6 +462,16 @@ export async function seedAllContent(
       const pageData = { title: pageTitle, slug, description: pageDesc, layout, availableLocales: ["ja","en"], isHomepage: true }
       const { docs: existing } = await payload.find({ collection: "pages", where: { slug: { equals: slug } }, limit: 1 })
       if (existing.length > 0) {
+        // The legacy Japanese home document contains Payload's internal
+        // localized block metadata (_locale/_parent_id). Recreating that one
+        // reviewed homepage removes the invalid legacy keys and makes the
+        // locale seed deterministic. English remains an in-place update.
+        if (locale === "ja") {
+          await payload.delete({ collection: "pages", id: existing[0].id } as unknown as Parameters<typeof payload.delete>[0])
+          await payload.create({ collection: "pages", data: pageData, locale } as unknown as Parameters<typeof payload.create>[0])
+          summary.pages.updated++
+          return
+        }
         await payload.update({ collection: "pages", id: existing[0].id, data: pageData, locale } as unknown as Parameters<typeof payload.update>[0])
         summary.pages.updated++
         return
