@@ -239,25 +239,48 @@ export async function readProductionEnvValue(name, appUuid) {
 }
 
 export async function updateCoolifyEnvs(appUuid, envMap) {
+  const resolvedAppUuid = appUuid || envValue("PARADIGM_APP_UUID", DEFAULT_APP_UUID)
+  const entries = Object.entries(envMap).map(([key, value]) => ({
+    key,
+    value: String(value),
+    is_preview: false,
+    is_literal: true,
+    is_multiline: false,
+    is_shown_once: false,
+  }))
+  if (entries.length === 0) return []
+
+  try {
+    await coolifyRequest(`/api/v1/applications/${resolvedAppUuid}/envs/bulk`, {
+      method: "PATCH",
+      body: JSON.stringify({ data: entries }),
+    })
+    return entries.map(({ key }) => ({ key, status: "set" }))
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    console.error("[coolify-env] bulk env update failed; trying per-variable fallback:", message)
+  }
+
   const results = []
-  for (const [key, value] of Object.entries(envMap)) {
+  for (const { key, value } of entries) {
     try {
-      await coolifyRequest(`/api/v1/applications/${appUuid}/envs`, {
+      await coolifyRequest(`/api/v1/applications/${resolvedAppUuid}/envs`, {
         method: "PATCH",
-        body: JSON.stringify({ key, value: String(value) }),
+        body: JSON.stringify({ key, value }),
       })
       results.push({ key, status: "set" })
     } catch (error) {
-      // Try alternative: POST for new env vars
       try {
-        await coolifyRequest(`/api/v1/applications/${appUuid}/envs`, {
+        await coolifyRequest(`/api/v1/applications/${resolvedAppUuid}/envs`, {
           method: "POST",
-          body: JSON.stringify({ key, value: String(value) }),
+          body: JSON.stringify({ key, value }),
         })
         results.push({ key, status: "created" })
       } catch (postError) {
-        results.push({ key, status: "failed", error: error.message })
-        console.error(`[coolify-env] failed to set ${key}:`, error.message)
+        const message = error instanceof Error ? error.message : String(error)
+        const postMessage = postError instanceof Error ? postError.message : String(postError)
+        results.push({ key, status: "failed", error: message })
+        console.error(`[coolify-env] failed to set ${key}:`, message, postMessage)
       }
     }
   }
