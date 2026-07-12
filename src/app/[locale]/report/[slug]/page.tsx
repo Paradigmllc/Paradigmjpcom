@@ -20,6 +20,23 @@ interface Props {
   params: Promise<{ locale: string; slug: string }>
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null
+}
+
+function generatedMessageReview(meta: Record<string, unknown> | undefined) {
+  const message = typeof meta?.japan_entry_initial_message === "string" ? meta.japan_entry_initial_message : null
+  const review = asRecord(meta?.japan_entry_message_review)
+  if (!message) return null
+  return {
+    message,
+    model: typeof review?.model === "string" ? review.model : "unknown",
+    qualityScore: typeof review?.qualityScore === "number" ? review.qualityScore : null,
+    wordCount: typeof review?.wordCount === "number" ? review.wordCount : null,
+    attempts: typeof review?.attempts === "number" ? review.attempts : null,
+  }
+}
+
 const getCachedReport = cache(
   async (slug: string, region: ReturnType<typeof localeToRegion>, locale: string) =>
     fetchDiagnosticReport({ slug, region, reportLocale: locale }),
@@ -77,6 +94,7 @@ export default async function ReportPage({ params }: Props) {
           locale={locale}
           title={safeData.company_name}
           salesOsHref="https://twenty.paradigmjp.com"
+          generatedMessageReview={generatedMessageReview(safeData.meta)}
           initialFields={{
             hook: safeData.hook,
             pain: safeData.acts[0]?.body ?? "",

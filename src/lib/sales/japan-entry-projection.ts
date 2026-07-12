@@ -19,7 +19,6 @@ export interface ProjectionEvidence {
   confidence: number
   limitation: string
 }
-
 export interface ProjectionAssumptions {
   businessModel: BusinessModel
   averageOrderValueUsd: number
@@ -74,6 +73,15 @@ export interface JapanEntryProjection {
   paybackMonth: number | null
   evidence: ProjectionEvidence[]
   limitations: string[]
+  messageGeneration?: {
+    engine: "deepseek-v4-pro"
+    model: "deepseek-v4-pro"
+    qualityScore: number
+    wordCount: number
+    observedFactIds: string[]
+    attempts: number
+    generatedAt: string
+  }
 }
 
 export interface JapanEntryProjectionInput {
@@ -293,16 +301,4 @@ export function buildJapanEntryProjection(input: JapanEntryProjectionInput): Jap
       "The first six managed months add no monthly fee; the model applies $995/month from month 7 under signed terms.",
     ],
   }
-}
-
-export function buildInitialJapanEntryMessage(companyName: string, projection: JapanEntryProjection): string {
-  const base = projection.scenarios.find((scenario) => scenario.scenario === "base")
-  const month12 = base?.horizons.find((item) => item.horizon === 12)
-  if (!month12) throw new Error("12-month base projection is unavailable")
-  const range = `${projection.monthlyVisitRange.low.toLocaleString("en-US")}–${projection.monthlyVisitRange.high.toLocaleString("en-US")}`
-  const message = `Hi ${companyName} team — using public web visibility signals, we modeled roughly ${range} monthly visits across your markets. Japan appears underrepresented in the model, with an estimated monthly opportunity gap of about $${projection.monthlyOpportunityGapUsd.toLocaleString("en-US")} before costs. Under the base assumptions, the 12-month modeled net impact is $${month12.cumulativeNetBenefitUsd.toLocaleString("en-US")} (${month12.roiPercent}% ROI). Our Japan Entry Package is $12,000 paid upfront and includes the first six managed months at no additional charge. These are modeled estimates, not analytics or a guarantee. Reply “Japan” and I’ll send the assumptions for review.`
-  if (/(?:https?:\/\/|www\.|\[[^\]]+\]\([^)]+\))/i.test(message)) {
-    throw new Error("Initial Japan Entry message must not contain a URL")
-  }
-  return message
 }
