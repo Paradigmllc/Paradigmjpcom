@@ -210,13 +210,14 @@ function checkStaticReleaseRules() {
     noLoginDeploy.includes("Five modules, one accountable launch.") &&
     noLoginDeploy.includes("seedMarketingHomepages") &&
     noLoginDeploy.includes('scope: "homepage"') &&
-    noLoginDeploy.includes("seedEnglishJapanEntryBlog") &&
+    noLoginDeploy.includes("seedJapanEntryBlog") &&
     noLoginDeploy.includes("/api/admin/seed-japan-entry-blog") &&
-    noLoginDeploy.includes("What Should a Japan Entry Package Actually Deliver?")
+    noLoginDeploy.includes("What Should a Japan Entry Package Actually Deliver?") &&
+    noLoginDeploy.includes("申込み後に何が起きるか")
   ) {
-    pass("deploy publishes both locale Japan Entry homepages and the English editorial set")
+    pass("deploy publishes both locale Japan Entry homepages and the maintained bilingual editorial set")
   } else {
-    fail("deploy must publish the English homepage/blog and smoke the dedicated application")
+    fail("deploy must publish the English and Japanese homepage/blog and smoke the dedicated application")
   }
 
   const contactMigrationPath = "supabase/migrations/migration_068_contact_submission_atomicity.sql"

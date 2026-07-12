@@ -55,12 +55,18 @@ const ENGLISH_BLOG_SLUGS = new Set([
   "what-a-japan-entry-package-should-deliver",
   "japan-entry-package-vs-diy-hire-agency-stack",
   "first-30-days-after-japan-launch",
+  "japan-entry-source-pack-and-approval",
+  "japan-entry-payment-and-inquiry-routing",
+  "japan-entry-public-signals-vs-first-party-data",
 ])
 const JAPANESE_BLOG_SLUGS = new Set([
   "japan-entry-kickoff-checklist-ja",
   "japan-entry-translation-localization-ja",
   "japan-entry-public-data-limitations-ja",
   "japan-entry-first-30-days-ja",
+  "japan-entry-application-after-ja",
+  "japan-entry-payment-route-ja",
+  "japan-entry-handover-operations-ja",
 ])
 
 export type MarketingLocale = (typeof MARKETING_LOCALES)[number]

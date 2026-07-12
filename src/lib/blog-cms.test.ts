@@ -50,7 +50,7 @@ describe("Japanese public blog gate", () => {
   })
 
   it("ships a reviewed fallback editorial set when the CMS has no public posts", () => {
-    expect(JAPAN_ENTRY_BLOG_POSTS_JA.length).toBeGreaterThanOrEqual(4)
+    expect(JAPAN_ENTRY_BLOG_POSTS_JA.length).toBeGreaterThanOrEqual(7)
     expect(JAPAN_ENTRY_BLOG_POSTS_JA.every(isPublicJapaneseBlogPost)).toBe(true)
     expect(JAPAN_ENTRY_BLOG_POSTS_JA.every((post) => [...post.content].length >= 2000)).toBe(true)
     expect(JAPAN_ENTRY_BLOG_POSTS_JA.every((post) => /^\|/m.test(post.content))).toBe(true)

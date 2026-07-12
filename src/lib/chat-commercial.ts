@@ -87,7 +87,7 @@ function getFallbackAnswerEn(question: string): string {
     question.includes("delivery time") ||
     question.includes("weeks")
   ) {
-    return "The launch target is 21 business days after agreement, payment, required access, and assets are complete. Client or specialist-review delays move the target; the fixed written scope records dependencies before payment."
+    return "The launch target is 14 business days after agreement, payment, required access, and assets are complete. Client or specialist-review delays move the target; the fixed written scope records dependencies before payment."
   }
   if (
     question.includes("include") ||

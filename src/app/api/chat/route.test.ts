@@ -18,7 +18,7 @@ describe("chat commercial fallback", () => {
   it("states the verified launch timing and dependencies", () => {
     const answer = getFallbackAnswer("How long does launch take?", "en")
 
-    expect(answer).toContain("21 business days")
+    expect(answer).toContain("14 business days")
     expect(answer).toContain("agreement")
     expect(answer).toContain("payment")
   })
