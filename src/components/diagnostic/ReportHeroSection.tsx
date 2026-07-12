@@ -40,7 +40,8 @@ export default function ReportHeroSection({
   const [imageFailed, setImageFailed] = useState(false)
 
   useEffect(() => {
-    setImageFailed(false)
+    const frame = window.requestAnimationFrame(() => setImageFailed(false))
+    return () => window.cancelAnimationFrame(frame)
   }, [screenshotUrl])
 
   const isJapanese = lang === "ja"

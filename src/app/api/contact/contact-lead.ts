@@ -68,9 +68,10 @@ function normalizeRestBaseUrl(url: string): string {
   if (normalized.endsWith("/rest/v1")) return normalized
 
   const parsed = new URL(normalized)
+  const directPostgrestFlag = process.env.SALES_SUPABASE_DIRECT_POSTGREST
   const directPostgrest =
     /supabase-rest-1(?::3000)?$/i.test(parsed.host) ||
-    /^(1|true|yes)$/i.test(process.env.SALES_SUPABASE_DIRECT_POSTGREST ?? "")
+    (directPostgrestFlag ? /^(1|true|yes)$/i.test(directPostgrestFlag) : false)
   return directPostgrest ? normalized : `${normalized}/rest/v1`
 }
 

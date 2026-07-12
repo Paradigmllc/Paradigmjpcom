@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import {
   getEnglishLegacyOfferRedirect,
   getInternationalMarketingRedirect,
+  getJapaneseLegacyOfferRedirect,
   isNonIndexablePath,
 } from "@/lib/marketing-routing";
 
@@ -42,12 +43,17 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(englishLegacyOfferRedirect, 308)
   }
 
+  const japaneseLegacyOfferRedirect = getJapaneseLegacyOfferRedirect(request.nextUrl)
+  if (japaneseLegacyOfferRedirect) {
+    return NextResponse.redirect(japaneseLegacyOfferRedirect, 308)
+  }
+
   const internationalMarketingRedirect = getInternationalMarketingRedirect(request.nextUrl)
   if (internationalMarketingRedirect) {
     return NextResponse.redirect(internationalMarketingRedirect, 308)
   }
 
-  // Sales OS dashboard → Twenty SSOT
+  // Legacy Sales OS paths → Twenty CRM SSOT
   if (pathname.match(/^\/(?:ja|en)\/admin\/sales/) || pathname.match(/^\/(?:ja|en)\/sales$/)) {
     return NextResponse.redirect(new URL("https://twenty.paradigmjp.com"));
   }

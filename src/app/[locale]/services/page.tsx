@@ -10,7 +10,6 @@
  * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
  */
 import type { Metadata } from "next"
-import { permanentRedirect } from "next/navigation"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
 import { Link } from "@/i18n/routing"
@@ -48,6 +47,9 @@ type ServiceDoc = {
   sortOrder?: number
 }
 
+type EnglishModule = { title: string; short: string; details: string[] }
+type OperatingStep = { title: string; desc: string }
+
 const CARD_GRADIENTS = [
   "from-zinc-950 via-zinc-800 to-blue-700",
   "from-zinc-900 via-blue-800 to-emerald-700",
@@ -60,10 +62,21 @@ const SERVICE_DETAIL_SLUGS = new Set(["web", "meo", "seo", "ai"])
 export default async function ServicesPage({ params }: Props) {
   const { locale: rawLocale } = await params
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
-  if (locale === "en") permanentRedirect("/en#japan-entry-pricing")
   const t = await getTranslations({ locale, namespace: "servicesPage" })
+  const englishModules = locale === "en" ? (t.raw("moduleCards") as EnglishModule[]) : []
+  const operatingSteps = locale === "en" ? (t.raw("operatingSteps") as OperatingStep[]) : []
 
-  let services = await withPayloadReadFallback<ServiceDoc[]>("services.payload.find", async () => {
+  let services = englishModules.length > 0
+    ? englishModules.map((module, index) => ({
+        id: `japan-entry-module-${index}`,
+        name: module.title,
+        slug: "",
+        icon: "◆",
+        tagline: module.short,
+        features: module.details.map((feature) => ({ feature })),
+        sortOrder: index,
+      }))
+    : await withPayloadReadFallback<ServiceDoc[]>("services.payload.find", async () => {
       const [{ getPayload }, { default: config }] = await Promise.all([
         import("payload"),
         import("@payload-config"),
@@ -120,13 +133,20 @@ export default async function ServicesPage({ params }: Props) {
       <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
         <div className="paradigm-mesh opacity-30" />
         <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-8">
+          {locale === "en" && (
+            <FadeIn className="mb-10 max-w-3xl">
+              <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("moduleEyebrow")}</p>
+              <h2 id="package-modules" className="font-display text-[26px] md:text-[40px] leading-[1.1] text-paradigm-ink">{t("moduleTitle")}</h2>
+              <p className="mt-4 text-[14px] md:text-[16px] text-paradigm-ink-soft leading-[1.85]">{t("moduleDesc")}</p>
+            </FadeIn>
+          )}
           {services.length === 0 ? (
             <FadeIn className="text-center py-12 max-w-xl mx-auto paradigm-glass rounded-lg p-8 paradigm-glow-md">
               <p className="text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.85] mb-7">
                 {t("emptyMessage")}
               </p>
               <Link
-                href="/contact"
+                href={locale === "en" ? "/contact?intent=japan-entry" : "/contact"}
                 className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
               >
                 {t("emptyCta")}
@@ -185,7 +205,7 @@ export default async function ServicesPage({ params }: Props) {
                             </Link>
                           )}
                           <Link
-                            href="/contact"
+                            href={locale === "en" ? "/contact?intent=japan-entry" : "/contact"}
                             className="inline-flex items-center gap-2 paradigm-glass text-paradigm-ink-soft hover:text-paradigm-ink px-6 py-3 rounded-lg text-[12px] tracking-[0.14em] uppercase font-medium transition-colors"
                           >
                             {t("getInTouch")}
@@ -200,6 +220,28 @@ export default async function ServicesPage({ params }: Props) {
           )}
         </div>
       </section>
+
+      {locale === "en" && operatingSteps.length > 0 && (
+        <section className="relative overflow-hidden bg-paradigm-paper-deep paradigm-section" aria-labelledby="module-operating-heading">
+          <div className="paradigm-mesh opacity-30" />
+          <div className="relative z-10 mx-auto max-w-5xl px-6 md:px-8">
+            <FadeIn className="mb-8 max-w-3xl">
+              <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{t("operatingEyebrow")}</p>
+              <h2 id="module-operating-heading" className="font-display text-[24px] leading-[1.15] text-paradigm-ink md:text-[38px]">{t("operatingTitle")}</h2>
+              <p className="mt-4 text-[14px] leading-[1.8] text-paradigm-ink-soft">{t("operatingDesc")}</p>
+            </FadeIn>
+            <ol className="grid gap-4 md:grid-cols-2">
+              {operatingSteps.map((step, index) => (
+                <FadeIn key={step.title} delay={index * 0.05} as="li" className="rounded-lg border border-paradigm-line bg-paradigm-paper p-6 paradigm-glow-sm">
+                  <span className="font-display text-[22px] text-paradigm-accent">{String(index + 1).padStart(2, "0")}</span>
+                  <h3 className="mt-3 font-display text-[18px] leading-[1.2] text-paradigm-ink">{step.title}</h3>
+                  <p className="mt-3 text-[13px] leading-[1.8] text-paradigm-ink-soft">{step.desc}</p>
+                </FadeIn>
+              ))}
+            </ol>
+          </div>
+        </section>
+      )}
 
       <RichCtaBand
         eyebrow={t("ctaEyebrow")}

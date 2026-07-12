@@ -11,6 +11,8 @@ import { generateDiagnosticVideo } from "./video-generator"
 import { computeSourceCoverage, saveSourceCoverageRows } from "./source-coverage"
 import { saveTechStackDetections } from "./source-acquisition"
 import { syncCompanyKarteToTwenty } from "./twenty-sync"
+import { generateFormMessage } from "./form-message"
+import { requiresVerifiedOutreachMetrics } from "./outreach/evidence-mode"
 import { buildReportUrl, normalizeReportLocale } from "./routing"
 import { auditJapanMarketReadiness } from "./sources/japan-market-audit"
 import { resolveDifyWorkflowKey, normalizeDifyCloudBaseUrl } from "./dify-cloud"
@@ -413,6 +415,24 @@ export async function processSyncPhase(
     resultPayload: JsonRecord,
   ) => Promise<void>,
 ): Promise<{ ok: boolean; error?: string }> {
+  const isLeadCandidateFlow = job.triggered_by === "lead_candidate_acquisition" || job.source === "lead_candidate_acquisition"
+  const formMessage = isLeadCandidateFlow
+    ? await generateFormMessage(company.id, { requireVerifiedMetrics: requiresVerifiedOutreachMetrics() })
+    : null
+  if (formMessage && !formMessage.ok) {
+    await logDiagnosisEvent(sb, {
+      companyId: company.id,
+      jobId: job.id,
+      eventType: "form_message_draft_failed",
+      status: "warning",
+      title: `Evidence-backed form message draft unavailable for ${company.domain}`,
+      message: formMessage.error,
+      payload: {
+        metric_unknowns: formMessage.metric_unknowns ?? [],
+        verified_metric_count: formMessage.verified_metrics?.length ?? 0,
+      },
+    })
+  }
   const twentySync = await syncCompanyKarteToTwenty(company.id)
   if (!twentySync.ok && twentySync.configured) {
     console.error("[sales-enrichment] Twenty karte sync failed:", twentySync.error)
@@ -432,6 +452,9 @@ export async function processSyncPhase(
     demo_url: phaseResults.demoUrl,
     source_coverage_score: phaseResults.coverageScore,
     twenty_sync: twentySync.ok ? "synced" : twentySync.configured ? "failed" : "not_configured",
+    form_message_draft: formMessage?.ok ? "generated" : formMessage ? "needs_review" : "not_requested",
+    form_message_engine: formMessage?.engine ?? null,
+    form_message_metric_count: formMessage?.verified_metrics?.length ?? 0,
     dify_configured: phaseResults.difyConfigured,
     dify_ok: phaseResults.difyOk,
     dify_error: phaseResults.difyError ?? null,

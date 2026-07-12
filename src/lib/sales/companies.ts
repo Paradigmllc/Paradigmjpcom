@@ -7,7 +7,6 @@
  * 設計:
  *   - getServiceSalesSupabase() で service_role 鍵を使う (RLS bypass)
  *   - upsertByDomain で「同じ domain は 1 行」を保証 (重複 insert 防止)
- *   - notion_page_id の round-trip を意識した update/fetch を提供
  */
 
 import { getServiceSalesSupabase } from "@/lib/supabase"
@@ -167,7 +166,7 @@ export async function upsertCompanyByDomain(
   return { ok: true, company: data as SalesCompany }
 }
 
-/** domain で 1 件取得 (Notion 側 round-trip で notion_page_id 確認用) */
+/** domain で 1 件取得 */
 export async function findCompanyByDomain(
   domain: string,
 ): Promise<SalesCompany | null> {
@@ -258,52 +257,6 @@ export async function findCompanyById(id: string): Promise<SalesCompany | null> 
   return (data as SalesCompany) ?? null
 }
 
-/** notion_page_id を後付けで紐付け (Notion 側でページ作成後に呼ぶ) */
-export async function setNotionPageId(
-  companyId: string,
-  notionPageId: string,
-): Promise<{ ok: boolean; error?: string }> {
-  const sb = getServiceSalesSupabase()
-  if (!sb) return { ok: false, error: "Supabase service_role not configured" }
-  const { error } = await sb
-    .from(DB_TABLES.SALES_COMPANIES)
-    .update({ notion_page_id: notionPageId })
-    .eq("id", companyId)
-  if (error) return { ok: false, error: error.message }
-  return { ok: true }
-}
-
-/** Notion から逆流: deal_stage / follow_up_date / memo / assigned_to のみ更新 */
-export interface NotionReverseInput {
-  deal_stage?: DealStage
-  follow_up_date?: string | null
-  memo?: string | null
-  assigned_to?: string | null
-}
-
-export async function updateCompanyFromNotion(
-  notionPageId: string,
-  input: NotionReverseInput,
-): Promise<{ ok: boolean; error?: string }> {
-  const sb = getServiceSalesSupabase()
-  if (!sb) return { ok: false, error: "Supabase service_role not configured" }
-  // 編集可能 4 field 以外は無視 (safety: Notion 側から domain 等を上書きさせない)
-  const safePayload: Record<string, unknown> = {}
-  if (input.deal_stage !== undefined) safePayload.deal_stage = input.deal_stage
-  if (input.follow_up_date !== undefined) safePayload.follow_up_date = input.follow_up_date
-  if (input.memo !== undefined) safePayload.memo = input.memo
-  if (input.assigned_to !== undefined) safePayload.assigned_to = input.assigned_to
-  if (Object.keys(safePayload).length === 0) {
-    return { ok: true } // 変更なし
-  }
-  const { error } = await sb
-    .from(DB_TABLES.SALES_COMPANIES)
-    .update(safePayload)
-    .eq("notion_page_id", notionPageId)
-  if (error) return { ok: false, error: error.message }
-  return { ok: true }
-}
-
 /** HOT lead 検出 (report_views >= threshold) */
 export async function markHotLead(
   companyId: string,
@@ -334,13 +287,8 @@ export async function setPipelineStatus(
   return { ok: true }
 }
 
-/**
- * dedup resolver: notion_page_id → canonical domain → name_key の順で既存企業を 1 件特定。
- * リスト内重複・同名異表記・www 差を吸収し「1 企業 = 1 行」を保証する照合の中核。
- * create 前に必ずこれで照合し、ヒットしたら update・無ければ create する。
- */
+/** Dedup resolver: canonical domain → name_key. */
 export async function findExistingCompany(input: {
-  notionPageId?: string | null
   domain?: string | null
   nameKey?: string | null
   region?: Region
@@ -348,14 +296,6 @@ export async function findExistingCompany(input: {
   const sb = getServiceSalesSupabase()
   if (!sb) return null
   const region = input.region ?? "jp"
-  if (input.notionPageId) {
-    const { data } = await sb
-      .from(DB_TABLES.SALES_COMPANIES)
-      .select("*")
-      .eq("notion_page_id", input.notionPageId)
-      .maybeSingle()
-    if (data) return data as SalesCompany
-  }
   const domain = normalizeDomain(input.domain)
   if (domain) {
     const { data } = await sb.from(DB_TABLES.SALES_COMPANIES).select("*").eq("domain", domain).maybeSingle()

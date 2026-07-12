@@ -1,6 +1,6 @@
-import { getServiceSalesSupabase } from "@/lib/supabase"
 import { notifySlack } from "@/lib/notify"
 import { generateFormMessage, fillReportUrl, fillDemoUrl } from "../form-message"
+import { requiresVerifiedOutreachMetrics } from "./evidence-mode"
 import { discoverFormUrl, normalizeOrigin } from "../sources/form-discovery"
 import { isAllowedFormUrlForOrigin } from "../sources/external-form-discovery"
 import type { Region, SalesCompany } from "../types"
@@ -13,6 +13,8 @@ import { DB_TABLES } from "@/lib/sales/db-tables"
 import { applyOutcome, logActivity, persistDiscoveredFormUrl, enqueueOperatorTask, persistOutcome, saveFormStructureCache } from "./side-effects"
 import { evaluateOutreachReadiness } from "./readiness"
 import { detectCmsType } from "./cms-form-templates"
+import { fetchCandidates } from "./candidate-selection"
+import { syncOutreachDraftToTwenty } from "./draft-sync"
 import type {
   OutreachBatchResult,
   OutreachItemResult,
@@ -23,6 +25,8 @@ import type {
 export interface RunOutreachOptions {
   region?: Region
   companyId?: string
+  /** Twenty の選択行を指定する。指定時はこの順序で処理する。 */
+  companyIds?: string[]
   pipelineRunId?: string | null
   limit?: number
   dryRun?: boolean
@@ -94,35 +98,6 @@ async function fetchPageHtml(url: string, timeoutMs: number): Promise<string | n
     return null
   }
 }
-async function fetchCandidates(region: Region, limit: number, companyId?: string): Promise<SalesCompany[]> {
-  const sb = getServiceSalesSupabase()
-  if (!sb) return []
-  if (companyId) {
-    const { data, error } = await sb
-      .from(DB_TABLES.SALES_COMPANIES)
-      .select("*")
-      .eq("id", companyId)
-      .maybeSingle()
-    if (error) {
-      console.error("[sales-outreach] fetch pipeline company failed:", error.message)
-      return []
-    }
-    return data ? [data as SalesCompany] : []
-  }
-  const { data, error } = await sb
-    .from(DB_TABLES.SALES_COMPANIES)
-    .select("*")
-    .eq("region", region)
-    .eq("pipeline_status", "report_ready")
-    .order("updated_at", { ascending: true })
-    .limit(limit)
-  if (error) {
-    console.error("[sales-outreach] fetch candidates failed:", error.message)
-    return []
-  }
-  return (data as SalesCompany[]) ?? []
-}
-
 async function processOne(
   company: SalesCompany,
   opts: Required<RunOutreachOptions>,
@@ -176,7 +151,7 @@ async function processOneInner(
   }
 
   const reportUrl = readiness.reportUrl
-  const generated = await generateFormMessage(company.id)
+  const generated = await generateFormMessage(company.id, { requireVerifiedMetrics: requiresVerifiedOutreachMetrics() })
   if (!generated.ok || !generated.message) {
     return base("discovery_failed", `message generation failed: ${generated.error ?? "empty"}`)
   }
@@ -186,6 +161,13 @@ async function processOneInner(
   const demoSite = companyMeta.demo_site as Record<string, unknown> | undefined
   const demoUrl = typeof demoSite?.url === "string" ? demoSite.url as string : null
   const finalMessage = demoUrl ? fillDemoUrl(message, demoUrl) : message
+
+  const draftSync = await syncOutreachDraftToTwenty(company.id)
+  if (!draftSync.ok) {
+    const reason = `Twenty draft sync failed: ${draftSync.error}`
+    await persistOutcome(company, "manual_queue", "follow_up", reason, { message: finalMessage }, opts.dryRun, opts.pipelineRunId)
+    return { ...base("manual_queue", reason), message: finalMessage }
+  }
 
   const msg = finalMessage // alias for readability in closures below
 
@@ -277,10 +259,10 @@ async function processOneInner(
     if (!opts.dryRun) {
       const { notifyBothChannels } = await import("@/lib/notify")
       const title = `CAPTCHA手動対応: ${company.company_name}`
-      const notificationMessage = `会社「${company.company_name}」（${company.domain}）でCAPTCHAまたはロボット防御を検出したため、手動キューに送信しました。営業ダッシュボードで送信可否を確認してください。\n送信先URL: ${formUrl ?? "不明"}`
+      const notificationMessage = `会社「${company.company_name}」（${company.domain}）でCAPTCHAまたはロボット防御を検出したため、手動キューに送信しました。Twenty CRMで送信可否を確認してください。\n送信先URL: ${formUrl ?? "不明"}`
 
       await notifyBothChannels(
-        `*CAPTCHA手動対応が必要です*\n*会社名*: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不明"}\n*対応*: 営業ダッシュボードで手動確認してください。`,
+        `*CAPTCHA手動対応が必要です*\n*会社名*: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不明"}\n*対応*: Twenty CRMで手動確認してください。`,
         {
           title,
           message: notificationMessage,
@@ -331,14 +313,14 @@ async function processOneInner(
     )
     const { notifyBothChannels } = await import("@/lib/notify")
     const title = `送信承認待ち: ${company.company_name}`
-    const notificationMessage = `会社「${company.company_name}」（${company.domain}）への初回フォーム送信は、first-5ゲートにより人間の承認が必要です。営業ダッシュボードで承認してください。\n送信先URL: ${formUrl ?? "不明"}\n診断レポート: ${reportUrl}`
+    const notificationMessage = `会社「${company.company_name}」（${company.domain}）への初回フォーム送信は、first-5ゲートにより人間の承認が必要です。Twenty CRMで承認してください。\n送信先URL: ${formUrl ?? "不明"}\n診断レポート: ${reportUrl}`
 
     await notifyBothChannels(
-      `*送信承認待ち* (初回送信ゲート)\n*会社名*: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不明"}\n*診断*: ${reportUrl}\n営業ダッシュボードで確認してください。`,
+        `*送信承認待ち* (初回送信ゲート)\n*会社名*: ${company.company_name} (${company.domain})\n*フォーム*: ${formUrl ?? "不明"}\n*診断*: ${reportUrl}\nTwenty CRMで確認してください。`,
       {
         title,
         message: notificationMessage,
-        link: "/ja/admin/sales",
+        link: process.env.TWENTY_BASE_URL || "https://twenty.paradigmjp.com",
         type: "approval_required"
       }
     ).catch((e) => console.error("[sales-outreach] notifyBothChannels failed:", e))
@@ -422,6 +404,7 @@ export async function runOutreachBatch(options: RunOutreachOptions = {}): Promis
   const opts: Required<RunOutreachOptions> = {
     region: options.region ?? "jp",
     companyId: options.companyId ?? "",
+    companyIds: options.companyIds ?? [],
     pipelineRunId: options.pipelineRunId ?? null,
     limit: options.limit ?? 5,
     dryRun: options.dryRun ?? true,
@@ -432,7 +415,13 @@ export async function runOutreachBatch(options: RunOutreachOptions = {}): Promis
     itemTimeoutMs: options.itemTimeoutMs ?? DEFAULT_ITEM_TIMEOUT_MS,
   }
 
-  const candidates = await fetchCandidates(opts.region, opts.limit, opts.companyId || undefined)
+  const selection = await fetchCandidates(
+    opts.region,
+    opts.limit,
+    opts.companyId || undefined,
+    opts.companyIds,
+  )
+  const candidates = selection.companies
   const items: OutreachItemResult[] = []
 
   // Per-domain rate limiting: prevent rapid repeated submissions to same domain
@@ -489,6 +478,16 @@ export async function runOutreachBatch(options: RunOutreachOptions = {}): Promis
       ["discovery_failed", "preflight_failed", "submit_failed"].includes(item.finalStage),
     ).length,
     dryRun: opts.dryRun,
+    selection: {
+      requestedCompanyIds: opts.companyIds.length > 0
+        ? opts.companyIds
+        : opts.companyId
+          ? [opts.companyId]
+          : [],
+      acceptedCompanyIds: candidates.map((candidate) => candidate.id),
+      missingCompanyIds: selection.missingCompanyIds,
+      notReadyCompanyIds: selection.notReadyCompanyIds,
+    },
     items,
   }
 }

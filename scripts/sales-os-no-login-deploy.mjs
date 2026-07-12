@@ -612,6 +612,10 @@ async function applyPublicSurfaceRlsMigration(envs) {
   return applySqlMigration(envs, "migration_071_public_surface_rls_and_constraints.sql", "Public surface RLS and constraint migration")
 }
 
+async function applyPublicJapanEntryChecksMigration(envs) {
+  return applySqlMigration(envs, "migration_072_public_japan_entry_checks.sql", "Public Japan Entry checks migration")
+}
+
 function runDeployGuard() {
   if (SKIP_DEPLOY_GUARD) {
     console.log("Coolify deploy guard: skipped")
@@ -968,6 +972,36 @@ async function seedEnglishHomepage(envs) {
   console.log("English homepage CMS publish OK")
 }
 
+async function seedEnglishJapanEntryBlog(envs) {
+  const secret = envs.ADMIN_SCRIPT_SECRET
+  if (typeof secret !== "string" || secret.trim().length < 16) {
+    throw new Error("ADMIN_SCRIPT_SECRET must be configured before publishing the English Japan Entry blog")
+  }
+
+  const response = await fetch("https://paradigmjp.com/api/admin/seed-japan-entry-blog", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-admin-secret": secret,
+    },
+    body: JSON.stringify({ confirm: true }),
+    signal: AbortSignal.timeout(120_000),
+  })
+  const bodyText = await response.text()
+  let result = null
+  try {
+    result = bodyText ? JSON.parse(bodyText) : null
+  } catch (error) {
+    console.error("English Japan Entry blog seed returned invalid JSON:", error)
+  }
+  if (!response.ok || result?.success !== true || result?.errors?.length > 0) {
+    throw new Error(
+      `English Japan Entry blog publish failed: HTTP ${response.status}${bodyText ? ` ${bodyText.slice(0, 500)}` : ""}`,
+    )
+  }
+  console.log(`English Japan Entry blog publish OK (${result.total} articles; ${result.created} created, ${result.updated} updated)`)
+}
+
 function readOriginLockHelper() {
   return fs.readFileSync(
     new URL("./lib/refresh-traefik-origin-lock.py", import.meta.url),
@@ -1115,6 +1149,7 @@ async function main() {
     console.log(await applyPayloadPostsConstraintsMigration(envs))
     console.log(await applyDemoContactHardeningMigration(envs))
     console.log(await applyPublicSurfaceRlsMigration(envs))
+    console.log(await applyPublicJapanEntryChecksMigration(envs))
     console.log(await applyVideoPipelineMigration(envs))
     console.log(await applyVideoStrategyMigration(envs))
     console.log(await applyVideoProductionMigration(envs))
@@ -1152,6 +1187,7 @@ async function main() {
     await waitDeploy(uuid)
     refreshManualTraefikRoute()
     await seedEnglishHomepage(envs)
+    await seedEnglishJapanEntryBlog(envs)
   } else {
     console.log("Dry/skip mode: skipped Coolify deploy")
   }
@@ -1160,6 +1196,7 @@ async function main() {
     { url: "https://paradigmjp.com/api/ready" },
     { url: "https://paradigmjp.com/ja/admin/sales" },
     { url: "https://paradigmjp.com/ja" },
+    { url: "https://paradigmjp.com/ja/blog", markers: ["日本進出のキックオフ前に確認する5つのこと"] },
     {
       url: "https://paradigmjp.com/en",
       markers: [
@@ -1167,6 +1204,10 @@ async function main() {
         "$12,000",
         "Apply for Japan Entry",
       ],
+    },
+    {
+      url: "https://paradigmjp.com/en/services",
+      markers: ["Five modules, one accountable launch.", "Japanese buyer path"],
     },
     {
       url: "https://paradigmjp.com/en/contact",
@@ -1180,7 +1221,7 @@ async function main() {
     { url: "https://paradigmjp.com/en/pricing", markers: ["$12,000", "$995"] },
     { url: "https://paradigmjp.com/en/faq", markers: ["$12,000"] },
     { url: "https://paradigmjp.com/en/works" },
-    { url: "https://paradigmjp.com/en/blog" },
+    { url: "https://paradigmjp.com/en/blog", markers: ["What Should a Japan Entry Package Actually Deliver?"] },
     { url: "https://paradigmjp.com/en/privacy" },
     { url: "https://paradigmjp.com/en/legal", markers: ["$12,000"] },
     { url: `https://paradigmjp.com${envValue("RELEASE_REPORT_SMOKE_PATH", "/en/report/ccbc-xynd21")}` },

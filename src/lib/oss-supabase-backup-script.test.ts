@@ -10,7 +10,7 @@ function validateConfig(extraEnv: Record<string, string> = {}) {
     encoding: "utf8",
     env: {
       NODE_ENV: "test",
-      PATH: process.env.PATH ?? "",
+      PATH: process.env.PATH,
       OSS_SUPABASE_ENV_FILE: path.resolve(
         process.cwd(),
         ".missing-oss-supabase-backup-env",
@@ -32,6 +32,8 @@ describe("OSS Supabase backup script", () => {
     const password = "test-only-database-password"
     const result = validateConfig({
       OSS_SUPABASE_POSTGRES_PASSWORD: password,
+      OSS_SUPABASE_BACKUP_ENCRYPTION_REQUIRED: "false",
+      OSS_SUPABASE_BACKUP_SSH_TARGET: "backup@example.invalid",
     })
 
     expect(result.status).toBe(0)
@@ -53,10 +55,23 @@ describe("OSS Supabase backup script", () => {
       OSS_SUPABASE_BACKUP_GPG_PASSPHRASE: "",
     })
 
-    // --validate-config checks credential availability only; the runtime path
-    // performs the encryption requirement check before dumping data.
+    expect(result.status).not.toBe(0)
+    expect(result.stderr).toContain("OSS_SUPABASE_BACKUP_GPG_PASSPHRASE is required")
+  })
+
+  it("accepts a complete R2 transport without SSH", () => {
+    const result = validateConfig({
+      OSS_SUPABASE_POSTGRES_PASSWORD: "test-only-database-password",
+      OSS_SUPABASE_BACKUP_ENCRYPTION_REQUIRED: "false",
+      OSS_SUPABASE_BACKUP_GPG_PASSPHRASE: "",
+      CLOUDFLARE_R2_BUCKET: "test-bucket",
+      CLOUDFLARE_R2_ACCOUNT_ID: "test-account-id-0123456789",
+      CLOUDFLARE_R2_ACCESS_KEY_ID: "test-access-key-0123456789",
+      CLOUDFLARE_R2_SECRET_ACCESS_KEY: "test-secret-key-0123456789",
+      OSS_SUPABASE_BACKUP_R2_UPLOAD_HELPER: "/usr/bin/true",
+    })
+
     expect(result.status).toBe(0)
-    const source = readFileSync(script, "utf8")
-    expect(source).toContain("OSS_SUPABASE_BACKUP_GPG_PASSPHRASE is required")
+    expect(result.stdout).toContain("Backup configuration: OK")
   })
 })

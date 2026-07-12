@@ -16,14 +16,14 @@
  *   PARADIGM_APP_UUID        — default: n8i2sjiqvr2d8hrzppop2m2i
  */
 
-const PROJECT_ID = process.env.SUPABASE_PROJECT_ID || ""
+const PROJECT_ID = process.env.SUPABASE_PROJECT_ID
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const PAT = process.env.SUPABASE_PAT
 const COOLIFY_TOKEN = process.env.COOLIFY_API_TOKEN
 const APP_UUID = process.env.PARADIGM_APP_UUID || "n8i2sjiqvr2d8hrzppop2m2i"
 
 const MGMT_API = "https://api.supabase.com"
-const DATA_API = PROJECT_ID ? `https://${PROJECT_ID}.supabase.co` : ""
+const DATA_API = PROJECT_ID ? `https://${PROJECT_ID}.supabase.co` : undefined
 const COOLIFY_API = process.env.COOLIFY_API_URL || "https://coolify.paradigmjp.com"
 
 const MIGRATE = process.argv.includes("--migrate") || process.argv.includes("--all")
@@ -45,6 +45,10 @@ async function checkServiceRoleKey() {
 
 // 1. Supabase Management API → プロジェクト状態
 async function checkProjectStatus() {
+  if (!PROJECT_ID) {
+    console.warn("  ⚠ SUPABASE_PROJECT_ID not set — skipping project status check")
+    return { ok: false, status: "unknown", reason: "no project id" }
+  }
   if (!PAT) {
     console.warn("  ⚠ SUPABASE_PAT not set — skipping Management API check")
     return { ok: false, status: "unknown", reason: "no PAT" }
@@ -70,7 +74,7 @@ async function checkProjectStatus() {
 
 // 2. Supabase Data API → DB 接続テスト
 async function checkDataApi() {
-  if (!SERVICE_ROLE_KEY) return { ok: false, reason: "no key" }
+  if (!SERVICE_ROLE_KEY || !DATA_API) return { ok: false, reason: "missing data api configuration" }
   try {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 8000)
@@ -148,7 +152,7 @@ async function checkPoolerTcp() {
 
 // 4. SQL migration 実行
 async function runMigration(sqlContent, label) {
-  if (!SERVICE_ROLE_KEY) return { ok: false, reason: "no key" }
+  if (!SERVICE_ROLE_KEY || !DATA_API) return { ok: false, reason: "missing data api configuration" }
   try {
     // Supabase の REST RPC 経由で SQL 実行を試みる
     // 注: exec_sql は Supabase ではデフォルト無効。有効化が必要。

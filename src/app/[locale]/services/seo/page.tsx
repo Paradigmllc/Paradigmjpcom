@@ -97,7 +97,7 @@ async function ComparisonBand({ locale }: { locale: string }) {
 
 export default async function SeoServicePage({ params }: Props) {
   const { locale } = await params
-  if (locale === "en") permanentRedirect("/en#japan-entry-pricing")
+  if (locale === "en") permanentRedirect("/en/services#package-modules")
   const t = await getTranslations({ locale, namespace: "serviceDetail" })
   const service = getServiceByKey(locale, "seo")
   const pricing = getPricingFor(locale, "seo")

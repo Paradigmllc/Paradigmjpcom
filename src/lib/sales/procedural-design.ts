@@ -3,6 +3,8 @@
  * from company data. LLM extracts numeric parameters (0.0-1.0),
  * algorithms compute the visual output.
  */
+import { boundedNumber, isJsonObject, parseJsonObject, readChatContent, stringValue } from "./llm-response"
+
 const API = process.env.DEEPSEEK_API_BASE || "https://api.deepseek.com/v1"
 const MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat"
 
@@ -119,16 +121,31 @@ export async function extractBrandDNA(company: {
       }),
       signal: AbortSignal.timeout(30000),
     })
-    const data = await res.json() as any
-    const raw = data.choices?.[0]?.message?.content || ""
-    const dna = JSON.parse(raw.replace(/```json\s*|\s*```/g, ""))
-    
-    // Validate ranges
-    dna.gravity = Math.max(0, Math.min(1, Number(dna.gravity) || 0.5))
-    dna.velocity = Math.max(0, Math.min(1, Number(dna.velocity) || 0.5))
-    dna.complexity = Math.max(0, Math.min(1, Number(dna.complexity) || 0.5))
-    dna.warmth = Math.max(0, Math.min(1, Number(dna.warmth) || 0.5))
-    dna.color_hue = ((Number(dna.color_hue) || 210) % 360 + 360) % 360
+    const data: unknown = await res.json()
+    const parsed = parseJsonObject(readChatContent(data))
+    const copy = isJsonObject(parsed.copy) ? parsed.copy : {}
+    const sections = Array.isArray(copy.sections)
+      ? copy.sections.flatMap((section): Array<{ title: string; body: string }> => {
+          if (!isJsonObject(section)) return []
+          const title = stringValue(section.title)
+          const body = stringValue(section.body)
+          return title && body ? [{ title, body }] : []
+        })
+      : []
+    const dna: BrandDNA = {
+      brand_seed: stringValue(parsed.brand_seed, company.name),
+      gravity: boundedNumber(parsed.gravity, 0.5),
+      velocity: boundedNumber(parsed.velocity, 0.5),
+      complexity: boundedNumber(parsed.complexity, 0.5),
+      warmth: boundedNumber(parsed.warmth, 0.5),
+      color_hue: boundedNumber(parsed.color_hue, 210, 0, 360),
+      copy: {
+        headline: stringValue(copy.headline, company.name),
+        subheadline: stringValue(copy.subheadline),
+        sections,
+        cta: stringValue(copy.cta, "Japan Entry Fit Review"),
+      },
+    }
 
     return { ok: true, dna }
   } catch (e) {

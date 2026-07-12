@@ -3,7 +3,7 @@
  * generate-templates-bulk.mjs — Sprint 11
  *
  * 役割: 8 業種 × 7 課題 = 56 templates を DeepSeek V4 PRO で生成し、
- *       Supabase sales_templates に upsert (Notion は別途 sync で投入).
+ *       Supabase sales_templates に upsertし、Twenty連携で利用できる状態にする。
  *
  * 入力:
  *   DEEPSEEK_API_KEY (必須)
@@ -62,9 +62,9 @@ JSON 厳守:
 }`
 
 const DEEPSEEK_API = "https://api.deepseek.com/v1/chat/completions"
-const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
-const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY ?? ""
+const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY
 
 if (!DEEPSEEK_KEY) {
   console.error("❌ DEEPSEEK_API_KEY not set. Aborting.")

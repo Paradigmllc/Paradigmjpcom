@@ -5,7 +5,7 @@ describe("Japan Entry editorial set", () => {
   it("contains distinct, publishable English articles", () => {
     const slugs = JAPAN_ENTRY_BLOG_POSTS.map((post) => post.slug)
     expect(new Set(slugs).size).toBe(JAPAN_ENTRY_BLOG_POSTS.length)
-    expect(JAPAN_ENTRY_BLOG_POSTS.length).toBeGreaterThanOrEqual(6)
+    expect(JAPAN_ENTRY_BLOG_POSTS.length).toBeGreaterThanOrEqual(9)
 
     for (const post of JAPAN_ENTRY_BLOG_POSTS) {
       expect(post.tags).toContain("japan-entry-public")

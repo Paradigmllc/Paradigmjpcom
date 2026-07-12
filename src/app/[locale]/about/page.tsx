@@ -17,6 +17,8 @@ import { buildPageSchema } from "@/lib/seo/schemas"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
+import RepresentativeMessage from "@/components/japan-entry/RepresentativeMessage"
+import JapanEntryVisualProof from "@/components/japan-entry/JapanEntryVisualProof"
 import { getSiteSettings } from "@/lib/settings"
 
 export const dynamic = "force-dynamic"
@@ -41,6 +43,7 @@ const VALUE_GRADIENTS = [
 ] as const
 
 interface ValueRow { title: string; desc: string }
+interface OperatingStep { title: string; desc: string }
 
 function buildEnglishCompanyInfo(
   settings: Awaited<ReturnType<typeof getSiteSettings>>,
@@ -105,6 +108,10 @@ export default async function AboutPage({ params }: Props) {
   // Public bios stay hidden until named members and publication consent have
   // been verified. Generic seeded roles are not evidence of a real team.
   const teamMembers: Array<{ id: string | number; name?: string; role?: string; bio?: string }> = []
+  const isJapanEntryLocale = locale === "en" || locale === "ja"
+  const representativePrinciples = isJapanEntryLocale ? (t.raw("representativePrinciples") as string[]) ?? [] : []
+  const operatingSteps = isJapanEntryLocale ? (t.raw("operatingSteps") as OperatingStep[]) ?? [] : []
+  const representativeName = settings.company.representativeName ?? (locale === "ja" ? "Paradigm合同会社 運営チーム" : "Paradigm LLC operator team")
 
   return (
     <>
@@ -129,6 +136,20 @@ export default async function AboutPage({ params }: Props) {
           </p>
         </FadeIn>
       </section>
+
+      {isJapanEntryLocale && (
+        <RepresentativeMessage
+          eyebrow={t("representativeEyebrow")}
+          title={t("representativeTitle")}
+          message={t("representativeMessage")}
+          principles={representativePrinciples}
+          signatureLabel={t("representativeSignatureLabel")}
+          signatureName={representativeName}
+          role={t("representativeRole")}
+        />
+      )}
+
+      {isJapanEntryLocale && <JapanEntryVisualProof locale={locale as "en" | "ja"} />}
 
       <section className="relative bg-paradigm-paper-deep paradigm-section overflow-hidden">
         <div className="paradigm-mesh opacity-50" />
@@ -159,6 +180,30 @@ export default async function AboutPage({ params }: Props) {
           </div>
         </div>
       </section>
+
+      {isJapanEntryLocale && operatingSteps.length > 0 && (
+        <section className="relative overflow-hidden bg-paradigm-paper paradigm-section" aria-labelledby="about-operating-heading">
+          <div className="paradigm-mesh opacity-25" />
+          <div className="relative z-10 mx-auto max-w-5xl px-6 md:px-8">
+            <FadeIn className="mb-8 max-w-3xl">
+              <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{t("operatingEyebrow")}</p>
+              <h2 id="about-operating-heading" className="font-display text-[24px] leading-[1.15] text-paradigm-ink md:text-[38px]">{t("operatingTitle")}</h2>
+              <p className="mt-4 text-[14px] leading-[1.8] text-paradigm-ink-soft">{t("operatingDesc")}</p>
+            </FadeIn>
+            <div className="grid gap-4 md:grid-cols-2">
+              {operatingSteps.map((step, index) => (
+                <FadeIn key={step.title} delay={index * 0.05}>
+                  <article className="h-full rounded-lg border border-paradigm-line bg-paradigm-paper-deep p-6 paradigm-glow-sm">
+                    <span className="font-display text-[22px] text-paradigm-accent">{String(index + 1).padStart(2, "0")}</span>
+                    <h3 className="mt-3 font-display text-[18px] leading-[1.2] text-paradigm-ink">{step.title}</h3>
+                    <p className="mt-3 text-[13px] leading-[1.8] text-paradigm-ink-soft">{step.desc}</p>
+                  </article>
+                </FadeIn>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
         <div className="relative z-10 max-w-3xl mx-auto px-6 md:px-8">

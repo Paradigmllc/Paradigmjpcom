@@ -348,7 +348,27 @@ export async function enrichFromContact(input: EnrichInput): Promise<EnrichResul
     country_nic: Array.isArray(countryNic) ? countryNic.filter(r => r?.ok).map(r => ({ countryCode: r.countryCode, registrar: r.registrar, yearsOld: r.yearsOld, organizationName: r.organizationName })) : null,
     enterprise_filter: enterpriseCheck.isEnterprise ? { excluded: true, matched_tech: enterpriseCheck.matched } : null,
     market_data: industry ? (INDUSTRY_MARKET_DATA[industry as keyof typeof INDUSTRY_MARKET_DATA] ?? null) : null,
-    smb_signals: tech && dns?.ok ? await collectSmbSignals(domain, ((tech as { tech: Array<{ name: string }> }).tech).map((t: { name: string }) => t.name), (dns as { mxRecords: { exchange: string }[] }).mxRecords).catch(() => null) : null,
+    smb_signals: await collectSmbSignals(
+      domain,
+      tech && Array.isArray((tech as { tech?: unknown }).tech)
+        ? ((tech as { tech: Array<{ name: string }> }).tech).map((t: { name: string }) => t.name)
+        : [],
+      dns?.ok && Array.isArray((dns as { mxRecords?: unknown }).mxRecords)
+        ? (dns as { mxRecords: { exchange: string }[] }).mxRecords
+        : [],
+      {
+        targetCountry: input.targetCountry,
+        tranco,
+        cloudflareRadar: radar,
+        commonCrawl: commoncrawl,
+        schemaOrg,
+        sitemap,
+        countryNic,
+      },
+    ).catch((error) => {
+      console.error("[enrich] public market visibility signals failed:", error)
+      return null
+    }),
     ...(gbizFirst ? toCompanyMeta(gbizFirst) : {}),
   }
 

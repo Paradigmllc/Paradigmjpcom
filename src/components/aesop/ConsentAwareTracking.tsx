@@ -48,15 +48,20 @@ export default function ConsentAwareTracking({
   const [allowed, setAllowed] = useState(false)
 
   useEffect(() => {
-    const stored = readStoredConsent()
-    setAllowed(hasAnalyticsConsent(stored))
+    const frame = window.requestAnimationFrame(() => {
+      const stored = readStoredConsent()
+      setAllowed(hasAnalyticsConsent(stored))
+    })
 
     const onConsentChanged = (event: Event) => {
       const detail = (event as CustomEvent<StoredConsent>).detail
       setAllowed(hasAnalyticsConsent(detail ?? null))
     }
     window.addEventListener(CONSENT_CHANGED_EVENT, onConsentChanged)
-    return () => window.removeEventListener(CONSENT_CHANGED_EVENT, onConsentChanged)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.removeEventListener(CONSENT_CHANGED_EVENT, onConsentChanged)
+    }
   }, [])
 
   if (!allowed) return null

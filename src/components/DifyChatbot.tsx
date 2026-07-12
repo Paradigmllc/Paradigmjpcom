@@ -64,8 +64,11 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
   }, [])
 
   useEffect(() => {
-    setMessages([{ role: "bot", text: t("greeting") }])
-    setConversationId(null)
+    const frame = window.requestAnimationFrame(() => {
+      setMessages([{ role: "bot", text: t("greeting") }])
+      setConversationId(null)
+    })
+    return () => window.cancelAnimationFrame(frame)
   }, [locale, t])
 
   useEffect(() => {

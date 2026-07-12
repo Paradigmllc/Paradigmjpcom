@@ -28,8 +28,11 @@ export function useTypingEffect(words: string[], speed = 80, pause = 2000) {
       const t = setTimeout(() => setText(text.slice(0, -1)), speed / 2)
       return () => clearTimeout(t)
     }
-    setWordIdx((wordIdx + 1) % words.length)
-    setTyping(true)
+    const t = setTimeout(() => {
+      setWordIdx((wordIdx + 1) % words.length)
+      setTyping(true)
+    }, 0)
+    return () => clearTimeout(t)
   }, [text, typing, wordIdx, words, speed, pause])
 
   return text

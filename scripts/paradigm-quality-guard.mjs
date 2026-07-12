@@ -263,18 +263,6 @@ function checkFileSizes() {
 // ═══════════════════════════════════════════════════════════════
 
 function checkEventDrivenAutomation() {
-  for (const rel of [
-    "n8n-workflows/01-supabase-to-notion-sync.json",
-    "n8n-workflows/02-notion-to-supabase-reverse.json",
-    "n8n-workflows/03-notion-template-sync.json",
-    "n8n-workflows/04-sales-video-pipeline.json",
-  ]) {
-    const workflow = readFile(rel)
-    if (workflow && workflow.includes("n8n-nodes-base.scheduleTrigger")) {
-      error(`${rel}: n8n scheduleTrigger is forbidden by WW-EVENT; use webhook trigger`)
-    }
-  }
-
   const serverFiles = [
     "src/instrumentation.ts",
     ...findSourceFiles().filter((rel) => rel.startsWith("src/lib/sales/") || rel.startsWith("src/app/api/sales/")),
@@ -291,17 +279,9 @@ function checkEventDrivenAutomation() {
     error("scripts/run-migrations.sh: missing migration_044_abolish_pg_cron_event_driven.sql")
   }
 
-  const abolishRoute = readFile("src/app/api/sales/admin/abolish-periodic-jobs/route.ts")
-  if (!abolishRoute) {
-    error("src/app/api/sales/admin/abolish-periodic-jobs/route.ts: missing one-shot pg_cron abolition endpoint")
-  } else {
-    if (!abolishRoute.includes("isSalesApiAuthorized")) {
-      error("src/app/api/sales/admin/abolish-periodic-jobs/route.ts: must require sales API authorization")
-    }
-    if (!abolishRoute.includes("to_regclass('cron.job')") || !abolishRoute.includes("cron.unschedule")) {
-      error("src/app/api/sales/admin/abolish-periodic-jobs/route.ts: must verify and unschedule pg_cron jobs")
-    }
-  }
+  // The legacy admin abolition endpoint was removed with the old Sales
+  // dashboard. The migration above remains the single source of truth for
+  // eliminating pg_cron; runtime scheduling must stay event-driven.
 
   ok("WW-EVENT no periodic automation guards verified")
 }

@@ -43,17 +43,18 @@ POSTGRES_PASSWORD_VALUE="$(read_postgres_password)"
 export PGPASSWORD="$POSTGRES_PASSWORD_VALUE"
 unset POSTGRES_PASSWORD_VALUE
 
-if [[ "${1:-}" == "--validate-config" ]]; then
-  printf 'Backup configuration: OK\n'
-  exit 0
-fi
-
 BACKUP_ROOT="${OSS_SUPABASE_BACKUP_ROOT:-/opt/backups/oss-supabase-nightly}"
 RETENTION_DAYS="${OSS_SUPABASE_BACKUP_RETENTION_DAYS:-14}"
-ENCRYPTION_REQUIRED="${OSS_SUPABASE_BACKUP_ENCRYPTION_REQUIRED:-false}"
+ENCRYPTION_REQUIRED="${OSS_SUPABASE_BACKUP_ENCRYPTION_REQUIRED:-true}"
 GPG_PASSPHRASE="${OSS_SUPABASE_BACKUP_GPG_PASSPHRASE:-}"
 OFFSITE_TARGET="${OSS_SUPABASE_BACKUP_SSH_TARGET:-}"
 OFFSITE_ROOT="${OSS_SUPABASE_BACKUP_SSH_ROOT:-/backups/paradigmjpcom}"
+R2_BUCKET="${CLOUDFLARE_R2_BUCKET:-${R2_BUCKET:-}}"
+R2_ACCOUNT_ID="${CLOUDFLARE_R2_ACCOUNT_ID:-}"
+R2_ACCESS_KEY_ID="${CLOUDFLARE_R2_ACCESS_KEY_ID:-}"
+R2_SECRET_ACCESS_KEY="${CLOUDFLARE_R2_SECRET_ACCESS_KEY:-}"
+R2_ROOT="${OSS_SUPABASE_BACKUP_R2_ROOT:-paradigmjpcom/oss-supabase}"
+R2_UPLOAD_HELPER="${OSS_SUPABASE_BACKUP_R2_UPLOAD_HELPER:-/usr/local/lib/paradigmjpcom/r2-put.py}"
 PGHOST_VALUE="${OSS_SUPABASE_PGHOST:-127.0.0.1}"
 PGPORT_VALUE="${OSS_SUPABASE_PGPORT:-5433}"
 PGUSER_VALUE="${OSS_SUPABASE_PGUSER:-postgres}"
@@ -67,6 +68,20 @@ if [[ "$ENCRYPTION_REQUIRED" =~ ^(1|true|yes)$ ]] && [[ -z "$GPG_PASSPHRASE" ]];
 fi
 if [[ -n "$GPG_PASSPHRASE" ]] && ! command -v gpg >/dev/null 2>&1; then
   die "gpg is required for encrypted backups"
+fi
+R2_CONFIGURED=false
+if [[ -n "$R2_BUCKET$R2_ACCOUNT_ID$R2_ACCESS_KEY_ID$R2_SECRET_ACCESS_KEY" ]]; then
+  [[ -n "$R2_BUCKET" && -n "$R2_ACCOUNT_ID" && -n "$R2_ACCESS_KEY_ID" && -n "$R2_SECRET_ACCESS_KEY" ]] ||
+    die "all Cloudflare R2 backup credentials are required when any R2 value is set"
+  [[ -x "$R2_UPLOAD_HELPER" ]] || die "R2 upload helper is missing or not executable: $R2_UPLOAD_HELPER"
+  R2_CONFIGURED=true
+fi
+if [[ -z "$OFFSITE_TARGET" && "$R2_CONFIGURED" != true ]]; then
+  die "an encrypted backup requires either OSS_SUPABASE_BACKUP_SSH_TARGET or complete Cloudflare R2 credentials"
+fi
+if [[ "${1:-}" == "--validate-config" ]]; then
+  printf 'Backup configuration: OK\n'
+  exit 0
 fi
 
 DATE="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -147,8 +162,25 @@ rm -f "$CHECKSUM_TMP"
 if [[ -n "$OFFSITE_TARGET" ]]; then
   scp -q "$ARCHIVE_PATH" "${ARCHIVE_PATH}.sha256" "${OFFSITE_TARGET}:${OFFSITE_ROOT}/" \
     || die "offsite backup upload failed"
-elif [[ "$ENCRYPTION_REQUIRED" =~ ^(1|true|yes)$ ]]; then
-  die "OSS_SUPABASE_BACKUP_SSH_TARGET is required when encrypted offsite backups are enabled"
+elif [[ "$R2_CONFIGURED" == true ]]; then
+  R2_ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+  R2_KEY_PREFIX="${R2_ROOT%/}/${DATE}"
+  python3 "$R2_UPLOAD_HELPER" \
+    --endpoint "$R2_ENDPOINT" \
+    --access-key "$R2_ACCESS_KEY_ID" \
+    --secret-key "$R2_SECRET_ACCESS_KEY" \
+    --bucket "$R2_BUCKET" \
+    --key "${R2_KEY_PREFIX}/$(basename "$ARCHIVE_PATH")" \
+    --file "$ARCHIVE_PATH" \
+    --content-type "application/octet-stream"
+  python3 "$R2_UPLOAD_HELPER" \
+    --endpoint "$R2_ENDPOINT" \
+    --access-key "$R2_ACCESS_KEY_ID" \
+    --secret-key "$R2_SECRET_ACCESS_KEY" \
+    --bucket "$R2_BUCKET" \
+    --key "${R2_KEY_PREFIX}/$(basename "$ARCHIVE_PATH").sha256" \
+    --file "${ARCHIVE_PATH}.sha256" \
+    --content-type "text/plain"
 fi
 
 find "$BACKUP_ROOT" -maxdepth 1 -name '*.tar.gz' -type f \

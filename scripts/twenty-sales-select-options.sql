@@ -174,7 +174,7 @@ with desired(field_name, label_text, position_number, is_visible) as (
     ('paradigmSourceName', 'ソース元', 13, true),
     ('paradigmSalesMaterialUrl', '営業資料URL', 14, true),
     ('paradigmDemoUrl', 'デモURL', 15, true),
-    ('paradigmCustomerPortalUrl', '顧客用Notion URL', 16, true),
+    ('paradigmCustomerPortalUrl', '顧客ポータルURL', 16, true),
     ('createdBy', 'Created by', 98, false),
     ('accountOwner', 'Account Owner', 99, false),
     ('createdAt', 'Creation date', 100, false),

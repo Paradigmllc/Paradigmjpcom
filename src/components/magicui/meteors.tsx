@@ -35,7 +35,8 @@ export function Meteors({ number = 20, color = "#ffffff", className }: MeteorsPr
       animationDelay: `${Math.random() * 1.8}s`,
       animationDuration: `${Math.floor(Math.random() * 6) + 4}s`,
     }))
-    setMeteorStyles(styles)
+    const frame = window.requestAnimationFrame(() => setMeteorStyles(styles))
+    return () => window.cancelAnimationFrame(frame)
   }, [number])
 
   return (

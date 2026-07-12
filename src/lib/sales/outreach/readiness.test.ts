@@ -28,7 +28,6 @@ function company(overrides: Partial<SalesCompany> = {}): SalesCompany {
     follow_up_date: null,
     memo: null,
     assigned_to: null,
-    notion_page_id: null,
     source: "twenty",
     tech_stack: null,
     pain_diagnosis: null,

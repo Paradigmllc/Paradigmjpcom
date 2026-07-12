@@ -48,7 +48,7 @@ export async function GET(
     }
 
     return NextResponse.json(spec, {
-      headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" },
+      headers: { "Cache-Control": "private, no-store, max-age=0" },
     })
   } catch (e) {
     console.error(`[demo-designs/${slug}] unexpected:`, e)

@@ -15,7 +15,6 @@ import { getR2StorageConfig, sanitizeR2ObjectName } from "./r2-storage"
 import { generateFullStackDemo } from "./demo-generator"
 import { generateSalesAsset } from "./sales-assets"
 import { syncCompanyKarteToTwenty } from "./twenty-sync"
-import { createVideoJob, runVideoJobAction } from "./video-pipeline"
 import { ensureCompanyVisualEvidence } from "./visual-evidence"
 import { executeDataCollectionStep } from "./sales-pipeline-data-collection"
 
@@ -335,32 +334,12 @@ export async function executeStep(sb: ServiceSupabase, run: SalesPipelineRun, st
   }
 
   if (step.step_key === "video_generate") {
-    if (!run.require_video) {
-      await updateStep(sb, step, { status: "skipped", output_payload: { reason: "video not required" } })
-      return
-    }
-    const video = await createVideoJob({
-      companyIdOrSlugOrDomain: run.company_id,
-      jobType: "sales_video",
-      targetPlatform: "report_page",
-      renderEngine: "hyperframes",
-      pipelineRunId: run.id,
-      priority: 75,
-      requestedBy: run.requested_by,
-    })
-    if (!video.ok || !video.job) {
-      console.error("[sales-pipeline-execution] video_generate failed:", video.error)
-      throw new Error(video.error ?? "video job creation failed")
-    }
-    const dispatched = await runVideoJobAction({ jobId: video.job.id, action: "dispatch" })
+    // Video production is deliberately outside the public-site runtime. Keep the
+    // legacy step key for old pipeline rows, but complete it as an explicit no-op
+    // so Twenty intake cannot fail on a retired video dependency.
     await updateStep(sb, step, {
-      status: dispatched.job?.status === "review_required" ? "needs_review" : "waiting_external",
-      error_message: dispatched.error ?? null,
-      output_payload: {
-        video_job_id: video.job.id,
-        video_status: dispatched.job?.status ?? video.job.status,
-        message: dispatched.message ?? null,
-      },
+      status: "skipped",
+      output_payload: { reason: run.require_video ? "video production is retired from this runtime" : "video not required" },
     })
     return
   }

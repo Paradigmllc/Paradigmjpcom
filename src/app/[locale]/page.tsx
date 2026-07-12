@@ -9,6 +9,9 @@ import {
 } from "@/lib/jsonld"
 import { pageAlternates } from "@/lib/page-metadata"
 import BlockRenderer from "@/blocks/BlockRenderer"
+import JapanEntryScorePromo from "@/components/japan-entry/JapanEntryScorePromo"
+import JapanEntryTrustPanel from "@/components/japan-entry/JapanEntryTrustPanel"
+import JapanEntryVisualProof from "@/components/japan-entry/JapanEntryVisualProof"
 import {
   isSafeEnglishJapanEntryHomepage,
   isSafeJapaneseHomepageBlock,
@@ -246,6 +249,9 @@ export default async function HomePage({ params }: Props) {
   return (
     <>
       <BlockRenderer blocks={blocks} />
+      {(locale === "en" || locale === "ja") && <JapanEntryTrustPanel locale={locale} />}
+      {(locale === "en" || locale === "ja") && <JapanEntryVisualProof locale={locale} />}
+      {(locale === "en" || locale === "ja") && <JapanEntryScorePromo locale={locale} />}
       {locale === "en" && (
         <script
           type="application/ld+json"

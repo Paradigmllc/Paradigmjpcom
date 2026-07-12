@@ -69,10 +69,9 @@ export function sourceCategoryBreakdown(karte: CompanyKarteSnapshot): string {
   return parts.length > 0 ? parts.join(" / ") : "no source data"
 }
 
-// Phase 7-2: deep link to the Twenty Sales OS source-coverage panel for per-source detail
-// (the full 50+ catalog with status/meaning/nextStep is shown in the dashboard).
+// Phase 7-2: deep link to the Twenty CRM for per-source detail.
+// The full source catalog remains in the company HOME summary and Supabase.
 export function sourceCoveragePanelLink(karte: CompanyKarteSnapshot): string {
-  const base = (process.env.PAYLOAD_PUBLIC_SERVER_URL || "https://paradigmjp.com").replace(/\/+$/, "")
-  const q = encodeURIComponent(karte.companyName ?? "")
-  return `${base}/ja/admin/sales?q=${q}`
+  const base = (process.env.TWENTY_BASE_URL || "https://twenty.paradigmjp.com").replace(/\/+$/, "")
+  return `${base}/companies`
 }

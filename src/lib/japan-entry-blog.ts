@@ -241,6 +241,148 @@ Read the page as a skeptical finance or operations lead. Can they identify the s
 
 Trust is the confidence that the same promise will still be understandable after the contract is signed.`
   },
+  {
+    slug: "what-a-japan-entry-package-should-deliver",
+    title: "What Should a Japan Entry Package Actually Deliver?",
+    excerpt:
+      "Before comparing price tags, compare the launch system: buyer path, trust coordination, discovery, support, ownership, dependencies, and handover.",
+    category: "Japan Entry",
+    readTime: "8 min",
+    publishedAt: "2026-07-12",
+    tags: ["japan-entry-public", "Scope", "Buyer Trust", "SMB"],
+    content: `## Start with the decision, not the deliverable list
+
+A Japan entry package is easy to make sound comprehensive. It is harder to make the scope useful. A long list of activities can still leave the buyer without a Japanese conversion path, a clear owner, or an answer to the dependencies that can stop launch.
+
+The practical question is: after the engagement, what can the company show, operate, and decide that it could not show, operate, or decide before?
+
+## Five connected parts of a useful package
+
+### 1. A Japanese buyer path
+
+The site should explain the offer, responsibility, proof, commercial terms, and next action in a way a Japanese buyer can evaluate. Translation is one input; information design, trust, support, and conversion are the system.
+
+### 2. Trust and compliance coordination
+
+The package should make privacy, commercial disclosure, support ownership, and open professional questions visible. It should also say what it cannot decide. Legal, tax, banking, incorporation, licensing, and regulated advice remain with qualified professionals.
+
+### 3. A discovery foundation
+
+Where the offer is eligible, the launch can prepare local discovery surfaces, entity information, search structure, and a measurement baseline. A responsible scope describes the implementation and the signal to inspect; it does not promise a ranking, traffic number, or revenue outcome.
+
+### 4. Support and escalation
+
+The first buyer question should have an owner. Define what the bilingual route can answer, when a person reviews the request, how sensitive questions are escalated, and what gets handed over to the client team.
+
+### 5. Launch operations and handover
+
+The package should include acceptance criteria, dependencies, access requirements, launch checks, analytics baseline, notification ownership, and operating documentation. Without those items, a finished website can still be an unfinished launch.
+
+## A simple acceptance test
+
+Before signing, ask the provider to show:
+
+1. The first Japanese offer and buyer path.
+2. The exact included and excluded work.
+3. The client inputs and approval gates.
+4. The external dependencies that can change timing.
+5. The owner and handover materials after launch.
+
+If the answers depend on a future proposal, the price is not yet comparable. If the answers are clear, the decision becomes easier even when the package is not the cheapest option.
+
+## The Paradigm commercial shape
+
+Paradigm's Japan Entry package uses a fixed $12,000 one-time setup. The standard monthly service is included at no additional monthly charge for the first six months, then $995/month from month seven under the signed terms. The point of the fixed structure is to make the first launch decision concrete; third-party costs and approved work outside scope remain separate.`
+  },
+  {
+    slug: "japan-entry-package-vs-diy-hire-agency-stack",
+    title: "Japan Entry Package vs DIY, Local Hire, and an Agency Stack",
+    excerpt:
+      "A clear comparison of four operating models for overseas SMBs deciding how to test a Japan revenue path without hiding coordination cost.",
+    category: "Japan Entry",
+    readTime: "9 min",
+    publishedAt: "2026-07-12",
+    tags: ["japan-entry-public", "Comparison", "Pricing", "Market Entry"],
+    content: `## There is no universally best entry model
+
+DIY, a local hire, several specialist agencies, and a fixed-scope launch operator can all be rational choices. The mistake is comparing only the quoted fee while ignoring who owns the decisions between workstreams.
+
+## Four models and their trade-offs
+
+| Model | What it gives you first | The cost to make visible |
+|------|--------------------------|--------------------------|
+| DIY | Maximum control and learning | Founder time, slower iteration, and responsibility for every dependency |
+| Local hire | A potential long-term in-country owner | Recruiting, onboarding, employment overhead, and specialist gaps |
+| Multiple specialists | Deep expertise in individual lanes | Cross-vendor integration, different timelines, and change-order risk |
+| Fixed-scope launch operator | One starting system and accountable handover | A bounded scope that must be respected; it is not every future capability |
+
+## When DIY is reasonable
+
+DIY works when the team has the time, language and market context, technical ownership, and a decision-maker who can resolve unknowns quickly. It becomes expensive when the founder is simultaneously translating, selecting providers, reviewing legal questions, configuring support, and trying to launch.
+
+## When a local hire is reasonable
+
+A hire can be the right long-term investment when Japan is already a strategic operating market and the company is prepared to manage the role. It is less suitable when the immediate question is simply whether a specific offer has a credible first route into Japan.
+
+## When a specialist stack is reasonable
+
+Multiple specialists make sense when an internal program manager already owns the integration. Without that owner, the client becomes the project manager across web, search, support, payments, and operations. Every handoff adds a place where the buyer can wait for an answer.
+
+## When a fixed package is reasonable
+
+A fixed-scope package fits a fast-decision SMB that has a real offer, one empowered approver, source material, and a defined launch question. The useful output is not a promise of market success. It is a launchable buyer path, explicit dependencies, a measurement baseline, and a handover the client can operate.
+
+## Compare like with like
+
+Ask every provider to state the same six items: deliverables, client inputs, approval gates, exclusions, launch dependencies, and what remains after the engagement ends. Then include founder time, integration work, and the cost of unresolved ownership in the comparison.
+
+Paradigm's public structure is $12,000 one-time setup, six months of standard monthly service included, and $995/month from month seven under signed terms. It is designed to reduce the coordination burden around a first Japan launch, not to replace legal advice, a permanent local team, or every specialist you may need later.`
+  },
+  {
+    slug: "first-30-days-after-japan-launch",
+    title: "The First 30 Days After a Japan Launch: What to Measure",
+    excerpt:
+      "After launch, avoid vanity metrics. Track buyer questions, route completion, response ownership, unresolved dependencies, and the evidence needed for the next decision.",
+    category: "Japan Entry",
+    readTime: "8 min",
+    publishedAt: "2026-07-12",
+    tags: ["japan-entry-public", "Operations", "Measurement", "SMB"],
+    content: `## Launch is the start of evidence collection
+
+The first month in Japan is rarely long enough to prove a full market thesis. It is long enough to learn whether the buyer path is understandable, whether the operating team can respond, and which dependencies deserve a serious decision.
+
+Do not begin with a promised revenue target or a borrowed benchmark. Begin with signals the team can actually observe and act on.
+
+## Five signals worth reviewing weekly
+
+### 1. Route completion
+
+Can a Japanese visitor find the offer, understand the next step, submit an inquiry, or complete the eligible payment route? Record where people stop and whether the cause is copy, trust, form friction, or fulfilment uncertainty.
+
+### 2. Question quality
+
+Classify incoming questions. Repeated questions about price, responsibility, delivery, privacy, or support indicate missing information in the public path. A better FAQ can be more valuable than another campaign.
+
+### 3. Response ownership
+
+Measure whether each request has an owner, a next action, and an escalation route. “We will get back to you” is not an operating system if nobody is accountable for the handoff.
+
+### 4. Dependency status
+
+Track payment-provider review, fulfilment, professional advice, account access, translation review, and internal approvals separately. A blocked dependency should be visible as blocked, not disguised as a marketing problem.
+
+### 5. Decision readiness
+
+At the end of the month, can the decision-maker say what to keep, what to change, and what must be funded next? The answer may be to continue, narrow the offer, invest in a local structure, or stop. All four are useful decisions.
+
+## What not to claim
+
+Public tools cannot observe a company's actual monthly visits, country-level traffic share, or revenue without first-party or authorized data. Treat public rank and crawl signals as evidence about visibility, not as a substitute for analytics.
+
+## The handover question
+
+The strongest launch leaves the client with a source of truth: current offer, ownership, support rules, measured signals, unresolved questions, and the next approval needed. That is how a 21-business-day implementation becomes a responsible operating decision rather than a one-off website release.`
+  },
 ]
 
 export function textToLexical(text: string) {

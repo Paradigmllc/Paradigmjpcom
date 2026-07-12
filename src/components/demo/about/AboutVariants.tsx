@@ -52,7 +52,7 @@ export function MissionBold({
             className="relative mx-auto mt-8 max-w-2xl rounded-2xl border border-white/10 p-8"
             style={{ background: `${accent}10` }}
           >
-            <p className="text-xl font-light leading-relaxed text-white/80 italic">"{about.mission}"</p>
+            <p className="text-xl font-light leading-relaxed text-white/80 italic">&ldquo;{about.mission}&rdquo;</p>
           </div>
         </motion.div>
       </div>

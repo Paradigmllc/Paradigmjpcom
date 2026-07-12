@@ -3,7 +3,7 @@
  *
  * 役割: sales_companies / sales_activity_log / sales_calendar_events から
  *       その日の営業 KPI を集計し sales_kpi に 1 行 upsert する。
- *       Notion KPI ダッシュボード / weekly-digest の元データ。
+ *       Twenty運用 / weekly-digest の元データ。
  *
  * sales_kpi は date に UNIQUE が無いため「同日 1 行」を JS 側で担保
  * (既存 id があれば update・無ければ insert)。

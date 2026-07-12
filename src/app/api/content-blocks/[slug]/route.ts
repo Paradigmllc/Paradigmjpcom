@@ -20,6 +20,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServiceSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { sanitizePublicJson } from "@/lib/public-surface"
 
 export const dynamic = "force-dynamic"
 
@@ -33,7 +34,7 @@ export async function GET(
   const { slug } = await params
   try {
     const sb = getServiceSupabase()
-    if (!sb) return NextResponse.json({ error: "supabase service role key not configured" }, { status: 500 })
+    if (!sb) return NextResponse.json({ error: "content unavailable" }, { status: 503 })
     const { data, error } = await sb
       .from(DB_TABLES.CMS_CONTENT_BLOCKS)
       .select("slug,page_type,region,title,blocks,meta,is_published,is_active")
@@ -44,7 +45,7 @@ export async function GET(
       .maybeSingle()
     if (error) {
       console.warn(`[content-blocks/${slug}] fetch failed:`, error.message)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: "content unavailable" }, { status: 503 })
     }
     // Never resolve arbitrary diagnostic_runs by a public slug prefix. A report
     // identifier is not an authorization token and must not expose company or
@@ -57,8 +58,8 @@ export async function GET(
       page_type: data.page_type,
       region: data.region,
       title: data.title,
-      blocks: data.blocks,
-      meta: data.meta,
+      blocks: sanitizePublicJson(data.blocks),
+      meta: sanitizePublicJson(data.meta),
       is_published: data.is_published,
       is_active: data.is_active,
     }, {
@@ -66,7 +67,7 @@ export async function GET(
     })
   } catch (e) {
     console.error(`[content-blocks/${slug}] unexpected:`, e)
-    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 })
+    return NextResponse.json({ error: "content unavailable" }, { status: 503 })
   }
 }
 
@@ -86,7 +87,7 @@ export async function PATCH(
 
   try {
     const sb = getServiceSupabase()
-    if (!sb) return NextResponse.json({ error: "supabase service role key not configured" }, { status: 500 })
+    if (!sb) return NextResponse.json({ error: "content unavailable" }, { status: 503 })
     const updates: Record<string, unknown> = {}
     if (body.title !== undefined) updates.title = body.title
     if (body.blocks !== undefined) updates.blocks = body.blocks

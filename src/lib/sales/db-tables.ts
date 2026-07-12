@@ -123,6 +123,9 @@ export const DB_TABLES = {
   // ── Demo Contact Submissions ──
   DEMO_CONTACT_SUBMISSIONS: "demo_contact_submissions",
 
+  // Public utility runs (migration_072)
+  PUBLIC_JAPAN_ENTRY_CHECKS: "public_japan_entry_checks",
+
   // ── Demo (migration_016) ──
   WEB_DEMOS: "web_demos",
   // NOTE: These tables have no migrations in this repo. Managed by Appexxme (separate project).

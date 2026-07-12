@@ -98,6 +98,12 @@ export function karteHomeSummary(karte: CompanyKarteSnapshot): string {
     .join(" / ")
   const sourceSummary = sourceCoverageSummary(karte.sourceItems)
   const outreachGate = outreachGateSummary(karte)
+  const formMessageEvidence = karte.formMessageEvidence
+  const verifiedMetrics = formMessageEvidence?.metrics?.length
+    ? formMessageEvidence.metrics
+      .map((metric) => `${metric.label}: ${metric.value} ${metric.unit} [${metric.source}]`)
+      .join(" / ")
+    : null
 
   return [
     `無料API/OSS取得データ(50+): ${sourceDataCounts(karte)}`,
@@ -122,13 +128,15 @@ export function karteHomeSummary(karte: CompanyKarteSnapshot): string {
     karte.formUrl ? `Form URL: ${karte.formUrl}` : null,
     karte.salesMaterialUrl ? `Sales material URL: ${karte.salesMaterialUrl}` : null,
     karte.demoUrl ? `Demo URL: ${karte.demoUrl}` : null,
+    verifiedMetrics ? `文面生成に使用した検証済み数値: ${verifiedMetrics}` : null,
+    formMessageEvidence?.unknowns?.length ? `文面生成時の未知項目: ${formMessageEvidence.unknowns.join(" / ")}` : null,
   ].filter(Boolean).join("\n")
 }
 
 export function customerHandoffSummary(input: TwentyCustomerHandoffInput): string {
   return [
     `成約後ハンドオフ: ${input.companyName}`,
-    `顧客共有Notion: ${input.customerPortalUrl ?? "作成待ち"}`,
+    `顧客ポータル: ${input.customerPortalUrl ?? "未設定"}`,
     `契約: ${input.contractName ?? "未設定"} / ${input.contractStatus ?? "unknown"}`,
     `契約金額: ${input.contractAmountYen === null ? "未設定" : `JPY ${input.contractAmountYen.toLocaleString("ja-JP")}`}`,
     `Docuseal: ${input.docusealUrl ?? "未設定"}`,

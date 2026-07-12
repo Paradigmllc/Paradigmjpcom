@@ -2,12 +2,12 @@
 
 ## 基本思想
 
-営業データの正本は Supabase OSS です。Twenty、NocoDB、Appsmith、Metabase、Cal.com、Docuseal、OpenClaw はすべて用途別の操作画面として扱います。
+営業データの正本は Supabase OSS です。Twenty は営業CRMの唯一の操作画面として扱い、Stagehand は必要なフォーム調査・送信をオンデマンドで実行します。
 
 ## 毎日の使い方
 
 1. Apollo / Fumadata / BIZMap / 手元CSVなどの営業リストを Supabase に投入する。
-2. 大量編集や重複整理が必要な場合は NocoDB を使う。
+2. 大量編集や重複整理が必要な場合は、認証済みのSupabase運用手順またはTwentyの一括操作を使う。
 3. enrichment job を実行し、企業カルテ、診断レポート、Astro差し替えデモを生成する。
 4. 営業担当は Twenty の企業ページで、診断レポートURL、フォームURL、推奨商材、商談を確認する。
 5. フォーム営業は Dify 文面生成とフォーム判定を通し、初回ライブ送信5件やリスク判定分は Appsmith の手動キューで確認する。
@@ -18,8 +18,8 @@
 | ツール | 役割 | 使いどころ |
 | --- | --- | --- |
 | Supabase OSS | SSOT | 営業データ、企業カルテ、ジョブ、Webhook、同期ログ |
-| NocoDB OSS | 一括編集 | リストの整形、重複整理、ステータス一括変更 |
 | Twenty OSS | CRM | 企業ページ、商談、担当、活動履歴 |
+| Stagehand worker | フォーム実務 | オンデマンドのフォーム発見・dry-run・承認済み送信 |
 | Appsmith OSS | 手動承認 | 初回送信承認、CAPTCHA/SPAフォーム確認 |
 | Metabase OSS | 分析 | 返信率、商談化率、ソース別成績 |
 | OpenClaw | オーケストレーター/リサーチ | ジョブ起動、Slack通知、外部API連携、Crawleeリサーチ |
@@ -54,8 +54,7 @@
 
 ## Paradigm AI Bot / 自律営業チーム
 
-`@aiparadigmbot` は営業OSのチャット入口です。Telegramからの指示は OpenClaw Pipeline または Hermes Agent が
-`POST /api/sales/agent/telegram-command` に渡し、Supabaseの `sales_agent_commands` に記録します。
+`@aiparadigmbot` は営業OSのチャット入口です。Telegramからの指示は認証済みの運用入口を経由し、Supabaseの指示台帳へ記録します。
 
 役割:
 
@@ -81,11 +80,11 @@
 
 安全ルール:
 
-- Supabaseが唯一の正本。Twenty、NocoDB、Metabase、Appsmithは用途別UIとして同期する。
+- Supabaseが唯一の正本。Twenty、Metabase、Appsmithは用途別UIとして同期する。
 - Telegramからのフォーム営業は常にdry-runから開始する。
 - 初回ライブ送信5件、CAPTCHA、ログイン必須、強いSPA、法務/業種リスクはAppsmith承認へ回す。
 - 契約書、請求、DNS、インフラ、APIキー変更はTelegram単独では実行しない。
-- すべての指示と結果をSupabaseに記録し、営業ダッシュボードの `AIチーム` タブで監査する。
+- すべての指示と結果をSupabaseに記録し、Twentyの企業履歴と運用ログで監査する。
 
 ## 実務運用面の残課題
 
@@ -131,7 +130,7 @@ node scripts/sales-os-no-login-deploy.mjs
 - テンプレ種別: `website_diagnostic`、`outreach`、`japan_entry`、`video_subscription` など
 - AIチーム指示種別: `status_report`、`run_enrichment`、`run_outreach_dry_run`、`prepare_assets`、`sync_twenty`、`manual_review`
 - オペレーターキュー種別: `cleanse`、`call`、`form_send`、`follow_up`、`crm_update`、`meeting_prep`、`analysis`
-- 成約後ハンドオフ種別: `manual`、`supabase_webhook`、`docuseal`、`stripe`、`twenty`、`telegram`、`n8n`
+- 成約後ハンドオフ種別: `manual`、`supabase_webhook`、`docuseal`、`stripe`、`twenty`、`telegram`
 
 ## 成約後パイプライン
 
@@ -140,8 +139,8 @@ node scripts/sales-os-no-login-deploy.mjs
 1. `sales_companies.deal_stage = 成約`、Docuseal signed webhook、または `POST /api/sales/customer-success/handoff` が入口になる。
 2. `runCustomerSuccessHandoff()` が `sales_customers` を作成または更新する。
 3. `sales_contracts` に契約を作成または Docuseal submission ID で upsert する。
-4. Notion 顧客DBに顧客共有ページを作成し、`sales_customers.notion_page_id` と `meta.customer_success.notion_page_url` に保存する。
-5. Twenty 企業HOMEへ、顧客共有Notion URL、契約名、契約ステータス、Cal.com URL、Docuseal URLを投影する。
+4. 顧客ポータルURL（Docuseal/Cal.com等）を `sales_customers` に保存する。
+5. Twenty 企業HOMEへ、顧客ポータルURL、契約名、契約ステータス、Cal.com URL、Docuseal URLを投影する。
 6. `sales_activity_log` と `sales_sync_logs` にハンドオフ履歴を残す。
 
 Twenty 側に `paradigmCustomerPortalUrl` カスタム項目がある場合はそこへ URL を入れます。項目がまだ無い環境では、HOME の企業カルテ要約に URL を追記する fallback にします。

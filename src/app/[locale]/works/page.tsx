@@ -18,6 +18,7 @@ import FadeIn from "@/components/aesop/FadeIn"
 import { filterByLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
 import { withPayloadReadFallback } from "@/lib/payload-availability"
 import { WORKS_EN } from "@/lib/data"
+import JapanEntryVisualProof from "@/components/japan-entry/JapanEntryVisualProof"
 import {
   JAPANESE_WORK_PUBLICATION_TAG,
   isVerifiedJapaneseWork,
@@ -47,6 +48,7 @@ type WorkDoc = {
 }
 
 type ProcessStep = { step: string; title: string; desc: string }
+type EvidenceCheck = { title: string; desc: string }
 
 const TILE_GRADIENTS = [
   "from-zinc-950 via-zinc-800 to-blue-700",
@@ -60,6 +62,7 @@ export default async function WorksPage({ params }: Props) {
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
   const t = await getTranslations({ locale, namespace: "worksPage" })
   const STEPS = t.raw("process") as ProcessStep[]
+  const evidenceChecks = locale === "en" ? (t.raw("evidenceChecks") as EvidenceCheck[]) : []
 
   let works = locale === "en"
     ? (t.raw("proofItems") as Array<Omit<WorkDoc, "id" | "tags"> & { tags: string[] }>).map((work, index) => ({
@@ -165,6 +168,8 @@ export default async function WorksPage({ params }: Props) {
         </div>
       </section>
 
+      {locale === "en" && <JapanEntryVisualProof locale="en" />}
+
       {/* Process */}
       <section className="relative bg-paradigm-paper-deep paradigm-section overflow-hidden">
         <div className="paradigm-mesh opacity-40" />
@@ -190,6 +195,30 @@ export default async function WorksPage({ params }: Props) {
           </ol>
         </div>
       </section>
+
+      {locale === "en" && evidenceChecks.length > 0 && (
+        <section className="relative overflow-hidden bg-paradigm-paper paradigm-section" aria-labelledby="evidence-policy-heading">
+          <div className="paradigm-mesh opacity-20" />
+          <div className="relative z-10 mx-auto max-w-5xl px-6 md:px-8">
+            <FadeIn className="mb-8 max-w-3xl">
+              <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{t("evidenceEyebrow")}</p>
+              <h2 id="evidence-policy-heading" className="font-display text-[24px] leading-[1.15] text-paradigm-ink md:text-[38px]">{t("evidenceTitle")}</h2>
+              <p className="mt-4 text-[14px] leading-[1.8] text-paradigm-ink-soft">{t("evidenceDesc")}</p>
+            </FadeIn>
+            <div className="grid gap-4 md:grid-cols-2">
+              {evidenceChecks.map((check, index) => (
+                <FadeIn key={check.title} delay={index * 0.05}>
+                  <article className="h-full rounded-lg border border-paradigm-line bg-paradigm-paper-deep p-6 paradigm-glow-sm">
+                    <span className="font-display text-[22px] text-paradigm-accent">{String(index + 1).padStart(2, "0")}</span>
+                    <h3 className="mt-3 font-display text-[18px] leading-[1.2] text-paradigm-ink">{check.title}</h3>
+                    <p className="mt-3 text-[13px] leading-[1.8] text-paradigm-ink-soft">{check.desc}</p>
+                  </article>
+                </FadeIn>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <RichCtaBand
         eyebrow={t("ctaEyebrow")}

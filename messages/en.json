@@ -351,6 +351,27 @@
         "desc": "Your team reviews the agreed scope, resolves blockers, and approves launch. The target depends on timely inputs and approvals."
       }
     ],
+    "evidenceEyebrow": "How to read the proof",
+    "evidenceTitle": "Inspect the route, not a made-up case study.",
+    "evidenceDesc": "When a project cannot be published with an authorized client name and first-party outcome data, the responsible alternative is to show the implementation, the operating boundary, and the evidence a buyer can verify.",
+    "evidenceChecks": [
+      {
+        "title": "Publicly inspectable",
+        "desc": "You can follow the application path, package scope, pricing, legal pages, signal utility, and editorial content before speaking with us."
+      },
+      {
+        "title": "Separated evidence",
+        "desc": "Public rank, crawl, registry, and site observations are kept separate from answers supplied by the applicant."
+      },
+      {
+        "title": "No invented outcomes",
+        "desc": "We do not turn a public signal into a claim about traffic, country share, conversion, or revenue that the source cannot prove."
+      },
+      {
+        "title": "Operational finish",
+        "desc": "A launch is only complete when ownership, escalation, acceptance criteria, measurement, and handover are clear."
+      }
+    ],
     "proofItems": [
       {
         "title": "Localized revenue-site system",
@@ -372,6 +393,27 @@
         "description": "One public offer keeps setup, included launch work, exclusions, support period, and ongoing price visible before application.",
         "metrics": "$12K · 6 months $0",
         "tags": ["Fixed scope", "USD", "Support", "Handover"]
+      },
+      {
+        "title": "Public evidence score",
+        "industry": "Market visibility",
+        "description": "The Japan Entry Signal Check separates public rank, crawl, registry, and site signals from self-reported readiness. Unknown visits and revenue are not invented.",
+        "metrics": "Public signals · unknowns visible",
+        "tags": ["Tranco", "Common Crawl", "RDAP", "Audit"]
+      },
+      {
+        "title": "Editorial decision support",
+        "industry": "Japan Entry Field Notes",
+        "description": "The public editorial set answers practical decisions about localization, hiring, agency coordination, commercial scope, and the first month after launch.",
+        "metrics": "9 decision-support articles",
+        "tags": ["Scope", "Comparison", "Operations", "Trust"]
+      },
+      {
+        "title": "Human-reviewed automation",
+        "industry": "Operating boundaries",
+        "description": "Automation can route, summarize, and surface signals, while sensitive, uncertain, or contractual decisions remain visible for human review.",
+        "metrics": "Escalation path documented",
+        "tags": ["Review", "Routing", "Handover", "Safety"]
       }
     ]
   },
@@ -528,6 +570,118 @@
       "Standard monthly service included for the first six months",
       "$995/month from month seven"
     ],
+    "packageEyebrow": "What you are buying",
+    "packageTitle": "One launch system, delivered in five connected parts.",
+    "packageDesc": "The package is not a menu of disconnected tasks. Each module removes a different launch dependency, with one written scope, one approval path, and one handover.",
+    "packageModules": [
+      {
+        "title": "Japanese buyer path",
+        "description": "Turn the existing offer into a Japanese-facing route a buyer can understand and act on.",
+        "deliverables": [
+          "Localized information architecture and copy direction",
+          "Responsive revenue site and CMS handover",
+          "Clear inquiry or eligible payment path"
+        ]
+      },
+      {
+        "title": "Trust and compliance coordination",
+        "description": "Make responsibility, privacy, commercial terms, and open professional questions visible before launch.",
+        "deliverables": [
+          "Public trust and disclosure checklist",
+          "Privacy and commercial-page coordination",
+          "Escalation list for legal, tax, banking, or licensing advice"
+        ]
+      },
+      {
+        "title": "Japan discovery foundation",
+        "description": "Prepare the eligible local discovery surfaces and measurement baseline relevant to the offer.",
+        "deliverables": [
+          "Profile and entity information setup where applicable",
+          "Search and discovery structure",
+          "Inspectable baseline without ranking guarantees"
+        ]
+      },
+      {
+        "title": "Bilingual support route",
+        "description": "Define how Japanese buyer questions are answered, escalated, owned, and handed over.",
+        "deliverables": [
+          "First-line support knowledge and routing",
+          "Human review boundaries for uncertain requests",
+          "Ownership, response, and handover documentation"
+        ]
+      },
+      {
+        "title": "Launch operations",
+        "description": "Keep decisions, dependencies, checks, and acceptance criteria in one accountable delivery path.",
+        "deliverables": [
+          "Gated 21-business-day launch target",
+          "Analytics and notification baseline",
+          "Launch checklist and operator handover"
+        ]
+      }
+    ],
+    "benefitsEyebrow": "Why this structure",
+    "benefitsTitle": "The value is less coordination risk, not more activity.",
+    "benefitsDesc": "A fast-decision SMB usually does not need another strategy deck. It needs a clear decision, a usable first route into Japan, and an owner for the dependencies that can stop launch.",
+    "packageBenefits": [
+      {
+        "title": "One approval surface",
+        "description": "Approve one fixed setup scope instead of coordinating separate quotes for site, search, support, and launch operations."
+      },
+      {
+        "title": "Unknowns become explicit",
+        "description": "Legal, tax, banking, fulfilment, provider, and content dependencies are listed before they become hidden schedule risk."
+      },
+      {
+        "title": "Optionality before overhead",
+        "description": "Create a buyer-facing route and learn what must be true before committing to a local hire, entity, office, or broad vendor stack."
+      },
+      {
+        "title": "A real handover",
+        "description": "The launch ends with ownership, operating steps, measurement signals, and a clear month-seven service decision—not an unfinished build."
+      }
+    ],
+    "comparisonEyebrow": "Compare the operating model",
+    "comparisonTitle": "Choose the model that matches the decision you are ready to make.",
+    "comparisonDesc": "This is a scope and coordination comparison, not a claim that one model fits every company. A local hire can be right for a long-term in-country build; multiple specialists can be right when you already have an integration owner.",
+    "comparisonHeaders": {
+      "criterion": "Decision dimension",
+      "package": "Japan Entry package",
+      "hire": "Local hire first",
+      "vendors": "Multiple specialists"
+    },
+    "comparisonRows": [
+      {
+        "criterion": "First launch path",
+        "package": "Gated 21-business-day target after inputs and approvals are ready",
+        "hire": "Recruiting, onboarding, and role design come first",
+        "vendors": "Each workstream starts on its own schedule"
+      },
+      {
+        "criterion": "Accountability",
+        "package": "One written scope, operator, approval path, and handover",
+        "hire": "One employee still needs specialist partners and internal support",
+        "vendors": "The client usually owns cross-vendor integration"
+      },
+      {
+        "criterion": "Commercial shape",
+        "package": "$12,000 fixed setup; six months included; $995/month from month seven",
+        "hire": "Recruiting, salary, employment overhead, and management cost",
+        "vendors": "Separate proposals, retainers, minimums, and change orders"
+      },
+      {
+        "criterion": "Professional boundaries",
+        "package": "Coordinates implementation and flags where qualified advice is required",
+        "hire": "Local context helps, but advice and licences still need the right specialists",
+        "vendors": "Responsibility depends on each contract and handoff"
+      },
+      {
+        "criterion": "Best fit",
+        "package": "A fast decision-maker with a real offer and a defined launch question",
+        "hire": "A company ready to build a permanent local operating team",
+        "vendors": "A company with an internal program owner and time to coordinate"
+      }
+    ],
     "scopeEyebrow": "Scope boundary",
     "scopeTitle": "Know what the fixed price covers before you apply.",
     "scopeDesc": "Final deliverables and dependencies are written into the engagement scope before work starts. The launch target assumes timely access, content, feedback, and approval.",
@@ -605,7 +759,24 @@
     ],
     "hurryLabel": "Need the commercial details first?",
     "hurryDesc": "Review the fixed scope, exclusions, support period, and cancellation outline before submitting.",
-    "hurryButton": "Review package pricing"
+    "hurryButton": "Review package pricing",
+    "nextEyebrow": "After you submit",
+    "nextTitle": "A clear review path, not an automated sales funnel.",
+    "nextDesc": "Your application is reviewed by an operator. We use the information to decide whether the fixed scope matches your offer, authority, timing, and dependencies.",
+    "nextSteps": [
+      {
+        "title": "Fit review",
+        "body": "We check the decision-maker, offer clarity, launch target, source material, and known Japan constraints."
+      },
+      {
+        "title": "Scope confirmation",
+        "body": "If the package fits, we confirm included work, exclusions, dependencies, terms, and the required start inputs."
+      },
+      {
+        "title": "Start decision",
+        "body": "Only after the scope and start date are agreed does the engagement move into the fixed launch sequence."
+      }
+    ]
   },
   "faqPage": {
     "metaTitle": "Japan Entry Package FAQ",
@@ -653,6 +824,26 @@
       {
         "q": "What happens after we apply?",
         "a": "We review fit, authority, timeline, source context, and launch constraints. A submitted application is not acceptance of an engagement. If the package fits, we confirm scope, dependencies, terms, and the start date before work begins."
+      },
+      {
+        "q": "What must be ready before kickoff?",
+        "a": "Prepare the current offer, brand and product source material, required account access, a preferred launch date, and one empowered approver. We also need to know which claims, payment flows, fulfilment steps, or regulated features require specialist review."
+      },
+      {
+        "q": "What happens during the first five business days?",
+        "a": "We confirm the first Japanese offer, buyer path, ownership, inputs, acceptance criteria, and dependencies. Any blocker that could change the target is recorded before implementation proceeds."
+      },
+      {
+        "q": "Can you support B2B and non-ecommerce offers?",
+        "a": "Yes. The buyer path may end in an inquiry, qualification, booking, proposal, or eligible payment route. The scope is shaped around the offer and the decision a Japanese buyer needs to make, not around a fixed ecommerce template."
+      },
+      {
+        "q": "How do you use public market data?",
+        "a": "Public rank, crawl, sitemap, schema, and registry signals can show visibility and market alignment. They cannot prove a company's actual monthly visits, country traffic share, or revenue. Those remain unknown unless first-party or authorized data is provided."
+      },
+      {
+        "q": "What if the package is not the right fit?",
+        "a": "The application is a fit review, not an obligation to proceed. If the decision authority, source material, timing, offer, or dependencies do not match the fixed scope, we identify that before accepting the engagement."
       }
     ]
   },
@@ -666,6 +857,37 @@
     "missionEyebrow": "Operating principle",
     "missionTitle": "Reduce the distance between decision and Japan launch.",
     "missionDesc": "Paradigm gives foreign SMBs one English-language delivery path into Japan. We use a written fixed scope, visible dependencies, and a 21-business-day launch target rather than an open-ended agency engagement.",
+    "representativeEyebrow": "A note from the operator",
+    "representativeTitle": "Japan entry should end with a decision you can operate.",
+    "representativeMessage": "We built Paradigm around a simple problem: a capable overseas company can spend months coordinating market research, translation, agencies, and local setup without ever reaching a buyer. Our job is to make the first Japan path concrete, inspectable, and owned. That means stating what is included, showing what is still unknown, and handing over something your team can actually run. We do not replace legal, tax, banking, or licensed advice. We do take responsibility for making the commercial and implementation work visible enough for a fast decision.",
+    "representativePrinciples": [
+      "One accountable launch path instead of disconnected workstreams",
+      "Public evidence and explicit unknowns instead of invented outcomes",
+      "A documented handover so the client can decide what happens next"
+    ],
+    "representativeSignatureLabel": "Operating responsibility",
+    "representativeRole": "Japan Entry delivery · Paradigm LLC",
+    "operatingEyebrow": "What the engagement feels like",
+    "operatingTitle": "A small team should know what happens next.",
+    "operatingDesc": "The fixed package is designed for an empowered owner who wants fewer handoffs, visible dependencies, and a usable decision record at the end of the launch.",
+    "operatingSteps": [
+      {
+        "title": "One accountable owner",
+        "desc": "You have one delivery path for scope, questions, approvals, and blockers instead of a collection of disconnected vendor conversations."
+      },
+      {
+        "title": "A written source of truth",
+        "desc": "Offer facts, trust information, commercial terms, access, acceptance criteria, and open specialist questions are kept explicit."
+      },
+      {
+        "title": "Decisions at the gate",
+        "desc": "The team does not hide unresolved dependencies inside a date. We surface what is ready, what is blocked, and what requires your approval."
+      },
+      {
+        "title": "Handover you can run",
+        "desc": "The launch closes with ownership, support escalation, measurement signals, and the next operating decision—not just a set of files."
+      }
+    ],
     "valuesEyebrow": "How we work",
     "valuesTitle": "Commercial clarity before activity",
     "values": [
@@ -715,6 +937,57 @@
     "emptyCta": "Apply for Japan Entry — $12K",
     "learnMore": "See module details",
     "getInTouch": "Apply for Japan Entry — $12K",
+    "moduleEyebrow": "Inside the package",
+    "moduleTitle": "Five modules, one accountable launch.",
+    "moduleDesc": "Each module closes a different dependency between the decision and the first Japanese buyer. They are delivered together under the fixed Japan Entry scope, not sold as separate low-cost plans.",
+    "moduleCards": [
+      {
+        "title": "Japanese buyer path",
+        "short": "Offer, trust, and next action in one localized route.",
+        "details": ["Information architecture and buyer-facing copy direction", "Responsive revenue site and CMS handover", "Inquiry or eligible payment route"]
+      },
+      {
+        "title": "Trust and compliance coordination",
+        "short": "Make responsibility, privacy, and open professional questions visible.",
+        "details": ["Commercial and privacy disclosure checklist", "Public ownership and support route", "Escalation list for specialist advice"]
+      },
+      {
+        "title": "Japan discovery foundation",
+        "short": "Build the eligible discovery surfaces and a baseline to inspect.",
+        "details": ["Entity and local profile information where applicable", "Search-ready structure and metadata", "Measurement baseline without ranking guarantees"]
+      },
+      {
+        "title": "Bilingual support route",
+        "short": "Give Japanese buyer questions an owner and an escalation path.",
+        "details": ["Knowledge and response routing", "Human review boundaries", "Ownership and handover documentation"]
+      },
+      {
+        "title": "Launch operations",
+        "short": "Coordinate inputs, approvals, checks, and the decision after launch.",
+        "details": ["Gated 21-business-day target", "Analytics and notification baseline", "Launch checklist and operator handover"]
+      }
+    ],
+    "operatingEyebrow": "How the modules connect",
+    "operatingTitle": "The deliverable is a working path, not five isolated tasks.",
+    "operatingDesc": "Each module produces a decision or input for the next one. That connection is what makes a fixed launch scope useful for a small team with limited time.",
+    "operatingSteps": [
+      {
+        "title": "01 · Frame the offer",
+        "desc": "Clarify the first Japanese buyer, the offer they must understand, and the action they should take."
+      },
+      {
+        "title": "02 · Make trust legible",
+        "desc": "Publish ownership, terms, privacy, support expectations, and the specialist questions that remain open."
+      },
+      {
+        "title": "03 · Build the route",
+        "desc": "Implement the responsive site, eligible inquiry or payment path, discovery baseline, and bilingual support rules."
+      },
+      {
+        "title": "04 · Approve and hand over",
+        "desc": "Run checks, resolve agreed revisions, record ownership and dependencies, and leave the team with the next decision."
+      }
+    ],
     "ctaEyebrow": "One commercial decision",
     "ctaTitle": "Choose the package, not a maze of retainers.",
     "ctaHighlight": "the package",
@@ -732,6 +1005,7 @@
     "pricing": "Pricing",
     "faq": "FAQ",
     "blog": "Blog",
+    "japanEntryScore": "Check Japan fit",
     "contact": "Apply — $12K",
     "menu": "Menu",
     "openMenu": "Open menu",
@@ -903,7 +1177,62 @@
       }
     },
     "testimonialsBody": "We do not publish anonymous outcome claims as proof. Review the inspectable site, application workflow, scope boundaries, delivery process, and company details, then decide whether the package fits.",
-    "heroBrandStory": "Paradigm focuses the English site on one fixed Japan Entry decision for foreign SMBs."
+    "heroBrandStory": "Paradigm focuses the English site on one fixed Japan Entry decision for foreign SMBs.",
+    "visualProof": {
+      "eyebrow": "Visual proof",
+      "title": "See the system before you buy the service.",
+      "desc": "These are product surfaces and operating artifacts—not stock photos or anonymous case-study claims.",
+      "utilityCta": "Run the free Signal Check",
+      "cards": [
+        {
+          "title": "Package scope",
+          "body": "The pricing and module surface a decision-maker can inspect before applying.",
+          "alt": "Visual representation of the Paradigm Japan Entry pricing page, package modules, and fixed-scope deliverables"
+        },
+        {
+          "title": "Signal Check",
+          "body": "A public-signal result that separates evidence, self-reported readiness, and unknowns.",
+          "alt": "Japan Entry Signal Check interface showing public evidence, self-reported readiness, and unknowns"
+        },
+        {
+          "title": "Application handover",
+          "body": "The application path showing fit review, scope confirmation, and the start decision.",
+          "alt": "Visual representation of the Paradigm Japan Entry application page and its three-step review path"
+        }
+      ]
+    },
+    "trustPanel": {
+      "eyebrow": "See the operating system",
+      "title": "Trust the work you can inspect before you apply.",
+      "desc": "A real launch needs more than a polished hero section. These are the concrete surfaces we make visible: the buyer path, the scope, the handover, and the decision owner.",
+      "cards": [
+        {
+          "kicker": "Buyer path",
+          "value": "JP / EN",
+          "title": "A route a Japanese buyer can use",
+          "body": "Offer framing, trust information, next action, and eligible inquiry or payment routing."
+        },
+        {
+          "kicker": "Commercial scope",
+          "value": "$12K",
+          "title": "A price with boundaries",
+          "body": "Fixed setup, six months included, exclusions, dependencies, and the month-seven decision."
+        },
+        {
+          "kicker": "Handover",
+          "value": "21d*",
+          "title": "A launch your team can run",
+          "body": "Checklist, ownership, analytics baseline, support escalation, and written operating steps."
+        },
+        {
+          "kicker": "Fit",
+          "value": "READY",
+          "title": "A decision-maker in the room",
+          "body": "The package is for a real offer, timely inputs, and one person who can approve the next step."
+        }
+      ],
+      "note": "*The 21-business-day figure is a gated target after required access, source material, approvals, and third-party dependencies are ready."
+    }
   },
   "chatbot": {
     "title": "Paradigm Assistant",

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   getEnglishLegacyOfferRedirect,
   getInternationalMarketingRedirect,
+  getJapaneseLegacyOfferRedirect,
   isJapaneseOnlyLegacyOfferPath,
   isNonIndexablePath,
   isPublicMarketingPath,
@@ -9,19 +10,24 @@ import {
 import { pageAlternates } from "./page-metadata"
 
 describe("marketing routing", () => {
-  it("redirects superseded English offers before static page rendering", () => {
+  it("redirects superseded English offers while keeping the live module overview", () => {
     const result = getEnglishLegacyOfferRedirect(
       new URL("https://paradigmjp.com/en/services/seo?utm_source=partner"),
     )
 
     expect(result?.toString()).toBe(
-      "https://paradigmjp.com/en?utm_source=partner#japan-entry-pricing",
+      "https://paradigmjp.com/en/services?utm_source=partner#package-modules",
     )
     expect(
       getEnglishLegacyOfferRedirect(
         new URL("https://paradigmjp.com/en/pricing"),
       ),
     ).toBeNull()
+    expect(
+      getEnglishLegacyOfferRedirect(
+        new URL("https://paradigmjp.com/en/video"),
+      )?.toString(),
+    ).toBe("https://paradigmjp.com/en/services#package-modules")
   })
 
   it("consolidates international marketing homepages into English", () => {
@@ -40,7 +46,7 @@ describe("marketing routing", () => {
     )
 
     expect(result?.toString()).toBe(
-      "https://paradigmjp.com/en?utm_campaign=launch#japan-entry-pricing",
+      "https://paradigmjp.com/en/services?utm_campaign=launch#package-modules",
     )
   })
 
@@ -68,6 +74,17 @@ describe("marketing routing", () => {
     expect(isJapaneseOnlyLegacyOfferPath("/en/pricing")).toBe(false)
   })
 
+  it("redirects Japanese legacy offers to the fixed Japan Entry package", () => {
+    expect(
+      getJapaneseLegacyOfferRedirect(
+        new URL("https://paradigmjp.com/ja/video?utm_source=legacy"),
+      )?.toString(),
+    ).toBe("https://paradigmjp.com/ja#japan-entry-pricing")
+    expect(
+      getJapaneseLegacyOfferRedirect(new URL("https://paradigmjp.com/ja/pricing"))?.pathname,
+    ).toBe("/ja")
+  })
+
   it("publishes only maintained hreflang URLs", () => {
     expect(pageAlternates("de", "/pricing")).toEqual({
       canonical: "https://paradigmjp.com/en/pricing",
@@ -78,10 +95,11 @@ describe("marketing routing", () => {
       },
     })
     expect(pageAlternates("en", "/services")).toEqual({
-      canonical: "https://paradigmjp.com/ja/services",
+      canonical: "https://paradigmjp.com/en/services",
       languages: {
-        "x-default": "https://paradigmjp.com/ja/services",
+        "x-default": "https://paradigmjp.com/en/services",
         "ja-JP": "https://paradigmjp.com/ja/services",
+        "en-US": "https://paradigmjp.com/en/services",
       },
     })
   })

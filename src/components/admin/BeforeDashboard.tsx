@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react"
 import type { Payload } from "payload"
 import { headers } from "next/headers"
+import Link from "next/link"
 
 type Counts = Record<string, number>
 
@@ -123,9 +124,9 @@ export default async function BeforeDashboard({ payload }: { payload: Payload })
           </a>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 16 }}>
-          <a href="/admin/collections/leads" style={adminButtonStyle()}>
+          <Link href="/admin/collections/leads" style={adminButtonStyle()}>
             Payloadリード
-          </a>
+          </Link>
           <a href={twentyUrl} target="_blank" rel="noopener noreferrer" style={adminButtonStyle()}>
             Twenty Sales OS
           </a>
@@ -141,10 +142,10 @@ export default async function BeforeDashboard({ payload }: { payload: Payload })
         {CONTENT_CARDS.map((item) => {
           const count = counts[item.slug]
           return (
-            <a key={item.slug} href={`/admin/collections/${item.slug}`} style={{ ...card, textDecoration: "none", color: "inherit" }}>
+            <Link key={item.slug} href={`/admin/collections/${item.slug}`} style={{ ...card, textDecoration: "none", color: "inherit" }}>
               <div style={{ fontSize: 12, color: "var(--theme-elevation-500)" }}>{item.label}</div>
               <div style={{ fontSize: 26, fontWeight: 600 }}>{count === undefined || count < 0 ? "-" : count}</div>
-            </a>
+            </Link>
           )
         })}
       </div>
@@ -153,9 +154,9 @@ export default async function BeforeDashboard({ payload }: { payload: Payload })
         <div style={card}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
             <strong>リード ({totalLeads})</strong>
-            <a href="/admin/collections/leads" style={{ fontSize: 12 }}>
+            <Link href="/admin/collections/leads" style={{ fontSize: 12 }}>
               すべて見る →
-            </a>
+            </Link>
           </div>
           {totalLeads === 0 ? (
             <p style={{ fontSize: 13, color: "var(--theme-elevation-500)" }}>まだリードがありません。</p>
@@ -174,9 +175,9 @@ export default async function BeforeDashboard({ payload }: { payload: Payload })
         <div style={card}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
             <strong>最近の変更</strong>
-            <a href="/admin/collections/audit-logs" style={{ fontSize: 12 }}>
+            <Link href="/admin/collections/audit-logs" style={{ fontSize: 12 }}>
               監査ログ →
-            </a>
+            </Link>
           </div>
           {recent.length === 0 ? (
             <p style={{ fontSize: 13, color: "var(--theme-elevation-500)" }}>まだ変更履歴がありません。</p>
@@ -194,11 +195,11 @@ export default async function BeforeDashboard({ payload }: { payload: Payload })
         <div style={card}>
           <strong>新規作成</strong>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
-            <a href="/admin/collections/posts/create" style={adminButtonStyle()}>+ 記事</a>
-            <a href="/admin/collections/works/create" style={adminButtonStyle()}>+ 実績</a>
-            <a href="/admin/collections/team-members/create" style={adminButtonStyle()}>+ メンバー</a>
-            <a href="/admin/collections/testimonials/create" style={adminButtonStyle()}>+ お客様の声</a>
-            <a href="/admin/collections/pages/create" style={adminButtonStyle()}>+ ページ</a>
+            <Link href="/admin/collections/posts/create" style={adminButtonStyle()}>+ 記事</Link>
+            <Link href="/admin/collections/works/create" style={adminButtonStyle()}>+ 実績</Link>
+            <Link href="/admin/collections/team-members/create" style={adminButtonStyle()}>+ メンバー</Link>
+            <Link href="/admin/collections/testimonials/create" style={adminButtonStyle()}>+ お客様の声</Link>
+            <Link href="/admin/collections/pages/create" style={adminButtonStyle()}>+ ページ</Link>
           </div>
         </div>
       </div>

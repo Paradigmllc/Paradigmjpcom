@@ -275,13 +275,13 @@ begin
   perform public._paradigm_twenty_ensure_company_field('paradigmSalesStatus', '営業ステータス', 'TEXT', 'Supabase pipeline_status と deal_stage を営業担当向けに要約した状態', 'IconProgressCheck');
   perform public._paradigm_twenty_ensure_company_field('paradigmSalesMaterialUrl', '営業資料URL', 'LINKS', 'Slidev/Gotenberg等で生成した営業資料URL', 'IconPresentationAnalytics', '{"maxNumberOfValues":1}'::jsonb);
   perform public._paradigm_twenty_ensure_company_field('paradigmDemoUrl', 'デモURL', 'LINKS', 'Astro差し替えデモサイトURL', 'IconBrowserCheck', '{"maxNumberOfValues":1}'::jsonb);
-  perform public._paradigm_twenty_ensure_company_field('paradigmCustomerPortalUrl', '顧客用Notion URL', 'LINKS', '成約後に顧客と共有するNotionページURL', 'IconBrandNotion', '{"maxNumberOfValues":1}'::jsonb);
+  perform public._paradigm_twenty_ensure_company_field('paradigmCustomerPortalUrl', '顧客ポータルURL', 'LINKS', '成約後に顧客と共有する顧客ポータルURL', 'IconLink', '{"maxNumberOfValues":1}'::jsonb);
 
   update core."fieldMetadata"
   set label = case name
       when 'paradigmReportUrl' then '診断レポートURL'
       when 'paradigmFormUrl' then 'フォームURL'
-      when 'paradigmCustomerPortalUrl' then '顧客用Notion URL'
+      when 'paradigmCustomerPortalUrl' then '顧客ポータルURL'
       when 'paradigmRecommendedProducts' then '推奨商材'
       when 'paradigmKarteScore' then 'カルテスコア'
       when 'paradigmSourceCoverage' then 'データ取得率'

@@ -120,8 +120,8 @@ function buildSlackBlocks(d: DigestData, scope: SalesLocaleScope) {
       ? "今週は HOT lead なし"
       : d.hotLeads
           .map((h, i) => {
-            const fallbackUrl = process.env.SALES_DASHBOARD_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://paradigmjp.com"
-            const link = h.slug ? buildReportUrl(scope.reportLocale, h.slug) : `${fallbackUrl}/ja/admin/sales`
+            const fallbackUrl = process.env.TWENTY_BASE_URL || "https://twenty.paradigmjp.com"
+            const link = h.slug ? buildReportUrl(scope.reportLocale, h.slug) : fallbackUrl
             return `${i + 1}. *<${link}|${h.company_name}>* — ${h.report_views} views`
           })
           .join("\n")
@@ -158,10 +158,10 @@ function buildSlackBlocks(d: DigestData, scope: SalesLocaleScope) {
     {
       type: "actions",
       elements: [
-        // Sprint 13: 営業ダッシュボードは Notion に集約 (admin 撤廃)
+        // Sales operations are handled in Twenty; this link keeps the digest actionable.
         {
           type: "button",
-          text: { type: "plain_text", text: "Notion で開く (リード DB)" },
+          text: { type: "plain_text", text: "Twentyで開く (リード CRM)" },
           url: process.env.SALES_DASHBOARD_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://paradigmjp.com",
           style: "primary",
         },

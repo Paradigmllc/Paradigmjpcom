@@ -211,7 +211,6 @@ function checkEnvSummary(): ServiceCheck {
     "DIFY_FORM_MESSAGE_API_KEY",
     "DIFY_FORM_MESSAGE_KEY",
     "DIFY_FREELANCE_AUTOREPLY_KEY",
-    "NOTION_API_KEY",
     "CRAWL4AI_BASE_URL",
     "STAGEHAND_URL",
     "STAGEHAND_API_KEY",

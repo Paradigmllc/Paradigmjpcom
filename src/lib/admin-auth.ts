@@ -1,4 +1,5 @@
 import { isPayloadInitCoolingDown, markPayloadInitFailure } from "./payload-availability"
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto"
 
 export type AdminAuthSource = "payload" | "legacy" | "webhook" | "none"
 
@@ -6,6 +7,39 @@ export type AdminAuthResult = {
   ok: boolean
   source: AdminAuthSource
   userEmail: string | null
+}
+
+const ADMIN_SESSION_TTL_SECONDS = 60 * 60 * 24 * 7
+
+function adminSessionSecret(): string | null {
+  const secret = process.env.ADMIN_SESSION_SECRET?.trim() || process.env.ADMIN_PASSWORD?.trim()
+  return secret && secret.length >= 16 ? secret : null
+}
+
+function signature(payload: string, secret: string): string {
+  return createHmac("sha256", secret).update(payload).digest("base64url")
+}
+
+export function createAdminSessionToken(now = Date.now()): string | null {
+  const secret = adminSessionSecret()
+  if (!secret) return null
+  const expiresAt = Math.floor(now / 1000) + ADMIN_SESSION_TTL_SECONDS
+  const payload = `${expiresAt}.${randomBytes(18).toString("base64url")}`
+  return `${payload}.${signature(payload, secret)}`
+}
+
+export function verifyAdminSessionToken(token: string | null | undefined, now = Date.now()): boolean {
+  const secret = adminSessionSecret()
+  if (!secret || !token) return false
+  const parts = token.split(".")
+  if (parts.length !== 3) return false
+  const [expiresAtRaw, nonce, receivedSignature] = parts
+  if (!/^\d+$/.test(expiresAtRaw) || !/^[A-Za-z0-9_-]{16,64}$/.test(nonce)) return false
+  if (Number(expiresAtRaw) < Math.floor(now / 1000)) return false
+  const expected = signature(`${expiresAtRaw}.${nonce}`, secret)
+  const received = Buffer.from(receivedSignature)
+  const expectedBuffer = Buffer.from(expected)
+  return received.length === expectedBuffer.length && timingSafeEqual(received, expectedBuffer)
 }
 
 function safeCompare(a: string, b: string): boolean {
@@ -46,13 +80,13 @@ export function authorizeWebhookRequest(headers: Headers): AdminAuthResult {
 export async function authorizePayloadAdminRequest(input: {
   headers: Headers
   legacyToken?: string | null
+  allowLegacyPassword?: boolean
 }): Promise<AdminAuthResult> {
   const expectedLegacyToken = process.env.ADMIN_PASSWORD
-  if (
-    expectedLegacyToken &&
-    input.legacyToken &&
-    safeCompare(input.legacyToken, expectedLegacyToken)
-  ) {
+  if (verifyAdminSessionToken(input.legacyToken)) {
+    return { ok: true, source: "legacy", userEmail: null }
+  }
+  if (input.allowLegacyPassword && expectedLegacyToken && input.legacyToken && safeCompare(input.legacyToken, expectedLegacyToken)) {
     return { ok: true, source: "legacy", userEmail: null }
   }
 

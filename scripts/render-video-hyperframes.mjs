@@ -16,7 +16,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const PROJECT_DIR = resolve(__dirname, "..", "test-video")
 const RENDERS_DIR = resolve(PROJECT_DIR, "renders")
 
-const PROFILES: Record<string, { fps: number; quality: string; extra?: string; desc: string }> = {
+const PROFILES = {
   draft: { fps: 15, quality: "draft", desc: "Quick preview" },
   standard: { fps: 30, quality: "standard", desc: "Standard quality" },
   high: { fps: 60, quality: "high", extra: "--video-bitrate 20M", desc: "High quality delivery" },
@@ -96,7 +96,7 @@ function main() {
       console.log(`\nRender complete (output file check unavailable)`)
     }
   } catch (error) {
-    console.error(`\nRender failed: ${(error as Error).message}`)
+    console.error(`\nRender failed: ${error instanceof Error ? error.message : String(error)}`)
     process.exit(1)
   }
 }

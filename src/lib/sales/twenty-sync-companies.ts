@@ -173,7 +173,7 @@ export async function syncCustomerHandoffToTwenty(
     intelligence: {
       signals: [],
       painPoints: [],
-      nextActions: ["Notion顧客共有ページでオンボーディングを開始する"],
+      nextActions: ["顧客ポータルでオンボーディングを開始する"],
     },
     diagnosisSummary: null,
     recommendedOffer: null,
@@ -190,7 +190,7 @@ export async function syncCustomerHandoffToTwenty(
 
     const summary = customerHandoffSummary(input)
     const fullPayload = {
-      paradigmCustomerPortalUrl: linkField("顧客共有Notion", input.customerPortalUrl),
+      paradigmCustomerPortalUrl: linkField("顧客ポータル", input.customerPortalUrl),
       paradigmKarteSummary: { markdown: summary },
     }
     const full = await patchTwentyCompanyHome(twentyCompany.id, fullPayload)

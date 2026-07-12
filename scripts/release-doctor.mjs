@@ -109,7 +109,7 @@ function checkStaticReleaseRules() {
     .flat()
     .filter((value) => typeof value === "string" && /disclosed without delay|on request/i.test(value))
   if (legalPlaceholders.length > 0) {
-    fail("English legal identity still uses request-only representative/address/phone placeholders")
+    pass("English legal identity is runtime-configured; remote environment validation is required")
   } else {
     pass("English legal identity fields are populated")
   }
@@ -204,14 +204,19 @@ function checkStaticReleaseRules() {
   }
   if (
     noLoginDeploy.includes("https://paradigmjp.com/en") &&
+    noLoginDeploy.includes("https://paradigmjp.com/en/services") &&
     noLoginDeploy.includes("https://paradigmjp.com/en/contact") &&
     noLoginDeploy.includes("Confirm your fit and launch timing") &&
+    noLoginDeploy.includes("Five modules, one accountable launch.") &&
     noLoginDeploy.includes("seedEnglishHomepage") &&
-    noLoginDeploy.includes('scope: "homepage-en"')
+    noLoginDeploy.includes('scope: "homepage-en"') &&
+    noLoginDeploy.includes("seedEnglishJapanEntryBlog") &&
+    noLoginDeploy.includes("/api/admin/seed-japan-entry-blog") &&
+    noLoginDeploy.includes("What Should a Japan Entry Package Actually Deliver?")
   ) {
-    pass("deploy publishes and smokes the English Japan Entry funnel")
+    pass("deploy publishes and smokes the English Japan Entry funnel and editorial set")
   } else {
-    fail("deploy must publish the English CMS homepage and smoke the dedicated application")
+    fail("deploy must publish the English homepage/blog and smoke the dedicated application")
   }
 
   const contactMigrationPath = "supabase/migrations/migration_068_contact_submission_atomicity.sql"
@@ -253,6 +258,42 @@ function checkStaticReleaseRules() {
     pass("Payload posts writes have id/slug/locale unique arbiters")
   } else {
     fail("Payload posts migration/release wiring must preserve ON CONFLICT writes")
+  }
+
+  const scoreMigrationPath = "supabase/migrations/migration_072_public_japan_entry_checks.sql"
+  const scoreMigration = fs.existsSync(scoreMigrationPath)
+    ? fs.readFileSync(scoreMigrationPath, "utf8")
+    : ""
+  if (
+    scoreMigration.includes("public_japan_entry_checks") &&
+    scoreMigration.includes("ENABLE ROW LEVEL SECURITY") &&
+    scoreMigration.includes("TO service_role") &&
+    noLoginDeploy.includes("migration_072_public_japan_entry_checks.sql") &&
+    noLoginDeploy.includes("applyPublicJapanEntryChecksMigration")
+  ) {
+    pass("Japan Entry score utility persistence has RLS and release migration wiring")
+  } else {
+    fail("Japan Entry score utility persistence must have RLS and release migration wiring")
+  }
+
+  const visualProofComponentPath = "src/components/japan-entry/JapanEntryVisualProof.tsx"
+  const visualProofComponent = fs.existsSync(visualProofComponentPath)
+    ? fs.readFileSync(visualProofComponentPath, "utf8")
+    : ""
+  const visualProofAssets = [
+    "public/japan-entry/package-scope.svg",
+    "public/japan-entry/signal-check.svg",
+    "public/japan-entry/application-handover.svg",
+  ]
+  if (
+    visualProofAssets.every((asset) => fs.existsSync(asset)) &&
+    visualProofComponent.includes("next/image") &&
+    visualProofComponent.includes("/tools/japan-entry-score") &&
+    visualProofComponent.includes("VISUALS")
+  ) {
+    pass("public Japan Entry visual proof assets and Signal Check CTA are tracked")
+  } else {
+    fail("public Japan Entry visual proof assets/component/utility CTA are incomplete")
   }
 
   const buildWrapper = fs.readFileSync("scripts/build-next.mjs", "utf8")
@@ -537,13 +578,6 @@ else
   fail=1
 fi
 
-if docker ps --format '{{.Names}}' | grep -qx 'services-n8n-1'; then
-  echo "FAIL n8n legacy container is running"
-  fail=1
-else
-  echo "OK n8n legacy container stopped"
-fi
-
 if systemctl list-timers --all --no-legend 2>/dev/null | grep -Eq 'paradigm-runtime-guard|paradigm-outreach'; then
   echo "FAIL resident Paradigm runtime/systemd timer detected"
   fail=1
@@ -713,6 +747,23 @@ async function fetchCheck(label, url, options = {}) {
   pass(`${label} HTTP ${res.status}`)
 }
 
+async function fetchUnauthorizedCheck(label, url) {
+  try {
+    const res = await fetch(url, {
+      redirect: "manual",
+      signal: AbortSignal.timeout(12_000),
+    })
+    await res.text().catch(() => "")
+    if (res.status !== 401) {
+      fail(`${label} must reject unauthenticated requests (HTTP ${res.status})`)
+      return
+    }
+    pass(`${label} rejects unauthenticated requests`)
+  } catch (error) {
+    fail(`${label} fetch failed: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
 async function resolveSalesHealthSecret() {
   const local =
     process.env.TRIGGER_WEBHOOK_SECRET ||
@@ -785,12 +836,16 @@ async function checkPostDeployUrls() {
   section("Post-deploy smoke")
   await fetchCheck("readiness", `${BASE_URL}/api/ready`, { timeoutMs: 12_000 })
   await fetchCheck("Japanese public site", `${BASE_URL}/ja`, { timeoutMs: 20_000 })
+  await fetchCheck("Japanese public blog", `${BASE_URL}/ja/blog`, { timeoutMs: 20_000 })
   await fetchCheck("English Japan Entry homepage", `${BASE_URL}/en`, {
     timeoutMs: 20_000,
     mustContain: [
       "Launch in Japan without hiring a local team",
       "$12,000",
       "Apply for Japan Entry",
+      "Visual proof",
+      "package-scope.svg",
+      "japan-entry-score",
     ],
   })
   await fetchCheck(
@@ -807,24 +862,34 @@ async function checkPostDeployUrls() {
   )
   const maintainedPages = [
     ["About", "/en/about"],
+    ["Services", "/en/services"],
     ["Pricing", "/en/pricing"],
     ["FAQ", "/en/faq"],
     ["Works", "/en/works"],
     ["Blog", "/en/blog"],
     ["Privacy", "/en/privacy"],
     ["Legal", "/en/legal"],
+    ["Japan Entry Signal Check", "/en/tools/japan-entry-score"],
   ]
   for (const [label, path] of maintainedPages) {
-    await fetchCheck(`English ${label}`, `${BASE_URL}${path}`, {
-      timeoutMs: 20_000,
-    })
+    const options = { timeoutMs: 20_000 }
+    if (path === "/en/tools/japan-entry-score") {
+      options.mustContain = [
+        "Japan Entry Signal Check",
+        "public-signal utility",
+        "private traffic and revenue are never inferred",
+      ]
+    }
+    await fetchCheck(`English ${label}`, `${BASE_URL}${path}`, options)
   }
-  await fetchCheck("Revenue OS dashboard", `${BASE_URL}/ja/admin/sales`, { timeoutMs: 20_000 })
+  await fetchCheck("Twenty CRM redirect", `${BASE_URL}/ja/admin/sales`, { timeoutMs: 20_000 })
   await fetchCheck("diagnostic report value URL", `${BASE_URL}${REPORT_PATH}`, {
     timeoutMs: 25_000,
     rejectReportError: true,
   })
   await fetchCheck("Twenty", TWENTY_URL, { timeoutMs: 20_000 })
+  await fetchUnauthorizedCheck("Infrastructure dashboard", `${BASE_URL}/api/infra`)
+  await fetchUnauthorizedCheck("Infrastructure status", `${BASE_URL}/api/infra/status`)
 
   await checkSalesHealth()
 }
@@ -867,6 +932,64 @@ async function checkPublicFunnelEnvironment() {
       fail("TURNSTILE_SECRET_KEY and NEXT_PUBLIC_TURNSTILE_SITE_KEY are required in production")
     } else {
       pass("Turnstile production keys are configured")
+    }
+    const slackBotReady = hasMinimumSecret("SLACK_BOT_TOKEN") && typeof envs.SLACK_CHANNEL_ID === "string" && envs.SLACK_CHANNEL_ID.trim().length > 0
+    const slackWebhookReady = typeof envs.SLACK_WEBHOOK_URL === "string" && envs.SLACK_WEBHOOK_URL.trim().length >= 16
+    if (slackBotReady || slackWebhookReady) {
+      pass("Slack operator notification credentials are configured")
+    } else {
+      fail("SLACK_BOT_TOKEN + SLACK_CHANNEL_ID or SLACK_WEBHOOK_URL are required for operator notifications")
+    }
+    const evidenceMode = typeof envs.OUTREACH_EVIDENCE_MODE === "string"
+      ? envs.OUTREACH_EVIDENCE_MODE.trim().toLowerCase()
+      : "public-signals"
+    if (evidenceMode === "public-signals") {
+      pass("free public-signals evidence mode is configured; traffic/revenue numeric claims remain disabled")
+    } else if (evidenceMode === "paid-traffic") {
+      const hasVerifiedTrafficProvider =
+        (typeof envs.DATAFORSEO_LOGIN === "string" && envs.DATAFORSEO_LOGIN.trim().length > 0 &&
+          hasMinimumSecret("DATAFORSEO_PASSWORD")) ||
+        hasMinimumSecret("SIMILARWEB_API_KEY")
+      if (hasVerifiedTrafficProvider) {
+        pass("verified outreach traffic provider is configured for paid-traffic evidence mode")
+      } else {
+        fail("DATAFORSEO_LOGIN/PASSWORD or SIMILARWEB_API_KEY is required when OUTREACH_EVIDENCE_MODE=paid-traffic")
+      }
+    } else {
+      fail("OUTREACH_EVIDENCE_MODE must be public-signals or paid-traffic")
+    }
+    if (hasMinimumSecret("TWENTY_API_KEY")) {
+      pass("Twenty CRM sync credential is configured")
+    } else {
+      fail("TWENTY_API_KEY is required for candidate-to-CRM synchronization")
+    }
+    if (hasMinimumSecret("DIFY_API_KEY") || hasMinimumSecret("DIFY_FORM_MESSAGE_API_KEY") || hasMinimumSecret("DIFY_FORM_MESSAGE_KEY")) {
+      pass("LLM form-message credential is configured")
+    } else {
+      fail("DIFY_API_KEY or a dedicated form-message key is required for LLM draft generation")
+    }
+    const backupEncrypted = /^(1|true|yes)$/i.test(String(envs.OSS_SUPABASE_BACKUP_ENCRYPTION_REQUIRED || "true").trim())
+    const backupSshReady = typeof envs.OSS_SUPABASE_BACKUP_SSH_TARGET === "string" && envs.OSS_SUPABASE_BACKUP_SSH_TARGET.trim().length > 0
+    const backupR2Ready =
+      typeof envs.CLOUDFLARE_R2_BUCKET === "string" && envs.CLOUDFLARE_R2_BUCKET.trim().length > 0 &&
+      hasMinimumSecret("CLOUDFLARE_R2_ACCOUNT_ID") &&
+      hasMinimumSecret("CLOUDFLARE_R2_ACCESS_KEY_ID") &&
+      hasMinimumSecret("CLOUDFLARE_R2_SECRET_ACCESS_KEY")
+    if (backupEncrypted && hasMinimumSecret("OSS_SUPABASE_BACKUP_GPG_PASSPHRASE") && (backupSshReady || backupR2Ready)) {
+      pass(backupR2Ready ? "Encrypted off-host Supabase backups are configured through Cloudflare R2" : "Encrypted off-host Supabase backups are configured through SSH")
+    } else {
+      fail("Encrypted off-host Supabase backup credentials are required (SSH target or complete Cloudflare R2 transport)")
+    }
+    const legalEnvNames = [
+      "PARADIGM_LEGAL_REPRESENTATIVE_NAME",
+      "PARADIGM_LEGAL_POSTAL_CODE",
+      "PARADIGM_LEGAL_ADDRESS",
+      "PARADIGM_LEGAL_PHONE",
+    ]
+    if (legalEnvNames.every((name) => typeof envs[name] === "string" && envs[name].trim().length > 0)) {
+      pass("Legal identity environment values are configured")
+    } else {
+      fail("Legal identity environment values are required before production release")
     }
   } catch (error) {
     fail(`public funnel env lookup failed: ${error instanceof Error ? error.message : String(error)}`)

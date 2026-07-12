@@ -17,13 +17,18 @@ const PUBLIC_MARKETING_ROOTS = new Set([
   "services",
   "video",
   "works",
+  "tools",
 ])
 
-const LEGACY_OFFER_ROOTS = new Set(["agency", "lp", "services", "video"])
+// The English services surface now explains the live Japan Entry modules.
+// Agency/LP/video remain retired offer surfaces and continue to redirect.
+const LEGACY_OFFER_ROOTS = new Set(["agency", "lp", "video"])
+const JAPANESE_LEGACY_OFFER_ROOTS = new Set([
+  ...LEGACY_OFFER_ROOTS,
+  "services",
+  "pricing",
+])
 const NON_INDEXABLE_LOCALE_ROOTS = new Set([
-  "_archive_diagnostic",
-  "_archive_optout",
-  "_archive_report",
   "admin",
   "cms",
   "d",
@@ -60,7 +65,10 @@ export function isPublicMarketingPath(pathname: string) {
 }
 
 export function isJapaneseOnlyLegacyOfferPath(pathname: string) {
-  const segments = marketingPathSegments(pathname)
+  const segments = pathname.split("/").filter(Boolean)
+  if (segments[0] === "ja") {
+    return Boolean(segments[1] && JAPANESE_LEGACY_OFFER_ROOTS.has(segments[1]))
+  }
   return Boolean(segments[0] && LEGACY_OFFER_ROOTS.has(segments[0]))
 }
 
@@ -99,9 +107,15 @@ export function getInternationalMarketingRedirect(source: URL) {
   const destination = new URL(source.toString())
   destination.hash = ""
 
+  if (root === "services" && publicSegments.length > 1) {
+    destination.pathname = `/${MARKETING_DEFAULT_LOCALE}/services`
+    destination.hash = "package-modules"
+    return destination
+  }
+
   if (root && LEGACY_OFFER_ROOTS.has(root)) {
-    destination.pathname = `/${MARKETING_DEFAULT_LOCALE}`
-    destination.hash = "#japan-entry-pricing"
+    destination.pathname = `/${MARKETING_DEFAULT_LOCALE}/services`
+    destination.hash = "#package-modules"
     return destination
   }
 
@@ -126,6 +140,12 @@ export function getEnglishLegacyOfferRedirect(source: URL) {
   const segments = source.pathname.split("/").filter(Boolean)
   const locale = segments[0]
   const root = segments[1]
+  if (locale === MARKETING_DEFAULT_LOCALE && root === "services" && segments.length > 2) {
+    const destination = new URL(source.toString())
+    destination.pathname = `/${MARKETING_DEFAULT_LOCALE}/services`
+    destination.hash = "package-modules"
+    return destination
+  }
   if (
     locale !== MARKETING_DEFAULT_LOCALE ||
     !root ||
@@ -135,7 +155,27 @@ export function getEnglishLegacyOfferRedirect(source: URL) {
   }
 
   const destination = new URL(source.toString())
-  destination.pathname = `/${MARKETING_DEFAULT_LOCALE}`
-  destination.hash = "#japan-entry-pricing"
+  destination.pathname = `/${MARKETING_DEFAULT_LOCALE}/services`
+  destination.hash = "#package-modules"
+  return destination
+}
+
+/**
+ * Keep the Japanese public surface aligned with the same fixed Japan Entry
+ * offer. Domestic-only legacy pages were still live and exposed stale plans,
+ * free-consultation CTAs, and old video/agency prices.
+ */
+export function getJapaneseLegacyOfferRedirect(source: URL) {
+  const segments = source.pathname.split("/").filter(Boolean)
+  const locale = segments[0]
+  const root = segments[1]
+  if (locale !== "ja" || !root || !JAPANESE_LEGACY_OFFER_ROOTS.has(root)) {
+    return null
+  }
+
+  const destination = new URL(source.toString())
+  destination.pathname = "/ja"
+  destination.search = ""
+  destination.hash = "japan-entry-pricing"
   return destination
 }

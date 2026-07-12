@@ -4,9 +4,21 @@
  * Contact form works. Multi-page. Real images injected.
  */
 import * as RadixColors from "@radix-ui/colors"
+import { boundedNumber, isJsonObject, parseJsonObject, readChatContent, stringValue } from "./llm-response"
 
 const API = process.env.DEEPSEEK_API_BASE || "https://api.deepseek.com/v1"
 const MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat"
+
+export interface AppleDNA {
+  brand_seed: string
+  headline: string
+  subheadline: string
+  sections: Array<{ title: string; body: string; image?: string }>
+  cta: string
+  color_hue: number
+  contact: { address?: string; phone?: string; email?: string }
+  images: string[]
+}
 
 // ── Apple DNA from Figma MCP ──
 const DNA = {
@@ -33,7 +45,8 @@ function applePalette(hue: number): Record<string, string> {
     const dist = Math.abs(hue - parseInt(h))
     if (dist < minDist) { minDist = dist; closest = name }
   }
-  const c = (RadixColors as any)[closest] || (RadixColors as any).blue
+  const palettes = RadixColors as unknown as Record<string, Record<string, string>>
+  const c = palettes[closest] ?? palettes.blue
   return {
     primary: c[closest + "9"] || "#0071e3",
     primaryDark: c[closest + "12"] || "#003580",
@@ -49,13 +62,7 @@ function applePalette(hue: number): Record<string, string> {
 }
 
 // ── Generate complete Apple-grade page ──
-export function generateApplePage(dna: {
-  brand_seed: string; headline: string; subheadline: string
-  sections: Array<{ title: string; body: string; image?: string }>
-  cta: string; color_hue: number
-  contact: { address?: string; phone?: string; email?: string }
-  images: string[]
-}): string {
+export function generateApplePage(dna: AppleDNA): string {
   const p = applePalette(dna.color_hue)
   const A = DNA
   const img = dna.images[0] || null
@@ -185,13 +192,7 @@ document.getElementById('contactForm')?.addEventListener('submit', async functio
 }
 
 // ── Multi-page generator ──
-export function generateAllPages(dna: {
-  brand_seed: string; headline: string; subheadline: string
-  sections: Array<{ title: string; body: string; image?: string }>
-  cta: string; color_hue: number
-  contact: { address?: string; phone?: string; email?: string }
-  images: string[]
-}): Map<string, string> {
+export function generateAllPages(dna: AppleDNA): Map<string, string> {
   const pages = new Map<string, string>()
   pages.set("index.html", generateApplePage(dna))
   return pages
@@ -202,7 +203,7 @@ export async function extractAppleDNA(company: {
   name: string; domain: string; industry: string | null; location: string | null
   founded?: string; employeeCount?: number; reviewRating?: number
   aboutText?: string; services?: string[]; painSummary?: string
-}): Promise<{ ok: boolean; dna?: any; error?: string }> {
+}): Promise<{ ok: boolean; dna?: AppleDNA; error?: string }> {
   const apiKey = process.env.DEEPSEEK_API_KEY
   if (!apiKey) return { ok: false, error: "no API key" }
 
@@ -229,9 +230,36 @@ export async function extractAppleDNA(company: {
       body: JSON.stringify({ model: MODEL, messages: [{ role: "user", content: prompt }], temperature: 0.7, max_tokens: 2048, response_format: { type: "json_object" } }),
       signal: AbortSignal.timeout(45000),
     })
-    const data = await res.json() as any
-    const raw = data.choices?.[0]?.message?.content || ""
-    const dna = JSON.parse(raw.replace(/```json\s*|\s*```/g, ""))
+    const data: unknown = await res.json()
+    const parsed = parseJsonObject(readChatContent(data))
+    const contact = isJsonObject(parsed.contact) ? parsed.contact : {}
+    const sections = Array.isArray(parsed.sections)
+      ? parsed.sections.flatMap((section): Array<{ title: string; body: string; image?: string }> => {
+          if (!isJsonObject(section)) return []
+          const title = stringValue(section.title)
+          const body = stringValue(section.body)
+          if (!title || !body) return []
+          const image = stringValue(section.image)
+          return [image ? { title, body, image } : { title, body }]
+        })
+      : []
+    const images = Array.isArray(parsed.images)
+      ? parsed.images.filter((image): image is string => typeof image === "string")
+      : []
+    const dna: AppleDNA = {
+      brand_seed: stringValue(parsed.brand_seed, company.name),
+      headline: stringValue(parsed.headline, company.name),
+      subheadline: stringValue(parsed.subheadline),
+      sections,
+      cta: stringValue(parsed.cta, "Japan Entry Fit Review"),
+      color_hue: boundedNumber(parsed.color_hue, 210, 0, 360),
+      contact: {
+        address: stringValue(contact.address) || undefined,
+        phone: stringValue(contact.phone) || undefined,
+        email: stringValue(contact.email) || undefined,
+      },
+      images,
+    }
     return { ok: true, dna }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) }

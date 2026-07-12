@@ -11,8 +11,35 @@
  */
 import { NextRequest, NextResponse } from "next/server"
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { sanitizePublicRecord, sanitizePublicJson } from "@/lib/public-surface"
 
 export const dynamic = "force-dynamic"
+
+const PUBLIC_META_KEYS = new Set([
+  "title",
+  "description",
+  "locale",
+  "industry",
+  "company_name",
+  "companyName",
+  "accentColor",
+  "accentColorDark",
+  "generated_at",
+  "generatedAt",
+  "templateId",
+])
+
+function publicMeta(value: unknown): Record<string, unknown> {
+  const sanitized = sanitizePublicRecord(value)
+  return Object.fromEntries(
+    Object.entries(sanitized).filter(([key]) => PUBLIC_META_KEYS.has(key)),
+  )
+}
+
+function publicBlocks(value: unknown): unknown[] {
+  const sanitized = sanitizePublicJson(value)
+  return Array.isArray(sanitized) ? sanitized : []
+}
 
 export async function GET(
   _req: NextRequest,
@@ -21,7 +48,7 @@ export async function GET(
   const { slug } = await params
   try {
     const sb = getServiceSalesSupabase()
-    if (!sb) return NextResponse.json({ error: "supabase not configured" }, { status: 500 })
+    if (!sb) return NextResponse.json({ error: "demo unavailable" }, { status: 503 })
 
     const { data, error } = await sb
       .from("theme_demo_pages")
@@ -32,35 +59,25 @@ export async function GET(
 
     if (error) {
       console.error(`[demo-pages/${slug}] fetch error:`, error.message)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: "demo unavailable" }, { status: 503 })
     }
     if (!data) {
       return NextResponse.json({ error: "not found" }, { status: 404 })
     }
 
-    const rawMeta = data.meta && typeof data.meta === "object" && !Array.isArray(data.meta)
-      ? data.meta as Record<string, unknown>
-      : {}
-    const publicMeta = Object.fromEntries(
-      Object.entries(rawMeta).filter(([key]) => ![
-        "company_id", "visits", "generator", "artifact_admin", "diagnostic",
-        "pain_diagnosis", "dify_result", "visual_evidence", "tech_stack",
-      ].includes(key)),
-    )
-
     return NextResponse.json({
       slug: data.slug,
       theme: data.theme,
       title: data.title,
-      blocks: data.blocks,
-      meta: publicMeta,
+      blocks: publicBlocks(data.blocks),
+      meta: publicMeta(data.meta),
       is_published: data.is_published,
     }, {
       headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
     })
   } catch (e) {
     console.error(`[demo-pages/${slug}] unexpected:`, e)
-    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 })
+    return NextResponse.json({ error: "demo unavailable" }, { status: 503 })
   }
 }
 

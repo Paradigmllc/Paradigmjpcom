@@ -102,7 +102,7 @@ describe("diagnostic evidence boundaries", () => {
     ])
   })
 
-  it("does not derive Japan visits or revenue from arbitrary conversion assumptions", () => {
+  it("does not derive private traffic or revenue from free public signals", () => {
     const withoutModel = buildJapanMarketMetrics(reportWithMeta({
       similarweb_free: {
         estimatedMonthlyVisits: 100_000,
@@ -110,20 +110,24 @@ describe("diagnostic evidence boundaries", () => {
       },
     }), "en")
 
-    expect(withoutModel[0]?.value).toBe("100,000 visits/mo")
-    expect(withoutModel[1]?.value).toBe("Japan appears in top markets")
-    expect(withoutModel[3]?.value).toBe("Not measured")
-    expect(JSON.stringify(withoutModel)).not.toMatch(/8%|2%|15,000/)
+    expect(withoutModel[0]?.value).toBe("Not measured")
+    expect(withoutModel[1]?.value).toBe("Not measured")
+    expect(withoutModel[3]?.value).toBe("Not publicly disclosed")
+    expect(JSON.stringify(withoutModel)).not.toMatch(/100,000|8%|2%|15,000/)
 
-    const withModel = buildJapanMarketMetrics(reportWithMeta({
-      japan_readiness_insight: {
-        loss_amount_usd_min: 1_000,
-        loss_amount_usd_max: 2_000,
-        confidence: 72,
+    const withPublicSignals = buildJapanMarketMetrics(reportWithMeta({
+      smb_signals: {
+        marketVisibility: {
+          index: 72,
+          band: "top-1m",
+          bestRank: 120_000,
+          countrySignals: [{ countryCode: "GB", signal: "ccTLD", value: ".uk" }],
+        },
       },
     }), "en")
-    expect(withModel[3]?.value).toBe("$1,000–$2,000")
-    expect(withModel[3]?.source).toContain("72/100 confidence")
+    expect(withPublicSignals[0]?.value).toBe("Public visibility 72/100")
+    expect(withPublicSignals[1]?.value).toBe("Market signals: GB")
+    expect(withPublicSignals[3]?.value).toBe("Not publicly disclosed")
   })
 
   it("does not infer healthy first-impression signals from missing acts or metadata", () => {

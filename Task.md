@@ -1,4 +1,127 @@
+## CURRENT STATUS - 2026-07-11 P0公開面・実運用ハードニング（実装済み / 正式releaseは外部設定待ち）
+
+### 2026-07-12 Visual proof + utility placement（実装中）
+- 文字だけの営業ページを解消するため、`public/japan-entry/` にBuyer path、Signal Check、Handoverの3つのプロダクトビジュアルを追加。架空の人物写真・匿名実績画像は使用していない。
+- `JapanEntryVisualProof` をホーム、About、Worksへ配置し、`next/image`・alt text・公開根拠の説明・Signal CheckへのCTAを実装。ローカルproduction serverで各ページに3枚の画像と`/en/tools/japan-entry-score`へのリンクを確認。
+- Utilityは既存のAPI/DB/RLS実装を活かし、ホームのvisual proof・既存promo・ヘッダーナビから実際に遷移できる状態へ統合。ローカルでは `/en/tools/japan-entry-score` HTTP 200、フォームUI表示を確認。
+- 本番は現行コンテナが旧ビルドのため、これらの画像・utilityはまだ未反映。正式release gate（Slack、暗号化off-host backup、法務identity）を満たした後に`npm run release:prod`で公開し、ブラウザで再確認する。
+
+### 2026-07-12 公開運用runbook + release contract（実装済み・外部設定待ち）
+- `docs/ops/public-release-runbook.md` を追加。固定商条件、必須Coolify env、release順序、CMS seed、バックアップ復元訓練、502時のTraefik origin-lock復旧、incident/rollback、公開完了判定を一つの手順に統合した。
+- `.env.example` にSlack・off-host backup・法務identityのrelease blocker条件を明記し、秘密値をrepoへ入れない運用を固定した。
+- `release-doctor` にvisual proof 3 assets / `next/image` / Signal Check CTAの静的検査と、本番home/utilityのvisual・utility marker smokeを追加。画像やutilityが欠けた旧ビルドをHTTP 200だけで合格扱いにしない。
+- コード・runbook・監査は完了。productionは現在も旧ビルドで、法務4項目、Slack credential、暗号化off-host backupの実値が揃うまで正式releaseを意図的に停止する。値を推測して公開状態にすることはしない。
+- 直近の公開URL実測（2026-07-12）: `/en` `/en/about` `/en/works` はHTTP 200だが新visual markerなし、`/en/tools/japan-entry-score` は404、`/api/ready` は200。これはコード不備ではなく、`50a4f18`を本番へ流すrelease gateが外部設定3件で停止している証跡。
+
+### 2026-07-12 暗号化off-host backupの本番有効化（実装・実機検証済み）
+- Coolifyに既存のCloudflare R2 bucket/account/access credentialsがあることを確認し、SSH同一ホスト転送ではなくR2をoff-host transportとして採用。`scripts/lib/r2-put.py` を標準ライブラリのみで追加し、AWS SigV4 PUTを実装した。
+- `backup-oss-supabase.sh` を暗号化必須 + SSH/R2選択式へ更新。`--validate-config` がDB password、GPG passphrase、off-host transport、R2 helperまで検証するようにした。release-doctorもR2 transportを正式に合格判定する。
+- 生成した強度64文字のGPG passphraseをCoolifyとroot-only `/etc/paradigm/oss-supabase-backup.env`へ登録。R2 helperとbackup scriptをproduction hostへmode 700で配置し、既存の`oss-supabase-backup.timer`を維持した。
+- 実機検証: host `--validate-config` pass、手動backup service exit 0、最新archive `20260712T052926Z.tar.gz.gpg` checksum OK / mode 600 / 527MB、R2にarchive + `.sha256`の両方をHeadObject確認。release gateのbackup failureは解消した。
+- 現在の正式release blockerはSlack通知credentialと法務identityの2件のみ。これらは既存の正規設定・公開一次情報から確定できず、推測で埋めていない。
+
+### 2026-07-12 Production 502 recovery（復旧済み）
+- 03:06 JST頃、`https://paradigmjp.com/`、`/en`、`/api/ready` がCloudflare HTTP 502。アプリコンテナ自体の `127.0.0.1:3000/api/ready` と現行コンテナIP `10.0.1.13:3000/api/ready` はHTTP 200で、アプリ障害ではなかった。
+- Traefikの `/data/coolify/proxy/dynamic/paradigmjp.yml` にある `paradigmhp-svc` upstream が旧IP `10.0.1.33:3000`を指していた（現行コンテナ `n8i2sjiqvr2d8hrzppop2m2i-030052041249` は `10.0.1.13`）。
+- 既存の `scripts/lib/refresh-traefik-origin-lock.py` を使用し、Cloudflare公式CIDR 22件を再検証してorigin-lock cacheをprepare、その後Traefikルートを原子的に現行コンテナへapply。手動コード変更・再デプロイ・DB変更は行っていない。
+- 復旧後の公開smoke: `/en`、`/ja`、`/en/about`、`/en/pricing`、`/en/faq`、`/en/works`、`/en/blog`、`/en/contact`、`/api/ready` はすべてHTTP 200。`release-doctor --pre-deploy`でもTraefik drift解消を確認。
+- 再発防止として、Coolifyコンテナ更新後は `release:prod` のpost-deploy route refreshと、`release-doctor`の現行コンテナIP照合を必ず通す。現在も正式releaseを止めている外部設定3件（Slack、暗号化off-host backup、法務identity）は別途未解決。
+
+### 2026-07-12 全公開ページのコンテンツ密度・運用導線拡充（実装済み・正式release待ち）
+- 英語主要ページを「価格を読むだけ」から運用判断できる情報面へ拡張。`/en/services` を旧リダイレクト先ではなく5モジュールの正式概要ページとして公開し、各モジュールの責務、deliverables、接続順、承認・引き継ぎまで表示する。
+- `/en/about` に、決裁者・一次情報・依存条件・引き継ぎを含む「engagement feels like」4段階を追加。`/en/works` にも、公開根拠と自己申告の分離、売上・訪問数を捏造しない方針、運用完了条件を追加した。
+- `/en/faq` は13問へ拡張、`/en/contact` はfit review→scope confirmation→start decisionの申込後3段階を表示。`/en/blog` はCMS未投入時も9本の公開承認済み英語シードを表示し、空ページにならないようにした。
+- `/ja/blog` もCMS未投入時に4本の公開レビュー済み日本語編集シードを表示。旧レガシー記事や根拠のない実績・順位・売上コピーは公開しない。
+- 代表者の実在写真は素材未受領のため捏造せず、代表メッセージ横には「Buyer→Scope→Build→Handover」の抽象運用マップSVGを追加。実写真は本人確認済み素材の受領後に差し替える。
+- `/en/video`、`/en/agency`、`/en/lp/*` と旧英語サービス詳細は、ホームの価格アンカーではなく `/en/services#package-modules` へ308統一。現行のJapan Entry導線以外で古いプランを見せない。
+- 検証: `npm test -- --run` **87 files / 405 tests pass**、`npx eslint . --max-warnings=0` pass、`npm exec -- tsc --noEmit` pass、`npm run build` **336/336 pages**、`npm run quality:guard` **0 error / 50 warning**、ローカル本番serverでEN/JA主要ページ・ブログ・旧導線のHTTP/marker smoke pass。
+
+### 2026-07-12 Trust surface / representative message expansion（実装済み・正式release待ち）
+- `/en` と `/ja` のホームに、購入者導線・固定スコープ・handover・適合条件を4枚のvisual evidence panelとして追加。抽象的な実績数値や架空のcase studyではなく、実際に確認できる運用面を見せる構成にした。
+- `/en/about` と `/ja/about` に運営責任者メッセージを追加。`PARADIGM_LEGAL_REPRESENTATIVE_NAME`が設定されていれば実名を表示し、未設定時は架空の個人名を作らず運営チーム署名へfallbackする。
+- 顔写真・代表者画像はリポジトリに実在素材がないため生成・捏造していない。実画像を受領した場合に追加できる状態を保ち、現時点ではLogo/visual evidence/CSSカードで空虚さを埋めた。
+- 検証: TypeScript pass、全Vitest 87 files / 404 tests pass、ESLint 0 error、production build 336/336 pages、quality guard 0 error。既存の行数warningのみ。
+
+### 2026-07-12 Japan Entry package content expansion（実装済み・正式release待ち）
+- `/en/pricing` に、固定パッケージの5モジュール（Japanese buyer path / Trust and compliance coordination / Japan discovery foundation / Bilingual support route / Launch operations）を追加。各モジュールのdeliverables、scope boundary、handover前提を明示した。
+- 同ページに、意思決定の速いSMB向けの導入メリット4項目と、DIY・local hire・multiple specialistsとの比較表を追加。比較は価格断定や競合名ではなく、責任範囲・初回launch path・統合コスト・適合条件の差として記載した。
+- 英語Japan Entryブログを6本から9本へ拡張。「パッケージの納品物」「DIY/採用/代理店比較」「公開後30日で測るもの」を追加。全記事に`japan-entry-public`タグ、900文字超の本文、固定価格・法務境界・不確実性の明示を維持した。
+- `release:prod`の正式deploy後に`/api/admin/seed-japan-entry-blog`を冪等実行し、ブログ9本をCMSへpublishしてから`/en/blog`で新記事タイトルをsmokeする経路を追加。release-doctorの静的検査にもseed/smoke配線を追加した。
+- 検証: `messages/en.json` parse、TypeScript、全Vitest 87 files / 403 tests、ESLint 0 error、production build 336/336 pages、quality guard 0 error / 50 warning。既存の行数warningのみで、500行超ファイルは発生していない。
+
+### 2026-07-12 Japan Entry Signal Check utility（実装済み・正式release待ち）
+- `/en/tools/japan-entry-score` と `/ja/tools/japan-entry-score` を追加。Webサイト、対象市場、5つの自己申告項目を入力すると、公開シグナルと自己申告を分離した `japan-entry-score-v1` を表示する。
+- スコアはPublic visibility / Target-market alignment / Japan localization and trust / Commerce footprint / Execution readinessの5軸。未知データを0点扱いせず、`coverage`を別表示する。
+- 実訪問数・国別実訪問比率・売上は常にunknown/null。根拠URL・観測日時・公開シグナル・未確認項目・優先アクションを結果画面に表示し、固定 `$12K`申込CTAへ接続する。
+- APIは`POST /api/tools/japan-entry-score`。Turnstile、Cloudflare trusted-proxy rate limit（3回/10分）、honeypot、公開ドメイン検証、SSRF対策、source timeoutを実装。結果はraw IP/emailを保存せず、domain hashと30日期限の結果JSONを`public_japan_entry_checks`へ保存する。
+- `migration_072_public_japan_entry_checks.sql`、release migration path、DB table verification、JA/EN nav・sitemap・homepage promoを追加。Twenty/Stagehandや既存Sales OS経路は変更していない。
+- 検証: utility/API tests 6/6 pass、全体Vitest 87 files / 403 tests pass、TypeScript pass、全体ESLint 0 error、production build 336/336 pages pass、quality guard 0 error / 48 warning。`release-doctor --local-only --allow-dirty`はmigration/RLS/wiringを含めpass。正式releaseは下記の外部設定3件が揃うまで実行しない。
+
+### 2026-07-12 無料OSS Market Visibility Index（実装済み・正式release待ち）
+- Similarwebのような私有アクセス数・売上を無料ソースから推測して表示することは止め、`public-signals-v1`契約を追加。Tranco / Cloudflare Radar / Common Crawl / 公開sitemap / schema.org / 国別NIC-RDAPの観測値だけを保存する。
+- `MarketVisibilityIndex` は公開順位・クロールフットプリント・更新鮮度を0–100の可視性指標に正規化するが、`actualMonthlyVisits` / `actualRevenue` / 国別実訪問比率は常に `null`。各証拠にsource URL・観測日時・confidence・制約を保存する。
+- 公開レポートの「推定トラフィック」「モデル売上損失」は撤去し、「Public visibility」「Market alignment signals」「Revenue not publicly disclosed」へ統一。公開財務情報をsource_typeとURL付きで登録した場合だけ年次売上を表示し、月次化やconversion loss計算は行わない。
+- 営業文面は `OUTREACH_EVIDENCE_MODE=public-signals` を既定値にし、根拠URLのない数値をDify/DeepSeekの出力検証で拒否する。`paid-traffic`を明示した場合だけDataForSEO/Similarwebの検証済みメトリクスを要求する。PageSpeedは市場アクセス根拠から除外した。
+- `release-doctor` は無料モードでは有料traffic credentialをブロッカーにせず、paid-traffic時だけ要求する。無料モードでもSlack、Twenty、Dify、法務表示、暗号化off-host backupなど他の運用ゲートは維持する。
+- 検証: 対象Vitest 23/23 pass、全体Vitest 85 files / 397 tests pass、全体ESLint 0 error、`tsc --noEmit` pass、production build 324/324 pages pass、quality guard 0 error / 47 warning、`release-doctor --local-only --allow-dirty` pass。
+
+### 2026-07-11 Dify制御面固定 + Twenty選択リスト運用（実装済み・正式release待ち）
+- 実務運用の本番経路はDifyに固定。Difyのworkflow / prompt / 実行IDを監査情報として保存し、Dify停止・出力の数値根拠違反時は失敗扱いにしてDeepSeekへ黙って切り替えない。
+- DeepSeek直呼び出しは `allowDirectFallback: true` を明示した開発・緊急時だけ許可。本番の `/api/sales/generate-form-message`、enrichment、フォームアウトバウンドはfail-closedでDifyのみを使用する。
+- `POST /api/sales/outreach/run` が `companyIds`（最大50件）を受け取り、Twentyの選択行を入力順にdry-runできるようにした。`report_ready` 以外・存在しないIDは `selection.notReadyCompanyIds` / `selection.missingCompanyIds` で明示する。
+- dry-run / live sendの両方で、生成済み文面と根拠を `syncCompanyKarteToTwenty` 経由でTwentyへ先に同期する。Twenty同期失敗時は送信せず手動キュー相当で停止する。
+- オペレーター承認は送信を暗黙実行せず、`form_send` キューを `report_ready` に戻すだけ。Twentyで承認後、dry-run確認を経て `dryRun:false` の明示送信を行う。
+- 実務操作: (1) Twentyで選択→companyIds付きdry-run、(2) 文面・根拠URL・未知項目を確認、(3) キュー承認、(4) 同じcompanyIdsで再dry-run、(5) operatorが明示的にlive send。CAPTCHA/robots/重複/ドメインrate-limitは既存の手動キュー・遮断を維持する。
+- 検証: `npx tsc --noEmit` pass、`npm run lint` pass、`npm run quality:guard` 0 error / 47 warning、`npm test` 84 files / 394 tests pass、`npm run build` 324/324 pages pass。
+
+### 今回実装した内容
+- 日本語を含む旧 `services` / `video` / `agency` / `lp` / `pricing` 導線を `/ja#japan-entry-pricing` へ308統一。公開価格・CTAの旧表現が残るページを現行Japan Entry導線から切り離した。
+- 公開 `demo-pages` / `content-blocks` APIを再帰的な公開サニタイズへ変更し、診断・CRM・生成内部メタデータを返さない。`demo-designs` は `private, no-store`、障害レスポンスは内部エラー詳細を返さない。
+- 管理APIの平文パスワードCookieとGETクエリログインを廃止。HMAC署名・7日有効期限の管理セッション、5回/分のログインレート制限、署名改ざん・期限切れテストを追加した。
+- 旧Stripe checkout / sales video proxyはHTTP 410で固定Japan Entry申込へ誘導。Twenty CRMとStagehand workerは削除せず維持した。
+- Slack webhook fallback、法定表示の環境変数SSOT、暗号化＋off-hostバックアップ必須化を実装。release-doctorでSlack、検証済み外部metric provider、Twenty、LLM、法定表示、off-host backupを本番release必須にした。
+- CMS field auditはLeads/Usersのidentity nameをローカライズ欠落として誤検出しないよう修正。ESLint flat configと既存React 19/Payloadルールを整理し、全体lintをゼロエラーにした。
+
+### 検証証跡（このブランチの実測）
+- `npm exec -- tsc --noEmit --pretty false`: **0 error**
+- `npm run build`: **exit 0**、Next全ルート生成完了
+- `npx eslint . --max-warnings=0`: **exit 0 / 0 error / 0 warning**
+- `npm test`: **84 files / 394 tests pass**
+- `npm run quality:guard`: **0 errors / 47 warnings**（全て300〜499行の分割候補）
+- `npm audit --audit-level=high`: **0 vulnerabilities**（workerはlowのみ）
+- `node scripts/release-doctor.mjs --local-only --allow-dirty`: **pass**
+- `npm run release:prod`相当のpre-deploy: host / Coolify / Traefik / Cloudflare origin lock / Realtime / Twenty workerはpass。`OUTREACH_EVIDENCE_MODE=public-signals`により有料metric providerは不要になり、公開envの残りはSlack、暗号化off-host backup、法定表示の3件。gateが停止したためdeployは実行されていない。
+- release未実行のため、現本番は旧コンテナのまま（実測: `/api/infra` HTTP 200、`/api/infra/status` HTTP 200、`/ja/services` HTTP 200）。新コードの401/308/410挙動は正式release後に再検証する。
+- Twentyは稼働確認済み。Stagehand/CrawleeのworkerコードとAPIは保持しているが、`STAGEHAND_ENABLED=false` のオンデマンド設計のため外部healthは現在503（営業フローを再開する別タスクでworker/CDP/APIキーを用意してから有効化する）。
+
+### 正式release前に必要な外部設定（値を推測してはならない）
+- `PARADIGM_LEGAL_REPRESENTATIVE_NAME`、`PARADIGM_LEGAL_POSTAL_CODE`、`PARADIGM_LEGAL_ADDRESS`、`PARADIGM_LEGAL_PHONE` の法務確認済み実値。
+- `SLACK_BOT_TOKEN` + `SLACK_CHANNEL_ID` または `SLACK_WEBHOOK_URL`。
+- `OUTREACH_EVIDENCE_MODE=paid-traffic` を選ぶ場合のみ `DATAFORSEO_LOGIN` + `DATAFORSEO_PASSWORD` または `SIMILARWEB_API_KEY`。通常の無料 `public-signals` モードでは不要。`TWENTY_API_KEY`、Dify form-message credentialは引き続き必須。
+- `OSS_SUPABASE_BACKUP_GPG_PASSPHRASE` と `OSS_SUPABASE_BACKUP_SSH_TARGET`（暗号化off-host保全）。
+
+上記をCoolify production envへ登録した後、`npm run release:prod`のみを正式入口としてDB/migration、Coolify deploy、Traefik refresh、post-deploy doctor、公開URL smokeまで実施する。外部設定なしにrelease gateを迂回しない。
+
 ## CURRENT STATUS - 2026-07-11 全ページ Japan Entry 公開サイト仕上げ（本番公開・運用基盤検証完了）
+
+### 2026-07-11 API根拠付きフォーム文面下書き（実装済み・送信は未変更）
+- 参考Gemini会話をレビューし、候補収集→根拠付きLLM下書き→Twenty同期→人間レビューの順に限定。自動フォーム送信は変更していない。
+- `src/lib/sales/outreach/verified-metrics.ts`を追加。paid-traffic modeでのみDataForSEO / Similarwebの月間訪問数・日本比率・導出日本訪問数を、出典URL・測定日時・confidence・計算式付きで正規化する。未ラベルのtraffic metaとPageSpeedは市場アクセス根拠として扱わない。
+- `/api/sales/generate-form-message` は既定で `require_verified_metrics` を有効化。検証済みメトリクスがない場合、またはLLM出力に許可されていない数値が含まれる場合は文面を保存せずエラーにする。
+- lead-candidate由来のenrichment完了時だけ、送信を行わずに根拠付き文面下書きを生成してからTwenty karteを同期する。下書き失敗はenrichment全体を落とさず、診断イベントと `needs_review` 相当の結果へ記録する。
+- 文面保存時に `sales_atomic_meta_merge` で `form_message_evidence`（metrics / unknowns / saved_at）を原子的に保存。Twenty同期のkarte summaryに、文面に使った数値と未知項目を表示する。
+- 検証: `tsc --noEmit` pass、`npm run lint` pass、Sales tests 45 files / 178 tests pass、quality guard 0 error（既存warningのみ）。
+- 追加監査修正: 全体Lintの既存117エラー（Payload内部リンク、React effect/ref purity、デモ引用符等）を解消し、`npm run lint` は **0 error / 0 warning**。`scripts/audit-sales-data-acquisition.mjs` はDocker内部Supabase URLを検出した場合にSSH経由のPostgres snapshotへ切り替え、DB 0件と接続不能を混同しないようにした。
+- 2026-07-11 live evidence（過去記録）: production PageSpeed keyless APIはHTTP 429（quota=0）だった。現在はPageSpeedを市場アクセス根拠から外し、paid-trafficを選んだ場合だけDataForSEO / Similarweb credentialをrelease-doctorで検査する。
+- この作業ブランチでは本番release・pushは未実施。公開サイトの大規模な未確定差分と分離してから正式releaseする。
+
+### 2026-07-11 公開サイト依存の全面スリムダウン（実装中）
+- ユーザー決定: 公開HPに不要なSales dashboard、Notion同期、n8n/video orchestration、旧MVP/提案・レポートアーカイブは撤去する。ただし **Twenty CRM と Stagehand worker は現行営業実務で使うため削除しない**。
+- 撤去済み: Notion API/Webhook/syncライブラリ・スクリプト、n8n workflow JSON、旧Sales dashboard UI/専用pipelineコンテナ、旧MVP API、旧提案/レポート/optout archive、旧video orchestration routes/lib、未参照のaudio/pipeline helper。
+- 維持: `/api/sales/twenty/**`、`twenty-sync`、Twenty CRM metadata/sync、`worker/**` Stagehand、Twenty向けpipeline intake/data collection、公開report/video template（レポート埋め込み互換）。
+- Twenty pipelineの旧`video_generate` stepは、既存DB行との互換性を保ったまま明示的にskipする（n8n/video runtimeへの依存を再導入しない）。
+- 顧客ポータル表示名をNotion依存から汎用の「顧客ポータルURL」へ統一。旧DBカラム名 `paradigmCustomerPortalUrl` はTwenty互換のため保持する。
+- 検証状況: `tsc --noEmit` pass、quality guardは旧チェックを削除後に再実行予定。production releaseはこのブランチのbuild/test/release gate完了後に実施する。
 
 ### 2026-07-11 運用監査 remediation（実装済み・次回release待ち）
 - 公開管理API（infra / analytics / demo-designs）をoperator認証＋`no-store`へ変更。`/api/infra`の内部origin情報は未認証公開しない。
@@ -72,8 +195,11 @@
 
 ### Active Handoff / 完了条件
 - HP公開と無停止運用に必要なcode / environment / Cloudflare / Coolify / DB / backup / live smokeは完了。営業フローの壁打ち・自動化は別タスクのまま維持する。
-- **ユーザーまたは契約情報が必要な残件**: (1) Slack app webhook/token/channelの発行、(2) 代表者・住所・電話の正式値と法務レビュー、(3) 災害復旧用オフホスト保全の選択。現行backupは同一hostのため、Cloudflare R2等の保存先credentialを用意するか、有償Hetzner Backupを承認後に有効化する。
+- **ユーザーまたは契約情報が必要な残件**: (1) Slack app webhook/token/channelの発行、(2) 代表者・住所・電話の正式値と法務レビュー、(3) 災害復旧用オフホスト保全の選択、(4) PageSpeed quota付きAPI key / DataForSEO / Similarweb APIのいずれか。現行backupは同一hostのため、Cloudflare R2等の保存先credentialを用意するか、有償Hetzner Backupを承認後に有効化する。
 - 会社代表者・住所・電話の設定値は現状未登録のため、法定表示は申込前のメール開示fallbackを使用する。実値を取得できた時点でsettingsへ登録し、最終的な法務レビューを行う。
+- `node scripts/release-doctor.mjs --pre-deploy --allow-dirty` 実測: infra / Cloudflare / Twenty / Turnstile / Dify は pass。残るfailは Slack credential、verified metric provider、暗号化off-host backup、法定表示4項目、未追跡新規ファイル（commit前のため）の5系統。
+- 変更は `5dacdde`（`feat: harden public surface and evidence-backed outreach`）としてcommit/push済み。clean worktreeでの`--pre-deploy`再実測は、Slack、verified metric provider、暗号化off-host backup、法定表示の4 failureのみ。コード不備や未追跡ファイルによるblockは解消済み。
+- 最終commit `2e85036` 後に `npm run build` を再実行し、Next.js production build **324/324 pages** 生成・standalone content copyまで完了。`npm run lint`、`tsc --noEmit`、対象Vitest 4/4、quality guard 0 errorも再確認済み。
 
 ## CURRENT STATUS - 2026-07-10 Japan Entry固定オファー型ホームページ改修（本番反映完了）
 

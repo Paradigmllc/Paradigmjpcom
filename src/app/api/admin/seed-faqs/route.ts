@@ -147,7 +147,7 @@ const FAQS: SeedFaq[] = [
   {
     question: { ja: "WordPressとNext.jsの違いは？どちらを選べばいいですか？", en: "WordPress vs Next.js — which should I choose?" },
     answer: {
-      ja: "WordPressは管理画面が充実しており、自分で更新したい方におすすめです。Next.jsは表示速度が非常に速く、SEOに強く、より高度な機能実装が可能です。どちらが適しているかはサイトの目的や更新頻度によって異なります。無料相談時にヒアリングの上、最適な方をご提案します。",
+      ja: "WordPressは管理画面が充実しており、Next.jsは表示速度と高度な実装に強みがあります。Japan Entryでは現状の制約、公開スコープ、引き継ぎ条件を確認して採用技術を決めます。",
       en: "WordPress has a rich admin panel, while Next.js offers a high-performance delivery layer. The right choice depends on the agreed Japan Entry scope, current stack, and handover requirements; we confirm it during the fit review.",
     },
     category: { ja: "Web制作", en: "Web Development" },
@@ -183,7 +183,7 @@ const FAQS: SeedFaq[] = [
   {
     question: { ja: "見積もりだけでも大丈夫ですか？", en: "Can I just get a quote?" },
     answer: {
-      ja: "もちろんです。無料相談（30分）でヒアリングの上、無料でお見積りを提出します。見積もり後のご判断はご自由です。お見積りだけでご発注いただけなくても問題ありません。",
+      ja: "Japan Entryの適合審査では、12,000ドル固定の範囲、依存条件、必要な承認者を確認します。契約前に書面で条件を提示し、適合しない場合は受注しません。",
       en: "The Japan Entry application is a fit review, not contract acceptance. We confirm the fixed $12,000 setup scope, dependencies, and written terms before any work starts.",
     },
     category: { ja: "お申し込み前", en: "Before Ordering" },
@@ -201,8 +201,8 @@ const FAQS: SeedFaq[] = [
   {
     question: { ja: "競合他社と比べて何が違いますか？", en: "What makes you different from competitors?" },
     answer: {
-      ja: "最大の違いは3点です。①「AI×デジタル」の融合：最新のAI技術（DeepSeek、Dify等）を活用し、人間だけでは実現できない効率と品質を提供します。②「一気通貫」：Web制作からMEO/SEO/GEO/AI導入までワンストップ。複数ベンダー管理の手間がなくなります。③「成果保証」：MEO/SEOは一定期間内に成果が出なければ返金対応。リスクなく始められます。",
-      en: "Three key differences: ① AI × Digital fusion: we leverage cutting-edge AI (DeepSeek, Dify, etc.) for efficiency and quality beyond human-only approaches. ② End-to-end: web development through MEO/SEO/GEO/AI — one partner instead of multiple vendors. ③ Results guarantee: MEO/SEO plans include a money-back guarantee if targets aren't met within the agreed timeframe. Start risk-free.",
+      ja: "最大の違いは3点です。①日本語の販売・問い合わせ導線を固定スコープで実装。②決済、法務表示、運用条件を先に確認。③12,000ドル固定で、最初の6か月は月額無料。売上成果は保証せず、合意した成果物と運用範囲を提供します。",
+      en: "Three differences: ① a fixed-scope Japanese revenue and inquiry path, ② payment, disclosure, and operating dependencies confirmed before kickoff, and ③ a fixed $12,000 setup with six months of managed operation at $0/month. Sales outcomes are not guaranteed.",
     },
     category: { ja: "お申し込み前", en: "Before Ordering" },
     sortOrder: 18,
