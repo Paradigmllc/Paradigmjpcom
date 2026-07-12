@@ -37,7 +37,7 @@ export default async function LegalPage({ params }: Props) {
   const translatedRows = t.raw("rows") as Array<[string, string]>
   const ROWS = translatedRows.map(([label, value], index): [string, string] => {
     if (index === 0) return [label, settings.company.legalName || value]
-    if (index === 1) return [label, settings.company.representativeName || value]
+    if (index === 1) return [label, value]
     if (index === 2) return [label, settings.company.address || settings.contact.address || value]
     if (index === 3) return [label, settings.contact.phone || value]
     if (index === 4) return [label, settings.contact.email || value]

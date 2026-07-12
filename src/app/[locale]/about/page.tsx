@@ -52,7 +52,6 @@ function buildEnglishCompanyInfo(
     ["Registered name", settings.company.legalName ?? settings.siteName],
   ]
   if (settings.company.registrationNumber) rows.push(["Registration number", settings.company.registrationNumber])
-  if (settings.company.representativeName) rows.push(["Representative", settings.company.representativeName])
   if (settings.company.foundedYear) rows.push(["Founded", settings.company.foundedYear])
   const configuredAddress = settings.company.address ?? settings.contact.address
   if (configuredAddress) {
@@ -73,7 +72,6 @@ function buildJapaneseCompanyInfo(
     ["会社名", settings.company.legalName ?? settings.siteName],
   ]
   if (settings.company.registrationNumber) rows.push(["法人番号", settings.company.registrationNumber])
-  if (settings.company.representativeName) rows.push(["代表", settings.company.representativeName])
   if (settings.company.foundedYear) rows.push(["設立", `${settings.company.foundedYear}年`])
   const configuredAddress = settings.company.address ?? settings.contact.address
   if (configuredAddress) {

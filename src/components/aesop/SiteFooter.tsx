@@ -29,10 +29,10 @@ import { CONSENT_SETTINGS_EVENT } from "@/lib/cookie-consent"
 const EASE = [0.22, 1, 0.36, 1] as const
 
 const SERVICE_LINKS = [
-  { href: "/services/web", labelKey: "web" },
-  { href: "/services/meo", labelKey: "meo" },
-  { href: "/services/seo", labelKey: "seo" },
-  { href: "/services/ai", labelKey: "ai" },
+  { href: "/services", labelKey: "web" },
+  { href: "/pricing", labelKey: "meo" },
+  { href: "/works", labelKey: "seo" },
+  { href: "/about", labelKey: "ai" },
 ] as const
 
 interface FooterProps {
@@ -78,8 +78,8 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
   const tLocale = useTranslations("locale")
   const tCookie = useTranslations("cookieConsent")
   const locale = useLocale()
-  const contactHref = locale === "en" ? "/contact?intent=japan-entry" : "/contact"
-  const japanEntryAnalytics = locale === "en" ? {
+  const contactHref = locale === "en" || locale === "ja" ? "/contact?intent=japan-entry" : "/contact"
+  const japanEntryAnalytics = locale === "en" || locale === "ja" ? {
     "data-umami-event": "japan-entry-apply",
     "data-umami-event-source": "footer",
   } : {}
@@ -88,9 +88,9 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
   const legalName = settings?.company?.legalName || t("company")
   const companyDetails = [
     settings?.company?.address,
-    settings?.company?.representativeName
-      ? `${t("representativeLabel")}: ${settings.company.representativeName}`
-      : null,
+    // Personal representative names are intentionally not published on the
+    // public site; legal identity is disclosed through the formal channel.
+    null,
     settings?.company?.registrationNumber
       ? `${t("registrationLabel")}: ${settings.company.registrationNumber}`
       : null,
