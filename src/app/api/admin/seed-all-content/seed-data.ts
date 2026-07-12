@@ -344,7 +344,7 @@ export async function seedAllContent(
       },
       {
         blockType: "pricing",
-        id: "japan-entry-pricing", title: "Japan Entry 固定オファー", subtitle: "セットアップ12,000ドル。最初の6か月は標準月額運用込み。7か月目以降は月額995ドル。",
+        title: "Japan Entry 固定オファー", subtitle: "セットアップ12,000ドル。最初の6か月は標準月額運用込み。7か月目以降は月額995ドル。",
         tiers: [
           { name: "Japan Entry Package", price: "$12,000", period: "one-time", description: "日本市場への購入者導線、調査、初期チャネル、法規制確認、公開運用、引き継ぎを一つにまとめた固定スコープ。", features: "LP / HPローカライズ\nSNS最大2チャネルの初期設定\n最大3市場の公開シグナル比較＋1市場深掘り\n特商法・関連規制の適用可能性整理\n日本語問い合わせ・適格な決済導線\n14営業日の公開目標\n月額0ドル（最初の6か月）\n7か月目以降は月額995ドル", ctaLabel: "Japan Entry 適合審査 — $12K", ctaHref: "/ja/contact?intent=japan-entry", highlighted: true },
         ],
