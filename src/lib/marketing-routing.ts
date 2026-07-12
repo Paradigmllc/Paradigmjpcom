@@ -45,6 +45,26 @@ const ALL_LOCALES = new Set<string>([
 ])
 const FALLBACK_LOCALES = new Set<string>(INTERNATIONAL_REPORT_LOCALES)
 
+// Public blog editorial is currently maintained in one locale per article.
+// Keep locale-switch links from landing on a valid slug with no translation.
+const ENGLISH_BLOG_SLUGS = new Set([
+  "enter-japan-without-hiring-local-team",
+  "japan-entry-21-business-day-readiness",
+  "localization-vs-translation-japan-buyers",
+  "japanese-entity-bank-account-needed",
+  "japan-entry-cost-hiring-agency-fixed-scope",
+  "build-trust-with-japanese-buyers",
+  "what-a-japan-entry-package-should-deliver",
+  "japan-entry-package-vs-diy-hire-agency-stack",
+  "first-30-days-after-japan-launch",
+])
+const JAPANESE_BLOG_SLUGS = new Set([
+  "japan-entry-kickoff-checklist-ja",
+  "japan-entry-translation-localization-ja",
+  "japan-entry-public-data-limitations-ja",
+  "japan-entry-first-30-days-ja",
+])
+
 export type MarketingLocale = (typeof MARKETING_LOCALES)[number]
 
 export function isMarketingLocale(locale: string): locale is MarketingLocale {
@@ -88,6 +108,28 @@ export function isNonIndexablePath(pathname: string) {
   if (!ALL_LOCALES.has(root)) return false
   const localeRoot = segments[1]
   return Boolean(localeRoot && NON_INDEXABLE_LOCALE_ROOTS.has(localeRoot))
+}
+
+/**
+ * Locale-switching a blog article must never turn an existing article into a
+ * not-found page. Move to the maintained locale at the proxy boundary so the
+ * response is a real HTTP redirect, even when the route is streamed.
+ */
+export function getBlogLocaleRedirect(source: URL) {
+  const segments = source.pathname.split("/").filter(Boolean)
+  if (segments.length !== 3 || segments[1] !== "blog") return null
+
+  const [locale, , slug] = segments
+  const destination = new URL(source.toString())
+  if (locale === "ja" && ENGLISH_BLOG_SLUGS.has(slug)) {
+    destination.pathname = `/en/blog/${slug}`
+    return destination
+  }
+  if (locale === "en" && JAPANESE_BLOG_SLUGS.has(slug)) {
+    destination.pathname = `/ja/blog/${slug}`
+    return destination
+  }
+  return null
 }
 
 /**

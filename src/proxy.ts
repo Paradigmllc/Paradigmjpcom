@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import {
+  getBlogLocaleRedirect,
   getEnglishLegacyOfferRedirect,
   getInternationalMarketingRedirect,
   getJapaneseLegacyOfferRedirect,
@@ -36,6 +37,11 @@ export function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL("/ja", request.url))
     }
     return NextResponse.redirect(new URL("/en", request.url))
+  }
+
+  const blogLocaleRedirect = getBlogLocaleRedirect(request.nextUrl)
+  if (blogLocaleRedirect) {
+    return NextResponse.redirect(blogLocaleRedirect, 308)
   }
 
   const englishLegacyOfferRedirect = getEnglishLegacyOfferRedirect(request.nextUrl)

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  getBlogLocaleRedirect,
   getEnglishLegacyOfferRedirect,
   getInternationalMarketingRedirect,
   getJapaneseLegacyOfferRedirect,
@@ -7,6 +8,22 @@ import {
   isNonIndexablePath,
   isPublicMarketingPath,
 } from "./marketing-routing"
+
+describe("blog locale redirects", () => {
+  it("keeps an English article on its maintained locale", () => {
+    const result = getBlogLocaleRedirect(
+      new URL("https://paradigmjp.com/ja/blog/what-a-japan-entry-package-should-deliver?source=switcher"),
+    )
+    expect(result?.pathname).toBe("/en/blog/what-a-japan-entry-package-should-deliver")
+    expect(result?.search).toBe("?source=switcher")
+  })
+
+  it("keeps a Japanese-only article on the Japanese locale", () => {
+    expect(
+      getBlogLocaleRedirect(new URL("https://paradigmjp.com/en/blog/japan-entry-kickoff-checklist-ja"))?.pathname,
+    ).toBe("/ja/blog/japan-entry-kickoff-checklist-ja")
+  })
+})
 import { pageAlternates } from "./page-metadata"
 
 describe("marketing routing", () => {
