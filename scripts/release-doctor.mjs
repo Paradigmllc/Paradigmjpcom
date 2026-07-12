@@ -207,11 +207,14 @@ function checkStaticReleaseRules() {
     noLoginDeploy.includes("https://paradigmjp.com/en/contact") &&
     noLoginDeploy.includes("Confirm your fit and launch timing") &&
     noLoginDeploy.includes("seedEnglishHomepage") &&
-    noLoginDeploy.includes('scope: "homepage-en"')
+    noLoginDeploy.includes('scope: "homepage-en"') &&
+    noLoginDeploy.includes("seedEnglishJapanEntryBlog") &&
+    noLoginDeploy.includes("/api/admin/seed-japan-entry-blog") &&
+    noLoginDeploy.includes("What Should a Japan Entry Package Actually Deliver?")
   ) {
-    pass("deploy publishes and smokes the English Japan Entry funnel")
+    pass("deploy publishes and smokes the English Japan Entry funnel and editorial set")
   } else {
-    fail("deploy must publish the English CMS homepage and smoke the dedicated application")
+    fail("deploy must publish the English homepage/blog and smoke the dedicated application")
   }
 
   const contactMigrationPath = "supabase/migrations/migration_068_contact_submission_atomicity.sql"

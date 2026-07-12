@@ -1,5 +1,12 @@
 ## CURRENT STATUS - 2026-07-11 P0公開面・実運用ハードニング（実装済み / 正式releaseは外部設定待ち）
 
+### 2026-07-12 Japan Entry package content expansion（実装済み・正式release待ち）
+- `/en/pricing` に、固定パッケージの5モジュール（Japanese buyer path / Trust and compliance coordination / Japan discovery foundation / Bilingual support route / Launch operations）を追加。各モジュールのdeliverables、scope boundary、handover前提を明示した。
+- 同ページに、意思決定の速いSMB向けの導入メリット4項目と、DIY・local hire・multiple specialistsとの比較表を追加。比較は価格断定や競合名ではなく、責任範囲・初回launch path・統合コスト・適合条件の差として記載した。
+- 英語Japan Entryブログを6本から9本へ拡張。「パッケージの納品物」「DIY/採用/代理店比較」「公開後30日で測るもの」を追加。全記事に`japan-entry-public`タグ、900文字超の本文、固定価格・法務境界・不確実性の明示を維持した。
+- `release:prod`の正式deploy後に`/api/admin/seed-japan-entry-blog`を冪等実行し、ブログ9本をCMSへpublishしてから`/en/blog`で新記事タイトルをsmokeする経路を追加。release-doctorの静的検査にもseed/smoke配線を追加した。
+- 検証: `messages/en.json` parse、TypeScript、全Vitest 87 files / 403 tests、ESLint 0 error、production build 336/336 pages、quality guard 0 error / 50 warning。既存の行数warningのみで、500行超ファイルは発生していない。
+
 ### 2026-07-12 Japan Entry Signal Check utility（実装済み・正式release待ち）
 - `/en/tools/japan-entry-score` と `/ja/tools/japan-entry-score` を追加。Webサイト、対象市場、5つの自己申告項目を入力すると、公開シグナルと自己申告を分離した `japan-entry-score-v1` を表示する。
 - スコアはPublic visibility / Target-market alignment / Japan localization and trust / Commerce footprint / Execution readinessの5軸。未知データを0点扱いせず、`coverage`を別表示する。

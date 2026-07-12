@@ -528,6 +528,118 @@
       "Standard monthly service included for the first six months",
       "$995/month from month seven"
     ],
+    "packageEyebrow": "What you are buying",
+    "packageTitle": "One launch system, delivered in five connected parts.",
+    "packageDesc": "The package is not a menu of disconnected tasks. Each module removes a different launch dependency, with one written scope, one approval path, and one handover.",
+    "packageModules": [
+      {
+        "title": "Japanese buyer path",
+        "description": "Turn the existing offer into a Japanese-facing route a buyer can understand and act on.",
+        "deliverables": [
+          "Localized information architecture and copy direction",
+          "Responsive revenue site and CMS handover",
+          "Clear inquiry or eligible payment path"
+        ]
+      },
+      {
+        "title": "Trust and compliance coordination",
+        "description": "Make responsibility, privacy, commercial terms, and open professional questions visible before launch.",
+        "deliverables": [
+          "Public trust and disclosure checklist",
+          "Privacy and commercial-page coordination",
+          "Escalation list for legal, tax, banking, or licensing advice"
+        ]
+      },
+      {
+        "title": "Japan discovery foundation",
+        "description": "Prepare the eligible local discovery surfaces and measurement baseline relevant to the offer.",
+        "deliverables": [
+          "Profile and entity information setup where applicable",
+          "Search and discovery structure",
+          "Inspectable baseline without ranking guarantees"
+        ]
+      },
+      {
+        "title": "Bilingual support route",
+        "description": "Define how Japanese buyer questions are answered, escalated, owned, and handed over.",
+        "deliverables": [
+          "First-line support knowledge and routing",
+          "Human review boundaries for uncertain requests",
+          "Ownership, response, and handover documentation"
+        ]
+      },
+      {
+        "title": "Launch operations",
+        "description": "Keep decisions, dependencies, checks, and acceptance criteria in one accountable delivery path.",
+        "deliverables": [
+          "Gated 21-business-day launch target",
+          "Analytics and notification baseline",
+          "Launch checklist and operator handover"
+        ]
+      }
+    ],
+    "benefitsEyebrow": "Why this structure",
+    "benefitsTitle": "The value is less coordination risk, not more activity.",
+    "benefitsDesc": "A fast-decision SMB usually does not need another strategy deck. It needs a clear decision, a usable first route into Japan, and an owner for the dependencies that can stop launch.",
+    "packageBenefits": [
+      {
+        "title": "One approval surface",
+        "description": "Approve one fixed setup scope instead of coordinating separate quotes for site, search, support, and launch operations."
+      },
+      {
+        "title": "Unknowns become explicit",
+        "description": "Legal, tax, banking, fulfilment, provider, and content dependencies are listed before they become hidden schedule risk."
+      },
+      {
+        "title": "Optionality before overhead",
+        "description": "Create a buyer-facing route and learn what must be true before committing to a local hire, entity, office, or broad vendor stack."
+      },
+      {
+        "title": "A real handover",
+        "description": "The launch ends with ownership, operating steps, measurement signals, and a clear month-seven service decision—not an unfinished build."
+      }
+    ],
+    "comparisonEyebrow": "Compare the operating model",
+    "comparisonTitle": "Choose the model that matches the decision you are ready to make.",
+    "comparisonDesc": "This is a scope and coordination comparison, not a claim that one model fits every company. A local hire can be right for a long-term in-country build; multiple specialists can be right when you already have an integration owner.",
+    "comparisonHeaders": {
+      "criterion": "Decision dimension",
+      "package": "Japan Entry package",
+      "hire": "Local hire first",
+      "vendors": "Multiple specialists"
+    },
+    "comparisonRows": [
+      {
+        "criterion": "First launch path",
+        "package": "Gated 21-business-day target after inputs and approvals are ready",
+        "hire": "Recruiting, onboarding, and role design come first",
+        "vendors": "Each workstream starts on its own schedule"
+      },
+      {
+        "criterion": "Accountability",
+        "package": "One written scope, operator, approval path, and handover",
+        "hire": "One employee still needs specialist partners and internal support",
+        "vendors": "The client usually owns cross-vendor integration"
+      },
+      {
+        "criterion": "Commercial shape",
+        "package": "$12,000 fixed setup; six months included; $995/month from month seven",
+        "hire": "Recruiting, salary, employment overhead, and management cost",
+        "vendors": "Separate proposals, retainers, minimums, and change orders"
+      },
+      {
+        "criterion": "Professional boundaries",
+        "package": "Coordinates implementation and flags where qualified advice is required",
+        "hire": "Local context helps, but advice and licences still need the right specialists",
+        "vendors": "Responsibility depends on each contract and handoff"
+      },
+      {
+        "criterion": "Best fit",
+        "package": "A fast decision-maker with a real offer and a defined launch question",
+        "hire": "A company ready to build a permanent local operating team",
+        "vendors": "A company with an internal program owner and time to coordinate"
+      }
+    ],
     "scopeEyebrow": "Scope boundary",
     "scopeTitle": "Know what the fixed price covers before you apply.",
     "scopeDesc": "Final deliverables and dependencies are written into the engagement scope before work starts. The launch target assumes timely access, content, feedback, and approval.",

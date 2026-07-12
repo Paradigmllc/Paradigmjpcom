@@ -59,6 +59,13 @@ type PricingDoc = {
 }
 
 type ScopeGroup = { title: string; items: string[] }
+type PackageModule = { title: string; description: string; deliverables: string[] }
+type PackageBenefit = { title: string; description: string }
+type ComparisonRow = { criterion: string; package: string; hire: string; vendors: string }
+
+function readRawArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? value as T[] : []
+}
 
 export default async function PricingPage({ params, searchParams }: Props) {
   const { locale: rawLocale } = await params
@@ -69,6 +76,9 @@ export default async function PricingPage({ params, searchParams }: Props) {
   const t = await getTranslations({ locale, namespace: "pricingPage" })
   const faqPairs = (t.raw("pricingFaqs") as Array<{ q: string; a: string }>) ?? []
   const scopeGroups = isEnglish ? (t.raw("scopeGroups") as ScopeGroup[]) : []
+  const packageModules = isEnglish ? readRawArray<PackageModule>(t.raw("packageModules")) : []
+  const packageBenefits = isEnglish ? readRawArray<PackageBenefit>(t.raw("packageBenefits")) : []
+  const comparisonRows = isEnglish ? readRawArray<ComparisonRow>(t.raw("comparisonRows")) : []
 
   // Billing cycle ラベルは namespace 経由で locale 別取得 (旧 BILLING_LABEL hardcode 廃止)
   const billingLabelFor = (cycle: string | undefined): string => {
@@ -246,6 +256,91 @@ export default async function PricingPage({ params, searchParams }: Props) {
           )}
         </div>
       </section>
+
+      {packageModules.length > 0 && (
+        <section className="relative overflow-hidden bg-paradigm-paper paradigm-section" aria-labelledby="package-modules-heading">
+          <div className="paradigm-mesh opacity-20" />
+          <div className="relative z-10 mx-auto max-w-6xl px-6 md:px-8">
+            <FadeIn className="mb-8 max-w-3xl">
+              <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{t("packageEyebrow")}</p>
+              <h2 id="package-modules-heading" className="font-display text-[24px] leading-[1.15] text-paradigm-ink md:text-[38px]">{t("packageTitle")}</h2>
+              <p className="mt-4 text-[14px] leading-[1.8] text-paradigm-ink-soft">{t("packageDesc")}</p>
+            </FadeIn>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
+              {packageModules.map((module, index) => (
+                <FadeIn key={module.title} delay={index * 0.04}>
+                  <article className="h-full rounded-lg border border-paradigm-line bg-paradigm-paper-deep p-5 paradigm-glow-sm">
+                    <p className="paradigm-eyebrow text-paradigm-accent">{String(index + 1).padStart(2, "0")}</p>
+                    <h3 className="mt-3 font-display text-[18px] leading-[1.2] text-paradigm-ink">{module.title}</h3>
+                    <p className="mt-3 text-[13px] leading-[1.75] text-paradigm-ink-soft">{module.description}</p>
+                    <ul className="mt-4 space-y-2 border-t border-paradigm-line/60 pt-4 text-[12px] leading-[1.65] text-paradigm-ink-soft">
+                      {module.deliverables.map((deliverable) => <li key={deliverable} className="flex gap-2"><span aria-hidden className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-paradigm-accent" /><span>{deliverable}</span></li>)}
+                    </ul>
+                  </article>
+                </FadeIn>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {packageBenefits.length > 0 && (
+        <section className="relative overflow-hidden bg-paradigm-paper-deep paradigm-section" aria-labelledby="package-benefits-heading">
+          <div className="relative z-10 mx-auto max-w-6xl px-6 md:px-8">
+            <FadeIn className="mb-8 max-w-3xl">
+              <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{t("benefitsEyebrow")}</p>
+              <h2 id="package-benefits-heading" className="font-display text-[24px] leading-[1.15] text-paradigm-ink md:text-[38px]">{t("benefitsTitle")}</h2>
+              <p className="mt-4 text-[14px] leading-[1.8] text-paradigm-ink-soft">{t("benefitsDesc")}</p>
+            </FadeIn>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {packageBenefits.map((benefit, index) => (
+                <FadeIn key={benefit.title} delay={index * 0.05}>
+                  <article className="h-full rounded-lg border border-paradigm-line bg-paradigm-paper p-6 paradigm-glow-sm">
+                    <h3 className="font-display text-[18px] leading-[1.2] text-paradigm-ink">{benefit.title}</h3>
+                    <p className="mt-3 text-[13px] leading-[1.8] text-paradigm-ink-soft">{benefit.description}</p>
+                  </article>
+                </FadeIn>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {comparisonRows.length > 0 && (
+        <section className="relative overflow-hidden bg-paradigm-paper paradigm-section" aria-labelledby="package-comparison-heading">
+          <div className="paradigm-mesh opacity-20" />
+          <div className="relative z-10 mx-auto max-w-6xl px-6 md:px-8">
+            <FadeIn className="mb-8 max-w-3xl">
+              <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{t("comparisonEyebrow")}</p>
+              <h2 id="package-comparison-heading" className="font-display text-[24px] leading-[1.15] text-paradigm-ink md:text-[38px]">{t("comparisonTitle")}</h2>
+              <p className="mt-4 text-[14px] leading-[1.8] text-paradigm-ink-soft">{t("comparisonDesc")}</p>
+            </FadeIn>
+            <div className="overflow-x-auto rounded-lg border border-paradigm-line bg-paradigm-paper-deep paradigm-glow-sm">
+              <table className="min-w-[760px] w-full border-collapse text-left text-[13px] leading-[1.7]">
+                <caption className="sr-only">{t("comparisonTitle")}</caption>
+                <thead>
+                  <tr className="border-b border-paradigm-line bg-paradigm-paper">
+                    <th scope="col" className="w-[20%] px-4 py-4 font-semibold text-paradigm-ink">{t("comparisonHeaders.criterion")}</th>
+                    <th scope="col" className="w-[27%] px-4 py-4 font-semibold text-paradigm-accent">{t("comparisonHeaders.package")}</th>
+                    <th scope="col" className="w-[26%] px-4 py-4 font-semibold text-paradigm-ink">{t("comparisonHeaders.hire")}</th>
+                    <th scope="col" className="w-[27%] px-4 py-4 font-semibold text-paradigm-ink">{t("comparisonHeaders.vendors")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparisonRows.map((row) => (
+                    <tr key={row.criterion} className="border-b border-paradigm-line/60 last:border-0 align-top">
+                      <th scope="row" className="px-4 py-4 font-semibold text-paradigm-ink">{row.criterion}</th>
+                      <td className="px-4 py-4 text-paradigm-ink-soft">{row.package}</td>
+                      <td className="px-4 py-4 text-paradigm-ink-soft">{row.hire}</td>
+                      <td className="px-4 py-4 text-paradigm-ink-soft">{row.vendors}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      )}
 
       {scopeGroups.length > 0 && (
         <section className="relative overflow-hidden bg-paradigm-paper-deep paradigm-section" aria-labelledby="scope-heading">

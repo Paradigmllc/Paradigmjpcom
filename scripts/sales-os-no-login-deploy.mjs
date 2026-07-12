@@ -972,6 +972,36 @@ async function seedEnglishHomepage(envs) {
   console.log("English homepage CMS publish OK")
 }
 
+async function seedEnglishJapanEntryBlog(envs) {
+  const secret = envs.ADMIN_SCRIPT_SECRET
+  if (typeof secret !== "string" || secret.trim().length < 16) {
+    throw new Error("ADMIN_SCRIPT_SECRET must be configured before publishing the English Japan Entry blog")
+  }
+
+  const response = await fetch("https://paradigmjp.com/api/admin/seed-japan-entry-blog", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-admin-secret": secret,
+    },
+    body: JSON.stringify({ confirm: true }),
+    signal: AbortSignal.timeout(120_000),
+  })
+  const bodyText = await response.text()
+  let result = null
+  try {
+    result = bodyText ? JSON.parse(bodyText) : null
+  } catch (error) {
+    console.error("English Japan Entry blog seed returned invalid JSON:", error)
+  }
+  if (!response.ok || result?.success !== true || result?.errors?.length > 0) {
+    throw new Error(
+      `English Japan Entry blog publish failed: HTTP ${response.status}${bodyText ? ` ${bodyText.slice(0, 500)}` : ""}`,
+    )
+  }
+  console.log(`English Japan Entry blog publish OK (${result.total} articles; ${result.created} created, ${result.updated} updated)`)
+}
+
 function readOriginLockHelper() {
   return fs.readFileSync(
     new URL("./lib/refresh-traefik-origin-lock.py", import.meta.url),
@@ -1157,6 +1187,7 @@ async function main() {
     await waitDeploy(uuid)
     refreshManualTraefikRoute()
     await seedEnglishHomepage(envs)
+    await seedEnglishJapanEntryBlog(envs)
   } else {
     console.log("Dry/skip mode: skipped Coolify deploy")
   }
@@ -1185,7 +1216,7 @@ async function main() {
     { url: "https://paradigmjp.com/en/pricing", markers: ["$12,000", "$995"] },
     { url: "https://paradigmjp.com/en/faq", markers: ["$12,000"] },
     { url: "https://paradigmjp.com/en/works" },
-    { url: "https://paradigmjp.com/en/blog" },
+    { url: "https://paradigmjp.com/en/blog", markers: ["What Should a Japan Entry Package Actually Deliver?"] },
     { url: "https://paradigmjp.com/en/privacy" },
     { url: "https://paradigmjp.com/en/legal", markers: ["$12,000"] },
     { url: `https://paradigmjp.com${envValue("RELEASE_REPORT_SMOKE_PATH", "/en/report/ccbc-xynd21")}` },
