@@ -17,6 +17,7 @@ const PUBLIC_MARKETING_ROOTS = new Set([
   "services",
   "video",
   "works",
+  "tools",
 ])
 
 const LEGACY_OFFER_ROOTS = new Set(["agency", "lp", "services", "video"])

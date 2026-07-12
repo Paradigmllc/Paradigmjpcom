@@ -1,5 +1,13 @@
 ## CURRENT STATUS - 2026-07-11 P0公開面・実運用ハードニング（実装済み / 正式releaseは外部設定待ち）
 
+### 2026-07-12 Japan Entry Signal Check utility（実装済み・正式release待ち）
+- `/en/tools/japan-entry-score` と `/ja/tools/japan-entry-score` を追加。Webサイト、対象市場、5つの自己申告項目を入力すると、公開シグナルと自己申告を分離した `japan-entry-score-v1` を表示する。
+- スコアはPublic visibility / Target-market alignment / Japan localization and trust / Commerce footprint / Execution readinessの5軸。未知データを0点扱いせず、`coverage`を別表示する。
+- 実訪問数・国別実訪問比率・売上は常にunknown/null。根拠URL・観測日時・公開シグナル・未確認項目・優先アクションを結果画面に表示し、固定 `$12K`申込CTAへ接続する。
+- APIは`POST /api/tools/japan-entry-score`。Turnstile、Cloudflare trusted-proxy rate limit（3回/10分）、honeypot、公開ドメイン検証、SSRF対策、source timeoutを実装。結果はraw IP/emailを保存せず、domain hashと30日期限の結果JSONを`public_japan_entry_checks`へ保存する。
+- `migration_072_public_japan_entry_checks.sql`、release migration path、DB table verification、JA/EN nav・sitemap・homepage promoを追加。Twenty/Stagehandや既存Sales OS経路は変更していない。
+- 検証: utility/API tests 6/6 pass、全体Vitest 87 files / 403 tests pass、TypeScript pass、全体ESLint 0 error、production build 336/336 pages pass、quality guard 0 error / 48 warning。`release-doctor --local-only --allow-dirty`はmigration/RLS/wiringを含めpass。正式releaseは下記の外部設定3件が揃うまで実行しない。
+
 ### 2026-07-12 無料OSS Market Visibility Index（実装済み・正式release待ち）
 - Similarwebのような私有アクセス数・売上を無料ソースから推測して表示することは止め、`public-signals-v1`契約を追加。Tranco / Cloudflare Radar / Common Crawl / 公開sitemap / schema.org / 国別NIC-RDAPの観測値だけを保存する。
 - `MarketVisibilityIndex` は公開順位・クロールフットプリント・更新鮮度を0–100の可視性指標に正規化するが、`actualMonthlyVisits` / `actualRevenue` / 国別実訪問比率は常に `null`。各証拠にsource URL・観測日時・confidence・制約を保存する。

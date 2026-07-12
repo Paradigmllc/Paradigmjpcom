@@ -612,6 +612,10 @@ async function applyPublicSurfaceRlsMigration(envs) {
   return applySqlMigration(envs, "migration_071_public_surface_rls_and_constraints.sql", "Public surface RLS and constraint migration")
 }
 
+async function applyPublicJapanEntryChecksMigration(envs) {
+  return applySqlMigration(envs, "migration_072_public_japan_entry_checks.sql", "Public Japan Entry checks migration")
+}
+
 function runDeployGuard() {
   if (SKIP_DEPLOY_GUARD) {
     console.log("Coolify deploy guard: skipped")
@@ -1115,6 +1119,7 @@ async function main() {
     console.log(await applyPayloadPostsConstraintsMigration(envs))
     console.log(await applyDemoContactHardeningMigration(envs))
     console.log(await applyPublicSurfaceRlsMigration(envs))
+    console.log(await applyPublicJapanEntryChecksMigration(envs))
     console.log(await applyVideoPipelineMigration(envs))
     console.log(await applyVideoStrategyMigration(envs))
     console.log(await applyVideoProductionMigration(envs))

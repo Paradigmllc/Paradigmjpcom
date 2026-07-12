@@ -255,6 +255,22 @@ function checkStaticReleaseRules() {
     fail("Payload posts migration/release wiring must preserve ON CONFLICT writes")
   }
 
+  const scoreMigrationPath = "supabase/migrations/migration_072_public_japan_entry_checks.sql"
+  const scoreMigration = fs.existsSync(scoreMigrationPath)
+    ? fs.readFileSync(scoreMigrationPath, "utf8")
+    : ""
+  if (
+    scoreMigration.includes("public_japan_entry_checks") &&
+    scoreMigration.includes("ENABLE ROW LEVEL SECURITY") &&
+    scoreMigration.includes("TO service_role") &&
+    noLoginDeploy.includes("migration_072_public_japan_entry_checks.sql") &&
+    noLoginDeploy.includes("applyPublicJapanEntryChecksMigration")
+  ) {
+    pass("Japan Entry score utility persistence has RLS and release migration wiring")
+  } else {
+    fail("Japan Entry score utility persistence must have RLS and release migration wiring")
+  }
+
   const buildWrapper = fs.readFileSync("scripts/build-next.mjs", "utf8")
   if (buildWrapper.includes("PAYLOAD_DISABLE_DATABASE_DURING_BUILD") && buildWrapper.includes("runWithHeartbeat")) {
     pass("Next build wrapper disables build-time DB dependency and emits heartbeat")

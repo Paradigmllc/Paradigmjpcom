@@ -66,6 +66,7 @@ export default function SiteHeader({ nav, announcementActive = false }: SiteHead
     { href: "/pricing", label: t("pricing") },
     { href: "/blog", label: t("blog") },
     { href: "/faq", label: t("faq") },
+    { href: "/tools/japan-entry-score", label: t("japanEntryScore") },
   ]
   // Every public English route sells the same fixed Japan Entry package.
   // Do not let CMS navigation re-introduce a generic contact CTA on sub-pages.
@@ -76,6 +77,7 @@ export default function SiteHeader({ nav, announcementActive = false }: SiteHead
     { href: "/works", label: t("works") },
     { href: "/faq", label: t("faq") },
     { href: "/blog", label: t("blog") },
+    { href: "/tools/japan-entry-score", label: t("japanEntryScore") },
   ]
   const NAV: NavLink[] = isJapanEntryConversionRoute
     ? JAPAN_ENTRY_NAV
