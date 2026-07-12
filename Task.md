@@ -1,3 +1,21 @@
+## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
+
+### 2026-07-12 Final production release (完了)
+- `main` の本番コミット `2beaf1e` を正式な `npm run release:prod` でデプロイ。Coolify deployment `l3vuskyiaj8pigdxsdpz56n1` は `finished`、現行コンテナ `n8i2sjiqvr2d8hrzppop2m2i-120124223176` は `healthy`。
+- pre-deploy / migration / Coolify / Traefik origin refresh / post-deploy release-doctor を全て通過。DB table verification **81/81**、公開schema RLS/anon ACL・integration slug制約、Supabase Realtime、Twenty worker、常駐timer/禁止worker停止、Cloudflare直origin遮断を確認。
+- CMS publishはEnglish homepageとJapan Entry blog **9記事**を冪等publish。切替直後のCloudflare 502/504を限定リトライで自動回復し、post-deploy smokeは全対象URL **HTTP 200**、Sales healthは **HTTP 200 / JSON ok**。
+- 本番URL実測: `/api/ready` `ok:true`、`/en`（visual proof + Signal Check CTA）、`/en/about`（代表者・法務情報）、`/en/works`、`/en/tools/japan-entry-score`（Signal Check）、`/en/blog`、`/ja/blog`（日本語キックオフ記事）、`/en/contact`、`/en/pricing`、`/en/faq`、`/en/legal` は全てHTTP 200。
+- 運用env: Slack operator DM通知、法務identity、暗号化R2 backup、Turnstile、Twenty、Dify、public-signals evidence modeをrelease gateで検証済み。実電話番号を捏造せず、申込前の電子メール開示文言を維持。
+- 残るquality guardの **50 warnings** は300〜499行の分割候補で、error 0・release blockerなし。次回の保守タスクとして責務分割を行う。
+
+### 2026-07-12 Release hardening fixes
+- `scripts/release-doctor.mjs`: public schema匿名権限チェックをrelation OIDで評価し、動的relation解決による誤失敗を解消。
+- `src/app/api/sales/health/route.ts`: Twentyをhealth内で単一probe化、停止ポリシー対象の内部Stagehand/Steel/Crawlee/Outreachは未設定扱い、内部Payload TCP probeはSupabase Event Store検証と併記して警告付きokに整理。
+- `src/lib/db/pool-monitor.ts`: DB TCP probeを短い2回再試行へ変更。
+- `scripts/sales-os-no-login-deploy.mjs`: CMS seedの一時502/503/504・接続エラーを4回まで限定リトライ。
+
+※ 以下の過去セクションは実装履歴。現在の本番状態・URL・release gateの判定は本セクションを正本とする。
+
 ## CURRENT STATUS - 2026-07-11 P0公開面・実運用ハードニング（実装済み / 正式releaseは外部設定待ち）
 
 ### 2026-07-12 Visual proof + utility placement（実装中）
