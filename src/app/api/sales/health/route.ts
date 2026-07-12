@@ -96,12 +96,27 @@ async function checkTwentyApi(): Promise<ServiceCheck> {
     }
   }
 
-  const result = await twentyFetch<TwentyListResponse<TwentyRecord>>("/rest/companies?limit=1")
-  if (!result.ok) {
-    return { name: "Twenty Sales OS API", status: "error", detail: result.error, url: baseUrl }
+  let lastError = "Twenty API request failed"
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      const response = await fetch(`${baseUrl}/rest/companies?limit=1`, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        signal: AbortSignal.timeout(8_000),
+      })
+      if (response.ok) {
+        return { name: "Twenty Sales OS API", status: "ok", detail: "companies REST API reachable", url: baseUrl }
+      }
+      lastError = `Twenty API HTTP ${response.status}`
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error)
+      if (attempt < 2) console.warn("[sales-health] Twenty probe failed; retrying:", error)
+    }
+    if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 250))
   }
-
-  return { name: "Twenty Sales OS API", status: "ok", detail: "companies REST API reachable", url: baseUrl }
+  return { name: "Twenty Sales OS API", status: "error", detail: lastError, url: baseUrl }
 }
 
 async function checkBrowserSearch(): Promise<ServiceCheck> {
