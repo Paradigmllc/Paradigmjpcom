@@ -20,6 +20,7 @@
 - 収集・見込み客への送信は未実施。公開ランク根拠がない企業は推定を生成せず停止する。
 - 検証: 投影ロジックVitest **4/4 pass**、対象ESLint pass、`npx tsc --noEmit` pass、`npm run build` **336/336 pages**。新API routeが本番bundleへ含まれることを確認。
 - PR #63をmainへmergeし、正式release deployment `g8zgsqcxw6auu336p3uvmq4l` はfinished、公開smoke・Sales healthはpass。初回release後の監査で、既存の手動migration列挙とDB検証リストが新テーブルを自動検出しないことを確認したため、専用migration適用と `sales_japan_entry_projections` 実在検査をrelease gateへ追補する。
+- PR #64でrelease wiringを追補し、正式release deployment `sy7j1xyl3qo342mh2ggfql0d` はfinished、DB **82/82**・公開smoke・Sales healthをpass。本番の専用テーブルは `RLS=true`、anon/authenticated SELECT=false、service_role SELECT=true、行数 **0**。新APIの未認証応答はHTTP 401で、候補収集・投影生成・Twenty登録・見込み客送信は未実行。
 
 ### 2026-07-13 Blog long-form / visual editorial pass (実装済み・正式release待ち)
 - `/en/blog` と `/ja/blog` の公開記事を、英語9本・日本語4本すべて2,000文字以上へ拡張。各記事に判断表、実務チェックリスト、公開根拠と不確実性の境界を追加し、文字だけの短文記事を廃止した。
