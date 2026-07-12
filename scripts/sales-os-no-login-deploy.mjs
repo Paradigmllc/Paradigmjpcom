@@ -942,33 +942,57 @@ async function smoke(url, markers = []) {
   }
 }
 
+async function postAdminSeed(url, secret, body, label) {
+  const maxAttempts = 4
+  let lastFailure = "unknown failure"
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-secret": secret,
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(120_000),
+      })
+      const bodyText = await response.text()
+      let result = null
+      try {
+        result = bodyText ? JSON.parse(bodyText) : null
+      } catch (error) {
+        console.error(`${label} returned invalid JSON:`, error)
+      }
+
+      const transient = [502, 503, 504].includes(response.status)
+      if (response.ok && result?.success === true) return { response, bodyText, result }
+      lastFailure = `HTTP ${response.status}${bodyText ? ` ${bodyText.slice(0, 500)}` : ""}`
+      if (!transient || attempt === maxAttempts) break
+      console.warn(`${label} temporarily unavailable (${lastFailure}); retrying ${attempt}/${maxAttempts - 1}`)
+    } catch (error) {
+      lastFailure = error instanceof Error ? error.message : String(error)
+      if (attempt === maxAttempts) break
+      console.warn(`${label} request failed (${lastFailure}); retrying ${attempt}/${maxAttempts - 1}`)
+    }
+    await new Promise((resolve) => setTimeout(resolve, attempt * 5_000))
+  }
+
+  throw new Error(`${label} failed: ${lastFailure}`)
+}
+
 async function seedEnglishHomepage(envs) {
   const secret = envs.ADMIN_SCRIPT_SECRET
   if (typeof secret !== "string" || secret.trim().length < 16) {
     throw new Error("ADMIN_SCRIPT_SECRET must be configured before publishing the English homepage")
   }
 
-  const response = await fetch("https://paradigmjp.com/api/admin/seed-all-content", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-admin-secret": secret,
-    },
-    body: JSON.stringify({ confirm: true, scope: "homepage-en" }),
-    signal: AbortSignal.timeout(120_000),
-  })
-  const bodyText = await response.text()
-  let result = null
-  try {
-    result = bodyText ? JSON.parse(bodyText) : null
-  } catch (error) {
-    console.error("English homepage seed returned invalid JSON:", error)
-  }
-  if (!response.ok || result?.success !== true) {
-    throw new Error(
-      `English homepage publish failed: HTTP ${response.status}${bodyText ? ` ${bodyText.slice(0, 500)}` : ""}`,
-    )
-  }
+  await postAdminSeed(
+    "https://paradigmjp.com/api/admin/seed-all-content",
+    secret,
+    { confirm: true, scope: "homepage-en" },
+    "English homepage seed",
+  )
   console.log("English homepage CMS publish OK")
 }
 
@@ -978,26 +1002,14 @@ async function seedEnglishJapanEntryBlog(envs) {
     throw new Error("ADMIN_SCRIPT_SECRET must be configured before publishing the English Japan Entry blog")
   }
 
-  const response = await fetch("https://paradigmjp.com/api/admin/seed-japan-entry-blog", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-admin-secret": secret,
-    },
-    body: JSON.stringify({ confirm: true }),
-    signal: AbortSignal.timeout(120_000),
-  })
-  const bodyText = await response.text()
-  let result = null
-  try {
-    result = bodyText ? JSON.parse(bodyText) : null
-  } catch (error) {
-    console.error("English Japan Entry blog seed returned invalid JSON:", error)
-  }
-  if (!response.ok || result?.success !== true || result?.errors?.length > 0) {
-    throw new Error(
-      `English Japan Entry blog publish failed: HTTP ${response.status}${bodyText ? ` ${bodyText.slice(0, 500)}` : ""}`,
-    )
+  const { result } = await postAdminSeed(
+    "https://paradigmjp.com/api/admin/seed-japan-entry-blog",
+    secret,
+    { confirm: true },
+    "English Japan Entry blog seed",
+  )
+  if (result?.errors?.length > 0) {
+    throw new Error(`English Japan Entry blog publish failed: ${result.errors.join("; ")}`)
   }
   console.log(`English Japan Entry blog publish OK (${result.total} articles; ${result.created} created, ${result.updated} updated)`)
 }
