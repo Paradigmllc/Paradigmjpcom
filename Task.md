@@ -8,6 +8,11 @@
 - 検証: 対象Vitest **8/8 pass**、`npx tsc --noEmit` pass、`npm run build` **336/336 pages**、`git diff --check` pass。正式`npm run release:prod`（Coolify deployment `ddh21yorl63y6sm97ogpqf12`）でCMS英語9記事を9/9更新し、release gateを完走した。
 - 本番実測: `/en/blog`・`/ja/blog`・英日個別記事はHTTP 200、記事HTMLに`figure`/`table`/画像asset/デスクトップ`hidden lg:block`サイドバー/モバイル`lg:hidden`目次が存在、画像3種はHTTP 200。`/en/blog/`は正規URLへ追従する。
 
+### 2026-07-13 Blog locale-switch 404 fix (本番反映済み)
+- Chromeの実際の404 URLは`/ja/blog/what-a-japan-entry-package-should-deliver`で、英語slugを日本語localeへそのまま切り替えたことが原因だった。正規英語URLは`/en/blog/what-a-japan-entry-package-should-deliver`。
+- `src/proxy.ts` / `src/lib/marketing-routing.ts` に英語9slug・日本語4slugのlocale補正を追加。未翻訳localeへ遷移した場合は、記事が存在するlocaleへHTTP 308で戻す。記事ページ側にもサーバーフォールバックを残した。
+- 対象テスト **20/20 pass**、TypeScript pass。正式`npm run release:prod`（Coolify deployment `w10yiriodxhiqxrvnoid1n5m`）完走後、`/ja/blog/what-a-japan-entry-package-should-deliver`→`/en/blog/what-a-japan-entry-package-should-deliver`の308と、Chrome表示後の英語記事titleを確認した。
+
 ### 2026-07-12 $12,000 setup scope content expansion (本番反映済み)
 - 固定セットアップの内訳を英語ホーム、料金ページ、FAQ、申込導線へ統一表示: LP/HPローカライズ、SNS最大2チャンネルの初期セットアップ、最大3市場のpublic-signal market report（1市場deep dive）、Japan's Act on Specified Commercial Transactionsを含む規制適用可能性スクリーニング、buyer path、launch operations、handover。
 - 除外範囲も明記: 継続SNS投稿・広告費、非公開トラフィック/売上データ、正式な法務意見・申請、第三者費用、無制限ページ/翻訳/追加機能。
