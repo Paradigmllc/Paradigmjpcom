@@ -6,6 +6,12 @@
 - Utilityは既存のAPI/DB/RLS実装を活かし、ホームのvisual proof・既存promo・ヘッダーナビから実際に遷移できる状態へ統合。ローカルでは `/en/tools/japan-entry-score` HTTP 200、フォームUI表示を確認。
 - 本番は現行コンテナが旧ビルドのため、これらの画像・utilityはまだ未反映。正式release gate（Slack、暗号化off-host backup、法務identity）を満たした後に`npm run release:prod`で公開し、ブラウザで再確認する。
 
+### 2026-07-12 公開運用runbook + release contract（実装済み・外部設定待ち）
+- `docs/ops/public-release-runbook.md` を追加。固定商条件、必須Coolify env、release順序、CMS seed、バックアップ復元訓練、502時のTraefik origin-lock復旧、incident/rollback、公開完了判定を一つの手順に統合した。
+- `.env.example` にSlack・off-host backup・法務identityのrelease blocker条件を明記し、秘密値をrepoへ入れない運用を固定した。
+- `release-doctor` にvisual proof 3 assets / `next/image` / Signal Check CTAの静的検査と、本番home/utilityのvisual・utility marker smokeを追加。画像やutilityが欠けた旧ビルドをHTTP 200だけで合格扱いにしない。
+- コード・runbook・監査は完了。productionは現在も旧ビルドで、法務4項目、Slack credential、暗号化off-host backupの実値が揃うまで正式releaseを意図的に停止する。値を推測して公開状態にすることはしない。
+
 ### 2026-07-12 Production 502 recovery（復旧済み）
 - 03:06 JST頃、`https://paradigmjp.com/`、`/en`、`/api/ready` がCloudflare HTTP 502。アプリコンテナ自体の `127.0.0.1:3000/api/ready` と現行コンテナIP `10.0.1.13:3000/api/ready` はHTTP 200で、アプリ障害ではなかった。
 - Traefikの `/data/coolify/proxy/dynamic/paradigmjp.yml` にある `paradigmhp-svc` upstream が旧IP `10.0.1.33:3000`を指していた（現行コンテナ `n8i2sjiqvr2d8hrzppop2m2i-030052041249` は `10.0.1.13`）。

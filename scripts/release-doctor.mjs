@@ -276,6 +276,26 @@ function checkStaticReleaseRules() {
     fail("Japan Entry score utility persistence must have RLS and release migration wiring")
   }
 
+  const visualProofComponentPath = "src/components/japan-entry/JapanEntryVisualProof.tsx"
+  const visualProofComponent = fs.existsSync(visualProofComponentPath)
+    ? fs.readFileSync(visualProofComponentPath, "utf8")
+    : ""
+  const visualProofAssets = [
+    "public/japan-entry/package-scope.svg",
+    "public/japan-entry/signal-check.svg",
+    "public/japan-entry/application-handover.svg",
+  ]
+  if (
+    visualProofAssets.every((asset) => fs.existsSync(asset)) &&
+    visualProofComponent.includes("next/image") &&
+    visualProofComponent.includes("/tools/japan-entry-score") &&
+    visualProofComponent.includes("VISUALS")
+  ) {
+    pass("public Japan Entry visual proof assets and Signal Check CTA are tracked")
+  } else {
+    fail("public Japan Entry visual proof assets/component/utility CTA are incomplete")
+  }
+
   const buildWrapper = fs.readFileSync("scripts/build-next.mjs", "utf8")
   if (buildWrapper.includes("PAYLOAD_DISABLE_DATABASE_DURING_BUILD") && buildWrapper.includes("runWithHeartbeat")) {
     pass("Next build wrapper disables build-time DB dependency and emits heartbeat")
@@ -823,6 +843,9 @@ async function checkPostDeployUrls() {
       "Launch in Japan without hiring a local team",
       "$12,000",
       "Apply for Japan Entry",
+      "Visual proof",
+      "package-scope.svg",
+      "japan-entry-score",
     ],
   })
   await fetchCheck(
@@ -849,9 +872,15 @@ async function checkPostDeployUrls() {
     ["Japan Entry Signal Check", "/en/tools/japan-entry-score"],
   ]
   for (const [label, path] of maintainedPages) {
-    await fetchCheck(`English ${label}`, `${BASE_URL}${path}`, {
-      timeoutMs: 20_000,
-    })
+    const options = { timeoutMs: 20_000 }
+    if (path === "/en/tools/japan-entry-score") {
+      options.mustContain = [
+        "Japan Entry Signal Check",
+        "public-signal utility",
+        "private traffic and revenue are never inferred",
+      ]
+    }
+    await fetchCheck(`English ${label}`, `${BASE_URL}${path}`, options)
   }
   await fetchCheck("Twenty CRM redirect", `${BASE_URL}/ja/admin/sales`, { timeoutMs: 20_000 })
   await fetchCheck("diagnostic report value URL", `${BASE_URL}${REPORT_PATH}`, {
