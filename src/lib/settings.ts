@@ -215,10 +215,14 @@ export const getSiteSettings = cache(async (locale: string = "ja"): Promise<Site
       company: {
         ...DEFAULTS.company,
         ...(s.company ?? {}),
-        representativeName: s.company?.representativeName ?? DEFAULTS.company.representativeName,
+        // The public site does not publish an individual's name. Legal identity
+        // remains available through the configured disclosure channel instead.
+        representativeName: null,
         registrationNumber: s.company?.registrationNumber ?? DEFAULTS.company.registrationNumber,
         postalCode: s.company?.postalCode ?? DEFAULTS.company.postalCode,
-        address: s.company?.address ?? DEFAULTS.company.address,
+        // A verified environment value is the public address source of truth;
+        // this prevents a stale localized CMS value from leaking into English.
+        address: DEFAULTS.company.address ?? s.company?.address ?? null,
       },
     }
   }, DEFAULTS)
