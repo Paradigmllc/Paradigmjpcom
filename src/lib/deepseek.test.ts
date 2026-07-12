@@ -11,6 +11,8 @@ beforeEach(() => {
   delete process.env.DEEPSEEK_MODEL_CHAIN
   delete process.env.DEEPSEEK_MODEL
   delete process.env.DEEPSEEK_API_BASE
+  delete process.env.LITELLM_API_KEY
+  delete process.env.LITELLM_API_BASE
   vi.spyOn(console, "warn").mockImplementation(() => {})
 })
 afterEach(() => vi.unstubAllGlobals())
@@ -64,5 +66,35 @@ describe("callDeepSeek フォールバックチェーン", () => {
     mockByModel({ "deepseek-coder": "coder出力" })
     const r = await callDeepSeek([{ role: "user", content: "hi" }], { model: "deepseek-coder" })
     expect(r.usedModel).toBe("deepseek-coder")
+  })
+
+  it("strict policyは指定モデルからフォールバックしない", async () => {
+    mockByModel({ "deepseek-v4-pro": "", "deepseek-chat": "fallback output" })
+    const r = await callDeepSeek(
+      [{ role: "user", content: "hi" }],
+      { model: "deepseek-v4-pro", modelPolicy: "strict" },
+    )
+    expect(r.ok).toBe(false)
+    expect(r.error).toContain("empty response")
+  })
+
+  it("LiteLLM credentials can provide the strict V4 Pro route", async () => {
+    delete process.env.DEEPSEEK_API_KEY
+    process.env.LITELLM_API_KEY = "litellm-test-key"
+    process.env.LITELLM_API_BASE = "https://litellm.example/v1"
+    const fetchMock = vi.fn(async (url: string, init: RequestInit) => {
+      const body = JSON.parse(init.body as string) as { model: string }
+      expect(url).toBe("https://litellm.example/v1/chat/completions")
+      expect(body.model).toBe("deepseek-v4-pro")
+      return new Response(JSON.stringify({ choices: [{ message: { content: "V4 Pro output" } }] }), { status: 200 })
+    })
+    vi.stubGlobal("fetch", fetchMock)
+    const r = await callDeepSeek(
+      [{ role: "user", content: "hi" }],
+      { model: "deepseek-v4-pro", modelPolicy: "strict" },
+    )
+    expect(r.ok).toBe(true)
+    expect(r.usedModel).toBe("deepseek-v4-pro")
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })

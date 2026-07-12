@@ -22,6 +22,13 @@ type Props = {
   title: string
   initialFields: EditFields
   salesOsHref?: string
+  generatedMessageReview?: {
+    message: string
+    model: string
+    qualityScore: number | null
+    wordCount: number | null
+    attempts: number | null
+  } | null
 }
 
 const REPORT_FIELDS: FieldConfig[] = [
@@ -61,6 +68,7 @@ export function ArtifactInlineEditor({
   title,
   initialFields,
   salesOsHref,
+  generatedMessageReview,
 }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -151,6 +159,25 @@ export function ArtifactInlineEditor({
           </div>
 
           <form onSubmit={onSubmit} className="max-h-[calc(82dvh-118px)] overflow-y-auto px-4 py-4">
+            {generatedMessageReview && (
+              <section className="mb-4 rounded-md border border-zinc-200 bg-zinc-50 p-3" aria-label="問い合わせフォーム文面レビュー">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-600">
+                  <span className="font-semibold text-zinc-950">フォーム文面（送信停止中）</span>
+                  <span>model: {generatedMessageReview.model}</span>
+                  <span>quality: {generatedMessageReview.qualityScore ?? "未採点"}</span>
+                  <span>words: {generatedMessageReview.wordCount ?? "未計測"}</span>
+                  <span>attempts: {generatedMessageReview.attempts ?? "不明"}</span>
+                </div>
+                <textarea
+                  readOnly
+                  aria-label="DeepSeek V4 Pro生成文面"
+                  value={generatedMessageReview.message}
+                  rows={6}
+                  className="mt-3 block w-full resize-y rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm leading-relaxed text-zinc-950 outline-none"
+                />
+                <p className="mt-2 text-xs text-amber-700">この画面は品質確認専用です。フォーム送信処理には接続されていません。</p>
+              </section>
+            )}
             <div className="grid gap-3 sm:grid-cols-2">
               {fieldConfigs.map((field) => (
                 <label key={String(field.key)} className={field.rows && field.rows > 2 ? "sm:col-span-2" : undefined}>

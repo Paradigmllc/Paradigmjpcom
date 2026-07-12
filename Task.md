@@ -21,6 +21,9 @@
 - 検証: 投影ロジックVitest **4/4 pass**、対象ESLint pass、`npx tsc --noEmit` pass、`npm run build` **336/336 pages**。新API routeが本番bundleへ含まれることを確認。
 - PR #63をmainへmergeし、正式release deployment `g8zgsqcxw6auu336p3uvmq4l` はfinished、公開smoke・Sales healthはpass。初回release後の監査で、既存の手動migration列挙とDB検証リストが新テーブルを自動検出しないことを確認したため、専用migration適用と `sales_japan_entry_projections` 実在検査をrelease gateへ追補する。
 - PR #64でrelease wiringを追補し、正式release deployment `sy7j1xyl3qo342mh2ggfql0d` はfinished、DB **82/82**・公開smoke・Sales healthをpass。本番の専用テーブルは `RLS=true`、anon/authenticated SELECT=false、service_role SELECT=true、行数 **0**。新APIの未認証応答はHTTP 401で、候補収集・投影生成・Twenty登録・見込み客送信は未実行。
+- 初回フォーム文面の固定テンプレートを廃止し、DeepSeek V4 Pro（`deepseek-v4-pro`固定、LiteLLM対応）による企業別生成へ変更。別モデル・定型文へフォールバックせず、会社名・公開根拠・$12,000一括前払い・最初の6か月込み・Yes/No質問を品質ゲートで検査する。URL、資料、ROI、売上、未承認数値、entity/legal/tax/compliance範囲の幻覚は拒否し、同一V4 Proで最大4回修正後も不合格なら保存しない。
+- 管理者のレポート編集パネルに、生成文面・モデル・品質点・語数・試行回数を送信停止状態で表示。問い合わせフォーム送信処理には未接続。
+- 検証: 関連Vitest **22/22 pass**、TypeScript pass、対象ESLint pass、production build **336/336 pages**。本番設定のDeepSeek V4 Proを架空企業に対して実呼び出しし、1回目の空応答後、2回目に60語・品質100点・公開Tranco根拠付き文面を生成。DB保存・Twenty登録・フォーム送信は実行していない。
 
 ### 2026-07-13 Blog long-form / visual editorial pass (実装済み・正式release待ち)
 - `/en/blog` と `/ja/blog` の公開記事を、英語9本・日本語4本すべて2,000文字以上へ拡張。各記事に判断表、実務チェックリスト、公開根拠と不確実性の境界を追加し、文字だけの短文記事を廃止した。

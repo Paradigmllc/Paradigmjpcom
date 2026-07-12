@@ -5,7 +5,7 @@ import { generateJapanEntryProjection, getLatestJapanEntryProjection } from "@/l
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
-export const maxDuration = 60
+export const maxDuration = 120
 
 const bodySchema = z.object({
   business_model: z.enum(["ecommerce", "saas", "service"]).optional(),
@@ -22,29 +22,61 @@ interface RouteContext {
 
 function errorStatus(message: string | undefined): number {
   if (message === "company not found") return 404
+  if (message?.includes("quality gate") || message?.includes("observed public fact")) return 422
+  if (message?.includes("DeepSeek V4 Pro") || message?.includes("LLM provider")) return 502
   if (message?.includes("required") || message?.includes("must exceed")) return 422
   return 503
 }
 
+function validCompanyId(value: string): boolean {
+  return z.string().uuid().safeParse(value).success
+}
+
 export async function GET(req: NextRequest, context: RouteContext) {
-  if (!(await isSalesApiAuthorized(req))) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+  try {
+    if (!(await isSalesApiAuthorized(req))) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+    }
+    const { companyId } = await context.params
+    if (!validCompanyId(companyId)) {
+      return NextResponse.json({ ok: false, error: "invalid companyId" }, { status: 400 })
+    }
+    const result = await getLatestJapanEntryProjection(companyId)
+    return NextResponse.json(result, { status: result.ok ? 200 : 503 })
+  } catch (error) {
+    console.error("[japan-entry-projection-api] GET failed:", error)
+    return NextResponse.json({ ok: false, error: "projection lookup failed" }, { status: 500 })
   }
-  const { companyId } = await context.params
-  const result = await getLatestJapanEntryProjection(companyId)
-  return NextResponse.json(result, { status: result.ok ? 200 : 503 })
 }
 
 export async function POST(req: NextRequest, context: RouteContext) {
-  if (!(await isSalesApiAuthorized(req))) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
-  }
   try {
-    const parsed = bodySchema.safeParse(await req.json())
-    if (!parsed.success) {
-      return NextResponse.json({ ok: false, error: "invalid request", issues: parsed.error.issues }, { status: 400 })
+    if (!(await isSalesApiAuthorized(req))) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
     }
+  } catch (error) {
+    console.error("[japan-entry-projection-api] authorization failed:", error)
+    return NextResponse.json({ ok: false, error: "authorization failed" }, { status: 500 })
+  }
+
+  let rawBody: unknown
+  try {
+    rawBody = await req.json()
+  } catch (error) {
+    console.error("[japan-entry-projection-api] invalid JSON body:", error)
+    return NextResponse.json({ ok: false, error: "invalid json body" }, { status: 400 })
+  }
+
+  const parsed = bodySchema.safeParse(rawBody)
+  if (!parsed.success) {
+    return NextResponse.json({ ok: false, error: "invalid request", issues: parsed.error.issues }, { status: 400 })
+  }
+
+  try {
     const { companyId } = await context.params
+    if (!validCompanyId(companyId)) {
+      return NextResponse.json({ ok: false, error: "invalid companyId" }, { status: 400 })
+    }
     const result = await generateJapanEntryProjection(companyId, {
       businessModel: parsed.data.business_model,
       averageOrderValueUsd: parsed.data.average_order_value_usd,
@@ -56,6 +88,6 @@ export async function POST(req: NextRequest, context: RouteContext) {
     return NextResponse.json(result, { status: result.ok ? 201 : errorStatus(result.error) })
   } catch (error) {
     console.error("[japan-entry-projection-api] POST failed:", error)
-    return NextResponse.json({ ok: false, error: "invalid json body" }, { status: 400 })
+    return NextResponse.json({ ok: false, error: "projection generation failed" }, { status: 500 })
   }
 }

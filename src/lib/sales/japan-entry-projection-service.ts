@@ -2,11 +2,11 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "./db-tables"
 import { findCompanyById } from "./companies"
 import {
-  buildInitialJapanEntryMessage,
   buildJapanEntryProjection,
   type BusinessModel,
   type JapanEntryProjection,
 } from "./japan-entry-projection"
+import { generatePersonalizedJapanEntryMessage } from "./japan-entry-personalized-message"
 import type { MarketVisibilityIndex } from "./market-visibility"
 
 type JsonRecord = Record<string, unknown>
@@ -86,11 +86,34 @@ export async function generateJapanEntryProjection(companyId: string, options: G
       visibility,
       ...options,
     })
-    initialMessage = buildInitialJapanEntryMessage(company.company_name, projection)
   } catch (error) {
     const message = error instanceof Error ? error.message : "projection calculation failed"
     console.error("[japan-entry-projection] calculation failed:", error)
     return { ok: false, error: message }
+  }
+
+  const personalized = await generatePersonalizedJapanEntryMessage({
+    companyName: company.company_name,
+    industry: company.industry,
+    targetCountry: company.target_country ?? null,
+    projection,
+  })
+  if (!personalized.ok || !personalized.message || !personalized.review) {
+    console.error("[japan-entry-projection] DeepSeek V4 Pro message generation failed:", personalized.error)
+    return { ok: false, error: personalized.error ?? "DeepSeek V4 Pro message generation failed" }
+  }
+  initialMessage = personalized.message
+  projection = {
+    ...projection,
+    messageGeneration: {
+      engine: "deepseek-v4-pro",
+      model: personalized.review.model,
+      qualityScore: personalized.review.score,
+      wordCount: personalized.review.wordCount,
+      observedFactIds: personalized.review.observedFactIds,
+      attempts: personalized.review.attempts,
+      generatedAt: new Date().toISOString(),
+    },
   }
 
   const input = {
@@ -100,6 +123,7 @@ export async function generateJapanEntryProjection(companyId: string, options: G
     assumptions: projection.assumptions,
     visibility_version: visibility.version,
     visibility_band: visibility.band,
+    message_generation: projection.messageGeneration,
   }
   const { data, error } = await sb
     .from(DB_TABLES.SALES_JAPAN_ENTRY_PROJECTIONS)
@@ -124,12 +148,18 @@ export async function generateJapanEntryProjection(companyId: string, options: G
     ...(company.meta ?? {}),
     japan_entry_projection: projection,
     japan_entry_initial_message: initialMessage,
+    japan_entry_message_engine: "deepseek-v4-pro",
+    japan_entry_message_review: projection.messageGeneration,
     japan_entry_outreach_state: "needs_review",
   }
   const update = await sb.from(DB_TABLES.SALES_COMPANIES).update({ meta }).eq("id", company.id)
   if (update.error) {
     console.error("[japan-entry-projection] company meta update failed:", update.error.message)
-    await sb.from(DB_TABLES.SALES_JAPAN_ENTRY_PROJECTIONS).delete().eq("id", data.id)
+    const rollback = await sb.from(DB_TABLES.SALES_JAPAN_ENTRY_PROJECTIONS).delete().eq("id", data.id)
+    if (rollback.error) {
+      console.error("[japan-entry-projection] projection rollback failed:", rollback.error.message)
+      return { ok: false, error: `${update.error.message}; rollback failed: ${rollback.error.message}` }
+    }
     return { ok: false, error: update.error.message }
   }
 

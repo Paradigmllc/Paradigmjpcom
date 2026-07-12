@@ -13,6 +13,8 @@
  *   - **第2プロバイダ fallback**: OPENROUTER_API_KEY があれば、primary 全滅時に OpenRouter へ。
  *
  * env:
+ *   LITELLM_API_KEY         LiteLLM proxy key (configured時はprimaryとして優先)
+ *   LITELLM_API_BASE        LiteLLM OpenAI-compatible base URL
  *   DEEPSEEK_API_KEY        primary プロバイダの鍵 (必須)
  *   DEEPSEEK_API_BASE       primary base URL (default https://api.deepseek.com/v1・LiteLLM 差替可)
  *   DEEPSEEK_MODEL_CHAIN    試行モデルを comma 区切りで明示 (例 "deepseek-v4,deepseek-chat")
@@ -32,6 +34,8 @@ export interface DeepSeekMessage {
 
 export interface DeepSeekOptions {
   model?: string // 指定時はこのモデルを先頭に (フォールバックは継続)
+  /** strict の場合は指定モデル・primary providerのみを使用し、別モデルへ落とさない。 */
+  modelPolicy?: "chain" | "strict"
   temperature?: number
   maxTokens?: number
   responseFormat?: "text" | "json_object"
@@ -70,17 +74,18 @@ function primaryModels(optModel?: string): string[] {
   return [...new Set(merged)]
 }
 
-function buildProviders(optModel?: string): Provider[] {
+function buildProviders(optModel?: string, modelPolicy: DeepSeekOptions["modelPolicy"] = "chain"): Provider[] {
   const providers: Provider[] = []
-  const dsKey = process.env.DEEPSEEK_API_KEY?.trim()
+  const dsKey = process.env.LITELLM_API_KEY?.trim() ?? process.env.DEEPSEEK_API_KEY?.trim()
   if (dsKey) {
     providers.push({
-      name: "deepseek",
-      base: (process.env.DEEPSEEK_API_BASE ?? "https://api.deepseek.com/v1").replace(/\/+$/, ""),
+      name: process.env.LITELLM_API_KEY?.trim() ? "litellm" : "deepseek",
+      base: (process.env.LITELLM_API_BASE ?? process.env.DEEPSEEK_API_BASE ?? "https://api.deepseek.com/v1").replace(/\/+$/, ""),
       key: dsKey,
-      models: primaryModels(optModel),
+      models: modelPolicy === "strict" && optModel ? [optModel] : primaryModels(optModel),
     })
   }
+  if (modelPolicy === "strict") return providers
   // 第2プロバイダ fallback (OpenRouter)
   const orKey = process.env.OPENROUTER_API_KEY?.trim()
   if (orKey) {
@@ -152,9 +157,9 @@ export async function callDeepSeek(
   messages: DeepSeekMessage[],
   opts: DeepSeekOptions = {},
 ): Promise<DeepSeekResponse> {
-  const providers = buildProviders(opts.model)
+  const providers = buildProviders(opts.model, opts.modelPolicy)
   if (providers.length === 0) {
-    return { ok: false, error: "no LLM provider configured (DEEPSEEK_API_KEY / OPENROUTER_API_KEY)" }
+    return { ok: false, error: "no LLM provider configured (LITELLM_API_KEY / DEEPSEEK_API_KEY / OPENROUTER_API_KEY)" }
   }
 
   let last: DeepSeekResponse = { ok: false, error: "no attempt made" }

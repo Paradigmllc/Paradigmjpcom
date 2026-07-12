@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { buildInitialJapanEntryMessage, buildJapanEntryProjection } from "./japan-entry-projection"
+import { buildJapanEntryProjection } from "./japan-entry-projection"
 import type { MarketVisibilityIndex } from "./market-visibility"
 
 const visibility: MarketVisibilityIndex = {
@@ -48,16 +48,6 @@ describe("Japan Entry opportunity projection", () => {
     expect(projection.evidence.some((item) => item.classification === "estimated")).toBe(true)
     expect(visibility.actualMonthlyVisits).toBeNull()
     expect(visibility.actualRevenue).toBeNull()
-  })
-
-  it("generates text-only initial copy with fixed commercial terms", () => {
-    const projection = buildJapanEntryProjection({ companyName: "Example", domain: "example.com", visibility })
-    const message = buildInitialJapanEntryMessage("Example", projection)
-
-    expect(message).toContain("$12,000 paid upfront")
-    expect(message).toContain("first six managed months at no additional charge")
-    expect(message).toContain("modeled estimates")
-    expect(message).not.toMatch(/https?:\/\/|www\.|\[[^\]]+\]\([^)]+\)/i)
   })
 
   it("refuses to create traffic estimates without public rank evidence", () => {
