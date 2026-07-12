@@ -1,5 +1,11 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
+### 2026-07-12 $12,000 setup scope content expansion (本番反映済み)
+- 固定セットアップの内訳を英語ホーム、料金ページ、FAQ、申込導線へ統一表示: LP/HPローカライズ、SNS最大2チャンネルの初期セットアップ、最大3市場のpublic-signal market report（1市場deep dive）、Japan's Act on Specified Commercial Transactionsを含む規制適用可能性スクリーニング、buyer path、launch operations、handover。
+- 除外範囲も明記: 継続SNS投稿・広告費、非公開トラフィック/売上データ、正式な法務意見・申請、第三者費用、無制限ページ/翻訳/追加機能。
+- CMS homepage seedを更新し、`/en` と `/en/pricing` で4項目の実本文を確認。`/en/faq` にSNS、market report、regulatory screeningのQ&Aを追加。FAQ JSON-LDも同期。
+- `npm run build` **336/336 pages**、関連Vitest **22/22 pass**、TypeScript pass。正式 `release:prod` deployment `e6ixm9o90yjfro745jdgq09j`、Sales health JSON ok、全対象URL HTTP 200を確認。
+
 ### 2026-07-12 Final production release (完了)
 - `main` の本番コミット `2beaf1e` を正式な `npm run release:prod` でデプロイ。Coolify deployment `l3vuskyiaj8pigdxsdpz56n1` は `finished`、現行コンテナ `n8i2sjiqvr2d8hrzppop2m2i-120124223176` は `healthy`。
 - pre-deploy / migration / Coolify / Traefik origin refresh / post-deploy release-doctor を全て通過。DB table verification **81/81**、公開schema RLS/anon ACL・integration slug制約、Supabase Realtime、Twenty worker、常駐timer/禁止worker停止、Cloudflare直origin遮断を確認。
