@@ -5,7 +5,8 @@
 - 既存のJapan Entry図版（`application-handover.svg` / `package-scope.svg` / `signal-check.svg`）を記事ごとのhero imageとして設定。記事一覧カードにも画像と可視タグを表示し、公開承認用の内部タグは画面から隠した。
 - 記事ページのデスクトップ右サイドバーは既存の目次・メタ情報・固定`$12K` CTAを維持し、モバイルにも目次とCTAを追加。記事本文・一覧カード双方で`next/image`とalt/captionを使用する。
 - Payloadに古い短文が残っている場合も、同slugの長文・表付きseedへフォールバックする品質ゲートを追加。CMS未投入時の英語・日本語seedも同じ要件を満たす。
-- 検証: 対象Vitest **8/8 pass**、`npx tsc --noEmit` pass、`npm run build` **336/336 pages**、`git diff --check` pass。正式公開前に`npm run release:prod`でCMS更新・本番URL（一覧/個別記事・画像・表・サイドバー）を再確認する。
+- 検証: 対象Vitest **8/8 pass**、`npx tsc --noEmit` pass、`npm run build` **336/336 pages**、`git diff --check` pass。正式`npm run release:prod`（Coolify deployment `ddh21yorl63y6sm97ogpqf12`）でCMS英語9記事を9/9更新し、release gateを完走した。
+- 本番実測: `/en/blog`・`/ja/blog`・英日個別記事はHTTP 200、記事HTMLに`figure`/`table`/画像asset/デスクトップ`hidden lg:block`サイドバー/モバイル`lg:hidden`目次が存在、画像3種はHTTP 200。`/en/blog/`は正規URLへ追従する。
 
 ### 2026-07-12 $12,000 setup scope content expansion (本番反映済み)
 - 固定セットアップの内訳を英語ホーム、料金ページ、FAQ、申込導線へ統一表示: LP/HPローカライズ、SNS最大2チャンネルの初期セットアップ、最大3市場のpublic-signal market report（1市場deep dive）、Japan's Act on Specified Commercial Transactionsを含む規制適用可能性スクリーニング、buyer path、launch operations、handover。
