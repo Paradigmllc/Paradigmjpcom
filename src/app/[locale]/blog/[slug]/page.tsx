@@ -12,6 +12,7 @@ import { pageAlternates } from "@/lib/page-metadata"
 import { MARKETING_LOCALES } from "@/i18n/locales"
 import { ArrowRight, Calendar, Clock, Tag } from "lucide-react"
 import Image from "next/image"
+import { redirect } from "next/navigation"
 
 export const dynamic = "force-dynamic"
 
@@ -128,7 +129,15 @@ export default async function BlogPostPage({
   const { slug, locale } = await params
   const t = await getTranslations({ locale, namespace: "blogPostPage" })
   const post = await getBlogPostBySlug(slug, locale)
-  if (!post) notFound()
+  if (!post) {
+    // A slug can exist in only one maintained marketing locale. The locale
+    // switcher preserves the pathname, so fall back to the available article
+    // instead of showing a false 404 for an otherwise valid public post.
+    const fallbackLocale = locale === "en" ? "ja" : "en"
+    const fallbackPost = await getBlogPostBySlug(slug, fallbackLocale)
+    if (fallbackPost) redirect(`/${fallbackLocale}/blog/${slug}`)
+    notFound()
+  }
   const orgName = (LOCALE_ORG_NAME as Record<string, string>)[locale] ?? "Paradigm LLC"
   const toc = extractToc(post.content)
   const isJa = locale === "ja"
