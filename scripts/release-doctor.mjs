@@ -208,13 +208,13 @@ function checkStaticReleaseRules() {
     noLoginDeploy.includes("https://paradigmjp.com/en/contact") &&
     noLoginDeploy.includes("Confirm your fit and launch timing") &&
     noLoginDeploy.includes("Five modules, one accountable launch.") &&
-    noLoginDeploy.includes("seedEnglishHomepage") &&
-    noLoginDeploy.includes('scope: "homepage-en"') &&
+    noLoginDeploy.includes("seedMarketingHomepages") &&
+    noLoginDeploy.includes('scope: "homepage"') &&
     noLoginDeploy.includes("seedEnglishJapanEntryBlog") &&
     noLoginDeploy.includes("/api/admin/seed-japan-entry-blog") &&
     noLoginDeploy.includes("What Should a Japan Entry Package Actually Deliver?")
   ) {
-    pass("deploy publishes and smokes the English Japan Entry funnel and editorial set")
+    pass("deploy publishes both locale Japan Entry homepages and the English editorial set")
   } else {
     fail("deploy must publish the English homepage/blog and smoke the dedicated application")
   }

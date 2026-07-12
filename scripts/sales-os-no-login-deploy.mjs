@@ -981,19 +981,19 @@ async function postAdminSeed(url, secret, body, label) {
   throw new Error(`${label} failed: ${lastFailure}`)
 }
 
-async function seedEnglishHomepage(envs) {
+async function seedMarketingHomepages(envs) {
   const secret = envs.ADMIN_SCRIPT_SECRET
   if (typeof secret !== "string" || secret.trim().length < 16) {
-    throw new Error("ADMIN_SCRIPT_SECRET must be configured before publishing the English homepage")
+    throw new Error("ADMIN_SCRIPT_SECRET must be configured before publishing the marketing homepages")
   }
 
   await postAdminSeed(
     "https://paradigmjp.com/api/admin/seed-all-content",
     secret,
-    { confirm: true, scope: "homepage-en" },
-    "English homepage seed",
+    { confirm: true, scope: "homepage" },
+    "Marketing homepages seed",
   )
-  console.log("English homepage CMS publish OK")
+  console.log("Japanese and English homepage CMS publish OK")
 }
 
 async function seedEnglishJapanEntryBlog(envs) {
@@ -1198,7 +1198,7 @@ async function main() {
     console.log(`Deployment queued: ${uuid}`)
     await waitDeploy(uuid)
     refreshManualTraefikRoute()
-    await seedEnglishHomepage(envs)
+    await seedMarketingHomepages(envs)
     await seedEnglishJapanEntryBlog(envs)
   } else {
     console.log("Dry/skip mode: skipped Coolify deploy")
