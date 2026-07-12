@@ -13,6 +13,11 @@
 - `src/proxy.ts` / `src/lib/marketing-routing.ts` に英語9slug・日本語4slugのlocale補正を追加。未翻訳localeへ遷移した場合は、記事が存在するlocaleへHTTP 308で戻す。記事ページ側にもサーバーフォールバックを残した。
 - 対象テスト **20/20 pass**、TypeScript pass。正式`npm run release:prod`（Coolify deployment `w10yiriodxhiqxrvnoid1n5m`）完走後、`/ja/blog/what-a-japan-entry-package-should-deliver`→`/en/blog/what-a-japan-entry-package-should-deliver`の308と、Chrome表示後の英語記事titleを確認した。
 
+### 2026-07-13 Public legal identity display update (本番反映済み)
+- フッター、About、Legal、公開layoutへ個人名を出さない方針を適用。CMSや環境変数に個人名が残っていても、公開表示は空欄または運営チーム表記へフォールバックする。
+- 本番の公開住所を`2-2-15 Minami-Aoyama, Minato-ku, Tokyo, Japan`へ統一し、古いCMSローカライズ住所より検証済み環境値を優先するよう変更した。
+- 関連テスト **17/17 pass**、TypeScript pass。正式`npm run release:prod`（Coolify deployment `idoxxwhkm9dwrrxedjuvg81p`）完走後、`/en` `/en/about` `/en/legal` `/ja` `/ja/about` `/ja/legal`で英語住所表示・個人名0件・日本語住所0件を確認した。
+
 ### 2026-07-12 $12,000 setup scope content expansion (本番反映済み)
 - 固定セットアップの内訳を英語ホーム、料金ページ、FAQ、申込導線へ統一表示: LP/HPローカライズ、SNS最大2チャンネルの初期セットアップ、最大3市場のpublic-signal market report（1市場deep dive）、Japan's Act on Specified Commercial Transactionsを含む規制適用可能性スクリーニング、buyer path、launch operations、handover。
 - 除外範囲も明記: 継続SNS投稿・広告費、非公開トラフィック/売上データ、正式な法務意見・申請、第三者費用、無制限ページ/翻訳/追加機能。
