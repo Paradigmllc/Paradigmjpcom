@@ -1,5 +1,12 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
+### 2026-07-13 Blog long-form / visual editorial pass (実装済み・正式release待ち)
+- `/en/blog` と `/ja/blog` の公開記事を、英語9本・日本語4本すべて2,000文字以上へ拡張。各記事に判断表、実務チェックリスト、公開根拠と不確実性の境界を追加し、文字だけの短文記事を廃止した。
+- 既存のJapan Entry図版（`application-handover.svg` / `package-scope.svg` / `signal-check.svg`）を記事ごとのhero imageとして設定。記事一覧カードにも画像と可視タグを表示し、公開承認用の内部タグは画面から隠した。
+- 記事ページのデスクトップ右サイドバーは既存の目次・メタ情報・固定`$12K` CTAを維持し、モバイルにも目次とCTAを追加。記事本文・一覧カード双方で`next/image`とalt/captionを使用する。
+- Payloadに古い短文が残っている場合も、同slugの長文・表付きseedへフォールバックする品質ゲートを追加。CMS未投入時の英語・日本語seedも同じ要件を満たす。
+- 検証: 対象Vitest **8/8 pass**、`npx tsc --noEmit` pass、`npm run build` **336/336 pages**、`git diff --check` pass。正式公開前に`npm run release:prod`でCMS更新・本番URL（一覧/個別記事・画像・表・サイドバー）を再確認する。
+
 ### 2026-07-12 $12,000 setup scope content expansion (本番反映済み)
 - 固定セットアップの内訳を英語ホーム、料金ページ、FAQ、申込導線へ統一表示: LP/HPローカライズ、SNS最大2チャンネルの初期セットアップ、最大3市場のpublic-signal market report（1市場deep dive）、Japan's Act on Specified Commercial Transactionsを含む規制適用可能性スクリーニング、buyer path、launch operations、handover。
 - 除外範囲も明記: 継続SNS投稿・広告費、非公開トラフィック/売上データ、正式な法務意見・申請、第三者費用、無制限ページ/翻訳/追加機能。

@@ -23,6 +23,11 @@ export type BlogPost = {
   category: string
   tags: string[]
   readTime: string
+  heroImage?: {
+    src: string
+    alt: string
+    caption: string
+  }
 }
 
 /** @deprecated Use lib/blog-cms.ts. Remaining only as Payload-empty fallback. */

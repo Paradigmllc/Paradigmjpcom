@@ -54,6 +54,7 @@ function japanEntrySeedToBlogPost(post: (typeof JAPAN_ENTRY_BLOG_POSTS)[number])
     category: post.category,
     tags: post.tags,
     readTime: post.readTime,
+    heroImage: post.heroImage,
   }
 }
 
@@ -106,6 +107,7 @@ function lexicalToText(node: unknown): string {
 
 function mapPayloadToBlogPost(p: PayloadPost, fallbackBySlug?: BlogPost): BlogPost {
   const contentText = lexicalToText(p.content).trim()
+  const hasEditorialTable = /^\|/m.test(contentText)
   const tags = (p.tags ?? []).map((t) => t.tag).filter((t): t is string => Boolean(t))
   // Categories relationship (categoryRef) を優先・無ければ自由テキスト category
   const refName =
@@ -114,13 +116,18 @@ function mapPayloadToBlogPost(p: PayloadPost, fallbackBySlug?: BlogPost): BlogPo
     slug: p.slug ?? fallbackBySlug?.slug ?? String(p.id),
     title: p.title ?? fallbackBySlug?.title ?? "",
     excerpt: p.excerpt ?? fallbackBySlug?.excerpt ?? "",
-    content: contentText || fallbackBySlug?.content || "",
+    // Keep the published article at the editorial quality bar when an older
+    // CMS document still contains the pre-long-form copy.
+    content: contentText.length >= 2000 && hasEditorialTable
+      ? contentText
+      : fallbackBySlug?.content || contentText,
     date: p.publishedAt
       ? new Date(p.publishedAt).toISOString().split("T")[0]
       : fallbackBySlug?.date ?? "",
     category: refName || p.category || fallbackBySlug?.category || "",
     tags: tags.length > 0 ? tags : fallbackBySlug?.tags ?? [],
     readTime: p.readTime ?? fallbackBySlug?.readTime ?? "5分",
+    heroImage: fallbackBySlug?.heroImage,
   }
 }
 
@@ -146,7 +153,15 @@ async function fetchAllPayloadPosts(locale: string): Promise<BlogPost[]> {
     const docs = (res?.docs ?? []) as unknown as PayloadPost[]
     const mappedPosts = docs
       .filter((p) => !!p.title)
-      .map((p) => mapPayloadToBlogPost(p, locale === "ja" ? BLOG_POSTS.find((b) => b.slug === p.slug) : undefined))
+      .map((p) => {
+        const fallbackBySlug = locale === "en"
+          ? JAPAN_ENTRY_BLOG_POSTS.map(japanEntrySeedToBlogPost).find((b) => b.slug === p.slug)
+          : locale === "ja"
+            ? JAPAN_ENTRY_BLOG_POSTS_JA.find((b) => b.slug === p.slug)
+              ?? BLOG_POSTS.find((b) => b.slug === p.slug)
+            : undefined
+        return mapPayloadToBlogPost(p, fallbackBySlug)
+      })
     if (locale === "en") return mappedPosts.filter(isPublicEnglishBlogPost)
     if (locale === "ja") return mappedPosts.filter(isPublicJapaneseBlogPost)
     return mappedPosts

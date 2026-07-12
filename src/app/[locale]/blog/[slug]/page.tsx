@@ -11,6 +11,7 @@ import { LOCALE_OG_LOCALE, LOCALE_ORG_NAME } from "@/lib/locale-map"
 import { pageAlternates } from "@/lib/page-metadata"
 import { MARKETING_LOCALES } from "@/i18n/locales"
 import { ArrowRight, Calendar, Clock, Tag } from "lucide-react"
+import Image from "next/image"
 
 export const dynamic = "force-dynamic"
 
@@ -132,6 +133,7 @@ export default async function BlogPostPage({
   const toc = extractToc(post.content)
   const isJa = locale === "ja"
   const contactHref = "/contact?intent=japan-entry"
+  const visibleTags = (post.tags ?? []).filter((tag) => !/public-reviewed|japan-entry-public/i.test(tag))
 
   return (
     <>
@@ -143,6 +145,48 @@ export default async function BlogPostPage({
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-8 lg:gap-12">
             {/* Main content */}
             <div className="min-w-0">
+              {post.heroImage && (
+                <figure className="mb-8 overflow-hidden rounded-2xl border border-paradigm-line/70 bg-white paradigm-glass paradigm-glow-sm">
+                  <Image
+                    src={post.heroImage.src}
+                    alt={post.heroImage.alt}
+                    width={900}
+                    height={560}
+                    sizes="(min-width: 1024px) 680px, 100vw"
+                    className="h-auto w-full"
+                    priority
+                  />
+                  <figcaption className="px-5 py-3 text-[11px] leading-[1.7] text-paradigm-ink-mute">
+                    {post.heroImage.caption}
+                  </figcaption>
+                </figure>
+              )}
+
+              {/* Mobile navigation keeps the article usable without a desktop sidebar. */}
+              <aside className="mb-8 space-y-4 lg:hidden">
+                {toc.length > 0 && (
+                  <nav className="paradigm-glass rounded-2xl p-5 paradigm-glow-sm" aria-label={isJa ? "記事の目次" : "Article contents"}>
+                    <h4 className="font-display text-[14px] text-paradigm-ink mb-4 tracking-[-0.01em]">{isJa ? "目次" : "Contents"}</h4>
+                    <ul className="space-y-1.5">
+                      {toc.map((item) => (
+                        <li key={item.id}>
+                          <a href={`#${item.id}`} className={`block text-[12px] text-paradigm-ink-soft hover:text-paradigm-accent transition-colors leading-[1.6] ${item.level === 3 ? "pl-3" : "font-medium text-paradigm-ink"}`}>
+                            {item.text}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </nav>
+                )}
+                <div className="paradigm-glass rounded-2xl p-5 paradigm-glow-sm bg-gradient-to-br from-paradigm-accent/5 to-paradigm-glow/5">
+                  <h4 className="font-display text-[14px] text-paradigm-ink mb-2">{isJa ? "Japan Entry 適合審査 — $12K" : "Japan Entry — $12K fixed"}</h4>
+                  <p className="text-[11px] text-paradigm-ink-soft leading-[1.7] mb-4">{isJa ? "セットアップ費用固定。月額運用は最初の6か月無料。" : "A fixed-scope starting system for fast-decision SMBs."}</p>
+                  <Link href={contactHref} className="inline-flex items-center gap-1.5 text-[11px] tracking-[0.12em] uppercase font-semibold bg-paradigm-ink text-paradigm-paper hover:bg-paradigm-accent transition-colors px-4 py-2 rounded-xl paradigm-glow-sm">
+                    Apply — $12K <ArrowRight size={12} />
+                  </Link>
+                </div>
+              </aside>
+
               {post.content ? (
                 <div className="paradigm-glass rounded-2xl p-7 md:p-9 paradigm-glow-md" dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }} />
               ) : (
@@ -152,7 +196,7 @@ export default async function BlogPostPage({
               )}
 
               <div className="mt-8 flex flex-wrap gap-3">
-                {post.tags?.map((tag) => (
+                {visibleTags.map((tag) => (
                   <span key={tag} className="paradigm-eyebrow text-[10px] px-3 py-1.5 paradigm-glass rounded-full text-paradigm-ink-soft flex items-center gap-1.5">
                     <Tag size={10} />{tag}
                   </span>
@@ -202,6 +246,14 @@ export default async function BlogPostPage({
                     <div className="flex items-center gap-2 text-[12px] text-paradigm-ink-soft">
                       <Tag size={14} className="text-paradigm-accent" />
                       <span>{post.category}</span>
+                    </div>
+                  )}
+                  {visibleTags.length > 0 && (
+                    <div className="border-t border-paradigm-line/70 pt-3">
+                      <p className="paradigm-eyebrow text-[10px] text-paradigm-ink-mute mb-2">{isJa ? "タグ" : "Topics"}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {visibleTags.map((tag) => <span key={tag} className="rounded-full border border-paradigm-line px-2 py-1 text-[10px] text-paradigm-ink-soft">{tag}</span>)}
+                      </div>
                     </div>
                   )}
                 </div>

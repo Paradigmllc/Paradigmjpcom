@@ -18,6 +18,7 @@ import { assertLocale } from "@/lib/cms/filters"
 import { LOCALE_HREFLANG } from "@/lib/locale-map"
 import { getAllBlogPosts } from "@/lib/blog-cms"
 import type { BlogPost } from "@/lib/blog"
+import Image from "next/image"
 
 export const dynamic = "force-dynamic"
 
@@ -83,7 +84,7 @@ export default async function BlogPage({ params }: Props) {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               {posts.map((post, i) => {
-                const tags = post.tags ?? []
+                const tags = (post.tags ?? []).filter((tag) => !/public-reviewed|japan-entry-public/i.test(tag))
                 const gradient = CATEGORY_GRADIENTS[i % CATEGORY_GRADIENTS.length]
                 return (
                   <FadeIn key={post.slug} delay={i * 0.05}>
@@ -91,6 +92,16 @@ export default async function BlogPage({ params }: Props) {
                       href={`/blog/${post.slug}`}
                       className="group block paradigm-glass rounded-lg p-6 paradigm-glow-sm hover:paradigm-glow-lg  transition-all duration-500 h-full"
                     >
+                      {post.heroImage && (
+                        <Image
+                          src={post.heroImage.src}
+                          alt={post.heroImage.alt}
+                          width={900}
+                          height={560}
+                          sizes="(min-width: 768px) 50vw, 100vw"
+                          className="mb-5 aspect-[16/10] w-full rounded-xl object-cover"
+                        />
+                      )}
                       <div className="flex flex-wrap items-center gap-2 mb-4">
                         {post.category && (
                           <span className={`paradigm-eyebrow inline-block rounded-full px-2.5 py-1 text-[10px] bg-gradient-to-br ${gradient} text-paradigm-paper paradigm-glow-sm`}>

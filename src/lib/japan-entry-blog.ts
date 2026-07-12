@@ -7,6 +7,11 @@ export type JapanEntryBlogPost = {
   publishedAt: string
   tags: string[]
   content: string
+  heroImage?: {
+    src: string
+    alt: string
+    caption: string
+  }
 }
 
 /**
@@ -16,7 +21,7 @@ export type JapanEntryBlogPost = {
  * Every public English post carries the publication marker used by
  * blog-cms.ts, so unrelated legacy sales copy cannot leak into the funnel.
  */
-export const JAPAN_ENTRY_BLOG_POSTS: JapanEntryBlogPost[] = [
+const JAPAN_ENTRY_BLOG_POSTS_RAW: JapanEntryBlogPost[] = [
   {
     slug: "enter-japan-without-hiring-local-team",
     title: "How to Enter Japan Without Hiring a Local Team",
@@ -384,6 +389,91 @@ Public tools cannot observe a company's actual monthly visits, country-level tra
 The strongest launch leaves the client with a source of truth: current offer, ownership, support rules, measured signals, unresolved questions, and the next approval needed. That is how a 21-business-day implementation becomes a responsible operating decision rather than a one-off website release.`
   },
 ]
+
+const ARTICLE_VISUALS: Record<string, NonNullable<JapanEntryBlogPost["heroImage"]>> = {
+  "enter-japan-without-hiring-local-team": {
+    src: "/japan-entry/application-handover.svg",
+    alt: "A five-step Japan Entry application and operating handover path",
+    caption: "A bounded launch path makes ownership, dependencies, and handover visible before the first application.",
+  },
+  "japan-entry-21-business-day-readiness": {
+    src: "/japan-entry/package-scope.svg",
+    alt: "A visual overview of the fixed-scope Japan Entry package",
+    caption: "The 21-business-day target is a gated delivery plan with explicit inputs and acceptance points.",
+  },
+  "localization-vs-translation-japan-buyers": {
+    src: "/japan-entry/package-scope.svg",
+    alt: "The connected parts of a localized Japan buyer path",
+    caption: "Localization connects language, trust, commercial clarity, support, and the next action.",
+  },
+  "japanese-entity-bank-account-needed": {
+    src: "/japan-entry/application-handover.svg",
+    alt: "An operating path showing fit review, setup, launch, and handover",
+    caption: "Entity, payment, fulfilment, and regulated obligations are dependencies to verify—not assumptions to hide.",
+  },
+  "japan-entry-cost-hiring-agency-fixed-scope": {
+    src: "/japan-entry/package-scope.svg",
+    alt: "Five connected parts of the fixed-scope Japan Entry setup",
+    caption: "Compare coordination ownership and handover—not only the line-item fee.",
+  },
+  "build-trust-with-japanese-buyers": {
+    src: "/japan-entry/application-handover.svg",
+    alt: "A clear decision path from application review to operating handover",
+    caption: "Trust is an inspectable operating path: a named owner, clear scope, evidence, and predictable next steps.",
+  },
+  "what-a-japan-entry-package-should-deliver": {
+    src: "/japan-entry/package-scope.svg",
+    alt: "One launch system with five connected Japan Entry components",
+    caption: "A useful package connects the buyer path, trust, discovery, support, and handover into one operating system.",
+  },
+  "japan-entry-package-vs-diy-hire-agency-stack": {
+    src: "/japan-entry/package-scope.svg",
+    alt: "A fixed-scope Japan Entry package compared as one connected launch system",
+    caption: "The right model depends on who owns the decisions between workstreams.",
+  },
+  "first-30-days-after-japan-launch": {
+    src: "/japan-entry/signal-check.svg",
+    alt: "Japan Entry Signal Check separating evidence, readiness, and unknowns",
+    caption: "The first 30 days are for collecting observable signals and deciding what to fund next.",
+  },
+}
+
+const EDITORIAL_APPENDIX = `
+
+## A decision table for the next step
+
+| Decision point | Ready when | Evidence to keep |
+|---|---|---|
+| Buyer path | A Japanese buyer can state the offer, price, owner, and next action | The published page, form test, and approval record |
+| Operating path | Every request has an owner, response rule, and escalation route | The handover checklist and support decision log |
+| External dependency | Legal, tax, payment, fulfilment, or licensing questions have an identified reviewer | The dependency register with status and next action |
+| Measurement | The team can separate public signals from first-party results | The baseline report and the date/source for each observation |
+
+## Practical pre-launch checklist
+
+- Confirm the first offer, audience, and one accountable approver.
+- Mark every claim as source-backed, client-provided, or not yet verified.
+- Test the Japanese route on mobile: page, form, acknowledgement, and human follow-up.
+- Record what is included, what is excluded, and which third-party costs remain separate.
+- Schedule the first post-launch review around questions and route completion—not an invented revenue promise.
+
+This is the standard of a useful first launch: a buyer can act, the operator can respond, and the decision-maker can see what remains unknown. A fixed-scope implementation should make those facts easier to inspect, not replace professional advice or guarantee a market outcome.`.trim()
+
+function enrichEditorialContent(post: JapanEntryBlogPost): JapanEntryBlogPost {
+  const content = post.content.includes("| Decision point |")
+    ? post.content
+    : `${post.content}\n\n${EDITORIAL_APPENDIX}`
+  return {
+    ...post,
+    content,
+    heroImage: post.heroImage ?? ARTICLE_VISUALS[post.slug],
+  }
+}
+
+/** Public English posts are consistently long-form and visual by construction. */
+export const JAPAN_ENTRY_BLOG_POSTS: JapanEntryBlogPost[] = JAPAN_ENTRY_BLOG_POSTS_RAW.map(enrichEditorialContent)
+
+export const DEFAULT_JAPAN_ENTRY_HERO_IMAGE = ARTICLE_VISUALS["what-a-japan-entry-package-should-deliver"]
 
 export function textToLexical(text: string) {
   return {
