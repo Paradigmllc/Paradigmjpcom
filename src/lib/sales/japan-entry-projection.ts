@@ -251,6 +251,28 @@ export function buildJapanEntryProjection(input: JapanEntryProjectionInput): Jap
       confidence: 0.38,
       limitation: "A wide planning range derived from public popularity bands; it is not analytics data.",
     },
+    {
+      id: "country-mix-assumption",
+      classification: "assumed",
+      label: "Current Japan traffic share",
+      value: `${(assumptions.currentJapanShare * 100).toFixed(1)}%`,
+      source: `${JAPAN_ENTRY_MODEL_VERSION} planning assumption`,
+      sourceUrl: null,
+      observedAt: generatedAt,
+      confidence: 0.25,
+      limitation: "Replace with first-party country analytics before treating the market mix as measured.",
+    },
+    {
+      id: "commercial-assumptions",
+      classification: "assumed",
+      label: "Conversion, order value and gross margin",
+      value: `${(assumptions.conversionRate * 100).toFixed(2)}% / $${assumptions.averageOrderValueUsd.toLocaleString("en-US")} / ${(assumptions.grossMargin * 100).toFixed(0)}%`,
+      source: `${JAPAN_ENTRY_MODEL_VERSION} ${assumptions.businessModel} defaults`,
+      sourceUrl: null,
+      observedAt: generatedAt,
+      confidence: 0.3,
+      limitation: "Scenario defaults only; replace with verified unit economics when supplied by the company.",
+    },
   ]
   return {
     modelVersion: JAPAN_ENTRY_MODEL_VERSION,
