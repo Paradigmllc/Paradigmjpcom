@@ -1,5 +1,18 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
+### 2026-07-13 HP全体 Japan Entry コンテンツ刷新（本番反映済み）
+- 英日ホーム、料金、サービス、FAQ、実績/公開根拠、会社概要、申込、ブログメタデータ、構造化データを Japan Market Engine / Japan Entry の固定オファーへ統一。
+- 公開条件を統一：セットアップ **$12,000固定**、最初の6か月は標準月額運用込み、7か月目以降 **$995/月**、必要条件受領後 **14営業日公開目標**、通常依頼は **48営業時間以内着手**。
+- セットアップ範囲を明示：LP/HPローカライズ、SNS最大2チャネル初期設定、最大3市場の公開シグナル比較＋1市場深掘り、法規制適用可能性整理、日本語サポート導線、公開運用・引き継ぎ。
+- 日本語ホームは旧Payload文書の内部ローカライズキーを除去して再生成するrelease seedを追加。`release:prod`で日英ホームCMS publish成功、全主要URL・DB 81/81・Revenue/Cloudflareゲートを確認。
+- 公開個人名をフッター・会社概要・特商法から抑止。住所は `2-2-15 Minami-Aoyama, Minato-ku, Tokyo, Japan`、法人番号 `5010403026363` を表示。
+
+### 2026-07-13 Twenty営業リスト全削除・再収集保留（本番反映済み）
+- 本番TwentyのCompanyを全件削除。削除前はactive **126,111件** / deleted **317件**、最終確認はREST `totalCount: 0` / DB `companies: 0`。
+- 削除前にTwenty DB全体の復元用スナップショットを `/var/backups/paradigm/twenty-reset/twenty-before-company-reset-20260712T214836Z.dump` へ作成（13MB、権限600）。
+- People **5件**・Opportunity **6件**は保持し、Companyとのリンクのみ解除。Twenty公開URLはHTTP 200を維持。
+- 再収集はユーザー指示で保留。途中検証で登録された候補も全削除し、ローカル・本番コンテナ双方で収集プロセスが残っていないことを確認。収集方法の壁打ちが完了するまで候補取得・Twenty登録・自動送信を実行しない。
+
 ### 2026-07-13 Blog long-form / visual editorial pass (実装済み・正式release待ち)
 - `/en/blog` と `/ja/blog` の公開記事を、英語9本・日本語4本すべて2,000文字以上へ拡張。各記事に判断表、実務チェックリスト、公開根拠と不確実性の境界を追加し、文字だけの短文記事を廃止した。
 - 既存のJapan Entry図版（`application-handover.svg` / `package-scope.svg` / `signal-check.svg`）を記事ごとのhero imageとして設定。記事一覧カードにも画像と可視タグを表示し、公開承認用の内部タグは画面から隠した。
