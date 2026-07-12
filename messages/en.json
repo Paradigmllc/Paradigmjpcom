@@ -1178,6 +1178,29 @@
     },
     "testimonialsBody": "We do not publish anonymous outcome claims as proof. Review the inspectable site, application workflow, scope boundaries, delivery process, and company details, then decide whether the package fits.",
     "heroBrandStory": "Paradigm focuses the English site on one fixed Japan Entry decision for foreign SMBs.",
+    "visualProof": {
+      "eyebrow": "Visual proof",
+      "title": "See the system before you buy the service.",
+      "desc": "These are product surfaces and operating artifacts—not stock photos or anonymous case-study claims.",
+      "utilityCta": "Run the free Signal Check",
+      "cards": [
+        {
+          "title": "Package scope",
+          "body": "The pricing and module surface a decision-maker can inspect before applying.",
+          "alt": "Visual representation of the Paradigm Japan Entry pricing page, package modules, and fixed-scope deliverables"
+        },
+        {
+          "title": "Signal Check",
+          "body": "A public-signal result that separates evidence, self-reported readiness, and unknowns.",
+          "alt": "Japan Entry Signal Check interface showing public evidence, self-reported readiness, and unknowns"
+        },
+        {
+          "title": "Application handover",
+          "body": "The application path showing fit review, scope confirmation, and the start decision.",
+          "alt": "Visual representation of the Paradigm Japan Entry application page and its three-step review path"
+        }
+      ]
+    },
     "trustPanel": {
       "eyebrow": "See the operating system",
       "title": "Trust the work you can inspect before you apply.",

@@ -1,5 +1,11 @@
 ## CURRENT STATUS - 2026-07-11 P0公開面・実運用ハードニング（実装済み / 正式releaseは外部設定待ち）
 
+### 2026-07-12 Visual proof + utility placement（実装中）
+- 文字だけの営業ページを解消するため、`public/japan-entry/` にBuyer path、Signal Check、Handoverの3つのプロダクトビジュアルを追加。架空の人物写真・匿名実績画像は使用していない。
+- `JapanEntryVisualProof` をホーム、About、Worksへ配置し、`next/image`・alt text・公開根拠の説明・Signal CheckへのCTAを実装。ローカルproduction serverで各ページに3枚の画像と`/en/tools/japan-entry-score`へのリンクを確認。
+- Utilityは既存のAPI/DB/RLS実装を活かし、ホームのvisual proof・既存promo・ヘッダーナビから実際に遷移できる状態へ統合。ローカルでは `/en/tools/japan-entry-score` HTTP 200、フォームUI表示を確認。
+- 本番は現行コンテナが旧ビルドのため、これらの画像・utilityはまだ未反映。正式release gate（Slack、暗号化off-host backup、法務identity）を満たした後に`npm run release:prod`で公開し、ブラウザで再確認する。
+
 ### 2026-07-12 Production 502 recovery（復旧済み）
 - 03:06 JST頃、`https://paradigmjp.com/`、`/en`、`/api/ready` がCloudflare HTTP 502。アプリコンテナ自体の `127.0.0.1:3000/api/ready` と現行コンテナIP `10.0.1.13:3000/api/ready` はHTTP 200で、アプリ障害ではなかった。
 - Traefikの `/data/coolify/proxy/dynamic/paradigmjp.yml` にある `paradigmhp-svc` upstream が旧IP `10.0.1.33:3000`を指していた（現行コンテナ `n8i2sjiqvr2d8hrzppop2m2i-030052041249` は `10.0.1.13`）。

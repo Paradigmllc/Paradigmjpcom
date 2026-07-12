@@ -18,6 +18,7 @@ import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
 import RepresentativeMessage from "@/components/japan-entry/RepresentativeMessage"
+import JapanEntryVisualProof from "@/components/japan-entry/JapanEntryVisualProof"
 import { getSiteSettings } from "@/lib/settings"
 
 export const dynamic = "force-dynamic"
@@ -147,6 +148,8 @@ export default async function AboutPage({ params }: Props) {
           role={t("representativeRole")}
         />
       )}
+
+      {isJapanEntryLocale && <JapanEntryVisualProof locale={locale as "en" | "ja"} />}
 
       <section className="relative bg-paradigm-paper-deep paradigm-section overflow-hidden">
         <div className="paradigm-mesh opacity-50" />

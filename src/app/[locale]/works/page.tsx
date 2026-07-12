@@ -18,6 +18,7 @@ import FadeIn from "@/components/aesop/FadeIn"
 import { filterByLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
 import { withPayloadReadFallback } from "@/lib/payload-availability"
 import { WORKS_EN } from "@/lib/data"
+import JapanEntryVisualProof from "@/components/japan-entry/JapanEntryVisualProof"
 import {
   JAPANESE_WORK_PUBLICATION_TAG,
   isVerifiedJapaneseWork,
@@ -166,6 +167,8 @@ export default async function WorksPage({ params }: Props) {
           )}
         </div>
       </section>
+
+      {locale === "en" && <JapanEntryVisualProof locale="en" />}
 
       {/* Process */}
       <section className="relative bg-paradigm-paper-deep paradigm-section overflow-hidden">
