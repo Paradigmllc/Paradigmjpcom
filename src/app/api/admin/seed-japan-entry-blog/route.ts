@@ -1,5 +1,5 @@
 /**
- * Seed the English Japan Entry editorial set.
+ * Seed the maintained English and Japanese Japan Entry editorial sets.
  *
  * This is an authenticated, idempotent admin action. It is intentionally
  * separate from the legacy all-content seed so publishing these articles
@@ -8,11 +8,17 @@
 
 import { NextResponse } from "next/server"
 import { JAPAN_ENTRY_BLOG_POSTS, textToLexical } from "@/lib/japan-entry-blog"
+import { JAPAN_ENTRY_BLOG_POSTS_JA } from "@/lib/japan-entry-blog-ja"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
 
 type SeedRequest = { confirm?: boolean; dryRun?: boolean }
+
+const EDITORIAL_POSTS = [
+  ...JAPAN_ENTRY_BLOG_POSTS.map((post) => ({ locale: "en" as const, post, publishedAt: post.publishedAt })),
+  ...JAPAN_ENTRY_BLOG_POSTS_JA.map((post) => ({ locale: "ja" as const, post, publishedAt: post.date })),
+]
 
 export async function POST(req: Request) {
   const expected = process.env.ADMIN_SCRIPT_SECRET
@@ -29,8 +35,8 @@ export async function POST(req: Request) {
   if (body.dryRun) {
     return NextResponse.json({
       dryRun: true,
-      total: JAPAN_ENTRY_BLOG_POSTS.length,
-      posts: JAPAN_ENTRY_BLOG_POSTS.map(({ slug, title }) => ({ slug, title })),
+      total: EDITORIAL_POSTS.length,
+      posts: EDITORIAL_POSTS.map(({ locale, post: { slug, title } }) => ({ locale, slug, title })),
     })
   }
 
@@ -46,13 +52,14 @@ export async function POST(req: Request) {
     const payload = await getPayload({ config })
     const results: Array<{ slug: string; action: "created" | "updated" | "error"; error?: string }> = []
 
-    for (const post of JAPAN_ENTRY_BLOG_POSTS) {
+    for (const editorial of EDITORIAL_POSTS) {
+      const { locale, post } = editorial
       try {
         const existing = await payload.find({
           collection: "posts",
           where: { slug: { equals: post.slug } },
           limit: 1,
-          locale: "en",
+          locale,
         })
         const data = {
           title: post.title,
@@ -64,8 +71,8 @@ export async function POST(req: Request) {
           tags: post.tags.map((tag) => ({ tag })),
           status: "published" as const,
           _status: "published" as const,
-          publishedAt: new Date(post.publishedAt).toISOString(),
-          availableLocales: ["en"],
+          publishedAt: new Date(editorial.publishedAt).toISOString(),
+          availableLocales: [locale],
         }
 
         if (existing.docs.length > 0) {
@@ -73,14 +80,14 @@ export async function POST(req: Request) {
             collection: "posts",
             id: existing.docs[0].id,
             data,
-            locale: "en",
+            locale,
           } as unknown as Parameters<typeof payload.update>[0])
           results.push({ slug: post.slug, action: "updated" })
         } else {
           await payload.create({
             collection: "posts",
             data,
-            locale: "en",
+            locale,
           } as unknown as Parameters<typeof payload.create>[0])
           results.push({ slug: post.slug, action: "created" })
         }
@@ -94,7 +101,7 @@ export async function POST(req: Request) {
     const errors = results.filter((result) => result.action === "error")
     return NextResponse.json({
       success: errors.length === 0,
-      total: JAPAN_ENTRY_BLOG_POSTS.length,
+      total: EDITORIAL_POSTS.length,
       created: results.filter((result) => result.action === "created").length,
       updated: results.filter((result) => result.action === "updated").length,
       errors,

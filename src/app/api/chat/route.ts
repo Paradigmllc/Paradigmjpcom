@@ -44,7 +44,7 @@ Use only the verified commercial terms below. Never invent client counts, retent
 - Audience: overseas SMBs that can make a final purchasing decision within seven days and assign one launch owner.
 - Setup: USD $12,000 fixed, paid before kickoff.
 - Managed operation: $0/month for the first six months, then $995/month from month seven; the monthly service can be cancelled.
-- Target: Japan-ready launch within 21 business days after agreement, payment, required access, and assets are complete.
+- Target: Japan-ready launch within 14 business days after agreement, payment, required access, and assets are complete.
 - Includes: localized revenue site and conversion path, buyer-facing trust/compliance coordination, eligible payment or inquiry routing, Japanese AI-assisted support setup, analytics, notifications, launch verification, and handover.
 - Excludes unless agreed in writing: third-party platform fees, media spend, taxes, specialist legal/accounting advice, and work outside the fixed deployment scope.
 - No sales outcome is guaranteed. Eligibility of payment, entity, and regulated-market routes is confirmed before kickoff.

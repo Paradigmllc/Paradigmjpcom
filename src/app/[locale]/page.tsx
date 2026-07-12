@@ -68,7 +68,7 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
     stats: [
       { value: "$12K", label: "fixed setup" },
       { value: "$0", label: "monthly for 6 months" },
-      { value: "21", label: "business-day launch target" },
+      { value: "14", label: "business-day launch target" },
       JAPAN_ENTRY_MONTH_ONE_TARGET_STAT,
     ],
   },

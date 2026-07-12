@@ -69,7 +69,7 @@ const PRODUCTS = [
     default_currency: "USD",
     default_amount_yen: 12000,
     is_subscription: false,
-    description: "Fast-decision global SMBs向けの日本市場参入パッケージ。$12,000の固定セットアップで、21営業日の立ち上げ目標と最初の6ヶ月の運用を提供する。",
+    description: "Fast-decision global SMBs向けの日本市場参入パッケージ。$12,000の固定セットアップで、14営業日の立ち上げ目標と最初の6ヶ月の運用を提供する。",
     sort_order: 30,
     meta: {
       primary_market: "global",
@@ -1004,22 +1004,22 @@ async function seedMarketingHomepages(envs) {
   console.log("Japanese and English homepage CMS publish OK")
 }
 
-async function seedEnglishJapanEntryBlog(envs) {
+async function seedJapanEntryBlog(envs) {
   const secret = envs.ADMIN_SCRIPT_SECRET
   if (typeof secret !== "string" || secret.trim().length < 16) {
-    throw new Error("ADMIN_SCRIPT_SECRET must be configured before publishing the English Japan Entry blog")
+    throw new Error("ADMIN_SCRIPT_SECRET must be configured before publishing the Japan Entry editorial blog")
   }
 
   const { result } = await postAdminSeed(
     "https://paradigmjp.com/api/admin/seed-japan-entry-blog",
     secret,
     { confirm: true },
-    "English Japan Entry blog seed",
+    "Japan Entry editorial blog seed",
   )
   if (result?.errors?.length > 0) {
-    throw new Error(`English Japan Entry blog publish failed: ${result.errors.join("; ")}`)
+    throw new Error(`Japan Entry editorial blog publish failed: ${result.errors.join("; ")}`)
   }
-  console.log(`English Japan Entry blog publish OK (${result.total} articles; ${result.created} created, ${result.updated} updated)`)
+  console.log(`Japan Entry editorial blog publish OK (${result.total} articles; ${result.created} created, ${result.updated} updated)`)
 }
 
 function readOriginLockHelper() {
@@ -1208,7 +1208,7 @@ async function main() {
     await waitDeploy(uuid)
     refreshManualTraefikRoute()
     await seedMarketingHomepages(envs)
-    await seedEnglishJapanEntryBlog(envs)
+    await seedJapanEntryBlog(envs)
   } else {
     console.log("Dry/skip mode: skipped Coolify deploy")
   }
@@ -1217,7 +1217,7 @@ async function main() {
     { url: "https://paradigmjp.com/api/ready" },
     { url: "https://paradigmjp.com/ja/admin/sales" },
     { url: "https://paradigmjp.com/ja" },
-    { url: "https://paradigmjp.com/ja/blog", markers: ["日本進出のキックオフ前に確認する5つのこと"] },
+    { url: "https://paradigmjp.com/ja/blog", markers: ["日本進出のキックオフ前に確認する5つのこと", "申込み後に何が起きるか"] },
     {
       url: "https://paradigmjp.com/en",
       markers: [
@@ -1242,7 +1242,7 @@ async function main() {
     { url: "https://paradigmjp.com/en/pricing", markers: ["$12,000", "$995"] },
     { url: "https://paradigmjp.com/en/faq", markers: ["$12,000"] },
     { url: "https://paradigmjp.com/en/works" },
-    { url: "https://paradigmjp.com/en/blog", markers: ["What Should a Japan Entry Package Actually Deliver?"] },
+    { url: "https://paradigmjp.com/en/blog", markers: ["What Should a Japan Entry Package Actually Deliver?", "The Source Pack That Keeps a Japan Launch Moving"] },
     { url: "https://paradigmjp.com/en/privacy" },
     { url: "https://paradigmjp.com/en/legal", markers: ["$12,000"] },
     { url: `https://paradigmjp.com${envValue("RELEASE_REPORT_SMOKE_PATH", "/en/report/ccbc-xynd21")}` },

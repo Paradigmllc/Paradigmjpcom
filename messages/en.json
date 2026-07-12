@@ -831,7 +831,7 @@
         "a": "Company incorporation, tax or legal opinions, regulated licences, inventory, logistics charges, advertising spend, payment-provider fees, third-party software, photography, and work outside the agreed launch scope are not included unless added in writing."
       },
       {
-        "q": "Is launch guaranteed in 21 business days?",
+        "q": "Is launch guaranteed in 14 business days?",
         "a": "It is a launch target, not an unconditional guarantee. It assumes complete source materials, required account access, a single empowered approver, prompt feedback, and no external compliance or provider delay. We identify blockers before kickoff."
       },
       {
@@ -2095,7 +2095,7 @@
       "marquee2": "Bilingual async workflow",
       "marquee3": "Fixed scope, fixed price",
       "marquee4": "Written scope boundaries",
-      "metric1Value": "21",
+      "metric1Value": "14",
       "metric1Label": "business-day launch target, subject to stated dependencies",
       "metric2Value": "$12K",
       "metric2Label": "fixed setup price in USD",

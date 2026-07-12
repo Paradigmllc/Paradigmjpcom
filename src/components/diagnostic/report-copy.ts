@@ -79,12 +79,12 @@ export const REPORT_FAQS: Record<"ja" | "en", Record<string, FaqItem[]>> = {
     website_diagnostic: [
       { q: "Do we need to scrap our existing hosting or domain?", a: "Usually not. We stage and verify the agreed presentation layer first, then document the cutover, downtime risk, and rollback path before touching production." },
       { q: "Is a Lighthouse 85+ score guaranteed?", a: "No unconditional score is guaranteed. We fix the measurement conditions, record the baseline, and report the launch result, including third-party scripts or infrastructure that constrain it." },
-      { q: "What is the timeline for deployment?", a: "For the fixed Japan Entry scope, the launch target is 21 business days after agreement, payment, required access, and assets are complete. External review or client delays move the target." }
+      { q: "What is the timeline for deployment?", a: "For the fixed Japan Entry scope, the launch target is 14 business days after agreement, payment, required access, and assets are complete. External review or client delays move the target." }
     ],
     japan_entry: [
       { q: "Can we start sales before establishing a local Japanese entity?", a: "Sometimes. The viable inquiry, payment, fulfilment, and disclosure route depends on your product, regulated status, provider eligibility, and tax or legal requirements. We confirm the route before accepting the fixed scope." },
       { q: "When is a Tokushoho commercial disclosure needed?", a: "Covered Japanese consumer mail-order transactions require specified seller and commercial information. The exact disclosure depends on the sales model, and specialist legal review remains separate where needed." },
-      { q: "How long does the localization setup take?", a: "The target is 21 business days after agreement, payment, required access, and assets are complete. Delayed approvals, expanded scope, regulation, or third-party reviews can move the date." }
+      { q: "How long does the localization setup take?", a: "The target is 14 business days after agreement, payment, required access, and assets are complete. Delayed approvals, expanded scope, regulation, or third-party reviews can move the date." }
     ],
     video_subscription: [
       { q: "Can we adjust the monthly video volume?", a: "Yes. We offer flexible plans where you can scale your video pipeline up or down depending on your current marketing campaigns." },

@@ -14,6 +14,13 @@ export type JapanEntryBlogPost = {
   }
 }
 
+import {
+  ARTICLE_VISUALS_ADDITIONS,
+  JAPAN_ENTRY_BLOG_POSTS_ADDITIONS,
+} from "./japan-entry-blog-additions"
+
+export { textToLexical } from "./japan-entry-blog-additions"
+
 /**
  * English, Japan-entry-specific editorial content.
  *
@@ -90,11 +97,11 @@ If any of these remain unclear, the blocker should be recorded before implementa
 
 Confirm the offer, buyer path, access, source content, ownership, and acceptance criteria. Decide what is in the fixed scope and what requires written approval.
 
-### Days 6–15: localized implementation
+### Days 6–10: localized implementation
 
 Build the agreed revenue site, trust elements, inquiry or payment route, discovery foundation, search-readiness baseline, and bilingual support workflow. Sensitive or uncertain responses receive a defined human escalation path.
 
-### Days 16–21: approval and handover
+### Days 11–14: approval and handover
 
 Run launch checks, resolve agreed revisions, document ownership and operating steps, and hand over the system. The clock moves when required client inputs and approvals are available.
 
@@ -438,6 +445,8 @@ const ARTICLE_VISUALS: Record<string, NonNullable<JapanEntryBlogPost["heroImage"
   },
 }
 
+const ALL_ARTICLE_VISUALS = { ...ARTICLE_VISUALS, ...ARTICLE_VISUALS_ADDITIONS }
+
 const EDITORIAL_APPENDIX = `
 
 ## A decision table for the next step
@@ -466,31 +475,14 @@ function enrichEditorialContent(post: JapanEntryBlogPost): JapanEntryBlogPost {
   return {
     ...post,
     content,
-    heroImage: post.heroImage ?? ARTICLE_VISUALS[post.slug],
+    heroImage: post.heroImage ?? ALL_ARTICLE_VISUALS[post.slug],
   }
 }
 
 /** Public English posts are consistently long-form and visual by construction. */
-export const JAPAN_ENTRY_BLOG_POSTS: JapanEntryBlogPost[] = JAPAN_ENTRY_BLOG_POSTS_RAW.map(enrichEditorialContent)
+export const JAPAN_ENTRY_BLOG_POSTS: JapanEntryBlogPost[] = [
+  ...JAPAN_ENTRY_BLOG_POSTS_RAW,
+  ...JAPAN_ENTRY_BLOG_POSTS_ADDITIONS,
+].map(enrichEditorialContent)
 
-export const DEFAULT_JAPAN_ENTRY_HERO_IMAGE = ARTICLE_VISUALS["what-a-japan-entry-package-should-deliver"]
-
-export function textToLexical(text: string) {
-  return {
-    root: {
-      type: "root" as const,
-      direction: "ltr" as const,
-      format: "" as const,
-      indent: 0,
-      version: 1,
-      children: text.split("\n\n").filter(Boolean).map((paragraph) => ({
-        type: "paragraph" as const,
-        direction: "ltr" as const,
-        format: "" as const,
-        indent: 0,
-        version: 1,
-        children: [{ type: "text" as const, text: paragraph, format: 0 }],
-      })),
-    },
-  }
-}
+export const DEFAULT_JAPAN_ENTRY_HERO_IMAGE = ALL_ARTICLE_VISUALS["what-a-japan-entry-package-should-deliver"]
