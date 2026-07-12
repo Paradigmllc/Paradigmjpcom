@@ -1196,7 +1196,7 @@ async function main() {
     { url: "https://paradigmjp.com/api/ready" },
     { url: "https://paradigmjp.com/ja/admin/sales" },
     { url: "https://paradigmjp.com/ja" },
-    { url: "https://paradigmjp.com/ja/blog", markers: ["キックオフ前に確認する5つのこと"] },
+    { url: "https://paradigmjp.com/ja/blog", markers: ["日本進出のキックオフ前に確認する5つのこと"] },
     {
       url: "https://paradigmjp.com/en",
       markers: [
