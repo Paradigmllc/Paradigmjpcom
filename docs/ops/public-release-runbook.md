@@ -32,7 +32,7 @@ or `Task.md`:
 | --- | --- | --- |
 | Legal disclosure | `PARADIGM_LEGAL_REPRESENTATIVE_NAME`, `PARADIGM_LEGAL_POSTAL_CODE`, `PARADIGM_LEGAL_ADDRESS`, `PARADIGM_LEGAL_PHONE` | Values are confirmed by the legal owner and match the `/en/legal` and `/ja/legal` disclosure. |
 | Operator alerts | `SLACK_WEBHOOK_URL`, or `SLACK_BOT_TOKEN` + `SLACK_CHANNEL_ID` | A test contact produces both a DB bell/outbox record and a Slack message. |
-| Backup | `OSS_SUPABASE_BACKUP_GPG_PASSPHRASE`, `OSS_SUPABASE_BACKUP_SSH_TARGET` | The passphrase is root-only; the SSH account is restricted to the backup directory; an encrypted archive and checksum reach the off-host target. |
+| Backup | `OSS_SUPABASE_BACKUP_GPG_PASSPHRASE` plus either SSH target or `CLOUDFLARE_R2_BUCKET` + `CLOUDFLARE_R2_ACCOUNT_ID` + R2 access/secret keys | The passphrase is root-only; the encrypted archive and checksum reach an off-host SSH or R2 target. |
 | Public form security | `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `CONTACT_FORM_CHALLENGE_SECRET`, `TRUSTED_PROXY_MODE=cloudflare`, `CLOUDFLARE_ORIGIN_LOCKED=1` | `release-doctor` passes the public-funnel environment section. |
 | Content and CRM | `ADMIN_SCRIPT_SECRET`, `TWENTY_API_KEY`, and a Dify form-message credential | The English blog seed and Twenty handoff can be run without a fallback model or silent failure. |
 
@@ -99,7 +99,8 @@ backup job must then produce:
 
 - an AES-256 GPG archive when encryption is required;
 - an adjacent `.sha256` file that verifies with `sha256sum -c`;
-- the same archive and checksum on the configured off-host target;
+- the same archive and checksum on the configured off-host SSH target or R2
+  prefix;
 - a 14-day retention window without deleting the newest archive.
 
 For the quarterly restore drill, copy one archive to an isolated disposable
@@ -154,6 +155,6 @@ stop and inspect the container logs instead of changing the route.
 The site is “publicly complete” only when the code checks pass, the production
 environment table above is satisfied, `npm run release:prod` passes both doctor
 phases, and the public URLs show the current visuals and utility. Until the
-external legal, Slack, and encrypted off-host backup values are supplied, the
-repository intentionally remains release-blocked; that is safer than claiming
-an operationally incomplete site is ready.
+external legal and Slack values are supplied, the repository intentionally
+remains release-blocked; the encrypted off-host R2 backup is already active.
+That is safer than claiming an operationally incomplete site is ready.

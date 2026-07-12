@@ -969,15 +969,16 @@ async function checkPublicFunnelEnvironment() {
       fail("DIFY_API_KEY or a dedicated form-message key is required for LLM draft generation")
     }
     const backupEncrypted = /^(1|true|yes)$/i.test(String(envs.OSS_SUPABASE_BACKUP_ENCRYPTION_REQUIRED || "true").trim())
-    if (
-      backupEncrypted &&
-      hasMinimumSecret("OSS_SUPABASE_BACKUP_GPG_PASSPHRASE") &&
-      typeof envs.OSS_SUPABASE_BACKUP_SSH_TARGET === "string" &&
-      envs.OSS_SUPABASE_BACKUP_SSH_TARGET.trim().length > 0
-    ) {
-      pass("Encrypted off-host Supabase backups are configured")
+    const backupSshReady = typeof envs.OSS_SUPABASE_BACKUP_SSH_TARGET === "string" && envs.OSS_SUPABASE_BACKUP_SSH_TARGET.trim().length > 0
+    const backupR2Ready =
+      typeof envs.CLOUDFLARE_R2_BUCKET === "string" && envs.CLOUDFLARE_R2_BUCKET.trim().length > 0 &&
+      hasMinimumSecret("CLOUDFLARE_R2_ACCOUNT_ID") &&
+      hasMinimumSecret("CLOUDFLARE_R2_ACCESS_KEY_ID") &&
+      hasMinimumSecret("CLOUDFLARE_R2_SECRET_ACCESS_KEY")
+    if (backupEncrypted && hasMinimumSecret("OSS_SUPABASE_BACKUP_GPG_PASSPHRASE") && (backupSshReady || backupR2Ready)) {
+      pass(backupR2Ready ? "Encrypted off-host Supabase backups are configured through Cloudflare R2" : "Encrypted off-host Supabase backups are configured through SSH")
     } else {
-      fail("Encrypted off-host Supabase backup credentials are required")
+      fail("Encrypted off-host Supabase backup credentials are required (SSH target or complete Cloudflare R2 transport)")
     }
     const legalEnvNames = [
       "PARADIGM_LEGAL_REPRESENTATIVE_NAME",

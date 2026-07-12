@@ -13,6 +13,13 @@
 - コード・runbook・監査は完了。productionは現在も旧ビルドで、法務4項目、Slack credential、暗号化off-host backupの実値が揃うまで正式releaseを意図的に停止する。値を推測して公開状態にすることはしない。
 - 直近の公開URL実測（2026-07-12）: `/en` `/en/about` `/en/works` はHTTP 200だが新visual markerなし、`/en/tools/japan-entry-score` は404、`/api/ready` は200。これはコード不備ではなく、`50a4f18`を本番へ流すrelease gateが外部設定3件で停止している証跡。
 
+### 2026-07-12 暗号化off-host backupの本番有効化（実装・実機検証済み）
+- Coolifyに既存のCloudflare R2 bucket/account/access credentialsがあることを確認し、SSH同一ホスト転送ではなくR2をoff-host transportとして採用。`scripts/lib/r2-put.py` を標準ライブラリのみで追加し、AWS SigV4 PUTを実装した。
+- `backup-oss-supabase.sh` を暗号化必須 + SSH/R2選択式へ更新。`--validate-config` がDB password、GPG passphrase、off-host transport、R2 helperまで検証するようにした。release-doctorもR2 transportを正式に合格判定する。
+- 生成した強度64文字のGPG passphraseをCoolifyとroot-only `/etc/paradigm/oss-supabase-backup.env`へ登録。R2 helperとbackup scriptをproduction hostへmode 700で配置し、既存の`oss-supabase-backup.timer`を維持した。
+- 実機検証: host `--validate-config` pass、手動backup service exit 0、最新archive `20260712T052926Z.tar.gz.gpg` checksum OK / mode 600 / 527MB、R2にarchive + `.sha256`の両方をHeadObject確認。release gateのbackup failureは解消した。
+- 現在の正式release blockerはSlack通知credentialと法務identityの2件のみ。これらは既存の正規設定・公開一次情報から確定できず、推測で埋めていない。
+
 ### 2026-07-12 Production 502 recovery（復旧済み）
 - 03:06 JST頃、`https://paradigmjp.com/`、`/en`、`/api/ready` がCloudflare HTTP 502。アプリコンテナ自体の `127.0.0.1:3000/api/ready` と現行コンテナIP `10.0.1.13:3000/api/ready` はHTTP 200で、アプリ障害ではなかった。
 - Traefikの `/data/coolify/proxy/dynamic/paradigmjp.yml` にある `paradigmhp-svc` upstream が旧IP `10.0.1.33:3000`を指していた（現行コンテナ `n8i2sjiqvr2d8hrzppop2m2i-030052041249` は `10.0.1.13`）。
