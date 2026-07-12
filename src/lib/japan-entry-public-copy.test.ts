@@ -46,6 +46,14 @@ describe("public English Japan Entry copy", () => {
     )
   })
 
+  it("publishes an accountable operator message and inspectable trust surfaces", () => {
+    expect(messages.aboutPage.representativeMessage.length).toBeGreaterThan(300)
+    expect(messages.aboutPage.representativePrinciples).toHaveLength(3)
+    expect(messages.home.trustPanel.cards).toHaveLength(4)
+    expect(jaMessages.aboutPage.representativeMessage.length).toBeGreaterThan(200)
+    expect(jaMessages.home.trustPanel.cards).toHaveLength(4)
+  })
+
   it("keeps the legacy homeEn catalog identical across en and ja bundles", () => {
     expect(jaMessages.homeEn).toEqual(messages.homeEn)
 

@@ -778,6 +778,16 @@
     "missionEyebrow": "Operating principle",
     "missionTitle": "Reduce the distance between decision and Japan launch.",
     "missionDesc": "Paradigm gives foreign SMBs one English-language delivery path into Japan. We use a written fixed scope, visible dependencies, and a 21-business-day launch target rather than an open-ended agency engagement.",
+    "representativeEyebrow": "A note from the operator",
+    "representativeTitle": "Japan entry should end with a decision you can operate.",
+    "representativeMessage": "We built Paradigm around a simple problem: a capable overseas company can spend months coordinating market research, translation, agencies, and local setup without ever reaching a buyer. Our job is to make the first Japan path concrete, inspectable, and owned. That means stating what is included, showing what is still unknown, and handing over something your team can actually run. We do not replace legal, tax, banking, or licensed advice. We do take responsibility for making the commercial and implementation work visible enough for a fast decision.",
+    "representativePrinciples": [
+      "One accountable launch path instead of disconnected workstreams",
+      "Public evidence and explicit unknowns instead of invented outcomes",
+      "A documented handover so the client can decide what happens next"
+    ],
+    "representativeSignatureLabel": "Operating responsibility",
+    "representativeRole": "Japan Entry delivery · Paradigm LLC",
     "valuesEyebrow": "How we work",
     "valuesTitle": "Commercial clarity before activity",
     "values": [
@@ -1016,7 +1026,39 @@
       }
     },
     "testimonialsBody": "We do not publish anonymous outcome claims as proof. Review the inspectable site, application workflow, scope boundaries, delivery process, and company details, then decide whether the package fits.",
-    "heroBrandStory": "Paradigm focuses the English site on one fixed Japan Entry decision for foreign SMBs."
+    "heroBrandStory": "Paradigm focuses the English site on one fixed Japan Entry decision for foreign SMBs.",
+    "trustPanel": {
+      "eyebrow": "See the operating system",
+      "title": "Trust the work you can inspect before you apply.",
+      "desc": "A real launch needs more than a polished hero section. These are the concrete surfaces we make visible: the buyer path, the scope, the handover, and the decision owner.",
+      "cards": [
+        {
+          "kicker": "Buyer path",
+          "value": "JP / EN",
+          "title": "A route a Japanese buyer can use",
+          "body": "Offer framing, trust information, next action, and eligible inquiry or payment routing."
+        },
+        {
+          "kicker": "Commercial scope",
+          "value": "$12K",
+          "title": "A price with boundaries",
+          "body": "Fixed setup, six months included, exclusions, dependencies, and the month-seven decision."
+        },
+        {
+          "kicker": "Handover",
+          "value": "21d*",
+          "title": "A launch your team can run",
+          "body": "Checklist, ownership, analytics baseline, support escalation, and written operating steps."
+        },
+        {
+          "kicker": "Fit",
+          "value": "READY",
+          "title": "A decision-maker in the room",
+          "body": "The package is for a real offer, timely inputs, and one person who can approve the next step."
+        }
+      ],
+      "note": "*The 21-business-day figure is a gated target after required access, source material, approvals, and third-party dependencies are ready."
+    }
   },
   "chatbot": {
     "title": "Paradigm Assistant",

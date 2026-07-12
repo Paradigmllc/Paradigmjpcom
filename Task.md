@@ -1,5 +1,11 @@
 ## CURRENT STATUS - 2026-07-11 P0公開面・実運用ハードニング（実装済み / 正式releaseは外部設定待ち）
 
+### 2026-07-12 Trust surface / representative message expansion（実装済み・正式release待ち）
+- `/en` と `/ja` のホームに、購入者導線・固定スコープ・handover・適合条件を4枚のvisual evidence panelとして追加。抽象的な実績数値や架空のcase studyではなく、実際に確認できる運用面を見せる構成にした。
+- `/en/about` と `/ja/about` に運営責任者メッセージを追加。`PARADIGM_LEGAL_REPRESENTATIVE_NAME`が設定されていれば実名を表示し、未設定時は架空の個人名を作らず運営チーム署名へfallbackする。
+- 顔写真・代表者画像はリポジトリに実在素材がないため生成・捏造していない。実画像を受領した場合に追加できる状態を保ち、現時点ではLogo/visual evidence/CSSカードで空虚さを埋めた。
+- 検証: TypeScript pass、全Vitest 87 files / 404 tests pass、ESLint 0 error、production build 336/336 pages、quality guard 0 error。既存の行数warningのみ。
+
 ### 2026-07-12 Japan Entry package content expansion（実装済み・正式release待ち）
 - `/en/pricing` に、固定パッケージの5モジュール（Japanese buyer path / Trust and compliance coordination / Japan discovery foundation / Bilingual support route / Launch operations）を追加。各モジュールのdeliverables、scope boundary、handover前提を明示した。
 - 同ページに、意思決定の速いSMB向けの導入メリット4項目と、DIY・local hire・multiple specialistsとの比較表を追加。比較は価格断定や競合名ではなく、責任範囲・初回launch path・統合コスト・適合条件の差として記載した。

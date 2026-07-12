@@ -17,6 +17,7 @@ import { buildPageSchema } from "@/lib/seo/schemas"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
+import RepresentativeMessage from "@/components/japan-entry/RepresentativeMessage"
 import { getSiteSettings } from "@/lib/settings"
 
 export const dynamic = "force-dynamic"
@@ -105,6 +106,9 @@ export default async function AboutPage({ params }: Props) {
   // Public bios stay hidden until named members and publication consent have
   // been verified. Generic seeded roles are not evidence of a real team.
   const teamMembers: Array<{ id: string | number; name?: string; role?: string; bio?: string }> = []
+  const isJapanEntryLocale = locale === "en" || locale === "ja"
+  const representativePrinciples = isJapanEntryLocale ? (t.raw("representativePrinciples") as string[]) ?? [] : []
+  const representativeName = settings.company.representativeName ?? (locale === "ja" ? "Paradigm合同会社 運営チーム" : "Paradigm LLC operator team")
 
   return (
     <>
@@ -129,6 +133,18 @@ export default async function AboutPage({ params }: Props) {
           </p>
         </FadeIn>
       </section>
+
+      {isJapanEntryLocale && (
+        <RepresentativeMessage
+          eyebrow={t("representativeEyebrow")}
+          title={t("representativeTitle")}
+          message={t("representativeMessage")}
+          principles={representativePrinciples}
+          signatureLabel={t("representativeSignatureLabel")}
+          signatureName={representativeName}
+          role={t("representativeRole")}
+        />
+      )}
 
       <section className="relative bg-paradigm-paper-deep paradigm-section overflow-hidden">
         <div className="paradigm-mesh opacity-50" />
