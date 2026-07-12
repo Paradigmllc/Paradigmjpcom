@@ -6,6 +6,7 @@ import {
   isPublicEnglishBlogPost,
   isPublicJapaneseBlogPost,
 } from "./blog-cms"
+import { JAPAN_ENTRY_BLOG_POSTS_JA } from "./japan-entry-blog-ja"
 
 const SAFE_POST: BlogPost = {
   slug: "japan-entry-readiness",
@@ -46,5 +47,11 @@ describe("Japanese public blog gate", () => {
         tags: [JAPANESE_BLOG_PUBLICATION_TAG],
       }),
     ).toBe(true)
+  })
+
+  it("ships a reviewed fallback editorial set when the CMS has no public posts", () => {
+    expect(JAPAN_ENTRY_BLOG_POSTS_JA.length).toBeGreaterThanOrEqual(4)
+    expect(JAPAN_ENTRY_BLOG_POSTS_JA.every(isPublicJapaneseBlogPost)).toBe(true)
+    expect(JAPAN_ENTRY_BLOG_POSTS_JA.every((post) => post.content.length > 200)).toBe(true)
   })
 })

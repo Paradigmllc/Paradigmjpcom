@@ -1196,6 +1196,7 @@ async function main() {
     { url: "https://paradigmjp.com/api/ready" },
     { url: "https://paradigmjp.com/ja/admin/sales" },
     { url: "https://paradigmjp.com/ja" },
+    { url: "https://paradigmjp.com/ja/blog", markers: ["キックオフ前に確認する5つのこと"] },
     {
       url: "https://paradigmjp.com/en",
       markers: [
@@ -1203,6 +1204,10 @@ async function main() {
         "$12,000",
         "Apply for Japan Entry",
       ],
+    },
+    {
+      url: "https://paradigmjp.com/en/services",
+      markers: ["Five modules, one accountable launch.", "Japanese buyer path"],
     },
     {
       url: "https://paradigmjp.com/en/contact",

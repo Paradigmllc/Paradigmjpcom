@@ -68,7 +68,7 @@ async function UseCasesBand({ locale }: { locale: string }) {
 
 export default async function AiServicePage({ params }: Props) {
   const { locale } = await params
-  if (locale === "en") permanentRedirect("/en#japan-entry-pricing")
+  if (locale === "en") permanentRedirect("/en/services#package-modules")
   const t = await getTranslations({ locale, namespace: "serviceDetail" })
   const service = getServiceByKey(locale, "ai")
   const pricing = getPricingFor(locale, "ai")

@@ -108,6 +108,9 @@ export default async function ContactPage({ params }: Props) {
   // PayloadCMS Settings global から admin 編集可能な calendar URL を取得
   const settings = await getSiteSettings(locale)
   const bookingUrl = calendarUrlFor(settings, locale)
+  const nextSteps = isJapanEntry
+    ? t.raw("nextSteps") as Array<{ title: string; body: string }>
+    : []
 
   return (
     <>
@@ -117,7 +120,7 @@ export default async function ContactPage({ params }: Props) {
         highlight={isJapanEntry ? "Japan Entry package." : t("heroHighlight")}
         desc={isJapanEntry ? "$12,000 fixed setup. $0/month for the first six months. Confirm your decision authority and launch timing below." : t("heroDesc")}
         asideText={isJapanEntry ? "Built for companies that can decide this week and launch with one accountable owner." : undefined}
-        asideCta={isJapanEntry ? { label: "Review the fixed offer", href: "/#japan-entry-pricing" } : undefined}
+        asideCta={isJapanEntry ? { label: "Review the fixed offer", href: "/en#japan-entry-pricing" } : undefined}
       />
 
       <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
@@ -180,6 +183,26 @@ export default async function ContactPage({ params }: Props) {
           </aside>
         </div>
       </section>
+      {isJapanEntry && nextSteps.length > 0 && (
+        <section className="relative overflow-hidden bg-paradigm-paper-deep paradigm-section" aria-labelledby="application-next-title">
+          <div className="relative z-10 mx-auto max-w-5xl px-6 md:px-8">
+            <div className="mb-8 max-w-3xl">
+              <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{t("nextEyebrow")}</p>
+              <h2 id="application-next-title" className="font-display text-[24px] leading-[1.15] text-paradigm-ink md:text-[36px]">{t("nextTitle")}</h2>
+              <p className="mt-4 text-[14px] leading-[1.8] text-paradigm-ink-soft">{t("nextDesc")}</p>
+            </div>
+            <ol className="grid gap-4 md:grid-cols-3">
+              {nextSteps.map((step, index) => (
+                <li key={step.title} className="rounded-lg border border-paradigm-line bg-paradigm-paper p-6 paradigm-glow-sm">
+                  <span className="font-display text-[28px] text-paradigm-accent">{String(index + 1).padStart(2, "0")}</span>
+                  <h3 className="mt-4 font-display text-[18px] text-paradigm-ink">{step.title}</h3>
+                  <p className="mt-3 text-[13px] leading-[1.8] text-paradigm-ink-soft">{step.body}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+      )}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

@@ -21,6 +21,8 @@
 
 import type { BlogPost } from "./blog"
 import { BLOG_POSTS } from "./blog"
+import { JAPAN_ENTRY_BLOG_POSTS } from "./japan-entry-blog"
+import { JAPAN_ENTRY_BLOG_POSTS_JA } from "./japan-entry-blog-ja"
 import { withPayloadReadFallback } from "./payload-availability"
 
 type PayloadPost = {
@@ -41,6 +43,19 @@ type PayloadPost = {
 
 export const ENGLISH_BLOG_PUBLICATION_TAG = "japan-entry-public"
 export const JAPANESE_BLOG_PUBLICATION_TAG = "ja-public-reviewed-2026"
+
+function japanEntrySeedToBlogPost(post: (typeof JAPAN_ENTRY_BLOG_POSTS)[number]): BlogPost {
+  return {
+    slug: post.slug,
+    title: post.title,
+    excerpt: post.excerpt,
+    content: post.content,
+    date: post.publishedAt,
+    category: post.category,
+    tags: post.tags,
+    readTime: post.readTime,
+  }
+}
 
 const BLOCKED_ENGLISH_SALES_COPY = [
   /free consult(?:ation)?/i,
@@ -150,10 +165,19 @@ async function fetchAllPayloadPosts(locale: string): Promise<BlogPost[]> {
 export async function getAllBlogPosts(locale: string = "ja"): Promise<BlogPost[]> {
   const cmsPosts = await fetchAllPayloadPosts(locale)
   const cmsSlugs = new Set(cmsPosts.map((p) => p.slug))
+  const englishSeedPosts = locale === "en"
+    ? JAPAN_ENTRY_BLOG_POSTS
+      .map(japanEntrySeedToBlogPost)
+      .filter(isPublicEnglishBlogPost)
+      .filter((p) => !cmsSlugs.has(p.slug))
+    : []
   const legacyPosts = locale === "ja"
     ? BLOG_POSTS.filter(isPublicJapaneseBlogPost).filter((p) => !cmsSlugs.has(p.slug))
     : []
-  return [...cmsPosts, ...legacyPosts].sort((a, b) => (a.date < b.date ? 1 : -1))
+  const japaneseSeedPosts = locale === "ja"
+    ? JAPAN_ENTRY_BLOG_POSTS_JA.filter((p) => !cmsSlugs.has(p.slug))
+    : []
+  return [...cmsPosts, ...englishSeedPosts, ...japaneseSeedPosts, ...legacyPosts].sort((a, b) => (a.date < b.date ? 1 : -1))
 }
 
 /** Public API: get a single blog post by slug for a given locale. */
@@ -173,6 +197,8 @@ export async function getAllBlogSlugs(): Promise<Array<{ slug: string }>> {
     const posts = await fetchAllPayloadPosts(locale)
     for (const p of posts) slugSet.add(p.slug)
   }
+  for (const post of JAPAN_ENTRY_BLOG_POSTS) slugSet.add(post.slug)
+  for (const post of JAPAN_ENTRY_BLOG_POSTS_JA) slugSet.add(post.slug)
   for (const p of BLOG_POSTS.filter(isPublicJapaneseBlogPost)) slugSet.add(p.slug)
   return Array.from(slugSet).map((slug) => ({ slug }))
 }

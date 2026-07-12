@@ -10,19 +10,24 @@ import {
 import { pageAlternates } from "./page-metadata"
 
 describe("marketing routing", () => {
-  it("redirects superseded English offers before static page rendering", () => {
+  it("redirects superseded English offers while keeping the live module overview", () => {
     const result = getEnglishLegacyOfferRedirect(
       new URL("https://paradigmjp.com/en/services/seo?utm_source=partner"),
     )
 
     expect(result?.toString()).toBe(
-      "https://paradigmjp.com/en?utm_source=partner#japan-entry-pricing",
+      "https://paradigmjp.com/en/services?utm_source=partner#package-modules",
     )
     expect(
       getEnglishLegacyOfferRedirect(
         new URL("https://paradigmjp.com/en/pricing"),
       ),
     ).toBeNull()
+    expect(
+      getEnglishLegacyOfferRedirect(
+        new URL("https://paradigmjp.com/en/video"),
+      )?.toString(),
+    ).toBe("https://paradigmjp.com/en/services#package-modules")
   })
 
   it("consolidates international marketing homepages into English", () => {
@@ -41,7 +46,7 @@ describe("marketing routing", () => {
     )
 
     expect(result?.toString()).toBe(
-      "https://paradigmjp.com/en?utm_campaign=launch#japan-entry-pricing",
+      "https://paradigmjp.com/en/services?utm_campaign=launch#package-modules",
     )
   })
 
@@ -90,10 +95,11 @@ describe("marketing routing", () => {
       },
     })
     expect(pageAlternates("en", "/services")).toEqual({
-      canonical: "https://paradigmjp.com/ja/services",
+      canonical: "https://paradigmjp.com/en/services",
       languages: {
-        "x-default": "https://paradigmjp.com/ja/services",
+        "x-default": "https://paradigmjp.com/en/services",
         "ja-JP": "https://paradigmjp.com/ja/services",
+        "en-US": "https://paradigmjp.com/en/services",
       },
     })
   })

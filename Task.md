@@ -1,5 +1,14 @@
 ## CURRENT STATUS - 2026-07-11 P0公開面・実運用ハードニング（実装済み / 正式releaseは外部設定待ち）
 
+### 2026-07-12 全公開ページのコンテンツ密度・運用導線拡充（実装済み・正式release待ち）
+- 英語主要ページを「価格を読むだけ」から運用判断できる情報面へ拡張。`/en/services` を旧リダイレクト先ではなく5モジュールの正式概要ページとして公開し、各モジュールの責務、deliverables、接続順、承認・引き継ぎまで表示する。
+- `/en/about` に、決裁者・一次情報・依存条件・引き継ぎを含む「engagement feels like」4段階を追加。`/en/works` にも、公開根拠と自己申告の分離、売上・訪問数を捏造しない方針、運用完了条件を追加した。
+- `/en/faq` は13問へ拡張、`/en/contact` はfit review→scope confirmation→start decisionの申込後3段階を表示。`/en/blog` はCMS未投入時も9本の公開承認済み英語シードを表示し、空ページにならないようにした。
+- `/ja/blog` もCMS未投入時に4本の公開レビュー済み日本語編集シードを表示。旧レガシー記事や根拠のない実績・順位・売上コピーは公開しない。
+- 代表者の実在写真は素材未受領のため捏造せず、代表メッセージ横には「Buyer→Scope→Build→Handover」の抽象運用マップSVGを追加。実写真は本人確認済み素材の受領後に差し替える。
+- `/en/video`、`/en/agency`、`/en/lp/*` と旧英語サービス詳細は、ホームの価格アンカーではなく `/en/services#package-modules` へ308統一。現行のJapan Entry導線以外で古いプランを見せない。
+- 検証: `npm test -- --run` **87 files / 405 tests pass**、`npx eslint . --max-warnings=0` pass、`npm exec -- tsc --noEmit` pass、`npm run build` **336/336 pages**、`npm run quality:guard` **0 error / 50 warning**、ローカル本番serverでEN/JA主要ページ・ブログ・旧導線のHTTP/marker smoke pass。
+
 ### 2026-07-12 Trust surface / representative message expansion（実装済み・正式release待ち）
 - `/en` と `/ja` のホームに、購入者導線・固定スコープ・handover・適合条件を4枚のvisual evidence panelとして追加。抽象的な実績数値や架空のcase studyではなく、実際に確認できる運用面を見せる構成にした。
 - `/en/about` と `/ja/about` に運営責任者メッセージを追加。`PARADIGM_LEGAL_REPRESENTATIVE_NAME`が設定されていれば実名を表示し、未設定時は架空の個人名を作らず運営チーム署名へfallbackする。

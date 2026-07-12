@@ -42,6 +42,26 @@ export default function RepresentativeMessage({
         </div>
 
         <aside className="rounded-2xl border border-white/10 bg-white/[0.06] p-6 backdrop-blur-sm sm:p-8">
+          <div className="mb-7 overflow-hidden rounded-xl border border-white/10 bg-zinc-950/60 p-4">
+            <svg viewBox="0 0 360 150" role="img" aria-labelledby="operator-map-title" className="h-auto w-full">
+              <title id="operator-map-title">A delivery map from buyer path to handover</title>
+              <defs>
+                <linearGradient id="operator-map-line" x1="0" x2="1">
+                  <stop offset="0" stopColor="#34d399" />
+                  <stop offset="1" stopColor="#60a5fa" />
+                </linearGradient>
+              </defs>
+              <path d="M52 75 H130 M180 75 H258" stroke="url(#operator-map-line)" strokeWidth="3" strokeLinecap="round" />
+              {[{ x: 28, label: "Buyer" }, { x: 130, label: "Scope" }, { x: 180, label: "Build" }, { x: 282, label: "Handover" }].map((node) => (
+                <g key={node.label}>
+                  <rect x={node.x} y="52" width="52" height="46" rx="10" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.25)" />
+                  <circle cx={node.x + 26} cy="68" r="5" fill="#34d399" />
+                  <text x={node.x + 26} y="88" textAnchor="middle" fill="rgba(255,255,255,0.78)" fontSize="9" fontFamily="sans-serif">{node.label}</text>
+                </g>
+              ))}
+              <text x="180" y="25" textAnchor="middle" fill="rgba(255,255,255,0.55)" fontSize="10" fontFamily="sans-serif" letterSpacing="1.5">ONE ACCOUNTABLE PATH</text>
+            </svg>
+          </div>
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-300">
             <ShieldCheck className="h-4 w-4" aria-hidden />
             {signatureLabel}

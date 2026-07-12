@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function AgencyPage({ params }: Props) {
   const { locale } = await params
-  if (locale === "en") permanentRedirect("/en#japan-entry-pricing")
+  if (locale === "en") permanentRedirect("/en/services#package-modules")
   const t = await getTranslations({ locale, namespace: "agencyPage" })
   const STEPS = t.raw("steps") as Step[]
   const PLANS = t.raw("plans") as Plan[]

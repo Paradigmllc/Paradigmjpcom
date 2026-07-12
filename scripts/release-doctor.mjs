@@ -204,8 +204,10 @@ function checkStaticReleaseRules() {
   }
   if (
     noLoginDeploy.includes("https://paradigmjp.com/en") &&
+    noLoginDeploy.includes("https://paradigmjp.com/en/services") &&
     noLoginDeploy.includes("https://paradigmjp.com/en/contact") &&
     noLoginDeploy.includes("Confirm your fit and launch timing") &&
+    noLoginDeploy.includes("Five modules, one accountable launch.") &&
     noLoginDeploy.includes("seedEnglishHomepage") &&
     noLoginDeploy.includes('scope: "homepage-en"') &&
     noLoginDeploy.includes("seedEnglishJapanEntryBlog") &&
@@ -814,6 +816,7 @@ async function checkPostDeployUrls() {
   section("Post-deploy smoke")
   await fetchCheck("readiness", `${BASE_URL}/api/ready`, { timeoutMs: 12_000 })
   await fetchCheck("Japanese public site", `${BASE_URL}/ja`, { timeoutMs: 20_000 })
+  await fetchCheck("Japanese public blog", `${BASE_URL}/ja/blog`, { timeoutMs: 20_000 })
   await fetchCheck("English Japan Entry homepage", `${BASE_URL}/en`, {
     timeoutMs: 20_000,
     mustContain: [
@@ -836,12 +839,14 @@ async function checkPostDeployUrls() {
   )
   const maintainedPages = [
     ["About", "/en/about"],
+    ["Services", "/en/services"],
     ["Pricing", "/en/pricing"],
     ["FAQ", "/en/faq"],
     ["Works", "/en/works"],
     ["Blog", "/en/blog"],
     ["Privacy", "/en/privacy"],
     ["Legal", "/en/legal"],
+    ["Japan Entry Signal Check", "/en/tools/japan-entry-score"],
   ]
   for (const [label, path] of maintainedPages) {
     await fetchCheck(`English ${label}`, `${BASE_URL}${path}`, {
