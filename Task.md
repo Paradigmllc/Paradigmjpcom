@@ -19,6 +19,7 @@
 - 専用DB `sales_japan_entry_projections`（RLS、service_role限定）、認証済みGET/POST API、レポートの市場別アクセスグラフ・累積純便益グラフ・ROI表、URLなし初回文面を実装。生成物は常に `needs_review` で、既存の `report_ready` / 送信処理 / Twenty送信導線には接続しない。
 - 収集・見込み客への送信は未実施。公開ランク根拠がない企業は推定を生成せず停止する。
 - 検証: 投影ロジックVitest **4/4 pass**、対象ESLint pass、`npx tsc --noEmit` pass、`npm run build` **336/336 pages**。新API routeが本番bundleへ含まれることを確認。
+- PR #63をmainへmergeし、正式release deployment `g8zgsqcxw6auu336p3uvmq4l` はfinished、公開smoke・Sales healthはpass。初回release後の監査で、既存の手動migration列挙とDB検証リストが新テーブルを自動検出しないことを確認したため、専用migration適用と `sales_japan_entry_projections` 実在検査をrelease gateへ追補する。
 
 ### 2026-07-13 Blog long-form / visual editorial pass (実装済み・正式release待ち)
 - `/en/blog` と `/ja/blog` の公開記事を、英語9本・日本語4本すべて2,000文字以上へ拡張。各記事に判断表、実務チェックリスト、公開根拠と不確実性の境界を追加し、文字だけの短文記事を廃止した。
