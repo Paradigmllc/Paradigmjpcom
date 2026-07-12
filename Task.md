@@ -1,5 +1,12 @@
 ## CURRENT STATUS - 2026-07-11 P0公開面・実運用ハードニング（実装済み / 正式releaseは外部設定待ち）
 
+### 2026-07-12 Production 502 recovery（復旧済み）
+- 03:06 JST頃、`https://paradigmjp.com/`、`/en`、`/api/ready` がCloudflare HTTP 502。アプリコンテナ自体の `127.0.0.1:3000/api/ready` と現行コンテナIP `10.0.1.13:3000/api/ready` はHTTP 200で、アプリ障害ではなかった。
+- Traefikの `/data/coolify/proxy/dynamic/paradigmjp.yml` にある `paradigmhp-svc` upstream が旧IP `10.0.1.33:3000`を指していた（現行コンテナ `n8i2sjiqvr2d8hrzppop2m2i-030052041249` は `10.0.1.13`）。
+- 既存の `scripts/lib/refresh-traefik-origin-lock.py` を使用し、Cloudflare公式CIDR 22件を再検証してorigin-lock cacheをprepare、その後Traefikルートを原子的に現行コンテナへapply。手動コード変更・再デプロイ・DB変更は行っていない。
+- 復旧後の公開smoke: `/en`、`/ja`、`/en/about`、`/en/pricing`、`/en/faq`、`/en/works`、`/en/blog`、`/en/contact`、`/api/ready` はすべてHTTP 200。`release-doctor --pre-deploy`でもTraefik drift解消を確認。
+- 再発防止として、Coolifyコンテナ更新後は `release:prod` のpost-deploy route refreshと、`release-doctor`の現行コンテナIP照合を必ず通す。現在も正式releaseを止めている外部設定3件（Slack、暗号化off-host backup、法務identity）は別途未解決。
+
 ### 2026-07-12 全公開ページのコンテンツ密度・運用導線拡充（実装済み・正式release待ち）
 - 英語主要ページを「価格を読むだけ」から運用判断できる情報面へ拡張。`/en/services` を旧リダイレクト先ではなく5モジュールの正式概要ページとして公開し、各モジュールの責務、deliverables、接続順、承認・引き継ぎまで表示する。
 - `/en/about` に、決裁者・一次情報・依存条件・引き継ぎを含む「engagement feels like」4段階を追加。`/en/works` にも、公開根拠と自己申告の分離、売上・訪問数を捏造しない方針、運用完了条件を追加した。
