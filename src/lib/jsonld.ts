@@ -54,6 +54,14 @@ export const JAPAN_ENTRY_FAQS = [
     q: "What must our team provide?",
     a: "One final decision-maker, one implementation owner, accurate product and policy information, brand assets, and required account access within 48 hours of kickoff.",
   },
+  {
+    q: "Does the setup include SNS and market research?",
+    a: "Yes. The fixed setup includes profile and starter-content setup for up to two priority social channels, plus a sourced public-signal market report across up to three markets with one priority deep dive. Ongoing posting and private traffic or revenue data are separate.",
+  },
+  {
+    q: "Does regulatory screening replace legal advice?",
+    a: "No. Paradigm screens likely disclosure and regulatory applicability, including Japan's Act on Specified Commercial Transactions where relevant, and records questions for qualified professionals. Formal legal opinions, filings, and licences remain separate.",
+  },
 ] as const
 
 function getJapanEntryServiceJsonLd() {

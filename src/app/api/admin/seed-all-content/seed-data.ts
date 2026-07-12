@@ -394,12 +394,14 @@ export async function seedAllContent(
         alignment: "center", background: "default",
       },
       {
-        blockType: "card-grid", variant: "equal", columns: "4",
+        blockType: "card-grid", variant: "equal", columns: "3",
         cards: [
-          { icon: "Globe", title: "Localized revenue site", description: "Japanese positioning, trust signals, pricing, and conversion paths rebuilt for the market — not pasted through a translator.", href: "", highlighted: true },
-          { icon: "ShieldCheck", title: "Trust & compliance coordination", description: "Required disclosures, policies, and buyer-facing details prepared for specialist review where your offer requires it.", href: "", highlighted: false },
+          { icon: "Globe", title: "LP / HP localization", description: "Japanese positioning, trust signals, pricing, metadata, and conversion paths rebuilt for the market — not pasted through a translator.", href: "", highlighted: true },
+          { icon: "MessageCircle", title: "SNS channel setup", description: "Up to two priority social profiles, bios, links, CTAs, visual direction, and starter-content templates with clear ownership.", href: "", highlighted: false },
+          { icon: "TrendingUp", title: "Japan market report", description: "A sourced comparison across priority markets with one deeper view, public evidence, observation dates, unknowns, and next actions.", href: "", highlighted: false },
+          { icon: "ShieldCheck", title: "Trust & regulatory screening", description: "Commercial disclosure, privacy, Japan's Act on Specified Commercial Transactions, and relevant sector questions organized for qualified review — not presented as legal advice.", href: "", highlighted: false },
           { icon: "CreditCard", title: "Payment & inquiry readiness", description: "We connect the payment and inquiry routes your business is eligible to use, with constraints confirmed before kickoff.", href: "", highlighted: false },
-          { icon: "MessageCircle", title: "Japanese customer operation", description: "Japanese inquiry handling, AI-assisted support, measurement, and a six-month managed operating period.", href: "", highlighted: false },
+          { icon: "MessageCircle", title: "Japanese operation & handover", description: "Japanese inquiry handling, measurement, launch checks, ownership mapping, and a six-month managed operating period.", href: "", highlighted: false },
         ],
       },
       EN_JAPAN_ENTRY_PROCESS_BLOCK,
@@ -409,7 +411,7 @@ export async function seedAllContent(
         title: "One fixed Japan entry offer",
         subtitle: "No low-cost pilot, no three-tier maze, and no surprise agency retainer. We accept companies only after confirming the fixed scope can be delivered.",
         tiers: [
-          { name: "Japan Entry Package", price: "$12,000", period: "one-time", description: "A complete market-ready launch with six months of managed Japan operation included at no additional monthly charge.", features: "21-business-day Japan-ready launch target\nLocalized revenue site and conversion path\nTrust and compliance coordination\nEligible payment and inquiry routing\nJapanese AI-assisted support setup\nAnalytics, notifications, and handover\n$0/month for the first six months\nThen $995/month — cancellable for future billing under the signed terms", ctaLabel: "Apply for Japan Entry — $12K", ctaHref: "/en/contact?intent=japan-entry", highlighted: true },
+          { name: "Japan Entry Package", price: "$12,000", period: "one-time", description: "A fixed-scope setup covering localization, SNS, market evidence, regulatory screening, launch operations, and handover, with six months of managed Japan operation included at no additional monthly charge.", features: "LP / HP localization and Japanese buyer path\nSNS setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nEligible payment and inquiry routing\nJapanese support, launch operations, and handover\n$0/month for the first six months\nThen $995/month — cancellable for future billing under the signed terms", ctaLabel: "Apply for Japan Entry — $12K", ctaHref: "/en/contact?intent=japan-entry", highlighted: true },
         ],
       },
       {
@@ -440,6 +442,8 @@ export async function seedAllContent(
           { question: "Do you guarantee Japanese sales?", answer: textToLexical("No. Product-market fit and purchasing decisions remain yours. We deliver the agreed market-ready environment and launch work, not a specific revenue outcome.") },
           { question: "Is this only for SaaS or e-commerce?", answer: textToLexical("No. We evaluate the launch path, decision speed, and commercial fit rather than filtering primarily by industry or employee count.") },
           { question: "What must our team provide?", answer: textToLexical("One final decision-maker, one implementation owner, accurate product and policy information, brand assets, and the required account access within 48 hours of kickoff.") },
+          { question: "Does the setup include SNS and market research?", answer: textToLexical("Yes. The setup includes profile and starter-content setup for up to two priority social channels, plus a sourced public-signal market report across up to three markets with one priority deep dive. Ongoing posting and private traffic or revenue data are separate.") },
+          { question: "Does regulatory screening replace legal advice?", answer: textToLexical("No. We screen likely disclosure and regulatory applicability, including Japan's Act on Specified Commercial Transactions where relevant, and record questions for qualified professionals. Formal legal opinions, filings, and licences remain separate.") },
           { question: "What can change the 21-business-day target?", answer: textToLexical("The launch target starts after payment, scope confirmation, and complete access. Missing inputs, delayed approvals, expanded scope, regulated requirements, and third-party reviews can change the date; dependencies are recorded before kickoff.") },
         ],
       },

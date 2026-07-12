@@ -94,7 +94,7 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
         description:
           "A market-ready launch with six months of managed Japan operation included at no additional monthly charge.",
         features:
-          "21-business-day Japan-ready launch target\nLocalized revenue site and conversion path\nTrust and compliance coordination\nEligible payment and inquiry routing\nJapanese AI-assisted support setup\nAnalytics, notifications, and handover\n$0/month for the first six months\nThen $995/month — cancellable for future billing under the signed terms",
+          "21-business-day Japan-ready launch target\nLP / HP localization and Japanese buyer path\nSNS setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nEligible payment and inquiry routing\nJapanese support, launch operations, and handover\n$0/month for the first six months\nThen $995/month — cancellable for future billing under the signed terms",
         ctaLabel: "Apply for Japan Entry — $12K",
         ctaHref: "/en/contact?intent=japan-entry",
         highlighted: true,

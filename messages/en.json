@@ -543,7 +543,7 @@
   },
   "pricingPage": {
     "metaTitle": "Japan Entry Pricing — Fixed $12,000 Setup",
-    "metaDescription": "One fixed Japan Entry offer: $12,000 one-time setup, monthly service included for six months, then $995/month.",
+    "metaDescription": "One fixed Japan Entry offer: $12,000 one-time setup covering localization, social setup, market intelligence, regulatory screening, launch operations, and handover. Monthly service included for six months, then $995/month.",
     "heroBadge": "One package · fixed USD price",
     "heroTitle": "One decision. One scope. One Japan launch.",
     "heroHighlight": "One scope",
@@ -559,64 +559,73 @@
     "pppHint": "Fixed USD price — standard {originalPrice}",
     "regionFooter": "The English Japan Entry package uses one fixed USD price for {country}; it does not change by region.",
     "fixedPlanName": "Japan Entry Package",
-    "fixedPlanDescription": "A fixed-scope launch for fast-decision SMBs entering Japan, with an accountable delivery path and an English-language client workflow.",
+    "fixedPlanDescription": "A fixed-scope Japan launch for fast-decision SMBs, covering the buyer-facing surface, public market evidence, channel setup, regulatory applicability screening, launch operations, and handover.",
     "fixedPlanFeatures": [
-      "Localized revenue-site launch within the agreed scope",
-      "Japan trust and compliance coordination",
-      "Local discovery and search-readiness foundation",
+      "LP / HP localization and Japanese buyer-path rebuild",
+      "SNS setup for up to two priority channels",
+      "Public-signal market report across up to three markets, with one priority deep dive",
+      "Japan trust, commercial disclosure, and regulatory applicability screening",
       "Eligible inquiry or payment-routing implementation",
-      "Bilingual support setup and operator handover",
-      "Analytics baseline and launch documentation",
+      "Bilingual support, launch operations, and operator handover",
       "Standard monthly service included for the first six months",
       "$995/month from month seven"
     ],
     "packageEyebrow": "What you are buying",
-    "packageTitle": "One launch system, delivered in five connected parts.",
-    "packageDesc": "The package is not a menu of disconnected tasks. Each module removes a different launch dependency, with one written scope, one approval path, and one handover.",
+    "packageTitle": "One launch system, delivered in six connected parts.",
+    "packageDesc": "The $12,000 setup is not a menu of disconnected tasks. It connects the buyer-facing surface, market evidence, acquisition channels, regulatory questions, launch operations, and handover under one written scope.",
     "packageModules": [
       {
-        "title": "Japanese buyer path",
-        "description": "Turn the existing offer into a Japanese-facing route a buyer can understand and act on.",
+        "title": "LP / HP localization",
+        "description": "Turn the existing offer into a Japanese-facing website and landing-page route a buyer can understand and act on.",
         "deliverables": [
-          "Localized information architecture and copy direction",
-          "Responsive revenue site and CMS handover",
-          "Clear inquiry or eligible payment path"
+          "Localized information architecture, copy, CTA, and metadata",
+          "Core public pages, trust content, and CMS handover",
+          "Japanese buyer path with clear inquiry or eligible payment route"
         ]
       },
       {
-        "title": "Trust and compliance coordination",
-        "description": "Make responsibility, privacy, commercial terms, and open professional questions visible before launch.",
+        "title": "SNS channel setup",
+        "description": "Prepare the first Japanese-facing social presence without pretending that setup equals ongoing audience growth.",
         "deliverables": [
-          "Public trust and disclosure checklist",
-          "Privacy and commercial-page coordination",
-          "Escalation list for legal, tax, banking, or licensing advice"
+          "Up to two priority channel profiles and bios",
+          "Link, CTA, visual, and content-pillar setup",
+          "Starter post templates and ownership guide"
         ]
       },
       {
-        "title": "Japan discovery foundation",
-        "description": "Prepare the eligible local discovery surfaces and measurement baseline relevant to the offer.",
+        "title": "Japan market report",
+        "description": "Give the decision-maker a sourced view of where to start and what remains unknown.",
         "deliverables": [
-          "Profile and entity information setup where applicable",
-          "Search and discovery structure",
-          "Inspectable baseline without ranking guarantees"
+          "Comparative scan across up to three priority markets",
+          "One priority-market deep dive with buyer and competitor context",
+          "Public source URLs, observed dates, unknowns, and next actions"
         ]
       },
       {
-        "title": "Bilingual support route",
+        "title": "Trust and regulatory screening",
+        "description": "Identify the Japanese disclosure and regulatory questions that must be resolved before launch.",
+        "deliverables": [
+          "Commercial disclosure and privacy checklist",
+          "Applicability screening for Japan's Act on Specified Commercial Transactions and relevant sector rules",
+          "Issue register and escalation list for qualified legal, tax, banking, or licensing advice"
+        ]
+      },
+      {
+        "title": "Japanese buyer operation",
         "description": "Define how Japanese buyer questions are answered, escalated, owned, and handed over.",
         "deliverables": [
-          "First-line support knowledge and routing",
+          "First-line support knowledge and bilingual routing",
           "Human review boundaries for uncertain requests",
-          "Ownership, response, and handover documentation"
+          "Eligible inquiry or payment path with ownership documentation"
         ]
       },
       {
-        "title": "Launch operations",
+        "title": "Launch operations and handover",
         "description": "Keep decisions, dependencies, checks, and acceptance criteria in one accountable delivery path.",
         "deliverables": [
           "Gated 21-business-day launch target",
-          "Analytics and notification baseline",
-          "Launch checklist and operator handover"
+          "Analytics, notification, and acceptance baseline",
+          "Launch checklist, ownership map, and operator handover"
         ]
       }
     ],
@@ -689,19 +698,23 @@
       {
         "title": "Included in the agreed launch scope",
         "items": [
-          "The agreed localized site and conversion path",
-          "Trust and compliance implementation coordination",
-          "Discovery, analytics, support, and handover setup",
+          "LP / HP localization and Japanese buyer-path implementation",
+          "SNS setup for up to two priority channels",
+          "Public-signal market report and priority-market deep dive",
+          "Japan's Act on Specified Commercial Transactions and relevant regulatory applicability screening",
+          "Discovery, analytics, support, launch, and handover setup",
           "Six months of the defined monthly service included with setup"
         ]
       },
       {
         "title": "Separate or out of scope",
         "items": [
-          "Legal, tax, banking, licensing, or incorporation advice",
+          "Formal legal, tax, banking, licensing, or incorporation advice",
+          "Ongoing SNS posting, community management, influencer work, or paid media",
+          "Private traffic, revenue, or conversion data that the client has not provided",
           "Advertising spend, inventory, fulfilment, and logistics",
           "Payment-provider, software, hosting, and other third-party fees",
-          "New features, content production, or integrations not agreed in writing"
+          "Unlimited pages, translation, content production, or integrations not agreed in writing"
         ]
       }
     ],
@@ -728,6 +741,18 @@
       {
         "q": "Are third-party costs included?",
         "a": "No. Provider fees, software, hosting, advertising, payment processing, legal or tax advice, licences, inventory, and logistics remain separate unless the signed scope explicitly says otherwise."
+      },
+      {
+        "q": "Does the setup include SNS?",
+        "a": "Yes. The fixed setup includes profile, bio, visual, link, CTA, and starter-content setup for up to two priority channels. Ongoing posting, community management, influencer work, and paid media are separate."
+      },
+      {
+        "q": "What is included in the market report?",
+        "a": "We compare up to three priority markets and provide one deeper market view with buyer context, competitor signals, sources, observation dates, unknowns, and next actions. Private traffic, country-level visits, and revenue remain unknown unless authorized data is provided."
+      },
+      {
+        "q": "Is regulatory screening legal advice?",
+        "a": "No. We screen the likely applicability of commercial disclosure, privacy, Japan's Act on Specified Commercial Transactions, and relevant sector rules, then record questions for qualified professionals. Formal legal opinions, filings, and licences are separate."
       },
       {
         "q": "What can change the 21-business-day target?",

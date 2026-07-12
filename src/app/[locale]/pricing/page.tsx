@@ -266,7 +266,7 @@ export default async function PricingPage({ params, searchParams }: Props) {
               <h2 id="package-modules-heading" className="font-display text-[24px] leading-[1.15] text-paradigm-ink md:text-[38px]">{t("packageTitle")}</h2>
               <p className="mt-4 text-[14px] leading-[1.8] text-paradigm-ink-soft">{t("packageDesc")}</p>
             </FadeIn>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {packageModules.map((module, index) => (
                 <FadeIn key={module.title} delay={index * 0.04}>
                   <article className="h-full rounded-lg border border-paradigm-line bg-paradigm-paper-deep p-5 paradigm-glow-sm">
