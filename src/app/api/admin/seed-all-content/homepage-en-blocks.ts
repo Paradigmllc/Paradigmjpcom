@@ -21,7 +21,7 @@ export const EN_JAPAN_ENTRY_COMPARISON_BLOCK = {
   rows: [
     { item: "Commercial model", leftValue: "$12,000 fixed setup", rightValue: "Multiple open-ended budgets" },
     { item: "Launch ownership", leftValue: "One accountable Tokyo team", rightValue: "Several internal and external owners" },
-    { item: "Time to market", leftValue: "21-business-day launch target", rightValue: "Dependent on hiring and vendor coordination" },
+    { item: "Time to market", leftValue: "14-business-day launch target", rightValue: "Dependent on hiring and vendor coordination" },
     { item: "Your team's workload", leftValue: "One English-speaking owner", rightValue: "Engineering, legal, marketing, and support" },
     { item: "Japanese operation", leftValue: "Six months included", rightValue: "Separate ongoing contracts" },
     { item: "Decision", leftValue: "One fixed scope", rightValue: "Repeated procurement decisions" },

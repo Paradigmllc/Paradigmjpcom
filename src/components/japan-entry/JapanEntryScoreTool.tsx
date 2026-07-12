@@ -120,7 +120,7 @@ const COPY: Record<LocaleVariant, {
     actions: "優先すべき次の一手",
     evidence: "根拠ソース",
     actualUnknown: "実際の月間訪問数・売上は公開情報から確認できません。",
-    apply: "21営業日のJapan Entry計画に申込む — $12K",
+    apply: "14営業日のJapan Entry計画に申込む — $12K",
     retry: "もう一度診断する",
     bands: {
       "no-data": "有効なシグナルなし",

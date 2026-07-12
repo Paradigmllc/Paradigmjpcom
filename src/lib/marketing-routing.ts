@@ -23,11 +23,9 @@ const PUBLIC_MARKETING_ROOTS = new Set([
 // The English services surface now explains the live Japan Entry modules.
 // Agency/LP/video remain retired offer surfaces and continue to redirect.
 const LEGACY_OFFER_ROOTS = new Set(["agency", "lp", "video"])
-const JAPANESE_LEGACY_OFFER_ROOTS = new Set([
-  ...LEGACY_OFFER_ROOTS,
-  "services",
-  "pricing",
-])
+// Japanese services and pricing are now first-class Japan Entry pages. Only
+// the retired agency/LP/video surfaces continue to redirect.
+const JAPANESE_LEGACY_OFFER_ROOTS = new Set([...LEGACY_OFFER_ROOTS])
 const NON_INDEXABLE_LOCALE_ROOTS = new Set([
   "admin",
   "cms",
@@ -86,6 +84,7 @@ export function isPublicMarketingPath(pathname: string) {
 
 export function isJapaneseOnlyLegacyOfferPath(pathname: string) {
   const segments = pathname.split("/").filter(Boolean)
+  if (segments[0] === "ja" && segments[1] === "services") return segments.length > 2
   if (segments[0] === "ja") {
     return Boolean(segments[1] && JAPANESE_LEGACY_OFFER_ROOTS.has(segments[1]))
   }
@@ -211,6 +210,13 @@ export function getJapaneseLegacyOfferRedirect(source: URL) {
   const segments = source.pathname.split("/").filter(Boolean)
   const locale = segments[0]
   const root = segments[1]
+  if (locale === "ja" && root === "services" && segments.length > 2) {
+    const destination = new URL(source.toString())
+    destination.pathname = "/ja/services"
+    destination.search = ""
+    destination.hash = "package-modules"
+    return destination
+  }
   if (locale !== "ja" || !root || !JAPANESE_LEGACY_OFFER_ROOTS.has(root)) {
     return null
   }

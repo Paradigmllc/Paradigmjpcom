@@ -21,7 +21,6 @@ import { WORKS_EN } from "@/lib/data"
 import JapanEntryVisualProof from "@/components/japan-entry/JapanEntryVisualProof"
 import {
   JAPANESE_WORK_PUBLICATION_TAG,
-  isVerifiedJapaneseWork,
 } from "@/lib/public-content-safety"
 
 export const revalidate = 300
@@ -62,9 +61,10 @@ export default async function WorksPage({ params }: Props) {
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
   const t = await getTranslations({ locale, namespace: "worksPage" })
   const STEPS = t.raw("process") as ProcessStep[]
-  const evidenceChecks = locale === "en" ? (t.raw("evidenceChecks") as EvidenceCheck[]) : []
+  const japanEntryLocale = locale === "en" || locale === "ja"
+  const evidenceChecks = japanEntryLocale ? (t.raw("evidenceChecks") as EvidenceCheck[]) : []
 
-  let works = locale === "en"
+  let works = japanEntryLocale
     ? (t.raw("proofItems") as Array<Omit<WorkDoc, "id" | "tags"> & { tags: string[] }>).map((work, index) => ({
         ...work,
         id: `verified-proof-${index}`,
@@ -85,7 +85,7 @@ export default async function WorksPage({ params }: Props) {
         ...localeFindOptions(locale),
       })
       const docs = (res.docs as unknown as WorkDoc[]) ?? []
-      return locale === "ja" ? docs.filter((work) => isVerifiedJapaneseWork(work.tags)) : docs
+      return docs
       }, [])
   if (works.length === 0 && locale !== "ja" && locale !== "en") {
     works = WORKS_EN.map((work, index) => ({
@@ -168,7 +168,7 @@ export default async function WorksPage({ params }: Props) {
         </div>
       </section>
 
-      {locale === "en" && <JapanEntryVisualProof locale="en" />}
+      {japanEntryLocale && <JapanEntryVisualProof locale={locale as "en" | "ja"} />}
 
       {/* Process */}
       <section className="relative bg-paradigm-paper-deep paradigm-section overflow-hidden">
@@ -196,7 +196,7 @@ export default async function WorksPage({ params }: Props) {
         </div>
       </section>
 
-      {locale === "en" && evidenceChecks.length > 0 && (
+      {japanEntryLocale && evidenceChecks.length > 0 && (
         <section className="relative overflow-hidden bg-paradigm-paper paradigm-section" aria-labelledby="evidence-policy-heading">
           <div className="paradigm-mesh opacity-20" />
           <div className="relative z-10 mx-auto max-w-5xl px-6 md:px-8">
@@ -226,7 +226,7 @@ export default async function WorksPage({ params }: Props) {
         highlight={t("ctaHighlight")}
         desc={t("ctaDesc")}
         buttonLabel={t("ctaButton")}
-        buttonHref={locale === "en" ? "/contact?intent=japan-entry" : "/contact"}
+        buttonHref={japanEntryLocale ? "/contact?intent=japan-entry" : "/contact"}
         analyticsSource="works-final-cta"
       />
       <script

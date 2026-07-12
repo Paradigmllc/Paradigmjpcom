@@ -16,7 +16,6 @@ import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
 import { buildPageSchema } from "@/lib/seo/schemas"
 import {
-  JAPAN_ENTRY_CONTACT_CANONICAL_URL,
   JAPAN_ENTRY_DESCRIPTION,
   JAPAN_ENTRY_TITLE,
   getJapanEntryApplicationJsonLd,
@@ -34,21 +33,24 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  const isJapanEntry = locale === "en"
+  const isJapanEntry = locale === "en" || locale === "ja"
   if (isJapanEntry) {
-    const title = `Apply for the ${JAPAN_ENTRY_TITLE}`
+    const title = locale === "ja" ? "Japan Entryパッケージの適合審査" : `Apply for the ${JAPAN_ENTRY_TITLE}`
+    const description = locale === "ja"
+      ? "セットアップ12,000ドル固定。最初の6か月は標準月額運用込み。日本市場への導線を14営業日目標で構築します。"
+      : JAPAN_ENTRY_DESCRIPTION
     return {
       title,
-      description: JAPAN_ENTRY_DESCRIPTION,
-      alternates: pageAlternates("en", "/contact"),
+      description,
+      alternates: pageAlternates(locale, "/contact"),
       openGraph: {
         type: "website",
-        url: JAPAN_ENTRY_CONTACT_CANONICAL_URL,
+        url: `https://paradigmjp.com/${locale}/contact`,
         title,
-        description: JAPAN_ENTRY_DESCRIPTION,
+        description,
         images: [
           {
-            url: "/en/opengraph-image",
+            url: `/${locale}/opengraph-image`,
             width: 1200,
             height: 630,
             alt: `${JAPAN_ENTRY_TITLE} — application`,
@@ -58,8 +60,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       twitter: {
         card: "summary_large_image",
         title,
-        description: JAPAN_ENTRY_DESCRIPTION,
-        images: ["/en/opengraph-image"],
+        description,
+        images: [`/${locale}/opengraph-image`],
       },
     }
   }
@@ -75,20 +77,50 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ContactPage({ params }: Props) {
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: "contactPage" })
-  const isJapanEntry = locale === "en"
+  const isJapanEntry = locale === "en" || locale === "ja"
+  const isJapanese = locale === "ja"
+  const entryCopy = isJapanese
+    ? {
+        badge: "Japan Entry",
+        title: "Japan Entryパッケージの適合審査",
+        highlight: "適合審査",
+        desc: "セットアップ12,000ドル固定。最初の6か月は標準月額運用込み。意思決定者と開始時期を確認します。",
+        aside: "今月中に判断でき、社内の公開責任者を1名置ける企業向けです。",
+        application: "申込み",
+        formTitle: "適合条件と開始時期を確認",
+        back: "← Japan Entryパッケージに戻る",
+        fixedLabel: "固定の取引条件",
+        fixedItems: ["セットアップ12,000ドル（着手前払い）", "最初の6か月は月額0ドル", "7か月目以降は月額995ドル", "将来月分は契約条件に従って解約可能"],
+        fitLabel: "迅速な意思決定に必要な条件",
+        fitItems: ["7日以内に最終承認", "社内の公開責任者1名", "48時間以内に必要素材を共有", "14営業日の公開目標"],
+      }
+    : {
+        badge: "Japan Entry",
+        title: "Apply for the fixed Japan Entry package.",
+        highlight: "Japan Entry package.",
+        desc: "$12,000 fixed setup. $0/month for the first six months. Confirm your decision authority and launch timing below.",
+        aside: "Built for companies that can decide this week and launch with one accountable owner.",
+        application: "Application",
+        formTitle: "Confirm your fit and launch timing",
+        back: "← Back to the Japan Entry Package",
+        fixedLabel: "Fixed commercial terms",
+        fixedItems: ["$12,000 setup paid before kickoff", "$0/month for the first six months", "$995/month from month seven", "Future billing is cancellable under the signed terms"],
+        fitLabel: "Fast-decision qualification",
+        fitItems: ["Final approval within seven days", "One internal launch owner", "Required assets within 48 hours", "14-business-day launch target"],
+      }
   const sidebarBlocks = isJapanEntry
     ? [
         {
           icon: Calendar,
           gradient: "from-zinc-950 via-zinc-800 to-blue-700",
-          label: "Fixed commercial terms",
-          items: ["$12,000 setup paid before kickoff", "$0/month for the first six months", "$995/month from month seven", "Future billing is cancellable under the signed terms"],
+          label: entryCopy.fixedLabel,
+          items: entryCopy.fixedItems,
         },
         {
           icon: Mail,
           gradient: "from-zinc-900 via-blue-800 to-emerald-700",
-          label: "Fast-decision qualification",
-          items: ["Final approval within seven days", "One internal launch owner", "Required assets within 48 hours", "21-business-day launch target"],
+          label: entryCopy.fitLabel,
+          items: entryCopy.fitItems,
         },
       ]
     : [
@@ -109,34 +141,40 @@ export default async function ContactPage({ params }: Props) {
   const settings = await getSiteSettings(locale)
   const bookingUrl = calendarUrlFor(settings, locale)
   const nextSteps = isJapanEntry
-    ? t.raw("nextSteps") as Array<{ title: string; body: string }>
+    ? isJapanese
+      ? [
+          { title: "適合確認", body: "会社、商品、意思決定権限、開始時期、必要な公開情報を確認します。" },
+          { title: "固定範囲を確定", body: "12,000ドルの提供範囲、依存条件、第三者費用、除外事項を文書で確定します。" },
+          { title: "着手と公開", body: "支払いと素材受領後、14営業日目標で実装・確認・引き継ぎを進めます。" },
+        ]
+      : t.raw("nextSteps") as Array<{ title: string; body: string }>
     : []
 
   return (
     <>
       <PageHero
-        badge={isJapanEntry ? "Japan Entry" : t("heroBadge")}
-        title={isJapanEntry ? "Apply for the fixed Japan Entry package." : t("heroTitle")}
-        highlight={isJapanEntry ? "Japan Entry package." : t("heroHighlight")}
-        desc={isJapanEntry ? "$12,000 fixed setup. $0/month for the first six months. Confirm your decision authority and launch timing below." : t("heroDesc")}
-        asideText={isJapanEntry ? "Built for companies that can decide this week and launch with one accountable owner." : undefined}
-        asideCta={isJapanEntry ? { label: "Review the fixed offer", href: "/en#japan-entry-pricing" } : undefined}
+        badge={isJapanEntry ? entryCopy.badge : t("heroBadge")}
+        title={isJapanEntry ? entryCopy.title : t("heroTitle")}
+        highlight={isJapanEntry ? entryCopy.highlight : t("heroHighlight")}
+        desc={isJapanEntry ? entryCopy.desc : t("heroDesc")}
+        asideText={isJapanEntry ? entryCopy.aside : undefined}
+        asideCta={isJapanEntry ? { label: isJapanese ? "固定オファーを見る" : "Review the fixed offer", href: isJapanese ? "/ja#japan-entry-pricing" : "/en#japan-entry-pricing" } : undefined}
       />
 
       <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
         <div className="paradigm-mesh opacity-30" />
         <div className="relative z-10 max-w-5xl mx-auto px-6 md:px-8 grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
           <div className="lg:col-span-3 paradigm-glass rounded-lg p-6 md:p-8 paradigm-glow-md">
-            <p className="paradigm-eyebrow text-paradigm-accent mb-3">{isJapanEntry ? "Application" : t("formEyebrow")}</p>
+            <p className="paradigm-eyebrow text-paradigm-accent mb-3">{isJapanEntry ? entryCopy.application : t("formEyebrow")}</p>
             <h2 className="font-display text-[22px] md:text-[28px] leading-[1.2] text-paradigm-ink mb-7 ">
-              {isJapanEntry ? "Confirm your fit and launch timing" : t("formTitle")}
+              {isJapanEntry ? entryCopy.formTitle : t("formTitle")}
             </h2>
             {isJapanEntry && (
               <Link
-                href="/en"
+                href={isJapanese ? "/ja" : "/en"}
                 className="mb-6 inline-flex min-h-11 items-center text-sm font-semibold text-paradigm-accent underline decoration-paradigm-accent/40 underline-offset-4 transition-colors hover:text-paradigm-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-paradigm-accent"
               >
-                ← Back to the Japan Entry Package
+                {entryCopy.back}
               </Link>
             )}
             <ContactForm />

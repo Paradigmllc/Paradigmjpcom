@@ -190,7 +190,7 @@ export function JapanEntryAcknowledgement({
       />
       <span>
         I understand that the Japan Entry setup fee is fixed at $12,000 and is
-        paid before the 21-business-day launch sequence begins.
+        paid before the 14-business-day launch sequence begins.
       </span>
     </label>
   )

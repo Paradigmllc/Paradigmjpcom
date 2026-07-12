@@ -86,8 +86,9 @@ describe("marketing routing", () => {
     expect(isPublicMarketingPath("/de/demo/acme")).toBe(false)
   })
 
-  it("identifies the domestic-only legacy service paths", () => {
+  it("keeps renewed Japanese package pages live and identifies retired paths", () => {
     expect(isJapaneseOnlyLegacyOfferPath("/ja/services/seo")).toBe(true)
+    expect(isJapaneseOnlyLegacyOfferPath("/ja/video")).toBe(true)
     expect(isJapaneseOnlyLegacyOfferPath("/en/pricing")).toBe(false)
   })
 
@@ -97,9 +98,8 @@ describe("marketing routing", () => {
         new URL("https://paradigmjp.com/ja/video?utm_source=legacy"),
       )?.toString(),
     ).toBe("https://paradigmjp.com/ja#japan-entry-pricing")
-    expect(
-      getJapaneseLegacyOfferRedirect(new URL("https://paradigmjp.com/ja/pricing"))?.pathname,
-    ).toBe("/ja")
+    expect(getJapaneseLegacyOfferRedirect(new URL("https://paradigmjp.com/ja/pricing"))).toBeNull()
+    expect(getJapaneseLegacyOfferRedirect(new URL("https://paradigmjp.com/ja/services/seo"))?.pathname).toBe("/ja/services")
   })
 
   it("publishes only maintained hreflang URLs", () => {

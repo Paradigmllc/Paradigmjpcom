@@ -35,7 +35,7 @@ const LOCALE_TITLES: Record<Locale, { default: string; template: string; descrip
   ja: {
     default: "Paradigm合同会社 | デジタルで事業を加速する",
     template: "%s | Paradigm合同会社",
-    description: "Web制作・MEO対策・SEO/GEO・AI導入支援。デジタル技術で中小企業の成長を支援するParadigm合同会社の公式サイトです。",
+    description: "ParadigmのJapan Market Engine。海外SMB向けに、日本語の購入者導線、市場根拠、SNS、法規制の適用可能性整理、公開運用を固定スコープで提供します。",
     ogSiteName: "Paradigm合同会社",
     ogLocale: "ja_JP",
   },

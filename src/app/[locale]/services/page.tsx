@@ -1,9 +1,9 @@
 /**
- * /[locale]/services — サービス一覧 (Web/MEO/SEO/AI を横並び比較)
+ * /[locale]/services — Japan Entry パッケージの提供モジュール
  *
  * 役割:   サービス一覧 (Web/MEO/SEO/AI を横並び比較)
  * 入力:   params.locale
- * 出力:   PageHero + ItemList JSON-LD + 4 service cards + RichCtaBand
+ * 出力:   PageHero + package modules + RichCtaBand
  *
  * AE-PHP-2 (P18-D 2026-05-08): 全 visible text を messages/{locale}.json:servicesPage 経由に統一.
  *   旧 isJa ? "JP" : "EN" の二択 hardcode → 12 locale 対応 (next-intl getTranslations).
@@ -63,11 +63,12 @@ export default async function ServicesPage({ params }: Props) {
   const { locale: rawLocale } = await params
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
   const t = await getTranslations({ locale, namespace: "servicesPage" })
-  const englishModules = locale === "en" ? (t.raw("moduleCards") as EnglishModule[]) : []
-  const operatingSteps = locale === "en" ? (t.raw("operatingSteps") as OperatingStep[]) : []
+  const japanEntryLocale = locale === "en" || locale === "ja"
+  const packageModules = japanEntryLocale ? (t.raw("moduleCards") as EnglishModule[]) : []
+  const operatingSteps = japanEntryLocale ? (t.raw("operatingSteps") as OperatingStep[]) : []
 
-  let services = englishModules.length > 0
-    ? englishModules.map((module, index) => ({
+  let services = packageModules.length > 0
+    ? packageModules.map((module, index) => ({
         id: `japan-entry-module-${index}`,
         name: module.title,
         slug: "",
@@ -133,7 +134,7 @@ export default async function ServicesPage({ params }: Props) {
       <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
         <div className="paradigm-mesh opacity-30" />
         <div className="relative z-10 max-w-6xl mx-auto px-6 md:px-8">
-          {locale === "en" && (
+          {japanEntryLocale && (
             <FadeIn className="mb-10 max-w-3xl">
               <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("moduleEyebrow")}</p>
               <h2 id="package-modules" className="font-display text-[26px] md:text-[40px] leading-[1.1] text-paradigm-ink">{t("moduleTitle")}</h2>
@@ -146,7 +147,7 @@ export default async function ServicesPage({ params }: Props) {
                 {t("emptyMessage")}
               </p>
               <Link
-                href={locale === "en" ? "/contact?intent=japan-entry" : "/contact"}
+                href={japanEntryLocale ? "/contact?intent=japan-entry" : "/contact"}
                 className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
               >
                 {t("emptyCta")}
@@ -205,7 +206,7 @@ export default async function ServicesPage({ params }: Props) {
                             </Link>
                           )}
                           <Link
-                            href={locale === "en" ? "/contact?intent=japan-entry" : "/contact"}
+                            href={japanEntryLocale ? "/contact?intent=japan-entry" : "/contact"}
                             className="inline-flex items-center gap-2 paradigm-glass text-paradigm-ink-soft hover:text-paradigm-ink px-6 py-3 rounded-lg text-[12px] tracking-[0.14em] uppercase font-medium transition-colors"
                           >
                             {t("getInTouch")}
@@ -221,7 +222,7 @@ export default async function ServicesPage({ params }: Props) {
         </div>
       </section>
 
-      {locale === "en" && operatingSteps.length > 0 && (
+      {japanEntryLocale && operatingSteps.length > 0 && (
         <section className="relative overflow-hidden bg-paradigm-paper-deep paradigm-section" aria-labelledby="module-operating-heading">
           <div className="paradigm-mesh opacity-30" />
           <div className="relative z-10 mx-auto max-w-5xl px-6 md:px-8">

@@ -1,9 +1,9 @@
 /**
- * /[locale]/pricing — 全サービス料金プラン一覧 (バリューベース 3 ティア)
+ * /[locale]/pricing — Japan Entry 固定オファーと提供範囲
  *
  * 役割:   全サービス料金プラン一覧 (バリューベース 3 ティア)
  * 入力:   params.locale (currency: ja=JPY / en=USD with PPP)
- * 出力:   PageHero + 3-tier pricing table + comparison grid
+ * 出力:   PageHero + fixed package + scope/comparison grid
  *
  * AE-PHP-2 (P18-D 2026-05-08): 全 visible text を messages/{locale}.json:pricingPage 経由に統一.
  *   旧 isJa ? "JP" : "EN" の二択 hardcode → 12 locale 対応 (next-intl getTranslations).
@@ -72,13 +72,13 @@ export default async function PricingPage({ params, searchParams }: Props) {
   const { force_country } = await searchParams
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
   const contentLocale = coerceLocale(rawLocale)     // ja/en（通貨フォーマット判定専用: formatPricePPP）
-  const isEnglish = locale === "en"
+  const isJapanEntry = locale === "en" || locale === "ja"
   const t = await getTranslations({ locale, namespace: "pricingPage" })
   const faqPairs = (t.raw("pricingFaqs") as Array<{ q: string; a: string }>) ?? []
-  const scopeGroups = isEnglish ? (t.raw("scopeGroups") as ScopeGroup[]) : []
-  const packageModules = isEnglish ? readRawArray<PackageModule>(t.raw("packageModules")) : []
-  const packageBenefits = isEnglish ? readRawArray<PackageBenefit>(t.raw("packageBenefits")) : []
-  const comparisonRows = isEnglish ? readRawArray<ComparisonRow>(t.raw("comparisonRows")) : []
+  const scopeGroups = isJapanEntry ? (t.raw("scopeGroups") as ScopeGroup[]) : []
+  const packageModules = isJapanEntry ? readRawArray<PackageModule>(t.raw("packageModules")) : []
+  const packageBenefits = isJapanEntry ? readRawArray<PackageBenefit>(t.raw("packageBenefits")) : []
+  const comparisonRows = isJapanEntry ? readRawArray<ComparisonRow>(t.raw("comparisonRows")) : []
 
   // Billing cycle ラベルは namespace 経由で locale 別取得 (旧 BILLING_LABEL hardcode 廃止)
   const billingLabelFor = (cycle: string | undefined): string => {
@@ -94,7 +94,7 @@ export default async function PricingPage({ params, searchParams }: Props) {
   const forcedCountry = force_country?.toUpperCase()
   const country = forcedCountry || detectCountryFromHeaders(h)
 
-  const plans: PricingDoc[] = isEnglish
+  const plans: PricingDoc[] = isJapanEntry
     ? [{
         id: "japan-entry",
         planName: t("fixedPlanName"),
@@ -125,7 +125,7 @@ export default async function PricingPage({ params, searchParams }: Props) {
   const priceFor = (plan: PricingDoc): FormatPriceResult => {
     const priceJPY = plan.price ?? 0
     const currency = (plan.currency ?? "jpy").toUpperCase() as "JPY" | "USD"
-    if (isEnglish) {
+    if (isJapanEntry) {
       return {
         display: "$12,000",
         adjusted: 12000,
@@ -157,8 +157,8 @@ export default async function PricingPage({ params, searchParams }: Props) {
                 {t("emptyMessage")}
               </p>
               <Link
-                href={isEnglish ? "/contact?intent=japan-entry" : "/contact"}
-                {...(isEnglish ? { "data-umami-event": "japan-entry-apply", "data-umami-event-source": "pricing-empty" } : {})}
+                href={isJapanEntry ? "/contact?intent=japan-entry" : "/contact"}
+                {...(isJapanEntry ? { "data-umami-event": "japan-entry-apply", "data-umami-event-source": "pricing-empty" } : {})}
                 className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
               >
                 {t("emptyCta")}
@@ -166,7 +166,7 @@ export default async function PricingPage({ params, searchParams }: Props) {
             </FadeIn>
           ) : (
             <>
-              <div className={`grid grid-cols-1 gap-3 md:gap-4 ${isEnglish ? "max-w-2xl mx-auto" : "md:grid-cols-2 lg:grid-cols-3"}`}>
+              <div className={`grid grid-cols-1 gap-3 md:gap-4 ${isJapanEntry ? "max-w-2xl mx-auto" : "md:grid-cols-2 lg:grid-cols-3"}`}>
                 {plans.map((plan, idx) => {
                   const price = priceFor(plan)
                   const billingLabel = billingLabelFor(plan.billingCycle)
@@ -229,8 +229,8 @@ export default async function PricingPage({ params, searchParams }: Props) {
                           </ul>
                         )}
                         <Link
-                          href={isEnglish ? "/contact?intent=japan-entry" : "/contact"}
-                          {...(isEnglish ? {
+                          href={isJapanEntry ? "/contact?intent=japan-entry" : "/contact"}
+                          {...(isJapanEntry ? {
                             "data-umami-event": "japan-entry-apply",
                             "data-umami-event-source": "pricing-card",
                           } : {})}
@@ -247,7 +247,7 @@ export default async function PricingPage({ params, searchParams }: Props) {
                   )
                 })}
               </div>
-              {!isEnglish && (
+              {!isJapanEntry && (
                 <p className="mt-6 paradigm-eyebrow text-paradigm-ink-mute text-center text-[10px]">
                   {t("regionFooter", { country })}
                 </p>
@@ -411,7 +411,7 @@ export default async function PricingPage({ params, searchParams }: Props) {
         highlight={t("ctaHighlight")}
         desc={t("ctaDesc")}
         buttonLabel={t("ctaButton")}
-        buttonHref={isEnglish ? "/contact?intent=japan-entry" : "/contact"}
+        buttonHref={isJapanEntry ? "/contact?intent=japan-entry" : "/contact"}
         analyticsSource="pricing-final-cta"
       />
       <script

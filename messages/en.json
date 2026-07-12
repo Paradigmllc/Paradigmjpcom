@@ -62,7 +62,7 @@
       "faqs": [
         {
           "question": "How long does a typical website build take?",
-          "answer": "The package uses a 21-business-day launch target. It depends on the agreed scope, complete source materials, access, prompt feedback, one empowered approver, and third-party review timing."
+          "answer": "The package uses a 14-business-day launch target after payment, scope confirmation, complete source materials, access, prompt feedback, one empowered approver, and third-party review timing."
         },
         {
           "question": "Do you offer post-launch maintenance?",
@@ -333,7 +333,7 @@
     "ctaDesc": "Apply if a decision-maker can approve a fixed $12,000 setup and supply launch inputs promptly.",
     "ctaButton": "Apply for Japan Entry — $12K",
     "processEyebrow": "Delivery process",
-    "processTitle": "A gated 21-business-day launch target",
+    "processTitle": "A gated 14-business-day launch target",
     "process": [
       {
         "step": "01",
@@ -465,7 +465,7 @@
       ],
       [
         "Service start and launch target",
-        "Work starts after written acceptance, required payment, and receipt of the agreed inputs. The 21-business-day launch target depends on timely access, content, approvals, scope, and third-party reviews."
+        "Work starts after written acceptance, required payment, and receipt of the agreed inputs. The 14-business-day launch target depends on timely access, content, approvals, scope, and third-party reviews."
       ],
       [
         "Cancellation and refunds",
@@ -623,7 +623,7 @@
         "title": "Launch operations and handover",
         "description": "Keep decisions, dependencies, checks, and acceptance criteria in one accountable delivery path.",
         "deliverables": [
-          "Gated 21-business-day launch target",
+          "Gated 14-business-day launch target",
           "Analytics, notification, and acceptance baseline",
           "Launch checklist, ownership map, and operator handover"
         ]
@@ -662,7 +662,7 @@
     "comparisonRows": [
       {
         "criterion": "First launch path",
-        "package": "Gated 21-business-day target after inputs and approvals are ready",
+        "package": "Gated 14-business-day target after inputs and approvals are ready",
         "hire": "Recruiting, onboarding, and role design come first",
         "vendors": "Each workstream starts on its own schedule"
       },
@@ -755,7 +755,7 @@
         "a": "No. We screen the likely applicability of commercial disclosure, privacy, Japan's Act on Specified Commercial Transactions, and relevant sector rules, then record questions for qualified professionals. Formal legal opinions, filings, and licences are separate."
       },
       {
-        "q": "What can change the 21-business-day target?",
+        "q": "What can change the 14-business-day target?",
         "a": "Missing content or access, delayed approvals, expanded scope, regulated requirements, and third-party provider reviews can change the launch date. We surface those dependencies before kickoff."
       }
     ]
@@ -773,7 +773,7 @@
     "consultItems": [
       "An empowered approver should be involved",
       "The setup fee is fixed at $12,000 USD",
-      "The 21-business-day target depends on timely inputs",
+      "The 14-business-day target depends on timely inputs",
       "Submission is a fit review, not contract acceptance"
     ],
     "contactLabel": "Contact details",
@@ -881,7 +881,7 @@
     "heroDesc": "One accountable package combines the localized revenue site, launch coordination, discovery foundation, support setup, and handover.",
     "missionEyebrow": "Operating principle",
     "missionTitle": "Reduce the distance between decision and Japan launch.",
-    "missionDesc": "Paradigm gives foreign SMBs one English-language delivery path into Japan. We use a written fixed scope, visible dependencies, and a 21-business-day launch target rather than an open-ended agency engagement.",
+        "missionDesc": "Paradigm gives foreign SMBs one English-language delivery path into Japan. We use a written fixed scope, visible dependencies, and a 14-business-day launch target rather than an open-ended agency engagement.",
     "representativeEyebrow": "A note from the operator",
     "representativeTitle": "Japan entry should end with a decision you can operate.",
     "representativeMessage": "We built Paradigm around a simple problem: a capable overseas company can spend months coordinating market research, translation, agencies, and local setup without ever reaching a buyer. Our job is to make the first Japan path concrete, inspectable, and owned. That means stating what is included, showing what is still unknown, and handing over something your team can actually run. We do not replace legal, tax, banking, or licensed advice. We do take responsibility for making the commercial and implementation work visible enough for a fast decision.",
@@ -989,7 +989,7 @@
       {
         "title": "Launch operations",
         "short": "Coordinate inputs, approvals, checks, and the decision after launch.",
-        "details": ["Gated 21-business-day target", "Analytics and notification baseline", "Launch checklist and operator handover"]
+        "details": ["Gated 14-business-day target", "Analytics and notification baseline", "Launch checklist and operator handover"]
       }
     ],
     "operatingEyebrow": "How the modules connect",
@@ -1135,7 +1135,7 @@
         "title": "Launch operations",
         "tagline": "One timeline and accountable owner",
         "desc": "Coordinate dependencies, approval gates, launch checks, analytics baseline, and the agreed handover.",
-        "results": "21-business-day target",
+        "results": "14-business-day target",
         "badge": "Fixed process"
       }
     },
@@ -1143,7 +1143,7 @@
     "featuresHeading": "Four reasons clients choose us",
     "features": {
       "speed": {
-        "title": "21-business-day target",
+        "title": "14-business-day target",
         "desc": "A gated target based on complete inputs, access, prompt feedback, one approver, and third-party timing."
       },
       "guarantee": {
@@ -1256,14 +1256,14 @@
           "body": "The package is for a real offer, timely inputs, and one person who can approve the next step."
         }
       ],
-      "note": "*The 21-business-day figure is a gated target after required access, source material, approvals, and third-party dependencies are ready."
+      "note": "*The 14-business-day figure is a gated target after required access, source material, approvals, and third-party dependencies are ready."
     }
   },
   "chatbot": {
     "title": "Paradigm Assistant",
     "status": "AI assistant available · human-reviewed handoff",
     "openLabel": "Ask our AI assistant",
-    "greeting": "Hi! I'm Paradigm's AI assistant.\n\nAsk about the fixed Japan Entry package:\n• $12,000 setup and ongoing terms\n• Included scope and exclusions\n• The 21-business-day launch target\n• Fit for fast-decision SMBs\n\nMy replies are general information. Final scope and terms are confirmed by a person.",
+    "greeting": "Hi! I'm Paradigm's AI assistant.\n\nAsk about the fixed Japan Entry package:\n• $12,000 setup and ongoing terms\n• Included scope and exclusions\n• The 14-business-day launch target\n• Fit for fast-decision SMBs\n\nMy replies are general information. Final scope and terms are confirmed by a person.",
     "placeholder": "Ask us anything...",
     "errorReply": "Sorry — something went wrong generating a reply.",
     "errorNetwork": "Sorry — a connection error occurred.\n\n📧 info@paradigmjp.com",
@@ -1275,7 +1275,7 @@
       "processLabel": "How it works",
       "processMessage": "Walk me through what happens after I submit a Japan Entry application.",
       "timelineLabel": "Timeline",
-      "timelineMessage": "What inputs and approvals are required for the 21-business-day Japan launch target?",
+      "timelineMessage": "What inputs and approvals are required for the 14-business-day Japan launch target?",
       "meoLabel": "Japan discovery setup",
       "meoMessage": "What local discovery and search-readiness work is included in the Japan Entry package?",
       "aiLabel": "Bilingual support setup",
@@ -1483,7 +1483,7 @@
           "Japan-ready revenue path",
           "Localized positioning and trust content",
           "Eligible inquiry or payment routing",
-          "21-business-day launch target, subject to dependencies"
+          "14-business-day launch target, subject to dependencies"
         ],
         "popular": true
       },
@@ -2157,7 +2157,7 @@
       "q2": "How do payments work without a Japanese bank?",
       "a2": "The eligible inquiry or payment-routing path depends on provider acceptance, your entity and settlement setup, product type, and compliance requirements. Provider fees and approvals are separate.",
       "q3": "How long until I'm live in Japan?",
-      "a3": "The package uses a 21-business-day target after kickoff, complete inputs, required access, and the agreed approval path. External reviews or scope changes can move the date.",
+      "a3": "The package uses a 14-business-day target after kickoff, complete inputs, required access, and the agreed approval path. External reviews or scope changes can move the date.",
       "q4": "Do I need to speak or write Japanese?",
       "a4": "No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side.",
       "q5": "What does it cost?",

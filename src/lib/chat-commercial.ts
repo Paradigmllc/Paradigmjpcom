@@ -121,5 +121,5 @@ function getFallbackAnswerEn(question: string): string {
   ) {
     return "Paradigm LLC is a Tokyo-based Japan market-entry operator for overseas SMBs. We publish only verified company and commercial information; see https://paradigmjp.com/en/about and /en/legal."
   }
-  return "Japan Entry is a fixed $12,000 setup for fast-decision overseas SMBs: 21-business-day launch target, six months at $0/month, then $995/month; future-period cancellation follows the signed terms. Ask about scope, timing, eligibility, or apply at https://paradigmjp.com/en/contact?intent=japan-entry"
+  return "Japan Entry is a fixed $12,000 setup for fast-decision overseas SMBs: 14-business-day launch target after prerequisites, six months at $0/month, then $995/month; future-period cancellation follows the signed terms. Ask about scope, timing, eligibility, or apply at https://paradigmjp.com/en/contact?intent=japan-entry"
 }

@@ -80,7 +80,7 @@ function buildJapaneseCompanyInfo(
     rows.push(["所在地", [settings.company.postalCode, configuredAddress].filter(Boolean).join(" ")])
   }
   rows.push(
-    ["事業内容", "Web制作 / MEO対策 / SEO・GEO対策 / AI導入支援"],
+    ["事業内容", "Japan Entry運用 / Web・LPローカライズ / 市場・競合調査 / SNS・SEO基盤"],
     ["メール", settings.contact.email ?? "info@paradigmjp.com"],
     ["Webサイト", "https://paradigmjp.com"],
   )
@@ -111,7 +111,7 @@ export default async function AboutPage({ params }: Props) {
   const isJapanEntryLocale = locale === "en" || locale === "ja"
   const representativePrinciples = isJapanEntryLocale ? (t.raw("representativePrinciples") as string[]) ?? [] : []
   const operatingSteps = isJapanEntryLocale ? (t.raw("operatingSteps") as OperatingStep[]) ?? [] : []
-  const representativeName = settings.company.representativeName ?? (locale === "ja" ? "Paradigm合同会社 運営チーム" : "Paradigm LLC operator team")
+  const representativeName = locale === "ja" ? "Paradigm合同会社 運営チーム" : "Paradigm LLC operator team"
 
   return (
     <>

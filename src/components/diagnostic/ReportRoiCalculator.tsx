@@ -44,7 +44,7 @@ export default function ReportRoiCalculator({
           ))}
         </div>
         <p className="mt-4 text-[11px] leading-5 text-zinc-500">
-          The 21-business-day launch target starts after agreement, payment, required access, and assets are complete. Sales outcomes are not guaranteed; exact scope and exclusions are confirmed before payment.
+          The 14-business-day launch target starts after agreement, payment, required access, and assets are complete. Sales outcomes are not guaranteed; exact scope and exclusions are confirmed before payment.
         </p>
       </motion.div>
     )

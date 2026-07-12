@@ -45,14 +45,14 @@ const VARIANT_DEMO_DATA: Record<string, VariantDemoData> = {
       },
       {
         type: "hope", icon: "REACH", headline: { ja: "固定範囲のJapan Entryを開始する", en: "Launch a fixed-scope Japan Entry deployment" },
-        body: { ja: "セットアップは12,000米ドル固定。必要条件が揃った後21営業日の公開を目標とし、運用は最初の6か月が月額0ドル、その後は月額995ドルです。将来期間の解約は署名済み契約条件に従います。売上成果は保証しません。", en: "Setup is fixed at USD $12,000. The launch target is 21 business days after prerequisites are complete. Managed operation is $0/month for six months, then $995/month; future-period cancellation follows the signed terms. Sales outcomes are not guaranteed." },
-        metric_label: { ja: "公開目標", en: "Launch target" }, metric_value: { ja: "21営業日", en: "21 business days" }, metric_unit: "", metric_bench: { ja: "前提条件完了後", en: "After prerequisites are complete" }, severity: "info",
+        body: { ja: "セットアップは12,000米ドル固定。必要条件が揃った後14営業日の公開を目標とし、運用は最初の6か月が月額0ドル、その後は月額995ドルです。将来期間の解約は署名済み契約条件に従います。売上成果は保証しません。", en: "Setup is fixed at USD $12,000. The launch target is 14 business days after prerequisites are complete. Managed operation is $0/month for six months, then $995/month; future-period cancellation follows the signed terms. Sales outcomes are not guaranteed." },
+        metric_label: { ja: "公開目標", en: "Launch target" }, metric_value: { ja: "14営業日", en: "14 business days" }, metric_unit: "", metric_bench: { ja: "前提条件完了後", en: "After prerequisites are complete" }, severity: "info",
       },
     ],
     totalLoss: { ja: "個別算定", en: "Not estimated" },
     cta: {
-      ja: "固定範囲、12,000米ドルの承認時期、必要素材、21営業日の目標条件を申込み前に書面で確認します。",
-      en: "Apply to confirm fit, the fixed $12,000 scope, approval timing, required inputs, and the conditions behind the 21-business-day launch target.",
+      ja: "固定範囲、12,000米ドルの承認時期、必要素材、14営業日の目標条件を申込み前に書面で確認します。",
+      en: "Apply to confirm fit, the fixed $12,000 scope, approval timing, required inputs, and the conditions behind the 14-business-day launch target.",
     },
   },
   website_diagnostic: {

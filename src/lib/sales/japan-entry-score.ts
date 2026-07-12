@@ -248,7 +248,7 @@ function buildActions(input: JapanEntryScoreInput, factors: JapanEntryScoreFacto
   if (!readiness || readiness.score === null || readiness.score < 60) actions.push("Add a Japanese buyer path with trust, privacy, and payment cues.")
   if (input.audit?.status.local_payments_missing) actions.push("Validate JCB, konbini, PayPay, Paidy, or another suitable Japan payment route.")
   if (input.selfReported.decisionReady === "no") actions.push("Assign one empowered decision-maker and implementation owner.")
-  if (actions.length === 0) actions.push("Validate the remaining unknowns and move into a scoped 21-business-day launch plan.")
+  if (actions.length === 0) actions.push("Validate the remaining unknowns and move into a scoped 14-business-day launch plan.")
   return actions.slice(0, 3)
 }
 

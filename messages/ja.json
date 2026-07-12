@@ -308,48 +308,65 @@
     }
   },
   "blogPage": {
-    "metaTitle": "ブログ",
-    "metaDescription": "Web制作・MEO・SEO/GEO・AI導入の最新情報やノウハウをお届けします。",
-    "heroBadge": "Journal",
-    "heroTitle": "デジタルマーケティングの最新ノウハウ。",
-    "heroHighlight": "最新ノウハウ",
-    "heroDesc": "Web 制作・MEO・SEO/GEO・AI 導入の現場知見をまとめます。",
+    "metaTitle": "Japan Entry Field Notes",
+    "metaDescription": "日本市場へのローカライズ、公開シグナル、法規制の確認、固定スコープ、公開後30日の判断を整理する実務記事。",
+    "heroBadge": "Japan Entry Field Notes",
+    "heroTitle": "日本進出の判断に必要な情報を、記事で確認する。",
+    "heroHighlight": "判断に必要な情報",
+    "heroDesc": "公開根拠、自己申告、未知項目を分け、ローカライズ、運用、法規制、引き継ぎの論点を実務向けに整理します。",
     "emptyMessage": "現在、公開中の記事はありません。新しい記事をお待ちください。",
     "emptyCta": "お問い合わせ",
     "readTimeFormat": "{readTime}で読める"
   },
   "worksPage": {
-    "metaTitle": "公開確認済みの制作情報",
-    "metaDescription": "掲載許諾と内容を確認できた制作情報のみを公開します。",
-    "heroBadge": "Works",
-    "heroTitle": "確認できる仕事だけを、公開する。",
-    "heroHighlight": "確認できる仕事",
-    "heroDesc": "掲載許諾と成果根拠を確認できた情報だけを公開します。",
-    "emptyMessage": "現在、公開確認済みの事例はありません。未公開案件を実績として案内することはありません。",
-    "emptyCta": "お問い合わせ",
-    "ctaEyebrow": "Together",
-    "ctaTitle": "御社の事例を一緒に作りましょう",
-    "ctaHighlight": "一緒に",
-    "ctaDesc": "課題・範囲・評価方法を確認し、実装可能な計画をご提案します。",
-    "ctaButton": "相談を申し込む",
-    "processEyebrow": "How We Work",
-    "processTitle": "プロジェクト成功までの流れ",
+    "metaTitle": "公開できる提供根拠 | Japan Entry",
+    "metaDescription": "ParadigmのJapan Entry固定パッケージで、申込前に確認できるサイト、運用、公開根拠を紹介します。",
+    "heroBadge": "提供根拠",
+    "heroTitle": "申込前に、確認できるものを見せる。",
+    "heroHighlight": "確認できるもの",
+    "heroDesc": "許諾のない匿名実績や推測の売上数字は掲載しません。このサイトと運用フローで確認できる具体的な提供面を公開します。",
+    "emptyMessage": "公開根拠を準備中です。未公開案件を実績として案内することはありません。",
+    "emptyCta": "Japan Entry適合審査 — $12K",
+    "ctaEyebrow": "次の公開",
+    "ctaTitle": "この運用システムを、日本進出の入口にする。",
+    "ctaHighlight": "日本進出の入口",
+    "ctaDesc": "12,000ドル固定を承認でき、必要な素材を速やかに共有できる企業向けです。",
+    "ctaButton": "Japan Entry適合審査 — $12K",
+    "processEyebrow": "公開プロセス",
+    "processTitle": "14営業日の公開目標を、条件付きで管理する",
     "process": [
       {
         "step": "01",
-        "title": "ヒアリング",
-        "desc": "課題・目標・予算をヒアリングし、最適なプランとスケジュールをご提案します。"
+        "title": "適合と素材の確認",
+        "desc": "意思決定権限、商品、素材、アクセス、開始時期、第三者依存を確認します。"
       },
       {
         "step": "02",
-        "title": "設計・制作",
-        "desc": "デザインからコーディング・AI 実装まで、専任チームが品質管理しながら進行します。"
+        "title": "ローカライズ実装",
+        "desc": "購入者導線、信頼・法規制確認、市場レポート、SNS、サポートを合意範囲で実装します。"
       },
       {
         "step": "03",
-        "title": "納品・公開",
-        "desc": "最終チェック後、本番環境に公開。公開後も保守・改善で継続サポートします。"
+        "title": "承認・公開・引き継ぎ",
+        "desc": "依存条件を解消して公開し、所有者、計測、エスカレーション、月額運用の手順を残します。"
       }
+    ],
+    "evidenceEyebrow": "根拠の読み方",
+    "evidenceTitle": "作られたケーススタディではなく、導線を確認する。",
+    "evidenceDesc": "顧客名と一次データを公開できない案件について、実装、運用境界、購入者が確認できる根拠を分けて表示することが責任ある代替です。",
+    "evidenceChecks": [
+      { "title": "公開画面で確認できる", "desc": "申込導線、範囲、料金、法務ページ、Signal Check、記事を会話前に確認できます。" },
+      { "title": "根拠を分離する", "desc": "公開順位、クロール、登録、サイト観測と、申込者の自己申告を混ぜません。" },
+      { "title": "成果を捏造しない", "desc": "公開シグナルから、アクセス、国別構成、コンバージョン、売上を推測して断定しません。" },
+      { "title": "運用まで終える", "desc": "所有者、エスカレーション、検収、計測、引き継ぎが決まって初めて公開完了です。" }
+    ],
+    "proofItems": [
+      { "title": "日本語の購入者導線", "industry": "公開できる実装", "description": "ローカライズルーティング、CMS、構造化されたページ、レスポンシブ表示、申込導線をこのサイトで確認できます。", "metrics": "paradigmjp.comで公開", "tags": ["ローカライズ", "CMS", "レスポンシブ", "SEO"] },
+      { "title": "適合審査フロー", "industry": "運用プロセス", "description": "会社、権限、開始時期、商品、公開情報を申込みで受け取り、具体的な入力から確認を始めます。", "metrics": "判断に必要な情報", "tags": ["適合", "入力", "引き継ぎ", "プライバシー"] },
+      { "title": "固定商業スコープ", "industry": "料金の透明性", "description": "セットアップ、含まれる公開作業、除外、月額運用、7か月目以降の条件を申込前に確認できます。", "metrics": "$12K · 6か月$0", "tags": ["固定範囲", "USD", "運用", "引き継ぎ"] },
+      { "title": "公開シグナルスコア", "industry": "市場の可視性", "description": "Signal Checkは公開順位、クロール、登録、サイト信号と自己申告を分離し、未知の訪問数や売上を作りません。", "metrics": "公開根拠 · 未知項目", "tags": ["Tranco", "Common Crawl", "RDAP", "監査"] },
+      { "title": "意思決定記事", "industry": "Japan Entry Field Notes", "description": "ローカライズ、採用、業者調整、商業範囲、公開後1か月の判断を記事で整理しています。", "metrics": "9本の実務記事", "tags": ["範囲", "比較", "運用", "信頼"] },
+      { "title": "人が確認する自動化", "industry": "運用境界", "description": "自動化はルーティング・要約・シグナル整理に使い、機微・不確実・契約判断は人の確認に残します。", "metrics": "エスカレーションを文書化", "tags": ["レビュー", "ルーティング", "引き継ぎ", "安全"] }
     ]
   },
   "legalPage": {
@@ -484,22 +501,71 @@
     ]
   },
   "pricingPage": {
-    "metaTitle": "料金プラン",
-    "metaDescription": "Paradigm合同会社の料金プラン。Web制作・MEO・SEO/GEO・AI導入の明朗な定額制パッケージ。",
-    "heroBadge": "Pricing",
-    "heroTitle": "明朗な定額制パッケージ。",
-    "heroHighlight": "明朗",
-    "heroDesc": "表示価格と提供範囲を確認し、追加条件は申込み前に書面で確定します。地域別価格が適用される場合は画面に明記します。",
-    "emptyMessage": "現在、公開中のプランはありません。",
-    "emptyCta": "お問い合わせ",
-    "popularBadge": "推奨プラン",
+    "metaTitle": "Japan Entry料金 — セットアップ12,000ドル固定",
+    "metaDescription": "日本市場向けの固定パッケージ。セットアップ12,000ドル、最初の6か月は標準月額運用込み、7か月目以降は月額995ドル。",
+    "heroBadge": "固定オファー · USD建て",
+    "heroTitle": "一つの判断で、日本市場の入口をつくる。",
+    "heroHighlight": "一つの判断",
+    "heroDesc": "セットアップ12,000ドル固定。最初の6か月は標準月額運用込み、7か月目以降は月額995ドル。国や企業規模で価格を変えません。",
+    "emptyMessage": "現在、公開中のパッケージはありません。",
+    "emptyCta": "Japan Entry適合審査 — $12K",
+    "popularBadge": "固定オファー",
     "planEyebrow": "Plan",
     "billingMonthly": "/月",
     "billingYearly": "/年",
-    "billingOnetime": "一括",
-    "defaultCta": "お問い合わせ",
-    "pppHint": "PPP 調整 — 通常 ¥{originalPrice}",
-    "regionFooter": "価格は {country} からのアクセスに基づき表示しています。",
+    "billingOnetime": "一括セットアップ",
+    "defaultCta": "Japan Entry適合審査 — $12K",
+    "pppHint": "",
+    "regionFooter": "Japan Entryは地域別の値引きを行わない固定USD価格です。",
+    "fixedPlanName": "Japan Entry Package",
+    "fixedPlanDescription": "日本語の購入者導線、公開シグナル市場レポート、SNS初期設定、法規制の適用可能性整理、公開運用、引き継ぎを一つにまとめた固定スコープ。",
+    "fixedPlanFeatures": [
+      "LP / HPローカライズと日本語の購入者導線",
+      "優先SNS最大2チャネルの初期設定",
+      "最大3市場の公開シグナル比較＋1市場深掘り",
+      "特商法・関連規制の適用可能性整理",
+      "適格な問い合わせ・決済経路の実装",
+      "日本語サポート、公開運用、引き継ぎ",
+      "最初の6か月は標準月額運用込み",
+      "7か月目以降は月額995ドル"
+    ],
+    "packageEyebrow": "購入するもの",
+    "packageTitle": "6つの作業を、1つの公開システムに接続します。",
+    "packageDesc": "12,000ドルは単発の翻訳費ではありません。購入者導線、市場根拠、チャネル、規制確認、公開運用、引き継ぎを同じ範囲・責任者で進めます。",
+    "packageModules": [
+      { "title": "LP / HPローカライズ", "description": "既存の提案を、日本の購入者が理解して次へ進めるページ構成に変えます。", "deliverables": ["情報設計、コピー方針、CTA、メタデータ", "主要ページ、信頼情報、CMS引き継ぎ", "問い合わせまたは適格な決済導線"] },
+      { "title": "SNS初期セットアップ", "description": "運用を約束するのではなく、最初の日本向け発信を始められる状態にします。", "deliverables": ["優先2チャネルのプロフィールと導線", "CTA、ビジュアル方針、投稿テーマ", "スターターテンプレートと所有者ガイド"] },
+      { "title": "市場・競合レポート", "description": "どこから始めるか、何がまだ不明かを公開根拠付きで整理します。", "deliverables": ["最大3市場の比較スキャン", "優先1市場の顧客・競合深掘り", "出典URL、観測日、未知項目、次の判断"] },
+      { "title": "信頼・法規制の確認", "description": "日本向け公開前に確認すべき表示・規制論点を一覧化します。", "deliverables": ["特商法・プライバシー表示チェック", "関連業種の適用可能性スクリーニング", "法務・税務・許認可専門家へのエスカレーション表"] },
+      { "title": "日本語の購入者運用", "description": "質問への回答、エスカレーション、担当範囲を引き継げる形にします。", "deliverables": ["一次回答ナレッジと日英ルーティング", "不確実・機微な問い合わせの人手確認境界", "問い合わせ・決済経路の所有者記録"] },
+      { "title": "公開運用・引き継ぎ", "description": "依存条件、承認、検収、公開後の月額運用を一つの手順にします。", "deliverables": ["必要条件受領後の14営業日公開目標", "計測・通知・受入基準", "チェックリスト、所有権、運用手順"] }
+    ],
+    "benefitsEyebrow": "この構造の理由",
+    "benefitsTitle": "価値は作業量ではなく、調整リスクを減らすこと。",
+    "benefitsDesc": "意思決定の速いSMBに必要なのは、別々の提案書を増やすことではありません。日本向けの最初の導線と、止まりやすい依存条件の責任者です。",
+    "packageBenefits": [
+      { "title": "承認面を一つに", "description": "サイト、検索、サポート、公開運用を別発注せず、一つの固定範囲で判断できます。" },
+      { "title": "未知項目を明示", "description": "法務、税務、銀行、決済、物流、コンテンツの依存条件を着手前に分けます。" },
+      { "title": "固定費を先送り", "description": "現地法人、採用、拠点、複数ベンダーを決める前に、購入者導線と次の判断をつくります。" },
+      { "title": "引き継ぎで終える", "description": "所有者、手順、計測、未解決事項、7か月目の判断を残します。" }
+    ],
+    "comparisonEyebrow": "運用モデルを比較",
+    "comparisonTitle": "今の意思決定に合う進め方を選ぶ。",
+    "comparisonDesc": "どの会社にも一つの正解があるという主張ではありません。現地採用や複数専門会社が適する段階もあります。",
+    "comparisonHeaders": { "criterion": "判断軸", "package": "Japan Entry", "hire": "現地採用から", "vendors": "複数専門会社" },
+    "comparisonRows": [
+      { "criterion": "最初の公開導線", "package": "必要条件・承認後の14営業日目標", "hire": "採用・オンボーディングが先", "vendors": "各社の開始日が分かれる" },
+      { "criterion": "責任の所在", "package": "固定範囲、担当、承認、引き継ぎを一つに", "hire": "社員だけでは専門作業が残る", "vendors": "顧客が統合責任を負う" },
+      { "criterion": "費用の形", "package": "$12,000固定、6か月込み、7か月目以降$995/月", "hire": "採用・給与・管理コスト", "vendors": "複数見積、最低料金、変更費用" },
+      { "criterion": "適する企業", "package": "実際の提案と、今月判断できる責任者がいる企業", "hire": "恒久的な日本チームをつくる企業", "vendors": "社内に統合責任者と時間がある企業" }
+    ],
+    "scopeEyebrow": "範囲の境界",
+    "scopeTitle": "申込前に、固定価格の中身を確認する。",
+    "scopeDesc": "最終成果物、依存条件、検収は着手前に契約範囲へ記載します。公開目標は素材、アクセス、承認、第三者審査が遅れないことを前提にします。",
+    "scopeGroups": [
+      { "title": "合意した公開範囲に含む", "items": ["LP / HPローカライズと購入者導線", "SNS最大2チャネルの初期設定", "公開シグナル市場レポートと深掘り", "特商法・関連規制の適用可能性整理", "問い合わせ、計測、公開、引き継ぎの初期設定", "最初の6か月の定義済み月額運用"] },
+      { "title": "別費用または範囲外", "items": ["正式な法務・税務・銀行・許認可・法人設立助言", "継続投稿、コミュニティ運営、インフルエンサー、広告運用", "未提供の非公開アクセス・売上・コンバージョンデータ", "広告費、在庫、物流、決済プロバイダー費用", "ホスティング、ソフトウェア、AI、その他第三者費用", "契約にない無制限のページ、翻訳、動画、連携"] }
+    ],
     "ctaEyebrow": "Custom",
     "ctaTitle": "カスタムプランをご希望の方へ",
     "ctaHighlight": "カスタム",
@@ -561,64 +627,64 @@
     "hurryButton": "オンライン相談を予約"
   },
   "faqPage": {
-    "metaTitle": "よくあるご質問",
-    "metaDescription": "Web制作・MEO・SEO/GEO・AI導入支援のよくあるご質問と回答。",
-    "heroBadge": "FAQ",
-    "heroTitle": "よくあるご質問にお答えします。",
-    "heroHighlight": "よくあるご質問",
-    "heroDesc": "お客様からよくいただくご質問をまとめました。",
+    "metaTitle": "Japan Entry よくある質問",
+    "metaDescription": "セットアップ12,000ドル、6か月の標準月額込み、14営業日の公開目標、範囲・除外・法規制確認に関するFAQ。",
+    "heroBadge": "Japan Entry FAQ",
+    "heroTitle": "申込前に、条件と境界を確認する。",
+    "heroHighlight": "条件と境界",
+    "heroDesc": "固定価格、公開目標、月額運用、コンテンツ資産、決済、法規制、所有権について回答します。",
     "emptyMessage": "現在、公開中の FAQ はありません。",
-    "emptyCta": "お問い合わせ",
-    "ctaEyebrow": "Still curious",
-    "ctaTitle": "解決しない疑問がありますか？",
-    "ctaHighlight": "解決しない疑問",
-    "ctaDesc": "お気軽にお問い合わせください。担当者が確認してご連絡します。",
-    "ctaButton": "お問い合わせ",
+    "emptyCta": "Japan Entry適合審査 — $12K",
+    "ctaEyebrow": "Next decision",
+    "ctaTitle": "条件が合えば、固定範囲を確認する。",
+    "ctaHighlight": "固定範囲",
+    "ctaDesc": "会社、意思決定権限、開始時期、現在の日本向け状況を送信してください。送信だけで契約は成立しません。",
+    "ctaButton": "Japan Entry適合審査 — $12K",
     "items": [
       {
-        "q": "初回相談は無料ですか？",
-        "a": "サイト上で無料と明記している初回オンライン相談は無料です。相談後の契約義務はありません。追加の調査や成果物が必要な場合は、実施前に範囲と費用を提示します。"
+        "q": "セットアップ費用は本当に12,000ドル固定ですか？",
+        "a": "はい。固定スコープのセットアップは12,000ドルです。公開範囲に収まらない場合は、後から価格を膨らませず申込みをお断りします。"
       },
       {
-        "q": "料金と提供範囲はどう決まりますか？",
-        "a": "公開プランを基準に、対象ページ・業務・外部連携・お客様側の作業・第三者費用を確認し、見積書と契約書で確定します。合意前に追加費用を発生させません。"
+        "q": "最初の6か月は何が無料ですか？",
+        "a": "契約で定義した標準月額運用を、セットアップ後6か月間は追加の月額請求なしで含めます。広告費、決済・ソフトウェア・法務・税務など第三者費用は別です。"
       },
       {
-        "q": "納期は保証されますか？",
-        "a": "着手条件と必要素材が揃った時点で目標日を提示します。承認遅延、追加要件、第三者審査、外部サービス障害などの依存条件も事前に記載し、無条件の納期保証は行いません。"
+        "q": "14営業日で必ず公開できますか？",
+        "a": "保証ではなく、支払い、範囲確定、必要素材・アクセス、迅速な承認、第三者審査が揃った後の目標です。入力遅延、追加要件、規制・外部サービスの確認で日程は変わります。"
       },
       {
-        "q": "MEO・SEOで特定順位を保証できますか？",
-        "a": "できません。検索順位、流入、来店、問い合わせ、売上は、検索サービスの仕様、競合、需要などでも変動します。開始時の基準値と実施内容を記録し、変化を報告します。"
+        "q": "50〜100件のSEOコンテンツは、すべて長文記事ですか？",
+        "a": "いいえ。長文の基幹記事、比較、FAQ、用途別ページ、プログラマティックページなどの日本向けコンテンツ資産の組み合わせです。正確な本数・形式・承認工程は、商品と素材を確認して契約範囲に記載します。"
       },
       {
-        "q": "AI導入でどのくらい効率化できますか？",
-        "a": "一律の削減率や投資回収期間は提示しません。対象業務の現在値、品質基準、人の確認工程、測定期間を合意し、実測値で判断します。"
+        "q": "決済や特商法対応は保証されますか？",
+        "a": "いいえ。利用可能な決済手段や規制は商品、顧客、プロバイダー、所在地で変わります。適用可能性を整理し、正式な法務・税務・許認可判断は有資格専門家へエスカレーションします。"
       },
       {
-        "q": "キャンセルや返金の条件は？",
-        "a": "着手前後、完了済み作業、確保済みリソース、外部費用、適用法令により異なります。見積書・契約書に条件を記載し、法令上認められる権利を排除しません。"
+        "q": "7か月目以降と解約はどうなりますか？",
+        "a": "7か月目以降の標準月額は995ドルです。将来月分の解約、通知期限、効力発生日は契約条件に従います。サービス終了後に運用・監視・サポートは継続しません。"
       },
       {
-        "q": "外部サービスの費用は含まれますか？",
-        "a": "広告、ホスティング、ドメイン、決済、AI利用料、法務・税務などは別途となる場合があります。必要な項目と負担者を申込み前に明記します。"
+        "q": "コード、ブランド、顧客データは誰のものですか？",
+        "a": "契約で定義する顧客提供素材、ブランド、顧客データ、ドメインは顧客側に残します。再利用可能な当社のテンプレート・プラットフォームコードは当社所有です。終了時のエクスポートと引き継ぎ範囲を契約で明記します。"
       },
       {
-        "q": "問い合わせ情報はどう扱われますか？",
-        "a": "問い合わせ対応、契約判断、サービス提供のために必要な範囲で扱います。保存先、通知、Cookie、AI支援、権利行使の詳細はプライバシーポリシーをご確認ください。"
+        "q": "実績や日本からの売上を公開していますか？",
+        "a": "許諾と一次データを確認できない売上、アクセス、国別比率、匿名体験談は実績として掲載しません。Signal Checkでも公開根拠、自己申告、未知項目を分けて表示します。"
       }
     ]
   },
   "aboutPage": {
-    "metaTitle": "会社概要",
-    "metaDescription": "Paradigm合同会社の会社概要。デジタル技術で中小企業の成長を支援するパートナーです。",
-    "heroBadge": "About",
-    "heroTitle": "テクノロジーで、ビジネスの常識を変える。",
-    "heroHighlight": "ビジネスの常識",
-    "heroDesc": "Web 制作・MEO 対策・SEO/GEO 対策・AI 導入支援を一貫してご提供し、中小企業のデジタルトランスフォーメーションを包括的に支援するパートナーです。",
+    "metaTitle": "Paradigmについて | Japan Entry運用",
+    "metaDescription": "Paradigmは、海外SMBの日本市場向け導線を固定スコープで設計・実装・運用する東京拠点のJapan Entryパートナーです。",
+    "heroBadge": "About · Japan Market Engine",
+    "heroTitle": "日本進出を、運用できる意思決定で終わらせる。",
+    "heroHighlight": "運用できる意思決定",
+    "heroDesc": "調査・翻訳・複数業者の調整だけで時間を失わないように、購入者導線、公開根拠、依存条件、引き継ぎを一つの固定範囲で管理します。",
     "missionEyebrow": "Mission",
-    "missionTitle": "デジタルで、事業を加速する。",
-    "missionDesc": "私たち Paradigm 合同会社は、Web 制作・MEO 対策・SEO/GEO 対策・AI 導入支援を通じて、中小企業のデジタルトランスフォーメーションを包括的にサポートします。最新の AI 技術とデジタルマーケティングの知見を組み合わせ、お客様のビジネスが持続的に成長できる基盤を構築します。",
+    "missionTitle": "日本市場への入口を、実装と運用の境界までつくる。",
+    "missionDesc": "Paradigmは、海外の意思決定者が日本向けの最初の導線を短期間で判断・公開できるように、ローカライズ、市場根拠、SNS、法規制の適用可能性整理、サポート、引き継ぎを同じ責任者で接続します。正式な法務・税務・許認可判断は専門家に委ね、実装と依存条件を明確にします。",
     "representativeEyebrow": "運営責任者から",
     "representativeTitle": "日本進出は、運用できる意思決定で終わらせる。",
     "representativeMessage": "海外企業が日本市場を検討するとき、調査・翻訳・複数業者との調整だけで数か月が過ぎ、購入者に届く導線まで進まないことがあります。Paradigmは、最初の日本向け導線を具体化し、確認できる状態にし、誰が運用するかまで明確にするための会社です。含まれる範囲、まだ分からないこと、専門家の確認が必要なことを分け、チームが次の判断をできる状態で引き継ぎます。法務・税務・銀行・許認可の専門判断を代替するのではなく、実装と依存条件を見える化することに責任を持ちます。",
@@ -638,11 +704,11 @@
       },
       {
         "title": "ワンストップで安心",
-        "desc": "Web 制作・集客・AI を一貫して提供。複数業者への発注コストと管理の手間をなくします。"
+        "desc": "ローカライズ、SNS、市場根拠、公開運用、サポートを一つの固定範囲で接続し、複数業者の調整負担を減らします。"
       },
       {
-        "title": "最新技術を、わかりやすく",
-        "desc": "AI・GEO 等の最先端技術も、お客様にわかりやすくお伝えし、無理のない形で導入を支援します。"
+        "title": "未知と専門判断を分ける",
+        "desc": "公開根拠、自己申告、未確認事項を分離し、正式な法務・税務・許認可判断が必要な地点を明示します。"
       }
     ],
     "companyEyebrow": "Company",
@@ -666,7 +732,7 @@
       ],
       [
         "事業内容",
-        "Web 制作 / MEO 対策 / SEO・GEO 対策 / AI 導入支援"
+        "Japan Entry運用 / Web・LPローカライズ / 市場・競合調査 / SNS・SEO基盤"
       ],
       [
         "メール",
@@ -678,27 +744,46 @@
       ]
     ],
     "ctaEyebrow": "Together",
-    "ctaTitle": "一緒にデジタルを活用しませんか？",
-    "ctaHighlight": "デジタル",
-    "ctaDesc": "御社のデジタル課題、お気軽にご相談ください。",
-    "ctaButton": "相談を申し込む"
+    "ctaTitle": "日本市場への入口を、固定範囲で確認する。",
+    "ctaHighlight": "固定範囲",
+    "ctaDesc": "12,000ドルのセットアップ範囲、14営業日の前提、月額運用、依存条件を確認してから申込みください。",
+    "ctaButton": "Japan Entry適合審査 — $12K"
   },
   "servicesPage": {
-    "metaTitle": "サービス一覧",
-    "metaDescription": "Web制作・MEO対策・SEO/GEO対策・AI導入支援。Paradigm合同会社が提供する4つのデジタル支援サービスをご紹介します。",
-    "heroBadge": "Services",
-    "heroTitle": "デジタル技術で事業を加速する。",
-    "heroHighlight": "事業を加速",
-    "heroDesc": "Web 制作・MEO 対策・SEO/GEO 対策・AI 導入支援を一貫してご提供します。",
-    "emptyMessage": "現在、公開中のサービスはありません。詳細は直接お問い合わせください。",
-    "emptyCta": "お問い合わせ",
-    "learnMore": "詳しく見る",
-    "getInTouch": "相談する",
-    "ctaEyebrow": "Together",
-    "ctaTitle": "どのサービスが最適かわからない？",
-    "ctaHighlight": "最適",
-    "ctaDesc": "課題と条件を確認し、実装可能なプランをご提案します。",
-    "ctaButton": "相談を申し込む"
+    "metaTitle": "Japan Entry提供モジュール",
+    "metaDescription": "ParadigmのJapan Entry固定パッケージに含まれる、ローカライズ、SNS、市場調査、法規制確認、公開運用のモジュール。",
+    "heroBadge": "一つのパッケージ · 連動するモジュール",
+    "heroTitle": "すべてを、日本市場の一つの公開導線へ。",
+    "heroHighlight": "一つの公開導線",
+    "heroDesc": "以下は単品の低価格サービスではありません。12,000ドル固定のJapan Entryパッケージを成立させる提供モジュールです。",
+    "emptyMessage": "パッケージモジュールを準備中です。",
+    "emptyCta": "Japan Entry適合審査 — $12K",
+    "learnMore": "モジュールの詳細",
+    "getInTouch": "Japan Entry適合審査 — $12K",
+    "moduleEyebrow": "パッケージの中身",
+    "moduleTitle": "5つのモジュールを、1つの責任者で進める。",
+    "moduleDesc": "各モジュールは、日本の最初の購入者に届くまでの別々の依存条件を閉じます。単品販売ではなく、固定スコープの中で接続して納品します。",
+    "moduleCards": [
+      { "title": "日本語の購入者導線", "short": "提案、信頼、次の行動を一つのローカライズ導線に。", "details": ["情報設計と購入者向けコピー方針", "レスポンシブサイトとCMS引き継ぎ", "問い合わせまたは適格な決済経路"] },
+      { "title": "信頼・法規制の整理", "short": "表示責任、プライバシー、専門家確認事項を見える化。", "details": ["特商法・プライバシー表示チェック", "公開所有者とサポート経路", "専門家へ渡す確認事項一覧"] },
+      { "title": "日本市場の発見基盤", "short": "適格な発見面と、確認できる公開シグナルを整える。", "details": ["該当する場合の企業・地域プロフィール", "検索に対応した構造とメタデータ", "順位保証をしない計測基準"] },
+      { "title": "日英サポート導線", "short": "日本語の質問に担当者とエスカレーションを設定。", "details": ["ナレッジと回答ルーティング", "人が確認する境界", "所有権と引き継ぎ文書"] },
+      { "title": "公開運用", "short": "素材、承認、チェック、公開後の判断を接続。", "details": ["必要条件受領後の14営業日目標", "計測・通知の基準", "公開チェックリストと運用引き継ぎ"] }
+    ],
+    "operatingEyebrow": "モジュールの接続",
+    "operatingTitle": "納品するのは、5つの作業ではなく動く導線。",
+    "operatingDesc": "各モジュールが次の判断に必要な入力を生みます。この接続が、時間のないSMBでも固定スコープを運用可能にします。",
+    "operatingSteps": [
+      { "title": "01 · 提案を定義", "desc": "最初の日本の購入者、理解すべき提案、取るべき行動を明確にします。" },
+      { "title": "02 · 信頼を表示", "desc": "所有者、条件、プライバシー、サポート、専門家確認事項を公開します。" },
+      { "title": "03 · 導線を実装", "desc": "サイト、適格な問い合わせ・決済経路、発見基盤、日英サポートのルールを実装します。" },
+      { "title": "04 · 承認と引き継ぎ", "desc": "チェック、修正、所有者、依存条件、次の判断を記録して運用へ渡します。" }
+    ],
+    "ctaEyebrow": "一つの商業判断",
+    "ctaTitle": "複数のリテイナーではなく、固定パッケージを選ぶ。",
+    "ctaHighlight": "固定パッケージ",
+    "ctaDesc": "セットアップ12,000ドル、最初の6か月は標準月額運用込み、7か月目以降は995ドル。最終範囲と依存条件は着手前に確定します。",
+    "ctaButton": "Japan Entry適合審査 — $12K"
   },
   "locale": {
     "name": "日本語",
@@ -712,22 +797,22 @@
     "faq": "FAQ",
     "blog": "ブログ",
     "japanEntryScore": "日本進出度を確認",
-    "contact": "お問い合わせ",
+    "contact": "申込み — $12K",
     "menu": "メニュー",
     "openMenu": "メニューを開く",
     "closeMenu": "メニューを閉じる",
     "primaryNav": "メインナビゲーション"
   },
   "cta": {
-    "primary": "無料相談",
-    "secondary": "サービスを見る",
-    "bookConsult": "無料相談を予約",
-    "diagnose": "無料診断を受ける",
-    "reportCta": "この内容を相談する"
+    "primary": "申込み — $12K",
+    "secondary": "Japan Entryの範囲を見る",
+    "bookConsult": "Japan Entry適合審査 — $12K",
+    "diagnose": "日本進出度を確認",
+    "reportCta": "Japan Entry適合審査 — $12K"
   },
   "footer": {
     "company": "Paradigm合同会社",
-    "companyTagline": "デジタル技術で中小企業の成長を支援する、Paradigm合同会社です。",
+    "companyTagline": "海外SMBの日本市場導線を、固定スコープで設計・実装・運用します。",
     "servicesHeading": "サービス",
     "companyHeading": "企業情報",
     "contactHeading": "お問い合わせ",
@@ -735,31 +820,31 @@
     "privacy": "プライバシーポリシー",
     "legal": "特定商取引法",
     "services": {
-      "web": "Web制作",
-      "meo": "MEO対策",
-      "seo": "SEO/GEO対策",
-      "ai": "AI導入支援"
+      "web": "LP / HPローカライズ",
+      "meo": "SNS初期セットアップ",
+      "seo": "市場・競合レポート",
+      "ai": "日本語サポート導線"
     },
     "studioLocation": "東京・日本 · Paradigm 合同会社",
     "socialGithub": "GitHub",
     "socialEmail": "メール",
-    "companyHeadline": "テクノロジーで、ビジネスを前へ。"
+    "companyHeadline": "一つの固定範囲で、日本市場の入口をつくる。"
   },
   "home": {
-    "heroBadge": "中小企業のデジタルパートナー",
-    "heroTitle": "AIと自動化で、中小企業のDXを加速する",
-    "heroSubtitle": "業務の自動化から顧客獲得まで、Paradigmが一気通貫で支援します。",
-    "heroSuffix": "で事業を加速する。",
-    "heroSubheadline": "Web制作・MEO対策・SEO/GEO・AI導入支援。中小企業のデジタル変革をワンストップで支援します。",
+    "heroBadge": "固定 Japan Entry パッケージ",
+    "heroTitle": "日本市場への入口を、一つの責任者でつくる。",
+    "heroSubtitle": "セットアップ12,000ドル固定 · 最初の6か月は標準月額運用込み · 7か月目以降995ドル/月",
+    "heroSuffix": "意思決定の速い海外SMB向け。",
+    "heroSubheadline": "日本語の購入者導線、SNS、市場・競合レポート、法規制の適用可能性整理、公開運用、引き継ぎを固定スコープで接続します。",
     "heroTypingWords": [
-      "MEO対策",
-      "AI活用",
-      "Web制作",
-      "SEO/GEO"
+      "ローカライズ",
+      "市場根拠",
+      "日本語サポート",
+      "公開運用"
     ],
-    "heroBookConsult": "無料相談を申し込む",
-    "heroSeeServices": "サービスを見る",
-    "trusted": "提供できる支援領域",
+    "heroBookConsult": "Japan Entry適合審査 — $12K",
+    "heroSeeServices": "固定範囲を見る",
+    "trusted": "公開されている商業条件",
     "stats": {
       "support": {
         "suffix": "領域",
@@ -779,63 +864,63 @@
       }
     },
     "servicesEyebrow": "Services",
-    "servicesHeading": "事業を成長させる4つのサービス",
+    "servicesHeading": "Japan Entryを構成する6つのモジュール",
     "servicesViewMore": "詳しく見る",
     "services": {
       "web": {
-        "title": "ホームページ制作",
-        "tagline": "集客に強いモダンサイト",
-        "desc": "レスポンシブ・SEO最適化・CMS付き。制作後の集客もワンストップでサポート。",
-        "results": "公開後の集客まで伴走",
-        "badge": "Web"
+        "title": "LP / HPローカライズ",
+        "tagline": "翻訳ではなく購入者導線",
+        "desc": "日本語の訴求、信頼情報、CTA、メタデータ、CMS引き継ぎを固定範囲で実装します。",
+        "results": "固定スコープに含む",
+        "badge": "Core"
       },
       "meo": {
-        "title": "MEO対策",
-        "tagline": "Googleビジネスプロフィールを整備・運用",
-        "desc": "口コミ対応・投稿運用・順位計測を行い、地域検索での発見性を継続的に改善します。",
-        "results": "施策と変化を月次で可視化",
+        "title": "SNS初期セットアップ",
+        "tagline": "優先2チャネルを公開できる状態に",
+        "desc": "プロフィール、リンク、CTA、投稿テーマ、スターターテンプレート、所有者を整えます。",
+        "results": "継続投稿は契約範囲で定義",
         "badge": ""
       },
       "seo": {
-        "title": "SEO/GEO対策",
-        "tagline": "AI検索・Google双方に対応",
-        "desc": "ChatGPT・Gemini等のAI検索でも推薦される次世代SEO。",
-        "results": "AI検索にも最適化",
-        "badge": "新定番"
+        "title": "市場・競合レポート",
+        "tagline": "最大3市場を公開根拠で比較",
+        "desc": "出典URL、観測日、未知項目、優先市場の深掘りを一つの判断資料にまとめます。",
+        "results": "公開シグナルを分離",
+        "badge": "Evidence"
       },
       "ai": {
-        "title": "AI導入支援",
-        "tagline": "業務を自動化・効率化",
-        "desc": "AIチャットボット・業務自動化・AI広告など導入から運用まで一括対応。",
-        "results": "導入から運用まで一貫",
+        "title": "法規制の適用可能性整理",
+        "tagline": "専門家確認が必要な地点を分ける",
+        "desc": "特商法、プライバシー、業種別ルールを整理。正式な法務・税務判断は専門家へ渡します。",
+        "results": "確認事項を記録",
         "badge": ""
       },
       "video": {
-        "title": "動画サブスク",
-        "tagline": "月額定額・プラン別納品上限",
-        "desc": "Web/LP/SNS用動画を、合意した月間上限・キュー・納期目標に沿って制作します。",
-        "results": "依頼・確認・納品をボードで管理",
-        "badge": "新"
+        "title": "公開運用・引き継ぎ",
+        "tagline": "14営業日の公開目標と運用手順",
+        "desc": "公開チェック、計測、通知、所有権、サポート、7か月目の判断を残します。",
+        "results": "運用できる状態で納品",
+        "badge": "Launch"
       }
     },
     "featuresEyebrow": "Why Paradigm",
     "featuresHeading": "選ばれる4つの理由",
     "features": {
       "speed": {
-        "title": "目標日と依存条件を明記",
-        "desc": "素材、承認、外部審査などの条件を確認し、着手前に目標日を共有します。"
+        "title": "14営業日の目標を条件付きで管理",
+        "desc": "素材、アクセス、承認、外部審査などの依存条件を確認し、着手前に目標日を共有します。"
       },
       "guarantee": {
         "title": "提供範囲と評価方法を明記",
         "desc": "成果物、作業範囲、検収条件、評価指標を合意します。売上や検索順位は保証しません。"
       },
       "team": {
-        "title": "専任担当が伴走",
-        "desc": "担当者が変わらない。月次レポート+定例MTGで継続サポート。"
+        "title": "固定の商業範囲",
+        "desc": "成果物、除外事項、第三者費用、検収、7か月目の条件を契約前に明記します。"
       },
       "aiFusion": {
-        "title": "AI×デジタルの融合",
-        "desc": "最新AIツールを活用した次世代集客。競合に差をつける戦略を提供。"
+        "title": "人が確認する自動化",
+        "desc": "ルーティングや要約に自動化を使い、機微・不確実・契約判断は人の確認に残します。"
       }
     },
     "testimonialsEyebrow": "Proof",
@@ -847,11 +932,11 @@
       "4": "押し売りなし"
     },
     "ctaEyebrow": "Get Started",
-    "ctaHeading": "まずは",
-    "ctaHeadingHighlight": "無料相談",
-    "ctaHeadingSuffix": "から",
-    "ctaSubheading": "無料のオンライン相談で、御社の現状の課題を整理し、最適なデジタル戦略を無料でご提案します。",
-    "ctaButton": "無料相談を申し込む",
+    "ctaHeading": "日本市場への入口を",
+    "ctaHeadingHighlight": "固定範囲で確認",
+    "ctaHeadingSuffix": "する。",
+    "ctaSubheading": "会社、意思決定権限、開始時期、現在の日本向け状況を送信してください。申込みは適合確認から始まります。",
+    "ctaButton": "Japan Entry適合審査 — $12K",
     "ctaBullets": {
       "1": "完全無料",
       "2": "営業電話なし",
@@ -924,7 +1009,7 @@
         },
         {
           "kicker": "引き継ぎ",
-          "value": "21日*",
+          "value": "14日*",
           "title": "公開後に運用できる状態",
           "body": "チェックリスト、担当、計測、サポートエスカレーション、運用手順を残します。"
         },
@@ -935,7 +1020,7 @@
           "body": "実際の商品、速い入力、次の判断を承認できる責任者がいる企業向けです。"
         }
       ],
-      "note": "*21営業日は、必要なアクセス・素材・承認・第三者依存条件が揃った後の目標です。"
+      "note": "*14営業日は、必要なアクセス・素材・承認・第三者依存条件が揃った後の目標です。"
     }
   },
   "chatbot": {
@@ -1887,7 +1972,7 @@
       "q2": "How do payments work without a Japanese bank?",
       "a2": "The eligible inquiry or payment-routing path depends on provider acceptance, your entity and settlement setup, product type, and compliance requirements. Provider fees and approvals are separate.",
       "q3": "How long until I'm live in Japan?",
-      "a3": "The package uses a 21-business-day target after kickoff, complete inputs, required access, and the agreed approval path. External reviews or scope changes can move the date.",
+      "a3": "The package uses a 14-business-day target after kickoff, complete inputs, required access, and the agreed approval path. External reviews or scope changes can move the date.",
       "q4": "Do I need to speak or write Japanese?",
       "a4": "No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side.",
       "q5": "What does it cost?",

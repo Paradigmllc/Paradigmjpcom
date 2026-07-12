@@ -35,8 +35,8 @@ const altNamesFor = (locale: string) =>
 
 const orgDescFor = (locale: string) =>
   localeContentVariant(locale) === "ja"
-    ? "Web 制作・MEO 対策・SEO/GEO・AI 導入支援。Paradigm合同会社が提供する 4 つのデジタル支援サービス。"
-    : "Web development, MEO, SEO/GEO, and AI integration. Four productized services from Paradigm LLC."
+    ? "海外SMB向けのJapan Entry固定パッケージ。日本語の購入者導線、市場・競合根拠、SNS、法規制の適用可能性整理、公開運用を接続します。"
+    : "A fixed Japan Entry package for overseas SMBs: localized buyer path, market evidence, channel setup, regulatory screening, launch operations, and handover."
 
 // ─── LocalBusiness (組織) ────────────────────────────────────────
 export function buildLocalBusinessSchema(locale: string = "ja") {

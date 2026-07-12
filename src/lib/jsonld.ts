@@ -171,14 +171,14 @@ export function getOrganizationJsonLd(locale: string = "ja") {
     logo: "https://paradigmjp.com/favicon.svg",
     description:
       variant === "ja"
-        ? "Web制作・MEO対策・SEO/GEO対策・AI導入支援。デジタル技術で中小企業の成長を支援するParadigm合同会社。"
+        ? "海外SMB向けのJapan Entry固定パッケージ。日本語の購入者導線、市場・競合根拠、SNS、法規制の適用可能性整理、公開運用を接続するParadigm合同会社。"
         : JAPAN_ENTRY_DESCRIPTION,
     sameAs: [],
     areaServed: { "@type": "Country", name: "Japan" },
     serviceArea: { "@type": "Country", name: "Japan" },
     knowsAbout:
       variant === "ja"
-        ? ["Web制作", "MEO対策", "SEO", "GEO", "AI導入支援", "デジタルマーケティング"]
+        ? ["Japan Entry", "ローカライズ", "市場・競合調査", "SNS初期設定", "法規制スクリーニング", "日本語サポート"]
         : ["Japan Market Entry", "Localization", "Revenue Operations", "Buyer Trust", "Bilingual Support"],
   }
 }
@@ -187,12 +187,7 @@ export function getServicesJsonLd(locale: string = "ja") {
   const variant = localeContentVariant(locale)
   const orgName = orgNameOf(locale)
   const services = variant === "ja"
-    ? [
-        { name: "Web制作", desc: "Next.js/WordPressによる高速・SEO最適化されたWebサイト制作", url: "/services/web", price: "298000", priceDesc: "ライトプラン〜" },
-        { name: "MEO対策", desc: "Googleビジネスプロフィール最適化による地域検索上位表示", url: "/services/meo", price: "29800", priceDesc: "月額エントリープラン〜" },
-        { name: "SEO/GEO対策", desc: "従来のSEO+AI検索最適化（GEO）による検索流入増加", url: "/services/seo", price: "49800", priceDesc: "月額SEOベーシック〜" },
-        { name: "AI導入支援", desc: "ChatGPT/Gemini等を活用した業務自動化・チャットボット構築", url: "/services/ai", price: "198000", priceDesc: "AIスタートプラン〜" },
-      ]
+    ? [{ name: JAPAN_ENTRY_TITLE, desc: "日本語の購入者導線、市場根拠、SNS、法規制の適用可能性整理、公開運用を一つにまとめた固定パッケージ。", url: "/ja", price: "12000", priceDesc: "固定セットアップ・6か月運用込み" }]
     : [
         {
           name: JAPAN_ENTRY_TITLE,

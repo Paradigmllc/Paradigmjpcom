@@ -61,14 +61,14 @@ That structure gives a decision-maker one number to approve for setup, a defined
   },
   {
     slug: "japan-entry-21-business-day-readiness",
-    title: "Japan Market Entry: A 21-Business-Day Readiness Checklist",
+    title: "Japan Market Entry: A 14-Business-Day Readiness Checklist",
     excerpt:
-      "The 21-business-day target is a gated launch plan, not a promise that external providers or client approvals can be rushed. Here is what must be ready.",
+      "The 14-business-day target is a gated launch plan, not a promise that external providers or client approvals can be rushed. Here is what must be ready.",
     category: "Japan Entry",
     readTime: "7 min",
     publishedAt: "2026-07-11",
     tags: ["japan-entry-public", "Japan Entry", "Launch Plan", "SMB"],
-    content: `## What the 21-business-day target means
+    content: `## What the 14-business-day target means
 
 The target covers the agreed implementation work after kickoff. It assumes that the decision-maker, source materials, account access, feedback, and required third-party reviews arrive on time. It is a planning target, not an unconditional launch guarantee.
 
@@ -386,7 +386,7 @@ Public tools cannot observe a company's actual monthly visits, country-level tra
 
 ## The handover question
 
-The strongest launch leaves the client with a source of truth: current offer, ownership, support rules, measured signals, unresolved questions, and the next approval needed. That is how a 21-business-day implementation becomes a responsible operating decision rather than a one-off website release.`
+The strongest launch leaves the client with a source of truth: current offer, ownership, support rules, measured signals, unresolved questions, and the next approval needed. That is how a 14-business-day implementation becomes a responsible operating decision rather than a one-off website release.`
   },
 ]
 
@@ -399,7 +399,7 @@ const ARTICLE_VISUALS: Record<string, NonNullable<JapanEntryBlogPost["heroImage"
   "japan-entry-21-business-day-readiness": {
     src: "/japan-entry/package-scope.svg",
     alt: "A visual overview of the fixed-scope Japan Entry package",
-    caption: "The 21-business-day target is a gated delivery plan with explicit inputs and acceptance points.",
+    caption: "The 14-business-day target is a gated delivery plan with explicit inputs and acceptance points.",
   },
   "localization-vs-translation-japan-buyers": {
     src: "/japan-entry/package-scope.svg",
