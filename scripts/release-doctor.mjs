@@ -276,6 +276,22 @@ function checkStaticReleaseRules() {
     fail("Japan Entry score utility persistence must have RLS and release migration wiring")
   }
 
+  const projectionMigrationPath = "supabase/migrations/20260712221723_sales_japan_entry_projections.sql"
+  const projectionMigration = fs.existsSync(projectionMigrationPath)
+    ? fs.readFileSync(projectionMigrationPath, "utf8")
+    : ""
+  if (
+    projectionMigration.includes("sales_japan_entry_projections") &&
+    projectionMigration.includes("ENABLE ROW LEVEL SECURITY") &&
+    projectionMigration.includes("TO service_role") &&
+    noLoginDeploy.includes("20260712221723_sales_japan_entry_projections.sql") &&
+    noLoginDeploy.includes("applyJapanEntryProjectionsMigration")
+  ) {
+    pass("Japan Entry projections have RLS and release migration wiring")
+  } else {
+    fail("Japan Entry projections must have RLS and release migration wiring")
+  }
+
   const visualProofComponentPath = "src/components/japan-entry/JapanEntryVisualProof.tsx"
   const visualProofComponent = fs.existsSync(visualProofComponentPath)
     ? fs.readFileSync(visualProofComponentPath, "utf8")
