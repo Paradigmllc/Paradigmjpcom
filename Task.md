@@ -13,6 +13,13 @@
 - People **5件**・Opportunity **6件**は保持し、Companyとのリンクのみ解除。Twenty公開URLはHTTP 200を維持。
 - 再収集はユーザー指示で保留。途中検証で登録された候補も全削除し、ローカル・本番コンテナ双方で収集プロセスが残っていないことを確認。収集方法の壁打ちが完了するまで候補取得・Twenty登録・自動送信を実行しない。
 
+### 2026-07-13 Japan Entry 市場別アクセス・ROIモデル（実装中 / 送信停止）
+- Japan Entry Package専用の公開シグナル投影モデルを追加。Tranco / Cloudflare Radar / Common Crawl等で構成済みの `public-signals-v1` を起点に、市場別推定アクセスと保守・基準・上振れの6/12/24か月試算を生成する。実アクセス・確定売上としては扱わず、観測・指数・推定・仮定を区別する。
+- 商条件は初期費用 **$12,000一括前払い**、最初の6か月は追加月額なし、7か月目以降は署名済み条件に基づき **$995/月**。ROIは増分売上ではなく増分粗利から費用を控除して算出する。
+- 専用DB `sales_japan_entry_projections`（RLS、service_role限定）、認証済みGET/POST API、レポートの市場別アクセスグラフ・累積純便益グラフ・ROI表、URLなし初回文面を実装。生成物は常に `needs_review` で、既存の `report_ready` / 送信処理 / Twenty送信導線には接続しない。
+- 収集・見込み客への送信は未実施。公開ランク根拠がない企業は推定を生成せず停止する。
+- 検証: 投影ロジックVitest **4/4 pass**、対象ESLint pass、`npx tsc --noEmit` pass、`npm run build` **336/336 pages**。新API routeが本番bundleへ含まれることを確認。
+
 ### 2026-07-13 Blog long-form / visual editorial pass (実装済み・正式release待ち)
 - `/en/blog` と `/ja/blog` の公開記事を、英語9本・日本語4本すべて2,000文字以上へ拡張。各記事に判断表、実務チェックリスト、公開根拠と不確実性の境界を追加し、文字だけの短文記事を廃止した。
 - 既存のJapan Entry図版（`application-handover.svg` / `package-scope.svg` / `signal-check.svg`）を記事ごとのhero imageとして設定。記事一覧カードにも画像と可視タグを表示し、公開承認用の内部タグは画面から隠した。

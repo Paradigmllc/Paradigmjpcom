@@ -34,6 +34,7 @@ import { ErrorBoundary } from "./ErrorBoundary"
 import { TRACKING_SCRIPT, PRINT_CSS } from "./report-tracking"
 import type { ReportBlogLinks } from "./report-constants"
 import { parseExplicitPositiveAmount } from "./report-evidence"
+import { JapanEntryProjectionSection } from "./JapanEntryProjectionSection"
 
 // Heavy components — code-split for faster initial load
 const ReportHyperFramesPlayer = dynamic(() => import("./ReportHyperFramesPlayer"), { ssr: false, loading: () => <div className="aspect-video bg-zinc-100 rounded-2xl animate-pulse" /> })
@@ -269,6 +270,10 @@ export default function DiagnosticReport({
           monthlyLoss={loss ?? undefined}
           findingsCount={safeData.acts.length}
         />
+
+        {safeData.template_variant === "japan_entry" && (
+          <JapanEntryProjectionSection data={safeData} lang={lang} />
+        )}
 
         {/* ── Score Overview ─────────────────────────────────── */}
         <ReportScoreOverview data={data} lang={lang} confidence={confidence} sourceScore={sourceScore} />
