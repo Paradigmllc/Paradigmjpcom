@@ -50,9 +50,7 @@ export async function POST(req: Request) {
       import("@payload-config"),
     ])
     const payload = await getPayload({ config })
-    const results: Array<{ slug: string; action: "created" | "updated" | "error"; error?: string }> = []
-
-    for (const editorial of EDITORIAL_POSTS) {
+    const results = await Promise.all(EDITORIAL_POSTS.map(async (editorial) => {
       const { locale, post } = editorial
       try {
         const existing = await payload.find({
@@ -82,21 +80,21 @@ export async function POST(req: Request) {
             data,
             locale,
           } as unknown as Parameters<typeof payload.update>[0])
-          results.push({ slug: post.slug, action: "updated" })
-        } else {
-          await payload.create({
-            collection: "posts",
-            data,
-            locale,
-          } as unknown as Parameters<typeof payload.create>[0])
-          results.push({ slug: post.slug, action: "created" })
+          return { slug: post.slug, action: "updated" as const }
         }
+
+        await payload.create({
+          collection: "posts",
+          data,
+          locale,
+        } as unknown as Parameters<typeof payload.create>[0])
+        return { slug: post.slug, action: "created" as const }
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : String(error)
         console.error(`[seed-japan-entry-blog] ${post.slug} failed`, error)
-        results.push({ slug: post.slug, action: "error", error: message })
+        return { slug: post.slug, action: "error" as const, error: message }
       }
-    }
+    }))
 
     const errors = results.filter((result) => result.action === "error")
     return NextResponse.json({
