@@ -61,22 +61,33 @@ export async function checkPoolHealth(): Promise<PoolHealthStatus> {
     warnings.push("Pooler is in Session mode (port 5432) — recommend switching to Transaction mode (port 6543) to avoid ECHECKOUTTIMEOUT")
   }
 
-  // Verify pooler connectivity via TCP
-  try {
-    const net = await import("node:net")
-    await new Promise<void>((resolve, reject) => {
-      const socket = net.createConnection({ host: poolerHost, port: Number(poolerPort), timeout: 5000 }, () => {
-        socket.destroy()
-        resolve()
+  // Verify pooler connectivity via TCP. A container can briefly lose the
+  // database route while Traefik swaps app instances, so use two bounded
+  // probes before marking the pool unavailable.
+  const net = await import("node:net")
+  let lastTcpError: unknown = null
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const socket = net.createConnection({ host: poolerHost, port: Number(poolerPort), timeout: 3000 }, () => {
+          socket.destroy()
+          resolve()
+        })
+        socket.on("error", reject)
+        socket.on("timeout", () => {
+          socket.destroy()
+          reject(new Error("TCP timeout"))
+        })
       })
-      socket.on("error", reject)
-      socket.on("timeout", () => {
-        socket.destroy()
-        reject(new Error("TCP timeout"))
-      })
-    })
-  } catch (e) {
-    warnings.push(`Pooler TCP unreachable: ${e instanceof Error ? e.message : String(e)}`)
+      lastTcpError = null
+      break
+    } catch (error) {
+      lastTcpError = error
+      if (attempt < 2) console.warn("[pool-monitor] TCP probe failed; retrying:", error)
+    }
+  }
+  if (lastTcpError) {
+    warnings.push(`Pooler TCP unreachable: ${lastTcpError instanceof Error ? lastTcpError.message : String(lastTcpError)}`)
   }
 
   const status: PoolHealthStatus["status"] =

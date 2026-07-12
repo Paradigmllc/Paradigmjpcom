@@ -30,6 +30,17 @@ interface ServiceCheck {
   url?: string | null
 }
 
+function isDisabledInternalServiceUrl(url: string | null | undefined): boolean {
+  if (!url) return false
+  try {
+    const host = new URL(url).hostname
+    return ["outreach-worker", "paradigm-outreach-worker", "services-steel-browser-1"].includes(host)
+  } catch (error) {
+    console.warn("[sales-health] invalid service URL:", { url, error })
+    return false
+  }
+}
+
 function env(name: string): string | null {
   const value = process.env[name]
   return value && value.trim().length > 0 ? value.trim() : null
@@ -41,7 +52,9 @@ function serviceHealthToCheck(name: string, result: ServiceHealthResult, url?: s
       ? "ok"
       : result.balanceStatus === "not_configured"
         ? "not_configured"
-        : "error"
+        : isDisabledInternalServiceUrl(url)
+          ? "not_configured"
+          : "error"
 
   return { name, status, detail: result.balanceLabel ?? "", url }
 }
@@ -138,28 +151,9 @@ async function checkOpenClaw(): Promise<ServiceCheck> {
     ok = false
   }
 
-  // 2. Verify Twenty API connectivity
-  try {
-    const twentyBase = process.env.TWENTY_BASE_URL
-    const twentyKey = process.env.TWENTY_API_KEY
-    if (twentyBase && twentyKey) {
-      const r = await fetch(`${twentyBase}/rest/companies?limit=1`, {
-        headers: { Authorization: `Bearer ${twentyKey}` },
-        signal: AbortSignal.timeout(5_000),
-      })
-      if (r.ok) {
-        results.push("Twenty API reachable")
-      } else {
-        results.push(`Twenty HTTP ${r.status}`)
-        ok = false
-      }
-    } else {
-      results.push("Twenty not configured")
-    }
-  } catch (e) {
-    results.push("Twenty unreachable")
-    ok = false
-  }
+  // Twenty API is checked once by checkTwentyApi above. Duplicating the
+  // request here made health probes contend with each other during deploys.
+  results.push("Twenty API checked separately")
 
   // 3. Verify DeepSeek API key
   if (process.env.DEEPSEEK_API_KEY) {

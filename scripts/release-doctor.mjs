@@ -642,7 +642,7 @@ select case when
     select 1 from pg_class c
     join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'public' and c.relkind = 'r'
-      and has_table_privilege('anon', format('public.%I', c.relname), 'SELECT')
+      and has_table_privilege('anon', c.oid, 'SELECT')
   )
   and exists (
     select 1 from pg_constraint where conrelid = 'public.sales_integration_status'::regclass and contype in ('p','u')
