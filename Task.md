@@ -1,12 +1,12 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
-### 2026-07-13 i18n公開面の再設計（ローカル実装・本番release待ち）
+### 2026-07-13 i18n公開面の再設計（本番反映済み）
 - `/ja` を国内向け一般サイトへ分離。ホーム、サービス、料金、FAQ、About、Works、Blog、Contact、フッター、JSON-LD、チャット導線からJapan Entryの固定オファーを除去し、Web制作・MEO・SEO/GEO・AI導入支援の内容へ整理した。
 - `/en` 以外の国際ロケール（ko/zh/de/fr/es/pt/ru/ar/vi/id）はURL・canonical・hreflangを維持したまま、`messages/en.json` のJapan Entry商業内容を正本として利用。旧$1,500/$2,500オファーを再マージしないよう、i18n requestで国際shellキーのみローカル翻訳を上書きする構成へ変更した。
 - 国際ロケールのmarketing redirectを撤去し、`/ko`等を`/en`へ308しない。国際サービス詳細は同一ロケールの`/services#package-modules`へ整理。JAの旧agency/LP/videoのみ`/ja/services`へ移動し、JAのJapan Entry Signal Checkは公開対象外とした。
 - ブログはJAを一般記事seed、国際ロケールを英語Japan Entry記事seedへ統一。サイトマップ、OG、JSON-LD、ヘッダー/フッターCTA、チャットlocaleも同じ分離ルールへ揃えた。
 - 検証済み: JSON parse、`npm exec -- tsc --noEmit`、対象Vitest 4 files / 38 tests、production build **336/336 pages**、quality guard 0 errors。ローカルHTTPは日英・ko/de主要ページ200、JA表示本文にJapan Entry/$12,000/Wise/USDC/14営業日なし、国際ページに固定$12,000/支払方法/14営業日あり、ko canonicalは`/ko/pricing`。
-- 次の正式作業: `npm run release:prod`でDB/migration・Coolify・Traefik route refresh・post-deploy doctorを完走し、本番全ロケールURLを再確認する。
+- 正式 `npm run release:prod` を完走。deployment `i3fgzgb9pu7br5ir59mxfm5k`、DB **82/82**、Traefik/Cloudflare、Sales health、日英主要smokeを通過。本番12ロケールのpricingをHTTP 200、JA主要8ページを本文marker clean、国際pricingをJapan Entry/$12,000 markerで再確認した。`/ja/tools/japan-entry-score` はJA公開対象外のnot-found表示。
 
 ### 2026-07-13 支払方法・14営業日納品保証の実務運用監査（本番反映済み）
 - Japan Entry申込フォームに希望支払方法（Wise、銀行振込、USDC、クレジットカード）とセットアップ費用確認を追加。選択値はlead metaへ保存し、DBベル／Slack通知の双方へ引き渡す。公開フォームでは口座・カード・ウォレット情報を収集しない。
