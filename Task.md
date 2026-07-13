@@ -8,11 +8,11 @@
 - デモ正規URLを `https://demo.paradigmjp.com/{locale}/{企業slug}` へ短縮。旧 `/{locale}/demo/{slug}` は308で短縮URLへ寄せ、署名入口もdemo hostへcanonicalizeしてslug限定HttpOnly Cookieを設定する。main siteと既存期限付きURLの互換を維持する。
 - 管理画面 `/ja/admin/demo-assets` に一括manifest投入、次の3社生成、状態更新、完了分URL発行を追加。TypeScript pass、対象ESLint pass、Vitest **5 files / 20 tests pass**、quality guard **0 errors**、production build **372/372 pages pass**。
 
-### 2026-07-13 Japan Entry意思決定フローの時系列可視化（実装・ローカル検証済み / 正式release待ち）
+### 2026-07-13 Japan Entry意思決定フローの時系列可視化（本番反映済み）
 - 国際向けホーム、料金、サービスページへ `Contact → Materials & fit call → Application & scope → Setup & launch → Operate & scale` の5段階タイムラインを追加。問い合わせ、資料・打ち合わせ、申込、固定スコープのセットアップ、公開後の拡張を一つの視線で追えるようにした。
 - `JapanEntryJourney` は共通コンポーネント化し、デスクトップは横方向の接続線、モバイルは縦積みカードへレスポンシブに切り替える。料金ページの固定スコープ・問い合わせCTAへ直接リンクし、14営業日の開始条件と「申込だけでは契約成立しない」境界も同じカード下部で明示する。
 - `/ja` の国内向け一般サービスにはJapan Entryの時系列を表示しない。国際ロケールは既存方針どおり英語商用文面を正本として利用する。
-- 検証: journeyテスト **12/12 pass**、全Vitest **95 files / 448 tests pass**、`npm exec -- tsc --noEmit --pretty false` pass、production build **372/372 pages pass**、quality guard **0 errors / 52 warnings**、`git diff --check` pass。正式 `npm run release:prod` と本番URLのEN/KO表示確認が残作業。
+- 検証: journeyテスト **12/12 pass**、全Vitest **95 files / 448 tests pass**、`npm exec -- tsc --noEmit --pretty false` pass、production build **372/372 pages pass**、quality guard **0 errors / 52 warnings**、`git diff --check` pass。正式 `npm run release:prod` は deployment **a122htnhq21f9p7hi1kmvf68** でfinished、DB **82/82**、Traefik/Cloudflare、Sales health、post-deploy release doctorを通過。公開URLのEN/KOホーム・料金・サービスはjourney markerを確認し、JAホーム・料金・サービスにはJapan Entry journeyが混入していないことを確認済み。
 
 ### 2026-07-13 Japan Entryフォーム文面・実務品質ゲート（本番反映済み / 送信停止）
 - 検証済みの日本アクセス推定と月次機会ギャップが揃う企業は、全候補を数値型へ固定。両方の数値、公開シグナルによる計画推定であること、実測analyticsではないこと、業種に適合するJapan固有の監査ギャップ1件を必須化した。数値ペアがない場合だけ監査型へ切り替え、未確認のtraffic / revenue / ROIを生成しない。
