@@ -14,7 +14,7 @@
 - 検証: 関連Vitest **19/19 pass**、チャットRAG追加テスト **3/3 pass**、TypeScript pass。公式 `npm run release:prod` 後に日英のContact、Works dossier、FAQ、Blog、チャットAPIを本番URLで再確認済み。
 
 ### 2026-07-13 SMBフルサイト・デモ品質ゲート（本番反映済み / 収集・送信停止）
-- 2026-07-13 実在事業者での再現性確認として、公式Instagramと公式noteを運用する「及川洋菓子店」の非送信・非公式デモを追加。Cafe版の色替えではなく、`premium.style=craft` 専用のsplit hero、番号付き商品導線、letterpress調、無限marquee、非対称galleryを持つ別レンダラーを実装した。公開事実は週末営業、欧州焼菓子、2020年3月開店、公式住所・SNSに限定し、画像3点は提案用生成素材として実物ではない旨を表示。11ページ、送信停止、noindex、rights manifest、品質97点を維持する。
+- 2026-07-13 実在事業者での再現性確認として、公式Instagramと公式noteを運用する「及川洋菓子店」の非送信・非公式デモを追加。Cafe版の色替えではなく、`premium.style=craft` 専用のsplit hero、番号付き商品導線、letterpress調、無限marquee、非対称galleryを持つ別レンダラーを実装した。公開事実は週末営業、欧州焼菓子、2020年3月開店、公式住所・SNSに限定し、画像3点は提案用生成素材として実物ではない旨を表示。11ページ、送信停止、noindex、rights manifest、品質97点を維持する。本番11経路HTTP 200、PC 1440px / mobile 390x844で横溢れ0、全固定ページの他社コピー混入0、フォーム0、console error 0を実ブラウザ確認済み。
 - 2026-07-13 TCD有料テーマ級への品質改修: 企業別の権利確認済み `demo_media` を使うpremium experience schemaを追加。3点未満のhero/gallery、SNS公式導線なし、画像rights manifestなし、特商法ページなしは品質ゲートで公開停止する。
 - Cafe SOSOMU確認用DEMOへ、提案用生成ビジュアル3点、フルスクリーンheroスライダー、Ken Burns風トランジション、Framer Motion reveal、Emblaギャラリー、画像付きメニュー、About/Menu画像hero、SNSブランドアイコン、モバイル固定CTAを追加。正式制作時は承認済み実写へ差し替える。
 - 固定ページは Home / About / Menu / Contact / Works / News / FAQ / Recruit / Privacy / Terms / Commerce Disclosure の11ページへ拡張。`/{locale}/demo/{slug}/commerce`を追加し、特定商取引法表記を生成品質の必須条件にした。
