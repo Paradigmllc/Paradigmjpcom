@@ -8,8 +8,8 @@ describe("mergeDeepSeekOutput", () => {
     const base = {
       premium: {
         style: "premium-v2",
-        heroMedia: [],
-        gallery: [],
+        heroMedia: [{ src: "/hero.jpg", alt: "一杯ずつハンドドリップ", caption: "2020年創業", kind: "image" }],
+        gallery: [{ src: "/gallery.jpg", alt: "卵と牛乳の配合", caption: "権利確認済みの公式素材", kind: "image" }],
         social: [{ label: "Instagram", href: "https://instagram.com/cafe_sosomu", network: "instagram" }],
         intro: { eyebrow: "STORY", title: "旧見出し", body: "長年の信頼とWeb改善デモ" },
       },
@@ -62,6 +62,8 @@ describe("mergeDeepSeekOutput", () => {
     expect(merged.premium?.intro.body).not.toContain("中はしっとり")
     expect(merged.pages.services.subtitle).not.toContain("ハンドドリップ")
     expect(JSON.stringify(merged.pages.services.services)).not.toMatch(/卵と牛乳|焼き加減/u)
+    expect(JSON.stringify(merged.premium?.heroMedia)).not.toMatch(/ハンドドリップ|2020年/u)
+    expect(JSON.stringify(merged.premium?.gallery)).not.toMatch(/卵と牛乳|公式素材/u)
     expect(merged.pages.contact.subtitle).toBe("安全な固定文")
     expect(JSON.stringify(merged.pages.faq?.sections)).toContain("最新の営業情報は公式Instagram")
     expect(JSON.stringify(merged.pages.faq?.sections)).toContain("このデモのフォームからは送信されません")
