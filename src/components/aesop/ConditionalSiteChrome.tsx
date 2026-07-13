@@ -135,6 +135,7 @@ export default function ConditionalSiteChrome({
     announcement?.enabled && announcement?.message,
   );
   const urgencyExcluded = /^\/[a-z]{2}\/(?:legal|privacy|terms|refund)(?:\/|$)/.test(pathname);
+  const marketUrgencyActive = Boolean(marketUrgency && !urgencyExcluded);
 
   // 通常 site chrome
   return (
@@ -151,8 +152,8 @@ export default function ConditionalSiteChrome({
         <ScrollProgress />
         <LuxuryLoader />
         <SiteHeader nav={headerNav} announcementActive={announcementActive} />
-        {marketUrgency && !urgencyExcluded && <JapanMarketUrgencyBar copy={marketUrgency} />}
-        <SiteWrapper>
+        {marketUrgencyActive && <JapanMarketUrgencyBar copy={marketUrgency!} />}
+        <SiteWrapper marketUrgencyActive={marketUrgencyActive}>
           <PageTransition>{children}</PageTransition>
         </SiteWrapper>
         <SiteFooter settings={footerSettings} nav={footerNav} />

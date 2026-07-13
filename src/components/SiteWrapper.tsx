@@ -11,9 +11,17 @@ import { usePathname } from "next/navigation"
  * 直接返す経路に切り替えた現在、本 component は LP 経路で呼ばれることは
  * 無いが、防御的に pathname 判定を残す (renderer migration time の保険).
  */
-export default function SiteWrapper({ children }: { children: React.ReactNode }) {
+export default function SiteWrapper({
+  children,
+  marketUrgencyActive = false,
+}: {
+  children: React.ReactNode
+  marketUrgencyActive?: boolean
+}) {
   const pathname = usePathname()
   // LP 経路は <main pt-16> を付けない (header skip のため top spacing 不要)
   const isLp = pathname.startsWith("/p/") || /^\/[a-z]{2}\/(?:report|d)\//.test(pathname)
-  return <main className={isLp ? "" : "pt-16"}>{children}</main>
+  // The urgency panel reserves the fixed header's space itself. Keeping the
+  // default header spacer here would create a visible blank band below it.
+  return <main className={isLp || marketUrgencyActive ? "" : "pt-16"}>{children}</main>
 }
