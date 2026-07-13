@@ -93,8 +93,22 @@ export function mergeDeepSeekOutput(
   if (ai.contact.intro?.trim()) contact.subtitle = ai.contact.intro;
   if (ai.contact.form_note?.trim()) contact.formNote = ai.contact.form_note;
 
+  const premium = base.premium ? {
+    ...base.premium,
+    intro: {
+      ...base.premium.intro,
+      title: home.hero.title,
+      body: about.story,
+    },
+  } : undefined;
+  const faqPage = base.pages.faq && home.faq ? {
+    ...base.pages.faq,
+    sections: home.faq.map((item) => ({ id: item.id, heading: item.question, body: item.answer })),
+  } : base.pages.faq;
+
   return {
     ...base,
+    premium,
     meta: {
       ...base.meta,
       engine: "deepseek",
@@ -102,6 +116,6 @@ export function mergeDeepSeekOutput(
       llmModel: ai.model,
       llmUsage: ai.usage,
     },
-    pages: { ...base.pages, home, about, services, contact },
+    pages: { ...base.pages, home, about, services, contact, faq: faqPage },
   };
 }
