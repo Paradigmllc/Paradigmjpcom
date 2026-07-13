@@ -1,5 +1,13 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
+### 2026-07-13 Japan Entryフォーム文面・実務品質ゲート（ローカル実装済み / 本番release待ち）
+- 検証済みの日本アクセス推定と月次機会ギャップが揃う企業は、全候補を数値型へ固定。両方の数値、公開シグナルによる計画推定であること、実測analyticsではないこと、業種に適合するJapan固有の監査ギャップ1件を必須化した。数値ペアがない場合だけ監査型へ切り替え、未確認のtraffic / revenue / ROIを生成しない。
+- SaaSへPayPay・コンビニ決済・配送・特商法表示を機械的に当てる誤診断を除外。Ecommerce / SaaS / serviceごとに利用可能な監査事実を分離した。
+- DeepSeek V4 Proの編集合格基準を合計92/100かつ4軸各22/25以上へ引き上げ、未達時は編集理由を反映して1回だけ再生成する。2回目も不合格、JSON不正、timeout、根拠不足の場合は保存せずfail-closedを維持する。
+- 評価LLMが95点を付けた実出力でも、未観測の`early exit`推測と入力にない`buyer support`を決定論的ゲートで拒否。因果推測・未承認deliverable・URL・資料・法務断定・未承認数値をモデル評価より先に遮断する。
+- 架空SaaS企業を使ったDeepSeek公式API直叩きの再検証は **97/100**（具体性24・自然さ24・信頼性25・経営判断適合24）、安全性100、4段落134語、risk 0で合格。DB保存、Twenty登録、候補収集、フォーム送信は未実行。
+- 検証済み: 対象Vitest **14/14 pass**、TypeScript、対象ESLint、diff check、production build **336/336 pages**。次は正式`npm run release:prod`を完走し、本番fingerprint・Sales health・DB行数0を再確認する。
+
 ### 2026-07-13 SMB実素材・期限付き非公開デモ Premium V2（実装済み / 正式release待ち / 送信停止）
 - `theme_demo_pages`へ `signed_private` access mode、SHA-256 preview token hash、最大30日の有効期限、素材審査status/manifestを追加するmigrationを実装。非公開デモは `is_published=false` のままservice-role経路だけで取得し、匿名RLS公開を行わない。
 - 署名URLは初回アクセス時にサーバー検証し、HttpOnly / Secure / SameSite=Lax / slug限定pathのCookieへ移す。期限切れ・改ざん・再発行前の旧tokenはHTTP 401となり、HomeからAbout / Services / Contact / Works / News / FAQ / Recruit / Privacy / Terms / Commerceへ移動してもCookie認証を維持する。
