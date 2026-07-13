@@ -6,7 +6,7 @@ import {
   getDemoPrivateAccess,
   revokeSignedPrivateDemo,
 } from "@/lib/sales/demo-private-access"
-import { siteUrl } from "@/lib/sales/routing"
+import { demoSiteUrl } from "@/lib/sales/routing"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -17,7 +17,7 @@ const assetSchema = z.object({
   sourceUrl: z.url().startsWith("https://"),
   ownerLabel: z.string().min(1).max(200),
   sourceAccount: z.string().min(1).max(500),
-  useBasis: z.enum(["consented", "official_embed", "private_proposal", "generated", "blocked"]),
+  useBasis: z.enum(["consented", "licensed", "official_embed", "private_proposal", "generated", "blocked"]),
   officialSource: z.boolean(),
   peopleVisible: z.boolean(),
   watermarkVisible: z.boolean(),
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!body.success) return NextResponse.json({ ok: false, error: body.error.issues[0]?.message ?? "入力が不正です" }, { status: 400 })
     const { slug } = await params
     const result = await activateSignedPrivateDemo({ slug, ttlDays: body.data.ttlDays, assets: body.data.assets })
-    const origin = process.env.NODE_ENV === "production" ? siteUrl() : request.nextUrl.origin
+    const origin = process.env.NODE_ENV === "production" ? demoSiteUrl() : request.nextUrl.origin
     const previewUrl = `${origin}/api/demo-preview/${encodeURIComponent(slug)}?token=${encodeURIComponent(result.token)}&locale=${body.data.locale}`
     return NextResponse.json({ ok: true, previewUrl, expiresAt: result.expiresAt, review: result.review }, { headers: { "Cache-Control": "private, no-store" } })
   } catch (error) {

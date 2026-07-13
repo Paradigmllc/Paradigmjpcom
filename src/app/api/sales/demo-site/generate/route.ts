@@ -26,7 +26,12 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const result = await generateFullStackDemo(body.company_id, body.locale)
+    const result = await generateFullStackDemo(body.company_id, body.locale, {
+      publicationMode: "private_review",
+      sourcePolicy: "reviewed_manifest",
+      enhanceWithAI: true,
+      notify: false,
+    })
 
     if (!result.ok) {
       return NextResponse.json(result, { status: 422 })

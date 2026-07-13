@@ -99,6 +99,8 @@ export function mergeDeepSeekOutput(
       ...base.meta,
       engine: "deepseek",
       generatedAt: ai.generatedAt,
+      llmModel: ai.model,
+      llmUsage: ai.usage,
     },
     pages: { ...base.pages, home, about, services, contact },
   };

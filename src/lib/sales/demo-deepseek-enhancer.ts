@@ -66,8 +66,10 @@ export async function enhanceDemoWithDeepSeek(
   locale: ReportLocale,
 ): Promise<DeepSeekEnhancedOutput | null> {
   const messages = buildPrompt(company, report, template, locale);
+  const model = process.env.DEMO_LLM_MODEL?.trim()
+    || (process.env.LITELLM_API_KEY?.trim() ? "deepseek-v4-pro" : process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat");
   const result = await callDeepSeek(messages, {
-    model: "deepseek-v4-pro",
+    model,
     modelPolicy: "strict",
     temperature: 0.4,
     maxTokens: 4096,
@@ -97,6 +99,13 @@ export async function enhanceDemoWithDeepSeek(
   return {
     engine: "deepseek",
     generatedAt: new Date().toISOString(),
+    model: result.usedModel ?? model,
+    usage: result.usage ? {
+      promptTokens: result.usage.prompt_tokens,
+      completionTokens: result.usage.completion_tokens,
+      cacheHitTokens: result.usage.cache_hit_tokens ?? 0,
+      cacheMissTokens: result.usage.cache_miss_tokens ?? 0,
+    } : undefined,
     home: parsed.home ?? {},
     about: parsed.about ?? {},
     services: parsed.services ?? {},

@@ -9,6 +9,7 @@ import {
 
 export function proxy(request: NextRequest) {
   const host = request.headers.get("host") || "";
+  const hostname = host.split(":")[0]?.toLowerCase() ?? "";
   const pathname = request.nextUrl.pathname;
 
   // Keep the public status host independent from optional internal dashboards.
@@ -16,15 +17,24 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/api/ready", "https://paradigmjp.com"), 308);
   }
 
-  if (host.startsWith("demo.")) {
+  if (hostname === "demo.paradigmjp.com" || hostname === "demo.localhost") {
+    if (pathname.startsWith("/api/demo-preview/")) return NextResponse.next();
+
     const legacyDemoPath = pathname.match(/^\/(?:ja|en)\/demo(\/.*)?$/);
     if (legacyDemoPath) {
-      return NextResponse.redirect(new URL(`/demo${legacyDemoPath[1] ?? ""}${request.nextUrl.search}`, request.url));
+      const locale = pathname.split("/")[1] === "en" ? "en" : "ja";
+      return NextResponse.redirect(new URL(`/${locale}${legacyDemoPath[1] ?? ""}${request.nextUrl.search}`, request.url), 308);
     }
 
-    const astroDemoOrigin = process.env.ASTRO_DEMO_INTERNAL_ORIGIN || "http://astro-demo:4321";
-    const astroPath = pathname === "/" ? "/demo" : pathname;
-    return NextResponse.rewrite(new URL(astroPath + request.nextUrl.search, astroDemoOrigin));
+    const visibleDemoPath = pathname.match(/^\/(ja|en)\/([^/]+)(\/.*)?$/);
+    if (visibleDemoPath) {
+      const [, locale, slug, suffix = ""] = visibleDemoPath;
+      const rewrite = request.nextUrl.clone();
+      rewrite.pathname = `/${locale}/demo/${slug}${suffix}`;
+      return NextResponse.rewrite(rewrite);
+    }
+
+    return NextResponse.rewrite(new URL("/not-found", request.url));
   }
 
   // Root path without locale → detect Accept-Language and redirect to best locale

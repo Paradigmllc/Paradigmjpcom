@@ -68,6 +68,13 @@ export interface DeepSeekContactEnhancement {
 export interface DeepSeekEnhancedOutput {
   engine: "deepseek";
   generatedAt: string;
+  model: string;
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    cacheHitTokens: number;
+    cacheMissTokens: number;
+  };
   home: Partial<DeepSeekHomeEnhancement>;
   about: Partial<DeepSeekAboutEnhancement>;
   services: Partial<DeepSeekServicesEnhancement>;

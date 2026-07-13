@@ -81,6 +81,13 @@ export interface DemoMeta {
   calBookingUrl: string
   generatedAt: string
   engine: string
+  llmModel?: string
+  llmUsage?: {
+    promptTokens: number
+    completionTokens: number
+    cacheHitTokens: number
+    cacheMissTokens: number
+  }
   sourceEvidence?: string[]
   proposalNotice?: string
   primaryCtaLabel?: string
