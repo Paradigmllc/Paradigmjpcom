@@ -18,7 +18,7 @@ import type { DiagnosticReportData } from "./diagnostic";
 import type { DemoTemplate } from "./demo-templates/registry";
 import type { ReportLocale } from "./types";
 import type { DeepSeekEnhancedOutput } from "./demo-deepseek-types";
-import { callDeepSeek } from "@/lib/deepseek";
+import { cacheHitRatio, callDeepSeek } from "@/lib/deepseek";
 import { parseDeepSeekOutput } from "./demo-deepseek-client";
 import {
   buildEnglishSystemPrompt,
@@ -95,11 +95,9 @@ export async function enhanceDemoWithDeepSeek(
   if (
     !parsed.home?.hero_title?.trim()
     || (parsed.home.features?.length ?? 0) < 3
-    || (parsed.home.faq?.length ?? 0) < 3
     || !parsed.about?.story?.trim()
     || !parsed.about?.mission?.trim()
     || (parsed.services?.services?.length ?? 0) < 2
-    || !parsed.contact?.intro?.trim()
   ) {
     console.error("[deepseek-enhancer] output failed full-site copy completeness checks");
     return null;
@@ -114,6 +112,7 @@ export async function enhanceDemoWithDeepSeek(
       completionTokens: result.usage.completion_tokens,
       cacheHitTokens: result.usage.cache_hit_tokens ?? 0,
       cacheMissTokens: result.usage.cache_miss_tokens ?? 0,
+      cacheHitRatio: cacheHitRatio(result.usage),
     } : undefined,
     home: parsed.home ?? {},
     about: parsed.about ?? {},
