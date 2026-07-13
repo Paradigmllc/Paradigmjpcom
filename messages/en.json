@@ -1391,6 +1391,41 @@
         }
       ]
     },
+    "journey": {
+      "eyebrow": "The decision path",
+      "title": "From first question to a Japan channel your team can run.",
+      "description": "The path is visible before you apply: ask a question, share the right context, confirm fit, approve one written scope, then operate and scale with evidence.",
+      "steps": [
+        {
+          "title": "Contact",
+          "timing": "Start here",
+          "body": "Send your offer, current Japan context, and the decision you need to make. We reply with the information needed for a useful next step."
+        },
+        {
+          "title": "Materials & fit call",
+          "timing": "Before application",
+          "body": "We review the source site, buyer, timing, decision authority, and known dependencies in a short written exchange or meeting."
+        },
+        {
+          "title": "Application & scope",
+          "timing": "Approval gate",
+          "body": "If the package fits, we confirm the fixed scope, exclusions, payment rail, required inputs, and the Start Date conditions in writing."
+        },
+        {
+          "title": "Setup & launch",
+          "timing": "14 business days*",
+          "body": "After payment, complete materials, access, and an empowered approver are ready, we build, check, launch, and hand over the agreed Japan route."
+        },
+        {
+          "title": "Operate & scale",
+          "timing": "Month 1 onward",
+          "body": "Use the included operating period to learn from real signals. From month seven, continue at $995/month only if the ongoing scope still earns its place."
+        }
+      ],
+      "note": "*The 14-business-day delivery guarantee starts only after written scope acceptance, cleared payment, complete source materials, required access, and one empowered approver. Application submission itself does not create a contract.",
+      "scopeCta": "Review the fixed scope",
+      "contactCta": "Start with a contact"
+    },
     "trustPanel": {
       "eyebrow": "See the operating system",
       "title": "Trust the work you can inspect before you apply.",

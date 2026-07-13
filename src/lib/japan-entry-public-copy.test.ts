@@ -50,6 +50,14 @@ describe("public English Japan Entry copy", () => {
     expect(messages.aboutPage.representativeMessage.length).toBeGreaterThan(300)
     expect(messages.aboutPage.representativePrinciples).toHaveLength(3)
     expect(messages.home.trustPanel.cards).toHaveLength(4)
+    expect(messages.home.journey.steps.map((step) => step.title)).toEqual([
+      "Contact",
+      "Materials & fit call",
+      "Application & scope",
+      "Setup & launch",
+      "Operate & scale",
+    ])
+    expect(messages.home.journey.note).toContain("does not create a contract")
     expect(jaMessages.aboutPage.representativeMessage.length).toBeGreaterThan(200)
     expect(jaMessages.home.trustPanel.cards).toHaveLength(4)
   })

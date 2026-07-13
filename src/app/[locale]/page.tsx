@@ -10,6 +10,7 @@ import {
 import { pageAlternates } from "@/lib/page-metadata"
 import BlockRenderer from "@/blocks/BlockRenderer"
 import JapanEntryScorePromo from "@/components/japan-entry/JapanEntryScorePromo"
+import JapanEntryJourney from "@/components/japan-entry/JapanEntryJourney"
 import JapanEntryTrustPanel from "@/components/japan-entry/JapanEntryTrustPanel"
 import JapanEntryVisualProof from "@/components/japan-entry/JapanEntryVisualProof"
 import {
@@ -258,6 +259,7 @@ export default async function HomePage({ params }: Props) {
   return (
     <>
       <BlockRenderer blocks={blocks} />
+      {isJapanEntryLocale && <JapanEntryJourney locale={locale} />}
       {isJapanEntryLocale && <JapanEntryTrustPanel locale={locale as "en" | "ja"} />}
       {isJapanEntryLocale && <JapanEntryVisualProof locale={locale as "en" | "ja"} />}
       {isJapanEntryLocale && <JapanEntryScorePromo locale={locale as "en" | "ja"} />}

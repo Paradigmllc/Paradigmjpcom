@@ -1,5 +1,11 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
+### 2026-07-13 Japan Entry意思決定フローの時系列可視化（実装・ローカル検証済み / 正式release待ち）
+- 国際向けホーム、料金、サービスページへ `Contact → Materials & fit call → Application & scope → Setup & launch → Operate & scale` の5段階タイムラインを追加。問い合わせ、資料・打ち合わせ、申込、固定スコープのセットアップ、公開後の拡張を一つの視線で追えるようにした。
+- `JapanEntryJourney` は共通コンポーネント化し、デスクトップは横方向の接続線、モバイルは縦積みカードへレスポンシブに切り替える。料金ページの固定スコープ・問い合わせCTAへ直接リンクし、14営業日の開始条件と「申込だけでは契約成立しない」境界も同じカード下部で明示する。
+- `/ja` の国内向け一般サービスにはJapan Entryの時系列を表示しない。国際ロケールは既存方針どおり英語商用文面を正本として利用する。
+- 検証: journeyテスト **12/12 pass**、全Vitest **95 files / 448 tests pass**、`npm exec -- tsc --noEmit --pretty false` pass、production build **372/372 pages pass**、quality guard **0 errors / 52 warnings**、`git diff --check` pass。正式 `npm run release:prod` と本番URLのEN/KO表示確認が残作業。
+
 ### 2026-07-13 Japan Entryフォーム文面・実務品質ゲート（本番反映済み / 送信停止）
 - 検証済みの日本アクセス推定と月次機会ギャップが揃う企業は、全候補を数値型へ固定。両方の数値、公開シグナルによる計画推定であること、実測analyticsではないこと、業種に適合するJapan固有の監査ギャップ1件を必須化した。数値ペアがない場合だけ監査型へ切り替え、未確認のtraffic / revenue / ROIを生成しない。
 - SaaSへPayPay・コンビニ決済・配送・特商法表示を機械的に当てる誤診断を除外。Ecommerce / SaaS / serviceごとに利用可能な監査事実を分離した。

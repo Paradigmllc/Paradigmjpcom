@@ -18,6 +18,7 @@ import { Link } from "@/i18n/routing"
 import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
+import JapanEntryJourney from "@/components/japan-entry/JapanEntryJourney"
 import { coerceLocale, assertLocale } from "@/lib/cms/filters"
 import {
   formatPricePPP,
@@ -286,6 +287,8 @@ export default async function PricingPage({ params, searchParams }: Props) {
           </div>
         </section>
       )}
+
+      {isJapanEntry && <JapanEntryJourney locale={locale} />}
 
       {packageModules.length > 0 && (
         <section className="relative overflow-hidden bg-paradigm-paper paradigm-section" aria-labelledby="package-modules-heading">
