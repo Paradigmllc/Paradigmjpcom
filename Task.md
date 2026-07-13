@@ -1,5 +1,13 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
+### 2026-07-13 SMBデモ正規URL・自動量産（本番反映・実事業者QA済み / 送信停止）
+- デモの正規URLを `https://demo.paradigmjp.com/{企業名slug}` に統一。locale、`demo`、ランダム文字列を公開URLへ含めず、Cafe SOSOMUは `https://demo.paradigmjp.com/cafe-sosomu` とした。旧 `/ja/cafe-sosomu` と内部 `/ja/demo/cafe-sosomu` は正規URLへ308転送する。企業名slugが既存の別企業と衝突した場合はランダム文字を足さずfail-closedで停止する。
+- Homeを含む全11ページのheader、footer、CTA、パンくず相当導線を `/{企業名slug}/...` へ統一。公開デモは `noindex, nofollow, noarchive` を維持し、検索面へ混入させない。
+- 最大100社を一括投入し、最大3社並列のone-shot drainがキュー末尾まで自動継続する量産経路を実装。DB singleton leaseでdrainを1系列に制限し、同じ企業・同じ審査済みmanifestは `generation_key` で完成済み結果を再利用してLLM再実行を避ける。品質90点未満、hard blocker、権利不明素材、公開根拠不足は公開せず停止する。
+- Cafe SOSOMUを本番batch APIへ実投入し、job `8eff6351-9bb8-45d8-8d36-fbe86880b8c7` は手動追加操作なしで2回目確認時にcompleted、quality **100**、slug `cafe-sosomu`、publication `published`、`sending_enabled=false`。drain leaseは解放済み、queued/running jobは0、同社outreach jobは0。
+- 本番QA: Home / About / Services / Works / News / FAQ / Recruit / Privacy / Terms / Commerce / Contactの **11/11 URL HTTP 200**、旧URLは308、正規URLheaderはnoindex。実ブラウザPCで全内部リンクが `/cafe-sosomu/...`、写真hero、Embla carousel、Instagramを確認。mobile 390x844でdrawer、Google Maps iframe、6項目フォーム、送信停止表示を確認した。
+- 実装はPR **#136 / #137**をmainへmerge。正式deployment `yzuvgk8vugt63lejyxvnpzzk` はfinishedし、DB **83/83**、Traefik / Cloudflare / Realtime / Twenty、Sales health HTTP 200 JSON ok、post-deploy release gateを通過した。メール、電話、郵送、フォーム送信、Twenty同期、営業通知は一切実行していない。
+
 ### 2026-07-13 Japan Entry 競合・需要パーソナライズ／両面危機訴求（本番反映・公開QA済み / 送信停止）
 - DeepSeek V4 Pro初回フォーム文面へ、HTTPS公開根拠付きの実名競合、日本の商品固有需要シグナル、公式市場データ、条件付き規制リスクを追加。商品固有需要がある場合は一般市場規模だけで逃げる候補を品質ゲートで拒否し、競合名・需要・監査ギャップ・推定アクセス・推定機会損失・規制の適用未確定表現を最大6 factで必須化した。
 - 規制訴求は、消費者庁が説明する適用対象違反時の業務改善指示・業務停止命令・罰則と、個人情報保護委員会の2026年APPI見直し方針を根拠化。「当該企業が違反している」とは断定せず、公開ページ診断では適用可能性や違反を確定しない文言を必須にした。「世界3位」は現時点の一次根拠を確認できないため不使用。
