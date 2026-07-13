@@ -32,6 +32,9 @@
 - 管理者のレポート編集パネルに、生成文面・モデル・品質点・語数・試行回数を送信停止状態で表示。問い合わせフォーム送信処理には未接続。
 - 検証: 関連Vitest **22/22 pass**、TypeScript pass、対象ESLint pass、production build **336/336 pages**。本番設定のDeepSeek V4 Proを架空企業に対して実呼び出しし、1回目の空応答後、2回目に60語・品質100点・公開Tranco根拠付き文面を生成。DB保存・Twenty登録・フォーム送信は実行していない。
 - PR #66をmainへmergeし、正式deployment `jq6w353slb0kfgcq7fyip831` はfinished、現行コンテナhealthy。既存ブログseedの一時504後にpost-deploy release-doctorを単独再実行し、全公開smoke・Sales health・DB **82/82**をpass。本番APIは未認証HTTP 401、`sales_japan_entry_projections` は **0件**で、本番の文面生成・保存・フォーム送信は未実行。
+- 文面品質の再監査で、旧「品質100」は禁止事項チェックの満点にすぎず、Tranco順位の機械的差し込み・汎用的な推論を営業品質として誤評価していたと判定。順位だけを個別化根拠にする生成を廃止し、日本語導線・JPY価格・日本配送・日本ローカル決済という公開ページ上のJapan固有ギャップを監査データへ追加した。
+- DeepSeek V4 Proは、Japan固有の高シグナル事実がある場合だけ異なる切り口を3案生成し、決定論的安全ゲート通過後に別のV4 Pro批評工程で具体性・自然さ・信頼性・経営判断適合を各25点で採点する。合計88点未満、1軸20点未満、risk flagありは保存しない。管理画面に4軸点・編集者所見・risk flagを表示する。
+- 品質是正の検証: 関連Vitest **20/20 pass**、TypeScript pass、対象ESLint pass、production build **336/336 pages**。本番設定の実APIでは候補生成まで成功したが、批評工程が3回タイムアウトしたためfail-closedで文面・DB行・送信を生成しなかった。本番Coolifyには `LITELLM_API_KEY` / `LITELLM_API_BASE` が未設定で、DeepSeek直APIのみ設定済み。LiteLLM V4 Pro経路の設定完了までは品質優先で保存停止を維持する。
 
 ### 2026-07-13 Blog long-form / visual editorial pass (実装済み・正式release待ち)
 - `/en/blog` と `/ja/blog` の公開記事を、英語9本・日本語4本すべて2,000文字以上へ拡張。各記事に判断表、実務チェックリスト、公開根拠と不確実性の境界を追加し、文字だけの短文記事を廃止した。

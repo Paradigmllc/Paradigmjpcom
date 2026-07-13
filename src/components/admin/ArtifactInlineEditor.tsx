@@ -28,6 +28,14 @@ type Props = {
     qualityScore: number | null
     wordCount: number | null
     attempts: number | null
+    editorialScores: {
+      specificity: number | null
+      naturalness: number | null
+      credibility: number | null
+      executiveRelevance: number | null
+    }
+    rationale: string | null
+    riskFlags: string[]
   } | null
 }
 
@@ -168,6 +176,18 @@ export function ArtifactInlineEditor({
                   <span>words: {generatedMessageReview.wordCount ?? "未計測"}</span>
                   <span>attempts: {generatedMessageReview.attempts ?? "不明"}</span>
                 </div>
+                <div className="mt-2 grid grid-cols-2 gap-1 text-xs text-zinc-600 sm:grid-cols-4">
+                  <span>具体性: {generatedMessageReview.editorialScores.specificity ?? "未採点"}/25</span>
+                  <span>自然さ: {generatedMessageReview.editorialScores.naturalness ?? "未採点"}/25</span>
+                  <span>信頼性: {generatedMessageReview.editorialScores.credibility ?? "未採点"}/25</span>
+                  <span>経営判断適合: {generatedMessageReview.editorialScores.executiveRelevance ?? "未採点"}/25</span>
+                </div>
+                {generatedMessageReview.rationale && (
+                  <p className="mt-2 text-xs leading-5 text-zinc-600">編集者所見: {generatedMessageReview.rationale}</p>
+                )}
+                {generatedMessageReview.riskFlags.length > 0 && (
+                  <p className="mt-2 text-xs font-medium text-red-700">要確認: {generatedMessageReview.riskFlags.join(" / ")}</p>
+                )}
                 <textarea
                   readOnly
                   aria-label="DeepSeek V4 Pro生成文面"

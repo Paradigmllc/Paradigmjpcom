@@ -71,12 +71,14 @@ export function buildAuditEvidence(audit: JapanMarketAudit | null): JapanReadine
       confidence: 0.15,
     }]
   }
-  const missing = Object.values(audit.status).filter(Boolean).length
+  const statusValues = Object.values(audit.status)
+  const missing = statusValues.filter(Boolean).length
+  const total = statusValues.length
   return [
     {
       id: "audit-score",
       label: "Public-page Japan readiness",
-      value: `${3 - missing}/3 signals confirmed`,
+      value: `${total - missing}/${total} signals confirmed`,
       source: "japan_market_audit",
       confidence: audit.pages_checked.length > 0 ? 0.72 : 0.35,
     },

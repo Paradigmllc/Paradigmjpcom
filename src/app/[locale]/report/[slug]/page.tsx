@@ -24,9 +24,14 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null
 }
 
+function reviewScore(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null
+}
+
 function generatedMessageReview(meta: Record<string, unknown> | undefined) {
   const message = typeof meta?.japan_entry_initial_message === "string" ? meta.japan_entry_initial_message : null
   const review = asRecord(meta?.japan_entry_message_review)
+  const editorial = asRecord(review?.editorialScores)
   if (!message) return null
   return {
     message,
@@ -34,6 +39,16 @@ function generatedMessageReview(meta: Record<string, unknown> | undefined) {
     qualityScore: typeof review?.qualityScore === "number" ? review.qualityScore : null,
     wordCount: typeof review?.wordCount === "number" ? review.wordCount : null,
     attempts: typeof review?.attempts === "number" ? review.attempts : null,
+    editorialScores: {
+      specificity: reviewScore(editorial?.specificity),
+      naturalness: reviewScore(editorial?.naturalness),
+      credibility: reviewScore(editorial?.credibility),
+      executiveRelevance: reviewScore(editorial?.executiveRelevance),
+    },
+    rationale: typeof review?.rationale === "string" ? review.rationale : null,
+    riskFlags: Array.isArray(review?.riskFlags)
+      ? review.riskFlags.filter((flag): flag is string => typeof flag === "string")
+      : [],
   }
 }
 
