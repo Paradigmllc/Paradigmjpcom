@@ -77,9 +77,18 @@ export interface JapanEntryProjection {
     engine: "deepseek-v4-pro"
     model: "deepseek-v4-pro"
     qualityScore: number
+    safetyScore: number
     wordCount: number
     observedFactIds: string[]
     attempts: number
+    editorialScores: {
+      specificity: number
+      naturalness: number
+      credibility: number
+      executiveRelevance: number
+    }
+    rationale: string
+    riskFlags: string[]
     generatedAt: string
   }
 }

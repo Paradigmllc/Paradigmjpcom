@@ -6,6 +6,9 @@ export interface JapanMarketAuditStatus {
   tokushoho_missing: boolean
   appi_missing: boolean
   local_payments_missing: boolean
+  japanese_language_missing?: boolean
+  jpy_currency_missing?: boolean
+  japan_shipping_missing?: boolean
 }
 
 export interface JapanMarketAudit {
@@ -17,6 +20,9 @@ export interface JapanMarketAudit {
     tokushoho: string[]
     appi: string[]
     local_payments: string[]
+    japanese_language?: string[]
+    jpy_currency?: string[]
+    japan_shipping?: string[]
   }
   pages_checked: string[]
   sales_pitch_context: string
@@ -79,6 +85,14 @@ const LOCAL_PAYMENT_PATTERNS = [
   /便利店/i,
 ] as const
 
+const JAPANESE_LANGUAGE_PATTERNS = [/[\u3040-\u30ff\u3400-\u9fff]{8,}/] as const
+const JPY_CURRENCY_PATTERNS = [/(?:\bJPY\b|Japanese yen|¥\s?\d|￥\s?\d|\d[\d,]*\s?円)/i] as const
+const JAPAN_SHIPPING_PATTERNS = [
+  /ship(?:ping)?\s+to\s+japan/i,
+  /japan\s+delivery/i,
+  /日本(?:へ|向け).{0,16}(?:配送|発送)/i,
+] as const
+
 function normalizeOrigin(domainOrUrl: string): string {
   const url = domainOrUrl.startsWith("http") ? domainOrUrl : `https://${domainOrUrl}`
   return new URL(url).origin
@@ -131,8 +145,11 @@ function scoreFromStatus(status: JapanMarketAuditStatus): number {
     status.tokushoho_missing,
     status.appi_missing,
     status.local_payments_missing,
+    status.japanese_language_missing,
+    status.jpy_currency_missing,
+    status.japan_shipping_missing,
   ].filter(Boolean).length
-  return Math.max(0, 100 - missing * 30)
+  return Math.max(0, 100 - missing * 15)
 }
 
 function buildSalesContext(status: JapanMarketAuditStatus): string {
@@ -140,6 +157,9 @@ function buildSalesContext(status: JapanMarketAuditStatus): string {
   if (status.tokushoho_missing) gaps.push("特定商取引法に基づく表示の確認")
   if (status.appi_missing) gaps.push("日本向け個人情報保護/APPI説明の確認")
   if (status.local_payments_missing) gaps.push("JCB・コンビニ・PayPay・Paidyなど日本ローカル決済の確認")
+  if (status.japanese_language_missing) gaps.push("日本語導線の確認")
+  if (status.jpy_currency_missing) gaps.push("JPY価格表示の確認")
+  if (status.japan_shipping_missing) gaps.push("日本配送条件の確認")
 
   if (gaps.length === 0) {
     return "公開ページ上では日本向けの法務・プライバシー・決済説明の一部シグナルを確認できました。次は購入導線、翻訳品質、問い合わせ導線の実運用確認に進めます。"
@@ -159,10 +179,16 @@ export async function auditJapanMarketReadiness(domainOrUrl: string): Promise<Ja
   const tokushoho = collectSignals(joined, TOKUSHOHO_PATTERNS)
   const appi = collectSignals(joined, APPI_PATTERNS)
   const localPayments = collectSignals(joined, LOCAL_PAYMENT_PATTERNS)
+  const japaneseLanguage = collectSignals(joined, JAPANESE_LANGUAGE_PATTERNS)
+  const jpyCurrency = collectSignals(joined, JPY_CURRENCY_PATTERNS)
+  const japanShipping = collectSignals(joined, JAPAN_SHIPPING_PATTERNS)
   const status = {
     tokushoho_missing: tokushoho.length === 0,
     appi_missing: appi.length === 0,
     local_payments_missing: localPayments.length === 0,
+    japanese_language_missing: japaneseLanguage.length === 0,
+    jpy_currency_missing: jpyCurrency.length === 0,
+    japan_shipping_missing: japanShipping.length === 0,
   }
 
   return {
@@ -174,6 +200,9 @@ export async function auditJapanMarketReadiness(domainOrUrl: string): Promise<Ja
       tokushoho,
       appi,
       local_payments: localPayments,
+      japanese_language: japaneseLanguage,
+      jpy_currency: jpyCurrency,
+      japan_shipping: japanShipping,
     },
     pages_checked: pages.map((page) => page.url),
     sales_pitch_context: buildSalesContext(status),

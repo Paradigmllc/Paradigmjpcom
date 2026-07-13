@@ -7,6 +7,7 @@ import {
   type JapanEntryProjection,
 } from "./japan-entry-projection"
 import { generatePersonalizedJapanEntryMessage } from "./japan-entry-personalized-message"
+import { companyJapanMarketAudit } from "./company-data-view"
 import type { MarketVisibilityIndex } from "./market-visibility"
 
 type JsonRecord = Record<string, unknown>
@@ -96,7 +97,9 @@ export async function generateJapanEntryProjection(companyId: string, options: G
     companyName: company.company_name,
     industry: company.industry,
     targetCountry: company.target_country ?? null,
+    businessModel: projection.assumptions.businessModel,
     projection,
+    audit: companyJapanMarketAudit(company),
   })
   if (!personalized.ok || !personalized.message || !personalized.review) {
     console.error("[japan-entry-projection] DeepSeek V4 Pro message generation failed:", personalized.error)
@@ -109,9 +112,13 @@ export async function generateJapanEntryProjection(companyId: string, options: G
       engine: "deepseek-v4-pro",
       model: personalized.review.model,
       qualityScore: personalized.review.score,
+      safetyScore: personalized.review.safetyScore,
       wordCount: personalized.review.wordCount,
       observedFactIds: personalized.review.observedFactIds,
       attempts: personalized.review.attempts,
+      editorialScores: personalized.review.editorialScores,
+      rationale: personalized.review.rationale,
+      riskFlags: personalized.review.riskFlags,
       generatedAt: new Date().toISOString(),
     },
   }
