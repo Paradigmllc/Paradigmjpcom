@@ -1,3 +1,13 @@
+## CURRENT STATUS - 2026-07-14 Japan Entry文面20社一括生成→Twenty保存の本番試験（完了 / 外部送信0 / QAデータ削除済み）
+
+### 2026-07-14 Opportunity Brief factory production batch verification
+- 本番に合成QA企業20社を隔離投入し、`sending_enabled=false`のまま最大3社並列のone-shot drainで文面生成→投影保存→Twenty企業カルテ同期を実行。キューは手動tickなしで20社の末尾まで到達し、外部フォーム・メール・電話・郵送・outreach jobは0件、`sent_at`更新0件、既存`mvp_outreach_runs`総数2件にも増加なし。
+- 初回試験で、Twentyの選択型へ`SaaS` / `ecommerce` / `service`や未知の取得元を直接渡す不整合を検出。既存taxonomyへ安全に正規化し、未登録の国・取得元は誤分類せずnullにする修正をPR **#153**でmainへmerge。続く実試験で`paradigmSourceCoverage`の実体がTEXT型なのに数値を送る不整合を検出し、文字列化をPR **#156**でmainへmergeした。
+- 最終結果は **18/20社（90%）completed + Twenty同期成功**、2/20社は決定論的品質ゲートでfail-closed。停止理由は、①商品文脈にない主張＋140語未満、②入力にない性能／添付資料主張。閾値を緩めず、不適格文面は投影・Twentyへ保存しない。
+- 合格18社の実測: quality **min 94 / avg 98.67 / max 100**、safety **18/18で100**、語数 **197–214（平均206.11）**、4段落 **18/18**、初回文面URL **0**、未置換プレースホルダー **0**。入力87,054 / 出力27,717 tokens、prefix cache **44,288 hit / 42,766 miss（50.87%）**。
+- Twenty実体で18社全件を照合し、カルテ本文 **3,724–3,870文字**、Opportunity Brief URL、国・業種分類、`Japan Entry初回フォーム文面を確認（未送信）`を確認。試験後はTwentyのQA企業 **18/18削除**、SupabaseのQA企業20社・job20件・投影・sync log 147件も削除し、両環境のQA企業残存数 **0**。
+- 検証: 関連Vitest **2 files / 9 tests pass**、TypeScript、対象ESLint、quality guard **0 errors / 59 warnings**、production build **396/396 pages**。正式`npm run release:prod`はdeployment **mpatatvqofx42r53mhflz6u5**と最終 **ux3080ahlo3wwkhh7fi82smo**を完走し、DB **83/83**、Traefik / Cloudflare / Realtime / Twenty worker restart 0、Sales health HTTP 200 JSON `ok:true`までpost-deploy gate pass。
+
 ## CURRENT STATUS - 2026-07-14 SMB Premium V3全ページ品質・業種別ブランドDNA（本番反映・飲食/建築の実ブラウザQA完了 / 送信停止）
 
 ### 2026-07-14 SMB Premium V3フルサイト品質強化
@@ -1229,3 +1239,13 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
   - `https://demo.paradigmjp.com/demo`: HTTP 200.
   - Public HTML checks: `className=0`, `accentLiteral=0`, `--brand: #7c3aed`.
   - Chrome headless screenshot saved at `C:\Users\apple\AppData\Local\Temp\demo-paradigmjp-demo-fixed.png` and visually checked.
+## CURRENT STATUS - 2026-07-14 フォーム適格リスト量産→Twenty同期（実装・ローカル検証完了 / 本番反映待ち / 送信0）
+
+### 2026-07-14 Form-qualified lead factory
+- 候補取得後すぐに`SalesCompany`へ昇格して重い診断・レポート・文面生成を起動していた順序を変更。生候補は候補倉庫に保持し、技術・国・機会スコア・SMBスコア・実フォームを確認した企業だけを`SalesCompany`へ昇格し、TwentyのCompany homeのみ同期する。Opportunity作成、診断、Opportunity Brief、初回文面、フォーム送信は起動しない。
+- フォーム判定へ`verification=form|page|fallback|none`を追加。連絡先ページの存在だけでは合格せず、HTMLの`<form>`または既知フォームプロバイダ署名を確認し、既定信頼度80以上だけを合格にする。最初のcontact pageにフォームがなくても、sitemap / Crawl4AI / common path / SPA経路を最後まで探索する。量産ゲートではDeepSeek判定を無効化し、トークン消費0。
+- SMB専用ゲートとして`min_smb_score`を独立保存し、Adobe Experience Manager / Sitecore / SAP Commerce / Salesforce Commerce Cloud / Oracle Commerce / Hybris / Workday等の明白なenterprise stack、または15種以上の過大stackをSMBレーンから除外する。総合機会スコアだけでは昇格しない。
+- DB migration `20260714143000_form_qualified_lead_factory.sql`で、run/itemへフォーム確認、合否理由、Twenty同期、SMB閾値、集計カウンタを追加。RLS済み既存2テーブルを拡張し、制約・索引・service_role運用を維持。正式release scriptと`run-migrations.sh`へ接続した。
+- 認可済みAPI `/api/sales/lead-candidates/factory`で最大20か国を一括投入可能。国別ラン最大2本、ラン内確認最大8並列のone-shot/event-driven処理で、常駐polling/cronは追加しない。Realtime SSEでrun更新を管理画面へ反映する。
+- 管理画面 `/ja/admin/lead-factory` を追加。主要対象国初期値US/GB/CA/AU/DE/FR/NL/SG/AE、候補数・確認数・最低機会スコア・最低SMBスコア・フォーム信頼度・技術を指定でき、フォーム確認/合格/昇格/Twenty同期/エラー、直近100件の個別判定を表示する。loading/empty/error/degraded realtime状態を実装。
+- ローカル検証: 関連Vitest **4 files / 15 tests pass**、TypeScript pass、対象ESLint pass、quality guard **0 errors / 59既存warnings + 今回warning 0**、production build **408/408 pages**、`git diff --check` pass。実ブラウザで未認証時の`/admin/login`保護遷移、ローカル検証用署名session後の管理画面表示、主要入力10要素、error overlay 0、PC 1280px / mobile 390px横溢れ0を確認。ローカルは本番DBを接続せず一覧APIの実データ表示は本番反映後に確認する。外部送信、候補収集、Twenty本番同期、DeepSeek実行は行っていない。

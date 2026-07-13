@@ -8,7 +8,7 @@ export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
 
-const ITEM_STATUSES = ["discovered", "verified", "scored", "promoted", "failed", "skipped"] as const
+const ITEM_STATUSES = ["discovered", "verified", "scored", "form_missing", "promoted", "failed", "skipped"] as const
 const STALE_RUN_MS = 5 * 60_000
 
 function shouldRestartRun(run: Record<string, unknown>): boolean {
@@ -52,7 +52,15 @@ export async function GET(req: NextRequest, context: { params: Promise<{ runId: 
       .order("updated_at", { ascending: false })
       .limit(20)
 
-    return NextResponse.json({ ok: true, run, itemCounts, recentFailures: recentFailures ?? [], autoRecovery })
+    const { data: recentItems, error: itemsError } = await sb
+      .from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS)
+      .select("domain, status, opportunity_score, form_url, form_method, form_confidence, form_verified, form_qualification_reason, twenty_synced, updated_at")
+      .eq("run_id", runId)
+      .order("updated_at", { ascending: false })
+      .limit(100)
+    if (itemsError) console.error("[lead-candidates/runs] recent items failed:", itemsError.message)
+
+    return NextResponse.json({ ok: true, run, itemCounts, recentItems: recentItems ?? [], recentFailures: recentFailures ?? [], autoRecovery })
   } catch (error) {
     console.error("[lead-candidates/runs] status request failed:", error)
     return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : "Run status request failed" }, { status: 500 })
