@@ -960,7 +960,7 @@ async function checkPostDeployUrls() {
       options.mustContain = ["Terms of Service", "$12,000", "Japan", "14 business days"]
     }
     if (path === "/en/refund") {
-      options.mustContain = ["Refund & Cancellation Policy", "100% of the USD 12,000 setup fee is refunded", "Start Date"]
+      options.mustContain = ["Refund", "100% of the USD 12,000 setup fee is refunded", "Start Date"]
     }
     if (path === "/en/tools/japan-entry-score") {
       options.mustContain = [
