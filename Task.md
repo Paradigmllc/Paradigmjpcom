@@ -35,6 +35,7 @@
 - 文面品質の再監査で、旧「品質100」は禁止事項チェックの満点にすぎず、Tranco順位の機械的差し込み・汎用的な推論を営業品質として誤評価していたと判定。順位だけを個別化根拠にする生成を廃止し、日本語導線・JPY価格・日本配送・日本ローカル決済という公開ページ上のJapan固有ギャップを監査データへ追加した。
 - DeepSeek V4 Proは、Japan固有の高シグナル事実がある場合だけ異なる切り口を3案生成し、決定論的安全ゲート通過後に別のV4 Pro批評工程で具体性・自然さ・信頼性・経営判断適合を各25点で採点する。合計88点未満、1軸20点未満、risk flagありは保存しない。管理画面に4軸点・編集者所見・risk flagを表示する。
 - 品質是正の検証: 関連Vitest **20/20 pass**、TypeScript pass、対象ESLint pass、production build **336/336 pages**。本番設定の実APIでは候補生成まで成功したが、批評工程が3回タイムアウトしたためfail-closedで文面・DB行・送信を生成しなかった。本番Coolifyには `LITELLM_API_KEY` / `LITELLM_API_BASE` が未設定で、DeepSeek直APIのみ設定済み。LiteLLM V4 Pro経路の設定完了までは品質優先で保存停止を維持する。
+- PR #68をmainへmergeし、正式deployment `sj7vp7jg0q9dmc3fy250dvdd` はfinished。新コンテナ、公開URL、Sales health HTTP 200 / JSON ok、DB **82/82**を確認した。post-deployでlegacy `agency_reports` のanon SELECT grant再付与を検出したため即時revokeし、release gateを再実行してpass。旧parity migrationからanon policy/grantも削除し、再発を防止した。`sales_japan_entry_projections`への保存、Twenty登録、フォーム送信は未実行。
 
 ### 2026-07-13 Blog long-form / visual editorial pass (実装済み・正式release待ち)
 - `/en/blog` と `/ja/blog` の公開記事を、英語9本・日本語4本すべて2,000文字以上へ拡張。各記事に判断表、実務チェックリスト、公開根拠と不確実性の境界を追加し、文字だけの短文記事を廃止した。
