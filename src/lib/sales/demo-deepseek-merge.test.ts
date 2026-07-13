@@ -46,15 +46,22 @@ describe("mergeDeepSeekOutput", () => {
           { q: "所在地はどこですか？", a: "アクセスページをご確認ください。" },
         ],
       },
-      about: { story: "確認済みのメニューと所在地をご案内します。" },
-      services: {},
+      about: { story: "外は香ばしく中はしっとりしたフレンチトーストです。" },
+      services: {
+        intro: "一杯ずつハンドドリップで抽出します。",
+        services: [
+          { title: "フレンチトースト", description: "卵と牛乳の配合にこだわります。", icon: "sparkles", features: ["焼き加減を調整"] },
+        ],
+      },
       contact: {},
     } satisfies DeepSeekEnhancedOutput
 
     const merged = mergeDeepSeekOutput(base, ai, "ja")
 
     expect(merged.premium?.intro.title).toBe(ai.home.hero_title)
-    expect(merged.premium?.intro.body).toBe(ai.about.story)
+    expect(merged.premium?.intro.body).not.toContain("中はしっとり")
+    expect(merged.pages.services.subtitle).not.toContain("ハンドドリップ")
+    expect(JSON.stringify(merged.pages.services.services)).not.toMatch(/卵と牛乳|焼き加減/u)
     expect(merged.pages.contact.subtitle).toBe("安全な固定文")
     expect(JSON.stringify(merged.pages.faq?.sections)).toContain("最新の営業情報は公式Instagram")
     expect(JSON.stringify(merged.pages.faq?.sections)).toContain("このデモのフォームからは送信されません")

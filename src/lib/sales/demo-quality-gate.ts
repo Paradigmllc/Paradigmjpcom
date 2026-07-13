@@ -6,8 +6,9 @@ import type {
   DemoRightsManifest,
 } from "./demo-site-types"
 import type { DemoTemplate } from "./demo-templates/registry"
+import { findUnsupportedDemoClaims } from "./demo-copy-grounding"
 
-export const DEMO_QUALITY_GATE_VERSION = "2026-07-13.3"
+export const DEMO_QUALITY_GATE_VERSION = "2026-07-13.4"
 export const DEMO_QUALITY_THRESHOLD = 90
 
 const FABRICATION_PATTERNS = [
@@ -122,18 +123,10 @@ export function evaluateDemoQuality(
   if (/(長年|創業|以来|歩んできた|信頼を築いて)/u.test(customerFacingCopy) && !/(創業|設立|沿革|(?:19|20)\d{2})/u.test(verifiedFacts)) {
     hardBlockers.push("unsupported_history_claim")
   }
-  if (/(公式素材|権利確認済み|official (?:photo|image|asset)|rights[- ]cleared)/iu.test(customerFacingCopy)
-    && !/(公式素材|権利確認済み|official (?:photo|image|asset)|rights[- ]cleared)/iu.test(verifiedFacts)) {
-    hardBlockers.push("unsupported_asset_provenance_claim")
-  }
-  if (/(?:予約.{0,16}(?:不要|なし|受け付|承|可能|できます)|(?:DM|ダイレクトメッセージ).{0,24}(?:受付|承|予約|問い合わせ|返信)|(?:翌営業日|当日|24時間以内).{0,20}(?:返信|返答|対応))/u.test(customerFacingCopy)
-    && !/(予約|DM|ダイレクトメッセージ|返信|返答|翌営業日|24時間以内)/u.test(verifiedFacts)) {
-    hardBlockers.push("unsupported_operational_claim")
-  }
-  if (/(?:外は.{0,20}(?:中は|ふわ|しっとり)|一杯ずつ|ハンドドリップ|豆本来|卵と牛乳|焼き加減|素材の配合)/u.test(customerFacingCopy)
-    && !/(外は|中は|ふわ|しっとり|一杯ずつ|ハンドドリップ|豆本来|卵と牛乳|焼き加減|素材の配合)/u.test(verifiedFacts)) {
-    hardBlockers.push("unsupported_product_detail_claim")
-  }
+  const unsupportedClaims = findUnsupportedDemoClaims(customerFacingCopy, verifiedFacts)
+  if (unsupportedClaims.includes("asset_provenance")) hardBlockers.push("unsupported_asset_provenance_claim")
+  if (unsupportedClaims.includes("operations")) hardBlockers.push("unsupported_operational_claim")
+  if (unsupportedClaims.includes("product_detail")) hardBlockers.push("unsupported_product_detail_claim")
   if (page.pages.contact.formEnabled !== false) {
     hardBlockers.push("private_demo_form_send_enabled")
   }
