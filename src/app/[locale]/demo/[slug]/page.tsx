@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
   const meta = data.meta
   return {
-    title: meta.title,
+    title: { absolute: meta.title },
     description: meta.description,
     openGraph: {
       title: meta.title,

@@ -6,12 +6,13 @@
 - EN FAQ、JA FAQ、AIチャットRAG知識にも同じ説明を追加。署名済み範囲の代替ではなく、共有の進行記録であることを明記した。
 - 検証: TypeScript pass、対象ESLint pass、関連Vitest **2 files / 15 tests pass**、quality guard **0 errors / 53 warnings**、JSON parse、diff check pass。ローカルproduction buildは別プロジェクトのNextビルド競合で1115秒時点に中断。正式releaseのリモートbuildで再確認予定。
 
-### 2026-07-13 SMB実素材デモ Premium V3 全ページ品質強化（実装・検証中 / 送信停止）
+### 2026-07-13 SMB実素材デモ Premium V3 全ページ品質強化（本番反映・公開QA済み / 送信停止）
 - Premium V2がトップ専用で、About / Services / Contact / Works等は旧汎用レンダラーのままだった分断を解消。店紹介、商品、アクセス、汎用コンテンツ／FAQ／法務を専用のeditorial rendererへ切り替え、全11ページを同じ色・書体・余白・写真表現へ統一した。
 - トップhero見出しを最大8.4rem・8.3vwから最大7rem・6.6vwへ縮小し、最小高さも820pxから720pxへ調整。提案制作側の説明文を顧客向けの店舗・商品コピーへ置換した。
 - `demo.paradigmjp.com/{locale}/{slug}` の短縮URLを内部リンクの正本にし、demo hostnameをserver/client双方で検出してParadigm本体header/footer/chatbotが重ならない独立サイト表示へ変更した。
 - APIキー不要のGoogle Maps iframe、住所／SNS／営業案内、6項目のバリデーション付き問い合わせフォーム、Embla carousel、FAQ accordion、モバイルdrawerを実装。非公開デモのフォームは入力・検証・完了表示まで動くが、`formEnabled=false`ではfetchせず外部送信しない。
-- 現時点の検証: TypeScript pass、対象ESLint pass、問い合わせschema／Google Maps URL Vitest **2/2 pass**、quality guard **0 errors / 54 existing warnings**、`git diff --check` pass、production build完走。全Vitestは **219/223 suites・475/480 tests pass**で、今回未変更の既知CRLF backupテスト4件と、最新mainのLiteLLM優先実装に対して旧DeepSeek直API期待が残る1件のみ失敗。PR、正式release、本番PC/mobile QAは継続中。
+- 検証: TypeScript pass、対象ESLint pass、問い合わせschema／Google Maps URL Vitest **2/2 pass**、quality guard **0 errors / 54 existing warnings**、`git diff --check` pass、production build完走。全Vitestは **219/223 suites・475/480 tests pass**で、今回未変更の既知CRLF backupテスト4件と、最新mainのLiteLLM優先実装に対して旧DeepSeek直API期待が残る1件のみ失敗。
+- PR **#104**をmainへmergeし、正式deployment `ebegbtxp3g4kannlcrdw2c9i` はfinished。DB／Traefik／Cloudflare／Realtime／Twenty／Revenue OS／公開smokeを含むpost-deploy release gateを通過した。本番PC 1280pxではhero見出し84.48px、mobile 390pxでは48px・横溢れ0。全11ページでParadigm本体chrome非表示、実画像、各ページの十分な本文、carousel、FAQ accordion、Google Maps、問い合わせフォームを実ブラウザ確認。フォームは入力完了UIまでで外部送信なし。demoページのmetadataは親サイトtitle templateを継承せず、店舗名だけの独立タイトルへ固定した。
 
 ### 2026-07-13 Japan Entry生成文面のTwenty自動同期（本番反映済み / 送信停止）
 - Japan Entry投影とDeepSeek V4 Pro文面を保存した直後、同じ企業のTwentyカルテを自動同期する。同期対象は既存の企業カルテ要約・次アクションで、推定日本月間アクセス、推定月間機会損失、6/12/24か月ROI、文面品質・安全性、URLなしの初回フォーム文面全文を表示する。
