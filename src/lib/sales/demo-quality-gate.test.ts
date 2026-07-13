@@ -132,6 +132,44 @@ describe("demo quality gate", () => {
     expect(summary.designFingerprint).not.toBe(summary.structuralFingerprint)
   })
 
+  it("accepts a registry-verified corporate demo without forcing an SNS account", () => {
+    const basePage = fixture()
+    basePage.industry = "construction"
+    basePage.premium!.social = []
+    basePage.meta.sourceEvidence = ["public_registry"]
+    const template = DEMO_TEMPLATES.find((item) => item.id === "prism")!
+    const recipe = buildDesignRecipe(template, basePage)
+    const page = upgradeDemoToPremiumV3(basePage, recipe)
+    const quality = evaluateDemoQuality(page, page.designRecipe ?? recipe, buildProposalRightsManifest([
+      { src: "/generated/hero-1.jpg", usage: "proposal_only" },
+    ]))
+
+    expect(quality.hardBlockers, JSON.stringify(quality)).toEqual([])
+    expect(quality.hardBlockers).not.toContain("verified_brand_path_missing")
+    expect(page.pages.contact.formNote).not.toContain("公式SNS")
+    expect(new Set([
+      page.pages.home.cta.subtitle,
+      page.pages.services.ctaSubtitle,
+      page.pages.contact.formNote,
+    ]).size).toBe(3)
+  })
+
+  it("blocks a demo that has neither a verified source path nor an official social path", () => {
+    const basePage = fixture()
+    basePage.premium!.social = []
+    basePage.meta.sourceEvidence = []
+    const template = DEMO_TEMPLATES.find((item) => item.id === "prism")!
+    const recipe = buildDesignRecipe(template, basePage)
+    const page = upgradeDemoToPremiumV3(basePage, recipe)
+    const quality = evaluateDemoQuality(page, page.designRecipe ?? recipe, buildProposalRightsManifest([
+      { src: "/generated/hero-1.jpg", usage: "proposal_only" },
+    ]))
+
+    expect(quality.passed).toBe(false)
+    expect(quality.hardBlockers).toContain("verified_source_coverage_missing")
+    expect(quality.hardBlockers).toContain("verified_brand_path_missing")
+  })
+
   it("blocks fabricated outcomes, financial projections, and synthetic proof", () => {
     const page = fixture()
     page.pages.home.totalLoss = "¥300,000"

@@ -137,6 +137,19 @@ function buildFaq(page: DemoMultiPageData): DemoContentPage {
 export function upgradeDemoToPremiumV3(page: DemoMultiPageData, recipe = page.designRecipe): DemoMultiPageData {
   if (!page.premium) return page
   const brandSystem = resolveDemoBrandSystem(page, recipe)
+  const hasSocial = page.premium.social.length > 0
+  const isRestaurant = page.industry === "restaurant"
+  const journeyCopy = {
+    home: isRestaurant
+      ? "メニュー、所在地、現在の営業案内を一つの流れで確認できます。ご来店前に必要な情報をご覧ください。"
+      : "業務内容、考え方、相談の流れを一つのサイトで確認できます。まずは各ページから検討に必要な情報をご覧ください。",
+    services: isRestaurant
+      ? "提供内容はメニューページで、所在地と地図はアクセスページでご確認いただけます。"
+      : "業務範囲と進め方を確認したうえで、正式な相談方法と必要な準備事項をご確認ください。",
+    contact: hasSocial
+      ? "最新の案内は公式SNSをご確認ください。この提案用フォームは入力体験のみで、外部には送信されません。"
+      : "正式な相談方法と受付条件は事業者確認後に掲載します。この提案用フォームは入力体験のみで、外部には送信されません。",
+  }
   return {
     ...page,
     brandSystem,
@@ -144,6 +157,9 @@ export function upgradeDemoToPremiumV3(page: DemoMultiPageData, recipe = page.de
     designRecipe: recipe ? { ...recipe, typographyPreset: brandSystem.id } : recipe,
     pages: {
       ...page.pages,
+      home: { ...page.pages.home, cta: { ...page.pages.home.cta, subtitle: journeyCopy.home } },
+      services: { ...page.pages.services, ctaSubtitle: journeyCopy.services },
+      contact: { ...page.pages.contact, formNote: journeyCopy.contact },
       works: page.pages.works ? enrichScenes(page) : page.pages.works,
       news: page.pages.news ? buildNews(page) : page.pages.news,
       faq: page.pages.faq ? buildFaq(page) : page.pages.faq,
