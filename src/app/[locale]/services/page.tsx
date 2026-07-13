@@ -63,7 +63,7 @@ export default async function ServicesPage({ params }: Props) {
   const { locale: rawLocale } = await params
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
   const t = await getTranslations({ locale, namespace: "servicesPage" })
-  const japanEntryLocale = locale === "en" || locale === "ja"
+  const japanEntryLocale = locale !== "ja"
   const packageModules = japanEntryLocale ? (t.raw("moduleCards") as EnglishModule[]) : []
   const operatingSteps = japanEntryLocale ? (t.raw("operatingSteps") as OperatingStep[]) : []
 
@@ -77,7 +77,9 @@ export default async function ServicesPage({ params }: Props) {
         features: module.details.map((feature) => ({ feature })),
         sortOrder: index,
       }))
-    : await withPayloadReadFallback<ServiceDoc[]>("services.payload.find", async () => {
+    : locale === "ja"
+      ? []
+      : await withPayloadReadFallback<ServiceDoc[]>("services.payload.find", async () => {
       const [{ getPayload }, { default: config }] = await Promise.all([
         import("payload"),
         import("@payload-config"),
@@ -92,7 +94,7 @@ export default async function ServicesPage({ params }: Props) {
         ...localeFindOptions(locale),
       })
       return (res.docs as unknown as ServiceDoc[]) ?? []
-  }, [])
+      }, [])
   if (services.length === 0) {
     services = getServices(locale).map((service, index) => ({
       id: service.id,

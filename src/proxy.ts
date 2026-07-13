@@ -3,7 +3,6 @@ import type { NextRequest } from "next/server";
 import {
   getBlogLocaleRedirect,
   getEnglishLegacyOfferRedirect,
-  getInternationalMarketingRedirect,
   getJapaneseLegacyOfferRedirect,
   isNonIndexablePath,
 } from "@/lib/marketing-routing";
@@ -52,11 +51,6 @@ export function proxy(request: NextRequest) {
   const japaneseLegacyOfferRedirect = getJapaneseLegacyOfferRedirect(request.nextUrl)
   if (japaneseLegacyOfferRedirect) {
     return NextResponse.redirect(japaneseLegacyOfferRedirect, 308)
-  }
-
-  const internationalMarketingRedirect = getInternationalMarketingRedirect(request.nextUrl)
-  if (internationalMarketingRedirect) {
-    return NextResponse.redirect(internationalMarketingRedirect, 308)
   }
 
   // Legacy Sales OS paths → Twenty CRM SSOT

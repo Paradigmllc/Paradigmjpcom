@@ -197,7 +197,19 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  if (locale !== "en") return {}
+  if (locale === "ja") {
+    return {
+      title: "Paradigm合同会社 | Web・集客・AI導入支援",
+      description: "Web制作、MEO、SEO/GEO、AI導入支援を、設計から公開後の運用まで一気通貫で支援します。",
+      alternates: pageAlternates("ja"),
+      openGraph: {
+        type: "website",
+        url: "https://paradigmjp.com/ja",
+        title: "Paradigm合同会社 | Web・集客・AI導入支援",
+        description: "Web制作、MEO、SEO/GEO、AI導入支援を、設計から公開後の運用まで一気通貫で支援します。",
+      },
+    }
+  }
 
   return {
     title: JAPAN_ENTRY_TITLE,
@@ -235,27 +247,24 @@ export default async function HomePage({ params }: Props) {
   const safeCmsBlocks = locale === "ja"
     ? cmsBlocks.filter(isSafeJapaneseHomepageBlock)
     : cmsBlocks
-  const cmsHomepagePassedSafetyGate = locale === "en"
+  const cmsHomepagePassedSafetyGate = locale !== "ja"
     ? isSafeEnglishJapanEntryHomepage(cmsBlocks)
-    : locale === "ja"
-      ? safeCmsBlocks.length === cmsBlocks.length && cmsBlocks.length > 0
-      : false
-  const blocks = cmsBlocks.length > 0 && cmsHomepagePassedSafetyGate
+    : safeCmsBlocks.length === cmsBlocks.length && cmsBlocks.length > 0
+  const isJapanEntryLocale = locale !== "ja"
+  const blocks = locale !== "ja" && cmsBlocks.length > 0 && cmsHomepagePassedSafetyGate
     ? safeCmsBlocks
-    : locale === "ja"
-      ? JA_FALLBACK_BLOCKS
-      : EN_FALLBACK_BLOCKS
+    : isJapanEntryLocale ? EN_FALLBACK_BLOCKS : JA_FALLBACK_BLOCKS
 
   return (
     <>
       <BlockRenderer blocks={blocks} />
-      {(locale === "en" || locale === "ja") && <JapanEntryTrustPanel locale={locale} />}
-      {(locale === "en" || locale === "ja") && <JapanEntryVisualProof locale={locale} />}
-      {(locale === "en" || locale === "ja") && <JapanEntryScorePromo locale={locale} />}
-      {locale === "en" && (
+      {isJapanEntryLocale && <JapanEntryTrustPanel locale={locale as "en" | "ja"} />}
+      {isJapanEntryLocale && <JapanEntryVisualProof locale={locale as "en" | "ja"} />}
+      {isJapanEntryLocale && <JapanEntryScorePromo locale={locale as "en" | "ja"} />}
+      {isJapanEntryLocale && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(getJapanEntryHomeJsonLd()) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(getJapanEntryHomeJsonLd(locale)) }}
         />
       )}
     </>

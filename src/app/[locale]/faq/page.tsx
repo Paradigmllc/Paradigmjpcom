@@ -36,6 +36,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 type FaqDoc = { id: string | number; question?: string; answer?: unknown }
 type LexicalNode = { type?: string; text?: string; children?: LexicalNode[] }
 
+const JAPANESE_GENERAL_FAQS = [
+  { q: "どのようなサービスに対応していますか？", a: "Web制作、MEO、SEO/GEO、AI導入支援を、目的と運用体制に合わせて設計・実装します。" },
+  { q: "相談から公開までの流れを教えてください。", a: "お問い合わせの内容を確認し、現状と目的を整理したうえで、実装範囲、スケジュール、費用を提案します。合意後に制作・検証・公開へ進みます。" },
+  { q: "既存サイトのリニューアルは可能ですか？", a: "可能です。既存URL、コンテンツ、計測、CMS、リダイレクトを確認し、公開後の運用まで含めて移行計画を作成します。" },
+  { q: "公開後の保守・運用も依頼できますか？", a: "対応可能です。更新範囲、対応時間、月額費用、第三者サービス費用を見積書と契約書に明記します。" },
+  { q: "AIの導入で成果は保証されますか？", a: "特定の売上や順位は保証しません。対象業務、基準値、人の確認工程、評価期間を決め、実測結果で改善を判断します。" },
+  { q: "相談だけでも大丈夫ですか？", a: "はい。現在の課題と目標をお聞かせください。必要な情報と次の選択肢を整理してご連絡します。" },
+] as const
+
 function lexicalToPlainText(node: unknown): string {
   if (!node || typeof node !== "object") return ""
   const n = node as { root?: LexicalNode } & LexicalNode
@@ -53,9 +62,9 @@ export default async function FaqPage({ params }: Props) {
   const { locale: rawLocale } = await params
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
   const t = await getTranslations({ locale, namespace: "faqPage" })
-  const translatedPublicFaqs = locale === "en" || locale === "ja"
-    ? (t.raw("items") as Array<{ q: string; a: string }>)
-    : null
+  const translatedPublicFaqs = locale === "ja"
+    ? [...JAPANESE_GENERAL_FAQS]
+    : (t.raw("items") as Array<{ q: string; a: string }>)
 
   const faqs = translatedPublicFaqs ? [] : await withPayloadReadFallback<FaqDoc[]>("faq.payload.find", async () => {
       const [{ getPayload }, { default: config }] = await Promise.all([
@@ -97,8 +106,8 @@ export default async function FaqPage({ params }: Props) {
                 {t("emptyMessage")}
               </p>
               <Link
-                href={locale === "en" ? "/contact?intent=japan-entry" : "/contact"}
-                {...(locale === "en" ? { "data-umami-event": "japan-entry-apply", "data-umami-event-source": "faq-empty" } : {})}
+                href={locale !== "ja" ? "/contact?intent=japan-entry" : "/contact"}
+                {...(locale !== "ja" ? { "data-umami-event": "japan-entry-apply", "data-umami-event-source": "faq-empty" } : {})}
                 className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
               >
                 {t("emptyCta")}
@@ -139,7 +148,7 @@ export default async function FaqPage({ params }: Props) {
         highlight={t("ctaHighlight")}
         desc={t("ctaDesc")}
         buttonLabel={t("ctaButton")}
-        buttonHref={locale === "en" ? "/contact?intent=japan-entry" : "/contact"}
+        buttonHref={locale !== "ja" ? "/contact?intent=japan-entry" : "/contact"}
         analyticsSource="faq-final-cta"
       />
     </>

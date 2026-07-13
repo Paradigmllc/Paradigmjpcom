@@ -178,20 +178,20 @@ async function fetchAllPayloadPosts(locale: string): Promise<BlogPost[]> {
  * the Payload version wins (admin overrides seed).
  */
 export async function getAllBlogPosts(locale: string = "ja"): Promise<BlogPost[]> {
-  const cmsPosts = await fetchAllPayloadPosts(locale)
+  // The Japanese marketing site is the domestic/general editorial surface.
+  // Its old Japan Entry editorial seed is intentionally not exposed here.
+  const cmsPosts = locale === "ja" ? [] : await fetchAllPayloadPosts("en")
   const cmsSlugs = new Set(cmsPosts.map((p) => p.slug))
-  const englishSeedPosts = locale === "en"
+  const englishSeedPosts = locale !== "ja"
     ? JAPAN_ENTRY_BLOG_POSTS
       .map(japanEntrySeedToBlogPost)
       .filter(isPublicEnglishBlogPost)
       .filter((p) => !cmsSlugs.has(p.slug))
     : []
   const legacyPosts = locale === "ja"
-    ? BLOG_POSTS.filter(isPublicJapaneseBlogPost).filter((p) => !cmsSlugs.has(p.slug))
+    ? BLOG_POSTS.filter((p) => !cmsSlugs.has(p.slug))
     : []
-  const japaneseSeedPosts = locale === "ja"
-    ? JAPAN_ENTRY_BLOG_POSTS_JA.filter((p) => !cmsSlugs.has(p.slug))
-    : []
+  const japaneseSeedPosts: BlogPost[] = []
   return [...cmsPosts, ...englishSeedPosts, ...japaneseSeedPosts, ...legacyPosts].sort((a, b) => (a.date < b.date ? 1 : -1))
 }
 

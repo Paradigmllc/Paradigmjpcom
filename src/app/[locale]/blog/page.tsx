@@ -58,7 +58,7 @@ export default async function BlogPage({ params }: Props) {
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
   const t = await getTranslations({ locale, namespace: "blogPage" })
 
-  const posts: BlogPost[] = await getAllBlogPosts(locale)
+  const posts: BlogPost[] = await getAllBlogPosts(locale === "ja" ? "ja" : "en")
 
   return (
     <>
@@ -77,7 +77,7 @@ export default async function BlogPage({ params }: Props) {
               <p className="text-[14px] text-paradigm-ink-soft leading-[1.85] mb-7">
                 {t("emptyMessage")}
               </p>
-              <Link href={locale === "en" ? "/contact?intent=japan-entry" : "/contact"} className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors">
+              <Link href={locale !== "ja" ? "/contact?intent=japan-entry" : "/contact"} className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors">
                 {t("emptyCta")}
               </Link>
             </FadeIn>

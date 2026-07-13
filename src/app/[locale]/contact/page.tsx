@@ -31,9 +31,10 @@ interface Props {
   searchParams: Promise<{ intent?: string }>
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { locale } = await params
-  const isJapanEntry = locale === "en" || locale === "ja"
+  const { intent } = await searchParams
+  const isJapanEntry = locale !== "ja" || intent === "japan-entry"
   if (isJapanEntry) {
     const title = locale === "ja" ? "Japan Entryパッケージの適合審査" : `Apply for the ${JAPAN_ENTRY_TITLE}`
     const description = locale === "ja"
@@ -74,10 +75,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function ContactPage({ params }: Props) {
+export default async function ContactPage({ params, searchParams }: Props) {
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: "contactPage" })
-  const isJapanEntry = locale === "en" || locale === "ja"
+  const { intent } = await searchParams
+  const isJapanEntry = locale !== "ja" || intent === "japan-entry"
   const isJapanese = locale === "ja"
   const entryCopy = isJapanese
       ? {

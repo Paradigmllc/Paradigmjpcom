@@ -38,7 +38,7 @@ type Plan = { name: string; price: string; desc: string; features: string[]; pop
 
 export default async function WebLP({ params }: Props) {
   const { locale } = await params
-  if (locale === "en") permanentRedirect("/en/services#package-modules")
+  if (locale !== "ja") permanentRedirect(`/${locale}/services#package-modules`)
   const t = await getTranslations({ locale, namespace: "lpWeb" })
   const pains = t.raw("pains") as string[]
   const solutions = t.raw("solutions") as Solution[]

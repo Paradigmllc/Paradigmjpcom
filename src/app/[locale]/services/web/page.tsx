@@ -68,7 +68,7 @@ async function ProcessBand({ locale }: { locale: string }) {
 
 export default async function WebServicePage({ params }: Props) {
   const { locale } = await params
-  if (locale === "en") permanentRedirect("/en/services#package-modules")
+  if (locale !== "ja") permanentRedirect(`/${locale}/services#package-modules`)
   const t = await getTranslations({ locale, namespace: "serviceDetail" })
   const service = getServiceByKey(locale, "web")
   const pricing = getPricingFor(locale, "web")

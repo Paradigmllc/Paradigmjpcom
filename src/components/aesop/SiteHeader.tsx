@@ -28,7 +28,7 @@
 import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import { Link } from "@/i18n/routing"
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import Logo from "./Logo"
 import ThemeToggle from "./ThemeToggle"
 import MobileMenu from "./MobileMenu"
@@ -45,6 +45,7 @@ interface SiteHeaderProps {
 export default function SiteHeader({ nav, announcementActive = false }: SiteHeaderProps = {}) {
   const t = useTranslations("nav")
   const tCta = useTranslations("cta")
+  const locale = useLocale()
   const [scrolled, setScrolled] = useState(false)
   const pathname = usePathname()
 
@@ -68,9 +69,9 @@ export default function SiteHeader({ nav, announcementActive = false }: SiteHead
     { href: "/faq", label: t("faq") },
     { href: "/tools/japan-entry-score", label: t("japanEntryScore") },
   ]
-  // Every public English route sells the same fixed Japan Entry package.
-  // Do not let CMS navigation re-introduce a generic contact CTA on sub-pages.
-  const isJapanEntryConversionRoute = pathname === "/en" || pathname.startsWith("/en/")
+  // International public routes sell the fixed Japan Entry package. The
+  // Japanese route is the domestic/general site and keeps a normal contact CTA.
+  const isJapanEntryConversionRoute = locale !== "ja"
   const JAPAN_ENTRY_NAV: NavLink[] = [
     { href: "/about", label: t("about") },
     { href: "/pricing", label: t("pricing") },

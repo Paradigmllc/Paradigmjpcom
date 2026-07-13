@@ -47,7 +47,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function VideoSubscriptionPage({ params }: Props) {
   const { locale: rawLocale } = await params
   const locale = assertLocale(rawLocale)
-  if (locale === "en") permanentRedirect("/en/services#package-modules")
+  if (locale !== "ja") permanentRedirect(`/${locale}/services#package-modules`)
   const t = await getTranslations({ locale, namespace: "videoPage" })
 
   const plans = t.raw("plans") as Plan[]

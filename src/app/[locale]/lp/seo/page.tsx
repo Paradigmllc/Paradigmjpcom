@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function SeoLP({ params }: Props) {
   const { locale } = await params
-  if (locale === "en") permanentRedirect("/en/services#package-modules")
+  if (locale !== "ja") permanentRedirect(`/${locale}/services#package-modules`)
   const t = await getTranslations({ locale, namespace: "lpSeo" })
   const STEPS = t.raw("process") as ProcessStep[]
   const PLANS = t.raw("plans") as Plan[]

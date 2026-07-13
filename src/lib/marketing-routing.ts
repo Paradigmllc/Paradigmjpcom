@@ -1,8 +1,4 @@
-import {
-  INTERNATIONAL_REPORT_LOCALES,
-  MARKETING_DEFAULT_LOCALE,
-  MARKETING_LOCALES,
-} from "@/i18n/locales"
+import { MARKETING_DEFAULT_LOCALE, MARKETING_LOCALES } from "@/i18n/locales"
 
 const PUBLIC_MARKETING_ROOTS = new Set([
   "about",
@@ -20,11 +16,10 @@ const PUBLIC_MARKETING_ROOTS = new Set([
   "tools",
 ])
 
-// The English services surface now explains the live Japan Entry modules.
 // Agency/LP/video remain retired offer surfaces and continue to redirect.
 const LEGACY_OFFER_ROOTS = new Set(["agency", "lp", "video"])
-// Japanese services and pricing are now first-class Japan Entry pages. Only
-// the retired agency/LP/video surfaces continue to redirect.
+// The Japanese site is the domestic/general Paradigm site. Only the retired
+// agency/LP/video surfaces redirect; service detail pages remain usable.
 const JAPANESE_LEGACY_OFFER_ROOTS = new Set([...LEGACY_OFFER_ROOTS])
 const NON_INDEXABLE_LOCALE_ROOTS = new Set([
   "admin",
@@ -39,9 +34,7 @@ const NON_INDEXABLE_LOCALE_ROOTS = new Set([
 ])
 const ALL_LOCALES = new Set<string>([
   ...MARKETING_LOCALES,
-  ...INTERNATIONAL_REPORT_LOCALES,
 ])
-const FALLBACK_LOCALES = new Set<string>(INTERNATIONAL_REPORT_LOCALES)
 
 // Public blog editorial is currently maintained in one locale per article.
 // Keep locale-switch links from landing on a valid slug with no translation.
@@ -138,44 +131,12 @@ export function getBlogLocaleRedirect(source: URL) {
 }
 
 /**
- * Consolidate unmaintained public translations into the current English funnel.
- * Report, demo and other personalised routes intentionally remain locale-aware.
+ * International marketing routes are locale-aware. The English content is the
+ * commercial source of truth (see i18n/request.ts), but the URL must stay in
+ * the requested locale for SEO, analytics, and a predictable user journey.
  */
 export function getInternationalMarketingRedirect(source: URL) {
-  const segments = source.pathname.split("/").filter(Boolean)
-  const locale = segments[0]
-  if (!locale || !FALLBACK_LOCALES.has(locale)) return null
-
-  const publicSegments = segments.slice(1)
-  const publicPath = `/${publicSegments.join("/")}`
-  if (!isPublicMarketingPath(publicPath)) return null
-
-  const root = publicSegments[0]
-  const destination = new URL(source.toString())
-  destination.hash = ""
-
-  if (root === "services" && publicSegments.length > 1) {
-    destination.pathname = `/${MARKETING_DEFAULT_LOCALE}/services`
-    destination.hash = "package-modules"
-    return destination
-  }
-
-  if (root && LEGACY_OFFER_ROOTS.has(root)) {
-    destination.pathname = `/${MARKETING_DEFAULT_LOCALE}/services`
-    destination.hash = "#package-modules"
-    return destination
-  }
-
-  if (root === "blog" && publicSegments.length > 1) {
-    destination.pathname = `/${MARKETING_DEFAULT_LOCALE}/blog`
-    return destination
-  }
-
-  destination.pathname = `/${MARKETING_DEFAULT_LOCALE}${publicPath === "/" ? "" : publicPath}`
-  if (root === "contact" && !destination.searchParams.has("intent")) {
-    destination.searchParams.set("intent", "japan-entry")
-  }
-  return destination
+  return null
 }
 
 /**
@@ -207,29 +168,18 @@ export function getEnglishLegacyOfferRedirect(source: URL) {
   return destination
 }
 
-/**
- * Keep the Japanese public surface aligned with the same fixed Japan Entry
- * offer. Domestic-only legacy pages were still live and exposed stale plans,
- * free-consultation CTAs, and old video/agency prices.
- */
+/** Keep retired Japanese agency/LP/video pages out of the domestic funnel. */
 export function getJapaneseLegacyOfferRedirect(source: URL) {
   const segments = source.pathname.split("/").filter(Boolean)
   const locale = segments[0]
   const root = segments[1]
-  if (locale === "ja" && root === "services" && segments.length > 2) {
-    const destination = new URL(source.toString())
-    destination.pathname = "/ja/services"
-    destination.search = ""
-    destination.hash = "package-modules"
-    return destination
-  }
   if (locale !== "ja" || !root || !JAPANESE_LEGACY_OFFER_ROOTS.has(root)) {
     return null
   }
 
   const destination = new URL(source.toString())
-  destination.pathname = "/ja"
+  destination.pathname = "/ja/services"
   destination.search = ""
-  destination.hash = "japan-entry-pricing"
+  destination.hash = ""
   return destination
 }

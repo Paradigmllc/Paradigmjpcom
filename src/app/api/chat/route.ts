@@ -117,7 +117,9 @@ export async function POST(req: NextRequest) {
   const message = typeof rawBody.message === "string" ? rawBody.message.trim().slice(0, 2_000) : ""
   const conversationId = typeof rawBody.conversationId === "string" ? rawBody.conversationId.trim().slice(0, 200) : ""
   const rawLocale = rawBody.locale
-  const locale: ChatLocale = rawLocale === "en" ? "en" : "ja"
+  // International marketing routes share the English Japan Entry source of
+  // truth; only the domestic route uses the Japanese general-service corpus.
+  const locale: ChatLocale = rawLocale === "ja" ? "ja" : "en"
   if (!message) return NextResponse.json({ error: "message required" }, { status: 400 })
   const sources = retrieveChatKnowledge(message, locale)
   const context = formatChatKnowledge(sources)

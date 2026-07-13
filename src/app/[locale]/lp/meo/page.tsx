@@ -78,7 +78,7 @@ async function lpMeoCopy(locale: string) {
 
 export default async function MeoLP({ params }: Props) {
   const { locale } = await params
-  if (locale === "en") permanentRedirect("/en/services#package-modules")
+  if (locale !== "ja") permanentRedirect(`/${locale}/services#package-modules`)
   const copy = await lpMeoCopy(locale)
   const t = copy.text
   const stats = copy.rawArray<Stat>("stats", EMPTY_STATS)

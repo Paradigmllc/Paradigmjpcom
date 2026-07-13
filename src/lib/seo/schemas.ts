@@ -35,7 +35,7 @@ const altNamesFor = (locale: string) =>
 
 const orgDescFor = (locale: string) =>
   localeContentVariant(locale) === "ja"
-    ? "海外SMB向けのJapan Entry固定パッケージ。日本語の購入者導線、市場・競合根拠、SNS、法規制の適用可能性整理、公開運用を接続します。"
+    ? "Web制作、MEO、SEO/GEO、AI導入を、設計から公開後の運用まで支援するParadigm合同会社。"
     : "A fixed Japan Entry package for overseas SMBs: localized buyer path, market evidence, channel setup, regulatory screening, launch operations, and handover."
 
 // ─── LocalBusiness (組織) ────────────────────────────────────────
