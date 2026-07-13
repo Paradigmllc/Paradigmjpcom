@@ -9,8 +9,8 @@ import type { DemoTemplate } from "./demo-templates/registry"
 import { findUnsupportedDemoClaims } from "./demo-copy-grounding"
 import { analyzeDemoQualitySignals } from "./demo-quality-signals"
 
-export const DEMO_QUALITY_GATE_VERSION = "2026-07-14.1"
-export const DEMO_QUALITY_THRESHOLD = 92
+export const DEMO_QUALITY_GATE_VERSION = "2026-07-14.2"
+export const DEMO_QUALITY_THRESHOLD = 94
 
 const FABRICATION_PATTERNS = [
   /問い合わせ.{0,8}(倍|増)/u,
@@ -51,6 +51,16 @@ export function buildDesignRecipe(
     compositionVariant: seed % 12,
     rhythmVariant: Math.floor(seed / 12) % 4,
     motionVariant: (["restrained", "editorial", "expressive"] as const)[Math.floor(seed / 48) % 3],
+    pageCompositions: {
+      home: ["cinematic-index", "editorial-split", "structured-story"][seed % 3],
+      about: ["story-led", "profile-led", "values-led"][Math.floor(seed / 3) % 3],
+      services: ["alternating-editorial", "catalogue", "precision-grid"][Math.floor(seed / 9) % 3],
+      works: ["visual-journal", "masonry-notes", "case-led"][Math.floor(seed / 27) % 3],
+      news: ["journal-index", "social-desk", "notice-board"][Math.floor(seed / 81) % 3],
+      recruit: ["culture-story", "role-guide", "principles-led"][Math.floor(seed / 243) % 3],
+      contact: ["map-led", "details-led", "split-contact"][Math.floor(seed / 729) % 3],
+      legal: "editorial-document",
+    },
   }
 }
 

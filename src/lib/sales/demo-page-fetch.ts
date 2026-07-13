@@ -11,6 +11,7 @@ import { JAPAN_ENTRY_CTA_EN, JAPAN_ENTRY_CTA_JA } from "@/lib/japan-entry-public
 import { verifyDemoPreviewToken, type DemoAssetReview } from "./demo-private-access"
 import { buildPremiumAssetNote } from "./demo-asset-note"
 import { applyIndustryPresentation } from "./demo-industry-presentation"
+import { upgradeDemoToPremiumV3 } from "./demo-premium-v3"
 
 /**
  * Fetch demo page data by slug from the theme_demo_pages table,
@@ -250,7 +251,7 @@ export async function fetchDemoMultiPageData(
               },
             }
           : themePage.site_payload.premium
-        return applyDemoAdminOverrides(applyIndustryPresentation({
+        return applyDemoAdminOverrides(upgradeDemoToPremiumV3(applyIndustryPresentation({
           ...themePage.site_payload,
           premium,
           designRecipe: isRecord(themePage.design_recipe)
@@ -274,7 +275,7 @@ export async function fetchDemoMultiPageData(
             brandLogoUrl: logo?.sourceUrl ?? themePage.site_payload.meta.brandLogoUrl,
             artifact_admin: meta.artifact_admin,
           } as DemoMultiPageData["meta"],
-        }))
+        })))
       }
 
       const { data: company } = await sb
