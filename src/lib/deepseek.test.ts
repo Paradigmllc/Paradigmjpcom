@@ -96,4 +96,24 @@ describe("callDeepSeek フォールバックチェーン", () => {
     expect(r.usedModel).toBe("deepseek-v4-pro")
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
+
+  it("passes non-thinking mode for deterministic JSON generation", async () => {
+    const fetchMock = vi.fn(async (_url: string, init: RequestInit) => {
+      const body = JSON.parse(init.body as string) as { thinking?: { type?: string }; response_format?: { type?: string } }
+      expect(body.thinking).toEqual({ type: "disabled" })
+      expect(body.response_format).toEqual({ type: "json_object" })
+      return new Response(JSON.stringify({ choices: [{ message: { content: "{\"ok\":true}" } }] }), { status: 200 })
+    })
+    vi.stubGlobal("fetch", fetchMock)
+
+    const r = await callDeepSeek([{ role: "user", content: "JSONで返してください" }], {
+      model: "deepseek-v4-pro",
+      modelPolicy: "strict",
+      responseFormat: "json_object",
+      thinking: "disabled",
+    })
+
+    expect(r.ok).toBe(true)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
 })

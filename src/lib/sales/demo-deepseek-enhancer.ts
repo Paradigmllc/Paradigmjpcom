@@ -82,6 +82,7 @@ export async function enhanceDemoWithDeepSeek(
     temperature: 0.4,
     maxTokens: DEMO_COPY_MAX_TOKENS,
     responseFormat: "json_object",
+    thinking: "disabled",
     timeoutMs: DEMO_COPY_TIMEOUT_MS,
   });
   if (!result.ok || !result.text) {
