@@ -69,6 +69,7 @@ describe("buildCompanyKarte", () => {
     expect(karte.targetCountry).toBe("US")
     expect(karte.formUrl).toBe("https://acme.example/contact")
     expect(karte.reportUrl).toBe("https://paradigmjp.com/en/report/acme-123")
+    expect(karte.opportunityBriefUrl).toBeNull()
     expect(karte.demoUrl).toBe("https://paradigmjp.com/en/d/acme-123-demo")
     expect(karte.localizedReportUrls.map((link) => link.url)).toContain(
       "https://paradigmjp.com/ja/report/acme-123",
@@ -108,6 +109,7 @@ describe("buildCompanyKarte", () => {
       meta: {
         ...fixtureCompany.meta,
         japan_entry_initial_message: message,
+        japan_entry_opportunity_url: "https://paradigmjp.com/en/opportunity/acme-123",
         japan_entry_outreach_state: "needs_review",
         japan_entry_projection: {
           classification: "modeled-estimate",
@@ -148,5 +150,6 @@ describe("buildCompanyKarte", () => {
         { month: 24, roiPercent: 164.8, cumulativeNetBenefitUsd: 19_776 },
       ],
     })
+    expect(karte.opportunityBriefUrl).toBe("https://paradigmjp.com/en/opportunity/acme-123")
   })
 })

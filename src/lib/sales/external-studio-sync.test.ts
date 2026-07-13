@@ -18,6 +18,7 @@ describe("buildExternalStudioPayload", () => {
       targetCountry: "JP",
       templateVariant: "japan_entry",
       reportUrl: "https://paradigmjp.com/ja/report/example",
+      opportunityBriefUrl: "https://paradigmjp.com/ja/opportunity/example",
       formUrl: "https://example.com/contact",
       demoUrl: "https://demo.example.com",
       salesMaterialUrl: "https://r2.example.com/deck.pdf",
@@ -59,6 +60,7 @@ describe("buildExternalStudioPayload", () => {
 
     expect(payload.company_id).toBe(karte.companyId)
     expect(payload.report_url).toBe("https://paradigmjp.com/ja/report/example")
+    expect(payload.opportunity_brief_url).toBe("https://paradigmjp.com/ja/opportunity/example")
     expect(payload.template_variant).toBe("japan_entry")
     expect(payload.sales_material_url).toBe("https://r2.example.com/deck.pdf")
     expect(payload.recommended_products).toEqual([

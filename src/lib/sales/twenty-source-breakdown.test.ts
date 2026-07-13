@@ -72,6 +72,7 @@ describe("twentyCompanyHomePayload", () => {
       targetCountry: "ZA",
       templateVariant: "japan_entry",
       reportUrl: "https://paradigmjp.com/en/report/digitalhumanity",
+      opportunityBriefUrl: null,
       formUrl: null,
       demoUrl: null,
       salesMaterialUrl: null,
@@ -124,6 +125,7 @@ describe("twentyCompanyHomePayload", () => {
       targetCountry: "US",
       templateVariant: "japan_entry",
       reportUrl: null,
+      opportunityBriefUrl: "https://paradigmjp.com/en/opportunity/acme-1",
       formUrl: "https://acme.example/contact",
       demoUrl: null,
       salesMaterialUrl: null,
@@ -168,6 +170,10 @@ describe("twentyCompanyHomePayload", () => {
     const payload = twentyCompanyHomePayload(karte)
     const summary = (payload.paradigmKarteSummary as { markdown: string }).markdown
     expect(payload.paradigmNextAction).toBe("Japan Entry初回フォーム文面を確認（未送信）")
+    expect(payload.xLink).toEqual({
+      primaryLinkLabel: "Japan Entry Opportunity Brief",
+      primaryLinkUrl: "https://paradigmjp.com/en/opportunity/acme-1",
+    })
     expect(summary).toContain("運用状態: 未送信・要レビュー")
     expect(summary).toContain("推定日本月間アクセス: 1,950")
     expect(summary).toContain("推定月間機会損失: $10,296")

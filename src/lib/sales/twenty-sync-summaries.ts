@@ -134,6 +134,7 @@ export function karteHomeSummary(karte: CompanyKarteSnapshot): string {
     karte.personalizedHook ? `パーソナライズHook: ${karte.personalizedHook}` : null,
     karte.personalizedCTA ? `CTA: ${karte.personalizedCTA}` : null,
     karte.reportUrl ? `Report URL: ${karte.reportUrl}` : null,
+    karte.opportunityBriefUrl ? `Japan Entry Opportunity Brief URL: ${karte.opportunityBriefUrl}` : null,
     karte.formUrl ? `Form URL: ${karte.formUrl}` : null,
     karte.salesMaterialUrl ? `Sales material URL: ${karte.salesMaterialUrl}` : null,
     karte.demoUrl ? `Demo URL: ${karte.demoUrl}` : null,
@@ -166,14 +167,16 @@ export function customerHandoffSummary(input: TwentyCustomerHandoffInput): strin
 }
 
 export function twentyCompanyHomePayload(karte: CompanyKarteSnapshot): Record<string, unknown> {
+  const primaryReportUrl = karte.opportunityBriefUrl ?? karte.reportUrl
+  const primaryReportLabel = karte.opportunityBriefUrl ? "Japan Entry Opportunity Brief" : "診断レポート"
   return {
     name: karte.companyName,
-    xLink: { primaryLinkLabel: karte.reportUrl ? "診断レポート" : "", primaryLinkUrl: karte.reportUrl ?? "" },
+    xLink: { primaryLinkLabel: primaryReportUrl ? primaryReportLabel : "", primaryLinkUrl: primaryReportUrl ?? "" },
     linkedinLink: { primaryLinkLabel: karte.formUrl ? "お問い合わせ" : "", primaryLinkUrl: karte.formUrl ?? "" },
     employees: karteScore(karte),
     annualRecurringRevenue: { amountMicros: karte.sourceScore * 1000000, currencyCode: "USD" },
     address: { addressCity: karteHomeSummary(karte).split("\n")[0]?.slice(0, 50) ?? "" },
-    paradigmReportUrl: { primaryLinkLabel: karte.reportUrl ? "診断レポートURL" : "", primaryLinkUrl: karte.reportUrl ?? "" },
+    paradigmReportUrl: { primaryLinkLabel: primaryReportUrl ? primaryReportLabel : "", primaryLinkUrl: primaryReportUrl ?? "" },
     paradigmFormUrl: { primaryLinkLabel: karte.formUrl ? "フォームURL" : "", primaryLinkUrl: karte.formUrl ?? "" },
     paradigmDemoUrl: { primaryLinkLabel: karte.demoUrl ? "デモURL" : "", primaryLinkUrl: karte.demoUrl ?? "" },
     paradigmCountryName: countrySelectValue(karte.targetCountry),

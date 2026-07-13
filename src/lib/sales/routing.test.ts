@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   buildCompanySlug,
   buildDemoUrl,
+  buildOpportunityBriefUrl,
   buildReportUrl,
   inferVariant,
   inferTargetCountryFromDomain,
@@ -51,6 +52,12 @@ describe("sales routing", () => {
   it("builds locale-aware report urls", () => {
     expect(buildReportUrl("ko", "sample-abc123")).toBe(
       "https://paradigmjp.com/ko/report/sample-abc123",
+    )
+  })
+
+  it("builds locale-aware opportunity brief urls", () => {
+    expect(buildOpportunityBriefUrl("en", "Acme & Co")).toBe(
+      "https://paradigmjp.com/en/opportunity/Acme%20%26%20Co",
     )
   })
 

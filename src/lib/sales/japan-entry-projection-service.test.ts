@@ -87,6 +87,8 @@ beforeEach(() => {
     id: companyId,
     company_name: "Acme",
     domain: "acme.example",
+    slug: "acme",
+    report_locale: "en",
     industry: "ecommerce",
     target_country: "US",
     meta: {
@@ -137,6 +139,7 @@ describe("generateJapanEntryProjection Twenty sync", () => {
     expect(mocks.syncCompanyKarteToTwenty).toHaveBeenCalledWith(companyId, { syncOpportunities: false })
     expect(result).toMatchObject({
       ok: true,
+      opportunityBriefUrl: "https://paradigmjp.com/en/opportunity/acme",
       projection: { id: projectionId, status: "needs_review", initial_message: initialMessage },
       twentySync: {
         ok: true,
@@ -146,6 +149,12 @@ describe("generateJapanEntryProjection Twenty sync", () => {
         homeSynced: true,
         sent: false,
       },
+    })
+    expect(supabase.rpc).toHaveBeenNthCalledWith(1, "sales_atomic_meta_merge", {
+      p_company_id: companyId,
+      p_patch: expect.objectContaining({
+        japan_entry_opportunity_url: "https://paradigmjp.com/en/opportunity/acme",
+      }),
     })
     expect(supabase.rpc).toHaveBeenNthCalledWith(2, "sales_atomic_meta_merge", {
       p_company_id: companyId,

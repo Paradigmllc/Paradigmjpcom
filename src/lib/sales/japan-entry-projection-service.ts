@@ -11,6 +11,7 @@ import { companyJapanMarketAudit } from "./company-data-view"
 import type { MarketVisibilityIndex } from "./market-visibility"
 import { syncCompanyKarteToTwenty } from "./twenty-sync-companies"
 import type { TwentySyncResult } from "./twenty-sync-utils"
+import { buildOpportunityBriefUrl, normalizeReportLocale } from "./routing"
 
 type JsonRecord = Record<string, unknown>
 
@@ -142,6 +143,7 @@ export async function generateJapanEntryProjection(companyId: string, options: G
   ok: boolean
   projection?: StoredJapanEntryProjection
   twentySync?: JapanEntryTwentySyncResult
+  opportunityBriefUrl?: string | null
   error?: string
 }> {
   const sb = getServiceSalesSupabase()
@@ -228,8 +230,12 @@ export async function generateJapanEntryProjection(companyId: string, options: G
     return { ok: false, error: error.message }
   }
 
+  const opportunityBriefUrl = company.slug
+    ? buildOpportunityBriefUrl(normalizeReportLocale(company.report_locale, "global"), company.slug)
+    : null
   const metaPatch = {
     japan_entry_projection: projection,
+    japan_entry_opportunity_url: opportunityBriefUrl,
     japan_entry_initial_message: initialMessage,
     japan_entry_message_engine: "deepseek-v4-pro",
     japan_entry_message_review: projection.messageGeneration,
@@ -251,5 +257,5 @@ export async function generateJapanEntryProjection(companyId: string, options: G
 
   const stored = data as StoredJapanEntryProjection
   const twentySync = await syncJapanEntryProjectionToTwenty(company.id, stored.id)
-  return { ok: true, projection: stored, twentySync }
+  return { ok: true, projection: stored, twentySync, opportunityBriefUrl }
 }

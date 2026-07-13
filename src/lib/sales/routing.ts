@@ -193,6 +193,10 @@ export function buildReportUrl(locale: ReportLocale, slug: string): string {
   return `${siteUrl()}/${locale}/report/${slug}`
 }
 
+export function buildOpportunityBriefUrl(locale: ReportLocale, slug: string): string {
+  return `${siteUrl()}/${locale}/opportunity/${encodeURIComponent(slug)}`
+}
+
 export function inferVariant(input: {
   templateVariant?: unknown
   targetCountry?: unknown

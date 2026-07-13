@@ -92,6 +92,7 @@ export function buildExternalStudioPayload(karte: CompanyKarteSnapshot): JsonRec
     title: `${karte.companyName} 営業診断パッケージ`,
     status: "ready",
     report_url: karte.reportUrl,
+    opportunity_brief_url: karte.opportunityBriefUrl,
     form_url: karte.formUrl,
     demo_url: karte.demoUrl,
     sales_material_url: karte.salesMaterialUrl,
