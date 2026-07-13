@@ -83,7 +83,7 @@ function fixture(): DemoMultiPageData {
       },
       contact: {
         title: "お問い合わせ", subtitle: "ご相談ください。", companyName: "サンプル商店", email: "", address: "東京都",
-        calBookingUrl: "/contact", formNote: "送信内容を確認後にご連絡します。", accentColor: "#2563eb",
+        calBookingUrl: "", formNote: "送信内容を確認後にご連絡します。", formEnabled: false, accentColor: "#2563eb",
       },
       works: contentPage,
       news: contentPage,
@@ -142,6 +142,40 @@ describe("demo quality gate", () => {
     expect(quality.hardBlockers).toEqual(expect.arrayContaining([
       "asset_rights_unverified",
       "structural_collision",
+    ]))
+  })
+
+  it("blocks provider sales copy and a live form from a private customer demo", () => {
+    const page = fixture()
+    page.pages.home.hero.primaryCta = { text: "Japan Entryについて問い合わせる", href: "https://cal.com/paradigm-jp/15min" }
+    page.pages.contact.formEnabled = true
+    const template = DEMO_TEMPLATES.find((item) => item.id === "prism")!
+    const recipe = buildDesignRecipe(template, page)
+    const quality = evaluateDemoQuality(page, recipe, buildProposalRightsManifest([
+      { src: "/generated/hero-1.jpg", usage: "proposal_only" },
+    ]))
+
+    expect(quality.passed).toBe(false)
+    expect(quality.hardBlockers).toEqual(expect.arrayContaining([
+      "provider_brand_leak",
+      "private_demo_form_send_enabled",
+      "unreviewed_external_cta",
+    ]))
+  })
+
+  it("blocks unsupported history and diagnostic copy", () => {
+    const page = fixture()
+    page.pages.about.story = "2020年の創業以来、長年の信頼を築いてきました。Inquiry path is not machine-discoverable yet."
+    const template = DEMO_TEMPLATES.find((item) => item.id === "prism")!
+    const recipe = buildDesignRecipe(template, page)
+    const quality = evaluateDemoQuality(page, recipe, buildProposalRightsManifest([
+      { src: "/generated/hero-1.jpg", usage: "proposal_only" },
+    ]))
+
+    expect(quality.hardBlockers).toEqual(expect.arrayContaining([
+      "sales_diagnostic_copy_leak",
+      "unsupported_chronology_claim",
+      "unsupported_history_claim",
     ]))
   })
 })

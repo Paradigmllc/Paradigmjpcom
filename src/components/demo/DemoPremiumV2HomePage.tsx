@@ -13,6 +13,7 @@ export function DemoPremiumV2HomePage({ data }: { data: DemoMultiPageData }) {
   const secondary = premium.heroMedia[1] ?? premium.gallery[0]
   const mapHref = data.pages.contact.mapUrl ?? `${basePath}/contact`
   const instagram = premium.social.find((item) => item.network === "instagram")?.href ?? home.cta.buttonHref
+  const serviceHighlights = data.pages.services.services.slice(0, 3)
 
   return (
     <div className="overflow-hidden bg-[#f4f1e9] text-[#171713]" style={{ "--v2-accent": data.meta.accentColor } as React.CSSProperties}>
@@ -23,7 +24,7 @@ export function DemoPremiumV2HomePage({ data }: { data: DemoMultiPageData }) {
         <div className="relative mx-auto flex min-h-[720px] max-w-[1500px] flex-col justify-end px-5 pb-14 pt-28 text-white sm:px-10 sm:pb-20 lg:min-h-[calc(100svh-5.5rem)] lg:px-16 lg:pb-24">
           <Reveal>
             <div className="mb-7 text-[10px] font-bold uppercase tracking-[.3em] text-white/70 sm:text-xs">{home.hero.tagline}</div>
-            <h1 className="max-w-5xl whitespace-pre-line font-premium-serif text-[clamp(3rem,6.6vw,7rem)] leading-[.92] tracking-[-.058em] text-balance">{home.hero.title}</h1>
+            <h1 className="max-w-5xl whitespace-pre-line font-premium-serif text-[clamp(2.75rem,5.6vw,6rem)] leading-[.96] tracking-[-.05em] text-balance">{home.hero.title}</h1>
             <div className="mt-10 grid max-w-5xl gap-7 border-t border-white/35 pt-8 md:grid-cols-[1fr_auto] md:items-end">
               <p className="max-w-2xl text-base leading-8 text-white/82 sm:text-lg">{home.hero.subtitle}</p>
               <div className="flex flex-col gap-3 sm:flex-row">
@@ -38,20 +39,20 @@ export function DemoPremiumV2HomePage({ data }: { data: DemoMultiPageData }) {
 
       <section className="grid border-y border-black/10 lg:grid-cols-[.42fr_1.58fr]">
         <div className="flex min-h-40 items-center bg-[#171713] px-6 py-10 text-white sm:px-12 lg:min-h-[500px] lg:items-end">
-          <p className="max-w-xs text-xs font-semibold uppercase leading-6 tracking-[.28em] text-white/55">Weekend sweets<br />Shimokitazawa<br />Since 2020</p>
+          <p className="max-w-xs text-xs font-semibold uppercase leading-6 tracking-[.28em] text-white/55">{home.hero.industryLabel}<br />{home.hero.locationLabel}<br />{data.companyName}</p>
         </div>
         <div className="px-5 py-20 sm:px-10 sm:py-28 lg:px-20 lg:py-36">
           <Reveal className="mx-auto max-w-5xl">
             <p className="text-xs font-bold uppercase tracking-[.3em] text-[var(--v2-accent)]">{premium.intro.eyebrow}</p>
             <h2 className="mt-7 whitespace-pre-line font-premium-serif text-4xl leading-[1.05] tracking-[-.045em] sm:text-6xl lg:text-7xl">{premium.intro.title}</h2>
-            <div className="mt-10 grid gap-8 md:grid-cols-2 md:gap-16"><p className="whitespace-pre-line text-base leading-8 text-black/68 sm:text-lg sm:leading-9">{premium.intro.body}</p><div className="border-l border-black/15 pl-7"><p className="text-sm leading-7 text-black/55">営業日とその週に並ぶお菓子は、公式Instagramの最新案内をご確認ください。</p><a href={`${basePath}/services`} className="group mt-8 inline-flex items-center gap-4 text-sm font-bold">お菓子について<span className="grid h-11 w-11 place-items-center rounded-full bg-black text-white transition group-hover:translate-x-1"><ArrowRight className="h-4 w-4" /></span></a></div></div>
+            <div className="mt-10 grid gap-8 md:grid-cols-2 md:gap-16"><p className="whitespace-pre-line text-base leading-8 text-black/68 sm:text-lg sm:leading-9">{premium.intro.body}</p><div className="border-l border-black/15 pl-7"><p className="text-sm leading-7 text-black/55">{premium.intro.note}</p><a href={`${basePath}/services`} className="group mt-8 inline-flex items-center gap-4 text-sm font-bold">サービスを見る<span className="grid h-11 w-11 place-items-center rounded-full bg-black text-white transition group-hover:translate-x-1"><ArrowRight className="h-4 w-4" /></span></a></div></div>
           </Reveal>
         </div>
       </section>
 
       <section className="bg-[#d9d2c2] px-5 py-20 sm:px-10 sm:py-28 lg:px-16 lg:py-36">
         <div className="mx-auto max-w-7xl">
-          <Reveal className="mb-14 flex flex-col justify-between gap-7 border-b border-black/20 pb-9 md:flex-row md:items-end"><div><p className="text-xs font-bold uppercase tracking-[.3em] text-black/50">This weekend&apos;s table</p><h2 className="mt-5 font-premium-serif text-4xl tracking-[-.045em] sm:text-6xl">週末に、出会えるもの。</h2></div><p className="max-w-sm text-sm leading-7 text-black/55">ヨーロッパの焼菓子を中心に、その週に焼き上がるお菓子を届けています。</p></Reveal>
+          <Reveal className="mb-14 flex flex-col justify-between gap-7 border-b border-black/20 pb-9 md:flex-row md:items-end"><div><p className="text-xs font-bold uppercase tracking-[.3em] text-black/50">Highlights</p><h2 className="mt-5 font-premium-serif text-4xl tracking-[-.045em] sm:text-6xl">選ばれる理由を、<br />ひとつずつ。</h2></div><p className="max-w-sm text-sm leading-7 text-black/55">{home.featureSubtitle ?? data.pages.services.subtitle}</p></Reveal>
           <div className="grid gap-px bg-black/15 md:grid-cols-3">
             {home.features.slice(0, 3).map((feature, index) => <Reveal key={feature.title} delay={index * .07} className="bg-[#d9d2c2] p-7 sm:p-9"><span className="font-premium-serif text-5xl italic text-black/25">0{index + 1}</span><h3 className="mt-12 font-premium-serif text-3xl">{feature.title}</h3><p className="mt-5 text-sm leading-7 text-black/60">{feature.description}</p></Reveal>)}
           </div>
@@ -61,12 +62,12 @@ export function DemoPremiumV2HomePage({ data }: { data: DemoMultiPageData }) {
       <section className="grid bg-[#161612] text-white lg:grid-cols-2">
         <div className="relative min-h-[620px] lg:min-h-[820px]"><PremiumMedia media={secondary} className="absolute inset-0" /><div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" /><p className="absolute bottom-8 left-8 max-w-sm font-premium-serif text-2xl italic text-white/90">{secondary.caption}</p></div>
         <div className="flex items-center px-5 py-20 sm:px-10 sm:py-28 lg:px-20">
-          <Reveal><p className="text-xs font-bold uppercase tracking-[.3em] text-white/45">Small batch, every weekend</p><h2 className="mt-7 font-premium-serif text-4xl leading-tight tracking-[-.04em] sm:text-6xl">一つずつ、<br />その週のために。</h2><p className="mt-8 max-w-xl text-base leading-8 text-white/60">店に並ぶもの、営業する日、お菓子の背景。小さな店だからこそ、週ごとの案内を丁寧に届けています。</p><div className="mt-12 space-y-0 border-y border-white/15">{["フランスやスペインなどの焼菓子", "毎週の営業日とラインナップを案内", "お菓子の背景を公式noteで紹介"].map((item, index) => <div key={item} className="flex gap-5 border-b border-white/15 py-5 last:border-0"><span className="text-white/30">0{index + 1}</span><p className="font-semibold">{item}</p></div>)}</div></Reveal>
+          <Reveal><p className="text-xs font-bold uppercase tracking-[.3em] text-white/45">Our services</p><h2 className="mt-7 font-premium-serif text-4xl leading-tight tracking-[-.04em] sm:text-6xl">提供しているもの。</h2><p className="mt-8 max-w-xl text-base leading-8 text-white/60">{data.pages.services.subtitle}</p><div className="mt-12 space-y-0 border-y border-white/15">{serviceHighlights.map((item, index) => <div key={item.title} className="flex gap-5 border-b border-white/15 py-5 last:border-0"><span className="text-white/30">0{index + 1}</span><div><p className="font-semibold">{item.title}</p><p className="mt-2 text-sm leading-7 text-white/50">{item.description}</p></div></div>)}</div></Reveal>
         </div>
       </section>
 
       <section className="px-5 py-20 sm:px-10 sm:py-28 lg:px-16 lg:py-36">
-        <div className="mx-auto max-w-7xl"><Reveal className="mb-10"><p className="text-xs font-bold uppercase tracking-[.3em] text-[var(--v2-accent)]">Selected scenes</p><h2 className="mt-5 font-premium-serif text-4xl tracking-[-.045em] sm:text-6xl">店をかたちづくる景色。</h2></Reveal><PremiumV2MediaCarousel media={premium.gallery} label="及川洋菓子店のイメージスライダー" /></div>
+        <div className="mx-auto max-w-7xl"><Reveal className="mb-10"><p className="text-xs font-bold uppercase tracking-[.3em] text-[var(--v2-accent)]">Selected scenes</p><h2 className="mt-5 font-premium-serif text-4xl tracking-[-.045em] sm:text-6xl">{data.companyName}の景色。</h2></Reveal><PremiumV2MediaCarousel media={premium.gallery} label={`${data.companyName}のイメージスライダー`} /></div>
       </section>
 
       <section className="bg-[var(--v2-accent)] px-5 py-20 text-white sm:px-10 sm:py-28 lg:px-16"><Reveal className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr_auto] lg:items-end"><div><p className="text-xs font-bold uppercase tracking-[.3em] text-white/60">Visit & follow</p><h2 className="mt-5 whitespace-pre-line font-premium-serif text-4xl leading-tight tracking-[-.04em] sm:text-6xl">{home.cta.title}</h2><p className="mt-6 max-w-xl text-base leading-8 text-white/70">{home.cta.subtitle}</p></div><div className="flex flex-col gap-3 sm:flex-row lg:flex-col"><a href={instagram} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center justify-center gap-3 bg-white px-8 text-sm font-bold text-black"><FaInstagram />Instagram</a><a href={mapHref} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center justify-center gap-3 border border-white/40 px-8 text-sm font-bold"><MapPin className="h-4 w-4" />アクセス</a></div></Reveal></section>

@@ -231,7 +231,7 @@ export async function fetchDemoMultiPageData(
             src: asset.sourceUrl,
             alt: asset.alt,
             kind: asset.kind === "video" ? "video" as const : "image" as const,
-            caption: asset.notes || asset.ownerLabel,
+            caption: asset.useBasis === "generated" ? "生成イメージ" : asset.notes || asset.ownerLabel,
           })) ?? []
         const premium = themePage.site_payload.premium && approvedMedia.length > 0
           ? {

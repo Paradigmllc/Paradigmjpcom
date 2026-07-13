@@ -8,6 +8,12 @@
 - migration `20260713203000_japan_entry_report_factory.sql` を正式release経路・release doctor・手動migration台帳へ配線。queue job type、投影冪等キー、Realtime publicationを冪等適用する。
 - 検証: TypeScript pass、対象ESLint pass、quality guard **0 errors / 58 warnings**、対象Vitest **7 files / 24 tests pass**＋Twenty rollback追加テストpass、100社を2 DB queryで投入するunit test pass、production build **384/384 pages**。全Vitestは **101/103 files・491/496 tests pass**で、変更外の既知baseline（DeepSeek共通テスト1件、CRLF backup shell 4件）のみ失敗。収集・見込み客へのフォーム送信は未実行。
 
+### 2026-07-13 人物・明るいストック素材の運用イメージスライダー（本番反映・公開QA済み）
+- 文字と図解だけで無機質に見える問題に対し、EN/JAホーム、About、Pricingへ、人物・チーム・会議室の明るいPexels素材を使った手動スライダーを追加。担当者、時差を越えた共同作業、公開後の引き継ぎを「運用の雰囲気」として可視化する。
+- スライドは自動再生せず、前後ボタン・ドット・キーボード操作・モバイルスワイプに対応。画像は`public/visuals/`からローカル配信し、外部CDN依存と不安定なリモート画像URLを避ける。各画像にはalt、Pexels出典表示、ストック素材であり実績・顧客・Paradigmスタッフではないことの開示を付けた。
+- `docs/knowledge/stock-imagery.md`に素材ページ、クリエイター、用途、ライセンス確認を記録。素材を実績写真や成果証明として扱わない方針を固定した。
+- 検証: TypeScript pass、対象ESLint pass、関連Vitest **13 tests pass**、quality guard **0 errors / 54 warnings**、production build **372/372 pages**、`git diff --check` pass。正式 `npm run release:prod` のdeployment `n12dtnpkdqtvjqtd1hs7lp7m` はfinished、DB **82/82**、Traefik/Cloudflare、Twenty、Sales health、post-deploy release gateを通過した。公開HTMLで`/en` `/en/about` `/en/pricing` `/ja` `/ja/about` `/ja/pricing`のスライダー本文・開示文・操作ラベルを確認し、3画像assetはすべてHTTP **200**。seed時の一時Cloudflare 502はrelease scriptの限定retryで回復し、CMS publishと全公開smokeは合格した。
+
 ### 2026-07-13 共有ワークスペースと48営業時間以内着手SLA（本番反映・公開QA済み）
 - ENのJapan Entry共通進行フローに、契約範囲確定後の顧客専用共有ワークスペースを追加。Notionを基本とし、顧客希望時はTrelloを選択できる運用として、範囲・担当・ステータス・ブロッカー・承認・成果物・次の作業を1か所で可視化する。
 - 「48時間で完了」と誤認させず、含まれる月額運用の通常依頼を48営業時間以内に受付・スコープ化・着手するSLAとして明記。緊急、規制、第三者依存、範囲外作業は書面承認へ分離した。

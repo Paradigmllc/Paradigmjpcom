@@ -7,7 +7,7 @@ import type {
 } from "./demo-site-types"
 import type { DemoTemplate } from "./demo-templates/registry"
 
-export const DEMO_QUALITY_GATE_VERSION = "2026-07-13.1"
+export const DEMO_QUALITY_GATE_VERSION = "2026-07-13.2"
 export const DEMO_QUALITY_THRESHOLD = 90
 
 const FABRICATION_PATTERNS = [
@@ -83,6 +83,22 @@ export function evaluateDemoQuality(
   const hardBlockers: string[] = []
   const warnings: string[] = []
   const serialized = JSON.stringify(page)
+  const customerFacingCopy = JSON.stringify({
+    meta: {
+      title: page.meta.title,
+      description: page.meta.description,
+      primaryCtaLabel: page.meta.primaryCtaLabel,
+      primaryCtaHref: page.meta.primaryCtaHref,
+      footerDescription: page.meta.footerDescription,
+    },
+    pages: page.pages,
+    premium: page.premium ? {
+      intro: page.premium.intro,
+      heroMedia: page.premium.heroMedia.map(({ alt, eyebrow, title, caption }) => ({ alt, eyebrow, title, caption })),
+      gallery: page.premium.gallery.map(({ alt, eyebrow, title, caption }) => ({ alt, eyebrow, title, caption })),
+    } : null,
+  })
+  const verifiedFacts = (page.meta.verifiedFacts ?? []).join("\n")
   const structuralFingerprint = fingerprint(recipe)
 
   if (!page.companyName.trim() || !page.pages.home.hero.title.trim()) {
@@ -93,6 +109,26 @@ export function evaluateDemoQuality(
   }
   if (page.meta.engine !== "deepseek") {
     hardBlockers.push("quality_copy_generation_missing")
+  }
+  if (/paradigm|japan entry|paradigmjp\.com|cal\.com\/paradigm/iu.test(customerFacingCopy)) {
+    hardBlockers.push("provider_brand_leak")
+  }
+  if (/web改善デモ|improvement demo|改善後のイメージ|公開データを分析|診断フック|inquiry path|security and trust headers/iu.test(customerFacingCopy)) {
+    hardBlockers.push("sales_diagnostic_copy_leak")
+  }
+  if (/(?:19|20)\d{2}/u.test(customerFacingCopy) && !/(?:19|20)\d{2}/u.test(verifiedFacts)) {
+    hardBlockers.push("unsupported_chronology_claim")
+  }
+  if (/(長年|創業|以来|歩んできた|信頼を築いて)/u.test(customerFacingCopy) && !/(創業|設立|沿革|(?:19|20)\d{2})/u.test(verifiedFacts)) {
+    hardBlockers.push("unsupported_history_claim")
+  }
+  if (page.pages.contact.formEnabled !== false) {
+    hardBlockers.push("private_demo_form_send_enabled")
+  }
+  const approvedExternalCtas = new Set(page.premium?.social.map((item) => item.href) ?? [])
+  const ctaHrefs = [page.pages.home.hero.primaryCta.href, page.pages.home.cta.buttonHref, page.pages.services.ctaHref].filter((href): href is string => Boolean(href))
+  if (ctaHrefs.some((href) => /^https?:\/\//u.test(href) && !approvedExternalCtas.has(href))) {
+    hardBlockers.push("unreviewed_external_cta")
   }
   if (!page.pages.about || !page.pages.services || !page.pages.contact
     || !page.pages.works || !page.pages.news || !page.pages.faq

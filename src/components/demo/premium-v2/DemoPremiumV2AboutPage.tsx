@@ -20,7 +20,7 @@ export function DemoPremiumV2AboutPage({ data }: { data: DemoMultiPageData }) {
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[.72fr_1.28fr] lg:gap-20">
           <PremiumV2Reveal>
             <p className="text-xs font-bold uppercase tracking-[.3em] text-[var(--demo-accent)]">Beginning</p>
-            <h2 className="mt-6 font-premium-serif text-4xl leading-[1.03] tracking-[-.045em] sm:text-6xl">小さな場所から、<br />週末の楽しみを。</h2>
+            <h2 className="mt-6 font-premium-serif text-4xl leading-[1.03] tracking-[-.045em] sm:text-6xl">{data.companyName}について。</h2>
           </PremiumV2Reveal>
           <PremiumV2Reveal delay={0.08} className="border-t border-black/20 pt-8 lg:mt-24">
             {storyParagraphs.map((paragraph) => <p key={paragraph} className="mb-6 whitespace-pre-line text-base leading-8 text-black/65 last:mb-0 sm:text-lg sm:leading-9">{paragraph}</p>)}
@@ -41,7 +41,7 @@ export function DemoPremiumV2AboutPage({ data }: { data: DemoMultiPageData }) {
           <PremiumV2Reveal>
             <p className="text-xs font-bold uppercase tracking-[.3em] text-white/40">Philosophy</p>
             <blockquote className="mt-8 font-premium-serif text-4xl leading-[1.12] tracking-[-.04em] sm:text-6xl">“{about.mission}”</blockquote>
-            <p className="mt-8 max-w-xl text-sm leading-8 text-white/55">店の佇まい、お菓子の背景、週末に足を運ぶ時間。そのすべてが一続きの体験になるよう、情報を丁寧に届けます。</p>
+            <p className="mt-8 max-w-xl text-sm leading-8 text-white/55">{about.teamNote}</p>
           </PremiumV2Reveal>
         </div>
       </section>
@@ -66,8 +66,8 @@ export function DemoPremiumV2AboutPage({ data }: { data: DemoMultiPageData }) {
 
       <section className="px-5 py-20 sm:px-10 sm:py-28 lg:px-16 lg:py-36">
         <div className="mx-auto max-w-7xl">
-          <PremiumV2Reveal className="mb-10"><p className="text-xs font-bold uppercase tracking-[.3em] text-[var(--demo-accent)]">Scenes</p><h2 className="mt-5 font-premium-serif text-4xl tracking-[-.045em] sm:text-6xl">店をかたちづくる景色。</h2></PremiumV2Reveal>
-          <PremiumV2MediaCarousel media={media} label="店のイメージギャラリー" />
+          <PremiumV2Reveal className="mb-10"><p className="text-xs font-bold uppercase tracking-[.3em] text-[var(--demo-accent)]">Scenes</p><h2 className="mt-5 font-premium-serif text-4xl tracking-[-.045em] sm:text-6xl">{data.companyName}の景色。</h2></PremiumV2Reveal>
+          <PremiumV2MediaCarousel media={media} label={`${data.companyName}のイメージギャラリー`} />
           {instagram && <a href={instagram.href} target="_blank" rel="noopener noreferrer" className="mt-10 inline-flex items-center gap-3 border-b border-black pb-2 text-sm font-bold">最新情報をInstagramで見る<ArrowUpRight className="h-4 w-4" /></a>}
         </div>
       </section>

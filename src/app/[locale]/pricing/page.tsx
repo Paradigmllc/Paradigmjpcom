@@ -20,6 +20,7 @@ import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
 import JapanEntryJourney from "@/components/japan-entry/JapanEntryJourney"
 import JapanEntryVisualProof from "@/components/japan-entry/JapanEntryVisualProof"
+import JapanEntryVisualContext, { type VisualContextCopy } from "@/components/japan-entry/JapanEntryVisualContext"
 import { coerceLocale, assertLocale } from "@/lib/cms/filters"
 import {
   formatPricePPP,
@@ -77,6 +78,8 @@ export default async function PricingPage({ params, searchParams }: Props) {
   const contentLocale = coerceLocale(rawLocale)     // ja/en（通貨フォーマット判定専用: formatPricePPP）
   const isJapanEntry = locale !== "ja"
   const t = await getTranslations({ locale, namespace: "pricingPage" })
+  const visualContextLocale = locale === "ja" ? "ja" : "en"
+  const visualContextT = await getTranslations({ locale: visualContextLocale, namespace: "home" })
   const faqPairs = locale === "ja"
     ? []
     : (t.raw("pricingFaqs") as Array<{ q: string; a: string }>) ?? []
@@ -292,6 +295,11 @@ export default async function PricingPage({ params, searchParams }: Props) {
       {isJapanEntry && <JapanEntryJourney locale={locale} />}
 
       {isJapanEntry && <JapanEntryVisualProof locale={locale as "en" | "ja"} />}
+
+      <JapanEntryVisualContext
+        locale={visualContextLocale}
+        copy={visualContextT.raw("visualContext") as VisualContextCopy}
+      />
 
       {packageModules.length > 0 && (
         <section className="relative overflow-hidden bg-paradigm-paper paradigm-section" aria-labelledby="package-modules-heading">

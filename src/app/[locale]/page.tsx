@@ -9,10 +9,12 @@ import {
 } from "@/lib/jsonld"
 import { pageAlternates } from "@/lib/page-metadata"
 import BlockRenderer from "@/blocks/BlockRenderer"
+import { getTranslations } from "next-intl/server"
 import JapanEntryScorePromo from "@/components/japan-entry/JapanEntryScorePromo"
 import JapanEntryJourney from "@/components/japan-entry/JapanEntryJourney"
 import JapanEntryTrustPanel from "@/components/japan-entry/JapanEntryTrustPanel"
 import JapanEntryVisualProof from "@/components/japan-entry/JapanEntryVisualProof"
+import JapanEntryVisualContext, { type VisualContextCopy } from "@/components/japan-entry/JapanEntryVisualContext"
 import {
   isSafeEnglishJapanEntryHomepage,
   isSafeJapaneseHomepageBlock,
@@ -245,6 +247,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function HomePage({ params }: Props) {
   const { locale } = await params
+  const visualContextLocale = locale === "ja" ? "ja" : "en"
+  const visualContextT = await getTranslations({ locale: visualContextLocale, namespace: "home" })
   const page = await fetchHomepage(locale)
   const cmsBlocks = page?.layout && Array.isArray(page.layout)
     ? page.layout as CmsBlock[]
@@ -266,6 +270,10 @@ export default async function HomePage({ params }: Props) {
       {isJapanEntryLocale && <JapanEntryJourney locale={locale} />}
       {isJapanEntryLocale && <JapanEntryTrustPanel locale={locale as "en" | "ja"} />}
       {isJapanEntryLocale && <JapanEntryVisualProof locale={locale as "en" | "ja"} />}
+      <JapanEntryVisualContext
+        locale={visualContextLocale}
+        copy={visualContextT.raw("visualContext") as VisualContextCopy}
+      />
       {isJapanEntryLocale && <JapanEntryScorePromo locale={locale as "en" | "ja"} />}
       {isJapanEntryLocale && (
         <script
