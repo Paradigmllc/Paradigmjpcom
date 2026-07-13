@@ -87,6 +87,7 @@ export interface DemoMeta {
     completionTokens: number
     cacheHitTokens: number
     cacheMissTokens: number
+    cacheHitRatio: number
   }
   sourceEvidence?: string[]
   verifiedFacts?: string[]

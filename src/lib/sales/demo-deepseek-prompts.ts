@@ -49,20 +49,9 @@ export function buildJapaneseUserPrompt(
   _tokens: DemoTemplate["designTokens"],
   verifiedFacts: string,
 ): string {
-  return `以下の企業情報をもとに、4ページ構成のビジネスWebサイト（Home、About、Services、Contact）のパーソナライズされたコピーを生成してください。
+  return `ビジネスWebサイトの創造的な中核コピー（Home、About、Services）を生成してください。FAQとContactは確認済みデータから別工程で生成するため、出力しないでください。
 
-【企業情報】
-- 企業名: ${name}
-- 業種: ${industry}
-- 所在地: ${prefecture || "記載なし"}
-- ドメイン: ${domain}
-- 技術スタック: ${techSummary}
-- 出力言語: ${locale === "ja" ? "日本語（です・ます調）" : locale}
-- レイアウトスタイル: ヒーロー=${heroVariant}, 特徴=${featureLayout}, カード=${cardStyle}, ナビ=${nav}
-
-【確認済み公開情報】
-${verifiedFacts}
-上記にない事実は創作せず、コピーには確認済み公開情報だけを使用してください。
+以下の出力仕様と安全規則は全案件共通です。末尾の企業固有入力だけを参照してコピーを作成してください。
 「フレンチトースト」が確認済みでも「外はカリッと中はふわふわ」「卵と牛乳」「焼き加減」は未確認です。
 「ドリップコーヒー」が確認済みでも「一杯ずつハンドドリップ」「豆本来の風味」は未確認です。
 「公式Instagram」が確認済みでも「DMで予約可能」「翌営業日に返信」は未確認です。
@@ -82,12 +71,6 @@ ${verifiedFacts}
         "icon": "sparkles | shield | route | star | bolt | globe | lock | target | cpu | search | chart | users | lightbulb | zap | heart | smile",
         "metric_label": "指標ラベル",
         "metric_value": "指標値"
-      }
-    ],
-    "faq": [
-      {
-        "q": "よくある質問",
-        "a": "自然な回答（100文字程度）"
       }
     ]
   },
@@ -118,15 +101,23 @@ ${verifiedFacts}
       {"step": 3, "title": "ステップ名", "description": "説明"},
       {"step": 4, "title": "ステップ名", "description": "説明"}
     ]
-  },
-  "contact": {
-    "intro": "問い合わせ導入文（2文程度）",
-    "booking_cta": "予約ボタンのテキスト",
-    "form_note": "フォームの補足文"
   }
 }
 
-重要: これは制作会社の改善提案LPではなく、入力企業がそのまま公式サイトとして使える顧客向けコピーです。Web改善、SEO、表示速度、診断、制作会社、Paradigm、Japan Entryには言及しないでください。features配列は3つ、FAQは4つ、valuesは4つ、servicesは3つ生成してください。根拠のない所在地、年代、沿革、営業時間、外部サービス連携、顧客の声、実績、数値、材料、味、食感、製法、予約可否、問い合わせ手段、返信時期、画像の出自・権利状態は絶対に生成しないでください。FAQとContactは、確認済み情報がなければ「正式公開前に事業者確認が必要です」としてください。`;
+重要: これは制作会社の改善提案LPではなく、入力企業がそのまま公式サイトとして使える顧客向けコピーです。Web改善、SEO、表示速度、診断、制作会社、Paradigm、Japan Entryには言及しないでください。features配列は3つ、valuesは4つ、servicesは3つ生成してください。FAQとContactは出力しないでください。根拠のない所在地、年代、沿革、営業時間、外部サービス連携、顧客の声、実績、数値、材料、味、食感、製法、予約可否、問い合わせ手段、返信時期、画像の出自・権利状態は絶対に生成しないでください。
+
+【企業固有入力・ここから末尾だけ案件ごとに変化】
+- 企業名: ${name}
+- 業種: ${industry}
+- 所在地: ${prefecture || "記載なし"}
+- ドメイン: ${domain}
+- 技術スタック: ${techSummary}
+- 出力言語: ${locale === "ja" ? "日本語（です・ます調）" : locale}
+- レイアウトスタイル: ヒーロー=${heroVariant}, 特徴=${featureLayout}, カード=${cardStyle}, ナビ=${nav}
+
+【確認済み公開情報】
+${verifiedFacts}
+上記にない事実は創作せず、確認済み公開情報だけを使用してください。`;
 }
 
 export function buildEnglishUserPrompt(
@@ -147,20 +138,9 @@ export function buildEnglishUserPrompt(
   _tokens: DemoTemplate["designTokens"],
   verifiedFacts: string,
 ): string {
-  return `Generate personalized copy for a 4-page business website (Home, About, Services, Contact) based on the following company data.
+  return `Generate the creative core copy for a business website (Home, About, Services). FAQ and Contact are generated separately from verified data, so do not output them.
 
-[Company Info]
-- Company Name: ${name}
-- Industry: ${industry}
-- Location: ${prefecture || "N/A"}
-- Domain: ${domain}
-- Tech Stack: ${techSummary}
-- Output Language: ${locale === "en" ? "Professional Business English" : locale}
-- Layout Style: hero=${heroVariant}, features=${featureLayout}, cards=${cardStyle}, nav=${nav}
-
-[Verified Public Facts]
-${verifiedFacts}
-Use only these verified facts for company-specific copy. Do not invent missing facts.
+The output schema and safety rules below are shared by every request. Use only the company-specific input appended at the end.
 An official social URL does not prove that direct messages, reservations, or replies are offered. A menu name does not prove its ingredients, texture, preparation, or taste. Do not infer any of those details.
 
 [Output Format]
@@ -177,12 +157,6 @@ Output the following JSON. All English copy must be professional business Englis
         "icon": "sparkles | shield | route | star | bolt | globe | lock | target | cpu | search | chart | users | lightbulb | zap | heart | smile",
         "metric_label": "Metric label",
         "metric_value": "Metric value"
-      }
-    ],
-    "faq": [
-      {
-        "q": "Common question",
-        "a": "Natural answer (around 100 chars)"
       }
     ]
   },
@@ -213,13 +187,21 @@ Output the following JSON. All English copy must be professional business Englis
       {"step": 3, "title": "Step name", "description": "Description"},
       {"step": 4, "title": "Step name", "description": "Description"}
     ]
-  },
-  "contact": {
-    "intro": "Contact intro (2 sentences)",
-    "booking_cta": "Booking button text",
-    "form_note": "Form note text"
   }
 }
 
-IMPORTANT: This is not a web-agency improvement pitch. Write customer-facing copy the input business could use as its official website. Do not mention web improvement, SEO, diagnostics, an agency, Paradigm, or Japan Entry. Generate exactly 3 features, 4 FAQs, 4 values, 3 services, and 4 process steps. Never invent locations, dates, history, opening hours, third-party integrations, testimonials, customer claims, performance metrics, ingredients, taste, texture, preparation, reservation policy, contact channels, response times, or image provenance. If FAQ or Contact details are not verified, say they require operator confirmation before publication.`;
+IMPORTANT: This is not a web-agency improvement pitch. Write customer-facing copy the input business could use as its official website. Do not mention web improvement, SEO, diagnostics, an agency, Paradigm, or Japan Entry. Generate exactly 3 features, 4 values, 3 services, and 4 process steps. Do not output FAQ or Contact. Never invent locations, dates, history, opening hours, third-party integrations, testimonials, customer claims, performance metrics, ingredients, taste, texture, preparation, reservation policy, contact channels, response times, or image provenance.
+
+[Company-specific input — only this suffix varies per request]
+- Company Name: ${name}
+- Industry: ${industry}
+- Location: ${prefecture || "N/A"}
+- Domain: ${domain}
+- Tech Stack: ${techSummary}
+- Output Language: ${locale === "en" ? "Professional Business English" : locale}
+- Layout Style: hero=${heroVariant}, features=${featureLayout}, cards=${cardStyle}, nav=${nav}
+
+[Verified Public Facts]
+${verifiedFacts}
+Use only these verified facts. Do not invent missing facts.`;
 }
