@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "node:crypto";
+import { after, NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth";
 import { getServiceSalesSupabase } from "@/lib/supabase";
@@ -6,11 +7,17 @@ import { DB_TABLES } from "@/lib/sales/db-tables";
 import {
   enqueueJapanEntryReportBatch,
   fetchRecentEnrichmentJobs,
+  type EnrichmentRunResult,
 } from "@/lib/sales/enrichment-jobs";
 import {
   assessJapanEntryReportReadiness,
   type JapanEntryReportCandidate,
 } from "@/lib/sales/japan-entry-report-readiness";
+import {
+  claimJapanEntryReportDrain,
+  dispatchJapanEntryReportDrain,
+  releaseJapanEntryReportDrain,
+} from "@/lib/sales/japan-entry-report-drain";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,6 +41,8 @@ const enqueueSchema = z.object({
 
 const runSchema = z.object({
   limit: z.number().int().min(1).max(5).default(3),
+  drainId: z.string().uuid().optional(),
+  automated: z.boolean().default(false),
 });
 
 const retrySchema = z.object({
@@ -172,6 +181,17 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
 
+  const drainId = randomUUID();
+  after(async () => {
+    const dispatched = await dispatchJapanEntryReportDrain({ drainId });
+    if (!dispatched.ok) {
+      console.error(
+        "[opportunity-report-batch] initial automatic drain dispatch failed:",
+        dispatched.error,
+      );
+    }
+  });
+
   try {
     const { notifyBothChannels } = await import("@/lib/notify");
     await notifyBothChannels("sales", {
@@ -191,6 +211,8 @@ export async function POST(req: NextRequest) {
     {
       ok: true,
       status: "queued",
+      automaticDrainStarted: true,
+      drainId,
       queued: queued.queued.length,
       reused: queued.reused.length,
       rejected,
@@ -220,25 +242,109 @@ export async function PUT(req: NextRequest) {
       { status: 400 },
     );
 
-  const { runEnrichmentJobs } =
-    await import("@/lib/sales/enrichment-jobs-runner");
-  const result = await runEnrichmentJobs(parsed.data.limit, [
-    "japan_entry_report",
-  ]);
+  const drainId = parsed.data.drainId ?? randomUUID();
+  const lease = await claimJapanEntryReportDrain(drainId);
+  if (!lease.ok)
+    return NextResponse.json(
+      { ok: false, error: lease.error, sendingEnabled: false },
+      { status: 503 },
+    );
+  if (!lease.claimed)
+    return NextResponse.json(
+      {
+        ok: true,
+        status: "already_running",
+        drainId,
+        sendingEnabled: false,
+      },
+      { status: 202 },
+    );
+
+  let result: EnrichmentRunResult;
   try {
-    const { notifyBothChannels } = await import("@/lib/notify");
-    await notifyBothChannels("sales", {
-      title: `Opportunity Brief生成結果: ${result.completed}/${result.processed}社`,
-      message:
-        result.failed > 0
-          ? `失敗${result.failed}社。管理画面で再試行理由を確認してください。`
-          : "全件完了。送信処理は実行していません。",
-      link: "/ja/admin/opportunity-briefs",
-      type:
-        result.failed > 0
-          ? "japan_entry_report_batch_failed"
-          : "japan_entry_report_batch_completed",
+    const { runEnrichmentJobs } =
+      await import("@/lib/sales/enrichment-jobs-runner");
+    result = await runEnrichmentJobs(parsed.data.limit, ["japan_entry_report"]);
+  } catch (error) {
+    console.error(
+      "[opportunity-report-batch] automatic drain execution failed:",
+      error,
+    );
+    await releaseJapanEntryReportDrain(drainId);
+    return NextResponse.json(
+      {
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+        drainId,
+        sendingEnabled: false,
+      },
+      { status: 500 },
+    );
+  }
+
+  const sb = getServiceSalesSupabase();
+  const due = sb
+    ? await sb
+        .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
+        .select("id", { count: "exact", head: true })
+        .eq("job_type", "japan_entry_report")
+        .eq("status", "queued")
+        .lte("next_run_at", new Date().toISOString())
+    : { count: 0, error: { message: "Supabase service_role not configured" } };
+  if (due.error) {
+    console.error(
+      "[opportunity-report-batch] remaining queue check failed:",
+      due.error.message,
+    );
+    await releaseJapanEntryReportDrain(drainId);
+    return NextResponse.json(
+      {
+        ...result,
+        ok: false,
+        error: due.error.message,
+        drainId,
+        sendingEnabled: false,
+      },
+      { status: 500 },
+    );
+  }
+  const remaining = due.count ?? 0;
+  if (remaining > 0) {
+    after(async () => {
+      const dispatched = await dispatchJapanEntryReportDrain({
+        drainId,
+        limit: parsed.data.limit,
+      });
+      if (!dispatched.ok) {
+        console.error(
+          "[opportunity-report-batch] chained automatic drain failed:",
+          dispatched.error,
+        );
+        await releaseJapanEntryReportDrain(drainId);
+      }
     });
+  } else {
+    await releaseJapanEntryReportDrain(drainId);
+  }
+  try {
+    if (result.failed > 0 || remaining === 0) {
+      const { notifyBothChannels } = await import("@/lib/notify");
+      await notifyBothChannels("sales", {
+        title:
+          result.failed > 0
+            ? `Opportunity Brief生成失敗: ${result.failed}社`
+            : "Opportunity Brief自動生成完了",
+        message:
+          result.failed > 0
+            ? "品質・同期エラーを管理画面で確認し、同じジョブIDで再試行してください。"
+            : `キューを最後まで処理しました。最終バッチ${result.completed}社、送信処理は実行していません。`,
+        link: "/ja/admin/opportunity-briefs",
+        type:
+          result.failed > 0
+            ? "japan_entry_report_batch_failed"
+            : "japan_entry_report_batch_completed",
+      });
+    }
   } catch (error) {
     console.error(
       "[opportunity-report-batch] completion notification failed:",
@@ -246,7 +352,14 @@ export async function PUT(req: NextRequest) {
     );
   }
   return NextResponse.json(
-    { ...result, sendingEnabled: false },
+    {
+      ...result,
+      status: remaining > 0 ? "continuing" : "drained",
+      remaining,
+      drainId,
+      automated: parsed.data.automated,
+      sendingEnabled: false,
+    },
     { status: result.ok ? 200 : 207 },
   );
 }
@@ -308,12 +421,28 @@ export async function PATCH(req: NextRequest) {
     const { notifyBothChannels } = await import("@/lib/notify");
     await notifyBothChannels("sales", {
       title: `Opportunity Brief再試行: ${retried.data?.length ?? 0}件`,
-      message: "同じジョブIDを再利用し、重複生成とフォーム送信を行わずに再処理します。",
+      message:
+        "同じジョブIDを再利用し、重複生成とフォーム送信を行わずに再処理します。",
       link: "/ja/admin/opportunity-briefs",
       type: "japan_entry_report_batch_retried",
     });
   } catch (error) {
-    console.error("[opportunity-report-batch] retry notification failed:", error);
+    console.error(
+      "[opportunity-report-batch] retry notification failed:",
+      error,
+    );
+  }
+  if ((retried.data?.length ?? 0) > 0) {
+    const drainId = randomUUID();
+    after(async () => {
+      const dispatched = await dispatchJapanEntryReportDrain({ drainId });
+      if (!dispatched.ok) {
+        console.error(
+          "[opportunity-report-batch] retry automatic drain dispatch failed:",
+          dispatched.error,
+        );
+      }
+    });
   }
   return NextResponse.json({
     ok: true,

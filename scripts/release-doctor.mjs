@@ -351,11 +351,13 @@ function checkStaticReleaseRules() {
   if (
     reportFactoryMigration.includes("japan_entry_report") &&
     reportFactoryMigration.includes("idempotency_key") &&
+    reportFactoryMigration.includes("claim_japan_entry_report_drain") &&
+    reportFactoryMigration.includes("sales_report_factory_state") &&
     reportFactoryMigration.includes("supabase_realtime") &&
     noLoginDeploy.includes("20260713203000_japan_entry_report_factory.sql") &&
     noLoginDeploy.includes("applyJapanEntryReportFactoryMigration")
   ) {
-    pass("Japan Entry report factory has queue, idempotency, Realtime, and release wiring")
+    pass("Japan Entry report factory has queue, idempotency, single-drain lease, Realtime, and release wiring")
   } else {
     fail("Japan Entry report factory requires queue, idempotency, Realtime, and release wiring")
   }

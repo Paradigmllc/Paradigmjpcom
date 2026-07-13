@@ -141,7 +141,11 @@ async function markJobFailure(
   message: string,
 ): Promise<void> {
   const nextAttempts = job.attempts + 1;
-  const terminal = nextAttempts >= job.max_attempts;
+  // Opportunity Briefs are fail-closed: a weak/partial report must be visible
+  // to an operator immediately instead of sitting in a delayed retry queue
+  // with no durable timer. PATCH retries reuse the same job and projection key.
+  const terminal =
+    job.job_type === "japan_entry_report" || nextAttempts >= job.max_attempts;
   const delayMs = Math.min(30 * 60_000, 2 ** nextAttempts * 60_000);
   const retrying = !terminal;
   const { error } = await sb
