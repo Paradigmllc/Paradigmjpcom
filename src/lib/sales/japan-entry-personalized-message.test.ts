@@ -163,6 +163,107 @@ describe("DeepSeek V4 Pro Japan Entry form copy", () => {
     expect(review.score).toBe(100)
   })
 
+  it("rejects unresolved placeholders even when surrounding evidence phrases are valid", () => {
+    const facts = buildJapanEntryPersonalizationFacts(audit, "ecommerce", projection)
+    const message = messages[0]
+      .replace("1,950", "[monthly visits]")
+      .replace("$10,296", "[opportunity gap]")
+    const review = reviewPersonalizedJapanEntryMessage({
+      message,
+      companyName: "Example",
+      productContext,
+      productEvidence,
+      factIds: ["japan-audit-language", "modeled-japan-monthly-visits", "modeled-monthly-opportunity-gap"],
+      facts,
+    })
+    expect(review.passed).toBe(false)
+    expect(review.score).toBe(0)
+    expect(review.issues).toContain("Unresolved template placeholder is prohibited")
+    expect(review.issues.join(" ")).toContain("Required modeled values are missing from paragraph 3")
+  })
+
+  it.each([
+    "[monthly visits]",
+    "［monthly visits］",
+    "【monthly visits】",
+    "{{monthly_visits}}",
+    "${monthly_visits}",
+    "<monthly_visits>",
+    "__MONTHLY_VISITS__",
+    "%MONTHLY_VISITS%",
+    "MONTHLY_VISITS",
+    "TBD",
+  ])("rejects unresolved placeholder form %s", (placeholder) => {
+    const facts = buildJapanEntryPersonalizationFacts(audit, "ecommerce", projection)
+    const review = reviewPersonalizedJapanEntryMessage({
+      message: messages[0].replace("1,950", placeholder),
+      companyName: "Example",
+      productContext,
+      productEvidence,
+      factIds: ["japan-audit-language", "modeled-japan-monthly-visits", "modeled-monthly-opportunity-gap"],
+      facts,
+    })
+    expect(review.passed).toBe(false)
+    expect(review.issues).toContain("Unresolved template placeholder is prohibited")
+  })
+
+  it("requires the exact supplied modeled values in the diagnosis paragraph", () => {
+    const facts = buildJapanEntryPersonalizationFacts(audit, "ecommerce", projection)
+    const message = messages[0]
+      .replace("1,950", "an estimated volume of visits")
+      .replace("$10,296", "an estimated monthly amount")
+    const review = reviewPersonalizedJapanEntryMessage({
+      message,
+      companyName: "Example",
+      productContext,
+      productEvidence,
+      factIds: ["japan-audit-language", "modeled-japan-monthly-visits", "modeled-monthly-opportunity-gap"],
+      facts,
+    })
+    expect(review.passed).toBe(false)
+    expect(review.issues.join(" ")).toMatch(/Required modeled values|exact USD currency label/)
+  })
+
+  it("requires the exact company name in the product-understanding paragraph", () => {
+    const facts = buildJapanEntryPersonalizationFacts(audit, "ecommerce", projection)
+    const message = messages[0]
+      .replace("I reviewed Example’s", "I reviewed the company’s")
+      .replace("Our public-signal", "Example’s public-signal")
+    const review = reviewPersonalizedJapanEntryMessage({
+      message,
+      companyName: "Example",
+      productContext,
+      productEvidence,
+      factIds: ["japan-audit-language", "modeled-japan-monthly-visits", "modeled-monthly-opportunity-gap"],
+      facts,
+    })
+    expect(review.passed).toBe(false)
+    expect(review.issues).toContain("Company name and grounded product understanding must be in paragraph 2")
+  })
+
+  it("rejects speculative product applicability found by the live V4 Pro smoke test", () => {
+    const facts = buildJapanEntryPersonalizationFacts(audit, "saas", projection)
+    const message = `Hello, I’m Sato from Paradigm LLC in Japan. We help overseas companies enter the Japanese market.
+
+I reviewed Example and noted its subscription analytics platform for independent retailers. Its inventory forecasting could address specific operational needs of Japanese shop owners.
+
+A public-signal planning model estimates approximately 1,950 monthly visits from Japan, with a potential monthly revenue opportunity gap of approximately $10,296. These are planning estimates, not measured analytics. The checked public pages did not show a Japanese-language customer path, so the customer path remains unverified.
+
+Paradigm addresses these items through our Japan Entry Package, which validates the opportunity and addresses the named customer-path gap. The package is $12,000 paid upfront, with the first six months of managed support included at no additional monthly charge. Would you like a detailed Japan opportunity analysis?`
+    const review = reviewPersonalizedJapanEntryMessage({
+      message,
+      companyName: "Example",
+      productContext,
+      productEvidence,
+      factIds: ["japan-audit-language", "modeled-japan-monthly-visits", "modeled-monthly-opportunity-gap"],
+      facts,
+    })
+    expect(review.passed).toBe(false)
+    expect(review.issues).toContain("Speculative product applicability is prohibited in paragraph 2")
+    expect(review.issues).toContain("Japan-specific product claims must come from the supplied product context")
+    expect(review.issues.join(" ")).toContain("Unsupported product-context terms")
+  })
+
   it("generates three candidates and uses a separate strict V4 Pro critic", async () => {
     const caller = vi
       .fn()
