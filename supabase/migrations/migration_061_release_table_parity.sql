@@ -143,7 +143,7 @@ create policy agency_demo_sites_service_role_all on public.agency_demo_sites for
 drop policy if exists agency_reports_service_role_all on public.agency_reports;
 create policy agency_reports_service_role_all on public.agency_reports for all to service_role using (true) with check (true);
 drop policy if exists agency_reports_anon_active_select on public.agency_reports;
-create policy agency_reports_anon_active_select on public.agency_reports for select to anon, authenticated using (status = 'active');
+drop policy if exists "Enable SELECT for anonymous on reports" on public.agency_reports;
 
 grant select, insert, update, delete on public.prospects to service_role;
 grant select, insert, update, delete on public.prospect_patterns to service_role;
@@ -152,7 +152,7 @@ grant select, insert, update, delete on public.agency_presentations to service_r
 grant select, insert, update, delete on public.agency_videos to service_role;
 grant select, insert, update, delete on public.agency_demo_sites to service_role;
 grant select, insert, update, delete on public.agency_reports to service_role;
-grant select on public.agency_reports to anon, authenticated;
+revoke all on public.agency_reports from public, anon, authenticated;
 
 drop trigger if exists set_prospects_updated_at on public.prospects;
 create trigger set_prospects_updated_at before update on public.prospects for each row execute function public.set_updated_at();
