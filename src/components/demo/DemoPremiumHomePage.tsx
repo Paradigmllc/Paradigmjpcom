@@ -31,7 +31,7 @@ export function DemoPremiumHomePage({ data }: { data: DemoMultiPageData }) {
   }, [premium.heroMedia.length, reducedMotion])
 
   const accent = data.meta.accentColor
-  const basePath = `/${data.locale}/demo/${data.slug}`
+  const basePath = `/${data.slug}`
   const mapHref = data.pages.contact.mapUrl ?? `${basePath}/contact`
 
   return (
