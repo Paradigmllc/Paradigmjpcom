@@ -67,7 +67,8 @@ export async function generateFullStackDemo(
     }
     const templates = selectTemplateCandidates(profile, diagnostic, 3)
     const existingFingerprints = await fetchExistingFingerprints(sb, companyId)
-    const rights = buildProposalRightsManifest()
+    const companyMeta = company.meta as Record<string, unknown> | null
+    const rights = buildProposalRightsManifest(companyMeta?.demo_media)
     const candidates: GeneratedCandidate[] = await Promise.all(templates.map(async (template) => {
       let page = buildPersonalizedDemoData(
         company as unknown as Parameters<typeof buildDemoMultiPageData>[0],

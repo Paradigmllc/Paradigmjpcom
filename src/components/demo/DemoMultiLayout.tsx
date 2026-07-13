@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
+import { FaInstagram } from "react-icons/fa6"
 import { navClasses, type NavStyle } from "@/lib/sales/demo-templates/registry"
 import type { DemoTemplate } from "@/lib/sales/demo-templates/registry"
 import type { DemoDesignRecipe, DemoMeta, DemoQualityReport } from "@/lib/sales/demo-site-types"
@@ -82,6 +83,7 @@ export function DemoMultiLayout({
     ? "提案用デモサイト（公式サイトではありません）"
     : "Proposal demo — not the company’s official website")
   const footerOwner = presentation?.footerOwner ?? "Paradigm LLC"
+  const isInstagramCta = /instagram\.com/i.test(ctaHref)
 
   // Dark theme for flux
   const isDarkNav = templateId === "flux"
@@ -94,8 +96,9 @@ export function DemoMultiLayout({
       data-motion={designRecipe?.motionVariant}
       style={{ "--demo-accent": accent } as React.CSSProperties}
     >
-      <div className={`border-b px-4 py-2 text-center text-xs font-medium ${isDarkNav ? "border-white/10 bg-gray-950 text-white/70" : "border-blue-100 bg-blue-50 text-blue-900"}`}>
-        {proposalNotice}
+      <div className={`border-b px-4 py-2 text-center text-[10px] font-medium sm:text-xs ${isDarkNav ? "border-white/10 bg-gray-950 text-white/70" : "border-[#a95f3d]/10 bg-[#f8f0e8] text-[#6f3723]"}`}>
+        <span className="sm:hidden">提案用デモ · 公式サイトではありません</span>
+        <span className="hidden sm:inline">{proposalNotice}</span>
         {quality?.passed ? ` · Quality ${quality.score}/100` : ""}
       </div>
       {/* Nav */}
@@ -144,7 +147,8 @@ export function DemoMultiLayout({
             }`}
             style={{ background: "var(--demo-accent, #2563eb)" }}
           >
-            {ctaText} <ArrowIcon />
+            {isInstagramCta && <FaInstagram className="h-4 w-4" aria-hidden="true" />}
+            <span className={isInstagramCta ? "hidden min-[430px]:inline" : ""}>{ctaText}</span> <ArrowIcon />
           </a>
         </div>
 
@@ -219,6 +223,7 @@ export function DemoMultiLayout({
                 className="mt-3 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all hover:opacity-90"
                 style={{ background: "var(--demo-accent, #2563eb)" }}
               >
+                {isInstagramCta && <FaInstagram className="h-4 w-4" aria-hidden="true" />}
                 {footerCTA}
               </a>
             </div>
@@ -232,6 +237,7 @@ export function DemoMultiLayout({
               <a href={`${basePath}/recruit`} className="hover:text-[var(--demo-accent)]">{isJa ? "採用情報" : "Careers"}</a>
               <a href={`${basePath}/privacy`} className="hover:text-[var(--demo-accent)]">{isJa ? "プライバシー" : "Privacy"}</a>
               <a href={`${basePath}/terms`} className="hover:text-[var(--demo-accent)]">{isJa ? "利用条件" : "Terms"}</a>
+              <a href={`${basePath}/commerce`} className="hover:text-[var(--demo-accent)]">{isJa ? "特定商取引法" : "Commerce disclosure"}</a>
             </div>
           </div>
         </div>

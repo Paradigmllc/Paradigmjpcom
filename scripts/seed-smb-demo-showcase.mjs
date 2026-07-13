@@ -38,10 +38,36 @@ const rightsManifest = {
     { kind: "text", source: sourceUrl, usage: "public_fact", reference: "name, address, category, menu summary" },
     { kind: "text", source: instagramUrl, usage: "public_fact", reference: "official social profile" },
     { kind: "logo", source: "generated text monogram", usage: "proposal_only" },
+    { kind: "image", source: "/demos/cafe-sosomu/hero.jpg", usage: "proposal_only", reference: "OpenAI-generated concept visual" },
+    { kind: "image", source: "/demos/cafe-sosomu/pour-over.jpg", usage: "proposal_only", reference: "OpenAI-generated concept visual" },
+    { kind: "image", source: "/demos/cafe-sosomu/exterior.jpg", usage: "proposal_only", reference: "OpenAI-generated concept visual" },
     { kind: "font", source: "application bundled fonts", usage: "licensed" },
     { kind: "map", source: mapUrl, usage: "public_fact" },
   ],
 }
+const premium = {
+    style: "editorial-cafe",
+    heroMedia: [
+      { src: "/demos/cafe-sosomu/hero.jpg", alt: "木の温もりを感じるカフェ空間とフレンチトースト、ドリップコーヒーの提案用イメージ", kind: "image", caption: "Coffee, French toast, and a slower afternoon", objectPosition: "center" },
+      { src: "/demos/cafe-sosomu/pour-over.jpg", alt: "ハンドドリップでコーヒーを淹れる提案用イメージ", kind: "image", caption: "A carefully poured cup", objectPosition: "center" },
+      { src: "/demos/cafe-sosomu/exterior.jpg", alt: "世田谷の住宅街にあるカフェ外観の提案用イメージ", kind: "image", caption: "A quiet place in the neighborhood", objectPosition: "center" },
+    ],
+    gallery: [
+      { src: "/demos/cafe-sosomu/hero.jpg", alt: "フレンチトーストとコーヒーの提案用イメージ", kind: "image", caption: "フレンチトーストとドリップコーヒー", objectPosition: "58% center" },
+      { src: "/demos/cafe-sosomu/pour-over.jpg", alt: "ドリップコーヒーを淹れる提案用イメージ", kind: "image", caption: "一杯ずつ、丁寧に", objectPosition: "center" },
+      { src: "/demos/cafe-sosomu/exterior.jpg", alt: "静かな街角のカフェ外観の提案用イメージ", kind: "image", caption: "桜のまちを歩く途中に", objectPosition: "center" },
+    ],
+    intro: {
+      eyebrow: "A SMALL PAUSE IN YOUR DAY",
+      title: "急がない時間が、\n今日を少し前へ進める。",
+      body: "Cafe SOSOMUは、世田谷区桜にあるカフェです。\n香り立つドリップコーヒーとフレンチトースト、軽食とともに、日常の歩幅を少しゆるめる時間を提案します。",
+      note: "掲載写真は提案用に生成したコンセプトビジュアルです。正式制作時に店舗承認済みの実写へ差し替えます。",
+    },
+    social: [
+      { label: "Cafe SOSOMU 公式Instagram", href: instagramUrl, network: "instagram" },
+    ],
+}
+
 const designRecipe = {
   templateId: "nomad",
   heroVariant: "centered",
@@ -65,6 +91,7 @@ const payload = {
   locale: "ja",
   industry: "restaurant",
   templateId: "nomad",
+  premium,
   designRecipe,
   quality,
   rightsManifest,
@@ -72,7 +99,7 @@ const payload = {
   meta: {
     title: "Cafe SOSOMU | 桜のまちで、ゆっくり進む",
     description: "フレンチトースト、ドリップコーヒー、軽食を楽しめるCafe SOSOMUの提案用Webサイトデモ。",
-    ogImage: "",
+    ogImage: "/demos/cafe-sosomu/hero.jpg",
     industry: "restaurant",
     locale: "ja",
     companyName: "Cafe SOSOMU",
@@ -203,6 +230,11 @@ const payload = {
       { id: "demo", heading: "このサイトについて", body: "Cafe SOSOMUの公開情報をもとに制作した提案用デモです。公式サイトではありません。" },
       { id: "facts", heading: "掲載情報", body: "営業情報やメニューは変更される可能性があります。最新情報は公式Instagramをご確認ください。" },
       { id: "rights", heading: "素材の取り扱い", body: "第三者写真やロゴを無断転載せず、正式制作時は使用許諾を確認した素材だけを掲載します。" },
+    ]),
+    commerce: contentPage("特定商取引法に基づく表記", "オンライン販売や有料予約を行う場合の確認用ページです。", "COMMERCE DISCLOSURE", [
+      { id: "operator", heading: "販売事業者・責任者", body: "正式な事業者名、責任者、所在地、連絡先を店舗確認後に掲載します。", note: "事業者確認が必要です" },
+      { id: "price", heading: "販売価格・追加費用", body: "オンライン販売を行う場合は、販売価格、送料、決済手数料など実際の条件を掲載します。" },
+      { id: "delivery", heading: "提供時期・返品・キャンセル", body: "商品や予約の性質に合わせ、提供時期と返品・キャンセル条件を専門家確認後に確定します。" },
     ]),
   },
 }

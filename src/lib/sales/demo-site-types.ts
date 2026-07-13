@@ -195,6 +195,7 @@ export interface DemoMultiPageData {
   quality?: DemoQualityReport
   rightsManifest?: DemoRightsManifest
   publicationStatus?: DemoPublicationStatus
+  premium?: DemoPremiumExperience
   pages: {
     home: DemoHomePage
     about: DemoAboutPage
@@ -206,7 +207,35 @@ export interface DemoMultiPageData {
     recruit?: DemoContentPage
     privacy?: DemoContentPage
     terms?: DemoContentPage
+    commerce?: DemoContentPage
   }
+}
+
+export interface DemoPremiumMedia {
+  src: string
+  alt: string
+  kind: "image" | "video"
+  eyebrow?: string
+  title?: string
+  caption?: string
+  objectPosition?: string
+}
+
+export interface DemoPremiumExperience {
+  style: "editorial-cafe" | "craft" | "professional" | "wellness" | "retail"
+  heroMedia: DemoPremiumMedia[]
+  gallery: DemoPremiumMedia[]
+  intro: {
+    eyebrow: string
+    title: string
+    body: string
+    note?: string
+  }
+  social: Array<{
+    label: string
+    href: string
+    network: "instagram" | "facebook" | "x" | "line" | "youtube" | "tiktok"
+  }>
 }
 
 export interface DemoContentPage {

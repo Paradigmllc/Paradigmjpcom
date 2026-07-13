@@ -6,7 +6,7 @@ import type { DemoContentPage as DemoContentPageData } from "@/lib/sales/demo-si
 export const dynamic = "force-dynamic"
 export const revalidate = 300
 
-const CONTENT_PAGES = ["works", "news", "faq", "recruit", "privacy", "terms"] as const
+const CONTENT_PAGES = ["works", "news", "faq", "recruit", "privacy", "terms", "commerce"] as const
 type ContentPageKey = typeof CONTENT_PAGES[number]
 
 function isContentPage(value: string): value is ContentPageKey {

@@ -427,3 +427,7 @@ body.no-grain::before { display: none; }
 .anim-fade-up-1 { animation: fadeSlideUp 0.7s 0.1s cubic-bezier(0.22,1,0.36,1) both; }
 .anim-fade-up-2 { animation: fadeSlideUp 0.7s 0.2s cubic-bezier(0.22,1,0.36,1) both; }
 .anim-fade-up-3 { animation: fadeSlideUp 0.7s 0.3s cubic-bezier(0.22,1,0.36,1) both; }
+
+.font-premium-serif {
+  font-family: "Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", serif;
+}
