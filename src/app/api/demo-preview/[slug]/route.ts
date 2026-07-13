@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { previewCookieName, verifyDemoPreviewToken } from "@/lib/sales/demo-private-access"
+import { siteUrl } from "@/lib/sales/routing"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -16,7 +17,8 @@ export async function GET(
     return NextResponse.json({ ok: false, error: "このプレビューURLは無効または期限切れです" }, { status: 401 })
   }
 
-  const response = NextResponse.redirect(new URL(`/${locale}/demo/${encodeURIComponent(slug)}`, request.url))
+  const origin = process.env.NODE_ENV === "production" ? siteUrl() : request.nextUrl.origin
+  const response = NextResponse.redirect(new URL(`/${locale}/demo/${encodeURIComponent(slug)}`, origin))
   response.cookies.set(previewCookieName(slug), token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
