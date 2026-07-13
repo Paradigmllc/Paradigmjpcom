@@ -101,7 +101,7 @@ describe("demo batch route without PostgREST relationship metadata", () => {
 
   it("issues a clean noindex URL after loading company metadata separately", async () => {
     const jobs = fluentQuery({
-      data: [{ id: jobId, company_id: companyId, status: "completed", input_payload: { locale: "ja" }, result_payload: { slug: "example-demo" } }],
+      data: [{ id: jobId, company_id: companyId, status: "completed", input_payload: { locale: "ja" }, result_payload: { slug: "example-demo", quality_report: { passed: true, score: 96 } } }],
       error: null,
     })
     const companies = fluentQuery({ data: [{ id: companyId, meta: { demo_source_manifest: validManifest() } }], error: null })

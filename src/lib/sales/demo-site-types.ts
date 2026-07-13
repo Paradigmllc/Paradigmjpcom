@@ -131,6 +131,7 @@ export interface DemoGenerateOutput {
   qualityScore?: number
   publicationStatus?: DemoPublicationStatus
   candidates?: DemoCandidateSummary[]
+  qualityReport?: DemoQualityReport
   error?: string
 }
 
@@ -178,6 +179,12 @@ export interface DemoQualityReport {
   hardBlockers: string[]
   warnings: string[]
   checks: Record<string, boolean>
+  dimensions: {
+    specificity: number
+    contentDepth: number
+    trustSafety: number
+    visualReadiness: number
+  }
 }
 
 export interface DemoCandidateSummary {
@@ -187,6 +194,7 @@ export interface DemoCandidateSummary {
   designFingerprint: string
   structuralFingerprint: string
   hardBlockers: string[]
+  visualVariant: string
 }
 
 /* ───── Multi-page types (v2) ───── */
@@ -207,6 +215,14 @@ export interface DemoMultiPageData {
   rightsManifest?: DemoRightsManifest
   publicationStatus?: DemoPublicationStatus
   premium?: DemoPremiumExperience
+  presentation?: {
+    featureEyebrow: string
+    featureHeading: string
+    servicesEyebrow: string
+    servicesHeading: string
+    galleryEyebrow: string
+    galleryHeading: string
+  }
   privatePreview?: {
     expiresAt: string
     assetStatus: "unreviewed" | "private_proposal" | "consented" | "blocked"

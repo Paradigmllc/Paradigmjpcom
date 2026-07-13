@@ -15,6 +15,29 @@ interface DemoBatchJob {
   sales_companies?: { company_name?: string } | Array<{ company_name?: string }> | null
 }
 
+interface BatchQualityReport {
+  score: number
+  passed: boolean
+  hardBlockers: string[]
+  warnings: string[]
+  dimensions?: Record<string, number>
+}
+
+function readQualityReport(value: unknown): BatchQualityReport | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null
+  const report = value as Record<string, unknown>
+  if (typeof report.score !== "number" || typeof report.passed !== "boolean") return null
+  return {
+    score: report.score,
+    passed: report.passed,
+    hardBlockers: Array.isArray(report.hardBlockers) ? report.hardBlockers.filter((item): item is string => typeof item === "string") : [],
+    warnings: Array.isArray(report.warnings) ? report.warnings.filter((item): item is string => typeof item === "string") : [],
+    dimensions: report.dimensions && typeof report.dimensions === "object" && !Array.isArray(report.dimensions)
+      ? report.dimensions as Record<string, number>
+      : undefined,
+  }
+}
+
 const EXAMPLE = JSON.stringify({
   items: [{
     companyName: "サンプル事業者",
@@ -73,7 +96,7 @@ export function DemoBatchQueueConsole() {
   }
 
   async function issueCompleted() {
-    const jobIds = jobs.filter((job) => job.status === "completed").map((job) => job.id)
+    const jobIds = jobs.filter((job) => job.status === "completed" && readQualityReport(job.result_payload.quality_report)?.passed === true).map((job) => job.id)
     if (jobIds.length === 0) return toast.error("発行できる完了ジョブがありません")
     setBusy(true)
     try {
@@ -108,7 +131,8 @@ export function DemoBatchQueueConsole() {
       <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
         {jobs.length === 0 ? <p className="p-6 text-sm text-slate-500">「状態を更新」で直近の生成ジョブを表示します。</p> : jobs.map((job) => {
           const company = Array.isArray(job.sales_companies) ? job.sales_companies[0] : job.sales_companies
-          return <div key={job.id} className="grid gap-2 border-b border-slate-100 p-4 text-sm last:border-b-0 sm:grid-cols-[1fr_auto]"><div><p className="font-semibold">{company?.company_name ?? job.id}</p><p className="mt-1 text-xs text-slate-500">{new Date(job.created_at).toLocaleString("ja-JP")} / 試行 {job.attempts}/{job.max_attempts}</p>{job.error_message && <p className="mt-2 text-xs text-red-700">{job.error_message}</p>}</div><span className="h-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-bold">{job.status}</span></div>
+          const quality = readQualityReport(job.result_payload.quality_report)
+          return <div key={job.id} className="grid gap-3 border-b border-slate-100 p-4 text-sm last:border-b-0 sm:grid-cols-[1fr_auto]"><div><p className="font-semibold">{company?.company_name ?? job.id}</p><p className="mt-1 text-xs text-slate-500">{new Date(job.created_at).toLocaleString("ja-JP")} / 試行 {job.attempts}/{job.max_attempts}</p>{quality && <div className="mt-3 flex flex-wrap gap-2">{Object.entries(quality.dimensions ?? {}).map(([label, score]) => <span key={label} className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] text-slate-700">{label} {score}/25</span>)}</div>}{quality?.hardBlockers.map((blocker) => <p key={blocker} className="mt-2 text-xs font-semibold text-red-700">公開停止: {blocker}</p>)}{job.error_message && <p className="mt-2 text-xs text-red-700">{job.error_message}</p>}</div><div className="flex items-start gap-2"><span className={`h-fit rounded-full px-3 py-1 text-xs font-bold ${quality?.passed ? "bg-emerald-100 text-emerald-800" : "bg-slate-100"}`}>{quality ? `${quality.score}/100` : job.status}</span></div></div>
         })}
       </div>
     </section>
