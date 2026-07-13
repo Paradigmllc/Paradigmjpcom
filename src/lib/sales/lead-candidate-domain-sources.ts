@@ -61,7 +61,9 @@ function buildResult(input: {
   limit: number
 }): CandidateDomainFetchResult {
   return {
-    domains: [...input.sourceByDomain.keys()].sort().slice(0, input.limit),
+    // Preserve source priority: verified technology-footprint candidates must be
+    // processed before generic TLD fallbacks.
+    domains: [...input.sourceByDomain.keys()].slice(0, input.limit),
     failures: input.failures.slice(0, MAX_FAILURES),
     sourceStats: input.sourceStats,
     sourceByDomain: serializeSourceByDomain(input.sourceByDomain),

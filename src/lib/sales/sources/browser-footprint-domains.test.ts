@@ -20,7 +20,7 @@ describe("fetchBrowserFootprintDomains", () => {
 
     expect(result.ok).toBe(true)
     expect(result.domains).toEqual(["brand-one.com", "brand-two.com"])
-    expect(result.queries[0]).toContain('"cdn.shopify.com"')
+    expect(result.queries[0]).toContain("site:myshopify.com")
     expect(searchWithBrowser).toHaveBeenCalledTimes(1)
   })
 
