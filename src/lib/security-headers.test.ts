@@ -28,6 +28,7 @@ describe("public HTTP security headers", () => {
     expect(policy).toContain("object-src 'none'")
     expect(policy).toContain("frame-ancestors 'self'")
     expect(policy).toContain("https://challenges.cloudflare.com")
+    expect(policy).toContain("https://static.cloudflareinsights.com")
     expect(policy).toContain("https://www.googletagmanager.com")
     expect(policy).toContain("https://connect.facebook.net")
     expect(policy).toContain("https://fonts.googleapis.com")
