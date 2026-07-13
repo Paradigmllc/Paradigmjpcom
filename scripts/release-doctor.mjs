@@ -1086,6 +1086,16 @@ async function checkPublicFunnelEnvironment() {
     } else {
       fail("DIFY_API_KEY or a dedicated form-message key is required for LLM draft generation")
     }
+    const demoModel = String(envs.DEMO_LLM_MODEL || "").trim()
+    const demoLiteLlmReady = hasMinimumSecret("LITELLM_API_KEY")
+      && typeof envs.LITELLM_API_BASE === "string"
+      && envs.LITELLM_API_BASE.trim().length > 0
+    const demoDeepSeekReady = hasMinimumSecret("DEEPSEEK_API_KEY")
+    if (demoModel === "deepseek-v4-pro" && (demoLiteLlmReady || demoDeepSeekReady)) {
+      pass("SMB demo generation is pinned to DeepSeek V4 Pro")
+    } else {
+      fail("DEMO_LLM_MODEL=deepseek-v4-pro and a LiteLLM or DeepSeek credential are required")
+    }
     const backupEncrypted = /^(1|true|yes)$/i.test(String(envs.OSS_SUPABASE_BACKUP_ENCRYPTION_REQUIRED || "true").trim())
     const backupSshReady = typeof envs.OSS_SUPABASE_BACKUP_SSH_TARGET === "string" && envs.OSS_SUPABASE_BACKUP_SSH_TARGET.trim().length > 0
     const backupR2Ready =
