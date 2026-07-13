@@ -31,6 +31,7 @@ export async function fetchDemoPageData(slug: string): Promise<DemoPageData | nu
 
     if (themePage && !themeError) {
       const meta = (themePage.meta ?? {}) as Record<string, unknown>
+
       const blocks = (themePage.blocks ?? []) as Array<{ id: string; type: string; props: Record<string, unknown> }>
 
       // Fetch associated company for full data
@@ -161,6 +162,21 @@ export async function fetchDemoPageData(slug: string): Promise<DemoPageData | nu
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value)
+}
+
+function isDemoMultiPageData(value: unknown): value is DemoMultiPageData {
+  if (!isRecord(value) || !isRecord(value.pages)) return false
+  return typeof value.slug === "string"
+    && typeof value.companyName === "string"
+    && isRecord(value.meta)
+    && isRecord(value.pages.home)
+    && isRecord(value.pages.about)
+    && isRecord(value.pages.services)
+    && isRecord(value.pages.contact)
+}
+
 /**
  * Fetch multi-page demo data by slug. Reuses the same Supabase lookup
  * logic as fetchDemoPageData but returns DemoMultiPageData for the
@@ -177,13 +193,33 @@ export async function fetchDemoMultiPageData(slug: string): Promise<DemoMultiPag
     // Try theme_demo_pages first
     const { data: themePage, error: themeError } = await sb
       .from(DB_TABLES.THEME_DEMO_PAGES)
-      .select("slug, company_id, title, blocks, meta")
+      .select("slug, company_id, title, blocks, meta, site_payload, design_recipe, quality_report, rights_manifest, publication_status")
       .eq("slug", slug)
       .eq("is_published", true)
       .maybeSingle()
 
     if (themePage && !themeError) {
       const meta = (themePage.meta ?? {}) as Record<string, unknown>
+
+      if (isDemoMultiPageData(themePage.site_payload)) {
+        return applyDemoAdminOverrides({
+          ...themePage.site_payload,
+          designRecipe: isRecord(themePage.design_recipe)
+            ? themePage.design_recipe as unknown as DemoMultiPageData["designRecipe"]
+            : themePage.site_payload.designRecipe,
+          quality: isRecord(themePage.quality_report)
+            ? themePage.quality_report as unknown as DemoMultiPageData["quality"]
+            : themePage.site_payload.quality,
+          rightsManifest: isRecord(themePage.rights_manifest)
+            ? themePage.rights_manifest as unknown as DemoMultiPageData["rightsManifest"]
+            : themePage.site_payload.rightsManifest,
+          publicationStatus: themePage.publication_status as DemoMultiPageData["publicationStatus"],
+          meta: {
+            ...themePage.site_payload.meta,
+            artifact_admin: meta.artifact_admin,
+          } as DemoMultiPageData["meta"],
+        })
+      }
 
       const { data: company } = await sb
         .from(DB_TABLES.SALES_COMPANIES)

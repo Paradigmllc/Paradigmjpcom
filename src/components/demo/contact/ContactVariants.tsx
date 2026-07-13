@@ -25,20 +25,22 @@ export function ContactInfoCard({
                 <p className="text-base font-semibold text-gray-900">{contact.companyName}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: `${accent}10` }}>
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                  <polyline points="22,6 12,13 2,6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+            {contact.email && (
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: `${accent}10` }}>
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                    <polyline points="22,6 12,13 2,6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-400">Email</p>
+                  <a href={`mailto:${contact.email}`} className="text-base font-semibold transition-colors hover:underline" style={{ color: accent }}>
+                    {contact.email}
+                  </a>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-400">Email</p>
-                <a href={`mailto:${contact.email}`} className="text-base font-semibold transition-colors hover:underline" style={{ color: accent }}>
-                  {contact.email}
-                </a>
-              </div>
-            </div>
+            )}
             {contact.phone && (
               <div className="flex items-start gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: `${accent}10` }}>

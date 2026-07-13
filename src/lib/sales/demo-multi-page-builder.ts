@@ -132,18 +132,15 @@ export function buildDemoMultiPageData(
     },
   ].filter((f) => f.title && f.description)
 
-  // Stats use real data when available
+  // Stats only use observed data. Targets and modeled outcomes are not facts.
   const psValue = company.pagespeed_mobile
-  const psDisplay = psValue != null ? `${psValue}` : "85+"
   const metaObj = (company.meta ?? {}) as Record<string, unknown>
   const sslObj = metaObj?.ssl as Record<string, unknown> | undefined
-  const sslDisplay = sslObj?.grade as string ?? "A+"
+  const sslDisplay = typeof sslObj?.grade === "string" ? sslObj.grade : null
 
   const stats: DemoStatsItem[] = [
-    { amount: psDisplay, title: isJa ? "PageSpeed目標" : "PageSpeed Target", icon: "bolt" },
-    { amount: sslDisplay, title: "SSL / Trust", icon: "lock" },
-    { amount: "3", title: isJa ? "主要CTA" : "Primary CTAs", icon: "target" },
-    { amount: "24h", title: isJa ? "初期改善案" : "First action plan", icon: "clock" },
+    ...(psValue != null ? [{ amount: `${psValue}`, title: isJa ? "観測PageSpeed" : "Observed PageSpeed", icon: "bolt" }] : []),
+    ...(sslDisplay ? [{ amount: sslDisplay, title: isJa ? "観測SSL評価" : "Observed SSL grade", icon: "lock" }] : []),
   ]
 
   // Build real metrics summary for Before/After
@@ -169,8 +166,8 @@ export function buildDemoMultiPageData(
       label: cleanFs(act?.headline, titles[i] ?? "", 90),
       beforeDescription: beforeDescriptions[i] ?? "",
       afterDescription: cleanFs(act?.body, isJa ? "改善後の理想状態" : "Improved state after redesign", 180),
-      beforeImageUrl: report.screenshot_url ?? null,
-      afterImageUrl: report.screenshot_url ?? null,
+      beforeImageUrl: null,
+      afterImageUrl: null,
       severity: (act?.severity ?? "info") as DemoBeforeAfterItem["severity"],
     }
   }) ?? []
@@ -282,9 +279,9 @@ export function buildDemoMultiPageData(
       ? "まずはお気軽にご相談ください。15分の無料オンライン相談を承っております。"
       : "Feel free to reach out. We offer a free 15-minute online consultation.",
     companyName: name,
-    email: "contact@paradigmjp.com",
+    email: "",
     phone: undefined,
-    address: isJa ? "東京都（オンライン対応 / 全国対応）" : "Tokyo, Japan (Online / Nationwide)",
+    address: locationStr,
     calBookingUrl: calEmbedUrl,
     calDirectUrl: calBookingUrl,
     formNote: isJa
@@ -295,12 +292,12 @@ export function buildDemoMultiPageData(
 
   /* ───── Meta ───── */
 
-  const ogImage = `https://pub-ac30eb86a32747f1a27e304aa9c6f95a.r2.dev/ogp/${company.id}.png`
+  const sourceEvidence = detectPublicSourceEvidence({ meta: company.meta, visualEvidence: company.visual_evidence })
 
   const meta = {
     title: `${name} | ${isJa ? "Web改善デモサイト" : "Web Improvement Demo"}`,
     description: cleanFs(report.hook, isJa ? `${name}のWeb改善デモ` : `${name} web improvement demo`, 150),
-    ogImage,
+    ogImage: "",
     industry: industry as Industry,
     locale,
     companyName: name,
@@ -309,6 +306,7 @@ export function buildDemoMultiPageData(
     calBookingUrl: ctaUrl,
     generatedAt: new Date().toISOString(),
     engine: "full-stack-nextjs-multi-page",
+    sourceEvidence,
   }
 
   return {
@@ -323,6 +321,90 @@ export function buildDemoMultiPageData(
       about: aboutPage,
       services: servicesPage,
       contact: contactPage,
+      works: {
+        title: isJa ? "実績・事例" : "Work & Cases",
+        subtitle: isJa ? "実際の写真と実績情報を確認後に公開するページです。" : "This page will be completed after verified project details and image rights are confirmed.",
+        eyebrow: isJa ? "掲載構成案" : "Proposed structure",
+        sections: [
+          { id: "case-1", heading: isJa ? "代表事例 01" : "Featured work 01", body: isJa ? "事例名、対応内容、期間、成果はヒアリング後に確定します。" : "Name, scope, dates, and outcomes will be confirmed in discovery.", note: isJa ? "未確認情報は公開しません" : "Unverified claims will not be published" },
+          { id: "case-2", heading: isJa ? "代表事例 02" : "Featured work 02", body: isJa ? "使用許諾を確認した写真と、お客様が承認した説明のみ掲載します。" : "Only rights-cleared images and customer-approved descriptions will be used." },
+        ],
+        accentColor,
+      },
+      news: {
+        title: isJa ? "お知らせ" : "News",
+        subtitle: isJa ? "営業日、サービス、イベントなどの最新情報を届けます。" : "A home for operating hours, service updates, and events.",
+        eyebrow: isJa ? "更新しやすい設計" : "Easy to update",
+        sections: [
+          { id: "news-policy", heading: isJa ? "公開情報を一元管理" : "One source for current information", body: isJa ? "初回納品時は、承認済みのお知らせのみ掲載します。" : "The first release includes only approved announcements." },
+          { id: "news-empty", heading: isJa ? "現在、公開済みのお知らせはありません" : "No approved news yet", body: isJa ? "管理画面から追加できる構成です。" : "New posts can be added through the administration workflow." },
+        ],
+        accentColor,
+      },
+      faq: {
+        title: isJa ? "よくあるご質問" : "Frequently Asked Questions",
+        subtitle: isJa ? "問い合わせ前の疑問を短く、分かりやすく解消します。" : "Clear answers before a visitor needs to contact you.",
+        eyebrow: "FAQ",
+        sections: (faq ?? []).map((item) => ({ id: item.id, heading: item.question, body: item.answer })),
+        accentColor,
+      },
+      recruit: {
+        title: isJa ? "採用情報" : "Careers",
+        subtitle: isJa ? "会社の考え方と募集情報を伝えるページです。" : "A page for culture and verified openings.",
+        eyebrow: isJa ? "採用" : "Careers",
+        sections: [
+          { id: "culture", heading: isJa ? "働く環境・価値観" : "Culture and values", body: isJa ? "取材内容と社内確認を経て掲載文を確定します。" : "Copy will be finalized after interviews and internal approval." },
+          { id: "openings", heading: isJa ? "募集状況" : "Open roles", body: isJa ? "現在の募集状況は要確認です。未確認の求人は掲載しません。" : "Current openings are to be confirmed; unverified roles will not be listed." },
+        ],
+        accentColor,
+      },
+      privacy: {
+        title: isJa ? "プライバシーポリシー" : "Privacy Policy",
+        subtitle: isJa ? "個人情報の取扱方針を示す納品前レビュー用の文面です。" : "A pre-delivery draft for reviewing personal-data handling.",
+        eyebrow: isJa ? "法務確認が必要です" : "Legal review required",
+        sections: [
+          { id: "purpose", heading: isJa ? "利用目的" : "Purpose", body: isJa ? "お問い合わせへの回答と必要なご連絡のために入力情報を利用する想定です。" : "Submitted information is intended to be used to respond to inquiries and necessary follow-up." },
+          { id: "retention", heading: isJa ? "保管・第三者提供" : "Retention and sharing", body: isJa ? "実際の運用、委託先、保管期間を確認後に確定します。" : "Final wording depends on actual operations, processors, and retention periods." },
+        ],
+        accentColor,
+      },
+      terms: {
+        title: isJa ? "サイト利用条件" : "Website Terms",
+        subtitle: isJa ? "サイト利用上の基本条件を示す確認用ページです。" : "A review page for the website's basic terms of use.",
+        eyebrow: isJa ? "法務確認が必要です" : "Legal review required",
+        sections: [
+          { id: "content", heading: isJa ? "掲載内容" : "Website content", body: isJa ? "掲載情報は公開前に事業者確認を行い、予告なく変更される場合があります。" : "Content is reviewed by the business before publication and may change without notice." },
+          { id: "liability", heading: isJa ? "免責事項" : "Disclaimer", body: isJa ? "事業内容に合わせた責任範囲を専門家確認後に確定します。" : "The final scope of liability requires professional review for the specific business." },
+        ],
+        accentColor,
+      },
     },
   }
+}
+
+function detectPublicSourceEvidence(input: unknown): string[] {
+  const values: string[] = []
+  const visit = (value: unknown, depth: number) => {
+    if (depth > 6 || value == null) return
+    if (typeof value === "string") {
+      values.push(value.toLowerCase())
+      return
+    }
+    if (Array.isArray(value)) {
+      value.forEach((item) => visit(item, depth + 1))
+      return
+    }
+    if (typeof value === "object") {
+      Object.values(value as Record<string, unknown>).forEach((item) => visit(item, depth + 1))
+    }
+  }
+  visit(input, 0)
+  const joined = values.join("\n")
+  return [
+    /https?:\/\/(?:www\.)?(?:google\.[^/]+\/maps|maps\.google\.[^/]+|maps\.app\.goo\.gl)/u.test(joined) ? "google_maps" : null,
+    /https?:\/\/(?:www\.)?instagram\.com\//u.test(joined) ? "instagram" : null,
+    /https?:\/\/(?:www\.)?facebook\.com\//u.test(joined) ? "facebook" : null,
+    /https?:\/\/(?:www\.)?tiktok\.com\//u.test(joined) ? "tiktok" : null,
+    /https?:\/\/(?:www\.)?youtube\.com\//u.test(joined) ? "youtube" : null,
+  ].filter((value): value is string => Boolean(value))
 }

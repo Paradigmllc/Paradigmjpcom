@@ -18,7 +18,8 @@ import type { DiagnosticReportData } from "./diagnostic";
 import type { DemoTemplate } from "./demo-templates/registry";
 import type { ReportLocale } from "./types";
 import type { DeepSeekEnhancedOutput } from "./demo-deepseek-types";
-import { callDeepSeek, parseDeepSeekOutput } from "./demo-deepseek-client";
+import { callDeepSeek } from "@/lib/deepseek";
+import { parseDeepSeekOutput } from "./demo-deepseek-client";
 import {
   buildEnglishSystemPrompt,
   buildEnglishUserPrompt,
@@ -64,21 +65,34 @@ export async function enhanceDemoWithDeepSeek(
   template: DemoTemplate,
   locale: ReportLocale,
 ): Promise<DeepSeekEnhancedOutput | null> {
-  const apiKey = readApiKey();
-  if (!apiKey) {
-    console.warn(
-      "[deepseek-enhancer] DEEPSEEK_API_KEY not set — skipping AI enhancement",
-    );
+  const messages = buildPrompt(company, report, template, locale);
+  const result = await callDeepSeek(messages, {
+    model: "deepseek-v4-pro",
+    modelPolicy: "strict",
+    temperature: 0.4,
+    maxTokens: 4096,
+    responseFormat: "json_object",
+    timeoutMs: 60_000,
+  });
+  if (!result.ok || !result.text) {
+    console.error("[deepseek-enhancer] strict DeepSeek V4 Pro generation failed:", result.error ?? "empty response");
     return null;
   }
 
-  const messages = buildPrompt(company, report, template, locale);
-
-  const result = await callDeepSeek(apiKey, messages, 0);
-  if (!result) return null;
-
-  const parsed = parseDeepSeekOutput(result, locale);
+  const parsed = parseDeepSeekOutput(result.text, locale);
   if (!parsed) return null;
+  if (
+    !parsed.home?.hero_title?.trim()
+    || (parsed.home.features?.length ?? 0) < 3
+    || (parsed.home.faq?.length ?? 0) < 3
+    || !parsed.about?.story?.trim()
+    || !parsed.about?.mission?.trim()
+    || (parsed.services?.services?.length ?? 0) < 2
+    || !parsed.contact?.intro?.trim()
+  ) {
+    console.error("[deepseek-enhancer] output failed full-site copy completeness checks");
+    return null;
+  }
 
   return {
     engine: "deepseek",
@@ -88,14 +102,6 @@ export async function enhanceDemoWithDeepSeek(
     services: parsed.services ?? {},
     contact: parsed.contact ?? {},
   };
-}
-
-/* ───── API key ───── */
-
-function readApiKey(): string | null {
-  const key = process.env.DEEPSEEK_API_KEY;
-  if (!key || key.trim().length === 0) return null;
-  return key.trim();
 }
 
 /* ───── Prompt builder ───── */
@@ -133,12 +139,9 @@ function buildPrompt(
   // Report summary
   const hook = report.hook ?? "";
   const acts = (report.acts ?? []).slice(0, 3);
-  const totalLoss = report.total_loss ?? "";
+  const totalLoss = "not publicly verified";
   const actSummaries = acts
-    .map(
-      (a) =>
-        `- ${a.headline ?? ""}: ${a.body ?? ""} [${a.metric_label ?? ""}: ${a.metric_value ?? ""}]`,
-    )
+    .map((a) => `- ${a.headline ?? ""}`)
     .join("\n");
 
   // Template summary

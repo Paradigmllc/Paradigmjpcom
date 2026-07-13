@@ -8,7 +8,9 @@ export function buildJapaneseSystemPrompt(): string {
 2. 不自然なAI翻訳調（機械翻訳のような表現）は避け、日本人のビジネスパーソンが実際に使う自然な表現にすること
 3. 業界や企業規模に合わせた適切な専門用語を使用すること
 4. 誇張表現や空虚なキャッチコピー（「革命的な」「世界初」「唯一無二」など）は避け、具体的で信頼感のある表現にすること
-5. 出力は必ず有効なJSON形式のみ。JSONの前後に説明文や注釈を付けないこと`;
+5. 入力に根拠がない実績、数値、沿革、代表者名、顧客名、推薦文、受賞歴、料金を創作しないこと
+6. 不明な情報は創作せず「要確認」と明示すること
+7. 出力は必ず有効なJSON形式のみ。JSONの前後に説明文や注釈を付けないこと`;
 }
 
 export function buildEnglishSystemPrompt(): string {
@@ -19,7 +21,9 @@ Follow these rules strictly:
 2. Avoid buzzwords like "revolutionary", "game-changing", "unparalleled", "world-class" unless truly justified
 3. Be specific and concrete rather than vague and grandiose
 4. Match the tone to the industry (formal for legal/accounting, approachable for retail/restaurant, innovative for tech)
-5. Output ONLY valid JSON. No explanations before or after the JSON.`;
+5. Never invent results, metrics, history, people, customers, testimonials, awards, or pricing
+6. Mark unsupported information as "To be confirmed"
+7. Output ONLY valid JSON. No explanations before or after the JSON.`;
 }
 
 export function buildJapaneseUserPrompt(
@@ -52,7 +56,7 @@ export function buildJapaneseUserPrompt(
 
 【診断レポート】
 - 診断フック: ${hook}
-- 推定損失: ${totalLoss}
+- 売上・損失: ${totalLoss}（公開コピーに数値として使用禁止）
 - 改善ポイント:
 ${actSummaries || "（特になし）"}
 
@@ -70,12 +74,6 @@ ${actSummaries || "（特になし）"}
         "icon": "sparkles | shield | route | star | bolt | globe | lock | target | cpu | search | chart | users | lightbulb | zap | heart | smile",
         "metric_label": "指標ラベル",
         "metric_value": "指標値"
-      }
-    ],
-    "testimonials": [
-      {
-        "quote": "実際のビジネスパーソンが言いそうな自然な推薦文",
-        "author": "役職, 企業名"
       }
     ],
     "faq": [
@@ -120,7 +118,7 @@ ${actSummaries || "（特になし）"}
   }
 }
 
-重要: features配列は必ず3つ生成してください。testimonialsは必ず2つ生成してください。FAQは必ず4つ生成してください。valuesは必ず4つ生成してください。servicesは必ず3つ生成してください。`;
+重要: features配列は3つ、FAQは4つ、valuesは4つ、servicesは3つ生成してください。根拠のない顧客の声・実績・数値は絶対に生成しないでください。`;
 }
 
 export function buildEnglishUserPrompt(
@@ -153,7 +151,7 @@ export function buildEnglishUserPrompt(
 
 [Diagnostic Report]
 - Diagnostic Hook: ${hook}
-- Estimated Loss: ${totalLoss}
+- Sales / loss: ${totalLoss} (do not turn this into a numeric public claim)
 - Improvement Points:
 ${actSummaries || "(none)"}
 
@@ -171,12 +169,6 @@ Output the following JSON. All English copy must be professional business Englis
         "icon": "sparkles | shield | route | star | bolt | globe | lock | target | cpu | search | chart | users | lightbulb | zap | heart | smile",
         "metric_label": "Metric label",
         "metric_value": "Metric value"
-      }
-    ],
-    "testimonials": [
-      {
-        "quote": "Natural-sounding testimonial quote",
-        "author": "Title, Company Name"
       }
     ],
     "faq": [
@@ -221,5 +213,5 @@ Output the following JSON. All English copy must be professional business Englis
   }
 }
 
-IMPORTANT: Generate exactly 3 features, 2 testimonials, 4 FAQs, 4 values, 3 services, and 4 process steps.`;
+IMPORTANT: Generate exactly 3 features, 4 FAQs, 4 values, 3 services, and 4 process steps. Never generate unsupported testimonials, customer claims, or performance metrics.`;
 }

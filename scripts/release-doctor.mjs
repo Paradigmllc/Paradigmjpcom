@@ -293,6 +293,23 @@ function checkStaticReleaseRules() {
     fail("Japan Entry projections must have RLS and release migration wiring")
   }
 
+  const demoQualityMigrationPath = "supabase/migrations/20260712233619_demo_quality_gate.sql"
+  const demoQualityMigration = fs.existsSync(demoQualityMigrationPath)
+    ? fs.readFileSync(demoQualityMigrationPath, "utf8")
+    : ""
+  if (
+    demoQualityMigration.includes("quality_score") &&
+    demoQualityMigration.includes("theme_demo_pages_quality_publish_check") &&
+    demoQualityMigration.toLowerCase().includes("enable row level security") &&
+    demoQualityMigration.toLowerCase().includes("to service_role") &&
+    noLoginDeploy.includes("20260712233619_demo_quality_gate.sql") &&
+    noLoginDeploy.includes("applyDemoQualityGateMigration")
+  ) {
+    pass("SMB demo quality gate has RLS, publish constraint, and release wiring")
+  } else {
+    fail("SMB demo quality gate must have RLS, publish constraint, and release wiring")
+  }
+
   const visualProofComponentPath = "src/components/japan-entry/JapanEntryVisualProof.tsx"
   const visualProofComponent = fs.existsSync(visualProofComponentPath)
     ? fs.readFileSync(visualProofComponentPath, "utf8")

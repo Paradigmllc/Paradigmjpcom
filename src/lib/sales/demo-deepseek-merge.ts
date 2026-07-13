@@ -30,23 +30,24 @@ export function mergeDeepSeekOutput(
       title: f.title || `Feature ${i + 1}`,
       description: f.description || "",
       icon: f.icon || "sparkles",
-      metricLabel: f.metric_label || "",
-      metricValue: f.metric_value || "",
+      metricLabel: "",
+      metricValue: "",
       metricBench: "",
       severity: "info" as const,
     }));
   }
 
-  // Home: testimonials (AI augments existing)
-  if (ai.home.testimonials && ai.home.testimonials.length > 0) {
-    const aiTestimonials = ai.home.testimonials.map((t, i) => ({
-      id: `ai-testimonial-${i}`,
-      quote: t.quote || "",
-      author: t.author || "",
-      role: "",
-      avatarInitials: (t.author || "A").charAt(0).toUpperCase(),
-    }));
-    home.testimonials = [...(home.testimonials ?? []), ...aiTestimonials];
+  // Testimonials and customer logos are never accepted from generative output.
+  // They require independently verified evidence and explicit usage rights.
+  home.testimonials = undefined;
+  home.trustedBy = undefined;
+  home.totalLoss = "";
+  if (home.metricsSummary) {
+    home.metricsSummary = {
+      ...home.metricsSummary,
+      monthlyLoss: null,
+      recoveryAmount: null,
+    };
   }
 
   // Home: FAQ (AI replaces rules-based if at least 2 exist)
@@ -77,7 +78,7 @@ export function mergeDeepSeekOutput(
       description: s.description || "",
       icon: s.icon || "sparkles",
       features: s.features?.filter(Boolean) ?? [],
-      priceNote: effectiveLocale === "ja" ? "お見積り無料" : "Free estimate",
+      priceNote: effectiveLocale === "ja" ? "料金は要確認" : "Pricing to be confirmed",
     }));
   }
   if (ai.services.process && ai.services.process.length >= 2) {
@@ -99,6 +100,6 @@ export function mergeDeepSeekOutput(
       engine: "deepseek",
       generatedAt: ai.generatedAt,
     },
-    pages: { home, about, services, contact },
+    pages: { ...base.pages, home, about, services, contact },
   };
 }

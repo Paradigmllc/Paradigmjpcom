@@ -322,7 +322,8 @@ export async function processAssetPhase(
                 design_philosophy: result.spec.design_philosophy,
                 generated_at: new Date().toISOString(),
               },
-              is_published: true,
+              is_published: false,
+              publication_status: "quality_review",
               company_id: company.id,
             }, { onConflict: "slug" })
             return result.spec

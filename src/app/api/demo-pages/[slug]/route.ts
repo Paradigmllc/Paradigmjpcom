@@ -52,9 +52,10 @@ export async function GET(
 
     const { data, error } = await sb
       .from("theme_demo_pages")
-      .select("slug,theme,title,blocks,meta,is_published")
+      .select("slug,theme,title,blocks,meta,is_published,publication_status,quality_score")
       .eq("slug", slug)
       .eq("is_published", true)
+      .in("publication_status", ["published", "legacy_published"])
       .maybeSingle()
 
     if (error) {
@@ -72,6 +73,7 @@ export async function GET(
       blocks: publicBlocks(data.blocks),
       meta: publicMeta(data.meta),
       is_published: data.is_published,
+      quality_score: data.quality_score,
     }, {
       headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
     })
@@ -100,7 +102,7 @@ export async function POST(
   }
 
   // Validate theme
-  const validThemes = ["astrowind", "screwfast", "astroship"]
+  const validThemes = ["astrowind", "screwfast", "astroship", "zenith", "aether", "prism", "terra", "flux", "vertex", "nomad", "apex", "hyper-personalized"]
   if (!validThemes.includes(theme)) {
     return NextResponse.json({ error: `theme must be one of: ${validThemes.join(", ")}` }, { status: 400 })
   }
@@ -114,7 +116,8 @@ export async function POST(
       theme,
       blocks: blocks || [],
       meta: meta || {},
-      is_published: body.is_published !== false,
+      is_published: false,
+      publication_status: "draft",
     }
     if (title !== undefined) row.title = title
     if (company_id !== undefined) row.company_id = company_id
@@ -152,7 +155,7 @@ export async function PATCH(
   const updates: Record<string, unknown> = {}
 
   if (body.theme !== undefined) {
-    const validThemes = ["astrowind", "screwfast", "astroship"]
+    const validThemes = ["astrowind", "screwfast", "astroship", "zenith", "aether", "prism", "terra", "flux", "vertex", "nomad", "apex", "hyper-personalized"]
     if (!validThemes.includes(body.theme)) {
       return NextResponse.json({ error: `theme must be one of: ${validThemes.join(", ")}` }, { status: 400 })
     }
@@ -161,7 +164,13 @@ export async function PATCH(
   if (body.title !== undefined) updates.title = body.title
   if (body.blocks !== undefined) updates.blocks = body.blocks
   if (body.meta !== undefined) updates.meta = body.meta
-  if (body.is_published !== undefined) updates.is_published = body.is_published
+  if (body.is_published === true) {
+    return NextResponse.json({ error: "Publish through the quality-gated generator" }, { status: 422 })
+  }
+  if (body.is_published === false) {
+    updates.is_published = false
+    updates.publication_status = "draft"
+  }
   if (body.company_id !== undefined) updates.company_id = body.company_id
 
   if (Object.keys(updates).length === 0) {

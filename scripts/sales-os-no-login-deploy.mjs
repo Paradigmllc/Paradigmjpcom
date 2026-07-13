@@ -624,6 +624,14 @@ async function applyJapanEntryProjectionsMigration(envs) {
   )
 }
 
+async function applyDemoQualityGateMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260712233619_demo_quality_gate.sql",
+    "SMB demo quality gate migration",
+  )
+}
+
 function runDeployGuard() {
   if (SKIP_DEPLOY_GUARD) {
     console.log("Coolify deploy guard: skipped")
@@ -1171,6 +1179,7 @@ async function main() {
     console.log(await applyPublicSurfaceRlsMigration(envs))
     console.log(await applyPublicJapanEntryChecksMigration(envs))
     console.log(await applyJapanEntryProjectionsMigration(envs))
+    console.log(await applyDemoQualityGateMigration(envs))
     console.log(await applyVideoPipelineMigration(envs))
     console.log(await applyVideoStrategyMigration(envs))
     console.log(await applyVideoProductionMigration(envs))

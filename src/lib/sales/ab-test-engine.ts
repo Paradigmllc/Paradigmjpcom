@@ -156,7 +156,8 @@ export async function persistABVariants(
       blocks: v.blueprint.blocks,
       meta: { ...v.blueprint.meta, variant: v.variant, ab_test: true },
       company_id: companyId,
-      is_published: true,
+      is_published: false,
+      publication_status: "quality_review",
     }, { onConflict: "slug" })
   }
 

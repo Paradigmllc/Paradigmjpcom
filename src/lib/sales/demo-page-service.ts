@@ -1,19 +1,30 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 import { buildDemoMultiPageData } from "./demo-multi-page-builder"
-import type { DemoGenerateOutput } from "./demo-site-types"
-import type { ReportLocale } from "./types"
-import { selectTemplate, type CompanyProfile } from "./demo-template-selector"
 import { buildPersonalizedDemoData } from "./demo-personalized-builder"
-import type { DiagnosticReportData } from "./diagnostic"
 import { enhanceDemoWithDeepSeek } from "./demo-deepseek-enhancer"
 import { mergeDeepSeekOutput } from "./demo-deepseek-merge"
+import {
+  buildDesignRecipe,
+  buildProposalRightsManifest,
+  evaluateDemoQuality,
+  summarizeCandidate,
+} from "./demo-quality-gate"
+import { selectTemplateCandidates, type CompanyProfile } from "./demo-template-selector"
+import type { DemoCandidateSummary, DemoGenerateOutput, DemoMultiPageData } from "./demo-site-types"
+import type { DiagnosticReportData } from "./diagnostic"
+import type { ReportLocale } from "./types"
+
 export { fetchDemoMultiPageData, fetchDemoPageData } from "./demo-page-fetch"
 
+interface GeneratedCandidate {
+  page: DemoMultiPageData
+  summary: DemoCandidateSummary
+}
+
 /**
- * Generate a full-stack Next.js demo site for a given company.
- * Saves to theme_demo_pages and updates the company's demo_site meta.
- * Returns the new demo URL in the format: demo.paradigmjp.com/[slug]
+ * Generate three complete candidates and publish only the highest-scoring one
+ * that passes evidence, rights, completeness, and collision checks.
  */
 export async function generateFullStackDemo(
   companyId: string,
@@ -21,144 +32,221 @@ export async function generateFullStackDemo(
   options?: { enhanceWithAI?: boolean },
 ): Promise<DemoGenerateOutput> {
   const sb = getServiceSalesSupabase()
-  if (!sb) return { ok: false, demoUrl: null, slug: null, error: "Supabase service_role not configured" }
-
-  const enhanceWithAI = options?.enhanceWithAI ?? true;
+  if (!sb) return failure("Supabase service_role not configured")
 
   try {
-    // Fetch company
     const { data: company, error: companyError } = await sb
       .from(DB_TABLES.SALES_COMPANIES)
-      .select("id, company_name, domain, slug, industry, prefecture, report_locale, tech_stack, pain_diagnosis, dify_result, visual_evidence, demo_site, meta")
+      .select("id, company_name, domain, slug, industry, prefecture, report_locale, tech_stack, pain_diagnosis, dify_result, visual_evidence, demo_site, pagespeed_mobile, pagespeed_desktop, meta")
       .eq("id", companyId)
       .maybeSingle()
 
     if (companyError || !company) {
-      return { ok: false, demoUrl: null, slug: null, error: `Company not found: ${companyError?.message ?? "no rows"}` }
+      return failure(`Company not found: ${companyError?.message ?? "no rows"}`)
     }
 
-    // Fetch diagnostic report
     const { fetchDiagnosticReport } = await import("./diagnostic")
     const { localeToRegion } = await import("./types")
-
-    const effectiveLocale = locale ?? (company.report_locale ?? "ja")
-    const region = localeToRegion(effectiveLocale)
+    const effectiveLocale = (locale ?? company.report_locale ?? "ja") as ReportLocale
     const diagnostic = await fetchDiagnosticReport({
       slug: company.slug ?? "",
-      region,
+      region: localeToRegion(effectiveLocale),
       reportLocale: effectiveLocale,
     })
+    if (!diagnostic) return failure("No diagnostic report found for this company")
 
-    if (!diagnostic) {
-      return { ok: false, demoUrl: null, slug: null, error: "No diagnostic report found for this company" }
-    }
-
-    // Build page data with template selection + personalization
-    const companyProfile: CompanyProfile = {
-      industry: (company.industry ?? "consulting") as string,
+    const profile: CompanyProfile = {
+      industry: company.industry ?? "consulting",
       company_name: company.company_name,
+      prefecture: company.prefecture,
+      pagespeed_mobile: company.pagespeed_mobile,
+      pagespeed_desktop: company.pagespeed_desktop,
       report_locale: effectiveLocale,
       tech_stack: company.tech_stack as Record<string, unknown> | null,
       meta: company.meta as Record<string, unknown> | null,
     }
-    const template = selectTemplate(companyProfile, diagnostic)
-    const pageData = buildPersonalizedDemoData(
-      company as Record<string, unknown> as Parameters<typeof buildDemoMultiPageData>[0],
-      diagnostic,
-      template,
-    )
-
-    const slug = pageData.slug
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.ASTRO_DEMO_BASE_URL || "https://demo.paradigmjp.com"
-    const cleanBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl
-    const demoUrl = `${cleanBase}/${slug}`
-
-    // Attempt AI enhancement via DeepSeek
-    let enhancedPageData = pageData
-    if (enhanceWithAI) {
-      try {
-        const aiOutput = await enhanceDemoWithDeepSeek(
-          company as Record<string, unknown> as Parameters<typeof enhanceDemoWithDeepSeek>[0],
-          diagnostic,
-          template,
-          effectiveLocale as ReportLocale,
-        )
-        if (aiOutput) {
-          enhancedPageData = mergeDeepSeekOutput(pageData, aiOutput, effectiveLocale)
-          console.warn(
-            `[demo-generator] DeepSeek AI enhancement applied for ${slug}`,
-          )
-        }
-      } catch (aiErr) {
-        console.error(
-          "[demo-generator] DeepSeek enhancement failed, using rules-based:",
-          aiErr instanceof Error ? aiErr.message : String(aiErr),
-        )
+    const templates = selectTemplateCandidates(profile, diagnostic, 3)
+    const existingFingerprints = await fetchExistingFingerprints(sb, companyId)
+    const rights = buildProposalRightsManifest()
+    const candidates: GeneratedCandidate[] = await Promise.all(templates.map(async (template) => {
+      let page = buildPersonalizedDemoData(
+        company as unknown as Parameters<typeof buildDemoMultiPageData>[0],
+        diagnostic,
+        template,
+      )
+      if (options?.enhanceWithAI ?? true) {
+        page = await enhanceCandidate(page, company, diagnostic, template, effectiveLocale)
       }
-    }
+      const recipe = buildDesignRecipe(template, page)
+      const quality = evaluateDemoQuality(page, recipe, rights, existingFingerprints)
+      page = { ...page, designRecipe: recipe, quality, rightsManifest: rights }
+      return { page, summary: summarizeCandidate(page, recipe, quality) }
+    }))
 
-    // Save to theme_demo_pages — store full multi-page data
-    const { error: upsertError } = await sb
-      .from(DB_TABLES.THEME_DEMO_PAGES)
-      .upsert({
-        slug,
-        theme: template.id,
-        title: enhancedPageData.meta.title,
-        blocks: enhancedPageData.pages as unknown as Record<string, unknown>[],
-        meta: { ...enhancedPageData.meta, templateId: template.id } as unknown as Record<string, unknown>,
-        company_id: companyId,
-        is_published: true,
-      }, { onConflict: "slug" })
+    candidates.sort((left, right) => right.summary.score - left.summary.score)
+    const selected = candidates[0]
+    if (!selected) return failure("No demo candidates were generated")
+
+    const published = selected.summary.passed
+    const publicationStatus = published ? "published" : "quality_review"
+    selected.page.publicationStatus = publicationStatus
+    const slug = selected.page.slug
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://paradigmjp.com"
+    const demoUrl = published ? `${baseUrl.replace(/\/$/, "")}/${effectiveLocale}/demo/${slug}` : null
+
+    const { error: upsertError } = await sb.from(DB_TABLES.THEME_DEMO_PAGES).upsert({
+      slug,
+      theme: selected.page.templateId,
+      title: selected.page.meta.title,
+      blocks: [],
+      meta: {
+        ...selected.page.meta,
+        templateId: selected.page.templateId,
+        industry: company.industry,
+        prefecture: company.prefecture,
+      },
+      company_id: companyId,
+      site_payload: selected.page,
+      design_recipe: selected.page.designRecipe,
+      design_fingerprint: selected.summary.designFingerprint,
+      structural_fingerprint: selected.summary.structuralFingerprint,
+      quality_score: selected.summary.score,
+      quality_report: selected.page.quality,
+      rights_manifest: rights,
+      generation_candidates: candidates.map(({ summary }) => summary),
+      quality_gate_version: selected.page.quality?.version,
+      publication_status: publicationStatus,
+      is_published: published,
+      reviewed_at: published ? new Date().toISOString() : null,
+    }, { onConflict: "slug" })
 
     if (upsertError) {
-      console.error("[demo-generator] generateFullStackDemo upsert failed:", upsertError.message)
-      return { ok: false, demoUrl: null, slug: null, error: upsertError.message }
+      console.error("[demo-generator] quality-gated upsert failed:", upsertError.message)
+      return failure(upsertError.message)
     }
 
-    console.warn(`[demo-generator] full-stack demo saved: ${slug} → ${demoUrl} (engine=${enhancedPageData.meta.engine})`)
-
-    // Update company demo_site meta
-    try {
-      const { error: metaError } = await sb.rpc("sales_atomic_meta_merge", {
-        p_company_id: companyId,
-        p_patch: {
-          demo_site: {
-            url: demoUrl,
-            type: "nextjs_fullstack",
-            slug,
-            generated_at: new Date().toISOString(),
-          },
-        },
-      })
-      if (metaError) console.error("[demo-generator] generateFullStackDemo meta merge failed:", metaError.message)
-    } catch (metaErr) {
-      console.error("[demo-generator] generateFullStackDemo meta update failed:", metaErr)
+    if (published && demoUrl) {
+      await persistPublishedReferences(sb, companyId, company.company_name, selected.page, demoUrl)
     }
+    await notifyGenerationResult({
+      companyId,
+      companyName: company.company_name,
+      slug,
+      score: selected.summary.score,
+      published,
+      demoUrl,
+      blockers: selected.summary.hardBlockers,
+    })
 
-    // Also save to web_demos for compatibility
-    try {
-      await sb.from(DB_TABLES.WEB_DEMOS).upsert({
-        company_id: companyId,
-        slug,
-        name: `${company.company_name} Full-Stack Demo`,
-        html_content: JSON.stringify(enhancedPageData),
-        source: "nextjs_fullstack",
-        is_published: true,
-        meta: {
-          generator: "nextjs_fullstack",
-          engine: enhancedPageData.meta.engine,
-          demo_url: demoUrl,
-          generated_at: new Date().toISOString(),
-        },
-      }, { onConflict: "slug" })
-    } catch (e) {
-      console.warn("[demo-generator] generateFullStackDemo web_demos save failed (non-critical):", e)
+    return {
+      ok: published,
+      demoUrl,
+      slug,
+      qualityScore: selected.summary.score,
+      publicationStatus,
+      candidates: candidates.map(({ summary }) => summary),
+      error: published ? undefined : `Quality gate failed: ${selected.summary.hardBlockers.join(", ")}`,
     }
-
-    return { ok: true, demoUrl, slug }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
     console.error("[demo-generator] generateFullStackDemo failed:", message)
-    return { ok: false, demoUrl: null, slug: null, error: message }
+    return failure(message)
+  }
+}
+
+async function enhanceCandidate(
+  page: DemoMultiPageData,
+  company: Record<string, unknown>,
+  diagnostic: DiagnosticReportData,
+  template: Parameters<typeof enhanceDemoWithDeepSeek>[2],
+  locale: ReportLocale,
+): Promise<DemoMultiPageData> {
+  try {
+    const output = await enhanceDemoWithDeepSeek(
+      company as Parameters<typeof enhanceDemoWithDeepSeek>[0],
+      diagnostic,
+      template,
+      locale,
+    )
+    return output ? mergeDeepSeekOutput(page, output, locale) : page
+  } catch (error) {
+    console.error(
+      `[demo-generator] AI enhancement failed for ${template.id}:`,
+      error instanceof Error ? error.message : String(error),
+    )
+    return page
+  }
+}
+
+async function fetchExistingFingerprints(
+  sb: NonNullable<ReturnType<typeof getServiceSalesSupabase>>,
+  companyId: string,
+): Promise<Set<string>> {
+  const { data, error } = await sb
+    .from(DB_TABLES.THEME_DEMO_PAGES)
+    .select("structural_fingerprint")
+    .eq("is_published", true)
+    .neq("company_id", companyId)
+    .not("structural_fingerprint", "is", null)
+    .limit(1000)
+  if (error) {
+    console.error("[demo-generator] fingerprint lookup failed:", error.message)
+    return new Set()
+  }
+  return new Set((data ?? []).map((row) => row.structural_fingerprint).filter((value): value is string => Boolean(value)))
+}
+
+async function persistPublishedReferences(
+  sb: NonNullable<ReturnType<typeof getServiceSalesSupabase>>,
+  companyId: string,
+  companyName: string,
+  page: DemoMultiPageData,
+  demoUrl: string,
+): Promise<void> {
+  const generatedAt = new Date().toISOString()
+  const { error: metaError } = await sb.rpc("sales_atomic_meta_merge", {
+    p_company_id: companyId,
+    p_patch: { demo_site: { url: demoUrl, type: "quality_gated_fullstack", slug: page.slug, generated_at: generatedAt } },
+  })
+  if (metaError) console.error("[demo-generator] company meta merge failed:", metaError.message)
+
+  const { error: compatibilityError } = await sb.from(DB_TABLES.WEB_DEMOS).upsert({
+    company_id: companyId,
+    slug: page.slug,
+    name: `${companyName} Full-Stack Demo`,
+    html_content: JSON.stringify(page),
+    source: "quality_gated_fullstack",
+    is_published: true,
+    meta: { generator: "quality_gate", engine: page.meta.engine, demo_url: demoUrl, generated_at: generatedAt },
+  }, { onConflict: "slug" })
+  if (compatibilityError) console.error("[demo-generator] compatibility save failed:", compatibilityError.message)
+}
+
+function failure(error: string): DemoGenerateOutput {
+  return { ok: false, demoUrl: null, slug: null, error }
+}
+
+async function notifyGenerationResult(input: {
+  companyId: string
+  companyName: string
+  slug: string
+  score: number
+  published: boolean
+  demoUrl: string | null
+  blockers: string[]
+}): Promise<void> {
+  try {
+    const { notifyBothChannels } = await import("@/lib/notify")
+    const result = await notifyBothChannels("sales", {
+      title: input.published ? "SMBデモ公開基準通過" : "SMBデモ品質レビュー待ち",
+      message: `${input.companyName} / ${input.score}点 / ${input.blockers.join(", ") || "blockerなし"}`,
+      link: input.demoUrl ?? `/api/sales/demo-site/quality/${input.slug}`,
+      type: input.published ? "demo_quality_passed" : "demo_quality_blocked",
+      leadId: input.companyId,
+      idempotencyKey: `demo-quality:${input.slug}:${input.score}`,
+    })
+    if (!result.ok) console.error("[demo-generator] quality notification incomplete:", result)
+  } catch (error) {
+    console.error("[demo-generator] quality notification failed:", error)
   }
 }
