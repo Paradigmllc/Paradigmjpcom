@@ -1,6 +1,7 @@
 "use client"
 
 import { usePathname } from "next/navigation"
+import Image from "next/image"
 import { motion } from "framer-motion"
 import { FaInstagram } from "react-icons/fa6"
 import { navClasses, type NavStyle } from "@/lib/sales/demo-templates/registry"
@@ -24,7 +25,8 @@ interface Props {
   accentColor?: string
   designRecipe?: DemoDesignRecipe
   quality?: DemoQualityReport
-  presentation?: Pick<DemoMeta, "proposalNotice" | "primaryCtaLabel" | "primaryCtaHref" | "footerDescription" | "footerOwner">
+  presentation?: Pick<DemoMeta, "proposalNotice" | "primaryCtaLabel" | "primaryCtaHref" | "footerDescription" | "footerOwner" | "brandLogoUrl">
+  privatePreview?: { expiresAt: string; assetStatus: "unreviewed" | "private_proposal" | "consented" | "blocked" }
   children: React.ReactNode
 }
 
@@ -38,6 +40,7 @@ export function DemoMultiLayout({
   designRecipe,
   quality,
   presentation,
+  privatePreview,
   children,
 }: Props) {
   const pathname = usePathname()
@@ -84,6 +87,7 @@ export function DemoMultiLayout({
     : "Proposal demo — not the company’s official website")
   const footerOwner = presentation?.footerOwner ?? "Paradigm LLC"
   const isInstagramCta = /instagram\.com/i.test(ctaHref)
+  const brandLogoUrl = presentation?.brandLogoUrl
 
   // Dark theme for flux
   const isDarkNav = templateId === "flux"
@@ -96,9 +100,9 @@ export function DemoMultiLayout({
       data-motion={designRecipe?.motionVariant}
       style={{ "--demo-accent": accent } as React.CSSProperties}
     >
-      <div className={`border-b px-4 py-2 text-center text-[10px] font-medium sm:text-xs ${isDarkNav ? "border-white/10 bg-gray-950 text-white/70" : "border-[#a95f3d]/10 bg-[#f8f0e8] text-[#6f3723]"}`}>
-        <span className="sm:hidden">提案用デモ · 公式サイトではありません</span>
-        <span className="hidden sm:inline">{proposalNotice}</span>
+      <div className={`border-b px-4 py-2 text-center text-[10px] font-medium sm:text-xs ${privatePreview ? "border-amber-200 bg-amber-50 text-amber-950" : isDarkNav ? "border-white/10 bg-gray-950 text-white/70" : "border-[#a95f3d]/10 bg-[#f8f0e8] text-[#6f3723]"}`}>
+        <span className="sm:hidden">{privatePreview ? "期限付き非公開デモ" : "提案用デモ · 公式サイトではありません"}</span>
+        <span className="hidden sm:inline">{privatePreview ? `期限付き非公開デモ · 素材審査 ${privatePreview.assetStatus} · ${new Date(privatePreview.expiresAt).toLocaleDateString("ja-JP")}まで` : proposalNotice}</span>
         {quality?.passed ? ` · Quality ${quality.score}/100` : ""}
       </div>
       {/* Nav */}
@@ -107,14 +111,14 @@ export function DemoMultiLayout({
           <a href={basePath}
             className={`flex items-center gap-2.5 font-display text-lg font-bold transition-colors group ${isDarkNav ? "text-white hover:text-white/80" : "text-gray-900 hover:text-[var(--demo-accent,#2563eb)]"}`}
           >
-            <motion.div
+            {brandLogoUrl ? <span className="flex h-10 w-14 items-center justify-center overflow-hidden rounded-lg bg-white p-1 shadow-sm"><Image src={brandLogoUrl} alt={`${companyName} ロゴ`} width={80} height={48} unoptimized className="max-h-full max-w-full object-contain" /></span> : <motion.div
               className={`flex h-10 w-10 items-center justify-center text-sm font-bold text-white shadow-sm ${navStyle === "bordered" ? "h-11 w-11 rounded-lg" : "rounded-xl"}`}
               style={{ background: "var(--demo-accent, #2563eb)" }}
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.2 }}
             >
               {initials}
-            </motion.div>
+            </motion.div>}
             <span className="hidden sm:inline">{companyName}</span>
           </a>
 
@@ -182,12 +186,12 @@ export function DemoMultiLayout({
           <div className="grid gap-8 sm:grid-cols-3">
             <div>
               <div className="mb-4 flex items-center gap-2.5">
-                <div
+                {brandLogoUrl ? <span className="flex h-10 w-14 items-center justify-center overflow-hidden rounded-lg bg-white p-1 shadow-sm"><Image src={brandLogoUrl} alt={`${companyName} ロゴ`} width={80} height={48} unoptimized className="max-h-full max-w-full object-contain" /></span> : <div
                   className="flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold text-white"
                   style={{ background: "var(--demo-accent, #2563eb)" }}
                 >
                   {initials}
-                </div>
+                </div>}
                 <span className="font-display text-base font-semibold">{companyName}</span>
               </div>
               <p className={`text-sm leading-relaxed ${isDarkNav ? "text-white/50" : "text-gray-500"}`}>
