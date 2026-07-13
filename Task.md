@@ -8,13 +8,14 @@
 - 検証: 関連Vitest **4 files / 37 tests pass**、TypeScript pass、対象ESLint pass、quality guard **0 errors / 59 warnings**、production build **396/396 pages**、`git diff --check` pass。実Chromeで `/en` `/en/services` `/en/pricing` `/en/package` はHTTP 200、危機訴求・市場数値表示、PC/mobile横溢れ0、overlay/console error 0。`/ja`への混入0。
 - PR **#133**をmainへmergeし、正式deployment `olryn34mx0zkbd46e4qkjl9k` はfinished。DB **83/83**、Traefik / Cloudflare / Realtime / Twenty、Sales health HTTP 200 JSON ok、post-deploy release gateを通過。本番 `/en` `/en/services` `/en/pricing` `/en/package` とOur Place Opportunity BriefはHTTP 200で競合・需要・規制・市場根拠を表示し、`/ja`への混入なし。DB保存、Twenty同期、フォーム送信、候補収集は一切実行していない。
 
-### 2026-07-13 Japan Entry文面量産・DeepSeek Prompt Caching最適化（ローカルQA・実API実測済み / 正式release待ち / 送信停止）
+### 2026-07-13 Japan Entry文面量産・DeepSeek Prompt Caching最適化（本番反映・実API実測済み / 送信停止）
 - 企業名・商品説明・監査・競合・推定値・補修指示をすべてuser JSONへ移し、生成／補修用system promptを企業・業種・モードをまたいでbyte-identicalな固定prefixへ変更。批評system promptも固定し、DeepSeek公式APIのautomatic prompt cachingを量産案件間で再利用できる構造にした。
 - 通常時の品質設計は3候補生成＋独立critic＋決定論ゲート（品質92点以上、各軸22点以上、安全性100）を維持。失敗時だけ最良の1候補を補修し、従来の3候補丸ごと再生成を廃止した。補修には必須fact id、失敗理由、検出した禁止語句を明示し、品質基準を緩めず再処理率を下げる。
 - コピー生成ではDeepSeek V4 Pro直叩き、thinking disabledを固定。出力上限を3候補4,000／1候補補修2,400／critic 1,200 tokensへ分離し、品質に不要な推論・暴走出力だけを制限。既存の投影冪等キーにより、同じ会社・同じ根拠のjob retryは保存済み結果を再利用してLLMを再実行しない。
 - generation／repair／criticとJSON再試行を含む全usageを合算し、input/output、cache hit/miss、cache hit ratioを投影JSONと会社metaへ保存。Twentyカルテにも `LLMトークン効率` として同期し、案件別の実コストを監視できる。フォーム送信や候補収集には接続しない。
 - 最終の架空企業・非送信DeepSeek実API smokeは、品質 **95/100**、安全性 **100/100**、197語、4段落、企業名・推定アクセス・推定機会損失・実名競合・商品固有需要・条件付き規制・未置換ゼロをすべて合格。入力 **5,036 tokens**のうち **3,584 hit / 1,452 miss / cache hit ratio 71.17%**。直前の同一prefix実測でも **5,120 / 6,635 hit（77.17%）**を確認した。
 - 検証: 関連Vitest **7 files / 55 tests pass**、全体Vitest **112/113 files・522/526 tests pass**（変更外の既知CRLF backup shell 4件のみ失敗）、TypeScript pass、全ESLint pass、quality guard **0 errors / 59 existing warnings**、production build **396/396 pages**、`git diff --check` pass。実API smokeはDB保存、Twenty同期、フォーム送信、候補収集を一切行っていない。
+- PR **#138**をmainへmerge。正式deployment `bxlnuw2kjvfuyu2py05airhn` はcommit `ec935053`でfinishedし、DB **83/83**、Traefik / Cloudflare / Realtime / Twenty worker restart 0、Sales health HTTP 200 JSON ok、英日公開面と診断レポートを含むpost-deploy release gateを通過した。
 
 ### 2026-07-13 SMBデモ量産・DeepSeek Prompt Caching最適化（本番反映・実測済み / 送信停止）
 - DeepSeek V4 Proへ渡す共通の品質規則・JSON schema・禁止事項をcompany固有データより前へ固定し、企業ごとに変わる名称・所在地・事実・design recipeを末尾へ分離した。DeepSeekのprefix cacheが企業をまたいで再利用できる構造に変更し、公式usageの `prompt_cache_hit_tokens` / `prompt_cache_miss_tokens` を正規化して生成payloadへ保存する。
