@@ -96,6 +96,11 @@ export interface JapanEntryProjection {
     };
     rationale: string;
     riskFlags: string[];
+    promptTokens: number;
+    completionTokens: number;
+    cacheHitTokens: number;
+    cacheMissTokens: number;
+    cacheHitRatio: number;
     generatedAt: string;
   };
 }

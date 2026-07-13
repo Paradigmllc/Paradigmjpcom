@@ -81,7 +81,11 @@ const result = await generatePersonalizedJapanEntryMessage({
 });
 
 if (!result.ok || !result.message || !result.review?.passed) {
-  throw new Error(result.error ?? "DeepSeek returned no production-ready Japan Entry message");
+  throw new Error(JSON.stringify({
+    error: result.error ?? "DeepSeek returned no production-ready Japan Entry message",
+    review: result.review,
+    usage: result.usage,
+  }));
 }
 
 const japanMarket = projection.markets.find((market) => market.code === "JP");
@@ -109,6 +113,10 @@ process.stdout.write(`${JSON.stringify({
   score: result.review.score,
   safetyScore: result.review.safetyScore,
   wordCount: result.review.wordCount,
+  usage: result.usage,
+  cacheHitRatio: result.usage
+    ? (result.usage.cache_hit_tokens ?? 0) / Math.max(1, (result.usage.cache_hit_tokens ?? 0) + (result.usage.cache_miss_tokens ?? 0))
+    : 0,
   expectedVisits,
   expectedGap,
   checks,
