@@ -128,6 +128,7 @@ function buildPrompt(
   const industry = company.industry ?? report.industry ?? "consulting";
   const prefecture = company.prefecture ?? "";
   const domain = company.domain || "";
+  const verifiedFacts = extractVerifiedPublicFacts(company.meta);
 
   // Summarize tech stack
   let techSummary = "unknown";
@@ -173,6 +174,7 @@ function buildPrompt(
         cardStyle,
         nav,
         tokens,
+        verifiedFacts,
       )
     : buildEnglishUserPrompt(
         name,
@@ -190,10 +192,21 @@ function buildPrompt(
         cardStyle,
         nav,
         tokens,
+        verifiedFacts,
       );
 
   return [
     { role: "system", content: systemPrompt },
     { role: "user", content: userPrompt },
   ];
+}
+
+export function extractVerifiedPublicFacts(meta?: Record<string, unknown> | null): string {
+  const facts = meta?.public_facts
+  if (!facts || typeof facts !== "object" || Array.isArray(facts)) return "（確認済み公開情報なし）"
+  const entries = Object.entries(facts as Record<string, unknown>)
+    .filter(([, value]) => typeof value === "string" || typeof value === "number" || typeof value === "boolean")
+    .slice(0, 20)
+    .map(([key, value]) => `- ${key}: ${String(value).slice(0, 300)}`)
+  return entries.length > 0 ? entries.join("\n") : "（確認済み公開情報なし）"
 }

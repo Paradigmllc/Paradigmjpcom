@@ -71,11 +71,11 @@ export function DemoHomePage({ data, template }: Props) {
 
   function renderFeatures() {
     switch (layout?.featureLayout ?? "grid3") {
-      case "grid2": return <FeatureGrid2 features={home.features} isJa={isJa} accent={accent} template={template?.designTokens} />
-      case "cards": return <FeatureCards features={home.features} isJa={isJa} accent={accent} template={template?.designTokens} />
-      case "alternating": return <FeatureAlternating features={home.features} isJa={isJa} accent={accent} template={template?.designTokens} />
-      case "list": return <FeatureList features={home.features} isJa={isJa} accent={accent} template={template?.designTokens} />
-      default: return <FeatureGrid3 features={home.features} isJa={isJa} accent={accent} template={template?.designTokens} />
+      case "grid2": return <FeatureGrid2 features={home.features} isJa={isJa} accent={accent} template={template?.designTokens} copy={home} />
+      case "cards": return <FeatureCards features={home.features} isJa={isJa} accent={accent} template={template?.designTokens} copy={home} />
+      case "alternating": return <FeatureAlternating features={home.features} isJa={isJa} accent={accent} template={template?.designTokens} copy={home} />
+      case "list": return <FeatureList features={home.features} isJa={isJa} accent={accent} template={template?.designTokens} copy={home} />
+      default: return <FeatureGrid3 features={home.features} isJa={isJa} accent={accent} template={template?.designTokens} copy={home} />
     }
   }
 

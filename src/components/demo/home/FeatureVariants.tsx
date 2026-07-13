@@ -2,7 +2,7 @@
 
 import { motion, useInView } from "framer-motion"
 import { useRef } from "react"
-import type { DemoFeatureItem } from "@/lib/sales/demo-site-types"
+import type { DemoFeatureItem, DemoHomePage } from "@/lib/sales/demo-site-types"
 import type { DemoTemplate } from "@/lib/sales/demo-templates/registry"
 import { headingSizeClass } from "@/lib/sales/demo-templates/registry"
 
@@ -11,11 +11,12 @@ interface Props {
   isJa: boolean
   accent: string
   template?: DemoTemplate["designTokens"]
+  copy?: Pick<DemoHomePage, "featureEyebrow" | "featureHeading" | "featureSubtitle">
 }
 
 /* ──────────── Feature Grid 3 ──────────── */
 
-export function FeatureGrid3({ features, isJa, accent, template }: Props) {
+export function FeatureGrid3({ features, isJa, accent, template, copy }: Props) {
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: "-50px" })
   const size = headingSizeClass(template?.typography.scale ?? "normal")
@@ -26,9 +27,9 @@ export function FeatureGrid3({ features, isJa, accent, template }: Props) {
         <motion.div className="mb-12 text-center"
           initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }}>
           <h2 className={`font-display ${size.h2} ${template?.typography.headingWeight ?? "font-bold"} text-gray-900`}>
-            {isJa ? "改善のポイント" : "Key Improvements"}
+            {copy?.featureHeading ?? (isJa ? "改善のポイント" : "Key Improvements")}
           </h2>
-          <p className="mt-3 text-gray-500">{isJa ? "診断レポートに基づく重点領域" : "Focus areas based on the diagnostic report"}</p>
+          <p className="mt-3 text-gray-500">{copy?.featureSubtitle ?? (isJa ? "診断レポートに基づく重点領域" : "Focus areas based on the diagnostic report")}</p>
         </motion.div>
         <motion.div ref={ref} className="grid gap-8 md:grid-cols-3" initial="hidden" animate={inView ? "visible" : "hidden"}>
           {features.map((feature, i) => (
@@ -56,7 +57,7 @@ export function FeatureGrid3({ features, isJa, accent, template }: Props) {
 
 /* ──────────── Feature Grid 2 ──────────── */
 
-export function FeatureGrid2({ features, isJa, accent, template }: Props) {
+export function FeatureGrid2({ features, isJa, accent, template, copy }: Props) {
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: "-50px" })
   const size = headingSizeClass(template?.typography.scale ?? "normal")
@@ -67,7 +68,7 @@ export function FeatureGrid2({ features, isJa, accent, template }: Props) {
         <motion.div className="mb-12 text-center"
           initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }}>
           <h2 className={`font-display ${size.h2} ${template?.typography.headingWeight ?? "font-bold"} text-gray-900`}>
-            {isJa ? "改善のポイント" : "Key Improvements"}
+            {copy?.featureHeading ?? (isJa ? "改善のポイント" : "Key Improvements")}
           </h2>
         </motion.div>
         <motion.div ref={ref} className="grid gap-8 md:grid-cols-2" initial="hidden" animate={inView ? "visible" : "hidden"}>
@@ -95,7 +96,7 @@ export function FeatureGrid2({ features, isJa, accent, template }: Props) {
 
 /* ──────────── Feature Cards ──────────── */
 
-export function FeatureCards({ features, isJa, accent, template }: Props) {
+export function FeatureCards({ features, isJa, accent, template, copy }: Props) {
   const ref = useRef(null)
   const inView = useInView(ref, { once: true, margin: "-50px" })
   const size = headingSizeClass(template?.typography.scale ?? "normal")
@@ -106,10 +107,10 @@ export function FeatureCards({ features, isJa, accent, template }: Props) {
         <motion.div className="mb-12 text-left"
           initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }}>
           <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: accent }}>
-            {isJa ? "改善ポイント" : "Improvements"}
+            {copy?.featureEyebrow ?? (isJa ? "改善ポイント" : "Improvements")}
           </p>
           <h2 className={`mt-2 font-display ${size.h2} ${template?.typography.headingWeight ?? "font-bold"} text-gray-900`}>
-            {isJa ? "集中的に改善する領域" : "Areas of Focus"}
+            {copy?.featureHeading ?? (isJa ? "集中的に改善する領域" : "Areas of Focus")}
           </h2>
         </motion.div>
         <motion.div ref={ref} className="grid gap-6 md:grid-cols-3" initial="hidden" animate={inView ? "visible" : "hidden"}>
@@ -136,7 +137,7 @@ export function FeatureCards({ features, isJa, accent, template }: Props) {
 
 /* ──────────── Feature Alternating ──────────── */
 
-export function FeatureAlternating({ features, isJa, accent, template }: Props) {
+export function FeatureAlternating({ features, isJa, accent, template, copy }: Props) {
   const size = headingSizeClass(template?.typography.scale ?? "normal")
 
   return (
@@ -145,7 +146,7 @@ export function FeatureAlternating({ features, isJa, accent, template }: Props) 
         <motion.div className="mb-16 text-center"
           initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }}>
           <h2 className={`font-display ${size.h2} ${template?.typography.headingWeight ?? "font-bold"} text-gray-900`}>
-            {isJa ? "改善のポイント" : "Key Improvements"}
+            {copy?.featureHeading ?? (isJa ? "改善のポイント" : "Key Improvements")}
           </h2>
         </motion.div>
         <div className="space-y-16">
@@ -192,7 +193,7 @@ export function FeatureAlternating({ features, isJa, accent, template }: Props) 
 
 /* ──────────── Feature List ──────────── */
 
-export function FeatureList({ features, isJa, accent, template }: Props) {
+export function FeatureList({ features, isJa, accent, template, copy }: Props) {
   const size = headingSizeClass(template?.typography.scale ?? "normal")
 
   return (
@@ -201,10 +202,10 @@ export function FeatureList({ features, isJa, accent, template }: Props) {
         <motion.div className="mb-12"
           initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }}>
           <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: accent }}>
-            {isJa ? "改善領域" : "Improvement Areas"}
+            {copy?.featureEyebrow ?? (isJa ? "改善領域" : "Improvement Areas")}
           </p>
           <h2 className={`mt-2 font-display ${size.h2} ${template?.typography.headingWeight ?? "font-bold"} text-gray-900`}>
-            {isJa ? "改善のポイント" : "Key Improvements"}
+            {copy?.featureHeading ?? (isJa ? "改善のポイント" : "Key Improvements")}
           </h2>
         </motion.div>
         <div className="divide-y divide-gray-100">

@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
 import { navClasses, type NavStyle } from "@/lib/sales/demo-templates/registry"
 import type { DemoTemplate } from "@/lib/sales/demo-templates/registry"
-import type { DemoDesignRecipe, DemoQualityReport } from "@/lib/sales/demo-site-types"
+import type { DemoDesignRecipe, DemoMeta, DemoQualityReport } from "@/lib/sales/demo-site-types"
 import { JAPAN_ENTRY_CTA_EN, JAPAN_ENTRY_CTA_JA } from "@/lib/japan-entry-public-copy"
 
 interface NavLink {
@@ -23,6 +23,7 @@ interface Props {
   accentColor?: string
   designRecipe?: DemoDesignRecipe
   quality?: DemoQualityReport
+  presentation?: Pick<DemoMeta, "proposalNotice" | "primaryCtaLabel" | "primaryCtaHref" | "footerDescription" | "footerOwner">
   children: React.ReactNode
 }
 
@@ -35,6 +36,7 @@ export function DemoMultiLayout({
   accentColor,
   designRecipe,
   quality,
+  presentation,
   children,
 }: Props) {
   const pathname = usePathname()
@@ -68,13 +70,18 @@ export function DemoMultiLayout({
     .toUpperCase()
     .slice(0, 2) || companyName.slice(0, 1).toUpperCase()
 
-  const ctaText = isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN
-  const footerCTA = isJa ? `${JAPAN_ENTRY_CTA_JA} →` : `${JAPAN_ENTRY_CTA_EN} →`
+  const ctaText = presentation?.primaryCtaLabel ?? (isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN)
+  const ctaHref = presentation?.primaryCtaHref ?? `${basePath}/contact`
+  const footerCTA = `${ctaText} →`
   const footerContactLabel = isJa ? "お問い合わせ" : "Contact"
   const footerPagesLabel = isJa ? "ページ" : "Pages"
-  const footerDescription = isJa
+  const footerDescription = presentation?.footerDescription ?? (isJa
     ? "診断データから自動生成されました。改善後のWebサイトのイメージです。"
-    : "Generated from diagnostic data. This is a demonstration of what an improved website could look like."
+    : "Generated from diagnostic data. This is a demonstration of what an improved website could look like.")
+  const proposalNotice = presentation?.proposalNotice ?? (isJa
+    ? "提案用デモサイト（公式サイトではありません）"
+    : "Proposal demo — not the company’s official website")
+  const footerOwner = presentation?.footerOwner ?? "Paradigm LLC"
 
   // Dark theme for flux
   const isDarkNav = templateId === "flux"
@@ -88,7 +95,7 @@ export function DemoMultiLayout({
       style={{ "--demo-accent": accent } as React.CSSProperties}
     >
       <div className={`border-b px-4 py-2 text-center text-xs font-medium ${isDarkNav ? "border-white/10 bg-gray-950 text-white/70" : "border-blue-100 bg-blue-50 text-blue-900"}`}>
-        {isJa ? "提案用デモサイト（公式サイトではありません）" : "Proposal demo — not the company’s official website"}
+        {proposalNotice}
         {quality?.passed ? ` · Quality ${quality.score}/100` : ""}
       </div>
       {/* Nav */}
@@ -129,7 +136,7 @@ export function DemoMultiLayout({
           </div>
 
           <a
-            href={`${basePath}/contact`}
+            href={ctaHref}
             target="_blank"
             rel="noopener noreferrer"
             className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all hover:opacity-90 ${
@@ -203,12 +210,10 @@ export function DemoMultiLayout({
                 {footerContactLabel}
               </h4>
               <p className={`text-sm leading-relaxed ${isDarkNav ? "text-white/50" : "text-gray-500"}`}>
-                {isJa
-                  ? "Webサイトの改善にご興味はありませんか？15分の無料コンサルテーションを予約してください。"
-                  : "Ready to review the Japan Entry package? Submit an application for a fit review."}
+                {footerDescription}
               </p>
               <a
-                href={`${basePath}/contact`}
+                href={ctaHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-3 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all hover:opacity-90"
@@ -220,8 +225,8 @@ export function DemoMultiLayout({
           </div>
           <div className={`mt-10 border-t pt-6 text-center text-xs ${isDarkNav ? "border-white/10 text-white/30" : "border-gray-200 text-gray-400"}`}>
             {isJa
-              ? `© ${new Date().getFullYear()} Paradigm LLC — このデモは診断データから自動生成されました。`
-              : `© ${new Date().getFullYear()} Paradigm LLC — This demo was auto-generated from diagnostic data.`}
+              ? `© ${new Date().getFullYear()} ${footerOwner} — 提案用デモサイトです。`
+              : `© ${new Date().getFullYear()} ${footerOwner} — Proposal demo.`}
             <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-2">
               <a href={`${basePath}/news`} className="hover:text-[var(--demo-accent)]">{isJa ? "お知らせ" : "News"}</a>
               <a href={`${basePath}/recruit`} className="hover:text-[var(--demo-accent)]">{isJa ? "採用情報" : "Careers"}</a>

@@ -63,9 +63,24 @@ export function ContactInfoCard({
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-400">{isJa ? "所在地" : "Address"}</p>
-                <p className="text-base font-semibold text-gray-900">{contact.address}</p>
+                {contact.mapUrl ? (
+                  <a href={contact.mapUrl} target="_blank" rel="noopener noreferrer" className="text-base font-semibold transition-colors hover:underline" style={{ color: accent }}>
+                    {contact.address}
+                  </a>
+                ) : <p className="text-base font-semibold text-gray-900">{contact.address}</p>}
               </div>
             </div>
+            {contact.externalProfileUrl && (
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold" style={{ background: `${accent}10`, color: accent }}>SNS</div>
+                <div>
+                  <p className="text-sm font-medium text-gray-400">{isJa ? "公式SNS" : "Official social"}</p>
+                  <a href={contact.externalProfileUrl} target="_blank" rel="noopener noreferrer" className="text-base font-semibold transition-colors hover:underline" style={{ color: accent }}>
+                    {isJa ? "最新情報を見る" : "View latest updates"}
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

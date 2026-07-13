@@ -83,7 +83,7 @@ function ServicesHero({
   )
 }
 
-function ServicesCta({ isJa, accent, services: _services }: { isJa: boolean; accent: string; services: DemoServicesPageData }) {
+function ServicesCta({ isJa, accent, services }: { isJa: boolean; accent: string; services: DemoServicesPageData }) {
   return (
     <section className="relative overflow-hidden px-4 py-20 sm:px-6 lg:px-8"
       style={{ background: `linear-gradient(135deg, ${accent}DD 0%, ${accent} 100%)` }}>
@@ -91,16 +91,16 @@ function ServicesCta({ isJa, accent, services: _services }: { isJa: boolean; acc
       <motion.div className="relative mx-auto max-w-3xl text-center"
         initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
         <h2 className="font-display text-3xl font-bold text-white sm:text-4xl">
-          {isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN}
+          {services.ctaTitle ?? (isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN)}
         </h2>
         <p className="mt-4 text-lg leading-relaxed text-white/80">
-          {isJa ? "お客様の課題に合わせた最適なプランをご提案します" : "We'll propose the optimal plan for your needs"}
+          {services.ctaSubtitle ?? (isJa ? "お客様の課題に合わせた最適なプランをご提案します" : "We'll propose the optimal plan for your needs")}
         </p>
         <div className="mt-8">
-          <a href="https://cal.com/paradigm-jp/15min" target="_blank" rel="noopener noreferrer"
+          <a href={services.ctaHref ?? "https://cal.com/paradigm-jp/15min"} target="_blank" rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-3.5 text-base font-bold shadow-xl transition-all hover:-translate-y-0.5 hover:shadow-2xl"
             style={{ color: accent }}>
-            {isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN}
+            {services.ctaText ?? (isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN)}
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
           </a>
         </div>

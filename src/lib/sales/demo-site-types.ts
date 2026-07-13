@@ -82,6 +82,12 @@ export interface DemoMeta {
   generatedAt: string
   engine: string
   sourceEvidence?: string[]
+  proposalNotice?: string
+  primaryCtaLabel?: string
+  primaryCtaHref?: string
+  footerDescription?: string
+  footerOwner?: string
+  navLabels?: Partial<Record<"home" | "about" | "services" | "works" | "faq" | "contact", string>>
 }
 
 export interface DemoPageData {
@@ -223,6 +229,9 @@ export interface DemoHomePage {
   beforeAfter: DemoBeforeAfterItem[]
   totalLoss: string
   cta: DemoCtaProps
+  featureEyebrow?: string
+  featureHeading?: string
+  featureSubtitle?: string
   /** Metrics summary card displayed above Before/After (real diagnostic numbers) */
   metricsSummary?: DemoMetricsSummary
   /** Data-driven FAQ items generated from detected issues */
@@ -292,6 +301,10 @@ export interface DemoServicesPage {
     title: string
     description: string
   }[]
+  ctaTitle?: string
+  ctaSubtitle?: string
+  ctaText?: string
+  ctaHref?: string
   accentColor: string
 }
 
@@ -306,5 +319,8 @@ export interface DemoContactPage {
   /** Direct link to Cal.com (non-embed) for fallback CTA button */
   calDirectUrl?: string
   formNote?: string
+  formEnabled?: boolean
+  externalProfileUrl?: string
+  mapUrl?: string
   accentColor: string
 }
