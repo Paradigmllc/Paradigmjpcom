@@ -1,5 +1,11 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
+### 2026-07-13 Japan市場機会損失バナーの固定ヘッダー重なり修正（本番反映・実ブラウザQA済み）
+- 国際向け共通の`THE OPPORTUNITY COST OF WAITING`バナーが固定ヘッダーの下へ潜り、ヘッダー用`pt-16`が二重に効いて空白帯を作るレイアウト崩れを修正。ヘッダー分の明示スペーサーをバナー前へ置き、バナー有効時だけ`SiteWrapper`の追加トップ余白を無効化した。
+- 告知バー有効時は告知バー込みのスペーサー高さへ切り替え、`/ja`と法務ページは従来どおりバナーなし・既定のヘッダー余白を維持する。先頭要素のmargin collapseを使わず、PC/モバイルで同じ構造にした。
+- 検証: pre-push TypeScript clean、対象ESLint pass、関連Vitest **2/2 pass**、quality guard **0 errors / 59 warnings**、`git diff --check` pass。実ブラウザで`/en`・`/en/services`・`/en/pricing`・`/en/package`は`scrollY=0`時にheader **0–81px**、spacer **0–80px**、urgency **80px開始**、main **458px開始**、横溢れなし。`/ja`はurgencyなし・`main.pt-16`を確認した。
+- PR **#143**をmainへmerge。正式`npm run release:prod`のdeployment **jdgsrj4fpvbs5yq7kwd8er5a**はfinished、DB **83/83**、Traefik/Cloudflare/Realtime/Twenty、Sales health HTTP 200 JSON ok、post-deploy release gateを通過した。
+
 ### 2026-07-13 Opportunity Briefパッケージ・限定オファー・CTA強化（本番反映・実企業QA済み / 送信停止）
 - Opportunity Brief末尾の契約条件を独立パネルへ分離し、`$12,000 paid upfront`、最初の6か月は追加月額なし、7か月目以降は署名済み契約に基づき月額$995という条件の直下へ、Japan Entry Packageの正式な7ワークストリームを表示する。
 - 6か月の月額無料を、期間限定かつ審査を通過した数組だけの導入オファーとして強調。架空の残枠数・締切は表示せず、適用可否は15分面談と契約書面で確定し、フォーム送信だけでは枠確保にならない境界を明記した。
