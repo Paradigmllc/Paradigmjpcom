@@ -8,6 +8,10 @@
 - 検証: 関連Vitest **19/19 pass**、チャットRAG追加テスト **3/3 pass**、TypeScript pass。公式 `npm run release:prod` 後に日英のContact、Works dossier、FAQ、Blog、チャットAPIを本番URLで再確認する。
 
 ### 2026-07-13 SMBフルサイト・デモ品質ゲート（本番反映済み / 収集・送信停止）
+- 2026-07-13 品質目視確認用として、送信・企業同期を行わない `Cafe SOSOMU` 10ページ提案デモを追加。公開根拠は公式Instagram、所在地・メニュー概要の公開ディレクトリ、Google Maps導線に限定し、第三者写真・ロゴ・口コミ・売上数値は不使用。フォームは `formEnabled:false` で誤送信を防止する。
+- 対象企業がそのまま使える見え方にするため、デモ共通UIへ企業別CTA、ナビ文言、フッター所有者・説明、公式SNS、Google Maps、送信停止表示、ページ別見出しを追加。従来のParadigm営業CTAはデータ指定がない既存デモのみ互換維持する。
+- 生成品質の欠陥を修正し、`meta.public_facts` のスカラー値をDeepSeek V4 Proプロンプトへ明示的に渡す。未確認情報を創作しない指示も追加。企業追加時のDBトリガーが使用する `db_trigger` をpipeline provider制約へ追加するmigrationを作成した。
+- 現在の確認用デモ本文は、LiteLLM V4 Pro未設定のため `human-reviewed-showcase` と明記した品質上限サンプル。自動V4出力と偽装しない。送信・Twenty同期・営業通知は実行しない。
 - HP未保有でGoogle Maps/SNSに公開情報があるSMB向けに、3つの異なるデザイン候補を生成し、品質スコア最高案だけを採用するトーナメント方式へ変更。会社名ハッシュによる単純テンプレ差し替えを廃止し、構成順・密度・モーション・レイアウトを含むdesign recipeと衝突fingerprintを保存する。
 - Home / About / Services / Contactに、Works / News / FAQ / Recruit / Privacy / Termsを加えた10ページ構成を実装。問い合わせフォーム、管理者向け品質表示、認証済みquality API、保存済みfull payloadの再現表示を接続した。
 - `theme_demo_pages`にfull payload、design recipe、候補3案、quality report、権利manifest、公開状態を追加。90点未満、hard blockerあり、Google Maps/SNS根拠なし、画像権利不明、構造衝突、架空の推薦・顧客ロゴ・売上/回復試算がある場合はDB制約と生成処理の両方で公開停止する。旧公開デモも再生成まで非公開へ移す。

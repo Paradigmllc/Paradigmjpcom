@@ -40,9 +40,10 @@ export default async function DemoMultiLayoutWrapper({ children, params }: Layou
     console.warn("[demo-layout] failed to load demo data:", error instanceof Error ? error.message : String(error))
   }
 
-  const navLabels = isJa
+  const defaultNavLabels = isJa
     ? { home: "ホーム", about: "会社概要", services: "サービス", works: "実績", faq: "FAQ", contact: "お問い合わせ" }
     : { home: "Home", about: "About", services: "Services", works: "Work", faq: "FAQ", contact: "Contact" }
+  const navLabels = { ...defaultNavLabels, ...demoData?.meta.navLabels }
 
   const navLinks = [
     { label: navLabels.home, href: basePath },
@@ -65,6 +66,7 @@ export default async function DemoMultiLayoutWrapper({ children, params }: Layou
         accentColor={accentColor}
         designRecipe={demoData?.designRecipe}
         quality={demoData?.quality}
+        presentation={demoData?.meta}
       >
         {children}
       </DemoMultiLayout>

@@ -35,7 +35,9 @@ export function DemoContactPage({ contact, companyName, locale, template }: Prop
       case "info":
         return <ContactInfoCard contact={contact} isJa={isJa} accent={accent} />
       case "form":
-        return <ContactFormSection isJa={isJa} accent={accent} companyName={companyName} contact={contact} />
+        return contact.formEnabled === false
+          ? <DisabledContactForm isJa={isJa} accent={accent} note={contact.formNote} />
+          : <ContactFormSection isJa={isJa} accent={accent} companyName={companyName} contact={contact} />
       case "booking":
         return <BookingEmbed contact={contact} isJa={isJa} accent={accent} />
       case "map":
@@ -63,6 +65,20 @@ export function DemoContactPage({ contact, companyName, locale, template }: Prop
 }
 
 const defaultContactSections: ContactSectionId[] = ["info", "form", "booking"]
+
+function DisabledContactForm({ isJa, accent, note }: { isJa: boolean; accent: string; note?: string }) {
+  return (
+    <section className="bg-white px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-3xl rounded-3xl border border-gray-100 bg-gray-50 p-8 text-center sm:p-12">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl text-white" style={{ background: accent }} aria-hidden="true">✓</div>
+        <h2 className="mt-5 font-display text-2xl font-bold text-gray-950">{isJa ? "お問い合わせ導線も実装済み" : "Contact flow included"}</h2>
+        <p className="mx-auto mt-3 max-w-xl leading-7 text-gray-600">
+          {note ?? (isJa ? "この提案用デモでは誤送信を防ぐため、フォーム送信を停止しています。" : "Form submission is disabled in this proposal demo to prevent accidental messages.")}
+        </p>
+      </div>
+    </section>
+  )
+}
 
 /* ──────────── Contact Hero ──────────── */
 

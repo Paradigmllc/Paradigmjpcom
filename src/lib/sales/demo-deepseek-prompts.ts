@@ -42,6 +42,7 @@ export function buildJapaneseUserPrompt(
   cardStyle: string,
   nav: string,
   tokens: DemoTemplate["designTokens"],
+  verifiedFacts: string,
 ): string {
   return `以下の企業情報をもとに、4ページ構成のビジネスWebサイト（Home、About、Services、Contact）のパーソナライズされたコピーを生成してください。
 
@@ -53,6 +54,10 @@ export function buildJapaneseUserPrompt(
 - 技術スタック: ${techSummary}
 - 出力言語: ${locale === "ja" ? "日本語（です・ます調）" : locale}
 - レイアウトスタイル: ヒーロー=${heroVariant}, 特徴=${featureLayout}, カード=${cardStyle}, ナビ=${nav}
+
+【確認済み公開情報】
+${verifiedFacts}
+上記にない事実は創作せず、コピーには確認済み公開情報だけを使用してください。
 
 【診断レポート】
 - 診断フック: ${hook}
@@ -137,6 +142,7 @@ export function buildEnglishUserPrompt(
   cardStyle: string,
   nav: string,
   tokens: DemoTemplate["designTokens"],
+  verifiedFacts: string,
 ): string {
   return `Generate personalized copy for a 4-page business website (Home, About, Services, Contact) based on the following company data.
 
@@ -148,6 +154,10 @@ export function buildEnglishUserPrompt(
 - Tech Stack: ${techSummary}
 - Output Language: ${locale === "en" ? "Professional Business English" : locale}
 - Layout Style: hero=${heroVariant}, features=${featureLayout}, cards=${cardStyle}, nav=${nav}
+
+[Verified Public Facts]
+${verifiedFacts}
+Use only these verified facts for company-specific copy. Do not invent missing facts.
 
 [Diagnostic Report]
 - Diagnostic Hook: ${hook}
