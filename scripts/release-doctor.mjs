@@ -310,6 +310,21 @@ function checkStaticReleaseRules() {
     fail("SMB demo quality gate must have RLS, publish constraint, and release wiring")
   }
 
+  const demoTriggerMigrationPath = "supabase/migrations/20260713120000_sales_pipeline_db_trigger_provider.sql"
+  const demoTriggerMigration = fs.existsSync(demoTriggerMigrationPath)
+    ? fs.readFileSync(demoTriggerMigrationPath, "utf8")
+    : ""
+  if (
+    demoTriggerMigration.includes("sales_pipeline_runs_provider_check") &&
+    demoTriggerMigration.includes("db_trigger") &&
+    noLoginDeploy.includes("20260713120000_sales_pipeline_db_trigger_provider.sql") &&
+    noLoginDeploy.includes("applySalesPipelineDbTriggerProviderMigration")
+  ) {
+    pass("SMB demo company trigger provider has release migration wiring")
+  } else {
+    fail("SMB demo company trigger provider must have release migration wiring")
+  }
+
   const visualProofComponentPath = "src/components/japan-entry/JapanEntryVisualProof.tsx"
   const visualProofComponent = fs.existsSync(visualProofComponentPath)
     ? fs.readFileSync(visualProofComponentPath, "utf8")

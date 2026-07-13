@@ -632,6 +632,14 @@ async function applyDemoQualityGateMigration(envs) {
   )
 }
 
+async function applySalesPipelineDbTriggerProviderMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260713120000_sales_pipeline_db_trigger_provider.sql",
+    "Sales pipeline DB trigger provider migration",
+  )
+}
+
 function runDeployGuard() {
   if (SKIP_DEPLOY_GUARD) {
     console.log("Coolify deploy guard: skipped")
@@ -1180,6 +1188,7 @@ async function main() {
     console.log(await applyPublicJapanEntryChecksMigration(envs))
     console.log(await applyJapanEntryProjectionsMigration(envs))
     console.log(await applyDemoQualityGateMigration(envs))
+    console.log(await applySalesPipelineDbTriggerProviderMigration(envs))
     console.log(await applyVideoPipelineMigration(envs))
     console.log(await applyVideoStrategyMigration(envs))
     console.log(await applyVideoProductionMigration(envs))

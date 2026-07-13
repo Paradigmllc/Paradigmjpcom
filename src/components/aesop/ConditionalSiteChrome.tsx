@@ -11,6 +11,7 @@
  *
  * 適用範囲:
  *   - LP-only (chrome 全消し): /{locale}/report/* — 顧客向け診断レポート (B36 MVP)
+ *   - LP-only (chrome 全消し): /{locale}/demo/* — 独立した顧客向けフルサイトデモ
  *   - LP-only (chrome 全消し): /p/* — レガシー営業提案ページ (旧 ProposalRenderer)
  *   - 通常 site chrome: それ以外の全ページ
  *
@@ -93,6 +94,7 @@ function isLpRoute(pathname: string): boolean {
   // /{2-letter-locale}/report/{anything} に厳密一致
   if (/^\/[a-z]{2}\/report\//.test(pathname)) return true
   if (/^\/[a-z]{2}\/d\//.test(pathname)) return true
+  if (/^\/[a-z]{2}\/demo\//.test(pathname)) return true
   if (/^\/[a-z]{2}\/admin(\/|$)/.test(pathname)) return true
   // /p/{anything} (legacy proposal pages)
   if (/^\/p\//.test(pathname)) return true
