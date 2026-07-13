@@ -20,7 +20,7 @@ const contentSecurityPolicyDirectives = [
   // Next.js emits inline bootstrap code. The remaining origins are the public
   // integrations rendered by the application after consent or on the contact
   // form. Do not replace these with a blanket https: source.
-  "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://www.googletagmanager.com https://connect.facebook.net",
+  "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://connect.facebook.net",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   // Browser requests stay on HTTPS. This covers analytics collection, the
   // Turnstile challenge, and configurable API/media origins used by reports.
