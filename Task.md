@@ -1,5 +1,12 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
+### 2026-07-13 Japan Entryフォーム文面・未置換/推測fail-closed強化（実装・実API検証済み / 正式release待ち）
+- `[]` / 全角括弧 / `{{}}` / `${}` / `<>` / `__TOKEN__` / `%TOKEN%` / `TBD` 等の未置換プレースホルダーを決定論的品質ゲートで全面拒否。修正前は `[monthly visits]` と `[opportunity gap]` が残っても安全性100点で通った再現ケースを、修正後は0点・保存不可へ変更した。
+- 数値型文面では、Japan推定月間アクセスと月次機会ギャップの元factに含まれる正確な数値を第3段落へ必須化し、機会ギャップはUSD記号を含む完全値を要求。企業名も第2段落への完全一致を必須化した。
+- 実DeepSeek V4 Pro初回smokeで見つかった、入力にない「日本の小売店のニーズに応え得る」という推測を回帰ケース化。第2段落の`could/may/might/likely`、入力にないJapan/Japanese、needs/challenges/demandを拒否し、プロンプトとV4 Pro批評規則も同じ境界へ統一した。
+- `npm run smoke:japan-entry-form-copy` を追加。合成企業のみを使い、DB保存・Twenty登録・フォーム送信なしで実V4 Pro生成を再現できる。最終実測は **95/100**、安全性 **100**、151語、4段落、企業名・`1,950` Japan visits・`$10,296` opportunity gapの完全一致、未置換0件で合格。
+- 検証: 対象Vitest **28/28 pass**、関連4 files **41 tests pass**、TypeScript、対象ESLint、quality guard **0 errors / 52 warnings**、production build **372/372 pages**、`git diff --check` pass。全体Vitestは **94/95 files・458/462 tests pass**で、今回未変更の`backup-oss-supabase.sh`がworktree上でCRLF展開されたことによる既存4件のみ失敗。フォーム送信、Twenty登録、実企業DB保存は未実行。
+
 ### 2026-07-13 SMBデモ大量生成の持続可能化（本番反映・subdomain route修正中 / 送信停止）
 - デモ本文生成はOpenAIではなくDeepSeekを正規経路とする。LiteLLMが設定済みなら `deepseek-v4-pro` を優先し、未設定時はDeepSeek公式APIの設定モデルを使用する。モデル名、input/output/cache token実績をデモmetaへ保存し、OpenAIやFlashへ黙って降格しない。
 - 同一企業に対してdesign spec、Astro code、3候補copyを重複生成していた経路を廃止。企業別copyは **1社1 LLM call**、3デザインは同じ確認済みcopyを決定論的なlayout recipeへ適用して品質比較する。最大7 call相当から1 callへ削減し、90点未満・根拠不足・権利不明は保存停止を維持する。

@@ -23,6 +23,7 @@
     "release:prod": "node scripts/release-doctor.mjs --pre-deploy && node scripts/sales-os-no-login-deploy.mjs && node scripts/release-doctor.mjs --post-deploy",
     "quality:guard": "node scripts/paradigm-quality-guard.mjs",
     "quality:ci": "node scripts/paradigm-quality-guard.mjs --ci",
+    "smoke:japan-entry-form-copy": "tsx scripts/smoke-japan-entry-form-copy.mts",
     "host:install-coolify-guard": "node scripts/install-coolify-host-guard.mjs",
     "host:disable-resident-runtime": "node scripts/disable-resident-runtime.mjs",
     "context:audit": "powershell -ExecutionPolicy Bypass -File %USERPROFILE%\\\\.agents\\\\scripts\\\\context-audit.ps1"

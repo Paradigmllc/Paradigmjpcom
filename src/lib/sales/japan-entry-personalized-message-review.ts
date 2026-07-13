@@ -27,6 +27,23 @@ function normalizeNumber(value: string): string {
   return value.replace(/^[$€£¥]\s*/, "").replaceAll(",", "").replace(/%$/, "");
 }
 
+function containsUnresolvedPlaceholder(value: string): boolean {
+  return [
+    /\[[^\]\n]{1,80}\]/,
+    /［[^］\n]{1,80}］/,
+    /【[^】\n]{1,80}】/,
+    /\{[^{}\n]{1,80}\}/,
+    /｛[^｛｝\n]{1,80}｝/,
+    /\$\{[^{}\n]{1,80}\}/,
+    /<[^<>\n]{1,80}>/,
+    /＜[^＜＞\n]{1,80}＞/,
+    /__[A-Z0-9][A-Z0-9_ -]{0,78}__/i,
+    /%[A-Z][A-Z0-9_]{1,78}%/,
+    /\b(?:COMPANY_NAME|MONTHLY_VISITS|OPPORTUNITY_GAP|INSERT_[A-Z0-9_]+)\b/,
+    /\b(?:TBD|TO\s+BE\s+(?:FILLED|CONFIRMED)|INSERT\s+(?:COMPANY|NUMBER|VALUE|METRIC)|PLACEHOLDER)\b/i,
+  ].some((pattern) => pattern.test(value));
+}
+
 function includesAny(value: string, candidates: string[]): boolean {
   const lower = value.toLowerCase();
   return candidates.some((candidate) => candidate.length >= 3 && lower.includes(candidate.toLowerCase()));
@@ -54,6 +71,11 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   const selected = input.factIds.map((id) => factMap.get(id)).filter((fact): fact is JapanEntryPersonalizationFact => Boolean(fact));
   const productEvidence = input.productEvidence.trim();
 
+  if (containsUnresolvedPlaceholder(message)) {
+    issues.push("Unresolved template placeholder is prohibited");
+    score = 0;
+  }
+
   if (!message.toLowerCase().includes(input.companyName.toLowerCase())) { issues.push("Company name is missing"); score -= 20; }
   if (!/Sato/i.test(message) || !/Paradigm LLC in Japan/i.test(message)) { issues.push("Sato and Paradigm LLC introduction is incomplete"); score -= 20; }
   if (!/Japan Entry Package/i.test(message)) { issues.push("Japan Entry Package name is missing"); score -= 15; }
@@ -66,8 +88,20 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   if (paragraphs.length !== 4) { issues.push("Message must contain exactly four short paragraphs separated by blank lines"); score -= 25; }
   else {
     const expectedIntro = "Hello, I’m Sato from Paradigm LLC in Japan. We help overseas companies enter the Japanese market.";
+    const productParagraph = paragraphs[1] ?? "";
     if ((paragraphs[0] ?? "").replace("I'm", "I’m") !== expectedIntro) { issues.push("Paragraph 1 must use the approved Sato introduction exactly"); score -= 20; }
-    if (!paragraphs[1]?.startsWith("I reviewed") || !paragraphs[1]?.toLowerCase().includes(productEvidence.toLowerCase())) { issues.push("Grounded product understanding must be in paragraph 2"); score -= 15; }
+    if (
+      !productParagraph.startsWith("I reviewed")
+      || !productParagraph.toLowerCase().includes(input.companyName.toLowerCase())
+      || !productParagraph.toLowerCase().includes(productEvidence.toLowerCase())
+    ) { issues.push("Company name and grounded product understanding must be in paragraph 2"); score -= 15; }
+    if (/\b(?:could|may|might|likely|appears? to|seems? to)\b/i.test(productParagraph)) { issues.push("Speculative product applicability is prohibited in paragraph 2"); score -= 40; }
+    if (/\bJapan(?:ese)?\b/i.test(productParagraph) && !/\bJapan(?:ese)?\b/i.test(input.productContext)) { issues.push("Japan-specific product claims must come from the supplied product context"); score -= 40; }
+    const unsupportedProductTerms = ["need", "needs", "pain point", "pain points", "challenge", "challenges", "demand"];
+    const unsupportedTerms = unsupportedProductTerms.filter(
+      (term) => productParagraph.toLowerCase().includes(term) && !input.productContext.toLowerCase().includes(term),
+    );
+    if (unsupportedTerms.length > 0) { issues.push(`Unsupported product-context terms in paragraph 2: ${unsupportedTerms.join(", ")}`); score -= 35; }
     if (!selected.some((fact) => includesAny(paragraphs[2] ?? "", fact.anchors))) { issues.push("Japan-specific diagnosis must be in paragraph 3"); score -= 20; }
     const approvedOfferLead = "Paradigm addresses these items through our Japan Entry Package, which validates the opportunity and addresses the named customer-path gap.";
     if (!paragraphs[3]?.startsWith(approvedOfferLead) || !/\$\s?12,?000|12,?000\s?(?:USD|dollars)/i.test(paragraphs[3] ?? "")) { issues.push("Offer and CTA must use the approved non-invented transition in paragraph 4"); score -= 20; }
@@ -95,6 +129,21 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     const selectedIds = new Set(selected.map((fact) => fact.id));
     if (!selectedIds.has("modeled-japan-monthly-visits") || !selectedIds.has("modeled-monthly-opportunity-gap")) { issues.push("Quantified mode requires both Japan visits and opportunity-gap facts"); score -= 45; }
     if (!/public-signal/i.test(message) || !/not measured (?:analytics|traffic|revenue|sales)/i.test(message)) { issues.push("Quantified mode must identify public-signal estimates as not measured analytics"); score -= 35; }
+    const diagnosisNumbers = new Set(numericTokens(paragraphs[2] ?? "").map(normalizeNumber));
+    const missingModeledValues = selected
+      .filter((fact) => fact.id.startsWith("modeled-"))
+      .flatMap((fact) => numericTokens(fact.statement).map(normalizeNumber))
+      .filter((token) => !diagnosisNumbers.has(token));
+    if (missingModeledValues.length > 0) {
+      issues.push(`Required modeled values are missing from paragraph 3: ${[...new Set(missingModeledValues)].join(", ")}`);
+      score -= 45;
+    }
+    const opportunityFact = selected.find((fact) => fact.id === "modeled-monthly-opportunity-gap");
+    const requiredCurrencyValue = opportunityFact?.anchors.find((anchor) => /^\$\d/.test(anchor));
+    if (requiredCurrencyValue && !(paragraphs[2] ?? "").includes(requiredCurrencyValue)) {
+      issues.push("The modeled opportunity value must retain its exact USD currency label in paragraph 3");
+      score -= 35;
+    }
   } else if (selectedModeled) { issues.push("Audit mode must not use incomplete modeled metrics"); score -= 45; }
   if (selectedModeled && !/(?:model(?:ed)?|estimate[sd]?|planning assumption)/i.test(message)) { issues.push("Modeled metrics are not clearly labeled as estimates"); score -= 40; }
   if (/\brevenue\b/i.test(message) && !selected.some((fact) => fact.id === "modeled-monthly-opportunity-gap")) { issues.push("Revenue wording is not tied to the modeled opportunity fact"); score -= 40; }
