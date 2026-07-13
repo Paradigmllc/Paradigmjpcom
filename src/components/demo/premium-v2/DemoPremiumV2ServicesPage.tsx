@@ -54,7 +54,7 @@ export function DemoPremiumV2ServicesPage({ data }: { data: DemoMultiPageData })
 
       <section className="px-5 py-20 sm:px-10 sm:py-28 lg:px-16 lg:py-36">
         <div className="mx-auto max-w-7xl">
-          <PremiumV2Reveal className="mb-10"><p className="text-xs font-bold uppercase tracking-[.3em] text-[var(--demo-accent)]">Gallery</p><h2 className="mt-5 font-premium-serif text-4xl tracking-[-.045em] sm:text-6xl">{data.companyName}のサービスイメージ。</h2></PremiumV2Reveal>
+          <PremiumV2Reveal className="mb-10"><p className="text-xs font-bold uppercase tracking-[.3em] text-[var(--demo-accent)]">Gallery</p><h2 className="mt-5 font-premium-serif text-4xl tracking-[-.045em] sm:text-6xl">{data.companyName}の{data.meta.navLabels?.services ?? "サービス"}。</h2></PremiumV2Reveal>
           <PremiumV2MediaCarousel media={media} label={`${data.companyName}のサービスイメージスライダー`} />
         </div>
       </section>

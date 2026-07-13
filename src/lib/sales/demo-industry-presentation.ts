@@ -10,6 +10,7 @@ interface PresentationProfile {
   servicesHeading: string
   galleryEyebrow: string
   galleryHeading: (companyName: string) => string
+  sceneHeadings: string[]
   works: { title: string; subtitle: string; eyebrow: string }
 }
 
@@ -22,6 +23,7 @@ const PROFILES: Record<string, PresentationProfile> = {
     servicesHeading: "ご用意しているもの。",
     galleryEyebrow: "SCENES",
     galleryHeading: (name) => `${name}の景色。`,
+    sceneHeadings: ["店内とメニュー", "一杯を淹れる時間", "店の佇まい", "季節の一皿"],
     works: { title: "店の景色", subtitle: "写真とともに、お店の雰囲気をご紹介します。", eyebrow: "SCENES" },
   },
   beauty_salon: {
@@ -32,6 +34,7 @@ const PROFILES: Record<string, PresentationProfile> = {
     servicesHeading: "ご案内しているメニュー。",
     galleryEyebrow: "STYLE",
     galleryHeading: (name) => `${name}のスタイル。`,
+    sceneHeadings: ["スタイル", "施術の時間", "サロン空間", "ディテール"],
     works: { title: "スタイル", subtitle: "施術や空間のイメージをご紹介します。", eyebrow: "STYLE" },
   },
   dental: {
@@ -42,6 +45,7 @@ const PROFILES: Record<string, PresentationProfile> = {
     servicesHeading: "診療について。",
     galleryEyebrow: "CLINIC",
     galleryHeading: (name) => `${name}の院内紹介。`,
+    sceneHeadings: ["受付・待合", "診療空間", "院内設備", "アクセス"],
     works: { title: "院内紹介", subtitle: "院内の設備や雰囲気をご紹介します。", eyebrow: "CLINIC" },
   },
   construction: {
@@ -52,6 +56,7 @@ const PROFILES: Record<string, PresentationProfile> = {
     servicesHeading: "手がけていること。",
     galleryEyebrow: "WORKS",
     galleryHeading: (name) => `${name}の仕事。`,
+    sceneHeadings: ["仕事の現場", "手仕事の細部", "仕上がり", "地域とのつながり"],
     works: { title: "施工・仕事", subtitle: "仕事の内容を写真とともにご紹介します。", eyebrow: "WORKS" },
   },
   retail: {
@@ -62,6 +67,7 @@ const PROFILES: Record<string, PresentationProfile> = {
     servicesHeading: "取り扱っているもの。",
     galleryEyebrow: "GALLERY",
     galleryHeading: (name) => `${name}のセレクション。`,
+    sceneHeadings: ["セレクション", "店内の風景", "商品のディテール", "季節のご案内"],
     works: { title: "ギャラリー", subtitle: "商品や店舗の雰囲気をご紹介します。", eyebrow: "GALLERY" },
   },
 }
@@ -74,15 +80,16 @@ const DEFAULT_PROFILE: PresentationProfile = {
   servicesHeading: "ご提供していること。",
   galleryEyebrow: "GALLERY",
   galleryHeading: (name) => `${name}の仕事と風景。`,
+  sceneHeadings: ["仕事の風景", "サービスの様子", "空間とディテール", "日々の取り組み"],
   works: { title: "仕事・実績", subtitle: "事業や仕事の様子をご紹介します。", eyebrow: "WORKS" },
 }
 
-function meaningfulMediaSections(page: DemoMultiPageData): DemoContentPage["sections"] {
+function meaningfulMediaSections(page: DemoMultiPageData, profile: PresentationProfile): DemoContentPage["sections"] {
   const media = [...(page.premium?.gallery ?? []), ...(page.premium?.heroMedia ?? [])]
   const unique = media.filter((item, index) => media.findIndex((candidate) => candidate.src === item.src) === index)
   return unique.slice(0, 4).map((item, index) => ({
     id: `scene-${index + 1}`,
-    heading: item.title?.trim() || item.eyebrow?.trim() || `Scene ${String(index + 1).padStart(2, "0")}`,
+    heading: item.title?.trim() || item.eyebrow?.trim() || profile.sceneHeadings[index] || `Gallery ${String(index + 1).padStart(2, "0")}`,
     body: item.caption?.trim() || item.alt,
   }))
 }
@@ -115,7 +122,7 @@ export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPag
   const social = page.premium?.social[0]
   const primaryHref = social?.href ?? `/${page.slug}/contact`
   const primaryLabel = social ? `${social.label}を見る` : profile.nav.contact
-  const scenes = meaningfulMediaSections(page)
+  const scenes = meaningfulMediaSections(page, profile)
   const works = page.pages.works ? {
     ...page.pages.works,
     ...profile.works,
