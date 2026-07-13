@@ -17,7 +17,6 @@ import {
   FeatureAlternating,
   FeatureList,
 } from "./home/FeatureVariants"
-import { TestimonialsSection, TrustedBySection } from "./home/SupplementalVariants"
 import { DemoFAQ } from "./DemoFAQ"
 
 interface Props {
@@ -41,9 +40,7 @@ export function DemoHomePage({ data, template }: Props) {
       case "stats":
         return home.stats.length > 0 ? <StatsSectionCompact stats={home.stats} isJa={isJa} accent={accent} template={template?.designTokens} /> : null
       case "loss":
-        return home.totalLoss && home.totalLoss !== "¥0" && home.totalLoss !== "0" && home.totalLoss !== "¥ 0"
-          ? <LossEstimate totalLoss={home.totalLoss} isJa={isJa} />
-          : null
+        return null
       case "beforeAfter":
         return home.beforeAfter.length > 0 ? (
           <>
@@ -56,13 +53,8 @@ export function DemoHomePage({ data, template }: Props) {
       case "cta":
         return <CtaSectionCompact cta={home.cta} isJa={isJa} accent={accent} accentDark={accentDark} template={template?.designTokens} />
       case "testimonials":
-        return home.testimonials && home.testimonials.length > 0
-          ? <TestimonialsSection testimonials={home.testimonials} isJa={isJa} accent={accent} template={template?.designTokens} />
-          : null
       case "trustedBy":
-        return home.trustedBy && home.trustedBy.length > 0
-          ? <TrustedBySection trustedBy={home.trustedBy} isJa={isJa} accent={accent} />
-          : null
+        return null
       default:
         return null
     }
@@ -93,7 +85,7 @@ export function DemoHomePage({ data, template }: Props) {
   return (
     <div className="[--demo-accent:var(--home-accent)]" style={{ "--home-accent": accent } as React.CSSProperties}>
       {/* Render sections in template order */}
-      {(layout?.sections ?? defaultSections).map((sectionId) => (
+      {(data.designRecipe?.sectionOrder ?? layout?.sections ?? defaultSections).map((sectionId) => (
         <div key={sectionId}>
           {renderSection(sectionId)}
         </div>
@@ -105,7 +97,7 @@ export function DemoHomePage({ data, template }: Props) {
   )
 }
 
-const defaultSections = ["hero", "stats", "loss", "beforeAfter", "features", "cta"]
+const defaultSections = ["hero", "stats", "beforeAfter", "features", "cta"]
 
 /* ──────────── Compact section renderers (extracted from original) ──────────── */
 

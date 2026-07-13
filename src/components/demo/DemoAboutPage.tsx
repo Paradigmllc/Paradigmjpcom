@@ -4,7 +4,7 @@ import { motion } from "framer-motion"
 import type { DemoAboutPage as DemoAboutPageData } from "@/lib/sales/demo-site-types"
 import type { DemoTemplate, AboutSectionId } from "@/lib/sales/demo-templates/registry"
 import { headingSizeClass } from "@/lib/sales/demo-templates/registry"
-import { StoryDefault, MissionBold, ValuesGrid, TeamNote, Timeline } from "./about/AboutVariants"
+import { StoryDefault, MissionBold, ValuesGrid, TeamNote } from "./about/AboutVariants"
 
 interface Props {
   about: DemoAboutPageData
@@ -31,7 +31,7 @@ export function DemoAboutPage({ about, companyName: _companyName, locale, templa
       case "team":
         return <TeamNote about={about} isJa={isJa} accent={accent} />
       case "timeline":
-        return <Timeline about={about} isJa={isJa} accent={accent} />
+        return null
       default:
         return null
     }

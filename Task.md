@@ -1,5 +1,13 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
+### 2026-07-13 SMBフルサイト・デモ品質ゲート（実装中 / 収集・送信停止）
+- HP未保有でGoogle Maps/SNSに公開情報があるSMB向けに、3つの異なるデザイン候補を生成し、品質スコア最高案だけを採用するトーナメント方式へ変更。会社名ハッシュによる単純テンプレ差し替えを廃止し、構成順・密度・モーション・レイアウトを含むdesign recipeと衝突fingerprintを保存する。
+- Home / About / Services / Contactに、Works / News / FAQ / Recruit / Privacy / Termsを加えた10ページ構成を実装。問い合わせフォーム、管理者向け品質表示、認証済みquality API、保存済みfull payloadの再現表示を接続した。
+- `theme_demo_pages`にfull payload、design recipe、候補3案、quality report、権利manifest、公開状態を追加。90点未満、hard blockerあり、Google Maps/SNS根拠なし、画像権利不明、構造衝突、架空の推薦・顧客ロゴ・売上/回復試算がある場合はDB制約と生成処理の両方で公開停止する。旧公開デモも再生成まで非公開へ移す。
+- 既存の架空testimonial/trusted-by生成、AI推薦文、推定損失表示、架空沿革を公開経路から除外。AI promptも未確認の実績・数値・沿革・人物・顧客・料金を創作しないfail-closedへ変更した。実ロゴ/写真は利用許諾が確認できるまで使わず、提案段階はテキストmonogramと権利確認済みUI資産のみ使用する。
+- release script / run-migrations / release-doctorへ `20260712233619_demo_quality_gate.sql` を配線。ローカルrelease doctor、TypeScript、対象Vitest、quality guardはpass。本番buildと最終ブラウザ確認後にcommit / push / 正式releaseを行う。
+- Twenty営業リストは空のまま。候補収集、SNS送信、メール、電話、郵送、フォーム送信は一切実行していない。送信再開は別途オペレーター承認が必要。
+
 ### 2026-07-13 ブログ編集セット刷新・実装漏れ修正（本番反映前）
 - 英語Japan Entry編集シードを9本から12本へ拡張。新規記事は、必要素材・承認、問い合わせ/決済導線、公開シグナルと一次データを扱い、固定$12,000・6か月月額込み・7か月目以降$995・14営業日目標・法務境界を一貫して記載。
 - 日本語の公開レビュー済み編集シードを4本から7本へ拡張。申込み後の適合確認、問い合わせ/決済、公開後の引き継ぎを追加し、各記事に2,000文字以上、表、タグ、ヒーロー画像、目次/サイドバー、固定CTAが揃う状態を維持。

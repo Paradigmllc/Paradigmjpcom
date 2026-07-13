@@ -81,6 +81,7 @@ export interface DemoMeta {
   calBookingUrl: string
   generatedAt: string
   engine: string
+  sourceEvidence?: string[]
 }
 
 export interface DemoPageData {
@@ -111,7 +112,64 @@ export interface DemoGenerateOutput {
   ok: boolean
   demoUrl: string | null
   slug: string | null
+  qualityScore?: number
+  publicationStatus?: DemoPublicationStatus
+  candidates?: DemoCandidateSummary[]
   error?: string
+}
+
+export type DemoPublicationStatus =
+  | "draft"
+  | "quality_review"
+  | "approved"
+  | "published"
+  | "rejected"
+  | "legacy_published"
+
+export interface DemoDesignRecipe {
+  templateId: string
+  heroVariant: string
+  featureLayout: string
+  serviceCardStyle: string
+  navStyle: string
+  footerStyle: string
+  sectionOrder: string[]
+  palette: { accent: string; accentDark: string }
+  density: string
+  containerWidth: string
+  compositionVariant: number
+  rhythmVariant: number
+  motionVariant: "restrained" | "editorial" | "expressive"
+}
+
+export interface DemoRightsAsset {
+  kind: "text" | "image" | "logo" | "font" | "map"
+  source: string
+  usage: "owned" | "licensed" | "public_fact" | "proposal_only" | "unknown"
+  reference?: string
+}
+
+export interface DemoRightsManifest {
+  status: "proposal_safe" | "verified" | "blocked"
+  assets: DemoRightsAsset[]
+}
+
+export interface DemoQualityReport {
+  version: string
+  score: number
+  passed: boolean
+  hardBlockers: string[]
+  warnings: string[]
+  checks: Record<string, boolean>
+}
+
+export interface DemoCandidateSummary {
+  templateId: string
+  score: number
+  passed: boolean
+  designFingerprint: string
+  structuralFingerprint: string
+  hardBlockers: string[]
 }
 
 /* ───── Multi-page types (v2) ───── */
@@ -127,12 +185,35 @@ export interface DemoMultiPageData {
   templateId?: string
   /** Design tokens from the selected template */
   designTokens?: DemoTemplate["designTokens"]
+  designRecipe?: DemoDesignRecipe
+  quality?: DemoQualityReport
+  rightsManifest?: DemoRightsManifest
+  publicationStatus?: DemoPublicationStatus
   pages: {
     home: DemoHomePage
     about: DemoAboutPage
     services: DemoServicesPage
     contact: DemoContactPage
+    works?: DemoContentPage
+    news?: DemoContentPage
+    faq?: DemoContentPage
+    recruit?: DemoContentPage
+    privacy?: DemoContentPage
+    terms?: DemoContentPage
   }
+}
+
+export interface DemoContentPage {
+  title: string
+  subtitle: string
+  eyebrow: string
+  sections: Array<{
+    id: string
+    heading: string
+    body: string
+    note?: string
+  }>
+  accentColor: string
 }
 
 export interface DemoHomePage {

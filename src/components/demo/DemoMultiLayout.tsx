@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
 import { navClasses, type NavStyle } from "@/lib/sales/demo-templates/registry"
 import type { DemoTemplate } from "@/lib/sales/demo-templates/registry"
+import type { DemoDesignRecipe, DemoQualityReport } from "@/lib/sales/demo-site-types"
 import { JAPAN_ENTRY_CTA_EN, JAPAN_ENTRY_CTA_JA } from "@/lib/japan-entry-public-copy"
 
 interface NavLink {
@@ -20,6 +21,8 @@ interface Props {
   templateId?: string
   /** Design tokens for accent colors */
   accentColor?: string
+  designRecipe?: DemoDesignRecipe
+  quality?: DemoQualityReport
   children: React.ReactNode
 }
 
@@ -30,6 +33,8 @@ export function DemoMultiLayout({
   companyName,
   templateId,
   accentColor,
+  designRecipe,
+  quality,
   children,
 }: Props) {
   const pathname = usePathname()
@@ -76,7 +81,16 @@ export function DemoMultiLayout({
   const isTransparent = navStyle === "transparent"
 
   return (
-    <div className={`flex min-h-dvh flex-col antialiased ${isDarkNav ? "bg-gray-950 text-white" : "bg-white text-gray-900"}`}>
+    <div
+      className={`flex min-h-dvh flex-col antialiased ${isDarkNav ? "bg-gray-950 text-white" : "bg-white text-gray-900"}`}
+      data-composition={designRecipe?.compositionVariant}
+      data-motion={designRecipe?.motionVariant}
+      style={{ "--demo-accent": accent } as React.CSSProperties}
+    >
+      <div className={`border-b px-4 py-2 text-center text-xs font-medium ${isDarkNav ? "border-white/10 bg-gray-950 text-white/70" : "border-blue-100 bg-blue-50 text-blue-900"}`}>
+        {isJa ? "提案用デモサイト（公式サイトではありません）" : "Proposal demo — not the company’s official website"}
+        {quality?.passed ? ` · Quality ${quality.score}/100` : ""}
+      </div>
       {/* Nav */}
       <nav className={nc.wrapper} style={isDarkNav ? { background: "rgba(17,24,39,0.95)" } : {}}>
         <div className={`${nc.inner} ${templateId === "apex" ? "max-w-4xl" : templateId === "terra" ? "max-w-7xl" : "max-w-6xl"}`}>
@@ -208,6 +222,12 @@ export function DemoMultiLayout({
             {isJa
               ? `© ${new Date().getFullYear()} Paradigm LLC — このデモは診断データから自動生成されました。`
               : `© ${new Date().getFullYear()} Paradigm LLC — This demo was auto-generated from diagnostic data.`}
+            <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-2">
+              <a href={`${basePath}/news`} className="hover:text-[var(--demo-accent)]">{isJa ? "お知らせ" : "News"}</a>
+              <a href={`${basePath}/recruit`} className="hover:text-[var(--demo-accent)]">{isJa ? "採用情報" : "Careers"}</a>
+              <a href={`${basePath}/privacy`} className="hover:text-[var(--demo-accent)]">{isJa ? "プライバシー" : "Privacy"}</a>
+              <a href={`${basePath}/terms`} className="hover:text-[var(--demo-accent)]">{isJa ? "利用条件" : "Terms"}</a>
+            </div>
           </div>
         </div>
       </footer>

@@ -30,14 +30,18 @@ export function selectTemplate(
   company: CompanyProfile,
   report: DiagnosticReportData,
 ): DemoTemplate {
+  return selectTemplateCandidates(company, report, 1)[0] ?? DEFAULT_TEMPLATE
+}
+
+/** Return genuinely different, ranked candidates for the quality tournament. */
+export function selectTemplateCandidates(
+  company: CompanyProfile,
+  report: DiagnosticReportData,
+  count = 3,
+): DemoTemplate[] {
   const industry = company.industry ?? "consulting"
   const locale = company.report_locale ?? report.report_locale ?? "ja"
-
-  // Step 1: Score each template
-  let bestScore = -1
-  let bestTemplate: DemoTemplate = DEFAULT_TEMPLATE
-
-  for (const template of DEMO_TEMPLATES) {
+  const ranked = DEMO_TEMPLATES.map((template) => {
     let score = 0
 
     // Industry match (weight × 3)
@@ -67,26 +71,17 @@ export function selectTemplate(
     // Locale affiliation
     if (locale === "ja" && template.id === "zenith") score += 5
 
-    if (score > bestScore) {
-      bestScore = score
-      bestTemplate = template
-    }
-  }
+    // Stable tie-breaker without overriding semantic ranking.
+    score += simpleHash(`${company.company_name}:${template.id}`) % 7
+    return { template, score }
+  }).sort((left, right) => right.score - left.score || left.template.id.localeCompare(right.template.id))
 
-  // Step 2: If no strong match (score <= 0), pick based on industry profile
-  if (bestScore <= 0) {
-    bestTemplate = pickByIndustry(industry)
-  }
+  const fallback = pickByIndustry(industry)
+  const ordered = ranked[0]?.score > 0
+    ? ranked.map(({ template }) => template)
+    : [fallback, ...ranked.map(({ template }) => template).filter((template) => template.id !== fallback.id)]
 
-  // Step 3: Ensure deterministic variation for same-industry companies
-  // Use company name hash for deterministic but varied selection
-  const hash = simpleHash(company.company_name)
-  const industryTemplates = DEMO_TEMPLATES.filter((t) => t.industries.includes(industry))
-  if (industryTemplates.length > 0) {
-    bestTemplate = industryTemplates[hash % industryTemplates.length]
-  }
-
-  return bestTemplate
+  return ordered.slice(0, Math.max(1, Math.min(count, DEMO_TEMPLATES.length)))
 }
 
 function severityScore(template: DemoTemplate, report: DiagnosticReportData): number {

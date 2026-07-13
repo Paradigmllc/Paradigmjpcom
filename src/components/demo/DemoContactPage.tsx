@@ -263,7 +263,7 @@ function MapPlaceholder({ isJa }: { isJa: boolean; accent: string }) {
     <section className="bg-gray-50/80 px-4 py-12 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl">
         <div className="flex h-64 items-center justify-center rounded-2xl border border-gray-200 bg-white">
-          <p className="text-sm text-gray-400">{isJa ? "地図プレースホルダー" : "Map placeholder"}</p>
+          <p className="text-sm text-gray-500">{isJa ? "所在地の詳細は事業者確認後に掲載します" : "Full location details will be shown after business approval"}</p>
         </div>
       </div>
     </section>
@@ -280,10 +280,12 @@ function ContactFaq({ isJa, accent, contact }: { isJa: boolean; accent: string; 
             <p className="font-semibold text-gray-900">{isJa ? "申込前に何を確認できますか？" : "What happens after I apply?"}</p>
             <p className="mt-1 text-gray-500">{isJa ? `${JAPAN_ENTRY_CTA_JA}から、適合性、固定範囲、前提条件を確認します。` : `${JAPAN_ENTRY_CTA_EN} starts a fit review; a submitted application is not contract acceptance.`}</p>
           </div>
-          <div className="rounded-xl border border-gray-100 p-4">
-            <p className="font-semibold text-gray-900">{isJa ? "メールでの問い合わせも可能ですか？" : "Can I reach out by email?"}</p>
-            <p className="mt-1 text-gray-500">{isJa ? `はい、` : `Yes, please email `}<a href={`mailto:${contact.email}`} className="underline" style={{ color: accent }}>{contact.email}</a>{isJa ? " までご連絡ください。" : "."}</p>
-          </div>
+          {contact.email && (
+            <div className="rounded-xl border border-gray-100 p-4">
+              <p className="font-semibold text-gray-900">{isJa ? "メールでの問い合わせも可能ですか？" : "Can I reach out by email?"}</p>
+              <p className="mt-1 text-gray-500">{isJa ? "はい、" : "Yes, please email "}<a href={`mailto:${contact.email}`} className="underline" style={{ color: accent }}>{contact.email}</a>{isJa ? " までご連絡ください。" : "."}</p>
+            </div>
+          )}
         </div>
       </div>
     </section>

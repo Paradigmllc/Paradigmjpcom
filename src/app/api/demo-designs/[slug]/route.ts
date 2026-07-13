@@ -31,6 +31,7 @@ export async function GET(
       .select("meta, company_id")
       .eq("slug", slug)
       .eq("is_published", true)
+      .in("publication_status", ["published", "legacy_published"])
       .maybeSingle()
 
     if (error) {
@@ -138,7 +139,8 @@ export async function POST(
             design_philosophy: result.spec.design_philosophy,
             generated_at: new Date().toISOString(),
           },
-          is_published: true,
+          is_published: false,
+          publication_status: "quality_review",
           company_id: companyId,
         },
         { onConflict: "slug" },
