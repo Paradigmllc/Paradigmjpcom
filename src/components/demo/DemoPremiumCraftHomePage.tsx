@@ -13,7 +13,7 @@ export function DemoPremiumCraftHomePage({ data }: { data: DemoMultiPageData }) 
   const home = data.pages.home
   const reducedMotion = useReducedMotion()
   const [active, setActive] = useState(0)
-  const basePath = `/${data.locale}/demo/${data.slug}`
+  const basePath = `/${data.slug}`
   const mapHref = data.pages.contact.mapUrl ?? `${basePath}/contact`
 
   useEffect(() => {

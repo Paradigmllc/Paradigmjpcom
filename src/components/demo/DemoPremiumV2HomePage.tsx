@@ -8,7 +8,7 @@ import { PremiumV2Media, PremiumV2MediaCarousel, PremiumV2Reveal } from "./premi
 export function DemoPremiumV2HomePage({ data }: { data: DemoMultiPageData }) {
   const premium = data.premium!
   const home = data.pages.home
-  const basePath = `/${data.locale}/${data.slug}`
+  const basePath = `/${data.slug}`
   const hero = premium.heroMedia[0]
   const secondary = premium.heroMedia[1] ?? premium.gallery[0]
   const mapHref = data.pages.contact.mapUrl ?? `${basePath}/contact`
