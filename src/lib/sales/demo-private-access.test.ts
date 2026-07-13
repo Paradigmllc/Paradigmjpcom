@@ -6,6 +6,7 @@ vi.mock("@/lib/supabase", () => ({ getServiceSalesSupabase: vi.fn() }))
 import {
   generateDemoPreviewToken,
   hashDemoPreviewToken,
+  normalizeDemoRouteSlug,
   previewCookieName,
   validateDemoAssets,
   validatePublicDemoAssets,
@@ -33,6 +34,11 @@ describe("demo private access", () => {
     expect(first.length).toBeGreaterThanOrEqual(40)
     expect(hashDemoPreviewToken(first)).toMatch(/^[a-f0-9]{64}$/)
     expect(previewCookieName("sample-demo")).toMatch(/^demo_preview_[a-f0-9]{20}$/)
+  })
+
+  it("normalizes an encoded Japanese route slug before cookie and DB lookup", () => {
+    expect(normalizeDemoRouteSlug("greyman%E4%B8%80%E7%B4%9A%E5%BB%BA%E7%AF%89%E5%A3%AB%E4%BA%8B%E5%8B%99%E6%89%80"))
+      .toBe("greyman一級建築士事務所")
   })
 
   it("accepts official private-proposal assets without people or watermark", () => {
