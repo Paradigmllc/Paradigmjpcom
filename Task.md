@@ -1,5 +1,11 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
+### 2026-07-13 共有ワークスペースと48営業時間以内着手SLA（実装・検証済み / 正式release待ち）
+- ENのJapan Entry共通進行フローに、契約範囲確定後の顧客専用共有ワークスペースを追加。Notionを基本とし、顧客希望時はTrelloを選択できる運用として、範囲・担当・ステータス・ブロッカー・承認・成果物・次の作業を1か所で可視化する。
+- 「48時間で完了」と誤認させず、含まれる月額運用の通常依頼を48営業時間以内に受付・スコープ化・着手するSLAとして明記。緊急、規制、第三者依存、範囲外作業は書面承認へ分離した。
+- EN FAQ、JA FAQ、AIチャットRAG知識にも同じ説明を追加。署名済み範囲の代替ではなく、共有の進行記録であることを明記した。
+- 検証: TypeScript pass、対象ESLint pass、関連Vitest **2 files / 15 tests pass**、quality guard **0 errors / 53 warnings**、JSON parse、diff check pass。ローカルproduction buildは別プロジェクトのNextビルド競合で1115秒時点に中断。正式releaseのリモートbuildで再確認予定。
+
 ### 2026-07-13 SMB実素材デモ Premium V3 全ページ品質強化（実装・検証中 / 送信停止）
 - Premium V2がトップ専用で、About / Services / Contact / Works等は旧汎用レンダラーのままだった分断を解消。店紹介、商品、アクセス、汎用コンテンツ／FAQ／法務を専用のeditorial rendererへ切り替え、全11ページを同じ色・書体・余白・写真表現へ統一した。
 - トップhero見出しを最大8.4rem・8.3vwから最大7rem・6.6vwへ縮小し、最小高さも820pxから720pxへ調整。提案制作側の説明文を顧客向けの店舗・商品コピーへ置換した。

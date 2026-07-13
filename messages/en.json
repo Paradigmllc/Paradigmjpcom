@@ -1006,6 +1006,10 @@
         "a": "We confirm the first Japanese offer, buyer path, ownership, inputs, acceptance criteria, and dependencies. Any blocker that could change the target is recorded before implementation proceeds."
       },
       {
+        "q": "How can we see progress after kickoff?",
+        "a": "After written scope acceptance, we create a dedicated client workspace—normally Notion, or Trello if your team prefers. It shows the agreed tasks, owners, status, blockers, approvals, deliverables, and next action. Standard requests inside the included monthly operation are acknowledged, scoped, and started within 48 business hours; this is a start SLA, not a promise that every request is completed within 48 hours."
+      },
+      {
         "q": "Can you support B2B and non-ecommerce offers?",
         "a": "Yes. The buyer path may end in an inquiry, qualification, booking, proposal, or eligible payment route. The scope is shaped around the offer and the decision a Japanese buyer needs to make, not around a fixed ecommerce template."
       },
@@ -1423,6 +1427,29 @@
         }
       ],
       "note": "*The 14-business-day delivery guarantee starts only after written scope acceptance, cleared payment, complete source materials, required access, and one empowered approver. Application submission itself does not create a contract.",
+      "workspace": {
+        "eyebrow": "Live delivery workspace",
+        "title": "See the work move, without chasing updates.",
+        "description": "After scope acceptance, we create a dedicated client workspace—Notion by default, or Trello if your team prefers. Scope, owners, task status, blockers, approvals, deliverables, and the next action stay visible in one place as the launch moves forward.",
+        "slaLabel": "Standard request SLA",
+        "slaTitle": "Started within 48 business hours",
+        "slaBody": "During the included monthly operation, standard requests are acknowledged, scoped, and started within 48 business hours. This is a start commitment, not a promise that every request is completed in 48 hours.",
+        "items": [
+          {
+            "title": "Task status",
+            "body": "Every agreed task has an owner, status, next action, and acceptance point instead of living in an untracked chat thread."
+          },
+          {
+            "title": "Blockers and approvals",
+            "body": "Client inputs, third-party dependencies, review requests, and decisions that pause the clock are recorded with a clear owner."
+          },
+          {
+            "title": "Deliverables and handover",
+            "body": "Links, acceptance notes, operating instructions, and unresolved questions remain available after the initial launch."
+          }
+        ],
+        "note": "The workspace is a shared delivery record, not a replacement for the signed scope. The 48-business-hour SLA applies to standard included requests; urgent, regulated, third-party, or out-of-scope work follows the written approval path."
+      },
       "scopeCta": "Review the fixed scope",
       "contactCta": "Start with a contact"
     },
