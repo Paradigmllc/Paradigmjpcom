@@ -19,6 +19,7 @@ import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
 import RepresentativeMessage from "@/components/japan-entry/RepresentativeMessage"
 import JapanEntryVisualProof from "@/components/japan-entry/JapanEntryVisualProof"
+import JapanEntryVisualContext, { type VisualContextCopy } from "@/components/japan-entry/JapanEntryVisualContext"
 import { getSiteSettings } from "@/lib/settings"
 
 export const dynamic = "force-dynamic"
@@ -91,6 +92,8 @@ export default async function AboutPage({ params }: Props) {
     getTranslations({ locale, namespace: "aboutPage" }),
     getSiteSettings(locale),
   ])
+  const visualContextLocale = locale === "ja" ? "ja" : "en"
+  const visualContextT = await getTranslations({ locale: visualContextLocale, namespace: "home" })
   const VALUES = (t.raw("values") as ValueRow[]).map((v, i) => ({
     icon: VALUE_ICONS[i] ?? Rocket,
     gradient: VALUE_GRADIENTS[i] ?? VALUE_GRADIENTS[0],
@@ -148,6 +151,11 @@ export default async function AboutPage({ params }: Props) {
       )}
 
       {isJapanEntryLocale && <JapanEntryVisualProof locale={locale as "en" | "ja"} />}
+
+      <JapanEntryVisualContext
+        locale={visualContextLocale}
+        copy={visualContextT.raw("visualContext") as VisualContextCopy}
+      />
 
       <section className="relative bg-paradigm-paper-deep paradigm-section overflow-hidden">
         <div className="paradigm-mesh opacity-50" />
