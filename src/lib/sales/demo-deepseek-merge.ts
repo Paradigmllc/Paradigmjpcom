@@ -1,5 +1,6 @@
 import type { DemoMultiPageData } from "./demo-site-types"
 import type { DeepSeekEnhancedOutput } from "./demo-deepseek-types"
+import { groundDemoText } from "./demo-copy-grounding"
 
 /**
  * Merge DeepSeek AI-enhanced output into the rules-based DemoMultiPageData.
@@ -15,20 +16,29 @@ export function mergeDeepSeekOutput(
   const about = { ...base.pages.about };
   const services = { ...base.pages.services };
   const contact = { ...base.pages.contact };
+  const isJa = effectiveLocale === "ja";
+  const verifiedFacts = (base.meta.verifiedFacts ?? []).join("\n");
+  const factSummary = (base.meta.verifiedFacts ?? [])
+    .filter((fact) => fact.trim() && !/^https?:\/\//u.test(fact))
+    .slice(0, 4)
+    .join(isJa ? "、" : ", ");
+  const groundedFallback = factSummary
+    ? (isJa ? `確認済みの公開情報では、${factSummary}をご案内しています。` : `Verified public information includes ${factSummary}.`)
+    : (isJa ? "詳細は正式公開前に事業者確認を行います。" : "Details require operator confirmation before publication.");
 
   // Home: hero title/subtitle
   if (ai.home.hero_title?.trim()) {
-    home.hero = { ...home.hero, title: ai.home.hero_title };
+    home.hero = { ...home.hero, title: groundDemoText(ai.home.hero_title, verifiedFacts, base.companyName) };
   }
   if (ai.home.hero_subtitle?.trim()) {
-    home.hero = { ...home.hero, subtitle: ai.home.hero_subtitle };
+    home.hero = { ...home.hero, subtitle: groundDemoText(ai.home.hero_subtitle, verifiedFacts, groundedFallback) };
   }
 
   // Home: features (AI replaces rules-based if at least 2 AI features exist)
   if (ai.home.features && ai.home.features.length >= 2) {
     home.features = ai.home.features.map((f, i) => ({
-      title: f.title || `Feature ${i + 1}`,
-      description: f.description || "",
+      title: groundDemoText(f.title, verifiedFacts, isJa ? `確認済みのご案内 ${i + 1}` : `Verified information ${i + 1}`),
+      description: groundDemoText(f.description, verifiedFacts, groundedFallback),
       icon: f.icon || "sparkles",
       metricLabel: "",
       metricValue: "",
@@ -56,32 +66,32 @@ export function mergeDeepSeekOutput(
   home.faq = buildEvidenceBoundFaq(base, effectiveLocale);
 
   // About: story, mission, values
-  if (ai.about.story?.trim()) about.story = ai.about.story;
-  if (ai.about.mission?.trim()) about.mission = ai.about.mission;
+  if (ai.about.story?.trim()) about.story = groundDemoText(ai.about.story, verifiedFacts, groundedFallback);
+  if (ai.about.mission?.trim()) about.mission = groundDemoText(ai.about.mission, verifiedFacts, groundedFallback);
   if (ai.about.values && ai.about.values.length >= 2) {
-    about.values = ai.about.values.map((v) => ({
-      title: v.title || "",
-      description: v.description || "",
+    about.values = ai.about.values.map((v, i) => ({
+      title: groundDemoText(v.title, verifiedFacts, isJa ? `大切にすること ${i + 1}` : `What matters ${i + 1}`),
+      description: groundDemoText(v.description, verifiedFacts, groundedFallback),
       icon: v.icon || "star",
     }));
   }
 
   // Services: intro, services list, process
-  if (ai.services.intro?.trim()) services.subtitle = ai.services.intro;
+  if (ai.services.intro?.trim()) services.subtitle = groundDemoText(ai.services.intro, verifiedFacts, groundedFallback);
   if (ai.services.services && ai.services.services.length >= 1) {
-    services.services = ai.services.services.map((s) => ({
-      title: s.title || "",
-      description: s.description || "",
+    services.services = ai.services.services.map((s, i) => ({
+      title: groundDemoText(s.title, verifiedFacts, isJa ? `ご案内 ${i + 1}` : `Offering ${i + 1}`),
+      description: groundDemoText(s.description, verifiedFacts, groundedFallback),
       icon: s.icon || "sparkles",
-      features: s.features?.filter(Boolean) ?? [],
+      features: s.features?.filter(Boolean).map((feature) => groundDemoText(feature, verifiedFacts, groundedFallback)) ?? [],
       priceNote: effectiveLocale === "ja" ? "料金は要確認" : "Pricing to be confirmed",
     }));
   }
   if (ai.services.process && ai.services.process.length >= 2) {
     services.process = ai.services.process.map((p) => ({
       step: p.step || 1,
-      title: p.title || "",
-      description: p.description || "",
+      title: groundDemoText(p.title, verifiedFacts, isJa ? "ご利用案内" : "Visitor information"),
+      description: groundDemoText(p.description, verifiedFacts, groundedFallback),
     }));
   }
 
