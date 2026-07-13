@@ -69,6 +69,7 @@
 - 品質是正の検証: 関連Vitest **20/20 pass**、TypeScript pass、対象ESLint pass、production build **336/336 pages**。本番設定の実APIでは候補生成まで成功したが、批評工程が3回タイムアウトしたためfail-closedで文面・DB行・送信を生成しなかった。本番は `DEEPSEEK_API_KEY` によるDeepSeek公式API直叩きを正規経路とし、LiteLLMは使用しない。V4 Proが空応答・タイムアウトの場合は品質優先で保存停止を維持する。
 - PR #68をmainへmergeし、正式deployment `sj7vp7jg0q9dmc3fy250dvdd` はfinished。新コンテナ、公開URL、Sales health HTTP 200 / JSON ok、DB **82/82**を確認した。post-deployでlegacy `agency_reports` のanon SELECT grant再付与を検出したため即時revokeし、release gateを再実行してpass。旧parity migrationからanon policy/grantも削除し、再発を防止した。`sales_japan_entry_projections`への保存、Twenty登録、フォーム送信は未実行。
 - 文面の情報密度を再設計。100–160語で、Sato / Paradigm LLCの自然な自己紹介、公開説明に基づく相手の商品理解、Japan固有の購入導線/表示ギャップ、公開シグナルモデルによる推定日本アクセスと推定月次機会ギャップ、$12,000一括・最初の6か月込み、詳細分析または15分面談のCTAまでを1通に含める。推定値はmodel/estimate/assumption表記を必須とし、実測・違法・規制違反とは断定しない。公開の商品説明が取れない企業はLLMを呼ばず停止する。検証はVitest **10/10**、TypeScript、対象ESLint、production build **336/336** pass。
+- 実V4 Pro出力に基づきプロンプトを再調整。本文は空行で区切る4段落（承認済み自己紹介 / 公開商品理解 / Japan診断 / Japan Entry Packageと単一CTA）を必須化し、未提供の役職・都市・会社種別、商品効果、顧客心理、離脱/コンバージョン因果を禁止。推論枠を8,000 tokens・120秒へ拡張し、批評JSONの`risk_flags`表記差もfail-safeに正規化した。架空企業を使ったDeepSeek公式API直叩きでは **94/100**（具体性23・自然さ24・信頼性23・経営判断適合24）、安全性100、4段落134語、risk 0で合格。DB保存・Twenty登録・フォーム送信は未実行。
 
 ### 2026-07-13 Blog long-form / visual editorial pass (実装済み・正式release待ち)
 - `/en/blog` と `/ja/blog` の公開記事を、英語9本・日本語4本すべて2,000文字以上へ拡張。各記事に判断表、実務チェックリスト、公開根拠と不確実性の境界を追加し、文字だけの短文記事を廃止した。

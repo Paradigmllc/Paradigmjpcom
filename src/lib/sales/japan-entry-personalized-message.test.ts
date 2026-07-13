@@ -58,9 +58,27 @@ const audit = {
 }
 
 const messages = [
-  "Hello, I’m Sato from Paradigm LLC, based in Japan. We help overseas companies enter the Japanese market. I came across Example’s subscription analytics platform for independent retailers and thought its inventory insights could be relevant to operators here. In reviewing the public customer journey, I could not find a Japanese-language path or customer-facing JPY pricing. Our public-signal planning model estimates roughly 1,950 monthly visits from Japan and, under stated assumptions, a potential monthly revenue opportunity gap of about $10,296—not measured analytics. Our Japan Entry Package is $12,000 paid upfront, with the first six months of managed support included at no additional monthly charge. Would a more detailed analysis or a 15-minute call be useful?",
-  "Hello, I’m Sato from Paradigm LLC, based in Japan. We support overseas companies entering the Japanese market. Example’s subscription analytics platform for independent retailers stood out because its inventory insights address a practical operating problem. On the public pages checked, however, I did not find Japan-local payment references or Japan-specific delivery terms, which can leave local buyers unsure whether the product is intended for them. Our Japan Entry Package is $12,000 paid upfront, with the first six months of managed support included at no additional monthly charge. We would validate the buyer path before making broader claims. Would you prefer a more detailed report or a 15-minute call to review the gaps?",
-  "Hello, I’m Sato from Paradigm LLC, based in Japan. We help overseas businesses prepare a credible entry into Japan. I was interested in Example’s subscription analytics platform for independent retailers, particularly the inventory insights described publicly. While reviewing the public customer path, I did not find a Japanese-language route or a Japan-specific commercial transactions disclosure. This is not a legal conclusion; it identifies two items a Japanese buyer may look for before engaging. The Japan Entry Package is $12,000 paid upfront, and the first six months of managed support are included at no additional monthly charge. Would a detailed analysis or a 15-minute conversation be useful?",
+  `Hello, I’m Sato from Paradigm LLC, based in Japan. We help overseas companies such as Example enter the Japanese market.
+
+I reviewed Example’s subscription analytics platform for independent retailers, including its inventory forecasting and replenishment insights.
+
+The public customer journey did not show a Japanese-language path. Separately, our public-signal planning model estimates roughly 1,950 monthly visits from Japan and a potential monthly revenue opportunity gap of about $10,296 under stated assumptions; these are estimates, not measured analytics.
+
+Paradigm addresses these items through our Japan Entry Package: $12,000 paid upfront, with the first six months of managed support included at no additional monthly charge. Would a more detailed analysis be useful?`,
+  `Hello, I’m Sato from Paradigm LLC, based in Japan. We help overseas companies such as Example enter the Japanese market.
+
+I reviewed Example’s subscription analytics platform for independent retailers and its inventory forecasting and replenishment workflow.
+
+The public pages checked did not show customer-facing JPY pricing or Japan-local payment references. This leaves two concrete parts of the Japanese purchase path unverified before any broader market claim can be made.
+
+Paradigm addresses these items through our Japan Entry Package: $12,000 paid upfront, with the first six months of managed support included at no additional monthly charge. Would a 15-minute call to review those two gaps be useful?`,
+  `Hello, I’m Sato from Paradigm LLC, based in Japan. We help overseas companies such as Example enter the Japanese market.
+
+I reviewed Example’s subscription analytics platform for independent retailers, particularly the inventory forecasting and replenishment insights described publicly.
+
+The checked public customer path did not show a Japanese-language route or a Japan-specific commercial transactions disclosure. This is not a legal conclusion; it identifies two public-facing items that still require primary-source confirmation.
+
+Paradigm addresses these items through our Japan Entry Package: $12,000 paid upfront, and the first six months of managed support are included at no additional monthly charge. Would a detailed analysis of those two items be useful?`,
 ]
 
 const productContext = "Example provides a subscription analytics platform for independent retailers with inventory insights."
@@ -139,7 +157,7 @@ describe("DeepSeek V4 Pro Japan Entry form copy", () => {
   it("generates three candidates and uses a separate strict V4 Pro critic", async () => {
     const caller = vi.fn()
       .mockResolvedValueOnce(generationResponse())
-      .mockResolvedValueOnce(criticResponse())
+      .mockResolvedValueOnce(criticResponse({ risk_flags: ["abrupt pricing", "reliance on modeled estimates"] }))
     const result = await generatePersonalizedJapanEntryMessage(generateInput(), caller)
 
     expect(result.ok).toBe(true)
@@ -152,8 +170,28 @@ describe("DeepSeek V4 Pro Japan Entry form copy", () => {
     })
     expect(caller).toHaveBeenCalledTimes(2)
     for (const [, options] of caller.mock.calls) {
-      expect(options).toMatchObject({ model: "deepseek-v4-pro", modelPolicy: "strict", responseFormat: "json_object" })
+      expect(options).toMatchObject({
+        model: "deepseek-v4-pro",
+        modelPolicy: "strict",
+        responseFormat: "json_object",
+        maxTokens: 8_000,
+        timeoutMs: 120_000,
+      })
     }
+  })
+
+  it("rejects dense copy without four readable paragraphs", () => {
+    const facts = buildJapanEntryPersonalizationFacts(audit, "ecommerce", projection)
+    const review = reviewPersonalizedJapanEntryMessage({
+      message: messages[0].replaceAll("\n\n", " "),
+      companyName: "Example",
+      productContext,
+      productEvidence,
+      factIds: ["japan-audit-language", "modeled-japan-monthly-visits", "modeled-monthly-opportunity-gap"],
+      facts,
+    })
+    expect(review.passed).toBe(false)
+    expect(review.issues).toContain("Message must contain exactly four short paragraphs separated by blank lines")
   })
 
   it("rejects the prior generic rank-led pattern", () => {
@@ -203,7 +241,9 @@ describe("DeepSeek V4 Pro Japan Entry form copy", () => {
   it("rejects modeled numbers presented without estimate language", () => {
     const facts = buildJapanEntryPersonalizationFacts(audit, "ecommerce", projection)
     const review = reviewPersonalizedJapanEntryMessage({
-      message: messages[0].replace("Our public-signal planning model estimates roughly", "You receive exactly"),
+      message: messages[0]
+        .replace("our public-signal planning model estimates roughly", "you receive exactly")
+        .replace("; these are estimates, not measured analytics", ""),
       companyName: "Example",
       productContext,
       productEvidence,
