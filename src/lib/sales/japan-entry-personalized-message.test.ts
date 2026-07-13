@@ -87,7 +87,12 @@ const productContext = "Example provides a subscription analytics platform for i
 const productEvidence = "subscription analytics platform for independent retailers"
 
 function response(text: string): DeepSeekResponse {
-  return { ok: true, text, usedModel: "deepseek-v4-pro" }
+  return {
+    ok: true,
+    text,
+    usedModel: "deepseek-v4-pro",
+    usage: { prompt_tokens: 100, completion_tokens: 20, cache_hit_tokens: 80, cache_miss_tokens: 20 },
+  }
 }
 
 function generationResponse(): DeepSeekResponse {
@@ -105,6 +110,17 @@ function generationResponse(): DeepSeekResponse {
       })),
     }),
   )
+}
+
+function repairResponse(message: string): DeepSeekResponse {
+  return response(JSON.stringify({
+    candidate: {
+      message,
+      fact_ids: ["japan-audit-jpy", "modeled-japan-monthly-visits", "modeled-monthly-opportunity-gap"],
+      product_evidence: productEvidence,
+      angle: "targeted-repair",
+    },
+  }))
 }
 
 function criticResponse(overrides: Record<string, unknown> = {}): DeepSeekResponse {
@@ -289,14 +305,16 @@ Paradigm addresses these items through our Japan Entry Package, which validates 
       },
     })
     expect(caller).toHaveBeenCalledTimes(2)
+    expect(result.usage).toEqual({ prompt_tokens: 200, completion_tokens: 40, cache_hit_tokens: 160, cache_miss_tokens: 40 })
     for (const [, options] of caller.mock.calls) {
       expect(options).toMatchObject({
         model: "deepseek-v4-pro",
         modelPolicy: "strict",
         responseFormat: "json_object",
-        maxTokens: 8_000,
+        thinking: "disabled",
         timeoutMs: 120_000,
       })
+      expect(options.maxTokens).toBeLessThanOrEqual(4_000)
     }
   })
 
@@ -426,14 +444,15 @@ Paradigm addresses these items through our Japan Entry Package, which validates 
           rationale: "The product connection is too shallow.",
         }),
       )
-      .mockResolvedValueOnce(generationResponse())
-      .mockResolvedValueOnce(criticResponse())
+      .mockResolvedValueOnce(repairResponse(messages[1]))
+      .mockResolvedValueOnce(criticResponse({ selected_index: 0 }))
     const result = await generatePersonalizedJapanEntryMessage(generateInput(), caller)
     expect(result.ok).toBe(true)
     expect(result.review?.score).toBe(93)
     expect(result.review?.attempts).toBe(4)
     expect(caller).toHaveBeenCalledTimes(4)
-    expect(caller.mock.calls[2]?.[0]?.[0]?.content).toContain("Previous draft feedback")
+    expect(caller.mock.calls[2]?.[0]?.[0]?.content).toBe(caller.mock.calls[0]?.[0]?.[0]?.content)
+    expect(caller.mock.calls[2]?.[0]?.[1]?.content).toContain("editorial_feedback")
   })
 
   it("fails closed when the editorial score is below the quality bar", async () => {
@@ -450,9 +469,10 @@ Paradigm addresses these items through our Japan Entry Package, which validates 
           },
         }),
       )
-      .mockResolvedValueOnce(generationResponse())
+      .mockResolvedValueOnce(repairResponse(messages[1]))
       .mockResolvedValueOnce(
         criticResponse({
+          selected_index: 0,
           scores: {
             specificity: 21,
             naturalness: 22,

@@ -11,9 +11,9 @@ vi.mock("@/lib/sales/api-auth", () => ({ isSalesApiAuthorized: mocks.authorize }
 vi.mock("@/lib/supabase", () => ({ getServiceSalesSupabase: mocks.getSupabase }))
 vi.mock("@/lib/sales/demo-private-access", async (importOriginal) => ({
   ...await importOriginal<typeof import("@/lib/sales/demo-private-access")>(),
-  activateSignedPrivateDemo: mocks.activate,
+  activatePublicUnlistedDemo: mocks.activate,
 }))
-vi.mock("@/lib/sales/routing", () => ({ demoSiteUrl: () => "https://demo.paradigmjp.com" }))
+vi.mock("@/lib/sales/routing", () => ({ buildDemoUrl: (_locale: string, slug: string) => `https://demo.paradigmjp.com/${slug}` }))
 
 import { GET, PUT } from "./route"
 
@@ -45,7 +45,7 @@ function validManifest() {
       sourceUrl: `https://assets.example.com/${index}.webp`,
       ownerLabel: "Example",
       sourceAccount: "https://www.instagram.com/example/",
-      useBasis: "private_proposal",
+      useBasis: "generated",
       officialSource: true,
       peopleVisible: false,
       watermarkVisible: false,
@@ -75,7 +75,7 @@ function fluentQuery(result: Record<string, unknown>) {
 beforeEach(() => {
   vi.clearAllMocks()
   mocks.authorize.mockResolvedValue(true)
-  mocks.activate.mockResolvedValue({ token: "preview-token", expiresAt: "2026-07-27T00:00:00.000Z" })
+  mocks.activate.mockResolvedValue({ urlSlug: "example", review: { status: "consented", assets: [] } })
   vi.spyOn(console, "error").mockImplementation(() => {})
 })
 
@@ -99,9 +99,9 @@ describe("demo batch route without PostgREST relationship metadata", () => {
     })
   })
 
-  it("issues a private preview after loading company metadata separately", async () => {
+  it("issues a clean noindex URL after loading company metadata separately", async () => {
     const jobs = fluentQuery({
-      data: [{ id: jobId, company_id: companyId, status: "completed", input_payload: { locale: "ja" }, result_payload: { slug: "example-demo" } }],
+      data: [{ id: jobId, company_id: companyId, status: "completed", input_payload: { locale: "ja" }, result_payload: { slug: "example-demo", quality_report: { passed: true, score: 96 } } }],
       error: null,
     })
     const companies = fluentQuery({ data: [{ id: companyId, meta: { demo_source_manifest: validManifest() } }], error: null })
@@ -119,7 +119,7 @@ describe("demo batch route without PostgREST relationship metadata", () => {
     expect(response.status, JSON.stringify(body)).toBe(200)
     expect(jobs.select).toHaveBeenCalledWith(expect.not.stringContaining("sales_companies"))
     expect(companies.in).toHaveBeenCalledWith("id", [companyId])
-    expect(mocks.activate).toHaveBeenCalledWith(expect.objectContaining({ slug: "example-demo", ttlDays: 14 }))
-    expect(body).toMatchObject({ ok: true, issued: [{ ok: true, slug: "example-demo" }] })
+    expect(mocks.activate).toHaveBeenCalledWith(expect.objectContaining({ slug: "example-demo" }))
+    expect(body).toMatchObject({ ok: true, issued: [{ ok: true, slug: "example-demo", cleanUrl: "https://demo.paradigmjp.com/example-demo" }] })
   })
 })

@@ -3,7 +3,9 @@ import Link from "next/link";
 import { JapanEntryProjectionSection } from "@/components/diagnostic/JapanEntryProjectionSection";
 import { OpportunityActionPlan } from "@/components/opportunity/OpportunityActionPlan";
 import { OpportunityEvidenceSummary } from "@/components/opportunity/OpportunityEvidenceSummary";
+import { OpportunityOfferPanel } from "@/components/opportunity/OpportunityOfferPanel";
 import { OpportunitySensitivityModel } from "@/components/opportunity/OpportunitySensitivityModel";
+import { OpportunityPressureSummary } from "@/components/opportunity/OpportunityPressureSummary";
 import type {
   OpportunityBriefData,
   OpportunityFinding,
@@ -176,6 +178,8 @@ export function OpportunityBrief({
 
       <OpportunityEvidenceSummary data={data} locale={locale} />
 
+      <OpportunityPressureSummary data={data} locale={locale} />
+
       <section
         className="px-5 py-14 sm:py-20"
         aria-labelledby="decision-summary-title"
@@ -205,13 +209,13 @@ export function OpportunityBrief({
                 rel="noopener noreferrer"
                 className="rounded-lg bg-red-700 px-5 py-3 text-sm font-semibold text-white hover:bg-red-800"
               >
-                {isJa ? "15分で前提を確認" : "Review assumptions in 15 minutes"}
+                {isJa ? "15分面談を予約" : "Book the 15-minute review"}
               </a>
               <Link
                 href={contactHref}
                 className="rounded-lg border border-zinc-300 px-5 py-3 text-sm font-semibold hover:bg-zinc-50"
               >
-                {isJa ? "質問を送る" : "Send a question"}
+                {isJa ? "申込（フォーム）" : "Apply via the form"}
               </Link>
             </div>
           </div>
@@ -335,28 +339,11 @@ export function OpportunityBrief({
 
       <OpportunityActionPlan findings={findings} locale={locale} />
 
-      <section className="bg-zinc-950 px-5 pb-16 text-white">
-        <div className="mx-auto flex max-w-6xl flex-col justify-between gap-5 rounded-2xl border border-zinc-700 p-6 sm:flex-row sm:items-center">
-          <div>
-            <p className="text-2xl font-semibold">
-              $12,000 {isJa ? "一括前払い" : "paid upfront"}
-            </p>
-            <p className="mt-2 text-sm text-zinc-400">
-              {isJa
-                ? "最初の6か月は追加月額なし。7か月目以降は契約条件に基づき月額$995。"
-                : "No additional monthly fee for the first six months; $995/month from month 7 under signed terms."}
-            </p>
-          </div>
-          <a
-            href={callHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 rounded-lg bg-white px-5 py-3 text-center text-sm font-semibold text-zinc-950 hover:bg-zinc-100"
-          >
-            {isJa ? "15分面談を予約" : "Book the 15-minute review"}
-          </a>
-        </div>
-      </section>
+      <OpportunityOfferPanel
+        callHref={callHref}
+        contactHref={contactHref}
+        isJa={isJa}
+      />
 
       <section
         className="bg-white px-5 py-10 text-xs text-zinc-500"

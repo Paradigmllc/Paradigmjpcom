@@ -15,6 +15,7 @@ import JapanEntryJourney from "@/components/japan-entry/JapanEntryJourney"
 import JapanEntryTrustPanel from "@/components/japan-entry/JapanEntryTrustPanel"
 import JapanEntryVisualProof from "@/components/japan-entry/JapanEntryVisualProof"
 import JapanEntryVisualContext, { type VisualContextCopy } from "@/components/japan-entry/JapanEntryVisualContext"
+import { JapanMarketUrgency } from "@/components/japan-entry/JapanMarketUrgency"
 import {
   isSafeEnglishJapanEntryHomepage,
   isSafeJapaneseHomepageBlock,
@@ -266,7 +267,15 @@ export default async function HomePage({ params }: Props) {
 
   return (
     <>
-      <BlockRenderer blocks={blocks} />
+      {isJapanEntryLocale ? (
+        <>
+          <BlockRenderer blocks={blocks.slice(0, 1)} />
+          <JapanMarketUrgency source="homepage" />
+          <BlockRenderer blocks={blocks.slice(1)} />
+        </>
+      ) : (
+        <BlockRenderer blocks={blocks} />
+      )}
       {isJapanEntryLocale && <JapanEntryJourney locale={locale} />}
       {isJapanEntryLocale && <JapanEntryTrustPanel locale={locale as "en" | "ja"} />}
       {isJapanEntryLocale && <JapanEntryVisualProof locale={locale as "en" | "ja"} />}

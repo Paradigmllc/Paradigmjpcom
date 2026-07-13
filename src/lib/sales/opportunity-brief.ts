@@ -36,11 +36,20 @@ export interface CompetitiveLandscape {
   competitors: VerifiedCompetitor[]
 }
 
+export interface VerifiedDemandSignal {
+  label: string
+  statement: string
+  sourceUrl: string
+  observedAt: string | null
+  confidence: number
+}
+
 export interface OpportunityBriefData {
   report: DiagnosticReportData
   projection: JapanEntryProjection
   findings: OpportunityFinding[]
   competition: CompetitiveLandscape
+  demandSignals: VerifiedDemandSignal[]
   generatedAt: string
 }
 
@@ -154,6 +163,28 @@ export function readCompetitiveLandscape(meta: JsonRecord | undefined): Competit
   }
 }
 
+export function readJapanDemandSignals(meta: JsonRecord | undefined): VerifiedDemandSignal[] {
+  const raw = asRecord(meta?.japan_entry_competitor_analysis)
+  const rows = Array.isArray(raw?.demand_signals)
+    ? raw.demand_signals
+    : Array.isArray(raw?.japan_demand_signals) ? raw.japan_demand_signals : []
+  return rows.flatMap((item): VerifiedDemandSignal[] => {
+    const row = asRecord(item)
+    const sourceUrl = httpsUrl(row?.evidence_url ?? row?.source_url)
+    const confidence = finiteNumber(row?.confidence) ? row.confidence : 0
+    if (!row || typeof row.statement !== "string" || !sourceUrl || confidence < 0.55) return []
+    const statement = row.statement.trim()
+    if (!statement) return []
+    return [{
+      label: typeof row.label === "string" && row.label.trim() ? row.label.trim() : "Verified Japan demand signal",
+      statement,
+      sourceUrl,
+      observedAt: typeof row.observed_at === "string" ? row.observed_at : null,
+      confidence,
+    }]
+  }).slice(0, 4)
+}
+
 function auditFindings(meta: JsonRecord | undefined): OpportunityFinding[] {
   const audit = asRecord(meta?.japan_market_audit)
   const status = asRecord(audit?.status)
@@ -200,6 +231,7 @@ export function buildOpportunityBrief(report: DiagnosticReportData): Opportunity
     projection,
     findings: auditFindings(report.meta),
     competition: readCompetitiveLandscape(report.meta),
+    demandSignals: readJapanDemandSignals(report.meta),
     generatedAt: projection.generatedAt,
   }
 }

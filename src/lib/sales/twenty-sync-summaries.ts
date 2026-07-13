@@ -123,6 +123,10 @@ export function karteHomeSummary(karte: CompanyKarteSnapshot): string {
   const japanEntryQuality = japanEntry
     ? `quality=${japanEntry.qualityScore ?? "未評価"} / safety=${japanEntry.safetyScore ?? "未評価"} / model=${japanEntry.model ?? "未記録"}`
     : null;
+  const japanEntryTokenUsage = japanEntry?.promptTokens !== null
+    && japanEntry?.promptTokens !== undefined
+    ? `input=${japanEntry.promptTokens.toLocaleString("en-US")} / output=${(japanEntry.completionTokens ?? 0).toLocaleString("en-US")} / cache=${Math.round((japanEntry.cacheHitRatio ?? 0) * 100)}% (${(japanEntry.cacheHitTokens ?? 0).toLocaleString("en-US")} hit / ${(japanEntry.cacheMissTokens ?? 0).toLocaleString("en-US")} miss)`
+    : null;
   const japanEntryHorizons = japanEntry?.horizons.length
     ? japanEntry.horizons
         .map(
@@ -188,6 +192,7 @@ export function karteHomeSummary(karte: CompanyKarteSnapshot): string {
       ? `推定月間機会損失: $${japanEntry.monthlyOpportunityGapUsd.toLocaleString("en-US")}`
       : null,
     japanEntryQuality ? `文面品質: ${japanEntryQuality}` : null,
+    japanEntryTokenUsage ? `LLMトークン効率: ${japanEntryTokenUsage}` : null,
     japanEntryHorizons ? `6/12/24ヶ月モデル: ${japanEntryHorizons}` : null,
     japanEntry ? `初回送信文面（URL・資料なし）:\n${japanEntry.message}` : null,
   ]

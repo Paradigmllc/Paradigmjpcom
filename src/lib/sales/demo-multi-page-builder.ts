@@ -54,7 +54,7 @@ export function buildDemoMultiPageData(
   const industry = (company.industry ?? report.industry ?? "consulting") as Industry
   const cfg = industryConfig(industry)
   const slug = buildSlug(company)
-  const basePath = `/${locale}/${slug}`
+  const basePath = `/${slug}`
   const name = cleanFs(company.company_name, "Your Company", 80)
   const locationStr = cleanFs(company.prefecture, isJa ? "全国対応" : "Nationwide", 30)
   const industryLabel = isJa ? (cfg.labelJa ?? "コンサルティング") : (cfg.labelEn ?? "Consulting")

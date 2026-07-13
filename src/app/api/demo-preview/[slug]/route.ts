@@ -29,12 +29,12 @@ export async function GET(
   }
 
   const origin = process.env.NODE_ENV === "production" ? productionOrigin : request.nextUrl.origin
-  const response = NextResponse.redirect(new URL(`/${locale}/${encodeURIComponent(slug)}`, origin))
+  const response = NextResponse.redirect(new URL(`/${encodeURIComponent(slug)}`, origin))
   response.cookies.set(previewCookieName(slug), token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    path: `/${locale}/${encodeURIComponent(slug)}`,
+    path: `/${encodeURIComponent(slug)}`,
     expires: new Date(verification.expiresAt),
   })
   response.headers.set("Cache-Control", "private, no-store")

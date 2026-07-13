@@ -22,7 +22,7 @@ interface LayoutProps {
 export default async function DemoMultiLayoutWrapper({ children, params }: LayoutProps) {
   const { locale, slug } = await params
   const isJa = locale === "ja"
-  const basePath = `/${locale}/${slug}`
+  const basePath = `/${slug}`
 
   let companyName = "Paradigm"
   let templateId: string | undefined

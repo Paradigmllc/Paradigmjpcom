@@ -15,6 +15,7 @@ import type { DemoCandidateSummary, DemoGenerateOutput, DemoMultiPageData } from
 import type { ReportLocale } from "./types"
 import { buildDemoUrl } from "./routing"
 import { readValidatedDemoSourceManifest } from "./demo-source-policy"
+import { applyIndustryPresentation } from "./demo-industry-presentation"
 
 export { fetchDemoMultiPageData, fetchDemoPageData } from "./demo-page-fetch"
 
@@ -97,6 +98,7 @@ export async function generateFullStackDemo(
         template,
       )
       if (sharedEnhancement) page = mergeDeepSeekOutput(page, sharedEnhancement, effectiveLocale)
+      page = applyIndustryPresentation(page)
       const recipe = buildDesignRecipe(template, page)
       const quality = evaluateDemoQuality(page, recipe, rights, existingFingerprints)
       page = { ...page, designRecipe: recipe, quality, rightsManifest: rights }
@@ -115,6 +117,16 @@ export async function generateFullStackDemo(
     selected.page.publicationStatus = publicationStatus
     const slug = selected.page.slug
     const demoUrl = qualityPassed ? buildDemoUrl(effectiveLocale === "en" ? "en" : "ja", slug) : null
+
+    const { data: slugOwner, error: slugOwnerError } = await sb
+      .from(DB_TABLES.THEME_DEMO_PAGES)
+      .select("company_id")
+      .eq("slug", slug)
+      .maybeSingle()
+    if (slugOwnerError) return failure(`Clean URL ownership check failed: ${slugOwnerError.message}`)
+    if (slugOwner?.company_id && slugOwner.company_id !== companyId) {
+      return failure(`Clean URL conflict: /${slug} is already assigned to another company`)
+    }
 
     const { error: upsertError } = await sb.from(DB_TABLES.THEME_DEMO_PAGES).upsert({
       slug,
@@ -147,6 +159,15 @@ export async function generateFullStackDemo(
       return failure(upsertError.message)
     }
 
+    const duplicateCleanup = await sb
+      .from(DB_TABLES.THEME_DEMO_PAGES)
+      .delete()
+      .eq("company_id", companyId)
+      .neq("slug", slug)
+    if (duplicateCleanup.error) {
+      console.error("[demo-generator] obsolete slug cleanup failed:", duplicateCleanup.error.message)
+    }
+
     if (published && demoUrl) {
       await persistPublishedReferences(sb, companyId, company.company_name, selected.page, demoUrl)
     }
@@ -169,6 +190,7 @@ export async function generateFullStackDemo(
       qualityScore: selected.summary.score,
       publicationStatus,
       candidates: candidates.map(({ summary }) => summary),
+      qualityReport: selected.page.quality,
       error: qualityPassed ? undefined : `Quality gate failed: ${selected.summary.hardBlockers.join(", ")}`,
     }
   } catch (error) {

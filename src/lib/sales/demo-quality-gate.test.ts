@@ -14,7 +14,7 @@ function fixture(): DemoMultiPageData {
     title: "追加ページ",
     subtitle: "確認済み情報を掲載します。",
     eyebrow: "Proposal",
-    sections: [{ id: "section", heading: "掲載内容", body: "内容は確認後に確定します。" }],
+    sections: [{ id: "section", heading: "掲載内容", body: "確認済み情報をもとにご案内します。" }],
     accentColor: "#2563eb",
   }
   return {
@@ -44,6 +44,10 @@ function fixture(): DemoMultiPageData {
       generatedAt: "2026-07-13T00:00:00.000Z",
       engine: "deepseek",
       sourceEvidence: ["google_maps", "instagram"],
+      verifiedFacts: ["東京都", "焼菓子"],
+      proposalNotice: "提案用デモ · 公式サイトではありません",
+      footerDescription: "サンプル商店のご案内です。",
+      navLabels: { home: "ホーム", about: "お店について", services: "商品・サービス", works: "ギャラリー", faq: "よくある質問", contact: "店舗情報" },
     },
     pages: {
       home: {
@@ -71,7 +75,7 @@ function fixture(): DemoMultiPageData {
       },
       about: {
         title: "私たちについて", subtitle: "事業紹介", companyName: "サンプル商店", industryLabel: "小売", locationLabel: "東京都",
-        story: "公開情報を基にした紹介文案です。", mission: "内容は確認後に確定します。", values: [], teamNote: "", accentColor: "#2563eb",
+        story: "公開情報を基にした紹介文案です。", mission: "日々の暮らしに寄り添う商品をご案内します。", values: [], teamNote: "", accentColor: "#2563eb",
       },
       services: {
         title: "サービス", subtitle: "取扱内容", accentColor: "#2563eb",
@@ -85,7 +89,7 @@ function fixture(): DemoMultiPageData {
         title: "お問い合わせ", subtitle: "ご相談ください。", companyName: "サンプル商店", email: "", address: "東京都",
         calBookingUrl: "", formNote: "送信内容を確認後にご連絡します。", formEnabled: false, accentColor: "#2563eb",
       },
-      works: contentPage,
+      works: { ...contentPage, sections: [...contentPage.sections, { id: "section-2", heading: "店内の様子", body: "店舗の雰囲気をご紹介します。" }, { id: "section-3", heading: "商品紹介", body: "取り扱う商品をご紹介します。" }] },
       news: contentPage,
       faq: contentPage,
       recruit: contentPage,
@@ -106,8 +110,8 @@ describe("demo quality gate", () => {
     ]))
     const summary = summarizeCandidate(page, recipe, quality)
 
-    expect(quality.passed).toBe(true)
-    expect(quality.score).toBeGreaterThanOrEqual(90)
+    expect(quality.passed, JSON.stringify(quality)).toBe(true)
+    expect(quality.score).toBeGreaterThanOrEqual(92)
     expect(summary.structuralFingerprint).toBe(fingerprint(recipe))
     expect(summary.designFingerprint).not.toBe(summary.structuralFingerprint)
   })
@@ -194,5 +198,24 @@ describe("demo quality gate", () => {
       "unsupported_operational_claim",
       "unsupported_product_detail_claim",
     ]))
+  })
+
+  it("blocks thin template copy even when rights and required pages are present", () => {
+    const page = fixture()
+    page.pages.works = {
+      ...page.pages.works!,
+      title: "実績",
+      sections: [{ id: "placeholder", heading: "代表事例 01", body: "ヒアリング後に確定します。" }],
+    }
+    const template = DEMO_TEMPLATES.find((item) => item.id === "prism")!
+    const recipe = buildDesignRecipe(template, page)
+    const quality = evaluateDemoQuality(page, recipe, buildProposalRightsManifest([
+      { src: "/generated/hero-1.jpg", usage: "proposal_only" },
+    ]))
+
+    expect(quality.passed).toBe(false)
+    expect(quality.score).toBeLessThanOrEqual(70)
+    expect(quality.hardBlockers).toContain("customer_facing_draft_copy")
+    expect(quality.dimensions).toEqual(expect.objectContaining({ specificity: expect.any(Number), contentDepth: expect.any(Number) }))
   })
 })

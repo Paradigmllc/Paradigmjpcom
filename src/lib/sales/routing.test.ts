@@ -63,7 +63,7 @@ describe("sales routing", () => {
 
   it("builds short demo-subdomain urls", () => {
     expect(buildDemoUrl("ja", "及川洋菓子店")).toBe(
-      "https://demo.paradigmjp.com/ja/%E5%8F%8A%E5%B7%9D%E6%B4%8B%E8%8F%93%E5%AD%90%E5%BA%97",
+      "https://demo.paradigmjp.com/%E5%8F%8A%E5%B7%9D%E6%B4%8B%E8%8F%93%E5%AD%90%E5%BA%97",
     )
   })
 })

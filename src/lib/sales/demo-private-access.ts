@@ -3,6 +3,7 @@ import "server-only"
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { DEMO_QUALITY_THRESHOLD } from "./demo-quality-gate"
 
 export type DemoAssetKind = "logo" | "image" | "video"
 export type DemoAssetUseBasis = "consented" | "licensed" | "official_embed" | "private_proposal" | "generated" | "blocked"
@@ -74,6 +75,16 @@ export function validateDemoAssets(assets: DemoReviewedAsset[]): string[] {
       errors.push(`素材${index + 1}: 非公式出所の素材は利用できません`)
     }
     if (asset.useBasis === "blocked") errors.push(`素材${index + 1}: blocked素材は登録できません`)
+  }
+  return errors
+}
+
+export function validatePublicDemoAssets(assets: DemoReviewedAsset[]): string[] {
+  const errors = validateDemoAssets(assets)
+  for (const [index, asset] of assets.entries()) {
+    if (asset.useBasis === "private_proposal") {
+      errors.push(`素材${index + 1}: 非公開提案限定素材はクリーンURLで公開できません`)
+    }
   }
   return errors
 }
@@ -161,6 +172,56 @@ export async function activateSignedPrivateDemo(input: {
   if (error) throw new Error(error.message)
   if (!data) throw new Error("Demo not found")
   return { token, expiresAt, review }
+}
+
+export async function activatePublicUnlistedDemo(input: {
+  slug: string
+  assets: DemoReviewedAsset[]
+}): Promise<{ urlSlug: string; review: DemoAssetReview }> {
+  const errors = validatePublicDemoAssets(input.assets)
+  if (errors.length > 0) throw new Error(errors.join("\n"))
+  const sb = getServiceSalesSupabase()
+  if (!sb) throw new Error("Supabase unavailable")
+  const { data: gate, error: gateError } = await sb
+    .from(DB_TABLES.THEME_DEMO_PAGES)
+    .select("slug, quality_score, quality_report, publication_status")
+    .eq("slug", input.slug)
+    .maybeSingle()
+  if (gateError) throw new Error(gateError.message)
+  const report = gate?.quality_report
+  const reportPassed = Boolean(
+    report
+    && typeof report === "object"
+    && !Array.isArray(report)
+    && report.passed === true,
+  )
+  if (!gate || !reportPassed || typeof gate.quality_score !== "number" || gate.quality_score < DEMO_QUALITY_THRESHOLD) {
+    throw new Error("Demo publication blocked: quality gate has not passed")
+  }
+  const review: DemoAssetReview = {
+    status: "consented",
+    reviewedAt: new Date().toISOString(),
+    assets: input.assets,
+  }
+  const { data, error } = await sb
+    .from(DB_TABLES.THEME_DEMO_PAGES)
+    .update({
+      access_mode: "public",
+      preview_token_hash: null,
+      preview_expires_at: null,
+      asset_approval_status: "consented",
+      asset_review: review,
+      is_published: true,
+      publication_status: "published",
+      reviewed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("slug", input.slug)
+    .select("slug")
+    .maybeSingle()
+  if (error) throw new Error(error.message)
+  if (!data) throw new Error("Demo not found or quality gate rejected publication")
+  return { urlSlug: data.slug, review }
 }
 
 export async function revokeSignedPrivateDemo(slug: string): Promise<boolean> {

@@ -286,6 +286,8 @@ async function processDemoGenerationJob(
     slug: result.slug,
     canonical_url: result.demoUrl,
     quality_score: result.qualityScore ?? null,
+    quality_report: result.qualityReport ?? null,
+    generation_candidates: result.candidates ?? [],
     publication_status: result.publicationStatus ?? "private_review",
     source_policy: "reviewed_manifest",
     sending_enabled: false,

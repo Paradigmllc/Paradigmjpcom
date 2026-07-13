@@ -50,8 +50,8 @@ export function DemoPremiumV2Layout({
         </div>
       )}
       <nav className="sticky top-0 z-50 border-b border-black/10 bg-[#f4f1e9]/92 backdrop-blur-xl" aria-label="メインナビゲーション">
-        <div className="mx-auto flex h-[76px] max-w-[1500px] items-center justify-between px-5 sm:px-10 lg:px-16">
-          <a href={basePath} className="flex min-w-0 items-center gap-3" aria-label={`${companyName} ホーム`}>
+        <div className="mx-auto flex h-[76px] max-w-[1500px] items-center justify-between gap-3 px-5 sm:px-8 lg:px-10 xl:px-14">
+          <a href={basePath} className="flex min-w-0 flex-1 items-center gap-3 xl:max-w-[22rem]" aria-label={`${companyName} ホーム`}>
             {presentation?.brandLogoUrl ? (
               <span className="relative h-11 w-16 overflow-hidden bg-white/70 p-1.5">
                 <Image src={presentation.brandLogoUrl} alt={`${companyName} ロゴ`} fill unoptimized className="object-contain p-1.5" />
@@ -61,7 +61,7 @@ export function DemoPremiumV2Layout({
             )}
             <span className="truncate font-premium-serif text-lg font-semibold tracking-[-.02em] sm:text-xl">{companyName}</span>
           </a>
-          <div className="hidden items-center gap-7 lg:flex">
+          <div className="hidden shrink-0 items-center gap-6 xl:flex">
             {navLinks.map((link) => (
               <a key={link.href} href={link.href} aria-current={isActive(link.href) ? "page" : undefined} className={`relative py-2 text-xs font-bold tracking-[.08em] transition ${isActive(link.href) ? "text-black" : "text-black/48 hover:text-black"}`}>
                 {link.label}
@@ -69,11 +69,11 @@ export function DemoPremiumV2Layout({
               </a>
             ))}
           </div>
-          <div className="flex items-center gap-2">
-            <a href={ctaHref} {...(isExternalCta ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="hidden min-h-11 items-center gap-2 bg-black px-5 text-xs font-bold text-white transition hover:bg-[var(--demo-accent)] sm:inline-flex">
+          <div className="flex shrink-0 items-center gap-2">
+            <a href={ctaHref} {...(isExternalCta ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="hidden min-h-11 shrink-0 items-center gap-2 bg-black px-4 text-xs font-bold text-white transition hover:bg-[var(--demo-accent)] md:inline-flex xl:px-5">
               {isInstagram && <FaInstagram className="h-4 w-4" aria-hidden="true" />}{ctaLabel}<ArrowUpRight className="h-4 w-4" />
             </a>
-            <button type="button" aria-label={menuOpen ? "メニューを閉じる" : "メニューを開く"} aria-expanded={menuOpen} onClick={() => setMenuOpen((value) => !value)} className="grid h-11 w-11 place-items-center border border-black/15 lg:hidden">
+            <button type="button" aria-label={menuOpen ? "メニューを閉じる" : "メニューを開く"} aria-expanded={menuOpen} onClick={() => setMenuOpen((value) => !value)} className="grid h-11 w-11 shrink-0 place-items-center border border-black/15 xl:hidden">
               {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
@@ -102,7 +102,7 @@ export function DemoPremiumV2Layout({
           <div className="grid gap-12 border-b border-white/15 pb-14 lg:grid-cols-[1.2fr_.8fr_.8fr]">
             <div>
               <p className="font-premium-serif text-4xl tracking-[-.04em] sm:text-5xl">{companyName}</p>
-              <p className="mt-6 max-w-lg text-sm leading-7 text-white/55">{presentation?.footerDescription}</p>
+              <p className="mt-6 max-w-lg text-sm leading-7 text-white/55">{presentation?.footerDescription ?? `${companyName}の事業・サービスをご紹介します。`}</p>
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[.28em] text-white/35">Pages</p>
@@ -123,7 +123,7 @@ export function DemoPremiumV2Layout({
           </div>
           <div className="flex flex-col gap-3 pt-7 text-[10px] tracking-[.08em] text-white/35 sm:flex-row sm:items-center sm:justify-between">
             <p>© {new Date().getFullYear()} {presentation?.footerOwner ?? companyName}</p>
-            <p>{privatePreview ? "非公開提案用プレビュー" : "Official website"}</p>
+            <p>{privatePreview ? "非公開提案用プレビュー" : (presentation?.proposalNotice ?? "提案用デモ · 公式サイトではありません")}</p>
           </div>
         </div>
       </footer>

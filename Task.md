@@ -7,11 +7,51 @@
 
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
-### 2026-07-13 国際向けJapan市場機会損失バナー（本番反映・公開QA済み）
-- 国際ロケールの通常公開ページ上部へ、`THE OPPORTUNITY COST OF WAITING`、日本を後回しにする機会損失、USD/EUR企業にとっての円安局面のコストウィンドウ、固定`$12K`スコープへのCTAをまとめた共通バナーを追加。`/en`、`/ko`、Services、Pricing、About、FAQ、Blogなどで同じメッセージを表示する。
-- 「世界で3番目」を固定断定するコピーは採用しなかった。GDP・PPP・消費市場で順位の定義が異なり、一次情報なしに順位を煽ると信頼と法務境界を損なうため、世界有数の市場という表現に留め、FX変動・成果非保証・根拠先行を明記した。
-- `/ja`には表示せず、`/legal`、`/privacy`、`/terms`、`/refund`にも表示しない。国内向け一般サイトと法務面を煽り文句から分離した。
-- 検証: JSON parse、TypeScript、対象ESLint、関連Vitest **15 tests pass**、quality guard **0 errors / 59 warnings**、production build **396/396 pages**、`git diff --check` pass。PR **#132**をmainへmergeし、正式 `npm run release:prod` のdeployment **l10zpkoi0diaeaf4ldheqss5** はfinished。DB **83/83**、Traefik/Cloudflare、Realtime、Twenty、Sales health、post-deploy release gateを通過した。本番HTMLで国際ページの`japan-market-urgency`と本文marker、JAページの非表示、EN法務・プライバシーの非表示を確認した。
+### 2026-07-14 SMBデモ品質ゲートV2・業種別編集（実装完了 / 本番反映前 / 送信停止）
+- Cafe SOSOMU実ブラウザ監査で確認した1024px帯のheader横切れ、飲食店に不適切な「会社概要 / サービス / 実績」ナビ、下層ページの仮置き文言、重複コピー、空見出し、`料金は要確認`、公開デモの`Official website`誤表示を修正した。
+- 1社1回のDeepSeek本文生成とprefix cacheは維持し、その後段へ決定論的な業種別編集レイヤーを追加。restaurant / beauty / dental / construction / retail / defaultでナビ、セクション見出し、Works、News、CTA、フッターを変え、3候補はdesign recipeのcomposition / hero / motionを実レンダリングへ反映する。
+- 品質ゲートを`2026-07-14.1`へ更新。specificity / contentDepth / trustSafety / visualReadinessの4軸各25点、合格92点とし、顧客向け仮置き文言、長文重複、業種不一致ナビ、空process見出し、提案表示不足をhard blocker化。hard blockerありは最大70点に制限する。
+- batchジョブ結果へ品質レポートと3候補を保存し、管理画面で4軸・停止理由を表示。品質レポート欠落または92点未満のジョブはGUI / batch API /公開切替関数の3層でクリーンURL発行を拒否する。送信、Twenty同期、メール、電話、郵送、フォーム送信は接続していない。
+- ローカル検証: 関連Vitest **3 files / 10 tests pass**、TypeScript pass、全ESLint pass、quality guard **0 errors / 59 existing warnings**、production build **396/396 pages**、`git diff --check` pass。
+
+### 2026-07-13 Japan市場機会損失バナーの固定ヘッダー重なり修正（本番反映・実ブラウザQA済み）
+- 国際向け共通の`THE OPPORTUNITY COST OF WAITING`バナーが固定ヘッダーの下へ潜り、ヘッダー用`pt-16`が二重に効いて空白帯を作るレイアウト崩れを修正。ヘッダー分の明示スペーサーをバナー前へ置き、バナー有効時だけ`SiteWrapper`の追加トップ余白を無効化した。
+- 告知バー有効時は告知バー込みのスペーサー高さへ切り替え、`/ja`と法務ページは従来どおりバナーなし・既定のヘッダー余白を維持する。先頭要素のmargin collapseを使わず、PC/モバイルで同じ構造にした。
+- 検証: pre-push TypeScript clean、対象ESLint pass、関連Vitest **2/2 pass**、quality guard **0 errors / 59 warnings**、`git diff --check` pass。実ブラウザで`/en`・`/en/services`・`/en/pricing`・`/en/package`は`scrollY=0`時にheader **0–81px**、spacer **0–80px**、urgency **80px開始**、main **458px開始**、横溢れなし。`/ja`はurgencyなし・`main.pt-16`を確認した。
+- PR **#143**をmainへmerge。正式`npm run release:prod`のdeployment **jdgsrj4fpvbs5yq7kwd8er5a**はfinished、DB **83/83**、Traefik/Cloudflare/Realtime/Twenty、Sales health HTTP 200 JSON ok、post-deploy release gateを通過した。
+
+### 2026-07-13 Opportunity Briefパッケージ・限定オファー・CTA強化（本番反映・実企業QA済み / 送信停止）
+- Opportunity Brief末尾の契約条件を独立パネルへ分離し、`$12,000 paid upfront`、最初の6か月は追加月額なし、7か月目以降は署名済み契約に基づき月額$995という条件の直下へ、Japan Entry Packageの正式な7ワークストリームを表示する。
+- 6か月の月額無料を、期間限定かつ審査を通過した数組だけの導入オファーとして強調。架空の残枠数・締切は表示せず、適用可否は15分面談と契約書面で確定し、フォーム送信だけでは枠確保にならない境界を明記した。
+- 意思決定要約と最終オファーのCTAを、企業名付きCal.comの `Book the 15-minute review` と、Japan Entry意図・企業名を引き継ぐ `Apply via the form` の2種類へ統一。Our Placeでは予約先が `https://cal.com/paradigm-jp/15min?name=Our%20Place`、申込先が `/en/contact?intent=japan-entry&company=Our%20Place` になる。
+- 検証: 関連Vitest **2 files / 6 tests pass**、TypeScript pass、対象ESLint pass、quality guard **0 errors / 59 existing warnings**、production build **396/396 pages**、`git diff --check` pass。React確認ではサーバーコンポーネントのまま、named export、semantic link、外部URLの安全属性、安定keyを確認した。
+- PR **#142**をmainへmerge。正式deployment `n5t3jiz0o5j9gbaur0a4v1wd` はcommit `adf39ceead787a47fcdf6dbffd0eeb91194fda65`でfinishedし、DB **83/83**、Traefik / Cloudflare / Realtime / Twenty worker restart 0、Sales health HTTP 200 JSON ok、post-deploy release gateを通過した。
+- 本番Our Place Opportunity BriefはHTTP **200**。PC 1440px / mobile 390pxで、料金、限定条件、7項目、CTA 2つ、企業名付きリンクを実ブラウザ確認し、横溢れ0、error overlay 0、console error 0。DB書き込み、Twenty同期、候補収集、フォーム送信、営業送信は一切実行していない。
+
+### 2026-07-13 SMBデモ正規URL・自動量産（本番反映・実事業者QA済み / 送信停止）
+- デモの正規URLを `https://demo.paradigmjp.com/{企業名slug}` に統一。locale、`demo`、ランダム文字列を公開URLへ含めず、Cafe SOSOMUは `https://demo.paradigmjp.com/cafe-sosomu` とした。旧 `/ja/cafe-sosomu` と内部 `/ja/demo/cafe-sosomu` は正規URLへ308転送する。企業名slugが既存の別企業と衝突した場合はランダム文字を足さずfail-closedで停止する。
+- Homeを含む全11ページのheader、footer、CTA、パンくず相当導線を `/{企業名slug}/...` へ統一。公開デモは `noindex, nofollow, noarchive` を維持し、検索面へ混入させない。
+- 最大100社を一括投入し、最大3社並列のone-shot drainがキュー末尾まで自動継続する量産経路を実装。DB singleton leaseでdrainを1系列に制限し、同じ企業・同じ審査済みmanifestは `generation_key` で完成済み結果を再利用してLLM再実行を避ける。品質90点未満、hard blocker、権利不明素材、公開根拠不足は公開せず停止する。
+- Cafe SOSOMUを本番batch APIへ実投入し、job `8eff6351-9bb8-45d8-8d36-fbe86880b8c7` は手動追加操作なしで2回目確認時にcompleted、quality **100**、slug `cafe-sosomu`、publication `published`、`sending_enabled=false`。drain leaseは解放済み、queued/running jobは0、同社outreach jobは0。
+- 本番QA: Home / About / Services / Works / News / FAQ / Recruit / Privacy / Terms / Commerce / Contactの **11/11 URL HTTP 200**、旧URLは308、正規URLheaderはnoindex。実ブラウザPCで全内部リンクが `/cafe-sosomu/...`、写真hero、Embla carousel、Instagramを確認。mobile 390x844でdrawer、Google Maps iframe、6項目フォーム、送信停止表示を確認した。
+- 実装はPR **#136 / #137**をmainへmerge。正式deployment `yzuvgk8vugt63lejyxvnpzzk` はfinishedし、DB **83/83**、Traefik / Cloudflare / Realtime / Twenty、Sales health HTTP 200 JSON ok、post-deploy release gateを通過した。メール、電話、郵送、フォーム送信、Twenty同期、営業通知は一切実行していない。
+
+### 2026-07-13 Japan Entry 競合・需要パーソナライズ／両面危機訴求（本番反映・公開QA済み / 送信停止）
+- DeepSeek V4 Pro初回フォーム文面へ、HTTPS公開根拠付きの実名競合、日本の商品固有需要シグナル、公式市場データ、条件付き規制リスクを追加。商品固有需要がある場合は一般市場規模だけで逃げる候補を品質ゲートで拒否し、競合名・需要・監査ギャップ・推定アクセス・推定機会損失・規制の適用未確定表現を最大6 factで必須化した。
+- 規制訴求は、消費者庁が説明する適用対象違反時の業務改善指示・業務停止命令・罰則と、個人情報保護委員会の2026年APPI見直し方針を根拠化。「当該企業が違反している」とは断定せず、公開ページ診断では適用可能性や違反を確定しない文言を必須にした。「世界3位」は現時点の一次根拠を確認できないため不使用。
+- 国際向けホーム、Services、Pricing、Packageへ共通の強い危機訴求を追加。人口123.05M、2024年B2C EC ¥26.1T（前年比+5.1%）、日銀2026年7月基準相場¥158/$1を出典・基準日付きで表示し、為替は削減保証にしない。JA国内向けページには混在させない。
+- Opportunity Briefへ競合・需要・規制を同時に比較する意思決定セクションを追加。商品固有の需要根拠がなければ人気を推測せず、一般市場文脈と「商品固有人気は未検証」を表示する。
+- 検証: 関連Vitest **4 files / 37 tests pass**、TypeScript pass、対象ESLint pass、quality guard **0 errors / 59 warnings**、production build **396/396 pages**、`git diff --check` pass。実Chromeで `/en` `/en/services` `/en/pricing` `/en/package` はHTTP 200、危機訴求・市場数値表示、PC/mobile横溢れ0、overlay/console error 0。`/ja`への混入0。
+- PR **#133**をmainへmergeし、正式deployment `olryn34mx0zkbd46e4qkjl9k` はfinished。DB **83/83**、Traefik / Cloudflare / Realtime / Twenty、Sales health HTTP 200 JSON ok、post-deploy release gateを通過。本番 `/en` `/en/services` `/en/pricing` `/en/package` とOur Place Opportunity BriefはHTTP 200で競合・需要・規制・市場根拠を表示し、`/ja`への混入なし。DB保存、Twenty同期、フォーム送信、候補収集は一切実行していない。
+
+### 2026-07-13 Japan Entry文面量産・DeepSeek Prompt Caching最適化（本番反映・実API実測済み / 送信停止）
+- 企業名・商品説明・監査・競合・推定値・補修指示をすべてuser JSONへ移し、生成／補修用system promptを企業・業種・モードをまたいでbyte-identicalな固定prefixへ変更。批評system promptも固定し、DeepSeek公式APIのautomatic prompt cachingを量産案件間で再利用できる構造にした。
+- 通常時の品質設計は3候補生成＋独立critic＋決定論ゲート（品質92点以上、各軸22点以上、安全性100）を維持。失敗時だけ最良の1候補を補修し、従来の3候補丸ごと再生成を廃止した。補修には必須fact id、失敗理由、検出した禁止語句を明示し、品質基準を緩めず再処理率を下げる。
+- コピー生成ではDeepSeek V4 Pro直叩き、thinking disabledを固定。出力上限を3候補4,000／1候補補修2,400／critic 1,200 tokensへ分離し、品質に不要な推論・暴走出力だけを制限。既存の投影冪等キーにより、同じ会社・同じ根拠のjob retryは保存済み結果を再利用してLLMを再実行しない。
+- generation／repair／criticとJSON再試行を含む全usageを合算し、input/output、cache hit/miss、cache hit ratioを投影JSONと会社metaへ保存。Twentyカルテにも `LLMトークン効率` として同期し、案件別の実コストを監視できる。フォーム送信や候補収集には接続しない。
+- 最終の架空企業・非送信DeepSeek実API smokeは、品質 **95/100**、安全性 **100/100**、197語、4段落、企業名・推定アクセス・推定機会損失・実名競合・商品固有需要・条件付き規制・未置換ゼロをすべて合格。入力 **5,036 tokens**のうち **3,584 hit / 1,452 miss / cache hit ratio 71.17%**。直前の同一prefix実測でも **5,120 / 6,635 hit（77.17%）**を確認した。
+- 検証: 関連Vitest **7 files / 55 tests pass**、全体Vitest **112/113 files・522/526 tests pass**（変更外の既知CRLF backup shell 4件のみ失敗）、TypeScript pass、全ESLint pass、quality guard **0 errors / 59 existing warnings**、production build **396/396 pages**、`git diff --check` pass。実API smokeはDB保存、Twenty同期、フォーム送信、候補収集を一切行っていない。
+- PR **#138**をmainへmerge。正式deployment `bxlnuw2kjvfuyu2py05airhn` はcommit `ec935053`でfinishedし、DB **83/83**、Traefik / Cloudflare / Realtime / Twenty worker restart 0、Sales health HTTP 200 JSON ok、英日公開面と診断レポートを含むpost-deploy release gateを通過した。
 
 ### 2026-07-13 SMBデモ量産・DeepSeek Prompt Caching最適化（本番反映・実測済み / 送信停止）
 - DeepSeek V4 Proへ渡す共通の品質規則・JSON schema・禁止事項をcompany固有データより前へ固定し、企業ごとに変わる名称・所在地・事実・design recipeを末尾へ分離した。DeepSeekのprefix cacheが企業をまたいで再利用できる構造に変更し、公式usageの `prompt_cache_hit_tokens` / `prompt_cache_miss_tokens` を正規化して生成payloadへ保存する。

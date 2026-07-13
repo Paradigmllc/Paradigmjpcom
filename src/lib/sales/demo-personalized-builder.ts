@@ -12,6 +12,7 @@ import type { DemoMultiPageData } from "./demo-site-types"
 import type { DemoTemplate } from "./demo-templates/registry"
 import type { DiagnosticReportData } from "./diagnostic"
 import type { ReportLocale } from "./types"
+import { applyIndustryPresentation } from "./demo-industry-presentation"
 
 export function buildPersonalizedDemoData(
   company: Parameters<typeof buildDemoMultiPageData>[0],
@@ -20,7 +21,7 @@ export function buildPersonalizedDemoData(
 ): DemoMultiPageData {
   const base = buildDemoMultiPageData(company, report)
 
-  return {
+  return applyIndustryPresentation({
     ...base,
     templateId: template.id,
     designTokens: template.designTokens,
@@ -36,7 +37,7 @@ export function buildPersonalizedDemoData(
         metricsSummary: undefined,
       },
     },
-  }
+  })
 }
 
 export async function buildAIPersonalizedDemoData(
@@ -49,7 +50,7 @@ export async function buildAIPersonalizedDemoData(
 
   try {
     const aiOutput = await enhanceDemoWithDeepSeek(company, report, template, locale)
-    return aiOutput ? mergeDeepSeekOutput(base, aiOutput, locale) : base
+    return applyIndustryPresentation(aiOutput ? mergeDeepSeekOutput(base, aiOutput, locale) : base)
   } catch (error) {
     console.error(
       "[demo-personalized-builder] AI enhancement failed:",

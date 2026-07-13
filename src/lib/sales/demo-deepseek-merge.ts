@@ -84,7 +84,7 @@ export function mergeDeepSeekOutput(
       description: groundDemoText(s.description, verifiedFacts, groundedFallback),
       icon: s.icon || "sparkles",
       features: s.features?.filter(Boolean).map((feature) => groundDemoText(feature, verifiedFacts, groundedFallback)) ?? [],
-      priceNote: effectiveLocale === "ja" ? "料金は要確認" : "Pricing to be confirmed",
+      priceNote: undefined,
     }));
   }
   if (ai.services.process && ai.services.process.length >= 2) {
