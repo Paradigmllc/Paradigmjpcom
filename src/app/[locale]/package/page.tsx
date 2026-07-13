@@ -67,7 +67,7 @@ export default async function PackagePage({ params }: { params: Promise<{ locale
         asideCta={{ label: t("ctaButton"), href: "/contact?intent=japan-entry" }}
       />
 
-      <section className="border-b border-paradigm-line bg-paradigm-paper-deep px-5 py-8 sm:px-8 lg:px-12" aria-label="Package summary">
+      <section className="border-b border-paradigm-line bg-paradigm-paper-deep px-5 py-8 sm:px-8 lg:px-12" aria-label={t("summaryLabel")}>
         <div className="mx-auto grid max-w-6xl grid-cols-2 divide-x divide-y divide-paradigm-line border border-paradigm-line bg-paradigm-paper md:grid-cols-4 md:divide-y-0">
           {summary.map((item) => (
             <div key={item.label} className="px-4 py-5 sm:px-6 sm:py-6">
@@ -93,7 +93,7 @@ export default async function PackagePage({ params }: { params: Promise<{ locale
                 <article className="h-full rounded-lg border border-paradigm-line bg-paradigm-paper-deep p-6 transition-shadow hover:shadow-lg md:p-7">
                   <div className="flex items-start justify-between gap-4">
                     <span className="font-display text-3xl text-paradigm-accent">{stream.number}</span>
-                    <span className="rounded-full border border-paradigm-line bg-paradigm-paper px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-paradigm-ink-mute">Included</span>
+                    <span className="rounded-full border border-paradigm-line bg-paradigm-paper px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-paradigm-ink-mute">{t("includedBadge")}</span>
                   </div>
                   <h3 className="mt-5 font-display text-[22px] leading-[1.15] text-paradigm-ink">{stream.title}</h3>
                   <p className="mt-3 text-[13px] leading-[1.75] text-paradigm-ink-soft">{stream.summary}</p>

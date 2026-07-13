@@ -1200,8 +1200,10 @@
       { "value": "14 days", "label": "delivery guarantee from the recorded Start Date" },
       { "value": "48h", "label": "start SLA for standard included requests" }
     ],
+    "summaryLabel": "Package summary",
     "includedEyebrow": "Included in the setup",
     "includedTitle": "Seven workstreams, one accountable handover.",
+    "includedBadge": "Included",
     "includedDesc": "The workstreams are connected. The point is not to buy seven disconnected tasks; it is to leave with a Japanese buyer path, the operating context around it, and a clear owner for what happens next.",
     "workstreams": [
       {
