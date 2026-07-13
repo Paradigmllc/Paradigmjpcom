@@ -32,6 +32,7 @@ describe("applyIndustryPresentation", () => {
     expect(page.meta.navLabels).toEqual(expect.objectContaining({ about: "お店について", services: "メニュー", works: "店の景色", contact: "アクセス" }))
     expect(page.pages.services.services.every((service) => service.priceNote === undefined)).toBe(true)
     expect(page.pages.services.processTitle).toBe("店で過ごす時間。")
+    expect(page.pages.contact).toEqual(expect.objectContaining({ title: "店舗情報・アクセス", subtitle: "所在地、地図、最新情報の確認先をご案内します。" }))
     expect(page.pages.works?.sections).toHaveLength(4)
     expect(page.pages.works?.sections.map((section) => section.heading)).toEqual(["店内とメニュー", "一杯を淹れる時間", "店の佇まい", "季節の一皿"])
     expect(page.meta.primaryCtaHref).toBe("https://instagram.com/example")

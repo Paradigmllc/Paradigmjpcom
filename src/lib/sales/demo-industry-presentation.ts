@@ -11,6 +11,8 @@ interface PresentationProfile {
   galleryEyebrow: string
   galleryHeading: (companyName: string) => string
   sceneHeadings: string[]
+  contactTitle: string
+  contactSubtitle: string
   works: { title: string; subtitle: string; eyebrow: string }
 }
 
@@ -24,6 +26,8 @@ const PROFILES: Record<string, PresentationProfile> = {
     galleryEyebrow: "SCENES",
     galleryHeading: (name) => `${name}の景色。`,
     sceneHeadings: ["店内とメニュー", "一杯を淹れる時間", "店の佇まい", "季節の一皿"],
+    contactTitle: "店舗情報・アクセス",
+    contactSubtitle: "所在地、地図、最新情報の確認先をご案内します。",
     works: { title: "店の景色", subtitle: "写真とともに、お店の雰囲気をご紹介します。", eyebrow: "SCENES" },
   },
   beauty_salon: {
@@ -35,6 +39,8 @@ const PROFILES: Record<string, PresentationProfile> = {
     galleryEyebrow: "STYLE",
     galleryHeading: (name) => `${name}のスタイル。`,
     sceneHeadings: ["スタイル", "施術の時間", "サロン空間", "ディテール"],
+    contactTitle: "ご予約・アクセス",
+    contactSubtitle: "所在地と正式なご予約・お問い合わせ方法をご案内します。",
     works: { title: "スタイル", subtitle: "施術や空間のイメージをご紹介します。", eyebrow: "STYLE" },
   },
   dental: {
@@ -46,6 +52,8 @@ const PROFILES: Record<string, PresentationProfile> = {
     galleryEyebrow: "CLINIC",
     galleryHeading: (name) => `${name}の院内紹介。`,
     sceneHeadings: ["受付・待合", "診療空間", "院内設備", "アクセス"],
+    contactTitle: "アクセス・お問い合わせ",
+    contactSubtitle: "所在地と正式な受診・お問い合わせ方法をご案内します。",
     works: { title: "院内紹介", subtitle: "院内の設備や雰囲気をご紹介します。", eyebrow: "CLINIC" },
   },
   construction: {
@@ -57,6 +65,8 @@ const PROFILES: Record<string, PresentationProfile> = {
     galleryEyebrow: "WORKS",
     galleryHeading: (name) => `${name}の仕事。`,
     sceneHeadings: ["仕事の現場", "手仕事の細部", "仕上がり", "地域とのつながり"],
+    contactTitle: "お問い合わせ",
+    contactSubtitle: "所在地と正式なお問い合わせ方法をご案内します。",
     works: { title: "施工・仕事", subtitle: "仕事の内容を写真とともにご紹介します。", eyebrow: "WORKS" },
   },
   retail: {
@@ -68,6 +78,8 @@ const PROFILES: Record<string, PresentationProfile> = {
     galleryEyebrow: "GALLERY",
     galleryHeading: (name) => `${name}のセレクション。`,
     sceneHeadings: ["セレクション", "店内の風景", "商品のディテール", "季節のご案内"],
+    contactTitle: "店舗情報",
+    contactSubtitle: "所在地、地図、最新情報の確認先をご案内します。",
     works: { title: "ギャラリー", subtitle: "商品や店舗の雰囲気をご紹介します。", eyebrow: "GALLERY" },
   },
 }
@@ -81,6 +93,8 @@ const DEFAULT_PROFILE: PresentationProfile = {
   galleryEyebrow: "GALLERY",
   galleryHeading: (name) => `${name}の仕事と風景。`,
   sceneHeadings: ["仕事の風景", "サービスの様子", "空間とディテール", "日々の取り組み"],
+  contactTitle: "お問い合わせ",
+  contactSubtitle: "所在地と正式なお問い合わせ方法をご案内します。",
   works: { title: "仕事・実績", subtitle: "事業や仕事の様子をご紹介します。", eyebrow: "WORKS" },
 }
 
@@ -174,6 +188,11 @@ export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPag
         ctaSubtitle: social ? "営業情報や最新のラインアップは、公式アカウントをご確認ください。" : page.pages.contact.formNote || page.pages.contact.subtitle,
         ctaText: primaryLabel,
         ctaHref: primaryHref,
+      },
+      contact: {
+        ...page.pages.contact,
+        title: profile.contactTitle,
+        subtitle: profile.contactSubtitle,
       },
       works,
       news: socialNewsPage(page),
