@@ -112,4 +112,68 @@ describe("twentyCompanyHomePayload", () => {
     })
     expect(karteHomeSummary(karte)).toContain("無料API/OSS取得データ(50+)")
   })
+
+  it("places the complete unsent Japan Entry draft and modeled numbers in the Twenty company record", () => {
+    const message = "Hello Acme team,\n\nYour Japanese checkout currently lacks a local payment cue.\n\nWould a 15-minute review be useful?"
+    const karte = {
+      ...karteWith([], "Acme"),
+      companyId: "company-1",
+      region: "global",
+      domain: "acme.example",
+      reportLocale: "en",
+      targetCountry: "US",
+      templateVariant: "japan_entry",
+      reportUrl: null,
+      formUrl: "https://acme.example/contact",
+      demoUrl: null,
+      salesMaterialUrl: null,
+      customerPortalUrl: null,
+      industry: "SaaS",
+      regionName: null,
+      sourceName: "public_signals",
+      pipelineStatus: "report_ready",
+      dealStage: "未対応",
+      localizedReportUrls: [],
+      sourceScore: 80,
+      collectedCount: 1,
+      configuredCount: 0,
+      missingCount: 0,
+      errorCount: 0,
+      evidence: [],
+      intelligence: { signals: [], painPoints: [], nextActions: [] },
+      diagnosisSummary: null,
+      recommendedOffer: "Japan Entry Package",
+      personalizedHook: null,
+      personalizedCTA: null,
+      recommendedProducts: [],
+      japanEntry: {
+        state: "needs_review",
+        message,
+        classification: "modeled-estimate",
+        estimatedJapanMonthlyVisits: 1_950,
+        monthlyOpportunityGapUsd: 10_296,
+        qualityScore: 95,
+        safetyScore: 100,
+        model: "deepseek-v4-pro",
+        generatedAt: "2026-07-13T00:00:00.000Z",
+        horizons: [
+          { month: 6, roiPercent: -12.5, cumulativeNetBenefitUsd: -1_500 },
+          { month: 12, roiPercent: 42.1, cumulativeNetBenefitUsd: 5_052 },
+          { month: 24, roiPercent: 164.8, cumulativeNetBenefitUsd: 19_776 },
+        ],
+      },
+      generatedAt: "2026-07-13T00:00:00.000Z",
+    } satisfies CompanyKarteSnapshot
+
+    const payload = twentyCompanyHomePayload(karte)
+    const summary = (payload.paradigmKarteSummary as { markdown: string }).markdown
+    expect(payload.paradigmNextAction).toBe("Japan Entry初回フォーム文面を確認（未送信）")
+    expect(summary).toContain("運用状態: 未送信・要レビュー")
+    expect(summary).toContain("推定日本月間アクセス: 1,950")
+    expect(summary).toContain("推定月間機会損失: $10,296")
+    expect(summary).toContain("6ヶ月 ROI -12.5%")
+    expect(summary).toContain("24ヶ月 ROI 164.8%")
+    expect(summary).toContain("quality=95 / safety=100 / model=deepseek-v4-pro")
+    expect(summary).toContain(message)
+  })
 })

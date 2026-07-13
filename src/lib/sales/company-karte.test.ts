@@ -100,4 +100,53 @@ describe("buildCompanyKarte", () => {
     expect(karte.demoUrl).toBe("https://paradigmjp.com/en/d/acme-normalized-demo")
     expect(karte.evidence.map((item) => item.label)).toContain("技術スタック")
   })
+
+  it("hydrates the reviewed Japan Entry draft and 6/12/24 month model from company meta", () => {
+    const message = "Hello Acme team,\n\nWe found a Japan-specific checkout gap.\n\nWould a 15-minute review be useful?"
+    const karte = buildCompanyKarte({
+      ...fixtureCompany,
+      meta: {
+        ...fixtureCompany.meta,
+        japan_entry_initial_message: message,
+        japan_entry_outreach_state: "needs_review",
+        japan_entry_projection: {
+          classification: "modeled-estimate",
+          generatedAt: "2026-07-13T00:00:00.000Z",
+          monthlyOpportunityGapUsd: 10_296,
+          markets: [{ code: "JP", estimatedMonthlyVisits: 1_950 }],
+          scenarios: [{
+            scenario: "base",
+            horizons: [
+              { horizon: 6, roiPercent: -12.5, cumulativeNetBenefitUsd: -1_500 },
+              { horizon: 12, roiPercent: 42.1, cumulativeNetBenefitUsd: 5_052 },
+              { horizon: 24, roiPercent: 164.8, cumulativeNetBenefitUsd: 19_776 },
+            ],
+          }],
+        },
+        japan_entry_message_review: {
+          model: "deepseek-v4-pro",
+          qualityScore: 95,
+          safetyScore: 100,
+          generatedAt: "2026-07-13T00:00:00.000Z",
+        },
+      },
+    }, [])
+
+    expect(karte.japanEntry).toEqual({
+      state: "needs_review",
+      message,
+      classification: "modeled-estimate",
+      estimatedJapanMonthlyVisits: 1_950,
+      monthlyOpportunityGapUsd: 10_296,
+      qualityScore: 95,
+      safetyScore: 100,
+      model: "deepseek-v4-pro",
+      generatedAt: "2026-07-13T00:00:00.000Z",
+      horizons: [
+        { month: 6, roiPercent: -12.5, cumulativeNetBenefitUsd: -1_500 },
+        { month: 12, roiPercent: 42.1, cumulativeNetBenefitUsd: 5_052 },
+        { month: 24, roiPercent: 164.8, cumulativeNetBenefitUsd: 19_776 },
+      ],
+    })
+  })
 })
