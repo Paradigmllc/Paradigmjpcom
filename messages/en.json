@@ -1186,6 +1186,157 @@
     "ctaDesc": "$12,000 one-time setup, standard monthly service included for six months, then $995/month. Final scope and dependencies are confirmed before kickoff.",
     "ctaButton": "Apply for Japan Entry — $12K"
   },
+  "packagePage": {
+    "metaTitle": "Japan Entry Package Deliverables | Paradigm",
+    "metaDescription": "A deliverable-by-deliverable view of the fixed $12,000 Japan Entry setup, its six-month operating period, exclusions, and handover.",
+    "navLabel": "See full package deliverables",
+    "heroBadge": "Japan Entry Package · Fixed deliverables",
+    "heroTitle": "Everything included in the $12,000 launch.",
+    "heroHighlight": "$12,000 launch",
+    "heroDesc": "This is the implementation brief behind the public offer: what we build, what we configure, what you approve, and what your team receives after launch. The package is designed for fast-decision SMBs that want one accountable Japan path without pulling their core team into a long market-entry project.",
+    "summary": [
+      { "value": "$12,000", "label": "one-time setup" },
+      { "value": "$0", "label": "standard monthly service for months 1–6" },
+      { "value": "14 days", "label": "delivery guarantee from the recorded Start Date" },
+      { "value": "48h", "label": "start SLA for standard included requests" }
+    ],
+    "includedEyebrow": "Included in the setup",
+    "includedTitle": "Seven workstreams, one accountable handover.",
+    "includedDesc": "The workstreams are connected. The point is not to buy seven disconnected tasks; it is to leave with a Japanese buyer path, the operating context around it, and a clear owner for what happens next.",
+    "workstreams": [
+      {
+        "number": "01",
+        "title": "Market and offer framing",
+        "summary": "Turn your existing offer into a Japan-specific decision path before production starts.",
+        "deliverables": [
+          "Source-site and current buyer-path review",
+          "Priority buyer, offer, objections, and first action definition",
+          "Japanese positioning and information-architecture direction",
+          "Decision log for assumptions, open questions, and approval owners"
+        ]
+      },
+      {
+        "number": "02",
+        "title": "LP / HP localization",
+        "summary": "Build the agreed Japanese-facing surface instead of shipping a raw translation.",
+        "deliverables": [
+          "Localized page structure, copy direction, CTA hierarchy, and trust information",
+          "Responsive implementation or agreed edits within the managed storefront scope",
+          "SEO metadata, eligible structured data, internal links, and Japanese-language QA",
+          "CMS or handover notes so your team can identify the source of truth"
+        ]
+      },
+      {
+        "number": "03",
+        "title": "SNS launch setup",
+        "summary": "Prepare up to two priority channels so the Japanese presence is coherent on launch day.",
+        "deliverables": [
+          "Profile, bio, category, link, CTA, and ownership setup",
+          "Starter content pillars and reusable post or creative direction",
+          "Language and escalation notes for incoming Japanese questions",
+          "A written boundary between setup and ongoing posting, community work, or paid media"
+        ]
+      },
+      {
+        "number": "04",
+        "title": "Market and competitor report",
+        "summary": "Give the decision-maker a sourced view of up to three priority markets and one deeper comparison.",
+        "deliverables": [
+          "Public-signal market comparison with source URLs and observation dates",
+          "One priority-market deep dive with competitors, positioning, and open questions",
+          "Evidence, self-reported inputs, estimates, and unknowns kept in separate fields",
+          "A next-action shortlist tied to the launch surface, not a generic strategy deck"
+        ]
+      },
+      {
+        "number": "05",
+        "title": "Trust and regulatory applicability",
+        "summary": "Make the commercial and compliance questions visible without pretending to be legal counsel.",
+        "deliverables": [
+          "Specified Commercial Transactions, privacy, refund, and contact disclosure checklist",
+          "Industry and payment applicability screening for the agreed offer",
+          "Specialist questions and escalation points for legal, tax, or regulated advice",
+          "Public ownership, support route, and customer-expectation language"
+        ]
+      },
+      {
+        "number": "06",
+        "title": "Inquiry and payment routing",
+        "summary": "Remove the next-step ambiguity for qualified Japanese buyers.",
+        "deliverables": [
+          "Inquiry, qualification, or eligible checkout route based on the offer",
+          "Wise, bank transfer, USDC, or credit-card payment via Stripe invoice or payment link where applicable",
+          "Payment and support handoff notes, including third-party account ownership",
+          "A clear list of provider fees, eligibility limits, and dependencies"
+        ]
+      },
+      {
+        "number": "07",
+        "title": "Launch operations and handover",
+        "summary": "Leave your team with an operating baseline, not a launch screenshot.",
+        "deliverables": [
+          "Recorded Start Date, launch checklist, QA pass, and the 14-business-day guarantee",
+          "Analytics, notification, support, and escalation baseline",
+          "Dedicated Notion workspace by default, or Trello if your team prefers",
+          "Handover notes, owners, blockers, approvals, next action, and month-seven decision point"
+        ]
+      }
+    ],
+    "timeline": {
+      "eyebrow": "The 14-business-day build",
+      "title": "A short, visible path from inputs to handover.",
+      "desc": "The guarantee starts only after the Start Date is recorded: scope is accepted, payment is cleared, required access and materials are complete, and one empowered approver is available.",
+      "steps": [
+        { "label": "Start Date", "title": "Inputs and scope locked", "body": "We confirm the written scope, dependencies, access, materials, payment, and approver." },
+        { "label": "Days 1–3", "title": "Frame and localize", "body": "Offer, buyer path, trust requirements, market signals, and content direction are aligned." },
+        { "label": "Days 4–9", "title": "Build the route", "body": "The agreed LP/HP, inquiry or payment path, SNS setup, support rules, and measurement baseline are implemented." },
+        { "label": "Days 10–13", "title": "Review and verify", "body": "We run responsive, content, link, form, tracking, and handover checks; one approver consolidates revisions." },
+        { "label": "Day 14", "title": "Launch and hand over", "body": "The agreed route goes live with owners, open dependencies, operating notes, and the next decision recorded." }
+      ]
+    },
+    "operations": {
+      "eyebrow": "Months 1–6 included",
+      "title": "What happens after launch.",
+      "desc": "The first six months include the standard monthly operation at no additional monthly charge. This is an operating layer around the agreed launch—not unlimited agency capacity.",
+      "items": [
+        { "title": "Support and triage", "body": "Customer questions, issue triage, and escalation within the agreed support route." },
+        { "title": "SNS / SEO updates", "body": "Planned updates to the agreed channels and search-ready content surface within the written scope." },
+        { "title": "Marketing materials", "body": "Agreed launch assets and selected creative updates, including video only when explicitly scoped." },
+        { "title": "Monthly report", "body": "Observed activity, completed work, open dependencies, and the next decision—not invented revenue attribution." },
+        { "title": "Visible workspace", "body": "Notion by default or Trello by request; standard included requests are acknowledged, scoped, and started within 48 business hours." },
+        { "title": "Month-seven choice", "body": "The $995/month continuation is a future operating decision under the signed terms; you are not locked into an indefinite retainer." }
+      ]
+    },
+    "notIncluded": {
+      "eyebrow": "Boundaries that protect the scope",
+      "title": "What is not silently bundled.",
+      "desc": "Clarity is part of the deliverable. These items require separate written scope, specialist review, or a third-party account and fee.",
+      "items": [
+        "Guaranteed traffic, rankings, conversion rate, revenue, or ROI",
+        "Private Similarweb-style traffic or sales data presented as observed fact",
+        "Formal legal, tax, immigration, medical, financial, or regulatory advice",
+        "Unlimited pages, languages, products, markets, revisions, or integrations",
+        "Paid media budget, creator or influencer fees, payment-provider fees, or local registrations",
+        "Unbounded daily SNS posting, community management, sales calls, or emergency response"
+      ]
+    },
+    "commercial": {
+      "eyebrow": "Commercial terms",
+      "title": "The decision is simple; the boundaries are written.",
+      "items": [
+        { "label": "Setup", "value": "$12,000 USD, one-time" },
+        { "label": "Months 1–6", "value": "Standard monthly operation included" },
+        { "label": "Month 7 onward", "value": "$995/month under the signed terms" },
+        { "label": "Refund", "value": "If the agreed setup is not delivered within 14 business days from the recorded Start Date, the setup fee is refunded in full, subject to the written conditions." },
+        { "label": "Payment", "value": "Wise, bank transfer, USDC, or credit card via Stripe invoice/payment link where applicable" }
+      ]
+    },
+    "ctaEyebrow": "Ready for a fit review?",
+    "ctaTitle": "Bring the offer. We will make the Japan path explicit.",
+    "ctaHighlight": "Japan path explicit",
+    "ctaDesc": "Share your current site, offer, decision authority, launch timing, and known Japan context. We will confirm fit, dependencies, and the written scope before any kickoff.",
+    "ctaButton": "Apply for Japan Entry — $12K"
+  },
   "locale": {
     "name": "English",
     "switchTo": "日本語"

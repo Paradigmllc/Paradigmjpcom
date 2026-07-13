@@ -42,6 +42,7 @@ const STATIC_ROUTES: StaticRoute[] = [
   { path: "/faq", changeFrequency: "monthly", priority: 0.7 },
   { path: "/blog", changeFrequency: "weekly", priority: 0.8 },
   { path: "/pricing", changeFrequency: "weekly", priority: 0.8 },
+  { path: "/package", changeFrequency: "weekly", priority: 0.9, locales: INTERNATIONAL_ONLY },
   { path: "/works", changeFrequency: "monthly", priority: 0.7 },
   { path: "/video", changeFrequency: "monthly", priority: 0.8, locales: JAPANESE_ONLY },
   { path: "/agency", changeFrequency: "monthly", priority: 0.7, locales: JAPANESE_ONLY },
