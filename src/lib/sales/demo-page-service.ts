@@ -116,6 +116,16 @@ export async function generateFullStackDemo(
     const slug = selected.page.slug
     const demoUrl = qualityPassed ? buildDemoUrl(effectiveLocale === "en" ? "en" : "ja", slug) : null
 
+    const { data: slugOwner, error: slugOwnerError } = await sb
+      .from(DB_TABLES.THEME_DEMO_PAGES)
+      .select("company_id")
+      .eq("slug", slug)
+      .maybeSingle()
+    if (slugOwnerError) return failure(`Clean URL ownership check failed: ${slugOwnerError.message}`)
+    if (slugOwner?.company_id && slugOwner.company_id !== companyId) {
+      return failure(`Clean URL conflict: /${slug} is already assigned to another company`)
+    }
+
     const { error: upsertError } = await sb.from(DB_TABLES.THEME_DEMO_PAGES).upsert({
       slug,
       theme: selected.page.templateId,
@@ -145,6 +155,15 @@ export async function generateFullStackDemo(
     if (upsertError) {
       console.error("[demo-generator] quality-gated upsert failed:", upsertError.message)
       return failure(upsertError.message)
+    }
+
+    const duplicateCleanup = await sb
+      .from(DB_TABLES.THEME_DEMO_PAGES)
+      .delete()
+      .eq("company_id", companyId)
+      .neq("slug", slug)
+    if (duplicateCleanup.error) {
+      console.error("[demo-generator] obsolete slug cleanup failed:", duplicateCleanup.error.message)
     }
 
     if (published && demoUrl) {

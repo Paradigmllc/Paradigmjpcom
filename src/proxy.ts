@@ -20,18 +20,33 @@ export function proxy(request: NextRequest) {
   if (hostname === "demo.paradigmjp.com" || hostname === "demo.localhost") {
     if (pathname.startsWith("/api/demo-preview/")) return NextResponse.next();
 
-    const legacyDemoPath = pathname.match(/^\/(?:ja|en)\/demo(\/.*)?$/);
+    const legacyDemoPath = pathname.match(/^\/(?:ja|en)\/demo\/([^/]+)(\/.*)?$/);
     if (legacyDemoPath) {
-      const locale = pathname.split("/")[1] === "en" ? "en" : "ja";
-      return NextResponse.redirect(new URL(`/${locale}${legacyDemoPath[1] ?? ""}${request.nextUrl.search}`, request.url), 308);
+      const [, slug, suffix = ""] = legacyDemoPath;
+      const response = NextResponse.redirect(new URL(`/${slug}${suffix}${request.nextUrl.search}`, request.url), 308);
+      response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+      return response;
     }
 
-    const visibleDemoPath = pathname.match(/^\/(ja|en)\/([^/]+)(\/.*)?$/);
+    const localePrefixedPath = pathname.match(/^\/(?:ja|en)\/([^/]+)(\/.*)?$/);
+    if (localePrefixedPath) {
+      const [, slug, suffix = ""] = localePrefixedPath;
+      const response = NextResponse.redirect(new URL(`/${slug}${suffix}${request.nextUrl.search}`, request.url), 308);
+      response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+      return response;
+    }
+
+    const visibleDemoPath = pathname.match(/^\/([^/]+)(\/.*)?$/);
     if (visibleDemoPath) {
-      const [, locale, slug, suffix = ""] = visibleDemoPath;
+      const [, slug, suffix = ""] = visibleDemoPath;
+      if (["api", "demo", "en", "ja", "not-found"].includes(slug.toLowerCase())) {
+        return NextResponse.rewrite(new URL("/not-found", request.url));
+      }
       const rewrite = request.nextUrl.clone();
-      rewrite.pathname = `/${locale}/demo/${slug}${suffix}`;
-      return NextResponse.rewrite(rewrite);
+      rewrite.pathname = `/ja/demo/${slug}${suffix}`;
+      const response = NextResponse.rewrite(rewrite);
+      response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+      return response;
     }
 
     return NextResponse.rewrite(new URL("/not-found", request.url));
