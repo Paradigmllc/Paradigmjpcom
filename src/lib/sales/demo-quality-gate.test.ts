@@ -178,4 +178,21 @@ describe("demo quality gate", () => {
       "unsupported_history_claim",
     ]))
   })
+
+  it("blocks invented operations, product details, and image provenance", () => {
+    const page = fixture()
+    page.pages.about.story = "外は香ばしく中はしっとり。掲載写真は権利確認済みの公式素材です。"
+    page.pages.contact.subtitle = "InstagramのDMで予約を承り、翌営業日に返信します。"
+    const template = DEMO_TEMPLATES.find((item) => item.id === "prism")!
+    const recipe = buildDesignRecipe(template, page)
+    const quality = evaluateDemoQuality(page, recipe, buildProposalRightsManifest([
+      { src: "/generated/hero-1.jpg", usage: "proposal_only" },
+    ]))
+
+    expect(quality.hardBlockers).toEqual(expect.arrayContaining([
+      "unsupported_asset_provenance_claim",
+      "unsupported_operational_claim",
+      "unsupported_product_detail_claim",
+    ]))
+  })
 })
