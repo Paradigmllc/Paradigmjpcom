@@ -7,13 +7,21 @@
 - Services / Pricing に既存のpackage-scope・signal-check・application-handover図解を再利用。画像はクライアント実績として扱わず、納品物・運用境界の説明資料として表示する。
 - 検証: `npm exec -- tsc --noEmit --pretty false` pass、変更対象ESLint pass、関連Vitest **4 files / 23 tests pass**、`npm run quality:guard` **0 errors / 53 warnings**、production buildで`.next/BUILD_ID`生成を確認。正式 `npm run release:prod` は未実行。
 
-### 2026-07-13 SMBデモ大量生成の持続可能化（実装・ローカル検証済み / 正式release待ち / 送信停止）
+### 2026-07-13 Japan Entryフォーム文面・未置換/推測fail-closed強化（本番反映済み / 送信停止）
+- `[]` / 全角括弧 / `{{}}` / `${}` / `<>` / `__TOKEN__` / `%TOKEN%` / `TBD` 等の未置換プレースホルダーを決定論的品質ゲートで全面拒否。修正前は `[monthly visits]` と `[opportunity gap]` が残っても安全性100点で通った再現ケースを、修正後は0点・保存不可へ変更した。
+- 数値型文面では、Japan推定月間アクセスと月次機会ギャップの元factに含まれる正確な数値を第3段落へ必須化し、機会ギャップはUSD記号を含む完全値を要求。企業名も第2段落への完全一致を必須化した。
+- 実DeepSeek V4 Pro初回smokeで見つかった、入力にない「日本の小売店のニーズに応え得る」という推測を回帰ケース化。第2段落の`could/may/might/likely`、入力にないJapan/Japanese、needs/challenges/demandを拒否し、プロンプトとV4 Pro批評規則も同じ境界へ統一した。
+- `npm run smoke:japan-entry-form-copy` を追加。合成企業のみを使い、DB保存・Twenty登録・フォーム送信なしで実V4 Pro生成を再現できる。最終実測は **95/100**、安全性 **100**、151語、4段落、企業名・`1,950` Japan visits・`$10,296` opportunity gapの完全一致、未置換0件で合格。
+- 検証: 対象Vitest **28/28 pass**、最新main統合後の関連4 files **42 tests pass**、TypeScript、対象ESLint、quality guard **0 errors / 53 warnings**、production build **372/372 pages**、`git diff --check` pass。全体Vitestは **94/95 files・458/462 tests pass**で、今回未変更の`backup-oss-supabase.sh`がworktree上でCRLF展開されたことによる既存4件のみ失敗。PR **#93**をmainへmergeし、正式deployment `t6231ixgn9g3kioa3qr4kzqv` はfinished。初回CMS seedの一時502は限定retryで回復し、DB **82/82**、Traefik/Cloudflare、公開URL、Twenty、Sales health **HTTP 200 / JSON ok**、post-deploy release gateを通過した。フォーム送信、Twenty登録、実企業DB保存は未実行。
+
+### 2026-07-13 SMBデモ大量生成の持続可能化（本番反映・公開QA済み / 送信停止）
 - デモ本文生成はOpenAIではなくDeepSeekを正規経路とする。LiteLLMが設定済みなら `deepseek-v4-pro` を優先し、未設定時はDeepSeek公式APIの設定モデルを使用する。モデル名、input/output/cache token実績をデモmetaへ保存し、OpenAIやFlashへ黙って降格しない。
 - 同一企業に対してdesign spec、Astro code、3候補copyを重複生成していた経路を廃止。企業別copyは **1社1 LLM call**、3デザインは同じ確認済みcopyを決定論的なlayout recipeへ適用して品質比較する。最大7 call相当から1 callへ削減し、90点未満・根拠不足・権利不明は保存停止を維持する。
 - `reviewed_manifest` を追加。最大100社/回の確認済み事実、公式プロフィール参照URL、R2/ライセンス/許諾済み/非公開提案素材だけを受け付け、すべて `fetchPolicy=never` とする。Google検索、Google Maps UI、SNS本文・画像、proxy/browser searchの自動取得はこの経路から呼び出さない。HP非保有企業は予約済み `.invalid` 内部domainで重複排除し、通常enrichmentを起動しない。
 - Supabase `sales_enrichment_jobs`へ `demo_generate` を追加し、常駐polling/cronなしのoperator起動・3社ずつbounded drainで処理する。完了後は最大100件の期限付きURLを一括発行できるが、token実値はDBへ保存しない。送信、Twenty同期、メール、電話、郵送、フォーム営業、外部通知は接続しない。
 - デモ正規URLを `https://demo.paradigmjp.com/{locale}/{企業slug}` へ短縮。旧 `/{locale}/demo/{slug}` は308で短縮URLへ寄せ、署名入口もdemo hostへcanonicalizeしてslug限定HttpOnly Cookieを設定する。main siteと既存期限付きURLの互換を維持する。
 - 管理画面 `/ja/admin/demo-assets` に一括manifest投入、次の3社生成、状態更新、完了分URL発行を追加。TypeScript pass、対象ESLint pass、Vitest **5 files / 20 tests pass**、quality guard **0 errors**、production build **372/372 pages pass**。
+- PR **#90 / #91 / #92 / #94 / #97**をmainへmerge。初回deployment `zxctlfc8a1wlkub9302nauds` の公開QAで、旧 `astrodemo-svc` とDocker labelの `paradigm-demos` nginxがdemo hostを横取りする競合、およびdemo DNSのCloudflare proxy無効を検出した。正式releaseのatomic route refreshでdemo hostを現行 `paradigmhp-svc` へ固定し、旧router/serviceと旧container 2種を停止、post-deploy gateで再起動・origin-lock欠落を不合格にした。Cloudflare proxyを有効化し、route修正deployment `q12blc3hr4hu2jsxkj4hp6d5` とDeepSeek V4 Pro固定deployment `zh6sutnbodq7j5guxa1tymqp` はfinished、DB **82/82**、5 app hostの直origin 403、Sales health、post-deploy release doctorをpass。稼働containerの `DEMO_LLM_MODEL=deepseek-v4-pro` も実値確認した。旧署名URLから `https://demo.paradigmjp.com/ja/oikawa-yogashiten-premium-v2-review` へ307 + 307、Home / About / Services / Contact / Works / News / FAQ / Recruit / Privacy / Terms / Commerceは **11/11 HTTP 200**。未署名は実デモ本文なし・private no-store・noindex、無効token 401、旧長形式URL 308、batch API未認証401、管理画面はログイン本文のみを確認した。
 
 ### 2026-07-13 Japan Entry意思決定フローの時系列可視化（本番反映済み）
 - 国際向けホーム、料金、サービスページへ `Contact → Materials & fit call → Application & scope → Setup & launch → Operate & scale` の5段階タイムラインを追加。問い合わせ、資料・打ち合わせ、申込、固定スコープのセットアップ、公開後の拡張を一つの視線で追えるようにした。

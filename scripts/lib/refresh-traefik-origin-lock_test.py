@@ -149,6 +149,12 @@ class OriginLockReleaseTests(unittest.TestCase):
         )
         for router_name in ("paradigmhp-https", "keystatic-https"):
             self.assertEqual(config["routers"][router_name]["priority"], 1000)
+        for router_name in ("paradigmhp-demo-http", "paradigmhp-demo-https"):
+            router = config["routers"][router_name]
+            self.assertEqual(router["rule"], "Host(`demo.paradigmjp.com`)")
+            self.assertEqual(router["service"], "paradigmhp-svc")
+            self.assertEqual(router["priority"], 1000)
+            self.assertEqual(router["middlewares"][0], ORIGIN_LOCK.MIDDLEWARE_NAME)
         backups = list(self.root.glob("paradigmjp.yml.bak-release-*-origin-lock"))
         self.assertEqual(len(backups), 1)
         self.assertEqual(stat.S_IMODE(backups[0].stat().st_mode), 0o600)
@@ -181,6 +187,39 @@ class OriginLockReleaseTests(unittest.TestCase):
                 now=self.now,
             )
         self.assertEqual(self.route_file.read_bytes(), original)
+
+    def test_apply_retires_the_legacy_astro_demo_route(self) -> None:
+        config = yaml.safe_load(self.route_file.read_text(encoding="utf-8"))
+        config["http"]["routers"]["astrodemo-http"] = {
+            "entryPoints": ["http"],
+            "rule": "Host(`demo.paradigmjp.com`)",
+            "service": "astrodemo-svc",
+        }
+        config["http"]["routers"]["astrodemo-https"] = {
+            "entryPoints": ["https"],
+            "rule": "Host(`demo.paradigmjp.com`)",
+            "service": "astrodemo-svc",
+        }
+        config["http"]["services"]["astrodemo-svc"] = {
+            "loadBalancer": {"servers": [{"url": "http://astro-demo:4321"}]},
+        }
+        self.route_file.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+        self.prepare()
+
+        ORIGIN_LOCK.apply_cached_origin_lock(
+            self.route_file,
+            self.cache_file,
+            "app-uuid",
+            "app-container",
+            "192.0.2.201",
+            alias_discoverer=lambda _container: [],
+            now=self.now + timedelta(minutes=5),
+        )
+
+        updated = yaml.safe_load(self.route_file.read_text(encoding="utf-8"))["http"]
+        self.assertNotIn("astrodemo-http", updated["routers"])
+        self.assertNotIn("astrodemo-https", updated["routers"])
+        self.assertNotIn("astrodemo-svc", updated["services"])
 
 
 if __name__ == "__main__":

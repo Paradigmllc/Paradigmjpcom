@@ -40,6 +40,7 @@ CACHE_MAX_AGE_SECONDS = 6 * 60 * 60
 MIDDLEWARE_NAME = "paradigm-cloudflare-only"
 MAIN_HOSTS = {"paradigmjp.com", "www.paradigmjp.com"}
 KEYSTATIC_HOST = "keystatic.paradigmjp.com"
+DEMO_HOST = "demo.paradigmjp.com"
 
 
 def validate_cloudflare_ranges(ipv4: object, ipv6: object) -> tuple[list[str], list[str]]:
@@ -294,6 +295,7 @@ def apply_cached_origin_lock(
     tick = chr(96)
     main_rule = f"Host({tick}paradigmjp.com{tick}) || Host({tick}www.paradigmjp.com{tick})"
     keystatic_rule = f"Host({tick}{KEYSTATIC_HOST}{tick})"
+    demo_rule = f"Host({tick}{DEMO_HOST}{tick})"
 
     http_router["rule"] = main_rule
     http_router["priority"] = 1000
@@ -319,6 +321,30 @@ def apply_cached_origin_lock(
         "service": "paradigmhp-svc",
     })
     routers["keystatic-https"] = keystatic_https
+
+    demo_http = copy.deepcopy(http_router)
+    demo_http.update({
+        "rule": demo_rule,
+        "priority": 1000,
+        "middlewares": prepend_once(middleware_list(demo_http), MIDDLEWARE_NAME),
+        "service": "paradigmhp-svc",
+    })
+    routers["paradigmhp-demo-http"] = demo_http
+
+    demo_https = copy.deepcopy(https_router)
+    demo_https.update({
+        "rule": demo_rule,
+        "priority": 1000,
+        "middlewares": prepend_once(middleware_list(demo_https), MIDDLEWARE_NAME),
+        "service": "paradigmhp-svc",
+    })
+    routers["paradigmhp-demo-https"] = demo_https
+
+    # Retire the former static Astro route. Keeping a second router for the
+    # same host makes Traefik selection ambiguous after each release.
+    routers.pop("astrodemo-http", None)
+    routers.pop("astrodemo-https", None)
+    services.pop("astrodemo-svc", None)
 
     aliases = alias_discoverer(new_container)
     if aliases:
@@ -348,7 +374,20 @@ def apply_cached_origin_lock(
         raise RuntimeError("Rendered upstream failed validation")
     if reparsed["middlewares"][MIDDLEWARE_NAME]["ipAllowList"]["sourceRange"] != cloudflare_ranges:
         raise RuntimeError("Rendered cached Cloudflare range set failed validation")
-    protected = ["paradigmhp-http", "paradigmhp-https", "keystatic-http", "keystatic-https"]
+    for name in ("paradigmhp-demo-http", "paradigmhp-demo-https"):
+        demo_router = reparsed["routers"].get(name, {})
+        if demo_router.get("rule") != demo_rule or demo_router.get("service") != "paradigmhp-svc":
+            raise RuntimeError("Rendered demo host route failed validation")
+    if any(router.get("service") == "astrodemo-svc" for router in reparsed["routers"].values()):
+        raise RuntimeError("Rendered route still contains the legacy Astro demo service")
+    protected = [
+        "paradigmhp-http",
+        "paradigmhp-https",
+        "keystatic-http",
+        "keystatic-https",
+        "paradigmhp-demo-http",
+        "paradigmhp-demo-https",
+    ]
     if aliases:
         protected.extend(["paradigmhp-origin-alias-http", "paradigmhp-origin-alias-https"])
     for name in protected:
@@ -373,7 +412,7 @@ def apply_cached_origin_lock(
         "origin_lock_verified": True,
         "changed": changed,
         "cloudflare_range_count": len(cloudflare_ranges),
-        "protected_alias_count": len(aliases) + 3,
+        "protected_alias_count": len(aliases) + 4,
     }
 
 
