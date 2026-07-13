@@ -1,3 +1,9 @@
+## CURRENT STATUS - 2026-07-14 共通機会損失セクションの背景面再設計（実装・型/品質検査済み / 本番反映待ち）
+
+### 2026-07-14 International urgency section surface refresh
+- `JapanMarketUrgencyBar` の共通セクションを、本文直後の暗い背景と混ざらない `paper-deep` 面へ変更。境界線を上下に追加し、青のラベル／ハイライトと濃色CTAで情報階層と可読性を揃えた。
+- 検査: `npm exec -- tsc --noEmit`、対象ESLint、`npm run quality:guard`（0 errors / 59 warnings）、`git diff --check` pass。本番反映後に実ブラウザで背景面とモバイル表示を確認する。
+
 ## CURRENT STATUS - 2026-07-14 Packageヘッダーナビ追加（本番反映・公開QA済み）
 
 ### 2026-07-14 Japan Entry Packageのヘッダー導線追加
