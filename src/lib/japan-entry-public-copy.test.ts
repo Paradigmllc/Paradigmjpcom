@@ -66,6 +66,18 @@ describe("public English Japan Entry copy", () => {
     expect(jaMessages.home.trustPanel.cards).toHaveLength(4)
   })
 
+  it("adds human context without presenting stock imagery as proof", () => {
+    expect(messages.home.visualContext.slides).toHaveLength(3)
+    expect(jaMessages.home.visualContext.slides).toHaveLength(3)
+    expect(messages.home.visualContext.disclosure).toMatch(/stock imagery/i)
+    expect(messages.home.visualContext.desc).toMatch(/not client case studies/i)
+    expect(jaMessages.home.visualContext.disclosure).toContain("ストック素材")
+    for (const slide of messages.home.visualContext.slides) {
+      expect(slide.alt.trim()).not.toBe("")
+      expect(slide.body.trim()).not.toBe("")
+    }
+  })
+
   it("keeps the legacy homeEn catalog identical across en and ja bundles", () => {
     expect(jaMessages.homeEn).toEqual(messages.homeEn)
 

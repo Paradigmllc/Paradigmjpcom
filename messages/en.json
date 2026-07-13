@@ -1395,6 +1395,32 @@
         }
       ]
     },
+    "visualContext": {
+      "eyebrow": "A closer look at the operating model",
+      "title": "People, process, and a visible handover.",
+      "desc": "The visuals below make the working relationship easier to picture: a clear owner, focused collaboration, and a handover your team can run. They are stock images for context, not client case studies or performance proof.",
+      "slides": [
+        {
+          "title": "A named operator, not a black box",
+          "body": "You know who owns the next step, what is waiting on your approval, and where the current work lives.",
+          "alt": "Smiling professional standing in a bright office workspace"
+        },
+        {
+          "title": "Focused collaboration across time zones",
+          "body": "The package is designed for concise written decisions, visible tasks, and fewer meetings that do not move the work forward.",
+          "alt": "Diverse colleagues collaborating at laptops in a bright office"
+        },
+        {
+          "title": "A handover that survives launch day",
+          "body": "The final output includes the agreed operating notes, access owners, measurement baseline, and the next decision—not just a launch screenshot.",
+          "alt": "Team reviewing a project plan during a bright office presentation"
+        }
+      ],
+      "previous": "Previous visual",
+      "next": "Next visual",
+      "slideLabel": "Visual {current} of {total}",
+      "disclosure": "Stock imagery from Pexels. Used for operating context only; it does not depict Paradigm staff, clients, or past results."
+    },
     "journey": {
       "eyebrow": "The decision path",
       "title": "From first question to a Japan channel your team can run.",
