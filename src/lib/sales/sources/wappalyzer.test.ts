@@ -41,7 +41,7 @@ describe("detectTechStack", () => {
       vi.fn(async () =>
         new Response(
           [
-            '<div class="shopify-buy"></div>',
+            '<div class="shopify-buy">Visit our New York store. Prices are shown in USD.</div>',
             '<script src="https://analytics.tiktok.com/i18n/pixel/events.js"></script>',
             "<script>ttq.load('PIXEL_ID'); window._learnq = window._learnq || [];</script>",
             '<script src="https://static.klaviyo.com/onsite/js/klaviyo.js"></script>',
@@ -56,5 +56,7 @@ describe("detectTechStack", () => {
     expect(names).toContain("Shopify (JP detection)")
     expect(names).toContain("TikTok Pixel")
     expect(names).toContain("Klaviyo")
+    expect(result.evidenceText).toContain("New York store")
+    expect(result.evidenceText).not.toContain("ttq.load")
   })
 })

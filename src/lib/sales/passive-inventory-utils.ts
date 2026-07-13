@@ -47,12 +47,27 @@ const COUNTRY_TEXT_RULES: Record<string, Array<{ type: string; pattern: RegExp; 
   US: [
     { type: "phone", pattern: /\+1[^0-9]|\b1-\d{3}/i, confidence: 78 },
     { type: "currency", pattern: /\bUSD\b|\$\s?\d{2,}|US Dollar/i, confidence: 72 },
-    { type: "address", pattern: /United States|New York|Los Angeles|Chicago|Houston|Phoenix/i, confidence: 74 },
+    { type: "address", pattern: /United States|New York|Los Angeles|Chicago|Houston|Phoenix|San Francisco|Seattle|Miami|Atlanta|Boston|Dallas|Denver|Portland|Austin|San Diego/i, confidence: 74 },
   ],
   DE: [
     { type: "phone", pattern: /\+49|0049/i, confidence: 92 },
     { type: "currency", pattern: /\bEUR\b|€\s?\d{2,}/i, confidence: 76 },
     { type: "address", pattern: /Germany|Deutschland|Berlin|Munich|Muenchen|Hamburg|Frankfurt|Koeln|Cologne/i, confidence: 84 },
+  ],
+  NL: [
+    { type: "phone", pattern: /\+31|0031/i, confidence: 90 },
+    { type: "currency", pattern: /\bEUR\b|€\s?\d{2,}/i, confidence: 76 },
+    { type: "address", pattern: /Netherlands|Nederland|Amsterdam|Rotterdam|Utrecht|Eindhoven|The Hague|Den Haag|Groningen/i, confidence: 84 },
+  ],
+  SG: [
+    { type: "phone", pattern: /\+65|0065/i, confidence: 90 },
+    { type: "currency", pattern: /\bSGD\b|S\$\s?\d{2,}|Singapore Dollar/i, confidence: 82 },
+    { type: "address", pattern: /Singapore/i, confidence: 86 },
+  ],
+  AE: [
+    { type: "phone", pattern: /\+971|00971/i, confidence: 92 },
+    { type: "currency", pattern: /\bAED\b|UAE Dirham/i, confidence: 84 },
+    { type: "address", pattern: /United Arab Emirates|UAE|Dubai|Abu Dhabi|Sharjah|Ajman|Ras Al Khaimah/i, confidence: 86 },
   ],
   FR: [
     { type: "phone", pattern: /\+33|0033/i, confidence: 92 },

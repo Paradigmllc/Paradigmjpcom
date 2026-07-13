@@ -29,6 +29,9 @@ const COUNTRY_TLD_PATTERNS: Record<string, string[]> = {
   GB: ["*.uk", "*.co.uk", "*.org.uk", "*.ltd.uk"],
   AU: ["*.au", "*.com.au", "*.net.au", "*.org.au"],
   CA: ["*.ca", "*.com", "*.org"],
+  NL: ["*.nl"],
+  SG: ["*.sg", "*.com.sg"],
+  AE: ["*.ae", "*.co.ae"],
   DE: ["*.de", "*.co.de"],
   FR: ["*.fr", "*.co.fr"],
   TH: ["*.th", "*.co.th", "*.or.th", "*.go.th"],
@@ -50,7 +53,7 @@ const COUNTRY_SIGNAL_RULES: Record<string, Array<{ type: string; pattern: RegExp
   US: [
     { type: "phone", pattern: /\+1[^0-9]|\b1-\d{3}/i, confidence: 78 },
     { type: "currency", pattern: /\bUSD\b|\$\s?\d{2,}|US Dollar/i, confidence: 72 },
-    { type: "address", pattern: /United States|New York|Los Angeles|Chicago|Houston|Phoenix/i, confidence: 74 },
+    { type: "address", pattern: /United States|New York|Los Angeles|Chicago|Houston|Phoenix|San Francisco|Seattle|Miami|Atlanta|Boston|Dallas|Denver|Portland|Austin|San Diego/i, confidence: 74 },
   ],
   GB: [
     { type: "phone", pattern: /\+44|0044|\b0\d{3}\s?\d{3}\s?\d{3}\b/i, confidence: 88 },
@@ -66,6 +69,21 @@ const COUNTRY_SIGNAL_RULES: Record<string, Array<{ type: string; pattern: RegExp
     { type: "phone", pattern: /\+1[^0-9]|\b1-\d{3}/i, confidence: 76 },
     { type: "currency", pattern: /\bCAD\b|C\$\s?\d{2,}|Canadian Dollar/i, confidence: 78 },
     { type: "address", pattern: /Canada|Toronto|Vancouver|Montreal|Calgary|Ottawa|Edmonton/i, confidence: 82 },
+  ],
+  NL: [
+    { type: "phone", pattern: /\+31|0031/i, confidence: 90 },
+    { type: "currency", pattern: /\bEUR\b|€\s?\d{2,}/i, confidence: 76 },
+    { type: "address", pattern: /Netherlands|Nederland|Amsterdam|Rotterdam|Utrecht|Eindhoven|The Hague|Den Haag|Groningen/i, confidence: 84 },
+  ],
+  SG: [
+    { type: "phone", pattern: /\+65|0065/i, confidence: 90 },
+    { type: "currency", pattern: /\bSGD\b|S\$\s?\d{2,}|Singapore Dollar/i, confidence: 82 },
+    { type: "address", pattern: /Singapore/i, confidence: 86 },
+  ],
+  AE: [
+    { type: "phone", pattern: /\+971|00971/i, confidence: 92 },
+    { type: "currency", pattern: /\bAED\b|UAE Dirham/i, confidence: 84 },
+    { type: "address", pattern: /United Arab Emirates|UAE|Dubai|Abu Dhabi|Sharjah|Ajman|Ras Al Khaimah/i, confidence: 86 },
   ],
   DE: [
     { type: "phone", pattern: /\+49|0049/i, confidence: 92 },
