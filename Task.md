@@ -1,5 +1,13 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
+### 2026-07-13 SMBデモ量産・DeepSeek Prompt Caching最適化（本番反映・実測済み / 送信停止）
+- DeepSeek V4 Proへ渡す共通の品質規則・JSON schema・禁止事項をcompany固有データより前へ固定し、企業ごとに変わる名称・所在地・事実・design recipeを末尾へ分離した。DeepSeekのprefix cacheが企業をまたいで再利用できる構造に変更し、公式usageの `prompt_cache_hit_tokens` / `prompt_cache_miss_tokens` を正規化して生成payloadへ保存する。
+- LLMはHome / About / Servicesの創造性が必要な中核コピーだけを担当する。FAQ / Contact、法務、アクセス、営業時間、SNS、フォーム、Google Mapsは審査済みmanifestから決定論的に構築し、LLM出力対象から外した。品質ゲート、事実grounding、3デザイン候補、private review、外部送信停止は維持する。
+- Cafe SOSOMUの本番連続生成で、1回目は入力 **1,484 tokens / hit 0 / miss 1,484 / 18.0秒**、2回目は **hit 1,408 / miss 76 / cache hit ratio 94.88% / 14.4秒**。両方とも品質score **100**、`private_review`、同じ11ページ構成で合格した。
+- 再生成後の実ブラウザQAは、PCで禁止コピー0・横溢れ0、ContactにGoogle Maps 1・フォーム6項目・Instagram 1・送信停止表示あり。mobile 390x844も横溢れ0、console error / warning 0。デモは `https://demo.paradigmjp.com/ja/demo-only-7f72cffa1689994f-demo` の非公開レビュー状態を維持する。
+- 品質強化はPR **#109 / #111 / #112 / #114 / #116 / #118 / #122 / #123 / #125 / #129**、Prompt Caching最適化はPR **#131**としてmainへmerge。関連Vitest **5 files / 22 tests pass**、TypeScript・対象ESLint pass、quality guard **0 errors / 59 existing warnings**。正式deployment `gkfkis74g004x0mx2wf82lg3` はfinishedし、DB **83/83**、Traefik / Cloudflare / Realtime / Twenty、Sales health HTTP 200 JSON ok、post-deploy release gateを通過した。
+- メール、電話、郵送、フォーム送信、Twenty同期、営業通知、候補自動収集は一切実行していない。量産は審査済みmanifest投入、最大3社のbounded drain、品質fail-closed、private reviewの順で行い、情報不足企業は薄いページを公開せずレビュー待ちに止める。
+
 ### 2026-07-13 Japan Entry Package詳細ページ（本番反映・公開QA済み）
 - `/[locale]/package` を追加。国際ロケールでは英語の正本コピーを表示し、JAは国内向け`/ja/services`へリダイレクトしてJapan Entryを混在させない。
 - $12,000セットアップの内訳を7ワークストリーム（市場・提案整理、LP/HPローカライズ、SNS初期設定、市場・競合レポート、信頼・法規制適用可能性、問い合わせ・決済、公開運用・引き継ぎ）へ分解。各項目に具体的な納品物を記載した。
