@@ -1,11 +1,11 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
-### 2026-07-13 Japan Entry生成文面のTwenty自動同期（実装・ローカル検証済み / 正式release待ち）
+### 2026-07-13 Japan Entry生成文面のTwenty自動同期（本番反映済み / 送信停止）
 - Japan Entry投影とDeepSeek V4 Pro文面を保存した直後、同じ企業のTwentyカルテを自動同期する。同期対象は既存の企業カルテ要約・次アクションで、推定日本月間アクセス、推定月間機会損失、6/12/24か月ROI、文面品質・安全性、URLなしの初回フォーム文面全文を表示する。
 - Twenty上では必ず `未送信・要レビュー` と表示し、フォーム送信処理には接続しない。Japan Entry生成時の同期は企業ホーム更新だけに限定し、商談レコードや商材推薦を自動作成しない。既存の通常Twenty同期は従来どおり商談同期を維持する。
 - 同期結果を `sales_companies.meta.japan_entry_twenty_sync` に原子的保存する。成功は `synced`、資格情報未設定は `not_configured`、Twenty API障害は `failed` とし、Twenty側の既存 `sales_sync_logs` にも `karte_home_sync` の成功・失敗を残す。生成済み文面は同期障害で削除せず、同じ投影APIの `PUT` から最新保存済み文面だけを安全に再同期できる。
 - 投影生成APIは文面保存とTwenty同期が両方成功した場合のみHTTP 201を返し、文面保存済みでもTwenty同期または同期状態保存に問題があればHTTP 207で詳細を返す。黙って完全成功扱いにしない。
-- 検証: 対象Vitest **5 files / 21 tests pass**、変更ファイルと依存グラフのTypeScript検査pass、変更対象ESLint pass、`npm run quality:guard` **0 errors / 54 warnings**、`git diff --check` pass。フォーム送信、候補収集、本番Twentyへのテスト企業作成は未実行。
+- 検証: 対象Vitest **5 files / 21 tests pass**、変更ファイルと依存グラフのTypeScript検査pass、変更対象ESLint pass、`npm run quality:guard` **0 errors / 54 warnings**、`git diff --check` pass。PR **#101**をmainへmergeし、正式deployment `pkf4kuu8ds7da6fp5fhic12c` はfinished。DB **82/82**、Traefik/Cloudflare、公開smoke、Twenty HTTP 200・worker restart 0、Sales health HTTP 200 / JSON ok、post-deploy release gateを通過した。フォーム送信、候補収集、本番Twentyへのテスト企業作成は未実行。
 
 ### 2026-07-13 全ページの視覚証拠・アニメーション強化（本番反映・公開QA済み）
 - 共通 `PageHero` に、公開実績を捏造しないCSSベースの運用パスビジュアル（Signal → Scope → Launch）を追加。20ページのヒーローで同じ視覚言語を再利用し、`prefers-reduced-motion` では静止表示へ切り替える。
