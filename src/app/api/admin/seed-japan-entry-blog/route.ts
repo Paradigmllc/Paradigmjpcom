@@ -1,5 +1,5 @@
 /**
- * Seed the maintained English and Japanese Japan Entry editorial sets.
+ * Seed the maintained English Japan Entry editorial set.
  *
  * This is an authenticated, idempotent admin action. It is intentionally
  * separate from the legacy all-content seed so publishing these articles
@@ -8,7 +8,6 @@
 
 import { NextResponse } from "next/server"
 import { JAPAN_ENTRY_BLOG_POSTS, textToLexical } from "@/lib/japan-entry-blog"
-import { JAPAN_ENTRY_BLOG_POSTS_JA } from "@/lib/japan-entry-blog-ja"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
@@ -17,7 +16,6 @@ type SeedRequest = { confirm?: boolean; dryRun?: boolean }
 
 const EDITORIAL_POSTS = [
   ...JAPAN_ENTRY_BLOG_POSTS.map((post) => ({ locale: "en" as const, post, publishedAt: post.publishedAt })),
-  ...JAPAN_ENTRY_BLOG_POSTS_JA.map((post) => ({ locale: "ja" as const, post, publishedAt: post.date })),
 ]
 
 export async function POST(req: Request) {
@@ -50,7 +48,8 @@ export async function POST(req: Request) {
       import("@payload-config"),
     ])
     const payload = await getPayload({ config })
-    const results = await Promise.all(EDITORIAL_POSTS.map(async (editorial) => {
+    const results: Array<{ slug: string; action: "created" | "updated" | "error"; error?: string }> = []
+    for (const editorial of EDITORIAL_POSTS) {
       const { locale, post } = editorial
       try {
         const existing = await payload.find({
@@ -80,7 +79,8 @@ export async function POST(req: Request) {
             data,
             locale,
           } as unknown as Parameters<typeof payload.update>[0])
-          return { slug: post.slug, action: "updated" as const }
+          results.push({ slug: post.slug, action: "updated" })
+          continue
         }
 
         await payload.create({
@@ -88,13 +88,13 @@ export async function POST(req: Request) {
           data,
           locale,
         } as unknown as Parameters<typeof payload.create>[0])
-        return { slug: post.slug, action: "created" as const }
+        results.push({ slug: post.slug, action: "created" })
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : String(error)
         console.error(`[seed-japan-entry-blog] ${post.slug} failed`, error)
-        return { slug: post.slug, action: "error" as const, error: message }
+        results.push({ slug: post.slug, action: "error", error: message })
       }
-    }))
+    }
 
     const errors = results.filter((result) => result.action === "error")
     return NextResponse.json({

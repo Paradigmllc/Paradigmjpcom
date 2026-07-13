@@ -1012,22 +1012,22 @@ async function seedMarketingHomepages(envs) {
   console.log("Japanese and English homepage CMS publish OK")
 }
 
-async function seedJapanEntryBlog(envs) {
+async function seedEnglishJapanEntryBlog(envs) {
   const secret = envs.ADMIN_SCRIPT_SECRET
   if (typeof secret !== "string" || secret.trim().length < 16) {
-    throw new Error("ADMIN_SCRIPT_SECRET must be configured before publishing the Japan Entry editorial blog")
+    throw new Error("ADMIN_SCRIPT_SECRET must be configured before publishing the English Japan Entry editorial blog")
   }
 
   const { result } = await postAdminSeed(
     "https://paradigmjp.com/api/admin/seed-japan-entry-blog",
     secret,
     { confirm: true },
-    "Japan Entry editorial blog seed",
+    "English Japan Entry blog seed",
   )
   if (result?.errors?.length > 0) {
-    throw new Error(`Japan Entry editorial blog publish failed: ${result.errors.join("; ")}`)
+    throw new Error(`English Japan Entry blog publish failed: ${result.errors.join("; ")}`)
   }
-  console.log(`Japan Entry editorial blog publish OK (${result.total} articles; ${result.created} created, ${result.updated} updated)`)
+  console.log(`English Japan Entry blog publish OK (${result.total} articles; ${result.created} created, ${result.updated} updated)`)
 }
 
 function readOriginLockHelper() {
@@ -1217,7 +1217,7 @@ async function main() {
     await waitDeploy(uuid)
     refreshManualTraefikRoute()
     await seedMarketingHomepages(envs)
-    await seedJapanEntryBlog(envs)
+    await seedEnglishJapanEntryBlog(envs)
   } else {
     console.log("Dry/skip mode: skipped Coolify deploy")
   }
