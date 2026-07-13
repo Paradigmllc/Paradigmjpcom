@@ -16,7 +16,7 @@ export type JapanMarketUrgencyCopy = {
 export default function JapanMarketUrgencyBar({ copy }: { copy: JapanMarketUrgencyCopy }) {
   return (
     <section
-      className="relative mt-16 overflow-hidden border-b border-paradigm-line bg-paradigm-ink px-5 pb-7 pt-5 text-paradigm-paper sm:mt-20 sm:px-8 sm:pb-9 sm:pt-6 lg:px-12"
+      className="relative overflow-hidden border-b border-paradigm-line bg-paradigm-ink px-5 py-7 text-paradigm-paper sm:px-8 sm:py-9 lg:px-12"
       aria-labelledby="japan-market-urgency-title"
       data-testid="japan-market-urgency"
     >

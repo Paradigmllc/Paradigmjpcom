@@ -152,7 +152,15 @@ export default function ConditionalSiteChrome({
         <ScrollProgress />
         <LuxuryLoader />
         <SiteHeader nav={headerNav} announcementActive={announcementActive} />
-        {marketUrgencyActive && <JapanMarketUrgencyBar copy={marketUrgency!} />}
+        {marketUrgencyActive && (
+          <>
+            <div
+              aria-hidden="true"
+              className={announcementActive ? "h-24 md:h-28" : "h-16 md:h-20"}
+            />
+            <JapanMarketUrgencyBar copy={marketUrgency!} />
+          </>
+        )}
         <SiteWrapper marketUrgencyActive={marketUrgencyActive}>
           <PageTransition>{children}</PageTransition>
         </SiteWrapper>
