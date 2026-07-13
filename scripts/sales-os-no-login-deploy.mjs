@@ -1235,7 +1235,7 @@ async function main() {
     { url: "https://paradigmjp.com/api/ready" },
     { url: "https://paradigmjp.com/ja/admin/sales" },
     { url: "https://paradigmjp.com/ja" },
-    { url: "https://paradigmjp.com/ja/blog", markers: ["日本進出のキックオフ前に確認する5つのこと", "申込み後に何が起きるか"] },
+    { url: "https://paradigmjp.com/ja/blog", markers: ["GEO対策とは？AI検索時代のSEO戦略を解説", "MEO対策の基本と成功のポイント"] },
     {
       url: "https://paradigmjp.com/en",
       markers: [
