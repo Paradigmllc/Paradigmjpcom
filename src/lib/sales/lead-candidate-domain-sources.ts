@@ -4,6 +4,7 @@ import { fetchCrtshDomains } from "./sources/crtsh-bulk"
 import { fetchTrancoTopDomains } from "./sources/tranco-top-domains"
 import { fetchPassiveInventoryDomains } from "./passive-inventory"
 import { fetchHttpArchiveCandidates, toTechItems } from "./sources/http-archive-bigquery"
+import { fetchBrowserFootprintDomains } from "./sources/browser-footprint-domains"
 
 export interface CandidateDomainSourceSummary {
   source: string
@@ -112,6 +113,40 @@ export async function fetchLeadCandidateDomains(countryCode: string, limit: numb
     } catch (e) {
       console.error("[lead-candidate-domain-sources] passive_inventory failed:", e instanceof Error ? e.message : String(e))
       failures.push({ key: "passive_inventory", reason: e instanceof Error ? e.message : "passive inventory failed with retries" })
+    }
+    await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
+    if (sourceByDomain.size >= limit) return buildResult({ sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
+  }
+
+  // Existing self-hosted browser search finds technology-specific SMB candidates
+  // without promoting raw search results into sales_companies.
+  if (options?.technology) {
+    try {
+      const browser = await withRetry("browser_footprint", () => fetchBrowserFootprintDomains({
+        countryCode,
+        technology: options.technology as string,
+        limit: Math.min(limit, 200),
+      }), 1)
+      sourceStats.push({
+        source: "browser_footprint",
+        pattern: `${countryCode}:${options.technology}`,
+        fetched: browser.domains.length,
+        total: browser.total,
+        ok: browser.ok,
+        error: browser.errors.length > 0 ? browser.errors.join("; ") : undefined,
+      })
+      addDomains({ sourceByDomain, source: "browser_footprint", domains: browser.domains, limit })
+      for (const domain of browser.domains) {
+        evidenceByDomain.set(domain, {
+          discovery_technology_hint: options.technology,
+          discovery_queries: browser.queries,
+          skip_active_verification: false,
+        })
+      }
+      if (!browser.ok) failures.push({ key: "browser_footprint", reason: browser.errors.join("; ") || "Browser footprint search returned no domains" })
+    } catch (error) {
+      console.error("[lead-candidate-domain-sources] browser_footprint failed:", error)
+      failures.push({ key: "browser_footprint", reason: error instanceof Error ? error.message : "Browser footprint search failed" })
     }
     await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
     if (sourceByDomain.size >= limit) return buildResult({ sourceByDomain, evidenceByDomain, failures, sourceStats, limit })

@@ -6,6 +6,7 @@
  */
 
 const CMS_FOOTPRINTS: Record<string, string[]> = {
+  Shopify: ['"cdn.shopify.com"', '"shopify-section"', '"myshopify.com"'],
   WordPress: ['"Powered by WordPress"', '"Proudly powered by WordPress"', "wp-content"],
   Wix: ['"Made with Wix"', '"Built with Wix"', "wixstatic.com"],
   Webflow: ['"Made in Webflow"', '"Powered by Webflow"', "webflow.io"],
@@ -60,15 +61,18 @@ const CITY_MAP: Record<string, string[]> = {
     "San Francisco", "Seattle", "Miami", "Atlanta", "Boston",
     "Dallas", "Denver", "Portland", "Austin", "San Diego",
   ],
+  CA: ["Toronto", "Vancouver", "Montreal", "Calgary", "Ottawa", "Edmonton"],
   GB: ["London", "Manchester", "Birmingham", "Leeds", "Glasgow", "Liverpool", "Bristol", "Edinburgh"],
   DE: ["Berlin", "Munich", "Hamburg", "Frankfurt", "Cologne", "Stuttgart", "Dusseldorf"],
   FR: ["Paris", "Marseille", "Lyon", "Toulouse", "Nice", "Bordeaux", "Lille"],
+  NL: ["Amsterdam", "Rotterdam", "Utrecht", "Eindhoven", "The Hague", "Groningen"],
   KR: ["Seoul", "Busan", "Incheon", "Daegu", "Daejeon", "Gwangju"],
   TW: ["Taipei", "Taichung", "Kaohsiung", "Tainan", "Hsinchu"],
   TH: ["Bangkok", "Chiang Mai", "Phuket", "Pattaya", "Khon Kaen", "Krabi", "Hua Hin"],
   ID: ["Jakarta", "Surabaya", "Bandung", "Medan", "Semarang", "Yogyakarta"],
   SG: ["Singapore"],
   AU: ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide", "Gold Coast"],
+  AE: ["Dubai", "Abu Dhabi", "Sharjah", "Ajman", "Ras Al Khaimah"],
   CH: ["Zurich", "Geneva", "Basel", "Bern", "Lausanne", "Lucerne", "Winterthur"],
   IL: ["Tel Aviv", "Jerusalem", "Haifa", "Petah Tikva", "Netanya", "Eilat", "Herzliya"],
   ZA: ["Johannesburg", "Cape Town", "Durban", "Pretoria", "Port Elizabeth", "Bloemfontein"],
