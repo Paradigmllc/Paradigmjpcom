@@ -1,5 +1,11 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
+### 2026-07-13 国際向けJapan市場機会損失バナー（本番反映・公開QA済み）
+- 国際ロケールの通常公開ページ上部へ、`THE OPPORTUNITY COST OF WAITING`、日本を後回しにする機会損失、USD/EUR企業にとっての円安局面のコストウィンドウ、固定`$12K`スコープへのCTAをまとめた共通バナーを追加。`/en`、`/ko`、Services、Pricing、About、FAQ、Blogなどで同じメッセージを表示する。
+- 「世界で3番目」を固定断定するコピーは採用しなかった。GDP・PPP・消費市場で順位の定義が異なり、一次情報なしに順位を煽ると信頼と法務境界を損なうため、世界有数の市場という表現に留め、FX変動・成果非保証・根拠先行を明記した。
+- `/ja`には表示せず、`/legal`、`/privacy`、`/terms`、`/refund`にも表示しない。国内向け一般サイトと法務面を煽り文句から分離した。
+- 検証: JSON parse、TypeScript、対象ESLint、関連Vitest **15 tests pass**、quality guard **0 errors / 59 warnings**、production build **396/396 pages**、`git diff --check` pass。PR **#132**をmainへmergeし、正式 `npm run release:prod` のdeployment **l10zpkoi0diaeaf4ldheqss5** はfinished。DB **83/83**、Traefik/Cloudflare、Realtime、Twenty、Sales health、post-deploy release gateを通過した。本番HTMLで国際ページの`japan-market-urgency`と本文marker、JAページの非表示、EN法務・プライバシーの非表示を確認した。
+
 ### 2026-07-13 Japan Entry Package詳細ページ（本番反映・公開QA済み）
 - `/[locale]/package` を追加。国際ロケールでは英語の正本コピーを表示し、JAは国内向け`/ja/services`へリダイレクトしてJapan Entryを混在させない。
 - $12,000セットアップの内訳を7ワークストリーム（市場・提案整理、LP/HPローカライズ、SNS初期設定、市場・競合レポート、信頼・法規制適用可能性、問い合わせ・決済、公開運用・引き継ぎ）へ分解。各項目に具体的な納品物を記載した。
