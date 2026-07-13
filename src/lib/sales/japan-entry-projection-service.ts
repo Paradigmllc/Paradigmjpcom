@@ -42,6 +42,21 @@ function visibilityFromMeta(meta: JsonRecord): MarketVisibilityIndex | null {
   return candidate as unknown as MarketVisibilityIndex
 }
 
+function productContextFromMeta(meta: JsonRecord): string | null {
+  const scan = asRecord(meta.scan)
+  const websiteAssets = asRecord(meta.website_assets)
+  const candidates = [
+    scan?.html_description,
+    meta.html_description,
+    websiteAssets?.description,
+    websiteAssets?.summary,
+  ]
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim().length >= 12) return candidate.trim().slice(0, 600)
+  }
+  return null
+}
+
 export async function getLatestJapanEntryProjection(companyId: string): Promise<{
   ok: boolean
   projection: StoredJapanEntryProjection | null
@@ -96,6 +111,7 @@ export async function generateJapanEntryProjection(companyId: string, options: G
   const personalized = await generatePersonalizedJapanEntryMessage({
     companyName: company.company_name,
     industry: company.industry,
+    productContext: productContextFromMeta(company.meta ?? {}),
     targetCountry: company.target_country ?? null,
     businessModel: projection.assumptions.businessModel,
     projection,

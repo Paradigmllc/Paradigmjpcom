@@ -58,10 +58,13 @@ const audit = {
 }
 
 const messages = [
-  "Hello Example team — the public pages we reviewed do not show customer-facing JPY pricing or Japan-local payment options. For a Japanese buyer, that creates a concrete purchase decision before localization becomes a broader project. Our Japan Entry Package is $12,000 paid upfront, with the first six months of managed support included at no additional monthly charge. Would testing that purchase path be relevant this quarter?",
-  "Example’s public storefront gives buyers a clear product path, but the checked pages do not show JPY prices or Japan-specific delivery terms. That makes the first Japan question less about a full launch and more about whether local customers can buy with confidence. The Japan Entry Package is $12,000 paid upfront, with the first six months of managed support included. Would a focused validation of that path be useful now?",
-  "The public customer journey for Example does not currently show a Japanese-language path or Japan-local payment references on the pages reviewed. Those are small but consequential signals when a buyer is deciding whether the store is meant for them. We run a $12,000 Japan Entry Package, paid upfront, with the first six months of managed support included. Is closing those two gaps a current priority?",
+  "Hello, I’m Sato from Paradigm LLC, based in Japan. We help overseas companies enter the Japanese market. I came across Example’s subscription analytics platform for independent retailers and thought its inventory insights could be relevant to operators here. In reviewing the public customer journey, I could not find a Japanese-language path or customer-facing JPY pricing. Our public-signal planning model estimates roughly 1,950 monthly visits from Japan and, under stated assumptions, a potential monthly revenue opportunity gap of about $10,296—not measured analytics. Our Japan Entry Package is $12,000 paid upfront, with the first six months of managed support included at no additional monthly charge. Would a more detailed analysis or a 15-minute call be useful?",
+  "Hello, I’m Sato from Paradigm LLC, based in Japan. We support overseas companies entering the Japanese market. Example’s subscription analytics platform for independent retailers stood out because its inventory insights address a practical operating problem. On the public pages checked, however, I did not find Japan-local payment references or Japan-specific delivery terms, which can leave local buyers unsure whether the product is intended for them. Our Japan Entry Package is $12,000 paid upfront, with the first six months of managed support included at no additional monthly charge. We would validate the buyer path before making broader claims. Would you prefer a more detailed report or a 15-minute call to review the gaps?",
+  "Hello, I’m Sato from Paradigm LLC, based in Japan. We help overseas businesses prepare a credible entry into Japan. I was interested in Example’s subscription analytics platform for independent retailers, particularly the inventory insights described publicly. While reviewing the public customer path, I did not find a Japanese-language route or a Japan-specific commercial transactions disclosure. This is not a legal conclusion; it identifies two items a Japanese buyer may look for before engaging. The Japan Entry Package is $12,000 paid upfront, and the first six months of managed support are included at no additional monthly charge. Would a detailed analysis or a 15-minute conversation be useful?",
 ]
+
+const productContext = "Example provides a subscription analytics platform for independent retailers with inventory insights."
+const productEvidence = "subscription analytics platform for independent retailers"
 
 function response(text: string): DeepSeekResponse {
   return { ok: true, text, usedModel: "deepseek-v4-pro" }
@@ -72,10 +75,11 @@ function generationResponse(): DeepSeekResponse {
     candidates: messages.map((message, index) => ({
       message,
       fact_ids: index === 0
-        ? ["japan-audit-jpy", "japan-audit-payments"]
+        ? ["japan-audit-language", "modeled-japan-monthly-visits", "modeled-monthly-opportunity-gap"]
         : index === 1
-          ? ["japan-audit-jpy", "japan-audit-shipping"]
-          : ["japan-audit-language", "japan-audit-payments"],
+          ? ["japan-audit-payments", "japan-audit-shipping"]
+          : ["japan-audit-language", "japan-audit-commerce-disclosure"],
+      product_evidence: productEvidence,
       angle: `angle-${index + 1}`,
     })),
   }))
@@ -95,6 +99,7 @@ function generateInput() {
   return {
     companyName: "Example",
     industry: "E-Commerce / Retail",
+    productContext,
     targetCountry: "US",
     businessModel: "ecommerce" as const,
     projection,
@@ -109,18 +114,22 @@ describe("DeepSeek V4 Pro Japan Entry form copy", () => {
       "japan-audit-jpy",
       "japan-audit-shipping",
       "japan-audit-payments",
+      "japan-audit-commerce-disclosure",
     ])
     expect(buildJapanEntryPersonalizationFacts(audit, "service").map((fact) => fact.id)).toEqual([
       "japan-audit-language",
+      "japan-audit-commerce-disclosure",
     ])
   })
 
   it("accepts restrained copy grounded in audited Japan gaps", () => {
-    const facts = buildJapanEntryPersonalizationFacts(audit, "ecommerce")
+    const facts = buildJapanEntryPersonalizationFacts(audit, "ecommerce", projection)
     const review = reviewPersonalizedJapanEntryMessage({
       message: messages[0],
       companyName: "Example",
-      factIds: ["japan-audit-jpy", "japan-audit-payments"],
+      productContext,
+      productEvidence,
+      factIds: ["japan-audit-language", "modeled-japan-monthly-visits", "modeled-monthly-opportunity-gap"],
       facts,
     })
     expect(review.passed).toBe(true)
@@ -148,10 +157,12 @@ describe("DeepSeek V4 Pro Japan Entry form copy", () => {
   })
 
   it("rejects the prior generic rank-led pattern", () => {
-    const facts = buildJapanEntryPersonalizationFacts(audit, "ecommerce")
+    const facts = buildJapanEntryPersonalizationFacts(audit, "ecommerce", projection)
     const review = reviewPersonalizedJapanEntryMessage({
       message: "Hi Example team — I noticed your site has a Tranco rank of 52,000. Given that reach, Japan is a logical next step. Our Japan Entry Package is $12,000 paid upfront, with the first six months included. Is this relevant?",
       companyName: "Example",
+      productContext,
+      productEvidence,
       factIds: ["japan-audit-jpy"],
       facts,
     })
@@ -160,11 +171,13 @@ describe("DeepSeek V4 Pro Japan Entry form copy", () => {
   })
 
   it("rejects URLs, performance claims, and unsupported numbers", () => {
-    const facts = buildJapanEntryPersonalizationFacts(audit, "ecommerce")
+    const facts = buildJapanEntryPersonalizationFacts(audit, "ecommerce", projection)
     const review = reviewPersonalizedJapanEntryMessage({
       message: `${messages[0]} Visit https://example.com for a guaranteed 400% ROI.`,
       companyName: "Example",
-      factIds: ["japan-audit-jpy", "japan-audit-payments"],
+      productContext,
+      productEvidence,
+      factIds: ["japan-audit-language", "modeled-japan-monthly-visits", "modeled-monthly-opportunity-gap"],
       facts,
     })
     expect(review.passed).toBe(false)
@@ -177,6 +190,28 @@ describe("DeepSeek V4 Pro Japan Entry form copy", () => {
     expect(result.ok).toBe(false)
     expect(result.error).toContain("No high-signal Japan-specific public fact")
     expect(caller).not.toHaveBeenCalled()
+  })
+
+  it("fails closed before the LLM when product understanding is unavailable", async () => {
+    const caller = vi.fn()
+    const result = await generatePersonalizedJapanEntryMessage({ ...generateInput(), productContext: null }, caller)
+    expect(result.ok).toBe(false)
+    expect(result.error).toContain("grounded public product description")
+    expect(caller).not.toHaveBeenCalled()
+  })
+
+  it("rejects modeled numbers presented without estimate language", () => {
+    const facts = buildJapanEntryPersonalizationFacts(audit, "ecommerce", projection)
+    const review = reviewPersonalizedJapanEntryMessage({
+      message: messages[0].replace("Our public-signal planning model estimates roughly", "You receive exactly"),
+      companyName: "Example",
+      productContext,
+      productEvidence,
+      factIds: ["japan-audit-language", "modeled-japan-monthly-visits", "modeled-monthly-opportunity-gap"],
+      facts,
+    })
+    expect(review.passed).toBe(false)
+    expect(review.issues).toContain("Modeled metrics are not clearly labeled as estimates")
   })
 
   it("fails closed when the editorial score is below the quality bar", async () => {
