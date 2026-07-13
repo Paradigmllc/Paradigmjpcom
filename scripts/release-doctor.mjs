@@ -312,6 +312,23 @@ function checkStaticReleaseRules() {
     fail("SMB demo quality gate must have RLS, publish constraint, and release wiring")
   }
 
+  const demoPrivateAssetMigrationPath = "supabase/migrations/20260713143000_demo_private_asset_review.sql"
+  const demoPrivateAssetMigration = fs.existsSync(demoPrivateAssetMigrationPath)
+    ? fs.readFileSync(demoPrivateAssetMigrationPath, "utf8")
+    : ""
+  if (
+    demoPrivateAssetMigration.includes("access_mode") &&
+    demoPrivateAssetMigration.includes("preview_token_hash") &&
+    demoPrivateAssetMigration.includes("asset_review") &&
+    demoPrivateAssetMigration.includes("private_review") &&
+    noLoginDeploy.includes("20260713143000_demo_private_asset_review.sql") &&
+    noLoginDeploy.includes("applyDemoPrivateAssetReviewMigration")
+  ) {
+    pass("SMB demo private access and asset review have release migration wiring")
+  } else {
+    fail("SMB demo private access and asset review require release migration wiring")
+  }
+
   const demoTriggerMigrationPath = "supabase/migrations/20260713120000_sales_pipeline_db_trigger_provider.sql"
   const demoTriggerMigration = fs.existsSync(demoTriggerMigrationPath)
     ? fs.readFileSync(demoTriggerMigrationPath, "utf8")

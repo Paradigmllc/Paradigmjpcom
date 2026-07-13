@@ -3,7 +3,7 @@ import { ArtifactInlineEditor } from "@/components/admin/ArtifactInlineEditor"
 import { DemoMultiLayout } from "@/components/demo/DemoMultiLayout"
 import { isCurrentRequestAdmin } from "@/lib/admin-page-auth"
 import type { DemoMultiPageData } from "@/lib/sales/demo-site-types"
-import { fetchDemoMultiPageData } from "@/lib/sales/demo-generator"
+import { fetchDemoMultiPageDataForRequest } from "@/lib/sales/demo-request-access"
 import { getTemplateById } from "@/lib/sales/demo-templates/registry"
 
 export const dynamic = "force-dynamic"
@@ -29,7 +29,7 @@ export default async function DemoMultiLayoutWrapper({ children, params }: Layou
   let demoData: DemoMultiPageData | null = null
 
   try {
-    const data = await fetchDemoMultiPageData(slug)
+    const data = await fetchDemoMultiPageDataForRequest(slug)
     if (data) {
       demoData = data
       companyName = data.meta?.companyName || companyName
@@ -67,6 +67,7 @@ export default async function DemoMultiLayoutWrapper({ children, params }: Layou
         designRecipe={demoData?.designRecipe}
         quality={demoData?.quality}
         presentation={demoData?.meta}
+        privatePreview={demoData?.privatePreview}
       >
         {children}
       </DemoMultiLayout>

@@ -1,5 +1,13 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
+### 2026-07-13 SMB実素材・期限付き非公開デモ Premium V2（実装済み / 正式release待ち / 送信停止）
+- `theme_demo_pages`へ `signed_private` access mode、SHA-256 preview token hash、最大30日の有効期限、素材審査status/manifestを追加するmigrationを実装。非公開デモは `is_published=false` のままservice-role経路だけで取得し、匿名RLS公開を行わない。
+- 署名URLは初回アクセス時にサーバー検証し、HttpOnly / Secure / SameSite=Lax / slug限定pathのCookieへ移す。期限切れ・改ざん・再発行前の旧tokenはHTTP 401となり、HomeからAbout / Services / Contact / Works / News / FAQ / Recruit / Privacy / Terms / Commerceへ移動してもCookie認証を維持する。
+- Payload管理者限定の `/ja/admin/demo-assets` を追加。ロゴ・画像・動画ごとに公式出所、所有者、取得元、利用根拠、人物、透かし、altを記録し、HTTPSでないURL、非公式出所、許諾なしの人物/透かし、blocked素材をfail-closedで拒否する。発行・コピー・確認・即時失効をGUIから操作できる。
+- 審査済み実素材をhero/gallery/logoへ反映する `premium-v2` rendererを追加。フルブリード実写hero、editorial split、ブランド別特徴、非対称gallery、実ロゴnav/footer、Framer Motion、モバイル最適化を備え、既存craft/editorial rendererは互換維持する。
+- 送信、Twenty同期、営業通知、メール、電話、郵送、フォーム送信は接続していない。非公開URL発行APIも通知を発生させない。
+- ローカル検証済み: TypeScript pass、素材安全規則Vitest **3/3 pass**、変更対象ESLint pass、quality guard **0 error**、production build pass。未認証private APIと無効preview tokenはともにHTTP 401、ローカル本番ブラウザはcontentあり・Next error overlayなし。正式release後にmigration適用、実DBでのURL発行、Premium V2のPC/mobile・11経路を本番確認する。
+
 ### 2026-07-13 i18n公開面の再設計（本番反映済み）
 - `/ja` を国内向け一般サイトへ分離。ホーム、サービス、料金、FAQ、About、Works、Blog、Contact、フッター、JSON-LD、チャット導線からJapan Entryの固定オファーを除去し、Web制作・MEO・SEO/GEO・AI導入支援の内容へ整理した。
 - `/en` 以外の国際ロケール（ko/zh/de/fr/es/pt/ru/ar/vi/id）はURL・canonical・hreflangを維持したまま、`messages/en.json` のJapan Entry商業内容を正本として利用。旧$1,500/$2,500オファーを再マージしないよう、i18n requestで国際shellキーのみローカル翻訳を上書きする構成へ変更した。

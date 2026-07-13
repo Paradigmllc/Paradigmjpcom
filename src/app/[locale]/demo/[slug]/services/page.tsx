@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { cache } from "react"
-import { fetchDemoMultiPageData } from "@/lib/sales/demo-generator"
+import { fetchDemoMultiPageDataForRequest } from "@/lib/sales/demo-request-access"
 import { DemoServicesPage } from "@/components/demo/DemoServicesPage"
 import { getTemplateById } from "@/lib/sales/demo-templates/registry"
 
@@ -12,13 +11,9 @@ interface Props {
   params: Promise<{ locale: string; slug: string }>
 }
 
-const getCachedData = cache(
-  async (slug: string) => fetchDemoMultiPageData(slug),
-)
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const data = await getCachedData(slug)
+  const data = await fetchDemoMultiPageDataForRequest(slug)
   if (!data) {
     return { title: "Services | Demo", robots: { index: false, follow: false } }
   }
@@ -31,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function DemoServicesServerPage({ params }: Props) {
   const { slug } = await params
-  const data = await getCachedData(slug)
+  const data = await fetchDemoMultiPageDataForRequest(slug)
   if (!data) notFound()
 
   const template = getTemplateById(data.templateId ?? "zenith")

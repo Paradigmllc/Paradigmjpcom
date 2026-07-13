@@ -8,6 +8,7 @@ import type { DemoBlock, DemoMultiPageData, DemoPageData } from "./demo-site-typ
 import { selectTemplate, type CompanyProfile } from "./demo-template-selector"
 import type { Industry, ReportLocale } from "./types"
 import { JAPAN_ENTRY_CTA_EN, JAPAN_ENTRY_CTA_JA } from "@/lib/japan-entry-public-copy"
+import { verifyDemoPreviewToken, type DemoAssetReview } from "./demo-private-access"
 
 /**
  * Fetch demo page data by slug from the theme_demo_pages table,
@@ -182,7 +183,10 @@ function isDemoMultiPageData(value: unknown): value is DemoMultiPageData {
  * logic as fetchDemoPageData but returns DemoMultiPageData for the
  * multi-page website (Home/About/Services/Contact).
  */
-export async function fetchDemoMultiPageData(slug: string): Promise<DemoMultiPageData | null> {
+export async function fetchDemoMultiPageData(
+  slug: string,
+  options: { previewToken?: string } = {},
+): Promise<DemoMultiPageData | null> {
   const sb = getServiceSalesSupabase()
   if (!sb) {
     console.error("[demo-generator] fetchDemoMultiPageData: Supabase not configured")
@@ -193,17 +197,53 @@ export async function fetchDemoMultiPageData(slug: string): Promise<DemoMultiPag
     // Try theme_demo_pages first
     const { data: themePage, error: themeError } = await sb
       .from(DB_TABLES.THEME_DEMO_PAGES)
-      .select("slug, company_id, title, blocks, meta, site_payload, design_recipe, quality_report, rights_manifest, publication_status")
+      .select("slug, company_id, title, blocks, meta, site_payload, design_recipe, quality_report, rights_manifest, publication_status, is_published, access_mode, preview_expires_at, asset_approval_status, asset_review")
       .eq("slug", slug)
-      .eq("is_published", true)
       .maybeSingle()
 
-    if (themePage && !themeError) {
+    if (themeError) {
+      console.error(`[demo-generator] theme lookup failed for ${slug}:`, themeError.message)
+      return null
+    }
+
+    let isPrivatePreview = false
+    if (themePage?.access_mode === "signed_private") {
+      const verification = options.previewToken
+        ? await verifyDemoPreviewToken(slug, options.previewToken)
+        : { ok: false, expiresAt: themePage.preview_expires_at as string | null }
+      if (!verification.ok) return null
+      isPrivatePreview = true
+    } else if (themePage && !themePage.is_published) {
+      return null
+    }
+
+    if (themePage) {
       const meta = (themePage.meta ?? {}) as Record<string, unknown>
 
       if (isDemoMultiPageData(themePage.site_payload)) {
+        const review = isRecord(themePage.asset_review)
+          ? themePage.asset_review as unknown as DemoAssetReview
+          : null
+        const logo = review?.assets.find((asset) => asset.kind === "logo")
+        const approvedMedia = review?.assets
+          .filter((asset) => asset.kind !== "logo")
+          .map((asset) => ({
+            src: asset.sourceUrl,
+            alt: asset.alt,
+            kind: asset.kind === "video" ? "video" as const : "image" as const,
+            caption: asset.notes || asset.ownerLabel,
+          })) ?? []
+        const premium = themePage.site_payload.premium && approvedMedia.length > 0
+          ? {
+              ...themePage.site_payload.premium,
+              style: "premium-v2" as const,
+              heroMedia: approvedMedia.slice(0, 3),
+              gallery: approvedMedia.length >= 3 ? approvedMedia : [...approvedMedia, ...themePage.site_payload.premium.gallery].slice(0, 5),
+            }
+          : themePage.site_payload.premium
         return applyDemoAdminOverrides({
           ...themePage.site_payload,
+          premium,
           designRecipe: isRecord(themePage.design_recipe)
             ? themePage.design_recipe as unknown as DemoMultiPageData["designRecipe"]
             : themePage.site_payload.designRecipe,
@@ -214,8 +254,15 @@ export async function fetchDemoMultiPageData(slug: string): Promise<DemoMultiPag
             ? themePage.rights_manifest as unknown as DemoMultiPageData["rightsManifest"]
             : themePage.site_payload.rightsManifest,
           publicationStatus: themePage.publication_status as DemoMultiPageData["publicationStatus"],
+          privatePreview: isPrivatePreview && themePage.preview_expires_at
+            ? {
+                expiresAt: themePage.preview_expires_at,
+                assetStatus: themePage.asset_approval_status as NonNullable<DemoMultiPageData["privatePreview"]>["assetStatus"],
+              }
+            : undefined,
           meta: {
             ...themePage.site_payload.meta,
+            brandLogoUrl: logo?.sourceUrl ?? themePage.site_payload.meta.brandLogoUrl,
             artifact_admin: meta.artifact_admin,
           } as DemoMultiPageData["meta"],
         })
