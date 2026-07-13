@@ -8,13 +8,22 @@
 - 架空SaaS企業を使ったDeepSeek公式API直叩きの再検証は **97/100**（具体性24・自然さ24・信頼性25・経営判断適合24）、安全性100、4段落134語、risk 0で合格。DB保存、Twenty登録、候補収集、フォーム送信は未実行。
 - 検証済み: 対象Vitest **14/14 pass**、TypeScript、対象ESLint、diff check、production build **336/336 pages**。次は正式`npm run release:prod`を完走し、本番fingerprint・Sales health・DB行数0を再確認する。
 
-### 2026-07-13 i18n公開面の再設計（ローカル実装・本番release待ち）
+### 2026-07-13 SMB実素材・期限付き非公開デモ Premium V2（実装済み / 正式release待ち / 送信停止）
+- `theme_demo_pages`へ `signed_private` access mode、SHA-256 preview token hash、最大30日の有効期限、素材審査status/manifestを追加するmigrationを実装。非公開デモは `is_published=false` のままservice-role経路だけで取得し、匿名RLS公開を行わない。
+- 署名URLは初回アクセス時にサーバー検証し、HttpOnly / Secure / SameSite=Lax / slug限定pathのCookieへ移す。期限切れ・改ざん・再発行前の旧tokenはHTTP 401となり、HomeからAbout / Services / Contact / Works / News / FAQ / Recruit / Privacy / Terms / Commerceへ移動してもCookie認証を維持する。
+- Payload管理者限定の `/ja/admin/demo-assets` を追加。ロゴ・画像・動画ごとに公式出所、所有者、取得元、利用根拠、人物、透かし、altを記録し、HTTPSでないURL、非公式出所、許諾なしの人物/透かし、blocked素材をfail-closedで拒否する。発行・コピー・確認・即時失効をGUIから操作できる。
+- 審査済み実素材をhero/gallery/logoへ反映する `premium-v2` rendererを追加。フルブリード実写hero、editorial split、ブランド別特徴、非対称gallery、実ロゴnav/footer、Framer Motion、モバイル最適化を備え、既存craft/editorial rendererは互換維持する。
+- 送信、Twenty同期、営業通知、メール、電話、郵送、フォーム送信は接続していない。非公開URL発行APIも通知を発生させない。
+- ローカル検証済み: TypeScript pass、素材安全規則Vitest **3/3 pass**、変更対象ESLint pass、quality guard **0 error**、production build pass。未認証private APIと無効preview tokenはともにHTTP 401、ローカル本番ブラウザはcontentあり・Next error overlayなし。正式release後にmigration適用、実DBでのURL発行、Premium V2のPC/mobile・11経路を本番確認する。
+- 初回本番発行で、Next.js内部origin `0.0.0.0:3000` が返るproxy差異を検出。productionでは検証済み `NEXT_PUBLIC_SITE_URL`（未設定時はParadigm正規URL）を使い、ローカルだけrequest originを使うよう即時修正した。
+
+### 2026-07-13 i18n公開面の再設計（本番反映済み）
 - `/ja` を国内向け一般サイトへ分離。ホーム、サービス、料金、FAQ、About、Works、Blog、Contact、フッター、JSON-LD、チャット導線からJapan Entryの固定オファーを除去し、Web制作・MEO・SEO/GEO・AI導入支援の内容へ整理した。
 - `/en` 以外の国際ロケール（ko/zh/de/fr/es/pt/ru/ar/vi/id）はURL・canonical・hreflangを維持したまま、`messages/en.json` のJapan Entry商業内容を正本として利用。旧$1,500/$2,500オファーを再マージしないよう、i18n requestで国際shellキーのみローカル翻訳を上書きする構成へ変更した。
 - 国際ロケールのmarketing redirectを撤去し、`/ko`等を`/en`へ308しない。国際サービス詳細は同一ロケールの`/services#package-modules`へ整理。JAの旧agency/LP/videoのみ`/ja/services`へ移動し、JAのJapan Entry Signal Checkは公開対象外とした。
 - ブログはJAを一般記事seed、国際ロケールを英語Japan Entry記事seedへ統一。サイトマップ、OG、JSON-LD、ヘッダー/フッターCTA、チャットlocaleも同じ分離ルールへ揃えた。
 - 検証済み: JSON parse、`npm exec -- tsc --noEmit`、対象Vitest 4 files / 38 tests、production build **336/336 pages**、quality guard 0 errors。ローカルHTTPは日英・ko/de主要ページ200、JA表示本文にJapan Entry/$12,000/Wise/USDC/14営業日なし、国際ページに固定$12,000/支払方法/14営業日あり、ko canonicalは`/ko/pricing`。
-- 次の正式作業: `npm run release:prod`でDB/migration・Coolify・Traefik route refresh・post-deploy doctorを完走し、本番全ロケールURLを再確認する。
+- 正式 `npm run release:prod` を完走。deployment `i3fgzgb9pu7br5ir59mxfm5k`、DB **82/82**、Traefik/Cloudflare、Sales health、日英主要smokeを通過。本番12ロケールのpricingをHTTP 200、JA主要8ページを本文marker clean、国際pricingをJapan Entry/$12,000 markerで再確認した。`/ja/tools/japan-entry-score` はJA公開対象外のnot-found表示。
 
 ### 2026-07-13 支払方法・14営業日納品保証の実務運用監査（本番反映済み）
 - Japan Entry申込フォームに希望支払方法（Wise、銀行振込、USDC、クレジットカード）とセットアップ費用確認を追加。選択値はlead metaへ保存し、DBベル／Slack通知の双方へ引き渡す。公開フォームでは口座・カード・ウォレット情報を収集しない。
