@@ -17,6 +17,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from "react"
 import { usePathname } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/routing"
+import ChatMessageBubble, { type ChatMessage, type ChatSource } from "@/components/ChatMessageBubble"
 
 const FONT_STACK = "'Noto Sans', 'Noto Sans JP', Arial, sans-serif"
 
@@ -30,9 +31,6 @@ const TOKENS = {
   line: "rgb(var(--paradigm-line))",
   accent: "rgb(var(--paradigm-accent))",
 } as const
-
-type ChatSource = { title: string; href: string }
-type ChatMessage = { role: "user" | "bot"; text: string; sources?: ChatSource[] }
 
 export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
   const pathname = usePathname()
@@ -318,36 +316,8 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
               background: TOKENS.paper,
             }}
           >
-            {messages.map((m, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
-                <div
-                  style={{
-                    maxWidth: "85%",
-                    padding: "12px 16px",
-                    fontSize: 13,
-                    lineHeight: 1.85,
-                    whiteSpace: "pre-wrap",
-                    border: `1px solid ${TOKENS.line}`,
-                    ...(m.role === "user"
-                      ? { background: TOKENS.ink, color: TOKENS.paper, borderColor: TOKENS.ink }
-                      : { background: TOKENS.paperDeep, color: TOKENS.ink }),
-                  }}
-                >
-                  {m.text}
-                  {m.role === "bot" && m.sources && m.sources.length > 0 && (
-                    <div style={{ marginTop: 10, paddingTop: 8, borderTop: `1px solid ${TOKENS.line}`, display: "flex", flexDirection: "column", gap: 5 }}>
-                      <span style={{ fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: TOKENS.inkMute }}>
-                        {locale === "ja" ? "参照した公開情報" : "Approved site sources"}
-                      </span>
-                      {m.sources.slice(0, 3).map((source) => (
-                        <Link key={`${source.href}-${source.title}`} href={source.href} style={{ fontSize: 11, color: TOKENS.accent, textDecoration: "underline", textUnderlineOffset: 3 }}>
-                          {source.title}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+            {messages.map((message, index) => (
+              <ChatMessageBubble key={index} message={message} locale={locale} />
             ))}
 
             {loading && (
