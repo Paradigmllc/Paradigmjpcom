@@ -1,5 +1,11 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
+### 2026-07-13 Japan市場機会損失バナーの固定ヘッダー重なり修正（本番反映・実ブラウザQA済み）
+- 国際向け共通の`THE OPPORTUNITY COST OF WAITING`バナーが固定ヘッダーの下へ潜り、ヘッダー用`pt-16`が二重に効いて空白帯を作るレイアウト崩れを修正。ヘッダー分の明示スペーサーをバナー前へ置き、バナー有効時だけ`SiteWrapper`の追加トップ余白を無効化した。
+- 告知バー有効時は告知バー込みのスペーサー高さへ切り替え、`/ja`と法務ページは従来どおりバナーなし・既定のヘッダー余白を維持する。先頭要素のmargin collapseを使わず、PC/モバイルで同じ構造にした。
+- 検証: pre-push TypeScript clean、対象ESLint pass、関連Vitest **2/2 pass**、quality guard **0 errors / 59 warnings**、`git diff --check` pass。実ブラウザで`/en`・`/en/services`・`/en/pricing`・`/en/package`は`scrollY=0`時にheader **0–81px**、spacer **0–80px**、urgency **80px開始**、main **458px開始**、横溢れなし。`/ja`はurgencyなし・`main.pt-16`を確認した。
+- PR **#143**をmainへmerge。正式`npm run release:prod`のdeployment **jdgsrj4fpvbs5yq7kwd8er5a**はfinished、DB **83/83**、Traefik/Cloudflare/Realtime/Twenty、Sales health HTTP 200 JSON ok、post-deploy release gateを通過した。
+
 ### 2026-07-13 SMBデモ正規URL・自動量産（本番反映・実事業者QA済み / 送信停止）
 - デモの正規URLを `https://demo.paradigmjp.com/{企業名slug}` に統一。locale、`demo`、ランダム文字列を公開URLへ含めず、Cafe SOSOMUは `https://demo.paradigmjp.com/cafe-sosomu` とした。旧 `/ja/cafe-sosomu` と内部 `/ja/demo/cafe-sosomu` は正規URLへ308転送する。企業名slugが既存の別企業と衝突した場合はランダム文字を足さずfail-closedで停止する。
 - Homeを含む全11ページのheader、footer、CTA、パンくず相当導線を `/{企業名slug}/...` へ統一。公開デモは `noindex, nofollow, noarchive` を維持し、検索面へ混入させない。
