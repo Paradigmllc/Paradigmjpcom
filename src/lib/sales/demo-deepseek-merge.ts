@@ -50,14 +50,10 @@ export function mergeDeepSeekOutput(
     };
   }
 
-  // Home: FAQ (AI replaces rules-based if at least 2 exist)
-  if (ai.home.faq && ai.home.faq.length >= 2) {
-    home.faq = ai.home.faq.map((f, i) => ({
-      id: `ai-faq-${i}`,
-      question: f.q || "",
-      answer: f.a || "",
-    }));
-  }
+  // FAQ and contact operations are not safe generative fields. Even a strong
+  // prompt can turn an official social URL into an invented DM/reservation
+  // policy. Keep these fields deterministic and evidence-bound.
+  home.faq = buildEvidenceBoundFaq(base, effectiveLocale);
 
   // About: story, mission, values
   if (ai.about.story?.trim()) about.story = ai.about.story;
@@ -89,9 +85,8 @@ export function mergeDeepSeekOutput(
     }));
   }
 
-  // Contact: intro, form note
-  if (ai.contact.intro?.trim()) contact.subtitle = ai.contact.intro;
-  if (ai.contact.form_note?.trim()) contact.formNote = ai.contact.form_note;
+  // Contact copy remains rules-based. The private-review form never sends and
+  // no response time or booking policy is inferred from an SNS profile.
 
   const premium = base.premium ? {
     ...base.premium,
@@ -118,4 +113,40 @@ export function mergeDeepSeekOutput(
     },
     pages: { ...base.pages, home, about, services, contact, faq: faqPage },
   };
+}
+
+function buildEvidenceBoundFaq(base: DemoMultiPageData, locale: string) {
+  const isJa = locale === "ja";
+  const instagram = base.premium?.social.find((item) => item.network === "instagram");
+  const address = base.pages.contact.address?.trim();
+  const facts = (base.meta.verifiedFacts ?? [])
+    .filter((fact) => fact.trim() && !/^https?:\/\//u.test(fact) && fact !== address && fact !== base.companyName)
+    .slice(0, 3);
+
+  return [
+    ...(facts.length > 0 ? [{
+      id: "verified-offering",
+      question: isJa ? "どのような商品・サービスがありますか？" : "What products or services are available?",
+      answer: isJa
+        ? `確認済みの公開情報では、${facts.join("、")}をご案内しています。詳細は正式公開前に事業者確認を行います。`
+        : `Verified public information currently lists ${facts.join(", ")}. Details require operator confirmation before publication.`,
+    }] : []),
+    ...(address ? [{
+      id: "verified-address",
+      question: isJa ? "所在地はどこですか？" : "Where are you located?",
+      answer: isJa ? `所在地は${address}です。地図はアクセス欄から確認できます。` : `The verified address is ${address}. See the access map for directions.`,
+    }] : []),
+    ...(instagram ? [{
+      id: "verified-hours",
+      question: isJa ? "最新の営業情報はどこで確認できますか？" : "Where can I find current operating information?",
+      answer: isJa ? "最新の営業情報は公式Instagramをご確認ください。" : "Please check the official Instagram profile for current operating information.",
+    }] : []),
+    {
+      id: "operator-confirmation",
+      question: isJa ? "予約やお問い合わせ方法を教えてください。" : "How can I make a reservation or inquiry?",
+      answer: isJa
+        ? "予約可否と正式なお問い合わせ方法は、公開前に事業者確認が必要です。このデモのフォームからは送信されません。"
+        : "Reservation availability and the official inquiry method require operator confirmation. This demo form does not submit data.",
+    },
+  ].slice(0, 4);
 }

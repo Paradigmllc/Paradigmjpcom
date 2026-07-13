@@ -10,7 +10,10 @@ export function buildJapaneseSystemPrompt(): string {
 4. 誇張表現や空虚なキャッチコピー（「革命的な」「世界初」「唯一無二」など）は避け、具体的で信頼感のある表現にすること
 5. 入力に根拠がない実績、数値、沿革、代表者名、顧客名、推薦文、受賞歴、料金を創作しないこと
 6. 不明な情報は創作せず「要確認」と明示すること
-7. 出力は必ず有効なJSON形式のみ。JSONの前後に説明文や注釈を付けないこと`;
+7. メニュー名だけが確認済みでも、材料、食感、製法、味、提供方法、予約可否、決済方法、返信時期まで推測しないこと
+8. 画像が生成素材か公式素材か、権利確認済みかを本文で断定しないこと
+9. 公式SNSのURLがあっても、DM受付、予約受付、返信期限を推測しないこと
+10. 出力は必ず有効なJSON形式のみ。JSONの前後に説明文や注釈を付けないこと`;
 }
 
 export function buildEnglishSystemPrompt(): string {
@@ -23,7 +26,9 @@ Follow these rules strictly:
 4. Match the tone to the industry (formal for legal/accounting, approachable for retail/restaurant, innovative for tech)
 5. Never invent results, metrics, history, people, customers, testimonials, awards, or pricing
 6. Mark unsupported information as "To be confirmed"
-7. Output ONLY valid JSON. No explanations before or after the JSON.`;
+7. Do not infer ingredients, taste, texture, preparation, reservation policy, payment methods, contact channels, or response times from a product name
+8. Do not claim that images are official or rights-cleared
+9. Output ONLY valid JSON. No explanations before or after the JSON.`;
 }
 
 export function buildJapaneseUserPrompt(
@@ -58,6 +63,10 @@ export function buildJapaneseUserPrompt(
 【確認済み公開情報】
 ${verifiedFacts}
 上記にない事実は創作せず、コピーには確認済み公開情報だけを使用してください。
+「フレンチトースト」が確認済みでも「外はカリッと中はふわふわ」「卵と牛乳」「焼き加減」は未確認です。
+「ドリップコーヒー」が確認済みでも「一杯ずつハンドドリップ」「豆本来の風味」は未確認です。
+「公式Instagram」が確認済みでも「DMで予約可能」「翌営業日に返信」は未確認です。
+確認済みでない詳細は魅力的に補完せず、事実の範囲内で簡潔に書いてください。
 
 【出力形式】
 以下のJSON形式で出力してください。日本語はすべて「です・ます調」で記述してください。
@@ -117,7 +126,7 @@ ${verifiedFacts}
   }
 }
 
-重要: これは制作会社の改善提案LPではなく、入力企業がそのまま公式サイトとして使える顧客向けコピーです。Web改善、SEO、表示速度、診断、制作会社、Paradigm、Japan Entryには言及しないでください。features配列は3つ、FAQは4つ、valuesは4つ、servicesは3つ生成してください。根拠のない所在地、年代、沿革、営業時間、外部サービス連携、顧客の声、実績、数値は絶対に生成しないでください。`;
+重要: これは制作会社の改善提案LPではなく、入力企業がそのまま公式サイトとして使える顧客向けコピーです。Web改善、SEO、表示速度、診断、制作会社、Paradigm、Japan Entryには言及しないでください。features配列は3つ、FAQは4つ、valuesは4つ、servicesは3つ生成してください。根拠のない所在地、年代、沿革、営業時間、外部サービス連携、顧客の声、実績、数値、材料、味、食感、製法、予約可否、問い合わせ手段、返信時期、画像の出自・権利状態は絶対に生成しないでください。FAQとContactは、確認済み情報がなければ「正式公開前に事業者確認が必要です」としてください。`;
 }
 
 export function buildEnglishUserPrompt(
@@ -152,6 +161,7 @@ export function buildEnglishUserPrompt(
 [Verified Public Facts]
 ${verifiedFacts}
 Use only these verified facts for company-specific copy. Do not invent missing facts.
+An official social URL does not prove that direct messages, reservations, or replies are offered. A menu name does not prove its ingredients, texture, preparation, or taste. Do not infer any of those details.
 
 [Output Format]
 Output the following JSON. All English copy must be professional business English — natural, polished, and free of AI clichés.
@@ -211,5 +221,5 @@ Output the following JSON. All English copy must be professional business Englis
   }
 }
 
-IMPORTANT: This is not a web-agency improvement pitch. Write customer-facing copy the input business could use as its official website. Do not mention web improvement, SEO, diagnostics, an agency, Paradigm, or Japan Entry. Generate exactly 3 features, 4 FAQs, 4 values, 3 services, and 4 process steps. Never invent locations, dates, history, opening hours, third-party platform integrations, testimonials, customer claims, or performance metrics.`;
+IMPORTANT: This is not a web-agency improvement pitch. Write customer-facing copy the input business could use as its official website. Do not mention web improvement, SEO, diagnostics, an agency, Paradigm, or Japan Entry. Generate exactly 3 features, 4 FAQs, 4 values, 3 services, and 4 process steps. Never invent locations, dates, history, opening hours, third-party integrations, testimonials, customer claims, performance metrics, ingredients, taste, texture, preparation, reservation policy, contact channels, response times, or image provenance. If FAQ or Contact details are not verified, say they require operator confirmation before publication.`;
 }
