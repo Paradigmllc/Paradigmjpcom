@@ -40,6 +40,16 @@ describe("demo subdomain", () => {
     expect(response.headers.get("location")).toBe("https://demo.paradigmjp.com/example/services")
   })
 
+  it("rewrites a Japanese company slug without double-encoding it", () => {
+    const response = proxy(new NextRequest("https://demo.paradigmjp.com/%E5%8F%8A%E5%B7%9D%E6%B4%8B%E8%8F%93%E5%AD%90%E5%BA%97/about", {
+      headers: { host: "demo.paradigmjp.com" },
+    }))
+
+    expect(response.headers.get("x-middleware-rewrite")).toBe(
+      "https://demo.paradigmjp.com/ja/demo/%E5%8F%8A%E5%B7%9D%E6%B4%8B%E8%8F%93%E5%AD%90%E5%BA%97/about",
+    )
+  })
+
   it("redirects locale-prefixed demo URLs to the company-only canonical path", () => {
     const response = proxy(new NextRequest("https://demo.paradigmjp.com/ja/example/contact", {
       headers: { host: "demo.paradigmjp.com" },
