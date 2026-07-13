@@ -26,7 +26,7 @@ export async function generateMetadata({
   const pageData = data?.pages[page] as DemoContentPageData | undefined
   if (!data || !pageData) return {}
   return {
-    title: `${pageData.title} | ${data.companyName}`,
+    title: { absolute: `${pageData.title} | ${data.companyName}` },
     description: pageData.subtitle,
     robots: { index: false, follow: false },
   }

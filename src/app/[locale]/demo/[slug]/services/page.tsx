@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "Services | Demo", robots: { index: false, follow: false } }
   }
   return {
-    title: `${data.pages.services.title} | ${data.companyName}`,
+    title: { absolute: `${data.pages.services.title} | ${data.companyName}` },
     description: data.pages.services.subtitle,
     robots: { index: false, follow: false },
   }
