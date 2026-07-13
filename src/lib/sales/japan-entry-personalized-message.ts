@@ -34,13 +34,14 @@ interface GenerateInput {
   businessModel: BusinessModel;
   projection: JapanEntryProjection;
   audit: unknown;
+  competitorAnalysis?: unknown;
 }
 
 type LlmCaller = typeof callDeepSeek;
 
 const candidateSchema = z.object({
-  message: z.string().min(1).max(1_200),
-  fact_ids: z.array(z.string().min(1)).min(1).max(3),
+  message: z.string().min(1).max(1_800),
+  fact_ids: z.array(z.string().min(1)).min(1).max(6),
   product_evidence: z.string().min(3).max(180),
   angle: z.string().min(1).max(120),
 }).strict();
@@ -153,7 +154,9 @@ export async function generatePersonalizedJapanEntryMessage(
   if (productContext.length < 12) {
     return { ok: false, error: "A grounded public product description is required for personalized copy" };
   }
-  const facts = buildJapanEntryPersonalizationFacts(input.audit, input.businessModel, input.projection);
+  const facts = buildJapanEntryPersonalizationFacts(input.audit, input.businessModel, input.projection, {
+    competitorAnalysis: input.competitorAnalysis,
+  });
   if (facts.length === 0) {
     return { ok: false, error: "No high-signal Japan-specific public fact is available for personalized copy" };
   }

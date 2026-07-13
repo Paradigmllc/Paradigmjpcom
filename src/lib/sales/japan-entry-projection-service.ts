@@ -252,6 +252,7 @@ export async function generateJapanEntryProjection(
     businessModel: projection.assumptions.businessModel,
     projection,
     audit: companyJapanMarketAudit(company),
+    competitorAnalysis: company.meta?.japan_entry_competitor_analysis,
   });
   if (!personalized.ok || !personalized.message || !personalized.review) {
     console.error(

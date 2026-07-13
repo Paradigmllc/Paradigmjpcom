@@ -1,4 +1,5 @@
 import type { BusinessModel, JapanEntryProjection } from "./japan-entry-projection";
+import { JAPAN_ENTRY_MARKET_EVIDENCE } from "@/lib/japan-entry-market-evidence";
 
 export interface JapanEntryPersonalizationFact {
   id: string;
@@ -10,6 +11,10 @@ export interface JapanEntryPersonalizationFact {
 
 type JsonRecord = Record<string, unknown>;
 
+export interface JapanEntryPersonalizationContext {
+  competitorAnalysis?: unknown;
+}
+
 function asRecord(value: unknown): JsonRecord | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as JsonRecord)
@@ -20,6 +25,64 @@ function stringArray(value: unknown): string[] {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0).map((item) => item.trim())
     : [];
+}
+
+function httpsUrl(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" ? url.toString() : null;
+  } catch (error) {
+    console.error("[japan-entry-message] invalid market-context evidence URL:", { value, error });
+    return null;
+  }
+}
+
+function competitorFacts(value: unknown): JapanEntryPersonalizationFact[] {
+  const raw = asRecord(value);
+  if (!Array.isArray(raw?.competitors)) return [];
+  return raw.competitors.slice(0, 2).flatMap((item, index): JapanEntryPersonalizationFact[] => {
+    const row = asRecord(item);
+    const evidence = Array.isArray(row?.evidence) ? row.evidence.map(asRecord) : [];
+    const source = evidence.map((entry) => httpsUrl(entry?.source_url)).find(Boolean);
+    const category = row?.category;
+    if (
+      !row || typeof row.name !== "string" || typeof row.summary !== "string" || !source ||
+      !["direct", "adjacent", "substitute"].includes(String(category))
+    ) return [];
+    const name = row.name.trim().slice(0, 100);
+    const summary = row.summary.trim().slice(0, 240);
+    if (!name || !summary) return [];
+    return [{
+      id: `verified-competitor-${index + 1}`,
+      statement: `Public-source analysis identifies ${name} as a ${category} Japan-market comparator: ${summary}`,
+      source,
+      confidence: 0.76,
+      anchors: [name, summary],
+    }];
+  });
+}
+
+function demandFacts(value: unknown): JapanEntryPersonalizationFact[] {
+  const raw = asRecord(value);
+  const rows = Array.isArray(raw?.demand_signals)
+    ? raw.demand_signals
+    : Array.isArray(raw?.japan_demand_signals) ? raw.japan_demand_signals : [];
+  return rows.slice(0, 2).flatMap((item, index): JapanEntryPersonalizationFact[] => {
+    const row = asRecord(item);
+    const source = httpsUrl(row?.evidence_url ?? row?.source_url);
+    const confidence = typeof row?.confidence === "number" ? row.confidence : 0;
+    if (!row || typeof row.statement !== "string" || !source || confidence < 0.55) return [];
+    const statement = row.statement.trim().slice(0, 260);
+    if (!statement) return [];
+    return [{
+      id: `verified-japan-demand-${index + 1}`,
+      statement,
+      source,
+      confidence,
+      anchors: [statement],
+    }];
+  });
 }
 
 function auditFact(input: {
@@ -45,6 +108,7 @@ export function buildJapanEntryPersonalizationFacts(
   audit: unknown,
   businessModel: BusinessModel,
   projection?: JapanEntryProjection,
+  context?: JapanEntryPersonalizationContext,
 ): JapanEntryPersonalizationFact[] {
   const record = asRecord(audit);
   const status = asRecord(record?.status);
@@ -108,6 +172,36 @@ export function buildJapanEntryPersonalizationFacts(
       anchors: ["commercial transactions disclosure", "Japan-specific disclosure", "Tokushoho"],
       confidence,
     }));
+  }
+
+  const verifiedCompetitors = competitorFacts(context?.competitorAnalysis);
+  const verifiedDemand = demandFacts(context?.competitorAnalysis);
+  if (verifiedCompetitors.length > 0) {
+    facts.push(...verifiedCompetitors, ...verifiedDemand, {
+      id: "official-japan-ecommerce-market",
+      statement: "METI reports Japan's 2024 B2C e-commerce market at ¥26.1 trillion, up 5.1% year over year.",
+      source: JAPAN_ENTRY_MARKET_EVIDENCE.ecommerce.sourceUrl,
+      confidence: 0.98,
+      anchors: ["¥26.1 trillion", "5.1%", "B2C e-commerce market"],
+    });
+    if (businessModel === "ecommerce" && status.tokushoho_missing === true) {
+      facts.push({
+        id: "regulatory-commerce-enforcement",
+        statement: "Japan's Consumer Affairs Agency states that in-scope failures to meet the Specified Commercial Transactions Act can result in business-improvement instructions, suspension orders or penalties; this public-page screen does not establish applicability or breach.",
+        source: JAPAN_ENTRY_MARKET_EVIDENCE.commerceEnforcement.sourceUrl,
+        confidence: 0.94,
+        anchors: ["suspension orders", "business-improvement instructions", "does not establish applicability or breach"],
+      });
+    }
+    if (status.appi_missing === true) {
+      facts.push({
+        id: "regulatory-privacy-review",
+        statement: "Japan's Personal Information Protection Commission published a 2026 reform policy during its statutory triennial APPI review; the public-page screen does not establish which obligations apply.",
+        source: JAPAN_ENTRY_MARKET_EVIDENCE.privacyReview.sourceUrl,
+        confidence: 0.94,
+        anchors: ["2026 reform policy", "triennial APPI review", "does not establish which obligations apply"],
+      });
+    }
   }
 
   const japanMarket = projection?.markets.find((market) => market.code === "JP");

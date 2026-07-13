@@ -1,7 +1,9 @@
 import type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-message-facts";
 
-const MIN_WORDS = 100;
-const MAX_WORDS = 160;
+const BASE_MIN_WORDS = 100;
+const BASE_MAX_WORDS = 160;
+const ENHANCED_MIN_WORDS = 140;
+const ENHANCED_MAX_WORDS = 215;
 
 export type JapanEntryMessageMode = "quantified" | "audit";
 
@@ -70,6 +72,9 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   const factMap = new Map(input.facts.map((fact) => [fact.id, fact]));
   const selected = input.factIds.map((id) => factMap.get(id)).filter((fact): fact is JapanEntryPersonalizationFact => Boolean(fact));
   const productEvidence = input.productEvidence.trim();
+  const enhanced = input.facts.some((fact) => fact.id.startsWith("verified-competitor-"));
+  const minWords = enhanced ? ENHANCED_MIN_WORDS : BASE_MIN_WORDS;
+  const maxWords = enhanced ? ENHANCED_MAX_WORDS : BASE_MAX_WORDS;
 
   if (containsUnresolvedPlaceholder(message)) {
     issues.push("Unresolved template placeholder is prohibited");
@@ -84,6 +89,19 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   if (selected.length === 0) { issues.push("No valid Japan-specific fact was selected"); score -= 40; }
   else if (!selected.some((fact) => includesAny(message, fact.anchors))) { issues.push("Selected Japan-specific fact is not reflected in the message"); score -= 30; }
   if (!selected.some((fact) => fact.id.startsWith("japan-audit-"))) { issues.push("No audited Japan-specific page observation was selected"); score -= 35; }
+  const availableCompetitors = input.facts.filter((fact) => fact.id.startsWith("verified-competitor-"));
+  const selectedCompetitor = selected.find((fact) => fact.id.startsWith("verified-competitor-"));
+  if (availableCompetitors.length > 0 && !selectedCompetitor) { issues.push("Verified competitor context is available but was not selected"); score -= 35; }
+  else if (selectedCompetitor && !includesAny(message, selectedCompetitor.anchors)) { issues.push("The exact verified competitor name is missing"); score -= 35; }
+  const demandAvailable = input.facts.some((fact) => fact.id.startsWith("verified-japan-demand-"));
+  const officialMarketAvailable = input.facts.some((fact) => fact.id === "official-japan-ecommerce-market");
+  if (demandAvailable && !selected.some((fact) => fact.id.startsWith("verified-japan-demand-"))) { issues.push("Verified product-specific Japan demand is available but was not selected"); score -= 35; }
+  else if (!demandAvailable && officialMarketAvailable && !selected.some((fact) => fact.id === "official-japan-ecommerce-market")) { issues.push("Official Japan market context is available but was not selected"); score -= 30; }
+  const regulatoryAvailable = input.facts.some((fact) => fact.id.startsWith("regulatory-"));
+  if (regulatoryAvailable && !selected.some((fact) => fact.id.startsWith("regulatory-"))) { issues.push("Available regulatory pressure evidence was not selected"); score -= 35; }
+  if (selected.some((fact) => fact.id.startsWith("regulatory-")) && !/(?:does not|doesn't|not a finding).{0,80}(?:establish|determine|show|mean).{0,60}(?:applicability|breach|obligation)/i.test(message)) {
+    issues.push("Regulatory pressure must state that the screen does not establish applicability or breach"); score -= 40;
+  }
 
   if (paragraphs.length !== 4) { issues.push("Message must contain exactly four short paragraphs separated by blank lines"); score -= 25; }
   else {
@@ -107,7 +125,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     if (!paragraphs[3]?.startsWith(approvedOfferLead) || !/\$\s?12,?000|12,?000\s?(?:USD|dollars)/i.test(paragraphs[3] ?? "")) { issues.push("Offer and CTA must use the approved non-invented transition in paragraph 4"); score -= 20; }
   }
 
-  if (words.length < MIN_WORDS || words.length > MAX_WORDS) { issues.push(`Message must be ${MIN_WORDS}-${MAX_WORDS} words`); score -= 15; }
+  if (words.length < minWords || words.length > maxWords) { issues.push(`Message must be ${minWords}-${maxWords} words`); score -= 15; }
   if (!/\$\s?12,?000|12,?000\s?(?:USD|dollars)/i.test(message)) { issues.push("$12,000 price is missing"); score -= 15; }
   if (!/(?:paid\s+upfront|upfront\s+payment)/i.test(message)) { issues.push("Upfront payment condition is missing"); score -= 10; }
   if (!/(?:first\s+)?six\s+months/i.test(message)) { issues.push("First six months inclusion is missing"); score -= 10; }

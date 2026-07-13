@@ -4,6 +4,7 @@ import { JapanEntryProjectionSection } from "@/components/diagnostic/JapanEntryP
 import { OpportunityActionPlan } from "@/components/opportunity/OpportunityActionPlan";
 import { OpportunityEvidenceSummary } from "@/components/opportunity/OpportunityEvidenceSummary";
 import { OpportunitySensitivityModel } from "@/components/opportunity/OpportunitySensitivityModel";
+import { OpportunityPressureSummary } from "@/components/opportunity/OpportunityPressureSummary";
 import type {
   OpportunityBriefData,
   OpportunityFinding,
@@ -175,6 +176,8 @@ export function OpportunityBrief({
       </section>
 
       <OpportunityEvidenceSummary data={data} locale={locale} />
+
+      <OpportunityPressureSummary data={data} locale={locale} />
 
       <section
         className="px-5 py-14 sm:py-20"

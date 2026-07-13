@@ -20,6 +20,7 @@ import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
 import JapanEntryJourney from "@/components/japan-entry/JapanEntryJourney"
 import JapanEntryVisualProof from "@/components/japan-entry/JapanEntryVisualProof"
+import { JapanMarketUrgency } from "@/components/japan-entry/JapanMarketUrgency"
 import JapanEntryVisualContext, { type VisualContextCopy } from "@/components/japan-entry/JapanEntryVisualContext"
 import { coerceLocale, assertLocale } from "@/lib/cms/filters"
 import {
@@ -159,6 +160,8 @@ export default async function PricingPage({ params, searchParams }: Props) {
         highlight={t("heroHighlight")}
         desc={t("heroDesc")}
       />
+
+      {isJapanEntry && <JapanMarketUrgency compact source="pricing" />}
 
       <section className="relative bg-paradigm-paper paradigm-section overflow-hidden">
         <div className="paradigm-mesh opacity-30" />
