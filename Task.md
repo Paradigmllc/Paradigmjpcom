@@ -1,12 +1,12 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
-### 2026-07-13 Japan Entryフォーム文面・実務品質ゲート（ローカル実装済み / 本番release待ち）
+### 2026-07-13 Japan Entryフォーム文面・実務品質ゲート（本番反映済み / 送信停止）
 - 検証済みの日本アクセス推定と月次機会ギャップが揃う企業は、全候補を数値型へ固定。両方の数値、公開シグナルによる計画推定であること、実測analyticsではないこと、業種に適合するJapan固有の監査ギャップ1件を必須化した。数値ペアがない場合だけ監査型へ切り替え、未確認のtraffic / revenue / ROIを生成しない。
 - SaaSへPayPay・コンビニ決済・配送・特商法表示を機械的に当てる誤診断を除外。Ecommerce / SaaS / serviceごとに利用可能な監査事実を分離した。
 - DeepSeek V4 Proの編集合格基準を合計92/100かつ4軸各22/25以上へ引き上げ、未達時は編集理由を反映して1回だけ再生成する。2回目も不合格、JSON不正、timeout、根拠不足の場合は保存せずfail-closedを維持する。
 - 評価LLMが95点を付けた実出力でも、未観測の`early exit`推測と入力にない`buyer support`を決定論的ゲートで拒否。因果推測・未承認deliverable・URL・資料・法務断定・未承認数値をモデル評価より先に遮断する。
 - 架空SaaS企業を使ったDeepSeek公式API直叩きの再検証は **97/100**（具体性24・自然さ24・信頼性25・経営判断適合24）、安全性100、4段落134語、risk 0で合格。DB保存、Twenty登録、候補収集、フォーム送信は未実行。
-- 検証済み: 対象Vitest **14/14 pass**、TypeScript、対象ESLint、diff check、production build **336/336 pages**。次は正式`npm run release:prod`を完走し、本番fingerprint・Sales health・DB行数0を再確認する。
+- 検証済み: 対象Vitest **14/14 pass**、TypeScript、対象ESLint、quality guard 0 error、diff check、production build **336/336 pages**。PR **#85**をmainへmergeし、正式deployment `bfzoe7yd8o4aywfs9jwniu2o` はfinished。初回CMS seedの一時504は限定retryで回復し、post-deploy gate、公開URL、Sales health HTTP 200 / JSON ok、DB **82/82**をpassした。直後の後続mainコンテナ `2e57c16d` もPR #85 mergeを祖先に含みhealthy。`sales_japan_entry_projections` は **0件**で、DB保存、Twenty登録、候補収集、フォーム送信は未実行。
 
 ### 2026-07-13 法務公開面の整備（実装・ローカル検証済み / 正式release待ち）
 - `/[locale]/terms` と `/[locale]/refund` を追加。JAは国内向け一般サービスの利用規約・返金／キャンセル方針、ENはJapan Entryの固定USD 12,000、開始日、14営業日納品保証、6か月月額込み、7か月目以降USD 995、支払経路、将来期間解約、第三者費用境界を明示する別文面にした。
