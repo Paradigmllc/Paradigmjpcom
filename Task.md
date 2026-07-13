@@ -15,13 +15,14 @@
 - sitemap、hreflang/canonical、release-doctor、production smokeへterms/refundを配線。Vitestのserver-only境界をテスト専用mockで安定化。
 - 検証: `npm exec -- tsc --noEmit --pretty false` pass、全Vitest **95 files / 445 tests pass**、production build **372/372 pages pass**、quality guard **0 errors / 52 warnings**、`git diff --check` pass。正式 `npm run release:prod`と本番URLのJA/EN法務4ページ確認が残作業。
 
-### 2026-07-13 SMB実素材・期限付き非公開デモ Premium V2（実装済み / 正式release待ち / 送信停止）
+### 2026-07-13 SMB実素材・期限付き非公開デモ Premium V2（本番反映・実事業者QA済み / 送信停止）
 - `theme_demo_pages`へ `signed_private` access mode、SHA-256 preview token hash、最大30日の有効期限、素材審査status/manifestを追加するmigrationを実装。非公開デモは `is_published=false` のままservice-role経路だけで取得し、匿名RLS公開を行わない。
 - 署名URLは初回アクセス時にサーバー検証し、HttpOnly / Secure / SameSite=Lax / slug限定pathのCookieへ移す。期限切れ・改ざん・再発行前の旧tokenはHTTP 401となり、HomeからAbout / Services / Contact / Works / News / FAQ / Recruit / Privacy / Terms / Commerceへ移動してもCookie認証を維持する。
 - Payload管理者限定の `/ja/admin/demo-assets` を追加。ロゴ・画像・動画ごとに公式出所、所有者、取得元、利用根拠、人物、透かし、altを記録し、HTTPSでないURL、非公式出所、許諾なしの人物/透かし、blocked素材をfail-closedで拒否する。発行・コピー・確認・即時失効をGUIから操作できる。
 - 審査済み実素材をhero/gallery/logoへ反映する `premium-v2` rendererを追加。フルブリード実写hero、editorial split、ブランド別特徴、非対称gallery、実ロゴnav/footer、Framer Motion、モバイル最適化を備え、既存craft/editorial rendererは互換維持する。
 - 送信、Twenty同期、営業通知、メール、電話、郵送、フォーム送信は接続していない。非公開URL発行APIも通知を発生させない。
-- ローカル検証済み: TypeScript pass、素材安全規則Vitest **3/3 pass**、変更対象ESLint pass、quality guard **0 error**、production build pass。未認証private APIと無効preview tokenはともにHTTP 401、ローカル本番ブラウザはcontentあり・Next error overlayなし。正式release後にmigration適用、実DBでのURL発行、Premium V2のPC/mobile・11経路を本番確認する。
+- 検証済み: TypeScript pass、素材安全規則Vitest **3/3 pass**、変更対象ESLint pass、quality guard **0 error**、production build pass。PR **#83 / #84 / #86 / #87**をmainへmergeし、migrationとrelease wiringを本番適用。及川洋菓子店の公式note画像4点（ロゴ、ダックワーズ、ビスコッティ、パステルバスコ）で `oikawa-yogashiten-premium-v2-review` を `signed_private` / `is_published=false` のまま発行した。
+- 本番QA: 期限付き入口から正規URLへHTTP 307、Home / About / Services / Contact / Works / News / FAQ / Recruit / Privacy / Terms / Commerceの **11/11経路 HTTP 200**。PCとmobile 390x844で実ロゴ・実商品画像の表示、横溢れ0、Next error overlayなし、Cookie継続を実ブラウザ確認。未認証直接アクセスは404本文だけを返し、実デモ本文なし、無効tokenはHTTP 401、`private, no-store`、Cloudflare `DYNAMIC`、`noindex` を確認。最終 `release-doctor --post-deploy` はDB/Traefik/Cloudflare/Realtime/Revenue OS/公開smokeを含め **release gate passed**。
 - 初回本番発行で、Next.js内部origin `0.0.0.0:3000` が返るproxy差異を検出。productionでは検証済み `NEXT_PUBLIC_SITE_URL`（未設定時はParadigm正規URL）を使い、ローカルだけrequest originを使うよう即時修正した。
 - 正規URL再発行後のブラウザ検証で、token検証後のredirectも内部originを使っていることを検出。入口routeにも同じproduction canonical origin規則を適用し、初回アクセスを正規demo URLへ遷移させる。
 - 実素材Premium V2の目視で、生成画像用の「実際の商品ではない」注記が残る矛盾を検出。素材審査statusがある場合は、`consented`なら権利確認済み、`private_proposal`なら公式公開元・非公開提案限定・正式公開前許諾確認の注記へ自動差し替える。
