@@ -19,6 +19,7 @@ import { filterByLocale, assertLocale, localeFindOptions } from "@/lib/cms/filte
 import { withPayloadReadFallback } from "@/lib/payload-availability"
 import { WORKS_EN } from "@/lib/data"
 import JapanEntryVisualProof from "@/components/japan-entry/JapanEntryVisualProof"
+import Image from "next/image"
 import {
   JAPANESE_WORK_PUBLICATION_TAG,
 } from "@/lib/public-content-safety"
@@ -62,6 +63,12 @@ const TILE_GRADIENTS = [
   "from-zinc-900 via-emerald-800 to-blue-700",
   "from-zinc-950 via-blue-800 to-amber-600",
 ]
+
+const TILE_VISUALS = [
+  "/japan-entry/package-scope.svg",
+  "/japan-entry/signal-check.svg",
+  "/japan-entry/application-handover.svg",
+] as const
 
 export default async function WorksPage({ params }: Props) {
   const { locale: rawLocale } = await params
@@ -145,6 +152,17 @@ export default async function WorksPage({ params }: Props) {
                     <article className="group paradigm-glass rounded-lg overflow-hidden paradigm-glow-sm hover:paradigm-glow-lg  transition-all duration-500 h-full flex flex-col">
                       <div className={`relative aspect-[4/3] bg-gradient-to-br ${gradient} p-5 md:p-6 flex flex-col justify-between text-paradigm-paper`}>
                         <div className="absolute inset-0 paradigm-mesh opacity-30" />
+                        {japanEntryLocale && (
+                          <Image
+                            src={TILE_VISUALS[i % TILE_VISUALS.length]}
+                            alt=""
+                            fill
+                            sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                            className="absolute inset-0 h-full w-full object-cover opacity-30 mix-blend-screen transition duration-500 group-hover:scale-105 group-hover:opacity-45"
+                            aria-hidden
+                          />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                         <p className="relative z-10 paradigm-eyebrow text-paradigm-paper/85">{w.industry ?? "—"}</p>
                         <div className="relative z-10">
                           <h3 className="font-display text-[18px] md:text-[22px] leading-[1.15] mb-2 paradigm-glow-text">{w.title ?? ""}</h3>

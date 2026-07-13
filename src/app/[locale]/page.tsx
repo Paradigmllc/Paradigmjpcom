@@ -56,7 +56,7 @@ function fallbackRichText(text: string) {
 const EN_FALLBACK_BLOCKS: CmsBlock[] = [
   {
     blockType: "hero",
-    variant: "centered",
+    variant: "split-image",
     badge: "FOR FAST-DECISION GLOBAL SMBs",
     title: "Launch in Japan without hiring a local team",
     subtitle:
@@ -66,6 +66,10 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
       href: "/en/contact?intent=japan-entry",
     },
     secondaryCta: { label: "See the fixed offer", href: "#japan-entry-pricing" },
+    image: {
+      url: "/japan-entry/package-scope.svg",
+      alt: "Japan Entry fixed-scope package visual showing the connected launch components",
+    },
     stats: [
       { value: "$12K", label: "fixed setup" },
       { value: "$0", label: "monthly for 6 months" },

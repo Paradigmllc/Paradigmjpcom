@@ -1,5 +1,12 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
+### 2026-07-13 全ページの視覚証拠・アニメーション強化（実装・ローカル検証済み / 正式release待ち）
+- 共通 `PageHero` に、公開実績を捏造しないCSSベースの運用パスビジュアル（Signal → Scope → Launch）を追加。20ページのヒーローで同じ視覚言語を再利用し、`prefers-reduced-motion` では静止表示へ切り替える。
+- 国際向けホームのCMSフォールバックHeroを、`/public/japan-entry/package-scope.svg` を使うsplit-image構成へ変更。CMSに画像がない場合でも、固定スコープの実装図がファーストビューに表示される。
+- ブログ一覧・記事詳細に、承認済みHero画像がない記事向けの決定論的なEditorial Coverを追加。Worksの公開確認済みカードにも既存のJapan Entry図解を重ね、文字だけのカードを残さない。
+- Services / Pricing に既存のpackage-scope・signal-check・application-handover図解を再利用。画像はクライアント実績として扱わず、納品物・運用境界の説明資料として表示する。
+- 検証: `npm exec -- tsc --noEmit --pretty false` pass、変更対象ESLint pass、関連Vitest **4 files / 23 tests pass**、`npm run quality:guard` **0 errors / 53 warnings**、production buildで`.next/BUILD_ID`生成を確認。正式 `npm run release:prod` は未実行。
+
 ### 2026-07-13 SMBデモ大量生成の持続可能化（実装・ローカル検証済み / 正式release待ち / 送信停止）
 - デモ本文生成はOpenAIではなくDeepSeekを正規経路とする。LiteLLMが設定済みなら `deepseek-v4-pro` を優先し、未設定時はDeepSeek公式APIの設定モデルを使用する。モデル名、input/output/cache token実績をデモmetaへ保存し、OpenAIやFlashへ黙って降格しない。
 - 同一企業に対してdesign spec、Astro code、3候補copyを重複生成していた経路を廃止。企業別copyは **1社1 LLM call**、3デザインは同じ確認済みcopyを決定論的なlayout recipeへ適用して品質比較する。最大7 call相当から1 callへ削減し、90点未満・根拠不足・権利不明は保存停止を維持する。
