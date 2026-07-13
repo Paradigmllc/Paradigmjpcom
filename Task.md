@@ -1,9 +1,11 @@
-## CURRENT STATUS - 2026-07-14 Packageヘッダーナビ追加（実装・型/品質検査済み / 本番反映待ち）
+## CURRENT STATUS - 2026-07-14 Packageヘッダーナビ追加（本番反映・公開QA済み）
 
 ### 2026-07-14 Japan Entry Packageのヘッダー導線追加
 - 国際ロケールの共通ヘッダー（デスクトップとモバイルメニュー）へ `Package` → `/package` を追加。`/en/package` の詳細ページを価格・実績・FAQと同じ一次導線から開けるようにした。
 - `en` だけでなく、国際化対象の全ロケールにナビラベルを追加。`/ja` は国内向けナビ構成を維持し、Japan Entry導線を混在させない。
-- 検査: 全ロケールJSON parse、`npm exec -- tsc --noEmit`、対象ESLint、`npm run quality:guard`（0 errors / 59 warnings）、`git diff --check` pass。本番反映と公開ブラウザ確認はこの変更のrelease後に追記する。
+- 検査: 全ロケールJSON parse、`npm exec -- tsc --noEmit`、対象ESLint、`npm run quality:guard`（0 errors / 59 warnings）、`git diff --check` pass。
+- PR #149 をマージし、`npm run release:prod`（deployment `brwc8244p6mbtn395itz6a56`）を完走。DB `83/83`、公開スモーク、Realtime、Twenty worker、Traefik route driftを含むrelease gate pass。
+- 公開QA: `https://paradigmjp.com/en` の実DOMで `Package` → `/en/package` を確認。デスクトップとモバイルが同じ共通ナビ配列を使用し、`/ja` の国内向けメニューは変更なし。
 
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
