@@ -153,6 +153,7 @@ export async function syncCustomerHandoffToTwenty(
     targetCountry: "JP",
     templateVariant: "website_diagnostic",
     reportUrl: null,
+    opportunityBriefUrl: null,
     formUrl: null,
     demoUrl: null,
     salesMaterialUrl: null,

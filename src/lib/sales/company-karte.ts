@@ -1,6 +1,6 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { buildCompanyIntelligence, type CompanyIntelligence } from "@/lib/sales/company-intelligence"
-import { buildReportUrl, REPORT_LOCALES, type ReportLocale } from "@/lib/sales/routing"
+import { buildOpportunityBriefUrl, buildReportUrl, REPORT_LOCALES, type ReportLocale } from "@/lib/sales/routing"
 import { computeSourceCoverage, type SourceCoverageItem } from "@/lib/sales/source-coverage"
 import type { CompanyProductRecommendation } from "@/lib/sales/products"
 import type { SalesCompany } from "@/lib/sales/types"
@@ -72,6 +72,7 @@ export interface CompanyKarteSnapshot {
   targetCountry: string
   templateVariant: string
   reportUrl: string | null
+  opportunityBriefUrl: string | null
   formUrl: string | null
   demoUrl: string | null
   salesMaterialUrl: string | null
@@ -288,6 +289,8 @@ export function buildCompanyKarte(
   const personalizedCopy = asRecord(meta.personalized_copy)
   const formMessageEvidence = asRecord(meta.form_message_evidence) as VerifiedOutreachContext | null
   const japanEntry = japanEntryDraftFromMeta(meta)
+  const opportunityBriefUrl = firstString(meta, [["japan_entry_opportunity_url"]]) ??
+    (japanEntry && company.slug ? buildOpportunityBriefUrl(reportLocale, company.slug) : null)
 
   return {
     companyId: company.id,
@@ -307,6 +310,7 @@ export function buildCompanyKarte(
     targetCountry,
     templateVariant,
     reportUrl: company.report_url ?? (company.slug ? buildReportUrl(reportLocale, company.slug) : null),
+    opportunityBriefUrl,
     formUrl,
     demoUrl: stringAt(meta, ["demo_site", "url"]),
     salesMaterialUrl: firstString(meta, [
@@ -392,6 +396,7 @@ export function companyKarteMarkdown(karte: CompanyKarteSnapshot): string {
     "## 営業URL",
     `- フォームURL: ${karte.formUrl ?? "未検出"}`,
     `- 診断レポートURL: ${karte.reportUrl ?? "未生成"}`,
+    `- Japan Entry Opportunity Brief: ${karte.opportunityBriefUrl ?? "未生成"}`,
     `- AstroデモURL: ${karte.demoUrl ?? "未生成"}`,
     "",
     "## 言語別レポートURL",

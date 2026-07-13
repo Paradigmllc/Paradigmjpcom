@@ -6,6 +6,13 @@
 - EN FAQ、JA FAQ、AIチャットRAG知識にも同じ説明を追加。署名済み範囲の代替ではなく、共有の進行記録であることを明記した。
 - 検証: TypeScript pass、対象ESLint pass、関連Vitest **2 files / 15 tests pass**、quality guard **0 errors / 53 warnings**、JSON parse、diff check pass。ローカルproduction buildは別プロジェクトのNextビルド競合で1115秒時点に中断。正式releaseのリモートbuildで再確認予定。
 
+### 2026-07-13 Japan Entry Opportunity Brief URL（実装・ローカル検証済み / 正式release待ち）
+- 興味返信後の企業へ共有する専用URL `/{locale}/opportunity/{slug}` を追加。既存診断レポートの会社データ取得、日本市場監査、公開シグナル投影を再利用しつつ、意思決定要約、推定市場別アクセス、6/12/24か月ROI、準備状況、競合環境、21営業日の推奨手順、$12,000一括前払い・最初の6か月込みを一つの非公開noindex資料へ再構成した。
+- 投影は `public-opportunity-v1` の完全な3シナリオと6/12/24か月データが揃う場合だけ公開し、不完全データは404へfail-closed。数値は公開シグナルに基づくモデル値として表示し、実測アクセス・確定売上・成果保証とは扱わない。
+- 競合名は `japan_entry_competitor_analysis` にHTTPS公開根拠URLがあるものだけ表示する。未検証時は類似カテゴリから推測せず「競合セット未検証」と明示し、15分面談後に対象顧客・価格帯・代替手段を確定する。
+- 投影生成時にOpportunity Brief URLを企業metaへ保存し、Twenty企業ホームの主リンクとカルテ要約へ同期する。既存投影もslugがあればカルテ生成時にURLを復元する。初回フォーム文面は従来どおりURL・資料なし、未送信・要レビューを維持し、候補収集やフォーム送信には接続しない。
+- 検証: 対象Vitest **6 files / 25 tests pass**、TypeScript pass、対象ESLint pass、quality guard **0 errors**、production build **372/372 pages**、新route `/[locale]/opportunity/[slug]` のbundle収載、`git diff --check` pass。
+
 ### 2026-07-13 SMB実素材デモ Premium V3 全ページ品質強化（本番反映・公開QA済み / 送信停止）
 - Premium V2がトップ専用で、About / Services / Contact / Works等は旧汎用レンダラーのままだった分断を解消。店紹介、商品、アクセス、汎用コンテンツ／FAQ／法務を専用のeditorial rendererへ切り替え、全11ページを同じ色・書体・余白・写真表現へ統一した。
 - トップhero見出しを最大8.4rem・8.3vwから最大7rem・6.6vwへ縮小し、最小高さも820pxから720pxへ調整。提案制作側の説明文を顧客向けの店舗・商品コピーへ置換した。
