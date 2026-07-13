@@ -7,6 +7,15 @@ import {
   isNonIndexablePath,
 } from "@/lib/marketing-routing";
 
+function decodeDemoPathSegment(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch (error) {
+    console.error("[proxy] invalid encoded demo path segment:", error);
+    return value;
+  }
+}
+
 export function proxy(request: NextRequest) {
   const host = request.headers.get("host") || "";
   const hostname = host.split(":")[0]?.toLowerCase() ?? "";
@@ -43,7 +52,7 @@ export function proxy(request: NextRequest) {
         return NextResponse.rewrite(new URL("/not-found", request.url));
       }
       const rewrite = request.nextUrl.clone();
-      rewrite.pathname = `/ja/demo/${slug}${suffix}`;
+      rewrite.pathname = `/ja/demo/${decodeDemoPathSegment(slug)}${suffix}`;
       const response = NextResponse.rewrite(rewrite);
       response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
       return response;
