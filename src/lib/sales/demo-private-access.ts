@@ -3,6 +3,7 @@ import "server-only"
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { DEMO_QUALITY_THRESHOLD } from "./demo-quality-gate"
 
 export type DemoAssetKind = "logo" | "image" | "video"
 export type DemoAssetUseBasis = "consented" | "licensed" | "official_embed" | "private_proposal" | "generated" | "blocked"
@@ -181,6 +182,22 @@ export async function activatePublicUnlistedDemo(input: {
   if (errors.length > 0) throw new Error(errors.join("\n"))
   const sb = getServiceSalesSupabase()
   if (!sb) throw new Error("Supabase unavailable")
+  const { data: gate, error: gateError } = await sb
+    .from(DB_TABLES.THEME_DEMO_PAGES)
+    .select("slug, quality_score, quality_report, publication_status")
+    .eq("slug", input.slug)
+    .maybeSingle()
+  if (gateError) throw new Error(gateError.message)
+  const report = gate?.quality_report
+  const reportPassed = Boolean(
+    report
+    && typeof report === "object"
+    && !Array.isArray(report)
+    && report.passed === true,
+  )
+  if (!gate || !reportPassed || typeof gate.quality_score !== "number" || gate.quality_score < DEMO_QUALITY_THRESHOLD) {
+    throw new Error("Demo publication blocked: quality gate has not passed")
+  }
   const review: DemoAssetReview = {
     status: "consented",
     reviewedAt: new Date().toISOString(),

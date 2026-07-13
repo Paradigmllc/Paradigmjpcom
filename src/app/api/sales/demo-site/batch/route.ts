@@ -15,6 +15,7 @@ import {
   releaseDemoBatchDrain,
 } from "@/lib/sales/demo-batch-drain"
 import { buildDemoUrl } from "@/lib/sales/routing"
+import { DEMO_QUALITY_THRESHOLD } from "@/lib/sales/demo-quality-gate"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -201,8 +202,22 @@ export async function PUT(request: NextRequest) {
       const related = row.company_id ? companyById.get(row.company_id) : null
       const sourceReview = readManifestFromRelatedCompany(related)
       const slug = typeof row.result_payload?.slug === "string" ? row.result_payload.slug : null
-      if (!slug || !sourceReview.ok || !sourceReview.manifest) {
-        issued.push({ jobId: row.id, ok: false, error: slug ? sourceReview.errors.join(", ") : "slug missing" })
+      const qualityReport = row.result_payload?.quality_report
+      const qualityPassed = Boolean(
+        qualityReport
+        && typeof qualityReport === "object"
+        && !Array.isArray(qualityReport)
+        && qualityReport.passed === true
+        && typeof qualityReport.score === "number"
+        && qualityReport.score >= DEMO_QUALITY_THRESHOLD,
+      )
+      if (!slug || !sourceReview.ok || !sourceReview.manifest || !qualityPassed) {
+        const errorMessage = !slug
+          ? "slug missing"
+          : !qualityPassed
+            ? "quality report missing or below publication threshold"
+            : sourceReview.errors.join(", ")
+        issued.push({ jobId: row.id, ok: false, error: errorMessage })
         continue
       }
       await activatePublicUnlistedDemo({ slug, assets: sourceReview.manifest.assets })

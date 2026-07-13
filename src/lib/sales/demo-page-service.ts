@@ -15,6 +15,7 @@ import type { DemoCandidateSummary, DemoGenerateOutput, DemoMultiPageData } from
 import type { ReportLocale } from "./types"
 import { buildDemoUrl } from "./routing"
 import { readValidatedDemoSourceManifest } from "./demo-source-policy"
+import { applyIndustryPresentation } from "./demo-industry-presentation"
 
 export { fetchDemoMultiPageData, fetchDemoPageData } from "./demo-page-fetch"
 
@@ -97,6 +98,7 @@ export async function generateFullStackDemo(
         template,
       )
       if (sharedEnhancement) page = mergeDeepSeekOutput(page, sharedEnhancement, effectiveLocale)
+      page = applyIndustryPresentation(page)
       const recipe = buildDesignRecipe(template, page)
       const quality = evaluateDemoQuality(page, recipe, rights, existingFingerprints)
       page = { ...page, designRecipe: recipe, quality, rightsManifest: rights }
@@ -188,6 +190,7 @@ export async function generateFullStackDemo(
       qualityScore: selected.summary.score,
       publicationStatus,
       candidates: candidates.map(({ summary }) => summary),
+      qualityReport: selected.page.quality,
       error: qualityPassed ? undefined : `Quality gate failed: ${selected.summary.hardBlockers.join(", ")}`,
     }
   } catch (error) {

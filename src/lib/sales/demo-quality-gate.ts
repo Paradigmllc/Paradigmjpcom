@@ -7,9 +7,10 @@ import type {
 } from "./demo-site-types"
 import type { DemoTemplate } from "./demo-templates/registry"
 import { findUnsupportedDemoClaims } from "./demo-copy-grounding"
+import { analyzeDemoQualitySignals } from "./demo-quality-signals"
 
-export const DEMO_QUALITY_GATE_VERSION = "2026-07-13.5"
-export const DEMO_QUALITY_THRESHOLD = 90
+export const DEMO_QUALITY_GATE_VERSION = "2026-07-14.1"
+export const DEMO_QUALITY_THRESHOLD = 92
 
 const FABRICATION_PATTERNS = [
   /問い合わせ.{0,8}(倍|増)/u,
@@ -165,13 +166,21 @@ export function evaluateDemoQuality(
   if (page.pages.home.features.length < 3) warnings.push("home_evidence_thin")
   if (!page.pages.contact.formNote) warnings.push("contact_expectation_missing")
 
-  const score = Math.max(0, 100 - hardBlockers.length * 30 - warnings.length * 3)
+  const editorial = analyzeDemoQualitySignals(page)
+  hardBlockers.push(...editorial.blockers)
+  warnings.push(...editorial.warnings)
+
+  const dimensionScore = Object.values(editorial.dimensions).reduce((total, value) => total + value, 0)
+  const score = hardBlockers.length > 0
+    ? Math.min(70, Math.max(0, dimensionScore - hardBlockers.length * 12 - warnings.length * 2))
+    : Math.max(0, dimensionScore - warnings.length * 2)
   return {
     version: DEMO_QUALITY_GATE_VERSION,
     score,
     passed: score >= DEMO_QUALITY_THRESHOLD && hardBlockers.length === 0,
     hardBlockers,
     warnings,
+    dimensions: editorial.dimensions,
     checks: {
       requiredPages: !hardBlockers.includes("required_page_missing"),
       evidenceSafe: !hardBlockers.some((item) => item.includes("unverified") || item.includes("fabricated") || item.includes("source_coverage")),
@@ -194,6 +203,7 @@ export function summarizeCandidate(
     designFingerprint: fingerprint({ companyId: page.companyId, recipe }),
     structuralFingerprint: fingerprint(recipe),
     hardBlockers: quality.hardBlockers,
+    visualVariant: `${recipe.templateId}:${recipe.heroVariant}:${recipe.compositionVariant}:${recipe.motionVariant}`,
   }
 }
 
