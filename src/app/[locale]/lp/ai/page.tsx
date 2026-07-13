@@ -39,7 +39,7 @@ type Plan = { name: string; price: string; period: string; desc: string; feature
 
 export default async function AiLP({ params }: Props) {
   const { locale } = await params
-  if (locale === "en") permanentRedirect("/en/services#package-modules")
+  if (locale !== "ja") permanentRedirect(`/${locale}/services#package-modules`)
   const t = await getTranslations({ locale, namespace: "lpAi" })
   const stats = t.raw("stats") as Stat[]
   const faqs = t.raw("faqs") as Faq[]

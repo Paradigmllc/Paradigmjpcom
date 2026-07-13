@@ -78,8 +78,8 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
   const tLocale = useTranslations("locale")
   const tCookie = useTranslations("cookieConsent")
   const locale = useLocale()
-  const contactHref = locale === "en" || locale === "ja" ? "/contact?intent=japan-entry" : "/contact"
-  const japanEntryAnalytics = locale === "en" || locale === "ja" ? {
+  const contactHref = locale !== "ja" ? "/contact?intent=japan-entry" : "/contact"
+  const japanEntryAnalytics = locale !== "ja" ? {
     "data-umami-event": "japan-entry-apply",
     "data-umami-event-source": "footer",
   } : {}
@@ -126,7 +126,7 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
             </div>
             <div className="lg:col-span-5 flex flex-col gap-6">
               <p className="text-[14px] md:text-[15px] text-paradigm-ink-soft leading-[1.85] max-w-md">
-                {locale === "en" ? t("companyTagline") : nav?.tagline || t("companyTagline")}
+              {locale !== "ja" ? t("companyTagline") : nav?.tagline || t("companyTagline")}
               </p>
               <Link
                 href={contactHref}
@@ -142,7 +142,7 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
         {/* Band 2 — Link columns. */}
         <motion.section initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.1, ease: EASE }}
           className="py-16 md:py-20 border-b border-paradigm-line">
-          {locale !== "en" && nav?.columns?.length ? (
+          {locale === "ja" && nav?.columns?.length ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10 md:gap-12">
               {nav.columns.map((col) => (
                 <div key={col.heading}>
@@ -152,12 +152,12 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
                       <li key={`${col.heading}-${l.href}`}>
                         {l.openInNewTab ? (
                           <a href={l.href} target="_blank" rel="noopener noreferrer" className="hover:text-paradigm-ink transition-colors">
-                            {locale === "en" && l.href === "/contact" ? tNav("contact") : l.label}
+                            {locale !== "ja" && l.href === "/contact" ? tNav("contact") : l.label}
                           </a>
                         ) : (
                           <Link
-                            href={locale === "en" && l.href === "/contact" ? contactHref : l.href}
-                            {...(locale === "en" && l.href === "/contact" ? japanEntryAnalytics : {})}
+                            href={locale !== "ja" && l.href === "/contact" ? contactHref : l.href}
+                            {...(locale !== "ja" && l.href === "/contact" ? japanEntryAnalytics : {})}
                             className="hover:text-paradigm-ink transition-colors"
                           >
                             {l.label}
@@ -174,7 +174,7 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
               <div>
                 <p className="paradigm-eyebrow mb-5">{t("servicesHeading")}</p>
                 <ul className="space-y-3 text-[14px] text-paradigm-ink-soft">
-                  {(locale === "en" ? englishOfferLinks : SERVICE_LINKS).map((l) => (
+                  {(locale !== "ja" ? englishOfferLinks : SERVICE_LINKS).map((l) => (
                     <li key={l.href}>
                       <Link href={l.href} className="hover:text-paradigm-ink transition-colors">
                         {"label" in l ? l.label : t(`services.${l.labelKey}`)}
@@ -210,7 +210,7 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
             <p className="text-[13px] text-paradigm-ink-soft leading-[1.8] max-w-xl">
               {companyDetails.length > 0
                 ? companyDetails.join(" · ")
-                : locale === "en"
+                : locale !== "ja"
                   ? t("studioLocation")
                   : nav?.studioLocation || t("studioLocation")}
             </p>

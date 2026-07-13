@@ -126,16 +126,17 @@ function getJapanEntryServiceJsonLd() {
   }
 }
 
-export function getJapanEntryHomeJsonLd() {
+export function getJapanEntryHomeJsonLd(locale: string = "en") {
+  const pageUrl = `https://paradigmjp.com/${locale}`
   return {
     "@context": "https://schema.org",
     "@graph": [
       getJapanEntryServiceJsonLd(),
       {
         "@type": "FAQPage",
-        "@id": `${JAPAN_ENTRY_URL}#faq`,
-        url: JAPAN_ENTRY_URL,
-        inLanguage: "en",
+        "@id": `${pageUrl}#faq`,
+        url: pageUrl,
+        inLanguage: locale,
         mainEntity: JAPAN_ENTRY_FAQS.map((faq) => ({
           "@type": "Question",
           name: faq.q,
@@ -179,14 +180,14 @@ export function getOrganizationJsonLd(locale: string = "ja") {
     logo: "https://paradigmjp.com/favicon.svg",
     description:
       variant === "ja"
-        ? "海外SMB向けのJapan Entry固定パッケージ。日本語の購入者導線、市場・競合根拠、SNS、法規制の適用可能性整理、公開運用を接続するParadigm合同会社。"
+        ? "Web制作、MEO、SEO/GEO、AI導入を、設計から公開後の運用まで支援するParadigm合同会社。"
         : JAPAN_ENTRY_DESCRIPTION,
     sameAs: [],
     areaServed: { "@type": "Country", name: "Japan" },
     serviceArea: { "@type": "Country", name: "Japan" },
     knowsAbout:
       variant === "ja"
-        ? ["Japan Entry", "ローカライズ", "市場・競合調査", "SNS初期設定", "法規制スクリーニング", "日本語サポート"]
+        ? ["Web制作", "MEO", "SEO/GEO", "AI導入支援", "デジタルマーケティング", "運用改善"]
         : ["Japan Market Entry", "Localization", "Revenue Operations", "Buyer Trust", "Bilingual Support"],
   }
 }
@@ -194,13 +195,19 @@ export function getOrganizationJsonLd(locale: string = "ja") {
 export function getServicesJsonLd(locale: string = "ja") {
   const variant = localeContentVariant(locale)
   const orgName = orgNameOf(locale)
-  const services = variant === "ja"
-    ? [{ name: JAPAN_ENTRY_TITLE, desc: "日本語の購入者導線、市場根拠、SNS、法規制の適用可能性整理、公開運用を一つにまとめた固定パッケージ。", url: "/ja", price: "12000", priceDesc: "固定セットアップ・6か月運用込み" }]
+  const pageLocale = variant === "ja" ? "ja" : locale
+  const services: Array<{ name: string; desc: string; url: string; price?: string; priceDesc?: string }> = variant === "ja"
+    ? [
+        { name: "Web制作", desc: "目的と運用条件に合わせたWebサイトの設計・制作・公開後運用。", url: "/ja/services/web" },
+        { name: "MEO", desc: "Googleビジネスプロフィールの整備、投稿・口コミ運用、順位計測。", url: "/ja/services/meo" },
+        { name: "SEO/GEO", desc: "検索エンジンとAI検索に対応するコンテンツ・構造化データ・技術改善。", url: "/ja/services/seo" },
+        { name: "AI導入支援", desc: "対象業務、人の確認工程、評価指標を定義したAI導入と自動化。", url: "/ja/services/ai" },
+      ]
     : [
         {
           name: JAPAN_ENTRY_TITLE,
           desc: JAPAN_ENTRY_DESCRIPTION,
-          url: "/en",
+          url: `/${pageLocale}`,
           price: "12000",
           priceDesc: "Fixed one-time setup with six months of managed operation included",
         },
@@ -213,13 +220,13 @@ export function getServicesJsonLd(locale: string = "ja") {
       name: s.name,
       description: s.desc,
       provider: { "@type": "Organization", name: orgName },
-      url: `https://paradigmjp.com${s.url}`,
-      offers: {
+      url: `https://paradigmjp.com${variant === "ja" ? s.url : `/${pageLocale}`}`,
+      ...(s.price ? { offers: {
         "@type": "Offer",
         priceCurrency: variant === "ja" ? "JPY" : "USD",
         price: s.price,
         description: s.priceDesc,
-      },
+      } } : {}),
     })),
   }
 }

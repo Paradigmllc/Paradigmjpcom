@@ -27,23 +27,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function JapanEntryScorePage({ params }: Props) {
   const { locale } = await params
   if (!isMarketingLocale(locale)) notFound()
-  const isJapanese = locale === "ja"
+  if (locale === "ja") notFound()
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: isJapanese ? "Japan Entry Signal Check" : "Japan Entry Signal Check",
+    name: "Japan Entry Signal Check",
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
     url: `https://paradigmjp.com/${locale}/tools/japan-entry-score`,
-    description: isJapanese
-      ? "公開シグナルと自己申告から日本進出準備の見え方を可視化するツール。"
-      : "A public-signal utility that visualizes how ready a business looks for Japan.",
+    description: "A public-signal utility that visualizes how ready a business looks for Japan.",
     offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
   }
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <JapanEntryScoreTool locale={locale} />
+      <JapanEntryScoreTool locale="en" />
     </>
   )
 }

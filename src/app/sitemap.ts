@@ -29,11 +29,12 @@ type StaticRoute = {
 }
 
 const JAPANESE_ONLY = ["ja"] as const
+const INTERNATIONAL_ONLY = ["en", "ko", "zh", "de", "fr", "es", "pt", "ru", "ar", "vi", "id"] as const
 
 const STATIC_ROUTES: StaticRoute[] = [
   { path: "", changeFrequency: "weekly", priority: 1.0 },
   { path: "/about", changeFrequency: "monthly", priority: 0.8 },
-  { path: "/services", changeFrequency: "monthly", priority: 0.9, locales: JAPANESE_ONLY },
+  { path: "/services", changeFrequency: "monthly", priority: 0.9 },
   { path: "/services/web", changeFrequency: "monthly", priority: 0.8, locales: JAPANESE_ONLY },
   { path: "/services/meo", changeFrequency: "monthly", priority: 0.8, locales: JAPANESE_ONLY },
   { path: "/services/seo", changeFrequency: "monthly", priority: 0.8, locales: JAPANESE_ONLY },
@@ -47,7 +48,7 @@ const STATIC_ROUTES: StaticRoute[] = [
   { path: "/contact", changeFrequency: "yearly", priority: 0.9 },
   { path: "/privacy", changeFrequency: "yearly", priority: 0.3 },
   { path: "/legal", changeFrequency: "yearly", priority: 0.3 },
-  { path: "/tools/japan-entry-score", changeFrequency: "weekly", priority: 0.95 },
+  { path: "/tools/japan-entry-score", changeFrequency: "weekly", priority: 0.95, locales: INTERNATIONAL_ONLY },
   { path: "/lp/web", changeFrequency: "monthly", priority: 0.7, locales: JAPANESE_ONLY },
   { path: "/lp/meo", changeFrequency: "monthly", priority: 0.7, locales: JAPANESE_ONLY },
   { path: "/lp/seo", changeFrequency: "monthly", priority: 0.7, locales: JAPANESE_ONLY },

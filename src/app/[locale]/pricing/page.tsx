@@ -73,9 +73,11 @@ export default async function PricingPage({ params, searchParams }: Props) {
   const { force_country } = await searchParams
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
   const contentLocale = coerceLocale(rawLocale)     // ja/en（通貨フォーマット判定専用: formatPricePPP）
-  const isJapanEntry = locale === "en" || locale === "ja"
+  const isJapanEntry = locale !== "ja"
   const t = await getTranslations({ locale, namespace: "pricingPage" })
-  const faqPairs = (t.raw("pricingFaqs") as Array<{ q: string; a: string }>) ?? []
+  const faqPairs = locale === "ja"
+    ? []
+    : (t.raw("pricingFaqs") as Array<{ q: string; a: string }>) ?? []
   const scopeGroups = isJapanEntry ? (t.raw("scopeGroups") as ScopeGroup[]) : []
   const packageModules = isJapanEntry ? readRawArray<PackageModule>(t.raw("packageModules")) : []
   const packageBenefits = isJapanEntry ? readRawArray<PackageBenefit>(t.raw("packageBenefits")) : []

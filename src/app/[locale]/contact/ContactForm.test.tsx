@@ -35,9 +35,9 @@ describe("isJapanEntryContact", () => {
     expect(isJapanEntryContact("en", "general")).toBe(true)
   })
 
-  test("keeps non-English general contact routes unchanged", () => {
+  test("keeps the Japanese route general while international routes use the package", () => {
     expect(isJapanEntryContact("ja", null)).toBe(false)
-    expect(isJapanEntryContact("de", null)).toBe(false)
+    expect(isJapanEntryContact("de", null)).toBe(true)
     expect(isJapanEntryContact("de", "japan-entry")).toBe(true)
   })
 })

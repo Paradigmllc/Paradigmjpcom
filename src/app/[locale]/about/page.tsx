@@ -78,7 +78,7 @@ function buildJapaneseCompanyInfo(
     rows.push(["所在地", [settings.company.postalCode, configuredAddress].filter(Boolean).join(" ")])
   }
   rows.push(
-    ["事業内容", "Japan Entry運用 / Web・LPローカライズ / 市場・競合調査 / SNS・SEO基盤"],
+    ["事業内容", "Web制作 / MEO / SEO・GEO / AI導入支援"],
     ["メール", settings.contact.email ?? "info@paradigmjp.com"],
     ["Webサイト", "https://paradigmjp.com"],
   )
@@ -106,7 +106,7 @@ export default async function AboutPage({ params }: Props) {
   // Public bios stay hidden until named members and publication consent have
   // been verified. Generic seeded roles are not evidence of a real team.
   const teamMembers: Array<{ id: string | number; name?: string; role?: string; bio?: string }> = []
-  const isJapanEntryLocale = locale === "en" || locale === "ja"
+  const isJapanEntryLocale = locale !== "ja"
   const representativePrinciples = isJapanEntryLocale ? (t.raw("representativePrinciples") as string[]) ?? [] : []
   const operatingSteps = isJapanEntryLocale ? (t.raw("operatingSteps") as OperatingStep[]) ?? [] : []
   const representativeName = locale === "ja" ? "Paradigm合同会社 運営チーム" : "Paradigm LLC operator team"
@@ -257,7 +257,7 @@ export default async function AboutPage({ params }: Props) {
         highlight={t("ctaHighlight")}
         desc={t("ctaDesc")}
         buttonLabel={t("ctaButton")}
-        buttonHref={locale === "en" ? "/contact?intent=japan-entry" : "/contact"}
+        buttonHref={isJapanEntryLocale ? "/contact?intent=japan-entry" : "/contact"}
         analyticsSource="about-final-cta"
       />
       <script

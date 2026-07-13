@@ -308,48 +308,36 @@
     }
   },
   "blogPage": {
-    "metaTitle": "Japan Entry Field Notes",
-    "metaDescription": "日本市場へのローカライズ、公開シグナル、法規制の確認、固定スコープ、公開後30日の判断を整理する実務記事。",
-    "heroBadge": "Japan Entry Field Notes",
-    "heroTitle": "日本進出の判断に必要な情報を、記事で確認する。",
-    "heroHighlight": "判断に必要な情報",
-    "heroDesc": "公開根拠、自己申告、未知項目を分け、ローカライズ、運用、法規制、引き継ぎの論点を実務向けに整理します。",
+    "metaTitle": "ブログ | Paradigm合同会社",
+    "metaDescription": "Web制作、MEO、SEO/GEO、AI活用など、事業の実装と運用に役立つ記事を掲載しています。",
+    "heroBadge": "Journal",
+    "heroTitle": "実装と運用に役立つ知識を届けます。",
+    "heroHighlight": "役立つ知識",
+    "heroDesc": "Web制作、集客、AI活用、公開後の改善について、実務で使える情報を整理します。",
     "emptyMessage": "現在、公開中の記事はありません。新しい記事をお待ちください。",
     "emptyCta": "お問い合わせ",
     "readTimeFormat": "{readTime}で読める"
   },
   "worksPage": {
-    "metaTitle": "公開できる提供根拠 | Japan Entry",
-    "metaDescription": "ParadigmのJapan Entry固定パッケージで、申込前に確認できるサイト、運用、公開根拠を紹介します。",
-    "heroBadge": "提供根拠",
-    "heroTitle": "申込前に、確認できるものを見せる。",
-    "heroHighlight": "確認できるもの",
-    "heroDesc": "許諾のない匿名実績や推測の売上数字は掲載しません。このサイトと運用フローで確認できる具体的な提供面を公開します。",
+    "metaTitle": "制作実績 | Paradigm合同会社",
+    "metaDescription": "Paradigmが手がけたWeb制作、集客、AI導入の取り組みと、確認できる提供内容をご紹介します。",
+    "heroBadge": "Works",
+    "heroTitle": "確認できる制作と改善を紹介します。",
+    "heroHighlight": "制作と改善",
+    "heroDesc": "公開できる範囲の成果物と進め方を紹介します。許諾のない実績や推測の数値は掲載しません。",
     "emptyMessage": "公開根拠を準備中です。未公開案件を実績として案内することはありません。",
-    "emptyCta": "Japan Entry適合審査 — $12K",
+    "emptyCta": "お問い合わせ",
     "ctaEyebrow": "次の公開",
-    "ctaTitle": "この運用システムを、日本進出の入口にする。",
-    "ctaHighlight": "日本進出の入口",
-    "ctaDesc": "12,000ドル固定を承認でき、必要な素材を速やかに共有できる企業向けです。",
-    "ctaButton": "Japan Entry適合審査 — $12K",
-    "processEyebrow": "公開プロセス",
-    "processTitle": "記録した開始日から14営業日の納品保証を管理する",
+    "ctaTitle": "次の制作・改善を相談する。",
+    "ctaHighlight": "次の制作・改善",
+    "ctaDesc": "目的と現状をお聞かせください。必要なスコープと進め方を整理します。",
+    "ctaButton": "お問い合わせ",
+    "processEyebrow": "制作プロセス",
+    "processTitle": "相談から公開後の改善まで、一つの流れで進める",
     "process": [
-      {
-        "step": "01",
-        "title": "適合と素材の確認",
-        "desc": "意思決定権限、商品、素材、アクセス、開始時期、第三者依存を確認します。"
-      },
-      {
-        "step": "02",
-        "title": "ローカライズ実装",
-        "desc": "購入者導線、信頼・法規制確認、市場レポート、SNS、サポートを合意範囲で実装します。"
-      },
-      {
-        "step": "03",
-        "title": "承認・公開・引き継ぎ",
-        "desc": "依存条件を解消して公開し、所有者、計測、エスカレーション、月額運用の手順を残します。"
-      }
+      { "step": "01", "title": "現状と目的を整理", "desc": "事業目標、顧客、既存サイト、運用体制を確認し、優先順位を決めます。" },
+      { "step": "02", "title": "設計・制作・実装", "desc": "必要なページ、コンテンツ、計測、AIや外部サービス連携を合意範囲で実装します。" },
+      { "step": "03", "title": "検証・公開・運用", "desc": "表示、アクセシビリティ、計測、引き継ぎを確認し、公開後の改善サイクルへつなげます。" }
     ],
     "evidenceEyebrow": "根拠の読み方",
     "evidenceTitle": "作られたケーススタディではなく、導線を確認する。",
@@ -528,22 +516,22 @@
     ]
   },
   "pricingPage": {
-    "metaTitle": "Japan Entry料金 — セットアップ12,000ドル固定",
-    "metaDescription": "日本市場向けの固定パッケージ。セットアップ12,000ドル、最初の6か月は標準月額運用込み、7か月目以降は月額995ドル。",
-    "heroBadge": "固定オファー · USD建て",
-    "heroTitle": "一つの判断で、日本市場の入口をつくる。",
-    "heroHighlight": "一つの判断",
-    "heroDesc": "セットアップ12,000ドル固定。最初の6か月は標準月額運用込み、7か月目以降は月額995ドル。国や企業規模で価格を変えません。",
-    "emptyMessage": "現在、公開中のパッケージはありません。",
-    "emptyCta": "Japan Entry適合審査 — $12K",
+    "metaTitle": "料金 | Paradigm合同会社",
+    "metaDescription": "Web制作、MEO、SEO/GEO、AI導入支援の料金と提供範囲をご案内します。",
+    "heroBadge": "Pricing",
+    "heroTitle": "必要な範囲から、料金を明確に。",
+    "heroHighlight": "料金を明確に",
+    "heroDesc": "目的、現在の環境、運用体制を確認したうえで、実装範囲と第三者費用を分けてご提案します。",
+    "emptyMessage": "現在、公開中のプランはありません。",
+    "emptyCta": "お問い合わせ",
     "popularBadge": "固定オファー",
     "planEyebrow": "Plan",
     "billingMonthly": "/月",
     "billingYearly": "/年",
     "billingOnetime": "一括セットアップ",
-    "defaultCta": "Japan Entry適合審査 — $12K",
+    "defaultCta": "お問い合わせ",
     "pppHint": "",
-    "regionFooter": "Japan Entryは地域別の値引きを行わない固定USD価格です。",
+    "regionFooter": "地域・要件・第三者費用は見積書で確定します。",
     "fixedPlanName": "Japan Entry Package",
     "fixedPlanDescription": "日本語の購入者導線、公開シグナル市場レポート、SNS初期設定、法規制の適用可能性整理、公開運用、引き継ぎを一つにまとめた固定スコープ。",
     "fixedPlanFeatures": [
@@ -608,10 +596,10 @@
       { "title": "別費用または範囲外", "items": ["正式な法務・税務・銀行・許認可・法人設立助言", "継続投稿、コミュニティ運営、インフルエンサー、広告運用", "未提供の非公開アクセス・売上・コンバージョンデータ", "広告費、在庫、物流、決済プロバイダー費用", "ホスティング、ソフトウェア、AI、その他第三者費用", "契約にない無制限のページ、翻訳、動画、連携"] }
     ],
     "ctaEyebrow": "Custom",
-    "ctaTitle": "カスタムプランをご希望の方へ",
-    "ctaHighlight": "カスタム",
-    "ctaDesc": "大規模案件・継続支援・ホワイトラベルのご相談もお気軽にどうぞ。",
-    "ctaButton": "相談を申し込む",
+    "ctaTitle": "必要な範囲を相談する。",
+    "ctaHighlight": "必要な範囲",
+    "ctaDesc": "公開後の運用や社内での引き継ぎまで含め、状況に合うプランを一緒に整理します。",
+    "ctaButton": "お問い合わせ",
     "faqEyebrow": "FAQ",
     "faqTitle": "料金に関するよくあるご質問",
     "pricingFaqs": [
@@ -672,19 +660,19 @@
     "hurryButton": "オンライン相談を予約"
   },
   "faqPage": {
-    "metaTitle": "Japan Entry よくある質問",
-    "metaDescription": "セットアップ12,000ドル、6か月の標準月額込み、開始日から14営業日の納品保証、範囲・除外・法規制確認に関するFAQ。",
-    "heroBadge": "Japan Entry FAQ",
-    "heroTitle": "申込前に、条件と境界を確認する。",
-    "heroHighlight": "条件と境界",
-    "heroDesc": "固定価格、支払方法、14営業日の納品保証、月額運用、コンテンツ資産、法規制、所有権について回答します。",
+    "metaTitle": "よくある質問 | Paradigm合同会社",
+    "metaDescription": "Web制作、MEO、SEO/GEO、AI導入支援に関するよくある質問です。",
+    "heroBadge": "FAQ",
+    "heroTitle": "よくある質問にお答えします。",
+    "heroHighlight": "よくある質問",
+    "heroDesc": "サービスの進め方、料金、公開後の運用、必要な情報についてご案内します。",
     "emptyMessage": "現在、公開中の FAQ はありません。",
-    "emptyCta": "Japan Entry適合審査 — $12K",
+    "emptyCta": "お問い合わせ",
     "ctaEyebrow": "Next decision",
-    "ctaTitle": "条件が合えば、固定範囲を確認する。",
-    "ctaHighlight": "固定範囲",
-    "ctaDesc": "会社、意思決定権限、開始時期、現在の日本向け状況を送信してください。送信だけで契約は成立しません。",
-    "ctaButton": "Japan Entry適合審査 — $12K",
+    "ctaTitle": "不明点を確認する。",
+    "ctaHighlight": "不明点を確認",
+    "ctaDesc": "現在の課題と目標をお送りください。必要な情報を整理してご連絡します。",
+    "ctaButton": "お問い合わせ",
     "items": [
       {
         "q": "セットアップ費用は本当に12,000ドル固定ですか？",
@@ -741,15 +729,15 @@
     ]
   },
   "aboutPage": {
-    "metaTitle": "Paradigmについて | Japan Entry運用",
-    "metaDescription": "Paradigmは、海外SMBの日本市場向け導線を固定スコープで設計・実装・運用する東京拠点のJapan Entryパートナーです。",
-    "heroBadge": "About · Japan Market Engine",
-    "heroTitle": "日本進出を、運用できる意思決定で終わらせる。",
-    "heroHighlight": "運用できる意思決定",
-    "heroDesc": "調査・翻訳・複数業者の調整だけで時間を失わないように、購入者導線、公開根拠、依存条件、引き継ぎを一つの固定範囲で管理します。",
+    "metaTitle": "Paradigmについて | Paradigm合同会社",
+    "metaDescription": "Paradigm合同会社は、Web制作、集客、AI導入を実装と運用の両面から支援します。",
+    "heroBadge": "About",
+    "heroTitle": "事業の前進に必要な実装を、責任を持って。",
+    "heroHighlight": "必要な実装",
+    "heroDesc": "課題の整理から設計、制作、公開後の改善まで、事業の状況に合わせて一つの運用導線にまとめます。",
     "missionEyebrow": "Mission",
-    "missionTitle": "日本市場への入口を、実装と運用の境界までつくる。",
-    "missionDesc": "Paradigmは、海外の意思決定者が日本向けの最初の導線を短期間で判断・公開できるように、ローカライズ、市場根拠、SNS、法規制の適用可能性整理、サポート、引き継ぎを同じ責任者で接続します。正式な法務・税務・許認可判断は専門家に委ね、実装と依存条件を明確にします。",
+    "missionTitle": "事業の課題を、公開できる実装へ変える。",
+    "missionDesc": "Paradigmは、Web制作、集客、AI導入を、目的・運用体制・公開後の改善まで含めて設計します。専門家の確認が必要な領域や第三者サービスの依存条件も分けて整理します。",
     "representativeEyebrow": "運営責任者から",
     "representativeTitle": "日本進出は、運用できる意思決定で終わらせる。",
     "representativeMessage": "海外企業が日本市場を検討するとき、調査・翻訳・複数業者との調整だけで数か月が過ぎ、購入者に届く導線まで進まないことがあります。Paradigmは、最初の日本向け導線を具体化し、確認できる状態にし、誰が運用するかまで明確にするための会社です。含まれる範囲、まだ分からないこと、専門家の確認が必要なことを分け、チームが次の判断をできる状態で引き継ぎます。法務・税務・銀行・許認可の専門判断を代替するのではなく、実装と依存条件を見える化することに責任を持ちます。",
@@ -769,7 +757,7 @@
       },
       {
         "title": "ワンストップで安心",
-        "desc": "ローカライズ、SNS、市場根拠、公開運用、サポートを一つの固定範囲で接続し、複数業者の調整負担を減らします。"
+        "desc": "設計、制作、公開、改善を一つの流れで進め、複数の担当者をまたぐ調整負担を減らします。"
       },
       {
         "title": "未知と専門判断を分ける",
@@ -797,7 +785,7 @@
       ],
       [
         "事業内容",
-        "Japan Entry運用 / Web・LPローカライズ / 市場・競合調査 / SNS・SEO基盤"
+        "Web制作 / MEO / SEO・GEO / AI導入支援"
       ],
       [
         "メール",
@@ -809,22 +797,22 @@
       ]
     ],
     "ctaEyebrow": "Together",
-    "ctaTitle": "日本市場への入口を、固定範囲で確認する。",
-    "ctaHighlight": "固定範囲",
-    "ctaDesc": "12,000ドルのセットアップ範囲、14営業日の前提、月額運用、依存条件を確認してから申込みください。",
-    "ctaButton": "Japan Entry適合審査 — $12K"
+    "ctaTitle": "事業の次の一手を相談する。",
+    "ctaHighlight": "次の一手",
+    "ctaDesc": "現在の課題、目標、社内の体制をお聞かせください。実行可能な選択肢を整理します。",
+    "ctaButton": "お問い合わせ"
   },
   "servicesPage": {
-    "metaTitle": "Japan Entry提供モジュール",
-    "metaDescription": "ParadigmのJapan Entry固定パッケージに含まれる、ローカライズ、SNS、市場調査、法規制確認、公開運用のモジュール。",
-    "heroBadge": "一つのパッケージ · 連動するモジュール",
-    "heroTitle": "すべてを、日本市場の一つの公開導線へ。",
-    "heroHighlight": "一つの公開導線",
-    "heroDesc": "以下は単品の低価格サービスではありません。12,000ドル固定のJapan Entryパッケージを成立させる提供モジュールです。",
-    "emptyMessage": "パッケージモジュールを準備中です。",
-    "emptyCta": "Japan Entry適合審査 — $12K",
+    "metaTitle": "サービス | Paradigm合同会社",
+    "metaDescription": "Web制作、MEO、SEO/GEO、AI導入支援を、事業の課題と運用体制に合わせて設計・実装します。",
+    "heroBadge": "Services",
+    "heroTitle": "Web・集客・AIを、実装できるサービスに。",
+    "heroHighlight": "実装できるサービス",
+    "heroDesc": "Web制作、MEO、SEO/GEO、AI導入支援を、戦略だけで終わらせず公開後の運用まで一貫して支援します。",
+    "emptyMessage": "サービス情報を準備中です。",
+    "emptyCta": "お問い合わせ",
     "learnMore": "モジュールの詳細",
-    "getInTouch": "Japan Entry適合審査 — $12K",
+    "getInTouch": "お問い合わせ",
     "moduleEyebrow": "パッケージの中身",
     "moduleTitle": "5つのモジュールを、1つの責任者で進める。",
     "moduleDesc": "各モジュールは、日本の最初の購入者に届くまでの別々の依存条件を閉じます。単品販売ではなく、固定スコープの中で接続して納品します。",
@@ -844,11 +832,11 @@
       { "title": "03 · 導線を実装", "desc": "サイト、適格な問い合わせ・決済経路、発見基盤、日英サポートのルールを実装します。" },
       { "title": "04 · 承認と引き継ぎ", "desc": "チェック、修正、所有者、依存条件、次の判断を記録して運用へ渡します。" }
     ],
-    "ctaEyebrow": "一つの商業判断",
-    "ctaTitle": "複数のリテイナーではなく、固定パッケージを選ぶ。",
-    "ctaHighlight": "固定パッケージ",
-    "ctaDesc": "セットアップ12,000ドル、最初の6か月は標準月額運用込み、7か月目以降は995ドル。最終範囲と依存条件は着手前に確定します。",
-    "ctaButton": "Japan Entry適合審査 — $12K"
+    "ctaEyebrow": "Next step",
+    "ctaTitle": "現在の課題を、実装できる計画に変える。",
+    "ctaHighlight": "実装できる計画",
+    "ctaDesc": "事業の状況、目標、社内の運用体制をお聞かせください。必要な範囲を整理してご提案します。",
+    "ctaButton": "お問い合わせ"
   },
   "locale": {
     "name": "日本語",
@@ -869,15 +857,15 @@
     "primaryNav": "メインナビゲーション"
   },
   "cta": {
-    "primary": "申込み — $12K",
-    "secondary": "Japan Entryの範囲を見る",
-    "bookConsult": "Japan Entry適合審査 — $12K",
-    "diagnose": "日本進出度を確認",
-    "reportCta": "Japan Entry適合審査 — $12K"
+    "primary": "お問い合わせ",
+    "secondary": "サービスを見る",
+    "bookConsult": "お問い合わせ",
+    "diagnose": "サービスを見る",
+    "reportCta": "お問い合わせ"
   },
   "footer": {
     "company": "Paradigm合同会社",
-    "companyTagline": "海外SMBの日本市場導線を、固定スコープで設計・実装・運用します。",
+    "companyTagline": "Web制作、集客、AI導入を、設計から運用まで支援します。",
     "servicesHeading": "サービス",
     "companyHeading": "企業情報",
     "contactHeading": "お問い合わせ",
@@ -893,23 +881,23 @@
     "studioLocation": "東京・日本 · Paradigm 合同会社",
     "socialGithub": "GitHub",
     "socialEmail": "メール",
-    "companyHeadline": "一つの固定範囲で、日本市場の入口をつくる。"
+    "companyHeadline": "事業の前進に必要な実装を、責任を持って。"
   },
   "home": {
-    "heroBadge": "固定 Japan Entry パッケージ",
-    "heroTitle": "日本市場への入口を、一つの責任者でつくる。",
-    "heroSubtitle": "セットアップ12,000ドル固定 · 最初の6か月は標準月額運用込み · 7か月目以降995ドル/月",
-    "heroSuffix": "意思決定の速い海外SMB向け。",
-    "heroSubheadline": "日本語の購入者導線、SNS、市場・競合レポート、法規制の適用可能性整理、公開運用、引き継ぎを固定スコープで接続します。",
+    "heroBadge": "Web・集客・AI導入支援",
+    "heroTitle": "事業の前進に必要な実装を、責任を持って。",
+    "heroSubtitle": "Web制作、MEO、SEO/GEO、AI導入を、設計から公開後の運用まで。",
+    "heroSuffix": "中小企業のデジタルパートナー。",
+    "heroSubheadline": "課題の整理、設計、制作、計測、改善を一つの導線で支援します。",
     "heroTypingWords": [
       "ローカライズ",
       "市場根拠",
       "日本語サポート",
       "公開運用"
     ],
-    "heroBookConsult": "Japan Entry適合審査 — $12K",
-    "heroSeeServices": "固定範囲を見る",
-    "trusted": "公開されている商業条件",
+    "heroBookConsult": "お問い合わせ",
+    "heroSeeServices": "サービスを見る",
+    "trusted": "公開後の運用まで見据えた実装",
     "stats": {
       "support": {
         "suffix": "領域",
@@ -929,7 +917,7 @@
       }
     },
     "servicesEyebrow": "Services",
-    "servicesHeading": "Japan Entryを構成する6つのモジュール",
+    "servicesHeading": "事業の成長に必要な実装を、ワンストップで",
     "servicesViewMore": "詳しく見る",
     "services": {
       "web": {
@@ -997,11 +985,11 @@
       "4": "押し売りなし"
     },
     "ctaEyebrow": "Get Started",
-    "ctaHeading": "日本市場への入口を",
-    "ctaHeadingHighlight": "固定範囲で確認",
+    "ctaHeading": "事業の次の一手を",
+    "ctaHeadingHighlight": "実装できる計画に",
     "ctaHeadingSuffix": "する。",
-    "ctaSubheading": "会社、意思決定権限、開始時期、現在の日本向け状況を送信してください。申込みは適合確認から始まります。",
-    "ctaButton": "Japan Entry適合審査 — $12K",
+    "ctaSubheading": "現在の課題と目標をお聞かせください。必要な範囲と進め方を整理してご連絡します。",
+    "ctaButton": "お問い合わせ",
     "ctaBullets": {
       "1": "完全無料",
       "2": "営業電話なし",

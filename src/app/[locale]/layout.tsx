@@ -30,12 +30,12 @@ type Props = {
 }
 
 // 12-locale 対応 metadata（P17 2026-04-27）
-// ja=独自設計・他11ロケールは "Japan Entry Package" を母版とする
+// ja は国内向け一般サイト、他11ロケールは英語 Japan Entry 母版を使う
 const LOCALE_TITLES: Record<Locale, { default: string; template: string; description: string; ogSiteName: string; ogLocale: string }> = {
   ja: {
     default: "Paradigm合同会社 | デジタルで事業を加速する",
     template: "%s | Paradigm合同会社",
-    description: "ParadigmのJapan Market Engine。海外SMB向けに、日本語の購入者導線、市場根拠、SNS、法規制の適用可能性整理、公開運用を固定スコープで提供します。",
+    description: "Paradigm合同会社は、Web制作、MEO、SEO/GEO、AI導入を設計から公開後の運用まで支援します。",
     ogSiteName: "Paradigm合同会社",
     ogLocale: "ja_JP",
   },
@@ -130,7 +130,16 @@ export const viewport: Viewport = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
-  const meta = LOCALE_TITLES[locale as Locale] ?? LOCALE_TITLES.en
+  const localizedMeta = LOCALE_TITLES[locale as Locale] ?? LOCALE_TITLES.en
+  const meta = locale === "ja"
+    ? localizedMeta
+    : locale === "en"
+      ? LOCALE_TITLES.en
+      : {
+          ...LOCALE_TITLES.en,
+          ogLocale: localizedMeta.ogLocale,
+          ogSiteName: localizedMeta.ogSiteName,
+        }
 
   return {
     title: { default: meta.default, template: meta.template },

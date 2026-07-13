@@ -46,6 +46,12 @@ type WorkDoc = {
   tags?: Array<{ tag?: string }>
 }
 
+const JAPANESE_GENERAL_WORKS: WorkDoc[] = [
+  { id: "ja-web", title: "企業サイトの再設計", industry: "Web制作", description: "事業内容と問い合わせ導線を整理し、更新しやすいCMSとレスポンシブUIへ再構成します。", metrics: "要件・計測・引き継ぎを記録", tags: [{ tag: "Web制作" }, { tag: "CMS" }] },
+  { id: "ja-local", title: "地域ビジネスの発見導線", industry: "MEO", description: "Googleビジネスプロフィール、店舗情報、投稿方針、口コミ対応の運用基準を整えます。", metrics: "公開情報と運用手順を整理", tags: [{ tag: "MEO" }, { tag: "運用" }] },
+  { id: "ja-ai", title: "AI活用の業務設計", industry: "AI導入", description: "対象業務、人の確認工程、ログ、評価指標を先に定義し、無理なく運用できる自動化を実装します。", metrics: "確認境界と評価方法を明示", tags: [{ tag: "AI" }, { tag: "業務改善" }] },
+]
+
 type ProcessStep = { step: string; title: string; desc: string }
 type EvidenceCheck = { title: string; desc: string }
 type CaseNote = { title: string; label: string; whatWeShow: string; acceptance: string; notClaimed: string }
@@ -62,7 +68,7 @@ export default async function WorksPage({ params }: Props) {
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
   const t = await getTranslations({ locale, namespace: "worksPage" })
   const STEPS = t.raw("process") as ProcessStep[]
-  const japanEntryLocale = locale === "en" || locale === "ja"
+  const japanEntryLocale = locale !== "ja"
   const evidenceChecks = japanEntryLocale ? (t.raw("evidenceChecks") as EvidenceCheck[]) : []
   const caseNotes = japanEntryLocale ? (t.raw("caseNotes") as CaseNote[]) : []
 
@@ -72,7 +78,9 @@ export default async function WorksPage({ params }: Props) {
         id: `verified-proof-${index}`,
         tags: work.tags.map((tag) => ({ tag })),
       }))
-    : await withPayloadReadFallback<WorkDoc[]>("works.payload.find", async () => {
+    : locale === "ja"
+      ? JAPANESE_GENERAL_WORKS
+      : await withPayloadReadFallback<WorkDoc[]>("works.payload.find", async () => {
       const [{ getPayload }, { default: config }] = await Promise.all([
         import("payload"),
         import("@payload-config"),
@@ -88,7 +96,7 @@ export default async function WorksPage({ params }: Props) {
       })
       const docs = (res.docs as unknown as WorkDoc[]) ?? []
       return docs
-      }, [])
+        }, [])
   if (works.length === 0 && locale !== "ja" && locale !== "en") {
     works = WORKS_EN.map((work, index) => ({
       id: `fallback-${index}`,
@@ -118,8 +126,8 @@ export default async function WorksPage({ params }: Props) {
                 {t("emptyMessage")}
               </p>
               <Link
-                href={locale === "en" ? "/contact?intent=japan-entry" : "/contact"}
-                {...(locale === "en" ? { "data-umami-event": "japan-entry-apply", "data-umami-event-source": "works-empty" } : {})}
+                href={japanEntryLocale ? "/contact?intent=japan-entry" : "/contact"}
+                {...(japanEntryLocale ? { "data-umami-event": "japan-entry-apply", "data-umami-event-source": "works-empty" } : {})}
                 className="inline-flex items-center gap-2 bg-paradigm-ink text-paradigm-paper px-7 py-3.5 rounded-lg text-[12px] tracking-[0.14em] uppercase font-semibold hover:bg-paradigm-accent transition-colors"
               >
                 {t("emptyCta")}

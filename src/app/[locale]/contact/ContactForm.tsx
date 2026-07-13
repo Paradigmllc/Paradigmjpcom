@@ -2,8 +2,8 @@
 
 /**
  * Localized contact form with a qualification-first Japan Entry flow.
- * English routes always use Japan Entry; other locales retain general contact
- * unless `intent=japan-entry` is explicitly requested.
+ * International routes use the Japan Entry application; the Japanese route
+ * remains general contact unless `intent=japan-entry` is explicitly requested.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -52,7 +52,7 @@ export function isJapanEntryContact(
   locale: string,
   intent: string | null,
 ): boolean {
-  return locale === "en" || intent === "japan-entry"
+  return locale !== "ja" || intent === "japan-entry"
 }
 
 export function shouldRotateSubmissionIdentity(status: number): boolean {

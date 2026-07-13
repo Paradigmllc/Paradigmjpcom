@@ -47,34 +47,28 @@ describe("marketing routing", () => {
     ).toBe("https://paradigmjp.com/en/services#package-modules")
   })
 
-  it("consolidates international marketing homepages into English", () => {
+  it("keeps international marketing URLs locale-aware", () => {
     const result = getInternationalMarketingRedirect(
       new URL("https://paradigmjp.com/de?utm_source=partner"),
     )
 
-    expect(result?.toString()).toBe(
-      "https://paradigmjp.com/en?utm_source=partner",
-    )
+    expect(result).toBeNull()
   })
 
-  it("sends legacy international offers to the fixed Japan Entry package", () => {
+  it("does not redirect international package routes to English", () => {
     const result = getInternationalMarketingRedirect(
       new URL("https://paradigmjp.com/fr/services/seo?utm_campaign=launch"),
     )
 
-    expect(result?.toString()).toBe(
-      "https://paradigmjp.com/en/services?utm_campaign=launch#package-modules",
-    )
+    expect(result).toBeNull()
   })
 
-  it("preserves attribution and defaults international contact intent", () => {
+  it("does not rewrite international contact intent", () => {
     const result = getInternationalMarketingRedirect(
       new URL("https://paradigmjp.com/es/contact?utm_source=directory"),
     )
 
-    expect(result?.pathname).toBe("/en/contact")
-    expect(result?.searchParams.get("utm_source")).toBe("directory")
-    expect(result?.searchParams.get("intent")).toBe("japan-entry")
+    expect(result).toBeNull()
   })
 
   it("does not redirect personalised report and demo routes", () => {
@@ -92,23 +86,33 @@ describe("marketing routing", () => {
     expect(isJapaneseOnlyLegacyOfferPath("/en/pricing")).toBe(false)
   })
 
-  it("redirects Japanese legacy offers to the fixed Japan Entry package", () => {
+  it("redirects Japanese retired offers to the general services page", () => {
     expect(
       getJapaneseLegacyOfferRedirect(
         new URL("https://paradigmjp.com/ja/video?utm_source=legacy"),
       )?.toString(),
-    ).toBe("https://paradigmjp.com/ja#japan-entry-pricing")
+    ).toBe("https://paradigmjp.com/ja/services")
     expect(getJapaneseLegacyOfferRedirect(new URL("https://paradigmjp.com/ja/pricing"))).toBeNull()
-    expect(getJapaneseLegacyOfferRedirect(new URL("https://paradigmjp.com/ja/services/seo"))?.pathname).toBe("/ja/services")
+    expect(getJapaneseLegacyOfferRedirect(new URL("https://paradigmjp.com/ja/services/seo"))).toBeNull()
   })
 
   it("publishes only maintained hreflang URLs", () => {
     expect(pageAlternates("de", "/pricing")).toEqual({
-      canonical: "https://paradigmjp.com/en/pricing",
+      canonical: "https://paradigmjp.com/de/pricing",
       languages: {
         "x-default": "https://paradigmjp.com/en/pricing",
         "ja-JP": "https://paradigmjp.com/ja/pricing",
         "en-US": "https://paradigmjp.com/en/pricing",
+        "ko-KR": "https://paradigmjp.com/ko/pricing",
+        "zh-Hans": "https://paradigmjp.com/zh/pricing",
+        "de-DE": "https://paradigmjp.com/de/pricing",
+        "fr-FR": "https://paradigmjp.com/fr/pricing",
+        "es-ES": "https://paradigmjp.com/es/pricing",
+        "pt-BR": "https://paradigmjp.com/pt/pricing",
+        "ru-RU": "https://paradigmjp.com/ru/pricing",
+        "ar-SA": "https://paradigmjp.com/ar/pricing",
+        "vi-VN": "https://paradigmjp.com/vi/pricing",
+        "id-ID": "https://paradigmjp.com/id/pricing",
       },
     })
     expect(pageAlternates("en", "/services")).toEqual({
@@ -117,6 +121,16 @@ describe("marketing routing", () => {
         "x-default": "https://paradigmjp.com/en/services",
         "ja-JP": "https://paradigmjp.com/ja/services",
         "en-US": "https://paradigmjp.com/en/services",
+        "ko-KR": "https://paradigmjp.com/ko/services",
+        "zh-Hans": "https://paradigmjp.com/zh/services",
+        "de-DE": "https://paradigmjp.com/de/services",
+        "fr-FR": "https://paradigmjp.com/fr/services",
+        "es-ES": "https://paradigmjp.com/es/services",
+        "pt-BR": "https://paradigmjp.com/pt/services",
+        "ru-RU": "https://paradigmjp.com/ru/services",
+        "ar-SA": "https://paradigmjp.com/ar/services",
+        "vi-VN": "https://paradigmjp.com/vi/services",
+        "id-ID": "https://paradigmjp.com/id/services",
       },
     })
   })

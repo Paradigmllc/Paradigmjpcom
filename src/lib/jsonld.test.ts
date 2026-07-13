@@ -19,7 +19,7 @@ describe("getOrganizationJsonLd", () => {
     const o = getOrganizationJsonLd("ja")
     expect(o.name).toBe("Paradigm合同会社")
     expect(o["@type"]).toBe("Organization")
-    expect(o.knowsAbout).toContain("Japan Entry")
+    expect(o.knowsAbout).toContain("Web制作")
   })
 
   it("returns EN brand name for en", () => {
@@ -37,10 +37,10 @@ describe("getOrganizationJsonLd", () => {
 })
 
 describe("getServicesJsonLd", () => {
-  it("emits the single fixed Japan Entry service", () => {
+  it("emits the domestic service catalogue for ja", () => {
     const s = getServicesJsonLd("ja")
-    expect(s.itemListElement).toHaveLength(1)
-    expect(s.itemListElement[0].name).toContain("Japan Entry Package")
+    expect(s.itemListElement).toHaveLength(4)
+    expect(s.itemListElement[0].name).toBe("Web制作")
     expect(s.itemListElement[0].provider.name).toBe("Paradigm合同会社")
   })
 
