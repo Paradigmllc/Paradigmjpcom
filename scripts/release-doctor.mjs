@@ -941,6 +941,8 @@ async function checkPostDeployUrls() {
     ["Blog", "/en/blog"],
     ["Privacy", "/en/privacy"],
     ["Legal", "/en/legal"],
+    ["Terms", "/en/terms"],
+    ["Refund policy", "/en/refund"],
     ["Japan Entry Signal Check", "/en/tools/japan-entry-score"],
   ]
   for (const [label, path] of maintainedPages) {
@@ -953,6 +955,12 @@ async function checkPostDeployUrls() {
     }
     if (path === "/en/legal") {
       options.mustContain = ["Wise", "100% of the USD 12,000 setup fee is refunded"]
+    }
+    if (path === "/en/terms") {
+      options.mustContain = ["Terms of Service", "$12,000", "Japan", "14 business days"]
+    }
+    if (path === "/en/refund") {
+      options.mustContain = ["Refund & Cancellation Policy", "100% of the USD 12,000 setup fee is refunded", "Start Date"]
     }
     if (path === "/en/tools/japan-entry-score") {
       options.mustContain = [

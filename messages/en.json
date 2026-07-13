@@ -456,7 +456,7 @@
     ],
     [
       "Address",
-      "Disclosed without delay by email before application on request (info@paradigmjp.com)"
+      "2-2-15 Minami-Aoyama, Minato City, Tokyo, Japan"
     ],
     [
       "Phone",
@@ -561,6 +561,104 @@
       {
         "title": "10. Changes and contact",
         "body": "We may update this policy and will publish the revised date on this page. For privacy requests or questions, contact:",
+        "contact": {
+          "name": "Paradigm LLC",
+          "email": "info@paradigmjp.com"
+        }
+      }
+    ]
+  },
+  "termsPage": {
+    "metaTitle": "Terms of Service | Japan Entry Package",
+    "metaDescription": "The public terms for Paradigm's fixed-scope Japan Entry service.",
+    "heroBadge": "Terms",
+    "heroTitle": "Terms of Service",
+    "heroDesc": "Last updated: July 13, 2026. The signed scope, order, and engagement terms control where they contain more specific provisions.",
+    "sections": [
+      {
+        "title": "1. Scope and eligibility",
+        "body": "These terms apply to Paradigm LLC's Japan Entry Package and related launch operations for an overseas business. The public site and application describe a possible engagement; submitting an application does not accept a contract or reserve a delivery date."
+      },
+      {
+        "title": "2. Formation and written scope",
+        "body": "An engagement begins only after Paradigm confirms fit, the parties accept the written scope, the payment terms are agreed, and an authorized person accepts the start conditions. The written scope records included modules, exclusions, dependencies, acceptance criteria, ownership, support expectations, and any staged payment."
+      },
+      {
+        "title": "3. Fixed setup and monthly service",
+        "body": "The standard Japan Entry setup is USD 12,000. The standard managed operation is included at no additional monthly charge for the first six months, then USD 995 per month from month seven unless cancelled for future periods under the signed terms. A different price or scope is effective only if confirmed in writing."
+      },
+      {
+        "title": "4. Payment rails, taxes, and third-party charges",
+        "body": "Payment may be arranged by Wise, bank transfer, USDC, or credit card through a Stripe invoice or payment link. The invoice confirms the recipient, due date, currency, network, and any applicable fee or tax. Never send a wallet address, bank credential, or card number through the public form. Hosting, software, advertising, payment processing, licences, logistics, and other third-party charges are separate unless the written scope says otherwise."
+      },
+      {
+        "title": "5. Start Date and delivery guarantee",
+        "body": "The Start Date is recorded after written scope acceptance, cleared setup payment, complete source materials, required access, and one empowered approver are available. The agreed fixed setup is delivered within 14 business days from that recorded date. The separate Refund Policy explains the full setup-fee refund if that fixed setup is not delivered on time."
+      },
+      {
+        "title": "6. Client responsibilities and change control",
+        "body": "The client provides accurate product information, rights-cleared assets, access, decisions, approvals, and a responsive owner. Client-requested scope changes, missing inputs, approval holds, provider review, or third-party dependencies are recorded and may pause the delivery clock or require a written change order."
+      },
+      {
+        "title": "7. Boundaries, compliance, and specialist advice",
+        "body": "Paradigm can localize the buyer path, prepare disclosures, screen likely applicability of Japan-specific rules, and record questions for qualified professionals. We do not provide formal legal, tax, banking, incorporation, licensing, medical, financial, or regulatory advice, and do not guarantee that a provider or authority will approve a proposed route."
+      },
+      {
+        "title": "8. Ownership, confidentiality, and acceptable use",
+        "body": "Client materials remain the client's responsibility. The written scope states what is handed over and what remains Paradigm's reusable tooling, templates, know-how, or third-party/OSS material. Each party protects the other's non-public information and may use it only to perform or receive the engagement. The service may not be used for unlawful, deceptive, infringing, abusive, or malicious activity."
+      },
+      {
+        "title": "9. Performance boundaries and liability",
+        "body": "The delivery guarantee concerns the agreed implementation and handover, not a promise of ranking, traffic, country share, conversion, customers, or revenue. Except for fraud, wilful misconduct, confidentiality breach, or liability that cannot legally be limited, Paradigm's aggregate liability is capped at the setup fees paid for the affected engagement. Nothing here removes mandatory rights under applicable law."
+      },
+      {
+        "title": "10. Suspension, cancellation, and governing law",
+        "body": "Either party may end the engagement as permitted by the signed terms. Future monthly periods can be cancelled under their notice and effective-date rules; earned fees and committed third-party costs remain payable. Paradigm may suspend access for non-payment, security risk, or unlawful use. These terms are governed by the laws of Japan, with the Tokyo District Court as the agreed first-instance forum where legally permitted.",
+        "contact": {
+          "name": "Paradigm LLC",
+          "email": "info@paradigmjp.com"
+        }
+      }
+    ]
+  },
+  "refundPage": {
+    "metaTitle": "Refund & Cancellation Policy | Japan Entry Package",
+    "metaDescription": "How Paradigm handles the Japan Entry delivery guarantee, setup-fee refunds, and future-period cancellation.",
+    "heroBadge": "Refunds",
+    "heroTitle": "Refund & Cancellation Policy",
+    "heroDesc": "Last updated: July 13, 2026. The signed scope and applicable law control if they provide more specific or mandatory rights.",
+    "sections": [
+      {
+        "title": "1. What this policy covers",
+        "body": "This policy covers the fixed USD 12,000 Japan Entry setup, the first six months of included managed operation, the USD 995 monthly service from month seven, and related approved work. It does not create a sales, traffic, ranking, conversion, or revenue guarantee."
+      },
+      {
+        "title": "2. Full setup-fee refund for a late fixed setup",
+        "body": "If Paradigm does not deliver the agreed fixed setup within 14 business days from the recorded Start Date, Paradigm refunds 100% of the USD 12,000 setup fee. The refund applies to the fixed scope and documented handover that were accepted in writing; it does not depend on a particular commercial outcome."
+      },
+      {
+        "title": "3. When the delivery clock starts",
+        "body": "The Start Date is recorded only after written scope acceptance, cleared setup payment, complete source materials, required account access, and one empowered approver are available. Client-requested changes, missing inputs, approval holds, provider review, or third-party delays are recorded separately and pause or move the clock under the written scope."
+      },
+      {
+        "title": "4. Other cancellation and refund cases",
+        "body": "An application may be withdrawn before an engagement is accepted. After acceptance or work commencement, refunds outside the delivery guarantee are handled under the signed scope and applicable law. Completed work, approved change orders, third-party charges, payment-provider fees, licences, advertising, hosting, and costs already committed for the client are not reversed solely because the client changes direction."
+      },
+      {
+        "title": "5. Monthly service cancellation",
+        "body": "The standard monthly service is included for months one through six. From month seven, USD 995/month applies unless the service is cancelled for a future period under the notice and effective-date terms. Cancellation does not reverse an earned period or an already-approved third-party commitment."
+      },
+      {
+        "title": "6. How to request a review",
+        "body": "Email info@paradigmjp.com with the company name, invoice or engagement reference, recorded Start Date, the agreed deliverable, and the reason for the request. We verify the requester and the written scope before confirming eligibility; a request alone does not stop work or trigger an automatic refund."
+      },
+      {
+        "title": "7. Refund processing",
+        "body": "Approved refunds are sent through the original payment rail where practical: Stripe card refunds use the relevant payment provider, while Wise, bank-transfer, or USDC refunds use the agreed invoice route. Provider processing time, bank charges, network fees, exchange-rate movement, and recipient verification may affect the final timing or amount as stated in the written confirmation."
+      },
+      {
+        "title": "8. Statutory rights and contact",
+        "body": "Nothing in this policy limits a mandatory consumer or other statutory right. If the public policy and signed terms differ, the more specific signed term applies only to the extent it is lawful. Please contact us before initiating a payment dispute so the written scope and delivery record can be reviewed.",
         "contact": {
           "name": "Paradigm LLC",
           "email": "info@paradigmjp.com"
@@ -1117,7 +1215,9 @@
     "contactHeading": "Contact",
     "rights": "All rights reserved.",
     "privacy": "Privacy Policy",
-    "legal": "Terms & Specified Commercial Transactions",
+    "legal": "Specified Commercial Transactions",
+    "terms": "Terms of Service",
+    "refund": "Refund & Cancellation",
     "services": {
       "web": "Localized revenue site",
       "meo": "Japan discovery setup",

@@ -244,13 +244,21 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
           </p>
           <ul className="flex flex-wrap items-center gap-x-5 gap-y-2">
             {nav?.legalLinks?.length ? (
-              nav.legalLinks.map((l) => (
-                <li key={l.href}>
-                  <Link href={l.href} className="hover:text-paradigm-ink-soft transition-colors">
-                    {l.label}
-                  </Link>
-                </li>
-              ))
+              <>
+                {nav.legalLinks.map((l) => (
+                  <li key={l.href}>
+                    <Link href={l.href} className="hover:text-paradigm-ink-soft transition-colors">
+                      {l.label}
+                    </Link>
+                  </li>
+                ))}
+                {!nav.legalLinks.some((l) => l.href === "/terms") && (
+                  <li><Link href="/terms" className="hover:text-paradigm-ink-soft transition-colors">{t("terms")}</Link></li>
+                )}
+                {!nav.legalLinks.some((l) => l.href === "/refund") && (
+                  <li><Link href="/refund" className="hover:text-paradigm-ink-soft transition-colors">{t("refund")}</Link></li>
+                )}
+              </>
             ) : (
               <>
                 <li>
@@ -261,6 +269,16 @@ export default function SiteFooter({ settings, nav }: FooterProps = {}) {
                 <li>
                   <Link href="/legal" className="hover:text-paradigm-ink-soft transition-colors">
                     {t("legal")}
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/terms" className="hover:text-paradigm-ink-soft transition-colors">
+                    {t("terms")}
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/refund" className="hover:text-paradigm-ink-soft transition-colors">
+                    {t("refund")}
                   </Link>
                 </li>
               </>

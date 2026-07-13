@@ -48,6 +48,8 @@ const STATIC_ROUTES: StaticRoute[] = [
   { path: "/contact", changeFrequency: "yearly", priority: 0.9 },
   { path: "/privacy", changeFrequency: "yearly", priority: 0.3 },
   { path: "/legal", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/terms", changeFrequency: "yearly", priority: 0.3 },
+  { path: "/refund", changeFrequency: "yearly", priority: 0.3 },
   { path: "/tools/japan-entry-score", changeFrequency: "weekly", priority: 0.95, locales: INTERNATIONAL_ONLY },
   { path: "/lp/web", changeFrequency: "monthly", priority: 0.7, locales: JAPANESE_ONLY },
   { path: "/lp/meo", changeFrequency: "monthly", priority: 0.7, locales: JAPANESE_ONLY },

@@ -1276,6 +1276,8 @@ async function main() {
     { url: "https://paradigmjp.com/en/blog", markers: ["What Should a Japan Entry Package Actually Deliver?", "The Source Pack That Keeps a Japan Launch Moving"] },
     { url: "https://paradigmjp.com/en/privacy" },
     { url: "https://paradigmjp.com/en/legal", markers: ["$12,000", "Wise", "100% of the USD 12,000 setup fee is refunded"] },
+    { url: "https://paradigmjp.com/en/terms", markers: ["Terms of Service", "$12,000", "14 business days"] },
+    { url: "https://paradigmjp.com/en/refund", markers: ["Refund & Cancellation Policy", "100% of the USD 12,000 setup fee is refunded", "Start Date"] },
     { url: `https://paradigmjp.com${envValue("RELEASE_REPORT_SMOKE_PATH", "/en/report/ccbc-xynd21")}` },
     { url: "https://twenty.paradigmjp.com" },
   ]

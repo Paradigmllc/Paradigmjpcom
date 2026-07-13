@@ -8,6 +8,13 @@
 - 架空SaaS企業を使ったDeepSeek公式API直叩きの再検証は **97/100**（具体性24・自然さ24・信頼性25・経営判断適合24）、安全性100、4段落134語、risk 0で合格。DB保存、Twenty登録、候補収集、フォーム送信は未実行。
 - 検証済み: 対象Vitest **14/14 pass**、TypeScript、対象ESLint、diff check、production build **336/336 pages**。次は正式`npm run release:prod`を完走し、本番fingerprint・Sales health・DB行数0を再確認する。
 
+### 2026-07-13 法務公開面の整備（実装・ローカル検証済み / 正式release待ち）
+- `/[locale]/terms` と `/[locale]/refund` を追加。JAは国内向け一般サービスの利用規約・返金／キャンセル方針、ENはJapan Entryの固定USD 12,000、開始日、14営業日納品保証、6か月月額込み、7か月目以降USD 995、支払経路、将来期間解約、第三者費用境界を明示する別文面にした。
+- `LegalDocumentPage`で法務文書のレイアウトとアクセシビリティ構造を共有し、各localeのmessagesで本文・メタデータを管理。フッターへPrivacy / Specified Commercial Transactions / Terms / Refund & Cancellationの4導線を追加し、CMSの既存legalLinksがあっても新規2ページを欠落させない。
+- 法定情報の既定値を、個人名なし・英語住所 `2-2-15 Minami-Aoyama, Minato City, Tokyo, Japan`・法人番号 `5010403026363` に統一。代表者名は従来どおり公開せず、請求時の事前開示経路を維持。
+- sitemap、hreflang/canonical、release-doctor、production smokeへterms/refundを配線。Vitestのserver-only境界をテスト専用mockで安定化。
+- 検証: `npm exec -- tsc --noEmit --pretty false` pass、全Vitest **95 files / 445 tests pass**、production build **372/372 pages pass**、quality guard **0 errors / 52 warnings**、`git diff --check` pass。正式 `npm run release:prod`と本番URLのJA/EN法務4ページ確認が残作業。
+
 ### 2026-07-13 SMB実素材・期限付き非公開デモ Premium V2（実装済み / 正式release待ち / 送信停止）
 - `theme_demo_pages`へ `signed_private` access mode、SHA-256 preview token hash、最大30日の有効期限、素材審査status/manifestを追加するmigrationを実装。非公開デモは `is_published=false` のままservice-role経路だけで取得し、匿名RLS公開を行わない。
 - 署名URLは初回アクセス時にサーバー検証し、HttpOnly / Secure / SameSite=Lax / slug限定pathのCookieへ移す。期限切れ・改ざん・再発行前の旧tokenはHTTP 401となり、HomeからAbout / Services / Contact / Works / News / FAQ / Recruit / Privacy / Terms / Commerceへ移動してもCookie認証を維持する。

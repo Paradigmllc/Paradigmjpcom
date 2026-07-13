@@ -22,6 +22,8 @@ const FILES = [
   { path: "src/app/[locale]/faq/page.tsx", route: "/faq" },
   { path: "src/app/[locale]/legal/page.tsx", route: "/legal" },
   { path: "src/app/[locale]/privacy/page.tsx", route: "/privacy" },
+  { path: "src/app/[locale]/terms/page.tsx", route: "/terms" },
+  { path: "src/app/[locale]/refund/page.tsx", route: "/refund" },
   { path: "src/app/[locale]/works/page.tsx", route: "/works" },
   { path: "src/app/[locale]/blog/page.tsx", route: "/blog" },
   { path: "src/app/[locale]/lp/web/page.tsx", route: "/lp/web" },

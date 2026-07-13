@@ -97,7 +97,9 @@ const DEFAULTS: SiteSettings = {
   contact: {
     email: "info@paradigmjp.com",
     phone: configuredEnv("PARADIGM_LEGAL_PHONE"),
-    address: configuredEnv("PARADIGM_LEGAL_ADDRESS"),
+    // Public registered address supplied by the legal owner. Keep it in
+    // English so the same legal identity is readable on every locale page.
+    address: configuredEnv("PARADIGM_LEGAL_ADDRESS") ?? "2-2-15 Minami-Aoyama, Minato City, Tokyo, Japan",
     businessHours: null,
   },
   social: {
@@ -129,10 +131,10 @@ const DEFAULTS: SiteSettings = {
   company: {
     legalName: "Paradigm合同会社",
     representativeName: configuredEnv("PARADIGM_LEGAL_REPRESENTATIVE_NAME"),
-    registrationNumber: configuredEnv("PARADIGM_LEGAL_REGISTRATION_NUMBER"),
+    registrationNumber: configuredEnv("PARADIGM_LEGAL_REGISTRATION_NUMBER") ?? "5010403026363",
     foundedYear: null,
     postalCode: configuredEnv("PARADIGM_LEGAL_POSTAL_CODE"),
-    address: configuredEnv("PARADIGM_LEGAL_ADDRESS"),
+    address: configuredEnv("PARADIGM_LEGAL_ADDRESS") ?? "2-2-15 Minami-Aoyama, Minato City, Tokyo, Japan",
   },
 }
 

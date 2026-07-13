@@ -149,4 +149,15 @@ describe("public English Japan Entry copy", () => {
       expect(japanese).toContain(term)
     }
   })
+
+  it("ships separate locale-specific contract and refund documents", () => {
+    expect(messages.termsPage.metaTitle).toBe("Terms of Service | Japan Entry Package")
+    expect(messages.termsPage.sections.length).toBeGreaterThanOrEqual(8)
+    expect(JSON.stringify(messages.termsPage)).toContain("USD 12,000")
+    expect(JSON.stringify(messages.refundPage)).toContain("14 business days")
+    expect(jaMessages.termsPage.metaTitle).toBe("利用規約")
+    expect(jaMessages.refundPage.metaTitle).toBe("返金・キャンセルポリシー")
+    expect(JSON.stringify(jaMessages.termsPage)).not.toContain("Japan Entry")
+    expect(JSON.stringify(jaMessages.refundPage)).not.toContain("$12,000")
+  })
 })
