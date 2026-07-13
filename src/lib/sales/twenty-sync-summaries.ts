@@ -104,6 +104,15 @@ export function karteHomeSummary(karte: CompanyKarteSnapshot): string {
       .map((metric) => `${metric.label}: ${metric.value} ${metric.unit} [${metric.source}]`)
       .join(" / ")
     : null
+  const japanEntry = karte.japanEntry
+  const japanEntryQuality = japanEntry
+    ? `quality=${japanEntry.qualityScore ?? "未評価"} / safety=${japanEntry.safetyScore ?? "未評価"} / model=${japanEntry.model ?? "未記録"}`
+    : null
+  const japanEntryHorizons = japanEntry?.horizons.length
+    ? japanEntry.horizons
+      .map((horizon) => `${horizon.month}ヶ月 ROI ${horizon.roiPercent}% / 累積純便益 $${horizon.cumulativeNetBenefitUsd.toLocaleString("en-US")}`)
+      .join(" / ")
+    : null
 
   return [
     `無料API/OSS取得データ(50+): ${sourceDataCounts(karte)}`,
@@ -130,6 +139,18 @@ export function karteHomeSummary(karte: CompanyKarteSnapshot): string {
     karte.demoUrl ? `Demo URL: ${karte.demoUrl}` : null,
     verifiedMetrics ? `文面生成に使用した検証済み数値: ${verifiedMetrics}` : null,
     formMessageEvidence?.unknowns?.length ? `文面生成時の未知項目: ${formMessageEvidence.unknowns.join(" / ")}` : null,
+    japanEntry ? "--- Japan Entry Package 初回フォーム文面 ---" : null,
+    japanEntry ? `運用状態: 未送信・要レビュー (${japanEntry.state})` : null,
+    japanEntry ? `数値区分: ${japanEntry.classification}（実測アクセス・実売上ではなく公開シグナルに基づく推定）` : null,
+    japanEntry?.estimatedJapanMonthlyVisits !== null && japanEntry?.estimatedJapanMonthlyVisits !== undefined
+      ? `推定日本月間アクセス: ${japanEntry.estimatedJapanMonthlyVisits.toLocaleString("en-US")}`
+      : null,
+    japanEntry?.monthlyOpportunityGapUsd !== null && japanEntry?.monthlyOpportunityGapUsd !== undefined
+      ? `推定月間機会損失: $${japanEntry.monthlyOpportunityGapUsd.toLocaleString("en-US")}`
+      : null,
+    japanEntryQuality ? `文面品質: ${japanEntryQuality}` : null,
+    japanEntryHorizons ? `6/12/24ヶ月モデル: ${japanEntryHorizons}` : null,
+    japanEntry ? `初回送信文面（URL・資料なし）:\n${japanEntry.message}` : null,
   ].filter(Boolean).join("\n")
 }
 
@@ -166,7 +187,9 @@ export function twentyCompanyHomePayload(karte: CompanyKarteSnapshot): Record<st
     paradigmDataSources: sourceDataCounts(karte),
     paradigmDataBreakdown: sourceCategoryBreakdown(karte),
     paradigmSourceDetailsUrl: { primaryLinkLabel: "50+ API/OSS詳細", primaryLinkUrl: sourceCoveragePanelLink(karte) },
-    paradigmNextAction: outreachGateSummary(karte).nextAction,
+    paradigmNextAction: karte.japanEntry?.state === "needs_review"
+      ? "Japan Entry初回フォーム文面を確認（未送信）"
+      : outreachGateSummary(karte).nextAction,
     paradigmLastError: firstSourceError(karte),
     paradigmKarteSummary: { markdown: karteHomeSummary(karte) },
   }

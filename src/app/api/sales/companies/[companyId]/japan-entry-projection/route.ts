@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
-import { generateJapanEntryProjection, getLatestJapanEntryProjection } from "@/lib/sales/japan-entry-projection-service"
+import {
+  generateJapanEntryProjection,
+  getLatestJapanEntryProjection,
+  syncJapanEntryProjectionToTwenty,
+} from "@/lib/sales/japan-entry-projection-service"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -85,9 +89,42 @@ export async function POST(req: NextRequest, context: RouteContext) {
       currentJapanShare: parsed.data.current_japan_share,
       targetJapanShareMonth24: parsed.data.target_japan_share_month_24,
     })
-    return NextResponse.json(result, { status: result.ok ? 201 : errorStatus(result.error) })
+    const status = result.ok
+      ? result.twentySync?.ok && !result.twentySync.statusPersistenceError
+        ? 201
+        : 207
+      : errorStatus(result.error)
+    return NextResponse.json(result, { status })
   } catch (error) {
     console.error("[japan-entry-projection-api] POST failed:", error)
     return NextResponse.json({ ok: false, error: "projection generation failed" }, { status: 500 })
+  }
+}
+
+export async function PUT(req: NextRequest, context: RouteContext) {
+  try {
+    if (!(await isSalesApiAuthorized(req))) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+    }
+    const { companyId } = await context.params
+    if (!validCompanyId(companyId)) {
+      return NextResponse.json({ ok: false, error: "invalid companyId" }, { status: 400 })
+    }
+    const latest = await getLatestJapanEntryProjection(companyId)
+    if (!latest.ok) {
+      return NextResponse.json(latest, { status: 503 })
+    }
+    if (!latest.projection) {
+      return NextResponse.json({ ok: false, error: "Japan Entry projection not found" }, { status: 404 })
+    }
+    const twentySync = await syncJapanEntryProjectionToTwenty(companyId, latest.projection.id)
+    const ok = twentySync.ok && !twentySync.statusPersistenceError
+    return NextResponse.json(
+      { ok, projectionId: latest.projection.id, twentySync },
+      { status: ok ? 200 : 207 },
+    )
+  } catch (error) {
+    console.error("[japan-entry-projection-api] Twenty retry failed:", error)
+    return NextResponse.json({ ok: false, error: "Twenty sync retry failed" }, { status: 500 })
   }
 }

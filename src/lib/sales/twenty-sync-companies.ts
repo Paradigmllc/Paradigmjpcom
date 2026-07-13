@@ -287,7 +287,7 @@ async function syncTwentyOpportunities(
 
 export async function syncCompanyKarteToTwenty(
   companyId: string,
-  options: { pipelineRunId?: string | null } = {},
+  options: { pipelineRunId?: string | null; syncOpportunities?: boolean } = {},
 ): Promise<TwentySyncResult> {
   try {
     requireTwentyAuth()
@@ -305,15 +305,18 @@ export async function syncCompanyKarteToTwenty(
   const karteResult = await fetchCompanyKarte(sb, companyId)
   if (!karteResult.ok) return { ok: false, configured: true, error: karteResult.error }
 
-  const recommendations = await ensureCompanyProductRecommendations(sb, {
-    companyId,
-    region: karteResult.karte.region,
-    reportLocale: karteResult.karte.reportLocale,
-    targetCountry: karteResult.karte.targetCountry,
-    templateVariant: karteResult.karte.templateVariant,
-    diagnosisSummary: karteResult.karte.diagnosisSummary,
-    recommendedOffer: karteResult.karte.recommendedOffer,
-  })
+  const syncOpportunities = options.syncOpportunities ?? true
+  const recommendations = syncOpportunities
+    ? await ensureCompanyProductRecommendations(sb, {
+        companyId,
+        region: karteResult.karte.region,
+        reportLocale: karteResult.karte.reportLocale,
+        targetCountry: karteResult.karte.targetCountry,
+        templateVariant: karteResult.karte.templateVariant,
+        diagnosisSummary: karteResult.karte.diagnosisSummary,
+        recommendedOffer: karteResult.karte.recommendedOffer,
+      })
+    : []
   const karte: CompanyKarteSnapshot = { ...karteResult.karte, recommendedProducts: recommendations }
 
   try {
@@ -332,9 +335,11 @@ export async function syncCompanyKarteToTwenty(
     if (!twentyCompany?.id) throw new Error("Twenty company id missing")
 
     await syncTwentyCompanyHomeFields(karte, twentyCompany.id)
-    const opportunityIds = await syncTwentyOpportunities(sb, karte, twentyCompany.id)
+    const opportunityIds = syncOpportunities
+      ? await syncTwentyOpportunities(sb, karte, twentyCompany.id)
+      : []
 
-    const { error: successLogError } = await insertWithOptionalColumns(sb, DB_TABLES.SALES_SYNC_LOGS, [
+    const successLogs = [
       {
         direction: "supabase->twenty",
         entity_type: "company",
@@ -347,9 +352,10 @@ export async function syncCompanyKarteToTwenty(
           report_url: karte.reportUrl,
           form_url: karte.formUrl,
           product_codes: recommendations.map((product) => product.code),
+          sync_opportunities: syncOpportunities,
         },
       },
-      {
+      ...(syncOpportunities ? [{
         direction: "supabase->twenty",
         entity_type: "company",
         entity_id: companyId,
@@ -361,8 +367,14 @@ export async function syncCompanyKarteToTwenty(
           twenty_opportunity_ids: opportunityIds,
           product_codes: recommendations.map((product) => product.code),
         },
-      },
-    ], ["pipeline_run_id"])
+      }] : []),
+    ]
+    const { error: successLogError } = await insertWithOptionalColumns(
+      sb,
+      DB_TABLES.SALES_SYNC_LOGS,
+      successLogs,
+      ["pipeline_run_id"],
+    )
     if (successLogError) console.error("[twenty-sync] success log insert failed:", successLogError.message)
 
     return {
@@ -381,11 +393,12 @@ export async function syncCompanyKarteToTwenty(
       entity_type: "company",
       entity_id: companyId,
       pipeline_run_id: options.pipelineRunId ?? null,
-      action: "opportunity_sync",
+      action: syncOpportunities ? "opportunity_sync" : "karte_home_sync",
       status: "error",
       error_message: message,
       payload: {
         product_codes: recommendations.map((product) => product.code),
+        sync_opportunities: syncOpportunities,
       },
     }, ["pipeline_run_id"])
     if (errorLogError) console.error("[twenty-sync] error log insert failed:", errorLogError.message)

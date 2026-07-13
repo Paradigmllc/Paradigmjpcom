@@ -9,6 +9,8 @@ import {
 import { generatePersonalizedJapanEntryMessage } from "./japan-entry-personalized-message"
 import { companyJapanMarketAudit } from "./company-data-view"
 import type { MarketVisibilityIndex } from "./market-visibility"
+import { syncCompanyKarteToTwenty } from "./twenty-sync-companies"
+import type { TwentySyncResult } from "./twenty-sync-utils"
 
 type JsonRecord = Record<string, unknown>
 
@@ -28,6 +30,64 @@ export interface StoredJapanEntryProjection {
   projection: JapanEntryProjection
   initial_message: string
   created_at: string
+}
+
+export interface JapanEntryTwentySyncResult extends TwentySyncResult {
+  status: "synced" | "not_configured" | "failed"
+  projectionId: string
+  attemptedAt: string
+  sent: false
+  statusPersistenceError?: string
+}
+
+export async function syncJapanEntryProjectionToTwenty(
+  companyId: string,
+  projectionId: string,
+): Promise<JapanEntryTwentySyncResult> {
+  const attemptedAt = new Date().toISOString()
+  const sb = getServiceSalesSupabase()
+  if (!sb) {
+    return {
+      ok: false,
+      configured: false,
+      status: "not_configured",
+      projectionId,
+      attemptedAt,
+      sent: false,
+      error: "Supabase service_role not configured",
+      statusPersistenceError: "Supabase service_role not configured",
+    }
+  }
+
+  const syncResult = await syncCompanyKarteToTwenty(companyId, { syncOpportunities: false })
+  const status = syncResult.ok ? "synced" : syncResult.configured ? "failed" : "not_configured"
+  const twentySync: JapanEntryTwentySyncResult = {
+    ...syncResult,
+    status,
+    projectionId,
+    attemptedAt,
+    sent: false,
+  }
+  const syncStatusUpdate = await sb.rpc("sales_atomic_meta_merge", {
+    p_company_id: companyId,
+    p_patch: {
+      japan_entry_twenty_sync: {
+        status,
+        configured: syncResult.configured,
+        twenty_company_id: syncResult.companyId ?? null,
+        home_synced: syncResult.homeSynced ?? false,
+        error: syncResult.error ?? null,
+        projection_id: projectionId,
+        attempted_at: attemptedAt,
+        sent: false,
+      },
+    },
+  })
+  if (syncStatusUpdate.error) {
+    console.error("[japan-entry-projection] Twenty sync status persistence failed:", syncStatusUpdate.error.message)
+    twentySync.statusPersistenceError = syncStatusUpdate.error.message
+  }
+  return twentySync
 }
 
 function asRecord(value: unknown): JsonRecord | null {
@@ -81,6 +141,7 @@ export async function getLatestJapanEntryProjection(companyId: string): Promise<
 export async function generateJapanEntryProjection(companyId: string, options: GenerateProjectionOptions = {}): Promise<{
   ok: boolean
   projection?: StoredJapanEntryProjection
+  twentySync?: JapanEntryTwentySyncResult
   error?: string
 }> {
   const sb = getServiceSalesSupabase()
@@ -167,25 +228,28 @@ export async function generateJapanEntryProjection(companyId: string, options: G
     return { ok: false, error: error.message }
   }
 
-  const meta = {
-    ...(company.meta ?? {}),
+  const metaPatch = {
     japan_entry_projection: projection,
     japan_entry_initial_message: initialMessage,
     japan_entry_message_engine: "deepseek-v4-pro",
     japan_entry_message_review: projection.messageGeneration,
     japan_entry_outreach_state: "needs_review",
   }
-  const update = await sb.from(DB_TABLES.SALES_COMPANIES).update({ meta }).eq("id", company.id)
-  if (update.error) {
-    console.error("[japan-entry-projection] company meta update failed:", update.error.message)
+  const metaUpdate = await sb.rpc("sales_atomic_meta_merge", {
+    p_company_id: company.id,
+    p_patch: metaPatch,
+  })
+  if (metaUpdate.error) {
+    console.error("[japan-entry-projection] company meta update failed:", metaUpdate.error.message)
     const rollback = await sb.from(DB_TABLES.SALES_JAPAN_ENTRY_PROJECTIONS).delete().eq("id", data.id)
     if (rollback.error) {
       console.error("[japan-entry-projection] projection rollback failed:", rollback.error.message)
-      return { ok: false, error: `${update.error.message}; rollback failed: ${rollback.error.message}` }
+      return { ok: false, error: `${metaUpdate.error.message}; rollback failed: ${rollback.error.message}` }
     }
-    return { ok: false, error: update.error.message }
+    return { ok: false, error: metaUpdate.error.message }
   }
 
   const stored = data as StoredJapanEntryProjection
-  return { ok: true, projection: stored }
+  const twentySync = await syncJapanEntryProjectionToTwenty(company.id, stored.id)
+  return { ok: true, projection: stored, twentySync }
 }

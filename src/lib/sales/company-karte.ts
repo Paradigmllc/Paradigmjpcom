@@ -39,6 +39,25 @@ export interface CompanyKarteLink {
   url: string
 }
 
+export interface CompanyKarteJapanEntryHorizon {
+  month: 6 | 12 | 24
+  roiPercent: number
+  cumulativeNetBenefitUsd: number
+}
+
+export interface CompanyKarteJapanEntryDraft {
+  state: string
+  message: string
+  classification: string
+  estimatedJapanMonthlyVisits: number | null
+  monthlyOpportunityGapUsd: number | null
+  qualityScore: number | null
+  safetyScore: number | null
+  model: string | null
+  generatedAt: string | null
+  horizons: CompanyKarteJapanEntryHorizon[]
+}
+
 export interface CompanyKarteSnapshot {
   companyId: string
   companyName: string
@@ -75,6 +94,7 @@ export interface CompanyKarteSnapshot {
   reportEngine?: string | null
   diagnosisEngine?: string | null
   formMessageEvidence?: VerifiedOutreachContext | null
+  japanEntry?: CompanyKarteJapanEntryDraft | null
   generatedAt: string
 }
 
@@ -98,6 +118,56 @@ function firstString(meta: JsonRecord, paths: string[][]): string | null {
     if (value) return value
   }
   return null
+}
+
+function finiteNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null
+}
+
+function japanEntryDraftFromMeta(meta: JsonRecord): CompanyKarteJapanEntryDraft | null {
+  const message = typeof meta.japan_entry_initial_message === "string"
+    ? meta.japan_entry_initial_message.trim()
+    : ""
+  const projection = asRecord(meta.japan_entry_projection)
+  if (!message || !projection) return null
+
+  const messageGeneration = asRecord(meta.japan_entry_message_review) ?? asRecord(projection.messageGeneration)
+  const markets = Array.isArray(projection.markets) ? projection.markets : []
+  const japanMarket = markets
+    .map(asRecord)
+    .find((market) => market?.code === "JP")
+  const scenarios = Array.isArray(projection.scenarios) ? projection.scenarios : []
+  const baseScenario = scenarios
+    .map(asRecord)
+    .find((scenario) => scenario?.scenario === "base")
+  const horizons = Array.isArray(baseScenario?.horizons) ? baseScenario.horizons : []
+  const parsedHorizons = horizons.flatMap((value): CompanyKarteJapanEntryHorizon[] => {
+    const horizon = asRecord(value)
+    const month = finiteNumber(horizon?.horizon)
+    const roiPercent = finiteNumber(horizon?.roiPercent)
+    const cumulativeNetBenefitUsd = finiteNumber(horizon?.cumulativeNetBenefitUsd)
+    if ((month !== 6 && month !== 12 && month !== 24) || roiPercent === null || cumulativeNetBenefitUsd === null) {
+      return []
+    }
+    return [{ month, roiPercent, cumulativeNetBenefitUsd }]
+  })
+
+  return {
+    state: typeof meta.japan_entry_outreach_state === "string" ? meta.japan_entry_outreach_state : "needs_review",
+    message,
+    classification: typeof projection.classification === "string" ? projection.classification : "modeled-estimate",
+    estimatedJapanMonthlyVisits: finiteNumber(japanMarket?.estimatedMonthlyVisits),
+    monthlyOpportunityGapUsd: finiteNumber(projection.monthlyOpportunityGapUsd),
+    qualityScore: finiteNumber(messageGeneration?.qualityScore),
+    safetyScore: finiteNumber(messageGeneration?.safetyScore),
+    model: typeof messageGeneration?.model === "string" ? messageGeneration.model : null,
+    generatedAt: typeof messageGeneration?.generatedAt === "string"
+      ? messageGeneration.generatedAt
+      : typeof projection.generatedAt === "string"
+        ? projection.generatedAt
+        : null,
+    horizons: parsedHorizons,
+  }
 }
 
 function numberEvidence(label: string, value: number | null, source: string): CompanyKarteEvidence | null {
@@ -217,6 +287,7 @@ export function buildCompanyKarte(
   const diagnosis = companyPainDiagnosis(company)
   const personalizedCopy = asRecord(meta.personalized_copy)
   const formMessageEvidence = asRecord(meta.form_message_evidence) as VerifiedOutreachContext | null
+  const japanEntry = japanEntryDraftFromMeta(meta)
 
   return {
     companyId: company.id,
@@ -266,6 +337,7 @@ export function buildCompanyKarte(
           : "template",
     diagnosisEngine: typeof diagnosis?.engine === "string" ? diagnosis.engine : null,
     formMessageEvidence,
+    japanEntry,
     generatedAt: new Date().toISOString(),
     ...counts,
   }
