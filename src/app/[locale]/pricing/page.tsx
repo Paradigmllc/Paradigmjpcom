@@ -78,6 +78,9 @@ export default async function PricingPage({ params, searchParams }: Props) {
   const contentLocale = coerceLocale(rawLocale)     // ja/en（通貨フォーマット判定専用: formatPricePPP）
   const isJapanEntry = locale !== "ja"
   const t = await getTranslations({ locale, namespace: "pricingPage" })
+  const packageCopy = isJapanEntry
+    ? await getTranslations({ locale: "en", namespace: "packagePage" })
+    : null
   const visualContextLocale = locale === "ja" ? "ja" : "en"
   const visualContextT = await getTranslations({ locale: visualContextLocale, namespace: "home" })
   const faqPairs = locale === "ja"
@@ -265,6 +268,18 @@ export default async function PricingPage({ params, searchParams }: Props) {
           )}
         </div>
       </section>
+
+      {packageCopy && (
+        <section className="border-b border-paradigm-line bg-paradigm-paper-deep px-5 py-8 sm:px-8 lg:px-12" aria-label={packageCopy("navLabel")}>
+          <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-4 rounded-lg border border-paradigm-line bg-paradigm-paper p-5 sm:flex-row sm:items-center sm:px-6">
+            <p className="max-w-2xl text-[13px] leading-[1.75] text-paradigm-ink-soft">{packageCopy("includedDesc")}</p>
+            <Link href="/package" className="inline-flex shrink-0 items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-paradigm-ink transition-colors hover:text-paradigm-accent">
+              {packageCopy("navLabel")}
+              <span aria-hidden>→</span>
+            </Link>
+          </div>
+        </section>
+      )}
 
       {isJapanEntry && paymentMethods.length > 0 && (
         <section className="relative overflow-hidden bg-paradigm-paper-deep paradigm-section" aria-labelledby="payment-assurance-heading">

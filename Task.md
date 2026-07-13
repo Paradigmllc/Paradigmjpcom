@@ -1,5 +1,12 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
+### 2026-07-13 Japan Entry Package詳細ページ（実装済み・正式release待ち）
+- `/[locale]/package` を追加。国際ロケールでは英語の正本コピーを表示し、JAは国内向け`/ja/services`へリダイレクトしてJapan Entryを混在させない。
+- $12,000セットアップの内訳を7ワークストリーム（市場・提案整理、LP/HPローカライズ、SNS初期設定、市場・競合レポート、信頼・法規制適用可能性、問い合わせ・決済、公開運用・引き継ぎ）へ分解。各項目に具体的な納品物を記載した。
+- 14営業日の時系列、開始条件、月1〜6の運用、Notion/Trello共有ワークスペース、48営業時間以内着手SLA、月7以降、支払方法、返金条件、除外事項、成果保証をしない境界を同じページに集約。
+- `/en/services`と`/en/pricing`から詳細ページへ導線を追加し、国際ロケールのsitemapにも`/package`を追加。JAの国内サービス導線は変更しない。
+- 検証: TypeScript pass、対象ESLint pass、関連Vitest **16 tests pass**、quality guard **0 errors / 54 warnings**、production build **384/384 pages**、`git diff --check` pass。次は正式releaseと公開URLの本文・JAリダイレクト・sitemapを確認する。
+
 ### 2026-07-13 Japan Entry Opportunity Brief量産・意思決定資料強化（本番反映・公開QA済み / 送信停止）
 - `japan_entry_report` を既存のevent-driven enrichment queueへ追加。最大100社の一括投入、最大3社の並列drain、進捗Realtime、失敗理由、同一ジョブ再試行、100社表示の管理画面 `/{locale}/admin/opportunity-briefs` を実装した。cron・常駐polling・フォーム送信には接続しない。
 - 投影行へjob単位の `idempotency_key` を追加。同じ失敗ジョブは保存済み投影を再利用してTwenty同期だけを再試行し、重複URL・重複文面を生成しない。公開シグナル、根拠付き商品情報、Japan readiness監査、既定ではHTTPS根拠付き競合分析が揃わない企業は品質ゲートで停止する。
