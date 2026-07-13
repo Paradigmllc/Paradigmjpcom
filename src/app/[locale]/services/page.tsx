@@ -10,6 +10,7 @@
  * AE-PHP-4 準拠 (各 page.tsx に役割/入力/出力 を明示)。
  */
 import type { Metadata } from "next"
+import { ArrowRight } from "lucide-react"
 import { getTranslations } from "next-intl/server"
 import { pageAlternates } from "@/lib/page-metadata"
 import { Link } from "@/i18n/routing"
@@ -66,6 +67,9 @@ export default async function ServicesPage({ params }: Props) {
   const locale = assertLocale(rawLocale)            // 実 locale（UI + CMS 12-locale 配信）
   const t = await getTranslations({ locale, namespace: "servicesPage" })
   const japanEntryLocale = locale !== "ja"
+  const packageCopy = japanEntryLocale
+    ? await getTranslations({ locale: "en", namespace: "packagePage" })
+    : null
   const packageModules = japanEntryLocale ? (t.raw("moduleCards") as EnglishModule[]) : []
   const operatingSteps = japanEntryLocale ? (t.raw("operatingSteps") as OperatingStep[]) : []
 
@@ -143,6 +147,12 @@ export default async function ServicesPage({ params }: Props) {
               <p className="paradigm-eyebrow text-paradigm-accent mb-3">{t("moduleEyebrow")}</p>
               <h2 id="package-modules" className="font-display text-[26px] md:text-[40px] leading-[1.1] text-paradigm-ink">{t("moduleTitle")}</h2>
               <p className="mt-4 text-[14px] md:text-[16px] text-paradigm-ink-soft leading-[1.85]">{t("moduleDesc")}</p>
+              {packageCopy && (
+                <Link href="/package" className="mt-5 inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.14em] text-paradigm-ink transition-colors hover:text-paradigm-accent">
+                  {packageCopy("navLabel")}
+                  <ArrowRight size={14} aria-hidden />
+                </Link>
+              )}
             </FadeIn>
           )}
           {services.length === 0 ? (
