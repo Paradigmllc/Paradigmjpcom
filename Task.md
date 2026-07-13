@@ -6,12 +6,12 @@
 - EN FAQ、JA FAQ、AIチャットRAG知識にも同じ説明を追加。署名済み範囲の代替ではなく、共有の進行記録であることを明記した。
 - 検証: TypeScript pass、対象ESLint pass、関連Vitest **2 files / 15 tests pass**、quality guard **0 errors / 53 warnings**、JSON parse、diff check pass。正式 `npm run release:prod` のdeployment `mk5w9a184pyshc5vg1jk2iow` はfinished、DB **82/82**、Traefik/Cloudflare、EN/JA主要公開URL、Twenty、Sales health、post-deploy release gateを通過。公開HTMLで共有ワークスペース、Notion/Trello、48 business hoursの文面を確認した。ローカルproduction buildは別プロジェクトのNextビルド競合で1115秒時点に中断したが、正式リモートbuildと公開smokeは合格した。
 
-### 2026-07-13 Japan Entry Opportunity Brief URL（実装・ローカル検証済み / 正式release待ち）
+### 2026-07-13 Japan Entry Opportunity Brief URL（本番反映済み / 送信停止）
 - 興味返信後の企業へ共有する専用URL `/{locale}/opportunity/{slug}` を追加。既存診断レポートの会社データ取得、日本市場監査、公開シグナル投影を再利用しつつ、意思決定要約、推定市場別アクセス、6/12/24か月ROI、準備状況、競合環境、21営業日の推奨手順、$12,000一括前払い・最初の6か月込みを一つの非公開noindex資料へ再構成した。
-- 投影は `public-opportunity-v1` の完全な3シナリオと6/12/24か月データが揃う場合だけ公開し、不完全データは404へfail-closed。数値は公開シグナルに基づくモデル値として表示し、実測アクセス・確定売上・成果保証とは扱わない。
+- 投影は `public-opportunity-v1` の完全な3シナリオと6/12/24か月データが揃う場合だけ公開し、不完全データは共通not-found本文へfail-closed。数値は公開シグナルに基づくモデル値として表示し、実測アクセス・確定売上・成果保証とは扱わない。現行locale共通shellはnot-found本文でもHTTP 200を返すsoft-404仕様だが、会社情報・投影・監査内容は返さない。
 - 競合名は `japan_entry_competitor_analysis` にHTTPS公開根拠URLがあるものだけ表示する。未検証時は類似カテゴリから推測せず「競合セット未検証」と明示し、15分面談後に対象顧客・価格帯・代替手段を確定する。
 - 投影生成時にOpportunity Brief URLを企業metaへ保存し、Twenty企業ホームの主リンクとカルテ要約へ同期する。既存投影もslugがあればカルテ生成時にURLを復元する。初回フォーム文面は従来どおりURL・資料なし、未送信・要レビューを維持し、候補収集やフォーム送信には接続しない。
-- 検証: 対象Vitest **6 files / 25 tests pass**、TypeScript pass、対象ESLint pass、quality guard **0 errors**、production build **372/372 pages**、新route `/[locale]/opportunity/[slug]` のbundle収載、`git diff --check` pass。
+- 検証: 対象Vitest **6 files / 25 tests pass**、TypeScript pass、対象ESLint pass、quality guard **0 errors**、production build **372/372 pages**、新route `/[locale]/opportunity/[slug]` のbundle収載、`git diff --check` pass。PR **#107**をmainへmergeし、正式deployment `mnqugthcsj0n2cy2ucczylka` はcommit `1425c83a`（Opportunity実装commit `c5a72a68`を包含）でfinished。DB **82/82**、Traefik/Cloudflare、Realtime、Twenty HTTP 200・worker restart 0、Sales health HTTP 200 / JSON ok、post-deploy release gateを通過した。本番の未存在slugと投影未生成slugは共通not-found本文のみで、候補収集・フォーム送信・本番テスト企業作成は未実行。
 
 ### 2026-07-13 SMB実素材デモ Premium V3 全ページ品質強化（本番反映・公開QA済み / 送信停止）
 - Premium V2がトップ専用で、About / Services / Contact / Works等は旧汎用レンダラーのままだった分断を解消。店紹介、商品、アクセス、汎用コンテンツ／FAQ／法務を専用のeditorial rendererへ切り替え、全11ページを同じ色・書体・余白・写真表現へ統一した。
