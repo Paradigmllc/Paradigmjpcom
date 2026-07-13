@@ -1,10 +1,10 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
-### 2026-07-13 共有ワークスペースと48営業時間以内着手SLA（実装・検証済み / 正式release待ち）
+### 2026-07-13 共有ワークスペースと48営業時間以内着手SLA（本番反映・公開QA済み）
 - ENのJapan Entry共通進行フローに、契約範囲確定後の顧客専用共有ワークスペースを追加。Notionを基本とし、顧客希望時はTrelloを選択できる運用として、範囲・担当・ステータス・ブロッカー・承認・成果物・次の作業を1か所で可視化する。
 - 「48時間で完了」と誤認させず、含まれる月額運用の通常依頼を48営業時間以内に受付・スコープ化・着手するSLAとして明記。緊急、規制、第三者依存、範囲外作業は書面承認へ分離した。
 - EN FAQ、JA FAQ、AIチャットRAG知識にも同じ説明を追加。署名済み範囲の代替ではなく、共有の進行記録であることを明記した。
-- 検証: TypeScript pass、対象ESLint pass、関連Vitest **2 files / 15 tests pass**、quality guard **0 errors / 53 warnings**、JSON parse、diff check pass。ローカルproduction buildは別プロジェクトのNextビルド競合で1115秒時点に中断。正式releaseのリモートbuildで再確認予定。
+- 検証: TypeScript pass、対象ESLint pass、関連Vitest **2 files / 15 tests pass**、quality guard **0 errors / 53 warnings**、JSON parse、diff check pass。正式 `npm run release:prod` のdeployment `mk5w9a184pyshc5vg1jk2iow` はfinished、DB **82/82**、Traefik/Cloudflare、EN/JA主要公開URL、Twenty、Sales health、post-deploy release gateを通過。公開HTMLで共有ワークスペース、Notion/Trello、48 business hoursの文面を確認した。ローカルproduction buildは別プロジェクトのNextビルド競合で1115秒時点に中断したが、正式リモートbuildと公開smokeは合格した。
 
 ### 2026-07-13 Japan Entry Opportunity Brief URL（実装・ローカル検証済み / 正式release待ち）
 - 興味返信後の企業へ共有する専用URL `/{locale}/opportunity/{slug}` を追加。既存診断レポートの会社データ取得、日本市場監査、公開シグナル投影を再利用しつつ、意思決定要約、推定市場別アクセス、6/12/24か月ROI、準備状況、競合環境、21営業日の推奨手順、$12,000一括前払い・最初の6か月込みを一つの非公開noindex資料へ再構成した。
