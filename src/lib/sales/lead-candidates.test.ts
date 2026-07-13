@@ -48,6 +48,27 @@ describe("lead candidate acquisition", () => {
     expect(score.opportunityScore).toBeGreaterThan(55)
   })
 
+  it("scores a hosted Shopify SMB with objective US evidence above the factory gate", () => {
+    const score = scoreCandidate({
+      requestedTechnology: "Shopify",
+      detections: [{ name: "Shopify", category: "Hosted Platform", confidence: 98 }],
+      countrySignals: inferCountrySignals({
+        domain: "independent-store.myshopify.com",
+        targetCountry: "US",
+        evidenceText: "Visit our Seattle store. Prices are shown in USD.",
+      }),
+      lane: "tech_footprint",
+      hasWebsite: true,
+      hasContactSignal: true,
+      source: "multi_source_domains",
+    })
+
+    expect(score.stackFitScore).toBe(96)
+    expect(score.geoConfidence).toBeGreaterThanOrEqual(70)
+    expect(score.smbScore).toBeGreaterThanOrEqual(50)
+    expect(score.opportunityScore).toBeGreaterThanOrEqual(68)
+  })
+
   it("scores fresh parked local-service domains without using WHOIS contacts as proof", () => {
     const signals = inferFreshDomainSignals({
       domain: "austin-roof-care.com",

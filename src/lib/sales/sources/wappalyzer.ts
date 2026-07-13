@@ -21,6 +21,17 @@ export interface TechItem {
   evidence?: EvidenceSource[]
 }
 
+function visibleEvidenceText(html: string): string {
+  return html
+    .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&(?:nbsp|amp|quot|#39);/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 50_000)
+}
+
 // ─── 258 technology signatures ───
 // Categories: CMS, EC, Framework, Analytics, Marketing, Payment, Chat/CRM, CDN/Hosting,
 //             Bot Protection, Email, Booking, Form, Cookie Consent, A/B Testing, SEO,
@@ -297,7 +308,7 @@ export function detectTechFromEvidence(input: {
     .filter((item): item is TechItem => item !== null)
 }
 
-export async function detectTechStack(url: string): Promise<{ tech: TechItem[]; server: string | null }> {
+export async function detectTechStack(url: string): Promise<{ tech: TechItem[]; server: string | null; evidenceText: string | null }> {
   try {
     const res = await fetch(
       url,
@@ -312,9 +323,9 @@ export async function detectTechStack(url: string): Promise<{ tech: TechItem[]; 
     const cookies = cookieText(res.headers)
     const server = res.headers.get("server")
     const tech = detectTechFromEvidence({ html, headers, cookies })
-    return { tech, server }
+    return { tech, server, evidenceText: visibleEvidenceText(html) }
   } catch (error) {
     console.warn("[wappalyzer] technology detection failed:", error)
-    return { tech: [], server: null }
+    return { tech: [], server: null, evidenceText: null }
   }
 }

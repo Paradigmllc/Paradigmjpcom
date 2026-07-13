@@ -16,6 +16,7 @@ import {
 } from "./lead-candidate-scoring"
 import { detectTechStack, type TechItem } from "./sources/wappalyzer"
 import { discoverFormUrl } from "./sources/form-discovery"
+import { techFromCname } from "./passive-inventory-utils"
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
@@ -295,10 +296,19 @@ async function processItem(run: RunRow, item: RunItemRow) {
     : null
   const passiveTech = Array.isArray(passive?.technologies) ? passive.technologies as TechItem[] : []
   const passiveSignals = Array.isArray(passive?.countrySignals) ? passive.countrySignals as CandidateCountrySignal[] : []
-  const detection = passive?.raw && (passive.raw as JsonRecord).skip_active_verification === true
-    ? { tech: passiveTech, server: null as string | null }
+  const rawPassive = passive?.raw && typeof passive.raw === "object" && !Array.isArray(passive.raw) ? passive.raw as JsonRecord : null
+  const activeDetection = rawPassive?.skip_active_verification === true
+    ? { tech: passiveTech, server: null as string | null, evidenceText: typeof rawPassive.common_crawl_text_sample === "string" ? rawPassive.common_crawl_text_sample : null }
     : await detectTechStack(rootUrl)
-  const countrySignals = passiveSignals.length > 0 ? passiveSignals : inferCountrySignals({ domain: candidate.domain, targetCountry: run.country_code })
+  const hostedTech = techFromCname(candidate.domain)
+  const hostedSlugs = new Set(hostedTech.map((tech) => technologySlug(tech.name)))
+  const detection = {
+    ...activeDetection,
+    tech: [...hostedTech, ...activeDetection.tech.filter((tech) => !hostedSlugs.has(technologySlug(tech.name)))],
+  }
+  const countrySignals = passiveSignals.length > 0
+    ? passiveSignals
+    : inferCountrySignals({ domain: candidate.domain, targetCountry: run.country_code, evidenceText: detection.evidenceText })
   const requestedSlug = run.technology ? technologySlug(run.technology) : null
   const techMatched = requestedSlug ? detection.tech.some((tech) => technologySlug(tech.name) === requestedSlug) : detection.tech.length > 0
   const form = await discoverFormUrl({ homeUrl: rootUrl, region: salesScopeFromCountry({ targetCountry: run.country_code }).region, enableLlm: false })
