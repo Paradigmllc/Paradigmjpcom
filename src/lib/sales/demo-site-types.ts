@@ -318,6 +318,8 @@ export interface DemoAboutPage {
 export interface DemoServicesPage {
   title: string
   subtitle: string
+  processEyebrow?: string
+  processTitle?: string
   services: {
     title: string
     description: string
