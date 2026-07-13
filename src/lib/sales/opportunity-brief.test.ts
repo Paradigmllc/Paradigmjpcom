@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 import type { DiagnosticReportData } from "./diagnostic"
-import { buildOpportunityBrief, readCompetitiveLandscape, readOpportunityProjection } from "./opportunity-brief"
+import { buildOpportunityBrief, readCompetitiveLandscape, readJapanDemandSignals, readOpportunityProjection } from "./opportunity-brief"
 
 const projection = {
   modelVersion: "public-opportunity-v1",
@@ -97,5 +97,20 @@ describe("opportunity brief publication gate", () => {
       status: "pending_verification",
       competitors: [],
     })
+  })
+
+  it("shows Japan demand only when the signal has HTTPS evidence and minimum confidence", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {})
+    const signals = readJapanDemandSignals({
+      japan_entry_competitor_analysis: {
+        demand_signals: [
+          { label: "Search interest", statement: "Verified Japanese search interest increased.", evidence_url: "https://example.com/evidence", confidence: 0.72 },
+          { statement: "Weak signal", evidence_url: "https://example.com/weak", confidence: 0.3 },
+          { statement: "Insecure source", evidence_url: "http://example.com", confidence: 0.9 },
+        ],
+      },
+    })
+    expect(signals).toHaveLength(1)
+    expect(signals[0]).toMatchObject({ label: "Search interest", confidence: 0.72 })
   })
 })

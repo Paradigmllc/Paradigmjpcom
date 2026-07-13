@@ -18,6 +18,7 @@ import FadeIn from "@/components/aesop/FadeIn"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import JapanEntryJourney from "@/components/japan-entry/JapanEntryJourney"
 import JapanEntryVisualProof from "@/components/japan-entry/JapanEntryVisualProof"
+import { JapanMarketUrgency } from "@/components/japan-entry/JapanMarketUrgency"
 
 const PACKAGE_LOCALES = ["en", ...INTERNATIONAL_REPORT_LOCALES] as const
 
@@ -66,6 +67,8 @@ export default async function PackagePage({ params }: { params: Promise<{ locale
         asideText={t("includedDesc")}
         asideCta={{ label: t("ctaButton"), href: "/contact?intent=japan-entry" }}
       />
+
+      <JapanMarketUrgency compact source="package" />
 
       <section className="border-b border-paradigm-line bg-paradigm-paper-deep px-5 py-8 sm:px-8 lg:px-12" aria-label={t("summaryLabel")}>
         <div className="mx-auto grid max-w-6xl grid-cols-2 divide-x divide-y divide-paradigm-line border border-paradigm-line bg-paradigm-paper md:grid-cols-4 md:divide-y-0">

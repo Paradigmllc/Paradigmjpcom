@@ -1,5 +1,13 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
+### 2026-07-13 Japan Entry 競合・需要パーソナライズ／両面危機訴求（実装・ローカルQA済み / 正式release待ち / 送信停止）
+- DeepSeek V4 Pro初回フォーム文面へ、HTTPS公開根拠付きの実名競合、日本の商品固有需要シグナル、公式市場データ、条件付き規制リスクを追加。商品固有需要がある場合は一般市場規模だけで逃げる候補を品質ゲートで拒否し、競合名・需要・監査ギャップ・推定アクセス・推定機会損失・規制の適用未確定表現を最大6 factで必須化した。
+- 規制訴求は、消費者庁が説明する適用対象違反時の業務改善指示・業務停止命令・罰則と、個人情報保護委員会の2026年APPI見直し方針を根拠化。「当該企業が違反している」とは断定せず、公開ページ診断では適用可能性や違反を確定しない文言を必須にした。「世界3位」は現時点の一次根拠を確認できないため不使用。
+- 国際向けホーム、Services、Pricing、Packageへ共通の強い危機訴求を追加。人口123.05M、2024年B2C EC ¥26.1T（前年比+5.1%）、日銀2026年7月基準相場¥158/$1を出典・基準日付きで表示し、為替は削減保証にしない。JA国内向けページには混在させない。
+- Opportunity Briefへ競合・需要・規制を同時に比較する意思決定セクションを追加。商品固有の需要根拠がなければ人気を推測せず、一般市場文脈と「商品固有人気は未検証」を表示する。
+- 検証: 関連Vitest **4 files / 37 tests pass**、TypeScript pass、対象ESLint pass、quality guard **0 errors / 59 warnings**、production build **396/396 pages**、`git diff --check` pass。実Chromeで `/en` `/en/services` `/en/pricing` `/en/package` はHTTP 200、危機訴求・市場数値表示、PC/mobile横溢れ0、overlay/console error 0。`/ja`への混入0。
+- 実V4 Pro非送信smokeは、候補文字上限問題を検出して1,800字へ修正後、企業名・推定アクセス・推定機会損失・競合・条件付き規制・4段落・未置換ゼロまで通った候補を得たが、商品固有需要を一般市場データで代替したため意図的にreject。需要必須化後の再試行は上流の空応答／不完全JSONが継続しfail-closed。DB保存、Twenty同期、フォーム送信、候補収集は一切実行していない。
+
 ### 2026-07-13 SMBデモ量産・DeepSeek Prompt Caching最適化（本番反映・実測済み / 送信停止）
 - DeepSeek V4 Proへ渡す共通の品質規則・JSON schema・禁止事項をcompany固有データより前へ固定し、企業ごとに変わる名称・所在地・事実・design recipeを末尾へ分離した。DeepSeekのprefix cacheが企業をまたいで再利用できる構造に変更し、公式usageの `prompt_cache_hit_tokens` / `prompt_cache_miss_tokens` を正規化して生成payloadへ保存する。
 - LLMはHome / About / Servicesの創造性が必要な中核コピーだけを担当する。FAQ / Contact、法務、アクセス、営業時間、SNS、フォーム、Google Mapsは審査済みmanifestから決定論的に構築し、LLM出力対象から外した。品質ゲート、事実grounding、3デザイン候補、private review、外部送信停止は維持する。

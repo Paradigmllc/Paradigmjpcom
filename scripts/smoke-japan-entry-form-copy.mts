@@ -50,16 +50,33 @@ const result = await generatePersonalizedJapanEntryMessage({
     status: {
       japanese_language_missing: true,
       jpy_currency_missing: true,
+      appi_missing: true,
     },
     signals: {
       japanese_language: [],
       jpy_currency: [],
+      appi: [],
     },
     pages_checked: [
       "https://atlasmetric.example/",
       "https://atlasmetric.example/pricing",
       "https://atlasmetric.example/terms",
     ],
+  },
+  competitorAnalysis: {
+    competitors: [{
+      name: "RetailMetric Japan",
+      domain: "retailmetric-japan.example",
+      category: "direct",
+      summary: "Offers Japanese-language subscription analytics for retail inventory planning.",
+      evidence: [{ label: "Product page", source_url: "https://retailmetric-japan.example/product" }],
+    }],
+    demand_signals: [{
+      label: "Verified category interest",
+      statement: "A public trend dataset shows sustained Japanese search interest in retail inventory analytics.",
+      evidence_url: "https://example.com/japan-retail-analytics-trend",
+      confidence: 0.72,
+    }],
   },
 });
 
@@ -76,6 +93,9 @@ const checks = {
   companyName: result.message.includes("AtlasMetric"),
   japanVisits: result.message.includes(expectedVisits),
   opportunityGap: result.message.includes(expectedGap),
+  competitor: result.message.includes("RetailMetric Japan"),
+  japanDemand: result.message.includes("sustained Japanese search interest in retail inventory analytics"),
+  conditionalRegulation: /does not|doesn't|not a finding/i.test(result.message) && /applicability|breach|obligation/i.test(result.message),
   noPlaceholder: !/(?:\[[^\]\n]+\]|［[^］\n]+］|【[^】\n]+】|\{[^{}\n]+\}|<[^<>\n]+>|__[A-Z0-9_ -]+__|\bTBD\b|\bPLACEHOLDER\b)/i.test(result.message),
   fourParagraphs: result.message.split(/\n\s*\n/).filter(Boolean).length === 4,
 };
