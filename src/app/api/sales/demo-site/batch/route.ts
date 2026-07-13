@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await sb
     .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
-    .select("id, company_id, status, attempts, max_attempts, error_message, result_payload, created_at, updated_at, sales_companies(company_name)")
+    .select("id, company_id, status, attempts, max_attempts, error_message, result_payload, created_at, updated_at")
     .eq("job_type", "demo_generate")
     .order("created_at", { ascending: false })
     .limit(100)
@@ -50,7 +50,20 @@ export async function GET(request: NextRequest) {
     console.error("[demo-batch] queue fetch failed:", error.message)
     return NextResponse.json({ ok: false, error: error.message }, { status: 503 })
   }
-  return NextResponse.json({ ok: true, jobs: data ?? [] }, { headers: { "Cache-Control": "private, no-store" } })
+  const companyIds = [...new Set((data ?? []).map((row) => row.company_id).filter((id): id is string => typeof id === "string"))]
+  const companies = companyIds.length > 0
+    ? await sb.from(DB_TABLES.SALES_COMPANIES).select("id, company_name").in("id", companyIds)
+    : { data: [], error: null }
+  if (companies.error) {
+    console.error("[demo-batch] company fetch failed:", companies.error.message)
+    return NextResponse.json({ ok: false, error: companies.error.message }, { status: 503 })
+  }
+  const companyById = new Map((companies.data ?? []).map((company) => [company.id, company]))
+  const jobs = (data ?? []).map((row) => ({
+    ...row,
+    sales_companies: row.company_id ? companyById.get(row.company_id) ?? null : null,
+  }))
+  return NextResponse.json({ ok: true, jobs }, { headers: { "Cache-Control": "private, no-store" } })
 }
 
 export async function POST(request: NextRequest) {
@@ -129,15 +142,22 @@ export async function PUT(request: NextRequest) {
     if (!parsed.success) return NextResponse.json({ ok: false, error: parsed.error.issues[0]?.message ?? "入力が不正です" }, { status: 400 })
     const { data, error } = await sb
       .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
-      .select("id, company_id, status, input_payload, result_payload, sales_companies(meta)")
+      .select("id, company_id, status, input_payload, result_payload")
       .eq("job_type", "demo_generate")
       .eq("status", "completed")
       .in("id", parsed.data.jobIds)
     if (error) throw new Error(error.message)
 
+    const companyIds = [...new Set((data ?? []).map((row) => row.company_id).filter((id): id is string => typeof id === "string"))]
+    const companies = companyIds.length > 0
+      ? await sb.from(DB_TABLES.SALES_COMPANIES).select("id, meta").in("id", companyIds)
+      : { data: [], error: null }
+    if (companies.error) throw new Error(companies.error.message)
+    const companyById = new Map((companies.data ?? []).map((company) => [company.id, company]))
+
     const issued: Array<Record<string, unknown>> = []
     for (const row of data ?? []) {
-      const related = Array.isArray(row.sales_companies) ? row.sales_companies[0] : row.sales_companies
+      const related = row.company_id ? companyById.get(row.company_id) : null
       const sourceReview = readManifestFromRelatedCompany(related)
       const slug = typeof row.result_payload?.slug === "string" ? row.result_payload.slug : null
       if (!slug || !sourceReview.ok || !sourceReview.manifest) {
