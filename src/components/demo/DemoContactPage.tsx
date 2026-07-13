@@ -39,11 +39,13 @@ export function DemoContactPage({ contact, companyName, locale, template }: Prop
           ? <DisabledContactForm isJa={isJa} accent={accent} note={contact.formNote} />
           : <ContactFormSection isJa={isJa} accent={accent} companyName={companyName} contact={contact} />
       case "booking":
-        return <BookingEmbed contact={contact} isJa={isJa} accent={accent} />
+        return contact.calBookingUrl || contact.calDirectUrl
+          ? <BookingEmbed contact={contact} isJa={isJa} accent={accent} />
+          : null
       case "map":
         return <MapPlaceholder isJa={isJa} accent={accent} />
       case "faq":
-        return <ContactFaq isJa={isJa} accent={accent} contact={contact} />
+        return contact.formEnabled === false ? null : <ContactFaq isJa={isJa} accent={accent} contact={contact} />
       default:
         return null
     }
