@@ -1,3 +1,13 @@
+## CURRENT STATUS - 2026-07-14 Japan Entry文面20社一括生成→Twenty保存の本番試験（完了 / 外部送信0 / QAデータ削除済み）
+
+### 2026-07-14 Opportunity Brief factory production batch verification
+- 本番に合成QA企業20社を隔離投入し、`sending_enabled=false`のまま最大3社並列のone-shot drainで文面生成→投影保存→Twenty企業カルテ同期を実行。キューは手動tickなしで20社の末尾まで到達し、外部フォーム・メール・電話・郵送・outreach jobは0件、`sent_at`更新0件、既存`mvp_outreach_runs`総数2件にも増加なし。
+- 初回試験で、Twentyの選択型へ`SaaS` / `ecommerce` / `service`や未知の取得元を直接渡す不整合を検出。既存taxonomyへ安全に正規化し、未登録の国・取得元は誤分類せずnullにする修正をPR **#153**でmainへmerge。続く実試験で`paradigmSourceCoverage`の実体がTEXT型なのに数値を送る不整合を検出し、文字列化をPR **#156**でmainへmergeした。
+- 最終結果は **18/20社（90%）completed + Twenty同期成功**、2/20社は決定論的品質ゲートでfail-closed。停止理由は、①商品文脈にない主張＋140語未満、②入力にない性能／添付資料主張。閾値を緩めず、不適格文面は投影・Twentyへ保存しない。
+- 合格18社の実測: quality **min 94 / avg 98.67 / max 100**、safety **18/18で100**、語数 **197–214（平均206.11）**、4段落 **18/18**、初回文面URL **0**、未置換プレースホルダー **0**。入力87,054 / 出力27,717 tokens、prefix cache **44,288 hit / 42,766 miss（50.87%）**。
+- Twenty実体で18社全件を照合し、カルテ本文 **3,724–3,870文字**、Opportunity Brief URL、国・業種分類、`Japan Entry初回フォーム文面を確認（未送信）`を確認。試験後はTwentyのQA企業 **18/18削除**、SupabaseのQA企業20社・job20件・投影・sync log 147件も削除し、両環境のQA企業残存数 **0**。
+- 検証: 関連Vitest **2 files / 9 tests pass**、TypeScript、対象ESLint、quality guard **0 errors / 59 warnings**、production build **396/396 pages**。正式`npm run release:prod`はdeployment **mpatatvqofx42r53mhflz6u5**と最終 **ux3080ahlo3wwkhh7fi82smo**を完走し、DB **83/83**、Traefik / Cloudflare / Realtime / Twenty worker restart 0、Sales health HTTP 200 JSON `ok:true`までpost-deploy gate pass。
+
 ## CURRENT STATUS - 2026-07-14 SMB Premium V3全ページ品質・業種別ブランドDNA（実装・ローカル実ブラウザQA済み / 本番反映待ち）
 
 ### 2026-07-14 SMB Premium V3フルサイト品質強化
