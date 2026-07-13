@@ -89,6 +89,7 @@ export interface DemoMeta {
     cacheMissTokens: number
   }
   sourceEvidence?: string[]
+  verifiedFacts?: string[]
   proposalNotice?: string
   primaryCtaLabel?: string
   primaryCtaHref?: string

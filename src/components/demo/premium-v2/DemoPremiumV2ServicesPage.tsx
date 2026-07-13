@@ -17,8 +17,8 @@ export function DemoPremiumV2ServicesPage({ data }: { data: DemoMultiPageData })
       <section className="px-5 py-20 sm:px-10 sm:py-28 lg:px-16 lg:py-36">
         <div className="mx-auto max-w-7xl">
           <PremiumV2Reveal className="mb-14 grid gap-7 border-b border-black/20 pb-10 lg:grid-cols-[1fr_.55fr] lg:items-end">
-            <div><p className="text-xs font-bold uppercase tracking-[.3em] text-[var(--demo-accent)]">This weekend</p><h2 className="mt-5 font-premium-serif text-4xl tracking-[-.045em] sm:text-6xl">今週の出会いを、<br />ひとつずつ。</h2></div>
-            <p className="text-sm leading-7 text-black/55">並ぶものが週ごとに変わるからこそ、ひとつひとつの背景と、最新の案内へ迷わず辿り着けるように。</p>
+            <div><p className="text-xs font-bold uppercase tracking-[.3em] text-[var(--demo-accent)]">Services</p><h2 className="mt-5 font-premium-serif text-4xl tracking-[-.045em] sm:text-6xl">{services.title}</h2></div>
+            <p className="text-sm leading-7 text-black/55">{services.subtitle}</p>
           </PremiumV2Reveal>
           <div className="space-y-16 sm:space-y-24">
             {services.services.map((service, index) => {
@@ -52,8 +52,8 @@ export function DemoPremiumV2ServicesPage({ data }: { data: DemoMultiPageData })
 
       <section className="px-5 py-20 sm:px-10 sm:py-28 lg:px-16 lg:py-36">
         <div className="mx-auto max-w-7xl">
-          <PremiumV2Reveal className="mb-10"><p className="text-xs font-bold uppercase tracking-[.3em] text-[var(--demo-accent)]">Gallery</p><h2 className="mt-5 font-premium-serif text-4xl tracking-[-.045em] sm:text-6xl">目で選ぶ、週末のお菓子。</h2></PremiumV2Reveal>
-          <PremiumV2MediaCarousel media={media} label="お菓子のイメージスライダー" />
+          <PremiumV2Reveal className="mb-10"><p className="text-xs font-bold uppercase tracking-[.3em] text-[var(--demo-accent)]">Gallery</p><h2 className="mt-5 font-premium-serif text-4xl tracking-[-.045em] sm:text-6xl">{data.companyName}のサービスイメージ。</h2></PremiumV2Reveal>
+          <PremiumV2MediaCarousel media={media} label={`${data.companyName}のサービスイメージスライダー`} />
         </div>
       </section>
 

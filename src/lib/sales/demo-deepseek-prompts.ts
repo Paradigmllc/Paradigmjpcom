@@ -32,16 +32,16 @@ export function buildJapaneseUserPrompt(
   prefecture: string,
   domain: string,
   techSummary: string,
-  hook: string,
-  totalLoss: string,
-  actSummaries: string,
+  _hook: string,
+  _totalLoss: string,
+  _actSummaries: string,
   locale: string,
-  homeSections: string,
+  _homeSections: string,
   heroVariant: string,
   featureLayout: string,
   cardStyle: string,
   nav: string,
-  tokens: DemoTemplate["designTokens"],
+  _tokens: DemoTemplate["designTokens"],
   verifiedFacts: string,
 ): string {
   return `以下の企業情報をもとに、4ページ構成のビジネスWebサイト（Home、About、Services、Contact）のパーソナライズされたコピーを生成してください。
@@ -59,23 +59,17 @@ export function buildJapaneseUserPrompt(
 ${verifiedFacts}
 上記にない事実は創作せず、コピーには確認済み公開情報だけを使用してください。
 
-【診断レポート】
-- 診断フック: ${hook}
-- 売上・損失: ${totalLoss}（公開コピーに数値として使用禁止）
-- 改善ポイント:
-${actSummaries || "（特になし）"}
-
 【出力形式】
 以下のJSON形式で出力してください。日本語はすべて「です・ます調」で記述してください。
 
 {
   "home": {
-    "hero_title": "診断フックに基づいた説得力のある見出し（40文字以内）",
-    "hero_subtitle": "1〜2文の価値提案（80文字以内）",
+    "hero_title": "確認済み商品・サービスを主役にした見出し（40文字以内）",
+    "hero_subtitle": "来店・利用者に向けた1〜2文の案内（80文字以内）",
     "features": [
       {
-        "title": "改善ポイントのタイトル",
-        "description": "具体的な説明（60文字以内）",
+        "title": "確認済み商品・サービスの魅力",
+        "description": "確認済み事実だけを使った説明（60文字以内）",
         "icon": "sparkles | shield | route | star | bolt | globe | lock | target | cpu | search | chart | users | lightbulb | zap | heart | smile",
         "metric_label": "指標ラベル",
         "metric_value": "指標値"
@@ -89,7 +83,7 @@ ${actSummaries || "（特になし）"}
     ]
   },
   "about": {
-    "story": "企業のストーリー（2〜3段落、です・ます調）",
+    "story": "確認済み情報に基づく事業紹介（2〜3段落、です・ます調。沿革や創業年は創作しない）",
     "mission": "ミッションステートメント（1文）",
     "values": [
       {
@@ -123,7 +117,7 @@ ${actSummaries || "（特になし）"}
   }
 }
 
-重要: features配列は3つ、FAQは4つ、valuesは4つ、servicesは3つ生成してください。根拠のない顧客の声・実績・数値は絶対に生成しないでください。`;
+重要: これは制作会社の改善提案LPではなく、入力企業がそのまま公式サイトとして使える顧客向けコピーです。Web改善、SEO、表示速度、診断、制作会社、Paradigm、Japan Entryには言及しないでください。features配列は3つ、FAQは4つ、valuesは4つ、servicesは3つ生成してください。根拠のない所在地、年代、沿革、営業時間、外部サービス連携、顧客の声、実績、数値は絶対に生成しないでください。`;
 }
 
 export function buildEnglishUserPrompt(
@@ -132,16 +126,16 @@ export function buildEnglishUserPrompt(
   prefecture: string,
   domain: string,
   techSummary: string,
-  hook: string,
-  totalLoss: string,
-  actSummaries: string,
+  _hook: string,
+  _totalLoss: string,
+  _actSummaries: string,
   locale: string,
-  homeSections: string,
+  _homeSections: string,
   heroVariant: string,
   featureLayout: string,
   cardStyle: string,
   nav: string,
-  tokens: DemoTemplate["designTokens"],
+  _tokens: DemoTemplate["designTokens"],
   verifiedFacts: string,
 ): string {
   return `Generate personalized copy for a 4-page business website (Home, About, Services, Contact) based on the following company data.
@@ -159,23 +153,17 @@ export function buildEnglishUserPrompt(
 ${verifiedFacts}
 Use only these verified facts for company-specific copy. Do not invent missing facts.
 
-[Diagnostic Report]
-- Diagnostic Hook: ${hook}
-- Sales / loss: ${totalLoss} (do not turn this into a numeric public claim)
-- Improvement Points:
-${actSummaries || "(none)"}
-
 [Output Format]
 Output the following JSON. All English copy must be professional business English — natural, polished, and free of AI clichés.
 
 {
   "home": {
-    "hero_title": "Compelling headline based on diagnostic hook (max 80 chars)",
-    "hero_subtitle": "1-2 sentence value proposition (max 120 chars)",
+    "hero_title": "Headline centered on a verified product or service (max 80 chars)",
+    "hero_subtitle": "1-2 sentence customer-facing introduction (max 120 chars)",
     "features": [
       {
-        "title": "Feature title",
-        "description": "Specific description (max 100 chars)",
+        "title": "Verified product or service benefit",
+        "description": "Description using verified facts only (max 100 chars)",
         "icon": "sparkles | shield | route | star | bolt | globe | lock | target | cpu | search | chart | users | lightbulb | zap | heart | smile",
         "metric_label": "Metric label",
         "metric_value": "Metric value"
@@ -189,7 +177,7 @@ Output the following JSON. All English copy must be professional business Englis
     ]
   },
   "about": {
-    "story": "Company story (2-3 paragraphs)",
+    "story": "Business introduction based only on verified facts (2-3 paragraphs; do not invent history or founding dates)",
     "mission": "Mission statement (1 sentence)",
     "values": [
       {
@@ -223,5 +211,5 @@ Output the following JSON. All English copy must be professional business Englis
   }
 }
 
-IMPORTANT: Generate exactly 3 features, 4 FAQs, 4 values, 3 services, and 4 process steps. Never generate unsupported testimonials, customer claims, or performance metrics.`;
+IMPORTANT: This is not a web-agency improvement pitch. Write customer-facing copy the input business could use as its official website. Do not mention web improvement, SEO, diagnostics, an agency, Paradigm, or Japan Entry. Generate exactly 3 features, 4 FAQs, 4 values, 3 services, and 4 process steps. Never invent locations, dates, history, opening hours, third-party platform integrations, testimonials, customer claims, or performance metrics.`;
 }

@@ -30,6 +30,7 @@ export function DemoPremiumV2ContactPage({ data }: { data: DemoMultiPageData }) 
   const hero = premium.gallery[2] ?? premium.heroMedia[0]
   const instagram = premium.social.find((item) => item.network === "instagram")
   const mapEmbedUrl = buildGoogleMapsEmbedUrl(contact.address)
+  const isPreviewForm = Boolean(data.privatePreview) || contact.formEnabled === false
 
   return (
     <div className="overflow-hidden bg-[#f4f1e9] text-[#171713]">
@@ -39,19 +40,19 @@ export function DemoPremiumV2ContactPage({ data }: { data: DemoMultiPageData }) 
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[.72fr_1.28fr] lg:gap-20">
           <PremiumV2Reveal>
             <p className="text-xs font-bold uppercase tracking-[.3em] text-[var(--demo-accent)]">Information</p>
-            <h2 className="mt-6 font-premium-serif text-4xl leading-[1.04] tracking-[-.045em] sm:text-6xl">週末の店へ、<br />迷わずどうぞ。</h2>
-            <p className="mt-7 max-w-md text-sm leading-8 text-black/55">営業日やその週のラインナップは変わる場合があります。ご来店前に公式SNSの最新案内をご確認ください。</p>
+            <h2 className="mt-6 font-premium-serif text-4xl leading-[1.04] tracking-[-.045em] sm:text-6xl">アクセスと<br />お問い合わせ。</h2>
+            <p className="mt-7 max-w-md text-sm leading-8 text-black/55">{contact.formNote}</p>
           </PremiumV2Reveal>
           <PremiumV2Reveal delay={0.08} className="grid gap-px bg-black/15 sm:grid-cols-2">
-            <InfoBlock icon={<MapPin className="h-5 w-5" />} label="所在地"><a href={contact.mapUrl} target="_blank" rel="noopener noreferrer" className="underline decoration-black/25 underline-offset-4">{contact.address}</a></InfoBlock>
-            <InfoBlock icon={<Clock3 className="h-5 w-5" />} label="営業案内">週末を中心に営業<br /><span className="text-xs text-black/45">最新情報は公式SNSへ</span></InfoBlock>
+            <InfoBlock icon={<MapPin className="h-5 w-5" />} label="所在地">{contact.mapUrl ? <a href={contact.mapUrl} target="_blank" rel="noopener noreferrer" className="underline decoration-black/25 underline-offset-4">{contact.address}</a> : contact.address}</InfoBlock>
+            <InfoBlock icon={<Clock3 className="h-5 w-5" />} label="営業案内">最新の営業情報をご確認ください<br /><span className="text-xs text-black/45">変更情報は公式案内へ</span></InfoBlock>
             {instagram && <InfoBlock icon={<FaInstagram className="h-5 w-5" />} label="公式Instagram"><a href={instagram.href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 underline decoration-black/25 underline-offset-4">最新の営業情報<ArrowUpRight className="h-4 w-4" /></a></InfoBlock>}
             <InfoBlock icon={<ArrowUpRight className="h-5 w-5" />} label="お問い合わせ">下記フォームから入力できます<br /><span className="text-xs text-black/45">デモでは送信されません</span></InfoBlock>
           </PremiumV2Reveal>
         </div>
       </section>
 
-      <section className="grid border-y border-black/10 lg:grid-cols-[1.1fr_.9fr]">
+      {contact.mapUrl && <section className="grid border-y border-black/10 lg:grid-cols-[1.1fr_.9fr]">
         <div className="relative min-h-[520px] bg-[#d9d2c2] lg:min-h-[720px]">
           <iframe
             src={mapEmbedUrl}
@@ -71,7 +72,7 @@ export function DemoPremiumV2ContactPage({ data }: { data: DemoMultiPageData }) 
             {contact.mapUrl && <a href={contact.mapUrl} target="_blank" rel="noopener noreferrer" className="mt-9 inline-flex min-h-12 items-center gap-3 border border-white/35 px-6 text-sm font-bold transition hover:bg-white hover:text-black">Google Mapsで開く<ArrowUpRight className="h-4 w-4" /></a>}
           </PremiumV2Reveal>
         </div>
-      </section>
+      </section>}
 
       <section className="px-5 py-20 sm:px-10 sm:py-28 lg:px-16 lg:py-36">
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[.65fr_1.35fr] lg:gap-20">
@@ -80,7 +81,7 @@ export function DemoPremiumV2ContactPage({ data }: { data: DemoMultiPageData }) 
             <h2 className="mt-6 font-premium-serif text-4xl leading-[1.05] tracking-[-.045em] sm:text-6xl">お問い合わせ。</h2>
             <p className="mt-7 text-sm leading-8 text-black/55">入力、バリデーション、完了表示まで実装したフォームです。非公開デモでは、相手事業者への誤送信を防ぐため外部送信を停止しています。</p>
           </PremiumV2Reveal>
-          <PremiumV2InquiryForm data={data} />
+          <PremiumV2InquiryForm data={data} previewOnly={isPreviewForm} />
         </div>
       </section>
     </div>
@@ -91,7 +92,7 @@ function InfoBlock({ icon, label, children }: { icon: React.ReactNode; label: st
   return <div className="min-h-48 bg-[#f4f1e9] p-6 sm:p-8"><div className="flex items-center gap-3 text-[var(--demo-accent)]">{icon}<p className="text-[10px] font-bold uppercase tracking-[.24em]">{label}</p></div><div className="mt-8 text-sm leading-7">{children}</div></div>
 }
 
-function PremiumV2InquiryForm({ data }: { data: DemoMultiPageData }) {
+function PremiumV2InquiryForm({ data, previewOnly }: { data: DemoMultiPageData; previewOnly: boolean }) {
   const contact = data.pages.contact
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [submitError, setSubmitError] = useState("")
@@ -104,7 +105,7 @@ function PremiumV2InquiryForm({ data }: { data: DemoMultiPageData }) {
     setStatus("loading")
     setSubmitError("")
     try {
-      if (contact.formEnabled === false) {
+      if (previewOnly) {
         await new Promise((resolve) => window.setTimeout(resolve, 450))
         setStatus("success")
         reset()
@@ -131,7 +132,7 @@ function PremiumV2InquiryForm({ data }: { data: DemoMultiPageData }) {
       <PremiumV2Reveal className="flex min-h-[520px] flex-col items-center justify-center border border-black/15 bg-white/45 p-8 text-center sm:p-12" >
         <CheckCircle2 className="h-12 w-12 text-[var(--demo-accent)]" />
         <h3 className="mt-7 font-premium-serif text-4xl">入力内容を確認しました。</h3>
-        <p className="mt-5 max-w-md text-sm leading-7 text-black/55">{contact.formEnabled === false ? "これは非公開デモのため、内容は外部へ送信されていません。正式納品時に指定の受付先へ接続できます。" : "お問い合わせありがとうございます。内容を確認のうえご連絡します。"}</p>
+        <p className="mt-5 max-w-md text-sm leading-7 text-black/55">{previewOnly ? "これは非公開デモのため、内容は外部へ送信されていません。正式納品時に指定の受付先へ接続できます。" : "お問い合わせありがとうございます。内容を確認のうえご連絡します。"}</p>
         <button type="button" onClick={() => setStatus("idle")} className="mt-8 border-b border-black pb-2 text-sm font-bold">別の内容を入力する</button>
       </PremiumV2Reveal>
     )
@@ -147,7 +148,7 @@ function PremiumV2InquiryForm({ data }: { data: DemoMultiPageData }) {
         <div className="sm:col-span-2"><Field label="お問い合わせ内容" error={errors.message?.message}><textarea {...register("message")} rows={6} className="premium-input resize-none" placeholder="お問い合わせ内容をご記入ください" /></Field></div>
         <div className="sm:col-span-2"><label className="flex items-start gap-3 text-sm leading-6 text-black/60"><input {...register("privacy")} type="checkbox" className="mt-1 h-4 w-4 accent-[var(--demo-accent)]" />入力内容とプライバシーに関する案内を確認し、フォームの利用に同意します。</label>{errors.privacy?.message && <p role="alert" className="mt-2 text-xs font-semibold text-red-700">{errors.privacy.message}</p>}</div>
         {status === "error" && <p role="alert" className="sm:col-span-2 text-sm font-semibold text-red-700">{submitError}</p>}
-        <div className="sm:col-span-2"><button type="submit" disabled={status === "loading"} className="inline-flex min-h-14 w-full items-center justify-center gap-3 bg-black px-8 text-sm font-bold text-white transition hover:bg-[var(--demo-accent)] disabled:cursor-wait disabled:opacity-60">{status === "loading" ? "確認中…" : contact.formEnabled === false ? "入力内容を確認する（送信なし）" : "お問い合わせを送信する"}<ArrowUpRight className="h-4 w-4" /></button></div>
+        <div className="sm:col-span-2"><button type="submit" disabled={status === "loading"} className="inline-flex min-h-14 w-full items-center justify-center gap-3 bg-black px-8 text-sm font-bold text-white transition hover:bg-[var(--demo-accent)] disabled:cursor-wait disabled:opacity-60">{status === "loading" ? "確認中…" : previewOnly ? "入力内容を確認する（送信なし）" : "お問い合わせを送信する"}<ArrowUpRight className="h-4 w-4" /></button></div>
       </form>
       <style jsx global>{`.premium-input{width:100%;border:0;border-bottom:1px solid rgb(0 0 0 / .22);background:transparent;padding:.75rem 0;color:#171713;outline:none;transition:border-color .2s}.premium-input:focus{border-color:var(--demo-accent)}.premium-input::placeholder{color:rgb(0 0 0 / .32)}`}</style>
     </PremiumV2Reveal>

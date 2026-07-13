@@ -98,7 +98,7 @@ export function sourceManifestToCompanyMeta(manifest: DemoSourceManifest): Recor
     src: asset.sourceUrl,
     alt: asset.alt,
     kind: asset.kind,
-    caption: asset.notes,
+    caption: asset.useBasis === "generated" ? "生成イメージ" : asset.notes,
     usage: asset.useBasis === "private_proposal" ? "proposal_only" : asset.useBasis === "generated" ? "owned" : "licensed",
   }))
   const socialUrls = manifest.sources.reduce<Record<string, string>>((result, source) => {
