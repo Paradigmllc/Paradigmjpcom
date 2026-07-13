@@ -6,6 +6,7 @@ import {
   getDemoPrivateAccess,
   revokeSignedPrivateDemo,
 } from "@/lib/sales/demo-private-access"
+import { siteUrl } from "@/lib/sales/routing"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!body.success) return NextResponse.json({ ok: false, error: body.error.issues[0]?.message ?? "入力が不正です" }, { status: 400 })
     const { slug } = await params
     const result = await activateSignedPrivateDemo({ slug, ttlDays: body.data.ttlDays, assets: body.data.assets })
-    const origin = request.nextUrl.origin
+    const origin = process.env.NODE_ENV === "production" ? siteUrl() : request.nextUrl.origin
     const previewUrl = `${origin}/api/demo-preview/${encodeURIComponent(slug)}?token=${encodeURIComponent(result.token)}&locale=${body.data.locale}`
     return NextResponse.json({ ok: true, previewUrl, expiresAt: result.expiresAt, review: result.review }, { headers: { "Cache-Control": "private, no-store" } })
   } catch (error) {
