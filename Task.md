@@ -19,7 +19,7 @@
 - `demo.paradigmjp.com/{locale}/{slug}` の短縮URLを内部リンクの正本にし、demo hostnameをserver/client双方で検出してParadigm本体header/footer/chatbotが重ならない独立サイト表示へ変更した。
 - APIキー不要のGoogle Maps iframe、住所／SNS／営業案内、6項目のバリデーション付き問い合わせフォーム、Embla carousel、FAQ accordion、モバイルdrawerを実装。非公開デモのフォームは入力・検証・完了表示まで動くが、`formEnabled=false`ではfetchせず外部送信しない。
 - 検証: TypeScript pass、対象ESLint pass、問い合わせschema／Google Maps URL Vitest **2/2 pass**、quality guard **0 errors / 54 existing warnings**、`git diff --check` pass、production build完走。全Vitestは **219/223 suites・475/480 tests pass**で、今回未変更の既知CRLF backupテスト4件と、最新mainのLiteLLM優先実装に対して旧DeepSeek直API期待が残る1件のみ失敗。
-- PR **#104**をmainへmergeし、正式deployment `ebegbtxp3g4kannlcrdw2c9i` はfinished。DB／Traefik／Cloudflare／Realtime／Twenty／Revenue OS／公開smokeを含むpost-deploy release gateを通過した。本番PC 1280pxではhero見出し84.48px、mobile 390pxでは48px・横溢れ0。全11ページでParadigm本体chrome非表示、実画像、各ページの十分な本文、carousel、FAQ accordion、Google Maps、問い合わせフォームを実ブラウザ確認。フォームは入力完了UIまでで外部送信なし。demoページのmetadataは親サイトtitle templateを継承せず、店舗名だけの独立タイトルへ固定した。
+- PR **#104**をmainへmergeし、正式deployment `ebegbtxp3g4kannlcrdw2c9i` はfinished。DB／Traefik／Cloudflare／Realtime／Twenty／Revenue OS／公開smokeを含むpost-deploy release gateを通過した。本番PC 1280pxではhero見出し84.48px、mobile 390pxでは48px・横溢れ0。全11ページでParadigm本体chrome非表示、実画像、各ページの十分な本文、carousel、FAQ accordion、Google Maps、問い合わせフォームを実ブラウザ確認。フォームは入力完了UIまでで外部送信なし。demoページのmetadataはPR **#105**で親サイトtitle templateから分離し、正式deployment `rltfap9yf3pmykh32b6v8h1r` とpost-deploy gate通過後、11/11ページの店舗名だけの独立タイトルを公開ブラウザで再確認した。
 
 ### 2026-07-13 Japan Entry生成文面のTwenty自動同期（本番反映済み / 送信停止）
 - Japan Entry投影とDeepSeek V4 Pro文面を保存した直後、同じ企業のTwentyカルテを自動同期する。同期対象は既存の企業カルテ要約・次アクションで、推定日本月間アクセス、推定月間機会損失、6/12/24か月ROI、文面品質・安全性、URLなしの初回フォーム文面全文を表示する。
