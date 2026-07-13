@@ -640,6 +640,14 @@ async function applyDemoPrivateAssetReviewMigration(envs) {
   )
 }
 
+async function applyDemoSustainableBatchMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260713160000_demo_sustainable_batch.sql",
+    "SMB demo sustainable batch queue migration",
+  )
+}
+
 async function applySalesPipelineDbTriggerProviderMigration(envs) {
   return applySqlMigration(
     envs,
@@ -1197,6 +1205,7 @@ async function main() {
     console.log(await applyJapanEntryProjectionsMigration(envs))
     console.log(await applyDemoQualityGateMigration(envs))
     console.log(await applyDemoPrivateAssetReviewMigration(envs))
+    console.log(await applyDemoSustainableBatchMigration(envs))
     console.log(await applySalesPipelineDbTriggerProviderMigration(envs))
     console.log(await applyVideoPipelineMigration(envs))
     console.log(await applyVideoStrategyMigration(envs))

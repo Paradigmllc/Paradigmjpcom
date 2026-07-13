@@ -5,7 +5,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "@/lib/sales/db-tables"
 
 export type DemoAssetKind = "logo" | "image" | "video"
-export type DemoAssetUseBasis = "consented" | "official_embed" | "private_proposal" | "generated" | "blocked"
+export type DemoAssetUseBasis = "consented" | "licensed" | "official_embed" | "private_proposal" | "generated" | "blocked"
 export type DemoAssetApprovalStatus = "unreviewed" | "private_proposal" | "consented" | "blocked"
 
 export interface DemoReviewedAsset {
@@ -70,7 +70,7 @@ export function validateDemoAssets(assets: DemoReviewedAsset[]): string[] {
     if ((asset.peopleVisible || asset.watermarkVisible) && asset.useBasis !== "consented") {
       errors.push(`素材${index + 1}: 人物または透かしを含む素材は明示許諾が必要です`)
     }
-    if (!asset.officialSource && !["consented", "generated"].includes(asset.useBasis)) {
+    if (!asset.officialSource && !["consented", "licensed", "generated"].includes(asset.useBasis)) {
       errors.push(`素材${index + 1}: 非公式出所の素材は利用できません`)
     }
     if (asset.useBasis === "blocked") errors.push(`素材${index + 1}: blocked素材は登録できません`)
@@ -139,7 +139,7 @@ export async function activateSignedPrivateDemo(input: {
   if (!sb) throw new Error("Supabase unavailable")
   const token = generateDemoPreviewToken()
   const expiresAt = new Date(Date.now() + input.ttlDays * 86_400_000).toISOString()
-  const status: DemoAssetApprovalStatus = input.assets.every((asset) => ["consented", "generated"].includes(asset.useBasis))
+  const status: DemoAssetApprovalStatus = input.assets.every((asset) => ["consented", "licensed", "generated"].includes(asset.useBasis))
     ? "consented"
     : "private_proposal"
   const review: DemoAssetReview = { status, reviewedAt: new Date().toISOString(), assets: input.assets }

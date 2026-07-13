@@ -329,6 +329,21 @@ function checkStaticReleaseRules() {
     fail("SMB demo private access and asset review require release migration wiring")
   }
 
+  const demoBatchMigrationPath = "supabase/migrations/20260713160000_demo_sustainable_batch.sql"
+  const demoBatchMigration = fs.existsSync(demoBatchMigrationPath)
+    ? fs.readFileSync(demoBatchMigrationPath, "utf8")
+    : ""
+  if (
+    demoBatchMigration.includes("demo_generate") &&
+    demoBatchMigration.includes("idx_sales_enrichment_jobs_demo_queue") &&
+    noLoginDeploy.includes("20260713160000_demo_sustainable_batch.sql") &&
+    noLoginDeploy.includes("applyDemoSustainableBatchMigration")
+  ) {
+    pass("SMB demo reviewed-manifest batch queue has release migration wiring")
+  } else {
+    fail("SMB demo reviewed-manifest batch queue requires release migration wiring")
+  }
+
   const demoTriggerMigrationPath = "supabase/migrations/20260713120000_sales_pipeline_db_trigger_provider.sql"
   const demoTriggerMigration = fs.existsSync(demoTriggerMigrationPath)
     ? fs.readFileSync(demoTriggerMigrationPath, "utf8")
