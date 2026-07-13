@@ -6,7 +6,10 @@ import {
   sourceCoveragePanelLink,
 } from "./twenty-sync-karte-fields";
 import {
+  countrySelectValue,
+  industrySelectValue,
   karteHomeSummary,
+  sourceSelectValue,
   twentyCompanyHomePayload,
 } from "./twenty-sync-summaries";
 
@@ -67,6 +70,18 @@ describe("sourceCoveragePanelLink (Phase 7-2)", () => {
 });
 
 describe("twentyCompanyHomePayload", () => {
+  it("normalizes supported international categories and omits unknown select values", () => {
+    expect(industrySelectValue("SaaS")).toBe("コンサルティング");
+    expect(industrySelectValue("ecommerce")).toBe("小売・店舗");
+    expect(industrySelectValue("service")).toBe("コンサルティング");
+    expect(industrySelectValue("orbital research")).toBeNull();
+    expect(sourceSelectValue("Apollo")).toBe("apollo");
+    expect(sourceSelectValue("qa_japan_entry_batch")).toBeNull();
+    expect(countrySelectValue("US")).toBe("米国");
+    expect(countrySelectValue("NL")).toBeNull();
+    expect(countrySelectValue("BR")).toBeNull();
+  });
+
   it("promotes the 50+ API/OSS breakdown and detail URL to first-class Twenty fields", () => {
     const karte = {
       companyId: "company-1",
@@ -115,6 +130,8 @@ describe("twentyCompanyHomePayload", () => {
     } satisfies CompanyKarteSnapshot;
 
     const payload = twentyCompanyHomePayload(karte);
+    expect(payload.paradigmIndustryName).toBeNull();
+    expect(payload.paradigmSourceName).toBeNull();
     expect(payload.paradigmSourceCoverage).toBe(42);
     expect(payload.paradigmDataBreakdown).toContain("analysis 1/2 (err 1)");
     expect(payload.paradigmSourceDetailsUrl).toEqual({
@@ -186,6 +203,8 @@ describe("twentyCompanyHomePayload", () => {
     const payload = twentyCompanyHomePayload(karte);
     const summary = (payload.paradigmKarteSummary as { markdown: string })
       .markdown;
+    expect(payload.paradigmIndustryName).toBe("コンサルティング");
+    expect(payload.paradigmSourceName).toBeNull();
     expect(payload.paradigmNextAction).toBe(
       "Japan Entry初回フォーム文面を確認（未送信）",
     );
@@ -196,7 +215,9 @@ describe("twentyCompanyHomePayload", () => {
     expect(summary).toContain("運用状態: 未送信・要レビュー");
     expect(summary).toContain("推定日本月間アクセス: 1,950");
     expect(summary).toContain("推定月間機会損失: $10,296");
-    expect(summary).toContain("LLMトークン効率: input=2,400 / output=640 / cache=80% (1,920 hit / 480 miss)");
+    expect(summary).toContain(
+      "LLMトークン効率: input=2,400 / output=640 / cache=80% (1,920 hit / 480 miss)",
+    );
     expect(summary).toContain("6ヶ月 ROI -12.5%");
     expect(summary).toContain("24ヶ月 ROI 164.8%");
     expect(summary).toContain(

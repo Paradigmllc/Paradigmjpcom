@@ -46,13 +46,77 @@ export function countrySelectValue(
     FR: "フランス",
     ES: "スペイン",
     PT: "ポルトガル",
-    BR: "ブラジル",
     RU: "ロシア",
     AE: "UAE",
     VN: "ベトナム",
     ID: "インドネシア",
   };
-  return labels[code] ?? (code.length === 2 ? code : null);
+  return labels[code] ?? null;
+}
+
+const TWENTY_INDUSTRY_VALUES = new Set([
+  "美容サロン",
+  "歯科医院",
+  "飲食店",
+  "建設・工務店",
+  "会計事務所",
+  "小売・店舗",
+  "清掃・メンテナンス",
+  "コンサルティング",
+]);
+
+export function industrySelectValue(
+  industry: string | null | undefined,
+): string | null {
+  const value = typeof industry === "string" ? industry.trim() : "";
+  if (!value) return null;
+  if (TWENTY_INDUSTRY_VALUES.has(value)) return value;
+
+  const normalized = value.toLowerCase().replace(/[\s_-]+/g, " ");
+  if (/beauty|salon|cosmetic|spa/.test(normalized)) return "美容サロン";
+  if (/dental|dentist|orthodont/.test(normalized)) return "歯科医院";
+  if (/restaurant|cafe|food|hospitality/.test(normalized)) return "飲食店";
+  if (/construction|builder|architect|contractor/.test(normalized)) {
+    return "建設・工務店";
+  }
+  if (/account|bookkeep|tax/.test(normalized)) return "会計事務所";
+  if (
+    /ecommerce|e commerce|retail|d2c|consumer goods|shop|store/.test(normalized)
+  ) {
+    return "小売・店舗";
+  }
+  if (/cleaning|maintenance|facility/.test(normalized)) {
+    return "清掃・メンテナンス";
+  }
+  if (
+    /saas|software|technology|consult|professional service|\bservice\b/.test(
+      normalized,
+    )
+  ) {
+    return "コンサルティング";
+  }
+  return null;
+}
+
+const TWENTY_SOURCE_VALUES = new Set([
+  "apollo",
+  "fumadata",
+  "bizmap",
+  "gbizinfo",
+  "jgrants",
+  "nta_corporate_number",
+  "apify",
+  "outscraper",
+  "manual_csv",
+  "codex_verification",
+  "codex_e2e",
+]);
+
+export function sourceSelectValue(
+  source: string | null | undefined,
+): string | null {
+  const value = typeof source === "string" ? source.trim().toLowerCase() : "";
+  return TWENTY_SOURCE_VALUES.has(value) ? value : null;
 }
 
 function sourceCoverageSummary(items: SourceCoverageItem[]): {
@@ -123,10 +187,10 @@ export function karteHomeSummary(karte: CompanyKarteSnapshot): string {
   const japanEntryQuality = japanEntry
     ? `quality=${japanEntry.qualityScore ?? "未評価"} / safety=${japanEntry.safetyScore ?? "未評価"} / model=${japanEntry.model ?? "未記録"}`
     : null;
-  const japanEntryTokenUsage = japanEntry?.promptTokens !== null
-    && japanEntry?.promptTokens !== undefined
-    ? `input=${japanEntry.promptTokens.toLocaleString("en-US")} / output=${(japanEntry.completionTokens ?? 0).toLocaleString("en-US")} / cache=${Math.round((japanEntry.cacheHitRatio ?? 0) * 100)}% (${(japanEntry.cacheHitTokens ?? 0).toLocaleString("en-US")} hit / ${(japanEntry.cacheMissTokens ?? 0).toLocaleString("en-US")} miss)`
-    : null;
+  const japanEntryTokenUsage =
+    japanEntry?.promptTokens !== null && japanEntry?.promptTokens !== undefined
+      ? `input=${japanEntry.promptTokens.toLocaleString("en-US")} / output=${(japanEntry.completionTokens ?? 0).toLocaleString("en-US")} / cache=${Math.round((japanEntry.cacheHitRatio ?? 0) * 100)}% (${(japanEntry.cacheHitTokens ?? 0).toLocaleString("en-US")} hit / ${(japanEntry.cacheMissTokens ?? 0).toLocaleString("en-US")} miss)`
+      : null;
   const japanEntryHorizons = japanEntry?.horizons.length
     ? japanEntry.horizons
         .map(
@@ -236,8 +300,8 @@ export function twentyCompanyHomePayload(
     },
     paradigmCountryName: countrySelectValue(karte.targetCountry),
     paradigmRegionName: karte.regionName,
-    paradigmIndustryName: karte.industry,
-    paradigmSourceName: karte.sourceName,
+    paradigmIndustryName: industrySelectValue(karte.industry),
+    paradigmSourceName: sourceSelectValue(karte.sourceName),
     paradigmSalesStatus: salesStatusLabel(karte),
     paradigmKarteScore: karteScore(karte),
     paradigmSourceCoverage: karte.sourceScore,
