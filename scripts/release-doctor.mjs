@@ -344,6 +344,22 @@ function checkStaticReleaseRules() {
     fail("SMB demo reviewed-manifest batch queue requires release migration wiring")
   }
 
+  const reportFactoryMigrationPath = "supabase/migrations/20260713203000_japan_entry_report_factory.sql"
+  const reportFactoryMigration = fs.existsSync(reportFactoryMigrationPath)
+    ? fs.readFileSync(reportFactoryMigrationPath, "utf8")
+    : ""
+  if (
+    reportFactoryMigration.includes("japan_entry_report") &&
+    reportFactoryMigration.includes("idempotency_key") &&
+    reportFactoryMigration.includes("supabase_realtime") &&
+    noLoginDeploy.includes("20260713203000_japan_entry_report_factory.sql") &&
+    noLoginDeploy.includes("applyJapanEntryReportFactoryMigration")
+  ) {
+    pass("Japan Entry report factory has queue, idempotency, Realtime, and release wiring")
+  } else {
+    fail("Japan Entry report factory requires queue, idempotency, Realtime, and release wiring")
+  }
+
   const demoTriggerMigrationPath = "supabase/migrations/20260713120000_sales_pipeline_db_trigger_provider.sql"
   const demoTriggerMigration = fs.existsSync(demoTriggerMigrationPath)
     ? fs.readFileSync(demoTriggerMigrationPath, "utf8")

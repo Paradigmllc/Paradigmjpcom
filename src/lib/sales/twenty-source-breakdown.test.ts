@@ -1,14 +1,14 @@
-import { describe, it, expect } from "vitest"
-import type { CompanyKarteSnapshot } from "./company-karte"
-import type { SourceCoverageItem } from "./source-coverage"
+import { describe, it, expect } from "vitest";
+import type { CompanyKarteSnapshot } from "./company-karte";
+import type { SourceCoverageItem } from "./source-coverage";
 import {
   sourceCategoryBreakdown,
   sourceCoveragePanelLink,
-} from "./twenty-sync-karte-fields"
+} from "./twenty-sync-karte-fields";
 import {
   karteHomeSummary,
   twentyCompanyHomePayload,
-} from "./twenty-sync-summaries"
+} from "./twenty-sync-summaries";
 
 function item(partial: Partial<SourceCoverageItem>): SourceCoverageItem {
   return {
@@ -21,11 +21,14 @@ function item(partial: Partial<SourceCoverageItem>): SourceCoverageItem {
     meaning: "",
     missingConsequence: "",
     nextStep: "",
-  }
+  };
 }
 
-function karteWith(items: SourceCoverageItem[], companyName = "Acme"): CompanyKarteSnapshot {
-  return { sourceItems: items, companyName } as unknown as CompanyKarteSnapshot
+function karteWith(
+  items: SourceCoverageItem[],
+  companyName = "Acme",
+): CompanyKarteSnapshot {
+  return { sourceItems: items, companyName } as unknown as CompanyKarteSnapshot;
 }
 
 describe("sourceCategoryBreakdown (Phase 7-1)", () => {
@@ -36,30 +39,32 @@ describe("sourceCategoryBreakdown (Phase 7-1)", () => {
       item({ category: "analysis", status: "error" }),
       item({ category: "list", status: "collected" }),
       item({ category: "demo", status: "missing" }),
-    ])
-    const out = sourceCategoryBreakdown(karte)
-    expect(out).toContain("analysis 1/3 (err 1)")
-    expect(out).toContain("list 1/1")
-    expect(out).toContain("demo 0/1")
-  })
+    ]);
+    const out = sourceCategoryBreakdown(karte);
+    expect(out).toContain("analysis 1/3 (err 1)");
+    expect(out).toContain("list 1/1");
+    expect(out).toContain("demo 0/1");
+  });
 
   it("omits categories with no sources", () => {
-    const out = sourceCategoryBreakdown(karteWith([item({ category: "list", status: "collected" })]))
-    expect(out).toBe("list 1/1")
-    expect(out).not.toContain("video")
-  })
+    const out = sourceCategoryBreakdown(
+      karteWith([item({ category: "list", status: "collected" })]),
+    );
+    expect(out).toBe("list 1/1");
+    expect(out).not.toContain("video");
+  });
 
   it("returns a no-data marker when there are no source items", () => {
-    expect(sourceCategoryBreakdown(karteWith([]))).toBe("no source data")
-  })
-})
+    expect(sourceCategoryBreakdown(karteWith([]))).toBe("no source data");
+  });
+});
 
 describe("sourceCoveragePanelLink (Phase 7-2)", () => {
   it("builds a Twenty CRM company link", () => {
-    const link = sourceCoveragePanelLink(karteWith([], "Sakura Dining"))
-    expect(link).toBe("https://twenty.paradigmjp.com/companies")
-  })
-})
+    const link = sourceCoveragePanelLink(karteWith([], "Sakura Dining"));
+    expect(link).toBe("https://twenty.paradigmjp.com/companies");
+  });
+});
 
 describe("twentyCompanyHomePayload", () => {
   it("promotes the 50+ API/OSS breakdown and detail URL to first-class Twenty fields", () => {
@@ -90,7 +95,12 @@ describe("twentyCompanyHomePayload", () => {
       errorCount: 1,
       sourceItems: [
         item({ category: "analysis", status: "collected", label: "Crawl4AI" }),
-        item({ category: "analysis", status: "error", label: "Stagehand", detail: "timeout" }),
+        item({
+          category: "analysis",
+          status: "error",
+          label: "Stagehand",
+          detail: "timeout",
+        }),
         item({ category: "list", status: "collected", label: "Twenty" }),
         item({ category: "demo", status: "missing", label: "Astro demo" }),
       ],
@@ -102,20 +112,21 @@ describe("twentyCompanyHomePayload", () => {
       personalizedCTA: null,
       recommendedProducts: [],
       generatedAt: "2026-06-23T00:00:00.000Z",
-    } satisfies CompanyKarteSnapshot
+    } satisfies CompanyKarteSnapshot;
 
-    const payload = twentyCompanyHomePayload(karte)
-    expect(payload.paradigmSourceCoverage).toBe(42)
-    expect(payload.paradigmDataBreakdown).toContain("analysis 1/2 (err 1)")
+    const payload = twentyCompanyHomePayload(karte);
+    expect(payload.paradigmSourceCoverage).toBe(42);
+    expect(payload.paradigmDataBreakdown).toContain("analysis 1/2 (err 1)");
     expect(payload.paradigmSourceDetailsUrl).toEqual({
       primaryLinkLabel: "50+ API/OSS詳細",
       primaryLinkUrl: expect.stringContaining("/companies"),
-    })
-    expect(karteHomeSummary(karte)).toContain("無料API/OSS取得データ(50+)")
-  })
+    });
+    expect(karteHomeSummary(karte)).toContain("無料API/OSS取得データ(50+)");
+  });
 
   it("places the complete unsent Japan Entry draft and modeled numbers in the Twenty company record", () => {
-    const message = "Hello Acme team,\n\nYour Japanese checkout currently lacks a local payment cue.\n\nWould a 15-minute review be useful?"
+    const message =
+      "Hello Acme team,\n\nYour Japanese checkout currently lacks a local payment cue.\n\nWould a 15-minute review be useful?";
     const karte = {
       ...karteWith([], "Acme"),
       companyId: "company-1",
@@ -165,21 +176,26 @@ describe("twentyCompanyHomePayload", () => {
         ],
       },
       generatedAt: "2026-07-13T00:00:00.000Z",
-    } satisfies CompanyKarteSnapshot
+    } satisfies CompanyKarteSnapshot;
 
-    const payload = twentyCompanyHomePayload(karte)
-    const summary = (payload.paradigmKarteSummary as { markdown: string }).markdown
-    expect(payload.paradigmNextAction).toBe("Japan Entry初回フォーム文面を確認（未送信）")
-    expect(payload.xLink).toEqual({
+    const payload = twentyCompanyHomePayload(karte);
+    const summary = (payload.paradigmKarteSummary as { markdown: string })
+      .markdown;
+    expect(payload.paradigmNextAction).toBe(
+      "Japan Entry初回フォーム文面を確認（未送信）",
+    );
+    expect(payload.paradigmReportUrl).toEqual({
       primaryLinkLabel: "Japan Entry Opportunity Brief",
       primaryLinkUrl: "https://paradigmjp.com/en/opportunity/acme-1",
-    })
-    expect(summary).toContain("運用状態: 未送信・要レビュー")
-    expect(summary).toContain("推定日本月間アクセス: 1,950")
-    expect(summary).toContain("推定月間機会損失: $10,296")
-    expect(summary).toContain("6ヶ月 ROI -12.5%")
-    expect(summary).toContain("24ヶ月 ROI 164.8%")
-    expect(summary).toContain("quality=95 / safety=100 / model=deepseek-v4-pro")
-    expect(summary).toContain(message)
-  })
-})
+    });
+    expect(summary).toContain("運用状態: 未送信・要レビュー");
+    expect(summary).toContain("推定日本月間アクセス: 1,950");
+    expect(summary).toContain("推定月間機会損失: $10,296");
+    expect(summary).toContain("6ヶ月 ROI -12.5%");
+    expect(summary).toContain("24ヶ月 ROI 164.8%");
+    expect(summary).toContain(
+      "quality=95 / safety=100 / model=deepseek-v4-pro",
+    );
+    expect(summary).toContain(message);
+  });
+});
