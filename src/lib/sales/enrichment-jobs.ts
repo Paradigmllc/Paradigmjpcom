@@ -149,12 +149,17 @@ export async function enqueueCompanyEnrichment(
   if (!error) return { ok: true, job: data as SalesEnrichmentJob };
 
   if (error.code === "23505") {
-    const existing = await sb
+    const generationKey = jobType === "demo_generate" && typeof input.payload?.generation_key === "string"
+      ? input.payload.generation_key
+      : null;
+    let existingQuery = sb
       .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
       .select("*")
       .eq("company_id", input.companyId)
       .eq("job_type", jobType)
-      .in("status", ["queued", "running"])
+      .in("status", generationKey ? ["queued", "running", "completed"] : ["queued", "running"]);
+    if (generationKey) existingQuery = existingQuery.eq("input_payload->>generation_key", generationKey);
+    const existing = await existingQuery
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();

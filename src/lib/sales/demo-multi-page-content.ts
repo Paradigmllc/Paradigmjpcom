@@ -1,5 +1,6 @@
 import type { DiagnosticReportData } from "./diagnostic"
 import type { DemoFAQItem, DemoMetricsSummary, DemoServicesPage } from "./demo-site-types"
+import { slugifyCompanyName } from "./routing"
 
 const CORRUPT_FS = /[�邵郢鬮隴陞陷驍縺繝譁蜑荳譛谿險螟豕邨髻蠕蝠逕莠陦蛻諡蜷繧]/
 
@@ -9,15 +10,8 @@ export function cleanFs(s: string | null | undefined, fallback: string, max = 20
   return t.length > max ? `${t.slice(0, max - 1)}…` : t
 }
 
-export function buildSlug(company: { domain: string; slug?: string | null; id: string }): string {
-  const raw = (company.domain || company.slug || company.id)
-    .replace(/^https?:\/\//, "")
-    .replace(/\.[^.]+$/, "")
-    .replace(/[^a-zA-Z0-9-]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .toLowerCase()
-    .slice(0, 50)
-  return `${raw}-demo`
+export function buildSlug(company: { company_name: string }): string {
+  return slugifyCompanyName(company.company_name)
 }
 
 export function industryConfig(industry: string | null | undefined): {

@@ -8,6 +8,7 @@ import {
   hashDemoPreviewToken,
   previewCookieName,
   validateDemoAssets,
+  validatePublicDemoAssets,
   type DemoReviewedAsset,
 } from "./demo-private-access"
 
@@ -36,6 +37,11 @@ describe("demo private access", () => {
 
   it("accepts official private-proposal assets without people or watermark", () => {
     expect(validateDemoAssets([safeAsset])).toEqual([])
+  })
+
+  it("keeps private-proposal assets behind signed access", () => {
+    expect(validatePublicDemoAssets([safeAsset]).join(" ")).toContain("非公開提案限定")
+    expect(validatePublicDemoAssets([{ ...safeAsset, useBasis: "generated" }])).toEqual([])
   })
 
   it("blocks non-HTTPS, unknown-source, and unconsented people assets", () => {

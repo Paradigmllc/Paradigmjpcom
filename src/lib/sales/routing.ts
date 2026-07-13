@@ -159,8 +159,8 @@ export function demoSiteUrl(): string {
   return (process.env.NEXT_PUBLIC_DEMO_SITE_URL ?? DEFAULT_DEMO_SITE_URL).replace(/\/$/, "")
 }
 
-export function buildDemoUrl(locale: "ja" | "en", slug: string): string {
-  return `${demoSiteUrl()}/${locale}/${encodeURIComponent(slug)}`
+export function buildDemoUrl(_locale: "ja" | "en", slug: string): string {
+  return `${demoSiteUrl()}/${encodeURIComponent(slug)}`
 }
 
 function stableHash(input: string): string {

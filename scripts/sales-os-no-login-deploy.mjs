@@ -656,6 +656,14 @@ async function applyJapanEntryReportFactoryMigration(envs) {
   )
 }
 
+async function applyDemoCleanUrlFactoryMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260713220000_demo_clean_urls_and_factory.sql",
+    "SMB demo clean URL factory migration",
+  )
+}
+
 async function applySalesPipelineDbTriggerProviderMigration(envs) {
   return applySqlMigration(
     envs,
@@ -1227,6 +1235,7 @@ async function main() {
     console.log(await applyDemoPrivateAssetReviewMigration(envs))
     console.log(await applyDemoSustainableBatchMigration(envs))
     console.log(await applyJapanEntryReportFactoryMigration(envs))
+    console.log(await applyDemoCleanUrlFactoryMigration(envs))
     console.log(await applySalesPipelineDbTriggerProviderMigration(envs))
     console.log(await applyDemoCompanyTriggerGuardMigration(envs))
     console.log(await applyVideoPipelineMigration(envs))

@@ -78,6 +78,16 @@ export function validateDemoAssets(assets: DemoReviewedAsset[]): string[] {
   return errors
 }
 
+export function validatePublicDemoAssets(assets: DemoReviewedAsset[]): string[] {
+  const errors = validateDemoAssets(assets)
+  for (const [index, asset] of assets.entries()) {
+    if (asset.useBasis === "private_proposal") {
+      errors.push(`素材${index + 1}: 非公開提案限定素材はクリーンURLで公開できません`)
+    }
+  }
+  return errors
+}
+
 function parseReview(value: unknown): DemoAssetReview {
   if (!value || typeof value !== "object" || Array.isArray(value)) return EMPTY_REVIEW
   const review = value as Partial<DemoAssetReview>
@@ -161,6 +171,40 @@ export async function activateSignedPrivateDemo(input: {
   if (error) throw new Error(error.message)
   if (!data) throw new Error("Demo not found")
   return { token, expiresAt, review }
+}
+
+export async function activatePublicUnlistedDemo(input: {
+  slug: string
+  assets: DemoReviewedAsset[]
+}): Promise<{ urlSlug: string; review: DemoAssetReview }> {
+  const errors = validatePublicDemoAssets(input.assets)
+  if (errors.length > 0) throw new Error(errors.join("\n"))
+  const sb = getServiceSalesSupabase()
+  if (!sb) throw new Error("Supabase unavailable")
+  const review: DemoAssetReview = {
+    status: "consented",
+    reviewedAt: new Date().toISOString(),
+    assets: input.assets,
+  }
+  const { data, error } = await sb
+    .from(DB_TABLES.THEME_DEMO_PAGES)
+    .update({
+      access_mode: "public",
+      preview_token_hash: null,
+      preview_expires_at: null,
+      asset_approval_status: "consented",
+      asset_review: review,
+      is_published: true,
+      publication_status: "published",
+      reviewed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("slug", input.slug)
+    .select("slug")
+    .maybeSingle()
+  if (error) throw new Error(error.message)
+  if (!data) throw new Error("Demo not found or quality gate rejected publication")
+  return { urlSlug: data.slug, review }
 }
 
 export async function revokeSignedPrivateDemo(slug: string): Promise<boolean> {

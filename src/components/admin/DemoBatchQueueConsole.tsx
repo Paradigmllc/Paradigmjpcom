@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { DatabaseZap, KeyRound, Play, RefreshCw } from "lucide-react"
+import { DatabaseZap, Globe2, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 
 interface DemoBatchJob {
@@ -32,7 +32,7 @@ const EXAMPLE = JSON.stringify({
         { key: "service", value: "焼菓子の製造販売", sourceId: "official", verified: true },
         { key: "hours", value: "営業日は公式投稿で案内", sourceId: "official", verified: true },
       ],
-      assets: [1, 2, 3].map((number) => ({ id: `asset-${number}`, kind: "image", sourceUrl: `https://assets.example.com/photo-${number}.webp`, ownerLabel: "サンプル事業者", sourceAccount: "https://www.instagram.com/example/", useBasis: "private_proposal", officialSource: true, peopleVisible: false, watermarkVisible: false, alt: `商品写真${number}` })),
+      assets: [1, 2, 3].map((number) => ({ id: `asset-${number}`, kind: "image", sourceUrl: `https://assets.example.com/photo-${number}.webp`, ownerLabel: "サンプル事業者", sourceAccount: "https://www.instagram.com/example/", useBasis: "generated", officialSource: true, peopleVisible: false, watermarkVisible: false, alt: `商品写真${number}` })),
     },
   }],
 }, null, 2)
@@ -48,28 +48,13 @@ export function DemoBatchQueueConsole() {
     try {
       const body = JSON.parse(json) as unknown
       const response = await fetch("/api/sales/demo-site/batch", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
-      const payload = await response.json() as { queued?: number; rejected?: number; error?: string }
+      const payload = await response.json() as { queued?: number; reused?: number; rejected?: number; error?: string }
       if (!response.ok && !payload.queued) throw new Error(payload.error ?? "キュー投入に失敗しました")
-      toast.success(`${payload.queued ?? 0}社を生成キューへ追加しました${payload.rejected ? `（拒否${payload.rejected}社）` : ""}`)
+      toast.success(`${payload.queued ?? 0}社を自動生成へ追加、既存再利用${payload.reused ?? 0}社${payload.rejected ? `、拒否${payload.rejected}社` : ""}`)
       await refresh()
     } catch (error) {
       console.error("[demo-batch-console] enqueue failed:", error)
       toast.error(error instanceof Error ? error.message : "キュー投入に失敗しました")
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function runNext() {
-    setBusy(true)
-    try {
-      const response = await fetch("/api/sales/enrichment/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ limit: 3 }) })
-      const payload = await response.json() as { ok?: boolean; error?: string }
-      if (!response.ok || !payload.ok) throw new Error(payload.error ?? "生成開始に失敗しました")
-      toast.success("次の3社を生成開始しました。完了後に更新してください")
-    } catch (error) {
-      console.error("[demo-batch-console] run failed:", error)
-      toast.error(error instanceof Error ? error.message : "生成開始に失敗しました")
     } finally {
       setBusy(false)
     }
@@ -93,11 +78,11 @@ export function DemoBatchQueueConsole() {
     setBusy(true)
     try {
       const response = await fetch("/api/sales/demo-site/batch", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jobIds, ttlDays: 14 }) })
-      const payload = await response.json() as { ok?: boolean; issued?: Array<{ ok?: boolean; previewUrl?: string }>; error?: string }
+      const payload = await response.json() as { ok?: boolean; issued?: Array<{ ok?: boolean; cleanUrl?: string }>; error?: string }
       if (!response.ok || !payload.ok) throw new Error(payload.error ?? "URL発行に失敗しました")
-      const urls = (payload.issued ?? []).flatMap((item) => item.ok && item.previewUrl ? [item.previewUrl] : [])
+      const urls = (payload.issued ?? []).flatMap((item) => item.ok && item.cleanUrl ? [item.cleanUrl] : [])
       setIssuedUrls(urls)
-      toast.success(`${urls.length}件の期限付きURLを発行しました`)
+      toast.success(`${urls.length}件のクリーンURLを発行しました`)
     } catch (error) {
       console.error("[demo-batch-console] issue failed:", error)
       toast.error(error instanceof Error ? error.message : "URL発行に失敗しました")
@@ -110,17 +95,16 @@ export function DemoBatchQueueConsole() {
     <section className="mx-auto mt-8 max-w-6xl rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-9">
       <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
         <div><p className="text-xs font-bold uppercase tracking-[.22em] text-indigo-700">Sustainable batch</p><h2 className="mt-2 text-2xl font-semibold tracking-tight">スクレイピングなしの一括生成</h2><p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">確認済み事実とR2等へ保存済みの素材だけを最大100社ずつ投入します。Google検索、Google Maps UI、SNS本文・画像の自動巡回は行いません。</p></div>
-        <div className="rounded-2xl bg-slate-100 px-4 py-3 text-xs leading-6 text-slate-700">LLMは1社1回。3デザインは決定論的に比較し、90点未満は非公開のまま停止します。</div>
+        <div className="rounded-2xl bg-slate-100 px-4 py-3 text-xs leading-6 text-slate-700">LLMは1社1回。最大3社を並列処理し、キュー末尾まで自動継続。同一manifestは既存結果を再利用します。</div>
       </div>
       <label className="mt-6 block text-sm font-semibold" htmlFor="demo-batch-json">審査済みmanifest JSON（最大100社）</label>
       <textarea id="demo-batch-json" value={json} onChange={(event) => setJson(event.target.value)} className="mt-2 min-h-80 w-full rounded-2xl border border-slate-300 bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-100 outline-none focus:border-indigo-500" spellCheck={false} />
       <div className="mt-4 flex flex-wrap gap-3">
         <button type="button" disabled={busy} onClick={enqueue} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-indigo-700 px-5 text-sm font-bold text-white disabled:opacity-50"><DatabaseZap className="h-4 w-4" />キューへ追加</button>
-        <button type="button" disabled={busy} onClick={runNext} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-slate-950 px-5 text-sm font-bold text-white disabled:opacity-50"><Play className="h-4 w-4" />次の3社を生成</button>
         <button type="button" disabled={busy} onClick={refresh} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-300 px-5 text-sm font-bold disabled:opacity-50"><RefreshCw className="h-4 w-4" />状態を更新</button>
-        <button type="button" disabled={busy} onClick={issueCompleted} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-5 text-sm font-bold text-emerald-900 disabled:opacity-50"><KeyRound className="h-4 w-4" />完了分のURL発行</button>
+        <button type="button" disabled={busy} onClick={issueCompleted} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-5 text-sm font-bold text-emerald-900 disabled:opacity-50"><Globe2 className="h-4 w-4" />完了分のクリーンURL発行</button>
       </div>
-      {issuedUrls.length > 0 && <div className="mt-5 rounded-2xl bg-emerald-50 p-4"><p className="text-sm font-bold text-emerald-950">今回発行した非公開URL</p><textarea readOnly value={issuedUrls.join("\n")} className="mt-3 min-h-28 w-full rounded-xl border border-emerald-200 bg-white p-3 text-xs leading-6 text-emerald-950" /></div>}
+      {issuedUrls.length > 0 && <div className="mt-5 rounded-2xl bg-emerald-50 p-4"><p className="text-sm font-bold text-emerald-950">今回発行したnoindexクリーンURL</p><textarea readOnly value={issuedUrls.join("\n")} className="mt-3 min-h-28 w-full rounded-xl border border-emerald-200 bg-white p-3 text-xs leading-6 text-emerald-950" /></div>}
       <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
         {jobs.length === 0 ? <p className="p-6 text-sm text-slate-500">「状態を更新」で直近の生成ジョブを表示します。</p> : jobs.map((job) => {
           const company = Array.isArray(job.sales_companies) ? job.sales_companies[0] : job.sales_companies

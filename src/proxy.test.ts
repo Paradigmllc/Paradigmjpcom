@@ -18,10 +18,11 @@ describe("public status host", () => {
 
 describe("demo subdomain", () => {
   it("rewrites the short company path to the private Next.js demo route", () => {
-    const response = proxy(new NextRequest("https://demo.paradigmjp.com/ja/example/about", {
+    const response = proxy(new NextRequest("https://demo.paradigmjp.com/example/about", {
       headers: { host: "demo.paradigmjp.com" },
     }))
     expect(response.headers.get("x-middleware-rewrite")).toBe("https://demo.paradigmjp.com/ja/demo/example/about")
+    expect(response.headers.get("x-robots-tag")).toContain("noindex")
   })
 
   it("keeps signed preview entry on the Next.js host", () => {
@@ -36,6 +37,14 @@ describe("demo subdomain", () => {
       headers: { host: "demo.paradigmjp.com" },
     }))
     expect(response.status).toBe(308)
-    expect(response.headers.get("location")).toBe("https://demo.paradigmjp.com/ja/example/services")
+    expect(response.headers.get("location")).toBe("https://demo.paradigmjp.com/example/services")
+  })
+
+  it("redirects locale-prefixed demo URLs to the company-only canonical path", () => {
+    const response = proxy(new NextRequest("https://demo.paradigmjp.com/ja/example/contact", {
+      headers: { host: "demo.paradigmjp.com" },
+    }))
+    expect(response.status).toBe(308)
+    expect(response.headers.get("location")).toBe("https://demo.paradigmjp.com/example/contact")
   })
 })

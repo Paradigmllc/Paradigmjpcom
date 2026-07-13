@@ -344,6 +344,22 @@ function checkStaticReleaseRules() {
     fail("SMB demo reviewed-manifest batch queue requires release migration wiring")
   }
 
+  const demoFactoryMigrationPath = "supabase/migrations/20260713220000_demo_clean_urls_and_factory.sql"
+  const demoFactoryMigration = fs.existsSync(demoFactoryMigrationPath)
+    ? fs.readFileSync(demoFactoryMigrationPath, "utf8")
+    : ""
+  if (
+    demoFactoryMigration.includes("claim_demo_generation_drain") &&
+    demoFactoryMigration.includes("generation_key") &&
+    demoFactoryMigration.includes("demo_generate") &&
+    noLoginDeploy.includes("20260713220000_demo_clean_urls_and_factory.sql") &&
+    noLoginDeploy.includes("applyDemoCleanUrlFactoryMigration")
+  ) {
+    pass("SMB demo clean URLs have an idempotent single-drain factory")
+  } else {
+    fail("SMB demo clean URLs require idempotent single-drain release wiring")
+  }
+
   const reportFactoryMigrationPath = "supabase/migrations/20260713203000_japan_entry_report_factory.sql"
   const reportFactoryMigration = fs.existsSync(reportFactoryMigrationPath)
     ? fs.readFileSync(reportFactoryMigrationPath, "utf8")
