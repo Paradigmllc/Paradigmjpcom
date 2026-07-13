@@ -24,7 +24,7 @@
  */
 
 import { usePathname } from "next/navigation"
-import type { ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import ScrollProgress from "./ScrollProgress"
 import LuxuryLoader from "./LuxuryLoader"
 import SiteHeader from "./SiteHeader"
@@ -73,6 +73,7 @@ type AnnouncementSettings = {
 interface Props {
   children: ReactNode
   locale: string
+  forceStandalone?: boolean
   footerSettings: SiteFooterSettings
   /** PayloadCMS Header global 由来ナビ (null=既定ナビ) */
   headerNav?: HeaderNav | null
@@ -104,6 +105,7 @@ function isLpRoute(pathname: string): boolean {
 export default function ConditionalSiteChrome({
   children,
   locale,
+  forceStandalone = false,
   footerSettings,
   headerNav,
   footerNav,
@@ -111,7 +113,14 @@ export default function ConditionalSiteChrome({
 }: Props) {
   const pathname = usePathname()
 
-  if (isLpRoute(pathname)) {
+  // Public demo URLs are shortened to /{locale}/{slug} on demo.paradigmjp.com,
+  // so the hostname is the only reliable signal after the reverse proxy.
+  const [isDemoHostname, setIsDemoHostname] = useState(forceStandalone)
+  useEffect(() => {
+    setIsDemoHostname(window.location.hostname === "demo.paradigmjp.com")
+  }, [])
+
+  if (isLpRoute(pathname) || isDemoHostname) {
     // LP モード: chrome 一切なし・i18n / theme provider は親 layout に残るので
     // ここでは children のみ返す. report page 側で独自 LP UI を組む.
     return <>{children}</>

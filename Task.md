@@ -1,5 +1,12 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
+### 2026-07-13 SMB実素材デモ Premium V3 全ページ品質強化（実装・検証中 / 送信停止）
+- Premium V2がトップ専用で、About / Services / Contact / Works等は旧汎用レンダラーのままだった分断を解消。店紹介、商品、アクセス、汎用コンテンツ／FAQ／法務を専用のeditorial rendererへ切り替え、全11ページを同じ色・書体・余白・写真表現へ統一した。
+- トップhero見出しを最大8.4rem・8.3vwから最大7rem・6.6vwへ縮小し、最小高さも820pxから720pxへ調整。提案制作側の説明文を顧客向けの店舗・商品コピーへ置換した。
+- `demo.paradigmjp.com/{locale}/{slug}` の短縮URLを内部リンクの正本にし、demo hostnameをserver/client双方で検出してParadigm本体header/footer/chatbotが重ならない独立サイト表示へ変更した。
+- APIキー不要のGoogle Maps iframe、住所／SNS／営業案内、6項目のバリデーション付き問い合わせフォーム、Embla carousel、FAQ accordion、モバイルdrawerを実装。非公開デモのフォームは入力・検証・完了表示まで動くが、`formEnabled=false`ではfetchせず外部送信しない。
+- 現時点の検証: TypeScript pass、対象ESLint pass、問い合わせschema／Google Maps URL Vitest **2/2 pass**、quality guard **0 errors / 54 existing warnings**、`git diff --check` pass、production build完走。全Vitestは **219/223 suites・475/480 tests pass**で、今回未変更の既知CRLF backupテスト4件と、最新mainのLiteLLM優先実装に対して旧DeepSeek直API期待が残る1件のみ失敗。PR、正式release、本番PC/mobile QAは継続中。
+
 ### 2026-07-13 Japan Entry生成文面のTwenty自動同期（実装・ローカル検証済み / 正式release待ち）
 - Japan Entry投影とDeepSeek V4 Pro文面を保存した直後、同じ企業のTwentyカルテを自動同期する。同期対象は既存の企業カルテ要約・次アクションで、推定日本月間アクセス、推定月間機会損失、6/12/24か月ROI、文面品質・安全性、URLなしの初回フォーム文面全文を表示する。
 - Twenty上では必ず `未送信・要レビュー` と表示し、フォーム送信処理には接続しない。Japan Entry生成時の同期は企業ホーム更新だけに限定し、商談レコードや商材推薦を自動作成しない。既存の通常Twenty同期は従来どおり商談同期を維持する。

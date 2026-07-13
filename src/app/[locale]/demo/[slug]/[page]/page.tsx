@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { DemoContentPage } from "@/components/demo/DemoContentPage"
+import { DemoPremiumV2ContentPage } from "@/components/demo/premium-v2/DemoPremiumV2ContentPage"
 import { fetchDemoMultiPageDataForRequest } from "@/lib/sales/demo-request-access"
 import type { DemoContentPage as DemoContentPageData } from "@/lib/sales/demo-site-types"
 
@@ -42,5 +43,6 @@ export default async function DemoExtendedPage({
   if (!data) notFound()
   const pageData = data.pages[page] as DemoContentPageData | undefined
   if (!pageData) notFound()
+  if (data.premium?.style === "premium-v2") return <DemoPremiumV2ContentPage data={data} page={pageData} pageKey={page} />
   return <DemoContentPage page={pageData} />
 }
