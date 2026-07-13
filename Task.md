@@ -1,11 +1,14 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
-### 2026-07-14 SMBデモ品質ゲートV2・業種別編集（実装完了 / 本番反映前 / 送信停止）
+### 2026-07-14 SMBデモ品質ゲートV2・業種別編集（本番反映・実ブラウザQA済み / 送信停止）
 - Cafe SOSOMU実ブラウザ監査で確認した1024px帯のheader横切れ、飲食店に不適切な「会社概要 / サービス / 実績」ナビ、下層ページの仮置き文言、重複コピー、空見出し、`料金は要確認`、公開デモの`Official website`誤表示を修正した。
 - 1社1回のDeepSeek本文生成とprefix cacheは維持し、その後段へ決定論的な業種別編集レイヤーを追加。restaurant / beauty / dental / construction / retail / defaultでナビ、セクション見出し、Works、News、CTA、フッターを変え、3候補はdesign recipeのcomposition / hero / motionを実レンダリングへ反映する。
 - 品質ゲートを`2026-07-14.1`へ更新。specificity / contentDepth / trustSafety / visualReadinessの4軸各25点、合格92点とし、顧客向け仮置き文言、長文重複、業種不一致ナビ、空process見出し、提案表示不足をhard blocker化。hard blockerありは最大70点に制限する。
 - batchジョブ結果へ品質レポートと3候補を保存し、管理画面で4軸・停止理由を表示。品質レポート欠落または92点未満のジョブはGUI / batch API /公開切替関数の3層でクリーンURL発行を拒否する。送信、Twenty同期、メール、電話、郵送、フォーム送信は接続していない。
 - ローカル検証: 関連Vitest **3 files / 10 tests pass**、TypeScript pass、全ESLint pass、quality guard **0 errors / 59 existing warnings**、production build **396/396 pages**、`git diff --check` pass。
+- PR **#146 / #147 / #148**をmainへmerge。業種別編集・fail-closed品質ゲートに加え、Worksの汎用`Scene 01`表記を飲食店固有の「店内とメニュー / 一杯を淹れる時間 / 店の佇まい / 季節の一皿」へ変更し、Contactを「店舗情報・アクセス」へ統一した。
+- 正式`npm run release:prod`の最終deployment **ahudjbd1hgfjmw8eho5kzi8h**はfinished。DB **83/83**、Cloudflare origin、Traefik、Realtime、Twenty worker restart 0、常駐timer/workerなし、Sales health JSON `ok:true`までpost-deploy release gateを通過した。
+- 本番`https://demo.paradigmjp.com/cafe-sosomu`はHome / About / Services / Works / News / FAQ / Recruit / Privacy / Terms / Commerce / Contactの **11/11 HTTP 200**。mobile 390pxで横溢れ0、空見出し0、仮置き文言0、broken image 0。アプリ内実ブラウザでもContactのGoogle Maps、6入力フォーム、「店舗情報・アクセス」、横溢れ0を確認した。候補収集、Twenty同期、メール、電話、郵送、フォーム送信は実行していない。
 
 ### 2026-07-13 Japan市場機会損失バナーの固定ヘッダー重なり修正（本番反映・実ブラウザQA済み）
 - 国際向け共通の`THE OPPORTUNITY COST OF WAITING`バナーが固定ヘッダーの下へ潜り、ヘッダー用`pt-16`が二重に効いて空白帯を作るレイアウト崩れを修正。ヘッダー分の明示スペーサーをバナー前へ置き、バナー有効時だけ`SiteWrapper`の追加トップ余白を無効化した。
