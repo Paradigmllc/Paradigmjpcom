@@ -7,12 +7,22 @@
 - Cafe SOSOMUローカル実ブラウザQA: 全11ページHTTP 200、Home 5,267px / About 4,174px / Services 5,880px / Works 4,162px / News 3,279px / Recruit 3,028px / FAQ 2,166px / 法務各2,000px超 / Contact 2,955px。Google Maps iframe 1、フォーム1、画像付き固定ページ、PC hero約66.6px、mobile 390px hero約43.2px、横溢れ0を確認。初回QAでrevealが透明のまま残る問題を検出し、表示をアニメーション依存にしないfail-safeへ修正した。
 - 検証: 関連Vitest **4 files / 11 tests pass**、TypeScript pass、変更対象ESLint pass、production build **396/396 pages**、`git diff --check` pass。メール、電話、郵送、フォーム送信、Twenty同期、営業通知は実行していない。
 
-## CURRENT STATUS - 2026-07-14 Packageヘッダーナビ追加（実装・型/品質検査済み / 本番反映待ち）
+## CURRENT STATUS - 2026-07-14 共通機会損失セクションの背景面再設計（本番反映・公開QA済み）
+
+### 2026-07-14 International urgency section surface refresh
+- `JapanMarketUrgencyBar` の共通セクションを、本文直後の暗い背景と混ざらない `paper-deep` 面へ変更。境界線を上下に追加し、青のラベル／ハイライトと濃色CTAで情報階層と可読性を揃えた。
+- 検査: `npm exec -- tsc --noEmit`、対象ESLint、`npm run quality:guard`（0 errors / 59 warnings）、`npm run build`（396ページ）、`git diff --check` pass。
+- `npm run release:prod` の公開ゲートを完走（deployment queue `q8ez6s08qjb5lrqk49ysstxz`）。DB `83/83`、公開スモーク、Realtime、Twenty worker、Traefik route driftを含む全チェック pass。
+- 公開QA: `https://paradigmjp.com/en` を実ブラウザでリロードし、淡い背景面・青アクセント・濃色CTAが本文のダーク面と明確に分離されることを確認。
+
+## CURRENT STATUS - 2026-07-14 Packageヘッダーナビ追加（本番反映・公開QA済み）
 
 ### 2026-07-14 Japan Entry Packageのヘッダー導線追加
 - 国際ロケールの共通ヘッダー（デスクトップとモバイルメニュー）へ `Package` → `/package` を追加。`/en/package` の詳細ページを価格・実績・FAQと同じ一次導線から開けるようにした。
 - `en` だけでなく、国際化対象の全ロケールにナビラベルを追加。`/ja` は国内向けナビ構成を維持し、Japan Entry導線を混在させない。
-- 検査: 全ロケールJSON parse、`npm exec -- tsc --noEmit`、対象ESLint、`npm run quality:guard`（0 errors / 59 warnings）、`git diff --check` pass。本番反映と公開ブラウザ確認はこの変更のrelease後に追記する。
+- 検査: 全ロケールJSON parse、`npm exec -- tsc --noEmit`、対象ESLint、`npm run quality:guard`（0 errors / 59 warnings）、`git diff --check` pass。
+- PR #149 をマージし、`npm run release:prod`（deployment `brwc8244p6mbtn395itz6a56`）を完走。DB `83/83`、公開スモーク、Realtime、Twenty worker、Traefik route driftを含むrelease gate pass。
+- 公開QA: `https://paradigmjp.com/en` の実DOMで `Package` → `/en/package` を確認。デスクトップとモバイルが同じ共通ナビ配列を使用し、`/ja` の国内向けメニューは変更なし。
 
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
