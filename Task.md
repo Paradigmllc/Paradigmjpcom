@@ -9,11 +9,12 @@
 
 ### 2026-07-13 Japan Entry Opportunity Brief量産・意思決定資料強化（本番反映・公開QA済み / 送信停止）
 - `japan_entry_report` を既存のevent-driven enrichment queueへ追加。最大100社の一括投入、最大3社の並列drain、進捗Realtime、失敗理由、同一ジョブ再試行、100社表示の管理画面 `/{locale}/admin/opportunity-briefs` を実装した。cron・常駐polling・フォーム送信には接続しない。
+- 量産監査で残っていた手動3社drainを廃止。POST投入後に認証済みone-shot PUTを開始し、各3社バッチの完了イベントから次バッチを自己dispatchしてキュー末尾まで自動処理する。DB singleton leaseを同一drain IDで延長し、複数の投入・再開操作が重なってもdrain workerは1系列だけに制限する。失敗ジョブは時間待ちqueueへ埋没させず即時failedとして可視化し、operator retryが同じjob・投影冪等キーを再利用する。
 - 投影行へjob単位の `idempotency_key` を追加。同じ失敗ジョブは保存済み投影を再利用してTwenty同期だけを再試行し、重複URL・重複文面を生成しない。公開シグナル、根拠付き商品情報、Japan readiness監査、既定ではHTTPS根拠付き競合分析が揃わない企業は品質ゲートで停止する。
 - Opportunity Briefを独立chromeへ修正し、公開サイト証拠付き表紙、observed/assumed分離、根拠数・監査ページ数・モデル内確度、既存の市場別アクセスと6/12/24か月ROI、単価・CVR・粗利率を自社数値へ置換できる感度分析、監査ギャップから逆算した21営業日プランを追加した。
 - Twenty実スキーマに存在しない `xLink` / `linkedinLink` / `employees` / `annualRecurringRevenue` を企業home payloadから除去。APIが未知フィールドを返した場合は最大8回まで該当項目だけを除去し、新規会社作成後に同期失敗した場合は部分会社をDELETEしてCRM汚染を防ぐ。
-- migration `20260713203000_japan_entry_report_factory.sql` を正式release経路・release doctor・手動migration台帳へ配線。queue job type、投影冪等キー、Realtime publicationを冪等適用する。
-- 検証: TypeScript pass、対象ESLint pass、quality guard **0 errors / 58 warnings**、対象Vitest **7 files / 25 tests pass**＋Twenty rollback追加テストpass、100社を2 DB queryで投入するunit test pass、production build **384/384 pages**。全Vitestは **101/103 files・491/496 tests pass**で、変更外の既知baseline（DeepSeek共通テスト1件、CRLF backup shell 4件）のみ失敗。
+- migration `20260713203000_japan_entry_report_factory.sql` を正式release経路・release doctor・手動migration台帳へ配線。queue job type、投影冪等キー、Realtime publication、RLS有効の `sales_report_factory_state` とservice_role限定claim/release RPCを冪等適用する。
+- 検証: TypeScript pass、対象ESLint pass、quality guard **0 errors / 59 warnings**、自動drainのlease・認証header・secret非露出・fail-closedを含む関連Vitest **6 files / 18 tests pass**、100社を2 DB queryで投入するunit test pass、production build **396/396 pages**。全Vitestは **106/107 files・504/508 tests pass**で、変更外の既知CRLF backup shell 4件のみ失敗。
 - PR **#117**をmainへmergeし、正式deployment `lfzatodzhzxzypztvdp9exdl` はfinished。DB **82/82**、Traefik/Cloudflare、Realtime、Twenty worker restart 0、Sales health HTTP 200 / JSON ok、post-deploy release gateを通過した。Cloudflare Analytics beaconの既存CSP errorもPR **#119**で許可originを限定追加し、正式deployment `xejy710ungy95vjjllxz6ng3` とpost-deploy gateを通過した。
 - 本番のOur Place実レポートで、HTTP 200、`noindex, nofollow, nocache`、header 1個、Evidence quality、6/12/24か月、感度分析slider 3本と値変更時の再計算、desktop/mobile横溢れ0、console error 0をChrome実ブラウザ確認。本番DBは `idempotency_key` 1列、`sales_enrichment_jobs` Realtime publication 1、report jobs 0、送信有効jobs 0、approved投影0。収集・見込み客へのフォーム送信は未実行。
 

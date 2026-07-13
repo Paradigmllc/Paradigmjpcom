@@ -56,7 +56,7 @@ const ALL_TABLES = [
   // SearXNG
   "sales_searxng_search_runs", "sales_searxng_search_results",
   // Japan Readiness
-  "sales_japan_readiness_insights", "sales_japan_entry_projections",
+  "sales_japan_readiness_insights", "sales_japan_entry_projections", "sales_report_factory_state",
   // Video
   "sales_video_jobs",
   // Platform Health

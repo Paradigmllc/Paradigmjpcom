@@ -188,13 +188,14 @@ export function OpportunityBriefFactoryConsole() {
         queued?: number;
         reused?: number;
         rejected?: RejectedCompany[];
+        automaticDrainStarted?: boolean;
         error?: string;
       };
       setRejected(payload.rejected ?? []);
       if (!response.ok)
         throw new Error(payload.error ?? "生成キューへの投入に失敗しました");
       toast.success(
-        `${payload.queued ?? 0}社を投入、${payload.reused ?? 0}社は実行中ジョブを再利用しました`,
+        `${payload.queued ?? 0}社を投入、${payload.reused ?? 0}社は実行中ジョブを再利用。自動生成を開始しました`,
       );
       setCompanyIds("");
       await refresh();
@@ -219,6 +220,7 @@ export function OpportunityBriefFactoryConsole() {
         body: JSON.stringify({ limit: 3 }),
       });
       const payload = (await response.json()) as {
+        status?: string;
         processed?: number;
         completed?: number;
         failed?: number;
@@ -229,7 +231,9 @@ export function OpportunityBriefFactoryConsole() {
           payload.errors?.[0] ?? "生成処理を開始できませんでした",
         );
       toast.success(
-        `${payload.processed ?? 0}社を処理、完了${payload.completed ?? 0}社、失敗${payload.failed ?? 0}社`,
+        payload.status === "already_running"
+          ? "自動生成は既に稼働中です"
+          : `${payload.processed ?? 0}社を処理。残りも自動で継続します`,
       );
       await refresh();
     } catch (error) {
@@ -282,7 +286,7 @@ export function OpportunityBriefFactoryConsole() {
               Opportunity Brief 量産管理
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-              証拠が揃った企業だけを最大100社ずつ生成します。公開URLはTwentyへ同期しますが、フォーム送信は常に無効です。
+              証拠が揃った企業だけを最大100社ずつ投入し、3社並列で最後まで自動生成します。公開URLはTwentyへ同期しますが、フォーム送信は常に無効です。
             </p>
           </div>
           <Badge
@@ -310,7 +314,7 @@ export function OpportunityBriefFactoryConsole() {
               生成対象を投入
             </CardTitle>
             <CardDescription>
-              sales_companies.idを改行またはカンマ区切りで入力。公開シグナル、商品情報、サイト監査、競合根拠の品質ゲートを通過した企業のみ受理します。
+              sales_companies.idを改行またはカンマ区切りで入力。公開シグナル、商品情報、サイト監査、競合根拠の品質ゲートを通過した企業のみ受理し、投入後は操作不要で処理を継続します。
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -346,7 +350,7 @@ export function OpportunityBriefFactoryConsole() {
                 disabled={busy}
               >
                 <Play className="mr-2 h-4 w-4" />
-                次の3社を生成
+                自動処理を再開
               </Button>
               <Button
                 type="button"
