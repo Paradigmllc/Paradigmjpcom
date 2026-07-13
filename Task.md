@@ -1,11 +1,13 @@
-## CURRENT STATUS - 2026-07-14 SMB Premium V3全ページ品質・業種別ブランドDNA（実装・ローカル実ブラウザQA済み / 本番反映待ち）
+## CURRENT STATUS - 2026-07-14 SMB Premium V3全ページ品質・業種別ブランドDNA（本番反映・飲食/建築の実ブラウザQA完了 / 送信停止）
 
 ### 2026-07-14 SMB Premium V3フルサイト品質強化
 - Cafe SOSOMUのHomeだけでなく、About / Services / Works / News / FAQ / Recruit / Privacy / Terms / Commerce / Contactの全11ページをPremium V3 rendererへ接続。ページ固有のstory、service index、visual journal、information desk、culture/recruit、document、Google Maps、送信停止フォームを実装した。
 - restaurant / beauty / dental / construction / retail / corporateへ業種別Brand DNAを追加し、書体、余白、色、角、画像処理、hero toneを企業IDとdesign recipeから決定する。建設・B2B等は飲食店の全面写真heroを流用せず、精密なsplit corporate heroへ切り替える。
-- 品質ゲートを`2026-07-14.2`、合格94点へ更新。全11ページごとの最低文字量、Premium V3 Brand DNA、8ページ以上のpage compositionをhard blocker化し、トップだけ綺麗・固定ページが薄いデモは公開停止する。
-- Cafe SOSOMUローカル実ブラウザQA: 全11ページHTTP 200、Home 5,267px / About 4,174px / Services 5,880px / Works 4,162px / News 3,279px / Recruit 3,028px / FAQ 2,166px / 法務各2,000px超 / Contact 2,955px。Google Maps iframe 1、フォーム1、画像付き固定ページ、PC hero約66.6px、mobile 390px hero約43.2px、横溢れ0を確認。初回QAでrevealが透明のまま残る問題を検出し、表示をアニメーション依存にしないfail-safeへ修正した。
-- 検証: 関連Vitest **4 files / 11 tests pass**、TypeScript pass、変更対象ESLint pass、production build **396/396 pages**、`git diff --check` pass。メール、電話、郵送、フォーム送信、Twenty同期、営業通知は実行していない。
+- 品質ゲートを`2026-07-14.3`、合格94点へ更新。全11ページごとの最低文字量、Premium V3 Brand DNA、8ページ以上のpage compositionをhard blocker化し、トップだけ綺麗・固定ページが薄いデモは公開停止する。SNSのない法人案件は、公的レジストリ・事業者提供・operator verified等のreviewed manifestがあれば通し、出典も公式導線もない案件はfail-closedを維持する。
+- Cafe SOSOMU本番実ブラウザQA: `https://demo.paradigmjp.com/cafe-sosomu` の全11ページを確認。Home 5,267px / About 4,175px / Services 5,880px / Works 4,163px / News 3,279px / Recruit 3,028px / FAQ 2,166px / 法務各2,000px超 / Contact 3,102px。Google Maps iframe 1、送信停止フォーム1、PC hero 66.56px、mobile 390px hero 43.2px、横溢れ0、drawer開閉を確認した。
+- 非飲食の実務投入として、那須塩原市の公開リストで事業者名・所在地・一級建築士事務所を確認した`GREYMAN一級建築士事務所`を選定。自動スクレイピングせず`collectionPolicy=no_automated_fetch`、公的レジストリ＋ライセンス済み提案画像3点で生成した。初回はSNS必須・出典伝播不足・CTA三重コピーを品質ゲートが54点で停止。基盤修正後は3候補すべて**quality 100 / blocker 0 / warning 0**、private reviewとして30日期限の署名URLを発行した（tokenはTask.mdへ保存しない）。
+- GREYMAN本番実ブラウザQA: 日本語の正規`/{企業名}` URLで発生した二重encode/Cookie path 404をPR #160/#161で修正。最終的に全11ページ表示、Home 5,517px / About 4,317px / Services 5,952px / Works 4,192px / News 3,279px / Recruit 3,320px / FAQ 2,190px / 法務各2,000px超 / Contact 3,215px、broken image 0、Google Maps iframe 1、送信停止フォーム1、mobile 390px横溢れ0、drawer開閉を確認した。飲食語彙・存在しないSNS導線は0。
+- PR #155 / #157 / #159 / #160 / #161をマージ。最終`npm run release:prod`はdeployment `dg2gnlfzvog70e04voc94qdj`、quality guard 0 errors、DB 83/83、post-deploy smoke / Revenue OS infra / Traefik / Sales healthを含む全ゲートpass。関連Vitest最大**5 files / 17 tests**およびURL修正を含む**4 files / 24 tests**、TypeScript、ESLint、production build **396/396 pages**、`git diff --check`を確認。メール、電話、郵送、フォーム送信、Twenty同期、営業通知は実行していない。
 
 ## CURRENT STATUS - 2026-07-14 共通機会損失セクションの背景面再設計（本番反映・公開QA済み）
 
