@@ -405,7 +405,7 @@
         "title": "Editorial decision support",
         "industry": "Japan Entry Field Notes",
         "description": "The public editorial set answers practical decisions about localization, hiring, agency coordination, commercial scope, and the first month after launch.",
-        "metrics": "9 decision-support articles",
+        "metrics": "12 decision-support articles",
         "tags": ["Scope", "Comparison", "Operations", "Trust"]
       },
       {
@@ -414,6 +414,29 @@
         "description": "Automation can route, summarize, and surface signals, while sensitive, uncertain, or contractual decisions remain visible for human review.",
         "metrics": "Escalation path documented",
         "tags": ["Review", "Routing", "Handover", "Safety"]
+      }
+    ],
+    "caseNotes": [
+      {
+        "title": "Dossier 01 · Localized buyer path",
+        "label": "Public delivery dossier — not a client outcome claim",
+        "whatWeShow": "A Japanese route with localized information architecture, commercial terms, trust pages, a clear next action, CMS ownership, and a tested application path.",
+        "acceptance": "A reviewer can identify the offer, price, owner, exclusions, and post-submission step on desktop and mobile.",
+        "notClaimed": "No ranking, traffic, conversion, or revenue result is implied without authorized first-party data."
+      },
+      {
+        "title": "Dossier 02 · Public-signal market check",
+        "label": "Free public evidence — unknowns remain visible",
+        "whatWeShow": "Public rank, crawl, sitemap, schema, registry, and dated source links are separated from self-reported readiness in Signal Check.",
+        "acceptance": "Every observed signal carries a source, observation date, confidence boundary, and next verification action.",
+        "notClaimed": "A public signal is not private monthly visits, country traffic share, conversion rate, or sales."
+      },
+      {
+        "title": "Dossier 03 · Application to handover",
+        "label": "Operational delivery path",
+        "whatWeShow": "Fit review, scope confirmation, source/access checklist, approval gates, support escalation, measurement baseline, and written handover.",
+        "acceptance": "A second operator can reproduce the inquiry response, ownership decision, escalation route, and launch checklist.",
+        "notClaimed": "The 14-business-day figure is a gated target, not a promise that client or third-party delays disappear."
       }
     ]
   },
@@ -869,6 +892,22 @@
       {
         "q": "What if the package is not the right fit?",
         "a": "The application is a fit review, not an obligation to proceed. If the decision authority, source material, timing, offer, or dependencies do not match the fixed scope, we identify that before accepting the engagement."
+      },
+      {
+        "q": "What do you mean by a guarantee?",
+        "a": "We guarantee the agreed delivery process, scope, acceptance checks, and documented handover—not a ranking, traffic level, conversion rate, or revenue outcome. If a dependency is outside our control, it is recorded before kickoff rather than hidden behind a promise."
+      },
+      {
+        "q": "Are the Works examples real client case studies?",
+        "a": "The Works page separates inspectable delivery dossiers from authorized client outcome studies. We show the buyer path, implementation evidence, acceptance checks, and unknowns; we do not present invented client names, revenue, or conversion results. A first-party case study is added only with permission and source data."
+      },
+      {
+        "q": "How does the AI assistant use our information?",
+        "a": "The public assistant retrieves approved site and editorial context, then uses Gemini or the configured Dify app when available. It must not invent commercial terms. Sensitive account details, legal advice, and final scope stay in the human-reviewed application and written agreement."
+      },
+      {
+        "q": "What happens if a provider or regulator delays launch?",
+        "a": "We surface the dependency, identify the affected route, and record an alternative inquiry or launch path where one is eligible. Provider approval, formal legal opinions, licences, banking, tax, and fulfilment remain external decisions and can move the target date."
       }
     ]
   },
@@ -1031,7 +1070,7 @@
     "faq": "FAQ",
     "blog": "Blog",
     "japanEntryScore": "Check Japan fit",
-    "contact": "Apply — $12K",
+    "contact": "Contact",
     "menu": "Menu",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
@@ -1245,7 +1284,7 @@
         },
         {
           "kicker": "Handover",
-          "value": "21d*",
+          "value": "14d*",
           "title": "A launch your team can run",
           "body": "Checklist, ownership, analytics baseline, support escalation, and written operating steps."
         },

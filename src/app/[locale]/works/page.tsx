@@ -48,6 +48,7 @@ type WorkDoc = {
 
 type ProcessStep = { step: string; title: string; desc: string }
 type EvidenceCheck = { title: string; desc: string }
+type CaseNote = { title: string; label: string; whatWeShow: string; acceptance: string; notClaimed: string }
 
 const TILE_GRADIENTS = [
   "from-zinc-950 via-zinc-800 to-blue-700",
@@ -63,6 +64,7 @@ export default async function WorksPage({ params }: Props) {
   const STEPS = t.raw("process") as ProcessStep[]
   const japanEntryLocale = locale === "en" || locale === "ja"
   const evidenceChecks = japanEntryLocale ? (t.raw("evidenceChecks") as EvidenceCheck[]) : []
+  const caseNotes = japanEntryLocale ? (t.raw("caseNotes") as CaseNote[]) : []
 
   let works = japanEntryLocale
     ? (t.raw("proofItems") as Array<Omit<WorkDoc, "id" | "tags"> & { tags: string[] }>).map((work, index) => ({
@@ -169,6 +171,38 @@ export default async function WorksPage({ params }: Props) {
       </section>
 
       {japanEntryLocale && <JapanEntryVisualProof locale={locale as "en" | "ja"} />}
+
+      {caseNotes.length > 0 && (
+        <section className="relative overflow-hidden bg-paradigm-paper-deep paradigm-section" aria-labelledby="case-notes-heading">
+          <div className="paradigm-mesh opacity-20" />
+          <div className="relative z-10 mx-auto max-w-6xl px-6 md:px-8">
+            <FadeIn className="mb-8 max-w-3xl">
+              <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{locale === "ja" ? "公開提供資料" : "Public delivery dossiers"}</p>
+              <h2 id="case-notes-heading" className="font-display text-[24px] leading-[1.15] text-paradigm-ink md:text-[38px]">
+                {locale === "ja" ? "過去事例を捏造せず、確認できる完成形を見せる。" : "Show the finished system without inventing a case study."}
+              </h2>
+              <p className="mt-4 text-[14px] leading-[1.8] text-paradigm-ink-soft">
+                {locale === "ja" ? "顧客名・一次データを公開できる許諾がない案件は、実装、検収、運用境界、未確認事項を資料として公開します。" : "When client names or first-party outcomes are not authorized for publication, we show the implementation, acceptance checks, operating boundary, and unknowns instead."}
+              </p>
+            </FadeIn>
+            <div className="grid gap-4 lg:grid-cols-3">
+              {caseNotes.map((note, index) => (
+                <FadeIn key={note.title} delay={index * 0.06}>
+                  <article className="h-full rounded-2xl border border-paradigm-line bg-paradigm-paper p-6 paradigm-glow-sm">
+                    <p className="paradigm-eyebrow text-[10px] text-paradigm-accent">{note.label}</p>
+                    <h3 className="mt-3 font-display text-[19px] leading-[1.2] text-paradigm-ink">{note.title}</h3>
+                    <dl className="mt-5 space-y-4 text-[12px] leading-[1.75] text-paradigm-ink-soft">
+                      <div><dt className="font-semibold text-paradigm-ink">{locale === "ja" ? "確認できること" : "What you can inspect"}</dt><dd className="mt-1">{note.whatWeShow}</dd></div>
+                      <div><dt className="font-semibold text-paradigm-ink">{locale === "ja" ? "検収の見方" : "Acceptance check"}</dt><dd className="mt-1">{note.acceptance}</dd></div>
+                      <div><dt className="font-semibold text-paradigm-ink">{locale === "ja" ? "主張しないこと" : "What is not claimed"}</dt><dd className="mt-1">{note.notClaimed}</dd></div>
+                    </dl>
+                  </article>
+                </FadeIn>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Process */}
       <section className="relative bg-paradigm-paper-deep paradigm-section overflow-hidden">

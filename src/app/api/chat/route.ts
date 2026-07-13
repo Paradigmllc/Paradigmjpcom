@@ -6,6 +6,7 @@ import {
   isSafeEnglishCommercialAnswer,
   type ChatLocale,
 } from "@/lib/chat-commercial"
+import { formatChatKnowledge, retrieveChatKnowledge } from "@/lib/chat-knowledge"
 
 /**
  * /api/chat — locale-aware Dify → Gemini fallback
@@ -51,16 +52,18 @@ Use only the verified commercial terms below. Never invent client counts, retent
 - Apply: https://paradigmjp.com/en/contact?intent=japan-entry
 - Email: info@paradigmjp.com
 
-Answer in concise, plain English. If a fact is not listed, say it will be confirmed in the fixed written scope before payment.`
+Answer in concise, plain English. If a fact is not listed, say it will be confirmed in the fixed written scope before payment.
+Use the retrieved approved-site context appended below. Never invent a number or outcome that is absent from it.`
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
-async function callGemini(message: string, locale: ChatLocale): Promise<string> {
+async function callGemini(message: string, locale: ChatLocale, context: string): Promise<string> {
   if (!GEMINI_API_KEY) return getFallbackAnswer(message, locale)
   try {
-    const systemPrompt = locale === "en" ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT_JA
+    const basePrompt = locale === "en" ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT_JA
+    const systemPrompt = `${basePrompt}\n\n[Retrieved approved-site context]\n${context}`
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`,
       {
@@ -113,6 +116,8 @@ export async function POST(req: NextRequest) {
   const rawLocale = rawBody.locale
   const locale: ChatLocale = rawLocale === "en" ? "en" : "ja"
   if (!message) return NextResponse.json({ error: "message required" }, { status: 400 })
+  const sources = retrieveChatKnowledge(message, locale)
+  const context = formatChatKnowledge(sources)
 
   // The existing English Dify app can contain historical commercial copy.
   // English answers therefore use the verified prompt/fallback path only.
@@ -121,7 +126,7 @@ export async function POST(req: NextRequest) {
     try {
       const body: Record<string, unknown> = {
         inputs: {},
-        query: message,
+        query: `${message}\n\nUse only this approved site context when answering:\n${context}`,
         response_mode: "blocking",
         user: `visitor-${locale}-${Date.now()}`,
       }
@@ -144,6 +149,8 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({
             answer,
             conversation_id: data.conversation_id || null,
+            sources: sources.map(({ title, href }) => ({ title, href })),
+            grounded: sources.length > 0,
           })
         }
       }
@@ -152,6 +159,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const answer = await callGemini(message, locale)
-  return NextResponse.json({ answer, conversation_id: null })
+  const answer = await callGemini(message, locale, context)
+  return NextResponse.json({
+    answer,
+    conversation_id: null,
+    sources: sources.map(({ title, href }) => ({ title, href })),
+    grounded: sources.length > 0,
+  })
 }

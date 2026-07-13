@@ -1,4 +1,7 @@
-export type ChatLocale = "ja" | "en"
+import { retrieveChatKnowledge } from "@/lib/chat-knowledge"
+import type { ChatLocale } from "@/lib/chat-knowledge"
+
+export type { ChatLocale } from "@/lib/chat-knowledge"
 
 const STALE_ENGLISH_ANSWER =
   /free consult|free audit|¥|198,000|300,000|350,000|200\+ clients|98% retention|founded 20\d{2}|\$(?:1,?300|1,?500|2,?000|3,?000|5,?000|8,?000)/i
@@ -30,6 +33,8 @@ export function getFallbackAnswer(
   question: string,
   locale: ChatLocale,
 ): string {
+  const groundedSource = retrieveChatKnowledge(question, locale, 1)[0]
+  if (groundedSource) return groundedSource.content
   const normalizedQuestion = question.toLowerCase()
   if (locale === "en") return getFallbackAnswerEn(normalizedQuestion)
   return getFallbackAnswerJa(normalizedQuestion)

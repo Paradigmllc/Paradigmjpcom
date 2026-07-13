@@ -32,6 +32,9 @@ describe("auditJapanMarketReadiness", () => {
       tokushoho_missing: true,
       appi_missing: true,
       local_payments_missing: true,
+      japanese_language_missing: true,
+      jpy_currency_missing: true,
+      japan_shipping_missing: true,
     })
     expect(audit.score).toBe(10)
     expect(audit.human_review_required).toBe(true)
@@ -40,7 +43,7 @@ describe("auditJapanMarketReadiness", () => {
 
   it("collects public-page signals without making legal assertions", async () => {
     mockFetch({
-      "/": "<html><body>JCB PayPay Paidy</body></html>",
+      "/": "<html><body>日本語の購入者向けページ JCB PayPay Paidy JPY 12000 shipping to Japan</body></html>",
       "/privacy": "<html><body>Privacy Policy and APPI personal information</body></html>",
       "/tokushoho": "<html><body>特定商取引法 販売業者 所在地 電話番号 返品 返金</body></html>",
     })

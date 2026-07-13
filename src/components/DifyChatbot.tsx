@@ -31,6 +31,9 @@ const TOKENS = {
   accent: "rgb(var(--paradigm-accent))",
 } as const
 
+type ChatSource = { title: string; href: string }
+type ChatMessage = { role: "user" | "bot"; text: string; sources?: ChatSource[] }
+
 export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
   const pathname = usePathname()
   const t = useTranslations("chatbot")
@@ -48,7 +51,7 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
   )
 
   const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState<{ role: "user" | "bot"; text: string }[]>([
+  const [messages, setMessages] = useState<ChatMessage[]>([
     { role: "bot", text: t("greeting") },
   ])
   const [input, setInput] = useState("")
@@ -114,7 +117,15 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
       const response = data && typeof data === "object" ? data as Record<string, unknown> : {}
       const answer = typeof response.answer === "string" ? response.answer : t("errorReply")
       const nextConversationId = typeof response.conversation_id === "string" ? response.conversation_id : null
-      setMessages((prev) => [...prev, { role: "bot", text: answer }])
+      const rawSources = Array.isArray(response.sources) ? response.sources : []
+      const sources = rawSources.flatMap((source): ChatSource[] => {
+        if (!source || typeof source !== "object") return []
+        const record = source as Record<string, unknown>
+        return typeof record.title === "string" && typeof record.href === "string" && record.href.startsWith("/")
+          ? [{ title: record.title, href: record.href }]
+          : []
+      })
+      setMessages((prev) => [...prev, { role: "bot", text: answer, sources }])
       if (nextConversationId) setConversationId(nextConversationId)
     } catch (error) {
       console.error("[DifyChatbot] failed to send message:", error)
@@ -323,6 +334,18 @@ export default function DifyChatbot({ locale }: { locale: "ja" | "en" }) {
                   }}
                 >
                   {m.text}
+                  {m.role === "bot" && m.sources && m.sources.length > 0 && (
+                    <div style={{ marginTop: 10, paddingTop: 8, borderTop: `1px solid ${TOKENS.line}`, display: "flex", flexDirection: "column", gap: 5 }}>
+                      <span style={{ fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: TOKENS.inkMute }}>
+                        {locale === "ja" ? "参照した公開情報" : "Approved site sources"}
+                      </span>
+                      {m.sources.slice(0, 3).map((source) => (
+                        <Link key={`${source.href}-${source.title}`} href={source.href} style={{ fontSize: 11, color: TOKENS.accent, textDecoration: "underline", textUnderlineOffset: 3 }}>
+                          {source.title}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

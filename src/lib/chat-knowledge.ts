@@ -1,0 +1,158 @@
+import { JAPAN_ENTRY_BLOG_POSTS } from "@/lib/japan-entry-blog"
+import { JAPAN_ENTRY_BLOG_POSTS_JA } from "@/lib/japan-entry-blog-ja"
+
+export type ChatLocale = "ja" | "en"
+
+export type ChatKnowledgeSource = {
+  title: string
+  href: string
+  content: string
+  score: number
+}
+
+type KnowledgeChunk = Omit<ChatKnowledgeSource, "score"> & {
+  locale: ChatLocale
+  keywords: string[]
+}
+
+const CORE_KNOWLEDGE: KnowledgeChunk[] = [
+  {
+    locale: "en",
+    title: "About Paradigm",
+    href: "/en/about",
+    keywords: ["paradigm", "company", "about", "operator", "who", "tokyo", "japan"],
+    content: "Paradigm LLC is a Tokyo-based Japan market-entry operator for overseas SMBs. We publish verified company and commercial information, separate public evidence from unknowns, and do not claim private client outcomes without permission and source data.",
+  },
+  {
+    locale: "ja",
+    title: "Paradigmについて",
+    href: "/ja/about",
+    keywords: ["Paradigm", "会社", "企業", "概要", "運営", "東京", "日本"],
+    content: "Paradigm合同会社は、海外SMBの日本市場向け導線を実装・運用する東京拠点の事業者です。確認できる会社情報と商用条件を公開し、公開根拠と未知の事項を分け、許諾と一次データのない顧客成果を実績として主張しません。",
+  },
+  {
+    locale: "en",
+    title: "Japan Entry pricing and commercial terms",
+    href: "/en/pricing",
+    keywords: ["price", "pricing", "cost", "fee", "monthly", "setup", "12,000", "995", "six", "month", "cancel"],
+    content: "$12,000 USD fixed one-time setup. Standard monthly operation is included at no additional monthly charge for the first six months; from month seven it is $995/month under the signed terms. Future-period cancellation follows the signed terms. Third-party costs and approved work outside scope remain separate.",
+  },
+  {
+    locale: "ja",
+    title: "Japan Entryの料金と契約条件",
+    href: "/ja/pricing",
+    keywords: ["料金", "費用", "価格", "セットアップ", "12000", "12,000", "995", "月額", "6か月", "解約"],
+    content: "セットアップは12,000ドル固定です。標準月額運用は最初の6か月、追加の月額なしで含まれます。7か月目以降は契約条件に基づき月額995ドルです。第三者費用と合意外の作業は別です。",
+  },
+  {
+    locale: "en",
+    title: "Japan Entry scope and exclusions",
+    href: "/en/services",
+    keywords: ["include", "scope", "deliver", "localization", "sns", "social", "compliance", "support", "handover", "exclude"],
+    content: "The fixed setup connects a Japanese buyer path, LP/HP localization, up to two priority social channels, public-signal market research, regulatory applicability screening, eligible inquiry or payment routing, bilingual support setup, launch operations, and handover. It does not replace legal, tax, banking, licensing, logistics, advertising, or provider approval.",
+  },
+  {
+    locale: "ja",
+    title: "Japan Entryの提供範囲と除外",
+    href: "/ja/services",
+    keywords: ["範囲", "内容", "納品", "ローカライズ", "SNS", "法規制", "サポート", "引き継ぎ", "除外"],
+    content: "固定セットアップは、日本語の購入者導線、LP/HPローカライズ、優先SNS最大2チャネル、市場・競合の公開シグナル調査、法規制の適用可能性整理、適格な問い合わせ・決済導線、日英サポート、公開運用、引き継ぎを接続します。法務・税務・銀行・許認可・物流・広告・決済会社の承認を代替しません。",
+  },
+  {
+    locale: "en",
+    title: "Japan Entry application and timeline",
+    href: "/en/contact?intent=japan-entry",
+    keywords: ["apply", "application", "contact", "timeline", "14", "business", "days", "approval", "input", "kickoff"],
+    content: "Submitting the application starts a fit review; it is not contract acceptance. The 14-business-day launch target begins after agreement, payment, complete source material, required access, an empowered approver, timely feedback, and third-party dependencies are available.",
+  },
+  {
+    locale: "ja",
+    title: "申込み後と14営業日の前提",
+    href: "/ja/contact?intent=japan-entry",
+    keywords: ["申込み", "問い合わせ", "期間", "14", "営業日", "承認", "素材", "アクセス", "開始"],
+    content: "フォーム送信は契約成立ではなく適合確認から始まります。14営業日の公開目標は、必要素材・アクセス・決裁者・迅速な承認・第三者依存条件が揃った後の目標です。",
+  },
+  {
+    locale: "en",
+    title: "Public signals and unknown traffic or revenue",
+    href: "/en/tools/japan-entry-score",
+    keywords: ["traffic", "visits", "revenue", "sales", "country", "market", "similarweb", "data", "signal", "rank", "objective"],
+    content: "Public rank, crawl, sitemap, schema, registry, and other open signals can show visibility and readiness. They cannot prove private monthly visits, country traffic share, conversion rate, or revenue without first-party or authorized data. Unknown values remain unknown.",
+  },
+  {
+    locale: "ja",
+    title: "公開シグナルで分かることと分からないこと",
+    href: "/ja/tools/japan-entry-score",
+    keywords: ["アクセス", "訪問", "売上", "国別", "市場", "データ", "順位", "シグナル", "公開", "推定"],
+    content: "公開順位、クロール、サイトマップ、構造化データ、登録情報などは可視性の手掛かりです。第一者データや許可されたデータがない限り、実際の訪問数、国別比率、成約率、売上は証明できません。未知は未知として表示します。",
+  },
+  {
+    locale: "en",
+    title: "Guarantees and published delivery evidence",
+    href: "/en/works",
+    keywords: ["guarantee", "guaranteed", "case", "case study", "proof", "results", "outcome", "works", "example"],
+    content: "Paradigm does not guarantee rankings, traffic, conversion, or revenue. The Works page shows inspectable delivery systems, process, ownership, evidence boundaries, acceptance checks, and handover rather than invented client outcomes. Authorized first-party case studies can be added when publication permission exists.",
+  },
+  {
+    locale: "ja",
+    title: "保証と公開できる提供根拠",
+    href: "/ja/works",
+    keywords: ["保証", "実績", "事例", "根拠", "成果", "売上", "作品", "公開"],
+    content: "検索順位、アクセス、コンバージョン、売上などの成果は保証しません。Worksでは、公開許諾のない顧客名や架空の結果ではなく、実装、工程、所有者、検収、根拠の境界、引き継ぎを確認できます。公開許諾のある一次データが揃った事例だけ追加します。",
+  },
+]
+
+const BLOG_KNOWLEDGE: KnowledgeChunk[] = [
+  ...JAPAN_ENTRY_BLOG_POSTS.map((post) => ({
+    locale: "en" as const,
+    title: post.title,
+    href: `/en/blog/${post.slug}`,
+    keywords: [post.title, post.excerpt, post.category, ...post.tags],
+    content: `${post.excerpt} ${post.content.slice(0, 900)}`,
+  })),
+  ...JAPAN_ENTRY_BLOG_POSTS_JA.map((post) => ({
+    locale: "ja" as const,
+    title: post.title,
+    href: `/ja/blog/${post.slug}`,
+    keywords: [post.title, post.excerpt, post.category, ...post.tags],
+    content: `${post.excerpt} ${post.content.slice(0, 900)}`,
+  })),
+]
+
+const KNOWLEDGE = [...CORE_KNOWLEDGE, ...BLOG_KNOWLEDGE]
+
+function normalize(value: string): string {
+  return value.toLocaleLowerCase().replace(/\s+/g, " ").trim()
+}
+
+const EN_STOPWORDS = new Set([
+  "a", "an", "and", "are", "can", "does", "for", "how", "in", "is", "it", "of", "on", "or", "the", "this", "to", "what", "when", "where", "who", "why", "with",
+])
+
+function scoreChunk(query: string, chunk: KnowledgeChunk): number {
+  const normalizedQuery = normalize(query)
+  const haystack = normalize(`${chunk.title} ${chunk.content} ${chunk.keywords.join(" ")}`)
+  const terms = normalizedQuery
+    .split(/[\s,、。.!?？]+/)
+    .filter((term) => term.length >= 2 && !EN_STOPWORDS.has(term))
+  const matchedTerms = terms.filter((term) => haystack.includes(term)).length
+  const exactKeywordHits = chunk.keywords.filter((keyword) => normalizedQuery.includes(normalize(keyword))).length
+  if (exactKeywordHits === 0 && matchedTerms < 4) return 0
+  return matchedTerms + exactKeywordHits * 2
+}
+
+export function retrieveChatKnowledge(query: string, locale: ChatLocale, limit = 4): ChatKnowledgeSource[] {
+  return KNOWLEDGE
+    .filter((chunk) => chunk.locale === locale)
+    .map((chunk) => ({ ...chunk, score: scoreChunk(query, chunk) }))
+    .filter((chunk) => chunk.score > 0)
+    .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title))
+    .slice(0, limit)
+}
+
+export function formatChatKnowledge(sources: ChatKnowledgeSource[]): string {
+  if (sources.length === 0) return "No directly matching approved source was retrieved. Say that the point requires human confirmation."
+  return sources
+    .map((source, index) => `[Source ${index + 1}] ${source.title} (${source.href})\n${source.content}`)
+    .join("\n\n")
+}
