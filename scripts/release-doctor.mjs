@@ -682,7 +682,7 @@ else
   echo "OK no resident Paradigm runtime timer detected"
 fi
 
-for forbidden_container in paradigm-outreach-worker services-steel-browser-1${POST_DEPLOY ? " astro-demo" : ""}; do
+for forbidden_container in paradigm-outreach-worker services-steel-browser-1${POST_DEPLOY ? " astro-demo paradigm-demos" : ""}; do
   if docker ps --format '{{.Names}}' | grep -qx "$forbidden_container"; then
     echo "FAIL forbidden resident container is running: $forbidden_container"
     fail=1
