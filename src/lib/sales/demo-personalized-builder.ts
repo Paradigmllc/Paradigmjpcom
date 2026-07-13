@@ -28,16 +28,12 @@ export function buildPersonalizedDemoData(
       ...base.pages,
       home: {
         ...base.pages.home,
+        stats: [],
+        beforeAfter: [],
         testimonials: undefined,
         trustedBy: undefined,
         totalLoss: "",
-        metricsSummary: base.pages.home.metricsSummary
-          ? {
-              ...base.pages.home.metricsSummary,
-              monthlyLoss: null,
-              recoveryAmount: null,
-            }
-          : undefined,
+        metricsSummary: undefined,
       },
     },
   }

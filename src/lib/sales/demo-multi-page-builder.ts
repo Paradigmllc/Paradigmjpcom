@@ -13,7 +13,6 @@ import type {
   DemoPremiumExperience,
 } from "./demo-site-types"
 import type { Industry, ReportLocale } from "./types"
-import { JAPAN_ENTRY_CTA_EN, JAPAN_ENTRY_CTA_JA } from "@/lib/japan-entry-public-copy"
 import {
   buildAboutStory,
   buildDataDrivenServices,
@@ -55,13 +54,16 @@ export function buildDemoMultiPageData(
   const industry = (company.industry ?? report.industry ?? "consulting") as Industry
   const cfg = industryConfig(industry)
   const slug = buildSlug(company)
+  const basePath = `/${locale}/${slug}`
   const name = cleanFs(company.company_name, "Your Company", 80)
   const locationStr = cleanFs(company.prefecture, isJa ? "全国対応" : "Nationwide", 30)
   const industryLabel = isJa ? (cfg.labelJa ?? "コンサルティング") : (cfg.labelEn ?? "Consulting")
-  // Cal.com booking URL — use embed parameter for iframe
-  const calBookingUrl = "https://cal.com/paradigm-jp/15min"
-  const calEmbedUrl = ""  // Disabled until valid Cal.com URL is configured
-  const ctaUrl = calBookingUrl
+  const metaObj = (company.meta ?? {}) as Record<string, unknown>
+  const publicFacts = (metaObj.public_facts ?? {}) as Record<string, unknown>
+  const verifiedFacts = Object.values(publicFacts).filter((value): value is string | number | boolean => ["string", "number", "boolean"].includes(typeof value)).map(String)
+  const displayFacts = verifiedFacts.filter((value) => !/^https?:\/\//u.test(value))
+  const address = cleanFs(typeof publicFacts.address === "string" ? publicFacts.address : company.prefecture, locationStr, 160)
+  const ctaUrl = `${basePath}/contact`
   const accentColor = cfg.accentColor ?? "#7c3aed"
   const accentColorDark = cfg.accentColorDark ?? "#5b21b6"
 
@@ -87,13 +89,13 @@ export function buildDemoMultiPageData(
     subtitle: isJa
       ? "御社の公開データを分析し、集客力を最大化する構成で再設計しました。下記は改善後のイメージです。"
       : "Redesigned based on your public data to maximize customer acquisition. This is the improved version.",
-    tagline: isJa ? `${industryLabel}向け改善デモ` : `${industryLabel} improvement demo`,
+    tagline: industryLabel,
     companyName: name,
     industryLabel,
     locationLabel: locationStr,
     primaryCta: {
-      text: isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN,
-      href: ctaUrl,
+      text: isJa ? "サービスを見る" : "View services",
+      href: `${basePath}/services`,
     },
     secondaryCta: {
       text: isJa ? "サービスを見る" : "View Services",
@@ -135,7 +137,6 @@ export function buildDemoMultiPageData(
 
   // Stats only use observed data. Targets and modeled outcomes are not facts.
   const psValue = company.pagespeed_mobile
-  const metaObj = (company.meta ?? {}) as Record<string, unknown>
   const sslObj = metaObj?.ssl as Record<string, unknown> | undefined
   const sslDisplay = typeof sslObj?.grade === "string" ? sslObj.grade : null
 
@@ -177,11 +178,11 @@ export function buildDemoMultiPageData(
   const faq = buildFAQ(issueTypes, isJa, name, industryLabel, report)
 
   const homeCta = {
-    title: isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN,
+    title: isJa ? "お問い合わせ" : "Contact us",
     subtitle: isJa
-      ? "デモサイトの続きや、実際の改善プランについて詳しくご説明します。お気軽にご連絡ください。"
-      : "Let's discuss the full demo and your actual improvement plan. Reach out anytime.",
-    buttonText: isJa ? JAPAN_ENTRY_CTA_JA : JAPAN_ENTRY_CTA_EN,
+      ? "商品やサービス、営業案内について、フォームからお気軽にお問い合わせください。"
+      : "Contact us about our products, services, or operating information.",
+    buttonText: isJa ? "お問い合わせフォームへ" : "Open contact form",
     buttonHref: ctaUrl,
     accentColor,
     accentColorDark,
@@ -232,8 +233,8 @@ export function buildDemoMultiPageData(
   const aboutPage: DemoAboutPage = {
     title: isJa ? `${name}について` : `About ${name}`,
     subtitle: isJa
-      ? `${industryLabel}のプロフェッショナルとして、お客様と共に歩んできた軌跡`
-      : `Our journey as a ${industryLabel} professional, walking alongside our clients`,
+      ? `${name}の事業と、大切にしている考え方をご紹介します。`
+      : `An introduction to ${name}, its services, and what it values.`,
     companyName: name,
     industryLabel,
     locationLabel: locationStr,
@@ -241,8 +242,8 @@ export function buildDemoMultiPageData(
     mission: aboutMission,
     values: aboutValues,
     teamNote: isJa
-      ? `${name}のチームは、一人ひとりのお客様に真摯に向き合い、最適なソリューションを提供します。`
-      : `The ${name} team is dedicated to each and every client, delivering optimal solutions with sincerity.`,
+      ? `${name}の商品・サービスと、ご利用に必要な情報を分かりやすくお届けします。`
+      : `${name} presents its products, services, and visitor information clearly.`,
     accentColor,
   }
 
@@ -269,6 +270,10 @@ export function buildDemoMultiPageData(
           { step: 3, title: "Implementation", description: "We bring the plan to life with cutting-edge technology and design, sharing progress regularly." },
           { step: 4, title: "Operation & Improvement", description: "After launch, we continue measuring and improving for long-term growth." },
         ],
+    ctaTitle: isJa ? "お問い合わせ" : "Contact us",
+    ctaSubtitle: isJa ? "商品やサービスについてお気軽にお問い合わせください。" : "Contact us about our products and services.",
+    ctaText: isJa ? "お問い合わせフォームへ" : "Open contact form",
+    ctaHref: ctaUrl,
     accentColor,
   }
 
@@ -277,17 +282,19 @@ export function buildDemoMultiPageData(
   const contactPage: DemoContactPage = {
     title: isJa ? "お問い合わせ" : "Contact Us",
     subtitle: isJa
-      ? "まずはお気軽にご相談ください。15分の無料オンライン相談を承っております。"
-      : "Feel free to reach out. We offer a free 15-minute online consultation.",
+      ? "商品やサービス、営業案内についてお気軽にお問い合わせください。"
+      : "Contact us about products, services, or operating information.",
     companyName: name,
     email: "",
     phone: undefined,
-    address: locationStr,
-    calBookingUrl: calEmbedUrl,
-    calDirectUrl: calBookingUrl,
+    address,
+    calBookingUrl: "",
+    calDirectUrl: "",
     formNote: isJa
-      ? "下記フォームからお気軽にお問い合わせください。または、カレンダーから直接オンライン相談を予約いただけます。"
-      : "Feel free to reach out using the form below, or book a consultation directly via the calendar.",
+      ? "営業時間などの最新情報は公式SNSをご確認ください。お問い合わせは下記フォームから承ります。"
+      : "Check the official social profile for current hours, or contact us using the form below.",
+    formEnabled: false,
+    mapUrl: typeof publicFacts.address === "string" ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : undefined,
     accentColor,
   }
 
@@ -296,18 +303,23 @@ export function buildDemoMultiPageData(
   const sourceEvidence = detectPublicSourceEvidence({ meta: company.meta, visualEvidence: company.visual_evidence })
 
   const meta = {
-    title: `${name} | ${isJa ? "Web改善デモサイト" : "Web Improvement Demo"}`,
-    description: cleanFs(report.hook, isJa ? `${name}のWeb改善デモ` : `${name} web improvement demo`, 150),
+    title: `${name} | ${industryLabel}`,
+    description: cleanFs(displayFacts.join("、"), `${name} | ${industryLabel}`, 150),
     ogImage: "",
     industry: industry as Industry,
     locale,
     companyName: name,
     accentColor,
     accentColorDark,
-    calBookingUrl: ctaUrl,
+    calBookingUrl: "",
     generatedAt: new Date().toISOString(),
     engine: "full-stack-nextjs-multi-page",
     sourceEvidence,
+    verifiedFacts,
+    primaryCtaLabel: isJa ? "お問い合わせ" : "Contact",
+    primaryCtaHref: ctaUrl,
+    footerDescription: cleanFs(displayFacts.join("。"), industryLabel, 180),
+    footerOwner: name,
   }
   const premium = buildPremiumExperience(company.meta, homePage, aboutPage.story, industry)
 
@@ -414,7 +426,7 @@ function buildPremiumExperience(
       src,
       alt,
       kind: item.kind === "video" ? "video" as const : "image" as const,
-      caption: typeof item.caption === "string" ? item.caption : undefined,
+      caption: typeof item.caption === "string" && !/paradigm/i.test(item.caption) ? item.caption : "提案用イメージ",
       objectPosition: typeof item.objectPosition === "string" ? item.objectPosition : undefined,
     }]
   })
@@ -440,7 +452,7 @@ function buildPremiumExperience(
       eyebrow: home.featureEyebrow ?? "OUR STORY",
       title: home.featureHeading ?? home.hero.title,
       body: aboutStory,
-      note: "使用素材と掲載内容は公開前に事業者確認を行います。",
+      note: instagram ? "営業案内などの最新情報は公式Instagramをご確認ください。" : "商品・サービスの詳細はお問い合わせください。",
     },
     social: [
       ...(instagram ? [{ label: "Instagram", href: instagram, network: "instagram" as const }] : []),
