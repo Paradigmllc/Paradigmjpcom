@@ -9,7 +9,7 @@ import type { DemoTemplate } from "./demo-templates/registry"
 import { findUnsupportedDemoClaims } from "./demo-copy-grounding"
 import { analyzeDemoQualitySignals } from "./demo-quality-signals"
 
-export const DEMO_QUALITY_GATE_VERSION = "2026-07-14.2"
+export const DEMO_QUALITY_GATE_VERSION = "2026-07-14.3"
 export const DEMO_QUALITY_THRESHOLD = 94
 
 const FABRICATION_PATTERNS = [
@@ -151,8 +151,16 @@ export function evaluateDemoQuality(
   if (!page.premium || page.premium.heroMedia.length < 3 || page.premium.gallery.length < 3) {
     hardBlockers.push("premium_visual_story_missing")
   }
-  if (!page.premium?.social.length) {
-    hardBlockers.push("social_brand_path_missing")
+  const hasVerifiedBrandPath = Boolean(page.premium?.social.length)
+    || Boolean(page.meta.sourceEvidence?.some((source) => [
+      "official_profile",
+      "official_feed",
+      "public_registry",
+      "customer_provided",
+      "operator_verified",
+    ].includes(source)))
+  if (!hasVerifiedBrandPath) {
+    hardBlockers.push("verified_brand_path_missing")
   }
   if (page.premium && !rights.assets.some((asset) => asset.kind === "image" && asset.usage !== "unknown")) {
     hardBlockers.push("premium_media_rights_missing")

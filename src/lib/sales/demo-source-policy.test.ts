@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { detectPublicSourceEvidence } from "./demo-multi-page-builder"
 import { sourceManifestToCompanyMeta, validateDemoSourceManifest } from "./demo-source-policy"
 
 function validManifest() {
@@ -57,5 +58,20 @@ describe("reviewed demo source manifest", () => {
     expect(meta.skip_enrichment).toBe(true)
     expect(meta.official_instagram_url).toBe("https://www.instagram.com/example/")
     expect(meta.demo_media).toHaveLength(3)
+  })
+
+  it("recognizes a reviewed public registry as verified source evidence", () => {
+    const base = validManifest()
+    const manifest = {
+      ...base,
+      sources: [{
+        ...base.sources[0],
+        type: "public_registry" as const,
+        url: "https://example.go.jp/registry.pdf",
+      }],
+    }
+    const meta = sourceManifestToCompanyMeta(manifest)
+
+    expect(detectPublicSourceEvidence({ meta })).toContain("public_registry")
   })
 })

@@ -60,6 +60,8 @@ export function buildDemoMultiPageData(
   const industryLabel = isJa ? (cfg.labelJa ?? "コンサルティング") : (cfg.labelEn ?? "Consulting")
   const metaObj = (company.meta ?? {}) as Record<string, unknown>
   const publicFacts = (metaObj.public_facts ?? {}) as Record<string, unknown>
+  const hasOfficialSocial = typeof metaObj.official_instagram_url === "string"
+    || typeof metaObj.official_facebook_url === "string"
   const verifiedFacts = Object.values(publicFacts).filter((value): value is string | number | boolean => ["string", "number", "boolean"].includes(typeof value)).map(String)
   const displayFacts = verifiedFacts.filter((value) => !/^https?:\/\//u.test(value))
   const address = cleanFs(typeof publicFacts.address === "string" ? publicFacts.address : company.prefecture, locationStr, 160)
@@ -291,8 +293,12 @@ export function buildDemoMultiPageData(
     calBookingUrl: "",
     calDirectUrl: "",
     formNote: isJa
-      ? "営業時間などの最新情報は公式SNSをご確認ください。お問い合わせは下記フォームから承ります。"
-      : "Check the official social profile for current hours, or contact us using the form below.",
+      ? hasOfficialSocial
+        ? "最新の案内は公式SNSをご確認ください。この提案用フォームは入力体験のみで、外部には送信されません。"
+        : "正式な相談方法と受付条件は事業者確認後に掲載します。この提案用フォームは入力体験のみで、外部には送信されません。"
+      : hasOfficialSocial
+        ? "Check the official social profile for current information. This proposal form is interactive but does not submit data."
+        : "The official inquiry method and acceptance criteria require operator confirmation. This proposal form does not submit data.",
     formEnabled: false,
     mapUrl: typeof publicFacts.address === "string" ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : undefined,
     accentColor,
@@ -461,7 +467,7 @@ function buildPremiumExperience(
   }
 }
 
-function detectPublicSourceEvidence(input: unknown): string[] {
+export function detectPublicSourceEvidence(input: unknown): string[] {
   const values: string[] = []
   const visit = (value: unknown, depth: number) => {
     if (depth > 6 || value == null) return
@@ -485,5 +491,10 @@ function detectPublicSourceEvidence(input: unknown): string[] {
     /https?:\/\/(?:www\.)?facebook\.com\//u.test(joined) ? "facebook" : null,
     /https?:\/\/(?:www\.)?tiktok\.com\//u.test(joined) ? "tiktok" : null,
     /https?:\/\/(?:www\.)?youtube\.com\//u.test(joined) ? "youtube" : null,
+    /official_profile_link/u.test(joined) ? "official_profile" : null,
+    /official_feed/u.test(joined) ? "official_feed" : null,
+    /public_registry/u.test(joined) ? "public_registry" : null,
+    /customer_provided/u.test(joined) ? "customer_provided" : null,
+    /operator_verified/u.test(joined) ? "operator_verified" : null,
   ].filter((value): value is string => Boolean(value))
 }
