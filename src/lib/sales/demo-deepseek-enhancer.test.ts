@@ -6,7 +6,7 @@ import {
 } from "./demo-deepseek-enhancer"
 
 describe("DeepSeek V4 full-site generation budget", () => {
-  it("allows reasoning and complete multi-page JSON without model fallback", () => {
+  it("allows complete non-thinking multi-page JSON without model fallback", () => {
     expect(DEMO_COPY_MAX_TOKENS).toBeGreaterThanOrEqual(8_192)
     expect(DEMO_COPY_TIMEOUT_MS).toBeGreaterThanOrEqual(180_000)
   })

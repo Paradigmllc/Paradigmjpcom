@@ -4,16 +4,17 @@ import type { DeepSeekEnhancedOutput } from "./demo-deepseek-types"
 import type { DemoMultiPageData } from "./demo-site-types"
 
 describe("mergeDeepSeekOutput", () => {
-  it("replaces stale diagnostic copy in premium intro and the fixed FAQ page", () => {
+  it("replaces stale premium copy while keeping FAQ and contact evidence-bound", () => {
     const base = {
       premium: {
         style: "premium-v2",
         heroMedia: [],
         gallery: [],
-        social: [],
+        social: [{ label: "Instagram", href: "https://instagram.com/cafe_sosomu", network: "instagram" }],
         intro: { eyebrow: "STORY", title: "旧見出し", body: "長年の信頼とWeb改善デモ" },
       },
-      meta: { engine: "full-stack" },
+      companyName: "Cafe SOSOMU",
+      meta: { engine: "full-stack", verifiedFacts: ["Cafe SOSOMU", "東京都世田谷区桜2丁目10-7", "フレンチトースト", "ドリップコーヒー"] },
       pages: {
         home: {
           hero: { title: "旧見出し", subtitle: "旧本文" },
@@ -23,7 +24,7 @@ describe("mergeDeepSeekOutput", () => {
         },
         about: { story: "旧事業紹介", mission: "", values: [] },
         services: { subtitle: "", services: [], process: [] },
-        contact: { subtitle: "" },
+        contact: { subtitle: "安全な固定文", address: "東京都世田谷区桜2丁目10-7" },
         faq: {
           title: "FAQ",
           subtitle: "",
@@ -54,9 +55,8 @@ describe("mergeDeepSeekOutput", () => {
 
     expect(merged.premium?.intro.title).toBe(ai.home.hero_title)
     expect(merged.premium?.intro.body).toBe(ai.about.story)
-    expect(merged.pages.faq?.sections).toEqual([
-      { id: "ai-faq-0", heading: ai.home.faq[0].q, body: ai.home.faq[0].a },
-      { id: "ai-faq-1", heading: ai.home.faq[1].q, body: ai.home.faq[1].a },
-    ])
+    expect(merged.pages.contact.subtitle).toBe("安全な固定文")
+    expect(JSON.stringify(merged.pages.faq?.sections)).toContain("最新の営業情報は公式Instagram")
+    expect(JSON.stringify(merged.pages.faq?.sections)).toContain("このデモのフォームからは送信されません")
   })
 })
