@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { DemoContentPage } from "@/components/demo/DemoContentPage"
-import { fetchDemoMultiPageData } from "@/lib/sales/demo-generator"
+import { fetchDemoMultiPageDataForRequest } from "@/lib/sales/demo-request-access"
 import type { DemoContentPage as DemoContentPageData } from "@/lib/sales/demo-site-types"
 
 export const dynamic = "force-dynamic"
@@ -21,7 +21,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug, page } = await params
   if (!isContentPage(page)) return {}
-  const data = await fetchDemoMultiPageData(slug)
+  const data = await fetchDemoMultiPageDataForRequest(slug)
   const pageData = data?.pages[page] as DemoContentPageData | undefined
   if (!data || !pageData) return {}
   return {
@@ -38,7 +38,7 @@ export default async function DemoExtendedPage({
 }) {
   const { slug, page } = await params
   if (!isContentPage(page)) notFound()
-  const data = await fetchDemoMultiPageData(slug)
+  const data = await fetchDemoMultiPageDataForRequest(slug)
   if (!data) notFound()
   const pageData = data.pages[page] as DemoContentPageData | undefined
   if (!pageData) notFound()

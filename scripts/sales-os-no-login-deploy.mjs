@@ -632,6 +632,14 @@ async function applyDemoQualityGateMigration(envs) {
   )
 }
 
+async function applyDemoPrivateAssetReviewMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260713143000_demo_private_asset_review.sql",
+    "SMB demo private asset review migration",
+  )
+}
+
 async function applySalesPipelineDbTriggerProviderMigration(envs) {
   return applySqlMigration(
     envs,
@@ -1188,6 +1196,7 @@ async function main() {
     console.log(await applyPublicJapanEntryChecksMigration(envs))
     console.log(await applyJapanEntryProjectionsMigration(envs))
     console.log(await applyDemoQualityGateMigration(envs))
+    console.log(await applyDemoPrivateAssetReviewMigration(envs))
     console.log(await applySalesPipelineDbTriggerProviderMigration(envs))
     console.log(await applyVideoPipelineMigration(envs))
     console.log(await applyVideoStrategyMigration(envs))

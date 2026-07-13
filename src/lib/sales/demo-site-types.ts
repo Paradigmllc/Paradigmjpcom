@@ -87,6 +87,7 @@ export interface DemoMeta {
   primaryCtaHref?: string
   footerDescription?: string
   footerOwner?: string
+  brandLogoUrl?: string
   navLabels?: Partial<Record<"home" | "about" | "services" | "works" | "faq" | "contact", string>>
 }
 
@@ -131,6 +132,7 @@ export type DemoPublicationStatus =
   | "published"
   | "rejected"
   | "legacy_published"
+  | "private_review"
 
 export interface DemoDesignRecipe {
   templateId: string
@@ -196,6 +198,10 @@ export interface DemoMultiPageData {
   rightsManifest?: DemoRightsManifest
   publicationStatus?: DemoPublicationStatus
   premium?: DemoPremiumExperience
+  privatePreview?: {
+    expiresAt: string
+    assetStatus: "unreviewed" | "private_proposal" | "consented" | "blocked"
+  }
   pages: {
     home: DemoHomePage
     about: DemoAboutPage
@@ -222,7 +228,7 @@ export interface DemoPremiumMedia {
 }
 
 export interface DemoPremiumExperience {
-  style: "editorial-cafe" | "craft" | "professional" | "wellness" | "retail"
+  style: "editorial-cafe" | "craft" | "premium-v2" | "professional" | "wellness" | "retail"
   heroMedia: DemoPremiumMedia[]
   gallery: DemoPremiumMedia[]
   intro: {
