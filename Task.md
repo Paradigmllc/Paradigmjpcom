@@ -7,6 +7,7 @@
 - 審査済み実素材をhero/gallery/logoへ反映する `premium-v2` rendererを追加。フルブリード実写hero、editorial split、ブランド別特徴、非対称gallery、実ロゴnav/footer、Framer Motion、モバイル最適化を備え、既存craft/editorial rendererは互換維持する。
 - 送信、Twenty同期、営業通知、メール、電話、郵送、フォーム送信は接続していない。非公開URL発行APIも通知を発生させない。
 - ローカル検証済み: TypeScript pass、素材安全規則Vitest **3/3 pass**、変更対象ESLint pass、quality guard **0 error**、production build pass。未認証private APIと無効preview tokenはともにHTTP 401、ローカル本番ブラウザはcontentあり・Next error overlayなし。正式release後にmigration適用、実DBでのURL発行、Premium V2のPC/mobile・11経路を本番確認する。
+- 初回本番発行で、Next.js内部origin `0.0.0.0:3000` が返るproxy差異を検出。productionでは検証済み `NEXT_PUBLIC_SITE_URL`（未設定時はParadigm正規URL）を使い、ローカルだけrequest originを使うよう即時修正した。
 
 ### 2026-07-13 i18n公開面の再設計（本番反映済み）
 - `/ja` を国内向け一般サイトへ分離。ホーム、サービス、料金、FAQ、About、Works、Blog、Contact、フッター、JSON-LD、チャット導線からJapan Entryの固定オファーを除去し、Web制作・MEO・SEO/GEO・AI導入支援の内容へ整理した。
