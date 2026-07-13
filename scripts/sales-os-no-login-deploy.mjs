@@ -624,6 +624,14 @@ async function applyFormQualifiedLeadFactoryMigration(envs) {
   )
 }
 
+async function applyLeadFactorySchemaReconcileMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260714231500_lead_factory_schema_reconcile.sql",
+    "Lead factory schema reconcile migration",
+  )
+}
+
 async function applyJapanEntryProjectionsMigration(envs) {
   return applySqlMigration(
     envs,
@@ -1239,6 +1247,7 @@ async function main() {
     console.log(await applyPublicSurfaceRlsMigration(envs))
     console.log(await applyPublicJapanEntryChecksMigration(envs))
     console.log(await applyFormQualifiedLeadFactoryMigration(envs))
+    console.log(await applyLeadFactorySchemaReconcileMigration(envs))
     console.log(await applyJapanEntryProjectionsMigration(envs))
     console.log(await applyDemoQualityGateMigration(envs))
     console.log(await applyDemoPrivateAssetReviewMigration(envs))
