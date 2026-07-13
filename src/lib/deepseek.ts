@@ -64,6 +64,25 @@ interface Provider {
   models: string[]
 }
 
+interface RawDeepSeekUsage {
+  prompt_tokens: number
+  completion_tokens: number
+  prompt_cache_hit_tokens?: number
+  prompt_cache_miss_tokens?: number
+  cache_hit_tokens?: number
+  cache_miss_tokens?: number
+}
+
+export function normalizeDeepSeekUsage(usage?: RawDeepSeekUsage): DeepSeekResponse["usage"] {
+  if (!usage) return undefined
+  return {
+    prompt_tokens: usage.prompt_tokens,
+    completion_tokens: usage.completion_tokens,
+    cache_hit_tokens: usage.prompt_cache_hit_tokens ?? usage.cache_hit_tokens ?? 0,
+    cache_miss_tokens: usage.prompt_cache_miss_tokens ?? usage.cache_miss_tokens ?? 0,
+  }
+}
+
 /* ───── フォールバックチェーン構築 ───── */
 
 function primaryModels(optModel?: string): string[] {
@@ -157,10 +176,10 @@ async function callOnce(
     }
     const data = (await res.json()) as {
       choices?: Array<{ message?: { content?: string } }>
-      usage?: DeepSeekResponse["usage"]
+      usage?: RawDeepSeekUsage
     }
     const text = data.choices?.[0]?.message?.content ?? ""
-    return { ok: true, text, usedModel: model, usage: data.usage, status: 200 }
+    return { ok: true, text, usedModel: model, usage: normalizeDeepSeekUsage(data.usage), status: 200 }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) }
   }
@@ -206,7 +225,8 @@ export async function callDeepSeek(
  * Cache hit ratio を計算 (debug 用・コスト監視に使う)
  */
 export function cacheHitRatio(usage?: DeepSeekResponse["usage"]): number {
-  if (!usage?.cache_hit_tokens || !usage.cache_miss_tokens) return 0
-  const total = usage.cache_hit_tokens + usage.cache_miss_tokens
-  return total > 0 ? usage.cache_hit_tokens / total : 0
+  const hits = usage?.cache_hit_tokens ?? 0
+  const misses = usage?.cache_miss_tokens ?? 0
+  const total = hits + misses
+  return total > 0 ? hits / total : 0
 }

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest"
-import { callDeepSeek } from "./deepseek"
+import { cacheHitRatio, callDeepSeek, normalizeDeepSeekUsage } from "./deepseek"
 
 beforeEach(() => {
   process.env.DEEPSEEK_API_KEY = "test-key"
@@ -115,5 +115,17 @@ describe("callDeepSeek フォールバックチェーン", () => {
 
     expect(r.ok).toBe(true)
     expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("normalizes official prompt cache usage fields", () => {
+    const usage = normalizeDeepSeekUsage({
+      prompt_tokens: 1_000,
+      completion_tokens: 500,
+      prompt_cache_hit_tokens: 800,
+      prompt_cache_miss_tokens: 200,
+    })
+    expect(usage?.cache_hit_tokens).toBe(800)
+    expect(usage?.cache_miss_tokens).toBe(200)
+    expect(cacheHitRatio(usage)).toBe(0.8)
   })
 })
