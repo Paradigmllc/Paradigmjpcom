@@ -56,6 +56,15 @@ export function previewCookieName(slug: string): string {
   return `demo_preview_${key}`
 }
 
+export function normalizeDemoRouteSlug(slug: string): string {
+  try {
+    return decodeURIComponent(slug)
+  } catch (error) {
+    console.error("[demo-preview] invalid encoded route slug:", error)
+    return slug
+  }
+}
+
 export function validateDemoAssets(assets: DemoReviewedAsset[]): string[] {
   const errors: string[] = []
   for (const [index, asset] of assets.entries()) {

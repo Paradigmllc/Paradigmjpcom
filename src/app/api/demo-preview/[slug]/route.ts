@@ -34,7 +34,7 @@ export async function GET(
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    path: `/${encodeURIComponent(slug)}`,
+    path: "/",
     expires: new Date(verification.expiresAt),
   })
   response.headers.set("Cache-Control", "private, no-store")
