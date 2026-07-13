@@ -1,5 +1,11 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
+### 2026-07-13 共有ワークスペースと48営業時間以内着手SLA（実装・検証済み / 正式release待ち）
+- ENのJapan Entry共通進行フローに、契約範囲確定後の顧客専用共有ワークスペースを追加。Notionを基本とし、顧客希望時はTrelloを選択できる運用として、範囲・担当・ステータス・ブロッカー・承認・成果物・次の作業を1か所で可視化する。
+- 「48時間で完了」と誤認させず、含まれる月額運用の通常依頼を48営業時間以内に受付・スコープ化・着手するSLAとして明記。緊急、規制、第三者依存、範囲外作業は書面承認へ分離した。
+- EN FAQ、JA FAQ、AIチャットRAG知識にも同じ説明を追加。署名済み範囲の代替ではなく、共有の進行記録であることを明記した。
+- 検証: TypeScript pass、対象ESLint pass、関連Vitest **2 files / 15 tests pass**、quality guard **0 errors / 53 warnings**、JSON parse、diff check pass。ローカルproduction buildは別プロジェクトのNextビルド競合で1115秒時点に中断。正式releaseのリモートbuildで再確認予定。
+
 ### 2026-07-13 全ページの視覚証拠・アニメーション強化（本番反映・公開QA済み）
 - 共通 `PageHero` に、公開実績を捏造しないCSSベースの運用パスビジュアル（Signal → Scope → Launch）を追加。20ページのヒーローで同じ視覚言語を再利用し、`prefers-reduced-motion` では静止表示へ切り替える。
 - 国際向けホームのCMSフォールバックHeroを、`/public/japan-entry/package-scope.svg` を使うsplit-image構成へ変更。CMSに画像がない場合でも、固定スコープの実装図がファーストビューに表示される。

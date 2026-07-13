@@ -58,6 +58,10 @@ describe("public English Japan Entry copy", () => {
       "Operate & scale",
     ])
     expect(messages.home.journey.note).toContain("does not create a contract")
+    expect(messages.home.journey.workspace.title).toContain("work")
+    expect(messages.home.journey.workspace.description).toContain("Notion")
+    expect(messages.home.journey.workspace.slaBody).toContain("48 business hours")
+    expect(messages.faqPage.items.some((item) => /workspace|Notion|Trello/i.test(`${item.q} ${item.a}`))).toBe(true)
     expect(jaMessages.aboutPage.representativeMessage.length).toBeGreaterThan(200)
     expect(jaMessages.home.trustPanel.cards).toHaveLength(4)
   })

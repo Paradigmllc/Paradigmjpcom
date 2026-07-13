@@ -70,6 +70,32 @@ export default async function JapanEntryJourney({ locale }: { locale: string }) 
             </Link>
           </div>
         </div>
+
+        <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50/70 p-5 shadow-sm sm:p-6" aria-labelledby="japan-entry-workspace-title">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-700">{t("journey.workspace.eyebrow")}</p>
+              <h3 id="japan-entry-workspace-title" className="mt-3 text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">
+                {t("journey.workspace.title")}
+              </h3>
+              <p className="mt-3 text-sm leading-7 text-zinc-700">{t("journey.workspace.description")}</p>
+            </div>
+            <div className="shrink-0 rounded-xl border border-blue-200 bg-white px-4 py-3 lg:max-w-xs">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">{t("journey.workspace.slaLabel")}</p>
+              <p className="mt-2 text-sm font-semibold leading-6 text-zinc-950">{t("journey.workspace.slaTitle")}</p>
+              <p className="mt-1 text-xs leading-6 text-zinc-600">{t("journey.workspace.slaBody")}</p>
+            </div>
+          </div>
+          <ul className="mt-6 grid gap-3 md:grid-cols-3">
+            {(t.raw("journey.workspace.items") as Array<{ title: string; body: string }>).map((item) => (
+              <li key={item.title} className="rounded-xl border border-blue-100 bg-white p-4">
+                <h4 className="text-sm font-semibold text-zinc-950">{item.title}</h4>
+                <p className="mt-2 text-xs leading-6 text-zinc-600">{item.body}</p>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-5 text-xs leading-6 text-zinc-600">{t("journey.workspace.note")}</p>
+        </div>
       </div>
     </section>
   )

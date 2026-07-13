@@ -80,11 +80,25 @@ const CORE_KNOWLEDGE: KnowledgeChunk[] = [
     content: "Submitting the application starts a fit review; it is not contract acceptance. The Start Date is recorded after written scope acceptance, cleared payment, complete source material, required access, and an empowered approver. The agreed fixed setup is covered by a 14-business-day delivery guarantee from that date, with a full setup-fee refund if it is not delivered; client changes or holds pause the clock.",
   },
   {
+    locale: "en",
+    title: "Shared delivery workspace and 48-hour start SLA",
+    href: "/en/pricing#japan-entry-journey",
+    keywords: ["notion", "trello", "workspace", "board", "task", "progress", "status", "48", "hours", "SLA", "updates"],
+    content: "After written scope acceptance, Paradigm creates a dedicated client delivery workspace, normally Notion or Trello on request. It records scope, owners, task status, blockers, approvals, deliverables, and the next action. Standard requests inside the included monthly operation are acknowledged, scoped, and started within 48 business hours; that is a start SLA, not a promise of completion within 48 hours.",
+  },
+  {
     locale: "ja",
     title: "申込み後と14営業日の前提",
     href: "/ja/contact?intent=japan-entry",
     keywords: ["申込み", "問い合わせ", "期間", "14", "営業日", "承認", "素材", "アクセス", "開始"],
     content: "フォーム送信は契約成立ではなく適合確認から始まります。書面で範囲を確定し、入金、必要素材・アクセス、決裁者が揃った日を開始日として記録します。開始日から14営業日の納品保証を適用し、未納品時はセットアップ費用を全額返金します。顧客側の変更・保留は時計を一時停止します。",
+  },
+  {
+    locale: "ja",
+    title: "共有ワークスペースと48時間以内の着手",
+    href: "/ja/contact",
+    keywords: ["Notion", "Trello", "ワークスペース", "ボード", "タスク", "進捗", "作業", "48時間", "着手", "更新"],
+    content: "契約・範囲確定後は、Notionを基本とする共有ワークスペース（希望時はTrello）に、範囲、担当、タスク状況、ブロッカー、承認、成果物、次の作業を記録します。契約した月額運用の通常依頼は原則48営業時間以内に着手します。これは着手の目安であり、すべての依頼が48時間で完了する保証ではありません。",
   },
   {
     locale: "en",
