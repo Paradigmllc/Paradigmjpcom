@@ -138,4 +138,15 @@ describe("public English Japan Entry copy", () => {
     expect(legal).toContain("info@paradigmjp.com")
     expect(legal).not.toContain("Available before contract on request")
   })
+
+  it("publishes the supported payment rails and delivery refund condition", () => {
+    const english = JSON.stringify(messages)
+    const japanese = JSON.stringify(jaMessages)
+    for (const term of ["Wise", "USDC", "Stripe invoice", "14 business days", "100% of the USD 12,000 setup fee is refunded"]) {
+      expect(english).toContain(term)
+    }
+    for (const term of ["Wise", "USDC", "Stripe請求書", "14営業日", "12,000ドルを全額返金"]) {
+      expect(japanese).toContain(term)
+    }
+  })
 })

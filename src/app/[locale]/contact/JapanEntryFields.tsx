@@ -1,6 +1,7 @@
 "use client"
 
 import type { Dispatch, SetStateAction } from "react"
+import { useLocale } from "next-intl"
 import type { ContactFormState } from "./ContactFormFields"
 
 const FIELD_BASE =
@@ -89,6 +90,8 @@ export function JapanEntryDecisionFields({
   form,
   setForm,
 }: JapanEntryFieldsProps) {
+  const locale = useLocale()
+  const isJa = locale === "ja"
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
@@ -165,6 +168,32 @@ export function JapanEntryDecisionFields({
           <option value="later">Later or exploratory</option>
         </select>
       </div>
+      <div className="md:col-span-2">
+        <label
+          htmlFor="paymentMethod"
+          className="block paradigm-eyebrow text-paradigm-ink-soft mb-2"
+        >
+          {isJa ? "希望する支払方法" : "Preferred payment method"} <span className="text-pink-500">*</span>
+        </label>
+        <select
+          id="paymentMethod"
+          required
+          value={form.paymentMethod}
+          onChange={(event) => updateContactForm(setForm, "paymentMethod", event.target.value)}
+          className={FIELD_BASE}
+        >
+          <option value="">{isJa ? "選択してください" : "Select one"}</option>
+          <option value="wise">Wise</option>
+          <option value="bank-transfer">{isJa ? "銀行振込（請求書）" : "Bank transfer (invoice)"}</option>
+          <option value="usdc">USDC（{isJa ? "ネットワークは請求書で確認" : "network confirmed on invoice"}）</option>
+          <option value="credit-card">{isJa ? "クレジットカード（Stripe請求書／決済リンク）" : "Credit card (Stripe invoice or payment link)"}</option>
+        </select>
+        <p className="mt-2 text-[11px] leading-[1.6] text-paradigm-ink-mute">
+          {isJa
+            ? "適合確認後に請求書または決済案内を発行します。公開フォームに口座情報やウォレットアドレスを入力しないでください。"
+            : "Payment instructions are issued after fit review. Never enter bank details or a wallet address in this public form."}
+        </p>
+      </div>
     </div>
   )
 }
@@ -173,6 +202,8 @@ export function JapanEntryAcknowledgement({
   form,
   setForm,
 }: JapanEntryFieldsProps) {
+  const locale = useLocale()
+  const isJa = locale === "ja"
   return (
     <label className="flex items-start gap-3 rounded-xl border border-paradigm-line p-4 text-[13px] leading-[1.65] text-paradigm-ink-soft cursor-pointer">
       <input
@@ -189,8 +220,9 @@ export function JapanEntryAcknowledgement({
         className="mt-1 accent-paradigm-accent"
       />
       <span>
-        I understand that the Japan Entry setup fee is fixed at $12,000 and is
-        paid before the 14-business-day launch sequence begins.
+        {isJa
+          ? "Japan Entryのセットアップ12,000ドルは着手前払いで、必要条件が揃った開始日から14営業日以内に合意した納品物を納品できない場合、セットアップ費用全額が返金される条件を確認しました。顧客側の追加変更・保留期間は起算日程に含まれません。"
+          : "I understand that the $12,000 Japan Entry setup fee is paid before kickoff and is fully refundable if Paradigm does not deliver the agreed setup within 14 business days from the Start Date. Client-requested changes or holds are recorded separately from the delivery clock."}
       </span>
     </label>
   )

@@ -316,7 +316,7 @@ export async function seedAllContent(
           { icon: "BarChart3", title: "市場・競合レポート", description: "最大3市場の公開シグナルを比較し、優先市場を1つ深掘り。出典・観測日・未知項目を明記します。", href: "/ja/works", highlighted: false },
           { icon: "ShieldCheck", title: "法規制の適用可能性整理", description: "特商法、プライバシー、業種別の確認事項を整理します。正式な法務・税務判断や申請は専門家の領域です。", href: "/ja/legal", highlighted: false },
           { icon: "MessageCircle", title: "日本語サポート導線", description: "問い合わせ、回答ナレッジ、エスカレーション、担当範囲を定義し、公開後に引き継げる形にします。", href: "/ja/contact", highlighted: false },
-          { icon: "Rocket", title: "公開・運用・引き継ぎ", description: "14営業日の公開目標、計測基準、チェックリスト、所有権、月額運用の境界を一つにまとめます。", href: "/ja/about", highlighted: false },
+          { icon: "Rocket", title: "公開・運用・引き継ぎ", description: "開始日から14営業日以内の納品保証、計測基準、チェックリスト、所有権、月額運用の境界を一つにまとめます。未納品時はセットアップ費用を全額返金します。", href: "/ja/about", highlighted: false },
         ],
       },
       {
@@ -326,7 +326,7 @@ export async function seedAllContent(
         stats: [
           { value: "$12K", label: "セットアップ", sublabel: "固定・一括" },
           { value: "$0", label: "月額", sublabel: "最初の6か月" },
-          { value: "14日", label: "公開目標", sublabel: "必要条件受領後" },
+          { value: "14日", label: "納品保証", sublabel: "開始日から・未納品時は全額返金" },
           { value: "48h", label: "着手SLA", sublabel: "月額運用の通常依頼" },
         ],
         background: "surface",
@@ -346,13 +346,13 @@ export async function seedAllContent(
         blockType: "pricing",
         title: "Japan Entry 固定オファー", subtitle: "セットアップ12,000ドル。最初の6か月は標準月額運用込み。7か月目以降は月額995ドル。",
         tiers: [
-          { name: "Japan Entry Package", price: "$12,000", period: "one-time", description: "日本市場への購入者導線、調査、初期チャネル、法規制確認、公開運用、引き継ぎを一つにまとめた固定スコープ。", features: "LP / HPローカライズ\nSNS最大2チャネルの初期設定\n最大3市場の公開シグナル比較＋1市場深掘り\n特商法・関連規制の適用可能性整理\n日本語問い合わせ・適格な決済導線\n14営業日の公開目標\n月額0ドル（最初の6か月）\n7か月目以降は月額995ドル", ctaLabel: "Japan Entry 適合審査 — $12K", ctaHref: "/ja/contact?intent=japan-entry", highlighted: true },
+          { name: "Japan Entry Package", price: "$12,000", period: "one-time", description: "日本市場への購入者導線、調査、初期チャネル、法規制確認、公開運用、引き継ぎを一つにまとめた固定スコープ。", features: "LP / HPローカライズ\nSNS最大2チャネルの初期設定\n最大3市場の公開シグナル比較＋1市場深掘り\n特商法・関連規制の適用可能性整理\nWise・銀行振込・USDC・クレジットカード\n開始日から14営業日以内に未納品ならセットアップ費用全額返金\n月額0ドル（最初の6か月）\n7か月目以降は月額995ドル", ctaLabel: "Japan Entry 適合審査 — $12K", ctaHref: "/ja/contact?intent=japan-entry", highlighted: true },
         ],
       },
       {
         blockType: "cta",
         title: "日本進出を、社内で判断できる運用単位に。",
-        subtitle: "12,000ドル固定の範囲、14営業日の前提、48時間以内着手の月額運用、第三者費用と除外事項を確認してから申込みください。",
+        subtitle: "12,000ドル固定の範囲、支払方法、開始日から14営業日の納品保証、48時間以内着手の月額運用、第三者費用と除外事項を確認してから申込みください。",
         primaryCta: { label: "Japan Entry 適合審査 — $12K", href: "/ja/contact?intent=japan-entry" },
         secondaryCta: { label: "固定オファーの範囲を見る", href: "#japan-entry-pricing" },
         background: "gradient",
@@ -370,7 +370,7 @@ export async function seedAllContent(
         stats: [
           { value: "$12K", label: "fixed setup" },
           { value: "$0", label: "monthly for 6 months" },
-          { value: "21", label: "business-day launch target" },
+          { value: "14", label: "business-day delivery guarantee" },
           JAPAN_ENTRY_MONTH_ONE_TARGET_STAT,
         ],
       },
@@ -391,7 +391,7 @@ export async function seedAllContent(
         blockType: "section",
         kicker: "THE OUTCOME",
         title: "A Japan-ready revenue path, not another strategy deck",
-        subtitle: "Paradigm turns your existing offer into a market-ready Japanese operation with a clear scope, a 14-business-day launch target, and one accountable Tokyo-based team.",
+        subtitle: "Paradigm turns your existing offer into a market-ready Japanese operation with a clear scope, a 14-business-day delivery guarantee from the recorded Start Date, and one accountable Tokyo-based team.",
         alignment: "center", background: "default",
       },
       {
@@ -412,7 +412,7 @@ export async function seedAllContent(
         title: "One fixed Japan entry offer",
         subtitle: "No low-cost pilot, no three-tier maze, and no surprise agency retainer. We accept companies only after confirming the fixed scope can be delivered.",
         tiers: [
-          { name: "Japan Entry Package", price: "$12,000", period: "one-time", description: "A fixed-scope setup covering localization, SNS, market evidence, regulatory screening, launch operations, and handover, with six months of managed Japan operation included at no additional monthly charge.", features: "LP / HP localization and Japanese buyer path\nSNS setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nEligible payment and inquiry routing\nJapanese support, launch operations, and handover\n$0/month for the first six months\nThen $995/month — cancellable for future billing under the signed terms", ctaLabel: "Apply for Japan Entry — $12K", ctaHref: "/en/contact?intent=japan-entry", highlighted: true },
+          { name: "Japan Entry Package", price: "$12,000", period: "one-time", description: "A fixed-scope setup covering localization, SNS, market evidence, regulatory screening, launch operations, and handover, with six months of managed Japan operation included at no additional monthly charge.", features: "LP / HP localization and Japanese buyer path\nSNS setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nWise, bank transfer, USDC, or credit card via Stripe invoice/payment link\nFull setup-fee refund if the agreed setup is not delivered within 14 business days from the Start Date\nJapanese support, launch operations, and handover\n$0/month for the first six months\nThen $995/month — cancellable for future billing under the signed terms", ctaLabel: "Apply for Japan Entry — $12K", ctaHref: "/en/contact?intent=japan-entry", highlighted: true },
         ],
       },
       {
@@ -445,7 +445,8 @@ export async function seedAllContent(
           { question: "What must our team provide?", answer: textToLexical("One final decision-maker, one implementation owner, accurate product and policy information, brand assets, and the required account access within 48 hours of kickoff.") },
           { question: "Does the setup include SNS and market research?", answer: textToLexical("Yes. The setup includes profile and starter-content setup for up to two priority social channels, plus a sourced public-signal market report across up to three markets with one priority deep dive. Ongoing posting and private traffic or revenue data are separate.") },
           { question: "Does regulatory screening replace legal advice?", answer: textToLexical("No. We screen likely disclosure and regulatory applicability, including Japan's Act on Specified Commercial Transactions where relevant, and record questions for qualified professionals. Formal legal opinions, filings, and licences remain separate.") },
-          { question: "What can change the 14-business-day target?", answer: textToLexical("The launch target starts after payment, scope confirmation, and complete access. Missing inputs, delayed approvals, expanded scope, regulated requirements, and third-party reviews can change the date; dependencies are recorded before kickoff.") },
+          { question: "What can change the 14-business-day delivery clock?", answer: textToLexical("The clock starts on the recorded Start Date after written scope, cleared payment, complete inputs, required access, and one empowered approver. Client-requested changes or holds pause the clock. If the agreed setup is not delivered within 14 business days, 100% of the $12,000 setup fee is refunded.") },
+          { question: "Which payment methods can we use?", answer: textToLexical("Wise, bank transfer, USDC, and credit card via a Stripe invoice or payment link are available after fit review. The invoice confirms recipient, fees, and the USDC network and wallet. Never send funds from public-form fields.") },
         ],
       },
       {

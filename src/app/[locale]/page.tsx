@@ -68,7 +68,7 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
     stats: [
       { value: "$12K", label: "fixed setup" },
       { value: "$0", label: "monthly for 6 months" },
-      { value: "14", label: "business-day launch target" },
+      { value: "14", label: "business-day delivery guarantee" },
       JAPAN_ENTRY_MONTH_ONE_TARGET_STAT,
     ],
   },
@@ -94,7 +94,7 @@ const EN_FALLBACK_BLOCKS: CmsBlock[] = [
         description:
           "A market-ready launch with six months of managed Japan operation included at no additional monthly charge.",
         features:
-          "14-business-day Japan-ready launch target\nLP / HP localization and Japanese buyer path\nSNS setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nEligible payment and inquiry routing\nJapanese support, launch operations, and handover\n$0/month for the first six months\nThen $995/month — cancellable for future billing under the signed terms",
+          "14-business-day delivery guarantee from the recorded Start Date, or the setup fee is refunded\nLP / HP localization and Japanese buyer path\nSNS setup for up to two priority channels\nPublic-signal market report across up to three markets\nTrust, commercial disclosure, and regulatory applicability screening\nWise, bank transfer, USDC, or credit card payment routing\nJapanese support, launch operations, and handover\n$0/month for the first six months\nThen $995/month — cancellable for future billing under the signed terms",
         ctaLabel: "Apply for Japan Entry — $12K",
         ctaHref: "/en/contact?intent=japan-entry",
         highlighted: true,

@@ -213,7 +213,9 @@ function checkStaticReleaseRules() {
     noLoginDeploy.includes("seedEnglishJapanEntryBlog") &&
     noLoginDeploy.includes("/api/admin/seed-japan-entry-blog") &&
     noLoginDeploy.includes("What Should a Japan Entry Package Actually Deliver?") &&
-    noLoginDeploy.includes("The Source Pack That Keeps a Japan Launch Moving")
+    noLoginDeploy.includes("The Source Pack That Keeps a Japan Launch Moving") &&
+    noLoginDeploy.includes("Wise") &&
+    noLoginDeploy.includes("14 business days")
   ) {
     pass("deploy publishes both locale Japan Entry homepages and the maintained English editorial set")
   } else {
@@ -895,6 +897,8 @@ async function checkPostDeployUrls() {
       "Visual proof",
       "package-scope.svg",
       "japan-entry-score",
+      "Wise",
+      "14 business days",
     ],
   })
   await fetchCheck(
@@ -906,6 +910,8 @@ async function checkPostDeployUrls() {
         "Japan Entry package.",
         "Confirm your fit and launch timing",
         "$12,000 fixed setup",
+        "Preferred payment method",
+        "fully refundable",
       ],
     },
   )
@@ -922,6 +928,15 @@ async function checkPostDeployUrls() {
   ]
   for (const [label, path] of maintainedPages) {
     const options = { timeoutMs: 20_000 }
+    if (path === "/en/pricing") {
+      options.mustContain = ["Wise", "delivery guarantee"]
+    }
+    if (path === "/en/faq") {
+      options.mustContain = ["Which payment methods can we use?", "full setup fee is refunded"]
+    }
+    if (path === "/en/legal") {
+      options.mustContain = ["Wise", "100% of the USD 12,000 setup fee is refunded"]
+    }
     if (path === "/en/tools/japan-entry-score") {
       options.mustContain = [
         "Japan Entry Signal Check",

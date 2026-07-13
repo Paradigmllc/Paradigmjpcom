@@ -82,7 +82,24 @@ export function buildContactLeadMeta(input: {
       decision_authority: payload.decisionAuthority || null,
       approval_timeline: payload.approvalTimeline || null,
       desired_launch: payload.desiredLaunch || null,
+      payment_method: payload.paymentMethod || null,
       setup_fee_acknowledged: payload.setupFeeAcknowledged,
+      delivery_guarantee: {
+        business_days: 14,
+        refund: "100_percent_setup_fee",
+        clock_starts: "written_scope_payment_cleared_complete_inputs_access_and_approver",
+        client_holds_recorded: true,
+        start_date: null,
+        acceptance_record_required: true,
+        outcome_guarantees: false,
+      },
+      payment_collection: {
+        requested_method: payload.paymentMethod || null,
+        status: "pending_manual_invoice",
+        invoice_authoritative: true,
+        public_form_collects_sensitive_details: false,
+        credit_card_route: "stripe_invoice_or_payment_link",
+      },
       qualification_score: qualification.score,
       qualification_tier: qualification.tier,
       qualification_reasons: qualification.reasons,
@@ -155,6 +172,10 @@ export function buildContactSlackText(input: {
       ? `*$12K承認時期:* ${payload.approvalTimeline}`
       : null,
     payload.desiredLaunch ? `*開始希望:* ${payload.desiredLaunch}` : null,
+    payload.paymentMethod ? `*支払方法:* ${payload.paymentMethod}` : null,
+    payload.intent === JAPAN_ENTRY_INTENT
+      ? "*納品保証:* 14営業日以内に合意したセットアップを納品できない場合はセットアップ費用全額返金（契約条件・起算条件を記録）"
+      : null,
     `*ご相談内容:*\n${escapeSlackText(payload.message)}`,
   ]
     .filter(Boolean)

@@ -46,6 +46,20 @@ const CORE_KNOWLEDGE: KnowledgeChunk[] = [
   },
   {
     locale: "en",
+    title: "Payment methods and setup delivery guarantee",
+    href: "/en/pricing#payment-assurance-heading",
+    keywords: ["payment", "payments", "wise", "bank", "transfer", "usdc", "credit", "card", "stripe", "refund", "refundable", "guarantee", "start date"],
+    content: "After fit review and written scope acceptance, Paradigm can issue payment instructions for Wise, bank transfer, USDC, or credit card through a Stripe invoice or payment link. The invoice confirms fees and, for USDC, the network and wallet. The Start Date is recorded after cleared payment, complete inputs, required access, and an empowered approver. If the agreed fixed setup is not delivered within 14 business days from that Start Date, 100% of the USD $12,000 setup fee is refunded. Client-requested changes or holds are logged and pause the clock.",
+  },
+  {
+    locale: "ja",
+    title: "支払方法とセットアップ納品保証",
+    href: "/ja/pricing#payment-assurance-heading",
+    keywords: ["支払い", "支払", "Wise", "銀行", "振込", "USDC", "クレジット", "カード", "Stripe", "返金", "全額", "保証", "開始日"],
+    content: "適合確認と範囲確定後、Wise、銀行振込、USDC、クレジットカード（Stripe請求書または決済リンク）の支払案内を発行します。請求書で手数料、USDCのネットワークとウォレットを確認します。入金、必要素材・アクセス、承認者が揃った日を開始日として記録し、合意した固定セットアップを開始日から14営業日以内に納品できない場合は12,000ドルを全額返金します。顧客側の追加変更や保留は記録して時計を一時停止します。",
+  },
+  {
+    locale: "en",
     title: "Japan Entry scope and exclusions",
     href: "/en/services",
     keywords: ["include", "scope", "deliver", "localization", "sns", "social", "compliance", "support", "handover", "exclude"],
@@ -63,14 +77,14 @@ const CORE_KNOWLEDGE: KnowledgeChunk[] = [
     title: "Japan Entry application and timeline",
     href: "/en/contact?intent=japan-entry",
     keywords: ["apply", "application", "contact", "timeline", "14", "business", "days", "approval", "input", "kickoff"],
-    content: "Submitting the application starts a fit review; it is not contract acceptance. The 14-business-day launch target begins after agreement, payment, complete source material, required access, an empowered approver, timely feedback, and third-party dependencies are available.",
+    content: "Submitting the application starts a fit review; it is not contract acceptance. The Start Date is recorded after written scope acceptance, cleared payment, complete source material, required access, and an empowered approver. The agreed fixed setup is covered by a 14-business-day delivery guarantee from that date, with a full setup-fee refund if it is not delivered; client changes or holds pause the clock.",
   },
   {
     locale: "ja",
     title: "申込み後と14営業日の前提",
     href: "/ja/contact?intent=japan-entry",
     keywords: ["申込み", "問い合わせ", "期間", "14", "営業日", "承認", "素材", "アクセス", "開始"],
-    content: "フォーム送信は契約成立ではなく適合確認から始まります。14営業日の公開目標は、必要素材・アクセス・決裁者・迅速な承認・第三者依存条件が揃った後の目標です。",
+    content: "フォーム送信は契約成立ではなく適合確認から始まります。書面で範囲を確定し、入金、必要素材・アクセス、決裁者が揃った日を開始日として記録します。開始日から14営業日の納品保証を適用し、未納品時はセットアップ費用を全額返金します。顧客側の変更・保留は時計を一時停止します。",
   },
   {
     locale: "en",

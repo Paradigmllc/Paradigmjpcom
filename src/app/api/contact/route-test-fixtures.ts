@@ -35,6 +35,7 @@ export const validPayload = {
   decisionAuthority: "final-decision-maker",
   approvalTimeline: "within-7-days",
   desiredLaunch: "this-month",
+  paymentMethod: "credit-card",
   setupFeeAcknowledged: true,
   idempotencyKey: SUBMISSION_ID,
   utmSource: "linkedin",

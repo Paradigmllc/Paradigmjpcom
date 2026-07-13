@@ -75,6 +75,10 @@ describe("Japan Entry structured data", () => {
     expect(faqPage).toBeDefined()
     if (!faqPage || !("mainEntity" in faqPage)) throw new Error("FAQPage schema is missing")
     expect(faqPage.mainEntity.length).toBeGreaterThanOrEqual(5)
+    const faqText = JSON.stringify(faqPage)
+    expect(faqText).toContain("Wise")
+    expect(faqText).toContain("14 business days")
+    expect(faqText).toContain("100% of the USD 12,000 setup fee is refunded")
   })
 
   it("publishes an intent-specific application page", () => {

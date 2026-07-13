@@ -62,6 +62,7 @@ type ScopeGroup = { title: string; items: string[] }
 type PackageModule = { title: string; description: string; deliverables: string[] }
 type PackageBenefit = { title: string; description: string }
 type ComparisonRow = { criterion: string; package: string; hire: string; vendors: string }
+type PaymentMethod = { name: string; description: string }
 
 function readRawArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? value as T[] : []
@@ -79,6 +80,7 @@ export default async function PricingPage({ params, searchParams }: Props) {
   const packageModules = isJapanEntry ? readRawArray<PackageModule>(t.raw("packageModules")) : []
   const packageBenefits = isJapanEntry ? readRawArray<PackageBenefit>(t.raw("packageBenefits")) : []
   const comparisonRows = isJapanEntry ? readRawArray<ComparisonRow>(t.raw("comparisonRows")) : []
+  const paymentMethods = isJapanEntry ? readRawArray<PaymentMethod>(t.raw("paymentMethods")) : []
 
   // Billing cycle ラベルは namespace 経由で locale 別取得 (旧 BILLING_LABEL hardcode 廃止)
   const billingLabelFor = (cycle: string | undefined): string => {
@@ -256,6 +258,32 @@ export default async function PricingPage({ params, searchParams }: Props) {
           )}
         </div>
       </section>
+
+      {isJapanEntry && paymentMethods.length > 0 && (
+        <section className="relative overflow-hidden bg-paradigm-paper-deep paradigm-section" aria-labelledby="payment-assurance-heading">
+          <div className="paradigm-mesh opacity-20" />
+          <div className="relative z-10 mx-auto max-w-6xl px-6 md:px-8">
+            <FadeIn className="mb-8 max-w-3xl">
+              <p className="paradigm-eyebrow mb-3 text-paradigm-accent">{t("paymentEyebrow")}</p>
+              <h2 id="payment-assurance-heading" className="font-display text-[24px] leading-[1.15] text-paradigm-ink md:text-[38px]">{t("paymentTitle")}</h2>
+              <p className="mt-4 text-[14px] leading-[1.8] text-paradigm-ink-soft">{t("paymentDesc")}</p>
+            </FadeIn>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {paymentMethods.map((method) => (
+                <article key={method.name} className="rounded-lg border border-paradigm-line bg-paradigm-paper p-5 paradigm-glow-sm">
+                  <h3 className="font-display text-[18px] text-paradigm-ink">{method.name}</h3>
+                  <p className="mt-2 text-[12px] leading-[1.75] text-paradigm-ink-soft">{method.description}</p>
+                </article>
+              ))}
+            </div>
+            <div className="mt-6 rounded-lg border border-paradigm-accent/40 bg-paradigm-accent/5 p-5">
+              <p className="paradigm-eyebrow text-paradigm-accent">{t("deliveryGuaranteeEyebrow")}</p>
+              <h3 className="mt-2 font-display text-[20px] leading-[1.2] text-paradigm-ink">{t("deliveryGuaranteeTitle")}</h3>
+              <p className="mt-2 text-[13px] leading-[1.8] text-paradigm-ink-soft">{t("deliveryGuaranteeDesc")}</p>
+            </div>
+          </div>
+        </section>
+      )}
 
       {packageModules.length > 0 && (
         <section className="relative overflow-hidden bg-paradigm-paper paradigm-section" aria-labelledby="package-modules-heading">

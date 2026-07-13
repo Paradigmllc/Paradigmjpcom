@@ -39,7 +39,7 @@ Identify the domain, CMS, analytics, inbox, payment provider, social accounts, a
 
 Use one decision log with a question, owner, due date, decision, and evidence link. Group questions into a daily batch rather than interrupting the approver for every sentence. Escalate only decisions that change scope, legal exposure, customer promise, or launch timing.
 
-The fixed Japan Entry scope is designed for this rhythm: the 14-business-day target begins after the required inputs, access, and approval path are available. A target that moves because a client or third party has not answered is a visible dependency, not a hidden failure.
+The fixed Japan Entry scope is designed for this rhythm: the Start Date is recorded after the required inputs, cleared payment, access, and approval path are available. The agreed fixed setup is covered by a 14-business-day delivery guarantee from that date; client or third-party holds are logged and pause the clock rather than being hidden as schedule risk.
 
 ## What the source pack cannot decide
 

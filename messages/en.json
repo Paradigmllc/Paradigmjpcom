@@ -46,8 +46,8 @@
           "label": "Fixed Japan Entry setup"
         },
         {
-          "value": "21 days",
-          "label": "Business-day launch target, subject to dependencies"
+          "value": "14 days",
+          "label": "Business-day delivery guarantee from Start Date"
         },
         {
           "value": "6 months",
@@ -62,7 +62,7 @@
       "faqs": [
         {
           "question": "How long does a typical website build take?",
-          "answer": "The package uses a 14-business-day launch target after payment, scope confirmation, complete source materials, access, prompt feedback, one empowered approver, and third-party review timing."
+          "answer": "The delivery guarantee starts on the recorded Start Date after written scope acceptance, cleared payment, complete source materials, required access, and one empowered approver. If the agreed setup is not delivered within 14 business days, 100% of the $12,000 setup fee is refunded."
         },
         {
           "question": "Do you offer post-launch maintenance?",
@@ -333,7 +333,7 @@
     "ctaDesc": "Apply if a decision-maker can approve a fixed $12,000 setup and supply launch inputs promptly.",
     "ctaButton": "Apply for Japan Entry — $12K",
     "processEyebrow": "Delivery process",
-    "processTitle": "A gated 14-business-day launch target",
+    "processTitle": "A recorded Start Date and a 14-business-day delivery guarantee",
     "process": [
       {
         "step": "01",
@@ -476,7 +476,7 @@
       ],
       [
         "Payment",
-        "Bank transfer (invoice-based)"
+        "Wise, bank transfer, USDC, or credit card through a Stripe invoice or payment link. The available method is confirmed on the invoice; USDC network and wallet details are never requested in the public form."
       ],
       [
         "Payment timing",
@@ -487,12 +487,16 @@
         "The standard monthly service is included at no additional monthly charge for the first six months, then $995/month from month seven unless cancelled under the signed terms."
       ],
       [
-        "Service start and launch target",
-        "Work starts after written acceptance, required payment, and receipt of the agreed inputs. The 14-business-day launch target depends on timely access, content, approvals, scope, and third-party reviews."
+        "Service start and delivery guarantee",
+        "The Start Date is recorded after written scope acceptance, cleared setup payment, complete source materials, required access, and one empowered approver. The agreed setup is delivered within 14 business days from that Start Date."
+      ],
+      [
+        "Setup delivery guarantee",
+        "If Paradigm does not deliver the agreed fixed setup within 14 business days from the recorded Start Date, 100% of the USD 12,000 setup fee is refunded. Client-requested scope changes or holds are recorded and pause the delivery clock; sales, ranking, traffic, conversion, and revenue outcomes are not guaranteed."
       ],
       [
         "Cancellation and refunds",
-        "A submitted application may be withdrawn before an engagement is accepted. After work starts, cancellation, completed work, committed third-party costs, and any refund are handled under the signed terms and applicable law. Statutory rights are not excluded."
+        "A submitted application may be withdrawn before an engagement is accepted. The setup delivery guarantee above governs a late fixed-scope delivery; any other cancellation, completed work, third-party cost, payment-provider reversal, or statutory right is handled under the signed terms and applicable law."
       ],
       [
         "Ongoing cancellation",
@@ -517,7 +521,7 @@
       },
       {
         "title": "2. Data we collect",
-        "body": "We may collect your name, company, work email, phone, website, selected modules, commercial readiness, decision authority, approval and launch timing, country or market context, message, and subsequent correspondence. We may also receive IP address, browser and device information, requested page, timestamp, referrer, and campaign parameters such as UTM values. Do not submit secrets or unnecessary sensitive information."
+        "body": "We may collect your name, company, work email, phone, website, selected modules, preferred payment method, setup-fee acknowledgement, commercial readiness, decision authority, approval and launch timing, country or market context, message, and subsequent correspondence. We may also receive IP address, browser and device information, requested page, timestamp, referrer, and campaign parameters such as UTM values. The public form never collects card numbers, bank credentials, wallet addresses, or seed phrases. Do not submit secrets or unnecessary sensitive information."
       },
       {
         "title": "3. Why we use the data",
@@ -590,9 +594,23 @@
       "Japan trust, commercial disclosure, and regulatory applicability screening",
       "Eligible inquiry or payment-routing implementation",
       "Bilingual support, launch operations, and operator handover",
+      "Payment options: Wise, bank transfer, USDC, or credit card via Stripe invoice/payment link",
+      "Full USD 12,000 setup-fee refund if the agreed setup is not delivered within 14 business days from the Start Date",
       "Standard monthly service included for the first six months",
       "$995/month from month seven"
     ],
+    "paymentEyebrow": "Payment and delivery assurance",
+    "paymentTitle": "Choose the settlement rail; keep the delivery boundary written.",
+    "paymentDesc": "After fit review and written scope acceptance, we issue an invoice or payment instruction for Wise, bank transfer, USDC, or credit card through a Stripe invoice or payment link. USDC network and wallet details are confirmed on the invoice. The public form never collects banking credentials or wallet addresses.",
+    "paymentMethods": [
+      { "name": "Wise", "description": "USD transfer to the confirmed Wise recipient details on the invoice." },
+      { "name": "Bank transfer", "description": "Invoice-based transfer with beneficiary and reference instructions." },
+      { "name": "USDC", "description": "Network and wallet address are confirmed per invoice before sending." },
+      { "name": "Credit card", "description": "Stripe invoice or payment link, subject to provider acceptance and fees shown before payment." }
+    ],
+    "deliveryGuaranteeEyebrow": "Setup assurance",
+    "deliveryGuaranteeTitle": "14 business days from a recorded Start Date—or the setup fee is refunded.",
+    "deliveryGuaranteeDesc": "The Start Date is recorded after written scope acceptance, cleared payment, complete source materials, required access, and one empowered approver. If the agreed fixed setup is not delivered within 14 business days, 100% of the USD 12,000 setup fee is refunded. Client-requested changes or holds are logged and pause the clock; this is a delivery guarantee, not a sales or revenue guarantee.",
     "packageEyebrow": "What you are buying",
     "packageTitle": "One launch system, delivered in six connected parts.",
     "packageDesc": "The $12,000 setup is not a menu of disconnected tasks. It connects the buyer-facing surface, market evidence, acquisition channels, regulatory questions, launch operations, and handover under one written scope. During the included operating period, standard requests start within 48 business hours; completion timing depends on scope, approvals, and third parties.",
@@ -646,7 +664,7 @@
         "title": "Launch operations and handover",
         "description": "Keep decisions, dependencies, checks, and acceptance criteria in one accountable delivery path.",
         "deliverables": [
-          "Gated 14-business-day launch target",
+          "Recorded Start Date and 14-business-day delivery guarantee",
           "Analytics, notification, and acceptance baseline",
           "Launch checklist, ownership map, and operator handover"
         ]
@@ -685,7 +703,7 @@
     "comparisonRows": [
       {
         "criterion": "First launch path",
-        "package": "Gated 14-business-day target after inputs and approvals are ready",
+        "package": "14-business-day delivery guarantee after the recorded Start Date",
         "hire": "Recruiting, onboarding, and role design come first",
         "vendors": "Each workstream starts on its own schedule"
       },
@@ -716,7 +734,7 @@
     ],
     "scopeEyebrow": "Scope boundary",
     "scopeTitle": "Know what the fixed price covers before you apply.",
-    "scopeDesc": "Final deliverables and dependencies are written into the engagement scope before work starts. The launch target assumes timely access, content, feedback, and approval.",
+    "scopeDesc": "Final deliverables and dependencies are written into the engagement scope before work starts. The Start Date is recorded after payment, complete inputs, access, and one approver; client changes or holds pause the delivery clock.",
     "scopeGroups": [
       {
         "title": "Included in the agreed launch scope",
@@ -778,8 +796,16 @@
         "a": "No. We screen the likely applicability of commercial disclosure, privacy, Japan's Act on Specified Commercial Transactions, and relevant sector rules, then record questions for qualified professionals. Formal legal opinions, filings, and licences are separate."
       },
       {
-        "q": "What can change the 14-business-day target?",
-        "a": "Missing content or access, delayed approvals, expanded scope, regulated requirements, and third-party provider reviews can change the launch date. We surface those dependencies before kickoff."
+        "q": "What can pause the 14-business-day delivery clock?",
+        "a": "The delivery clock starts on the recorded Start Date: written scope acceptance, cleared payment, complete inputs, required access, and one empowered approver. Client-requested changes or holds pause the clock. If Paradigm misses the 14-business-day delivery commitment for the agreed setup, the full $12,000 setup fee is refunded."
+      },
+      {
+        "q": "Which payment methods can we use?",
+        "a": "Wise, bank transfer, USDC, and credit card through a Stripe invoice or payment link are available after fit review. The invoice confirms the recipient, reference, fees, and—if using USDC—the network and wallet. Do not send funds from public-form fields or unconfirmed wallet details."
+      },
+      {
+        "q": "How does the 14-business-day refund work?",
+        "a": "The Start Date and agreed deliverables are recorded in the written scope. If the fixed setup is not delivered within 14 business days from that date, Paradigm refunds 100% of the $12,000 setup fee. Client-requested scope changes or holds are recorded separately and pause the clock; sales, ranking, traffic, conversion, and revenue are not guaranteed."
       }
     ]
   },
@@ -796,7 +822,7 @@
     "consultItems": [
       "An empowered approver should be involved",
       "The setup fee is fixed at $12,000 USD",
-      "The 14-business-day target depends on timely inputs",
+      "The 14-business-day delivery guarantee starts from the recorded Start Date",
       "Submission is a fit review, not contract acceptance"
     ],
     "contactLabel": "Contact details",
@@ -822,7 +848,7 @@
       },
       {
         "title": "Start decision",
-        "body": "Only after the scope and start date are agreed does the engagement move into the fixed launch sequence."
+        "body": "Only after scope, payment method, Start Date, and delivery guarantee terms are agreed does the engagement move into the fixed launch sequence."
       }
     ]
   },
@@ -832,7 +858,7 @@
     "heroBadge": "FAQ",
     "heroTitle": "Answers to common questions.",
     "heroHighlight": "common questions",
-    "heroDesc": "Clear answers about the fixed $12,000 package, launch target, eligibility, scope, and ongoing support.",
+    "heroDesc": "Clear answers about the fixed $12,000 package, payment rails, delivery guarantee, eligibility, scope, and ongoing support.",
     "emptyMessage": "No FAQs are published yet.",
     "emptyCta": "Apply for Japan Entry — $12K",
     "ctaEyebrow": "Ready to decide",
@@ -854,8 +880,8 @@
         "a": "Company incorporation, tax or legal opinions, regulated licences, inventory, logistics charges, advertising spend, payment-provider fees, third-party software, photography, and work outside the agreed launch scope are not included unless added in writing."
       },
       {
-        "q": "Is launch guaranteed in 14 business days?",
-        "a": "It is a launch target, not an unconditional guarantee. It assumes complete source materials, required account access, a single empowered approver, prompt feedback, and no external compliance or provider delay. We identify blockers before kickoff."
+        "q": "What does the 14-business-day delivery guarantee cover?",
+        "a": "The Start Date is recorded after written scope acceptance, cleared payment, complete source materials, required access, and one empowered approver. If the agreed fixed setup is not delivered within 14 business days, 100% of the $12,000 setup fee is refunded. Client-requested changes or holds pause the clock; sales outcomes are not guaranteed."
       },
       {
         "q": "Who is the package designed for?",
@@ -920,7 +946,7 @@
     "heroDesc": "One accountable package combines the localized revenue site, launch coordination, discovery foundation, support setup, and handover.",
     "missionEyebrow": "Operating principle",
     "missionTitle": "Reduce the distance between decision and Japan launch.",
-        "missionDesc": "Paradigm gives foreign SMBs one English-language delivery path into Japan. We use a written fixed scope, visible dependencies, and a 14-business-day launch target rather than an open-ended agency engagement.",
+        "missionDesc": "Paradigm gives foreign SMBs one English-language delivery path into Japan. We use a written fixed scope, a recorded Start Date, and a 14-business-day delivery guarantee rather than an open-ended agency engagement.",
     "representativeEyebrow": "A note from the operator",
     "representativeTitle": "Japan entry should end with a decision you can operate.",
     "representativeMessage": "We built Paradigm around a simple problem: a capable overseas company can spend months coordinating market research, translation, agencies, and local setup without ever reaching a buyer. Our job is to make the first Japan path concrete, inspectable, and owned. That means stating what is included, showing what is still unknown, and handing over something your team can actually run. We do not replace legal, tax, banking, or licensed advice. We do take responsibility for making the commercial and implementation work visible enough for a fast decision.",
@@ -965,7 +991,7 @@
       },
       {
         "title": "Evidence over theatre",
-        "desc": "We show inspectable systems and process, avoid anonymous outcome claims, and distinguish launch targets from guarantees."
+        "desc": "We show inspectable systems and process, avoid anonymous outcome claims, and distinguish the fixed delivery guarantee from sales or ranking outcomes."
       }
     ],
     "companyEyebrow": "Company",
@@ -1028,7 +1054,7 @@
       {
         "title": "Launch operations",
         "short": "Coordinate inputs, approvals, checks, and the decision after launch.",
-        "details": ["Gated 14-business-day target", "Analytics and notification baseline", "Launch checklist and operator handover"]
+        "details": ["Recorded Start Date and 14-business-day delivery guarantee", "Analytics and notification baseline", "Launch checklist and operator handover"]
       }
     ],
     "operatingEyebrow": "How the modules connect",
@@ -1174,7 +1200,7 @@
         "title": "Launch operations",
         "tagline": "One timeline and accountable owner",
         "desc": "Coordinate dependencies, approval gates, launch checks, analytics baseline, and the agreed handover.",
-        "results": "14-business-day target",
+        "results": "14-business-day delivery guarantee",
         "badge": "Fixed process"
       }
     },
@@ -1182,8 +1208,8 @@
     "featuresHeading": "Four reasons clients choose us",
     "features": {
       "speed": {
-        "title": "14-business-day target",
-        "desc": "A gated target based on complete inputs, access, prompt feedback, one approver, and third-party timing."
+        "title": "14-business-day delivery guarantee",
+        "desc": "The Start Date is recorded after complete inputs, access, cleared payment, and one approver. If the agreed setup is not delivered within 14 business days, the full setup fee is refunded."
       },
       "guarantee": {
         "title": "Fixed commercial scope",
@@ -1302,7 +1328,7 @@
     "title": "Paradigm Assistant",
     "status": "AI assistant available · human-reviewed handoff",
     "openLabel": "Ask our AI assistant",
-    "greeting": "Hi! I'm Paradigm's AI assistant.\n\nAsk about the fixed Japan Entry package:\n• $12,000 setup and ongoing terms\n• Included scope and exclusions\n• The 14-business-day launch target\n• Fit for fast-decision SMBs\n\nMy replies are general information. Final scope and terms are confirmed by a person.",
+    "greeting": "Hi! I'm Paradigm's AI assistant.\n\nAsk about the fixed Japan Entry package:\n• $12,000 setup and ongoing terms\n• Wise, bank transfer, USDC, or credit card via Stripe invoice/payment link\n• The 14-business-day delivery guarantee and full-refund condition\n• Fit for fast-decision SMBs\n\nMy replies are general information. Final scope and terms are confirmed by a person.",
     "placeholder": "Ask us anything...",
     "errorReply": "Sorry — something went wrong generating a reply.",
     "errorNetwork": "Sorry — a connection error occurred.\n\n📧 info@paradigmjp.com",
@@ -1314,7 +1340,7 @@
       "processLabel": "How it works",
       "processMessage": "Walk me through what happens after I submit a Japan Entry application.",
       "timelineLabel": "Timeline",
-      "timelineMessage": "What inputs and approvals are required for the 14-business-day Japan launch target?",
+      "timelineMessage": "What inputs and approvals are required for the 14-business-day Japan delivery guarantee?",
       "meoLabel": "Japan discovery setup",
       "meoMessage": "What local discovery and search-readiness work is included in the Japan Entry package?",
       "aiLabel": "Bilingual support setup",
@@ -1522,7 +1548,7 @@
           "Japan-ready revenue path",
           "Localized positioning and trust content",
           "Eligible inquiry or payment routing",
-          "14-business-day launch target, subject to dependencies"
+          "14-business-day delivery guarantee from Start Date"
         ],
         "popular": true
       },
@@ -2135,7 +2161,7 @@
       "marquee3": "Fixed scope, fixed price",
       "marquee4": "Written scope boundaries",
       "metric1Value": "14",
-      "metric1Label": "business-day launch target, subject to stated dependencies",
+      "metric1Label": "business-day delivery guarantee from the recorded Start Date",
       "metric2Value": "$12K",
       "metric2Label": "fixed setup price in USD",
       "metric3Value": "6",
@@ -2194,9 +2220,9 @@
       "q1": "Do I need a Japanese legal entity to start?",
       "a1": "Not for every launch. The required structure depends on your offer, payment, fulfilment, support, tax, and regulated obligations. We coordinate implementation but do not replace legal or tax advice.",
       "q2": "How do payments work without a Japanese bank?",
-      "a2": "The eligible inquiry or payment-routing path depends on provider acceptance, your entity and settlement setup, product type, and compliance requirements. Provider fees and approvals are separate.",
+      "a2": "After fit review, payment is arranged by Wise, bank transfer, USDC, or credit card through a Stripe invoice or payment link. The invoice confirms the recipient, fees, and (for USDC) the network and wallet; provider approval and fees remain separate.",
       "q3": "How long until I'm live in Japan?",
-      "a3": "The package uses a 14-business-day target after kickoff, complete inputs, required access, and the agreed approval path. External reviews or scope changes can move the date.",
+      "a3": "The Start Date is recorded after written scope acceptance, cleared payment, complete inputs, required access, and one empowered approver. If the agreed fixed setup is not delivered within 14 business days, 100% of the $12,000 setup fee is refunded; client-requested changes or holds pause the clock.",
       "q4": "Do I need to speak or write Japanese?",
       "a4": "No. Everything with you is in English. All Japanese-facing work — site, support, compliance — is handled on our side.",
       "q5": "What does it cost?",

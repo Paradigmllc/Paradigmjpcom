@@ -20,6 +20,7 @@ const validJapanEntry = {
   decisionAuthority: "final-decision-maker",
   approvalTimeline: "within-7-days",
   desiredLaunch: "this-month",
+  paymentMethod: "credit-card",
   setupFeeAcknowledged: true,
   idempotencyKey: "contact-submission-123456",
 }
@@ -47,7 +48,19 @@ describe("Japan Entry contact payload", () => {
 
     expect(payload).not.toBeNull()
     expect(payload && validateContactPayload(payload)).toBe(
-      "Confirm the fixed $12,000 setup fee before applying.",
+      "Confirm the $12,000 setup fee and 14-business-day delivery refund terms before applying.",
+    )
+  })
+
+  test("requires a supported payment method for Japan Entry", () => {
+    const payload = parseContactPayload({
+      ...validJapanEntry,
+      paymentMethod: "cash",
+    })
+
+    expect(payload).not.toBeNull()
+    expect(payload && validateContactPayload(payload)).toBe(
+      "Select a supported payment method.",
     )
   })
 

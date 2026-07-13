@@ -62,6 +62,14 @@ export const JAPAN_ENTRY_FAQS = [
     q: "Does regulatory screening replace legal advice?",
     a: "No. Paradigm screens likely disclosure and regulatory applicability, including Japan's Act on Specified Commercial Transactions where relevant, and records questions for qualified professionals. Formal legal opinions, filings, and licences remain separate.",
   },
+  {
+    q: "Which payment methods can we use?",
+    a: "Wise, bank transfer, USDC, and credit card through a Stripe invoice or payment link are available after fit review. The invoice confirms the recipient, fees, and USDC network and wallet details.",
+  },
+  {
+    q: "What happens if the agreed setup is not delivered within 14 business days?",
+    a: "The Start Date is recorded after written scope acceptance, cleared payment, complete inputs, required access, and one empowered approver. If Paradigm misses the 14-business-day delivery commitment for the agreed setup, 100% of the USD 12,000 setup fee is refunded. Client-requested changes or holds pause the clock.",
+  },
 ] as const
 
 function getJapanEntryServiceJsonLd() {
@@ -90,7 +98,7 @@ function getJapanEntryServiceJsonLd() {
       price: "12000",
       priceCurrency: "USD",
       description:
-        "$12,000 one-time setup. Managed operation is $0/month for the first six months, then $995/month with future billing cancellable under the signed service terms.",
+        "$12,000 one-time setup. Wise, bank transfer, USDC, or credit card via Stripe invoice/payment link. Managed operation is $0/month for the first six months, then $995/month. If the agreed setup is not delivered within 14 business days from the recorded Start Date, 100% of the setup fee is refunded under the written terms.",
       eligibleRegion: ["US", "CA", "GB", "EU", "AU", "NZ"],
       priceSpecification: [
         {

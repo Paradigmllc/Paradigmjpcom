@@ -13,6 +13,18 @@ The production offer and public promise are fixed:
 - `USD 12,000` one-time setup.
 - Standard monthly service is included for the first six months; month seven is
   `USD 995/month` unless the signed agreement says otherwise.
+- Payment is collected only from the invoice or payment instruction issued
+  after fit review: Wise, bank transfer, USDC, or credit card through a Stripe
+  invoice/payment link. The invoice is authoritative for the recipient,
+  reference, fees, and (for USDC) network and wallet. Never publish or request
+  bank credentials or wallet addresses in the public form.
+- The Start Date is the timestamp recorded after written scope acceptance,
+  cleared payment, complete source materials, required access, and one
+  empowered approver are present. The agreed fixed setup must be delivered
+  within 14 business days of that date. If it is not, 100% of the USD 12,000
+  setup fee is refunded. Client-requested scope changes or holds are logged and
+  pause the clock. This is a delivery guarantee, not a promise of sales,
+  rankings, traffic, conversion, or revenue.
 - The public audience is fast-decision SMBs in North America, the UK, Europe,
   and Australia. Employee count and industry are not eligibility gates.
 - The free utility uses public signals and self-reported answers. It must never
@@ -22,6 +34,25 @@ The production offer and public promise are fixed:
 Any copy or CMS edit that changes these points requires a new review before
 release. Do not add anonymous case-study numbers, guaranteed outcomes, or
 unverified market-size claims.
+
+### Payment and refund evidence
+
+The operator must be able to reconstruct every paid Japan Entry application
+without relying on chat history. Store the following with the lead, invoice,
+and engagement record:
+
+1. The selected payment rail and the issued invoice/payment instruction ID.
+2. Payment-cleared timestamp and the recorded Start Date.
+3. The signed fixed scope, required inputs/access checklist, named approver,
+   dependency/hold log, and any approved scope changes.
+4. Delivery URL or artifact list, acceptance timestamp, and handover record.
+5. If the guarantee is triggered, the refund decision, amount (100% of
+   USD 12,000), approval, provider receipt, and customer notification.
+
+The public form records only the preferred rail. It must never collect card
+numbers, bank credentials, wallet addresses, or seed phrases. Credit-card
+collection remains an invoice/payment-link flow because the direct checkout
+endpoint is intentionally retired.
 
 ## Required production settings
 
@@ -88,8 +119,11 @@ Keystatic/Payload, verify all of the following before publishing:
    route; no placeholder or internal diagnostic metadata is exposed.
 3. `/en/services`, `/en/pricing`, and `/en/contact` agree on `$12,000`, six
    included months, and `$995/month` from month seven.
-4. `/en/legal` renders the confirmed legal identity, not the fallback wording.
-5. Images have meaningful alt text and the visual proof cards remain product
+4. `/en/pricing`, `/en/contact`, `/en/faq`, and `/en/legal` list Wise, bank
+   transfer, USDC, and credit card via Stripe invoice/payment link, and use the
+   same Start Date and 14-business-day full-refund condition.
+5. `/en/legal` renders the confirmed legal identity, not the fallback wording.
+6. Images have meaningful alt text and the visual proof cards remain product
    artifacts, not fabricated people or customer results.
 
 ## Backup and restore acceptance

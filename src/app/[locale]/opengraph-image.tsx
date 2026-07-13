@@ -38,7 +38,7 @@ const COPY: Record<string, CopyBundle> = {
     tagline: "Launch in Japan. Move this month.",
     services: [
       "$12K fixed",
-      "14-business-day target",
+      "14-business-day delivery guarantee",
       "6 months $0",
       "then $995/mo",
     ],

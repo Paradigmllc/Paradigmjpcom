@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (isJapanEntry) {
     const title = locale === "ja" ? "Japan Entryパッケージの適合審査" : `Apply for the ${JAPAN_ENTRY_TITLE}`
     const description = locale === "ja"
-      ? "セットアップ12,000ドル固定。最初の6か月は標準月額運用込み。日本市場への導線を14営業日目標で構築します。"
+      ? "セットアップ12,000ドル固定。最初の6か月は標準月額運用込み。記録した開始日から14営業日の納品保証を適用します。"
       : JAPAN_ENTRY_DESCRIPTION
     return {
       title,
@@ -80,33 +80,33 @@ export default async function ContactPage({ params }: Props) {
   const isJapanEntry = locale === "en" || locale === "ja"
   const isJapanese = locale === "ja"
   const entryCopy = isJapanese
-    ? {
+      ? {
         badge: "Japan Entry",
         title: "Japan Entryパッケージの適合審査",
         highlight: "適合審査",
-        desc: "セットアップ12,000ドル固定。最初の6か月は標準月額運用込み。意思決定者と開始時期を確認します。",
+        desc: "セットアップ12,000ドル固定。Wise・銀行振込・USDC・クレジットカードに対応し、必要条件が揃った開始日から14営業日以内に納品できない場合はセットアップ費用全額を返金します。",
         aside: "今月中に判断でき、社内の公開責任者を1名置ける企業向けです。",
         application: "申込み",
         formTitle: "適合条件と開始時期を確認",
         back: "← Japan Entryパッケージに戻る",
         fixedLabel: "固定の取引条件",
-        fixedItems: ["セットアップ12,000ドル（着手前払い）", "最初の6か月は月額0ドル", "7か月目以降は月額995ドル", "将来月分は契約条件に従って解約可能"],
+        fixedItems: ["セットアップ12,000ドル（着手前払い）", "支払方法：Wise・銀行振込・USDC・クレジットカード", "必要条件受領後14営業日以内に納品できない場合はセットアップ費用全額返金", "最初の6か月は月額0ドル", "7か月目以降は月額995ドル"],
         fitLabel: "迅速な意思決定に必要な条件",
-        fitItems: ["7日以内に最終承認", "社内の公開責任者1名", "48時間以内に必要素材を共有", "14営業日の公開目標"],
+        fitItems: ["7日以内に最終承認", "社内の公開責任者1名", "48時間以内に必要素材を共有", "起算日から14営業日以内の納品保証"],
       }
     : {
         badge: "Japan Entry",
         title: "Apply for the fixed Japan Entry package.",
         highlight: "Japan Entry package.",
-        desc: "$12,000 fixed setup. $0/month for the first six months. Confirm your decision authority and launch timing below.",
+        desc: "$12,000 fixed setup. Wise, bank transfer, USDC, or credit card. If the agreed setup is not delivered within 14 business days from the Start Date, the full setup fee is refunded.",
         aside: "Built for companies that can decide this week and launch with one accountable owner.",
         application: "Application",
         formTitle: "Confirm your fit and launch timing",
         back: "← Back to the Japan Entry Package",
         fixedLabel: "Fixed commercial terms",
-        fixedItems: ["$12,000 setup paid before kickoff", "$0/month for the first six months", "$995/month from month seven", "Future billing is cancellable under the signed terms"],
+        fixedItems: ["$12,000 setup paid before kickoff", "Payment: Wise, bank transfer, USDC, or credit card", "Full setup-fee refund if agreed setup is not delivered within 14 business days from the Start Date", "$0/month for the first six months", "$995/month from month seven"],
         fitLabel: "Fast-decision qualification",
-        fitItems: ["Final approval within seven days", "One internal launch owner", "Required assets within 48 hours", "14-business-day launch target"],
+        fitItems: ["Final approval within seven days", "One internal launch owner", "Required assets within 48 hours", "14-business-day delivery guarantee from the Start Date"],
       }
   const sidebarBlocks = isJapanEntry
     ? [
@@ -145,7 +145,7 @@ export default async function ContactPage({ params }: Props) {
       ? [
           { title: "適合確認", body: "会社、商品、意思決定権限、開始時期、必要な公開情報を確認します。" },
           { title: "固定範囲を確定", body: "12,000ドルの提供範囲、依存条件、第三者費用、除外事項を文書で確定します。" },
-          { title: "着手と公開", body: "支払いと素材受領後、14営業日目標で実装・確認・引き継ぎを進めます。" },
+          { title: "着手と公開", body: "支払確認、素材・アクセス・承認者の受領日をStart Dateとして記録し、14営業日以内の納品保証と返金条件を適用します。" },
         ]
       : t.raw("nextSteps") as Array<{ title: string; body: string }>
     : []

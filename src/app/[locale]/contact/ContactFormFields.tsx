@@ -27,6 +27,7 @@ export interface ContactFormState {
   decisionAuthority: string
   approvalTimeline: string
   desiredLaunch: string
+  paymentMethod: string
   setupFeeAcknowledged: boolean
 }
 
@@ -42,6 +43,7 @@ export const EMPTY_CONTACT_FORM: ContactFormState = {
   decisionAuthority: "",
   approvalTimeline: "",
   desiredLaunch: "",
+  paymentMethod: "",
   setupFeeAcknowledged: false,
 }
 

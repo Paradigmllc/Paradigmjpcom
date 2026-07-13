@@ -150,7 +150,7 @@ export function ProposalSection({ data, lang }: { data: DiagnosticReportData; la
                 {[
                   { step: "1", label: lang === "ja" ? "診断レポート確認" : "Confirm decision authority and fit", time: lang === "ja" ? "今すぐ" : "Fit review" },
                   { step: "2", label: lang === "ja" ? "15分の要件確認" : "Sign, pay $12,000, and provide launch inputs", time: lang === "ja" ? "翌日以降" : "Before kickoff" },
-                  { step: "3", label: lang === "ja" ? "合意範囲の実装・検証" : "Implement and verify the fixed scope", time: lang === "ja" ? "書面で確定" : "14-business-day target" },
+                  { step: "3", label: lang === "ja" ? "合意範囲の実装・検証" : "Implement and verify the fixed scope", time: lang === "ja" ? "書面で確定" : "14-business-day guarantee" },
                   { step: "4", label: lang === "ja" ? "公開・効果測定開始" : "Launch, operate, and hand over", time: lang === "ja" ? "検証後" : "6 managed months" },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-3">

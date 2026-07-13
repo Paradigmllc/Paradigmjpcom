@@ -70,14 +70,14 @@ That structure gives a decision-maker one number to approve for setup, a defined
     slug: "japan-entry-21-business-day-readiness",
     title: "Japan Market Entry: A 14-Business-Day Readiness Checklist",
     excerpt:
-      "The 14-business-day target is a gated launch plan, not a promise that external providers or client approvals can be rushed. Here is what must be ready.",
+      "The 14-business-day delivery guarantee starts only after the recorded Start Date. Here is what must be ready, what counts as delivery, and when the setup fee is refunded.",
     category: "Japan Entry",
     readTime: "7 min",
     publishedAt: "2026-07-11",
     tags: ["japan-entry-public", "Japan Entry", "Launch Plan", "SMB"],
-    content: `## What the 14-business-day target means
+    content: `## What the 14-business-day delivery guarantee means
 
-The target covers the agreed implementation work after kickoff. It assumes that the decision-maker, source materials, account access, feedback, and required third-party reviews arrive on time. It is a planning target, not an unconditional launch guarantee.
+The Start Date is recorded after written scope acceptance, cleared payment, complete source materials, required account access, and one empowered approver. The guarantee covers the agreed implementation work and documented handover. If that fixed setup is not delivered within 14 business days from the Start Date, 100% of the $12,000 setup fee is refunded. Client-requested changes or holds are logged and pause the clock. This is a delivery guarantee, not a promise of ranking, traffic, conversion, or revenue.
 
 ## Before kickoff
 
@@ -103,7 +103,7 @@ Build the agreed revenue site, trust elements, inquiry or payment route, discove
 
 ### Days 11–14: approval and handover
 
-Run launch checks, resolve agreed revisions, document ownership and operating steps, and hand over the system. The clock moves when required client inputs and approvals are available.
+Run launch checks, resolve agreed revisions, document ownership and operating steps, and hand over the system. The acceptance record captures the Start Date, delivery date, agreed scope, open dependencies, and any client-requested holds.
 
 ## The client-side checklist
 
@@ -406,7 +406,7 @@ const ARTICLE_VISUALS: Record<string, NonNullable<JapanEntryBlogPost["heroImage"
   "japan-entry-21-business-day-readiness": {
     src: "/japan-entry/package-scope.svg",
     alt: "A visual overview of the fixed-scope Japan Entry package",
-    caption: "The 14-business-day target is a gated delivery plan with explicit inputs and acceptance points.",
+    caption: "The 14-business-day delivery guarantee uses explicit inputs, a recorded Start Date, and acceptance points.",
   },
   "localization-vs-translation-japan-buyers": {
     src: "/japan-entry/package-scope.svg",

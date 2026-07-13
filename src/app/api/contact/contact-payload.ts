@@ -20,6 +20,13 @@ const DESIRED_LAUNCHES = new Set([
   "later",
 ])
 
+export const JAPAN_ENTRY_PAYMENT_METHODS = new Set([
+  "wise",
+  "bank-transfer",
+  "usdc",
+  "credit-card",
+])
+
 export interface ContactPayload {
   name: string
   company: string
@@ -36,6 +43,7 @@ export interface ContactPayload {
   decisionAuthority: string
   approvalTimeline: string
   desiredLaunch: string
+  paymentMethod: string
   setupFeeAcknowledged: boolean
   idempotencyKey: string
   utmSource: string
@@ -153,6 +161,7 @@ export function parseContactPayload(value: unknown): ContactPayload | null {
     decisionAuthority: readString(value, "decisionAuthority", 80),
     approvalTimeline: readString(value, "approvalTimeline", 80),
     desiredLaunch: readString(value, "desiredLaunch", 80),
+    paymentMethod: readString(value, "paymentMethod", 40),
     setupFeeAcknowledged: value.setupFeeAcknowledged === true,
     idempotencyKey: readString(value, "idempotencyKey", 128),
     utmSource: readString(value, "utmSource", 200),
@@ -312,8 +321,11 @@ export function validateContactPayload(payload: ContactPayload): string | null {
   if (!DESIRED_LAUNCHES.has(payload.desiredLaunch)) {
     return "Select the desired Japan launch timing."
   }
+  if (!JAPAN_ENTRY_PAYMENT_METHODS.has(payload.paymentMethod)) {
+    return "Select a supported payment method."
+  }
   if (!payload.setupFeeAcknowledged) {
-    return "Confirm the fixed $12,000 setup fee before applying."
+    return "Confirm the $12,000 setup fee and 14-business-day delivery refund terms before applying."
   }
   if (!/^[A-Za-z0-9_-]{16,128}$/.test(payload.idempotencyKey)) {
     return "Form verification identity is missing. Reload the page and try again."
