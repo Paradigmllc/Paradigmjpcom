@@ -18,7 +18,7 @@
 - Cafe SOSOMU確認用DEMOへ、提案用生成ビジュアル3点、フルスクリーンheroスライダー、Ken Burns風トランジション、Framer Motion reveal、Emblaギャラリー、画像付きメニュー、About/Menu画像hero、SNSブランドアイコン、モバイル固定CTAを追加。正式制作時は承認済み実写へ差し替える。
 - 固定ページは Home / About / Menu / Contact / Works / News / FAQ / Recruit / Privacy / Terms / Commerce Disclosure の11ページへ拡張。`/{locale}/demo/{slug}/commerce`を追加し、特定商取引法表記を生成品質の必須条件にした。
 - UI依存は既存Framer Motionに加え、shadcn carousel経由のEmblaとSNSブランド表示用react-iconsを追加。production build 336/336 pages、関連Vitest 5/5、TypeScript、対象ESLintを通過。
-- 2026-07-13 品質目視確認用として、送信・企業同期を行わない `Cafe SOSOMU` 10ページ提案デモを追加。公開根拠は公式Instagram、所在地・メニュー概要の公開ディレクトリ、Google Maps導線に限定し、第三者写真・ロゴ・口コミ・売上数値は不使用。フォームは `formEnabled:false` で誤送信を防止する。
+- 2026-07-13 品質目視確認用として、送信・企業同期を行わない `Cafe SOSOMU` 11ページ提案デモを追加。公開根拠は公式Instagram、所在地・メニュー概要の公開ディレクトリ、Google Maps導線に限定し、第三者写真・ロゴ・口コミ・売上数値は不使用。フォームは `formEnabled:false` で誤送信を防止する。PC 1440px / mobile 390x844 の実ブラウザ検品で横溢れ0、公開11経路HTTP 200、console error 0を確認し、メニューの汎用制作会社コピーと特商法metadataも公開上で修正済み。
 - 対象企業がそのまま使える見え方にするため、デモ共通UIへ企業別CTA、ナビ文言、フッター所有者・説明、公式SNS、Google Maps、送信停止表示、ページ別見出しを追加。従来のParadigm営業CTAはデータ指定がない既存デモのみ互換維持する。
 - 生成品質の欠陥を修正し、`meta.public_facts` のスカラー値をDeepSeek V4 Proプロンプトへ明示的に渡す。未確認情報を創作しない指示も追加。企業追加時のDBトリガーが使用する `db_trigger` をpipeline provider制約へ追加するmigrationを作成した。
 - 現在の確認用デモ本文は、LiteLLM V4 Pro未設定のため `human-reviewed-showcase` と明記した品質上限サンプル。自動V4出力と偽装しない。送信・Twenty同期・営業通知は実行しない。
