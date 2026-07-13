@@ -174,6 +174,8 @@ const payload = {
     services: {
       title: "メニュー",
       subtitle: "確認できた公開情報をもとにしたメニュー紹介です。価格・提供時間・品目の詳細は正式確認後に反映します。",
+      processEyebrow: "HOW TO ENJOY",
+      processTitle: "今日のCafe SOSOMUを楽しむ",
       services: [
         { title: "フレンチトースト", description: "コーヒーと一緒に楽しみたい、Cafe SOSOMUの公開情報で紹介されている一皿。", icon: "sparkles", features: ["提供内容は要確認", "最新情報はInstagramへ", "写真は使用許諾後に掲載"], priceNote: "価格は店舗にご確認ください" },
         { title: "ドリップコーヒー", description: "香りとともに、落ち着いた時間を楽しむためのコーヒー。", icon: "heart", features: ["豆の詳細は要確認", "提供内容は要確認", "テイクアウト可否は要確認"], priceNote: "価格は店舗にご確認ください" },
