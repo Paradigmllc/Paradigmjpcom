@@ -1239,7 +1239,7 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
   - `https://demo.paradigmjp.com/demo`: HTTP 200.
   - Public HTML checks: `className=0`, `accentLiteral=0`, `--brand: #7c3aed`.
   - Chrome headless screenshot saved at `C:\Users\apple\AppData\Local\Temp\demo-paradigmjp-demo-fixed.png` and visually checked.
-## CURRENT STATUS - 2026-07-14 フォーム適格リスト量産→Twenty同期（実装・ローカル検証完了 / 本番反映待ち / 送信0）
+## CURRENT STATUS - 2026-07-14 フォーム適格リスト量産→Twenty同期（本番稼働 / 品質強化中 / 送信0）
 
 ### 2026-07-14 Form-qualified lead factory
 - 候補取得後すぐに`SalesCompany`へ昇格して重い診断・レポート・文面生成を起動していた順序を変更。生候補は候補倉庫に保持し、技術・国・機会スコア・SMBスコア・実フォームを確認した企業だけを`SalesCompany`へ昇格し、TwentyのCompany homeのみ同期する。Opportunity作成、診断、Opportunity Brief、初回文面、フォーム送信は起動しない。
@@ -1250,3 +1250,7 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 管理画面 `/ja/admin/lead-factory` を追加。主要対象国初期値US/GB/CA/AU/DE/FR/NL/SG/AE、候補数・確認数・最低機会スコア・最低SMBスコア・フォーム信頼度・技術を指定でき、フォーム確認/合格/昇格/Twenty同期/エラー、直近100件の個別判定を表示する。loading/empty/error/degraded realtime状態を実装。
 - ローカル検証: 関連Vitest **4 files / 15 tests pass**、TypeScript pass、対象ESLint pass、quality guard **0 errors / 59既存warnings + 今回warning 0**、production build **408/408 pages**、`git diff --check` pass。実ブラウザで未認証時の`/admin/login`保護遷移、ローカル検証用署名session後の管理画面表示、主要入力10要素、error overlay 0、PC 1280px / mobile 390px横溢れ0を確認。ローカルは本番DBを接続せず一覧APIの実データ表示は本番反映後に確認する。外部送信、候補収集、Twenty本番同期、DeepSeek実行は行っていない。
 - 初回本番非送信パイロットで、実DBの候補テーブルが旧版から先に存在したため、`CREATE TABLE IF NOT EXISTS`ではdomain/run item/tech detection/scoreの一意arbitrerが追加されず、upsertがfail-closed停止することを検出。run表の`error_message`不足も同時に検出した。候補0・重複0・Twenty追加0・送信0を確認してから、schema reconcile migrationで4つの一意indexと失敗理由列を追加し、PostgREST schema reloadを接続した。
+- PR #164 / main `90b2cebc`を正式releaseし、Coolify deployment `qppmquk6dmvwxszkh7rvxhrg`が完走。DB 83/83、Sales health JSON `ok:true`、Realtime、Twenty worker restart 0、常駐polling/cron 0、公開smokeを通過。本番DBで`error_message`列と4 unique indexの存在を直接確認した。
+- schema修正後の本番非送信run `3500fd9e-01cb-420a-b3e1-dc1a81ea04e5`は、US/Shopify・候補20・確認5で`completed`。候補20、確認5、スコア保存5、失敗0、フォーム合格0、昇格0、Twenty同期0、enrichment job 0。contact pageのみの候補を`contact_page_only`として不合格にし、誤ってCRMへ入れないfail-closed動作を確認した。
+- 同runで、HTTP Archive BigQuery credential未設定時にTranco `.us`へ偏り、Shopify一致0になる母集団品質課題を実測。既存の自己ホストFlareSolverr/ブラウザ検索を候補倉庫の前段へ追加し、`cdn.shopify.com`等の技術フットプリント×対象国主要都市で最大6検索・2並列取得する。検索結果は直接`SalesCompany`へ入れず、従来どおり技術・SMB・実フォームの全ゲート通過後だけTwentyへ同期する。CA/NL/AEの都市辞書も対象市場へ追加。DeepSeekトークンと有料データAPIは使用しない。
+- 品質強化後の関連Vitestは **6 files / 21 tests pass**、TypeScript / 対象ESLint pass。正式再releaseと技術フットプリント経路の本番再パイロットを続行する。
