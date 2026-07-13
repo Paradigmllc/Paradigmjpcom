@@ -33,6 +33,7 @@ describe("applyIndustryPresentation", () => {
     expect(page.pages.services.services.every((service) => service.priceNote === undefined)).toBe(true)
     expect(page.pages.services.processTitle).toBe("店で過ごす時間。")
     expect(page.pages.works?.sections).toHaveLength(4)
+    expect(page.pages.works?.sections.map((section) => section.heading)).toEqual(["店内とメニュー", "一杯を淹れる時間", "店の佇まい", "季節の一皿"])
     expect(page.meta.primaryCtaHref).toBe("https://instagram.com/example")
   })
 })
