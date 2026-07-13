@@ -48,6 +48,13 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/en", request.url))
   }
 
+  // Japan Entry is an international offer; keep the domestic Japanese site on
+  // its general services surface with a real HTTP redirect (not a streamed
+  // meta refresh from the page component).
+  if (pathname === "/ja/package") {
+    return NextResponse.redirect(new URL(`/ja/services${request.nextUrl.search}`, request.url), 308)
+  }
+
   const blogLocaleRedirect = getBlogLocaleRedirect(request.nextUrl)
   if (blogLocaleRedirect) {
     return NextResponse.redirect(blogLocaleRedirect, 308)
