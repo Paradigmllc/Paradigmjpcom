@@ -1,10 +1,10 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
-### 2026-07-13 支払方法・14営業日納品保証の実務運用監査（release待ち）
+### 2026-07-13 支払方法・14営業日納品保証の実務運用監査（本番反映済み）
 - Japan Entry申込フォームに希望支払方法（Wise、銀行振込、USDC、クレジットカード）とセットアップ費用確認を追加。選択値はlead metaへ保存し、DBベル／Slack通知の双方へ引き渡す。公開フォームでは口座・カード・ウォレット情報を収集しない。
 - 料金、申込、FAQ、法務、プライバシー、ホーム、Works、ブログ、診断デモ、AIチャットの公開コピーを、記録したStart Date、14営業日以内の固定セットアップ納品、未納品時の12,000ドル全額返金、顧客側変更・保留による時計停止、成果保証なしへ統一。
 - 運用runbookへ、請求書を正本とする支払手段、Stripe請求書／決済リンク、USDCネットワーク確認、検収・引き継ぎ・返金証跡を追記。release smokeにWise、14営業日、全額返金、支払方法項目を追加。
-- 検証済み: JSON parse、関連Vitest 8 files / 67 tests、TypeScript、quality guard（0 errors）、diff check。正式 `npm run release:prod` と公開URL再確認を残作業とする。
+- 検証済み: JSON parse、関連Vitest 8 files / 67 tests、全Vitest 94 files / 440 tests、TypeScript、quality guard（0 errors）、production build 336/336、diff check。正式 `npm run release:prod` は deployment `ipdwlqvgv7jcta351omk5qk5` で完走し、DB 82/82、日英主要ページ、Stripe legacy endpoint 410、日英チャットRAGの支払方法・返金回答を本番URLで確認済み。
 
 ### 2026-07-13 Japan Entry CTA・根拠資料・RAGアシスタント強化（正式release待ち）
 - ヘッダー右上の導線を日英とも `Contact` / `お問い合わせ` に変更。価格・固定オファーの明示は料金、申込、本文CTAへ残し、初見で「問い合わせ先」と認識できる導線へ整理した。
