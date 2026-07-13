@@ -1,5 +1,13 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
+### 2026-07-13 Opportunity Briefパッケージ・限定オファー・CTA強化（本番反映・実企業QA済み / 送信停止）
+- Opportunity Brief末尾の契約条件を独立パネルへ分離し、`$12,000 paid upfront`、最初の6か月は追加月額なし、7か月目以降は署名済み契約に基づき月額$995という条件の直下へ、Japan Entry Packageの正式な7ワークストリームを表示する。
+- 6か月の月額無料を、期間限定かつ審査を通過した数組だけの導入オファーとして強調。架空の残枠数・締切は表示せず、適用可否は15分面談と契約書面で確定し、フォーム送信だけでは枠確保にならない境界を明記した。
+- 意思決定要約と最終オファーのCTAを、企業名付きCal.comの `Book the 15-minute review` と、Japan Entry意図・企業名を引き継ぐ `Apply via the form` の2種類へ統一。Our Placeでは予約先が `https://cal.com/paradigm-jp/15min?name=Our%20Place`、申込先が `/en/contact?intent=japan-entry&company=Our%20Place` になる。
+- 検証: 関連Vitest **2 files / 6 tests pass**、TypeScript pass、対象ESLint pass、quality guard **0 errors / 59 existing warnings**、production build **396/396 pages**、`git diff --check` pass。React確認ではサーバーコンポーネントのまま、named export、semantic link、外部URLの安全属性、安定keyを確認した。
+- PR **#142**をmainへmerge。正式deployment `n5t3jiz0o5j9gbaur0a4v1wd` はcommit `adf39ceead787a47fcdf6dbffd0eeb91194fda65`でfinishedし、DB **83/83**、Traefik / Cloudflare / Realtime / Twenty worker restart 0、Sales health HTTP 200 JSON ok、post-deploy release gateを通過した。
+- 本番Our Place Opportunity BriefはHTTP **200**。PC 1440px / mobile 390pxで、料金、限定条件、7項目、CTA 2つ、企業名付きリンクを実ブラウザ確認し、横溢れ0、error overlay 0、console error 0。DB書き込み、Twenty同期、候補収集、フォーム送信、営業送信は一切実行していない。
+
 ### 2026-07-13 SMBデモ正規URL・自動量産（本番反映・実事業者QA済み / 送信停止）
 - デモの正規URLを `https://demo.paradigmjp.com/{企業名slug}` に統一。locale、`demo`、ランダム文字列を公開URLへ含めず、Cafe SOSOMUは `https://demo.paradigmjp.com/cafe-sosomu` とした。旧 `/ja/cafe-sosomu` と内部 `/ja/demo/cafe-sosomu` は正規URLへ308転送する。企業名slugが既存の別企業と衝突した場合はランダム文字を足さずfail-closedで停止する。
 - Homeを含む全11ページのheader、footer、CTA、パンくず相当導線を `/{企業名slug}/...` へ統一。公開デモは `noindex, nofollow, noarchive` を維持し、検索面へ混入させない。
