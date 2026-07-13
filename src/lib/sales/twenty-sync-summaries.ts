@@ -1,7 +1,7 @@
-import type { CompanyKarteSnapshot } from "@/lib/sales/company-karte"
-import type { SourceCoverageItem } from "@/lib/sales/source-coverage"
-import type { TwentyCustomerHandoffInput } from "./twenty-sync-utils"
-import { PIPELINE_LABELS } from "./twenty-sync-utils"
+import type { CompanyKarteSnapshot } from "@/lib/sales/company-karte";
+import type { SourceCoverageItem } from "@/lib/sales/source-coverage";
+import type { TwentyCustomerHandoffInput } from "./twenty-sync-utils";
+import { PIPELINE_LABELS } from "./twenty-sync-utils";
 import {
   firstSourceError,
   outreachGateSummary,
@@ -9,20 +9,27 @@ import {
   sourceCoveragePanelLink,
   sourceDataCounts,
   sourceDataStatus,
-} from "@/lib/sales/twenty-sync-karte-fields"
+} from "@/lib/sales/twenty-sync-karte-fields";
 
 export function karteScore(karte: CompanyKarteSnapshot): number {
-  const topFit = karte.recommendedProducts[0]?.fitScore ?? 70
-  return Math.max(0, Math.min(100, Math.round((karte.sourceScore + topFit) / 2)))
+  const topFit = karte.recommendedProducts[0]?.fitScore ?? 70;
+  return Math.max(
+    0,
+    Math.min(100, Math.round((karte.sourceScore + topFit) / 2)),
+  );
 }
 
 export function salesStatusLabel(karte: CompanyKarteSnapshot): string {
-  const pipeline = PIPELINE_LABELS[karte.pipelineStatus] ?? karte.pipelineStatus
-  return `${pipeline} / ${karte.dealStage}`
+  const pipeline =
+    PIPELINE_LABELS[karte.pipelineStatus] ?? karte.pipelineStatus;
+  return `${pipeline} / ${karte.dealStage}`;
 }
 
-export function countrySelectValue(countryCode: string | null | undefined): string | null {
-  const code = typeof countryCode === "string" ? countryCode.trim().toUpperCase() : ""
+export function countrySelectValue(
+  countryCode: string | null | undefined,
+): string | null {
+  const code =
+    typeof countryCode === "string" ? countryCode.trim().toUpperCase() : "";
   const labels: Record<string, string> = {
     JP: "日本",
     US: "米国",
@@ -44,16 +51,16 @@ export function countrySelectValue(countryCode: string | null | undefined): stri
     AE: "UAE",
     VN: "ベトナム",
     ID: "インドネシア",
-  }
-  return labels[code] ?? (code.length === 2 ? code : null)
+  };
+  return labels[code] ?? (code.length === 2 ? code : null);
 }
 
 function sourceCoverageSummary(items: SourceCoverageItem[]): {
-  collected: string
-  configured: string
-  missing: string
-  evidence: string
-  nextSteps: string
+  collected: string;
+  configured: string;
+  missing: string;
+  evidence: string;
+  nextSteps: string;
 } {
   const byStatus = (status: SourceCoverageItem["status"], limit: number) =>
     items
@@ -61,26 +68,31 @@ function sourceCoverageSummary(items: SourceCoverageItem[]): {
       .sort((a, b) => b.score - a.score || a.label.localeCompare(b.label))
       .slice(0, limit)
       .map((item) => item.label)
-      .join(" / ")
+      .join(" / ");
 
   const evidence = items
     .filter((item) => item.status === "collected")
     .sort((a, b) => b.score - a.score || a.label.localeCompare(b.label))
     .slice(0, 8)
     .map((item) => `- ${item.label}: ${item.detail}`)
-    .join("\n")
+    .join("\n");
 
   const nextSteps = items
-    .filter((item) => item.status === "configured" || item.status === "missing" || item.status === "error")
+    .filter(
+      (item) =>
+        item.status === "configured" ||
+        item.status === "missing" ||
+        item.status === "error",
+    )
     .sort((a, b) => {
-      const priority = { error: 0, configured: 1, missing: 2 } as const
-      const aPriority = priority[a.status as keyof typeof priority] ?? 3
-      const bPriority = priority[b.status as keyof typeof priority] ?? 3
-      return aPriority - bPriority || a.label.localeCompare(b.label)
+      const priority = { error: 0, configured: 1, missing: 2 } as const;
+      const aPriority = priority[a.status as keyof typeof priority] ?? 3;
+      const bPriority = priority[b.status as keyof typeof priority] ?? 3;
+      return aPriority - bPriority || a.label.localeCompare(b.label);
     })
     .slice(0, 6)
     .map((item) => `- ${item.label}: ${item.nextStep}`)
-    .join("\n")
+    .join("\n");
 
   return {
     collected: byStatus("collected", 12),
@@ -88,31 +100,37 @@ function sourceCoverageSummary(items: SourceCoverageItem[]): {
     missing: byStatus("missing", 8),
     evidence,
     nextSteps,
-  }
+  };
 }
 
 export function karteHomeSummary(karte: CompanyKarteSnapshot): string {
   const products = karte.recommendedProducts
     .slice(0, 3)
     .map((product) => `${product.displayName}(${product.fitScore})`)
-    .join(" / ")
-  const sourceSummary = sourceCoverageSummary(karte.sourceItems)
-  const outreachGate = outreachGateSummary(karte)
-  const formMessageEvidence = karte.formMessageEvidence
+    .join(" / ");
+  const sourceSummary = sourceCoverageSummary(karte.sourceItems);
+  const outreachGate = outreachGateSummary(karte);
+  const formMessageEvidence = karte.formMessageEvidence;
   const verifiedMetrics = formMessageEvidence?.metrics?.length
     ? formMessageEvidence.metrics
-      .map((metric) => `${metric.label}: ${metric.value} ${metric.unit} [${metric.source}]`)
-      .join(" / ")
-    : null
-  const japanEntry = karte.japanEntry
+        .map(
+          (metric) =>
+            `${metric.label}: ${metric.value} ${metric.unit} [${metric.source}]`,
+        )
+        .join(" / ")
+    : null;
+  const japanEntry = karte.japanEntry;
   const japanEntryQuality = japanEntry
     ? `quality=${japanEntry.qualityScore ?? "未評価"} / safety=${japanEntry.safetyScore ?? "未評価"} / model=${japanEntry.model ?? "未記録"}`
-    : null
+    : null;
   const japanEntryHorizons = japanEntry?.horizons.length
     ? japanEntry.horizons
-      .map((horizon) => `${horizon.month}ヶ月 ROI ${horizon.roiPercent}% / 累積純便益 $${horizon.cumulativeNetBenefitUsd.toLocaleString("en-US")}`)
-      .join(" / ")
-    : null
+        .map(
+          (horizon) =>
+            `${horizon.month}ヶ月 ROI ${horizon.roiPercent}% / 累積純便益 $${horizon.cumulativeNetBenefitUsd.toLocaleString("en-US")}`,
+        )
+        .join(" / ")
+    : null;
 
   return [
     `無料API/OSS取得データ(50+): ${sourceDataCounts(karte)}`,
@@ -123,39 +141,63 @@ export function karteHomeSummary(karte: CompanyKarteSnapshot): string {
     `対象: ${karte.targetCountry} / ${karte.reportLocale} / ${karte.templateVariant}`,
     `取得状況: ${karte.sourceScore}% (${karte.collectedCount} collected, ${karte.configuredCount} configured, ${karte.missingCount} missing)`,
     `生成エンジン: report=${karte.reportEngine ?? "未生成"} / diagnosis=${karte.diagnosisEngine ?? "未実行"} / template=${karte.templateVariant}`,
-    sourceSummary.collected ? `取得済みソース: ${sourceSummary.collected}` : null,
-    sourceSummary.configured ? `次に取得可能: ${sourceSummary.configured}` : null,
+    sourceSummary.collected
+      ? `取得済みソース: ${sourceSummary.collected}`
+      : null,
+    sourceSummary.configured
+      ? `次に取得可能: ${sourceSummary.configured}`
+      : null,
     sourceSummary.missing ? `不足ソース: ${sourceSummary.missing}` : null,
     `主な痛み: ${karte.diagnosisSummary ?? "Dify診断待ち"}`,
     `推奨提案: ${karte.recommendedOffer ?? (products || "商材判定待ち")}`,
     `推奨商材: ${products || "未判定"}`,
     sourceSummary.evidence ? `主要証跡:\n${sourceSummary.evidence}` : null,
-    sourceSummary.nextSteps ? `次アクション:\n${sourceSummary.nextSteps}` : null,
-    karte.personalizedHook ? `パーソナライズHook: ${karte.personalizedHook}` : null,
+    sourceSummary.nextSteps
+      ? `次アクション:\n${sourceSummary.nextSteps}`
+      : null,
+    karte.personalizedHook
+      ? `パーソナライズHook: ${karte.personalizedHook}`
+      : null,
     karte.personalizedCTA ? `CTA: ${karte.personalizedCTA}` : null,
     karte.reportUrl ? `Report URL: ${karte.reportUrl}` : null,
-    karte.opportunityBriefUrl ? `Japan Entry Opportunity Brief URL: ${karte.opportunityBriefUrl}` : null,
+    karte.opportunityBriefUrl
+      ? `Japan Entry Opportunity Brief URL: ${karte.opportunityBriefUrl}`
+      : null,
     karte.formUrl ? `Form URL: ${karte.formUrl}` : null,
-    karte.salesMaterialUrl ? `Sales material URL: ${karte.salesMaterialUrl}` : null,
+    karte.salesMaterialUrl
+      ? `Sales material URL: ${karte.salesMaterialUrl}`
+      : null,
     karte.demoUrl ? `Demo URL: ${karte.demoUrl}` : null,
-    verifiedMetrics ? `文面生成に使用した検証済み数値: ${verifiedMetrics}` : null,
-    formMessageEvidence?.unknowns?.length ? `文面生成時の未知項目: ${formMessageEvidence.unknowns.join(" / ")}` : null,
+    verifiedMetrics
+      ? `文面生成に使用した検証済み数値: ${verifiedMetrics}`
+      : null,
+    formMessageEvidence?.unknowns?.length
+      ? `文面生成時の未知項目: ${formMessageEvidence.unknowns.join(" / ")}`
+      : null,
     japanEntry ? "--- Japan Entry Package 初回フォーム文面 ---" : null,
     japanEntry ? `運用状態: 未送信・要レビュー (${japanEntry.state})` : null,
-    japanEntry ? `数値区分: ${japanEntry.classification}（実測アクセス・実売上ではなく公開シグナルに基づく推定）` : null,
-    japanEntry?.estimatedJapanMonthlyVisits !== null && japanEntry?.estimatedJapanMonthlyVisits !== undefined
+    japanEntry
+      ? `数値区分: ${japanEntry.classification}（実測アクセス・実売上ではなく公開シグナルに基づく推定）`
+      : null,
+    japanEntry?.estimatedJapanMonthlyVisits !== null &&
+    japanEntry?.estimatedJapanMonthlyVisits !== undefined
       ? `推定日本月間アクセス: ${japanEntry.estimatedJapanMonthlyVisits.toLocaleString("en-US")}`
       : null,
-    japanEntry?.monthlyOpportunityGapUsd !== null && japanEntry?.monthlyOpportunityGapUsd !== undefined
+    japanEntry?.monthlyOpportunityGapUsd !== null &&
+    japanEntry?.monthlyOpportunityGapUsd !== undefined
       ? `推定月間機会損失: $${japanEntry.monthlyOpportunityGapUsd.toLocaleString("en-US")}`
       : null,
     japanEntryQuality ? `文面品質: ${japanEntryQuality}` : null,
     japanEntryHorizons ? `6/12/24ヶ月モデル: ${japanEntryHorizons}` : null,
     japanEntry ? `初回送信文面（URL・資料なし）:\n${japanEntry.message}` : null,
-  ].filter(Boolean).join("\n")
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
-export function customerHandoffSummary(input: TwentyCustomerHandoffInput): string {
+export function customerHandoffSummary(
+  input: TwentyCustomerHandoffInput,
+): string {
   return [
     `成約後ハンドオフ: ${input.companyName}`,
     `顧客ポータル: ${input.customerPortalUrl ?? "未設定"}`,
@@ -163,22 +205,30 @@ export function customerHandoffSummary(input: TwentyCustomerHandoffInput): strin
     `契約金額: ${input.contractAmountYen === null ? "未設定" : `JPY ${input.contractAmountYen.toLocaleString("ja-JP")}`}`,
     `Docuseal: ${input.docusealUrl ?? "未設定"}`,
     `Cal.com: ${input.calComUrl ?? "未設定"}`,
-  ].join("\n")
+  ].join("\n");
 }
 
-export function twentyCompanyHomePayload(karte: CompanyKarteSnapshot): Record<string, unknown> {
-  const primaryReportUrl = karte.opportunityBriefUrl ?? karte.reportUrl
-  const primaryReportLabel = karte.opportunityBriefUrl ? "Japan Entry Opportunity Brief" : "診断レポート"
+export function twentyCompanyHomePayload(
+  karte: CompanyKarteSnapshot,
+): Record<string, unknown> {
+  const primaryReportUrl = karte.opportunityBriefUrl ?? karte.reportUrl;
+  const primaryReportLabel = karte.opportunityBriefUrl
+    ? "Japan Entry Opportunity Brief"
+    : "診断レポート";
   return {
     name: karte.companyName,
-    xLink: { primaryLinkLabel: primaryReportUrl ? primaryReportLabel : "", primaryLinkUrl: primaryReportUrl ?? "" },
-    linkedinLink: { primaryLinkLabel: karte.formUrl ? "お問い合わせ" : "", primaryLinkUrl: karte.formUrl ?? "" },
-    employees: karteScore(karte),
-    annualRecurringRevenue: { amountMicros: karte.sourceScore * 1000000, currencyCode: "USD" },
-    address: { addressCity: karteHomeSummary(karte).split("\n")[0]?.slice(0, 50) ?? "" },
-    paradigmReportUrl: { primaryLinkLabel: primaryReportUrl ? primaryReportLabel : "", primaryLinkUrl: primaryReportUrl ?? "" },
-    paradigmFormUrl: { primaryLinkLabel: karte.formUrl ? "フォームURL" : "", primaryLinkUrl: karte.formUrl ?? "" },
-    paradigmDemoUrl: { primaryLinkLabel: karte.demoUrl ? "デモURL" : "", primaryLinkUrl: karte.demoUrl ?? "" },
+    paradigmReportUrl: {
+      primaryLinkLabel: primaryReportUrl ? primaryReportLabel : "",
+      primaryLinkUrl: primaryReportUrl ?? "",
+    },
+    paradigmFormUrl: {
+      primaryLinkLabel: karte.formUrl ? "フォームURL" : "",
+      primaryLinkUrl: karte.formUrl ?? "",
+    },
+    paradigmDemoUrl: {
+      primaryLinkLabel: karte.demoUrl ? "デモURL" : "",
+      primaryLinkUrl: karte.demoUrl ?? "",
+    },
     paradigmCountryName: countrySelectValue(karte.targetCountry),
     paradigmRegionName: karte.regionName,
     paradigmIndustryName: karte.industry,
@@ -189,11 +239,15 @@ export function twentyCompanyHomePayload(karte: CompanyKarteSnapshot): Record<st
     paradigmDataStatus: sourceDataStatus(karte),
     paradigmDataSources: sourceDataCounts(karte),
     paradigmDataBreakdown: sourceCategoryBreakdown(karte),
-    paradigmSourceDetailsUrl: { primaryLinkLabel: "50+ API/OSS詳細", primaryLinkUrl: sourceCoveragePanelLink(karte) },
-    paradigmNextAction: karte.japanEntry?.state === "needs_review"
-      ? "Japan Entry初回フォーム文面を確認（未送信）"
-      : outreachGateSummary(karte).nextAction,
+    paradigmSourceDetailsUrl: {
+      primaryLinkLabel: "50+ API/OSS詳細",
+      primaryLinkUrl: sourceCoveragePanelLink(karte),
+    },
+    paradigmNextAction:
+      karte.japanEntry?.state === "needs_review"
+        ? "Japan Entry初回フォーム文面を確認（未送信）"
+        : outreachGateSummary(karte).nextAction,
     paradigmLastError: firstSourceError(karte),
     paradigmKarteSummary: { markdown: karteHomeSummary(karte) },
-  }
+  };
 }

@@ -648,6 +648,14 @@ async function applyDemoSustainableBatchMigration(envs) {
   )
 }
 
+async function applyJapanEntryReportFactoryMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260713203000_japan_entry_report_factory.sql",
+    "Japan Entry report factory migration",
+  )
+}
+
 async function applySalesPipelineDbTriggerProviderMigration(envs) {
   return applySqlMigration(
     envs,
@@ -1218,6 +1226,7 @@ async function main() {
     console.log(await applyDemoQualityGateMigration(envs))
     console.log(await applyDemoPrivateAssetReviewMigration(envs))
     console.log(await applyDemoSustainableBatchMigration(envs))
+    console.log(await applyJapanEntryReportFactoryMigration(envs))
     console.log(await applySalesPipelineDbTriggerProviderMigration(envs))
     console.log(await applyDemoCompanyTriggerGuardMigration(envs))
     console.log(await applyVideoPipelineMigration(envs))
