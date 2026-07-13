@@ -35,6 +35,7 @@ import BackToTop from "./BackToTop";
 import PageTransition from "./PageTransition";
 import SiteWrapper from "@/components/SiteWrapper";
 import DifyChatbot from "@/components/DifyChatbot";
+import JapanMarketUrgencyBar, { type JapanMarketUrgencyCopy } from "@/components/japan-entry/JapanMarketUrgencyBar";
 import { localeContentVariant } from "@/lib/locale-map";
 import type { HeaderNav, FooterNav } from "@/lib/navigation";
 
@@ -81,6 +82,8 @@ interface Props {
   footerNav?: FooterNav | null;
   /** PayloadCMS Settings.announcement 由来の告知バー */
   announcement?: AnnouncementSettings;
+  /** International Japan Entry urgency strip; intentionally absent on /ja. */
+  marketUrgency?: JapanMarketUrgencyCopy;
 }
 
 /**
@@ -111,6 +114,7 @@ export default function ConditionalSiteChrome({
   headerNav,
   footerNav,
   announcement,
+  marketUrgency,
 }: Props) {
   const pathname = usePathname();
 
@@ -130,6 +134,7 @@ export default function ConditionalSiteChrome({
   const announcementActive = Boolean(
     announcement?.enabled && announcement?.message,
   );
+  const urgencyExcluded = /^\/[a-z]{2}\/(?:legal|privacy|terms|refund)(?:\/|$)/.test(pathname);
 
   // 通常 site chrome
   return (
@@ -146,6 +151,7 @@ export default function ConditionalSiteChrome({
         <ScrollProgress />
         <LuxuryLoader />
         <SiteHeader nav={headerNav} announcementActive={announcementActive} />
+        {marketUrgency && !urgencyExcluded && <JapanMarketUrgencyBar copy={marketUrgency} />}
         <SiteWrapper>
           <PageTransition>{children}</PageTransition>
         </SiteWrapper>

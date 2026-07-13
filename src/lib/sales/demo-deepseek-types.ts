@@ -74,6 +74,7 @@ export interface DeepSeekEnhancedOutput {
     completionTokens: number;
     cacheHitTokens: number;
     cacheMissTokens: number;
+    cacheHitRatio: number;
   };
   home: Partial<DeepSeekHomeEnhancement>;
   about: Partial<DeepSeekAboutEnhancement>;

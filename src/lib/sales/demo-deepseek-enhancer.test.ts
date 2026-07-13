@@ -4,6 +4,8 @@ import {
   DEMO_COPY_TIMEOUT_MS,
   extractVerifiedPublicFacts,
 } from "./demo-deepseek-enhancer"
+import { buildJapaneseUserPrompt } from "./demo-deepseek-prompts"
+import type { DemoTemplate } from "./demo-templates/registry"
 
 describe("DeepSeek V4 full-site generation budget", () => {
   it("allows complete non-thinking multi-page JSON without model fallback", () => {
@@ -29,5 +31,24 @@ describe("extractVerifiedPublicFacts", () => {
 
   it("returns an explicit empty marker when facts are unavailable", () => {
     expect(extractVerifiedPublicFacts(null)).toBe("（確認済み公開情報なし）")
+  })
+})
+
+describe("DeepSeek prompt cache layout", () => {
+  it("keeps a long identical prefix and moves company-specific input to the suffix", () => {
+    const tokens = {} as DemoTemplate["designTokens"]
+    const common = ["", "", "", "ja", "", "split", "grid", "bordered", "minimal", tokens] as const
+    const first = buildJapaneseUserPrompt("Cafe A", "restaurant", "東京都", "a.example", "unknown", ...common, "- specialty: coffee")
+    const second = buildJapaneseUserPrompt("Cafe B", "restaurant", "大阪府", "b.example", "unknown", ...common, "- specialty: tea")
+    const marker = "【企業固有入力・ここから末尾だけ案件ごとに変化】"
+    const firstMarker = first.indexOf(marker)
+    const secondMarker = second.indexOf(marker)
+
+    expect(firstMarker).toBeGreaterThan(1_500)
+    expect(first.slice(0, firstMarker)).toBe(second.slice(0, secondMarker))
+    expect(first.indexOf("Cafe A")).toBeGreaterThan(firstMarker)
+    expect(second.indexOf("Cafe B")).toBeGreaterThan(secondMarker)
+    expect(first).not.toContain('"faq"')
+    expect(first).not.toContain('"contact"')
   })
 })

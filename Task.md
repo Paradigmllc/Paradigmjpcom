@@ -8,12 +8,12 @@
 - 検証: 関連Vitest **4 files / 37 tests pass**、TypeScript pass、対象ESLint pass、quality guard **0 errors / 59 warnings**、production build **396/396 pages**、`git diff --check` pass。実Chromeで `/en` `/en/services` `/en/pricing` `/en/package` はHTTP 200、危機訴求・市場数値表示、PC/mobile横溢れ0、overlay/console error 0。`/ja`への混入0。
 - 実V4 Pro非送信smokeは、候補文字上限問題を検出して1,800字へ修正後、企業名・推定アクセス・推定機会損失・競合・条件付き規制・4段落・未置換ゼロまで通った候補を得たが、商品固有需要を一般市場データで代替したため意図的にreject。需要必須化後の再試行は上流の空応答／不完全JSONが継続しfail-closed。DB保存、Twenty同期、フォーム送信、候補収集は一切実行していない。
 
-### 2026-07-13 Japan Entry Package詳細ページ（実装済み・正式release待ち）
+### 2026-07-13 Japan Entry Package詳細ページ（本番反映・公開QA済み）
 - `/[locale]/package` を追加。国際ロケールでは英語の正本コピーを表示し、JAは国内向け`/ja/services`へリダイレクトしてJapan Entryを混在させない。
 - $12,000セットアップの内訳を7ワークストリーム（市場・提案整理、LP/HPローカライズ、SNS初期設定、市場・競合レポート、信頼・法規制適用可能性、問い合わせ・決済、公開運用・引き継ぎ）へ分解。各項目に具体的な納品物を記載した。
 - 14営業日の時系列、開始条件、月1〜6の運用、Notion/Trello共有ワークスペース、48営業時間以内着手SLA、月7以降、支払方法、返金条件、除外事項、成果保証をしない境界を同じページに集約。
 - `/en/services`と`/en/pricing`から詳細ページへ導線を追加し、国際ロケールのsitemapにも`/package`を追加。JAの国内サービス導線は変更しない。
-- 検証: TypeScript pass、対象ESLint pass、関連Vitest **16 tests pass**、quality guard **0 errors / 54 warnings**、production build **384/384 pages**、`git diff --check` pass。次は正式releaseと公開URLの本文・JAリダイレクト・sitemapを確認する。
+- 検証: TypeScript pass、対象ESLint pass、関連Vitest **16 tests pass**、quality guard **0 errors**、production build **384/384 pages**、`git diff --check` pass。PR **#120**をmainへmergeし、国内URLのHTTP挙動をPR **#128**で追加修正。正式 `npm run release:prod` の最終deployment **q15xfh54oq5496tukgehc8mx** はfinished。DB **83/83**、Traefik/Cloudflare、Realtime、Twenty、Sales health、post-deploy release gateを通過した。本番の`/en/package`と`/ko/package`はHTTP **200**で内訳・48営業時間以内着手・除外事項・導線を確認。`/ja/package`はHTTP **308**で`/ja/services`へ移動し、Japan Entry本文を返さない。sitemapには国際ロケールの`/package`だけが掲載され、`/ja/package`は含まれない。`/en/services`と`/en/pricing`からの詳細ページ導線も公開確認済み。
 
 ### 2026-07-13 Japan Entry Opportunity Brief量産・意思決定資料強化（本番反映・公開QA済み / 送信停止）
 - `japan_entry_report` を既存のevent-driven enrichment queueへ追加。最大100社の一括投入、最大3社の並列drain、進捗Realtime、失敗理由、同一ジョブ再試行、100社表示の管理画面 `/{locale}/admin/opportunity-briefs` を実装した。cron・常駐polling・フォーム送信には接続しない。
