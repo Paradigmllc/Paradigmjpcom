@@ -9,6 +9,7 @@ import { selectTemplate, type CompanyProfile } from "./demo-template-selector"
 import type { Industry, ReportLocale } from "./types"
 import { JAPAN_ENTRY_CTA_EN, JAPAN_ENTRY_CTA_JA } from "@/lib/japan-entry-public-copy"
 import { verifyDemoPreviewToken, type DemoAssetReview } from "./demo-private-access"
+import { buildPremiumAssetNote } from "./demo-asset-note"
 
 /**
  * Fetch demo page data by slug from the theme_demo_pages table,
@@ -241,9 +242,10 @@ export async function fetchDemoMultiPageData(
               gallery: approvedMedia.length >= 3 ? approvedMedia : [...approvedMedia, ...themePage.site_payload.premium.gallery].slice(0, 5),
               intro: {
                 ...themePage.site_payload.premium.intro,
-                note: themePage.asset_approval_status === "consented"
-                  ? "掲載写真は権利確認済みの公式素材です。"
-                  : "掲載写真は相手企業の公式公開アカウントから取得した非公開提案用素材です。正式公開前に権利者の許諾を確認します。",
+                note: buildPremiumAssetNote(
+                  review,
+                  themePage.asset_approval_status as "unreviewed" | "private_proposal" | "consented" | "blocked",
+                ),
               },
             }
           : themePage.site_payload.premium
