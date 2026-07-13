@@ -1,11 +1,11 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
-### 2026-07-13 全ページの視覚証拠・アニメーション強化（実装・ローカル検証済み / 正式release待ち）
+### 2026-07-13 全ページの視覚証拠・アニメーション強化（本番反映・公開QA済み）
 - 共通 `PageHero` に、公開実績を捏造しないCSSベースの運用パスビジュアル（Signal → Scope → Launch）を追加。20ページのヒーローで同じ視覚言語を再利用し、`prefers-reduced-motion` では静止表示へ切り替える。
 - 国際向けホームのCMSフォールバックHeroを、`/public/japan-entry/package-scope.svg` を使うsplit-image構成へ変更。CMSに画像がない場合でも、固定スコープの実装図がファーストビューに表示される。
 - ブログ一覧・記事詳細に、承認済みHero画像がない記事向けの決定論的なEditorial Coverを追加。Worksの公開確認済みカードにも既存のJapan Entry図解を重ね、文字だけのカードを残さない。
 - Services / Pricing に既存のpackage-scope・signal-check・application-handover図解を再利用。画像はクライアント実績として扱わず、納品物・運用境界の説明資料として表示する。
-- 検証: `npm exec -- tsc --noEmit --pretty false` pass、変更対象ESLint pass、関連Vitest **4 files / 23 tests pass**、`npm run quality:guard` **0 errors / 53 warnings**、production buildで`.next/BUILD_ID`生成を確認。正式 `npm run release:prod` は未実行。
+- 検証: `npm exec -- tsc --noEmit --pretty false` pass、変更対象ESLint pass、関連Vitest **4 files / 23 tests pass**、`npm run quality:guard` **0 errors / 53 warnings**、production build **372/372 pages**。正式 `npm run release:prod` のdeployment `dq8ilhordm3lhh3jojpdv3zl` はfinished、DB **82/82**、Traefik/Cloudflare、EN/JA主要公開URL、Terms/Refund、Twenty、Sales health、post-deploy release gateを通過。公開HTMLで`page-hero-visual`、`package-scope.svg`、Editorial Coverのマーカーを確認した。
 
 ### 2026-07-13 Japan Entryフォーム文面・未置換/推測fail-closed強化（本番反映済み / 送信停止）
 - `[]` / 全角括弧 / `{{}}` / `${}` / `<>` / `__TOKEN__` / `%TOKEN%` / `TBD` 等の未置換プレースホルダーを決定論的品質ゲートで全面拒否。修正前は `[monthly visits]` と `[opportunity gap]` が残っても安全性100点で通った再現ケースを、修正後は0点・保存不可へ変更した。
