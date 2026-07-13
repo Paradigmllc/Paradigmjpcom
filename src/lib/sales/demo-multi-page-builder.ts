@@ -10,6 +10,7 @@ import type {
   DemoStatsItem,
   DemoMetricsSummary,
   DemoFAQItem,
+  DemoPremiumExperience,
 } from "./demo-site-types"
 import type { Industry, ReportLocale } from "./types"
 import { JAPAN_ENTRY_CTA_EN, JAPAN_ENTRY_CTA_JA } from "@/lib/japan-entry-public-copy"
@@ -308,6 +309,7 @@ export function buildDemoMultiPageData(
     engine: "full-stack-nextjs-multi-page",
     sourceEvidence,
   }
+  const premium = buildPremiumExperience(company.meta, homePage, aboutPage.story, industry)
 
   return {
     slug,
@@ -316,6 +318,7 @@ export function buildDemoMultiPageData(
     locale,
     industry: industry as Industry,
     meta,
+    ...(premium ? { premium } : {}),
     pages: {
       home: homePage,
       about: aboutPage,
@@ -378,7 +381,71 @@ export function buildDemoMultiPageData(
         ],
         accentColor,
       },
+      commerce: {
+        title: isJa ? "特定商取引法に基づく表記" : "Commerce Disclosure",
+        subtitle: isJa ? "オンライン販売や有料申込みを行う場合に必要となる確認用ページです。" : "A review page for disclosures required when accepting online payments or paid orders.",
+        eyebrow: isJa ? "事業者・法務確認が必要です" : "Business and legal review required",
+        sections: [
+          { id: "operator", heading: isJa ? "販売事業者・責任者" : "Seller and responsible party", body: isJa ? "正式な事業者名、代表者名、所在地、連絡先を確認後に掲載します。" : "The legal entity, representative, address, and contact details will be published after verification." },
+          { id: "price", heading: isJa ? "価格・追加費用" : "Price and additional fees", body: isJa ? "販売価格、送料、決済手数料など実際の取引条件に合わせて確定します。" : "Prices, shipping, payment fees, and other transaction terms will be finalized for the actual offer." },
+          { id: "delivery", heading: isJa ? "提供時期・返品" : "Delivery and returns", body: isJa ? "商品の性質、提供時期、キャンセル・返品条件を専門家確認後に掲載します。" : "Delivery timing and cancellation or return terms require review for the actual product or service." },
+        ],
+        accentColor,
+      },
     },
+  }
+}
+
+function buildPremiumExperience(
+  meta: Record<string, unknown> | null | undefined,
+  home: DemoHomePage,
+  aboutStory: string,
+  industry: string,
+): DemoPremiumExperience | null {
+  const rawMedia = Array.isArray(meta?.demo_media) ? meta.demo_media : []
+  const media = rawMedia.flatMap((value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return []
+    const item = value as Record<string, unknown>
+    const usage = typeof item.usage === "string" ? item.usage : "unknown"
+    const src = typeof item.src === "string" ? item.src.trim() : ""
+    const alt = typeof item.alt === "string" ? item.alt.trim() : ""
+    if (!src || !alt || !["owned", "licensed", "proposal_only"].includes(usage)) return []
+    return [{
+      src,
+      alt,
+      kind: item.kind === "video" ? "video" as const : "image" as const,
+      caption: typeof item.caption === "string" ? item.caption : undefined,
+      objectPosition: typeof item.objectPosition === "string" ? item.objectPosition : undefined,
+    }]
+  })
+  if (media.length < 3) return null
+
+  const style: DemoPremiumExperience["style"] = industry === "restaurant"
+    ? "editorial-cafe"
+    : industry === "construction"
+      ? "craft"
+      : ["dental", "beauty_salon"].includes(industry)
+        ? "wellness"
+        : industry === "retail"
+          ? "retail"
+          : "professional"
+  const instagram = typeof meta?.official_instagram_url === "string" ? meta.official_instagram_url : null
+  const facebook = typeof meta?.official_facebook_url === "string" ? meta.official_facebook_url : null
+
+  return {
+    style,
+    heroMedia: media.slice(0, 5),
+    gallery: media.slice(0, 8),
+    intro: {
+      eyebrow: home.featureEyebrow ?? "OUR STORY",
+      title: home.featureHeading ?? home.hero.title,
+      body: aboutStory,
+      note: "使用素材と掲載内容は公開前に事業者確認を行います。",
+    },
+    social: [
+      ...(instagram ? [{ label: "Instagram", href: instagram, network: "instagram" as const }] : []),
+      ...(facebook ? [{ label: "Facebook", href: facebook, network: "facebook" as const }] : []),
+    ],
   }
 }
 

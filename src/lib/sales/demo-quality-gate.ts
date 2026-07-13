@@ -52,13 +52,24 @@ export function buildDesignRecipe(
   }
 }
 
-export function buildProposalRightsManifest(): DemoRightsManifest {
+export function buildProposalRightsManifest(demoMedia?: unknown): DemoRightsManifest {
+  const mediaAssets = Array.isArray(demoMedia)
+    ? demoMedia.flatMap((value) => {
+        if (!value || typeof value !== "object" || Array.isArray(value)) return []
+        const item = value as Record<string, unknown>
+        const source = typeof item.src === "string" ? item.src : ""
+        const usage = item.usage
+        if (!source || !["owned", "licensed", "proposal_only"].includes(String(usage))) return []
+        return [{ kind: "image" as const, source, usage: usage as "owned" | "licensed" | "proposal_only" }]
+      })
+    : []
   return {
     status: "proposal_safe",
     assets: [
       { kind: "text", source: "verified company and diagnostic data", usage: "public_fact" },
       { kind: "logo", source: "generated text monogram", usage: "proposal_only" },
       { kind: "font", source: "application bundled fonts", usage: "licensed" },
+      ...mediaAssets,
     ],
   }
 }
@@ -85,8 +96,18 @@ export function evaluateDemoQuality(
   }
   if (!page.pages.about || !page.pages.services || !page.pages.contact
     || !page.pages.works || !page.pages.news || !page.pages.faq
-    || !page.pages.recruit || !page.pages.privacy || !page.pages.terms) {
+    || !page.pages.recruit || !page.pages.privacy || !page.pages.terms
+    || !page.pages.commerce) {
     hardBlockers.push("required_page_missing")
+  }
+  if (!page.premium || page.premium.heroMedia.length < 3 || page.premium.gallery.length < 3) {
+    hardBlockers.push("premium_visual_story_missing")
+  }
+  if (!page.premium?.social.length) {
+    hardBlockers.push("social_brand_path_missing")
+  }
+  if (page.premium && !rights.assets.some((asset) => asset.kind === "image" && asset.usage !== "unknown")) {
+    hardBlockers.push("premium_media_rights_missing")
   }
   if (page.pages.home.testimonials?.length || page.pages.home.trustedBy?.length) {
     hardBlockers.push("unverified_social_proof")

@@ -8,9 +8,10 @@ interface Props {
   faq: DemoFAQItem[]
   isJa: boolean
   accent: string
+  subtitle?: string
 }
 
-export function DemoFAQ({ faq, isJa, accent }: Props) {
+export function DemoFAQ({ faq, isJa, accent, subtitle }: Props) {
   const [openId, setOpenId] = useState<string | null>(null)
 
   const toggle = (id: string) => {
@@ -39,9 +40,9 @@ export function DemoFAQ({ faq, isJa, accent }: Props) {
             {isJa ? "よくある質問" : "Frequently Asked Questions"}
           </h2>
           <p className="mt-3 text-gray-500">
-            {isJa
+            {subtitle ?? (isJa
               ? "診断データに基づいてよくある疑問にお答えします"
-              : "Answers to common questions based on your diagnostic data"}
+              : "Answers to common questions based on your diagnostic data")}
           </p>
         </motion.div>
 

@@ -194,7 +194,7 @@ export default async function LocaleLayout({ children, params }: Props) {
              to Outfit — modern geometric sans for bold, distinctive headings.
              Body remains Noto Sans for readability across 12 locales. */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&family=Noto+Serif+JP:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
         {isRtl && (

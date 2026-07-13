@@ -8,6 +8,10 @@
 - 検証: 関連Vitest **19/19 pass**、チャットRAG追加テスト **3/3 pass**、TypeScript pass。公式 `npm run release:prod` 後に日英のContact、Works dossier、FAQ、Blog、チャットAPIを本番URLで再確認する。
 
 ### 2026-07-13 SMBフルサイト・デモ品質ゲート（本番反映済み / 収集・送信停止）
+- 2026-07-13 TCD有料テーマ級への品質改修: 企業別の権利確認済み `demo_media` を使うpremium experience schemaを追加。3点未満のhero/gallery、SNS公式導線なし、画像rights manifestなし、特商法ページなしは品質ゲートで公開停止する。
+- Cafe SOSOMU確認用DEMOへ、提案用生成ビジュアル3点、フルスクリーンheroスライダー、Ken Burns風トランジション、Framer Motion reveal、Emblaギャラリー、画像付きメニュー、About/Menu画像hero、SNSブランドアイコン、モバイル固定CTAを追加。正式制作時は承認済み実写へ差し替える。
+- 固定ページは Home / About / Menu / Contact / Works / News / FAQ / Recruit / Privacy / Terms / Commerce Disclosure の11ページへ拡張。`/{locale}/demo/{slug}/commerce`を追加し、特定商取引法表記を生成品質の必須条件にした。
+- UI依存は既存Framer Motionに加え、shadcn carousel経由のEmblaとSNSブランド表示用react-iconsを追加。production build 336/336 pages、関連Vitest 5/5、TypeScript、対象ESLintを通過。
 - 2026-07-13 品質目視確認用として、送信・企業同期を行わない `Cafe SOSOMU` 10ページ提案デモを追加。公開根拠は公式Instagram、所在地・メニュー概要の公開ディレクトリ、Google Maps導線に限定し、第三者写真・ロゴ・口コミ・売上数値は不使用。フォームは `formEnabled:false` で誤送信を防止する。
 - 対象企業がそのまま使える見え方にするため、デモ共通UIへ企業別CTA、ナビ文言、フッター所有者・説明、公式SNS、Google Maps、送信停止表示、ページ別見出しを追加。従来のParadigm営業CTAはデータ指定がない既存デモのみ互換維持する。
 - 生成品質の欠陥を修正し、`meta.public_facts` のスカラー値をDeepSeek V4 Proプロンプトへ明示的に渡す。未確認情報を創作しない指示も追加。企業追加時のDBトリガーが使用する `db_trigger` をpipeline provider制約へ追加するmigrationを作成した。

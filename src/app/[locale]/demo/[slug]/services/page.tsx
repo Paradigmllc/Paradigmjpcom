@@ -36,5 +36,5 @@ export default async function DemoServicesServerPage({ params }: Props) {
 
   const template = getTemplateById(data.templateId ?? "zenith")
 
-  return <DemoServicesPage services={data.pages.services} companyName={data.companyName} locale={data.locale} template={template} />
+  return <DemoServicesPage services={data.pages.services} companyName={data.companyName} locale={data.locale} template={template} media={data.premium?.gallery[1]} />
 }

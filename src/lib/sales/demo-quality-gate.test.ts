@@ -24,6 +24,13 @@ function fixture(): DemoMultiPageData {
     locale: "ja",
     industry: "retail",
     templateId: "prism",
+    premium: {
+      style: "retail",
+      heroMedia: [1, 2, 3].map((index) => ({ src: `/generated/hero-${index}.jpg`, alt: `提案用画像${index}`, kind: "image" as const })),
+      gallery: [1, 2, 3].map((index) => ({ src: `/generated/gallery-${index}.jpg`, alt: `提案用ギャラリー${index}`, kind: "image" as const })),
+      intro: { eyebrow: "STORY", title: "丁寧な仕事を伝える", body: "確認済み情報をもとにした紹介文です。" },
+      social: [{ label: "Instagram", href: "https://instagram.com/example", network: "instagram" }],
+    },
     meta: {
       title: "サンプル商店",
       description: "公開情報を基にした提案デモ",
@@ -84,6 +91,7 @@ function fixture(): DemoMultiPageData {
       recruit: contentPage,
       privacy: contentPage,
       terms: contentPage,
+      commerce: contentPage,
     },
   }
 }
@@ -93,7 +101,9 @@ describe("demo quality gate", () => {
     const page = fixture()
     const template = DEMO_TEMPLATES.find((item) => item.id === "prism")!
     const recipe = buildDesignRecipe(template, page)
-    const quality = evaluateDemoQuality(page, recipe, buildProposalRightsManifest())
+    const quality = evaluateDemoQuality(page, recipe, buildProposalRightsManifest([
+      { src: "/generated/hero-1.jpg", usage: "proposal_only" },
+    ]))
     const summary = summarizeCandidate(page, recipe, quality)
 
     expect(quality.passed).toBe(true)
@@ -108,7 +118,9 @@ describe("demo quality gate", () => {
     page.pages.home.testimonials = [{ id: "fake", quote: "問い合わせが2倍に増えました。", author: "A社", role: "代表", avatarInitials: "A" }]
     const template = DEMO_TEMPLATES.find((item) => item.id === "prism")!
     const recipe = buildDesignRecipe(template, page)
-    const quality = evaluateDemoQuality(page, recipe, buildProposalRightsManifest())
+    const quality = evaluateDemoQuality(page, recipe, buildProposalRightsManifest([
+      { src: "/generated/hero-1.jpg", usage: "proposal_only" },
+    ]))
 
     expect(quality.passed).toBe(false)
     expect(quality.hardBlockers).toEqual(expect.arrayContaining([
@@ -122,7 +134,7 @@ describe("demo quality gate", () => {
     const page = fixture()
     const template = DEMO_TEMPLATES.find((item) => item.id === "prism")!
     const recipe = buildDesignRecipe(template, page)
-    const rights = buildProposalRightsManifest()
+    const rights = buildProposalRightsManifest([{ src: "/generated/hero-1.jpg", usage: "proposal_only" }])
     rights.assets.push({ kind: "image", source: "social media", usage: "unknown" })
     const quality = evaluateDemoQuality(page, recipe, rights, new Set([fingerprint(recipe)]))
 

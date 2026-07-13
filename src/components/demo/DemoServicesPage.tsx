@@ -1,7 +1,8 @@
 "use client"
 
 import { motion } from "framer-motion"
-import type { DemoServicesPage as DemoServicesPageData } from "@/lib/sales/demo-site-types"
+import Image from "next/image"
+import type { DemoPremiumMedia, DemoServicesPage as DemoServicesPageData } from "@/lib/sales/demo-site-types"
 import type { DemoTemplate, ServiceSectionId, ServiceCardStyle } from "@/lib/sales/demo-templates/registry"
 import { headingSizeClass } from "@/lib/sales/demo-templates/registry"
 import { JAPAN_ENTRY_CTA_EN, JAPAN_ENTRY_CTA_JA } from "@/lib/japan-entry-public-copy"
@@ -19,9 +20,10 @@ interface Props {
   companyName: string
   locale: string
   template?: DemoTemplate
+  media?: DemoPremiumMedia
 }
 
-export function DemoServicesPage({ services, companyName: _companyName, locale, template }: Props) {
+export function DemoServicesPage({ services, companyName: _companyName, locale, template, media }: Props) {
   const isJa = locale === "ja"
   const accent = services.accentColor || "#2563eb"
   const layout = template?.layout.services
@@ -29,7 +31,7 @@ export function DemoServicesPage({ services, companyName: _companyName, locale, 
   const renderSection = (sectionId: ServiceSectionId) => {
     switch (sectionId) {
       case "hero":
-        return <ServicesHero services={services} isJa={isJa} accent={accent} template={template?.designTokens} />
+        return <ServicesHero services={services} isJa={isJa} accent={accent} template={template?.designTokens} media={media} />
       case "cards":
         return renderServiceCards(layout?.cardStyle ?? "detailed")
       case "process":
@@ -66,18 +68,21 @@ export function DemoServicesPage({ services, companyName: _companyName, locale, 
 const defaultServiceSections: ServiceSectionId[] = ["hero", "cards", "process"]
 
 function ServicesHero({
-  services, isJa, template,
-}: { services: DemoServicesPageData; isJa: boolean; accent: string; template?: DemoTemplate["designTokens"] }) {
+  services, isJa, template, media,
+}: { services: DemoServicesPageData; isJa: boolean; accent: string; template?: DemoTemplate["designTokens"]; media?: DemoPremiumMedia }) {
   const size = headingSizeClass(template?.typography.scale ?? "normal")
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-blue-50/50 px-4 pb-16 pt-20 sm:px-6 lg:px-8">
+    <section className={`relative overflow-hidden px-4 pb-20 pt-24 sm:px-6 sm:pb-24 sm:pt-28 lg:px-8 ${media ? "min-h-[520px] bg-[#251914]" : "bg-gradient-to-br from-gray-50 via-white to-blue-50/50"}`}>
+      {media?.kind === "image" && <Image src={media.src} alt={media.alt} fill priority sizes="100vw" className="object-cover" style={{ objectPosition: media.objectPosition ?? "center" }} />}
+      {media?.kind === "video" && <video src={media.src} autoPlay muted loop playsInline className="absolute inset-0 h-full w-full object-cover" aria-label={media.alt} />}
+      {media && <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/45 to-black/15" />}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)] bg-[size:64px_64px]" />
-      <motion.div className="relative mx-auto max-w-4xl text-center"
+      <motion.div className={`relative mx-auto max-w-5xl ${media ? "pt-20 text-left sm:pt-28" : "text-center"}`}
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-        <h1 className={`font-display ${size.h1} ${template?.typography.headingWeight ?? "font-extrabold"} tracking-tight text-gray-900`}>
+        <h1 className={`font-premium-serif ${size.h1} ${template?.typography.headingWeight ?? "font-extrabold"} tracking-tight ${media ? "max-w-3xl text-white" : "text-gray-900"}`}>
           {services.title}
         </h1>
-        <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-gray-500 sm:text-xl">{services.subtitle}</p>
+        <p className={`${media ? "mr-auto text-white/75" : "mx-auto text-gray-500"} mt-6 max-w-2xl text-lg leading-relaxed sm:text-xl`}>{services.subtitle}</p>
       </motion.div>
     </section>
   )
