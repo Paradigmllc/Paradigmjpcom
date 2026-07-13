@@ -75,6 +75,7 @@ export default function SiteHeader({ nav, announcementActive = false }: SiteHead
   const JAPAN_ENTRY_NAV: NavLink[] = [
     { href: "/about", label: t("about") },
     { href: "/pricing", label: t("pricing") },
+    { href: "/package", label: t("package") },
     { href: "/works", label: t("works") },
     { href: "/faq", label: t("faq") },
     { href: "/blog", label: t("blog") },
