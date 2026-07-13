@@ -1237,3 +1237,13 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
   - `https://demo.paradigmjp.com/demo`: HTTP 200.
   - Public HTML checks: `className=0`, `accentLiteral=0`, `--brand: #7c3aed`.
   - Chrome headless screenshot saved at `C:\Users\apple\AppData\Local\Temp\demo-paradigmjp-demo-fixed.png` and visually checked.
+## CURRENT STATUS - 2026-07-14 フォーム適格リスト量産→Twenty同期（実装・ローカル検証完了 / 本番反映待ち / 送信0）
+
+### 2026-07-14 Form-qualified lead factory
+- 候補取得後すぐに`SalesCompany`へ昇格して重い診断・レポート・文面生成を起動していた順序を変更。生候補は候補倉庫に保持し、技術・国・機会スコア・SMBスコア・実フォームを確認した企業だけを`SalesCompany`へ昇格し、TwentyのCompany homeのみ同期する。Opportunity作成、診断、Opportunity Brief、初回文面、フォーム送信は起動しない。
+- フォーム判定へ`verification=form|page|fallback|none`を追加。連絡先ページの存在だけでは合格せず、HTMLの`<form>`または既知フォームプロバイダ署名を確認し、既定信頼度80以上だけを合格にする。最初のcontact pageにフォームがなくても、sitemap / Crawl4AI / common path / SPA経路を最後まで探索する。量産ゲートではDeepSeek判定を無効化し、トークン消費0。
+- SMB専用ゲートとして`min_smb_score`を独立保存し、Adobe Experience Manager / Sitecore / SAP Commerce / Salesforce Commerce Cloud / Oracle Commerce / Hybris / Workday等の明白なenterprise stack、または15種以上の過大stackをSMBレーンから除外する。総合機会スコアだけでは昇格しない。
+- DB migration `20260714143000_form_qualified_lead_factory.sql`で、run/itemへフォーム確認、合否理由、Twenty同期、SMB閾値、集計カウンタを追加。RLS済み既存2テーブルを拡張し、制約・索引・service_role運用を維持。正式release scriptと`run-migrations.sh`へ接続した。
+- 認可済みAPI `/api/sales/lead-candidates/factory`で最大20か国を一括投入可能。国別ラン最大2本、ラン内確認最大8並列のone-shot/event-driven処理で、常駐polling/cronは追加しない。Realtime SSEでrun更新を管理画面へ反映する。
+- 管理画面 `/ja/admin/lead-factory` を追加。主要対象国初期値US/GB/CA/AU/DE/FR/NL/SG/AE、候補数・確認数・最低機会スコア・最低SMBスコア・フォーム信頼度・技術を指定でき、フォーム確認/合格/昇格/Twenty同期/エラー、直近100件の個別判定を表示する。loading/empty/error/degraded realtime状態を実装。
+- ローカル検証: 関連Vitest **4 files / 15 tests pass**、TypeScript pass、対象ESLint pass、quality guard **0 errors / 59既存warnings + 今回warning 0**、production build **408/408 pages**、`git diff --check` pass。実ブラウザで未認証時の`/admin/login`保護遷移、ローカル検証用署名session後の管理画面表示、主要入力10要素、error overlay 0、PC 1280px / mobile 390px横溢れ0を確認。ローカルは本番DBを接続せず一覧APIの実データ表示は本番反映後に確認する。外部送信、候補収集、Twenty本番同期、DeepSeek実行は行っていない。
