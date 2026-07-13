@@ -27,6 +27,14 @@ import {
   buildJapaneseUserPrompt,
 } from "./demo-deepseek-prompts";
 
+/**
+ * DeepSeek V4 Pro includes reasoning tokens in max_tokens. A complete Japanese
+ * four-page payload regularly exceeds the former 4,096-token / 60-second
+ * budget, which left otherwise valid generations as truncated JSON.
+ */
+export const DEMO_COPY_MAX_TOKENS = 8_192;
+export const DEMO_COPY_TIMEOUT_MS = 180_000;
+
 export type {
   DeepSeekAboutEnhancement,
   DeepSeekContactEnhancement,
@@ -72,9 +80,9 @@ export async function enhanceDemoWithDeepSeek(
     model,
     modelPolicy: "strict",
     temperature: 0.4,
-    maxTokens: 4096,
+    maxTokens: DEMO_COPY_MAX_TOKENS,
     responseFormat: "json_object",
-    timeoutMs: 60_000,
+    timeoutMs: DEMO_COPY_TIMEOUT_MS,
   });
   if (!result.ok || !result.text) {
     console.error("[deepseek-enhancer] strict DeepSeek V4 Pro generation failed:", result.error ?? "empty response");
