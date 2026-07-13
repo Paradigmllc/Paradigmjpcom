@@ -1127,6 +1127,8 @@ fi
 python3 - --apply "$route_file" "$cache_file" "$app_uuid" "$new_container" "$new_ip" <<'PY'
 ${originLockHelper}
 PY
+docker rm -f astro-demo >/dev/null 2>&1 || true
+echo "Legacy Astro demo container: stopped"
 `
   runOriginLockHostScript("Manual Traefik atomic route refresh", script)
 }
