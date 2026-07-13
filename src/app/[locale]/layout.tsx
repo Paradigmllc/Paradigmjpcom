@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { notFound } from "next/navigation"
+import { headers } from "next/headers"
 import { NextIntlClientProvider, hasLocale } from "next-intl"
 import { getMessages, setRequestLocale } from "next-intl/server"
 import { ThemeProvider } from "@/components/aesop/ThemeProvider"
@@ -188,6 +189,8 @@ export default async function LocaleLayout({ children, params }: Props) {
     getHeaderNav(locale),
     getFooterNav(locale),
   ])
+  const requestHost = (await headers()).get("host")?.split(":")[0]
+  const forceStandalone = requestHost === "demo.paradigmjp.com"
   const umamiId = umamiWebsiteIdFor(settings, locale) ?? process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ?? null
   // admin が編集した color/font/radius tokens を CSS 変数として注入 (空なら ""・globals.css default を使用)
   const themeOverrideCss = themeTokensToCss(settings.theme)
@@ -250,6 +253,7 @@ export default async function LocaleLayout({ children, params }: Props) {
               // 2026-05-21: header/footer ナビ + 告知バーを CMS global から渡す。
               <ConditionalSiteChrome
                 locale={locale}
+                forceStandalone={forceStandalone}
                 footerSettings={{
                   contactEmail: settings.contact.email,
                   social: settings.social,
