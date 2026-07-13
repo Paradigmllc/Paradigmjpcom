@@ -92,7 +92,7 @@ function InfoBlock({ icon, label, children }: { icon: React.ReactNode; label: st
   return <div className="min-h-48 bg-[#f4f1e9] p-6 sm:p-8"><div className="flex items-center gap-3 text-[var(--demo-accent)]">{icon}<p className="text-[10px] font-bold uppercase tracking-[.24em]">{label}</p></div><div className="mt-8 text-sm leading-7">{children}</div></div>
 }
 
-function PremiumV2InquiryForm({ data, previewOnly }: { data: DemoMultiPageData; previewOnly: boolean }) {
+export function PremiumV2InquiryForm({ data, previewOnly }: { data: DemoMultiPageData; previewOnly: boolean }) {
   const contact = data.pages.contact
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [submitError, setSubmitError] = useState("")

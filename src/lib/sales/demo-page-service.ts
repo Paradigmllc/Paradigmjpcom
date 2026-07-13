@@ -16,6 +16,7 @@ import type { ReportLocale } from "./types"
 import { buildDemoUrl } from "./routing"
 import { readValidatedDemoSourceManifest } from "./demo-source-policy"
 import { applyIndustryPresentation } from "./demo-industry-presentation"
+import { upgradeDemoToPremiumV3 } from "./demo-premium-v3"
 
 export { fetchDemoMultiPageData, fetchDemoPageData } from "./demo-page-fetch"
 
@@ -100,9 +101,11 @@ export async function generateFullStackDemo(
       if (sharedEnhancement) page = mergeDeepSeekOutput(page, sharedEnhancement, effectiveLocale)
       page = applyIndustryPresentation(page)
       const recipe = buildDesignRecipe(template, page)
-      const quality = evaluateDemoQuality(page, recipe, rights, existingFingerprints)
-      page = { ...page, designRecipe: recipe, quality, rightsManifest: rights }
-      return { page, summary: summarizeCandidate(page, recipe, quality) }
+      page = upgradeDemoToPremiumV3(page, recipe)
+      const brandedRecipe = page.designRecipe ?? recipe
+      const quality = evaluateDemoQuality(page, brandedRecipe, rights, existingFingerprints)
+      page = { ...page, designRecipe: brandedRecipe, quality, rightsManifest: rights }
+      return { page, summary: summarizeCandidate(page, brandedRecipe, quality) }
     })
 
     candidates.sort((left, right) => right.summary.score - left.summary.score)

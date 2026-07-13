@@ -8,13 +8,14 @@ import {
 } from "./demo-quality-gate"
 import type { DemoMultiPageData } from "./demo-site-types"
 import { DEMO_TEMPLATES } from "./demo-templates/registry"
+import { upgradeDemoToPremiumV3 } from "./demo-premium-v3"
 
 function fixture(): DemoMultiPageData {
   const contentPage = {
     title: "追加ページ",
     subtitle: "確認済み情報を掲載します。",
     eyebrow: "Proposal",
-    sections: [{ id: "section", heading: "掲載内容", body: "確認済み情報をもとにご案内します。" }],
+    sections: [{ id: "section", heading: "掲載内容", body: "確認済みの商品、店舗、所在地、公式情報をもとに、初めて利用する方にも分かりやすい順序でご案内します。変わる可能性がある内容は、現在の公式案内をご確認ください。" }],
     accentColor: "#2563eb",
   }
   return {
@@ -53,7 +54,7 @@ function fixture(): DemoMultiPageData {
       home: {
         hero: {
           title: "暮らしに合う道具を、丁寧に。",
-          subtitle: "公開情報を基にした構成提案です。",
+          subtitle: "東京都で確認できる商品と店舗情報を、初めて訪れる方にも分かりやすい順序でご案内します。最新情報と提供状況は公式案内をご確認ください。",
           tagline: "提案デモ",
           companyName: "サンプル商店",
           industryLabel: "小売",
@@ -64,30 +65,43 @@ function fixture(): DemoMultiPageData {
           accentColorDark: "#1e40af",
         },
         features: [
-          { title: "特徴1", description: "説明1", icon: "star", metricLabel: "", metricValue: "", metricBench: "", severity: "info" },
-          { title: "特徴2", description: "説明2", icon: "star", metricLabel: "", metricValue: "", metricBench: "", severity: "info" },
-          { title: "特徴3", description: "説明3", icon: "star", metricLabel: "", metricValue: "", metricBench: "", severity: "info" },
+          { title: "丁寧な商品案内", description: "確認できる商品情報を整理し、特徴や選び方を事実の範囲で分かりやすくご案内します。", icon: "star", metricLabel: "", metricValue: "", metricBench: "", severity: "info" },
+          { title: "店舗での体験", description: "所在地や店内の写真、取扱内容を一つの流れで確認でき、訪問前の不安を減らします。", icon: "star", metricLabel: "", metricValue: "", metricBench: "", severity: "info" },
+          { title: "正確な最新情報", description: "営業や提供状況が変わる情報は公式案内へつなぎ、未確認の内容を掲載しません。", icon: "star", metricLabel: "", metricValue: "", metricBench: "", severity: "info" },
         ],
         stats: [],
         beforeAfter: [],
         totalLoss: "",
-        cta: { title: "お問い合わせ", subtitle: "ご相談内容をお知らせください。", buttonText: "お問い合わせ", buttonHref: "/contact", accentColor: "#2563eb", accentColorDark: "#1e40af" },
+        cta: { title: "最新情報とアクセスをご確認ください。", subtitle: "商品や営業に関する現在の案内は公式情報をご確認ください。所在地と地図はアクセスページにまとめています。取扱内容や訪問前に確認したい事項は、商品案内とよくある質問からもご覧いただけます。", buttonText: "お問い合わせ", buttonHref: "/contact", accentColor: "#2563eb", accentColorDark: "#1e40af" },
       },
       about: {
         title: "私たちについて", subtitle: "事業紹介", companyName: "サンプル商店", industryLabel: "小売", locationLabel: "東京都",
-        story: "公開情報を基にした紹介文案です。", mission: "日々の暮らしに寄り添う商品をご案内します。", values: [], teamNote: "", accentColor: "#2563eb",
+        story: "サンプル商店は、東京都で確認できる商品と店舗情報を分かりやすく届ける小売店です。初めて訪れる方が、取扱内容、場所、現在の案内を迷わず確認できることを大切にしています。\n\n商品については公開情報で確認できる内容を中心に紹介し、価格、在庫、営業時間など変わる可能性がある情報は公式案内へつなぎます。", mission: "日々の暮らしに寄り添う商品を、正確な情報とともにご案内します。", values: [
+          { title: "正確さ", description: "確認できる内容と未確認の内容を分け、現在の情報を誠実にお伝えします。", icon: "shield" },
+          { title: "選びやすさ", description: "商品やサービスを比較しやすい順序に整理し、必要な情報へ短くつなぎます。", icon: "star" },
+          { title: "地域との接点", description: "所在地やアクセスを明確にし、訪問前に確認したい事項をまとめます。", icon: "users" },
+          { title: "継続した案内", description: "営業や提供状況が変わる情報は、公式案内で継続的に更新します。", icon: "lightbulb" },
+        ], teamNote: "商品、店舗、営業に関する情報は、事業者が確認した内容だけを公開します。", accentColor: "#2563eb",
       },
       services: {
         title: "サービス", subtitle: "取扱内容", accentColor: "#2563eb",
+        processEyebrow: "FLOW",
+        processTitle: "ご利用の流れ",
         services: [
-          { title: "サービス1", description: "説明", icon: "star", features: [] },
-          { title: "サービス2", description: "説明", icon: "star", features: [] },
+          { title: "商品案内", description: "確認済みの商品カテゴリーと選ぶ際に必要な情報を、写真と言葉で分かりやすくご案内します。", icon: "star", features: ["取扱カテゴリー", "写真による紹介", "最新情報への導線"] },
+          { title: "店舗案内", description: "店舗の所在地、地図、店内の雰囲気をまとめ、初めて訪れる方が必要な情報を確認できるようにします。", icon: "star", features: ["所在地", "アクセス地図", "店内写真"] },
+          { title: "最新情報", description: "営業日や提供状況など変わる可能性がある情報を、公式案内から確認できるようにします。", icon: "star", features: ["営業案内", "提供状況", "公式SNS"] },
         ],
-        process: [],
+        process: [
+          { step: 1, title: "商品を知る", description: "商品・サービスページで確認できる取扱内容をご覧ください。" },
+          { step: 2, title: "最新情報を確認", description: "営業日や提供状況など、現在の案内を公式情報から確認します。" },
+          { step: 3, title: "場所を確認", description: "アクセスページの所在地と地図から、訪問経路をご確認ください。" },
+          { step: 4, title: "正式窓口を利用", description: "掲載情報にない事項は、事業者が案内する正式な窓口をご利用ください。" },
+        ],
       },
       contact: {
         title: "お問い合わせ", subtitle: "ご相談ください。", companyName: "サンプル商店", email: "", address: "東京都",
-        calBookingUrl: "", formNote: "送信内容を確認後にご連絡します。", formEnabled: false, accentColor: "#2563eb",
+        calBookingUrl: "", formNote: "商品、営業、アクセスに関する現在の情報は公式案内をご確認ください。この提案デモのフォームは入力確認まで体験できますが、外部へ送信されません。", formEnabled: false, accentColor: "#2563eb",
       },
       works: { ...contentPage, sections: [...contentPage.sections, { id: "section-2", heading: "店内の様子", body: "店舗の雰囲気をご紹介します。" }, { id: "section-3", heading: "商品紹介", body: "取り扱う商品をご紹介します。" }] },
       news: contentPage,
@@ -102,17 +116,19 @@ function fixture(): DemoMultiPageData {
 
 describe("demo quality gate", () => {
   it("passes a complete proposal-safe demo and emits stable fingerprints", () => {
-    const page = fixture()
+    const basePage = fixture()
     const template = DEMO_TEMPLATES.find((item) => item.id === "prism")!
-    const recipe = buildDesignRecipe(template, page)
-    const quality = evaluateDemoQuality(page, recipe, buildProposalRightsManifest([
+    const recipe = buildDesignRecipe(template, basePage)
+    const page = upgradeDemoToPremiumV3(basePage, recipe)
+    const brandedRecipe = page.designRecipe ?? recipe
+    const quality = evaluateDemoQuality(page, brandedRecipe, buildProposalRightsManifest([
       { src: "/generated/hero-1.jpg", usage: "proposal_only" },
     ]))
-    const summary = summarizeCandidate(page, recipe, quality)
+    const summary = summarizeCandidate(page, brandedRecipe, quality)
 
     expect(quality.passed, JSON.stringify(quality)).toBe(true)
     expect(quality.score).toBeGreaterThanOrEqual(92)
-    expect(summary.structuralFingerprint).toBe(fingerprint(recipe))
+    expect(summary.structuralFingerprint).toBe(fingerprint(brandedRecipe))
     expect(summary.designFingerprint).not.toBe(summary.structuralFingerprint)
   })
 

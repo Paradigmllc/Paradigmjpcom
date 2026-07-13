@@ -13,6 +13,20 @@ const DRAFT_PATTERNS = [
 
 const GENERIC_NAV_LABELS = new Set(["会社概要", "サービス", "実績"])
 
+const PAGE_DEPTH_MINIMUMS = {
+  home: 350,
+  about: 300,
+  services: 320,
+  works: 220,
+  news: 350,
+  faq: 250,
+  recruit: 380,
+  privacy: 500,
+  terms: 500,
+  commerce: 500,
+  contact: 80,
+} as const
+
 function collectStrings(value: unknown, output: string[] = []): string[] {
   if (typeof value === "string") {
     const normalized = value.replace(/\s+/gu, " ").trim()
@@ -51,6 +65,10 @@ export function analyzeDemoQualitySignals(page: DemoMultiPageData): {
     if (!item || typeof item !== "object" || !("sections" in item)) return total
     return total + (Array.isArray(item.sections) ? item.sections.length : 0)
   }, 0)
+  const pageDepth = Object.fromEntries(Object.entries(PAGE_DEPTH_MINIMUMS).map(([key]) => {
+    const pageValue = page.pages[key as keyof DemoMultiPageData["pages"]]
+    return [key, collectStrings(pageValue).join("").length]
+  })) as Record<keyof typeof PAGE_DEPTH_MINIMUMS, number>
 
   if (DRAFT_PATTERNS.some((pattern) => pattern.test(copy))) blockers.push("customer_facing_draft_copy")
   if (duplicateLongCopy(page)) blockers.push("repeated_customer_copy")
@@ -68,6 +86,15 @@ export function analyzeDemoQualitySignals(page: DemoMultiPageData): {
   if ((page.pages.works?.sections.length ?? 0) < 2) warnings.push("works_content_thin")
   if ((page.pages.news?.sections.length ?? 0) < 1) warnings.push("news_content_thin")
   if (sectionCount < 9) warnings.push("fixed_page_content_thin")
+  for (const [key, minimum] of Object.entries(PAGE_DEPTH_MINIMUMS)) {
+    const length = pageDepth[key as keyof typeof PAGE_DEPTH_MINIMUMS]
+    if (length < minimum) blockers.push(`page_content_thin:${key}`)
+    else if (length < minimum * 1.15) warnings.push(`page_content_near_minimum:${key}`)
+  }
+  if (page.premium?.style !== "premium-v3" || !page.brandSystem) blockers.push("premium_v3_brand_system_missing")
+  if (!page.designRecipe?.pageCompositions || Object.keys(page.designRecipe.pageCompositions).length < 8) {
+    blockers.push("page_composition_system_missing")
+  }
 
   const specificity = Math.max(0, 25
     - (blockers.includes("industry_navigation_mismatch") ? 12 : 0)
@@ -77,14 +104,18 @@ export function analyzeDemoQualitySignals(page: DemoMultiPageData): {
     - (warnings.includes("works_content_thin") ? 5 : 0)
     - (warnings.includes("news_content_thin") ? 4 : 0)
     - (warnings.includes("fixed_page_content_thin") ? 7 : 0)
-    - (blockers.includes("repeated_customer_copy") ? 10 : 0))
+    - (blockers.includes("repeated_customer_copy") ? 10 : 0)
+    - (blockers.filter((item) => item.startsWith("page_content_thin:")).length * 4)
+    - (warnings.filter((item) => item.startsWith("page_content_near_minimum:")).length * 1))
   const trustSafety = Math.max(0, 25
     - (blockers.includes("presentation_metadata_incomplete") ? 10 : 0)
     - (page.pages.contact.formEnabled === false ? 0 : 15))
   const visualReadiness = Math.max(0, 25
     - (!page.premium || page.premium.heroMedia.length < 3 ? 12 : 0)
     - (!page.premium || page.premium.gallery.length < 3 ? 8 : 0)
-    - (blockers.includes("process_heading_missing") ? 5 : 0))
+    - (blockers.includes("process_heading_missing") ? 5 : 0)
+    - (blockers.includes("premium_v3_brand_system_missing") ? 10 : 0)
+    - (blockers.includes("page_composition_system_missing") ? 8 : 0))
 
   return { blockers, warnings, dimensions: { specificity, contentDepth, trustSafety, visualReadiness } }
 }

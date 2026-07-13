@@ -5,6 +5,7 @@ import { DemoHomePage } from "@/components/demo/DemoHomePage"
 import { DemoPremiumHomePage } from "@/components/demo/DemoPremiumHomePage"
 import { DemoPremiumCraftHomePage } from "@/components/demo/DemoPremiumCraftHomePage"
 import { DemoPremiumV2HomePage } from "@/components/demo/DemoPremiumV2HomePage"
+import { DemoPremiumV3HomePage } from "@/components/demo/premium-v3/DemoPremiumV3HomePage"
 import { getTemplateById } from "@/lib/sales/demo-templates/registry"
 
 export const dynamic = "force-dynamic"
@@ -42,6 +43,7 @@ export default async function DemoHomeServerPage({ params }: Props) {
   // Resolve template from templateId
   const template = getTemplateById(data.templateId ?? "zenith")
 
+  if (data.premium?.style === "premium-v3") return <DemoPremiumV3HomePage data={data} />
   if (data.premium?.style === "premium-v2") return <DemoPremiumV2HomePage data={data} />
   if (data.premium?.style === "craft") return <DemoPremiumCraftHomePage data={data} />
   if (data.premium) return <DemoPremiumHomePage data={data} />

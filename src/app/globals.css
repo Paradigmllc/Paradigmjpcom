@@ -525,5 +525,5 @@ body.no-grain::before { display: none; }
 }
 
 .font-premium-serif {
-  font-family: "Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", serif;
+  font-family: var(--demo-font-display, "Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", serif);
 }

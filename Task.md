@@ -1,3 +1,12 @@
+## CURRENT STATUS - 2026-07-14 SMB Premium V3全ページ品質・業種別ブランドDNA（実装・ローカル実ブラウザQA済み / 本番反映待ち）
+
+### 2026-07-14 SMB Premium V3フルサイト品質強化
+- Cafe SOSOMUのHomeだけでなく、About / Services / Works / News / FAQ / Recruit / Privacy / Terms / Commerce / Contactの全11ページをPremium V3 rendererへ接続。ページ固有のstory、service index、visual journal、information desk、culture/recruit、document、Google Maps、送信停止フォームを実装した。
+- restaurant / beauty / dental / construction / retail / corporateへ業種別Brand DNAを追加し、書体、余白、色、角、画像処理、hero toneを企業IDとdesign recipeから決定する。建設・B2B等は飲食店の全面写真heroを流用せず、精密なsplit corporate heroへ切り替える。
+- 品質ゲートを`2026-07-14.2`、合格94点へ更新。全11ページごとの最低文字量、Premium V3 Brand DNA、8ページ以上のpage compositionをhard blocker化し、トップだけ綺麗・固定ページが薄いデモは公開停止する。
+- Cafe SOSOMUローカル実ブラウザQA: 全11ページHTTP 200、Home 5,267px / About 4,174px / Services 5,880px / Works 4,162px / News 3,279px / Recruit 3,028px / FAQ 2,166px / 法務各2,000px超 / Contact 2,955px。Google Maps iframe 1、フォーム1、画像付き固定ページ、PC hero約66.6px、mobile 390px hero約43.2px、横溢れ0を確認。初回QAでrevealが透明のまま残る問題を検出し、表示をアニメーション依存にしないfail-safeへ修正した。
+- 検証: 関連Vitest **4 files / 11 tests pass**、TypeScript pass、変更対象ESLint pass、production build **396/396 pages**、`git diff --check` pass。メール、電話、郵送、フォーム送信、Twenty同期、営業通知は実行していない。
+
 ## CURRENT STATUS - 2026-07-14 Packageヘッダーナビ追加（実装・型/品質検査済み / 本番反映待ち）
 
 ### 2026-07-14 Japan Entry Packageのヘッダー導線追加

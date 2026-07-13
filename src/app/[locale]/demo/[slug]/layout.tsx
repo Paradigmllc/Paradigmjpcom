@@ -2,10 +2,11 @@ import type { Metadata } from "next"
 import { ArtifactInlineEditor } from "@/components/admin/ArtifactInlineEditor"
 import { DemoMultiLayout } from "@/components/demo/DemoMultiLayout"
 import { DemoPremiumV2Layout } from "@/components/demo/premium-v2/DemoPremiumV2Layout"
+import { DemoPremiumV3Layout } from "@/components/demo/premium-v3/DemoPremiumV3Layout"
 import { isCurrentRequestAdmin } from "@/lib/admin-page-auth"
 import type { DemoMultiPageData } from "@/lib/sales/demo-site-types"
 import { fetchDemoMultiPageDataForRequest } from "@/lib/sales/demo-request-access"
-import { getTemplateById } from "@/lib/sales/demo-templates/registry"
+import { resolveDemoBrandSystem } from "@/lib/sales/demo-premium-v3"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 300
@@ -56,7 +57,20 @@ export default async function DemoMultiLayoutWrapper({ children, params }: Layou
   ]
   const isAdmin = await isCurrentRequestAdmin()
 
-  const siteLayout = demoData?.premium?.style === "premium-v2" ? (
+  const siteLayout = demoData?.premium?.style === "premium-v3" ? (
+    <DemoPremiumV3Layout
+      navLinks={navLinks}
+      basePath={basePath}
+      companyName={companyName}
+      accent={accentColor ?? "#742f32"}
+      brand={resolveDemoBrandSystem(demoData)}
+      quality={demoData.quality}
+      presentation={demoData.meta}
+      privatePreview={demoData.privatePreview}
+    >
+      {children}
+    </DemoPremiumV3Layout>
+  ) : demoData?.premium?.style === "premium-v2" ? (
     <DemoPremiumV2Layout
       navLinks={navLinks}
       basePath={basePath}

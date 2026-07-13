@@ -158,6 +158,23 @@ export interface DemoDesignRecipe {
   compositionVariant: number
   rhythmVariant: number
   motionVariant: "restrained" | "editorial" | "expressive"
+  typographyPreset?: string
+  pageCompositions?: Partial<Record<"home" | "about" | "services" | "works" | "news" | "faq" | "recruit" | "contact" | "legal", string>>
+}
+
+export interface DemoBrandSystem {
+  id: string
+  displayFont: string
+  bodyFont: string
+  headingWeight: 400 | 500 | 600 | 700
+  surface: string
+  surfaceAlt: string
+  ink: string
+  muted: string
+  line: string
+  heroTone: "cinematic" | "editorial" | "precision" | "welcoming"
+  imageTreatment: "warm" | "natural" | "crisp" | "monochrome"
+  shape: "square" | "soft" | "rounded"
 }
 
 export interface DemoRightsAsset {
@@ -215,6 +232,7 @@ export interface DemoMultiPageData {
   rightsManifest?: DemoRightsManifest
   publicationStatus?: DemoPublicationStatus
   premium?: DemoPremiumExperience
+  brandSystem?: DemoBrandSystem
   presentation?: {
     featureEyebrow: string
     featureHeading: string
@@ -253,7 +271,7 @@ export interface DemoPremiumMedia {
 }
 
 export interface DemoPremiumExperience {
-  style: "editorial-cafe" | "craft" | "premium-v2" | "professional" | "wellness" | "retail"
+  style: "editorial-cafe" | "craft" | "premium-v2" | "premium-v3" | "professional" | "wellness" | "retail"
   heroMedia: DemoPremiumMedia[]
   gallery: DemoPremiumMedia[]
   intro: {
