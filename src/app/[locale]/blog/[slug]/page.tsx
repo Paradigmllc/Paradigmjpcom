@@ -12,6 +12,7 @@ import { pageAlternates } from "@/lib/page-metadata"
 import { MARKETING_LOCALES } from "@/i18n/locales"
 import { ArrowRight, Calendar, Clock, Tag } from "lucide-react"
 import Image from "next/image"
+import BlogCoverFallback from "@/components/BlogCoverFallback"
 import { redirect } from "next/navigation"
 
 export const dynamic = "force-dynamic"
@@ -154,7 +155,7 @@ export default async function BlogPostPage({
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-8 lg:gap-12">
             {/* Main content */}
             <div className="min-w-0">
-              {post.heroImage && (
+              {post.heroImage ? (
                 <figure className="mb-8 overflow-hidden rounded-2xl border border-paradigm-line/70 bg-white paradigm-glass paradigm-glow-sm">
                   <Image
                     src={post.heroImage.src}
@@ -167,6 +168,13 @@ export default async function BlogPostPage({
                   />
                   <figcaption className="px-5 py-3 text-[11px] leading-[1.7] text-paradigm-ink-mute">
                     {post.heroImage.caption}
+                  </figcaption>
+                </figure>
+              ) : (
+                <figure className="mb-8 overflow-hidden rounded-2xl border border-paradigm-line/70 bg-white p-2 paradigm-glass paradigm-glow-sm">
+                  <BlogCoverFallback category={post.category} title={post.title} />
+                  <figcaption className="px-3 py-3 text-[11px] leading-[1.7] text-paradigm-ink-mute">
+                    {isJa ? "記事のテーマを示す編集用カバー" : "Editorial cover for this field note"}
                   </figcaption>
                 </figure>
               )}

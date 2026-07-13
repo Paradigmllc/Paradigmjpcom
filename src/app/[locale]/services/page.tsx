@@ -17,6 +17,7 @@ import PageHero from "@/components/PageHero"
 import RichCtaBand from "@/components/aesop/RichCtaBand"
 import FadeIn from "@/components/aesop/FadeIn"
 import JapanEntryJourney from "@/components/japan-entry/JapanEntryJourney"
+import JapanEntryVisualProof from "@/components/japan-entry/JapanEntryVisualProof"
 import { filterByLocale, assertLocale, localeFindOptions } from "@/lib/cms/filters"
 import { withPayloadReadFallback } from "@/lib/payload-availability"
 import { getServices } from "@/lib/data"
@@ -248,6 +249,8 @@ export default async function ServicesPage({ params }: Props) {
       )}
 
       {japanEntryLocale && <JapanEntryJourney locale={locale} />}
+
+      {japanEntryLocale && <JapanEntryVisualProof locale={locale as "en" | "ja"} />}
 
       <RichCtaBand
         eyebrow={t("ctaEyebrow")}

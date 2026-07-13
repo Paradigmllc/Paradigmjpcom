@@ -19,6 +19,7 @@ import { LOCALE_HREFLANG } from "@/lib/locale-map"
 import { getAllBlogPosts } from "@/lib/blog-cms"
 import type { BlogPost } from "@/lib/blog"
 import Image from "next/image"
+import BlogCoverFallback from "@/components/BlogCoverFallback"
 
 export const dynamic = "force-dynamic"
 
@@ -92,7 +93,7 @@ export default async function BlogPage({ params }: Props) {
                       href={`/blog/${post.slug}`}
                       className="group block paradigm-glass rounded-lg p-6 paradigm-glow-sm hover:paradigm-glow-lg  transition-all duration-500 h-full"
                     >
-                      {post.heroImage && (
+                      {post.heroImage ? (
                         <Image
                           src={post.heroImage.src}
                           alt={post.heroImage.alt}
@@ -101,6 +102,10 @@ export default async function BlogPage({ params }: Props) {
                           sizes="(min-width: 768px) 50vw, 100vw"
                           className="mb-5 aspect-[16/10] w-full rounded-xl object-cover"
                         />
+                      ) : (
+                        <div className="mb-5">
+                          <BlogCoverFallback category={post.category} title={post.title} index={i} />
+                        </div>
                       )}
                       <div className="flex flex-wrap items-center gap-2 mb-4">
                         {post.category && (

@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 import { ArrowRight } from "lucide-react"
 import { Sparkles } from "@/components/magicui/sparkles"
 import { Meteors } from "@/components/magicui/meteors"
+import PageHeroVisual from "@/components/PageHeroVisual"
 
 const EASE = [0.22, 1, 0.36, 1] as const
 
@@ -17,6 +18,11 @@ export default function BlockRendererHero({ block: b }: { block: AnyBlock }) {
   const stats = (b.stats as Array<{ value?: string; label?: string }>) ?? []
   const primary = b.primaryCta as { label?: string; href?: string } | undefined
   const secondary = b.secondaryCta as { label?: string; href?: string } | undefined
+  const variant = typeof b.variant === "string" ? b.variant : "centered"
+  const image = b.image && typeof b.image === "object"
+    ? b.image as { url?: string; alt?: string }
+    : undefined
+  const hasImage = variant === "split-image" && Boolean(image?.url)
 
   return (
     <section className="relative min-h-[80vh] sm:min-h-[90vh] flex items-center bg-paradigm-ink overflow-hidden">
@@ -30,8 +36,10 @@ export default function BlockRendererHero({ block: b }: { block: AnyBlock }) {
       <div className="absolute inset-0 section-dots opacity-[0.04] pointer-events-none" />
       <Meteors number={10} color="rgba(167, 139, 250, 0.4)" />
       <Sparkles count={18} color="rgba(244, 114, 182, 0.4)" duration={4} />
-      <div className="relative z-10 w-full max-w-5xl mx-auto px-6 md:px-12 pt-32 pb-20 text-center">
+      <div className={`relative z-10 w-full mx-auto px-6 md:px-12 pt-32 pb-20 ${hasImage ? "max-w-7xl" : "max-w-5xl text-center"}`}>
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: EASE }}>
+          <div className={hasImage ? "grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.9fr)]" : undefined}>
+          <div className={hasImage ? "text-left" : undefined}>
           {!!b.badge && (
             <div className="inline-flex items-center gap-2.5 bg-paradigm-surface/10 backdrop-blur-sm border border-paradigm-line/20 rounded-full px-4 py-2 mb-8">
               <span className="w-2 h-2 rounded-full bg-gradient-to-r from-paradigm-accent to-paradigm-glow animate-pulse" />
@@ -59,7 +67,7 @@ export default function BlockRendererHero({ block: b }: { block: AnyBlock }) {
             )}
           </div>
           {stats.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto">
+            <div className={`grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl ${hasImage ? "mr-auto" : "mx-auto"}`}>
               {stats.map((s, i) => (
                 <motion.div key={i} whileHover={{ y: -3, scale: 1.02 }} transition={{ duration: 0.3, ease: EASE }}
                   className="paradigm-glass rounded-xl px-3 py-4 text-center cursor-default paradigm-glow-sm">
@@ -73,6 +81,23 @@ export default function BlockRendererHero({ block: b }: { block: AnyBlock }) {
               ))}
             </div>
           )}
+          </div>
+          {hasImage ? (
+            <div className="relative overflow-hidden rounded-3xl border border-white/15 bg-white/95 p-2 shadow-2xl shadow-blue-950/30">
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-blue-200/10" />
+              <img
+                src={image?.url}
+                alt={image?.alt ?? "Japan Entry package visual"}
+                className="relative z-10 h-auto w-full rounded-2xl object-cover"
+                loading="eager"
+              />
+            </div>
+          ) : (
+            <div className="mx-auto mt-10 hidden max-w-[300px] lg:block">
+              <PageHeroVisual />
+            </div>
+          )}
+          </div>
         </motion.div>
       </div>
     </section>

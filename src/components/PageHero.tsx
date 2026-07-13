@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react"
 import { getTranslations } from "next-intl/server"
 import { Link } from "@/i18n/routing"
+import PageHeroVisual from "@/components/PageHeroVisual"
 
 interface PageHeroProps {
   badge: string
@@ -53,6 +54,7 @@ export default async function PageHero({ badge, title, desc, highlight, asideTex
 
         </div>
         <aside className="self-end border-l border-paradigm-line pl-6 anim-fade-up-3">
+          <PageHeroVisual />
           <p className="text-[12px] leading-[1.8] text-paradigm-ink-mute">
             {asideText ?? tFooter("companyTagline")}
           </p>
