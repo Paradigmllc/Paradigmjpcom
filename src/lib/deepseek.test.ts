@@ -78,13 +78,12 @@ describe("callDeepSeek フォールバックチェーン", () => {
     expect(r.error).toContain("empty response")
   })
 
-  it("LiteLLM credentials can provide the strict V4 Pro route", async () => {
-    delete process.env.DEEPSEEK_API_KEY
+  it("strict V4 Pro calls the DeepSeek API directly even if LiteLLM variables exist", async () => {
     process.env.LITELLM_API_KEY = "litellm-test-key"
     process.env.LITELLM_API_BASE = "https://litellm.example/v1"
     const fetchMock = vi.fn(async (url: string, init: RequestInit) => {
       const body = JSON.parse(init.body as string) as { model: string }
-      expect(url).toBe("https://litellm.example/v1/chat/completions")
+      expect(url).toBe("https://api.deepseek.com/v1/chat/completions")
       expect(body.model).toBe("deepseek-v4-pro")
       return new Response(JSON.stringify({ choices: [{ message: { content: "V4 Pro output" } }] }), { status: 200 })
     })

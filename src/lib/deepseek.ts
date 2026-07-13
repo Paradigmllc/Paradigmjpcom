@@ -1,22 +1,19 @@
 /**
- * lib/deepseek.ts — LLM ゲートウェイ (LiteLLM スタイル・多段フォールバック)
+ * lib/deepseek.ts — DeepSeek 公式 API ゲートウェイ
  *
  * 役割: 全 LLM 呼び出しの唯一の窓口。OpenAI 互換 endpoint を叩き、
  *       モデル/プロバイダの **フォールバックチェーン** で「空応答・エラー」を吸収する。
  *
- * モデル方針 (2026-05-20・ユーザー指示「LiteLLM・default DeepSeek V4・fallback」):
+ * モデル方針 (2026-07-13・ユーザー指示「DeepSeek V4 直叩き」):
  *   - **default = DeepSeek V4 を最初に試す** → 空/失敗なら自動で次モデルへフォールバック
  *   - 実 API では deepseek-v4-pro/v4/v4-flash が 200/空応答を返すため、フォールバックで
  *     `deepseek-chat` (実出力) に落ちる設計。DeepSeek が真の V4 id を公開したら default で通る。
- *   - **LiteLLM 対応**: DEEPSEEK_API_BASE で LiteLLM proxy / OpenRouter 等の OpenAI 互換
- *     endpoint に差し替え可。LiteLLM 経由なら DEEPSEEK_MODEL_CHAIN に "deepseek/..." を設定。
+ *   - primary は DeepSeek 公式 API を直接呼び出す。LiteLLM は使用しない。
  *   - **第2プロバイダ fallback**: OPENROUTER_API_KEY があれば、primary 全滅時に OpenRouter へ。
  *
  * env:
- *   LITELLM_API_KEY         LiteLLM proxy key (configured時はprimaryとして優先)
- *   LITELLM_API_BASE        LiteLLM OpenAI-compatible base URL
- *   DEEPSEEK_API_KEY        primary プロバイダの鍵 (必須)
- *   DEEPSEEK_API_BASE       primary base URL (default https://api.deepseek.com/v1・LiteLLM 差替可)
+ *   DEEPSEEK_API_KEY        DeepSeek 公式 API key (必須)
+ *   DEEPSEEK_API_BASE       DeepSeek API base URL (default https://api.deepseek.com/v1)
  *   DEEPSEEK_MODEL_CHAIN    試行モデルを comma 区切りで明示 (例 "deepseek-v4,deepseek-chat")
  *   DEEPSEEK_MODEL          単一 default モデル (CHAIN 未指定時の先頭・default "deepseek-v4-pro")
  *   OPENROUTER_API_KEY      任意・第2プロバイダ fallback の鍵
@@ -76,11 +73,11 @@ function primaryModels(optModel?: string): string[] {
 
 function buildProviders(optModel?: string, modelPolicy: DeepSeekOptions["modelPolicy"] = "chain"): Provider[] {
   const providers: Provider[] = []
-  const dsKey = process.env.LITELLM_API_KEY?.trim() ?? process.env.DEEPSEEK_API_KEY?.trim()
+  const dsKey = process.env.DEEPSEEK_API_KEY?.trim()
   if (dsKey) {
     providers.push({
-      name: process.env.LITELLM_API_KEY?.trim() ? "litellm" : "deepseek",
-      base: (process.env.LITELLM_API_BASE ?? process.env.DEEPSEEK_API_BASE ?? "https://api.deepseek.com/v1").replace(/\/+$/, ""),
+      name: "deepseek",
+      base: (process.env.DEEPSEEK_API_BASE ?? "https://api.deepseek.com/v1").replace(/\/+$/, ""),
       key: dsKey,
       models: modelPolicy === "strict" && optModel ? [optModel] : primaryModels(optModel),
     })
@@ -159,7 +156,7 @@ export async function callDeepSeek(
 ): Promise<DeepSeekResponse> {
   const providers = buildProviders(opts.model, opts.modelPolicy)
   if (providers.length === 0) {
-    return { ok: false, error: "no LLM provider configured (LITELLM_API_KEY / DEEPSEEK_API_KEY / OPENROUTER_API_KEY)" }
+    return { ok: false, error: "no LLM provider configured (DEEPSEEK_API_KEY / OPENROUTER_API_KEY)" }
   }
 
   let last: DeepSeekResponse = { ok: false, error: "no attempt made" }
