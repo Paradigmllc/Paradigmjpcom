@@ -8,7 +8,7 @@ import type {
 import type { DemoTemplate } from "./demo-templates/registry"
 import { findUnsupportedDemoClaims } from "./demo-copy-grounding"
 
-export const DEMO_QUALITY_GATE_VERSION = "2026-07-13.4"
+export const DEMO_QUALITY_GATE_VERSION = "2026-07-13.5"
 export const DEMO_QUALITY_THRESHOLD = 90
 
 const FABRICATION_PATTERNS = [
@@ -117,14 +117,10 @@ export function evaluateDemoQuality(
   if (/web改善デモ|improvement demo|改善後のイメージ|公開データを分析|診断フック|inquiry path|security and trust headers/iu.test(customerFacingCopy)) {
     hardBlockers.push("sales_diagnostic_copy_leak")
   }
-  if (/(?:19|20)\d{2}/u.test(customerFacingCopy) && !/(?:19|20)\d{2}/u.test(verifiedFacts)) {
-    hardBlockers.push("unsupported_chronology_claim")
-  }
-  if (/(長年|創業|以来|歩んできた|信頼を築いて)/u.test(customerFacingCopy) && !/(創業|設立|沿革|(?:19|20)\d{2})/u.test(verifiedFacts)) {
-    hardBlockers.push("unsupported_history_claim")
-  }
   const unsupportedClaims = findUnsupportedDemoClaims(customerFacingCopy, verifiedFacts)
   if (unsupportedClaims.includes("asset_provenance")) hardBlockers.push("unsupported_asset_provenance_claim")
+  if (unsupportedClaims.includes("chronology")) hardBlockers.push("unsupported_chronology_claim")
+  if (unsupportedClaims.includes("history")) hardBlockers.push("unsupported_history_claim")
   if (unsupportedClaims.includes("operations")) hardBlockers.push("unsupported_operational_claim")
   if (unsupportedClaims.includes("product_detail")) hardBlockers.push("unsupported_product_detail_claim")
   if (page.pages.contact.formEnabled !== false) {

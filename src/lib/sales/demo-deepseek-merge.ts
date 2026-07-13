@@ -100,10 +100,25 @@ export function mergeDeepSeekOutput(
 
   const premium = base.premium ? {
     ...base.premium,
+    heroMedia: base.premium.heroMedia.map((item) => ({
+      ...item,
+      alt: groundDemoText(item.alt, verifiedFacts, `${base.companyName} ${isJa ? "提案用イメージ" : "proposal image"}`),
+      caption: groundDemoText(item.caption, verifiedFacts, isJa ? "提案用イメージ" : "Proposal image"),
+      eyebrow: groundDemoText(item.eyebrow, verifiedFacts, ""),
+      title: groundDemoText(item.title, verifiedFacts, ""),
+    })),
+    gallery: base.premium.gallery.map((item) => ({
+      ...item,
+      alt: groundDemoText(item.alt, verifiedFacts, `${base.companyName} ${isJa ? "提案用イメージ" : "proposal image"}`),
+      caption: groundDemoText(item.caption, verifiedFacts, isJa ? "提案用イメージ" : "Proposal image"),
+      eyebrow: groundDemoText(item.eyebrow, verifiedFacts, ""),
+      title: groundDemoText(item.title, verifiedFacts, ""),
+    })),
     intro: {
       ...base.premium.intro,
       title: home.hero.title,
       body: about.story,
+      note: groundDemoText(base.premium.intro.note, verifiedFacts, isJa ? "詳細は正式公開前に事業者確認を行います。" : "Details require operator confirmation before publication."),
     },
   } : undefined;
   const faqPage = base.pages.faq && home.faq ? {
