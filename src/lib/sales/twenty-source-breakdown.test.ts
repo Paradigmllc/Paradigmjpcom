@@ -132,7 +132,7 @@ describe("twentyCompanyHomePayload", () => {
     const payload = twentyCompanyHomePayload(karte);
     expect(payload.paradigmIndustryName).toBeNull();
     expect(payload.paradigmSourceName).toBeNull();
-    expect(payload.paradigmSourceCoverage).toBe(42);
+    expect(payload.paradigmSourceCoverage).toBe("42");
     expect(payload.paradigmDataBreakdown).toContain("analysis 1/2 (err 1)");
     expect(payload.paradigmSourceDetailsUrl).toEqual({
       primaryLinkLabel: "50+ API/OSS詳細",

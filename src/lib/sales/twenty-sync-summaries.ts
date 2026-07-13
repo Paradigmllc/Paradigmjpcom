@@ -304,7 +304,7 @@ export function twentyCompanyHomePayload(
     paradigmSourceName: sourceSelectValue(karte.sourceName),
     paradigmSalesStatus: salesStatusLabel(karte),
     paradigmKarteScore: karteScore(karte),
-    paradigmSourceCoverage: karte.sourceScore,
+    paradigmSourceCoverage: String(karte.sourceScore),
     paradigmDataStatus: sourceDataStatus(karte),
     paradigmDataSources: sourceDataCounts(karte),
     paradigmDataBreakdown: sourceCategoryBreakdown(karte),
