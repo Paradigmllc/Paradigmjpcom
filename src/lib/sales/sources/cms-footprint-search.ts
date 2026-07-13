@@ -6,7 +6,7 @@
  */
 
 const CMS_FOOTPRINTS: Record<string, string[]> = {
-  Shopify: ['"cdn.shopify.com"', '"shopify-section"', '"myshopify.com"'],
+  Shopify: ["site:myshopify.com", '"Powered by Shopify"', '"shopify-section"'],
   WordPress: ['"Powered by WordPress"', '"Proudly powered by WordPress"', "wp-content"],
   Wix: ['"Made with Wix"', '"Built with Wix"', "wixstatic.com"],
   Webflow: ['"Made in Webflow"', '"Powered by Webflow"', "webflow.io"],
