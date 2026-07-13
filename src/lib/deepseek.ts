@@ -39,6 +39,7 @@ export interface DeepSeekOptions {
   temperature?: number
   maxTokens?: number
   responseFormat?: "text" | "json_object"
+  thinking?: "enabled" | "disabled"
   timeoutMs?: number
 }
 
@@ -76,6 +77,15 @@ function primaryModels(optModel?: string): string[] {
 
 function buildProviders(optModel?: string, modelPolicy: DeepSeekOptions["modelPolicy"] = "chain"): Provider[] {
   const providers: Provider[] = []
+  const dsKey = process.env.DEEPSEEK_API_KEY?.trim()
+  if (modelPolicy === "strict" && dsKey) {
+    return [{
+      name: "deepseek",
+      base: (process.env.DEEPSEEK_API_BASE ?? "https://api.deepseek.com/v1").replace(/\/+$/, ""),
+      key: dsKey,
+      models: optModel ? [optModel] : primaryModels(),
+    }]
+  }
   const liteKey = process.env.LITELLM_API_KEY?.trim()
   const liteBase = process.env.LITELLM_API_BASE?.trim()
   if (liteKey && liteBase) {
@@ -86,7 +96,6 @@ function buildProviders(optModel?: string, modelPolicy: DeepSeekOptions["modelPo
       models: modelPolicy === "strict" && optModel ? [optModel] : primaryModels(optModel),
     })
   }
-  const dsKey = process.env.DEEPSEEK_API_KEY?.trim()
   if (dsKey) {
     providers.push({
       name: "deepseek",
@@ -124,6 +133,7 @@ async function callOnce(
     max_tokens: opts.maxTokens ?? 1500,
     stream: false,
   }
+  if (opts.thinking) body.thinking = { type: opts.thinking }
   if (opts.responseFormat === "json_object") {
     body.response_format = { type: "json_object" }
   }

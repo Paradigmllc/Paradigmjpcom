@@ -1,94 +1,119 @@
-import { getServiceSalesSupabase } from "@/lib/supabase"
-import { recoverStaleEnrichmentJobs, runEnrichmentJobs } from "./enrichment-jobs-runner"
-import { shouldDeferHeavyDispatch } from "./host-admission"
-import { DB_TABLES } from "@/lib/sales/db-tables"
+import { getServiceSalesSupabase } from "@/lib/supabase";
+import {
+  recoverStaleEnrichmentJobs,
+  runEnrichmentJobs,
+} from "./enrichment-jobs-runner";
+import { shouldDeferHeavyDispatch } from "./host-admission";
+import { DB_TABLES } from "@/lib/sales/db-tables";
 
-export type JsonRecord = Record<string, unknown>
-export type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
+export type JsonRecord = Record<string, unknown>;
+export type ServiceSupabase = NonNullable<
+  ReturnType<typeof getServiceSalesSupabase>
+>;
 
-export type EnrichmentJobStatus = "queued" | "running" | "completed" | "failed" | "cancelled"
-export type EnrichmentJobType = "company_karte" | "dify_diagnosis" | "report_personalize" | "twenty_sync" | "demo_generate"
+export type EnrichmentJobStatus =
+  | "queued"
+  | "running"
+  | "completed"
+  | "failed"
+  | "cancelled";
+export type EnrichmentJobType =
+  | "company_karte"
+  | "dify_diagnosis"
+  | "report_personalize"
+  | "twenty_sync"
+  | "demo_generate"
+  | "japan_entry_report";
 
 export interface SalesEnrichmentJob {
-  id: string
-  company_id: string
-  job_type: EnrichmentJobType
-  status: EnrichmentJobStatus
-  priority: number
-  attempts: number
-  max_attempts: number
-  source: string | null
-  triggered_by: string | null
-  next_run_at: string
-  started_at: string | null
-  completed_at: string | null
-  locked_at: string | null
-  lock_owner: string | null
-  error_message: string | null
-  input_payload: JsonRecord
-  result_payload: JsonRecord
-  created_at: string
-  updated_at: string
+  id: string;
+  company_id: string;
+  job_type: EnrichmentJobType;
+  status: EnrichmentJobStatus;
+  priority: number;
+  attempts: number;
+  max_attempts: number;
+  source: string | null;
+  triggered_by: string | null;
+  next_run_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+  locked_at: string | null;
+  lock_owner: string | null;
+  error_message: string | null;
+  input_payload: JsonRecord;
+  result_payload: JsonRecord;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface EnqueueEnrichmentInput {
-  companyId: string
-  source: string
-  triggeredBy: string
-  priority?: number
-  payload?: JsonRecord
+  companyId: string;
+  source: string;
+  triggeredBy: string;
+  priority?: number;
+  payload?: JsonRecord;
   /** Phase 1-2: isolate Dify diagnosis / report personalization as their own job type so a retry does not re-run collection. Defaults to company_karte. */
-  jobType?: EnrichmentJobType
+  jobType?: EnrichmentJobType;
 }
 
 export interface EnrichmentRunResult {
-  ok: boolean
-  processed: number
-  completed: number
-  failed: number
-  errors: string[]
+  ok: boolean;
+  processed: number;
+  completed: number;
+  failed: number;
+  errors: string[];
+}
+
+export interface EnqueueReportBatchResult {
+  ok: boolean;
+  queued: SalesEnrichmentJob[];
+  reused: SalesEnrichmentJob[];
+  error?: string;
 }
 
 interface JobCompanyProjection {
-  company_name?: string | null
-  domain?: string | null
+  company_name?: string | null;
+  domain?: string | null;
 }
 
 interface RecentJobRow {
-  id: string
-  company_id: string
-  job_type: string
-  status: string
-  priority: number | null
-  attempts: number | null
-  max_attempts: number | null
-  source: string | null
-  triggered_by: string | null
-  error_message: string | null
-  created_at: string
-  updated_at: string
-  sales_companies?: JobCompanyProjection | JobCompanyProjection[] | null
+  id: string;
+  company_id: string;
+  job_type: string;
+  status: string;
+  priority: number | null;
+  attempts: number | null;
+  max_attempts: number | null;
+  source: string | null;
+  triggered_by: string | null;
+  error_message: string | null;
+  result_payload: JsonRecord | null;
+  created_at: string;
+  updated_at: string;
+  sales_companies?: JobCompanyProjection | JobCompanyProjection[] | null;
 }
 
 export interface DashboardEnrichmentJob {
-  id: string
-  companyId: string
-  companyName: string | null
-  domain: string | null
-  jobType: string
-  status: string
-  priority: number
-  attempts: number
-  maxAttempts: number
-  source: string | null
-  triggeredBy: string | null
-  errorMessage: string | null
-  createdAt: string
-  updatedAt: string
+  id: string;
+  companyId: string;
+  companyName: string | null;
+  domain: string | null;
+  jobType: string;
+  status: string;
+  priority: number;
+  attempts: number;
+  maxAttempts: number;
+  source: string | null;
+  triggeredBy: string | null;
+  errorMessage: string | null;
+  resultPayload: JsonRecord;
+  createdAt: string;
+  updatedAt: string;
 }
 
 function getSb(): ServiceSupabase | null {
-  return getServiceSalesSupabase()
+  return getServiceSalesSupabase();
 }
 
 export function getEnrichmentOrchestratorConfig() {
@@ -96,16 +121,16 @@ export function getEnrichmentOrchestratorConfig() {
     provider: "openclaw" as const,
     taskId: "openclaw-diagnosis-output",
     ready: true,
-  }
+  };
 }
 
 export async function enqueueCompanyEnrichment(
   input: EnqueueEnrichmentInput,
 ): Promise<{ ok: boolean; job?: SalesEnrichmentJob; error?: string }> {
-  const sb = getSb()
-  if (!sb) return { ok: false, error: "Supabase service_role not configured" }
+  const sb = getSb();
+  if (!sb) return { ok: false, error: "Supabase service_role not configured" };
 
-  const jobType: EnrichmentJobType = input.jobType ?? "company_karte"
+  const jobType: EnrichmentJobType = input.jobType ?? "company_karte";
 
   const { data, error } = await sb
     .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
@@ -119,9 +144,9 @@ export async function enqueueCompanyEnrichment(
       input_payload: input.payload ?? {},
     })
     .select("*")
-    .single()
+    .single();
 
-  if (!error) return { ok: true, job: data as SalesEnrichmentJob }
+  if (!error) return { ok: true, job: data as SalesEnrichmentJob };
 
   if (error.code === "23505") {
     const existing = await sb
@@ -132,48 +157,134 @@ export async function enqueueCompanyEnrichment(
       .in("status", ["queued", "running"])
       .order("created_at", { ascending: false })
       .limit(1)
-      .maybeSingle()
-    if (existing.data) return { ok: true, job: existing.data as SalesEnrichmentJob }
+      .maybeSingle();
+    if (existing.data)
+      return { ok: true, job: existing.data as SalesEnrichmentJob };
   }
 
-  console.error("[sales-enrichment] enqueue failed:", error.message)
-  return { ok: false, error: error.message }
+  console.error("[sales-enrichment] enqueue failed:", error.message);
+  return { ok: false, error: error.message };
+}
+
+export async function enqueueJapanEntryReportBatch(input: {
+  targets: Array<{ companyId: string; payload: JsonRecord }>;
+  triggeredBy: string;
+  priority?: number;
+}): Promise<EnqueueReportBatchResult> {
+  const sb = getSb();
+  if (!sb)
+    return {
+      ok: false,
+      queued: [],
+      reused: [],
+      error: "Supabase service_role not configured",
+    };
+  const payloadByCompany = new Map(
+    input.targets.map((target) => [target.companyId, target.payload]),
+  );
+  const companyIds = [...payloadByCompany.keys()];
+  if (companyIds.length === 0) return { ok: true, queued: [], reused: [] };
+
+  const active = await sb
+    .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
+    .select("*")
+    .in("company_id", companyIds)
+    .eq("job_type", "japan_entry_report")
+    .in("status", ["queued", "running"]);
+  if (active.error) {
+    console.error(
+      "[sales-enrichment] report batch active-job lookup failed:",
+      active.error.message,
+    );
+    return { ok: false, queued: [], reused: [], error: active.error.message };
+  }
+  const reused = (active.data ?? []) as SalesEnrichmentJob[];
+  const activeCompanyIds = new Set(reused.map((job) => job.company_id));
+  const rows = companyIds
+    .filter((companyId) => !activeCompanyIds.has(companyId))
+    .map((companyId) => ({
+      company_id: companyId,
+      job_type: "japan_entry_report" as const,
+      status: "queued" as const,
+      priority: input.priority ?? 70,
+      source: "japan_entry_report_factory",
+      triggered_by: input.triggeredBy,
+      input_payload: payloadByCompany.get(companyId) ?? {},
+    }));
+  if (rows.length === 0) return { ok: true, queued: [], reused };
+
+  const inserted = await sb
+    .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
+    .insert(rows)
+    .select("*");
+  if (inserted.error) {
+    console.error(
+      "[sales-enrichment] report batch enqueue failed:",
+      inserted.error.message,
+    );
+    return { ok: false, queued: [], reused, error: inserted.error.message };
+  }
+  return {
+    ok: true,
+    queued: (inserted.data ?? []) as SalesEnrichmentJob[],
+    reused,
+  };
 }
 
 /**
  * Run enrichment jobs locally. Trigger.dev dispatch removed (2026-07-06).
  * Always uses the bounded event-drain path.
  */
-export async function runEnrichmentRunner(limit = 3): Promise<{ ok: boolean; dispatched: boolean; error?: string }> {
+export async function runEnrichmentRunner(
+  limit = 3,
+): Promise<{ ok: boolean; dispatched: boolean; error?: string }> {
   if (await shouldDeferHeavyDispatch()) {
-    console.warn("[sales-enrichment] admission gate: deferring dispatch (system saturated); jobs remain queued")
-    return { ok: true, dispatched: false }
+    console.warn(
+      "[sales-enrichment] admission gate: deferring dispatch (system saturated); jobs remain queued",
+    );
+    return { ok: true, dispatched: false };
   }
-  const safeLimit = Math.max(1, Math.min(Math.round(limit), 3))
-  const result = await runEnrichmentJobs(safeLimit)
-  return { ok: result.ok, dispatched: result.processed > 0, error: result.errors[0] }
+  const safeLimit = Math.max(1, Math.min(Math.round(limit), 3));
+  const result = await runEnrichmentJobs(safeLimit);
+  return {
+    ok: result.ok,
+    dispatched: result.processed > 0,
+    error: result.errors[0],
+  };
 }
 
 /** @deprecated 2026-07-06 — Trigger.dev decommissioned. Use runEnrichmentRunner() instead. */
-export const triggerEnrichmentRunner = runEnrichmentRunner
+export const triggerEnrichmentRunner = runEnrichmentRunner;
 
-export async function fetchRecentEnrichmentJobs(limit = 30): Promise<DashboardEnrichmentJob[]> {
-  const sb = getSb()
-  if (!sb) return []
+export async function fetchRecentEnrichmentJobs(
+  limit = 30,
+  jobType?: EnrichmentJobType,
+): Promise<DashboardEnrichmentJob[]> {
+  const sb = getSb();
+  if (!sb) return [];
 
-  const { data, error } = await sb
+  let query = sb
     .from(DB_TABLES.SALES_ENRICHMENT_JOBS)
-    .select("id, company_id, job_type, status, priority, attempts, max_attempts, source, triggered_by, error_message, created_at, updated_at, sales_companies(company_name, domain)")
+    .select(
+      "id, company_id, job_type, status, priority, attempts, max_attempts, source, triggered_by, error_message, result_payload, created_at, updated_at, sales_companies(company_name, domain)",
+    )
     .order("created_at", { ascending: false })
-    .limit(limit)
+    .limit(limit);
+  if (jobType) query = query.eq("job_type", jobType);
+  const { data, error } = await query;
 
   if (error) {
-    console.error("[sales-enrichment] fetch recent jobs failed:", error.message)
-    return []
+    console.error(
+      "[sales-enrichment] fetch recent jobs failed:",
+      error.message,
+    );
+    return [];
   }
 
   return ((data ?? []) as RecentJobRow[]).map((item) => {
-    const company = Array.isArray(item.sales_companies) ? item.sales_companies[0] : item.sales_companies
+    const company = Array.isArray(item.sales_companies)
+      ? item.sales_companies[0]
+      : item.sales_companies;
     return {
       id: item.id,
       companyId: item.company_id,
@@ -187,10 +298,11 @@ export async function fetchRecentEnrichmentJobs(limit = 30): Promise<DashboardEn
       source: item.source,
       triggeredBy: item.triggered_by,
       errorMessage: item.error_message,
+      resultPayload: item.result_payload ?? {},
       createdAt: item.created_at,
       updatedAt: item.updated_at,
-    }
-  })
+    };
+  });
 }
 
-export { recoverStaleEnrichmentJobs, runEnrichmentJobs }
+export { recoverStaleEnrichmentJobs, runEnrichmentJobs };
