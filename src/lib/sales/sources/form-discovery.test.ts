@@ -45,6 +45,7 @@ describe("form-discovery", () => {
 
     expect(result.formUrl).toBe("https://example.com/contact")
     expect(result.method).toBe("regex")
+    expect(result.verification).toBe("form")
     expect(result.confidence).toBeGreaterThanOrEqual(80)
   })
 
@@ -72,6 +73,9 @@ describe("form-discovery", () => {
         if (url === "https://crawl4.example/discover-form") {
           return new Response(JSON.stringify({ form_url: "https://example.com/contact-us" }), { status: 200 })
         }
+        if (url === "https://example.com/contact-us") {
+          return new Response('<form><input name="email" /></form>', { status: 200, headers: { "content-type": "text/html" } })
+        }
         return new Response("", { status: 404 })
       }),
     )
@@ -80,6 +84,7 @@ describe("form-discovery", () => {
 
     expect(result.formUrl).toBe("https://example.com/contact-us")
     expect(result.method).toBe("crawl4ai")
+    expect(result.verification).toBe("form")
   })
 
   it("ignores unrelated external Crawl4AI form URLs and continues to local heuristics", async () => {
@@ -112,5 +117,36 @@ describe("form-discovery", () => {
 
     expect(result.formUrl).toBe("https://example.com/contact")
     expect(result.method).toBe("heuristic")
+    expect(result.verification).toBe("form")
+  })
+
+  it("does not classify a contact page without an actual form as form-qualified", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === "https://example.com") return new Response('<a href="/contact">Contact</a>', { status: 200, headers: { "content-type": "text/html" } })
+      if (url === "https://example.com/contact") return new Response("Contact our sales team by phone.", { status: 200, headers: { "content-type": "text/html" } })
+      return new Response("", { status: 404 })
+    }))
+
+    const result = await discoverFormUrl({ homeUrl: "example.com", region: "global", enableLlm: false })
+
+    expect(result.formUrl).toBe("https://example.com/contact")
+    expect(result.verification).toBe("page")
+    expect(result.confidence).toBeLessThan(80)
+  })
+
+  it("continues past a contact-only page and finds an actual form on another common path", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url === "https://example.com") return new Response('<a href="/contact">Contact</a>', { status: 200, headers: { "content-type": "text/html" } })
+      if (url === "https://example.com/contact") return new Response("Contact our sales team.", { status: 200, headers: { "content-type": "text/html" } })
+      if (url === "https://example.com/request-a-demo") return new Response('<form><input name="email" /></form>', { status: 200, headers: { "content-type": "text/html" } })
+      return new Response("", { status: 404 })
+    }))
+
+    const result = await discoverFormUrl({ homeUrl: "example.com", region: "global", enableLlm: false })
+
+    expect(result.formUrl).toBe("https://example.com/request-a-demo")
+    expect(result.verification).toBe("form")
   })
 })

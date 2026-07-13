@@ -14,7 +14,11 @@ const BodySchema = z.object({
   verifyLimit: z.number().int().min(0).max(5000).optional(),
   promote: z.boolean().optional(),
   minOpportunityScore: z.number().min(0).max(100).optional(),
+  minSmbScore: z.number().min(0).max(100).optional(),
   syncVerifyBatchSize: z.number().int().min(0).max(120).optional(),
+  requireVerifiedForm: z.boolean().optional(),
+  minFormConfidence: z.number().int().min(0).max(100).optional(),
+  syncTwenty: z.boolean().optional(),
 })
 
 function errorMessage(error: unknown): string {

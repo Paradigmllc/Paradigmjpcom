@@ -27,6 +27,7 @@ export type DiscoveryMethod =
 export interface FormDiscoveryResult {
   formUrl: string | null
   method: DiscoveryMethod
+  verification: "form" | "page" | "fallback" | "none"
   confidence: number
   candidates: string[]
   traceMs: number
@@ -211,16 +212,32 @@ export async function discoverFormUrl(opts: FormDiscoveryOptions): Promise<FormD
   const timeoutMs = opts.timeoutMs ?? 8_000
   const origin = normalizeOrigin(opts.homeUrl)
   const candidates = new Set<string>()
+  let bestPage: string | null = null
+  let bestPageMethod: DiscoveryMethod = "none"
+  let bestPageConfidence = 0
 
-  const done = (formUrl: string | null, method: DiscoveryMethod, confidence: number): FormDiscoveryResult => ({
+  const rememberPage = (url: string, method: DiscoveryMethod, confidence: number) => {
+    if (confidence <= bestPageConfidence) return
+    bestPage = url
+    bestPageMethod = method
+    bestPageConfidence = confidence
+  }
+
+  const done = (
+    formUrl: string | null,
+    method: DiscoveryMethod,
+    verification: FormDiscoveryResult["verification"],
+    confidence: number,
+  ): FormDiscoveryResult => ({
     formUrl,
     method,
+    verification,
     confidence,
     candidates: uniqueUrls(candidates),
     traceMs: Date.now() - started,
   })
 
-  if (!origin) return done(null, "none", 0)
+  if (!origin) return done(null, "none", "none", 0)
 
   const homepageHtml = opts.homepageHtml ?? (await fetchText(origin, timeoutMs))
   if (homepageHtml) {
@@ -228,8 +245,8 @@ export async function discoverFormUrl(opts: FormDiscoveryOptions): Promise<FormD
     const best = pickBestCandidate([...candidates])
     if (best) {
       const pageType = await inspectContactPage(best, timeoutMs)
-      if (pageType === "form") return done(best, "regex", 88)
-      if (pageType === "page") return done(best, "regex", 72)
+      if (pageType === "form") return done(best, "regex", "form", 88)
+      if (pageType === "page") rememberPage(best, "regex", 72)
     }
   }
 
@@ -240,15 +257,17 @@ export async function discoverFormUrl(opts: FormDiscoveryOptions): Promise<FormD
     const best = pickBestCandidate(contactSitemapUrls)
     if (best) {
       const pageType = await inspectContactPage(best, timeoutMs)
-      if (pageType === "form") return done(best, "sitemap", 90)
-      if (pageType === "page") return done(best, "sitemap", 74)
+      if (pageType === "form") return done(best, "sitemap", "form", 90)
+      if (pageType === "page") rememberPage(best, "sitemap", 74)
     }
   }
 
   const crawl4Ai = await discoverWithCrawl4Ai({ origin, region: opts.region, timeoutMs })
   if (crawl4Ai?.formUrl) {
     for (const url of crawl4Ai.candidates) candidates.add(url)
-    return done(crawl4Ai.formUrl, "crawl4ai", crawl4Ai.confidence)
+    const pageType = await inspectContactPage(crawl4Ai.formUrl, timeoutMs)
+    if (pageType === "form") return done(crawl4Ai.formUrl, "crawl4ai", "form", crawl4Ai.confidence)
+    if (pageType === "page") rememberPage(crawl4Ai.formUrl, "crawl4ai", Math.min(crawl4Ai.confidence, 74))
   }
 
   const paths = opts.region === "global" ? HEURISTIC_PATHS_GLOBAL : HEURISTIC_PATHS_JP
@@ -260,20 +279,22 @@ export async function discoverFormUrl(opts: FormDiscoveryOptions): Promise<FormD
       return { path, candidate, pageType }
     }),
   )
-  let bestPage: string | null = null
   for (const result of settled) {
     if (result.status !== "fulfilled") continue
     const { candidate, pageType } = result.value
     if (pageType === "missing") continue
     candidates.add(candidate)
-    if (pageType === "form") return done(candidate, "heuristic", 82)
-    if (!bestPage) bestPage = candidate
+    if (pageType === "form") return done(candidate, "heuristic", "form", 82)
+    if (pageType === "page") rememberPage(candidate, "heuristic", 65)
   }
-  if (bestPage) return done(bestPage, "heuristic", 65)
 
   if (opts.enableLlm !== false && candidates.size > 0) {
     const picked = await llmPickFormUrl(origin, [...candidates], timeoutMs)
-    if (picked.url) return done(picked.url, "llm", Math.round(picked.confidence * 100))
+    if (picked.url) {
+      const pageType = await inspectContactPage(picked.url, timeoutMs)
+      if (pageType === "form") return done(picked.url, "llm", "form", Math.round(picked.confidence * 100))
+      if (pageType === "page") rememberPage(picked.url, "llm", Math.min(Math.round(picked.confidence * 100), 70))
+    }
   }
 
   if (opts.spaDiscover) {
@@ -281,12 +302,15 @@ export async function discoverFormUrl(opts: FormDiscoveryOptions): Promise<FormD
       const spaUrl = await opts.spaDiscover(origin)
       if (spaUrl) {
         candidates.add(spaUrl)
-        return done(spaUrl, "spa", 65)
+        const pageType = await inspectContactPage(spaUrl, timeoutMs)
+        if (pageType === "form") return done(spaUrl, "spa", "form", 80)
+        if (pageType === "page") rememberPage(spaUrl, "spa", 65)
       }
     } catch (error) {
       console.warn("[form-discovery] SPA discovery failed:", error)
     }
   }
 
-  return done(origin, "fallback", 20)
+  if (bestPage) return done(bestPage, bestPageMethod, "page", bestPageConfidence)
+  return done(origin, "fallback", "fallback", 20)
 }
