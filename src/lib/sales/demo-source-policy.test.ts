@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { detectPublicSourceEvidence } from "./demo-multi-page-builder"
+import { detectPublicSourceEvidence } from "./demo-source-evidence"
 import { sourceManifestToCompanyMeta, validateDemoSourceManifest } from "./demo-source-policy"
 
 function validManifest() {
