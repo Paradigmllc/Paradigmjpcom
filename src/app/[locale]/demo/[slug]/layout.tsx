@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { ArtifactInlineEditor } from "@/components/admin/ArtifactInlineEditor"
 import { DemoMultiLayout } from "@/components/demo/DemoMultiLayout"
+import { DemoPremiumV2Layout } from "@/components/demo/premium-v2/DemoPremiumV2Layout"
 import { isCurrentRequestAdmin } from "@/lib/admin-page-auth"
 import type { DemoMultiPageData } from "@/lib/sales/demo-site-types"
 import { fetchDemoMultiPageDataForRequest } from "@/lib/sales/demo-request-access"
@@ -21,7 +22,7 @@ interface LayoutProps {
 export default async function DemoMultiLayoutWrapper({ children, params }: LayoutProps) {
   const { locale, slug } = await params
   const isJa = locale === "ja"
-  const basePath = `/${locale}/demo/${slug}`
+  const basePath = `/${locale}/${slug}`
 
   let companyName = "Paradigm"
   let templateId: string | undefined
@@ -55,9 +56,20 @@ export default async function DemoMultiLayoutWrapper({ children, params }: Layou
   ]
   const isAdmin = await isCurrentRequestAdmin()
 
-  return (
-    <>
-      <DemoMultiLayout
+  const siteLayout = demoData?.premium?.style === "premium-v2" ? (
+    <DemoPremiumV2Layout
+      navLinks={navLinks}
+      basePath={basePath}
+      companyName={companyName}
+      accent={accentColor ?? "#742f32"}
+      quality={demoData.quality}
+      presentation={demoData.meta}
+      privatePreview={demoData.privatePreview}
+    >
+      {children}
+    </DemoPremiumV2Layout>
+  ) : (
+    <DemoMultiLayout
         navLinks={navLinks}
         basePath={basePath}
         isJa={isJa}
@@ -71,6 +83,11 @@ export default async function DemoMultiLayoutWrapper({ children, params }: Layou
       >
         {children}
       </DemoMultiLayout>
+  )
+
+  return (
+    <>
+      {siteLayout}
       {isAdmin && demoData && (
         <>
           {demoData.quality && (

@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { fetchDemoMultiPageDataForRequest } from "@/lib/sales/demo-request-access"
 import { DemoAboutPage } from "@/components/demo/DemoAboutPage"
+import { DemoPremiumV2AboutPage } from "@/components/demo/premium-v2/DemoPremiumV2AboutPage"
 import { getTemplateById } from "@/lib/sales/demo-templates/registry"
 
 export const dynamic = "force-dynamic"
@@ -31,5 +32,6 @@ export default async function DemoAboutServerPage({ params }: Props) {
 
   const template = getTemplateById(data.templateId ?? "zenith")
 
+  if (data.premium?.style === "premium-v2") return <DemoPremiumV2AboutPage data={data} />
   return <DemoAboutPage about={data.pages.about} companyName={data.companyName} locale={data.locale} template={template} media={data.premium?.gallery[2]} />
 }
