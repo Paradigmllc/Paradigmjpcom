@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest"
-import { extractVerifiedPublicFacts } from "./demo-deepseek-enhancer"
+import {
+  DEMO_COPY_MAX_TOKENS,
+  DEMO_COPY_TIMEOUT_MS,
+  extractVerifiedPublicFacts,
+} from "./demo-deepseek-enhancer"
+
+describe("DeepSeek V4 full-site generation budget", () => {
+  it("allows reasoning and complete multi-page JSON without model fallback", () => {
+    expect(DEMO_COPY_MAX_TOKENS).toBeGreaterThanOrEqual(8_192)
+    expect(DEMO_COPY_TIMEOUT_MS).toBeGreaterThanOrEqual(180_000)
+  })
+})
 
 describe("extractVerifiedPublicFacts", () => {
   it("serializes only scalar verified facts", () => {
