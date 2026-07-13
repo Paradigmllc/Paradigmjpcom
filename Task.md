@@ -8,12 +8,12 @@
 - 架空SaaS企業を使ったDeepSeek公式API直叩きの再検証は **97/100**（具体性24・自然さ24・信頼性25・経営判断適合24）、安全性100、4段落134語、risk 0で合格。DB保存、Twenty登録、候補収集、フォーム送信は未実行。
 - 検証済み: 対象Vitest **14/14 pass**、TypeScript、対象ESLint、quality guard 0 error、diff check、production build **336/336 pages**。PR **#85**をmainへmergeし、正式deployment `bfzoe7yd8o4aywfs9jwniu2o` はfinished。初回CMS seedの一時504は限定retryで回復し、post-deploy gate、公開URL、Sales health HTTP 200 / JSON ok、DB **82/82**をpassした。直後の後続mainコンテナ `2e57c16d` もPR #85 mergeを祖先に含みhealthy。`sales_japan_entry_projections` は **0件**で、DB保存、Twenty登録、候補収集、フォーム送信は未実行。
 
-### 2026-07-13 法務公開面の整備（実装・ローカル検証済み / 正式release待ち）
+### 2026-07-13 法務公開面の整備（本番反映済み）
 - `/[locale]/terms` と `/[locale]/refund` を追加。JAは国内向け一般サービスの利用規約・返金／キャンセル方針、ENはJapan Entryの固定USD 12,000、開始日、14営業日納品保証、6か月月額込み、7か月目以降USD 995、支払経路、将来期間解約、第三者費用境界を明示する別文面にした。
 - `LegalDocumentPage`で法務文書のレイアウトとアクセシビリティ構造を共有し、各localeのmessagesで本文・メタデータを管理。フッターへPrivacy / Specified Commercial Transactions / Terms / Refund & Cancellationの4導線を追加し、CMSの既存legalLinksがあっても新規2ページを欠落させない。
 - 法定情報の既定値を、個人名なし・英語住所 `2-2-15 Minami-Aoyama, Minato City, Tokyo, Japan`・法人番号 `5010403026363` に統一。代表者名は従来どおり公開せず、請求時の事前開示経路を維持。
 - sitemap、hreflang/canonical、release-doctor、production smokeへterms/refundを配線。Vitestのserver-only境界をテスト専用mockで安定化。
-- 検証: `npm exec -- tsc --noEmit --pretty false` pass、全Vitest **95 files / 445 tests pass**、production build **372/372 pages pass**、quality guard **0 errors / 52 warnings**、`git diff --check` pass。正式 `npm run release:prod`と本番URLのJA/EN法務4ページ確認が残作業。
+- 検証: `npm exec -- tsc --noEmit --pretty false` pass、全Vitest **95 files / 445 tests pass**、production build **372/372 pages pass**、quality guard **0 errors / 52 warnings**、`git diff --check` pass。正式 `npm run release:prod` は deployment **rwyld93iuw6nzv5qc71b1mi2** でfinished、DB **82/82**、Traefik/Cloudflare、Sales health、日英主要smoke、post-deploy release doctorを通過。本番のJA/EN/KO法務ページ12経路はHTTP 200、JA/ENの本文marker、sitemapのterms/refund、canonical/hreflangを確認済み。公開法務文書では個人名を出さず、英語住所と法人番号を表示する。
 
 ### 2026-07-13 SMB実素材・期限付き非公開デモ Premium V2（本番反映・実事業者QA済み / 送信停止）
 - `theme_demo_pages`へ `signed_private` access mode、SHA-256 preview token hash、最大30日の有効期限、素材審査status/manifestを追加するmigrationを実装。非公開デモは `is_published=false` のままservice-role経路だけで取得し、匿名RLS公開を行わない。
