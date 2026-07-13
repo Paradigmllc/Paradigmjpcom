@@ -329,6 +329,21 @@ function checkStaticReleaseRules() {
     fail("SMB demo private access and asset review require release migration wiring")
   }
 
+  const demoBatchMigrationPath = "supabase/migrations/20260713160000_demo_sustainable_batch.sql"
+  const demoBatchMigration = fs.existsSync(demoBatchMigrationPath)
+    ? fs.readFileSync(demoBatchMigrationPath, "utf8")
+    : ""
+  if (
+    demoBatchMigration.includes("demo_generate") &&
+    demoBatchMigration.includes("idx_sales_enrichment_jobs_demo_queue") &&
+    noLoginDeploy.includes("20260713160000_demo_sustainable_batch.sql") &&
+    noLoginDeploy.includes("applyDemoSustainableBatchMigration")
+  ) {
+    pass("SMB demo reviewed-manifest batch queue has release migration wiring")
+  } else {
+    fail("SMB demo reviewed-manifest batch queue requires release migration wiring")
+  }
+
   const demoTriggerMigrationPath = "supabase/migrations/20260713120000_sales_pipeline_db_trigger_provider.sql"
   const demoTriggerMigration = fs.existsSync(demoTriggerMigrationPath)
     ? fs.readFileSync(demoTriggerMigrationPath, "utf8")
@@ -421,7 +436,14 @@ route_match = re.fullmatch(r"http://([^/:]+):3000", str(servers[0].get("url", ""
 if not route_match or route_match.group(1) not in {expected_ip, container}:
     raise RuntimeError("Paradigm upstream drift detected")
 
-protected = ["paradigmhp-http", "paradigmhp-https", "keystatic-http", "keystatic-https"]
+protected = [
+    "paradigmhp-http",
+    "paradigmhp-https",
+    "keystatic-http",
+    "keystatic-https",
+]
+if ${POST_DEPLOY ? "True" : "False"}:
+    protected.extend(["paradigmhp-demo-http", "paradigmhp-demo-https"])
 for name, router in routers.items():
     if router.get("service") == "paradigmhp-svc":
         protected.append(name)
@@ -440,6 +462,11 @@ if rule_hosts(routers["paradigmhp-https"].get("rule")) != {"paradigmjp.com", "ww
     raise RuntimeError("Main app host rule is not exact")
 if rule_hosts(routers["keystatic-https"].get("rule")) != {"keystatic.paradigmjp.com"}:
     raise RuntimeError("Keystatic host rule is not isolated")
+if ${POST_DEPLOY ? "True" : "False"}:
+    if rule_hosts(routers["paradigmhp-demo-https"].get("rule")) != {"demo.paradigmjp.com"}:
+        raise RuntimeError("Demo host rule is not isolated")
+    if any(router.get("service") == "astrodemo-svc" for router in routers.values()):
+        raise RuntimeError("Legacy Astro demo route is still active")
 
 labels = json.loads(subprocess.check_output(
     ["docker", "inspect", container, "--format", "{{json .Config.Labels}}"],
@@ -510,6 +537,8 @@ labels = json.loads(subprocess.check_output(
     text=True,
 )) or {}
 hosts = {"paradigmjp.com", "www.paradigmjp.com", "keystatic.paradigmjp.com"}
+if ${POST_DEPLOY ? "True" : "False"}:
+    hosts.add("demo.paradigmjp.com")
 for key, value in labels.items():
     if not re.fullmatch(r"traefik\\.http\\.routers\\.[^.]+\\.rule", str(key)):
         continue
@@ -653,7 +682,7 @@ else
   echo "OK no resident Paradigm runtime timer detected"
 fi
 
-for forbidden_container in paradigm-outreach-worker services-steel-browser-1; do
+for forbidden_container in paradigm-outreach-worker services-steel-browser-1${POST_DEPLOY ? " astro-demo" : ""}; do
   if docker ps --format '{{.Names}}' | grep -qx "$forbidden_container"; then
     echo "FAIL forbidden resident container is running: $forbidden_container"
     fail=1

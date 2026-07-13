@@ -34,6 +34,7 @@ export const TEMPLATE_VARIANTS = [
 export type TemplateVariant = (typeof TEMPLATE_VARIANTS)[number]
 
 const DEFAULT_SITE_URL = "https://paradigmjp.com"
+const DEFAULT_DEMO_SITE_URL = "https://demo.paradigmjp.com"
 
 const LOCALE_COUNTRY: Record<ReportLocale, string> = {
   ja: "JP",
@@ -152,6 +153,14 @@ export function normalizeTemplateVariant(value: unknown): TemplateVariant {
 
 export function siteUrl(): string {
   return (process.env.NEXT_PUBLIC_SITE_URL ?? DEFAULT_SITE_URL).replace(/\/$/, "")
+}
+
+export function demoSiteUrl(): string {
+  return (process.env.NEXT_PUBLIC_DEMO_SITE_URL ?? DEFAULT_DEMO_SITE_URL).replace(/\/$/, "")
+}
+
+export function buildDemoUrl(locale: "ja" | "en", slug: string): string {
+  return `${demoSiteUrl()}/${locale}/${encodeURIComponent(slug)}`
 }
 
 function stableHash(input: string): string {

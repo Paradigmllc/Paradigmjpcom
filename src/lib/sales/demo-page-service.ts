@@ -12,14 +12,22 @@ import {
 } from "./demo-quality-gate"
 import { selectTemplateCandidates, type CompanyProfile } from "./demo-template-selector"
 import type { DemoCandidateSummary, DemoGenerateOutput, DemoMultiPageData } from "./demo-site-types"
-import type { DiagnosticReportData } from "./diagnostic"
 import type { ReportLocale } from "./types"
+import { buildDemoUrl } from "./routing"
+import { readValidatedDemoSourceManifest } from "./demo-source-policy"
 
 export { fetchDemoMultiPageData, fetchDemoPageData } from "./demo-page-fetch"
 
 interface GeneratedCandidate {
   page: DemoMultiPageData
   summary: DemoCandidateSummary
+}
+
+export interface DemoGenerationOptions {
+  enhanceWithAI?: boolean
+  publicationMode?: "public" | "private_review"
+  sourcePolicy?: "legacy" | "reviewed_manifest"
+  notify?: boolean
 }
 
 /**
@@ -29,7 +37,7 @@ interface GeneratedCandidate {
 export async function generateFullStackDemo(
   companyId: string,
   locale?: string,
-  options?: { enhanceWithAI?: boolean },
+  options: DemoGenerationOptions = {},
 ): Promise<DemoGenerateOutput> {
   const sb = getServiceSalesSupabase()
   if (!sb) return failure("Supabase service_role not configured")
@@ -43,6 +51,11 @@ export async function generateFullStackDemo(
 
     if (companyError || !company) {
       return failure(`Company not found: ${companyError?.message ?? "no rows"}`)
+    }
+
+    if (options.sourcePolicy === "reviewed_manifest") {
+      const sourceReview = readValidatedDemoSourceManifest(company.meta)
+      if (!sourceReview.ok) return failure(`Source manifest rejected: ${sourceReview.errors.join(", ")}`)
     }
 
     const { fetchDiagnosticReport } = await import("./diagnostic")
@@ -69,31 +82,39 @@ export async function generateFullStackDemo(
     const existingFingerprints = await fetchExistingFingerprints(sb, companyId)
     const companyMeta = company.meta as Record<string, unknown> | null
     const rights = buildProposalRightsManifest(companyMeta?.demo_media)
-    const candidates: GeneratedCandidate[] = await Promise.all(templates.map(async (template) => {
+    const sharedEnhancement = (options.enhanceWithAI ?? true) && templates[0]
+      ? await enhanceDemoWithDeepSeek(
+          company as Parameters<typeof enhanceDemoWithDeepSeek>[0],
+          diagnostic,
+          templates[0],
+          effectiveLocale,
+        )
+      : null
+    const candidates: GeneratedCandidate[] = templates.map((template) => {
       let page = buildPersonalizedDemoData(
         company as unknown as Parameters<typeof buildDemoMultiPageData>[0],
         diagnostic,
         template,
       )
-      if (options?.enhanceWithAI ?? true) {
-        page = await enhanceCandidate(page, company, diagnostic, template, effectiveLocale)
-      }
+      if (sharedEnhancement) page = mergeDeepSeekOutput(page, sharedEnhancement, effectiveLocale)
       const recipe = buildDesignRecipe(template, page)
       const quality = evaluateDemoQuality(page, recipe, rights, existingFingerprints)
       page = { ...page, designRecipe: recipe, quality, rightsManifest: rights }
       return { page, summary: summarizeCandidate(page, recipe, quality) }
-    }))
+    })
 
     candidates.sort((left, right) => right.summary.score - left.summary.score)
     const selected = candidates[0]
     if (!selected) return failure("No demo candidates were generated")
 
-    const published = selected.summary.passed
-    const publicationStatus = published ? "published" : "quality_review"
+    const qualityPassed = selected.summary.passed
+    const published = qualityPassed && options.publicationMode !== "private_review"
+    const publicationStatus = qualityPassed
+      ? (published ? "published" : "private_review")
+      : "quality_review"
     selected.page.publicationStatus = publicationStatus
     const slug = selected.page.slug
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://paradigmjp.com"
-    const demoUrl = published ? `${baseUrl.replace(/\/$/, "")}/${effectiveLocale}/demo/${slug}` : null
+    const demoUrl = qualityPassed ? buildDemoUrl(effectiveLocale === "en" ? "en" : "ja", slug) : null
 
     const { error: upsertError } = await sb.from(DB_TABLES.THEME_DEMO_PAGES).upsert({
       slug,
@@ -129,53 +150,31 @@ export async function generateFullStackDemo(
     if (published && demoUrl) {
       await persistPublishedReferences(sb, companyId, company.company_name, selected.page, demoUrl)
     }
-    await notifyGenerationResult({
-      companyId,
-      companyName: company.company_name,
-      slug,
-      score: selected.summary.score,
-      published,
-      demoUrl,
-      blockers: selected.summary.hardBlockers,
-    })
+    if (options.notify !== false && options.publicationMode !== "private_review") {
+      await notifyGenerationResult({
+        companyId,
+        companyName: company.company_name,
+        slug,
+        score: selected.summary.score,
+        published,
+        demoUrl,
+        blockers: selected.summary.hardBlockers,
+      })
+    }
 
     return {
-      ok: published,
+      ok: qualityPassed,
       demoUrl,
       slug,
       qualityScore: selected.summary.score,
       publicationStatus,
       candidates: candidates.map(({ summary }) => summary),
-      error: published ? undefined : `Quality gate failed: ${selected.summary.hardBlockers.join(", ")}`,
+      error: qualityPassed ? undefined : `Quality gate failed: ${selected.summary.hardBlockers.join(", ")}`,
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     console.error("[demo-generator] generateFullStackDemo failed:", message)
     return failure(message)
-  }
-}
-
-async function enhanceCandidate(
-  page: DemoMultiPageData,
-  company: Record<string, unknown>,
-  diagnostic: DiagnosticReportData,
-  template: Parameters<typeof enhanceDemoWithDeepSeek>[2],
-  locale: ReportLocale,
-): Promise<DemoMultiPageData> {
-  try {
-    const output = await enhanceDemoWithDeepSeek(
-      company as Parameters<typeof enhanceDemoWithDeepSeek>[0],
-      diagnostic,
-      template,
-      locale,
-    )
-    return output ? mergeDeepSeekOutput(page, output, locale) : page
-  } catch (error) {
-    console.error(
-      `[demo-generator] AI enhancement failed for ${template.id}:`,
-      error instanceof Error ? error.message : String(error),
-    )
-    return page
   }
 }
 

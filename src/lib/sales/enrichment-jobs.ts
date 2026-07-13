@@ -7,7 +7,7 @@ export type JsonRecord = Record<string, unknown>
 export type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 
 export type EnrichmentJobStatus = "queued" | "running" | "completed" | "failed" | "cancelled"
-export type EnrichmentJobType = "company_karte" | "dify_diagnosis" | "report_personalize" | "twenty_sync"
+export type EnrichmentJobType = "company_karte" | "dify_diagnosis" | "report_personalize" | "twenty_sync" | "demo_generate"
 
 export interface SalesEnrichmentJob {
   id: string

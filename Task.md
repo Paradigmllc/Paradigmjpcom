@@ -7,11 +7,20 @@
 - `npm run smoke:japan-entry-form-copy` を追加。合成企業のみを使い、DB保存・Twenty登録・フォーム送信なしで実V4 Pro生成を再現できる。最終実測は **95/100**、安全性 **100**、151語、4段落、企業名・`1,950` Japan visits・`$10,296` opportunity gapの完全一致、未置換0件で合格。
 - 検証: 対象Vitest **28/28 pass**、関連4 files **41 tests pass**、TypeScript、対象ESLint、quality guard **0 errors / 52 warnings**、production build **372/372 pages**、`git diff --check` pass。全体Vitestは **94/95 files・458/462 tests pass**で、今回未変更の`backup-oss-supabase.sh`がworktree上でCRLF展開されたことによる既存4件のみ失敗。フォーム送信、Twenty登録、実企業DB保存は未実行。
 
-### 2026-07-13 Japan Entry意思決定フローの時系列可視化（実装・ローカル検証済み / 正式release待ち）
+### 2026-07-13 SMBデモ大量生成の持続可能化（本番反映・subdomain route修正中 / 送信停止）
+- デモ本文生成はOpenAIではなくDeepSeekを正規経路とする。LiteLLMが設定済みなら `deepseek-v4-pro` を優先し、未設定時はDeepSeek公式APIの設定モデルを使用する。モデル名、input/output/cache token実績をデモmetaへ保存し、OpenAIやFlashへ黙って降格しない。
+- 同一企業に対してdesign spec、Astro code、3候補copyを重複生成していた経路を廃止。企業別copyは **1社1 LLM call**、3デザインは同じ確認済みcopyを決定論的なlayout recipeへ適用して品質比較する。最大7 call相当から1 callへ削減し、90点未満・根拠不足・権利不明は保存停止を維持する。
+- `reviewed_manifest` を追加。最大100社/回の確認済み事実、公式プロフィール参照URL、R2/ライセンス/許諾済み/非公開提案素材だけを受け付け、すべて `fetchPolicy=never` とする。Google検索、Google Maps UI、SNS本文・画像、proxy/browser searchの自動取得はこの経路から呼び出さない。HP非保有企業は予約済み `.invalid` 内部domainで重複排除し、通常enrichmentを起動しない。
+- Supabase `sales_enrichment_jobs`へ `demo_generate` を追加し、常駐polling/cronなしのoperator起動・3社ずつbounded drainで処理する。完了後は最大100件の期限付きURLを一括発行できるが、token実値はDBへ保存しない。送信、Twenty同期、メール、電話、郵送、フォーム営業、外部通知は接続しない。
+- デモ正規URLを `https://demo.paradigmjp.com/{locale}/{企業slug}` へ短縮。旧 `/{locale}/demo/{slug}` は308で短縮URLへ寄せ、署名入口もdemo hostへcanonicalizeしてslug限定HttpOnly Cookieを設定する。main siteと既存期限付きURLの互換を維持する。
+- 管理画面 `/ja/admin/demo-assets` に一括manifest投入、次の3社生成、状態更新、完了分URL発行を追加。TypeScript pass、対象ESLint pass、Vitest **5 files / 20 tests pass**、quality guard **0 errors**、production build **372/372 pages pass**。
+- PR **#90**をmainへmergeし、正式deployment `zxctlfc8a1wlkub9302nauds` はfinished。DB **82/82**、Traefik/Cloudflare、Sales health、post-deploy release doctorはpassした。公開QAで旧署名URLからdemo hostへの307は確認したが、既存Traefikの `astrodemo-svc` が `demo.paradigmjp.com` を旧静的nginxへ配信し、Next.js署名入口が404になるroute競合を検出。手動迂回で完了扱いにせず、正式releaseのatomic route refreshでdemo hostを現行 `paradigmhp-svc` へ固定し、旧Astro router/containerを停止する再発防止を実装中。
+
+### 2026-07-13 Japan Entry意思決定フローの時系列可視化（本番反映済み）
 - 国際向けホーム、料金、サービスページへ `Contact → Materials & fit call → Application & scope → Setup & launch → Operate & scale` の5段階タイムラインを追加。問い合わせ、資料・打ち合わせ、申込、固定スコープのセットアップ、公開後の拡張を一つの視線で追えるようにした。
 - `JapanEntryJourney` は共通コンポーネント化し、デスクトップは横方向の接続線、モバイルは縦積みカードへレスポンシブに切り替える。料金ページの固定スコープ・問い合わせCTAへ直接リンクし、14営業日の開始条件と「申込だけでは契約成立しない」境界も同じカード下部で明示する。
 - `/ja` の国内向け一般サービスにはJapan Entryの時系列を表示しない。国際ロケールは既存方針どおり英語商用文面を正本として利用する。
-- 検証: journeyテスト **12/12 pass**、全Vitest **95 files / 448 tests pass**、`npm exec -- tsc --noEmit --pretty false` pass、production build **372/372 pages pass**、quality guard **0 errors / 52 warnings**、`git diff --check` pass。正式 `npm run release:prod` と本番URLのEN/KO表示確認が残作業。
+- 検証: journeyテスト **12/12 pass**、全Vitest **95 files / 448 tests pass**、`npm exec -- tsc --noEmit --pretty false` pass、production build **372/372 pages pass**、quality guard **0 errors / 52 warnings**、`git diff --check` pass。正式 `npm run release:prod` は deployment **a122htnhq21f9p7hi1kmvf68** でfinished、DB **82/82**、Traefik/Cloudflare、Sales health、post-deploy release doctorを通過。公開URLのEN/KOホーム・料金・サービスはjourney markerを確認し、JAホーム・料金・サービスにはJapan Entry journeyが混入していないことを確認済み。
 
 ### 2026-07-13 Japan Entryフォーム文面・実務品質ゲート（本番反映済み / 送信停止）
 - 検証済みの日本アクセス推定と月次機会ギャップが揃う企業は、全候補を数値型へ固定。両方の数値、公開シグナルによる計画推定であること、実測analyticsではないこと、業種に適合するJapan固有の監査ギャップ1件を必須化した。数値ペアがない場合だけ監査型へ切り替え、未確認のtraffic / revenue / ROIを生成しない。
