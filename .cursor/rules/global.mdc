@@ -176,15 +176,15 @@ Claude / Codex / Cline / Cursor など複数 AI エージェントで作業す�
 
 ## 💰 AI モデル選定（PP）
 
-**DeepSeek V4 一択。LiteLLM プロキシ経由で Pro / Flash を使い分ける。**
-APIキーはグローバルメモリ管理（環境変数 `LITELLM_API_KEY`）。
+**DeepSeek V4 一択。DeepSeek公式APIを直接呼び出し、Pro / Flashを使い分ける。**
+APIキーはグローバルメモリ管理（環境変数 `DEEPSEEK_API_KEY`）。
 
 | 用途 | モデル | 経路 |
 |------|--------|------|
-| コーディング・JSON出力・大量生成 | DeepSeek V4 Pro | LiteLLM |
-| 軽量タスク・高速応答 | DeepSeek V4 Flash | LiteLLM |
-| 画像・PDF・マルチモーダル | DeepSeek V4 Pro | LiteLLM |
-| 複雑な推論・長文生成・アーキテクチャ設計 | DeepSeek V4 Pro | LiteLLM |
+| コーディング・JSON出力・大量生成 | DeepSeek V4 Pro | DeepSeek API直叩き |
+| 軽量タスク・高速応答 | DeepSeek V4 Flash | DeepSeek API直叩き |
+| 画像・PDF・マルチモーダル | DeepSeek V4 Pro | DeepSeek API直叩き |
+| 複雑な推論・長文生成・アーキテクチャ設計 | DeepSeek V4 Pro | DeepSeek API直叩き |
 
 ---
 
