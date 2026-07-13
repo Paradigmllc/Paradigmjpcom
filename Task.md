@@ -1,5 +1,13 @@
 ## CURRENT STATUS - 2026-07-12 本番公開・実運用ゲート完了
 
+### 2026-07-13 Japan Entryフォーム文面・実務品質ゲート（ローカル実装済み / 本番release待ち）
+- 検証済みの日本アクセス推定と月次機会ギャップが揃う企業は、全候補を数値型へ固定。両方の数値、公開シグナルによる計画推定であること、実測analyticsではないこと、業種に適合するJapan固有の監査ギャップ1件を必須化した。数値ペアがない場合だけ監査型へ切り替え、未確認のtraffic / revenue / ROIを生成しない。
+- SaaSへPayPay・コンビニ決済・配送・特商法表示を機械的に当てる誤診断を除外。Ecommerce / SaaS / serviceごとに利用可能な監査事実を分離した。
+- DeepSeek V4 Proの編集合格基準を合計92/100かつ4軸各22/25以上へ引き上げ、未達時は編集理由を反映して1回だけ再生成する。2回目も不合格、JSON不正、timeout、根拠不足の場合は保存せずfail-closedを維持する。
+- 評価LLMが95点を付けた実出力でも、未観測の`early exit`推測と入力にない`buyer support`を決定論的ゲートで拒否。因果推測・未承認deliverable・URL・資料・法務断定・未承認数値をモデル評価より先に遮断する。
+- 架空SaaS企業を使ったDeepSeek公式API直叩きの再検証は **97/100**（具体性24・自然さ24・信頼性25・経営判断適合24）、安全性100、4段落134語、risk 0で合格。DB保存、Twenty登録、候補収集、フォーム送信は未実行。
+- 検証済み: 対象Vitest **14/14 pass**、TypeScript、対象ESLint、diff check、production build **336/336 pages**。次は正式`npm run release:prod`を完走し、本番fingerprint・Sales health・DB行数0を再確認する。
+
 ### 2026-07-13 i18n公開面の再設計（ローカル実装・本番release待ち）
 - `/ja` を国内向け一般サイトへ分離。ホーム、サービス、料金、FAQ、About、Works、Blog、Contact、フッター、JSON-LD、チャット導線からJapan Entryの固定オファーを除去し、Web制作・MEO・SEO/GEO・AI導入支援の内容へ整理した。
 - `/en` 以外の国際ロケール（ko/zh/de/fr/es/pt/ru/ar/vi/id）はURL・canonical・hreflangを維持したまま、`messages/en.json` のJapan Entry商業内容を正本として利用。旧$1,500/$2,500オファーを再マージしないよう、i18n requestで国際shellキーのみローカル翻訳を上書きする構成へ変更した。
