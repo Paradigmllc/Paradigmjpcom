@@ -239,6 +239,12 @@ export async function fetchDemoMultiPageData(
               style: "premium-v2" as const,
               heroMedia: approvedMedia.slice(0, 3),
               gallery: approvedMedia.length >= 3 ? approvedMedia : [...approvedMedia, ...themePage.site_payload.premium.gallery].slice(0, 5),
+              intro: {
+                ...themePage.site_payload.premium.intro,
+                note: themePage.asset_approval_status === "consented"
+                  ? "掲載写真は権利確認済みの公式素材です。"
+                  : "掲載写真は相手企業の公式公開アカウントから取得した非公開提案用素材です。正式公開前に権利者の許諾を確認します。",
+              },
             }
           : themePage.site_payload.premium
         return applyDemoAdminOverrides({

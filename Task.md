@@ -24,6 +24,7 @@
 - ローカル検証済み: TypeScript pass、素材安全規則Vitest **3/3 pass**、変更対象ESLint pass、quality guard **0 error**、production build pass。未認証private APIと無効preview tokenはともにHTTP 401、ローカル本番ブラウザはcontentあり・Next error overlayなし。正式release後にmigration適用、実DBでのURL発行、Premium V2のPC/mobile・11経路を本番確認する。
 - 初回本番発行で、Next.js内部origin `0.0.0.0:3000` が返るproxy差異を検出。productionでは検証済み `NEXT_PUBLIC_SITE_URL`（未設定時はParadigm正規URL）を使い、ローカルだけrequest originを使うよう即時修正した。
 - 正規URL再発行後のブラウザ検証で、token検証後のredirectも内部originを使っていることを検出。入口routeにも同じproduction canonical origin規則を適用し、初回アクセスを正規demo URLへ遷移させる。
+- 実素材Premium V2の目視で、生成画像用の「実際の商品ではない」注記が残る矛盾を検出。素材審査statusがある場合は、`consented`なら権利確認済み、`private_proposal`なら公式公開元・非公開提案限定・正式公開前許諾確認の注記へ自動差し替える。
 
 ### 2026-07-13 i18n公開面の再設計（本番反映済み）
 - `/ja` を国内向け一般サイトへ分離。ホーム、サービス、料金、FAQ、About、Works、Blog、Contact、フッター、JSON-LD、チャット導線からJapan Entryの固定オファーを除去し、Web制作・MEO・SEO/GEO・AI導入支援の内容へ整理した。
