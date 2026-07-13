@@ -359,6 +359,22 @@ function checkStaticReleaseRules() {
     fail("SMB demo company trigger provider must have release migration wiring")
   }
 
+  const demoTriggerGuardMigrationPath = "supabase/migrations/20260713190000_demo_company_trigger_guard.sql"
+  const demoTriggerGuardMigration = fs.existsSync(demoTriggerGuardMigrationPath)
+    ? fs.readFileSync(demoTriggerGuardMigrationPath, "utf8")
+    : ""
+  if (
+    demoTriggerGuardMigration.includes("skip_enrichment") &&
+    demoTriggerGuardMigration.includes("reviewed_demo_manifest") &&
+    demoTriggerGuardMigration.includes("event_driven") &&
+    noLoginDeploy.includes("20260713190000_demo_company_trigger_guard.sql") &&
+    noLoginDeploy.includes("applyDemoCompanyTriggerGuardMigration")
+  ) {
+    pass("SMB demo-only companies bypass the legacy sales pipeline trigger")
+  } else {
+    fail("SMB demo-only companies require a release-wired sales pipeline trigger guard")
+  }
+
   const visualProofComponentPath = "src/components/japan-entry/JapanEntryVisualProof.tsx"
   const visualProofComponent = fs.existsSync(visualProofComponentPath)
     ? fs.readFileSync(visualProofComponentPath, "utf8")
