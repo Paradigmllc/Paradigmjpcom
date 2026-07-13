@@ -4,14 +4,14 @@
 - Japan Entry申込フォームに希望支払方法（Wise、銀行振込、USDC、クレジットカード）とセットアップ費用確認を追加。選択値はlead metaへ保存し、DBベル／Slack通知の双方へ引き渡す。公開フォームでは口座・カード・ウォレット情報を収集しない。
 - 料金、申込、FAQ、法務、プライバシー、ホーム、Works、ブログ、診断デモ、AIチャットの公開コピーを、記録したStart Date、14営業日以内の固定セットアップ納品、未納品時の12,000ドル全額返金、顧客側変更・保留による時計停止、成果保証なしへ統一。
 - 運用runbookへ、請求書を正本とする支払手段、Stripe請求書／決済リンク、USDCネットワーク確認、検収・引き継ぎ・返金証跡を追記。release smokeにWise、14営業日、全額返金、支払方法項目を追加。
-- 検証済み: JSON parse、関連Vitest 8 files / 67 tests、全Vitest 94 files / 440 tests、TypeScript、quality guard（0 errors）、production build 336/336、diff check。正式 `npm run release:prod` は deployment `ipdwlqvgv7jcta351omk5qk5` で完走し、DB 82/82、日英主要ページ、Stripe legacy endpoint 410、日英チャットRAGの支払方法・返金回答を本番URLで確認済み。
+- 検証済み: JSON parse、関連Vitest 8 files / 67 tests、全Vitest 94 files / 440 tests、TypeScript、quality guard（0 errors）、production build 336/336、diff check。正式 `npm run release:prod` は最新 deployment `s5us1sfkciqmy9oqo4z7tk3f` で完走し、DB 82/82、日英主要ページ、Stripe legacy endpoint 410、日英チャットRAGの支払方法・返金回答を本番URLで確認済み。
 
-### 2026-07-13 Japan Entry CTA・根拠資料・RAGアシスタント強化（正式release待ち）
+### 2026-07-13 Japan Entry CTA・根拠資料・RAGアシスタント強化（本番反映済み）
 - ヘッダー右上の導線を日英とも `Contact` / `お問い合わせ` に変更。価格・固定オファーの明示は料金、申込、本文CTAへ残し、初見で「問い合わせ先」と認識できる導線へ整理した。
 - Worksに公開提供資料の3 dossier（購入者導線 / 公開シグナル / 申込みから引き継ぎ）を追加。確認できる実装・検収・運用境界と、許諾なしには主張しない順位・訪問・成約・売上を明示し、架空の過去事例を作らない。
 - FAQを英語13→17件、日本語8→13件へ拡張。保証の定義、Works資料と顧客事例の違い、AI参照範囲、外部審査遅延、公開後サポートを追加。ブログは英語12本・日本語7本、最短本文2,000文字超、hero画像・表・タグ・目次・サイドバーを維持。
 - 右下チャットを承認済みサイト/ブログのlocale別RAGへ接続。Gemini（設定時）/日本語Dify（設定時）へ根拠コンテキストを渡し、回答に参照リンクを表示、根拠なしは人確認へフォールバック。料金・保証・成果の幻覚を安全ゲートで抑止。
-- 検証: 関連Vitest **19/19 pass**、チャットRAG追加テスト **3/3 pass**、TypeScript pass。公式 `npm run release:prod` 後に日英のContact、Works dossier、FAQ、Blog、チャットAPIを本番URLで再確認する。
+- 検証: 関連Vitest **19/19 pass**、チャットRAG追加テスト **3/3 pass**、TypeScript pass。公式 `npm run release:prod` 後に日英のContact、Works dossier、FAQ、Blog、チャットAPIを本番URLで再確認済み。
 
 ### 2026-07-13 SMBフルサイト・デモ品質ゲート（本番反映済み / 収集・送信停止）
 - 2026-07-13 実在事業者での再現性確認として、公式Instagramと公式noteを運用する「及川洋菓子店」の非送信・非公式デモを追加。Cafe版の色替えではなく、`premium.style=craft` 専用のsplit hero、番号付き商品導線、letterpress調、無限marquee、非対称galleryを持つ別レンダラーを実装した。公開事実は週末営業、欧州焼菓子、2020年3月開店、公式住所・SNSに限定し、画像3点は提案用生成素材として実物ではない旨を表示。11ページ、送信停止、noindex、rights manifest、品質97点を維持する。
