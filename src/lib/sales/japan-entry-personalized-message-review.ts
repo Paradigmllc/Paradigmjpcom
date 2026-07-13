@@ -138,7 +138,12 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   if (/(?:https?:\/\/|www\.|\[[^\]]+\]\([^)]+\)|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b)/i.test(message)) { issues.push("URL, link, or email is prohibited"); score = 0; }
   if (/(?:\bROI\b|return on investment|gross profit|guarantee[sd]?|attachment|download|document)/i.test(message)) { issues.push("Unsupported performance or attached-material claim is prohibited"); score -= 40; }
   if (/(?:local entity|entity setup|incorporat(?:e|ion)|legal advice|tax advice|regulatory approval|licen[cs]e approval|visa support|non-?compliant|violat(?:e|es|ion)|illegal)/i.test(message)) { issues.push("Unsupported legal, entity, or violation claim is prohibited"); score -= 45; }
-  if (/(?:logical next step|given that reach|i noticed your site|unlock|untapped|huge opportunity|game.changer|revolutionary|stood out|aligns well|real need|many japanese|critical to (?:building|build)|capture (?:part of|the|that traffic)|tailored roadmap|data-driven approach|based in Tokyo|lead Japan market entry|consultancy|rel(?:y|ies) on|optimi[sz]e stock|reduce waste|with confidence|likely bounce|creates uncertainty)/i.test(message)) { issues.push("Generic, promotional, invented, or unsupported market phrasing is prohibited"); score -= 35; }
+  const promotionalMatch = message.match(/(?:logical next step|given that reach|i noticed your site|unlock|untapped|huge opportunity|game.changer|revolutionary|stands? out|stood out|aligns well|real need|many japanese|critical to (?:building|build)|capture (?:part of|the|that traffic)|tailored roadmap|data-driven approach|based in Tokyo|lead Japan market entry|consultancy|rel(?:y|ies) on|optimi[sz]e stock|reduce waste|with confidence|likely bounce|creates uncertainty)/i);
+  if (promotionalMatch) {
+    issues.push("Generic, promotional, invented, or unsupported market phrasing is prohibited");
+    issues.push(`Remove prohibited phrase exactly: ${promotionalMatch[0]}`);
+    score -= 35;
+  }
   if (/(?:\bpotentially\b|may cause|could cause|caus(?:e|es|ing)|early exit|drop[- ]?off|abandon(?:ment|ed|ing)?|creates? friction|affects? conversion|lost (?:sale|sales|revenue)|buyer support|Japanese-language touchpoints)/i.test(message)) { issues.push("Unsupported causal inference or invented package deliverable is prohibited"); score -= 45; }
 
   const selectedModeled = selected.some((fact) => fact.id.startsWith("modeled-"));

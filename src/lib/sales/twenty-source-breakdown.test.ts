@@ -168,6 +168,11 @@ describe("twentyCompanyHomePayload", () => {
         qualityScore: 95,
         safetyScore: 100,
         model: "deepseek-v4-pro",
+        promptTokens: 2_400,
+        completionTokens: 640,
+        cacheHitTokens: 1_920,
+        cacheMissTokens: 480,
+        cacheHitRatio: 0.8,
         generatedAt: "2026-07-13T00:00:00.000Z",
         horizons: [
           { month: 6, roiPercent: -12.5, cumulativeNetBenefitUsd: -1_500 },
@@ -191,6 +196,7 @@ describe("twentyCompanyHomePayload", () => {
     expect(summary).toContain("運用状態: 未送信・要レビュー");
     expect(summary).toContain("推定日本月間アクセス: 1,950");
     expect(summary).toContain("推定月間機会損失: $10,296");
+    expect(summary).toContain("LLMトークン効率: input=2,400 / output=640 / cache=80% (1,920 hit / 480 miss)");
     expect(summary).toContain("6ヶ月 ROI -12.5%");
     expect(summary).toContain("24ヶ月 ROI 164.8%");
     expect(summary).toContain(

@@ -17,6 +17,11 @@ export type { JapanEntryMessageReview } from "./japan-entry-personalized-message
 const MODEL = "deepseek-v4-pro" as const;
 const EDITORIAL_PASS_SCORE = 92;
 const EDITORIAL_DIMENSION_FLOOR = 22;
+const STAGE_MAX_TOKENS = {
+  generation: 4_000,
+  repair: 2_400,
+  critic: 1_200,
+} as const;
 
 export interface PersonalizedJapanEntryMessageResult {
   ok: boolean;
@@ -43,11 +48,15 @@ const candidateSchema = z.object({
   message: z.string().min(1).max(1_800),
   fact_ids: z.array(z.string().min(1)).min(1).max(6),
   product_evidence: z.string().min(3).max(180),
-  angle: z.string().min(1).max(120),
+  angle: z.string().min(1).max(300),
 }).strict();
 
 const generationSchema = z.object({
   candidates: z.array(candidateSchema).length(3),
+}).strict();
+
+const repairSchema = z.object({
+  candidate: candidateSchema,
 }).strict();
 
 const riskFlagsSchema = z.preprocess((value) => {
@@ -64,7 +73,7 @@ const criticSchema = z.object({
     credibility: z.number().int().min(0).max(25),
     executive_relevance: z.number().int().min(0).max(25),
   }).strict(),
-  rationale: z.string().min(1).max(600),
+  rationale: z.string().min(1).max(1_200),
   risk_flags: riskFlagsSchema,
 }).strict();
 
@@ -72,16 +81,30 @@ function parseJson(text: string): unknown {
   return JSON.parse(text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, ""));
 }
 
+function addUsage(
+  current?: DeepSeekResponse["usage"],
+  next?: DeepSeekResponse["usage"],
+): DeepSeekResponse["usage"] {
+  if (!current && !next) return undefined;
+  return {
+    prompt_tokens: (current?.prompt_tokens ?? 0) + (next?.prompt_tokens ?? 0),
+    completion_tokens: (current?.completion_tokens ?? 0) + (next?.completion_tokens ?? 0),
+    cache_hit_tokens: (current?.cache_hit_tokens ?? 0) + (next?.cache_hit_tokens ?? 0),
+    cache_miss_tokens: (current?.cache_miss_tokens ?? 0) + (next?.cache_miss_tokens ?? 0),
+  };
+}
+
 async function callStructured<T>(input: {
-  stage: string;
+  stage: keyof typeof STAGE_MAX_TOKENS;
   messages: DeepSeekMessage[];
   schema: z.ZodType<T>;
   caller: LlmCaller;
 }): Promise<
   | { ok: true; data: T; attempts: number; usage?: DeepSeekResponse["usage"] }
-  | { ok: false; attempts: number; error: string }
+  | { ok: false; attempts: number; error: string; usage?: DeepSeekResponse["usage"] }
 > {
   let lastError = `${input.stage} failed`;
+  let usage: DeepSeekResponse["usage"];
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     let response: DeepSeekResponse;
     try {
@@ -89,8 +112,9 @@ async function callStructured<T>(input: {
         model: MODEL,
         modelPolicy: "strict",
         responseFormat: "json_object",
-        temperature: input.stage === "generation" ? 0.55 : 0.1,
-        maxTokens: 8_000,
+        temperature: input.stage === "generation" ? 0.55 : input.stage === "repair" ? 0.35 : 0.1,
+        maxTokens: STAGE_MAX_TOKENS[input.stage],
+        thinking: "disabled",
         timeoutMs: 120_000,
       });
     } catch (error) {
@@ -98,19 +122,20 @@ async function callStructured<T>(input: {
       console.error(`[japan-entry-message] ${input.stage} attempt ${attempt} threw:`, error);
       continue;
     }
+    usage = addUsage(usage, response?.usage);
     if (!response?.ok || !response.text) {
       lastError = response?.error ?? `${input.stage} returned an empty response`;
       console.error(`[japan-entry-message] ${input.stage} attempt ${attempt} failed:`, lastError);
       continue;
     }
     try {
-      return { ok: true, data: input.schema.parse(parseJson(response.text)), attempts: attempt, usage: response.usage };
+      return { ok: true, data: input.schema.parse(parseJson(response.text)), attempts: attempt, usage };
     } catch (error) {
       lastError = error instanceof Error ? error.message : `${input.stage} returned invalid JSON`;
       console.error(`[japan-entry-message] ${input.stage} attempt ${attempt} JSON invalid:`, lastError);
     }
   }
-  return { ok: false, attempts: 3, error: lastError };
+  return { ok: false, attempts: 3, error: lastError, usage };
 }
 
 function buildReview(input: {
@@ -162,62 +187,136 @@ export async function generatePersonalizedJapanEntryMessage(
   }
 
   const mode = getJapanEntryMessageMode(facts);
-  let feedback: string | undefined;
   let totalAttempts = 0;
-  let lastReview: JapanEntryMessageReview | undefined;
+  let totalUsage: DeepSeekResponse["usage"];
+  let repairUsed = false;
 
-  for (let round = 1; round <= 2; round += 1) {
-    const generated = await callStructured({
-      stage: "generation",
-      messages: generationMessages(input, facts, mode, feedback),
-      schema: generationSchema,
+  const inspectCandidate = (candidate: z.infer<typeof candidateSchema>) => ({
+    candidate,
+    safety: reviewPersonalizedJapanEntryMessage({
+      message: candidate.message,
+      companyName: input.companyName,
+      productContext,
+      productEvidence: candidate.product_evidence,
+      factIds: candidate.fact_ids,
+      facts,
+    }),
+  });
+
+  const generated = await callStructured({
+    stage: "generation",
+    messages: generationMessages(input, facts, mode),
+    schema: generationSchema,
+    caller,
+  });
+  totalAttempts += generated.attempts;
+  totalUsage = addUsage(totalUsage, generated.usage);
+  if (!generated.ok) {
+    return { ok: false, usage: totalUsage, error: `DeepSeek V4 Pro candidate generation failed: ${generated.error}` };
+  }
+
+  const reviewedCandidates = generated.data.candidates.map(inspectCandidate);
+  let valid = reviewedCandidates.filter((item) => item.safety.passed);
+  if (valid.length === 0) {
+    const strongest = [...reviewedCandidates].sort((a, b) => b.safety.score - a.safety.score)[0];
+    if (!strongest) {
+      return { ok: false, usage: totalUsage, error: "DeepSeek V4 Pro returned no candidate to repair" };
+    }
+    const repaired = await callStructured({
+      stage: "repair",
+      messages: generationMessages(input, facts, mode, {
+        candidate: strongest.candidate,
+        issues: strongest.safety.issues,
+      }),
+      schema: repairSchema,
       caller,
     });
-    totalAttempts += generated.attempts;
-    if (!generated.ok) {
-      return { ok: false, error: `DeepSeek V4 Pro candidate generation failed: ${generated.error}` };
+    repairUsed = true;
+    totalAttempts += repaired.attempts;
+    totalUsage = addUsage(totalUsage, repaired.usage);
+    if (!repaired.ok) {
+      return { ok: false, usage: totalUsage, error: `DeepSeek V4 Pro candidate repair failed: ${repaired.error}` };
     }
-
-    const valid = generated.data.candidates.map((candidate) => ({
-      candidate,
-      safety: reviewPersonalizedJapanEntryMessage({
-        message: candidate.message,
-        companyName: input.companyName,
-        productContext,
-        productEvidence: candidate.product_evidence,
-        factIds: candidate.fact_ids,
-        facts,
-      }),
-    })).filter((item) => item.safety.passed);
-
-    if (valid.length === 0) {
-      if (round === 1) {
-        feedback = "All candidates failed deterministic grounding, formatting, or evidence-mode requirements. Follow every paragraph, fact-id, number-labeling, and CTA constraint exactly.";
-        continue;
-      }
-      return { ok: false, error: "All DeepSeek V4 Pro candidates failed the deterministic safety gate after one repair pass" };
+    const repairedCandidate = inspectCandidate(repaired.data.candidate);
+    if (!repairedCandidate.safety.passed) {
+      return {
+        ok: false,
+        usage: totalUsage,
+        error: `The strongest DeepSeek V4 Pro candidate failed the deterministic safety gate after one targeted repair: ${repairedCandidate.safety.issues.join("; ")}`,
+      };
     }
+    valid = [repairedCandidate];
+  }
 
+  const criticize = async (candidates: typeof valid) => {
     const criticized = await callStructured({
       stage: "critic",
-      messages: criticMessages(input.companyName, facts, valid.map((item) => item.candidate), mode),
+      messages: criticMessages(input.companyName, facts, candidates.map((item) => item.candidate), mode),
       schema: criticSchema,
       caller,
     });
     totalAttempts += criticized.attempts;
-    if (!criticized.ok) {
-      return { ok: false, error: `DeepSeek V4 Pro editorial review failed: ${criticized.error}` };
-    }
-    const selected = valid[criticized.data.selected_index];
-    if (!selected) return { ok: false, error: "DeepSeek V4 Pro critic selected an invalid candidate" };
+    totalUsage = addUsage(totalUsage, criticized.usage);
+    return criticized;
+  };
 
-    const review = buildReview({ selected, criticized: criticized.data, attempts: totalAttempts });
-    if (review.passed) {
-      return { ok: true, message: selected.candidate.message.trim(), review, usage: generated.usage };
-    }
-    lastReview = review;
-    feedback = `The selected draft scored ${review.score}/100. Editor rationale: ${review.rationale}. Material risks: ${review.riskFlags.join(", ") || "none"}. Raise every dimension to at least ${EDITORIAL_DIMENSION_FLOOR} without weakening evidence labeling.`;
+  const criticized = await criticize(valid);
+  if (!criticized.ok) {
+    return { ok: false, usage: totalUsage, error: `DeepSeek V4 Pro editorial review failed: ${criticized.error}` };
+  }
+  const selected = valid[criticized.data.selected_index];
+  if (!selected) {
+    return { ok: false, usage: totalUsage, error: "DeepSeek V4 Pro critic selected an invalid candidate" };
   }
 
-  return { ok: false, review: lastReview, error: lastReview?.issues[0] ?? "DeepSeek V4 Pro editorial review failed" };
+  const review = buildReview({ selected, criticized: criticized.data, attempts: totalAttempts });
+  if (review.passed) {
+    return { ok: true, message: selected.candidate.message.trim(), review, usage: totalUsage };
+  }
+  if (repairUsed) {
+    return { ok: false, review, usage: totalUsage, error: review.issues[0] };
+  }
+
+  const repaired = await callStructured({
+    stage: "repair",
+    messages: generationMessages(input, facts, mode, {
+      candidate: selected.candidate,
+      issues: review.issues,
+      editorialFeedback: `Score ${review.score}/100. ${review.rationale}. Material risks: ${review.riskFlags.join(", ") || "none"}. Raise every dimension to at least ${EDITORIAL_DIMENSION_FLOOR}.`,
+    }),
+    schema: repairSchema,
+    caller,
+  });
+  totalAttempts += repaired.attempts;
+  totalUsage = addUsage(totalUsage, repaired.usage);
+  if (!repaired.ok) {
+    return { ok: false, review, usage: totalUsage, error: `DeepSeek V4 Pro candidate repair failed: ${repaired.error}` };
+  }
+  const repairedCandidate = inspectCandidate(repaired.data.candidate);
+  if (!repairedCandidate.safety.passed) {
+    return {
+      ok: false,
+      usage: totalUsage,
+      error: `DeepSeek V4 Pro targeted repair failed the deterministic safety gate: ${repairedCandidate.safety.issues.join("; ")}`,
+    };
+  }
+
+  const repairedCritic = await criticize([repairedCandidate]);
+  if (!repairedCritic.ok) {
+    return { ok: false, review, usage: totalUsage, error: `DeepSeek V4 Pro repaired-draft review failed: ${repairedCritic.error}` };
+  }
+  const repairedReview = buildReview({
+    selected: repairedCandidate,
+    criticized: repairedCritic.data,
+    attempts: totalAttempts,
+  });
+  if (!repairedReview.passed) {
+    return { ok: false, review: repairedReview, usage: totalUsage, error: repairedReview.issues[0] };
+  }
+  return {
+    ok: true,
+    message: repairedCandidate.candidate.message.trim(),
+    review: repairedReview,
+    usage: totalUsage,
+  };
 }
