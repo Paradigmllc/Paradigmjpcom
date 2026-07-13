@@ -142,6 +142,12 @@ beforeEach(() => {
       rationale: "Specific and grounded",
       riskFlags: [],
     },
+    usage: {
+      prompt_tokens: 2_400,
+      completion_tokens: 640,
+      cache_hit_tokens: 1_920,
+      cache_miss_tokens: 480,
+    },
   });
 });
 

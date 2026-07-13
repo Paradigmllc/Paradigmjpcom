@@ -57,5 +57,16 @@ Paradigm addresses these items through our Japan Entry Package, which validates 
     })
     expect(review.passed).toBe(true)
     expect(review.wordCount).toBeGreaterThanOrEqual(140)
+
+    const promotional = reviewPersonalizedJapanEntryMessage({
+      message: message.replace("including its inventory insights", "whose inventory insights stand out, including its inventory insights"),
+      companyName: "Example",
+      productContext: "Example provides a subscription analytics platform for independent retailers with inventory insights.",
+      productEvidence: "subscription analytics platform for independent retailers",
+      factIds,
+      facts,
+    })
+    expect(promotional.passed).toBe(false)
+    expect(promotional.issues).toContain("Generic, promotional, invented, or unsupported market phrasing is prohibited")
   })
 })

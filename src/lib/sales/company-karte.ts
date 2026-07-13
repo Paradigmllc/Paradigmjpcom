@@ -54,6 +54,11 @@ export interface CompanyKarteJapanEntryDraft {
   qualityScore: number | null
   safetyScore: number | null
   model: string | null
+  promptTokens: number | null
+  completionTokens: number | null
+  cacheHitTokens: number | null
+  cacheMissTokens: number | null
+  cacheHitRatio: number | null
   generatedAt: string | null
   horizons: CompanyKarteJapanEntryHorizon[]
 }
@@ -162,6 +167,11 @@ function japanEntryDraftFromMeta(meta: JsonRecord): CompanyKarteJapanEntryDraft 
     qualityScore: finiteNumber(messageGeneration?.qualityScore),
     safetyScore: finiteNumber(messageGeneration?.safetyScore),
     model: typeof messageGeneration?.model === "string" ? messageGeneration.model : null,
+    promptTokens: finiteNumber(messageGeneration?.promptTokens),
+    completionTokens: finiteNumber(messageGeneration?.completionTokens),
+    cacheHitTokens: finiteNumber(messageGeneration?.cacheHitTokens),
+    cacheMissTokens: finiteNumber(messageGeneration?.cacheMissTokens),
+    cacheHitRatio: finiteNumber(messageGeneration?.cacheHitRatio),
     generatedAt: typeof messageGeneration?.generatedAt === "string"
       ? messageGeneration.generatedAt
       : typeof projection.generatedAt === "string"

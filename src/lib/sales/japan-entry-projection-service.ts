@@ -1,4 +1,5 @@
 import { getServiceSalesSupabase } from "@/lib/supabase";
+import { cacheHitRatio } from "@/lib/deepseek";
 import { DB_TABLES } from "./db-tables";
 import { findCompanyById } from "./companies";
 import {
@@ -278,6 +279,11 @@ export async function generateJapanEntryProjection(
       editorialScores: personalized.review.editorialScores,
       rationale: personalized.review.rationale,
       riskFlags: personalized.review.riskFlags,
+      promptTokens: personalized.usage?.prompt_tokens ?? 0,
+      completionTokens: personalized.usage?.completion_tokens ?? 0,
+      cacheHitTokens: personalized.usage?.cache_hit_tokens ?? 0,
+      cacheMissTokens: personalized.usage?.cache_miss_tokens ?? 0,
+      cacheHitRatio: cacheHitRatio(personalized.usage),
       generatedAt: new Date().toISOString(),
     },
   };
