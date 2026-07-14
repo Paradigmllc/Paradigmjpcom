@@ -3,9 +3,11 @@
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useEffect, useState, type CSSProperties } from "react"
+import { AnimatePresence, MotionConfig, motion } from "framer-motion"
 import { ArrowUpRight, Menu, X } from "lucide-react"
 import { FaInstagram } from "react-icons/fa6"
 import type { DemoBrandSystem, DemoMeta, DemoQualityReport } from "@/lib/sales/demo-site-types"
+import { PremiumV3ScrollProgress } from "./PremiumV3Motion"
 
 interface NavLink { label: string; href: string }
 type DemoStyle = CSSProperties & Record<`--demo-${string}`, string | number>
@@ -58,17 +60,19 @@ export function DemoPremiumV3Layout({
   const isActive = (href: string) => pathname === href || (href !== basePath && pathname.startsWith(href))
 
   return (
+    <MotionConfig reducedMotion="user" transition={{ ease: [0.22, 1, 0.36, 1] }}>
     <div className="min-h-dvh bg-[var(--demo-surface)] text-[var(--demo-ink)] antialiased" style={styles} data-brand-system={brand.id}>
-      <nav className="sticky top-0 z-50 border-b border-[var(--demo-line)] bg-[color:var(--demo-surface)]/94 backdrop-blur-xl" aria-label="メインナビゲーション">
+      <PremiumV3ScrollProgress />
+      <motion.nav initial={{ y: -80 }} animate={{ y: 0 }} transition={{ duration: 0.8 }} className="sticky top-0 z-50 border-b border-[var(--demo-line)] bg-[color:var(--demo-surface)]/88 backdrop-blur-xl" aria-label="メインナビゲーション">
         <div className="mx-auto flex h-[78px] max-w-[1500px] items-center justify-between gap-3 px-5 sm:px-8 lg:px-10 xl:px-14">
-          <a href={basePath} className="flex min-w-0 flex-1 items-center gap-3 xl:max-w-[22rem]" aria-label={`${companyName} ホーム`}>
+          <motion.a href={basePath} whileHover={{ x: 3 }} className="flex min-w-0 flex-1 items-center gap-3 xl:max-w-[22rem]" aria-label={`${companyName} ホーム`}>
             {presentation?.brandLogoUrl ? (
               <span className="relative h-11 w-16 overflow-hidden bg-white/75 p-1"><Image src={presentation.brandLogoUrl} alt={`${companyName} ロゴ`} fill unoptimized className="object-contain p-1" /></span>
             ) : (
               <span className="grid h-10 w-10 place-items-center border border-[var(--demo-line)] text-xs font-bold tracking-[.12em]" style={{ color: accent }}>{companyName.slice(0, 1)}</span>
             )}
             <span className="truncate text-lg font-[var(--demo-heading-weight)] tracking-[-.02em] sm:text-xl [font-family:var(--demo-font-display)]">{companyName}</span>
-          </a>
+          </motion.a>
           <div className="hidden shrink-0 items-center gap-6 xl:flex">
             {navLinks.map((link) => <a key={link.href} href={link.href} aria-current={isActive(link.href) ? "page" : undefined} className={`relative py-2 text-xs font-bold tracking-[.08em] transition ${isActive(link.href) ? "text-[var(--demo-ink)]" : "text-[var(--demo-muted)] hover:text-[var(--demo-ink)]"}`}>{link.label}{isActive(link.href) && <span className="absolute inset-x-0 -bottom-1 h-px bg-[var(--demo-accent)]" />}</a>)}
           </div>
@@ -77,13 +81,15 @@ export function DemoPremiumV3Layout({
             <button type="button" aria-label={menuOpen ? "メニューを閉じる" : "メニューを開く"} aria-expanded={menuOpen} onClick={() => setMenuOpen((value) => !value)} className="grid h-11 w-11 place-items-center border border-[var(--demo-line)] xl:hidden">{menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
           </div>
         </div>
-      </nav>
-      {menuOpen && (
-        <div className="fixed inset-x-0 bottom-0 top-[79px] z-40 overflow-y-auto bg-[var(--demo-ink)] px-5 py-10 text-white sm:px-10">
-          <div className="mx-auto max-w-2xl">{navLinks.map((link, index) => <a key={link.href} href={link.href} className="flex items-center justify-between border-b border-white/15 py-5 text-3xl [font-family:var(--demo-font-display)]">{link.label}<span className="text-xs text-white/35">0{index + 1}</span></a>)}<a href={ctaHref} {...(isExternalCta ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="mt-8 inline-flex min-h-12 w-full items-center justify-center gap-3 bg-white px-6 text-sm font-bold text-black">{isInstagram && <FaInstagram />}{ctaLabel}<ArrowUpRight className="h-4 w-4" /></a></div>
-        </div>
-      )}
-      <main>{children}</main>
+      </motion.nav>
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div initial={{ opacity: 0, clipPath: "inset(0 0 100% 0)" }} animate={{ opacity: 1, clipPath: "inset(0 0 0% 0)" }} exit={{ opacity: 0, clipPath: "inset(0 0 100% 0)" }} transition={{ duration: 0.55 }} className="fixed inset-x-0 bottom-0 top-[79px] z-40 overflow-y-auto bg-[var(--demo-ink)] px-5 py-10 text-white sm:px-10">
+            <motion.div initial="hidden" animate="visible" variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.07, delayChildren: 0.12 } } }} className="mx-auto max-w-2xl">{navLinks.map((link, index) => <motion.a variants={{ hidden: { opacity: 0, x: -22 }, visible: { opacity: 1, x: 0 } }} key={link.href} href={link.href} className="flex items-center justify-between border-b border-white/15 py-5 text-3xl [font-family:var(--demo-font-display)]">{link.label}<span className="text-xs text-white/35">0{index + 1}</span></motion.a>)}<motion.a variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }} href={ctaHref} {...(isExternalCta ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="mt-8 inline-flex min-h-12 w-full items-center justify-center gap-3 bg-white px-6 text-sm font-bold text-black">{isInstagram && <FaInstagram />}{ctaLabel}<ArrowUpRight className="h-4 w-4" /></motion.a></motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <motion.main key={pathname} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.55 }}>{children}</motion.main>
       <footer className="bg-[var(--demo-ink)] px-5 py-16 text-white sm:px-10 sm:py-20 lg:px-16">
         <div className="mx-auto max-w-[1380px]">
           <div className="grid gap-12 border-b border-white/15 pb-14 lg:grid-cols-[1.2fr_.8fr_.8fr]">
@@ -95,5 +101,6 @@ export function DemoPremiumV3Layout({
         </div>
       </footer>
     </div>
+    </MotionConfig>
   )
 }

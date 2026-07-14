@@ -1,3 +1,12 @@
+## CURRENT STATUS - 2026-07-14 Premium V3モーションシステム強化（実装・ローカルゲート完了 / リリース前）
+
+### 2026-07-14 Apple-style interaction foundation
+- Premium V3で`PremiumV3Reveal`が`initial=false`のまま実表示トリガーを持たず、全ページが静的に見えていた原因を修正。`restrained / editorial / expressive`ごとの表示領域進入モーション、見出しのマスク式行送り、stagger、スクロール連動parallax、ページ進捗、kinetic railをFramer Motionで共通部品化した。
+- 旧Premium V2のカルーセルaliasを廃止し、EmblaベースのPremium V3専用カルーセルへ置換。自動再生、ドラッグ、active slideのscale/opacity、caption crossfade、線形progress、一時停止・再開、前後操作を実装。hover・keyboard focus・document非表示・`prefers-reduced-motion`時は自動再生を止める。
+- Homeのfull/split hero、下層共通hero、story image、サービス一覧、全ページ共通nav/mobile drawerへ同じmotion languageを適用。モバイルではscroll-linked motionを描画しない分離componentとし、transform/opacity主体、動画preload metadata、reduced-motion静止表示を維持する。新規依存は追加せず既存Framer Motion / Emblaを深く利用した。
+- ローカル検証: Premium V3 motion回帰 + demo quality gate **2 files / 15 tests pass**、TypeScript、全ESLint、quality guard **0 errors / 59 existing warnings**、production build **408/408 pages**、`git diff --check` pass。全Vitestは既知の変更外2 files / 5 testsのみ不一致（日本語代表メッセージ191文字とworktree CRLFのbackup shell test）で、今回のPremium V3テストを含む130 files / 600 testsはpass。
+- 外部送信、候補収集、Twenty同期、フォーム送信は実行していない。PR・正式`npm run release:prod`・本番のPC/mobile/reduced-motion実ブラウザQAは次工程。
+
 ## CURRENT STATUS - 2026-07-14 エキテン実候補→Premium V3本番デモの実務pilot（生成・QA完了 / 外部送信0）
 
 ### 2026-07-14 ノン美容室の実素材デモ生成と量産ゲート修正
