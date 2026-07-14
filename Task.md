@@ -6,6 +6,7 @@
 - 画像はoperatorが元ページを確認し、人物・透かしを除外して3点以上選択した場合だけ `reviewed_manifest` 化。スナップショット外URLを拒否し、`private_proposal` として登録するため、権利確認前のクリーン公開URLと外部送信は既存ゲートで停止する。
 - 承認済み候補は既存の最大3件並列one-shot drainへ自動接続し、同一企業・同一manifestは既存結果を再利用。11ページPremium V3、品質94点、hard blocker 0の既存基準を緩めず、メール・電話・郵便・SNS・ポータルDM・フォーム送信・Twenty同期は接続していない。
 - ローカル検証: ポータル抽出・HP判定・素材審査・API認証・自動drain・再利用を含む全Vitest **125 files / 571 tests pass**、TypeScript、全ESLint、quality guard **0 errors / 60 warnings**、production build **408/408 pages**、`git diff --check` pass。
+- PR **#170**をmainへmergeし、正式`npm run release:prod`のdeployment **lvckkb5hj4ybr5m30abkcaie**を完走。DB **83/83**、Traefik / Cloudflare / Realtime / Twenty worker restart 0、Sales health HTTP 200 JSON `ok:true`、post-deploy smokeを含む全ゲートpass。本番ポータルAPIは未認証HTTP 401で存在と認証境界を確認し、候補投入・DEMO生成・外部送信は実行していない。
 
 ## CURRENT STATUS - 2026-07-14 Japan Entry文面20社一括生成→Twenty保存の本番試験（完了 / 外部送信0 / QAデータ削除済み）
 
