@@ -1,4 +1,4 @@
-## CURRENT STATUS - 2026-07-15 Lead Source website preflight強化（実装・検証完了 / 本番release前 / 外部送信0）
+## CURRENT STATUS - 2026-07-15 Lead Source website preflight強化（本番release・再pilot完了 / batch未承認 / 外部送信0）
 
 ### 数千件を504なしで検査するfail-closed経路
 - 前回pilotの失敗2件を本番DBで確認し、`starschema.com`は恒久的なDNS不達、`bluepathlabs.com`は現在DNS・HTTPS 200が回復した一時障害と特定した。従来は両方ともcandidate runの`failed`へ入って失敗率を押し上げていた。
@@ -6,12 +6,13 @@
 - 1 API requestは50件・同時10件まで、DBの`FOR UPDATE SKIP LOCKED` claimと15分stale recoveryで処理する。管理GUIが最大10,000件までchunkを継続し、未検査だけ・一時障害だけ・全件再検査を選び分けるため、長時間単一requestによる504と同一候補の重複検査を避ける。件数と上位除外理由はDB集計をAPI / GUIへ即時表示する。
 - 再ingestまたは再検査で候補集合が変わると既存のpilot量産承認を自動解除する。文面生成、Opportunity、レポート、Twenty同期、フォーム送信は事前検査から起動しない。
 
-### Verification / remaining gate
+### Production verification / remaining gate
 - 新migrationは本番DB上の単一transactionで`BEGIN -> 全DDL/RPC -> ROLLBACK`し、既存schema互換とSQL実行を副作用なしで確認した。対象Vitest **4 files / 18 tests**、全Vitest **155 files / 711 tests**、TypeScript、対象ESLint、quality guard **0 errors / 60 existing warnings**、production build **408/408 pages**、`git diff --check`がpass。
 - `lead-source-records.ts`は530行へ増えた時点で候補readiness / atomic selectionを`lead-source-selection.ts`へ分離し452行へ戻した。新規依存は追加していない。
-- 初回の正式releaseはdeploy開始前に、release-doctorが分割前の`lead-source-records.ts`だけを検査していたため静的gateで停止した。同時に新migrationが正式releaseの明示適用リストへ未配線だった点も検出し、doctorを新selection / preflight実体の検査へ更新、migration適用関数と回帰テストを追加した。gateを迂回せず再releaseする。
-- 正式deployment `xhf4odik8od4nqu6px6ymjc4`はDB 87/87、Sales health JSON `ok:true`、Twenty worker restart 0、Realtime / Traefik / 公開smokeを含むpost-deploy gateまでpass。source 9件の本番事前検査は7 eligible / 0 retryable / 2 rejectedで完走した。この実測でWordPress.comの公開IP`192.0.78.24/25`まで予約域扱いする既存`192.0/16`判定を発見したため、SSRF防御対象を`192.0.0.0/24`とTEST-NET-1 `192.0.2.0/24`へ正確化し、再release / 全件再検査する。
-- 残作業はcommit / push / PR / `npm run release:prod`、本番source 9件の事前検査、外部送信0の再pilot。失敗率20%以下かつ人間確認が終わるまでbatch量産承認は行わない。
+- 初回の正式releaseはdeploy開始前に、release-doctorが分割前の`lead-source-records.ts`だけを検査していたため静的gateで停止した。同時に新migrationが正式releaseの明示適用リストへ未配線だった点も検出し、doctorを新selection / preflight実体の検査へ更新、migration適用関数と回帰テストを追加した。gateは迂回せず修復後に再実行した。
+- deployment `xhf4odik8od4nqu6px6ymjc4`で新migrationを適用後、source 9件の本番事前検査は7 eligible / 2 rejected。この実測でWordPress.com公開IP`192.0.78.24/25`まで予約域扱いする既存`192.0/16`判定を発見し、SSRF防御対象を`192.0.0.0/24`とTEST-NET-1 `192.0.2.0/24`へ正確化した。最終deployment `keomk5hb9m7mk9t91j2n6teq` / image `85d6f3bd...`はDB 87/87、Sales health JSON `ok:true`、Twenty worker restart 0、Realtime / Traefik / 公開smokeを含むpost-deploy gateまでpass。再検査は**8 eligible / 0 retryable / 1 rejected（starschema.com NXDOMAIN）**。
+- 非送信再pilot `23b4c654-954c-415b-98cb-715c5b8d1869`は新たにclaim可能になった`bluepathlabs.com` 1件だけを取得・検証し、failed 0 / review_required 1 / Twenty sync 0でcompleted。従業員30名、US根拠、identity 90は確認できたがJapan Entry offer fit 0のため`japan_entry_offer_fit_missing`で安全停止した。Sales Company追加0、outreach run総数2のまま、sourceの`pilot_approved_at`はnull。
+- batch量産は未承認。再pilotは1件しか新規検証できずフォーム合格率を評価できないため、次の実務作業は同じ品質基準で対象国sourceを拡充し、5件以上のフォーム確認を含むpilotを成立させること。Twenty追加、文面生成、レポート生成、外部送信は自動で開始しない。
 
 ## CURRENT STATUS - 2026-07-14 Japan Entry Lead Factory実務稼働開始（非送信pilot稼働 / batch品質ゲート未承認 / 外部送信0）
 
