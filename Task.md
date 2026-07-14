@@ -1266,11 +1266,13 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - browser footprint初回run `a61afeca-e353-40f3-826c-240e7b7d154c`は候補20・確認10・実フォーム4・失敗0まで改善したが、検索語`cdn.shopify.com`が技術解説/監視サイトを拾いShopify一致0。全件をゲートで遮断しTwenty追加0・送信0を維持した。実検索でstore subdomainが返る`site:myshopify.com`へ置換し、候補配列は技術特化sourceの挿入順を維持してgeneric TLD fallbackより先に確認するよう修正した。
 - store subdomain版run `68d6a109-591b-428b-95c1-fdad3ed722dc`は技術特化候補8件を先行取得し、候補20・確認10・実フォーム6・失敗0。既存HTML検出だけでは`*.myshopify.com`をShopify確定証拠として扱わず、本文の住所/通貨/電話も国判定へ渡していなかったため、Shopify一致0・Twenty追加0でfail-closed停止した。既存CNAME/hosted-platform規則をdomain hostnameにも適用し、ページ本文からscript/styleを除いた最大50KBだけを国の客観証拠へ使用する。US主要都市を拡張し、対象市場NL/SG/AEのTLD・電話・通貨・住所規則も追加した。
 - hosted Shopify + US住所/通貨 + 実フォーム条件が既定68点以上になる回帰テストを追加。関連 **9 files / 37 tests pass**、TypeScript / 対象ESLint / production build 408/408 pass。
-## CURRENT STATUS - 2026-07-14 /ja国内Web制作サイト刷新（実装済み・本番反映待ち）
+## CURRENT STATUS - 2026-07-14 /ja国内Web制作サイト刷新（本番反映・公開QA済み）
 
 ### 2026-07-14 /ja Web production repositioning
 - `/ja` のCMSホームシードと安全なフォールバックを、Japan Entryではなく国内向けWeb制作へ刷新。企業サイト・採用サイト・LP・既存サイトリニューアル、CMS、SEO/GEO基盤、保守・改善を30万円〜の料金目安とともに掲載し、4工程（ヒアリング、情報設計、デザイン・実装、公開・引き継ぎ）を可視化した。
 - `/ja` のトップ、料金、サービス、FAQ、会社概要、問い合わせ、チャットボット、運用イメージの文面を国内Web制作に統一。`/ja/contact?intent=japan-entry` の旧クエリでも国際Japan Entryへ戻らないようにし、英語版の固定オファーは変更していない。
-- 検証済み: 全locale JSON parse、`npm exec -- tsc --noEmit`、対象ESLint、`npm run quality:guard`（0 errors / 60 warnings）、`git diff --check`。正式releaseと本番 `/ja` のブラウザQAはコミット・デプロイ後に追記する。
+- 検証済み: 全locale JSON parse、`npm exec -- tsc --noEmit`、対象ESLint、関連Vitest **1 file / 13 tests pass**、`npm run quality:guard`（0 errors / 60 warnings）、`git diff --check`。
+- PR #172をmainへmergeし、正式`npm run release:prod`を完走。deployment queue `hh3rwblu17iqkze2sb2ljwvt`、DB **83/83**、Japanese/English homepage CMS publish、English blog 12件、Traefik / Cloudflare / Realtime / Twenty worker restart 0、Sales health HTTP 200 JSON `ok:true`、公開smokeまで全gate pass。
+- 実Chrome公開QA: `/ja`（国内Web制作ヒーロー、30万円〜、画像3点、横溢れ0、Package導線なし）、`/ja/pricing`（¥300,000 / ¥600,000 / ¥1,000,000）、`/ja/services`、`/ja/faq`、`/ja/blog`、`/ja/contact?intent=japan-entry`（旧クエリでも国内フォーム）を確認。JAページ内に`Japan Entry` / `$12,000` / `$0/month`の混入なし。
 - 最終US/Shopify pilot run `993f3fbb-c464-4655-b72a-03de7da5fef8`は、候補20・確認10・Shopify一致10・実フォーム8・適格/昇格7・Twenty同期7・失敗0。7社すべてでTwenty company IDを保存し、フォームURLと機会スコア75を保持した。enrichment job 0、outreach run 0、artifact 0、diagnosis 0を確認した。
 - ただし`SalesCompany` insert後、既存DB triggerがlist-only企業にも空のevent-driven pipelineを6本（48 queued steps）作成したため、即時に全run/stepを`cancelled`へ変更。送信・文面・レポート生成前であり外部送信0を維持した。promotion metaへ`skip_enrichment=true` / `list_only=true`を固定し、DB trigger側も`source=multi_source_domains`を二重に除外する。Twenty company同期だけを許可する。
