@@ -214,12 +214,13 @@ export function evaluateDemoQuality(
   ].map((item) => item.src)).size
   if (uniquePremiumMedia < 3) hardBlockers.push("visual_media_repetition")
   const primaryMedia = page.premium?.heroMedia[0]
-  const explicitLowResolution = primaryMedia?.kind === "image"
-    && typeof primaryMedia.width === "number"
-    && typeof primaryMedia.height === "number"
-    && (primaryMedia.width < 1_200 || primaryMedia.height < 720)
-  if (recipe.creativeDirection.heroComposition === "cinematic"
-    && (explicitLowResolution || isLikelyThumbnail(primaryMedia?.src ?? ""))) {
+  const missingOrLowResolution = primaryMedia?.kind === "image"
+    && (typeof primaryMedia.width !== "number"
+      || typeof primaryMedia.height !== "number"
+      || primaryMedia.width < 1_200
+      || primaryMedia.height < 720)
+  if (recipe.creativeDirection.heroComposition !== "mosaic"
+    && (missingOrLowResolution || isLikelyThumbnail(primaryMedia?.src ?? ""))) {
     hardBlockers.push("hero_media_resolution_risk")
   }
   if (page.pages.services.services.length < 2) warnings.push("service_detail_thin")

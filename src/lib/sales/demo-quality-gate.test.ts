@@ -50,8 +50,8 @@ function fixture(): DemoMultiPageData {
     templateId: "prism",
     premium: {
       style: "retail",
-      heroMedia: [1, 2, 3].map((index) => ({ src: `/generated/hero-${index}.jpg`, alt: `提案用画像${index}`, kind: "image" as const })),
-      gallery: [1, 2, 3].map((index) => ({ src: `/generated/gallery-${index}.jpg`, alt: `提案用ギャラリー${index}`, kind: "image" as const })),
+      heroMedia: [1, 2, 3].map((index) => ({ src: `/generated/hero-${index}.jpg`, alt: `提案用画像${index}`, kind: "image" as const, width: 1_600, height: 1_000 })),
+      gallery: [1, 2, 3].map((index) => ({ src: `/generated/gallery-${index}.jpg`, alt: `提案用ギャラリー${index}`, kind: "image" as const, width: 1_600, height: 1_000 })),
       intro: { eyebrow: "STORY", title: "丁寧な仕事を伝える", body: "確認済み情報をもとにした紹介文です。" },
       social: [{ label: "Instagram", href: "https://instagram.com/example", network: "instagram" }],
     },
@@ -337,7 +337,7 @@ describe("demo quality gate", () => {
     expect(quality.dimensions).toEqual(expect.objectContaining({ specificity: expect.any(Number), contentDepth: expect.any(Number) }))
   })
 
-  it("blocks a cinematic hero when the reviewed source is only a thumbnail", () => {
+  it("blocks every non-mosaic hero when the reviewed source is only a thumbnail", () => {
     const basePage = fixture()
     basePage.premium!.heroMedia[0] = {
       ...basePage.premium!.heroMedia[0],
@@ -358,6 +358,33 @@ describe("demo quality gate", () => {
     expect(quality.passed).toBe(false)
     expect(quality.hardBlockers).toContain("hero_media_resolution_risk")
     expect(quality.assessmentStage).toBe("structural_preflight")
+  })
+
+  it("fails closed on unknown hero dimensions but permits a low-resolution mosaic", () => {
+    const basePage = fixture()
+    basePage.premium!.heroMedia[0] = {
+      src: "https://image.example.test/reviewed-source.jpg",
+      alt: "寸法未確認の審査素材",
+      kind: "image",
+    }
+    const template = DEMO_TEMPLATES.find((item) => item.id === "prism")!
+    const splitRecipe = buildBaseDesignRecipe(template, basePage, {
+      ...TEST_DIRECTION,
+      heroComposition: "precision-split",
+    })
+    const splitQuality = evaluateDemoQuality(basePage, splitRecipe, buildProposalRightsManifest([
+      { src: basePage.premium!.heroMedia[0].src, usage: "proposal_only" },
+    ]))
+    const mosaicRecipe = buildBaseDesignRecipe(template, basePage, {
+      ...TEST_DIRECTION,
+      heroComposition: "mosaic",
+    })
+    const mosaicQuality = evaluateDemoQuality(basePage, mosaicRecipe, buildProposalRightsManifest([
+      { src: basePage.premium!.heroMedia[0].src, usage: "proposal_only" },
+    ]))
+
+    expect(splitQuality.hardBlockers).toContain("hero_media_resolution_risk")
+    expect(mosaicQuality.hardBlockers).not.toContain("hero_media_resolution_risk")
   })
 
   it("detects candidates that only change template IDs but render the same visual grammar", () => {
