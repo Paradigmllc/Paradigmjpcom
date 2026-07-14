@@ -6,21 +6,9 @@ import type { DemoSourceManifest } from "../demo-source-policy"
 import { validateDemoSourceManifest } from "../demo-source-policy"
 import { ingestLocalSmbCandidates, listLeadCandidates, type CandidateListItem, type LocalSmbInputRow } from "../lead-candidates"
 import type { Industry } from "../types"
-import { fetchPortalCandidate } from "./extract"
-import type { PortalCandidateExtraction, PortalCandidateImportResult, PortalSource } from "./types"
-
-async function mapLimit<T, R>(values: T[], limit: number, task: (value: T) => Promise<R>): Promise<R[]> {
-  const output = new Array<R>(values.length)
-  let cursor = 0
-  async function worker(): Promise<void> {
-    while (cursor < values.length) {
-      const index = cursor++
-      output[index] = await task(values[index])
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(limit, values.length) }, () => worker()))
-  return output
-}
+import { normalizePortalOperatorSnapshot } from "./extract"
+import { assessPortalSmbFit } from "./smb-fit"
+import type { PortalCandidateExtraction, PortalCandidateImportResult, PortalOperatorSnapshot, PortalSource } from "./types"
 
 function toLocalSmbRow(candidate: PortalCandidateExtraction): LocalSmbInputRow {
   return {
@@ -32,23 +20,24 @@ function toLocalSmbRow(candidate: PortalCandidateExtraction): LocalSmbInputRow {
     phone: candidate.phone,
     socialLinks: candidate.socialLinks,
     websiteUrl: candidate.websiteUrl,
+    isEnterpriseLike: candidate.status === "enterprise_like",
     sourceSlug: candidate.source,
     raw: { portal_snapshot: candidate },
   }
 }
 
-export async function ingestPortalCandidateUrls(source: PortalSource, urls: string[]): Promise<{
+export async function ingestPortalOperatorSnapshots(snapshots: PortalOperatorSnapshot[]): Promise<{
   ok: boolean
   imported: number
   failed: number
   results: PortalCandidateImportResult[]
 }> {
-  const results = await mapLimit(urls, 5, async (url): Promise<PortalCandidateImportResult> => {
+  const results = snapshots.map((snapshot): PortalCandidateImportResult => {
     try {
-      return { url, ok: true, candidate: await fetchPortalCandidate(source, url) }
+      return { url: snapshot.listingUrl, ok: true, candidate: normalizePortalOperatorSnapshot(snapshot) }
     } catch (error) {
-      console.error(`[portal-source/${source}] import failed:`, url, error)
-      return { url, ok: false, error: error instanceof Error ? error.message : "取得に失敗しました" }
+      console.error(`[portal-source/${snapshot.source}] operator snapshot failed:`, snapshot.listingUrl, error)
+      return { url: snapshot.listingUrl, ok: false, error: error instanceof Error ? error.message : "確認済み情報の保存に失敗しました" }
     }
   })
   const rows = results.flatMap((result) => result.ok && result.candidate ? [toLocalSmbRow(result.candidate)] : [])
@@ -69,13 +58,32 @@ function portalSnapshot(meta: Record<string, unknown>): PortalCandidateExtractio
   const raw = meta.raw
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null
   const snapshot = (raw as Record<string, unknown>).portal_snapshot
-  return snapshot && typeof snapshot === "object" && !Array.isArray(snapshot) ? snapshot as PortalCandidateExtraction : null
+  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) return null
+  const candidate = snapshot as PortalCandidateExtraction
+  const smbFit = assessPortalSmbFit({
+    companyName: candidate.companyName,
+    category: candidate.category,
+    description: candidate.description,
+    address: candidate.address,
+    websiteUrl: candidate.websiteUrl,
+    imageCount: candidate.images.length,
+  })
+  const status = candidate.websiteUrl
+    ? "has_website"
+    : smbFit.enterpriseSignals.length > 0
+      ? "enterprise_like"
+      : candidate.images.length < 3 || (!candidate.description && !candidate.address)
+        ? "insufficient_content"
+        : smbFit.eligible
+          ? "ready_for_review"
+          : "decision_fit_unverified"
+  return { ...candidate, smbFit, status }
 }
 
 export function buildPortalDemoManifest(candidate: CandidateListItem, assets: DemoReviewedAsset[]): DemoSourceManifest {
   const snapshot = portalSnapshot(candidate.meta)
   if (!snapshot) throw new Error("ポータル取得スナップショットがありません")
-  if (snapshot.status !== "ready_for_review") throw new Error("独自HPあり、または情報・画像が不足している候補です")
+  if (snapshot.status !== "ready_for_review") throw new Error("独自HP・大企業シグナル・意思決定者情報・素材のいずれかが基準未達です")
   const allowedImages = new Set(snapshot.images.map((image) => image.url))
   if (assets.some((asset) => !allowedImages.has(asset.sourceUrl))) throw new Error("取得スナップショットにない素材が含まれています")
   const sourceId = `portal-${snapshot.source}`

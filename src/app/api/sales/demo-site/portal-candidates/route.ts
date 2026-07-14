@@ -8,7 +8,7 @@ import { dispatchDemoBatchDrain } from "@/lib/sales/demo-batch-drain"
 import { INDUSTRIES } from "@/lib/sales/types"
 import {
   approvePortalCandidateForDemo,
-  ingestPortalCandidateUrls,
+  ingestPortalOperatorSnapshots,
   listPortalCandidates,
   readPortalSnapshot,
 } from "@/lib/sales/portal-sources/service"
@@ -19,9 +19,22 @@ export const dynamic = "force-dynamic"
 export const maxDuration = 300
 
 const SourceSchema = z.enum(PORTAL_SOURCES)
+const WebUrlSchema = z.url().refine((value) => /^https?:\/\//u.test(value), "HTTPまたはHTTPSのURLを指定してください")
+const SnapshotSchema = z.object({
+  listingUrl: z.url().startsWith("https://"),
+  companyName: z.string().min(2).max(200),
+  category: z.string().min(2).max(120),
+  description: z.string().min(30).max(1000),
+  address: z.string().max(300).nullish(),
+  phone: z.string().max(80).nullish(),
+  websiteUrl: WebUrlSchema.nullish(),
+  socialLinks: z.array(z.url().startsWith("https://")).max(20).default([]),
+  images: z.array(z.object({ url: z.url().startsWith("https://"), alt: z.string().max(200) })).min(3).max(20),
+})
 const ImportSchema = z.object({
   source: SourceSchema,
-  urls: z.array(z.url().startsWith("https://")).min(1).max(100),
+  operatorConfirmed: z.literal(true),
+  snapshots: z.array(SnapshotSchema).min(1).max(100),
 })
 const AssetSchema = demoSourceManifestSchema.shape.assets.element
 const ApproveSchema = z.object({
@@ -73,6 +86,7 @@ export async function GET(request: NextRequest) {
           contactUrl: snapshot.contactUrl,
           images: snapshot.images,
           suggestedIndustry: snapshot.suggestedIndustry,
+          smbFit: snapshot.smbFit,
           reviewStatus: snapshot.status,
           lastSeenAt: candidate.lastSeenAt,
         }] : []
@@ -93,11 +107,12 @@ export async function POST(request: NextRequest) {
       console.error("[portal-candidates] invalid import:", parsed.error)
       return NextResponse.json({ ok: false, error: parsed.error.issues[0]?.message ?? "入力が不正です" }, { status: 400 })
     }
-    const result = await ingestPortalCandidateUrls(parsed.data.source, [...new Set(parsed.data.urls)])
+    const snapshots = parsed.data.snapshots.map((snapshot) => ({ ...snapshot, source: parsed.data.source }))
+    const result = await ingestPortalOperatorSnapshots(snapshots)
     if (result.imported > 0) {
       await notifyPortalResult(
         "ポータル候補を収集",
-        `${parsed.data.source}: ${result.imported}件保存 / ${result.failed}件失敗 / 送信なし`,
+        `${parsed.data.source}: ブラウザ確認済み${result.imported}件保存 / ${result.failed}件失敗 / ポータル再取得・送信なし`,
         `portal-import:${parsed.data.source}:${new Date().toISOString().slice(0, 13)}`,
       )
     }

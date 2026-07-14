@@ -43,6 +43,7 @@ export interface LocalSmbInputRow {
   socialLinks?: string[]
   websiteUrl?: string | null
   sourceSlug?: string | null
+  isEnterpriseLike?: boolean
   raw?: Record<string, unknown>
 }
 
@@ -409,6 +410,7 @@ export async function ingestLocalSmbCandidates(rows: LocalSmbInputRow[], promote
         hasWebsite,
         hasContactSignal: Boolean(row.phone || row.listingUrl || (row.socialLinks?.length ?? 0) > 0),
         source: sourceSlug,
+        isEnterpriseLike: row.isEnterpriseLike,
       })
       await saveCandidateEvidence({
         candidate,

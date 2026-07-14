@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
   approve: vi.fn(),
   authorize: vi.fn(),
   dispatch: vi.fn(),
-  importUrls: vi.fn(),
+  importSnapshots: vi.fn(),
   list: vi.fn(),
   notify: vi.fn(),
   snapshot: vi.fn(),
@@ -21,7 +21,7 @@ vi.mock("@/lib/sales/demo-batch-drain", () => ({ dispatchDemoBatchDrain: mocks.d
 vi.mock("@/lib/notify", () => ({ notifyBothChannels: mocks.notify }))
 vi.mock("@/lib/sales/portal-sources/service", () => ({
   approvePortalCandidateForDemo: mocks.approve,
-  ingestPortalCandidateUrls: mocks.importUrls,
+  ingestPortalOperatorSnapshots: mocks.importSnapshots,
   listPortalCandidates: mocks.list,
   readPortalSnapshot: mocks.snapshot,
 }))
@@ -61,14 +61,31 @@ describe("portal candidate API", () => {
   })
 
   it("imports only through the selected portal adapter and keeps sending disabled", async () => {
-    mocks.importUrls.mockResolvedValue({ ok: true, imported: 1, failed: 0, results: [] })
+    mocks.importSnapshots.mockResolvedValue({ ok: true, imported: 1, failed: 0, results: [] })
     const response = await POST(new NextRequest("https://paradigmjp.com/api/sales/demo-site/portal-candidates", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ source: "houzz", urls: ["https://www.houzz.jp/pro/takumi"] }),
+      body: JSON.stringify({
+        source: "houzz",
+        operatorConfirmed: true,
+        snapshots: [{
+          listingUrl: "https://www.houzz.jp/pro/takumi",
+          companyName: "匠リフォーム",
+          category: "リフォーム会社",
+          description: "代表の建築士が地域密着で戸建てリフォームと外構工事を手掛けています。",
+          address: "東京都千代田区千代田1-1",
+          websiteUrl: "http://takumi.example.jp",
+          images: [1, 2, 3].map((index) => ({ url: `https://cdn.example.jp/work-${index}.webp`, alt: `施工例${index}` })),
+        }],
+      }),
     }))
     expect(response.status).toBe(200)
-    expect(mocks.importUrls).toHaveBeenCalledWith("houzz", ["https://www.houzz.jp/pro/takumi"])
+    expect(mocks.importSnapshots).toHaveBeenCalledWith([expect.objectContaining({
+      source: "houzz",
+      listingUrl: "https://www.houzz.jp/pro/takumi",
+      companyName: "匠リフォーム",
+      websiteUrl: "http://takumi.example.jp",
+    })])
     expect(await response.json()).toMatchObject({ ok: true, imported: 1, sendingEnabled: false })
   })
 
