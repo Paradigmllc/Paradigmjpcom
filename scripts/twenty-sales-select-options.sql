@@ -128,7 +128,6 @@ with field_options(field_name, option_label, option_value, option_color, option_
     ('paradigmSourceName', '手動CSV', 'manual_csv', 'gray', 8),
     ('paradigmSourceName', 'Codex検証', 'codex_verification', 'red', 9),
     ('paradigmSourceName', 'Codex E2E', 'codex_e2e', 'red', 10),
-    ('paradigmSourceName', 'OSSフォーム適格収集', 'oss_form_factory', 'green', 11),
     ('paradigmSalesStatus', '未診断 / 未対応', '未診断 / 未対応', 'gray', 0),
     ('paradigmSalesStatus', 'カルテ生成中 / 未対応', 'カルテ生成中 / 未対応', 'yellow', 1),
     ('paradigmSalesStatus', '送信待ち / 未対応', '送信待ち / 未対応', 'orange', 2),
