@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { decideFormQualification, isEnterpriseLikeStack } from "./lead-factory-qualification"
+import { decideFormQualification, isEnterpriseLikeStack, isNonContactFormUrl } from "./lead-factory-qualification"
 import type { FormDiscoveryResult } from "./sources/form-discovery"
 
 function discovery(patch: Partial<FormDiscoveryResult>): FormDiscoveryResult {
@@ -25,6 +25,19 @@ describe("decideFormQualification", () => {
 
   it("rejects low-confidence form discoveries", () => {
     expect(decideFormQualification(discovery({ formUrl: "https://example.com/contact", method: "spa", verification: "form", confidence: 75 }), 80)).toEqual({ qualified: false, reason: "low_confidence" })
+  })
+
+  it("rejects generic forms embedded on legal and policy pages", () => {
+    const legalForm = discovery({
+      formUrl: "https://example.com/policies/legal-notice",
+      method: "regex",
+      verification: "form",
+      confidence: 88,
+    })
+
+    expect(isNonContactFormUrl(legalForm.formUrl ?? "")).toBe(true)
+    expect(decideFormQualification(legalForm, 80)).toEqual({ qualified: false, reason: "no_form" })
+    expect(isNonContactFormUrl("https://example.com/pages/contact-us")).toBe(false)
   })
 
   it("blocks obvious enterprise platform stacks from the SMB lane", () => {
