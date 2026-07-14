@@ -1,4 +1,4 @@
-## CURRENT STATUS - 2026-07-14 ポータル候補のSMB意思決定ゲート・持続可能な一括収集（実装中 / 外部送信0）
+## CURRENT STATUS - 2026-07-14 ポータル候補のSMB意思決定ゲート・持続可能な一括収集（本番反映 / 外部送信0）
 
 ### 2026-07-14 Houzz・エキテン・ジモティーの経営者直結候補選定
 - ポータルURLを本番サーバーから直接取得する経路を廃止。通常ブラウザで確認済みの公開プロフィールだけを構造化スナップショットとして1〜100件保存し、検索エンジン、Google Maps、SNS本文、proxy、ポータル巡回を呼び出さない運用へ変更した。
@@ -6,6 +6,7 @@
 - 「専門家が在籍」だけでは通さず、代表者・店主・院長・所長・オーナー・創業者・本人・個人／家族経営の直接シグナルと、地域性・沿革・資格・専門性の両方を必須化。独自HPなし、掲載画像3点以上、説明／所在地を満たす候補だけを画像審査とDEMO生成へ進める。
 - 管理画面は大企業除外数、意思決定者未確認数、審査可能数、生成投入数を分離表示。除外候補も監査証跡として候補DBに保存するが、営業対象リスト・DEMO生成・外部送信へは昇格させない。メール、電話、郵送、SNS、ポータルDM、フォーム送信は引き続き0。
 - 検証: ポータルURL制約、HTTP独自HP、現行／旧スナップショット再判定、SMB／大企業／意思決定者ゲート、素材manifest、API認証・自動drainを含む関連Vitest **4 files / 22 tests pass**、TypeScript、変更対象ESLint、quality guard **0 errors / 60 existing warnings**、production build **408/408 pages**、`git diff --check` pass。全体Vitestは既存の日本語代表メッセージ191文字に対する200文字超テスト1件だけが今回変更外で不一致（バックアップscript 5件はworktreeのCRLFを一時正規化して5/5 pass）。
+- PR **#179**をmainへmergeし、正式`npm run release:prod`のdeployment **gzd6hoibki3yl1x47wqeqbgk**を完走。DB **83/83**、Sales health HTTP 200 JSON `ok:true`、Traefik / Cloudflare / Realtime / Twenty worker restart 0を含むpost-deploy gate pass。本番管理画面のJS chunkで`ブラウザ確認済みプロフィールを保存` fingerprintを確認し、ポータルAPIは未認証HTTP 401。候補DB投入、DEMO生成、外部送信は実行していない。
 
 ## CURRENT STATUS - 2026-07-14 Japan Entry候補リスト実運用開始・旧Twenty自動Pipeline削除
 
