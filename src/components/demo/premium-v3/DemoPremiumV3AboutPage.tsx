@@ -18,7 +18,7 @@ export function DemoPremiumV3AboutPage({ data }: { data: DemoMultiPageData }) {
 
   return (
     <div className="overflow-hidden bg-[var(--demo-surface)] text-[var(--demo-ink)]">
-      <PremiumV3PageHero title={about.title} subtitle={about.subtitle} eyebrow={direction.labels.story} media={hero} mediaGallery={direction.id === "beauty" ? media : undefined} recipe={data.designRecipe} variant={direction.hero} />
+      <PremiumV3PageHero title={about.title} subtitle={about.subtitle} eyebrow={direction.labels.story} media={hero} mediaGallery={direction.hero === "mosaic" ? media : undefined} recipe={data.designRecipe} variant={direction.hero} />
       <section className="border-b border-[var(--demo-line)] px-5 py-20 sm:px-10 sm:py-28 lg:px-16 lg:py-32">
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[.62fr_1.38fr] lg:gap-24">
           <PremiumV3Reveal motionStyle={motionStyle}><p className="text-xs font-bold tracking-[.22em] text-[var(--demo-accent)]">基本情報</p><h2 className={`${demoHeadlineClass(`${data.companyName}をつくるもの`)} mt-6 font-[var(--demo-heading-weight)] [font-family:var(--demo-font-display)]`}>{data.companyName}を<br />つくるもの。</h2><dl className="mt-10 border-t border-[var(--demo-line)] text-sm"><div className="grid grid-cols-[90px_1fr] gap-4 border-b border-[var(--demo-line)] py-4"><dt className="text-[var(--demo-muted)]">拠点</dt><dd>{about.locationLabel}</dd></div><div className="grid grid-cols-[90px_1fr] gap-4 border-b border-[var(--demo-line)] py-4"><dt className="text-[var(--demo-muted)]">事業</dt><dd>{about.industryLabel}</dd></div></dl></PremiumV3Reveal>

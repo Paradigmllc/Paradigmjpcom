@@ -6,6 +6,7 @@ import {
 } from "./demo-deepseek-enhancer"
 import { buildJapaneseUserPrompt } from "./demo-deepseek-prompts"
 import type { DemoTemplate } from "./demo-templates/registry"
+import { parseDeepSeekOutput } from "./demo-deepseek-client"
 
 describe("DeepSeek V4 full-site generation budget", () => {
   it("allows complete non-thinking multi-page JSON without model fallback", () => {
@@ -50,5 +51,39 @@ describe("DeepSeek prompt cache layout", () => {
     expect(second.indexOf("Cafe B")).toBeGreaterThan(secondMarker)
     expect(first).not.toContain('"faq"')
     expect(first).not.toContain('"contact"')
+    expect(first).toContain('"art_directions"')
+    expect(first).toContain("候補間で明確に異なる")
+  })
+})
+
+describe("DeepSeek executable art direction parsing", () => {
+  it("keeps three bounded visual directions in the shared response", () => {
+    const artDirections = [
+      ["zenith", "editorial-serif", "cinematic", "hairline"],
+      ["aether", "humanist-sans", "mosaic", "offset-grid"],
+      ["prism", "technical-sans", "precision-split", "numbered-index"],
+    ].map(([template_id, typography_style, hero_composition, signature_motif], index) => ({
+      template_id,
+      concept: `企業固有のデザイン構想 ${index + 1}`,
+      typography_style,
+      hero_composition,
+      service_layout: index === 1 ? "salon-catalogue" : index === 0 ? "editorial-list" : "precision-grid",
+      works_layout: index === 1 ? "salon-lookbook" : index === 0 ? "journal" : "case-grid",
+      palette_mood: index === 0 ? "warm-neutral" : "cool-professional",
+      density: index === 0 ? "airy" : "balanced",
+      motion: index === 2 ? "restrained" : "editorial",
+      signature_motif,
+    }))
+    const parsed = parseDeepSeekOutput(JSON.stringify({
+      home: { hero_title: "見出し", hero_subtitle: "本文", features: [] },
+      about: {},
+      services: {},
+      contact: {},
+      art_directions: artDirections,
+    }), "ja")
+
+    expect(parsed?.artDirections).toHaveLength(3)
+    expect(new Set(parsed?.artDirections.map((direction) => direction.template_id))).toEqual(new Set(["zenith", "aether", "prism"]))
+    expect(parsed?.artDirections[1]?.hero_composition).toBe("mosaic")
   })
 })

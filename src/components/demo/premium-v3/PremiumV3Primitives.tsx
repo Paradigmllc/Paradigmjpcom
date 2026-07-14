@@ -28,14 +28,15 @@ export function PremiumV3PageHero({
   variant?: DemoArtDirection["hero"]
 }) {
   const split = variant ? variant !== "cinematic" : recipe?.rhythmVariant === 1 || recipe?.rhythmVariant === 3
+  const editorialSplit = variant === "editorial-split"
   const motionStyle = recipe?.motionVariant
   const balancedTitle = demoHeadlineText(title)
-  const useBeautyMosaic = variant === "editorial-split" && Boolean(mediaGallery && mediaGallery.length >= 3)
+  const useBeautyMosaic = variant === "mosaic" && Boolean(mediaGallery && mediaGallery.length >= 3)
 
   if (split) {
     return (
-      <header className="grid min-h-[500px] bg-[var(--demo-surface)] text-[var(--demo-ink)] lg:grid-cols-[.88fr_1.12fr]">
-        <div className="flex items-end px-5 pb-14 pt-28 sm:px-10 sm:pb-18 lg:px-16 lg:pb-20">
+      <header className={`grid min-h-[500px] bg-[var(--demo-surface)] text-[var(--demo-ink)] ${editorialSplit ? "lg:grid-cols-[1.08fr_.92fr]" : "lg:grid-cols-[.88fr_1.12fr]"}`}>
+        <div className={`flex px-5 pb-14 pt-28 sm:px-10 sm:pb-18 lg:px-16 lg:pb-20 ${editorialSplit ? "items-center" : "items-end"}`}>
           <PremiumV3Reveal motionStyle={motionStyle}>
             <p className="text-[10px] font-bold uppercase tracking-[.32em] text-[var(--demo-muted)] sm:text-xs">{eyebrow}</p>
             <h1 className={`${demoHeadlineClass(title, "hero")} mt-6 max-w-[15em] font-[var(--demo-heading-weight)] text-balance [font-family:var(--demo-font-display)]`}><PremiumV3TextLines text={balancedTitle} /></h1>

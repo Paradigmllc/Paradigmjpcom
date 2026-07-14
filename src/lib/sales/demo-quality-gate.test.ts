@@ -1,14 +1,37 @@
 import { describe, expect, it } from "vitest"
 import {
-  buildDesignRecipe,
+  buildDesignRecipe as buildBaseDesignRecipe,
   buildProposalRightsManifest,
+  collidingCandidateIndexes,
   evaluateDemoQuality,
-  fingerprint,
+  renderGrammarFingerprint,
   summarizeCandidate,
+  visualGrammarSimilarity,
 } from "./demo-quality-gate"
 import type { DemoMultiPageData } from "./demo-site-types"
 import { DEMO_TEMPLATES } from "./demo-templates/registry"
 import { upgradeDemoToPremiumV3 } from "./demo-premium-v3"
+import type { DemoCreativeDirection } from "./demo-site-types"
+
+const TEST_DIRECTION: DemoCreativeDirection = {
+  source: "deepseek",
+  concept: "確認済みの商品と場所を静かな編集デザインで伝える",
+  typographyStyle: "modern-grotesk",
+  heroComposition: "precision-split",
+  serviceLayout: "precision-grid",
+  worksLayout: "case-grid",
+  paletteMood: "cool-professional",
+  density: "balanced",
+  motion: "editorial",
+  signatureMotif: "numbered-index",
+}
+
+function buildDesignRecipe(
+  template: Parameters<typeof buildBaseDesignRecipe>[0],
+  page: Parameters<typeof buildBaseDesignRecipe>[1],
+) {
+  return buildBaseDesignRecipe(template, page, TEST_DIRECTION)
+}
 
 function fixture(): DemoMultiPageData {
   const contentPage = {
@@ -128,7 +151,7 @@ describe("demo quality gate", () => {
 
     expect(quality.passed, JSON.stringify(quality)).toBe(true)
     expect(quality.score).toBeGreaterThanOrEqual(92)
-    expect(summary.structuralFingerprint).toBe(fingerprint(brandedRecipe))
+    expect(summary.structuralFingerprint).toBe(renderGrammarFingerprint(brandedRecipe))
     expect(summary.designFingerprint).not.toBe(summary.structuralFingerprint)
   })
 
@@ -235,7 +258,7 @@ describe("demo quality gate", () => {
     const recipe = buildDesignRecipe(template, page)
     const rights = buildProposalRightsManifest([{ src: "/generated/hero-1.jpg", usage: "proposal_only" }])
     rights.assets.push({ kind: "image", source: "social media", usage: "unknown" })
-    const quality = evaluateDemoQuality(page, recipe, rights, new Set([fingerprint(recipe)]))
+    const quality = evaluateDemoQuality(page, recipe, rights, new Set([renderGrammarFingerprint(recipe)]))
 
     expect(quality.passed).toBe(false)
     expect(quality.hardBlockers).toEqual(expect.arrayContaining([
@@ -312,5 +335,57 @@ describe("demo quality gate", () => {
     expect(quality.score).toBeLessThanOrEqual(70)
     expect(quality.hardBlockers).toContain("customer_facing_draft_copy")
     expect(quality.dimensions).toEqual(expect.objectContaining({ specificity: expect.any(Number), contentDepth: expect.any(Number) }))
+  })
+
+  it("blocks a cinematic hero when the reviewed source is only a thumbnail", () => {
+    const basePage = fixture()
+    basePage.premium!.heroMedia[0] = {
+      ...basePage.premium!.heroMedia[0],
+      src: "https://image.ekiten.jp/shop/1/photo/1?1to1_m",
+      width: 159,
+      height: 159,
+    }
+    const template = DEMO_TEMPLATES.find((item) => item.id === "prism")!
+    const recipe = buildBaseDesignRecipe(template, basePage, {
+      ...TEST_DIRECTION,
+      heroComposition: "cinematic",
+    })
+    const page = upgradeDemoToPremiumV3(basePage, recipe)
+    const quality = evaluateDemoQuality(page, page.designRecipe ?? recipe, buildProposalRightsManifest([
+      { src: basePage.premium!.heroMedia[0].src, usage: "proposal_only" },
+    ]))
+
+    expect(quality.passed).toBe(false)
+    expect(quality.hardBlockers).toContain("hero_media_resolution_risk")
+    expect(quality.assessmentStage).toBe("structural_preflight")
+  })
+
+  it("detects candidates that only change template IDs but render the same visual grammar", () => {
+    const page = fixture()
+    const templates = DEMO_TEMPLATES.slice(0, 3)
+    const recipes = templates.map((template) => buildBaseDesignRecipe(template, page, TEST_DIRECTION))
+
+    expect(collidingCandidateIndexes(recipes)).toEqual(new Set([0, 1, 2]))
+  })
+
+  it("blocks candidates and existing demos that are visually near-identical", () => {
+    const page = fixture()
+    const templates = DEMO_TEMPLATES.slice(0, 2)
+    const nearMatch: DemoCreativeDirection = { ...TEST_DIRECTION, motion: "restrained" }
+    const recipes = [
+      buildBaseDesignRecipe(templates[0], page, TEST_DIRECTION),
+      buildBaseDesignRecipe(templates[1], page, nearMatch),
+    ]
+    const quality = evaluateDemoQuality(
+      page,
+      recipes[0],
+      buildProposalRightsManifest([{ src: "/generated/hero-1.jpg", usage: "proposal_only" }]),
+      new Set(),
+      [nearMatch],
+    )
+
+    expect(visualGrammarSimilarity(TEST_DIRECTION, nearMatch)).toBeGreaterThanOrEqual(0.8)
+    expect(collidingCandidateIndexes(recipes)).toEqual(new Set([0, 1]))
+    expect(quality.hardBlockers).toContain("visual_similarity_collision")
   })
 })

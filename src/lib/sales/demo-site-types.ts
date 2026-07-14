@@ -144,6 +144,38 @@ export type DemoPublicationStatus =
   | "legacy_published"
   | "private_review"
 
+export type DemoTypographyStyle =
+  | "editorial-serif"
+  | "humanist-sans"
+  | "modern-grotesk"
+  | "technical-sans"
+
+export type DemoHeroComposition =
+  | "cinematic"
+  | "editorial-split"
+  | "precision-split"
+  | "mosaic"
+
+export type DemoServiceLayout = "editorial-list" | "salon-catalogue" | "precision-grid"
+export type DemoWorksLayout = "journal" | "salon-lookbook" | "case-grid"
+
+/**
+ * A bounded art direction that the renderer can actually execute. DeepSeek
+ * chooses from these primitives in one shared request; it never emits CSS.
+ */
+export interface DemoCreativeDirection {
+  source: "deepseek" | "deterministic"
+  concept: string
+  typographyStyle: DemoTypographyStyle
+  heroComposition: DemoHeroComposition
+  serviceLayout: DemoServiceLayout
+  worksLayout: DemoWorksLayout
+  paletteMood: "warm-neutral" | "cool-professional" | "earth" | "monochrome" | "soft-contrast"
+  density: "airy" | "balanced" | "compact"
+  motion: "restrained" | "editorial" | "expressive"
+  signatureMotif: "hairline" | "numbered-index" | "framed-media" | "offset-grid" | "kinetic-rail"
+}
+
 export interface DemoDesignRecipe {
   templateId: string
   heroVariant: string
@@ -159,6 +191,7 @@ export interface DemoDesignRecipe {
   rhythmVariant: number
   motionVariant: "restrained" | "editorial" | "expressive"
   typographyPreset?: string
+  creativeDirection: DemoCreativeDirection
   pageCompositions?: Partial<Record<"home" | "about" | "services" | "works" | "news" | "faq" | "recruit" | "contact" | "legal", string>>
 }
 
@@ -202,6 +235,7 @@ export interface DemoQualityReport {
     trustSafety: number
     visualReadiness: number
   }
+  assessmentStage?: "structural_preflight" | "render_audit"
 }
 
 export interface DemoCandidateSummary {
@@ -210,8 +244,10 @@ export interface DemoCandidateSummary {
   passed: boolean
   designFingerprint: string
   structuralFingerprint: string
+  renderFingerprint: string
   hardBlockers: string[]
   visualVariant: string
+  creativeConcept: string
 }
 
 /* ───── Multi-page types (v2) ───── */
@@ -264,6 +300,8 @@ export interface DemoPremiumMedia {
   src: string
   alt: string
   kind: "image" | "video"
+  width?: number
+  height?: number
   eyebrow?: string
   title?: string
   caption?: string

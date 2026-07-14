@@ -38,6 +38,8 @@ const assetSchema = z.object({
   peopleVisible: z.boolean(),
   watermarkVisible: z.boolean(),
   alt: z.string().min(1).max(240),
+  width: z.number().int().positive().max(20_000).optional(),
+  height: z.number().int().positive().max(20_000).optional(),
   notes: z.string().max(500).optional(),
 })
 
@@ -98,6 +100,8 @@ export function sourceManifestToCompanyMeta(manifest: DemoSourceManifest): Recor
     src: asset.sourceUrl,
     alt: asset.alt,
     kind: asset.kind,
+    width: asset.width,
+    height: asset.height,
     caption: asset.useBasis === "generated" ? "生成イメージ" : asset.notes,
     usage: asset.useBasis === "private_proposal" ? "proposal_only" : asset.useBasis === "generated" ? "owned" : "licensed",
   }))

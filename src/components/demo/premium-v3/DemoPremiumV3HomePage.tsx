@@ -5,9 +5,12 @@ import { FaInstagram } from "react-icons/fa6"
 import type { DemoMultiPageData } from "@/lib/sales/demo-site-types"
 import { PremiumV3KineticRail, PremiumV3Media, PremiumV3MediaCarousel, PremiumV3Parallax, PremiumV3Reveal, PremiumV3Stagger, PremiumV3StaggerItem, PremiumV3TextLines } from "./PremiumV3Primitives"
 import { DemoPremiumV3BeautyHome } from "./DemoPremiumV3BeautyHome"
+import { BeautyMediaMosaic } from "./BeautyMediaMosaic"
+import { resolveDemoArtDirection } from "@/lib/sales/demo-art-direction"
 
 export function DemoPremiumV3HomePage({ data }: { data: DemoMultiPageData }) {
-  if (data.industry === "beauty_salon") return <DemoPremiumV3BeautyHome data={data} />
+  const direction = resolveDemoArtDirection(data)
+  if (data.industry === "beauty_salon" && direction.hero === "mosaic") return <DemoPremiumV3BeautyHome data={data} />
 
   const premium = data.premium!
   const home = data.pages.home
@@ -23,16 +26,17 @@ export function DemoPremiumV3HomePage({ data }: { data: DemoMultiPageData }) {
   const isExternalMap = /^https?:\/\//u.test(mapHref)
   const motionStyle = data.designRecipe?.motionVariant
   const isRestaurant = data.industry === "restaurant"
-  const precisionHero = data.brandSystem?.heroTone === "precision"
+  const splitHero = direction.hero !== "cinematic"
+  const editorialSplit = direction.hero === "editorial-split"
   const aboutLabel = data.meta.navLabels?.about ?? (isRestaurant ? "お店について" : "私たちについて")
 
   return (
     <div className="overflow-hidden bg-[var(--demo-surface)] text-[var(--demo-ink)]">
-      {precisionHero ? <section className="grid min-h-[660px] bg-[var(--demo-surface)] lg:grid-cols-[.92fr_1.08fr]">
-        <div className="flex items-end px-5 pb-14 pt-28 sm:px-10 sm:pb-20 lg:px-16 lg:pb-24">
+      {splitHero ? <section className={`grid min-h-[660px] bg-[var(--demo-surface)] ${editorialSplit ? "lg:grid-cols-[.72fr_1.28fr]" : "lg:grid-cols-[.92fr_1.08fr]"}`}>
+        <div className={`flex px-5 pb-14 pt-28 sm:px-10 sm:pb-20 lg:px-16 lg:pb-24 ${editorialSplit ? "items-center" : "items-end"}`}>
           <PremiumV3Reveal motionStyle={motionStyle}>
             <p className="mb-7 text-[10px] font-bold uppercase tracking-[.34em] text-[var(--demo-accent)] sm:text-xs">{home.hero.tagline}</p>
-            <h1 className="max-w-4xl text-[clamp(2.8rem,5vw,5.6rem)] font-[var(--demo-heading-weight)] leading-[.98] tracking-[-.045em] text-balance [font-family:var(--demo-font-display)]"><PremiumV3TextLines text={home.hero.title} /></h1>
+            <h1 className={`max-w-4xl font-[var(--demo-heading-weight)] text-balance [font-family:var(--demo-font-display)] ${editorialSplit ? "text-[clamp(2.6rem,4.35vw,4.8rem)] leading-[1.06] tracking-[-.035em]" : "text-[clamp(2.8rem,5vw,5.6rem)] leading-[.98] tracking-[-.045em]"}`}><PremiumV3TextLines text={home.hero.title} /></h1>
             <p className="mt-8 max-w-2xl border-l border-[var(--demo-line)] pl-5 text-base leading-8 text-[var(--demo-muted)] sm:text-lg">{home.hero.subtitle}</p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <a href={home.hero.primaryCta.href} {...(isExternalPrimary ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="inline-flex min-h-12 items-center justify-center gap-3 bg-[var(--demo-ink)] px-7 text-sm font-bold text-white transition hover:-translate-y-1">{home.hero.primaryCta.text}<ArrowUpRight className="h-4 w-4" /></a>
@@ -40,7 +44,9 @@ export function DemoPremiumV3HomePage({ data }: { data: DemoMultiPageData }) {
             </div>
           </PremiumV3Reveal>
         </div>
-        <div className="group relative min-h-[520px] overflow-hidden lg:min-h-[660px]"><PremiumV3Parallax className="absolute -inset-y-16 inset-x-0"><PremiumV3Media media={hero} priority className="absolute inset-0" sizes="(max-width:1024px) 100vw, 54vw" /></PremiumV3Parallax><div className="absolute inset-0 bg-gradient-to-t from-black/36 via-transparent to-transparent" /><div className="absolute bottom-7 left-7 border-l border-white/55 pl-4 text-xs uppercase tracking-[.26em] text-white/80">{home.hero.locationLabel}</div></div>
+        {direction.hero === "mosaic"
+          ? <BeautyMediaMosaic media={[...premium.heroMedia, ...premium.gallery]} priority label={`${data.companyName}の写真`} height="home" />
+          : <div className="group relative min-h-[520px] overflow-hidden lg:min-h-[660px]"><PremiumV3Parallax className="absolute -inset-y-16 inset-x-0"><PremiumV3Media media={hero} priority className="absolute inset-0" sizes="(max-width:1024px) 100vw, 54vw" /></PremiumV3Parallax><div className="absolute inset-0 bg-gradient-to-t from-black/36 via-transparent to-transparent" /><div className="absolute bottom-7 left-7 border-l border-white/55 pl-4 text-xs uppercase tracking-[.26em] text-white/80">{home.hero.locationLabel}</div></div>}
       </section> : <section className="relative min-h-[620px] lg:min-h-[calc(100svh-4.9rem)]">
         <PremiumV3Parallax className="absolute -inset-y-16 inset-x-0"><PremiumV3Media media={hero} priority className="absolute inset-0" sizes="100vw" /></PremiumV3Parallax>
         <div className="absolute inset-0 bg-gradient-to-r from-black/76 via-black/34 to-black/5" />

@@ -54,6 +54,7 @@ describe("mergeDeepSeekOutput", () => {
         ],
       },
       contact: {},
+      artDirections: [],
     } satisfies DeepSeekEnhancedOutput
 
     const merged = mergeDeepSeekOutput(base, ai, "ja")

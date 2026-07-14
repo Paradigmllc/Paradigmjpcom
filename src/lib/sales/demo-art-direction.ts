@@ -4,7 +4,7 @@ export type DemoArtDirectionId = "hospitality" | "beauty" | "precision" | "retai
 
 export interface DemoArtDirection {
   id: DemoArtDirectionId
-  hero: "cinematic" | "editorial-split" | "precision-split"
+  hero: "cinematic" | "editorial-split" | "precision-split" | "mosaic"
   serviceLayout: "editorial-list" | "salon-catalogue" | "precision-grid"
   worksLayout: "journal" | "salon-lookbook" | "case-grid"
   labels: {
@@ -66,8 +66,16 @@ function normalized(value: string | undefined): string {
   return (value ?? "").replace(/[\s、。！？・／/「」『』（）()]/gu, "").toLowerCase()
 }
 
-export function resolveDemoArtDirection(page: Pick<DemoMultiPageData, "industry">): DemoArtDirection {
-  return ART_DIRECTIONS[String(page.industry)] ?? CORPORATE
+export function resolveDemoArtDirection(page: Pick<DemoMultiPageData, "industry" | "designRecipe">): DemoArtDirection {
+  const base = ART_DIRECTIONS[String(page.industry)] ?? CORPORATE
+  const creative = page.designRecipe?.creativeDirection
+  if (!creative) return base
+  return {
+    ...base,
+    hero: creative.heroComposition,
+    serviceLayout: creative.serviceLayout,
+    worksLayout: creative.worksLayout,
+  }
 }
 
 export function demoHeadlineClass(value: string, scale: "hero" | "section" | "card" = "section"): string {

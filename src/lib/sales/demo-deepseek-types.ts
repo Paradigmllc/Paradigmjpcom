@@ -61,6 +61,19 @@ export interface DeepSeekContactEnhancement {
   form_note: string;
 }
 
+export interface DeepSeekArtDirection {
+  template_id: string;
+  concept: string;
+  typography_style: "editorial-serif" | "humanist-sans" | "modern-grotesk" | "technical-sans";
+  hero_composition: "cinematic" | "editorial-split" | "precision-split" | "mosaic";
+  service_layout: "editorial-list" | "salon-catalogue" | "precision-grid";
+  works_layout: "journal" | "salon-lookbook" | "case-grid";
+  palette_mood: "warm-neutral" | "cool-professional" | "earth" | "monochrome" | "soft-contrast";
+  density: "airy" | "balanced" | "compact";
+  motion: "restrained" | "editorial" | "expressive";
+  signature_motif: "hairline" | "numbered-index" | "framed-media" | "offset-grid" | "kinetic-rail";
+}
+
 /**
  * Structured output from DeepSeek enhancement.
  * All fields are optional — the merger applies AI content only where available.
@@ -80,4 +93,5 @@ export interface DeepSeekEnhancedOutput {
   about: Partial<DeepSeekAboutEnhancement>;
   services: Partial<DeepSeekServicesEnhancement>;
   contact: Partial<DeepSeekContactEnhancement>;
+  artDirections: DeepSeekArtDirection[];
 }

@@ -1,6 +1,7 @@
 import type {
   DemoBrandSystem,
   DemoContentPage,
+  DemoCreativeDirection,
   DemoDesignRecipe,
   DemoMultiPageData,
 } from "./demo-site-types"
@@ -11,7 +12,8 @@ const BRAND_SYSTEMS: Record<string, DemoBrandSystem[]> = {
     { id: "quiet-kissa", displayFont: '"Noto Serif JP", "Yu Mincho", serif', bodyFont: '"Noto Sans JP", sans-serif', headingWeight: 500, surface: "#f6f3ed", surfaceAlt: "#ded8cc", ink: "#17191a", muted: "#5f625f", line: "rgba(23,25,26,.16)", heroTone: "welcoming", imageTreatment: "natural", shape: "soft" },
   ],
   beauty_salon: [
-    { id: "salon-editorial", displayFont: '"Zen Kaku Gothic New", "Noto Sans JP", sans-serif', bodyFont: '"Zen Kaku Gothic New", "Noto Sans JP", sans-serif', headingWeight: 500, surface: "#faf8f6", surfaceAlt: "#ece7e2", ink: "#1e1b1a", muted: "#6d6661", line: "rgba(30,27,26,.14)", heroTone: "precision", imageTreatment: "crisp", shape: "soft" },
+    { id: "salon-editorial", displayFont: '"Zen Kaku Gothic New", "Noto Sans JP", sans-serif', bodyFont: '"Noto Sans JP", sans-serif', headingWeight: 500, surface: "#faf8f6", surfaceAlt: "#ece7e2", ink: "#1e1b1a", muted: "#6d6661", line: "rgba(30,27,26,.14)", heroTone: "precision", imageTreatment: "crisp", shape: "soft" },
+    { id: "salon-signature", displayFont: '"Shippori Mincho", "Noto Serif JP", serif', bodyFont: '"Zen Kaku Gothic New", "Noto Sans JP", sans-serif', headingWeight: 500, surface: "#f7f3ef", surfaceAlt: "#e8ded7", ink: "#211b19", muted: "#71645f", line: "rgba(33,27,25,.15)", heroTone: "editorial", imageTreatment: "warm", shape: "square" },
   ],
   dental: [
     { id: "clinical-calm", displayFont: '"Outfit", "Noto Sans JP", sans-serif', bodyFont: '"Noto Sans JP", sans-serif', headingWeight: 600, surface: "#f5f8f8", surfaceAlt: "#dfe9e8", ink: "#102123", muted: "#53696b", line: "rgba(16,33,35,.14)", heroTone: "precision", imageTreatment: "crisp", shape: "soft" },
@@ -28,6 +30,21 @@ const BRAND_SYSTEMS: Record<string, DemoBrandSystem[]> = {
   ],
 }
 
+const TYPOGRAPHY_SYSTEMS: Record<string, DemoBrandSystem[]> = {
+  "editorial-serif": [BRAND_SYSTEMS.restaurant[0], BRAND_SYSTEMS.default[1], BRAND_SYSTEMS.beauty_salon[1]],
+  "humanist-sans": [BRAND_SYSTEMS.beauty_salon[0], BRAND_SYSTEMS.retail[0]],
+  "modern-grotesk": [BRAND_SYSTEMS.default[0], BRAND_SYSTEMS.dental[0]],
+  "technical-sans": [BRAND_SYSTEMS.construction[0], BRAND_SYSTEMS.default[0]],
+}
+
+const PALETTE_MOODS: Record<DemoCreativeDirection["paletteMood"], Pick<DemoBrandSystem, "surface" | "surfaceAlt" | "ink" | "muted" | "line">> = {
+  "warm-neutral": { surface: "#f6f1e8", surfaceAlt: "#e6daca", ink: "#1f1a15", muted: "#6b6055", line: "rgba(31,26,21,.17)" },
+  "cool-professional": { surface: "#f1f5f7", surfaceAlt: "#dce5e9", ink: "#112127", muted: "#58686e", line: "rgba(17,33,39,.16)" },
+  earth: { surface: "#f3efe6", surfaceAlt: "#ddd2bf", ink: "#282118", muted: "#6b6254", line: "rgba(40,33,24,.18)" },
+  monochrome: { surface: "#f5f5f3", surfaceAlt: "#deded9", ink: "#131313", muted: "#5d5d59", line: "rgba(19,19,19,.17)" },
+  "soft-contrast": { surface: "#fbf7f5", surfaceAlt: "#eae2de", ink: "#241f1f", muted: "#726665", line: "rgba(36,31,31,.15)" },
+}
+
 function hash(input: string): number {
   let value = 2166136261
   for (let index = 0; index < input.length; index += 1) {
@@ -41,10 +58,14 @@ export function resolveDemoBrandSystem(page: DemoMultiPageData, recipe = page.de
   // Previously generated salon demos persisted the serif-heavy `salon-air`
   // token set. Always migrate them to the current balanced art direction at
   // read time so a renderer release improves existing proposals immediately.
-  if (page.industry === "beauty_salon") return BRAND_SYSTEMS.beauty_salon[0]
-  if (page.brandSystem) return page.brandSystem
-  const systems = BRAND_SYSTEMS[String(page.industry)] ?? BRAND_SYSTEMS.default
-  return systems[hash(`${page.companyId}:${recipe?.templateId ?? "default"}`) % systems.length]
+  const typographyStyle = recipe?.creativeDirection?.typographyStyle
+  const systems = typographyStyle
+    ? TYPOGRAPHY_SYSTEMS[typographyStyle] ?? BRAND_SYSTEMS.default
+    : BRAND_SYSTEMS[String(page.industry)] ?? BRAND_SYSTEMS.default
+  const selected = page.brandSystem
+    ?? systems[hash(`${page.companyId}:${recipe?.templateId ?? "default"}:${recipe?.creativeDirection?.concept ?? ""}`) % systems.length]
+  const mood = recipe?.creativeDirection?.paletteMood
+  return mood ? { ...selected, ...PALETTE_MOODS[mood] } : selected
 }
 
 function sentence(value: string): string {

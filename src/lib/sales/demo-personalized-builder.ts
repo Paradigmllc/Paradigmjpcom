@@ -49,7 +49,7 @@ export async function buildAIPersonalizedDemoData(
   const locale = (company.report_locale ?? report.report_locale ?? "ja") as ReportLocale
 
   try {
-    const aiOutput = await enhanceDemoWithDeepSeek(company, report, template, locale)
+    const aiOutput = await enhanceDemoWithDeepSeek(company, report, [template], locale)
     return applyIndustryPresentation(aiOutput ? mergeDeepSeekOutput(base, aiOutput, locale) : base)
   } catch (error) {
     console.error(

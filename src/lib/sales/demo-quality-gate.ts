@@ -1,5 +1,6 @@
 import type {
   DemoCandidateSummary,
+  DemoCreativeDirection,
   DemoDesignRecipe,
   DemoMultiPageData,
   DemoQualityReport,
@@ -8,9 +9,11 @@ import type {
 import type { DemoTemplate } from "./demo-templates/registry"
 import { findUnsupportedDemoClaims } from "./demo-copy-grounding"
 import { analyzeDemoQualitySignals } from "./demo-quality-signals"
+import { visualGrammar } from "./demo-creative-direction"
 
-export const DEMO_QUALITY_GATE_VERSION = "2026-07-14.4"
+export const DEMO_QUALITY_GATE_VERSION = "2026-07-14.5"
 export const DEMO_QUALITY_THRESHOLD = 94
+export const DEMO_VISUAL_SIMILARITY_THRESHOLD = 0.8
 
 const FABRICATION_PATTERNS = [
   /問い合わせ.{0,8}(倍|増)/u,
@@ -25,6 +28,7 @@ const FABRICATION_PATTERNS = [
 export function buildDesignRecipe(
   template: DemoTemplate,
   page: DemoMultiPageData,
+  creativeDirection?: DemoCreativeDirection,
 ): DemoDesignRecipe {
   const seed = Number.parseInt(fingerprint(`${page.companyId}:${template.id}`).slice(-6), 16)
   const safeSections = template.layout.home.sections.filter(
@@ -34,6 +38,18 @@ export function buildDesignRecipe(
   const flexibleSections = safeSections.filter((section) => section !== "hero")
   const shift = flexibleSections.length > 0 ? seed % flexibleSections.length : 0
   const rotatedSections = [...flexibleSections.slice(shift), ...flexibleSections.slice(0, shift)]
+  const direction = creativeDirection ?? {
+    source: "deterministic" as const,
+    concept: `${page.companyName} ${template.id}`,
+    typographyStyle: "modern-grotesk" as const,
+    heroComposition: template.layout.home.heroVariant === "fullscreen" ? "cinematic" as const : "precision-split" as const,
+    serviceLayout: "precision-grid" as const,
+    worksLayout: "case-grid" as const,
+    paletteMood: "cool-professional" as const,
+    density: "balanced" as const,
+    motion: "editorial" as const,
+    signatureMotif: "numbered-index" as const,
+  }
   return {
     templateId: template.id,
     heroVariant: template.layout.home.heroVariant,
@@ -46,16 +62,17 @@ export function buildDesignRecipe(
       accent: page.meta.accentColor,
       accentDark: page.meta.accentColorDark,
     },
-    density: template.designTokens.spacing,
+    density: direction.density,
     containerWidth: template.designTokens.containerWidth,
     compositionVariant: seed % 12,
     rhythmVariant: Math.floor(seed / 12) % 4,
-    motionVariant: (["restrained", "editorial", "expressive"] as const)[Math.floor(seed / 48) % 3],
+    motionVariant: direction.motion,
+    creativeDirection: direction,
     pageCompositions: {
-      home: ["cinematic-index", "editorial-split", "structured-story"][seed % 3],
+      home: direction.heroComposition,
       about: ["story-led", "profile-led", "values-led"][Math.floor(seed / 3) % 3],
-      services: ["alternating-editorial", "catalogue", "precision-grid"][Math.floor(seed / 9) % 3],
-      works: ["visual-journal", "masonry-notes", "case-led"][Math.floor(seed / 27) % 3],
+      services: direction.serviceLayout,
+      works: direction.worksLayout,
       news: ["journal-index", "social-desk", "notice-board"][Math.floor(seed / 81) % 3],
       recruit: ["culture-story", "role-guide", "principles-led"][Math.floor(seed / 243) % 3],
       contact: ["map-led", "details-led", "split-contact"][Math.floor(seed / 729) % 3],
@@ -91,6 +108,7 @@ export function evaluateDemoQuality(
   recipe: DemoDesignRecipe,
   rights: DemoRightsManifest,
   existingStructuralFingerprints: ReadonlySet<string> = new Set(),
+  existingCreativeDirections: readonly DemoCreativeDirection[] = [],
 ): DemoQualityReport {
   const hardBlockers: string[] = []
   const warnings: string[] = []
@@ -111,7 +129,7 @@ export function evaluateDemoQuality(
     } : null,
   })
   const verifiedFacts = (page.meta.verifiedFacts ?? []).join("\n")
-  const structuralFingerprint = fingerprint(recipe)
+  const structuralFingerprint = renderGrammarFingerprint(recipe)
 
   if (!page.companyName.trim() || !page.pages.home.hero.title.trim()) {
     hardBlockers.push("company_identity_or_hero_missing")
@@ -180,6 +198,30 @@ export function evaluateDemoQuality(
   if (existingStructuralFingerprints.has(structuralFingerprint)) {
     hardBlockers.push("structural_collision")
   }
+  if (existingCreativeDirections.some((direction) => (
+    visualGrammarSimilarity(recipe.creativeDirection, direction) >= DEMO_VISUAL_SIMILARITY_THRESHOLD
+  ))) {
+    hardBlockers.push("visual_similarity_collision")
+  }
+  if (recipe.creativeDirection.source !== "deepseek") warnings.push("deterministic_art_direction")
+  if (recipe.creativeDirection.concept.trim().length < 8) hardBlockers.push("company_art_direction_missing")
+  if (page.brandSystem && page.brandSystem.displayFont === page.brandSystem.bodyFont) {
+    hardBlockers.push("unbalanced_typography_pairing")
+  }
+  const uniquePremiumMedia = new Set([
+    ...(page.premium?.heroMedia ?? []),
+    ...(page.premium?.gallery ?? []),
+  ].map((item) => item.src)).size
+  if (uniquePremiumMedia < 3) hardBlockers.push("visual_media_repetition")
+  const primaryMedia = page.premium?.heroMedia[0]
+  const explicitLowResolution = primaryMedia?.kind === "image"
+    && typeof primaryMedia.width === "number"
+    && typeof primaryMedia.height === "number"
+    && (primaryMedia.width < 1_200 || primaryMedia.height < 720)
+  if (recipe.creativeDirection.heroComposition === "cinematic"
+    && (explicitLowResolution || isLikelyThumbnail(primaryMedia?.src ?? ""))) {
+    hardBlockers.push("hero_media_resolution_risk")
+  }
   if (page.pages.services.services.length < 2) warnings.push("service_detail_thin")
   if (page.pages.home.features.length < 3) warnings.push("home_evidence_thin")
   if (!page.pages.contact.formNote) warnings.push("contact_expectation_missing")
@@ -199,11 +241,12 @@ export function evaluateDemoQuality(
     hardBlockers,
     warnings,
     dimensions: editorial.dimensions,
+    assessmentStage: "structural_preflight",
     checks: {
       requiredPages: !hardBlockers.includes("required_page_missing"),
       evidenceSafe: !hardBlockers.some((item) => item.includes("unverified") || item.includes("fabricated") || item.includes("source_coverage")),
       rightsSafe: !hardBlockers.includes("asset_rights_unverified"),
-      structurallyUnique: !hardBlockers.includes("structural_collision"),
+      structurallyUnique: !hardBlockers.some((item) => item === "structural_collision" || item === "visual_similarity_collision"),
       contactReady: Boolean(page.pages.contact),
     },
   }
@@ -214,15 +257,53 @@ export function summarizeCandidate(
   recipe: DemoDesignRecipe,
   quality: DemoQualityReport,
 ): DemoCandidateSummary {
+  const renderFingerprint = renderGrammarFingerprint(recipe)
   return {
     templateId: recipe.templateId,
     score: quality.score,
     passed: quality.passed,
     designFingerprint: fingerprint({ companyId: page.companyId, recipe }),
-    structuralFingerprint: fingerprint(recipe),
+    structuralFingerprint: renderFingerprint,
+    renderFingerprint,
     hardBlockers: quality.hardBlockers,
-    visualVariant: `${recipe.templateId}:${recipe.heroVariant}:${recipe.compositionVariant}:${recipe.motionVariant}`,
+    visualVariant: Object.values(visualGrammar(recipe.creativeDirection)).join(":"),
+    creativeConcept: recipe.creativeDirection.concept,
   }
+}
+
+export function renderGrammarFingerprint(recipe: DemoDesignRecipe): string {
+  return fingerprint(visualGrammar(recipe.creativeDirection))
+}
+
+export function collidingCandidateIndexes(recipes: readonly DemoDesignRecipe[]): Set<number> {
+  const collisions = new Set<number>()
+  recipes.forEach((recipe, index) => {
+    for (let comparisonIndex = index + 1; comparisonIndex < recipes.length; comparisonIndex += 1) {
+      const comparison = recipes[comparisonIndex]
+      if (visualGrammarSimilarity(recipe.creativeDirection, comparison.creativeDirection) < DEMO_VISUAL_SIMILARITY_THRESHOLD) continue
+      collisions.add(index)
+      collisions.add(comparisonIndex)
+    }
+  })
+  return collisions
+}
+
+export function visualGrammarSimilarity(
+  left: DemoCreativeDirection,
+  right: DemoCreativeDirection,
+): number {
+  const leftGrammar = visualGrammar(left)
+  const rightGrammar = visualGrammar(right)
+  const fields = Object.keys(leftGrammar)
+  if (fields.length === 0) return 0
+  const matches = fields.filter((field) => leftGrammar[field] === rightGrammar[field]).length
+  return matches / fields.length
+}
+
+function isLikelyThumbnail(value: string): boolean {
+  if (!value) return false
+  if (/[?&](?:w|width|size|sz)=([1-3]?\d{1,2})(?:&|$)/iu.test(value)) return true
+  return /(?:^|[/?&_.-])(?:thumb|thumbnail|small|1to1_[sm])(?:[/_.?&-]|$)/iu.test(value)
 }
 
 export function fingerprint(value: unknown): string {

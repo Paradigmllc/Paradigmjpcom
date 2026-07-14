@@ -70,10 +70,10 @@ export async function enhanceDemoWithDeepSeek(
     meta?: Record<string, unknown> | null;
   },
   report: DiagnosticReportData,
-  template: DemoTemplate,
+  templates: readonly DemoTemplate[],
   locale: ReportLocale,
 ): Promise<DeepSeekEnhancedOutput | null> {
-  const messages = buildPrompt(company, report, template, locale);
+  const messages = buildPrompt(company, report, templates, locale);
   const model = process.env.DEMO_LLM_MODEL?.trim()
     || (process.env.LITELLM_API_KEY?.trim() ? "deepseek-v4-pro" : process.env.DEEPSEEK_MODEL?.trim() || "deepseek-chat");
   const result = await callDeepSeek(messages, {
@@ -92,12 +92,16 @@ export async function enhanceDemoWithDeepSeek(
 
   const parsed = parseDeepSeekOutput(result.text, locale);
   if (!parsed) return null;
+  const expectedTemplateIds = new Set(templates.map((template) => template.id));
   if (
     !parsed.home?.hero_title?.trim()
     || (parsed.home.features?.length ?? 0) < 3
     || !parsed.about?.story?.trim()
     || !parsed.about?.mission?.trim()
     || (parsed.services?.services?.length ?? 0) < 2
+    || parsed.artDirections.length !== expectedTemplateIds.size
+    || new Set(parsed.artDirections.map((direction) => direction.template_id)).size !== expectedTemplateIds.size
+    || parsed.artDirections.some((direction) => !expectedTemplateIds.has(direction.template_id))
   ) {
     console.error("[deepseek-enhancer] output failed full-site copy completeness checks");
     return null;
@@ -118,6 +122,7 @@ export async function enhanceDemoWithDeepSeek(
     about: parsed.about ?? {},
     services: parsed.services ?? {},
     contact: parsed.contact ?? {},
+    artDirections: parsed.artDirections,
   };
 }
 
@@ -137,7 +142,7 @@ function buildPrompt(
     meta?: Record<string, unknown> | null;
   },
   report: DiagnosticReportData,
-  template: DemoTemplate,
+  templates: readonly DemoTemplate[],
   locale: ReportLocale,
 ): Array<{ role: "system" | "user"; content: string }> {
   const isJa = locale === "ja";
@@ -163,12 +168,21 @@ function buildPrompt(
     .join("\n");
 
   // Template summary
-  const homeSections = template.layout.home.sections.join(", ");
-  const heroVariant = template.layout.home.heroVariant;
-  const featureLayout = template.layout.home.featureLayout;
-  const cardStyle = template.layout.services.cardStyle;
-  const nav = template.nav;
-  const tokens = template.designTokens;
+  const primaryTemplate = templates[0];
+  if (!primaryTemplate) throw new Error("At least one demo template candidate is required");
+  const homeSections = primaryTemplate.layout.home.sections.join(", ");
+  const heroVariant = primaryTemplate.layout.home.heroVariant;
+  const featureLayout = primaryTemplate.layout.home.featureLayout;
+  const cardStyle = primaryTemplate.layout.services.cardStyle;
+  const nav = primaryTemplate.nav;
+  const tokens = primaryTemplate.designTokens;
+  const candidateTemplates = templates.map((template, index) => [
+    `${index + 1}. template_id=${template.id}`,
+    `hero=${template.layout.home.heroVariant}`,
+    `features=${template.layout.home.featureLayout}`,
+    `cards=${template.layout.services.cardStyle}`,
+    `nav=${template.nav}`,
+  ].join(", ")).join("\n");
 
   const systemPrompt = isJa
     ? buildJapaneseSystemPrompt()
@@ -192,6 +206,8 @@ function buildPrompt(
         nav,
         tokens,
         verifiedFacts,
+        candidateTemplates,
+        templates.length,
       )
     : buildEnglishUserPrompt(
         name,
@@ -210,6 +226,8 @@ function buildPrompt(
         nav,
         tokens,
         verifiedFacts,
+        candidateTemplates,
+        templates.length,
       );
 
   return [
