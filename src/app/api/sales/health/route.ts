@@ -5,13 +5,11 @@ import {
   checkCrawl4AiHealth,
   checkCrawleeHealth,
   checkDifyHealth,
-  checkFlareSolverrServiceHealth,
   checkPlaywrightStealthHealth,
   checkStagehandHealth,
   checkSteelHealth,
   type ServiceHealthResult,
 } from "@/lib/sales/oss-service-health"
-import { getBrowserSearchBackendStatus } from "@/lib/sales/sources/browser-search"
 import { getSalesSupabaseConfig, getServiceSalesSupabase } from "@/lib/supabase"
 import { checkPoolHealth, getPoolConfigSummary } from "@/lib/db/pool-monitor"
 import { getPayloadPoolMetrics, getConsecutiveFailures } from "@/lib/payload-availability"
@@ -117,20 +115,6 @@ async function checkTwentyApi(): Promise<ServiceCheck> {
     if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 250))
   }
   return { name: "Twenty Sales OS API", status: "error", detail: lastError, url: baseUrl }
-}
-
-async function checkBrowserSearch(): Promise<ServiceCheck> {
-  const backend = getBrowserSearchBackendStatus()
-  if (!backend.configured) {
-    return { name: "Browser search", status: "not_configured", detail: backend.error ?? "Browser search backend is not configured" }
-  }
-
-  if (backend.flaresolverrUrl) {
-    const result = await checkFlareSolverrServiceHealth()
-    return serviceHealthToCheck("Browser search (FlareSolverr)", result, backend.flaresolverrUrl)
-  }
-
-  return { name: "Browser search (Steel)", status: "ok", detail: "Steel backend configured", url: backend.steelBaseUrl }
 }
 
 async function checkDify(): Promise<ServiceCheck> {
@@ -289,7 +273,6 @@ export async function GET(req: NextRequest) {
       checkSupabase(),
       checkTwentyApi(),
       checkPayloadPool(),
-      checkBrowserSearch(),
       checkDify(),
       checkOpenClaw(),
       guardHealth("Crawl4AI", env("CRAWL4AI_BASE_URL"), checkCrawl4AiHealth),

@@ -315,13 +315,16 @@ async function processItem(run: RunRow, item: RunItemRow) {
   const activeDetection = rawPassive?.skip_active_verification === true
     ? { tech: passiveTech, server: null as string | null, evidenceText: typeof rawPassive.common_crawl_text_sample === "string" ? rawPassive.common_crawl_text_sample : null }
     : await detectTechStack(rootUrl)
-  const hostedTech = techFromCname(candidate.domain)
-  const hostedSlugs = new Set(hostedTech.map((tech) => technologySlug(tech.name)))
+  const passiveCname = typeof passive?.cnameTarget === "string" ? passive.cnameTarget : null
+  const hostedTech = techFromCname(passiveCname)
+  const passiveTechnology = [...passiveTech, ...hostedTech]
+  const hostedSlugs = new Set(passiveTechnology.map((tech) => technologySlug(tech.name)))
   const detection = {
     ...activeDetection,
-    tech: [...hostedTech, ...activeDetection.tech.filter((tech) => !hostedSlugs.has(technologySlug(tech.name)))],
+    tech: [...passiveTechnology, ...activeDetection.tech.filter((tech) => !hostedSlugs.has(technologySlug(tech.name)))],
   }
-  const countrySignals = passiveSignals.length > 0
+  const hasStrongPassiveCountry = passiveSignals.some((signal) => signal.confidence >= 60 && signal.signalType !== "request_scope")
+  const countrySignals = hasStrongPassiveCountry
     ? passiveSignals
     : inferCountrySignals({ domain: candidate.domain, targetCountry: run.country_code, evidenceText: detection.evidenceText })
   const requestedSlug = run.technology ? technologySlug(run.technology) : null

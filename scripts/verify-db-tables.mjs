@@ -53,7 +53,7 @@ const ALL_TABLES = [
   "sales_pipeline_runs", "sales_pipeline_steps", "sales_artifact_manifest",
   // CRM Field Config
   "sales_crm_view_fields", "sales_crm_select_options",
-  // SearXNG
+  // Historical search audit tables retained read-only; no runtime producer remains.
   "sales_searxng_search_runs", "sales_searxng_search_results",
   // Japan Readiness
   "sales_japan_readiness_insights", "sales_japan_entry_projections", "sales_initial_form_drafts", "sales_report_factory_state",

@@ -1,0 +1,50 @@
+import { beforeEach, describe, expect, it, vi } from "vitest"
+
+const mocks = vi.hoisted(() => ({
+  scan: vi.fn(),
+  archive: vi.fn(),
+}))
+
+vi.mock("@/lib/supabase", () => ({ getServiceSalesSupabase: () => null }))
+vi.mock("./sources/passive-cname-scan", () => ({ scanCnameRecords: mocks.scan }))
+vi.mock("./sources/commoncrawl-passive-evidence", () => ({ fetchCommonCrawlPassiveEvidence: mocks.archive }))
+
+import { processPassiveInventoryDomainBatch } from "./passive-inventory"
+
+beforeEach(() => {
+  vi.clearAllMocks()
+  mocks.scan.mockResolvedValue({
+    ok: true,
+    records: { "merchant.example.com": "shops.myshopify.com" },
+    engine: "node_dns",
+    checked: 1,
+  })
+  mocks.archive.mockResolvedValue({
+    ok: false,
+    countrySignals: [],
+    technologies: [],
+    textSample: null,
+    pagesChecked: 0,
+  })
+})
+
+describe("passive inventory qualification", () => {
+  it("keeps a generic-TLD stack match for bounded active country verification", async () => {
+    const result = await processPassiveInventoryDomainBatch({
+      runId: null,
+      countryCode: "US",
+      technology: "Shopify",
+      domains: ["merchant.example.com"],
+      sourceLabel: "bulk_domain_corpus",
+      limit: 10,
+    })
+
+    expect(result.domains).toEqual(["merchant.example.com"])
+    expect(result.stackMatched).toBe(1)
+    expect(result.geoMatched).toBe(0)
+    expect(result.evidenceByDomain["merchant.example.com"]?.raw).toMatchObject({
+      skip_active_verification: false,
+    })
+    expect(mocks.archive).not.toHaveBeenCalled()
+  })
+})

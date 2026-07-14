@@ -1,12 +1,6 @@
-import { tldPatternsForCountry } from "./lead-candidate-scoring"
-import { fetchCommonCrawlDomains } from "./sources/commoncrawl-domains"
-import { fetchCrtshDomains } from "./sources/crtsh-bulk"
-import { fetchTrancoTopDomains } from "./sources/tranco-top-domains"
-import { fetchPassiveInventoryDomains } from "./passive-inventory"
-import { fetchHttpArchiveCandidates, toTechItems } from "./sources/http-archive-bigquery"
-import { fetchBrowserFootprintDomains } from "./sources/browser-footprint-domains"
+import { fetchBulkDomainCorpus } from "./sources/bulk-domain-corpus"
+import { fetchPassiveInventoryDomains, passivePatterns } from "./passive-inventory"
 import { isCustomerFacingBusinessDomain } from "./data-quality-guard"
-import { fetchSearxngFootprintDomains } from "./sources/searxng-footprint-domains"
 
 export interface CandidateDomainSourceSummary {
   source: string
@@ -30,11 +24,6 @@ const MAX_FAILURES = 40
 interface FetchLeadCandidateDomainsOptions {
   onProgress?: (result: CandidateDomainFetchResult) => Promise<void>
   skipPassiveInventory?: boolean
-  skipBigQuery?: boolean
-}
-
-function toCrtshPattern(pattern: string): string {
-  return pattern.replace(/^\*\./, "%.").replace(/^\*/, "%")
 }
 
 function addDomains(input: {
@@ -49,6 +38,21 @@ function addDomains(input: {
     const sources = input.sourceByDomain.get(domain) ?? new Set<string>()
     sources.add(input.source)
     input.sourceByDomain.set(domain, sources)
+  }
+}
+
+function addCorpusDomains(input: {
+  destination: Map<string, Set<string>>
+  domains: string[]
+  corpusSources: Record<string, string[]>
+  limit: number
+}) {
+  for (const domain of input.domains) {
+    if (!isCustomerFacingBusinessDomain(domain)) continue
+    if (input.destination.size >= input.limit && !input.destination.has(domain)) break
+    const sources = input.destination.get(domain) ?? new Set<string>()
+    for (const source of input.corpusSources[domain] ?? ["bulk_domain_corpus"]) sources.add(source)
+    input.destination.set(domain, sources)
   }
 }
 
@@ -87,7 +91,7 @@ async function emitProgress(input: {
 }
 
 export async function fetchLeadCandidateDomains(countryCode: string, limit: number, options?: FetchLeadCandidateDomainsOptions & { technology?: string | null }): Promise<CandidateDomainFetchResult> {
-  const patterns = tldPatternsForCountry(countryCode)
+  const patterns = passivePatterns(countryCode, options?.technology ?? null)
   const sourceByDomain = new Map<string, Set<string>>()
   const evidenceByDomain = new Map<string, Record<string, unknown>>()
   const failures: Array<{ key: string; reason: string }> = []
@@ -123,139 +127,17 @@ export async function fetchLeadCandidateDomains(countryCode: string, limit: numb
     if (sourceByDomain.size >= limit) return buildResult({ sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
   }
 
-  // Self-hosted SearXNG is the primary active source. It is free/OSS and runs
-  // inside the private Coolify network; every result is still actively verified.
-  if (options?.technology) {
-    try {
-      const searxng = await withRetry("searxng_footprint", () => fetchSearxngFootprintDomains({
-        countryCode,
-        technology: options.technology as string,
-        limit: Math.min(limit, 200),
-      }), 1)
-      sourceStats.push({
-        source: "searxng_footprint",
-        pattern: `${countryCode}:${options.technology}`,
-        fetched: searxng.domains.length,
-        total: searxng.total,
-        ok: searxng.ok,
-        error: searxng.errors.length > 0 ? searxng.errors.join("; ") : undefined,
-      })
-      addDomains({ sourceByDomain, source: "searxng_footprint", domains: searxng.domains, limit })
-      for (const [domain, evidence] of Object.entries(searxng.evidenceByDomain)) evidenceByDomain.set(domain, evidence)
-      if (!searxng.ok) failures.push({ key: "searxng_footprint", reason: searxng.errors.join("; ") || "SearXNG footprint search returned no domains" })
-    } catch (error) {
-      console.error("[lead-candidate-domain-sources] searxng_footprint failed:", error)
-      failures.push({ key: "searxng_footprint", reason: error instanceof Error ? error.message : "SearXNG footprint search failed" })
-    }
-    await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
-    if (sourceByDomain.size >= limit) return buildResult({ sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
-  }
-
-  // Existing self-hosted browser search finds technology-specific SMB candidates
-  // without promoting raw search results into sales_companies.
-  if (options?.technology) {
-    try {
-      const browser = await withRetry("browser_footprint", () => fetchBrowserFootprintDomains({
-        countryCode,
-        technology: options.technology as string,
-        limit: Math.min(limit, 200),
-      }), 1)
-      sourceStats.push({
-        source: "browser_footprint",
-        pattern: `${countryCode}:${options.technology}`,
-        fetched: browser.domains.length,
-        total: browser.total,
-        ok: browser.ok,
-        error: browser.errors.length > 0 ? browser.errors.join("; ") : undefined,
-      })
-      addDomains({ sourceByDomain, source: "browser_footprint", domains: browser.domains, limit })
-      for (const domain of browser.domains) {
-        evidenceByDomain.set(domain, {
-          discovery_technology_hint: options.technology,
-          discovery_queries: browser.queries,
-          skip_active_verification: false,
-        })
-      }
-      if (!browser.ok) failures.push({ key: "browser_footprint", reason: browser.errors.join("; ") || "Browser footprint search returned no domains" })
-    } catch (error) {
-      console.error("[lead-candidate-domain-sources] browser_footprint failed:", error)
-      failures.push({ key: "browser_footprint", reason: error instanceof Error ? error.message : "Browser footprint search failed" })
-    }
-    await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
-    if (sourceByDomain.size >= limit) return buildResult({ sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
-  }
-
-  // HTTP Archive BigQuery — bulk tech-stack discovery (free 1TB/month)
-  if (!options?.skipBigQuery) {
-    try {
-      const bq = await withRetry("http_archive", () => fetchHttpArchiveCandidates({
-        countryCode,
-        technologies: options?.technology ? [options.technology] : undefined,
-        limit: Math.min(limit, 200),
-      }))
-      sourceStats.push({
-        source: "http_archive",
-        pattern: countryCode,
-        fetched: bq.candidates.length,
-        total: bq.candidates.length,
-        ok: bq.ok,
-        error: bq.error,
-      })
-      if (bq.ok && bq.candidates.length > 0) {
-        const domains = bq.candidates.map((c) => c.domain)
-        addDomains({ sourceByDomain, source: "http_archive", domains, limit })
-        for (const cand of bq.candidates) {
-          if (cand.technologies.length > 0) {
-            evidenceByDomain.set(cand.domain, {
-              http_archive_techs: toTechItems(cand.technologies),
-              http_archive_rank: cand.rank,
-              http_archive_snapshot: cand.snapshotMonth,
-            })
-          }
-        }
-      }
-      if (!bq.ok && bq.error) failures.push({ key: "http_archive", reason: bq.error })
-    } catch (e) {
-      console.error("[lead-candidate-domain-sources] http_archive failed:", e instanceof Error ? e.message : String(e))
-    }
-    await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
-    if (sourceByDomain.size >= limit) return buildResult({ sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
-  }
-
+  // Bulk acquisition must remain independent from search engines, proxies,
+  // per-domain certificate queries, and Common Crawl's rate-limited CDX API.
   for (const pattern of patterns) {
     try {
-      const cc = await withRetry(`cc_${pattern}`, () => fetchCommonCrawlDomains(pattern, perPatternLimit))
-      sourceStats.push({ source: "common_crawl_domains", pattern, fetched: cc.domains.length, total: cc.total, ok: cc.ok, error: cc.error })
-      if (!cc.ok) failures.push({ key: `common_crawl_domains:${pattern}`, reason: cc.error ?? "Common Crawl returned no domains" })
-      addDomains({ sourceByDomain, source: "common_crawl_domains", domains: cc.domains, limit })
+      const corpus = await withRetry(`bulk_corpus_${pattern}`, () => fetchBulkDomainCorpus(pattern, perPatternLimit))
+      sourceStats.push(...corpus.sourceStats)
+      failures.push(...corpus.failures)
+      addCorpusDomains({ destination: sourceByDomain, domains: corpus.domains, corpusSources: corpus.sourceByDomain, limit })
     } catch (e) {
-      console.error("[lead-candidate-domain-sources] common_crawl_domains failed:", pattern, e instanceof Error ? e.message : String(e))
-      failures.push({ key: `common_crawl_domains:${pattern}`, reason: e instanceof Error ? e.message : "Common Crawl failed with retries" })
-    }
-    await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
-    if (sourceByDomain.size >= limit) break
-
-    try {
-      const tranco = await withRetry(`tranco_${pattern}`, () => fetchTrancoTopDomains(pattern, perPatternLimit))
-      sourceStats.push({ source: "tranco_top_domains", pattern, fetched: tranco.domains.length, total: tranco.total, ok: tranco.ok, error: tranco.error })
-      if (!tranco.ok) failures.push({ key: `tranco_top_domains:${pattern}`, reason: tranco.error ?? "Tranco top list returned no domains" })
-      addDomains({ sourceByDomain, source: "tranco_top_domains", domains: tranco.domains, limit })
-    } catch (e) {
-      console.error("[lead-candidate-domain-sources] tranco_top_domains failed:", pattern, e instanceof Error ? e.message : String(e))
-      failures.push({ key: `tranco_top_domains:${pattern}`, reason: e instanceof Error ? e.message : "Tranco failed with retries" })
-    }
-    await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
-    if (sourceByDomain.size >= limit) break
-
-    try {
-      const crtPattern = toCrtshPattern(pattern)
-      const crt = await withRetry(`crt_${pattern}`, () => fetchCrtshDomains(crtPattern, perPatternLimit))
-      sourceStats.push({ source: "crtsh_bulk", pattern: crtPattern, fetched: crt.domains.length, total: crt.total, ok: crt.ok, error: crt.error })
-      if (!crt.ok) failures.push({ key: `crtsh_bulk:${crtPattern}`, reason: crt.error ?? "crt.sh returned no domains" })
-      addDomains({ sourceByDomain, source: "crtsh_bulk", domains: crt.domains, limit })
-    } catch (e) {
-      console.error("[lead-candidate-domain-sources] crtsh_bulk failed:", pattern, e instanceof Error ? e.message : String(e))
-      failures.push({ key: `crtsh_bulk:${pattern}`, reason: e instanceof Error ? e.message : "crt.sh failed with retries" })
+      console.error("[lead-candidate-domain-sources] bulk_domain_corpus failed:", pattern, e instanceof Error ? e.message : String(e))
+      failures.push({ key: `bulk_domain_corpus:${pattern}`, reason: e instanceof Error ? e.message : "Bulk domain corpus failed with retries" })
     }
     await emitProgress({ options, sourceByDomain, evidenceByDomain, failures, sourceStats, limit })
     if (sourceByDomain.size >= limit) break
