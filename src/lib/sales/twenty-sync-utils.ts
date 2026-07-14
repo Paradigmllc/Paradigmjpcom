@@ -28,6 +28,10 @@ export interface TwentyRecord {
   paradigmKarteSummary?: {
     markdown?: string | null
   } | null
+  paradigmLeadStatus?: string | null
+  paradigmTechnology?: string | null
+  paradigmOpportunityScore?: number | null
+  paradigmSmbScore?: number | null
 }
 
 export interface TwentyListResponse<T> {

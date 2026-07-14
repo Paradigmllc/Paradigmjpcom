@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/supabase", () => ({ getServiceSalesSupabase: mocks.getSupabase }))
 vi.mock("./companies", () => ({ upsertCompanyByDomain: mocks.upsert }))
-vi.mock("./twenty-sync-companies", () => ({ syncCompanyKarteToTwenty: mocks.sync }))
+vi.mock("./twenty-sync-list-lead", () => ({ syncListLeadToTwenty: mocks.sync }))
 
 import { promoteFormQualifiedCandidate } from "./lead-candidate-promotion"
 
@@ -43,13 +43,15 @@ describe("promoteFormQualifiedCandidate", () => {
 
     expect(result).toMatchObject({ promoted: true, twentySynced: true, twentyCompanyId: "twenty-1" })
     expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      pipeline_status: "pending",
+      generate_report_url: false,
       meta: expect.objectContaining({
         skip_enrichment: true,
         list_only: true,
         contact_form_url: input.form.formUrl,
       }),
     }))
-    expect(mocks.sync).toHaveBeenCalledWith("company-1", { syncOpportunities: false })
+    expect(mocks.sync).toHaveBeenCalledWith("company-1")
     expect(mocks.update).toHaveBeenCalledWith({ status: "promoted", company_id: "company-1" })
   })
 

@@ -218,7 +218,7 @@ export async function pullTwentyCompaniesToSupabase(
       patchMeta.routing = { ...plainRecord(patchMeta.routing), report_locale: reportLocale, target_country: targetCountry, template_variant: templateVariant }
 
       const patch: Record<string, unknown> = { meta: patchMeta }
-      if (reportUrl && !companyReportUrl) { patch.report_url = reportUrl; companyReportUrl = reportUrl }
+      if (!listOnly && reportUrl && !companyReportUrl) { patch.report_url = reportUrl; companyReportUrl = reportUrl }
 
       if (!company?.slug) {
         const generatedSlug = buildCompanySlug(companyName, domain)
@@ -228,7 +228,7 @@ export async function pullTwentyCompaniesToSupabase(
       }
 
       const effectiveSlug = typeof patch.slug === "string" ? patch.slug : company?.slug
-      if (shouldRepairRouting) {
+      if (shouldRepairRouting && !listOnly) {
         patch.region = scope.region; patch.report_locale = reportLocale; patch.target_country = targetCountry; patch.template_variant = templateVariant
         if (effectiveSlug) { patch.report_url = buildReportUrl(reportLocale, effectiveSlug); companyReportUrl = patch.report_url as string }
       } else {
@@ -237,7 +237,7 @@ export async function pullTwentyCompaniesToSupabase(
         if (!company?.template_variant) patch.template_variant = templateVariant
       }
 
-      if (record.paradigmSalesStatus) {
+      if (record.paradigmSalesStatus && !listOnly) {
         const parsed = parseSalesStatusLabel(record.paradigmSalesStatus)
         if (parsed.pipelineStatus) patch.pipeline_status = parsed.pipelineStatus
         if (parsed.dealStage) patch.deal_stage = parsed.dealStage
