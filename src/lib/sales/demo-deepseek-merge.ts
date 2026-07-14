@@ -24,12 +24,25 @@ export function mergeDeepSeekOutput(
     .filter((fact) => fact.trim() && !/^https?:\/\//u.test(fact))
     .slice(0, 4)
     .join(isJa ? "、" : ", ");
+  const usableFacts = (base.meta.verifiedFacts ?? [])
+    .filter((fact) => fact.trim() && !/^https?:\/\//u.test(fact))
   const groundedFallback = factSummary
     ? (isJa ? `確認済みの公開情報では、${factSummary}をご案内しています。` : `Verified public information includes ${factSummary}.`)
     : (isJa ? "詳細は正式公開前に事業者確認を行います。" : "Details require operator confirmation before publication.");
+  const groundedDetail = (scope: string, index: number) => {
+    const fact = usableFacts.length > 0 ? usableFacts[index % usableFacts.length] : ""
+    if (isJa) {
+      return fact
+        ? `${fact}。${base.companyName}の${scope}として現在確認できる情報です。変わる可能性がある詳細は、正式公開前に事業者確認を行います。`
+        : `${base.companyName}の${scope}は、正式公開前に事業者確認を行い、現在の案内だけを掲載します。`
+    }
+    return fact
+      ? `${fact}. This is currently verified information for ${scope} at ${base.companyName}. Details that may change require operator confirmation before publication.`
+      : `${scope} at ${base.companyName} requires operator confirmation before publication so only current information is presented.`
+  }
   const groundedServices = (ai.services.services ?? []).map((service, index) => ({
     title: groundDemoText(service.title, verifiedFacts, isJa ? `ご案内 ${index + 1}` : `Offering ${index + 1}`),
-    description: groundDemoText(service.description, verifiedFacts, groundedFallback),
+    description: groundDemoText(service.description, verifiedFacts, groundedDetail(isJa ? `提供内容 ${index + 1}` : `offering ${index + 1}`, index)),
   }))
   type NarrativeInput = { eyebrow: string; title: string; body: string; points: string[] }
   const groundModules = (
@@ -83,7 +96,7 @@ export function mergeDeepSeekOutput(
   if (ai.home.features && ai.home.features.length >= 2) {
     home.features = ai.home.features.map((f, i) => ({
       title: groundDemoText(f.title, verifiedFacts, isJa ? `確認済みのご案内 ${i + 1}` : `Verified information ${i + 1}`),
-      description: groundDemoText(f.description, verifiedFacts, groundedFallback),
+      description: groundDemoText(f.description, verifiedFacts, groundedDetail(isJa ? `特徴 ${i + 1}` : `feature ${i + 1}`, i)),
       icon: f.icon || "sparkles",
       metricLabel: "",
       metricValue: "",
@@ -122,7 +135,7 @@ export function mergeDeepSeekOutput(
   if (ai.about.values && ai.about.values.length >= 2) {
     about.values = ai.about.values.map((v, i) => ({
       title: groundDemoText(v.title, verifiedFacts, isJa ? `大切にすること ${i + 1}` : `What matters ${i + 1}`),
-      description: groundDemoText(v.description, verifiedFacts, groundedFallback),
+      description: groundDemoText(v.description, verifiedFacts, groundedDetail(isJa ? `大切にすること ${i + 1}` : `principle ${i + 1}`, i + 1)),
       icon: v.icon || "star",
     }));
   }
@@ -138,17 +151,21 @@ export function mergeDeepSeekOutput(
   if (ai.services.services && ai.services.services.length >= 1) {
     services.services = ai.services.services.map((s, i) => ({
       title: groundDemoText(s.title, verifiedFacts, isJa ? `ご案内 ${i + 1}` : `Offering ${i + 1}`),
-      description: groundDemoText(s.description, verifiedFacts, groundedFallback),
+      description: groundDemoText(s.description, verifiedFacts, groundedDetail(isJa ? `提供内容 ${i + 1}` : `offering ${i + 1}`, i)),
       icon: s.icon || "sparkles",
-      features: s.features?.filter(Boolean).map((feature) => groundDemoText(feature, verifiedFacts, groundedFallback)) ?? [],
+      features: s.features?.filter(Boolean).map((feature, featureIndex) => groundDemoText(
+        feature,
+        verifiedFacts,
+        groundedDetail(isJa ? `確認事項 ${i + 1}-${featureIndex + 1}` : `service detail ${i + 1}-${featureIndex + 1}`, i + featureIndex + 1),
+      )) ?? [],
       priceNote: undefined,
     }));
   }
   if (ai.services.process && ai.services.process.length >= 2) {
-    services.process = ai.services.process.map((p) => ({
+    services.process = ai.services.process.map((p, index) => ({
       step: p.step || 1,
       title: groundDemoText(p.title, verifiedFacts, isJa ? "ご利用案内" : "Visitor information"),
-      description: groundDemoText(p.description, verifiedFacts, groundedFallback),
+      description: groundDemoText(p.description, verifiedFacts, groundedDetail(isJa ? `ご利用の流れ ${index + 1}` : `visitor step ${index + 1}`, index + 2)),
     }));
   }
   services.guidance = completeModules(

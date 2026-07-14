@@ -111,5 +111,13 @@ describe("mergeDeepSeekOutput", () => {
     expect(merged.pages.about.chapters?.every((item) => item.body.length >= 220)).toBe(true)
     expect(merged.pages.services.guidance?.every((item) => item.body.length >= 180)).toBe(true)
     expect(merged.pages.works?.sections.every((item) => item.body.length >= 180)).toBe(true)
+    const counts = new Map<string, number>()
+    const visit = (value: unknown) => {
+      if (typeof value === "string" && value.length >= 42) counts.set(value, (counts.get(value) ?? 0) + 1)
+      else if (Array.isArray(value)) value.forEach(visit)
+      else if (value && typeof value === "object") Object.values(value as Record<string, unknown>).forEach(visit)
+    }
+    visit(merged.pages)
+    expect(Math.max(...counts.values())).toBeLessThan(3)
   })
 })
