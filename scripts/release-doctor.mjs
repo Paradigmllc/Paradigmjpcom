@@ -295,6 +295,23 @@ function checkStaticReleaseRules() {
     fail("Japan Entry projections must have RLS and release migration wiring")
   }
 
+  const initialDraftMigrationPath = "supabase/migrations/20260714234500_initial_form_draft_factory.sql"
+  const initialDraftMigration = fs.existsSync(initialDraftMigrationPath)
+    ? fs.readFileSync(initialDraftMigrationPath, "utf8")
+    : ""
+  if (
+    initialDraftMigration.includes("sales_initial_form_drafts")
+    && initialDraftMigration.includes("ENABLE ROW LEVEL SECURITY")
+    && initialDraftMigration.includes("sales_initial_form_drafts_never_sent_check")
+    && initialDraftMigration.includes("CHECK (sent = false)")
+    && noLoginDeploy.includes("20260714234500_initial_form_draft_factory.sql")
+    && noLoginDeploy.includes("applyInitialFormDraftFactoryMigration")
+  ) {
+    pass("Initial form drafts have RLS, a never-sent DB constraint, and release wiring")
+  } else {
+    fail("Initial form drafts require RLS, a never-sent DB constraint, and release wiring")
+  }
+
   const demoQualityMigrationPath = "supabase/migrations/20260712233619_demo_quality_gate.sql"
   const demoQualityMigration = fs.existsSync(demoQualityMigrationPath)
     ? fs.readFileSync(demoQualityMigrationPath, "utf8")
