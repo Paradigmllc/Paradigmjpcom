@@ -127,7 +127,7 @@ export function DemoBatchQueueConsole() {
         <button type="button" disabled={busy} onClick={refresh} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-300 px-5 text-sm font-bold disabled:opacity-50"><RefreshCw className="h-4 w-4" />状態を更新</button>
         <button type="button" disabled={busy} onClick={issueCompleted} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-5 text-sm font-bold text-emerald-900 disabled:opacity-50"><Globe2 className="h-4 w-4" />完了分の7日限定URL発行</button>
       </div>
-      {issuedUrls.length > 0 && <div className="mt-5 rounded-2xl bg-emerald-50 p-4"><p className="text-sm font-bold text-emerald-950">今回発行した署名付き非公開URL（7日で失効）</p><textarea readOnly value={issuedUrls.join("\n")} className="mt-3 min-h-28 w-full rounded-xl border border-emerald-200 bg-white p-3 text-xs leading-6 text-emerald-950" /></div>}
+      {issuedUrls.length > 0 && <div className="mt-5 rounded-2xl bg-emerald-50 p-4"><p className="text-sm font-bold text-emerald-950">今回発行した期限付き未公開URL（企業名のみ・7日で失効）</p><textarea readOnly value={issuedUrls.join("\n")} className="mt-3 min-h-28 w-full rounded-xl border border-emerald-200 bg-white p-3 text-xs leading-6 text-emerald-950" /></div>}
       <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200">
         {jobs.length === 0 ? <p className="p-6 text-sm text-slate-500">「状態を更新」で直近の生成ジョブを表示します。</p> : jobs.map((job) => {
           const company = Array.isArray(job.sales_companies) ? job.sales_companies[0] : job.sales_companies

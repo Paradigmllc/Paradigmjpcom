@@ -8,7 +8,7 @@ import type { DemoBlock, DemoMultiPageData, DemoPageData } from "./demo-site-typ
 import { selectTemplate, type CompanyProfile } from "./demo-template-selector"
 import type { Industry, ReportLocale } from "./types"
 import { JAPAN_ENTRY_CTA_EN, JAPAN_ENTRY_CTA_JA } from "@/lib/japan-entry-public-copy"
-import { verifyDemoPreviewToken, type DemoAssetReview } from "./demo-private-access"
+import { isTemporaryUnlistedDemoActive, verifyDemoPreviewToken, type DemoAssetReview } from "./demo-private-access"
 import { buildPremiumAssetNote } from "./demo-asset-note"
 import { applyIndustryPresentation } from "./demo-industry-presentation"
 import { upgradeDemoToPremiumV3 } from "./demo-premium-v3"
@@ -215,6 +215,9 @@ export async function fetchDemoMultiPageData(
         ? await verifyDemoPreviewToken(slug, options.previewToken)
         : { ok: false, expiresAt: themePage.preview_expires_at as string | null }
       if (!verification.ok) return null
+      isPrivatePreview = true
+    } else if (themePage?.access_mode === "temporary_unlisted") {
+      if (!isTemporaryUnlistedDemoActive(themePage.access_mode, themePage.preview_expires_at)) return null
       isPrivatePreview = true
     } else if (themePage && !themePage.is_published) {
       return null

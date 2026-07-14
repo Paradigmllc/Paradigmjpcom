@@ -17,6 +17,14 @@
 - 最終release gateはquality guard 0 errors、DB **84/84**、Traefik / Cloudflare / Supabase Realtime / Twenty worker restart 0、公開日本語・英語URL、Twenty、診断レポート、Sales health HTTP 200 JSON `ok:true`を含めてpass。
 - 対象回帰は最大 **5 files / 22 tests pass**、TypeScript、対象ESLint、`git diff --check` pass。全体Vitestの既知変更外5件（日本語代表メッセージの旧200文字期待1件、CRLF依存backup shell 4件）は別課題として残る。
 
+## CURRENT STATUS - 2026-07-14 SMB DEMO企業名URL 404修正（ローカル検証完了・本番反映前）
+
+### 期限付き未公開URLをCookie不要のクリーンURLへ統一
+- `https://demo.paradigmjp.com/{企業名}`を新しいブラウザで直接開くと、HTTP 200でも`Demo Not Found`を描画する不整合を確認。原因は、管理画面が初回だけtoken queryでCookieを発行するURLを返す一方、営業用にはqueryなしの企業名URLだけを使う設計だったこと。
+- `temporary_unlisted` access modeを追加。企業名だけのURLをCookieなしで最大7日閲覧でき、`preview_expires_at`を過ぎると自動的に404へ戻る。`is_published=false`、`private_review`、noindex、審査済みasset manifest、送信停止は維持する。企業名slugは推測可能なため「完全非公開」とは表示せず、「検索非掲載・正式公開前・期限付き」と明記する。
+- URL発行API、最大100件batch、管理画面、公開fetch、失効API、DB制約、正式release migrationを同じaccess modeへ統一。新規発行URLは`https://demo.paradigmjp.com/{企業名}`のみでtoken queryを含まない。
+- ローカル検証: 関連Vitest **3 files / 12 tests pass**、TypeScript、変更対象ESLint、script syntax、`git diff --check` pass。候補収集、Twenty同期、フォーム送信、外部送信は実行していない。本番migration・既存「ノン美容室」の7日期限再発行・CookieなしブラウザQAは未実施。
+
 ## CURRENT STATUS - 2026-07-14 SMB DEMO Art Direction V4（下層画像品質の最終追補・再リリース前）
 
 ### テンプレ感・タイポグラフィ・美容室下層ページの構造修正

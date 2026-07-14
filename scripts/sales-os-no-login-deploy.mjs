@@ -660,6 +660,14 @@ async function applyDemoPrivateAssetReviewMigration(envs) {
   )
 }
 
+async function applyDemoTemporaryUnlistedAccessMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260714164000_demo_temporary_unlisted_access.sql",
+    "SMB demo temporary unlisted access migration",
+  )
+}
+
 async function applyDemoSustainableBatchMigration(envs) {
   return applySqlMigration(
     envs,
@@ -1264,6 +1272,7 @@ async function main() {
     console.log(await applyJapanEntryProjectionsMigration(envs))
     console.log(await applyDemoQualityGateMigration(envs))
     console.log(await applyDemoPrivateAssetReviewMigration(envs))
+    console.log(await applyDemoTemporaryUnlistedAccessMigration(envs))
     console.log(await applyDemoSustainableBatchMigration(envs))
     console.log(await applyJapanEntryReportFactoryMigration(envs))
     console.log(await applyDemoCleanUrlFactoryMigration(envs))

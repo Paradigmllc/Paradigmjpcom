@@ -366,6 +366,22 @@ function checkStaticReleaseRules() {
     fail("SMB demo private access and asset review require release migration wiring")
   }
 
+  const demoTemporaryUnlistedMigrationPath = "supabase/migrations/20260714164000_demo_temporary_unlisted_access.sql"
+  const demoTemporaryUnlistedMigration = fs.existsSync(demoTemporaryUnlistedMigrationPath)
+    ? fs.readFileSync(demoTemporaryUnlistedMigrationPath, "utf8")
+    : ""
+  if (
+    demoTemporaryUnlistedMigration.includes("temporary_unlisted") &&
+    demoTemporaryUnlistedMigration.includes("preview_expires_at") &&
+    demoTemporaryUnlistedMigration.includes("is_published = false") &&
+    noLoginDeploy.includes("20260714164000_demo_temporary_unlisted_access.sql") &&
+    noLoginDeploy.includes("applyDemoTemporaryUnlistedAccessMigration")
+  ) {
+    pass("SMB demo clean temporary URLs have an expiry-enforced release migration")
+  } else {
+    fail("SMB demo clean temporary URLs require an expiry-enforced release migration")
+  }
+
   const demoBatchMigrationPath = "supabase/migrations/20260713160000_demo_sustainable_batch.sql"
   const demoBatchMigration = fs.existsSync(demoBatchMigrationPath)
     ? fs.readFileSync(demoBatchMigrationPath, "utf8")
