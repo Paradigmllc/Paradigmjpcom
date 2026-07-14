@@ -11,16 +11,18 @@
 - ローカル本番chunk `.next/static/chunks/app/[locale]/admin/demo-assets/page-dbd5ffe65bf328da.js` に `エキテン一覧・詳細ページ貼り付け抽出`、`候補JSONへ変換`、抽出ロジックが含まれることを確認した。ローカルdevの`/admin/login`ブラウザ確認は検証用`DATABASE_URI`未設定でPayload初期化500となったため、UIの実ブラウザ操作は正式release後の本番認証環境で確認する。
 - 外部送信、ポータルDM、メール、SNS、電話、郵送、フォーム送信、Twenty追加、実エキテンへのサーバー取得は実行していない。
 
-## CURRENT STATUS - 2026-07-15 検証済み候補在庫の数千件自動量産（実装・実データadapter検証完了 / release前 / 外部送信0）
+## CURRENT STATUS - 2026-07-15 検証済み候補在庫の数千件自動量産（本番release完了 / source承認前 / 外部送信0）
 
 ### 公式SMEデータをCodex非依存で取込・再開する経路
 - 欧州委員会CORDISのHorizon Europe / Horizon 2020月次公開ZIPを、欧州15市場・2世代の30 source packとして追加した。`SME=true`、`activityType=PRC`、企業名、公式サイト、組織ID、EC根拠URLが揃う行だけをstreaming CSV parserで抽出し、国別・domain別に重複排除する。既存Wikidata 10市場と合わせて40 pack。登録時は従来どおりdraft / inactive / terms未確認で、規約確認・preview・担当者承認を迂回しない。
 - ZIP adapterはpublic HTTPS / DNS再検証、redirect上限5、圧縮80MB、展開120MB、50万行、dataset filter後2.5万行のfail-closed上限を持つ。 malformed quoteを許容する一方、必須列欠落・想定entry欠落・サイズ超過は保存前に停止する。公式Tier 3の`is_sme=true`だけをSMB客観根拠98点として使い、enterprise signalがあれば0点へ戻す。企業同一性・サイト国・EC/SaaS適合・実フォームは別ゲートのまま。
 - `sales_lead_inventory_runs`へ収集元単位の進捗、取込数、サイト利用可、除外、一時障害、失敗とheartbeatを保存し、承認済みpackを順次ingest→全件website preflightするevent-driven runnerと認可API、管理GUIを追加した。途中停止したrunning runは同じDB位置から再開できる。run tableのCHECKで`send_count=0`かつ`twenty_sync_count=0`を強制し、文面・レポート・Twenty・フォーム送信を接続しない。
 
-### Verification / remaining production gate
+### Production verification / remaining operator gate
 - 実CORDIS H2020 ZIPを新adapterで直接取得し、ドイツはfilter後1,045行・重複排除可能355 domain、公式EC根拠URL付きsampleを確認した。事前集計では優先15市場の2世代合算で約2,400 unique domain。これは候補母集団であり、実サイト・企業同一性・対象国・offer fit・フォーム合格後の件数を「数千件」とは未確認。
-- 対象Vitest **8 files / 29 tests**、main統合後の全Vitest **161 files / 740 tests**、TypeScript、対象ESLint、quality guard **0 errors / 60 existing warnings**、production build **408/408 pages**、release-doctorの新しい静的gate、`git diff --check`がpass。正式release、migration本番rollback、公開管理画面、規約確認済みsourceの非送信inventory runは未実行。品質を実測するまで自動Twenty、文面、レポート、送信は開始しない。
+- 対象Vitest **8 files / 29 tests**、main統合後の全Vitest **161 files / 740 tests**、TypeScript、対象ESLint、quality guard **0 errors / 60 existing warnings**、production build **408/408 pages**、release-doctorの新しい静的gate、`git diff --check`がpass。
+- PR **#234** / main **1a638221** / deployment **xtpewz7x17jad1k9fl4rr4yr**。正式`npm run release:prod`は新migration、DB **88/88**、Sales health JSON `ok:true`、Twenty worker restart 0、Realtime / Traefik / Cloudflare origin lock / 公開smokeまでpass。本番`/ja/admin/lead-factory`はHTTP 200、新inventory / source pack APIは未認証HTTP 401。本番JS chunkで`数千件・検証済み在庫ラン`、`未登録packを一括draft登録`、`1国最大5,000候補・1,000社を実確認`を確認した。
+- release直後の本番DBはsource pack 0、approved pack 0、inventory run 0、inventory send 0、inventory Twenty sync 0。コード配布だけで候補登録・取込・Twenty・文面・レポート・送信が起動していない。次は管理画面で必要なpackをdraft登録し、再利用条件の人間確認→preview→承認後に非送信inventory runを開始する。実サイト・企業同一性・対象国・offer fit・フォーム合格を実測するまで「高品質な数千件完成」とは判定しない。
 
 ## CURRENT STATUS - 2026-07-15 国別Lead Source Pack（実装・本番DB rollback検証完了 / release前 / 外部送信0）
 
