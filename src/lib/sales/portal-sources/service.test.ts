@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import type { DemoReviewedAsset } from "../demo-private-access"
 import type { CandidateListItem } from "../lead-candidate-list"
-import { buildPortalDemoManifest } from "./service"
+import { buildPortalDemoManifest, readPortalSnapshot } from "./service"
 
 function candidate(status: "ready_for_review" | "has_website" = "ready_for_review"): CandidateListItem {
   return {
@@ -23,7 +23,7 @@ function candidate(status: "ready_for_review" | "has_website" = "ready_for_revie
           listingUrl: "https://www.houzz.jp/pro/takumi",
           companyName: "匠リフォーム",
           category: "リフォーム会社",
-          description: "戸建てリフォームと外構工事を手掛けています。",
+          description: "代表の建築士が2008年に創業し、地域密着で戸建てリフォームと外構工事を手掛けています。",
           address: "東京都千代田区",
           phone: "03-0000-0000",
           prefecture: "東京都",
@@ -32,6 +32,13 @@ function candidate(status: "ready_for_review" | "has_website" = "ready_for_revie
           contactUrl: "https://www.houzz.jp/pro/takumi",
           images: [1, 2, 3].map((index) => ({ url: `https://cdn.example.jp/work-${index}.webp`, alt: `施工例${index}` })),
           suggestedIndustry: "construction",
+          smbFit: {
+            eligible: status === "ready_for_review",
+            score: status === "ready_for_review" ? 92 : 55,
+            decisionSignals: ["代表者・店主本人", "地域密着"],
+            enterpriseSignals: [],
+            reasons: ["経営者直結シグナル"],
+          },
           fetchedAt: "2026-07-14T00:00:00.000Z",
           status,
         },
@@ -70,6 +77,15 @@ describe("portal candidate review manifest", () => {
   })
 
   it("rejects candidates that already have an independent website", () => {
-    expect(() => buildPortalDemoManifest(candidate("has_website"), assets())).toThrow("独自HPあり")
+    expect(() => buildPortalDemoManifest(candidate("has_website"), assets())).toThrow("独自HP・大企業シグナル")
+  })
+
+  it("re-evaluates legacy snapshots with the current decision-maker gate", () => {
+    const legacy = candidate()
+    const raw = legacy.meta.raw as Record<string, unknown>
+    const snapshot = raw.portal_snapshot as Record<string, unknown>
+    delete snapshot.smbFit
+    snapshot.description = "戸建てリフォームと外構工事を提供しています。お気軽にお問い合わせください。"
+    expect(readPortalSnapshot(legacy)?.status).toBe("decision_fit_unverified")
   })
 })

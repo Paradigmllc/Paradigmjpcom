@@ -1,7 +1,7 @@
 import { inferPortalIndustry, isAllowedPortalUrl, PORTAL_ADAPTERS } from "./adapters"
-import type { PortalCandidateExtraction, PortalImageCandidate, PortalSource } from "./types"
+import { assessPortalSmbFit } from "./smb-fit"
+import type { PortalCandidateExtraction, PortalImageCandidate, PortalOperatorSnapshot, PortalSource } from "./types"
 
-const MAX_HTML_BYTES = 2_000_000
 const SOCIAL_HOSTS = ["instagram.com", "facebook.com", "x.com", "twitter.com", "youtube.com", "tiktok.com", "line.me"]
 
 type JsonRecord = Record<string, unknown>
@@ -91,6 +91,18 @@ function absoluteHttpsUrl(value: unknown, baseUrl: string): string | null {
   }
 }
 
+function absoluteWebUrl(value: unknown, baseUrl: string): string | null {
+  const raw = stringValue(value)
+  if (!raw) return null
+  try {
+    const url = new URL(raw, baseUrl)
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : null
+  } catch (error) {
+    console.warn("[portal-source] invalid extracted website URL:", error instanceof Error ? error.message : String(error))
+    return null
+  }
+}
+
 function collectImageValues(value: unknown, output: unknown[]): void {
   if (Array.isArray(value)) return value.forEach((item) => collectImageValues(item, output))
   if (typeof value === "string") output.push(value)
@@ -136,7 +148,7 @@ function prefectureFromAddress(address: string | null): string | null {
 
 function linksFromPage(html: string, baseUrl: string): Array<{ url: string; label: string }> {
   return [...html.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)].flatMap((match) => {
-    const url = absoluteHttpsUrl(match[1], baseUrl)
+    const url = absoluteWebUrl(match[1], baseUrl)
     return url ? [{ url, label: stripTags(match[2]).slice(0, 120) }] : []
   }).slice(0, 500)
 }
@@ -159,7 +171,7 @@ function socialLinks(record: JsonRecord | null, links: Array<{ url: string }>): 
 
 function officialWebsite(record: JsonRecord | null, links: Array<{ url: string; label: string }>, listingUrl: string): string | null {
   const candidates = [
-    absoluteHttpsUrl(record?.url, listingUrl),
+    absoluteWebUrl(record?.url, listingUrl),
     ...links.filter((link) => /公式|ホームページ|web\s*site|website/i.test(link.label)).map((link) => link.url),
   ].filter((url): url is string => Boolean(url))
   return candidates.find((url) => {
@@ -193,7 +205,16 @@ export function extractPortalCandidateFromHtml(source: PortalSource, listingUrl:
   const images = imagesFromPage(html, business, listingUrl, companyName)
   const websiteUrl = officialWebsite(business, links, listingUrl)
   const evidenceText = `${companyName}\n${category}\n${description}`
-  const status = websiteUrl ? "has_website" : images.length >= 3 && (description || address) ? "ready_for_review" : "insufficient_content"
+  const smbFit = assessPortalSmbFit({ companyName, category, description, address, websiteUrl, imageCount: images.length })
+  const status = websiteUrl
+    ? "has_website"
+    : smbFit.enterpriseSignals.length > 0
+      ? "enterprise_like"
+      : images.length < 3 || (!description && !address)
+        ? "insufficient_content"
+        : smbFit.eligible
+          ? "ready_for_review"
+          : "decision_fit_unverified"
   return {
     source,
     listingUrl,
@@ -208,26 +229,59 @@ export function extractPortalCandidateFromHtml(source: PortalSource, listingUrl:
     contactUrl: listingUrl,
     images,
     suggestedIndustry: inferPortalIndustry(source, evidenceText),
+    smbFit,
     fetchedAt: new Date().toISOString(),
     status,
   }
 }
 
-export async function fetchPortalCandidate(source: PortalSource, listingUrl: string): Promise<PortalCandidateExtraction> {
-  if (!isAllowedPortalUrl(source, listingUrl)) throw new Error(`${PORTAL_ADAPTERS[source].label}のHTTPS URLを指定してください`)
-  const response = await fetch(listingUrl, {
-    cache: "no-store",
-    redirect: "error",
-    headers: {
-      Accept: "text/html,application/xhtml+xml",
-      "Accept-Language": "ja-JP,ja;q=0.9",
-      "User-Agent": "Paradigm-Demo-Review/1.0 (+https://paradigmjp.com)",
-    },
-    signal: AbortSignal.timeout(12_000),
-  })
-  if (!response.ok) throw new Error(`${PORTAL_ADAPTERS[source].label} HTTP ${response.status}`)
-  const length = Number(response.headers.get("content-length") ?? 0)
-  if (length > MAX_HTML_BYTES) throw new Error("ページサイズが上限を超えています")
-  const html = (await response.text()).slice(0, MAX_HTML_BYTES)
-  return extractPortalCandidateFromHtml(source, listingUrl, html)
+export function normalizePortalOperatorSnapshot(snapshot: PortalOperatorSnapshot): PortalCandidateExtraction {
+  if (!isAllowedPortalUrl(snapshot.source, snapshot.listingUrl)) throw new Error(`${PORTAL_ADAPTERS[snapshot.source].label}のHTTPS URLを指定してください`)
+  const companyName = stripTags(snapshot.companyName).slice(0, 200)
+  const category = stripTags(snapshot.category).slice(0, 120)
+  const description = stripTags(snapshot.description).slice(0, 1000)
+  const address = snapshot.address ? stripTags(snapshot.address).slice(0, 300) : null
+  const phone = snapshot.phone ? stripTags(snapshot.phone).slice(0, 80) : null
+  const websiteUrl = snapshot.websiteUrl ? absoluteWebUrl(snapshot.websiteUrl, snapshot.listingUrl) : null
+  const socialLinks = [...new Set((snapshot.socialLinks ?? []).flatMap((value) => {
+    const url = absoluteHttpsUrl(value, snapshot.listingUrl)
+    if (!url) return []
+    const host = new URL(url).hostname
+    return SOCIAL_HOSTS.some((social) => host === social || host.endsWith(`.${social}`)) ? [url] : []
+  }))].slice(0, 20)
+  const seenImages = new Set<string>()
+  const images = snapshot.images.flatMap((image, index) => {
+    const url = absoluteHttpsUrl(image.url, snapshot.listingUrl)
+    if (!url || seenImages.has(url)) return []
+    seenImages.add(url)
+    return [{ url, alt: stripTags(image.alt).slice(0, 200) || `${companyName}の掲載写真 ${index + 1}` }]
+  }).slice(0, 20)
+  const smbFit = assessPortalSmbFit({ companyName, category, description, address, websiteUrl, imageCount: images.length })
+  const status = websiteUrl
+    ? "has_website"
+    : smbFit.enterpriseSignals.length > 0
+      ? "enterprise_like"
+      : images.length < 3 || (!description && !address)
+        ? "insufficient_content"
+        : smbFit.eligible
+          ? "ready_for_review"
+          : "decision_fit_unverified"
+  return {
+    source: snapshot.source,
+    listingUrl: snapshot.listingUrl,
+    companyName,
+    category,
+    description,
+    address,
+    phone,
+    prefecture: prefectureFromAddress(address),
+    websiteUrl,
+    socialLinks,
+    contactUrl: snapshot.listingUrl,
+    images,
+    suggestedIndustry: inferPortalIndustry(snapshot.source, `${companyName}\n${category}\n${description}`),
+    smbFit,
+    fetchedAt: new Date().toISOString(),
+    status,
+  }
 }
