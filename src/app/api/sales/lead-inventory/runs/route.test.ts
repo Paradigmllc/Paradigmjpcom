@@ -69,8 +69,10 @@ describe("verified lead inventory routes", () => {
     })
     expect(mocks.audit).toHaveBeenCalledWith(expect.objectContaining({
       action: "verified_inventory_started",
+      entityId: "11111111-1111-4111-8111-111111111111",
       detail: { sourceCount: 1, sendCount: 0, twentySyncCount: 0 },
     }))
+    expect(mocks.audit.mock.calls[0]?.[0]).not.toHaveProperty("runId")
     expect(mocks.startRun).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111")
     expect(mocks.notify).toHaveBeenCalledWith("sales", expect.objectContaining({
       message: expect.stringContaining("外部送信は実行しません"),
@@ -84,5 +86,25 @@ describe("verified lead inventory routes", () => {
 
     expect(response.status).toBe(409)
     expect(mocks.createRun).not.toHaveBeenCalled()
+  })
+
+  it("resumes inventory runs without using the candidate-run foreign key", async () => {
+    sourceQuery.single = vi.fn(async () => ({
+      data: { id: "11111111-1111-4111-8111-111111111111", status: "running" },
+      error: null,
+    }))
+
+    const response = await POST(post({
+      operatorName: "Sato",
+      resumeRunId: "11111111-1111-4111-8111-111111111111",
+    }))
+
+    expect(response.status).toBe(202)
+    expect(mocks.startRun).toHaveBeenCalledWith("11111111-1111-4111-8111-111111111111")
+    expect(mocks.audit).toHaveBeenCalledWith(expect.objectContaining({
+      action: "verified_inventory_resumed",
+      entityId: "11111111-1111-4111-8111-111111111111",
+    }))
+    expect(mocks.audit.mock.calls[0]?.[0]).not.toHaveProperty("runId")
   })
 })

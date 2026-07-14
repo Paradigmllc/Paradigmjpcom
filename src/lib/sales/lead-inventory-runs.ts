@@ -66,7 +66,6 @@ async function completeRun(run: LeadInventoryRun): Promise<void> {
   await updateRun(run.id, { status, current_source_id: null, completed_at: nowIso() })
   try {
     await recordLeadOperatorEvent({
-      runId: run.id,
       entityType: "run",
       entityId: run.id,
       action: `verified_inventory_${status}`,

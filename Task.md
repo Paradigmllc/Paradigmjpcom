@@ -1556,3 +1556,13 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - 実務Wave 1をUS/GB/AU/CA/SG/AE × Shopifyで実行。無料passive corpusから5,744候補を取得し、720件を実確認、実フォーム合格267件、適格昇格28件、Twenty同期28件、外部送信0件、文面生成0件。Twenty REST再照合は28/28 HTTP 200、国28/28、確認済みフォーム28/28、`未送信`ステータス28/28。国別同期はAE 3 / AU 7 / CA 6 / GB 5 / SG 7 / US 0。
 - Wave 1のUS/AEで、in-memory fallback runnerがheartbeat停止後も`alreadyRunning`を保持する停滞を実測。既存の認可済み同期process APIで残件を補完し、全6 runをactive 0まで完了させた。恒久対応として一覧API/Realtimeへ`heartbeat_at`を追加し、共通5分停滞判定、管理画面の`停滞runを再開`/`復旧を続行`操作、24件×最大10バッチの有界同期復旧を実装。復旧は残り候補だけを処理し、文面・レポート・フォーム送信を起動しない。
 - 停滞復旧のローカル検証はVitest 4 files / 9 tests、TypeScript、対象ESLint、`git diff --check`がpass。正式releaseと本番管理画面の公開確認を続行する。
+## CURRENT STATUS - 2026-07-15 検証済み候補在庫の本番収集開始（33 source / 外部送信0）
+
+### 本番運用
+- 40件の国別source packを本番DBへdraft登録し、WikidataはCC0、European Commission CORDISはCC BY 4.0再利用条件を確認した。非保存previewはCORDIS 30/30とWikidata 3/10が合格し、この33件だけを承認・有効化した。Wikidata 7件は公開query endpointの502/timeoutで未承認のまま隔離した。
+- 非送信inventory run `15849730-69c7-47f4-81ab-200cce4d94a2`を開始。初期実測は3/33 source完了、233件取込、186件サイト事前検査合格、34件retryable、13件rejected、source失敗0。DB制約どおりsend_count 0 / twenty_sync_count 0を維持する。
+- 起動時、`sales_lead_operator_events.run_id`が旧candidate run専用FKであるのにinventory run IDを渡して監査保存が500になる不整合を検出した。runnerはresume処理の先頭で開始できたため同じrun IDで実収集を継続し、送信系には接続していない。
+
+### 修正・検証
+- inventoryのstart / resume / completion監査はcandidate-run FK列を使わず、汎用の`entity_type=run / entity_id=inventory run ID`だけで保存するよう修正した。startとresumeの回帰テストは監査payloadに`runId`が存在しないことを検証する。
+- 対象Vitest 2 files / 7 tests、全Vitest 161 files / 741 tests、TypeScript、対象ESLint、quality guard 0 errors / 60 existing warnings、production build 408/408 pages、`git diff --check`がpass。正式release後に同じrun IDをresumeし、監査HTTP 202、進捗、send 0、Twenty sync 0を再確認する。
