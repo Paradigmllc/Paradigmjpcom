@@ -8,11 +8,12 @@
 ### 品質判定を「点数100」からfail-closedの実描画事前検査へ変更
 - 管理画面の点数表記を「事前検査」と明記。構造、コピー、権利、素材を確認するpreflightであり、実ブラウザの最終品質保証ではないことを表示する。
 - 同じtemplate IDかどうかではなく、実際に描画される6軸のvisual grammarをfingerprint化。3候補内の完全一致だけでなく80%以上の近似一致、過去のprivate review / approved / publishedデモとの近似一致もhard blockerにする。まだrendererに接続していないdensity / motifは差分の水増しに使わない。
-- cinematic heroへサムネイルまたは幅1,200px / 高さ720px未満の審査済み画像を拡大する場合、画像URLと取得済み寸法からfail-closedにする。display / body fontの完全同一、画像反復、企業固有concept欠落も停止する。
+- mosaic以外のheroへ寸法不明または幅1,200px / 高さ720px未満の審査済み画像を拡大する場合、画像URLと取得済み寸法からfail-closedにする。display / body fontの完全同一、画像反復、企業固有concept欠落も停止する。
 
 ### ローカル検証と残る公開条件
-- デモ関連 **16 files / 56 tests pass**、TypeScript、変更対象ESLint、quality guard **0 errors / 59 existing warnings**、production build **408/408 pages**、`git diff --check` pass。新規依存なし。
+- デモ関連 **16 files / 57 tests pass**、TypeScript、変更対象ESLint、quality guard **0 errors / 59 existing warnings**、production build **408/408 pages**、`git diff --check` pass。新規依存なし。
 - この段階では外部送信、候補追加、Twenty同期、ポータルDM、フォーム送信を行っていない。コード検査は合格したが、未知の複数実企業をDeepSeekだけで生成し、PC / mobileでHomeと下層を実ブラウザ比較するまでは「品質合格」「量産開始」と判定しない。
+- 初回本番QAで既存「ノン美容室」の235×353px画像が約804×892pxへ拡大され、旧`salon-air`書体のまま表示される不合格を検出。cinematicだけを止めていた画像ゲートを修正し、mosaic以外のheroは寸法不明または1,200×720未満をすべてfail-closedにする。既存デモの表示を合格扱いせず、新パイプライン再生成と再QAを必須とする。
 
 ## CURRENT STATUS - 2026-07-14 Japan Entry候補収集のSearXNG廃止・パッシブコーパス量産化（本番反映 / 外部送信0）
 
