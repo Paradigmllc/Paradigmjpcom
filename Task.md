@@ -1,4 +1,4 @@
-## CURRENT STATUS - 2026-07-14 SMB DEMO Art Direction V4（初回本番QA反映・画像解像度追補のローカル検証完了）
+## CURRENT STATUS - 2026-07-14 SMB DEMO Art Direction V4（下層画像品質の最終追補・再リリース前）
 
 ### テンプレ感・タイポグラフィ・美容室下層ページの構造修正
 - 「ノン美容室」の実ブラウザ指摘をrenderer起因として修正。美容室を飲食・法人と同じ全面写真＋巨大明朝＋英字labelの文法から分離し、Zen Kaku Gothic中心の専用brand system、editorial split hero、日本語microcopy、長文見出しの文字数連動scale上限を追加した。既存payloadの旧`salon-air`も読込時に`salon-editorial`へ移行するため、再生成なしで現行デモへ反映できる。
@@ -7,6 +7,8 @@
 - 品質ゲートを`2026-07-14.4`へ更新。hero titleとeditorial intro、intro bodyとAbout storyの完全重複を`repeated_home_narrative`でfail-closedにし、長い日本語heroは最大3.2rem・line-height 1.18へ抑える回帰testを追加した。
 - ローカル検証: デモ関連 **3 files / 16 tests pass**、TypeScript、変更対象ESLint、quality guard **0 errors / 59 existing warnings**、production build **408/408 pages**、`git diff --check` pass。全Vitestは **132/134 files・605/610 tests pass**で、変更外の既知5件（日本語代表メッセージ191文字の旧期待1件、CRLF依存backup shell 4件）のみ不一致。外部送信、候補収集、Twenty同期、フォーム送信は実行していない。
 - PR **#192**をmainへmergeし、正式deployment **ta2vq6vhnjly4lmb007tqzok**とpost-deploy gateを完走。直後の「ノン美容室」実ブラウザQAで、旧全面写真よりタイポグラフィは改善した一方、heroが67.968pxで語中改行し、審査済みエキテン画像の実体が159px角なのに764px幅へ拡大されていた問題を検出した。合格扱いせず、長文heroを最大3.2remへ縮小して句読点で意味単位改行し、hero／メニュー／lookbook／carouselを小画像mosaic・compact表示へ変更。追補後の関連 **3 files / 17 tests pass**、TypeScript、変更対象ESLint、production build **408/408 pages**。最終本番QAまでは候補追加と外部送信を停止する。
+- 画像mosaicと見出し閾値の追補をPR **#193 / #195**でmainへmergeし、正式deployment **cocealoontjzxc2w7ptd4i4h**まで完走。公開HomeでH1 **44.588px**、句読点位置の2行改行、横overflow 0、6枚mosaicを確認した。その後の下層QAで、エキテンの`?1to1_m`付き縮小画像をsplit heroへ拡大する残課題を検出したため、再び合格を保留した。
+- 最終追補は美容室の全下層heroを共通split写真から6枚のeditorial mosaicへ分岐し、`image.ekiten.jp`の既知サムネイル指定だけを除去して同一審査済み原本を利用する。他host・署名queryは保持する回帰testを追加。関連 **3 files / 10 tests pass**、TypeScript、変更対象ESLint、`git diff --check` pass。再リリースとPC / mobile実画面QAまでは、外部送信、候補収集、Twenty同期、フォーム送信を停止する。
 
 ## CURRENT STATUS - 2026-07-14 Premium V3モーションシステム強化（本番反映・実ブラウザQA完了）
 

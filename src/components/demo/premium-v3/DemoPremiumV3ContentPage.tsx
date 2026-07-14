@@ -23,7 +23,7 @@ function pageMedia(data: DemoMultiPageData) {
 
 function pageHero(data: DemoMultiPageData, page: DemoContentPage, media: ReturnType<typeof pageMedia>[number]) {
   const direction = resolveDemoArtDirection(data)
-  return <PremiumV3PageHero title={page.title} subtitle={page.subtitle} eyebrow={page.eyebrow} media={media} recipe={data.designRecipe} variant={direction.hero} />
+  return <PremiumV3PageHero title={page.title} subtitle={page.subtitle} eyebrow={page.eyebrow} media={media} mediaGallery={direction.id === "beauty" ? pageMedia(data) : undefined} recipe={data.designRecipe} variant={direction.hero} />
 }
 
 function WorksPage({ data, page }: { data: DemoMultiPageData; page: DemoContentPage }) {
@@ -52,7 +52,7 @@ function BeautyWorksPage({ data, page }: { data: DemoMultiPageData; page: DemoCo
 
   return (
     <div className="overflow-hidden bg-[var(--demo-surface)] text-[var(--demo-ink)] [font-feature-settings:'palt']">
-      <PremiumV3PageHero title={page.title} subtitle={page.subtitle} eyebrow="スタイル・サロンの風景" media={hero} recipe={data.designRecipe} variant={direction.hero} />
+      <PremiumV3PageHero title={page.title} subtitle={page.subtitle} eyebrow="スタイル・サロンの風景" media={hero} mediaGallery={media} recipe={data.designRecipe} variant={direction.hero} />
       <section className="px-5 py-20 sm:px-10 sm:py-28 lg:px-16 lg:py-32"><div className="mx-auto max-w-7xl"><PremiumV3Reveal motionStyle={motionStyle} className="grid gap-8 border-b border-[var(--demo-line)] pb-10 lg:grid-cols-[1fr_.7fr] lg:items-end"><h2 className={`${demoHeadlineClass(`${data.companyName}で生まれるスタイル`)} max-w-[14em] font-[var(--demo-heading-weight)] [font-family:var(--demo-font-display)]`}>{data.companyName}で生まれる、<br />それぞれのスタイル。</h2><p className="text-base leading-9 text-[var(--demo-muted)]">仕上がりだけでなく、サロンで過ごす時間や空間の雰囲気も写真でご覧いただけます。</p></PremiumV3Reveal></div></section>
       <section className="px-5 pb-20 sm:px-10 sm:pb-28 lg:px-16 lg:pb-36"><div className="mx-auto grid max-w-[1500px] gap-x-4 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">{entries.map((section, index) => {
         const itemMedia = media[index % media.length] ?? hero
