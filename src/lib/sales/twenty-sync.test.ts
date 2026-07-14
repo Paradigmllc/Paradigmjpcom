@@ -284,6 +284,26 @@ describe("pullTwentyCompaniesToSupabase", () => {
     expect(supabase.calls.runInserts).toHaveLength(0)
   })
 
+  it("never creates a pipeline for a list-only company pulled back from Twenty", async () => {
+    stubTwentyList()
+    const supabase = createSupabaseMock({
+      existingCompany: {
+        id: "company-list-only",
+        meta: { list_only: true, skip_enrichment: true },
+        pipeline_status: "pending",
+        report_url: null,
+      },
+    })
+    mocks.getServiceSalesSupabase.mockReturnValue(supabase.client)
+
+    const result = await pullTwentyCompaniesToSupabase(10, { autoRunPipeline: true })
+
+    expect(result.updated).toBe(1)
+    expect(result.pipelineRunsCreated).toBe(0)
+    expect(result.pipelineRunsReused).toBe(0)
+    expect(supabase.calls.runInserts).toHaveLength(0)
+  })
+
   it("dry-runs Twenty intake without writing companies, sync logs, or pipeline runs", async () => {
     stubTwentyList()
     const supabase = createSupabaseMock()
