@@ -48,6 +48,14 @@ describe("lead candidate acquisition", () => {
     expect(score.opportunityScore).toBeGreaterThan(55)
   })
 
+  it("does not treat generic .com or .org domains as US or Canadian evidence", () => {
+    const us = inferCountrySignals({ domain: "example.com", targetCountry: "US" })
+    const ca = inferCountrySignals({ domain: "example.org", targetCountry: "CA" })
+
+    expect(us.some((signal) => signal.signalType === "tld")).toBe(false)
+    expect(ca.some((signal) => signal.signalType === "tld")).toBe(false)
+  })
+
   it("scores a hosted Shopify SMB with objective US evidence above the factory gate", () => {
     const score = scoreCandidate({
       requestedTechnology: "Shopify",
@@ -150,7 +158,7 @@ describe("lead candidate acquisition", () => {
     expect(JSON.stringify(rows[0])).not.toContain("@")
   })
 
-  it("maps country codes to Common Crawl CDX patterns", () => {
+  it("maps country codes to passive corpus TLD patterns", () => {
     expect(tldPatternsForCountry("ZA")).toContain("*.co.za")
     expect(tldPatternsForCountry("ZA")).toContain("*.za")
     expect(tldPatternsForCountry("CH")).toContain("*.swiss")

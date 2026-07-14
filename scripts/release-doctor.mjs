@@ -312,20 +312,24 @@ function checkStaticReleaseRules() {
     fail("Initial form drafts require RLS, a never-sent DB constraint, and release wiring")
   }
 
-  const searxngSettingsPath = "infra/searxng/settings.yml"
-  const searxngSettings = fs.existsSync(searxngSettingsPath)
-    ? fs.readFileSync(searxngSettingsPath, "utf8")
+  const passiveFactoryPath = "src/lib/sales/lead-candidate-domain-sources.ts"
+  const passiveFactory = fs.existsSync(passiveFactoryPath)
+    ? fs.readFileSync(passiveFactoryPath, "utf8")
     : ""
   if (
-    fs.existsSync("scripts/lib/ensure-searxng.mjs")
-    && searxngSettings.includes("- json")
-    && noLoginDeploy.includes("ensureSearxng")
-    && noLoginDeploy.includes('SEARXNG_BASE_URL: "http://searxng:8080"')
-    && noLoginDeploy.includes('SALES_LIST_COLLECTION_PROVIDER: "searxng"')
+    passiveFactory.includes("fetchPassiveInventoryDomains")
+    && passiveFactory.includes("fetchBulkDomainCorpus")
+    && !passiveFactory.includes("fetchCommonCrawlDomains")
+    && !passiveFactory.includes("fetchCrtshDomains")
+    && !passiveFactory.includes("Searx")
+    && !passiveFactory.includes("BrowserFootprint")
+    && !fs.existsSync("src/app/api/sales/browser-search/route.ts")
+    && !fs.existsSync("src/app/api/sales/lead-candidates/common-crawl/route.ts")
+    && !fs.existsSync("src/lib/sales/searxng-source.ts")
   ) {
-    pass("self-hosted SearXNG has JSON format, private-network provisioning, and release wiring")
+    pass("lead factory uses passive corpora with no search-engine or proxy dependency")
   } else {
-    fail("self-hosted SearXNG requires JSON format, private-network provisioning, and release wiring")
+    fail("lead factory must use passive corpora and exclude legacy SearXNG/browser search")
   }
 
   const demoQualityMigrationPath = "supabase/migrations/20260712233619_demo_quality_gate.sql"
@@ -1159,14 +1163,7 @@ async function checkPublicFunnelEnvironment() {
     } else {
       fail("OUTREACH_EVIDENCE_MODE must be public-signals or paid-traffic")
     }
-    if (
-      String(envs.SALES_LIST_COLLECTION_PROVIDER || "").trim().toLowerCase() === "searxng"
-      && String(envs.SEARXNG_BASE_URL || "").trim() === "http://searxng:8080"
-    ) {
-      pass("lead collection uses private self-hosted SearXNG")
-    } else {
-      fail("SALES_LIST_COLLECTION_PROVIDER=searxng and SEARXNG_BASE_URL=http://searxng:8080 are required")
-    }
+    pass("lead collection uses passive public corpora; no search proxy credential is required")
     if (hasMinimumSecret("TWENTY_API_KEY")) {
       pass("Twenty CRM sync credential is configured")
     } else {

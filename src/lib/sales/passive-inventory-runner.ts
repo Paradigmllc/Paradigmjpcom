@@ -2,10 +2,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "./db-tables"
 import { optionalEnv } from "./japan-readiness-utils"
 import { fetchPassiveInventoryDomains, passivePatterns, processPassiveInventoryDomainBatch, getPassiveInventoryConfiguration } from "./passive-inventory"
-import { fetchZoneDomains } from "./sources/czds-zone-files"
-import { fetchCommonCrawlDomains } from "./sources/commoncrawl-domains"
-import { fetchTrancoTopDomains } from "./sources/tranco-top-domains"
-import { fetchPassiveDomainFeeds } from "./sources/passive-domain-feeds"
+import { fetchBulkDomainCorpus } from "./sources/bulk-domain-corpus"
 
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
 type JsonRecord = Record<string, unknown>
@@ -216,38 +213,14 @@ async function claimSegments(runId: string, maxSegments: number): Promise<Passiv
 }
 
 async function fetchSegmentDomains(pattern: string, limit: number) {
-  const zone = await fetchZoneDomains([pattern], limit)
-  const domains = new Set(zone.domains)
-  const sourceStats = [...zone.sourceStats]
-  const failures = [...zone.failures]
-  let fallbackUsed = false
-  let feedUsed = false
-
-  if (domains.size < limit) {
-    const feed = await fetchPassiveDomainFeeds(pattern, limit - domains.size)
-    feed.domains.forEach((domain) => domains.add(domain))
-    sourceStats.push(...feed.sourceStats)
-    failures.push(...feed.failures)
-    feedUsed = feed.domains.length > 0
+  const corpus = await fetchBulkDomainCorpus(pattern, limit)
+  return {
+    domains: corpus.domains,
+    sourceStats: corpus.sourceStats,
+    failures: corpus.failures,
+    fallbackUsed: corpus.sourceStats.some((stat) => stat.source === "tranco_top_domains"),
+    sourceLabel: "bulk_domain_corpus",
   }
-
-  if (domains.size === 0) {
-    fallbackUsed = true
-    const commonCrawl = await fetchCommonCrawlDomains(pattern, limit)
-    commonCrawl.domains.forEach((domain) => domains.add(domain))
-    sourceStats.push({ source: "common_crawl_domains", pattern, fetched: commonCrawl.domains.length, total: commonCrawl.total, ok: commonCrawl.ok, error: commonCrawl.error })
-    if (!commonCrawl.ok && commonCrawl.error) failures.push({ key: `common_crawl_domains:${pattern}`, reason: commonCrawl.error })
-  }
-
-  if (domains.size < limit) {
-    const tranco = await fetchTrancoTopDomains(pattern, limit - domains.size)
-    tranco.domains.forEach((domain) => domains.add(domain))
-    sourceStats.push({ source: "tranco_top_domains", pattern, fetched: tranco.domains.length, total: tranco.total, ok: tranco.ok, error: tranco.error })
-    if (!tranco.ok && tranco.error) failures.push({ key: `tranco_top_domains:${pattern}`, reason: tranco.error })
-  }
-
-  const sourceLabel = fallbackUsed ? "free_bulk_fallback" : feedUsed && zone.domains.length > 0 ? "zone_and_domain_feed" : feedUsed ? "domain_feed" : "zone_file"
-  return { domains: [...domains].sort().slice(0, limit), sourceStats, failures, fallbackUsed, sourceLabel }
 }
 
 async function processSegment(run: PassiveRunRow, segment: PassiveSegmentRow) {
@@ -373,8 +346,7 @@ export function startPassiveInventoryFallback(runId: string): { started: boolean
 export async function startPassiveInventoryRunAndDispatch(input: StartPassiveInventoryRunInput) {
   const run = await startPassiveInventoryRun(input)
   const trigger = await triggerPassiveInventoryRunner(run.runId)
-  const fallback = startPassiveInventoryFallback(run.runId)
-  return { ...run, runnerTriggered: trigger.ok, fallbackRunnerStarted: fallback.started || fallback.alreadyRunning, runnerError: trigger.error ?? null }
+  return { ...run, runnerTriggered: trigger.ok, fallbackRunnerStarted: trigger.ok, runnerError: trigger.error ?? null }
 }
 
 export async function smokePassiveInventoryBatch(countryCode: string, technology: string | null, limit: number) {

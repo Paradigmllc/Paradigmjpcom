@@ -2,12 +2,13 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import { spawn } from "node:child_process"
+import { resolveCname } from "node:dns/promises"
 import { optionalEnv } from "../japan-readiness-utils"
 
 export interface CnameScanResult {
   ok: boolean
   records: Record<string, string | null>
-  engine: "massdns" | "doh"
+  engine: "massdns" | "node_dns" | "doh"
   checked: number
   error?: string
 }
@@ -84,6 +85,38 @@ async function dohCname(domain: string): Promise<string | null> {
   return null
 }
 
+async function nodeCname(domain: string): Promise<string | null> {
+  for (const hostname of [domain, `www.${domain}`]) {
+    try {
+      const records = await Promise.race([
+        resolveCname(hostname),
+        new Promise<string[]>((resolve) => setTimeout(() => resolve([]), 4_000)),
+      ])
+      const cname = records[0]?.replace(/\.$/, "").toLowerCase()
+      if (cname) return cname
+    } catch (error) {
+      const code = error && typeof error === "object" && "code" in error ? String(error.code) : ""
+      if (!["ENODATA", "ENOTFOUND", "ESERVFAIL", "ETIMEOUT", "EREFUSED"].includes(code)) {
+        console.warn("[passive-cname] node DNS query failed:", hostname, error)
+      }
+    }
+  }
+  return null
+}
+
+async function scanWithNodeDns(domains: string[], concurrency: number): Promise<CnameScanResult> {
+  const records: Record<string, string | null> = {}
+  let cursor = 0
+  const workers = Array.from({ length: Math.min(concurrency, domains.length) }, async () => {
+    while (cursor < domains.length) {
+      const domain = domains[cursor++]!
+      records[domain] = await nodeCname(domain)
+    }
+  })
+  await Promise.all(workers)
+  return { ok: true, records, engine: "node_dns", checked: domains.length }
+}
+
 async function scanWithDoh(domains: string[], concurrency: number): Promise<CnameScanResult> {
   const records: Record<string, string | null> = {}
   let cursor = 0
@@ -101,7 +134,15 @@ export async function scanCnameRecords(domains: string[], options: { timeoutMs?:
   if (domains.length === 0) return { ok: true, records: {}, engine: "doh", checked: 0 }
   const massdns = await scanWithMassdns(domains, options.timeoutMs ?? 120_000)
   if (massdns?.ok) return massdns
-  const doh = await scanWithDoh(domains, Math.max(1, Math.min(options.concurrency ?? 16, 64)))
-  if (massdns?.error) doh.error = massdns.error
-  return doh
+  const concurrency = Math.max(1, Math.min(options.concurrency ?? 48, 96))
+  try {
+    const native = await scanWithNodeDns(domains, concurrency)
+    if (massdns?.error) native.error = massdns.error
+    return native
+  } catch (error) {
+    console.error("[passive-cname] native DNS scan failed:", error)
+    const doh = await scanWithDoh(domains, concurrency)
+    doh.error = error instanceof Error ? error.message : massdns?.error
+    return doh
+  }
 }

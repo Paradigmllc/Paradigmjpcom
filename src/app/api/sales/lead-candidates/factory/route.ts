@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import { DB_TABLES } from "@/lib/sales/db-tables"
+import { getSalesCrmFieldConfig } from "@/lib/sales/crm-field-config"
 import { ingestLeadCandidatesDurable } from "@/lib/sales/lead-candidate-runs"
 import { getServiceSalesSupabase } from "@/lib/supabase"
+import { applyTwentyCrmMetadata } from "@/lib/sales/twenty-crm-metadata"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -57,6 +59,15 @@ export async function POST(req: NextRequest) {
     if (!(await isSalesApiAuthorized(req))) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
     const parsed = BodySchema.safeParse(await req.json())
     if (!parsed.success) return NextResponse.json({ ok: false, error: "Invalid request body", details: parsed.error.flatten() }, { status: 400 })
+    const crmFieldConfig = await getSalesCrmFieldConfig()
+    const twentyMetadata = await applyTwentyCrmMetadata(crmFieldConfig)
+    if (twentyMetadata.error) {
+      return NextResponse.json({
+        ok: false,
+        error: `Twenty CRM metadata is not ready: ${twentyMetadata.error}`,
+        twentyMetadata,
+      }, { status: 503 })
+    }
     const countryCodes = [...new Set(parsed.data.countryCodes.map((code) => code.toUpperCase()))]
     const runs = await mapLimit(countryCodes, 2, async (countryCode) => ingestLeadCandidatesDurable({
       countryCode,
@@ -82,7 +93,7 @@ export async function POST(req: NextRequest) {
     } catch (error) {
       console.error("[lead-candidate-factory] notification failed:", error)
     }
-    return NextResponse.json({ ok: failed.length === 0, runs, failed: failed.length }, { status: failed.length === 0 ? 202 : 207 })
+    return NextResponse.json({ ok: failed.length === 0, runs, failed: failed.length, twentyMetadata }, { status: failed.length === 0 ? 202 : 207 })
   } catch (error) {
     console.error("[lead-candidate-factory] start failed:", error)
     return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : "Factory could not be started" }, { status: 500 })

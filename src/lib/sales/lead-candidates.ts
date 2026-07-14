@@ -5,15 +5,13 @@ import { normalizeDomain, normalizeCompanyName } from "./dedup"
 import { upsertCompanyByDomain } from "./companies"
 import { enqueueCompanyEnrichment, triggerEnrichmentRunner } from "./enrichment-jobs"
 import { salesScopeFromCountry } from "./locale-scope"
-import { fetchCommonCrawlDomains } from "./sources/commoncrawl-domains"
-import { detectTechStack, type TechItem } from "./sources/wappalyzer"
+import type { TechItem } from "./sources/wappalyzer"
 import type { SalesCompany } from "./types"
 import {
   clampScore,
   inferCountrySignals,
   scoreCandidate,
   technologySlug,
-  tldPatternsForCountry,
   type CandidateCountrySignal,
   type CandidateLane,
   type CandidateScore,
@@ -23,15 +21,6 @@ import { listLeadCandidates, type CandidateListItem } from "./lead-candidate-lis
 
 export { listLeadCandidates } from "./lead-candidate-list"
 export type { CandidateListFilters, CandidateListItem } from "./lead-candidate-list"
-
-export interface CommonCrawlCandidateInput {
-  countryCode: string
-  technology?: string | null
-  limit?: number
-  verifyLimit?: number
-  promote?: boolean
-  minOpportunityScore?: number
-}
 
 export interface LocalSmbInputRow {
   businessName: string
@@ -270,101 +259,6 @@ export async function promoteCandidate(input: {
     },
   })
   return { ok: true, company: saved.company, jobQueued: queued.ok, error: queued.error }
-}
-
-export async function ingestCommonCrawlCandidates(input: CommonCrawlCandidateInput): Promise<CandidateAcquisitionSummary> {
-  const countryCode = input.countryCode.trim().toUpperCase()
-  const source = "common_crawl_domains"
-  const limit = Math.min(Math.max(input.limit ?? 100, 1), 1000)
-  const verifyLimit = Math.min(Math.max(input.verifyLimit ?? Math.min(limit, 30), 0), Math.min(limit, 120))
-  const minOpportunityScore = clampScore(input.minOpportunityScore ?? 68)
-  const patterns = tldPatternsForCountry(countryCode)
-  const failures: Array<{ key: string; reason: string }> = []
-  const domains = new Set<string>()
-
-  for (const pattern of patterns) {
-    const result = await fetchCommonCrawlDomains(pattern, Math.ceil(limit / patterns.length))
-    if (!result.ok) failures.push({ key: pattern, reason: result.error ?? "Common Crawl returned no domains" })
-    for (const domain of result.domains) domains.add(domain)
-  }
-
-  let upserted = 0
-  let verified = 0
-  let matchedTechnology = 0
-  let scored = 0
-  let promoted = 0
-  let jobsEnqueued = 0
-  const output: CandidateListItem[] = []
-
-  for (const domain of [...domains].slice(0, limit)) {
-    try {
-      const rootUrl = `https://${domain}`
-      const candidate = await upsertCandidateDomain({
-        domain,
-        rootUrl,
-        lane: "tech_footprint",
-        sourceSlug: source,
-        meta: { country_code: countryCode, requested_technology: input.technology ?? null },
-      })
-      upserted++
-
-      if (verified >= verifyLimit) continue
-      verified++
-      const detection = await detectTechStack(rootUrl)
-      const detections = detection.tech
-      const countrySignals = inferCountrySignals({ domain, targetCountry: countryCode })
-      const requestedSlug = input.technology ? technologySlug(input.technology) : null
-      const isStackMatch = requestedSlug ? detections.some((tech) => technologySlug(tech.name) === requestedSlug) : detections.length > 0
-      if (isStackMatch) matchedTechnology++
-      const score = scoreCandidate({
-        requestedTechnology: input.technology,
-        detections,
-        countrySignals,
-        lane: "tech_footprint",
-        hasWebsite: true,
-        hasContactSignal: false,
-        source,
-      })
-      await saveCandidateEvidence({
-        candidate,
-        sourceSlug: source,
-        observedUrl: rootUrl,
-        rawEvidence: { server: detection.server, country_code: countryCode, requested_technology: input.technology ?? null },
-        signatureHits: detections,
-        countrySignals,
-        score,
-      })
-      scored++
-
-      if (input.promote && score.opportunityScore >= minOpportunityScore && isStackMatch) {
-        const promotion = await promoteCandidate({
-          candidate,
-          countryCode,
-          sourceSlug: source,
-          companyName: guessedCompanyName(domain),
-          score,
-          detections,
-        })
-        if (promotion.ok) {
-          promoted++
-          if (promotion.jobQueued) jobsEnqueued++
-        } else {
-          failures.push({ key: domain, reason: promotion.error ?? "promotion failed" })
-        }
-      }
-    } catch (error) {
-      console.error("[lead-candidates] Common Crawl ingestion failed:", domain, error)
-      failures.push({ key: domain, reason: error instanceof Error ? error.message : "ingestion failed" })
-    }
-  }
-
-  if (jobsEnqueued > 0) {
-    const trigger = await triggerEnrichmentRunner(Math.min(jobsEnqueued, 3))
-    if (!trigger.ok) failures.push({ key: "trigger_enrichment_runner", reason: trigger.error ?? "trigger failed" })
-  }
-
-  output.push(...await listLeadCandidates({ countryCode, technology: input.technology, limit: 30 }))
-  return { ok: failures.length === 0 || upserted > 0, source, fetched: domains.size, upserted, verified, matchedTechnology, scored, promoted, jobsEnqueued, failures: failures.slice(0, 30), candidates: output }
 }
 
 export async function ingestLocalSmbCandidates(rows: LocalSmbInputRow[], promote = false): Promise<CandidateAcquisitionSummary> {

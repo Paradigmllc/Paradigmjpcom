@@ -2,7 +2,7 @@ import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "./db-tables"
 import { inferCountrySignals, technologySlug, tldPatternsForCountry } from "./lead-candidate-scoring"
 import { optionalEnv } from "./japan-readiness-utils"
-import { fetchZoneDomains } from "./sources/czds-zone-files"
+import { fetchBulkDomainCorpus } from "./sources/bulk-domain-corpus"
 import { scanCnameRecords } from "./sources/passive-cname-scan"
 import { fetchCommonCrawlPassiveEvidence } from "./sources/commoncrawl-passive-evidence"
 import { passiveEvidence, techFromCname, type PassiveEvidence } from "./passive-inventory-utils"
@@ -61,8 +61,8 @@ function hasHostedCnameSignal(technology: string | null): boolean {
 
 function archiveTechDetectionLimit(): number {
   const raw = optionalEnv("PASSIVE_ARCHIVE_TECH_CHECK_LIMIT")
-  const parsed = raw ? Number.parseInt(raw, 10) : 5_000
-  return Number.isFinite(parsed) ? Math.max(0, Math.min(parsed, 100_000)) : 5_000
+  const parsed = raw ? Number.parseInt(raw, 10) : 50
+  return Number.isFinite(parsed) ? Math.max(0, Math.min(parsed, 500)) : 50
 }
 
 export function passivePatterns(countryCode: string, technology: string | null): string[] {
@@ -145,8 +145,8 @@ async function fetchArchiveEvidence(domain: string, countryCode: string) {
 async function enrichGeo(domain: string, countryCode: string, tldMatched: boolean, archive?: Awaited<ReturnType<typeof fetchArchiveEvidence>>) {
   const baseSignals = inferCountrySignals({ domain, targetCountry: countryCode })
   if (tldMatched && maxConfidence(baseSignals) >= 60) return { signals: baseSignals, sample: null, checked: 0 }
-  const cc = archive ?? await fetchArchiveEvidence(domain, countryCode)
-  return { signals: [...baseSignals.filter((signal) => signal.signalType !== "request_scope"), ...cc.countrySignals], sample: cc.textSample, checked: cc.pagesChecked }
+  if (!archive) return { signals: baseSignals, sample: null, checked: 0 }
+  return { signals: [...baseSignals.filter((signal) => signal.signalType !== "request_scope"), ...archive.countrySignals], sample: archive.textSample, checked: archive.pagesChecked }
 }
 
 async function persistRows(runId: string | null, rows: PassiveDomainRow[]): Promise<void> {
@@ -185,18 +185,19 @@ export async function processPassiveInventoryDomainBatch(input: {
   const sourceByDomain = new Map<string, Set<string>>()
   const evidenceByDomain: Record<string, Record<string, unknown>> = {}
   const selectedRows: PassiveDomainRow[] = []
+  const observedRows: PassiveDomainRow[] = []
   const archiveLimit = technology ? archiveTechDetectionLimit() : 0
   let archiveChecks = 0
   let stackMatchedCount = 0
   let geoMatchedCount = 0
 
-  const cname = await scanCnameRecords(uniqueDomains, { concurrency: input.cnameConcurrency ?? 24 })
+  const cname = await scanCnameRecords(uniqueDomains, { concurrency: input.cnameConcurrency ?? 64 })
   if (cname.error) failures.push({ key: "passive_cname_scan", reason: cname.error })
 
   for (const [index, domain] of uniqueDomains.entries()) {
     if (selectedRows.length >= input.limit) break
     const progress = async () => {
-      if (input.onProgress && (index + 1) % 25 === 0) {
+      if (input.onProgress && (index + 1) % 250 === 0) {
         await input.onProgress({ processed: index + 1, stackMatched: stackMatchedCount, geoMatched: geoMatchedCount, persisted: selectedRows.length })
       }
     }
@@ -238,7 +239,7 @@ export async function processPassiveInventoryDomainBatch(input: {
       common_crawl_text_sample: geo.sample ?? archive?.textSample ?? null,
       common_crawl_pages_checked: Math.max(geo.checked, archive?.pagesChecked ?? 0),
       archive_tech_checks: archiveChecks,
-      skip_active_verification: true,
+      skip_active_verification: geoMatched,
     }
     const finalEvidence = passiveEvidence({ ...evidence, countrySignals: geo.signals, raw })
     const row: PassiveDomainRow = {
@@ -256,18 +257,14 @@ export async function processPassiveInventoryDomainBatch(input: {
       passive_evidence: finalEvidence as unknown as Record<string, unknown>,
       status: "candidate",
     }
-    await persistRows(input.runId, [row])
-    if (!geoMatched) {
-      await progress()
-      continue
-    }
+    observedRows.push(row)
     selectedRows.push(row)
     sourceByDomain.set(domain, new Set(finalEvidence.sources))
     evidenceByDomain[domain] = finalEvidence as unknown as Record<string, unknown>
     await progress()
   }
 
-  await persistRows(input.runId, selectedRows)
+  await persistRows(input.runId, observedRows)
   return {
     checked: cname.checked,
     stackMatched: stackMatchedCount,
@@ -288,51 +285,45 @@ export async function fetchPassiveInventoryDomains(countryCodeRaw: string, techn
   const failures: PassiveInventoryResult["failures"] = []
   const sourceByDomain = new Map<string, Set<string>>()
   const evidenceByDomain: Record<string, Record<string, unknown>> = {}
-  const selectedRows: PassiveDomainRow[] = []
   const configuration = getPassiveInventoryConfiguration()
 
   try {
-    const zone = await fetchZoneDomains(patterns, Math.max(limit * 10, 200))
-    failures.push(...zone.failures)
-    await updateRun(runId, { fetched_domains_count: zone.domains.length, cursor: { zone_source_stats: zone.sourceStats } })
-    if (zone.domains.length === 0) {
+    const corpusLimit = Math.min(Math.max(limit * 5, 500), 20_000)
+    const perPatternLimit = Math.max(100, Math.ceil(corpusLimit / Math.max(patterns.length, 1)))
+    const corpusDomains = new Set<string>()
+    const corpusStats: PassiveInventoryResult["sourceStats"] = []
+    for (const pattern of patterns) {
+      if (corpusDomains.size >= corpusLimit) break
+      const corpus = await fetchBulkDomainCorpus(pattern, Math.min(perPatternLimit, corpusLimit - corpusDomains.size))
+      corpus.domains.forEach((domain) => corpusDomains.add(domain))
+      corpusStats.push(...corpus.sourceStats)
+      failures.push(...corpus.failures)
+    }
+    const domains = [...corpusDomains]
+    await updateRun(runId, { fetched_domains_count: domains.length, cursor: { corpus_source_stats: corpusStats } })
+    if (domains.length === 0) {
       await updateRun(runId, { status: "partial", errors: failures, completed_at: nowIso() })
-      return { ok: false, domains: [], sourceByDomain: {}, evidenceByDomain, sourceStats: zone.sourceStats, failures, configuration }
+      return { ok: false, domains: [], sourceByDomain: {}, evidenceByDomain, sourceStats: corpusStats, failures, configuration }
     }
 
-    const batch = await processPassiveInventoryDomainBatch({ runId, countryCode, technology, domains: zone.domains, sourceLabel: "czds_zone", limit })
+    const batch = await processPassiveInventoryDomainBatch({ runId, countryCode, technology, domains, sourceLabel: "bulk_domain_corpus", limit })
     failures.push(...batch.failures)
-    await updateRun(runId, { cname_checked_count: batch.checked, cursor: { zone_source_stats: zone.sourceStats } })
-    selectedRows.push(...batch.domains.map((domain) => ({
-      domain,
-      root_url: `https://${domain}`,
-      source_slug: "passive_inventory",
-      zone_tld: domainTld(domain),
-      country_code: countryCode,
-      technology,
-      cname_target: null,
-      stack_matched: true,
-      geo_matched: true,
-      geo_confidence: 60,
-      geo_signals: [],
-      passive_evidence: batch.evidenceByDomain[domain] ?? {},
-      status: "candidate" as const,
-    })))
+    await updateRun(runId, { cname_checked_count: batch.checked, cursor: { corpus_source_stats: corpusStats } })
     for (const [domain, sources] of Object.entries(batch.sourceByDomain)) sourceByDomain.set(domain, new Set(sources))
     Object.assign(evidenceByDomain, batch.evidenceByDomain)
     await updateRun(runId, {
-      status: selectedRows.length > 0 ? "completed" : "partial",
-      stack_matched_count: selectedRows.length,
-      geo_matched_count: selectedRows.length,
+      status: batch.domains.length > 0 ? "completed" : "partial",
+      stack_matched_count: batch.stackMatched,
+      geo_matched_count: batch.geoMatched,
       completed_at: nowIso(),
       errors: failures,
     })
     return {
-      ok: selectedRows.length > 0,
-      domains: selectedRows.map((row) => row.domain),
+      ok: batch.domains.length > 0,
+      domains: batch.domains,
       sourceByDomain: Object.fromEntries([...sourceByDomain.entries()].map(([domain, sources]) => [domain, [...sources].sort()])),
       evidenceByDomain,
-      sourceStats: zone.sourceStats,
+      sourceStats: corpusStats,
       failures,
       configuration,
     }

@@ -18,7 +18,6 @@ import {
   getCoolifyAuth as getSharedCoolifyAuth,
 } from "./lib/coolify-env.mjs"
 import { sshArgs } from "./lib/ssh-options.mjs"
-import { ensureSearxng } from "./lib/ensure-searxng.mjs"
 
 function envValue(name, fallback = null) {
   const value = process.env[name]
@@ -567,10 +566,6 @@ async function applySourceTechMetricsMigration(envs) {
 
 async function applyMonthlyLeadBatchMigration(envs) {
   return applySqlMigration(envs, "migration_031_sales_monthly_lead_batches.sql", "Monthly lead batch migration")
-}
-
-async function applySearxngSearchRunsMigration(envs) {
-  return applySqlMigration(envs, "migration_032_sales_searxng_search_runs.sql", "SearxNG search runs migration")
 }
 
 async function applyJapanReadinessInsightsMigration(envs) {
@@ -1220,9 +1215,6 @@ async function main() {
   // Secret values must already exist in the approved runtime secret store.
   const { ensureCoolifyEnvs, updateCoolifyEnvs } = await import("./lib/coolify-env.mjs")
   const requiredNonSecretEnvs = {
-    FLARESOLVERR_API_URL: "http://flaresolverr:8191",
-    SEARXNG_BASE_URL: "http://searxng:8080",
-    SALES_LIST_COLLECTION_PROVIDER: "searxng",
     ...(/^(1|true|yes)$/i.test(String(envs.CLOUDFLARE_ORIGIN_LOCKED || "").trim())
       ? { TRUSTED_PROXY_MODE: "cloudflare" }
       : {}),
@@ -1241,8 +1233,6 @@ async function main() {
   if (!envs.TRIGGER_WEBHOOK_SECRET || String(envs.TRIGGER_WEBHOOK_SECRET).trim().length === 0) {
     throw new Error("TRIGGER_WEBHOOK_SECRET is missing in Coolify env; set it in the approved secret store before deploy")
   }
-
-  if (!DRY && !SKIP_DEPLOY) ensureSearxng({ deployHost: DEPLOY_HOST, appUuid: APP_UUID })
 
   if (!DRY && !SKIP_DEPLOY) {
     runHostDiskPreflight()
@@ -1285,7 +1275,6 @@ async function main() {
     console.log(await applyCrmFieldMasterMigration(envs))
     console.log(await applySourceTechMetricsMigration(envs))
     console.log(await applyMonthlyLeadBatchMigration(envs))
-    console.log(await applySearxngSearchRunsMigration(envs))
     console.log(await applyJapanReadinessInsightsMigration(envs))
     console.log(await applyPostOutreachToolsMigration(envs))
     console.log(await applyExternalStudioSyncMigration(envs))

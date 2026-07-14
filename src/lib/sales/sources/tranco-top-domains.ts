@@ -67,13 +67,15 @@ async function getTopDomains(): Promise<string[]> {
 export async function fetchTrancoTopDomains(pattern: string, limit = 5000): Promise<TrancoTopDomainResult> {
   try {
     const domains = await getTopDomains()
-    const matched: string[] = []
-    for (const domain of domains) {
-      if (!domainMatchesPattern(domain, pattern)) continue
-      matched.push(domain)
-      if (matched.length >= limit) break
-    }
-    return { ok: true, domains: matched, total: matched.length }
+    const matched = domains.filter((domain) => domainMatchesPattern(domain, pattern))
+    if (matched.length <= limit) return { ok: true, domains: matched, total: matched.length }
+
+    // Sample the full ranking instead of taking only the largest sites. This
+    // keeps the corpus useful for SMB discovery while remaining deterministic.
+    const sampled: string[] = []
+    const stride = matched.length / limit
+    for (let index = 0; index < limit; index++) sampled.push(matched[Math.floor(index * stride)]!)
+    return { ok: true, domains: sampled, total: matched.length }
   } catch (error) {
     console.error("[tranco-top-domains] fetch failed:", error)
     return {

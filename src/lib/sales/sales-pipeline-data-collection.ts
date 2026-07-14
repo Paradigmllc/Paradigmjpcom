@@ -185,34 +185,6 @@ export async function executeDataCollectionStep(
       errors.push("Google Trends: skipped (no domain)")
     }
 
-    // SearXNG — private metasearch engine
-    try {
-      const searchQuery = domain
-        ? encodeURIComponent(`${domain} company info services`)
-        : encodeURIComponent(`${typeof companyRes.data?.company_name === "string" ? companyRes.data.company_name : "company"} overview`)
-      const searxngUrl = `http://services-searxng-1:8080/search?q=${searchQuery}&format=json&categories=general`
-      const searxngRes = await fetch(searxngUrl, { signal: AbortSignal.timeout(20_000) })
-      if (searxngRes.ok) {
-        const searxngData = (await searxngRes.json()) as Record<string, unknown>
-        const results = Array.isArray(searxngData.results) ? searxngData.results : []
-        collected.searxng_result_count = results.length
-        collected.searxng_top_results = (results as Array<Record<string, unknown>>).slice(0, 5).map((r) => ({
-          title: r.title ?? null,
-          url: r.url ?? null,
-          snippet: (typeof r.content === "string" ? r.content : typeof r.snippet === "string" ? r.snippet : null) ?? null,
-        }))
-        collected.searxng_collected_at = new Date().toISOString()
-      } else {
-        const sxErr = `SearXNG returned HTTP ${searxngRes.status}`
-        console.error("[sales-pipeline-execution] data_collection SearXNG failed:", sxErr)
-        errors.push(sxErr)
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "SearXNG fetch error"
-      console.error("[sales-pipeline-execution] data_collection SearXNG error:", msg)
-      errors.push(`SearXNG: ${msg}`)
-    }
-
     // Store results in sales_companies.meta.data_collection
     const { error: metaUpdateError } = await sb
       .from(DB_TABLES.SALES_COMPANIES)
@@ -241,7 +213,6 @@ export async function executeDataCollectionStep(
       { slug: "mozilla_observatory", collectedKey: "observatory_score", label: "Mozilla Observatory", category: "security" },
       { slug: "overpass_api", collectedKey: "overpass_osm_elements", label: "OverPass API (OSM)", category: "geo" },
       { slug: "google_trends", collectedKey: "trends_data_available", label: "Google Trends", category: "market" },
-      { slug: "searxng_search", collectedKey: "searxng_result_count", label: "SearXNG Metasearch", category: "search" },
     ]
     for (const src of sourceKeyMap) {
       const hasData = collected[src.collectedKey] !== undefined && collected[src.collectedKey] !== null

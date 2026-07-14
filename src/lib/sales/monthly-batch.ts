@@ -45,8 +45,6 @@ export interface LeadBatchCsvRow {
   search_title?: string | null
   search_snippet?: string | null
   search_score?: string | null
-  browser_search_run_id?: string | null
-  browser_search_result_id?: string | null
 }
 export interface SalesLeadBatchSummary {
   id: string

@@ -25,10 +25,10 @@ export interface CandidateScore {
 
 const COUNTRY_TLD_PATTERNS: Record<string, string[]> = {
   JP: ["*.jp", "*.co.jp", "*.or.jp", "*.ne.jp", "*.ac.jp"],
-  US: ["*.us", "*.com", "*.org"],
+  US: ["*.us"],
   GB: ["*.uk", "*.co.uk", "*.org.uk", "*.ltd.uk"],
   AU: ["*.au", "*.com.au", "*.net.au", "*.org.au"],
-  CA: ["*.ca", "*.com", "*.org"],
+  CA: ["*.ca"],
   NL: ["*.nl"],
   SG: ["*.sg", "*.com.sg"],
   AE: ["*.ae", "*.co.ae"],
@@ -249,7 +249,6 @@ export function scoreCandidate(input: {
     } else {
       freshnessScore =
         input.lane === "dns_freshness" ? 92
-        : input.source === "common_crawl_domains" ? 62
         : input.source === "http_archive" ? 50
         : 74
     }
