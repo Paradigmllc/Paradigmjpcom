@@ -1,3 +1,22 @@
+## CURRENT STATUS - 2026-07-14 Japan Entry候補収集のSearXNG廃止・パッシブコーパス量産化（本番反映 / 外部送信0）
+
+### 2026-07-14 proxy不要の候補factory再構築
+- proxyなしSearXNG／検索結果スクレイピングを数千件収集の主経路にしない方針へ確定。旧SearXNG API・UI・source、browser-search、検索orchestrator、Common Crawl CDXの一括候補取得、release時のSearXNG provisionを削除し、候補水源をローカル/CZDS zone、任意の受動feed、Tranco top-1M fallbackへ置換した。既知domainの検証はネイティブDNS CNAME、HTTP技術判定、国根拠、SMB、実問い合わせフォームの順でfail-closedにする。
+- 本番hostから`paradigm-searxng` container、設定directory、cache volumeを削除。最終deployment後もSearXNG/search container 0、`/opt/paradigm-searxng`不存在を確認。旧`migration_032`由来の2テーブルは監査履歴として残すが、runtime producer/API/UIは存在しない。
+- 実測はTrancoからUS/GB/AU/CA/DE/FR/NL各1,000候補を約0.1〜2.0秒、SG 871、AE 735を取得。ネイティブDNSは`.com` 1,000件約10.9秒、3,000件約27.7秒で、3,000件からShopify 146 / HubSpot 12 / Squarespace 3 / Wix 2 / Webflow 1を検出。Common Crawl archiveの逐次照合はpilotで詰まりを確認したためbulk pathから完全除外した。
+- Twenty同期前にCRM field metadataを自己修復し、国名field `paradigmCountryName`（表示名`国名`）を候補viewへ追加。最終pilotのSnagtightsをTwenty APIで照合し、国名`米国`、実フォーム、`フォーム確認済み / Twenty登録済み / 未送信`、`候補レビュー待ち（未送信）`を確認した。
+
+### 本番pilotと回帰修正
+- 最終pilot run `ecced422-6320-45b3-b0d1-113c81851498` はUS / Shopifyで100候補取得、20社検証、技術一致3、フォーム合格8、厳格ゲート通過1、Twenty同期1、タイムアウト2。失敗domainは各attempt 1で`failed`へ固定され、同一社の即時再検証ループは再発していない。
+- 途中pilotで発見した重複技術証拠によるDB conflict、failed行の再選択、Crawl4AI 404反復、失敗status更新の未確認を修正。技術slugを事前dedupeし、検証対象を`discovered`だけに限定、Crawl4AIをbulk pathで無効化、失敗保存はDBから`failed`行が返るまで最大3回確認し、保存不能ならrun全体をfail-closedにする。
+- `policies/legal-notice`上の汎用newsletter formを問い合わせフォームと誤認する実例を検出。policy/legal/privacy/terms/refund/return/shipping/account/login/cart/checkout/password pathを非問い合わせURLとして除外した。再pilotで`thesoundofvinyl.us`は`form_missing`・Twenty同期falseとなり、旧pilotで作成した誤登録Twenty recordはDELETE後HTTP 404まで確認した。
+- pilot対象runの`initial_form_drafts`は0、`sent=true`は0。DeepSeek文面生成、レポート生成、フォーム送信は実行していない。
+
+### Release / verification
+- main merge: PR **#194 / #196 / #198 / #199 / #200**。最終commit **1b20a89b0842eedde41bd571a60c4773065dd665**、正式deployment **hrszkt6kdtkzgrsop6m701i7**。
+- 最終release gateはquality guard 0 errors、DB **84/84**、Traefik / Cloudflare / Supabase Realtime / Twenty worker restart 0、公開日本語・英語URL、Twenty、診断レポート、Sales health HTTP 200 JSON `ok:true`を含めてpass。
+- 対象回帰は最大 **5 files / 22 tests pass**、TypeScript、対象ESLint、`git diff --check` pass。全体Vitestの既知変更外5件（日本語代表メッセージの旧200文字期待1件、CRLF依存backup shell 4件）は別課題として残る。
+
 ## CURRENT STATUS - 2026-07-14 SMB DEMO Art Direction V4（下層画像品質の最終追補・再リリース前）
 
 ### テンプレ感・タイポグラフィ・美容室下層ページの構造修正
