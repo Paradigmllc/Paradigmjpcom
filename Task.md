@@ -1,4 +1,4 @@
-## CURRENT STATUS - 2026-07-15 エキテン中心SMB DEMO実務運用の高速化（実装・検証完了 / release前 / 外部送信0）
+## CURRENT STATUS - 2026-07-15 エキテン中心SMB DEMO実務運用の高速化（本番release完了 / エキテン貼り付け量産入口稼働 / 外部送信0）
 
 ### 1件ずつ入力する運用を廃止する貼り付け抽出
 - `/ja/admin/demo-assets`のポータル候補フォームへ、エキテン専用の「一覧・詳細ページ貼り付け抽出」を追加した。通常ブラウザで確認したエキテンの一覧ページまたは詳細ページHTML/選択範囲を貼ると、`/shop_...`リンク、事業者名、本文、住所候補、画像URLを抽出し、最大300件の一括保存JSONへ変換する。
@@ -9,6 +9,7 @@
 - `npm install`は1519 packages / audit 0 vulnerabilities。`src/components/admin/PortalSnapshotImportForm.tsx`は293行で500行未満。
 - TypeScript `npx tsc --noEmit` pass、対象ESLint pass、対象Vitest **2 files / 13 tests pass**、production build **408/408 pages** pass、`git diff --check` pass。
 - ローカル本番chunk `.next/static/chunks/app/[locale]/admin/demo-assets/page-dbd5ffe65bf328da.js` に `エキテン一覧・詳細ページ貼り付け抽出`、`候補JSONへ変換`、抽出ロジックが含まれることを確認した。ローカルdevの`/admin/login`ブラウザ確認は検証用`DATABASE_URI`未設定でPayload初期化500となったため、UIの実ブラウザ操作は正式release後の本番認証環境で確認する。
+- PR **#236** / main **64c2123a** / deployment **nbl42lf1dyg57hnqk4d23rdt**。正式`npm run release:prod`はDB **88/88**、Quality Guard **0 errors / 60 existing warnings**、Sales health JSON `ok:true`、Twenty HTTP 200、Twenty worker restart 0、Realtime / Traefik / Cloudflare origin lock / 公開smokeまでpass。本番`https://paradigmjp.com/api/ready`はHTTP 200、`/api/sales/demo-site/portal-candidates?source=ekiten`は未認証HTTP 401。本番admin chunk `page-02f1b913afffd74c.js`に`エキテン一覧・詳細ページ貼り付け抽出`、`候補JSONへ変換`、`DOMParser`、`/shop_`抽出が含まれることを確認した。
 - 外部送信、ポータルDM、メール、SNS、電話、郵送、フォーム送信、Twenty追加、実エキテンへのサーバー取得は実行していない。
 
 ## CURRENT STATUS - 2026-07-15 検証済み候補在庫の数千件自動量産（本番release完了 / source承認前 / 外部送信0）
