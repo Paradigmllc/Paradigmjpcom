@@ -8,7 +8,7 @@
 
 ### Verification / handoff
 - 変更範囲Vitest **13 files / 53 tests pass**、TypeScript、全体ESLint、quality guard 0 errors、release-doctor static/infra、production build **408/408 pages** pass。全体Vitestは今回変更外の既知5件（日本語代表メッセージ旧200文字期待1件、CRLF checkoutのbackup shell 4件）のみ失敗し、今回追加した管理画面の一時timeoutは単独再実行でpass。
-- PR **#207** / merge commit **154f6662** / 正式deployment **ssby457z7bk4kfyvivzufw9b**。新規migration適用、DB table検査、Sales health HTTP 200 JSON `ok:true`、Traefik / Cloudflare / Supabase Realtime / Twenty worker restart 0、公開日本語・英語URL、Twenty HTTP 200を含むpost-deploy gateがpassした。収集元登録、候補収集、Twenty追加、文面・レポート生成、外部送信は実行していない。
+- PR **#207 / #208** / final main commit **51df341d** / 最終deployment **b13n3eyc8rlis2w8rxomxcq5**。新規migration適用、DB **86/86**、Sales health HTTP 200 JSON `ok:true`、Traefik / Cloudflare / Supabase Realtime / Twenty worker restart 0、公開日本語・英語URL、Twenty HTTP 200を含むpost-deploy gateがpassした。管理画面`/ja/admin/lead-factory`はHTTP 200、lead source APIは未認証HTTP 401を確認。収集元登録、候補収集、Twenty追加、文面・レポート生成、外部送信は実行していない。
 - release後も承認済み収集元0件の状態ではfail-closedを維持する。実際のsource URLと再利用条件を人間確認してから国別pilotを開始する。
 
 ## CURRENT STATUS - 2026-07-14 SMB DEMO Art Direction V5（Codex非依存化・本番QA前）
