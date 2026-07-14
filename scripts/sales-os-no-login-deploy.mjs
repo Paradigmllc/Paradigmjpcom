@@ -632,6 +632,14 @@ async function applyLeadFactorySchemaReconcileMigration(envs) {
   )
 }
 
+async function applyInitialFormDraftFactoryMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260714234500_initial_form_draft_factory.sql",
+    "Initial form draft factory migration",
+  )
+}
+
 async function applyJapanEntryProjectionsMigration(envs) {
   return applySqlMigration(
     envs,
@@ -1248,6 +1256,7 @@ async function main() {
     console.log(await applyPublicJapanEntryChecksMigration(envs))
     console.log(await applyFormQualifiedLeadFactoryMigration(envs))
     console.log(await applyLeadFactorySchemaReconcileMigration(envs))
+    console.log(await applyInitialFormDraftFactoryMigration(envs))
     console.log(await applyJapanEntryProjectionsMigration(envs))
     console.log(await applyDemoQualityGateMigration(envs))
     console.log(await applyDemoPrivateAssetReviewMigration(envs))

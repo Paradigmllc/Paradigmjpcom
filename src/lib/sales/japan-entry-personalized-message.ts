@@ -2,6 +2,7 @@ import { z } from "zod";
 import { callDeepSeek, type DeepSeekMessage, type DeepSeekResponse } from "@/lib/deepseek";
 import type { BusinessModel, JapanEntryProjection } from "./japan-entry-projection";
 import { criticMessages, generationMessages } from "./japan-entry-personalized-message-prompts";
+import type { JapanEntryMessagePurpose } from "./japan-entry-personalized-message-prompts";
 import { buildJapanEntryPersonalizationFacts } from "./japan-entry-personalized-message-facts";
 import {
   getJapanEntryMessageMode,
@@ -37,9 +38,10 @@ interface GenerateInput {
   productContext: string | null;
   targetCountry: string | null;
   businessModel: BusinessModel;
-  projection: JapanEntryProjection;
+  projection?: JapanEntryProjection;
   audit: unknown;
   competitorAnalysis?: unknown;
+  purpose?: JapanEntryMessagePurpose;
 }
 
 type LlmCaller = typeof callDeepSeek;
@@ -187,6 +189,7 @@ export async function generatePersonalizedJapanEntryMessage(
   }
 
   const mode = getJapanEntryMessageMode(facts);
+  const purpose = input.purpose ?? "commercial_offer";
   let totalAttempts = 0;
   let totalUsage: DeepSeekResponse["usage"];
   let repairUsed = false;
@@ -200,6 +203,7 @@ export async function generatePersonalizedJapanEntryMessage(
       productEvidence: candidate.product_evidence,
       factIds: candidate.fact_ids,
       facts,
+      purpose,
     }),
   });
 
@@ -251,7 +255,7 @@ export async function generatePersonalizedJapanEntryMessage(
   const criticize = async (candidates: typeof valid) => {
     const criticized = await callStructured({
       stage: "critic",
-      messages: criticMessages(input.companyName, facts, candidates.map((item) => item.candidate), mode),
+      messages: criticMessages(input.companyName, facts, candidates.map((item) => item.candidate), mode, purpose),
       schema: criticSchema,
       caller,
     });

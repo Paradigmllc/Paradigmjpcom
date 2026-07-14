@@ -53,6 +53,12 @@ export function listLeadTwentyPayload(company: ListLeadCompany): Record<string, 
   const technologies = technologyNames(company.tech_stack)
   const opportunityScore = finiteScore(score.opportunityScore)
   const smbScore = finiteScore(score.smbScore)
+  const draft = record(meta.initial_form_draft)
+  const draftMessage = typeof draft.message === "string" ? draft.message.trim() : ""
+  const draftReview = record(draft.review)
+  const draftQuality = finiteScore(draftReview.score)
+  const draftSafety = finiteScore(draftReview.safetyScore)
+  const hasReviewableDraft = draft.state === "needs_review" && draftMessage.length > 0 && draft.sent === false
   const evidence = [
     "Japan Entry候補（OSSフォーム適格収集 / 未送信）",
     `対象国: ${company.target_country ?? "未判定"}`,
@@ -60,8 +66,14 @@ export function listLeadTwentyPayload(company: ListLeadCompany): Record<string, 
     `機会スコア: ${opportunityScore ?? "未判定"}`,
     `SMBスコア: ${smbScore ?? "未判定"}`,
     `実フォーム: ${formUrl ?? "未確認"}`,
-    "レポート・文面・Opportunity・送信は未生成",
-  ].join("\n")
+    hasReviewableDraft
+      ? "初回文面: DeepSeek V4 Pro生成済み / 人間レビュー待ち / 未送信"
+      : "レポート・文面・Opportunity・送信は未生成",
+    hasReviewableDraft ? `文面品質: ${draftQuality ?? "未判定"}/100 / safety ${draftSafety ?? "未判定"}/100` : null,
+    hasReviewableDraft ? "--- 初回フォーム文面（URL・資料・価格なし） ---" : null,
+    hasReviewableDraft ? draftMessage : null,
+    hasReviewableDraft ? "--- ここまで / 外部送信 0件 ---" : null,
+  ].filter((line): line is string => Boolean(line)).join("\n")
 
   return {
     name: company.company_name,
@@ -73,11 +85,15 @@ export function listLeadTwentyPayload(company: ListLeadCompany): Record<string, 
     // Twenty 2.14 restores SELECT options from its application manifest at boot.
     // Use an existing stable value and describe the OSS lane in the lead evidence.
     paradigmSourceName: "codex_verification",
-    paradigmLeadStatus: "フォーム確認済み / Twenty登録済み / 未送信",
+    paradigmLeadStatus: hasReviewableDraft
+      ? "初回文面生成済み / 要レビュー / 未送信"
+      : "フォーム確認済み / Twenty登録済み / 未送信",
     paradigmTechnology: technologies.join(", ") || null,
     paradigmOpportunityScore: opportunityScore,
     paradigmSmbScore: smbScore,
-    paradigmNextAction: "候補レビュー待ち（未送信）",
+    paradigmNextAction: hasReviewableDraft
+      ? "初回フォーム文面を人間確認（未送信）"
+      : "候補レビュー待ち（未送信）",
     paradigmKarteSummary: { markdown: evidence },
     // Clear legacy pipeline values. They are populated only after an interested reply.
     paradigmReportUrl: { primaryLinkLabel: "", primaryLinkUrl: "" },

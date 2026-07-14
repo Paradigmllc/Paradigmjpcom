@@ -102,6 +102,7 @@ export const DB_TABLES = {
   // ── Japan Readiness (migration_033) ──
   SALES_JAPAN_READINESS_INSIGHTS: "sales_japan_readiness_insights",
   SALES_JAPAN_ENTRY_PROJECTIONS: "sales_japan_entry_projections",
+  SALES_INITIAL_FORM_DRAFTS: "sales_initial_form_drafts",
   SALES_REPORT_FACTORY_STATE: "sales_report_factory_state",
 
   // ── Video (migration_026, 027, 028) ──
