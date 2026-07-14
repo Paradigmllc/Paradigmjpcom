@@ -3,6 +3,7 @@ import {
   DEMO_COPY_MAX_TOKENS,
   DEMO_COPY_TIMEOUT_MS,
   extractVerifiedPublicFacts,
+  hasOnlyRepairableDemoCopyGaps,
   inspectDemoCopyCompleteness,
 } from "./demo-deepseek-enhancer"
 import { buildJapaneseUserPrompt } from "./demo-deepseek-prompts"
@@ -117,6 +118,22 @@ describe("DeepSeek prompt cache layout", () => {
     ]))
     expect(report.counts).toEqual(expect.objectContaining({ homeNarratives: 1, worksSections: 1 }))
     expect(JSON.stringify(report)).not.toContain("短い章")
+  })
+
+  it("repairs only narrative and works gaps while preserving structural fail-closed checks", () => {
+    const base = {
+      passed: false,
+      counts: { homeFeatures: 3, homeNarratives: 2, aboutValues: 4, aboutChapters: 3, services: 4, processSteps: 4, serviceGuidance: 3, worksSections: 6, artDirections: 3 },
+      bodyLengths: { homeNarratives: [95, 96], aboutChapters: [196, 140, 123], serviceGuidance: [119, 105, 103], worksSections: [81, 63, 59, 69, 71, 72] },
+    }
+    expect(hasOnlyRepairableDemoCopyGaps({
+      ...base,
+      reasons: ["home_narratives_incomplete", "home_narratives_short", "service_guidance_short", "works_sections_short"],
+    })).toBe(true)
+    expect(hasOnlyRepairableDemoCopyGaps({
+      ...base,
+      reasons: ["home_features_incomplete", "home_narratives_short"],
+    })).toBe(false)
   })
 })
 

@@ -59,6 +59,22 @@ export interface DemoCopyCompletenessReport {
   }
 }
 
+const REPAIRABLE_CONTENT_REASONS = new Set([
+  "home_narratives_incomplete",
+  "home_narratives_short",
+  "about_chapters_incomplete",
+  "about_chapters_short",
+  "service_guidance_incomplete",
+  "service_guidance_short",
+  "works_sections_incomplete",
+  "works_sections_short",
+])
+
+export function hasOnlyRepairableDemoCopyGaps(report: DemoCopyCompletenessReport): boolean {
+  return report.reasons.length > 0
+    && report.reasons.every((reason) => REPAIRABLE_CONTENT_REASONS.has(reason))
+}
+
 export function inspectDemoCopyCompleteness(
   parsed: ParsedDeepSeekOutput,
   expectedTemplateIds: readonly string[],
@@ -169,13 +185,11 @@ export async function enhanceDemoWithDeepSeek(
   if (!parsed) return null;
   const completeness = inspectDemoCopyCompleteness(parsed, templates.map((template) => template.id), locale)
   if (!completeness.passed) {
-    const repairableShortCopy = completeness.reasons.length > 0
-      && completeness.reasons.every((reason) => reason.endsWith("_short"))
-    if (!repairableShortCopy) {
+    if (!hasOnlyRepairableDemoCopyGaps(completeness)) {
       console.error("[deepseek-enhancer] output failed full-site copy completeness checks:", JSON.stringify(completeness));
       return null;
     }
-    console.warn("[deepseek-enhancer] short copy accepted for deterministic grounded expansion:", JSON.stringify(completeness));
+    console.warn("[deepseek-enhancer] content gaps accepted for deterministic grounded completion:", JSON.stringify(completeness));
   }
 
   return {
