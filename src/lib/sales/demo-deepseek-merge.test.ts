@@ -90,13 +90,19 @@ describe("mergeDeepSeekOutput", () => {
       },
     } as unknown as DemoMultiPageData
     const narrative = { eyebrow: "STORY", title: "店内で確認できること", body: "店内の雰囲気をご紹介します。", points: ["店内写真"] }
+    const repeatedGroundedBody = "神奈川県横浜市港北区で確認できる情報です。現在の詳細は正式公開前に確認します。"
     const ai = {
       engine: "deepseek",
       generatedAt: "2026-07-14T00:00:00.000Z",
       model: "deepseek-v4-pro",
-      home: { hero_title: "ノン美容室", hero_subtitle: "横浜の美容室です。", features: [], narrative_modules: [narrative, { ...narrative, title: "サロンの空間" }] },
-      about: { chapters: [narrative] },
-      services: { services: [{ title: "カット", description: "確認済みの提供内容です。", icon: "sparkles", features: [] }], guidance: [narrative] },
+      home: { hero_title: "ノン美容室", hero_subtitle: repeatedGroundedBody, features: Array.from({ length: 3 }, (_, index) => ({ title: `特徴 ${index + 1}`, description: repeatedGroundedBody, icon: "sparkles", metric_label: "", metric_value: "" })), narrative_modules: [narrative, { ...narrative, title: "サロンの空間" }] },
+      about: { story: repeatedGroundedBody, mission: repeatedGroundedBody, values: Array.from({ length: 4 }, (_, index) => ({ title: `姿勢 ${index + 1}`, description: repeatedGroundedBody, icon: "star" })), chapters: [narrative] },
+      services: {
+        intro: repeatedGroundedBody,
+        services: Array.from({ length: 3 }, (_, index) => ({ title: `メニュー ${index + 1}`, description: repeatedGroundedBody, icon: "sparkles", features: [repeatedGroundedBody] })),
+        process: Array.from({ length: 4 }, (_, index) => ({ step: index + 1, title: `流れ ${index + 1}`, description: repeatedGroundedBody })),
+        guidance: [narrative],
+      },
       works: { intro: "店内の風景をご紹介します。", sections: [{ title: "セット面", body: "鏡と椅子が写る店内です。", note: "" }] },
       contact: {},
       artDirections: [],
