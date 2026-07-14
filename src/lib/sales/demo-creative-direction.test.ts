@@ -48,4 +48,35 @@ describe("demo creative direction", () => {
     expect(readCreativeDirection({ creativeDirection: complete })).toEqual(complete)
     expect(readCreativeDirection({ creativeDirection: { ...complete, motion: "unknown" } })).toBeNull()
   })
+
+  it("reserves one mosaic candidate when reviewed hero dimensions are unsafe", () => {
+    const template = DEMO_TEMPLATES[0]
+    const direction = buildDemoCreativeDirection(template, {
+      companyName: "地域美容室",
+      industry: "beauty_salon",
+      premium: {
+        style: "premium-v3",
+        heroMedia: [{ src: "https://example.test/reviewed.jpg", alt: "審査素材", kind: "image" }],
+        gallery: [],
+        intro: { eyebrow: "STORY", title: "店について", body: "紹介文" },
+        social: [],
+      },
+    }, 0, {
+      template_id: template.id,
+      concept: "地域に根差した温かみのあるプライベートサロン",
+      typography_style: "humanist-sans",
+      hero_composition: "editorial-split",
+      service_layout: "editorial-list",
+      works_layout: "journal",
+      palette_mood: "warm-neutral",
+      density: "airy",
+      motion: "restrained",
+      signature_motif: "hairline",
+    })
+
+    expect(direction.source).toBe("deepseek")
+    expect(direction.heroComposition).toBe("mosaic")
+    expect(direction.typographyStyle).toBe("humanist-sans")
+    expect(direction.serviceLayout).toBe("editorial-list")
+  })
 })
