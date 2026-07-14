@@ -5,6 +5,7 @@ import type { DemoMultiPageData } from "@/lib/sales/demo-site-types"
 import { resolveDemoArtDirection } from "@/lib/sales/demo-art-direction"
 import { PremiumV3Media, PremiumV3MediaCarousel, PremiumV3PageHero, PremiumV3Reveal } from "./PremiumV3Primitives"
 import { DemoPremiumV3BeautyServices } from "./DemoPremiumV3BeautyServices"
+import { DemoPremiumV3Narrative } from "./DemoPremiumV3Narrative"
 
 export function DemoPremiumV3ServicesPage({ data }: { data: DemoMultiPageData }) {
   const direction = resolveDemoArtDirection(data)
@@ -21,7 +22,7 @@ export function DemoPremiumV3ServicesPage({ data }: { data: DemoMultiPageData })
 
   return (
     <div className="overflow-hidden bg-[var(--demo-surface)] text-[var(--demo-ink)]">
-      <PremiumV3PageHero title={services.title} subtitle={services.subtitle} eyebrow={data.presentation?.servicesEyebrow ?? "サービス"} media={hero} mediaGallery={direction.hero === "mosaic" ? media : undefined} recipe={data.designRecipe} variant={direction.hero} />
+      <PremiumV3PageHero title={services.title} subtitle={services.subtitle} eyebrow={data.presentation?.servicesEyebrow ?? "サービス"} media={hero} mediaGallery={direction.hero === "mosaic" ? media : undefined} recipe={data.designRecipe} variant={direction.hero} mosaicLayout="strip" />
       <section className="px-5 py-20 sm:px-10 sm:py-28 lg:px-16 lg:py-32">
         <div className="mx-auto max-w-7xl">
           <PremiumV3Reveal motionStyle={motionStyle} className="grid gap-8 border-b border-[var(--demo-line)] pb-10 lg:grid-cols-[1fr_.62fr] lg:items-end"><div><p className="text-xs font-bold uppercase tracking-[.3em] text-[var(--demo-accent)]">Lineup</p><h2 className="mt-5 text-4xl tracking-[-.035em] sm:text-6xl [font-family:var(--demo-font-display)]">{data.presentation?.servicesHeading ?? services.title}</h2></div><p className="text-sm leading-8 text-[var(--demo-muted)]">{services.subtitle} 掲載されていない内容や現在の提供状況は、公式情報をご確認ください。</p></PremiumV3Reveal>
@@ -43,6 +44,15 @@ export function DemoPremiumV3ServicesPage({ data }: { data: DemoMultiPageData })
           </div>}
         </div>
       </section>
+
+      <DemoPremiumV3Narrative
+        modules={services.guidance ?? []}
+        label="SERVICE GUIDE"
+        title="選ぶ前に、知っておきたいこと。"
+        introduction="提供内容の違いだけでなく、相談から利用後までを具体的に想像できる情報を整理しました。"
+        motionStyle={motionStyle}
+        variant="editorial"
+      />
 
       <section className="bg-[var(--demo-ink)] px-5 py-20 text-white sm:px-10 sm:py-28 lg:px-16 lg:py-32"><div className="mx-auto max-w-7xl"><PremiumV3Reveal motionStyle={motionStyle} className="mb-10 grid gap-6 md:grid-cols-[1fr_.55fr] md:items-end"><div><p className="text-xs font-bold uppercase tracking-[.3em] text-white/42">{services.processEyebrow ?? "FLOW"}</p><h2 className="mt-5 text-4xl tracking-[-.035em] sm:text-6xl [font-family:var(--demo-font-display)]">{services.processTitle ?? "ご利用の流れ。"}</h2></div><p className="text-sm leading-8 text-white/55">ご利用方法は商品・サービスによって異なります。ここでは確認済みの案内をもとに、基本的な流れを紹介します。</p></PremiumV3Reveal><div className="grid border-t border-white/15 md:grid-cols-2">{services.process.map((step, index) => <PremiumV3Reveal key={step.step} motionStyle={motionStyle} delay={index * 0.05} className="grid min-h-64 grid-cols-[70px_1fr] gap-4 border-b border-white/15 py-8 md:border-r md:px-8"><span className="text-sm text-white/32">0{step.step}</span><div><h3 className="text-3xl [font-family:var(--demo-font-display)]">{step.title}</h3><p className="mt-5 text-sm leading-8 text-white/56">{step.description}</p></div></PremiumV3Reveal>)}</div></div></section>
 

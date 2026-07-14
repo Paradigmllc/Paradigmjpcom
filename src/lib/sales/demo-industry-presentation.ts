@@ -163,10 +163,13 @@ export function applyIndustryPresentation(page: DemoMultiPageData): DemoMultiPag
   const primaryHref = social?.href ?? `/${page.slug}/contact`
   const primaryLabel = social ? `${social.label}を見る` : profile.nav.contact
   const scenes = meaningfulMediaSections(page, profile)
+  const authoredWorks = page.pages.works?.sections ?? []
+  const hasSubstantialWorks = authoredWorks.length >= 4
+    && authoredWorks.every((section) => section.body.trim().length >= 120)
   const works = page.pages.works ? {
     ...page.pages.works,
     ...profile.works,
-    sections: scenes.length > 0 ? scenes : page.pages.works.sections,
+    sections: hasSubstantialWorks ? authoredWorks : scenes.length > 0 ? scenes : authoredWorks,
   } : page.pages.works
 
   return {

@@ -1,3 +1,19 @@
+## CURRENT STATUS - 2026-07-14 SMB DEMO Content / Art Direction V6（再設計実装・本番QA前 / 外部送信0）
+
+### 薄い文章と反復テンプレを生成後の小修正ではなくschemaから廃止
+- 旧DeepSeek schemaがHome 3 features / About 4 values / Services 3件だけを求め、WorksはLLM対象外、さらに業種別整形が生成後のWorks全文を4枚の画像captionへ上書きしていた原因を特定した。1社1回・3候補共通のDeepSeek呼び出しは維持しつつ、Home narrative 3章、About 3章、Services guidance 3章、Works 4〜6章を長文の構造化JSONで生成する。確認済み画像のalt/captionもgrounding factへ追加するが、権利不明素材は入力しない。
+- DeepSeek完了条件を、Home features 3、About values 4、Services 3 / process 4、3種のnarrative各3章、Works 4章以上かつ本文最低長へ引き上げた。欠落・短文・JSON切れはrules-basedの薄い公開物へフォールバックせず生成失敗として停止する。Prompt cache用の共通prefixと1社1回呼び出しは維持し、出力上限だけ12,288 tokensへ拡張した。
+- 品質ゲートを`2026-07-14.7`へ更新。Home 900 / About 1,050 / Services 1,000 / Works 800文字、各narrative本文120文字、Works 4章・各120文字をhard blocker化し、8ページのcomposition値が6種未満の反復サイトも停止する。旧スキーマ相当のデモは点数が高くても公開不可となる。
+
+### 下層ページを同一heroの使い回しからページ固有の編集設計へ分離
+- Homeはブランド導入、Aboutは章立ての読み物、Servicesはcatalogue＋利用前guide、Worksは非対称lookbook、Contactは画像heroを使わない情報起点のdark header＋Google Maps＋送信停止formへ分離した。美容室のmosaicもHome grid / About editorial / Services strip / Works lookbookの4構図を持ち、低解像度素材を全面拡大しない。
+- 美容室でもDeepSeekの汎用`modern-grotesk`指定が法人用Outfitへ落ちる経路を修正し、業種内のbrand systemだけを候補にする。美容室はNoto Serif JPまたはShippori Minchoの見出しとZen Kaku Gothic New本文を組み合わせ、汎用法人書体へ逸脱しない。
+- 初期`opacity:0`に近いReveal / text-lineを廃止し、SSR直後から内容を読める0.94〜0.96のprogressive enhancementへ変更。Framer Motionのscroll reveal / parallax / progress / kinetic railとEmbla carousel、自動再生停止、reduced-motionは維持する。
+
+### Verification / remaining gate
+- 変更対象ESLint、TypeScript、デモ関連 **6 files / 32 tests pass**、quality guard **0 errors / 60 existing warnings**、production build **408/408 pages**、`git diff --check` pass。新規依存なし。
+- この時点ではコード検査のみ。正式release、同じ実企業「ノン美容室」のV6再生成、PC / mobileのHome / About / Services / Works / Contact実ブラウザ比較、実DOM文字量と横overflow確認が終わるまで「品質合格」「量産開始」としない。候補追加、Twenty同期、ポータルDM、メール、電話、郵送、フォーム送信は実行していない。
+
 ## CURRENT STATUS - 2026-07-14 Japan Entry証拠付き候補factory（本番反映・公開QA完了 / 外部送信0）
 
 ### 旧Tranco母集団を廃止し、企業証拠から始める収集へ再構築

@@ -36,5 +36,16 @@ describe("applyIndustryPresentation", () => {
     expect(page.pages.works?.sections).toHaveLength(4)
     expect(page.pages.works?.sections.map((section) => section.heading)).toEqual(["店内とメニュー", "一杯を淹れる時間", "店の佇まい", "季節の一皿"])
     expect(page.meta.primaryCtaHref).toBe("https://instagram.com/example")
+
+    base.pages.works!.sections = [1, 2, 3, 4].map((index) => ({
+      id: `authored-${index}`,
+      heading: `確認済みの読み物 ${index}`,
+      body: `確認済みの写真と公開情報を組み合わせ、第${index}の視点から事業と場所の特徴を詳しく紹介します。画像だけでは伝わらない利用前の確認事項、提供内容、次に見るべき情報を一続きの文章として整理し、変わる可能性がある内容は断定せず現在の公式案内へつなぎます。単なるキャプション一覧ではなく、判断材料になる読み物として構成します。`,
+    }))
+    const authored = applyIndustryPresentation(base)
+
+    expect(authored.pages.works?.sections.map((section) => section.id)).toEqual([
+      "authored-1", "authored-2", "authored-3", "authored-4",
+    ])
   })
 })

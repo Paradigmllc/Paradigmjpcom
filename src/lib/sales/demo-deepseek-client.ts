@@ -5,7 +5,9 @@ import type {
   DeepSeekContactEnhancement,
   DeepSeekEnhancedOutput,
   DeepSeekHomeEnhancement,
+  DeepSeekNarrativeModule,
   DeepSeekServicesEnhancement,
+  DeepSeekWorksEnhancement,
 } from "./demo-deepseek-types";
 
 const DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1";
@@ -102,6 +104,7 @@ export function parseDeepSeekOutput(
   home?: DeepSeekHomeEnhancement;
   about?: DeepSeekAboutEnhancement;
   services?: DeepSeekServicesEnhancement;
+  works?: DeepSeekWorksEnhancement;
   contact?: DeepSeekContactEnhancement;
   artDirections: DeepSeekArtDirection[];
 } | null {
@@ -129,6 +132,7 @@ export function parseDeepSeekOutput(
       services: sanitizeServicesPage(
         (parsed.services as Record<string, unknown>) ?? {},
       ),
+      works: sanitizeWorksPage((parsed.works as Record<string, unknown>) ?? {}),
       contact: sanitizeContactPage(
         (parsed.contact as Record<string, unknown>) ?? {},
       ),
@@ -197,6 +201,39 @@ function cleanStr(s: unknown, fallback: string, max: number): string {
   return v.length > max ? v.slice(0, max - 1) + "…" : v;
 }
 
+function cleanLongStr(s: unknown, fallback: string, max: number): string {
+  if (typeof s !== "string") return fallback;
+  const value = s
+    .split(/\n{2,}/u)
+    .map((paragraph) => paragraph.replace(/[\t ]+/gu, " ").trim())
+    .filter(Boolean)
+    .join("\n\n")
+    .replace(ENTITY_PATTERN, "")
+    .trim();
+  if (!value || CORRUPT_CHARS.test(value)) return fallback;
+  return value.length > max ? value.slice(0, max - 1) + "…" : value;
+}
+
+function sanitizeNarrativeModules(value: unknown, limit = 4): DeepSeekNarrativeModule[] {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, limit).flatMap((entry) => {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) return [];
+    const item = entry as Record<string, unknown>;
+    const title = cleanStr(item.title, "", 100);
+    const body = cleanLongStr(item.body, "", 700);
+    if (!title || !body) return [];
+    const points = Array.isArray(item.points)
+      ? item.points.slice(0, 5).map((point) => cleanStr(point, "", 120)).filter(Boolean)
+      : [];
+    return [{
+      eyebrow: cleanStr(item.eyebrow, "", 50),
+      title,
+      body,
+      points,
+    }];
+  });
+}
+
 function sanitizeHomePage(
   raw: Record<string, unknown>,
 ): DeepSeekHomeEnhancement {
@@ -239,6 +276,7 @@ function sanitizeHomePage(
     features,
     testimonials,
     faq,
+    narrative_modules: sanitizeNarrativeModules(raw.narrative_modules, 4),
   };
 }
 
@@ -257,9 +295,10 @@ function sanitizeAboutPage(
     : [];
 
   return {
-    story: cleanStr(raw.story, "", 800),
+    story: cleanLongStr(raw.story, "", 1_600),
     mission: cleanStr(raw.mission, "", 200),
     values,
+    chapters: sanitizeNarrativeModules(raw.chapters, 4),
   };
 }
 
@@ -299,7 +338,22 @@ function sanitizeServicesPage(
     intro: cleanStr(raw.intro, "", 300),
     services,
     process,
+    guidance: sanitizeNarrativeModules(raw.guidance, 4),
   };
+}
+
+function sanitizeWorksPage(raw: Record<string, unknown>): DeepSeekWorksEnhancement {
+  const sections = Array.isArray(raw.sections)
+    ? raw.sections.slice(0, 8).flatMap((entry: unknown) => {
+        if (!entry || typeof entry !== "object" || Array.isArray(entry)) return [];
+        const item = entry as Record<string, unknown>;
+        const title = cleanStr(item.title, "", 100);
+        const body = cleanLongStr(item.body, "", 600);
+        if (!title || !body) return [];
+        return [{ title, body, note: cleanStr(item.note, "", 120) }];
+      })
+    : [];
+  return { intro: cleanLongStr(raw.intro, "", 500), sections };
 }
 
 function sanitizeContactPage(

@@ -12,7 +12,7 @@ const BRAND_SYSTEMS: Record<string, DemoBrandSystem[]> = {
     { id: "quiet-kissa", displayFont: '"Noto Serif JP", "Yu Mincho", serif', bodyFont: '"Noto Sans JP", sans-serif', headingWeight: 500, surface: "#f6f3ed", surfaceAlt: "#ded8cc", ink: "#17191a", muted: "#5f625f", line: "rgba(23,25,26,.16)", heroTone: "welcoming", imageTreatment: "natural", shape: "soft" },
   ],
   beauty_salon: [
-    { id: "salon-editorial", displayFont: '"Zen Kaku Gothic New", "Noto Sans JP", sans-serif', bodyFont: '"Noto Sans JP", sans-serif', headingWeight: 500, surface: "#faf8f6", surfaceAlt: "#ece7e2", ink: "#1e1b1a", muted: "#6d6661", line: "rgba(30,27,26,.14)", heroTone: "precision", imageTreatment: "crisp", shape: "soft" },
+    { id: "salon-editorial", displayFont: '"Noto Serif JP", "Yu Mincho", serif', bodyFont: '"Zen Kaku Gothic New", "Noto Sans JP", sans-serif', headingWeight: 500, surface: "#faf8f6", surfaceAlt: "#ece7e2", ink: "#1e1b1a", muted: "#6d6661", line: "rgba(30,27,26,.14)", heroTone: "precision", imageTreatment: "crisp", shape: "soft" },
     { id: "salon-signature", displayFont: '"Shippori Mincho", "Noto Serif JP", serif', bodyFont: '"Zen Kaku Gothic New", "Noto Sans JP", sans-serif', headingWeight: 500, surface: "#f7f3ef", surfaceAlt: "#e8ded7", ink: "#211b19", muted: "#71645f", line: "rgba(33,27,25,.15)", heroTone: "editorial", imageTreatment: "warm", shape: "square" },
   ],
   dental: [
@@ -59,9 +59,11 @@ export function resolveDemoBrandSystem(page: DemoMultiPageData, recipe = page.de
   // token set. Always migrate them to the current balanced art direction at
   // read time so a renderer release improves existing proposals immediately.
   const typographyStyle = recipe?.creativeDirection?.typographyStyle
-  const systems = typographyStyle
-    ? TYPOGRAPHY_SYSTEMS[typographyStyle] ?? BRAND_SYSTEMS.default
-    : BRAND_SYSTEMS[String(page.industry)] ?? BRAND_SYSTEMS.default
+  const industrySystems = BRAND_SYSTEMS[String(page.industry)] ?? BRAND_SYSTEMS.default
+  const typographySystems = typographyStyle ? TYPOGRAPHY_SYSTEMS[typographyStyle] ?? [] : []
+  const industryIds = new Set(industrySystems.map((system) => system.id))
+  const industryTypographySystems = typographySystems.filter((system) => industryIds.has(system.id))
+  const systems = industryTypographySystems.length > 0 ? industryTypographySystems : industrySystems
   const selected = page.brandSystem
     ?? systems[hash(`${page.companyId}:${recipe?.templateId ?? "default"}:${recipe?.creativeDirection?.concept ?? ""}`) % systems.length]
   const mood = recipe?.creativeDirection?.paletteMood
@@ -80,7 +82,7 @@ function enrichScenes(page: DemoMultiPageData): DemoContentPage {
   const latest = page.premium?.social.length
     ? "営業日や提供内容などの最新情報は、公式SNSでご確認ください。"
     : "営業日や提供内容などの最新情報は、正式な案内をご確認ください。"
-  const sections = current.sections.slice(0, 4).map((item, index) => ({
+  const sections = current.sections.slice(0, 6).map((item, index) => ({
     ...item,
     body: `${sentence(item.body)}${index === 0 && serviceNames ? `${page.companyName}では、${serviceNames}をご案内しています。` : ""}${latest}`,
   }))
@@ -172,8 +174,8 @@ export function upgradeDemoToPremiumV3(page: DemoMultiPageData, recipe = page.de
       ? "提供内容はメニューページで、所在地と地図はアクセスページでご確認いただけます。"
       : "業務範囲と進め方を確認したうえで、正式な相談方法と必要な準備事項をご確認ください。",
     contact: hasSocial
-      ? "最新の案内は公式SNSをご確認ください。この提案用フォームは入力体験のみで、外部には送信されません。"
-      : "正式な相談方法と受付条件は事業者確認後に掲載します。この提案用フォームは入力体験のみで、外部には送信されません。",
+      ? "所在地、地図、現在の案内はこのページで確認できます。営業や提供内容に変更がある場合は、公式SNSの最新情報もあわせてご確認ください。この提案用フォームは入力・確認の体験のみで、外部には送信されません。正式公開時には、事業者が確認した受付方法と必要項目へ切り替えます。"
+      : "所在地、地図、現在確認できる事業情報をこのページにまとめています。正式な相談方法、受付条件、必要な入力項目は事業者確認後に掲載します。この提案用フォームは入力・確認の体験のみで、外部には送信されません。正式公開前に実際の運用に合わせて切り替えます。",
   }
   return {
     ...page,

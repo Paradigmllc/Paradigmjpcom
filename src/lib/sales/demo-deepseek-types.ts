@@ -35,24 +35,45 @@ export interface DeepSeekProcessStep {
   description: string;
 }
 
+export interface DeepSeekNarrativeModule {
+  eyebrow: string;
+  title: string;
+  body: string;
+  points: string[];
+}
+
+export interface DeepSeekWorksSection {
+  title: string;
+  body: string;
+  note: string;
+}
+
 export interface DeepSeekHomeEnhancement {
   hero_title: string;
   hero_subtitle: string;
   features: DeepSeekFeature[];
   testimonials: DeepSeekTestimonial[];
   faq: DeepSeekFAQ[];
+  narrative_modules: DeepSeekNarrativeModule[];
 }
 
 export interface DeepSeekAboutEnhancement {
   story: string;
   mission: string;
   values: DeepSeekValue[];
+  chapters: DeepSeekNarrativeModule[];
 }
 
 export interface DeepSeekServicesEnhancement {
   intro: string;
   services: DeepSeekServiceItem[];
   process: DeepSeekProcessStep[];
+  guidance: DeepSeekNarrativeModule[];
+}
+
+export interface DeepSeekWorksEnhancement {
+  intro: string;
+  sections: DeepSeekWorksSection[];
 }
 
 export interface DeepSeekContactEnhancement {
@@ -92,6 +113,7 @@ export interface DeepSeekEnhancedOutput {
   home: Partial<DeepSeekHomeEnhancement>;
   about: Partial<DeepSeekAboutEnhancement>;
   services: Partial<DeepSeekServicesEnhancement>;
+  works: Partial<DeepSeekWorksEnhancement>;
   contact: Partial<DeepSeekContactEnhancement>;
   artDirections: DeepSeekArtDirection[];
 }

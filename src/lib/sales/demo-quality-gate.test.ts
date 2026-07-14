@@ -41,6 +41,17 @@ function fixture(): DemoMultiPageData {
     sections: [{ id: "section", heading: "掲載内容", body: "確認済みの商品、店舗、所在地、公式情報をもとに、初めて利用する方にも分かりやすい順序でご案内します。変わる可能性がある内容は、現在の公式案内をご確認ください。" }],
     accentColor: "#2563eb",
   }
+  const narratives = (scope: string) => [1, 2, 3].map((index) => ({
+    eyebrow: `${scope.toUpperCase()} 0${index}`,
+    title: `${scope}で確かめたいこと ${index}`,
+    body: `${scope}では、確認済みの商品、店舗、所在地、公式情報を第${index}の視点から詳しく整理します。初めて知る方が、事業の特徴だけでなく、利用前に確認したいこと、次に見るべき情報、変わる可能性がある内容まで一つの流れで理解できる構成です。公開情報から断定できない価格、在庫、営業時間、個別対応については固定情報として扱わず、現在の公式案内へつなぎます。写真、説明、関連する案内を同じ章にまとめ、ページを行き来しなくても検討に必要な前提を理解できるようにします。`,
+    points: [`${scope}の確認済み情報 ${index}`, "現在の提供内容", "公式情報への案内"],
+  }))
+  const workSections = [1, 2, 3, 4].map((index) => ({
+    id: `work-${index}`,
+    heading: `商品と店舗の風景 ${index}`,
+    body: `確認できる写真と公開情報を組み合わせ、商品や店舗の特徴を第${index}の切り口から具体的に紹介します。見た目だけでなく、どのような商品を扱い、利用前に何を確認でき、次にどのページを見ると判断しやすいかまでを一続きの読み物として整理しています。変わる可能性がある内容は断定せず、現在の公式案内を確認できる導線を設けます。写真の背景にある仕事や利用場面も言葉で補い、単なる画像一覧では終わらない構成にします。`,
+  }))
   return {
     slug: "sample-demo",
     companyId: "company-1",
@@ -95,6 +106,7 @@ function fixture(): DemoMultiPageData {
         stats: [],
         beforeAfter: [],
         totalLoss: "",
+        narrativeModules: narratives("ホーム"),
         cta: { title: "最新情報とアクセスをご確認ください。", subtitle: "商品や営業に関する現在の案内は公式情報をご確認ください。所在地と地図はアクセスページにまとめています。取扱内容や訪問前に確認したい事項は、商品案内とよくある質問からもご覧いただけます。", buttonText: "お問い合わせ", buttonHref: "/contact", accentColor: "#2563eb", accentColorDark: "#1e40af" },
       },
       about: {
@@ -104,7 +116,7 @@ function fixture(): DemoMultiPageData {
           { title: "選びやすさ", description: "商品やサービスを比較しやすい順序に整理し、必要な情報へ短くつなぎます。", icon: "star" },
           { title: "地域との接点", description: "所在地やアクセスを明確にし、訪問前に確認したい事項をまとめます。", icon: "users" },
           { title: "継続した案内", description: "営業や提供状況が変わる情報は、公式案内で継続的に更新します。", icon: "lightbulb" },
-        ], teamNote: "商品、店舗、営業に関する情報は、事業者が確認した内容だけを公開します。", accentColor: "#2563eb",
+        ], chapters: narratives("私たちについて"), teamNote: "商品、店舗、営業に関する情報は、事業者が確認した内容だけを公開します。", accentColor: "#2563eb",
       },
       services: {
         title: "サービス", subtitle: "取扱内容", accentColor: "#2563eb",
@@ -121,12 +133,13 @@ function fixture(): DemoMultiPageData {
           { step: 3, title: "場所を確認", description: "アクセスページの所在地と地図から、訪問経路をご確認ください。" },
           { step: 4, title: "正式窓口を利用", description: "掲載情報にない事項は、事業者が案内する正式な窓口をご利用ください。" },
         ],
+        guidance: narratives("サービス"),
       },
       contact: {
         title: "お問い合わせ", subtitle: "ご相談ください。", companyName: "サンプル商店", email: "", address: "東京都",
-        calBookingUrl: "", formNote: "商品、営業、アクセスに関する現在の情報は公式案内をご確認ください。この提案デモのフォームは入力確認まで体験できますが、外部へ送信されません。", formEnabled: false, accentColor: "#2563eb",
+        calBookingUrl: "", formNote: "商品、営業、アクセスに関する現在の情報は公式案内をご確認ください。この提案デモのフォームは入力確認まで体験できますが、外部へ送信されません。所在地と地図、問い合わせ前の注意事項、正式公開時に必要となる入力項目を同じページで確認できます。", formEnabled: false, accentColor: "#2563eb",
       },
-      works: { ...contentPage, sections: [...contentPage.sections, { id: "section-2", heading: "店内の様子", body: "店舗の雰囲気をご紹介します。" }, { id: "section-3", heading: "商品紹介", body: "取り扱う商品をご紹介します。" }] },
+      works: { ...contentPage, sections: workSections },
       news: contentPage,
       faq: contentPage,
       recruit: contentPage,
@@ -335,6 +348,46 @@ describe("demo quality gate", () => {
     expect(quality.score).toBeLessThanOrEqual(70)
     expect(quality.hardBlockers).toContain("customer_facing_draft_copy")
     expect(quality.dimensions).toEqual(expect.objectContaining({ specificity: expect.any(Number), contentDepth: expect.any(Number) }))
+  })
+
+  it("blocks the former shallow page architecture even when legacy fields exist", () => {
+    const page = fixture()
+    page.pages.home.narrativeModules = []
+    page.pages.about.chapters = []
+    page.pages.services.guidance = []
+    page.pages.works!.sections = page.pages.works!.sections.slice(0, 2)
+    const template = DEMO_TEMPLATES.find((item) => item.id === "prism")!
+    const recipe = buildDesignRecipe(template, page)
+    const quality = evaluateDemoQuality(page, recipe, buildProposalRightsManifest([
+      { src: "/generated/hero-1.jpg", usage: "proposal_only" },
+    ]))
+
+    expect(quality.passed).toBe(false)
+    expect(quality.hardBlockers).toEqual(expect.arrayContaining([
+      "home_narrative_depth_missing",
+      "about_narrative_depth_missing",
+      "service_guidance_depth_missing",
+      "works_content_architecture_missing",
+    ]))
+  })
+
+  it("blocks a full site that repeats one composition across its lower pages", () => {
+    const basePage = fixture()
+    const template = DEMO_TEMPLATES.find((item) => item.id === "prism")!
+    const recipe = buildDesignRecipe(template, basePage)
+    const repeatedRecipe = {
+      ...recipe,
+      pageCompositions: Object.fromEntries(
+        Object.keys(recipe.pageCompositions ?? {}).map((key) => [key, "same-layout"]),
+      ) as typeof recipe.pageCompositions,
+    }
+    const page = upgradeDemoToPremiumV3(basePage, repeatedRecipe)
+    const quality = evaluateDemoQuality(page, repeatedRecipe, buildProposalRightsManifest([
+      { src: "/generated/hero-1.jpg", usage: "proposal_only" },
+    ]))
+
+    expect(quality.passed).toBe(false)
+    expect(quality.hardBlockers).toContain("page_composition_repetition")
   })
 
   it("blocks every non-mosaic hero when the reviewed source is only a thumbnail", () => {

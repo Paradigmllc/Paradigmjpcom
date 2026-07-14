@@ -12,6 +12,7 @@ import {
   PremiumV3TextLines,
 } from "./PremiumV3Primitives"
 import { BeautyMediaMosaic } from "./BeautyMediaMosaic"
+import { DemoPremiumV3Narrative } from "./DemoPremiumV3Narrative"
 
 export function DemoPremiumV3BeautyHome({ data }: { data: DemoMultiPageData }) {
   const premium = data.premium!
@@ -71,6 +72,15 @@ export function DemoPremiumV3BeautyHome({ data }: { data: DemoMultiPageData }) {
           </PremiumV3Stagger>
         </div>
       </section>
+
+      <DemoPremiumV3Narrative
+        modules={home.narrativeModules}
+        label="SALON JOURNAL"
+        title="この場所で、大切にしていること。"
+        introduction="メニュー名だけでは伝わりにくいサロンの特徴を、確認できる情報から三つの章に分けてご紹介します。"
+        motionStyle={motionStyle}
+        variant="contrast"
+      />
 
       <section className="grid bg-[var(--demo-surface-alt)] lg:grid-cols-[.45fr_.55fr]">
         <BeautyMediaMosaic media={visualSet.slice(0, 4)} label="サロンの風景" height="compact" />

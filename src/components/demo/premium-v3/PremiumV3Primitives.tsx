@@ -4,7 +4,7 @@ import type { DemoDesignRecipe, DemoPremiumMedia } from "@/lib/sales/demo-site-t
 import { demoHeadlineClass, demoHeadlineText, type DemoArtDirection } from "@/lib/sales/demo-art-direction"
 import { PremiumV3Parallax, PremiumV3Reveal, PremiumV3TextLines } from "./PremiumV3Motion"
 import { PremiumV3Media } from "./PremiumV3Media"
-import { BeautyMediaMosaic } from "./BeautyMediaMosaic"
+import { BeautyMediaMosaic, type BeautyMosaicLayout } from "./BeautyMediaMosaic"
 
 export { PremiumV3MediaCarousel } from "./PremiumV3Carousel"
 export { PremiumV3Media } from "./PremiumV3Media"
@@ -18,6 +18,7 @@ export function PremiumV3PageHero({
   mediaGallery,
   recipe,
   variant,
+  mosaicLayout = "grid",
 }: {
   title: string
   subtitle: string
@@ -26,6 +27,7 @@ export function PremiumV3PageHero({
   mediaGallery?: DemoPremiumMedia[]
   recipe?: DemoDesignRecipe
   variant?: DemoArtDirection["hero"]
+  mosaicLayout?: BeautyMosaicLayout
 }) {
   const split = variant ? variant !== "cinematic" : recipe?.rhythmVariant === 1 || recipe?.rhythmVariant === 3
   const editorialSplit = variant === "editorial-split"
@@ -44,7 +46,7 @@ export function PremiumV3PageHero({
           </PremiumV3Reveal>
         </div>
         {useBeautyMosaic
-          ? <BeautyMediaMosaic media={mediaGallery!} priority label={`${title}のサロン写真`} height="page" />
+          ? <BeautyMediaMosaic media={mediaGallery!} priority label={`${title}のサロン写真`} height="page" layout={mosaicLayout} />
           : <div className="group relative min-h-[420px] overflow-hidden lg:min-h-[500px]"><PremiumV3Parallax className="absolute -inset-y-14 inset-x-0"><PremiumV3Media media={media} priority className="absolute inset-0" sizes="(max-width:1024px) 100vw, 56vw" /></PremiumV3Parallax><div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" /></div>}
       </header>
     )

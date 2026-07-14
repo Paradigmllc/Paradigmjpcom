@@ -15,10 +15,10 @@ const DRAFT_PATTERNS = [
 const GENERIC_NAV_LABELS = new Set(["会社概要", "サービス", "実績"])
 
 const PAGE_DEPTH_MINIMUMS = {
-  home: 350,
-  about: 300,
-  services: 320,
-  works: 220,
+  home: 900,
+  about: 1_050,
+  services: 1_000,
+  works: 800,
   news: 350,
   faq: 250,
   recruit: 380,
@@ -96,6 +96,21 @@ export function analyzeDemoQualitySignals(page: DemoMultiPageData): {
   if ((page.pages.works?.sections.length ?? 0) < 2) warnings.push("works_content_thin")
   if ((page.pages.news?.sections.length ?? 0) < 1) warnings.push("news_content_thin")
   if (sectionCount < 9) warnings.push("fixed_page_content_thin")
+  const homeNarrative = page.pages.home.narrativeModules ?? []
+  const aboutChapters = page.pages.about.chapters ?? []
+  const serviceGuidance = page.pages.services.guidance ?? []
+  if (homeNarrative.length < 3 || homeNarrative.some((item) => item.body.length < 120)) {
+    blockers.push("home_narrative_depth_missing")
+  }
+  if (aboutChapters.length < 3 || aboutChapters.some((item) => item.body.length < 120)) {
+    blockers.push("about_narrative_depth_missing")
+  }
+  if (serviceGuidance.length < 3 || serviceGuidance.some((item) => item.body.length < 120)) {
+    blockers.push("service_guidance_depth_missing")
+  }
+  if ((page.pages.works?.sections.length ?? 0) < 4 || page.pages.works?.sections.some((item) => item.body.length < 120)) {
+    blockers.push("works_content_architecture_missing")
+  }
   for (const [key, minimum] of Object.entries(PAGE_DEPTH_MINIMUMS)) {
     const length = pageDepth[key as keyof typeof PAGE_DEPTH_MINIMUMS]
     if (length < minimum) blockers.push(`page_content_thin:${key}`)
@@ -104,6 +119,8 @@ export function analyzeDemoQualitySignals(page: DemoMultiPageData): {
   if (page.premium?.style !== "premium-v3" || !page.brandSystem) blockers.push("premium_v3_brand_system_missing")
   if (!page.designRecipe?.pageCompositions || Object.keys(page.designRecipe.pageCompositions).length < 8) {
     blockers.push("page_composition_system_missing")
+  } else if (new Set(Object.values(page.designRecipe.pageCompositions)).size < 6) {
+    blockers.push("page_composition_repetition")
   }
 
   const specificity = Math.max(0, 25
@@ -116,6 +133,7 @@ export function analyzeDemoQualitySignals(page: DemoMultiPageData): {
     - (warnings.includes("fixed_page_content_thin") ? 7 : 0)
     - (blockers.includes("repeated_customer_copy") ? 10 : 0)
     - (blockers.includes("repeated_home_narrative") ? 10 : 0)
+    - (blockers.filter((item) => item.endsWith("_depth_missing") || item === "works_content_architecture_missing").length * 5)
     - (blockers.filter((item) => item.startsWith("page_content_thin:")).length * 4)
     - (warnings.filter((item) => item.startsWith("page_content_near_minimum:")).length * 1))
   const trustSafety = Math.max(0, 25
@@ -126,7 +144,8 @@ export function analyzeDemoQualitySignals(page: DemoMultiPageData): {
     - (!page.premium || page.premium.gallery.length < 3 ? 8 : 0)
     - (blockers.includes("process_heading_missing") ? 5 : 0)
     - (blockers.includes("premium_v3_brand_system_missing") ? 10 : 0)
-    - (blockers.includes("page_composition_system_missing") ? 8 : 0))
+    - (blockers.includes("page_composition_system_missing") ? 8 : 0)
+    - (blockers.includes("page_composition_repetition") ? 8 : 0))
 
   return { blockers, warnings, dimensions: { specificity, contentDepth, trustSafety, visualReadiness } }
 }
