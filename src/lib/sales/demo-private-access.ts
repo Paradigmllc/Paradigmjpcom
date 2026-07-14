@@ -8,6 +8,7 @@ import { DEMO_QUALITY_THRESHOLD } from "./demo-quality-gate"
 export type DemoAssetKind = "logo" | "image" | "video"
 export type DemoAssetUseBasis = "consented" | "licensed" | "official_embed" | "private_proposal" | "generated" | "blocked"
 export type DemoAssetApprovalStatus = "unreviewed" | "private_proposal" | "consented" | "blocked"
+export type DemoAccessMode = "public" | "signed_private" | "temporary_unlisted"
 
 export interface DemoReviewedAsset {
   id: string
@@ -31,7 +32,7 @@ export interface DemoAssetReview {
 
 export interface DemoPrivateAccessRecord {
   slug: string
-  accessMode: "public" | "signed_private"
+  accessMode: DemoAccessMode
   expiresAt: string | null
   approvalStatus: DemoAssetApprovalStatus
   review: DemoAssetReview
@@ -63,6 +64,17 @@ export function normalizeDemoRouteSlug(slug: string): string {
     console.error("[demo-preview] invalid encoded route slug:", error)
     return slug
   }
+}
+
+export function isTemporaryUnlistedDemoActive(
+  accessMode: unknown,
+  expiresAt: unknown,
+  now = Date.now(),
+): boolean {
+  return accessMode === "temporary_unlisted"
+    && typeof expiresAt === "string"
+    && Number.isFinite(Date.parse(expiresAt))
+    && Date.parse(expiresAt) > now
 }
 
 export function validateDemoAssets(assets: DemoReviewedAsset[]): string[] {
@@ -120,11 +132,52 @@ export async function getDemoPrivateAccess(slug: string): Promise<DemoPrivateAcc
   if (!data) return null
   return {
     slug: data.slug,
-    accessMode: data.access_mode === "signed_private" ? "signed_private" : "public",
+    accessMode: data.access_mode === "signed_private"
+      ? "signed_private"
+      : data.access_mode === "temporary_unlisted"
+        ? "temporary_unlisted"
+        : "public",
     expiresAt: data.preview_expires_at,
     approvalStatus: data.asset_approval_status as DemoAssetApprovalStatus,
     review: parseReview(data.asset_review),
   }
+}
+
+export async function activateTemporaryUnlistedDemo(input: {
+  slug: string
+  ttlDays: number
+  assets: DemoReviewedAsset[]
+}): Promise<{ urlSlug: string; expiresAt: string; review: DemoAssetReview }> {
+  if (!Number.isInteger(input.ttlDays) || input.ttlDays < 1 || input.ttlDays > 7) {
+    throw new Error("期限付き未公開デモの有効日数は1〜7日で指定してください")
+  }
+  const errors = validateDemoAssets(input.assets)
+  if (errors.length > 0) throw new Error(errors.join("\n"))
+  const sb = getServiceSalesSupabase()
+  if (!sb) throw new Error("Supabase unavailable")
+  const expiresAt = new Date(Date.now() + input.ttlDays * 86_400_000).toISOString()
+  const status: DemoAssetApprovalStatus = input.assets.every((asset) => ["consented", "licensed", "generated"].includes(asset.useBasis))
+    ? "consented"
+    : "private_proposal"
+  const review: DemoAssetReview = { status, reviewedAt: new Date().toISOString(), assets: input.assets }
+  const { data, error } = await sb
+    .from(DB_TABLES.THEME_DEMO_PAGES)
+    .update({
+      access_mode: "temporary_unlisted",
+      preview_token_hash: null,
+      preview_expires_at: expiresAt,
+      asset_approval_status: status,
+      asset_review: review,
+      is_published: false,
+      publication_status: "private_review",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("slug", input.slug)
+    .select("slug")
+    .maybeSingle()
+  if (error) throw new Error(error.message)
+  if (!data) throw new Error("Demo not found")
+  return { urlSlug: data.slug, expiresAt, review }
 }
 
 export async function verifyDemoPreviewToken(slug: string, token: string): Promise<{ ok: boolean; expiresAt: string | null }> {
@@ -244,6 +297,20 @@ export async function revokeSignedPrivateDemo(slug: string): Promise<boolean> {
     .update({ preview_expires_at: new Date(0).toISOString(), updated_at: new Date().toISOString() })
     .eq("slug", slug)
     .eq("access_mode", "signed_private")
+    .select("slug")
+    .maybeSingle()
+  if (error) throw new Error(error.message)
+  return Boolean(data)
+}
+
+export async function revokeTemporaryUnlistedDemo(slug: string): Promise<boolean> {
+  const sb = getServiceSalesSupabase()
+  if (!sb) throw new Error("Supabase unavailable")
+  const { data, error } = await sb
+    .from(DB_TABLES.THEME_DEMO_PAGES)
+    .update({ preview_expires_at: new Date(0).toISOString(), updated_at: new Date().toISOString() })
+    .eq("slug", slug)
+    .eq("access_mode", "temporary_unlisted")
     .select("slug")
     .maybeSingle()
   if (error) throw new Error(error.message)

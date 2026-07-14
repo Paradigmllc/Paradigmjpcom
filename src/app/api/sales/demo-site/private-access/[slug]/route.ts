@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
 import {
-  activateSignedPrivateDemo,
+  activateTemporaryUnlistedDemo,
   getDemoPrivateAccess,
-  revokeSignedPrivateDemo,
+  revokeTemporaryUnlistedDemo,
 } from "@/lib/sales/demo-private-access"
 import { demoSiteUrl } from "@/lib/sales/routing"
 
@@ -54,9 +54,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const body = activateSchema.safeParse(await request.json())
     if (!body.success) return NextResponse.json({ ok: false, error: body.error.issues[0]?.message ?? "入力が不正です" }, { status: 400 })
     const { slug } = await params
-    const result = await activateSignedPrivateDemo({ slug, ttlDays: body.data.ttlDays, assets: body.data.assets })
+    const result = await activateTemporaryUnlistedDemo({ slug, ttlDays: body.data.ttlDays, assets: body.data.assets })
     const origin = process.env.NODE_ENV === "production" ? demoSiteUrl() : request.nextUrl.origin
-    const previewUrl = `${origin}/api/demo-preview/${encodeURIComponent(slug)}?token=${encodeURIComponent(result.token)}&locale=${body.data.locale}`
+    const previewUrl = `${origin}/${encodeURIComponent(result.urlSlug)}`
     return NextResponse.json({ ok: true, previewUrl, expiresAt: result.expiresAt, review: result.review }, { headers: { "Cache-Control": "private, no-store" } })
   } catch (error) {
     console.error("[demo-private-access] POST failed:", error)
@@ -68,7 +68,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   if (!(await authorized(request))) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
   try {
     const { slug } = await params
-    const revoked = await revokeSignedPrivateDemo(slug)
+    const revoked = await revokeTemporaryUnlistedDemo(slug)
     return NextResponse.json({ ok: revoked })
   } catch (error) {
     console.error("[demo-private-access] DELETE failed:", error)

@@ -4,6 +4,8 @@ vi.mock("server-only", () => ({}))
 vi.mock("@/lib/supabase", () => ({ getServiceSalesSupabase: vi.fn() }))
 
 import {
+  activateTemporaryUnlistedDemo,
+  isTemporaryUnlistedDemoActive,
   generateDemoPreviewToken,
   activateSignedPrivateDemo,
   hashDemoPreviewToken,
@@ -46,6 +48,13 @@ describe("demo private access", () => {
     expect(validateDemoAssets([safeAsset])).toEqual([])
   })
 
+  it("allows clean unlisted access only before its stored expiry", () => {
+    const now = Date.parse("2026-07-14T00:00:00.000Z")
+    expect(isTemporaryUnlistedDemoActive("temporary_unlisted", "2026-07-21T00:00:00.000Z", now)).toBe(true)
+    expect(isTemporaryUnlistedDemoActive("temporary_unlisted", "2026-07-13T00:00:00.000Z", now)).toBe(false)
+    expect(isTemporaryUnlistedDemoActive("signed_private", "2026-07-21T00:00:00.000Z", now)).toBe(false)
+  })
+
   it("keeps private-proposal assets behind signed access", () => {
     expect(validatePublicDemoAssets([safeAsset]).join(" ")).toContain("非公開提案限定")
     expect(validatePublicDemoAssets([{ ...safeAsset, useBasis: "generated" }])).toEqual([])
@@ -66,6 +75,8 @@ describe("demo private access", () => {
 
   it("rejects private preview URLs longer than seven days before any DB write", async () => {
     await expect(activateSignedPrivateDemo({ slug: "sample", ttlDays: 8, assets: [safeAsset] }))
+      .rejects.toThrow("1〜7日")
+    await expect(activateTemporaryUnlistedDemo({ slug: "sample", ttlDays: 8, assets: [safeAsset] }))
       .rejects.toThrow("1〜7日")
   })
 })

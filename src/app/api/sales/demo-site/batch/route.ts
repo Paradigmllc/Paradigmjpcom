@@ -6,7 +6,7 @@ import { DB_TABLES } from "@/lib/sales/db-tables"
 import { demoSourceManifestSchema, validateDemoSourceManifest } from "@/lib/sales/demo-source-policy"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { INDUSTRIES } from "@/lib/sales/types"
-import { activateSignedPrivateDemo } from "@/lib/sales/demo-private-access"
+import { activateTemporaryUnlistedDemo } from "@/lib/sales/demo-private-access"
 import {
   claimDemoBatchDrain,
   dispatchDemoBatchDrain,
@@ -158,13 +158,12 @@ export async function PUT(request: NextRequest) {
         issued.push({ jobId: row.id, ok: false, error: errorMessage })
         continue
       }
-      const access = await activateSignedPrivateDemo({
+      const access = await activateTemporaryUnlistedDemo({
         slug,
         ttlDays: parsed.data.ttlDays,
         assets: sourceReview.manifest.assets,
       })
-      const locale = row.input_payload?.locale === "en" ? "en" : "ja"
-      const previewUrl = `${demoSiteUrl()}/api/demo-preview/${encodeURIComponent(slug)}?token=${encodeURIComponent(access.token)}&locale=${locale}`
+      const previewUrl = `${demoSiteUrl()}/${encodeURIComponent(access.urlSlug)}`
       const nextResult = {
         ...row.result_payload,
         preview_expires_at: access.expiresAt,

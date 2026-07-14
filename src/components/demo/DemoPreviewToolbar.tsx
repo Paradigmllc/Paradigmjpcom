@@ -16,7 +16,7 @@ export function demoPreviewNotice(expiresAt?: string): string {
   if (!expiresAt) return "提案用デモです。検索エンジンには登録されず、正式公開前の内容です。"
   const expiry = new Date(expiresAt)
   const label = Number.isNaN(expiry.getTime()) ? "7日以内" : expiry.toLocaleDateString("ja-JP")
-  return `現在一般公開・検索登録されておらず、この閲覧URLは${label}に失効します。`
+  return `検索エンジンには登録されていない正式公開前のURLです。この閲覧URLは${label}に失効します。`
 }
 
 export function DemoPreviewToolbar({
