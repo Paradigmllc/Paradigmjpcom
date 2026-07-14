@@ -7,7 +7,7 @@
 
 ### Verification / remaining production gate
 - 実CORDIS H2020 ZIPを新adapterで直接取得し、ドイツはfilter後1,045行・重複排除可能355 domain、公式EC根拠URL付きsampleを確認した。事前集計では優先15市場の2世代合算で約2,400 unique domain。これは候補母集団であり、実サイト・企業同一性・対象国・offer fit・フォーム合格後の件数を「数千件」とは未確認。
-- 対象Vitest **8 files / 29 tests**、全Vitest **160 files / 733 tests**、TypeScript、対象ESLint、quality guard **0 errors / 60 existing warnings**、production build **408/408 pages**、release-doctorの新しい静的gate、`git diff --check`がpass。正式release、migration本番rollback、公開管理画面、規約確認済みsourceの非送信inventory runは未実行。品質を実測するまで自動Twenty、文面、レポート、送信は開始しない。
+- 対象Vitest **8 files / 29 tests**、main統合後の全Vitest **161 files / 740 tests**、TypeScript、対象ESLint、quality guard **0 errors / 60 existing warnings**、production build **408/408 pages**、release-doctorの新しい静的gate、`git diff --check`がpass。正式release、migration本番rollback、公開管理画面、規約確認済みsourceの非送信inventory runは未実行。品質を実測するまで自動Twenty、文面、レポート、送信は開始しない。
 
 ## CURRENT STATUS - 2026-07-15 国別Lead Source Pack（実装・本番DB rollback検証完了 / release前 / 外部送信0）
 
