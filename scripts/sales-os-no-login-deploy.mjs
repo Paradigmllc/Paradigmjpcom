@@ -652,6 +652,14 @@ async function applyLeadFactoryOperatorApprovalMigration(envs) {
   )
 }
 
+async function applyLeadSourceWebsitePreflightMigration(envs) {
+  return applySqlMigration(
+    envs,
+    "20260715113000_lead_source_website_preflight.sql",
+    "Lead source website preflight migration",
+  )
+}
+
 async function applyJapanEntryProjectionsMigration(envs) {
   return applySqlMigration(
     envs,
@@ -1287,6 +1295,7 @@ async function main() {
     console.log(await applyInitialFormDraftFactoryMigration(envs))
     console.log(await applyHighQualityLeadSourcesMigration(envs))
     console.log(await applyLeadFactoryOperatorApprovalMigration(envs))
+    console.log(await applyLeadSourceWebsitePreflightMigration(envs))
     console.log(await applyJapanEntryProjectionsMigration(envs))
     console.log(await applyDemoQualityGateMigration(envs))
     console.log(await applyDemoPrivateAssetReviewMigration(envs))

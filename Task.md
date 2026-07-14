@@ -9,6 +9,7 @@
 ### Verification / remaining gate
 - 新migrationは本番DB上の単一transactionで`BEGIN -> 全DDL/RPC -> ROLLBACK`し、既存schema互換とSQL実行を副作用なしで確認した。対象Vitest **4 files / 18 tests**、全Vitest **155 files / 711 tests**、TypeScript、対象ESLint、quality guard **0 errors / 60 existing warnings**、production build **408/408 pages**、`git diff --check`がpass。
 - `lead-source-records.ts`は530行へ増えた時点で候補readiness / atomic selectionを`lead-source-selection.ts`へ分離し452行へ戻した。新規依存は追加していない。
+- 初回の正式releaseはdeploy開始前に、release-doctorが分割前の`lead-source-records.ts`だけを検査していたため静的gateで停止した。同時に新migrationが正式releaseの明示適用リストへ未配線だった点も検出し、doctorを新selection / preflight実体の検査へ更新、migration適用関数と回帰テストを追加した。gateを迂回せず再releaseする。
 - 残作業はcommit / push / PR / `npm run release:prod`、本番source 9件の事前検査、外部送信0の再pilot。失敗率20%以下かつ人間確認が終わるまでbatch量産承認は行わない。
 
 ## CURRENT STATUS - 2026-07-14 Japan Entry Lead Factory実務稼働開始（非送信pilot稼働 / batch品質ゲート未承認 / 外部送信0）
