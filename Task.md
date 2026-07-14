@@ -24,10 +24,11 @@
 - mosaic以外のheroへ寸法不明または幅1,200px / 高さ720px未満の審査済み画像を拡大する場合、画像URLと取得済み寸法からfail-closedにする。display / body fontの完全同一、画像反復、企業固有concept欠落も停止する。
 
 ### ローカル検証と残る公開条件
-- デモ関連 **16 files / 58 tests pass**、TypeScript、変更対象ESLint、quality guard **0 errors / 59 existing warnings**、production build **408/408 pages**、`git diff --check` pass。新規依存なし。
+- デモ関連 **17 files / 59 tests pass**、TypeScript、変更対象ESLint、quality guard **0 errors / 59 existing warnings**、production build **408/408 pages**、`git diff --check` pass。新規依存なし。
 - この段階では外部送信、候補追加、Twenty同期、ポータルDM、フォーム送信を行っていない。コード検査は合格したが、未知の複数実企業をDeepSeekだけで生成し、PC / mobileでHomeと下層を実ブラウザ比較するまでは「品質合格」「量産開始」と判定しない。
 - 初回本番QAで既存「ノン美容室」の235×353px画像が約804×892pxへ拡大され、旧`salon-air`書体のまま表示される不合格を検出。cinematicだけを止めていた画像ゲートを修正し、mosaic以外のheroは寸法不明または1,200×720未満をすべてfail-closedにする。既存デモの表示を合格扱いせず、新パイプライン再生成と再QAを必須とする。
 - V5本番再生成ではDeepSeekが別コンセプト3案を約18秒で返したが、3案ともmosaic以外を選んだため全件`hero_media_resolution_risk`・70点で正しく停止した。素材制約をLLM任せにせず、寸法不明または低解像度の画像では候補0を必ずmosaicへ安全補正する。コピー、書体、サービス、実績、配色、motionの企業固有directionは保持し、残り2案は停止理由を可視化する。
+- media-safe補正後の本番再生成は約29秒で、候補0のmosaicだけが100点・`private_review`、残り2案は70点・`hero_media_resolution_risk`で停止した。PC実ブラウザQAでは美容サービス3件を2列表示した最終行の右側が大きな空白となる組版不良を検出したため、奇数件の最終カードを全幅表示へ補正し、構造点とは別に目視QAを継続する。
 
 ## CURRENT STATUS - 2026-07-14 Japan Entry候補収集のSearXNG廃止・パッシブコーパス量産化（本番反映 / 外部送信0）
 
