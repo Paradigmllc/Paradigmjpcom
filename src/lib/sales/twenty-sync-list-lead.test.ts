@@ -88,4 +88,37 @@ describe("listLeadTwentyPayload", () => {
       "twenty_summary_drift",
     ]))
   })
+
+  it("keeps current list-only evidence stable after legacy tech_stack rows were cleared", () => {
+    const meta = {
+      list_only: true,
+      skip_enrichment: true,
+      contact_form_url: "https://example.com/contact",
+      lead_candidate: {
+        score: {
+          opportunityScore: 80,
+          smbScore: 90,
+          details: { detectedTechnologies: ["shopify", "google-analytics"] },
+        },
+      },
+    }
+    const company = {
+      id: "company-current",
+      company_name: "Current Store",
+      domain: "example.com",
+      target_country: "US",
+      source: "evidence_first_sources",
+      tech_stack: null,
+      report_url: null,
+      pipeline_status: "pending",
+      meta,
+    }
+    const summary = (listLeadTwentyPayload(company).paradigmKarteSummary as { markdown: string }).markdown
+
+    expect(summary).toContain("技術: Shopify, Google Analytics")
+    expect(listLeadSyncDriftReasons({
+      ...company,
+      meta: { ...meta, twenty: { id: "twenty-current", summary } },
+    })).toEqual([])
+  })
 })

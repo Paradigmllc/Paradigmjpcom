@@ -4,6 +4,7 @@
 - `list_only=true`かつ`skip_enrichment=true`の候補だけを対象に、Twenty ID、候補カルテ、旧営業ステータス、旧レポートURL、pipeline状態のdriftを検出する。管理画面でpreview後に不整合だけを最大3並列で再同期し、企業ごとのrequested / repaired / failedをoperator監査ログへ保存する。
 - Twenty側はdomain検索を先に行うため重複企業を作らず、既存企業を現在のlist-onlyカルテへ更新する。ローカル側もTwenty IDとcanonical summaryを再保存し、旧report URLをnull、pipelineをpendingへ戻す。Opportunity、初回文面、診断レポート、外部送信は生成しない。
 - 2026-07-14時点の本番事前監査ではlist-only候補79社、Twentyリンク78社、旧レポート文言2社、Twenty ID欠落1社を確認。停止していたpilot run `2b7b82b2-1fa5-4635-b100-fc19331061c5`は、既存の認証・監査付きcancel APIでcancelledへ変更済み。実データ修復は正式release後に新APIから実行する。
+- 初回production previewは保存済みsummaryと現在再計算したsummaryの完全一致を要求し、過去同期後に`tech_stack`がnull化された76社までdriftと誤判定したため、修復せず停止した。current list-only構造と禁止済み旧レポートmarkerで判定する方式へ変更し、欠落`tech_stack`は候補scoreの検出slugから人間可読名へ復元する。実DBと同じ条件でdriftは3社だけに戻ることを確認した。
 
 ### 持続可能な収集元とrelease gate
 - CSV / JSON / JSONL / HTMLごとに正しいAccept headerを送り、配信hostと企業詳細hostが異なる公式データは`source_page_allowed_hosts`で明示許可する。HTTPS、public DNS、同一または許可subdomain、25MB上限、preview、規約確認、operator承認、明示ingestの既存fail-closed条件は維持する。
