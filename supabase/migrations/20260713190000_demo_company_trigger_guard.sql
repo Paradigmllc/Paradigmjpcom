@@ -1,5 +1,5 @@
 -- Keep the legacy event-driven company trigger compatible with the canonical
--- source constraint, while excluding reviewed demo-only companies completely.
+-- source constraint, while excluding reviewed demo-only and list-only companies completely.
 alter table public.sales_pipeline_runs
   drop constraint if exists sales_pipeline_runs_source_check;
 
@@ -26,7 +26,7 @@ declare
   new_run_id uuid;
 begin
   if coalesce(new.meta->>'skip_enrichment', 'false') = 'true'
-    or new.source = 'reviewed_demo_manifest' then
+    or new.source in ('reviewed_demo_manifest', 'multi_source_domains') then
     return new;
   end if;
 
