@@ -1272,3 +1272,5 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - `/ja` のCMSホームシードと安全なフォールバックを、Japan Entryではなく国内向けWeb制作へ刷新。企業サイト・採用サイト・LP・既存サイトリニューアル、CMS、SEO/GEO基盤、保守・改善を30万円〜の料金目安とともに掲載し、4工程（ヒアリング、情報設計、デザイン・実装、公開・引き継ぎ）を可視化した。
 - `/ja` のトップ、料金、サービス、FAQ、会社概要、問い合わせ、チャットボット、運用イメージの文面を国内Web制作に統一。`/ja/contact?intent=japan-entry` の旧クエリでも国際Japan Entryへ戻らないようにし、英語版の固定オファーは変更していない。
 - 検証済み: 全locale JSON parse、`npm exec -- tsc --noEmit`、対象ESLint、`npm run quality:guard`（0 errors / 60 warnings）、`git diff --check`。正式releaseと本番 `/ja` のブラウザQAはコミット・デプロイ後に追記する。
+- 最終US/Shopify pilot run `993f3fbb-c464-4655-b72a-03de7da5fef8`は、候補20・確認10・Shopify一致10・実フォーム8・適格/昇格7・Twenty同期7・失敗0。7社すべてでTwenty company IDを保存し、フォームURLと機会スコア75を保持した。enrichment job 0、outreach run 0、artifact 0、diagnosis 0を確認した。
+- ただし`SalesCompany` insert後、既存DB triggerがlist-only企業にも空のevent-driven pipelineを6本（48 queued steps）作成したため、即時に全run/stepを`cancelled`へ変更。送信・文面・レポート生成前であり外部送信0を維持した。promotion metaへ`skip_enrichment=true` / `list_only=true`を固定し、DB trigger側も`source=multi_source_domains`を二重に除外する。Twenty company同期だけを許可する。

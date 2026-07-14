@@ -42,7 +42,13 @@ describe("promoteFormQualifiedCandidate", () => {
     const result = await promoteFormQualifiedCandidate(input)
 
     expect(result).toMatchObject({ promoted: true, twentySynced: true, twentyCompanyId: "twenty-1" })
-    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({ meta: expect.objectContaining({ contact_form_url: input.form.formUrl }) }))
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      meta: expect.objectContaining({
+        skip_enrichment: true,
+        list_only: true,
+        contact_form_url: input.form.formUrl,
+      }),
+    }))
     expect(mocks.sync).toHaveBeenCalledWith("company-1", { syncOpportunities: false })
     expect(mocks.update).toHaveBeenCalledWith({ status: "promoted", company_id: "company-1" })
   })

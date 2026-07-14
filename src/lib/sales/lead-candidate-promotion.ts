@@ -38,6 +38,8 @@ export async function promoteFormQualifiedCandidate(input: PromotionInput) {
     pipeline_status: "scanning",
     tech_stack: { detections: input.detections, source: input.source },
     meta: {
+      skip_enrichment: true,
+      list_only: true,
       contact_form_url: input.form.formUrl,
       form_discovery: input.form,
       lead_candidate: { id: input.candidateId, run_id: input.runId, source: input.source, score: input.score, promoted_at: new Date().toISOString() },
