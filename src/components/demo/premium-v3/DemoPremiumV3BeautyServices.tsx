@@ -5,6 +5,10 @@ import type { DemoMultiPageData } from "@/lib/sales/demo-site-types"
 import { demoHeadlineClass, resolveDemoArtDirection } from "@/lib/sales/demo-art-direction"
 import { PremiumV3Media, PremiumV3MediaCarousel, PremiumV3PageHero, PremiumV3Reveal, PremiumV3Stagger, PremiumV3StaggerItem } from "./PremiumV3Primitives"
 
+export function shouldSpanOddServiceRow(index: number, count: number): boolean {
+  return count % 2 === 1 && index === count - 1
+}
+
 export function DemoPremiumV3BeautyServices({ data }: { data: DemoMultiPageData }) {
   const premium = data.premium!
   const services = data.pages.services
@@ -28,7 +32,8 @@ export function DemoPremiumV3BeautyServices({ data }: { data: DemoMultiPageData 
           <div className="grid gap-px bg-[var(--demo-line)] md:grid-cols-2">
             {services.services.map((service, index) => {
               const itemMedia = media[index % media.length] ?? hero
-              return <PremiumV3Reveal key={service.title} motionStyle={motionStyle} delay={index * 0.04} className="group grid bg-[var(--demo-surface)] sm:grid-cols-[180px_1fr]"><div className="relative aspect-square overflow-hidden sm:aspect-auto sm:min-h-72"><PremiumV3Media media={itemMedia} className="absolute inset-0" sizes="(max-width:640px) 100vw, 180px" /><div className="absolute inset-0 bg-gradient-to-t from-black/46 via-transparent to-transparent" /><span className="absolute bottom-4 left-4 text-[10px] font-bold tracking-[.22em] text-white/78">MENU {String(index + 1).padStart(2, "0")}</span></div><div className="p-7 sm:p-8"><h3 className={`${demoHeadlineClass(service.title, "card")} font-[var(--demo-heading-weight)] [font-family:var(--demo-font-display)]`}>{service.title}</h3><p className="mt-5 text-sm leading-8 text-[var(--demo-muted)]">{service.description}</p><ul className="mt-7 grid gap-3 border-t border-[var(--demo-line)] pt-5">{service.features.map((feature) => <li key={feature} className="flex items-start gap-3 text-xs leading-6"><Check className="mt-1 h-3.5 w-3.5 shrink-0 text-[var(--demo-accent)]" />{feature}</li>)}</ul></div></PremiumV3Reveal>
+              const spansFullRow = shouldSpanOddServiceRow(index, services.services.length)
+              return <PremiumV3Reveal key={service.title} motionStyle={motionStyle} delay={index * 0.04} className={`group grid bg-[var(--demo-surface)] sm:grid-cols-[180px_1fr] ${spansFullRow ? "md:col-span-2 md:grid-cols-[minmax(260px,0.72fr)_1.28fr]" : ""}`}><div className="relative aspect-square overflow-hidden sm:aspect-auto sm:min-h-72"><PremiumV3Media media={itemMedia} className="absolute inset-0" sizes={spansFullRow ? "(max-width:640px) 100vw, (max-width:1280px) 36vw, 360px" : "(max-width:640px) 100vw, 180px"} /><div className="absolute inset-0 bg-gradient-to-t from-black/46 via-transparent to-transparent" /><span className="absolute bottom-4 left-4 text-[10px] font-bold tracking-[.22em] text-white/78">MENU {String(index + 1).padStart(2, "0")}</span></div><div className="p-7 sm:p-8"><h3 className={`${demoHeadlineClass(service.title, "card")} font-[var(--demo-heading-weight)] [font-family:var(--demo-font-display)]`}>{service.title}</h3><p className="mt-5 text-sm leading-8 text-[var(--demo-muted)]">{service.description}</p><ul className="mt-7 grid gap-3 border-t border-[var(--demo-line)] pt-5">{service.features.map((feature) => <li key={feature} className="flex items-start gap-3 text-xs leading-6"><Check className="mt-1 h-3.5 w-3.5 shrink-0 text-[var(--demo-accent)]" />{feature}</li>)}</ul></div></PremiumV3Reveal>
             })}
           </div>
         </div>
