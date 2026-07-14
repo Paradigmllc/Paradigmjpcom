@@ -20,6 +20,25 @@
 - 公式Wikidata endpointでUS packを実行し、企業名・website・従業員数・業種・HTTPS entity URLを持つ50件を取得、archive/SNS URL 0件を確認した。対象Vitest **3 files / 9 tests**、TypeScript、対象ESLint、release-doctorの新しいsource-pack静的gate、migrationの本番DB `BEGIN -> DDL -> ROLLBACK`がpass。
 - 正式release、公開管理画面/API確認、sourceのdraft登録からpreview・承認・ingest・事前検査、5件以上の実フォームを含む非送信pilotは未実行。batch承認、Twenty追加、文面/レポート生成、外部送信は開始しない。
 
+## CURRENT STATUS - 2026-07-15 SMB DEMO 300社wave量産（本番release完了 / 数百社wave運用準備完了 / 外部送信0）
+
+### 数百社運用に耐えるwave単位の量産制御
+- `/api/sales/demo-site/batch`の一括受付上限を100社から300社へ拡張し、1回の実務waveを`waveId`で追跡する。enqueueは最大8並列、実際のデモ生成drainは既存どおり品質優先の最大3並列に抑え、数百社を受けてもLLM/API/DBへ過剰負荷をかけない。
+- 既存の`sales_enrichment_jobs`を単一の永続queueとして使い、`input_payload.wave_id`へwave情報を保存する。新規DB tableは追加しないため、既存migration/RLS面を増やさず、途中停止後も`GET ?waveId=`で進捗再取得、`PATCH retry_failed`で失敗分だけ再投入できる。
+- 管理GUIに300社manifest投入、進捗バー、queued/running/completed/quality passed/failedの件数、15秒自動更新、停止時の再開、失敗分再試行、完了分URL発行を追加した。外部送信は引き続きfalseで固定し、URL発行も既存の7日限定previewだけを対象にする。
+
+### Houzz / エキテン / ジモティー候補の人手確認を数百件化
+- ポータル候補APIの表示上限を300件へ上げ、GUIは20件ずつページングして画像カードを一気に描画しない。リストが大きくなっても管理画面の初期描画を重くしない。
+- ブラウザ確認済みプロフィールの一括保存は最大300件のJSONを受け付け、内部では50件chunkに分割して既存APIへ順次保存する。スクレイピングやGoogle/SNS自動取得は追加せず、operator-confirmed snapshotだけを量産入力にする。
+
+### Verification
+- `npm install`は1507 packages / audit 0 vulnerabilities。`git diff --check` pass。
+- TypeScript `npx tsc --noEmit` pass。対象Vitest **4 files / 14 tests pass**（300件wave、301件拒否、wave別retry、drain回帰）。production build **408/408 pages** pass。
+- agent-browserで`http://localhost:3100/ja/admin/demo-assets`を確認。管理ログイン後、HTTP 200、本文あり、Next error overlayなし、`最大300社`と`失敗分を再試行`のUI表示あり。mobile 390pxも横overflow 0。ローカルSupabase/Payload未設定に伴う候補取得エラー表示は想定どおりで、UIは落ちていない。
+- PR **#232** / main **11dbfc85** / deployment **k10tim3y83ckq55n9qmg07xt**。正式`npm run release:prod`はDB **87/87**、Quality Guard **0 errors / 60 existing warnings**、Traefik / Cloudflare origin lock / Realtime / Twenty worker restart 0、公開smoke、Sales health HTTP 200 JSON `ok:true`までpass。
+- 本番確認: `https://paradigmjp.com/api/ready` HTTP 200、`/api/sales/demo-site/batch`と`/api/sales/demo-site/portal-candidates?source=ekiten`は未認証HTTP 401。`/ja/admin/demo-assets`の本番chunk `page-71f47359ef9a3766.js`に`最大300社`、`失敗分を再試行`、`waveId`、`retry_failed`が含まれることを確認。
+- 実300社生成は未実行。LLM/APIコストと外部候補副作用を避けるため、まず本番反映後に10件 -> 50件 -> 300件の非送信pilotで運用負荷と品質を確認する。メール、SNS、郵送、電話、ポータルDM、フォーム送信、Twenty追加は実行していない。
+
 ## CURRENT STATUS - 2026-07-15 Lead Source website preflight強化（本番release・再pilot完了 / batch未承認 / 外部送信0）
 
 ### 数千件を504なしで検査するfail-closed経路
