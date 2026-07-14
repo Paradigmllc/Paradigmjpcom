@@ -72,6 +72,13 @@ function emptyResult(input: { configured: boolean; dryRun: boolean; error?: stri
   }
 }
 
+function isListOnlyCompany(meta: Record<string, unknown>): boolean {
+  return meta.list_only === true
+    || meta.list_only === "true"
+    || meta.skip_enrichment === true
+    || meta.skip_enrichment === "true"
+}
+
 export async function pullTwentyCompaniesToSupabase(
   limit = 200,
   options: TwentyPullOptions = {},
@@ -121,6 +128,7 @@ export async function pullTwentyCompaniesToSupabase(
     const existingCompany = existingDomainMap.get(domain) ?? null
     const company = existingCompany ?? null
     const currentMeta = plainRecord(company?.meta)
+    const listOnly = isListOnlyCompany(currentMeta)
     const rawReportUrl = record.paradigmReportUrl?.primaryLinkUrl ?? null
     const rawFormUrl = record.paradigmFormUrl?.primaryLinkUrl ?? null
     const reportUrl = reportUrlFromTwenty(rawReportUrl)
@@ -248,7 +256,7 @@ export async function pullTwentyCompaniesToSupabase(
 
     if (isDryRun) {
       const needsGeneration = !companyReportUrl || companyPipelineStatus !== "report_ready" || sourceCoverageTooLow(record, patchMeta) || hasSourceErrors(patchMeta) || isDataStale(patchMeta) || invalidTwentyUrl
-      if (shouldAutoRunPipeline && needsGeneration && companyId) pipelineRunsCreated += 1
+      if (!listOnly && shouldAutoRunPipeline && needsGeneration && companyId) pipelineRunsCreated += 1
       continue
     }
 
@@ -261,7 +269,7 @@ export async function pullTwentyCompaniesToSupabase(
     if (syncLogError) console.error("[twenty-pull] sync log insert failed:", syncLogError.message)
 
     const needsGeneration = !companyReportUrl || !contactFormUrlFromMeta(patchMeta) || companyPipelineStatus !== "report_ready" || sourceCoverageTooLow(record, patchMeta) || hasSourceErrors(patchMeta) || isDataStale(patchMeta) || invalidTwentyUrl
-    if (!shouldAutoRunPipeline || !needsGeneration) continue
+    if (listOnly || !shouldAutoRunPipeline || !needsGeneration) continue
 
     const pipeline = await ensureTwentyPipelineRun(sb, { companyId, record, domain, options, dispatch: shouldDispatchPipeline })
     if (pipeline.reused) pipelineRunsReused += 1
