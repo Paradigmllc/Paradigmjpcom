@@ -4,6 +4,7 @@ import { salesScopeFromCountry } from "./locale-scope"
 import { listLeadCandidates, type CandidateListItem } from "./lead-candidate-list"
 import { ensureLeadCandidateRunDomainsFetched } from "./lead-candidate-acquisition"
 import { decideFormQualification, isEnterpriseLikeStack } from "./lead-factory-qualification"
+import { persistRunItemFailure } from "./lead-candidate-failure-persistence"
 import { promoteFormQualifiedCandidate } from "./lead-candidate-promotion"
 import { isCustomerFacingBusinessDomain } from "./data-quality-guard"
 import {
@@ -407,8 +408,7 @@ export async function processLeadCandidateRun(runId: string, options: { batchSiz
       } catch (error) {
         const message = error instanceof Error ? error.message : "candidate verification failed"
         console.error("[lead-candidate-runs] item failed:", item.domain, error)
-        const attempts = item.attempts + 1
-        await sb.from(DB_TABLES.SALES_LEAD_CANDIDATE_RUN_ITEMS).update({ status: "failed", attempts, error_message: message, processed_at: nowIso() }).eq("id", item.id)
+        await persistRunItemFailure(item, message)
         return { techMatched: false, promoted: false, twentySynced: false }
       }
     })
