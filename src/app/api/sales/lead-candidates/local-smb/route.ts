@@ -16,6 +16,7 @@ const LocalSmbRowSchema = z.object({
   phone: z.string().max(80).nullable().optional(),
   socialLinks: z.array(z.string().url()).max(20).optional(),
   websiteUrl: z.string().url().nullable().optional(),
+  sourceSlug: z.string().min(1).max(80).nullable().optional(),
   raw: z.record(z.string(), z.unknown()).optional(),
 })
 

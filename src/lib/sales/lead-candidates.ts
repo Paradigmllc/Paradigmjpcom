@@ -42,6 +42,7 @@ export interface LocalSmbInputRow {
   phone?: string | null
   socialLinks?: string[]
   websiteUrl?: string | null
+  sourceSlug?: string | null
   raw?: Record<string, unknown>
 }
 
@@ -366,7 +367,8 @@ export async function ingestCommonCrawlCandidates(input: CommonCrawlCandidateInp
 }
 
 export async function ingestLocalSmbCandidates(rows: LocalSmbInputRow[], promote = false): Promise<CandidateAcquisitionSummary> {
-  const source = "local_smb_directory"
+  const sourceSlugs = [...new Set(rows.map((row) => row.sourceSlug?.trim()).filter((value): value is string => Boolean(value)))]
+  const source = sourceSlugs.length === 1 ? sourceSlugs[0] : "local_smb_directory"
   const failures: Array<{ key: string; reason: string }> = []
   let upserted = 0
   let scored = 0
@@ -375,6 +377,7 @@ export async function ingestLocalSmbCandidates(rows: LocalSmbInputRow[], promote
 
   for (const row of rows.slice(0, 500)) {
     try {
+      const sourceSlug = row.sourceSlug?.trim() || "local_smb_directory"
       const countryCode = row.countryCode.trim().toUpperCase()
       const hasWebsite = Boolean(row.websiteUrl?.trim())
       const identity = hasWebsite ? normalizeDomain(row.websiteUrl) ?? localSmbIdentity(row) : localSmbIdentity(row)
@@ -385,7 +388,7 @@ export async function ingestLocalSmbCandidates(rows: LocalSmbInputRow[], promote
         domain: identity,
         rootUrl: hasWebsite ? row.websiteUrl?.trim() ?? null : null,
         lane: "no_website_local_smb",
-        sourceSlug: source,
+        sourceSlug,
         meta: {
           business_name: row.businessName,
           category: row.category ?? null,
@@ -405,11 +408,11 @@ export async function ingestLocalSmbCandidates(rows: LocalSmbInputRow[], promote
         lane: "no_website_local_smb",
         hasWebsite,
         hasContactSignal: Boolean(row.phone || row.listingUrl || (row.socialLinks?.length ?? 0) > 0),
-        source,
+        source: sourceSlug,
       })
       await saveCandidateEvidence({
         candidate,
-        sourceSlug: source,
+        sourceSlug,
         observedUrl: row.listingUrl ?? row.websiteUrl ?? null,
         rawEvidence: { ...row, identity, country_code: countryCode },
         signatureHits: [],
@@ -422,7 +425,7 @@ export async function ingestLocalSmbCandidates(rows: LocalSmbInputRow[], promote
         const promotion = await promoteCandidate({
           candidate,
           countryCode,
-          sourceSlug: source,
+          sourceSlug,
           companyName: row.businessName,
           score,
           detections: [],
@@ -446,6 +449,11 @@ export async function ingestLocalSmbCandidates(rows: LocalSmbInputRow[], promote
   }
 
   const countryCode = rows[0]?.countryCode ?? null
-  const candidates = await listLeadCandidates({ countryCode, lane: "no_website_local_smb", limit: 30 })
+  const candidates = await listLeadCandidates({
+    countryCode,
+    lane: "no_website_local_smb",
+    sourceSlug: sourceSlugs.length === 1 ? sourceSlugs[0] : null,
+    limit: 100,
+  })
   return { ok: failures.length === 0 || upserted > 0, source, fetched: rows.length, upserted, verified: rows.length, matchedTechnology: 0, scored, promoted, jobsEnqueued, failures: failures.slice(0, 30), candidates }
 }
