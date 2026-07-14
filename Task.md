@@ -1,3 +1,12 @@
+## CURRENT STATUS - 2026-07-14 Houzz・エキテン・ジモティー候補→SMB DEMO量産レーン（実装・ローカル検証完了 / 外部送信0）
+
+### 2026-07-14 Portal sourced SMB demo factory
+- 管理者画面 `/ja/admin/demo-assets` に、Houzz → エキテン → ジモティーの3系統を切り替える候補収集コンソールを追加。検索エンジンを巡回せず、operatorが指定した各ポータルの公開HTTPS URLだけを最大100件ずつ、同時5件で取得する。
+- 取得した事業者名、業種、説明、住所、電話、SNS、掲載画像、独自HP候補を既存 `sales_lead_candidate_*` DBへ保存。`source_slug`を `houzz` / `ekiten` / `jmty` のまま保持し、独自HPあり、画像3点未満、説明・住所不足はDEMO生成対象からfail-closedで除外する。
+- 画像はoperatorが元ページを確認し、人物・透かしを除外して3点以上選択した場合だけ `reviewed_manifest` 化。スナップショット外URLを拒否し、`private_proposal` として登録するため、権利確認前のクリーン公開URLと外部送信は既存ゲートで停止する。
+- 承認済み候補は既存の最大3件並列one-shot drainへ自動接続し、同一企業・同一manifestは既存結果を再利用。11ページPremium V3、品質94点、hard blocker 0の既存基準を緩めず、メール・電話・郵便・SNS・ポータルDM・フォーム送信・Twenty同期は接続していない。
+- ローカル検証: ポータル抽出・HP判定・素材審査・API認証・自動drain・再利用を含む全Vitest **125 files / 571 tests pass**、TypeScript、全ESLint、quality guard **0 errors / 60 warnings**、production build **408/408 pages**、`git diff --check` pass。
+
 ## CURRENT STATUS - 2026-07-14 Japan Entry文面20社一括生成→Twenty保存の本番試験（完了 / 外部送信0 / QAデータ削除済み）
 
 ### 2026-07-14 Opportunity Brief factory production batch verification
@@ -1257,5 +1266,11 @@ Phase 9 — インフラ堅牢化（数千〜数万件対応）
 - browser footprint初回run `a61afeca-e353-40f3-826c-240e7b7d154c`は候補20・確認10・実フォーム4・失敗0まで改善したが、検索語`cdn.shopify.com`が技術解説/監視サイトを拾いShopify一致0。全件をゲートで遮断しTwenty追加0・送信0を維持した。実検索でstore subdomainが返る`site:myshopify.com`へ置換し、候補配列は技術特化sourceの挿入順を維持してgeneric TLD fallbackより先に確認するよう修正した。
 - store subdomain版run `68d6a109-591b-428b-95c1-fdad3ed722dc`は技術特化候補8件を先行取得し、候補20・確認10・実フォーム6・失敗0。既存HTML検出だけでは`*.myshopify.com`をShopify確定証拠として扱わず、本文の住所/通貨/電話も国判定へ渡していなかったため、Shopify一致0・Twenty追加0でfail-closed停止した。既存CNAME/hosted-platform規則をdomain hostnameにも適用し、ページ本文からscript/styleを除いた最大50KBだけを国の客観証拠へ使用する。US主要都市を拡張し、対象市場NL/SG/AEのTLD・電話・通貨・住所規則も追加した。
 - hosted Shopify + US住所/通貨 + 実フォーム条件が既定68点以上になる回帰テストを追加。関連 **9 files / 37 tests pass**、TypeScript / 対象ESLint / production build 408/408 pass。
+## CURRENT STATUS - 2026-07-14 /ja国内Web制作サイト刷新（実装済み・本番反映待ち）
+
+### 2026-07-14 /ja Web production repositioning
+- `/ja` のCMSホームシードと安全なフォールバックを、Japan Entryではなく国内向けWeb制作へ刷新。企業サイト・採用サイト・LP・既存サイトリニューアル、CMS、SEO/GEO基盤、保守・改善を30万円〜の料金目安とともに掲載し、4工程（ヒアリング、情報設計、デザイン・実装、公開・引き継ぎ）を可視化した。
+- `/ja` のトップ、料金、サービス、FAQ、会社概要、問い合わせ、チャットボット、運用イメージの文面を国内Web制作に統一。`/ja/contact?intent=japan-entry` の旧クエリでも国際Japan Entryへ戻らないようにし、英語版の固定オファーは変更していない。
+- 検証済み: 全locale JSON parse、`npm exec -- tsc --noEmit`、対象ESLint、`npm run quality:guard`（0 errors / 60 warnings）、`git diff --check`。正式releaseと本番 `/ja` のブラウザQAはコミット・デプロイ後に追記する。
 - 最終US/Shopify pilot run `993f3fbb-c464-4655-b72a-03de7da5fef8`は、候補20・確認10・Shopify一致10・実フォーム8・適格/昇格7・Twenty同期7・失敗0。7社すべてでTwenty company IDを保存し、フォームURLと機会スコア75を保持した。enrichment job 0、outreach run 0、artifact 0、diagnosis 0を確認した。
 - ただし`SalesCompany` insert後、既存DB triggerがlist-only企業にも空のevent-driven pipelineを6本（48 queued steps）作成したため、即時に全run/stepを`cancelled`へ変更。送信・文面・レポート生成前であり外部送信0を維持した。promotion metaへ`skip_enrichment=true` / `list_only=true`を固定し、DB trigger側も`source=multi_source_domains`を二重に除外する。Twenty company同期だけを許可する。

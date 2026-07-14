@@ -136,28 +136,107 @@ const JA_FALLBACK_BLOCKS: CmsBlock[] = [
   {
     blockType: "hero",
     variant: "centered",
-    badge: "中小企業のデジタルパートナー",
-    title: "Web制作×AIで、ビジネスの成長を加速する",
+    badge: "中小企業向け Web制作",
+    title: "伝わるだけで終わらない。事業に使えるWebサイトを。",
     subtitle:
-      "戦略設計から公開後の集客・運用まで、Paradigmが一気通貫で支援します。",
-    primaryCta: { label: "お問い合わせ", href: "/ja/contact" },
-    secondaryCta: { label: "サービスを見る", href: "/ja/services" },
+      "企業サイト、採用サイト、サービスサイト、LPを、情報設計から公開後の運用まで。初期費用30万円〜、要件と範囲を明記して進めます。",
+    primaryCta: { label: "無料相談を申し込む", href: "/ja/contact" },
+    secondaryCta: { label: "料金を見る", href: "/ja/pricing" },
+    stats: [
+      { value: "30万円〜", label: "Web制作" },
+      { value: "4", label: "標準工程" },
+      { value: "1", label: "担当窓口" },
+      { value: "公開後", label: "運用も支援" },
+    ],
+  },
+  {
+    blockType: "marquee",
+    items: [
+      { text: "Web制作30万円〜" },
+      { text: "企業サイト・採用サイト" },
+      { text: "LP・キャンペーンページ" },
+      { text: "WordPress / Next.js" },
+      { text: "SEO・アクセシビリティ" },
+      { text: "公開後の保守・改善" },
+    ],
+    direction: "left",
+    speed: "slow",
   },
   {
     blockType: "section",
-    kicker: "SERVICES",
-    title: "ビジネスの成長に必要な実装を、ワンストップで",
+    kicker: "WEB PRODUCTION",
+    title: "見た目だけでなく、問い合わせまで設計する。",
     subtitle:
-      "Web制作、MEO、SEO/GEO、AI導入支援を、成果につながる一つの導線として設計・実装します。",
+      "目的、顧客、運用体制を先に整理し、情報設計・デザイン・実装・計測を一つの制作プロセスとして進めます。",
     alignment: "center",
     background: "default",
   },
   {
+    blockType: "card-grid",
+    variant: "bento",
+    columns: "3",
+    cards: [
+      { icon: "Globe", title: "企業サイト・採用サイト", description: "会社の強み、提供価値、採用情報を整理し、初めて訪れた人が次の行動へ進める構成にします。", href: "/ja/services/web", highlighted: true },
+      { icon: "PenTool", title: "LP・キャンペーンページ", description: "一つの商材や施策に集中したページを、訴求・証拠・CTAの順番から設計します。", href: "/ja/services/web", highlighted: false },
+      { icon: "RefreshCw", title: "既存サイトのリニューアル", description: "現行URL、コンテンツ、検索導線、更新体制を確認し、残すものと作り直すものを分けます。", href: "/ja/services/web", highlighted: false },
+      { icon: "Code2", title: "CMS・更新基盤", description: "更新担当者が迷わない入力項目と権限を設計し、公開後の更新手順まで残します。", href: "/ja/services/web", highlighted: false },
+      { icon: "Search", title: "SEO・GEOの土台", description: "見出し、メタデータ、構造化データ、内部リンクを制作時から整え、計測できる状態で公開します。", href: "/ja/services/seo", highlighted: false },
+      { icon: "ShieldCheck", title: "保守・改善", description: "SSL、バックアップ、軽微な更新、改善提案など、必要な範囲を月額契約に明記します。", href: "/ja/contact", highlighted: false },
+    ],
+  },
+  {
+    blockType: "stats",
+    kicker: "WORKING MODEL",
+    title: "制作前に、範囲と判断基準をそろえる。",
+    subtitle: "ページ数だけで料金を決めず、目的・更新体制・外部連携・公開後の責任範囲を先に確認します。",
+    stats: [
+      { value: "30万円〜", label: "初期制作", sublabel: "要件・ページ数で確定" },
+      { value: "4工程", label: "標準プロセス", sublabel: "要件から公開後まで" },
+      { value: "1窓口", label: "進行担当", sublabel: "確認事項を集約" },
+      { value: "明記", label: "納品条件", sublabel: "見積書・契約書で合意" },
+    ],
+    background: "surface",
+  },
+  {
+    blockType: "process",
+    kicker: "PROCESS",
+    title: "相談から公開後の改善まで、4つの工程で進める。",
+    subtitle: "制作側だけでなく、社内の確認・承認が止まらないように、各工程の成果物と次の判断を共有します。",
+    steps: [
+      { title: "ヒアリング・現状監査", description: "事業目標、顧客、既存サイト、素材、更新体制を確認し、制作範囲を整理します。", icon: "ClipboardCheck" },
+      { title: "情報設計・ワイヤー", description: "ページ構成、導線、必要なコンテンツ、CTA、計測項目を合意します。", icon: "CheckCircle" },
+      { title: "デザイン・実装", description: "デザインシステム、レスポンシブUI、CMS、フォーム、SEO基盤を実装します。", icon: "Code2" },
+      { title: "公開・引き継ぎ・改善", description: "検収、公開、操作説明、初期計測、保守範囲を確認し、次の改善を決めます。", icon: "TrendingUp" },
+    ],
+  },
+  {
+    blockType: "pricing",
+    title: "Web制作の料金目安",
+    subtitle: "初期費用30万円〜。ページ数、機能、素材、CMS、移行、公開後サポートの範囲を確認して正式見積もりを作成します。",
+    tiers: [
+      { name: "ライト", price: "300,000", period: "〜", description: "小規模サイトやサービス紹介ページ向け。まず必要な情報を整理して公開します。", features: "トップページ＋下層4ページ前後\nレスポンシブ対応\nお問い合わせフォーム\nSEO基本設定\n公開後1か月の軽微な修正", ctaLabel: "このプランを相談", ctaHref: "/ja/contact", highlighted: false },
+      { name: "スタンダード", price: "600,000", period: "〜", description: "企業サイト・採用サイトの標準構成。更新しやすいCMSと計測基盤を含めます。", features: "トップページ＋下層9ページ前後\n情報設計・ワイヤー・デザイン\nWordPressまたはNext.js CMS\nSEO内部対策・構造化データ\n公開後3か月の運用相談", ctaLabel: "おすすめを相談", ctaHref: "/ja/contact", highlighted: true },
+      { name: "グロース", price: "1,000,000", period: "〜", description: "複数サービス、多言語、外部連携などを含む本格的なサイト基盤。", features: "ページ・機能を要件定義で確定\nカスタムUIとコンポーネント設計\n多言語・外部サービス連携\nアクセス解析・改善ダッシュボード\n公開後6か月の改善伴走", ctaLabel: "要件を相談", ctaHref: "/ja/contact", highlighted: false },
+    ],
+  },
+  {
+    blockType: "faq",
+    title: "Web制作を依頼する前に",
+    subtitle: "制作範囲、進め方、費用の考え方を先に公開しています。",
+    items: [
+      { question: "本当に30万円から制作できますか？", answer: fallbackRichText("はい。ライトプランは30万円からが目安です。ページ数、原稿・写真の準備状況、フォームや外部連携、CMSの有無によって変わるため、要件確認後に正式見積もりを提示します。") },
+      { question: "制作期間はどのくらいですか？", answer: fallbackRichText("小規模サイトは要件と素材がそろってから3〜6週間程度、中規模以上は2〜3か月程度が目安です。承認回数、素材準備、外部サービスの審査などの依存条件を見積書に記載します。") },
+      { question: "既存サイトのリニューアルにも対応しますか？", answer: fallbackRichText("対応します。既存URL、検索流入、コンテンツ、フォーム、CMS、ドメイン・サーバーを確認し、リダイレクトと切り替え手順を含めて計画します。") },
+      { question: "公開後の保守は必須ですか？", answer: fallbackRichText("必須ではありません。更新代行、SSL・バックアップ、障害対応、改善提案など、必要な範囲だけを月額契約に分けて明記します。") },
+      { question: "成果や検索順位は保証されますか？", answer: fallbackRichText("制作物の納品・検収条件は契約で明記しますが、売上、問い合わせ数、検索順位などの事業成果は保証しません。公開後に計測し、改善できる状態をつくります。") },
+    ],
+  },
+  {
     blockType: "cta",
-    title: "事業課題を、実装できる計画に変えます。",
-    subtitle: "現在の課題と目標をお聞かせください。担当者が次の一手を整理してご連絡します。",
-    primaryCta: { label: "お問い合わせ", href: "/ja/contact" },
-    secondaryCta: { label: "会社情報を見る", href: "/ja/about" },
+    title: "Webサイトを、事業の前進に使える状態へ。",
+    subtitle: "現在のサイト、作りたいページ、公開時期、社内の運用体制をお聞かせください。必要な範囲と進め方を整理してご提案します。",
+    primaryCta: { label: "無料相談を申し込む", href: "/ja/contact" },
+    secondaryCta: { label: "サービスを見る", href: "/ja/services" },
     background: "gradient",
   },
 ]
@@ -207,14 +286,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params
   if (locale === "ja") {
     return {
-      title: "Paradigm合同会社 | Web・集客・AI導入支援",
-      description: "Web制作、MEO、SEO/GEO、AI導入支援を、設計から公開後の運用まで一気通貫で支援します。",
+      title: "Web制作30万円〜 | Paradigm合同会社",
+      description: "企業サイト・採用サイト・LPを30万円〜。情報設計から公開後の運用まで支援します。",
       alternates: pageAlternates("ja"),
       openGraph: {
         type: "website",
         url: "https://paradigmjp.com/ja",
-        title: "Paradigm合同会社 | Web・集客・AI導入支援",
-        description: "Web制作、MEO、SEO/GEO、AI導入支援を、設計から公開後の運用まで一気通貫で支援します。",
+        title: "Web制作30万円〜 | Paradigm合同会社",
+        description: "企業サイト・採用サイト・LPを30万円〜。情報設計から公開後の運用まで支援します。",
       },
     }
   }

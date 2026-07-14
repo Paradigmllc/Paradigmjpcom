@@ -9,7 +9,6 @@ import {
   JAPAN_ENTRY_MONTH_ONE_TARGET_DISCLOSURE,
   JAPAN_ENTRY_MONTH_ONE_TARGET_STAT,
 } from "@/lib/japan-entry-public-copy"
-
 function textToLexical(text: string) {
   return {
     root: { type: "root" as const, direction: "ltr" as const, format: "" as const, indent: 0, version: 1,
@@ -20,19 +19,16 @@ function textToLexical(text: string) {
     },
   }
 }
-
 export const CATEGORIES = [
   { slug:"seo-geo", ja:{name:"SEO/GEO", desc:"検索エンジン最適化とAI検索対策の最新情報"}, en:{name:"SEO/GEO", desc:"Latest insights on search engine optimization and AI search"}, color:"indigo" as const, sort:1 },
   { slug:"ai-automation", ja:{name:"AI・自動化", desc:"AI活用・業務自動化・DX推進の実践ノウハウ"}, en:{name:"AI & Automation", desc:"Practical know-how for AI adoption, automation, and DX"}, color:"violet" as const, sort:2 },
   { slug:"web-production", ja:{name:"Web制作", desc:"Webサイト制作・リニューアルのノウハウと最新トレンド"}, en:{name:"Web Development", desc:"Best practices and trends in web development and redesign"}, color:"emerald" as const, sort:3 },
   { slug:"digital-marketing", ja:{name:"デジタルマーケティング", desc:"集客・成約率改善・データ活用の総合マーケティング情報"}, en:{name:"Digital Marketing", desc:"Comprehensive marketing insights for lead generation, CVR, and data utilization"}, color:"amber" as const, sort:4 },
 ]
-
 interface SeedPost {
   slug: string; ja: { title: string; excerpt: string; cat: string; read: string; content: string }; en: { title: string; excerpt: string; cat: string; read: string; content: string }
   tags: string[]; date: string
 }
-
 const POSTS_PART1: SeedPost[] = [
   { slug:"geo-2025-complete-guide", ja:{title:"GEO完全ガイド 2025 — AI検索時代のSEO戦略", excerpt:"ChatGPT、Perplexity、Google AI Overviews。AIが回答を生成する時代に、検索流入を獲得する新手法GEOの全貌を解説。従来SEOとの違い、具体的な最適化手法、12カ国語対応の実践戦略まで。", cat:"SEO/GEO", read:"12分", content:`## GEOとは何か\n\nGEO（Generative Engine Optimization）は、ChatGPT、Perplexity、Google AI Overviews、Claude、Geminiといった生成AIエンジンにおいて、自社コンテンツが引用・参照されるよう最適化する新しい分野です。従来のSEOが「Googleの青リンク10件」の中での上位表示を目指すのに対し、GEOは「AIが生成する回答」の中に自社情報を組み込ませることを目的とします。\n\n## なぜ今GEOが必要なのか\n\n2025年現在、検索行動は大きく変化しています。Google検索でもAI Overviewsが上部に表示され、ユーザーは青リンクをクリックする前にAIの回答を読んで満足してしまうケースが増えています。PerplexityやChatGPT Searchの利用率も急増しており、従来型SEOだけでは獲得できないトラフィックが拡大しています。\n\n## GEOとSEOの決定的な違い\n\nSEOが「クローラー向けの技術最適化＋被リンク獲得」であるのに対し、GEOは「AIが学習・引用したくなる情報価値」が核心です。一次データ・独自統計の保有、権威ある外部ソースからの被引用実績、構造化された明確な情報設計、質問に対する直接的で簡潔な回答が重要です。\n\n## 具体的なGEO最適化手法\n\nTL;DR要約を冒頭に配置、独自統計・データを提示、外部引用シグナルを強化、構造化データ（JSON-LD）を完璧に実装、多言語展開でグローバルAI検索をカバー。Paradigmでは12カ国語対応のGEO最適化を提供しています。`}, en:{title:"GEO 2025 Complete Guide — SEO Strategy for the AI Search Era", excerpt:"ChatGPT, Perplexity, Google AI Overviews. A complete guide to GEO — the new discipline for winning traffic in the AI-generated answer era. Differences from traditional SEO, concrete optimization methods, and a 12-language practical strategy.", cat:"SEO/GEO", read:"12 min", content:`## What is GEO\n\nGEO (Generative Engine Optimization) is a new discipline focused on optimizing content so that AI engines — ChatGPT, Perplexity, Google AI Overviews, Claude, Gemini — cite and reference your brand in their generated answers. While traditional SEO targets ranking among Google's blue links, GEO aims to embed your information directly into AI-generated responses.\n\n## Why GEO Matters Now\n\nSearch behavior has shifted dramatically. Google's own AI Overviews now dominate the top of search results, and users often find answers without ever clicking a link. Perplexity and ChatGPT Search adoption is accelerating, creating traffic channels that traditional SEO alone cannot capture.\n\n## Key Differences\n\nSEO focuses on technical crawler optimization and backlinks. GEO centers on the information value that makes AI want to cite you: original data, citation track record, clear information architecture, and direct concise answers.\n\n## Practical GEO Optimization\n\nPlace TL;DR summaries at the top, present original statistics, strengthen external citation signals, implement complete structured data (JSON-LD), and cover global AI search through multilingual deployment. Paradigm provides GEO optimization across 12 languages.`}, tags:["GEO","AI検索","ChatGPT","Perplexity","SEO"], date:"2025-08-01" },
   { slug:"seo-technical-checklist-2025", ja:{title:"【2025年版】テクニカルSEO完全チェックリスト", excerpt:"Core Web Vitals、モバイルファースト、構造化データ、サイト速度。検索順位を左右するテクニカルSEOの全要素を50項目で網羅。INP対応やNext.js最適化も解説。", cat:"SEO/GEO", read:"15分", content:`## テクニカルSEOの重要性\n\nテクニカルSEOは、検索エンジンがサイトを正しくクロール・インデックスできるようにする基盤整備です。コンテンツが素晴らしくても技術的な問題で検索順位が上がらないケースは非常に多くあります。\n\n## 2025年の重要トピック\n\nGoogleはINP（Interaction to Next Paint）をCore Web Vitalsの正式指標に採用しました。FIDに代わるこの指標はユーザー操作への応答速度を測定します。\n\n## 主要チェック項目\n\nクロール・インデックス: XML Sitemapの自動生成と送信、robots.txtの適切な設定、canonicalタグの正しい実装。構造化データ: Organizationスキーマ、BreadcrumbListスキーマ、FAQスキーマ、Articleスキーマ。Core Web Vitals: LCP 2.5秒以内、INP 200ms以内、CLS 0.1以内、画像のWebP/AVIF化。モバイル: レスポンシブデザイン、タップターゲットサイズ、コンテンツパリティ。\n\n## Next.jsサイトの最適化\n\nnext/image活用、動的メタデータのgenerateMetadata実装、ISRによるパフォーマンス最適化、適切なキャッシュ戦略の設定が重要です。`}, en:{title:"2025 Technical SEO Complete Checklist", excerpt:"Core Web Vitals, mobile-first indexing, structured data, site speed. A complete 50-item checklist covering every technical SEO factor that impacts rankings, including INP and Next.js optimization.", cat:"SEO/GEO", read:"15 min", content:`## The Importance of Technical SEO\n\nTechnical SEO is the foundation that enables search engines to correctly crawl and index your site. Even with exceptional content, technical issues frequently prevent sites from ranking well.\n\n## Key 2025 Topics\n\nGoogle adopted INP (Interaction to Next Paint) as a Core Web Vitals metric. This replacement for FID measures responsiveness to user interactions.\n\n## Major Checklist Items\n\nCrawl & Index: XML Sitemap, proper robots.txt, correct canonical tags. Structured Data: Organization, BreadcrumbList, FAQ, Article schemas. Core Web Vitals: LCP under 2.5s, INP under 200ms, CLS under 0.1, WebP/AVIF images. Mobile: Responsive design, tap target sizing, content parity.\n\n## Next.js Optimization\n\nPay attention to next/image usage, dynamic metadata via generateMetadata, ISR performance optimization, and proper cache strategy configuration.`}, tags:["テクニカルSEO","Core Web Vitals","チェックリスト","Next.js"], date:"2025-07-20" },
@@ -46,7 +42,6 @@ const POSTS_PART1: SeedPost[] = [
   { slug:"dx-small-business-roadmap", ja:{title:"中小企業DXの羅針盤 — 3ステップではじめるデジタル改革", excerpt:"DXは大企業だけのものではありません。中小企業が今日から始められるDXの3ステップ「デジタル化 → 自動化 → 高度化」を具体的な費用感とともに解説します。", cat:"AI・自動化", read:"7分", content:`## DXは難しくない\n\nDXに圧倒される中小企業経営者は少なくありません。しかし本質はシンプルです。「デジタル技術を使って今の業務をより良くする」ことです。\n\n## ステップ1：デジタル化\n\n紙の書類をクラウドに移行し情報共有をスムーズに。Google WorkspaceやMicrosoft 365の導入、クラウド会計ソフトへの移行、電子契約の導入から始めましょう。\n\n## ステップ2：自動化\n\n繰り返し作業をツールで自動化。event-driven workersで「メール→Slack通知→スプレッドシート記録」のようなルーチンを自動化、AIチャットボットで一次問い合わせ対応を自動化します。\n\n## ステップ3：高度化\n\n蓄積したデータを分析しAIを活用した予測や意思決定支援を行います。在庫予測、売上予測、顧客離反予測などの高度な分析をクラウドAIツールで実現できます。`}, en:{title:"SMB DX Roadmap — A 3-Step Guide to Digital Transformation", excerpt:"DX isn't just for enterprises. A practical 3-step framework for SMBs — Digitalize → Automate → Advance — with concrete cost estimates and actionable starting points.", cat:"AI & Automation", read:"7 min", content:`## DX Isn't Hard\n\nMany SMB leaders feel overwhelmed by DX but the essence is simple: use digital technology to make current operations better.\n\n## Step 1: Digitalize\n\nMove paper to the cloud. Start with Google Workspace or Microsoft 365, cloud accounting, and electronic contracts.\n\n## Step 2: Automate\n\nAutomate repetitive tasks with event-driven workers workflows and AI chatbots for first-response inquiries.\n\n## Step 3: Advance\n\nAnalyze data and leverage AI for prediction and decision support — inventory forecasting, sales prediction, churn prediction with cloud AI tools.`}, tags:["DX","デジタル化","中小企業","業務改善"], date:"2025-07-01" },
   { slug:"ai-tool-comparison-2025", ja:{title:"【2025年比較】ビジネスAIツール完全ガイド — ChatGPT vs Claude vs Gemini vs DeepSeek", excerpt:"ビジネス用途で最適なAIツールはどれか。4大LLMを精度・コスト・機能・日本語対応の4軸で徹底比較します。", cat:"AI・自動化", read:"11分", content:`## 4大LLMの比較軸\n\nAIツール選定で重要なのは「どのタスクにどのモデルが最適か」です。日本語生成精度、APIコスト、機能、エコシステムの4軸で比較します。\n\n## 各モデルの特徴\n\nChatGPT（OpenAI）: エコシステムが最も充実。プラグイン、GPTs、API連携が豊富。日本語精度は高いがAPIコストは最高。Claude（Anthropic）: 長文処理と安全性に強み。200Kトークンのコンテキストウィンドウ。Gemini（Google）: マルチモーダル最強。画像・動画・音声の理解力が高い。DeepSeek V4: コストパフォーマンス最強。Context Cachingで入力コスト90%OFF。\n\n## 用途別おすすめ\n\nカスタマーサポート自動化 → DeepSeek（低コスト・高精度）。長文レポート作成 → Claude。画像・動画解析 → Gemini。社内AIアシスタント → ChatGPT。`}, en:{title:"2025 Business AI Tool Comparison — ChatGPT vs Claude vs Gemini vs DeepSeek", excerpt:"Which AI tool is best for business? A thorough 4-axis comparison of ChatGPT, Claude, Gemini, and DeepSeek — accuracy, cost, features, and Japanese support.", cat:"AI & Automation", read:"11 min", content:`## Comparison Framework\n\nThe key question: which model for which task? Compare Japanese quality, API cost, features, and ecosystem.\n\n## Model Highlights\n\nChatGPT: Richest ecosystem. Claude: Long-form processing, 200K context. Gemini: Best multimodal. DeepSeek V4: Best cost-performance, 90% input cost reduction.\n\n## Recommendations\n\nSupport automation → DeepSeek (low cost, high accuracy). Reports → Claude. Image/video → Gemini. Internal assistant → ChatGPT.`}, tags:["AI比較","ChatGPT","Claude","Gemini","DeepSeek"], date:"2025-06-20" },
 ]
-
 const POSTS_PART2: SeedPost[] = [
   // Web制作
   { slug:"web-production-cost-2025", ja:{title:"Webサイト制作の費用相場 2025 — 発注前に知っておくべき予算のすべて", excerpt:"HP制作、LP制作、ECサイト構築。2025年のWeb制作費用相場を制作タイプ別・発注先別に徹底解説。見積もりの読み方、失敗しない発注のコツも紹介します。", cat:"Web制作", read:"11分", content:`## Web制作費用の全体像\n\nWebサイト制作の費用は「何を作るか」「誰に頼むか」で大きく変動します。\n\n## 制作タイプ別費用相場\n\nシンプルなコーポレートサイト（5ページ程度）: 30〜80万円。10ページ以上の本格サイト: 80〜200万円。LP1枚: 15〜50万円。ECサイト（Shopify等）: 100〜500万円。フルカスタムWebアプリ: 300万円〜。\n\n## 発注先別の特徴\n\n大手制作会社: 300万円〜。品質は高いが高額。中小制作会社: 50〜200万円。バランスが良い。フリーランス: 20〜100万円。コスパは良いが属人化リスクあり。\n\n## 見積もりの読み方\n\n見積書には制作費だけでなくサーバー代・ドメイン代・保守費用・追加修正費用が含まれているか確認しましょう。サブスク型の保守費用は要注意です。`}, en:{title:"Web Development Cost Guide 2025", excerpt:"A comprehensive 2025 web development cost guide by project type and vendor category. Learn to read quotes, spot hidden costs, and commission with confidence.", cat:"Web Development", read:"11 min", content:`## Web Development Cost Overview\n\nWeb development costs vary significantly based on what you're building and who you hire.\n\n## Cost Ranges by Project Type\n\nSimple corporate site: ¥300K-800K. Full site (10+ pages): ¥800K-2M. Single LP: ¥150K-500K. Ecommerce: ¥1M-5M. Custom web app: ¥3M+.\n\n## Vendor Categories\n\nLarge agencies: ¥3M+. Mid-size: ¥500K-2M. Freelancers: ¥200K-1M. Offshore: ¥100K-500K.\n\n## Reading Proposals\n\nCheck whether quotes include hosting, domains, maintenance, and revision costs beyond the base fee.`}, tags:["Web制作","費用","見積もり","発注","相場"], date:"2025-08-10" },
@@ -61,10 +56,8 @@ const POSTS_PART2: SeedPost[] = [
   { slug:"sns-marketing-strategy-2025", ja:{title:"2025年SNSマーケティング戦略 — プラットフォーム別・業種別の最適解", excerpt:"X、Instagram、LinkedIn、TikTok、Facebook。2025年に注力すべきSNSを業種別・目的別に整理し最新動向と運用のコツを解説。", cat:"デジタルマーケティング", read:"10分", content:`## SNSマーケティングの全体像\n\n2025年、SNSは「情報発信の場」から「購買の場」へと進化しました。\n\n## 業種別おすすめSNS\n\nBtoB（IT・コンサル）: LinkedInを軸にXで専門性発信。BtoC（小売・飲食）: Instagramを軸にTikTokで若年層リーチ。BtoBtoC（不動産・教育）: YouTubeを軸にInstagramで補完。\n\n## 運用のコツ\n\nコンテンツの再利用（1記事をスレッド、リール、ブログに展開）。投稿時間の最適化。コミュニティ運営（コメント返信・DM対応を徹底）。`}, en:{title:"2025 Social Media Marketing Strategy", excerpt:"X, Instagram, LinkedIn, TikTok, Facebook. A platform-by-platform, industry-by-industry breakdown with latest algorithm trends and operating tips.", cat:"Digital Marketing", read:"10 min", content:`## Social Media Landscape\n\nIn 2025, social media has evolved from broadcast channels to purchase channels.\n\n## Platform by Industry\n\nB2B: LinkedIn anchor + X expertise. B2C: Instagram anchor + TikTok for youth. B2B2C: YouTube anchor + Instagram complement.\n\n## Operating Tips\n\nContent repurposing, post timing optimization, community management (prioritize replies and DMs).`}, tags:["SNS","マーケティング","Instagram","LinkedIn"], date:"2025-06-28" },
   { slug:"marketing-automation-intro", ja:{title:"MA（マーケティングオートメーション）入門 — 最小構成ではじめる顧客育成の仕組み", excerpt:"MAツールは高額という先入観を捨てましょう。WebhookとMakeを使えば月額数千円からMAを構築できます。実際のワークフロー例とともに解説。", cat:"デジタルマーケティング", read:"8分", content:`## MAは高くない\n\nHubSpotやMarketoのような高額ツールを想像するかもしれませんがWebhookとMakeで必要な機能のほとんどを実現できます。\n\n## 最小構成MAの4要素\n\nリード獲得: LPやフォームからのデータを自動でDBに保存。スコアリング: 閲覧・開封・DLなどの行動を自動スコア化。セグメンテーション: スコアや属性で自動リスト分け。ステップメール: セグメントに応じた最適なメールを自動配信。\n\n## Webhook実装例\n\n問い合わせフォーム→Webhook→Google Sheets→Slack通知。メルマガ開封者→関連ホワイトペーパー自動送付。未接触リード→自動再アプローチメール。`}, en:{title:"Marketing Automation 101", excerpt:"Marketing automation does not have to be expensive. With webhooks and Make, you can build it starting at a few dollars a month. Real workflow examples included.", cat:"Digital Marketing", read:"8 min", content:`## MA Isn't Expensive\n\nWebhooks and Make can deliver most of what expensive tools do.\n\n## 4 Elements of Minimal MA\n\nLead capture: auto-save form data. Scoring: auto-score behaviors. Segmentation: auto-sort leads. Drip email: auto-send optimized emails per segment.\n\n## Webhook Examples\n\nContact form→Webhook→Sheets→Slack. Newsletter openers→auto-send white paper. Inactive leads→re-engagement email.`}, tags:["MA","マーケティングオートメーション","Webhook","Make"], date:"2025-06-18" },
 ]
-
 // Combine posts
 export const ALL_POSTS: SeedPost[] = [...POSTS_PART1, ...POSTS_PART2]
-
 export const SERVICES = [
   { slug:"jaas", ja:{name:"Japan-as-a-Service (JaaS)", tagline:"海外企業の日本市場参入をフルスタックで支援", features:["市場調査・競合分析（公開データ + AI構造化）","現地法人設立支援（司法書士・税理士コーディネート）","日本語LP/EC構築（12カ国語対応 + GEO最適化）","MEO/SEO/SNS集客の現地運用代行","請求書発行・経理代行（Stripe + 国内決済）","日本人カスタマーサポート（チャット/メール/電話）"]}, en:{name:"Japan-as-a-Service (JaaS)", tagline:"Full-stack market entry support for global SMBs", features:["Market research & competitor analysis","Local entity setup","Japanese LP/EC build (12-language + GEO)","MEO/SEO/Social ops","Invoicing & accounting (Stripe + JP payments)","Japanese customer support"]}, icon:"Globe", sort:1 },
   { slug:"web", ja:{name:"Web制作", tagline:"集客に強いモダンなビジネスサイトを", features:["コーポレートサイト/LP/ECサイト制作","レスポンシブデザイン（スマホ・タブレット対応）","SEO内部対策 + 構造化データ実装","CMS管理画面（PayloadCMS / WordPress）","Next.js + Tailwind CSS + shadcn/ui 採用","12カ国語多言語対応"]}, en:{name:"Web Development", tagline:"Modern, conversion-focused business websites", features:["Corporate/LP/EC site development","Responsive design","On-page SEO + structured data","CMS admin","Next.js + Tailwind CSS + shadcn/ui","12-language i18n"]}, icon:"Globe", sort:2 },
@@ -72,7 +65,6 @@ export const SERVICES = [
   { slug:"seo", ja:{name:"SEO / GEO対策", tagline:"検索エンジンとAI検索からの集客を最大化", features:["キーワード戦略立案・検索意図分析","コンテンツSEO（記事制作・リライト）","テクニカルSEO（サイト速度・構造改善）","GEO対策（ChatGPT/Perplexity最適化）","構造化データ（JSON-LD）実装","月次レポート・分析レポート"]}, en:{name:"SEO / GEO", tagline:"Maximize traffic from search engines and AI", features:["Keyword strategy & intent analysis","Content SEO","Technical SEO","GEO (AI search optimization)","Structured data implementation","Monthly reporting"]}, icon:"Search", sort:4 },
   { slug:"ai", ja:{name:"AI導入支援 / DX", tagline:"対象業務と確認工程からAI導入を設計", features:["業務分析・自動化設計コンサルティング","Dify構築（AIチャットボット・社内ナレッジQ&A）","OpenClaw / Difyによるイベント駆動ワークフロー","DeepSeek V4統合（低コストLLM活用）","社内研修・AIリテラシー向上支援","運用保守・継続改善"]}, en:{name:"AI Enablement / DX", tagline:"Design AI around scoped workflows and human review", features:["Process analysis & automation consulting","Dify setup","Event-driven OpenClaw / Dify workflows","DeepSeek V4 integration","Staff training & AI literacy","Ongoing operations"]}, icon:"Bot", sort:5 },
 ]
-
 export const PRICING_PLANS = [
   { planJa:"スターター", planEn:"Starter", sid:"web", price:300000, cur:"jpy", bill:"one-time", descJa:"5ページのシンプルなコーポレートサイト。レスポンシブデザイン、問い合わせフォーム付き。", descEn:"Simple 5-page corporate site with responsive design and contact form.", featJa:["レスポンシブデザイン","問い合わせフォーム","SEO基本対策","CMS管理画面","1ヶ月無料保守"], featEn:["Responsive design","Contact form","Basic SEO","CMS admin","1 month free maintenance"], pop:false, ctaJa:"詳細を見る", ctaEn:"Learn More", sort:1 },
   { planJa:"ビジネス", planEn:"Business", sid:"web", price:800000, cur:"jpy", bill:"one-time", descJa:"10ページ以上の本格コーポレートサイト。多言語対応、ブログ機能、アニメーション演出付き。", descEn:"Full corporate site (10+ pages) with multilingual support, blog, and animations.", featJa:["全ページレスポンシブ","CMS + ブログ機能","SEO内部対策 + 構造化データ","多言語対応（3言語まで）","アニメーション演出","3ヶ月無料保守"], featEn:["Fully responsive","CMS + blog","On-page SEO + structured data","3-language support","Animation design","3 months free maintenance"], pop:true, ctaJa:"詳細を見る", ctaEn:"Learn More", sort:2 },
@@ -87,7 +79,6 @@ export const PRICING_PLANS = [
   { planJa:"ビジネス", planEn:"Business", sid:"ai", price:300000, cur:"jpy", bill:"monthly", descJa:"複数業務の自動化設計 + Dify/OpenClaw導入 + DeepSeek統合。", descEn:"Multi-workflow automation + Dify/OpenClaw + DeepSeek integration.", featJa:["業務分析（3業務）","Dify + OpenClaw導入","DeepSeek V4統合","社内研修（3回）","月次サポート"], featEn:["Process analysis (3 workflows)","Dify + OpenClaw deployment","DeepSeek V4 integration","Training (3 sessions)","Monthly support"], pop:true, ctaJa:"詳細を見る", ctaEn:"Learn More", sort:11 },
   { planJa:"DXパートナー", planEn:"DX Partner", sid:"ai", price:800000, cur:"jpy", bill:"monthly", descJa:"全社DX推進パートナー。専任コンサルタントが伴走しAI化・自動化・データ活用を全面支援。", descEn:"Company-wide DX partner. Dedicated consultant for AI, automation, and data enablement.", featJa:["全社業務棚卸し + DXロードマップ","Dify/OpenClaw/DeepSeek導入","カスタムAIアプリ開発","データ分析基盤構築","役員向けAI戦略コンサル","専任DXコンサルタント（週次定例）"], featEn:["Company-wide audit + DX roadmap","Dify/OpenClaw/DeepSeek deployment","Custom AI app development","Data analytics foundation","Executive AI strategy consulting","Dedicated DX consultant (weekly)"], pop:false, ctaJa:"お問い合わせ", ctaEn:"Contact Us", sort:12 },
 ]
-
 export const WORKS = [
   { slug:"sericia-d2c", ja:{title:"Sericia — 日本クラフト食品のグローバルD2Cサイト", industry:"食品・D2C", desc:"日本全国の訳ありクラフト食品を世界80カ国に届けるD2Cブランド", challenge:"海外向け販売のための多言語ECサイト構築と購入導線の最適化", solution:"PayloadCMS + Medusa v2を統合したヘッドレスECをNext.jsで構築。12カ国語対応、AIチャットボット、Push PWA。", metrics:"公開後3ヶ月で月間PV 5万達成、海外売上比率60%"}, en:{title:"Sericia — Global D2C Site", industry:"Food & D2C", desc:"D2C brand delivering Japanese craft food to 80+ countries.", challenge:"Building a multilingual ecommerce site for global sales.", solution:"Built headless ecommerce on Next.js + PayloadCMS + Medusa v2. 12-language, AI chatbot, Push PWA.", metrics:"50K monthly PV within 3 months, 60% overseas revenue."}, tags:["EC","D2C","多言語","Next.js","PayloadCMS"], color:"rose" as const, sort:1 },
   { slug:"appexxme-sales-os", ja:{title:"Appexxme — AI営業自動化プラットフォーム", industry:"SaaS・営業DX", desc:"公開データ×AIで営業リスト作成から診断レポート自動生成までを一貫自動化", challenge:"グローバル8言語×6デザインの営業診断レポートを人手を介さず自動生成する仕組みの構築", solution:"Dify + event-driven workers + DeepSeek V4 + Playwrightによる自律型営業OS。企業情報の自動収集→AI診断→レポート生成→フォーム送信までをイベント駆動で自動化。", metrics:"従来比98%工数削減、月間1,000件の自動診断を実現"}, en:{title:"Appexxme — AI Sales Automation Platform", industry:"SaaS & Sales DX", desc:"End-to-end automation from lead discovery to diagnostic report generation.", challenge:"Building a fully automated pipeline for diagnostic reports in 8 languages × 6 designs.", solution:"Autonomous sales OS with Dify + event-driven workers + DeepSeek V4 + Playwright. Event-driven automation.", metrics:"98% reduction in manual effort, 1,000 automated diagnoses/month."}, tags:["AI","営業自動化","Dify","event-driven workers","DeepSeek"], color:"violet" as const, sort:2 },
@@ -96,7 +87,6 @@ export const WORKS = [
   { slug:"dxdoctor-platform", ja:{title:"DX Doctor — 中小企業DX診断プラットフォーム", industry:"DX・コンサルティング", desc:"Webサイト解析→AI診断→補助金診断までを自動化する中小企業DX診断サービス", challenge:"補助金・DX診断の専門家不足を補う、Webサイトの公開情報だけで高精度な診断を行うAIシステムの構築", solution:"Playwrightによる自動解析、DeepSeek V4による業界別診断、Dify+event-driven workersによるレポート自動生成。人間専門家が最終レビューのみ行うハイブリッドモデル。", metrics:"診断1件あたりの工数90%削減、月間500社の自動診断が可能に"}, en:{title:"DX Doctor — SMB DX Diagnostic Platform", industry:"DX & Consulting", desc:"Automated SMB DX diagnostic service from website analysis to subsidy assessment.", challenge:"Building an AI system for high-accuracy diagnostics from public website data.", solution:"Automated analysis via Playwright, industry diagnosis via DeepSeek V4, auto-reports via Dify+event-driven workers.", metrics:"90% reduction in per-diagnosis effort, capacity for 500 automated diagnoses/month."}, tags:["DX","AI診断","自動化","補助金","DeepSeek"], color:"amber" as const, sort:5 },
   { slug:"temploft-marketplace", ja:{title:"Temploft — Web制作×AI運用のマーケットプレイス", industry:"SaaS・マーケットプレイス", desc:"AIによるWordPressサイト自動運用とテンプレートマーケットプレイスの2軸プラットフォーム", challenge:"WordPressサイトのセキュリティ・更新・バックアップ運用をAIで自動化しつつ日本初の本格テンプレートMPを構築", solution:"AI運用SaaS（自動更新・セキュリティパッチ・パフォーマンス最適化）+ Stripe Connectによるクリエイター向け販売基盤", metrics:"設計フェーズ完了、MVP開発中。CTP（特許出願中）技術をコア差別化要因に。"}, en:{title:"Temploft — Web Dev × AI Operations Marketplace", industry:"SaaS & Marketplace", desc:"Dual-axis platform: AI-powered WordPress management + template marketplace.", challenge:"Building AI automation for WordPress ops alongside Japan's first full-scale template marketplace.", solution:"AI operations SaaS + Stripe Connect creator template sales infrastructure.", metrics:"Design phase complete, MVP in development. CTP (patent-pending) as differentiator."}, tags:["SaaS","WordPress","AI","マーケットプレイス","Stripe"], color:"emerald" as const, sort:6 },
 ]
-
 export const FAQS = [
   { qJa:"Webサイト制作の期間はどのくらいですか？", qEn:"How long does web development take?", aJa:"制作規模により異なります。5ページ程度のシンプルなコーポレートサイトは1〜2ヶ月、10ページ以上の本格サイトは2〜3ヶ月、ECサイトやフルカスタム開発は3〜6ヶ月が目安です。いずれも企画・設計フェーズを含めた全体期間です。", aEn:"Depends on scope: 5-page corporate site 1-2 months, 10+ page site 2-3 months, ecommerce/custom 3-6 months. All timelines include planning and design.", catJa:"Web制作", catEn:"Web Development", sort:1 },
   { qJa:"MEO対策の効果が出るまでどのくらいかかりますか？", qEn:"How long until MEO shows results?", aJa:"最適化後、即日〜1週間で順位変動が始まります。安定した上位表示には1〜3ヶ月の継続運用が必要です。口コミ数や競合状況で変動します。", aEn:"Ranking changes begin within days to a week. Stable top rankings require 1-3 months of consistent effort.", catJa:"MEO対策", catEn:"MEO", sort:2 },
@@ -114,7 +104,6 @@ export const FAQS = [
   { qJa:"制作実績をもっと見ることはできますか？", qEn:"Can I see more case studies?", aJa:"はい、Worksページで主要プロジェクトを公開中です。個別相談時には業種や課題が近い事例を詳しくご紹介できます。", aEn:"Yes, see our Works page. During consultations, we share detailed matching case studies.", catJa:"その他", catEn:"Other", sort:14 },
   { qJa:"申込み前に何を確認しますか？", qEn:"What happens before I apply?", aJa:"意思決定者、提供範囲、必要なアカウント・素材、決済・規制上の前提を確認します。適合しない場合は無理に受注せず、お断りします。", aEn:"We confirm the decision-maker, fixed scope, required access and assets, and payment or regulatory dependencies. If the scope is not a fit, we decline rather than expand the price.", catJa:"お取引", catEn:"Business", sort:15 },
 ]
-
 // Public testimonials and team profiles must be created from named, verified,
 // consented records in Payload. The seed must never invent social proof.
 export const TESTIMONIALS: Array<Record<string, never>> = []
@@ -128,7 +117,6 @@ export async function seedAllContent(
   ])
   const payload = await getPayload({ config })
   const summary: Record<string, { created: number; updated: number; errors: number }> = {}
-
   if (scope === "all") {
   // Categories
   summary.categories = { created: 0, updated: 0, errors: 0 }
@@ -147,7 +135,6 @@ export async function seedAllContent(
       await payload.update({ collection: "categories", id: docId, data: { name: c.en.name, description: c.en.desc }, locale: "en" } as unknown as Parameters<typeof payload.update>[0])
     } catch (e: unknown) { console.error(`[seed] category ${c.slug}:`, e); summary.categories.errors++ }
   }
-
   // Posts
   summary.posts = { created: 0, updated: 0, errors: 0 }
   for (const p of ALL_POSTS) {
@@ -165,7 +152,6 @@ export async function seedAllContent(
       await payload.update({ collection: "posts", id: docId, data: { title: p.en.title, excerpt: p.en.excerpt, content: textToLexical(p.en.content), category: p.en.cat, readTime: p.en.read }, locale: "en" } as unknown as Parameters<typeof payload.update>[0])
     } catch (e: unknown) { console.error(`[seed] post ${p.slug}:`, e); summary.posts.errors++ }
   }
-
   // Services
   summary.services = { created: 0, updated: 0, errors: 0 }
   for (const s of SERVICES) {
@@ -183,7 +169,6 @@ export async function seedAllContent(
       await payload.update({ collection: "services", id: docId, data: { name: s.en.name, tagline: s.en.tagline, features: s.en.features.map(f => ({ feature: f })) }, locale: "en" } as unknown as Parameters<typeof payload.update>[0])
     } catch (e: unknown) { console.error(`[seed] service ${s.slug}:`, e); summary.services.errors++ }
   }
-
   // Pricing
   summary.pricing = { created: 0, updated: 0, errors: 0 }
   for (const p of PRICING_PLANS) {
@@ -276,85 +261,104 @@ export async function seedAllContent(
     } catch (e: unknown) { console.error(`[seed] team:`, e); summary.team.errors++ }
   }
   }
-
   // CMS Homepage — locale-aware (JA: Web制作 / EN: JaaS Japan Entry)
   summary.pages = { created: 0, updated: 0, errors: 0 }
   try {
     const layoutJa = [
       {
         blockType: "hero", variant: "centered",
-        badge: "意思決定の速い海外SMB向け",
-        title: "日本市場への入口を、14営業日目標で運用できる形に。",
-        subtitle: "セットアップ12,000ドル固定。最初の6か月は標準月額運用込み。日本語の販売導線、法規制の適用可能性整理、SNS・SEO基盤、公開後の運用を一つの範囲で進めます。",
-        primaryCta: { label: "Japan Entry 適合審査 — $12K", href: "/ja/contact?intent=japan-entry" },
-        secondaryCta: { label: "固定オファーの範囲を見る", href: "#japan-entry-pricing" },
+        badge: "中小企業向け Web制作",
+        title: "伝わるだけで終わらない。事業に使えるWebサイトを。",
+        subtitle: "企業サイト、採用サイト、サービスサイト、LPを、情報設計から公開後の運用まで。初期費用30万円〜、要件と範囲を明記して進めます。",
+        primaryCta: { label: "無料相談を申し込む", href: "/ja/contact" },
+        secondaryCta: { label: "料金を見る", href: "/ja/pricing" },
+        stats: [
+          { value: "30万円〜", label: "Web制作" },
+          { value: "4", label: "標準工程" },
+          { value: "1", label: "担当窓口" },
+          { value: "公開後", label: "運用も支援" },
+        ],
       },
       {
         blockType: "marquee",
         items: [
-          { text: "セットアップ$12,000固定" },
-          { text: "6か月の標準運用込み" },
-          { text: "14営業日の公開目標" },
-          { text: "日英バイリンガル対応" },
-          { text: "提供範囲を契約前に明記" },
-          { text: "外部費用と除外事項を分離" },
+          { text: "Web制作30万円〜" },
+          { text: "企業サイト・採用サイト" },
+          { text: "LP・キャンペーンページ" },
+          { text: "WordPress / Next.js" },
+          { text: "SEO・アクセシビリティ" },
+          { text: "公開後の保守・改善" },
         ],
         direction: "left", speed: "slow",
       },
       {
         blockType: "section",
-        kicker: "JAPAN MARKET ENGINE",
-        title: "翻訳ではなく、日本の購入者が進める導線をつくる",
-        subtitle: "既存HP/LPのローカライズ、信頼情報、問い合わせ・適格な決済経路、公開シグナル調査、サポート運用を固定スコープで接続します。",
+        kicker: "WEB PRODUCTION",
+        title: "見た目だけでなく、問い合わせまで設計する。",
+        subtitle: "目的、顧客、運用体制を先に整理し、情報設計・デザイン・実装・計測を一つの制作プロセスとして進めます。",
         alignment: "center", background: "default",
       },
       {
         blockType: "card-grid", variant: "bento", columns: "3",
         cards: [
-          { icon: "Globe", title: "LP / HPローカライズ", description: "日本語の訴求、情報設計、CTA、メタデータ、信頼情報を購入者の判断順序に合わせて再設計します。", href: "/ja/pricing", highlighted: true },
-          { icon: "Share2", title: "SNS初期セットアップ", description: "優先2チャネルまで、プロフィール、リンク、CTA、投稿テンプレート、運用責任を整えます。", href: "/ja/services", highlighted: false },
-          { icon: "BarChart3", title: "市場・競合レポート", description: "最大3市場の公開シグナルを比較し、優先市場を1つ深掘り。出典・観測日・未知項目を明記します。", href: "/ja/works", highlighted: false },
-          { icon: "ShieldCheck", title: "法規制の適用可能性整理", description: "特商法、プライバシー、業種別の確認事項を整理します。正式な法務・税務判断や申請は専門家の領域です。", href: "/ja/legal", highlighted: false },
-          { icon: "MessageCircle", title: "日本語サポート導線", description: "問い合わせ、回答ナレッジ、エスカレーション、担当範囲を定義し、公開後に引き継げる形にします。", href: "/ja/contact", highlighted: false },
-          { icon: "Rocket", title: "公開・運用・引き継ぎ", description: "開始日から14営業日以内の納品保証、計測基準、チェックリスト、所有権、月額運用の境界を一つにまとめます。未納品時はセットアップ費用を全額返金します。", href: "/ja/about", highlighted: false },
+          { icon: "Globe", title: "企業サイト・採用サイト", description: "会社の強み、提供価値、採用情報を整理し、初めて訪れた人が次の行動へ進める構成にします。", href: "/ja/services/web", highlighted: true },
+          { icon: "PenTool", title: "LP・キャンペーンページ", description: "一つの商材や施策に集中したページを、訴求・証拠・CTAの順番から設計します。", href: "/ja/services/web", highlighted: false },
+          { icon: "RefreshCw", title: "既存サイトのリニューアル", description: "現行URL、コンテンツ、検索導線、更新体制を確認し、残すものと作り直すものを分けます。", href: "/ja/services/web", highlighted: false },
+          { icon: "Code2", title: "CMS・更新基盤", description: "更新担当者が迷わない入力項目と権限を設計し、公開後の更新手順まで残します。", href: "/ja/services/web", highlighted: false },
+          { icon: "Search", title: "SEO・GEOの土台", description: "見出し、メタデータ、構造化データ、内部リンクを制作時から整え、計測できる状態で公開します。", href: "/ja/services/seo", highlighted: false },
+          { icon: "ShieldCheck", title: "保守・改善", description: "SSL、バックアップ、軽微な更新、改善提案など、必要な範囲を月額契約に明記します。", href: "/ja/contact", highlighted: false },
         ],
       },
       {
         blockType: "stats",
-        kicker: "WORKING MODEL", title: "固定オファーの数字と境界",
-        subtitle: "成果を保証するのではなく、決めるために必要な範囲と依存条件を公開します。",
+        kicker: "WORKING MODEL", title: "制作前に、範囲と判断基準をそろえる。",
+        subtitle: "ページ数だけで料金を決めず、目的・更新体制・外部連携・公開後の責任範囲を先に確認します。",
         stats: [
-          { value: "$12K", label: "セットアップ", sublabel: "固定・一括" },
-          { value: "$0", label: "月額", sublabel: "最初の6か月" },
-          { value: "14日", label: "納品保証", sublabel: "開始日から・未納品時は全額返金" },
-          { value: "48h", label: "着手SLA", sublabel: "月額運用の通常依頼" },
+          { value: "30万円〜", label: "初期制作", sublabel: "要件・ページ数で確定" },
+          { value: "4工程", label: "標準プロセス", sublabel: "要件から公開後まで" },
+          { value: "1窓口", label: "進行担当", sublabel: "確認事項を集約" },
+          { value: "明記", label: "納品条件", sublabel: "見積書・契約書で合意" },
         ],
         background: "surface",
       },
       {
         blockType: "process",
-        kicker: "PROCESS", title: "適合確認から引き継ぎまで",
-        subtitle: "意思決定の速い企業が、何を準備し、どこで承認するかを先に共有します。",
+        kicker: "PROCESS", title: "相談から公開後の改善まで、4つの工程で進める。",
+        subtitle: "制作側だけでなく、社内の確認・承認が止まらないように、各工程の成果物と次の判断を共有します。",
         steps: [
-          { title: "適合確認", description: "商品、対象市場、意思決定権限、開始時期、必要な素材と外部依存を確認します。", icon: "ClipboardCheck" },
-          { title: "固定範囲の確定", description: "12,000ドルの成果物、除外事項、第三者費用、所有権、検収条件を文書化します。", icon: "FileCheck2" },
-          { title: "実装とレビュー", description: "日本語導線、SNS、レポート、法規制確認事項、サポートと計測を実装し、合意範囲でレビューします。", icon: "Code2" },
-          { title: "公開・運用引き継ぎ", description: "公開チェック、責任分担、未解決事項、月額運用の依頼方法を残し、次の判断を可能にします。", icon: "ArrowUpRight" },
+          { title: "ヒアリング・現状監査", description: "事業目標、顧客、既存サイト、素材、更新体制を確認し、制作範囲を整理します。", icon: "ClipboardCheck" },
+          { title: "情報設計・ワイヤー", description: "ページ構成、導線、必要なコンテンツ、CTA、計測項目を合意します。", icon: "CheckCircle" },
+          { title: "デザイン・実装", description: "デザインシステム、レスポンシブUI、CMS、フォーム、SEO基盤を実装します。", icon: "Code2" },
+          { title: "公開・引き継ぎ・改善", description: "検収、公開、操作説明、初期計測、保守範囲を確認し、次の改善を決めます。", icon: "TrendingUp" },
         ],
       },
       {
         blockType: "pricing",
-        title: "Japan Entry 固定オファー", subtitle: "セットアップ12,000ドル。最初の6か月は標準月額運用込み。7か月目以降は月額995ドル。",
+        title: "Web制作の料金目安", subtitle: "初期費用30万円〜。ページ数、機能、素材、CMS、移行、公開後サポートの範囲を確認して正式見積もりを作成します。",
         tiers: [
-          { name: "Japan Entry Package", price: "$12,000", period: "one-time", description: "日本市場への購入者導線、調査、初期チャネル、法規制確認、公開運用、引き継ぎを一つにまとめた固定スコープ。", features: "LP / HPローカライズ\nSNS最大2チャネルの初期設定\n最大3市場の公開シグナル比較＋1市場深掘り\n特商法・関連規制の適用可能性整理\nWise・銀行振込・USDC・クレジットカード\n開始日から14営業日以内に未納品ならセットアップ費用全額返金\n月額0ドル（最初の6か月）\n7か月目以降は月額995ドル", ctaLabel: "Japan Entry 適合審査 — $12K", ctaHref: "/ja/contact?intent=japan-entry", highlighted: true },
+          { name: "ライト", price: "300,000", period: "〜", description: "小規模サイトやサービス紹介ページ向け。まず必要な情報を整理して公開します。", features: "トップページ＋下層4ページ前後\nレスポンシブ対応\nお問い合わせフォーム\nSEO基本設定\n公開後1か月の軽微な修正", ctaLabel: "このプランを相談", ctaHref: "/ja/contact", highlighted: false },
+          { name: "スタンダード", price: "600,000", period: "〜", description: "企業サイト・採用サイトの標準構成。更新しやすいCMSと計測基盤を含めます。", features: "トップページ＋下層9ページ前後\n情報設計・ワイヤー・デザイン\nWordPressまたはNext.js CMS\nSEO内部対策・構造化データ\n公開後3か月の運用相談", ctaLabel: "おすすめを相談", ctaHref: "/ja/contact", highlighted: true },
+          { name: "グロース", price: "1,000,000", period: "〜", description: "複数サービス、多言語、外部連携などを含む本格的なサイト基盤。", features: "ページ・機能を要件定義で確定\nカスタムUIとコンポーネント設計\n多言語・外部サービス連携\nアクセス解析・改善ダッシュボード\n公開後6か月の改善伴走", ctaLabel: "要件を相談", ctaHref: "/ja/contact", highlighted: false },
+        ],
+      },
+      {
+        blockType: "faq",
+        title: "Web制作を依頼する前に",
+        subtitle: "制作範囲、進め方、費用の考え方を先に公開しています。",
+        items: [
+          { question: "本当に30万円から制作できますか？", answer: textToLexical("はい。ライトプランは30万円からが目安です。ページ数、原稿・写真の準備状況、フォームや外部連携、CMSの有無によって変わるため、要件確認後に正式見積もりを提示します。") },
+          { question: "制作期間はどのくらいですか？", answer: textToLexical("小規模サイトは要件と素材がそろってから3〜6週間程度、中規模以上は2〜3か月程度が目安です。承認回数、素材準備、外部サービスの審査などの依存条件を見積書に記載します。") },
+          { question: "既存サイトのリニューアルにも対応しますか？", answer: textToLexical("対応します。既存URL、検索流入、コンテンツ、フォーム、CMS、ドメイン・サーバーを確認し、リダイレクトと切り替え手順を含めて計画します。") },
+          { question: "公開後の保守は必須ですか？", answer: textToLexical("必須ではありません。更新代行、SSL・バックアップ、障害対応、改善提案など、必要な範囲だけを月額契約に分けて明記します。") },
+          { question: "成果や検索順位は保証されますか？", answer: textToLexical("制作物の納品・検収条件は契約で明記しますが、売上、問い合わせ数、検索順位などの事業成果は保証しません。公開後に計測し、改善できる状態をつくります。") },
         ],
       },
       {
         blockType: "cta",
-        title: "日本進出を、社内で判断できる運用単位に。",
-        subtitle: "12,000ドル固定の範囲、支払方法、開始日から14営業日の納品保証、48時間以内着手の月額運用、第三者費用と除外事項を確認してから申込みください。",
-        primaryCta: { label: "Japan Entry 適合審査 — $12K", href: "/ja/contact?intent=japan-entry" },
-        secondaryCta: { label: "固定オファーの範囲を見る", href: "#japan-entry-pricing" },
+        title: "Webサイトを、事業の前進に使える状態へ。",
+        subtitle: "現在のサイト、作りたいページ、公開時期、社内の運用体制をお聞かせください。必要な範囲と進め方を整理してご提案します。",
+        primaryCta: { label: "無料相談を申し込む", href: "/ja/contact" },
+        secondaryCta: { label: "サービスを見る", href: "/ja/services" },
         background: "gradient",
       },
     ]
@@ -480,11 +484,10 @@ export async function seedAllContent(
       await payload.create({ collection: "pages", data: pageData, locale } as unknown as Parameters<typeof payload.create>[0])
       summary.pages.created++
     }
-
     if (scope !== "homepage-en") {
       await upsertHomePage("home-ja",
-        "Paradigm — Japan Entry 固定パッケージ",
-        "12,000ドル固定、最初の6か月は標準月額運用込み。海外SMBの日本市場向け導線を14営業日目標で構築します。",
+        "Paradigm — Web制作30万円〜 | Paradigm合同会社",
+        "企業サイト・採用サイト・LPを30万円〜。情報設計から公開後の運用まで、必要な範囲を明記して制作します。",
         layoutJa, "ja")
     }
     await upsertHomePage("home-en",
@@ -492,6 +495,5 @@ export async function seedAllContent(
       "$12,000 fixed Japan entry setup with six months of managed operation included. Launch a market-ready Japanese revenue path without hiring a local team.",
       layoutEn, "en")
   } catch (e: unknown) { console.error(`[seed] pages:`, e); summary.pages.errors++ }
-
   return summary
 }
