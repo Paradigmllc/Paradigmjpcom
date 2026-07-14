@@ -73,7 +73,7 @@ export function resolveDemoArtDirection(page: Pick<DemoMultiPageData, "industry"
 export function demoHeadlineClass(value: string, scale: "hero" | "section" | "card" = "section"): string {
   const length = [...normalized(value)].length
   if (scale === "hero") {
-    return length >= 25
+    return length >= 18
       ? "text-[clamp(2.05rem,3.55vw,3.2rem)] leading-[1.18] tracking-[-.03em]"
       : "text-[clamp(2.45rem,4.8vw,5rem)] leading-[1.06] tracking-[-.04em]"
   }
