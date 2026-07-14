@@ -1,4 +1,5 @@
 import type { JapanEntryPersonalizationFact } from "./japan-entry-personalized-message-facts";
+import type { JapanEntryMessagePurpose } from "./japan-entry-personalized-message-prompts";
 
 const BASE_MIN_WORDS = 100;
 const BASE_MAX_WORDS = 160;
@@ -63,6 +64,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   productEvidence: string;
   factIds: string[];
   facts: JapanEntryPersonalizationFact[];
+  purpose?: JapanEntryMessagePurpose;
 }): { passed: boolean; score: number; issues: string[]; wordCount: number; factIds: string[] } {
   const message = input.message.trim();
   const words = message.split(/\s+/).filter(Boolean);
@@ -72,6 +74,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   const factMap = new Map(input.facts.map((fact) => [fact.id, fact]));
   const selected = input.factIds.map((id) => factMap.get(id)).filter((fact): fact is JapanEntryPersonalizationFact => Boolean(fact));
   const productEvidence = input.productEvidence.trim();
+  const purpose = input.purpose ?? "commercial_offer";
   const enhanced = input.facts.some((fact) => fact.id.startsWith("verified-competitor-"));
   const minWords = enhanced ? ENHANCED_MIN_WORDS : BASE_MIN_WORDS;
   const maxWords = enhanced ? ENHANCED_MAX_WORDS : BASE_MAX_WORDS;
@@ -83,7 +86,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
 
   if (!message.toLowerCase().includes(input.companyName.toLowerCase())) { issues.push("Company name is missing"); score -= 20; }
   if (!/Sato/i.test(message) || !/Paradigm LLC in Japan/i.test(message)) { issues.push("Sato and Paradigm LLC introduction is incomplete"); score -= 20; }
-  if (!/Japan Entry Package/i.test(message)) { issues.push("Japan Entry Package name is missing"); score -= 15; }
+  if (purpose === "commercial_offer" && !/Japan Entry Package/i.test(message)) { issues.push("Japan Entry Package name is missing"); score -= 15; }
   if (productEvidence.length < 3 || !input.productContext.toLowerCase().includes(productEvidence.toLowerCase())) { issues.push("Product evidence is not grounded in the supplied product context"); score -= 30; }
   else if (!message.toLowerCase().includes(productEvidence.toLowerCase())) { issues.push("Grounded product evidence is missing from the message"); score -= 25; }
   if (selected.length === 0) { issues.push("No valid Japan-specific fact was selected"); score -= 40; }
@@ -121,14 +124,24 @@ export function reviewPersonalizedJapanEntryMessage(input: {
     );
     if (unsupportedTerms.length > 0) { issues.push(`Unsupported product-context terms in paragraph 2: ${unsupportedTerms.join(", ")}`); score -= 35; }
     if (!selected.some((fact) => includesAny(paragraphs[2] ?? "", fact.anchors))) { issues.push("Japan-specific diagnosis must be in paragraph 3"); score -= 20; }
-    const approvedOfferLead = "Paradigm addresses these items through our Japan Entry Package, which validates the opportunity and addresses the named customer-path gap.";
-    if (!paragraphs[3]?.startsWith(approvedOfferLead) || !/\$\s?12,?000|12,?000\s?(?:USD|dollars)/i.test(paragraphs[3] ?? "")) { issues.push("Offer and CTA must use the approved non-invented transition in paragraph 4"); score -= 20; }
+    if (purpose === "initial_interest") {
+      const approvedClose = "If useful, I can share a more detailed Japan opportunity analysis based on public evidence. Would you be open to receiving it?";
+      if (paragraphs[3] !== approvedClose) { issues.push("Initial-interest CTA must use the approved permission-based close exactly"); score -= 25; }
+    } else {
+      const approvedOfferLead = "Paradigm addresses these items through our Japan Entry Package, which validates the opportunity and addresses the named customer-path gap.";
+      if (!paragraphs[3]?.startsWith(approvedOfferLead) || !/\$\s?12,?000|12,?000\s?(?:USD|dollars)/i.test(paragraphs[3] ?? "")) { issues.push("Offer and CTA must use the approved non-invented transition in paragraph 4"); score -= 20; }
+    }
   }
 
   if (words.length < minWords || words.length > maxWords) { issues.push(`Message must be ${minWords}-${maxWords} words`); score -= 15; }
-  if (!/\$\s?12,?000|12,?000\s?(?:USD|dollars)/i.test(message)) { issues.push("$12,000 price is missing"); score -= 15; }
-  if (!/(?:paid\s+upfront|upfront\s+payment)/i.test(message)) { issues.push("Upfront payment condition is missing"); score -= 10; }
-  if (!/(?:first\s+)?six\s+months/i.test(message)) { issues.push("First six months inclusion is missing"); score -= 10; }
+  if (purpose === "commercial_offer") {
+    if (!/\$\s?12,?000|12,?000\s?(?:USD|dollars)/i.test(message)) { issues.push("$12,000 price is missing"); score -= 15; }
+    if (!/(?:paid\s+upfront|upfront\s+payment)/i.test(message)) { issues.push("Upfront payment condition is missing"); score -= 10; }
+    if (!/(?:first\s+)?six\s+months/i.test(message)) { issues.push("First six months inclusion is missing"); score -= 10; }
+  } else if (/\$\s?\d|paid\s+upfront|upfront\s+payment|first\s+six\s+months|Japan Entry Package|15-minute|book(?:ing)?\s+(?:link|a call)/i.test(message)) {
+    issues.push("Initial-interest message must not include commercial terms, package scope, or a call offer");
+    score -= 45;
+  }
   if (!/\?\s*$/.test(message)) { issues.push("Message must end with a yes/no question"); score -= 10; }
   if (!/public(?:ly)?/i.test(message)) { issues.push("Public-page provenance is missing"); score -= 10; }
   const hasAnalysisCta = /detailed(?: Japan opportunity)? (?:analysis|report)/i.test(message);
@@ -171,7 +184,7 @@ export function reviewPersonalizedJapanEntryMessage(input: {
   if (selectedModeled && !/(?:model(?:ed)?|estimate[sd]?|planning assumption)/i.test(message)) { issues.push("Modeled metrics are not clearly labeled as estimates"); score -= 40; }
   if (/\brevenue\b/i.test(message) && !selected.some((fact) => fact.id === "modeled-monthly-opportunity-gap")) { issues.push("Revenue wording is not tied to the modeled opportunity fact"); score -= 40; }
 
-  const allowed = new Set(["12000", "6", "15"]);
+  const allowed = new Set(purpose === "commercial_offer" ? ["12000", "6", "15"] : []);
   for (const fact of selected) for (const token of numericTokens(fact.statement)) allowed.add(normalizeNumber(token));
   const unsupported = numericTokens(message).map(normalizeNumber).filter((token) => !allowed.has(token));
   if (unsupported.length > 0) { issues.push(`Unsupported numeric claims: ${[...new Set(unsupported)].join(", ")}`); score -= 35; }
