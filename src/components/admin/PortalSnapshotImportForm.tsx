@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, type ReactNode } from "react"
-import { ClipboardCheck, LoaderCircle, Upload } from "lucide-react"
+import { ClipboardCheck, LoaderCircle, ScanText, Upload } from "lucide-react"
 import { toast } from "sonner"
 import type { PortalSource } from "@/lib/sales/portal-sources/types"
 import { chunkDemoBatch, DEMO_BATCH_MAX_ITEMS } from "@/lib/sales/demo-batch-wave"
@@ -26,6 +26,8 @@ export function PortalSnapshotImportForm({ source, onImported }: PortalSnapshotI
   const [socialLinks, setSocialLinks] = useState("")
   const [imageUrls, setImageUrls] = useState("")
   const [batchJson, setBatchJson] = useState("")
+  const [portalPaste, setPortalPaste] = useState("")
+  const [extractedCount, setExtractedCount] = useState(0)
   const [confirmed, setConfirmed] = useState(false)
   const [busy, setBusy] = useState(false)
 
@@ -114,6 +116,15 @@ export function PortalSnapshotImportForm({ source, onImported }: PortalSnapshotI
     }
   }
 
+  function buildBatchFromPaste() {
+    if (source !== "ekiten") return toast.error("貼り付け抽出はまずエキテン専用です")
+    const snapshots = extractEkitenSnapshotsFromPaste(portalPaste)
+    if (snapshots.length === 0) return toast.error("候補を抽出できませんでした。エキテンの一覧または詳細ページHTMLを貼り付けてください")
+    setBatchJson(JSON.stringify(snapshots, null, 2))
+    setExtractedCount(snapshots.length)
+    toast.success(`${snapshots.length}件を一括保存JSONへ変換しました`)
+  }
+
   return (
     <div className="mt-7 rounded-2xl border border-slate-200 bg-slate-50 p-5">
       <div className="flex items-start gap-3">
@@ -144,6 +155,23 @@ export function PortalSnapshotImportForm({ source, onImported }: PortalSnapshotI
         </button>
       </div>
       <div className="mt-6 border-t border-slate-200 pt-5">
+        {source === "ekiten" && <div className="mb-6 rounded-2xl border border-violet-200 bg-white p-4">
+          <div className="flex items-start gap-3">
+            <ScanText className="mt-1 h-5 w-5 text-violet-700" />
+            <div>
+              <h4 className="text-sm font-semibold">エキテン一覧・詳細ページ貼り付け抽出</h4>
+              <p className="mt-1 text-xs leading-5 text-slate-600">通常ブラウザで確認したエキテンのページHTMLまたは選択範囲を貼ると、候補JSONへ変換します。サーバーからポータルへアクセスしません。</p>
+            </div>
+          </div>
+          <textarea value={portalPaste} onChange={(event) => setPortalPaste(event.target.value)} className="field mt-4 min-h-40 font-mono text-xs" placeholder="<html>... または エキテンページで選択コピーした内容 ..." />
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <button type="button" disabled={busy || !portalPaste.trim()} onClick={buildBatchFromPaste} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-violet-700 px-5 text-sm font-bold text-white disabled:opacity-40">
+              <ScanText className="h-4 w-4" />
+              候補JSONへ変換
+            </button>
+            {extractedCount > 0 && <span className="text-xs font-semibold text-violet-800">{extractedCount}件を変換済み</span>}
+          </div>
+        </div>}
         <div className="flex items-start gap-3">
           <Upload className="mt-1 h-5 w-5 text-slate-700" />
           <div>
@@ -163,4 +191,103 @@ export function PortalSnapshotImportForm({ source, onImported }: PortalSnapshotI
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return <label className="block text-xs font-semibold text-slate-700"><span>{label}</span><span className="mt-2 block">{children}</span></label>
+}
+
+function absoluteEkitenUrl(value: string): string | null {
+  try {
+    const url = new URL(value, "https://www.ekiten.jp")
+    return url.protocol === "https:" && url.hostname.endsWith("ekiten.jp") ? url.toString() : null
+  } catch (error) {
+    console.error("[portal-snapshot-form] invalid pasted ekiten URL:", error)
+    return null
+  }
+}
+
+function cleanPastedText(value: string): string {
+  return value.replace(/\s+/g, " ").trim()
+}
+
+function pickEkitenCategory(text: string): string {
+  if (/外壁|屋根|防水|塗装|リフォーム|リノベーション/u.test(text)) return "住宅リフォーム・リノベーション"
+  if (/整体|鍼灸|接骨|整骨|リラク|マッサージ/u.test(text)) return "整体・鍼灸・リラクゼーション"
+  if (/行政書士/u.test(text)) return "行政書士"
+  if (/社労士|社会保険労務士/u.test(text)) return "社会保険労務士"
+  if (/税理士|会計/u.test(text)) return "税理士・会計事務所"
+  if (/美容室|ヘアサロン|サロン/u.test(text)) return "美容室・サロン"
+  return "ローカル専門サービス"
+}
+
+function pickEkitenAddress(text: string): string | null {
+  return text.match(/(北海道|東京都|京都府|大阪府|.{2,3}県)[^\s,、。]{4,80}/u)?.[0] ?? null
+}
+
+function extractImages(root: Element, companyName: string): Array<{ url: string; alt: string }> {
+  const seen = new Set<string>()
+  const images: Array<{ url: string; alt: string }> = []
+  root.querySelectorAll("img").forEach((image, index) => {
+    const raw = image.getAttribute("src") ?? image.getAttribute("data-src") ?? image.getAttribute("data-original") ?? ""
+    const url = raw ? absoluteEkitenUrl(raw) : null
+    if (!url || seen.has(url) || /logo|icon|sprite|gmo|ekiten/i.test(url)) return
+    seen.add(url)
+    images.push({ url, alt: image.getAttribute("alt")?.trim() || `${companyName}の掲載写真 ${index + 1}` })
+  })
+  return images.slice(0, 12)
+}
+
+function nearestCandidateRoot(anchor: HTMLAnchorElement): Element {
+  let root: Element = anchor
+  for (let i = 0; i < 6 && root.parentElement; i++) {
+    root = root.parentElement
+    const text = cleanPastedText(root.textContent ?? "")
+    if (text.length > 120 && root.querySelectorAll("img").length >= 3) return root
+  }
+  return anchor.closest("body") ?? anchor
+}
+
+function extractEkitenSnapshotsFromPaste(raw: string): Array<Record<string, unknown>> {
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(raw.includes("<") ? raw : `<main>${raw}</main>`, "text/html")
+  const anchors = [...doc.querySelectorAll<HTMLAnchorElement>("a[href*='/shop_']")]
+  const detailUrl = raw.match(/https:\/\/www\.ekiten\.jp\/shop_\d+\/?/u)?.[0] ?? null
+  if (anchors.length === 0 && detailUrl) {
+    const bodyText = cleanPastedText(doc.body.textContent ?? raw)
+    const companyName = bodyText.match(/#\s*([^\n\r]{2,80})/u)?.[1]?.trim() ?? bodyText.split(/\s+/u).find((part) => part.length >= 2 && part.length <= 30) ?? ""
+    const images = extractImages(doc.body, companyName)
+    return images.length >= 3 ? [{
+      listingUrl: detailUrl,
+      companyName,
+      category: pickEkitenCategory(bodyText),
+      description: bodyText.slice(0, 900),
+      address: pickEkitenAddress(bodyText),
+      websiteUrl: null,
+      socialLinks: [],
+      images,
+    }] : []
+  }
+
+  const seen = new Set<string>()
+  const snapshots: Array<Record<string, unknown>> = []
+  for (const anchor of anchors) {
+    const listingUrl = absoluteEkitenUrl(anchor.getAttribute("href") ?? "")
+    if (!listingUrl || seen.has(listingUrl)) continue
+    seen.add(listingUrl)
+    const root = nearestCandidateRoot(anchor)
+    const text = cleanPastedText(root.textContent ?? "")
+    const companyName = cleanPastedText(anchor.textContent ?? "").replace(/^(店舗公式|NEW|\d+\.\d+)\s*/u, "").slice(0, 80)
+    if (companyName.length < 2 || /写真|口コミ|料金|詳細|電話|お問い合わせ|PAGE TOP|ログイン/u.test(companyName)) continue
+    const images = extractImages(root, companyName)
+    if (images.length < 3) continue
+    snapshots.push({
+      listingUrl,
+      companyName,
+      category: pickEkitenCategory(text),
+      description: text.slice(0, 900),
+      address: pickEkitenAddress(text),
+      websiteUrl: null,
+      socialLinks: [],
+      images,
+    })
+    if (snapshots.length >= DEMO_BATCH_MAX_ITEMS) break
+  }
+  return snapshots
 }

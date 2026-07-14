@@ -1,3 +1,16 @@
+## CURRENT STATUS - 2026-07-15 エキテン中心SMB DEMO実務運用の高速化（実装・検証完了 / release前 / 外部送信0）
+
+### 1件ずつ入力する運用を廃止する貼り付け抽出
+- `/ja/admin/demo-assets`のポータル候補フォームへ、エキテン専用の「一覧・詳細ページ貼り付け抽出」を追加した。通常ブラウザで確認したエキテンの一覧ページまたは詳細ページHTML/選択範囲を貼ると、`/shop_...`リンク、事業者名、本文、住所候補、画像URLを抽出し、最大300件の一括保存JSONへ変換する。
+- サーバー側からエキテンへアクセスしない。operatorがブラウザで見た公開情報を貼り付けるだけなので、Google検索・SNS・Google Map・ポータル巡回・proxy・有料APIを使わず、既存のoperator-confirmed snapshot経路にそのまま乗せる。
+- 住宅リフォーム/外壁/屋根/防水、整体/鍼灸、行政書士/社労士/税理士、美容室などを貼り付け本文から簡易分類し、画像3件未満は候補JSON化しない。抽出後は既存の一括保存、候補審査、300社wave投入、失敗再試行、7日限定URL発行へ接続する。
+
+### Verification
+- `npm install`は1519 packages / audit 0 vulnerabilities。`src/components/admin/PortalSnapshotImportForm.tsx`は293行で500行未満。
+- TypeScript `npx tsc --noEmit` pass、対象ESLint pass、対象Vitest **2 files / 13 tests pass**、production build **408/408 pages** pass、`git diff --check` pass。
+- ローカル本番chunk `.next/static/chunks/app/[locale]/admin/demo-assets/page-dbd5ffe65bf328da.js` に `エキテン一覧・詳細ページ貼り付け抽出`、`候補JSONへ変換`、抽出ロジックが含まれることを確認した。ローカルdevの`/admin/login`ブラウザ確認は検証用`DATABASE_URI`未設定でPayload初期化500となったため、UIの実ブラウザ操作は正式release後の本番認証環境で確認する。
+- 外部送信、ポータルDM、メール、SNS、電話、郵送、フォーム送信、Twenty追加、実エキテンへのサーバー取得は実行していない。
+
 ## CURRENT STATUS - 2026-07-15 検証済み候補在庫の数千件自動量産（本番release完了 / source承認前 / 外部送信0）
 
 ### 公式SMEデータをCodex非依存で取込・再開する経路
