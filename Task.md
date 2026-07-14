@@ -1,15 +1,16 @@
 ## CURRENT STATUS - 2026-07-14 Japan Entry Lead Factory実務稼働開始（非送信pilot稼働 / batch品質ゲート未承認 / 外部送信0）
 
 ### 本番実測
-- 正式release deployment `l3hw5439vqkvmra1x1fuo1k7` / `l5a589jkmfvagztuubgcohpw` はDB **87/87**、Sales health JSON `ok:true`、Twenty HTTP 200・worker restart 0、常駐runtime 0、公開smokeまでpassした。
+- 正式release deployment `l3hw5439vqkvmra1x1fuo1k7` / `l5a589jkmfvagztuubgcohpw` / `gm932wa6vnnz9iq82e5kijxd` / 最終`od772orb2c4asmj55evkyze9` はDB **87/87**、Sales health JSON `ok:true`、Twenty HTTP 200・worker restart 0、常駐runtime 0、公開smokeまでpassした。
 - list-only候補79社を再監査し、実drift 3社（Bajoperfil36 / Jewelry On 5th / Weston Main）だけを再同期した。requested 3 / repaired 3 / failed 0、再preview drift 0、Twenty ID欠落 0、旧report URL 0、外部送信 0を確認した。
 - CC0のWikidata公式structured dataを利用したUS EC/SaaS SMB限定sourceを登録し、preview 9/9、evidence URL 9/9、ingest 9、reject 0。広すぎた最初のsourceはsuspendedの監査履歴として隔離した。
-- 非送信pilot `9982e0c1-e8d9-47ee-a4b0-b51ea0adc603` は9社取得・9社検証・3社採点・フォーム合格1・要レビュー2・品質除外2・取得失敗2で終了した。失敗率22.2%のためsourceのbatch量産承認はfail-closedのまま。WeLaunch 1社だけは40名SMB、AI/SaaS適合、米国根拠、実フォームconfidence 94を目視確認済みで、Twenty同期の最終承認対象とする。
+- 非送信pilot `9982e0c1-e8d9-47ee-a4b0-b51ea0adc603` は9社取得・9社検証・3社採点・フォーム合格1・要レビュー2・品質除外2・取得失敗2で終了した。失敗率22.2%のためsourceのbatch量産承認はfail-closedのまま。WeLaunch 1社だけを40名SMB、AI/SaaS適合、米国根拠、実フォームconfidence 94の目視判断で承認し、approved 1 / failed 0 / invalid 0でTwenty同期した。
 
 ### 最終ハードニング
 - 開始APIが新runと無関係な過去候補全件を返していた経路を削除し、run summaryだけを返す。数千件蓄積後もレスポンスサイズと全件list queryが増えない。
 - 候補1社の承認ごとにTwenty全field/viewを再設定していた同期処理を廃止する。CRM metadata変更は明示設定API / release経路だけで行い、個別承認は軽量auth preflight後にlive company patchを実行する。必須field不備やTwenty障害は`promotion_failed`と監査ログへ保存してfail-closedを維持する。
-- この修正の正式release後にWeLaunchだけを人手承認し、Twentyの国名・フォームURL・未送信カルテ、Sales DBのoperator approval、外部送信0、Opportunity / 文面 / レポート未生成を最終確認する。batchはpilot失敗率が20%以下になるまで開始しない。
+- Twenty更新直後にlive read-backを追加し、企業ID、国名、フォームURL、未送信status、next action、カルテ、旧report / material / demo URLの空状態を一致確認する。不一致なら同期成功にせず`promotion_failed`へ止める。
+- WeLaunchの本番read-backは国名`米国`、フォーム`https://welaunch.ai/contact-us`、未送信カルテ、report / material / demo URL空、Sales DB `approved` / Twenty synced、Opportunity 0、文面未生成、外部送信0。list-only総数80、Twenty ID欠落0、report URL残存0、送信済み初回文面0、既存outreach run総数2のまま。batchはpilot失敗率が20%以下になるまで開始しない。
 
 ### 既存Twenty候補を破壊せず監査・修復する経路
 - `list_only=true`かつ`skip_enrichment=true`の候補だけを対象に、Twenty ID、候補カルテ、旧営業ステータス、旧レポートURL、pipeline状態のdriftを検出する。管理画面でpreview後に不整合だけを最大3並列で再同期し、企業ごとのrequested / repaired / failedをoperator監査ログへ保存する。
@@ -22,9 +23,9 @@
 - Lead Source GUIに承認済みsourceの一時停止・再有効化を追加。収集元候補はCC0のWikidata公式structured dataをUS SMB向け限定queryで登録し、preview合格後にのみingest・非送信pilotへ進める。B Corp directoryは商用・robot利用条件に合わないため採用しない。
 - Cloudflare edgeの一時502/503/504/522だけをTwenty redirect検査で最大3回・短いbackoff付きで再確認する。その他URLは従来どおり1回、永続障害は最終attemptでrelease失敗を維持する。
 
-### Local verification / remaining production gate
+### Final verification
 - TypeScript、対象ESLint、quality guard **0 errors / 60 existing warnings**、production build **408/408 pages**、全Vitest **153 files / 693 tests pass**、`git diff --check` pass。従来残っていた日本語代表文面の長さ不一致と、`core.autocrlf=true`でshellがCRLFになる4テストも、内容追記と`.gitattributes`の`*.sh eol=lf`固定で解消した。
-- 正式PR merge、`npm run release:prod`、本番79社の再監査・3社修復、公式収集元の登録/preview/承認/ingest、非送信pilot、人手品質判定、Twenty表示とexternal send 0件の最終監査が終わるまで「実務稼働開始済み」としない。
+- PR **#219 / #221 / #224 / #226**をmainへmerge。公式source登録、preview / ingest、非送信pilot、人手承認、Twenty read-back、DB監査まで完了したため、非送信pilot運用は開始済み。batch量産だけは品質ゲート未達のため未承認であり、自動開始しない。
 
 ## CURRENT STATUS - 2026-07-14 SMB DEMO V6本文品質回帰の修復（本番反映・PC/mobile実画面QA完了 / 外部送信0）
 
