@@ -1,4 +1,4 @@
-## CURRENT STATUS - 2026-07-14 Houzz・エキテン・ジモティー候補→SMB DEMO量産レーン（実装・ローカル検証完了 / 外部送信0）
+## CURRENT STATUS - 2026-07-14 Houzz・エキテン・ジモティー候補→SMB DEMO量産レーン（本番反映・実ブラウザQA完了 / 外部送信0）
 
 ### 2026-07-14 Portal sourced SMB demo factory
 - 管理者画面 `/ja/admin/demo-assets` に、Houzz → エキテン → ジモティーの3系統を切り替える候補収集コンソールを追加。検索エンジンを巡回せず、operatorが指定した各ポータルの公開HTTPS URLだけを最大100件ずつ、同時5件で取得する。
@@ -10,6 +10,7 @@
 - 全DEMOページ最上部へPreview Toolbarを追加。PC 100% / tablet 820px / mobile 390pxを同一オリジンiframeで切り替え、実際のレスポンシブbreakpointを検品できる。注意事項だけを閉じるInfo、全画面表示、toolbar全体を閉じるXを実装。非公開URLは「削除」と誤認させず、一般公開・検索登録なし＋実際の失効日を表示する。
 - signed private URLの有効期間をUI・private access API・batch API・serviceの4層で最大7日に統一し、8日以上はDB書き込み前にfail-closed。公開showcaseは期限を偽装せず「検索登録なし・正式公開前」と表示する。
 - Preview Toolbar検証: interaction / notice / 7日上限を含む **3 files / 11 tests pass**、TypeScript、変更対象ESLint、quality guard **0 errors / 60 warnings**、production build **408/408 pages** pass。実務判定は、候補URL投入→審査→品質gate付きDEMO生成→7日期限URL発行までpilot運用可能。ポータル自動送信と無審査の数千件投入は未接続のため、full-scale送信運用はまだ開始不可。
+- Preview ToolbarはPR **#175**でmainへmergeし、正式`npm run release:prod`のdeployment **wdrpbatfxpoono4swjxrs7ra**を完走。DB **83/83**、Sales health HTTP 200 JSON `ok:true`、post-deploy gate pass。本番`https://demo.paradigmjp.com/cafe-sosomu`でPC / tablet / mobile切替、mobile実幅390px、注意事項close、toolbar close、iframe内の下層ページ遷移後もtoolbar維持を実ブラウザ確認した。
 
 ## CURRENT STATUS - 2026-07-14 Japan Entry文面20社一括生成→Twenty保存の本番試験（完了 / 外部送信0 / QAデータ削除済み）
 
