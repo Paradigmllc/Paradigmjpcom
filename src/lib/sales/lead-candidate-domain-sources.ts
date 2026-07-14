@@ -5,6 +5,7 @@ import { fetchTrancoTopDomains } from "./sources/tranco-top-domains"
 import { fetchPassiveInventoryDomains } from "./passive-inventory"
 import { fetchHttpArchiveCandidates, toTechItems } from "./sources/http-archive-bigquery"
 import { fetchBrowserFootprintDomains } from "./sources/browser-footprint-domains"
+import { isCustomerFacingBusinessDomain } from "./data-quality-guard"
 
 export interface CandidateDomainSourceSummary {
   source: string
@@ -42,6 +43,7 @@ function addDomains(input: {
   limit: number
 }) {
   for (const domain of input.domains) {
+    if (!isCustomerFacingBusinessDomain(domain)) continue
     if (input.sourceByDomain.size >= input.limit && !input.sourceByDomain.has(domain)) break
     const sources = input.sourceByDomain.get(domain) ?? new Set<string>()
     sources.add(input.source)

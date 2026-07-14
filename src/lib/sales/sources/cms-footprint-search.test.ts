@@ -6,7 +6,11 @@ describe("buildFootprintQueries", () => {
     const queries = buildFootprintQueries("US", ["Shopify"], 2)
 
     expect(queries).toHaveLength(2)
-    expect(queries.every((query) => query.query.includes("site:myshopify.com"))).toBe(true)
+    expect(queries.every((query) => !query.query.includes("site:myshopify.com"))).toBe(true)
+    expect(queries.map((query) => query.query)).toEqual([
+      '"Powered by Shopify" New York',
+      '"cdn.shopify.com" Miami',
+    ])
     expect(queries.map((query) => query.city)).toEqual(["New York", "Miami"])
   })
 

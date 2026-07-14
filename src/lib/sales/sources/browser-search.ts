@@ -131,6 +131,7 @@ const BLOCKED_DOMAIN_SUFFIXES = [
   "google.com", "youtube.com", "facebook.com", "instagram.com", "twitter.com", "x.com",
   "linkedin.com", "reddit.com", "wikipedia.org", "tiktok.com", "pinterest.com",
   "amazon.com", "ebay.com", "etsy.com", "shopify.com", "alibaba.com",
+  "myshopify.com",
   "apple.com", "microsoft.com", "github.com", "stackoverflow.com",
   "brave.com", "brave.app", "duckduckgo.com", "duck.com", "bing.com", "yahoo.com", "mozilla.org",
   "storeleads.app", "techbehemoths.com", "clutch.co", "similarweb.com", "builtwith.com",

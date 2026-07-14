@@ -1,5 +1,6 @@
 import { searchWithBrowser } from "./browser-search"
 import { buildFootprintQueries } from "./cms-footprint-search"
+import { isCustomerFacingBusinessDomain } from "../data-quality-guard"
 
 export interface BrowserFootprintDomainResult {
   ok: boolean
@@ -48,7 +49,7 @@ export async function fetchBrowserFootprintDomains(input: {
     if (!result.ok && result.error) errors.push(`${queries[index]?.city ?? input.countryCode}: ${result.error}`)
     for (const domain of result.domains) {
       if (domains.size >= input.limit) break
-      domains.add(domain)
+      if (isCustomerFacingBusinessDomain(domain)) domains.add(domain)
     }
   })
 

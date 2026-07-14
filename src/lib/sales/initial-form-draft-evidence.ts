@@ -1,5 +1,6 @@
 import type { BusinessModel } from "./japan-entry-projection";
 import { normalizeDomain } from "./dedup";
+import { isCustomerFacingBusinessDomain } from "./data-quality-guard";
 import { getProxyFetchOptions } from "./proxy-agent";
 import { auditJapanMarketReadiness } from "./sources/japan-market-audit";
 
@@ -27,8 +28,8 @@ function publicOrigin(domain: string): string {
     || normalized.endsWith(".local")
     || /^(?:0|10|127|169\.254|172\.(?:1[6-9]|2\d|3[01])|192\.168)\./.test(normalized)
   ) throw new Error("Private or local domains are prohibited");
-  if (normalized.endsWith(".myshopify.com")) {
-    throw new Error("A customer-facing canonical domain is required; myshopify.com hostnames are review-only");
+  if (!isCustomerFacingBusinessDomain(normalized)) {
+    throw new Error("A customer-facing canonical domain is required; hosted platform domains are review-only");
   }
   return `https://${normalized}`;
 }
