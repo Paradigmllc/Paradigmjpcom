@@ -16,7 +16,7 @@ export const REVENUE_SOURCE_REGISTRY_CORE: RevenueSourceRegistryItem[] = [
     env: ["PASSIVE_DOMAIN_FEED_DIR", "PASSIVE_DOMAIN_FEED_URLS", "CZDS_ZONE_FILE_DIR", "CZDS_USERNAME", "CZDS_PASSWORD", "MASSDNS_BIN"],
     primaryInput: "Tranco, optional zone/domain feeds, and CNAME records",
     primaryOutput: "stack-matched and geo-matched candidate domains without visiting target websites",
-    notes: "Tranco provides the zero-config base corpus; approved CZDS/local feeds expand it. Native DNS or massdns identifies hosted stacks, with bounded archive lookups only for known domains.",
+    notes: "Tranco provides the zero-config base corpus; approved CZDS/local feeds expand it. Native DNS or massdns identifies hosted stacks, and only the bounded verification set visits target sites.",
   }),
   item({
     slug: "multi_source_domains",

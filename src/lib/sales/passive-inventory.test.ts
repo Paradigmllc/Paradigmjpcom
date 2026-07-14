@@ -2,12 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const mocks = vi.hoisted(() => ({
   scan: vi.fn(),
-  archive: vi.fn(),
 }))
 
 vi.mock("@/lib/supabase", () => ({ getServiceSalesSupabase: () => null }))
 vi.mock("./sources/passive-cname-scan", () => ({ scanCnameRecords: mocks.scan }))
-vi.mock("./sources/commoncrawl-passive-evidence", () => ({ fetchCommonCrawlPassiveEvidence: mocks.archive }))
 
 import { processPassiveInventoryDomainBatch } from "./passive-inventory"
 
@@ -18,13 +16,6 @@ beforeEach(() => {
     records: { "merchant.example.com": "shops.myshopify.com" },
     engine: "node_dns",
     checked: 1,
-  })
-  mocks.archive.mockResolvedValue({
-    ok: false,
-    countrySignals: [],
-    technologies: [],
-    textSample: null,
-    pagesChecked: 0,
   })
 })
 
@@ -45,6 +36,5 @@ describe("passive inventory qualification", () => {
     expect(result.evidenceByDomain["merchant.example.com"]?.raw).toMatchObject({
       skip_active_verification: false,
     })
-    expect(mocks.archive).not.toHaveBeenCalled()
   })
 })
