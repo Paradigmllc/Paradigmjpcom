@@ -45,8 +45,16 @@ function collectStrings(value: unknown, output: string[] = []): string[] {
 
 function duplicateLongCopy(page: DemoMultiPageData): boolean {
   const counts = new Map<string, number>()
+  const reusableMediaCopy = new Set(collectStrings({
+    heroMedia: page.premium?.heroMedia ?? [],
+    gallery: page.premium?.gallery ?? [],
+  }))
   for (const text of collectStrings(page.pages)) {
     if (text.length < 42) continue
+    // Reviewed images are intentionally reused across the hero, gallery, and
+    // lower pages. Their URL, alt, and provenance caption are media metadata,
+    // not duplicated customer-facing body copy.
+    if (reusableMediaCopy.has(text)) continue
     counts.set(text, (counts.get(text) ?? 0) + 1)
   }
   return [...counts.values()].some((count) => count >= 3)
