@@ -433,6 +433,8 @@ function buildPremiumExperience(
       src,
       alt,
       kind: item.kind === "video" ? "video" as const : "image" as const,
+      width: typeof item.width === "number" && item.width > 0 ? item.width : undefined,
+      height: typeof item.height === "number" && item.height > 0 ? item.height : undefined,
       caption: typeof item.caption === "string" && !/paradigm/i.test(item.caption) ? item.caption : "提案用イメージ",
       objectPosition: typeof item.objectPosition === "string" ? item.objectPosition : undefined,
     }]

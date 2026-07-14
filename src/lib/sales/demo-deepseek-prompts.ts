@@ -48,6 +48,8 @@ export function buildJapaneseUserPrompt(
   nav: string,
   _tokens: DemoTemplate["designTokens"],
   verifiedFacts: string,
+  candidateTemplates = "1. template_id=default",
+  candidateCount = 3,
 ): string {
   return `ビジネスWebサイトの創造的な中核コピー（Home、About、Services）を生成してください。FAQとContactは確認済みデータから別工程で生成するため、出力しないでください。
 
@@ -101,10 +103,24 @@ export function buildJapaneseUserPrompt(
       {"step": 3, "title": "ステップ名", "description": "説明"},
       {"step": 4, "title": "ステップ名", "description": "説明"}
     ]
-  }
+  },
+  "art_directions": [
+    {
+      "template_id": "候補のtemplate_idをそのまま記載",
+      "concept": "この企業固有の視覚コンセプト（8〜50文字）",
+      "typography_style": "editorial-serif | humanist-sans | modern-grotesk | technical-sans",
+      "hero_composition": "cinematic | editorial-split | precision-split | mosaic",
+      "service_layout": "editorial-list | salon-catalogue | precision-grid",
+      "works_layout": "journal | salon-lookbook | case-grid",
+      "palette_mood": "warm-neutral | cool-professional | earth | monochrome | soft-contrast",
+      "density": "airy | balanced | compact",
+      "motion": "restrained | editorial | expressive",
+      "signature_motif": "hairline | numbered-index | framed-media | offset-grid | kinetic-rail"
+    }
+  ]
 }
 
-重要: これは制作会社の改善提案LPではなく、入力企業がそのまま公式サイトとして使える顧客向けコピーです。Web改善、SEO、表示速度、診断、制作会社、Paradigm、Japan Entryには言及しないでください。features配列は3つ、valuesは4つ、servicesは3つ生成してください。FAQとContactは出力しないでください。根拠のない所在地、年代、沿革、営業時間、外部サービス連携、顧客の声、実績、数値、材料、味、食感、製法、予約可否、問い合わせ手段、返信時期、画像の出自・権利状態は絶対に生成しないでください。
+重要: これは制作会社の改善提案LPではなく、入力企業がそのまま公式サイトとして使える顧客向けコピーです。Web改善、SEO、表示速度、診断、制作会社、Paradigm、Japan Entryには言及しないでください。features配列は3つ、valuesは4つ、servicesは3つ生成してください。FAQとContactは出力しないでください。art_directionsは下記${candidateCount}候補と同じtemplate_idで必ず${candidateCount}件生成し、タイポグラフィ、hero、サービス、実績、色調、密度、動き、モチーフの組合せが候補間で明確に異なるようにしてください。根拠のない所在地、年代、沿革、営業時間、外部サービス連携、顧客の声、実績、数値、材料、味、食感、製法、予約可否、問い合わせ手段、返信時期、画像の出自・権利状態は絶対に生成しないでください。
 
 【企業固有入力・ここから末尾だけ案件ごとに変化】
 - 企業名: ${name}
@@ -114,6 +130,9 @@ export function buildJapaneseUserPrompt(
 - 技術スタック: ${techSummary}
 - 出力言語: ${locale === "ja" ? "日本語（です・ます調）" : locale}
 - レイアウトスタイル: ヒーロー=${heroVariant}, 特徴=${featureLayout}, カード=${cardStyle}, ナビ=${nav}
+
+【実装可能なデザイン候補】
+${candidateTemplates}
 
 【確認済み公開情報】
 ${verifiedFacts}
@@ -137,6 +156,8 @@ export function buildEnglishUserPrompt(
   nav: string,
   _tokens: DemoTemplate["designTokens"],
   verifiedFacts: string,
+  candidateTemplates = "1. template_id=default",
+  candidateCount = 3,
 ): string {
   return `Generate the creative core copy for a business website (Home, About, Services). FAQ and Contact are generated separately from verified data, so do not output them.
 
@@ -187,10 +208,24 @@ Output the following JSON. All English copy must be professional business Englis
       {"step": 3, "title": "Step name", "description": "Description"},
       {"step": 4, "title": "Step name", "description": "Description"}
     ]
-  }
+  },
+  "art_directions": [
+    {
+      "template_id": "copy an exact candidate template_id",
+      "concept": "company-specific visual concept",
+      "typography_style": "editorial-serif | humanist-sans | modern-grotesk | technical-sans",
+      "hero_composition": "cinematic | editorial-split | precision-split | mosaic",
+      "service_layout": "editorial-list | salon-catalogue | precision-grid",
+      "works_layout": "journal | salon-lookbook | case-grid",
+      "palette_mood": "warm-neutral | cool-professional | earth | monochrome | soft-contrast",
+      "density": "airy | balanced | compact",
+      "motion": "restrained | editorial | expressive",
+      "signature_motif": "hairline | numbered-index | framed-media | offset-grid | kinetic-rail"
+    }
+  ]
 }
 
-IMPORTANT: This is not a web-agency improvement pitch. Write customer-facing copy the input business could use as its official website. Do not mention web improvement, SEO, diagnostics, an agency, Paradigm, or Japan Entry. Generate exactly 3 features, 4 values, 3 services, and 4 process steps. Do not output FAQ or Contact. Never invent locations, dates, history, opening hours, third-party integrations, testimonials, customer claims, performance metrics, ingredients, taste, texture, preparation, reservation policy, contact channels, response times, or image provenance.
+IMPORTANT: This is not a web-agency improvement pitch. Write customer-facing copy the input business could use as its official website. Do not mention web improvement, SEO, diagnostics, an agency, Paradigm, or Japan Entry. Generate exactly 3 features, 4 values, 3 services, and 4 process steps. Do not output FAQ or Contact. Generate exactly ${candidateCount} art_directions using the exact candidate template_ids below, with visibly different typography, hero, service, works, palette, density, motion, and motif choices. Never invent locations, dates, history, opening hours, third-party integrations, testimonials, customer claims, performance metrics, ingredients, taste, texture, preparation, reservation policy, contact channels, response times, or image provenance.
 
 [Company-specific input — only this suffix varies per request]
 - Company Name: ${name}
@@ -200,6 +235,9 @@ IMPORTANT: This is not a web-agency improvement pitch. Write customer-facing cop
 - Tech Stack: ${techSummary}
 - Output Language: ${locale === "en" ? "Professional Business English" : locale}
 - Layout Style: hero=${heroVariant}, features=${featureLayout}, cards=${cardStyle}, nav=${nav}
+
+[Executable design candidates]
+${candidateTemplates}
 
 [Verified Public Facts]
 ${verifiedFacts}

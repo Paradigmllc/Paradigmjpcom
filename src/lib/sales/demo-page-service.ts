@@ -9,14 +9,16 @@ import {
   buildProposalRightsManifest,
   evaluateDemoQuality,
   summarizeCandidate,
+  collidingCandidateIndexes,
 } from "./demo-quality-gate"
 import { selectTemplateCandidates, type CompanyProfile } from "./demo-template-selector"
-import type { DemoCandidateSummary, DemoGenerateOutput, DemoMultiPageData } from "./demo-site-types"
+import type { DemoCandidateSummary, DemoCreativeDirection, DemoGenerateOutput, DemoMultiPageData } from "./demo-site-types"
 import type { ReportLocale } from "./types"
 import { buildDemoUrl } from "./routing"
 import { readValidatedDemoSourceManifest } from "./demo-source-policy"
 import { applyIndustryPresentation } from "./demo-industry-presentation"
 import { upgradeDemoToPremiumV3 } from "./demo-premium-v3"
+import { buildDemoCreativeDirection, readCreativeDirection } from "./demo-creative-direction"
 
 export { fetchDemoMultiPageData, fetchDemoPageData } from "./demo-page-fetch"
 
@@ -81,18 +83,18 @@ export async function generateFullStackDemo(
       meta: company.meta as Record<string, unknown> | null,
     }
     const templates = selectTemplateCandidates(profile, diagnostic, 3)
-    const existingFingerprints = await fetchExistingFingerprints(sb, companyId)
+    const existingSignatures = await fetchExistingSignatures(sb, companyId)
     const companyMeta = company.meta as Record<string, unknown> | null
     const rights = buildProposalRightsManifest(companyMeta?.demo_media)
     const sharedEnhancement = (options.enhanceWithAI ?? true) && templates[0]
       ? await enhanceDemoWithDeepSeek(
           company as Parameters<typeof enhanceDemoWithDeepSeek>[0],
           diagnostic,
-          templates[0],
+          templates,
           effectiveLocale,
         )
       : null
-    const candidates: GeneratedCandidate[] = templates.map((template) => {
+    const candidates: GeneratedCandidate[] = templates.map((template, candidateIndex) => {
       let page = buildPersonalizedDemoData(
         company as unknown as Parameters<typeof buildDemoMultiPageData>[0],
         diagnostic,
@@ -100,13 +102,36 @@ export async function generateFullStackDemo(
       )
       if (sharedEnhancement) page = mergeDeepSeekOutput(page, sharedEnhancement, effectiveLocale)
       page = applyIndustryPresentation(page)
-      const recipe = buildDesignRecipe(template, page)
+      const generatedDirection = sharedEnhancement?.artDirections.find((direction) => direction.template_id === template.id)
+      const creativeDirection = buildDemoCreativeDirection(template, page, candidateIndex, generatedDirection)
+      const recipe = buildDesignRecipe(template, page, creativeDirection)
       page = upgradeDemoToPremiumV3(page, recipe)
       const brandedRecipe = page.designRecipe ?? recipe
-      const quality = evaluateDemoQuality(page, brandedRecipe, rights, existingFingerprints)
+      const quality = evaluateDemoQuality(
+        page,
+        brandedRecipe,
+        rights,
+        existingSignatures.fingerprints,
+        existingSignatures.creativeDirections,
+      )
       page = { ...page, designRecipe: brandedRecipe, quality, rightsManifest: rights }
       return { page, summary: summarizeCandidate(page, brandedRecipe, quality) }
     })
+
+    const collisions = collidingCandidateIndexes(candidates.map((candidate) => candidate.page.designRecipe!))
+    for (const index of collisions) {
+      const candidate = candidates[index]
+      if (!candidate?.page.quality) continue
+      const hardBlockers = [...new Set([...candidate.page.quality.hardBlockers, "candidate_visual_collision"])]
+      candidate.page.quality = {
+        ...candidate.page.quality,
+        score: Math.min(candidate.page.quality.score, 70),
+        passed: false,
+        hardBlockers,
+        checks: { ...candidate.page.quality.checks, candidateDiversity: false },
+      }
+      candidate.summary = summarizeCandidate(candidate.page, candidate.page.designRecipe!, candidate.page.quality)
+    }
 
     candidates.sort((left, right) => right.summary.score - left.summary.score)
     const selected = candidates[0]
@@ -203,22 +228,28 @@ export async function generateFullStackDemo(
   }
 }
 
-async function fetchExistingFingerprints(
+async function fetchExistingSignatures(
   sb: NonNullable<ReturnType<typeof getServiceSalesSupabase>>,
   companyId: string,
-): Promise<Set<string>> {
+): Promise<{ fingerprints: Set<string>; creativeDirections: DemoCreativeDirection[] }> {
   const { data, error } = await sb
     .from(DB_TABLES.THEME_DEMO_PAGES)
-    .select("structural_fingerprint")
-    .eq("is_published", true)
+    .select("structural_fingerprint, design_recipe")
+    .in("publication_status", ["published", "private_review", "approved", "quality_review"])
     .neq("company_id", companyId)
     .not("structural_fingerprint", "is", null)
     .limit(1000)
   if (error) {
     console.error("[demo-generator] fingerprint lookup failed:", error.message)
-    return new Set()
+    return { fingerprints: new Set(), creativeDirections: [] }
   }
-  return new Set((data ?? []).map((row) => row.structural_fingerprint).filter((value): value is string => Boolean(value)))
+  return {
+    fingerprints: new Set((data ?? []).map((row) => row.structural_fingerprint).filter((value): value is string => Boolean(value))),
+    creativeDirections: (data ?? []).flatMap((row) => {
+      const direction = readCreativeDirection(row.design_recipe)
+      return direction ? [direction] : []
+    }),
+  }
 }
 
 async function persistPublishedReferences(

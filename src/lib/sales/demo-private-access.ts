@@ -21,6 +21,8 @@ export interface DemoReviewedAsset {
   peopleVisible: boolean
   watermarkVisible: boolean
   alt: string
+  width?: number
+  height?: number
   notes?: string
 }
 

@@ -1,6 +1,7 @@
 import type { ReportLocale } from "./types";
 import type {
   DeepSeekAboutEnhancement,
+  DeepSeekArtDirection,
   DeepSeekContactEnhancement,
   DeepSeekEnhancedOutput,
   DeepSeekHomeEnhancement,
@@ -102,6 +103,7 @@ export function parseDeepSeekOutput(
   about?: DeepSeekAboutEnhancement;
   services?: DeepSeekServicesEnhancement;
   contact?: DeepSeekContactEnhancement;
+  artDirections: DeepSeekArtDirection[];
 } | null {
   try {
     // DeepSeek sometimes wraps JSON in markdown code blocks
@@ -130,6 +132,7 @@ export function parseDeepSeekOutput(
       contact: sanitizeContactPage(
         (parsed.contact as Record<string, unknown>) ?? {},
       ),
+      artDirections: sanitizeArtDirections(parsed.art_directions),
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -142,6 +145,42 @@ export function parseDeepSeekOutput(
     );
     return null;
   }
+}
+
+const TYPOGRAPHY_STYLES = ["editorial-serif", "humanist-sans", "modern-grotesk", "technical-sans"] as const;
+const HERO_COMPOSITIONS = ["cinematic", "editorial-split", "precision-split", "mosaic"] as const;
+const SERVICE_LAYOUTS = ["editorial-list", "salon-catalogue", "precision-grid"] as const;
+const WORKS_LAYOUTS = ["journal", "salon-lookbook", "case-grid"] as const;
+const PALETTE_MOODS = ["warm-neutral", "cool-professional", "earth", "monochrome", "soft-contrast"] as const;
+const DENSITIES = ["airy", "balanced", "compact"] as const;
+const MOTIONS = ["restrained", "editorial", "expressive"] as const;
+const MOTIFS = ["hairline", "numbered-index", "framed-media", "offset-grid", "kinetic-rail"] as const;
+
+function enumValue<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
+  return typeof value === "string" && allowed.includes(value as T) ? value as T : fallback;
+}
+
+function sanitizeArtDirections(value: unknown): DeepSeekArtDirection[] {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 3).flatMap((entry, index) => {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) return [];
+    const item = entry as Record<string, unknown>;
+    const templateId = cleanStr(item.template_id, "", 40);
+    const concept = cleanStr(item.concept, "", 120);
+    if (!templateId || concept.length < 8) return [];
+    return [{
+      template_id: templateId,
+      concept,
+      typography_style: enumValue(item.typography_style, TYPOGRAPHY_STYLES, index === 0 ? "editorial-serif" : "modern-grotesk"),
+      hero_composition: enumValue(item.hero_composition, HERO_COMPOSITIONS, index === 0 ? "cinematic" : "precision-split"),
+      service_layout: enumValue(item.service_layout, SERVICE_LAYOUTS, index === 0 ? "editorial-list" : "precision-grid"),
+      works_layout: enumValue(item.works_layout, WORKS_LAYOUTS, index === 0 ? "journal" : "case-grid"),
+      palette_mood: enumValue(item.palette_mood, PALETTE_MOODS, index === 0 ? "warm-neutral" : "cool-professional"),
+      density: enumValue(item.density, DENSITIES, index === 0 ? "airy" : "balanced"),
+      motion: enumValue(item.motion, MOTIONS, index === 0 ? "editorial" : "restrained"),
+      signature_motif: enumValue(item.signature_motif, MOTIFS, index === 0 ? "hairline" : "numbered-index"),
+    }];
+  });
 }
 
 /* ───── Sanitizers ───── */

@@ -1,3 +1,19 @@
+## CURRENT STATUS - 2026-07-14 SMB DEMO Art Direction V5（Codex非依存化・本番QA前）
+
+### DeepSeekをコピー生成器から実装可能なアートディレクターへ拡張
+- 1社につきDeepSeek呼び出しは1回のまま、Home / About / Servicesの企業固有コピーに加え、3候補それぞれの視覚コンセプトを構造化JSONで生成する。候補ごとにタイポグラフィ、hero、サービス、実績、配色、モーションを選び、rendererがその6軸を実画面へ反映する。Codexによる企業別コード修正を量産フローの前提にしない。
+- Premium V3へeditorial split / precision split / cinematic / mosaic hero、editorial list / catalogue / precision gridサービス、journal / lookbook / case grid実績、5種のneutral palette、4種の書体方針、3種のmotionを配線した。トップだけでなくAbout / Services / Works等の下層heroと構成も同じart directionに追従する。
+- 既存の1件用AI builderも候補数可変の同じDeepSeek schemaへ統一し、3候補の量産経路は完全に同一prefixを使うためprompt cacheを維持する。
+
+### 品質判定を「点数100」からfail-closedの実描画事前検査へ変更
+- 管理画面の点数表記を「事前検査」と明記。構造、コピー、権利、素材を確認するpreflightであり、実ブラウザの最終品質保証ではないことを表示する。
+- 同じtemplate IDかどうかではなく、実際に描画される6軸のvisual grammarをfingerprint化。3候補内の完全一致だけでなく80%以上の近似一致、過去のprivate review / approved / publishedデモとの近似一致もhard blockerにする。まだrendererに接続していないdensity / motifは差分の水増しに使わない。
+- cinematic heroへサムネイルまたは幅1,200px / 高さ720px未満の審査済み画像を拡大する場合、画像URLと取得済み寸法からfail-closedにする。display / body fontの完全同一、画像反復、企業固有concept欠落も停止する。
+
+### ローカル検証と残る公開条件
+- デモ関連 **16 files / 56 tests pass**、TypeScript、変更対象ESLint、quality guard **0 errors / 59 existing warnings**、production build **408/408 pages**、`git diff --check` pass。新規依存なし。
+- この段階では外部送信、候補追加、Twenty同期、ポータルDM、フォーム送信を行っていない。コード検査は合格したが、未知の複数実企業をDeepSeekだけで生成し、PC / mobileでHomeと下層を実ブラウザ比較するまでは「品質合格」「量産開始」と判定しない。
+
 ## CURRENT STATUS - 2026-07-14 Japan Entry候補収集のSearXNG廃止・パッシブコーパス量産化（本番反映 / 外部送信0）
 
 ### 2026-07-14 proxy不要の候補factory再構築
