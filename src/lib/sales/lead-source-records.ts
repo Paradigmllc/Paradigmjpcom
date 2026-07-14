@@ -142,13 +142,27 @@ function mappedValue(record: JsonRecord, mapping: JsonRecord, field: string, fal
   return null
 }
 
-function safeSourcePageUrl(value: unknown, sourceUrl: string): string {
+function configuredSourcePageHosts(mapping: JsonRecord): string[] {
+  const configured = textValue(mapping.source_page_allowed_hosts)
+  if (!configured) return []
+  return [...new Set(configured
+    .split(/[\s,]+/)
+    .map((value) => normalizePublicDomain(value))
+    .filter((value): value is string => Boolean(value)))]
+}
+
+function hostMatches(hostname: string, allowedHostname: string): boolean {
+  return hostname === allowedHostname || hostname.endsWith(`.${allowedHostname}`)
+}
+
+function safeSourcePageUrl(value: unknown, sourceUrl: string, allowedHosts: string[] = []): string {
   try {
     const base = new URL(sourceUrl)
     const resolved = new URL(textValue(value) ?? sourceUrl, base)
     const baseHost = base.hostname.toLowerCase().replace(/^www\./, "")
     const resolvedHost = resolved.hostname.toLowerCase().replace(/^www\./, "")
-    if (resolved.protocol !== "https:" || (resolvedHost !== baseHost && !resolvedHost.endsWith(`.${baseHost}`))) return sourceUrl
+    const approvedExternalHost = allowedHosts.some((host) => hostMatches(resolvedHost, host.replace(/^www\./, "")))
+    if (resolved.protocol !== "https:" || (!hostMatches(resolvedHost, baseHost) && !approvedExternalHost)) return sourceUrl
     resolved.hash = ""
     return resolved.toString()
   } catch (error) {
@@ -171,6 +185,7 @@ function contentHash(value: JsonRecord): string {
 
 function normalizeStructuredRecord(record: JsonRecord, config: LeadSourceConfig): NormalizedSourceRecord | null {
   const mapping = asRecord(config.field_mapping)
+  const allowedSourcePageHosts = configuredSourcePageHosts(mapping)
   const companyName = textValue(mappedValue(record, mapping, "company_name", ["company_name", "companyName", "name", "company"]))
   const website = normalizedWebsite(mappedValue(record, mapping, "website_url", ["website_url", "websiteUrl", "website", "domain", "url"]))
   if (!companyName || !website) return null
@@ -197,7 +212,7 @@ function normalizeStructuredRecord(record: JsonRecord, config: LeadSourceConfig)
     domain: website.domain,
     website_url: website.websiteUrl,
     country_code: config.country_code,
-    source_page_url: safeSourcePageUrl(mappedValue(record, mapping, "source_page_url", ["source_page_url", "sourcePageUrl", "detail_url", "profile_url"]), config.source_url),
+    source_page_url: safeSourcePageUrl(mappedValue(record, mapping, "source_page_url", ["source_page_url", "sourcePageUrl", "detail_url", "profile_url"]), config.source_url, allowedSourcePageHosts),
     business_type: textValue(businessType)?.slice(0, 200) ?? null,
     employee_count: scaledNumberValue(employeeCount),
     annual_revenue_usd: scaledNumberValue(annualRevenue),
@@ -258,11 +273,20 @@ export function parseLeadSourcePayload(text: string, config: LeadSourceConfig): 
 
 async function fetchSourceText(config: LeadSourceConfig): Promise<string> {
   let url = new URL(config.source_url)
+  const acceptByFormat: Record<LeadSourceFormat, string> = {
+    json: "application/json",
+    jsonl: "application/x-ndjson, application/json;q=0.9",
+    csv: "text/csv",
+    html: "text/html, application/xhtml+xml;q=0.9",
+  }
   for (let redirect = 0; redirect <= 5; redirect++) {
     if (url.protocol !== "https:" || !normalizePublicDomain(url.hostname)) throw new Error("Source URL must be a public HTTPS URL")
     if (!(await passesPublicDnsCheck(url.hostname))) throw new Error("Source URL did not pass the public DNS safety check")
     const response = await fetch(url, {
-      headers: { "User-Agent": "ParadigmLeadSourceIngest/1.0 (+https://paradigmjp.com)" },
+      headers: {
+        Accept: acceptByFormat[config.source_format],
+        "User-Agent": "ParadigmLeadSourceIngest/1.0 (+https://paradigmjp.com)",
+      },
       redirect: "manual",
       signal: AbortSignal.timeout(60_000),
     })

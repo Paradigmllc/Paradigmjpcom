@@ -1,3 +1,19 @@
+## CURRENT STATUS - 2026-07-14 Japan Entry Lead Factory実務稼働ハードニング（正式release前 / 外部送信0）
+
+### 既存Twenty候補を破壊せず監査・修復する経路
+- `list_only=true`かつ`skip_enrichment=true`の候補だけを対象に、Twenty ID、候補カルテ、旧営業ステータス、旧レポートURL、pipeline状態のdriftを検出する。管理画面でpreview後に不整合だけを最大3並列で再同期し、企業ごとのrequested / repaired / failedをoperator監査ログへ保存する。
+- Twenty側はdomain検索を先に行うため重複企業を作らず、既存企業を現在のlist-onlyカルテへ更新する。ローカル側もTwenty IDとcanonical summaryを再保存し、旧report URLをnull、pipelineをpendingへ戻す。Opportunity、初回文面、診断レポート、外部送信は生成しない。
+- 2026-07-14時点の本番事前監査ではlist-only候補79社、Twentyリンク78社、旧レポート文言2社、Twenty ID欠落1社を確認。停止していたpilot run `2b7b82b2-1fa5-4635-b100-fc19331061c5`は、既存の認証・監査付きcancel APIでcancelledへ変更済み。実データ修復は正式release後に新APIから実行する。
+
+### 持続可能な収集元とrelease gate
+- CSV / JSON / JSONL / HTMLごとに正しいAccept headerを送り、配信hostと企業詳細hostが異なる公式データは`source_page_allowed_hosts`で明示許可する。HTTPS、public DNS、同一または許可subdomain、25MB上限、preview、規約確認、operator承認、明示ingestの既存fail-closed条件は維持する。
+- Lead Source GUIに承認済みsourceの一時停止・再有効化を追加。収集元候補はCC0のWikidata公式structured dataをUS SMB向け限定queryで登録し、preview合格後にのみingest・非送信pilotへ進める。B Corp directoryは商用・robot利用条件に合わないため採用しない。
+- Cloudflare edgeの一時502/503/504/522だけをTwenty redirect検査で最大3回・短いbackoff付きで再確認する。その他URLは従来どおり1回、永続障害は最終attemptでrelease失敗を維持する。
+
+### Local verification / remaining production gate
+- TypeScript、対象ESLint、quality guard **0 errors / 60 existing warnings**、production build **408/408 pages**、全Vitest **153 files / 693 tests pass**、`git diff --check` pass。従来残っていた日本語代表文面の長さ不一致と、`core.autocrlf=true`でshellがCRLFになる4テストも、内容追記と`.gitattributes`の`*.sh eol=lf`固定で解消した。
+- 正式PR merge、`npm run release:prod`、本番79社の再監査・3社修復、公式収集元の登録/preview/承認/ingest、非送信pilot、人手品質判定、Twenty表示とexternal send 0件の最終監査が終わるまで「実務稼働開始済み」としない。
+
 ## CURRENT STATUS - 2026-07-14 Japan Entry候補factoryのoperator approval hardening（本番反映・公開QA完了 / 外部送信0）
 
 ### 収集元・候補・Twentyの境界を人間の明示承認へ変更

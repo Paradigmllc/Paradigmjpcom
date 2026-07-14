@@ -999,37 +999,55 @@ function isBadReportBody(text) {
 
 async function fetchCheck(label, url, options = {}) {
   const timeoutMs = options.timeoutMs ?? 20_000
-  let res
-  try {
-    res = await fetch(url, {
-      redirect: options.redirect ?? "follow",
-      signal: AbortSignal.timeout(timeoutMs),
-      headers: options.headers,
-    })
-  } catch (error) {
-    fail(`${label} fetch failed: ${error instanceof Error ? error.message : String(error)}`)
+  const requestedAttempts = Number(options.attempts ?? 1)
+  const attempts = Number.isFinite(requestedAttempts)
+    ? Math.max(1, Math.min(Math.floor(requestedAttempts), 3))
+    : 1
+  const retryStatuses = new Set(options.retryStatuses ?? [])
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    let res
+    try {
+      res = await fetch(url, {
+        redirect: options.redirect ?? "follow",
+        signal: AbortSignal.timeout(timeoutMs),
+        headers: options.headers,
+      })
+    } catch (error) {
+      if (attempt < attempts) {
+        warn(`${label} fetch attempt ${attempt}/${attempts} failed; retrying after the transient edge path settles`)
+        await new Promise((resolve) => setTimeout(resolve, 750 * attempt))
+        continue
+      }
+      fail(`${label} fetch failed: ${error instanceof Error ? error.message : String(error)}`)
+      return
+    }
+    const text = await res.text().catch(() => "")
+    if (retryStatuses.has(res.status) && attempt < attempts) {
+      warn(`${label} returned transient HTTP ${res.status} on attempt ${attempt}/${attempts}; retrying`)
+      await new Promise((resolve) => setTimeout(resolve, 750 * attempt))
+      continue
+    }
+    if (res.status < 200 || res.status >= 400) {
+      fail(`${label} returned HTTP ${res.status}`)
+      return
+    }
+    if (options.rejectReportError && isBadReportBody(text)) {
+      fail(`${label} rendered an application/report error`)
+      return
+    }
+    const expectedMarkers = options.mustContain
+      ? Array.isArray(options.mustContain)
+        ? options.mustContain
+        : [options.mustContain]
+      : []
+    const missingMarkers = expectedMarkers.filter((marker) => !text.includes(marker))
+    if (missingMarkers.length > 0) {
+      fail(`${label} did not contain expected marker(s): ${missingMarkers.join(", ")}`)
+      return
+    }
+    pass(`${label} HTTP ${res.status}`)
     return
   }
-  const text = await res.text().catch(() => "")
-  if (res.status < 200 || res.status >= 400) {
-    fail(`${label} returned HTTP ${res.status}`)
-    return
-  }
-  if (options.rejectReportError && isBadReportBody(text)) {
-    fail(`${label} rendered an application/report error`)
-    return
-  }
-  const expectedMarkers = options.mustContain
-    ? Array.isArray(options.mustContain)
-      ? options.mustContain
-      : [options.mustContain]
-    : []
-  const missingMarkers = expectedMarkers.filter((marker) => !text.includes(marker))
-  if (missingMarkers.length > 0) {
-    fail(`${label} did not contain expected marker(s): ${missingMarkers.join(", ")}`)
-    return
-  }
-  pass(`${label} HTTP ${res.status}`)
 }
 
 async function fetchUnauthorizedCheck(label, url) {
@@ -1188,7 +1206,11 @@ async function checkPostDeployUrls() {
     }
     await fetchCheck(`English ${label}`, `${BASE_URL}${path}`, options)
   }
-  await fetchCheck("Twenty CRM redirect", `${BASE_URL}/ja/admin/sales`, { timeoutMs: 20_000 })
+  await fetchCheck("Twenty CRM redirect", `${BASE_URL}/ja/admin/sales`, {
+    timeoutMs: 20_000,
+    attempts: 3,
+    retryStatuses: [502, 503, 504, 522],
+  })
   await fetchCheck("diagnostic report value URL", `${BASE_URL}${REPORT_PATH}`, {
     timeoutMs: 25_000,
     rejectReportError: true,

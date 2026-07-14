@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { listLeadTwentyPayload } from "./twenty-sync-list-lead"
+import { listLeadSyncDriftReasons, listLeadTwentyPayload } from "./twenty-sync-list-lead"
 
 describe("listLeadTwentyPayload", () => {
   it("projects only reviewed list evidence and clears legacy report pipeline fields", () => {
@@ -62,5 +62,30 @@ describe("listLeadTwentyPayload", () => {
       markdown: expect.stringContaining("Hello from the approved evidence-backed draft."),
     }))
     expect(JSON.stringify(payload)).not.toContain("https://paradigmjp.com")
+  })
+
+  it("detects missing Twenty linkage and legacy report summaries", () => {
+    const company = {
+      id: "company-3",
+      company_name: "Legacy Store",
+      domain: "legacy.example",
+      target_country: "US",
+      source: "multi_source_domains",
+      tech_stack: { detections: [{ name: "Shopify" }] },
+      report_url: null,
+      pipeline_status: "pending",
+      meta: {
+        list_only: true,
+        skip_enrichment: true,
+        contact_form_url: "https://legacy.example/contact",
+        lead_candidate: { score: { opportunityScore: 75, smbScore: 58 } },
+        twenty: { summary: "Report URL: https://paradigmjp.com/en/report/legacy" },
+      },
+    }
+
+    expect(listLeadSyncDriftReasons(company)).toEqual(expect.arrayContaining([
+      "twenty_id_missing",
+      "twenty_summary_drift",
+    ]))
   })
 })
