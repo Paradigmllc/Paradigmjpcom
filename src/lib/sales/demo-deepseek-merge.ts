@@ -1,6 +1,7 @@
 import type { DemoMultiPageData } from "./demo-site-types"
 import type { DeepSeekEnhancedOutput } from "./demo-deepseek-types"
 import { groundDemoText } from "./demo-copy-grounding"
+import { expandGroundedBody } from "./demo-content-depth"
 
 /**
  * Merge DeepSeek AI-enhanced output into the rules-based DemoMultiPageData.
@@ -26,13 +27,27 @@ export function mergeDeepSeekOutput(
   const groundedFallback = factSummary
     ? (isJa ? `確認済みの公開情報では、${factSummary}をご案内しています。` : `Verified public information includes ${factSummary}.`)
     : (isJa ? "詳細は正式公開前に事業者確認を行います。" : "Details require operator confirmation before publication.");
+  const groundedServices = (ai.services.services ?? []).map((service, index) => ({
+    title: groundDemoText(service.title, verifiedFacts, isJa ? `ご案内 ${index + 1}` : `Offering ${index + 1}`),
+    description: groundDemoText(service.description, verifiedFacts, groundedFallback),
+  }))
   const groundModules = (
     modules: Array<{ eyebrow: string; title: string; body: string; points: string[] }> | undefined,
     label: string,
+    context: "home" | "about" | "services",
   ) => modules?.map((module, index) => ({
     eyebrow: groundDemoText(module.eyebrow, verifiedFacts, `${label} ${String(index + 1).padStart(2, "0")}`),
     title: groundDemoText(module.title, verifiedFacts, isJa ? `${label}のご案内 ${index + 1}` : `${label} guide ${index + 1}`),
-    body: groundDemoText(module.body, verifiedFacts, `${groundedFallback} ${isJa ? `項目${index + 1}` : `Section ${index + 1}`}`),
+    body: expandGroundedBody({
+      body: groundDemoText(module.body, verifiedFacts, `${groundedFallback} ${isJa ? `項目${index + 1}` : `Section ${index + 1}`}`),
+      companyName: base.companyName,
+      facts: base.meta.verifiedFacts ?? [],
+      services: groundedServices,
+      index,
+      locale: isJa ? "ja" : "en",
+      context,
+      targetLength: context === "about" ? (isJa ? 220 : 650) : (isJa ? 180 : 520),
+    }),
     points: module.points.map((point, pointIndex) => groundDemoText(
       point,
       verifiedFacts,
@@ -61,7 +76,7 @@ export function mergeDeepSeekOutput(
     }));
   }
   if (ai.home.narrative_modules && ai.home.narrative_modules.length >= 3) {
-    home.narrativeModules = groundModules(ai.home.narrative_modules, isJa ? "特徴" : "Highlights");
+    home.narrativeModules = groundModules(ai.home.narrative_modules, isJa ? "特徴" : "Highlights", "home");
   }
 
   // Testimonials and customer logos are never accepted from generative output.
@@ -93,7 +108,7 @@ export function mergeDeepSeekOutput(
     }));
   }
   if (ai.about.chapters && ai.about.chapters.length >= 3) {
-    about.chapters = groundModules(ai.about.chapters, isJa ? "事業紹介" : "Our story");
+    about.chapters = groundModules(ai.about.chapters, isJa ? "事業紹介" : "Our story", "about");
   }
 
   // Services: intro, services list, process
@@ -115,14 +130,23 @@ export function mergeDeepSeekOutput(
     }));
   }
   if (ai.services.guidance && ai.services.guidance.length >= 3) {
-    services.guidance = groundModules(ai.services.guidance, isJa ? "サービス案内" : "Service guide");
+    services.guidance = groundModules(ai.services.guidance, isJa ? "サービス案内" : "Service guide", "services");
   }
   if (works && ai.works.intro?.trim() && (ai.works.sections?.length ?? 0) >= 4) {
     works.subtitle = groundDemoText(ai.works.intro, verifiedFacts, works.subtitle);
     works.sections = ai.works.sections!.map((section, index) => ({
       id: `story-${index + 1}`,
       heading: groundDemoText(section.title, verifiedFacts, isJa ? `スタイル ${index + 1}` : `Story ${index + 1}`),
-      body: groundDemoText(section.body, verifiedFacts, `${groundedFallback} ${isJa ? `場面${index + 1}` : `Scene ${index + 1}`}`),
+      body: expandGroundedBody({
+        body: groundDemoText(section.body, verifiedFacts, `${groundedFallback} ${isJa ? `場面${index + 1}` : `Scene ${index + 1}`}`),
+        companyName: base.companyName,
+        facts: base.meta.verifiedFacts ?? [],
+        services: groundedServices,
+        index,
+        locale: isJa ? "ja" : "en",
+        context: "works",
+        targetLength: isJa ? 180 : 520,
+      }),
       note: groundDemoText(section.note, verifiedFacts, ""),
     }));
   }

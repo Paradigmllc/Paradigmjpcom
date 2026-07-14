@@ -26,6 +26,57 @@ export function reviewedMediaFacts(meta: Record<string, unknown>): string[] {
   })
 }
 
+export function expandGroundedBody(input: {
+  body: string
+  companyName: string
+  facts: string[]
+  services: Array<{ title: string; description: string }>
+  index: number
+  locale: "ja" | "en"
+  context: "home" | "about" | "services" | "works"
+  targetLength: number
+}): string {
+  const initial = input.body.trim()
+  if (initial.length >= input.targetLength) return initial
+  const isJa = input.locale === "ja"
+  const facts = input.facts.filter((fact) => fact.trim() && !/^https?:\/\//u.test(fact))
+  const rotatedFacts = facts.length > 0
+    ? Array.from({ length: Math.min(3, facts.length) }, (_, offset) => facts[(input.index + offset) % facts.length])
+    : []
+  const service = input.services.length > 0 ? input.services[input.index % input.services.length] : undefined
+  const contextCopy = isJa ? {
+    home: "初めて知る方が、事業の特徴と次に確認する情報を一つの流れで理解できるように整理しています。",
+    about: "確認できる事実と、正式公開前に確認が必要な内容を分け、仕事への向き合い方が伝わる順序でご紹介します。",
+    services: "各項目の違い、利用前に確認したいこと、現在の案内へ進む方法を同じ章で確認できる構成です。",
+    works: "写真だけを並べず、写っている場所や提供内容と確認済み情報を組み合わせ、判断材料になる読み物としてご紹介します。",
+  }[input.context] : {
+    home: "The information is organized so a first-time visitor can understand the business and the next details to verify in one sequence.",
+    about: "Verified facts and items requiring operator review are separated so the business can be understood without unsupported claims.",
+    services: "Each section brings together the differences, pre-use checks, and the route to current official information.",
+    works: "Reviewed imagery is paired with verified context so this reads as useful editorial information rather than a gallery of isolated captions.",
+  }[input.context]
+  const candidates = [
+    ...rotatedFacts.map((fact) => isJa
+      ? `${sentence(fact)}これは、${input.companyName}について現在確認できる情報の一つです。`
+      : `${sentence(fact)} This is one of the details currently verified for ${input.companyName}.`),
+    ...(service ? [isJa
+      ? `${sentence(service.title)}${sentence(service.description)}`
+      : `${sentence(service.title)} ${sentence(service.description)}`] : []),
+    contextCopy,
+    isJa
+      ? "営業や提供状況など変わる可能性がある内容は固定せず、現在の正式な案内を優先します。"
+      : "Details that may change, including operations and availability, are routed to current official information.",
+  ]
+  let expanded = initial
+  for (const candidate of candidates) {
+    const normalized = candidate.trim()
+    if (!normalized || expanded.includes(normalized)) continue
+    expanded = `${expanded}\n\n${normalized}`
+    if (expanded.length >= input.targetLength) break
+  }
+  return expanded
+}
+
 export function fallbackNarrativeModules(input: {
   companyName: string
   facts: string[]

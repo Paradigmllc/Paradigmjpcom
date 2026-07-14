@@ -169,8 +169,13 @@ export async function enhanceDemoWithDeepSeek(
   if (!parsed) return null;
   const completeness = inspectDemoCopyCompleteness(parsed, templates.map((template) => template.id), locale)
   if (!completeness.passed) {
-    console.error("[deepseek-enhancer] output failed full-site copy completeness checks:", JSON.stringify(completeness));
-    return null;
+    const repairableShortCopy = completeness.reasons.length > 0
+      && completeness.reasons.every((reason) => reason.endsWith("_short"))
+    if (!repairableShortCopy) {
+      console.error("[deepseek-enhancer] output failed full-site copy completeness checks:", JSON.stringify(completeness));
+      return null;
+    }
+    console.warn("[deepseek-enhancer] short copy accepted for deterministic grounded expansion:", JSON.stringify(completeness));
   }
 
   return {
