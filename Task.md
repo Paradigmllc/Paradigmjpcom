@@ -7,6 +7,7 @@
 - 本番実ブラウザQAはHome + About / Services / Works / FAQ / Contact / News / Recruit / Privacy / Terms / Commerceの **11/11ページ**。下層main DOMは1,112〜2,972文字相当、見出し3〜13、画像0〜10、ContactのGoogle Mapsと送信停止フォーム、PC / tablet / mobile切替、mobile header/menuボタン、2026-07-21失効表示を確認した。
 - バッチ画面で`ttlDays: 7`を受けながら無期限クリーン公開を試みていた不整合を修正。完了ジョブはmanifestの審査済み素材から署名付き非公開URLを一括発行し、実際の失効日時を返す。UI文言も「7日限定URL」へ統一し、token実値はDBへ保存しない。
 - ローカル検証: 対象Vitest **2 files / 13 tests pass**、TypeScript、変更対象ESLint、quality guard **0 errors / 60 existing warnings**、production build **408/408 pages**、`git diff --check` pass。メール、電話、郵送、SNS、ポータルDM、フォーム営業、Twenty同期は実行していない。
+- PR **#185**をmainへmergeし、正式`npm run release:prod`のdeployment **ifs4u5pwp2j1osuk3jwsltjz**を完走。DB **84/84**、Sales health HTTP 200 JSON `ok:true`、Traefik / Cloudflare / Realtime / Twenty worker restart 0を含むpost-deploy gate pass。本番batch APIから同じ完了jobへ`ttlDays=7`を指定し、`previewUrl`と実失効日時`2026-07-21T04:33:21.017Z`が返ること、入口から正規`/ノン美容室`へ遷移してtoolbar・失効日・11ページ導線・企業固有heroが表示されることを再確認した（token実値は記録しない）。
 
 ## CURRENT STATUS - 2026-07-14 ポータル候補のSMB意思決定ゲート・持続可能な一括収集（本番反映 / 外部送信0）
 
