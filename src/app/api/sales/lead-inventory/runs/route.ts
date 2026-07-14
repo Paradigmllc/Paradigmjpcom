@@ -42,7 +42,6 @@ export async function POST(req: NextRequest) {
       }
       const runner = startLeadInventoryRun(parsed.data.resumeRunId)
       await recordLeadOperatorEvent({
-        runId: parsed.data.resumeRunId,
         entityType: "run",
         entityId: parsed.data.resumeRunId,
         action: "verified_inventory_resumed",
@@ -70,7 +69,6 @@ export async function POST(req: NextRequest) {
 
     const run = await createLeadInventoryRun({ operatorName: parsed.data.operatorName, sourceConfigIds })
     await recordLeadOperatorEvent({
-      runId: run.id,
       entityType: "run",
       entityId: run.id,
       action: "verified_inventory_started",
