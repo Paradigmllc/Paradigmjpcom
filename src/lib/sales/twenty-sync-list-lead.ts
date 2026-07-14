@@ -14,7 +14,7 @@ import {
   type TwentySyncResult,
 } from "./twenty-sync-utils"
 
-interface ListLeadCompany {
+export interface ListLeadCompany {
   id: string
   company_name: string
   domain: string
@@ -22,6 +22,8 @@ interface ListLeadCompany {
   source: string | null
   tech_stack: unknown
   meta: unknown
+  report_url?: string | null
+  pipeline_status?: string | null
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -107,6 +109,21 @@ export function listLeadTwentyPayload(company: ListLeadCompany): Record<string, 
   }
 }
 
+export function listLeadSyncDriftReasons(company: ListLeadCompany): string[] {
+  const meta = record(company.meta)
+  const twenty = record(meta.twenty)
+  const payload = listLeadTwentyPayload(company)
+  const canonicalSummary = record(payload.paradigmKarteSummary).markdown
+  const reasons: string[] = []
+  if (meta.list_only !== true || meta.skip_enrichment !== true) reasons.push("list_only_guard_missing")
+  if (typeof twenty.id !== "string" || twenty.id.trim().length === 0) reasons.push("twenty_id_missing")
+  if (twenty.summary !== canonicalSummary) reasons.push("twenty_summary_drift")
+  if (twenty.salesStatus !== null && twenty.salesStatus !== undefined && twenty.salesStatus !== "") reasons.push("legacy_sales_status")
+  if (company.report_url !== undefined && company.report_url !== null) reasons.push("legacy_report_url")
+  if (company.pipeline_status !== undefined && company.pipeline_status !== "pending") reasons.push("pipeline_status_drift")
+  return reasons
+}
+
 export async function syncListLeadToTwenty(companyId: string): Promise<TwentySyncResult> {
   try {
     requireTwentyAuth()
@@ -130,6 +147,10 @@ export async function syncListLeadToTwenty(companyId: string): Promise<TwentySyn
     return { ok: false, configured: true, error: companyError?.message ?? "List lead company not found" }
   }
   const company = data as ListLeadCompany
+  const companyMeta = record(company.meta)
+  if (companyMeta.list_only !== true || companyMeta.skip_enrichment !== true) {
+    return { ok: false, configured: true, error: "Only reviewed list-only companies can use the list lead sync" }
+  }
   let createdTwentyCompanyId: string | null = null
 
   try {
@@ -140,8 +161,33 @@ export async function syncListLeadToTwenty(companyId: string): Promise<TwentySyn
     }
     if (!twentyCompany.id) throw new Error("Twenty company id missing")
 
-    const patched = await patchTwentyCompanyHome(twentyCompany.id, listLeadTwentyPayload(company))
+    const payload = listLeadTwentyPayload(company)
+    const patched = await patchTwentyCompanyHome(twentyCompany.id, payload)
     if (!patched.ok) throw new Error(patched.error)
+
+    const twentyMeta = record(companyMeta.twenty)
+    const canonicalSummary = record(payload.paradigmKarteSummary).markdown
+    const localUpdate = await sb.from(DB_TABLES.SALES_COMPANIES).update({
+      report_url: null,
+      pipeline_status: "pending",
+      meta: {
+        ...companyMeta,
+        list_only: true,
+        skip_enrichment: true,
+        twenty: {
+          ...twentyMeta,
+          id: twentyCompany.id,
+          summary: canonicalSummary,
+          salesStatus: null,
+          dataStatus: "",
+          lastError: "",
+          sourceName: "codex_verification",
+          nextAction: payload.paradigmNextAction,
+          updatedAt: new Date().toISOString(),
+        },
+      },
+    }).eq("id", company.id)
+    if (localUpdate.error) throw new Error(`Local list-only state could not be reconciled: ${localUpdate.error.message}`)
 
     const { error: logError } = await insertWithOptionalColumns(sb, DB_TABLES.SALES_SYNC_LOGS, {
       direction: "supabase->twenty",

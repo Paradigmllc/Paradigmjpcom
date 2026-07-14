@@ -65,6 +65,23 @@ describe("parseLeadSourcePayload", () => {
 
     expect(parsed.records[0]).toMatchObject({ company_name: "Bright Goods", domain: "brightgoods.example", employee_count: 18, source_page_url: "https://directory.example/exporters/bright-goods" })
   })
+
+  it("allows an explicitly configured official detail host while rejecting unapproved external links", () => {
+    const csv = [
+      "company_name,website_url,employee_count,source_page_url",
+      "Open Commerce,https://open-commerce.example,24,https://www.wikidata.org/entity/Q123",
+    ].join("\n")
+    const approved = parseLeadSourcePayload(csv, config({
+      source_url: "https://query.wikidata.org/sparql?query=bounded",
+      field_mapping: { source_page_allowed_hosts: "www.wikidata.org" },
+    }))
+    const rejected = parseLeadSourcePayload(csv, config({
+      source_url: "https://query.wikidata.org/sparql?query=bounded",
+    }))
+
+    expect(approved.records[0].source_page_url).toBe("https://www.wikidata.org/entity/Q123")
+    expect(rejected.records[0].source_page_url).toBe("https://query.wikidata.org/sparql?query=bounded")
+  })
 })
 
 describe("fetchLeadSourceCandidateRecords", () => {
