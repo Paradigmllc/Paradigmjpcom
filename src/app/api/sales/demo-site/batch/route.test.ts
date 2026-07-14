@@ -11,7 +11,7 @@ vi.mock("@/lib/sales/api-auth", () => ({ isSalesApiAuthorized: mocks.authorize }
 vi.mock("@/lib/supabase", () => ({ getServiceSalesSupabase: mocks.getSupabase }))
 vi.mock("@/lib/sales/demo-private-access", async (importOriginal) => ({
   ...await importOriginal<typeof import("@/lib/sales/demo-private-access")>(),
-  activateSignedPrivateDemo: mocks.activate,
+  activateTemporaryUnlistedDemo: mocks.activate,
 }))
 vi.mock("@/lib/sales/routing", () => ({ demoSiteUrl: () => "https://demo.paradigmjp.com" }))
 
@@ -75,7 +75,7 @@ function fluentQuery(result: Record<string, unknown>) {
 beforeEach(() => {
   vi.clearAllMocks()
   mocks.authorize.mockResolvedValue(true)
-  mocks.activate.mockResolvedValue({ token: "private-token", expiresAt: "2026-07-21T00:00:00.000Z", review: { status: "private_proposal", assets: [] } })
+  mocks.activate.mockResolvedValue({ urlSlug: "example-demo", expiresAt: "2026-07-21T00:00:00.000Z", review: { status: "private_proposal", assets: [] } })
   vi.spyOn(console, "error").mockImplementation(() => {})
 })
 
@@ -99,7 +99,7 @@ describe("demo batch route without PostgREST relationship metadata", () => {
     })
   })
 
-  it("issues a seven-day signed private URL after loading company metadata separately", async () => {
+  it("issues a seven-day clean unlisted URL after loading company metadata separately", async () => {
     const jobs = fluentQuery({
       data: [{ id: jobId, company_id: companyId, status: "completed", input_payload: { locale: "ja" }, result_payload: { slug: "example-demo", quality_report: { passed: true, score: 96 } } }],
       error: null,
@@ -125,7 +125,7 @@ describe("demo batch route without PostgREST relationship metadata", () => {
       issued: [{
         ok: true,
         slug: "example-demo",
-        previewUrl: "https://demo.paradigmjp.com/api/demo-preview/example-demo?token=private-token&locale=ja",
+        previewUrl: "https://demo.paradigmjp.com/example-demo",
         expiresAt: "2026-07-21T00:00:00.000Z",
       }],
     })

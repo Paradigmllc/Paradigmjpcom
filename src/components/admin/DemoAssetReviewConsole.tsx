@@ -44,7 +44,7 @@ export function DemoAssetReviewConsole() {
       if (!response.ok || !payload.ok || !payload.previewUrl) throw new Error(payload.error ?? "発行に失敗しました")
       setPreviewUrl(payload.previewUrl)
       setExpiresAt(payload.expiresAt ?? "")
-      toast.success("期限付き非公開URLを発行しました")
+      toast.success("期限付き未公開URLを発行しました")
     } catch (error) {
       console.error("[demo-assets] issue failed:", error)
       toast.error(error instanceof Error ? error.message : "発行に失敗しました")
@@ -75,7 +75,7 @@ export function DemoAssetReviewConsole() {
     <main className="min-h-dvh bg-[#f5f7fa] px-4 py-10 text-slate-950 sm:px-8">
       <div className="mx-auto max-w-6xl">
         <header className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-9">
-          <div className="flex items-start gap-4"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white"><ShieldCheck /></div><div><p className="text-xs font-bold uppercase tracking-[.22em] text-emerald-700">Private demo control</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">実素材の審査と非公開URL発行</h1><p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">公式SNS等の実素材は、出所・許諾・人物・透かしを記録し、期限付き非公開デモだけで利用します。送信やCRM同期は行いません。</p></div></div>
+          <div className="flex items-start gap-4"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white"><ShieldCheck /></div><div><p className="text-xs font-bold uppercase tracking-[.22em] text-emerald-700">Unlisted demo control</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">実素材の審査と期限付きURL発行</h1><p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">公式SNS等の実素材は、出所・許諾・人物・透かしを記録し、検索非掲載・最大7日の未公開デモだけで利用します。送信やCRM同期は行いません。</p></div></div>
         </header>
 
         <section className="mt-6 grid gap-6 lg:grid-cols-[.72fr_1.28fr]">
@@ -85,7 +85,7 @@ export function DemoAssetReviewConsole() {
             <label className="mt-5 block text-sm font-semibold" htmlFor="ttl-days">有効日数（最大7日）</label>
             <input id="ttl-days" type="number" min={1} max={7} value={ttlDays} onChange={(event) => setTtlDays(Number(event.target.value))} className="mt-2 h-12 w-full rounded-xl border border-slate-300 px-4 outline-none focus:border-slate-950" />
             <div className="mt-6 rounded-2xl bg-amber-50 p-4 text-xs leading-6 text-amber-950"><strong>自動ブロック:</strong> HTTPSでないURL、出所不明、許諾なしの人物・透かし、blocked指定素材。</div>
-            <button type="button" disabled={busy} onClick={issuePreview} className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 text-sm font-bold text-white disabled:opacity-50"><KeyRound className="h-4 w-4" />{busy ? "処理中…" : "審査して非公開URLを発行"}</button>
+            <button type="button" disabled={busy} onClick={issuePreview} className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 text-sm font-bold text-white disabled:opacity-50"><KeyRound className="h-4 w-4" />{busy ? "処理中…" : "審査して期限付きURLを発行"}</button>
             <button type="button" disabled={busy} onClick={revokePreview} className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-red-200 text-sm font-bold text-red-700 disabled:opacity-50"><Trash2 className="h-4 w-4" />URLを失効</button>
           </div>
 
@@ -108,7 +108,7 @@ export function DemoAssetReviewConsole() {
           </div>
         </section>
 
-        {previewUrl && <section className="mt-6 rounded-3xl border border-emerald-200 bg-emerald-50 p-6"><p className="font-semibold text-emerald-950">非公開URL（再発行すると旧URLは無効）</p><p className="mt-2 break-all text-sm text-emerald-900">{previewUrl}</p><p className="mt-2 text-xs text-emerald-800">期限: {new Date(expiresAt).toLocaleString("ja-JP")}</p><div className="mt-4 flex flex-wrap gap-3"><button type="button" onClick={() => navigator.clipboard.writeText(previewUrl).then(() => toast.success("コピーしました")).catch((error) => { console.error("[demo-assets] copy failed:", error); toast.error("コピーに失敗しました") })} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-900 px-5 text-sm font-bold text-white"><Copy className="h-4 w-4" />コピー</button><a href={previewUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-emerald-800 px-5 text-sm font-bold text-emerald-950"><ExternalLink className="h-4 w-4" />確認する</a></div></section>}
+        {previewUrl && <section className="mt-6 rounded-3xl border border-emerald-200 bg-emerald-50 p-6"><p className="font-semibold text-emerald-950">期限付き未公開URL（再発行すると期限を更新）</p><p className="mt-2 break-all text-sm text-emerald-900">{previewUrl}</p><p className="mt-2 text-xs text-emerald-800">期限: {new Date(expiresAt).toLocaleString("ja-JP")}</p><div className="mt-4 flex flex-wrap gap-3"><button type="button" onClick={() => navigator.clipboard.writeText(previewUrl).then(() => toast.success("コピーしました")).catch((error) => { console.error("[demo-assets] copy failed:", error); toast.error("コピーに失敗しました") })} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-900 px-5 text-sm font-bold text-white"><Copy className="h-4 w-4" />コピー</button><a href={previewUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-emerald-800 px-5 text-sm font-bold text-emerald-950"><ExternalLink className="h-4 w-4" />確認する</a></div></section>}
       </div>
       <style jsx global>{`.field{height:3rem;width:100%;border-radius:.75rem;border:1px solid #cbd5e1;padding:0 .875rem;background:white;outline:none}.field:focus{border-color:#0f172a}`}</style>
     </main>

@@ -26,7 +26,7 @@ describe("demo preview toolbar", () => {
     expect(demoPreviewNotice()).not.toContain("7日以内に削除")
   })
 
-  it("shows the exact expiry date for signed private previews", () => {
+  it("shows the exact expiry date for temporary unlisted previews", () => {
     expect(demoPreviewNotice("2026-07-21T00:00:00.000Z")).toContain("2026/7/21")
     expect(demoPreviewNotice("2026-07-21T00:00:00.000Z")).toContain("失効")
   })
