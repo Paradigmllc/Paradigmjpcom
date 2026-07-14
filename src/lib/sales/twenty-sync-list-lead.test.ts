@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { listLeadSyncDriftReasons, listLeadTwentyPayload } from "./twenty-sync-list-lead"
+import { listLeadSyncDriftReasons, listLeadTwentyPayload, listLeadTwentyReadbackIssues } from "./twenty-sync-list-lead"
 
 describe("listLeadTwentyPayload", () => {
   it("projects only reviewed list evidence and clears legacy report pipeline fields", () => {
@@ -120,5 +120,60 @@ describe("listLeadTwentyPayload", () => {
       ...company,
       meta: { ...meta, twenty: { id: "twenty-current", summary } },
     })).toEqual([])
+  })
+
+  it("fails read-back when Twenty omits the country or keeps a legacy report URL", () => {
+    const payload = listLeadTwentyPayload({
+      id: "company-readback",
+      company_name: "Example Store",
+      domain: "example.com",
+      target_country: "US",
+      source: "evidence_first_sources",
+      tech_stack: { detections: [{ name: "Shopify" }] },
+      meta: {
+        contact_form_url: "https://example.com/contact",
+        lead_candidate: { score: { opportunityScore: 80, smbScore: 90 } },
+      },
+    })
+    const summary = payload.paradigmKarteSummary as { markdown: string }
+
+    expect(listLeadTwentyReadbackIssues({
+      id: "twenty-1",
+      paradigmCountryName: null,
+      paradigmFormUrl: { primaryLinkUrl: "https://example.com/contact" },
+      paradigmLeadStatus: payload.paradigmLeadStatus as string,
+      paradigmNextAction: payload.paradigmNextAction as string,
+      paradigmKarteSummary: summary,
+      paradigmReportUrl: { primaryLinkUrl: "https://paradigmjp.com/en/report/legacy" },
+      paradigmSalesMaterialUrl: { primaryLinkUrl: "" },
+      paradigmDemoUrl: { primaryLinkUrl: "" },
+    }, "twenty-1", payload)).toEqual(["country_mismatch", "legacy_report_url"])
+  })
+
+  it("accepts a complete current Twenty read-back", () => {
+    const payload = listLeadTwentyPayload({
+      id: "company-readback-ok",
+      company_name: "Example Store",
+      domain: "example.com",
+      target_country: "US",
+      source: "evidence_first_sources",
+      tech_stack: null,
+      meta: {
+        contact_form_url: "https://example.com/contact",
+        lead_candidate: { score: { opportunityScore: 80, smbScore: 90 } },
+      },
+    })
+
+    expect(listLeadTwentyReadbackIssues({
+      id: "twenty-2",
+      paradigmCountryName: payload.paradigmCountryName as string,
+      paradigmFormUrl: payload.paradigmFormUrl as { primaryLinkUrl: string },
+      paradigmLeadStatus: payload.paradigmLeadStatus as string,
+      paradigmNextAction: payload.paradigmNextAction as string,
+      paradigmKarteSummary: payload.paradigmKarteSummary as { markdown: string },
+      paradigmReportUrl: { primaryLinkUrl: "" },
+      paradigmSalesMaterialUrl: { primaryLinkUrl: "" },
+      paradigmDemoUrl: { primaryLinkUrl: "" },
+    }, "twenty-2", payload)).toEqual([])
   })
 })

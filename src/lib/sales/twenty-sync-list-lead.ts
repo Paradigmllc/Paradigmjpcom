@@ -11,6 +11,7 @@ import { requireTwentyAuth } from "./twenty-health"
 import {
   twentyFetch,
   type TwentyMutationResponse,
+  type TwentyRecord,
   type TwentySyncResult,
 } from "./twenty-sync-utils"
 
@@ -157,6 +158,41 @@ export function listLeadSyncDriftReasons(company: ListLeadCompany): string[] {
   return reasons
 }
 
+function expectedText(payload: Record<string, unknown>, key: string): string | null {
+  const value = payload[key]
+  return typeof value === "string" ? value : null
+}
+
+function expectedLink(payload: Record<string, unknown>, key: string): string {
+  const value = record(payload[key]).primaryLinkUrl
+  return typeof value === "string" ? value : ""
+}
+
+function actualLink(value: unknown): string {
+  const url = record(value).primaryLinkUrl
+  return typeof url === "string" ? url : ""
+}
+
+export function listLeadTwentyReadbackIssues(
+  company: TwentyRecord | null,
+  expectedCompanyId: string,
+  payload: Record<string, unknown>,
+): string[] {
+  if (!company) return ["company_not_found"]
+  const issues: string[] = []
+  if (company.id !== expectedCompanyId) issues.push("company_id_mismatch")
+  if (company.paradigmCountryName !== expectedText(payload, "paradigmCountryName")) issues.push("country_mismatch")
+  if (actualLink(company.paradigmFormUrl) !== expectedLink(payload, "paradigmFormUrl")) issues.push("form_url_mismatch")
+  if (company.paradigmLeadStatus !== expectedText(payload, "paradigmLeadStatus")) issues.push("lead_status_mismatch")
+  if (company.paradigmNextAction !== expectedText(payload, "paradigmNextAction")) issues.push("next_action_mismatch")
+  const expectedSummary = record(payload.paradigmKarteSummary).markdown
+  if (company.paradigmKarteSummary?.markdown !== expectedSummary) issues.push("summary_mismatch")
+  if (actualLink(company.paradigmReportUrl) !== "") issues.push("legacy_report_url")
+  if (actualLink(company.paradigmSalesMaterialUrl) !== "") issues.push("legacy_sales_material_url")
+  if (actualLink(company.paradigmDemoUrl) !== "") issues.push("legacy_demo_url")
+  return issues
+}
+
 export async function syncListLeadToTwenty(companyId: string): Promise<TwentySyncResult> {
   try {
     requireTwentyAuth()
@@ -197,6 +233,11 @@ export async function syncListLeadToTwenty(companyId: string): Promise<TwentySyn
     const payload = listLeadTwentyPayload(company)
     const patched = await patchTwentyCompanyHome(twentyCompany.id, payload)
     if (!patched.ok) throw new Error(patched.error)
+    const readback = await findTwentyCompanyByDomain(company.domain)
+    const readbackIssues = listLeadTwentyReadbackIssues(readback, twentyCompany.id, payload)
+    if (readbackIssues.length > 0) {
+      throw new Error(`Twenty list lead read-back verification failed: ${readbackIssues.join(", ")}`)
+    }
 
     const twentyMeta = record(companyMeta.twenty)
     const canonicalSummary = record(payload.paradigmKarteSummary).markdown
