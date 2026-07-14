@@ -6,7 +6,7 @@ import { salesScopeFromCountry } from "./locale-scope"
 import type { CandidateScore } from "./lead-candidate-scoring"
 import type { FormDiscoveryResult } from "./sources/form-discovery"
 import type { TechItem } from "./sources/wappalyzer"
-import { syncCompanyKarteToTwenty } from "./twenty-sync-companies"
+import { syncListLeadToTwenty } from "./twenty-sync-list-lead"
 
 interface PromotionInput {
   runId: string
@@ -35,7 +35,8 @@ export async function promoteFormQualifiedCandidate(input: PromotionInput) {
     report_locale: scope.reportLocale,
     target_country: scope.targetCountry,
     source: input.source,
-    pipeline_status: "scanning",
+    pipeline_status: "pending",
+    generate_report_url: false,
     tech_stack: { detections: input.detections, source: input.source },
     meta: {
       skip_enrichment: true,
@@ -49,7 +50,7 @@ export async function promoteFormQualifiedCandidate(input: PromotionInput) {
 
   let twentyCompanyId: string | null = null
   if (input.syncTwenty) {
-    const synced = await syncCompanyKarteToTwenty(saved.company.id, { syncOpportunities: false })
+    const synced = await syncListLeadToTwenty(saved.company.id)
     if (!synced.ok) return { promoted: false, companyId: saved.company.id, twentySynced: false, error: synced.error ?? "Twenty sync failed" }
     twentyCompanyId = synced.companyId ?? null
   }

@@ -11,14 +11,20 @@ import {
 export async function findTwentyCompany(
   karte: CompanyKarteSnapshot,
 ): Promise<TwentyRecord | null> {
-  const query = `limit=100&filter=domainName.primaryLinkUrl[ilike]:%25${encodeURIComponent(karte.domain)}%25`;
+  return findTwentyCompanyByDomain(karte.domain);
+}
+
+export async function findTwentyCompanyByDomain(
+  domain: string,
+): Promise<TwentyRecord | null> {
+  const query = `limit=100&filter=domainName.primaryLinkUrl[ilike]:%25${encodeURIComponent(domain)}%25`;
   const result = await twentyFetch<TwentyListResponse<TwentyRecord>>(
     `/rest/companies?${query}`,
   );
   if (!result.ok) throw new Error(result.error);
   return (
     result.data.data?.companies?.find((company) =>
-      domainMatches(company, karte.domain),
+      domainMatches(company, domain),
     ) ?? null
   );
 }
@@ -26,13 +32,20 @@ export async function findTwentyCompany(
 export async function createTwentyCompany(
   karte: CompanyKarteSnapshot,
 ): Promise<TwentyRecord> {
+  return createTwentyCompanyBase({ companyName: karte.companyName, domain: karte.domain });
+}
+
+export async function createTwentyCompanyBase(input: {
+  companyName: string;
+  domain: string;
+}): Promise<TwentyRecord> {
   const result = await twentyFetch<TwentyMutationResponse>("/rest/companies", {
     method: "POST",
     body: JSON.stringify({
-      name: karte.companyName,
+      name: input.companyName,
       domainName: {
-        primaryLinkLabel: karte.domain,
-        primaryLinkUrl: `https://${karte.domain}`,
+        primaryLinkLabel: input.domain,
+        primaryLinkUrl: `https://${input.domain}`,
       },
     }),
   });

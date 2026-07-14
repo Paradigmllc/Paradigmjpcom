@@ -57,6 +57,7 @@ export interface UpsertCompanyInput {
   demo_site?: Record<string, unknown> | null
   visual_evidence?: Record<string, unknown> | null
   report_generated_at?: string | null
+  generate_report_url?: boolean
 }
 
 /** domain で既存リードを upsert (重複作成防止・region 必須 default 'jp') */
@@ -116,7 +117,9 @@ export async function upsertCompanyByDomain(
     }
     slug = candidate
   }
-  const reportUrl = buildReportUrl(reportLocale, slug)
+  const reportUrl = input.generate_report_url === false
+    ? null
+    : buildReportUrl(reportLocale, slug)
   const metaWithRouting = {
     ...mergedMeta,
     routing: {
