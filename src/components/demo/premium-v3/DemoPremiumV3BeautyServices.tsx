@@ -4,6 +4,7 @@ import { ArrowUpRight, Check, Scissors } from "lucide-react"
 import type { DemoMultiPageData } from "@/lib/sales/demo-site-types"
 import { demoHeadlineClass, resolveDemoArtDirection } from "@/lib/sales/demo-art-direction"
 import { PremiumV3Media, PremiumV3MediaCarousel, PremiumV3PageHero, PremiumV3Reveal, PremiumV3Stagger, PremiumV3StaggerItem } from "./PremiumV3Primitives"
+import { DemoPremiumV3Narrative } from "./DemoPremiumV3Narrative"
 
 export function shouldSpanOddServiceRow(index: number, count: number): boolean {
   return count % 2 === 1 && index === count - 1
@@ -21,7 +22,7 @@ export function DemoPremiumV3BeautyServices({ data }: { data: DemoMultiPageData 
 
   return (
     <div className="overflow-hidden bg-[var(--demo-surface)] text-[var(--demo-ink)] [font-feature-settings:'palt']">
-      <PremiumV3PageHero title={services.title} subtitle={services.subtitle} eyebrow="サロンメニュー" media={hero} mediaGallery={media} recipe={data.designRecipe} variant={direction.hero} />
+      <PremiumV3PageHero title={services.title} subtitle={services.subtitle} eyebrow="サロンメニュー" media={hero} mediaGallery={media} recipe={data.designRecipe} variant={direction.hero} mosaicLayout="strip" />
 
       <section className="px-5 py-20 sm:px-10 sm:py-28 lg:px-16 lg:py-36">
         <div className="mx-auto max-w-7xl">
@@ -38,6 +39,15 @@ export function DemoPremiumV3BeautyServices({ data }: { data: DemoMultiPageData 
           </div>
         </div>
       </section>
+
+      <DemoPremiumV3Narrative
+        modules={services.guidance ?? []}
+        label="BEFORE YOUR VISIT"
+        title="メニューを選ぶ前に、知っておきたいこと。"
+        introduction="仕上がりだけでなく、相談の仕方や当日の過ごし方まで。初めての方にも判断しやすい情報をまとめました。"
+        motionStyle={motionStyle}
+        variant="editorial"
+      />
 
       <section className="bg-[var(--demo-ink)] px-5 py-20 text-white sm:px-10 sm:py-28 lg:px-16"><div className="mx-auto max-w-7xl"><PremiumV3Reveal motionStyle={motionStyle} className="grid gap-8 border-b border-white/15 pb-10 lg:grid-cols-[1fr_.62fr] lg:items-end"><div><p className="text-xs font-bold tracking-[.22em] text-white/48">ご利用の流れ</p><h2 className={`${demoHeadlineClass(services.processTitle ?? "ご予約からご来店まで")} mt-5 font-[var(--demo-heading-weight)] [font-family:var(--demo-font-display)]`}>{services.processTitle ?? "ご予約からご来店まで。"}</h2></div><p className="text-sm leading-8 text-white/58">初めての方にも流れが分かるよう、確認できる手順をまとめています。</p></PremiumV3Reveal><PremiumV3Stagger className="grid md:grid-cols-2 lg:grid-cols-4">{services.process.map((step, index) => <PremiumV3StaggerItem key={step.step} className="border-b border-white/15 py-8 md:border-r md:px-7"><span className="text-xs text-white/35">0{index + 1}</span><h3 className="mt-8 text-xl font-medium [font-family:var(--demo-font-display)]">{step.title}</h3><p className="mt-4 text-sm leading-7 text-white/58">{step.description}</p></PremiumV3StaggerItem>)}</PremiumV3Stagger></div></section>
 

@@ -16,18 +16,18 @@ const EASE = [0.22, 1, 0.36, 1] as const
 export function buildPremiumV3RevealVariants(style: DemoDesignRecipe["motionVariant"]): Variants {
   if (style === "restrained") {
     return {
-      hidden: { opacity: 0, y: 14 },
+      hidden: { opacity: 0.96, y: 8 },
       visible: { opacity: 1, y: 0 },
     }
   }
   if (style === "expressive") {
     return {
-      hidden: { opacity: 0, y: 46, scale: 0.975, filter: "blur(8px)" },
+      hidden: { opacity: 0.94, y: 18, scale: 0.99, filter: "blur(1px)" },
       visible: { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" },
     }
   }
   return {
-    hidden: { opacity: 0, y: 30, clipPath: "inset(0 0 18% 0)" },
+    hidden: { opacity: 0.95, y: 12, clipPath: "inset(0 0 2% 0)" },
     visible: { opacity: 1, y: 0, clipPath: "inset(0 0 0% 0)" },
   }
 }
@@ -89,7 +89,7 @@ export function PremiumV3StaggerItem({ children, className = "" }: { children: R
     <motion.div
       className={className}
       variants={{
-        hidden: { opacity: 0, y: 26 },
+        hidden: { opacity: 0.95, y: 10 },
         visible: { opacity: 1, y: 0, transition: { duration: 0.72, ease: EASE } },
       }}
     >
@@ -142,8 +142,8 @@ export function PremiumV3TextLines({
           <motion.span
             aria-hidden="true"
             className="block"
-            initial={reducedMotion ? false : { y: "112%", rotate: 1.2 }}
-            animate={{ y: "0%", rotate: 0 }}
+            initial={reducedMotion ? false : { y: "6%", rotate: 0.2, opacity: 0.96 }}
+            animate={{ y: "0%", rotate: 0, opacity: 1 }}
             transition={{ duration: 1.05, delay: 0.12 + index * 0.11, ease: EASE }}
           >
             {line}

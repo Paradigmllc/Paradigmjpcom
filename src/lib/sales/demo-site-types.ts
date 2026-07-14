@@ -338,6 +338,13 @@ export interface DemoContentPage {
   accentColor: string
 }
 
+export interface DemoNarrativeModule {
+  eyebrow: string
+  title: string
+  body: string
+  points: string[]
+}
+
 export interface DemoHomePage {
   hero: DemoHeroProps
   features: DemoFeatureItem[]
@@ -356,6 +363,8 @@ export interface DemoHomePage {
   testimonials?: DemoTestimonial[]
   /** Template-specific: trusted-by logos (if template includes trustedBy section) */
   trustedBy?: DemoTrustedByItem[]
+  /** Grounded editorial depth beyond the hero, cards, and visual gallery. */
+  narrativeModules?: DemoNarrativeModule[]
 }
 
 export interface DemoTestimonial {
@@ -398,6 +407,7 @@ export interface DemoAboutPage {
   story: string
   mission: string
   values: { title: string; description: string; icon: string }[]
+  chapters?: DemoNarrativeModule[]
   teamNote: string
   accentColor: string
 }
@@ -419,6 +429,7 @@ export interface DemoServicesPage {
     title: string
     description: string
   }[]
+  guidance?: DemoNarrativeModule[]
   ctaTitle?: string
   ctaSubtitle?: string
   ctaText?: string

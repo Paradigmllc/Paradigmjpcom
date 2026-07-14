@@ -4,6 +4,7 @@ import { ArrowRight, ArrowUpRight } from "lucide-react"
 import type { DemoMultiPageData } from "@/lib/sales/demo-site-types"
 import { demoHeadlineClass, resolveDemoArtDirection } from "@/lib/sales/demo-art-direction"
 import { PremiumV3Media, PremiumV3MediaCarousel, PremiumV3PageHero, PremiumV3Reveal } from "./PremiumV3Primitives"
+import { DemoPremiumV3Narrative } from "./DemoPremiumV3Narrative"
 
 export function DemoPremiumV3AboutPage({ data }: { data: DemoMultiPageData }) {
   const premium = data.premium!
@@ -18,13 +19,22 @@ export function DemoPremiumV3AboutPage({ data }: { data: DemoMultiPageData }) {
 
   return (
     <div className="overflow-hidden bg-[var(--demo-surface)] text-[var(--demo-ink)]">
-      <PremiumV3PageHero title={about.title} subtitle={about.subtitle} eyebrow={direction.labels.story} media={hero} mediaGallery={direction.hero === "mosaic" ? media : undefined} recipe={data.designRecipe} variant={direction.hero} />
+      <PremiumV3PageHero title={about.title} subtitle={about.subtitle} eyebrow={direction.labels.story} media={hero} mediaGallery={direction.hero === "mosaic" ? media : undefined} recipe={data.designRecipe} variant={direction.hero} mosaicLayout="editorial" />
       <section className="border-b border-[var(--demo-line)] px-5 py-20 sm:px-10 sm:py-28 lg:px-16 lg:py-32">
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[.62fr_1.38fr] lg:gap-24">
           <PremiumV3Reveal motionStyle={motionStyle}><p className="text-xs font-bold tracking-[.22em] text-[var(--demo-accent)]">基本情報</p><h2 className={`${demoHeadlineClass(`${data.companyName}をつくるもの`)} mt-6 font-[var(--demo-heading-weight)] [font-family:var(--demo-font-display)]`}>{data.companyName}を<br />つくるもの。</h2><dl className="mt-10 border-t border-[var(--demo-line)] text-sm"><div className="grid grid-cols-[90px_1fr] gap-4 border-b border-[var(--demo-line)] py-4"><dt className="text-[var(--demo-muted)]">拠点</dt><dd>{about.locationLabel}</dd></div><div className="grid grid-cols-[90px_1fr] gap-4 border-b border-[var(--demo-line)] py-4"><dt className="text-[var(--demo-muted)]">事業</dt><dd>{about.industryLabel}</dd></div></dl></PremiumV3Reveal>
           <PremiumV3Reveal motionStyle={motionStyle} delay={0.08} className="lg:pt-20"><p className="border-l-2 border-[var(--demo-accent)] pl-6 text-xl leading-9 sm:text-2xl sm:leading-10 [font-family:var(--demo-font-display)]">{about.mission}</p><div className="mt-10 space-y-6">{storyParagraphs.map((paragraph) => <p key={paragraph} className="whitespace-pre-line text-base leading-9 text-[var(--demo-muted)] sm:text-lg">{paragraph}</p>)}</div><p className="mt-10 border-t border-[var(--demo-line)] pt-8 text-sm leading-8 text-[var(--demo-muted)]">{about.teamNote}</p></PremiumV3Reveal>
         </div>
       </section>
+
+      <DemoPremiumV3Narrative
+        modules={about.chapters ?? []}
+        label="OUR STORY"
+        title={`${data.companyName}を、もう少し深く。`}
+        introduction="表面的な紹介だけでは伝わらない、仕事への向き合い方と日々の判断軸を章立てでご紹介します。"
+        motionStyle={motionStyle}
+        variant="index"
+      />
 
       <section className="grid bg-[var(--demo-ink)] text-white lg:grid-cols-[1.1fr_.9fr]">
         <div className="group relative min-h-[520px] lg:min-h-[720px]"><PremiumV3Media media={media[1] ?? hero} className="absolute inset-0" sizes="(max-width:1024px) 100vw, 55vw" /><div className="absolute inset-0 bg-gradient-to-t from-black/48 via-transparent to-transparent" /></div>

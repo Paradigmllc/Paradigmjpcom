@@ -32,7 +32,7 @@ import {
  * four-page payload regularly exceeds the former 4,096-token / 60-second
  * budget, which left otherwise valid generations as truncated JSON.
  */
-export const DEMO_COPY_MAX_TOKENS = 8_192;
+export const DEMO_COPY_MAX_TOKENS = 12_288;
 export const DEMO_COPY_TIMEOUT_MS = 180_000;
 
 export type {
@@ -42,11 +42,13 @@ export type {
   DeepSeekFAQ,
   DeepSeekFeature,
   DeepSeekHomeEnhancement,
+  DeepSeekNarrativeModule,
   DeepSeekProcessStep,
   DeepSeekServiceItem,
   DeepSeekServicesEnhancement,
   DeepSeekTestimonial,
   DeepSeekValue,
+  DeepSeekWorksEnhancement,
 } from "./demo-deepseek-types";
 
 /* ───── Core function ───── */
@@ -93,12 +95,24 @@ export async function enhanceDemoWithDeepSeek(
   const parsed = parseDeepSeekOutput(result.text, locale);
   if (!parsed) return null;
   const expectedTemplateIds = new Set(templates.map((template) => template.id));
+  const narrativeMinimum = locale === "ja" ? 120 : 450
+  const worksMinimum = locale === "ja" ? 120 : 320
+  const completeNarrative = (items: Array<{ body: string }> | undefined) => (
+    (items?.length ?? 0) >= 3 && items!.every((item) => item.body.trim().length >= narrativeMinimum)
+  )
   if (
     !parsed.home?.hero_title?.trim()
     || (parsed.home.features?.length ?? 0) < 3
     || !parsed.about?.story?.trim()
     || !parsed.about?.mission?.trim()
-    || (parsed.services?.services?.length ?? 0) < 2
+    || (parsed.about?.values?.length ?? 0) < 4
+    || (parsed.services?.services?.length ?? 0) < 3
+    || (parsed.services?.process?.length ?? 0) < 4
+    || !completeNarrative(parsed.home?.narrative_modules)
+    || !completeNarrative(parsed.about?.chapters)
+    || !completeNarrative(parsed.services?.guidance)
+    || (parsed.works?.sections?.length ?? 0) < 4
+    || parsed.works!.sections.some((section) => section.body.trim().length < worksMinimum)
     || parsed.artDirections.length !== expectedTemplateIds.size
     || new Set(parsed.artDirections.map((direction) => direction.template_id)).size !== expectedTemplateIds.size
     || parsed.artDirections.some((direction) => !expectedTemplateIds.has(direction.template_id))
@@ -121,6 +135,7 @@ export async function enhanceDemoWithDeepSeek(
     home: parsed.home ?? {},
     about: parsed.about ?? {},
     services: parsed.services ?? {},
+    works: parsed.works ?? {},
     contact: parsed.contact ?? {},
     artDirections: parsed.artDirections,
   };
@@ -238,10 +253,24 @@ function buildPrompt(
 
 export function extractVerifiedPublicFacts(meta?: Record<string, unknown> | null): string {
   const facts = meta?.public_facts
-  if (!facts || typeof facts !== "object" || Array.isArray(facts)) return "（確認済み公開情報なし）"
-  const entries = Object.entries(facts as Record<string, unknown>)
+  const factRecord = facts && typeof facts === "object" && !Array.isArray(facts)
+    ? facts as Record<string, unknown>
+    : {}
+  const entries = Object.entries(factRecord)
     .filter(([, value]) => typeof value === "string" || typeof value === "number" || typeof value === "boolean")
     .slice(0, 20)
     .map(([key, value]) => `- ${key}: ${String(value).slice(0, 300)}`)
-  return entries.length > 0 ? entries.join("\n") : "（確認済み公開情報なし）"
+  const mediaEntries = Array.isArray(meta?.demo_media)
+    ? meta.demo_media.slice(0, 8).flatMap((entry, index) => {
+        if (!entry || typeof entry !== "object" || Array.isArray(entry)) return []
+        const item = entry as Record<string, unknown>
+        if (!["owned", "licensed", "proposal_only"].includes(String(item.usage ?? ""))) return []
+        const alt = typeof item.alt === "string" ? item.alt.trim() : ""
+        const caption = typeof item.caption === "string" ? item.caption.trim() : ""
+        const description = [alt, caption].filter(Boolean).join(" / ")
+        return description ? [`- reviewed_image_${index + 1}: ${description.slice(0, 300)}`] : []
+      })
+    : []
+  const allEntries = [...entries, ...mediaEntries]
+  return allEntries.length > 0 ? allEntries.join("\n") : "（確認済み公開情報なし）"
 }

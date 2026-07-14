@@ -10,7 +10,7 @@ import { parseDeepSeekOutput } from "./demo-deepseek-client"
 
 describe("DeepSeek V4 full-site generation budget", () => {
   it("allows complete non-thinking multi-page JSON without model fallback", () => {
-    expect(DEMO_COPY_MAX_TOKENS).toBeGreaterThanOrEqual(8_192)
+    expect(DEMO_COPY_MAX_TOKENS).toBeGreaterThanOrEqual(12_288)
     expect(DEMO_COPY_TIMEOUT_MS).toBeGreaterThanOrEqual(180_000)
   })
 })
@@ -33,6 +33,18 @@ describe("extractVerifiedPublicFacts", () => {
   it("returns an explicit empty marker when facts are unavailable", () => {
     expect(extractVerifiedPublicFacts(null)).toBe("（確認済み公開情報なし）")
   })
+
+  it("includes reviewed proposal media as grounding context without accepting unknown assets", () => {
+    const result = extractVerifiedPublicFacts({
+      demo_media: [
+        { usage: "proposal_only", alt: "店内のセット面", caption: "鏡と椅子が写る店内" },
+        { usage: "unknown", alt: "未確認画像", caption: "使ってはいけない画像" },
+      ],
+    })
+
+    expect(result).toContain("reviewed_image_1: 店内のセット面 / 鏡と椅子が写る店内")
+    expect(result).not.toContain("未確認画像")
+  })
 })
 
 describe("DeepSeek prompt cache layout", () => {
@@ -51,8 +63,34 @@ describe("DeepSeek prompt cache layout", () => {
     expect(second.indexOf("Cafe B")).toBeGreaterThan(secondMarker)
     expect(first).not.toContain('"faq"')
     expect(first).not.toContain('"contact"')
+    expect(first).toContain('"narrative_modules"')
+    expect(first).toContain('"chapters"')
+    expect(first).toContain('"guidance"')
+    expect(first).toContain('"works"')
     expect(first).toContain('"art_directions"')
     expect(first).toContain("候補間で明確に異なる")
+  })
+
+  it("preserves multi-paragraph narrative and works payloads for the renderer", () => {
+    const narrative = {
+      eyebrow: "STORY",
+      title: "店内で確認できること",
+      body: "第一段落の説明です。\n\n第二段落の説明です。",
+      points: ["所在地", "店内写真", "提供内容"],
+    }
+    const parsed = parseDeepSeekOutput(JSON.stringify({
+      home: { hero_title: "見出し", hero_subtitle: "本文", features: [], narrative_modules: [narrative] },
+      about: { chapters: [narrative] },
+      services: { guidance: [narrative] },
+      works: { intro: "導入文", sections: [{ title: "店内の風景", body: narrative.body, note: "確認済み" }] },
+      contact: {},
+      art_directions: [],
+    }), "ja")
+
+    expect(parsed?.home?.narrative_modules[0]?.body).toContain("\n\n")
+    expect(parsed?.about?.chapters).toHaveLength(1)
+    expect(parsed?.services?.guidance).toHaveLength(1)
+    expect(parsed?.works?.sections[0]?.title).toBe("店内の風景")
   })
 })
 

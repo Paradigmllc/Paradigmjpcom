@@ -16,6 +16,7 @@ export function mergeDeepSeekOutput(
   const about = { ...base.pages.about };
   const services = { ...base.pages.services };
   const contact = { ...base.pages.contact };
+  const works = base.pages.works ? { ...base.pages.works } : undefined;
   const isJa = effectiveLocale === "ja";
   const verifiedFacts = (base.meta.verifiedFacts ?? []).join("\n");
   const factSummary = (base.meta.verifiedFacts ?? [])
@@ -25,6 +26,19 @@ export function mergeDeepSeekOutput(
   const groundedFallback = factSummary
     ? (isJa ? `確認済みの公開情報では、${factSummary}をご案内しています。` : `Verified public information includes ${factSummary}.`)
     : (isJa ? "詳細は正式公開前に事業者確認を行います。" : "Details require operator confirmation before publication.");
+  const groundModules = (
+    modules: Array<{ eyebrow: string; title: string; body: string; points: string[] }> | undefined,
+    label: string,
+  ) => modules?.map((module, index) => ({
+    eyebrow: groundDemoText(module.eyebrow, verifiedFacts, `${label} ${String(index + 1).padStart(2, "0")}`),
+    title: groundDemoText(module.title, verifiedFacts, isJa ? `${label}のご案内 ${index + 1}` : `${label} guide ${index + 1}`),
+    body: groundDemoText(module.body, verifiedFacts, `${groundedFallback} ${isJa ? `項目${index + 1}` : `Section ${index + 1}`}`),
+    points: module.points.map((point, pointIndex) => groundDemoText(
+      point,
+      verifiedFacts,
+      isJa ? `確認事項 ${index + 1}-${pointIndex + 1}` : `Verified item ${index + 1}-${pointIndex + 1}`,
+    )),
+  }));
 
   // Home: hero title/subtitle
   if (ai.home.hero_title?.trim()) {
@@ -45,6 +59,9 @@ export function mergeDeepSeekOutput(
       metricBench: "",
       severity: "info" as const,
     }));
+  }
+  if (ai.home.narrative_modules && ai.home.narrative_modules.length >= 3) {
+    home.narrativeModules = groundModules(ai.home.narrative_modules, isJa ? "特徴" : "Highlights");
   }
 
   // Testimonials and customer logos are never accepted from generative output.
@@ -75,6 +92,9 @@ export function mergeDeepSeekOutput(
       icon: v.icon || "star",
     }));
   }
+  if (ai.about.chapters && ai.about.chapters.length >= 3) {
+    about.chapters = groundModules(ai.about.chapters, isJa ? "事業紹介" : "Our story");
+  }
 
   // Services: intro, services list, process
   if (ai.services.intro?.trim()) services.subtitle = groundDemoText(ai.services.intro, verifiedFacts, groundedFallback);
@@ -92,6 +112,18 @@ export function mergeDeepSeekOutput(
       step: p.step || 1,
       title: groundDemoText(p.title, verifiedFacts, isJa ? "ご利用案内" : "Visitor information"),
       description: groundDemoText(p.description, verifiedFacts, groundedFallback),
+    }));
+  }
+  if (ai.services.guidance && ai.services.guidance.length >= 3) {
+    services.guidance = groundModules(ai.services.guidance, isJa ? "サービス案内" : "Service guide");
+  }
+  if (works && ai.works.intro?.trim() && (ai.works.sections?.length ?? 0) >= 4) {
+    works.subtitle = groundDemoText(ai.works.intro, verifiedFacts, works.subtitle);
+    works.sections = ai.works.sections!.map((section, index) => ({
+      id: `story-${index + 1}`,
+      heading: groundDemoText(section.title, verifiedFacts, isJa ? `スタイル ${index + 1}` : `Story ${index + 1}`),
+      body: groundDemoText(section.body, verifiedFacts, `${groundedFallback} ${isJa ? `場面${index + 1}` : `Scene ${index + 1}`}`),
+      note: groundDemoText(section.note, verifiedFacts, ""),
     }));
   }
 
@@ -136,7 +168,7 @@ export function mergeDeepSeekOutput(
       llmModel: ai.model,
       llmUsage: ai.usage,
     },
-    pages: { ...base.pages, home, about, services, contact, faq: faqPage },
+    pages: { ...base.pages, home, about, services, contact, works, faq: faqPage },
   };
 }
 

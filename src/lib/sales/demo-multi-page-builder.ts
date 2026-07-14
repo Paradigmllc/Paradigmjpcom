@@ -24,6 +24,11 @@ import {
   industryConfig,
 } from "./demo-multi-page-content"
 import { detectPublicSourceEvidence } from "./demo-source-evidence"
+import {
+  fallbackNarrativeModules,
+  fallbackWorksSections,
+  reviewedMediaFacts,
+} from "./demo-content-depth"
 
 /**
  * Build multi-page demo data for a full business website:
@@ -63,7 +68,10 @@ export function buildDemoMultiPageData(
   const publicFacts = (metaObj.public_facts ?? {}) as Record<string, unknown>
   const hasOfficialSocial = typeof metaObj.official_instagram_url === "string"
     || typeof metaObj.official_facebook_url === "string"
-  const verifiedFacts = Object.values(publicFacts).filter((value): value is string | number | boolean => ["string", "number", "boolean"].includes(typeof value)).map(String)
+  const verifiedFacts = [
+    ...Object.values(publicFacts).filter((value): value is string | number | boolean => ["string", "number", "boolean"].includes(typeof value)).map(String),
+    ...reviewedMediaFacts(metaObj),
+  ]
   const displayFacts = verifiedFacts.filter((value) => !/^https?:\/\//u.test(value))
   const address = cleanFs(typeof publicFacts.address === "string" ? publicFacts.address : company.prefecture, locationStr, 160)
   const ctaUrl = `${basePath}/contact`
@@ -279,6 +287,11 @@ export function buildDemoMultiPageData(
     ctaHref: ctaUrl,
     accentColor,
   }
+  const contentLocale = isJa ? "ja" as const : "en" as const
+  homePage.narrativeModules = fallbackNarrativeModules({ companyName: name, facts: verifiedFacts, services: servicesPage.services, locale: contentLocale, page: "home" })
+  aboutPage.chapters = fallbackNarrativeModules({ companyName: name, facts: verifiedFacts, services: servicesPage.services, locale: contentLocale, page: "about" })
+  servicesPage.guidance = fallbackNarrativeModules({ companyName: name, facts: verifiedFacts, services: servicesPage.services, locale: contentLocale, page: "services" })
+  const worksSections = fallbackWorksSections({ companyName: name, facts: verifiedFacts, services: servicesPage.services, locale: contentLocale })
 
   /* ───── Contact page ───── */
 
@@ -347,10 +360,7 @@ export function buildDemoMultiPageData(
         title: isJa ? "実績・事例" : "Work & Cases",
         subtitle: isJa ? "実際の写真と実績情報を確認後に公開するページです。" : "This page will be completed after verified project details and image rights are confirmed.",
         eyebrow: isJa ? "掲載構成案" : "Proposed structure",
-        sections: [
-          { id: "case-1", heading: isJa ? "代表事例 01" : "Featured work 01", body: isJa ? "事例名、対応内容、期間、成果はヒアリング後に確定します。" : "Name, scope, dates, and outcomes will be confirmed in discovery.", note: isJa ? "未確認情報は公開しません" : "Unverified claims will not be published" },
-          { id: "case-2", heading: isJa ? "代表事例 02" : "Featured work 02", body: isJa ? "使用許諾を確認した写真と、お客様が承認した説明のみ掲載します。" : "Only rights-cleared images and customer-approved descriptions will be used." },
-        ],
+        sections: worksSections,
         accentColor,
       },
       news: {

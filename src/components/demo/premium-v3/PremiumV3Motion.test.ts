@@ -13,7 +13,7 @@ describe("Premium V3 motion profiles", () => {
   it("uses a richer visual transition for expressive demos", () => {
     const expressive = buildPremiumV3RevealVariants("expressive")
 
-    expect(expressive.hidden).toMatchObject({ opacity: 0, scale: 0.975, filter: "blur(8px)" })
+    expect(expressive.hidden).toMatchObject({ opacity: 0.94, scale: 0.99, filter: "blur(1px)" })
     expect(expressive.visible).toMatchObject({ opacity: 1, scale: 1, filter: "blur(0px)" })
   })
 })

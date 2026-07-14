@@ -7,6 +7,7 @@ import { PremiumV3KineticRail, PremiumV3Media, PremiumV3MediaCarousel, PremiumV3
 import { DemoPremiumV3BeautyHome } from "./DemoPremiumV3BeautyHome"
 import { BeautyMediaMosaic } from "./BeautyMediaMosaic"
 import { resolveDemoArtDirection } from "@/lib/sales/demo-art-direction"
+import { DemoPremiumV3Narrative } from "./DemoPremiumV3Narrative"
 
 export function DemoPremiumV3HomePage({ data }: { data: DemoMultiPageData }) {
   const direction = resolveDemoArtDirection(data)
@@ -79,6 +80,15 @@ export function DemoPremiumV3HomePage({ data }: { data: DemoMultiPageData }) {
           <PremiumV3Reveal motionStyle={motionStyle} delay={0.08}><h2 className="max-w-4xl whitespace-pre-line text-4xl font-[var(--demo-heading-weight)] leading-[1.12] tracking-[-.035em] sm:text-6xl [font-family:var(--demo-font-display)]">{premium.intro.title}</h2><p className="mt-8 max-w-3xl whitespace-pre-line text-base leading-9 text-[var(--demo-muted)] sm:text-lg">{premium.intro.body}</p><a href={`${basePath}/about`} className="group mt-9 inline-flex items-center gap-4 text-sm font-bold">{aboutLabel}詳しく見る<span className="grid h-11 w-11 place-items-center rounded-full bg-[var(--demo-ink)] text-white transition group-hover:translate-x-1"><ArrowRight className="h-4 w-4" /></span></a></PremiumV3Reveal>
         </div>
       </section>
+
+      <DemoPremiumV3Narrative
+        modules={home.narrativeModules ?? []}
+        label="EDITORIAL NOTES"
+        title={`${data.companyName}らしさを、3つの視点から。`}
+        introduction="サービス名だけでは見えにくい考え方や体験の違いを、確認できる情報を軸に読み解きます。"
+        motionStyle={motionStyle}
+        variant="index"
+      />
 
       <section className="bg-[var(--demo-surface-alt)] px-5 py-20 sm:px-10 sm:py-28 lg:px-16 lg:py-32">
         <div className="mx-auto max-w-7xl">

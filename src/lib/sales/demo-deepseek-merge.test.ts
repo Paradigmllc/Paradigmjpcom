@@ -53,6 +53,7 @@ describe("mergeDeepSeekOutput", () => {
           { title: "フレンチトースト", description: "卵と牛乳の配合にこだわります。", icon: "sparkles", features: ["焼き加減を調整"] },
         ],
       },
+      works: {},
       contact: {},
       artDirections: [],
     } satisfies DeepSeekEnhancedOutput
