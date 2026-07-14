@@ -18,6 +18,7 @@ import {
   getCoolifyAuth as getSharedCoolifyAuth,
 } from "./lib/coolify-env.mjs"
 import { sshArgs } from "./lib/ssh-options.mjs"
+import { ensureSearxng } from "./lib/ensure-searxng.mjs"
 
 function envValue(name, fallback = null) {
   const value = process.env[name]
@@ -1217,18 +1218,31 @@ async function main() {
 
   // Auto-ensure non-secret defaults are set in Coolify.
   // Secret values must already exist in the approved runtime secret store.
-  const { ensureCoolifyEnvs } = await import("./lib/coolify-env.mjs")
+  const { ensureCoolifyEnvs, updateCoolifyEnvs } = await import("./lib/coolify-env.mjs")
   const requiredNonSecretEnvs = {
     FLARESOLVERR_API_URL: "http://flaresolverr:8191",
+    SEARXNG_BASE_URL: "http://searxng:8080",
+    SALES_LIST_COLLECTION_PROVIDER: "searxng",
     ...(/^(1|true|yes)$/i.test(String(envs.CLOUDFLARE_ORIGIN_LOCKED || "").trim())
       ? { TRUSTED_PROXY_MODE: "cloudflare" }
       : {}),
   }
   const envResult = await ensureCoolifyEnvs(APP_UUID, requiredNonSecretEnvs)
   if (envResult.set > 0) console.log(`[deploy] auto-set ${envResult.set} missing env vars in Coolify`)
+  const staleNonSecretEnvs = Object.fromEntries(Object.entries(requiredNonSecretEnvs).filter(([key, value]) => (
+    typeof envs[key] === "string" && envs[key].trim().length > 0 && envs[key].trim() !== value
+  )))
+  if (Object.keys(staleNonSecretEnvs).length > 0) {
+    const corrected = await updateCoolifyEnvs(APP_UUID, staleNonSecretEnvs)
+    const failed = corrected.filter((item) => item.status === "failed")
+    if (failed.length > 0) throw new Error(`Failed to correct non-secret Coolify envs: ${failed.map((item) => item.key).join(", ")}`)
+    console.log(`[deploy] corrected ${corrected.length} stale non-secret env vars in Coolify`)
+  }
   if (!envs.TRIGGER_WEBHOOK_SECRET || String(envs.TRIGGER_WEBHOOK_SECRET).trim().length === 0) {
     throw new Error("TRIGGER_WEBHOOK_SECRET is missing in Coolify env; set it in the approved secret store before deploy")
   }
+
+  if (!DRY && !SKIP_DEPLOY) ensureSearxng({ deployHost: DEPLOY_HOST, appUuid: APP_UUID })
 
   if (!DRY && !SKIP_DEPLOY) {
     runHostDiskPreflight()
