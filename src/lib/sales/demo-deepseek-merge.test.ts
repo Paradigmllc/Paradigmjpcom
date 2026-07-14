@@ -70,4 +70,46 @@ describe("mergeDeepSeekOutput", () => {
     expect(JSON.stringify(merged.pages.faq?.sections)).toContain("最新の営業情報は公式Instagram")
     expect(JSON.stringify(merged.pages.faq?.sections)).toContain("このデモのフォームからは送信されません")
   })
+
+  it("tops up incomplete model narratives from grounded fallback modules", () => {
+    const fallbackNarratives = Array.from({ length: 3 }, (_, index) => ({
+      eyebrow: `FALLBACK ${index + 1}`,
+      title: `確認済みのご案内 ${index + 1}`,
+      body: `神奈川県横浜市港北区で確認できる情報 ${index + 1}。`,
+      points: ["所在地", "店内写真"],
+    }))
+    const base = {
+      companyName: "ノン美容室",
+      meta: { verifiedFacts: ["神奈川県横浜市港北区", "店内のセット面", "鏡と椅子が写る店内"] },
+      pages: {
+        home: { hero: { title: "旧見出し", subtitle: "旧本文" }, features: [], narrativeModules: fallbackNarratives },
+        about: { story: "旧事業紹介", mission: "旧方針", values: [], chapters: fallbackNarratives },
+        services: { subtitle: "", services: [], process: [], guidance: fallbackNarratives },
+        contact: { subtitle: "固定文", address: "神奈川県横浜市港北区" },
+        works: { title: "スタイル", subtitle: "旧本文", eyebrow: "WORKS", accentColor: "#000", sections: fallbackNarratives.map((item, index) => ({ id: `work-${index}`, heading: item.title, body: item.body })) },
+      },
+    } as unknown as DemoMultiPageData
+    const narrative = { eyebrow: "STORY", title: "店内で確認できること", body: "店内の雰囲気をご紹介します。", points: ["店内写真"] }
+    const ai = {
+      engine: "deepseek",
+      generatedAt: "2026-07-14T00:00:00.000Z",
+      model: "deepseek-v4-pro",
+      home: { hero_title: "ノン美容室", hero_subtitle: "横浜の美容室です。", features: [], narrative_modules: [narrative, { ...narrative, title: "サロンの空間" }] },
+      about: { chapters: [narrative] },
+      services: { services: [{ title: "カット", description: "確認済みの提供内容です。", icon: "sparkles", features: [] }], guidance: [narrative] },
+      works: { intro: "店内の風景をご紹介します。", sections: [{ title: "セット面", body: "鏡と椅子が写る店内です。", note: "" }] },
+      contact: {},
+      artDirections: [],
+    } satisfies DeepSeekEnhancedOutput
+
+    const merged = mergeDeepSeekOutput(base, ai, "ja")
+    expect(merged.pages.home.narrativeModules).toHaveLength(4)
+    expect(merged.pages.about.chapters).toHaveLength(4)
+    expect(merged.pages.services.guidance).toHaveLength(4)
+    expect(merged.pages.works?.sections).toHaveLength(4)
+    expect(merged.pages.home.narrativeModules?.every((item) => item.body.length >= 180)).toBe(true)
+    expect(merged.pages.about.chapters?.every((item) => item.body.length >= 220)).toBe(true)
+    expect(merged.pages.services.guidance?.every((item) => item.body.length >= 180)).toBe(true)
+    expect(merged.pages.works?.sections.every((item) => item.body.length >= 180)).toBe(true)
+  })
 })

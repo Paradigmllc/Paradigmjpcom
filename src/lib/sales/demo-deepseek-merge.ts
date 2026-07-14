@@ -31,11 +31,12 @@ export function mergeDeepSeekOutput(
     title: groundDemoText(service.title, verifiedFacts, isJa ? `ご案内 ${index + 1}` : `Offering ${index + 1}`),
     description: groundDemoText(service.description, verifiedFacts, groundedFallback),
   }))
+  type NarrativeInput = { eyebrow: string; title: string; body: string; points: string[] }
   const groundModules = (
-    modules: Array<{ eyebrow: string; title: string; body: string; points: string[] }> | undefined,
+    modules: NarrativeInput[],
     label: string,
     context: "home" | "about" | "services",
-  ) => modules?.map((module, index) => ({
+  ) => modules.map((module, index) => ({
     eyebrow: groundDemoText(module.eyebrow, verifiedFacts, `${label} ${String(index + 1).padStart(2, "0")}`),
     title: groundDemoText(module.title, verifiedFacts, isJa ? `${label}のご案内 ${index + 1}` : `${label} guide ${index + 1}`),
     body: expandGroundedBody({
@@ -54,6 +55,21 @@ export function mergeDeepSeekOutput(
       isJa ? `確認事項 ${index + 1}-${pointIndex + 1}` : `Verified item ${index + 1}-${pointIndex + 1}`,
     )),
   }));
+  const completeModules = (
+    generated: NarrativeInput[] | undefined,
+    fallback: NarrativeInput[] | undefined,
+    label: string,
+    context: "home" | "about" | "services",
+  ) => {
+    const seen = new Set<string>()
+    const combined = [...(generated ?? []), ...(fallback ?? [])].filter((module) => {
+      const key = `${module.title.trim()}\n${module.body.trim()}`
+      if (!module.body.trim() || seen.has(key)) return false
+      seen.add(key)
+      return true
+    }).slice(0, 4)
+    return groundModules(combined, label, context)
+  }
 
   // Home: hero title/subtitle
   if (ai.home.hero_title?.trim()) {
@@ -75,9 +91,12 @@ export function mergeDeepSeekOutput(
       severity: "info" as const,
     }));
   }
-  if (ai.home.narrative_modules && ai.home.narrative_modules.length >= 3) {
-    home.narrativeModules = groundModules(ai.home.narrative_modules, isJa ? "特徴" : "Highlights", "home");
-  }
+  home.narrativeModules = completeModules(
+    ai.home.narrative_modules,
+    home.narrativeModules,
+    isJa ? "特徴" : "Highlights",
+    "home",
+  );
 
   // Testimonials and customer logos are never accepted from generative output.
   // They require independently verified evidence and explicit usage rights.
@@ -107,9 +126,12 @@ export function mergeDeepSeekOutput(
       icon: v.icon || "star",
     }));
   }
-  if (ai.about.chapters && ai.about.chapters.length >= 3) {
-    about.chapters = groundModules(ai.about.chapters, isJa ? "事業紹介" : "Our story", "about");
-  }
+  about.chapters = completeModules(
+    ai.about.chapters,
+    about.chapters,
+    isJa ? "事業紹介" : "Our story",
+    "about",
+  );
 
   // Services: intro, services list, process
   if (ai.services.intro?.trim()) services.subtitle = groundDemoText(ai.services.intro, verifiedFacts, groundedFallback);
@@ -129,12 +151,25 @@ export function mergeDeepSeekOutput(
       description: groundDemoText(p.description, verifiedFacts, groundedFallback),
     }));
   }
-  if (ai.services.guidance && ai.services.guidance.length >= 3) {
-    services.guidance = groundModules(ai.services.guidance, isJa ? "サービス案内" : "Service guide", "services");
-  }
-  if (works && ai.works.intro?.trim() && (ai.works.sections?.length ?? 0) >= 4) {
+  services.guidance = completeModules(
+    ai.services.guidance,
+    services.guidance,
+    isJa ? "サービス案内" : "Service guide",
+    "services",
+  );
+  if (works && ai.works.intro?.trim()) {
     works.subtitle = groundDemoText(ai.works.intro, verifiedFacts, works.subtitle);
-    works.sections = ai.works.sections!.map((section, index) => ({
+    const seenWorks = new Set<string>()
+    const completeWorks = [
+      ...(ai.works.sections ?? []).map((section) => ({ title: section.title, body: section.body, note: section.note })),
+      ...works.sections.map((section) => ({ title: section.heading, body: section.body, note: section.note ?? "" })),
+    ].filter((section) => {
+      const key = `${section.title.trim()}\n${section.body.trim()}`
+      if (!section.body.trim() || seenWorks.has(key)) return false
+      seenWorks.add(key)
+      return true
+    }).slice(0, 6)
+    works.sections = completeWorks.map((section, index) => ({
       id: `story-${index + 1}`,
       heading: groundDemoText(section.title, verifiedFacts, isJa ? `スタイル ${index + 1}` : `Story ${index + 1}`),
       body: expandGroundedBody({
