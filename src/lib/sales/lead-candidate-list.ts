@@ -15,6 +15,7 @@ export interface CandidateListFilters {
   status?: CandidateStatus | null
   lane?: CandidateLane | null
   minScore?: number | null
+  sourceSlug?: string | null
   limit?: number | null
 }
 
@@ -129,6 +130,7 @@ export async function listLeadCandidates(filters: CandidateListFilters = {}): Pr
     .limit(limit)
   if (filters.status) query = query.eq("status", filters.status)
   if (filters.lane) query = query.eq("lane", filters.lane)
+  if (filters.sourceSlug) query = query.eq("source_slug", filters.sourceSlug)
   if (candidateIds) query = query.in("id", [...candidateIds].slice(0, limit * 10))
 
   const { data: rows, error } = await query

@@ -1,3 +1,12 @@
+## CURRENT STATUS - 2026-07-14 Houzz・エキテン・ジモティー候補→SMB DEMO量産レーン（実装・ローカル検証完了 / 外部送信0）
+
+### 2026-07-14 Portal sourced SMB demo factory
+- 管理者画面 `/ja/admin/demo-assets` に、Houzz → エキテン → ジモティーの3系統を切り替える候補収集コンソールを追加。検索エンジンを巡回せず、operatorが指定した各ポータルの公開HTTPS URLだけを最大100件ずつ、同時5件で取得する。
+- 取得した事業者名、業種、説明、住所、電話、SNS、掲載画像、独自HP候補を既存 `sales_lead_candidate_*` DBへ保存。`source_slug`を `houzz` / `ekiten` / `jmty` のまま保持し、独自HPあり、画像3点未満、説明・住所不足はDEMO生成対象からfail-closedで除外する。
+- 画像はoperatorが元ページを確認し、人物・透かしを除外して3点以上選択した場合だけ `reviewed_manifest` 化。スナップショット外URLを拒否し、`private_proposal` として登録するため、権利確認前のクリーン公開URLと外部送信は既存ゲートで停止する。
+- 承認済み候補は既存の最大3件並列one-shot drainへ自動接続し、同一企業・同一manifestは既存結果を再利用。11ページPremium V3、品質94点、hard blocker 0の既存基準を緩めず、メール・電話・郵便・SNS・ポータルDM・フォーム送信・Twenty同期は接続していない。
+- ローカル検証: ポータル抽出・HP判定・素材審査・API認証・自動drain・再利用を含む全Vitest **125 files / 571 tests pass**、TypeScript、全ESLint、quality guard **0 errors / 60 warnings**、production build **408/408 pages**、`git diff --check` pass。
+
 ## CURRENT STATUS - 2026-07-14 Japan Entry文面20社一括生成→Twenty保存の本番試験（完了 / 外部送信0 / QAデータ削除済み）
 
 ### 2026-07-14 Opportunity Brief factory production batch verification

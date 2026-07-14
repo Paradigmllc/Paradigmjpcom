@@ -1,11 +1,9 @@
-import { createHash, randomUUID } from "node:crypto"
+import { randomUUID } from "node:crypto"
 import { after, NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { isSalesApiAuthorized } from "@/lib/sales/api-auth"
-import { findCompanyById, upsertCompanyByDomain } from "@/lib/sales/companies"
 import { DB_TABLES } from "@/lib/sales/db-tables"
-import { demoSourceManifestSchema, sourceManifestToCompanyMeta, validateDemoSourceManifest } from "@/lib/sales/demo-source-policy"
-import { enqueueCompanyEnrichment } from "@/lib/sales/enrichment-jobs"
+import { demoSourceManifestSchema, validateDemoSourceManifest } from "@/lib/sales/demo-source-policy"
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { INDUSTRIES } from "@/lib/sales/types"
 import { activatePublicUnlistedDemo } from "@/lib/sales/demo-private-access"
@@ -16,6 +14,7 @@ import {
 } from "@/lib/sales/demo-batch-drain"
 import { buildDemoUrl } from "@/lib/sales/routing"
 import { DEMO_QUALITY_THRESHOLD } from "@/lib/sales/demo-quality-gate"
+import { queueReviewedDemoItem } from "@/lib/sales/demo-batch-queue"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -39,18 +38,6 @@ const drainSchema = z.object({
   drainId: z.string().uuid().optional(),
   automated: z.boolean().default(false),
 })
-
-function syntheticDomain(companyName: string, manifest: z.infer<typeof demoSourceManifestSchema>): string {
-  const seed = `${companyName}:${manifest.sources.map((source) => source.url).sort().join("|")}`
-  const hash = createHash("sha256").update(seed).digest("hex").slice(0, 16)
-  return `demo-only-${hash}.invalid`
-}
-
-function generationKey(companyId: string, manifest: z.infer<typeof demoSourceManifestSchema>): string {
-  return createHash("sha256")
-    .update(`${companyId}:${JSON.stringify(manifest)}`)
-    .digest("hex")
-}
 
 export async function GET(request: NextRequest) {
   if (!(await isSalesApiAuthorized(request))) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
@@ -93,57 +80,8 @@ export async function POST(request: NextRequest) {
 
     const results: Array<Record<string, unknown>> = []
     for (const [index, item] of parsed.data.items.entries()) {
-      const review = validateDemoSourceManifest(item.manifest)
-      if (!review.ok || !review.manifest) {
-        results.push({ index, ok: false, error: review.errors.join(", ") })
-        continue
-      }
-
-      const existing = item.companyId ? await findCompanyById(item.companyId) : null
-      if (item.companyId && !existing) {
-        results.push({ index, ok: false, error: "company not found" })
-        continue
-      }
-      const companyName = existing?.company_name ?? item.companyName ?? ""
-      const saved = await upsertCompanyByDomain({
-        domain: existing?.domain ?? syntheticDomain(companyName, review.manifest),
-        company_name: companyName,
-        region: item.locale === "ja" ? "jp" : "global",
-        report_locale: item.locale,
-        industry: existing?.industry ?? item.industry,
-        prefecture: existing?.prefecture ?? item.prefecture ?? null,
-        pipeline_status: "manual_queue",
-        source: "reviewed_demo_manifest",
-        meta: sourceManifestToCompanyMeta(review.manifest),
-      })
-      if (!saved.ok || !saved.company) {
-        results.push({ index, ok: false, error: saved.error ?? "company save failed" })
-        continue
-      }
-
-      const queued = await enqueueCompanyEnrichment({
-        companyId: saved.company.id,
-        jobType: "demo_generate",
-        source: "reviewed_demo_manifest",
-        triggeredBy: "demo_batch_console",
-        priority: 60,
-        payload: {
-          locale: item.locale,
-          source_policy: "reviewed_manifest",
-          generation_key: generationKey(saved.company.id, review.manifest),
-          sending_enabled: false,
-        },
-      })
-      results.push({
-        index,
-        ok: queued.ok,
-        companyId: saved.company.id,
-        companyName: saved.company.company_name,
-        jobId: queued.job?.id,
-        status: queued.job?.status,
-        reused: queued.job?.status === "completed",
-        error: queued.error,
-      })
+      const queued = await queueReviewedDemoItem(item, "demo_batch_console")
+      results.push({ index, ...queued })
     }
 
     const queuedCount = results.filter((result) => result.ok && result.status === "queued").length
