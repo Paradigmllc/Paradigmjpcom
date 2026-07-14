@@ -5,6 +5,7 @@ vi.mock("@/lib/supabase", () => ({ getServiceSalesSupabase: vi.fn() }))
 
 import {
   generateDemoPreviewToken,
+  activateSignedPrivateDemo,
   hashDemoPreviewToken,
   normalizeDemoRouteSlug,
   previewCookieName,
@@ -61,5 +62,10 @@ describe("demo private access", () => {
     expect(errors.join(" ")).toContain("HTTPS")
     expect(errors.join(" ")).toContain("明示許諾")
     expect(errors.join(" ")).toContain("非公式出所")
+  })
+
+  it("rejects private preview URLs longer than seven days before any DB write", async () => {
+    await expect(activateSignedPrivateDemo({ slug: "sample", ttlDays: 8, assets: [safeAsset] }))
+      .rejects.toThrow("1〜7日")
   })
 })

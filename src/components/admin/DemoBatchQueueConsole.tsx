@@ -100,7 +100,7 @@ export function DemoBatchQueueConsole() {
     if (jobIds.length === 0) return toast.error("発行できる完了ジョブがありません")
     setBusy(true)
     try {
-      const response = await fetch("/api/sales/demo-site/batch", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jobIds, ttlDays: 14 }) })
+      const response = await fetch("/api/sales/demo-site/batch", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jobIds, ttlDays: 7 }) })
       const payload = await response.json() as { ok?: boolean; issued?: Array<{ ok?: boolean; cleanUrl?: string }>; error?: string }
       if (!response.ok || !payload.ok) throw new Error(payload.error ?? "URL発行に失敗しました")
       const urls = (payload.issued ?? []).flatMap((item) => item.ok && item.cleanUrl ? [item.cleanUrl] : [])

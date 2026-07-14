@@ -38,9 +38,7 @@ export function DemoMultiLayout({
   templateId,
   accentColor,
   designRecipe,
-  quality,
   presentation,
-  privatePreview,
   children,
 }: Props) {
   const pathname = usePathname()
@@ -82,9 +80,6 @@ export function DemoMultiLayout({
   const footerDescription = presentation?.footerDescription ?? (isJa
     ? "診断データから自動生成されました。改善後のWebサイトのイメージです。"
     : "Generated from diagnostic data. This is a demonstration of what an improved website could look like.")
-  const proposalNotice = presentation?.proposalNotice ?? (isJa
-    ? "提案用デモサイト（公式サイトではありません）"
-    : "Proposal demo — not the company’s official website")
   const footerOwner = presentation?.footerOwner ?? "Paradigm LLC"
   const isInstagramCta = /instagram\.com/i.test(ctaHref)
   const brandLogoUrl = presentation?.brandLogoUrl
@@ -100,11 +95,6 @@ export function DemoMultiLayout({
       data-motion={designRecipe?.motionVariant}
       style={{ "--demo-accent": accent } as React.CSSProperties}
     >
-      <div className={`border-b px-4 py-2 text-center text-[10px] font-medium sm:text-xs ${privatePreview ? "border-amber-200 bg-amber-50 text-amber-950" : isDarkNav ? "border-white/10 bg-gray-950 text-white/70" : "border-[#a95f3d]/10 bg-[#f8f0e8] text-[#6f3723]"}`}>
-        <span className="sm:hidden">{privatePreview ? "期限付き非公開デモ" : "提案用デモ · 公式サイトではありません"}</span>
-        <span className="hidden sm:inline">{privatePreview ? `期限付き非公開デモ · 素材審査 ${privatePreview.assetStatus} · ${new Date(privatePreview.expiresAt).toLocaleDateString("ja-JP")}まで` : proposalNotice}</span>
-        {quality?.passed ? ` · Quality ${quality.score}/100` : ""}
-      </div>
       {/* Nav */}
       <nav className={nc.wrapper} style={isDarkNav ? { background: "rgba(17,24,39,0.95)" } : {}}>
         <div className={`${nc.inner} ${templateId === "apex" ? "max-w-4xl" : templateId === "terra" ? "max-w-7xl" : "max-w-6xl"}`}>

@@ -112,7 +112,7 @@ describe("demo batch route without PostgREST relationship metadata", () => {
     const response = await PUT(new NextRequest("https://paradigmjp.com/api/sales/demo-site/batch", {
       method: "PUT",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ jobIds: [jobId], ttlDays: 14 }),
+      body: JSON.stringify({ jobIds: [jobId], ttlDays: 7 }),
     }))
     const body = await response.json()
 

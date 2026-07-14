@@ -153,6 +153,9 @@ export async function activateSignedPrivateDemo(input: {
   ttlDays: number
   assets: DemoReviewedAsset[]
 }): Promise<{ token: string; expiresAt: string; review: DemoAssetReview }> {
+  if (!Number.isInteger(input.ttlDays) || input.ttlDays < 1 || input.ttlDays > 7) {
+    throw new Error("非公開デモの有効日数は1〜7日で指定してください")
+  }
   const errors = validateDemoAssets(input.assets)
   if (errors.length > 0) throw new Error(errors.join("\n"))
   const sb = getServiceSalesSupabase()

@@ -59,11 +59,6 @@ export function DemoPremiumV3Layout({
 
   return (
     <div className="min-h-dvh bg-[var(--demo-surface)] text-[var(--demo-ink)] antialiased" style={styles} data-brand-system={brand.id}>
-      {privatePreview && (
-        <div className="border-b border-[var(--demo-line)] bg-[var(--demo-surface-alt)] px-4 py-2 text-center text-[10px] font-semibold tracking-[.1em] text-[var(--demo-muted)] sm:text-xs">
-          非公開プレビュー · 公式サイトではありません · {new Date(privatePreview.expiresAt).toLocaleDateString("ja-JP")}まで
-        </div>
-      )}
       <nav className="sticky top-0 z-50 border-b border-[var(--demo-line)] bg-[color:var(--demo-surface)]/94 backdrop-blur-xl" aria-label="メインナビゲーション">
         <div className="mx-auto flex h-[78px] max-w-[1500px] items-center justify-between gap-3 px-5 sm:px-8 lg:px-10 xl:px-14">
           <a href={basePath} className="flex min-w-0 flex-1 items-center gap-3 xl:max-w-[22rem]" aria-label={`${companyName} ホーム`}>
@@ -84,7 +79,7 @@ export function DemoPremiumV3Layout({
         </div>
       </nav>
       {menuOpen && (
-        <div className={`fixed inset-x-0 bottom-0 z-40 overflow-y-auto bg-[var(--demo-ink)] px-5 py-10 text-white sm:px-10 ${privatePreview ? "top-[111px]" : "top-[79px]"}`}>
+        <div className="fixed inset-x-0 bottom-0 top-[79px] z-40 overflow-y-auto bg-[var(--demo-ink)] px-5 py-10 text-white sm:px-10">
           <div className="mx-auto max-w-2xl">{navLinks.map((link, index) => <a key={link.href} href={link.href} className="flex items-center justify-between border-b border-white/15 py-5 text-3xl [font-family:var(--demo-font-display)]">{link.label}<span className="text-xs text-white/35">0{index + 1}</span></a>)}<a href={ctaHref} {...(isExternalCta ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="mt-8 inline-flex min-h-12 w-full items-center justify-center gap-3 bg-white px-6 text-sm font-bold text-black">{isInstagram && <FaInstagram />}{ctaLabel}<ArrowUpRight className="h-4 w-4" /></a></div>
         </div>
       )}
