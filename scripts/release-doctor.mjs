@@ -352,8 +352,8 @@ function checkStaticReleaseRules() {
   const sourcePreviewRoute = fs.existsSync("src/app/api/sales/lead-sources/[sourceId]/preview/route.ts")
     ? fs.readFileSync("src/app/api/sales/lead-sources/[sourceId]/preview/route.ts", "utf8")
     : ""
-  const leadSourceRecordsService = fs.existsSync("src/lib/sales/lead-source-records.ts")
-    ? fs.readFileSync("src/lib/sales/lead-source-records.ts", "utf8")
+  const leadSourceSelectionService = fs.existsSync("src/lib/sales/lead-source-selection.ts")
+    ? fs.readFileSync("src/lib/sales/lead-source-selection.ts", "utf8")
     : ""
   const deepSeekGateway = fs.existsSync("src/lib/deepseek.ts")
     ? fs.readFileSync("src/lib/deepseek.ts", "utf8")
@@ -387,7 +387,7 @@ function checkStaticReleaseRules() {
     && candidateRunner.includes("pendingFallbackRuns")
     && reviewRoute.includes("approve_pilot")
     && sourcePreviewRoute.includes("previewLeadSourceConfig")
-    && leadSourceRecordsService.includes('rpc("sales_claim_lead_source_records"')
+    && leadSourceSelectionService.includes('rpc("sales_claim_lead_source_records"')
     && !deepSeekGateway.includes("process.env.LITELLM_API_KEY")
     && !deepSeekGateway.includes("process.env.OPENROUTER_API_KEY")
     && personalizedMessage.includes('modelPolicy: "strict"')
@@ -396,6 +396,36 @@ function checkStaticReleaseRules() {
     pass("lead factory enforces source preview, pilot review, manual Twenty promotion, operator audit and direct DeepSeek V4 Pro generation")
   } else {
     fail("lead factory must remain fail-closed until explicit operator review and Twenty approval")
+  }
+
+  const leadSourcePreflightMigrationPath = "supabase/migrations/20260715113000_lead_source_website_preflight.sql"
+  const leadSourcePreflightMigration = fs.existsSync(leadSourcePreflightMigrationPath)
+    ? fs.readFileSync(leadSourcePreflightMigrationPath, "utf8")
+    : ""
+  const leadSourcePreflightService = fs.existsSync("src/lib/sales/lead-source-preflight.ts")
+    ? fs.readFileSync("src/lib/sales/lead-source-preflight.ts", "utf8")
+    : ""
+  const leadSourcePreflightRoute = fs.existsSync("src/app/api/sales/lead-sources/[sourceId]/preflight/route.ts")
+    ? fs.readFileSync("src/app/api/sales/lead-sources/[sourceId]/preflight/route.ts", "utf8")
+    : ""
+  if (
+    leadSourcePreflightMigration.includes("sales_claim_lead_source_preflight_records")
+    && leadSourcePreflightMigration.includes("sales_complete_lead_source_preflight")
+    && leadSourcePreflightMigration.includes("preflight_status = 'eligible'")
+    && leadSourcePreflightMigration.includes("preflight_checked_at >= now() - interval '7 days'")
+    && leadSourcePreflightMigration.includes("FOR UPDATE OF source_record SKIP LOCKED")
+    && leadSourcePreflightMigration.includes("TO service_role")
+    && noLoginDeploy.includes("20260715113000_lead_source_website_preflight.sql")
+    && noLoginDeploy.includes("applyLeadSourceWebsitePreflightMigration")
+    && leadSourcePreflightService.includes("PREFLIGHT_CHUNK_SIZE = 50")
+    && leadSourcePreflightService.includes("PREFLIGHT_CONCURRENCY = 10")
+    && leadSourcePreflightService.includes("dns_private_or_reserved")
+    && leadSourcePreflightRoute.includes("recordLeadOperatorEvent")
+    && leadSourcePreflightRoute.includes("notifyBothChannels")
+  ) {
+    pass("lead source website preflight is bounded, auditable, release-wired and fail-closed")
+  } else {
+    fail("lead source website preflight requires bounded execution, audit, fresh eligibility and release wiring")
   }
 
   const evidenceFactoryPath = "src/lib/sales/lead-candidate-acquisition.ts"
