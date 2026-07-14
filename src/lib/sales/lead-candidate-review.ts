@@ -1,11 +1,10 @@
 import { getServiceSalesSupabase } from "@/lib/supabase"
 import { DB_TABLES } from "./db-tables"
-import { getSalesCrmFieldConfig } from "./crm-field-config"
 import { EVIDENCE_FIRST_SOURCE } from "./lead-candidate-verification"
 import { promoteFormQualifiedCandidate } from "./lead-candidate-promotion"
 import { parsePromotionSnapshot, promotionEligibilityReason, type ReviewItemRow } from "./lead-candidate-review-gate"
-import { applyTwentyCrmMetadata } from "./twenty-crm-metadata"
 import { refreshLeadCandidateRunCounts } from "./lead-candidate-runs"
+import { requireTwentyAuth } from "./twenty-health"
 
 type JsonRecord = Record<string, unknown>
 type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSalesSupabase>>
@@ -161,8 +160,13 @@ export async function approveLeadCandidateItems(input: {
 
   const claimIds = eligible.map((item) => item.id)
   if (claimIds.length > 0) {
-    const twentyMetadata = await applyTwentyCrmMetadata(await getSalesCrmFieldConfig())
-    if (twentyMetadata.error) throw new Error(`Twenty CRM metadata is not ready: ${twentyMetadata.error}`)
+    // CRM field creation and view normalization are configuration mutations and
+    // belong to the explicit CRM settings/release path. Reapplying every field
+    // for each operator approval made a single review exceed the edge timeout.
+    // Keep this request fail-closed with a cheap auth preflight; the actual
+    // company patch below verifies the live fields and persists promotion_failed
+    // when Twenty rejects any required field.
+    requireTwentyAuth()
     await insertAuditEvents(eligible.map((item) => ({
       run_id: input.runId,
       entity_type: "item",

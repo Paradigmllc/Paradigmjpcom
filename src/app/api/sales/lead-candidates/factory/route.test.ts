@@ -54,6 +54,7 @@ describe("form-qualified lead factory route", () => {
     expect(mocks.notify).toHaveBeenCalledWith("sales", expect.objectContaining({
       type: "form_qualified_lead_factory_started",
     }))
+    expect(JSON.stringify(await response.json())).not.toContain('"candidates"')
   })
 
   it("rejects batch execution without the explicit confirmation phrase", async () => {

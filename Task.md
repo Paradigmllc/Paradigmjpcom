@@ -1,4 +1,15 @@
-## CURRENT STATUS - 2026-07-14 Japan Entry Lead Factory実務稼働ハードニング（正式release前 / 外部送信0）
+## CURRENT STATUS - 2026-07-14 Japan Entry Lead Factory実務稼働開始（非送信pilot稼働 / batch品質ゲート未承認 / 外部送信0）
+
+### 本番実測
+- 正式release deployment `l3hw5439vqkvmra1x1fuo1k7` / `l5a589jkmfvagztuubgcohpw` はDB **87/87**、Sales health JSON `ok:true`、Twenty HTTP 200・worker restart 0、常駐runtime 0、公開smokeまでpassした。
+- list-only候補79社を再監査し、実drift 3社（Bajoperfil36 / Jewelry On 5th / Weston Main）だけを再同期した。requested 3 / repaired 3 / failed 0、再preview drift 0、Twenty ID欠落 0、旧report URL 0、外部送信 0を確認した。
+- CC0のWikidata公式structured dataを利用したUS EC/SaaS SMB限定sourceを登録し、preview 9/9、evidence URL 9/9、ingest 9、reject 0。広すぎた最初のsourceはsuspendedの監査履歴として隔離した。
+- 非送信pilot `9982e0c1-e8d9-47ee-a4b0-b51ea0adc603` は9社取得・9社検証・3社採点・フォーム合格1・要レビュー2・品質除外2・取得失敗2で終了した。失敗率22.2%のためsourceのbatch量産承認はfail-closedのまま。WeLaunch 1社だけは40名SMB、AI/SaaS適合、米国根拠、実フォームconfidence 94を目視確認済みで、Twenty同期の最終承認対象とする。
+
+### 最終ハードニング
+- 開始APIが新runと無関係な過去候補全件を返していた経路を削除し、run summaryだけを返す。数千件蓄積後もレスポンスサイズと全件list queryが増えない。
+- 候補1社の承認ごとにTwenty全field/viewを再設定していた同期処理を廃止する。CRM metadata変更は明示設定API / release経路だけで行い、個別承認は軽量auth preflight後にlive company patchを実行する。必須field不備やTwenty障害は`promotion_failed`と監査ログへ保存してfail-closedを維持する。
+- この修正の正式release後にWeLaunchだけを人手承認し、Twentyの国名・フォームURL・未送信カルテ、Sales DBのoperator approval、外部送信0、Opportunity / 文面 / レポート未生成を最終確認する。batchはpilot失敗率が20%以下になるまで開始しない。
 
 ### 既存Twenty候補を破壊せず監査・修復する経路
 - `list_only=true`かつ`skip_enrichment=true`の候補だけを対象に、Twenty ID、候補カルテ、旧営業ステータス、旧レポートURL、pipeline状態のdriftを検出する。管理画面でpreview後に不整合だけを最大3並列で再同期し、企業ごとのrequested / repaired / failedをoperator監査ログへ保存する。
