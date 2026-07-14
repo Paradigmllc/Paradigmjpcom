@@ -74,13 +74,28 @@ export function demoHeadlineClass(value: string, scale: "hero" | "section" | "ca
   const length = [...normalized(value)].length
   if (scale === "hero") {
     return length >= 25
-      ? "text-[clamp(2.15rem,4vw,4.15rem)] leading-[1.16] tracking-[-.035em]"
+      ? "text-[clamp(2.05rem,3.55vw,3.2rem)] leading-[1.18] tracking-[-.03em]"
       : "text-[clamp(2.45rem,4.8vw,5rem)] leading-[1.06] tracking-[-.04em]"
   }
   if (scale === "card") return "text-[clamp(1.45rem,2.1vw,2rem)] leading-[1.28] tracking-[-.025em]"
   return length >= 22
     ? "text-[clamp(2rem,3.5vw,3.35rem)] leading-[1.2] tracking-[-.03em]"
     : "text-[clamp(2.25rem,4vw,4rem)] leading-[1.12] tracking-[-.035em]"
+}
+
+export function demoHeadlineText(value: string): string {
+  if (value.includes("\n")) return value
+  const characters = [...value.trim()]
+  if (characters.length < 18) return value
+
+  const midpoint = characters.length / 2
+  const punctuationBreaks = characters
+    .map((character, index) => ({ character, index: index + 1 }))
+    .filter(({ character, index }) => /[、。！？]/u.test(character) && index >= 7 && characters.length - index >= 7)
+    .sort((left, right) => Math.abs(left.index - midpoint) - Math.abs(right.index - midpoint))
+  const breakAt = punctuationBreaks[0]?.index ?? Math.ceil(characters.length / 2)
+
+  return `${characters.slice(0, breakAt).join("")}\n${characters.slice(breakAt).join("")}`
 }
 
 export function hasRepeatedHomeNarrative(page: DemoMultiPageData): boolean {
